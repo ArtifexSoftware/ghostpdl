@@ -464,12 +464,12 @@ hpgl_polyfill_bbox(
  int
 hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-	/* if we are doing vector fill a clipping path has already
-           been set up using the last polygon */
-	if ( render_mode == hpgl_rm_vector_fill )
-	  return 0;
-	else
-	  {
+    /* if we are doing vector fill a clipping path has already
+       been set up using the last polygon */
+    if ( render_mode == hpgl_rm_vector_fill )
+        return 0;
+    else
+        {
 	    gs_fixed_rect fixed_box;
 	    gs_rect pcl_clip_box;
 	    gs_rect dev_clip_box;
@@ -495,10 +495,6 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
                open and the clip box defined by IW is closed */
 	    dev_clip_box.q.x += 1.0;
 	    dev_clip_box.q.y += 1.0;
-	    if ( gs_debug_c('P') )
-		dprintf4("gl/2 device picture frame: p.x=%f p.y=%f q.x=%f q.y=%f\n",
-			 dev_clip_box.p.x, dev_clip_box.p.y,
-			 dev_clip_box.q.x, dev_clip_box.q.y);
 	    /* if the clipping window is active calculate the new clip
                box derived from IW and the intersection of the device
                space boxes replace the current box.  Note that IW
@@ -517,16 +513,7 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y - 1.0);
 	    	dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x + 1.0);
 		dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y + 1.0);
-		if ( gs_debug_c('P') ) {
-		    dprintf4("gl/2 window user units: p.x=%f p.y=%f q.x=%f q.y=%f\n",
-			     pgls->g.soft_clip_window.rect.p.x, 
-			     pgls->g.soft_clip_window.rect.p.y,
-			     pgls->g.soft_clip_window.rect.q.x, 
-			     pgls->g.soft_clip_window.rect.q.y);
-		    dprintf4("gl/2 device soft clip region: p.x=%f p.y=%f q.x=%f q.y=%f\n",
-			     dev_soft_window_box.p.x - 1.0, dev_soft_window_box.p.y - 1.0,
-			     dev_soft_window_box.q.x + 1.0, dev_soft_window_box.q.y + 1.0);
-		}
+
 	    }
 	    /* convert intersection box to fixed point and clip */
 	    fixed_box.p.x = float2fixed(floor(dev_clip_box.p.x));
@@ -538,32 +525,9 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    fixed_box.p.y = max(fixed_box.p.y, pgls->xfm_state.dev_print_rect.p.y);
 	    fixed_box.q.x = min(fixed_box.q.x, pgls->xfm_state.dev_print_rect.q.x);
 	    fixed_box.q.y = min(fixed_box.q.y, pgls->xfm_state.dev_print_rect.q.y);
-	    if ( gs_debug_c('P') ) {
-		gs_matrix mat;
-		dprintf4("gl/2 device clip region: p.x=%f p.y=%f q.x=%f q.y=%f\n",
-			 fixed2float(fixed_box.p.x), fixed2float(fixed_box.p.y),
-			 fixed2float(fixed_box.q.x), fixed2float(fixed_box.q.y));
-		    gs_make_identity(&mat);
-		    hpgl_gsave(pgls);
-		    gs_setmatrix(pgls->pgs, &mat);
-		    gs_setgray(pgls->pgs, 0);
-		    gs_newpath(pgls->pgs);
-		    gs_setlinewidth(pgls->pgs, 0);
-		    gs_moveto(pgls->pgs, fixed2float(fixed_box.p.x), 
-			      fixed2float(fixed_box.p.y));
-		    gs_lineto(pgls->pgs, fixed2float(fixed_box.p.x),
-			      fixed2float(fixed_box.q.y));
-		    gs_lineto(pgls->pgs, fixed2float(fixed_box.q.x),
-			      fixed2float(fixed_box.q.y));
-		    gs_lineto(pgls->pgs, fixed2float(fixed_box.q.x),
-			      fixed2float(fixed_box.p.y));
-		    gs_closepath(pgls->pgs);
-		    gs_stroke(pgls->pgs);
-		    hpgl_grestore(pgls);
-		} else
-		    hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box)); 
-	  }
-	return 0;
+            hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box)); 
+        }
+    return 0;
 }
 
 /* Plot one vector for vector fill all these use absolute coordinates. */
@@ -1094,8 +1058,6 @@ hpgl_set_current_position(
 )
 {
     pgls->g.pos = *pt;
-    if ( gs_debug_c('P') )
-	dprintf2("gl/2 setting position: x=%f y=%f\n", pt->x, pt->y);
     return 0;
 }
 
@@ -1133,19 +1095,6 @@ hpgl_add_point_to_path(
     }
     {
         int     code = (*gs_procs[func])(pgls->pgs, x, y);
-	if ( gs_debug_c('P') ) {
-	    static const char *hpgl_draw_func[] = {
-		"hpgl_plot_move_absolute",
-		"hpgl_plot_move_relative",
-		"hpgl_plot_draw_absolute",
-		"hpgl_plot_draw_relative" 
-	    };
-	    gs_point dev_pt;
-	    hpgl_call(gs_transform(pgls->pgs, x, y, &dev_pt));
-	    dprintf1("gl/2 plot function=%s\t", hpgl_draw_func[func]);
-	    dprintf2("gl/2 user coord: x=%f y=%f\t", x, y);
-	    dprintf2("gl/2 device coord: x=%f y=%f\n", dev_pt.x, dev_pt.y);
-    	}
 	if (code < 0) {
             hpgl_call_note_error(code);
 	    if (code == gs_error_limitcheck)
