@@ -737,6 +737,9 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	scale *= ppts->values.size;
     } else
 	scale = 0.001 * ppts->values.size;
+    /* if TEXT_FROM_CHARS the data was converted to bytes earlier */
+    if ( pte->text.operation & TEXT_FROM_CHARS )
+        pte->text.operation = ((pte->text.operation & ~TEXT_FROM_CHARS) | TEXT_FROM_STRING);
     pte->text.data.bytes = pstr->data;
     pte->text.size = pstr->size;
     pte->index = 0;
