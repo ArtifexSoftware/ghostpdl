@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.7 2002/07/15 23:25:30 giles Exp $
+# $Id: Makefile.am,v 1.8 2002/07/17 13:59:47 giles Exp $
 ## process this file with automake to generate Makefile.in
 
 lib_LIBRARIES = libjbig2dec.a
@@ -17,3 +17,5 @@ jbig2dec_SOURCES = jbig2dec.c
 jbig2dec_LDADD = libjbig2dec.a @LIBOBJS@
 
 MAINTAINERCLEANFILES = config_types.h.in
+
+TESTS = test_jbig2dec.py
