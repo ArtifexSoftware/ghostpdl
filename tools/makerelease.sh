@@ -1,7 +1,5 @@
 #! /bin/bash
 
-# intertactive or automatic
-
 echo ""
 echo "Enter directory of the release"
 read RELEASE_DIR
@@ -25,7 +23,7 @@ then
 fi
 
 # check if this is a "plausible release "
-for x in common docs gs main pcl pxl tools urwfonts
+for x in common doc gs main pcl pxl tools urwfonts
 do
     if test ! -d $RELEASE_DIR/$x
     then
@@ -42,72 +40,8 @@ read NEWS_UPDATE
 if test $NEWS_UPDATE = "y" || test $NEWS_UPDATE = "Y"
 then
     
-    for x in common main pcl pxl tools gs
-    do
-        # build the news file name, if you don't have perl...
-        # news-directory all upcase.
-        UPCASE_DIR=$(echo $x | perl -pe 'tr/[a-z]/[A-Z]/')
-        NEWS_FILE="NEWS-"$UPCASE_DIR
-
-        # get the new logs
-        cd $RELEASE_DIR/$x
-        LOG=$(../$RELEASE_DIR/tools/cvs2log.py -L$NEWS_FILE -h artifex.com)
-        # if the log is empty continue
-        if test -z "$LOG"
-        then
-            echo "No code changes in the $x directory"
-        else # LOG not null
-            echo ""
-            echo "$LOG"
-            echo "Merge new logs for $x? (y/n)"
-            read MERGE_LOGS
-            # merge the new logs with the old logs
-            if test $MERGE_LOGS = "y" || test $MERGE_LOGS = "Y"
-            then
-                # read old header the header is delimited by ^Version
-                HEADER=""
-                # preserve leading whitespace in the reads
-                IFS="
-"
-                cat $NEWS_FILE | while read LINE
-                do
-                    if echo "$LINE" | grep "^Version" > /dev/null
-                    then
-                        # print the previous header, new header and
-                        # log to a temporary file
-                        printf "$HEADER" > "$NEWS_FILE.tmp"
-                        echo "" >> "$NEWS_FILE.tmp"
-                        echo "Version $VERSION ($(date '+%m/%d/%Y'))" >> "$NEWS_FILE.tmp"
-                        echo "======================================" >> "$NEWS_FILE.tmp"
-                        echo "$LOG" >> "$NEWS_FILE.tmp"
-                        # print the old logs.
-                        PRINT_LINE=""
-                        cat $NEWS_FILE | while read LINE
-                        do
-                            if echo "$LINE" | grep "^Version" > /dev/null
-                            then
-                                PRINT_LINE="1"
-                            fi
-                            if test ! -z "$PRINT_LINE"
-                            then
-                                echo "$LINE" >> "$NEWS_FILE.tmp"
-                            fi
-                        done
-                        break
-                    else
-                        HEADER="$HEADER\n$LINE"
-                    fi
-                done
-                cp $NEWS_FILE.tmp $NEWS_FILE
-                rm $NEWS_FILE.tmp
-            fi # merge logs - yes
-        fi # LOG not null case.
-        # back to release directory and continue.
-        cd -
-    done # NEWS file loop end
-    # Update version in makefile
-fi # update NEWS file condition
-# update news files
+    (cd $RELEASE_DIR; tools/cvs2log.py -h artifex.com > ChangeLog)
+fi
 
 echo ""
 echo "Update pl.mak file? (y/n)"
@@ -118,7 +52,7 @@ then
 fi
 
 echo ""
-echo "Committing NEWS Files, ready (y/n)"
+echo "Commit changes (y/n)"
 read COMMIT
 if test $COMMIT = "y" || test $COMMIT = "Y"
 then
@@ -130,5 +64,10 @@ echo "Tar ready (y/n)"
 read TAR
 if test $TAR = "y" || test $TAR = "Y"
 then
-    (cd $RELEASE_DIR; cd ..; tar --exclude CVS -czvf ghostpcl_$VERSION.tar.gz $(basename "$RELEASE_DIR"))
+    BASEDIR_NAME=$(basename "$RELEASE_DIR")
+    RELEASE_NAME=$BASEDIR_NAME-$VERSION
+    (cd $RELEASE_DIR; cd ..;
+    mv $BASEDIR_NAME $RELEASE_NAME
+    tar --exclude CVS -czvf $RELEASE_NAME.tar.gz $RELEASE_NAME
+    mv $RELEASE_NAME $BASEDIR_NAME)
 fi
