@@ -560,8 +560,8 @@ private inline void t1_hinter__adjust_matrix_precision(t1_hinter * this, fixed x
 
 private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
 {   
-    uint align_x = urshift(fixed_1, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
-    uint align_y = urshift(fixed_1, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
+    fixed align_x = rshift(fixed_1, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
+    fixed align_y = rshift(fixed_1, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
 
     this->orig_dx = (dx + align_x / 2) & ~(align_x - 1);
     this->orig_dy = (dy + align_y / 2) & ~(align_y - 1);
