@@ -312,6 +312,11 @@ pcl_pattern_get_gl_uptrn(
  * control like facility provided for GL/2. To undefine patterns, use null
  * as the second operand. See pcpatrn.h for further information.
  *
+ * Note that RF patterns may be either colored or uncolored. At the GL/2 level
+ * the determination is made based on whether or not they contain pen indices
+ * other than 0 or 1. At this level the determination is based on the depth
+ * of the data pixmap: 1 for uncolored, 8 for colored.
+ *
  * Returns 0 on success, < 0 in the event of an error.
  */
   int
@@ -327,13 +332,16 @@ pcl_pattern_RF(
     id_set_value(key, indx);
 
     if (ppixmap != 0) {
-        int     code = pcl_pattern_build_pattern( &pptrn,
-                                                  ppixmap,
-                                                  pcl_pattern_colored,
-                                                  300,
-                                                  300,
-                                                  pcs->memory
-                                                  );
+        pcl_pattern_type_t  type = ( ppixmap->pix_depth == 1
+                                           ? pcl_pattern_uncolored
+				           : pcl_pattern_colored );
+        int                 code = pcl_pattern_build_pattern( &pptrn,
+                                                              ppixmap,
+                                                              type,
+                                                              300,
+                                                              300,
+                                                              pcs->memory
+                                                              );
 
         if (code < 0)
             return code;
