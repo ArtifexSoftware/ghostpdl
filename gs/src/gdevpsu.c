@@ -236,7 +236,7 @@ psw_end_file(FILE *f, const gx_device *dev,
 void
 psw_write_page_header(stream *s, const gx_device *dev,
                       const gx_device_pswrite_common_t *pdpc,
-                      bool do_scale, long page_ord)
+                      bool do_scale, long page_ord, int dictsize)
 {
     long page = dev->PageCount + 1;
 
@@ -277,7 +277,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
 	pprintd2(s, "%d %d ", width, height);
 	pprints1(s, "%s setpagesize\n", p->size_name);
     }
-    stream_puts(s, "/pagesave save store 100 dict begin\n");
+    pprintd1(s, "/pagesave save store %d dict begin\n", dictsize);
     if (do_scale)
 	pprintg2(s, "%g %g scale\n",
 		 72.0 / dev->HWResolution[0], 72.0 / dev->HWResolution[1]);

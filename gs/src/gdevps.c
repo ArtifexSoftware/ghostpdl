@@ -252,7 +252,7 @@ private const char *const psw_procset[] = {
     "/q/gsave #/Q/grestore #/rf{re fill}!",
     "/Y{P clip newpath}!/Y*{P eoclip newpath}!/rY{re Y}!",
 	/* <w> <h> <name> <data> <?> |= <w> <h> <data> */
-    "/|={pop exch 4 1 roll 3 array astore cvx exch 1 index def exec}!",
+    "/|={pop exch 4 1 roll 1 array astore cvx 3 array astore cvx exch 1 index def exec}!",
 	/* <w> <h> <name> <length> <src> | <w> <h> <data> */
     "/|{exch string readstring |=}!",
 	/* <w> <?> <name> (<length>|) + <w> <?> <name> <length> */
@@ -644,7 +644,8 @@ psw_beginpage(gx_device_vector * vdev)
 	psw_begin_file(pdev, NULL);
 
     psw_write_page_header(s, (gx_device *)vdev, &pdev->pswrite_common, true, 
-                          (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount + 1));
+                          (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount + 1),
+                          image_cache_size);
     pdev->page_fill.color = gx_no_color_index;
     return 0;
 }

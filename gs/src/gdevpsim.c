@@ -63,7 +63,7 @@ ps_image_write_headers(FILE *f, gx_device_printer *pdev,
 	stream s;
 
 	swrite_file(&s, f, buf, sizeof(buf));
-	psw_write_page_header(&s, (gx_device *)pdev, pdpc, true, pdev->PageCount + 1);
+	psw_write_page_header(&s, (gx_device *)pdev, pdpc, true, pdev->PageCount + 1, 10);
 	sflush(&s);
     }
 }

@@ -61,7 +61,7 @@ void psw_end_file(FILE *f, const gx_device *dev,
  */
 void psw_write_page_header(stream *s, const gx_device *dev,
 			   const gx_device_pswrite_common_t *pdpc,
-			   bool do_scale, long page_ord);
+			   bool do_scale, long page_ord,  int dictsize);
 /*
  * Write the page trailer.  We do this directly to the file, rather than to
  * the stream, because we may have to do it during finalization.
