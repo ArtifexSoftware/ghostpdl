@@ -1484,18 +1484,22 @@ pcl_ht_init_render_methods(
     /* initialize the color mapping mapping devices; install the default */
     gdev_cmap_init(&pcs->cmap_device_identity, pcur_dev, device_cmap_identity);
     gx_device_retain((gx_device *)&pcs->cmap_device_identity, true);
+
     gdev_cmap_init( &pcs->cmap_device_snap_to_primaries,
                     pcur_dev,
                     device_cmap_snap_to_primaries
                     );
     gx_device_retain((gx_device *)&pcs->cmap_device_snap_to_primaries, true);
+
     gdev_cmap_init( &pcs->cmap_device_color_to_black_over_white,
                     pcur_dev,
                     device_cmap_color_to_black_over_white
                     );
     gx_device_retain((gx_device *)&pcs->cmap_device_color_to_black_over_white, true);
+
     gdev_cmap_init(&pcs->cmap_device_monochrome, pcur_dev, device_cmap_monochrome);
     gx_device_retain((gx_device *)&pcs->cmap_device_monochrome, true);
+
     gs_setdevice_no_init(pcs->pgs, (gx_device *)&pcs->cmap_device_identity);
     /* initialize default halftone */
     pcs->pdflt_ht = 0;
@@ -2199,8 +2203,12 @@ pcl_ht_set_halftone(
     }
     pinfo_new = get_rendering_info(pcs, pht->render_method, cstype, for_image);
     if ((pdev = pinfo_new->pdev) != old_pdev) {
+        long    ref_count = pdev->rc.ref_count; /* HACK ALERT */
+
+        if (ref_count == 0)     /* HACK ALERT */
+            ref_count = 1;
         gdev_cmap_init(pdev, pdev->target, pdev->mapping_method);
-	gx_device_retain((gx_device *)pdev, true);
+        pdev->rc.ref_count = ref_count; /* HACK ALERT */
         gs_setdevice_no_init(pcs->pgs, (gx_device *)pdev);
     }
     ncomps = pdev->color_info.num_components;
