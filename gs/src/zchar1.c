@@ -868,7 +868,7 @@ z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
 	)
 	return code;
     if (pglyph)
-	*pglyph = glyph;
+	*pglyph = name_index(&rglyph);
     if (pgd)
 	code = zchar_charstring_data((gs_font *)pfont, &rglyph, pgd);
     return code;
