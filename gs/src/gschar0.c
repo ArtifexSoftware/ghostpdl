@@ -21,6 +21,7 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsfcmap.h"
+#include "gxfcmap.h"
 #include "gxfixed.h"
 #include "gxdevice.h"
 #include "gxfont.h"
@@ -358,10 +359,40 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		    uint mindex = p - str - 1;	/* p was incremented */
 		    int code;
 
-		    cstr.data = str;
-		    cstr.size = end - str;
-		    code = gs_cmap_decode_next(pdata->CMap, &cstr, &mindex,
+                    /*
+                     * When decoding an FMapType4 or 5, the value
+                     * of chr is modified; when an FMapType9 (CMap)
+                     * composite font is used as a decendant font,
+                     * we have to pass the text including a modified
+                     * chr. Check whether chr has been modified, and
+                     * if so, construct and pass a modified buffer.
+                     */
+		    if (*(p - 1) != chr) {
+			byte substr[MAX_CMAP_CODE_SIZE];
+			int submindex = 0;
+			if_debug2('j', "[j] *(p-1) 0x%02x != chr 0x%02x, modified str should be passed\n",
+				*(p-1), (byte)chr);
+			memcpy(substr, p - 1,
+				min(MAX_CMAP_CODE_SIZE, end - p + 1));
+			substr[0] = chr;
+			cstr.data = substr;
+			cstr.size = min(MAX_CMAP_CODE_SIZE, end - p + 1);
+			if (gs_debug_c('j')) {
+			    dlprintf("[j] original str(");
+			    debug_print_string_hex(str, end - str);
+			    dlprintf(") -> modified substr(");
+			    debug_print_string_hex(cstr.data, cstr.size);
+			    dlprintf(")\n");
+			}
+			code = gs_cmap_decode_next(pdata->CMap, &cstr,
+					&submindex, &fidx, &chr, &glyph);
+			mindex += submindex;
+		    } else {
+			cstr.data = str;
+			cstr.size = end - str;
+			code = gs_cmap_decode_next(pdata->CMap, &cstr, &mindex,
 					       &fidx, &chr, &glyph);
+		    }
 		    if (code < 0)
 			return code;
 		    pte->cmap_code = code; /* hack for widthshow */
