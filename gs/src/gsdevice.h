@@ -42,15 +42,9 @@ typedef struct gs_matrix_s gs_matrix;
 typedef struct gs_param_list_s gs_param_list;
 #endif
 
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
-#endif
+/* Device procedures not involving a graphics state. */
 
 int gs_opendevice(P1(gx_device *));
-int gs_flushpage(P1(gs_state *));
-int gs_copypage(P1(gs_state *));
-int gs_output_page(P3(gs_state *, int, int));
 int gs_copyscanlines(P6(gx_device *, int, byte *, uint, int *, uint *));
 const gx_device *gs_getdevice(P1(int));
 int gs_copydevice(P3(gx_device **, const gx_device *, gs_memory_t *));
@@ -72,17 +66,6 @@ int gs_initialize_wordimagedevice(P9(gx_device_memory * new_dev,
 				     bool word_oriented, bool page_device,
 				     gs_memory_t * mem));
 
-int gs_nulldevice(P1(gs_state *));
-int gs_setdevice(P2(gs_state *, gx_device *));
-int gs_setdevice_no_erase(P2(gs_state *, gx_device *));		/* returns 1 */
-						/* if erasepage required */
-int gs_setdevice_no_init(P2(gs_state *, gx_device *));
-gx_device *gs_currentdevice(P1(const gs_state *));
-
-/* gzstate.h redefines the following: */
-#ifndef gs_currentdevice_inline
-#  define gs_currentdevice_inline(pgs) gs_currentdevice(pgs)
-#endif
 const char *gs_devicename(P1(const gx_device *));
 void gs_deviceinitialmatrix(P2(gx_device *, gs_matrix *));
 
@@ -95,4 +78,38 @@ int gs_get_device_or_hardware_params(P3(gx_device *, gs_param_list *, bool));
 int gs_putdeviceparams(P2(gx_device *, gs_param_list *));
 int gs_closedevice(P1(gx_device *));
 
+/* Device procedures involving an imager state. */
+
+#ifndef gs_imager_state_DEFINED
+#  define gs_imager_state_DEFINED
+typedef struct gs_imager_state_s gs_imager_state;
+#endif
+
+int gs_imager_putdeviceparams(P3(gs_imager_state *pis, gx_device *dev,
+                               gs_param_list *plist));
+
+/* Device procedures involving a graphics state. */
+
+#ifndef gs_state_DEFINED
+#  define gs_state_DEFINED
+   typedef struct gs_state_s gs_state;
+#endif
+
+int gs_flushpage(P1(gs_state *));
+int gs_copypage(P1(gs_state *));
+int gs_output_page(P3(gs_state *, int, int));
+int gs_nulldevice(P1(gs_state *));
+int gs_setdevice(P2(gs_state *, gx_device *));
+int gs_setdevice_no_erase(P2(gs_state *, gx_device *));               /* returns 1 */
+                                              /* if erasepage required */
+int gs_setdevice_no_init(P2(gs_state *, gx_device *));
+gx_device *gs_currentdevice(P1(const gs_state *));
+
+/* gzstate.h redefines the following: */
+#ifndef gs_currentdevice_inline
+#  define gs_currentdevice_inline(pgs) gs_currentdevice(pgs)
+#endif
+
+int gs_state_putdeviceparams(P2(gs_state *pgs, gs_param_list *plist));
+  
 #endif /* gsdevice_INCLUDED */
