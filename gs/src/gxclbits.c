@@ -150,14 +150,15 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    stream_RLE_state rl;
 	} sstate;
 	int code;
+	int try_size = op_size + min(uncompressed_size, max_size);
 
-	*psize = op_size + uncompressed_size;
+	*psize = try_size;
 	code = (pcls != 0 ?
-		set_cmd_put_op(dp, cldev, pcls, 0, *psize) :
-		set_cmd_put_all_op(dp, cldev, 0, *psize));
+		set_cmd_put_op(dp, cldev, pcls, 0, try_size) :
+		set_cmd_put_all_op(dp, cldev, 0, try_size));
 	if (code < 0)
 	    return code;
-	cmd_uncount_op(0, *psize);
+	cmd_uncount_op(0, try_size);
 	/*
 	 * Note that we currently keep all the padding if we are
 	 * compressing.  This is ridiculous, but it's too hard to
@@ -196,21 +197,26 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 		cmd_shorten_list_op(cldev,
 			     (pcls ? &pcls->list : &cldev->band_range_list),
-				    uncompressed_size - wcount);
+				    try_size - (op_size + wcount));
 		*psize = op_size + wcount;
 		goto out;
 	    }
 	}
 	if (uncompressed_size > max_size) {
+	    /* Shorten to zero, erasing the operation altogether */
+	    if_debug1 ('L', "[L]Uncompressed bits %u too large for buffer\n",
+		       uncompressed_size);
 	    cmd_shorten_list_op(cldev,
 			     (pcls ? &pcls->list : &cldev->band_range_list),
-				*psize);
+				try_size);
 	    return_error(gs_error_limitcheck);
 	}
 	if (uncompressed_size != short_size) {
+	    if_debug2 ('L', "[L]Shortening bits from %u to %u\n",
+		       try_size, op_size + short_size);
 	    cmd_shorten_list_op(cldev,
 			     (pcls ? &pcls->list : &cldev->band_range_list),
-				uncompressed_size - short_size);
+				try_size - (op_size + short_size));
 	    *psize = op_size + short_size;
 	}
 	compress = 0;
