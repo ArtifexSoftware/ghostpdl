@@ -8,12 +8,15 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.10 2002/06/22 16:05:45 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.11 2002/06/22 21:20:38 giles Exp $
+    
+    symbol dictionary segment decode and support
 */
 
 #include <stddef.h>
 #include <stdint.h>
 
+#include "config.h"
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
@@ -21,7 +24,7 @@
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
-#ifdef OUTPUT_PBM
+#if OUTPUT_PBM || HAVE_LIBPNG
 #include <stdio.h>
 #include "jbig2_image.h"
 #endif
@@ -45,14 +48,30 @@ typedef struct {
   int8_t sdrat[4];
 } Jbig2SymbolDictParams;
 
+#ifdef HAVE_LIBPNG
+void
+jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
+{
+    int index;
+    char filename[24];
+    
+    fprintf(stderr, "dumping symbol dict as %d individual png files\n", dict->n_symbols);
+    for (index = 0; index < dict->n_symbols; index++) {
+        snprintf(filename, sizeof(filename), "symbol_%04d.png", index);
+        jbig2_image_write_png_file(dict->glyphs[index], filename);
+    }
+}
+#endif /* HAVE_LIBPNG */
+
 /* 6.5 */
-int
+Jbig2SymbolDict *
 jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			 Jbig2Segment *segment,
 			 const Jbig2SymbolDictParams *params,
 			 const byte *data, size_t size,
 			 Jbig2ArithCx *GB_stats)
 {
+  Jbig2SymbolDict *SDNEWSYMS;
   int32_t HCHEIGHT;
   uint32_t NSYMSDECODED;
   int32_t SYMWIDTH, TOTWIDTH;
@@ -74,6 +93,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       IADW = jbig2_arith_int_ctx_new(ctx);
     }
 
+  SDNEWSYMS = jbig2_alloc(ctx->allocator, params->SDNUMNEWSYMS * sizeof(*SDNEWSYMS));
+  SDNEWSYMS->n_symbols = params->SDNUMNEWSYMS;
+  SDNEWSYMS->glyphs = (Jbig2Image **)jbig2_alloc(ctx->allocator, SDNEWSYMS->n_symbols * sizeof(Jbig2Image*));
+  
   /* 6.5.5 (4a) */
   while (NSYMSDECODED < params->SDNUMNEWSYMS)
     {
@@ -94,9 +117,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       HCFIRSTSYM = NSYMSDECODED;
 
       if (HCHEIGHT < 0)
-	/* todo: mem cleanup */
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+        {
+	  /* todo: mem cleanup */
+	  code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			   "Invalid HCHEIGHT value");
+          return NULL;
+        }
 
       jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
         "HCHEIGHT = %d", HCHEIGHT);
@@ -117,9 +143,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  SYMWIDTH = SYMWIDTH + DW;
 	  TOTWIDTH = TOTWIDTH + SYMWIDTH;
 	  if (SYMWIDTH < 0)
-	    /* todo: mem cleanup */
-	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-			       "Invalid SYMWIDTH value");
+            {
+	      /* todo: mem cleanup */
+              code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                "Invalid SYMWIDTH value");
+              return NULL;
+            }
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "SYMWIDTH = %d", SYMWIDTH);
 
@@ -143,12 +172,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		  image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
 
-		  code = jbig2_decode_generic_region(ctx, segment,
-						     &region_params,
-						     as,
-						     image, GB_stats);
+		  code = jbig2_decode_generic_region(ctx, segment, &region_params,
+						     as, image, GB_stats);
 		  /* todo: handle errors */
-		  /* todo: stash image in SDNEWSYMS */
+                  
+                  SDNEWSYMS->glyphs[NSYMSDECODED] = image;
+
 #ifdef OUTPUT_PBM
                   jbig2_image_write_pbm(image, stdout);
 #endif
@@ -164,7 +193,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
   jbig2_free(ctx->allocator, GB_stats);
 
-  return 0;
+  return SDNEWSYMS;
 }
 
 /* 7.4.2 */
@@ -255,11 +284,16 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
         "segment marks bitmap coding context as retained (NYI)");
     }
 
-  return jbig2_decode_symbol_dict(ctx, segment,
+  segment->result = (void *)jbig2_decode_symbol_dict(ctx, segment,
 				  &params,
 				  segment_data + offset,
 				  segment->data_length - offset,
 				  GB_stats);
+#ifdef HAVE_LIBPNG
+  jbig2_dump_symbol_dict(segment->result);
+#endif
+
+  return 0;
 
   /* todo: retain or free GB_stats */
   

@@ -8,9 +8,18 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.h,v 1.3 2002/06/22 16:05:45 giles Exp $
-*/
+    $Id: jbig2_symbol_dict.h,v 1.4 2002/06/22 21:20:38 giles Exp $
 
+    symbol dictionary header
+ */
+
+/* the results of decoding a symbol dictionary */
+typedef struct {
+    int n_symbols;
+    Jbig2Image **glyphs;
+} Jbig2SymbolDict;
+
+/* decode a symbol dictionary segment and store the results */
 int
 jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			const byte *segment_data);
