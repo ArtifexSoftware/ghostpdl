@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 2000-1 artofcode LLC.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -25,7 +25,7 @@
 #	PNGGENDIR - the generated intermediate file directory
 #	PNGOBJDIR - the object directory
 #	PNGVERSION - the library version number ("89", "90", "95", "96",
-#	  "10001", "10002", "10003", "10005", "10008", "10009", "10010").
+#	  and "10001" through "10002").
 #	  For historical reasons, "101" and "102" are also acceptable,
 #	  even though they don't match libpng's numbering scheme
 #	  (see png.h for more details).
@@ -39,6 +39,7 @@
 #   http://www.libpng.org/pub/png/src/
 #   ftp://swrinde.nde.swri.edu/pub/png/src/
 #   ftp://ftp.uu.net/graphics/png/src/
+#   http://libpng.sourceforge.net/
 # Please see Ghostscript's `Make.htm' file for instructions about how to
 # unpack these archives.
 #
@@ -48,10 +49,12 @@
 # for more convenient access.
 #
 # The makefile is known to work with the following library versions:
-# 0.89, 0.90, 0.95, 0.96, 1.0.1, 1.0.2, 1.0.3, 1.0.5, 1.0.8, 1.0.9, 1.0.10.
+# 0.89, 0.90, 0.95, 0.96, 1.0.1, 1.0.2, 1.0.3, 1.0.5, 1.0.8, 1.0.9,
+# 1.0.10, 1.0.11, 1.0.12.
 #
 # NOTE: the archive for libpng 0.95 may be inconsistent: if you have
-# compilation problems, use an older version.
+# compilation problems, use a newer version.
+#
 # Please see Ghostscript's Make.htm file for instructions about how to
 # unpack these archives.
 #
@@ -169,3 +172,9 @@ $(PNGGEN)lpg10009.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGE
 
 $(PNGGEN)lpg10010.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
 	$(SETMOD) $(PNGGEN)lpg10010 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
+
+$(PNGGEN)lpg10011.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
+	$(SETMOD) $(PNGGEN)lpg10011 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
+
+$(PNGGEN)lpg10012.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
+	$(SETMOD) $(PNGGEN)lpg10012 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
