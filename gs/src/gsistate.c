@@ -52,7 +52,13 @@ private RELOC_PTRS_WITH(line_params_reloc_ptrs, gx_line_params *plp)
 } RELOC_PTRS_END
 private_st_line_params();
 
-/* GC procedures for gs_imager_state */
+/*
+ * GC procedures for gs_imager_state
+ *
+ * See comments in gixstate.h before the definition of gs_cr_state_do_rc and
+ * st_cr_state_num_ptrs for an explanation about why the effective_transfer
+ * pointers are handled in this manner.
+ */
 public_st_imager_state();
 private 
 ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
