@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -464,6 +464,7 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     pdf_resource_type_t rtype = resourceFont;
     gs_string chars_used, glyphs_used;
     int *Widths = 0;
+    int *real_widths = 0;
     byte *widths_known = 0;
     ushort *CIDToGIDMap = 0;
     int code;
@@ -508,11 +509,15 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 	uint chars_count = pdf_font_chars_count(font);
 	uint widths_known_size = (chars_count + 7) >> 3;
 
-	Widths = (void *)gs_alloc_byte_array(mem, chars_count, sizeof(*Widths),
-					     "pdf_alloc_font(Widths)");
+	Widths =
+	    (void *)gs_alloc_byte_array(mem, chars_count, sizeof(*Widths),
+					"pdf_alloc_font(Widths)");
+	real_widths =
+	    (void *)gs_alloc_byte_array(mem, chars_count, sizeof(*real_widths),
+					"pdf_alloc_font(real_widths)");
 	widths_known = gs_alloc_bytes(mem, widths_known_size,
 				      "pdf_alloc_font(widths_known)");
-	if (Widths == 0 || widths_known == 0)
+	if (Widths == 0 || real_widths == 0 || widths_known == 0)
 	    goto vmfail;
 	if (font->FontType == ft_CID_TrueType) {
 	    CIDToGIDMap = (void *)
@@ -539,6 +544,7 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     pfres->FontDescriptor = pfd;
     pfres->write_Widths = false;
     pfres->Widths = Widths;
+    pfres->real_widths = real_widths;
     pfres->widths_known = widths_known;
     pfres->BaseEncoding = ENCODING_INDEX_UNKNOWN;
     pfres->Differences = 0;
@@ -552,6 +558,7 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
  fail:
     gs_free_object(mem, CIDToGIDMap, "pdf_alloc_font(CIDToGIDMap)");
     gs_free_object(mem, widths_known, "pdf_alloc_font(widths_known)");
+    gs_free_object(mem, real_widths, "pdf_alloc_font(real_widths)");
     gs_free_object(mem, Widths, "pdf_alloc_font(Widths)");
     if (glyphs_used.data)
 	gs_free_string(mem, glyphs_used.data, glyphs_used.size,
@@ -573,6 +580,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 {
     int index = -1;
     int ftemp_Widths[256];
+    int ftemp_real_widths[256];
     byte ftemp_widths_known[256/8];
     int BaseEncoding = ENCODING_INDEX_UNKNOWN;
     int same = 0, base_same = 0;
@@ -747,10 +755,11 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		memset(&ftemp, 0, sizeof(ftemp));
 		pdf_font_orig_matrix(font, &ftemp.orig_matrix);
 		ftemp.Widths = ftemp_Widths;
+		ftemp.real_widths = ftemp_real_widths;
 		ftemp.widths_known = ftemp_widths_known;
 		memset(ftemp.widths_known, 0, sizeof(ftemp_widths_known));
 		for (i = 0; i <= 255; ++i) {
-		    code = pdf_char_width(&ftemp, i, font, NULL);
+		    code = pdf_char_widths(&ftemp, i, font, NULL);
 		    if (code < 0 && code != gs_error_undefined)
 			return code;
 		}
@@ -871,6 +880,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
     }
     if (have_widths) {
 	memcpy(ppf->Widths, ftemp_Widths, sizeof(ftemp_Widths));
+	memcpy(ppf->real_widths, ftemp_real_widths, sizeof(ftemp_real_widths));
 	memcpy(ppf->widths_known, ftemp_widths_known,
 	       sizeof(ftemp_widths_known));
     }
@@ -1000,8 +1010,8 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
      * Since the font Widths are indexed by character code, changing the
      * encoding also changes the Widths.
      */
-    int width;
-    int code = pdf_glyph_width(ppf, glyph, (gs_font *)bfont, &width);
+    pdf_glyph_widths_t widths;
+    int code = pdf_glyph_widths(ppf, glyph, (gs_font *)bfont, &widths);
 
     if (code < 0)
 	return code;
@@ -1018,7 +1028,8 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
     pdiff[chr].glyph = glyph;
     pdiff[chr].str.data = (const byte *)
 	bfont->procs.callbacks.glyph_name(glyph, &pdiff[chr].str.size);
-    ppf->Widths[chr] = width;
+    ppf->Widths[chr] = widths.Width;
+    ppf->real_widths[chr] = widths.real_width;
     if (code == 0)
 	ppf->widths_known[chr >> 3] |= 0x80 >> (chr & 7);
     else
@@ -1027,12 +1038,13 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
 }
 
 /*
- * Get the width of a given character in a (base) font.  May add the width
- * to the widths cache (ppf->Widths).
+ * Get the widths (unmodified and possibly modified) of a given character
+ * in a (base) font.  May add the widths to the widths cache (ppf->Widths
+ * and ppf->real_widths).
  */
 int
-pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
-	       int *pwidth /* may be NULL */)
+pdf_char_widths(pdf_font_t *ppf, int ch, gs_font *font,
+		pdf_glyph_widths_t *pwidths /* may be NULL */)
 {
     if (ch < 0 || ch > 255)
 	return_error(gs_error_rangecheck);
@@ -1040,27 +1052,45 @@ pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 	gs_font_base *bfont = (gs_font_base *)font;
 	gs_glyph glyph = bfont->procs.encode_char(font, (gs_char)ch,
 						  GLYPH_SPACE_INDEX);
-	int width = 0;
-	int code = pdf_glyph_width(ppf, glyph, font, &width);
+	pdf_glyph_widths_t widths;
+	int code = pdf_glyph_widths(ppf, glyph, font, &widths);
 
 	if (code < 0)
 	    return code;
-	ppf->Widths[ch] = width;
+	ppf->Widths[ch] = widths.Width;
+	ppf->real_widths[ch] = widths.real_width;
 	if (code == 0)
 	    ppf->widths_known[ch >> 3] |= 0x80 >> (ch & 7);
     }
-    if (pwidth)
-	*pwidth = ppf->Widths[ch];
+    if (pwidths) {
+	pwidths->Width = ppf->Widths[ch];
+	pwidths->real_width = ppf->real_widths[ch];
+    }
     return 0;
 }
 
 /*
- * Get the width of a glyph in a (base) font.  Return 1 if the width was
- * defaulted to MissingWidth.
+ * Get the widths (unmodified and possibly modified of a glyph in a (base)
+ * font.  Return 1 if the width was defaulted to MissingWidth.
  */
+private int
+store_glyph_width(int *pwidth, int wmode, double scale,
+		  const gs_glyph_info_t *pinfo)
+{
+    double w, v;
+
+    if (wmode && (w = pinfo->width[wmode].y) != 0)
+	v = pinfo->width[wmode].x;
+    else
+	w = pinfo->width[wmode].x, v = pinfo->width[wmode].y;
+    if (v != 0)
+	return_error(gs_error_rangecheck);
+    *pwidth = (int)(w * scale);
+    return 0;
+}
 int
-pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
-		int *pwidth /* must not be NULL */)
+pdf_glyph_widths(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
+		 pdf_glyph_widths_t *pwidths)
 {
     int wmode = font->WMode;
     gs_glyph_info_t info;
@@ -1072,18 +1102,15 @@ pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 
     if (glyph != gs_no_glyph &&
 	(code = font->procs.glyph_info(font, glyph, NULL,
+				       (GLYPH_INFO_WIDTH0 << wmode) |
+				       GLYPH_INFO_OUTLINE_WIDTHS,
+				       &info)) >= 0 &&
+	(code = store_glyph_width(&pwidths->Width, wmode, scale, &info)) >= 0 &&
+	(code = font->procs.glyph_info(font, glyph, NULL,
 				       GLYPH_INFO_WIDTH0 << wmode,
-				       &info)) >= 0
+				       &info)) >= 0 &&
+	(code = store_glyph_width(&pwidths->real_width, wmode, scale, &info)) >= 0
 	) {
-	double w, v;
-
-	if (wmode && (w = info.width[wmode].y) != 0)
-	    v = info.width[wmode].x;
-	else
-	    w = info.width[wmode].x, v = info.width[wmode].y;
-	if (v != 0)
-	    return_error(gs_error_rangecheck);
-	*pwidth = (int)(w * scale);
 	/*
 	 * If the character is .notdef, don't cache the width,
 	 * just in case this is an incrementally defined font.
@@ -1101,7 +1128,7 @@ pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 				     &finfo);
 	if (code < 0)
 	    return code;
-	*pwidth = finfo.MissingWidth;
+	pwidths->Width = pwidths->real_width = finfo.MissingWidth;
 	/*
 	 * Don't mark the width as known, just in case this is an
 	 * incrementally defined font.

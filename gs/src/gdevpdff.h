@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -206,7 +206,15 @@ struct pdf_font_s {
 
     pdf_font_descriptor_t *FontDescriptor; /* 0 for composite */
     bool write_Widths;
+    /*
+     * Note that the Widths written for Type 1 fonts do not reflect
+     * Metrics[2] or CDevProc: they must be the same as the widths in
+     * the CharStrings (i.e., they are a pure accelerator).  However,
+     * we must also store the real (possibly modified) widths so that
+     * we can space characters correctly when writing text.
+     */
     int *Widths;		/* [256] for non-composite, non-CID */
+    int *real_widths;		/* [256] including possible modifications */
     byte *widths_known;		/* 1 bit per Widths element */
 
     /* Members for non-synthesized fonts other than composite or CID. */
@@ -410,18 +418,23 @@ int pdf_add_encoding_difference(P5(gx_device_pdf *pdev, pdf_font_t *ppf,
 				   gs_glyph glyph));
 
 /*
- * Get the width of a given character in a (base) font.  May add the width
- * to the widths cache (ppf->Widths).
+ * Get the widths (unmodified and possibly modified) of a given character
+ * in a (base) font.  May add the widths to the widths cache (ppf->Widths
+ * and ppf->real_widths).
  */
-int pdf_char_width(P4(pdf_font_t *ppf, int ch, gs_font *font,
-		      int *pwidth /* may be NULL */));
+typedef struct pdf_glyph_widths_s {
+    int Width;			/* unmodified, for Widths */
+    int real_width;		/* possibly modified, for rendering */
+} pdf_glyph_widths_t;
+int pdf_char_widths(P4(pdf_font_t *ppf, int ch, gs_font *font,
+		       pdf_glyph_widths_t *pwidths /* may be NULL */));
 
 /*
- * Get the width of a glyph in a (base) font.  Return 1 if the width should
- * not be cached.
+ * Get the widths (unmodified and possibly modified) of a glyph in a (base)
+ * font.  Return 1 if the width should not be cached.
  */
-int pdf_glyph_width(P4(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
-		       int *pwidth /* must not be NULL */));
+int pdf_glyph_widths(P4(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
+			pdf_glyph_widths_t *pwidths));
 
 /*
  * Find the range of character codes that includes all the defined

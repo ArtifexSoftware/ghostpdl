@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1999, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -111,7 +111,15 @@ typedef struct gs_font_info_s {
 } gs_font_info_t;
 
 /*
- * Define the structure used to return information about a glyph.
+ * Define the structure used to return information about a glyph.  Note that
+ * a glyph may have two different sets of widths: those stored in the
+ * outline (which includes hmtx for TrueType fonts), and those actually used
+ * when rendering the glyph.  Currently, these differ only for Type 1 fonts
+ * that use Metrics or CDevProc to change the widths.  The glyph_info
+ * procedure normally returns the rendering widths: to get the outline
+ * widths, clients use GLYPH_INFO_OUTLINE_WIDTHS.  (Fonts that don't
+ * distinguish the two sets of widths don't need to do anything special, and
+ * don't need to test for GLYPH_INFO_OUTLINE_WIDTHS.)
  */
 typedef struct gs_glyph_info_s {
     int members;		/* mask of which members are valid */
@@ -127,6 +135,7 @@ typedef struct gs_glyph_info_s {
 #define GLYPH_INFO_PIECES 16
     gs_glyph *pieces;		/* pieces are stored here: the caller must */
 				/* preset pieces if INFO_PIECES is set. */
+#define GLYPH_INFO_OUTLINE_WIDTHS 32 /* return unmodified widths, see above */
 } gs_glyph_info_t;
 
 /* Define the "object" procedures of fonts. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 2000, 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000, 2001, 2002 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -498,11 +498,12 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font *font, pdf_font_t *psubf,
 		    }
 		}
 		if (!(psubf->widths_known[index] & mask)) {
-		    int width;
+		    pdf_glyph_widths_t widths;
 
-		    code = pdf_glyph_width(psubf, glyph, subfont, &width);
+		    code = pdf_glyph_widths(psubf, glyph, subfont, &widths);
 		    if (code == 0) {
-			psubf->Widths[cid] = width;
+			psubf->Widths[cid] = widths.Width;
+			psubf->real_widths[cid] = widths.real_width;
 			psubf->widths_known[index] |= mask;
 		    }
 		}
@@ -813,6 +814,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     const gs_text_params_t *text = &pte->text;
     int i;
     int code = 0, mask;
+    gs_point width_pt;
 
     font = penum->current_font;
     if (pfmat == 0)
@@ -901,54 +903,65 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	return code;
     }
 
-    /* Write out the characters, unless we have to emulate ADD_TO_WIDTH. */
-    if (mask == 0 && (text->operation & TEXT_DO_DRAW)) {
-	code = pdf_append_chars(pdev, pstr->data, pstr->size);
+    /*
+     * The only operations left to handle are TEXT_DO_DRAW and
+     * TEXT_RETURN_WIDTH.
+     */
+    if (mask == 0) {
+	/*
+	 * If any character has real_width != Width, we have to process
+	 * the string character-by-character.  process_text_return_width
+	 * will tell us what we need to know.
+	 */
+	int save_index = *pindex;
+
+	if (!(text->operation & (TEXT_DO_DRAW | TEXT_RETURN_WIDTH)))
+	    return 0;
+	code = process_text_return_width(pte, font, pts->pdfont, pfmat,
+					 (gs_const_string *)pstr,
+					 pindex, &width_pt);
+	if (code < 0)
+	    return code;
+	if (code == 0) {
+	    /* No characters with redefined widths -- the fast case. */
+	    if (text->operation & TEXT_DO_DRAW) {
+		code = pdf_append_chars(pdev, pstr->data, pstr->size);
+		if (code < 0)
+		    return code;
+	    }
+	} else {
+	    /* Use the slow case.  Set mask to any non-zero value. */
+	    mask = TEXT_RETURN_WIDTH;
+	    *pindex = save_index;
+	}
+    }
+    if (mask) {
+	/*
+	 * Cancel the word and character spacing, since we're going
+	 * to emulate them.
+	 */
+	pts->words = pts->chars = 0;
+	code = pdf_write_text_process_state(pdev, pte, pts,
+					    (gs_const_string *)pstr);
+	if (code < 0)
+	    return code;
+	code = process_text_add_width(pte, font, pfmat, pts,
+				      (gs_const_string *)pstr,
+				      pindex, &width_pt);
 	if (code < 0)
 	    return code;
     }
 
-    /*
-     * If we don't need the total width, and don't have to emulate
-     * ADD_TO_WIDTH, return now.  If the widths are available directly from
-     * the font, place the characters and/or compute and return the total
-     * width now.  Otherwise, call the default implementation.
-     */
-    {
-	gs_point dpt;
 
-	if (mask) {
-	    /*
-	     * Cancel the word and character spacing, since we're going
-	     * to emulate them.
-	     */
-	    pts->words = pts->chars = 0;
-	    code = pdf_write_text_process_state(pdev, pte, pts,
-						(gs_const_string *)pstr);
-	    if (code < 0)
-		return code;
-	    code = process_text_add_width(pte, font, pfmat, pts,
-					  (gs_const_string *)pstr,
-					  pindex, &dpt);
-	    if (code < 0)
-		return code;
-	    if (!(text->operation & TEXT_RETURN_WIDTH))
-		return 0;
-	} else if (!(text->operation & TEXT_RETURN_WIDTH))
-	    return 0;
-	else {
-	    code = process_text_return_width(pte, font, pts->pdfont, pfmat,
-					     (gs_const_string *)pstr,
-					     pindex, &dpt);
-	    if (code < 0)
-		return code;
-	}
-	pte->returned.total_width = dpt;
-	gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pis), &dpt);
-	return gx_path_add_point(pte->path,
-				 penum->origin.x + float2fixed(dpt.x),
-				 penum->origin.y + float2fixed(dpt.y));
-    }
+    /* Finally, return the total width if requested. */
+    if (!(text->operation & TEXT_RETURN_WIDTH))
+	return 0;
+    pte->returned.total_width = width_pt;
+    gs_distance_transform(width_pt.x, width_pt.y, &ctm_only(pte->pis),
+			  &width_pt);
+    return gx_path_add_point(pte->path,
+			     penum->origin.x + float2fixed(width_pt.x),
+			     penum->origin.y + float2fixed(width_pt.y));
 }
 
 /*
@@ -1448,7 +1461,10 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
     return 0;
 }
 
-/* Compute the total text width (in user space). */
+/*
+ * Compute the total text width (in user space).  Return 1 if any
+ * character had real_width != Width, otherwise 0.
+ */
 private int
 process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
 			  pdf_font_t *pdfont, const gs_matrix *pfmat,
@@ -1462,14 +1478,17 @@ process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
     int space_char =
 	(pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH ?
 	 pte->text.space.s_char : -1);
+    int widths_differ = 0;
 
     for (i = *pindex, w = 0; i < pstr->size; ++i) {
-	int cw;
-	int code = pdf_char_width(pdfont, pstr->data[i], font, &cw);
+	pdf_glyph_widths_t cw;
+	int code = pdf_char_widths(pdfont, pstr->data[i], font, &cw);
 
 	if (code < 0)
 	    return code;
-	w += cw;
+	w += cw.real_width;
+	if (cw.real_width != cw.Width)
+	    widths_differ = 1;
 	if (pstr->data[i] == space_char)
 	    ++num_spaces;
     }
@@ -1486,7 +1505,7 @@ process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
     }
     *pindex = i;
     *pdpt = dpt;
-    return 0;
+    return widths_differ;
 }
 /*
  * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH.
@@ -1513,8 +1532,8 @@ process_text_add_width(gs_text_enum_t *pte, gs_font *font,
     dpt.x = dpt.y = 0;
     tmat = ppts->text_matrix;
     for (i = *pindex, w = 0; i < pstr->size; ++i) {
-	int cw;
-	int code = pdf_char_width(ppts->pdfont, pstr->data[i], font, &cw);
+	pdf_glyph_widths_t cw;
+	int code = pdf_char_widths(ppts->pdfont, pstr->data[i], font, &cw);
 	gs_point wpt;
 
 	if (code < 0)
@@ -1535,8 +1554,10 @@ process_text_add_width(gs_text_enum_t *pte, gs_font *font,
 	    if (code < 0)
 		break;
 	}
-	gs_distance_transform(cw * scale, 0.0, pfmat, &wpt);
+	gs_distance_transform(cw.real_width * scale, 0.0, pfmat, &wpt);
 	dpt.x += wpt.x, dpt.y += wpt.y;
+	if (cw.real_width != cw.Width)
+	    move = true;
 	if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	    dpt.x += pte->text.delta_all.x;
 	    dpt.y += pte->text.delta_all.y;

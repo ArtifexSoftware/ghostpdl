@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -1002,9 +1002,9 @@ icont:
 }
 
 /*
- * Redefine glyph_info to take Metrics[2] and CDevProc into account.
- * (If CDevProc is present, return e_rangecheck, since we can't call the
- * interpreter from here.)
+ * Redefine glyph_info to take Metrics[2] and CDevProc into account (unless
+ * GLYPH_INFO_OUTLINE_WIDTHS is set).  If CDevProc is present, return
+ * e_rangecheck, since we can't call the interpreter from here.
  */
 int
 z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
@@ -1022,7 +1022,7 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     int done_members = 0;
     int code;
 
-    if (!width_members)
+    if (!width_members || (members & GLYPH_INFO_OUTLINE_WIDTHS))
 	return gs_type1_glyph_info(font, glyph, pmat, members, info);
     if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
 	return_error(e_rangecheck); /* can't handle it */
