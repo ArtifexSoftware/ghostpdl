@@ -89,7 +89,8 @@ pdf2dsc.ps pdfopt.ps ;\
 	done'
 
 # install html documentation
-DOC_PAGES=PUBLIC README API.htm Bug-form.htm Bug-info.htm \
+DOC_PAGES=PUBLIC README index.html gs.css \
+	   API.htm Bug-form.htm Bug-info.htm \
 	   C-style.htm Changes.htm Commprod.htm Copying.htm \
 	   Current.htm DLL.htm Develop.htm Devices.htm Drivers.htm \
 	   Fonts.htm Helpers.htm Hershey.htm \
