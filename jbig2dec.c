@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.13 2002/02/13 08:47:18 raph Exp $
+    $Id: jbig2dec.c,v 1.14 2002/02/16 07:25:36 raph Exp $
 */
 
 #include <stdio.h>
@@ -215,6 +215,7 @@ jbig2_read_symbol_dictionary (Jbig2Ctx_foo *ctx)
   Jbig2SymbolDictionary *result = (Jbig2SymbolDictionary *)malloc(sizeof(Jbig2SymbolDictionary));
   int offset = ctx->offset;
   bool SDHUFF, SDREFAGG, SDRTEMPLATE;
+  int SDTEMPLATE;
   int sdat_bytes;
 
   /* 7.4.2.1.1 */
@@ -223,6 +224,7 @@ jbig2_read_symbol_dictionary (Jbig2Ctx_foo *ctx)
 
   SDHUFF = result->flags & 1;
   SDREFAGG = (result->flags >> 1) & 1;
+  SDTEMPLATE = (result->flags >> 10) & 3;
   SDRTEMPLATE = (result->flags >> 12) & 1;
 
   /* FIXME: there are quite a few of these conditions to check */

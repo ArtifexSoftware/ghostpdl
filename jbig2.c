@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include "jbig2.h"
 #include "jbig2_priv.h"
+#include "jbig2_arith.h"
 #include "jbig2_generic.h"
+#include "jbig2_symbol_dict.h"
 
 static void *
 jbig2_default_alloc (Jbig2Allocator *allocator, size_t size)
@@ -56,13 +58,17 @@ jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int seg_idx,
   char buf[1024];
   va_list ap;
   int n;
+  int code;
 
   va_start (ap, fmt);
   n = vsnprintf (buf, sizeof(buf), fmt, ap);
   va_end (ap);
   if (n < 0 || n == sizeof(buf))
     strcpy (buf, "jbig2_error: error in generating error string");
-  return ctx->error_callback (ctx->error_callback_data, buf, severity, seg_idx);
+  code = ctx->error_callback (ctx->error_callback_data, buf, severity, seg_idx);
+  if (severity == JBIG2_SEVERITY_FATAL)
+    code = -1;
+  return code;
 }
 
 Jbig2Ctx *
@@ -77,7 +83,7 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
   if (allocator == NULL)
       allocator = &jbig2_default_allocator;
 
-  result = (Jbig2Ctx *)jbig2_alloc (allocator, sizeof(Jbig2Ctx));
+  result = (Jbig2Ctx *)jbig2_alloc(allocator, sizeof(Jbig2Ctx));
   result->allocator = allocator;
   result->options = options;
   result->global_ctx = (const Jbig2Ctx *)global_ctx;
@@ -93,6 +99,11 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
   result->n_sh = 0;
   result->n_sh_max = 1;
   result->sh_ix = 0;
+
+  result->n_results = 0;
+  result->n_results_max = 16;
+  result->results = (const Jbig2Result **)jbig2_alloc(allocator, result->n_results_max * sizeof(Jbig2Result *));
+
   return result;
 }
 
@@ -100,6 +111,12 @@ int32_t
 jbig2_get_int32 (const byte *buf)
 {
   return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+}
+
+int16_t
+jbig2_get_int16 (const byte *buf)
+{
+  return (buf[0] << 8) | buf[1];
 }
 
 static Jbig2SegmentHeader *
@@ -240,11 +257,8 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	  if (ctx->buf_wr_ix - ctx->buf_rd_ix < 9)
 	    return 0;
 	  if (memcmp(ctx->buf + ctx->buf_rd_ix, jbig2_id_string, 8))
-	    {
-	      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
-			  "Not a JBIG2 file header");
-	      return -1;
-	    }
+	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+			       "Not a JBIG2 file header");
 	  ctx->file_header_flags = ctx->buf[ctx->buf_rd_ix + 8];
 	  if (!(ctx->file_header_flags & 2))
 	    {
@@ -322,9 +336,8 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	case JBIG2_FILE_EOF:
 	  if (ctx->buf_rd_ix == ctx->buf_wr_ix)
 	    return 0;
-	  jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
+	  return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
 		      "Garbage beyond end of file");
-	  return -1;
 	}
     }
   return 0;
@@ -337,6 +350,7 @@ jbig2_ctx_free (Jbig2Ctx *ctx)
 {
   Jbig2Allocator *ca = ctx->allocator;
   int i;
+  int32_t seg_ix;
 
   jbig2_free(ca, ctx->buf);
   if (ctx->sh_list != NULL)
@@ -345,6 +359,16 @@ jbig2_ctx_free (Jbig2Ctx *ctx)
 	jbig2_free_segment_header(ctx, ctx->sh_list[i]);
       jbig2_free(ca, ctx->sh_list);
     }
+
+  for (seg_ix = 0; seg_ix < ctx->n_results; seg_ix++)
+    {
+      const Jbig2Result *result = ctx->results[seg_ix];
+
+      if (result)
+	result->free(result, ctx);
+    }
+  jbig2_free(ca, ctx->results);
+
   jbig2_free(ca, ctx);
 }
 
@@ -367,8 +391,101 @@ int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 	      sh->data_length);
   switch (sh->flags & 63)
     {
+    case 0:
+      return jbig2_symbol_dictionary(ctx, sh, segment_data);
     case 38:
       return jbig2_immediate_generic_region(ctx, sh, segment_data);
     }
   return 0;
 }
+
+const Jbig2Result *
+jbig2_get_result(Jbig2Ctx *ctx, int32_t segment_number)
+{
+  if (segment_number < 0 || segment_number >= ctx->n_results)
+    {
+      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment_number,
+		  "Attempting to get invalid segment number");
+      return NULL;
+    }
+  return ctx->results[segment_number];
+}
+
+int
+jbig2_put_result(Jbig2Ctx *ctx, const Jbig2Result *result)
+{
+  int32_t segment_number = result->segment_number;
+  int32_t i;
+
+  if (ctx->n_results_max <= segment_number)
+    {
+      const Jbig2Result **new_results;
+      do
+	ctx->n_results_max <<= 1;
+      while (ctx->n_results_max <= segment_number);
+      new_results = (const Jbig2Result **)jbig2_realloc(ctx->allocator,
+							  ctx->results,
+							  ctx->n_results_max * sizeof(Jbig2Result *));
+      if (new_results == NULL)
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment_number,
+			   "Allocation failure");
+      ctx->results = new_results;
+    }
+  for (i = ctx->n_results; i < segment_number; i++)
+    ctx->results[i] = NULL;
+  ctx->results[segment_number] = result;
+  if (ctx->n_results < segment_number + 1)
+    ctx->n_results = segment_number + 1;
+  return 0;
+}
+
+typedef struct {
+  Jbig2WordStream super;
+  const byte *data;
+  size_t size;
+} Jbig2WordStreamBuf;
+
+/* I'm not committed to keeping the word stream interface. It's handy
+   when you think you may be streaming your input, but if you're not
+   (as is currently the case), it just adds complexity.
+*/
+
+static uint32_t
+jbig2_word_stream_buf_get_next_word(Jbig2WordStream *self, int offset)
+{
+  Jbig2WordStreamBuf *z = (Jbig2WordStreamBuf *)self;
+  const byte *data = z->data;
+  uint32_t result;
+
+  if (offset + 4 < z->size)
+    result = (data[offset] << 24) | (data[offset + 1] << 16) |
+      (data[offset + 2] << 8) | data[offset + 3];
+  else
+    {
+      int i;
+
+      result = 0;
+      for (i = 0; i < z->size - offset; i++)
+	result |= data[offset + i] << ((3 - i) << 3);
+    }
+  return result;
+}
+
+Jbig2WordStream *
+jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size)
+{
+  Jbig2WordStreamBuf *result = (Jbig2WordStreamBuf *)jbig2_alloc(ctx->allocator, sizeof(Jbig2WordStreamBuf));
+
+  result->super.get_next_word = jbig2_word_stream_buf_get_next_word;
+  result->data = data;
+  result->size = size;
+
+  return &result->super;
+}
+
+void
+jbig2_word_stream_buf_free(Jbig2Ctx *ctx, Jbig2WordStream *ws)
+{
+  jbig2_free(ctx->allocator, ws);
+}
+

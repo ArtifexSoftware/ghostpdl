@@ -14,18 +14,6 @@
 #include "jbig2_arith.h"
 #include "jbig2_generic.h"
 
-/* Table 2 */
-typedef struct {
-  bool MMR;
-  int32_t GBW;
-  int32_t GBH;
-  int GBTEMPLATE;
-  bool TPGDON;
-  bool USESKIP;
-  /* SKIP */
-  byte gbat[8];
-} Jbig2GenericRegionParams;
-
 typedef struct {
   int32_t width;
   int32_t height;
@@ -34,69 +22,88 @@ typedef struct {
   byte flags;
 } Jbig2RegionSegmentInfo;
 
-typedef struct {
-  Jbig2WordStream super;
-  const byte *data;
-  size_t size;
-} Jbig2WordStreamBuf;
-
-static uint32_t
-jbig2_word_stream_buf_get_next_word(Jbig2WordStream *self, int offset)
-{
-  Jbig2WordStreamBuf *z = (Jbig2WordStreamBuf *)self;
-  const byte *data = z->data;
-  uint32_t result;
-
-  if (offset + 4 < z->size)
-    result = (data[offset] << 24) | (data[offset + 1] << 16) |
-      (data[offset + 2] << 8) | data[offset + 3];
-  else
-    {
-      int i;
-
-      result = 0;
-      for (i = 0; i < z->size - offset; i++)
-	result |= data[offset + i] << ((3 - i) << 3);
-    }
-  return result;
-}
-
-Jbig2WordStream *
-jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size)
-{
-  Jbig2WordStreamBuf *result = (Jbig2WordStreamBuf *)jbig2_alloc(ctx->allocator, sizeof(Jbig2WordStreamBuf));
-
-  result->super.get_next_word = jbig2_word_stream_buf_get_next_word;
-  result->data = data;
-  result->size = size;
-
-  return &result->super;
-}
-
-void
-jbig2_word_stream_buf_free(Jbig2Ctx *ctx, Jbig2WordStream *ws)
-{
-  jbig2_free(ctx->allocator, ws);
-}
-
 static int
-jbig2_decode_generic_template1(Jbig2Ctx *ctx,
+jbig2_decode_generic_template0(Jbig2Ctx *ctx,
 			       int32_t seg_number,
 			       const Jbig2GenericRegionParams *params,
-			       const byte *data, size_t size,
-			       byte *gbreg)
+			       Jbig2ArithState *as,
+			       byte *gbreg,
+			       Jbig2ArithCx *GB_stats)
 {
-  Jbig2ArithCx GB_stats[8192];
-  Jbig2WordStream *ws = jbig2_word_stream_buf_new(ctx, data, size);
-  /* todo: ctx needs to be an argument; fix up memory allocation */
-  Jbig2ArithState *as = jbig2_arith_new(ws);
   int GBW = params->GBW;
   int rowstride = (GBW + 7) >> 3;
   int x, y;
   byte *gbreg_line = gbreg;
   bool LTP = 0;
 
-  memset(GB_stats, 0, sizeof(GB_stats));
+  /* todo: currently we only handle the nominal gbat location */
+
+#ifdef OUTPUT_PBM
+  printf("P4\n%d %d\n", GBW, params->GBH);
+#endif
+
+  for (y = 0; y < params->GBH; y++)
+    {
+      uint32_t CONTEXT;
+      uint32_t line_m1;
+      uint32_t line_m2;
+      int padded_width = (GBW + 7) & -8;
+
+      line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
+      line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 6 : 0;
+      CONTEXT = (line_m1 & 0x7f0) | (line_m2 & 0xf800);
+
+      /* 6.2.5.7 3d */
+      for (x = 0; x < padded_width; x += 8)
+	{
+	  byte result = 0;
+	  int x_minor;
+	  int minor_width = GBW - x > 8 ? 8 : GBW - x;
+
+	  if (y >= 1)
+	    line_m1 = (line_m1 << 8) |
+	      (x + 8 < GBW ? gbreg_line[-rowstride + (x >> 3) + 1] : 0);
+
+	  if (y >= 2)
+	    line_m2 = (line_m2 << 8) |
+	      (x + 8 < GBW ? gbreg_line[-(rowstride << 1) + (x >> 3) + 1] << 6: 0);
+
+	  /* This is the speed-critical inner loop. */
+	  for (x_minor = 0; x_minor < minor_width; x_minor++)
+	    {
+	      bool bit;
+
+	      bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
+	      result |= bit << (7 - x_minor);
+	      CONTEXT = ((CONTEXT & 0x7bf7) << 1) | bit |
+		((line_m1 >> (7 - x_minor)) & 0x10) |
+		((line_m2 >> (7 - x_minor)) & 0x800);
+	    }
+	  gbreg_line[x >> 3] = result;
+	}
+#ifdef OUTPUT_PBM
+      fwrite(gbreg_line, 1, rowstride, stdout);
+#endif
+      gbreg_line += rowstride;
+    }
+
+  return 0;
+}
+
+static int
+jbig2_decode_generic_template1(Jbig2Ctx *ctx,
+			       int32_t seg_number,
+			       const Jbig2GenericRegionParams *params,
+			       Jbig2ArithState *as,
+			       byte *gbreg,
+			       Jbig2ArithCx *GB_stats)
+{
+  int GBW = params->GBW;
+  int rowstride = (GBW + 7) >> 3;
+  int x, y;
+  byte *gbreg_line = gbreg;
+  bool LTP = 0;
+
   /* todo: currently we only handle the nominal gbat location */
 
 #ifdef OUTPUT_PBM
@@ -112,7 +119,7 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
 
       line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
       line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 5 : 0;
-      CONTEXT = ((line_m1 >> 1) & 0x1f8) | ((line_m2 >> 4) & 0x1e00);
+      CONTEXT = ((line_m1 >> 1) & 0x1f8) | ((line_m2 >> 1) & 0x1e00);
 
       /* 6.2.5.7 3d */
       for (x = 0; x < padded_width; x += 8)
@@ -171,12 +178,21 @@ int
 jbig2_decode_generic_region(Jbig2Ctx *ctx,
 			    int32_t seg_number,
 			    const Jbig2GenericRegionParams *params,
-			    const byte *data, size_t size,
-			    byte *gbreg)
+			    Jbig2ArithState *as,
+			    byte *gbreg,
+			    Jbig2ArithCx *GB_stats)
 {
-  if (!params->MMR && params->GBTEMPLATE == 1)
+  if (!params->MMR && params->GBTEMPLATE == 0)
+    return jbig2_decode_generic_template0(ctx, seg_number,
+					  params, as, gbreg, GB_stats);
+  else if (!params->MMR && params->GBTEMPLATE == 1)
     return jbig2_decode_generic_template1(ctx, seg_number,
-					  params, data, size, gbreg);
+					  params, as, gbreg, GB_stats);
+  {
+    int i;
+    for (i = 0; i < 8; i++)
+      printf ("gbat[%d] = %d\n", i, params->gbat[i]);
+  }
   jbig2_error(ctx, JBIG2_SEVERITY_WARNING, seg_number,
 	      "decode_generic_region: MMR=%d, GBTEMPLATE=%d NYI",
 	      params->MMR, params->GBTEMPLATE);
@@ -207,14 +223,14 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   Jbig2GenericRegionParams params;
   int code;
   byte *gbreg;
+  Jbig2WordStream *ws;
+  Jbig2ArithState *as;
+  Jbig2ArithCx *GB_stats = NULL;
 
   /* 7.4.6 */
   if (sh->data_length < 18)
-    {
-      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, sh->segment_number,
-		  "Segment too short");
-      return -1;
-    }
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, sh->segment_number,
+		       "Segment too short");
 
   jbig2_get_region_segment_info(&rsi, segment_data);
   jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
@@ -235,7 +251,8 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
     {
       gbat_bytes = (seg_flags & 6) ? 2 : 8;
       if (18 + gbat_bytes > sh->data_length)
-	return -1;
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, sh->segment_number,
+			   "Segment too short");
       memcpy(gbat, segment_data + 18, gbat_bytes);
       jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
 		  "gbat: %d, %d", gbat[0], gbat[1]);
@@ -254,12 +271,26 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 
   gbreg = jbig2_alloc(ctx->allocator, ((rsi.width + 7) >> 3) * rsi.height);
 
+  ws = jbig2_word_stream_buf_new(ctx,
+				 segment_data + offset,
+				 sh->data_length - offset);
+  as = jbig2_arith_new(ctx, ws);
+
+  if (!params.MMR)
+    {
+      int stats_size = params.GBTEMPLATE == 0 ? 65536 :
+	params.GBTEMPLATE == 1 ? 8192 : 1024;
+      GB_stats = jbig2_alloc(ctx->allocator, stats_size);
+      memset(GB_stats, 0, stats_size);
+    }
+
   code = jbig2_decode_generic_region(ctx, sh->segment_number, &params,
-				     segment_data + offset,
-				     sh->data_length - offset,
-				     gbreg);
+				     as, gbreg, GB_stats);
 
   /* todo: stash gbreg as segment result */
+  /* todo: free ws, as */
+
+  jbig2_free(ctx->allocator, GB_stats);
 
   return code;
 }

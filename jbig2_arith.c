@@ -8,13 +8,15 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_arith.c,v 1.6 2002/02/15 20:46:30 raph Exp $
+    $Id: jbig2_arith.c,v 1.7 2002/02/16 07:25:36 raph Exp $
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
-#include "jbig2dec.h"
+#include "jbig2.h"
+#include "jbig2_priv.h"
 #include "jbig2_arith.h"
 
 #ifdef DEBUG
@@ -22,12 +24,12 @@
 #endif
 
 struct _Jbig2ArithState {
-  uint32 C;
+  uint32_t C;
   int A;
 
   int CT;
 
-  uint32 next_word;
+  uint32_t next_word;
   int next_word_bytes;
 
   Jbig2WordStream *ws;
@@ -170,7 +172,7 @@ jbig2_arith_trace (Jbig2ArithState *as, Jbig2ArithCx cx)
 #endif
 
 Jbig2ArithState *
-jbig2_arith_new (Jbig2WordStream *ws)
+jbig2_arith_new (Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
   Jbig2ArithState *result = (Jbig2ArithState *)malloc (sizeof(Jbig2ArithState));
 
@@ -334,7 +336,7 @@ jbig2_arith_decode (Jbig2ArithState *as, Jbig2ArithCx *pcx)
 
 #ifdef TEST
 
-static int32
+static int32_t
 test_get_word (Jbig2WordStream *self, int offset)
 {
   byte stream[] = {
@@ -359,7 +361,7 @@ main (int argc, char **argv)
   Jbig2ArithCx cx = 0;
 
   ws.get_next_word = test_get_word;
-  as = jbig2_arith_new (&ws);
+  as = jbig2_arith_new (NULL, &ws);
   jbig2_arith_trace (as, cx);
 
   for (i = 0; i < 256; i++)

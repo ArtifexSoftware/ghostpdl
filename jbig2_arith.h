@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_arith.h,v 1.3 2001/06/10 07:09:18 giles Exp $
+    $Id: jbig2_arith.h,v 1.4 2002/02/16 07:25:36 raph Exp $
 */
 
 typedef struct _Jbig2ArithState Jbig2ArithState;
@@ -19,7 +19,7 @@ typedef struct _Jbig2ArithState Jbig2ArithState;
 typedef unsigned char Jbig2ArithCx;
 
 Jbig2ArithState *
-jbig2_arith_new (Jbig2WordStream *ws);
+jbig2_arith_new (Jbig2Ctx *ctx, Jbig2WordStream *ws);
 
 bool
 jbig2_arith_decode (Jbig2ArithState *as, Jbig2ArithCx *pcx);
