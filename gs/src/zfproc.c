@@ -239,6 +239,7 @@ s_proc_read_continue(i_ctx_t *i_ctx_p)
 /* ---------------- Write streams ---------------- */
 
 /* Forward references */
+private stream_proc_flush(s_proc_write_flush);
 private stream_proc_process(s_proc_write_process);
 private int s_proc_write_continue(P1(i_ctx_t *));
 
@@ -249,7 +250,7 @@ private const stream_template s_proc_write_template = {
 };
 private const stream_procs s_proc_write_procs = {
     s_std_noavailable, s_std_noseek, s_std_write_reset,
-    s_std_write_flush, s_std_null, NULL
+    s_proc_write_flush, s_std_null, NULL
 };
 
 /* Allocate and open a procedure-based write stream. */
@@ -289,6 +290,17 @@ s_proc_write_process(stream_state * st, stream_cursor_read * pr,
     return ((ss->eof = last) ? EOFC : 0);
 }
 
+/* Flush the output.  This is non-standard because it must call the */
+/* procedure. */
+private int
+s_proc_write_flush(stream *s)
+{
+    int result = s_process_write_buf(s, false);
+    stream_proc_state *const ss = (stream_proc_state *)s->state;
+
+    return (result < 0 || ss->index == 0 ? result : CALLC);
+}
+
 /* Handle an exception (INTC or CALLC) from a write stream */
 /* whose buffer is full. */
 int
@@ -310,16 +322,7 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
     for (ps = fptr(fop); ps->strm != 0;)
 	ps = ps->strm;
     psst = (stream_proc_state *) ps->state;
-    if (psst->eof) {
-	/* This is the final call from closing the stream. */
-	/* Don't run the continuation. */
-	check_estack(5);
-	esp += 5;
-	make_op_estack(esp - 4, zpop);	/* pop the file */
-	make_op_estack(esp - 3, zpop);	/* pop the string returned */
-					/* by the procedure */
-	make_false(esp - 1);
-    } else {
+    {
 	int npush = nstate + 6;
 
 	check_estack(npush);
@@ -351,8 +354,9 @@ s_proc_write_continue(i_ctx_t *i_ctx_p)
 
     check_file(ps, op);
     check_write_type(*opbuf, t_string);
-    while ((ps->end_status = 0, ps->strm) != 0)
+    while (ps->strm != 0)
 	ps = ps->strm;
+    ps->end_status = 0;
     ss = (stream_proc_state *) ps->state;
     ss->data = *opbuf;
     ss->index = 0;

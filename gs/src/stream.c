@@ -742,10 +742,7 @@ s_process_write_buf(stream * s, bool last)
     int status = swritebuf(s, &s->cursor.r, last);
 
     stream_compact(s, false);
-    if (status >= 0)
-	status = 0;
-    s->end_status = status;
-    return status;
+    return (status >= 0 ? 0 : status);
 }
 
 /* Move forward or backward in a pipeline.  We temporarily reverse */
@@ -820,15 +817,6 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    if (cstat != 0)
 		status = cstat;
 	}
-#if 0
-	/* If we need to do a callout, unwind all the way now. */
-	if (status == CALLC) {
-	    while ((curr->end_status = status), prev != 0) {
-		MOVE_BACK(curr, prev);
-	    }
-	    return status;
-	}
-#endif
 	/* Unwind from the recursion. */
 	curr->end_status = (status >= 0 ? 0 : status);
 	if (prev == 0)
@@ -853,8 +841,6 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
      * the first stream in the pipeline, or it is a temporary stream
      * below the first stream and the stream immediately above it has
      * end_status = EOFC.
-     *      - We never unwind the recursion past a stream with
-     * end_status < 0.
      */
     for (;;) {
 	for (;;) {
@@ -922,14 +908,19 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 	curr->end_status = (status >= 0 ? 0 : status);
 	if (status < 0 || prev == 0) {
 	    /*
-	     * All streams above here were called with last = true
-	     * and returned 0 or EOFC: finish unwinding and then
-	     * return.
+	     * All streams up to here were called with last = true
+	     * and returned 0 or EOFC (so their end_status is now EOFC):
+	     * finish unwinding and then return.  Change the status of
+	     * the prior streams to ERRC if the new status is ERRC,
+	     * otherwise leave it alone.
 	     */
 	    while (prev) {
 		if_debug0('s', "[s]unwinding\n");
 		MOVE_BACK(curr, prev);
-		curr->end_status = (status >= 0 ? 0 : status);
+		if (status >= 0)
+		    curr->end_status = 0;
+		else if (status == ERRC)
+		    curr->end_status = ERRC;
 	    }
 	    return status;
 	}
