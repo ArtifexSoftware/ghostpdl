@@ -82,7 +82,7 @@ $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE) $(AK)
 
 # Build the configuration file.
 $(GENDIR)\pconf$(CONFIG).h $(GENDIR)\ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
-	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GENDIR)\pconf$(CONFIG).h -p &ps -ol $(GENDIR)\ldconf$(CONFIG).tr
+	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GENDIR)\pconf$(CONFIG).h -ol $(GENDIR)\ldconf$(CONFIG).tr
 
 # Link an MS executable.
 $(GENDIR)\ldt$(CONFIG).tr: $(MAKEFILE) $(GENDIR)\ldl$(CONFIG).tr $(GENDIR)\ldconf$(CONFIG).tr
