@@ -215,7 +215,12 @@ struct pcl_state_s {
                                          * direction in PCL */
 
     bool                source_transparent; /* (also in graphics state) */
-    bool                pattern_transparent;/* (also in graphics state) */
+    bool                pattern_transparent;/* (also in graphics state);
+                                             * PCL and GL/2 set this
+                                             * independenty; for GL/2 it is
+                                             * known as source transparent */
+    bool                pcl_pattern_transparent;
+
 
     /* Chapter 14 (pcrect.c) */
     coord_point     rectangle;
@@ -245,13 +250,15 @@ struct pcl_state_s {
     /* Chapter C2/C3/C4 (pcpalet.c/pcindexed.c/pccsbase.c/etc.) */
     int                 sel_palette_id;
     int                 ctrl_palette_id;
+    bool                monochrome_mode;/* true ==> monochrome print mode */
+    int                 render_mode;    /* raw (unmapped) render algorithm */
     pcl_palette_t *     ppalet;
     pcl_frgrnd_t *      pfrgrnd;
     pcl_gstate_ids_t *  pids;
 
     /* Chapter C5 (pccprint.c) */
     byte            logical_op;	    /* (also in graphics state) */
-    float           grid_adjust;    /* (also fill adjust in graphics state) */
+    byte            pp_mode;        /* pixel placement mode */
 
     /* ---------------- HP-GL/2 state ---------------- */
     pcl_hpgl_state_t    g;	/* see pgstate.h */
