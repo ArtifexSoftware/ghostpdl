@@ -47,7 +47,7 @@ const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	"AFPL Ghostscript PRE-RELEASE"
+	"AFPL Ghostscript"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 

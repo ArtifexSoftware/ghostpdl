@@ -1028,15 +1028,13 @@ Color mapping:
 
 <p>
 ICC profiles are in some ways a special case of color mapping, but are
-not standard in PostScript. The gs_stdio.h header file is used only to
-provide a "fake" environment for icclib.
+not standard in PostScript.
 
 <dt>
 Color mapping:
 <dd>
 <a href="../src/gsicc.c">src/gsicc.c</a>,
 <a href="../src/gsicc.h">src/gsicc.h</a>,
-<a href="../src/gs_stdio.h">src/gs_stdio.h</a>.
 
 </dl>
 
@@ -2135,7 +2133,7 @@ Filters:
 <a href="../src/zfilter2.c">src/zfilter2.c</a>,
 <a href="../src/zfilterx.c">src/zfilterx.c</a>,
 <a href="../src/zfmd5.c">src/zfmd5.c</a>,
-<a href="../src/zfmd5.c">src/zfarc4.c</a>,
+<a href="../src/zfarc4.c">src/zfarc4.c</a>,
 <a href="../src/zfproc.c">src/zfproc.c</a>,
 <a href="../src/zfrsd.c">src/zfrsd.c</a>,
 <a href="../src/zfzlib.c">src/zfzlib.c</a>.
@@ -3927,6 +3925,13 @@ for extended MS-DOS with Watcom C.
 for MS Windows with Watcom C.
 </ul>
 
+<li>Macintosh:
+<ul>
+<li><a href="../src/macos-mcp.mak">src/macos-mcp.mak</a>,
+for Macintosh MCP.
+</ul>
+
+
 <li>Other:
 <ul>
 <li><a href="../src/all-arch.mak">src/all-arch.mak</a>,
@@ -4118,7 +4123,7 @@ an installer and uninstaller.
 
 <li>OS/2 requires a little special code.
 
-<li>MacOS also requires special top-level code (not distributed with the
+<li>MacOS also requires special top-level code (now distributed with the
 standard Ghostscript package).
 
 <li>All platforms supporting DLLs (currently all three of the above) share
@@ -4166,6 +4171,26 @@ Unix files:
 <dd>
 <a href="../src/dxmain.c">src/dxmain.c</a>.
 <a href="../src/dxmainc.c">src/dxmainc.c</a>.
+
+<dt>
+Macintosh files:
+<dd>
+<a href="../src/gdevmac.c">src/gdevmac.c</a>.
+<a href="../src/gdevmac.h">src/gdevmac.h</a>.
+<a href="../src/gdevmacpictop.h">src/gdevmacpictop.h</a>.
+<a href="../src/gdevmacttf.h">src/gdevmacttf.h</a>.
+<a href="../src/gdevmacxf.c">src/gdevmacxf.c</a>.
+<a href="../src/gp_mac.c">src/gp_mac.c</a>.
+<a href="../src/gp_mac.h">src/gp_mac.h</a>.
+<a href="../src/gp_macio.c">src/gp_macio.c</a>.
+<a href="../src/macgenmcpxml.sh">src/macgenmcpxml.sh</a>.
+<a href="../src/macsysstat.h">src/macsysstat.h</a>.
+<a href="../src/macsystypes.h">src/macsystypes.h</a>.
+
+<dt>
+VMS files:
+<dd>
+<a href="../src/vms_x_fix.h">src/vms_x_fix.h</a>.
 
 <dt>
 DLL files:
@@ -4242,7 +4267,7 @@ details of the terms of using, copying, modifying, and redistributing
 AFPL Ghostscript.</small>
 
 <p>
-<small>Ghostscript version 7.02, 22 September 2001
+<small>Ghostscript version 7.03, 20 October 2001
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
