@@ -70,33 +70,9 @@
 #  endif
 #  define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
 #endif
+
 /*
- * Microsoft C defines the O_ and S_ symbols with, and only with, a
- * leading underscore.
- */
-#if !defined(O_APPEND) && defined(_O_APPEND)
-#  define O_APPEND _O_APPEND
-#endif
-#if !defined(O_CREAT) && defined(_O_CREAT)
-#  define O_CREAT _O_CREAT
-#endif
-#if !defined(O_EXCL) && defined(_O_EXCL)
-#  define O_EXCL _O_EXCL
-#endif
-#if !defined(O_RDONLY) && defined(_O_RDONLY)
-#  define O_RDONLY _O_RDONLY
-#endif
-#if !defined(O_RDWR) && defined(_O_RDWR)
-#  define O_RDWR _O_RDWR
-#endif
-#if !defined(O_TRUNC) && defined(_O_TRUNC)
-#  define O_TRUNC _O_TRUNC
-#endif
-#if !defined(O_WRONLY) && defined(_O_WRONLY)
-#  define O_WRONLY _O_WRONLY
-#endif
-/*
- * Microsoft C also doesn't define S_IRUSR or S_IWUSR.
+ * Microsoft C doesn't define S_IRUSR or S_IWUSR.
  */
 #ifndef S_IRUSR
 #  ifndef S_IREAD

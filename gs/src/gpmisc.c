@@ -20,9 +20,9 @@
 /* Miscellaneous support for platform facilities */
 
 #include "close_.h"
+#include "fcntl_.h"
 #include "stdio_.h"
 #include "stat_.h"
-#include <fcntl.h>
 #include "gp.h"
 #include "gpgetenv.h"
 #include "gpmisc.h"

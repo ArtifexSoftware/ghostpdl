@@ -84,6 +84,7 @@ dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
 dirent__h=$(GLSRC)dirent_.h $(std_h) $(gconfig__h)
 errno__h=$(GLSRC)errno_.h $(std_h)
+fcntl__h=$(GLSRC)fcntl_.h $(std_h)
 malloc__h=$(GLSRC)malloc_.h $(std_h)
 math__h=$(GLSRC)math_.h $(std_h) $(vmsmath_h)
 memory__h=$(GLSRC)memory_.h $(std_h)
@@ -220,7 +221,8 @@ $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
 ### Miscellaneous
 
 # Support for platform code
-$(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c $(close__h) $(stat__h) $(stdio__h)\
+$(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c\
+ $(close__h) $(fcntl__h) $(stat__h) $(stdio__h)\
  $(gp_h) $(gpgetenv_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 
