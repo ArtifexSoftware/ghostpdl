@@ -246,6 +246,27 @@ currentdict /match_in_diff undef
 
 % ---------------- Utilities ---------------- %
 
+/.pdforigfontcache_g 20 dict def
+currentglobal false setglobal
+systemdict /.pdforigfontcache_l 20 dict .forceput
+setglobal
+
+% Cache original fonts to prevent adjustfont to accumulate changes.
+/pdfcachefont {   % <font_name> pdfcachefont <font>
+  dup //.pdforigfontcache_g exch .knownget {
+    exch pop
+  } {
+    dup .pdforigfontcache_l exch .knownget {
+      exch pop
+    } {
+      dup findfont dup    
+      dup gcheck { //.pdforigfontcache_g } { .pdforigfontcache_l } ifelse
+                     % Stack : font_name font font cache
+      4 2 roll .growput
+    } ifelse
+  } ifelse
+} bind def
+
 % Find a font (except for embedded ones), and adjust its encoding if necessary.
 /.pdfdfndict mark
   /defaultfontname /Helvetica
@@ -254,7 +275,7 @@ currentdict /match_in_diff undef
 		% If the font isn't available, synthesize one based on
 		% its descriptor.
   dup /Font resourcestatus {
-    pop pop findfont
+    pop pop pdfcachefont
   } {
     1 index /FontDescriptor knownoget {
 		% Stack: font-res fontname fontdesc
@@ -291,7 +312,7 @@ currentdict /match_in_diff undef
 	(Substituting font ) print dup =only
 	( for ) print 2 index =only (.) = flush
       } if
-      findfont
+      pdfcachefont
 		% Stack: font-res fontname fontdesc font
 		% If this is a small-caps font, replace the CharString
 		% entries for a..z.
@@ -322,7 +343,7 @@ currentdict /match_in_diff undef
       definefont
     } {
 		% No descriptor available, use the default algorithm.
-      findfont
+      pdfcachefont
     } ifelse
   } ifelse
   exch pop
