@@ -425,7 +425,7 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 	        req_rect.q = req_rect.p;
 	        make_adjustment_matrix(request, &req_rect, pmat, false, rotate);
 	    }
-	    *best_mismatch = mismatch;
+	    *best_mismatch = fabs(mismatch);
         }
         if (pmat->xx == 0) {	/* Swap request X and Y. */
 	    double temp = rx;
