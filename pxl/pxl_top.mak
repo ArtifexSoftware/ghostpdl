@@ -20,6 +20,7 @@ clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
 config-clean: pl.config-clean pxl.config-clean
 	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld$(CONFIG).tr
 	$(RMN_) $(PXLGEN)pconf$(CONFIG).h $(PXLGEN)pconfig.h
+	$(RM_) $(PXLSRC)pxlver.h
 
 #### Main program
 
