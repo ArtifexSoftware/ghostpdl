@@ -210,6 +210,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {0},				/* EncryptionKey */
  0,				/* EncryptionV */
  true,				/* EncryptMetadata */
+ {0, 0},			/* NoEncrypt */
  0 /*false*/,			/* is_EPS */
  {-1, -1},			/* doc_dsc_info */
  {-1, -1},			/* page_dsc_info */

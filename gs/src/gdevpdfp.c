@@ -82,6 +82,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("KeyLength", gs_param_type_int, KeyLength),
     pi("Permissions", gs_param_type_int, Permissions),
     pi("EncryptionR", gs_param_type_int, EncryptionR),
+    pi("NoEncrypt", gs_param_type_string, NoEncrypt),
 #undef pi
     gs_param_item_end
 };

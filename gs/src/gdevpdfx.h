@@ -402,6 +402,7 @@ struct gx_device_pdf_s {
     byte EncryptionKey[16];
     uint EncryptionV;
     bool EncryptMetadata;
+    gs_const_string NoEncrypt;
     /* Values derived from DSC comments */
     bool is_EPS;
     pdf_page_dsc_info_t doc_dsc_info; /* document default */

@@ -995,7 +995,7 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
 private void
 pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
-    if (!pdev->KeyLength)
+    if (!pdev->KeyLength || object_id == (gs_id)-1)
 	stream_write(pdev->strm, str, size);
     else
 	DISCARD(pdf_encrypt_encoded_string(pdev, str, size, object_id));
@@ -1030,7 +1030,7 @@ pdf_scan_item(const gx_device_pdf * pdev, const byte * p, uint l, gs_id object_i
 private void
 pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id object_id)
 {
-    if (!pdev->KeyLength) {
+    if (!pdev->KeyLength || object_id == (gs_id)-1) {
 	stream_write(pdev->strm, vstr, size);
 	return;
     } else {

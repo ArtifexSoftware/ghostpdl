@@ -760,8 +760,11 @@ cos_elements_write(stream *s, const cos_dict_element_t *pcde,
 
 	pdev->strm = s;
 	for (;;) {
-	    pdf_write_value(pdev, pcde->key.data, pcde->key.size, object_id);
-	    cos_value_write_spaced(&pcde->value, pdev, true, object_id);
+	    gs_id object_id1 = (bytes_compare(pdev->NoEncrypt.data, pdev->NoEncrypt.size,
+			    pcde->key.data, pcde->key.size) ? object_id : (gs_id)-1);
+
+	    pdf_write_value(pdev, pcde->key.data, pcde->key.size, object_id1);
+	    cos_value_write_spaced(&pcde->value, pdev, true, object_id1);
 	    pcde = pcde->next;
 	    if (pcde || do_space)
 		stream_putc(s, '\n');
