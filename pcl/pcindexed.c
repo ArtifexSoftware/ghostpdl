@@ -598,10 +598,6 @@ pcl_cs_indexed_set_norm_and_Decode(
     if (pindexed->fixed)
         return 0;
 
-    /* check for singularity */
-    if ((wht0 == blk0) || (wht1 == blk1) || (wht2 == blk2))
-        return 0;
-
     /* get a unique copy of the color space */
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
@@ -610,11 +606,11 @@ pcl_cs_indexed_set_norm_and_Decode(
 
     /* set up for the additive space */
     pnorm[0].blkref = blk0;
-    pnorm[0].inv_range = 255.0 / (wht0 - blk0);
+    pnorm[0].inv_range = (wht0 == blk0 ? 0.0 : 255.0 / (wht0 - blk0));
     pnorm[1].blkref = blk1;
-    pnorm[1].inv_range = 255.0 / (wht1 - blk1);
+    pnorm[1].inv_range = (wht1 == blk1 ? 0.0 : 255.0 / (wht1 - blk1));
     pnorm[2].blkref = blk2;
-    pnorm[2].inv_range = 255.0 / (wht2 - blk2);
+    pnorm[2].inv_range = (wht2 == blk2 ? 0.0 : 255.0 / (wht2 - blk2));
 
     /*
      * Build the Decode array to be used with images.
@@ -660,10 +656,13 @@ pcl_cs_indexed_set_norm_and_Decode(
 
         for (i = 0; i < 3; i++) {
             int     nbits = pindexed->cid.bits_per_primary[i];
+            floatp  inv_range = pnorm[i].inv_range;
 
-            pdecode[2 * i] = -pnorm[i].blkref * pnorm[i].inv_range / 255.0;
+            if (inv_range == 0.0)
+                inv_range = 254;
+            pdecode[2 * i] = -pnorm[i].blkref * inv_range / 255.0;
             pdecode[2 * i + 1] = ((float)((1L << nbits) - 1) - pnorm[i].blkref)
-                                    * pnorm[i].inv_range / 255.0;
+                                    * inv_range / 255.0;
         }
     } else {
         pindexed->Decode[0] = 0.0;
@@ -828,11 +827,15 @@ pcl_cs_indexed_set_palette_entry(
     indx *= 3;
     for (i = 0; i < 3; i++) {
         pcl_cs_indexed_norm_t * pn = &(pindexed->norm[i]);
-        float                   val = comps[i];
+        floatp                  val = comps[i];
 
-        val = (val - pn->blkref) * pn->inv_range;
-        pindexed->palette.data[indx + i]
-           = (val < 0.0 ? 0 : (val > 255.0 ? 255 : (byte)val));
+        if (pn->inv_range == 0)
+	    val = (val >= pn->blkref ? 255.0 : 0.0);
+        else {
+            val = (val - pn->blkref) * pn->inv_range;
+            val = (val < 0.0 ? 0.0 : (val > 255.0 ? 255.0 : val));
+        }
+        pindexed->palette.data[indx + i] = (byte)val;
     }
     return 0;
 }
