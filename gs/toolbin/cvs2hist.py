@@ -60,8 +60,8 @@ def LineBrokenText(indent, line_length, items):
 
 # 'Normalize' the text of a named anchor to comply with spec
 def NormalizeAnchor(name):
-    import regsub
-    return regsub.gsub('[^0-9a-zA-Z-_\.]', '_', name)
+    import re
+    return re.sub('[^0-9a-zA-Z-_\.]', '_', name)
 
 # replace special characters with html entities
 # FIXME: isn't there a library call for this?
@@ -224,13 +224,13 @@ def ChangeLogEntry(cvs_command, author, date, rev_files, description_lines, pref
 # The date is just a string in RCS format (yyyy/mm/dd hh:mm:ss).
 # The description is a sequence of text lines, each terminated with \n.
 def BuildLog(log_date_command):
-    import os, regex, string
+    import os, re, string
 
     reading_description = 0
     reading_tags = 0
     description = []
     log = []
-    tag_pattern = regex.compile("^	\([^:]+\): \([0-9.]+\)\n$")
+    tag_pattern = re.compile("^	\([^:]+\): \([0-9.]+\)\n$")
 
     for line in os.popen(log_date_command, 'r').readlines():
 	if line[:5] == '=====' or line[:5] == '-----':
@@ -239,7 +239,7 @@ def BuildLog(log_date_command):
                     my_tags = tags[revision]
                 except KeyError:
                     my_tags = []
-		log.append(date, author, description, rcs_file, revision, my_tags)
+		log.append((date, author, description, rcs_file, revision, my_tags))
 	    reading_description = 0
 	    description = []
             continue
@@ -291,7 +291,7 @@ GroupOrder = {
 
 # Parse command line options and build logs.
 def main():
-    import sys, getopt, time, string, regex, regsub
+    import sys, getopt, time, string, re
     try:
 	opts, args = getopt.getopt(sys.argv[1:], "C:d:Hi:l:Mptr:v:",
 				   ["CVS_command",
@@ -370,7 +370,7 @@ def main():
     # Sort the log by group, then by fix/non-fix, then by date, then by
     # description (to group logically connected files together).
     sorter = []
-    group_pattern = regex.compile("^(\([^)]+\))[ ]+")
+    group_pattern = re.compile("^(\([^)]+\))[ ]+")
     for date, author, text_lines, file, revision, tags in log:
         if date <= min_date:
             continue
@@ -395,8 +395,8 @@ def main():
             text_lines[0] = line[4:] + '\n'
             section = 0
         else:
-            section = regex.match("^Fix", text_lines[0]) < 0
-        sorter.append(group_order, section, date, group, text_lines, author, file, revision, tags)
+            section = re.match("^Fix", text_lines[0]) < 0
+        sorter.append((group_order, section, date, group, text_lines, author, file, revision, tags))
     sorter.sort()
     log = sorter
     # Print the HTML header.
@@ -457,7 +457,7 @@ def main():
             last_date = date
             last_description = description
 	# Accumulate the revisions and RCS files.
-        rev_files.append(revision, rcs_file)
+        rev_files.append((revision, rcs_file))
 
     # print the last entry if there is one (i.e. the last two entries
     # have the same author and date)
