@@ -308,7 +308,7 @@ end
 	% All of these require the "transparency" feature in the interpreter.
   /ca { ca }
   /CA { CA }
-  /SMask { SMask }
+  /SMask { gssmask }
   /AIS { AIS }
   /BM { BM }
   /TK { TK }
@@ -321,6 +321,60 @@ end
       oforce exch gsparamdict exch .knownget { exec } { pop } ifelse
     } forall pop
   } if
+} bdef
+
+% Transparency support
+
+/gssmask {
+  dup /None eq {
+    null
+  } {
+	% Preprocess the SMask value into a parameter dictionary for
+	% .begintransparencymask, with added /BBox and /Draw keys.
+    mark exch		% Stack: mark smaskdict
+    dup /S oget /Subtype exch 3 2 roll
+			% Stack: mark ... smaskdict
+    dup /BC knownoget { /Background exch 3 2 roll } if
+    dup /TR knownoget {
+      resolveidfnproc /TransferFunction exch 3 2 roll
+    } if    
+    dup /G oget dup /BBox oget /BBox exch 4 2 roll
+    /.execmaskgroup cvx 2 packedarray cvx /Draw exch 3 2 roll
+    pop .dicttomark
+  } ifelse SMask
+} bdef
+
+% This procedure is called within a .{begin,end}transparencymask to
+% actually render the soft mask.
+/.execmaskgroup {	% <groupdict> .execmaskgroup -
+  dup /Resources knownoget { oforce } { 0 dict } ifelse
+  exch false resolvestream
+  .execgroup
+} bdef
+% Paint a Form+Group XObject, either for a transparency mask or for a Do.
+% ****** NEEDS A LOT OF WORK ******
+/.execgroup {		% <resdict> <stream> .execgroup -
+%  1 .setopacityalpha 1 .setshapealpha
+%  0 .inittransparencymask 1 .inittransparencymask
+%  /Compatible .setblendmode
+	% Execute the body of the Form, similar to DoForm.
+  pdfopdict .pdfruncontext
+} bdef
+
+% .paintgroupform implements the Form PaintProc in the case where the
+% Form XObject dictionary includes a Group key.  See .paintform below.
+/.paintgroupform {	% <resdict> <stream> <formdict> .paintform -
+  mark exch
+  dup /I knownoget { /Isolated exch 3 2 roll } if
+  dup /K knownoget { /Knockout exch 3 2 roll } if
+  counttomark 1 add 1 roll .dicttomark
+		% Stack: resdict stream formdict paramdict
+  exch /BBox oget aload pop
+  .begintransparencygroup {
+    .execgroup
+  } .internalstopped {
+    .discardtransparencygroup stop
+  } if .endtransparencygroup
 } bdef
 
 % ---------------- Color setting ---------------- %
@@ -720,11 +774,18 @@ end
   dup dup PDFfile eq exch PDFsource eq or { pop } { closefile } ifelse
 } bdef
 
+/.paintform {	% <formdict> <resdict> <stream> .paintform -
+  3 -1 roll dup /Group known {
+    .paintgroupform
+  } {
+    pop pdfopdict .pdfruncontext
+  } ifelse
+} bdef
 /DoForm {
   dup length dict copy
-  dup [ /pop load 2 index /Resources knownoget { oforce } { 0 dict } ifelse
+  dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
   3 index false /resolvestream cvx
-  pdfopdict /.pdfruncontext cvx
+  /.paintform cvx
   ] cvx /PaintProc exch put
   execform
 } bdef

@@ -186,10 +186,7 @@ nodict readonly pop
 } bdef
 /ca { /FillConstantAlpha gput } bdef
 /CA { /StrokeConstantAlpha gput } bdef
-/SMask {
-	% ****** NYI ******
-  pop null /SoftMask gput
-} bdef
+/SMask { /SoftMask gput } bdef
 /AIS { /AlphaIsShape gput } bdef
 /BM {
   /.setblendmode where {
@@ -207,12 +204,29 @@ nodict readonly pop
 % ---------------- Color installation ---------------- %
 
 % Establish a given color (and color space) as current.
-/.settransparencyparams {
+/.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   /.setshapemask where {
-    pop 1 null AlphaIsShape { 4 2 roll } if
-    .setshapemask .setshapealpha .setopacitymask .setopacityalpha
+    pop AlphaIsShape {
+      1 .setopacityalpha 0 .inittransparencyymask exch .setshapealpha 1
+    } {
+      1 .setshapealpha 1 .inittransparencymask exch .setopacityalpha 1
+    } ifelse
+	% Set the soft mask by rendering the XObject.  Doing this every time
+	% is obviously very inefficient; we'll improve it later.
+    .settransparencymask    
   } {
     pop pop
+  } ifelse
+} bdef
+/.settransparencymask {		% <paramdict> <masknum> .settransparencymask -
+  exch dup null eq {
+    pop .inittransparencymask
+  } {
+    dup dup /BBox get aload pop .begintransparencymask {
+      /Draw get exec .endtransparencymask
+    } .internalstopped {
+      .discardtransparencymask stop
+    } if
   } ifelse
 } bdef
 /setfillcolor {
