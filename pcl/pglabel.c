@@ -683,7 +683,8 @@ hpgl_print_char(
 	        pgls->g.pen.width_relative = save_relative;
                 return code;
             }
-	    gs_setlinewidth(pgs, nwidth);
+
+            gs_setlinewidth(pgs, nwidth);
 	}
 
 	str[0] = ch;
