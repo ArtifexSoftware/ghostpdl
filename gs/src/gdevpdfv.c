@@ -748,10 +748,8 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 
 	if (from_array)
 	    while ((flag = shade_next_flag(&cs, 0)) >= 0) {
-		int num_c = (flag == 0 ? 4 : 2);
-
-		data_params.num_points = 4 * num_c * 2;
-		data_params.num_components = num_comp * num_c;
+		data_params.num_points = (flag == 0 ? 12 : 8);
+		data_params.num_components = num_comp * (flag == 0 ? 4 : 2);
 		if ((code = put_float_mesh_data(pscs, &cs, flag,
 						&data_params)) < 0)
 		    return code;
@@ -766,10 +764,8 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 
 	if (from_array)
 	    while ((flag = shade_next_flag(&cs, 0)) >= 0) {
-		int num_c = (flag == 0 ? 4 : 2);
-
-		data_params.num_points = 8 * num_c * 2;
-		data_params.num_components = num_comp * num_c;
+		data_params.num_points = (flag == 0 ? 16 : 12);
+		data_params.num_components = num_comp * (flag == 0 ? 4 : 2);
 		if ((code = put_float_mesh_data(pscs, &cs, flag,
 						&data_params)) < 0)
 		    return code;
