@@ -149,14 +149,16 @@ const stream_template s_PFBD_template = {
 
 private_st_SFD_state();
 
-/* Set default parameter values (actually, just clear pointers). */
+/* Set default parameter values. */
 private void
 s_SFD_set_defaults(stream_state * st)
 {
     stream_SFD_state *const ss = (stream_SFD_state *) st;
 
+    ss->count = 0;
     ss->eod.data = 0;
     ss->eod.size = 0;
+    ss->skip_count = 0;
 }
 
 /* Initialize the stream */
@@ -185,8 +187,18 @@ s_SFD_process(stream_state * st, stream_cursor_read * pr,
     if (ss->eod.size == 0) {	/* Just read, with no EOD pattern. */
 	int rcount = rlimit - p;
 	int wcount = wlimit - q;
-	int count = min(rcount, wcount);
+	int count;
 
+	if (rcount <= ss->skip_count) { /* skipping */
+	    ss->skip_count -= rcount;
+	    pr->ptr = rlimit;
+	    return 0;
+	} else if (ss->skip_count > 0) {
+	    rcount -= ss->skip_count;
+	    pr->ptr = p += ss->skip_count;
+	    ss->skip_count = 0;
+	}
+	count = min(rcount, wcount);
 	if (ss->count == 0)	/* no EOD limit */
 	    return stream_move(pr, pw);
 	else if (ss->count > count) {	/* not EOD yet */
@@ -225,6 +237,12 @@ cp:
 
 	    if (c == pattern[match]) {
 		if (++match == ss->eod.size) {
+		    if (ss->skip_count > 0) {
+			q = pw->ptr; /* undo any writes */
+			ss->skip_count--;
+			match = 0;
+			continue;
+		    }
 		    /*
 		     * We use if/else rather than switch because the value
 		     * is long, which is not supported as a switch value in
@@ -254,10 +272,7 @@ cp:
 
 		while (match > 0) {
 		    match--;
-		    if (!memcmp(pattern,
-				pattern + end - match,
-				match)
-			)
+		    if (!memcmp(pattern, pattern + end - match, match))
 			break;
 		}
 		/*
@@ -277,7 +292,8 @@ cp:
 	    *++q = c;
 	}
 xit:	pr->ptr = p;
-	pw->ptr = q;
+	if (ss->skip_count <= 0)
+	    pw->ptr = q;
 	ss->match = match;
     }
     return status;

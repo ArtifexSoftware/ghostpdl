@@ -90,8 +90,9 @@ extern const stream_template s_PFBD_template;
 typedef struct stream_SFD_state_s {
     stream_state_common;
     /* The following parameters are set by the client. */
-    long count;			/* # of EODs to scan over */
+    long count;			/* # of chars or EODs to scan over */
     gs_const_string eod;
+    long skip_count;		/* # of initial chars or records to skip */
     /* The following change dynamically. */
     uint match;			/* # of matched chars not copied to output */
     uint copy_count;		/* # of matched characters left to copy */
