@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000-2004 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* "Unix-like" file system platform routines for Ghostscript */
+
 #include "memory_.h"
 #include "string_.h"
 #include "stdio_.h"		/* for FILENAME_MAX */
@@ -86,10 +87,14 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 #ifdef HAVE_MKSTEMP
     {
 	    int file;
+	    char ofname[gp_filename_sizeof];
+
+	    /* save the old filename template in case mkstemp fails */
+	    memcpy(ofname, fname, gp_filename_sizeof);
 
 	    file = mkstemp(fname);
 	    if (file < -1) {
-		    eprintf1("**** Could not open temporary file %s\n", fname);
+		    eprintf1("**** Could not open temporary file %s\n", ofname);
 		    return NULL;
 	    }
 	    fp = fdopen(file, mode);
