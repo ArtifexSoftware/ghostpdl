@@ -8,6 +8,8 @@ zlib
 configure
 configure.ac
 config.status
+config.cache
+config.log
 Makefile
 Makefile.in
 ghostscript\ Data

@@ -20,7 +20,7 @@ AC_PROG_CPP
 dnl CFLAGS="$cflags_save"
 
 AC_PROG_RANLIB
-AC_PROG_INSTALL
+#AC_PROG_INSTALL
 
 dnl --------------------------------------------------
 dnl Set build flags based on environment
