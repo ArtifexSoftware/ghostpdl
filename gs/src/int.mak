@@ -1341,10 +1341,11 @@ $(PSOBJ)zfcmap.$(OBJ) : $(PSSRC)zfcmap.c $(OP) $(memory__h)\
 
 cidread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcid.$(OBJ) $(PSOBJ)zfcid0.$(OBJ) $(PSOBJ)zfcid1.$(OBJ)
 $(PSD)cidfont.dev : $(INT_MAK) $(ECHOGS_XE) $(cidread_)\
- $(PSD)psf1read.dev $(PSD)psl2int.dev $(PSD)type42.dev $(PSD)zfrsd.dev
+ $(PSD)psf1read.dev $(PSD)psl2int.dev $(PSD)type2.dev $(PSD)type42.dev\
+ $(PSD)zfrsd.dev
 	$(SETMOD) $(PSD)cidfont $(cidread_)
 	$(ADDMOD) $(PSD)cidfont -include $(PSD)psf1read $(PSD)psl2int
-	$(ADDMOD) $(PSD)cidfont -include $(PSD)type42 $(PSD)zfrsd
+	$(ADDMOD) $(PSD)cidfont -include $(PSD)type2 $(PSD)type42 $(PSD)zfrsd
 	$(ADDMOD) $(PSD)cidfont -oper zfcid0 zfcid1
 	$(ADDMOD) $(PSD)cidfont -ps gs_cidfn
 
