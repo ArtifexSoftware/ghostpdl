@@ -203,7 +203,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {0, 0},			/* OwnerPassword */
  {0, 0},			/* UserPassword */
  0,				/* KeyLength */
- 4,				/* Permissions */
+ -4,				/* Permissions */
  0,				/* EncryptionR */
  {0},				/* EncryptionO */
  {0},				/* EncryptionU */
@@ -545,7 +545,8 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 	eprintf("PDF encryption key length must be a multiple of 8.\n");
 	return_error(gs_error_rangecheck);
     }
-    if (pdev->EncryptionR == 2 && (pdev->Permissions & (0xF << 8))) {
+    if (pdev->EncryptionR == 2 &&
+	((pdev->Permissions & (0xFFFFFFC3)) != 0xFFFFFFC0)) {
 	eprintf("Some of Permissions are not allowed with R=2.\n");
 	return_error(gs_error_rangecheck);
     }
