@@ -92,10 +92,10 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     if (si < ei) {
 	if (fa->swap_axes) {
 	    vd_rect(int2fixed(j), int2fixed(si), int2fixed(j + 1), int2fixed(ei), 1, (ulong)ci0);
-	    return dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - bi, ci0);
+	    return dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - si, ci0);
 	} else {
 	    vd_rect(int2fixed(si), int2fixed(j), int2fixed(ei), int2fixed(j + 1), 1, (ulong)ci0);
-	    return dev_proc(dev, fill_rectangle)(dev, si, j, ei - bi, 1, ci0);
+	    return dev_proc(dev, fill_rectangle)(dev, si, j, ei - si, 1, ci0);
 	}
     }
     return 0;

@@ -101,9 +101,9 @@ private const gx_device_clip gs_clip_device =
   gx_forward_pattern_manage,
   gx_forward_fill_rectangle_hl_color,
   gx_forward_include_color_space,
-  gx_forward_fill_linear_color_scanline,
-  gx_forward_fill_linear_color_trapezoid,
-  gx_forward_fill_linear_color_triangle
+  gx_default_fill_linear_color_scanline,
+  gx_default_fill_linear_color_trapezoid,
+  gx_default_fill_linear_color_triangle
  }
 };
 

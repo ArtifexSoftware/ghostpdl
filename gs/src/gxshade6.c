@@ -1309,7 +1309,7 @@ dc2fc(const patch_fill_state_t *pfs, gx_color_index c,
     int j;
     const gx_device_color_info *cinfo = &pfs->dev->color_info;
 
-    for (j = 0; j < pfs->num_components; j++) {
+    for (j = 0; j < cinfo->num_components; j++) {
 	    int shift = cinfo->comp_shift[j];
 	    int bits = cinfo->comp_bits[j];
 
@@ -1322,8 +1322,12 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
 {
     gs_direct_color_space *cs = 
 		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
-    float smoothness = pfs->smoothness, s = 0;
     int code;
+    float smoothness = max(pfs->smoothness, 1.0 / 256), s = 0;
+    /* Restrict the smoothness with 1/256, because cs_is_linear
+       can't provide a better precision due to the color
+       representation with integers.
+     */
 
     if (pfs->Function != NULL) {
 	patch_color_t c;
@@ -1876,8 +1880,6 @@ private inline int
 fill_triangle_wedge(patch_fill_state_t *pfs,
 	    const shading_vertex_t *q0, const shading_vertex_t *q1, const shading_vertex_t *q2)
 {
-    int code;
-
     if ((int64_t)(q1->p.x - q0->p.x) * (q2->p.y - q0->p.y) == 
 	(int64_t)(q1->p.y - q0->p.y) * (q2->p.x - q0->p.x))
 	return 0; /* Zero area. */
