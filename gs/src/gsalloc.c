@@ -205,6 +205,7 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
     iimem->gc_status.max_vm = max_long;
     iimem->gc_status.psignal = NULL;
     iimem->gc_status.enabled = false;
+    iimem->gc_allocated = 0;
     iimem->previous_status.allocated = 0;
     iimem->previous_status.used = 0;
     ialloc_reset(iimem);

@@ -113,6 +113,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
      */
     pcst->dict_stack.system_dict = *psystem_dict;
     pcst->dict_stack.min_size = 0;
+    pcst->dict_stack.userdict_index = 0;
     pcst->pgs = int_gstate_alloc(dmem);
     if (pcst->pgs == 0) {
 	code = gs_note_error(e_VMerror);
