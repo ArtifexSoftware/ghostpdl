@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -879,7 +879,7 @@ zmonitor(i_ctx_t *i_ctx_p)
     push_op_estack(monitor_release);
     *++esp = *op;
     pop(2);
-    return code;
+    return o_push_estack;
 }
 /* Release the monitor lock when unwinding for an error or exit. */
 private int
