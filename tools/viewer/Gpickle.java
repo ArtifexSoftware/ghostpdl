@@ -35,9 +35,10 @@ public class Gpickle {
      */
     private String runString()
     {
-	return "pcl6 " +  " -dFirstPage=" + pageToDisplay + " -dLastPage=" + pageToDisplay + " -r" +
-	    xRes + "x" + yRes + " -dTextAlphaBits=2" +" -sDEVICE=" + deviceName + " -dNOPAUSE " +
-	    " -sOutputFile=- " + jobList + "\n";
+	return "pcl6 " +  "-dTextAlphaBits=2 -dFirstPage=" + pageToDisplay + " -dLastPage=" +
+            pageToDisplay + " -r" +
+	    xRes + "x" + yRes + " -sDEVICE=" +
+            deviceName + " -dNOPAUSE " + " -sOutputFile=- " + jobList + "\n";
     }
 
     // public methods.
@@ -50,9 +51,10 @@ public class Gpickle {
 
     public BufferedImage getPrinterOutputPage()
     {
+        int ch;
+        Process p = null;
 	try {
-	    Process p = Runtime.getRuntime().exec(runString());
-
+	    p = Runtime.getRuntime().exec(runString());
 	    // read process output and return a buffered image.
 	    JPEGImageDecoder decoder = JPEGCodec.createJPEGDecoder(p.getInputStream());
 	    BufferedImage bim = decoder.decodeAsBufferedImage();
@@ -60,7 +62,19 @@ public class Gpickle {
 	    this.width = bim.getWidth();
 	    return bim;
 	} catch (Exception e) {
-	    System.out.println(e);
+            // exception but we have a real process - read for errors
+            if ( p != null ) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+                String line;
+                try {
+                    while ((line = br.readLine()) != null)
+                        System.out.println(line);
+                } catch (IOException ie) {
+                    System.out.println(e);
+                }
+            } else {
+                System.out.println(e);
+            }
 	    return null;
 	}
     }
