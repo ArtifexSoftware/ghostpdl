@@ -375,6 +375,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	int code;
 	int px;
 	const ref *pp;
+	bool at_eof = false;
 
 	/*
 	 * Do a first pass through the files to ensure that at least
@@ -384,14 +385,15 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	for (px = 0, pp = ETOP_SOURCE(esp, 0); px < num_sources;
 	     ++px, pp -= 2
 	    ) {
-	    stream *s = pp->value.pfile;
-	    int min_left = sbuf_min_left(s);
 	    int num_aliases = pp[1].value.intval;
+	    stream *s = pp->value.pfile;
+	    int min_left;
 	    uint avail;
 
 	    if (num_aliases <= 0)
 		continue;	/* this is an alias for an earlier file */
-	    while ((avail = sbufavailable(s)) < min_left + num_aliases) {
+	    while ((avail = sbufavailable(s)) <=
+		   (min_left = sbuf_min_left(s)) + num_aliases - 1) {
 		int next = s->end_status;
 
 		switch (next) {
@@ -399,7 +401,8 @@ image_file_continue(i_ctx_t *i_ctx_p)
 		    s_process_read_buf(s);
 		    continue;
 		case EOFC:
-		    break;	/* with avail < min_left */
+		    at_eof = true;
+		    break;	/* with no data available */
 		case INTC:
 		case CALLC:
 		    return
@@ -411,10 +414,12 @@ image_file_continue(i_ctx_t *i_ctx_p)
 		}
 		break;		/* for EOFC */
 	    }
-	    /* Note that in the EOF case, we can get here with */
-	    /* avail < min_left. */
+	    /*
+	     * Note that in the EOF case, we can get here with no data
+	     * available.
+	     */
 	    if (avail >= min_left)
-		avail = (avail - min_left) / num_aliases;
+		avail = (avail - min_left) / num_aliases; /* may be 0 */
 	    if (avail < min_avail)
 		min_avail = avail;
 	    plane_data[px].data = sbufptr(s);
@@ -441,7 +446,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	    if (code == e_RemapColor)
 		return code;
 	}
-	if (min_avail == 0)
+	if (at_eof)
 	    code = 1;
 	if (code) {
 	    esp = zimage_pop_estack(esp);
