@@ -688,7 +688,38 @@ process_zero_rows(
     if (nrows > rem_rows)
         nrows = rem_rows;
 
-    {
+    /* render as raster or rectangle */
+    if ( ((nrows * nbytes > 1024) || (prast->pen == 0)) && 
+         (prast->zero_is_white || prast->zero_is_black)   ) {
+        gs_state *  pgs = prast->pcs->pgs;
+
+        close_raster(prast, false);
+        if ((prast->zero_is_black) || !prast->transparent) {
+            gs_rect tmp_rect;
+            bool    invert = prast->zero_is_white;
+
+            tmp_rect.p.x = 0.0;
+            tmp_rect.p.y = 0.0;
+            tmp_rect.q.x = (double)npixels;
+            tmp_rect.q.y = (double)nrows;
+            if (invert)
+                gs_setrasterop( pgs,
+                                (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
+                                );
+            gs_rectfill(pgs, &tmp_rect, 1);
+            if (invert)
+                gs_setrasterop( pgs,
+                                (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
+                                );
+            
+        }
+
+        prast->src_height -= nrows;
+        gs_translate(pgs, 0.0, (floatp)nrows);
+
+        return 0;
+
+    } else {
         int             nsrcs = prast->nsrcs;
         gs_image_enum * pen = prast->pen;
         int             cnt = 0;
@@ -1207,14 +1238,14 @@ transfer_raster_row(
     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
 
     /* process any planes that have not been provided; complete the row */
-    if (code >= 0) {
+    if (pcs->raster_state.compression_mode != ADAPTIVE_COMPRESS && code >= 0) {
         int     i, nplanes = pcur_raster->nplanes;
 
         for (i = pcur_raster->plane_index; (i < nplanes) && (code >= 0); i++)
             code = add_raster_plane(pdata, 0, false, pcs);
+        if (code >= 0)
+            code = process_row(pcur_raster);
     }
-    if (code >= 0 && pcs->raster_state.compression_mode != ADAPTIVE_COMPRESS)
-        code = process_row(pcur_raster);
 
     return code;
 }

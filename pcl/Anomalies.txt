@@ -460,6 +460,28 @@ Difference in specific tests of the PCL 5c FTS
     no reason to expect the results to be the same across two implementations,
     and little reason to try to make them the same.
 
+765:
+
+  The output produced by the Artifex interpreter appears to be correct and
+  agrees with the output of the DJ 1600C/CM. The output on the CLJ 5/5M
+  differs, quite probably due to a physical limitation of the printer.
+
+  This example involves scaled PCL rasters. Such rasters are clipped to the
+  the page's printable region. In PCL, a page is always assumed to have a 1/6"
+  unprintable margin. For this test all three of the rasters present are
+  scaled by a factor of 14.5. The middle (green) raster in the example has a
+  width of 25 samples, and is placed 205 pixels to the left of the right
+  printable margin. Hence, all of the first 14 samples should be visible
+  (14 * 14.5 = 203), as well as two pixels of the 15th sample.
+
+  In this test, all raster sample lines are the same, and consist of the
+  following pattern (0 == white, 1 == color, either dark blue or green):
+
+      0000 0001 0000 0011 0000 0111 0
+
+  Hence, the 15th sample value is colored, and a two-pixel-wide sliver of this
+  sample should be visible.
+
 800 - 804:
 
     Each of the "bars" in these test are rendered in a different color space,
