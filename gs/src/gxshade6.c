@@ -1442,64 +1442,51 @@ triangles(patch_fill_state_t *pfs, const tensor_patch *p)
 }
 
 int
-padding(patch_fill_state_t *pfs, const gs_fixed_point pole[4], 
+padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1)
 {
-    tensor_patch p;
+    gs_fixed_point q0, q1;
+    const patch_color_t *cc0, *cc1;
+    fixed dx = p1->x - p0->x;
+    fixed dy = p1->y - p0->y;
+    bool swap_axes = (any_abs(dx) > any_abs(dy));
+    gs_fixed_edge le, re;
     const fixed adjust = INTERPATCH_PADDING;
-    fixed dx = pole[3].x - pole[0].x;
-    fixed dy = pole[3].y - pole[0].y;
 
-    if (any_abs(dx) > any_abs(dy)) {
-	if (dx > 0) {
-	    p.pole[0][0].x = pole[0].x - adjust;
-	    p.pole[0][3].x = pole[3].x + adjust;
-	    p.pole[3][0].x = pole[0].x - adjust;
-	    p.pole[3][3].x = pole[3].x + adjust;
+    if (swap_axes) {
+	if (p0->x < p1->x) {
+	    q0.x = p0->y;
+	    q0.y = p0->x;
+	    q1.x = p1->y;
+	    q1.y = p1->x;
+	    cc0 = c0;
+	    cc1 = c1;
 	} else {
-	    p.pole[0][0].x = pole[0].x + adjust;
-	    p.pole[0][3].x = pole[3].x - adjust;
-	    p.pole[3][0].x = pole[0].x + adjust;
-	    p.pole[3][3].x = pole[3].x - adjust;
+	    q0.x = p1->y;
+	    q0.y = p1->x;
+	    q1.x = p0->y;
+	    q1.y = p0->x;
+	    cc0 = c1;
+	    cc1 = c0;
 	}
-	if (dy > 0) {
-	    p.pole[0][0].y = pole[0].y - adjust;
-	    p.pole[0][3].y = pole[3].y - adjust;
-	    p.pole[3][0].y = pole[0].y + adjust;
-	    p.pole[3][3].y = pole[3].y + adjust;
-	} else {
-	    p.pole[0][0].y = pole[0].y + adjust;
-	    p.pole[0][3].y = pole[3].y + adjust;
-	    p.pole[3][0].y = pole[0].y - adjust;
-	    p.pole[3][3].y = pole[3].y - adjust;
-	}
+    } else if (p0->y < p1->y) {
+	q0 = *p0;
+	q1 = *p1;
+	cc0 = c0;
+	cc1 = c1;
     } else {
-	if (dx > 0) {
-	    p.pole[0][0].x = pole[0].x + adjust;
-	    p.pole[0][3].x = pole[3].x + adjust;
-	    p.pole[3][0].x = pole[0].x - adjust;
-	    p.pole[3][3].x = pole[3].x - adjust;
-	} else {
-	    p.pole[0][0].x = pole[0].x - adjust;
-	    p.pole[0][3].x = pole[3].x - adjust;
-	    p.pole[3][0].x = pole[0].x + adjust;
-	    p.pole[3][3].x = pole[3].x + adjust;
-	}
-	if (dy > 0) {
-	    p.pole[0][0].y = pole[0].y - adjust;
-	    p.pole[0][3].y = pole[3].y + adjust;
-	    p.pole[3][0].y = pole[0].y - adjust;
-	    p.pole[3][3].y = pole[3].y + adjust;
-	} else {
-	    p.pole[0][0].y = pole[0].y + adjust;
-	    p.pole[0][3].y = pole[3].y - adjust;
-	    p.pole[3][0].y = pole[0].y + adjust;
-	    p.pole[3][3].y = pole[3].y - adjust;
-	}
+	q0 = *p1;
+	q1 = *p0;
+	cc0 = c1;
+	cc1 = c0;
     }
-    p.c[0][0] = p.c[1][0] = *c0;
-    p.c[0][1] = p.c[1][1] = *c1;
-    return triangles(pfs, &p);
+    le.start.x = q0.x - adjust;
+    re.start.x = q0.x + adjust;
+    le.start.y = re.start.y = q0.y - adjust;
+    le.end.x = q1.x - adjust;
+    re.end.x = q1.x + adjust;
+    le.end.y = re.end.y = q1.y + adjust;
+    return decompose_linear_color(pfs, &le, &re, le.start.y, le.end.y, swap_axes, cc0, cc1);
 }
 
 private int
@@ -1521,7 +1508,7 @@ fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka,
 	return fill_wedges_aux(pfs, k / 2, ka, q[1], &c, c1, wedge_type);
     } else {
 	if (INTERPATCH_PADDING && (wedge_type & interpatch_padding)) {
-	    code = padding(pfs, pole, c0, c1);
+	    code = padding(pfs, &pole[0], &pole[3], c0, c1);
 	    if (code < 0)
 		return code;
 	}

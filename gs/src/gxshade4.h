@@ -103,7 +103,7 @@ int triangle(patch_fill_state_t *pfs,
     const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
     const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2);
 
-int padding(patch_fill_state_t *pfs, const gs_fixed_point pole[4], 
+int padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1);
 #endif
 

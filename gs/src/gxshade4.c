@@ -348,7 +348,6 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const mesh_vertex_t * va,
 #   else
 	patch_color_t c0, c1, c2;
 	patch_fill_state_t pfs1;
-	gs_fixed_point pole[4];
 	int code;
 
 	memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
@@ -358,19 +357,13 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const mesh_vertex_t * va,
 	memcpy(c1.cc.paint.values, vb->cc, sizeof(c1.cc.paint.values[0]) * pfs->num_components);
 	memcpy(c2.cc.paint.values, vc->cc, sizeof(c2.cc.paint.values[0]) * pfs->num_components);
 	if (INTERPATCH_PADDING) {
-	    pole[0] = va->p;
-	    pole[3] = vb->p;
-	    code = padding(&pfs1, pole, &c0, &c1);
+	    code = padding(&pfs1, &va->p, &vb->p, &c0, &c1);
 	    if (code < 0)
 		return code;
-	    pole[0] = vb->p;
-	    pole[3] = vc->p;
-	    code = padding(&pfs1, pole, &c1, &c2);
+	    code = padding(&pfs1, &vb->p, &vc->p, &c1, &c2);
 	    if (code < 0)
 		return code;
-	    pole[0] = vc->p;
-	    pole[3] = va->p;
-	    code = padding(&pfs1, pole, &c2, &c0);
+	    code = padding(&pfs1, &vc->p, &va->p, &c2, &c0);
 	    if (code < 0)
 		return code;
 	}
