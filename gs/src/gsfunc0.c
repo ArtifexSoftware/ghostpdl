@@ -555,6 +555,23 @@ gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
+/* aA helper for gs_function_Sd_serialize. */
+private int serialize_array(const float *a, int half_size, stream *s)
+{
+    uint n;
+    const float dummy[2] = {0, 0};
+    int i, code;
+
+    if (a != NULL)
+	return sputs(s, (const byte *)a, sizeof(a[0]) * half_size * 2, &n);
+    for (i = 0; i < half_size; i++) {
+	code = sputs(s, (const byte *)dummy, sizeof(dummy), &n);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+
 /* Serialize. */
 private int
 gs_function_Sd_serialize(const gs_function_t * pfn, stream *s)
@@ -567,7 +584,6 @@ gs_function_Sd_serialize(const gs_function_t * pfn, stream *s)
     uint count;
     byte buf[100];
     const byte *ptr;
-    const float dummy[8] = {0, 0, 0, 0,  0, 0, 0, 0};
 
     if (code < 0)
 	return code;
@@ -577,16 +593,10 @@ gs_function_Sd_serialize(const gs_function_t * pfn, stream *s)
     code = sputs(s, (const byte *)&p->BitsPerSample, sizeof(p->BitsPerSample), &n);
     if (code < 0)
 	return code;
-    if (p->Encode == NULL && p->m * 2 > count_of(dummy))
-	return_error(gs_error_unregistered); /* Unimplemented. */
-    code = sputs(s, (const byte *)(p->Encode != NULL ? &p->Encode[0] : dummy), 
-		    sizeof(p->Encode[0]) * p->m * 2, &n);
+    code = serialize_array(p->Encode, p->m, s);
     if (code < 0)
 	return code;
-    if (p->Encode == NULL && p->n * 2 > count_of(dummy))
-	return_error(gs_error_unregistered); /* Unimplemented. */
-    code = sputs(s, (const byte *)(p->Decode != NULL ? &p->Decode[0] : dummy), 
-		    sizeof(p->Decode[0]) * p->n * 2, &n);
+    code = serialize_array(p->Decode, p->n, s);
     if (code < 0)
 	return code;
     gs_function_get_info(pfn, &info);
