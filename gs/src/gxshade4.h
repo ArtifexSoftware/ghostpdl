@@ -71,6 +71,7 @@ typedef struct patch_fill_state_s {
 #endif
 } patch_fill_state_t;
 
+#endif
 /* Define a color to be used in curve rendering. */
 /* This may be a real client color, or a parametric function argument. */
 typedef struct patch_color_s {
@@ -78,7 +79,12 @@ typedef struct patch_color_s {
     gs_client_color cc;
 } patch_color_t;
 
-#endif
+/* Define a structure for mesh or patch vertex. */
+struct shading_vertex_s {
+    gs_fixed_point p;
+    patch_color_t c;
+};
+
 #if TENSOR_SHADING_DEBUG
     extern int triangle_cnt;
 #endif
@@ -97,6 +103,8 @@ void mesh_init_fill_triangle(mesh_fill_state_t * pfs,
 int mesh_fill_triangle(mesh_fill_state_t * pfs);
 
 #if NEW_SHADINGS
+void patch_set_color(const patch_fill_state_t * pfs, patch_color_t *c, const float *cc);
+
 void init_patch_fill_state(patch_fill_state_t *pfs);
 
 int triangle(patch_fill_state_t *pfs, 

@@ -74,15 +74,6 @@ shade_next_curve(shade_coord_stream_t * cs, patch_curve_t * curve)
     return code;
 }
 
-#if !NEW_SHADINGS
-/* Define a color to be used in curve rendering. */
-/* This may be a real client color, or a parametric function argument. */
-typedef struct patch_color_s {
-    float t;			/* parametric value */
-    gs_client_color cc;
-} patch_color_t;
-#endif
-
 /*
  * Parse the next patch out of the input stream.  Return 1 if done,
  * 0 if patch, <0 on error.
@@ -2479,7 +2470,7 @@ lcp2(fixed p0, fixed p3)
     return (p0 + p3 + p3) / 3;
 }
 
-private inline void
+void
 patch_set_color(const patch_fill_state_t * pfs, patch_color_t *c, const float *cc)
 {
     if (pfs->Function) 
