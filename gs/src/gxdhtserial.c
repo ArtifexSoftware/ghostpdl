@@ -602,8 +602,18 @@ gx_ht_read_and_install(
     }
 
     /* if everything is OK, install the halftone */
-    if (code >= 0)
+    if (code >= 0) {
+        /* The following assignment guarantees the imager state will
+           take ownership of the memory associated with the components
+           of the halftone, specifically the order bit data and order
+           level data (see gx_ht_alloc_ht_order()).  Unfortunately, to
+           completely address this issue gx_imager_dev_ht_install()
+           procedure needs to be reconsidered.  Its weirdness is
+           fairly well documented above the
+           gx_imager_dev_ht_install()'s definition. */
+        dht.rc.memory = mem;
         code = gx_imager_dev_ht_install(pis, &dht, dht.type, dev);
+    }
 
     /*
      * If installation failed, discard the allocated elements. We can't

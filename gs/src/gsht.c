@@ -1154,15 +1154,24 @@ gx_imager_dev_ht_install(
                      comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS  ) {
                     if (p_s_order->wse != 0)
                         gs_wts_free_enum(p_s_order->wse);
+                    /* FIXME - clearing pointers is fine if the
+                       halftone was moved but if it was copied
+                       clearing results in a memory leak */
                     memset(p_s_order, 0, sizeof(*p_s_order));
                 } else if ( comp_num == GX_DEVICE_COLOR_MAX_COMPONENTS &&
                             used_default                                 )
+                    /* FIXME - clearing pointers is fine if the
+                       halftone was moved but if it was copied
+                       clearing results in a memory leak */
                     memset(p_s_order, 0, sizeof(*p_s_order));
             }
         }
         if (used_default) {
             if (wse0 != 0)
                 gs_wts_free_enum(wse0);
+            /* FIXME - clearing pointers is fine if the
+               halftone was moved but if it was copied
+               clearing results in a memory leak */
             memset(&pdht->order, 0, sizeof(pdht->order));
         }
 
