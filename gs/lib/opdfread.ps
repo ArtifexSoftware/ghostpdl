@@ -442,29 +442,60 @@ currentdict end readonly def
   } if
 } bind def
 
+/ShortFilterNames 15 dict begin
+  /AHx /ASCIIHexDecode def
+  /A85 /ASCII85Decode def
+  /LZW /LZWDecode def
+  /Fl  /FlateDecode def
+  /RL  /RunLengthDecode def
+  /CCF /CCITTFaxDecode def
+  /DCT /DCTDecode def
+currentdict end readonly def
+
 /AppendFilters  % <file> <dict> AppendFilters <file>
 {
-  dup 3 1 roll					    % d f
-  /Filter //knownget exec {			    % d f n
-    dup type /nametype eq {
-      2 index /DecodeParms //knownget exec {
+  //PDFR_DEBUG {
+    (AppendFilters beg.) =
+  } if
+  dup 3 1 roll					    % d f d
+  /Filter //knownget exec {			    % d f F
+    dup type /nametype eq {                         % d f /F
+      dup //ShortFilterNames exch //knownget exec {
+        exch pop
+      } if
+      2 index /DecodeParms //knownget exec {        % d f p /F
         exch
       } if
-      filter
-    } {
-      dup 0 exch 1 exch length 1 sub {		    % d [] i
-        2 index /DecodeParms //knownget exec {	    % d [] i DP
-          1 index get				    % d [] i dp
+      filter                                        % d f'
+    } {                                             % d f []
+      dup 0 exch 1 exch length 1 sub {		    % d f [] i
+        2 copy get                                  % d f [] i /F
+        dup //ShortFilterNames exch //knownget exec {
+          exch pop
         } if
-	exch 2 index exch get			    % d [] dp fn
-        filter
+        3 1 roll                                    % d f /F [] i
+        4 index /DecodeParms //knownget exec {	    % d f /F [] i DP
+          exch get				    % d f /F [] dp
+        } {                                         % d f /F [] i
+          pop null                                  % d f /F [] dp
+        } ifelse
+        dup null eq {                               % d f /F [] dp
+          pop 3 1 roll filter exch                  % d f' []
+        } {                                         % d f /F [] dp
+          3 1 roll                                  % d f dp /F []
+          4 1 roll filter exch                      % d f' []
+        } ifelse
       } for
+      pop                                           % d f'
     } ifelse
     //PDFR_DEBUG //PDFR_DUMP and  {
       //MakeStreamDumper exec
     } if
   } if
   exch pop
+  //PDFR_DEBUG {
+    (AppendFilters end.) =
+  } if
 } bind def
 
 /ExecuteStream	% <id> <obj> ExecuteStream <id> <obj>
