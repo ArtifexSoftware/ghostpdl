@@ -371,12 +371,13 @@ Execute
 </pre></blockquote>
 e.g.
 <blockquote><pre>
-<tt>toolbin/cvs2hist.py -j gs7_03 -r '-rHEAD' -v 7.20 > doc/Changes.htm</tt>
+<tt>toolbin/cvs2hist.py -j gs7_03 -r-b -v 7.20 > doc/Changes.htm</tt>
 </pre></blockquote>
 
 <p>
 This consolidates all the CVS logs since the previous release in a readable
-format.
+format. Note that the branch tag should be empty when generating logs
+for the cvs main branch due to variations in naming.
 
 <p>
 Run
