@@ -467,6 +467,29 @@ gx_device_set_media_size(gx_device * dev, floatp media_width, floatp media_heigh
     dev->height = media_height * dev->y_pixels_per_inch / 72.0 + 0.499;
 }
 
+/*
+ * Copy device parameters back from a target.  This copies all standard
+ * parameters related to page size and resolution, plus color_info.
+ */
+void
+gx_device_copy_params(gx_device *to, const gx_device *from)
+{
+#define COPY_PARAM(p) to->p = from->p
+#define COPY_ARRAY_PARAM(p) memcpy(to->p, from->p, sizeof(to->p))
+	COPY_PARAM(width);
+	COPY_PARAM(height);
+	COPY_ARRAY_PARAM(MediaSize);
+	COPY_ARRAY_PARAM(ImagingBBox);
+	COPY_PARAM(ImagingBBox_set);
+	COPY_ARRAY_PARAM(HWResolution);
+	COPY_ARRAY_PARAM(MarginsHWResolution);
+	COPY_ARRAY_PARAM(Margins);
+	COPY_ARRAY_PARAM(HWMargins);
+	COPY_PARAM(color_info);
+#undef COPY_PARAM
+#undef COPY_ARRAY_PARAM
+}
+
 /* Open the output file for a device. */
 int
 gx_device_open_output_file(const gx_device * dev, const char *fname,

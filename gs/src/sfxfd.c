@@ -61,31 +61,38 @@
 
 /* Forward references for file stream procedures */
 private int
-    s_fileno_available(P2(stream *, long *)), s_fileno_read_seek(P2(stream *, long)),
-     s_fileno_read_close(P1(stream *)), s_fileno_read_process(P4(stream_state *, stream_cursor_read *,
-					      stream_cursor_write *, bool));
+    s_fileno_available(P2(stream *, long *)),
+    s_fileno_read_seek(P2(stream *, long)),
+    s_fileno_read_close(P1(stream *)),
+    s_fileno_read_process(P4(stream_state *, stream_cursor_read *,
+			     stream_cursor_write *, bool));
 private int
-    s_fileno_write_seek(P2(stream *, long)), s_fileno_write_flush(P1(stream *)),
-     s_fileno_write_close(P1(stream *)), s_fileno_write_process(P4(stream_state *, stream_cursor_read *,
-					      stream_cursor_write *, bool));
+    s_fileno_write_seek(P2(stream *, long)),
+    s_fileno_write_flush(P1(stream *)),
+    s_fileno_write_close(P1(stream *)),
+    s_fileno_write_process(P4(stream_state *, stream_cursor_read *,
+			      stream_cursor_write *, bool));
 private int
     s_fileno_switch(P2(stream *, bool));
 
 /* ------ File streams ------ */
 
 /* Get the file descriptor number of a stream. */
-#define sfileno(s) fileno((s)->file)
+inline private int
+sfileno(const stream *s)
+{
+    return fileno(s->file);
+}
 
 /* Initialize a stream for reading an OS file. */
 void
 sread_fileno(register stream * s, FILE * file, byte * buf, uint len)
 {
-    static const stream_procs p =
-    {s_fileno_available, s_fileno_read_seek, s_std_read_reset,
-     s_std_read_flush, s_fileno_read_close, s_fileno_read_process,
-     s_fileno_switch
+    static const stream_procs p = {
+	s_fileno_available, s_fileno_read_seek, s_std_read_reset,
+	s_std_read_flush, s_fileno_read_close, s_fileno_read_process,
+	s_fileno_switch
     };
-
     /*
      * There is no really portable way to test seekability,
      * but this should work on most systems.
@@ -132,7 +139,7 @@ s_fileno_read_seek(register stream * s, long pos)
     uint end = s->srlimit - s->cbuf + 1;
     long offset = pos - s->position;
 
-    if (offset >= 0 && offset <= end) {		/* Staying within the same buffer */
+    if (offset >= 0 && offset <= end) {  /* Staying within the same buffer */
 	s->srptr = s->cbuf + offset - 1;
 	return 0;
     }
@@ -159,10 +166,10 @@ s_fileno_read_close(stream * s)
 void
 swrite_fileno(register stream * s, FILE * file, byte * buf, uint len)
 {
-    static const stream_procs p =
-    {s_std_noavailable, s_fileno_write_seek, s_std_write_reset,
-     s_fileno_write_flush, s_fileno_write_close, s_fileno_write_process,
-     s_fileno_switch
+    static const stream_procs p = {
+	s_std_noavailable, s_fileno_write_seek, s_std_write_reset,
+	s_fileno_write_flush, s_fileno_write_close, s_fileno_write_process,
+	s_fileno_switch
     };
 
     s_std_init(s, buf, len, &p,
@@ -184,7 +191,8 @@ sappend_fileno(register stream * s, FILE * file, byte * buf, uint len)
 /* Procedures for writing on a file */
 private int
 s_fileno_write_seek(stream * s, long pos)
-{				/* We must flush the buffer to reposition. */
+{
+    /* We must flush the buffer to reposition. */
     int code = sflush(s);
 
     if (code < 0)
@@ -209,25 +217,23 @@ s_fileno_write_close(register stream * s)
     return s_fileno_read_close(s);
 }
 
-/* Define the switch cases for System V interrupts. */
-#define case_again(errn) case errn: goto again;
+/* Define the System V interrupts that require retrying a call. */
+inline private bool
+errno_is_retry(int errn)
+{
+    switch (errn) {
 #ifdef EINTR
-#  define handle_EINTR() case_again(EINTR)
-#else
-#  define handle_EINTR()	/* */
+    case EINTR: return true;
 #endif
 #if defined(EAGAIN) && (!defined(EINTR) || EAGAIN != EINTR)
-#  define handle_EAGAIN() case_again(EAGAIN)
-#else
-#  define handle_EAGAIN()	/* */
+    case EAGAIN: return true;
 #endif
 #if defined(EWOULDBLOCK) && (!defined(EINTR) || EWOULDBLOCK != EINTR) && (!defined(EAGAIN) || EWOULDBLOCK != EAGAIN)
-#  define handle_EWOULDBLOCK() case_again(EWOULDBLOCK)
-#else
-#  define handle_EWOULDBLOCK()	/* */
+    case EWOULDBLOCK: return true;
 #endif
-#define handle_SYSV_errno()\
-  handle_EINTR() handle_EAGAIN() handle_EWOULDBLOCK()
+    default: return false;
+    }
+}
 
 /* Process a buffer for a file reading stream. */
 /* This is the first stream in the pipeline, so pr is irrelevant. */
@@ -237,19 +243,18 @@ s_fileno_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 {
     int nread, status;
 
-  again:nread = read(sfileno((stream *) st), pw->ptr + 1,
+again:
+    nread = read(sfileno((stream *) st), pw->ptr + 1,
 		 (uint) (pw->limit - pw->ptr));
     if (nread > 0) {
 	pw->ptr += nread;
 	status = 0;
     } else if (nread == 0)
 	status = EOFC;
+    else if (errno_is_retry(errno))	/* Handle System V interrupts */
+	goto again;
     else
-	switch (errno) {
-		handle_SYSV_errno()	/* Handle System V interrupts */
-	    default:
-		status = ERRC;
-	}
+	status = ERRC;
     process_interrupts();
     return status;
 }
@@ -263,7 +268,8 @@ s_fileno_write_process(stream_state * st, stream_cursor_read * pr,
     int nwrite, status;
     uint count;
 
-  again:count = pr->limit - pr->ptr;
+again:
+    count = pr->limit - pr->ptr;
     /* Some versions of the DEC C library on AXP architectures */
     /* give an error on write if the count is zero! */
     if (count == 0) {
@@ -274,12 +280,10 @@ s_fileno_write_process(stream_state * st, stream_cursor_read * pr,
     if (nwrite >= 0) {
 	pr->ptr += nwrite;
 	status = 0;
-    } else
-	switch (errno) {
-		handle_SYSV_errno()	/* Handle System V interrupts */
-	    default:
-		status = ERRC;
-	}
+    } else if (errno_is_retry(errno))	/* Handle System V interrupts */
+	goto again;
+    else
+	status = ERRC;
     process_interrupts();
     return status;
 }
@@ -300,7 +304,7 @@ s_fileno_switch(stream * s, bool writing)
 		  (ulong) s, pos);
 	lseek(fd, pos, SEEK_SET);	/* pacify OS */
 	if (modes & s_mode_append) {
-	    sappend_file(s, s->file, s->cbuf, s->cbsize);	/* sets position */
+	    sappend_file(s, s->file, s->cbuf, s->cbsize);  /* sets position */
 	} else {
 	    swrite_file(s, s->file, s->cbuf, s->cbsize);
 	    s->position = pos;

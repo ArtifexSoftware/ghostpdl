@@ -60,9 +60,9 @@ typedef struct long_param_def_s {
 } long_param_def_t;
 
 #if arch_sizeof_long > arch_sizeof_int
-#  define max_uint_param max_uint
+#  define MAX_UINT_PARAM max_uint
 #else
-#  define max_uint_param max_long
+#  define MAX_UINT_PARAM max_long
 #endif
 typedef struct bool_param_def_s {
     param_def_common;
@@ -174,8 +174,8 @@ current_Revision(void)
 private const long_param_def_t system_long_params[] =
 {
     {"BuildTime", min_long, max_long, current_BuildTime, NULL},
-{"MaxFontCache", 0, max_uint_param, current_MaxFontCache, set_MaxFontCache},
-    {"CurFontCache", 0, max_uint_param, current_CurFontCache, NULL},
+{"MaxFontCache", 0, MAX_UINT_PARAM, current_MaxFontCache, set_MaxFontCache},
+    {"CurFontCache", 0, MAX_UINT_PARAM, current_CurFontCache, NULL},
     {"Revision", min_long, max_long, current_Revision, NULL},
     /* Extensions */
     {"MaxGlobalVM", 0, max_long, current_MaxGlobalVM, set_MaxGlobalVM}
@@ -411,17 +411,17 @@ set_MinScreenLevels(long val)
 }
 private const long_param_def_t user_long_params[] =
 {
-    {"JobTimeout", 0, max_uint_param,
+    {"JobTimeout", 0, MAX_UINT_PARAM,
      current_JobTimeout, set_JobTimeout},
-    {"MaxFontItem", 0, max_uint_param,
+    {"MaxFontItem", 0, MAX_UINT_PARAM,
      current_MaxFontItem, set_MaxFontItem},
-    {"MinFontCompress", 0, max_uint_param,
+    {"MinFontCompress", 0, MAX_UINT_PARAM,
      current_MinFontCompress, set_MinFontCompress},
-    {"MaxOpStack", 0, max_uint_param,
+    {"MaxOpStack", 0, MAX_UINT_PARAM,
      current_MaxOpStack, set_MaxOpStack},
-    {"MaxDictStack", 0, max_uint_param,
+    {"MaxDictStack", 0, MAX_UINT_PARAM,
      current_MaxDictStack, set_MaxDictStack},
-    {"MaxExecStack", 0, max_uint_param,
+    {"MaxExecStack", 0, MAX_UINT_PARAM,
      current_MaxExecStack, set_MaxExecStack},
     {"MaxLocalVM", 0, max_long,
      current_MaxLocalVM, set_MaxLocalVM},
@@ -429,10 +429,10 @@ private const long_param_def_t user_long_params[] =
      current_VMReclaim, set_vm_reclaim},
     {"VMThreshold", -1, max_long,
      current_VMThreshold, set_vm_threshold},
-    {"WaitTimeout", 0, max_uint_param,
+    {"WaitTimeout", 0, MAX_UINT_PARAM,
      current_WaitTimeout, set_WaitTimeout},
     /* Extensions */
-    {"MinScreenLevels", 0, max_uint_param,
+    {"MinScreenLevels", 0, MAX_UINT_PARAM,
      current_MinScreenLevels, set_MinScreenLevels}
 };
 

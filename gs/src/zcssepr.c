@@ -42,7 +42,7 @@ private int separation_map1(P1(os_ptr));
 
 /* Define the separation cache size.  This makes many useful tint values */
 /* map to integer cache indices. */
-#define separation_cache_size 360
+#define SEPARATION_CACHE_SIZE 360
 
 /* Tint transform procedure that just consults the cache. */
 private int
@@ -52,7 +52,7 @@ lookup_tint(const gs_separation_params * params, floatp tint, float *values)
     const gs_indexed_map *map = params->map;
     int value_index =
 	(tint < 0 ? 0 : tint > 1 ? map->num_values - m :
-	 (int)(tint * separation_cache_size + 0.5) * m);
+	 (int)(tint * SEPARATION_CACHE_SIZE + 0.5) * m);
     const float *pv = &map->values[value_index];
 
     switch (m) {
@@ -96,7 +96,7 @@ zsetseparationspace(register os_ptr op)
     cs = *gs_currentcolorspace(igs);
     if (!cs.type->can_be_alt_space)
 	return_error(e_rangecheck);
-    code = zcs_begin_map(&map, &pcsa[2], separation_cache_size + 1,
+    code = zcs_begin_map(&map, &pcsa[2], SEPARATION_CACHE_SIZE + 1,
 			 (const gs_base_color_space *)&cs,
 			 separation_map1);
     if (code < 0)
@@ -140,7 +140,7 @@ separation_map1(os_ptr op)
     }
     push(1);
     ep[csme_index].value.intval = ++i;
-    make_real(op, i / (float)separation_cache_size);
+    make_real(op, i / (float)SEPARATION_CACHE_SIZE);
     make_op_estack(ep + 1, separation_map1);
     ep[2] = ep[csme_proc];	/* tint_transform */
     esp = ep + 2;

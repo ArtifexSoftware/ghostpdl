@@ -347,22 +347,25 @@ readonly def
 /buildType3		% <Type3-font-resource> buildType3 <font>
   { 8 dict begin
     /FontType 3 def
+    /Resources 1 index /Resources knownoget { oforce } { 0 dict } ifelse def
     /FontBBox 1 index /FontBBox get cvx def
     /FontMatrix 1 index /FontMatrix oget def
     /CharProcs 1 index /CharProcs oget def
     /FontName 1 index /Name get genfontname def
     /Encoding .notdefEncoding 2 index getencoding def
-    /BuildGlyph
-     { exch /CharProcs get exch oget
+    /BuildGlyph {
+		% Stack: font glyphname
+       1 index /CharProcs get exch oget
        PDFfile fileposition exch
        false resolvestream
+		% Stack: font filepos stream
 		% Don't let setgcolor set the color inside the BuildGlyph
 		% procedure, because this causes an /undefined error.
        q null /FillColor gput null /StrokeColor gput
-       pdfopdict .pdfrun
+       2 index /Resources get exch pdfopdict .pdfruncontext
        Q
-       PDFfile exch setfileposition
-     } bdef
+       PDFfile exch setfileposition pop
+    } bdef
     FontName currentdict end definefont exch pop
   } bdef
 
@@ -447,13 +450,16 @@ readonly def
     2 index /DescendantFonts oget { exec resourcefont } forall
   ] def
   /CMap 1 index /Encoding oget
-    dup type /nametype eq
-     { knownCMaps 1 index .knownget
-        { exch pop exec } { /undefined signalerror } ifelse
-     }
-     { resolvestream
-     }
-    ifelse
+    dup type /nametype eq {
+      dup /CMap resourcestatus {
+	pop pop /CMap findresource
+      } {
+	knownCMaps 1 index .knownget
+	  { exch pop exec } { /undefined signalerror } ifelse
+      } ifelse
+    } {
+      resolvestream
+    } ifelse
   def
   FontName currentdict end definefont exch pop
 } bdef

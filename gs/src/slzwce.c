@@ -60,9 +60,9 @@
  */
 
 /* Define the special codes, relative to 1 << InitialCodeLength. */
-#define code_reset 0
-#define code_eod 1
-#define code_0 2		/* first assignable code */
+#define CODE_RESET 0
+#define CODE_EOD 1
+#define CODE_0 2		/* first assignable code */
 
 /* Internal routine to put a code into the output buffer. */
 /* Let S = ss->code_size. */
@@ -74,7 +74,7 @@ lzw_put_code(register stream_LZW_state * ss, byte * q, uint code)
 {
     uint size = ss->code_size;
     byte cb = (ss->bits << ss->bits_left) +
-    (code >> (size - ss->bits_left));
+	(code >> (size - ss->bits_left));
 
     if_debug2('W', "[w]writing 0x%x,%d\n", code, ss->code_size);
     *++q = cb;
@@ -129,8 +129,8 @@ s_LZWE_process(stream_state * st, stream_cursor_read * pr,
 		status = 1;
 		break;
 	    }
-	    q = lzw_put_code(ss, q, signal + code_reset);
-	    next_code = signal + code_0;
+	    q = lzw_put_code(ss, q, signal + CODE_RESET);
+	    next_code = signal + CODE_0;
 	}
 	if (wlimit - q < 2) {
 	    status = 1;
@@ -143,7 +143,7 @@ s_LZWE_process(stream_state * st, stream_cursor_read * pr,
 	if (wlimit - q < 2)
 	    status = 1;
 	else {
-	    q = lzw_put_code(ss, q, signal + code_eod);
+	    q = lzw_put_code(ss, q, signal + CODE_EOD);
 	    if (ss->bits_left < 8)
 		*++q = ss->bits << ss->bits_left;	/* final byte */
 	}
@@ -155,7 +155,7 @@ s_LZWE_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Stream template */
-const stream_template s_LZWE_template =
-{&st_LZW_state, s_LZWE_init, s_LZWE_process, 1, 2, NULL,
- s_LZW_set_defaults, s_LZWE_reset
+const stream_template s_LZWE_template = {
+    &st_LZW_state, s_LZWE_init, s_LZWE_process, 1, 2, NULL,
+    s_LZW_set_defaults, s_LZWE_reset
 };

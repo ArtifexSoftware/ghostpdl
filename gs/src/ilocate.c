@@ -46,7 +46,9 @@ gc_locate(const void *ptr, gc_state_t * gcst)
     if (chunk_locate(ptr, &gcst->loc))
 	return gcst->loc.cp;
     mem = gcst->loc.memory;
+
     /* Try the other space, if there is one. */
+
     if (gcst->space_local != gcst->space_global) {
 	gcst->loc.memory =
 	    (mem->space == avm_local ? gcst->space_global : gcst->space_local);
@@ -61,17 +63,25 @@ gc_locate(const void *ptr, gc_state_t * gcst)
 		return gcst->loc.cp;
 	}
     }
-    /* Try the system space.  This is simpler because it isn't */
-    /* subject to save/restore. */
+
+    /*
+     * Try system space.  This is simpler because it isn't subject to
+     * save/restore.
+     */
+
     if (mem != gcst->space_system) {
 	gcst->loc.memory = gcst->space_system;
 	gcst->loc.cp = 0;
 	if (chunk_locate(ptr, &gcst->loc))
 	    return gcst->loc.cp;
     }
-    /* Try other save levels of the initial space, */
-    /* or of global space if the original space was system space. */
-    /* In the latter case, try all levels. */
+
+    /*
+     * Try other save levels of the initial space, or of global space if the
+     * original space was system space.  In the latter case, try all
+     * levels.
+     */
+
     gcst->loc.memory =
 	(mem == gcst->space_system || mem->space == avm_global ?
 	 gcst->space_global : gcst->space_local);
@@ -85,7 +95,9 @@ gc_locate(const void *ptr, gc_state_t * gcst)
 	    break;
 	gcst->loc.memory = &gcst->loc.memory->saved->state;
     }
+
     /* Restore locator to a legal state. */
+
     gcst->loc.memory = mem;
     gcst->loc.cp = 0;
     return 0;
@@ -101,55 +113,58 @@ ialloc_validate_spaces(const gs_dual_memory_t * dmem)
 {
     int i;
     gc_state_t state;
-
-#define nspaces countof(dmem->spaces.indexed)
-    chunk_t cc[nspaces];
-    uint rsize[nspaces];
-    ref rlast[nspaces];
+    struct sm_ {
+	chunk_t cc;
+	uint rsize;
+	ref rlast;
+    } save[countof(dmem->spaces.indexed)];
 
     state.spaces = dmem->spaces;
     state.loc.memory = state.spaces.named.local;
     state.loc.cp = 0;
 
     /* Save everything we need to reset temporarily. */
-    for (i = 0; i < nspaces; i++)
+
+    for (i = 0; i < countof(save); i++)
 	if (dmem->spaces.indexed[i] != 0) {
 	    gs_ref_memory_t *mem = dmem->spaces.indexed[i];
 	    chunk_t *pcc = mem->pcc;
 	    obj_header_t *rcur = mem->cc.rcur;
 
 	    if (pcc != 0) {
-		cc[i] = *pcc;
+		save[i].cc = *pcc;
 		*pcc = mem->cc;
 	    }
 	    if (rcur != 0) {
-		rsize[i] = rcur[-1].o_size;
+		save[i].rsize = rcur[-1].o_size;
 		rcur[-1].o_size = mem->cc.rtop - (byte *) rcur;
 		/* Create the final ref, reserved for the GC. */
-		rlast[i] = ((ref *) mem->cc.rtop)[-1];
+		save[i].rlast = ((ref *) mem->cc.rtop)[-1];
 		make_mark((ref *) mem->cc.rtop - 1);
 	    }
 	}
+
     /* Validate memory. */
-    for (i = 0; i < nspaces; i++)
+
+    for (i = 0; i < countof(save); i++)
 	if (dmem->spaces.indexed[i] != 0)
 	    ialloc_validate_memory(dmem->spaces.indexed[i], &state);
 
     /* Undo temporary changes. */
-    for (i = 0; i < nspaces; i++)
+
+    for (i = 0; i < countof(save); i++)
 	if (dmem->spaces.indexed[i] != 0) {
 	    gs_ref_memory_t *mem = dmem->spaces.indexed[i];
 	    chunk_t *pcc = mem->pcc;
 	    obj_header_t *rcur = mem->cc.rcur;
 
 	    if (rcur != 0) {
-		rcur[-1].o_size = rsize[i];
-		((ref *) mem->cc.rtop)[-1] = rlast[i];
+		rcur[-1].o_size = save[i].rsize;
+		((ref *) mem->cc.rtop)[-1] = save[i].rlast;
 	    }
 	    if (pcc != 0)
-		*pcc = cc[i];
+		*pcc = save[i].cc;
 	}
-#undef nspaces
 }
 void
 ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
@@ -183,9 +198,7 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
 			     (ulong) pfree, size, i);
 		    break;
 		}
-		if (size < free_size - obj_align_mask ||
-		    size > free_size
-		    ) {
+		if (size < free_size - obj_align_mask || size > free_size) {
 		    lprintf3("Object 0x%lx(%u) size wrong on freelist %i!\n",
 			     (ulong) pfree, size, i);
 		    break;
@@ -212,11 +225,11 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
     SCAN_CHUNK_OBJECTS(cp);
     DO_ALL
 	if (pre->o_type == &st_free) {
-	if (!object_size_valid(pre, size, cp))
-	    lprintf3("Bad free object 0x%lx(%lu), in chunk 0x%lx!\n",
-		     (ulong) (pre + 1), (ulong) size, (ulong) cp);
-    } else
-	ialloc_validate_object(pre + 1, cp, gcst);
+	    if (!object_size_valid(pre, size, cp))
+		lprintf3("Bad free object 0x%lx(%lu), in chunk 0x%lx!\n",
+			 (ulong) (pre + 1), (ulong) size, (ulong) cp);
+	} else
+	    ialloc_validate_object(pre + 1, cp, gcst);
     if_debug3('7', " [7]validating %s(%lu) 0x%lx\n",
 	      struct_type_name_string(pre->o_type),
 	      (ulong) size, (ulong) pre);
@@ -236,8 +249,7 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 		rp += packed_per_ref;
 	    }
     } else {
-	struct_proc_enum_ptrs((*proc)) =
-	    pre->o_type->enum_ptrs;
+	struct_proc_enum_ptrs((*proc)) = pre->o_type->enum_ptrs;
 	uint index = 0;
 	const void *ptr;
 	gs_ptr_type_t ptype;
@@ -277,7 +289,7 @@ ialloc_validate_ref(const ref * pref, gc_state_t * gcst)
 	case t_struct:
 	case t_astruct:
 	    optr = pref->value.pstruct;
-	  cks:if (optr != 0)
+cks:	    if (optr != 0)
 		ialloc_validate_object(optr, NULL, gcst);
 	    break;
 	case t_name:
@@ -312,7 +324,7 @@ ialloc_validate_ref(const ref * pref, gc_state_t * gcst)
 	    rptr = pref->value.refs;
 	    size = r_size(pref);
 	    tname = "array";
-	  cka:if (!gc_locate(rptr, gcst)) {
+cka:	    if (!gc_locate(rptr, gcst)) {
 		lprintf3("At 0x%lx, %s 0x%lx not in any chunk\n",
 			 (ulong) pref, tname, (ulong) rptr);
 		break;

@@ -33,12 +33,10 @@
 #ifndef gs_context_state_t_DEFINED
 #  define gs_context_state_t_DEFINED
 typedef struct gs_context_state_s gs_context_state_t;
-
 #endif
 #ifndef ref_stack_DEFINED
 #  define ref_stack_DEFINED
 typedef struct ref_stack_s ref_stack;
-
 #endif
 struct gs_context_state_s {
     ref_stack *dstack;
@@ -61,7 +59,7 @@ struct gs_context_state_s {
  * We make st_context_state public because interp.c must allocate one,
  * and zcontext.c must subclass it.
  */
-				  /*extern_st(st_context_state); *//* in icontext.h */
+/*extern_st(st_context_state); *//* in icontext.h */
 #define public_st_context_state()	/* in icontext.c */\
   gs_public_st_complex_only(st_context_state, gs_context_state_t,\
     "gs_context_state_t", context_state_clear_marks,\

@@ -42,16 +42,20 @@
   } if
   dup /FDArray get mark exch {
 		% Add pro forma entries
-     currentglobal exch dup gcheck setglobal
-     dup /FontType 1 put
-     dup /CharStrings mark /.notdef () .dicttomark put
-     dup /Encoding [] put
-		% Create a dummy Subrs array now.
-     dup /Private get dup /SubrCount .knownget {
-       array 1 index /Subrs 3 -1 roll put
-     } if pop
-     exch setglobal
-     dup /FontName .knownget not { () } if exch .buildfont1 exch pop
+    currentglobal exch dup gcheck setglobal
+    dup /FontType 1 put
+    dup /CharStrings mark /.notdef () .dicttomark put
+    dup /Encoding [] put
+		% Create a dummy Subrs array now, if there isn't one here
+		% already (which can only happen if we're giving another
+		% name to an existing font).
+    dup /Private get dup /Subrs known not {
+      dup /SubrCount .knownget {
+	array 1 index /Subrs 3 -1 roll put
+      } if readonly
+    } if pop
+    exch setglobal
+    dup /FontName .knownget not { () } if exch .buildfont1 exch pop
   } forall ] 1 index /FDepVector 3 -1 roll put
   3 -1 roll setglobal
   1 index exch .buildfont9 exch pop
@@ -248,8 +252,9 @@ currentdict end
 { string ReadString .cvbsi
 } bind def
 
-% Read the glyph data for a given CID.
-% The CIDFont is currentdict.
+% Read the glyph data for a given CID.  The CIDFont is currentdict.
+% Note that the data must be read into the same VM as the CharStrings
+% dictionary of the selected subfont.
 /.readglyphdata {	% <cid> .readglyphdata <subfont> <string|null>
   currentdict /GlyphDirectory .knownget {
     dup type /arraytype eq {
@@ -277,7 +282,11 @@ currentdict end
     1 index sub dup 0 eq {
       pop pop pop FDepVector 0 get null
     } {
-      string ReadString exch FDepVector exch get exch
+			% Stack: fd pos len
+      FDepVector 4 -1 roll get
+      dup /CharStrings get gcheck .currentglobal exch .setglobal
+			% Stack: pos len subfont global
+      4 2 roll string ReadString exch .setglobal
     } ifelse  
   } ifelse
 } bind def
@@ -355,7 +364,14 @@ dup null eq { pop pop pop pop } {	%**** WRONG ****
 (%Type11BuildGlyph) cvn {	% <cidfont> <cid> %Type11BuildGlyph -
   .currentglobal 3 1 roll 1 index gcheck .setglobal
   1 index begin
-  dup GDBytes mul GDBytes string CIDMap .stringsreadstring .cvbsi
+		% We must be prepared for out-of-range CIDs.
+  dup GDBytes mul GDBytes string CIDMap
+  mark 4 1 roll { .stringsreadstring } .internalstopped {
+		%**** 0 IS WRONG
+    cleartomark 0 GDBytes string CIDMap .stringsreadstring
+  } {
+    exch pop
+  } ifelse .cvbsi
 			% Stack: cidfont cid glyphindex
 %**************** GlyphDirectory is not supported yet.
 (

@@ -287,37 +287,36 @@ end
     } ifelse resolvecolorspace
   }
   /Separation {
-    dup 2 2 copy oget resolvecolorspace put
-    dup 3 oget resolvefunction
-    1 index 3 3 -1 roll put
+    aload pop exch oforce resolvecolorspace exch oforce resolvefunction
+    4 array astore
   }
   /DeviceN {
-    dup 1 oget pop		% just force it
-    dup 2 2 copy oget resolvecolorspace put
-    dup 3 oget resolvefunction
-    1 index 3 3 -1 roll put
+    aload pop 3 -1 roll oforce
+    3 -1 roll oforce resolvecolorspace
+    3 -1 roll oforce resolvefunction
+    4 array astore
   }
-  /Indexed
-   { dup 1 2 copy oget resolvecolorspace put
-     dup 3 oget dup type /stringtype eq
-      { pop
-      }
-      {		% The color lookup table is a stream.
+  /Indexed {
+    aload pop 3 -1 roll resolvecolorspace 3 1 roll
+    oforce dup type /stringtype eq {
+      pop
+    } {
+		% The color lookup table is a stream.
 		% Get its contents.  Don't lose our place in PDFfile.
-	PDFfile fileposition 3 1 roll
-	true resolvestream
-	1 index 2 get 1 add
-		% Stack: filepos cspace lookupstream len
-	2 index 1 get	% basespace
+		% Stack: /Indexed basespace hival lookup
+	PDFfile fileposition 5 1 roll true resolvestream
+		% Stack: filepos /Indexed basespace hival lookupstream
+	1 index 1 add
+		% Stack: filepos /Indexed basespace hival lookupstream len
+	3 index
 	  dup dup type /arraytype eq { 0 get } if
 	  //csncompdict exch get exec mul
 	string readstring pop
-		% Stack: filepos cspace table
-	1 index 3 3 -1 roll put
-	exch PDFfile exch setfileposition
-      }
-     ifelse
-   }
+		% Stack: filepos /Indexed basespace hival table
+	5 -1 roll PDFfile exch setfileposition
+    }
+    ifelse 4 array astore
+  }
   /Pattern
    { dup type /nametype ne
       { dup length 1 ge

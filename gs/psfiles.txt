@@ -144,6 +144,9 @@ fonts.txt for more information.
 caption.ps - a file for putting a caption in a box at the bottom of each
 page, useful for trade show demos.
 
+cid2code.ps - a utility for creating maps from CIDs to Unicode, useful when
+substituting a TrueType font for an Adobe font.
+
 docie.ps - an emulation of the CIE color mapping algorithms.
 
 * gslp.ps - a utility for doing "line printing" of plain text files.

@@ -296,6 +296,12 @@ void gx_device_forward_fill_in_procs(P1(gx_device_forward *));
 /* Forward the color mapping procedures from a device to its target. */
 void gx_device_forward_color_procs(P1(gx_device_forward *));
 
+/*
+ * Copy device parameters back from a target.  This copies all standard
+ * parameters related to page size and resolution, plus color_info.
+ */
+void gx_device_copy_params(P2(gx_device *to, const gx_device *from));
+
 /* Open the output file for a device. */
 int gx_device_open_output_file(P5(const gx_device * dev, const char *fname,
 				  bool binary, bool positionable,

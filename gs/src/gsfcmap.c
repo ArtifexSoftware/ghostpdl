@@ -27,23 +27,23 @@
 public_st_cmap();
 public_st_code_map();
 public_st_code_map_element();
+
 #define pcmap ((gx_code_map *)vptr)
 /* Because code maps can be elements of arrays, */
 /* their enum_ptrs procedure must never return 0 prematurely. */
 private 
 ENUM_PTRS_BEGIN(code_map_enum_ptrs) return 0;
-
 ENUM_PTR(0, gx_code_map, cmap);
 case 1:
 switch (pcmap->type)
 {
     case cmap_glyph:
-(*pcmap->cmap->mark_glyph) (pcmap->data.glyph,
-			    pcmap->cmap->mark_glyph_data);
+	(*pcmap->cmap->mark_glyph)(pcmap->data.glyph,
+				   pcmap->cmap->mark_glyph_data);
     default:
-ENUM_RETURN(0);
+	ENUM_RETURN(0);
     case cmap_subtree:
-ENUM_RETURN_PTR(gx_code_map, data.subtree);
+	ENUM_RETURN_PTR(gx_code_map, data.subtree);
 }
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(code_map_reloc_ptrs);
@@ -57,6 +57,7 @@ switch (pcmap->type) {
 RELOC_PTR(gx_code_map, cmap);
 RELOC_PTRS_END
 #undef pcmap
+
 /* CIDSystemInfo structure */
 public_st_cid_system_info();
 
@@ -68,10 +69,10 @@ public_st_cid_system_info();
  * number of bytes in the code, or an error.  For undefined characters,
  * we set *pglyph = gs_no_glyph and return 0.
  */
-     private int
-         code_map_decode_next(const gx_code_map * pcmap, const gs_const_string * str,
-			      uint * pindex, uint * pfidx,
-			      gs_char * pchr, gs_glyph * pglyph)
+private int
+code_map_decode_next(const gx_code_map * pcmap, const gs_const_string * str,
+		     uint * pindex, uint * pfidx,
+		     gs_char * pchr, gs_glyph * pglyph)
 {
     const gx_code_map *map = pcmap;
     uint chr = 0;
@@ -79,26 +80,33 @@ public_st_cid_system_info();
     for (;;) {
 	int result;
 
+	if_debug1('J', "[J]cmap char = 0x%x: ", chr);
 	switch ((gx_code_map_type) map->type) {
 	    case cmap_char_code:
-		*pglyph = (gs_glyph) map->data.ccode;
+		if_debug0('J', "char code");
+		*pglyph = (gs_glyph)map->data.ccode;
 		result = map->num_bytes1 + 1;
-	      leaf:if (chr > map->last)
+leaf:		if (chr > map->last)
 		    goto undef;
 		if (map->add_offset)
 		    *pglyph += chr - map->first;
 		*pfidx = map->byte_data.font_index;
 		*pchr = chr & 0xff;
+		if_debug3('J', " 0x%lx, fidx %u, result %d\n",
+			  *pglyph, *pfidx, result);
 		return result;
 	    case cmap_glyph:
+		if_debug0('J', "glyph");
 		*pglyph = map->data.glyph;
 		result = 0;
 		goto leaf;
 	    case cmap_subtree:
+		if_debug0('J', "subtree\n");
 		if (*pindex >= str->size)
 		    return_error(gs_error_rangecheck);
 		chr = str->data[(*pindex)++];
-		if (chr >= map->data.subtree[0].first) {	/* Invariant: map[lo].first <= chr < map[hi].first. */
+		if (chr >= map->data.subtree[0].first) {
+		    /* Invariant: map[lo].first <= chr < map[hi].first. */
 		    uint lo = 0, hi = map->byte_data.count1 + 1;
 
 		    map = map->data.subtree;
@@ -113,10 +121,12 @@ public_st_cid_system_info();
 		    map = &map[lo];
 		    continue;
 		}
-	      undef:*pchr = 0;
+undef:		if_debug0('J', " undef\n");
+		*pchr = 0;
 		*pglyph = gs_no_glyph;
 		return 0;
 	    default:		/* (can't happen) */
+		if_debug0('J', "error!\n");
 		return_error(gs_error_invalidfont);
 	}
     }
@@ -128,11 +138,12 @@ public_st_cid_system_info();
  */
 int
 gs_cmap_decode_next(const gs_cmap * pcmap, const gs_const_string * str,
-	     uint * pindex, uint * pfidx, gs_char * pchr, gs_glyph * pglyph)
+		    uint * pindex, uint * pfidx,
+		    gs_char * pchr, gs_glyph * pglyph)
 {
     uint save_index = *pindex;
     int code =
-    code_map_decode_next(&pcmap->def, str, pindex, pfidx, pchr, pglyph);
+	code_map_decode_next(&pcmap->def, str, pindex, pfidx, pchr, pglyph);
 
     if (code != 0 || *pglyph != gs_no_glyph)
 	return code;

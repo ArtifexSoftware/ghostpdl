@@ -293,16 +293,22 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     } else {
 	gs_malloc_block_t *np;
 
-	for (; (np = bp->next) != 0; bp = np) {
-	    if (ptr == np + 1) {
-		bp->next = np->next;
-		if (np->next)
-		    np->next->prev = bp;
-		mmem->used -= np->size + sizeof(gs_malloc_block_t);
-		gs_alloc_fill(np, gs_alloc_fill_free,
-			      np->size + sizeof(gs_malloc_block_t));
-		free(np);
-		return;
+	/*
+	 * bp == 0 at this point is an error, but we'd rather have an
+	 * error message than an invalid access.
+	 */
+	if (bp) {
+	    for (; (np = bp->next) != 0; bp = np) {
+		if (ptr == np + 1) {
+		    bp->next = np->next;
+		    if (np->next)
+			np->next->prev = bp;
+		    mmem->used -= np->size + sizeof(gs_malloc_block_t);
+		    gs_alloc_fill(np, gs_alloc_fill_free,
+				  np->size + sizeof(gs_malloc_block_t));
+		    free(np);
+		    return;
+		}
 	    }
 	}
 	lprintf2("%s: free 0x%lx not found!\n",

@@ -46,10 +46,10 @@ const byte ref_type_properties[] =
 
 /* Copy refs from one place to another. */
 int
-refcpy_to_old(ref * aref, uint index, register const ref * from,
-	      register uint size, client_name_t cname)
+refcpy_to_old(ref * aref, uint index, const ref * from,
+	      uint size, client_name_t cname)
 {
-    register ref *to = aref->value.refs + index;
+    ref *to = aref->value.refs + index;
     int code = refs_check_space(from, size, r_space(aref));
 
     if (code < 0)
@@ -64,7 +64,7 @@ refcpy_to_old(ref * aref, uint index, register const ref * from,
     return 0;
 }
 void
-refcpy_to_new(register ref * to, register const ref * from, register uint size)
+refcpy_to_new(ref * to, const ref * from, uint size)
 {
     while (size--)
 	ref_assign_new(to, from), to++, from++;
@@ -72,7 +72,7 @@ refcpy_to_new(register ref * to, register const ref * from, register uint size)
 
 /* Fill a new object with nulls. */
 void
-refset_null(register ref * to, register uint size)
+refset_null(ref * to, uint size)
 {
     while (size--)
 	make_null_new(to), to++;
@@ -80,13 +80,16 @@ refset_null(register ref * to, register uint size)
 
 /* Compare two objects for equality. */
 bool
-obj_eq(register const ref * pref1, register const ref * pref2)
+obj_eq(const ref * pref1, const ref * pref2)
 {
     ref nref;
 
-    if (r_type(pref1) != r_type(pref2)) {	/* Only a few cases need be considered here: */
-	/* integer/real (and vice versa), name/string */
-	/* (and vice versa), and extended operators. */
+    if (r_type(pref1) != r_type(pref2)) {
+	/*
+	 * Only a few cases need be considered here:
+	 * integer/real (and vice versa), name/string (and vice versa),
+	 * and extended operators.
+	 */
 	switch (r_type(pref1)) {
 	    case t_integer:
 		return (r_has_type(pref2, t_real) &&
@@ -111,9 +114,10 @@ obj_eq(register const ref * pref1, register const ref * pref2)
 		    return false;
 	}
     }
-    /* Now do a type-dependent comparison. */
-    /* This would be very simple if we always filled in */
-    /* all 8 bytes of a ref, but we currently don't. */
+    /*
+     * Now do a type-dependent comparison.  This would be very simple if we
+     * always filled in all the bytes of a ref, but we currently don't.
+     */
     switch (r_btype(pref1)) {
 	case t_array:
 	    return (pref1->value.refs == pref2->value.refs &&
@@ -152,10 +156,10 @@ obj_eq(register const ref * pref1, register const ref * pref2)
 	case t_astruct:
 	    return (pref1->value.pstruct == pref2->value.pstruct);
 	case t_fontID:
-	    {			/*
-				 * In the Adobe implementations, different scalings of a
-				 * font have "equal" FIDs, so we do the same.
-				 */
+	    {	/*
+		 * In the Adobe implementations, different scalings of a
+		 * font have "equal" FIDs, so we do the same.
+		 */
 		const gs_font *pfont1 = r_ptr(pref1, gs_font);
 		const gs_font *pfont2 = r_ptr(pref2, gs_font);
 
@@ -171,7 +175,7 @@ obj_eq(register const ref * pref1, register const ref * pref2)
 
 /* Compare two objects for identity. */
 bool
-obj_ident_eq(register const ref * pref1, register const ref * pref2)
+obj_ident_eq(const ref * pref1, const ref * pref2)
 {
     if (r_type(pref1) != r_type(pref2))
 	return false;
@@ -188,63 +192,17 @@ obj_ident_eq(register const ref * pref1, register const ref * pref2)
  * If the object was a string or name, store a pointer to its characters
  * even if it was too large.
  */
+private void ensure_dot(P1(char *));
 int
-obj_cvp(const ref * op, byte * str, uint len, uint * prlen, const byte ** pchars,
-	bool full_print)
+obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
+	const byte ** pchars, bool full_print)
 {
-    char buf[30];		/* big enough for any float */
-    const byte *pstr = (const byte *)buf;
-    uint plen;
-    ref nref;
-
     if (full_print)
 	switch (r_btype(op)) {
 	    case t_boolean:
 	    case t_integer:
-	    case t_real:
 		break;
-	    default:
-		return_error(e_typecheck);
-	}
-    switch (r_btype(op)) {
-	case t_boolean:
-	    pstr = (const byte *)(op->value.boolval ? "true" : "false");
-	    break;
-	case t_integer:
-	    sprintf(buf, "%ld", op->value.intval);
-	    break;
-	case t_name:
-	    name_string_ref(op, &nref);		/* name string */
-	  cvname:pstr = nref.value.bytes;
-	    plen = r_size(&nref);
-	    if (pchars != 0)
-		*pchars = pstr;
-	    goto nl;
-	case t_oparray:
-	    {
-		uint index = op_index(op);
-		const op_array_table *opt = op_index_op_array_table(index);
-
-		name_index_ref(opt->nx_table[index - opt->base_index], &nref);
-	    }
-	    name_string_ref(&nref, &nref);
-	    goto cvname;
-	case t_operator:
-	    {			/* Recover the name from the initialization table. */
-		uint index = op_index(op);
-
-		/* Check the validity of the index.  (An out-of-bounds */
-		/* index is only possible when examining an invalid */
-		/* object using the debugger.) */
-		if (index > 0 && index < op_def_count) {
-		    pstr = (const byte *)(op_def_table[index]->oname + 1);
-		    break;
-		}
-	    }
-	    /* Internal operator, no name. */
-	    sprintf(buf, "@0x%lx", (ulong) op->value.opproc);
-	    break;
-	case t_real:
+	    case t_real:
 	    /*
 	     * To get fully accurate output results for IEEE single-
 	     * precision floats (24 bits of mantissa), the ANSI
@@ -260,39 +218,83 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen, const byte ** pchars
 	     * to do (use %g), and only produce accurate output for ==,
 	     * for which there is no analogue of cvs.  What a hack!
 	     */
-	    {
-		float value = op->value.realval;
-
-		sprintf(buf, "%g", value);
-		if (full_print) {
+		if (!full_print)
+		    break;
+		{
+		    char buf[30];  /* big enough for any float or double */
+		    float value = op->value.realval;
 		    float scanned;
+		    uint plen;
 
+		    sprintf(buf, "%g", value);
 		    sscanf(buf, "%f", &scanned);
 		    if (scanned != value)
 			sprintf(buf, "%.9g", value);
+		    ensure_dot(buf);
+		    *prlen = plen = strlen(buf);
+		    if (plen > len)
+			return_error(e_rangecheck);
+		    memcpy(str, buf, plen);
+		    return 0;
 		}
-	    }
-	    /*
-	     * Make sure the output has a decimal point.
-	     * This is needed for compatibility with
-	     * Adobe (and other) interpreters.
-	     */
-	    if (strchr(buf, '.') != NULL)
-		break;
+	    default:
+		return_error(e_typecheck);
+	}
+    return obj_cvs(op, str, len, prlen, pchars);
+}
+int
+obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
+	const byte ** pchars)
+{
+    char buf[30];		/* big enough for any float or double */
+    const byte *pstr = (const byte *)buf;
+    uint plen;
+    ref nref;
+
+    switch (r_btype(op)) {
+	case t_boolean:
+	    pstr = (const byte *)(op->value.boolval ? "true" : "false");
+	    break;
+	case t_integer:
+	    sprintf(buf, "%ld", op->value.intval);
+	    break;
+	case t_name:
+	    name_string_ref(op, &nref);		/* name string */
+cvname:	    pstr = nref.value.bytes;
+	    plen = r_size(&nref);
+	    if (pchars != 0)
+		*pchars = pstr;
+	    goto nl;
+	case t_oparray:
 	    {
-		char *ept = strchr(buf, 'e');
+		uint index = op_index(op);
+		const op_array_table *opt = op_index_op_array_table(index);
 
-		if (ept == NULL)
-		    strcat(buf, ".0");
-		else {		/* Insert the .0 before the exponent. */
-		    /* What a nuisance! */
-		    char buf1[30];
+		name_index_ref(opt->nx_table[index - opt->base_index], &nref);
+	    }
+	    name_string_ref(&nref, &nref);
+	    goto cvname;
+	case t_operator:
+	    {
+		/* Recover the name from the initialization table. */
+		uint index = op_index(op);
 
-		    strcpy(buf1, ept);
-		    strcpy(ept, ".0");
-		    strcat(buf, buf1);
+		/*
+		 * Check the validity of the index.  (An out-of-bounds index
+		 * is only possible when examining an invalid object using
+		 * the debugger.)
+		 */
+		if (index > 0 && index < op_def_count) {
+		    pstr = (const byte *)(op_def_table[index]->oname + 1);
+		    break;
 		}
 	    }
+	    /* Internal operator, no name. */
+	    sprintf(buf, "@0x%lx", (ulong) op->value.opproc);
+	    break;
+	case t_real:
+	    sprintf(buf, "%g", op->value.realval);
+	    ensure_dot(buf);
 	    break;
 	case t_string:
 	    check_read(*op);
@@ -305,11 +307,33 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen, const byte ** pchars
 	    pstr = (const byte *)"--nostringval--";
     }
     plen = strlen((const char *)pstr);
-  nl:*prlen = plen;
+nl: *prlen = plen;
     if (plen > len)
 	return_error(e_rangecheck);
     memcpy(str, pstr, plen);
     return 0;
+}
+/*
+ * Make sure the converted form of a real number has a decimal point.  This
+ * is needed for compatibility with Adobe (and other) interpreters.
+ */
+private void
+ensure_dot(char *buf)
+{
+    if (strchr(buf, '.') == NULL) {
+	char *ept = strchr(buf, 'e');
+
+	if (ept == NULL)
+	    strcat(buf, ".0");
+	else {
+	    /* Insert the .0 before the exponent.  What a nuisance! */
+	    char buf1[30];
+
+	    strcpy(buf1, ept);
+	    strcpy(ept, ".0");
+	    strcat(buf, buf1);
+	}
+    }
 }
 
 /* Find the index of an operator that doesn't have one stored in it. */
@@ -354,36 +378,37 @@ op_index_ref(uint index, ref * pref)
 int
 array_get(const ref * aref, long index_long, ref * pref)
 {
-    if ((ulong) index_long >= r_size(aref))
+    if ((ulong)index_long >= r_size(aref))
 	return_error(e_rangecheck);
     switch (r_type(aref)) {
 	case t_array:
 	    {
-		const ref *pvalue =
-		aref->value.refs + (uint) index_long;
+		const ref *pvalue = aref->value.refs + index_long;
 
 		ref_assign(pref, pvalue);
-	    } return 0;
+	    }
+	    break;
 	case t_mixedarray:
 	    {
 		const ref_packed *packed = aref->value.packed;
-		uint index = (uint) index_long;
+		uint index = (uint)index_long;
 
 		for (; index--;)
 		    packed = packed_next(packed);
 		packed_get(packed, pref);
 	    }
-	    return 0;
+	    break;
 	case t_shortarray:
 	    {
-		const ref_packed *packed =
-		aref->value.packed + (uint) index_long;
+		const ref_packed *packed = aref->value.packed + index_long;
 
 		packed_get(packed, pref);
-	    } return 0;
+	    }
+	    break;
 	default:
 	    return_error(e_typecheck);
     }
+    return 0;
 }
 
 /* Get an element from a packed array. */
@@ -423,7 +448,7 @@ packed_get(const ref_packed * packed, ref * pref)
 /* to a space younger than a given one. */
 /* Return 0 or e_invalidaccess. */
 int
-refs_check_space(register const ref * bot, register uint size, uint space)
+refs_check_space(const ref * bot, uint size, uint space)
 {
     for (; size--; bot++)
 	store_check_space(space, bot);
@@ -558,7 +583,8 @@ int_param(const ref * op, int max_value, int *pparam)
 /* Make real values on the operand stack. */
 int
 make_reals(ref * op, const double *pval, int count)
-{				/* This should return e_limitcheck if any real is too large */
+{
+    /* This should return e_limitcheck if any real is too large */
     /* to fit into a float on the stack. */
     for (; count--; op++, pval++)
 	make_real(op, *pval);
@@ -566,7 +592,8 @@ make_reals(ref * op, const double *pval, int count)
 }
 int
 make_floats(ref * op, const float *pval, int count)
-{				/* This should return e_limitcheck for infinities. */
+{
+    /* This should return e_undefinedresult for infinities. */
     for (; count--; op++, pval++)
 	make_real(op, *pval);
     return 0;
@@ -624,7 +651,7 @@ read_matrix(const ref * op, gs_matrix * pmat)
 /* Write a matrix operand. */
 /* Return 0 if OK, error code if not. */
 int
-write_matrix(register ref * op, const gs_matrix * pmat)
+write_matrix(ref * op, const gs_matrix * pmat)
 {
     ref *aptr;
     const float *pel;

@@ -28,8 +28,9 @@
 #include "iutil.h"
 
 /* Define the number of bytes for a given format of encoded number. */
-const byte enc_num_bytes[] =
-{enc_num_bytes_values};
+const byte enc_num_bytes[] = {
+    enc_num_bytes_values
+};
 
 /* ------ Encoded number reading ------ */
 
@@ -104,18 +105,17 @@ num_array_get(const ref * op, int format, uint index, ref * np)
 
 /* Internal routine to decode a number in a given format. */
 /* Same returns as sget_encoded_number. */
-static const double binary_scale[32] =
-{
-#define expn2(n) (0.5 / (1L << (n-1)))
-    1.0, expn2(1), expn2(2), expn2(3),
-    expn2(4), expn2(5), expn2(6), expn2(7),
-    expn2(8), expn2(9), expn2(10), expn2(11),
-    expn2(12), expn2(13), expn2(14), expn2(15),
-    expn2(16), expn2(17), expn2(18), expn2(19),
-    expn2(20), expn2(21), expn2(22), expn2(23),
-    expn2(24), expn2(25), expn2(26), expn2(27),
-    expn2(28), expn2(29), expn2(30), expn2(31)
-#undef expn2
+static const double binary_scale[32] = {
+#define EXPN2(n) (0.5 / (1L << (n-1)))
+    1.0, EXPN2(1), EXPN2(2), EXPN2(3),
+    EXPN2(4), EXPN2(5), EXPN2(6), EXPN2(7),
+    EXPN2(8), EXPN2(9), EXPN2(10), EXPN2(11),
+    EXPN2(12), EXPN2(13), EXPN2(14), EXPN2(15),
+    EXPN2(16), EXPN2(17), EXPN2(18), EXPN2(19),
+    EXPN2(20), EXPN2(21), EXPN2(22), EXPN2(23),
+    EXPN2(24), EXPN2(25), EXPN2(26), EXPN2(27),
+    EXPN2(28), EXPN2(29), EXPN2(30), EXPN2(31)
+#undef EXPN2
 };
 int
 sdecode_number(const byte * str, int format, ref * np)
@@ -179,12 +179,11 @@ sdecodelong(const byte * p, int format)
 	      ((long)d << 24) + ((long)c << 16) + (b << 8) + a :
 	      ((long)a << 24) + ((long)b << 16) + (c << 8) + d);
 
-#if arch_sizeof_long == 4
-    return v;
-#else
-    /* Sign-extend if sizeof(long) > 4. */
-    return (v & 0x7fffffffL) - (v & 0x80000000L);
-#endif
+    /*
+     * The following is only needed if sizeof(long) > 4, but it does
+     * no harm if sizeof(long) == 4.
+     */
+    return (v ^ 0x80000000L) - 0x80000000L;
 }
 
 /* Decode a float.  We assume that native floats occupy 32 bits. */

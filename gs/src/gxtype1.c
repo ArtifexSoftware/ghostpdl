@@ -438,8 +438,11 @@ gs_type1_endchar(gs_type1_state * pcis)
 	ptx = pcis->origin.x, pty = pcis->origin.y;
 	pcis->asb_diff = pcis->save_asb;
 	pcis->adxy = pcis->save_adxy;
-	accum_xy(pcis->adxy.x + pcis->lsb.x,
-		 pcis->adxy.y + pcis->lsb.y);
+	/*
+	 * We're going to add in the lsb of the accented character when
+	 * we encounter its [h]sbw, so don't do it now.
+	 */
+	accum_xy(pcis->adxy.x, pcis->adxy.y);
 	ppath->position.x = pcis->position.x = ptx;
 	ppath->position.y = pcis->position.y = pty;
 	pcis->os_count = 0;	/* clear */

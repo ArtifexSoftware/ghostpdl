@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,55 +21,48 @@
 #include "ghost.h"
 #include "oper.h"
 #include "gsccode.h"		/* for gxfont.h */
-#include "gscoord.h"
+#include "gsmatrix.h"
 #include "gsutil.h"
-#include "gxdevice.h"
-#include "gxdevmem.h"
+#include "gxfixed.h"
 #include "gxchar.h"
 #include "gxfont.h"
 #include "gxfcache.h"
 #include "ifont.h"
 #include "igstate.h"
+#include "store.h"
 
 /* ([wx wy llx lly urx ury] | [w0x w0y llx lly urx ury w1x w1y vx vy]) */
-/*   <bitmap> <cid> <type32font> addglyph - */
-private floatp
-coeff_sign(floatp v)
-{
-    return (v < 0 ? -1.0 : v > 0 ? 1.0 : 0.0);
-}
+/*   <bitmap> <cid> <type32font> <str22> .makeglyph32 <<same with substr>> */
 private int
-zaddglyph(os_ptr op)
+zmakeglyph32(os_ptr op)
 {
-    int num_wmodes = 1;
-    int int_mask = 0x3c;	/* bits for llx .. ury */
+    bool long_form;
     uint msize;
     double metrics[10];
-    int llx, lly, urx, ury;
+    int wx, llx, lly, urx, ury;
     int width, height, raster;
     gs_font *pfont;
-    gs_matrix save_mat;
-    cached_fm_pair *pair;
-    int wmode;
     int code;
+    byte *str;
 
-    check_array(op[-3]);
-    msize = r_size(op - 3);
+    check_array(op[-4]);
+    msize = r_size(op - 4);
     switch (msize) {
 	case 10:
-	    num_wmodes = 2;
-	    int_mask = 0x33c;	/* add bits for vx, vy */
+	    long_form = true;
+	    break;
 	case 6:
+	    long_form = false;
 	    break;
 	default:
 	    return_error(e_rangecheck);
     }
-    code = num_params(op[-3].value.refs + msize - 1, msize, metrics);
+    code = num_params(op[-4].value.refs + msize - 1, msize, metrics);
     if (code < 0)
 	return code;
-    if (~code & int_mask)	/* check llx .. ury for integers */
+    if (~code & 0x3c)		/* check llx .. ury for integers */
 	return_error(e_typecheck);
-    check_read_type(op[-2], t_string);
+    check_read_type(op[-3], t_string);
     llx = (int)metrics[2];
     lly = (int)metrics[3];
     urx = (int)metrics[4];
@@ -77,75 +70,47 @@ zaddglyph(os_ptr op)
     width = urx - llx;
     height = ury - lly;
     raster = (width + 7) >> 3;
-    if (width < 0 || height < 0 || r_size(op - 2) != raster * height)
+    if (width < 0 || height < 0 || r_size(op - 3) != raster * height)
 	return_error(e_rangecheck);
-    check_int_leu(op[-1], 65535);
-    code = font_param(op, &pfont);
+    check_int_leu(op[-2], 65535);
+    code = font_param(op - 1, &pfont);
     if (code < 0)
 	return code;
-    if (pfont->FontType != ft_bitmap)
+    if (pfont->FontType != ft_CID_bitmap)
 	return_error(e_invalidfont);
-    /* Set the CTM to the (properly oriented) identity. */
-    gs_currentmatrix(igs, &save_mat);
-    {
-	gs_matrix init_mat, font_mat;
+    check_write_type(*op, t_string);
+    if (r_size(op) < 22)
+	return_error(e_rangecheck);
+    str = op->value.bytes;
+    if (long_form || metrics[0] != (wx = (int)metrics[0]) ||
+	metrics[1] != 0 || height == 0 ||
+	((wx | width | height | (llx + 128) | (lly + 128)) & ~255) != 0
+	) {
+	/* Use the long form. */
+	int i, n = (long_form ? 10 : 6);
 
-	gs_defaultmatrix(igs, &init_mat);
-	font_mat.xx = coeff_sign(init_mat.xx);
-	font_mat.xy = coeff_sign(init_mat.xy);
-	font_mat.yx = coeff_sign(init_mat.yx);
-	font_mat.yy = coeff_sign(init_mat.yy);
-	font_mat.tx = font_mat.ty = 0;
-	gs_setmatrix(igs, &font_mat);
-    }
-    pair = gx_lookup_fm_pair(pfont, igs);
-    if (pair == 0) {
-	gs_setmatrix(igs, &save_mat);
-	return_error(e_VMerror);
-    }
-    /* The APIs for adding characters to the cache are not ideal.... */
-    for (wmode = 0; wmode < num_wmodes; ++wmode) {
-	gx_device_memory mdev;
-	static const gs_log2_scale_point no_scale =
-	{0, 0};
-	cached_char *cc;
-	gx_bitmap_id id = gs_next_ids(1);
+	str[0] = 0;
+	str[1] = long_form;
+	for (i = 0; i < n; ++i) {
+	    int v = (int)metrics[i];  /* no floating point widths yet */
 
-	mdev.memory = 0;
-	mdev.target = 0;
-	cc = gx_alloc_char_bits(pfont->dir, &mdev, NULL, width, height,
-				&no_scale, 1);
-	if (cc == 0) {
-	    code = gs_note_error(e_limitcheck);
-	    break;
+	    str[2 + 2 * i] = (byte)(v >> 8);
+	    str[2 + 2 * i + 1] = (byte)v;
 	}
-	cc->wxy.x = float2fixed(metrics[0]);
-	cc->wxy.y = float2fixed(metrics[1]);
-	cc->offset.x = -llx;
-	cc->offset.y = -lly;
-	gx_copy_mono_unaligned((gx_device *) & mdev,
-			       op[-2].value.const_bytes, 0, raster, id,
-			       0, 0, width, height,
-			       (gx_color_index) 0, (gx_color_index) 1);
-	gx_add_cached_char(pfont->dir, &mdev, cc, pair, &no_scale);
-	cc->code = gs_min_cid_glyph + op[-1].value.intval;
-	cc->wmode = wmode;
-	gx_add_char_bits(pfont->dir, cc, &no_scale);
-	/* Adjust for WMode = 1. */
-	if (num_wmodes > wmode + 1) {
-	    metrics[0] = metrics[6];
-	    metrics[1] = metrics[7];
-	    llx -= (int)metrics[8];
-	    lly -= (int)metrics[9];
-	}
+	r_set_size(op, 2 + n * 2);
+    } else {
+	/* Use the short form. */
+	str[0] = (byte)width;
+	str[1] = (byte)height;
+	str[2] = (byte)wx;
+	str[3] = (byte)(llx + 128);
+	str[4] = (byte)(lly + 128);
+	r_set_size(op, 5);
     }
-    gs_setmatrix(igs, &save_mat);
-    if (code >= 0)
-	pop(4);
     return code;
 }
 
-/* <cid_min> <cid_max> <type32font> removeglyphs - */
+/* <cid_min> <cid_max> <type32font> .removeglyphs - */
 typedef struct {
     gs_glyph cid_min, cid_max;
     gs_font *font;
@@ -170,7 +135,7 @@ zremoveglyphs(os_ptr op)
     code = font_param(op, &range.font);
     if (code < 0)
 	return code;
-    if (range.font->FontType != ft_bitmap)
+    if (range.font->FontType != ft_CID_bitmap)
 	return_error(e_invalidfont);
     range.cid_min = gs_min_cid_glyph + op[-2].value.intval;
     range.cid_max = gs_min_cid_glyph + op[-1].value.intval;
@@ -180,11 +145,67 @@ zremoveglyphs(os_ptr op)
     return 0;
 }
 
+/* <str5/14/22> .getmetrics32 <width> <height> <w0x> ... <vy> 5/14 */
+/* <str5/14/22> .getmetrics32 <width> <height> <wx> ... <ury> 22 */
+private int
+zgetmetrics32(os_ptr op)
+{
+    const byte *data;
+    uint size;
+    int i, n = 6;
+    os_ptr wop;
+
+    check_read_type(*op, t_string);
+    data = op->value.const_bytes;
+    size = r_size(op);
+    if (size < 5)
+	return_error(e_rangecheck);
+    if (data[0]) {
+	/* Short form. */
+	int llx = (int)data[3] - 128, lly = (int)data[4] - 128;
+
+	n = 6;
+	size = 5;
+	push(8);
+	make_int(op - 6, data[2]); /* wx */
+	make_int(op - 5, 0);	/* wy */
+	make_int(op - 4, llx);
+	make_int(op - 3, lly);
+	make_int(op - 2, llx + data[0]); /* urx */
+	make_int(op - 1, lly + data[1]); /* ury */
+    } else {
+	if (data[1]) {
+	    /* Long form, both WModes. */
+	    if (size < 22)
+		return_error(e_rangecheck);
+	    n = 10;
+	    size = 22;
+	} else {
+	    /* Long form, WMode = 0 only. */
+	    if (size < 14)
+		return_error(e_rangecheck);
+	    n = 6;
+	    size = 14;
+	}
+	push(2 + n);
+	for (i = 0; i < n; ++i)
+	    make_int(op - n + i,
+		     ((int)((data[2 * i + 2] << 8) + data[2 * i + 3]) ^ 0x8000)
+		       - 0x8000);
+    }
+    wop = op - n;
+    make_int(wop - 2, wop[4].value.intval - wop[2].value.intval);
+    make_int(wop - 1, wop[5].value.intval - wop[3].value.intval);
+    make_int(op, size);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zchar32_op_defs[] =
 {
-    {"4addglyph", zaddglyph},
-    {"3removeglyphs", zremoveglyphs},
+    {"1.getmetrics32", zgetmetrics32},
+    {"4.makeglyph32", zmakeglyph32},
+    {"3.removeglyphs", zremoveglyphs},
     op_def_end(0)
 };

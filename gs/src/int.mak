@@ -660,9 +660,9 @@ type2.dev: $(INT_MAK) $(ECHOGS_XE) type1.dev psf2lib.dev
 # ---------------- Type 32 (downloaded bitmap) fonts ---------------- #
 
 $(PSOBJ)zchar32.$(OBJ): $(PSSRC)zchar32.c $(OP)\
- $(gsccode_h) $(gscoord_h) $(gsutil_h)\
- $(gxchar_h) $(gxdevice_h) $(gxdevmem_h) $(gxfcache_h) $(gxfont_h)\
- $(ifont_h) $(igstate_h)
+ $(gsccode_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxchar_h) $(gxfcache_h) $(gxfixed_h) $(gxfont_h)\
+ $(ifont_h) $(igstate_h) $(store_h)
 	$(PSCC) $(PSO_)zchar32.$(OBJ) $(C_) $(PSSRC)zchar32.c
 
 $(PSOBJ)zfont32.$(OBJ): $(PSSRC)zfont32.c $(OP)\

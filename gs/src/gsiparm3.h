@@ -30,8 +30,11 @@
  */
 
 /*
- * If InterleaveType is 3, the data source for the mask is provided as
- * an additional data source *before* the data sources for the pixel data.
+ * If InterleaveType is 3, the data source for the mask is provided as an
+ * additional data source *before* the data sources for the pixel data.  For
+ * both InterleaveType 2 and 3, the client is responsible for always
+ * providing mask data before the pixel data that it masks.  (The
+ * implementation does not currently check this, but it should.)
  */
 typedef enum {
     interleave_chunky = 1,
@@ -48,11 +51,6 @@ typedef struct gs_image3_s {
 #define public_st_gs_image3()	/* in gximage3.c */\
   gs_public_st_suffix_add0(st_gs_image3, gs_image3_t, "gs_image3_t",\
     image3_enum_ptrs, image3_reloc_ptrs, st_gs_pixel_image)
-
-#define image3_type_data\
-  gx_begin_image3, gx_data_image_source_size, 3
-#define image3_enum_procs_data\
-  gx_image3_plane_data, gx_image3_end_image
 
 /*
  * Initialize an ImageType 3 image.

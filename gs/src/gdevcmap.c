@@ -56,7 +56,8 @@ private const gx_device_cmap gs_cmap_device =
 	cmap_map_rgb_alpha_color,
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0,
+	gx_default_begin_image,
+	0, 0, 0, 0, 0,
 	cmap_begin_typed_image,
 	0,
 	0			/* map_color_rgb_alpha */
@@ -75,13 +76,11 @@ gdev_cmap_init(gx_device_cmap * dev, gx_device * target,
     gx_device_init((gx_device *) dev, (const gx_device *)&gs_cmap_device,
 		   target->memory, true);
     dev->target = target;
-    dev->color_info = target->color_info;
+    gx_device_copy_params((gx_device *)dev, target);
+    gx_device_forward_fill_in_procs((gx_device_forward *) dev);
     code = gdev_cmap_set_method(dev, method);
     if (code < 0)
 	return code;
-    gx_device_forward_fill_in_procs((gx_device_forward *) dev);
-    dev->width = target->width;
-    dev->height = target->height;
     return 0;
 }
 
@@ -97,14 +96,27 @@ gdev_cmap_set_method(gx_device_cmap * cmdev,
      * core into not halftoning.
      */
     switch (method) {
+
 	case device_cmap_identity:
-	case device_cmap_monochrome:
-	    cmdev->color_info = target->color_info;
+	    cmdev->color_info.max_gray = target->color_info.max_gray;
+	    cmdev->color_info.max_color = target->color_info.max_color;
+            cmdev->color_info.num_components =
+		target->color_info.num_components;
 	    break;
+
+	case device_cmap_monochrome:
+	    cmdev->color_info.max_gray = target->color_info.max_gray;
+	    cmdev->color_info.max_color = target->color_info.max_color;
+            cmdev->color_info.num_components = 1;
+	    break;
+
 	case device_cmap_snap_to_primaries:
 	case device_cmap_color_to_black_over_white:
 	    cmdev->color_info.max_gray = cmdev->color_info.max_color = 4095;
+            cmdev->color_info.num_components =
+		target->color_info.num_components;
 	    break;
+
 	default:
 	    return_error(gs_error_rangecheck);
     }
@@ -120,9 +132,6 @@ private void
 cmap_convert_rgb_color(const gx_device_cmap * cmdev, cmap_rgb_t * rgb)
 {
     switch (cmdev->mapping_method) {
-
-	default:
-	    DO_NOTHING;
 
 	case device_cmap_snap_to_primaries:
 	    /* Snap each RGB primary component to 0 or 1 individually. */
@@ -141,18 +150,10 @@ cmap_convert_rgb_color(const gx_device_cmap * cmdev, cmap_rgb_t * rgb)
 		 gx_max_color_value : 0);
 	    break;
 
-	case device_cmap_monochrome:{
-		/* Convert to a gray shade of the correct brightness. */
-		gx_color_value gray =
-		(rgb->red * (unsigned long)lum_red_weight +
-		 rgb->green * (unsigned long)lum_green_weight +
-		 rgb->blue * (unsigned long)lum_blue_weight +
-		 (lum_all_weights / 2))
-		/ lum_all_weights;
-
-		rgb->red = rgb->green = rgb->blue = gray;
-		break;
-	    }
+	case device_cmap_identity:
+	case device_cmap_monochrome:
+	default:
+	    break;
 
     }
 }

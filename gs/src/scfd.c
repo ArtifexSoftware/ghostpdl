@@ -317,13 +317,15 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
 		hcd_store_state();
 	    }
 	    ++eol_count;
-	    if (ss->EndOfBlock) {	/* Check for end-of-data sequence. */
-		if (eol_count == (ss->K < 0 ? 2 : 6)) {
-		    status = EOFC;
-		    goto out;
-		}
-	    } else
-		break;		/* >1 EOL is an error */
+	    /*
+	     * According to Adobe, the decoder should always check for
+	     * the EOD sequence, regardless of EndOfBlock: the Red Book's
+	     * documentation of EndOfBlock is wrong.
+	     */
+	    if (eol_count == (ss->K < 0 ? 2 : 6)) {
+		status = EOFC;
+		goto out;
+	    }
 	}
 	if (status == 0)	/* input empty while scanning EOLs */
 	    goto out;

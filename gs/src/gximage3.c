@@ -42,10 +42,12 @@ extern_st(st_gs_pixel_image);
 public_st_gs_image3();
 
 /* Define the image type for ImageType 3 images. */
-private const gx_image_type_t image3_type =
-{image3_type_data};
-private const gx_image_enum_procs_t image3_enum_procs =
-{image3_enum_procs_data};
+private const gx_image_type_t image3_type = {
+    gx_begin_image3, gx_data_image_source_size, 3
+};
+private const gx_image_enum_procs_t image3_enum_procs = {
+    gx_image3_plane_data, gx_image3_end_image
+};
 
 /* Initialize an ImageType 3 image. */
 void
@@ -150,19 +152,6 @@ gx_begin_image3(gx_device * dev,
 	    penum->pixel_height = pim->Height;
     penum->mask_width = pim->MaskDict.Width;
     penum->mask_height = pim->MaskDict.Height;
-    if (pim->InterleaveType == interleave_chunky) {
-	/* Allocate row buffers for the mask and pixel data. */
-	penum->pixel_data =
-	    gs_alloc_bytes(mem,
-			   (penum->pixel_width * pim->BitsPerComponent *
-			    penum->num_components + 7) >> 3,
-			   "gx_begin_image3(pixel_data)");
-	penum->mask_data =
-	    gs_alloc_bytes(mem, (penum->mask_width + 7) >> 3,
-			   "gx_begin_image3(mask_data)");
-	if (penum->pixel_data == 0 || penum->mask_data == 0)
-	    goto out1;
-    }
     penum->mdev = mdev =
 	gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
 			"gx_begin_image3(mdev)");
@@ -177,6 +166,19 @@ gx_begin_image3(gx_device * dev,
     penum->pixel_info = 0;
     penum->mask_data = 0;
     penum->pixel_data = 0;
+    if (pim->InterleaveType == interleave_chunky) {
+	/* Allocate row buffers for the mask and pixel data. */
+	penum->pixel_data =
+	    gs_alloc_bytes(mem,
+			   (penum->pixel_width * pim->BitsPerComponent *
+			    penum->num_components + 7) >> 3,
+			   "gx_begin_image3(pixel_data)");
+	penum->mask_data =
+	    gs_alloc_bytes(mem, (penum->mask_width + 7) >> 3,
+			   "gx_begin_image3(mask_data)");
+	if (penum->pixel_data == 0 || penum->mask_data == 0)
+	    goto out3;
+    }
     penum->InterleaveType = pim->InterleaveType;
     penum->bpc = pim->BitsPerComponent;
     penum->memory = mem;

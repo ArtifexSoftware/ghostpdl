@@ -307,7 +307,7 @@ end		% serverdict
 % in .runexec; we leave on the o-stack a procedure to execute aftewards.
 %
 %**************** The definition of startjob is not complete yet, since
-% it doesn't reset stdin/stdout or other aspects of the interpreter.
+% it doesn't reset stdin/stdout.
 /.startnewjob {			% <exit_bool> <password_level>
 				%   .startnewjob -
     serverdict /.jobsave get dup null eq { pop } { restore } ifelse
@@ -316,6 +316,10 @@ end		% serverdict
       serverdict /.jobsave null put
       serverdict /.jobsavelevel 0 put
       serverdict /.adminjob 3 -1 roll 1 gt put
+		% The Adobe documentation doesn't say what happens to the
+		% graphics state stack in this case, but an experiment
+		% produced results suggesting that a grestoreall occurs.
+      grestoreall
     } {
 			% Encapsulated job
       pop
@@ -323,6 +327,10 @@ end		% serverdict
       serverdict /.jobsavelevel 1 put
       .userdict /quit /stop load put
     } ifelse
+		% Reset the interpreter state.
+  clear cleardictstack
+  initgraphics
+  false setglobal
 } bind def
 /.startjob {			% <exit_bool> <password> <finish_proc>
 				%   .startjob <ok_bool>

@@ -46,7 +46,7 @@ param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
     code = param_read_string(plist, kstr, &ps);
     switch (code) {
 	case 0:		/* OK */
-	    if (ps.size > max_password)
+	    if (ps.size > MAX_PASSWORD)
 		return_error(e_limitcheck);
 	    /* Copy the data back. */
 	    memcpy(ppass->data, ps.data, ps.size);
@@ -68,13 +68,14 @@ param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
 }
 /* Write a password to a parameter list. */
 int
-param_write_password(gs_param_list * plist, const char *kstr, const password * ppass)
+param_write_password(gs_param_list * plist, const char *kstr,
+		     const password * ppass)
 {
     gs_param_string ps;
 
     ps.data = (const byte *)ppass->data, ps.size = ppass->size,
 	ps.persistent = false;
-    if (ps.size > max_password)
+    if (ps.size > MAX_PASSWORD)
 	return_error(e_limitcheck);
     return param_write_string(plist, kstr, &ps);
 }
@@ -125,7 +126,7 @@ dict_read_password(password * ppass, const ref * pdref, const char *pkey)
 
     if (code < 0)
 	return code;
-    if (pvalue->value.const_bytes[0] > max_password)
+    if (pvalue->value.const_bytes[0] > MAX_PASSWORD)
 	return_error(e_rangecheck);	/* limitcheck? */
     memcpy(ppass->data, pvalue->value.const_bytes + 1,
 	   (ppass->size = pvalue->value.const_bytes[0]));

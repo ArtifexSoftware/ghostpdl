@@ -141,22 +141,8 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_white)
 {
     gx_device *tdev = bdev->target;
 
-    if (tdev != 0) {		/* This is kind of scatter-shot.... */
-#define COPY_PARAM(p) bdev->p = tdev->p
-#define COPY_ARRAY_PARAM(p) memcpy(bdev->p, tdev->p, sizeof(bdev->p))
-	COPY_PARAM(width);
-	COPY_PARAM(height);
-	COPY_ARRAY_PARAM(MediaSize);
-	COPY_ARRAY_PARAM(ImagingBBox);
-	COPY_PARAM(ImagingBBox_set);
-	COPY_ARRAY_PARAM(HWResolution);
-	COPY_ARRAY_PARAM(MarginsHWResolution);
-	COPY_ARRAY_PARAM(Margins);
-	COPY_ARRAY_PARAM(HWMargins);
-	COPY_PARAM(color_info);
-#undef COPY_PARAM
-#undef COPY_ARRAY_PARAM
-    }
+    if (tdev != 0)
+	gx_device_copy_params(bdev, tdev);
     if (remap_white)
 	bdev->white = gx_device_white((gx_device *)bdev);
 }

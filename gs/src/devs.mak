@@ -495,24 +495,6 @@ $(GLOBJ)gdevlj56.$(OBJ): $(GLSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
  $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h)
 	$(GLCC) $(GLO_)gdevlj56.$(OBJ) $(C_) $(GLSRC)gdevlj56.c
 
-###### ------------------------- Fax devices ------------------------- ######
-
-### --------------- Generic PostScript system compatible fax ------------ ###
-
-# This code doesn't work yet.  Don't even think about using it.
-
-PSFAX=$(GLOBJ)gdevpfax.$(OBJ)
-
-psfax_=$(PSFAX)
-psfax.dev: $(psfax_) page.dev
-	$(SETPDEV) psfax $(psfax_)
-	$(ADDMOD) psfax -iodev Fax
-
-$(GLOBJ)gdevpfax.$(OBJ): $(GLSRC)gdevpfax.c $(PDEVH) $(gsparam_h) $(gxiodev_h)
-	$(GLCC) $(GLO_)gdevpfax.$(OBJ) $(C_) $(GLSRC)gdevpfax.c
-
-### --------------See under TIFF below for fax-format TIFF -------------- ###
-
 ###### ------------------- High-level file formats ------------------- ######
 
 # Support for PostScript and PDF

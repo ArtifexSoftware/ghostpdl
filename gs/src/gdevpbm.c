@@ -507,6 +507,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
     }
     for (; lnum < pdev->height; lnum++) {
 	byte *row;
+
 	code = gdev_prn_get_bits(pdev, lnum, data, &row);
 	if (code < 0)
 	    break;

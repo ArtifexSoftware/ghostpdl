@@ -112,8 +112,8 @@ filter_write_predictor(os_ptr op, int npop, const stream_template * template,
 	ref_assign(&rfd, op);
 	code =
 	    (predictor == 2 ?
-	 filter_read(op, 0, &s_PDiffE_template, (stream_state *) & pds, 0) :
-	  filter_read(op, 0, &s_PNGPE_template, (stream_state *) & pps, 0));
+	     filter_write(op, 0, &s_PDiffE_template, (stream_state *)&pds, 0) :
+	     filter_write(op, 0, &s_PNGPE_template, (stream_state *)&pps, 0));
 	if (code < 0) {
 	    /* Restore the operands.  Don't bother trying to clean up */
 	    /* the first stream. */

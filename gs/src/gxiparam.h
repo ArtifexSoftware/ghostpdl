@@ -120,7 +120,6 @@ int gx_image_enum_common_init(P7(gx_image_enum_common_t * piec,
 #ifndef gx_image_type_DEFINED
 #  define gx_image_type_DEFINED
 typedef struct gx_image_type_s gx_image_type_t;
-
 #endif
 struct gx_image_type_s {
 
@@ -163,9 +162,5 @@ dev_proc_begin_typed_image(gx_begin_image1);
 image_enum_proc_plane_data(gx_image1_plane_data);
 image_enum_proc_end_image(gx_image1_end_image);
 image_enum_proc_flush(gx_image1_flush);
-#define image1_type_data\
-  gx_begin_image1, gx_data_image_source_size, 1
-#define image1_enum_procs_data\
-  gx_image1_plane_data, gx_image1_end_image, gx_image1_flush
 
 #endif /* gxiparam_INCLUDED */

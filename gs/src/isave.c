@@ -261,6 +261,21 @@ alloc_save_init(gs_dual_memory_t * dmem)
     alloc_set_not_in_save(dmem);
 }
 
+/* Record that we are in a save. */
+void
+alloc_set_in_save(gs_dual_memory_t *dmem)
+{
+    dmem->test_mask = dmem->new_mask = l_new;
+}
+
+/* Record that we are not in a save. */
+void
+alloc_set_not_in_save(gs_dual_memory_t *dmem)
+{
+    dmem->test_mask = ~0;
+    dmem->new_mask = 0;
+}
+
 /* Save the state. */
 private alloc_save_t *alloc_save_space(P2(gs_ref_memory_t *,
 					  gs_dual_memory_t *));
@@ -458,6 +473,11 @@ alloc_save_current_id(const gs_dual_memory_t * dmem)
     while (save != 0 && save->id == 0)
 	save = save->state.saved;
     return save->id;
+}
+alloc_save_t *
+alloc_save_current(const gs_dual_memory_t * dmem)
+{
+    return alloc_find_save(dmem, alloc_save_current_id(dmem));
 }
 
 /* Test whether a reference would be invalidated by a restore. */

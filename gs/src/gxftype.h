@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,11 +31,11 @@ typedef enum {
     ft_CFF = 2,
     ft_user_defined = 3,
     ft_disk_based = 4,
-    ft_CID_encrypted = 9,
-    ft_CID_user_defined = 10,
-    ft_CID_TrueType = 11,
+    ft_CID_encrypted = 9,	/* CIDFontType 0 */
+    ft_CID_user_defined = 10,	/* CIDFontType 1 */
+    ft_CID_TrueType = 11,	/* CIDFontType 2 */
     ft_Chameleon = 14,
-    ft_bitmap = 32,
+    ft_CID_bitmap = 32,		/* CIDFontType 4 */
     ft_TrueType = 42
 } font_type;
 

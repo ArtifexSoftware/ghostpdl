@@ -63,13 +63,16 @@ image_strategy_simple(gx_image_enum * penum)
 	case image_portrait:
 	    {			/* Use fast portrait algorithm. */
 		long dev_width =
-		fixed2long_pixround(ox + penum->x_extent.x) -
-		fixed2long_pixround(ox);
+		    fixed2long_pixround(ox + penum->x_extent.x) -
+		    fixed2long_pixround(ox);
 
-		if (dev_width != penum->rect.w) {	/* Add an extra align_bitmap_mod of padding so that */
-		    /* we can align scaled rows with the device. */
+		if (dev_width != penum->rect.w) {
+		    /*
+		     * Add an extra align_bitmap_mod of padding so that
+		     * we can align scaled rows with the device.
+		     */
 		    long line_size =
-		    bitmap_raster(any_abs(dev_width)) + align_bitmap_mod;
+			bitmap_raster(any_abs(dev_width)) + align_bitmap_mod;
 
 		    if (penum->adjust != 0 || line_size > max_uint)
 			return 0;
@@ -80,7 +83,7 @@ image_strategy_simple(gx_image_enum * penum)
 					    penum->line_size, "image line");
 		    if (penum->line == 0) {
 			gx_default_end_image(penum->dev,
-					   (gx_image_enum_common_t *) penum,
+					     (gx_image_enum_common_t *)penum,
 					     false);
 			return 0;
 		    }
@@ -93,12 +96,12 @@ image_strategy_simple(gx_image_enum * penum)
 	case image_landscape:
 	    {			/* Use fast landscape algorithm. */
 		long dev_width =
-		fixed2long_pixround(oy + penum->x_extent.y) -
-		fixed2long_pixround(oy);
+		    fixed2long_pixround(oy + penum->x_extent.y) -
+		    fixed2long_pixround(oy);
 		long line_size =
-		(dev_width = any_abs(dev_width),
-		 bitmap_raster(dev_width) * 8 +
-		 round_up(dev_width, 8) * align_bitmap_mod);
+		    (dev_width = any_abs(dev_width),
+		     bitmap_raster(dev_width) * 8 +
+		     round_up(dev_width, 8) * align_bitmap_mod);
 
 		if ((dev_width != penum->rect.w && penum->adjust != 0) ||
 		    line_size > max_uint
@@ -121,7 +124,8 @@ image_strategy_simple(gx_image_enum * penum)
 		rproc = image_render_landscape;
 		/* Precompute values needed for rasterizing. */
 		penum->dxy =
-		    float2fixed(penum->matrix.xy + fixed2float(fixed_epsilon) / 2);
+		    float2fixed(penum->matrix.xy +
+				fixed2float(fixed_epsilon) / 2);
 		break;
 	    }
 	default:
@@ -130,10 +134,11 @@ image_strategy_simple(gx_image_enum * penum)
     /* Precompute values needed for rasterizing. */
     penum->dxx =
 	float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
-    /* We don't want to spread the samples, */
-    /* but we have to reset unpack_bps to prevent the buffer */
-    /* pointer from being incremented by 8 bytes */
-    /* per input byte. */
+    /*
+     * We don't want to spread the samples, but we have to reset unpack_bps
+     * to prevent the buffer pointer from being incremented by 8 bytes per
+     * input byte.
+     */
     penum->unpack = sample_unpack_copy;
     penum->unpack_bps = 8;
     return rproc;
@@ -169,17 +174,21 @@ struct stats_image_fast_s {
          byte04, rbit0, lbit1, byte1, rbit1, thin, thin2, nwide, bwide,
          nfill, bfill;
 } stats_image_fast;
-
-#  define incs(stat) ++stats_image_fast.stat
-#  define adds(stat, n) stats_image_fast.stat += n
+#  define INCS(stat) ++stats_image_fast.stat
+#  define ADDS(stat, n) stats_image_fast.stat += n
 #else
-#  define incs(stat) DO_NOTHING
-#  define adds(stat, n) DO_NOTHING
+#  define INCS(stat) DO_NOTHING
+#  define ADDS(stat, n) DO_NOTHING
 #endif
+inline private void
+fill_row(byte *line, int line_x, uint raster, int value)
+{
+    memset(line + (line_x >> 3), value, raster - (line_x >> 3));
+}
 private void
 image_simple_expand(byte * line, int line_x, uint raster,
-	const byte * buffer, int data_x, uint w, fixed xcur, fixed x_extent,
-		    byte zero /* 0 or 0xff */ )
+		    const byte * buffer, int data_x, uint w,
+		    fixed xcur, fixed x_extent, byte zero /* 0 or 0xff */ )
 {
     int dbitx = data_x & 7;
     byte sbit = 0x80 >> dbitx;
@@ -218,10 +227,7 @@ image_simple_expand(byte * line, int line_x, uint raster,
 
     if (w == 0)
 	return;
-    incs(calls);
-
-#define fill_row(value)\
-  memset(line + (line_x >> 3), value, raster - (line_x >> 3))
+    INCS(calls);
 
     /* Scan backward for the last transition. */
     if (stopbit == 0x80)
@@ -235,7 +241,8 @@ image_simple_expand(byte * line, int line_x, uint raster,
 
 	if (stop == psrc)	/* only 1 input byte */
 	    stopmask &= sbitmask;
-	if (last & stopbit) {	/* The last bit is a 1: look for a 0-to-1 transition. */
+	if (last & stopbit) {
+	    /* The last bit is a 1: look for a 0-to-1 transition. */
 	    if (~last & stopmask) {	/* Transition in last byte. */
 		last |= stopbit - 1;
 	    } else {		/* No transition in the last byte. */
@@ -243,15 +250,17 @@ image_simple_expand(byte * line, int line_x, uint raster,
 		    --stop;
 		if (stop == psrc ||
 		    (stop == psrc + 1 && !(~*psrc & sbitmask))
-		    ) {		/* The input is all 1s.  Clear the row and exit. */
-		    incs(all1s);
-		    fill_row(one);
+		    ) {
+		    /* The input is all 1s.  Clear the row and exit. */
+		    INCS(all1s);
+		    fill_row(line, line_x, raster, one);
 		    return;
 		}
 		last = *--stop;
 	    }
 	    stopx = byte_bit_run_length_0[byte_reverse_bits[last]] - 1;
-	} else {		/* The last bit is a 0: look for a 1-to-0 transition. */
+	} else {
+	    /* The last bit is a 0: look for a 1-to-0 transition. */
 	    if (last & stopmask) {	/* Transition in last byte. */
 		last &= -stopbit;
 	    } else {		/* No transition in the last byte. */
@@ -259,15 +268,15 @@ image_simple_expand(byte * line, int line_x, uint raster,
 		    --stop;
 		if (stop == psrc ||
 		    (stop == psrc + 1 && !(*psrc & sbitmask))
-		    ) {		/* The input is all 0s.  Clear the row and exit. */
-		    incs(all0s);
-		    fill_row(zero);
+		    ) {
+		    /* The input is all 0s.  Clear the row and exit. */
+		    INCS(all0s);
+		    fill_row(line, line_x, raster, zero);
 		    return;
 		}
 		last = *--stop;
 	    }
-	    stopx =
-		byte_bit_run_length_0[byte_reverse_bits[last ^ 0xff]] - 1;
+	    stopx = byte_bit_run_length_0[byte_reverse_bits[last ^ 0xff]] - 1;
 	}
 	if (stopx < 0)
 	    stopx = 7, ++stop;
@@ -275,8 +284,7 @@ image_simple_expand(byte * line, int line_x, uint raster,
     }
 
     /* Pre-clear the row. */
-    fill_row(zero);
-#undef fill_row
+    fill_row(line, line_x, raster, zero);
 
     /* Set up the DDAs. */
     xl0 =
@@ -305,40 +313,42 @@ image_simple_expand(byte * line, int line_x, uint raster,
     for (data = *psrc;;) {
 	int x0, n, bit;
 	byte *bp;
-	static const byte lmasks[9] =
-	{0xff, 0x7f, 0x3f, 0x1f, 0xf, 7, 3, 1, 0};
-	static const byte rmasks[9] =
-	{0, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
+	static const byte lmasks[9] = {
+	    0xff, 0x7f, 0x3f, 0x1f, 0xf, 7, 3, 1, 0
+	};
+	static const byte rmasks[9] = {
+	    0, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff
+	};
 
-	incs(runs);
+	INCS(runs);
 
 	/* Scan a run of zeros. */
 	data ^= 0xff;		/* invert */
 	while (data & sbit) {
 	    dda_next(xl);
 	    sbit >>= 1;
-	    incs(lbit0);
+	    INCS(lbit0);
 	}
 	if (!sbit) {		/* Scan a run of zero bytes. */
-	  sw:if ((data = psrc[1]) != 0) {
+sw:	    if ((data = psrc[1]) != 0) {
 		psrc++;
-		incs(byte00);
+		INCS(byte00);
 	    } else if ((data = psrc[2]) != 0) {
 		dda_state_next(xl.state, dxx8);
 		psrc += 2;
-		incs(byte01);
+		INCS(byte01);
 	    } else if ((data = psrc[3]) != 0) {
 		dda_state_next(xl.state, dxx16);
 		psrc += 3;
-		incs(byte02);
+		INCS(byte02);
 	    } else if ((data = psrc[4]) != 0) {
 		dda_state_next(xl.state, dxx24);
 		psrc += 4;
-		incs(byte03);
+		INCS(byte03);
 	    } else {
 		dda_state_next(xl.state, dxx32);
 		psrc += 4;
-		incs(byte04);
+		INCS(byte04);
 		goto sw;
 	    }
 	    if (data > 0xf)
@@ -351,12 +361,15 @@ image_simple_expand(byte * line, int line_x, uint raster,
 	    while (data & sbit) {
 		dda_next(xl);
 		sbit >>= 1;
-		incs(rbit0);
+		INCS(rbit0);
 	    }
 	}
 	x0 = dda_current_fixed2int(xl);
-	if (psrc >= stop && sbit == stopbit) {	/* We've scanned the last run of 0s. */
-	    /* Prepare to fill the final run of 1s. */
+	if (psrc >= stop && sbit == stopbit) {
+	    /*
+	     * We've scanned the last run of 0s.
+	     * Prepare to fill the final run of 1s.
+	     */
 	    n = fixed2int(xl0 + x_extent) - x0;
 	} else {		/* Scan a run of ones. */
 	    /* We know the current bit is a one. */
@@ -364,13 +377,13 @@ image_simple_expand(byte * line, int line_x, uint raster,
 	    do {
 		dda_next(xl);
 		sbit >>= 1;
-		incs(lbit1);
+		INCS(lbit1);
 	    }
 	    while (data & sbit);
 	    if (!sbit) {	/* Scan a run of 0xff bytes. */
 		while ((data = *++psrc) == 0xff) {
 		    dda_state_next(xl.state, dxx8);
-		    incs(byte1);
+		    INCS(byte1);
 		}
 		if (data < 0xf0)
 		    sbit = 0x80;
@@ -381,7 +394,7 @@ image_simple_expand(byte * line, int line_x, uint raster,
 		while (data & sbit) {
 		    dda_next(xl);
 		    sbit >>= 1;
-		    incs(rbit1);
+		    INCS(rbit1);
 		}
 	    }
 	    n = dda_current_fixed2int(xl) - x0;
@@ -394,11 +407,11 @@ image_simple_expand(byte * line, int line_x, uint raster,
 	bit = x0 & 7;
 	if ((n += bit) <= 8) {
 	    *bp ^= lmasks[bit] - lmasks[n];
-	    incs(thin);
+	    INCS(thin);
 	} else if ((n -= 8) <= 8) {
 	    *bp ^= lmasks[bit];
 	    bp[1] ^= rmasks[n];
-	    incs(thin2);
+	    INCS(thin2);
 	} else {
 	    *bp++ ^= lmasks[bit];
 	    if (n >= 56) {
@@ -406,13 +419,13 @@ image_simple_expand(byte * line, int line_x, uint raster,
 
 		memset(bp, one, nb);
 		bp += nb;
-		incs(nwide);
-		adds(bwide, nb);
+		INCS(nwide);
+		ADDS(bwide, nb);
 	    } else {
-		adds(bfill, n >> 3);
+		ADDS(bfill, n >> 3);
 		while ((n -= 8) >= 0)
 		    *bp++ = one;
-		incs(nfill);
+		INCS(nfill);
 	    }
 	    *bp ^= rmasks[n & 7];
 	}
@@ -422,7 +435,6 @@ image_simple_expand(byte * line, int line_x, uint raster,
 }
 
 /* Copy one rendered scan line to the device. */
-/* We may expand this (or its fastest case) inline someday. */
 private int
 copy_portrait(gx_image_enum * penum, const byte * data, int dx, int raster,
 	      int x, int y, int w, int h, gx_device * dev)
@@ -441,7 +453,8 @@ copy_portrait(gx_image_enum * penum, const byte * data, int dx, int raster,
 	pdc0 = &penum->icolor0, pdc1 = &penum->icolor1;
     data -= align;
     dx += align << 3;
-    if (gx_dc_is_pure(pdc0) && gx_dc_is_pure(pdc1)) {	/* Just use copy_mono. */
+    if (gx_dc_is_pure(pdc0) && gx_dc_is_pure(pdc1)) {
+	/* Just use copy_mono. */
 	dev_proc_copy_mono((*copy_mono)) =
 	    (h == 1 || (raster & (align_bitmap_mod - 1)) == 0 ?
 	     dev_proc(dev, copy_mono) : gx_copy_mono_unaligned);
@@ -449,20 +462,26 @@ copy_portrait(gx_image_enum * penum, const byte * data, int dx, int raster,
 	    (dev, data, dx, raster, gx_no_bitmap_id,
 	     x, y, w, h, pdc0->colors.pure, pdc1->colors.pure);
     }
-    /* At least one color isn't pure; use its fill_masked procedure. */
+    /*
+     * At least one color isn't pure: if the other one is transparent, use
+     * the opaque color's fill_masked procedure.  Note that we use a
+     * slightly unusual representation for transparent here (per
+     * gx_begin_image1): a pure color with pixel value gx_no_color_index.
+     */
     {
 	const gx_device_color *pdc;
 	bool invert;
 
-#define dc_is_null(pdc)\
+#define DC_IS_NULL(pdc)\
   (gx_dc_is_pure(pdc) && (pdc)->colors.pure == gx_no_color_index)
-	if (dc_is_null(pdc1)) {
+
+	if (DC_IS_NULL(pdc1)) {
 	    pdc = pdc0;
 	    invert = true;
 	} else {
-	    if (!dc_is_null(pdc0)) {
+	    if (!DC_IS_NULL(pdc0)) {
 		int code = gx_device_color_fill_rectangle
-		(pdc0, x, y, w, h, dev, lop_default, NULL);
+		    (pdc0, x, y, w, h, dev, lop_default, NULL);
 
 		if (code < 0)
 		    return code;
@@ -470,10 +489,13 @@ copy_portrait(gx_image_enum * penum, const byte * data, int dx, int raster,
 	    pdc = pdc1;
 	    invert = false;
 	}
+
+#undef DC_IS_NULL
+
 	return (*pdc->type->fill_masked)
 	    (pdc, data, dx, raster, gx_no_bitmap_id, x, y, w, h,
 	     dev, lop_default, invert);
-#undef dc_is_null
+
     }
 }
 
@@ -491,10 +513,9 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
     fixed xcur = dda_current(penum->dda.pixel0.x);
     int ix = fixed2int_pixround(xcur);
     const int iy = penum->yci, ih = penum->hci;
+    const gx_device_color * const pdc0 = &penum->icolor0;
+    const gx_device_color * const pdc1 = &penum->icolor1;
     int dy;
-
-#define pdc0 (&penum->icolor0)
-#define pdc1 (&penum->icolor1)
 
     if (h == 0)
 	return 0;
@@ -508,8 +529,9 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
 	/* We know the colors must be (0,1) or (1,0). */
 	       (pdc0->colors.pure ^ pdc1->colors.pure) == 1 &&
 	       !penum->clip_image
-	) {			/* Do the operation directly into the memory device bitmap. */
-	int ixr = fixed2int_pixround(xcur + w * dxx) - 1;
+	) {
+	/* Do the operation directly into the memory device bitmap. */
+	int ixr = fixed2int_pixround(xcur + penum->x_extent.x) - 1;
 	int line_ix;
 	int ib_left = ix >> 3, ib_right = ixr >> 3;
 	byte *scan_line = scan_line_base((gx_device_memory *) dev, iy);
@@ -539,16 +561,15 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
 		(scan_line[ib_right] & mask) + (save_right & ~mask);
 	if (ih <= 1)
 	    return 1;
-/****** MAY BE UNALIGNED ******/
+	/****** MAY BE UNALIGNED ******/
 	line = scan_line + (line_ix >> 3);
 	if (dxx < 0)
 	    ix -= line_width;
 	for (dy = 1; dy < ih; dy++) {
-	    int code = (*copy_mono) (dev, line, line_x, line_size,
-				     gx_no_bitmap_id,
-				     ix, iy + dy, line_width, 1,
-				     (gx_color_index) 0,
-				     (gx_color_index) 1);
+	    int code = (*copy_mono)
+		(dev, line, line_x, line_size, gx_no_bitmap_id,
+		 ix, iy + dy, line_width, 1,
+		 (gx_color_index)0, (gx_color_index)1);
 
 	    if (code < 0)
 		return code;
@@ -576,8 +597,6 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
     }
 
     return 1;
-#undef pdc0
-#undef pdc1
 }
 
 /* Rendering procedure for a 90 degree rotated monobit image */
@@ -634,9 +653,7 @@ image_render_landscape(gx_image_enum * penum, const byte * buffer, int data_x,
 	    ++ix;
 	    if (xmod == 7) {
 		int code =
-		    copy_landscape(penum,
-				   penum->line_xy, ix,
-				   y_neg, dev);
+		    copy_landscape(penum, penum->line_xy, ix, y_neg, dev);
 
 		if (code < 0)
 		    return code;
@@ -646,9 +663,7 @@ image_render_landscape(gx_image_enum * penum, const byte * buffer, int data_x,
 	} else {
 	    if (xmod == 0) {
 		int code =
-		    copy_landscape(penum, ix,
-				   penum->line_xy,
-				   y_neg, dev);
+		    copy_landscape(penum, ix, penum->line_xy, y_neg, dev);
 
 		if (code < 0)
 		    return code;

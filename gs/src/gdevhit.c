@@ -86,6 +86,7 @@ private int
 hit_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		   gx_color_index color)
 {
-    fit_fill(dev, x, y, w, h);	/* returns 0 if empty rectangle */
-    return_error(gs_error_hit_detected);
+    if (w > 0 && h > 0)
+	return_error(gs_error_hit_detected);
+    return 0;
 }

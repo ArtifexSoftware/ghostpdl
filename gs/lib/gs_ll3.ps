@@ -250,25 +250,25 @@ systemdict /.shadingtypes mark		% not ll3dict
 
 /settrapparams dup {		% <paramdict> settrapparams -
   /.trapparams .uservar dup length dict .copydict
-  dup 1 index {
+  dup 2 index {
 			% Stack: paramdict olddict olddict key value
     2 index 2 index known { put dup } { pop pop } ifelse
   } forall pop
   dup .settrapparams	% Let the operator check parameter validity.
-  .userdict /.trapparams 2 index put pop
+  .userdict /.trapparams 3 -1 roll put pop
 } bind .makeoperator
 
 /.copyparams {		% <obj> .copyparams <obj'>
   dup type /dicttype eq {
     dup length dict .copydict
-    exch {
+    dup {
       .copyparams 3 copy put pop pop
     } forall
   } {
     dup type /arraytype eq {
       [ exch { .copyparams } forall ]
     } if
-  } if
+  } ifelse
 } odef
 
 /currenttrapparams dup {	% - currenttrapparams <paramdict>

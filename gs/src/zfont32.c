@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -46,11 +46,11 @@ zbuildfont32(os_ptr op)
     gs_font_base *pfont;
 
     check_type(*op, t_dictionary);
-    make_null(&build.BuildChar);
-    make_null(&build.BuildGlyph);
-    code = build_gs_simple_font(op, &pfont, ft_bitmap,
-				&st_gs_font_base, &build,
-				bf_Encoding_optional);
+    code = build_proc_name_refs(&build, NULL, "%Type32BuildGlyph");
+    if (code < 0)
+	return code;
+    code = build_gs_simple_font(op, &pfont, ft_CID_bitmap, &st_gs_font_base,
+				&build, bf_Encoding_optional);
     if (code < 0)
 	return code;
     /* Always transform cached bitmaps. */

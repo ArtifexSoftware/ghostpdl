@@ -135,10 +135,12 @@ public_st_gs_pixel_image();
 gx_image_strategies_t image_strategies;
 
 /* Define the image type for ImageType 1 images. */
-private const gx_image_type_t image1_type =
-{image1_type_data};
-private const gx_image_enum_procs_t image1_enum_procs =
-{image1_enum_procs_data};
+private const gx_image_type_t image1_type = {
+    gx_begin_image1, gx_data_image_source_size, 1
+};
+private const gx_image_enum_procs_t image1_enum_procs = {
+    gx_image1_plane_data, gx_image1_end_image, gx_image1_flush
+};
 
 /* Define the procedures for initializing gs_image_ts to default values. */
 void
@@ -597,14 +599,16 @@ gx_begin_image1(gx_device * dev,
 		mty = (((mty + diff) | fixed_half) & -fixed_half) - diff;
 	    }
 	}
-	if_debug11('b',
-		   "[b]Image: cbox=(%g,%g),(%g,%g), obox=(%g,%g),(%g,%g)\n	mt=(%g,%g) clip_image=0x%x\n",
-		   fixed2float(cbox.p.x), fixed2float(cbox.p.y),
-		   fixed2float(cbox.q.x), fixed2float(cbox.q.y),
-		   fixed2float(obox.p.x), fixed2float(obox.p.y),
-		   fixed2float(obox.q.x), fixed2float(obox.q.y),
-		   fixed2float(mtx), fixed2float(mty),
-		   penum->clip_image);
+	if_debug5('b', "[b]Image: %sspp=%d, bps=%d, mt=(%g,%g)\n",
+		  (masked? "masked, " : ""), spp, bps,
+		  fixed2float(mtx), fixed2float(mty));
+	if_debug9('b',
+		  "[b]   cbox=(%g,%g),(%g,%g), obox=(%g,%g),(%g,%g), clip_image=0x%x\n",
+		  fixed2float(cbox.p.x), fixed2float(cbox.p.y),
+		  fixed2float(cbox.q.x), fixed2float(cbox.q.y),
+		  fixed2float(obox.p.x), fixed2float(obox.p.y),
+		  fixed2float(obox.q.x), fixed2float(obox.q.y),
+		  penum->clip_image);
 	dda_init(penum->dda.row.x, mtx, col_extent.x, height);
 	dda_init(penum->dda.row.y, mty, col_extent.y, height);
 	if (penum->rect.y) {

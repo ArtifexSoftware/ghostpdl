@@ -62,6 +62,7 @@ zglyphshow(os_ptr op)
 	case ft_CID_encrypted:
 	case ft_CID_user_defined:
 	case ft_CID_TrueType:
+	case ft_CID_bitmap:
 	    check_int_leu(*op, gs_max_glyph - gs_min_cid_glyph);
 	    glyph = (gs_glyph) op->value.intval + gs_min_cid_glyph;
 	    break;

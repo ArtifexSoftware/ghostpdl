@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,7 +35,6 @@
  */
 #ifndef alloc_save_t_DEFINED	/* also in inamedef.h */
 typedef struct alloc_save_s alloc_save_t;
-
 #  define alloc_save_t_DEFINED
 #endif
 
@@ -45,9 +44,11 @@ extern void alloc_save_init(P1(gs_dual_memory_t *));
 /* Map a save ID to its save object.  Return 0 if the ID is invalid. */
 alloc_save_t *alloc_find_save(P2(const gs_dual_memory_t *, ulong));
 
-/* Save the state.  Return 0 if we can't allocate the save object, */
-/* otherwise return the save ID.  The second argument is a client data */
-/* pointer, assumed to point to an object. */
+/*
+ * Save the state.  Return 0 if we can't allocate the save object,
+ * otherwise return the save ID.  The second argument is a client data
+ * pointer, assumed to point to an object.
+ */
 ulong alloc_save_state(P2(gs_dual_memory_t *, void *));
 
 /* Get the client pointer passed to alloc_saved_state. */
@@ -58,9 +59,7 @@ int alloc_save_level(P1(const gs_dual_memory_t *));
 
 /* Return (the id of) the innermost externally visible save object. */
 ulong alloc_save_current_id(P1(const gs_dual_memory_t *));
-
-#define alloc_save_current(dmem)\
-  alloc_find_save(dmem, alloc_save_current_id(dmem))
+alloc_save_t *alloc_save_current(P1(const gs_dual_memory_t *));
 
 /* Check whether a pointer refers to an object allocated since a given save. */
 bool alloc_is_since_save(P2(const void *, const alloc_save_t *));
@@ -69,20 +68,26 @@ bool alloc_is_since_save(P2(const void *, const alloc_save_t *));
 bool alloc_name_is_since_save(P2(const ref *, const alloc_save_t *));
 bool alloc_name_index_is_since_save(P2(uint, const alloc_save_t *));
 
-/* Check whether any names have been created since a given save */
-/* that might be released by the restore. */
+/*
+ * Check whether any names have been created since a given save
+ * that might be released by the restore.
+ */
 bool alloc_any_names_since_save(P1(const alloc_save_t *));
 
-/* Do one step of restoring the state.  Return true if the argument */
-/* was the innermost save, in which case this is the last (or only) step. */
-/* Assume the caller obtained the argument by calling alloc_find_save; */
-/* if this is the case, the operation cannot fail. */
+/*
+ * Do one step of restoring the state.  Return true if the argument
+ * was the innermost save, in which case this is the last (or only) step.
+ * Assume the caller obtained the argument by calling alloc_find_save;
+ * if this is the case, the operation cannot fail.
+ */
 bool alloc_restore_state_step(P1(alloc_save_t *));
 
-/* Forget a save -- like committing a transaction (restore is like */
-/* aborting a transaction).  Assume the caller obtained the argument */
-/* by calling alloc_find_save.  Note that forgetting a save does not */
-/* require checking pointers for recency. */
+/*
+ * Forget a save -- like committing a transaction (restore is like
+ * aborting a transaction).  Assume the caller obtained the argument
+ * by calling alloc_find_save.  Note that forgetting a save does not
+ * require checking pointers for recency.
+ */
 void alloc_forget_save(P1(alloc_save_t *));
 
 /* Release all memory -- like doing a restore "past the bottom". */
@@ -114,11 +119,9 @@ int alloc_save_change(P4(gs_dual_memory_t *, const ref * pcont,
 /* ------ Internals ------ */
 
 /* Record that we are in a save. */
-#define alloc_set_in_save(dmem)\
-  ((dmem)->test_mask = (dmem)->new_mask = l_new)
+void alloc_set_in_save(P1(gs_dual_memory_t *));
 
 /* Record that we are not in a save. */
-#define alloc_set_not_in_save(dmem)\
-  ((dmem)->test_mask = ~0, (dmem)->new_mask = 0)
+void alloc_set_not_in_save(P1(gs_dual_memory_t *));
 
 #endif /* isave_INCLUDED */

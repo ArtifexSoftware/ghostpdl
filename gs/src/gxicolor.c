@@ -264,7 +264,7 @@ fill:	/* Fill the region between */
 
 		if (hi < 0)
 		    yi += hi, hi = -hi;
-		if (hi < 0)
+		if (hi > 0)
 		    code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
 							pdevc, dev, lop);
 		yrun = yprev;	/* for sake of final run */

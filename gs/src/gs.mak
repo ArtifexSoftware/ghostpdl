@@ -82,8 +82,6 @@
 #	    The remaining features are of interest primarily to developers
 #	      who want to "mix and match" features to create custom
 #	      configurations:
-#		    dps - (partial) support for Display PostScript extensions:
-#			see language.txt for details.
 #		    btoken - support for binary token encodings.
 #			Included automatically in the dps and psl2 features.
 #		    cidfont - (currently partial) support for CID-keyed fonts.
@@ -93,6 +91,10 @@
 #			Included automatically in the psl2 feature.
 #		    dct - support for DCTEncode/Decode filters.
 #			Included automatically in the psl2 feature.
+#		    dps - (partial) support for Display PostScript extensions:
+#			see language.txt for details.
+#		    dpsnext - (partial) support for Display PostScript
+#			extensions with NeXT's additions.
 #		    epsf - support for recognizing and skipping the binary
 #			header of MS-DOS EPSF files.
 #		    filter - support for Level 2 filters (other than eexec,

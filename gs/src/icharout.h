@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,9 +35,9 @@ typedef enum {
     metricsWidthOnly = 1,
     metricsSideBearingAndWidth = 2
 } metrics_present;
-int				/*metrics_present */
-    zchar_get_metrics(P3(const gs_font_base * pbfont, const ref * pcnref,
-			 double psbw[4]));
+int /*metrics_present*/
+  zchar_get_metrics(P3(const gs_font_base * pbfont, const ref * pcnref,
+		       double psbw[4]));
 
 /*
  * Consult Metrics2 and CDevProc, and call setcachedevice[2].  Return

@@ -28,7 +28,6 @@
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
-
 #endif
 
 /*
@@ -47,12 +46,6 @@ typedef struct gs_image2_s {
     gx_path *UnpaintedPath;
     bool PixelCopy;
 } gs_image2_t;
-
-/* ImageType 2 images compute the source size differently. */
-#define image2_type_data\
-  gx_begin_image2, gx_image2_source_size, 2
-#define image2_enum_procs_data\
-  0/*num_planes*/, gx_no_image_plane_data, gx_ignore_end_image
 
 /*
  * Initialize an ImageType 2 image.  Defaults:

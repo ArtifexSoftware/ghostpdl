@@ -67,7 +67,7 @@ gs_fonts.ps gs_kanji.ps gs_lev2.ps gs_ll3.ps \
 gs_pfile.ps gs_res.ps gs_setpd.ps gs_statd.ps \
 gs_ttf.ps gs_typ32.ps gs_typ42.ps gs_type1.ps \
 gs_dbt_e.ps gs_iso_e.ps gs_ksb_e.ps gs_std_e.ps gs_sym_e.ps \
-acctest.ps align.ps bdftops.ps caption.ps decrypt.ps docie.ps \
+acctest.ps align.ps bdftops.ps caption.ps cid2code.ps decrypt.ps docie.ps \
 font2c.ps font2pcl.ps gslp.ps impath.ps landscap.ps level1.ps lines.ps \
 markhint.ps markpath.ps \
 packfile.ps pcharstr.ps pf2afm.ps ppath.ps prfont.ps printafm.ps \

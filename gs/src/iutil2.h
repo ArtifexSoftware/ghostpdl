@@ -25,11 +25,11 @@
 /* ------ Password utilities ------ */
 
 /* Define the password structure. */
-/* NOTE: max_password must match the initial password lengths in gs_lev2.ps. */
-#define max_password 64		/* must be at least 11 */
+/* NOTE: MAX_PASSWORD must match the initial password lengths in gs_lev2.ps. */
+#define MAX_PASSWORD 64		/* must be at least 11 */
 typedef struct password_s {
     uint size;
-    byte data[max_password];
+    byte data[MAX_PASSWORD];
 } password;
 
 # define NULL_PASSWORD {0, {0}}

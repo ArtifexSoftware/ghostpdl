@@ -1530,8 +1530,10 @@ oparray_cleanup(os_ptr op)
 
     if (ocount > ocount_old)
 	ref_stack_pop(&o_stack, ocount - ocount_old);
-    if (dcount > dcount_old)
+    if (dcount > dcount_old) {
 	ref_stack_pop(&d_stack, dcount - dcount_old);
+	dict_set_top();
+    }
     return 0;
 }
 

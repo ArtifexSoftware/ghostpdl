@@ -26,34 +26,33 @@
 #include "scanchar.h"
 #include "store.h"
 
-#define is_digit(d, c)\
-  ((d = decoder[c]) < 10)
+/*
+ * Warning: this file has a "spaghetti" control structure.  But since this
+ * code accounts for over 10% of the execution time of some PostScript
+ * files, this is one of the few places we feel this is justified.
+ */
 
-#define scan_sign(sign, ptr)\
-  switch ( *ptr ) {\
-    case '-': sign = -1; ptr++; break;\
-    case '+': sign = 1; ptr++; break;\
-    default: sign = 0;\
-  }
-
-/* Note that the number scanning procedures use a byte ** and a byte * */
-/* rather than a stream.  (It makes quite a difference in performance.) */
-#define ngetc(cvar, sp, exit)\
-  if ( sp >= end ) { exit; } else cvar = *sp++
-
-/* Scan a number.  If the number consumes the entire string, return 0; */
-/* if not, set *psp to the first character beyond the number and return 1. */
+/*
+ * Scan a number.  If the number consumes the entire string, return 0;
+ * if not, set *psp to the first character beyond the number and return 1.
+ */
 int
-scan_number(const byte * sp, const byte * end, int sign,
+scan_number(const byte * str, const byte * end, int sign,
 	    ref * pref, const byte ** psp)
-{				/* Powers of 10 up to 6 can be represented accurately as */
-    /* a single-precision float. */
-#define num_powers_10 6
-    static const float powers_10[num_powers_10 + 1] =
+{
+    const byte *sp = str;
+#define GET_NEXT(cvar, sp, end_action)\
+  if ( sp >= end ) { end_action; } else cvar = *sp++
+    /*
+     * Powers of 10 up to 6 can be represented accurately as
+     * a single-precision float.
+     */
+#define NUM_POWERS_10 6
+    static const float powers_10[NUM_POWERS_10 + 1] =
     {
 	1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6
     };
-    static const double neg_powers_10[num_powers_10 + 1] =
+    static const double neg_powers_10[NUM_POWERS_10 + 1] =
     {
 	1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6
     };
@@ -64,16 +63,18 @@ scan_number(const byte * sp, const byte * end, int sign,
     int code = 0;
     int c, d;
     const byte *const decoder = scan_char_decoder;
+#define IS_DIGIT(d, c)\
+  ((d = decoder[c]) < 10)
 
-    ngetc(c, sp, return_error(e_syntaxerror));
-#define would_overflow(val, d, maxv)\
+    GET_NEXT(c, sp, return_error(e_syntaxerror));
+#define WOULD_OVERFLOW(val, d, maxv)\
   (val >= maxv / 10 && (val > maxv / 10 || d > (int)(maxv % 10)))
-    if (!is_digit(d, c)) {
+    if (!IS_DIGIT(d, c)) {
 	if (c != '.')
 	    return_error(e_syntaxerror);
 	/* Might be a number starting with '.'. */
-	ngetc(c, sp, return_error(e_syntaxerror));
-	if (!is_digit(d, c))
+	GET_NEXT(c, sp, return_error(e_syntaxerror));
+	if (!IS_DIGIT(d, c))
 	    return_error(e_syntaxerror);
 	ival = 0;
 	goto i2r;
@@ -84,32 +85,32 @@ scan_number(const byte * sp, const byte * end, int sign,
     /* most numbers have 4 (integer) digits or fewer. */
     ival = d;
     if (end - sp >= 3) {	/* just check once */
-	if (!is_digit(d, (c = *sp))) {
+	if (!IS_DIGIT(d, (c = *sp))) {
 	    sp++;
 	    goto ind;
 	}
 	ival = ival * 10 + d;
-	if (!is_digit(d, (c = sp[1]))) {
+	if (!IS_DIGIT(d, (c = sp[1]))) {
 	    sp += 2;
 	    goto ind;
 	}
 	ival = ival * 10 + d;
 	sp += 3;
-	if (!is_digit(d, (c = sp[-1])))
+	if (!IS_DIGIT(d, (c = sp[-1])))
 	    goto ind;
 	ival = ival * 10 + d;
     }
     for (;; ival = ival * 10 + d) {
-	ngetc(c, sp, goto iret);
-	if (!is_digit(d, c))
+	GET_NEXT(c, sp, goto iret);
+	if (!IS_DIGIT(d, c))
 	    break;
-	if (would_overflow(ival, d, max_int))
+	if (WOULD_OVERFLOW(ival, d, max_int))
 	    goto i2l;
     }
   ind:				/* We saw a non-digit while accumulating an integer in ival. */
     switch (c) {
 	case '.':
-	    ngetc(c, sp, c = EOFC);
+	    GET_NEXT(c, sp, c = EOFC);
 	    goto i2r;
 	default:
 	    *psp = sp;
@@ -124,9 +125,9 @@ scan_number(const byte * sp, const byte * end, int sign,
 	    goto fe;
 	case '#':
 	    {
+		const uint radix = (uint)ival;
 		ulong uval = 0, lmax;
 
-#define radix (uint)ival
 		if (sign || radix < min_radix || radix > max_radix)
 		    return_error(e_syntaxerror);
 		/* Avoid multiplies for power-of-2 radix. */
@@ -134,29 +135,26 @@ scan_number(const byte * sp, const byte * end, int sign,
 		    int shift;
 
 		    switch (radix) {
-#define set_shift(n)\
-  shift = n; lmax = max_ulong >> n
 			case 2:
-			    set_shift(1);
+			    shift = 1, lmax = max_ulong >> 1;
 			    break;
 			case 4:
-			    set_shift(2);
+			    shift = 2, lmax = max_ulong >> 2;
 			    break;
 			case 8:
-			    set_shift(3);
+			    shift = 3, lmax = max_ulong >> 3;
 			    break;
 			case 16:
-			    set_shift(4);
+			    shift = 4, lmax = max_ulong >> 4;
 			    break;
 			case 32:
-			    set_shift(5);
+			    shift = 5, lmax = max_ulong >> 5;
 			    break;
-#undef set_shift
 			default:	/* can't happen */
 			    return_error(e_rangecheck);
 		    }
 		    for (;; uval = (uval << shift) + d) {
-			ngetc(c, sp, break);
+			GET_NEXT(c, sp, break);
 			d = decoder[c];
 			if (d >= radix) {
 			    *psp = sp;
@@ -171,7 +169,7 @@ scan_number(const byte * sp, const byte * end, int sign,
 
 		    lmax = max_ulong / radix;
 		    for (;; uval = uval * radix + d) {
-			ngetc(c, sp, break);
+			GET_NEXT(c, sp, break);
 			d = decoder[c];
 			if (d >= radix) {
 			    *psp = sp;
@@ -184,27 +182,29 @@ scan_number(const byte * sp, const byte * end, int sign,
 			    return_error(e_limitcheck);
 		    }
 		}
-#undef radix
 		make_int_new(pref, uval);
 		return code;
 	    }
     }
-  iret:make_int_new(pref, (sign < 0 ? -ival : ival));
+iret:
+    make_int_new(pref, (sign < 0 ? -ival : ival));
     return code;
 
     /* Accumulate a long in lval. */
-  i2l:for (lval = ival;;) {
-	if (would_overflow(lval, d, max_long)) {	/* Make a special check for entering the smallest */
+i2l:
+    for (lval = ival;;) {
+	if (WOULD_OVERFLOW(lval, d, max_long)) {
+	    /* Make a special check for entering the smallest */
 	    /* (most negative) integer. */
 	    if (lval == max_long / 10 &&
 		d == (int)(max_long % 10) + 1 && sign < 0
 		) {
-		ngetc(c, sp, c = EOFC);
+		GET_NEXT(c, sp, c = EOFC);
 		dval = -(double)min_long;
 		if (c == 'e' || c == 'E' || c == '.') {
 		    exp10 = 0;
 		    goto fs;
-		} else if (!is_digit(d, c)) {
+		} else if (!IS_DIGIT(d, c)) {
 		    lval = min_long;
 		    break;
 		}
@@ -213,13 +213,13 @@ scan_number(const byte * sp, const byte * end, int sign,
 	    goto l2d;
 	}
 	lval = lval * 10 + d;
-	ngetc(c, sp, goto lret);
-	if (!is_digit(d, c))
+	GET_NEXT(c, sp, goto lret);
+	if (!IS_DIGIT(d, c))
 	    break;
     }
     switch (c) {
 	case '.':
-	    ngetc(c, sp, c = EOFC);
+	    GET_NEXT(c, sp, c = EOFC);
 	    exp10 = 0;
 	    goto l2r;
 	default:
@@ -233,20 +233,22 @@ scan_number(const byte * sp, const byte * end, int sign,
 	case '#':
 	    return_error(e_syntaxerror);
     }
-  lret:make_int_new(pref, (sign < 0 ? -lval : lval));
+lret:
+    make_int_new(pref, (sign < 0 ? -lval : lval));
     return code;
 
     /* Accumulate a double in dval. */
-  l2d:exp10 = 0;
+l2d:
+    exp10 = 0;
     for (;;) {
 	dval = dval * 10 + d;
-	ngetc(c, sp, c = EOFC);
-	if (!is_digit(d, c))
+	GET_NEXT(c, sp, c = EOFC);
+	if (!IS_DIGIT(d, c))
 	    break;
     }
     switch (c) {
 	case '.':
-	    ngetc(c, sp, c = EOFC);
+	    GET_NEXT(c, sp, c = EOFC);
 	    exp10 = 0;
 	    goto fs;
 	default:
@@ -266,20 +268,21 @@ scan_number(const byte * sp, const byte * end, int sign,
     }
 
     /* We saw a '.' while accumulating an integer in ival. */
-  i2r:exp10 = 0;
-    while (is_digit(d, c)) {
-	if (would_overflow(ival, d, max_int)) {
+i2r:
+    exp10 = 0;
+    while (IS_DIGIT(d, c)) {
+	if (WOULD_OVERFLOW(ival, d, max_int)) {
 	    lval = ival;
 	    goto l2r;
 	}
 	ival = ival * 10 + d;
 	exp10--;
-	ngetc(c, sp, c = EOFC);
+	GET_NEXT(c, sp, c = EOFC);
     }
     if (sign < 0)
 	ival = -ival;
     /* Take a shortcut for the common case */
-    if (!(c == 'e' || c == 'E' || exp10 < -num_powers_10)) {	/* Check for trailing garbage */
+    if (!(c == 'e' || c == 'E' || exp10 < -NUM_POWERS_10)) {	/* Check for trailing garbage */
 	if (c != EOFC)
 	    *psp = sp, code = 1;
 	make_real_new(pref, ival * neg_powers_10[-exp10]);
@@ -289,29 +292,34 @@ scan_number(const byte * sp, const byte * end, int sign,
     goto fe;
 
     /* We saw a '.' while accumulating a long in lval. */
-  l2r:while (is_digit(d, c)) {
-	if (would_overflow(lval, d, max_long)) {
+l2r:
+    while (IS_DIGIT(d, c)) {
+	if (WOULD_OVERFLOW(lval, d, max_long)) {
 	    dval = lval;
 	    goto fd;
 	}
 	lval = lval * 10 + d;
 	exp10--;
-	ngetc(c, sp, c = EOFC);
+	GET_NEXT(c, sp, c = EOFC);
     }
-  le:if (sign < 0)
+le:
+    if (sign < 0)
 	lval = -lval;
     dval = lval;
     goto fe;
 
     /* Now we are accumulating a double in dval. */
-  fd:while (is_digit(d, c)) {
+fd:
+    while (IS_DIGIT(d, c)) {
 	dval = dval * 10 + d;
 	exp10--;
-	ngetc(c, sp, c = EOFC);
+	GET_NEXT(c, sp, c = EOFC);
     }
-  fs:if (sign < 0)
+fs:
+    if (sign < 0)
 	dval = -dval;
-  fe:				/* Now dval contains the value, negated if necessary. */
+fe:
+    /* Now dval contains the value, negated if necessary. */
     switch (c) {
 	case 'e':
 	case 'E':
@@ -319,20 +327,20 @@ scan_number(const byte * sp, const byte * end, int sign,
 		int esign = 0;
 		int iexp;
 
-		ngetc(c, sp, return_error(e_syntaxerror));
+		GET_NEXT(c, sp, return_error(e_syntaxerror));
 		switch (c) {
 		    case '-':
 			esign = 1;
 		    case '+':
-			ngetc(c, sp, return_error(e_syntaxerror));
+			GET_NEXT(c, sp, return_error(e_syntaxerror));
 		}
 		/* Scan the exponent.  We limit it arbitrarily to 999. */
-		if (!is_digit(d, c))
+		if (!IS_DIGIT(d, c))
 		    return_error(e_syntaxerror);
 		iexp = d;
 		for (;; iexp = iexp * 10 + d) {
-		    ngetc(c, sp, break);
-		    if (!is_digit(d, c)) {
+		    GET_NEXT(c, sp, break);
+		    if (!IS_DIGIT(d, c)) {
 			*psp = sp;
 			code = 1;
 			break;
@@ -354,15 +362,15 @@ scan_number(const byte * sp, const byte * end, int sign,
     }
     /* Compute dval * 10^exp10. */
     if (exp10 > 0) {
-	while (exp10 > num_powers_10)
-	    dval *= powers_10[num_powers_10],
-		exp10 -= num_powers_10;
+	while (exp10 > NUM_POWERS_10)
+	    dval *= powers_10[NUM_POWERS_10],
+		exp10 -= NUM_POWERS_10;
 	if (exp10 > 0)
 	    dval *= powers_10[exp10];
     } else if (exp10 < 0) {
-	while (exp10 < -num_powers_10)
-	    dval /= powers_10[num_powers_10],
-		exp10 += num_powers_10;
+	while (exp10 < -NUM_POWERS_10)
+	    dval /= powers_10[NUM_POWERS_10],
+		exp10 += NUM_POWERS_10;
 	if (exp10 < 0)
 	    dval /= powers_10[-exp10];
     }
@@ -378,6 +386,7 @@ scan_number(const byte * sp, const byte * end, int sign,
 	if (dval < -MAX_FLOAT)
 	    return_error(e_limitcheck);
     }
-  rret:make_real_new(pref, dval);
+rret:
+    make_real_new(pref, dval);
     return code;
 }

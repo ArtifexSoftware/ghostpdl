@@ -40,25 +40,37 @@
 /* ------ Private code ------ */
 
 /* Forward references */
-private int huge cfont_ref_from_string(P3(ref *, const char *, uint));
+private int cfont_ref_from_string(P3(ref *, const char *, uint));
 
 typedef struct {
     const char *str_array;
     ref next;
 } str_enum;
 
-#define init_str_enum(sep, ksa)\
-  (sep)->str_array = ksa
+inline private void
+init_str_enum(str_enum *pse, const char *ksa)
+{
+    pse->str_array = ksa;
+}
+
 typedef struct {
     cfont_dict_keys keys;
     str_enum strings;
 } key_enum;
 
-#define init_key_enum(kep, kp, ksa)\
-  (kep)->keys = *kp, init_str_enum(&(kep)->strings, ksa)
+inline private void
+init_key_enum(key_enum *pke, const cfont_dict_keys *pkeys, const char *ksa)
+{
+    pke->keys = *pkeys;
+    init_str_enum(&pke->strings, ksa);
+}
 
 /* Check for reaching the end of the keys. */
-#define more_keys(kep) ((kep)->keys.num_enc_keys | (kep)->keys.num_str_keys)
+inline private bool
+more_keys(const key_enum *pke)
+{
+    return (pke->keys.num_enc_keys | pke->keys.num_str_keys);
+}
 
 /* Get the next string from a string array. */
 /* Return 1 if it was a string, 0 if it was something else, */
@@ -77,8 +89,7 @@ cfont_next_string(str_enum * pse)
 	int code;
 
 	len = ((len & 0xff) << 8) + str[2];
-	code = cfont_ref_from_string(&pse->next,
-				     (const char *)str + 3, len);
+	code = cfont_ref_from_string(&pse->next, (const char *)str + 3, len);
 	if (code < 0)
 	    return code;
 	pse->str_array = str + 3 + len;
@@ -94,19 +105,22 @@ cfont_next_string(str_enum * pse)
 private int
 cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
 {
+    cfont_dict_keys * const kp = &kep->keys;
     ref kname;
     int code;
 
-#define kp (&kep->keys)
-    if (pdict->value.pdict == 0) {	/* First time, create the dictionary. */
-	code = dict_create(kp->num_enc_keys + kp->num_str_keys + kp->extra_slots, pdict);
+    if (pdict->value.pdict == 0) {
+	/* First time, create the dictionary. */
+	code = dict_create(kp->num_enc_keys + kp->num_str_keys +
+			   kp->extra_slots, pdict);
 	if (code < 0)
 	    return code;
     }
     if (kp->num_enc_keys) {
 	const charindex *skp = kp->enc_keys++;
 
-	code = array_get(&registered_Encoding(skp->encx), (long)(skp->charx), &kname);
+	code = array_get(&registered_Encoding(skp->encx), (long)(skp->charx),
+			 &kname);
 	kp->num_enc_keys--;
     } else {			/* must have kp->num_str_keys != 0 */
 	code = cfont_next_string(&kep->strings);
@@ -119,13 +133,12 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
     if (code < 0)
 	return code;
     return dict_put(pdict, &kname, pvalue);
-#undef kp
 }
 
 /* ------ Routines called from compiled font initialization ------ */
 
 /* Create a dictionary with general ref values. */
-private int huge
+private int
 cfont_ref_dict_create(ref * pdict, const cfont_dict_keys * kp,
 		      cfont_string_array ksa, const ref * values)
 {
@@ -145,7 +158,7 @@ cfont_ref_dict_create(ref * pdict, const cfont_dict_keys * kp,
 }
 
 /* Create a dictionary with string/null values. */
-private int huge
+private int
 cfont_string_dict_create(ref * pdict, const cfont_dict_keys * kp,
 			 cfont_string_array ksa, cfont_string_array kva)
 {
@@ -175,9 +188,10 @@ cfont_string_dict_create(ref * pdict, const cfont_dict_keys * kp,
 }
 
 /* Create a dictionary with number values. */
-private int huge
+private int
 cfont_num_dict_create(ref * pdict, const cfont_dict_keys * kp,
-	    cfont_string_array ksa, const ref * values, const char *lengths)
+		      cfont_string_array ksa, const ref * values,
+		      const char *lengths)
 {
     key_enum kenum;
     const ref *vp = values;
@@ -205,7 +219,7 @@ cfont_num_dict_create(ref * pdict, const cfont_dict_keys * kp,
 }
 
 /* Create an array with name values. */
-private int huge
+private int
 cfont_name_array_create(ref * parray, cfont_string_array ksa, int size)
 {
     int code = ialloc_ref_array(parray, a_readonly, size,
@@ -233,7 +247,7 @@ cfont_name_array_create(ref * parray, cfont_string_array ksa, int size)
 }
 
 /* Create an array with string/null values. */
-private int huge
+private int
 cfont_string_array_create(ref * parray, cfont_string_array ksa,
 			  int size, uint attrs)
 {
@@ -264,14 +278,14 @@ cfont_string_array_create(ref * parray, cfont_string_array ksa,
 }
 
 /* Create a name. */
-private int huge
+private int
 cfont_name_create(ref * pnref, const char *str)
 {
     return name_ref((const byte *)str, strlen(str), pnref, 0);
 }
 
 /* Create an object by parsing a string. */
-private int huge
+private int
 cfont_ref_from_string(ref * pref, const char *str, uint len)
 {
     scanner_state sstate;

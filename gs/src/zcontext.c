@@ -207,9 +207,6 @@ context_store(gs_scheduler_t *psched, gs_context *pctx)
         context_usertime() - psched->usertime_initial;
 }
 
-#define check_context(op, vpc)\
-  if ( (code = context_param(the_gs_scheduler, op, &vpc)) < 0 ) return code
-
 /* List manipulation */
 private void
 add_last(ctx_list *pl, gs_context *pc)
@@ -362,10 +359,12 @@ zcurrentcontext(register os_ptr op)
 private int
 zdetach(register os_ptr op)
 {
+    const gs_scheduler_t *psched = the_gs_scheduler;
     gs_context *pctx;
     int code;
 
-    check_context(op, pctx);
+    if ((code = context_param(psched, op, &pctx)) < 0)
+	return code;
     if_debug2('\'', "[']detach %ld, status = %d\n",
 	      pctx->index, pctx->status);
     if (pctx->joiner != 0 || pctx->detach)
@@ -673,7 +672,8 @@ zjoin(register os_ptr op)
     gs_context *pctx;
     int code;
 
-    check_context(op, pctx);
+    if ((code = context_param(psched, op, &pctx)) < 0)
+	return code;
     if_debug2('\'', "[']join %ld, status = %d\n",
 	      pctx->index, pctx->status);
     /*
@@ -728,7 +728,8 @@ finish_join(os_ptr op)
     gs_context *pctx;
     int code;
 
-    check_context(op, pctx);
+    if ((code = context_param(psched, op, &pctx)) < 0)
+	return code;
     if_debug2('\'', "[']finish_join %ld, status = %d\n",
 	      pctx->index, pctx->status);
     if (pctx->joiner != psched->current)

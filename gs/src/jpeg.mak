@@ -84,7 +84,7 @@ JCC=$(CC_) $(I_)$(GLGENDIR) $(II)$(JI_)$(_I) $(JF_)
 # to express indirect dependencies; instead, we build the dependencies
 # into the rules for copying the files.
 # Note: jerror_h and jpeglib_h are defined in lib.mak.
-jconfig_h=$(GLGEN)jconfig.h
+jconfig_h=$(GLGEN)jconfig.h $(GLGEN)arch.h
 #jerror_h=$(JSRC)jerror.h
 jmorecfg_h=$(GLGEN)jmorecfg.h
 #jpeglib_h=$(GLGEN)jpeglib.h

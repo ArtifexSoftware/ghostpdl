@@ -234,7 +234,7 @@ ifelse def
       nseg2 add /idroff etab 2 index nseg2 getinterval def
 		% The following hack allows us to properly handle
 		% idiosyncratic fonts that start at 0xf000:
-      /firstcode startc 0 getu16 dup 16#ff00 and 16#f000 ne { pop 0 } if def
+      /firstcode startc 0 getu16 16#ff00 and dup 16#f000 ne { pop 0 } if def
       pop /numcodes counttomark 1 sub def
       0 2 nseg2 3 sub
        { /i2 exch def
@@ -252,18 +252,16 @@ ifelse def
 	   ( delta=) print delta =only
 	   ( droff=) print idroff i2 getu16 =
 	 } if
-	 idroff i2 getu16 dup 0 eq
-	  { pop scode 1 ecode { delta add 65535 and } for
-	  }
-	  {     % The +2 is for the 'reserved pad'.
-	    /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
-	    0 1 ecode scode sub
-	     { 2 mul gloff add etab exch getu16
-	       dup 0 ne { delta add 65535 and } if
-	     }
-	    for
-	  }
-	 ifelse
+	 idroff i2 getu16 dup 0 eq {
+	   pop scode delta add 65535 and 1 ecode delta add 65535 and { } for
+	 }
+	 {     % The +2 is for the 'reserved pad'.
+	   /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
+	   0 1 ecode scode sub {
+	     2 mul gloff add etab exch getu16
+	     dup 0 ne { delta add 65535 and } if
+	   } for
+	 } ifelse
        }
       for
     } bind
@@ -635,10 +633,11 @@ ifelse def
 % Create a string with N CIDs from the top of the stack.
 % <cid1> ... <cidN> <N> .makecidmap <string>
 /.makecidmap {
-  dup 2 mul string exch 1 sub 2 mul -2 0 {
-		% Stack: cids str i2
-    2 copy 5 -1 roll putu16 pop
-  } for
+  dup 2 mul string dup 3 -1 roll 1 sub 2 mul -2 0 {
+		% Stack: cids str str i2
+    2 copy 5 index -8 bitshift put
+    1 add 4 -1 roll 16#ff and put dup
+  } for pop
 } bind def
 
 % -mark- <key> <value> ... .definettcidfont <font>

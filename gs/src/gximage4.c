@@ -33,10 +33,10 @@ private image_enum_proc_end_image(gx_image4_end_image);
 
 /* Define the image type for ImageType 4 images. */
 private const gx_image_type_t image4_type = {
-    image4_type_data
+    gx_begin_image4, gx_data_image_source_size, 4
 };
 private const gx_image_enum_procs_t image4_enum_procs = {
-    image4_enum_procs_data
+    gx_image4_plane_data, gx_image4_end_image
 };
 
 /* Initialize an ImageType 4 image. */

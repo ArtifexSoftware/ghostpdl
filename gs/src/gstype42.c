@@ -81,9 +81,9 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 	access(pfont->data.loca + glyph_index * 4 + 4, 4, ploca);
 	glyph_length = u32(ploca) - glyph_start;
     } else {
-	access(pfont->data.loca + glyph_index * 2, 4, ploca);
+	access(pfont->data.loca + glyph_index * 2, 2, ploca);
 	glyph_start = (ulong) u16(ploca) << 1;
-	access(pfont->data.loca + glyph_index * 2 + 2, 4, ploca);
+	access(pfont->data.loca + glyph_index * 2 + 2, 2, ploca);
 	glyph_length = ((ulong) u16(ploca) << 1) - glyph_start;
     }
     pglyph->size = glyph_length;

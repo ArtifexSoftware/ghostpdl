@@ -37,8 +37,9 @@ private dev_proc_begin_typed_image(gx_begin_image2);
 private image_proc_source_size(gx_image2_source_size);
 
 /* Define the image type for ImageType 2 images. */
-private const gx_image_type_t image2_type =
-{image2_type_data};
+private const gx_image_type_t image2_type = {
+    gx_begin_image2, gx_image2_source_size, 2
+};
 
 /* Initialize an ImageType 2 image. */
 void

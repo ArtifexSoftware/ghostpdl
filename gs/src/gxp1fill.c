@@ -32,19 +32,6 @@
 #include "gxpcolor.h"
 #include "gxp1fill.h"
 
-/*
- * If DISREGARD_PHASE is defined, the filling procedures below disregard the
- * phase in the color.  We don't see how this can possibly work, but
- * according to a comment in the NEWS for release 5.02, it does work, and if
- * we do take the phase into account, we get incorrect output.
- */
-#define DISREGARD_PHASE
-#ifdef DISREGARD_PHASE
-#  define PHASE_VALUE(v) 0
-#else
-#  define PHASE_VALUE(v) (v)
-#endif
-
 /* Define the state for tile filling. */
 typedef struct tile_fill_state_s {
 
@@ -112,12 +99,6 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
     ptfs->x0 = x0, ptfs->w0 = w0;
     ptfs->y0 = y0, ptfs->h0 = h0;
     step_matrix = ptile->step_matrix;
-#ifndef DISREGARD_PHASE
-    if_debug2('T', "[T]phase=(%d,%d)\n",
-	      ptfs->pdevc->mask.m_phase.x, ptfs->pdevc->mask.m_phase.y);
-    step_matrix.tx -= ptfs->pdevc->mask.m_phase.x;
-    step_matrix.ty -= ptfs->pdevc->mask.m_phase.y;
-#endif
     {
 	gs_rect bbox;		/* bounding box in device space */
 	gs_rect ibbox;		/* bounding box in stepping space */
@@ -247,12 +228,8 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     if (code < 0)
 	return code;
     if (ptile->is_simple) {
-	int px = imod(-(int)(ptile->step_matrix.tx + 0.5) +
-		      PHASE_VALUE(pdevc->mask.m_phase.x),
-		      bits->rep_width);
-	int py = imod(-(int)(ptile->step_matrix.ty + 0.5) +
-		      PHASE_VALUE(pdevc->mask.m_phase.y),
-		      bits->rep_height);
+	int px = imod(-(int)(ptile->step_matrix.tx + 0.5), bits->rep_width);
+	int py = imod(-(int)(ptile->step_matrix.ty + 0.5), bits->rep_height);
 
 	if (state.pcdev != dev)
 	    tile_clip_set_phase(&state.cdev, px, py);
@@ -313,9 +290,21 @@ gx_dc_pure_masked_fill_rect(const gx_device_color * pdevc,
     tile_fill_state_t state;
     int code;
 
+    /*
+     * This routine should never be called if there is no masking,
+     * but we leave the checks below just in case.
+     */
     code = tile_fill_init(&state, pdevc, dev);
     if (code < 0)
 	return code;
+    if (state.pcdev != dev) {
+	int px = imod(-(int)(ptile->step_matrix.tx + 0.5),
+		      ptile->tmask.rep_width);
+	int py = imod(-(int)(ptile->step_matrix.ty + 0.5),
+		      ptile->tmask.rep_height);
+
+	tile_clip_set_phase(&state.cdev, px, py);
+    }
     if (state.pcdev == dev || ptile->is_simple)
 	return (*gx_dc_type_data_pure.fill_rectangle)
 	    (pdevc, x, y, w, h, state.pcdev, lop, source);

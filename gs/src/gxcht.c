@@ -310,18 +310,39 @@ set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
     gx_color_value v[2][4];
     gx_color_value max_color = dev->color_info.dither_colors - 1;
     int plane_mask = 0;
+    /*
+     * NB: the halftone orders are all set up for an additive color space.
+     *     To use these work with a cmyk color space, it is necessary to
+     *     invert both the color level and the color pair. Note that if the
+     *     original color was provided an additive space, this will reverse
+     *     (in an approximate sense) the color conversion performed to
+     *     express the color in cmyk space.
+     */
+    bool invert = dev->color_info.num_components == 4;  /****** HACK ******/
 
 #define set_plane_color(i)\
-{	uint q = pdc->colors.colored.c_base[i];\
-	uint r = pdc->colors.colored.c_level[i];\
-	v[0][i] = fractional_color(q, max_color);\
-	if ( r == 0 )\
-	  v[1][i] = v[0][i], sbits[i] = &ht_no_bitmap;\
-	else\
-	  v[1][i] = fractional_color(q+1, max_color),\
-	  sbits[i] = &gx_render_ht(caches[i], r)->tiles,\
-	  plane_mask |= 1 << (i);\
-}
+  BEGIN\
+    uint q = pdc->colors.colored.c_base[i];\
+    uint r = pdc->colors.colored.c_level[i];\
+\
+    v[0][i] = fractional_color(q, max_color);\
+    if (r == 0)\
+	v[1][i] = v[0][i], sbits[i] = &ht_no_bitmap;\
+    else if (!invert) {\
+	v[1][i] = fractional_color(q + 1, max_color);\
+	sbits[i] = &gx_render_ht(caches[i], r)->tiles;\
+	plane_mask |= 1 << (i);\
+    } else {                                                        \
+	const gx_device_halftone *  pdht = pdc->colors.colored.c_ht;\
+	int                         nlevels = 0;                    \
+                                                                    \
+	nlevels = pdht->components[pdht->color_indices[i]].corder.num_levels;\
+	v[1][i] = v[0][i];                                          \
+	v[0][i] = fractional_color(q + 1, max_color);               \
+	sbits[i] = &gx_render_ht(caches[i], nlevels - r)->tiles;    \
+	plane_mask |= 1 << (i);                                     \
+    }\
+  END
 #define map8(m) m(0), m(1), m(2), m(3), m(4), m(5), m(6), m(7)
     set_plane_color(0);
     set_plane_color(1);

@@ -29,6 +29,146 @@ Procedures, Utilities, Drivers, Platforms, Fonts, Interpreter, Streams
 (included under Interpreter through release 2.9.9), Library.  Changes marked
 with a * were made available as patches to a previous release.
 
+Version 5.37(beta) (8/31/98)
+============================
+
+Documentation
+-------------
+
+Mentions the new cid2code utility in the documentation.  (psfiles.txt)
+
+Documents dpsnext.dev.  (gs.mak)
+
+Notes that clients of ImageType 3 images are responsible for providing the
+mask data before the pixel data.  (gsiparm3.h)
+
+Procedures
+----------
+
+Fixes problems:
+	- The makefiles were missing a dependency of jconfig.h on arch.h.
+With this fix, parallel builds (make -jN) work reliably.  (jpeg.mak)
+
+Utilities
+---------
+
+Adds a utility for creating maps from CIDs to Unicode.  (unixinst.mak,
+cid2code.ps)
+
+Drivers
+-------
+
+Removes the %Fax% IODevice code, since it was only a skeleton and Adobe no
+longer supports this facility.  (devs.mak, gdevpfax.c [deleted])
+
+Fonts
+-----
+
+Fixes problems:
+	- TrueType fonts whose first code wasn't 0 or 0xf000 didn't display
+correctly.  (bug introduced in 5.36) (gs_ttf.ps)
+	- CIDFontType 0 fonts didn't handle being redefined with another
+name.  (gs_cidfn.ps)
+	- CIDFontType 0 fonts could get local-into-global-store errors.
+(gs_cidfn.ps)
+	- PDF files couldn't use already-defined CMap resources.
+(pdf_font.ps)
+	- Out-of-range CIDs gave an error rather than using a notdef
+character.  (gs_cidfn.ps)
+
+Interpreter
+-----------
+
+Fixes problems:
+	- CIDFontType 4 fonts weren't recognized as CID-keyed.  (zchar2.c,
+zchar32.c, zfont32.c)
+	- When recovering from an error in an operator procedure, the
+interpreter didn't update the dictionary stack caches.  (interp.c)
+	- The reader side of overlapped band devices was confused about its
+open/closed status.  (gdevprna.c)
+	- startjob didn't reinitialize the stacks or VM space.  (gs_lev2.ps)
+	- Encoding filters with a Predictor always caused an error.
+(zfilter2.c)
+	- currenttrapparams gave an error.  (gs_ll3.ps)
+	- settrapparams had no effect, and left the dictionary on the stack.
+(gs_ll3.ps)
+
+Finishes implementing Type 32 fonts.  These fonts don't actually work
+directly with the cache -- they store the bitmaps in a compressed form in an
+ordinary Dictionary -- but they do behave the way they are specified.
+(gs_typ32.ps, zchar32.c, zfont32.c)
+
+Cleans up formatting and macros in a few more files.  (ccfont.h, icharout.h,
+icstate.h, iutil.h, iutil2.h, ibnum.c, iccfont.c, iccinit0.c, ilocate.c,
+isave.h, isave.c, iscannum.c, iutil.c, iutil2.c)
+
+Removes or capitalizes a few more macros.  (zcontext.c, zcssepr.c,
+zusparam.c)
+
+Interpreter (PDF)
+-----------------
+
+Fixes problems:
+	- Color spaces with subsidiary spaces (Indexed, Separation, DeviceN)
+sometimes didn't work properly, because they were translated to PostScript
+structures more than once.  (pdf_draw.ps)
+	- Type 3 fonts didn't rebind the resource context when executing the
+CharProc procedure.  (pdf_font.ps)
+
+Streams
+-------
+
+Fixes problems:
+	- The CCITTFax decoder signaled an error if it saw an EOB with
+EndOfBlock = false.  (According to e-mail from Adobe, EOBs should be
+recognized even if EndOfBlock is false, even though the Red Book implies the
+opposite.)  (scfd.c)
+
+Cleans up macros and formatting in a few more files.  (slzwce.c, sfxfd.c,
+sfxstdio.c)
+
+Library
+-------
+
+Fixes problems:
+	- Landscape color images usually didn't display.  (bug introduced in
+5.32)  (gxicolor.c)
+	- If gs_heap_free_object was called with ptr != 0 but bp = 0 (which
+is an error), an invalid memory access would occur.  (gsmalloc.c)
+	- The left side bearing was still being added in a second time for
+the accent of a seac.  (bug probably introduced in 5.20)  (gxtype1.c)
+	- An access error occurred when rendering the very last glyph of a
+TrueType font with a 2-byte loca table.  (gstype42.c)
+	- In the fast portrait case of monochrome images, a numerical error
+sometimes produced a 1-bit-wide vertical stripe of an incorrect color at the
+right edge of the image.  (gxifast.c)
+	- ImageType 3 images with InterleaveType = 3 gave memory access
+errors.  (gximage3.c)
+	- Hit detection ignored any part of the aperture that had negative X
+or Y coordinates.  (gdevhit.c)
+	- The special color mapping device didn't copy all necessary values
+back from its target.  (gxdevice.h, gdevbbox.c, gdevcmap.c, gsdevice.c)
+	- The special color mapping device didn't handle ordinary (Type 1)
+images correctly.  (gdevcmap.c)
+	- CMYK halftones complemented both the color and the halftone level:
+this produced the right number of pixels turned on (only for linear spot
+functions or threshold arrays), but wasn't consistent with either the Adobe
+specification or the user's intentions.  (gxcht.c)
+	- The phase of mask Patterns wasn't always set correctly.
+(gxp1fill.c)
+
+Renames Type 32 fonts from ft_bitmap to ft_CID_bitmap.  (gxftype.h)
+
+Adds some more tracing for composite font decoding.  (gsfcmap.c)
+
+Adds some more tracing for images.  (gxiinit.c)
+
+Cleans up formatting and macros in a few more files.  (gxifast.c)
+
+Moves the image*_type_data and image*_enum_procs_data definitions from
+header files into more appropriate .c files.  (gsiparm2.h, gsiparm3.h,
+gsiparm4.h, gxiparam.h, gxiinit.c, gximage2.c, gximage3.c, gximage4.c)
+
 Version 5.36(beta) (8/25/98)
 ============================
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,7 +27,8 @@
 /* Copy refs from one place to another. */
 /* (If we are copying to the stack, we can just use memcpy.) */
 void refcpy_to_new(P3(ref * to, const ref * from, uint size));
-int refcpy_to_old(P5(ref * aref, uint index, const ref * from, uint size, client_name_t cname));
+int refcpy_to_old(P5(ref * aref, uint index, const ref * from, uint size,
+		     client_name_t cname));
 
 /* Fill an array with nulls. */
 void refset_null(P2(ref * to, uint size));
@@ -49,9 +50,9 @@ bool obj_ident_eq(P2(const ref *, const ref *));
  */
 int obj_cvp(P6(const ref * op, byte * str, uint len, uint * prlen,
 	       const byte ** pchars, bool full_print));
-
-#define obj_cvs(op, str, len, prlen, pchars)\
-  obj_cvp(op, str, len, prlen, pchars, false)
+/* obj_cvs is equivalent to obj_cvp with full_print = false. */
+int obj_cvs(P5(const ref * op, byte * str, uint len, uint * prlen,
+	       const byte ** pchars));
 
 /* Get an element from an array (packed or not). */
 int array_get(P3(const ref *, long, ref *));
@@ -103,7 +104,6 @@ int make_floats(P3(ref *, const float *, int));
 #ifndef gs_matrix_DEFINED
 #  define gs_matrix_DEFINED
 typedef struct gs_matrix_s gs_matrix;
-
 #endif
 
 /* Read a matrix operand. */

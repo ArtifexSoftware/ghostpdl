@@ -27,13 +27,17 @@
 
 /* Forward references for file stream procedures */
 private int
-    s_file_available(P2(stream *, long *)), s_file_read_seek(P2(stream *, long)),
-     s_file_read_close(P1(stream *)), s_file_read_process(P4(stream_state *, stream_cursor_read *,
-					      stream_cursor_write *, bool));
+    s_file_available(P2(stream *, long *)),
+    s_file_read_seek(P2(stream *, long)),
+    s_file_read_close(P1(stream *)),
+    s_file_read_process(P4(stream_state *, stream_cursor_read *,
+			   stream_cursor_write *, bool));
 private int
-    s_file_write_seek(P2(stream *, long)), s_file_write_flush(P1(stream *)),
-     s_file_write_close(P1(stream *)), s_file_write_process(P4(stream_state *, stream_cursor_read *,
-					      stream_cursor_write *, bool));
+    s_file_write_seek(P2(stream *, long)),
+    s_file_write_flush(P1(stream *)),
+    s_file_write_close(P1(stream *)),
+    s_file_write_process(P4(stream_state *, stream_cursor_read *,
+			    stream_cursor_write *, bool));
 private int
     s_file_switch(P2(stream *, bool));
 
@@ -43,17 +47,15 @@ private int
 void
 sread_file(register stream * s, FILE * file, byte * buf, uint len)
 {
-    static const stream_procs p =
-    {s_file_available, s_file_read_seek, s_std_read_reset,
-     s_std_read_flush, s_file_read_close, s_file_read_process,
-     s_file_switch
+    static const stream_procs p = {
+	s_file_available, s_file_read_seek, s_std_read_reset,
+	s_std_read_flush, s_file_read_close, s_file_read_process,
+	s_file_switch
     };
-
     /*
-     * There is no really portable way to test seekability,
-     * but this should work on most systems.
-     * Note that if our probe sets the ferror bit for the stream,
-     * we have to clear it again to avoid trouble later.
+     * There is no really portable way to test seekability, but this should
+     * work on most systems.  Note that if our probe sets the ferror bit for
+     * the stream, we have to clear it again to avoid trouble later.
      */
     int had_error = ferror(file);
     long curpos = ftell(file);
@@ -96,7 +98,7 @@ s_file_read_seek(register stream * s, long pos)
     uint end = s->srlimit - s->cbuf + 1;
     long offset = pos - s->position;
 
-    if (offset >= 0 && offset <= end) {		/* Staying within the same buffer */
+    if (offset >= 0 && offset <= end) {  /* Staying within the same buffer */
 	s->srptr = s->cbuf + offset - 1;
 	return 0;
     }
@@ -123,10 +125,10 @@ s_file_read_close(stream * s)
 void
 swrite_file(register stream * s, FILE * file, byte * buf, uint len)
 {
-    static const stream_procs p =
-    {s_std_noavailable, s_file_write_seek, s_std_write_reset,
-     s_file_write_flush, s_file_write_close, s_file_write_process,
-     s_file_switch
+    static const stream_procs p = {
+	s_std_noavailable, s_file_write_seek, s_std_write_reset,
+	s_file_write_flush, s_file_write_close, s_file_write_process,
+	s_file_switch
     };
 
     s_std_init(s, buf, len, &p,
@@ -148,7 +150,8 @@ sappend_file(register stream * s, FILE * file, byte * buf, uint len)
 /* Procedures for writing on a file */
 private int
 s_file_write_seek(stream * s, long pos)
-{				/* We must flush the buffer to reposition. */
+{
+    /* We must flush the buffer to reposition. */
     int code = sflush(s);
 
     if (code < 0)
@@ -173,8 +176,10 @@ s_file_write_close(register stream * s)
     return s_file_read_close(s);
 }
 
-/* Process a buffer for a file reading stream. */
-/* This is the first stream in the pipeline, so pr is irrelevant. */
+/*
+ * Process a buffer for a file reading stream.
+ * This is the first stream in the pipeline, so pr is irrelevant.
+ */
 private int
 s_file_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
@@ -189,15 +194,20 @@ s_file_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     return (ferror(file) ? ERRC : feof(file) ? EOFC : 1);
 }
 
-/* Process a buffer for a file writing stream. */
-/* This is the last stream in the pipeline, so pw is irrelevant. */
+/*
+ * Process a buffer for a file writing stream.
+ * This is the last stream in the pipeline, so pw is irrelevant.
+ */
 private int
 s_file_write_process(stream_state * st, stream_cursor_read * pr,
 		     stream_cursor_write * ignore_pw, bool last)
-{				/* The DEC C library on AXP architectures gives an error on */
-    /* fwrite if the count is zero! */
+{
     uint count = pr->limit - pr->ptr;
 
+    /*
+     * The DEC C library on AXP architectures gives an error on
+     * fwrite if the count is zero!
+     */
     if (count != 0) {
 	FILE *file = ((stream *) st)->file;
 	int written = fwrite(pr->ptr + 1, 1, count, file);
