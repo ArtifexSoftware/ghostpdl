@@ -111,7 +111,7 @@
 </ul>
 <li><a href="#OpenWindows_fonts">Sun OpenWindows</a>
 </ul>
-<li><a href="#UFST_run">Appendix: Running Ghostscript with UFST</a>
+<li><a href="#FAPI_run">Appendix: Running Ghostscript with 3d party font renderers</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -2650,27 +2650,37 @@ Ghostscript.symbolFonts: \
 </pre>
 
 
-<h2><a name="UFST_run"></a>Running Ghostscript with UFST</h2>
+<h2><a name="FAPI_run"></a>Running Ghostscript with 3d party font renderers</h2>
 
 <p>
-<em>Note: This section is only for customers who have licensed Agfa's UFST.
-Other users please skip this section.
+Font API (FAPI) is a new feature which allows to attach 3d party font renderers to Ghostscript.
+This section explains how to run Ghostscript with 3d party font renderers,
+such as Agfa UFST or Free Type.
+
+<p>
+<em>Note: To run Ghostscript with Agfa UFST you need a license from Agfa.
+Please ignore issues about UFST if you haven't got it.
 </em>
 
 <p>
 <em>
-Important note: Third-party font renderers (such as UFST) are incompatible
+Important note: Third-party font renderers are incompatible
 with devices that can embed fonts in their output (such as pdfwrite),
 because such renderers store fonts in a form from which Ghostscript cannot
 get the necessary information for embedding.  Ghostscript disables such
-renderers when such devices is being used.  In particular, UFST is
+renderers when such device is being used.  In particular, UFST and Free Type are
 disabled while running Ghostscript with the <b><tt>pdfwrite</tt></b>
 device.
 </em>
 
 <p>
+To run Ghostscript with Free Type, you first need to build Ghostscript
+with the Free Type bridge. Refer <a href="Make.htm#FT_build">How to build Ghostscript with Free Type</a>.
+<p>
 To run Ghostscript with UFST, you first need to build Ghostscript
 with the UFST bridge. Refer <a href="Make.htm#UFST_build">How to build Ghostscript with UFST</a>.
+Both bridges may run together.
+<p>
 
 <p>
 Then you need to obtain the Decoding resources from Artifex Software Inc. and install them with Ghostscript.
@@ -2679,9 +2689,9 @@ Just copy the files to the <b><tt>Resource/Decoding</tt></b> directory (or to th
 
 
 <p>
-There are 2 ways to handle fonts with UFST. First, you can substitute
-any UFST-handled font to a Postscript font, using special map files.
-Second, you can redirect Postscript fonts to UFST, setting
+There are 2 ways to handle fonts with a 3d party font renderer (FAPI). First, you can substitute
+any FAPI-handled font to a Postscript font, using special map files.
+Second, you can redirect Postscript fonts to FAPI, setting
 entries in <b><tt>gs/lib/FAPIconfig</tt></b> file.
 
 <p>
@@ -2689,14 +2699,14 @@ The file <b><tt>gs/lib/FAPIfontmap</tt></b> defines a map table for FAPI-handled
 The format of <b><tt>gs/lib/FAPIfontmap</tt></b> is explained below.
 
 <p>
-Font files being handled with UFST may reside in any directory in your hard disk.
+Font files being handled with FAPI may reside in any directory in your hard disk.
 Paths to them to be specified in <b><tt>gs/lib/FAPIfontmap</tt></b>. The path may be either
 absolute or relative. Relative ones are being resolved from the path,
 which is specified in <b><tt>gs/lib/FAPIconfig</tt></b> file.
 
 <p>
 The file <b><tt>gs/lib/FAPIfontmap</tt></b> is actually special PostScript code.
-It contains records for each font being rendered by UFST.
+It contains records for each font being rendered with FAPI.
 Records must end with semicolon. Each record is a pair.
 The first element of the pair is the font name (the name that PostScript
 documents use to access the font, which may differ
@@ -2720,11 +2730,12 @@ The second element is a dictionary with entries :
 <tr>	<td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only AgfaUFST is now allowed.
+            Only <b><tt>AgfaUFST</tt></b> and <b><tt>FreeType</tt></b> are now allowed.
 <tr>	<td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
             It is being ignored if Path doesn't specify a collection.
+            Note that Free Type can't handle FCO.
             Default value is 0.
 <tr>	<td>Decoding
         <td>name
@@ -2746,7 +2757,7 @@ Font category. CID fonts to be listed in another map file.
 
 <p>
 The file <b><tt>gs/lib/FAPIcidfmap</tt></b> defines a mapping table for
-CIDFont resources. It contains records for each CID font being rendered by UFST.
+CIDFont resources. It contains records for each CID font being rendered with FAPI.
 The format is similar to <b><tt>gs/lib/FAPIfontmap</tt></b>,
 but dictionaries must contain few different entries :
 
@@ -2806,10 +2817,10 @@ The control file <b><tt>gs/lib/FAPIconfig</tt></b> defines 4 entries :
         <td>string
         <td>Absolute path to a directory, which contains fonts to substitute to CID fonts.
             Used to resolve relative paths in <b><tt>gs/lib/FAPIcidfmap</tt></b>.
-            It may be same or different than FontPath. 
+            It may be same or different than FontPath.
 <tr>	<td>HookDiskFonts
         <td>array of integers.
-        <td>List of PS font types to be handled with UFST.
+        <td>List of PS font types to be handled with FAPI.
             This controls other fonts that ones listed in <b><tt>gs/lib/FAPIfontmap</tt></b>
             and <b><tt>gs/lib/FAPIcidfmap</tt></b> - such ones are PS fonts installed to
             Ghostscript with <b><tt>gs/lib/fontmap</tt></b> or with <b><tt>GS_FONTPATH</tt></b>,
@@ -2819,7 +2830,7 @@ The control file <b><tt>gs/lib/FAPIconfig</tt></b> defines 4 entries :
             correspond to CIDFontType 0 and 2.
 <tr>	<td>HookEmbeddedFonts
         <td>array of integers.
-        <td>List of PS font types to be handled with UFST.
+        <td>List of PS font types to be handled with FAPI.
             This controls fonts being embedded into a document -
             either fonts or CID font resources. Unlisted font types will be
             rendered with the native Ghostscript font renderer.
@@ -2832,12 +2843,12 @@ The control file <b><tt>gs/lib/FAPIconfig</tt></b> defines 4 entries :
 You may need to customize the file <b><tt>gs/lib/xlatmap</tt></b>. Follow instructions in it.
 
 <p>
-Note that UFST cannot handle some Ghostscript fonts because
-UFST does not include a PostScript interpreter and therefore has stronger restrictions on
+Note that UFST and Free Type cannot handle some Ghostscript fonts because
+they does not include a PostScript interpreter and therefore has stronger restrictions on
 font formats than Ghostscript itself does.
 If their font types are listed in HookDiskFonts or in HookEmbeddedFonts,
 Ghostscript interpret them as PS files, then serializes font data into a RAM buffer and
-passes it to UFST as PCLEOs.
+passes it to FAPI as PCLEOs.
 
 <p>
 

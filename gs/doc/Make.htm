@@ -116,6 +116,7 @@
 <li><a href="#QNX">QNX</a>
 </ul>
 <li><a href="#UFST_build">How to build Ghostscript with UFST</a>
+<li><a href="#FT_build">How to build Ghostscript with Free Type</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -2767,10 +2768,53 @@ To build Ghostscript with UFST, specify additional options for "make":
 
 <p>An example for Unix/GCC :
 <blockquote>
-<tt>UFST_BRIDGE=1 UFST_ROOT=../Agfa UFST_CFLAG=-DGCCx86 UFST_LIB_EXT=.a</tt>
+<tt>UFST_BRIDGE=1 UFST_ROOT=../Agfa UFST_CFLAGS=-DGCCx86 UFST_LIB_EXT=.a</tt>
 </blockquote>
 
 <p>For Windows/MSVC you need only specify UFST_ROOT.
+msvc32.mak sets the other options automatically.
+
+<p>
+
+<h2><a name="FT_build"></a>How to build Ghostscript with Free Type</h2>
+
+<p>
+<em>Note: This section is only for users who wish to use Ghostscript with Free Type font renderer.
+Other users please skip this section.
+</em>
+
+<p>
+Ghostscript sources do not include Free Type sources. You need to obtain them from Free Type group.
+Ghostscript includes only some source modules that provide a bridge to Free Type.
+
+<p>
+Ghostscript makefiles do not include any script for building Free Type libraries.
+Refer to Free Type manual how to build them. Free Type object libraries must be built
+before building Ghostscript with the Free Type bridge.
+
+<p>
+To build Ghostscript with Free Type, specify additional options for "make":
+
+<dl>
+<dt><b><tt>FT_BRIDGE=1</tt></b>
+<dd>forces the Free Type bridge to build.
+
+<dt><b><tt>FT_ROOT=path</tt></b>
+<dd>specifies the path to Free Type root directory or folder.
+
+<dt><b><tt>FT_CFLAGS=options</tt></b>
+<dd>specifies C compiler options for Free Type library. Refer to Free Type manual for information about them.
+
+<dt><b><tt>FT_LIB_EXT=extension</tt></b>
+<dd>sets the file name extension for object libraries. You must use the appropriate one for your platform and linker.
+</dl>
+
+<p>An example for Unix/GCC :
+<blockquote>
+<tt>FT_BRIDGE=1 FT_ROOT=../FreeType FT_CFLAGS=-DGCCx86 FT_LIB_EXT=.a</tt>
+</blockquote>
+
+<p>For Windows/MSVC you need only specify FT_ROOT.
 msvc32.mak sets the other options automatically.
 
 <p>
