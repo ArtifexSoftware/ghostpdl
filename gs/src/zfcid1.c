@@ -317,6 +317,25 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <Decoding> <TT_cmap> <SubstNWP> <GDBytes> <CIDMap> .fillCIDMap - */
+private int
+zfillCIDMap(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref *Decoding = op - 4, *TT_cmap = op - 3, *SubstNWP = op - 2, 
+        *GDBytes = op - 1, *CIDMap = op;
+    int code;
+
+    check_type(*Decoding, t_dictionary);
+    check_type(*TT_cmap, t_array);
+    check_type(*SubstNWP, t_array);
+    check_type(*GDBytes, t_integer);
+    check_type(*CIDMap, t_array);
+    code = cid_fill_CIDMap(Decoding, TT_cmap, SubstNWP, GDBytes->value.intval, CIDMap);
+    pop(5);
+    return code;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfcid1_op_defs[] =
@@ -324,5 +343,6 @@ const op_def zfcid1_op_defs[] =
     {"2.buildfont10", zbuildfont10},
     {"2.buildfont11", zbuildfont11},
     {"2.type11mapcid", ztype11mapcid},
+    {"2.fillCIDMap", zfillCIDMap},
     op_def_end(0)
 };

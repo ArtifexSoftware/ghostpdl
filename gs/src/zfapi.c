@@ -41,6 +41,7 @@
 #include "idparam.h"
 #include "iname.h"
 #include "ifont.h"
+#include "icid.h"
 #include "igstate.h"
 #include "icharout.h"
 #include "ifapi.h"
@@ -1036,21 +1037,6 @@ private int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     return code;
 }
 
-private bool TT_char_code_from_CID(ref *Decoding, int nCID, FAPI_char_ref *cr)
-{   ref *DecodingArray, char_code, ih;
-
-    make_int(&ih, nCID / 256);
-    if (dict_find(Decoding, &ih, &DecodingArray) <= 0 || !r_has_type(DecodingArray, t_array) ||
-        array_get(DecodingArray, nCID % 256, &char_code) < 0 || !r_has_type(&char_code, t_integer)) {
-        cr->is_glyph_index = true;
-        cr->char_code = 0; /* .notdef */
-        return false;
-    } else {
-        cr->char_code = char_code.value.intval;
-        return true;
-    }
-}
-
 private ulong array_find(ref *Encoding, ref *char_name) {
     ulong n = r_size(Encoding), i;
     ref v;
@@ -1328,38 +1314,25 @@ retry_oversampling:
     /* Obtain the character code or glyph index : */
     if (bCID) {
         if (font_file_path != NULL) {
-            ref *Decoding, *SubstNWP;
+            ref *Decoding, *SubstNWP, src_type, dst_type;
             int SubstNWP_length, i;
+	    uint c;
+
             if (dict_find_string(pdr, "Decoding", &Decoding) <= 0 || !r_has_type(Decoding, t_dictionary))
                 return_error(e_invalidfont);
             if (dict_find_string(pdr, "SubstNWP", &SubstNWP) <= 0 || !r_has_type(SubstNWP, t_array))
                 return_error(e_invalidfont);
-            SubstNWP_length = r_size(SubstNWP);
-            if (!TT_char_code_from_CID(Decoding, client_char_code, &cr)) {
-                for (i = 0; i < SubstNWP_length; i += 5) {
-                    /* fixme : process the narrow/wide/proportional mapping type -
-                       need to adjust the 'matrix' above.
-                       Call get_font_proportional_feature for proper choice.
-                    */
-                    ref rb, re, rs;
-                    int nb, ne, ns;
-                    if ((code = array_get(SubstNWP, i + 1, &rb)) < 0)
-			return code;
-                    if ((code = array_get(SubstNWP, i + 2, &re)) < 0)
-			return code;
-                    if ((code = array_get(SubstNWP, i + 3, &rs)) < 0)
-			return code;
-                    nb = rb.value.intval;
-                    ne = re.value.intval;
-                    ns = rs.value.intval;
-                    if (client_char_code >= nb && client_char_code <= ne)
-                        if (TT_char_code_from_CID(Decoding, ns + (client_char_code - nb), &cr))
-                            break;
-                    if (client_char_code >= ns && client_char_code <= ns + (ne - nb))
-                        if (TT_char_code_from_CID(Decoding, nb + (client_char_code - ns), &cr))
-                            break;
-                }
-            }
+
+	    code = cid_to_TT_charcode(Decoding, NULL, SubstNWP, 
+				      client_char_code, &c, &src_type, &dst_type);
+	    if (code < 0)
+		return code;
+	    cr.char_code = c;
+	    cr.is_glyph_index = (code == 0);
+            /* fixme : process the narrow/wide/proportional mapping type,
+	       using src_type, dst_type. Should adjust the 'matrix' above.
+               Call get_font_proportional_feature for proper choice.
+            */
         } else
             cr.char_code = client_char_code;
     } else if (is_TT_from_type42) {

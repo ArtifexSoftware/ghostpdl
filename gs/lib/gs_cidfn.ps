@@ -68,8 +68,10 @@ dup 0 {
   dup /FontMatrix known not {
     dup /FontMatrix [0.001 0 0 0.001 0 0] put
     dup /FDArray get {
+       currentglobal exch dup gcheck setglobal
        dup /FontMatrix get [1000 0 0 1000 0 0] matrix concatmatrix
        /FontMatrix exch put
+       setglobal
     } forall
   } if
   dup /FDArray get {

@@ -1416,7 +1416,7 @@ $(PSD)cidfont.dev : $(INT_MAK) $(ECHOGS_XE) $(cidread_)\
 	$(ADDMOD) $(PSD)cidfont -ps gs_cidfn gs_cidcm gs_cidfm gs_fntem gs_cidtt
 
 $(PSOBJ)zcid.$(OBJ) : $(PSSRC)zcid.c $(OP)\
- $(gxcid_h) $(errors_h) $(icid_h) $(idict_h) $(idparam_h)
+ $(gxcid_h) $(errors_h) $(icid_h) $(idict_h) $(idparam_h) $(store_h)
 	$(PSCC) $(PSO_)zcid.$(OBJ) $(C_) $(PSSRC)zcid.c
 
 $(PSOBJ)zfcid.$(OBJ) : $(PSSRC)zfcid.c $(OP)\
@@ -1797,7 +1797,7 @@ $(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(gp_h)\
  $(gxfont_h) $(gxfont1_h) $(gxpath_h) $(gzstate_h) $(gdevpsf_h)\
  $(bfont_h) $(dstack_h) $(files_h) \
  $(ichar_h) $(idict_h) $(iddict_h) $(idparam_h) $(iname_h) $(ifont_h)\
- $(igstate_h) $(icharout_h) $(ifapi_h) $(iplugin_h) \
+ $(icid_h) $(igstate_h) $(icharout_h) $(ifapi_h) $(iplugin_h) \
  $(oper_h) $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)zfapi.$(OBJ) $(C_) $(PSSRC)zfapi.c
 

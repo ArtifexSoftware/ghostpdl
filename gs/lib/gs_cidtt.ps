@@ -49,60 +49,21 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 } bind def
 
 /GenerateCIDMap   % <font> GenerateCIDMap <font>
-{
-  (GenerateCIDMap : Incomplete implementation. See lib/gs_cidtt.ps .) =
-  begin
-
+{ begin
     % Obtain the maximal CID :
-    %   fixme : this incomplete implementation doesn't check whether glyphs really present.
+    %   This implementation doesn't check whether glyphs really present.
     Decoding /CIDCount get /CIDCount exch def
-
     % Prepare the CIDMap structure :
     /CIDMap [
       CIDCount 32767 le {
-                % Use a single string.
         CIDCount 2 mul string
       } {
-                % We must use 2 strings.
         32767 2 mul string
         CIDCount 32767 sub 2 mul string
       } ifelse
     ] def
-
-    % Now build it :
-    %   fixme : account SubstNWP. See zfapi.c .
-    %   fixme : C code would be faster. 
-    Decoding {
-      exch                                   % [dec] key
-      dup type /integertype eq {             % [dec] cidHigh
-        256 mul                              % [dec] cid
-        exch {                               % cid value
-          dup type /integertype eq {
-            exch                             % cc cid
-            TT_cmap % fixme : optimize.
-            dup length                       % cc cid [cmap] l
-            2 index le {                     % cc cid [cmap]
-              pop exch pop                   % cid
-            } {                              % cc cid [cmap]
-              3 2 roll                       % cid [cmap] cc
-              dup 2 index length lt {
-                get                          % cid gid
-                CIDMap % fixme : optimize    % cid gid [CIDmap]
-                //put_to_CIDMap exec         % cid
-              } {
-                pop pop
-              } ifelse
-            } ifelse
-          } {
-            pop                              % cid
-          } ifelse                           
-          1 add                              % cid'
-        } forall
-        pop                                  %
-      } {
-        pop pop                              %
-      } ifelse
-    } forall  
+    % Now fill it :
+    Decoding TT_cmap SubstNWP GDBytes CIDMap .fillCIDMap
   currentdict end
 } bind def
 
