@@ -211,17 +211,17 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     pdev->substream_Resources = pcd_Resources;
     sprintf(buf, "[%g %g %g %g]", t->BBox.p.x, t->BBox.p.y, 
 				  t->BBox.q.x, t->BBox.q.y);
+    /* The graphics library assumes a shifted origin to provide 
+       positive bitmap pixel indices. Compensate it now. */
+    gs_distance_transform(t->BBox.p.x, t->BBox.p.y, &smat, &p);
+    smat.tx = pinst->step_matrix.tx - p.x;
+    smat.ty = pinst->step_matrix.ty - p.y;
     smat.xx /= scale_x;
     smat.xy /= scale_x;
     smat.yx /= scale_y;
     smat.yy /= scale_y;
     smat.tx /= scale_x;
     smat.ty /= scale_y;
-    /* The graphics library assumes a shifted origin to provide 
-       positive bitmap pixel indices. Compensate it now. */
-    gs_distance_transform(t->BBox.p.x, t->BBox.p.y, &smat, &p);
-    smat.tx += p.x;
-    smat.ty += p.y;
     if (any_abs(smat.tx) < 0.0001)  /* Noise. */
 	smat.tx = 0;
     if (any_abs(smat.ty) < 0.0001)
