@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
         
-    $Id: os_types.h,v 1.1 2002/07/20 17:23:15 giles Exp $
+    $Id$
 */
 
 /*
@@ -32,4 +32,6 @@
 
 #if defined(HAVE_STDINT_H) || defined(__MACOS__)
 #include <stdint.h>
+#elif defined(__VMS)
+#include <inttypes.h>
 #endif
