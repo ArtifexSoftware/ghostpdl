@@ -70,6 +70,7 @@ private dev_proc_encode_color(pngalpha_encode_color);
 private dev_proc_decode_color(pngalpha_decode_color);
 private dev_proc_copy_alpha(pngalpha_copy_alpha);
 private dev_proc_fill_rectangle(pngalpha_fill_rectangle);
+private dev_proc_get_params(pngalpha_get_params);
 private dev_proc_put_params(pngalpha_put_params);
 private dev_proc_create_buf_device(pngalpha_create_buf_device);
 
@@ -147,6 +148,7 @@ struct gx_device_pngalpha_s {
     gx_device_common;
     gx_prn_device_common;
     dev_t_proc_fill_rectangle((*orig_fill_rectangle), gx_device);
+    int background;
 };
 private const gx_device_procs pngalpha_procs =
 {
@@ -163,7 +165,7 @@ private const gx_device_procs pngalpha_procs =
 	NULL,	/* copy_color */
 	NULL,	/* draw_line */
 	NULL,	/* get_bits */
-	gdev_prn_get_params,
+	pngalpha_get_params,
 	pngalpha_put_params,
 	NULL,	/* map_cmyk_color */
 	NULL,	/* get_xfont_procs */
@@ -233,7 +235,9 @@ const gx_device_pngalpha gs_pngalpha_device = {
 	   X_DPI, Y_DPI),
 	offset_margin_values(0, 0, 0, 0, 0, 0),
 	std_device_part3_(),
-	prn_device_body_rest_(png_print_page)
+	prn_device_body_rest_(png_print_page),
+	NULL, 
+	0xffffff	/* white background */
 };
 
 
@@ -290,6 +294,15 @@ png_print_page(gx_device_printer * pdev, FILE * file)
 	    info_ptr->bit_depth = 8;
 	    info_ptr->color_type = PNG_COLOR_TYPE_RGB_ALPHA;
 	    png_set_invert_alpha(png_ptr);
+	    {   gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
+		png_color_16 background;
+		background.index = 0;
+		background.red =   (ppdev->background >> 16) & 0xff;
+		background.green = (ppdev->background >> 8)  & 0xff;
+		background.blue =  (ppdev->background)       & 0xff;
+		background.gray = 0;
+		png_set_bKGD(png_ptr, info_ptr, &background);
+	    }
 	    break;
 	case 24:
 	    info_ptr->bit_depth = 8;
@@ -433,18 +446,49 @@ private int
 pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
-    int code = gdev_prn_put_params(pdev, plist);
-    if ((ppdev->procs.fill_rectangle != pngalpha_fill_rectangle) &&
-	(ppdev->procs.fill_rectangle != NULL)) {
-        /* Get current implementation of fill_rectangle and restore ours.
-	 * Implementation is either clist or memory and can change 
-	 * during put_params.
-	 */
-	ppdev->orig_fill_rectangle = ppdev->procs.fill_rectangle;
-	ppdev->procs.fill_rectangle = pngalpha_fill_rectangle;
+    int background;
+    int code;
+
+    /* BackgroundColor in format 16#RRGGBB is used for bKGD chunk */
+    switch(code = param_read_int(plist, "BackgroundColor", &background)) {
+	case 0:
+	    ppdev->background = background & 0xffffff;
+	    break;
+	case 1:		/* not found */
+	    code = 0;
+	    break;
+	default:
+	    param_signal_error(plist, "BackgroundColor", code);
+	    break;
+    }
+
+    if (code == 0) {
+	code = gdev_prn_put_params(pdev, plist);
+	if ((ppdev->procs.fill_rectangle != pngalpha_fill_rectangle) &&
+	    (ppdev->procs.fill_rectangle != NULL)) {
+	    /* Get current implementation of fill_rectangle and restore ours.
+	     * Implementation is either clist or memory and can change 
+	     * during put_params.
+	     */
+	    ppdev->orig_fill_rectangle = ppdev->procs.fill_rectangle;
+	    ppdev->procs.fill_rectangle = pngalpha_fill_rectangle;
+	}
     }
     return code;
 }
+
+/* Get device parameters */
+private int
+pngalpha_get_params(gx_device * pdev, gs_param_list * plist)
+{
+    gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
+    int code = gdev_prn_get_params(pdev, plist);
+    if (code >= 0)
+	code = param_write_int(plist, "BackgroundColor",
+				&(ppdev->background));
+    return code;
+}
+
 
 /* RGB mapping for 32-bit RGBA color devices */
 

@@ -195,7 +195,25 @@ anti-aliasing are enabled by default.</p>
 
 <h4>Options</h4>
 
-<p>The png devices have no special options.</p>
+<p>The pngalpha device has one option. 
+The other png devices have no special options.</p>
+
+<blockquote>
+<dl>
+<dt><b><tt>-dBackgroundColor=</tt></b><b><em>16#RRGGBB</em></b> (RGB color, default white = 16#ffffff)
+<dd>For the <tt>pngalpha</tt> device only, 
+set the suggested background color in the PNG bKGD chunk.  
+When a program reading a PNG file does not support alpha
+transparency, the PNG library converts the image using
+either a background color if supplied by the program
+or the bKGD chunk.
+One common web browser has this problem, so when using
+<b><tt>&lt;body bgcolor="CCCC00"&gt;</tt></b> on a web page
+you would need to use <b><tt>-dBackgroundColor=16#CCCC00</tt></b>
+when creating alpha transparent PNG images for use on the
+page.
+</dl>
+</blockquote>
 
 <h4>Examples</h4>
 
