@@ -133,6 +133,7 @@ struct pcl_cs_indexed_s {
     pcl_cid_hdr_t           cid;
     pcl_cs_base_t *         pbase;
     gs_color_space *        pcspace;
+    int                     original_cspace;
     int                     num_entries;
     gs_string               palette;
     float                   pen_widths[pcl_cs_indexed_palette_size];

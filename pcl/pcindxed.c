@@ -194,6 +194,7 @@ unshare_indexed_cspace(
     /* copy fields various and sundry */
     pnew->pfixed = pindexed->pfixed;
     pnew->cid = pindexed->cid;
+    pnew->original_cspace = pindexed->original_cspace;
     pnew->num_entries = pindexed->num_entries;
     memcpy(pnew->palette.data, pindexed->palette.data, 3 * num_entries);
     memcpy(pnew->pen_widths, pindexed->pen_widths, num_entries * sizeof(float));
@@ -480,6 +481,7 @@ set_default_entries(
     static const byte * gl2_order[3] = {order_1, gl2_order_2, gl2_order_3};
 
     int                 type = pindexed->cid.cspace;
+    int                 orig_type = pindexed->original_cspace;
     int                 bits = pindexed->cid.bits_per_index - 1;
     const byte *        porder;
     int                 cnt = (num + start > 8 ? 8 - start : num);
@@ -489,7 +491,9 @@ set_default_entries(
         bits = 2;
     if (gl2)
         porder = gl2_order[bits];
-    else if ( (type == pcl_cspace_RGB) || (type == pcl_cspace_Colorimetric) )
+    /* check for a rgb or colorimetric.  If the colorimetric is being
+       substituted for device CMY use the cmy order */
+    else if (((type == pcl_cspace_RGB) || (type == pcl_cspace_Colorimetric)) && (orig_type != pcl_cspace_CMY) )
         porder = rgb_order[bits];
     else
         porder = cmy_order[bits];
@@ -956,6 +960,11 @@ pcl_cs_indexed_build_cspace(
     /* copy the header of the configure image data structure */
     pindexed->cid = pcid->u.hdr;
 
+    /* copy in the original color space if there is a substitution in
+       effect.  There will be the no color spaces type if no use cie
+       substitution is in effect */
+    pindexed->original_cspace = pcid->original_cspace;
+
     /* set up the normalization information */
     if ((pcid->len > 6) && (type < pcl_cspace_Colorimetric)) {
         const pcl_cid_dev_long_t *  pdev = &(pcid->u.dev);
@@ -974,7 +983,7 @@ pcl_cs_indexed_build_cspace(
         }
 
         /* reverse for the CMY color space */
-        if (type == pcl_cspace_CMY) {
+        if ( (type == pcl_cspace_CMY) || (pcid->original_cspace == pcl_cspace_CMY) ) {
             int     i;
 
             for (i = 0; i < 3; i++) {

@@ -274,6 +274,52 @@ check_cid_hdr(
     return 0;
 }
 
+ private int
+substitute_colorimetric_cs(
+	   pcl_state_t *pcs,
+	   pcl_cid_data_t *pcid
+)
+{
+    pcl_cid_col_long_t *    pcol = &(pcid->u.col);
+    /* it might be desirable to make these partameters for the
+       substitute color space configurable for now they are set here
+       to reasonable values */
+    floatp gamma = 2.2;
+    floatp gain = 1.0;
+    floatp min1 = 0.0;
+    floatp min2 = 0.0;
+    floatp min3 = 0.0;
+    floatp max1 = 1.0;
+    floatp max2 = 1.0;
+    floatp max3 = 1.0;
+    dprintf1("substituting color space srbg for %s\n", 
+             pcid->u.hdr.cspace == pcl_cspace_RGB ? "rgb" : "cmy");
+    /* just override the color space we use the other header values
+       from the old device dependent color space */
+    pcid->original_cspace = pcid->u.hdr.cspace;
+    pcid->u.hdr.cspace = pcl_cspace_Colorimetric;
+    pcid->len = 122;
+
+    pcol->colmet.nonlin[0].gamma = gamma; pcol->colmet.nonlin[0].gain = gain;
+    pcol->colmet.nonlin[1].gamma = gamma; pcol->colmet.nonlin[1].gain = gain;
+    pcol->colmet.nonlin[2].gamma = gamma; pcol->colmet.nonlin[2].gain = gain;
+
+    pcol->minmax.val_range[0].min_val = min1;
+    pcol->minmax.val_range[1].min_val = min2;
+    pcol->minmax.val_range[2].min_val = min3;
+
+    pcol->minmax.val_range[0].max_val = max1;
+    pcol->minmax.val_range[1].max_val = max2;
+    pcol->minmax.val_range[2].max_val = max3;
+
+    /* reasonable chroma values...  These could be paramaterized as well.  */
+    pcol->colmet.chroma[0].x = 0.640; pcol->colmet.chroma[0].y = 0.340; /* red */
+    pcol->colmet.chroma[1].x = 0.310; pcol->colmet.chroma[1].y = 0.595; /* green */
+    pcol->colmet.chroma[2].x = 0.155; pcol->colmet.chroma[2].y = 0.070; /* blue */
+    pcol->colmet.chroma[3].x = 0.313; pcol->colmet.chroma[3].y = 0.329; /* white */
+    return 0;
+}
+
 /*
  * Construct a configure image data object, and use it to overwrite the current
  * active palette.
@@ -295,8 +341,16 @@ install_cid_data(
     if ((cid.len = len) < 6)
         return e_Range;
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
-    if ( ((code = check_cid_hdr(pcs, &(cid.u.hdr))) >= 0) && (len > 6) )
-        code = build_cid_longform[pbuff[0]](&cid, pbuff);
+    /* check if we should substitute colometric for a device color space */
+    if ( (pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&
+	 (pcl_cid_get_cspace(&cid) <= pcl_cspace_CMY) &&
+	 !pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "useciecolor"), "on") )
+	code = substitute_colorimetric_cs(pcs, &cid);
+    else {
+	cid.original_cspace = pcl_cspace_num;
+	if ( ((code = check_cid_hdr(pcs, &(cid.u.hdr))) >= 0) && (len > 6) )
+	    code = build_cid_longform[pbuff[0]](&cid, pbuff);
+    }
     if (code < 0) {
         if (code == -1)
             code = e_Range;     /* handle idiocy in pcommand.h */

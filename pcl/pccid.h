@@ -126,6 +126,7 @@ typedef struct pcl_cid_lum_long_s {
  */
 typedef struct pcl_cid_data_s {
     uint16      len;
+    byte        original_cspace;  /* the original color space if a substitution has occurred */
     union {
         pcl_cid_hdr_t       hdr;
         pcl_cid_dev_long_t  dev;
