@@ -1,0 +1,38 @@
+   Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, NEWS-PL, describes the changes in the most recent releases of
+Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
+XL, in reverse chronological order.
+
+We do not currently track this library as a separate released object; we
+include it in PCL5 and PCL XL releases.  Therefore, changes are noted only
+by date.
+
+1/13/97
+-------
+
+Updates the dingbats symbol sets to be more complete, and to use a MSL
+mapping.  (plsymbol.c)
+
+1/10/97
+-------
+
+Initializes the new library accurate curves flag to true.  (plmain.c)
+
+1/9/97
+------
+
+Moves code for printing usage statistics (time, # of pages printed, memory
+usage) into the library.  (plmain.h, plmain.c)
+
+Limits the size of the initially allocated glyph tables, in case a client
+asks for an unreasonably large one (as do some of the Genoa tests).
+(plchar.c)
+
+Corrects a misleading error message.  (plmain.c)
+
+Greatly speeds up the generation of pseudo-bold characters, by replacing an
+O(N) algorithm with an O(log N) one.  (plchar.c)
