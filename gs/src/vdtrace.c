@@ -17,8 +17,6 @@
 /* $Id$ */
 /* Visual tracer service */
 
-#include "std.h"
-#include "stdpre.h"
 #include "math_.h"
 #include "jmorecfg.h"
 #include "gxfixed.h"
