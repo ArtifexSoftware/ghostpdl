@@ -121,7 +121,7 @@ PSICFLAGS=-DPSI_INCLUDED
 # based on application build.  PSI_INCLUDED is and example of this. 
 EXPERIMENT_CFLAGS=
 
-GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings $(PSICFLAGS) $(EXPERIMENT_CFLAGS)
+GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(PSICFLAGS) $(EXPERIMENT_CFLAGS)
 CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS) $(PSICFLAGS)
 
 XINCLUDE=-I/usr/X11R6/include
