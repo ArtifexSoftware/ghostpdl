@@ -24,8 +24,8 @@
 #include "gpcheck.h"
 #include "gsparam.h"
 #include "gdevpccm.h"
+#include "iapi.h"
 #include "gsdll.h"
-#include "gsdllwin.h"
 
 /* Forward references */
 private int win_set_bits_per_pixel(P2(gx_device_win *, int));
@@ -83,7 +83,8 @@ win_open(gx_device * dev)
 int
 win_sync_output(gx_device * dev)
 {
-    (*pgsdll_callback) (GSDLL_SYNC, (unsigned char *)wdev, 0);
+    if (pgsdll_callback)
+	(*pgsdll_callback) (GSDLL_SYNC, (unsigned char *)wdev, 0);
     return (0);
 }
 
@@ -91,7 +92,8 @@ win_sync_output(gx_device * dev)
 int
 win_output_page(gx_device * dev, int copies, int flush)
 {
-    (*pgsdll_callback) (GSDLL_PAGE, (unsigned char *)wdev, 0);
+    if (pgsdll_callback)
+	(*pgsdll_callback) (GSDLL_PAGE, (unsigned char *)wdev, 0);
     return gx_finish_output_page(dev, copies, flush);;
 }
 

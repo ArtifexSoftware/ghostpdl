@@ -256,19 +256,32 @@ gdev_vector_reset(gx_device_vector * vdev)
 
 /* Open the output file and stream. */
 int
-gdev_vector_open_file_bbox(gx_device_vector * vdev, uint strmbuf_size,
-			   bool bbox)
-{				/* Open the file as positionable if possible. */
-    int code = gx_device_open_output_file((gx_device *) vdev, vdev->fname,
-					  true, true, &vdev->file);
+gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
+			      int open_options)
+{
+    bool binary = !(open_options & VECTOR_OPEN_FILE_ASCII);
+    int code = -1;		/* (only for testing, never returned) */
 
+    /* Open the file as seekable or sequential, as requested. */
+    if (!(open_options & VECTOR_OPEN_FILE_SEQUENTIAL)) {
+	/* Try to open as seekable. */
+	code =
+	    gx_device_open_output_file((gx_device *)vdev, vdev->fname,
+				       binary, true, &vdev->file);
+    }
+    if (code < 0 && (open_options & (VECTOR_OPEN_FILE_SEQUENTIAL |
+				     VECTOR_OPEN_FILE_SEQUENTIAL_OK))) {
+	/* Try to open as sequential. */
+	code = gx_device_open_output_file((gx_device *)vdev, vdev->fname,
+					  binary, false, &vdev->file);
+    }
     if (code < 0)
 	return code;
     if ((vdev->strmbuf = gs_alloc_bytes(vdev->v_memory, strmbuf_size,
 					"vector_open(strmbuf)")) == 0 ||
 	(vdev->strm = s_alloc(vdev->v_memory,
 			      "vector_open(strm)")) == 0 ||
-	(bbox &&
+	((open_options & VECTOR_OPEN_FILE_BBOX) &&
 	 (vdev->bbox_device =
 	  gs_alloc_struct_immovable(vdev->v_memory,
 				    gx_device_bbox, &st_device_bbox,
@@ -292,6 +305,7 @@ gdev_vector_open_file_bbox(gx_device_vector * vdev, uint strmbuf_size,
     }
     vdev->strmbuf_size = strmbuf_size;
     swrite_file(vdev->strm, vdev->file, vdev->strmbuf, strmbuf_size);
+    vdev->open_options = open_options;
     /*
      * We don't want finalization to close the file, but we do want it
      * to flush the stream buffer.
@@ -409,95 +423,104 @@ dash_pattern_eq(const float *stored, const gx_dash_params * set, floatp scale)
 
 /* Bring state up to date for stroking. */
 int
-gdev_vector_prepare_stroke(gx_device_vector * vdev, const gs_imager_state * pis,
-	  const gx_stroke_params * params, const gx_drawing_color * pdcolor,
+gdev_vector_prepare_stroke(gx_device_vector * vdev,
+			   const gs_imager_state * pis,	/* may be NULL */
+			   const gx_stroke_params * params, /* may be NULL */
+			   const gx_drawing_color * pdcolor, /* may be NULL */
 			   floatp scale)
 {
-    int pattern_size = pis->line_params.dash.pattern_size;
-    float dash_offset = pis->line_params.dash.offset * scale;
-    float half_width = pis->line_params.half_width * scale;
+    if (pis) {
+	int pattern_size = pis->line_params.dash.pattern_size;
+	float dash_offset = pis->line_params.dash.offset * scale;
+	float half_width = pis->line_params.half_width * scale;
 
-    if (pattern_size > max_dash)
-	return_error(gs_error_limitcheck);
-    if (dash_offset != vdev->state.line_params.dash.offset ||
-	pattern_size != vdev->state.line_params.dash.pattern_size ||
-	(pattern_size != 0 &&
-	 !dash_pattern_eq(vdev->dash_pattern, &pis->line_params.dash,
-			  scale))
-	) {
-	float pattern[max_dash];
-	int i, code;
+	if (pattern_size > max_dash)
+	    return_error(gs_error_limitcheck);
+	if (dash_offset != vdev->state.line_params.dash.offset ||
+	    pattern_size != vdev->state.line_params.dash.pattern_size ||
+	    (pattern_size != 0 &&
+	     !dash_pattern_eq(vdev->dash_pattern, &pis->line_params.dash,
+			      scale))
+	    ) {
+	    float pattern[max_dash];
+	    int i, code;
 
-	for (i = 0; i < pattern_size; ++i)
-	    pattern[i] = pis->line_params.dash.pattern[i] * scale;
-	code = (*vdev_proc(vdev, setdash))
-	    (vdev, pattern, pattern_size, dash_offset);
-	if (code < 0)
-	    return code;
-	memcpy(vdev->dash_pattern, pattern, pattern_size * sizeof(float));
+	    for (i = 0; i < pattern_size; ++i)
+		pattern[i] = pis->line_params.dash.pattern[i] * scale;
+	    code = (*vdev_proc(vdev, setdash))
+		(vdev, pattern, pattern_size, dash_offset);
+	    if (code < 0)
+		return code;
+	    memcpy(vdev->dash_pattern, pattern, pattern_size * sizeof(float));
 
-	vdev->state.line_params.dash.pattern_size = pattern_size;
-	vdev->state.line_params.dash.offset = dash_offset;
+	    vdev->state.line_params.dash.pattern_size = pattern_size;
+	    vdev->state.line_params.dash.offset = dash_offset;
+	}
+	if (half_width != vdev->state.line_params.half_width) {
+	    int code = (*vdev_proc(vdev, setlinewidth))
+		(vdev, half_width * 2);
+
+	    if (code < 0)
+		return code;
+	    vdev->state.line_params.half_width = half_width;
+	}
+	if (pis->line_params.miter_limit != vdev->state.line_params.miter_limit) {
+	    int code = (*vdev_proc(vdev, setmiterlimit))
+		(vdev, pis->line_params.miter_limit);
+
+	    if (code < 0)
+		return code;
+	    gx_set_miter_limit(&vdev->state.line_params,
+			       pis->line_params.miter_limit);
+	}
+	if (pis->line_params.cap != vdev->state.line_params.cap) {
+	    int code = (*vdev_proc(vdev, setlinecap))
+		(vdev, pis->line_params.cap);
+
+	    if (code < 0)
+		return code;
+	    vdev->state.line_params.cap = pis->line_params.cap;
+	}
+	if (pis->line_params.join != vdev->state.line_params.join) {
+	    int code = (*vdev_proc(vdev, setlinejoin))
+		(vdev, pis->line_params.join);
+
+	    if (code < 0)
+		return code;
+	    vdev->state.line_params.join = pis->line_params.join;
+	} {
+	    int code = gdev_vector_update_log_op(vdev, pis->log_op);
+
+	    if (code < 0)
+		return code;
+	}
     }
-    if (params->flatness != vdev->state.flatness) {
-	int code = (*vdev_proc(vdev, setflat)) (vdev, params->flatness);
+    if (params) {
+	if (params->flatness != vdev->state.flatness) {
+	    int code = (*vdev_proc(vdev, setflat)) (vdev, params->flatness);
 
-	if (code < 0)
-	    return code;
-	vdev->state.flatness = params->flatness;
+	    if (code < 0)
+		return code;
+	    vdev->state.flatness = params->flatness;
+	}
     }
-    if (half_width != vdev->state.line_params.half_width) {
-	int code = (*vdev_proc(vdev, setlinewidth))
-	    (vdev, half_width * 2);
+    if (pdcolor) {
+	if (!drawing_color_eq(pdcolor, &vdev->stroke_color)) {
+	    int code = (*vdev_proc(vdev, setstrokecolor)) (vdev, pdcolor);
 
-	if (code < 0)
-	    return code;
-	vdev->state.line_params.half_width = half_width;
-    }
-    if (pis->line_params.miter_limit != vdev->state.line_params.miter_limit) {
-	int code = (*vdev_proc(vdev, setmiterlimit))
-	    (vdev, pis->line_params.miter_limit);
-
-	if (code < 0)
-	    return code;
-	gx_set_miter_limit(&vdev->state.line_params,
-			   pis->line_params.miter_limit);
-    }
-    if (pis->line_params.cap != vdev->state.line_params.cap) {
-	int code = (*vdev_proc(vdev, setlinecap))
-	    (vdev, pis->line_params.cap);
-
-	if (code < 0)
-	    return code;
-	vdev->state.line_params.cap = pis->line_params.cap;
-    }
-    if (pis->line_params.join != vdev->state.line_params.join) {
-	int code = (*vdev_proc(vdev, setlinejoin))
-	    (vdev, pis->line_params.join);
-
-	if (code < 0)
-	    return code;
-	vdev->state.line_params.join = pis->line_params.join;
-    } {
-	int code = gdev_vector_update_log_op(vdev, pis->log_op);
-
-	if (code < 0)
-	    return code;
-    }
-    if (!drawing_color_eq(pdcolor, &vdev->stroke_color)) {
-	int code = (*vdev_proc(vdev, setstrokecolor)) (vdev, pdcolor);
-
-	if (code < 0)
-	    return code;
-	vdev->stroke_color = *pdcolor;
+	    if (code < 0)
+		return code;
+	    vdev->stroke_color = *pdcolor;
+	}
     }
     return 0;
 }
 
 /*
- * Compute the scale or transformation matrix for transforming the line
- * width and dash pattern for a stroke operation.  Return 0 if scaling,
- * 1 if a full matrix is needed.
+ * Compute the scale for transforming the line width and dash pattern for a
+ * stroke operation, and, if necessary to handle anisotropic scaling, a full
+ * transformation matrix to be inverse-applied to the path elements as well.
+ * Return 0 if only scaling, 1 if a full matrix is needed.
  */
 int
 gdev_vector_stroke_scaling(const gx_device_vector *vdev,
@@ -531,10 +554,11 @@ gdev_vector_stroke_scaling(const gx_device_vector *vdev,
     }
     if (set_ctm) {
 	/*
-	 * Adobe Acrobat Reader can't handle user coordinates larger than
-	 * 32K.  If we scale the matrix down too far, the coordinates will
-	 * get too big: don't allow this to happen.  (This does no harm
-	 * for other output formats.)
+	 * Adobe Acrobat Reader has limitations on the maximum user
+	 * coordinate value.  If we scale the matrix down too far, the
+	 * coordinates will get too big: limit the scale factor to prevent
+	 * this from happening.  (This does no harm for other output
+	 * formats.)
 	 */
 	double
 	    mxx = pis->ctm.xx / vdev->scale.x,
@@ -958,8 +982,8 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 	    vdev->bbox_device = bbdev;
 	    if (code < 0)
 		return code;
-	    return gdev_vector_open_file_bbox(vdev, vdev->strmbuf_size,
-					      bbdev != 0);
+	    return gdev_vector_open_file_options(vdev, vdev->strmbuf_size,
+						 vdev->open_options);
 	}
     }
     gdev_vector_load_cache(vdev);	/* in case color mapping changed */

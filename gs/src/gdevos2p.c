@@ -143,12 +143,12 @@ os2prn_open(gx_device * dev)
     oprn = opdev;
 
     if (DosGetInfoBlocks(&pptib, &pppib)) {
-	fprintf(stderr, "\nos2prn_open: Couldn't get pid\n");
+	errprintf("\nos2prn_open: Couldn't get pid\n");
 	return gs_error_limitcheck;
     }
     if (pppib->pib_ultype != 3) {
 	/* if caller is not PM app */
-	fprintf(stderr, "os2prn device can only be used from a PM application\n");
+	errprintf("os2prn device can only be used from a PM application\n");
 	return gs_error_limitcheck;
     }
     opdev->hab = WinQueryAnchorBlock(hwndtext);
@@ -184,10 +184,10 @@ os2prn_open(gx_device * dev)
 	pprq = &(opdev->ql.prq[opdev->ql.defqueue]);
     }
     if (pprq == (PRQINFO3 *) NULL) {
-	fprintf(stderr, "Invalid os2prn queue  name -sOS2QUEUE=\042%s\042\n", opdev->queue_name);
-	fprintf(stderr, "Valid device names are:\n");
+	errprintf("Invalid os2prn queue  name -sOS2QUEUE=\042%s\042\n", opdev->queue_name);
+	errprintf("Valid device names are:\n");
 	for (i = 0; i < opdev->ql.nqueues; i++) {
-	    fprintf(stderr, "  -sOS2QUEUE=\042%s\042\n", opdev->ql.prq[i].pszName);
+	    errprintf("  -sOS2QUEUE=\042%s\042\n", opdev->ql.prq[i].pszName);
 	}
 	return gs_error_rangecheck;
     }
@@ -204,7 +204,7 @@ os2prn_open(gx_device * dev)
     if (opdev->hdc == DEV_ERROR) {
 	ERRORID eid = WinGetLastError(opdev->hab);
 
-	fprintf(stderr, "DevOpenDC for printer error 0x%x\n", eid);
+	errprintf("DevOpenDC for printer error 0x%x\n", eid);
 	return gs_error_limitcheck;
     }
     os2prn_free_queue_list(&opdev->ql);
@@ -260,7 +260,7 @@ os2prn_open(gx_device * dev)
     if (opdev->hdcMem == DEV_ERROR) {
 	ERRORID eid = WinGetLastError(opdev->hab);
 
-	fprintf(stderr, "DevOpenDC for memory error 0x%x\n", eid);
+	errprintf("DevOpenDC for memory error 0x%x\n", eid);
 	return gs_error_limitcheck;
     }
     sizlPage.cx = dev->width;
@@ -270,14 +270,14 @@ os2prn_open(gx_device * dev)
     if (opdev->hpsMem == GPI_ERROR) {
 	ERRORID eid = WinGetLastError(opdev->hab);
 
-	fprintf(stderr, "GpiCreatePS for memory error 0x%x\n", eid);
+	errprintf("GpiCreatePS for memory error 0x%x\n", eid);
 	return gs_error_limitcheck;
     }
     if (DevEscape(opdev->hdc, DEVESC_STARTDOC, (LONG) strlen(gs_product),
 		  (char *)gs_product, NULL, NULL) == DEVESC_ERROR) {
 	ERRORID eid = WinGetLastError(opdev->hab);
 
-	fprintf(stderr, "DEVESC_STARTDOC error 0x%x\n", eid);
+	errprintf("DEVESC_STARTDOC error 0x%x\n", eid);
 	return gs_error_limitcheck;
     }
     /* gdev_prn_open opens a temporary file which we don't want */
@@ -678,7 +678,7 @@ os2prn_get_queue_list(OS2QL * ql)
 	}
     } else {
 	/* If we are here we had a bad error code. Print it and some other info. */
-	fprintf(stdout, "SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
+	eprintf4("SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
 		splerr, cTotal, cReturned, cbNeeded);
     }
     if (splerr)

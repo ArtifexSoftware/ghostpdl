@@ -100,9 +100,11 @@ s_init(stream *s, gs_memory_t * mem)
 {
     s->memory = mem;
     s->report_error = s_no_report_error;
+    s->min_left = 0;
     s->error_string[0] = 0;
     s->prev = s->next = 0;	/* clean for GC */
     s->file_name.data = 0;	/* ibid. */
+    s->file_name.size = 0;	
     s->close_strm = false;	/* default */
     s->close_at_eod = true;	/* default */
 }
@@ -127,6 +129,7 @@ s_init_state(stream_state *st, const stream_template *template,
     st->template = template;
     st->memory = mem;
     st->report_error = s_no_report_error;
+    st->min_left = 0;
 }
 stream_state *
 s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
@@ -164,6 +167,7 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->state = (stream_state *) s;	/* hack to avoid separate state */
     s->file = 0;
     s->file_name.data = 0;	/* in case stream is on stack */
+    s->file_name.size = 0;
     if_debug4('s', "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
 	      (ulong) s, (ulong) ptr, len, modes);
 }
@@ -299,6 +303,7 @@ s_disable(register stream * s)
 	gs_free_const_string(s->memory, s->file_name.data, s->file_name.size,
 			     "s_disable(file_name)");
 	s->file_name.data = 0;
+	s->file_name.size = 0;
     }
     /****** SHOULD DO MORE THAN THIS ******/
     if_debug1('s', "[s]disable 0x%lx\n", (ulong) s);
@@ -409,20 +414,6 @@ sclose(register stream * s)
     }
     s_disable(s);
     return code;
-}
-
-/*
- * Define the minimum amount of data that must be left in an input buffer
- * after a read operation to handle filter read-ahead.  This is 1 byte for
- * filters (including procedure data sources) that haven't reached EOD,
- * 0 for files.
- */
-int
-sbuf_min_left(const stream *s)
-{
-    return
-	(s->strm == 0 ? (s->end_status != CALLC ? 0 : 1) :
-	 s->end_status == EOFC || s->end_status == ERRC ? 0 : 1);
 }
 
 /*
@@ -572,6 +563,25 @@ sputs(register stream * s, const byte * str, uint wlen, uint * pn)
 	}
     *pn = wlen - len;
     return (status >= 0 ? 0 : status);
+}
+
+/* versions of sgets and sputs to implement fread/fwrite */
+int
+sread(void * pbuff, uint sz, uint cnt, stream * s)
+{
+    uint    tot;
+    int     status = sgets(s, pbuff, sz * cnt, &tot);
+
+    return (status < 0) ? status : tot;
+}
+
+int
+swrite(const void * pbuff, uint sz, uint cnt, stream * s)
+{
+    uint    tot;
+    int     status = sputs(s, pbuff, sz * cnt, &tot);
+
+    return (status < 0) ? status : tot;
 }
 
 /* Skip ahead a specified distance in a read stream. */
@@ -753,7 +763,12 @@ s_process_write_buf(stream * s, bool last)
     curr->strm = prev; prev = curr; curr = ahead;\
   END
 
-/* Read from a pipeline. */
+/*
+ * Read from a stream pipeline.  Update end_status for all streams that were
+ * actually touched.  Return the status from the outermost stream: this is
+ * normally the same as s->end_status, except that if s->procs.process
+ * returned 1, sreadbuf sets s->end_status to 0, but returns 1.
+ */
 private int
 sreadbuf(stream * s, stream_cursor_write * pbuf)
 {
@@ -763,11 +778,12 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 
     for (;;) {
 	stream *strm;
+	stream_cursor_write *pw;
+	byte *oldpos;
 
 	for (;;) {		/* Descend into the recursion. */
 	    stream_cursor_read cr;
 	    stream_cursor_read *pr;
-	    stream_cursor_write *pw;
 	    int left;
 	    bool eof;
 
@@ -788,6 +804,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    if_debug4('s', "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), eof);
+	    oldpos = pw->ptr;
 	    status = (*curr->procs.process) (curr->state, pr, pw, eof);
 	    pr->limit += left;
 	    if_debug4('s', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d\n",
@@ -795,9 +812,11 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 		      (uint) (pw->limit - pw->ptr), status);
 	    if (strm == 0 || status != 0)
 		break;
-	    status = strm->end_status;
-	    if (status < 0)
+	    if (strm->end_status < 0) {
+		if (strm->end_status != EOFC || pw->ptr == oldpos)
+		    status = strm->end_status;
 		break;
+	    }
 	    MOVE_AHEAD(curr, prev);
 	    stream_compact(curr, false);
 	}

@@ -20,29 +20,50 @@ class ImageWindow {
     ImageWindow *next;
 
     HWND hwnd;
-    char FAR *device;		// handle to Ghostscript device
+    HBRUSH hBrush;	/* background */
+    int raster;
+    unsigned int format;
+    unsigned char *image;
+    BITMAPINFOHEADER bmih;
+    HPALETTE palette;
+    int bytewidth;
+    int sep;		/* CMYK separations to display */
 
-    int width, height;
+    /* periodic redrawing */
+    SYSTEMTIME update_time;
+    int update_interval;
 
-    // Window scrolling stuff
+    /* Window scrolling stuff */
     int cxClient, cyClient;
     int cxAdjust, cyAdjust;
     int nVscrollPos, nVscrollMax;
     int nHscrollPos, nHscrollMax;
 
-    void register_class(void);
+    /* thread synchronisation */
+    HANDLE hmutex;
 
-         public:
-    static HINSTANCE hInstance;	// instance of EXE
+    IMAGE *next;
 
-    static HWND hwndtext;	// handle to text window
+    HWND hwndtext;	/* handle to text window */
 
-    friend ImageWindow *FindImageWindow(char FAR * dev);
-    void open(char FAR * dev);
-    void close(void);
-    void sync(void);
-    void page(void);
-    void size(int x, int y);
-    void create_window(void);
-    LRESULT WndProc(HWND, UINT, WPARAM, LPARAM);
+    int x, y, cx, cy;	/* window position */
 };
+
+extern IMAGE *first_image;
+
+/* Main thread only */
+IMAGE *image_find(void *handle, void *device);
+IMAGE *image_new(void *handle, void *device);
+void image_delete(IMAGE *img);
+int image_size(IMAGE *img, int new_width, int new_height, int new_raster, 
+   unsigned int new_format, void *pimage);
+
+/* GUI thread only */
+void image_open(IMAGE *img);
+void image_close(IMAGE *img);
+void image_sync(IMAGE *img);
+void image_page(IMAGE *img);
+void image_presize(IMAGE *img, int new_width, int new_height, int new_raster, 
+   unsigned int new_format);
+void image_poll(IMAGE *img);
+

@@ -12,7 +12,7 @@
 
 /*$RCSfile$ $Revision$ */
 /* Definition of interpreter instance */
-/* Requires stdio_.h, gsmemory.h, iref.h */
+/* Requires stdio_.h, gsmemory.h, iref.h, iapi.h */
 
 #ifndef iminst_INCLUDED
 #  define iminst_INCLUDED
@@ -46,6 +46,11 @@ typedef struct gs_file_path_s {
     uint count;
 } gs_file_path;
 
+/* buffer sizes for stdio */
+#define STDIN_BUF_SIZE 128
+#define STDOUT_BUF_SIZE 128
+#define STDERR_BUF_SIZE 128
+
 /*
  * Here is where we actually define the structure of interpreter instances.
  * Clients should not reference any of the members.  Note that in order to
@@ -70,6 +75,16 @@ struct gs_main_instance_s {
     gs_file_path lib_path;	/* library search list (GS_LIB) */
     long base_time[2];		/* starting usertime */
     void *readline_data;	/* data for gp_readline */
+    char stdin_buf[STDIN_BUF_SIZE];	/* for e_NeedStdin callout */
+    char stdout_buf[STDOUT_BUF_SIZE];	/* for e_NeedStdout callout */
+    char stderr_buf[STDERR_BUF_SIZE];	/* for e_NeedStderr callout */
+    ref error_object;		/* Use by gsapi_*() */
+    void *caller_handle;	/* identifies caller of GS DLL/shared object */
+    int (GSDLLCALL *stdin_fn)(void *caller_handle, char *buf, int len);
+    int (GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len);
+    int (GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len);
+    int (GSDLLCALL *poll_fn)(void *caller_handle);
+    display_callback *display;	/* callback structure for display device */
     /* The following are updated dynamically. */
     i_ctx_t *i_ctx_p;		/* current interpreter context state */
 };

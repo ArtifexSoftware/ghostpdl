@@ -80,12 +80,6 @@ int gs_type42_get_metrics(P3(gs_font_type42 * pfont, uint glyph_index,
 int gs_type42_wmode_metrics(P4(gs_font_type42 * pfont, uint glyph_index,
 			       int wmode, float psbw[4]));
 
-/* Get the metrics of a TrueType glyph. 
- * default for overrideable function pfont->data.get_metrics()
- */
-int gs_type42_default_get_metrics(P4(gs_font_type42 * pfont, uint glyph_index,
-				     int wmode, float sbw[4]));
-
 /* Export the font procedures so they can be called from the interpreter. */
 font_proc_enumerate_glyph(gs_type42_enumerate_glyph);
 font_proc_glyph_info(gs_type42_glyph_info);

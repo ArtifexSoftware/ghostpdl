@@ -16,6 +16,7 @@
 #include "string_.h"
 /* Capture stdin/out/err before gs.h redefines them. */
 #include <stdio.h>
+#include <stdlib.h>
 private void
 set_stdfiles(FILE * stdfiles[3])
 {
@@ -51,6 +52,7 @@ set_stdfiles(FILE * stdfiles[3])
 #include "isave.h"		/* for prototypes */
 #include "interp.h"
 #include "ivmspace.h"
+#include "idisp.h"		/* for setting display device callback */
 
 /* ------ Exported data ------ */
 
@@ -66,11 +68,6 @@ gs_main_instance_default(void)
 	the_gs_main_instance = gs_main_instance_init_values;
     return &the_gs_main_instance;
 }
-
-/* The only reason we export gs_exit_status is so that window systems */
-/* with alert boxes can know whether to pause before exiting if */
-/* the program terminates with an error.  There must be a better way .... */
-int gs_exit_status;
 
 /* Define the interpreter's name table.  We'll move it somewhere better */
 /* eventually.... */
@@ -188,6 +185,126 @@ init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
 	      ifp - srefs, const_refs, srefs);
     initial_enter_name(aname, &ifa);
 }
+
+/*
+ * Invoke the interpreter, handling stdio callouts
+ * e_NeedStdin, e_NeedStdout and e_NeedStderr.
+ * We don't yet pass callouts all the way out because they
+ * occur within gs_main_init2() and swproc().
+ */
+private int
+gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors, 
+	int *pexit_code, ref * perror_object)
+{
+    i_ctx_t *i_ctx_p;
+    ref refnul;
+    ref refpop;
+    int code;
+
+    code = gs_interpret(&minst->i_ctx_p, pref, 
+		user_errors, pexit_code, perror_object);
+    while ((code == e_NeedStdin) || (code == e_NeedStdout) || 
+	(code == e_NeedStderr)) {
+        i_ctx_p = minst->i_ctx_p;
+	if (code == e_NeedStdout) {
+	    /*
+	     * On entry:
+	     *  esp[0]  = string, data to write to stdout
+	     *  esp[-1] = bool, EOF (ignored)
+	     *  esp[-2] = array, procedure (ignored)
+	     *  esp[-3] = file, stdout stream
+	     * We print the string then pop these 4 items.
+	     */
+	    if (r_type(&esp[0]) == t_string) {
+		const char *str = (const char *)(esp[0].value.const_bytes); 
+		int count = esp[0].tas.rsize;
+		int rcode = 0;
+		if (str != NULL) {
+		    if (minst->stdout_fn)
+			rcode = (*minst->stdout_fn)(minst->caller_handle, 
+			    str, count);
+		    else 
+			fwrite(str, 1, count, minst->fstdout);
+		}
+		if (rcode < 0)
+		    return_error(e_ioerror);
+	    }
+
+	    /* On return, we need to set 
+	     *  osp[-1] = string buffer, 
+	     *  osp[0] = file
+	     */
+	    gs_push_string(minst, (byte *)minst->stdout_buf, 
+		sizeof(minst->stdout_buf), false);
+	    gs_push_integer(minst, 0);	/* push integer */
+	    osp[0] = esp[-3];		/* then replace with file */
+	    /* remove items from execution stack */
+	    esp -= 4;
+	}
+	else if (code == e_NeedStderr) {
+	    if (r_type(&esp[0]) == t_string) {
+		const char *str = (const char *)(esp[0].value.const_bytes); 
+		int count = esp[0].tas.rsize;
+		int rcode = 0;
+		if (str != NULL) {
+		    if (minst->stderr_fn)
+			rcode = (*minst->stderr_fn)(minst->caller_handle, 
+			    str, count);
+		    else 
+			fwrite(str, 1, count, minst->fstderr);
+		}
+		if (rcode < 0)
+		    return_error(e_ioerror);
+	    }
+	    gs_push_string(minst, (byte *)minst->stderr_buf, 
+		sizeof(minst->stderr_buf), false);
+	    gs_push_integer(minst, 0);
+	    osp[0] = esp[-3];
+	    esp -= 4;
+	}
+	else if (code == e_NeedStdin) {
+	    int count = sizeof(minst->stdin_buf);
+	    /*
+	     * On entry:
+	     *  esp[0]  = array, procedure (ignored)
+	     *  esp[-1] = file, stdin stream
+	     * We read from stdin then pop these 2 items.
+	     */
+	    if (gs_stdin_is_interactive)
+		count = 1;
+	    if (minst->stdin_fn)
+		count = (*minst->stdin_fn)(minst->caller_handle, 
+			minst->stdin_buf, count);
+	    else
+		count = fread(minst->stdin_buf, 1, count, minst->fstdin);
+	    if (count < 0)
+	        return_error(e_ioerror);
+
+	    /* On return, we need to set 
+	     *  osp[-1] = string buffer, 
+	     *  osp[0] = file
+	     */
+	    gs_push_string(minst, (byte *)minst->stdin_buf, count, false);
+	    gs_push_integer(minst, 0);	/* push integer */
+	    osp[0] = esp[-1];		/* then replace with file */
+	    /* remove items from execution stack */
+	    esp -= 2;
+	}
+	/*
+	 * To resume the interpreter, we call gs_interpret with a null ref.
+	 * This copies the literal null onto the operand stack.
+	 * To remove this we push a zpop onto the execution stack.
+	 */
+	make_null(&refnul);
+	make_oper(&refpop, 0, zpop); 
+	esp += 1;
+	*esp = refpop;
+	code = gs_interpret(&minst->i_ctx_p, &refnul, 
+		    user_errors, pexit_code, perror_object);
+    }
+    return code;
+}
+
 int
 gs_main_init2(gs_main_instance * minst)
 {
@@ -236,6 +353,10 @@ gs_main_init2(gs_main_instance * minst)
 	    return code;
 	minst->init_done = 2;
 	i_ctx_p = minst->i_ctx_p; /* init file may change it */
+	if (minst->display)
+	    code = display_set_callback(minst, minst->display);
+	if (code < 0)
+	    return code;
     }
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Start");
@@ -362,7 +483,7 @@ gs_main_run_file(gs_main_instance * minst, const char *file_name, int user_error
 
     if (code < 0)
 	return code;
-    return gs_interpret(&minst->i_ctx_p, &initial_file, user_errors,
+    return gs_main_interpret(minst, &initial_file, user_errors,
 			pexit_code, perror_object);
 }
 int
@@ -410,7 +531,7 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     }
     *++osp = first_token;
     r_set_attrs(&ifile, a_executable);
-    return gs_interpret(&minst->i_ctx_p, &ifile, minst->user_errors,
+    return gs_main_interpret(minst, &ifile, minst->user_errors,
 			pexit_code, perror_object);
 }
 
@@ -453,7 +574,7 @@ gs_main_run_string_begin(gs_main_instance * minst, int user_errors,
     gs_main_set_lib_paths(minst);
     make_const_string(&rstr, avm_foreign | a_readonly | a_executable,
 		      strlen(setup), (const byte *)setup);
-    code = gs_interpret(&minst->i_ctx_p, &rstr, user_errors, pexit_code,
+    code = gs_main_interpret(minst, &rstr, user_errors, pexit_code,
 			perror_object);
     return (code == e_NeedInput ? 0 : code == 0 ? e_Fatal : code);
 }
@@ -468,7 +589,7 @@ gs_main_run_string_continue(gs_main_instance * minst, const char *str,
 	return 0;		/* empty string signals EOF */
     make_const_string(&rstr, avm_foreign | a_readonly, length,
 		      (const byte *)str);
-    return gs_interpret(&minst->i_ctx_p, &rstr, user_errors, pexit_code,
+    return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
 			perror_object);
 }
 /* Signal EOF when suspended. */
@@ -479,7 +600,7 @@ gs_main_run_string_end(gs_main_instance * minst, int user_errors,
     ref rstr;
 
     make_empty_const_string(&rstr, avm_foreign | a_readonly);
-    return gs_interpret(&minst->i_ctx_p, &rstr, user_errors, pexit_code,
+    return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
 			perror_object);
 }
 
@@ -590,7 +711,7 @@ gs_pop_real(gs_main_instance * minst, float *result)
 	    *result = vref.value.realval;
 	    break;
 	case t_integer:
-	    *result = vref.value.intval;
+	    *result = (float)(vref.value.intval);
 	    break;
 	default:
 	    return_error(e_typecheck);
@@ -632,6 +753,8 @@ void
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    int exit_code;
+    ref error_object;
 
     /*
      * Previous versions of this code closed the devices in the
@@ -639,7 +762,11 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * they cannot be opened, so they do not need to be closed;
      * alloc_restore_all will close dynamically allocated devices.
      */
-    gs_exit_status = exit_status;	/* see above */
+    /* Flush stdout and stderr */
+    if (minst->init_done >= 2)
+      gs_main_run_string(minst, 
+	"(%stdout) (w) file closefile (%stderr) (w) file closefile quit",
+	0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Final");
@@ -659,6 +786,15 @@ void
 gs_exit(int exit_status)
 {
     gs_exit_with_code(exit_status, 0);
+}
+
+void
+gs_abort(void)
+{
+    gs_exit(1);
+    /* This is the ONLY reference to exit() */
+    /* Even this one should be removed */
+    exit(1);	
 }
 
 /* ------ Debugging ------ */
@@ -723,3 +859,42 @@ gs_debug_dump_stack(int code, ref * perror_object)
 {
     gs_main_dump_stack(gs_main_instance_default(), code, perror_object);
 }
+
+
+/* Provide a single point for all "C" stdout and stderr.
+ * Eventually these will always be referenced through an instance structure. 
+ * We don't know which instance is running (and currently only one
+ * instance is possible) so use the default instance.
+ */
+
+int outwrite(const char *str, int len)
+{
+    gs_main_instance * minst = gs_main_instance_default();
+    if (minst->stdout_fn)
+	return (*minst->stdout_fn)(minst->caller_handle, str, len);
+    return fwrite(str, 1, len, minst->fstdout);
+}
+
+int errwrite(const char *str, int len)
+{
+    gs_main_instance * minst = gs_main_instance_default();
+    if (minst->stderr_fn)
+	return (*minst->stderr_fn)(minst->caller_handle, str, len);
+    return fwrite(str, 1, len, minst->fstderr);
+}
+
+void outflush()
+{
+    gs_main_instance * minst = gs_main_instance_default();
+    if (!minst->stdout_fn)
+        fflush(minst->fstdout);
+}
+
+void errflush()
+{
+    gs_main_instance * minst = gs_main_instance_default();
+    if (!minst->stderr_fn)
+        fflush(minst->fstderr);
+}
+
+

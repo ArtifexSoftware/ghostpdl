@@ -131,18 +131,6 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  */
 
 /*
- * Enumerate the pointers in a graphics state, other than the ones in the
- * imager state, and device, which must be handled specially.
- */
-#define gs_state_do_ptrs(m)\
-  m(0,saved) m(1,path) m(2,clip_path) m(3,clip_stack)\
-  m(4,view_clip) m(5,effective_clip_path)\
-  m(6,color_space) m(7,ccolor) m(8,dev_color)\
-  m(9,font) m(10,root_font) m(11,show_gstate) /*m(---,device)*/\
-  m(12,transparency_group_stack)
-#define gs_state_num_ptrs 13
-
-/*
  * Define these elements of the graphics state that are allocated
  * individually for each state, except for line_params.dash.pattern.
  * Note that effective_clip_shared is not on the list.
@@ -168,11 +156,13 @@ public_st_gs_state();
 
 /* GC procedures for gs_state */
 private ENUM_PTRS_WITH(gs_state_enum_ptrs, gs_state *gsvptr)
-ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 1);
+ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 2);
 #define e1(i,elt) ENUM_PTR(i,gs_state,elt);
 gs_state_do_ptrs(e1)
 case gs_state_num_ptrs:	/* handle device specially */
 ENUM_RETURN(gx_device_enum_ptr(gsvptr->device));
+case gs_state_num_ptrs + 1:	/* handle device filter stack specially */
+ENUM_RETURN(gsvptr->dfilter_stack);
 #undef e1
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(gs_state_reloc_ptrs, gs_state *gsvptr)
@@ -183,6 +173,7 @@ private RELOC_PTRS_WITH(gs_state_reloc_ptrs, gs_state *gsvptr)
 	gs_state_do_ptrs(r1)
 #undef r1
 	gsvptr->device = gx_device_reloc_ptr(gsvptr->device, gcst);
+	RELOC_PTR(gs_state, dfilter_stack);
     }
 }
 RELOC_PTRS_END
@@ -277,6 +268,7 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->in_charpath = (gs_char_path_mode) 0;
     pgs->show_gstate = 0;
     pgs->level = 0;
+    pgs->dfilter_stack = 0;
     pgs->transparency_group_stack = 0;
     if (gs_initgraphics(pgs) >= 0)
 	return pgs;

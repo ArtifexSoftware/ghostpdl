@@ -12,10 +12,12 @@
 
 /*$RCSfile$ $Revision$ */
 /* Get/put parameters for PDF-writing driver */
-#include "memory_.h"		/* should be first */
+#include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
+#include "gdevpdfo.h"
 #include "gsparamx.h"
 
 /*
@@ -107,8 +109,6 @@ private const gs_param_item_t pdf_param_items[] = {
 
   ---- Other functionality ----
 
-  Embed CID fonts
-  Compress TT, CFF, CID/TT, and CID/CFF if CompressPages
   Compress forms, Type 3 fonts, and Cos streams
 
   ---- Image parameters ----
@@ -162,8 +162,6 @@ private const gs_param_item_t pdf_param_items[] = {
 
   ---- Job-level control ----
 
-  ParseDSCComments
-  ParseDSCCommentsForDocInfo
   EmitDSCWarnings
     Require DSC parser / interceptor
   CreateJobTicket
@@ -337,14 +335,14 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     if (ecode < 0)
 	goto fail;
     /*
-     * Acrobat Reader 4.0 and earlier don't handle user-space coordinates
-     * larger than 32K.  To compensate for this, reduce the resolution so that
-     * the page size in device space (which we equate to user space) is
-     * significantly less than 32K.  Note that this still does not protect
-     * us against input files that use coordinates far outside the page
-     * boundaries.
+     * Acrobat Reader doesn't handle user-space coordinates larger than
+     * MAX_USER_COORD.  To compensate for this, reduce the resolution so
+     * that the page size in device space (which we equate to user space) is
+     * significantly less than MAX_USER_COORD.  Note that this still does
+     * not protect us against input files that use coordinates far outside
+     * the page boundaries.
      */
-#define MAX_EXTENT 28000
+#define MAX_EXTENT ((int)(MAX_USER_COORD * 0.9))
     /* Changing resolution or page size requires closing the device, */
     if (dev->height > MAX_EXTENT || dev->width > MAX_EXTENT) {
 	double factor =
@@ -387,6 +385,94 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 private int
 pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 {
-    /* This is just a place-holder. */
-    return 0;
+    /*
+     * The Adobe "Distiller Parameters" documentation says that Distiller
+     * looks at DSC comments, but it doesn't say which ones.  We look at
+     * the ones that we see how to map directly to obvious PDF constructs.
+     */
+    int code = 0;
+    int i;
+
+    for (i = 0; i + 1 < pma->size && code >= 0; i += 2) {
+	const gs_param_string *pkey = &pma->data[i];
+	const gs_param_string *pvalue = &pma->data[i + 1];
+	const char *key;
+	int code;
+
+	if (pdf_key_eq(pkey, "Creator"))
+	    key = "/Creator";
+	else if (pdf_key_eq(pkey, "CreationDate"))
+	    key = "/CreationDate";
+	else if (pdf_key_eq(pkey, "Title"))
+	    key = "/Title";
+	else if (pdf_key_eq(pkey, "For"))
+	    key = "/Author";
+	else {
+	    pdf_page_dsc_info_t *ppdi;
+	    int orient;
+
+	    if (!pdev->ParseDSCComments)
+		continue;
+	    if ((ppdi = &pdev->doc_dsc_info,
+		 pdf_key_eq(pkey, "Orientation")) ||
+		(ppdi = &pdev->page_dsc_info,
+		 pdf_key_eq(pkey, "PageOrientation"))
+		) {
+		if (pvalue->size == 1 && pvalue->data[0] >= '0' &&
+		    pvalue->data[0] <= '3'
+		    )
+		    orient = pvalue->data[0] - '0';
+		else
+		    orient = -1;
+	    } else if ((ppdi = &pdev->doc_dsc_info,
+			pdf_key_eq(pkey, "ViewingOrientation")) ||
+		       (ppdi = &pdev->page_dsc_info,
+			pdf_key_eq(pkey, "PageViewingOrientation"))
+		       ) {
+		gs_matrix mat;
+
+		if (sscanf((const char *)pvalue->data, "[%g %g %g %g]",
+			   &mat.xx, &mat.xy, &mat.yx, &mat.yy) != 4
+		    )
+		    continue;	/* error */
+		for (orient = 0; orient < 4; ++orient) {
+		    if (mat.xx == 1 && mat.xy == 0 && mat.yx == 0 && mat.yy == 1)
+			break;
+		    gs_matrix_rotate(&mat, -90.0, &mat);
+		}
+		if (orient == 4) /* error */
+		    orient = -1;
+	    } else {
+		gs_rect box;
+
+		if (pdf_key_eq(pkey, "EPSF")) {
+		    pdev->is_EPS = (pkey->size >= 1 && pkey->data[0] != '0');
+		    continue;
+		}
+		/*
+		 *
+		 * We only parse the BoundingBox for the sake of
+		 * AutoPositionEPSFiles.
+		 */
+		if (pdf_key_eq(pkey, "BoundingBox"))
+		    ppdi = &pdev->doc_dsc_info;
+		else if (pdf_key_eq(pkey, "PageBoundingBox"))
+		    ppdi = &pdev->page_dsc_info;
+		else
+		    continue;
+		if (sscanf((const char *)pvalue->data, "[%lg %lg %lg %lg]",
+			   &box.p.x, &box.p.y, &box.q.x, &box.q.y) != 4
+		    )
+		    continue;	/* error */
+		ppdi->bounding_box = box;
+		continue;
+	    }
+	    ppdi->orientation = orient;
+	    continue;
+	}
+	if (pdev->ParseDSCCommentsForDocInfo)
+	    code = cos_dict_put_c_key_string(pdev->Info, key,
+					     pvalue->data, pvalue->size);
+    }
+    return code;
 }

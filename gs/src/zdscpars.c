@@ -227,6 +227,18 @@ dsc_creation_date(gs_param_list *plist, const CDSC *pData)
 }
 
 private int
+dsc_title(gs_param_list *plist, const CDSC *pData)
+{
+    return dsc_put_string(plist, "Title", pData->dsc_title );
+}
+
+private int
+dsc_for(gs_param_list *plist, const CDSC *pData)
+{
+    return dsc_put_string(plist, "For", pData->dsc_for);
+}
+
+private int
 dsc_bounding_box(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_bounding_box(plist, "BoundingBox", pData->bbox);
@@ -235,8 +247,13 @@ dsc_bounding_box(gs_param_list *plist, const CDSC *pData)
 private int
 dsc_page(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_int(plist, "PageNum",
-		       pData->page[pData->page_count - 1].ordinal );
+    int page_num = pData->page_count;
+
+    if (page_num)		/* If we have page information */
+        return dsc_put_int(plist, "PageNum",
+		       pData->page[page_num - 1].ordinal );
+    else			/* No page info - so return page=0 */
+        return dsc_put_int(plist, "PageNum", 0 );
 }
 
 private int
@@ -257,7 +274,13 @@ dsc_page_bounding_box(gs_param_list *plist, const CDSC *pData)
 private int
 convert_orient(CDSC_ORIENTATION_ENUM orient)
 {
-    return (orient == CDSC_LANDSCAPE ? 1 : 0);
+    switch (orient) {
+    case CDSC_PORTRAIT: return 0;
+    case CDSC_LANDSCAPE: return 1;
+    case CDSC_UPSIDEDOWN: return 2;
+    case CDSC_SEASCAPE: return 3;
+    default: return -1;
+    }
 }
 
 private int
@@ -266,7 +289,7 @@ dsc_page_orientation(gs_param_list *plist, const CDSC *pData)
     int page_num = pData->page_count;
 
     /*
-     * The pageOrientation comment might be either in the 'defaults'
+     * The PageOrientation comment might be either in the 'defaults'
      * section or in a page section.  If in the defaults then fhe value
      * will be in page_orientation.
      */
@@ -275,7 +298,7 @@ dsc_page_orientation(gs_param_list *plist, const CDSC *pData)
 			convert_orient(pData->page[page_num - 1].orientation));
     else
         return dsc_put_int(plist, "Orientation",
-			       convert_orient(pData->page_orientation));
+			   convert_orient(pData->page_orientation));
 }
 
 private int
@@ -285,17 +308,34 @@ dsc_orientation(gs_param_list *plist, const CDSC *pData)
 			   convert_orient(pData->page_orientation));
 }
 
-
 private int
-dsc_title(gs_param_list *plist, const CDSC *pData)
+dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_string(plist, "Title", pData->dsc_title );
-}
+    int page_num = pData->page_count;
+    const char *key;
+    const CDSCCTM *pctm;
+    float values[4];
+    gs_param_float_array va;
 
-private int
-dsc_for(gs_param_list *plist, const CDSC *pData)
-{
-    return 0;		        /* To be completed */
+    /*
+     * As for PageOrientation, ViewingOrientation may be either in the
+     * 'defaults' section or in a page section.
+     */
+    if (page_num && pData->page[page_num - 1].viewing_orientation != NULL) {
+	key = "PageViewingOrientation";
+	pctm = pData->page[page_num - 1].viewing_orientation;
+    } else {
+        key = "ViewingOrientation";
+	pctm = pData->viewing_orientation;
+    }
+    values[0] = pctm->xx;
+    values[1] = pctm->xy;
+    values[2] = pctm->yx;
+    values[3] = pctm->yy;
+    va.data = values;
+    va.size = 4;
+    va.persistent = false;
+    return param_write_float_array(plist, key, &va);
 }
 
 /*
@@ -320,11 +360,12 @@ private const cmdlist_t DSCcmdlist[] = {
     { CDSC_BOUNDINGBOX,     "BoundingBox",	dsc_bounding_box },
     { CDSC_ORIENTATION,	    "Orientation",	dsc_orientation },
     { CDSC_BEGINDEFAULTS,   "BeginDefaults",	NULL },
-    { CDSC_ENDDEFAULTS,     "BeginDefaults",	NULL },
+    { CDSC_ENDDEFAULTS,     "EndDefaults",	NULL },
     { CDSC_PAGE,	    "Page",		dsc_page },
     { CDSC_PAGES,	    "Pages",		dsc_pages },
     { CDSC_PAGEORIENTATION, "PageOrientation",  dsc_page_orientation },
     { CDSC_PAGEBOUNDINGBOX, "PageBoundingBox",	dsc_page_bounding_box },
+    { CDSC_VIEWINGORIENTATION, "ViewingOrientation", dsc_viewing_orientation },
     { CDSC_EOF,		    "EOF",		NULL },
     { 0,		    "NOP",		NULL }  /* Table terminator */
 };
@@ -364,13 +405,16 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     dict_param_list list;
 
     /*
-     * Verify operand types and length of DSC comment string.
+     * Verify operand types and length of DSC comment string.  If a comment
+     * is too long then we simply truncate it.  Russell's parser gets to
+     * handle any errors that may result.  (Crude handling but the comment
+     * is bad, so ...).
      */
     check_type(*opString, t_string);
     check_dict_write(*opDict);
     ssize = r_size(opString);
-    if (ssize > MAX_DSC_MSG_SIZE - 2) /* need room for EOL + \0 */
-    	return (gs_note_error(e_rangecheck));
+    if (ssize > MAX_DSC_MSG_SIZE)   /* need room for EOL + \0 */
+        ssize = MAX_DSC_MSG_SIZE;
     /*
      * Pick up the comment string to be parsed.
      */
@@ -397,8 +441,14 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
             return code;
         comment_code = dsc_scan_data(dsc_data, dsc_buffer, ssize + 1);
         if_debug1('%', "[%%].parse_dsc_comments: code = %d\n", comment_code);
+	/*
+	 * We ignore any errors from Russell's parser.  The only value that
+	 * it will return for an error is -1 so there is very little information.
+	 * We also do not want bad DSC comments to abort processing of an
+	 * otherwise valid PS file.
+	 */
         if (comment_code < 0)
-	    return_error(comment_code);
+	    comment_code = 0;
     }
     /*
      * Transfer data from DSC structure to postscript variables.

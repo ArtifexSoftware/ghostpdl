@@ -151,6 +151,7 @@ int gdev_vector_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0,
 	stream *strm;\
 	byte *strmbuf;\
 	uint strmbuf_size;\
+	int open_options;	/* see below */\
 		/* Graphics state */\
 	gs_imager_state state;\
 	float dash_pattern[max_dash];\
@@ -174,6 +175,7 @@ int gdev_vector_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0,
 	0,		/* strm */\
 	0,		/* strmbuf */\
 	0,		/* strmbuf_size */\
+	0,		/* open_options */\
 	 { 0 },		/* state */\
 	 { 0 },		/* dash_pattern */\
 	 { 0 },		/* fill_color ****** WRONG ****** */\
@@ -209,10 +211,20 @@ void gdev_vector_init(P1(gx_device_vector * vdev));
 /* Reset the remembered graphics state. */
 void gdev_vector_reset(P1(gx_device_vector * vdev));
 
-/* Open the output file and stream, with optional bbox tracking. */
-int gdev_vector_open_file_bbox(P3(gx_device_vector * vdev, uint strmbuf_size,
-				  bool bbox));
-
+/*
+ * Open the output file and stream, with optional bbox tracking.
+ * The options must be defined so that 0 is always the default.
+ */
+#define VECTOR_OPEN_FILE_ASCII 1	/* open file as text, not binary */
+#define VECTOR_OPEN_FILE_SEQUENTIAL 2	/* open as non-seekable */
+#define VECTOR_OPEN_FILE_SEQUENTIAL_OK 4  /* open as non-seekable if */
+					/* open as seekable fails */
+#define VECTOR_OPEN_FILE_BBOX 8		/* also open bbox device */
+int gdev_vector_open_file_options(P3(gx_device_vector * vdev,
+				     uint strmbuf_size, int open_options));
+#define gdev_vector_open_file_bbox(vdev, bufsize, bbox)\
+  gdev_vector_open_file_options(vdev, bufsize,\
+				(bbox ? VECTOR_OPEN_FILE_BBOX : 0))
 #define gdev_vector_open_file(vdev, strmbuf_size)\
   gdev_vector_open_file_bbox(vdev, strmbuf_size, false)
 
@@ -240,6 +252,7 @@ int gdev_vector_prepare_fill(P4(gx_device_vector * vdev,
 /* for the line width and dash offset explicitly. */
 /* May call setlinewidth, setlinecap, setlinejoin, setmiterlimit, */
 /* setdash, setflat, setstrokecolor, setlogop. */
+/* Any of pis, params, and pdcolor may be NULL. */
 int gdev_vector_prepare_stroke(P5(gx_device_vector * vdev,
 				  const gs_imager_state * pis,
 				  const gx_stroke_params * params,
@@ -247,9 +260,10 @@ int gdev_vector_prepare_stroke(P5(gx_device_vector * vdev,
 				  floatp scale));
 
 /*
- * Compute the scale or transformation matrix for transforming the line
- * width and dash pattern for a stroke operation.  Return 0 if scaling,
- * 1 if a full matrix is needed.
+ * Compute the scale for transforming the line width and dash pattern for a
+ * stroke operation, and, if necessary to handle anisotropic scaling, a full
+ * transformation matrix to be inverse-applied to the path elements as well.
+ * Return 0 if only scaling, 1 if a full matrix is needed.
  */
 int gdev_vector_stroke_scaling(P4(const gx_device_vector *vdev,
 				  const gs_imager_state *pis,

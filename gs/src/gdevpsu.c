@@ -89,12 +89,43 @@ private const char *const psw_begin_prolog[] = {
     0
 };
 
+/*
+ * To achieve page independence, every page must in the general case
+ * set page parameters. To preserve duplexing the page cannot set page
+ * parameters. The following code checks the current page size and sets
+ * it only if it is necessary.
+ */
 private const char *const psw_ps_procset[] = {
 	/* <w> <h> <sizename> setpagesize - */
-   "/setpagesize{1 index where{pop cvx exec pop pop}{pop /setpagedevice where",
-    "{pop 2 array astore 1 dict dup/PageSize 4 -1 roll put setpagedevice}",
-    "{pop/setpage where{pop pageparams 3{exch pop}repeat setpage}",
-    "{pop pop}ifelse}ifelse}ifelse}bind def",
+   "/PageSize 2 array def"
+   "/setpagesize"              /* x y /a4 -> -          */
+     "{ PageSize aload pop "   /* x y /a4 x0 y0         */
+       "3 index eq exch",      /* x y /a4 bool x0       */
+       "4 index eq and"        /* x y /a4 bool          */
+         "{ pop pop pop"
+         "}"
+         "{ PageSize dup  1",  /* x y /a4 [  ] [  ] 1   */
+           "5 -1 roll put 0 "  /* x /a4 [ y] 0          */
+           "4 -1 roll put "    /* /a4                   */
+           "dup where"        
+             "{ exch get exec" /* -                     */
+             "}",
+             "{ pop"           /* -                     */
+               "/setpagedevice where",
+                 "{ pop 1 dict dup /PageSize PageSize put setpagedevice"
+                 "}",
+                 "{ /setpage where"
+                     "{ pop PageSize aload pop pageparams 3 {exch pop} repeat",
+                       "setpage"
+                     "}"
+                   "if"
+                 "}"
+               "ifelse"
+             "}"
+           "ifelse"
+         "}"
+       "ifelse"
+     "} bind def",
     0
 };
 
@@ -129,7 +160,6 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
     }
     fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
 	    dev->dname);
-#ifdef COMMENt
     {
 	time_t t;
 	struct tm tms;
@@ -140,7 +170,6 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
 		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
 		tms.tm_hour, tms.tm_min, tms.tm_sec);
     }
-#endif
     if (ascii)
 	fputs("%%DocumentData: Clean7Bit\n", f);
     if (pdpc->LanguageLevel >= 2.0)
@@ -171,9 +200,12 @@ psw_end_file_header(FILE *f)
  */
 void
 psw_end_file(FILE *f, const gx_device *dev,
-	     const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox)
+	     const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox,
+             int page_count)
 {
-    fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", dev->PageCount);
+    if (f == NULL)
+        return;		/* clients should be more careful */
+    fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", page_count);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
 	if (pdpc->bbox_position >= 0) {
 	    long save_pos = ftell(f);
@@ -196,12 +228,12 @@ psw_end_file(FILE *f, const gx_device *dev,
  */
 void
 psw_write_page_header(stream *s, const gx_device *dev,
-		      const gx_device_pswrite_common_t *pdpc,
-		      bool do_scale)
+                      const gx_device_pswrite_common_t *pdpc,
+                      bool do_scale, long page_ord)
 {
     long page = dev->PageCount + 1;
 
-    pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page);
+    pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page_ord);
     /*
      * Adobe's documentation says that page setup must be placed outside the
      * save/restore that encapsulates the page contents, and that the
@@ -212,7 +244,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
      * driver is page size, but there might be more in the future.
      */
     psw_put_procset_name(s, dev, pdpc);
-    pputs(s, " begin\n");
+    stream_puts(s, " begin\n");
     if (!pdpc->ProduceEPS) {
 	int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
 	int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
@@ -238,11 +270,11 @@ psw_write_page_header(stream *s, const gx_device *dev,
 	pprintd2(s, "%d %d ", width, height);
 	pprints1(s, "%s setpagesize\n", p->size_name);
     }
-    pputs(s, "/pagesave save store 100 dict begin\n");
+    stream_puts(s, "/pagesave save store 100 dict begin\n");
     if (do_scale)
 	pprintg2(s, "%g %g scale\n",
 		 72.0 / dev->HWResolution[0], 72.0 / dev->HWResolution[1]);
-    pputs(s, "%%EndPageSetup\ngsave mark\n");
+    stream_puts(s, "%%EndPageSetup\ngsave mark\n");
 }
 
 /*

@@ -113,7 +113,7 @@
 private dev_proc_print_page(dmp_print_page);
 
 /* Standard DMP device */
-gx_device_printer far_data gs_appledmp_device =
+const gx_device_printer far_data gs_appledmp_device =
 prn_device(prn_std_procs, "appledmp",
 	85,				/* width_10ths, 8.5" */
 	110,				/* height_10ths, 11" */
@@ -123,7 +123,7 @@ prn_device(prn_std_procs, "appledmp",
 
 
 /*  lowrez Imagewriter device */
-gx_device_printer far_data gs_iwlo_device =
+const gx_device_printer far_data gs_iwlo_device =
 prn_device(prn_std_procs, "iwlo",
 	85,				/* width_10ths, 8.5" */
 	110,				/* height_10ths, 11" */
@@ -133,7 +133,7 @@ prn_device(prn_std_procs, "iwlo",
 
 
 /*  hirez Imagewriter device */
-gx_device_printer far_data gs_iwhi_device =
+const gx_device_printer far_data gs_iwhi_device =
 prn_device(prn_std_procs, "iwhi",
 	85,				/* width_10ths, 8.5" */
 	110,				/* height_10ths, 11" */
@@ -143,7 +143,7 @@ prn_device(prn_std_procs, "iwhi",
 
 
 /* LQ hirez Imagewriter device */
-gx_device_printer far_data gs_iwlq_device =
+const gx_device_printer far_data gs_iwlq_device =
 prn_device(prn_std_procs, "iwlq",
 	85,				/* width_10ths, 8.5" */
 	110,				/* height_10ths, 11" */

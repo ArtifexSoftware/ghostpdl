@@ -76,10 +76,11 @@ PCFBASM=
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-# ****** WRONG ****** NEED GLOBJ PREFIX ******
-BEGINFILES=gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
-   $(GSDLL).dll $(GSCONSOLE).exe\
-   $(BEGINFILES2)
+BEGINFILES=$(GLGENDIR)\ccf32.tr\
+ $(GLOBJDIR)\*.res $(GLOBJDIR)\*.ico\
+ $(BINDIR)\$(GSDLL).dll $(BINDIR)\$(GSCONSOLE).exe\
+ $(BINDIR)\setupgs.exe $(BINDIR)\uninstgs.exe\
+ $(BEGINFILES2)
 
 # Include the generic makefiles.
 #!include $(COMMONDIR)/pcdefs.mak
@@ -90,6 +91,7 @@ BEGINFILES=gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
 # zlib.mak must precede libpng.mak
 !include $(GLSRCDIR)\zlib.mak
 !include $(GLSRCDIR)\libpng.mak
+!include $(GLSRCDIR)\icclib.mak
 !include $(GLSRCDIR)\devs.mak
 !include $(GLSRCDIR)\contrib.mak
 
@@ -122,25 +124,12 @@ $(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 
 # The Windows Win32 platform
 
-mswin32__=$(GLOBJ)gp_msio.$(OBJ)
-$(GLGEN)mswin32_.dev: $(mswin32__) $(ECHOGS_XE) $(GLGEN)msw32nc_.dev
+mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
+mswin32_inc=$(GLD)nosync.dev $(GLD)winplat.dev
+
+$(GLGEN)mswin32_.dev:  $(mswin32__) $(ECHOGS_XE) $(mswin32_inc)
 	$(SETMOD) $(GLGEN)mswin32_ $(mswin32__)
-	$(ADDMOD) $(GLGEN)mswin32_ -include $(GLGEN)msw32nc_.dev
-	$(ADDMOD) $(GLGEN)mswin32_ -iodev wstdio
-
-$(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
- $(gsdll_h) $(stdio__h) $(gxiodev_h) $(stream_h) $(gx_h) $(gp_h) $(windows__h)
-	$(GLCCWIN) $(GLO_)gp_msio.$(OBJ) $(C_) $(GLSRC)gp_msio.c
-
-# Hack: we need a version of the platform code that doesn't include the
-# console I/O module gp_msio.c, because this incorrectly refers to gsdll.c,
-# which in turn incorrectly refers to PostScript interpreter code.
-
-msw32nc__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
-msw32nc_inc=$(GLD)nosync.dev $(GLD)winplat.dev
-$(GLGEN)msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE) $(msw32nc_inc)
-	$(SETMOD) $(GLGEN)msw32nc_ $(msw32nc__)
-	$(ADDMOD) $(GLGEN)msw32nc_ -include $(msw32nc_inc)
+	$(ADDMOD) $(GLGEN)mswin32_ -include $(mswin32_inc)
 
 $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
  $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \
@@ -161,5 +150,17 @@ $(GLOBJ)gp_mshdl.$(OBJ): $(GLSRC)gp_mshdl.c $(AK)\
  $(ctype__h) $(errno__h) $(stdio__h) $(string__h)\
  $(gserror_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)
 	$(GLCC) $(GLO_)gp_mshdl.$(OBJ) $(C_) $(GLSRC)gp_mshdl.c
+
+# Define MS-Windows printer (file system) as a separable feature.
+
+msprinter_=$(GLOBJ)gp_msprn.$(OBJ)
+$(GLD)msprinter.dev: $(ECHOGS_XE) $(msprinter_)
+	$(SETMOD) $(GLD)msprinter $(msprinter_)
+	$(ADDMOD) $(GLD)msprinter -iodev printer
+
+$(GLOBJ)gp_msprn.$(OBJ): $(GLSRC)gp_msprn.c $(AK)\
+ $(ctype__h) $(errno__h) $(stdio__h) $(string__h)\
+ $(gserror_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)
+	$(GLCCWIN) $(GLO_)gp_msprn.$(OBJ) $(C_) $(GLSRC)gp_msprn.c
 
 # end of winlib.mak

@@ -226,7 +226,6 @@ private int
 inferno_open(P1(gx_device *dev))
 {
 	inferno_device *bdev = (inferno_device*) dev;
-	setbuf(stderr, 0);
 	bdev->color = bdev->gray = 0;
 	bdev->cmapcall = 0;
 	bdev->ldepth = 3;
@@ -272,11 +271,10 @@ inferno_print_page(P2(gx_device_printer *pdev, FILE *f))
 
 	inferno_device *bdev = (inferno_device *) pdev;
 	Rectangle r;
-	setbuf(stderr, 0);
 
 	gsbpl = gdev_prn_raster(pdev);
 	if(gsbpl > sizeof(buf)) {
-		fprintf(stderr, "bitmap far too wide for inferno\n");
+		errprintf("bitmap far too wide for inferno\n");
 		return_error(gs_error_Fatal);
 	}
 
@@ -293,7 +291,7 @@ inferno_print_page(P2(gx_device_printer *pdev, FILE *f))
 	bpl = bytesperline(r, ldepth);
 	w = initwriteimage(f, r, ldepth);
 	if(w == nil) {
-		fprintf(stderr, "initwriteimage failed\n");
+		errprintf("initwriteimage failed\n");
 		return_error(gs_error_Fatal);
 	}
 
@@ -440,7 +438,7 @@ addbuf(WImage *w, uchar *buf, int nbuf)
 	int n;
 	if(buf == nil || w->outp+nbuf > w->eout) {
 		if(w->loutp==w->outbuf){	/* can't really happen -- we checked line length above */
-			fprintf(stderr, "buffer too small for line\n");
+			errprintf("buffer too small for line\n");
 			return ERROR;
 		}
 		n=w->loutp-w->outbuf;
@@ -644,7 +642,7 @@ initwriteimage(FILE *f, Rectangle r, int ldepth)
 
 	bpl = bytesperline(r, ldepth);
 	if(r.max.y <= r.min.y || r.max.x <= r.min.x || bpl <= 0) {
-		fprintf(stderr, "bad rectangle, ldepth");
+		errprintf("bad rectangle, ldepth");
 		return nil;
 	}
 
@@ -684,7 +682,7 @@ writeimageblock(WImage *w, uchar *data, int ndata)
 				return ERROR;
 		addbuf(w, nil, 0);
 		if(w->r.min.y != w->origr.max.y) {
-			fprintf(stderr, "not enough data supplied to writeimage\n");
+			errprintf("not enough data supplied to writeimage\n");
 		}
 		free(w);
 		return 0;

@@ -121,12 +121,17 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10008
+PVERSION=10012
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
+
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=icclib
 
 # Define any other compilation flags.
 
@@ -213,6 +218,11 @@ BAND_LIST_COMPRESSOR=zlib
 # See gs.mak and sfxfd.c for more details.
 
 FILE_IMPLEMENTATION=stdio
+
+# Choose the implementation of stdio: '' for file I/O and 'c' for callouts
+# See gs.mak and ziodevs.c/ziodevsc.c for more details.
+
+STDIO_IMPLEMENTATION= 
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.

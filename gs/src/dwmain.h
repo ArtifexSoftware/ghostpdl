@@ -13,7 +13,7 @@
 
 // $RCSfile$ $Revision$
 
-// Icon index definitions -- why are these here??
+/* Icon index definitions - needed by resources */
 
 #define GSTEXT_ICON	50
 #define GSIMAGE_ICON	51

@@ -309,6 +309,14 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
     /* See if we want to cache this character. */
     if (pgs->in_cachedevice)	/* no recursion! */
 	return 0;
+    if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE)) { /* cshow */
+	int code;
+	if_debug0('k', "[k]no cache: cshow");
+	code = gs_nulldevice(pgs);
+	if (code < 0)
+	    return code;
+	return 0;
+    }
     pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;	/* disable color/gray/image operators */
     /* We can only use the cache if we know the glyph. */
     glyph = CURRENT_GLYPH(penum);
@@ -446,6 +454,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 		  (uint) iwidth, (uint) iheight,
 		  fixed2float(cc->offset.x),
 		  fixed2float(cc->offset.y));
+	pgs->in_cachedevice = CACHE_DEVICE_NONE; /* Provide correct grestore */
 	if ((code = gs_gsave(pgs)) < 0) {
 	    gx_free_cached_char(dir, cc);
 	    return code;
@@ -560,8 +569,13 @@ continue_show(gs_show_enum * penum)
 /* the cached values in the enumerator. */
 private int
 continue_kshow(gs_show_enum * penum)
-{
-    int code = show_state_setup(penum);
+{   int code;
+    gs_state *pgs = penum->pgs;
+
+    if (pgs->font != penum->orig_font) 
+	gs_setfont(pgs, penum->orig_font);
+
+    code = show_state_setup(penum);
 
     if (code < 0)
 	return code;

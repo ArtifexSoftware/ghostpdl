@@ -20,6 +20,7 @@
 #include "ivmspace.h"
 #include "opdef.h"
 #include "ifunc.h"
+#include "iapi.h"
 #include "iminst.h"
 
 /* Define the default values for an interpreter instance. */

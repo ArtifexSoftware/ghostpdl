@@ -66,8 +66,9 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     gs_color_space cs;
     ref_colorspace cspace_old;
     uint edepth = ref_stack_count(&e_stack);
-    gs_indexed_map *map;
-    ref sname;
+    gs_indexed_map *map = 0;
+    ref sname, tname1, tname2;
+    separation_type sep_type;
     int code;
 
     check_read_type(*op, t_array);
@@ -86,22 +87,34 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
 	case t_name:
 	    break;
     }
+
+    if ((code = name_ref((const byte *)"All", 3, &tname1, 0)) < 0)
+	return code;
+    if ((code = name_ref((const byte *)"None", 4, &tname2, 0)) < 0)
+	return code;
+    sep_type = ( name_eq(&sname, &tname1) ? SEP_ALL :
+	         name_eq(&sname, &tname2) ? SEP_NONE : SEP_OTHER);
+
     check_proc(pcsa[2]);
     cs = *gs_currentcolorspace(igs);
     if (!cs.type->can_be_alt_space)
 	return_error(e_rangecheck);
-    code = zcs_begin_map(i_ctx_p, &map, &pcsa[2], SEPARATION_CACHE_SIZE + 1,
-			 (const gs_direct_color_space *)&cs,
-			 separation_map1);
-    if (code < 0)
-	return code;
-    map->proc.tint_transform = lookup_tint;
+    if (sep_type == SEP_OTHER) {
+	code = zcs_begin_map(i_ctx_p, &map, &pcsa[2], SEPARATION_CACHE_SIZE + 1,
+			     (const gs_direct_color_space *)&cs,
+			     separation_map1);
+	if (code < 0)
+	    return code;
+        map->proc.tint_transform = lookup_tint;
+    }
+
     /* See zcsindex.c for why we use memmove here. */
     memmove(&cs.params.separation.alt_space, &cs,
 	    sizeof(cs.params.separation.alt_space));
     gs_cspace_init(&cs, &gs_color_space_type_Separation, NULL);
     cs.params.separation.sname = name_index(&sname);
     cs.params.separation.map = map;
+    cs.params.separation.sep_type = sep_type;
     cspace_old = istate->colorspace;
     istate->colorspace.procs.special.separation.layer_name = pcsa[0];
     istate->colorspace.procs.special.separation.tint_transform = pcsa[2];

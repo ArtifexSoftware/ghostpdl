@@ -181,7 +181,7 @@ COMMON_ARGS		= DEVICE_DEVS_EXTRA='$(DEVICE_DEVS_EXTRA)' \
 			  JSRCDIR='$(JSRCDIR)' \
 			  PNGSRCDIR='$(PNGSRCDIR)' \
 			  PSRCDIR='$(PNGSRCDIR)' \
-			  PVERSION=10008 \
+			  PVERSION=10012 \
 			  SHARE_LIBPNG='$(SHARE_LIBPNG)' \
 			  SHARE_ZLIB='$(SHARE_ZLIB)' \
 			  XCFLAGS='$(XCFLAGS)' \
@@ -244,7 +244,7 @@ SHARE_ZLIB		= 1
 # Use of the shared libraries still requires reference to source code in
 # these directories:
 JSRCDIR			= $(SRCDIR)/jpeg/jpeg-6b
-PNGSRCDIR		= $(SRCDIR)/libpng/libpng-1.0.8
+PNGSRCDIR		= $(SRCDIR)/libpng/libpng-1.0.10
 ZSRCDIR			= $(SRCDIR)/zlib/zlib-1.1.3
 
 # Use this to provide alternate targets to make, instead of the default

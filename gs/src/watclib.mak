@@ -64,11 +64,18 @@ JVERSION=6
 PSRCDIR=libpng
 !endif
 !ifndef PVERSION
-PVERSION=10008
+PVERSION=10012
 !endif
 
 !ifndef ZSRCDIR
 ZSRCDIR=zlib
+!endif
+
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+!ifndef ICCSRCDIR
+ICCSRCDIR=icclib
 !endif
 
 CFLAGS=
@@ -114,6 +121,9 @@ BAND_LIST_COMPRESSOR=zlib
 !endif
 !ifndef FILE_IMPLEMENTATION
 FILE_IMPLEMENTATION=stdio
+!endif
+!ifndef STDIO_IMPLEMENTATION
+STDIO_IMPLEMENTATION=
 !endif
 
 !include $(GLSRCDIR)\wctail.mak

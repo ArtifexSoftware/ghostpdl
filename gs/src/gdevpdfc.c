@@ -20,11 +20,12 @@
 #include "gscie.h"
 #include "gscindex.h"
 #include "gscsepr.h"
+#include "stream.h"
+#include "gsicc.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
-#include "stream.h"
 #include "strimpl.h"
 #include "sstring.h"
 
@@ -108,6 +109,135 @@ cie_vector_cache_is_exponential(const gx_cie_vector_cache * pc, float *pexpt)
 #undef iv
 #undef a
 #undef b
+
+/* ------ Lab space synthesis ------ */
+
+/*
+ * PDF doesn't have general CIEBased color spaces.  However, since the
+ * transformation from L*a*b* space to XYZ space is invertible, we can
+ * handle any PostScript CIEBased space by transforming color values in
+ * that space to XYZ, then inverse-transforming them to L*a*b* and using
+ * a L*a*b* space with the same WhitePoint and BlackPoint and appropriate
+ * ranges for a* and b*.  This approach has two drawbacks:
+ *
+ *	- Y values outside the range [0..1] can't be represented: we clamp
+ *	them.
+ *
+ *	- For shadings, color interpolation will occur in the Lab space
+ *	rather in the original CIEBased space.  We aren't going to worry
+ *	about this.
+ */
+
+/* Transform a CIEBased color to XYZ. */
+private int
+cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs)
+{
+    /****** NOT IMPLEMENTED YET ******/
+    out[0] = in[0], out[1] = in[1], out[2] = in[2];	/****** BOGUS ******/
+    return 0;
+}
+
+/* Transform XYZ values to Lab. */
+private double
+lab_g_inverse(double v)
+{
+    if (v >= (6.0 * 6.0 * 6.0) / (29 * 29 * 29))
+	return pow(v, 1.0 / 3);	/* use cbrt if available? */
+    else
+	return (v * (841.0 / 108) + 4.0 / 29);
+}
+private void
+xyz_to_lab(const double xyz[3], double lab[3], const gs_cie_common *pciec)
+{
+    const gs_vector3 *const pWhitePoint = &pciec->points.WhitePoint;
+    double L, lunit;
+
+    /* Calculate L* first. */
+    L = lab_g_inverse(xyz[1] / pWhitePoint->v) * 116 - 16;
+    /* Clamp L* to the PDF range [0..100]. */
+    if (L < 0)
+	L = 0;
+    else if (L > 100)
+	L = 100;
+    lab[1] = L;
+    lunit = (L + 16) / 116;
+
+    /* Calculate a* and b*. */
+    lab[0] = (lab_g_inverse(xyz[0] / pWhitePoint->u) - lunit) * 500;
+    lab[2] = (lab_g_inverse(xyz[2] / pWhitePoint->w) - lunit) * -200;
+}
+
+/* Create a PDF Lab color space corresponding to a CIEBased color space. */
+private int
+lab_range(double lab_min[3], double lab_max[3],
+	  const gs_color_space *pcs, const gs_cie_common *pciec)
+{
+    /*
+     * Determine the range of a* and b* by evaluating the color space
+     * mapping at all of its extrema.
+     */
+    int ncomp = gs_color_space_num_components(pcs);
+    int i, j;
+    const gs_range *ranges;
+
+    switch (gs_color_space_get_index(pcs)) {
+    case gs_color_space_index_CIEDEFG:
+	ranges = pcs->params.defg->RangeDEFG.ranges;
+	break;
+    case gs_color_space_index_CIEDEF:
+	ranges = pcs->params.def->RangeDEF.ranges;
+	break;
+    case gs_color_space_index_CIEABC:
+	ranges = pcs->params.abc->RangeABC.ranges;
+	break;
+    case gs_color_space_index_CIEA:
+	ranges = &pcs->params.a->RangeA;
+	break;
+    default:
+	return_error(gs_error_rangecheck);
+    }
+
+    for (j = 1; j < 3; ++j)
+	lab_min[j] = 1000.0, lab_max[j] = -1000.0;
+    for (i = 0; i < 1 << ncomp; ++i) {
+	double in[4], xyz[3];
+
+	for (j = 0; j < ncomp; ++j)
+	    in[j] = (i & (1 << j) ? ranges[j].rmax : ranges[j].rmin);
+	if (cie_to_xyz(in, xyz, pcs) >= 0) {
+	    double lab[3];
+
+	    xyz_to_lab(xyz, lab, pciec);
+	    for (j = 1; j < 3; ++j) {
+		lab_min[j] = min(lab_min[j], lab[j]);
+		lab_max[j] = max(lab_max[j], lab[j]);
+	    }
+	}
+    }
+    return 0;
+}
+private int
+pdf_lab_color_space(cos_array_t *pca, cos_dict_t *pcd,
+		    const gs_color_space *pcs, const gs_cie_common *pciec)
+{
+    double lab_min[3], lab_max[3]; /* only 1 and 2 used */
+    cos_array_t *pcar = cos_array_alloc(pca->pdev, "pdf_lab_color_space");
+    cos_value_t v;
+    int code;
+
+    if (pcar == 0)
+	return_error(gs_error_VMerror);
+    if ((code = lab_range(lab_min, lab_max, pcs, pciec)) < 0 ||
+	(code = cos_array_add(pca, cos_c_string_value(&v, "/Lab"))) < 0 ||
+	(code = cos_array_add_real(pcar, lab_min[1])) < 0 ||
+	(code = cos_array_add_real(pcar, lab_max[1])) < 0 ||
+	(code = cos_array_add_real(pcar, lab_min[2])) < 0 ||
+	(code = cos_array_add_real(pcar, lab_max[2])) < 0 ||
+	(code = cos_dict_put_c_key_object(pcd, "/Range", COS_OBJECT(pcar))) < 0
+	)
+	return code;
+    return 0;
+}
 
 /* ------ Color space writing ------ */
 
@@ -224,19 +354,106 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    return 0;
 	}
 	break;
+    case gs_color_space_index_CIEICC:
+        /* special early exit for unrecognized ICCBased color spaces */
+        if (pcs->params.icc.picc_info->picc == 0)
+            return pdf_color_space( pdev, pvalue,
+                                    (const gs_color_space *)
+                                        &pcs->params.icc.alt_space,
+                                    pcsn, by_name);
+        break;
     default:
 	break;
     }
+
+
     /* Space has parameters -- create an array. */
     pca = cos_array_alloc(pdev, "pdf_color_space");
     if (pca == 0)
 	return_error(gs_error_VMerror);
     switch (csi) {
+    case gs_color_space_index_CIEICC: {
+        /* this would arise only in a pdf ==> pdf translation, but we
+         * should allow for it anyway */
+        const gs_icc_params * picc_params = &pcs->params.icc;
+        const gs_cie_icc * picc_info = picc_params->picc_info;
+        int ncomps = picc_info->num_components;
+        cos_stream_t * pcstrm;
+        int i;
+        gs_color_space_index alt_csi;
+
+        /* ICCBased color spaces are essentially copied to the output */
+        if ((code = cos_array_add(pca, cos_c_string_value(&v, "/ICCBased"))) < 0)
+            return code;
+
+        /* create a stream for the output */
+        if ((pcstrm = cos_stream_alloc( pdev, "pdf_color_space(stream)")) == 0)
+            return_error(gs_error_VMerror);
+
+        /* indicate the number of components */
+        code = cos_dict_put_c_key_int(cos_stream_dict(pcstrm), "/N", ncomps);
+
+        /* indicate the range, if appropriate */
+        for (i = 0; i < ncomps && picc_info->Range.ranges[i].rmin == 0.0 &&
+             picc_info->Range.ranges[i].rmax == 1.0; i++)
+            ;
+        if (code >= 0 && i != ncomps) {
+            cos_array_t * prngca = cos_array_alloc(pdev,
+                                                   "pdf_color_space(Range)");
+
+            if (prngca == 0)
+                return_error(gs_error_VMerror);
+            for (i = 0; code >= 0 && i < ncomps; i++) {
+                code = cos_array_add_int(prngca,
+                                         picc_info->Range.ranges[i].rmin);
+                if (code >= 0)
+                    code = cos_array_add_int(prngca,
+                                             picc_info->Range.ranges[i].rmax);
+            }
+            if (code < 0 || 
+                (code = cos_dict_put_c_key_object(cos_stream_dict(pcstrm),
+                                                  "/Range",
+                                                  COS_OBJECT(prngca))) < 0)
+                COS_FREE(prngca, "pcf_colos_space(Range)");
+        }
+
+        /* output the alternate color space, if necessary */
+        alt_csi = gs_color_space_get_index(pcs);
+        if (code >= 0 && alt_csi != gs_color_space_index_DeviceGray &&
+            alt_csi != gs_color_space_index_DeviceRGB &&
+            alt_csi != gs_color_space_index_DeviceCMYK) {
+            code = pdf_color_space(pdev, pvalue, 
+                               (const gs_color_space *)&picc_params->alt_space,
+                               &pdf_color_space_names, false);
+            if (code >= 0)
+                code = cos_dict_put_c_key(cos_stream_dict(pcstrm), 
+                                          "/Alternate", pvalue);
+        }
+
+        /* transfer the profile stream */
+        while (code >= 0) {
+            byte    sbuff[256];
+            uint    cnt;
+
+            code = sgets(picc_info->instrp, sbuff, sizeof(sbuff), &cnt);
+            if (cnt == 0)
+                break;
+            if (code >= 0)
+                code = cos_stream_add_bytes(pcstrm, sbuff, cnt);
+        }
+        if (code >= 0)
+            code = cos_array_add(pca, COS_OBJECT_VALUE(&v, pcstrm));
+        else
+            COS_FREE(pcstrm, "pcf_color_space(ICCBased dictionary)");
+        }
+        break;
+
     case gs_color_space_index_CIEA: {
 	/* Check that we can represent this as a CalGray space. */
 	const gs_cie_a *pcie = pcs->params.a;
 	gs_vector3 expts;
 
+	pciec = (const gs_cie_common *)pcie;
 	if (!(pcie->MatrixA.u == 1 && pcie->MatrixA.v == 1 &&
 	      pcie->MatrixA.w == 1 &&
 	      pcie->common.MatrixLMN.is_identity))
@@ -251,7 +468,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		   ) {
 	    DO_NOTHING;
 	} else
-	    return_error(gs_error_rangecheck);
+	    goto lab;
 	code = cos_array_add(pca, cos_c_string_value(&v, "/CalGray"));
 	if (code < 0)
 	    return code;
@@ -263,7 +480,6 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    if (code < 0)
 		return code;
 	}
-	pciec = (const gs_cie_common *)pcie;
     }
     cal:
     code = cos_dict_put_c_key_vector3(pcd, "/WhitePoint",
@@ -287,6 +503,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	gs_vector3 expts;
 	const gs_matrix3 *pmat;
 
+	pciec = (const gs_cie_common *)pcie;
 	if (pcie->common.MatrixLMN.is_identity &&
 	    cie_cache3_is_identity(pcie->common.caches.DecodeLMN) &&
 	    cie_vector3_cache_is_exponential(pcie->caches.DecodeABC, expts)
@@ -298,7 +515,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		 )
 	    pmat = &pcie->common.MatrixLMN;
 	else
-	    return_error(gs_error_rangecheck);
+	    goto lab;
 	code = cos_array_add(pca, cos_c_string_value(&v, "/CalRGB"));
 	if (code < 0)
 	    return code;
@@ -324,9 +541,24 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		)
 		return code;
 	}
-	pciec = (const gs_cie_common *)pcie;
     }
     goto cal;
+    case gs_color_space_index_CIEDEF:
+	pciec = (const gs_cie_common *)pcs->params.def;
+	goto lab;
+    case gs_color_space_index_CIEDEFG:
+	pciec = (const gs_cie_common *)pcs->params.defg;
+    lab:
+	/* Convert all other CIEBased spaces to a Lab space. */
+	/****** NOT IMPLEMENTED YET, REQUIRES TRANSFORMING VALUES ******/
+	if (1) return_error(gs_error_rangecheck);
+	pcd = cos_dict_alloc(pdev, "pdf_color_space(dict)");
+	if (pcd == 0)
+	    return_error(gs_error_VMerror);
+	code = pdf_lab_color_space(pca, pcd, pcs, pciec);
+	if (code < 0)
+	    return code;
+	goto cal;
     case gs_color_space_index_Indexed: {
 	const gs_indexed_params *pip = &pcs->params.indexed;
 	const gs_color_space *base_space =
@@ -407,7 +639,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		base_space = &cs_gray;
 	    }
 	}
-	pwrite(&es, palette, table_size);
+	stream_write(&es, palette, table_size);
 	gs_free_string(mem, palette, table_size, "pdf_color_space(palette)");
 	sclose(&es);
 	sflush(&s);

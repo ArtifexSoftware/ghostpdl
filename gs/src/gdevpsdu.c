@@ -82,7 +82,7 @@ psdf_setdash(gx_device_vector * vdev, const float *pattern, uint count,
     stream *s = gdev_vector_stream(vdev);
     int i;
 
-    pputs(s, "[ ");
+    stream_puts(s, "[ ");
     for (i = 0; i < count; ++i)
 	pprintg1(s, "%g ", pattern[i]);
     pprintg1(s, "] %g d\n", offset);
@@ -173,7 +173,7 @@ int
 psdf_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
 	       floatp x_start, floatp y_start, gx_path_type_t type)
 {
-    pputs(gdev_vector_stream(vdev), "h\n");
+    stream_puts(gdev_vector_stream(vdev), "h\n");
     return 0;
 }
 
@@ -338,9 +338,9 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
 	if (plist)
 	    gs_c_param_list_set_target(&rcc_list, plist);
 	/* Allocate space for IJG parameters. */
-	jcdp = (jpeg_compress_data *)
-	    gs_alloc_bytes_immovable(mem, sizeof(*jcdp), "zDCTE");
-	if (jcdp == 0)
+	jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
+           &st_jpeg_compress_data, "zDCTE");
+        if (jcdp == 0)
 	    return_error(gs_error_VMerror);
 	ss->data.compress = jcdp;
 	jcdp->memory = ss->jpeg_memory = mem;	/* set now for allocation */

@@ -124,7 +124,7 @@ pdf_endpath(gx_device_vector * vdev, gx_path_type_t type)
     return 0;			/* always handled by caller */
 }
 
-private const gx_device_vector_procs pdf_vector_procs = {
+const gx_device_vector_procs pdf_vector_procs = {
 	/* Page management */
     NULL,
 	/* Imager state */
@@ -173,11 +173,10 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 {
     stream *s = pdev->strm;
 
-    pdev->vec_procs = &pdf_vector_procs;
     if (pcpath == NULL) {
 	if (pdev->clip_path_id == pdev->no_clip_path_id)
 	    return 0;
-	pputs(s, "Q\nq\n");
+	stream_puts(s, "Q\nq\n");
 	pdev->clip_path_id = pdev->no_clip_path_id;
     } else {
 	if (pdev->clip_path_id == pcpath->id)
@@ -188,7 +187,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    ) {
 	    if (pdev->clip_path_id == pdev->no_clip_path_id)
 		return 0;
-	    pputs(s, "Q\nq\n");
+	    stream_puts(s, "Q\nq\n");
 	    pdev->clip_path_id = pdev->no_clip_path_id;
 	} else {
 	    gdev_vector_dopath_state_t state;
@@ -196,7 +195,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    gs_fixed_point vs[3];
 	    int pe_op;
 
-	    pprints1(s, "Q\nq\n%s\n", (pcpath->rule <= 0 ? "W" : "W*"));
+	    stream_puts(s, "Q\nq\n");
 	    gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
 				    gx_path_type_fill, NULL);
 	    /*
@@ -208,7 +207,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
 	    while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
 		gdev_vector_dopath_segment(&state, pe_op, vs);
-	    pputs(s, "n\n");
+	    pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
 	    if (pe_op < 0)
 		return pe_op;
 	    pdev->clip_path_id = pcpath->id;
@@ -223,22 +222,24 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 
 /*
  * Compute the scaling to ensure that user coordinates for a path are within
- * Acrobat's 15-bit range.  Return true if scaling was needed.
+ * Acrobat's range.  Return true if scaling was needed.  In this case, the
+ * CTM will be multiplied by *pscale, and all coordinates will be divided by
+ * *pscale.
  */
 private bool
-make_path_scaling(const gx_device_pdf *pdev, gx_path *ppath, double *pscale)
+make_path_scaling(const gx_device_pdf *pdev, gx_path *ppath,
+		  floatp prescale, double *pscale)
 {
     gs_fixed_rect bbox;
     double bmin, bmax;
 
     gx_path_bbox(ppath, &bbox);
-    bmin = min(bbox.p.x / pdev->scale.x, bbox.p.y / pdev->scale.y);
-    bmax = max(bbox.q.x / pdev->scale.x, bbox.q.y / pdev->scale.y);
-#define MAX_USER_COORD 32000
+    bmin = min(bbox.p.x / pdev->scale.x, bbox.p.y / pdev->scale.y) * prescale;
+    bmax = max(bbox.q.x / pdev->scale.x, bbox.q.y / pdev->scale.y) * prescale;
     if (bmin <= int2fixed(-MAX_USER_COORD) ||
 	bmax > int2fixed(MAX_USER_COORD)
 	) {
-	/* Rescale the path.  Add a little slop. */
+	/* Rescale the path. */
 	*pscale = max(bmin / int2fixed(-MAX_USER_COORD),
 		      bmax / int2fixed(MAX_USER_COORD));
 	return true;
@@ -269,7 +270,6 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
      */
     bool have_path;
 
-    pdev->vec_procs = &pdf_vector_procs;
     /*
      * Check for an empty clipping path.
      */
@@ -313,18 +313,18 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    pprintg1(s, "%g i\n", params->flatness);
 	    pdev->state.flatness = params->flatness;
 	}
-	if (make_path_scaling(pdev, ppath, &scale)) {
-	    gs_make_scaling(pdev->scale.x / scale, pdev->scale.y / scale,
+	if (make_path_scaling(pdev, ppath, 1.0, &scale)) {
+	    gs_make_scaling(pdev->scale.x * scale, pdev->scale.y * scale,
 			    &smat);
+            pdf_put_matrix(pdev, "q ", &smat, "cm\n");
 	    psmat = &smat;
-	    pputs(s, "q\n");
 	}
 	gdev_vector_dopath((gx_device_vector *)pdev, ppath,
 			   gx_path_type_fill | gx_path_type_optimize,
 			   psmat);
-	pputs(s, (params->rule < 0 ? "f\n" : "f*\n"));
+	stream_puts(s, (params->rule < 0 ? "f\n" : "f*\n"));
 	if (psmat)
-	    pputs(s, "Q\n");
+	    stream_puts(s, "Q\n");
     }
     return 0;
 }
@@ -341,13 +341,13 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     double scale, path_scale;
     bool set_ctm;
     gs_matrix mat;
+    double prescale = 1;
 
     if (gx_path_is_void(ppath))
 	return 0;		/* won't mark the page */
     code = pdf_prepare_stroke(pdev, pis);
     if (code < 0)
 	return code;
-    pdev->vec_procs = &pdf_vector_procs;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
@@ -363,8 +363,22 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
      */
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
 					       pis, &scale, &mat);
-    if (make_path_scaling(pdev, ppath, &path_scale)) {
-	scale *= path_scale;
+    if (set_ctm) {
+	/*
+	 * We want a scaling factor that will bring the largest reasonable
+	 * user coordinate within bounds.  We choose a factor based on the
+	 * minor axis of the transformation.  Thanks to Raph Levien for
+	 * the following formula.
+	 */
+	double a = mat.xx, b = mat.xy, c = mat.yx, d = mat.yy;
+	double u = fabs(a * d - b * c);
+	double v = a * a + b * b + c * c + d * d;
+	double minor = (sqrt(v + 2 * u) - sqrt(v - 2 * u)) * 0.5;
+
+	prescale = (minor == 0 || minor > 1 ? 1 : 1 / minor);
+    }
+    if (make_path_scaling(pdev, ppath, prescale, &path_scale)) {
+	scale /= path_scale;
 	if (set_ctm)
 	    gs_matrix_scale(&mat, path_scale, path_scale, &mat);
 	else {
@@ -380,14 +394,14 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 				      pcpath);
 
     if (set_ctm)
-	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
+  	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
     code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
 			      gx_path_type_stroke | gx_path_type_optimize,
 			      (set_ctm ? &mat : (const gs_matrix *)0));
     if (code < 0)
 	return code;
     s = pdev->strm;
-    pputs(s, (code ? "s" : "S"));
-    pputs(s, (set_ctm ? " Q\n" : "\n"));
+    stream_puts(s, (code ? "s" : "S"));
+    stream_puts(s, (set_ctm ? " Q\n" : "\n"));
     return 0;
 }

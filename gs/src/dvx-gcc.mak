@@ -127,7 +127,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10008
+PVERSION=10012
 
 # Choose whether to use a shared version of the PNG library (-lpng).
 # See gs.mak and Make.htm for more information.
@@ -144,6 +144,11 @@ ZSRCDIR=zlib
 
 SHARE_ZLIB=0
 ZLIB_NAME=gz
+
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=icclib
 
 # ------ Platform-specific options ------ #
 
@@ -265,6 +270,11 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
+# Choose the implementation of stdio: '' for file I/O and 'c' for callouts
+# See gs.mak and ziodevs.c/ziodevsc.c for more details.
+
+STDIO_IMPLEMENTATION= 
+
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
@@ -320,6 +330,7 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/dvx-tail.mak

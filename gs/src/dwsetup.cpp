@@ -34,12 +34,12 @@
 // uninstall log files are to be placed.  
 // Subsequent lines contain files to be copied (but not directories).
 // For example, filelist.txt might contain:
-//   Artifex Ghostscript 6.50
+//   AFPL Ghostscript 6.50
 //   gs6.50
 //   gs6.50\bin\gsdll32.dll
 //   gs6.50\lib\gs_init.ps
 // The file fontlist.txt might contain:
-//   Artifex Ghostscript Fonts
+//   AFPL Ghostscript Fonts
 //   fonts
 //   fonts\n019003l.pfb
 //   fonts\n019023l.pfb
@@ -683,7 +683,7 @@ install_all()
 BOOL
 install_prog()
 {
-	char *regkey1 = "Artifex Ghostscript";
+	char *regkey1 = "AFPL Ghostscript";
 	char regkey2[16];
 	char szDLL[MAXSTR];
 	char szLIB[MAXSTR];
@@ -1009,7 +1009,7 @@ BOOL make_filelist(int argc, char *argv[])
 		    if ((title == NULL) || (strlen(title) == 0) ||
 			(dir == NULL) || (strlen(dir) == 0) ||
 			(list == NULL) || (strlen(list) == 0)) {
-			message_box("Usage: setupgs -title \042Artifex Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
+			message_box("Usage: setupgs -title \042AFPL Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
 			return FALSE;
 		    }
 		    if (fList == (FILE *)NULL) {

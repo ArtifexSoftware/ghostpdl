@@ -58,6 +58,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #   ****** compiler or executable.
 #	vesa	SuperVGA with VESA standard API driver
 # Other displays:
+#	display   For use on any platform that supports DLLs
 #   MS Windows:
 #	mswindll  Microsoft Windows 3.1 DLL  [MS Windows only]
 #	mswinprn  Microsoft Windows 3.0, 3.1 DDB printer  [MS Windows only]
@@ -370,6 +371,18 @@ $(GLOBJ)gdevs3ga.$(OBJ) : $(GLSRC)gdevs3ga.c $(GDEV) $(gdevpcfb_h) $(gdevsvga_h)
 	$(GLCC) $(GLO_)gdevs3ga.$(OBJ) $(C_) $(GLSRC)gdevs3ga.c
 
 ###### ----------------------- Other displays ------------------------ ######
+
+### ------------------ Display device for DLL platforms ----------------- ###
+
+display_=$(GLOBJ)gdevdsp.$(OBJ)
+$(DD)display.dev : $(display_)
+	$(SETDEV) $(DD)display $(display_)
+
+$(GLOBJ)gdevdsp.$(OBJ) : $(GLSRC)gdevdsp.c $(string__h)\
+ $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsexit_h) $(gsparam_h)\
+ $(GDEVH) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
+	$(GLCC) $(GLO_)gdevdsp.$(OBJ) $(C_) $(GLSRC)gdevdsp.c
+
 
 ### ---------------------- Linux PC with vgalib ------------------------- ###
 ### Note: these drivers were contributed by users.                        ###
@@ -694,7 +707,7 @@ pdfwrite3_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfg.$(OBJ)
 pdfwrite4_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfj.$(OBJ)
 pdfwrite5_=$(GLOBJ)gdevpdfm.$(OBJ)
 pdfwrite6_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ)
-pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ)
+pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ) $(GLOBJ)gdevpdfs.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ)
 pdfwrite8_=$(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfv.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
 pdfwrite9_=
 pdfwrite10_=$(GLOBJ)gsflip.$(OBJ)
@@ -708,10 +721,16 @@ pdfwritetwo_=$(pdfwrite21_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite10_) $(pdfwrite11_)
 
 
+# Including the DSC parser here is clearly wrong: it requires a PostScript
+# interpreter.  We aren't sure what to do about this yet.
+# Including macglyph is also wrong: loading the Mac glyph table also
+# requires a PostScript interpreter.
+
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
- $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)psf.dev $(PSD)macglyph.dev
+ $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)psf.dev\
+ $(PSD)dscparse.dev $(PSD)macglyph.dev
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite3_)
@@ -729,30 +748,8 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)smd5 $(GLD)szlibe
-	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf $(GLD)psf $(PSD)macglyph
-
-$(DD)pdfwrite2.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwritetwo_)\
- $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
- $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
- $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)psf.dev 
-	$(SETDEV2) $(DD)pdfwrite2 $(pdfwrite21_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite2_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite3_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite4_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite5_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite6_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite7_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite8_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite9_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite10_)
-	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite11_)
-	$(ADDMOD) $(DD)pdfwrite2 -ps gs_pdfwr
-	$(ADDMOD) $(DD)pdfwrite2 -ps gs_css_e gs_lgo_e gs_lgx_e gs_mex_e
-	$(ADDMOD) $(DD)pdfwrite2 -ps gs_wan_e
-	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
-	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
-	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)smd5 $(GLD)szlibe
-	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)psdf $(GLD)psf
+	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf $(GLD)psf
+	$(ADDMOD) $(DD)pdfwrite -include $(PSD)dscparse $(PSD)macglyph
 
 gdevpdff_h=$(GLSRC)gdevpdff.h
 gdevpdfg_h=$(GLSRC)gdevpdfg.h $(gscspace_h)
@@ -762,8 +759,8 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
  $(spprint_h) $(stream_h) $(gdevpsdf_h)
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
- $(memory__h) $(string__h)\
- $(gscdefs_h) $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)
+ $(memory__h) $(string__h) $(gp_h)\
+ $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 
 $(GLOBJ)gdevpdf2.$(OBJ) : $(GLSRC)gdevpdf2.c $(GDEVH)\
@@ -779,7 +776,7 @@ $(GLOBJ)gdevpdfb.$(OBJ) : $(GLSRC)gdevpdfb.c\
 
 $(GLOBJ)gdevpdfc.$(OBJ) : $(GLSRC)gdevpdfc.c $(GXERR) $(math__h) $(memory__h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
- $(gscie_h) $(gscindex_h) $(gscspace_h) $(gscdevn_h) $(gscsepr_h)\
+ $(gscie_h) $(gscindex_h) $(gscspace_h) $(gscdevn_h) $(gscsepr_h) $(gsicc_h)\
  $(sstring_h) $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfc.$(OBJ) $(C_) $(GLSRC)gdevpdfc.c
 
@@ -801,7 +798,8 @@ $(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
  $(ctype__h) $(math__h) $(memory__h) $(string__h) $(gx_h)\
  $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpsf_h)\
  $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gspath_h) $(gsutil_h)\
- $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxpath_h)\
+ $(gxfcache_h) $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxfont42_h)\
+ $(gxpath_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdff.$(OBJ) $(C_) $(GLSRC)gdevpdff.c
 
@@ -836,8 +834,8 @@ $(GLOBJ)gdevpdfo.$(OBJ) : $(GLSRC)gdevpdfo.c $(memory__h) $(string__h)\
  $(sa85x_h) $(slzwx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfo.$(OBJ) $(C_) $(GLSRC)gdevpdfo.c
 
-$(GLOBJ)gdevpdfp.$(OBJ) : $(GLSRC)gdevpdfp.c $(memory__h) $(gx_h)\
- $(gdevpdfx_h) $(gserrors_h) $(gsparamx_h)
+$(GLOBJ)gdevpdfp.$(OBJ) : $(GLSRC)gdevpdfp.c $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsparamx_h)
 	$(GLCC) $(GLO_)gdevpdfp.$(OBJ) $(C_) $(GLSRC)gdevpdfp.c
 
 $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
@@ -845,6 +843,15 @@ $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
  $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
  $(scanchar_h) $(sstring_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfr.$(OBJ) $(C_) $(GLSRC)gdevpdfr.c
+
+$(GLOBJ)gdevpdfs.$(OBJ) : $(GLSRC)gdevpdfs.c\
+ $(math__h) $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpsf_h)\
+ $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcache_h) $(gxfcid_h) $(gxfcmap_h) $(gxfixed_h) $(gxfont_h)\
+ $(gxfont0_h) $(gxfont1_h) $(gxfont42_h) $(gxpath_h)\
+ $(scommon_h)
+	$(GLCC) $(GLO_)gdevpdfs.$(OBJ) $(C_) $(GLSRC)gdevpdfs.c
 
 $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
@@ -857,7 +864,7 @@ $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
 
 $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
  $(jpeglib__h) $(memory__h) $(string__h)\
- $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gscdefs_h)\
  $(gsdsrc_h) $(gsfunc_h)\
  $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
@@ -873,8 +880,8 @@ $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
 $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
  $(memory__h) $(string__h) $(gx_h)\
  $(gdevpdff_h) $(gdevpdfx_h) $(gdevpsf_h)\
- $(gsbittab_h) $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcid_h) $(gxfont_h) $(gxfont0_h)\
+ $(gsalloc_h) $(gsbittab_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcid_h) $(gxfcmap_h) $(gxfont_h) $(gxfont0_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdfw.$(OBJ) $(C_) $(GLSRC)gdevpdfw.c
 
@@ -1192,6 +1199,16 @@ $(DD)png256.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 $(DD)png16m.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)png16m $(png_)
 	$(ADDMOD) $(DD)png16m $(png_i_)
+
+### -------------------- PNG with transparency -------------------- ###
+
+pnga_=$(GLOBJ)gdevpnga.$(OBJ)
+$(DD)pnga.dev :	$(pnga_)
+	$(SETDEV) $(DD)pnga $(pnga_)
+
+$(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c\
+ $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(png__h)
+	$(CC_) $(I_)$(GLI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(GLO_)gdevpnga.$(OBJ) $(C_) $(GLSRC)gdevpnga.c
 
 ### ---------------------- PostScript image format ---------------------- ###
 ### These devices make it possible to print monochrome Level 2 files on a ###

@@ -270,7 +270,7 @@ private const gx_device_procs prn_hl_procs =
 		   gdev_prn_get_params, gdev_prn_put_params);
 
 
-gx_device_printer far_data gs_hl7x0_device =
+const gx_device_printer far_data gs_hl7x0_device =
   prn_device(prn_hl_procs, "hl7x0",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -975,7 +975,7 @@ private void addByte(ByteList *list,Byte value ) {
  if (list->current < list->maxSize)
   list->data[list->current++] = value;
  else
-   fprintf(stderr,"Could not add byte to command\n");
+   errprintf("Could not add byte to command\n");
 }
 
 
@@ -990,7 +990,7 @@ private void addArray(ByteList *list, Byte *source, short nb){
     list->current += nb;
   }
   else 
-    fprintf(stderr,"Could not add byte array to command\n");
+    errprintf("Could not add byte array to command\n");
 }
 
 
@@ -1009,7 +1009,7 @@ private void addNBytes(ByteList * list, Byte value, short nb){
     list->current += nb;
   }
   else 
-    fprintf(stderr,"Could not add %d bytes to command\n",nb);
+    errprintf("Could not add %d bytes to command\n",nb);
 }
 
 /*

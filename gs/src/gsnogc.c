@@ -321,6 +321,9 @@ gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 	    use_string_freelists((gs_ref_memory_t *)mem->stable_memory);
     }
 }
+#ifdef VMS
+#pragma optimize ansi_alias=off
+#endif
 private void
 use_string_freelists(gs_ref_memory_t *rmem)
 {
@@ -332,7 +335,13 @@ use_string_freelists(gs_ref_memory_t *rmem)
      * below, even though this degrades code readability by obscuring the
      * fact that they are only manipulating fields of the more abstract
      * superclass.
+     * For OpenVMS this still gets us a warning so we switch the warning
+     * message off.
      */
+#ifdef VMS
+#pragma message disable BADANSIALIAS
+#endif
+
     /* Change the allocator to use string freelists in the future.  */
     rmem->procs.alloc_string = sf_alloc_string;
     if (rmem->procs.free_string != gs_ignore_free_string)

@@ -155,7 +155,7 @@
 /* Flag for displaying debug messages at run-time.  Higher
 	number = higher detail */
 #define IM_DEBUG 0
-#define DebugMsg(Level,P1,P2) if (Level<=IM_DEBUG) {fprintf(stderr,P1,P2 );}
+#define DebugMsg(Level,P1,P2) if (Level<=IM_DEBUG) {errprintf(P1,P2 );}
 
 /*-------------------------------------------*/ 
   /* Impress bitmaps are made up of 32x32 bit swatches. 
@@ -231,7 +231,7 @@ gx_device_procs imagen_procs =
 #define ppdev ((gx_device_printer *)pdev)
 
 /*-------------------------------------------*/ 
-gx_device_printer far_data gs_imagen_device = 
+const gx_device_printer far_data gs_imagen_device = 
   prn_device(/*prn_std_procs*/ imagen_procs,
 	"imagen", 
 	WIDTH_10THS, 

@@ -74,7 +74,6 @@ gscdefs_h=$(GLSRC)gscdefs.h $(gconfigv_h)
 
 vmsmath_h=$(GLSRC)vmsmath.h
 
-close__h=$(GLSRC)close_.h $(std_h)
 dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
 dirent__h=$(GLSRC)dirent_.h $(std_h) $(gconfig__h)
@@ -87,6 +86,7 @@ stat__h=$(GLSRC)stat_.h $(std_h)
 stdio__h=$(GLSRC)stdio_.h $(std_h)
 string__h=$(GLSRC)string_.h $(std_h)
 time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
+unistd__h=$(GLSRC)unistd_.h $(std_h)
 windows__h=$(GLSRC)windows_.h
 # Out of order
 pipe__h=$(GLSRC)pipe_.h $(stdio__h)
@@ -151,6 +151,7 @@ gxbitops_h=$(GLSRC)gxbitops.h $(gsbitops_h)
 # Streams
 scommon_h=$(GLSRC)scommon.h $(gsmemory_h) $(gstypes_h) $(gsstype_h)
 stream_h=$(GLSRC)stream.h $(scommon_h) $(srdline_h)
+gs_stdio_h=$(GLSRC)gs_stdio.h $(stdio__h) $(stream_h)
 
 ### Memory manager
 
@@ -187,6 +188,10 @@ $(GLOBJ)gsnogc.$(OBJ) : $(GLSRC)gsnogc.c $(GX)\
 
 ### Bitmap processing
 
+$(GLOBJ)gsbitcom.$(OBJ) : $(GLSRC)gsbitcom.c $(AK) $(std_h)\
+ $(gdebug_h) $(gsbitops_h) $(gstypes_h)
+	$(GLCC) $(GLO_)gsbitcom.$(OBJ) $(C_) $(GLSRC)gsbitcom.c
+
 $(GLOBJ)gsbitops.$(OBJ) : $(GLSRC)gsbitops.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gsbittab_h) $(gserror_h) $(gserrors_h) $(gstypes_h)\
  $(gxbitops_h)
@@ -217,7 +222,7 @@ $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
 
 # Support for platform code
 $(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c\
- $(close__h) $(fcntl__h) $(stat__h) $(stdio__h)\
+ $(unistd__h) $(fcntl__h) $(stat__h) $(stdio__h)\
  $(gp_h) $(gpgetenv_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 
@@ -275,6 +280,7 @@ gscoord_h=$(GLSRC)gscoord.h
 gscpm_h=$(GLSRC)gscpm.h
 gscsepnm_h=$(GLSRC)gscsepnm.h
 gsdevice_h=$(GLSRC)gsdevice.h
+gsdfilt_h=$(GLSRC)gsdfilt.h
 gsfcmap_h=$(GLSRC)gsfcmap.h $(gsccode_h)
 gsfname_h=$(GLSRC)gsfname.h
 gsfont_h=$(GLSRC)gsfont.h
@@ -370,6 +376,7 @@ gxfont_h=$(GLSRC)gxfont.h\
  $(gsccode_h) $(gsfont_h) $(gsnotify_h) $(gsstype_h) $(gsuid_h) $(gxftype_h)
 gxiparam_h=$(GLSRC)gxiparam.h $(gsstype_h) $(gxdevcli_h)
 gscie_h=$(GLSRC)gscie.h $(gconfigv_h) $(gsrefct_h) $(gsstype_h) $(gxctable_h)
+gsicc_h=$(GLSRC)gsicc.h $(gscie_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
 gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
 gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
@@ -444,6 +451,7 @@ siscale_h=$(GLSRC)siscale.h $(sisparam_h)
 gximage_h=$(GLSRC)gximage.h $(gsiparam_h)\
  $(gxcspace_h) $(gxdda_h) $(gxiclass_h) $(gxiparam_h) $(gxsample_h)\
  $(sisparam_h) $(strimpl_h)
+gsptype2_h=$(GLSRC)gsptype2.h $(gspcolor_h) $(gxfixed_h)
 
 ### Executable code
 
@@ -537,7 +545,7 @@ $(GLOBJ)gxdither.$(OBJ) : $(GLSRC)gxdither.c $(GX)\
 $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(GXERR)\
  $(gsstruct_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
- $(gxistate_h) $(gxpaint_h)\
+ $(gxistate_h) $(gxpaint_h) $(gsptype2_h)\
  $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxfill.$(OBJ) $(C_) $(GLSRC)gxfill.c
 
@@ -669,6 +677,13 @@ $(GLOBJ)gsdevice.$(OBJ) : $(GLSRC)gsdevice.c $(GXERR)\
  $(gspaint_h) $(gspath_h) $(gsstruct_h)\
  $(gxcmap_h) $(gxdevice_h) $(gxdevmem_h) $(gxiodev_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gsdevice.$(OBJ) $(C_) $(GLSRC)gsdevice.c
+
+$(GLOBJ)gsdfilt.$(OBJ) : $(GLSRC)gsdfilt.c $(GXERR)\
+ $(ctype__h) $(memory__h) $(string__h) $(gp_h)\
+ $(gscdefs_h) $(gscoord_h) $(gsfname_h) $(gsmatrix_h)\
+ $(gspaint_h) $(gspath_h) $(gsstruct_h)\
+ $(gxcmap_h) $(gxdevice_h) $(gxdevmem_h) $(gxiodev_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsdfilt.$(OBJ) $(C_) $(GLSRC)gsdfilt.c
 
 $(GLOBJ)gsdevmem.$(OBJ) : $(GLSRC)gsdevmem.c $(GXERR) $(math__h) $(memory__h)\
  $(gsdevice_h) $(gxarith_h) $(gxdevice_h) $(gxdevmem_h)
@@ -925,12 +940,12 @@ $(GLOBJ)gdevemap.$(OBJ) : $(GLSRC)gdevemap.c $(AK) $(std_h)
 
 LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ)
 LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ)
-LIB2s=$(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
+LIB2s=$(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
 LIB3s=$(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ) $(GLOBJ)gscoord.$(OBJ)
 LIB4s=$(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ) $(GLOBJ)gscssub.$(OBJ)
-LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ)
+LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ) $(GLOBJ)gsdfilt.$(OBJ)
 LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ)
 LIB7s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB8s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsistate.$(OBJ) $(GLOBJ)gsline.$(OBJ)
@@ -974,7 +989,7 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev
 	$(ADDMOD) $(GLD)libs $(LIB10s)
 	$(ADDMOD) $(GLD)libs $(LIB11s)
 	$(ADDMOD) $(GLD)libs $(LIB12s)
-	$(ADDMOD) $(GLD)libs -init gshtscr
+	$(ADDMOD) $(GLD)libs -init gshtscr gsutil
 	$(ADDMOD) $(GLD)libs -include $(GLD)gsiodevs
 
 $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
@@ -1036,7 +1051,7 @@ $(GLOBJ)sfxstdio.$(OBJ) : $(GLSRC)sfxstdio.c $(AK) $(stdio__h) $(memory__h)\
 	$(GLCC) $(GLO_)sfxstdio.$(OBJ) $(C_) $(GLSRC)sfxstdio.c
 
 $(GLOBJ)sfxfd.$(OBJ) : $(GLSRC)sfxfd.c $(AK)\
- $(stdio__h) $(errno__h) $(memory__h)\
+ $(stdio__h) $(errno__h) $(memory__h) $(unistd__h)\
  $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)sfxfd.$(OBJ) $(C_) $(GLSRC)sfxfd.c
 
@@ -1662,7 +1677,7 @@ $(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev
 	$(ADDMOD) $(GLD)cmaplib -include $(GLD)cidlib
 
 $(GLOBJ)gsfcmap.$(OBJ) : $(GLSRC)gsfcmap.c $(GXERR) $(memory__h)\
- $(gsstruct_h) $(gxfcmap_h)
+ $(gsstruct_h) $(gsutil_h) $(gxfcmap_h)
 	$(GLCC) $(GLO_)gsfcmap.$(OBJ) $(C_) $(GLSRC)gsfcmap.c
 
 psf0lib_=$(GLOBJ)gschar0.$(OBJ) $(GLOBJ)gsfont0.$(OBJ)
@@ -1816,7 +1831,8 @@ $(DD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
 	$(ADDMOD) $(DD)psf -obj $(psf_2)
 
 $(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
+ $(gsccode_h) $(gsmatrix_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
  $(sfilter_h) $(sstring_h) $(stream_h) $(strimpl_h)\
  $(gdevpsf_h) $(spprint_h) $(spsdf_h)
 	$(GLCC) $(GLO_)gdevpsf1.$(OBJ) $(C_) $(GLSRC)gdevpsf1.c
@@ -2031,7 +2047,8 @@ $(GLD)cielib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cielib_)
 
 $(GLOBJ)gscie.$(OBJ) : $(GLSRC)gscie.c $(GXERR) $(math__h) $(memory__h)\
  $(gscolor2_h) $(gsmatrix_h) $(gsstruct_h)\
- $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)
+ $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)\
+ $(gsicc_h)
 	$(GLCC) $(GLO_)gscie.$(OBJ) $(C_) $(GLSRC)gscie.c
 
 $(GLOBJ)gsciemap.$(OBJ) : $(GLSRC)gsciemap.c $(GXERR) $(math__h)\
@@ -2058,6 +2075,20 @@ $(GLOBJ)gscscie.$(OBJ) : $(GLSRC)gscscie.c $(GXERR) $(math__h)\
 $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
  $(gxfixed_h) $(gxfrac_h) $(gxctable_h)
 	$(GLCC) $(GLO_)gxctable.$(OBJ) $(C_) $(GLSRC)gxctable.c
+
+# ---------------- ICCBased color ---------------- #
+sicclib_=$(GLOBJ)gsicc.$(OBJ)
+$(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(GLD)cielib.dev\
+ $(ICCGENDIR)$(D)icclib.dev
+	$(SETMOD) $(GLD)sicclib $(sicclib_)
+	$(ADDMOD) $(GLD)sicclib -include $(ICCGENDIR)$(D)icclib.dev
+
+icc_h=$(ICCI_)$(D)icc.h
+
+$(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
+ $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
+ $(gzstate_h) $(gs_stdio_h) $(icc_h) $(gsicc_h)
+	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(I_)$(GLI_) $(II)$(ICCI_)$(_I) $(GLSRC)gsicc.c
 
 # ---------------- Separation colors ---------------- #
 
@@ -2146,6 +2177,7 @@ $(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_)
 gstrans_h=$(GLSRC)gstrans.h $(gstparam_h)
 gsipar3x_h=$(GLSRC)gsipar3x.h $(gsiparam_h) $(gsiparm3_h)
 gximag3x_h=$(GLSRC)gximag3x.h $(gsipar3x_h) $(gxiparam_h)
+gxblend_h=$(GLSRC)gxblend.h
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
  $(gstrans_h) $(gsutil_h) $(gzstate_h)
@@ -2157,7 +2189,15 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
  $(gxdevice_h) $(gxdevmem_h) $(gximag3x_h) $(gxistate_h)
 	$(GLCC) $(GLO_)gximag3x.$(OBJ) $(C_) $(GLSRC)gximag3x.c
 
-translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)
+$(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(GXERR)
+	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
+
+$(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
+ $(gsdevice_h) $(gstparam_h) $(gsstruct_h) $(gxblend_h) $(gxtext_h)
+	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
+
+translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
+ $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gdevp14.$(OBJ)
 $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_) $(GLD)cspixlib.dev
 	$(SETMOD) $(GLD)translib $(translib_)
 	$(ADDMOD) $(GLD)translib -imagetype 3x
@@ -2167,7 +2207,6 @@ $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_) $(GLD)cspixlib.dev
 
 gscolor3_h=$(GLSRC)gscolor3.h
 gsfunc3_h=$(GLSRC)gsfunc3.h $(gsdsrc_h) $(gsfunc_h)
-gsptype2_h=$(GLSRC)gsptype2.h $(gspcolor_h)
 gsshade_h=$(GLSRC)gsshade.h\
  $(gsccolor_h) $(gscspace_h) $(gsdsrc_h) $(gsfunc_h) $(gsmatrix_h)\
  $(gxfixed_h)
@@ -2198,13 +2237,14 @@ $(GLOBJ)gsshade.$(OBJ) : $(GLSRC)gsshade.c $(GXERR)\
 
 $(GLOBJ)gxshade.$(OBJ) : $(GLSRC)gxshade.c $(GXERR) $(math__h)\
  $(gscie_h) $(gsrect_h)\
- $(gxcspace_h) $(gxdevcli_h) $(gxdht_h) $(gxistate_h) $(gxpaint_h) $(gxshade_h)
+ $(gxcspace_h) $(gxdevcli_h) $(gxdht_h) $(gxistate_h) $(gxpaint_h) $(gxshade_h)\
+ $(gsicc_h)
 	$(GLCC) $(GLO_)gxshade.$(OBJ) $(C_) $(GLSRC)gxshade.c
 
 $(GLOBJ)gxshade1.$(OBJ) : $(GLSRC)gxshade1.c $(GXERR) $(math__h) $(memory__h)\
  $(gscoord_h) $(gsmatrix_h) $(gspath_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxfarith_h) $(gxfixed_h) $(gxistate_h)\
- $(gxpath_h) $(gxshade_h)
+ $(gxpath_h) $(gxshade_h) $(gxdevcli_h)
 	$(GLCC) $(GLO_)gxshade1.$(OBJ) $(C_) $(GLSRC)gxshade1.c
 
 $(GLOBJ)gxshade4.$(OBJ) : $(GLSRC)gxshade4.c $(GXERR) $(memory__h)\

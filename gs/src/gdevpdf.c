@@ -14,7 +14,9 @@
 /* PDF-writing driver */
 #include "memory_.h"
 #include "string_.h"
+#include "unistd_.h"
 #include "gx.h"
+#include "gp.h"			/* for gp_get_realtime */
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gdevpdfx.h"
@@ -26,11 +28,6 @@
 /* Acrobat 4 (PDF 1.3) is the default. */
 #define PSDF_VERSION_INITIAL psdf_version_ll3
 #define PDF_COMPATIBILITY_LEVEL_INITIAL 1.3
-
-/* Define the names of the resource types. */
-private const char *const resource_type_names[] = {
-    pdf_resource_type_names
-};
 
 /* Define the size of internal stream buffers. */
 /* (This is not a limitation, it only affects performance.) */
@@ -187,11 +184,15 @@ const gx_device_pdf gs_pdfwrite_device =
  1 /*true*/,			/* ReAssignCharacters */
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
+ 0 /*false*/,			/* is_EPS */
+ {-1},				/* doc_dsc_info */
+ {-1},				/* page_dsc_info */
  0 /*false*/,			/* fill_overprint */
  0 /*false*/,			/* stroke_overprint */
  0,				/* overprint_mode */
  gs_no_id,			/* halftone_id */
  {gs_no_id, gs_no_id, gs_no_id, gs_no_id}, /* transfer_ids */
+ 0,				/* transfer_not_identity */
  gs_no_id,			/* black_generation_id */
  gs_no_id,			/* undercolor_removal_id */
  pdf_compress_none,		/* compression */
@@ -202,6 +203,8 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* open_font */
  0 /*false*/,			/* use_open_font */
  0,				/* embedded_encoding_id */
+ -1,				/* max_embedded_code */
+ 0,				/* random_offset */
  0,				/* next_id */
  0,				/* Catalog */
  0,				/* Info */
@@ -219,6 +222,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {{0}},				/* text_rotation */
  0,				/* pages */
  0,				/* num_pages */
+ 1,				/* used_mask */
  {
      {
 	 {0}}},			/* resources */
@@ -286,6 +290,7 @@ pdf_close_files(gx_device_pdf * pdev, int code)
 private void
 pdf_reset_page(gx_device_pdf * pdev)
 {
+    pdev->page_dsc_info = gs_pdfwrite_device.page_dsc_info;
     pdev->contents_id = 0;
     pdf_reset_graphics(pdev);
     pdev->procsets = NoMarks;
@@ -363,10 +368,18 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     pdf_create_named_dict(pdev, NULL, &pdev->Pages, 0L);
 }
 
+#ifdef __DECC
+/* The ansi alias rules are violated in this next routine.  Tell the compiler
+   to ignore this.
+ */
+#pragma optimize save
+#pragma optimize ansi_alias=off
+#endif
 /* Update the color mapping procedures after setting ProcessColorModel. */
 void
 pdf_set_process_color_model(gx_device_pdf * pdev)
 {
+    gx_color_index color = 0; /* black */
     switch (pdev->color_info.num_components) {
     case 1:
 	set_dev_proc(pdev, map_rgb_color, gx_default_gray_map_rgb_color);
@@ -381,12 +394,21 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
     case 4:
 	set_dev_proc(pdev, map_rgb_color, NULL);
 	set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
+       /* possible problems with aliassing on next statement */
 	set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+        color = gx_map_cmyk_color((gx_device *)pdev,
+		      frac2cv(frac_0), frac2cv(frac_0),
+		      frac2cv(frac_0), frac2cv(frac_1));
 	break;
     default:			/* can't happen */
 	DO_NOTHING;
     }
+    color_set_pure(&pdev->fill_color, color);
+    color_set_pure(&pdev->stroke_color, color);
 }
+#ifdef __DECC
+#pragma optimize restore
+#endif
 
 /*
  * Reset the text state parameters to initial values.  This isn't a very
@@ -401,6 +423,7 @@ pdf_reset_text(gx_device_pdf * pdev)
     pdev->text.word_spacing = 0;
     pdev->text.leading = 0;
     pdev->text.use_leading = false;
+    pdev->text.render_mode = 0;
 }
 
 /* Open the device. */
@@ -421,6 +444,7 @@ pdf_open(gx_device * dev)
     if (code < 0)
 	goto fail;
     gdev_vector_init((gx_device_vector *) pdev);
+    pdev->vec_procs = &pdf_vector_procs;
     pdev->fill_options = pdev->stroke_options = gx_path_type_optimize;
     /* Set in_page so the vector routines won't try to call */
     /* any vector implementation procedures. */
@@ -463,6 +487,36 @@ pdf_open(gx_device * dev)
     pdev->open_graphics = 0;
     pdf_reset_page(pdev);
 
+    /*
+     * We don't use rand() for generating subset prefixes, because it isn't
+     * random across runs (always starts at 1).  We don't seed rand() from a
+     * one-time source of randomness, because a library should never assume
+     * it can modify program-global state.  So what we do is generate a
+     * one-time random offset, and combine that with the sequence produced
+     * by rand().
+     */
+    {
+	/*
+	 * If we're on a system that provides /dev/random, that's the best
+	 * source of good random bits.
+	 */
+	FILE *rfile = fopen("/dev/random", "rb");
+
+	if (rfile && fread(&pdev->random_offset, sizeof(pdev->random_offset),
+			   1, rfile) == sizeof(pdev->random_offset)
+	    )
+	    fclose(rfile);
+	else {
+	    /* Hope that the clock is random enough. */
+	    long tm[2];
+
+	    if (rfile)
+		fclose(rfile);
+	    gp_get_realtime(tm);
+	    pdev->random_offset = tm[0] + tm[1];
+	}
+    }
+
     return 0;
   fail:
     return pdf_close_files(pdev, code);
@@ -500,50 +554,13 @@ pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
     return angles[imax];
 }
 
-/*
- * Write and release the Cos objects for page-specific resources.
- * We must write all the objects before freeing any of them, because
- * they might refer to each other.
- */
-private int
-pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
-{
-    int j;
-
-    /* Write objects. */
-    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
-
-	for (; pres != 0; pres = pres->next)
-	    if (!pres->named && !pres->object->written)
-		cos_write_object(pres->object, pdev);
-    }
-
-    /* Free unnamed objects, which can't be used again. */
-    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-	pdf_resource_t **prev = &pdev->resources[rtype].chains[j];
-	pdf_resource_t *pres;
-
-	while ((pres = *prev) != 0) {
-	    if (pres->named) {	/* named, don't free */
-		prev = &pres->next;
-	    } else {
-		cos_free(pres->object, "pdf_write_resource_objects");
-		pres->object = 0;
-		*prev = pres->next;
-	    }
-	}
-    }
-
-    return 0;
-}
-
 /* Close the current page. */
 private int
 pdf_close_page(gx_device_pdf * pdev)
 {
     int page_num = ++(pdev->next_page);
     pdf_page_t *page;
+    int code;
 
     /*
      * If the very first page is blank, we need to open the document
@@ -567,82 +584,15 @@ pdf_close_page(gx_device_pdf * pdev)
     page->MediaBox.y = (int)(pdev->MediaSize[1]);
     page->procsets = pdev->procsets;
     page->contents_id = pdev->contents_id;
-
-    /* Write out any resource dictionaries. */
-
-    {
-	int i;
-
-	for (i = 0; i < resourceFont; ++i) {
-	    bool any = false;
-	    stream *s;
-	    int j;
-
-	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-		pdf_resource_t *pres = pdev->resources[i].chains[j];
-
-		for (; pres != 0; pres = pres->next) {
-		    if (pres->used_on_page) {
-			long id = pres->object->id;
-
-			if (!any) {
-			    page->resource_ids[i] = pdf_begin_obj(pdev);
-			    s = pdev->strm;
-			    pputs(s, "<<");
-			    any = true;
-			}
-			pprintld2(s, "/R%ld\n%ld 0 R", id, id);
-		    }
-		}
-	    }
-	    if (any) {
-		pputs(s, ">>\n");
-		pdf_end_obj(pdev);
-		pdf_write_resource_objects(pdev, i);
-	    }
-	}
-    }
+    /* pdf_store_page_resources sets procsets, resource_ids[]. */
+    code = pdf_store_page_resources(pdev, page);
+    if (code < 0)
+	return code;
 
     /* Write out Functions. */
 
     pdf_write_resource_objects(pdev, resourceFunction);
 
-    /* Record references to just those fonts used on this page. */
-
-    {
-	bool any = false;
-	stream *s;
-	int j;
-
-	for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-	    pdf_font_t **prev =
-		(pdf_font_t **)&pdev->resources[resourceFont].chains[j];
-	    pdf_font_t *font;
-
-	    while ((font = *prev) != 0) {
-		if (font->used_on_page) {
-		    if (!any) {
-			page->fonts_id = pdf_begin_obj(pdev);
-			s = pdev->strm;
-			pputs(s, "<<");
-			any = true;
-		    }
-		    pprints1(s, "/%s", font->frname);
-		    pprintld1(s, "\n%ld 0 R", font->object->id);
-		    font->used_on_page = false;
-		}
-		if (font->skip) {
-		    /* The font was already written and freed. */
-		    *prev = font->next;
-		} else
-		    prev = &font->next;
-	    }
-	}
-	if (any) {
-	    pputs(s, ">>\n");
-	    pdf_end_obj(pdev);
-	}
-    }
     /*
      * When Acrobat Reader 3 prints a file containing a Type 3 font with a
      * non-standard Encoding, it apparently only emits the subset of the
@@ -667,11 +617,28 @@ pdf_close_page(gx_device_pdf * pdev)
 	    pdev->text_rotation.counts[i] += page->text_rotation.counts[i];
     }
 
+    /* Record information from DSC comments. */
+
+    page->dsc_info = pdev->page_dsc_info;
+    if (page->dsc_info.orientation < 0)
+	page->dsc_info.orientation = pdev->doc_dsc_info.orientation;
+    if (page->dsc_info.bounding_box.p.x >= page->dsc_info.bounding_box.q.x ||
+	page->dsc_info.bounding_box.p.y >= page->dsc_info.bounding_box.q.y
+	)
+	page->dsc_info.bounding_box = pdev->doc_dsc_info.bounding_box;
+
+    /* Finish up. */
+
     pdf_reset_page(pdev);
     return (pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) : 0);
 }
 
 /* Write the page object. */
+private double
+round_box_coord(floatp xy)
+{
+    return (int)(xy * 100 + 0.5) / 100.0;
+}
 private int
 pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
@@ -681,52 +648,57 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 
     pdf_open_obj(pdev, page_id);
     s = pdev->strm;
-    pprintd2(s, "<</Type/Page/MediaBox [0 0 %d %d]\n",
-	     page->MediaBox.x, page->MediaBox.y);
+    pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
+	     round_box_coord(page->MediaBox.x),
+	     round_box_coord(page->MediaBox.y));
     if (page->text_rotation.Rotate >= 0)
 	pprintd1(s, "/Rotate %d", page->text_rotation.Rotate);
+    else if (page->dsc_info.orientation >= 0)
+	pprintd1(s, "/Rotate %d", page->dsc_info.orientation * 90);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
-    pputs(s, "/Resources<</ProcSet[/PDF");
+    stream_puts(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)
-	pputs(s, " /ImageB");
+	stream_puts(s, " /ImageB");
     if (page->procsets & ImageC)
-	pputs(s, " /ImageC");
+	stream_puts(s, " /ImageC");
     if (page->procsets & ImageI)
-	pputs(s, " /ImageI");
+	stream_puts(s, " /ImageI");
     if (page->procsets & Text)
-	pputs(s, " /Text");
-    pputs(s, "]\n");
+	stream_puts(s, " /Text");
+    stream_puts(s, "]\n");
     {
 	int i;
 
-	for (i = 0; i < resourceFont; ++i)
+	for (i = 0; i < countof(page->resource_ids); ++i)
 	    if (page->resource_ids[i]) {
-		pprints1(s, "/%s ", resource_type_names[i]);
-		pprintld1(s, "%ld 0 R\n", page->resource_ids[i]);
+		stream_puts(s, pdf_resource_type_names[i]);
+		pprintld1(s, " %ld 0 R\n", page->resource_ids[i]);
 	    }
     }
-    if (page->fonts_id)
-	pprintld1(s, "/Font %ld 0 R\n", page->fonts_id);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
 
     /* Write out the annotations array if any. */
 
     if (page->Annots) {
-	pputs(s, "/Annots");
+	stream_puts(s, "/Annots");
 	COS_WRITE(page->Annots, pdev);
 	COS_FREE(page->Annots, "pdf_write_page(Annots)");
 	page->Annots = 0;
     }
-    if (page->contents_id == 0)
-	pputs(s, "/Contents []\n");
-    else
+    /*
+     * The PDF documentation allows, and this code formerly emitted,
+     * a Contents entry whose value was an empty array.  Acrobat Reader
+     * 3 and 4 accept this, but Acrobat Reader 5.0 rejects it.
+     * Fortunately, the Contents entry is optional.
+     */
+    if (page->contents_id != 0)
 	pprintld1(s, "/Contents %ld 0 R\n", page->contents_id);
 
     /* Write any elements stored by pdfmarks. */
 
     cos_dict_elements_write(page->Page, pdev);
 
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_obj(pdev);
     return 0;
 }
@@ -782,12 +754,13 @@ pdf_close(gx_device * dev)
     /* Write the font resources and related resources. */
 
     pdf_write_font_resources(pdev);
+    pdf_write_resource_objects(pdev, resourceCMap);
 
     /* Create the Pages tree. */
 
     pdf_open_obj(pdev, Pages_id);
     s = pdev->strm;
-    pputs(s, "<< /Type /Pages /Kids [\n");
+    stream_puts(s, "<< /Type /Pages /Kids [\n");
     /* Omit the last page if it was incomplete. */
     if (partial_page)
 	--(pdev->next_page);
@@ -802,7 +775,7 @@ pdf_close(gx_device * dev)
 	pprintd1(s, "/Rotate %d\n",
 		 pdf_dominant_rotation(&pdev->text_rotation));
     cos_dict_elements_write(pdev->Pages, pdev);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_obj(pdev);
 
     /* Close outlines and articles. */
@@ -843,19 +816,19 @@ pdf_close(gx_device * dev)
 
 	Threads_id = pdf_begin_obj(pdev);
 	s = pdev->strm;
-	pputs(s, "[ ");
+	stream_puts(s, "[ ");
 	while ((part = pdev->articles) != 0) {
 	    pdev->articles = part->next;
 	    pprintld1(s, "%ld 0 R\n", part->contents->id);
 	    COS_FREE(part->contents, "pdf_close(article contents)");
 	    gs_free_object(mem, part, "pdf_close(article)");
 	}
-	pputs(s, "]\n");
+	stream_puts(s, "]\n");
 	pdf_end_obj(pdev);
     }
     pdf_open_obj(pdev, Catalog_id);
     s = pdev->strm;
-    pputs(s, "<<");
+    stream_puts(s, "<<");
     pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
     if (pdev->outlines_id != 0)
 	pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
@@ -864,7 +837,7 @@ pdf_close(gx_device * dev)
     if (pdev->Dests)
 	pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
     cos_dict_elements_write(pdev->Catalog, pdev);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_obj(pdev);
     if (pdev->Dests) {
 	COS_FREE(pdev->Dests, "pdf_close(Dests)");
@@ -927,16 +900,16 @@ pdf_close(gx_device * dev)
 	    if (pos & ASIDES_BASE_POSITION)
 		pos += resource_pos - ASIDES_BASE_POSITION;
 	    sprintf(str, "%010ld 00000 n \n", pos);
-	    pputs(s, str);
+	    stream_puts(s, str);
 	}
     }
 
     /* Write the trailer. */
 
-    pputs(s, "trailer\n");
+    stream_puts(s, "trailer\n");
     pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
 	      pdev->next_id, Catalog_id, Info_id);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
 
     /* Release the resource records. */

@@ -35,6 +35,8 @@ private int append_outline(P4(uint glyph_index, const gs_matrix_fixed * pmat,
 			      gx_path * ppath, gs_font_type42 * pfont));
 private int default_get_outline(P3(gs_font_type42 *pfont, uint glyph_index,
 				   gs_const_string *pgstr));
+private int default_get_metrics(P4(gs_font_type42 *pfont, uint glyph_index,
+				   int wmode, float sbw[4]));
 
 /* Set up a pointer to a substring of the font data. */
 /* Free variables: pfont, string_proc. */
@@ -136,7 +138,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
     }
     pfont->data.get_outline = default_get_outline;
-    pfont->data.get_metrics = gs_type42_default_get_metrics;
+    pfont->data.get_metrics = default_get_metrics;
     pfont->procs.glyph_outline = gs_type42_glyph_outline;
     pfont->procs.glyph_info = gs_type42_glyph_info;
     pfont->procs.enumerate_glyph = gs_type42_enumerate_glyph;
@@ -239,11 +241,13 @@ private int
 total_points(gs_font_type42 *pfont, uint glyph_index)
 {
     gs_const_string glyph_string;
-    int code = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
+    int code;
+    int ocode = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
     const byte *gdata = glyph_string.data;
+    int total;
 
-    if (code < 0)
-	return code;
+    if (ocode < 0)
+	return ocode;
     if (glyph_string.size == 0)
 	return 0;
     if (S16(gdata) != -1) {
@@ -252,16 +256,15 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
 	const byte *pends = gdata + 10;
 	const byte *pinstr = pends + numContours * 2;
 
-	return (numContours == 0 ? 0 : U16(pinstr - 2) + 1);
-    }
-    /* This is a composite glyph.  Add up the components. */
-    gdata += 10;
-    {
+	total = (numContours == 0 ? 0 : U16(pinstr - 2) + 1);
+    } else {
+	/* This is a composite glyph.  Add up the components. */
 	uint flags;
 	gs_matrix_fixed mat;
-	int total = 0;
 
+	gdata += 10;
 	memset(&mat, 0, sizeof(mat)); /* arbitrary */
+	total = 0;
 	do {
 	    code = total_points(pfont, U16(gdata + 2));
 	    if (code < 0)
@@ -270,8 +273,11 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
 	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
 	}
 	while (flags & cg_moreComponents);
-	return total;
     }
+    if (ocode > 0)
+	gs_free_const_string(pfont->memory, gdata, glyph_string.size,
+			     "total_points");
+    return total;
 }
 
 /* Define the default implementation for getting the outline data for */
@@ -339,6 +345,9 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	*pnum_pieces = i;
     } else
 	*pnum_pieces = 0;
+    if (code > 0)
+	gs_free_const_string(pfont->memory, glyph_string.data,
+			     glyph_string.size, "parse_pieces");
     return 0;
 }
 
@@ -372,8 +381,7 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		     int members, gs_glyph_info_t *info)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    /* glyph_index = glyph for pcl; glyph_index = glyph - gs_min_cid_glyph for ps */
-    uint glyph_index = glyph >= gs_min_cid_glyph ? glyph - gs_min_cid_glyph : glyph;
+    uint glyph_index = glyph - gs_min_cid_glyph;
     int default_members =
 	members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_NUM_PIECES |
 		    GLYPH_INFO_PIECES);
@@ -387,8 +395,12 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    return code;
     } else if ((code = pfont->data.get_outline(pfont, glyph_index, &outline)) < 0)
 	return code;		/* non-existent glyph */
-    else
+    else {
+	if (code > 0)
+	    gs_free_const_string(pfont->memory, outline.data, outline.size,
+				 "gs_type42_glyph_info");
 	info->members = 0;
+    }
     if (members & GLYPH_INFO_WIDTH) {
 	int i;
 
@@ -434,6 +446,9 @@ gs_type42_enumerate_glyph(gs_font *font, int *pindex,
 	if (outline.data == 0)
 	    continue;		/* empty (undefined) glyph */
 	*pglyph = glyph_index + gs_min_cid_glyph;
+	if (code > 0)
+	    gs_free_const_string(pfont->memory, outline.data, outline.size,
+				 "gs_type42_enumerate_glyph");
 	return 0;
     }
     /* We are done. */
@@ -486,15 +501,14 @@ simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
     return 0;
 }
 
-/* Get the metrics of a glyph. 
- * default for overrideable function pfont->data.get_metrics()
- */
-int
-gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
-			      float sbw[4])
+/* Get the metrics of a glyph. */
+private int
+default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
+		    float sbw[4])
 {
     gs_const_string glyph_string;
     int code = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
+    int result;
 
     if (code < 0)
 	return code;
@@ -510,12 +524,18 @@ gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmod
 
 	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
 	    if (flags & cg_useMyMetrics) {
-		return gs_type42_wmode_metrics(pfont, comp_index, wmode, sbw);
+		result = gs_type42_wmode_metrics(pfont, comp_index, wmode, sbw);
+		goto done;
 	    }
 	}
 	while (flags & cg_moreComponents);
     }
-    return simple_glyph_metrics(pfont, glyph_index, wmode, sbw);
+    result = simple_glyph_metrics(pfont, glyph_index, wmode, sbw);
+ done:
+    if (code > 0)
+	gs_free_const_string(pfont->memory, glyph_string.data,
+			     glyph_string.size, "default_get_metrics");
+    return result;
 }
 int
 gs_type42_wmode_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
@@ -554,6 +574,16 @@ gs_type42_append(uint glyph_index, gs_imager_state * pis,
     /* Set the flatness for curve rendering. */
     return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
 }
+
+/* Add 2nd degree Bezier to the path */
+private int
+add_quadratic_curve(gx_path * const ppath, const gs_fixed_point * const a,
+     const gs_fixed_point * const b, const gs_fixed_point * const c)
+{
+    return gx_path_add_curve(ppath, (a->x + 2*b->x)/3, (a->y + 2*b->y)/3,
+	(c->x + 2*b->x)/3, (c->y + 2*b->y)/3, c->x, c->y);
+}
+
 
 /*
  * Append a simple glyph outline to a path (ppath != 0) and/or return
@@ -621,13 +651,16 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 				 0.0, &pt);
 	for (i = 0, np = 0; i < numContours; ++i) {
 	    bool move = true;
-	    uint last_point = U16(pends + i * 2);
+	    bool off_curve = false;
+            bool is_start_off = false;
+            uint last_point = U16(pends + i * 2);
 	    float dx, dy;
-	    int off_curve = 0;
-	    gs_fixed_point start;
-	    gs_fixed_point cpoints[3];
+	    gs_fixed_point start,pt_start_off;
+	    gs_fixed_point cpoints[2];
 
-	    for (; np <= last_point; --reps, ++np) {
+            if_debug1('1', "[1t]start %d\n", i);
+            
+            for (; np <= last_point; --reps, ++np) {
 		gs_fixed_point dpt;
 
 		if (reps == 0) {
@@ -661,63 +694,85 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 		if (code < 0)
 		    return code;
 		pt.x += dpt.x, pt.y += dpt.y;
-		if (ppts)	/* return the points */
+		
+                if (ppts)	/* return the points */
 		    ppts[np] = pt;
-		if (ppath) {	/* append to a path */
-#define control1(xy) cpoints[1].xy
-#define control2(xy) cpoints[2].xy
-#define control3off(xy) ((cpoints[1].xy + pt.xy) / 2)
-#define control4off(xy) ((cpoints[0].xy + 2 * cpoints[1].xy) / 3)
-#define control5off(xy) ((2 * cpoints[1].xy + cpoints[2].xy) / 3)
-#define control6off(xy) ((2 * cpoints[1].xy + pt.xy) / 3)
-#define control7off(xy) ((2 * cpoints[1].xy + start.xy) / 3)
-		    if (move) {
-			if_debug2('1', "[1t]start (%g,%g)\n",
-				  fixed2float(pt.x), fixed2float(pt.y));
-			start = pt;
-			code = gx_path_add_point(ppath, pt.x, pt.y);
-			cpoints[0] = pt;
-			move = false;
+		
+                if (ppath) {
+                    /* append to a path */
+		    if_debug3('1', "[1t]%s (%g %g)\n",
+		    	(flags & gf_OnCurve ? "on " : "off"), fixed2float(pt.x), fixed2float(pt.y));
+                    
+                    if (move) {
+                        if(is_start_off) {
+                            if(flags & gf_OnCurve)
+                                start = pt;
+                            else { 
+                                start.x = (pt_start_off.x + pt.x)/2;
+			        start.y = (pt_start_off.y + pt.y)/2;
+                                cpoints[1]=pt;
+			        off_curve=true;
+                            }
+                            move = false;
+                            cpoints[0] = start;
+                            code = gx_path_add_point(ppath, start.x, start.y);
+                        } else { 
+                            if(flags & gf_OnCurve) { 
+                                cpoints[0] = start = pt;
+			        code = gx_path_add_point(ppath, pt.x, pt.y);
+			        move = false;
+                            } else { 
+                                is_start_off = true;
+                                pt_start_off = pt;
+                            }
+                        }
 		    } else if (flags & gf_OnCurve) {
-			if_debug2('1', "[1t]ON (%g,%g)\n",
-				  fixed2float(pt.x), fixed2float(pt.y));
-			if (off_curve)
-			    code = gx_path_add_curve(ppath, control4off(x),
-						control4off(y), control6off(x),
-						control6off(y), pt.x, pt.y);
+                        if (off_curve)
+			    code = add_quadratic_curve(ppath, cpoints, cpoints+1, &pt);
 			else
 			    code = gx_path_add_line(ppath, pt.x, pt.y);
 			cpoints[0] = pt;
-			off_curve = 0;
+			off_curve = false;
 		    } else {
-			if_debug2('1', "[1t]...off (%g,%g)\n",
-				  fixed2float(pt.x), fixed2float(pt.y));
-			switch (off_curve++) {
-			default:	/* >= 1 */
-			    control2(x) = control3off(x);
-			    control2(y) = control3off(y);
-			    code = gx_path_add_curve(ppath,
-						control4off(x), control4off(y),
-						control5off(x), control5off(y),
-						control2(x), control2(y));
-			    cpoints[0] = cpoints[2];
-			    off_curve = 1;
-			    /* falls through */
-			case 0:
-			    cpoints[1] = pt;
+                        if(off_curve) {
+			    gs_fixed_point p;
+                            p.x = (cpoints[1].x + pt.x)/2;
+			    p.y = (cpoints[1].y + pt.y)/2;
+			    code = add_quadratic_curve(ppath, cpoints, cpoints+1, &p);
+			    cpoints[0] = p;
 			}
+                        off_curve = true;
+		        cpoints[1] = pt;
 		    }
 		    if (code < 0)
 			return code;
 		}
 	    }
 	    if (ppath) {
-		if (off_curve)
-		    code = gx_path_add_curve(ppath,
-					control4off(x), control4off(y),
-					control7off(x), control7off(y),
-					start.x, start.y);
-		code = gx_path_close_subpath(ppath);
+		if (is_start_off) { 
+                    if (off_curve) { 
+                        gs_fixed_point p;
+                        p.x = (cpoints[1].x + pt_start_off.x)/2;
+	                p.y = (cpoints[1].y + pt_start_off.y)/2;
+                        code = add_quadratic_curve(ppath, cpoints, cpoints+1, &p);
+		        if (code < 0)
+		            return code;
+                        code = add_quadratic_curve(ppath, &p, &pt_start_off, &start);
+		        if (code < 0)
+		            return code;
+                    } else { 
+                        code = add_quadratic_curve(ppath, cpoints, &pt_start_off, &start);
+		        if (code < 0)
+		            return code;
+                    }
+                } else { 
+                    if (off_curve) { 
+                        code = add_quadratic_curve(ppath, cpoints, cpoints+1, &start);
+		        if (code < 0)
+		            return code;
+                    }
+                }
+                code = gx_path_close_subpath(ppath);
 		if (code < 0)
 		    return code;
 	    }
@@ -730,30 +785,33 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 private int
 check_component(uint glyph_index, const gs_matrix_fixed *pmat,
 		gx_path *ppath, gs_font_type42 *pfont, gs_fixed_point *ppts,
-		const byte **pgdata)
+		gs_const_string *pgstr, bool *pfree_data)
 {
     gs_const_string glyph_string;
     const byte *gdata;
     float sbw[4];
     int numContours;
-    int code;
+    int ocode, code;
 
-    code = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
-    if (code < 0)
-	return code;
+    ocode = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
+    if (ocode < 0)
+	return ocode;
     gdata = glyph_string.data;
     if (gdata == 0 || glyph_string.size == 0)	/* empty glyph */
 	return 0;
     numContours = S16(gdata);
     if (numContours >= 0) {
-	/* was: simple_glyph_metrics(), now call overrideable function */
-	pfont->data.get_metrics(pfont, glyph_index, pfont->WMode, sbw);
+	simple_glyph_metrics(pfont, glyph_index, pfont->WMode, sbw);
 	code = append_simple(gdata, sbw, pmat, ppath, ppts, pfont);
+	if (ocode > 0)
+	    gs_free_const_string(pfont->memory, gdata, glyph_string.size,
+				 "check_component");
 	return (code < 0 ? code : 0); /* simple */
     }
     if (numContours != -1)
 	return_error(gs_error_rangecheck);
-    *pgdata = gdata;
+    *pgstr = glyph_string;
+    *pfree_data = ocode > 0;
     return 1;			/* composite */
 }
 private int
@@ -761,11 +819,12 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 		 gx_path * ppath, gs_fixed_point *ppts, int point_index,
 		 gs_font_type42 * pfont)
 {
-    const byte *gdata;
+    gs_const_string gstr;
+    bool free_data;
     int code;
 
     code = check_component(glyph_index, pmat, ppath, pfont, ppts + point_index,
-			   &gdata);
+			   &gstr, &free_data);
     if (code != 1)
 	return code;
     /*
@@ -775,8 +834,8 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
      */
     {
 	uint flags;
+	const byte *gdata = gstr.data + 10;
 
-	gdata += 10;
 	do {
 	    uint comp_index = U16(gdata + 2);
 	    gs_matrix_fixed mat;
@@ -797,7 +856,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 		code = append_component(comp_index, &mat, NULL, ppts,
 					point_index, pfont);
 		if (code < 0)
-		    return code;
+		    break;
 		diff.x = pfrom->x - pto->x;
 		diff.y = pfrom->y - pto->y;
 		mat.tx = fixed2float(mat.tx_fixed += diff.x);
@@ -806,25 +865,28 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 	    code = append_component(comp_index, &mat, ppath, ppts,
 				    point_index, pfont);
 	    if (code < 0)
-		return code;
+		break;
 	    point_index += total_points(pfont, comp_index);
 	}
 	while (flags & cg_moreComponents);
     }
-    return 0;
+    if (free_data)
+	gs_free_const_string(pfont->memory, gstr.data, gstr.size,
+			     "append_component");
+    return code;
 }
 private int
 append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 	       gx_path * ppath, gs_font_type42 * pfont)
 {
-    {
-	const byte *gdata;
-	int code =
-	    check_component(glyph_index, pmat, ppath, pfont, NULL, &gdata);
+    gs_const_string gstr;
+    bool free_data;
+    int code =
+	check_component(glyph_index, pmat, ppath, pfont, NULL, &gstr,
+			&free_data);
 
-	if (code != 1)
-	    return code;
-    }
+    if (code != 1)
+	return code;
     {
 	/*
 	 * Set up the points array (only needed for point matching, sigh).
@@ -838,20 +900,25 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 	if (num_points <= MAX_STACK_PTS) {
 	    gs_fixed_point pts[MAX_STACK_PTS];
 
-	    return append_component(glyph_index, pmat, ppath, pts, 0, pfont);
+	    code = append_component(glyph_index, pmat, ppath, pts, 0, pfont);
 	} else {
 	    gs_memory_t *mem = pfont->memory; /* any memory will do */
 	    gs_fixed_point *ppts = (gs_fixed_point *)
 		gs_alloc_byte_array(mem, num_points, sizeof(gs_fixed_point),
 				    "append_outline");
-	    int code;
 
 	    if (ppts == 0)
-		return_error(gs_error_VMerror);
-	    code = append_component(glyph_index, pmat, ppath, ppts, 0, pfont);
-	    gs_free_object(mem, ppts, "append_outline");
-	    return code;
+		code = gs_note_error(gs_error_VMerror);
+	    else {
+		code = append_component(glyph_index, pmat, ppath, ppts, 0,
+					pfont);
+		gs_free_object(mem, ppts, "append_outline");
+	    }
 	}
 #undef MAX_STACK_PTS
     }
+    if (free_data)
+	gs_free_const_string(pfont->memory, gstr.data, gstr.size,
+			     "append_outline");
+    return code;
 }

@@ -100,7 +100,8 @@ private int
 fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 {
     const gs_function_PtCr_t *pfn = (const gs_function_PtCr_t *)pfn_common;
-    calc_value_t vstack[1 + MAX_VSTACK + 1];
+    calc_value_t vstack_buf[2 + MAX_VSTACK + 1];
+    calc_value_t *vstack = &vstack_buf[1];
     calc_value_t *vsp = vstack + pfn->params.m;
     const byte *p = pfn->params.ops.data;
     int i;
@@ -209,6 +210,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 
     };
 
+    vstack[-1].type = CVT_NONE;  /* for type dispatch in empty stack case */
     vstack[0].type = CVT_NONE;	/* catch underflow */
     for (i = 0; i < pfn->params.m; ++i)
 	store_float(&vstack[i + 1], in[i]);
@@ -579,10 +581,10 @@ calc_put_ops(stream *s, const byte *ops, uint size)
 	    break;
 	}
 	case PtCr_true:
-	    pputs(s, "true ");
+	    stream_puts(s, "true ");
 	    break;
 	case PtCr_false:
-	    pputs(s, "false ");
+	    stream_puts(s, "false ");
 	    break;
 	case PtCr_if: {
 	    int skip = (p[0] << 8) + p[1];
@@ -598,13 +600,15 @@ calc_put_ops(stream *s, const byte *ops, uint size)
 		p += skip;
 		if (code < 0)
 		    return code;
-		pputs(s, " ifelse ");
+		stream_puts(s, " ifelse ");
 	    } else
-		pputs(s, " if ");
+		stream_puts(s, " if ");
+	    break;
 	}
 	case PtCr_else:
 	    if (p != ops + size - 2)
 		return_error(gs_error_rangecheck);
+	    spputc(s, '}');
 	    return 1;
 	/*case PtCr_return:*/	/* not possible */
 	default: {		/* must be < PtCr_NUM_OPS */
@@ -640,18 +644,30 @@ calc_access(const gs_data_source_t *psrc, ulong start, uint length,
     const gs_function_PtCr_t *const pfn =
 	(const gs_function_PtCr_t *)
 	  ((const char *)psrc - offset_of(gs_function_PtCr_t, data_source));
+    /*
+     * The caller wants a specific substring of the symbolic definition.
+     * Generate the entire definition, using a SubFileDecode filter (in an
+     * output pipeline!) to extract the substring.  This is very
+     * inefficient, but this code is rarely used, and almost never actually
+     * has to break up the definition into pieces to fit in the caller's
+     * buffer.
+     */
     stream_SFD_state st;
-    stream s;
+    stream ds, bs;
+    byte dbuf[200];		/* arbitrary */
     const stream_template *const template = &s_SFD_template;
 
+    /* Set up the stream that writes into the buffer. */
+    s_init(&bs, NULL);
+    swrite_string(&bs, buf, length);
+    /* Set up the SubFileDecode stream. */
+    s_init(&ds, NULL);
+    s_init_state((stream_state *)&st, template, NULL);
     template->set_defaults((stream_state *)&st);
     st.skip_count = start;
-    swrite_string(&s, buf, length);
-    s.procs.process = template->process;
-    s.state = (stream_state *)&st;
-    if (template->init)
-	template->init((stream_state *)&st);
-    calc_put(&s, pfn);
+    s_init_filter(&ds, (stream_state *)&st, dbuf, sizeof(dbuf), &bs);
+    calc_put(&ds, pfn);
+    sclose(&ds);
     if (ptr)
 	*ptr = buf;
     return 0;

@@ -48,6 +48,52 @@ orig_sqrt(double x)
 /* Define private replacements for stdin, stdout, and stderr. */
 FILE *gs_stdio[3];
 
+
+/* ------ Redirected stdout and stderr  ------ */
+
+#include <stdarg.h>
+#define PRINTF_BUF_LENGTH 1024
+
+int outprintf(const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+
+    count = vsprintf(buf, fmt, args);
+    outwrite(buf, count);
+    if (count >= PRINTF_BUF_LENGTH) {
+	count = sprintf(buf, 
+	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
+	    PRINTF_BUF_LENGTH);
+	outwrite(buf, count);
+    }
+    va_end(args);
+    return count;
+}
+
+int errprintf(const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+
+    count = vsprintf(buf, fmt, args);
+    errwrite(buf, count);
+    if (count >= PRINTF_BUF_LENGTH) {
+	count = sprintf(buf, 
+	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
+	    PRINTF_BUF_LENGTH);
+	errwrite(buf, count);
+    }
+    va_end(args);
+    return count;
+}
+
 /* ------ Debugging ------ */
 
 /* Ghostscript writes debugging output to gs_debug_out. */
@@ -72,13 +118,13 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
 /*
  * Define the trace printout procedures.  We always include these, in case
  * other modules were compiled with DEBUG set.  Note that they must use
- * fprintf, not fput[cs], because of the way that stdout is implemented on
- * Windows platforms.
+ * out/errprintf, not fprintf nor fput[cs], because of the way that 
+ * stdout/stderr are implemented on DLL/shared library builds.
  */
 void
 dflush(void)
 {
-    fflush(dstderr);
+    errflush();
 }
 private const char *
 dprintf_file_tail(const char *file)
@@ -93,53 +139,56 @@ dprintf_file_tail(const char *file)
 }
 #if __LINE__			/* compiler provides it */
 void
-dprintf_file_and_line(FILE * f, const char *file, int line)
+dprintf_file_and_line(const char *file, int line)
 {
     if (gs_debug['/'])
-	fprintf(f, dprintf_file_and_line_format,
+	dpf(dprintf_file_and_line_format,
 		dprintf_file_tail(file), line);
 }
 #else
 void
-dprintf_file_only(FILE * f, const char *file)
+dprintf_file_only(const char *file)
 {
     if (gs_debug['/'])
-	fprintf(f, dprintf_file_only_format, dprintf_file_tail(file));
+	dpf(dprintf_file_only_format, dprintf_file_tail(file));
 }
 #endif
 void
-printf_program_ident(FILE * f, const char *program_name,
-		     long revision_number)
+printf_program_ident(const char *program_name, long revision_number)
 {
     if (program_name)
-	fprintf(f, (revision_number ? "%s " : "%s"), program_name);
+	outprintf((revision_number ? "%s " : "%s"), program_name);
     if (revision_number) {
 	int fpart = revision_number % 100;
 
-	fprintf(f, (fpart == 0 ? "%d.%d" : "%d.%02d"),
-		(int)(revision_number / 100), fpart);
+	outprintf("%d.%02d", (int)(revision_number / 100), fpart);
     }
 }
 void
-eprintf_program_ident(FILE * f, const char *program_name,
+eprintf_program_ident(const char *program_name,
 		      long revision_number)
 {
     if (program_name) {
-	printf_program_ident(f, program_name, revision_number);
-	fprintf(f, ": ");
+	epf((revision_number ? "%s " : "%s"), program_name);
+	if (revision_number) {
+	    int fpart = revision_number % 100;
+
+	    epf("%d.%02d", (int)(revision_number / 100), fpart);
+	}
+	epf(": ");
     }
 }
 #if __LINE__			/* compiler provides it */
 void
-lprintf_file_and_line(FILE * f, const char *file, int line)
+lprintf_file_and_line(const char *file, int line)
 {
-    fprintf(f, "%s(%d): ", file, line);
+    epf("%s(%d): ", file, line);
 }
 #else
 void
 lprintf_file_only(FILE * f, const char *file)
 {
-    fprintf(f, "%s(?): ", file);
+    epf("%s(?): ", file);
 }
 #endif
 
@@ -382,6 +431,17 @@ debug_print_string(const byte * chrs, uint len)
 
     for (i = 0; i < len; i++)
 	dputc(chrs[i]);
+    dflush();
+}
+
+/* Print a string in hexdump format. */
+void
+debug_print_string_hex(const byte * chrs, uint len)
+{
+    uint i;
+
+    for (i = 0; i < len; i++)
+        dprintf1("%02x", chrs[i]);
     dflush();
 }
 
@@ -651,8 +711,14 @@ set_fixed2double_(double *pd, fixed x, int frac_bits)
 /*
  * If doubles aren't wide enough, we lose too much precision by using double
  * arithmetic: we have to use the slower, accurate fixed-point algorithm.
+ * See the simpler implementation below for more information.
  */
-#if USE_FPU_FIXED || (arch_double_mantissa_bits < arch_sizeof_long * 12)
+#define MAX_OTHER_FACTOR_BITS\
+  (ARCH_DOUBLE_MANTISSA_BITS - ARCH_SIZEOF_FIXED * 8)
+#define ROUND_BITS\
+  (ARCH_SIZEOF_FIXED * 8 * 2 - ARCH_DOUBLE_MANTISSA_BITS)
+
+#if USE_FPU_FIXED || ROUND_BITS >= MAX_OTHER_FACTOR_BITS - 1
 
 #ifdef DEBUG
 struct {
@@ -808,37 +874,57 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
     }
 }
 
-#else				/* can approximate using doubles */
+#else				/* use doubles */
 
 /*
- * Compute A * B / C as above.  Since a double doesn't have enough bits to
- * represent the product of two longs, we have to do it in two steps.
+ * Compute A * B / C as above using doubles.  If floating point is
+ * reasonably fast, this is much faster than the fixed-point algorithm.
  */
 fixed
 fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 {
-#define MAX_OTHER_FACTOR\
-  (1L << (arch_double_mantissa_bits - sizeof(fixed) * 8))
+    /*
+     * Check whether A * B will fit in the mantissa of a double.
+     */
+#define MAX_OTHER_FACTOR (1L << MAX_OTHER_FACTOR_BITS)
     if (B < MAX_OTHER_FACTOR || any_abs(signed_A) < MAX_OTHER_FACTOR) {
-	/* The double computation will be exact. */
-	return (fixed)floor((double)signed_A * B / C);
-    }
 #undef MAX_OTHER_FACTOR
-    {
-	/* Use 2 double steps. */
-	fixed bhi = B >> half_bits;
-	fixed qhi = (fixed)floor((double)signed_A * bhi / C);
-	fixed rhi = signed_A * bhi - qhi * C;
-	fixed blo = B & half_mask;
-	fixed qlo =
-	    (fixed)floor(((double)rhi * (1L << half_bits) +
-			  (double)signed_A * blo) / C);
+	/*
+	 * The product fits, so a straightforward double computation
+	 * will be exact.
+	 */
+	return (fixed)floor((double)signed_A * B / C);
+    } else {
+	/*
+	 * The product won't fit.  However, the approximate product will
+	 * only be off by at most +/- 1/2 * (1 << ROUND_BITS) because of
+	 * rounding.  If we add 1 << ROUND_BITS to the value of the product
+	 * (i.e., 1 in the least significant bit of the mantissa), the
+	 * result is always greater than the correct product by between 1/2
+	 * and 3/2 * (1 << ROUND_BITS).  We know this is less than C:
+	 * because of the 'if' just above, we know that B >=
+	 * MAX_OTHER_FACTOR; since B <= C, we know C >= MAX_OTHER_FACTOR;
+	 * and because of the #if that chose between the two
+	 * implementations, we know that C >= 2 * (1 << ROUND_BITS).  Hence,
+	 * the quotient after dividing by C will be at most 1 too large.
+	 */
+	fixed q =
+	    (fixed)floor(((double)signed_A * B + (1L << ROUND_BITS)) / C);
 
-	return (qhi << half_bits) + qlo;
+	/*
+	 * Compute the remainder R.  If the quotient was correct,
+	 * 0 <= R < C.  If the quotient was too high, -C <= R < 0.
+	 */
+	if (signed_A * B - q * C < 0)
+	    --q;
+	return q;
     }
 }
 
 #endif
+
+#undef MAX_OTHER_FACTOR_BITS
+#undef ROUND_BITS
 
 #undef num_bits
 #undef half_bits

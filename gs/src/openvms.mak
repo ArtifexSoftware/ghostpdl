@@ -124,13 +124,18 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-1_0_8]
-PVERSION=10008
+PSRCDIR=[.libpng-1_0_12]
+PVERSION=10012
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=[.zlib-1_1_3]
+
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=[.icclib]
 
 # Note that built-in third-party libraries aren't available.
 
@@ -155,7 +160,7 @@ else
 COMP:=$(COMP)/NODEBUG/OPTIMIZE
 endif
 
-COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY
+COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/NAMES=SHORTENED
 
 # Define any other compilation flags. 
 # Including defines for A4 paper size
@@ -236,6 +241,11 @@ BAND_LIST_COMPRESSOR=zlib
 # See gs.mak and sfxfd.c for more details.
 
 FILE_IMPLEMENTATION=stdio
+
+# Choose the implementation of stdio: '' for file I/O and 'c' for callouts
+# See gs.mak and ziodevs.c/ziodevsc.c for more details.
+
+STDIO_IMPLEMENTATION= 
 
 # Define the name table capacity size of 2^(16+n).
 
@@ -327,7 +337,7 @@ CC=$(COMP)
 
 # Define the Link invocation.
 
-LINK=$(LINKER)/MAP/EXE=$@ $^,$(GLGENDIR)OPENVMS.OPT/OPTION
+LINK=$(LINKER)/EXE=$@ $^,$(GLGENDIR)OPENVMS.OPT/OPTION
 
 # Define the ANSI-to-K&R dependency.  We don't need this.
 
@@ -364,9 +374,9 @@ CONFLDTR=-o
 
 # Define the generic compilation rules.
 
-.suffixes: .c .obj .exe
+..suffixes: .c .obj .exe
 
-.obj.exe:
+..obj.exe:
 	$(LINK)
 
 # ---------------------------- End of options ---------------------------- #
@@ -395,6 +405,7 @@ include $(GLSRCDIR)jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)zlib.mak
 include $(GLSRCDIR)libpng.mak
+include $(GLSRCDIR)icclib.mak
 include $(GLSRCDIR)devs.mak
 include $(GLSRCDIR)contrib.mak
 
@@ -408,7 +419,7 @@ CC_NO_WARN=$(CC_)
 # ----------------------------- Main program ------------------------------ #
 
 $(GS_XE) : openvms $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
-	$(LINKER)/MAP=$(BINDIR)gs.map/EXE=$@ $(GLOBJ)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLGENDIR)OPENVMS.OPT/OPTION
+	$(LINKER)/EXE=$@ $(GLOBJ)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLGENDIR)OPENVMS.OPT/OPTION
 
 # OpenVMS.dev
 

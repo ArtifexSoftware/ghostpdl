@@ -161,7 +161,7 @@ const int gs_interp_max_op_num_args = MIN_BLOCK_OSTACK;		/* for iinit.c */
  * user parameter).
  */
 #ifndef MAX_ESTACK
-#  define MAX_ESTACK 250
+#  define MAX_ESTACK 5000
 #endif
 /*
  * The minimum block size for extending the execution stack is the largest
@@ -517,6 +517,9 @@ again:
 	    epref = &doref;
 	    goto again;
 	case e_NeedInput:
+	case e_NeedStdin:
+	case e_NeedStdout:
+	case e_NeedStderr:
 	    return code;
     }
     /* Adjust osp in case of operand stack underflow */

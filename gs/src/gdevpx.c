@@ -251,6 +251,7 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 }
 
 /* Test whether we can handle a given color space in an image. */
+/* We cannot handle ICCBased color spaces. */
 private bool
 pclxl_can_handle_color_space(const gs_color_space * pcs)
 {
@@ -263,7 +264,8 @@ pclxl_can_handle_color_space(const gs_color_space * pcs)
 	    gs_color_space_get_index(gs_color_space_indexed_base_space(pcs));
     }
     return !(index == gs_color_space_index_Separation ||
-	     index == gs_color_space_index_Pattern);
+	     index == gs_color_space_index_Pattern ||
+             index == gs_color_space_index_CIEICC);
 }
 
 /* Set brush, pen, and mode for painting a path. */
@@ -1090,10 +1092,10 @@ pclxl_open_device(gx_device * dev)
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
     int code;
 
-    vdev->v_memory = dev->memory;
-/****** WRONG ******/
+    vdev->v_memory = dev->memory;	/****** WRONG ******/
     vdev->vec_procs = &pclxl_vector_procs;
-    code = gdev_vector_open_file(vdev, 512);
+    code = gdev_vector_open_file_options(vdev, 512,
+					 VECTOR_OPEN_FILE_SEQUENTIAL);
     if (code < 0)
 	return code;
     pclxl_page_init(xdev);

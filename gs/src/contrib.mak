@@ -470,6 +470,16 @@ $(GLOBJ)gdevstc3.$(OBJ) : $(GLSRC)gdevstc3.c $(gdevstc_h) $(PDEVH)
 $(GLOBJ)gdevstc4.$(OBJ) : $(GLSRC)gdevstc4.c $(gdevstc_h) $(PDEVH)
 	$(GLCC) $(GLO_)gdevstc4.$(OBJ) $(C_) $(GLSRC)gdevstc4.c
 
+###--------------- Added Omni --------------------------###
+
+epclr_h1=$(GLSRC)defs.h
+
+$(DD)omni.dev : $(GLOBJ)gomni.$(OBJ) $(DD)page.dev
+	$(SETPDEV) $(DD)omni $(GLOBJ)gomni.$(OBJ)
+
+$(GLOBJ)gomni.$(OBJ) : $(GLSRC)gomni.c $(epclr_h1) $(PDEVH)
+	$(GLCC) $(GLO_)gomni.$(OBJ) $(C_) $(GLSRC)gomni.c
+
 ### --------------- Ugly/Update -> Unified Printer Driver ---------------- ###
 ### For questions about this driver, please contact:                       ###
 ###        Gunther Hess (gunther@elmos.de)                                 ###
@@ -480,6 +490,34 @@ $(DD)uniprint.dev : $(uniprint_) $(DD)page.dev
 
 $(GLOBJ)gdevupd.$(OBJ) : $(GLSRC)gdevupd.c $(PDEVH) $(gsparam_h)
 	$(GLCC) $(GLO_)gdevupd.$(OBJ) $(C_) $(GLSRC)gdevupd.c
+
+### ------------- Hewlett-Packard Co. Inkjet Driver -------------- ###
+
+hpijs_=$(GLOBJ)gdevhpij.$(OBJ)
+
+$(GLOBJ)gdevhpij.$(OBJ) : $(GLSRC)gdevhpij.c $(PDEVH)
+	$(GLCC) $(GLO_)gdevhpij.$(OBJ) $(C_) $(GLSRC)gdevhpij.c
+
+$(DD)DJ630.dev : $(hpijs_) $(DD)page.dev
+	$(SETPDEV) $(DD)DJ630 $(hpijs_)
+
+$(DD)DJ6xx.dev : $(hpijs_) $(DD)page.dev
+	$(SETPDEV) $(DD)DJ6xx $(hpijs_)
+
+$(DD)DJ6xxP.dev : $(hpijs_) $(DD)page.dev
+	$(SETPDEV) $(DD)DJ6xxP $(hpijs_)
+
+$(DD)DJ8xx.dev : $(hpijs_) $(DD)page.dev
+	$(SETPDEV) $(DD)DJ8xx $(hpijs_)
+
+$(DD)DJ9xx.dev : $(hpijs_) $(DD)page.dev
+	$(SETPDEV) $(DD)DJ9xx $(hpijs_)
+
+$(DD)DJ9xxVIP.dev : $(hpijs_) $(DD)page.dev
+	$(SETPDEV) $(DD)DJ9xxVIP $(hpijs_)
+
+$(DD)AP21xx.dev : $(hpijs_) $(DD)page.dev
+	$(SETPDEV) $(DD)AP21xx $(hpijs_)
 
 ### ------------ The H-P PaintJet color printer device ----------------- ###
 ### Note: this driver also supports the DEC LJ250 color printer, which   ###

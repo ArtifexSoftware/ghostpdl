@@ -78,7 +78,7 @@ pdf_open_document(gx_device_pdf * pdev)
 	pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
 	pdev->binary_ok = !pdev->params.ASCII85EncodePages;
 	if (pdev->binary_ok)
-	    pputs(s, "%\307\354\217\242\n");
+	    stream_puts(s, "%\307\354\217\242\n");
     }
     /*
      * Determine the compression method.  Currently this does nothing.
@@ -167,7 +167,7 @@ pdf_begin_obj(gx_device_pdf * pdev)
 int
 pdf_end_obj(gx_device_pdf * pdev)
 {
-    pputs(pdev->strm, "endobj\n");
+    stream_puts(pdev->strm, "endobj\n");
     return 0;
 }
 
@@ -201,7 +201,7 @@ none_to_stream(gx_device_pdf * pdev)
     pprintld1(s, "<</Length %ld 0 R", pdev->contents_length_id);
     if (pdev->compression == pdf_compress_Flate)
 	pprints1(s, "/Filter /%s", compression_filter_name);
-    pputs(s, ">>\nstream\n");
+    stream_puts(s, ">>\nstream\n");
     pdev->contents_pos = pdf_stell(pdev);
     if (pdev->compression == pdf_compress_Flate) {	/* Set up the Flate filter. */
 	const stream_template *template = &compression_filter_template;
@@ -225,8 +225,12 @@ none_to_stream(gx_device_pdf * pdev)
 	(*template->init) ((stream_state *) st);
 	pdev->strm = s = es;
     }
-    /* Scale the coordinate system. */
-    pprintg2(s, "%g 0 0 %g 0 0 cm\n",
+    /*
+     * Scale the coordinate system.  Use an extra level of q/Q for the
+     * sake of poorly designed PDF tools that assume that the contents
+     * stream restores the CTM.
+     */
+    pprintg2(s, "q %g 0 0 %g 0 0 cm\n",
 	     72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
     if (pdev->CompatibilityLevel >= 1.3) {
 	/* Set the default rendering intent. */
@@ -238,7 +242,7 @@ none_to_stream(gx_device_pdf * pdev)
 	}
     }
     /* Do a level of gsave for the clipping path. */
-    pputs(s, "q\n");
+    stream_puts(s, "q\n");
     return PDF_IN_STREAM;
 }
 /* Enter text context from stream context. */
@@ -266,7 +270,7 @@ private int
 string_to_text(gx_device_pdf * pdev)
 {
     pdf_put_string(pdev, pdev->text.buffer, pdev->text.buffer_count);
-    pputs(pdev->strm, (pdev->text.use_leading ? "'\n" : "Tj\n"));
+    stream_puts(pdev->strm, (pdev->text.use_leading ? "'\n" : "Tj\n"));
     pdev->text.use_leading = false;
     pdev->text.buffer_count = 0;
     return PDF_IN_TEXT;
@@ -275,7 +279,7 @@ string_to_text(gx_device_pdf * pdev)
 private int
 text_to_stream(gx_device_pdf * pdev)
 {
-    pputs(pdev->strm, "ET Q\n");
+    stream_puts(pdev->strm, "ET Q\n");
     pdf_reset_text(pdev);	/* because of Q */
     return PDF_IN_STREAM;
 }
@@ -286,6 +290,8 @@ stream_to_none(gx_device_pdf * pdev)
     stream *s = pdev->strm;
     long length;
 
+    /* Close the extra q/Q for poorly designed PDF tools. */
+    stream_puts(s, "Q\n");
     if (pdev->compression == pdf_compress_Flate) {	/* Terminate the Flate filter. */
 	stream *fs = s->strm;
 
@@ -295,7 +301,7 @@ stream_to_none(gx_device_pdf * pdev)
 	pdev->strm = s = fs;
     }
     length = pdf_stell(pdev) - pdev->contents_pos;
-    pputs(s, "endstream\n");
+    stream_puts(s, "endstream\n");
     pdf_end_obj(pdev);
     pdf_open_obj(pdev, pdev->contents_length_id);
     pprintld1(s, "%ld\n", length);
@@ -328,7 +334,7 @@ pdf_close_contents(gx_device_pdf * pdev, bool last)
 	return 0;
     if (last) {			/* Exit from the clipping path gsave. */
 	pdf_open_contents(pdev, PDF_IN_STREAM);
-	pputs(pdev->strm, "Q\n");
+	stream_puts(pdev->strm, "Q\n");
 	pdev->text.font = 0;
     }
     return pdf_open_contents(pdev, PDF_IN_NONE);
@@ -337,11 +343,11 @@ pdf_close_contents(gx_device_pdf * pdev, bool last)
 /* ------ Resources et al ------ */
 
 /* Define the allocator descriptors for the resource types. */
-private const char *const resource_names[] = {
-    pdf_resource_type_names
+const char *const pdf_resource_type_names[] = {
+    PDF_RESOURCE_TYPE_NAMES
 };
-private const gs_memory_struct_type_t *const resource_structs[] = {
-    pdf_resource_type_structs
+const gs_memory_struct_type_t *const pdf_resource_type_structs[] = {
+    PDF_RESOURCE_TYPE_STRUCTS
 };
 
 /* Find a resource of a given type by gs_id. */
@@ -397,13 +403,19 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
     if (pres == 0 || object == 0) {
 	return_error(gs_error_VMerror);
     }
-    object->id = (id < 0 ? -1L : id == 0 ? pdf_obj_ref(pdev) : id);
+    if (id < 0) {
+	object->id = -1L;
+	pres->rname[0] = 0;
+    } else {
+	object->id = (id == 0 ? pdf_obj_ref(pdev) : id);
+	sprintf(pres->rname, "R%ld", object->id);
+    }
     pres->next = *plist;
     *plist = pres;
     pres->prev = pdev->last_resource;
     pdev->last_resource = pres;
     pres->named = false;
-    pres->used_on_page = true;
+    pres->where_used = pdev->used_mask;
     pres->object = object;
     *ppres = pres;
     return 0;
@@ -425,7 +437,7 @@ pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 			gs_id rid, pdf_resource_t ** ppres)
 {
     int code = pdf_begin_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
-			       resource_structs[rtype], ppres);
+			       pdf_resource_type_structs[rtype], ppres);
 
     if (code >= 0)
 	(*ppres)->rid = rid;
@@ -437,10 +449,10 @@ pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 {
     int code = pdf_begin_resource_body(pdev, rtype, rid, ppres);
 
-    if (code >= 0 && resource_names[rtype] != 0) {
+    if (code >= 0 && pdf_resource_type_names[rtype] != 0) {
 	stream *s = pdev->strm;
 
-	pprints1(s, "<</Type/%s", resource_names[rtype]);
+	pprints1(s, "<</Type%s", pdf_resource_type_names[rtype]);
 	pprintld1(s, "/Name/R%ld", (*ppres)->object->id);
     }
     return code;
@@ -452,7 +464,7 @@ pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 		   pdf_resource_t ** ppres, long id)
 {
     int code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
-			       resource_structs[rtype], ppres, id);
+			       pdf_resource_type_structs[rtype], ppres, id);
 
     if (code >= 0)
 	(*ppres)->rid = rid;
@@ -489,6 +501,93 @@ pdf_end_resource(gx_device_pdf * pdev)
     return pdf_end_aside(pdev);
 }
 
+/*
+ * Write and release the Cos objects for resources local to a content stream.
+ * We must write all the objects before freeing any of them, because
+ * they might refer to each other.
+ */
+int
+pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
+{
+    int j;
+
+    /* Write objects. */
+    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
+
+	for (; pres != 0; pres = pres->next)
+	    if (!pres->named && !pres->object->written)
+		cos_write_object(pres->object, pdev);
+    }
+
+    /* Free unnamed objects, which can't be used again. */
+    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+	pdf_resource_t **prev = &pdev->resources[rtype].chains[j];
+	pdf_resource_t *pres;
+
+	while ((pres = *prev) != 0) {
+	    if (pres->named) {	/* named, don't free */
+		prev = &pres->next;
+	    } else {
+		cos_free(pres->object, "pdf_write_resource_objects");
+		pres->object = 0;
+		*prev = pres->next;
+	    }
+	}
+    }
+
+    return 0;
+}
+
+/*
+ * Store the resource sets for a content stream (page or XObject).
+ * Sets page->{procsets, resource_ids[]}.
+ */
+int
+pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
+{
+
+    /* Write out any resource dictionaries. */
+
+    {
+	int i;
+
+	for (i = 0; i <= resourceFont; ++i) {
+	    stream *s = 0;
+	    int j;
+
+	    page->resource_ids[i] = 0;
+	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+		pdf_resource_t *pres = pdev->resources[i].chains[j];
+
+		for (; pres != 0; pres = pres->next) {
+		    if (pres->where_used & pdev->used_mask) {
+			long id = pres->object->id;
+
+			if (s == 0) {
+			    page->resource_ids[i] = pdf_begin_separate(pdev);
+			    s = pdev->strm;
+			    stream_puts(s, "<<");
+			}
+			pprints1(s, "/%s\n", pres->rname);
+			pprintld1(s, "%ld 0 R", id);
+			pres->where_used -= pdev->used_mask;
+		    }
+		}
+	    }
+	    if (s) {
+		stream_puts(s, ">>\n");
+		pdf_end_separate(pdev);
+		if (i != resourceFont)
+		    pdf_write_resource_objects(pdev, i);
+	    }
+	}
+    }
+
+    page->procsets = pdev->procsets;
+    return 0;
+}
+
 /* Copy data from a temporary file to a stream. */
 void
 pdf_copy_data(stream *s, FILE *file, long count)
@@ -500,7 +599,7 @@ pdf_copy_data(stream *s, FILE *file, long count)
 	uint copy = min(left, sbuf_size);
 
 	fread(buf, 1, sbuf_size, file);
-	pwrite(s, buf, copy);
+	stream_write(s, buf, copy);
 	left -= copy;
     }
 }
@@ -559,7 +658,7 @@ int
 pdf_write_saved_string(gx_device_pdf * pdev, gs_string * pstr)
 {
     if (pstr->data != 0) {
-	pwrite(pdev->strm, pstr->data, pstr->size);
+	stream_write(pdev->strm, pstr->data, pstr->size);
 	gs_free_string(pdev->pdf_memory, pstr->data, pstr->size,
 		       "pdf_write_saved_string");
 	pstr->data = 0;
@@ -598,11 +697,11 @@ pdf_put_matrix(gx_device_pdf * pdev, const char *before,
     stream *s = pdev->strm;
 
     if (before)
-	pputs(s, before);
+	stream_puts(s, before);
     pprintg6(s, "%g %g %g %g %g %g ",
 	     pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
     if (after)
-	pputs(s, after);
+	stream_puts(s, after);
 }
 
 /*
@@ -610,29 +709,18 @@ pdf_put_matrix(gx_device_pdf * pdev, const char *before,
  * no choice but to replace these characters with '?'; in PDF 1.2, we can
  * use an escape sequence for anything except a null <00>.
  */
-void
-pdf_put_name_escaped(stream *s, const byte *nstr, uint size, bool escape)
+private int
+pdf_put_name_chars_1_1(stream *s, const byte *nstr, uint size)
 {
     uint i;
 
-    pputc(s, '/');
     for (i = 0; i < size; ++i) {
 	uint c = nstr[i];
-	char hex[4];
 
 	switch (c) {
-	    case '#':
-		/* These are valid in 1.1, but must be escaped in 1.2. */
-		if (escape) {
-		    sprintf(hex, "#%02x", c);
-		    pputs(s, hex);
-		    break;
-		}
-		/* falls through */
 	    default:
 		if (c >= 0x21 && c <= 0x7e) {
-		    /* These are always valid. */
-		    pputc(s, c);
+		    stream_putc(s, c);
 		    break;
 		}
 		/* falls through */
@@ -642,25 +730,60 @@ pdf_put_name_escaped(stream *s, const byte *nstr, uint size, bool escape)
 	    case '[': case ']':
 	    case '{': case '}':
 	    case '/':
-		/* These characters are invalid in both 1.1 and 1.2, */
-		/* but can be escaped in 1.2. */
-		if (escape) {
-		    sprintf(hex, "#%02x", c);
-		    pputs(s, hex);
+	    case 0:
+		stream_putc(s, '?');
+	}
+    }
+    return 0;
+}
+private int
+pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
+{
+    uint i;
+
+    for (i = 0; i < size; ++i) {
+	uint c = nstr[i];
+	char hex[4];
+
+	switch (c) {
+	    default:
+		if (c >= 0x21 && c <= 0x7e) {
+		    stream_putc(s, c);
 		    break;
 		}
 		/* falls through */
+	    case '#':
+	    case '%':
+	    case '(': case ')':
+	    case '<': case '>':
+	    case '[': case ']':
+	    case '{': case '}':
+	    case '/':
+		sprintf(hex, "#%02x", c);
+		stream_puts(s, hex);
+		break;
 	    case 0:
-		/* This is invalid in 1.1 and 1.2, and cannot be escaped. */
-		pputc(s, '?');
+		stream_putc(s, '?');
 	}
     }
+    return 0;
+}
+pdf_put_name_chars_proc_t
+pdf_put_name_chars_proc(const gx_device_pdf *pdev)
+{
+    return (pdev->CompatibilityLevel >= 1.2 ? pdf_put_name_chars_1_2 :
+	    pdf_put_name_chars_1_1);
+}
+void
+pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr, uint size)
+{
+    DISCARD(pdf_put_name_chars_proc(pdev)(pdev->strm, nstr, size));
 }
 void
 pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size)
 {
-    pdf_put_name_escaped(pdev->strm, nstr, size,
-			 pdev->CompatibilityLevel >= 1.2);
+    stream_putc(pdev->strm, '/');
+    pdf_put_name_chars(pdev, nstr, size);
 }
 
 /*
@@ -682,7 +805,7 @@ pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size)
     if (size > 0 && vstr[0] == '/')
 	pdf_put_name(pdev, vstr + 1, size - 1);
     else
-	pwrite(pdev->strm, vstr, size);
+	stream_write(pdev->strm, vstr, size);
 }
 
 /* Store filters for a stream. */
@@ -801,11 +924,12 @@ pdf_flate_binary(gx_device_pdf *pdev, psdf_binary_writer *pbw)
 }
 
 /*
- * Begin a Function or halftone data stream.  The client has opened the
- * object and written the << and any desired dictionary keys.
+ * Begin a data stream.  The client has opened the object and written
+ * the << and any desired dictionary keys.
  */
 int
-pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
+pdf_begin_data_binary(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+		      bool data_is_binary)
 {
     long length_id = pdf_obj_ref(pdev);
     stream *s = pdev->strm;
@@ -818,11 +942,13 @@ pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
     int filters = 0;
     int code;
 
-    if (!pdev->binary_ok)
-	filters |= USE_ASCII85;
-    if (pdev->CompatibilityLevel >= 1.2)
+    if (pdev->CompatibilityLevel >= 1.2) {
 	filters |= USE_FLATE;
-    pputs(s, fnames[filters]);
+	data_is_binary = true;
+    }
+    if (data_is_binary && !pdev->binary_ok)
+	filters |= USE_ASCII85;
+    stream_puts(s, fnames[filters]);
     pprintld1(s, "/Length %ld 0 R>>stream\n", length_id);
     code = psdf_begin_binary((gx_device_psdf *)pdev, &pdw->binary);
     if (code < 0)
@@ -846,7 +972,7 @@ pdf_end_data(pdf_data_writer_t *pdw)
 
     if (code < 0)
 	return code;
-    pputs(pdev->strm, "\nendstream\n");
+    stream_puts(pdev->strm, "\nendstream\n");
     pdf_end_separate(pdev);
     pdf_open_separate(pdev, pdw->length_id);
     pprintld1(pdev->strm, "%ld\n", length);
@@ -905,7 +1031,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 		count = min(sizeof(buf), info.data_size - pos);
 		data_source_access_only(info.DataSource, pos, count, buf,
 					&ptr);
-		pwrite(writer.strm, ptr, count);
+		stream_write(writer.strm, ptr, count);
 	    }
 	    code = psdf_end_binary(&writer);
 	    sclose(s);

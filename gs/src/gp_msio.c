@@ -112,6 +112,7 @@ win_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	return code;
     s->procs.process = win_std_write_process;
     s->procs.available = win_std_available;
+    s->procs.flush = s_std_write_flush;
     s->file = NULL;
     return 0;
 }
@@ -128,6 +129,7 @@ win_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	return code;
     s->procs.process = win_std_write_process;
     s->procs.available = win_std_available;
+    s->procs.flush = s_std_write_flush;
     s->file = NULL;
     return 0;
 }

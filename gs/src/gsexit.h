@@ -16,14 +16,10 @@
 #ifndef gsexit_INCLUDED
 #  define gsexit_INCLUDED
 
+/* These do not call exit() */
+/* You still need to return to the caller.*/
 void gs_exit_with_code(P2(int exit_status, int code));
 void gs_exit(P1(int exit_status));
-
-#define gs_abort() gs_exit(1)
-
-/* The only reason we export gs_exit_status is so that window systems */
-/* with alert boxes can know whether to pause before exiting if */
-/* the program terminates with an error.  There must be a better way .... */
-extern int gs_exit_status;
+void gs_abort(P0());
 
 #endif /* gsexit_INCLUDED */

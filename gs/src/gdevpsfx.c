@@ -41,7 +41,7 @@ private void
 skip_iv(gs_type1_state *pcis)
 {
     int skip = pcis->pfont->data.lenIV;
-    ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
+    ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
     const byte *cip = ipsp->char_string.data;
     crypt_state state = crypt_charstring_seed;
 
@@ -67,6 +67,7 @@ type1_next_init(gs_type1_state *pcis, const gs_const_string *pstr,
     pcis->flex_count = flex_max;
     pcis->dotsection_flag = dotsection_out;
     pcis->ipstack[0].char_string = *pstr;
+    pcis->ipstack[0].free_char_string = 0;
     skip_iv(pcis);
 }
 
@@ -82,14 +83,16 @@ private int
 type1_callsubr(gs_type1_state *pcis, int index)
 {
     gs_font_type1 *pfont = pcis->pfont;
+    ip_state_t *ipsp1 = &pcis->ipstack[pcis->ips_count];
     int code = pfont->data.procs.subr_data(pfont, index, false,
-			&pcis->ipstack[pcis->ips_count].char_string);
+					   &ipsp1->char_string);
 
     if (code < 0)
 	return_error(code);
+    ipsp1->free_char_string = code;
     pcis->ips_count++;
     skip_iv(pcis);
-    return 0;
+    return code;
 }
 
 /* Add 1 or 3 stem hints. */
@@ -141,7 +144,7 @@ type1_stem3(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv3,
 private int
 type1_next(gs_type1_state *pcis)
 {
-    ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
+    ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
     const byte *cip;
     crypt_state state;
 #define CLEAR (csp = pcis->ostack - 1)
@@ -203,6 +206,10 @@ type1_next(gs_type1_state *pcis)
 	    ++ipsp;
 	    goto load;
 	case c_return:
+	    if (ipsp->free_char_string > 0)
+		gs_free_const_string(pcis->pfont->memory,
+				     ipsp->char_string.data,
+				     ipsp->char_string.size, "type1_next");
 	    pcis->ips_count--;
 	    --ipsp;
 	    goto load;
@@ -788,7 +795,7 @@ psf_convert_type1_to_type2(stream *s, const gs_const_string *pstr,
 	    case cx_vhcurveto:
 		if (depth & 1)
 		    goto copy;
-		if (depth & 4)
+		if (!(depth & 4))
 		    goto vrc;
 	    hrc:  /* (hvcurveto vhcurveto)+ hrcurveto => hvcurveto */
 		/* vhcurveto (hvcurveto vhcurveto)* hrcurveto => vhcurveto */

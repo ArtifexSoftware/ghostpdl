@@ -36,6 +36,7 @@ GLOBJDIR=[.obj]
 PSSRCDIR=[.src]
 PSGENDIR=[.obj]
 PSOBJDIR=[.obj]
+PSLIBDIR=[.lib]
 # Because of OpenVMS syntactic problems, the following redundant definitions
 # are necessary.  If you are using more than one GENDIR and/or OBJDIR,
 # you will have to edit the code below that creates these directories.
@@ -119,7 +120,11 @@ BUILD_TIME_GS=GS
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=[.jpeg-6b]
+.ifdef SYSLIB
+JSRCDIR=sys$library:
+.else
+JSRCDIR=[--.jpeg-6b]
+.endif
 JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
@@ -127,13 +132,26 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-1_0_8]
-PVERSION=10008
+.ifdef SYSLIB
+PSRCDIR=sys$library:
+.else
+PSRCDIR=[--.libpng-1_0_10]
+.endif
+PVERSION=10010
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
-ZSRCDIR=[.zlib-1_1_3]
+.ifdef SYSLIB
+ZSRCDIR=sys$library:
+.else
+ZSRCDIR=[--.zlib-1_1_3]
+.endif
+
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=[.icclib]
 
 # Note that built-in third-party libraries aren't available.
 
@@ -156,15 +174,15 @@ SW_DEBUG=/DEBUG/NOOPTIMIZE
 SW_DEBUG=/NODEBUG/OPTIMIZE
 .endif
 
-SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY
+SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/name=(as_is,short)
 
 # Define any other compilation flags. 
 # Including defines for A4 paper size
 
 .ifdef A4_PAPER
-SW_PAPER=/DEFINE=("A4")
+SW_PAPER=/DEFINE=("A4","HAVE_MKSTEMP")
 .else
-SW_PAPER=
+SW_PAPER=/DEFINE=("HAVE_MKSTEMP")
 .endif
 
 COMP=CC$(SW_DEBUG)$(SW_PLATFORM)$(SW_PAPER)
@@ -219,7 +237,7 @@ DEVICE_DEVS20=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -331,7 +349,7 @@ CC=$(COMP)
 
 # Define the Link invocation.
 
-LINK=$(LINKER)/MAP/EXE=$@ $+,$(GLSRCDIR)OPENVMS.OPT/OPTION
+LINK=$(LINKER)/EXE=$@ $+,$(GLSRCDIR)OPENVMS.OPT/OPTION
 
 # Define the ANSI-to-K&R dependency.  We don't need this.
 
@@ -398,6 +416,7 @@ all : macro [.lib]Fontmap. $(GS_XE)
 # zlib.mak must precede libpng.mak
 .include $(GLSRCDIR)zlib.mak
 .include $(GLSRCDIR)libpng.mak
+.include $(GLSRCDIR)icclib.mak
 .include $(GLSRCDIR)devs.mak
 .include $(GLSRCDIR)contrib.mak
 
@@ -410,17 +429,24 @@ macro :
 .else
 	@ a4p = 0
 .endif
+.ifdef SYSLIB
+	@ dsl = 1
+.else
+	@ dsl = 0
+.endif
 	@ decc = f$search("SYS$SYSTEM:DECC$COMPILER.EXE").nes.""
 	@ decw12 = f$search("SYS$SHARE:DECW$XTLIBSHRR5.EXE").nes.""
 	@ macro = ""
-	@ if a4p.or.decc.or.decw12 then macro = "/MACRO=("
+	@ if dsl.or.a4p.or.decc.or.decw12 then macro = "/MACRO=("
 	@ if decw12 then macro = macro + "DECWINDOWS1_2=1,"
 	@ if a4p then macro = macro + "A4_PAPER=1,"
+	@ if dsl then macro = macro + "SYSLIB=1,"
 	@ if macro.nes."" then macro = f$extract(0,f$length(macro)-1,macro)+ ")"
 	$(MMS)$(MMSQUALIFIERS)'macro' $(GS_XE)
 
 $(GS_XE) : openvms $(GLGEN)arch.h $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
-	$(LINKER)/MAP/EXE=$@ $(GLOBJDIR)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLSRCDIR)OPENVMS.OPT/OPTION
+	$(LINKER)/EXE=$@ $(GLOBJDIR)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLSRCDIR)OPENVMS.OPT/OPTION
+	@ Write Sys$Output "Build of GhostScript is complete!"
 
 # OpenVMS.dev
 

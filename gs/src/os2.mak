@@ -32,13 +32,13 @@ GLSRCDIR=src
 GLGENDIR=obj
 GLOBJDIR=obj
 PSSRCDIR=src
-PSLIBDIR=src
+PSLIBDIR=lib
 PSGENDIR=obj
 PSOBJDIR=obj
 
 # Define the root directory for Ghostscript installation.
 
-AROOTDIR=c:/Aladdin
+AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 
 # Define the directory that will hold documentation at runtime.
@@ -129,12 +129,17 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10005
+PVERSION=10012
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
+
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=icclib
 
 # The following is a hack to get around the special treatment of \ at
 # the end of a line.
@@ -169,6 +174,9 @@ EMXPATH=/emx
 COMPDIR=$(COMPBASE)\bin
 INCDIR=$(EMXPATH)/include
 LIBDIR=$(EMXPATH)/lib
+!if $(PVERSION) >= 10009
+CPNG=-DPNGAPI=
+!endif
 !endif
 
 !if $(IBMCPP)
@@ -200,7 +208,7 @@ CPU_TYPE=386
 # of that type (or higher) is available: this is NOT currently checked
 # at runtime.
 
-FPU_TYPE=0
+FPU_TYPE=387
 
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.  Don't change this unless you really know
@@ -394,7 +402,11 @@ CDLL=/Gd- /Ge- /Gm+ /Gs+ /D__DLL__
 CDLL=
 !endif
 
-GENOPT=$(CP) $(CD) $(CGDB) $(CDLL) $(CO)
+!if $(EMX)
+CEXE=-Zomf
+!endif
+
+GENOPT=$(CP) $(CD) $(CGDB) $(CDLL) $(CO) $(CPNG)
 
 CCFLAGS0=$(GENOPT) $(PLATOPT) -D__OS2__
 CCFLAGS=$(CCFLAGS0) 
@@ -433,11 +445,16 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
+# Choose the implementation of stdio: '' for file I/O and 'c' for callouts
+# See gs.mak and ziodevs.c/ziodevsc.c for more details.
+
+STDIO_IMPLEMENTATION=c
+
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak, pcwin.mak, and contrib.mak for the list of available devices.
 
 !if $(MAKEDLL)
-DEVICE_DEVS=$(DD)os2pm.dev $(DD)os2dll.dev $(DD)os2prn.dev
+DEVICE_DEVS=$(DD)display.dev $(DD)os2pm.dev $(DD)os2dll.dev $(DD)os2prn.dev
 !else
 DEVICE_DEVS=$(DD)os2pm.dev
 !endif
@@ -475,6 +492,7 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 # zlib.mak must precede libpng.mak
 !include "$(GLSRCDIR)\zlib.mak"
 !include "$(GLSRCDIR)\libpng.mak"
+!include "$(GLSRCDIR)\icclib.mak"
 !include "$(GLSRCDIR)\devs.mak"
 !include "$(GLSRCDIR)\pcwin.mak"
 !include "$(GLSRCDIR)\contrib.mak"
@@ -485,21 +503,13 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 
 # The GCC/EMX platform
 
-os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_os2.$(OBJ)
+os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ)
 $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)os2_ $(os2__) -include $(GLD)nosync
-!if $(MAKEDLL)
-# Using a file device resource to get the console streams re-initialized 
-# is bad architecture (an upward reference to ziodev),                   
-# but it will have to do for the moment.                                 
-#   We need to redirect stdin/out/err to gsdll_callback
-        $(ADDMOD) $(GLGEN)os2_ -iodev wstdio
-!endif
-  
 
 $(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c\
  $(dos__h) $(pipe__h) $(string__h) $(time__h)\
- $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h)
+ $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_os2.$(OBJ) $(C_) $(GLSRC)gp_os2.c
 
 # -------------------------- Auxiliary programs --------------------------- #
@@ -519,6 +529,8 @@ $(ECHOGS_XE): $(GLSRCDIR)\echogs.c
 !endif
 
 $(GENARCH_XE): $(GLSRCDIR)\genarch.c $(GENARCH_DEPS)
+	-mkdir $(GLGENDIR)
+	-mkdir $(BINDIR)
 !if $(EMX)
 	$(CCAUX) -o $(AUXGEN)genarch $(GLSRCDIR)\genarch.c
 	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genarch $(GENARCH_XE)
@@ -586,17 +598,21 @@ gsdllos2_h=$(GLSRC)gsdllos2.h
 
 ICONS=$(GLOBJ)gsos2.ico $(GLOBJ)gspmdrv.ico
 
+$(GLOBJ)dpmain.$(OBJ): $(GLSRC)dpmain.c $(AK)\
+ $(gdevdsp_h) $(iapi_h) $(gscdefs_h) $(errors_h)
+	$(CC) $(CEXE) -I$(GLSRCDIR) -I$(GLGENDIR) $(GLO_)dpmain.$(OBJ) $(C_) $(GLSRC)dpmain.c
+
 !if $(MAKEDLL)
 #making a DLL
 GS_ALL=$(GLOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GLOBJ)$(GS).res $(ICONS)
 
-$(GS_XE): $(BINDIR)\$(GSDLL).dll $(GLSRC)dpmainc.c $(gsdll_h) $(gsdllos2_h) $(GLSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
+$(GS_XE): $(BINDIR)\$(GSDLL).dll $(GLSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(GLSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
 !if $(EMX)
-	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(GLSRCDIR) -I$(GLOBJDIR) -o$(GS_XE) $(GLSRC)dpmainc.c $(GLOBJ)gscdefs.$(OBJ) $(GLSRC)gsos2.def
+	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(GLSRCDIR) -I$(GLOBJDIR) -o$(GS_XE) $(GLSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ) $(GLSRC)gsos2.def
 !endif
 !if $(IBMCPP)
-	$(CCAUX) -I$(GLSRCDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(GLSRC)dpmainc.c $(GLOBJ)gscdefs.$(OBJ)
+	$(CCAUX) -I$(GLSRCDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(GLSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ)
 !endif
 	rc $(GLOBJ)$(GS).res $(GS_XE)
 
@@ -646,3 +662,29 @@ $(BINDIR)\gspmdrv.exe: $(GLOBJ)gspmdrv.o $(GLOBJ)gspmdrv.res $(GLSRC)gspmdrv.def
 	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -o $(GLOBJ)gspmdrv $(GLOBJ)gspmdrv.o 
 	$(COMPDIR)\emxbind -p -r$(GLOBJ)gspmdrv.res -d$(GLSRC)gspmdrv.def $(COMPDIR)\emxl.exe $(GLOBJ)gspmdrv $(BINDIR)\gspmdrv.exe
 	del $(GLOBJ)gspmdrv
+
+# Create a ZIP archive
+# This assumes that the current directory is named gs#.## relative to its
+# parent, where #.## is the Ghostscript version.
+
+ZIP_XE=zip
+ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsos2.exe
+ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gsdll2.dll
+ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gspmdrv.exe
+ZIPPROGFILE4=gs$(GS_DOT_VERSION)\doc
+ZIPPROGFILE5=gs$(GS_DOT_VERSION)\examples
+ZIPPROGFILE6=gs$(GS_DOT_VERSION)\lib
+ZIPFONTDIR=fonts
+
+# Make the zip archive.
+zip:
+	cd ..
+	-del gs$(GS_VERSION)os2.zip
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPFONTDIR)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE1)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE2)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE3)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE4)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE5)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE6)
+	cd gs$(GS_DOT_VERSION)

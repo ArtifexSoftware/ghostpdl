@@ -50,10 +50,10 @@ gp_getenv(const char *name, char *ptr, int *plen)
     {
 	/* If using Win32, look in the registry for a value with
 	 * the given name.  The registry value will be under the key
-	 * HKEY_CURRENT_USER\Software\Artifex Ghostscript\N.NN
+	 * HKEY_CURRENT_USER\Software\AFPL Ghostscript\N.NN
 	 * or if that fails under the key
-	 * HKEY_LOCAL_MACHINE\Software\Artifex Ghostscript\N.NN
-	 * where "Artifex Ghostscript" is actually gs_productfamily
+	 * HKEY_LOCAL_MACHINE\Software\AFPL Ghostscript\N.NN
+	 * where "AFPL Ghostscript" is actually gs_productfamily
 	 * and N.NN is obtained from gs_revision.
 	 */
 	DWORD version = GetVersion();
@@ -65,11 +65,8 @@ gp_getenv(const char *name, char *ptr, int *plen)
 	    char key[256];
 	    char dotversion[16];
 	    
-	    if (gs_revision % 100 == 0)
-		sprintf(dotversion, "%d.0", (int)(gs_revision / 100));
-	    else
-		sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
-			(int)(gs_revision % 100));
+	    sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
+		    (int)(gs_revision % 100));
 	    sprintf(key, "Software\\%s\\%s", gs_productfamily, dotversion);
 
 	    code = gp_getenv_registry(HKEY_CURRENT_USER, key, name, ptr, plen);

@@ -15,7 +15,9 @@
 #include "ghost.h"
 #include "imain.h"
 #include "imainarg.h"
+#include "iapi.h"
 #include "iminst.h"
+#include "errors.h"
 
 /* Define an optional array of strings for testing. */
 /*#define RUN_STRINGS */
@@ -34,13 +36,10 @@ private const char *run_strings[] =
 int
 main(int argc, char *argv[])
 {
+    int exit_status = 0;
     gs_main_instance *minst = gs_main_instance_default();
     int code = gs_main_init_with_args(minst, argc, argv);
 
-    if (code < 0) {
-	gs_exit_with_code(255, code);
-	/* NOTREACHED */
-    }
 #ifdef RUN_STRINGS
     {				/* Run a list of strings (for testing). */
 	const char **pstr = run_strings;
@@ -59,17 +58,29 @@ main(int argc, char *argv[])
 	    fflush(stdout);
 	    if (code < 0) {
 		gs_exit(1);
-		/* NOTREACHED */
-		return 1;	/* pacify compilers */
+		return 1;
 	    }
 	}
     }
 #endif
 
-    if (minst->run_start)
-	gs_main_run_start(minst);
+    if (code >= 0)
+	code = gs_main_run_start(minst);
 
-    gs_exit(0);			/* exit */
-    /* NOTREACHED */
-    return 0;			/* pacify compilers */
+    exit_status = 0;
+    switch (code) {
+	case 0:
+	case e_Info:
+	case e_Quit:
+	    break;
+	case e_Fatal:
+	    exit_status = 1;
+	    break;
+	default:
+	    exit_status = 255;
+    }
+
+    gs_exit_with_code(exit_status, code);
+
+    return exit_status;
 }

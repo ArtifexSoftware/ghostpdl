@@ -47,13 +47,18 @@ SHARE_JPEG=0
 JPEG_NAME=jpeg
 
 PSRCDIR=libpng
-PVERSION=10008
+PVERSION=10012
 SHARE_LIBPNG=1
 LIBPNG_NAME=png
 
 ZSRCDIR=zlib
 SHARE_ZLIB=1
 ZLIB_NAME=z
+
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=icclib
 
 CC=gcc
 CCLD=$(CC)
@@ -69,8 +74,8 @@ CFLAGS=$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)
 LDFLAGS=$(XLDFLAGS)
 STDLIBS=-lm
 EXTRALIBS=
-XINCLUDE=-I/usr/local/X/include
-XLIBDIRS=-L/usr/X11/lib
+XINCLUDE=-I/usr/X11R6/include
+XLIBDIRS=-L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt Xext X11
 
@@ -84,6 +89,7 @@ COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
+STDIO_IMPLEMENTATION=
 DEVICE_DEVS=$(DD)x11cmyk.dev $(DD)x11mono.dev $(DD)x11.dev $(DD)x11alpha.dev\
  $(DD)djet500.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev\
  $(DD)bitcmyk.dev $(GLD)bbox.dev
@@ -127,6 +133,7 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak

@@ -42,7 +42,7 @@ typedef struct sun_rasterfile_s {
 
 private dev_proc_print_page(sunhmono_print_page);
 
-gx_device_printer gs_sunhmono_device =
+const gx_device_printer gs_sunhmono_device =
     prn_device(prn_std_procs, "sunhmono",
 	       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	       X_DPI, Y_DPI,
@@ -62,7 +62,7 @@ sunhmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int code = 0;
 
     /*
-      fprintf(stderr,"pdev->width:%d (%d/%d) gsLineBytes:%d rasLineBytes:%d\n",
+      errprintf("pdev->width:%d (%d/%d) gsLineBytes:%d rasLineBytes:%d\n",
       pdev->width, pdev->width/8, pdev->width%8,gsLineBytes,rasLineBytes);
     */
     lineStorage = gs_malloc(gsLineBytes, 1, "rasterfile_print_page(in)");

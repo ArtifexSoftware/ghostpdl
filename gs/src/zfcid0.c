@@ -20,6 +20,7 @@
 #include "gsstruct.h"
 #include "gxfcid.h"
 #include "gxfont1.h"
+#include "gxalloc.h"		/* for gs_ref_memory_t */
 #include "stream.h"		/* for files.h */
 #include "bfont.h"
 #include "files.h"
@@ -204,21 +205,29 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_const_string *pgstr,
 	byte fd_gd[(MAX_FDBytes + MAX_GDBytes) * 2];
 	uint num_bytes = pfont->cidata.FDBytes + pfont->cidata.common.GDBytes;
 	ulong base = pfont->cidata.CIDMapOffset + glyph_index * num_bytes;
-	ulong gidx, gidx_next;
+	ulong gidx, fidx_next, gidx_next;
+	int rcode = cid0_read_bytes(pfont, base, (ulong)(num_bytes * 2), fd_gd,
+				    &gstr);
+	gs_const_string orig_str;
 
-	code = cid0_read_bytes(pfont, base, (ulong)(num_bytes * 2), fd_gd,
-			       &gstr);
+	if (rcode < 0)
+	    return rcode;
+	orig_str = gstr;
+	if ((code = get_index(&gstr, pfont->cidata.FDBytes, &fidx)) < 0 ||
+	    (code = get_index(&gstr, pfont->cidata.common.GDBytes, &gidx)) < 0 ||
+	    (code = get_index(&gstr, pfont->cidata.FDBytes, &fidx_next)) < 0 ||
+	    (code = get_index(&gstr, pfont->cidata.common.GDBytes, &gidx_next)) < 0
+	    )
+	    DO_NOTHING;
+	if (rcode > 0)
+	    gs_free_const_string(pfont->memory, orig_str.data, orig_str.size,
+				 "z9_glyph_data");
 	if (code < 0)
 	    return code;
-	get_index(&gstr, pfont->cidata.FDBytes, &fidx);
-	get_index(&gstr, pfont->cidata.common.GDBytes, &gidx);
 	/*
 	 * Some CID fonts (from Adobe!) have invalid font indexes for
 	 * missing glyphs.  Handle this now.
 	 */
-	gstr.data += pfont->cidata.FDBytes;
-	gstr.size -= pfont->cidata.FDBytes;
-	get_index(&gstr, pfont->cidata.common.GDBytes, &gidx_next);
 	if (gidx_next <= gidx) { /* missing glyph */
 	    *pfidx = 0;
 	    if (pgstr)
@@ -469,9 +478,26 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
     code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
 			(gs_glyph)(gs_min_cid_glyph + op->value.intval),
 				    &gstr, &fidx);
-    if (code < 0)
-	return code;
-    make_const_string(op - 1, a_readonly, gstr.size, gstr.data);
+
+    /* return code; original error-sensitive & fragile code */
+    if (code < 0) { /* failed to load glyph data, put CID 0 */
+       int default_fallback_CID = 0 ;
+
+       if_debug2('J', "[J]ztype9cidmap() use CID %d instead of glyph-missing CID %d\n", default_fallback_CID, op->value.intval);
+
+       op->value.intval = default_fallback_CID;
+
+       /* reload glyph for default_fallback_CID */
+
+       code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
+                    (gs_glyph)(gs_min_cid_glyph + default_fallback_CID),
+                                   &gstr, &fidx);
+    }
+
+    make_const_string(op - 1, 
+		      a_readonly | imemory_space((gs_ref_memory_t *)pfont->memory), 
+		      gstr.size, 
+		      gstr.data);
     make_int(op, fidx);
     return 0;
 }

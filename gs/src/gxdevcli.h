@@ -24,6 +24,7 @@
 #include "gsrefct.h"
 #include "gsropt.h"
 #include "gsstruct.h"
+#include "gstparam.h"
 #include "gsxfont.h"
 #include "gxbitmap.h"
 #include "gxcindex.h"
@@ -71,6 +72,11 @@ typedef struct gx_device_s gx_device;
  * non-retained, if there are no references to it from graphics states or
  * targets, it will be freed immediately.
  *
+ * The preferred technique for creating a new device is now gs_copydevice.
+ * There are a number of places in the code where memory is explicitly
+ * allocated, then initialized with gx_device_init. These should gradually
+ * be replaced.
+ *
  * There are 3 ways that a device structure might be allocated:
  *	1) Allocated dynamically, e.g.,
  *		gx_device *pdev_new;
@@ -80,9 +86,12 @@ typedef struct gx_device_s gx_device;
  *	or
  *		const gx_device devc = ...;
  *	3) Embedded in an object allocated in one of the above ways.
- * If you allocate a device using #2 or #3, you MUST mark it as retained
- * by calling gx_device_retain(pdev, true).  If you do not do this, an
- * attempt will be made to free the device, corrupting memory.  */
+ * If you allocate a device using #2 or #3, you must either mark it as
+ * retained by calling gx_device_retain(pdev, true) or initialize it with a
+ * NULL memory.  If you do not do this, an attempt will be made to free the
+ * device, corrupting memory.  Note that when memory is NULL, the finalize
+ * method of the device will not be called when it is freed, so you cannot
+ * use it for cleanup.  */
 
 /*
  * Do not set the target of a forwarding device with an assignment like
@@ -686,6 +695,84 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_finish_copydevice(proc)\
   dev_t_proc_finish_copydevice(proc, gx_device)
 
+		/* Added in release 6.61 (raph) */
+
+
+/*
+  This area of the transparency facilities is in flux.  Here is a proposal
+  for extending the driver interface.
+*/
+
+/*
+  Push the current transparency state (*ppts) onto the associated stack,
+  and set *ppts to a new transparency state of the given dimension.  The
+  transparency state may copy some or all of the imager state, such as the
+  current alpha and/or transparency mask values, and definitely copies the
+  parameters.
+*/
+#define dev_t_proc_begin_transparency_group(proc, dev_t)\
+  int proc(P6(gx_device *dev,\
+    const gs_transparency_group_params_t *ptgp,\
+    const gs_rect *pbbox,\
+    gs_imager_state *pis,\
+    gs_transparency_state_t **ppts,\
+    gs_memory_t *mem))
+#define dev_proc_begin_transparency_group(proc)\
+  dev_t_proc_begin_transparency_group(proc, gx_device)
+
+/*
+  End a transparency group: blend the top element of the transparency
+  stack, which must be a group, into the next-to-top element, popping the
+  stack.  If the stack only had a single element, blend into the device
+  output.  Set *ppts to 0 iff the stack is now empty.  If end_group fails,
+  the stack is *not* popped.
+*/
+#define dev_t_proc_end_transparency_group(proc, dev_t)\
+  int proc(P3(gx_device *dev,\
+    gs_imager_state *pis,\
+    gs_transparency_state_t **ppts))
+#define dev_proc_end_transparency_group(proc)\
+  dev_t_proc_end_transparency_group(proc, gx_device)
+
+/*
+  Push the transparency state and prepare to render a transparency mask.
+  This is similar to begin_transparency_group except that it only
+  accumulates coverage values, not full pixel values.
+*/
+#define dev_t_proc_begin_transparency_mask(proc, dev_t)\
+  int proc(P6(gx_device *dev,\
+    const gs_transparency_mask_params_t *ptmp,\
+    const gs_rect *pbbox,\
+    gs_imager_state *pis,\
+    gs_transparency_state_t **ppts,\
+    gs_memory_t *mem))
+#define dev_proc_begin_transparency_mask(proc)\
+  dev_t_proc_begin_transparency_mask(proc, gx_device)
+
+/*
+  Store a pointer to the rendered transparency mask into *pptm, popping the
+  stack like end_group.  Normally, the client will follow this by using
+  rc_assign to store the rendered mask into pis->{opacity,shape}.mask.  If
+  end_mask fails, the stack is *not* popped.
+*/
+#define dev_t_proc_end_transparency_mask(proc, dev_t)\
+  int proc(P2(gx_device *dev,\
+    gs_transparency_mask_t **pptm))
+#define dev_proc_end_transparency_mask(proc)\
+  dev_t_proc_end_transparency_mask(proc, gx_device)
+
+/*
+  Pop the transparency stack, discarding the top element, which may be
+  either a group or a mask.  Set *ppts to 0 iff the stack is now empty.
+*/
+#define dev_t_proc_discard_transparency_layer(proc, dev_t)\
+  int proc(P2(gx_device *dev,\
+    gs_transparency_state_t **ppts))
+#define dev_proc_discard_transparency_layer(proc)\
+  dev_t_proc_discard_transparency_layer(proc, gx_device)
+
+     /* (end of transparency driver interface extensions) */
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -733,6 +820,11 @@ typedef struct gs_param_list_s gs_param_list;
 	dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
 	dev_t_proc_text_begin((*text_begin), dev_t);\
 	dev_t_proc_finish_copydevice((*finish_copydevice), dev_t);\
+	dev_t_proc_begin_transparency_group((*begin_transparency_group), dev_t);\
+	dev_t_proc_end_transparency_group((*end_transparency_group), dev_t);\
+	dev_t_proc_begin_transparency_mask((*begin_transparency_mask), dev_t);\
+	dev_t_proc_end_transparency_mask((*end_transparency_mask), dev_t);\
+	dev_t_proc_discard_transparency_layer((*discard_transparency_layer), dev_t);\
 }
 /*
  * Provide procedures for passing image data.  image_data and end_image

@@ -63,15 +63,16 @@ typedef struct gx_code_space_s {
 typedef enum {
     CODE_VALUE_CID,		/* CIDs */
     CODE_VALUE_GLYPH,		/* glyphs */
-    CODE_VALUE_CHARS		/* character(s) */
-#define CODE_VALUE_MAX CODE_VALUE_CHARS
+    CODE_VALUE_CHARS,		/* character(s) */
+    CODE_VALUE_NOTDEF,		/* CID - for notdef(char|range) dst */
+#define CODE_VALUE_MAX CODE_VALUE_NOTDEF
 } gx_code_value_type_t;
 /* The strings in this structure are all const after initialization. */
 typedef struct gx_code_lookup_range_s {
     gs_cmap_t *cmap;		/* back pointer for glyph marking */
     /* Keys */
     byte key_prefix[MAX_CMAP_CODE_SIZE];
-    int key_prefix_size;	/* 1 .. MAX_CMAP_CODE_SIZE */
+    int key_prefix_size;	/* 0 .. MAX_CMAP_CODE_SIZE */
     int key_size;		/* 0 .. MAX_CMAP_CODE_SIZE - key_prefix_s' */
     int num_keys;
     bool key_is_range;
@@ -107,7 +108,15 @@ typedef struct gx_code_map_s {
 
 /* A CMap proper is relatively simple. */
 struct gs_cmap_s {
+	/*
+	 * The following entries are common to all CMapTypes, and must
+	 * come first.
+	 */
     int CMapType;		/* must be first; must be 0 or 1 */
+    gs_id id;			/* internal ID (no relation to UID) */
+	/* 
+	 * End of common entries.
+	 */
     gs_const_string CMapName;
     gs_cid_system_info_t *CIDSystemInfo; /* [num_fonts] */
     int num_fonts;
@@ -140,5 +149,11 @@ extern_st(st_cmap);
  * for the GC.
  */
 void gs_cmap_init(P1(gs_cmap_t *));
+
+/*
+ * Create an Identity CMap.
+ */
+int gs_cmap_create_identity(P4(gs_cmap_t **ppcmap, int num_bytes, int wmode,
+			       gs_memory_t *mem));
 
 #endif /* gxfcmap_INCLUDED */

@@ -55,9 +55,9 @@ prefix = /usr/local
 exec_prefix = $(prefix)
 bindir = $(exec_prefix)/bin
 scriptdir = $(bindir)
+libdir = $(exec_prefix)/lib
 mandir = $(prefix)/man
 man1ext = 1
-man1dir = $(mandir)/man$(man1ext)
 datadir = $(prefix)/share
 gsdir = $(datadir)/ghostscript
 gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
@@ -97,6 +97,15 @@ GS_INIT=gs_init.ps
 #	  No execution time or space penalty.
 
 GENOPT=
+
+# Choose capability options.
+
+# -DHAVE_MKSTEMP
+#	uses mkstemp instead of mktemp
+#		This gets rid of several security warnings that look
+#		ominous.  Enable this if you wish to get rid of them.
+
+CAPOPT= -DHAVE_MKSTEMP
 
 # Define the name of the executable file.
 
@@ -144,7 +153,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10008
+PVERSION=10012
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -165,6 +174,11 @@ ZSRCDIR=zlib
 SHARE_ZLIB=0
 #ZLIB_NAME=gz
 ZLIB_NAME=z
+
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=icclib
 
 # Define how to build the library archives.  (These are not used in any
 # standard configuration.)
@@ -191,11 +205,13 @@ CCLD=$(CC)
 
 GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -Wtraditional -fno-builtin -fno-common
 
-# Define the added flags for standard, debugging, and profiling builds.
+# Define the added flags for standard, debugging, profiling 
+# and shared object builds.
 
 CFLAGS_STANDARD=-O2
 CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg -O2
+CFLAGS_SO=-fPIC
 
 # Define the other compilation flags.  Add at most one of the following:
 #	-DBSD4_2 for 4.2bsd systems.
@@ -239,7 +255,10 @@ EXTRALIBS=
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
 # two others fold libm into libc and don't require any additional library.
 
-STDLIBS=-lpthread -lm
+#STDLIBS=-lpthread -lm
+
+# Since the default build is for nosync, don't include pthread lib
+STDLIBS=-lm
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
@@ -249,7 +268,7 @@ STDLIBS=-lpthread -lm
 # Note that x_.h expects to find the header files in $(XINCLUDE)/X11,
 # not in $(XINCLUDE).
 
-XINCLUDE=-I/usr/local/X/include
+XINCLUDE=-I/usr/X11R6/include
 
 # Define the directory/ies and library names for the X11 library files.
 # XLIBDIRS is for ld and should include -L; XLIBDIR is for LD_RUN_PATH
@@ -264,7 +283,7 @@ XINCLUDE=-I/usr/local/X/include
 #XLIBS=Xt SM ICE Xext X11
 
 #XLIBDIRS=-L/usr/local/X/lib
-XLIBDIRS=-L/usr/X11/lib
+XLIBDIRS=-L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt Xext X11
 
@@ -282,7 +301,12 @@ FPU_TYPE=1
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.
 
-SYNC=posync
+# If POSIX sync primitives are used, also change the STDLIBS to include
+# the pthread library.
+#SYNC=posync
+
+# Default is No sync primitives since some platforms don't have it (HP-UX)
+SYNC=nosync
 
 # ------ Devices and features ------ #
 
@@ -316,6 +340,15 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
+# Choose the implementation of stdio: '' for file I/O and 'c' for callouts
+# See gs.mak and ziodevs.c/ziodevsc.c for more details.
+
+STDIO_IMPLEMENTATION= 
+
+# Override the default device.  This is set to 'display' by 
+# unix-dll.mak when building a shared object.
+DISPLAY_DEV=
+
 # Define the name table capacity size of 2^(16+n).
 # Setting this to a non-zero value will slow down the interpreter.
 
@@ -324,7 +357,7 @@ EXTEND_NAMES=0
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
+DEVICE_DEVS=$(DISPLAY_DEV) $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
 
 #DEVICE_DEVS1=
 #DEVICE_DEVS2=
@@ -348,7 +381,7 @@ DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(
 #DEVICE_DEVS20=
 
 DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
-DEVICE_DEVS2=$(DD)bmpamono.dev $(DD)bmpasep1.dev $(DD)bmpasep8.dev $(DD)bmpa16.dev $(DD)bmpa256.dev $(DD)bmpa16m.dev $(DD)bmpa32b.dev
+DEVICE_DEVS2=
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj5mono.dev $(DD)lj5gray.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
 DEVICE_DEVS5=$(DD)uniprint.dev
@@ -385,7 +418,7 @@ AK=$(GLGENDIR)/cc.tr
 
 # Define the compilation rules and flags.
 
-CCFLAGS=$(GENOPT) $(CFLAGS)
+CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) `cat $(AK)` $(CCFLAGS)
 CCAUX=$(CC) `cat $(AK)`
 CC_LEAF=$(CC_) -fomit-frame-pointer
@@ -406,10 +439,12 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak
 include $(GLSRCDIR)/unixlink.mak
+include $(GLSRCDIR)/unix-dll.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/unixinst.mak
 

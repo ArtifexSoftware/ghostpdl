@@ -157,7 +157,7 @@ $(PSOBJ)idebug.$(OBJ) : $(PSSRC)idebug.c $(GH) $(string__h)\
  $(opdef_h) $(ipacked_h)
 	$(PSCC) $(PSO_)idebug.$(OBJ) $(C_) $(PSSRC)idebug.c
 
-$(PSOBJ)idict.$(OBJ) : $(PSSRC)idict.c $(GH) $(string__h)\
+$(PSOBJ)idict.$(OBJ) : $(PSSRC)idict.c $(GH) $(math__h) $(string__h)\
  $(errors_h)\
  $(gxalloc_h)\
  $(iddstack_h) $(idebug_h) $(idict_h) $(idictdef_h)\
@@ -204,12 +204,14 @@ $(PSOBJ)iutil.$(OBJ) : $(PSSRC)iutil.c $(GH) $(math__h) $(memory__h) $(string__h
 btoken_h=$(PSSRC)btoken.h
 files_h=$(PSSRC)files.h
 fname_h=$(PSSRC)fname.h
+iapi_h=$(PSSRC)iapi.h
 ichar_h=$(PSSRC)ichar.h
 ichar1_h=$(PSSRC)ichar1.h
 icharout_h=$(PSSRC)icharout.h
 icolor_h=$(PSSRC)icolor.h
 icremap_h=$(PSSRC)icremap.h $(gsccolor_h)
 icsmap_h=$(PSSRC)icsmap.h
+idisp_h=$(PSSRC)idisp.h
 ifilter2_h=$(PSSRC)ifilter2.h
 ifont_h=$(PSSRC)ifont.h $(gsccode_h) $(gsstype_h)
 ifont1_h=$(PSSRC)ifont1.h
@@ -338,11 +340,11 @@ $(PSOBJ)ziodev.$(OBJ) : $(PSSRC)ziodev.c $(OP)\
  $(scanchar_h) $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)ziodev.$(OBJ) $(C_) $(PSSRC)ziodev.c
 
-$(PSOBJ)ziodevs.$(OBJ) : $(PSSRC)ziodevs.c $(OP) $(stdio__h)\
+$(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) : $(PSSRC)ziodevs$(STDIO_IMPLEMENTATION).c $(OP) $(stdio__h)\
  $(gpcheck_h)\
  $(gxiodev_h)\
  $(files_h) $(store_h) $(stream_h)
-	$(PSCC) $(PSO_)ziodevs.$(OBJ) $(C_) $(PSSRC)ziodevs.c
+	$(PSCC) $(PSO_)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) $(C_) $(PSSRC)ziodevs$(STDIO_IMPLEMENTATION).c
 
 $(PSOBJ)zmath.$(OBJ) : $(PSSRC)zmath.c $(OP) $(math__h) $(gxfarith_h) $(store_h)
 	$(PSCC) $(PSO_)zmath.$(OBJ) $(C_) $(PSSRC)zmath.c
@@ -426,6 +428,11 @@ $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h)
 	$(PSCC) $(PSO_)zdevice.$(OBJ) $(C_) $(PSSRC)zdevice.c
 
+$(PSOBJ)zdfilter.$(OBJ) : $(PSSRC)zdfilter.c $(OP) $(string__h)\
+ $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
+ $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h) $(gsdfilt_h)
+	$(PSCC) $(PSO_)zdfilter.$(OBJ) $(C_) $(PSSRC)zdfilter.c
+
 $(PSOBJ)zfont.$(OBJ) : $(PSSRC)zfont.c $(OP)\
  $(gsstruct_h) $(gxdevice_h) $(gxfont_h) $(gxfcache_h)\
  $(gzstate_h)\
@@ -465,9 +472,9 @@ $(PSOBJ)zpath.$(OBJ) : $(PSSRC)zpath.c $(OP) $(math__h)\
 # Define the base PostScript language interpreter.
 # This is the subset of PostScript Level 1 required by our PDF reader.
 
-INT1=$(PSOBJ)icontext.$(OBJ) $(PSOBJ)idebug.$(OBJ) $(PSOBJ)idict.$(OBJ)
-INT2=$(PSOBJ)idparam.$(OBJ) $(PSOBJ)idstack.$(OBJ) $(PSOBJ)iinit.$(OBJ)
-INT3=$(PSOBJ)interp.$(OBJ)
+INT1=$(PSOBJ)iapi.$(OBJ) $(PSOBJ)icontext.$(OBJ) $(PSOBJ)idebug.$(OBJ)
+INT2=$(PSOBJ)idict.$(OBJ) $(PSOBJ)idparam.$(OBJ) $(PSOBJ)idstack.$(OBJ)
+INT3=$(PSOBJ)iinit.$(OBJ) $(PSOBJ)interp.$(OBJ)
 INT4=$(PSOBJ)iparam.$(OBJ) $(PSOBJ)ireclaim.$(OBJ)
 INT5=$(PSOBJ)iscan.$(OBJ) $(PSOBJ)iscannum.$(OBJ) $(PSOBJ)istack.$(OBJ)
 INT6=$(PSOBJ)iutil.$(OBJ) $(GLOBJ)sa85d.$(OBJ) $(GLOBJ)scantab.$(OBJ)
@@ -475,12 +482,12 @@ INT7=$(PSOBJ)sfilter1.$(OBJ) $(GLOBJ)sstring.$(OBJ) $(GLOBJ)stream.$(OBJ)
 Z1=$(PSOBJ)zarith.$(OBJ) $(PSOBJ)zarray.$(OBJ) $(PSOBJ)zcontrol.$(OBJ)
 Z2=$(PSOBJ)zdict.$(OBJ) $(PSOBJ)zfile.$(OBJ) $(PSOBJ)zfileio.$(OBJ)
 Z3=$(PSOBJ)zfilter.$(OBJ) $(PSOBJ)zfproc.$(OBJ) $(PSOBJ)zgeneric.$(OBJ)
-Z4=$(PSOBJ)ziodev.$(OBJ) $(PSOBJ)ziodevs.$(OBJ) $(PSOBJ)zmath.$(OBJ)
+Z4=$(PSOBJ)ziodev.$(OBJ) $(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) $(PSOBJ)zmath.$(OBJ)
 Z5=$(PSOBJ)zmisc.$(OBJ) $(PSOBJ)zpacked.$(OBJ) $(PSOBJ)zrelbit.$(OBJ)
 Z6=$(PSOBJ)zstack.$(OBJ) $(PSOBJ)zstring.$(OBJ) $(PSOBJ)zsysvm.$(OBJ)
 Z7=$(PSOBJ)ztoken.$(OBJ) $(PSOBJ)ztype.$(OBJ) $(PSOBJ)zvmem.$(OBJ)
 Z8=$(PSOBJ)zbfont.$(OBJ) $(PSOBJ)zchar.$(OBJ) $(PSOBJ)zcolor.$(OBJ)
-Z9=$(PSOBJ)zdevice.$(OBJ) $(PSOBJ)zfont.$(OBJ) $(PSOBJ)zgstate.$(OBJ)
+Z9=$(PSOBJ)zdevice.$(OBJ) $(PSOBJ)zfont.$(OBJ) $(PSOBJ)zgstate.$(OBJ) $(PSOBJ)zdfilter.$(OBJ)
 Z10=$(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
 Z11=$(PSOBJ)zpaint.$(OBJ) $(PSOBJ)zpath.$(OBJ)
 Z1OPS=zarith zarray zcontrol1 zcontrol2 zcontrol3
@@ -488,12 +495,12 @@ Z2OPS=zdict1 zdict2 zfile zfileio1 zfileio2
 Z3_4OPS=zfilter zfproc zgeneric ziodev zmath
 Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar zcolor
-Z9OPS=zdevice zfont zgstate1 zgstate2
+Z9OPS=zdevice zfont zgstate1 zgstate2 zdfilter
 Z10OPS=zht zimage zmatrix
 Z11OPS=zpaint zpath
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
-INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ)
+INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ) $(GLOBJ)idisp.$(OBJ)
 INT_OBJS=$(INT_MAIN)\
  $(INT1) $(INT2) $(INT3) $(INT4) $(INT5) $(INT6) $(INT7)\
  $(Z1) $(Z2) $(Z3) $(Z4) $(Z5) $(Z6) $(Z7) $(Z8) $(Z9) $(Z10) $(Z11)
@@ -588,7 +595,7 @@ dscparse_h=$(PSSRC)dscparse.h
 
 $(PSOBJ)zdscpars.$(OBJ) : $(PSSRC)zdscpars.c $(GH) $(memory__h) $(string__h)\
  $(dscparse_h) $(estack_h) $(ialloc_h) $(idict_h) $(iddict_h) $(iname_h)\
- $(ivmspace_h) $(oper_h) $(store_h)\
+ $(iparam_h) $(istack_h) $(ivmspace_h) $(oper_h) $(store_h)\
  $(gsstruct_h)
 	$(PSCC) $(PSO_)zdscpars.$(OBJ) $(C_) $(PSSRC)zdscpars.c
 
@@ -1116,7 +1123,7 @@ $(PSD)psl2read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl2read_)\
 $(PSOBJ)zcolor2.$(OBJ) : $(PSSRC)zcolor2.c $(OP)\
  $(gscolor_h) $(gscssub_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxpcolor_h)\
- $(estack_h) $(ialloc_h) $(idict_h) $(idparam_h) $(igstate_h) $(istruct_h)\
+ $(estack_h) $(ialloc_h) $(idict_h) $(iname_h) $(idparam_h) $(igstate_h) $(istruct_h)\
  $(store_h)
 	$(PSCC) $(PSO_)zcolor2.$(OBJ) $(C_) $(PSSRC)zcolor2.c
 
@@ -1664,6 +1671,23 @@ $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
  $(store_h)
 	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c
 
+# ---------------- ICCBased color spaces ---------------- #
+
+iccread_=$(PSOBJ)zicc.$(OBJ)
+$(PSD)icc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
+                $(GLD)sicclib.dev
+	$(SETMOD) $(PSD)icc $(iccread_)
+	$(ADDMOD) $(PSD)icc -oper zicc_ll3
+	$(ADDMOD) $(PSD)icc -ps gs_icc
+	$(ADDMOD) $(PSD)icc -include $(GLD)sicclib $(PSD)cie
+
+$(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
+ $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
+ $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h) $(icie_h)
+	$(PSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
+
+
+
 # ================================ PDF ================================ #
 
 # We need nearly all of the PostScript LanguageLevel 3 interpreter for PDF,
@@ -1680,11 +1704,12 @@ $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
 $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
- $(PSD)fmd5.dev $(PSD)ttfont.dev $(PSD)type2.dev
+ $(PSD)fmd5.dev $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
 	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)ttfont $(PSD)type2
+	$(ADDMOD) $(PSD)pdf -include $(PSD)icc
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
 
@@ -1710,12 +1735,26 @@ $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\
  $(imain_h) $(imainarg_h) $(iminst_h)
 	$(PSCC) $(PSO_)gs.$(OBJ) $(C_) $(PSSRC)gs.c
 
+$(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(GH)\
+ $(string__h) $(errors_h) $(gsargs_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
+ $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h)
+	$(PSCC) $(PSO_)iapi.$(OBJ) $(C_) $(PSSRC)iapi.c
+
 $(PSOBJ)icontext.$(OBJ) : $(PSSRC)icontext.c $(GH)\
  $(gsstruct_h) $(gxalloc_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
  $(icontext_h) $(idict_h) $(igstate_h) $(interp_h) $(isave_h) $(store_h)\
  $(stream_h)
 	$(PSCC) $(PSO_)icontext.$(OBJ) $(C_) $(PSSRC)icontext.c
+
+gdevdsp_h=$(GLSRC)gdevdsp.h
+gdevdsp2_h=$(GLSRC)gdevdsp2.h
+
+$(PSOBJ)idisp.$(OBJ) : $(PSSRC)idisp.c\
+ $(iapi_h) $(ghost_h) $(gp_h)\
+ $(imain_h) $(iminst_h) $(idisp_h)\
+ $(gx_h) $(gxdevice_h) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
+	$(PSCC) $(PSO_)idisp.$(OBJ) $(C_) $(PSSRC)idisp.c
 
 $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(ctype__h) $(memory__h) $(string__h)\
@@ -1731,8 +1770,8 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
  $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h) $(gxdevice_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
- $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(iinit_h) $(iname_h)\
- $(interp_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
+ $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(idisp_h) $(iinit_h)\
+ $(iname_h) $(interp_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
  $(main_h) $(oper_h) $(ostack_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)imain.$(OBJ) $(C_) $(PSSRC)imain.c

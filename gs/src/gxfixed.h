@@ -23,6 +23,7 @@
  */
 typedef long fixed;
 typedef ulong ufixed;		/* only used in a very few places */
+#define ARCH_SIZEOF_FIXED ARCH_SIZEOF_LONG
 
 #define max_fixed max_long
 #define min_fixed min_long

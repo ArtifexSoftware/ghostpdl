@@ -39,7 +39,13 @@ typedef enum {
     i_vm_max = i_vm_local
 } i_vm_space;
 
-/* Define an array of allocators indexed by space. */
+/*
+ * Define an array of allocators indexed by space.  Note that the first
+ * ("foreign") element of this array is always 0: foreign pointers, by
+ * definition, point to objects that are not managed by a Ghostscript
+ * allocator (typically, static const objects, or objects allocated with
+ * malloc by some piece of code other than Ghostscript).
+ */
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;

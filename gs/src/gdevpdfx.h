@@ -30,7 +30,7 @@
 
 /* Define the maximum depth of an outline tree. */
 /* Note that there is no limit on the breadth of the tree. */
-#define MAX_OUTLINE_DEPTH 8
+#define MAX_OUTLINE_DEPTH 32
 
 /* Define the maximum size of a destination array string. */
 #define MAX_DEST_STRING 80
@@ -77,15 +77,17 @@ typedef enum {
      * Internally used (pseudo-)resources.
      */
     resourceCharProc,
+    resourceCIDFont,
+    resourceCMap,
     resourceFontDescriptor,
     resourceFunction,
     NUM_RESOURCE_TYPES
 } pdf_resource_type_t;
 
-#define pdf_resource_type_names\
-  "ColorSpace", "ExtGState", "Pattern", "Shading", "XObject", "Font",\
-  0, 0, 0
-#define pdf_resource_type_structs\
+#define PDF_RESOURCE_TYPE_NAMES\
+  "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", "/Font",\
+  0, "/Font", "/CMap", "/FontDescriptor", 0
+#define PDF_RESOURCE_TYPE_STRUCTS\
   &st_pdf_resource,		/* see below */\
   &st_pdf_resource,\
   &st_pdf_resource,\
@@ -93,15 +95,23 @@ typedef enum {
   &st_pdf_x_object,		/* see below */\
   &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_char_proc,		/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_resource,\
   &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource
+
+/*
+ * rname is currently R<id> for all resources other than synthesized fonts;
+ * for synthesized fonts, rname is A, B, ....  The string is null-terminated.
+ */
 
 #define pdf_resource_common(typ)\
     typ *next;			/* next resource of this type */\
     pdf_resource_t *prev;	/* previously allocated resource */\
     gs_id rid;			/* optional ID key */\
     bool named;\
-    bool used_on_page;\
+    char rname[1/*R*/ + (sizeof(long) * 8 / 3 + 1) + 1/*\0*/];\
+    ulong where_used;		/* 1 bit per level of content stream */\
     cos_object_t *object
 typedef struct pdf_resource_s pdf_resource_t;
 struct pdf_resource_s {
@@ -128,6 +138,15 @@ struct pdf_x_object_s {
   gs_private_st_suffix_add0(st_pdf_x_object, pdf_x_object_t,\
     "pdf_x_object_t", pdf_x_object_enum_ptrs, pdf_x_object_reloc_ptrs,\
     st_pdf_resource)
+
+/* Define the mask for which procsets have been used on a page. */
+typedef enum {
+    NoMarks = 0,
+    ImageB = 1,
+    ImageC = 2,
+    ImageI = 4,
+    Text = 8
+} pdf_procset_t;
 
 /* ------ Fonts ------ */
 
@@ -165,6 +184,7 @@ struct pdf_graphics_save_s {
     cos_stream_t *object;
     long position;
     pdf_context_t save_context;
+    pdf_procset_t save_procsets;
     long save_contents_id;
 };
 
@@ -224,12 +244,13 @@ typedef struct pdf_std_font_s {
 } pdf_std_font_t;
 typedef struct pdf_text_state_s {
     /* State parameters */
-    float character_spacing;
-    pdf_font_t *font;
-    floatp size;
-    float word_spacing;
-    float leading;
+    float character_spacing;	/* Tc */
+    pdf_font_t *font;		/* for Tf */
+    floatp size;		/* for Tf */
+    float word_spacing;		/* Tw */
+    float leading;		/* TL */
     bool use_leading;		/* true => use ', false => use Tj */
+    int render_mode;		/* Tr */
     /* Bookkeeping */
     gs_matrix matrix;		/* relative to device space, not user space */
     gs_point line_start;
@@ -240,7 +261,7 @@ typedef struct pdf_text_state_s {
 } pdf_text_state_t;
 
 #define pdf_text_state_default\
-  0, NULL, 0, 0, 0, 0 /*false*/,\
+  0, NULL, 0, 0, 0, 0 /*false*/, 0,\
   { identity_matrix_body }, { 0, 0 }, { 0, 0 }, { 0 }, 0
 
 /* Resource lists */
@@ -261,15 +282,6 @@ typedef struct pdf_stream_position_s {
     long start_pos;
 } pdf_stream_position_t;
 
-/* Define the mask for which procsets have been used on a page. */
-typedef enum {
-    NoMarks = 0,
-    ImageB = 1,
-    ImageC = 2,
-    ImageI = 4,
-    Text = 8
-} pdf_procset;
-
 /*
  * Define the structure for keeping track of text rotation.
  * There is one for the current page (for AutoRotate /PageByPage)
@@ -282,19 +294,27 @@ typedef struct pdf_text_rotation_s {
 #define pdf_text_rotation_angle_values 0, 90, 180, 270, -1
 
 /*
+ * Define document and page information derived from DSC comments.
+ */
+typedef struct pdf_page_dsc_info_s {
+    int orientation;		/* -1 .. 3 */
+    gs_rect bounding_box;
+} pdf_page_dsc_info_t;
+
+/*
  * Define the stored information for a page.  Because pdfmarks may add
  * information to any page anywhere in the document, we have to wait
  * until the end to write out the page dictionaries.
  */
 typedef struct pdf_page_s {
     cos_dict_t *Page;
-    gs_int_point MediaBox;
-    pdf_procset procsets;
+    gs_point MediaBox;
+    pdf_procset_t procsets;
     long contents_id;
-    long resource_ids[resourceFont]; /* resources up to Font, see above */
-    long fonts_id;
+    long resource_ids[resourceFont + 1]; /* resources thru Font, see above */
     cos_array_t *Annots;
     pdf_text_rotation_t text_rotation;
+    pdf_page_dsc_info_t dsc_info;
 } pdf_page_t;
 #define private_st_pdf_page()	/* in gdevpdf.c */\
   gs_private_st_ptrs2(st_pdf_page, pdf_page_t, "pdf_page_t",\
@@ -338,11 +358,16 @@ struct gx_device_pdf_s {
     bool ReEncodeCharacters;
     long FirstObjectNumber;
     /* End of parameters */
+    /* Values derived from DSC comments */
+    bool is_EPS;
+    pdf_page_dsc_info_t doc_dsc_info; /* document default */
+    pdf_page_dsc_info_t page_dsc_info; /* current page */
     /* Additional graphics state */
     bool fill_overprint, stroke_overprint;
     int overprint_mode;
     gs_id halftone_id;
     gs_id transfer_ids[4];
+    int transfer_not_identity;	/* bitmask */
     gs_id black_generation_id, undercolor_removal_id;
     /* Following are set when device is opened. */
     enum {
@@ -382,6 +407,8 @@ struct gx_device_pdf_s {
     pdf_font_t *open_font;	/* current Type 3 synthesized font */
     bool use_open_font;		/* if false, start new open_font */
     long embedded_encoding_id;
+    int max_embedded_code;	/* max Type 3 code used */
+    long random_offset;		/* for generating subset prefixes */
     /* ................ */
     long next_id;
     /* The following 3 objects, and only these, are allocated */
@@ -396,7 +423,7 @@ struct gx_device_pdf_s {
     pdf_context_t context;
     long contents_length_id;
     long contents_pos;
-    pdf_procset procsets;	/* used on this page */
+    pdf_procset_t procsets;	/* used on this page */
     pdf_text_state_t text;
     pdf_std_font_t std_fonts[PDF_NUM_STD_FONTS];
     long space_char_ids[X_SPACE_MAX - X_SPACE_MIN + 1];
@@ -404,6 +431,7 @@ struct gx_device_pdf_s {
 #define initial_num_pages 50
     pdf_page_t *pages;
     int num_pages;
+    ulong used_mask;		/* for where_used: page level = 1 */
     pdf_resource_list_t resources[NUM_RESOURCE_TYPES];
     /* cs_Patterns[0] is colored; 1,3,4 are uncolored + Gray,RGB,CMYK */
     pdf_resource_t *cs_Patterns[5];
@@ -458,6 +486,7 @@ dev_proc_copy_color(gdev_pdf_copy_color);
 dev_proc_fill_mask(gdev_pdf_fill_mask);
 dev_proc_strip_tile_rectangle(gdev_pdf_strip_tile_rectangle);
     /* In gdevpdfd.c */
+extern const gx_device_vector_procs pdf_vector_procs;
 dev_proc_fill_rectangle(gdev_pdf_fill_rectangle);
 dev_proc_fill_path(gdev_pdf_fill_path);
 dev_proc_stroke_path(gdev_pdf_stroke_path);
@@ -515,6 +544,9 @@ int pdf_close_contents(P2(gx_device_pdf * pdev, bool last));
 
 /* ------ Resources et al ------ */
 
+extern const char *const pdf_resource_type_names[];
+extern const gs_memory_struct_type_t *const pdf_resource_type_structs[];
+
 /*
  * Define the offset that indicates that a file position is in the
  * asides file rather than the main (contents) file.
@@ -560,6 +592,20 @@ int pdf_end_aside(P1(gx_device_pdf * pdev));
 
 /* End a resource. */
 int pdf_end_resource(P1(gx_device_pdf * pdev));
+
+/*
+ * Write and release the Cos objects for resources local to a content stream.
+ * We must write all the objects before freeing any of them, because
+ * they might refer to each other.
+ */
+int pdf_write_resource_objects(P2(gx_device_pdf *pdev,
+				  pdf_resource_type_t rtype));
+
+/*
+ * Store the resource sets for a content stream (page or XObject).
+ * Sets page->{procsets, resource_ids[], fonts_id}.
+ */
+int pdf_store_page_resources(P2(gx_device_pdf *pdev, pdf_page_t *page));
 
 /* Copy data from a temporary file to a stream. */
 void pdf_copy_data(P3(stream *s, FILE *file, long count));
@@ -620,8 +666,11 @@ void pdf_put_matrix(P4(gx_device_pdf *pdev, const char *before,
 		       const gs_matrix *pmat, const char *after));
 
 /* Write a name, with escapes for unusual characters. */
-void pdf_put_name_escaped(P4(stream *s, const byte *nstr, uint size,
-			     bool escape));
+typedef int (*pdf_put_name_chars_proc_t)(P3(stream *, const byte *, uint));
+pdf_put_name_chars_proc_t
+    pdf_put_name_chars_proc(P1(const gx_device_pdf *pdev));
+void pdf_put_name_chars(P3(const gx_device_pdf *pdev, const byte *nstr,
+			   uint size));
 void pdf_put_name(P3(const gx_device_pdf *pdev, const byte *nstr, uint size));
 
 /* Write a string in its shortest form ( () or <> ). */
@@ -641,10 +690,12 @@ typedef struct pdf_data_writer_s {
     long length_id;
 } pdf_data_writer_t;
 /*
- * Begin a Function or halftone data stream.  The client has opened the
- * object and written the << and any desired dictionary keys.
+ * Begin a data stream.  The client has opened the object and written
+ * the << and any desired dictionary keys.
  */
-int pdf_begin_data(P2(gx_device_pdf *pdev, pdf_data_writer_t *pdw));
+int pdf_begin_data_binary(P3(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+			     bool data_is_binary));
+#define pdf_begin_data(pdev, pdw) pdf_begin_data_binary(pdev, pdw, true)
 
 /* End a data stream. */
 int pdf_end_data(P1(pdf_data_writer_t *pdw));

@@ -13,7 +13,7 @@
 /*$RCSfile$ $Revision$ */
 /* Miscellaneous support for platform facilities */
 
-#include "close_.h"
+#include "unistd_.h"
 #include "fcntl_.h"
 #include "stdio_.h"
 #include "stat_.h"

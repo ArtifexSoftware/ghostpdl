@@ -221,6 +221,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
+    pdf_put_clip_path(pdev, pcpath);
     if (context == PDF_IMAGE_TYPE3_MASK) {
 	/*
 	 * The soft mask for an ImageType 3x image uses a DevicePixel
@@ -263,15 +264,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     in_line &= nbytes <= MAX_INLINE_IMAGE_BYTES;
     if (rect.p.x != 0 || rect.p.y != 0 ||
 	rect.q.x != pim->Width || rect.q.y != pim->Height ||
-	(is_mask ? pim->CombineWithColor :
-	 pdf_color_space(pdev, &cs_value, pcs,
-			 (in_line ? &pdf_color_space_names_short :
-			  &pdf_color_space_names), in_line) < 0)
+	(is_mask && pim->CombineWithColor)
+	/* Color space setup used to be done here: see SRZB comment below. */
 	) {
 	gs_free_object(mem, pie, "pdf_begin_image");
 	goto nyi;
     }
-    pdf_put_clip_path(pdev, pcpath);
     if (pmat == 0)
 	pmat = &ctm_only(pis);
     {
@@ -291,15 +289,38 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     }
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 				      height, NULL, in_line)) < 0 ||
-	/****** pctm IS WRONG ******/
-	(code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-					 &pie->writer.binary, &image.pixel,
-					 pmat, pis)) < 0 ||
+	/*
+	 * Some regrettable PostScript code (such as LanguageLevel 1 output
+	 * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
+	 * function to accomplish the equivalent of indexed color.
+	 * Downsampling (well, only averaging) or JPEG compression are not
+	 * compatible with this.  Play it safe by using only lossless
+	 * filters if the transfer function(s) is/are other than the
+	 * identity.
+	 */
+	(code = (pdev->transfer_not_identity ?
+		 psdf_setup_lossless_filters((gx_device_psdf *) pdev,
+					     &pie->writer.binary,
+					     &image.pixel) :
+		 psdf_setup_image_filters((gx_device_psdf *) pdev,
+					  &pie->writer.binary, &image.pixel,
+					  pmat, pis))) < 0 ||
+	/* SRZB 2001-04-25/Bl
+	 * Since psdf_setup_image_filters may change the color space
+	 * (in case of pdev->params.ConvertCMYKImagesToRGB == true),
+	 * we postpone the selection of the PDF color space to here:
+	 */
+	(!is_mask &&
+	 pdf_color_space(pdev, &cs_value, image.pixel.ColorSpace,
+			 (in_line ? &pdf_color_space_names_short :
+			  &pdf_color_space_names), in_line) < 0) ||
 	(code = pdf_begin_image_data(pdev, &pie->writer,
 				     (const gs_pixel_image_t *)&image,
 				     &cs_value)) < 0
-	)
+	) {
+	/****** SHOULD FREE STRUCTURES AND CLEAN UP HERE ******/
 	return code;
+    }
     return 0;
  nyi:
     return gx_default_begin_typed_image
