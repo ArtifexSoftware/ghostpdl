@@ -18,6 +18,7 @@
 /* "Unix-like" file system platform routines for Ghostscript */
 #include "memory_.h"
 #include "string_.h"
+#include "stdio_.h"		/* for FILENAME_MAX */
 #include "gx.h"
 #include "gp.h"
 #include "gpmisc.h"
@@ -27,14 +28,13 @@
 #include "dirent_.h"
 #include "unistd_.h"
 #include <stdlib.h>             /* for mkstemp/mktemp */
-#include <sys/param.h>		/* for MAXPATHLEN */
 
-/* Some systems (Interactive for example) don't define MAXPATHLEN,
- * so we define it here.  (This probably should be done via a Config-Script.)
+/* Provide a definition of the maximum path length in case the system
+ * headers don't define it. This should be gp_file_name_sizeof from
+ * gp.h once that value is properly sent in a system-dependent way 
  */
-
-#ifndef MAXPATHLEN
-#  define MAXPATHLEN 1024
+#ifndef FILENAME_MAX
+#  define FILENAME_MAX 1024
 #endif
 
 /* Library routines not declared in a standard header */
@@ -205,7 +205,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 
     /* Reject attempts to enumerate paths longer than the */
     /* system-dependent limit. */
-    if (patlen > MAXPATHLEN)
+    if (patlen > FILENAME_MAX)
 	return 0;
 
     /* Reject attempts to enumerate with a pattern containing zeroes. */
@@ -235,7 +235,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     memcpy(pfen->pattern, pat, patlen);
     pfen->pattern[patlen] = 0;
 
-    work = (char *)gs_alloc_bytes(mem, MAXPATHLEN + 1,
+    work = (char *)gs_alloc_bytes(mem, FILENAME_MAX + 1,
 				  "gp_enumerate_files(work)");
     if (work == 0)
 	return 0;
@@ -333,7 +333,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     len = strlen(de->d_name);
     if (len <= 2 && (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..")))
 	goto top;
-    if (len + worklen + 1 > MAXPATHLEN)
+    if (len + worklen + 1 > FILENAME_MAX)
 	/* Should be an error, I suppose */
 	goto top;
     if (worklen == 0) {		/* "Current" directory (evil un*x kludge) */
