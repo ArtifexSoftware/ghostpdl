@@ -330,6 +330,7 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	int i;
 	gs_int_rect win;
 
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	/* get the default picture frame coordinates. */
 	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
 	wxy[0] = win.p.x;
@@ -346,7 +347,6 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  pgls->g.soft_clip_window.state = inactive;
 	  return 0;
 	}
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	/* HAS needs error checking */
 	pgls->g.soft_clip_window.rect.p.x = wxy[0];
 	pgls->g.soft_clip_window.rect.p.y = wxy[1];
