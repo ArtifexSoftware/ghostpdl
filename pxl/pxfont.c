@@ -307,12 +307,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	      return code;
 	  }
 	gs_currentmatrix(pgs, &save_ctm);
-#if 0
-	/*
-	 * I don't know why this code was here (briefly); if it turns out
-	 * to be important, we can put it back in, but it breaks Genoa FTS
-	 * t202 images 3-5.
-	 */
+
 	if ( pxgs->base_font->scaling_technology == plfst_bitmap )
 	  { /*
 	     * Bitmap fonts don't scale or rotate: the char_matrix is the
@@ -325,7 +320,6 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	    gs_setmatrix(pgs, &mat);
 	  }
 	else
-#endif
 #ifdef TRANSFORM_TEXT_AS_OBJECTS
 	/* Keep the current translation, but post-scale and rotate. */
 	{ gs_matrix tmat, rmat;
