@@ -43,8 +43,13 @@ AK=$(GLGENDIR)\ccf32.tr
 
 # Define the syntax for command, object, and executable files.
 
+NULL=
+
 CMD=.bat
 C_=-c
+D_=-D
+_D_=$(NULL)=
+_D=
 I_=-I
 II=-I
 _I=
