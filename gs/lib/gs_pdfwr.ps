@@ -620,6 +620,24 @@ currentdict /.pdf_hook_DSC_Creator undef
   } ifelse
 } .bind odef
 
+1000 % priority
+{ currentdevice .devicename /pdfwrite eq {
+    currentglobal true setglobal
+    systemdict /.setupUnicodeDecoder known {
+      /Unicode /Decoding resourcestatus {
+        pop pop
+        /Unicode /Decoding findresource
+        .setupUnicodeDecoder
+      } {
+        QUIET not {
+          (WARNING: /Unicode /Decoding resource is not accessible but it is useful for generating ToUnicode CMap.) =
+        } if
+      } ifelse
+    } if
+    setglobal
+  } if
+} bind .schedule_init
+
 1010 % priority
 {
   currentdevice .devicename /pdfwrite eq systemdict /PDFSETTINGS known or {
@@ -637,21 +655,11 @@ currentdict /.pdf_hook_DSC_Creator undef
   } if
 } bind .schedule_init
 
-1000 % priority
-{ currentdevice .devicename /pdfwrite eq {
-    currentglobal true setglobal
-    systemdict /.setupUnicodeDecoder known {
-      /Unicode /Decoding resourcestatus {
-        pop pop
-        /Unicode /Decoding findresource
-        .setupUnicodeDecoder
-      } {
-        QUIET not {
-          (WARNING: /Unicode /Decoding resource is not accessible but it is useful for generating ToUnicode CMap.) =
-        } if
-      } ifelse
-    } if
-    setglobal
+2000 % priority
+{
+  currentdevice .devicename /pdfwrite eq {
+    % Inform the device with initial graphic state. See gdev_pdf_fill_path.
+    newpath fill
   } if
 } bind .schedule_init
 

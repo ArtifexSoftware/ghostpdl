@@ -37,9 +37,87 @@
 
 /* ---------------- Miscellaneous ---------------- */
 
-/* Reset the graphics state parameters to initial values. */
+/* Save the viewer's graphic state. */
+int
+pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
+{
+    const int i = pdev->vgstack_depth;
+
+    if (pdev->vgstack_depth >= count_of(pdev->vgstack))
+	return_error(gs_error_unregistered); /* Must not happen. */
+    pdev->vgstack[i].transfer_ids[0] = pdev->transfer_ids[0];
+    pdev->vgstack[i].transfer_ids[1] = pdev->transfer_ids[1];
+    pdev->vgstack[i].transfer_ids[2] = pdev->transfer_ids[2];
+    pdev->vgstack[i].transfer_ids[3] = pdev->transfer_ids[3];
+    pdev->vgstack[i].transfer_not_identity = pdev->transfer_not_identity;
+    pdev->vgstack[i].opacity_alpha = pdev->state.opacity.alpha;
+    pdev->vgstack[i].shape_alpha = pdev->state.shape.alpha;
+    pdev->vgstack[i].blend_mode = pdev->state.blend_mode;
+    pdev->vgstack[i].halftone_id = pdev->halftone_id;
+    pdev->vgstack[i].black_generation_id = pdev->black_generation_id;
+    pdev->vgstack[i].undercolor_removal_id = pdev->undercolor_removal_id;
+    pdev->vgstack[i].overprint_mode = pdev->overprint_mode;
+    pdev->vgstack[i].smoothness = pdev->state.smoothness;
+    pdev->vgstack[i].text_knockout = pdev->state.text_knockout;
+    pdev->vgstack[i].fill_overprint = pdev->fill_overprint;
+    pdev->vgstack[i].stroke_overprint = pdev->stroke_overprint;
+    pdev->vgstack[i].stroke_adjust = pdev->state.stroke_adjust;
+    pdev->vgstack[i].saved_fill_color = pdev->saved_fill_color;
+    pdev->vgstack[i].saved_stroke_color = pdev->saved_stroke_color;
+    pdev->vgstack[i].line_params = pdev->state.line_params;
+    pdev->vgstack[i].line_params.dash.pattern = 0; /* Use pdev->dash_pattern instead. */
+    memcpy(pdev->vgstack[i].dash_pattern, pdev->dash_pattern, 
+		sizeof(pdev->vgstack[i].dash_pattern));
+    pdev->vgstack_depth++;
+    stream_puts(s, "q\n");
+    return 0;
+}
+
+/* Load the viewer's graphic state. */
+private void
+pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
+{   
+    pdev->transfer_ids[0] = s->transfer_ids[0];
+    pdev->transfer_ids[1] = s->transfer_ids[1];
+    pdev->transfer_ids[2] = s->transfer_ids[2];
+    pdev->transfer_ids[3] = s->transfer_ids[3];
+    pdev->transfer_not_identity = s->transfer_not_identity;
+    pdev->state.opacity.alpha = s->opacity_alpha;
+    pdev->state.shape.alpha = s->shape_alpha;
+    pdev->state.blend_mode = s->blend_mode;
+    pdev->halftone_id = s->halftone_id;
+    pdev->black_generation_id = s->black_generation_id;
+    pdev->undercolor_removal_id = s->undercolor_removal_id;
+    pdev->overprint_mode = s->overprint_mode;
+    pdev->state.smoothness = s->smoothness;
+    pdev->state.text_knockout = s->text_knockout;
+    pdev->fill_overprint = s->fill_overprint;
+    pdev->stroke_overprint = s->stroke_overprint;
+    pdev->state.stroke_adjust = s->stroke_adjust;
+    pdev->saved_fill_color = s->saved_fill_color;
+    pdev->saved_stroke_color = s->saved_stroke_color;
+    pdev->state.line_params = s->line_params;
+    memcpy(pdev->dash_pattern, s->dash_pattern,
+		sizeof(s->dash_pattern));
+}
+
+
+/* Restore the viewer's graphic state. */
+int
+pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
+{   const int i = --pdev->vgstack_depth;
+
+    if (i < 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    stream_puts(s, "Q\n");
+    pdf_load_viewer_state(pdev, pdev->vgstack + i);
+    return 0;
+}
+
+/* Set initial color. */
 void
-pdf_reset_graphics(gx_device_pdf * pdev)
+pdf_set_initial_color(gx_device_pdf * pdev, gx_device_color_saved *saved_fill_color,
+		    gx_device_color_saved *saved_stroke_color)
 {
     gx_color_index color = 0; /* black on DeviceGray and DeviceRGB */
     gx_device_color temp_color;
@@ -51,10 +129,72 @@ pdf_reset_graphics(gx_device_pdf * pdev)
         color = dev_proc(pdev, map_cmyk_color)((gx_device *)pdev, cv);
     }
     color_set_pure(&temp_color, color);
-    memset(&pdev->saved_fill_color, 0, sizeof(pdev->saved_fill_color));
-    memset(&pdev->saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
-    gx_saved_color_update(&pdev->saved_fill_color, &temp_color);
-    gx_saved_color_update(&pdev->saved_stroke_color, &temp_color);
+    memset(&pdev->vg_initial.saved_fill_color, 0, sizeof(pdev->saved_fill_color));
+    memset(&pdev->vg_initial.saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
+    gx_saved_color_update(&pdev->vg_initial.saved_fill_color, &temp_color);
+    gx_saved_color_update(&pdev->vg_initial.saved_stroke_color, &temp_color);
+}
+
+/* Prepare intitial values for viewer's graphics state parameters. */
+void
+pdf_prepare_initial_viewers_state(gx_device_pdf * pdev, const gs_imager_state *pis)
+{
+    /* Parameter values, which are specified in PDF spec, are set here.
+     * Parameter values, which are specified in PDF spec as "installation dependent",
+     * are set here to intial values used with PS interpreter.
+     * This allows to write differences to the output file
+     * and skip initial values.
+     */
+
+    pdf_set_initial_color(pdev, &pdev->vg_initial.saved_fill_color, &pdev->vg_initial.saved_stroke_color);
+    pdev->vg_initial.transfer_not_identity = 
+	    (pis->set_transfer.red   != NULL ? pis->set_transfer.red->proc   != gs_identity_transfer : 0) * 1 +
+	    (pis->set_transfer.green != NULL ? pis->set_transfer.green->proc != gs_identity_transfer : 0) * 2 +
+	    (pis->set_transfer.blue  != NULL ? pis->set_transfer.blue->proc  != gs_identity_transfer : 0) * 4 +
+	    (pis->set_transfer.gray  != NULL ? pis->set_transfer.gray->proc  != gs_identity_transfer : 0) * 8;
+    pdev->vg_initial.transfer_ids[0] = (pis->set_transfer.red != NULL ? pis->set_transfer.red->id : 0);
+    pdev->vg_initial.transfer_ids[1] = (pis->set_transfer.green != NULL ? pis->set_transfer.green->id : 0);
+    pdev->vg_initial.transfer_ids[2] = (pis->set_transfer.blue != NULL ? pis->set_transfer.blue->id : 0);
+    pdev->vg_initial.transfer_ids[3] = (pis->set_transfer.gray != NULL ? pis->set_transfer.gray->id : 0);
+    pdev->vg_initial.opacity_alpha = pis->opacity.alpha;
+    pdev->vg_initial.shape_alpha = pis->shape.alpha;
+    pdev->vg_initial.blend_mode = pis->blend_mode;
+    pdev->vg_initial.halftone_id = (pis->dev_ht != 0 ? pis->dev_ht->id : 0);
+    pdev->vg_initial.black_generation_id = (pis->black_generation != 0 ? pis->black_generation->id : 0);
+    pdev->vg_initial.undercolor_removal_id = (pis->undercolor_removal != 0 ? pis->undercolor_removal->id : 0);
+    pdev->vg_initial.overprint_mode = 0;
+    pdev->vg_initial.smoothness = pis->smoothness;
+    pdev->vg_initial.text_knockout = pis->text_knockout;
+    pdev->vg_initial.fill_overprint = false;
+    pdev->vg_initial.stroke_overprint = false;
+    pdev->vg_initial.stroke_adjust = false;
+    pdev->vg_initial.line_params.half_width = 0.5;
+    pdev->vg_initial.line_params.cap = 0;
+    pdev->vg_initial.line_params.join = 0;
+    pdev->vg_initial.line_params.curve_join = 0;
+    pdev->vg_initial.line_params.miter_limit = 10.0;
+    pdev->vg_initial.line_params.miter_check = 0;
+    pdev->vg_initial.line_params.dot_length = pis->line_params.dot_length;
+    pdev->vg_initial.line_params.dot_length_absolute = pis->line_params.dot_length_absolute;
+    pdev->vg_initial.line_params.dot_orientation = pis->line_params.dot_orientation;
+    memset(&pdev->vg_initial.line_params.dash, 0 , sizeof(pdev->vg_initial.line_params.dash));
+    memset(pdev->vg_initial.dash_pattern, 0, sizeof(pdev->vg_initial.dash_pattern));
+    pdev->vg_initial_set = true;
+    /*
+     * Some parameters listed in PDF spec are missed here :
+     * color space - because we ever convert to output color model, except for images.
+     * text state - it is initialized per page.
+     * rendering intent - not sure why, fixme.
+     */
+}
+
+/* Reset the graphics state parameters to initial values. */
+/* Used if pdf_prepare_initial_viewers_state was not callad. */
+private void
+pdf_reset_graphics_old(gx_device_pdf * pdev)
+{
+
+    pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color);
     pdev->state.flatness = -1;
     {
 	static const gx_line_params lp_initial = {
@@ -65,6 +205,17 @@ pdf_reset_graphics(gx_device_pdf * pdev)
     }
     pdev->fill_overprint = false;
     pdev->stroke_overprint = false;
+    pdf_reset_text(pdev);
+}
+
+/* Reset the graphics state parameters to initial values. */
+void
+pdf_reset_graphics(gx_device_pdf * pdev)
+{
+    if (pdev->vg_initial_set)
+	pdf_load_viewer_state(pdev, &pdev->vg_initial);
+    else
+	pdf_reset_graphics_old(pdev);
     pdf_reset_text(pdev);
 }
 
@@ -1152,71 +1303,3 @@ pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
 				 &psdf_set_fill_color_commands);
 }
 
-/* Save the viewer's graphic state. */
-int
-pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
-{
-    const int i = pdev->vgstack_depth;
-
-    if (pdev->vgstack_depth >= count_of(pdev->vgstack))
-	return_error(gs_error_unregistered); /* Must not happen. */
-    pdev->vgstack[i].transfer_ids[0] = pdev->transfer_ids[0];
-    pdev->vgstack[i].transfer_ids[1] = pdev->transfer_ids[1];
-    pdev->vgstack[i].transfer_ids[2] = pdev->transfer_ids[2];
-    pdev->vgstack[i].transfer_ids[3] = pdev->transfer_ids[3];
-    pdev->vgstack[i].transfer_not_identity = pdev->transfer_not_identity;
-    pdev->vgstack[i].opacity_alpha = pdev->state.opacity.alpha;
-    pdev->vgstack[i].shape_alpha = pdev->state.shape.alpha;
-    pdev->vgstack[i].blend_mode = pdev->state.blend_mode;
-    pdev->vgstack[i].halftone_id = pdev->halftone_id;
-    pdev->vgstack[i].black_generation_id = pdev->black_generation_id;
-    pdev->vgstack[i].undercolor_removal_id = pdev->undercolor_removal_id;
-    pdev->vgstack[i].overprint_mode = pdev->overprint_mode;
-    pdev->vgstack[i].smoothness = pdev->state.smoothness;
-    pdev->vgstack[i].text_knockout = pdev->state.text_knockout;
-    pdev->vgstack[i].fill_overprint = pdev->fill_overprint;
-    pdev->vgstack[i].stroke_overprint = pdev->stroke_overprint;
-    pdev->vgstack[i].stroke_adjust = pdev->state.stroke_adjust;
-    pdev->vgstack[i].saved_fill_color = pdev->saved_fill_color;
-    pdev->vgstack[i].saved_stroke_color = pdev->saved_stroke_color;
-    pdev->vgstack[i].line_params = pdev->state.line_params;
-    pdev->vgstack[i].line_params.dash.pattern = 0; /* Use pdev->dash_pattern instead. */
-    memcpy(pdev->vgstack[i].dash_pattern, pdev->dash_pattern, 
-		sizeof(pdev->vgstack[i].dash_pattern));
-    pdev->vgstack_depth++;
-    stream_puts(s, "q\n");
-    return 0;
-}
-
-/* Restore the viewer's graphic state. */
-int
-pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
-{   const int i = --pdev->vgstack_depth;
-
-    if (i < 0)
-	return_error(gs_error_unregistered); /* Must not happen. */
-    stream_puts(s, "Q\n");
-    pdev->transfer_ids[0] = pdev->vgstack[i].transfer_ids[0];
-    pdev->transfer_ids[1] = pdev->vgstack[i].transfer_ids[1];
-    pdev->transfer_ids[2] = pdev->vgstack[i].transfer_ids[2];
-    pdev->transfer_ids[3] = pdev->vgstack[i].transfer_ids[3];
-    pdev->transfer_not_identity = pdev->vgstack[i].transfer_not_identity;
-    pdev->state.opacity.alpha = pdev->vgstack[i].opacity_alpha;
-    pdev->state.shape.alpha = pdev->vgstack[i].shape_alpha;
-    pdev->state.blend_mode = pdev->vgstack[i].blend_mode;
-    pdev->halftone_id = pdev->vgstack[i].halftone_id;
-    pdev->black_generation_id = pdev->vgstack[i].black_generation_id;
-    pdev->undercolor_removal_id = pdev->vgstack[i].undercolor_removal_id;
-    pdev->overprint_mode = pdev->vgstack[i].overprint_mode;
-    pdev->state.smoothness = pdev->vgstack[i].smoothness;
-    pdev->state.text_knockout = pdev->vgstack[i].text_knockout;
-    pdev->fill_overprint = pdev->vgstack[i].fill_overprint;
-    pdev->stroke_overprint = pdev->vgstack[i].stroke_overprint;
-    pdev->state.stroke_adjust = pdev->vgstack[i].stroke_adjust;
-    pdev->saved_fill_color = pdev->vgstack[i].saved_fill_color;
-    pdev->saved_stroke_color = pdev->vgstack[i].saved_stroke_color;
-    pdev->state.line_params = pdev->vgstack[i].line_params;
-    memcpy(pdev->dash_pattern, pdev->vgstack[i].dash_pattern,
-		sizeof(pdev->vgstack[i].dash_pattern));
-    return 0;
-}

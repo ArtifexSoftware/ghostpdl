@@ -370,6 +370,13 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     bool have_path;
     gs_fixed_rect box = {{0, 0}, {0, 0}};
 
+    have_path = !gx_path_is_void(ppath);
+    if (!have_path && !pdev->vg_initial_set) {
+	/* See lib/gs_pdfwr.ps about "initial graphic state". */
+	pdf_prepare_initial_viewers_state(pdev, pis);
+	pdf_reset_graphics(pdev);
+	return 0;
+    }
     /*
      * Check for an empty clipping path.
      */
@@ -387,7 +394,6 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    return 0;
     }
     new_clip = pdf_must_put_clip_path(pdev, pcpath);
-    have_path = !gx_path_is_void(ppath);
     if (have_path || pdev->context == PDF_IN_NONE || new_clip) {
         if (new_clip)
 	    code = pdf_unclip(pdev);

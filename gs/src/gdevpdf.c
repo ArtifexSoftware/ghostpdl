@@ -243,6 +243,8 @@ const gx_device_pdf gs_pdfwrite_device =
     {0}, {0}
  },
  0,				/* vgstack_depth */
+ {0},				/* vg_initial */
+ false				/* vg_initial_set */
 };
 
 /* ---------------- Device open/close ---------------- */
@@ -439,33 +441,7 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
     } else {	/* can't happen - see the call from gdev_pdf_put_params. */
  	DO_NOTHING;
     }
-    /* 
-     * Set initial color value.
-     * Doing this with a model-independent algorithm.
-     */
-    {
-	int i;
-	frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	gx_color_index color;
-	frac gray = frac_0;	/* Black */
-	const gx_cm_color_map_procs *procs;
-	gx_device_color temp_color;
-
-	/* map Black to color model components */
-	procs = dev_proc(pdev, get_color_mapping_procs)((gx_device *)pdev);
-	procs->map_gray((gx_device *)pdev, gray, cm_comps);
-	for (i = 0; i < pdev->color_info.num_components; i++)
-		cv[i] = frac2cv(cm_comps[i]);
-	/* Encode as a color index */
-	color = dev_proc(pdev, encode_color)((gx_device *)pdev, cv);
-	/* Now set it. */
-	color_set_pure(&temp_color, color);
-	memset(&pdev->saved_fill_color, 0, sizeof(pdev->saved_fill_color));
-	memset(&pdev->saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
-	gx_saved_color_update(&pdev->saved_fill_color, &temp_color);
-	gx_saved_color_update(&pdev->saved_stroke_color, &temp_color);
-    }
+    pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color);
 }
 #ifdef __DECC
 #pragma optimize restore

@@ -99,8 +99,15 @@ void pdf_color_space_procsets(gx_device_pdf *pdev,
 
 /* ---------------- Exported by gdevpdfg.c ---------------- */
 
+/* Prepare intitial values for viewer's graphics state parameters. */
+void pdf_prepare_initial_viewers_state(gx_device_pdf * pdev, const gs_imager_state *pis);
+
 /* Reset the graphics state parameters to initial values. */
 void pdf_reset_graphics(gx_device_pdf *pdev);
+
+/* Set initial color. */
+void pdf_set_initial_color(gx_device_pdf * pdev, gx_device_color_saved *saved_fill_color,
+		    gx_device_color_saved *saved_stroke_color);
 
 /* Set the fill or stroke color. */
 /* pdecolor is &pdev->fill_color or &pdev->stroke_color. */

@@ -505,6 +505,8 @@ struct gx_device_pdf_s {
      */
     pdf_viewer_state vgstack[2];
     int vgstack_depth;
+    pdf_viewer_state vg_initial; /* Initial values for viewer's graphic state */
+    bool vg_initial_set;
 };
 
 #define is_in_page(pdev)\
