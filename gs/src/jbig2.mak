@@ -36,7 +36,7 @@ JBIG2SRC=$(JBIG2SRCDIR)$(D)
 JBIG2GEN=$(JBIG2OBJDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
 
-# This list is only known good for jbig2dec v0.2-0.3
+# This list is only known good for jbig2dec v0.2-0.4
 
 libjbig2_OBJS1=\
 	$(JBIG2OBJ)jbig2.$(OBJ) \
@@ -105,8 +105,8 @@ $(JBIG2GEN)libjbig2_0.dev : $(TOP_MAKEFILES) $(JBIG2_MAK) $(ECHOGS_XE) $(libjbig
 
 # explicit rules for building the source files. 
 
-$(JBIG2OBJ)vsnprintf.$(OBJ) : $(JBIG2SRC)vsnprintf.c $(JBIG2DEP)
-	$(JBIG2_CC) $(JBIG2O_)vsnprintf.$(OBJ) $(C_) $(JBIG2SRC)vsnprintf.c
+$(JBIG2OBJ)snprintf.$(OBJ) : $(JBIG2SRC)snprintf.c $(JBIG2DEP)
+	$(JBIG2_CC) $(JBIG2O_)snprintf.$(OBJ) $(C_) $(JBIG2SRC)snprintf.c
 
 $(JBIG2OBJ)getopt.$(OBJ) : $(JBIG2SRC)getopt.c $(JBIG2SRC)getopt.h $(JBIG2DEP)
 	$(JBIG2_CC) $(JBIG2O_)getopt.$(OBJ) $(C_) $(JBIG2SRC)getopt.c
