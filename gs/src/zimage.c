@@ -474,6 +474,7 @@ image_string_continue(i_ctx_t *i_ctx_p)
 
 	if (code == e_RemapColor)
 	    return code;
+    stop_now:
 	if (code) {		/* Stop now. */
 	    esp -= NUM_PUSH(num_sources);
 	    image_cleanup(i_ctx_p);
@@ -482,9 +483,14 @@ image_string_continue(i_ctx_t *i_ctx_p)
 	for (px = 0; px < num_sources; ++px)
 	    if (sources[px].size == 0) {
 		const ref *psrc = ETOP_SOURCE(esp, px);
+		uint size = r_size(psrc);
 
+		if (size == 0) {	    /* empty source */
+		    code = 1;
+		    goto stop_now;
+                }
 		sources[px].data = psrc->value.bytes;
-		sources[px].size = r_size(psrc);
+		sources[px].size = size;
 	    }
     }
 }
