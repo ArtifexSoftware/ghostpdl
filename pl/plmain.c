@@ -725,18 +725,19 @@ pl_main_universe_select(
 /* Initialize the instance parameters. */
 void
 pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
-{	pti->memory = mem;
-	pti->error_report = -1;
-	pti->pause = true;
-        pti->print_page_count = false;
-	pti->device = 0;
-	pti->implementation = 0;
-	gp_get_usertime(pti->base_time);
-	pti->first_page = 1;
-	pti->last_page = max_int;
-	pti->page_count = 0;
-	pti->saved_hwres = false;
-	strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
+{	
+    pti->memory = mem;
+    pti->error_report = -1;
+    pti->pause = true;
+    pti->print_page_count = false;
+    pti->device = 0;
+    pti->implementation = 0;
+    gp_get_usertime(pti->base_time);
+    pti->first_page = 1;
+    pti->last_page = max_int;
+    pti->page_count = 0;
+    pti->saved_hwres = false;
+    strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
 /* -------- Command-line processing ------ */
@@ -1071,16 +1072,13 @@ pl_auto_sense(
 void
 pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pti,
   const char *msg)
-{	gs_memory_status_t status;
+{	
 	long utime[2];
-
-	gs_memory_status(mem, &status);
 	gp_get_usertime(utime);
-	dprintf5("%% %s time = %g, pages = %d, memory allocated = %lu, used = %lu\n",
+	dprintf3("%% %s time = %g, pages = %d\n",
 		 msg, utime[0] - pti->base_time[0] +
 		 (utime[1] - pti->base_time[1]) / 1000000000.0,
-		 pti->page_count, status.allocated, status.used);
-	dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
+                 pti->page_count);
 }
 
 /* Log a string to console, optionally wait for input */

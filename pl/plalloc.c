@@ -130,7 +130,7 @@ pl_mem_node_remove(byte *addr)
             
         }
         if ( !found )
-            dprintf( "FAIL freed addres not found\n" );
+            dprintf1( "FAIL freeing wild pointer freed address %x not found\n", addr );
     }
   }
   return 0;
