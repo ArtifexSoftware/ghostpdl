@@ -20,7 +20,7 @@
 #ifndef dwtrace_INCLUDED
 #  define dwtrace_INCLUDED
 
-struct vd_trace_interface_s visual_tracer;
+extern struct vd_trace_interface_s visual_tracer;
 void visual_tracer_init(void);
 
 #endif /* dwtrace_INCLUDED */
