@@ -750,7 +750,7 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 	    denom <<= bits_8th, shift += bits_8th;
 	}
 #undef bits_8th
-	while (!(denom & (1L << (num_bits - 1)))) {
+	while (!(denom & (-1L << (num_bits - 1)))) {
 	    mincr(mds);
 	    denom <<= 1, ++shift;
 	}
