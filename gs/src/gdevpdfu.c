@@ -984,7 +984,7 @@ pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
 	 * represent the inverse scaling from what gs_function_make_scaled
 	 * expects.
 	 */
-	gs_memory_t *mem = pdev->memory;
+	gs_memory_t *mem = pdev->pdf_memory;
 	gs_function_t *psfn;
 	gs_range_t *ranges = (gs_range_t *)
 	    gs_alloc_byte_array(mem, pfn->params.n, sizeof(gs_range_t),

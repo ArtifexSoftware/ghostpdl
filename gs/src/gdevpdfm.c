@@ -300,7 +300,7 @@ setup_pdfmark_stream_compression(gx_device_psdf *pdev0,
 {
     /* This function is for pdfwrite only. */
     gx_device_pdf *pdev = (gx_device_pdf *)pdev0;
-    gs_memory_t *mem = pdev->memory;
+    gs_memory_t *mem = pdev->pdf_memory;
     static const pdf_filter_names_t fnames = {
 	PDF_FILTER_NAMES
     };
@@ -1153,7 +1153,7 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
      */
     cos_dict_t *const pcd = pdev->Info;
     int code = 0, i;
-    gs_memory_t *mem = pdev->memory;
+    gs_memory_t *mem = pdev->pdf_memory;
 
     if (count & 1)
 	return_error(gs_error_rangecheck);

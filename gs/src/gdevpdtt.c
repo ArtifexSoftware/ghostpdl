@@ -274,11 +274,11 @@ pdf_remove_font_cache_elem(pdf_font_cache_elem_t *e0)
     for (; *e != 0; e = &(*e)->next)
 	if (*e == e0) {
 	    *e = e0->next;
-	    gs_free_object(pdev->memory->stable_memory, e0->glyph_usage, 
+	    gs_free_object(pdev->pdf_memory, e0->glyph_usage, 
 				"pdf_remove_font_cache_elem");
-	    gs_free_object(pdev->memory->stable_memory, e0->real_widths, 
+	    gs_free_object(pdev->pdf_memory, e0->real_widths, 
 				"pdf_remove_font_cache_elem");
-	    gs_free_object(pdev->memory->stable_memory, e0, 
+	    gs_free_object(pdev->pdf_memory, e0, 
 				"pdf_remove_font_cache_elem");
 	    return;
 	}
@@ -320,15 +320,15 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
 
     font_cache_elem_array_sizes(pdev, font, &num_widths, &num_chars);
     len = (num_chars + 7) / 8;
-    e->glyph_usage = gs_alloc_bytes(pdev->memory->stable_memory, 
+    e->glyph_usage = gs_alloc_bytes(pdev->pdf_memory, 
 			len, "alloc_font_cache_elem_arrays");
-    e->real_widths = (double *)gs_alloc_bytes(pdev->memory->stable_memory, 
+    e->real_widths = (double *)gs_alloc_bytes(pdev->pdf_memory, 
 			num_widths * sizeof(*e->real_widths), 
 			"alloc_font_cache_elem_arrays");
     if (e->glyph_usage == NULL || e->real_widths == NULL) {
-	gs_free_object(pdev->memory->stable_memory, e->glyph_usage, 
+	gs_free_object(pdev->pdf_memory, e->glyph_usage, 
 			    "pdf_attach_font_resource");
-	gs_free_object(pdev->memory->stable_memory, e->real_widths, 
+	gs_free_object(pdev->pdf_memory, e->real_widths, 
 			    "alloc_font_cache_elem_arrays");
 	return_error(gs_error_VMerror);
     }
@@ -398,7 +398,7 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
 	memset(e->real_widths, 0, num_widths * sizeof(*e->real_widths));
     } else {
 	int code;
-	e = (pdf_font_cache_elem_t *)gs_alloc_struct(pdev->memory->stable_memory,
+	e = (pdf_font_cache_elem_t *)gs_alloc_struct(pdev->pdf_memory,
 		pdf_font_cache_elem_t, &st_pdf_font_cache_elem,
 			    "pdf_attach_font_resource");
 	if (e == NULL)
