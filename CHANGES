@@ -1,6 +1,6 @@
 Version 0.8 (unreleased)
 
- * no changes as of yet
+ * Fix an allocation error in the page array
 
 Version 0.7 (2004 December 8)
 

@@ -85,7 +85,8 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
             index++;
             if (index >= ctx->max_page_index) { /* FIXME: should also look for freed pages? */
                 /* grow the list */
-                jbig2_realloc(ctx->allocator, ctx->pages, (ctx->max_page_index <<= 2) * sizeof(Jbig2Page));
+                ctx->pages = jbig2_realloc(ctx->allocator, ctx->pages,
+			(ctx->max_page_index <<= 2) * sizeof(Jbig2Page));
                 for (j=index; j < ctx->max_page_index; j++) {
                     /* note to raph: and look, it gets worse! */
                     ctx->pages[j].state = JBIG2_PAGE_FREE;
