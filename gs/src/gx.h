@@ -27,11 +27,18 @@
 #include "gsmemory.h"
 #include "gdebug.h"
 
+/* Configuration swtches - development needs only. */
+/* Users should not modify them. */
 #define NEW_TT_INTERPRETER 1
 #define TT_GRID_FITTING (NEW_TT_INTERPRETER && 0) /* old code = 0, new code = 1. */
 #define CURVED_TRAPEZOID_FILL 0 /* old code = 0, new code = 1. */
-#define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. */
-#define CHECK_BACKSCAN_CONSISTENCY 1 /* Temporarily used for a debug purpose. */
+/* The following switches are only important with CURVED_TRAPEZOID_FILL 1. */
+#   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
+                                               The implementation of 0 is not completed yet. */
+#   define FLATTENED_ITERATOR_BACKSCAN 0 /* 0 - simpler and faster code, 1 - smaller RAM. */
+#   define FLATTENED_ITERATOR_SELFTEST 1 /* Temporarily used for a debug purpose. */
+#   define FLATTENED_ITERATOR_HEAVY_SELFTEST 1 /* Temporarily used for a debug purpose. */
+
 
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */

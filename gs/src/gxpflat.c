@@ -108,13 +108,6 @@ gx_curve_log2_samples(fixed x0, fixed y0, const curve_segment * pc,
 }
 
 /*
- * Define the maximum number of points for sampling if we want accurate
- * rasterizing.  2^(k_sample_max*3)-1 must fit into a uint with a bit
- * to spare; also, we must be able to compute 1/2^(3*k) by table lookup.
- */
-#define k_sample_max min((size_of(int) * 8 - 1) / 3, 10)
-
-/*
  * Split a curve segment into two pieces at the (parametric) midpoint.
  * Algorithm is from "The Beta2-split: A special case of the Beta-spline
  * Curve and Surface Representation," B. A. Barsky and A. D. DeRose, IEEE,
@@ -202,6 +195,13 @@ curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3,
     return true;
 }
 
+#if FLATTENED_ITERATOR_SELFTEST
+#if FLATTENED_ITERATOR_BACKSCAN
+private void gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this);
+#endif
+private void gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this);
+#endif
+
 /*  Initialize the iterator. 
     Momotonic curves with non-zero length are only allowed.
  */
@@ -233,6 +233,11 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 	this->x3 = x0;
 	this->y3 = y0;
     }
+    if (!curve_coeffs_ranged(this->x0, x1, x2, this->x3,
+			     this->y0, y1, y2, this->y3, 
+			     &this->ax, &this->bx, &this->cx, 
+			     &this->ay, &this->by, &this->cy, k))
+	return false;
 #   if CURVED_TRAPEZOID_FILL
 	this->curve = true;
 #   endif
@@ -251,11 +256,9 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 		      fixed2float(this->x3), fixed2float(this->y3), this->k);
 	}
 #   endif
-    if (!curve_coeffs_ranged(this->x0, x1, x2, this->x3,
-			     this->y0, y1, y2, this->y3, 
-			     &this->ax, &this->bx, &this->cx, 
-			     &this->ay, &this->by, &this->cy, k))
-	return false;
+#   if !FLATTENED_ITERATOR_BACKSCAN
+        memset(this->skip_points, 0, sizeof(this->skip_points));
+#   endif
     if (k == -1) {
 	/* A special hook for gx_subdivide_curve_rec.
 	   Only checked the range. 
@@ -306,6 +309,14 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
     adjust_rem(this->rd2x, this->id2x, this->rmask);
     adjust_rem(this->rd2y, this->id2y, this->rmask);
 #   undef adjust_rem
+#   if CURVED_TRAPEZOID_FILL
+#	if FLATTENED_ITERATOR_SELFTEST
+#	    if FLATTENED_ITERATOR_BACKSCAN
+		gx_flattened_iterator__test_filtered1(this);
+#	    endif
+	    gx_flattened_iterator__test_filtered2(this);
+#	endif
+#   endif
     return true;
 }
 
@@ -459,11 +470,9 @@ last:
 /* Move to the next segment uniting small segments,
  * and store it to this->gx0, this->gy0, this->gx1, this->gy1 .
  * Return true iff there exist more segments.
- * Note : The number of generated segments can be samller than 2^k 
- *	  due to the small segment uniting.
  * Note : It can generate nearly collinear segments. 
  */
-bool
+private bool
 gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this)
 {
     fixed x0 = this->lx1, y0 = this->ly1;
@@ -506,7 +515,7 @@ gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this)
  * half-pixel and both coordinates are monotonic.
  */
 private inline bool
-gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
+gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
 {
 #if MERGE_COLLINEAR_SEGMENTS
     /*	The macro name above is taken from the old code.
@@ -529,11 +538,9 @@ gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x
 /* Move to the next segment uniting nearly collinear segments,
  * and store it to this->fx0, this->fy0, this->fx1, this->fy1 .
  * Return true iff there exist more segments.
- * Note : The number of generated segments can be samller than 2^k 
- *	  due to the segment uniting.
  */
-bool
-gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
+private inline bool
+gx_flattened_iterator__next_filtered2_aux(gx_flattened_iterator *this)
 {
     /* fixme: CURVED_TRAPEZOID_FILL0_COMPATIBLE 0 is not implemented yet. */
     if (this->i == 1 << this->k) {
@@ -587,7 +594,7 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 		    this->fy1 = this->gy0;
 		    break;
 		}
-		if (!gx_check_nearly_collinear_inline(this->fx0, this->fy0, 
+		if (!gx_check_nearly_collinear(this->fx0, this->fy0, 
 			this->gx0, this->gy0, this->gx1, this->gy1)) {
 		    this->fx1 = this->gx0;
 		    this->fy1 = this->gy0;
@@ -601,6 +608,21 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
     }
     vd_bar(this->fx0, this->fy0, this->fx1, this->fy1, 1, RGB(0, 0, 255));
     return this->ahead || this->i != 0;
+}
+
+bool
+gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
+{
+#   if FLATTENED_ITERATOR_BACKSCAN
+	return gx_flattened_iterator__next_filtered2_aux(this);
+#   else
+	bool more = gx_flattened_iterator__next_filtered2_aux(this);
+
+	assert(this->filtered2_i < sizeof(this->skip_points) * 8);
+	assert(this->filtered2_i >= 0);
+	this->skip_points[this->filtered2_i >> 3] |= 1 << (this->filtered2_i & 7);
+	return more;
+#   endif
 }
 
 private inline void
@@ -621,8 +643,6 @@ gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
 /* Move back to the previous segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * This only works for states reached with gx_flattened_iterator__next.
  * Return true iff there exist more segments.
- * Note : The number of generated segments can be samller than 2^k 
- *	  due to the small segment skipping.
  * Note : It can generate collinear segments. 
  */
 bool
@@ -666,7 +686,7 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
 
 /* Switching from the forward scanning to the backward scanning for the filtered1. */
 void
-gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this, bool first_segment)
+gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this)
 {
     /*	When scanning forth, the accumulator stands on the end of a segment,
 	except for the last segment.
@@ -678,17 +698,16 @@ gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this, bool fir
     if (this->k <= 1)
 	return; /* This case doesn't use the accumulator. */
     gx_flattened_iterator__unaccum(this);
-    if (first_segment)
-	return;
-    while (this->i < this->prev_filtered1_i) {
-	gx_flattened_iterator__prev(this);
-    }
+#   if FLATTENED_ITERATOR_BACKSCAN
+	while (this->i < this->prev_filtered1_i) {
+	    gx_flattened_iterator__prev(this);
+	}
+#   endif
 }
 
+#if FLATTENED_ITERATOR_BACKSCAN
 /* Move to the previous segment uniting small segments.
  * Return true iff there exist more segments.
- * Note : The number of generated segments can be samller than 2^k 
- *	  due to the small segment uniting.
  * Note : It can generate nearly collinear segments. 
  */
 private bool
@@ -763,25 +782,48 @@ gx_flattened_iterator__prev_filtered1(gx_flattened_iterator *this)
     }
 #   endif
 }
+#endif /* FLATTENED_ITERATOR_BACKSCAN */
+
+#if !FLATTENED_ITERATOR_BACKSCAN
+private bool
+gx_flattened_iterator__prev_filtered2_aux(gx_flattened_iterator *this)
+{
+    for (;;) { /* this->filtered2_i counts back. */
+	bool more = gx_flattened_iterator__prev(this);
+
+	if (!more)
+	    return more;
+	if (this->skip_points[this->i >> 3] & 1 << (this->i & 7))
+	    return more;
+    }
+}
+#endif /* FLATTENED_ITERATOR_BACKSCAN */
+
 
 /* Switching from the forward scanning to the backward scanning for the filtered1. */
 void
 gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, 
-	    bool first_segment, bool last_segment)
+	    bool last_segment)
 {
-    if (first_segment || last_segment)
-	return;
-    gx_flattened_iterator__switch_to_backscan1(this, first_segment);
-    while (this->filtered1_i < this->prev_filtered2_i) {
-	this->xn = this->gx1;
-	this->yn = this->gy1;
-	gx_flattened_iterator__prev_filtered1(this);
-    }
+#   if FLATTENED_ITERATOR_BACKSCAN
+	if (last_segment)
+	    return;
+	gx_flattened_iterator__switch_to_backscan1(this);
+	while (this->filtered1_i < this->prev_filtered2_i) {
+	    this->xn = this->gx1;
+	    this->yn = this->gy1;
+	    gx_flattened_iterator__prev_filtered1(this);
+	}
+#   else
+	gx_flattened_iterator__switch_to_backscan1(this);
+	if (!last_segment)
+	    assert(gx_flattened_iterator__prev_filtered2_aux(this));
+	gx_flattened_iterator__prev_filtered2_aux(this);
+#   endif
 }
 
-#if CHECK_BACKSCAN_CONSISTENCY
-
-#define HEAVY_TEST 1
+#if FLATTENED_ITERATOR_BACKSCAN
+#if FLATTENED_ITERATOR_SELFTEST
 
 private void
 gx_flattened_iterator__test_backscan1(gx_flattened_iterator *this, 
@@ -792,13 +834,13 @@ gx_flattened_iterator__test_backscan1(gx_flattened_iterator *this,
     int i, j;
     bool more;
 
-    gx_flattened_iterator__switch_to_backscan1(&fi, single_segment);
+    if (single_segment) {
+	/* We stand on the last segment, there is no more. */
+	return;
+    }
+    gx_flattened_iterator__switch_to_backscan1(&fi);
     i = fi.filtered1_i + 1; /* fi.i counts back. */
     do {
-	if (single_segment) {
-	    /* We stand on the last segment, there is no more. */
-	    break;
-	}
 	more = gx_flattened_iterator__prev_filtered1(&fi);
 	j = fi.filtered1_i;
 	/* The bit index corresponds to the end of a filtered segment. */
@@ -814,13 +856,11 @@ gx_flattened_iterator__test_backscan1(gx_flattened_iterator *this,
     } while(more);
 }
 
-void
+private void
 gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this)
 {
     /* 'this' must be just initialized. */
-    byte skip_points[128];  /* The length should be (1 << k_sample_max) bits.
-			       128 sholuld be fine.
-			       With a smaller value the testing is not guaranteed. */
+    byte skip_points[(1 << k_sample_max) / 8];
     gx_flattened_iterator fi = *this;
     bool more, single_segment = true;
 
@@ -831,20 +871,18 @@ gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this)
 	    skip_points[fi.i >> 3] |= 1 << (fi.i & 7);
 	    /* The bit index corresponds to the end of an unfiltered segment. */
 	}
-	if (HEAVY_TEST || !more)
+	if (FLATTENED_ITERATOR_HEAVY_SELFTEST || !more)
 	    gx_flattened_iterator__test_backscan1(&fi, skip_points, sizeof(skip_points), 
 		    single_segment);
 	single_segment &= !more;
     } while(more);
 }
-#endif
+#endif /* FLATTENED_ITERATOR_SELFTEST */
 
 /* Move to the previous segment uniting nearly collinear segments,
  * and store it to this->fx0, this->fy0, this->fx1, this->fy1 .
  * Return true iff there exist more segments.
  * It should return exactly same segments, which 'next_filtered2' does.
- * Note : The number of generated segments can be samller than 2^k 
- *	  due to the segment uniting.
  */
 bool
 gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
@@ -999,8 +1037,9 @@ gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
 
     }
 }
+#endif /* FLATTENED_ITERATOR_BACKSCAN */
 
-#if CHECK_BACKSCAN_CONSISTENCY
+#if FLATTENED_ITERATOR_SELFTEST
 
 private void
 gx_flattened_iterator__test_backscan2(gx_flattened_iterator *this, 
@@ -1011,15 +1050,15 @@ gx_flattened_iterator__test_backscan2(gx_flattened_iterator *this,
     bool more;
     bool missed_back2 = false, extra_back2 = false;
 
-    gx_flattened_iterator__switch_to_backscan2(&fi, single_segment, last_segment);
+    if (single_segment) {
+	/* We stand on the last segment, there is no more. */
+	return;
+    }
+    gx_flattened_iterator__switch_to_backscan2(&fi, last_segment);
     i = fi.last_filtered2_i + 1; /* fi.i counts back. */
     if (points != NULL)
 	ppt--;
     do {
-	if (single_segment) {
-	    /* We stand on the last segment, there is no more. */
-	    break;
-	}
 	more = gx_flattened_iterator__prev_filtered2(&fi);
 	j = fi.filtered2_i;
 	/* The bit index corresponds to the end of a filtered segment. */
@@ -1042,11 +1081,11 @@ gx_flattened_iterator__test_backscan2(gx_flattened_iterator *this,
 	assert(ppt == points);
 }
 
-void
+private void
 gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
 {
     /* 'this' must be just initialized. */
-    byte skip_points[128];
+    byte skip_points[(1 << k_sample_max) / 8];
     gx_flattened_iterator fi = *this, fi1;
     bool more, first = true, single_segment = true;
     bool missed_forth2 = false, extra_forth2 = false;
@@ -1057,7 +1096,7 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
     do {
 	more = gx_flattened_iterator__next_filtered1(&fi);
 	if (ppt > points + 1 && more)
-	    if (gx_check_nearly_collinear_inline(ppt[-2].x, ppt[-2].y, 
+	    if (gx_check_nearly_collinear(ppt[-2].x, ppt[-2].y, 
 			    ppt[-1].x, ppt[-1].y, fi.gx1, fi.gy1))
 		--ppt;		/* remove middle point */
 	ppt->x = fi.gx1;
@@ -1106,7 +1145,7 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
 	    assert(ppp->x == fi.fx1 && ppp->y == fi.fy1);
 	    ppp++;
 	}
-	if (HEAVY_TEST || !more)
+	if (FLATTENED_ITERATOR_HEAVY_SELFTEST || !more)
 	    gx_flattened_iterator__test_backscan2(&fi, 
 		(ppt < ppe ? points : NULL), ppp, skip_points, 
 		sizeof(skip_points), single_segment, !more);
@@ -1115,15 +1154,39 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
     if (ppt < ppe)
 	assert(ppp == ppt);
 }
-#endif
+#endif /* FLATTENED_ITERATOR_SELFTEST */
 
-#   if CURVED_TRAPEZOID_FILL0_COMPATIBLE
+#if !FLATTENED_ITERATOR_BACKSCAN
+/* Move to the previous segment uniting nearly collinear segments,
+ * and store it to this->fx0, this->fy0, this->fx1, this->fy1 .
+ * Return true iff there exist more segments.
+ * It should return exactly same segments, which 'next_filtered2' does.
+ */
 bool
-gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1)
+gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
 {
-    return coord_near(x0, x1) && coord_near(y0, y1);
+    this->fx1 = this->fx0;
+    this->fy1 = this->fy0;
+    this->filtered2_i = this->i;
+    if (this->i + 1 == 1 << this->k) {
+	this->fx0 = this->x0;
+	this->fy0 = this->y0;
+	return false;
+    } else {
+	gx_flattened_iterator__prev_filtered2_aux(this);
+	if (this->skip_points[this->i >> 3] & 1 << (this->i & 7)) {
+	    this->fx0 = this->lx1;
+	    this->fy0 = this->ly1;
+	    return true;
+	} else {
+	    this->fx0 = this->x0;
+	    this->fy0 = this->y0;
+	    return false;
+	}
+    }
 }
-#endif
+
+#endif /* !FLATTENED_ITERATOR_BACKSCAN */
 
 #define max_points 50		/* arbitrary */
 
@@ -1149,14 +1212,6 @@ generate_segments(gx_path * ppath, const gs_fixed_point *points,
 	return gx_path_add_lines_notes(ppath, points + 1, count - 1, notes | sn_not_first);
     }
 }
-
-#if CURVED_TRAPEZOID_FILL0_COMPATIBLE
-bool
-gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
-{
-    return gx_check_nearly_collinear_inline(x0, y0, x1, y1, x2, y2);
-}
-#endif
 
 private int
 gx_subdivide_curve_rec(gx_flattened_iterator *this, 
@@ -1191,7 +1246,7 @@ top :
 		/* The old code does so - keeping it for a while. */
 		more = gx_flattened_iterator__next_filtered1(this);
 		if (ppt > points + 1 && more)
-		    if (gx_check_nearly_collinear_inline(ppt[-2].x, ppt[-2].y, 
+		    if (gx_check_nearly_collinear(ppt[-2].x, ppt[-2].y, 
 				    ppt[-1].x, ppt[-1].y, this->lx1, this->ly1))
 			--ppt;		/* remove middle point */
 		ppt->x = this->lx1;

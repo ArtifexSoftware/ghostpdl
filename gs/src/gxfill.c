@@ -848,10 +848,6 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 	    assert(gx_flattened_iterator__init(&alp->fi, 
 		s1->pt.x, s1->pt.y, (curve_segment *)s0, k, false, 0));
 	    alp->more_flattened = false;
-#	    if CHECK_BACKSCAN_CONSISTENCY
-		gx_flattened_iterator__test_filtered1(&alp->fi);
-		gx_flattened_iterator__test_filtered2(&alp->fi);
-#	    endif
 	    do {
 		more = gx_flattened_iterator__next_filtered2(&alp->fi);
 		alp->more_flattened |= more;

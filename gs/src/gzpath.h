@@ -167,9 +167,12 @@ void gx_curve_split(fixed, fixed, const curve_segment *, double,
 
 /* Flatten a partial curve by sampling (internal procedure). */
 int gx_subdivide_curve(gx_path *, int, curve_segment *, segment_notes);
-#if CURVED_TRAPEZOID_FILL0_COMPATIBLE
-bool gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2);
-#endif
+/*
+ * Define the maximum number of points for sampling if we want accurate
+ * rasterizing.  2^(k_sample_max*3)-1 must fit into a uint with a bit
+ * to spare; also, we must be able to compute 1/2^(3*k) by table lookup.
+ */
+#define k_sample_max min((size_of(int) * 8 - 1) / 3, 10)
 
 /* Initialize a cursor for rasterizing a monotonic curve. */
 typedef struct curve_cursor_s {
@@ -429,26 +432,22 @@ struct gx_flattened_iterator_s {
     /* public data for filtered2 : */
     fixed fx0, fy0, fx1, fy1;
     int filtered2_i;
+#if !FLATTENED_ITERATOR_BACKSCAN
+    byte skip_points[(1 << k_sample_max) / 8]; /* Only for curves. */
+#endif
 };
 
 bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes);
 bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes);
-void gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this, 
-	    bool first_segment);
-void gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, 
-	    bool first_segment, bool last_segment);
+void gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this);
+void gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, bool last_segment);
 bool gx_flattened_iterator__next(gx_flattened_iterator *this);
 bool gx_flattened_iterator__prev(gx_flattened_iterator *this);
-bool gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this);
 bool gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this);
 bool gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this);
 bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);
-#if CHECK_BACKSCAN_CONSISTENCY
-void gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this);
-void gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this);
-#endif
 
 bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
 		    fixed y0, fixed y1, fixed y2, fixed y3, 
