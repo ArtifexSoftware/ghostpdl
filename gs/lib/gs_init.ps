@@ -1363,8 +1363,6 @@ devicedict /Default devicedict .defaultdevicename get put
 			% Stack: doscree
   {
     % Set the transfer function to lighten up the grays.
-    % We correct at the high end so that very light grays
-    % don't disappear completely if they darken <1 screen pixel.
     % Parameter values closer to 1 are better for devices with
     % less dot spreading; lower values are better with more spreading.
     % The value 0.8 is a compromise that will probably please no one!
@@ -1375,12 +1373,6 @@ devicedict /Default devicedict .defaultdevicename get put
       dup dup 0.0 gt exch 1.0 lt and
       {
         0.8 exp
-        dup 0.998 lt   % 254.5 / 255
-        {	% Keep at least one halftone dot if not saturated color
-          .currentscreenlevels 1 sub dup 1 sub exch div
-	  .min
-        }
-        if
       }
       if
     }
