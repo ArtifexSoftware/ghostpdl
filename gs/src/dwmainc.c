@@ -84,13 +84,15 @@ gsdll_stderr(void *instance, const char *str, int len)
 /* is running Ghostscript and blocks on stdin. */
 
 /* We notify second thread of events using PostThreadMessage()
- * with the following messages
+ * with the following messages. Apparently Japanese Windows sends
+ * WM_USER+1 with lParam == 0 and crashes. So we use WM_USER+101.
+ * Fix from Akira Kakuto
  */
-#define DISPLAY_OPEN WM_USER+1
-#define DISPLAY_CLOSE WM_USER+2
-#define DISPLAY_SIZE WM_USER+3
-#define DISPLAY_SYNC WM_USER+4
-#define DISPLAY_PAGE WM_USER+5
+#define DISPLAY_OPEN WM_USER+101
+#define DISPLAY_CLOSE WM_USER+102
+#define DISPLAY_SIZE WM_USER+103
+#define DISPLAY_SYNC WM_USER+104
+#define DISPLAY_PAGE WM_USER+105
 
 /*
 #define DISPLAY_DEBUG
@@ -245,7 +247,9 @@ int display_update(void *handle, void *device,
     return 0;
 }
 
+/*
 #define DISPLAY_DEBUG_USE_ALLOC
+*/
 #ifdef DISPLAY_DEBUG_USE_ALLOC
 /* This code isn't used, but shows how to use this function */
 void *display_memalloc(void *handle, void *device, unsigned long size)
