@@ -20,19 +20,28 @@
 
 /*$Id$ */
 /* Simple hardware benchmarking suite (C and PostScript) */
-#include <stdio.h>
+#include "stdio_.h"
 #include <stdlib.h>
-
-/*
- * Read the CPU time (in seconds since an implementation-defined epoch)
- * into ptm[0], and fraction (in nanoseconds) into ptm[1].
- */
-extern void gp_get_usertime(long ptm[2]);
 
 /* Patchup for GS externals */
 FILE *gs_stdout;
 FILE *gs_stderr;
+FILE *gs_debug_out;
 const char gp_scratch_file_name_prefix[] = "gs_";
+static void
+capture_stdio(void)
+{
+    gs_stdout = stdout;
+    gs_stderr = stderr;
+    gs_debug_out = stderr;
+}
+#include "gsio.h"
+#undef gs_stdout
+#undef gs_stderr
+#undef stdout
+#define stdout gs_stdout
+#undef stderr
+#define stderr gs_stderr
 FILE *
 gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 {
@@ -43,15 +52,26 @@ gp_set_printer_binary(int prnfno, int binary)
 {
 }
 void 
-gs_exit(n)
+gs_exit(int n)
 {
     exit(n);
 }
+#define eprintf_program_ident(f, pn, rn) (void)0
 void 
 lprintf_file_and_line(FILE * f, const char *file, int line)
 {
     fprintf(f, "%s(%d): ", file, line);
 }
+
+/*
+ * Read the CPU time (in seconds since an implementation-defined epoch)
+ * into ptm[0], and fraction (in nanoseconds) into ptm[1].
+ */
+#include "gp_unix.c"
+#undef stdout
+#define stdout gs_stdout
+#undef stderr
+#define stderr gs_stderr
 
 /* Loop unrolling macros */
 #define do10(x) x;x;x;x;x; x;x;x;x;x
@@ -178,8 +198,7 @@ main(int argc, const char *argv[])
     int i;
     int *mem = malloc(1100000);
 
-    gs_stdout = stdout;
-    gs_stderr = stderr;
+    capture_stdio();
     for (i = 0;; ++i) {
 	long t0[2], t1[2];
 	char *msg;
@@ -219,8 +238,8 @@ main(int argc, const char *argv[])
 		exit(0);
 	}
 	gp_get_usertime(t1);
-	printf("Time for %9d %s = %g ms\n", n, msg,
-	       (t1[0] - t0[0]) * 1000.0 + (t1[1] - t0[1]) / 1000000.0);
+	fprintf(stdout, "Time for %9d %s = %g ms\n", n, msg,
+		(t1[0] - t0[0]) * 1000.0 + (t1[1] - t0[1]) / 1000000.0);
 	fflush(stdout);
     }
 }
