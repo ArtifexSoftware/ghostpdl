@@ -357,7 +357,8 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
 	if (code < 0)
 	    return code;
-	ffid = pdf_obj_ref(pdev);
+	if (!pfd)
+	    ffid = pdf_obj_ref(pdev);
 	goto wf;
     case FONT_EMBED_NO:
 	/*
