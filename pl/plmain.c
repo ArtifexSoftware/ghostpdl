@@ -366,6 +366,7 @@ pl_main(
                 if_debug0('|', "End of of data\n");
                 if ( !in_pjl ) {
                     if_debug0('|', "end of data stream found in middle of job\n");
+		    pl_process_eof(curr_instance);
                     if ( close_job(&universe, &inst) < 0 ) {
 			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
 			return -1;
