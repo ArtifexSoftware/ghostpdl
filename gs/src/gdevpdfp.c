@@ -89,7 +89,6 @@ private const gs_param_item_t pdf_param_items[] = {
   Current limitations
   -------------------
 
-  FunctionType 4 is not supported
   Non-primary elements in HalftoneType 5 are not written correctly
   Doesn't recognize Default TR/HT/BG/UCR
   Optimization is a separate program
@@ -114,8 +113,6 @@ private const gs_param_item_t pdf_param_items[] = {
   Embed CID fonts
   Compress TT, CFF, CID, and Type 1 fonts (with lenIV = -1) if CompressPages
   Compress forms, patterns, Type 3 fonts, and Cos streams
-  Compress/encode/downsample masks like mono images (see k/gomez/mmtp*.ps)
-  Pattern fill/stroke/text/imagemask
 
   ---- Image parameters ----
 
@@ -201,6 +198,9 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
 	(code = param_write_float(plist, "CompatibilityLevel", &cl)) < 0 ||
+	/* Indicate that we can process pdfmark. */
+	(param_requested(plist, "pdfmark") > 0 &&
+	 (code = param_write_null(plist, "pdfmark")) < 0) ||
 	(code = gs_param_write_items(plist, pdev, NULL, pdf_param_items)) < 0
 	);
     return code;

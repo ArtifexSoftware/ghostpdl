@@ -27,6 +27,13 @@ pdfdict begin
 % Patch in an obsolete variable used by some third-party software.
 /#? false def
 
+% Test whether the current output device handles pdfmark.
+/.writepdfmarkdict 1 dict dup /pdfmark null put readonly def
+/.writepdfmarks {	% - .writepdfmarks <bool>
+  currentdevice //.writepdfmarkdict .getdeviceparams
+  mark eq { false } { pop pop true } ifelse
+} bind def
+
 % For simplicity, we use a single interpretation dictionary for all
 % PDF graphics execution, even though this is too liberal.
 /pdfopdict mark
@@ -188,12 +195,14 @@ pdfdict begin
 /pdfopen {		% <file> pdfopen <dict>
   pdfopenfile begin
   pdfopencache
+  .writepdfmarks {
 	% Copy bookmarks (outline) to the output.
-  Trailer /Root oget /Outlines knownoget {
-    /First knownoget {
-      { dup writeoutline /Next knownoget not { exit } if } loop
+    Trailer /Root oget /Outlines knownoget {
+      /First knownoget {
+	{ dup writeoutline /Next knownoget not { exit } if } loop
+      } if
     } if
-  } if
+  } if		% end .writepdfmarks
   currentdict end
 } bind def
 /pdfopencache {		% - pdfopencache -
@@ -550,22 +559,25 @@ end readonly def
   pop currentdict end setpagedevice
 } bind def
 
-/pdfshowpage_finish	% <pagedict> pdfshowpage_finish -
- {
+/pdfshowpage_finish {	% <pagedict> pdfshowpage_finish -
+
+  .writepdfmarks {
+
 	% Copy the crop box.
-   dup /CropBox knownoget {
+    dup /CropBox knownoget {
       mark /CropBox 3 -1 roll /PAGE pdfmark
-   } if
+    } if
 
 	% Copy annotations and links.
-   dup /Annots knownoget
-    { 0 1 2 index length 1 sub
+    dup /Annots knownoget {
+      0 1 2 index length 1 sub
        { 1 index exch oget
          dup /Subtype oget annottypes exch .knownget { exec } { pop } ifelse
        }
       for pop
-    }
-   if
+    } if
+
+  } if		% end .writepdfmarks
 
 	% Display the actual page contents.
    6 dict begin
@@ -587,7 +599,7 @@ end readonly def
    /Annots knownoget { { oforce drawannot } forall } if
    endpage
    end			% scratch dict
- } bind def
+} bind def
 
 end			% pdfdict
 .setglobal

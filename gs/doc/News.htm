@@ -93,6 +93,9 @@ require masking.
 replacing Columns.
 	- The gp_ procedures for managing screen swapping between console
 and graphics are removed.
+	- Any driver that processes the pdfmark pseudo-parameter must now
+also return null for the "value" of the pdfmark parameter when (and only
+when) specifically requested.
 (PDF writer)
 	- The last argument of pdf_alloc_font has changed.
 	- pdf_set_color is renamed pdf_set_pure_color.
