@@ -752,30 +752,40 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	    }
 	    { 
 		/* We're setting a device parameter to a non-string value. */
-		/* Currently we only support integer values; */
-		/* in the future we may support Booleans and floats. */
+		/* Currently we only support integer and float values; */
+		/* in the future we may support Booleans. */
 		char *eqp = strchr(arg, '=');
 		const char *value;
 		int vi;
-		  
+		float vf;
 		if ( eqp || (eqp = strchr(arg, '#')) )
 		    value = eqp + 1;
 		else
 		    value = "true";
-		if ( sscanf(value, "%d", &vi) != 1 ) {
+                /* search for an int (no decimal), if fail try a float */
+                if ( ( !index(value, '.' ) ) &&
+                       ( sscanf(value, "%d", &vi) == 1 ) ) {
+                    if ( !strncmp(arg, "FirstPage", 9) )
+                        pmi->first_page = max(vi, 1);
+                    else if ( !strncmp(arg, "LastPage", 8) )
+                        pmi->last_page = vi;
+                    else {
+                        /* create a null terminated string */
+                        char buffer[128];
+                        strncpy(buffer, arg, eqp - arg);
+                        buffer[eqp - arg] = '\0';
+                        code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &vi);
+                    }
+                }
+                else if ( sscanf(value, "%f", &vf) == 1 ) {
+                    /* create a null terminated string.  NB duplicated code. */
+                    char buffer[128];
+                    strncpy(buffer, arg, eqp - arg);
+                    buffer[eqp - arg] = '\0';
+                    code = param_write_float((gs_param_list *)params, arg_heap_copy(buffer), &vf);
+                } else {
 		    fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
 		    continue;
-		}
-		if ( !strncmp(arg, "FirstPage", 9) )
-		    pmi->first_page = max(vi, 1);
-		else if ( !strncmp(arg, "LastPage", 8) )
-		    pmi->last_page = vi;
-		else {
-		    /* create a null terminated string */
-		    char buffer[128];
-		    strncpy(buffer, arg, eqp - arg);
-		    buffer[eqp - arg] = '\0';
-		    code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &vi);
 		}
 	    }
 	    break;
