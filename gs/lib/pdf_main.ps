@@ -1088,6 +1088,7 @@ end readonly def
   dup pageusestransparency dup /PDFusingtransparency exch def {
     % Show the page within a PDF 1.4 device filter.
     0 .pushpdf14devicefilter {
+      /DefaultQstate qstate store		% device has changed -- reset DefaultQstate
       % If the page has a Group, enclose contents in transparency group.
       % (Adobe Tech Note 5407, sec 9.2)
       dup /Group knownoget {
@@ -1103,8 +1104,11 @@ end readonly def
       } ifelse
     } .internalstopped {
       % todo: discard
-      .popdevicefilter stop
+      .popdevicefilter
+      /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
+      stop
     } if .popdevicefilter
+    /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
   } {
     showpagecontents
   } ifelse
