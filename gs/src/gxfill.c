@@ -1441,7 +1441,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    fixed height = y1 - y;
 	    fixed xlbot, xltop; /* as of last "outside" line */
 	    int inside = 0;
-	    active_line flp;
+	    active_line *flp;
 
 	    INCR(band);
 
@@ -1460,7 +1460,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		if (!INSIDE_PATH_P(inside, rule)) { 	/* i.e., outside */
 		    inside += alp->direction;
 		    if (INSIDE_PATH_P(inside, rule))	/* about to go in */
-			xlbot = xbot, xltop = xtop, flp = *alp;
+			xlbot = xbot, xltop = xtop, flp = alp;
 		    continue;
 		}
 		/* We're inside a region being filled. */
@@ -1510,9 +1510,9 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 
 			if (pseudo_rasterization) {
 			    flags |= ftf_pseudo_rasterization;
-			    if (flp.start.x == alp->start.x && flp.start.y == y)
+			    if (flp->start.x == alp->start.x && flp->start.y == y)
 				flags |= ftf_peak0;
-			    if (flp.end.x == alp->end.x && flp.end.y == y1)
+			    if (flp->end.x == alp->end.x && flp->end.y == y1)
 				flags |= ftf_peak0;
 			}
 			code = loop_fill_trap(dev, xlbot, xbot - xlbot, y, xltop, wtop, height, 
@@ -1521,16 +1521,16 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		    if (pseudo_rasterization) {
 			if (code < 0)
 			    return code;
-			code = complete_margin(ll, &flp, alp, y, y1);
+			code = complete_margin(ll, flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = margin_interior(ll, &flp, alp, y, y1);
+			code = margin_interior(ll, flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = add_margin(ll, &flp, alp, y, y1);
+			code = add_margin(ll, flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = process_h_lists(ll, plp, &flp, alp);
+			code = process_h_lists(ll, plp, flp, alp);
 			plp = alp;
 		    }
 		}
@@ -1541,7 +1541,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    /* No trapezoids generation needed. */
 	    if (pseudo_rasterization) {
 		/* Process dropouts near trapezoids. */
-		active_line flp;
+		active_line *flp;
 		int inside = 0;
 
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
@@ -1550,17 +1550,17 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		    if (!INSIDE_PATH_P(inside, rule)) {		/* i.e., outside */
 			inside += alp->direction;
 			if (INSIDE_PATH_P(inside, rule))	/* about to go in */
-			    flp = *alp;
+			    flp = alp;
 			continue;
 		    }
 		    /* We're inside a region being filled. */
 		    inside += alp->direction;
 		    if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
 			continue;
-		    code = continue_margin(ll, &flp, alp, y, y1);
+		    code = continue_margin(ll, flp, alp, y, y1);
 		    if (code < 0)
 			return code;
-		    code = process_h_lists(ll, plp, &flp, alp);
+		    code = process_h_lists(ll, plp, flp, alp);
 		    plp = alp;
 		    if (code < 0)
 			return code;
