@@ -273,6 +273,23 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 
 /* ------ Position management ------ */
 
+/* accessor for character extra space takes line feed direction into account */
+private inline hpgl_real_t
+hpgl_get_character_extra_space_x(const hpgl_state_t *pgls) 
+{
+    return (pgls->g.character.line_feed_direction < 0) ? 
+	pgls->g.character.extra_space.y :
+	pgls->g.character.extra_space.x;
+}
+
+private inline hpgl_real_t
+hpgl_get_character_extra_space_y(const hpgl_state_t *pgls) 
+{
+    return (pgls->g.character.line_feed_direction < 0) ? 
+	pgls->g.character.extra_space.x :
+	pgls->g.character.extra_space.y;
+}
+
 /* Get a character width in the current font, plus extra space if any. */
 /* If the character isn't defined, return 1, otherwise return 0. */
 private int
@@ -301,7 +318,7 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
     }
  add:	
 
-    if ( pgls->g.character.extra_space.x != 0 ) {
+    if ( hpgl_get_character_extra_space_x(pgls) != 0 ) {
 	/* Add extra space. */
 	if ( pfs->params.proportional_spacing && ch != ' ' ) {
 	    /* Get the width of the space character. */
@@ -313,11 +330,11 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 		extra = gs_width.x * hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
 	    else
 		extra = hpgl_points_2_plu(pgls, (pl_fp_pitch_cp(&pfs->params)) / 100.0);
-	    *width += extra * pgls->g.character.extra_space.x;
+	    *width += extra * hpgl_get_character_extra_space_x(pgls);
 	} else {
 	    /* All characters have the same width, */
 	    /* or we're already getting the width of a space. */
-	    *width *= 1.0 + pgls->g.character.extra_space.x;
+	    *width *= 1.0 + hpgl_get_character_extra_space_x(pgls);
 	}
     }
     return code;
@@ -344,7 +361,7 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
 	    if (pgls->g.character.size_mode == hpgl_size_relative)
 		*height *= pgls->g.P2.y - pgls->g.P1.y;
 	}
-	*height *= 1.0 + pgls->g.character.extra_space.y;
+	*height *= 1.0 + hpgl_get_character_extra_space_y(pgls);
 	return 0;
 }
 
@@ -819,7 +836,7 @@ hpgl_print_char(
 		} else
 		    space_width =
 			    ( coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)) ) / scale.x;
-		space_width *= (1.0 + pgls->g.character.extra_space.x);
+		space_width *= (1.0 + hpgl_get_character_extra_space_x(pgls));
             }
 	}
 
@@ -852,7 +869,7 @@ hpgl_print_char(
             }
 	    hpgl_call(gs_currentpoint(pgs, &end_pt));
 	    if ( (text_path == hpgl_text_right)        &&
-		 (pgls->g.character.extra_space.x != 0)  ) {
+		 (hpgl_get_character_extra_space_x(pgls) != 0)  ) {
 		hpgl_get_char_width(pgls, ch, &width);
 		end_pt.x = start_pt.x + width / scale.x;
 		hpgl_call(hpgl_add_point_to_path(pgls, end_pt.x, end_pt.y, hpgl_plot_move_absolute, false));
