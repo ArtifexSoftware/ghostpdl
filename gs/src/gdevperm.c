@@ -340,11 +340,14 @@ perm_decode_color(gx_device *dev, gx_color_index color, gx_color_value *out)
     int ncomp = dev->color_info.num_components;
 
     for (; i<ncomp; i++) {
-        out[ncomp - i - 1] = (color & mask) << drop;
+        out[ncomp - i - 1] = (gx_color_value)((color & mask) << drop);
 	color >>= bpc;
     }
     return 0;
 }
+
+#define set_param_array(a, d, s)\
+  (a.data = d, a.size = s, a.persistent = false);
 
 private int
 perm_get_params(gx_device *pdev, gs_param_list *plist)
@@ -355,10 +358,31 @@ perm_get_params(gx_device *pdev, gs_param_list *plist)
     code = param_write_int(plist, "Permute", &dev->permute);
     if (code >= 0)
 	code = param_write_int(plist, "Mode", &dev->mode);
+    /*
+     * We need to specify the SeparationColorNames if we are permuting the colors.
+     */
+    if (code >= 0 && dev->permute == 1) {
+	int i;
+	/* Temp variables.  The data is copied into the plist below. */
+        gs_param_string_array scna;
+        gs_param_string scn[6];
+
+        set_param_array(scna, scn, dev->num_std_colorant_names);
+	/* Place colorant names into string array elements */
+	for (i = 0; i < dev->num_std_colorant_names; i++)
+	    param_string_from_string(scn[i], dev->std_colorant_names[i]);
+	/*
+	 * Place the name array in the plist.  This includes allocating
+	 * memory for the name array element and the actual string array.
+	 */
+	code = param_write_name_array(plist, "SeparationColorNames", &scna);
+    }
     if (code >= 0)
 	code = gdev_prn_get_params(pdev, plist);
     return code;
 }
+
+#undef set_param_array
 
 private const char * DeviceCMYKComponents[] = {
 	"Cyan",
