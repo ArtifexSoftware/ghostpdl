@@ -1,0 +1,190 @@
+%    Copyright (C) 2001 Aladdin Enterprises.  All rights reserved.
+% 
+% This file is part of AFPL Ghostscript.
+% 
+% AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
+% distributor accepts any responsibility for the consequences of using it, or
+% for whether it serves any particular purpose or works at all, unless he or
+% she says so in writing.  Refer to the Aladdin Free Public License (the
+% "License") for full details.
+% 
+% Every copy of AFPL Ghostscript must include a copy of the License, normally
+% in a plain ASCII text file named PUBLIC.  The License grants you the right
+% to copy, modify and redistribute AFPL Ghostscript, but only under certain
+% conditions described in the License.  Among other things, the License
+% requires that the copyright notice and this notice be preserved on all
+% copies.
+
+% $id: pphs.ps $
+% Print Linearized PDF hint streams
+
+% Utilities
+/read1 {	% <file> read1 <value>
+  read not {
+    (**** Unexpected EOF) = flush quit
+  } if
+} bind def
+/read2 {	% <file> read2 <value>
+  dup read1 8 bitshift exch read1 add
+} bind def
+/read4 {	% <file> read4 <value>
+  dup read2 16 bitshift exch read2 add
+} bind def
+% Free variables: Bits, Bitsleft
+/readninit {	% - <readninit> -
+  /Bits 0 def
+  /Bitsleft 0 def
+} bind def
+
+/pdftoken {	% <file> pdftoken <token>
+  dup token pop
+  dup type /nametype eq 1 index xcheck and {
+    dup dup (<<) cvn eq exch ([) eq or {
+      exec exch {
+	dup pdftoken dup dup (>>) cvn eq exch (]) eq or {
+	  exch pop exec exit
+	} if exch
+      } loop
+    } {
+      exch pop
+    } ifelse
+  } {
+    exch pop
+  } ifelse
+} bind def
+/makemask {	% <nbits> makemask <mask>
+  1 exch bitshift 1 sub
+} bind def
+/readn {	% <file> <nbits> readn <value>
+  dup Bitsleft le {
+    exch pop
+    /Bitsleft Bitsleft 2 index sub def
+    makemask Bits Bitsleft neg bitshift and
+  } {
+    Bitsleft makemask Bits and
+    exch Bitsleft sub exch 1 index bitshift 3 1 roll
+    /Bits 2 index read1 def /Bitsleft 8 def
+    readn add
+  } ifelse
+} bind def
+/sread {	% <string> sread <file>
+  0 () /SubFileDecode filter
+} bind def
+
+% Print the Page Offset Hint Table.
+/ppoht {	% <npages> <file> ppoht -
+
+  20 dict begin
+  /f exch def
+  /npages exch def
+  readninit
+
+  (1: ) print f read4 =
+  (2: ) print f read4 =
+  (3: ) print f read2 dup = /nb3 exch def
+  (4: ) print f read4 =
+  (5: ) print f read2 dup = /nb5 exch def
+  (6: ) print f read4 =
+  (7: ) print f read2 dup = /nb7 exch def
+  (8: ) print f read4 =
+  (9: ) print f read2 dup = /nb9 exch def
+  (10: ) print f read2 dup = /nb10 exch def
+  (11: ) print f read2 dup = /nb11 exch def
+  (12: ) print f read2 dup = /nb12 exch def
+  (13: ) print f read2 =
+
+  (*1: ) print [ npages { f nb3 readn } repeat ] ==
+  (*2: ) print [ npages { f nb5 readn } repeat ] ==
+  (*3: ) print [ npages { f nb10 readn } repeat ] dup == /nso exch def
+  (*4: ) print [ nso { [ exch { f nb11 readn } repeat ] } forall ] ==
+  (*5: ) print [ nso { [ exch { f nb12 readn } repeat ] } forall ] ==
+  (*6: ) print [ npages { f nb7 readn } repeat ] ==
+  (*7: ) print [ npages { f nb9 readn } repeat ] ==
+
+  end		% temp dict
+
+} bind def
+
+% Print the Shared Objects Hint Table.
+/psoht {	% <file> psoht -
+
+  20 dict begin
+  /f exch def
+  readninit
+
+  (1: ) print f read4 =
+  (2: ) print f read4 =
+  (3: ) print f read4 dup = /n3 exch def
+  (4: ) print f read4 dup = /n4 exch def
+  (5: ) print f read2 dup = /nb5 exch def
+  (6: ) print f read4 =
+  (7: ) print f read2 dup = /nb7 exch def
+
+  /nse n4 def
+  (*1: ) print [ nse { f nb7 readn } repeat ] ==
+  (*2: ) print [ nse { f 1 readn } repeat ] dup == /md5s exch def
+  (*3:) = md5s {
+    0 ne {
+      (  ) print f 16 string readstring pop
+      (%stdout) (w) file dup 3 -1 roll writehexstring closefile () =
+    } if
+  } forall
+  (*4: ) print [ nse { f nb5 readn } repeat ] ==
+
+  end		% temp dict
+
+} bind def
+
+% Print the Primary Hint Stream of a PDF file.
+/pphs {		% <file> pphs -
+  /pdf exch def
+
+	% Read the linearization parameter dictionary.
+  { pdf pdftoken /obj eq { exit } if } loop
+  pdf pdftoken /lpdict exch def
+  /lpdict type /dicttype eq { lpdict /Linearized known } { false } ifelse {
+    (Not a linearized PDF file.) = stop
+  } if
+
+  lpdict === flush
+
+	% Read the primary hint stream.
+  null {
+    pdf pdftoken dup /stream eq { pop exit } if
+    exch pop
+  } loop
+  /phsdict exch def
+	% Remove Length if indirect reference.
+  phsdict 0 known {
+    phsdict 0 undef  phsdict /Length undef
+  } if
+  phsdict === flush
+  pdf 0 (endstream) /SubFileDecode filter
+  dup 5000 string readstring pop exch closefile
+  sread /phsdata exch def
+
+	% Decode the hint stream data if necessary.
+  phsdict /Filter .knownget {
+    phsdata exch filter
+    dup 5000 string readstring pop exch closefile
+    sread /phsdata exch def
+  } if
+
+	% HACK: assume /P = 0
+  (Page Offset Hint Table:) =
+  lpdict /N get
+  phsdata phsdict /S get string readstring pop sread
+  ppoht
+  (Shared Objects Hint Table:) =
+  phsdata psoht
+} bind def
+
+% Check for command line arguments.
+[ shellarguments
+ { ] dup length 1 eq
+    { 0 get (r) file dup pphs closefile }
+    { (Usage: pphs filename.pdf\n) print flush }
+   ifelse
+ }
+ { pop }
+ifelse
