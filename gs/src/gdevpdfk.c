@@ -733,16 +733,18 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	byte sbuff[256];	/* arbitrary */
 	uint cnt;
 
-	code = sgets(picc_info->instrp, sbuff, sizeof(sbuff), &cnt);
+	sgets(picc_info->instrp, sbuff, sizeof(sbuff), &cnt);
 	if (cnt == 0)
 	    break;
-	if (code >= 0)
-	    code = cos_stream_add_bytes(pcstrm, sbuff, cnt);
+	code = cos_stream_add_bytes(pcstrm, sbuff, cnt);
     }
     if (code >= 0)
 	code = pdf_finish_iccbased(pcstrm);
-    if (code < 0)
-	COS_FREE(pcstrm, "pcf_color_space(ICCBased dictionary)");
+    /*
+     * The stream has been added to the array: in case of failure, the
+     * caller will free the array, so there is no need to free the stream
+     * explicitly here.
+     */
     return code;
 }
 
