@@ -18,12 +18,7 @@ PCLGENDIR=..\pcl
 PCLOBJDIR=..\pcl
 COMMONDIR=..\common
 
-# Language and configuration.  These are actually platform-independent,
-# but we define them here just to keep all parameters in one place.
-CONFIG=5
-TARGET_DEVS=$(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
 TARGET_XE=pcl5
-MAIN_OBJ=$(PCLOBJDIR)\pcmain.$(OBJ)
 
 # Debugging options
 DEBUG=1
@@ -41,6 +36,7 @@ WCVERSION=10.0
 DEVICE_DEVS=vga.dev djet500.dev ljet4.dev pcxmono.dev pcxgray.dev
 
 # Generic makefile
+!include $(PCLSRCDIR)\pcl_conf.mak
 !include $(COMMONDIR)\watc_top.mak
 
 # Subsystems

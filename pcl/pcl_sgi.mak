@@ -18,12 +18,7 @@ PCLGENDIR   = ../pcl
 PCLOBJDIR   = ../pcl
 COMMONDIR   = ../common
 
-# Language and configuration.  These are actually platform-independent,
-# but we define them here just to keep all parameters in one place.
-CONFIG      = 5
-TARGET_DEVS = $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
 TARGET_XE   = pcl5
-MAIN_OBJ    = $(PCLOBJDIR)/pcmain.$(OBJ)
 
 # Assorted definitions.  Some of these should probably be factored out....
 #
@@ -66,6 +61,7 @@ DEVICE_DEVS = x11mono.dev   \
 #              pxlcolor.dev
 
 # Generic makefile
+include $(PCLSRCDIR)/pcl_conf.mak
 include $(COMMONDIR)/sgi_top.mak
 
 # Subsystems

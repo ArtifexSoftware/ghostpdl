@@ -6,19 +6,17 @@
 
 # This file must be preceded by pcl.mak.
 
-#DEVICE_DEVS is defined in the platform-specific file.
-FEATURE_DEVS=dps2lib.dev path1lib.dev patlib.dev rld.dev roplib.dev ttflib.dev
-
 default: $(TARGET_XE)$(XE)
 	echo Done.
 
 clean: config-clean clean-not-config-clean
 
 clean-not-config-clean: pl.clean-not-config-clean pcl.clean-not-config-clean
-	$(RM_) $(TARGET_XE)$(XE)
+	$(RMN_) $(TARGET_XE)$(XE) $(CLEAN_PLATFORM_FILES)
 
 config-clean: pl.config-clean pcl.config-clean
-	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld$(CONFIG).tr
+	$(RM_) *.tr
+	$(RMN_) $(GD)devs.tr$(CONFIG) $(GD)ld$(CONFIG).tr
 	$(RMN_) $(PCLGEN)pconf$(CONFIG).h $(PCLGEN)pconfig.h
 
 #### Main program
