@@ -19,7 +19,7 @@
 # $Id$
 
 #
-# make_two_versions <filename> [<device> [<res>]]
+# make_two_versions <filename> [<device> [<res> [<banding>]]]
 #
 # this script creates two versions of the file specified
 # one from baseline, and one from head
@@ -40,6 +40,10 @@ if len(sys.argv) > 3:
     res = int(sys.argv[3])
 else:
     res = 72
+if len(sys.argv) > 4:
+    banding = int(sys.argv[4])
+else:
+    banding = 0
 
 dbfile = "%s.%s.%d.%d" % (file, device, res, 0)
 ofile = "%s.%s.baseline.pnm" % (file, device)
@@ -55,7 +59,7 @@ else:
     gs.outfile = ofile
     gs.device = device
     gs.dpi = res
-    gs.band = 0
+    gs.band = banding
     gs.log_stdout = gsconf.log_stdout
     gs.log_stderr = gsconf.log_stderr
 
@@ -71,7 +75,7 @@ gs.infile = gsconf.comparefiledir + file
 gs.outfile = ofile
 gs.device = device
 gs.dpi = res
-gs.band = 0
+gs.band = banding
 gs.log_stdout = gsconf.log_stdout
 gs.log_stderr = gsconf.log_stderr
 
