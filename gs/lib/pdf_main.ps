@@ -471,7 +471,6 @@ pdfdict begin
    { initPDFobjects findxref readxref } .internalstopped {
      recover_xref_data		% Read failed.  Attempt to recover xref data.
      search_trailer		% Search for the primary trailer
-     /Trailer exch def		% Save trailer dict
    } {
      /Trailer exch def		% Save trailer dict after first xref table
 	% Read any previous cross-reference tables.

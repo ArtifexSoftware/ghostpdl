@@ -137,7 +137,7 @@
       { PDFfile 1 index readline pop pop
       } repeat			% skip entries
       pop			% pop working string
-      PDFfile token pop		% get 'trailer'
+      PDFfile token pop pop	% get 'trailer'
       PDFfile fileposition	% get file position
     } if
   } {
