@@ -33,11 +33,12 @@ if test $ac_cv_prog_gcc = yes; then
 -Wmissing-declarations -Wmissing-prototypes \
 -Wcast-qual -Wwrite-strings \
 -fno-builtin -fno-common"
+    optflags_to_try="-O2"
 else
     cflags_to_try=
+    optflags_to_try="-O"
 fi
-optflags_to_try="-O2"
-	
+
 AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
 echo
