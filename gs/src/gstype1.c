@@ -209,11 +209,11 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
 	    case cx_hstem:
 		apply_path_hints(pcis, false);
-		type1_hstem(pcis, cs0, cs1);
+		type1_hstem(pcis, cs0, cs1, true);
 		cnext;
 	    case cx_vstem:
 		apply_path_hints(pcis, false);
-		type1_vstem(pcis, cs0, cs1);
+		type1_vstem(pcis, cs0, cs1, true);
 		cnext;
 	    case cx_vmoveto:
 		cs1 = cs0;
@@ -364,22 +364,22 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 		    case ce1_vstem3:
 			apply_path_hints(pcis, false);
 			if (!pcis->vstem3_set && pcis->fh.use_x_hints) {
-			    center_vstem(pcis, pcis->lsb.x + cs2, cs3);
+			    type1_center_vstem(pcis, pcis->lsb.x + cs2, cs3);
 			    /* Adjust the current point */
 			    /* (center_vstem handles everything else). */
 			    ptx += pcis->vs_offset.x;
 			    pty += pcis->vs_offset.y;
 			    pcis->vstem3_set = true;
 			}
-			type1_vstem(pcis, cs0, cs1);
-			type1_vstem(pcis, cs2, cs3);
-			type1_vstem(pcis, cs4, cs5);
+			type1_vstem(pcis, cs0, cs1, true);
+			type1_vstem(pcis, cs2, cs3, true);
+			type1_vstem(pcis, cs4, cs5, true);
 			cnext;
 		    case ce1_hstem3:
 			apply_path_hints(pcis, false);
-			type1_hstem(pcis, cs0, cs1);
-			type1_hstem(pcis, cs2, cs3);
-			type1_hstem(pcis, cs4, cs5);
+			type1_hstem(pcis, cs0, cs1, true);
+			type1_hstem(pcis, cs2, cs3, true);
+			type1_hstem(pcis, cs4, cs5, true);
 			cnext;
 		    case ce1_seac:
 			code = gs_type1_seac(pcis, cstack + 1, cstack[0],

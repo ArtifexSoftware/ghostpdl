@@ -89,7 +89,7 @@ type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
 
     apply_path_hints(pcis, false);
     for (ap = cstack; ap + 1 <= csp; x += ap[1], ap += 2)
-	type1_vstem(pcis, x += ap[0], ap[1]);
+	type1_vstem(pcis, x += ap[0], ap[1], false);
     pcis->num_hints += (csp + 1 - cstack) >> 1;
     return 0;
 }
@@ -271,10 +271,12 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		}
 		check_first_operator(csp > cstack);
 		accum_y(*csp);
-	      move:if ((pcis->hint_next != 0 || path_is_drawing(sppath)))
+	      move:
+		if ((pcis->hint_next != 0 || !gx_path_is_void(sppath)))
 		    apply_path_hints(pcis, true);
 		code = gx_path_add_point(sppath, ptx, pty);
-	      cc:if (code < 0)
+	      cc:
+		if (code < 0)
 		    return code;
 		goto pp;
 	    case cx_rlineto:
@@ -319,6 +321,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    code = gx_path_close_subpath(sppath);
 		    if (code < 0)
 			return code;
+		    apply_path_hints(pcis, true);
 		}
 		/*
 		 * It is an undocumented (!) feature of Type 2 CharStrings
@@ -440,7 +443,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    fixed x = 0;
 
 		    for (ap = cstack; ap + 1 <= csp; x += ap[1], ap += 2)
-			type1_hstem(pcis, x += ap[0], ap[1]);
+			type1_hstem(pcis, x += ap[0], ap[1], false);
 		}
 		pcis->num_hints += (csp + 1 - cstack) >> 1;
 		cnext;

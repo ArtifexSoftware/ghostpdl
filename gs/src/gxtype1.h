@@ -339,26 +339,28 @@ void compute_font_hints(P4(font_hints *, const gs_matrix_fixed *,
 			   const gs_type1_data *));
 
 /* Character level hints */
-void reset_stem_hints(P1(gs_type1_state *)), update_stem_hints(P1(gs_type1_state *)),
-     type1_replace_stem_hints(P1(gs_type1_state *)),
+void
+    reset_stem_hints(P1(gs_type1_state *)),
+    update_stem_hints(P1(gs_type1_state *)),
+    type1_replace_stem_hints(P1(gs_type1_state *)),
+    type1_apply_path_hints(P3(gs_type1_state *, bool, gx_path *)),
+    type1_do_hstem(P5(gs_type1_state *, fixed, fixed, bool,
+		      const gs_matrix_fixed *)),
+    type1_do_vstem(P5(gs_type1_state *, fixed, fixed, bool,
+		      const gs_matrix_fixed *)),
+    type1_do_center_vstem(P4(gs_type1_state *, fixed, fixed,
+			     const gs_matrix_fixed *));
+
 #define replace_stem_hints(pcis)\
   (apply_path_hints(pcis, false),\
    type1_replace_stem_hints(pcis))
-     type1_apply_path_hints(P3(gs_type1_state *, bool, gx_path *)),
 #define apply_path_hints(pcis, closing)\
   type1_apply_path_hints(pcis, closing, pcis->path)
-     type1_do_hstem(P4(gs_type1_state *, fixed, fixed,
-		       const gs_matrix_fixed *)),
-#define type1_hstem(pcis, y, dy)\
-  type1_do_hstem(pcis, y, dy, &(pcis)->pis->ctm)
-      type1_do_vstem(P4(gs_type1_state *, fixed, fixed,
-			const gs_matrix_fixed *)),
-#define type1_vstem(pcis, x, dx)\
-  type1_do_vstem(pcis, x, dx, &(pcis)->pis->ctm)
-      type1_do_center_vstem(P4(gs_type1_state *, fixed, fixed,
-			       const gs_matrix_fixed *));
-
-#define center_vstem(pcis, x0, dx)\
+#define type1_hstem(pcis, y, dy, add_lsb)\
+  type1_do_hstem(pcis, y, dy, add_lsb, &(pcis)->pis->ctm)
+#define type1_vstem(pcis, x, dx, add_lsb)\
+  type1_do_vstem(pcis, x, dx, add_lsb, &(pcis)->pis->ctm)
+#define type1_center_vstem(pcis, x0, dx)\
   type1_do_center_vstem(pcis, x0, dx, &(pcis)->pis->ctm)
 
 #endif /* gxtype1_INCLUDED */
