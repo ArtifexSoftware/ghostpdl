@@ -1002,7 +1002,7 @@ pdf_unclip(gx_device_pdf * pdev)
     const int bottom = 0;
 #endif
 
-    if (pdev->sbstack_depth == bottom) {
+    if (pdev->sbstack_depth <= bottom) {
 	int code = pdf_open_page(pdev, PDF_IN_STREAM);
 
 	if (code < 0)
