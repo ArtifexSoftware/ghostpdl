@@ -45,6 +45,13 @@
 % Modified by L. Peter Deutsch for GS 3.33
 % Originally by Russell Lang  1995-04-26
 
+/DSCfile DSCname (w) file def
+systemdict /.setsafe known { .setsafe } if
+
+/puts { DSCfile exch writestring } bind def
+/DSCstring 255 string def
+/MediaTypes 10 dict def
+
 % (str1) (str2)  concatstr  (str1str2)
 /concatstr {
   2 copy length exch length add string
@@ -52,11 +59,6 @@
 % stack: newstring newstring str2 str1-length
   exch putinterval
 } bind def
-
-/DSCfile DSCname (w) file def
-/puts { DSCfile exch writestring } bind def
-/DSCstring 255 string def
-/MediaTypes 10 dict def
 
    GS_PDF_ProcSet begin
    pdfdict begin
