@@ -303,7 +303,9 @@ pdf_char_widths(pdf_font_resource_t *pdfont, int ch, gs_font_base *font,
 	return_error(gs_error_rangecheck);
     if (pwidths == 0)
 	pwidths = &widths;
-    if (pdfont->Widths[ch] == 0) {
+    if (pdfont->Widths[ch] == 0 ||
+	(pdfont->copied_font != NULL &&
+	 pdfont->copied_font->WMode != font->WMode)) {
 	/* Might be an unused char, or just not cached. */
 	gs_glyph glyph = pdfont->u.simple.Encoding[ch].glyph;
 
