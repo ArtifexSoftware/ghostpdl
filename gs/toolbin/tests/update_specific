@@ -221,7 +221,8 @@ os.mkdir(instdir)
 
 try:
     # do the cvs checkout
-    ret = run("cvs -z3 get -D \"" + datespec + "\" gs", cvsdir)
+    ret = run("cvs -z3 -d " + gsconf.repodir + " get -D \"" +
+              datespec + "\" gs", cvsdir)
     if ret != 0:
         raise StandardError, "ERROR: CVS checkout failed"
 
