@@ -270,7 +270,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 /*
  * Get the widths (unmodified and possibly modified) of a given character
  * in a simple font.  May add the widths to the widths cache (pdfont->Widths
- * and pdfont->real_widths).  Return 1 if the widths were not cached.
+ * and pdf_font_cache_elem::real_widths).  Return 1 if the widths were not cached.
  */
 private int
 pdf_char_widths(gx_device_pdf *const pdev,
@@ -308,7 +308,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	     * horizontally due to PS spec.
 	     * Therefore we need to fill Width array,
 	     * which is required by PDF spec.
-	     * Take it from WMode=0.
+	     * Take it from WMode==0.
 	     */
 	    int save_WMode = font->WMode;
 	    font->WMode = 0; /* Temporary patch font because font->procs.glyph_info

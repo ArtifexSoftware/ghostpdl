@@ -1192,46 +1192,44 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
 }
 
 /*
- * Get the widths (unmodified and possibly modified) of a glyph in a (base)
- * font.  Return 1 if the width was defaulted to MissingWidth.
+ * Get the widths (unmodified from the copied font,
+ * and possibly modified from the original font) of a given glyph.
+ * Return 1 if the width was defaulted to MissingWidth.
  */
 private int store_glyph_width(pdf_glyph_width_t *pwidth, int wmode,
 			      double scale, const gs_glyph_info_t *pinfo);
 int
 pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
-		 gs_font_base *font, pdf_glyph_widths_t *pwidths)
+		 gs_font_base *ofont, pdf_glyph_widths_t *pwidths)
 {
-    int wmode = font->WMode;
+    gs_font_base *cfont = pdf_font_resource_font(pdfont);
+    int wmode = ofont->WMode;
     gs_glyph_info_t info;
     /*
      * orig_scale is 1.0 for TrueType, 0.001 or 1.0/2048 for Type 1.
      */
-    double scale = font_orig_scale((const gs_font *)pdf_font_resource_font(pdfont)) * 1000.0;
+    double scale_c = font_orig_scale((const gs_font *)cfont) * 1000.0;
+    double scale_o = font_orig_scale((const gs_font *)ofont) * 1000.0;
     int code, rcode = 0;
 
     pwidths->v.x = pwidths->v.y = 0;
     if (glyph != GS_NO_GLYPH &&
-	(code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
-				       (GLYPH_INFO_WIDTH0 << wmode) |
-				       GLYPH_INFO_OUTLINE_WIDTHS,
-				       &info)) != gs_error_undefined
+	(code = ofont->procs.glyph_info((gs_font *)ofont, glyph, NULL,
+				        (GLYPH_INFO_WIDTH0 << wmode) |
+				        GLYPH_INFO_OUTLINE_WIDTHS,
+				        &info)) != gs_error_undefined
 	) {
 	if (code < 0 ||
-	    (code = store_glyph_width(&pwidths->Width, wmode, scale, &info)) < 0
+	    (code = store_glyph_width(&pwidths->Width, wmode, scale_o, &info)) < 0
 	    )
 	    return code;
 	rcode |= code;
-	/*
-	 * Only ask for modified widths if they are different, i.e.,
-	 * if GLYPH_INFO_OUTLINE_WIDTHS was set in the response.
-	 */
-	if ((info.members & GLYPH_INFO_OUTLINE_WIDTHS) != 0 &&
-	    (code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
-					   GLYPH_INFO_WIDTH0 << wmode,
-					   &info)) != gs_error_undefined
+	if ((code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
+					    GLYPH_INFO_WIDTH0 << wmode,
+					    &info)) != gs_error_undefined
 	    ) {
 	    if (code < 0 ||
-		(code = store_glyph_width(&pwidths->real_width, wmode, scale, &info)) < 0
+		(code = store_glyph_width(&pwidths->real_width, wmode, scale_c, &info)) < 0
 		)
 		return code;
 	    rcode |= code;
@@ -1246,10 +1244,10 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 	const gs_point *pscale = 0;
 	gs_font_info_t finfo;
 
-	if (scale != 1)
-	    scale2.x = scale2.y = scale, pscale = &scale2;
-	code = font->procs.font_info((gs_font *)font, pscale,
-				     FONT_INFO_MISSING_WIDTH, &finfo);
+	if (scale_c != 1)
+	    scale2.x = scale2.y = scale_c, pscale = &scale2;
+	code = cfont->procs.font_info((gs_font *)cfont, pscale,
+				      FONT_INFO_MISSING_WIDTH, &finfo);
 	if (code < 0)
 	    return code;
 	if (wmode) {
