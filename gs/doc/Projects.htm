@@ -157,6 +157,18 @@ information about the device.  <I>This would replace the current
 non-standard use of a 4-element <b><tt>PageSize</tt></b> in the
 <b><tt>InputAttributes</tt></b> entry of the page device dictionary.</I>
 
+<h3>Removing the limit on the length of OutputFile.</h3>
+
+<p>
+Currently, the maximum length of the <b><tt>OutputFile</tt></b> parameter is
+a compile-time constant, <b><tt>gp_file_name_sizeof</tt></b>.  This is
+appropriate for ordinary file names, since this constant is the platform's
+limit on the length of a file name.  However, if <b><tt>OutputFile</tt></b>
+is a pipe, the length should not be limited in this way.  <I>This is
+probably a small project: it requires allocating the file name dynamically,
+and freeing it in the finalization routine that gets called when a driver
+instance is freed.</I>.
+
 <h2><a name="Specific_drivers"></a>Specific drivers</h2>
 
 <h3>PrintGear and PPA output drivers.</h3>
