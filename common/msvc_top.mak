@@ -25,53 +25,58 @@ AK=ccf32.tr
 !include $(COMMONDIR)\msvcdefs.mak
 !include $(COMMONDIR)\pcdefs.mak
 !include $(COMMONDIR)\generic.mak
-!include $(GSDIR)\msvccmd.mak
-!include $(GSDIR)\version.mak
-!include $(GSDIR)\msvctail.mak
+!include $(GLSRCDIR)\msvccmd.mak
+!include $(GLSRCDIR)\version.mak
+!include $(GLSRCDIR)\msvctail.mak
 
 CCLEAFFLAGS=$(COMPILE_WITHOUT_FRAMES)
 
 # Build the required files in the GS directory.
-ld$(CONFIG).tr: $(MAKEFILE) $(AK)
-	echo MSVC_VERSION=$(MSVC_VERSION) >$(GSDIR)\_vc_temp.mak
-	echo DEVSTUDIO=$(DEVSTUDIO) >>$(GSDIR)\_vc_temp.mak
-	echo FEATURE_DEVS=$(FEATURE_DEVS) >>$(GSDIR)\_vc_temp.mak
-	echo DEVICE_DEVS=$(DEVICE_DEVS) bbox.dev >>$(GSDIR)\_vc_temp.mak
-	echo BAND_LIST_STORAGE=memory >>$(GSDIR)\_vc_temp.mak
-	echo BAND_LIST_COMPRESSOR=zlib >>$(GSDIR)\_vc_temp.mak
-	echo FPU_TYPE=$(FPU_TYPE) >>$(GSDIR)\_vc_temp.mak
-	echo CPU_TYPE=$(CPU_TYPE) >>$(GSDIR)\_vc_temp.mak
-	echo CONFIG=$(CONFIG) >>$(GSDIR)\_vc_temp.mak
-	echo !include msvclib.mak >>$(GSDIR)\_vc_temp.mak
+$(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE) $(AK)
+	-mkdir $(GLGENDIR)
+	-mkdir $(GLOBJDIR)
+	echo MSVC_VERSION=$(MSVC_VERSION) >$(GENDIR)\_vc_temp.mak
+	echo GLSRCDIR=$(GLSRCDIR) >>$(GENDIR)\_vc_temp.mak
+	echo GLGENDIR=$(GLGENDIR) >>$(GENDIR)\_vc_temp.mak
+	echo GLOBJDIR=$(GLOBJDIR) >>$(GENDIR)\_vc_temp.mak
+	echo DEVSTUDIO=$(DEVSTUDIO) >>$(GENDIR)\_vc_temp.mak
+	echo FEATURE_DEVS=$(FEATURE_DEVS) >>$(GENDIR)\_vc_temp.mak
+	echo DEVICE_DEVS=$(DEVICE_DEVS) bbox.dev >>$(GENDIR)\_vc_temp.mak
+	echo BAND_LIST_STORAGE=memory >>$(GENDIR)\_vc_temp.mak
+	echo BAND_LIST_COMPRESSOR=zlib >>$(GENDIR)\_vc_temp.mak
+	echo FPU_TYPE=$(FPU_TYPE) >>$(GENDIR)\_vc_temp.mak
+	echo CPU_TYPE=$(CPU_TYPE) >>$(GENDIR)\_vc_temp.mak
+	echo CONFIG=$(CONFIG) >>$(GENDIR)\_vc_temp.mak
+	echo !include msvclib.mak >>$(GENDIR)\_vc_temp.mak
 	rem --- Create/use BAT file since CD in a bat file is not effective here
-	-cd >$(GSDIR)\_vc_dir.bat
-	echo cd $(GSDIR) >$(GSDIR)\_vc_make.bat
-	echo $(MAKE) /F _vc_temp.mak CONFIG=$(CONFIG) gsargs.$(OBJ) gsnogc.$(OBJ) echogs.exe >>$(GSDIR)\_vc_make.bat
-	echo $(MAKE) /F _vc_temp.mak CONFIG=$(CONFIG) ld$(CONFIG).tr gconfig$(CONFIG).$(OBJ) gscdefs$(CONFIG).$(OBJ) >>$(GSDIR)\_vc_make.bat
-	echo $(ECHOGS_XE) -w _wm_cdir.bat cd -s -r _vc_dir.bat >>$(GSDIR)\_vc_make.bat
-	echo _wm_cdir.bat >>$(GSDIR)\_vc_make.bat
-	call $(GSDIR)\_vc_make.bat
+	-cd >$(GENDIR)\_vc_dir.bat
+	echo cd $(GENDIR) >$(GENDIR)\_vc_make.bat
+	echo $(MAKE) /F $(GENDIR)\_vc_temp.mak CONFIG=$(CONFIG) $(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\gsnogc.$(OBJ) $(GLOBJDIR)\echogs.exe >>$(GENDIR)\_vc_make.bat
+	echo $(MAKE) /F $(GENDIR)\_vc_temp.mak CONFIG=$(CONFIG) $(GLOBJDIR)\ld$(CONFIG).tr $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) $(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ) >>$(GENDIR)\_vc_make.bat
+	echo $(ECHOGS_XE) -w _wm_cdir.bat cd -s -r _vc_dir.bat >>$(GENDIR)\_vc_make.bat
+	echo _wm_cdir.bat >>$(GENDIR)\_vc_make.bat
+	call $(GENDIR)\_vc_make.bat
 	rem --------------------
-	del $(GSDIR)\_vc_temp.mak
-	del $(GSDIR)\_vc_dir.bat
-	del $(GSDIR)\_vc_make.bat
-	del $(GSDIR)\_wm_cdir.bat
+#	del $(GENDIR)\_vc_temp.mak
+#	del $(GENDIR)\_vc_dir.bat
+#	del $(GENDIR)\_vc_make.bat
+#	del $(GENDIR)\_wm_cdir.bat
 	rem Use type rather than copy to update the creation time
-	type $(GSDIR)\ld$(CONFIG).tr >ld$(CONFIG).tr
+	type $(GENDIR)\ld$(CONFIG).tr >$(GENDIR)\ldl$(CONFIG).tr
 
 # Build the configuration file.
-pconf$(CONFIG).h ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GSDIR)\genconf$(XE)
-	$(GSDIR)\genconf -n - $(TARGET_DEVS) -h pconf$(CONFIG).h -p &ps -ol ldconf$(CONFIG).tr
+$(GENDIR)\pconf$(CONFIG).h $(GENDIR)\ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
+	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GENDIR)\pconf$(CONFIG).h -p &ps -ol $(GENDIR)\ldconf$(CONFIG).tr
 
 # Link an MS executable.
-ldt$(CONFIG).tr: $(MAKEFILE) ld$(CONFIG).tr ldconf$(CONFIG).tr
+ldt$(CONFIG).tr: $(MAKEFILE) $(GENDIR)\ldl$(CONFIG).tr $(GENDIR)\ldconf$(CONFIG).tr
 	echo /SUBSYSTEM:CONSOLE >ldt$(CONFIG).tr
-	$(CP_) ldt$(CONFIG).tr+ld$(CONFIG).tr
-	echo $(GSDIR)\gsargs.$(OBJ) >>ldt$(CONFIG).tr
-	echo $(GSDIR)\gsnogc.$(OBJ) >>ldt$(CONFIG).tr
-	echo $(GSDIR)\gconfig$(CONFIG).$(OBJ) >>ldt$(CONFIG).tr
-	echo $(GSDIR)\gscdefs$(CONFIG).$(OBJ) >>ldt$(CONFIG).tr
-	$(CP_) ldt$(CONFIG).tr+ldconf$(CONFIG).tr
+	$(CP_) $(GENDIR)\ldt$(CONFIG).tr+$(GENDIR)ld$(CONFIG).tr
+	echo $(GLOBJDIR)\gsargs.$(OBJ) >>$(GENDIR)\ldt$(CONFIG).tr
+	echo $(GLOBJDIR)\gsnogc.$(OBJ) >>$(GENDIR)\ldt$(CONFIG).tr
+	echo $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) >>$(GENDIR)\ldt$(CONFIG).tr
+	echo $(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ) >>$(GENDIR)\ldt$(CONFIG).tr
+	$(CP_) $(GENDIR)\ldt$(CONFIG).tr+$(GENDIR)\ldconf$(CONFIG).tr
 
 # Link the executable. Force LIB to ref GS 'coz ld$(CONFIG).tr obj's have no pathname
 !ifdef LIB
@@ -80,9 +85,9 @@ OLD_LIB=$(LIB)
 
 $(TARGET_XE)$(XE): ldt$(CONFIG).tr $(MAIN_OBJ) $(LIBCTR)
 	rem Set LIB env var to alloc linker to find GS object files
-	set LIB=$(GSDIR)
+	set LIB=$(GLGENDIR)
 	$(LINK_SETUP)
-	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) @ldt$(CONFIG).tr @$(LIBCTR)
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) @$(GLGENDIR)\ldt$(CONFIG).tr @$(LIBCTR)
 	set LIB=$(OLD_LIB)
 
 !ifdef OLD_LIB
