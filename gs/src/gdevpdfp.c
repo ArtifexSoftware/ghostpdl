@@ -339,7 +339,7 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	     * it.
 	     */
 	    static const char *const pcm_names[] = {
-		"DeviceGray", "DeviceRGB", "DeviceCMYK", 0
+		"DeviceGray", "DeviceRGB", "DeviceCMYK", "DeviceN", 0
 	    };
 	    int pcm = -1;
 
