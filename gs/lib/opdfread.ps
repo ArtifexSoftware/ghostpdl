@@ -520,7 +520,10 @@ currentdict end readonly def
   //PDFReader /InitialGraphicState get 
   //PDFReader /GraphicState get copy pop
   //PDFReader /Operators get begin
-  currentfile exch () /SubFileDecode filter		% id obj file
+  % currentfile exch () /SubFileDecode filter		% id obj file
+  % We would like to use the code above, 
+  % but HP LaserJet 1320 continues parsing after the byte count exceeds.
+  pop currentfile 0 (endstream) /SubFileDecode filter	% id obj file
   1 index //AppendFilters exec
   cvx mark exch 					% id obj mark file
   exec
@@ -2910,7 +2913,17 @@ currentdict end readonly def
 
   /BI { currentglobal false setglobal << } bind def
   /ID { >>
-	dup /DataSource currentfile put
+	dup /DataSource currentfile 
+	% HACK BEG
+	% This hack provides a compatibility to HP LaserJet 1320,
+	% which sometimes closes the underlying stream when EOD 
+	% is reached in the ASCII85Decode filter.
+	% This portion is not required by the Postscript language definition.
+	2 index /F get /A85 eq {
+	  0 (~>) /SubFileDecode filter 
+	} if
+	% HACK END
+	put
 	//CompleteInlineImage exec
 	exch setglobal
 	//DoImage exec
