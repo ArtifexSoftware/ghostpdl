@@ -748,11 +748,11 @@ currentdict end readonly def
       (Recognized a page.) =
     } if
     dup /Contents //knownget exec {			% id obj c
-    0 get //DoNothing exch				% id obj dn id1
-    [ % <id> <obj> proc <id> <obj>
-      3 index //PageContentsDaemon /exec load
-    ] cvx						% id obj {}
-    //Register exec					% id obj
+      0 get //DoNothing exch				% id obj dn id1
+      [ % <id> <obj> proc <id> <obj>
+        3 index //PageContentsDaemon /exec load
+      ] cvx						% id obj {}
+      //Register exec					% id obj
     } {
       (fixme: page with no Contents won't be printed.) =
     } ifelse
@@ -2977,8 +2977,10 @@ currentdict end readonly def
 	% which sometimes closes the underlying stream when EOD 
 	% is reached in the ASCII85Decode filter.
 	% This portion is not required by the Postscript language definition.
-	2 index /F get /A85 eq {
-	  0 (~>) /SubFileDecode filter 
+	2 index /F //knownget exec {
+	  /A85 eq {
+	    0 (~>) /SubFileDecode filter 
+	  } if
 	} if
 	% HACK END
 	put
