@@ -249,7 +249,7 @@ STDLIBS=-lm
 # Note that x_.h expects to find the header files in $(XINCLUDE)/X11,
 # not in $(XINCLUDE).
 
-XINCLUDE=-I/usr/local/X/include
+XINCLUDE=-I/usr/X11R6/include
 
 # Define the directory/ies and library names for the X11 library files.
 # XLIBDIRS is for ld and should include -L; XLIBDIR is for LD_RUN_PATH
@@ -263,7 +263,7 @@ XINCLUDE=-I/usr/local/X/include
 # X11R6 (on any platform) may need
 #XLIBS=Xt SM ICE Xext X11
 
-XLIBDIRS=-L/usr/local/X/lib
+XLIBDIRS=-L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt Xext X11
 
