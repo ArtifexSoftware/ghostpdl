@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -174,7 +174,8 @@ typedef struct gs_memory_procs_s {
     gs_memory_proc_alloc_string((*alloc_string_immovable));
 
     /*
-     * Resize a string.
+     * Resize a string.  The specification is the same as resize_object
+     * (in gsmemraw.h), except that the element size is always a byte.
      */
 
 #define gs_memory_proc_resize_string(proc)\
