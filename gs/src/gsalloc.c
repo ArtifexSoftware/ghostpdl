@@ -26,6 +26,15 @@
 #include "stream.h"		/* for clearing stream list */
 
 /*
+ * Define whether to try consolidating space before adding a new chunk.
+ * The default is not to do this, because it is computationally
+ * expensive and doesn't seem to help much.  However, this is done for
+ * "controlled" spaces whether or not the #define is in effect.
+ */
+/*#define CONSOLIDATE_BEFORE_ADDING_CHUNK */
+
+
+/*
  * This allocator produces tracing messages of the form
  *      [aNMOTS]...
  * where
@@ -91,7 +100,7 @@ private RELOC_PTRS_WITH(ref_memory_reloc_ptrs, gs_ref_memory_t *mptr)
 RELOC_PTRS_END
 
 /*
- * Define flags for the alloc_obj, which implements all but the fastest
+ * Define the flags for alloc_obj, which implements all but the fastest
  * case of allocation.
  */
 typedef enum {
@@ -807,14 +816,37 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
+    /*
+     * Cycle through the chunks at the current save level, starting
+     * with the currently open one.
+     */
+    chunk_t *cp_orig = imem->pcc;
 
-top:if (imem->cc.ctop - imem->cc.cbot > nbytes) {
+    if (cp_orig == 0) {
+	/* Open an arbitrary chunk. */
+	cp_orig = imem->pcc = imem->cfirst;
+	alloc_open_chunk(imem);
+    }
+top:
+    if (imem->cc.ctop - imem->cc.cbot > nbytes) {
 	if_debug4('A', "[a%d:+> ]%s(%u) = 0x%lx\n",
 		  alloc_trace_space(imem), client_name_string(cname), nbytes,
 		  (ulong) (imem->cc.ctop - nbytes));
 	str = imem->cc.ctop -= nbytes;
 	gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
 	return str;
+    }
+    /* Try the next chunk. */
+    {
+	chunk_t *cp = imem->cc.cnext;
+
+	alloc_close_chunk(imem);
+	if (cp == 0)
+	    cp = imem->cfirst;
+	imem->pcc = cp;
+	alloc_open_chunk(imem);
+	if (cp != cp_orig)
+	    goto top;
     }
     if (nbytes > string_space_quanta(max_uint - sizeof(chunk_head_t)) *
 	string_data_quantum
@@ -1078,40 +1110,102 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
 	cp->cbot += asize;
 	ptr->o_alone = 1;
 	ptr->o_size = lsize;
-    } else if (lsize > max_freelist_size && (flags & ALLOC_DIRECT) &&
-	      (ptr = large_freelist_alloc(mem, lsize)) != 0) {
-	/* We hadn't checked the large block freelist yet. */
-	--ptr;			/* must point to header */
-	goto done;
     } else {
+	/*
+	 * Cycle through the chunks at the current save level, starting
+	 * with the currently open one.
+	 */
+	chunk_t *cp_orig = mem->pcc;
 	uint asize = obj_size_round((uint) lsize);
-	bool consolidate = mem->is_controlled;
-	bool allocate_success = true;
+	bool allocate_success = false;
 
-	while (mem->cc.ctop -
-	       (byte *) (ptr = (obj_header_t *) mem->cc.cbot)
-	       <= asize + sizeof(obj_header_t)) {
-	    if (consolidate) {
+	if (lsize > max_freelist_size && (flags & ALLOC_DIRECT)) {
+	    /* We haven't checked the large block freelist yet. */
+	    if ((ptr = large_freelist_alloc(mem, lsize)) != 0) {
+		--ptr;			/* must point to header */
+		goto done;
+	    }
+	}
+
+	if (cp_orig == 0) {
+	    /* Open an arbitrary chunk. */
+	    cp_orig = mem->pcc = mem->cfirst;
+	    alloc_open_chunk(mem);
+	}
+
+#define CAN_ALLOC_AT_END(cp)\
+  ((cp)->ctop - (byte *) (ptr = (obj_header_t *) (cp)->cbot)\
+   > asize + sizeof(obj_header_t))
+
+	do {
+	    if (CAN_ALLOC_AT_END(&mem->cc)) {
+		allocate_success = true;
+		break;
+	    } else if (mem->is_controlled) {
 		/* Try consolidating free space. */
 		gs_consolidate_free((gs_memory_t *)mem);
-		consolidate = false;
-		continue;
-	    } else {
-		/* Add another chunk. */
-		chunk_t *cp =
-		    alloc_add_chunk(mem, (ulong)mem->chunk_size, "chunk");
-
-		if (cp == 0) {
-		    allocate_success = false;
+		if (CAN_ALLOC_AT_END(&mem->cc)) {
+		    allocate_success = true;
 		    break;
 		}
 	    }
+	    /* No luck, go on to the next chunk. */
+	    {
+		chunk_t *cp = mem->cc.cnext;
+
+		alloc_close_chunk(mem);
+		if (cp == 0)
+		    cp = mem->cfirst;
+		mem->pcc = cp;
+		alloc_open_chunk(mem);
+	    }
+	} while (mem->pcc != cp_orig);
+
+#ifdef CONSOLIDATE_BEFORE_ADDING_CHUNK
+	if (!allocate_success) {
+	    /*
+	     * Try consolidating free space before giving up.
+	     * It's not clear this is a good idea, since it requires quite
+	     * a lot of computation and doesn't seem to improve things much.
+	     */
+	    if (!mem->is_controlled) { /* already did this if controlled */
+		chunk_t *cp = cp_orig;
+
+		alloc_close_chunk(mem);
+		do {
+		    consolidate_chunk_free(cp, mem);
+		    if (CAN_ALLOC_AT_END(cp)) {
+			mem->pcc = cp;
+			alloc_open_chunk(mem);
+			allocate_success = true;
+			break;
+		    }
+		    if ((cp = cp->cnext) == 0)
+			cp = mem->cfirst;
+		} while (cp != cp_orig);
+	    }
 	}
+#endif
+
+#undef CAN_ALLOC_AT_END
+
+	if (!allocate_success) {
+	    /* Add another chunk. */
+	    chunk_t *cp =
+		alloc_add_chunk(mem, (ulong)mem->chunk_size, "chunk");
+			
+	    if (cp) {
+		/* mem->pcc == cp, mem->cc == *mem->pcc. */
+		ptr = (obj_header_t *)cp->cbot;
+		allocate_success = true;
+	    }
+	}
+
 	/*
-	 * If no success, try to scavenge from low free memory. This is only
-	 * enabled for controlled memory (currently only async renderer)
-	 * because it's too much work to prevent it from examining outer
-	 * save levels in the general case.
+	 * If no success, try to scavenge from low free memory. This is
+	 * only enabled for controlled memory (currently only async
+	 * renderer) because it's too much work to prevent it from
+	 * examining outer save levels in the general case.
 	 */
 	if (allocate_success)
 	    mem->cc.cbot = (byte *) ptr + asize;
