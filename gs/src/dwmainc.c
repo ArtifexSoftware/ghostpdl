@@ -40,7 +40,7 @@
 #endif
 
 GSDLL gsdll;
-struct gs_main_instance_s *instance;
+void *instance;
 BOOL quitnow = FALSE;
 HANDLE hthread;
 DWORD thread_id;

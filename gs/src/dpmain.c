@@ -992,7 +992,7 @@ main(int argc, char *argv[])
     char **nargv;
     char dformat[64];
     ULONG version[3];
-    gs_main_instance *instance;
+    void *instance;
 
     if (DosQuerySysInfo(QSV_VERSION_MAJOR, QSV_VERSION_REVISION, 
 	    &version, sizeof(version)))
