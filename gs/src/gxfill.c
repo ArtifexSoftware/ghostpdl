@@ -31,10 +31,6 @@
 #include "gxpaint.h"		/* for prototypes */
 #include "gsptype2.h"
 #include "gdevddrw.h"
-
-#if !DROPOUT_PREVENTION
-#define VD_TRACE 0
-#endif
 #include "vdtrace.h"
 
 #define VD_SCALE 0.004
@@ -45,7 +41,7 @@
 /*
  * Configuration flags for dropout prevention code.
  */
-#define PSEUDO_RASTERIZATION (DROPOUT_PREVENTION && 1) /* Change 1 to 0 for benchmarking. */
+#define PSEUDO_RASTERIZATION 1 /* Reserved for further development. */
 #define ADJUST_SERIF 1 /* See comments near occurances. */
 #define CHECK_SPOT_CONTIGUITY 1 /* See comments near occurances. */
 

@@ -24,10 +24,6 @@
 #include "gxfarith.h"
 #include "gxistate.h"		/* for access to line params */
 #include "gzpath.h"
-
-#if !DROPOUT_PREVENTION
-#define VD_TRACE 0
-#endif
 #include "vdtrace.h"
 
 /* Forward declarations */

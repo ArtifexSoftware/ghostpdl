@@ -20,10 +20,6 @@
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gzpath.h"
-
-#if !DROPOUT_PREVENTION
-#define VD_TRACE 0
-#endif
 #include "vdtrace.h"
 
 /* Define whether to merge nearly collinear line segments when flattening */

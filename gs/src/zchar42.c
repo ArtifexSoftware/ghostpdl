@@ -141,9 +141,6 @@ private int type42_finish(i_ctx_t *i_ctx_p,
 private int
 type42_fill(i_ctx_t *i_ctx_p)
 {
-#if !DROPOUT_PREVENTION
-    return type42_finish(i_ctx_p, gs_fill);
-#else
     int code;
     gs_fixed_point fa = i_ctx_p->pgs->fill_adjust;
 
@@ -152,7 +149,6 @@ type42_fill(i_ctx_t *i_ctx_p)
     i_ctx_p->pgs->fill_adjust = fa; /* Not sure whether we need to restore it,
                                        but this isn't harmful. */
     return code;
-#endif
 }
 private int
 type42_stroke(i_ctx_t *i_ctx_p)

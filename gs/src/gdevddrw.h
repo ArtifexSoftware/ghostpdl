@@ -20,8 +20,6 @@
 #ifndef gdevddrw_INCLUDED
 #  define gdevddrw_INCLUDED
 
-#if DROPOUT_PREVENTION
-
 enum fill_trap_flags {
     ftf_peak0 = 1,
     ftf_peak1 = 2,
@@ -32,7 +30,6 @@ int
 gx_fill_trapezoid_narrow(gx_device * dev, const gs_fixed_edge * left,
     const gs_fixed_edge * right, fixed ybot, fixed ytop, int flags,
     const gx_device_color * pdevc, gs_logical_operation_t lop);
-#endif
 
 #endif /* gdevddrw_INCLUDED */
 

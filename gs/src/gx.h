@@ -27,9 +27,6 @@
 #include "gsmemory.h"
 #include "gdebug.h"
 
-/* Temporary switch for a new filling algorithm : */
-#define DROPOUT_PREVENTION 1 /* 0 = old, 1 = new */
-
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */
 /* rather than at a higher level as perhaps would be more appropriate. */
