@@ -1685,6 +1685,10 @@ Unix, users have reported that the proper flags are
 
 <p>
 again, optionally omitting the <b><tt>-g3</tt></b>.
+
+<li>If you get compiler error messages about "ANSI aliasing rules", please
+see the section about <a href="#VMS_build">building under OpenVMS</a> below.
+
 </ul>
 
 <h3><a name="FreeBSD"></a>FreeBSD</h3>
@@ -2412,6 +2416,11 @@ Now, if you wish, you can edit OS2.MAK to suit your needs, and then perform
 <hr>
 
 <h1><a name="VMS_build"></a>How to build Ghostscript from source (OpenVMS version)</h1>
+
+<p>The DECC6.2-003 compiler has an optimization problem that may lead to
+warnings about the "ANSI aliasing rules".  DEC (Compaq) can provide a fix
+for this problem.  The DECC6.2-006 compiler apparently does not have the
+problem.
 
 <p>
 DEC C runtime library versions 5.5 and newer have an <b><tt>exit</tt></b>
