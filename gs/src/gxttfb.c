@@ -283,13 +283,13 @@ void ttfFont__destroy(ttfFont *this)
     mem->free(mem, mem, "ttfFont__destroy");
 }
 
-int ttfFont__Open_aux(ttfFont *this, ttfReader *r, gs_font_type42 *pfont)
+int ttfFont__Open_aux(ttfFont *this, gx_ttfReader *r, gs_font_type42 *pfont)
 {
     /* Ghostscript proceses a TTC index in gs/lib/gs_ttf.ps, */
     /* so that TTC never comes here. */
     unsigned int nTTC = 0; 
 
-    switch(ttfFont__Open(this, r, nTTC)) {
+    switch(ttfFont__Open(this, &r->super, nTTC)) {
 	case fNoError:
 	    return 0;
 	case fMemoryError:
@@ -301,7 +301,12 @@ int ttfFont__Open_aux(ttfFont *this, ttfReader *r, gs_font_type42 *pfont)
 	    this->patented = true;
 	    return 0;
 	default:
-	    return_error(gs_error_invalidfont);
+	    {	int code = r->super.Error(&r->super);
+
+		if (code < 0)
+		    return code;
+		return_error(gs_error_invalidfont);
+	    }
     }
 }
 

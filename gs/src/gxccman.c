@@ -224,7 +224,7 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	pair->ttf = ttfFont__create(dir->memory);
 	if (!pair->ttf)
 	    return_error(gs_error_VMerror);
-	code = ttfFont__Open_aux(pair->ttf, &pair->ttr->super, (gs_font_type42 *)font);
+	code = ttfFont__Open_aux(pair->ttf, pair->ttr, (gs_font_type42 *)font);
 	if (code < 0)
 	    return code; /* fixme : propagate error. */
     }

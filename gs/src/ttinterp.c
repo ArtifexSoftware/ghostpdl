@@ -4541,8 +4541,12 @@ static int nInstrCount=0;
 
       A = CUR.stack[CUR.args + 1];
       B = CUR.stack[CUR.args];
-
+#if 0
       if ( BOUNDS( A, CUR.zp0.n_points ) )
+#else
+      /* igorm changed : allow phantom points (Altona.Page_3.2002-09-27.pdf). */
+      if ( BOUNDS( A, CUR.zp0.n_points + 2 ) )
+#endif
       {
         CUR.error = TT_Err_Invalid_Reference;
         return;

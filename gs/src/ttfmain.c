@@ -348,6 +348,9 @@ FontError ttfFont__Open(ttfFont *this, ttfReader *r, unsigned int nTTC)
     code = Face_Create(this->face);
     if (code)
 	return fMemoryError;
+    code = r->Error(r);
+    if (code < 0)
+	return fBadFontData;
     this->inst = this->ttf_memory->alloc_struct(this->ttf_memory, 
 			    (const ttfMemoryDescriptor *)&st_TInstance, "ttfFont__Open");
     if (this->inst == NULL)

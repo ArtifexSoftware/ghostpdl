@@ -55,7 +55,7 @@ gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont);
 void gx_ttfReader__destroy(gx_ttfReader *this);
 ttfFont *ttfFont__create(gs_memory_t *mem);
 void ttfFont__destroy(ttfFont *this);
-int ttfFont__Open_aux(ttfFont *this, ttfReader *r, gs_font_type42 *pfont);
+int ttfFont__Open_aux(ttfFont *this, gx_ttfReader *r, gs_font_type42 *pfont);
 int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int glyph_index, 
 	const gs_matrix *m, const gs_log2_scale_point * pscale, 
 	gx_path *path);
