@@ -355,7 +355,7 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 
 	    /* 'code' is the returned length */
 	    buf = (byte *)gs_alloc_string(pfont->memory, glyph_length, "default_get_outline");
-	    if (buf < 0)
+	    if (buf == 0)
 		return_error(gs_error_VMerror);
 	    gs_glyph_data_from_string(pgd, buf, glyph_length, (gs_font *)pfont);
 	    for (;;) {
