@@ -153,6 +153,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->vectorization = false; /* A stub for a while. Will use with pclwrite. */
     pfs->maybe_self_intersecting = true;
     pfs->monotonic_color = (pfs->Function == NULL);
+    pfs->inside = false;
     pfs->n_color_args = 1;
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
     pfs->smoothness = pfs->pis->smoothness;
@@ -1362,23 +1363,28 @@ function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const
 private inline bool
 is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
 {
-    gs_direct_color_space *cs = 
-		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
-    int code;
-    float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
-    /* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
-       can't provide a better precision due to the color
-       representation with integers.
-     */
-    float s = function_linearity(pfs, c0, c1);
 
-    if (s > smoothness)
-	return false;
-    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-	    &c0->cc, &c1->cc, NULL, NULL, smoothness - s);
-    if (code <= 0)
-	return false;
-    return true;
+    if (pfs->unlinear)
+	return true; /* Disable this check. */
+    else {
+	gs_direct_color_space *cs = 
+		    (gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+	int code;
+	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
+	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
+	   can't provide a better precision due to the color
+	   representation with integers.
+	 */
+	float s = function_linearity(pfs, c0, c1);
+
+	if (s > smoothness)
+	    return false;
+	code = cs_is_linear(cs, pfs->pis, pfs->dev, 
+		&c0->cc, &c1->cc, NULL, NULL, smoothness - s);
+	if (code <= 0)
+	    return false;
+	return true;
+    }
 }
 
 private int
@@ -1402,52 +1408,51 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 	bool monotonic_color_save = pfs->monotonic_color;
 
 	if (!pfs->monotonic_color)
-	    pfs->monotonic_color = is_color_monotonic(pfs, c0, c1);
+	    pfs->monotonic_color = is_color_monotonic(pfs, c0, c1) &&
+				   is_color_linear(pfs, c0, c1);
 	if (!pfs->unlinear && pfs->monotonic_color) {
-	    if (is_color_linear(pfs, c0, c1)) {
-		gx_device *pdev = pfs->dev;
-		frac31 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
-		gs_fill_attributes fa;
-		gx_device_color dc[2];
-		gs_fixed_rect clip;
-		int code;
+	    gx_device *pdev = pfs->dev;
+	    frac31 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    gs_fill_attributes fa;
+	    gx_device_color dc[2];
+	    gs_fixed_rect clip;
+	    int code;
 
-		clip = pfs->rect;
-		if (swap_axes) {
-		    fixed v;
+	    clip = pfs->rect;
+	    if (swap_axes) {
+		fixed v;
 
-		    v = clip.p.x; clip.p.x = clip.p.y; clip.p.y = v;
-		    v = clip.q.x; clip.q.x = clip.q.y; clip.q.y = v;
-		}
-		clip.p.y = max(clip.p.y, ybot);
-		clip.q.y = min(clip.q.y, ytop);
-		fa.clip = &clip; 
-		fa.ht = NULL;
-		fa.swap_axes = swap_axes;
-		fa.lop = 0;
-		fa.ystart = ybot;
-		fa.yend = ytop;
-		code = patch_color_to_device_color(pfs, c0, &dc[0]);
+		v = clip.p.x; clip.p.x = clip.p.y; clip.p.y = v;
+		v = clip.q.x; clip.q.x = clip.q.y; clip.q.y = v;
+	    }
+	    clip.p.y = max(clip.p.y, ybot);
+	    clip.q.y = min(clip.q.y, ytop);
+	    fa.clip = &clip; 
+	    fa.ht = NULL;
+	    fa.swap_axes = swap_axes;
+	    fa.lop = 0;
+	    fa.ystart = ybot;
+	    fa.yend = ytop;
+	    code = patch_color_to_device_color(pfs, c0, &dc[0]);
+	    if (code < 0)
+		return code;
+	    if (dc[0].type == &gx_dc_type_data_pure) {
+		dc2fc(pfs, dc[0].colors.pure, fc[0]);
+		code = patch_color_to_device_color(pfs, c1, &dc[1]);
 		if (code < 0)
 		    return code;
-		if (dc[0].type == &gx_dc_type_data_pure) {
-		    dc2fc(pfs, dc[0].colors.pure, fc[0]);
-		    code = patch_color_to_device_color(pfs, c1, &dc[1]);
-		    if (code < 0)
-			return code;
-		    dc2fc(pfs, dc[1].colors.pure, fc[1]);
-		    code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
-				    &le->start, &le->end, &re->start, &re->end, 
-				    fc[0], fc[1], NULL, NULL);
-		    if (code == 1) {
-			pfs->monotonic_color = monotonic_color_save;
-			return 0; /* The area is filled. */
-		    }
-		    if (code < 0)
-			return code;
-		    else /* code == 0, the device requested to decompose the area. */ 
-			return_error(gs_error_unregistered); /* Must not happen. */
+		dc2fc(pfs, dc[1].colors.pure, fc[1]);
+		code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
+				&le->start, &le->end, &re->start, &re->end, 
+				fc[0], fc[1], NULL, NULL);
+		if (code == 1) {
+		    pfs->monotonic_color = monotonic_color_save;
+		    return 0; /* The area is filled. */
 		}
+		if (code < 0)
+		    return code;
+		else /* code == 0, the device requested to decompose the area. */ 
+		    return_error(gs_error_unregistered); /* Must not happen. */
 	    }
 	}
 	if (!pfs->monotonic_color || !pfs->unlinear ||
@@ -1538,7 +1543,8 @@ private void
 split_curve_s(const gs_fixed_point *pole, gs_fixed_point *q0, gs_fixed_point *q1, int pole_step)
 {
     /*	This copies a code fragment from split_curve_midpoint,
-        substituting another data type.
+        substituting another data type. 
+	Also fixed a bug in the macro "midpoint".
      */				
     /*
      * We have to define midpoint carefully to avoid overflow.
@@ -1546,7 +1552,7 @@ split_curve_s(const gs_fixed_point *pole, gs_fixed_point *q0, gs_fixed_point *q1
      * on, but we could get infinite recursion that way....)
      */
 #define midpoint(a,b)\
-  (arith_rshift_1(a) + arith_rshift_1(b) + ((a) & (b) & 1) + 1)
+  (arith_rshift_1(a) + arith_rshift_1(b) + (((a) | (b)) & 1))
     fixed x12 = midpoint(pole[1 * pole_step].x, pole[2 * pole_step].x);
     fixed y12 = midpoint(pole[1 * pole_step].y, pole[2 * pole_step].y);
 
@@ -2517,7 +2523,7 @@ is_color_span_v_linear(const patch_fill_state_t *pfs, const tensor_patch *p)
     code = is_color_linear(pfs, &p->c[0][1], &p->c[1][1]);
     if (code <= 0)
 	return false;
-    return 1;
+    return true;
 }
 
 private inline bool
@@ -2581,6 +2587,45 @@ divide_bar(patch_fill_state_t *pfs,
     patch_interpolate_color(&p->c, &p0->c, &p1->c, pfs, (double)(radix - 1) / radix);
 }
 
+private inline void
+bbox_of_points(gs_fixed_rect *r, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2, const gs_fixed_point *p3)
+{
+    r->p.x = r->q.x = p0->x;
+    r->p.y = r->q.y = p0->y;
+
+    if (r->p.x > p1->x)
+	r->p.x = p1->x;
+    if (r->q.x < p1->x)
+	r->q.x = p1->x;
+    if (r->p.y > p1->y)
+	r->p.y = p1->y;
+    if (r->q.y < p1->y)
+	r->q.y = p1->y;
+
+    if (r->p.x > p2->x)
+	r->p.x = p2->x;
+    if (r->q.x < p2->x)
+	r->q.x = p2->x;
+    if (r->p.y > p2->y)
+	r->p.y = p2->y;
+    if (r->q.y < p2->y)
+	r->q.y = p2->y;
+
+    if (p3 == NULL)
+	return;
+
+    if (r->p.x > p3->x)
+	r->p.x = p3->x;
+    if (r->q.x < p3->x)
+	r->q.x = p3->x;
+    if (r->p.y > p3->y)
+	r->p.y = p3->y;
+    if (r->q.y < p3->y)
+	r->q.y = p3->y;
+}
+
 private int 
 triangle_by_4(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
@@ -2589,8 +2634,17 @@ triangle_by_4(patch_fill_state_t *pfs,
 {
     shading_vertex_t p01, p12, p20;
     wedge_vertex_list_t L01, L12, L20, L[3];
+    bool inside_save = pfs->inside;
+    gs_fixed_rect r, r1;
     int code;
     
+    if (!pfs->inside) {
+	bbox_of_points(&r, &p0->p, &p1->p, &p2->p, NULL);
+	r1 = r;
+	rect_intersect(r, pfs->rect);
+	if (r.q.x <= r.p.x || r.q.y <= r.p.y)
+	    return 0; /* Outside. */
+    }
     code = try_device_linear_color(pfs, false, p0, p1, p2);
     switch(code) {
 	case 0: /* The area is filled. */
@@ -2616,6 +2670,11 @@ triangle_by_4(patch_fill_state_t *pfs,
 	    break;
 	default: /* Error. */
 	    return code;
+    }
+    if (!pfs->inside) {
+	if (r.p.x == r1.p.x && r.p.y == r1.p.y && 
+	    r.q.x == r1.q.x && r.q.y == r1.q.y)
+	    pfs->inside = true;
     }
     divide_bar(pfs, p0, p1, 2, &p01);
     divide_bar(pfs, p1, p2, 2, &p12);
@@ -2675,6 +2734,7 @@ triangle_by_4(patch_fill_state_t *pfs,
 	if (code < 0)
 	    return code;
     }
+    pfs->inside = inside_save;
     return 0;
 }
 
@@ -2836,6 +2896,26 @@ make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2],
     q->l1000 = &l[3];
 }
 
+private inline bool
+is_quadrangle_color_linear(const patch_fill_state_t *pfs, const quadrangle_patch *p)
+{
+    if (pfs->unlinear)
+	return true; /* Disable this check. */
+    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[0][1]->c))
+	return false;
+    if (!is_color_linear(pfs, &p->p[1][0]->c, &p->p[1][1]->c))
+	return false;
+    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][0]->c))
+	return false;
+    if (!is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][1]->c))
+	return false;
+    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][1]->c))
+	return false;
+    if (!is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][0]->c))
+	return false;
+    return true;
+}
+
 typedef enum {
     color_change_small,
     color_change_gradient,
@@ -2858,12 +2938,11 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
     D0111 = color_span(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
     D0011 = color_span(pfs, &p->p[0][0]->c, &p->p[1][1]->c);
     D0110 = color_span(pfs, &p->p[0][1]->c, &p->p[1][0]->c);
-    if (pfs->unlinear)
+    if (pfs->unlinear) {
 	if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness &&
 	    D0010 <= pfs->smoothness && D0111 <= pfs->smoothness &&
 	    D0011 <= pfs->smoothness && D0110 <= pfs->smoothness)
 	    return color_change_small;
-    if (pfs->unlinear) {
 	if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness) {
 	    *uv = false;
 	    return color_change_gradient;
@@ -2875,10 +2954,12 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
     }
     color_diff(pfs, &d0001, &d1011, &d);
     D = color_norm(pfs, &d);
-    if (D <= pfs->smoothness)
-	return color_change_linear;
     Du = max(D0001, D1011);
     Dv = max(D0010, D0111);
+    if (Du <= pfs->smoothness / 8 && Dv <= pfs->smoothness / 8)
+	return color_change_small;
+    if (D <= pfs->smoothness)
+	return color_change_linear;
     *uv = Du > Dv;
     return color_change_general;
 }
@@ -2895,8 +2976,17 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
     bool divide_u = false, divide_v = false, big1 = big;
     shading_vertex_t q[2];
     bool monotonic_color_save = pfs->monotonic_color;
+    bool inside_save = pfs->inside;
+    gs_fixed_rect r, r1;
     /* Warning : pfs->monotonic_color is not restored on error. */
 
+    if (!pfs->inside) {
+	bbox_of_points(&r, &p->p[0][0]->p, &p->p[0][1]->p, &p->p[1][0]->p, &p->p[1][1]->p);
+	r1 = r;
+	rect_intersect(r, pfs->rect);
+	if (r.q.x <= r.p.x || r.q.y <= r.p.y)
+	    return 0; /* Outside. */
+    }
     if (big) {
 	/* Likely 'big' is an unuseful rudiment due to curve_samples
 	   restricts lengthes. We keep it for a while because its implementation 
@@ -2943,7 +3033,8 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 			constant_color_quadrangle : triangles)(pfs, p, 
 			    pfs->maybe_self_intersecting);
 	if (!pfs->monotonic_color)
-	    pfs->monotonic_color = is_quadrangle_color_monotonic(pfs, p, &color_u);
+	    pfs->monotonic_color = is_quadrangle_color_monotonic(pfs, p, &color_u)
+				&& is_quadrangle_color_linear(pfs, p);
 	if (!pfs->monotonic_color) {
 	    /* go to divide. */
 	} else switch(quadrangle_color_change(pfs, p, &color_u)) {
@@ -2966,6 +3057,11 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    divide_u = is_big_u;
 	    divide_v = is_big_v; /* Unused. Just for a clarity. */
 	}
+    }
+    if (!pfs->inside) {
+	if (r.p.x == r1.p.x && r.p.y == r1.p.y && 
+	    r.q.x == r1.q.x && r.q.y == r1.q.y)
+	    pfs->inside = true;
     }
     if (LAZY_WEDGES)
 	init_wedge_vertex_list(&l0, 1);
@@ -3047,6 +3143,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	}
     }
     pfs->monotonic_color = monotonic_color_save;
+    pfs->inside = inside_save;
     return code;
 }
 

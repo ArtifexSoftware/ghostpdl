@@ -115,6 +115,7 @@ typedef struct patch_fill_state_s {
     bool maybe_self_intersecting;
     bool monotonic_color;
     bool unlinear;
+    bool inside;
 #endif
 } patch_fill_state_t;
 #endif

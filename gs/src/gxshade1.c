@@ -917,6 +917,8 @@ R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
     double d = hypot(dx, dy);
     gs_point p0, p1, pc0, pc1;
     int k, j, code;
+    bool inside = 0;
+
     pc0.x = x0, pc0.y = y0; 
     pc1.x = x1, pc1.y = y1;
     if (r0 + d <= r1 || r1 + d <= r0) {
@@ -924,6 +926,8 @@ R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
 	   Use any subdivision, 
 	   but don't depend on dx, dy, which may be too small. */
 	p0.x = 0, p0.y = -1;
+	/* Align stripes along radii for faster triangulation : */
+	inside = 1;
     } else {
         /* Must generate canonic quadrangle arcs,
 	   because we approximate them with curves. */
@@ -939,7 +943,8 @@ R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
 		p0.x = -1, p0.y = 0;
 	}
     }
-    /* fixme: wish: cut invisible parts off. */
+    /* fixme: wish: cut invisible parts off. 
+       Note : when r0 != r1 the invisible part is not a half circle. */
     for (k = 0; k < 4; k++, p0 = p1) {
 	gs_point p[12];
 	patch_curve_t curve[4];
@@ -960,24 +965,27 @@ R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
 	p[10].y = (p[9].y * 2 + p[0].y) / 3;
 	p[11].x = (p[9].x + p[0].x * 2) / 3;
 	p[11].y = (p[9].y + p[0].y * 2) / 3;
-	/* fixme : truncate by 'rect'. */
 	for (j = 0; j < 4; j++) {
+	    int jj = (j + inside) % 4;
+
 	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
-			p[j * 3 + 0].x, p[j * 3 + 0].y, &curve[j].vertex.p);
+			p[j * 3 + 0].x, p[j * 3 + 0].y, &curve[jj].vertex.p);
 	    if (code < 0)
 		return code;
 	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
-			p[j * 3 + 1].x, p[j * 3 + 1].y, &curve[j].control[0]);
+			p[j * 3 + 1].x, p[j * 3 + 1].y, &curve[jj].control[0]);
 	    if (code < 0)
 		return code;
 	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
-			p[j * 3 + 2].x, p[j * 3 + 2].y, &curve[j].control[1]);
+			p[j * 3 + 2].x, p[j * 3 + 2].y, &curve[jj].control[1]);
 	    if (code < 0)
 		return code;
 	}
 #	if NEW_RADIAL_SHADINGS
-	    curve[0].vertex.cc[0] = curve[1].vertex.cc[0] = t0;
-	    curve[2].vertex.cc[0] = curve[3].vertex.cc[0] = t1;
+	    curve[(0 + inside) % 4].vertex.cc[0] = t0;
+	    curve[(1 + inside) % 4].vertex.cc[0] = t0;
+	    curve[(2 + inside) % 4].vertex.cc[0] = t1;
+	    curve[(3 + inside) % 4].vertex.cc[0] = t1;
 #	else
 	    curve[0].vertex.cc[0] = curve[1].vertex.cc[0] = 0; /* stub. */
 	    curve[2].vertex.cc[0] = curve[3].vertex.cc[0] = 0; /* stub. */
@@ -998,7 +1006,6 @@ R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect,
 	double x1, double y1, double r1, 
 	double *x2, double *y2, double *r2)
 {
-    double ax, ay, a0, a1;
     double dx = x1 - x0, dy = y1 - y0;
     double sp, sq, s;
 
@@ -1087,7 +1094,7 @@ R_is_covered(double ax, double ay,
     double dx0 = p0->x - ax, dy0 = p0->y - ay;
     double dx1 = p1->x - ax, dy1 = p1->y - ay;
     double dx = p->x - ax, dy = p->y - ay;
-    double vp0 = dx * dy0 - dy * dx0;
+    double vp0 = dx0 * dy - dy0 * dx;
     double vp1 = dx * dy1 - dy * dx1;
 
     return vp0 >= 0 && vp1 >= 0;
@@ -1112,12 +1119,12 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
     ax = x0 + (x1 - x0) * as;
     ay = y0 + (y1 - y0) * as;
 
-    if (any_abs(d - dr) < 1e-7) {
+    if (any_abs(d - dr) < 1e-7 * (d + dr)) {
 	/* Nearly degenerate, replace with half-plane. */
 	p0.x = ax - dy * r / d;
-	p0.y = ax + dx * r / d;
+	p0.y = ay + dx * r / d;
 	p1.x = ax + dy * r / d;
-	p1.y = ax - dx * r / d;
+	p1.y = ay - dx * r / d;
     } else {
 	/* Tangent limits by proportional triangles. */
 	double da = hypot(ax - x0, ay - y0);
@@ -1125,10 +1132,10 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 
 	assert(h <= r);
 	g = sqrt(r * r - h * h);
-	p0.x = ax - dy * h / d;
-	p0.y = ax + dx * g / d;
-	p0.x = ax + dy * h / d;
-	p0.y = ax - dx * g / d;
+	p0.x = ax - dx * g / d - dy * h / d;
+	p0.y = ay - dy * g / d + dx * h / d;
+	p1.x = ax - dx * g / d + dy * h / d;
+	p1.y = ay - dy * g / d - dx * h / d;
     }
     /* Now we have 2 limited tangents, and 4 corners of the rect. 
        Need to know what corners are covered. */
@@ -1171,8 +1178,21 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 }
 
 private int
+R_tensor_cone_apex(patch_fill_state_t *pfs, const gs_rect *rect,
+	double x0, double y0, double r0, 
+	double x1, double y1, double r1, double t)
+{
+    double as = r0 / (r0 - r1);
+    double ax = x0 + (x1 - x0) * as;
+    double ay = y0 + (y1 - y0) * as;
+
+    return R_tensor_annulus(pfs, rect, x1, y1, r1, t, ax, ay, 0, t);
+}
+
+
+private int
 R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *rect, 
-	double t0, double t1)
+	double t0, double t1, bool Extend0, bool Extend1)
 {
     float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
     floatp r0 = psh->params.Coords[2];
@@ -1182,65 +1202,69 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
     double d = hypot(dx, dy), r;
     int code;
 
-    if (dr >= d) {
+    if (dr >= d - 1e-7 * (d + dr)) {
 	/* Nested circles, or degenerate. */
 	if (r0 > r1) {
-	    if (psh->params.Extend[0]) {
+	    if (Extend0) {
 		r = R_rect_radius(rect, x0, y0);
-		code = R_tensor_annulus(pfs, rect, x0, y0, r, t0, x0, y0, r0, t0);
-		if (code < 0)
-		    return code;
+		if (r > r0) {
+		    code = R_tensor_annulus(pfs, rect, x0, y0, r, t0, x0, y0, r0, t0);
+		    if (code < 0)
+			return code;
+		}
 	    }
-	    if (psh->params.Extend[1])
+	    if (Extend1 && r1 > 0)
 		return R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x1, y1, 0, t1);
 	} else {
-	    if (psh->params.Extend[1]) {
+	    if (Extend1) {
 		r = R_rect_radius(rect, x1, y1);
-		code = R_tensor_annulus(pfs, rect, x1, y1, r, t1, x1, y1, r1, t1);
-		if (code < 0)
-		    return code;
+		if (r > r1) {
+		    code = R_tensor_annulus(pfs, rect, x1, y1, r, t1, x1, y1, r1, t1);
+		    if (code < 0)
+			return code;
+		}
 	    }
-	    if (psh->params.Extend[0])
+	    if (Extend0 && r0 > 0)
 		return R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x0, y0, 0, t0);
 	}
     } else if (dr > d / 3) {
 	/* Obtuse cone. */
 	if (r0 > r1) {
-	    if (psh->params.Extend[0]) {
+	    if (Extend0) {
 		r = R_rect_radius(rect, x0, y0);
 		code = R_obtuse_cone(pfs, rect, x0, y0, r0, x1, y1, r1, t0, r);
 		if (code < 0)
 		    return code;
 	    }
-	    if (psh->params.Extend[1] && r1 != 0)
-		return R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x1, y1, 0, t1);
+	    if (Extend1 && r1 != 0)
+		return R_tensor_cone_apex(pfs, rect, x0, y0, r0, x1, y1, r1, t1);
 	    return 0;
 	} else {
-	    if (psh->params.Extend[1]) {
+	    if (Extend1) {
 		r = R_rect_radius(rect, x1, y1);
 		code = R_obtuse_cone(pfs, rect, x1, y1, r1, x0, y0, r0, t1, r);
 		if (code < 0)
 		    return code;
 	    }
-	    if (psh->params.Extend[0] && r0 != 0)
-		return R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x0, y0, 0, t0);
+	    if (Extend0 && r0 != 0)
+		return R_tensor_cone_apex(pfs, rect, x1, y1, r1, x0, y0, r0, t0);
 	}
     } else {
 	/* Acute cone or cylinder. */
 	double x2, y2, r2, x3, y3, r3;
 
-	if (psh->params.Extend[0]) {
-	    R_outer_circle(pfs, rect, x0, y0, r0, x1, y1, r1, &x2, &y2, &r2);
-	    if (x2 != x0 || y2 != y0) {
-		code = R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x2, y2, r2, t1);
+	if (Extend0) {
+	    R_outer_circle(pfs, rect, x1, y1, r1, x0, y0, r0, &x3, &y3, &r3);
+	    if (x3 != x1 || y3 != y1) {
+		code = R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x3, y3, r3, t0);
 		if (code < 0)
 		    return code;
 	    }
 	}
-	if (psh->params.Extend[1]) {
-	    R_outer_circle(pfs, rect, x1, y1, r1, x0, y0, r0, &x3, &y3, &r3);
-	    if (x3 != x1 || y3 != y1) {
-		code = R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x3, y3, r3, t0);
+	if (Extend1) {
+	    R_outer_circle(pfs, rect, x0, y0, r0, x1, y1, r1, &x2, &y2, &r2);
+	    if (x2 != x0 || y2 != y0) {
+		code = R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x2, y2, r2, t1);
 		if (code < 0)
 		    return code;
 	    }
@@ -1414,7 +1438,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	shade_bbox_transform2fixed(rect, pis, &pfs1.rect);
 	pfs1.maybe_self_intersecting = false;
 
-	code = R_extensions(&pfs1, psh, rect, t[0], t[1]);
+	code = R_extensions(&pfs1, psh, rect, t[0], t[1], psh->params.Extend[0], false);
 	if (code < 0)
 	    return code;
 	{
@@ -1424,7 +1448,10 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	    floatp r1 = psh->params.Coords[5];
 	    
 	    code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, t[0], x1, y1, r1, t[1]);
+	    if (code < 0)
+		return code;
 	}
+	code = R_extensions(&pfs1, psh, rect, t[0], t[1], false, psh->params.Extend[1]);
     } else {
 	/*
 	    For a faster painting, we apply fill adjustment to outer annula only.
