@@ -71,8 +71,6 @@ set_gs_font(
 )
 {
     gs_font *       pfont = (gs_font *)pcs->font->pfont;
-
-    pfont->procs.next_char_glyph = get_gs_next_char;
     gs_setfont(pcs->pgs, pfont);
 }
 
@@ -216,6 +214,7 @@ get_next_char(
     const byte **   ppb,
     uint *          plen,
     gs_char *       pchr,
+    gs_char *       porig_char,
     bool *          pis_space,
     bool            literal,
     gs_point *      pwidth
@@ -236,7 +235,7 @@ get_next_char(
 	*pis_space = (chr == ' ' &&  pcs->font->storage == pcds_internal);
     *ppb = pb;
     *plen = len;
-
+    *porig_char = chr;
     /* check if the code is considered "printable" in the current symbol set */
     if (!is_printable(pcs, chr, literal)) {
         *pis_space = literal;
@@ -531,7 +530,7 @@ pcl_show_chars_slow(
     bool                    wrap = pcs->end_of_line_wrap;
     bool                    is_space = false;
     bool                    use_rmargin = (pcs->cap.x <= rmargin);
-    gs_char                 chr;
+    gs_char                 chr, orig_chr;
     int                     code = 0;
     floatp                  width;
     gs_point                cpt;
@@ -540,7 +539,7 @@ pcl_show_chars_slow(
     cpt.x = pcs->cap.x;
     cpt.y = pcs->cap.y;
 
-    while (get_next_char(pcs, &str, &size, &chr, &is_space, literal, &advance_vector) == 0) {
+    while (get_next_char(pcs, &str, &size, &chr, &orig_chr, &is_space, literal, &advance_vector) == 0) {
         floatp  tmp_x;
 
         /* check if a character was found */
@@ -602,7 +601,6 @@ pcl_show_chars_slow(
         gs_moveto(pgs, tmp_x / pscale->x, cpt.y / pscale->y);
 
         if (chr != 0xffff) {
-
             /* if source is opaque, show and opaque background */
             if (source_opaque)
                 code = show_char_background(pcs, buff);

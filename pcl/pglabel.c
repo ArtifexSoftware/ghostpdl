@@ -55,22 +55,6 @@ hpgl_points_2_plu(const hpgl_state_t *pgls, floatp points)
 
 /* ------ Next-character procedure ------ */
 
-/*
- * Parse one character from a string.  Return 2 if the string is exhausted,
- * 0 if a character was parsed, -1 if the string ended in the middle of
- * a double-byte character.
- */
-private int
-hpgl_next_char(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
-{	
-    if ( penum->index == 1 )
-        return 2;
-    *pglyph = gs_no_glyph;
-    *pchr = penum->text.data.chars[0];
-    penum->index++;
-    return 0;
-}
-
 /* is it a printable character - duplicate of pcl algorithm in
    pctext.c */
 private bool
@@ -735,7 +719,6 @@ hpgl_print_char(
 	/*
 	 * Patch the next-character procedure.
 	 */
-	pfont->procs.next_char_glyph = hpgl_next_char; /* FIX ME (void *) */
 	gs_setfont(pgs, pfont);
 
 	/*
