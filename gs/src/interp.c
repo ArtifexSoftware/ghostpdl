@@ -41,6 +41,7 @@
 #include "iddict.h"
 #include "isave.h"
 #include "istack.h"
+#include "itoken.h"
 #include "iutil.h"		/* for array_get */
 #include "ivmspace.h"
 #include "dstack.h"
@@ -54,9 +55,6 @@
  * slightly slower when not packed.
  */
 #define PACKED_SPECIAL_OPS 1
-
-/**************** HACK ****************/
-#define INTERP_SCAN_OPTIONS SCAN_PROCESS_DSC_COMMENTS
 
 /*
  * Pseudo-operators (procedures of type t_oparray) record
@@ -73,13 +71,6 @@ extern_st(st_ref_stack);
 public_st_dict_stack();
 public_st_exec_stack();
 public_st_op_stack();
-
-/* Other imported procedures */
-extern int ztokenexec_continue(P1(i_ctx_t *));
-extern int ztoken_handle_comment(P8(i_ctx_t *i_ctx_p, const ref *fop,
-				    scanner_state *sstate, const ref *ptoken,
-				    int scan_code, bool save, bool push_file,
-				    op_proc_t cont));
 
 /* 
  * The procedure to call if an operator requests rescheduling.
@@ -1276,11 +1267,13 @@ remap:		    if (iesp + 2 >= estop) {
 		scanner_state sstate;
 
 		check_read_known_file(s, IREF, return_with_error_iref);
-	      rt:if (iosp >= ostop)	/* check early */
+	    rt:
+		if (iosp >= ostop)	/* check early */
 		    return_with_stackoverflow_iref();
 		osp = iosp;	/* scan_token uses ostack */
-		scanner_state_init_options(&sstate, INTERP_SCAN_OPTIONS);
-	      again:code = scan_token(i_ctx_p, s, &token, &sstate);
+		scanner_state_init_options(&sstate, i_ctx_p->scanner_options);
+	    again:
+		code = scan_token(i_ctx_p, s, &token, &sstate);
 		iosp = osp;	/* ditto */
 		switch (code) {
 		    case 0:	/* read a token */

@@ -21,6 +21,7 @@
 #include "string_.h"
 #include "ghost.h"
 #include "oper.h"
+#include "dstack.h"		/* for dict_find_name */
 #include "estack.h"
 #include "gsstruct.h"		/* for iscan.h */
 #include "stream.h"
@@ -28,8 +29,10 @@
 #include "store.h"
 #include "strimpl.h"		/* for sfilter.h */
 #include "sfilter.h"		/* for iscan.h */
+#include "idict.h"
 #include "iname.h"
 #include "iscan.h"
+#include "itoken.h"		/* for prototypes */
 
 /* <file> token <obj> -true- */
 /* <string> token <post> <obj> -true- */
@@ -253,6 +256,7 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
     const char *proc_name;
     scanner_state *pstate;
     os_ptr op;
+    ref *ppcproc;
     int code;
 
     switch (scan_code) {
@@ -265,7 +269,15 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
     default:
 	return_error(e_Fatal);	/* can't happen */
     }
-    check_ostack(2);		/* ****** WRONG, RETURNS ON OVERFLOW ****** */
+    /*
+     * We can't use check_ostack here, because it returns on overflow.
+     */
+    /*check_ostack(2);*/
+    if (ostop - osp < 2) {
+	code = ref_stack_extend(&o_stack, 2);
+	if (code < 0)
+	    return code;
+    }
     check_estack(4);
     code = name_enter_string(proc_name, esp + 4);
     if (code < 0)
@@ -278,29 +290,77 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
 	*pstate = *sstate;
     } else
 	pstate = sstate;
+    /* Save the token now -- it might be on the e-stack. */
+    if (!pstate->s_pstack)
+	osp[2] = *ptoken;
     /*
-     * Push the file and comment string on the o-stack.
-     * If we were inside { }, the comment string is already on the stack.
-     */
-    if (pstate->s_pstack) {
-	op = ++osp;
-	*op = op[-1];
-    } else {
-	op = osp += 2;
-	*osp = *ptoken;
-    }
-    op[-1] = *fop;
-    /*
-     * Push the continuation, scanner state, file, and callout name on the
-     * e-stack.
+     * Push the continuation, scanner state, file, and callout procedure
+     * on the e-stack.
      */
     make_op_estack(esp + 1, cont);
     make_istruct(esp + 2, 0, pstate);
     esp[3] = *fop;
     r_clear_attrs(esp + 3, a_executable);
-    r_set_attrs(esp + 4, a_executable);	/* see name_ref above */
-    esp += 4;
+    ppcproc = dict_find_name(esp + 4);
+    if (ppcproc == 0) {
+	/*
+	 * This can only happen during initialization.
+	 * Pop the comment string from the o-stack if needed (see below).
+	 */
+	if (pstate->s_pstack)
+	    --osp;
+	esp += 3;		/* do run the continuation */
+    } else {
+	/*
+	 * Push the file and comment string on the o-stack.
+	 * If we were inside { }, the comment string is already on the stack.
+	 */
+	if (pstate->s_pstack) {
+	    op = ++osp;
+	    *op = op[-1];
+	} else {
+	    op = osp += 2;
+	    /* *op = *ptoken; */	/* saved above */
+	}
+	op[-1] = *fop;
+	esp[4] = *ppcproc;
+	esp += 4;
+    }
     return o_push_estack;
+}
+
+/*
+ * Update the cached scanner_options in the context state after doing a
+ * setuserparams.  (We might move this procedure somewhere else eventually.)
+ */
+int
+ztoken_scanner_options(const ref *upref, int old_options)
+{
+    typedef struct named_scanner_option_s {
+	const char *pname;
+	int option;
+    } named_scanner_option_t;
+    static const named_scanner_option_t named_options[2] = {
+	{"ProcessComment", SCAN_PROCESS_COMMENTS},
+	{"ProcessDSCComment", SCAN_PROCESS_DSC_COMMENTS}
+    };
+    int options = old_options;
+    int i;
+
+    for (i = 0; i < countof(named_options); ++i) {
+	const named_scanner_option_t *pnso = &named_options[i];
+	ref *ppcproc;
+	int code = dict_find_string(upref, pnso->pname, &ppcproc);
+
+	/* Update the options only if the parameter has changed. */
+	if (code >= 0) {
+	    if (r_has_type(ppcproc, t_null))
+		options &= ~pnso->option;
+	    else
+		options |= pnso->option;
+	}
+    }
+    return options;
 }
 
 /* ------ Initialization procedure ------ */

@@ -231,6 +231,7 @@ iparray_h=$(PSSRC)iparray.h
 iscanbin_h=$(PSSRC)iscanbin.h
 iscannum_h=$(PSSRC)iscannum.h
 istream_h=$(PSSRC)istream.h
+itoken_h=$(PSSRC)itoken.h
 main_h=$(PSSRC)main.h $(imain_h) $(iminst_h)
 sbwbs_h=$(PSSRC)sbwbs.h
 shcgen_h=$(PSSRC)shcgen.h
@@ -371,8 +372,10 @@ $(PSOBJ)zsysvm.$(OBJ) : $(PSSRC)zsysvm.c $(GH)\
  $(ialloc_h) $(ivmspace_h) $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)zsysvm.$(OBJ) $(C_) $(PSSRC)zsysvm.c
 
-$(PSOBJ)ztoken.$(OBJ) : $(PSSRC)ztoken.c $(OP)\
- $(estack_h) $(files_h) $(gsstruct_h) $(iscan_h)\
+$(PSOBJ)ztoken.$(OBJ) : $(PSSRC)ztoken.c $(OP) $(string__h)\
+ $(gsstruct_h)\
+ $(dstack_h) $(estack_h) $(files_h)\
+ $(idict_h) $(iname_h) $(iscan_h) $(itoken_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)ztoken.$(OBJ) $(C_) $(PSSRC)ztoken.c
 
@@ -1061,7 +1064,7 @@ $(PSD)usparam.dev : $(INT_MAK) $(ECHOGS_XE) $(usparam_)
 $(PSOBJ)zusparam.$(OBJ) : $(PSSRC)zusparam.c $(OP) $(memory__h) $(string__h)\
  $(gscdefs_h) $(gsfont_h) $(gsstruct_h) $(gsutil_h) $(gxht_h)\
  $(ialloc_h) $(icontext_h) $(idict_h) $(idparam_h) $(iparam_h)\
- $(iname_h) $(iutil2_h) $(ivmem2_h)\
+ $(iname_h) $(itoken_h) $(iutil2_h) $(ivmem2_h)\
  $(dstack_h) $(estack_h) $(store_h)
 	$(PSCC) $(PSO_)zusparam.$(OBJ) $(C_) $(PSSRC)zusparam.c
 
@@ -1691,7 +1694,7 @@ $(PSOBJ)interp.$(OBJ) : $(PSSRC)interp.c $(GH) $(memory__h) $(string__h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iastruct_h) $(icontext_h) $(icremap_h) $(iddict_h) $(igstate_h)\
  $(iname_h) $(inamedef_h) $(interp_h) $(ipacked_h)\
- $(isave_h) $(iscan_h) $(istack_h) $(iutil_h) $(ivmspace_h)\
+ $(isave_h) $(iscan_h) $(istack_h) $(itoken_h) $(iutil_h) $(ivmspace_h)\
  $(oper_h) $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)interp.$(OBJ) $(C_) $(PSSRC)interp.c
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,6 +35,7 @@
 #include "iparam.h"
 #include "dstack.h"
 #include "iname.h"
+#include "itoken.h"
 #include "iutil2.h"
 #include "ivmem2.h"
 #include "store.h"
@@ -480,8 +481,12 @@ zsetuserparams(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code = set_user_params(i_ctx_p, op);
 
-    if (code >= 0)
+    if (code >= 0) {
+	/* Update cached scanner options. */
+	i_ctx_p->scanner_options =
+	    ztoken_scanner_options(op, i_ctx_p->scanner_options);
 	pop(1);
+    }
     return code;
 }
 

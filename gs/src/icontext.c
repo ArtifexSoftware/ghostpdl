@@ -145,6 +145,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
 	    goto x2;
 	/* PostScript code initializes the user parameters. */
     }
+    pcst->scanner_options = 0;
     /* The initial stdio values are bogus.... */
     make_file(&pcst->stdio[0], a_readonly | avm_invalid_file_entry, 1,
 	      invalid_file_entry);

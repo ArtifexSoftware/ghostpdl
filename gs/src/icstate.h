@@ -50,6 +50,7 @@ struct gs_context_state_s {
     int in_superexec;		/* # of levels of superexec */
     /* View clipping is handled in the graphics state. */
     ref userparams;		/* t_dictionary */
+    int scanner_options;	/* derived from userparams */
     ref stdio[3];		/* t_file */
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;
