@@ -1074,6 +1074,20 @@ someproc(... <b><tt>gx_device *dev</tt></b> ...)<br>
 <b><tt>}</tt></b>
 </blockquote>
 
+<p>
+Don't "shadow" a local variable or procedure parameter with an inner local
+variable of the same name.  I.e., don't do this:
+
+<blockquote>
+<b><tt>int</tt></b><br>
+someproc(... <b><tt>int x</tt></b> ...)<br>
+<b><tt>{</tt></b><br>
+&nbsp;&nbsp;&nbsp;...<br>
+<b><tt>&nbsp;&nbsp;&nbsp;int x;</tt></b><br>
+&nbsp;&nbsp;&nbsp;...<br>
+<b><tt>}</tt></b>
+</blockquote>
+
 <h4><a name="Compiler_warnings"></a>Compiler warnings</h4>
 
 <p>
