@@ -443,7 +443,7 @@ gstate_set_pattern_cache(gs_state * pgs, gx_pattern_cache * pcache)
 private void
 gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
-    if (ctile->id != gx_no_bitmap_id) {
+    if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
 	gs_memory_t *mem = pcache->memory;
 	gx_device_memory mdev;
 
