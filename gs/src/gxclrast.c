@@ -1937,15 +1937,11 @@ read_set_ht_data(command_buf_t *pcb, uint *pdata_index, gx_ht_order *porder,
 }
 
 private int
-read_set_transparency_source(command_buf_t *pcb, gs_transparency_source_t *pts,
-			     const char *member_name)
+read_set_transparency_mask(command_buf_t *pcb, gs_transparency_source_t *pts,
+			   const char *member_name)
 {
     const byte *cbp = pcb->ptr;
-    float alpha;
 
-    cmd_get_value(alpha, cbp);
-    pts->alpha = alpha;
-    if_debug2('L', " %s.alpha=%g\n", member_name, alpha);
     /****** mask is NYI ******/
     pcb->ptr = cbp;
     return 0;
@@ -2007,16 +2003,24 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 	*pnotes = (segment_notes)(cb & 0x3f);
 	if_debug1('L', " notes=%d\n", *pnotes);
     }
-    if (mask & opacity_known) {
+    if (mask & opacity_alpha_known) {
+	cmd_get_value(pis->opacity.alpha, cbp);
+	if_debug1('L', " opacity.alpha=%g\n", pis->opacity.alpha);
+    }
+    if (mask & opacity_mask_known) {
 	pcb->ptr = cbp;
-	code = read_set_transparency_source(pcb, &pis->opacity, "opacity");
+	code = read_set_transparency_mask(pcb, &pis->opacity, "opacity");
 	if (code < 0)
 	    return code;
 	cbp = pcb->ptr;
     }
-    if (mask & shape_known) {
+    if (mask & shape_alpha_known) {
+	cmd_get_value(pis->shape.alpha, cbp);
+	if_debug1('L', " shape.alpha=%g\n", pis->shape.alpha);
+    }
+    if (mask & shape_mask_known) {
 	pcb->ptr = cbp;
-	code = read_set_transparency_source(pcb, &pis->shape, "shape");
+	code = read_set_transparency_mask(pcb, &pis->shape, "shape");
 	if (code < 0)
 	    return code;
 	cbp = pcb->ptr;

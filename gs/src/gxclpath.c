@@ -270,6 +270,7 @@ cmd_write_transparency_mask(gx_device_clist_writer *cdev,
 			    const gs_soft_mask_t *psm)
 {
     /****** NYI ******/
+    return 0;
 }
 
 /*
@@ -314,8 +315,8 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 	*punknown |= opacity_alpha_known;
 	state_update(opacity.alpha);
     }
-    if (cmd_check_transparency_mask(&cdev->imager_state.opacity.mask,
-				    &pis->opacity.mask)
+    if (cmd_check_transparency_mask(cdev->imager_state.opacity.mask,
+				    pis->opacity.mask)
 	) {
 	*punknown |= opacity_mask_known;
 	state_update(opacity.mask);
@@ -324,8 +325,8 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 	*punknown |= shape_alpha_known;
 	state_update(shape.alpha);
     }
-    if (cmd_check_transparency_mask(&cdev->imager_state.shape.mask,
-				    &pis->shape.mask)
+    if (cmd_check_transparency_mask(cdev->imager_state.shape.mask,
+				    pis->shape.mask)
 	) {
 	*punknown |= shape_mask_known;
 	state_update(shape.mask);
