@@ -230,7 +230,7 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
 		    (gs_font_type42 *)font, &m, log2_scale);
 	if (code < 0)
-	    return code; /* fixme : propagate error. */
+	    return code;
     }
 #endif
     pair->memory = 0;

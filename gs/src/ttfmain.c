@@ -524,7 +524,6 @@ private void MoveGlyphOutline(TGlyph_Zone *pts, int nOffset, ttfGlyphOutline *ou
     TransformF26Dot6PointFix(&p, out->start.x, out->start.y, m);
     out->start.x = p.x;
     out->start.y = p.y;
-    /* fixme: transform the bbox in 'out'. */
 }
 
 private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyphIndex, 
@@ -1073,7 +1072,6 @@ FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
     FloatPoint p1;
     FloatMatrix m = *m1;
 
-    /* fixme : grid_fit==false is ignored. */
     out.contourCount = 0;
     out.pointCount = 0;
     out.bCompound = FALSE;

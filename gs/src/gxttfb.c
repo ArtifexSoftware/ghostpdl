@@ -350,7 +350,6 @@ int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_fo
     bool atp = gs_currentaligntopixels(pfont->dir);
 
     decompose_matrix(char_tm, log2_scale, atp, &char_size, &subpix_origin, &post_transform);
-    /* fixme : AlignToPixels==1 (log2_scale) isn't processed yet. */
     switch(ttfFont__Open(tti, this, &r->super, nTTC, char_size.x, char_size.y, 
 			!gs_currentgridfittt(pfont->dir))) {
 	case fNoError:
@@ -482,7 +481,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
 	case fUnimplemented:
 	    return_error(gs_error_unregistered);
 	case fPatented:
-	    /* The returned outline did not apply a bytecode (it is "unhinted"). */
+	    /* The returned outline did not apply a bytecode (it is not grid-fitted). */
 	    WarnPatented(pfont, ttf, "Some glyphs of the font");
 	    return 0;
 	default:
