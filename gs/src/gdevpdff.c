@@ -1152,9 +1152,13 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
      * Embedded TrueType fonts use a 1000-unit character space, but the
      * font itself uses a 1-unit space.  Compensate for this here.
      */
-    if (font->FontType == ft_TrueType) {
+    switch (font->FontType) {
+    case ft_TrueType:
+    case ft_CID_TrueType:
 	gs_make_scaling(1000.0, 1000.0, &smat);
 	pmat = &smat;
+    default:
+	break;
     }
     /*
      * See the note on FONT_IS_ADOBE_ROMAN / FONT_USES_STANDARD_ENCODING
