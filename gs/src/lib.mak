@@ -1,4 +1,4 @@
-#    Copyright (C) 1995-2003 artofcode LLC. All rights reserved.
+#    Copyright (C) 1995-2004 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -255,7 +255,7 @@ $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(GXERR)\
-  $(gslibctx_h)
+  $(gslibctx_h) $(stdio__h)
 	$(GLCC) $(GLO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
   
 $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(GXERR)\
