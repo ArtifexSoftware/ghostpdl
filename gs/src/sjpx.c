@@ -176,30 +176,41 @@ copy_row_yuv(unsigned char *dest, jas_image_t *image,
     int count = (bytes/3) * 3;
     int shift[3];
     int clut[3];
+    int hstep[3],vstep[3];
     int p[3],q[3];
 
     /* get the component mapping */
     clut[0] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_Y);
-    clut[1] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CB);
-    clut[2] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CR);
-    /* shift each component down to 8 bits */
-    for (i = 0; i < 3; i++)
-	shift[i] = max(jas_image_cmptprec(image, i) - 8, 0);
+    clut[1] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CR);
+    clut[2] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CB);
 
+    for (i = 0; i < 3; i++) {
+	/* shift each component down to 8 bits */
+	shift[i] = max(jas_image_cmptprec(image, clut[i]) - 8, 0);
+	/* repeat subsampled pixels */
+	hstep[i] = jas_image_cmpthstep(image, clut[i]);
+	vstep[i] = jas_image_cmptvstep(image, clut[i]);
+    }
     for (i = 1; i <= count; i+=3) {
 	/* read the sample */
-	dlprintf2("calling readcmptsample with x = %d, y = %d\n", x, y);
-	p[0] = jas_image_readcmptsample(image, clut[0], x, y);
-	p[1] = jas_image_readcmptsample(image, clut[1], x, y);
-	p[2] = jas_image_readcmptsample(image, clut[2], x, y);
+	//dlprintf2("calling readcmptsample with x = %d, y = %d\n", x, y);
+	p[0] = jas_image_readcmptsample(image, clut[0], x/hstep[0], y/vstep[0]);
+	p[1] = jas_image_readcmptsample(image, clut[1], x/hstep[1], y/vstep[1]);
+	p[2] = jas_image_readcmptsample(image, clut[2], x/hstep[2], y/vstep[2]);
 	/* rotate to RGB */
+#if 0
 	q[0] = (1/1.772) * (p[0] + 1.402 * p[2]);
 	q[1] = (1/1.772) * (p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
 	q[2] = (1/1.772) * (p[0] + 1.772 * p[1]);
+#else
+	q[0] = (1/1.772) * ((double)p[0] + 1.402 * p[2]);
+	q[1] = (1/1.772) * ((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
+	q[2] = (1/1.772) * ((double)p[0] - 1.772 * p[1]);
+#endif
 	/* write out the pixel */
 	dest[i] = q[0] >> shift[0];
 	dest[i+1] = q[1] >> shift[1];
-	dest[i+2] = q[3] >> shift[2];
+	dest[i+2] = q[2] >> shift[2];
 	x++;
     }
 
@@ -224,6 +235,62 @@ copy_row_default(unsigned char *dest, jas_image_t *image,
     return count;
 }
 
+/* buffer the input stream into our state */
+private int
+s_jpxd_buffer_input(stream_jpxd_state *const state, stream_cursor_read *pr,
+		       long bytes)
+{
+    /* grow internal buffer if necessary */
+    if (bytes > state->bufsize - state->buffill) {
+        int newsize = state->bufsize;
+        unsigned char *newbuf = NULL;
+        while (newsize - state->buffill < bytes)
+            newsize <<= 1;
+        newbuf = (unsigned char *)gs_malloc(newsize, 1, 
+						"JPXDecode temp buffer");
+        /* TODO: check for allocation failure */
+        memcpy(newbuf, state->buffer, state->buffill);
+        gs_free(state->buffer, state->bufsize, 1,
+					"JPXDecode temp buffer");
+        state->buffer = newbuf;
+        state->bufsize = newsize;
+    }
+
+    /* copy requested amount of data and return */
+    memcpy(state->buffer + state->buffill, pr->ptr + 1, bytes);
+    state->buffill += bytes;
+    pr->ptr += bytes;
+    return bytes;
+}
+
+/* decode the compressed image data saved in our state */
+private int
+s_jpxd_decode_image(stream_jpxd_state *const state)
+{
+    jas_stream_t *stream = state->stream;
+    jas_image_t *image = NULL;
+
+    /* see if an image is available */
+    if (stream != NULL) {
+	image = jas_image_decode(stream, -1, 0);
+	if (image == NULL) {
+	    dprintf("unable to decode JPX image data.\n");
+	    return ERRC;
+	}
+	state->image = image;
+        state->offset = 0;
+        jas_stream_close(stream);
+        state->stream = NULL;
+
+#ifdef DEBUG_JPX
+	dump_jas_image(image);
+#endif
+
+    }
+
+    return 0;
+}
+
 /* process a section of the input and return any decoded data.
    see strimpl.h for return codes.
  */
@@ -238,7 +305,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
     int status = 0;
     
     /* note that the gs stream library expects offset-by-one
-       indexing of the buffers */
+       indexing of its buffers while we use zero indexing */
        
     /* JasPer has its own stream library, but there's no public
        api for handing it pieces. We need to add some plumbing 
@@ -248,78 +315,50 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
     
     /* pass all available input to the decoder */
     if (in_size > 0) {
-        if (in_size > state->bufsize - state->buffill) {
-        	int newsize = state->bufsize;
-        	unsigned char *newbuf = NULL;
-        	while (newsize - state->buffill < in_size)
-        		newsize <<= 1;
-        	newbuf = (unsigned char *)gs_malloc(newsize, 1, 
-						"JPXDecode temp buffer");
-        	/* TODO: check for allocation failure */
-        	memcpy(newbuf, state->buffer, state->buffill);
-        	gs_free(state->buffer, state->bufsize, 1,
-					"JPXDecode temp buffer");
-        	state->buffer = newbuf;
-        	state->bufsize = newsize;
-        }
-        memcpy(state->buffer + state->buffill, pr->ptr + 1, in_size);
-        state->buffill += in_size;
-        pr->ptr += in_size;
+	s_jpxd_buffer_input(state, pr, in_size);
     }
     if ((last == 1) && (stream == NULL) && (state->image == NULL)) {
-	/* try to turn our buffer into a stream */
+	/* turn our buffer into a stream */
 	stream = jas_stream_memopen(state->buffer, state->bufsize);
 	state->stream = stream;
     }
     if (out_size > 0) {
         if (state->image == NULL) {
-            jas_image_t *image = NULL;
-            /* see if an image is available */
-            if (stream != NULL) {
-                image = jas_image_decode(stream, -1, 0);
-                if (image == NULL) {
-		    dprintf("unable to decode JPX image data.\n");
-		    return ERRC;
-                }
-                state->image = image;
-                state->offset = 0;
-                jas_stream_close(stream);
-                state->stream = NULL;
-#ifdef DEBUG_JPX
-		dump_jas_image(image);
-#endif
-            }
+	    status = s_jpxd_decode_image(state);
         }
         if (state->image != NULL) {
             jas_image_t *image = state->image;
-            long image_size = jas_image_width(image)*jas_image_height(image);
+	    int numcmpts = jas_image_numcmpts(image);
+	    int stride = numcmpts*jas_image_width(image);
+            long image_size = stride*jas_image_height(image);
 	    int clrspc = jas_image_clrspc(image);
-            long usable = min(image_size - state->offset, out_size);
-	    int x,y;
-            /* copy data out of the decoded image, if any */
-	    y = state->offset / jas_image_width(image);
-	    x = state->offset - y * jas_image_width(image);
-	    if (x >= jas_image_width(image)) { x = 0; y += 1; }
+	    int x, y;
+	    long usable, done;
+	    y = state->offset / stride;
+	    x = state->offset - y*stride; /* bytes, not samples */
+	    usable = min(out_size, stride - x);
+	    x = x/numcmpts;               /* now samples */
+	    /* copy data out of the decoded image data */
 	    /* be lazy and only write the rest of the current row */
-	    usable = min(usable, jas_image_width(image) - x);
 	    switch (jas_clrspc_fam(clrspc)) {
 		case JAS_CLRSPC_FAM_RGB:
-		    pw->ptr += copy_row_rgb(pw->ptr, image, x, y, usable);
+		    done = copy_row_rgb(pw->ptr, image, x, y, usable);
 		    break;
 		case JAS_CLRSPC_FAM_YCBCR:
-		    pw->ptr += copy_row_yuv(pw->ptr, image, x, y, usable);
+		    done = copy_row_yuv(pw->ptr, image, x, y, usable);
 		    break;
 		case JAS_CLRSPC_FAM_GRAY:
-		    pw->ptr += copy_row_gray(pw->ptr, image, x, y, usable);
+		    done = copy_row_gray(pw->ptr, image, x, y, usable);
 		    break;
 		case JAS_CLRSPC_FAM_XYZ:
 		case JAS_CLRSPC_FAM_LAB:
 		case JAS_CLRSPC_FAM_UNKNOWN:
 		default:
-		    pw->ptr += copy_row_default(pw->ptr, image, x, y, usable);
+		    done = copy_row_default(pw->ptr, image, x, y, usable);
 		    break;
 	    }
-            state->offset += usable;
+	    pw->ptr += done;
+            state->offset += done;
             status = (state->offset < image_size) ? 1 : 0;
         }
     }    
@@ -356,6 +395,9 @@ s_jpxd_set_defaults(stream_state *ss)
     state->stream = NULL;
     state->image = NULL;
     state->offset = 0;
+    state->buffer = NULL;
+    state->bufsize = 0;
+    state->buffill = 0;
 }
 
 

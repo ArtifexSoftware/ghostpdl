@@ -1,4 +1,4 @@
-/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2003-2004 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -36,7 +36,8 @@ typedef struct stream_jpxd_state_s
     stream_state_common;	/* a define from scommon.h */
     jas_image_t *image;
     jas_stream_t *stream;
-    long offset; /* offset into the image bitmap of the next byte to be returned */
+    long offset; /* offset into the image bitmap of the next
+                    byte to be returned */
 
     unsigned char *buffer; /* temporary buffer for compressed data */
     long bufsize; /* total size of the buffer */
