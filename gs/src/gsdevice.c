@@ -392,7 +392,7 @@ gs_make_null_device(gx_device_null *dev_null, const gx_device *dev,
 		   mem, true);
     dev_null->target = dev;
     if (dev)
-	gx_device_copy_color_params(dev_null, dev);
+	gx_device_copy_color_params((gx_device *)dev_null, dev);
 }
 
 /* Select a null device. */

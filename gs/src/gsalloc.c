@@ -618,7 +618,7 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
 	new_obj = obj;
     } else /* try and trim the object -- but only if room for a dummy header */
 	if (new_size_rounded + sizeof(obj_header_t) <= obj_align_round(old_size)) {
-	    trim_obj(mem, (obj_header_t *)obj, (uint)new_size_rounded);
+	    trim_obj(imem, (obj_header_t *)obj, (uint)new_size_rounded);
 	    new_obj = obj;
 	}
     if (new_obj) {
