@@ -436,7 +436,7 @@ envBDF begin
            /charname remarg def
 	 (ENCODING) getline
 	   /eindex iarg def
-	   eindex 0 ge
+	   eindex dup 0 ge exch 255 le and
 	    { charname /charname StandardEncoding eindex get def
 	      charname /.notdef eq eindex 0 gt and
 	       { /charname (A) eindex =string cvs concatstrings cvn def
@@ -469,15 +469,18 @@ envBDF begin
 % Read the bits for this character.
 	 /raster bbw 7 add 8 idiv def
 	 /cbits raster bbh mul string def
-	 0 raster cbits length raster sub
-	  { cbits exch raster getinterval
-	    bdfile buffer readline not
-	     { (EOF in bitmap\n) print stop } if
-		% stack has <cbits.interval> <buffer.interval>
-	    0 () /SubFileDecode filter
-	    exch 2 copy readhexstring pop pop pop closefile
-	  } for
-	 (ENDCHAR) getline
+	 cbits length 0 gt
+	  { 0 raster cbits length raster sub
+	      { cbits exch raster getinterval
+	        bdfile buffer readline not
+	         { (EOF in bitmap\n) print stop } if
+		    % stack has <cbits.interval> <buffer.interval>
+	        0 () /SubFileDecode filter
+	        exch 2 copy readhexstring pop pop pop closefile
+	      } for
+	  } if
+
+         (ENDCHAR) getline
 
 % Save the character data.
 	 chardata charname [swx swy bbw bbh bbox bboy cbits] put
@@ -517,8 +520,8 @@ envBDF begin
 	 bbox neg   bboy neg			% origin x & y
 	 	% Account for lenIV when converting the outline.
 	 outline  lenIV  outline length lenIV sub  getinterval
-	 type1imagepath
-	 length lenIV add
+         type1imagepath
+         length lenIV add
 	 outline exch 0 exch getinterval
 
 % Check for a fixed width font.
