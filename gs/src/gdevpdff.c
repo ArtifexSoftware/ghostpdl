@@ -874,7 +874,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
     if (desc.Ascent == 0)
 	desc.Ascent = desc.FontBBox.q.y;
     desc.Descent = desc.FontBBox.p.y;
-    if (!(desc.Flags & FONT_IS_ALL_CAPS) &&
+    if (!(desc.Flags & (FONT_IS_SYMBOLIC | FONT_IS_ALL_CAPS)) &&
 	(small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9)
 	)
 	desc.Flags |= FONT_IS_SMALL_CAPS;
