@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Lower-level path filling procedures */
 #include <assert.h>
+#include <limits.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -788,7 +789,7 @@ init_line_list(ll_ptr ll, gs_memory_t * mem)
     ll->h_list0 = ll->h_list1 = 0;
     ll->margin_set0.margin_list = ll->margin_set1.margin_list = 0;
     ll->margin_set0.margin_touched = ll->margin_set1.margin_touched = 0;
-    ll->margin_set0.y = ll->margin_set1.y = 0;
+    ll->margin_set0.y = ll->margin_set1.y = LONG_MIN;
     ll->free_margin_list = 0;
     ll->local_margin_alloc_count = 0;
     ll->margin_set0.sect = ll->local_section0;
@@ -1796,7 +1797,8 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
     y = yll->start.y;		/* first Y value */
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
-   while (1) {
+    ll->margin_set0.y = fixed_pixround(y) - fixed_half;
+    while (1) {
 	fixed y1;
 	active_line *endp, *alp, *stopx, *plp = NULL;
 	fixed x;
