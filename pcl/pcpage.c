@@ -900,7 +900,6 @@ get_default_paper(
     pcs->wide_a4 = false;
     for (i = 0; i < countof(paper_sizes); i++)
         if (!pjl_compare(psize, paper_sizes[i].pname)) {
-	    pcl_paper_size_t *ps = &(paper_sizes[i].psize);
 	    /* we are not sure if widea4 applies to all paper sizes */
 	    if (!pjl_compare(pjl_get_envvar(pcs->pjls, "widea4"), "YES"))
 		pcs->wide_a4 = true;
