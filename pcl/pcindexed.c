@@ -1,22 +1,6 @@
-/*
- * Copyright (C) 1998 Aladdin Enterprises.
- * All rights reserved.
- *
- * This file is part of Aladdin Ghostscript.
- *
- * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
- * or distributor accepts any responsibility for the consequences of using it,
- * or for whether it serves any particular purpose or works at all, unless he
- * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
- * License (the "License") for full details.
- *
- * Every copy of Aladdin Ghostscript must include a copy of the License,
- * normally in a plain ASCII text file named PUBLIC.  The License grants you
- * the right to copy, modify and redistribute Aladdin Ghostscript, but only
- * under certain conditions described in the License.  Among other things, the
- * License requires that the copyright notice and this notice be preserved on
- * all copies.
- */
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights
+   reserved.  Unauthorized use, copying, and/or distribution
+   prohibited.  */
 
 /* pcindexed.c - PCL indexed color space implementation */
 #include "gx.h"
@@ -133,7 +117,7 @@ alloc_indexed_cspace(
                        "allocate pcl indexed color space"
                        );
     pindexed->rc.free = free_indexed_cspace;
-    pindexed->fixed = false;
+    pindexed->pfixed = false;
     pcl_cs_base_init_from(pindexed->pbase, pbase);
     pindexed->pcspace = 0;
     pindexed->num_entries = 0;
@@ -201,7 +185,7 @@ unshare_indexed_cspace(
     pnew = *ppindexed;
 
     /* copy fields various and sundry */
-    pnew->fixed = pindexed->fixed;
+    pnew->pfixed = pindexed->pfixed;
     pnew->cid = pindexed->cid;
     pnew->num_entries = pindexed->num_entries;
     memcpy(pnew->palette.data, pindexed->palette.data, 3 * num_entries);
@@ -593,7 +577,7 @@ pcl_cs_indexed_set_norm_and_Decode(
     int                     code = 0;
 
     /* ignore request if palette is fixed */
-    if (pindexed->fixed)
+    if (pindexed->pfixed)
         return 0;
 
     /* get a unique copy of the color space */
@@ -694,7 +678,7 @@ pcl_cs_indexed_set_num_entries(
     int                 code = 0;
 
     /* ignore request if palette is fixed */
-    if (pindexed->fixed)
+    if (pindexed->pfixed)
         return 0;
 
     /*
@@ -804,7 +788,7 @@ pcl_cs_indexed_set_palette_entry(
     int                 i;
 
     /* ignore request if palette is fixed */
-    if (pindexed->fixed)
+    if (pindexed->pfixed)
         return 0;
 
     /*
@@ -911,11 +895,12 @@ pcl_cs_indexed_set_pen_width(
  *
  * Returns 0 if successful, < 0 in case of error.
  */
+
   int
 pcl_cs_indexed_build_cspace(
     pcl_cs_indexed_t **     ppindexed,
     const pcl_cid_data_t *  pcid,
-    bool                    fixed,
+    bool                    pfixed,
     bool                    gl2,
     gs_memory_t *           pmem
 )
@@ -928,13 +913,12 @@ pcl_cs_indexed_build_cspace(
     pcl_cs_base_t *         pbase = 0;
     bool                    is_default = false;
     int                     code = 0;
-
     /*
      * Check if the default color space is being requested. Since there are
      * only three fixed spaces, it is sufficient to check that palette is
      * fixed and has 1-bit per pixel.
      */
-    if (fixed && (pcid->u.hdr.bits_per_index == dflt_cid_hdr.bits_per_index)) {
+    if (pfixed && (pcid->u.hdr.bits_per_index == dflt_cid_hdr.bits_per_index)) {
         is_default = true;
         if (pdflt_cs_indexed != 0) {
             pcl_cs_indexed_copy_from(*ppindexed, pdflt_cs_indexed);
@@ -1002,7 +986,7 @@ pcl_cs_indexed_build_cspace(
     pcl_cs_indexed_set_num_entries(ppindexed, 1L << bits, gl2);
 
     /* now can indicate if the palette is fixed */
-    pindexed->fixed = fixed;
+    pindexed->pfixed = pfixed;
 
     /* record if this is the default */
     if (is_default)
@@ -1070,7 +1054,7 @@ pcl_cs_indexed_build_special(
     if ((code = alloc_indexed_cspace(ppindexed, pbase, pmem)) < 0)
         return code;
     pindexed = *ppindexed;
-    pindexed->fixed = false;
+    pindexed->pfixed = false;
     pindexed->cid = cid;
     pindexed->num_entries = 2;
 
