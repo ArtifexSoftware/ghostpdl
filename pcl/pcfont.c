@@ -21,6 +21,7 @@
 #include "gscoord.h"
 #include "gspaint.h"
 #include "gspath.h"
+#include "gspath2.h"
 #include "gsstate.h"
 #include "gsutil.h"
 #include "gxfixed.h"
@@ -42,11 +43,14 @@
 
 
 /*
- * Decache the HMI after resetting the font.
+ * Decache the HMI after resetting the font.  According to TRM 5-22,
+ * this always happens, regardless of how the HMI was set; formerly,
+ * we only invalidated the HMI if it was set from the font rather than
+ * explicitly.
  */
 #define pcl_decache_hmi(pcls)\
   do {\
-    if ( pcls->hmi_set == hmi_set_from_font )\
+    /*if ( pcls->hmi_set == hmi_set_from_font )*/\
       pcls->hmi_set = hmi_not_set;\
   } while (0)\
 
@@ -186,21 +190,27 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 		    move = 0.0;
 		  }
 		gs_currentpoint(pgs, &pt);
-		/* Compensate for the fact that everything is scaled. */
-		/* We should really handle this by scaling the font.... */
-		if ( (pt.x + width.x) * pscale->x > pcls->right_margin )
+		/*
+		 * Compensate for the fact that everything is scaled.
+		 * We should really handle this by scaling the font....
+		 * We need a little fuzz to handle rounding inaccuracies.
+		 */
+		if ( (pt.x + width.x) * pscale->x - pcls->right_margin >= 0.5 )
 		  { pcl_do_CR(pcls);
 		    pcl_do_LF(pcls);
 		    gs_moveto(pgs, pcls->cap.x / pscale->x,
 			      pcls->cap.y / pscale->y);
 		  }
 		gs_show_n_init(penum, pgs, str + i, 1);
-		gs_show_next(penum);
+		code = gs_show_next(penum);
+		if ( code < 0 )
+		  return code;
 		if ( move != 0 )
 		  gs_rmoveto(pgs, move, 0.0);
 	      }
+	    return 0;
 	  }
-	else switch ( adjust )
+	switch ( adjust )
 	  {
 	  case char_adjust_none:
 	    code = gs_show_n_init(penum, pgs, str, size);
@@ -241,6 +251,17 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	pfp = &pcls->font_selection[pcls->font_selected];
 	/**** WE COULD CACHE MORE AND DO LESS SETUP HERE ****/
 	pcl_set_graphics_state(pcls, true);
+	/* Clip to the margins. */
+	{ gs_rect text_clip;
+
+	  text_clip.p.x = pcls->left_margin;
+	  text_clip.p.y = pcls->top_margin;
+	  text_clip.q.x = pcls->right_margin;
+	  text_clip.q.y = pcls->top_margin + pcls->text_length * pcls->vmi;
+	  code = gs_rectclip(pcls->pgs, &text_clip, 1);
+	  if ( code < 0 )
+	    return code;
+	}
 	code = pcl_set_drawing_color(pcls, pcls->pattern_type,
 				     &pcls->current_pattern_id);
 	if ( code < 0 )
@@ -322,11 +343,15 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	  { /*
 	     * If the string has any spaces and the font doesn't define the
 	     * space character, we have to do something special.
+	     * ******HACK******: The built-in fonts must not define the
+	     * space character (required by Genoa FTS 0010-054).
 	     */
 	    uint i;
 	    for ( i = 0; i < size; ++i )
 	      if ( str[i] == ' ' )
-		{ if ( !pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ') )
+		{ if ( (pcls->font->storage & ~pcds_downloaded) ||
+		       !pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ')
+		     )
 		    adjust = char_adjust_space;
 	          break;
 		}
@@ -493,14 +518,21 @@ pcl_secondary_spacing(pcl_args_t *pargs, pcl_state_t *pcls)
 
 private int
 pcl_pitch(pcl_args_t *pargs, pcl_state_t *pcls, int set)
-{	uint pitch_100ths = (uint)(float_arg(pargs) * 100 + 0.5);
+{	float cpi = float_arg(pargs) + 0.005;
+	uint pitch_cp;
 	pcl_font_selection_t *pfs = &pcls->font_selection[set];
 
-	if ( pitch_100ths > 65535 )
+	if ( cpi < 0.1 )
+	  cpi = 0.1;
+	/* Convert characters per inch to 100ths of design units. */
+	pitch_cp = 7200.0 / cpi;
+	if ( pitch_cp > 65535 )
 	  return e_Range;
-	if ( pitch_100ths != pfs->params.pitch_100ths )
+	if ( pitch_cp < 1 )
+	  pitch_cp = 1;
+	if ( pitch_cp != pl_fp_pitch_cp(&pfs->params) )
 	  {
-	    pfs->params.pitch_100ths = pitch_100ths;
+	    pl_fp_set_pitch_cp(&pfs->params, pitch_cp);
 	    if ( !pfs->selected_by_id )
 	      pcl_decache_font(pcls, set);
 	  }
@@ -855,7 +887,7 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	  { pcls->font_selection[0].params.symbol_set =
 	      DEFAULT_SYMBOL_SET;
 	    pcls->font_selection[0].params.proportional_spacing = false;
-	    pcls->font_selection[0].params.pitch_100ths = 10*100;
+	    pl_fp_set_pitch_per_inch(&pcls->font_selection[0].params, 10);
 	    pcls->font_selection[0].params.height_4ths = 12*4;
 	    pcls->font_selection[0].params.style = 0;
 	    pcls->font_selection[0].params.stroke_weight = 0;
@@ -903,21 +935,22 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
   { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_Unicode) }
 #define cc_dingbats\
   { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_Unicode) }
-	    {"arial",	{0, 1, 0, 0, 0, 0, 16602}, cc_alphabetic },
-	    {"arialbd",	{0, 1, 0, 0, 0, 3, 16602}, cc_alphabetic },
-	    {"arialbi",	{0, 1, 0, 0, 1, 3, 16602}, cc_alphabetic },
-	    {"ariali",	{0, 1, 0, 0, 1, 0, 16602}, cc_alphabetic },
-	    {"cour",	{0, 0, 0, 0, 0, 0,  4099}, cc_alphabetic },
-	    {"courbd",	{0, 0, 0, 0, 0, 3,  4099}, cc_alphabetic },
-	    {"courbi",	{0, 0, 0, 0, 1, 3,  4099}, cc_alphabetic },
-	    {"couri",	{0, 0, 0, 0, 1, 0,  4099}, cc_alphabetic },
-	    {"times",	{0, 1, 0, 0, 0, 0, 16901}, cc_alphabetic },
-	    {"timesbd",	{0, 1, 0, 0, 0, 3, 16901}, cc_alphabetic },
-	    {"timesbi",	{0, 1, 0, 0, 1, 3, 16901}, cc_alphabetic },
-	    {"timesi",	{0, 1, 0, 0, 1, 0, 16901}, cc_alphabetic },
-	    {"symbol",	{621,1,0, 0, 0, 0, 16686}, cc_symbol },
-	    {"wingding",{2730,1,0,0, 0, 0, 19114}, cc_dingbats },
-	    {NULL,	{0, 0, 0, 0, 0, 0, 0} }
+#define pitch_1 fp_pitch_value_cp(1)
+	    {"arial",	{0, 1, pitch_1, 0, 0, 0, 16602}, cc_alphabetic },
+	    {"arialbd",	{0, 1, pitch_1, 0, 0, 3, 16602}, cc_alphabetic },
+	    {"arialbi",	{0, 1, pitch_1, 0, 1, 3, 16602}, cc_alphabetic },
+	    {"ariali",	{0, 1, pitch_1, 0, 1, 0, 16602}, cc_alphabetic },
+	    {"cour",	{0, 0, pitch_1, 0, 0, 0,  4099}, cc_alphabetic },
+	    {"courbd",	{0, 0, pitch_1, 0, 0, 3,  4099}, cc_alphabetic },
+	    {"courbi",	{0, 0, pitch_1, 0, 1, 3,  4099}, cc_alphabetic },
+	    {"couri",	{0, 0, pitch_1, 0, 1, 0,  4099}, cc_alphabetic },
+	    {"times",	{0, 1, pitch_1, 0, 0, 0, 16901}, cc_alphabetic },
+	    {"timesbd",	{0, 1, pitch_1, 0, 0, 3, 16901}, cc_alphabetic },
+	    {"timesbi",	{0, 1, pitch_1, 0, 1, 3, 16901}, cc_alphabetic },
+	    {"timesi",	{0, 1, pitch_1, 0, 1, 0, 16901}, cc_alphabetic },
+	    {"symbol",	{621,1,pitch_1, 0, 0, 0, 16686}, cc_symbol },
+	    {"wingding",{2730,1,pitch_1,0, 0, 0, 19114}, cc_dingbats },
+	    {NULL,	{0, 0, pitch_1, 0, 0, 0, 0} }
 #undef C
 #undef cc_alphabetic
 #undef cc_symbol
@@ -967,11 +1000,14 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
 		plfont->storage = pcds_internal;
 		if ( hackp->params.symbol_set != 0 )
 		  plfont->font_type = plft_8bit;
-		/* Don't smash the pitch_100ths, which was obtained
-		 * from the actual font. */
-		{ uint save_pitch = plfont->params.pitch_100ths;
+		/*
+		 * Don't smash the pitch, which was obtained
+		 * from the actual font.
+		 */
+		{ pl_font_pitch_t save_pitch;
+		  save_pitch = plfont->params.pitch;
 		  plfont->params = hackp->params;
-		  plfont->params.pitch_100ths = save_pitch;
+		  plfont->params.pitch = save_pitch;
 		}
 		memcpy(plfont->character_complement,
 		       hackp->character_complement, 8);

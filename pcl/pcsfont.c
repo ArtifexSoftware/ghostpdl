@@ -192,20 +192,14 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	      }
 	    else
 	      plfont->resolution.x = plfont->resolution.y = 300;
-	    /* pitch_100ths is 100ths of points (nominal em units); */
-	    /* the Pitch value in the header is in quarter dots. */
 	    { ulong pitch_1024th_dots =
 		((ulong)pl_get_uint16(pfh->Pitch) << 8) + pfh->PitchExtended;
-	      if ( pitch_1024th_dots == 0 )
-		{ /* Something bizarre is going on, but we shouldn't crash. */
-		  plfont->params.pitch_100ths = 0;
-		}
-	      else
-		{ plfont->params.pitch_100ths = (uint)
-		    (pitch_1024th_dots / 1024.0	/* dots */
-		     / plfont->resolution.x	/* => inches */
-		     * 7200.0);
-		}
+	      uint pitch_cp = (uint)
+		(pitch_1024th_dots / 1024.0	/* dots */
+		 / plfont->resolution.x	/* => inches */
+		 * 7200.0);
+
+	      pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
 	    }
 	    plfont->params.height_4ths = pl_get_uint16(pfh->Height);
 	    break;
@@ -245,8 +239,10 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	      return code;
 	    pl_fill_in_tt_font(pfont, NULL, gs_next_ids(1));
 	    /* pfh->Pitch is design unit width for scalable fonts. */
-	    plfont->params.pitch_100ths =
-	      pl_get_uint16(pfh->Pitch) * 100 / pfont->data.unitsPerEm;
+	    { uint pitch_cp =
+		pl_get_uint16(pfh->Pitch) * 100 / pfont->data.unitsPerEm;
+	      pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
+	    }
 	  }
 	    break;
 	  case plfst_Intellifont:

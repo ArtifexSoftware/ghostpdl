@@ -96,7 +96,9 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	      /* scalable; match is effectively exact */
 	      score[score_pitch] = 0x2000000;
 	    else
-	      { int delta = fp->params.pitch_100ths - pfs->params.pitch_100ths;
+	      { int delta =
+		  pl_fp_pitch_per_inch_x100(&fp->params) -
+		    pl_fp_pitch_per_inch_x100(&pfs->params);
 
 		/* If within one unit, call it exact; otherwise give
 		 * preference to higher pitch than requested. */
@@ -273,7 +275,7 @@ pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id,
 		 
 	pfs->params.proportional_spacing = fp->params.proportional_spacing;
 	if ( !pfs->params.proportional_spacing && !pl_font_is_scalable(fp) )
-	  pfs->params.pitch_100ths = fp->params.pitch_100ths;
+	  pfs->params.pitch = fp->params.pitch;
 	if ( !pl_font_is_scalable(fp) )
 	  pfs->params.height_4ths = fp->params.height_4ths;
 	pfs->params.style = fp->params.style;

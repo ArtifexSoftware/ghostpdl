@@ -6,27 +6,142 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
+Version 0.25 (5/12/97)
+======================
+
+More bug fixes.  This fileset produces halfway reasonable output from many
+of the Genoa FTS files.
+
+This version requires pl library version 1.14 or later.
+
+FTS problems:
+    0060:
+	.1 Rev portrait & rev landscape text clipped in landscape orientations
+	.2 GL/2 filled wedges missing (all 4)
+	.3 GL/2 stuff is displaced in landscape orientations
+    1060:
+	.1 Unsupported fill types are replaced with a black fill.
+	.2 Dashed line offset is not correct so most of the graphics that use
+	  dashing dash out of phase.
+	.3 In order to recover the missing diagonal lines in several panels the
+	  PCL Reset command will have to be redefined to stroke the current gl2
+	  path.  This is because the test file issues the PCL reset in GL/2
+	  stream without using the exit to PCL command.
+CET problems:
+	- The width of Intellifont characters is wrong.  (CET 14_01)
+	- Positioning of characters is off -- requires "real" fonts.
+	- Text wrap happens too far to the right.
+	- Tabs don't work quite right.
+	- Text length doesn't work.  (CET 16_04)
+	- CET files with major anomalies: 16_10, 16_11
+Unimplemented features (PCL):
+	- Font Control 6 (copy font & assign ID) (CET 14_04)
+	- Continuation blocks for downloaded characters.
+	- User-defined line type (99).
+
+(LPD) Fixes bugs:
+	- The 3-point arc algorithms often drew incorrect portions of the
+arc.  (pgvector.c)
+	- The rounding algorithm for chord angles could result in drawing
+too long an arc.  (pgdraw.c)
+	- Some PCL commands didn't include name strings for debugging.
+(pgframe.c)
+	- The Genoa FTS (0010) apparently requires the built-in scalable
+fonts to treat the space character as a control code rather than a printable
+character, so that it is affected by explicit setting of HMI.  (pcfont.c)
+	- Tab positions were computed relative to the edge of the logical
+page rather than relative to the left margin.  (pcursor.c)
+	- The HMI wasn't always recomputed when a new font was selected.
+(pcfont.c)
+	- Text wasn't clipped at the margins.  (pcfont.c)
+	- Because of a typo, selecting end-of-line wrapping could cause an
+error.  (pcfont.c)
+	- Rounding caused lines to wrap one character too early.  (pcfont.c)
+	- The margins weren't reset properly when changing print direction.
+(pcdraw.c)
+	- Raster graphics with presentation mode 3 in landscape orientation
+were drawn in the opposite direction from the correct one.  (rtraster.c)
+	- Fill patterns were rendered at the current resolution rather than
+the correct one (normally 300 dpi).  (pcdraw.c)
+	- Fill patterns weren't rotated to match the orientation and print
+direction.  (pcstate.h, pcdraw.c)
+	- The vertical cross-hatch pattern was incorrect.  (pcdraw.c)
+	- The HMI sometimes wasn't computed from the font when needed.
+(pcpage.c)
+	- The right margin was set to the left edge of the specified column
+rather than the right edge.  (pcpage.c)
+	- The text length should be stored as a floating point value to
+preserve accurate margin values when changing print directions.  (pcstate.h)
+	- We didn't track both rotated and unrotated logical page
+dimensions.  (pcstate.h, pcdraw.c, pcpage.c)
+	- There was confusion about whether the pitch_100ths value in font
+headers was the pitch in 100ths of a design unit (nominally, 1 point) or the
+pitch in 100ths of characters per inch, because downloaded PCL font headers
+use the former concept but pitch setting commands use the latter.  We now
+provide both.  (pcdraw.c, pcfont.c, pcfsel.c, pcsfont.c, pcstatus.c,
+pgchar.c, pgdraw.c, pginit.c, pglabel.c)
+
+(HAS) Change Log:  (note: there might be a few omissions this time)
+
+	* pgvector.c (hpgl_CI): corrected stray lines from center of
+	circles.  
+
+	* pggeom.c (hpgl_compute_arc_center): did not use absolute value
+	to check for degenerate case.
+
+	* *.[ch]: general cleanup of function not using hpgl_call() and
+	removal of obsolete calls.
+
+	* pgdraw.c (hpgl_start_path): moved recording of first point to
+	hpgl_start_path().
+
+	* pgpoly.c (hpgl_PM): missing "break" in case statement.  No
+	associated bug.
+
+	* pgdraw.c (hpgl_set_user_units_to_plu_ctm): apply P1 and P2
+	translation only when scaling is on.  Recovers first panels in fts
+	1060 tests.
+
+	* pgvector.c (hpgl_CI): corrected circle implementation.
+
+	* pgdraw.c (hpgl_draw_current_path): even odd and nonzero winding
+ 	changes. (new functionality)
+
+	* pgstate.h: state changes to support even-odd and non-zero
+	winding fills. (new functionality)
+
+	* pgdraw.c (hpgl_add_arc_to_path): implemented peter's fix for
+	getting the correct number of chords for arcs.
+
+	* pgvector.c (hpgl_arc_3_point): integrated peter's fix for 3
+	point arc.
+	
+	* pgvector.c (hpgl_arc_3_point): changed arc three point to use
+	hpgl_arc() routine.
+
+	* pglabel.c (hpgl_process_buffer): fixed formfeed and horizontal
+	tabs processing.
+
+	* pgdraw.c (hpgl_map_fill_type): partial support for character mode
+	filling.  Set drawing color correctly so the fts headers are now
+	visible. 
+
+	* pglabel.c (hpgl_LB): bug fix LB not processing carriage return
+	introduced with pcl023.
+
+	* pgdraw.c (hpgl_set_graphics_state): made private and removed
+	from interface in pgdraw.h.
+
+	* pglabel.c (hpgl_print_char): removed call to
+	hpgl_set_graphics_state. 
+
+	* pgstate.h: documented hpgl/2 coordinate system.
+
 Version 0.24 (5/7/97)
 =====================
 
 More bug fixes.  This is an intermediate fileset to synchronize LPD's and
 HAS's changes.
-
-Known problems (PCL):
-	- The width of Intellifont characters is wrong.  (CET 14_01)
-	- Positioning of characters is off -- requires "real" fonts.
-	- Text wrap happens too far to the right.
-	- Tabs don't work quite right.
-	- Graphics aren't oriented correctly in landscape print direction.
-	- Text length doesn't work.  (CET 16_04)
-	- CET files with major anomalies: 16_10, 16_11
-	- The built-in shading and cross-hatch patterns are rendered at the
-	maximum printer resolution rather than always at 300 dpi.
-Unimplemented features (PCL):
-	- Font Control 6 (copy font & assign ID) (CET 14_04)
-	- Continuation blocks for downloaded characters.
-	- Text clipping at the right margin.
-	- User-defined line type (99).
 
 (LPD) Fixes bugs:
 	- The makefile rule for pcl5.dev had a typo (PCLOJB for PCLOBJ).

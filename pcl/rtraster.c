@@ -289,7 +289,7 @@ pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 	  /* Convert CAP to device coordinates, since it mustn't move. */
 	  gs_transform(pcls->pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y,
 		       &cap_dev);
-	  gs_rotate(pcls->pgs, -90.0);
+	  gs_rotate(pcls->pgs, 90.0);
 	  gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
 	  pcls->cap.x = (coord)cap_image.x;
 	  pcls->cap.y = (coord)cap_image.y;

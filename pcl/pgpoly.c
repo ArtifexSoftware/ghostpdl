@@ -169,6 +169,9 @@ hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_int(pargs, &method) && (method & ~1) )
 	  return e_Range;
 
+	pgls->g.fill_type = (method == 0) ? 
+	  hpgl_even_odd_rule : hpgl_winding_number_rule;
+
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
 
 	return 0;
@@ -205,6 +208,7 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_call(hpgl_close_current_path(pgls));
 	    /* return to vector mode */
 	    pgls->g.polygon_mode = false;
+	    break;
 	  default:
 	    return e_Range;
 	  }    

@@ -161,7 +161,7 @@ status_put_font(stream *s, const pcl_state_t *pcls,
 	stprintf(s, "<Esc>%cs%dp", paren, proportional);
 	if ( plfont->scaling_technology == plfst_bitmap )
 	  { /* Bitmap font */
-	    status_put_floating(s, plfont->params.pitch_100ths / 100.0);
+	    status_put_floating(s, pl_fp_pitch_per_inch(&plfont->params));
 	    stputs(s, "h");
 	    status_put_floating(s, plfont->params.height_4ths / 4.0);
 	    stputs(s, "v");
@@ -178,8 +178,8 @@ status_put_font(stream *s, const pcl_state_t *pcls,
 		  }
 		else
 		  { status_put_floating(s,
-		      pcls->font_selection[font_set].params.pitch_100ths /
-			  100.0);
+		      pl_fp_pitch_per_inch(&pcls->font_selection[font_set].
+					   params));
 		    stputs(s, "v");
 		  }
 	      }

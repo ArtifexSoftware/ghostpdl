@@ -104,10 +104,17 @@ pcl_BS(pcl_args_t *pargs, pcl_state_t *pcls)
 int /* HT */
 pcl_HT(pcl_args_t *pargs, pcl_state_t *pcls)
 {	coord hmi = pcl_hmi(pcls);
+
 	if ( hmi == 0 )
 	  return 0;
 	{ coord tab = hmi * 8;
-	  pcl_set_cursor_x(pcls, (pcls->cap.x / tab + 1) * tab, true);
+	  coord x_pos = pcls->cap.x - pcls->left_margin;
+
+	  if ( x_pos < 0 )
+	    x_pos = 0;
+	  pcl_set_cursor_x(pcls,
+			   ((int)(x_pos / tab) + 1) * tab + pcls->left_margin,
+			   true);
 	}
 	return 0;
 }

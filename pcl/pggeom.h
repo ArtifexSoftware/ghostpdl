@@ -32,24 +32,10 @@
 /* compute the angle between 0 and 2*PI given the slope */
 floatp hpgl_compute_angle(P2(floatp dx, floatp dy));
 
-/* normalize the chord angle to 0 - PI/2 */
-floatp hpgl_normalize_chord_angle(P1(floatp angle));
-
-/* number of chord angles within the arc */
-int hpgl_compute_number_of_chords(P2(floatp arc_angle, 
-				     floatp chord_angle));
-
-/* the arc angle as an integral multiple of the chord angle */
-floatp hpgl_adjust_arc_angle(P2(int num_chords, floatp chord_angle));
-
 /* compute the center of an arc given 3 points on the arc */
 int hpgl_compute_arc_center(P8(floatp x1, floatp y1, floatp x2, 
 			       floatp y2, floatp x3, floatp y3, 
 			       floatp *pcx, floatp *pcy));
-
-/* calculate rotation as clockwise (false) or counterclockwise (true) */
-bool hpgl_compute_arc_direction(P4(floatp start_x, floatp start_y,
-				  floatp end_x, floatp end_y));
 
 /* compute the coordinates of a point on an arc */
 int hpgl_compute_arc_coords(P6(floatp radius, floatp center_x, 
@@ -61,12 +47,6 @@ int hpgl_compute_arc_coords(P6(floatp radius, floatp center_x,
 int hpgl_compute_vector_endpoints(P6(floatp magnitude, floatp x, floatp y, 
 				     floatp angle_degrees, floatp *endx,
 				     floatp *endy));
-
-/* calculates the dot product of 2 2d vectors */
-int hpgl_compute_dot_product(P3(gs_point *pt1, gs_point *pt2, floatp *result));
-
-/* scales a 2d vector */
-int hpgl_scale_vector(P3(gs_point *pt1, floatp scale, gs_point *result));
 
 /* ------ 3-point arcs ------ */
 

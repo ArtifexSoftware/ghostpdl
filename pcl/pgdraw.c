@@ -239,11 +239,11 @@ hpgl_set_label_to_plu_ctm(hpgl_state_t *pgls)
 	pcl_font_selection_t *pfs = 
 	  &pgls->g.font_selection[pgls->g.font_selected];
 	hpgl_real_t height_points = pfs->params.height_4ths / 4.0;
-	hpgl_real_t width_points = 1.0 / (pfs->params.pitch_100ths / 100.0);
+	hpgl_real_t width_points = pl_fp_pitch_cp(&pfs->params) / 100.0;
 	hpgl_call(gs_translate(pgls->pgs, pgls->g.pos.x, pgls->g.pos.y));
 	hpgl_call(gs_scale(pgls->pgs, 
 			   points_2_plu(height_points),
-			   inches_2_plu(width_points)));
+			   points_2_plu(width_points)));
 	return 0;
 }
 
@@ -252,17 +252,18 @@ hpgl_set_label_to_plu_ctm(hpgl_state_t *pgls)
 hpgl_set_user_units_to_plu_ctm(hpgl_state_t *pgls)
 {
 
-	hpgl_call(gs_translate(pgls->pgs, pgls->g.P1.x, pgls->g.P1.y));
 			       
 	/* finally scale to user units.  HAS this only handles the
            simple scaling scale for the moment. */
 	/*	if ( pgls->g.scaling_type == hpgl_scaling_anisotropic ) */
 	if ( pgls->g.scaling_type != hpgl_scaling_none )
 	  { 
+	    
 	    floatp scale_x = (pgls->g.P2.x - pgls->g.P1.x) / 
 	      (pgls->g.scaling_params.pmax.x - pgls->g.scaling_params.pmin.x);
 	    floatp scale_y = (pgls->g.P2.y - pgls->g.P1.y) / 
 	      (pgls->g.scaling_params.pmax.y - pgls->g.scaling_params.pmin.y);
+	    hpgl_call(gs_translate(pgls->pgs, pgls->g.P1.x, pgls->g.P1.y));
 	    hpgl_call(gs_scale(pgls->pgs, scale_x, scale_y));
 	  }
 	    /*	else if ( pgls->g.scaling_type != hpgl_scaling_none ) */
@@ -371,7 +372,8 @@ hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	return 0;
 }
 
-int
+/* We export this for drawing characters. */
+ int
 hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
         /* HACK to reset the ctm.  Note that in character mode we
@@ -431,11 +433,14 @@ hpgl_start_path(hpgl_state_t *pgls, gs_point pt)
 	/* if relative mode we use a moveto the current position and
            an rmoveto otherwise we just need a moveto.  A limitcheck
            results in GL/2 lost mode */
-	if ( pgls->g.relative )
-	    hpgl_call(hpgl_get_current_position(pgls, &pt));
+	hpgl_call(hpgl_get_current_position(pgls, &pt));
 
 	/* moveto that position */
 	hpgl_call_check_lost(gs_moveto(pgls->pgs, pt.x, pt.y));
+
+	/* record the first point of the path in gl/2 state so that we
+           can implicitly close the path if necessary */
+	hpgl_call(hpgl_get_current_position(pgls, &pgls->g.first_point));
 
 	/* if we are in lost indicate that we do not have a path */
 	if (!hpgl_lost) pgls->g.have_first_moveto = true;
@@ -459,11 +464,6 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 
 	/* update hpgl's state position */
 	hpgl_call(hpgl_set_current_position(pgls, &point));
-
-	/* record the first point of the path in gl/2 state so that we
-           can implicitly close the path if necessary */
-	if ( new_path )
-	  hpgl_call(hpgl_get_current_position(pgls, &pgls->g.first_point));
 
 	return 0;
 }
@@ -506,20 +506,17 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 		     floatp radius, floatp start_angle, floatp sweep_angle,
 		     floatp chord_angle)
 {
-	int num_chords;
 	floatp start_angle_radians = start_angle * degrees_to_radians;
-	floatp chord_angle_radians = chord_angle * degrees_to_radians;
+	/*
+	 * Ensure that the sweep angle is an integral multiple of the
+	 * chord angle, by decreasing the chord angle if necessary.
+	 */
+	int num_chords = ceil(sweep_angle / chord_angle);
+	floatp chord_angle_radians =
+	  sweep_angle / num_chords * degrees_to_radians;
 	int i;
 	floatp arccoord_x, arccoord_y;
 
-	/* compute the number of chords */
-	num_chords = hpgl_compute_number_of_chords(sweep_angle, chord_angle);
-
-	/* adjust the sweep angle to be an even multiple of the chord angle */
-	sweep_angle = hpgl_adjust_arc_angle(num_chords, chord_angle);
-
-	/* recompute the number of chords with the adjusted sweep */
-	num_chords = hpgl_compute_number_of_chords(sweep_angle, chord_angle);
 	hpgl_compute_arc_coords(radius, center_x, center_y, 
 				start_angle_radians, 
 				&arccoord_x, &arccoord_y);
@@ -594,7 +591,12 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	
 	/* we fill polygons and stroke in character and vector mode */
 	if ( render_mode == hpgl_rm_polygon ) 
-	  hpgl_call(gs_fill(pgls->pgs));
+	  if ( pgls->g.fill_type == hpgl_even_odd_rule )
+	    hpgl_call(gs_eofill(pgls->pgs));
+	  else if ( pgls->g.fill_type == hpgl_winding_number_rule )
+	    hpgl_call(gs_fill(pgls->pgs));
+	  else 
+	    return -1;
 	else
 	  hpgl_call(gs_stroke(pgls->pgs));
 

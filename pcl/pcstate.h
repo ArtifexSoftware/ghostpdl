@@ -245,7 +245,8 @@ struct pcl_state_s {
 	int orientation;	/* 0..3 */
 	coord left_margin, right_margin;
 	coord top_margin;
-	int text_length;
+	float text_length;	/* needed to preserve accurate margin values */
+				/* when changing print direction */
 	bool perforation_skip;
 	coord hmi, hmi_unrounded, vmi;
 	enum {
@@ -259,6 +260,10 @@ struct pcl_state_s {
 	coord_point logical_page_size;	/* size of logical page */
 #define logical_page_width logical_page_size.x
 #define logical_page_height logical_page_size.y
+	coord_point rotated_page_size; /* logical page size rotated per */
+				/* print direction */
+#define rotated_page_width rotated_page_size.x
+#define rotated_page_height rotated_page_size.y
 
 		/* Chapter 6 (pcursor.c) */
 
@@ -324,8 +329,10 @@ struct pcl_state_s {
 	pcl_id_t current_pattern_id;	/* at last select_pattern */
 	bool pattern_set;	/* true if pattern set in graphics state */
 	gx_ht_tile pattern_tile;	/* set by pcl_set_drawing_color */
-	gs_pattern_instance *cached_shading[7];  /* create as needed */
-	gs_pattern_instance *cached_cross_hatch[6];  /* create as needed */
+	gs_pattern_instance *cached_shading[7*4];  /* create as needed, */
+						/* 1 per rotation */
+	gs_pattern_instance *cached_cross_hatch[6*4];  /* create as needed, */
+						/* 1 per rotation */
 
 		/* Chapter 14 (pcrect.c) */
 

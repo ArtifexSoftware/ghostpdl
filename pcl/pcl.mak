@@ -90,10 +90,10 @@ $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c $(std_h)\
  $(pcommand_h) $(pcparam_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcommand.c $(PCLO_)pcommand.$(OBJ)
 
-$(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c $(std_h)\
- $(gscolor2_h) $(gscoord_h) $(gscspace_h) $(gsdcolor_h)\
- $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
- $(gxfixed_h) $(gxpath_h)\
+$(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c $(std_h) $(math__h)\
+ $(gscolor2_h) $(gscoord_h) $(gscspace_h) $(gsdcolor_h) $(gsimage_h)\
+ $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h) $(gsutil_h)\
+ $(gxfixed_h) $(gxpath_h) $(gxstate_h)\
  $(pcdraw_h) $(pcommand_h) $(pcfont_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcdraw.c $(PCLO_)pcdraw.$(OBJ)
 
@@ -235,8 +235,8 @@ $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c $(std_h)\
 # Chapter 8
 $(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c\
  $(memory__h) $(stdio__h) $(string__h) $(gp_h)\
- $(gschar_h) $(gscoord_h) $(gsfont_h) $(gsmatrix_h) $(gspaint_h) $(gspath_h)\
- $(gsstate_h) $(gsutil_h)\
+ $(gschar_h) $(gscoord_h) $(gsfont_h) $(gsmatrix_h) $(gspaint_h)\
+ $(gspath_h) $(gspath2_h) $(gsstate_h) $(gsutil_h)\
  $(plvalue_h)\
  $(pcdraw_h) $(pcfont_h) $(pcommand_h) $(pcstate_h) $(pcsymbol_h)
 	$(PCLCCC) $(PCLSRC)pcfont.c $(PCLO_)pcfont.$(OBJ)
@@ -414,7 +414,7 @@ $(PCLOBJ)pgframe.$(OBJ): $(PCLSRC)pgframe.c $(math__h)\
 # Chapter 19
 $(PCLOBJ)pgconfig.$(OBJ): $(PCLSRC)pgconfig.c $(std_h)\
  $(gscoord_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
- $(pgdraw_h) $(pggeom_h) $(pginit_h) $(pgmand_h)
+ $(pgdraw_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)pgconfig.c $(PCLO_)pgconfig.$(OBJ)
 
 # Chapter 20
@@ -431,7 +431,7 @@ $(PCLOBJ)pgpoly.$(OBJ): $(PCLSRC)pgpoly.c $(std_h)\
 # Chapter 22
 $(PCLOBJ)pglfill.$(OBJ): $(PCLSRC)pglfill.c $(memory__h)\
  $(gstypes_h) $(gsuid_h) $(gxbitmap_h)\
- $(pgdraw_h) $(pggeom_h) $(pginit_h) $(pgmand_h)
+ $(pgdraw_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)pglfill.c $(PCLO_)pglfill.$(OBJ)
 
 # Chapter 23

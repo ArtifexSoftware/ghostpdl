@@ -46,6 +46,10 @@ typedef enum {
 	hpgl_lost_mode_cleared
 } hpgl_lost_mode_t;
 
+typedef enum {
+	hpgl_even_odd_rule,
+	hpgl_winding_number_rule
+} hpgl_render_fill_type_t;
 
 typedef struct pcl_hpgl_state_s {
 		/* Chapter 17 lost mode (pgmisc.c) */
@@ -137,6 +141,7 @@ typedef struct pcl_hpgl_state_s {
 	    uint pattern_id;
 	  } param;
 	} fill;
+	hpgl_render_fill_type_t fill_type;
 	hpgl_line_type_t fixed_line_type[8];
 	hpgl_line_type_t adaptive_line_type[8];
 	gs_point anchor_corner;

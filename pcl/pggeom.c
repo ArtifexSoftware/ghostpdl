@@ -22,35 +22,6 @@ hpgl_compute_angle(floatp dx, floatp dy)
 	return (alpha < 0 ? alpha + M_PI * 2.0 : alpha);
 }
 
-/* normalize the chord angle to 0 - PI/2 */
-floatp
-hpgl_normalize_chord_angle(floatp angle)
-{
-	if ( angle < 0 )
-	  angle = -angle;
-	if ( angle > 360 )
-	  angle = angle - (floor(angle / 360.0) * 360.0);
-	if ( angle > 180 )
-	  angle = 360 - angle;
-	if ( angle < 0.1 )
-	  angle = 0.36;
-	return angle;
-}
-
-/* number of chord angles within the arc */
-int
-hpgl_compute_number_of_chords(floatp arc_angle, floatp chord_angle)
-{
-	return (int)ceil(fabs(arc_angle / chord_angle));
-}
-
-/* the arc angle as an integral multiple of the chord angle */
-floatp
-hpgl_adjust_arc_angle(int num_chords, floatp arc_angle)
-{
-	return(num_chords * arc_angle);
-}
-
 /* compute the center of an arc given 3 points on the arc */
 int
 hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2, 
@@ -106,15 +77,6 @@ hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2,
 	return 0;
 }
 
-/* calculate rotation as clockwise (false) or counterclockwise (true). */
-/* Algorithm is the same as counterclockwise calculation in gxstroke. */
-bool
-hpgl_compute_arc_direction(floatp start_x, floatp start_y, 
-			   floatp end_x, floatp end_y) 
-{
-	return((start_x * end_y) > (end_x * start_y)); 
-}
-
 /* compute the coordinates of a point on an arc */
 int
 hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y, 
@@ -135,20 +97,4 @@ hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
 	return hpgl_compute_arc_coords(magnitude, x, y,
 				       angle_degrees * (M_PI/180.0),
 				       endx, endy);
-}
-
- int 
-hpgl_compute_dot_product(gs_point *pt1, gs_point *pt2, floatp *result)
-{
-	*result = ((pt1->x * pt2->x) + (pt1->y * pt2->y));
-	return 0;
-}
-
-/* scales a 2d vector */
- int 
-hpgl_scale_vector(gs_point *pt1, floatp scale, gs_point *result)
-{
-	result->x = scale * pt1->x;
-	result->y = scale * pt1->y;
-	return 0;
 }

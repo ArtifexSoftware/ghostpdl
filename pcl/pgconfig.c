@@ -14,6 +14,7 @@
 #include "pgdraw.h"
 #include "pginit.h"
 #include "pggeom.h"
+#include "pgmisc.h"
 
 /* CO"text" */
 int
@@ -346,7 +347,7 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  {
 	    /* HAS -- I believe we must maintain the device
                coordinates of the current pen.  I need to check this */
-	    hpgl_draw_current_path(pgls, hpgl_rm_vector);
+	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    pgls->g.rotation = angle;
 	  }
 	    
@@ -369,6 +370,11 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t xy[4];
 	int i;
 	int type;
+
+	/* we must clear the current path because we set up the CTM
+           when issuing the first point, and the CTM is a function of
+           SC. */
+	/*	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector)); */
 
 	for ( i = 0; i < 4 && hpgl_arg_real(pargs, &xy[i]); ++i )
 	  ;

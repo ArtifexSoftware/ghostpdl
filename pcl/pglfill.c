@@ -12,6 +12,7 @@
 #include "pginit.h"
 #include "pggeom.h"
 #include "pgdraw.h"
+#include "pgmisc.h"
 
 /* AC [x,y]; Anchor corner for fill offsets, not that this is
    different than the anchor corner of the pcl picture frame. */
@@ -26,7 +27,7 @@ hpgl_AC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  }
 
 	/* draw the current path */
-	hpgl_draw_current_path(pgls, hpgl_rm_vector);
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
 	pgls->g.anchor_corner.x = x;
 	pgls->g.anchor_corner.y = y;

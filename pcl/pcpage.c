@@ -81,9 +81,9 @@ pcl_default_end_page(pcl_state_t *pcls, int num_copies, int flush)
 private void
 reset_margins(pcl_state_t *pcls)
 {	pcls->left_margin = left_margin_default;
-	pcls->right_margin = pcls->logical_page_width;
+	pcls->right_margin = pcls->rotated_page_width;
 	pcls->top_margin =
-	  (top_margin_default > pcls->logical_page_height ? 0 :
+	  (top_margin_default > pcls->rotated_page_height ? 0 :
 	   top_margin_default);
 }
 
@@ -91,7 +91,7 @@ reset_margins(pcl_state_t *pcls)
 private void
 reset_text_length(pcl_state_t *pcls)
 {	if ( pcls->vmi != 0 )
-	  { int len = (int)((pcls->logical_page_height - pcls->top_margin -
+	  { int len = (int)((pcls->rotated_page_height - pcls->top_margin -
 			     inch2coord(0.5)) / pcls->vmi);
 	    /* We suppose that the minimum text length is 1.... */
 	    pcls->text_length = max(len, 1);
@@ -219,6 +219,7 @@ pcl_print_direction(pcl_args_t *pargs, pcl_state_t *pcls)
 private int /* ESC & a <col> L */
 pcl_left_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 {	coord lmarg = int_arg(pargs) * pcl_hmi(pcls);
+
 	if ( lmarg < pcls->right_margin )
 	  { pcls->left_margin = lmarg;
 	    pcl_clamp_cursor_x(pcls, true);
@@ -228,9 +229,14 @@ pcl_left_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 
 private int /* ESC & a <col> M */
 pcl_right_margin(pcl_args_t *pargs, pcl_state_t *pcls)
-{	coord rmarg = int_arg(pargs) * pcls->hmi;
-	if ( rmarg > pcls->logical_page_width )
-	  rmarg = pcls->logical_page_width;
+{	/*
+	 * The right margin is set to the *right* edge of the specified
+	 * column, so we need to add 1 to the column number.
+	 */
+	coord rmarg = (int_arg(pargs) + 1) * pcl_hmi(pcls);
+
+	if ( rmarg > pcls->rotated_page_width )
+	  rmarg = pcls->rotated_page_width;
 	if ( rmarg > pcls->left_margin )
 	  { pcls->right_margin = rmarg;
 	    pcl_clamp_cursor_x(pcls, true);
@@ -241,7 +247,7 @@ pcl_right_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 private int /* ESC 9 */
 pcl_clear_horizontal_margins(pcl_args_t *pargs, pcl_state_t *pcls)
 {	pcls->left_margin = 0;
-	pcls->right_margin = pcls->logical_page_width;
+	pcls->right_margin = pcls->rotated_page_width;
 	pcl_clamp_cursor_x(pcls, true);
 	return 0;
 }
@@ -249,7 +255,7 @@ pcl_clear_horizontal_margins(pcl_args_t *pargs, pcl_state_t *pcls)
 private int /* ESC & l <line> E */
 pcl_top_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 {	coord tmarg = int_arg(pargs) * pcls->vmi;
-	if ( pcls->vmi == 0 || tmarg > pcls->logical_page_height )
+	if ( pcls->vmi == 0 || tmarg > pcls->rotated_page_height )
 	  return 0;
 	pcls->top_margin = tmarg;
 	reset_text_length(pcls);
@@ -262,7 +268,7 @@ pcl_text_length(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int len = int_arg(pargs);
 	if ( pcls->vmi == 0 )
 	  return 0;
-	if ( pcls->top_margin + len * pcls->vmi <= pcls->logical_page_height )
+	if ( pcls->top_margin + len * pcls->vmi <= pcls->rotated_page_height )
 	  pcls->text_length = len;
 	return 0;
 }

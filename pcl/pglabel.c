@@ -70,7 +70,7 @@ hpgl_get_current_cell_width(const hpgl_state_t *pgls, hpgl_real_t *width)
 	*width =
 	  (pfs->params.proportional_spacing ?
 	   points_2_plu(pfs->params.height_4ths / 4.0 /****** WRONG ******/) :
-	   1.5 * inches_2_plu(1.0 / (pfs->params.pitch_100ths / 100.0)));
+	   1.5 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0));
 	return 0;
 }
 
@@ -83,7 +83,7 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height)
 	*height =
 	  (pfs->params.proportional_spacing ?
 	   1.33 * points_2_plu(pfs->params.height_4ths /4.0) :
-	   2.0 * inches_2_plu(1.0 / (pfs->params.pitch_100ths / 100.0))
+	   2.0 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0)
 	     /****** WRONG ******/);
 	return 0;
 }
@@ -631,7 +631,7 @@ pglabel_do_init(gs_memory_t *mem)
 	stick_font.font_type = plft_7bit_printable;	/****** WRONG ******/
 	stick_font.params.proportional_spacing = false;
 	/* The basic cell size for the stick font is 32 plu. */
-	stick_font.params.pitch_100ths = 100.0 / plu_2_inches(32);
+	pl_fp_set_pitch_cp(&stick_font.params, plu_2_inches(32) * 7200);
 	stick_font.params.typeface_family = STICK_FONT_TYPEFACE;
 	return 0;
 }

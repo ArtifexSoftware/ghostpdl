@@ -5,6 +5,7 @@
 /* pcdraw.h */
 /* PCL5 drawing utilities */
 #include "std.h"
+#include "math_.h"
 #include "gstypes.h"		/* for gsstate.h */
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
@@ -13,8 +14,11 @@
 #include "gscolor2.h"		/* for gs_makebitmappattern */
 #include "gscoord.h"
 #include "gsdcolor.h"
+#include "gsimage.h"
+#include "gsutil.h"
 #include "gxfixed.h"
 #include "gxpath.h"
+#include "gxstate.h"
 #include "plvalue.h"
 #include "pcommand.h"
 #include "pcstate.h"
@@ -40,6 +44,11 @@ pcl_compute_logical_page_size(pcl_state_t *pcls)
 	      psize->width - 2 * psize->offset_portrait.x;
 	    pcls->logical_page_height = psize->height;
 	  }
+	if ( pcls->print_direction & 1 )
+	  pcls->rotated_page_size.x = pcls->logical_page_size.y,
+	    pcls->rotated_page_size.y = pcls->logical_page_size.x;
+	else
+	  pcls->rotated_page_size = pcls->logical_page_size;
 }
 
 /* Set the CTM from the current left and top offset, orientation, */
@@ -123,36 +132,49 @@ int
 pcl_set_print_direction(pcl_state_t *pcls, int print_direction)
 {	if ( pcls->print_direction != print_direction )
 	  { /*
-	     * Recompute the CAP in the new coordinate system.
-	     * Also permute the margins per TRM 5-11.
+	     * Recompute the CAP in the new coordinate system.  Also permute
+	     * the margins per TRM 5-11, and the rotated logical page size.
 	     */
 	    gs_state *pgs = pcls->pgs;
-	    gs_point capt;
-	    int diff = (print_direction - pcls->print_direction) & 3;
-	    coord page_size[3];
-	    coord margins[7];
+	    /* Yes, the reverse difference is correct. */
+	    int diff = (pcls->print_direction - print_direction) & 3;
+	    gs_point mp, mq, capt;
 
+	    /* Transform the CAP and margins to device space. */
 	    pcl_set_ctm(pcls, true);
-	    page_size[0] = page_size[2] = pcls->logical_page_width;
-	    page_size[1] = pcls->logical_page_height;
-	    margins[0] = margins[4] = pcls->left_margin;
-	    margins[1] = margins[5] = pcls->top_margin;
-	    margins[2] = margins[6] =
-	      pcls->logical_page_width - pcls->right_margin;
-	    margins[3] = pcls->logical_page_height -
-	      (pcls->top_margin + pcls->text_length * pcls->vmi);
 	    gs_transform(pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y, &capt);
+	    gs_transform(pgs, (floatp)pcls->left_margin,
+			 (floatp)pcls->top_margin, &mp);
+	    gs_transform(pgs, (floatp)pcls->right_margin,
+			 (floatp)(pcls->top_margin +
+				  pcls->text_length * pcls->vmi),
+			 &mq);
+	    /* Now we can reset the print direction. */
 	    pcls->print_direction = print_direction;
+	    if ( pcls->print_direction & 1 )
+	      pcls->rotated_page_size.x = pcls->logical_page_size.y,
+		pcls->rotated_page_size.y = pcls->logical_page_size.x;
+	    else
+	      pcls->rotated_page_size = pcls->logical_page_size;
+	    /* Transform the CAP and margins back again. */
 	    pcl_set_ctm(pcls, true);
 	    gs_itransform(pgs, capt.x, capt.y, &capt);
 	    pcls->cap.x = (coord)capt.x;
 	    pcls->cap.y = (coord)capt.y;
-	    pcls->left_margin = margins[diff];
-	    pcls->top_margin = margins[diff + 1];
-	    pcls->right_margin =
-	      page_size[diff & 1] - margins[diff + 2];
-	    pcls->text_length =
-	      (page_size[~diff & 1] - margins[diff + 3]) / pcls->vmi;
+	    gs_itransform(pgs, mp.x, mp.y, &mp);
+	    gs_itransform(pgs, mq.x, mq.y, &mq);
+	    if ( diff & 2 )
+	      { gs_point mt;
+	        mt = mq; mq = mp; mp = mt;
+	      }
+	    if ( diff & 1 )
+	      { double mt;
+	        mt = mp.y; mp.y = mq.y; mq.y = mt;
+	      }
+	    pcls->left_margin = mp.x;
+	    pcls->top_margin = mp.y;
+	    pcls->right_margin = mq.x;
+	    pcls->text_length = (mq.y - pcls->top_margin) / pcls->vmi;
 	  }
 	return 0;
 }
@@ -230,12 +252,11 @@ pcl_updated_hmi(pcl_state_t *pcls)
 	if ( pl_font_is_scalable(plfont) )
 	  { /* Scale the font's pitch by the requested height. */
 	    hmi =
-	      inch2coord(plfont->params.pitch_100ths
-			 * pcls->font_selection[pcls->font_selected].params.height_4ths
-			 / (7200.0 * 4));
+	      pl_fp_pitch_cp(&plfont->params) *
+	      pcls->font_selection[pcls->font_selected].params.height_4ths / 4;
 	  }
 	else
-	  { hmi = inch2coord(plfont->params.pitch_100ths / 7200.0);
+	  { hmi = pl_fp_pitch_cp(&plfont->params);
 	  }
 	pcl_set_hmi(pcls, hmi, false);
 	return pcls->hmi;
@@ -292,7 +313,10 @@ private const uint32
     p8(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
   },
   ch_vertical[] = {
-    p2x8(0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80)
+    r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80),
+    r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80),
+    r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80),
+    r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80)
   },
   ch_45_degree[] = {
     r2(0x80, 0x01), r2(0xc0, 0x00), r2(0x60, 0x00), r2(0x30, 0x00),
@@ -323,13 +347,72 @@ private const uint32 *cross_hatch_patterns[] = {
   ch_square, ch_diamond
 };
 
+/* Define an analogue of makebitmappattern that allows scaling. */
+/* (This might get migrated back into the library someday.) */
+private int pcl_bitmap_PaintProc(P2(const gs_client_color *, gs_state *));
+int
+pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
+  gs_state *pgs, floatp scale_x, floatp scale_y, int rotation /* 0..3 */)
+{	gs_client_pattern pat;
+	gs_matrix mat, smat;
+	int angle = rotation * 90;
+
+	if ( tile->raster != bitmap_raster(tile->size.x) )
+	  return_error(gs_error_rangecheck);
+	uid_set_UniqueID(&pat.uid, gs_next_ids(1));
+	pat.PaintType = 1;
+	pat.TilingType = 1;
+	pat.BBox.p.x = 0;
+	pat.BBox.p.y = 0;
+	pat.BBox.q.x = tile->size.x;
+	pat.BBox.q.y = tile->rep_height;
+	pat.XStep = tile->size.x;
+	pat.YStep = tile->rep_height;
+	pat.PaintProc = pcl_bitmap_PaintProc;
+	pat.client_data = tile->data;
+	gs_currentmatrix(pgs, &smat);
+	gs_make_identity(&mat);
+	gs_setmatrix(pgs, &mat);
+	gs_make_scaling(scale_x, scale_y, &mat);
+	if ( smat.yy > 0 )
+	  mat.yy = -mat.yy, angle = -angle;
+	gs_matrix_rotate(&mat, angle, &mat);
+	gs_makepattern(pcc, &pat, &mat, pgs, NULL);
+	gs_setmatrix(pgs, &smat);
+	return 0;
+}
+private int
+pcl_bitmap_PaintProc(const gs_client_color *pcolor, gs_state *pgs)
+{	gs_image_enum *pen =
+	  gs_image_enum_alloc(gs_state_memory(pgs), "bitmap_PaintProc");
+	const gs_client_pattern *ppat = gs_getpattern(pcolor);
+	const byte *dp = ppat->client_data;
+	gs_image_t image;
+	int n;
+	uint nbytes, raster, used;
+
+	gs_image_t_init_gray(&image);
+	image.Decode[0] = 1.0;
+	image.Decode[1] = 0.0;
+	image.Width = (int)ppat->XStep;
+	image.Height = (int)ppat->YStep;
+	raster = bitmap_raster(image.Width);
+	nbytes = (image.Width + 7) >> 3;
+	gs_image_init(pen, &image, false, pgs);
+	for ( n = image.Height; n > 0; dp += raster, --n )
+	  gs_image_next(pen, dp, nbytes, &used);
+	gs_image_cleanup(pen);
+	gs_free_object(gs_state_memory(pgs), pen, "bitmap_PaintProc");
+	return 0;
+}
+
 /* Set the color and pattern for drawing. */
 int
 pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
   const pcl_id_t *pid)
 {	gs_state *pgs = pcls->pgs;
 	gs_pattern_instance **ppi;
-	gs_pattern_instance *pi = 0;	/* for user-defined pattern hack */
+	gs_pattern_instance *pi[4];	/* for user-defined pattern hack */
 	gs_int_point resolution;
 	gx_tile_bitmap tile;
 
@@ -350,7 +433,7 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 #define else_if_percent(maxp, shade, index)\
   else if ( percent <= maxp )\
     tile.data = (const byte *)shade,\
-    ppi = &pcls->cached_shading[index]
+    ppi = &pcls->cached_shading[index*4]
 	      else_if_percent(2, shade_1_2, 0);
 	      else_if_percent(10, shade_3_10, 1);
 	      else_if_percent(20, shade_11_20, 2);
@@ -388,7 +471,7 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 		  gs_setgray(pgs, 0.0);
 		  return 0;
 		}
-	      ppi = &pcls->cached_cross_hatch[index];
+	      ppi = &pcls->cached_cross_hatch[index*4];
 	      tile.data = (const byte *)cross_hatch_patterns[index];
 	    }
 	    tile.raster = 8;
@@ -430,7 +513,8 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 	       ****** HACK: just create a new pattern each time.
 	       ****** THIS IS UNACCEPTABLE, but will get us through the CET.
 	       */
-	      ppi = &pi;
+	      pi[0] = pi[1] = pi[2] = pi[3] = 0;
+	      ppi = pi;
 	    }
 	    break;
 	  /* case pcpt_current_pattern: */	/* caller handles this */
@@ -443,24 +527,33 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 	 * We should track changes in orientation, but we don't yet.
 	 */
 	{ gs_client_color ccolor;
+	  int rotation = (pcls->orientation + pcls->print_direction) & 3;
+
+	  ppi += rotation;
 	  ccolor.pattern = *ppi;
 	  if ( ccolor.pattern == 0 )
-	    { int code;
-	      gs_matrix mat;
-	      /*
+	    { /*
 	       * Make a bitmap pattern at the specified resolution.
 	       * Assume the CTM was set by pcl_set_ctm.
-	       ****** DOESN'T WORK -- MAKEB.PATTERN FORCES IDENTITY ******
 	       */
-	      gs_currentmatrix(pgs, &mat);
-	      gs_scale(pgs, pcls->resolution.x / resolution.x,
-		       pcls->resolution.y / resolution.y);
-	      code = gs_makebitmappattern(&ccolor, &tile, false, pgs, NULL);
+	      floatp scale_x = pcls->resolution.x / resolution.x;
+	      floatp scale_y = pcls->resolution.y / resolution.y;
+	      int code;
+
+	      /* If the resolution ratios are almost integers, */
+	      /* make them integers. */
+#define adjust_scale(s)\
+  if ( s - floor(s) < 0.001 || ceil(s) - s < 0.001 )\
+    s = floor(s + 0.0015)
+	      adjust_scale(scale_x);
+	      adjust_scale(scale_y);
+#undef adjust_scale
+	      code = pcl_makebitmappattern(&ccolor, &tile, pgs, scale_x,
+					   scale_y, rotation);
 
 	      if ( code < 0 )
 		return code;
 	      *ppi = ccolor.pattern;
-	      gs_setmatrix(pgs, &mat);
 	    }
 	  gs_setpattern(pgs, &ccolor);
 	}

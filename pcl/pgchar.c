@@ -50,7 +50,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      { hpgl_real_t pitch;
 	        if ( !hpgl_arg_c_real(pargs, &pitch) || pitch < 0 )
 		  return e_Range;
-		pfp->pitch_100ths = (uint)(pitch * 100);
+		pl_fp_set_pitch_per_inch(pfp, pitch);
 	      }
 	      break;
 	    case 4:		/* height */
