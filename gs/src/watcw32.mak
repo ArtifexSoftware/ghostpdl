@@ -45,7 +45,7 @@ PSOBJDIR=obj
 
 # Define the root directory for Ghostscript installation.
 
-AROOTDIR=c:/Aladdin
+AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 
 # Define the directory that will hold documentation at runtime.

@@ -30,7 +30,7 @@
 # Define the root directory for Ghostscript installation.
 
 !ifndef AROOTDIR
-AROOTDIR=c:/Aladdin
+AROOTDIR=c:/gs
 !endif
 !ifndef GSROOTDIR
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
