@@ -663,145 +663,116 @@ pdf_set_pattern_image(gs_data_image_t *pic, const gx_strip_bitmap *tile)
     pic->ImageMatrix.yy = pic->Height = tile->rep_height;
 }
 
-/* Write a color value.  rgs is "rg" for fill, "RG" for stroke. */
+/* Write the mask for a Pattern. */
 private int
-pdf_put_pattern_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
-		      const psdf_set_color_commands_t *ppscc)
+pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
+		     cos_stream_t **ppcs_mask)
 {
-    int code;
-    pdf_resource_t *pres;
+    int w = m_tile->tmask.rep_width, h = m_tile->tmask.rep_height;
+    gs_image1_t image;
     pdf_image_writer writer;
     cos_stream_t *pcs_image;
+    long pos;
+    int code;
+
+    gs_image_t_init_mask_adjust(&image, true, false);
+    pdf_set_pattern_image((gs_data_image_t *)&image, &m_tile->tmask);
+    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
+	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, NULL)) < 0
+	)
+	return code;
+    pcs_image = (cos_stream_t *)writer.pres->object;
+    pos = stell(pdev->streams.strm);
+    if ((code = pdf_copy_mask_bits(writer.binary.strm, m_tile->tmask.data, 0, m_tile->tmask.raster, w, h, 0)) < 0 ||
+	(code = cos_stream_add_since(pcs_image, pos)) < 0 ||
+	(code = pdf_end_image_binary(pdev, &writer, h)) < 0 ||
+	(code = pdf_end_write_image(pdev, &writer)) < 0
+	)
+	return code;
+    *ppcs_mask = pcs_image;
+    return 0;
+}
+
+/* Write a color value.  rgs is "rg" for fill, "RG" for stroke. */
+/* We break out some cases into single-use procedures for readability. */
+private int
+pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			const psdf_set_color_commands_t *ppscc,
+			pdf_resource_t **ppres)
+{
+    const gx_color_tile *m_tile = pdc->mask.m_tile;
+    const gx_color_tile *p_tile = pdc->colors.pattern.p_tile;
+    int w = p_tile->tbits.rep_width, h = p_tile->tbits.rep_height;
+    gs_color_space cs_RGB;
+    cos_value_t cs_value;
+    pdf_image_writer writer;
+    gs_image1_t image;
+    cos_stream_t *pcs_image;
+    cos_stream_t *pcs_mask = 0;
+    cos_value_t v;
+    long pos;
+    int code = pdf_cs_Pattern(pdev, &v);
+
+    if (code < 0)
+	return code;
+    gs_cspace_init_DeviceRGB(&cs_RGB);
+    code = pdf_color_space(pdev, &cs_value, &cs_RGB,
+			   &pdf_color_space_names, true);
+    if (code < 0)
+	return code;
+    gs_image_t_init_adjust(&image, &cs_RGB, false);
+    image.BitsPerComponent = 8;
+    pdf_set_pattern_image((gs_data_image_t *)&image, &p_tile->tbits);
+    if (m_tile) {
+	if ((code = pdf_put_pattern_mask(pdev, m_tile, &pcs_mask)) < 0)
+	    return code;
+    }
+    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
+	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, &cs_value)) < 0
+	)
+	return code;
+    pcs_image = (cos_stream_t *)writer.pres->object;
+    pos = stell(pdev->streams.strm);
+    if ((code = pdf_copy_color_bits(writer.binary.strm, p_tile->tbits.data, 0, p_tile->tbits.raster, w, h, pdev->color_info.depth >> 3)) < 0 ||
+	(code = cos_stream_add_since(pcs_image, pos)) < 0 ||
+	(code = pdf_end_image_binary(pdev, &writer, h)) < 0
+	)
+	return code;
+    pcs_image = (cos_stream_t *)writer.pres->object;
+    if ((pcs_mask != 0 &&
+	 (code = cos_dict_put_c_key_object(cos_stream_dict(pcs_image), "/Mask",
+					   COS_OBJECT(pcs_mask))) < 0) ||
+	(code = pdf_end_write_image(pdev, &writer)) < 0
+	)
+	return code;
+    code = pdf_pattern(pdev, pdc, p_tile, m_tile, pcs_image, ppres);
+    if (code < 0)
+	return code;
+    cos_value_write(&v, pdev);
+    pprints1(pdev->strm, " %s ", ppscc->setcolorspace);
+    return 0;
+}
+private int
+pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			  const psdf_set_color_commands_t *ppscc,
+			  pdf_resource_t **ppres)
+{
+    gx_color_index color = gx_dc_pure_color(pdc);
+    const gx_color_tile *m_tile = pdc->mask.m_tile;
     cos_value_t v;
     stream *s = pdev->strm;
-    const char *const cs = ppscc->setcolorspace;
-    const char *const scn = ppscc->setcolorn;
-    long pos;
+    int code = pdf_cs_Pattern_RGB(pdev, &v);
+    cos_stream_t *pcs_image;
 
-    if (pdc->type == gx_dc_type_pattern) {
-	/* Colored pattern (may be masked) */
-	const gx_color_tile *m_tile = pdc->mask.m_tile;
-	const gx_color_tile *p_tile = pdc->colors.pattern.p_tile;
-	int w = p_tile->tbits.rep_width, h = p_tile->tbits.rep_height;
-	gs_image1_t image1;	/* if not masked */
-	gs_image3_t image3;	/* if masked */
-	gs_color_space cs_RGB;
-	cos_value_t cs_value;
-
-	code = pdf_cs_Pattern(pdev, &v);
-	if (code < 0)
-	    return code;
-	gs_cspace_init_DeviceRGB(&cs_RGB);
-	code = pdf_color_space(pdev, &cs_value, &cs_RGB,
-			       &pdf_color_space_names, true);
-	if (code < 0)
-	    return code;
-	if (m_tile) {
-	    /* Masked image. */
-	    cos_stream_t *pcs_mask;
-	    /*
-	     * pdf_begin_image_data requires a gs_pixel_image_t, but the
-	     * MaskDict of a gs_image3_t is only a gs_data_image_t.
-	     */
-	    gs_image1_t mask_image;
-
-	    gs_image3_t_init(&image3, &cs_RGB,
-			     interleave_separate_source);
-	    image3.BitsPerComponent = 8;
-	    pdf_set_pattern_image((gs_data_image_t *)&image3,
-				  &p_tile->tbits);
-	    gs_image_t_init_mask_adjust(&mask_image, true, false);
-	    pdf_set_pattern_image((gs_data_image_t *)&mask_image,
-				  &m_tile->tmask);
-	    /* Write the image. */
-	    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
-		(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image3, &cs_value)) < 0
-		)
-		return code;
-	    pcs_image = (cos_stream_t *)writer.pres->object;
-	    pos = stell(pdev->streams.strm);
-	    if ((code = pdf_copy_color_bits(writer.binary.strm, p_tile->tbits.data, 0, p_tile->tbits.raster, w, h, pdev->color_info.depth >> 3)) < 0 ||
-		(code = cos_stream_add_since(pcs_image, pos)) < 0 ||
-		(code = pdf_end_image_binary(pdev, &writer, h)) < 0 ||
-		(code = pdf_end_write_image(pdev, &writer)) < 0
-		)
-		return code;
-	    /* Write the mask. */
-	    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
-		(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&mask_image, NULL)) < 0
-		)
-		return code;
-	    pcs_mask = (cos_stream_t *)writer.pres->object;
-	    pos = stell(pdev->streams.strm);
-
-	    if ((code = cos_dict_put_c_key_object(cos_stream_dict(pcs_image),
-						  "/Mask",
-						  COS_OBJECT(pcs_mask))) < 0 ||
-		(code = pdf_copy_mask_bits(writer.binary.strm, m_tile->tmask.data, 0, m_tile->tmask.raster, w, h, 0)) < 0 ||
-		(code = cos_stream_add_since(pcs_image, pos)) < 0 ||
-		(code = pdf_end_image_binary(pdev, &writer, h)) < 0 ||
-		(code = pdf_end_write_image(pdev, &writer)) < 0
-		)
-		return code;
-	} else {
-	    /* No mask. */
-	    gs_image_t_init_adjust(&image1, &cs_RGB, false);
-	    image1.BitsPerComponent = 8;
-	    pdf_set_pattern_image((gs_data_image_t *)&image1,
-				  &p_tile->tbits);
-	    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
-		(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image1, &cs_value)) < 0
-		)
-		return code;
-	    pcs_image = (cos_stream_t *)writer.pres->object;
-	    pos = stell(pdev->streams.strm);
-	    if ((code = pdf_copy_color_bits(writer.binary.strm, p_tile->tbits.data, 0, p_tile->tbits.raster, w, h, pdev->color_info.depth >> 3)) < 0 ||
-		(code = cos_stream_add_since(pcs_image, pos)) < 0 ||
-		(code = pdf_end_image_binary(pdev, &writer, h)) < 0 ||
-		(code = pdf_end_write_image(pdev, &writer)) < 0
-		)
-		return code;
-	}
-	code = pdf_pattern(pdev, pdc, p_tile, m_tile, pcs_image, &pres);
-	if (code < 0)
-	    return code;
-	cos_value_write(&v, pdev);
-	pprints1(s, " %s ", cs);
-    } else if (pdc->type == &gx_dc_pure_masked) {
-	/* Uncolored pattern (mask) */
-	gx_color_index color = gx_dc_pure_color(pdc);
-	const gx_color_tile *m_tile = pdc->mask.m_tile;
-	int w = m_tile->tmask.rep_width, h = m_tile->tmask.rep_height;
-	gs_image1_t image;
-
-	code = pdf_cs_Pattern_RGB(pdev, &v);
-	if (code < 0)
-	    return code;
-	gs_image_t_init_mask_adjust(&image, true, false);
-	pdf_set_pattern_image((gs_data_image_t *)&image, &m_tile->tmask);
-	if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
-	    (code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, NULL)) < 0
-	    )
-	    return code;
-	pcs_image = (cos_stream_t *)writer.pres->object;
-	pos = stell(pdev->streams.strm);
-	if ((code = pdf_copy_mask_bits(writer.binary.strm, m_tile->tmask.data, 0, m_tile->tmask.raster, w, h, 0)) < 0 ||
-	    (code = cos_stream_add_since(pcs_image, pos)) < 0 ||
-	    (code = pdf_end_image_binary(pdev, &writer, h)) < 0 ||
-	    (code = pdf_end_write_image(pdev, &writer)) < 0
-	    )
-	    return code;
-	code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, &pres);
-	if (code < 0)
-	    return code;
-	cos_value_write(&v, pdev);
-	pprints1(s, " %s ", cs);
-	pprintg3(s, "%g %g %g ", (color >> 16) / 255.0,
-		 ((color >> 8) & 0xff) / 255.0, (color & 0xff) / 255.0);
-    } else
-	return_error(gs_error_rangecheck);
-    cos_value_write(cos_resource_value(&v, pres->object), pdev);
-    pprints1(s, " %s\n", scn);
+    if (code < 0 ||
+	(code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
+	(code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
+	)
+	return code;
+    cos_value_write(&v, pdev);
+    pprints1(s, " %s ", ppscc->setcolorspace);
+    pprintg3(s, "%g %g %g ", (color >> 16) / 255.0,
+	     ((color >> 8) & 0xff) / 255.0, (color & 0xff) / 255.0);
     return 0;
 }
 int
@@ -810,8 +781,24 @@ pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 {
     if (gx_dc_is_pure(pdc))
 	return psdf_set_color((gx_device_vector *) pdev, pdc, ppscc);
-    /* We never halftone, so this must be a Pattern. */
-    return pdf_put_pattern_color(pdev, pdc, ppscc);
+    else {
+	/* We never halftone, so this must be a Pattern. */
+	int code;
+	pdf_resource_t *pres;
+	cos_value_t v;
+
+	if (pdc->type == gx_dc_type_pattern)
+	    code = pdf_put_colored_pattern(pdev, pdc, ppscc, &pres);
+	else if (pdc->type == &gx_dc_pure_masked)
+	    code = pdf_put_uncolored_pattern(pdev, pdc, ppscc, &pres);
+	else
+	    return_error(gs_error_rangecheck);
+	if (code < 0)
+	    return code;
+	cos_value_write(cos_resource_value(&v, pres->object), pdev);
+	pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
+	return 0;
+    }
 }
 
 /* ---------------- Miscellaneous ---------------- */
