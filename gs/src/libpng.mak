@@ -106,16 +106,16 @@ $(PNGGEN)libpng.dev : $(TOP_MAKEFILES) $(PNGGEN)libpng_$(SHARE_LIBPNG).dev
 
 # Define the shared version of libpng.
 # Note that it requires libz, which must be searched *after* libpng.
-$(PNGGEN)libpng_1.dev : $(TOP_MAKEFILES) $(LIBPNG_MAK) $(ECHOGS_XE) $(PZGEN)zlibe.dev
+$(PNGGEN)libpng_1.dev : $(TOP_MAKEFILES) $(LIBPNG_MAK) $(ECHOGS_XE) $(PZGEN)zlibd.dev $(PZGEN)zlibe.dev
 	$(SETMOD) $(PNGGEN)libpng_1 -lib $(LIBPNG_NAME)
-	$(ADDMOD) $(PNGGEN)libpng_1 -include $(PZGEN)zlibe.dev
+	$(ADDMOD) $(PNGGEN)libpng_1 -include $(PZGEN)zlibd.dev $(PZGEN)zlibe.dev
 
 # Define the non-shared version of libpng.
 $(PNGGEN)libpng_0.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(png_1) $(png_2)\
- $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
+ $(PZGEN)zlibd.dev $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
 	$(SETMOD) $(PNGGEN)libpng_0 $(png_1)
 	$(ADDMOD) $(PNGGEN)libpng_0 $(png_2)
-	$(ADDMOD) $(PNGGEN)libpng_0 -include $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
+	$(ADDMOD) $(PNGGEN)libpng_0 -include $(PZGEN)zlibd.dev $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
 
 $(PNGGEN)lpg89.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ)
 	$(SETMOD) $(PNGGEN)lpg89 $(PNGOBJ)pngwio.$(OBJ)
