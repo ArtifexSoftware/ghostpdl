@@ -382,7 +382,7 @@ $(DD)display.dev : $(display_)
 	$(SETDEV) $(DD)display $(display_)
 
 $(GLOBJ)gdevdsp.$(OBJ) : $(GLSRC)gdevdsp.c $(string__h)\
- $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsexit_h) $(gsparam_h)\
+ $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsparam_h)\
  $(GDEVH) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
 	$(GLCC) $(GLO_)gdevdsp.$(OBJ) $(C_) $(GLSRC)gdevdsp.c
 
@@ -540,7 +540,7 @@ HPPCL=$(GLOBJ)gdevpcl.$(OBJ)
 HPDLJM=$(GLOBJ)gdevdljm.$(OBJ) $(HPPCL)
 HPMONO=$(GLOBJ)gdevdjet.$(OBJ) $(HPDLJM)
 
-$(GLOBJ)gdevpcl.$(OBJ) : $(GLSRC)gdevpcl.c $(PDEVH) $(gdevpcl_h)
+$(GLOBJ)gdevpcl.$(OBJ) : $(GLSRC)gdevpcl.c $(PDEVH) $(math__h) $(gdevpcl_h)
 	$(GLCC) $(GLO_)gdevpcl.$(OBJ) $(C_) $(GLSRC)gdevpcl.c
 
 $(GLOBJ)gdevdljm.$(OBJ) : $(GLSRC)gdevdljm.c $(PDEVH) $(gdevdljm_h)
@@ -636,7 +636,7 @@ ijs_=$(GLOBJ)gdevijs.$(OBJ) $(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_client.$(OBJ) \
 $(DD)ijs.dev : $(ijs_) $(GLD)page.dev $(DD)ijslib.dev
 	$(SETPDEV) $(DD)ijs $(ijs_)
 
-$(GLOBJ)gdevijs.$(OBJ) : $(GLSRC)gdevijs.c $(PDEVH) \
+$(GLOBJ)gdevijs.$(OBJ) : $(GLSRC)gdevijs.c $(PDEVH) $(unistd__h) $(gp_h)\
  $(ijs_h) $(ijs_client_h)
 	$(CC_) $(I_)$(GLI_) $(II)$(IJSI_)$(_I) $(GLF_) $(GLO_)gdevijs.$(OBJ) $(C_) $(GLSRC)gdevijs.c
 
@@ -832,7 +832,7 @@ $(GLOBJ)gdevpdfj.$(OBJ) : $(GLSRC)gdevpdfj.c\
 
 $(GLOBJ)gdevpdfk.$(OBJ) : $(GLSRC)gdevpdfk.c $(GXERR) $(math__h) $(memory__h)\
  $(gdevpdfc_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
- $(gscie_h) $(gscspace_h) $(gsicc_h)\
+ $(gsicc_h) $(gxcie_h) $(gxcspace_h)\
  $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfk.$(OBJ) $(C_) $(GLSRC)gdevpdfk.c
 
@@ -1217,8 +1217,9 @@ pnga_=$(GLOBJ)gdevpnga.$(OBJ)
 $(DD)pnga.dev :	$(pnga_)
 	$(SETDEV) $(DD)pnga $(pnga_)
 
-$(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c\
- $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(png__h)
+$(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c $(png__h)\
+ $(gscdefs_h) $(gsdevice_h) $(gxblend_h) $(gxtext_h)\
+ $(gdevmem_h) $(gdevpccm_h) $(gdevprn_h)
 	$(CC_) $(I_)$(GLI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(GLO_)gdevpnga.$(OBJ) $(C_) $(GLSRC)gdevpnga.c
 
 ### ---------------------- PostScript image format ---------------------- ###
