@@ -737,7 +737,7 @@ userdict /.currentresourcefile null put
       ( in ) print = flush
       count 2 gt
        { (Operand stack:\n  ) print
-	 2 1 count 3 sub { (  ) print index =only flush } for
+         count 1 sub -1 2 { (  ) print index =only flush } for
 	 () = flush
        } if
     }
