@@ -494,16 +494,16 @@ embed_as_standard(gx_device_pdf *pdev, gs_font *font, int index,
 /*
  * Choose a name for embedded font.
  */
-const gs_font_name *pdf_choose_font_name(gs_font *font, bool orig_name)
+const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name)
 {
-    return orig_name ? (font->key_name.size != 0 ? &font->key_name : &font->font_name)
+    return key_name ? (font->key_name.size != 0 ? &font->key_name : &font->font_name)
 	             : (font->font_name.size != 0 ? &font->font_name : &font->key_name);
 }
 pdf_font_embed_t
 pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 		      gs_glyph *glyphs, int num_glyphs)
 {
-    const gs_font_name *fn = pdf_choose_font_name(font, true);
+    const gs_font_name *fn = pdf_choose_font_name(font, false);
     const byte *chars = fn->chars;
     uint size = fn->size;
     int index = pdf_find_standard_font_name(chars, size);

@@ -344,7 +344,7 @@ int pdf_close_text_document(gx_device_pdf *pdev); /* in gdevpdtw.c */
 /*
  * Choose a name for embedded font.
  */
-const gs_font_name *pdf_choose_font_name(gs_font *font, bool orig_name);
+const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name);
 /* ---------------- CMap resources ---------------- */
 
 /*
