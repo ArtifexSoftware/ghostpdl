@@ -83,8 +83,7 @@ pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 int
 pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont, 
 		  gs_glyph glyph, gs_char ch)
-{   gs_glyph_info_t info;
-    int code;
+{   int code;
     gs_char unicode;
 
     if (glyph == GS_NO_GLYPH)
