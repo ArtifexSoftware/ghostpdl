@@ -67,8 +67,7 @@ GS_DOCDIR=GS_DOC
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with ,.
 
-GS_LIB_DEFAULT=GS_LIB
-#GS_LIB_DEFAULT=SYS$COMMON:[GS],SYS$COMMON:[GS.FONT]
+GS_LIB_DEFAULT=GS_ROOT:[LIB],GS_ROOT:[RESOURCE],GS_ROOT:[FONT]
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
