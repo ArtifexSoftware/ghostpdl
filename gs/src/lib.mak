@@ -1638,7 +1638,7 @@ $(GLOBJ)gxclzlib.$(OBJ) : $(GLSRC)gxclzlib.c $(std_h)\
 # We include this here for the same reasons as page.dev.
 
 gdevvec_h=$(GLSRC)gdevvec.h $(gdevbbox_h) $(gp_h)\
- $(gsropt_h) $(gxdevice_h) $(gxiparam_h) $(gxistate_h) $(stream_h)
+ $(gsropt_h) $(gxdevice_h) $(gxiparam_h) $(gxistate_h) $(gxhldevc_h) $(stream_h)
 
 vector_=$(GLOBJ)gdevvec.$(OBJ)
 $(GLD)vector.dev : $(LIB_MAK) $(ECHOGS_XE) $(vector_)\

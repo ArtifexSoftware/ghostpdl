@@ -26,6 +26,7 @@
 #include "gdevbbox.h"
 #include "gxiparam.h"
 #include "gxistate.h"
+#include "gxhldevc.h"
 #include "stream.h"
 
 /*
@@ -109,8 +110,12 @@ typedef struct gx_device_vector_procs_s {
     int (*setlogop) (gx_device_vector * vdev, gs_logical_operation_t lop,
 		     gs_logical_operation_t diff);
     /* Other state */
-    int (*setfillcolor) (gx_device_vector * vdev, const gx_drawing_color * pdc);
-    int (*setstrokecolor) (gx_device_vector * vdev, const gx_drawing_color * pdc);
+    bool (*can_handle_hl_color) (gx_device_vector * vdev, const gs_imager_state * pis, 
+                         const gx_drawing_color * pdc);
+    int (*setfillcolor) (gx_device_vector * vdev, const gs_imager_state * pis, 
+                         const gx_drawing_color * pdc);
+    int (*setstrokecolor) (gx_device_vector * vdev, const gs_imager_state * pis,
+                           const gx_drawing_color * pdc);
     /* Paths */
     /* dopath and dorect are normally defaulted */
     int (*dopath) (gx_device_vector * vdev, const gx_path * ppath,
@@ -159,8 +164,8 @@ int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
 		/* Graphics state */\
 	gs_imager_state state;\
 	float dash_pattern[max_dash];\
-	gx_device_color_saved saved_fill_color;\
-	gx_device_color_saved saved_stroke_color;\
+	gx_hl_saved_color saved_fill_color;\
+	gx_hl_saved_color saved_stroke_color;\
 	gs_id no_clip_path_id;	/* indicates no clipping */\
 	gs_id clip_path_id;\
 		/* Other state */\
@@ -244,6 +249,7 @@ int gdev_vector_update_log_op(gx_device_vector * vdev,
 /* Bring the fill color up to date. */
 /* May call setfillcolor. */
 int gdev_vector_update_fill_color(gx_device_vector * vdev,
+				  const gs_imager_state * pis,
 				  const gx_drawing_color * pdcolor);
 
 /* Bring state up to date for filling. */

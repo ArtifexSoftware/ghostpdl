@@ -284,10 +284,10 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	}
 
 	if ((code =
-	     pdf_set_drawing_color(pdev, pdcolor, &pdev->saved_stroke_color,
+	     pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_stroke_color,
 				   &psdf_set_stroke_color_commands)) < 0 ||
 	    (code =
-	     pdf_set_drawing_color(pdev, pdcolor, &pdev->saved_fill_color,
+	     pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_fill_color,
 				   &psdf_set_fill_color_commands)) < 0
 	    )
 	    return code;

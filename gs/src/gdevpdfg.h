@@ -106,17 +106,17 @@ void pdf_prepare_initial_viewers_state(gx_device_pdf * pdev, const gs_imager_sta
 void pdf_reset_graphics(gx_device_pdf *pdev);
 
 /* Set initial color. */
-void pdf_set_initial_color(gx_device_pdf * pdev, gx_device_color_saved *saved_fill_color,
-		    gx_device_color_saved *saved_stroke_color);
+void pdf_set_initial_color(gx_device_pdf * pdev, gx_hl_saved_color *saved_fill_color,
+		    gx_hl_saved_color *saved_stroke_color);
 
 /* Set the fill or stroke color. */
 /* pdecolor is &pdev->fill_color or &pdev->stroke_color. */
 int pdf_set_pure_color(gx_device_pdf *pdev, gx_color_index color,
-		       gx_device_color_saved * psc,
+		       gx_hl_saved_color * psc,
 		       const psdf_set_color_commands_t *ppscc);
-int pdf_set_drawing_color(gx_device_pdf *pdev,
+int pdf_set_drawing_color(gx_device_pdf *pdev, const gs_imager_state * pis,
 			  const gx_drawing_color *pdc,
-			  gx_device_color_saved * psc,
+			  gx_hl_saved_color * psc,
 			  const psdf_set_color_commands_t *ppscc);
 
 /*

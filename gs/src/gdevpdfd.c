@@ -68,20 +68,33 @@ pdf_setlinewidth(gx_device_vector * vdev, floatp width)
 }
 
 private int
-pdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
+pdf_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
+		 const gx_drawing_color * pdc)
+{
+    return false;  /* High level color is not implemented yet. */
+}
+
+private int
+pdf_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis, 
+		 const gx_drawing_color * pdc)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
+    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdc);
+    const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
 
-    return pdf_set_drawing_color(pdev, pdc, &pdev->saved_fill_color,
+    return pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_fill_color,
 				 &psdf_set_fill_color_commands);
 }
 
 private int
-pdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
+pdf_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis, 
+                   const gx_drawing_color * pdc)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
+    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdc);
+    const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
 
-    return pdf_set_drawing_color(pdev, pdc, &pdev->saved_stroke_color,
+    return pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_stroke_color,
 				 &psdf_set_stroke_color_commands);
 }
 
@@ -146,6 +159,7 @@ const gx_device_vector_procs pdf_vector_procs = {
     psdf_setflat,
     psdf_setlogop,
 	/* Other state */
+    pdf_can_handle_hl_color,
     pdf_setfillcolor,
     pdf_setstrokecolor,
 	/* Paths */
@@ -411,7 +425,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     code = pdf_put_clip_path(pdev, pcpath);
     if (code < 0)
 	return code;
-    if (pdf_setfillcolor((gx_device_vector *)pdev, pdcolor) < 0)
+    if (pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor) < 0)
 	return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
 				    pcpath);
     if (have_path) {

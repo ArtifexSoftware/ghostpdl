@@ -280,14 +280,14 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
     gx_path_type_t rule = type & gx_path_type_rule;
 
     if (!(type & gx_path_type_fill) &&
-	!gx_dc_is_null(&xdev->saved_fill_color)
+	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color)
 	) {
 	static const byte nac_[] = {
 	    DUB(0), DA(pxaNullBrush), pxtSetBrushSource
 	};
 
 	PX_PUT_LIT(s, nac_);
-	color_set_null(&xdev->saved_fill_color);
+	color_set_null(&xdev->saved_fill_color.saved_dev_color);
 	if (rule != xdev->fill_rule) {
 	    px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
 		       eNonZeroWinding));
@@ -296,14 +296,14 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
 	}
     }
     if (!(type & gx_path_type_stroke) &&
-	!gx_dc_is_null(&xdev->saved_stroke_color)
+	!gx_dc_is_null(&xdev->saved_stroke_color.saved_dev_color)
 	) {
 	static const byte nac_[] = {
 	    DUB(0), DA(pxaNullPen), pxtSetPenSource
 	};
 
 	PX_PUT_LIT(s, nac_);
-	color_set_null(&xdev->saved_stroke_color);
+	color_set_null(&xdev->saved_stroke_color.saved_dev_color);
     }
 }
 
@@ -879,7 +879,15 @@ pclxl_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 }
 
 private int
-pclxl_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
+pclxl_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
+                   const gx_drawing_color * pdc)
+{
+    return false;
+}
+
+private int
+pclxl_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis, 
+                   const gx_drawing_color * pdc)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
 
@@ -887,7 +895,8 @@ pclxl_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 }
 
 private int
-pclxl_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
+pclxl_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis, 
+                     const gx_drawing_color * pdc)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
 
@@ -1069,6 +1078,7 @@ private const gx_device_vector_procs pclxl_vector_procs = {
     gdev_vector_setflat,
     pclxl_setlogop,
 	/* Other state */
+    pclxl_can_handle_hl_color,
     pclxl_setfillcolor,
     pclxl_setstrokecolor,
 	/* Paths */
@@ -1176,7 +1186,7 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
 	gx_drawing_color dcolor;
 
 	set_nonclient_dev_color(&dcolor, one);
-	pclxl_setfillcolor(vdev, &dcolor);
+	pclxl_setfillcolor(vdev, NULL, &dcolor);
 	if (pclxl_copy_text_char(xdev, data, raster, id, w, h) >= 0)
 	    return 0;
     }
@@ -1292,7 +1302,7 @@ pclxl_fill_mask(gx_device * dev,
     code = gdev_vector_update_clip_path(vdev, pcpath);
     if (code < 0)
 	return code;
-    code = gdev_vector_update_fill_color(vdev, pdcolor);
+    code = gdev_vector_update_fill_color(vdev, NULL, pdcolor);
     if (code < 0)
 	return 0;
     pclxl_set_cursor(xdev, x, y);
@@ -1431,7 +1441,9 @@ pclxl_begin_image(gx_device * dev,
 	    const byte *palette = (const byte *)
 		(pim->Decode[0] ? "\377\000" : "\000\377");
 
-	    code = gdev_vector_update_fill_color(vdev, pdcolor);
+	    code = gdev_vector_update_fill_color(vdev, 
+	                             NULL, /* use process color */
+				     pdcolor);
 	    if (code < 0)
 		goto fail;
 	    code = gdev_vector_update_log_op

@@ -107,18 +107,6 @@ psdf_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 }
 
 int
-psdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
-{
-    return psdf_set_color(vdev, pdc, &psdf_set_fill_color_commands);
-}
-
-int
-psdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
-{
-    return psdf_set_color(vdev, pdc, &psdf_set_stroke_color_commands);
-}
-
-int
 psdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	    gx_path_type_t type)
 {

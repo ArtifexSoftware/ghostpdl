@@ -252,8 +252,8 @@ gdev_vector_reset(gx_device_vector * vdev)
     {gs_imager_state_initial(1)};
 
     vdev->state = state_initial;
-    color_unset(&vdev->saved_fill_color);
-    color_unset(&vdev->saved_stroke_color);
+    gx_hld_saved_color_init(&vdev->saved_fill_color);
+    gx_hld_saved_color_init(&vdev->saved_stroke_color);
     vdev->clip_path_id =
 	vdev->no_clip_path_id = gs_next_ids(1);
 }
@@ -358,29 +358,47 @@ gdev_vector_update_log_op(gx_device_vector * vdev, gs_logical_operation_t lop)
     return 0;
 }
 
+/* Update color (fill or stroke). */
+private int
+gdev_vector_update_color(gx_device_vector * vdev,
+			      const gs_imager_state * pis,
+			      const gx_drawing_color * pdcolor,
+			      gx_hl_saved_color *sc,
+			      int (*setcolor) (gx_device_vector * vdev, 
+			                       const gs_imager_state * pis, 
+					       const gx_drawing_color * pdc))
+{
+    gx_hl_saved_color temp;
+    int code;
+    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdcolor);
+    const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
+    
+    gx_hld_save_color(pis_for_hl_color, pdcolor, &temp);
+    if (gx_hld_saved_color_equal(&temp, sc))
+	return 0;
+    code = (*setcolor) (vdev, pis_for_hl_color, pdcolor);
+    if (code < 0)
+	return code;
+    *sc = temp;
+    return 0;
+}
+
 /* Update the fill color. */
 int
 gdev_vector_update_fill_color(gx_device_vector * vdev,
+			      const gs_imager_state * pis,
 			      const gx_drawing_color * pdcolor)
 {
-    gx_device_color_saved temp = vdev->saved_fill_color;
-    int code;
-
-    if (!gx_saved_color_update(&temp, pdcolor))
-	return 0;
-    code = (*vdev_proc(vdev, setfillcolor)) (vdev, pdcolor);
-    if (code < 0)
-	return code;
-    vdev->saved_fill_color = temp;
-    return 0;
+    return gdev_vector_update_color(vdev, pis, pdcolor, &vdev->saved_fill_color, 
+                                    vdev_proc(vdev, setfillcolor));
 }
 
 /* Update the state for filling a region. */
 private int
-update_fill(gx_device_vector * vdev, const gx_drawing_color * pdcolor,
-	    gs_logical_operation_t lop)
+update_fill(gx_device_vector * vdev, const gs_imager_state * pis, 
+	    const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
 {
-    int code = gdev_vector_update_fill_color(vdev, pdcolor);
+    int code = gdev_vector_update_fill_color(vdev, pis, pdcolor);
 
     if (code < 0)
 	return code;
@@ -399,7 +417,7 @@ gdev_vector_prepare_fill(gx_device_vector * vdev, const gs_imager_state * pis,
 	    return code;
 	vdev->state.flatness = params->flatness;
     }
-    return update_fill(vdev, pdcolor, pis->log_op);
+    return update_fill(vdev, pis, pdcolor, pis->log_op);
 }
 
 /* Compare two dash patterns. */
@@ -498,15 +516,11 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 	}
     }
     if (pdcolor) {
-	gx_device_color_saved temp = vdev->saved_stroke_color;
+	int code = gdev_vector_update_color(vdev, pis, pdcolor, 
+		    &vdev->saved_stroke_color, vdev_proc(vdev, setstrokecolor));
 
-	if (gx_saved_color_update(&temp, pdcolor)) {
-	    int code = (*vdev_proc(vdev, setstrokecolor)) (vdev, pdcolor);
-
-	    if (code < 0)
-		return code;
-	    vdev->saved_stroke_color = temp;
-	}
+	if (code < 0)
+	    return code;
     }
     return 0;
 }
@@ -831,7 +845,7 @@ gdev_vector_begin_image(gx_device_vector * vdev,
 	(code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
 	((pim->ImageMask ||
 	  (pim->CombineWithColor && rop3_uses_T(pis->log_op))) &&
-	 (code = gdev_vector_update_fill_color(vdev, pdcolor)) < 0) ||
+	 (code = gdev_vector_update_fill_color(vdev, pis, pdcolor)) < 0) ||
 	(vdev->bbox_device &&
 	 (code = (*dev_proc(vdev->bbox_device, begin_image))
 	  ((gx_device *) vdev->bbox_device, pis, pim, format, prect,
@@ -1008,7 +1022,7 @@ gdev_vector_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 	if (code < 0)
 	    return code;
-	if ((code = update_fill(vdev, &dcolor, rop3_T)) < 0)
+	if ((code = update_fill(vdev, NULL, &dcolor, rop3_T)) < 0)
 	    return code;
     }
     if (vdev->bbox_device) {
@@ -1091,7 +1105,7 @@ gdev_vector_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 
 #define y0 ybot
 #define y1 ytop
-    int code = update_fill(vdev, pdevc, lop);
+    int code = update_fill(vdev, NULL, pdevc, lop);
     gs_fixed_point points[4];
 
     if (code < 0)
@@ -1131,7 +1145,7 @@ gdev_vector_fill_parallelogram(gx_device * dev,
 		  const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
     fixed pax = px + ax, pay = py + ay;
-    int code = update_fill(vdev, pdevc, lop);
+    int code = update_fill(vdev, NULL, pdevc, lop);
     gs_fixed_point points[4];
 
     if (code < 0)
@@ -1161,7 +1175,7 @@ gdev_vector_fill_triangle(gx_device * dev,
 		 fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
 		  const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
-    int code = update_fill(vdev, pdevc, lop);
+    int code = update_fill(vdev, NULL, pdevc, lop);
     gs_fixed_point points[3];
 
     if (code < 0)

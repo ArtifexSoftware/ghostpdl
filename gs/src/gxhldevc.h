@@ -66,15 +66,13 @@ typedef struct gx_device_color_s gx_device_color;
 /*
  * A structure for saving high level color information for high level devices.
  */
-typedef struct gx_hl_saved_color_s{
+typedef struct gx_hl_saved_color_s {
     gs_id color_space_id;
     gs_id pattern_id;
     bool ccolor_valid;
     gs_client_color ccolor;
     gx_device_color_saved saved_dev_color;
-} gx_hl_saved_color_t;
-
-typedef struct gx_hl_saved_color_s gx_hl_saved_color;
+} gx_hl_saved_color;
 
 /*
  * Initiailze a high level saved color to null
@@ -96,6 +94,9 @@ const gs_state * gx_hld_get_gstate_ptr(const gs_imager_state * pis);
  * to completely describe a full high level (non process color model)
  * color.  Otherwise 'false' is returned.  Thus the return does both
  * a save and test on the given color.
+ *
+ * If the device can't handle high level colors, it must pass NULL to 
+ * the 'pis' argument.
  */
 bool gx_hld_save_color(const gs_imager_state * pis,
 	const gx_device_color * pdevc, gx_hl_saved_color * psc);

@@ -176,7 +176,10 @@ const gx_device_pswrite gs_epswrite_device = {
 /* Vector device implementation */
 private int
     psw_beginpage(gx_device_vector * vdev),
-    psw_setcolors(gx_device_vector * vdev, const gx_drawing_color * pdc),
+    psw_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
+                  const gx_drawing_color * pdc),
+    psw_setcolors(gx_device_vector * vdev, const gs_imager_state * pis, 
+                  const gx_drawing_color * pdc),
     psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 	       fixed y1, gx_path_type_t type),
     psw_beginpath(gx_device_vector * vdev, gx_path_type_t type),
@@ -202,6 +205,7 @@ private const gx_device_vector_procs psw_vector_procs = {
     psdf_setflat,
     psdf_setlogop,
 	/* Other state */
+    psw_can_handle_hl_color,
     psw_setcolors,		/* fill & stroke colors are the same */
     psw_setcolors,
 	/* Paths */
@@ -682,14 +686,24 @@ psw_beginpage(gx_device_vector * vdev)
     return 0;
 }
 
+
 private int
-psw_setcolors(gx_device_vector * vdev, const gx_drawing_color * pdc)
+psw_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1, 
+              const gx_drawing_color * pdc)
 {
+    return false; /* High level color is not implemented yet. */
+}
+
+private int
+psw_setcolors(gx_device_vector * vdev, const gs_imager_state * pis1, 
+              const gx_drawing_color * pdc)
+{
+    const gs_imager_state * pis = NULL; /* High level color is not implemented yet. */
     if (!gx_dc_is_pure(pdc))
 	return_error(gs_error_rangecheck);
     /* PostScript only keeps track of a single color. */
-    gx_saved_color_update(&vdev->saved_fill_color, pdc);
-    gx_saved_color_update(&vdev->saved_stroke_color, pdc);
+    gx_hld_save_color(pis, pdc, &vdev->saved_fill_color);
+    gx_hld_save_color(pis, pdc, &vdev->saved_stroke_color);
     {
 	stream *s = gdev_vector_stream(vdev);
 	gx_color_index color = gx_dc_pure_color(pdc);
@@ -1194,7 +1208,7 @@ psw_copy_mono(gx_device * dev, const byte * data,
     if (one == gx_no_color_index) {
 	set_nonclient_dev_color(&color, zero);
 	code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
-					     &color);
+					     NULL, &color);
 	op = "If";
     } else if (zero == vdev->black && one == vdev->white)
 	op = "1 I";
@@ -1206,7 +1220,7 @@ psw_copy_mono(gx_device * dev, const byte * data,
 	}
 	set_nonclient_dev_color(&color, one);
 	code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
-					     &color);
+					     NULL, &color);
 	op = ",";
     }
     if (code < 0)
@@ -1345,7 +1359,7 @@ psw_fill_mask(gx_device * dev,
      */
     if (depth > 1 ||
 	gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
-	gdev_vector_update_fill_color(vdev, pdcolor) < 0 ||
+	gdev_vector_update_fill_color(vdev, NULL, pdcolor) < 0 ||
 	gdev_vector_update_log_op(vdev, lop) < 0
 	)
 	return gx_default_fill_mask(dev, data, data_x, raster, id,

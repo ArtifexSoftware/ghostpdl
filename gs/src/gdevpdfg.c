@@ -116,18 +116,16 @@ pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
 
 /* Set initial color. */
 void
-pdf_set_initial_color(gx_device_pdf * pdev, gx_device_color_saved *saved_fill_color,
-		    gx_device_color_saved *saved_stroke_color)
+pdf_set_initial_color(gx_device_pdf * pdev, gx_hl_saved_color *saved_fill_color,
+		    gx_hl_saved_color *saved_stroke_color)
 {
     gx_device_color black;
 
     pdev->black = gx_device_black((gx_device *)pdev);
     pdev->white = gx_device_white((gx_device *)pdev);
     set_nonclient_dev_color(&black, pdev->black);
-    memset(&pdev->vg_initial.saved_fill_color, 0, sizeof(pdev->saved_fill_color));
-    memset(&pdev->vg_initial.saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
-    gx_saved_color_update(&pdev->vg_initial.saved_fill_color, &black);
-    gx_saved_color_update(&pdev->vg_initial.saved_stroke_color, &black);
+    gx_hld_save_color(NULL, &black, &pdev->vg_initial.saved_fill_color);
+    gx_hld_save_color(NULL, &black, &pdev->vg_initial.saved_stroke_color);
 }
 
 /* Prepare intitial values for viewer's graphics state parameters. */
@@ -216,18 +214,21 @@ pdf_reset_graphics(gx_device_pdf * pdev)
 
 /* Set the fill or stroke color. */
 private int
-pdf_reset_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
-		gx_device_color_saved * psc,
+pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis, 
+	        const gx_drawing_color *pdc, gx_hl_saved_color * psc,
 		const psdf_set_color_commands_t *ppscc)
 {
     int code;
-    gx_device_color_saved temp = *psc;
+    gx_hl_saved_color temp;
 
+    if (pdev->skip_colors)
+	return 0;
+    gx_hld_save_color(pis, pdc, &temp);
     /* Since pdfwrite never applies halftones and patterns, but monitors
      * halftone/pattern IDs separately, we don't need to compare
      * halftone/pattern bodies here.
      */
-    if (!gx_saved_color_update(&temp, pdc) || pdev->skip_colors)
+    if (gx_hld_saved_color_equal(&temp, psc))
 	return 0;
     /*
      * In principle, we can set colors in either stream or text
@@ -246,21 +247,22 @@ pdf_reset_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
     return 0;
 }
 int
-pdf_set_drawing_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
-		      gx_device_color_saved * psc,
+pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
+		      const gx_drawing_color *pdc,
+		      gx_hl_saved_color * psc,
 		      const psdf_set_color_commands_t *ppscc)
 {
-    return pdf_reset_color(pdev, pdc, psc, ppscc);
+    return pdf_reset_color(pdev, pis, pdc, psc, ppscc);
 }
 int
 pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
-		   gx_device_color_saved * psc,
+		   gx_hl_saved_color * psc,
 		   const psdf_set_color_commands_t *ppscc)
 {
     gx_drawing_color dcolor;
 
     set_nonclient_dev_color(&dcolor, color);
-    return pdf_reset_color(pdev, &dcolor, psc, ppscc);
+    return pdf_reset_color(pdev, NULL, &dcolor, psc, ppscc);
 }
 
 /*
@@ -1305,7 +1307,7 @@ pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
 
     if (code < 0)
 	return code;
-    return pdf_set_drawing_color(pdev, pdcolor, &pdev->saved_fill_color,
+    return pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_fill_color,
 				 &psdf_set_fill_color_commands);
 }
 

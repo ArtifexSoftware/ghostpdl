@@ -266,10 +266,6 @@ int psdf_setflat(gx_device_vector * vdev, floatp flatness);
 int psdf_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 		  gs_logical_operation_t diff);
 
-	/* Other state */
-int psdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc);
-int psdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc);
-
 	/* Paths */
 #define psdf_dopath gdev_vector_dopath
 int psdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,

@@ -90,13 +90,6 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 bool gx_device_color_equal(const gx_device_color *pdevc1,
 			   const gx_device_color *pdevc2);
 
-/*
- * Saves a device color and replies whether the saved one was up to date.
- * This doesn't save the halftone or pattern body.
- */
-bool gx_saved_color_update(gx_device_color_saved *psc,
-		      const gx_device_color *pdevc);
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * The definitions in the following section of the file, plus the ones
  * just above, are the only ones that should be used by clients that
