@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.15 2003/03/05 02:44:43 giles Exp $
+# $Id$
 ## process this file with automake to generate Makefile.in
 
 AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 # require automake 1.7
@@ -33,6 +33,6 @@ test_sha1_CFLAGS = -DTEST
 
 TESTS = test_sha1 test_jbig2dec.py
 
-EXTRA_DIST = test_jbig2dec.py msvc.mak
+EXTRA_DIST = test_jbig2dec.py msvc.mak LICENSE
 
 MAINTAINERCLEANFILES = config_types.h.in
