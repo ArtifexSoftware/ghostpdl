@@ -174,7 +174,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     int code = 0;
     uint len;
 
-  top:if (pfen->first_time) {
+    if (pfen->first_time) {
 	pfen->find_handle = FindFirstFile(pfen->pattern, &(pfen->find_data));
 	if (pfen->find_handle == INVALID_HANDLE_VALUE)
 	    code = -1;
