@@ -15,6 +15,8 @@
 #include "gspaint.h"
 #include "gspath.h"
 #include "gspath2.h"
+#include "gsrop.h"
+#include "gsstate.h"
 #include "gxchar.h"
 #include "gxfont.h"		/* for setting next_char proc */
 #include "gxstate.h"
@@ -33,12 +35,17 @@ private const pcl_text_parsing_method_t
 private gs_char
 pcl_map_symbol(uint chr, const gs_show_enum *penum)
 {	const pcl_state_t *pcls = gs_state_client_data(penum->pgs);
-	const pl_symbol_map_t *psm =
-	  pcls->font_selection[pcls->font_selected].map;
+	const pcl_font_selection_t *pfs =
+	  &pcls->font_selection[pcls->font_selected];
+	const pl_symbol_map_t *psm = pfs->map;
 	uint first_code, last_code;
 
 	if ( psm == 0 )
-	  return chr;
+	  { /* Hack: bound TrueType fonts are indexed from 0xf000. */
+	    if ( pfs->font->scaling_technology == plfst_TrueType )
+	      return chr + 0xf000;
+	    return chr;
+	  }
 	first_code = pl_get_uint16(psm->first_code);
 	last_code = pl_get_uint16(psm->last_code);
 	/* If chr is double-byte but the symbol map is only single-byte, */
@@ -132,6 +139,15 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 	floatp scaled_hmi = pcl_hmi(pcls) / pscale->x;
 	floatp diff;
 	floatp limit = (pcl_right_margin(pcls) + 0.5) / pscale->x;
+	gs_rop3_t rop = gs_currentrasterop(pgs);
+	floatp gray = gs_currentgray(pgs);
+	gs_rop3_t effective_rop =
+	  (gray == 1.0 ? rop3_know_T_1(rop) :
+	   gray == 0.0 ? rop3_know_T_0(rop) : rop);
+	bool source_transparent = gs_currentsourcetransparent(pgs);
+	bool opaque = !source_transparent &&
+	  rop3_know_S_0(effective_rop) != rop3_D;
+	bool wrap = pcls->end_of_line_wrap && pcls->check_right_margin;
 
 	/* Compute any width adjustment. */
 	switch ( adjust )
@@ -167,12 +183,16 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 	 * occurs when *crossing* the right margin: if the cursor
 	 * is initially to the right of the margin, wrapping does
 	 * not occur.
+	 *
+	 * If characters are opaque (i.e., affect the part of their
+	 * bounding box that is outside their actual shape), we have to
+	 * do quite a bit of extra work.  This "feature" is a pain!
 	 */
-	if ( pcls->end_of_line_wrap && pcls->check_right_margin )
+	if ( opaque || wrap )
 	  { /*
-	     * If end-of-line wrap is enabled, we must render one character
-	     * at a time.  (It's a good thing this is used primarily for
-	     * diagnostics.)
+	     * If end-of-line wrap is enabled, or characters are opaque,
+	     * we must render one character at a time.  (It's a good thing
+	     * this is used primarily for diagnostics and contrived tests.)
 	     */
 	    uint i, ci;
 	    gs_char chr;
@@ -200,21 +220,131 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 		  }
 		gs_currentpoint(pgs, &pt);
 		/*
+		 * Check for end-of-line wrap.
 		 * Compensate for the fact that everything is scaled.
 		 * We should really handle this by scaling the font....
 		 * We need a little fuzz to handle rounding inaccuracies.
 		 */
-		if ( pt.x + width.x >= limit )
+		if ( wrap && pt.x + width.x >= limit )
 		  { pcl_do_CR(pcls);
 		    pcl_do_LF(pcls);
 		    pcls->check_right_margin = true; /* CR/LF reset this */
 		    gs_moveto(pgs, pcls->cap.x / pscale->x,
 			      pcls->cap.y / pscale->y);
 		  }
-		gs_show_n_init(penum, pgs, str + ci, 1);
-		code = gs_show_next(penum);
-		if ( code < 0 )
-		  return code;
+		if ( opaque )
+		  { /*
+		     * We have to handle bitmap and outline characters
+		     * differently.  For outlines, we construct the path,
+		     * then use eofill to process the inside and outside
+		     * separately.  For bitmaps, we do the rendering
+		     * ourselves, replacing the BuildChar procedure.
+		     * What a nuisance!
+		     */
+		    gs_font *pfont = gs_currentfont(penum->pgs);
+		    const pl_font_t *plfont =
+		      (const pl_font_t *)(pfont->client_data);
+		    gs_rop3_t background_rop = rop3_know_S_1(effective_rop);
+
+		    if ( plfont->scaling_technology == plfst_bitmap )
+		      { /*
+			 * It's too much work to handle all cases right.
+			 * Do the right thing in the two common ones:
+			 * where the background is unchanged, or where
+			 * the foreground doesn't depend on the previous
+			 * state of the destination.
+			 */
+			gs_point pt;
+
+			gs_gsave(pgs);
+			gs_setfilladjust(pgs, 0.0, 0.0);
+			/*
+			 * Here's where we take the shortcut: if the
+			 * current RasterOp is such that the background is
+			 * actually affected, affect the entire bounding
+			 * box of the character, not just the part outside
+			 * the glyph.
+			 */
+			if ( background_rop != rop3_D )
+			  { /*
+			     * Fill the bounding box.  We get this by
+			     * actually digging into the font structure.
+			     * Someday this should probably be a pl library
+			     * procedure.
+			     */
+			    gs_char chr;
+			    gs_glyph glyph;
+			    const byte *cdata;
+
+			    gs_show_n_init(penum, pgs, str + ci, 1);
+			    pcl_next_char_proc(penum, &chr);
+			    glyph = (*pfont->procs.encode_char)
+			      (penum, pfont, &chr);
+			    cdata = pl_font_lookup_glyph(plfont, glyph)->data;
+			    if ( cdata != 0 )
+			      { const byte *params = cdata + 6;
+			        int lsb = pl_get_int16(params);
+				int ascent = pl_get_int16(params + 2);
+			        int width = pl_get_uint16(params + 4);
+				int height = pl_get_uint16(params + 6);
+				gs_rect bbox;
+
+				gs_currentpoint(pgs, &pt);
+				bbox.p.x = pt.x + lsb;
+				bbox.p.y = pt.y - ascent;
+				bbox.q.x = bbox.p.x + width;
+				bbox.q.y = bbox.p.y + height;
+				gs_gsave(pgs);
+				gs_setrasterop(pgs, background_rop);
+				gs_rectfill(pgs, &bbox, 1);
+				gs_grestore(pgs);
+			      }
+			  }
+			/* Now do the foreground. */
+			gs_show_n_init(penum, pgs, str + ci, 1);
+			code = gs_show_next(penum);
+			if ( code < 0 )
+			  return code;
+			gs_currentpoint(pgs, &pt);
+			gs_grestore(pgs);
+			gs_moveto(pgs, pt.x, pt.y);
+		      }
+		    else
+		      { gs_point pt;
+		        gs_rect bbox;
+
+			gs_gsave(pgs);
+			gs_currentpoint(pgs, &pt);
+		        gs_newpath(pgs);
+			gs_moveto(pgs, pt.x, pt.y);
+			/* Don't allow pixels to be processed twice. */
+		        gs_setfilladjust(pgs, 0.0, 0.0);
+			gs_charpath_n_init(penum, pgs, str + ci, 1, true);
+			code = gs_show_next(penum);
+			if ( code < 0 )
+			  { gs_grestore(pgs);
+			    return code;
+			  }
+			gs_currentpoint(pgs, &pt); /* save end point */
+			/* Handle the outside of the path. */
+			gs_gsave(pgs);
+			gs_pathbbox(pgs, &bbox);
+			gs_rectappend(pgs, &bbox, 1);
+			gs_setrasterop(pgs, background_rop);
+			gs_eofill(pgs);
+			gs_grestore(pgs);
+			/* Handle the inside of the path. */
+			gs_fill(pgs);
+			gs_grestore(pgs);
+			gs_moveto(pgs, pt.x, pt.y);
+		      }
+		  }
+		else
+		  { gs_show_n_init(penum, pgs, str + ci, 1);
+		    code = gs_show_next(penum);
+		    if ( code < 0 )
+		      return code;
+		  }
 		if ( move != 0 )
 		  gs_rmoveto(pgs, move, 0.0);
 	      }

@@ -211,6 +211,7 @@ int hpgl_ES(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_FI(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_FN(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_LM(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_SA(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls);

@@ -7,9 +7,6 @@
 
 /* We use 'stick' instead of 'stick_or_arc' below just because it's shorter. */
 
-/* Define the number of symbols in the stick/arc font. */
-#define hpgl_stick_num_symbols (256+20)
-
 /* The arc font is just a condensed version of the stick font, */
 /* with minimal inter-character spacing. */
 #define hpgl_arc_font_condensation 0.70
@@ -33,3 +30,9 @@ int hpgl_stick_arc_segments(P4(const hpgl_stick_segment_procs_t *procs,
 
 /* Get the unscaled width of a stick/arc character. */
 int hpgl_stick_arc_width(P1(uint char_index));
+
+/*
+ * Map a Unicode character number to a stick/arc symbol index.
+ * Return 0 if not mappable.  (The first real symbol index is 32.)
+ */
+uint hpgl_unicode_stick_index(P1(gs_glyph char_code));

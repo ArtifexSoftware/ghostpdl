@@ -9,6 +9,7 @@
 #include "ctype_.h"
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
+#include "plvalue.h"
 #include "pgmand.h"
 #include "pginit.h"
 #include "pgfont.h"
@@ -16,14 +17,88 @@
 #include "pggeom.h"
 #include "pgmisc.h"
 #include "pcfsel.h"
-#include "gschar.h"
+#include "pcsymbol.h"
 #include "gscoord.h"
 #include "gsline.h"
 #include "gspath.h"
 #include "gsutil.h"
+#include "gxchar.h"		/* for show enumerator */
 #include "gxfont.h"
+#include "gxstate.h"		/* for gs_state_client_data */
 
 #define STICK_FONT_TYPEFACE 48
+
+/* ------ Next-character procedure ------ */
+
+/*
+ * Parse one character from a string.  Return 2 if the string is exhausted,
+ * 0 if a character was parsed, -1 if the string ended in the middle of
+ * a double-byte character.
+ */
+private int
+hpgl_next_char(const gs_const_string *pstr, uint *pindex,
+  const hpgl_state_t *pgls, gs_char *pchr)
+{	uint i = *pindex;
+	uint size = pstr->size;
+	const byte *p;
+
+	if ( i >= size )
+	  return 2;
+	p = pstr->data + i;
+	if ( pgls->g.label.double_byte ) {
+	  if ( i + 1 >= size )
+	    return -1;
+	  *pchr = (*p << 8) + p[1];
+	  *pindex = i + 2;
+	} else {
+	  *pchr = *p + pgls->g.label.row_offset;
+	  *pindex = i + 1;
+	}
+	return 0;
+}
+
+/*
+ * Map a character through the symbol set, if needed.
+ */
+private uint
+hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
+{	const pcl_font_selection_t *pfs =
+	  &pgls->g.font_selection[pgls->g.font_selected];
+	const pl_symbol_map_t *psm = pfs->map;
+
+	if ( psm == 0 )
+	  { /* Hack: bound TrueType fonts are indexed from 0xf000. */
+	    if ( pfs->font->scaling_technology == plfst_TrueType )
+	      return chr + 0xf000;
+	    return chr;
+	  }
+	{ uint first_code = pl_get_uint16(psm->first_code);
+	  uint last_code = pl_get_uint16(psm->last_code);
+
+	  /*
+	   * If chr is double-byte but the symbol map is only
+	   * single-byte, just return chr.
+	   */
+	  if ( chr < first_code || chr > last_code )
+	    return (last_code <= 0xff && chr > 0xff ? chr : 0xffff);
+	  else
+	    return psm->codes[chr - first_code];
+	}
+}
+
+/* Next-character procedure for fonts in GL/2 mode. */
+private int
+hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
+{	const pcl_state_t *pcls = gs_state_client_data(penum->pgs);
+#define pgls pcls		/****** NOTA BENE ******/
+	int code = hpgl_next_char(&penum->str, &penum->index, pgls, pchr);
+
+	if ( code )
+	  return code;
+	*pchr = hpgl_map_symbol(*pchr, pgls);
+#undef pgls
+	return 0;
+}
 
 /* ------ Font selection ------- */
 
@@ -40,6 +115,16 @@
     if ( (pgls)->g.font == 0 )\
       hpgl_call(hpgl_recompute_font(pgls));\
   } while (0)
+
+/*
+ * The character complement for the stick font is puzzling: it doesn't seem
+ * to correspond directly to any of the MSL *or* Unicode symbol set bits
+ * described in the Comparison Guide.  We set the bits for MSL Basic Latin
+ * (63) and for Unicode ASCII (31), Latin 1 (30), and Accents (26).
+ */
+private const byte stick_character_complement[8] = {
+  0x7f, 0xff, 0xff, 0xff, 0x3b, 0xff, 0xff, 0xfe
+};
 
 /* Select the stick font, creating it if necessary. */
 /* We break this out only for readability: it's only called in one place. */
@@ -69,7 +154,8 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	      hpgl_fill_in_stick_font(pfont, gs_next_ids(1));
 	    font->pfont = (gs_font *)pfont;
 	    font->scaling_technology = plfst_TrueType;/****** WRONG ******/
-	    font->font_type = plft_7bit_printable;	/****** WRONG ******/
+	    font->font_type = plft_Unicode;
+	    memcpy(font->character_complement, stick_character_complement, 8);
 	  }
 	/*
 	 * The stick/arc font is protean: set its proportional spacing,
@@ -85,8 +171,29 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	 */
 	pl_fp_set_pitch_cp(&font->params, 100.0*2/3);
 	pfs->font = font;
-	pfs->map = 0;	/****** WRONG ******/
+	{ byte id[2];
+
+	  id[0] = pfs->params.symbol_set >> 8;
+	  id[1] = pfs->params.symbol_set & 255;
+	  pfs->map = pcl_find_symbol_map(pgls /****** NOTA BENE ******/,
+					 id, plgv_Unicode);
+	}
 	return 0;
+}
+
+/* Check whether the stick font supports a given symbol set. */
+private bool
+hpgl_stick_font_supports(const pcl_state_t *pcls, uint symbol_set)
+{	pl_glyph_vocabulary_t gv = ~stick_character_complement[7] & 07;
+	byte id[2];
+	pl_symbol_map_t *map;
+
+	id[0] = symbol_set >> 8;
+	id[1] = symbol_set;
+	if ( (map = pcl_find_symbol_map(pcls, id, gv)) == 0 )
+	  return false;
+	return pcl_check_symbol_support(map->character_requirements,
+					stick_character_complement);
 }
 
 /* Recompute the current font if necessary. */
@@ -97,6 +204,8 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 
 	if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE
 	     && pfs->params.style == 0 /* upright */
+	     && hpgl_stick_font_supports(pgls /****** NOTA BENE ******/,
+					 pfs->params.symbol_set)
 	   )
 	  hpgl_call(hpgl_select_stick_font(pgls));
 	else
@@ -118,6 +227,7 @@ private int
 hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width,
   bool with_extra_space)
 {
+	uint glyph = hpgl_map_symbol(ch, pgls);
 	const pcl_font_selection_t *pfs = 
 	  &pgls->g.font_selection[pgls->g.font_selected];
 	int code = 0;
@@ -126,7 +236,8 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width,
 
 	if ( pfs->params.proportional_spacing ) {
 	  gs_make_identity(&mat);
-	  code = pl_font_char_width(pfs->font, pfs->map, &mat, ch, &gs_width);
+	  code = pl_font_char_width(pfs->font, pfs->map, &mat, glyph,
+				    &gs_width);
 	  if ( code >= 0 ) {
 	    *width = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
 	    goto add;
@@ -139,7 +250,8 @@ add:	if ( with_extra_space && pgls->g.character.extra_space.x != 0 ) {
 	  if ( pfs->params.proportional_spacing && ch != ' ' ) {
 	    /* Get the width of the space character. */
 	    int scode =
-	      pl_font_char_width(pfs->font, pfs->map, &mat, ' ', &gs_width);
+	      pl_font_char_width(pfs->font, pfs->map, &mat,
+				 hpgl_map_symbol(' ', pgls), &gs_width);
 	    hpgl_real_t extra;
 
 	    if ( scode >= 0 )
@@ -477,6 +589,10 @@ hpgl_print_char(hpgl_state_t *pgls, uint ch)
 	      smat.yx = pgls->g.character.slant;
 	      gs_concat(pgs, &smat);
 	    }
+	  /*
+	   * Patch the next-character procedure.
+	   */
+	  pfont->procs.next_char = hpgl_next_char_proc;
 	  gs_setfont(pgs, pfont);
 	  /*
 	   * Adjust the initial position of the character according to

@@ -15,6 +15,7 @@
 #include "gscoord.h"
 #include "gspath.h"
 #include "gspaint.h"
+#include "gsrop.h"		/* for gs_setsourcetransparent */
 #include "gxfarith.h"		/* for sincos */
 #include "gxfixed.h"
 #include "pgmand.h"
@@ -345,13 +346,13 @@ hpgl_polyfill_anchored_bbox(hpgl_state_t *pgls, gs_rect *bbox,
 #define cos_dir sincos.cos
 	  gs_matrix mat, imat;
 	  gs_sincos_t sincos;
-	  gs_point fill_increment;
 	  gs_point anchor = pgls->g.anchor_corner;
 	  /* calculate integer number of fill lines between the origin
              of the bbox and the anchor corner in X and Y directions.
              Then use the coordinates of the n'th fill line as the
              anchor corner.  Also make sure anchor corner is in front of bbox */
 #if 0
+	  gs_point fill_increment;
 	  int fill_line_num;
 #endif
 	  hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
@@ -467,10 +468,16 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 /* Plot one vector for vector fill all these use absolute coordinates. */
 private int
 hpgl_draw_vector_absolute(hpgl_state_t *pgls, hpgl_real_t x0, hpgl_real_t y0,
-			   hpgl_real_t x1, hpgl_real_t y1)
+			  hpgl_real_t x1, hpgl_real_t y1,
+			  hpgl_rendering_mode_t render_mode)
 {
-	hpgl_call(hpgl_add_point_to_path(pgls, x0, y0, hpgl_plot_move_absolute, false));
-	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, hpgl_plot_draw_absolute, false));
+	bool set_ctm = (render_mode != hpgl_rm_character);
+	hpgl_call(hpgl_add_point_to_path(pgls, x0, y0, 
+					 hpgl_plot_move_absolute, set_ctm));
+	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
+					 hpgl_plot_draw_absolute, set_ctm));
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
+
 	return 0;      
 }
 
@@ -478,7 +485,7 @@ hpgl_draw_vector_absolute(hpgl_state_t *pgls, hpgl_real_t x0, hpgl_real_t y0,
    +Y.  Not quite right - anchor corner not yet supported.
    pgls->g.anchor_corner needs to be used to set dash offsets */
  private int
-hpgl_polyfill(hpgl_state_t *pgls)
+hpgl_polyfill(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	hpgl_real_t diag_mag, startx, starty, endx, endy;
 	gs_sincos_t sincos;
@@ -540,7 +547,8 @@ start:	gs_sincos_degrees(direction, &sincos);
 	startx = bbox.p.x; starty = bbox.p.y;
 	endx = (diag_mag * cos_dir) + startx;
 	endy = (diag_mag * sin_dir) + starty;
-	hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, endx, endy));
+	hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, 
+					    endx, endy, render_mode));
 	/* Travel along +x using current spacing. */
 	if ( sin_dir != 0 )
 	  { hpgl_real_t x_fill_increment = fabs(spacing / sin_dir);
@@ -549,8 +557,8 @@ start:	gs_sincos_degrees(direction, &sincos);
 		    (startx += x_fill_increment) <= bbox.q.x
 
 		  )
-	      hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, endx, endy));
-	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
+	      hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, 
+						  endx, endy, render_mode));
 	  }
 	/* Travel along +Y similarly. */
 	if ( cos_dir != 0 )
@@ -572,8 +580,8 @@ start:	gs_sincos_degrees(direction, &sincos);
 	    while ( endy += y_fill_increment,
 		    (starty += y_fill_increment) <= bbox.q.y
 		  )
-	      hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, endx, endy));
-	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
+	      hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, 
+						  endx, endy, render_mode));
 	  }
 	if ( cross )
 	  {
@@ -589,104 +597,50 @@ start:	gs_sincos_degrees(direction, &sincos);
 
 /* HAS - probably not necessary and clip intersection with IW */
  private int
-hpgl_polyfill_using_current_line_type(hpgl_state_t *pgls)
+hpgl_polyfill_using_current_line_type(hpgl_state_t *pgls, 
+				      hpgl_rendering_mode_t render_mode)
 {
 	/* gsave and grestore used to preserve the clipping region */
   	hpgl_call(hpgl_gsave(pgls));
 	/* use the current path to set up a clipping path */
 	/* beginning at the anchor corner replicate lines */
 	hpgl_call(gs_clip(pgls->pgs));
-	hpgl_call(hpgl_polyfill(pgls));
+	hpgl_call(hpgl_polyfill(pgls, render_mode));
 	hpgl_call(hpgl_grestore(pgls));
 	hpgl_call(hpgl_clear_current_path(pgls));
 
 	return 0;
-}	      
-
-/* HAS no color support yet!!!  maps hpgl/2 pen colors to pcl
-   patterns.  Separate function as hpgl/2 color will be more
-   elaborate. */
- private pcl_pattern_type_t
-hpgl_map_pen_color(hpgl_state_t *pgls)
-{
-	/* HAS no color support yet.  Should use pcl_set_foreground_color(). */
-	return pgls->g.pen.selected == 0 ? pcpt_solid_white : pcpt_solid_black;
-
 }
 
-/* maps current hpgl fill type to pcl pattern type.  */
-/* HAS note that hpgl_map_fill_type() and hpgl_map_id() can/should be
-   merged into one function of one albeit large switch statement.  It
-   is two functions now for debugging purposes */
- private pcl_pattern_type_t
-hpgl_map_fill_type(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+ private int
+hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-	switch ( render_mode )
+	pcl_id_t pcl_id;
+	/* default to pcl pattern dictionary.  Only user defined types
+           use a private hpgl/2 dictionary. */
+	pl_dict_t *pattern_dictp = &pgls->patterns;
+	pcl_pattern_type_t pat;
+
+	if ( (render_mode == hpgl_rm_clip_and_fill_polygon) ||
+	     ((render_mode == hpgl_rm_character) &&
+	      ((pgls->g.character.fill_mode == hpgl_char_fill) ||
+	       (pgls->g.character.fill_mode == hpgl_char_fill_edge))) )
 	  {
-	  case hpgl_rm_character:
-	    switch (pgls->g.character.fill_mode)
-	      {
-	      case hpgl_char_solid_edge:
-	      case hpgl_char_edge:	/* (value is irrelevant) */
-		return pcpt_solid_black;
-	      default:
-		break;
-	      }
-	    /* fill like a polygon */
-	  case hpgl_rm_polygon:
-	    switch (pgls->g.fill.type)
-	      {
-	      case hpgl_fill_solid: 
-	      case hpgl_fill_solid2: return pcpt_solid_black;
-		/* should not hit next two cases in polygon mode and here
-                   (i.e. implies hpgl_rm_vector_fill) */
-	      case hpgl_fill_hatch: 
-	      case hpgl_fill_crosshatch: return pcpt_user_defined;
-	      case hpgl_fill_pcl_crosshatch: return pcpt_cross_hatch;
-	      case hpgl_fill_shaded: return pcpt_shading;
-	      case hpgl_fill_pcl_user_defined: return pcpt_user_defined;
-	      default: break;
-	      }
-	    break;
-	  case hpgl_rm_vector:
-	  case hpgl_rm_vector_fill:
-	    switch( pgls->g.screen.type )
-	      {
-	      case hpgl_screen_none: return hpgl_map_pen_color(pgls);
-	      case hpgl_screen_shaded_fill: return pcpt_shading;
-	      case hpgl_screen_hpgl_user_defined: return pcpt_user_defined;
-	      case hpgl_screen_crosshatch: return pcpt_cross_hatch;
-	      case hpgl_screen_pcl_user_defined: return pcpt_user_defined;
-	      default: break;
-	      }
-	  default: break;
+	    hpgl_call(hpgl_polyfill_using_current_line_type(pgls, 
+							    render_mode));
+	    return 0;
 	  }
-	/* If we are here the render mode or fill type is unknown/unsupported */
-	return pcpt_solid_black;
-}
-
-private pcl_id_t *
-hpgl_setget_pcl_id(pcl_id_t *id, uint val)
-{
-	id_set_value(*id, val);
-	return(id);
-}
-
-/* HAS I don't much care for the idea of overloading pcl_id with
-   shading and hatching information, but that appears to be the way
-   pcl_set_drawing_color() is set up.  */
-private pcl_id_t *
-hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_mode)
-{
 	switch ( render_mode )
 	  {
 	  case hpgl_rm_character:
 	    switch ( pgls->g.character.fill_mode )
 	      {
-	      case hpgl_char_solid_edge:
-	      case hpgl_char_edge:	/* (value is irrelevant) */
-		return NULL;
+	      case hpgl_char_solid_edge: /* fall through */
+	      case hpgl_char_edge:
+		pat = pcpt_solid_black;
+		break;
 	      default:
+		dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
 		break;
 	      }
 	    /* fill like a polygon */
@@ -694,79 +648,92 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 	    switch ( pgls->g.fill.type )
 	      {
 	      case hpgl_fill_solid: 
-	      case hpgl_fill_solid2: return NULL;
-		/* should not hit next two cases in polygon mode and here
-                   (i.e. implies hpgl_rm_vector_fill) */
-	      case hpgl_fill_hatch: 
-	      case hpgl_fill_crosshatch: break;
-	      case hpgl_fill_pcl_crosshatch: 
-		return hpgl_setget_pcl_id(id, pgls->g.fill.param.pattern_type);
-	      case hpgl_fill_shaded: 
-		return
-		  hpgl_setget_pcl_id(id, pgls->g.fill.param.shading);
-	      case hpgl_fill_pcl_user_defined : /* HAS - not supported */
-		return hpgl_setget_pcl_id(id, pgls->g.fill.param.pattern_id);
-	      default: break;
+	      case hpgl_fill_solid2: /* fall through */
+		/* this is handled by hpgl/2 line drawing machinary
+		   and should not be handled here. (see hpgl_polyfill()
+		   below).  For now we use black and no id */
+	      case hpgl_fill_hatch:
+	      case hpgl_fill_crosshatch:
+		pat = pcpt_solid_black;
+		break;
+	      case hpgl_fill_pcl_crosshatch:
+		id_set_value(pcl_id, pgls->g.fill.param.pattern_type);
+		pat = pcpt_cross_hatch;
+		break;
+	      case hpgl_fill_shaded:
+		id_set_value(pcl_id, pgls->g.fill.param.shading);
+		pat = pcpt_shading;
+		break;
+	      case hpgl_fill_pcl_user_defined:
+		id_set_value(pcl_id, pgls->g.fill.param.pattern_id);
+		pat = pcpt_user_defined;
+		break;
+	      case hpgl_fill_hpgl_user_defined:
+		{
+		  void *value;
+		  id_set_value(pcl_id, pgls->g.fill.param.pattern_id);
+		  if ( pl_dict_find(&pgls->g.raster_patterns, id_key(pcl_id), 2, &value ) )
+		    {
+		      pat = pcpt_user_defined;
+		      pattern_dictp = &pgls->g.raster_patterns;
+		    } else
+		      pat = pcpt_solid_black;
+		}
+	      break;
+	      default:
+		dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+		break;
 	      }
 	    break;
 	  case hpgl_rm_vector:
 	  case hpgl_rm_vector_fill:
 	    switch( pgls->g.screen.type )
 	      {
-	      case hpgl_screen_none: return NULL;
-	      case hpgl_screen_shaded_fill: 
-		return
-		  hpgl_setget_pcl_id(id, pgls->g.screen.param.shading);
-	      case hpgl_screen_hpgl_user_defined: break; /* unsupported */
+	      case hpgl_screen_none:
+		/* HAS should use set foreground color */
+		pat = (pgls->g.pen.selected == 0 ? pcpt_solid_white : pcpt_solid_black);
+		break;
+	      case hpgl_screen_shaded_fill:
+		pat = pcpt_shading;
+		id_set_value(pcl_id, pgls->g.screen.param.shading);
+		break;
 	      case hpgl_screen_crosshatch: 
-		return 
-		  hpgl_setget_pcl_id(id, pgls->g.screen.param.pattern_type);
-	      case hpgl_screen_pcl_user_defined: /* unsupported */
-		return hpgl_setget_pcl_id(id, pgls->g.screen.param.pattern_id);
-	      default: break;
+		pat = pcpt_cross_hatch;
+		id_set_value(pcl_id, pgls->g.screen.param.pattern_type);
+		break;
+	      case hpgl_screen_hpgl_user_defined:
+		{
+		  void *value;
+		  id_set_value(pcl_id, pgls->g.screen.param.user_defined.pattern_index);
+		  if ( pl_dict_find(&pgls->g.raster_patterns, id_key(pcl_id), 2, &value ) )
+		    {
+		      pat = pcpt_user_defined;
+		      pattern_dictp = &pgls->g.raster_patterns;
+		    } else
+		      pat = pcpt_solid_black;
+		}
+		break;
+	      case hpgl_screen_pcl_user_defined:
+		pat = pcpt_user_defined;
+		id_set_value(pcl_id, pgls->g.screen.param.pattern_id);
+		break;
+	      default: 
+		dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+		break;
 	      }
 	    break;
-	  default : break;
+	  default:
+	    dprintf("hpgl_set_drawing_color: internal error illegal mode\n");
+	    break;
 	  }
-	/* implies something is unknown or unsupported */
-	return NULL;
-} 
- 
- private int
-hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
-{
-	pcl_id_t pcl_id;
-	pl_dict_t pattern_dict;
-	pcl_pattern_type_t pat_type;
-	bool user_defined = ( (pgls->g.fill.type == hpgl_fill_hpgl_user_defined) ||
-			      (pgls->g.screen.type == hpgl_screen_hpgl_user_defined) );
-	if ( user_defined )
-	  {
-	    void *value; /* ignored */
-	    id_set_value(pcl_id, pgls->g.raster_fill_index);
-	    pattern_dict = pgls->g.raster_patterns;
-	    if ( !pl_dict_find(&pattern_dict, id_key(pcl_id), 2, &value) )
-	      pat_type = pcpt_solid_black;
-	    else
-	      pat_type = pcpt_user_defined;
-	  }
-	else
-	  {
-	    pat_type = hpgl_map_fill_type(pgls, render_mode);
-	    hpgl_map_id_type(pgls, &pcl_id, render_mode);
-	    pattern_dict = pgls->patterns;
-	  }
-	hpgl_call(pcl_set_drawing_color_rotation(pgls,
-						 pat_type,
-						 &pcl_id,
-						 &pattern_dict,
-						 (pgls->g.rotation / 90) & 3));
+
 	gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
-	if ( (render_mode == hpgl_rm_clip_and_fill_polygon) ||
-	     ((render_mode == hpgl_rm_character) &&
-	      ((pgls->g.character.fill_mode == hpgl_char_fill) ||
-	       (pgls->g.character.fill_mode == hpgl_char_fill_edge))) )
-	  hpgl_call(hpgl_polyfill_using_current_line_type(pgls));
+
+	hpgl_call(pcl_set_drawing_color_rotation(pgls,
+						 pat,
+						 &pcl_id,
+						 pattern_dictp,
+						 (pgls->g.rotation / 90) & 3));
 	return 0;
 }
 

@@ -15,7 +15,7 @@
 #include "gsuid.h"		/* for gxbitmap.h */
 #include "gstypes.h"		/* for gxbitmap.h */
 #include "gsstate.h"            /* needed by gsrop.h */
-#include "gsrop.h"              /* for source transparency */
+#include "gsrop.h"
 #include "gxbitmap.h"
 
 /* AC [x,y]; Anchor corner for fill offsets, note that this is
@@ -107,7 +107,7 @@ hatch:	    { hpgl_real_t spacing = params->spacing;
 	      if ( hpgl_arg_c_int(pargs, &index) )
 		{ if ( index < 1 || index > 8 )
 		    return e_Range;
-		  pgls->g.raster_fill_index = index;
+		   pgls->g.fill.param.pattern_id = index;
 		}
 	    }
 	    break;
@@ -270,6 +270,21 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
+/* MC mode[,opcode]; */
+int
+hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{	int mode = 0, opcode;
+
+	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
+	  return e_Range;
+	opcode = (mode ? 168 : 255);
+	if ( hpgl_arg_c_int(pargs, &opcode) && (opcode & ~255) )
+	  return e_Range;
+	pgls->logical_op = opcode;
+	gs_setrasterop(pgls->pgs, opcode);
+	return 0;
+}
+
 /* PW [width[,pen]]; */
 int
 hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
@@ -314,17 +329,11 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
-/* FIXME -- static global here because parser's longjmp clobbers the
-   dynamic allocation. */
-char data[1024];
-static char *pattern_data;
-
 /* RF [index[,width,height,pen...]]; */
 int
 hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	uint index, width, height;
-	int build_pat;
 	if ( pargs->phase == 0 )
 	  { 
 	    if ( !hpgl_arg_c_int(pargs, &index) )
@@ -344,56 +353,64 @@ hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		 height < 1 || height > 255
 	       )
 	      return e_Range;
-#define bitmap_width ((width + 7) >> 3)
-	    /* FIXME -- somehow the pg parser steps on this data while
-               parsing pixels */
-               
-#ifdef CLOBBER
-	    data = gs_alloc_bytes(pgls->memory,
-				  height * bitmap_width +
-				  sizeof(pcl_pattern_t),
-				  "hpgl raster fill");
-#endif
-	    if ( data == 0 )
+	    /* We convert raster fills to pcl user defined format and
+               let pcl process the data just like a user defined pcl
+               pattern.  All variables must be saved in globals since
+               the parser reinvokes hpgl_RF() while processing data. */
+	    pgls->g.raster_fill.width = width;
+	    pgls->g.raster_fill.height = height;
+#define bitmap_width ((pgls->g.raster_fill.width + 7) >> 3)  /* byte width */
+	    /* allocate enough memory for pattern header and data */
+	    pgls->g.raster_fill.data = gs_alloc_bytes(pgls->memory,
+						      height *
+						      bitmap_width +
+						      sizeof(pcl_pattern_t),
+						      "hpgl raster fill");
+	    if ( pgls->g.raster_fill.data == 0 )
 	      return e_Memory;
 
 	    /* format, continuation, pixel encoding, reserved, height
-               in pixels, width in pixels, and resolution */
-	    sprintf(data, "%c%c%c%c%c%c%c%c%c%c%c%c", 0, 0, 1, 0,
-		    height >> 8, height & 0xff, width >> 8, width & 0xff,
+               in pixels, width in pixels, and resolution. */
+	    sprintf(pgls->g.raster_fill.data, "%c%c%c%c%c%c%c%c%c%c%c%c", 0, 0, 1, 0,
+		    pgls->g.raster_fill.height >> 8,
+		    pgls->g.raster_fill.height & 0xff,
+		    pgls->g.raster_fill.width >> 8,
+		    pgls->g.raster_fill.width & 0xff,
 		    ((uint)floor(pgls->resolution.x + 0.5)) >> 8,
 		    ((uint)floor(pgls->resolution.x + 0.5)) & 0xff,
 		    ((uint)floor(pgls->resolution.y + 0.5)) >> 8,
-		    ((uint)floor(pgls->resolution.y + 0.5)) & 0xff );
+		    ((uint)floor(pgls->resolution.y + 0.5)) & 0xff);
 		     
+	    /* global id to uniquely identify the dictionary key.  FT
+               selects the pattern */
 	    id_set_value(pgls->g.raster_pattern_id, index);
-	    pattern_data = data + pattern_data_offset;
-	    memset(pattern_data, 0, height * bitmap_width);
+#define data (pgls->g.raster_fill.data)
+	    /* set bitmap to 0 we only toggle bits for the "on" case */
+	    memset(&data[pattern_data_offset], 0, pgls->g.raster_fill.height * bitmap_width);
+	    pargs->phase = 1;
 	  }
-	while ( pargs->phase < width * height )
+	/* bit offset of data */
+#define bitindx ((pargs->phase-1) + (pattern_data_offset * 8))
+	while ( (pargs->phase-1) < pgls->g.raster_fill.width * pgls->g.raster_fill.height )
 	  { 
 	    int pixel;
 	    if ( !hpgl_arg_c_int(pargs, &pixel) )
 	      break;
-	      if ( pixel )
-		pattern_data[pargs->phase >> 3] |= (128 >> (pargs->phase & 7));
-	      pargs->phase++;
+	    if ( pixel )
+	      data[bitindx >> 3] |= (128 >> (bitindx & 7));
+	    hpgl_next_phase(pargs);
 	  }
-	build_pat = 
-	  pcl_store_user_defined_pattern(pgls, &pgls->g.raster_patterns,
-					 pgls->g.raster_pattern_id, 
-					 data,
-					 height * bitmap_width + 
-					 sizeof(pcl_pattern_t));
+#undef data
+#undef byte_index
+	/* call pcl with the pattern data */
+	hpgl_call(pcl_store_user_defined_pattern(pgls, &pgls->g.raster_patterns,
+						 pgls->g.raster_pattern_id,
+						 pgls->g.raster_fill.data,
+						 pgls->g.raster_fill.height * bitmap_width +
+						 sizeof(pcl_pattern_t)));
 #undef bitmap_width
-#ifdef CLOBBER
-	gs_free_object(pgls->memory, data, "hpgl raster fill");
-#endif
-	if ( build_pat != 0) 
-	  { 
-	    dprintf( "bug\n" );
-	    return 0;
-	  }
+#undef pattern_data
+	gs_free_object(pgls->memory, pgls->g.raster_fill.data, "hpgl raster fill");
 	return 0;
 }
 
@@ -445,10 +462,15 @@ hpgl_SP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 
 /* SV [type[,option1[,option2]]; */
+/* HAS - this should be redone with a local copy of the screen
+   parameters and need to check if we draw the current path if the
+   command is called with arguments that set the state to the current
+   state */
 int
 hpgl_SV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int type = hpgl_screen_none;
 
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	if ( hpgl_arg_c_int(pargs, &type) )
 	  switch ( type )
 	    {
@@ -568,6 +590,7 @@ pglfill_do_init(gs_memory_t *mem)
 	  HPGL_COMMAND('F', 'T', hpgl_FT, 0),
 	  HPGL_COMMAND('L', 'A', hpgl_LA, 0),
 	  HPGL_COMMAND('L', 'T', hpgl_LT, 0),
+	  HPGL_COMMAND('M', 'C', hpgl_MC, 0),
 	  HPGL_COMMAND('P', 'W', hpgl_PW, 0),
 	  HPGL_COMMAND('R', 'F', hpgl_RF, 0),		/* + additional I parameters */
 	  /* SM has special argument parsing, so it must handle skipping */

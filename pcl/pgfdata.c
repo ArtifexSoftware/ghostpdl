@@ -6,8 +6,25 @@
 /* HP-GL/2 stick and arc font data */
 #include "std.h"
 #include "gstypes.h"
+#include "gsccode.h"
 #include "gxarith.h"		/* for any_abs */
 #include "pgfdata.h"
+
+/*
+ * This file serves 3 different purposes:
+ *
+ *	Compiled normally, it contains the runtime procedures for
+ *	implementing the stick/arc font.
+ *
+ *	Compiled with -dESCAPEMENTS, it creates an executable that prints out
+ *	the escapements for this font.
+ *
+ *	Compiled with -dOUTLINES, it creates an executable that prints out
+ *	PostScript procedures for the character outlines.
+ */
+
+/* Define the number of symbols in the stick/arc font. */
+#define hpgl_stick_num_symbols (256+20)
 
 /*
  * Characters are defined by a series of 1-byte points.  Normally, the top
@@ -264,6 +281,340 @@ main(int argc, char *argv[])
 
 #endif /* ESCAPEMENTS */
 
+#ifdef OUTLINES
+
+/*
+ * Main program for printing outlines.  Compile with:
+ *	gcc -I../gs -DOUTLINES -lm pgfdata.c 
+ */
+#include "math_.h"
+
+private int
+out_rmoveto(void *data, int dx, int dy)
+{	printf(" %d %d rmoveto", dx, dy);
+	return 0;
+}
+private int
+out_rlineto(void *data, int dx, int dy)
+{	printf(" %d %d rlineto", dx, dy);
+	return 0;
+}
+private int
+out_arc(void *data, int cx, int cy, const gs_int_point *start,
+  int sweep_angle, floatp chord_angle)
+{	int sx = start->x, sy = start->y;
+	int dx = sx - cx, dy = sy - cy;
+	double radius, angle;
+
+	if ( dx == 0 ) {
+	  radius = any_abs(dy);
+	  angle = (dy >= 0 ? 90.0 : 270.0);
+	} else if ( dy == 0 ) {
+	  radius = any_abs(dx);
+	  angle = (dx >= 0 ? 0.0 : 180.0);
+	} else {
+	  radius = hypot((floatp)dx, (floatp)dy);
+	  angle = atan2((floatp)dy, (floatp)dx) * radians_to_degrees;
+	}
+	printf(" %d %d %g %g %g %s", cx, cy, radius, angle,
+	       angle + sweep_angle,
+	       (sweep_angle < 0 ? "arcn" : "arc"));
+	return 0;
+}
+
+const hpgl_stick_segment_procs_t out_procs = {
+  out_rmoveto, out_rlineto, out_arc
+};
+
+int
+main(int argc, char *argv[])
+{	uint index;
+
+	for ( index = 0x20; index < 0x20 + hpgl_stick_num_symbols; ++index )
+	  { uint count = index - 0x20;
+
+	    printf("%d {\n", count);
+	    hpgl_stick_arc_segments(&out_procs, (void *)0, index, 0.0);
+	    printf("\n} defchar\n");
+	  }
+	return 0;
+}
+
+#endif /* OUTLINES */
+
+/* Unicode to symbol index mapping */
+
+/*
+ * The H-P plotter symbol set includes quite a few symbols that aren't
+ * in Unicode, plus what appear to be many duplicate symbols.
+ * The following table includes a fair number of educated guesses,
+ * and some missing mappings.
+ *
+ * H-P numbers their symbols starting at 32, so we do too.
+ * The table below is indexed by symbol number - 32.
+ */
+
+private const ushort hpgl_stick_to_unicode[hpgl_stick_num_symbols] = {
+  /* The first 92 symbols are 1-for-1 with the corresponding Unicode. */
+/* 32 (0x20) */
+  0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027,
+  0x0028, 0x0029, 0x002a, 0x002b, 0x002c, 0x002d, 0x002e, 0x002f,
+/* 48 (0x30) */
+  0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037,
+  0x0038, 0x0039, 0x003a, 0x003b, 0x003c, 0x003d, 0x003e, 0x003f,
+/* 64 (0x40) */
+  0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047,
+  0x0048, 0x0049, 0x004a, 0x004b, 0x004c, 0x004d, 0x004e, 0x004f,
+/* 80 (0x50) */
+  0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057,
+  0x0058, 0x0059, 0x005a, 0x005b, 0x005c, 0x005d, 0x005e, 0x005f,
+/* 96 (0x60) */
+  0x0060, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067,
+  0x0068, 0x0069, 0x006a, 0x006b, 0x006c, 0x006d, 0x006e, 0x006f,
+/* 112 (0x70) */
+  0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077,
+  0x0078, 0x0079, 0x007a, 0x007b,
+  0x00a6,			/* broken vertical bar */
+  0x007d,			/* right brace */
+  0x007e,			/* tilde */
+  0x25a0,			/* solid black square (DEL) */
+/* 128 (0x80) */
+  0x00f7,			/* division symbol */
+  0x00b1,			/* plus-minus */
+  0xffff,			/* small superscript x */
+  0x00b2,			/* small superscript 2 */
+  0x00b3,			/* small superscript 3 */
+  0xffff,			/* small subscript 10 */
+  0xffff,			/* small subscript e */
+  0x2264,
+  0x2265,
+  0x00b0,			/* (duplicate) degree symbol */
+  0x2248,
+  0x03a9,
+  0x03b1,
+  0x03b2,
+  0x03b3,
+  0x0394,
+/* 144 (0x90) */
+  0x03b5,			/* small epsilon */
+  0x03b8,
+  0x03bb,
+  0x00b5,
+  0x03bd,
+  0x03c0,
+  0x03c1,
+  0x03a3,
+  0x03c3,
+  0x00f8,
+  0x03c8,
+  0xffff,			/* small upward arrow */
+  0x2205,
+  0x00a4,
+  0x2260,
+  0x00a5,
+/* 160 (0xa0) */
+  0x00c4,			/* capital A diaeresis */
+  0x00d6,
+  0x00dc,
+  0x00e4,
+  0x00f6,
+  0x00fc,
+  0x00df,
+  0x00a1,
+  0x00d1,
+  0x00bf,
+  0x00f1,
+  0x00a3,
+  0x00e0,
+  0x00e7,
+  0x00a7,
+  0x00e9,
+/* 176 (0xb0) */
+  0x00f9,			/* small u grave */
+  0x00e8,
+  0xffff,			/* small a (or o?) ring */
+  0x00c6,
+  0x00e6,
+  0x00c5,
+  0x02c6,
+  0x02c7,
+  0x00e1,
+  0x00f2,
+  0x00f3,
+  0x00fa,
+  0x00e7,
+  0xffff,			/* capital sharp s?? (no such letter) */
+  0x00d8,
+  0x2229,
+/* 192 (0xc0) */
+  0x2283,			/* includes symbol */
+  0x2282,
+  0x222a,
+  0xffff,			/* long overscore */
+  0x2261,
+  0x2245,
+  0x2213,
+  0x2192,
+  0x2190,
+  0x2193,
+  0x222b,
+  0x2217,
+  0x2207,
+  0x02ca,
+  0x02cb,
+  0x221a,
+/* 208 (0xd0) */
+  0x22a2,			/* right tack */
+  0x2191,
+  0x00c3,
+  0x00e3,
+  0x00c7,
+  0x00c9,
+  0x00ec,
+  0x00d5,
+  0x00f5,
+  0x00f2,
+  0xffff,			/* duplicate diaeresis? */
+  0xffff,			/* macron? */
+  0x22a5,
+  0xffff,			/* duplicate ring/degree? */
+  0xffff,			/* square with top vertical tick */
+  0xffff,			/* rounded square with top vertical tick */
+/* 224 (0xe0) */
+  0xffff,			/* upward triangle with top vertical tick */
+  0xffff,			/* large plus sign */
+  0xffff,			/* large X / multiply sign */
+  0xffff,			/* 45 degree tilted square with top v. tick */
+  0xffff,			/* upward pointing arrow with open tri. head */
+  0xffff,			/* X with closed top */
+  0xffff,			/* large Z with small bar */
+  0xffff,			/* large Y */
+  0xffff,			/* large X with center replaced by small */
+				/* square with top vertical tick */
+  0xffff,			/* large 8-point star */
+  0xffff,			/* X with closed top and bottom */
+  0x007c,
+  0x2721,
+  0xffff,			/* em dash? */
+  0xffff,			/* top vertical tick */
+  0xffff,			/* (undefined) */
+/* 240 (0xf0) */
+  0xffff,			/* (undefined) */
+  0xffff,			/* (undefined) */
+  0x00a8,
+  0x02da,
+  0x02c8,
+  0xffff,			/* duplicate circumflex? */
+  0xffff,			/* duplicate em dash? */
+  0xffff,			/* raised large tilde */
+  0x02dc,			/* raised small tilde */
+  0xffff,			/* (undefined) */
+  0x25a0,			/* (duplicate) black square */
+  0x02cb,			/* (duplicate) grave accent */
+  0x02ca,			/* (duplicate) acute accent */
+  0xffff,			/* (undefined) */
+  0xffff,			/* long macron */
+  0xffff,			/* (undefined) */
+/* 256 (0x100) */
+  0x00c2,			/* capital A circumflex */
+  0x00e2,
+  0x00c1,
+  0x00c0,
+  0x00cb,
+  0x00eb,
+  0x00ca,
+  0x00ea,
+  0x00c8,
+  0x00ce,
+  0x00ee,
+  0x00cf,
+  0x00ef,
+  0x00cd,
+  0x00ed,
+  0x00cc,
+/* 272 (0x110) */
+  0x00d4,			/* capital O circumflex */
+  0x00f4,
+  0x00d2,
+  0x00d3,
+  0x00ba,
+  0x00aa,
+  0x0160,
+  0x0161,
+  0x0178,
+  0x00ff,
+  0x00fd,
+  0x00dd,
+  0x00da,
+  0x00db,
+  0x00fb,
+  0x00d9,
+/* 288 (0x120) */
+  0x00bb,			/* double guillemet right */
+  0x00ab,
+  0x25a1,
+  0x00bd,
+  0x00bc,
+  0x00be,
+  0x00de,			/* capital Thorn (maybe small?) */
+  0x00fe,			/* small thorn (maybe capital?) */
+  0x00b6,
+  0xffff,			/* infinity sign? */
+  0x00a2,
+  0x0192,
+  0x00d0,
+  0x00f0,
+  0x02ca,			/* (duplicate) acute accent? */
+  0x20a4,
+/* 304 (0x130) */
+  0x00e5,			/* small a tilde */
+  0xffff,			/* (duplicate) tilde? */
+  0xffff,			/* straight comma */
+  0xffff			/* 5-pointed asterisk */
+};
+
+/*
+ * Some stick font symbols have more than 1 plausible Unicode mapping.
+ * Define those here.
+ */
+
+private const ushort hpgl_stick_alt_unicode[] = {
+  139, 0x2126,			/* capital Omega = ohm symbol */
+  143, 0x2206,			/* capital Delta = increment */
+  143, 0x25b3,			/*   = upward-pointing triangle */
+  147, 0x03bc,			/* micro = small mu */
+  151, 0x2211,			/* capital Sigma = summation  */
+  204, 0x25bd,			/* nabla = downward-pointing triangle */
+  288, 0x226b,			/* double guil. right = much greater than */
+  289, 0x226a			/* double guil. left = much less than */
+};
+
+/*
+ * Map a Unicode character number to an index in the stick/arc font
+ * symbol table.  Return 0 if not mappable.  (The first real symbol
+ * index is 32.)
+ */
+uint
+hpgl_unicode_stick_index(gs_glyph char_code)
+{	if ( char_code < 0x20 )
+	  return 0;
+	if ( char_code <= 0x7b )
+	  return char_code;
+	if ( char_code == 0xffff )
+	  return 0;
+	/* Search the table.  This is slow. */
+	{ uint i;
+
+	  for ( i = 0x7c - 0x20; i < countof(hpgl_stick_to_unicode); ++i )
+	    if ( hpgl_stick_to_unicode[i] == char_code )
+	      return i + 0x20;
+	  /* Look for an alternate mapping. */
+	  for ( i = 0; i < countof(hpgl_stick_alt_unicode); i += 2 )
+	    if ( hpgl_stick_alt_unicode[i+1] == char_code )
+	      return hpgl_stick_alt_unicode[i];
+	}
+	return 0;
+}
 
 /* The actual font data */
 
@@ -588,432 +939,4 @@ private const byte arc_symbol_widths[] = {
    9, 9, 7, 7, 9, 9,11,10,18, 8,
    7,10, 8, 9, 3, 8,
    0
-};
-
-/*
- * Character set mappings.  The first byte of each pair is the replacement
- * value, the second byte is the character code.  Each table ends with 0.
- */
-
-static const ushort asciihp[] = {		 /* character set 0, no
-						    translation */
-    0, 0
-};
-
-static const ushort hp9825[] = {		 /* font 1 (hp 9825 character
-						    font): first number is CCP
-						    character index, second
-						    number is ASCII  */
-    175, 92,					 /* grid (square root sign) */
-    123, 94,					 /* up arrow */
-    214, 95,					 /* grid (backspace;
-						    underscore) */
-    219, 96,					 /* grid (backspace; grave
-						    accent) */
-    117, 123,					 /* greek upper case letter pi */
-    176, 124,					 /* grid (sideways "t") */
-    167, 125,					 /* grid (right arrow) */
-    216, 126,					 /* grid (backspace; tilde) */
-    0, 0
-};
-static const ushort fr_gr[] = {			/* font 2 (french / german font) */
-    139, 35,					 /* english pound sign */
-    220, 39,					 /* grid (backspace; acute
-						    accent) */
-    156, 92,					 /* lower case "c" with cedilla */
-    213, 94,					 /* grid (backspace;
-						    circumflex) */
-    214, 95,					 /* grid (backspace;
-						    underscore) */
-    219, 96,					 /* grid (backspace; grave
-						    accent) */
-    210, 123,					 /* grid (backspace; diaeresis
-						    or umlaut) */
-    211, 124,					 /* grid (backspace; center top
-						    circle) */
-    210, 125,					 /* grid (backspace; diaeresis
-						    or umlaut) */
-    7, 126,					 /* single quote */
-    0, 0
-};
-static const ushort scand[] = {			/* font 3 (scandinavian) */
-    139, 35,					 /* english pount sign */
-    158, 91,					 /* upper case "o" with slash */
-    147, 92,					 /* upper case "ae" combination */
-    121, 93,					 /* lower case "o" with slash */
-    148, 94,					 /* lower case "ae" combination */
-    214, 95,					 /* grid (backspace;
-						    underscore) */
-    210, 123,					 /* grid (backspace; diaeresis
-						    or umlaut) */
-    211, 124,					 /* grid (backspace; top center
-						    circle) */
-    210, 125,					 /* grid (backspace; diaeresis
-						    or umlaut) */
-    211, 126,					 /* grid (backspace; top center
-						    circle) */
-0, 0};
-static const ushort spanish[] = {		/* font 4 (spanish and latin american) */
-    137, 35,					 /* inverted question mark */
-    220, 39,					 /* grid (backspace; acute
-						    accent) */
-    135, 92,					 /* lower case dotted "i" */
-    213, 94,					 /* grid (backspace;
-						    circumflex) */
-    214, 95,					 /* grid (backspace;
-						    underscore) */
-    215, 123,					 /* grid (backspace; long
-						    tilde) */
-    216, 124,					 /* grid (backspace; tilde) */
-    215, 125,					 /* grid (backspace; long
-						    tilde) */
-    216, 126,					 /* grid (backspace; tilde) */
-    0, 0
-};
-static const ushort special[] = {		/* font 5 (special symbols) */
-    190, 65,					 /* grid (face centered symbol) */
-    191, 66,					 /* total 17 symbs */
-    192, 67,
-    193, 68,
-    194, 69,
-    195, 70,
-    196, 71,
-    197, 72,
-    198, 73,
-    199, 74,
-    200, 75,
-    201, 76,
-    202, 77,
-    203, 78,
-    204, 79,
-    205, 80,
-    206, 81,
-    /* break */
-    159, 97,					 /* grid (intersection symbol) */
-    160, 98,
-    161, 99,
-    162, 100,
-    0xbb, 101,					 /* over head bar */
-    164, 102,					 /* alway equal */
-    165, 103,					 /* grid (approximately equal
-						    symbol) */
-    106, 104,					 /* approximate symbol */
-    94, 105,					 /* similar (tilde) symbol */
-    103, 106,					 /* less than or equal symbol */
-    104, 107,					 /* greater than or equal
-						    symbol */
-    126, 108,					 /* not equal symbol */
-    111, 109,					 /* greek upper case delta */
-    117, 110,					 /* greek upper case pi */
-    119, 111,					 /* greek upper case sigma
-						    (summation symbol) */
-    97, 112,					 /* plus or minus sign */
-    166, 113,					 /* grid (minus or plus sign) */
-    167, 114,					 /* grid (right arrow) */
-    177, 115,					 /* up arrow */
-    168, 116,					 /* grid (left arrow) */
-    169, 117,					 /* grid (down arrow) */
-    170, 118,					 /* grid (integral symbol) */
-    96, 119,					 /* division sign */
-    171, 120,					 /* grid (five pointed star) */
-    172, 121,					 /* grid (gradient - inverted
-						    greek delta) */
-    105, 122,					 /* degrees symbol */
-    0, 0
-};
-
-static const ushort swedish_iso[] = {		/* font 50 iso swedish */
-    125, 36,                                   /* circle with four corner */
-    128, 91,                                   /* upper case "A" with 2 dots */
-    129, 92,                                   /* upper case "O" with 2 dots */
-    149, 93,                                   /* upper case "A" with one dot */
-    131, 123,                                  /* lower case "a" with 2 dots */
-    132, 124,                                  /* lower case "o" with 2 dots */
-    0x110, 125,                                /* lower case "a" with one dot */
-    0xbb, 126,                                 /* upper line */
-    0,0
-
-};
-
-static const ushort norway_iso1[] = {		/* font 59 iso Norway */
-    147, 91,                                   /* upper case "ae" combination   */
-    158, 92,                                   /* upper case "O" with slash */
-    149, 93,                                   /* upper case "A" with one dot */
-    148, 123,                                  /* lower case "ae" combination */
-    121, 124,                                  /* lower case "o" with slash */
-    0x110, 125,                                /* lower case "a" with one dot */
-    0xbb, 126,                                 /* upper line */
-     0,0
-};
-   
-static const ushort norway_iso2[] = {		/* font 59 iso Norway */
-    142, 35,                                   /* section divider */
-    147, 91,                                   /* upper case "ae" combination   */
-    158, 92,                                   /* upper case "O" with slash */
-    149, 93,                                   /* upper case "A" with one dot */
-    148, 123,                                  /* lower case "ae" combination */
-    121, 124,                                  /* lower case "o" with slash */
-    0x110, 125,                                /* lower case "a" with one dot */
-    92, 126,                                   /* vertical line */
-     0,0
-};
-
-static const ushort roman_ext[] = {		/* character sets 7,17,27 */
-	0xe3, 33,
-	0xe0, 34,
-	0xe8, 35,
-	0xe6, 36,
-	0xe4, 37,
-	0xe9, 38,
-	0xeb, 39,
-	0x10e,40,
-	0x40, 41,
-	0x3e, 42,
-	0xba, 43,
-	0x111, 44,
-	0xff, 45,
-	0xfd, 46,
-	0x10f,47,	
-	0xbb, 48,
-	0xfb, 49,
-	0xfa, 50,
-	0xbd, 51,
-	0xb4, 52,
-	0x9c, 53,
-	0x88, 54,
-	0x8a, 55,
-	0x87, 56,
-	0x89, 57,
-	0x7d, 58,
-	0x8b, 59,
-	0x7f, 60,
-	0x8e, 61,
-	0x10b,62,
-	0x10a,63,
-	0xe1, 64,
-	0xe7, 65,
-	0xf1, 66,
-	0xfe, 67,
-	0x98, 68,
-	0x8f, 69,
-	0x9a, 70,
-	0x9b, 71,
-	0x8c, 72,
-	0x91, 73,
-	0x99, 74,
-	0x90, 75,
-	0x83, 76,
-	0xe5, 77,
-	0x84, 78,
-	0x85, 79,
-	0x95, 80,
-	0xea, 81,
-	0x9e, 82,
-	0x93, 83,
-	0x110,84,
-	0xee, 85,
-	0x79, 86,
-	0x94, 87,
-	0x80, 88,
-	0xb6, 89,
-	0x81, 90,
-	0x82, 91,
-	0xb5, 92,
-	0xec, 93,
-	0x86, 94,
-	0xf0, 95,
-	0xe2, 96,
-	0xb2, 97,
-	0xb3, 98,
-	0x10c,99,
-	0x10d,100,
-	0xed, 101,
-	0xef, 102,
-	0xf3, 103,
-	0xf2, 104,
-	0xb7, 105,
-	0xb8, 106,
-	0xf6, 107,
-	0xf7, 108,
-	0xfc, 109,
-	0xf8, 110,
-	0xf9, 111,
-	0x106, 112,
-	0x107, 113,
-	14, 114,
-	0x73, 115,
-	0x108, 116,
-	0x105, 117,
-	0x104, 119,
-	0x103, 120,
-	0xf5, 121,
-	0xf4, 122,
-	0x101, 123,
-	0x102, 124,
-	0x100, 125,
-	13, 118,
-	0x61, 126,
-	0, 0
-};
-
-static const ushort jis_ascii[] = {		/* character sets 6,16,26 */
-	0x7f, 92,
-	0xbb, 126,
-	0, 0
-}; 
-
-static const ushort irv_iso[] = {		/* character sets 9,19,29 */
-	0x7d, 36,
-	0xbb, 126, 
-	0,0
-};
-
-static const ushort swedish_name_iso[] = {	/* character sets 31,41,51 */
-	0x7d, 36,
-	0xb5, 64,
-	0x80, 91,
-	0x81, 92,
-	0x95, 93,
-	0x82, 94,
-	0x8f, 96,
-	0x83, 123,
-	0x84, 124,
-	0x110, 125,
-	0x85, 126,
-	0,0
-}; 
-
-static const ushort german_iso[] = {		/* character sets 33,43,53 */
-	0x8e, 64,
-	0x80, 91,
-	0x81, 92,
-	0x82, 93,
-	0x83, 123,
-	0x84, 124,
-	0x85, 125,
-	0x86, 126,
-	0,0
-};
-
-static const ushort french_iso[] = {		/* character sets 34,44,54 */
-	0x8b, 35,
-	0x8c, 64,
-	0xbd, 91,
-	0x9c, 92,
-	0x8e, 93,
-	0x8f, 123,
-	0x90, 124,
-	0x91, 125,
-	0xba, 126,
-	0, 0
-};
-
-static const ushort uk_iso[] = {		/* character sets 35,45,55 */
-	0x8b, 35,
-	0xbb, 126,
-	0, 0
-
-};
-
-static const ushort italian_iso[] = {		/* character sets 36,46,56 */
-	0x8b, 35,
-	0x8e, 64,
-	0xbd, 91,
-	0x9c, 92,
-	0x8f, 93,
-	0x90, 96,
-	0x8c, 123,
-	0x99, 124,
-	0x91, 125,
-	0xb6, 126,
-	0, 0
-};
-
-static const ushort spanish_iso[] = {		/* character sets 37,47,57 */
-	0x8b, 35,
-	0x8e, 64,
-	0x87, 91,
-	0x88, 92,
-	0x89, 93,
-	0xbd, 123,
-	0x8a, 124,
-	0x9c, 125,
-	0, 0
-};
-
-static const ushort portuguese_iso[] = {	/* character sets 38,48,58 */
-	0x8e, 64,
-	0xb2, 91,
-	0xb4, 92,
-	0xb7, 93,
-	0xb3, 123,
-	0x9c, 124,
-	0xb8, 125,
-	0xbd, 126,
-	0, 0
-};
-
-static const ushort french2_iso[] = {		/* character sets 60,70,80 */
-	0x8b, 35,
-	0x8c, 64,
-	0xbd, 91,
-	0x9c, 92,
-	0x8e, 93,
-	0x73, 96,
-	0x8f, 123,
-	0x90, 124,
-	0x91, 125,
-	0xba, 126,
-	0, 0
-};
-
-static const ushort draft[] = {			/* character set 99 */
-	0x10a, 35,
-	0x10e, 39,
-	0x113, 42,
-	0x112, 44,
-	0x79, 92,
-	0xbc, 94,
-	0x73, 123,
-	0xbd, 124,
-	0x109,125,
-	0, 0
-};
-
-static const ushort config_plt[] = {    /* special character sets   */
-    0x110,123,                 /* lower case "a" with one dot */
-    0x8f, 124,                  /* Right accent e*/
-    0x9a, 125,                  /* Right accent o */
-    0x9b, 126,                  /* Right accent u */
-    0x83,  91,                  /* Umla a */
-    0x8a,  92,                  /* tilde n */
-    0x84,  93,                  /* Umla o */
-    0x85,  94,                  /* Umla u */
-       0,   0
-};
-
-static const ushort *hpcharset[] = {
-    asciihp,                                     /* set 0, 10 of hp */
-    hp9825,                                      /* ..  1, 11 ....  */
-    fr_gr,
-    scand,
-    spanish,
-    special,
-    jis_ascii,
-    roman_ext,
-    asciihp,
-    irv_iso,
-    swedish_iso,
-    swedish_name_iso,
-    norway_iso1,
-    german_iso,
-    french_iso,
-    uk_iso,
-    italian_iso,
-    spanish_iso,
-    portuguese_iso,
-    norway_iso2,
-    french2_iso,
-    draft,
-    config_plt          /* special for use with configuration plot only*/
 };

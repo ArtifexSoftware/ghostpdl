@@ -4,7 +4,8 @@
 
 /* pcfsel.c */
 /* PCL5 / HP-GL/2 font selection */
-#include "std.h"
+#include "stdio_.h"		/* stdio for gdebug */
+#include "gdebug.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcfont.h"
@@ -30,6 +31,31 @@ typedef enum {
 } score_index_t;
 typedef	int match_score_t[score_limit];
 
+#ifdef DEBUG
+
+private void
+dprint_cc(const byte *pcc)
+{	dprintf8("cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
+		 pcc[1], pcc[2], pcc[3], pcc[4], pcc[5], pcc[6], pcc[7]);
+}
+private void
+dprint_font_params_t(const pl_font_params_t *pfp)
+{	dprintf7("symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u\n",
+		 pfp->symbol_set,
+		 (pfp->proportional_spacing ? "prop." : "fixed"),
+		 pl_fp_pitch_cp(pfp) / 100.0, pfp->height_4ths * 4, pfp->style,
+		 pfp->stroke_weight, pfp->typeface_family);
+}
+private void
+dprint_font_t(const pl_font_t *pfont)
+{	dprintf3("storage=%d scaling=%d type=%d ",
+		 pfont->storage, pfont->scaling_technology, pfont->font_type);
+	dprint_cc(pfont->character_complement);
+	dputs(";\n   ");
+	dprint_font_params_t(&pfont->params);
+}
+
+#endif
 
 /* Decide whether an unbound font supports a symbol set (mostly convenient
  * setup for pcl_check_symbol_support(). */
@@ -191,6 +217,20 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 		fhp->Orientation == pcls->orientation:
 		0;
 	  }
+
+#ifdef DEBUG
+	if ( gs_debug_c('=') )
+	  { int i;
+
+	    dprintf1("[=]scoring 0x%lx: ", (ulong)fp);
+	    dprint_font_t(fp);
+	    dputs("   score:");
+	    for ( i = 0; i < score_limit; ++i )
+	      dprintf1(" %d", score[i]);
+	    dputs("\n");
+	  }
+#endif
+
 }
 
 /* Recompute the current font from the descriptive parameters. */
@@ -204,6 +244,13 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
 	    pl_font_t *best_font = 0;
 	    pl_symbol_map_t *mapp, *best_map;
 	    match_score_t best_match;
+
+#ifdef DEBUG
+	    if ( gs_debug_c('=') )
+	      { dputs("[=]request: ");
+	        dprint_font_params_t(&pfs->params);
+	      }
+#endif
 
 	    /* Initialize the best match to be worse than any real font. */
 	    best_match[0] = -1;
@@ -223,6 +270,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
 			  best_map = mapp;
 			  memcpy((void*)best_match, (void*)match,
 			      sizeof(match));
+			  if_debug0('=', "   (***best so far***)\n");
 			}
 		      break;
 		    }

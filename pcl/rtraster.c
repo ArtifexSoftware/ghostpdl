@@ -417,6 +417,13 @@ pcl_image_row(pcl_state_t *pcls, pcl_raster_row_t *row)
 	byte *data = row->data;
 	uint width = row->count << 3;
 
+	/* If the source isn't transparent, pad the row. */
+	if ( !pcls->raster.image.ImageMask )
+	  { if ( pcls->raster.width > width )
+	      memset(data + row->count, 0,
+		     ((pcls->raster.width + 7) >> 3) - row->count);
+	    width = pcls->raster.width;
+	  }
 	/* If the width has changed, end the current image and */
 	/* start a new one. */
 	if ( pcls->raster.last_width != width )

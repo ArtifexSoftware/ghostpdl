@@ -62,6 +62,7 @@ coord pcl_updated_hmi(P1(pcl_state_t *pcls));
 /* including the storage status that we prefix to it. */
 typedef struct pcl_pattern_s {
   pcl_entity_common;
+  uint id;			/* PCL pattern id, if any */
 	/* The first 8 or 12 bytes are defined by PCL5. */
 	/* See p. 13-18 of the PCL5 Technical Reference Manual. */
   byte format;

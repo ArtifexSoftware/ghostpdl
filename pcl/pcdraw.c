@@ -11,11 +11,12 @@
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"
 #include "gscspace.h"		/* for gscolor2.h */
-#include "gscolor2.h"		/* for gs_makebitmappattern */
 #include "gscoord.h"
 #include "gsdcolor.h"
 #include "gsimage.h"
+#include "gsrefct.h"
 #include "gsutil.h"
+#include "gxcolor2.h"		/* for gs_makebitmappattern, rc_decrement */
 #include "gxfixed.h"
 #include "gxstate.h"
 #include "gzstate.h"		/* for dev_color for color_set_null */
@@ -377,10 +378,13 @@ private const uint32 *cross_hatch_patterns[] = {
 
 /* Define an analogue of makebitmappattern that allows scaling. */
 /* (This might get migrated back into the library someday.) */
+/* We pass the PCL pattern id so we can store it in the Pattern's UID, */
+/* in order to be able to winnow the Pattern cache by PCL id. */
 private int pcl_bitmap_PaintProc(P2(const gs_client_color *, gs_state *));
-int
+private int
 pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
-  gs_state *pgs, floatp scale_x, floatp scale_y, int rotation /* 0..3 */)
+  gs_state *pgs, floatp scale_x, floatp scale_y, int rotation /* 0..3 */,
+  uint id)
 {	gs_client_pattern pat;
 	gs_matrix mat, dmat, smat;
 	bool d_reflected, s_reflected;
@@ -388,7 +392,7 @@ pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
 
 	if ( tile->raster != bitmap_raster(tile->size.x) )
 	  return_error(gs_error_rangecheck);
-	uid_set_UniqueID(&pat.uid, gs_next_ids(1));
+	uid_set_UniqueID(&pat.uid, id);
 	pat.PaintType = 1;
 	pat.TilingType = 1;
 	pat.BBox.p.x = 0;
@@ -416,6 +420,11 @@ pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
 	else 
 	  angle = -angle;
 	gs_matrix_rotate(&mat, angle, &mat);
+	/*
+	 * Reset the current color in the graphics state so that we don't
+	 * wind up with a stale pointer to a deleted pattern.
+	 */
+	gs_setgray(pgs, 0.0);
 	gs_makepattern(pcc, &pat, &mat, pgs, (gs_memory_t *)0);
 	gs_setmatrix(pgs, &smat);
 	return 0;
@@ -452,9 +461,9 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
   const pcl_id_t *pid, pl_dict_t *patterns, int rotation)
 {	gs_state *pgs = pcls->pgs;
 	gs_pattern_instance **ppi;
-	gs_pattern_instance *pi[4];	/* for user-defined pattern hack */
 	gs_int_point resolution;
 	gx_tile_bitmap tile;
+	uint saved_id;
 
 	switch ( type )
 	  {
@@ -473,7 +482,8 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 #define else_if_percent(maxp, shade, index)\
   else if ( percent <= maxp )\
     tile.data = (const byte *)shade,\
-    ppi = &pcls->cached_shading[index*4]
+    ppi = &pcls->cached_shading[index*4],\
+    saved_id = 0x10000 + index
 	      else_if_percent(2, shade_1_2, 0);
 	      else_if_percent(10, shade_3_10, 1);
 	      else_if_percent(20, shade_11_20, 2);
@@ -513,6 +523,7 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 		}
 	      ppi = &pcls->cached_cross_hatch[index*4];
 	      tile.data = (const byte *)cross_hatch_patterns[index];
+	      saved_id = 0x20000 + index;
 	    }
 	    tile.raster = 8;
 	    tile.size.x = 64;
@@ -551,12 +562,23 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	      resolution.y = pl_get_uint16(ppt->y_resolution);
 #undef ppt
 	      /*
-	       ****** HACK: just create a new pattern each time.
-	       ****** THIS IS UNACCEPTABLE, but will get us through the CET.
+	       * Currently we only save the Pattern object for a single
+	       * user-defined pattern at a time.  This is probably going
+	       * to be good enough for all realistic applications....
 	       */
-	      pi[0] = pi[1] = pi[2] = pi[3] = 0;
-	      ppi = pi;
+	      if ( id_value(*pid) != id_value(pcls->cached_pattern_id) )
+		{ /* Release patterns being decached. */
+		  int i;
+		  for ( i = 0; i < 3; ++i )
+		    { rc_decrement_only(pcls->cached_pattern[i],
+					"old cached_pattern");
+		      pcls->cached_pattern[i] = 0;
+		    }
+		  pcls->cached_pattern_id = *pid;
+		}
+	      ppi = pcls->cached_pattern;
 	    }
+	    saved_id = id_value(*pid);
 	    break;
 	  /* case pcpt_current_pattern: */	/* caller handles this */
 	  default:
@@ -589,7 +611,7 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	      adjust_scale(scale_y);
 #undef adjust_scale
 	      code = pcl_makebitmappattern(&ccolor, &tile, pgs, scale_x,
-					   scale_y, rotate);
+					   scale_y, rotate, saved_id);
 
 	      if ( code < 0 )
 		return code;
@@ -606,14 +628,34 @@ pcdraw_do_init(gs_memory_t *mem)
 {	return 0;
 }
 private void
+cached_pattern_init(gs_pattern_instance **pcpat)
+{	*pcpat = 0;
+}
+private void
+cached_pattern_release(gs_pattern_instance **pcpat)
+{	rc_decrement_only(*pcpat, "cached_pattern_release");
+	*pcpat = 0;
+}
+private void
 pcdraw_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & pcl_reset_initial )
-	  { int i;
-	    for ( i = 0; i < countof(pcls->cached_shading); ++i )
-	      pcls->cached_shading[i] = 0;
-	    for ( i = 0; i < countof(pcls->cached_cross_hatch); ++i )
-	      pcls->cached_cross_hatch[i] = 0;
-	  }
+{	void (*proc)(P1(gs_pattern_instance **));
+
+	if ( type & pcl_reset_initial )
+	  proc = cached_pattern_init;
+	else if ( type & (pcl_reset_cold | pcl_reset_printer) )
+	  proc = cached_pattern_release;
+	else
+	  return;
+	/* Flush any stale pointers to patterns. */
+	gs_setgray(pcls->pgs, 0.0);
+	{ int i;
+	  for ( i = 0; i < countof(pcls->cached_shading); ++i )
+	    (*proc)(&pcls->cached_shading[i]);
+	  for ( i = 0; i < countof(pcls->cached_cross_hatch); ++i )
+	    (*proc)(&pcls->cached_cross_hatch[i]);
+	  for ( i = 0; i < countof(pcls->cached_pattern); ++i )
+	    (*proc)(&pcls->cached_pattern[i]);
+	}
 }
 const pcl_init_t pcdraw_init = {
   pcdraw_do_init, pcdraw_do_reset

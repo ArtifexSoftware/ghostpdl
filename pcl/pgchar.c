@@ -21,42 +21,51 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 {	/*
 	 * Since these commands take an arbitrary number of arguments,
 	 * we reset the argument bookkeeping after each group.
-	 * We reset phase to 1 after seeing the first pair,
+	 * We reset phase to 1, 2, or 3 after seeing the first pair,
 	 * so we can tell whether there were any arguments at all.
+	 * (1 means no parameter changed, >1 means some parameter changed.)
 	 */
 	pcl_font_selection_t *pfs = &pgls->g.font_selection[index];
 #define pfp (&pfs->params)
 	int kind;
 
-	for ( ; hpgl_arg_c_int(pargs, &kind); pargs->phase = 1 )
+	for ( ; hpgl_arg_c_int(pargs, &kind); pargs->phase |= 1 )
 	  switch ( kind )
 	    {
 	    case 1:		/* symbol set */
 	      { int32 sset;
 	        if ( !hpgl_arg_int(pargs, &sset) )
 		  return e_Range;
-		pfp->symbol_set = (uint)sset;
+		if ( pfp->symbol_set != (uint)sset )
+		  pfp->symbol_set = (uint)sset,
+		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 2:		/* spacing */
 	      { int spacing;
 	        if ( !hpgl_arg_c_int(pargs, &spacing) || (spacing & ~1) )
 		  return e_Range;
-		pfp->proportional_spacing = spacing;
+		if ( pfp->proportional_spacing != spacing )
+		  pfp->proportional_spacing = spacing,
+		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 3:		/* pitch */
 	      { hpgl_real_t pitch;
 	        if ( !hpgl_arg_c_real(pargs, &pitch) || pitch < 0 )
 		  return e_Range;
-		pl_fp_set_pitch_per_inch(pfp, pitch);
+		if ( pl_fp_pitch_per_inch(pfp) != pitch )
+		  pl_fp_set_pitch_per_inch(pfp, pitch),
+		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 4:		/* height */
 	      { hpgl_real_t height;
 	        if ( !hpgl_arg_c_real(pargs, &height) || height < 0 )
 		  return e_Range;
-		pfp->height_4ths = (uint)(height * 4);
+		if ( pfp->height_4ths != (uint)(height * 4) )
+		  pfp->height_4ths = (uint)(height * 4),
+		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 5:		/* posture */
@@ -65,7 +74,9 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 		     posture < 0 || posture > 2
 		   )
 		  return e_Range;
-		pfp->style = posture;
+		if ( pfp->style != posture )
+		  pfp->style = posture,
+		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 6:		/* stroke weight */
@@ -74,14 +85,18 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 		     weight < -7 || (weight > 7 && weight != 9999)
 		   )
 		  return e_Range;
-		pfp->stroke_weight = weight;
+		if ( pfp->stroke_weight != weight )
+		  pfp->stroke_weight = weight,
+		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 7:		/* typeface */
 	      { int32 face;
 	        if ( !hpgl_arg_int(pargs, &face) )
 		  return e_Range;
-		pfp->typeface_family = (uint)face;
+		if ( pfp->typeface_family != (uint)face )
+		  pfp->typeface_family = (uint)face,
+		    pargs->phase |= 2;
 	      }
 	      break;
 	    default:
@@ -90,10 +105,12 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	/* If there were no arguments at all, default all values. */
 	if ( !pargs->phase )
 	  hpgl_default_font_params(pfs);
-	/* Decache the font. */
-	pfs->font = 0;
-	if ( index == pgls->g.font_selected )
-	  pgls->g.font = 0;
+	if ( pargs->phase != 1 )
+	  { /* A value changed, or we are defaulting.  Decache the font. */
+	    pfs->font = 0;
+	    if ( index == pgls->g.font_selected )
+	      pgls->g.font = 0;
+	  }
 	return 0;
 }
 /* Define label drawing direction (DI, DR). */
@@ -281,6 +298,32 @@ hpgl_FN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return hpgl_select_font_by_id(pargs, pgls, 1);
 }
 
+/* The following is an extension documented in the Comparison Guide. */
+/* LM [mode[, row number]]; */
+ int
+hpgl_LM(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{	int mode = 0, row_number = 0;
+	int old_mode =
+	  (pgls->g.label.double_byte ? 1 : 0) +
+	  (pgls->g.label.write_vertical ? 2 : 0);
+
+	hpgl_arg_c_int(pargs, &mode);
+	hpgl_arg_c_int(pargs, &row_number);
+	pgls->g.label.row_offset =
+	  (row_number < 0 ? 0 : row_number > 255 ? 255 : row_number) << 8;
+	mode &= 3;
+	pgls->g.label.double_byte = (mode & 1) != 0;
+	pgls->g.label.write_vertical = (mode & 2) != 0;
+	/*
+	 * The documentation says "When LM switches modes, it turns off
+	 * symbol mode."  We take this literally: LM only turns off
+	 * symbol mode if the new label mode differs from the old one.
+	 */
+	if ( mode != old_mode )
+	  pgls->g.symbol_mode = 0;
+	return 0;
+}
+
 /* LO [origin]; */
  int
 hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls)
@@ -420,6 +463,7 @@ pgchar_do_init(gs_memory_t *mem)
 	  HPGL_COMMAND('E', 'S', hpgl_ES, 0),
 	  HPGL_COMMAND('F', 'I', hpgl_FI, 0),
 	  HPGL_COMMAND('F', 'N', hpgl_FN, 0),
+	  HPGL_COMMAND('L', 'M', hpgl_LM, 0),
 	  HPGL_COMMAND('L', 'O', hpgl_LO, 0),
 	  HPGL_COMMAND('S', 'A', hpgl_SA, 0),
 	  HPGL_COMMAND('S', 'B', hpgl_SB, 0),

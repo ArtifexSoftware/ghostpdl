@@ -15,6 +15,8 @@
 #include "gsrop.h"
 #include "gsstate.h"
 #include "gxbitmap.h"
+#include "gxdevice.h"		/* for gxpcolor.h */
+#include "gxpcolor.h"		/* for pattern cache winnowing */
 
 /* Source transparency setting is in rtmisc.c. */
 
@@ -66,19 +68,25 @@ pcl_store_user_defined_pattern(pcl_state_t *pcls, pl_dict_t *pattern_dict,
 	uint height, width;
 	uint raster, bytes, start, stored_raster;
 	byte *header;
+
 #define ppat ((const pcl_pattern_t *)(data - pattern_extra))
-	/* Amazingly enough, H-P added X and Y resolution fields */
-	/* in the LJ4, but didn't change the format number! */
-	/* The only way we can tell the difference is by checking */
-	/* the byte count. */
-	if ( ppat->format != 0 || ppat->continuation != 0 ||
+	/*
+	 * Amazingly enough, H-P added X and Y resolution fields
+	 * in the LJ4, but didn't change the format number!
+	 * The only way we can tell the difference is by checking
+	 * the byte count.  It appears that in the LJ5, they changed
+	 * the format number for resolution-bound patterns to 20,
+	 * the same as for bitmap font headers, but this is not documented
+	 * in the TRM.
+	 */
+	if ( (ppat->format != 0 && ppat->format != 20) ||
+	     ppat->continuation != 0 ||
 	     ppat->encoding != 1 || ppat->reserved != 0
 	   )
 	  {
-	    dprintf1( "format %c\n", ppat->format);
-	    dprintf1( "encoding %c\n", ppat->encoding);
-	    dprintf1( "reserved %c\n", ppat->reserved);
-	    dprintf1( "encoding %c\n", ppat->continuation);
+	    dprintf4("? format %02x continuation %02x encoding %02x reserved %02x\n",
+		     ppat->format, ppat->continuation,
+		     ppat->encoding, ppat->reserved);
 	    return e_Range;
 	  }
 	height = pl_get_uint16(ppat->height);
@@ -166,6 +174,28 @@ pcl_set_pattern_reference_point(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
+/* Purge deleted entries from the graphics library's Pattern cache. */
+private bool
+choose_deleted_patterns(gx_color_tile *ctile, void *pcls_data)
+{	pcl_state_t *pcls = (pcl_state_t *)pcls_data;
+	long id = ctile->uid.id;
+	pcl_id_t key;
+	void *ignore_value;
+
+	if ( id & ~0xffffL )
+	  return false;		/* not a user-defined pattern */
+	id_set_value(key, (uint)id);
+	return !pl_dict_find(&pcls->patterns, id_key(key), 2, &ignore_value);
+}
+private void
+pcl_purge_pattern_cache(pcl_state_t *pcls)
+{	gx_pattern_cache *pcache = gstate_pattern_cache(pcls->pgs);
+
+	if ( pcache != 0 )
+	  gx_pattern_cache_winnow(pcache, choose_deleted_patterns,
+				  (void *)pcls);
+}
+
 private int /* ESC * c <pc_enum> Q */
 pcl_pattern_control(pcl_args_t *pargs, pcl_state_t *pcls)
 {	gs_const_string key;
@@ -176,15 +206,23 @@ pcl_pattern_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	  {
 	  case 0:
 	    { /* Delete all user-defined patterns. */
-	      pl_dict_release(&pcls->patterns);
+	      if ( pl_dict_length(&pcls->patterns, false) != 0 )
+		{ pl_dict_release(&pcls->patterns);
+		  pcl_purge_pattern_cache(pcls);
+		}
 	    }
 	    return 0;
 	  case 1:
 	    { /* Delete all temporary patterns. */
+	      bool deleted = false;
+
 	      pl_dict_enum_stack_begin(&pcls->patterns, &denum, false);
 	      while ( pl_dict_enum_next(&denum, &key, &value) )
 		if ( ((pcl_pattern_t *)value)->storage == pcds_temporary )
-		  pl_dict_undef(&pcls->patterns, key.data, key.size);
+		  deleted = true,
+		    pl_dict_undef(&pcls->patterns, key.data, key.size);
+	      if ( deleted )
+		pcl_purge_pattern_cache(pcls);
 	    }
 	    return 0;
 	  case 2:

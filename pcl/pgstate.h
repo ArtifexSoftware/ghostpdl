@@ -170,7 +170,6 @@ typedef struct pcl_hpgl_state_s {
 	struct polygon_ {
 	  hpgl_path_state_t buffer; /* path for polygon buffer */
 	  hpgl_pen_state_t pen_state; /* save pen state during polygon mode */
-	  gs_matrix ctm; /* matrix to handle rotation of the polygon buffer */
 	} polygon;
 	bool polygon_mode;
 
@@ -291,6 +290,10 @@ typedef struct pcl_hpgl_state_s {
 	  int origin;
 	  uint terminator;
 	  bool print_terminator;
+	  /* Double-byte support */
+	  uint row_offset;	/* implicit high byte */
+	  bool double_byte;
+	  bool write_vertical;
 	  /*
 	   * The following are only used during the execution of a
 	   * single LB command, but since hpgl_LB may need to exit

@@ -376,6 +376,8 @@ struct pcl_state_s {
 						/* 1 per rotation */
 	gs_pattern_instance *cached_cross_hatch[6*4];  /* create as needed, */
 						/* 1 per rotation */
+	pcl_id_t cached_pattern_id;	/* of cached_pattern[] */
+	gs_pattern_instance *cached_pattern[4];
 
 		/* Chapter 14 (pcrect.c) */
 

@@ -66,6 +66,8 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
 	    {"timesbd",	{0, 1, pitch_1, 0, 0, 3, tf_times}, cc_alphabetic },
 	    {"timesbi",	{0, 1, pitch_1, 0, 1, 3, tf_times}, cc_alphabetic },
 	    {"timesi",	{0, 1, pitch_1, 0, 1, 0, tf_times}, cc_alphabetic },
+  /* Note that "bound" TrueType fonts are indexed starting at 0xf000, */
+  /* not at 0. */
 	    {"symbol",	{621,1,pitch_1, 0, 0, 0, 16686}, cc_symbol },
 	    {"wingding",{2730,1,pitch_1,0, 0, 0, 19114}, cc_dingbats },
 	    {NULL,	{0, 0, pitch_1, 0, 0, 0, 0} }

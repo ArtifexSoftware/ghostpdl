@@ -24,6 +24,7 @@
 /* Note that we misappropriate pfont->StrokeWidth for the chord angle. */
 
 /* The client handles all encoding issues for these fonts. */
+/* The fonts themselves use Unicode indexing. */
 private gs_glyph
 hpgl_stick_arc_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
 {	return (gs_glyph)*pchr;
@@ -32,9 +33,8 @@ hpgl_stick_arc_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
 /* The stick font is fixed-pitch. */
 private int
 hpgl_stick_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
-  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
-{	bool in_range =
-	  char_code >= 0x20 && char_code < 0x20 + hpgl_stick_num_symbols;
+  const gs_matrix *pmat, uint uni_code, gs_point *pwidth)
+{	bool in_range = hpgl_unicode_stick_index(uni_code) != 0;
 
 	if ( pwidth ) {
 	  gs_distance_transform(0.667, 0.0, pmat, pwidth);
@@ -44,9 +44,9 @@ hpgl_stick_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
 /* The arc font is proportionally spaced. */
 private int
 hpgl_arc_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
-  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
-{	bool in_range =
-	  char_code >= 0x20 && char_code < 0x20 + hpgl_stick_num_symbols;
+  const gs_matrix *pmat, uint uni_code, gs_point *pwidth)
+{	uint char_code = hpgl_unicode_stick_index(uni_code);
+	bool in_range = char_code != 0;
 
 	if ( pwidth ) {
 	  gs_distance_transform(hpgl_stick_arc_width(char_code) / 15.0
@@ -65,14 +65,17 @@ private int hpgl_arc_add_arc(P6(void *data, int cx, int cy,
 /* Add a symbol to the path. */
 private int
 hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
-  gs_glyph char_index, floatp condensation)
-{	double chord_angle = pfont->StrokeWidth;
-	int width = (chord_angle == 0 ? hpgl_stick_arc_width(char_index) : 15);
+  gs_glyph uni_code, floatp condensation)
+{	uint char_index = hpgl_unicode_stick_index(uni_code);
+	double chord_angle;
+	int width;
 	gs_matrix save_ctm;
 	int code;
 
-	if ( char_index < 0x20 || char_index >= 0x20 + hpgl_stick_num_symbols )
+	if ( char_index == 0 )
 	  return 0;
+	chord_angle = pfont->StrokeWidth;
+	width = (chord_angle == 0 ? hpgl_stick_arc_width(char_index) : 15);
 	/* The TRM says the stick font is based on a 32x32 unit cell, */
 	/* but the font we're using here is only 15x15. */
 	/* Also, per TRM 23-18, the character cell is only 2/3 the */
@@ -155,13 +158,13 @@ hpgl_arc_add_arc(void *data, int cx, int cy, const gs_int_point *start,
 
 private int
 hpgl_stick_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
-  gs_char ignore_chr, gs_glyph char_index)
-{	return hpgl_stick_arc_build_char(penum, pgs, pfont, char_index, 1.0);
+  gs_char ignore_chr, gs_glyph uni_code)
+{	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, 1.0);
 }
 private int
 hpgl_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
-  gs_char ignore_chr, gs_glyph char_index)
-{	return hpgl_stick_arc_build_char(penum, pgs, pfont, char_index,
+  gs_char ignore_chr, gs_glyph uni_code)
+{	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code,
 					 hpgl_arc_font_condensation);
 }
 

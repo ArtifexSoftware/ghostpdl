@@ -84,6 +84,9 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_setup(&args);
 	hpgl_LA(&args, pgls);
 
+	hpgl_args_setup(&args);
+	hpgl_LM(&args, pgls);
+
 	hpgl_args_set_int(&args, 1);
 	hpgl_LO(&args, pgls);
 
@@ -192,8 +195,9 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* derive the current picture frame coordinates */
 
  private int 
-hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_rect *gl2_win)
+hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 {
+
 	gs_rect dev_win; /* device window */
 	gs_rect pcl_win; /* pcl window -- upper left and lower right */
 	hpgl_real_t x1 = pgls->g.picture_frame.anchor_point.x;
@@ -203,7 +207,7 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_rect *gl2_win)
 	pcl_set_ctm(pgls, false);
 	hpgl_call(gs_transform(pgls->pgs, x1, y1, &dev_win.p));
 	hpgl_call(gs_transform(pgls->pgs, x2, y2, &dev_win.q));
-	hpgl_call(hpgl_set_ctm(pgls));
+	hpgl_call(hpgl_set_plu_ctm(pgls));
 	hpgl_call(gs_itransform(pgls->pgs, 
 			       dev_win.p.x,
 			       dev_win.p.y,
@@ -214,11 +218,13 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_rect *gl2_win)
 			       &pcl_win.q));
 	/* now win.p is the upper left and win.q the lower right, gl/2
            likes to use the lower left and upper right for boxes */
-	gl2_win->p.x = pcl_win.p.x;
-	gl2_win->p.y = pcl_win.q.y; /* !! */
-	gl2_win->q.x = pcl_win.q.x;
-	gl2_win->q.y = pcl_win.p.y; /* !! */
-	
+/* HAS have not checked if this is properly rounded or truncated */
+#define round(x) (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
+	gl2_win->p.x = round(pcl_win.p.x);
+	gl2_win->p.y = round(pcl_win.q.y); /* !! */
+	gl2_win->q.x = round(pcl_win.q.x);
+	gl2_win->q.y = round(pcl_win.p.y); /* !! */
+#undef round
 	return 0;
 }
 	
@@ -229,20 +235,13 @@ int
 hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int32 ptxy[4];
 	int i;
-	gs_rect win;
+	gs_int_rect win;
 	/* get the default picture frame coordinates */
 	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
 
-/* HAS have not checked if this is properly rounded or truncated */
-#define round(x) (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
-
 	/* round the picture frame coordinates */
-	ptxy[0] = round(win.p.x);
-	ptxy[1] = round(win.p.y);
-	ptxy[2] = round(win.q.x);
-	ptxy[3] = round(win.q.y);
-#undef round
-
+	ptxy[0] = win.p.x; ptxy[1] = win.p.y;
+	ptxy[2] = win.q.x; ptxy[3] = win.q.y;
 	for ( i = 0; i < 4 && hpgl_arg_int(pargs, &ptxy[i]); ++i )
 	  ;
 	if ( i & 1 )
@@ -270,7 +269,6 @@ hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* HAS more error checking ??? */
 
 	if ( pgls->g.P1.x == pgls->g.P2.x ) pgls->g.P2.x++;
-
 	if ( pgls->g.P1.y == pgls->g.P2.y ) pgls->g.P2.y++;
 	
 	return 0;
@@ -281,33 +279,33 @@ hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_IR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t rptxy[4];
-	int i, j;
+	int i;
 	hpgl_args_t args;
+	gs_int_rect win;
+
 	for ( i = 0; i < 4 && hpgl_arg_c_real(pargs, &rptxy[i]); ++i )
 	  ;
 	if ( i & 1 )
 	  return e_Range;
-	else
+
+	/* get the PCL picture frame coordinates */
+	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
+	hpgl_args_setup(&args);
+	hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
+			  rptxy[0] / 100.0);
+
+	hpgl_args_add_int(&args, win.p.y + (win.q.y - win.p.y) *
+			  rptxy[1] / 100.0);
+
+	if ( i == 4 )
 	  {
+	    hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
+			      rptxy[2] / 100.0);
 
-	    hpgl_args_setup(&args);
-
-	    for ( j = 0; j < i / 2; j++ ) 
-	      {
-		
-		hpgl_args_add_int(&args, pgls->g.P1.x +
-				  (pgls->g.P2.x - pgls->g.P1.x) *
-				  rptxy[j] / 100.0);
-
-		hpgl_args_add_int(&args, pgls->g.P1.y +
-				  (pgls->g.P2.y - pgls->g.P1.y) *
-				  rptxy[j+1] / 100.0);
-	      }
-
-	    hpgl_IP( &args, pgls );
-
+	    hpgl_args_add_int(&args, win.p.y + (win.q.y - win.p.y) *
+			      rptxy[3] / 100.0);
 	  }
-
+	hpgl_IP( &args, pgls );
 	return 0;
 }
 
@@ -317,7 +315,8 @@ int
 hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t wxy[4];
 	int i;
-	gs_rect win;
+	gs_int_rect win;
+
 	/* get the default picture frame coordinates.  HAS this need
            to be redone.  I don't think it is necessary. */
 	hpgl_call(hpgl_picture_frame_coords(pgls, &win));

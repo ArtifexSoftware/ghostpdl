@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -8,24 +8,8 @@
 #include "pgmand.h"
 #include "pginit.h"
 #include "gsstate.h"		/* for gs_setfilladjust */
-#include "gsrop.h"		/* for gs_setrasterop */
 
 /* ------ Commands ------ */
-
-/* MC mode[,opcode]; */
-int
-hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	int mode = 0, opcode;
-
-	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
-	  return e_Range;
-	opcode = (mode ? 168 : 255);
-	if ( hpgl_arg_c_int(pargs, &opcode) && (opcode & ~255) )
-	  return e_Range;
-	pgls->logical_op = opcode;
-	gs_setrasterop(pgls->pgs, opcode);
-	return 0;
-}
 
 /* PC [pen[,primary1,primary2,primary3]; */
 int
@@ -119,7 +103,6 @@ pgcolor_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
 	  HPGL_COMMAND('C', 'R', hpgl_CR, 0),
-	  HPGL_COMMAND('M', 'C', hpgl_MC, 0),
 	  HPGL_COMMAND('N', 'P', hpgl_NP, 0),
 	  HPGL_COMMAND('P', 'C', hpgl_PC, 0),
 	  HPGL_COMMAND('P', 'P', hpgl_PP, 0),
