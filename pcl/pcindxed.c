@@ -496,7 +496,7 @@ set_default_entries(
         memset(pindexed->palette.data + 3 * (start + cnt), 0, num - cnt);
 
     /* set the default widths */
-    for (i = start; i < start + num; i++)
+    for (i = start; i < num; i++)
         pindexed->pen_widths[i] = dflt_pen_width;
 
     return 0;
