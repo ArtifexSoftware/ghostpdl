@@ -1229,7 +1229,7 @@ devicedict /Default devicedict .defaultdevicename get put
 % Set the default screen and BG/UCR.
 /.setdefaultbgucr {
   systemdict /setblackgeneration known {
-    { } dup setblackgeneration setundercolorremoval
+    { pop 0 } dup setblackgeneration setundercolorremoval
   } if
 } bind def
 /.useloresscreen {	% - .useloresscreen <bool>

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -68,14 +68,16 @@ color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
      * but they must agree with the ones in gs_init.ps.
      */
     frac bg =
-	(pis->black_generation == NULL ? k :
+	(pis->black_generation == NULL ? frac_0 :
 	 gx_map_color_frac(pis, k, black_generation));
     signed_frac ucr =
-	(pis->undercolor_removal == NULL ? k :
+	(pis->undercolor_removal == NULL ? frac_0 :
 	 gx_map_color_frac(pis, k, undercolor_removal));
 
     if (ucr == frac_1)
 	cmyk[0] = cmyk[1] = cmyk[2] = 0;
+    else if (ucr == frac_0)
+	cmyk[0] = c, cmyk[1] = m, cmyk[2] = y;
     else {
 #ifdef USE_ADOBE_CMYK_RGB
 	/* C = max(0.0, min(1.0, 1 - R - UCR)), etc. */
