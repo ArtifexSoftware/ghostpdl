@@ -490,12 +490,8 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
     pdev->color_info.num_components = real_ncomps;
 
     ecode = gdev_prn_get_params(pdev, plist);
-#ifdef CIEWORKING
-    /* the sample C crd code is incompatible with recent changes in
-       the CIE code so this is temporarily disabled */
-       code = sample_device_crd_get_params(pdev, plist, "CRDDefault");
-#endif
-	if (code < 0)
+    code = sample_device_crd_get_params(pdev, plist, "CRDDefault");
+    if (code < 0)
 	    ecode = code;
     if ((code = param_write_int(plist, "ForceMono", &forcemono)) < 0) {
 	ecode = code;
