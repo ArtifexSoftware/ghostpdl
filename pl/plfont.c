@@ -540,7 +540,8 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 			  ((gs_font *)pfont, space, gs_no_glyph);
 		      float sbw[4];
 
-		      if ( gs_type42_get_metrics(pfont, glyph_index, sbw) < 0 )
+		      if ( gs_type42_get_metrics(pfont, 
+				glyph_index == 0xffff ? 0 : glyph_index, sbw) < 0 )
 			sbw[2] = 0.6;
 		      pl_fp_set_pitch_cp(&plfont->params, sbw[2] * 100);
 		    }

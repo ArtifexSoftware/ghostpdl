@@ -646,7 +646,7 @@ pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
 	  access(offset, cmap_offset + cmap_len - offset, table);
 	}
 	code = pl_cmap_lookup((uint)chr, table, &value);
-	return (code < 0 ? 0 : value);
+	return (code < 0 ? 0xffff : value);
 }
 
 /* Encode a character using the map built for downloaded TrueType fonts. */
@@ -711,7 +711,7 @@ pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph not_used)
 	pl_font_glyph_t *pfg;
 
 	if ( plfont->offsets.GC < 0 )
-	  return glyph;	/* no substitute */
+	  return glyph;	 /* no substitute */
 	pfg = pl_font_lookup_glyph(plfont, glyph);
 	/* If the character is missing, use the galley character instead. */
 	if ( !pfg->data )
@@ -821,9 +821,10 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 #  define tt_set_cache(penum, pgs, w2)\
      gs_setcharwidth(penum, pgs, w2[0], w2[1]);
 #endif
-
+	/* undefined */
+	if ( glyph == 0xffff )
+	    return 0;
 	/* Check for a vertical substitute. */
-
 	if ( pfont->WMode & 1 )
 	  { pl_font_t *plfont = pfont->client_data;
 	    gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
