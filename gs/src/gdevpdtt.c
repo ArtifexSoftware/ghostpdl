@@ -1923,9 +1923,14 @@ pdf_text_process(gs_text_enum_t *pte)
 	gs_glyph glyphs[BUF_SIZE / sizeof(gs_glyph)];
     } buf;
 
-    if (!penum->pte_default || !penum->charproc_accum) {
+    if (!penum->pte_default && !penum->charproc_accum) {
 	/* Don't need to sync before exiting charproc. */
 	code = pdf_prepare_text_drawing(pdev, pte->pis, pte->pdcolor, pte->pcpath, &pte->text);
+	if (code == gs_error_rangecheck) {
+	    /* Fallback to the default implermentation for handling 
+	       a transparency with CompatibilityLevel<=1.3 . */
+	    goto default_impl;
+	}
 	if (code < 0)
 	    return code;
     }
@@ -2045,6 +2050,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	    return code;
 	if (code == gs_error_VMerror)
 	    return code;
+ default_impl:
 	/* Fall back to the default implementation. */
 	code = pdf_default_text_begin(pte, &pte->text, &pte_default);
 	if (code < 0)

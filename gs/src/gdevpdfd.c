@@ -466,6 +466,11 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	return 0;
     }
     code = prepare_fill_with_clip(pdev, pis, &box, have_path, pdcolor, pcpath);
+    if (code == gs_error_rangecheck) {
+	/* Fallback to the default implermentation for handling 
+	   a transparency with CompatibilityLevel<=1.3 . */
+	return gx_default_fill_path((gx_device *)pdev, pis, ppath, params, pdcolor, pcpath);
+    }
     if (code < 0)
 	return code;
     if (code == 1)
@@ -532,6 +537,11 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     if (code < 0)
 	return code;
     code = pdf_prepare_stroke(pdev, pis);
+    if (code == gs_error_rangecheck) {
+	/* Fallback to the default implermentation for handling 
+	   a transparency with CompatibilityLevel<=1.3 . */
+	return gx_default_stroke_path((gx_device *)dev, pis, ppath, params, pdcolor, pcpath);
+    }
     if (code < 0)
 	return code;
     code = pdf_put_clip_path(pdev, pcpath);
