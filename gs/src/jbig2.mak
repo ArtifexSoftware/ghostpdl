@@ -36,7 +36,11 @@ JBIG2SRC=$(JBIG2SRCDIR)$(D)
 JBIG2GEN=$(JBIG2OBJDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
 
-# This list is only known good for jbig2dec v0.2-0.4
+# This makefile is only known to work with jbig2dec v0.7
+# to use an earlier version, remove unknown files from
+# the OBJS lists below
+
+# This list is only known good for jbig2dec v0.2-0.6
 
 libjbig2_OBJS1=\
 	$(JBIG2OBJ)jbig2.$(OBJ) \
@@ -44,6 +48,7 @@ libjbig2_OBJS1=\
         $(JBIG2OBJ)jbig2_arith_iaid.$(OBJ) \
         $(JBIG2OBJ)jbig2_arith_int.$(OBJ) \
         $(JBIG2OBJ)jbig2_generic.$(OBJ) \
+        $(JBIG2OBJ)jbig2_refinement.$(OBJ) \
         $(JBIG2OBJ)jbig2_huffman.$(OBJ) \
         $(JBIG2OBJ)jbig2_image.$(OBJ) \
         $(JBIG2OBJ)jbig2_mmr.$(OBJ)
@@ -129,6 +134,9 @@ $(JBIG2OBJ)jbig2_arith_int.$(OBJ) : $(JBIG2SRC)jbig2_arith_int.c $(libjbig2_HDRS
 $(JBIG2OBJ)jbig2_generic.$(OBJ) : $(JBIG2SRC)jbig2_generic.c $(libjbig2_HDRS) $(JBIG2DEP)
 	$(JBIG2_CC) $(JBIG2O_)jbig2_generic.$(OBJ) $(C_) $(JBIG2SRC)jbig2_generic.c
 
+$(JBIG2OBJ)jbig2_refinement.$(OBJ) : $(JBIG2SRC)jbig2_refinement.c $(libjbig2_HDRS) $(JBIG2DEP)
+	$(JBIG2_CC) $(JBIG2O_)jbig2_refinement.$(OBJ) $(C_) $(JBIG2SRC)jbig2_refinement.c
+ 
 $(JBIG2OBJ)jbig2_huffman.$(OBJ) : $(JBIG2SRC)jbig2_huffman.c $(libjbig2_HDRS) $(JBIG2DEP)
 	$(JBIG2_CC) $(JBIG2O_)jbig2_huffman.$(OBJ) $(C_) $(JBIG2SRC)jbig2_huffman.c
 
