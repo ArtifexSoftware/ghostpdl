@@ -31,7 +31,7 @@ languagelevel 2 .setlanguagelevel currentglobal true setglobal
 % resource files. This supposes that document doesn't uninstall
 % resource files. To disable caching, set enable_cache to false.
 
-% We suppose that names starting with '.prs' do not appear in resource files.
+% We assume that names starting with '.prs' do not appear in resource files.
 % If this causes any problem, this prefix should be systematically changed
 % in this file.  ('prs' is an abbreviation for 'prescan'.)
 
@@ -358,9 +358,9 @@ currentdict end def
   % Store resource names into local dictionaries :
 
   { /.DisableResourceOrdering pop % gs_resmp accesses this through execstack - don't remove !
-    5 index [ 2 index {exch cvn dup put} aload pop ] cvx 5 index //ResourceForAll exec
-    (*)     [ 3 index {exch cvn dup put} aload pop ] cvx 5 index /CMap resourceforall
-    (*)     [ 4 index {exch cvn dup put} aload pop ] cvx 5 index /CIDFont resourceforall
+    5 index [ 2 index {exch cvn dup put} aload pop ] cvx bind 5 index //ResourceForAll exec
+    (*)     [ 3 index {exch cvn dup put} aload pop ] cvx bind 5 index /CMap resourceforall
+    (*)     [ 4 index {exch cvn dup put} aload pop ] cvx bind 5 index /CIDFont resourceforall
     exit
   } loop % This loop is a pattern for execstack_lookup - don't remove !
 

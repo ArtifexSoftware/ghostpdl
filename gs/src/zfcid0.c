@@ -344,6 +344,8 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
     if (code < 0)
 	return code;
     pfont = (gs_font_type1 *)pbfont;
+    pbfont->FAPI = NULL;
+    pbfont->FAPI_font_data = NULL;
     charstring_font_init(pfont, &refs, &data1);
     pfont->data.procs.glyph_data = z9_FDArray_glyph_data;
     pfont->data.procs.seac_data = z9_FDArray_seac_data;
@@ -461,7 +463,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 }
 
 /* <cid9font> <cid> .type9mapcid <charstring> <font_index> */
-private int
+int
 ztype9mapcid(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

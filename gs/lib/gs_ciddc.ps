@@ -1,0 +1,180 @@
+%    Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+% 
+% This file is part of AFPL Ghostscript.
+% 
+% AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
+% distributor accepts any responsibility for the consequences of using it, or
+% for whether it serves any particular purpose or works at all, unless he or
+% she says so in writing.  Refer to the Aladdin Free Public License (the
+% "License") for full details.
+% 
+% Every copy of AFPL Ghostscript must include a copy of the License, normally
+% in a plain ASCII text file named PUBLIC.  The License grants you the right
+% to copy, modify and redistribute AFPL Ghostscript, but only under certain
+% conditions described in the License.  Among other things, the License
+% requires that the copyright notice and this notice be preserved on all
+% copies.
+
+% $Id$
+% Define CIDDecoding resource category and related procsets.
+
+languagelevel 2 .setlanguagelevel
+currentglobal true setglobal
+
+%----------------ParseCMap_Inverse procset----------------------------
+
+/ParseCMap_Inverse <<
+  /findresource { pop } bind
+  /defineresource { pop pop } bind
+  /dict {}
+  /def { pop pop } bind
+  /dup null
+  /begin { pop } bind
+  /end {}
+  /currentdict null
+  /CMapName null
+  /usecmap { pop } bind
+  /begincmap {}
+  /endcmap {}
+  /begincodespacerange { pop mark } bind
+  /endcodespacerange { cleartomark } bind
+  /beginnotdefrange { pop mark } bind
+  /endnotdefrange { cleartomark } bind
+  /beginbfchar { pop mark } bind
+  /endbfchar { pop mark } bind
+  /beginbfrange { begincidrange }
+  /endbfrange { endcidrange }
+  /begincidchar { beginbfchar }
+  /endcidchar { endbfchar }
+  /begincidrange { pop mark } bind
+  /endcidrange  { cleartomark } bind
+>>  % Just keep it on stack for a while.
+
+% Now we define another dict for local binding, than merge it with the previous one :
+dup length 5 add dict begin
+
+  /.Ranges 40 dict def % Key = CID/256, value = array of 256 integer codes.
+
+  /.StringToInt     % <string> .StringToInt <integer>
+  { 0 exch { exch 8 bitshift add } forall
+  } bind def
+
+  /.SetCouple    % <I> <b> .SetCouple -
+  { exch                                    % b I
+    dup 256 idiv                            % b I I0
+    dup //.Ranges exch known not {
+      dup //.Ranges exch 256 array put
+    } if                                    % b I I0
+    //.Ranges exch get                      % b I [Range]
+    exch 256 mod                            % b [Range] I1
+    3 2 roll put                            %
+  } bind def
+
+  /endcidrange
+  { % Writes the inversed CMap to .Ranges
+    counttomark 3 idiv {                    % (b) (e) I
+      exch .StringToInt                     % (b) I e
+      3 2 roll .StringToInt                 % I e b
+      % fixme : This code does't handle multidimentional CID ranges.
+      % fixme : optimize belov.
+      dup 3 2 roll exch sub 1 add           % I b d
+      { 2 copy //.SetCouple exec            % I b
+        1 add exch 1 add exch
+      } repeat                              % I b
+      pop pop
+    } repeat
+    pop % mark
+  } bind def
+
+  /.PurgeDict   % <dict> .PurgeDict -
+  { { true
+      1 index { pop exch pop false exit
+      } forall
+      { exit
+      } if
+      1 index exch undef
+    } loop
+    pop
+  } bind def
+
+  /.GetCIDDecoding         % - .GetCIDDEcoding <dict>
+  { //.Ranges dup length dict copy
+    //.Ranges //.PurgeDict exec
+  } bind def
+
+currentdict end
+exch copy % Merge the dicts - see above.
+/ProcSet defineresource pop
+
+%----------------CIDDecoding category----------------------------
+% Note that we put all instances in global memory - see FindResource.
+
+/Generic /Category findresource dup length dict copy
+begin
+  /Category /CIDDecoding def
+  /InstanceType /dicttype def
+
+  /.CMapChooser <<
+    % This lists CMaps to inverse and unite for creating a CIDDecoding.
+    % Choose by FAPIcidfmap.Registry concatenated with TrueType encoding ID.
+    % Font renderer must provide the glyph substitution internally.
+
+    % fixme : The values below are taken roughly, will verify them some later.
+
+    /CNS1.Big5       [ /ETen-B5-H /ETen-B5-V ]
+    /CNS1.Unicode    [ /Unicode-CNS1-ATI ]
+    /GB1.GB2312      [ /GBK-EUC-H /GBK-EUC-V ]
+    /GB1.Unicode     [ /Unicode-GB1-ATI ]
+    /Japan1.ShiftJIS [ /90ms-RKSJ-H /90ms-RKSJ-V ]
+    /Japan1.Unicode  [ /Unicode-Japan1-ATI /UniJIS-UCS2-H ]
+    /Japan2.ShiftJIS [ /90ms-RKSJ-H /90ms-RKSJ-V ]
+    /Japan2.Unicode  [ /UniJoho-UCS2-H ]
+    /Korea1.Johab    [ /KSC-Johab-V /KSC-Johab-H ]
+    /Korea1.Wansung  [ /KSCms-UHC-V /KSCms-UHC-H ]
+    /Korea1.Unicode  [ /Unicode-Johab-ATI /Unicode-Wansung-ATI ]
+  >> def
+
+  /.MakeInstance    % <name> .MakeInstance <inst>
+  { dup                                              % /Name /Name
+    //.CMapChooser exch .knownget not {
+      (Can't build /) print =string cvs print ( /CIDDecoding. ) =
+      /findresource cvx /undefinedresource signalerror
+    } if                                             % /Name [CMaps]
+    exch pop                                         % [CMaps]
+    /CMap /Category findresource                     % [CMaps] <CMapCategory>
+    /ParseCMap_Inverse /ProcSet findresource         % [CMaps] <CMapCategory> <PCI>
+    3 2 roll {                                       % <CMapCategory> <PCI> /CMapName
+      3 2 roll begin                                 % <PCI> /CMapName
+      dup =string ResourceFileName                   % <PCI> /CMapName (path)
+      currentdict end exch                           % <PCI> /CMapName <CMapCategory> (path)
+      (r) { file } stopped {                         % <PCI> /CMapName <CMapCategory> (path)
+        pop                         
+        (Can't find ) print print ( building a CIDDecoding resource. ) =
+        /findresource cvx /undefinedresource signalerror
+      } if                                           % <PCI> /CMapName <CMapCategory> file
+      3 index begin
+      cvx exec                                       % <PCI> /CMapName <CMapCategory>
+      end
+      exch pop exch                                  % <CMapCategory> <PCI>
+    } forall
+    exch pop begin                                   %
+    .GetCIDDecoding
+    end
+  } bind def
+
+  /FindResource      % <name> FindResource <dict>
+  { currentglobal exch                               % bGlobal /InstName
+    true setglobal
+    dup //.MakeInstance exec                         % bGlobal /InstName <Inst>
+    DefineResource                                   % bGlobal <Inst>
+    exch setglobal                                   % <Inst>
+  } bind def
+
+currentdict end
+/CIDDecoding exch /Category defineresource pop
+
+%----------------CIDDecoding procset----------------------------
+
+
+setglobal
+.setlanguagelevel

@@ -131,14 +131,14 @@ dup 0 {
 dup 1 {
   10 .checkfonttype pop
   1 index exch .buildfont10 exch pop
-} bind put
+} put % Don't bind it here because gs_fapi.ps redefines .buildfont10
 
 % ------ CIDFontType 2 (FontType 11) ------ %
 
 dup 2 {
   11 .checkfonttype pop
   1 index exch .buildfont11 exch pop
-} bind put
+} put % Don't bind it here because gs_fapi.ps redefines .buildfont11
 
 pop		% .cidfonttypes
 
@@ -391,3 +391,5 @@ dup /.CheckResource {
 /Category defineresource pop
 
 .setlanguagelevel
+
+(gs_ciddc.ps) runlibfile

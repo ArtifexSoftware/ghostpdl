@@ -22,9 +22,9 @@
 /* GS includes : */
 #include "gx.h"
 /* UFST includes : */
-#include "CGCONFIG.H"
-#include "PORT.H"    
-#include "SHAREINC.H"
+#include "cgconfig.h"
+#include "port.h"
+#include "shareinc.h"
 /* GS includes : */
 #include "gxfapi.h"
 

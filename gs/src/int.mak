@@ -1759,9 +1759,9 @@ $(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
 
 $(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) \
  $(memory__h) $(math__h) $(ghost_h) $(gp_h) $(oper_h) $(gxdevice_h) $(gxfont_h) $(gxfont1_h) \
- $(gxchar_h) $(gxpath_h) $(gxchrout_h) $(gscoord_h) $(gspaint_h) $(bfont_h) $(dstack_h) \
- $(ichar_h) $(idict_h) $(iddict_h) $(iname_h) $(igstate_h) $(icharout_h) $(ifapi_h) \
- $(iplugin_h) $(store_h) $(gzstate_h) $(stream_h) $(files_h) $(gscrypt1_h) 
+ $(gxchar_h) $(gxpath_h) $(gxchrout_h) $(gscoord_h) $(gspaint_h) $(gsfont_h) $(bfont_h) $(dstack_h) \
+ $(ichar_h) $(idict_h) $(iddict_h) $(iname_h) $(ifont_h) $(igstate_h) $(icharout_h) $(ifapi_h) \
+ $(iplugin_h) $(store_h) $(gzstate_h) $(stream_h) $(files_h) $(gscrypt1_h) $(gsfcid_h) 
 	$(PSCC) $(PSO_)zfapi.$(OBJ) $(C_) $(PSSRC)zfapi.c
 
 # UFST bridge :
@@ -1784,12 +1784,13 @@ $(PSD)fapiu1.dev : $(INT_MAK) $(ECHOGS_XE) \
 
 $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(OP) \
  $(memory__h) $(stdio__h) $(math__h) $(errors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) \
- $(UFST_ROOT)$(D)rts$(D)inc$(D)CGCONFIG.H\
- $(UFST_ROOT)$(D)rts$(D)inc$(D)SHAREINC.H\
- $(UFST_ROOT)$(D)sys$(D)inc$(D)PORT.H \
- $(UFST_ROOT)$(D)sys$(D)inc$(D)CGMACROS.H \
- $(UFST_ROOT)$(D)rts$(D)psi$(D)T1ISFNT.H \
- $(UFST_ROOT)$(D)rts$(D)tt$(D)TTPCLEO.H
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)port.h\
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)cgmacros.h\
+ $(UFST_ROOT)$(D)rts$(D)psi$(D)t1isfnt.h\
+ $(UFST_ROOT)$(D)rts$(D)tt$(D)sfntenum.h\
+ $(UFST_ROOT)$(D)rts$(D)tt$(D)ttpcleo.h
 	$(PSCC) $(UFST_CFLAG) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
 
 # stub for UFST bridge :

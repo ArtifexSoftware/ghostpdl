@@ -2311,9 +2311,9 @@ $(PSD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ)
 
 $(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c \
  $(gx_h) $(gxfapi_h) \
- $(UFST_ROOT)$(D)rts$(D)inc$(D)CGCONFIG.H\
- $(UFST_ROOT)$(D)rts$(D)inc$(D)SHAREINC.H\
- $(UFST_ROOT)$(D)sys$(D)inc$(D)PORT.H
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)port.h
 	$(GLCC) $(UFST_CFLAG) $(UFST_INC_) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
 
 
