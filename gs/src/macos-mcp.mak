@@ -207,7 +207,7 @@ EXTEND_NAMES=0
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=$(DD)macos.dev $(DD)macos_.dev
+DEVICE_DEVS=$(DD)macos.dev $(DD)macos_.dev $(DD)display.dev
 
 #DEVICE_DEVS1=
 #DEVICE_DEVS2=
