@@ -576,12 +576,20 @@ pxEllipsePath(px_args_t *par, px_state_t *pxs)
 {	px_arc_params_t params;
 	int code = setup_arc(&params, par->pv[0], NULL, NULL, pxs);
 	int rcode = code;
+	real a_start = 180.0;
+	real a_end = -180.0;
+
+	/* swap start and end angles if counter clockwise ellipse */
+	if ( params.reversed )
+	  { a_start = -180.0;
+	    a_end = 180.0;
+	  }
 
 	/* See ArcPath above for the meaning of "clockwise". */
 	if ( code < 0 || code == arc_degenerate ||
 	     (code = gs_arc_add(pxs->pgs, !params.reversed,
 				params.center.x, params.center.y,
-				params.radius, 180.0, -180.0, false)) < 0 ||
+				params.radius, a_start, a_end, false)) < 0 ||
 	     /* We have to close the path explicitly. */
 	     (code = gs_closepath(pxs->pgs)) < 0
 	   )
