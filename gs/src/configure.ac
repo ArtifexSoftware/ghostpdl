@@ -171,15 +171,18 @@ elif test -f jpeg-6b/jpeglib.h; then
 	LIBJPEGDIR=jpeg-6b
 else
 	AC_MSG_RESULT([no])
-	AC_CHECK_LIB(jpeg, jpeg_set_defaults, [SHARE_LIBJPEG=1], [
-		AC_MSG_ERROR([I wasn't able to find a copy
+	AC_CHECK_LIB(jpeg, jpeg_set_defaults, [
+	  AC_CHECK_HEADERS([jpeglib.h], [SHARE_LIBJPEG=1])
+	])
+fi
+if test -z "$SHARE_LIBJPEG"; then
+  AC_MSG_ERROR([I wasn't able to find a copy
   of the jpeg library. This is required for compiling
   ghostscript. Please download a copy of the source,
   e.g. from http://www.ijg.org/, unpack it at the
   top level of the gs source tree, and rename
   the directory to 'jpeg'.
-		])
-	])
+  ])
 fi
 AC_SUBST(SHARE_LIBJPEG)
 AC_SUBST(LIBJPEGDIR)
@@ -206,19 +209,23 @@ if test -d zlib; then
 	ZLIBDIR=zlib
 else
 	AC_MSG_RESULT([no])
-	AC_CHECK_LIB(z, deflate, [SHARE_ZLIB=1], [
-		AC_MSG_ERROR([I did not find a copy of zlib on your system.
-Please either install it, or unpack a copy of the source in a
-local directory named 'zlib'. See http://www.gzip.org/zlib/
-for more information.
-		])
+	AC_CHECK_LIB(z, deflate, [
+	  AC_CHECK_HEADERS(zlib.h, [SHARE_ZLIB=1])
 	])
+fi
+if test -z "$SHARE_ZLIB"; then
+  AC_MSG_ERROR([I did not find a copy of zlib on your system.
+  Please either install it, or unpack a copy of the source in a
+  local directory named 'zlib'. See http://www.gzip.org/zlib/
+  for more information.
+  ])
 fi
 AC_SUBST(SHARE_ZLIB)
 AC_SUBST(ZLIBDIR)
 
 dnl png for the png output device; it also requires zlib
 LIBPNGDIR=src
+PNGDEVS=''
 AC_MSG_CHECKING([for local png library source])
 if test -d libpng; then
 	AC_MSG_RESULT([yes])
@@ -228,14 +235,14 @@ if test -d libpng; then
 else
 	AC_MSG_RESULT([no])
 	AC_CHECK_LIB(png, png_check_sig, [
+	  AC_CHECK_HEADERS(png.h, [
 		SHARE_LIBPNG=1
 		PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev $(DD)pngalpha.dev'
-	], [
-		SHARE_LIBPNG=0
-		AC_MSG_RESULT([no])
-		AC_MSG_NOTICE([disabling png output devices])
-		PNGDEVS=''
-	], [-lz])
+	  ], [SHARE_LIBPNG=0])
+	], [SHARE_LIBPNG=0], [-lz])
+fi
+if test -z "$PNGDEVS"; then
+  AC_MSG_NOTICE([disabling png output devices])
 fi
 AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
