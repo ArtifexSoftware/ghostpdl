@@ -42,6 +42,8 @@
 #include "gxfillts.h" - Do not remove this comment. "gxfillts.h" is included below.
 */
 
+#define BAND_INDEPENDENT 0 /* Old code 0, new code 1 */
+
 #ifdef DEBUG
 /* Define the statistics structure instance. */
 stats_fill_t stats_fill;
@@ -1233,13 +1235,29 @@ complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, 
  * (or rectangle) plus two horizontal almost-rectangles.
  */
 private int
-fill_slant_adjust(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
+fill_slant_adjust(const line_list *ll, 
+	const active_line *flp, const active_line *alp, fixed y, fixed y1)
 {
     const fill_options * const fo = ll->fo;
-    const fixed yb = le->start.y - fo->adjust_below;
-    const fixed ya = le->start.y + fo->adjust_above;
-    const fixed y1b = le->end.y - fo->adjust_below;
-    const fixed y1a = le->end.y + fo->adjust_above;
+#   if BAND_INDEPENDENT
+	const fixed ybl = flp->start.y - fo->adjust_below;
+	const fixed yal = flp->start.y + fo->adjust_above;
+	const fixed y1bl = flp->end.y - fo->adjust_below;
+	const fixed y1al = flp->end.y + fo->adjust_above;
+	const fixed ybr = alp->start.y - fo->adjust_below;
+	const fixed yar = alp->start.y + fo->adjust_above;
+	const fixed y1br = alp->end.y - fo->adjust_below;
+	const fixed y1ar = alp->end.y + fo->adjust_above;
+#   else
+	const fixed ybl = y - fo->adjust_below, ybr = ybl;
+	const fixed yal = y + fo->adjust_above, yar = yal;
+	const fixed y1bl = y1 - fo->adjust_below, y1br = y1bl;
+	const fixed y1al = y1 + fo->adjust_above, y1ar = y1al;
+#   endif
+    const fixed Yb = y - fo->adjust_below;
+    const fixed Ya = y + fo->adjust_above;
+    const fixed Y1b = y1 - fo->adjust_below;
+    const fixed Y1a = y1 + fo->adjust_above;
     const gs_fixed_edge *plbot;
     const gs_fixed_edge *prbot;
     const gs_fixed_edge *pltop;
@@ -1248,34 +1266,43 @@ fill_slant_adjust(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
     int code;
 
     INCR(slant);
-    vd_quad(le->start.x, le->start.y, re->start.x, re->start.y, 
-	    re->end.x, re->end.y, le->end.x, le->end.y, 1, VD_TRAP_COLOR);
+    vd_quad(flp->x_current, y, alp->x_current, y, 
+	    alp->x_next, y1, flp->x_next, y1, 1, VD_TRAP_COLOR); /* fixme: Wrong X. */
 
     /* Set up all the edges, even though we may not need them all. */
 
-    if (le->start.x < le->end.x) {	/* && re->start.x < re->end.x */
-	vert_left.start.x = vert_left.end.x = le->start.x;
-	vert_left.start.y = yb, vert_left.end.y = ya;
-	vert_right.start.x = vert_right.end.x = re->end.x;
-	vert_right.start.y = y1b, vert_right.end.y = y1a;
-	slant_left.start.y = ya, slant_left.end.y = y1a;
-	slant_right.start.y = yb, slant_right.end.y = y1b;
+    if (BAND_INDEPENDENT ? flp->start.x < flp->end.x : flp->x_current < flp->x_next) {
+	vert_left.start.x = vert_left.end.x = flp->x_current - fo->adjust_left;
+	vert_left.start.y = Yb, vert_left.end.y = Ya;
+	vert_right.start.x = vert_right.end.x = alp->x_next + fo->adjust_right;
+	vert_right.start.y = Y1b, vert_right.end.y = Y1a;
+	slant_left.start.y = yal, slant_left.end.y = y1al;
+	slant_right.start.y = ybr, slant_right.end.y = y1br;
 	plbot = &vert_left, prbot = &slant_right,
 	    pltop = &slant_left, prtop = &vert_right;
     } else {
-	vert_left.start.x = vert_left.end.x = le->end.x;
-	vert_left.start.y = y1b, vert_left.end.y = y1a;
-	vert_right.start.x = vert_right.end.x = re->start.x;
-	vert_right.start.y = yb, vert_right.end.y = ya;
-	slant_left.start.y = yb, slant_left.end.y = y1b;
-	slant_right.start.y = ya, slant_right.end.y = y1a;
+	vert_left.start.x = vert_left.end.x = flp->x_next - fo->adjust_left;
+	vert_left.start.y = Y1b, vert_left.end.y = Y1a;
+	vert_right.start.x = vert_right.end.x = alp->x_current + fo->adjust_right;
+	vert_right.start.y = Yb, vert_right.end.y = Ya;
+	slant_left.start.y = ybl, slant_left.end.y = y1bl;
+	slant_right.start.y = yar, slant_right.end.y = y1ar;
 	plbot = &slant_left, prbot = &vert_right,
 	    pltop = &vert_left, prtop = &slant_right;
     }
-    slant_left.start.x = le->start.x, slant_left.end.x = le->end.x;
-    slant_right.start.x = re->start.x, slant_right.end.x = re->end.x;
+#   if BAND_INDEPENDENT
+	slant_left.start.x = flp->start.x - fo->adjust_left; 
+	slant_left.end.x = flp->end.x - fo->adjust_left;
+	slant_right.start.x = alp->start.x + fo->adjust_right; 
+	slant_right.end.x = alp->end.x + fo->adjust_right;
+#   else
+	slant_left.start.x = flp->x_current - fo->adjust_left; 
+	slant_left.end.x = flp->x_next - fo->adjust_left;
+	slant_right.start.x = alp->x_current + fo->adjust_right; 
+	slant_right.end.x = alp->x_next + fo->adjust_right;
+#   endif
 
-    if (ya >= y1b) {
+    if (Ya >= Y1b) {
 	/*
 	 * The upper and lower adjustment bands overlap.
 	 * Since the entire entity is less than 2 pixels high
@@ -1283,30 +1310,30 @@ fill_slant_adjust(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
 	 * with no more than 2 rectangle fills, but for right now
 	 * we don't attempt to do this.
 	 */
-	int iyb = fixed2int_var_pixround(yb);
-	int iya = fixed2int_var_pixround(ya);
-	int iy1b = fixed2int_var_pixround(y1b);
-	int iy1a = fixed2int_var_pixround(y1a);
+	int iYb = fixed2int_var_pixround(Yb);
+	int iYa = fixed2int_var_pixround(Ya);
+	int iY1b = fixed2int_var_pixround(Y1b);
+	int iY1a = fixed2int_var_pixround(Y1a);
 
 	INCR(slant_shallow);
-	if (iy1b > iyb) {
+	if (iY1b > iYb) {
 	    code = fo->fill_trap(fo->dev, plbot, prbot,
-				 yb, y1b, false, fo->pdevc, fo->lop);
+				 Yb, Y1b, false, fo->pdevc, fo->lop);
 	    if (code < 0)
 		return code;
 	}
-	if (iya > iy1b) {
+	if (iYa > iY1b) {
 	    int ix = fixed2int_var_pixround(vert_left.start.x);
 	    int iw = fixed2int_var_pixround(vert_right.start.x) - ix;
 
-	    code = gx_fill_rectangle_device_rop(ix, iy1b, iw, iya - iy1b, 
+	    code = gx_fill_rectangle_device_rop(ix, iY1b, iw, iYa - iY1b, 
 			fo->pdevc, fo->dev, fo->lop);
 	    if (code < 0)
 		return code;
 	}
-	if (iy1a > iya)
+	if (iY1a > iYa)
 	    code = fo->fill_trap(fo->dev, pltop, prtop,
-				 ya, y1a, false, fo->pdevc, fo->lop);
+				 Ya, Y1a, false, fo->pdevc, fo->lop);
 	else
 	    code = 0;
     } else {
@@ -1314,26 +1341,26 @@ fill_slant_adjust(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
 	 * Clip the trapezoid if possible.  This can save a lot
 	 * of work when filling paths that cross band boundaries.
 	 */
-	fixed yac;
+	fixed Yac;
 
-	if (fo->pbox->p.y < ya) {
+	if (fo->pbox->p.y < Ya) {
 	    code = fo->fill_trap(fo->dev, plbot, prbot,
-				 yb, ya, false, fo->pdevc, fo->lop);
+				 Yb, Ya, false, fo->pdevc, fo->lop);
 	    if (code < 0)
 		return code;
-	    yac = ya;
+	    Yac = Ya;
 	} else
-	    yac = fo->pbox->p.y;
-	if (fo->pbox->q.y > y1b) {
+	    Yac = fo->pbox->p.y;
+	if (fo->pbox->q.y > Y1b) {
 	    code = fo->fill_trap(fo->dev, &slant_left, &slant_right,
-				 yac, y1b, false, fo->pdevc, fo->lop);
+				 Yac, Y1b, false, fo->pdevc, fo->lop);
 	    if (code < 0)
 		return code;
 	    code = fo->fill_trap(fo->dev, pltop, prtop,
-				 y1b, y1a, false, fo->pdevc, fo->lop);
+				 Y1b, Y1a, false, fo->pdevc, fo->lop);
 	} else
 	    code = fo->fill_trap(fo->dev, &slant_left, &slant_right,
-				 yac, fo->pbox->q.y, false, fo->pdevc, fo->lop);
+				 Yac, fo->pbox->q.y, false, fo->pdevc, fo->lop);
     }
     return code;
 }
@@ -1440,11 +1467,11 @@ process_h_segments(line_list *ll, fixed y)
 }
 
 private inline int
-loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_edge *re)
+loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_edge *re, fixed y, fixed y1)
 {
     const fill_options * const fo = ll->fo;
-    fixed ybot = max(le->start.y, fo->pbox->p.y);
-    fixed ytop = min(le->end.y, fo->pbox->q.y);
+    fixed ybot = max(y, fo->pbox->p.y);
+    fixed ytop = min(y1, fo->pbox->q.y);
 
     if (ybot >= ytop)
 	return 0;

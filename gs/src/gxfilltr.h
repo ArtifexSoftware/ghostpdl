@@ -170,8 +170,18 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 
 	    INCR(band);
 	    le.start.x = le.end.x = 0xbaadf00d;
-	    le.start.y = re.start.y = y;
-	    le.end.y = re.end.y = y1;
+#	    if BAND_INDEPENDENT
+		/* fixme : move the le, re initialization closer to gx_fill_trapezoid_* calls,
+		    because in other places they should be replaced with flp, alp,
+		    and won't generate for some branches.
+    		    Delaying it until dropping the BAND_INDEPENDENT 0 code.
+		*/
+		le.start.y = re.start.y = 0xbaadf00d;
+		le.end.y = re.end.y = 0xbaadf00d;
+#	    else
+		le.start.y = re.start.y = y;
+		le.end.y = re.end.y = y1;
+#	    endif
 
 	    /* Generate trapezoids */
 
@@ -179,13 +189,22 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 		int code;
 
 		print_al("step", alp);
-		re.start.x = alp->x_current;
-		re.end.x = alp->x_next;
+#		if BAND_INDEPENDENT
+		    re.start = alp->start;
+		    re.end = alp->end;
+#		else
+		    re.start.x = alp->x_current;
+		    re.end.x = alp->x_next;
+#		endif
 		INCR(band_step);
 		if (!INSIDE_PATH_P(inside, rule)) { 	/* i.e., outside */
 		    inside += alp->direction;
 		    if (INSIDE_PATH_P(inside, rule))	/* about to go in */
-			le.start.x = re.start.x, le.end.x = re.end.x, flp = alp;
+#			if BAND_INDEPENDENT
+			    le.start = re.start, le.end = re.end, flp = alp;
+#			else
+			    le.start.x = re.start.x, le.end.x = re.end.x, flp = alp;
+#			endif
 		    continue;
 		}
 		/* We're inside a region being filled. */
@@ -194,32 +213,26 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 		    continue;
 		/* We just went from inside to outside, so fill the region. */
 		INCR(band_fill);
-		if (FILL_ADJUST && (fo.adjust_left | fo.adjust_right) != 0) {
-		    le.start.x -= fo.adjust_left;
-		    re.start.x += fo.adjust_right;
-		    le.end.x -= fo.adjust_left;
-		    re.end.x += fo.adjust_right;
-		}
 		if (FILL_ADJUST && !(le.end.x == le.start.x && re.end.x == re.start.x) && 
 		    (fo.adjust_below | fo.adjust_above) != 0) {
 		    /* Assuming pseudo_rasterization = false. */
 		    if (FILL_DIRECT)
-			code = fill_trap_slanted_fd(ll, &le, &re);
+			code = fill_trap_slanted_fd(ll, flp, alp, y, y1);
 		    else
-			code = fill_trap_slanted_nd(ll, &le, &re);
+			code = fill_trap_slanted_nd(ll, flp, alp, y, y1);
 		} else {
 		    if (IS_SPOTAN) {
 			/* We can't pass data through the device interface because 
 			   we need to pass segment pointers. We're unhappy of that. */
 			code = gx_san_trap_store((gx_device_spot_analyzer *)fo.dev, 
-			    y, y1, le.start.x, re.start.x, le.end.x, re.end.x, flp->pseg, alp->pseg, 
-			    flp->direction, alp->direction);
+			    y, y1, flp->x_current, alp->x_current, flp->x_next, alp->x_next, 
+			    flp->pseg, alp->pseg, flp->direction, alp->direction);
 		    } else {
 			if (le.start.x == le.end.x && re.start.x == re.end.x) {
 			    int yi = fixed2int_pixround(le.start.y - (!FILL_ADJUST ? 0 : fo.adjust_below));
 			    int wi = fixed2int_pixround(le.end.y + (!FILL_ADJUST ? 0 : fo.adjust_above)) - yi;
-			    int xli = fixed2int_var_pixround(le.end.x);
-			    int xi = fixed2int_var_pixround(re.end.x);
+			    int xli = fixed2int_var_pixround(le.end.x - (!FILL_ADJUST ? 0 : fo.adjust_left));
+			    int xi = fixed2int_var_pixround(re.end.x + (!FILL_ADJUST ? 0 : fo.adjust_right));
 
 			    if (PSEUDO_RASTERIZATION && xli == xi) {
 				/*
@@ -237,18 +250,6 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 			    vd_rect(le.end.x, le.start.y, re.end.x, le.end.y, 1, VD_TRAP_COLOR);
 			    code = LOOP_FILL_RECTANGLE_DIRECT(&fo, xli, yi, xi - xli, wi);
 			} else if (ybot < ytop) {
-			    #if 0 /* Reserved to improve the banding. */
-			    if (!FILL_ADJUST) {
-				/* Set original trapezoid sides. 
-				   We believe that the optimizer compiler siuppresses 
-				   unuseful old assignments.
-				*/
-				le.start = flp->start;
-				le.end = flp->end;
-				re.start = alp->start;
-				re.end = alp->end;
-			    }
-			    #endif
 			    vd_quad(flp->x_current, ybot, alp->x_current, ybot, alp->x_next, ytop, flp->x_next, ytop, 1, VD_TRAP_COLOR);
 			    if (PSEUDO_RASTERIZATION) {
 				int flags = ftf_pseudo_rasterization;
