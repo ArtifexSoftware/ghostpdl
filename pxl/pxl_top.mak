@@ -41,8 +41,8 @@ pxlver_h=$(PXLSRC)pxlver.h
 $(PXLOBJ)pxmain.$(OBJ): $(PXLSRC)pxmain.c $(AK)\
  $(malloc__h) $(math__h) $(memory__h) $(string__h)\
  $(gdebug_h) $(gp_h)\
- $(gsargs_h) $(gscdefs_h) $(gscoord_h) $(gsdevice_h) $(gserrors_h) $(gsgc_h)\
- $(gsio_h) $(gslib_h) $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gsparam_h)\
+ $(gsargs_h) $(gscdefs_h) $(gscoord_h) $(gsdevice_h) $(gserrors_h) $(gsnogc_h)\
+ $(gsio_h) $(gslib_h) $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gsnogc_h) $(gsparam_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxalloc_h) $(gxstate_h)\
  $(plmain_h) $(plparse_h) $(pjparse_h)\
