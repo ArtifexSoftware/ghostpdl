@@ -775,8 +775,6 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	    }
 	    { 
 		/* We're setting a device parameter to a non-string value. */
-		/* Currently we only support integer and float values; */
-		/* in the future we may support Booleans. */
 		char *eqp = strchr(arg, '=');
 		const char *value;
 		int vi;
@@ -787,7 +785,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		    value = "true";
                 /* search for an int (no decimal), if fail try a float */
                 if ( ( !strchr(value, '.' ) ) &&
-                       ( sscanf(value, "%d", &vi) == 1 ) ) {
+                     ( sscanf(value, "%d", &vi) == 1 ) ) {
                     if ( !strncmp(arg, "FirstPage", 9) )
                         pmi->first_page = max(vi, 1);
                     else if ( !strncmp(arg, "LastPage", 8) )
@@ -799,15 +797,26 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                         buffer[eqp - arg] = '\0';
                         code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &vi);
                     }
-                }
-                else if ( sscanf(value, "%f", &vf) == 1 ) {
+                } else if ( sscanf(value, "%f", &vf) == 1 ) {
                     /* create a null terminated string.  NB duplicated code. */
                     char buffer[128];
                     strncpy(buffer, arg, eqp - arg);
                     buffer[eqp - arg] = '\0';
                     code = param_write_float((gs_param_list *)params, arg_heap_copy(buffer), &vf);
+                } else if ( !strcmp(value, "true") ) {
+                    bool bval = true;
+                    char buffer[128];
+                    strncpy(buffer, arg, eqp - arg);
+                    buffer[eqp - arg] = '\0';
+                    code = param_write_bool((gs_param_list *)params, arg_heap_copy(buffer), &bval);
+                } else if ( !strcmp(value, "false") ) {
+                    bool bval = false;
+                    char buffer[128];
+                    strncpy(buffer, arg, eqp - arg);
+                    buffer[eqp - arg] = '\0';
+                    code = param_write_bool((gs_param_list *)params, arg_heap_copy(buffer), &bval);
                 } else {
-		    fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
+                    fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
 		    continue;
 		}
 	    }
