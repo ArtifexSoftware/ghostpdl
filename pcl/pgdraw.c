@@ -373,7 +373,7 @@ hpgl_set_graphics_line_attribute_state(
     const float *           widths = pcl_palette_get_pen_widths(pgls->ppalet);
     floatp                  pen_wid = widths[hpgl_get_selected_pen(pgls)];
 
-    gs_setfilladjust(pgls->pgs, 0.5, 0.5);
+    gs_setfilladjust(pgls->pgs, 0.0, 0.0);
 	    
     /* character mode has already set up all of this information in
        the build character routine for the font */
