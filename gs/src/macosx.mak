@@ -204,7 +204,7 @@ RANLIB=ranlib
 
 # Define the name of the C compiler.
 
-CC=gcc
+CC=cc
 
 # Define the name of the linker for the final link step.
 # Normally this is the same as the C compiler.
@@ -216,12 +216,13 @@ CCLD=$(CC)
 # the 2.7.0-2.7.2 optimizer bug, either "-Dconst=" or
 # "-Wcast-qual -Wwrite-strings" is automatically included.
 
-GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -fno-builtin -fno-common
+GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes \
+	-fno-builtin -fno-common -DHAVE_STDINT_H
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
 
-CFLAGS_STANDARD=-O2 -traditional-cpp
+CFLAGS_STANDARD=
 CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg -O2
 CFLAGS_SO=-dynamic
