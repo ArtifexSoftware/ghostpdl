@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,7 +20,7 @@
 /* BCP and TBCP filters */
 #include "stdio_.h"
 #include "strimpl.h"
-#include "sfilter.h"
+#include "sbcp.h"
 
 #define CtrlA 0x01
 #define CtrlC 0x03

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -37,29 +37,6 @@
  * and values that change dynamically.  Unless otherwise indicated,
  * all structure members change dynamically.
  */
-
-/* (T)BCPEncode */
-/* (no state) */
-extern const stream_template s_BCPE_template;
-extern const stream_template s_TBCPE_template;
-
-/* (T)BCPDecode */
-typedef struct stream_BCPD_state_s {
-    stream_state_common;
-    /* The client sets the following before initialization. */
-    int (*signal_interrupt) (P1(stream_state *));
-    int (*request_status) (P1(stream_state *));
-    /* The following are updated dynamically. */
-    bool escaped;
-    int matched;		/* TBCP only */
-    int copy_count;		/* TBCP only */
-    const byte *copy_ptr;	/* TBCP only */
-} stream_BCPD_state;
-
-#define private_st_BCPD_state()	/* in sbcp.c */\
-  gs_private_st_simple(st_BCPD_state, stream_BCPD_state, "(T)BCPDecode state")
-extern const stream_template s_BCPD_template;
-extern const stream_template s_TBCPD_template;
 
 /* eexecEncode */
 typedef struct stream_exE_state_s {

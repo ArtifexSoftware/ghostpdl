@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,7 +25,7 @@
 #include "ialloc.h"
 #include "stream.h"
 #include "strimpl.h"
-#include "sfilter.h"
+#include "sbcp.h"
 #include "ifilter.h"
 
 /* Define null handlers for the BCP out-of-band signals. */
