@@ -1097,8 +1097,7 @@ pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_i
 void
 pdf_put_string(const gx_device_pdf * pdev, const byte * str, uint size)
 {
-    psdf_write_string(pdev->strm, str, size,
-		      (pdev->binary_ok ? PRINT_BINARY_OK : 0));
+    psdf_write_string(pdev->strm, str, size, 0);
 }
 
 /* Write a value, treating names specially. */
