@@ -55,6 +55,8 @@ int hpgl_add_arc_3point_to_path(P9(hpgl_state_t *pgls, floatp start_x, floatp
 				   floatp end_x, floatp end_y, floatp chord_angle,
 				   hpgl_plot_function_t draw));
 
+int hpgl_close_path(P1(hpgl_state_t *pgls));
+
 /* put bezier into the current path */
 int hpgl_add_bezier_to_path(P10(hpgl_state_t *pgls, floatp x1,
 				floatp y1, floatp x2, floatp y2,
@@ -86,8 +88,5 @@ int hpgl_close_current_path(P1(hpgl_state_t *pgls));
 
 /* adds a pcl point to the current path */
 int hpgl_add_pcl_point_to_path(P2(hpgl_state_t *pgls, const gs_point *pcl_point));
-
-/* initialize the path machinery */
-#define hpgl_init_path(state) ((state)->g.have_first_moveto = false)
 
 #endif                          /* pgdraw_INCLUDED */
