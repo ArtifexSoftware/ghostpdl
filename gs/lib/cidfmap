@@ -24,5 +24,5 @@
 % Examples :
 %    
 %   /ShinGo-Bold   /HeiseiKakuGo-W5 ;
-%   /Ryumin-Medium << /FileType /TrueType /Path (H:/AuxFiles/Fonts/BATANG.TTC) /SunfontID 3 /CSI [(Japan1) 2] >> ;
+%   /Ryumin-Medium << /FileType /TrueType /Path (H:/AuxFiles/Fonts/BATANG.TTC) /SubfontID 3 /CSI [(Japan1) 2] >> ;
 %
