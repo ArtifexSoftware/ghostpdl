@@ -301,9 +301,9 @@ PCL5_PARSE  = $(PCLOBJ)pcommand.$(OBJ) $(PCLOBJ)pcparse.$(OBJ)
 PCL5_OTHER  = $(PCL5_PARSE) $(PCLOBJ)pcdraw.$(OBJ)
 
 $(PCLOBJ)pcl5base.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5_OTHER)    \
-                       $(PLOBJ)pl.dev $(PLOBJ)pjl.dev
+                       $(PLOBJ)pl.dev $(PLOBJ)pjl.dev $(PLOBJ)$(PCL_FONT_SCALER).dev
 	$(SETMOD) $(PCLOBJ)pcl5base $(PCL5_OTHER)
-	$(ADDMOD) $(PCLOBJ)pcl5base -include $(PLOBJ)pl $(PLOBJ)pjl
+	$(ADDMOD) $(PCLOBJ)pcl5base -include $(PLOBJ)pl $(PLOBJ)pjl $(PLOBJ)$(PCL_FONT_SCALER)
 	$(ADDMOD) $(PCLOBJ)pcl5base -init pcparse
 
 ################ Raster graphics base ################
@@ -726,20 +726,6 @@ $(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c   \
                         $(pjtop_h)
 	$(PCLCCC) $(PCLSRC)pcfont.c $(PCLO_)pcfont.$(OBJ)
 
-$(PCLOBJ)pclfont.$(OBJ): $(PCLSRC)pclfont.c \
-                         $(stdio__h)        \
-                         $(string__h)       \
-                         $(gx_h)            \
-                         $(gp_h)            \
-                         $(gsccode_h)       \
-                         $(gsmatrix_h)      \
-                         $(gsutil_h)        \
-                         $(gxfont_h)        \
-                         $(gxfont42_h)      \
-                         $(pcommand_h)      \
-                         $(pcstate_h)
-	$(PCLCCC) $(PCLSRC)pclfont.c $(PCLO_)pclfont.$(OBJ)
-
 $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c   \
                         $(gx_h)             \
                         $(gsimage_h)        \
@@ -859,8 +845,7 @@ $(PCLOBJ)pcfontpg.$(OBJ): $(PCLSRC)pcfontpg.c \
 PCL5_OPS1   = $(PCLOBJ)pcjob.$(OBJ) $(PCLOBJ)pcpage.$(OBJ)      \
               $(PCLOBJ)pcursor.$(OBJ)
 
-PCL5_OPS2   = $(PCLOBJ)pcfont.$(OBJ) $(PCLOBJ)pclfont.$(OBJ)    \
-              $(PCLOBJ)pctext.$(OBJ)
+PCL5_OPS2   = $(PCLOBJ)pcfont.$(OBJ) $(PCLOBJ)pctext.$(OBJ)
 
 PCL5_OPS3   = $(PCLOBJ)pcsymbol.$(OBJ)
 
@@ -874,7 +859,7 @@ PCL5_OPS    = $(PCL5_OPS1) $(PCL5_OPS2) $(PCL5_OPS3) $(PCL5_OPS4) $(PCL5_OPS5)
 # Note: we have to initialize the cursor after initializing the logical
 # page dimensions, so we do it last.  This is a hack.
 $(PCLOBJ)pcl5.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL_COMMON) $(PCL5_OPS) \
-                   $(PCLOBJ)pcl5base.dev $(PCLOBJ)rtlbase.dev
+                   $(PCLOBJ)pcl5base.dev $(PCLOBJ)rtlbase.dev 
 	$(SETMOD) $(PCLOBJ)pcl5 $(PCL_COMMON)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS1)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS2)
