@@ -1,5 +1,5 @@
 <html><head>
-<title>Ghostscript 6.21 change history as of 2000-04-19 23:37:40</title>
+<title>Ghostscript 6.21 change history as of 2000-04-28 15:18:30</title>
 </head><body>
 
 <blockquote><ul>
@@ -24,6 +24,14 @@ size wasn't an exact multiple of the downsampling factor.
 	- When processing a PDF file, the font substitution heuristic based
 on the FontName sometimes overrode the Flags information in the
 FontDescriptor. (doc/News.htm [1.34]: 2000/04/20 06:36:02 lpd)
+	- When pdfwrite was producing PDF 1.3 output, the base 14 fonts were
+never embedded, rather than being handled like all other fonts.
+(doc/News.htm [1.37]: 2000/04/20 23:49:40 lpd)
+	- The URL for the Arphic free Chinese fonts had become incorrect.
+(doc/Fonts.htm [1.3]: 2000/04/27 13:44:52 lpd)
+	- Fixes a few typos, and adds GS_FONTPATH to the list of environment
+variables to be unset for a pristine test run. (doc/Release.htm [1.10]:
+2000/04/28 22:08:41 lpd)
 
 Adds projects related to SVG and to pswrite image compression.
 (doc/Projects.htm [1.4]: 2000/04/07 18:39:12 lpd)
@@ -106,6 +114,54 @@ Adds a couple of graphics library optimization projects.
 Adds a project for creating an OutputDevice resource instance for each
 device. (doc/Projects.htm [1.6]: 2000/04/19 21:37:47 lpd)
 
+Checks in the accumulated change log. (doc/Changes.htm [1.10]: 2000/04/20
+07:24:22 lpd)
+
+Removes the gp_ procedures for managing screen swapping between console and
+graphics, which haven't been used for a long time and are no longer useful.
+(doc/News.htm [1.35]: 2000/04/20 22:47:35 lpd)
+
+Removes all remaining direct references to stdin/out/err from the library,
+interpreter, and non-contributed drivers; moves the ersatz definitions of
+stdin/out/err to a new header file. (doc/News.htm [1.36]: 2000/04/20
+23:30:22 lpd)
+
+Reduces the startup time for displaying PDF files, by skipping the creation
+of pdfmarks for annotations and outlines when the output device doesn't
+process pdfmarks. (doc/News.htm [1.38]: 2000/04/21 16:58:28 lpd)
+
+Notes that even if SHARE_JPEG=1, the IJG library sources are required.
+(doc/Make.htm [1.12]: 2000/04/27 07:39:05 lpd)
+
+Documents the new -dPrinted[=true/false] switch for PDF files.
+(doc/Use.htm [1.3]: 2000/04/27 08:17:05 lpd)
+
+Adds a MD5Encode filter, which computes the 16-byte MD5 digest of the input.
+No output is produced until the filter is closed. (doc/Language.htm [1.2]:
+2000/04/27 14:39:57 lpd)
+
+Updates the description of the project to produce higher-level PCL output.
+(doc/Projects.htm [1.7]: 2000/04/28 10:42:02 lpd)
+
+Adds a sample file containing a wide variety of PDF annotations; updates
+documentation for this and some other overlooked files.
+(doc/Psfiles.htm [1.4]: 2000/04/28 10:51:02 lpd)
+
+Notes that the uniprint dnj750c.upp parameters are also good for the 450C.
+(doc/Devices.htm [1.6]: 2000/04/28 14:27:02 lpd)
+
+Updates release dates. (man/pdf2ps.1 [1.3], man/ps2ps.1 [1.5]: 2000/04/28
+18:29:32 lpd)
+
+Updates version numbers and dates for the 6.21 fileset.
+(doc/Bug-form.htm [1.6], doc/Devices.htm [1.7], doc/Fonts.htm [1.4],
+doc/Language.htm [1.3], doc/Make.htm [1.13], doc/Projects.htm [1.8],
+doc/Ps2epsi.htm [1.2], doc/Psfiles.htm [1.5], doc/Readme.htm [1.7],
+doc/Use.htm [1.4]: 2000/04/28 22:06:25 lpd)
+
+Updates the news for the 6.21 fileset. (doc/News.htm [1.39]: 2000/04/28
+22:18:16 lpd)
+
 </pre><h2><a name="6.21 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
@@ -128,6 +184,11 @@ font embedding overhaul. (devs.mak [1.11]: 2000/04/10 18:57:33 lpd)
 crash (memory fault). (devs.mak [1.16]: 2000/04/13 01:53:07 lpd)
 	- `make install' didn't install all the documentation files.
 (unixinst.mak [1.9]: 2000/04/14 04:06:13 lpd)
+	- The Color LaserJet 5 drivers were incorrectly identified as
+"supported" rather than "contributed". (contrib.mak [1.7], devs.mak [1.17]:
+2000/04/20 17:12:54 lpd)
+	- PDF images with a bitmap Mask caused errors or produced incorrect
+output. (int.mak [1.20]: 2000/04/24 00:59:04 lpd)
 
 Completely redesigns the representation of CMaps, to reduce space
 requirements and make comparing them more reasonable, changing gs_cmap to
@@ -192,6 +253,53 @@ Adds a user-contributed driver for the Epson Stylus (Color) Photo printers.
 Converts the ps2epsi documentation to HTML. (unixinst.mak [1.10]: 2000/04/18
 17:59:13 lpd)
 
+Checks in the accumulated change log. (version.mak [1.13]: 2000/04/20
+07:24:22 lpd)
+
+Converts the bmp* and bmpa* devices to -dev2, to make them const.
+(devs.mak [1.18]: 2000/04/20 17:19:21 lpd)
+
+Removes the gp_ procedures for managing screen swapping between console and
+graphics, which haven't been used for a long time and are no longer useful.
+(dvx-tail.mak [1.2], lib.mak [1.14], openvms.mak [1.3], openvms.mmk [1.4],
+os2.mak [1.5], unix-aux.mak [1.2], watc.mak [1.3], watclib.mak [1.3],
+winlib.mak [1.2]: 2000/04/20 22:47:35 lpd)
+
+Removes all remaining direct references to stdin/out/err from the library,
+interpreter, and non-contributed drivers; moves the ersatz definitions of
+stdin/out/err to a new header file. (lib.mak [1.15], unix-gcc.mak [1.5]:
+2000/04/20 23:30:22 lpd)
+
+Adds compression for pdfwrite Patterns. (devs.mak [1.19]: 2000/04/24
+06:13:02 lpd)
+
+Adds a MD5Encode filter, which computes the 16-byte MD5 digest of the input.
+No output is produced until the filter is closed. (devs.mak [1.20],
+int.mak [1.21], lib.mak [1.16]: 2000/04/27 14:39:57 lpd)
+
+Adds a user-contributed driver for the H-P 970Cxi inkjet printer.
+(contrib.mak [1.8]: 2000/04/27 14:55:56 lpd)
+
+Factors the H-P monochrome laser and inkjet drivers into a generic driver
+and printer-specific clients. (devs.mak [1.21]: 2000/04/27 20:16:33 lpd)
+
+Adds a user-contributed driver for the Brother HL-1250 laser printer. This
+has a dual AFPL/GPL license, and a non-Aladdin copyright.
+(contrib.mak [1.9]: 2000/04/27 20:18:39 lpd)
+
+Once again, updates some dependency lists that had become inconsistent with
+the code. (contrib.mak [1.10], devs.mak [1.22], lib.mak [1.17]: 2000/04/27
+21:36:19 lpd)
+
+Yet again, updates an out-of-date dependency list. (contrib.mak [1.11]:
+2000/04/28 18:28:42 lpd)
+
+Changes the check for documentation files having the correct embedded date.
+(toolbin/pre [1.3]: 2000/04/28 18:29:14 lpd)
+
+Updates version numbers and dates for the 6.21 fileset. (version.mak [1.14]:
+2000/04/28 22:06:26 lpd)
+
 </pre><h2><a name="6.21 Utilities"></a>Utilities</h2><pre>
 
 Fixes problems:
@@ -202,6 +310,8 @@ fonts produced by recent versions of dvips), ps2epsi caused an error.
 (lib/ps2epsi.ps [1.3]: 2000/04/11 16:32:51 lpd)
 	- Backs out contributed changes of 2000-03-05 because of bugs.
 (ansi2knr.c [1.3]: 2000/04/13 03:41:48 lpd)
+	- ps2epsi removed all ^M characters in the input, possibly
+corrupting binary data. (lib/ps2epsi [1.2]: 2000/04/27 01:44:04 lpd)
 
 Makes the ps2pdf scripts replace a .eps extension with .pdf, as they do with
 .ps. (lib/ps2pdfwr [1.2], lib/ps2pdfxx.bat [1.2]: 2000/04/07 19:28:14 lpd)
@@ -224,6 +334,14 @@ Moves the optimization prologue for ps2pdf from the command line to a
 procedure, to avoid shell length limits. (lib/ps2pdfwr [1.4],
 lib/ps2pdfxx.bat [1.3]: 2000/04/18 16:40:14 lpd)
 
+Removes the gp_ procedures for managing screen swapping between console and
+graphics, which haven't been used for a long time and are no longer useful.
+(bench.c [1.2], gp_dosfb.c [1.2], gp_iwatc.c [1.2], gp_nofb.c [1.2]:
+2000/04/20 22:47:35 lpd)
+
+Checks in a file overlooked in the elimination of the gp_ console
+procedures. (gp_os2.c [1.2]: 2000/04/20 23:27:21 lpd)
+
 </pre><h2><a name="6.21 Drivers"></a>Drivers</h2><pre>
 
 Fixes problems:
@@ -240,6 +358,10 @@ size wasn't an exact multiple of the downsampling factor. (gdevpsdi.c [1.7],
 gdevpsds.c [1.2], gdevpsds.h [1.2]: 2000/04/13 16:44:59 lpd)
 	- Downsampled mask images could cause a memory access error.
 (gdevpsdi.c [1.9]: 2000/04/18 16:37:04 lpd)
+	- PDF Patterns weren't written correctly if the ProcessColorModel
+wasn't Device RGB. (gdevpsdu.c [1.3]: 2000/04/24 05:40:30 lpd)
+	- The [e]pswrite driver produced incorrect output for color images
+with multiple data sources. (gdevps.c [1.5]: 2000/04/25 19:35:07 lpd)
 
 Implements pdfwrite compression for mask images, using the same parameters
 as for monochrome images. (gdevpsdi.c [1.8]: 2000/04/13 18:40:23 lpd)
@@ -252,6 +374,50 @@ lib/bj8pa06n.upp [1.1], lib/bj8pp12f.upp [1.1], lib/bj8ts06n.upp [1.1]:
 
 Adds a user-contributed driver for the Epson Stylus (Color) Photo printers.
 (gdevphex.c [1.1]: 2000/04/18 06:34:26 lpd)
+
+Converts the bmp* and bmpa* devices to -dev2, to make them const.
+(gdevbmp.c [1.2], gdevbmpa.c [1.2]: 2000/04/20 17:19:21 lpd)
+
+Documents the astounding fact that the Xt implementation actually writes
+into the XtResource tables. (gdevxres.c [1.2]: 2000/04/20 19:59:28 lpd)
+
+Removes all remaining direct references to stdin/out/err from the library,
+interpreter, and non-contributed drivers; moves the ersatz definitions of
+stdin/out/err to a new header file. (gdevxxf.c [1.3]: 2000/04/20 23:30:22
+lpd)
+
+When writing PDF output, reduces the size of compressed images in Indexed
+color spaces by not using a Predictor for them. (gdevpsdi.c [1.10]:
+2000/04/21 06:46:08 lpd)
+
+Adds an internal filter for converting images to Indexed form if possible.
+(gdevpsds.c [1.3], gdevpsds.h [1.3]: 2000/04/21 19:26:37 lpd)
+
+Cleans up code by replacing macros with procedures or variables.
+(gdevps.c [1.6]: 2000/04/25 20:35:46 lpd)
+
+Makes the [e]pswrite and pdfwrite drivers merge adjacent horizontal or
+vertical line segments going in the same direction. This makes a big
+difference for PostScript files produced by certain applications.
+(gdevps.c [1.7]: 2000/04/25 22:39:54 lpd)
+
+Adds a user-contributed driver for the H-P 970Cxi inkjet printer.
+(gdevdj9.c [1.1]: 2000/04/27 14:55:56 lpd)
+
+Factors the H-P monochrome laser and inkjet drivers into a generic driver
+and printer-specific clients. (gdevdjet.c [1.3], gdevdljm.c [1.1],
+gdevdljm.h [1.1]: 2000/04/27 20:16:33 lpd)
+
+Adds a user-contributed driver for the Brother HL-1250 laser printer. This
+has a dual AFPL/GPL license, and a non-Aladdin copyright. (gdevhl12.c [1.1]:
+2000/04/27 20:18:39 lpd)
+
+Once again, updates some dependency lists that had become inconsistent with
+the code. (gdevdj9.c [1.2]: 2000/04/27 21:36:19 lpd)
+
+Makes the printers in gdevdjet.c that support setting the number of copies
+use this feature when multiple copies are requested. (gdevdjet.c [1.4],
+gdevdljm.c [1.2], gdevdljm.h [1.2]: 2000/04/28 13:37:47 lpd)
 
 </pre><h2><a name="6.21 PDF writer"></a>PDF writer</h2><pre>
 
@@ -277,6 +443,35 @@ size wasn't an exact multiple of the downsampling factor.
 gdevpdfj.c [1.2]: 2000/04/13 17:24:54 lpd)
 	- gxdcolor.h was required for gxpcolor.h, but wasn't included.
 (gdevpdfc.c [1.4]: 2000/04/18 17:42:55 lpd)
+	- A table of constant strings wasn't declared as const.
+(gdevpdfp.c [1.7]: 2000/04/20 17:37:31 lpd)
+	- When pdfwrite was producing PDF 1.3 output, the base 14 fonts were
+never embedded, rather than being handled like all other fonts.
+(gdevpdff.c [1.4]: 2000/04/20 23:49:40 lpd)
+	- Indexed color spaces used in in-line images were being written
+incorrectly. Also optimizes Indexed images by converting RGB palettes to
+Gray if all the entries are actually gray. (gdevpdfc.c [1.5]: 2000/04/21
+15:29:20 lpd)
+	- The recent optimization for using the ' command in PDF output lost
+track of the leading value between blocks of text, causing lines in later
+blocks to overprint each other. (gdevpdfu.c [1.9]: 2000/04/21 22:29:05 lpd)
+	- Backs out the change that allowed embedding of the base 14 fonts,
+because it produces invalid output. (gdevpdff.c [1.5]: 2000/04/22 00:13:11
+lpd)
+	- Colored Patterns requiring masking weren't written properly.
+(gdevpdfc.c [1.6]: 2000/04/24 00:09:37 lpd)
+	- Patterns were written upside-down. (gdevpdfc.c [1.7]: 2000/04/24
+01:11:36 lpd)
+	- PDF Patterns weren't written correctly if the ProcessColorModel
+wasn't Device RGB. (gdevpdf.c [1.15], gdevpdfc.c [1.8], gdevpdfg.h [1.5],
+gdevpdfi.c [1.13], gdevpdfx.h [1.15]: 2000/04/24 05:40:30 lpd)
+	- The color space for images wasn't always written in the correct
+form (an object reference for image XObjects, a resource name for in-line
+images). (gdevpdfi.c [1.14]: 2000/04/28 12:07:37 lpd)
+	- Patterns were sometimes written with a duplicate Type element.
+(gdevpdfc.c [1.10]: 2000/04/28 12:23:54 lpd)
+	- Patterns were sometimes written twice, with an empty definition
+the second time. (gdevpdfi.c [1.15]: 2000/04/28 12:24:42 lpd)
 
 Overhauls font embedding in the PDF writer: splits off the code into a new
 file (gdevpdfe.c), writes embedded Type 1 fonts as Type 1C (CFF Type 2), and
@@ -331,6 +526,21 @@ Tweaks the PDF writer to use the ' command for positioning text when
 possible (small optimization only). (gdevpdfg.c [1.4], gdevpdft.c [1.10],
 gdevpdfu.c [1.8], gdevpdfx.h [1.14]: 2000/04/18 16:08:16 lpd)
 
+Reduces the startup time for displaying PDF files, by skipping the creation
+of pdfmarks for annotations and outlines when the output device doesn't
+process pdfmarks. (gdevpdfp.c [1.8]: 2000/04/21 16:58:28 lpd)
+
+Adds compression for pdfwrite Patterns. (gdevpdfc.c [1.9]: 2000/04/24
+06:13:02 lpd)
+
+Makes the [e]pswrite and pdfwrite drivers merge adjacent horizontal or
+vertical line segments going in the same direction. This makes a big
+difference for PostScript files produced by certain applications.
+(gdevpdf.c [1.16], gdevpdfd.c [1.8]: 2000/04/25 22:39:54 lpd)
+
+Updates the list of remaining pdfwrite tasks. (gdevpdfp.c [1.9]: 2000/04/27
+21:36:52 lpd)
+
 </pre><h2><a name="6.21 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
 
 Fixes problems:
@@ -340,6 +550,22 @@ in the font data rather than the font name in the PDF resource object. (bug
 	- When processing a PDF file, the font substitution heuristic based
 on the FontName sometimes overrode the Flags information in the
 FontDescriptor. (lib/pdf_font.ps [1.6]: 2000/04/20 06:36:02 lpd)
+	- PDF images with a bitmap Mask caused errors or produced incorrect
+output. (lib/pdf_draw.ps [1.10]: 2000/04/24 00:59:04 lpd)
+	- Masked images weren't drawn properly, because the two data sources
+could reference the same file. (lib/pdf_draw.ps [1.11]: 2000/04/24 05:39:45
+lpd)
+	- *Really* fixes the problem of data source aliasing for masked
+images. (lib/pdf_draw.ps [1.12]: 2000/04/24 05:53:43 lpd)
+	- If a font specified Subtype = /TrueType but the actual font used
+was not a TrueType font, any Encoding in the Font object should be ignored.
+(This is a hack required by the PDF specification.) (lib/pdf_font.ps [1.7]:
+2000/04/24 06:37:18 lpd)
+	- Colored annotation borders caused an error; 0-width borders were
+drawn even though they shouldn't be; Link and Stamp annotations weren't
+drawn at all. Also adds a new -dPrinted[=true/false] switch to choose
+whether to produce "screen" or "printer" output. (code from Artifex)
+(lib/pdf_draw.ps [1.13], lib/pdf_main.ps [1.7]: 2000/04/27 08:16:40 lpd)
 
 Makes undefined XObject resources for the Do operator produce a warning
 rather than an error, to parallel Acrobat Reader. (lib/pdf_draw.ps [1.9]:
@@ -347,6 +573,10 @@ rather than an error, to parallel Acrobat Reader. (lib/pdf_draw.ps [1.9]:
 
 Tweaks up the performance of the PDF interpreter loop slightly.
 (lib/pdf_base.ps [1.7]: 2000/04/18 05:45:49 lpd)
+
+Reduces the startup time for displaying PDF files, by skipping the creation
+of pdfmarks for annotations and outlines when the output device doesn't
+process pdfmarks. (lib/pdf_main.ps [1.6]: 2000/04/21 16:58:28 lpd)
 
 </pre><h2><a name="6.21 Interpreter"></a>Interpreter</h2><pre>
 
@@ -391,6 +621,19 @@ despite the fact that we tested it.) (lib/gs_setpd.ps [1.3]: 2000/04/20
 	- When processing a PDF file, the font substitution heuristic based
 on the FontName sometimes overrode the Flags information in the
 FontDescriptor. (lib/gs_fonts.ps [1.7]: 2000/04/20 06:36:02 lpd)
+	- Showing a string in a Type 1 font with a singular combined matrix
+(e.g., after 0 scalefont setfont) caused an error instead of doing nothing.
+(zchar1.c [1.3]: 2000/04/22 00:34:46 lpd)
+	- Images with multiple file DataSources where two or more of the
+files were the same caused a crash. (zimage.c [1.3]: 2000/04/24 00:07:41
+lpd)
+	- .reusablestreamdecode wasn't defined for use in LanguageLevel 2.
+(The ReusableStreamDecode filter itself was properly defined.)
+(lib/gs_frsd.ps [1.3]: 2000/04/24 00:45:38 lpd)
+	- Loading an unknown font gave a spurious "non-string font name"
+message; unknown fonts with names containing style strings like Bold or
+Italic caused an error. (bug introduced since 6.20) (lib/gs_fonts.ps [1.8]:
+2000/04/28 22:03:58 lpd)
 
 Adds a workaround for misnamed glyphs in some Microsoft TrueType font 'post'
 tables. (lib/gs_mgl_e.ps [1.2], lib/gs_ttf.ps [1.4]: 2000/04/08 01:53:16
@@ -424,6 +667,22 @@ Moves the optimization prologue for ps2pdf from the command line to a
 procedure, to avoid shell length limits. (lib/gs_pdfwr.ps [1.3]: 2000/04/18
 16:40:14 lpd)
 
+Removes all remaining direct references to stdin/out/err from the library,
+interpreter, and non-contributed drivers; moves the ersatz definitions of
+stdin/out/err to a new header file. (imainarg.c [1.2]: 2000/04/20 23:30:22
+lpd)
+
+Speeds up Type 1 font loading slightly by removing a conversion from binary
+to hex and back again. (zmisc1.c [1.2]: 2000/04/22 16:03:18 lpd)
+
+Adds a MD5Encode filter, which computes the 16-byte MD5 digest of the input.
+No output is produced until the filter is closed. (zfmd5.c [1.1]: 2000/04/27
+14:39:57 lpd)
+
+Adds a sample file containing a wide variety of PDF annotations; updates
+documentation for this and some other overlooked files.
+(examples/annots.pdf [1.1]: 2000/04/28 10:51:02 lpd)
+
 </pre><h2><a name="6.21 Streams"></a>Streams</h2><pre>
 
 Fixes problems:
@@ -432,10 +691,26 @@ sread_subfile). (sfxfd.c [1.3]: 2000/04/10 02:41:48 lpd)
 	- flushfile and closefile didn't properly flush streams whose final
 target was a procedure, and closefile didn't actually close them. (This is a
 very old bug.) (stream.c [1.6]: 2000/04/18 05:50:15 lpd)
+	- The PixelDifference filters (Predictor = 2) weren't implemented
+for Colors > 4 and BitsPerComponent != 8, and they dropped trailing bytes if
+the length of the data wasn't an exact multiple of the pixel size.
+(spdiff.c [1.2]: 2000/04/22 03:55:22 lpd)
 
 Enhances the ASCII85Encode filter to avoid %! at the beginning of a line of
 output, in addition to avoiding %% which it did already. (sa85x.h [1.2],
 sfilter2.c [1.2]: 2000/04/08 01:30:36 lpd)
+
+Removes all remaining direct references to stdin/out/err from the library,
+interpreter, and non-contributed drivers; moves the ersatz definitions of
+stdin/out/err to a new header file. (std.h [1.2]: 2000/04/20 23:30:22 lpd)
+
+Speeds up Type 1 font loading slightly by removing a conversion from binary
+to hex and back again. (seexec.c [1.2], sfilter.h [1.5]: 2000/04/22 16:03:18
+lpd)
+
+Adds a MD5Encode filter, which computes the 16-byte MD5 digest of the input.
+No output is produced until the filter is closed. (smd5.c [1.1],
+smd5.h [1.1]: 2000/04/27 14:39:57 lpd)
 
 </pre><h2><a name="6.21 Library"></a>Library</h2><pre>
 
@@ -454,6 +729,13 @@ non-standard prototype for the sqrt function. (gsmisc.c [1.3]: 2000/04/10
 	- putdeviceparams allowed a PageSize or .MediaSize value with the
 wrong number of elements to take effect. (gsdparam.c [1.2]: 2000/04/19
 05:59:05 lpd)
+	- The elimination of stdin/out/err also eliminated some #defines
+that are needed for error printout. (gsio.h [1.3]: 2000/04/21 06:39:17 lpd)
+	- The structure descriptor for ImageType 3 images was public rather
+than private. (gsiparm3.h [1.3], gximage3.c [1.2]: 2000/04/22 07:02:18 lpd)
+	- The "point matching" feature of TrueType composite glyphs wasn't
+implemented, causing some composite (accented) characters to have their
+accents misplaced. (gstype42.c [1.4]: 2000/04/25 07:22:50 lpd)
 
 Completely redesigns the representation of CMaps, to reduce space
 requirements and make comparing them more reasonable, changing gs_cmap to
@@ -473,5 +755,26 @@ eventual embedding in PDF output. (gdevpsf.h [1.4], gdevpsfm.c [1.1]:
 Completes code for reading and writing CMaps. (gdevpsf.h [1.5],
 gdevpsfm.c [1.2], gsccode.h [1.3], gsfcid.c [1.3], gsfcmap.c [1.5],
 gxcid.h [1.2], gxfcmap.h [1.4]: 2000/04/16 03:05:29 lpd)
+
+Removes the gp_ procedures for managing screen swapping between console and
+graphics, which haven't been used for a long time and are no longer useful.
+(gp.h [1.3]: 2000/04/20 22:47:35 lpd)
+
+Removes all remaining direct references to stdin/out/err from the library,
+interpreter, and non-contributed drivers; moves the ersatz definitions of
+stdin/out/err to a new header file. (gsdevice.c [1.3], gsio.h [1.2],
+gsmisc.c [1.5], gxdevice.h [1.2]: 2000/04/20 23:30:22 lpd)
+
+Adds an essential new file overlooked in the removal of references to
+stdin/out/err. (gxstdio.h [1.1]: 2000/04/20 23:50:20 lpd)
+
+Makes the [e]pswrite and pdfwrite drivers merge adjacent horizontal or
+vertical line segments going in the same direction. This makes a big
+difference for PostScript files produced by certain applications.
+(gdevvec.c [1.2], gdevvec.h [1.2]: 2000/04/25 22:39:54 lpd)
+
+Adds template macros for printer devices that implement print_page_copies
+rather than print_page. (gdevprn.c [1.2], gdevprn.h [1.3]: 2000/04/28
+13:36:16 lpd)
 
 </pre></body></html>
