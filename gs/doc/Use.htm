@@ -1180,8 +1180,11 @@ string, which you can do with <b><tt>od</tt></b>, you can use
 <b><tt>tail</tt></b> to strip them off.  For instance:
 
 <blockquote>
-<b><tt>od -c Macintosh.pdf | more</tt></b> ;# <em>shows that <b><tt>%PDF</tt></b> occurs after 128 characters</em><br>
-<b><tt>tail +128c Macintosh.pdf &gt;Legal.pdf</tt></b>
+<b><tt>od -c Macintosh.pdf | more</tt></b> ;# <em>shows that
+<b><tt>%PDF</tt></b> occurs after a 128-byte prefix</em><br>
+then <b><tt>tail +128c Macintosh.pdf &gt; Legal.pdf</tt></b> or<br>
+<b><tt>tail -c +129 Macintosh.pdf &gt; Legal.pdf</tt></b> on POSIX
+systems.
 </blockquote>
 
 <p>
