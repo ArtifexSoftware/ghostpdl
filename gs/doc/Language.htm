@@ -451,10 +451,14 @@ The initial value of the text knockout flag is <b><tt>true</tt></b>.
 <h4><a name="Transparency_rendering_stack_operators">Rendering stack operators</h4>
 
 <p>
-The interpreter state is extended to include a rendering stack.  The stack
-is per-context and is saved and restored by <b><tt>save</tt></b> and
-<b><tt>restore</tt></b>.  There may be other as yet undefined constraints on
-how it interacts with the graphics state stack.
+The interpreter state is extended to include a rendering stack for handling
+transparency groups and masks.  Groups accumulate a full value for each
+pixel (paint plus transparency); masks accumulate only a coverage value.
+The stack is per-context and is saved and restored by <b><tt>save</tt></b>
+and <b><tt>restore</tt></b>.  There may be other as yet undefined
+constraints on how it interacts with the graphics state stack.  Groups and
+masks must be properly nested, i.e., the 'end' or 'discard' operator must
+match the corresponding 'begin' operator.
 
 <dl>
 <dt><b><tt>&lt;paramdict&gt; &lt;llx&gt; &lt;lly&gt; &lt;urx&gt; &lt;ury&gt;
