@@ -665,7 +665,7 @@ pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 {
     pdf_font_resource_t *pdfont;
     gs_font_base *pfont = pdf_font_descriptor_font(pfd);
-    gs_point *v;
+    gs_point *v = NULL;
     int code;
 
     if (pfont->WMode) {
