@@ -42,10 +42,6 @@ public class Nav extends Gview  {
 
 	// zoom window is higher res, don't count pages now.
 	pageView.runJob(args, startingRes, false);
-
-	// set the total page count as unknown for now 
-        setPageCount(-1);
-	pageView.setPageCount(-1);
     }
 
     /** main program */

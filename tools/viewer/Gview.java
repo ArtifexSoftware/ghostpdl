@@ -850,6 +850,8 @@ public class Gview
 	    pageCounter.setJob(args[0]);  
 	    pageCounter.startCountingPages();
 	}
+	// set the total page count as unknown for now 
+        setPageCount(-1);
 
 	pageNumber = 1;
 	pickle.setPageNumber(pageNumber);
