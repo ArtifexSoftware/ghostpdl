@@ -468,7 +468,7 @@ $(AK):
 distclean : clean config-clean
 	-$(RM) Makefile
 
-maintainer-clean : disclean
+maintainer-clean : distclean
 	# nothing special to do
 
 
