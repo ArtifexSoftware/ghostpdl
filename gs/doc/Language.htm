@@ -974,7 +974,17 @@ otherwise.
 
 <dl>
 <dt><b><tt>&lt;device&gt; copydevice &lt;device&gt;</tt></b>
-<dd>Copies a device.  The copy is writable and installable.
+<dd>Copies a device.  The copy is writable and installable.  The copy is
+created in the current VM (local or global), usually local VM for executing
+ordinary PostScript files.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;devicename&gt; finddevice &lt;device&gt;</tt></b>
+<dd>Creates a default instance of a device specified by name.  The instance
+is created in global VM.  If <b><tt>finddevice</tt></b> is called more than
+once with the same device name, it creates the default instance the first
+time, and returns the same instance thereafter.
 </dl>
 
 <dl>

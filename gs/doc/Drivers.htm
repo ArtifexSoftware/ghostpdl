@@ -772,10 +772,17 @@ close a device instance.  Device instances are only closed when they are
 about to be freed, which occurs in three situations:
 
 <ul>
-<li>when a 'restore' occurs, if the instance was created since the
-corresponding 'save';
-<li>by the garbage collector, if the instance is no longer accessible; or
-<li>when Ghostscript exits (terminates).
+<li>When a <b><tt>restore</tt></b> occurs, if the instance was created since
+the corresponding <b><tt>save</tt></b> and is in a VM being restored.  I.e.,
+if the instance was created in local VM since a <b><tt>save</tt></b>, it
+will always be closed and freed by the corresponding
+<b><tt>restore</tt></b>; if it was created in global VM, it will only be
+closed by the outermost <b><tt>restore</tt></b>, regardless of the save
+level at the time the instance was created.
+
+<li>By the garbage collector, if the instance is no longer accessible.
+
+<li>When Ghostscript exits (terminates).
 </ul>
 
 <h2><a name="Open_close"></a>Open, close, sync</h2>
