@@ -237,4 +237,12 @@ int process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 			  const gs_const_string *pstr,
 			  gs_point *pdpt);
 
+/* 
+ * Add char code pair to ToUnicode CMap,
+ * creating the CMap on neccessity.
+ */
+int
+pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont, 
+		  gs_glyph glyph, gs_char ch);
+
 #endif /* gdevpdtt_INCLUDED */

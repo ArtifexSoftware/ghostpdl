@@ -217,7 +217,6 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 {
     ref *pcharstrings = 0;
     ref CharStrings;
-    ref *pfontinfo, *g2u = NULL;
     gs_font_base *pfont;
     font_data *pdata;
     int code;
@@ -240,11 +239,6 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	 */
 	CharStrings = *pcharstrings;
     }
-    if (dict_find_string(op, "FontInfo", &pfontinfo) <= 0 ||
-	    !r_has_type(pfontinfo, t_dictionary) ||
-	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
-	    !r_has_type(pfontinfo, t_dictionary))
-	g2u = NULL;
     code = build_gs_outline_font(i_ctx_p, op, ppfont, ftype, pstype, pbuild,
 				 options, build_gs_simple_font);
     if (code != 0)
@@ -261,9 +255,6 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	!dict_check_uid_param(op, &pfont->UID)
 	)
 	uid_set_invalid(&pfont->UID);
-
-    if (g2u != NULL)
-	ref_assign_new(&pdata->GlyphNames2Unicode, g2u);
     return 0;
 }
 
@@ -357,7 +348,13 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     gs_uid uid;
     int code;
     gs_font_base *pfont;
+    ref *pfontinfo, *g2u = NULL;
 
+    if (dict_find_string(op, "FontInfo", &pfontinfo) <= 0 ||
+	    !r_has_type(pfontinfo, t_dictionary) ||
+	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
+	    !r_has_type(pfontinfo, t_dictionary))
+	g2u = NULL;
     code = font_bbox_param(op, bbox);
     if (code < 0)
 	return code;
@@ -373,12 +370,18 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     pfont = *ppfont;
     pfont->procs.init_fstack = gs_default_init_fstack;
     pfont->procs.define_font = gs_no_define_font;
+    pfont->procs.decode_glyph = gs_font_map_glyph_to_unicode;
     pfont->procs.make_font = zbase_make_font;
     pfont->procs.next_char_glyph = gs_default_next_char_glyph;
     pfont->FAPI = 0;
     pfont->FAPI_font_data = 0;
     init_gs_simple_font(pfont, bbox, &uid);
     lookup_gs_simple_font_encoding(pfont);
+    if (g2u != NULL) {
+	font_data *pdata = pfont_data(pfont);
+
+	ref_assign_new(&pdata->GlyphNames2Unicode, g2u);
+    }
     return 0;
 }
 

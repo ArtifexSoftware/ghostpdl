@@ -152,8 +152,6 @@ typedef struct gs_glyph_info_s {
 #define GLYPH_INFO_OUTLINE_WIDTHS 32 /* return unmodified widths, see above */
 #define GLYPH_INFO_VVECTOR0 64	
 #define GLYPH_INFO_VVECTOR1 128	/* must be VVECTOR0 << 1 */
-    gs_char unicode;		/* Unicode UTC-16 code for the glyph. */
-#define GLYPH_INFO_UTC16  256   
 } gs_glyph_info_t;
 
 /* Define the "object" procedures of fonts. */
@@ -223,6 +221,13 @@ typedef struct gs_font_procs_s {
 #define font_proc_encode_char(proc)\
   gs_glyph proc(gs_font *, gs_char, gs_glyph_space_t)
     font_proc_encode_char((*encode_char));
+
+    /* Map a glyph name to Unicode UTC-16.
+     */
+
+#define font_proc_decode_glyph(proc)\
+  gs_char proc(gs_font *, gs_glyph)
+    font_proc_decode_glyph((*decode_glyph));
 
     /*
      * Get the next glyph in an enumeration of all glyphs defined by the
@@ -336,6 +341,7 @@ font_proc_same_font(gs_default_same_font);
 font_proc_same_font(gs_base_same_font);
 /* Default glyph-level font procedures in gsfont.c */
 font_proc_encode_char(gs_no_encode_char);
+font_proc_decode_glyph(gs_no_decode_glyph);
 font_proc_enumerate_glyph(gs_no_enumerate_glyph);
 font_proc_glyph_info(gs_default_glyph_info);
 font_proc_glyph_outline(gs_no_glyph_outline);

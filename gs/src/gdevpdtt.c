@@ -1424,7 +1424,11 @@ pdf_text_process(gs_text_enum_t *pte)
  top:
     pte_default = penum->pte_default;
     if (pte_default) {
+	gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
+
+	pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
 	code = gs_text_process(pte_default);
+	pdev->pte = NULL;	 /* CAUTION: See comment in gdevpdfx.h . */
 	gs_text_enum_copy_dynamic(pte, pte_default, true);
 	if (code)
 	    return code;

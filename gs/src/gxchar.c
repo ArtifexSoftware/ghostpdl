@@ -895,14 +895,20 @@ show_proceed(gs_show_enum * penum)
 		     * do it here.
 		     */
 		    SET_CURRENT_CHAR(penum, chr);
+		    /*
+		     * Store glyph now, because pdfwrite needs it while
+		     * synthezising bitmap fonts (see assign_char_code).
+		     */
 		    if (glyph == gs_no_glyph) {
 			glyph = (*penum->encode_char)(pfont, chr,
 						      GLYPH_SPACE_NAME);
+			SET_CURRENT_GLYPH(penum, glyph);
 			if (glyph == gs_no_glyph) {
 			    cc = 0;
 			    goto no_cache;
 			}
-		    }
+		    } else
+    			SET_CURRENT_GLYPH(penum, glyph);
 		    if (pair == 0)
 			pair = gx_lookup_fm_pair(pfont, pgs);
 		    {
@@ -1001,8 +1007,7 @@ show_proceed(gs_show_enum * penum)
 		    } else
 			code = show_fast_move(pgs, &cc->wxy);
 		    if (code) {
-			/* Might be kshow, so store the state. */
-			SET_CURRENT_GLYPH(penum, glyph);
+			/* Might be kshow, glyph is stored above. */
 			return code;
 		    }
 	    }
@@ -1027,6 +1032,7 @@ show_proceed(gs_show_enum * penum)
 	if (glyph == gs_no_glyph) {
 	    glyph = (*penum->encode_char)(pfont, chr, GLYPH_SPACE_NAME);
 	}
+        SET_CURRENT_GLYPH(penum, glyph);
 	cc = 0;
     }
   no_cache:
@@ -1035,10 +1041,9 @@ show_proceed(gs_show_enum * penum)
      * we only do this if the character is not cached (cc = 0);
      * however, we also must do this if we have an xfont but
      * are using scalable widths.  In this case, and only this case,
-     * we get here with cc != 0.  penum->current_char has already
-     * been set, but not penum->current_glyph.
+     * we get here with cc != 0.  penum->current_char and penum->current_glyph
+     * has already been set.
      */
-    SET_CURRENT_GLYPH(penum, glyph);
     if ((code = gs_gsave(pgs)) < 0)
 	return code;
     /* Set the font to the current descendant font. */

@@ -375,7 +375,11 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	     */
 	    continue;
 	}
-	rect_merge(desc.FontBBox, info.bbox);
+	/* rect_merge(desc.FontBBox, info.bbox); Expanding due to type cast :*/
+	if (info.bbox.p.x < desc.FontBBox.p.x) desc.FontBBox.p.x = (int)info.bbox.p.x;
+	if (info.bbox.q.x > desc.FontBBox.q.x) desc.FontBBox.q.x = (int)info.bbox.q.x;
+	if (info.bbox.p.y < desc.FontBBox.p.y) desc.FontBBox.p.y = (int)info.bbox.p.y;
+	if (info.bbox.q.y > desc.FontBBox.q.y) desc.FontBBox.q.y = (int)info.bbox.q.y;
 	if (!info.num_pieces)
 	    desc.Ascent = max(desc.Ascent, (int)info.bbox.q.y);
 	if (notdef == GS_NO_GLYPH && gs_font_glyph_is_notdef(bfont, glyph)) {

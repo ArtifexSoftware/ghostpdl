@@ -50,6 +50,7 @@ const gs_font_procs gs_font_procs_default = {
     gs_default_font_info,
     gs_default_same_font,
     gs_no_encode_char,
+    gs_no_decode_glyph,
     gs_no_enumerate_glyph,
     gs_default_glyph_info,
     gs_no_glyph_outline,
@@ -840,6 +841,13 @@ gs_glyph
 gs_no_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t glyph_space)
 {
     return gs_no_glyph;
+}
+
+/* Dummy glyph decoding procedure */
+gs_char
+gs_no_decode_glyph(gs_font *pfont, gs_glyph glyph)
+{
+    return GS_NO_CHAR;
 }
 
 /* Dummy glyph enumeration procedure */

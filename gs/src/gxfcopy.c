@@ -1664,6 +1664,7 @@ private const gs_font_procs copied_font_procs = {
     copied_font_info,
     gs_default_same_font,
     0,				/* encode_char, varies by FontType */
+    0,				/* decode_char, not supported */
     copied_enumerate_glyph,
     0,				/* glyph_info, varies by FontType */
     0,				/* glyph_outline, varies by FontType */

@@ -25,6 +25,7 @@
 #include "gdevpdti.h"
 #include "gdevpdts.h"
 #include "gdevpdtw.h"
+#include "gdevpdtt.h"
 
 /* ---------------- Private ---------------- */
 
@@ -68,39 +69,48 @@ private int
 assign_char_code(gx_device_pdf * pdev, int width)
 {
     pdf_bitmap_fonts_t *pbfs = pdev->text->bitmap_fonts;
-    pdf_font_resource_t *font = pbfs->open_font; /* Type 3 */
-    int c;
+    pdf_font_resource_t *pdfont = pbfs->open_font; /* Type 3 */
+    int c, code;
 
     if (pbfs->bitmap_encoding_id == 0)
 	pbfs->bitmap_encoding_id = pdf_obj_ref(pdev);
-    if (font == 0 || font->u.simple.LastChar == 255 ||
+    if (pdfont == 0 || pdfont->u.simple.LastChar == 255 ||
 	!pbfs->use_open_font
 	) {
 	/* Start a new synthesized font. */
-	int code = pdf_font_type3_alloc(pdev, &font, write_contents_bitmap);
 	char *pc;
 
+	code = pdf_font_type3_alloc(pdev, &pdfont, write_contents_bitmap);
 	if (code < 0)
 	    return code;
 	if (pbfs->open_font == 0)
-	    font->rname[0] = 0;
+	    pdfont->rname[0] = 0;
 	else
-	    strcpy(font->rname, pbfs->open_font->rname);
+	    strcpy(pdfont->rname, pbfs->open_font->rname);
 	/*
 	 * We "increment" the font name as a radix-26 "number".
 	 * This cannot possibly overflow.
 	 */
-	for (pc = font->rname; *pc == 'Z'; ++pc)
+	for (pc = pdfont->rname; *pc == 'Z'; ++pc)
 	    *pc = '@';
 	if ((*pc)++ == 0)
 	    *pc = 'A', pc[1] = 0;
-	pbfs->open_font = font;
+	pbfs->open_font = pdfont;
 	pbfs->use_open_font = true;
     }
-    c = ++(font->u.simple.LastChar);
-    font->Widths[c] = pdev->char_width.x;
+    c = ++(pdfont->u.simple.LastChar);
+    pdfont->Widths[c] = pdev->char_width.x;
     if (c > pbfs->max_embedded_code)
 	pbfs->max_embedded_code = c;
+
+    /* Synthezise ToUnicode CMap :*/
+    {	gs_text_enum_t *pte = pdev->pte;
+        gs_font *font = pte->current_font;
+
+	code = pdf_add_ToUnicode(pdev, font, pdfont, pte->returned.current_glyph, c); 
+	if (code < 0)
+	    return code;
+    }
     return c;
 }
 

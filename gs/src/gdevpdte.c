@@ -76,6 +76,33 @@ pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     return pdf_process_string(penum, pstr, pdfont, pfmat, ppts);
 }
 
+/* 
+ * Add char code pair to ToUnicode CMap,
+ * creating the CMap on neccessity.
+ */
+int
+pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont, 
+		  gs_glyph glyph, gs_char ch)
+{   gs_glyph_info_t info;
+    int code;
+    gs_char unicode;
+
+    if (glyph == GS_NO_GLYPH)
+	return 0;
+    unicode = font->procs.decode_glyph((gs_font *)font, glyph);
+    if (unicode != GS_NO_CHAR) {
+	if (pdfont->cmap_ToUnicode == NULL) {
+	    code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, 256, 1, 
+					    &pdfont->cmap_ToUnicode);
+	    if (code < 0)
+		return code;
+	}
+	if (pdfont->cmap_ToUnicode != NULL)
+	    gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode);
+    }
+    return 0;
+}
+
 /*
  * Given a text string and a simple gs_font, return a font resource suitable
  * for the text string, possibly re-encoding the string.  This
@@ -138,21 +165,9 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 	if (code < 0)
 	    return code;
 	if (need_ToUnicode) {
-	    gs_glyph_info_t info;
-
-	    code = font->procs.glyph_info((gs_font *)font, glyph, NULL, GLYPH_INFO_UTC16, &info);
-	    if (code != gs_error_undefined && code < 0)
+	    code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch);
+	    if (code < 0)
 		return code;
-	    if (code != gs_error_undefined && info.unicode != GS_NO_CHAR) {
-		if (pdfont->cmap_ToUnicode == NULL) {
-		    code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, 256, 1, 
-						    &pdfont->cmap_ToUnicode);
-		    if (code < 0)
-			return code;
-		}
-	    }
-	    if (pdfont->cmap_ToUnicode != NULL)
-		gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, info.unicode);
 	}
 	pet->glyph = glyph;
 	pet->str = gnstr;

@@ -463,6 +463,15 @@ struct gx_device_pdf_s {
     cos_array_t *PageLabels;
     int PageLabels_current_page;
     cos_dict_t *PageLabels_current_label;
+    /*
+     * The following is a dangerous pointer, which pdf_text_process
+     * uses to communicate with assign_char_code.
+     * It is a pointer from global memory to local memory.
+     * The garbager must not proceess this pointer, and it must
+     * not be listed in st_device_pdfwrite.
+     * It's life time terminates on garbager invocation.
+     */
+    gs_text_enum_t *pte;
 };
 
 #define is_in_page(pdev)\
