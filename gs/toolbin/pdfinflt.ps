@@ -59,7 +59,7 @@
       		% find its length, we create an indirect object.
             10 dict begin
             /infile exch def /sdict exch def
-            RMap length neg omapnew pop /lenobj exch def
+            RMap ld_length neg omapnew pop /lenobj exch def
             sdict dup length dict copy
             dup /Filter undef dup /DecodeParms undef
             dup /Length lenobj /O cvx 2 packedarray cvx put
