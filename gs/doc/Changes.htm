@@ -1,1398 +1,536 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html><head>
-<title>Ghostscript 7.31 change history as of 2002-10-17 00:07:01</title>
+<title>Ghostscript 7.32 change history as of 2002-11-02 00:12:42</title>
 <link rel=stylesheet type="text/css" href="gs.css">
 </head><body>
 
 <!-- cvs command: cvs -d raph@cvs.ghostscript.com:/cvs/ghostscript -Q log  -b -->
 
 <ul>
-<li><a href="#7.31-Documentation">Documentation</a>,
-    <a href="#7.31-Procedures">Procedures</a>,
-    <a href="#7.31-Utilities">Utilities</a>,
-    <a href="#7.31-Drivers">Drivers</a>,
-    <a href="#7.31-PDF_writer">PDF writer</a>,
-    <a href="#7.31-PDF_Interpreter">PDF Interpreter</a>,
-    <a href="#7.31-Interpreter">Interpreter</a>,
-    <a href="#7.31-Streams">Streams</a>,
-    <a href="#7.31-Library">Library</a>,
-    <a href="#7.31-Other">Other</a>
+<li><a href="#7.32-Documentation">Documentation</a>,
+    <a href="#7.32-Procedures">Procedures</a>,
+    <a href="#7.32-Utilities">Utilities</a>,
+    <a href="#7.32-Drivers">Drivers</a>,
+    <a href="#7.32-PDF_writer">PDF writer</a>,
+    <a href="#7.32-PDF_Interpreter">PDF Interpreter</a>,
+    <a href="#7.32-Interpreter">Interpreter</a>,
+    <a href="#7.32-Streams">Streams</a>,
+    <a href="#7.32-Library">Library</a>,
+    <a href="#7.32-Other">Other</a>
 </ul>
 
 
-<h2><a name="7.31-Documentation"></a>Documentation</h2><pre>
+<h2><a name="7.32-Documentation"></a>Documentation</h2><pre>
 
 Fixes problems:
-	- Mentions the autoconf build method in the installation
-documentation. Inspired by a user report of having looked there first rather
-than at Make.htm; an understandible choice based on linux packaging
-conventions. (doc/Install.htm [1.35]: 2002/09/16 21:15:39 giles)
-	- Keep pagedevice and device views of .LockSafetyParams correct even
-after a 'restore' is used to unlock. The dictionary fed to the setpagedevice
-operator is allocated in the same VM space as currentpagedevice to avoid
-invalidaccess problems. Fixed SF #580029 and does not revert to the
-incorrect behaviour of bug #516379. (doc/Language.htm [1.53]: 2002/09/18
-16:58:01 ray)
-
-German man page translation updates from Thomas Hoffmann.
-(man/de/ansi2knr.1 [1.2], man/de/dvipdf.1 [1.3], man/de/font2c.1 [1.3],
-man/de/gsnd.1 [1.4], man/de/pdf2dsc.1 [1.3], man/de/pdf2ps.1 [1.3],
-man/de/pdfopt.1 [1.2], man/de/printafm.1 [1.3], man/de/ps2ascii.1 [1.2],
-man/de/ps2pdf.1 [1.4], man/de/ps2ps.1 [1.3], man/de/wftopfa.1 [1.3]:
-2002/09/09 08:11:44 ghostgum)
-
-Update documentation to remove some confusion between Borland C++ 5 and
-Borland C++Builder 5. (doc/Make.htm [1.54]: 2002/09/09 12:05:59 ghostgum)
-
-Bump version numbers after 7.30 release. (doc/News.htm [1.113]: 2002/09/12
-09:52:19 giles)
-
-Update the device API documentation to include the changes made for support
-of various DeviceN related features. (doc/Drivers.htm [1.32]: 2002/09/12
-18:10:54 dan)
-
-For Windows printers, change documentation to use the preferred output file
-name %printer%xyz, not the old confusing \\spool\xyz.
-(doc/Devices.htm [1.49]: 2002/09/16 20:56:19 ghostgum)
-
-For Windows printers, change documentation to use the preferred output file
-name %printer%xyz, not the old confusing \\spool\xyz.
-(doc/Devices.htm [1.50]: 2002/09/16 20:58:52 ghostgum)
-
-Add documentation to the .setsafe operator that was added to .locksafe
-operator that says that .setsafe uses setpagedevice, thus it will erase the
-page. Related to SourceForge bug #580029. (doc/Language.htm [1.54]:
-2002/09/23 06:18:51 ray)
-
-Adds -dDONTPS command line option to disable processing of DoPS directives
-in PDF files. Works around problem rendering S2_Digitalproof-Forum_x3k.pdf.
-(doc/Use.htm [1.57]: 2002/09/29 17:38:43 raph)
-
-document the new testdiff command (doc/Testing.htm [1.10]: 2002/09/29
-23:11:28 giles)
-
-More documentation for: 1. Color_info fields related to "linear and
-separable": comp_shift, comp_bits, and comp_mask. 2. Macros for color_info
-structure definitions. 3. What to do if the any changes are made to the
-color_info fields. (doc/Drivers.htm [1.33]: 2002/10/09 07:44:47 dan)
-
-Removes references to the no longer supported ansi2knr.c.
-(doc/Develop.htm [1.91], doc/Release.htm [1.68]: 2002/10/09 23:41:13 giles)
-
-Add zht2.h to the file listing in Develop.htm. (doc/Develop.htm [1.92]:
-2002/10/10 00:39:26 giles)
-
-Add zht2.h to the correct section of the file listings. Corrects a
-cut-and-paste error in the previous commit. (doc/Develop.htm [1.93]:
-2002/10/10 00:42:22 giles)
-
-Adds PhotoShop (psdcmyk and psdrgb) devices. (doc/Develop.htm [1.94]:
-2002/10/12 12:02:40 jeong)
-
-Cleans up output device documentation. Old printer drivers (replaced by
-hpijs and/or gimpprintijs) are moved to a new file, Deprecated.htm. Stub
-documentation for file output devices and general re-organization.
-(doc/Deprecated.htm [1.1], doc/Devices.htm [1.51], doc/Readme.htm [1.41]:
-2002/10/15 15:13:35 giles)
-
-Corrects formatting errors and updates the table of contents for the devices
-documentation. (doc/Devices.htm [1.52]: 2002/10/15 15:31:17 giles)
-
-First documentation commit for 7.31 release: edits to News.htm, version and
-date updates, minor patches to Develop.htm and Deprecated.htm.
-(doc/API.htm [1.25], doc/Bug-form.htm [1.30], doc/Bug-info.htm [1.29],
-doc/C-style.htm [1.36], doc/Commprod.htm [1.22], doc/Copying.htm [1.22],
-doc/Current.htm [1.22], doc/DLL.htm [1.24], doc/Deprecated.htm [1.2],
-doc/Develop.htm [1.95], doc/Devices.htm [1.53], doc/Drivers.htm [1.34],
-doc/Fonts.htm [1.31], doc/Helpers.htm [1.26], doc/History1.htm [1.22],
-doc/History2.htm [1.22], doc/History3.htm [1.22], doc/History4.htm [1.22],
-doc/History5.htm [1.24], doc/History6.htm [1.39], doc/History7.htm [1.22],
-doc/Htmstyle.htm [1.27], doc/Install.htm [1.36], doc/Issues.htm [1.26],
-doc/Language.htm [1.55], doc/Lib.htm [1.24], doc/Maintain.htm [1.32],
-doc/Make.htm [1.55], doc/New-user.htm [1.41], doc/News.htm [1.114],
-doc/Projects.htm [1.46], doc/Ps-style.htm [1.20], doc/Ps2epsi.htm [1.24],
-doc/Ps2pdf.htm [1.46], doc/Psfiles.htm [1.37], doc/Readme.htm [1.42],
-doc/Release.htm [1.69], doc/Source.htm [1.22], doc/Tester.htm [1.21],
-doc/Testing.htm [1.11], doc/Unix-lpr.htm [1.22], doc/Use.htm [1.58],
-doc/Xfonts.htm [1.22], doc/gs-vms.hlp [1.21], man/dvipdf.1 [1.19],
-man/font2c.1 [1.19], man/gs.1 [1.19], man/gslp.1 [1.19], man/gsnd.1 [1.19],
-man/pdf2dsc.1 [1.18], man/pdf2ps.1 [1.20], man/pdfopt.1 [1.18],
-man/pf2afm.1 [1.19], man/pfbtopfa.1 [1.20], man/printafm.1 [1.19],
-man/ps2ascii.1 [1.18], man/ps2epsi.1 [1.17], man/ps2pdf.1 [1.24],
-man/ps2pdfwr.1 [1.23], man/ps2ps.1 [1.25], man/wftopfa.1 [1.19]: 2002/10/17
-06:37:28 raph)
-
-Second documentation commit for 7.31 release: Changes.htm generated from
-cvs2hist (then hand-edited because the logs for Jan's commits are not
-compatible with the script), History7.htm autogenerated, minor edits to News
-and Use. (doc/Changes.htm [1.38], doc/History7.htm [1.23],
-doc/News.htm [1.115], doc/Use.htm [1.59]: 2002/10/17 07:37:32 raph)
-
-update the open bug list (doc/News.htm [1.116]: 2002/10/17 10:13:38 giles)
-
-</pre><h2><a name="7.31-Procedures"></a>Procedures</h2><pre>
-
-Fixes problems:
-	- Fix (pdfwrite): Virtual function same_font cannot work properly if
-arguments have different representation (particularly for comparing an
-original font with its stable copy). Due to it pdf_font_resource_t::Widths
-mixed widths taken from fonts variations with different metrics. Entirely
-changing the logics of creating font resources with new function
-gs_copied_can_copy_glyphs. Source Forge bugs : #596394 (pdfwrite) Wrong
-glyph width (093-01.ps), #567604 missing characters with -c save pop #596284
-font spacing/ragged edge on text column (devs.mak [1.73], lib.mak [1.96]:
-2002/09/08 20:20:12 igor)
-	- Fix (pdfwrite) : Completely removing the generation of "space
-chars", because they can overflow Encoding. (devs.mak [1.74]: 2002/09/15
-13:21:09 igor)
-	- Fix (pdfwrite) : Completely removing the old PDF text code.
-(devs.mak [1.75]: 2002/09/15 14:11:51 igor)
-	- On case-insensitive file systems, sometimes PDF file detection
-wasn't working. (toolbin/tests/gstestgs.py [1.14]: 2002/09/18 19:17:40 jack)
-	- Typo in run_nightly. (toolbin/tests/run_nightly [1.7]: 2002/09/19
-19:51:20 jack)
-	- In dots mode, the DIFFER result had a spurious newline.
-(toolbin/tests/gstestutils.py [1.5]: 2002/09/23 15:56:31 jack)
-	- Fix : Providing a virtual path interface for computing glyph bbox
-without allocating path segments. SourceForge bug "[ 605200 ] pdf_close
-generates many path segments". (lib.mak [1.100]: 2002/09/23 16:38:28 igor)
-	- Fix previous commit (marginal python skills)
-(toolbin/tests/run_nightly [1.9]: 2002/09/26 16:28:15 ray)
-	- Fix syntax errors and use actual paths for run_regression and
-testdiff (toolbin/tests/run_nightly [1.11]: 2002/09/29 22:33:17 ray)
-	- removes duplicate definition of gscspace_h. (lib.mak [1.102]:
-2002/10/10 20:21:38 giles)
-	- Remove psdrgb.dev and psdcmyk.dev from the MSVC makefile (these
-crept in by mistake). (msvc32.mak [1.33]: 2002/10/11 15:39:35 ray)
-	- remove the remainder of the gcc version check hack through the aux
-dependency. This was missed in initial commit of that changed and prevented
-normal running of the mcp-generation makefile. (macos-mcp.mak [1.10]:
-2002/10/17 16:12:36 giles)
-
-Update documentation to remove some confusion between Borland C++ 5 and
-Borland C++Builder 5. (bcwin32.mak [1.21]: 2002/09/09 12:05:59 ghostgum)
-
-  src/int.mak
-  src/lib.mak
-    Updated various dependency lists.
-(int.mak [1.83], lib.mak [1.97]: 2002/09/10 22:16:07 dan; checkin for Jan)
-
-Bump version numbers after 7.30 release. (version.mak [1.52]: 2002/09/12
-09:52:20 giles)
-
-  src/lib.mak
-    Updated the dependency list for gxclrast.$(OBJ).
-(lib.mak [1.98]: 2002/09/13 22:21:22 dan; checkin for Jan)
-
-Implements daily results databases for regression results as well as a new
-tool 'testdiff' to view the difference between two such databases. Also
-updates the nightly report output to include a new section of just that
-day's new regressions. (toolbin/tests/gscheck_pdfwrite.py [1.5],
-toolbin/tests/gsconf.py [1.8], toolbin/tests/gssum.py [1.4],
-toolbin/tests/gstestgs.py [1.13], toolbin/tests/gstestutils.py [1.4],
-toolbin/tests/run_nightly [1.6], toolbin/tests/run_regression [1.7],
-toolbin/tests/testdiff [1.1]: 2002/09/18 19:15:30 jack)
-
-  src/lib.mak
-    Updated the dependency list for gsbitops.c.
-(lib.mak [1.99]: 2002/09/21 00:26:04 dan; checkin for Jan)
-
-Revive the fuzzy pdfwrite compare test.
-(toolbin/tests/gscheck_fuzzypdf.py [1.1]: 2002/09/23 16:26:15 jack)
-
-Put in log files for the preparation steps: cvs update, make and install.
-The cvs logs are cumulative (they can be truncated manually if desired).
-These changes were in the actual running scripts until 9/18 when an update
-overwrote these changes that were being tested, but were never committed.
-(toolbin/tests/run_nightly [1.8]: 2002/09/26 16:18:42 ray)
-
-The last fixup -- more bad python. (toolbin/tests/run_nightly [1.10]:
-2002/09/26 16:33:01 ray)
-
-Move the callback routine, which is used to translate a gs_separation_name
-into a string pointer and a length, from the graphics state into the device
-color structure. This is being done to make it available to the pdfwrite
-device when handling DeviceN or Separation color spaces. (int.mak [1.84]:
-2002/10/04 23:43:38 dan)
-
-  src/devs.mak
-    Updated dependency list for gdevscf.$(OBJ).
-  src/lib.mak
-    Updated various dependency lists.
-(devs.mak [1.76], lib.mak [1.101]: 2002/10/08 00:49:48 dan; checkin
-for Jan)
-
-Prune the dead 'begin' makefile target. This was supposedly removed in
-release 5.20. (gs.mak [1.16]: 2002/10/09 22:13:17 giles)
-
-Remove remaining references to ansi2knr.c. We no longer support building
-ghostscript with it, but the remaining dead code causes confusion for some
-users. Inspired by Sourceforge bug #618048. Removes references to the no
-longer supported ansi2knr.c. (dvx-gcc.mak [1.20], dvx-tail.mak [1.8],
-gs.mak [1.17], macos-mcp.mak [1.9], macosx.mak [1.13], openvms.mak [1.26],
-openvms.mmk [1.19], os2.mak [1.27], ugcclib.mak [1.21], unix-aux.mak [1.9],
-unix-gcc.mak [1.36], unixansi.mak [1.25], wccommon.mak [1.6],
-winlib.mak [1.18]: 2002/10/09 23:43:58 giles)
-
-Change the default on the MSVC build to use 64 bit gx_color_index values.
-(msvc32.mak [1.32]: 2002/10/11 00:14:23 dan)
-
-Adds PhotoShop (psdcmyk and psdrgb) devices. (devs.mak [1.77],
-msvc32.mak [1.34], unix-gcc.mak [1.37]: 2002/10/12 11:47:11 jeong)
-
-This is some clean up on the DeviceN devices: XCF, PSD, and spot devices. 1.
-Ensuring that the process color model name is correct. 2. removing support
-of SeparationColorNames from additive devices. 3. Finish removal of variable
-bits per components (GrayValues) from the devices. None of them had any form
-of correct support for this feature. (devs.mak [1.78]: 2002/10/16 07:43:46
-dan)
-
-Removes the obsolete 'hpijs' driver. This has been superceeded by the ijs
-driver interface both in Ghostscript and the hpijs collection of printer
-drivers. (contrib.mak [1.28]: 2002/10/16 23:26:33 giles)
-
-First documentation commit for 7.31 release: edits to News.htm, version and
-date updates, minor patches to Develop.htm and Deprecated.htm.
-(version.mak [1.53]: 2002/10/17 06:37:29 raph)
-
-</pre><h2><a name="7.31-Utilities"></a>Utilities</h2><pre>
-
-Fixes problems:
-	- code cleanup in macos platform specific routines. (gp_mac.c [1.9]:
-2002/09/17 00:09:26 giles)
-	- the console stubs are no longer necessary for the macos build.
-(macgenmcpxml.sh [1.4]: 2002/09/17 00:57:38 giles)
-	- remove some compiler options that generated spurious warnings.
-(macgenmcpxml.sh [1.5]: 2002/09/26 19:50:12 giles)
-
-Apply casts to remove lots of warnings from MSVC 6. Update some Windows
-color mapping functions for DeviceN. Change order of arguments for the
-gs_pdf14_device_filter_push function and the calls to the device filter push
-procedure to match the prototype. (gp_mswin.c [1.13], gp_ntfs.c [1.10],
-gp_win32.c [1.5]: 2002/10/07 08:28:56 ghostgum)
-
-</pre><h2><a name="7.31-Drivers"></a>Drivers</h2><pre>
-
-Fixes problems:
-	- Introduces "backwards compatible" encode_color routine for
-grayscale devices which supply map_rgb_color but not encode_color. Fixes
-gray modes in pdfwrite and ijs devices, among others. (gdevbmpc.c [1.7],
-gdevijs.c [1.5]: 2002/10/17 06:09:33 raph)
-
-Change bmpgray device to use 8-bit 1 component instead of instead of 8-bit 3
-components. (gdevbmp.c [1.7]: 2002/09/16 20:35:07 ghostgum)
-
-Apply casts to remove lots of warnings from MSVC 6. Update some Windows
-color mapping functions for DeviceN. Change order of arguments for the
-gs_pdf14_device_filter_push function and the calls to the device filter push
-procedure to match the prototype. (gdev4693.c [1.7], gdevbj10.c [1.8],
-gdevbjc.h [1.5], gdevbmp.c [1.8], gdevcdj.c [1.12], gdevdcrd.c [1.5],
-gdevdjet.c [1.10], gdevdljm.c [1.8], gdevdm24.c [1.7], gdevepsc.c [1.8],
-gdevepsn.c [1.7], gdevescp.c [1.6], gdevjpeg.c [1.6], gdevlbp8.c [1.6],
-gdevmswn.c [1.8], gdevmswn.h [1.6], gdevmsxf.c [1.7], gdevpbm.c [1.9],
-gdevps.c [1.30], gdevpx.c [1.11], gdevpxut.c [1.5], gdevstc.c [1.7],
-gdevstc2.c [1.5], gdevtifs.c [1.7], gdevupd.c [1.10], gdevwdib.c [1.7],
-gdevwpr2.c [1.12], gdevwprn.c [1.7]: 2002/10/07 08:28:56 ghostgum)
-
-Attached is a updated version of our code release of 4 October, 2002. As
-before, the primary purpose of this release is to modify the manner in which
-overprint information is passed to the overprint compositor device. This
-resolves some difficulties seen when overprinting is used with the command
-list device. This update incorporates the changes checked in by Dan on
-October 4th. Since Dan's changes to gxcldev.h and gxclrast.c were identical
-to ours, we have removed those two files from this release. Jan Modified
-Files lib/gs_init.ps lib/pdf_draw.ps Change "DONTPS" flag to "DOPS", with
-the logically inverted function: only if DOPS is defined will "PS" XObjects
-be rendered. We believe this is the more appropriate default. lib/gs_dps.ps
-lib/gs_img.ps src/gsdparams.c Modified the deviceinfo and image code to work
-around a potentially improperly set ColorValues parameter. src/devs.mak
-Updated dependency list for gdevscf.$(OBJ). src/gdevdflt.c 1. Added
-initialization of the new color_info.opmode field to
-gx_device_fill_in_procs. 2. In get_decode_color, added special case handling
-for canonical 1-bit CMYK devices (e.g.: pkmraw). Previously the decode_color
-method for this devices would default to gx_default_cmyk_decode_color, which
-performed an CMYK ==&gt; RGB ==&gt; CMYK conversion. This conversion would
-defeat overprinting if gray object was placed on top of a colored region.
-src/gscdevn.c src/gscolor.c src/gscolor2.c src/gscpixel.c src/gscsepr.c
-src/gscspace.c src/gsovrc.c src/gxovrc.h src/gspcolor.c src/gsptype1.c
-src/gsptype2.c src/gsstate.c src/gsstate.h src/gxcmap.c src/gxcspace.h
-src/zcolor.c Modified the overprint code to, when necessary, pass overprint
-mode information when setting the device color. This is necessary to
-properly handle overprint mode when using the command list device. NB: This
-change alters the meaning of the "effective_overprint_mode" field in the
-imager state. src/gxdevcli.h Added the opmode and process_comps fields to
-the gx_device_color_info structure. These are required by the new code that
-passes overprint mode information when the device color is set.
-src/gsdfilt.h Changed the prototype for the push method in the
-gs_device_filter structure to match the actual implementation and usage of
-this method (the third and fourth operands were reversed). src/gsimage.c
-Modified gx_image_cleanup to check if penum-&gt;info field is null before
-calling gx_image_end. This avoids a crash associated that can occur if an
-image has zero height or width, as the image enumeration data structure will
-have been released in such cases before gs_image_cleanup is called.
-src/lib.mak Updated various dependency lists. src/gdevdevn.c src/gdevnfwd.c
-src/gdevpdte.c src/gdevxcf.c src/gscrdp.c src/gsdfilt.c src/gsht.c
-src/gsht1.c src/gswts.c src/gzht.h src/ialloc.c src/imain.c src/iscanbin.c
-zfapi.c Installed some minor changes to quiet compiler warnings.
-(gdevdevn.c [1.2], gdevxcf.c [1.3]: 2002/10/08 00:49:48 dan)
-
-Adds DeviceCMY (-dMode=1) process color model to permute device.
-(gdevperm.c [1.2]: 2002/10/08 16:49:59 raph)
-
-Add a setup the shift and mask bits in ppm_open. This finishes initializing
-the device as being "linear and separable". This is needed since the various
-pxm devices are using the default color encode routine which needs the
-linear and separable information. (gdevpbm.c [1.10]: 2002/10/09 02:34:11
-dan)
-
-PhotoShop PSD Driver. (gdevpsd.c [1.1]: 2002/10/12 11:43:21 jeong)
-
-Removed logic for setting variable number of bits per component. This is not
-supported on the xcf, spotrgb, or spotcmyk devices. (gdevdevn.c [1.3],
-gdevxcf.c [1.4]: 2002/10/15 00:36:57 dan)
-
-This is some clean up on the DeviceN devices: XCF, PSD, and spot devices. 1.
-Ensuring that the process color model name is correct. 2. removing support
-of SeparationColorNames from additive devices. 3. Finish removal of variable
-bits per components (GrayValues) from the devices. None of them had any form
-of correct support for this feature. (gdevdevn.c [1.4], gdevpsd.c [1.2],
-gdevxcf.c [1.5]: 2002/10/16 07:43:46 dan)
-
-</pre><h2><a name="7.31-PDF_writer"></a>PDF writer</h2><pre>
-
-Fixes problems:
-	- Fix (pdfwrite): Virtual function same_font cannot work properly if
-arguments have different representation (particularly for comparing an
-original font with its stable copy). Due to it pdf_font_resource_t::Widths
-mixed widths taken from fonts variations with different metrics. Entirely
-changing the logics of creating font resources with new function
-gs_copied_can_copy_glyphs. Source Forge bugs : #596394 (pdfwrite) Wrong
-glyph width (093-01.ps), #567604 missing characters with -c save pop #596284
-font spacing/ragged edge on text column (gdevpdfx.h [1.50],
-gdevpdtb.c [1.9], gdevpdtb.h [1.4], gdevpdtc.c [1.9], gdevpdtd.c [1.5],
-gdevpdte.c [1.11], gdevpdtf.c [1.15], gdevpdtf.h [1.6], gdevpdti.c [1.6],
-gdevpdtt.c [1.9], gdevpdtt.h [1.6]: 2002/09/08 20:20:12 igor)
-	- Fixing C style for pdf_font_cache_elem_t definition.
-(gdevpdfx.h [1.51]: 2002/09/08 20:42:13 igor)
-	- Correct duplicate definition of pdf_font_cache_elem_t which
-prevented compilation. (gdevpdfx.h [1.52]: 2002/09/09 16:08:19 giles)
-	- Fix (pdfwrite) : Completing the logics of the Widths array
-generation. Now the contents of Widths is taken from embedded font, but
-widths for glyphs placement (Tj) are from original font. (gdevpdte.c [1.12],
-gdevpdtt.c [1.10]: 2002/09/11 11:26:13 igor)
-	- Fix (pdfwrite) : Improving the logics of merging same fonts, and
-fixing a bug in gs_copied_can_copy_glyphs. (gdevpdtt.c [1.11]: 2002/09/11
-15:10:23 igor)
-	- Fix (pdfwrite) : (1) gs_glyph_info_t::v was uninitialized if glyph
-metrics is taken from the outline (thanks to Erik Strik for spotting it).
-(2) Improving glyph placement. (3) A minor optimization and improving some
-comments about glyph placament. (gdevpdte.c [1.13], gdevpdtt.c [1.12]:
-2002/09/13 23:43:07 igor)
-	- Fix (pdfwrite) : (1) The previous fix wrongly processed Metrics.
-(2) TJ arguments were computed with accounting Tc taken from a desincronized
-text state. (3) Type 42 missed side bearing. (4) An optimization reduces
-calls to gs_default_glyph_info. Debugged with 0.pdf . (gdevpdts.c [1.13],
-gdevpdtt.c [1.13]: 2002/09/14 02:07:33 igor)
-	- Fix (pdfwrite) : (1) Unwinding the previous change for Tj
-(gdevpdts.c). (2) sync_text_state now checks the ending position of the text
-against the starting position of the text continuation (gdevpdts.c); (3)
-font_orig_scale was erroneusely exchenged for original and copied fonts; (4)
-Enhancing the hack in font_orig_scale with upside_down FontMatrix, (Source
-Forge bug "[ 607480 ] 'Ghost' text appears"). (5) Enhancing
-same_type1_hinting with fonts with nulls in Subrs (gxfcopy.c, test file of
-#607480). Debugged with 0.pdf and 020-01.ps. (gdevpdts.c [1.14],
-gdevpdtt.c [1.14]: 2002/09/14 19:29:30 igor)
-	- Fix (pdfwrite) : Skipping Tj breaks being equal to Tc.
-(gdevpdts.c [1.15]: 2002/09/14 20:27:07 igor)
-	- Fix (pdfwrite) : (1) For better precision changing the internal
-representation of Widths to double, and skipping small noise while writing
-Tj. (2) Widths for Type 3 fonts were not computed (020-01.ps, 031-01.ps).
-(gdevpdfx.h [1.53], gdevpdtc.c [1.10], gdevpdte.c [1.14], gdevpdtf.c [1.16],
-gdevpdtf.h [1.7], gdevpdti.c [1.7], gdevpdts.c [1.16], gdevpdtt.c [1.15],
-gdevpdtt.h [1.7], gdevpdtw.c [1.8]: 2002/09/15 12:23:07 igor)
-	- Fix (pdfwrite) : Completely removing the generation of "space
-chars", because they can overflow Encoding. (gdevpdtf.h [1.8],
-gdevpdti.c [1.8], gdevpdti.h [1.2], gdevpdts.c [1.17]: 2002/09/15 13:21:09
-igor)
-	- Fix (pdfwrite) : Completely removing the old PDF text code.
-(gdevpdfx.h [1.54]: 2002/09/15 14:11:51 igor)
-	- Fix (pdfwrite) : Text process fallback now restarts the text from
-the beginning. (gdevpdtt.c [1.16]: 2002/09/16 05:42:23 igor)
-	- Fix (pdfwrite) : Text process fallback now restarts the text from
-the beginning depending on font type. (gdevpdte.c [1.15], gdevpdtt.c [1.17]:
-2002/09/16 06:28:08 igor)
-	- Fix (pdfwrite) : /notdef characters caused font conversion to
-bitmap font; (gdevpdte.c [1.16], gdevpdtt.c [1.18]: 2002/09/16 07:01:43
-igor)
-	- Fix : Providing a virtual path interface for computing glyph bbox
-without allocating path segments. SourceForge bug "[ 605200 ] pdf_close
-generates many path segments". (gdevpdte.c [1.17]: 2002/09/23 16:38:28 igor)
-	- Fix (pdfwrite) : The font scale was applied twice to MissingWidth.
-SourceForge bug "[ 613217 ] Misplaced characters after ps2pdf".
-(gdevpdtt.c [1.19]: 2002/10/02 12:10:11 igor)
-	- Fix (pdfwrite) : Implementing colorant names after DeviceN merge.
-(gdevpdfc.c [1.29], gdevpdfg.h [1.18]: 2002/10/07 10:59:09 igor)
-	- Fix (pdfwrite) : Completing the ProcessColorModel implementation
-after DeviceN merge. Also fixes SourceForge bug "[ 614705 ] Inverted colos
-in CMYK PDF writer". Thanks to Alex and Jan for participation.
-(gdevpdf.c [1.53], gdevpdfp.c [1.30]: 2002/10/07 12:54:12 igor)
-	- Fix (pdfwrite) : Removing a call to the deprecated map_cmyk_color.
-Thanks to Daniel Coby for the suggested algorithm. (gdevpdf.c [1.54]:
-2002/10/07 13:56:41 igor)
-	- Fix (pdfwrite) : Making the text matrix synchronization condition
-stronger. Also removing some obsolete comments. Source Forge bug "[ 617643 ]
-math symbol skewed". Thanks to Alex Cherepanov for preliminary analysis.
-(gdevpdts.c [1.18]: 2002/10/09 13:03:44 igor)
-	- Fix (pdfwrite) : Skipping zero height images because AR cannot
-handle them. Patch from Jan Stockenius, improved. (gdevpdfi.c [1.43]:
-2002/10/10 15:24:23 igor)
-	- Fix : Providing multiple halftone component names for pdfwrite.
-They were missed with DeviceN merge. (gdevpdfc.c [1.30], gdevpdfg.c [1.25],
-gdevpdfg.h [1.19]: 2002/10/11 19:01:10 igor)
-	- Fix : Providing spot halftone params for pdfwrite. They were
-missed with DeviceN merge. (gdevpdfg.c [1.26]: 2002/10/16 08:46:39 igor)
-	- Introduces "backwards compatible" encode_color routine for
-grayscale devices which supply map_rgb_color but not encode_color. Fixes
-gray modes in pdfwrite and ijs devices, among others. (gdevpdf.c [1.55]:
-2002/10/17 06:09:34 raph)
-	- We were incorrectly replicating fill color for overprint rectangle
-fill. This resulted in erroneous color is HeiseiMinStd.pdf with pkmraw
-device. This regression appeared on 10-9-02. (gxoprect.c [1.4]: 2002/10/17
-07:25:42 dan)
-
-Apply casts to remove lots of warnings from MSVC 6. Update some Windows
-color mapping functions for DeviceN. Change order of arguments for the
-gs_pdf14_device_filter_push function and the calls to the device filter push
-procedure to match the prototype. (gdevpdfc.c [1.28], gdevpdfj.c [1.23],
-gdevpdfk.c [1.7], gdevpdfp.c [1.29], gdevpdfu.c [1.32], gdevpdfv.c [1.19],
-gdevpdtd.c [1.6]: 2002/10/07 08:28:56 ghostgum)
-
-  src/gdevpdte.c
-(gdevpdte.c [1.18]: 2002/10/08 00:49:49 dan; checkin for Jan)
-</pre><h2><a name="7.31-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
-
-Fixes problems:
-	- Resolve Function parameters (optional as well as required) when
-creating the PostScript Function dictionary for shadings. Fixes SourceForge
-bug #609486. Fixes based on analysis and preliminary fix by Dan Coby.
-(lib/pdf_draw.ps [1.52]: 2002/09/15 20:40:54 ray)
-	- If the CIDCount for a font exceeded 32767, building the
-CIDToGIDMap would exceed the maximum string length. Create an array of two
-strings for this case. Also issue a warning if the CIDToGIDMap stream did
-not contain enough characters for the CIDCount. SourceForge bug #611099 for
-Artifex Customer #350. (lib/pdf_font.ps [1.45]: 2002/09/19 18:10:00 ray)
-	- Insure that individual color name references are resolved in PDF
-DeviceN colorspaces. (lib/pdf_draw.ps [1.53]: 2002/09/26 05:26:32 dan)
-	- Fix to PDF interpreter : 1. Changing the logics of the True Type
-cmap choice to comply with PDF spec. 2. Making the embedded font parser to
-create a PS font independently on font resource options, so that the font
-can associate with the font descriptor. 3. Avoiding the redundant parsing of
-embedded fonts with removing the hack for SF bug "533467 Missing char on
-test2a.pdf (regression)". 4. Removing the hack from buildTrueType because it
-has no effect. 5. Widths and Encoding were ignored for embedded True Type
-fonts. 6. Adding few warnings about PDF spec violations.
-(lib/pdf_font.ps [1.46]: 2002/10/03 19:40:27 igor)
-	- Ignore non-zero wy values to the d1 CharProcs operator in Type3
-fonts. This is what Adobe Acrobat Readers do, and apparently Adobe Distiller
-will write fonts with non-zero wy values even though the spec says "wy must
-be zero". Fixes SourceForge bug #616692 for Artifex customer #561.
-(lib/pdf_font.ps [1.47]: 2002/10/08 06:08:37 ray)
-	- Fix to PDF interpreter : Don't rename fonts. Source Forge bug
-"600855 Distilling a PDF enlarges FontName". (lib/pdf_font.ps [1.48]:
-2002/10/10 09:37:39 igor)
-	- Fix to PDF interpreter : improve the error message handler.
-(lib/pdf_main.ps [1.57]: 2002/10/10 09:38:56 igor)
-	- Fix to PDF interpreter : Properly set up the data stream for
-shadings which may share PDF streams. Patch from Alex Cherepanov, improved.
-(lib/pdf_ops.ps [1.25]: 2002/10/10 18:14:33 igor)
-	- Fixing a spelling in comment. (lib/pdf_ops.ps [1.26]: 2002/10/10
-18:17:59 igor)
-
-Adds -dDONTPS command line option to disable processing of DoPS directives
-in PDF files. Works around problem rendering S2_Digitalproof-Forum_x3k.pdf.
-(lib/pdf_draw.ps [1.54]: 2002/09/29 17:38:43 raph)
-
-  lib/pdf_draw.ps
-    Change "DONTPS" flag to "DOPS", with the logically inverted function:
-    only if DOPS is defined will "PS" XObjects be rendered. We believe this
-    is the more appropriate default.
-(lib/pdf_draw.ps [1.55]: 2002/10/08 00:49:48 dan; checkin for Dan)
-
-</pre><h2><a name="7.31-Interpreter"></a>Interpreter</h2><pre>
-
-Fixes problems:
-	- Fix (pdfwrite) : PDFSETTINGS=screen should embed fonts.
-SourceForge bug "[ 592833 ] Bad image and font appearance".
-(lib/gs_pdfwr.ps [1.19]: 2002/09/11 11:18:39 igor)
-	- removes to unused variables (zcontrol.c [1.10]: 2002/09/16
-17:11:15 giles)
-	- Keep pagedevice and device views of .LockSafetyParams correct even
-after a 'restore' is used to unlock. The dictionary fed to the setpagedevice
-operator is allocated in the same VM space as currentpagedevice to avoid
-invalidaccess problems. Fixed SF #580029 and does not revert to the
-incorrect behaviour of bug #516379. (lib/gs_init.ps [1.64]: 2002/09/18
-16:58:01 ray)
-	- Fix : Overlapping format 4 CMap ranges, while arguably buggy, are
-commonly found in quite a few popular CJK TrueType fonts. Patch from Anthony
-Fok Tung-Ling. (lib/gs_ttf.ps [1.18]: 2002/09/20 15:36:53 igor)
-	- Fix : Unwinding the patch from Anthony Fok Tung-Ling, because it
-caused regression with comparefiles/fonts.pdf . (lib/gs_ttf.ps [1.19]:
-2002/09/22 12:41:26 igor)
-	- Fix : (1) Providing cmap format 2 in True Type font reader; (2)
-Accomodating cmap format 4 for CJK fonts. Code from Hideyuki Suzuki and
-Taiji Yamada with minor changes. (lib/gs_ttf.ps [1.20]: 2002/09/24 10:43:40
-igor)
-	- Fix to PDF interpreter : 1. Changing the logics of the True Type
-cmap choice to comply with PDF spec. 2. Making the embedded font parser to
-create a PS font independently on font resource options, so that the font
-can associate with the font descriptor. 3. Avoiding the redundant parsing of
-embedded fonts with removing the hack for SF bug "533467 Missing char on
-test2a.pdf (regression)". 4. Removing the hack from buildTrueType because it
-has no effect. 5. Widths and Encoding were ignored for embedded True Type
-fonts. 6. Adding few warnings about PDF spec violations.
-(lib/gs_ttf.ps [1.21]: 2002/10/03 19:40:27 igor)
-	- .pagetypenames was broken for a long time since the executable
-array contained the "STRICT { ... } if" logic. Changed to make this a
-regular array. (lib/gs_statd.ps [1.10]: 2002/10/10 16:30:01 ray)
-	- Finish changes to make old statusdict stuff actually work.
-Previous commit was incomplete, causing invalidaccess during initialization.
-(lib/gs_statd.ps [1.11]: 2002/10/10 17:29:39 ray)
-	- Fix : Providing multiple halftone component names for pdfwrite.
-They were missed with DeviceN merge. (zht2.c [1.9]: 2002/10/11 19:01:10
-igor)
-	- Adds /Colors /BitsPerPixel and /ColorValues to .dynamicppkeys
-because they can change dynamically when adding separation colors.
-(lib/gs_setpd.ps [1.16]: 2002/10/17 06:08:00 raph)
-
-The attached code release addresses a number of issues:
-
-  1. Most of the code changes are required to turn off overprint mode when
-     processing images, smooth shading fills (shfill operator), or
-     when using PatternType 2 (smooth shading) patterns.
-[...]
-
-  lib/gs_img.ps
-    Added code to turn off overprint mode for images.
-
-  lib/gs_ll3.ps
-    Added code to turn off overprint mode for shfill.
-
-  src/zcolor.c
-    Added code to disable overprint mode for PatternType 2 patterns.
-(lib/gs_img.ps [1.2], lib/gs_ll3.ps [1.17], zcolor.c [1.10]:
-2002/09/10 22:16:05 dan; checkin for Jan)
-
-Bump version numbers after 7.30 release. (lib/gs_init.ps [1.63]: 2002/09/12
-09:52:20 giles)
-
-
-  lib/gs_devn.ps
-    Modified the cs_install procedure for DeviceN color spaces to
-    support the component name array "[ All ]". The documentation
-    indicates that this is not legal ("PDF Reference", 3rd. ed.,
-    p. 206), but beginning with Acrobat 5, DeviceN color spaces with
-    this component name array are handled in the same manner as
-    Separation color spaces with the component name All. The modified
-    code detects this component array and converts the operand color
-    space to a Separation color space.
-(lib/gs_devn.ps [1.2]: 2002/09/23 01:21:02 dan; checkin for Jan)
-
-The attached code release fixes a variety of memory handling problems
-discovered by Dan's test with the memory validation enabled.
-
-  2. Several problems noted with files 119-01.ps (panel 119-07) and
-     119-28.ps (panel 119-31) were caused by a problem with the memory
-     allocator used for the jpeg_compress_data structure used with the
-     DCTEncode (JPEG) filter. This filter is used by the PDFwriter, the
-     JPEG device drive, and as a filter accessible from PostScript.
-     In the first two cases the jpeg_compress_data structure is allocated
-     using the normal, gs_ref_memory_t structure. When used from
-     PostScript, however, this structure is allocated using the
-     gs_memory_default allocator (presumably because the jpeg library
-     code is not set up to deal with save/restore).
-
-     The gs_memory_default allocator is not a gs_ref_memory_t allocator,
-     so it does not create the hidden obj_header_t structures preceding
-     each allocated region. The garbage collector is dependent on these
-     headers, hence the pointer enumeration routines in structure
-     descriptors must not enumerate any pointers to memory allocated
-     by non-gs_ref_memory_t headers.
-
-     This creates a difficult problem for the pointer enumeration
-     routine of the stream_DCT_state structure, whose data.compress field
-     points to a jpeg_compress_data structure. This routine would have
-     to determine which allocator was used for this structure before
-     deciding whether or not to "enumerate" the data.compress pointer.
-     In principle it has enough information to do this (the jpeg_memory
-     field of the structure), but this seems like a overly complicated
-     solution. Use of a stable gs_ref_memory_t allocator in place of
-     the gs_memory_default allocator seems like a simpler solution.
-
-  src/zfdcte.c
-    Modified zDCTE to place the jpeg_compress_data structure into stable
-    memory rather than use the gs_memory_default allocator.
-(zfdcte.c [1.8]: 2002/09/26 18:45:02 dan; checkin for Jan)
-
-Adds -dDONTPS command line option to disable processing of DoPS directives
-in PDF files. Works around problem rendering S2_Digitalproof-Forum_x3k.pdf.
-(lib/gs_init.ps [1.65]: 2002/09/29 17:38:43 raph)
-
-Move the callback routine, which is used to translate a gs_separation_name
-into a string pointer and a length, from the graphics state into the device
-color structure. This is being done to make it available to the pdfwrite
-device when handling DeviceN or Separation color spaces. (zcsdevn.c [1.11],
-zcssepr.c [1.13], zht2.c [1.7], zht2.h [1.1]: 2002/10/04 23:43:38 dan)
-
-THis file was missed in the previous commit. Move the callback routine,
-which is used to translate a gs_separation_name into a string pointer and a
-length, from the graphics state into the device color structure. This is
-being done to make it available to the pdfwrite device when handling DeviceN
-or Separation color spaces. (zgstate.c [1.7]: 2002/10/04 23:48:01 dan)
-
-Another change due to the earlier commit. Move the callback routine, which
-is used to translate a gs_separation_name into a string pointer and a
-length, from the graphics state into the device color structure. This is
-being done to make it available to the pdfwrite device when handling DeviceN
-or Separation color spaces. (zht2.c [1.8]: 2002/10/05 05:52:00 dan)
-
-Correct the includsion protestion. (zht2.h [1.2]: 2002/10/05 06:19:45 dan)
-
-Apply casts to remove lots of warnings from MSVC 6. Update some Windows
-color mapping functions for DeviceN. Change order of arguments for the
-gs_pdf14_device_filter_push function and the calls to the device filter push
-procedure to match the prototype. (idparam.c [1.7], igc.c [1.9],
-iutil.c [1.8], zcharx.c [1.6], zpacked.c [1.5], ztype.c [1.7]: 2002/10/07
-08:28:56 ghostgum)
-
-
-Attached is a updated version of our code release of 4 October, 2002.
-
-As before, the primary purpose of this release is to modify the manner
-in which overprint information is passed to the overprint compositor
-device.  This resolves some difficulties seen when overprinting is
-used with the command list device.
-
-This update incorporates the changes checked in by Dan on October 4th.
-Since Dan's changes to gxcldev.h and gxclrast.c were identical to ours,
-we have removed those two files from this release.
-
-                                                       Jan
-
-
-Modified Files
-
-  lib/gs_init.ps
-  lib/pdf_draw.ps
-    Change "DONTPS" flag to "DOPS", with the logically inverted function:
-    only if DOPS is defined will "PS" XObjects be rendered. We believe this
-    is the more appropriate default.
-
-  lib/gs_dps.ps
-  lib/gs_img.ps
-  src/gsdparams.c
-    Modified the deviceinfo and image code to work around a potentially
-    improperly set ColorValues parameter.
-
-  src/devs.mak
-    Updated dependency list for gdevscf.$(OBJ).
-
-  src/gdevdflt.c
-    1. Added initialization of the new color_info.opmode field to
-       gx_device_fill_in_procs.
-    2. In get_decode_color, added special case handling for canonical 1-bit
-       CMYK devices (e.g.: pkmraw). Previously the decode_color method for
-       this devices would default to gx_default_cmyk_decode_color, which
-       performed an CMYK ==&gt; RGB ==&gt; CMYK conversion. This conversion would
-       defeat overprinting if gray object was placed on top of a colored
-       region.
-
-  src/zcolor.c
-    Modified the overprint code to, when necessary, pass overprint mode
-    information when setting the device color. This is necessary to properly
-    handle overprint mode when using the command list device.
-
-    NB: This change alters the meaning of the "effective_overprint_mode" field
-        in the imager state.
-
-  src/ialloc.c
-  src/imain.c
-  src/iscanbin.c
-  zfapi.c
-    Installed some minor changes to quiet compiler warnings.
-(ialloc.c [1.5], imain.c [1.27], iscanbin.c [1.12], lib/gs_dps.ps [1.7],
-lib/gs_img.ps [1.3], lib/gs_init.ps [1.66], zcolor.c [1.11], zfapi.c [1.28]:
-2002/10/08 00:49:48 dan; checkin for Jan)
-
-</pre><h2><a name="7.31-Streams"></a>Streams</h2><pre>
-
-Apply casts to remove lots of warnings from MSVC 6. Update some Windows
-color mapping functions for DeviceN. Change order of arguments for the
-gs_pdf14_device_filter_push function and the calls to the device filter push
-procedure to match the prototype. (stdio_.h [1.8]: 2002/10/07 08:28:56
-ghostgum)
-
-</pre><h2><a name="7.31-Library"></a>Library</h2><pre>
-
-Fixes problems:
-	- Fix (pdfwrite): Virtual function same_font cannot work properly if
-arguments have different representation (particularly for comparing an
-original font with its stable copy). Due to it pdf_font_resource_t::Widths
-mixed widths taken from fonts variations with different metrics. Entirely
-changing the logics of creating font resources with new function
-gs_copied_can_copy_glyphs. Source Forge bugs : #596394 (pdfwrite) Wrong
-glyph width (093-01.ps), #567604 missing characters with -c save pop #596284
-font spacing/ragged edge on text column (gsfcid.c [1.10], gxfcid.h [1.12],
-gxfcopy.c [1.15], gxfcopy.h [1.7]: 2002/09/08 20:20:12 igor)
-	- Fix : Propagating possible error in type0_from_cidfont_cmap.
-(gsfont0c.c [1.4]: 2002/09/08 20:29:07 igor)
-	- temporary workaround for uninitialized reads in 045-01.ps.
-(gxcmap.c [1.7]: 2002/09/09 07:29:07 henrys)
-	- Fix (pdfwrite) : Improving the logics of merging same fonts, and
-fixing a bug in gs_copied_can_copy_glyphs. (gxfcopy.c [1.16]: 2002/09/11
-15:10:23 igor)
-	- Fix (pdfwrite) : (1) gs_glyph_info_t::v was uninitialized if glyph
-metrics is taken from the outline (thanks to Erik Strik for spotting it).
-(2) Improving glyph placement. (3) A minor optimization and improving some
-comments about glyph placament. (gxtype1.c [1.16]: 2002/09/13 23:43:07 igor)
-	- Fix (pdfwrite) : (1) The previous fix wrongly processed Metrics.
-(2) TJ arguments were computed with accounting Tc taken from a desincronized
-text state. (3) Type 42 missed side bearing. (4) An optimization reduces
-calls to gs_default_glyph_info. Debugged with 0.pdf . (gstype42.c [1.23],
-gxtype1.c [1.17]: 2002/09/14 02:07:33 igor)
-	- Fix (pdfwrite) : (1) Unwinding the previous change for Tj
-(gdevpdts.c). (2) sync_text_state now checks the ending position of the text
-against the starting position of the text continuation (gdevpdts.c); (3)
-font_orig_scale was erroneusely exchenged for original and copied fonts; (4)
-Enhancing the hack in font_orig_scale with upside_down FontMatrix, (Source
-Forge bug "[ 607480 ] 'Ghost' text appears"). (5) Enhancing
-same_type1_hinting with fonts with nulls in Subrs (gxfcopy.c, test file of
-#607480). Debugged with 0.pdf and 020-01.ps. (gxfcopy.c [1.17]: 2002/09/14
-19:29:30 igor)
-	- removes unused variables to avoid warnings. (gximono.c [1.9]:
-2002/09/16 23:23:16 giles)
-	- removes an unused variable to clear a warning. (vdtrace.c [1.6]:
-2002/09/16 23:45:02 giles)
-	- Part 1 of 2 of a fix for 601694. Remove check for color space ids
-which was producing erroneous messages. Replace it with code for verifying
-that DeviceN and Separation info in imager state matches the color space
-being used. (gscdevn.c [1.11], gscolor2.c [1.12], gscpixel.c [1.7],
-gscsepr.c [1.18], gxistate.h [1.14]: 2002/09/17 22:09:21 dan)
-	- Adobe Illustrator 8, 9 and 10 create stitched functions with
-Bounds arrays that are illegal according to the PLRM 3rd edition, and the
-PDF 1.4 reference. Adobe Acrobat handles these, so we do as well. Bounds
-that set zero size ranges are now allowed (Bounds elements equal, or equal
-to one of the Domain values). SourceForge bug 609024, 594291.
-(gsfunc3.c [1.12]: 2002/09/19 17:55:20 ray)
-	- Fix : Providing a virtual path interface for computing glyph bbox
-without allocating path segments. SourceForge bug "[ 605200 ] pdf_close
-generates many path segments". (gsfont.c [1.13], gstype1.c [1.12],
-gstype2.c [1.19], gxhint3.c [1.7], gxpath.c [1.7], gxpath.h [1.7],
-gxtype1.c [1.18], gzpath.h [1.8]: 2002/09/23 16:38:28 igor)
-	- 'state.width' could hold negative value and this caused wrong
-rendering of radial gradient. Now fixed. SF#610359, Wrong rendering of
-radial gradient (gxshade1.c [1.17]: 2002/09/25 11:51:47 jeong)
-	- We were incorrectly checking the DeviceN component names due to a
-misplaced line of code. The result was using the DeviceN colorspace when the
-alternate should have been used. (gscdevn.c [1.12]: 2002/09/26 19:03:07 dan)
-	- make use of the return value of gs_forward_map_rgb_color() in a
-color mapping function. Found through an unused variable warning. Patch from
-Henry Stiles. (gdevabuf.c [1.7]: 2002/09/28 18:29:40 giles)
-	- Set uncomputed truetype table checksums to zero. Corrects an
-undefined variable access and produces deterministic (if still off spec)
-output. (gdevpsft.c [1.22]: 2002/09/28 19:05:29 giles)
-	- address both color values in gx_dc_ht_binary_get_nonzero_comps().
-(gxht.c [1.14]: 2002/09/29 23:35:06 giles)
-	- Fix (pdfwrite) : Font type 2 case was missed in compare_glyphs
-causing an 'unregistered' error. Debugged with 86554321.pdf .
-(gxfcopy.c [1.18]: 2002/10/01 16:10:12 igor)
-	- Fix (pdfwrite) : compare_glyphs was not implemented for composite
-True Type glyphs. Debugged with test_multipage_prob.pdf . (gxfcopy.c [1.19]:
-2002/10/02 12:46:48 igor)
-	- Bug #615957 undefined variable in gxclrast.c. This removes
-obsolete cmd_map_ht_transfer command and its related code.
-(gxcldev.h [1.12], gxclrast.c [1.25]: 2002/10/04 23:31:13 dan)
-	- Fix : Added code in gs_image_next_planes to increment the
-penum-&gt;y parameter. This parameter is used when penum-&gt;dev is zero,
-which occurs when an image or imagemask is rendered as part of the execution
-of the charpath operator. Failing to increment this value can result in an
-infinite loop. Patch from Jan Stockenius. (gsimage.c [1.11]: 2002/10/10
-14:42:50 igor)
-	- corrects an uninitialized variable warning. (gsfcid2.c [1.4]:
-2002/10/10 19:04:03 giles)
-	- Fix : Providing multiple halftone component names for pdfwrite.
-They were missed with DeviceN merge. (gxht.h [1.7]: 2002/10/11 19:01:10
-igor)
-	- Place the under color removal and black generation functions into
-the clist for all images. This corrects a problem found with the permute
-device, Permute = 1, banding and the RealCities.pdf or foo.pdf test files.
-The functions were needed but were not present in the imager state.
-(gxclimag.c [1.10]: 2002/10/16 00:29:39 dan)
-	- Fix : Providing spot halftone params for pdfwrite. They were
-missed with DeviceN merge. (gsht.c [1.16]: 2002/10/16 08:46:39 igor)
-	- Introduces "backwards compatible" encode_color routine for
-grayscale devices which supply map_rgb_color but not encode_color. Fixes
-gray modes in pdfwrite and ijs devices, among others. (gdevdflt.c [1.9],
-gxcmap.c [1.11], gxcmap.h [1.7]: 2002/10/17 06:09:34 raph)
-
-
-The attached code release addresses a number of issues:
-
-  1. Most of the code changes are required to turn off overprint mode when
-     processing images, smooth shading fills (shfill operator), or
-     when using PatternType 2 (smooth shading) patterns.
-
-  2. A few other changes were required to correct improper updating of the
-     overprint compositor information.
-
-  3. The code has been modified to avoid the crash that was observed for
-     the file 86554321.pdf on MSWindows XP systems.
-
-  4. The command list playback code has been modified to handle filling of
-     thin lines in a manner consistent with the noband case. This allows
-     files such as mspro.pdf to be rendered consistently in the banded and
-     noband case.
-
-                                                                Jan
-
-
-Modified Files:
-
-  src/gscolor2.c
-    1. Modified gs_setcolorspace to call gs_do_set_overprint rather than
-       invoking the color space's set_overprint routine directly. This
-       allows pattern color spaces to be handled (somewhat more) correctly.
-    2. Modified gs_setcolor to update overprint information. This is
-       necessary for pattern color spaces, where the color space to be used
-       for overprint purposes may be part of the color.
-
-  src/gscspace.c
-    Modified gx_set_overprint_DeviceCMYK to use the effective_overprint_mode
-    parameter in the image state (rather than the overprint_mode parameter
-    itself). This is part of the change necessary to allow overprint mode to
-    be turned off when a PatternType2 pattern is used as the current color.
-
-  src/gsdevice.c
-    Modified gs_set_device_no_init to call gs_do_set_overprint rather than
-    invoking the color space's set_overprint routine directly.
-
-  src/gsdps1.c
-    Modified rectfill to use the effective_overprint_mode parameter in the
-    imager state (rather than the overprint_mode parameter).
-
-  src/gsovrc.c
-    1. Fixed a bug in overprint_draw_thin_line: the third and fourth
-       operands in the call to gx_default_draw_thin_line (the y coordinate
-       of the first point and the x-coordinate of the second) were
-       in reverse order. This caused random lines to appear on various
-       overprint mode tests (e.g.: BEST99-00-Path.fh7.pdf,
-       Testform.v1.0.2.pdf).
-    2. Fixed typo in comment.
-    3. Modified the fill_in_procs procedure to initialize the device color
-       model information for the temporary device used in this routine.
-       Though the color model information does not affect the output of
-       the routine, reasonable values must be provided to avoid problems
-       when gx_device_forward_fill_in_procs calls gx_device_fill_in_procs.
-       This would cause certain systems to crash with files that involved
-       overprint/overprint mode (e.g.: 86554321.pdf on MSWinXP/MSVC systems).
-    4. Modified several checks that treated the separable_and_linear flag
-       in the device color model information as a boolean to handle this
-       parameter as an enumeration instead (since it is an enumeration).
-
-  src/gsptype1.c
-    Added gs_pattern1_set_color, the set_color method appropriate for
-    PatternType 1 patterns. This method performs overprint updating at
-    setcolor time, a requirement for patterns as the "colorspace" to be
-    used for overprint purposes is determined (in part) by the current
-    "color" (pattern).
-
-  src/gsptype2.c
-    Added gs_pattern2_set_color, the set_color method appropriate for
-    PatternType 2 patterns.
-
-  src/gsstate.c
-    1. Changed the criterion used in gs_grestore_only to determine if the
-       overprint compositor must be updated. Restoring the graphic state
-       may change the current color, which in the case of patterns may
-       change the "colorspace" to be used for overprint purposes. The code
-       now properly handles this possibility.
-    2. Added the gs_do_set_overprint routine, and modified various other
-       routines that directly call the current color space's
-       set_overprint method to call this procedure instead. The procedure
-       implements the special handling required for pattern color spaces,
-       where the current color may need to be considered when determining
-       which color model components must be retained.
-    3. Added code to initialize the effective_overprint_mode parameter in
-       the imager state, and provided two external routines to manipulate
-       this parameter. The first routine, gs_disable_effective_overprint_mode,
-       sets the effective_overprint_mode parameter to false, irrespective
-       of the setting of the overprint_mode parameter. The second,
-       gs_reset_effective_overprint_mode, sets the effective_overprint_mode
-       parameter to have the same value as the overprint_mode parameter.
-       The effective_overprint_mode parameter is used to turn off
-       overprint_mode when a PatternType 2 pattern is being used.
-
-  src/gsstate.h
-    Added prototypes for gs_do_set_overprint,
-    gs_disable_effective_overprint_mode, and
-    gs_reset_effective_overprint_mode.
-
-  src/gxccache.c
-    Modified gx_image_cached_char to invoke gx_set_dev_color before calling
-    (non-standard) device fill_mask methods. This handles several
-    situations in which a device color is not set when a cached character
-    is to be imaged, in particular for the command list device.
-
-  src/gxclpath.c
-    Added a comment to indicate that, though the overprint and
-    overprint_mode parameters are passed through the command list, they
-    usually have no effect, as overprint is controlled by the compositor
-    information that is (also) passed through the command list.
-
-  src/gxclrast.c
-    1. Added a comment to indicate that the overprint and overprint mode
-       parameters passed through the command list usually have no effect.
-    2. Added code to initialize the effective_parameter_mode field in the
-       imager state (though this field is usually in-effective).
-    3. Initialized the fill_zero_width field of the fill_params structure
-       in clist_playback_band to have the same value as in the noband case.
-       This parameter was previously always set to false, which led to
-       dropped lines for some files (e.g.: mspro.pdf).
-
-  src/gxistate.h
-    Added the effective_overprint_mode parameter.
-
-  src/gxpcolor.h
-    Added a set_color method to the pattern method vector. This method
-    performs any PatternType-specific actions necessary at setcolor
-    time. For now, this just updates the overprint compositor as required.
-(gscolor2.c [1.11], gscspace.c [1.8], gsdevice.c [1.16], gsdps1.c
-[1.7], gsovrc.c [1.2], gsptype1.c [1.10], gsptype2.c [1.10], gsstate.c
-[1.17], gsstate.h [1.7], gxccache.c [1.11], gxclpath.c [1.16],
-gxclrast.c [1.21], gxistate.h [1.13], gxpcolor.h [1.7]: 2002/09/10
-22:16:07 dan; checkin for Jan)
-
-The last code change for the this file was incorrect and should be replaced
-with this entry. The previous log message is still applicable.
-(gxcmap.c [1.8]: 2002/09/10 23:28:48 henrys)
-
-Bump version numbers after 7.30 release. (gscdef.c [1.26]: 2002/09/12
-09:52:20 giles)
-
-
-  src/gxccache.c
-    1. Fixed numerous problems with compress_alpha_bits and its invocation in
-       gx_image_cached_char. The former procedure is called only if anti-
-       aliasing (text alpha bits &gt; 1) is called for a color that requires
-       halftoning or for a device, such as pbmraw, that does not support the
-       copy_alpha method. This happens infrequently, and the code was
-       apparently never used.
-    2. Moved the invocation of gs_set_dev_color to an earlier location in
-       gx_image_cached_char, so that the device color will be set before
-       any check is made to see if it is a pure color.
-
-  src/gxclimag.c
-    1. Added code in clist_fill_mask to return an error if the mask to be
-       filled has depth &gt; 1 and clist_disable_copy_alpha flag is set in the
-       disable_mask field. The latter will be the case if the target device
-       does not support copy alpha. The command list translates fill_mask
-       calls into copy_alpha calls, which drives this requirement. By
-       returning an error, the fall-back mechanism included in
-       gx_image_cached_char (gxccache.c), which is the only client of the
-       fill_mask method, can function properly.
-    2. Also modified clist_fill_mask to check that the drawing color is
-       pure if depth &gt; 1 and use the default fill_mask method if this is
-       not the case. (The copy_alpha call to which the command list code will
-       translate the fill_mask works only for pure colors.) In addition, if
-       the color is pure, the clist_fill_mask routine will now send commands
-       to set color1 as well as transmit the device color; the code in
-       clist_playback_band (gxclrast.c) assumes that all "copy_mono" and
-       "copy_alpha" commands have set color1.
-
-  src/gxclist.c
-    Added code in clist_init_data to set the clist_disable_copy_alpha bit
-    in the disable_mask field if the target device does not support the
-    copy_alpha method. This must be done in this rather unintuitive location
-    because it is impossible to tell if the target device supports copy_alpha
-    until it has been made into a memory device (via the create_buf_device
-    buffer device method).
-
-  src/gxclist.h
-    Defined the clist_disable_copy_alpha bit, which is used in the
-    disable_mask field to indicate that the target device does not support
-    the copy_alpha method.
-
-  src/gxclrast.c
-    Added include of gzht.h, to silence some compiler complaints.
-
-  src/gxclrect.c
-    Modified clist_copy_alpha to return an error if clist_disable_copy_alpha
-    bit is set in the disable_mask field. This bit indicates that the target
-    device does not support the copy_alpha method, so we might as well
-    return an error now, while there is a chance the client might be able to
-    do something about it.
-(gxccache.c [1.12], gxclimag.c [1.9], gxclist.c [1.9], gxclist.h
-[1.6], gxclrast.c [1.22], gxclrect.c [1.5]: 2002/09/13 22:21:22 dan;
-checkin for Jan)
-
-Add a macro to eliminate compiler warnings if size of gx_color_index is only
-4 bytes. We are defining a table with entry sizes up to 8 bytes.
-(gxclutil.c [1.9]: 2002/09/13 22:25:07 dan)
-
-Add two casts to eliminate warning messages about differing pointer types.
-(gdevmem.c [1.6]: 2002/09/16 22:04:43 dan)
-
-Remove old code inadvertently left within a comment. (gsfunc3.c [1.13]:
-2002/09/19 18:00:01 ray)
-
-
-The modification changes the way tile depth is encoded in the command
-list as part of the cmd_opv_set_tile_size command.
-
-Modified files:
-
-  gxcldev.h
-    Added the macros cmd_depth_to_code and cmd_code_to_depth. These allow
-    encoding/decoding of the color model depth parameter (bits/pixel) in
-    such a manner as to support depths up to 120 bits (depths > 15 bits
-    must be a multiple of 8).
-
-  gxclbits.c
-    Modified cmd_store_tile_params to use the cmd_depth_to_code macro.
-
-  gxclrast.c
-    Modified read_set_tile_size to use the cmd_code_to_depth macro.
-(gxclbits.c [1.8], gxcldev.h [1.11], gxclrast.c [1.23]: 2002/09/19
-18:36:03 dan; checkin for Jan)
-
-
-The attached code generalizes the sample_load_* and sample_store_* macros
-in gsbitops.h to handle depths up to 64 bits. In addition to providing
-64 bit versions of these macros, we also added the macros sample_load_any,
-sample_load_next_any, and sample_store_next_any. These macros are intended
-to be used in situations in which any supported depth may be used. All of
-the invocations of the sample_load32, sample_load_next32, etc. macros have
-been changed to invoke the *_any version of these macros instead. In
-addition, a few minor changes have been made to silence compiler warning
-messages.
-
-Modified files:
-
-  src/gdevalph.c
-    Changed invocations of the sample_{load|store}_next32 macro to be
-    invocations of sample_{load|store}_next_any instead. Also made various
-    changes to allow the code to be compiled with the DeviceN system (the
-    file has apparently not been compiled for some time).
-
-  src/gdevdbit.c
-    Made a couple of minor changes to silence compiler warning messages.
-
-  src/gdevdgbr.c
-    Changed invocations of the sample_{load|store}_next32 macro to be
-    invocations of sample_{load|store}_next_any instead.
-
-  src/gdevmpla.c
-    Changed invocations of the sample_{load|store}_next32 macro to be
-    invocations of sample_{load|store}_next_any instead.
-
-  src/gsbitops.c
-    Changed invocations of the sample_{load|store}_next32 macro to be
-    invocations of sample_{load|store}_next_any instead. Also made the
-    value being read/written be of type gx_color_index rather than
-    type bits32.
-
-  src/gsbitops.h
-    Added 64-bit versions of the sample_load* and sample_store* macros.
-    Also added *_any versions of these macros, to be used in situations
-    where any supported color depth may be encountered.
-
-  src/gxcindex.h
-    Changed an invocation of the sample_store_next32 macro to be an
-    invocation of sample_store_next_any instead. Also updated a comment.
-(gdevalph.c [1.6], gdevdbit.c [1.8], gdevdgbr.c [1.8], gdevmpla.c
-[1.5], gsbitops.c [1.7], gsbitops.h [1.7], gxcindex.h [1.6]:
-2002/09/21 00:26:04 dan; checkin for Jan)
-
-src/gsht.c 1. Fixed a memory handling problem in gx_imager_dev_ht_install,
-which could result in objects being freed multiple times. 2. Removed a
-temporary hack in gx_imager_dev_ht_install that ensured that the halftone
-cache always had at least one tile per level. This hack is no longer
-necessary, as binary halftone device colors are now handled correctly.
-(gsht.c [1.11]: 2002/09/21 07:08:27 dan)
-
-
-Modified Files:
-
-  src/gsmisc.c
-    Fixed an apparently long-standing bug in ilog2. Due to a typo, this
-    procedure returned 0 for any power of 16.
-
-  src/gxoprect.c
-    Fixed an uninitialized variable problem in
-    gx_overprint_sep_fill_rectangle_1 and gx_overprint_sep_fill_rectangle_2.
-(gsmisc.c [1.15], gxoprect.c [1.2]: 2002/09/23 01:21:02 dan; checkin for Jan)
-
-Modified Files: src/gsht.c Modified the invocation of
-gx_device_halftone_release in gx_ht_install to use the memory allocator
-pointer stored in the device halftone, rather than the one stored in the
-graphic state. src/gsimage.c Removed what appears to have been an errant
-optimization in gx_image_cleanup. This procedure will now always invoke
-gx_image_end, even if the image was not rendered (penum-&gt;dev == 0).
-(gsht.c [1.12], gsimage.c [1.9]: 2002/09/23 21:36:31 dan)
-
-
-The attached code release fixes a variety of memory handling problems
-discovered by Dan's test with the memory validation enabled.
-
-  1. Most of the problems with the FTS were accounted for by a relatively
-     harmless dangling pointer problem for paths. In order to support the
-     charpath operator, paths are normally constructed in stable memory
-     (not subject to save/restore). However, clipping paths were
-     constructed in normal memory. If the clippath operator was used to
-     make the clipping path the current path, the top-level
-     gx_path_segments would be in stable memory, while the rest of the
-     path would be in normal memory. A restore operation could then
-     leave dangling pointers.
-
-     This is not normally a problem, because the grestore operation
-     associated with the restore would clear the gx_path_segments
-     structure. This only works on the graphic state stack, however;
-     graphic state objects stored in VM would not be reset.
-
-     This is harmful only in a very obscure case when the charpath operator
-     is used on a user-defined font whose BuildGlyph procedure contains
-     internal save/restore operators and which builds part of its
-     output with the clippath operator. As far as we know, this has
-     never occurred in practice.
-
-  2. [...zDCTE stable memory...]
-
-  3. If an overprint compositor was used with a banding device, the code
-     in clist_playback_band was not cleaning up this compositor before
-     exiting. This caused difficulty with the p2b-100.pdf file. This
-     code has been modified to close the target device if this device
-     does not match the original target device with which the routine
-     was invoked.
-
-  4. For historical reasons, the link between a halftone order and its
-     tile cache is a bit peculiar. The order includes a pointer to the
-     tile cache, and the tile cache keeps a copy of the order, which
-     points to the same levels/bit data structure of the original order.
-     Because of these two-way points, the order and its tile cache must
-     use the same memory allocator to avoid dangling pointer problems.
-     The code patch modifies gx_imager_dev_ht_install (gsht.c) to
-     preserve this invariant. The change fixes another problem noted for
-     p2b-100.pdf.
-
-With these changes, we are able to run both the PS3 FTS and the full set
-of pdf regression files using the '-Z@$?' switch with no reported problems.
-
-
-                                                       Jan
-
-Modified files:
-
-  src/gspaint.c
-  src/gspath.c
-    In gs_strokepath and gs_clippath, cause the newly constructed path to
-    use the memory allocator of the current path, rather than the memory
-    of the current graphic state. This is no longer strictly necessary
-    due to other changes that place path substructure completely in
-    stable memory (see gxpath.c below).
-
-  src/gxpath.c
-    Modify path_allocs_segments, rc_free_path_segments_local,
-    gx_path_add_lines_notes, and the path_alloc_segment macro to place
-    the entire path substructure (from the gx_path_segments structure
-    down) in stable memory. This is necessary to avoid dangling
-    pointers, as a list of path segments may be attached to another path,
-    parts of which were constructed with a different allocator.
-
-  src/gsht1.c
-    Removed obsolete code.
-
-  src/gxclrast.c
-    In clist_playback_band, close and discard the target device on
-    completion of a band if it is not the same as the target device on
-    entry.  This is necessary to remove an overprint compositor that
-    may have been created in the course of the band.
-
-  src/gsht.c
-    In gx_imager_dev_ht_install, copy any halftone orders that were not
-    allocated using the same allocator as used by the graphic state. This
-    must be done to avoid dangling forward/back pointer between halftone
-    orders and the associated tile caches.
-(gsht.c [1.13], gsht1.c [1.11], gspaint.c [1.5], gspath.c [1.7],
-gxclrast.c [1.24], gxpath.c [1.8]: 2002/09/26 18:45:02 dan; checkin
-for Jan)
-
-Move the callback routine, which is used to translate a gs_separation_name
-into a string pointer and a length, from the graphics state into the device
-color structure. This is being done to make it available to the pdfwrite
-device when handling DeviceN or Separation color spaces. (gscdevn.c [1.13],
-gscsepr.c [1.19], gscspace.h [1.13], gsht.c [1.14], gxstate.h [1.7]:
-2002/10/04 23:43:38 dan)
-
-This file was missed in the previous commit. Move the callback routine,
-which is used to translate a gs_separation_name into a string pointer and a
-length, from the graphics state into the device color structure. This is
-being done to make it available to the pdfwrite device when handling DeviceN
-or Separation color spaces. (gzht.h [1.10]: 2002/10/05 03:41:42 dan)
-
-Apply casts to remove lots of warnings from MSVC 6. Update some Windows
-color mapping functions for DeviceN. Change order of arguments for the
-gs_pdf14_device_filter_push function and the calls to the device filter push
-procedure to match the prototype. (gdevdflt.c [1.7], gdevdgbr.c [1.9],
-gdevm1.c [1.6], gdevp14.c [1.14], gdevpsf1.c [1.16], gdevpsf2.c [1.26],
-gdevpsft.c [1.23], gdevpsfx.c [1.16], gsbitops.c [1.8], gsciemap.c [1.12],
-gscrdp.c [1.5], gsdevice.c [1.17], gsdfilt.c [1.7], gsfont.c [1.14],
-gsfunc0.c [1.10], gsfunc4.c [1.13], gsicc.c [1.9], gspaint.c [1.6],
-gsparam.c [1.7], gsptype1.c [1.11], gstype2.c [1.20], gstype42.c [1.24],
-gsutil.c [1.9], gswts.c [1.2], gxccache.c [1.13], gxclpath.c [1.17],
-gxcmap.c [1.9], gxdhtserial.c [1.3], gxifast.c [1.8], gximag3x.c [1.13],
-gximage.c [1.6], gximage3.c [1.10], gxipixel.c [1.8], gxistate.h [1.15],
-gxline.h [1.6], gxoprect.c [1.3], gxpcopy.c [1.7], gxshade4.c [1.10],
-gxtype1.c [1.19], gxwts.c [1.4]: 2002/10/07 08:28:56 ghostgum)
-
-
-Attached is a updated version of our code release of 4 October, 2002.
-
-As before, the primary purpose of this release is to modify the manner
-in which overprint information is passed to the overprint compositor
-device.  This resolves some difficulties seen when overprinting is
-used with the command list device.
-
-This update incorporates the changes checked in by Dan on October 4th.
-Since Dan's changes to gxcldev.h and gxclrast.c were identical to ours,
-we have removed those two files from this release.
-
-                                                       Jan
-
-
-Modified Files
-
-  lib/gs_init.ps
-  lib/pdf_draw.ps
-    Change "DONTPS" flag to "DOPS", with the logically inverted function:
-    only if DOPS is defined will "PS" XObjects be rendered. We believe this
-    is the more appropriate default.
-
-  lib/gs_dps.ps
-  lib/gs_img.ps
-  src/gsdparams.c
-    Modified the deviceinfo and image code to work around a potentially
-    improperly set ColorValues parameter.
-
-  src/devs.mak
-    Updated dependency list for gdevscf.$(OBJ).
-
-  src/gdevdflt.c
-    1. Added initialization of the new color_info.opmode field to
-       gx_device_fill_in_procs.
-    2. In get_decode_color, added special case handling for canonical 1-bit
-       CMYK devices (e.g.: pkmraw). Previously the decode_color method for
-       this devices would default to gx_default_cmyk_decode_color, which
-       performed an CMYK ==> RGB ==> CMYK conversion. This conversion would
-       defeat overprinting if gray object was placed on top of a colored
-       region.
-
-  src/gscdevn.c
-  src/gscolor.c
-  src/gscolor2.c
-  src/gscpixel.c
-  src/gscsepr.c
-  src/gscspace.c
-  src/gsovrc.c
-  src/gxovrc.h
-  src/gspcolor.c
-  src/gsptype1.c
-  src/gsptype2.c
-  src/gsstate.c
-  src/gsstate.h
-  src/gxcmap.c
-  src/gxcspace.h
-  src/zcolor.c
-    Modified the overprint code to, when necessary, pass overprint mode
-    information when setting the device color. This is necessary to properly
-    handle overprint mode when using the command list device.
-
-    NB: This change alters the meaning of the "effective_overprint_mode" field
-        in the imager state.
-
-  src/gxdevcli.h
-    Added the opmode and process_comps fields to the gx_device_color_info
-    structure. These are required by the new code that passes overprint mode
-    information when the device color is set.
-
-  src/gsdfilt.h
-    Changed the prototype for the push method in the gs_device_filter
-    structure to match the actual implementation and usage of this method
-    (the third and fourth operands were reversed).
-
-  src/gsimage.c
-    Modified gx_image_cleanup to check if penum->info field is null before
-    calling gx_image_end. This avoids a crash associated that can occur if
-    an image has zero height or width, as the image enumeration data structure
-    will have been released in such cases before gs_image_cleanup is called.
-
-  src/lib.mak
-    Updated various dependency lists.
-
-  src/gdevdevn.c
-  src/gdevnfwd.c
-  src/gdevpdte.c
-  src/gdevxcf.c
-  src/gscrdp.c
-  src/gsdfilt.c
-  src/gsht.c
-  src/gsht1.c
-  src/gswts.c
-  src/gzht.h
-  src/ialloc.c
-  src/imain.c
-  src/iscanbin.c
-  zfapi.c
-    Installed some minor changes to quiet compiler warnings.
-
-(gdevdflt.c [1.8], gdevnfwd.c [1.7], gscdevn.c [1.14], gscolor.c
-[1.10], gscolor2.c [1.13], gscpixel.c [1.8], gscrdp.c [1.6], gscsepr.c
-[1.20], gscspace.c [1.9], gsdfilt.h [1.7], gsdparam.c [1.11], gsht.c
-[1.15], gsht1.c [1.12], gsimage.c [1.10], gsovrc.h [1.2], gsovrc.c
-[1.3], gspcolor.c [1.8], gsptype1.c [1.12], gsptype2.c [1.11],
-gsstate.c [1.18], gsstate.h [1.8], gswts.c [1.3], gxcmap.c [1.10],
-gxcspace.h [1.9], gxdevcli.h [1.14], gzht.h [1.11]: 2002/10/08
-00:49:49 dan; checkin for Jan)
-
-Due to a combination of corrections by Russell Lang and Jan Stoeckenius, we
-have corrected a problem - twice. Unfortunately this is an example of two
-rights making a wrong. Thanks to Jan for noticing this. (gsdfilt.h [1.8]:
-2002/10/08 23:02:31 dan)
-
-Corrects an unitialized variable warning in image_render_color(). The
-routine now falls back to landscape scan parameters in the unhandled 'skew'
-posture case. (gxicolor.c [1.7]: 2002/10/10 19:30:42 giles)
-
-Correct handling of text when the pixel depth is 56 bits. (gdevm56.c [1.2]:
-2002/10/11 05:58:22 dan)
-
-Modified the dci_alpha_values macro to assume that devices with depth &gt;=
-16 have a separable and linear color encoding. (gxdevcli.h [1.15]:
-2002/10/16 00:47:55 dan)
-
-First documentation commit for 7.31 release: edits to News.htm, version and
-date updates, minor patches to Develop.htm and Deprecated.htm.
-(gscdef.c [1.27]: 2002/10/17 06:37:29 raph)
-
-</pre><h2><a name="7.31-Other"></a>Other</h2><pre>
-
-Adds sobin and soobj to .cvsignore. (.cvsignore [1.5]: 2002/09/29 17:24:43
+	- removes an extra parenthesis (doc/API.htm [1.26]: 2002/10/19
+14:50:28 giles)
+	- Language level 3 is added to the list of supported language levels
+in pswrite and epswrite devices. Currently it generates the same code as 2.
+Bug #626497 (doc/Devices.htm [1.55]: 2002/10/24 20:28:43 alexcher)
+
+Removes the unmaintained 'current release' information. The News and Changes
+files provide a reasonable summary. (doc/Readme.htm [1.43],
+doc/Release.htm [1.70]: 2002/10/20 15:28:27 giles)
+
+Removes the 'PageSize cannot use packedarray' issue description. Ghostscript
+no longer fails as described. (doc/Issues.htm [1.27]: 2002/10/20 15:54:42
 giles)
 
-Adds some missing files to the ijs .cvsignore. (ijs/.cvsignore [1.2]:
-2002/09/29 17:54:28 giles)
+Clean up html. Properly escape dictionary delimeters and blockquote code
+examples. Add Peter's update on SourceForge bung #224134.
+(doc/Issues.htm [1.28]: 2002/10/20 17:14:53 giles)
 
-Remove remaining references to ansi2knr.c. We no longer support building
-ghostscript with it, but the remaining dead code causes confusion for some
-users. Inspired by Sourceforge bug #618048. Removes references to the no
-longer supported ansi2knr.c. (Makefile.in [1.17]: 2002/10/09 23:43:58 giles)
+Updates the usage documentation. The first section is re-written to be
+easier and quicker for new users. The rest has been re-arranged for clarity.
+Moves the bbox documentation to Devices.htm. Adds descriptions of the
+*AlphaBits driver parameters. Removes mention of some obsolete options
+(-sOUTPUTFILE, -_, -sOutputFile=|) from the introduction; they're still
+documented elsewhere. (doc/Deprecated.htm [1.3], doc/Devices.htm [1.54],
+doc/Use.htm [1.60]: 2002/10/21 20:54:01 giles)
+
+Removes the documentation on the no-longer-supported MS-DOS platform.
+(doc/Use.htm [1.61]: 2002/10/21 20:58:10 giles)
+
+Remove pdfwrite testing module zfctest and associated source.
+(doc/Develop.htm [1.96]: 2002/10/22 18:42:24 giles)
+
+Update code policy documentation. (doc/Maintain.htm [1.33]: 2002/10/23
+22:06:49 giles)
+
+additional documentation cleanup related to the new usage sections
+(doc/Commprod.htm [1.23], doc/Readme.htm [1.44]: 2002/10/23 22:09:07 giles)
+
+Adds a documentation stub for the -dUseCIEColor option. (doc/Use.htm [1.62]:
+2002/10/23 22:42:23 giles)
+
+Clarify description of -dUseCIEColor. (doc/Use.htm [1.63]: 2002/10/24
+11:31:59 giles)
+
+Clarify that DOS is not the same as the windows command prompt.
+(doc/Use.htm [1.64]: 2002/10/24 12:47:43 giles)
+
+Update the release documentation now that 'make dist-clean' works reliably.
+(doc/Release.htm [1.71]: 2002/10/24 13:06:10 giles)
+
+Clarify options accepted by ps2ps, and document the current low-level output
+of pswrite. Inspired by SourceForge bug #620865. (man/ps2ps.1 [1.26]:
+2002/10/24 14:21:22 giles)
+
+Clean up build documenation. Correct markup, remove obsolete or irrelevent
+sections, further encourage the use of the autoconf makefile. Resolves
+SourceForge bug #468762. (doc/Make.htm [1.56]: 2002/10/24 15:25:20 giles)
+
+Rename the makefile variable UFST_CFLAG to the more conventional
+UFST_CFLAGS. (doc/Make.htm [1.57]: 2002/10/24 16:07:20 giles)
+
+Document pdfwrite generating truetype font data with incorrect checksums as
+an issue. SourceForge bug #615620. (doc/Issues.htm [1.29]: 2002/10/25
+11:58:19 giles)
+
+Document 'save' 'restore' not working from the interactive prompt as an
+issue. SourceForge bug #603689. (doc/Issues.htm [1.30]: 2002/10/25 12:07:11
+giles)
+
+Removes the alpha storage device. This code is obsolete and has been unused
+for some time. Closes SourceForge bug #592164. (doc/Develop.htm [1.97]:
+2002/10/25 12:14:54 giles)
+
+Bump version after the 7.31 release. (doc/News.htm [1.117]: 2002/10/28
+20:11:08 giles)
+
+Remove documentation for the old watc.mak which is not longer in the
+distribution. (doc/Develop.htm [1.98], doc/Make.htm [1.58]: 2002/10/30
+23:34:57 giles)
+
+Encapsulate EPS files to make sure that at least one page is printed. Add
+command line options -dNOEPS, -dEPSCrop and -dEPSFitPage for customizing
+handling of EPS files. Warn if EPS bounding box does not fit in clipping
+box. Enable EPS and DOS EPS processing for several platforms.
+(doc/Use.htm [1.65]: 2002/10/31 09:22:13 ghostgum)
+
+When ghostscript is given a PDF file on standard input, copy it to a
+temporary file before processing. Prior to version 7, ghostscript could read
+PDF from standard input redirected from a file, but not from a pipe.
+Standard input was changed in version 7 to use callouts, which prevented PDF
+reading from standard input. Fixes SourceForge bug #583413, /ioerror with gs
+- &lt; file.pdf vers 7.xx (doc/Use.htm [1.66]: 2002/10/31 10:23:08 ghostgum)
+
+Minor wording corrections to Russell Lang's recent updates.
+(doc/Use.htm [1.67]: 2002/10/31 15:07:45 giles)
+
+First commit for 7.32 release: update version numbers and dates, News.htm.
+(doc/API.htm [1.27], doc/Bug-form.htm [1.31], doc/Bug-info.htm [1.30],
+doc/C-style.htm [1.37], doc/Commprod.htm [1.24], doc/Copying.htm [1.23],
+doc/DLL.htm [1.25], doc/Deprecated.htm [1.4], doc/Develop.htm [1.99],
+doc/Devices.htm [1.56], doc/Drivers.htm [1.35], doc/Fonts.htm [1.32],
+doc/Helpers.htm [1.27], doc/History1.htm [1.23], doc/History2.htm [1.23],
+doc/History3.htm [1.23], doc/History4.htm [1.23], doc/History5.htm [1.25],
+doc/History6.htm [1.40], doc/History7.htm [1.25], doc/Htmstyle.htm [1.28],
+doc/Install.htm [1.37], doc/Issues.htm [1.31], doc/Language.htm [1.56],
+doc/Lib.htm [1.25], doc/Maintain.htm [1.34], doc/Make.htm [1.59],
+doc/New-user.htm [1.42], doc/News.htm [1.118], doc/Projects.htm [1.47],
+doc/Ps-style.htm [1.21], doc/Ps2epsi.htm [1.25], doc/Ps2pdf.htm [1.47],
+doc/Psfiles.htm [1.38], doc/Readme.htm [1.45], doc/Release.htm [1.72],
+doc/Source.htm [1.23], doc/Tester.htm [1.22], doc/Testing.htm [1.12],
+doc/Unix-lpr.htm [1.23], doc/Use.htm [1.68], doc/Xfonts.htm [1.23],
+doc/gs-vms.hlp [1.22], man/dvipdf.1 [1.20], man/font2c.1 [1.20],
+man/gs.1 [1.20], man/gslp.1 [1.20], man/gsnd.1 [1.20], man/pdf2dsc.1 [1.19],
+man/pdf2ps.1 [1.21], man/pdfopt.1 [1.19], man/pf2afm.1 [1.20],
+man/pfbtopfa.1 [1.21], man/printafm.1 [1.20], man/ps2ascii.1 [1.19],
+man/ps2epsi.1 [1.18], man/ps2pdf.1 [1.25], man/ps2pdfwr.1 [1.24],
+man/ps2ps.1 [1.27], man/wftopfa.1 [1.20]: 2002/11/02 08:11:07 raph)
+
+</pre><h2><a name="7.32-Procedures"></a>Procedures</h2><pre>
+
+Fixes problems:
+	- adds a missing header to gxshade for indexed color routines.
+(lib.mak [1.103]: 2002/10/22 13:31:37 giles)
+	- update the ECHOGS_MAK dependency to ECHOGS_XE. (devs.mak [1.80],
+int.mak [1.86], lib.mak [1.105]: 2002/10/22 18:38:00 giles)
+	- correct some dependencies against the include lists in the
+relevent C files. Also reorder them to facilitate easer checking next time.
+Closes SourceForge bug #607819. (int.mak [1.89], lib.mak [1.108]: 2002/10/28
+19:17:19 giles)
+	- install cidfmap on unix. (unixinst.mak [1.27]: 2002/10/28 19:27:06
+giles)
+	- install the example FAPI configuration files by default. Ideally
+this would be dependent of enabling the fapi feature in the build.
+(unixinst.mak [1.28]: 2002/10/28 19:43:42 giles)
+	- provided a meaningful error message when an immediately evaluated
+name can not be found. Fixes SourceForge bug #543185, Confusing diagnostics
+for //undefined. (int.mak [1.91]: 2002/10/29 09:57:53 ghostgum)
+	- also install the character translation FAPI config file.
+(unixinst.mak [1.29]: 2002/10/31 16:01:12 giles)
+	- Fiddles with makefile parameter quoting so that "make pg" runs
+again. (unix-end.mak [1.5]: 2002/11/02 05:51:00 raph)
+
+Remove the gcc version check from the macosx makefile. That platform is
+unlikely to be running the version in question. (macosx.mak [1.14]:
+2002/10/18 13:17:07 giles)
+
+Use 'gcc2' as the C compiler with the macosx makefile, working around a bug
+in Apple's gcc3 (the default cc). This won't work on pre-10.2 developer
+tools, but users are less likely to encounter that now. (macosx.mak [1.15]:
+2002/10/18 15:48:26 giles)
+
+Corrects various include dependency problems. Closes SourceForge Bug
+#604884. (devs.mak [1.79], int.mak [1.85], lib.mak [1.104]: 2002/10/22
+16:47:30 giles)
+
+Remove pdfwrite testing module zfctest and associated source.
+(int.mak [1.87]: 2002/10/22 18:42:32 giles)
+
+Add real 'make distclean' and 'make maintainer-clean' targets. These are no
+longer general no-ops but are the responsibility of the platform-specific
+makefiles. The autoconf build now removes its generated files from the
+top-level directory when requested. (gs.mak [1.18], unix-gcc.mak [1.38],
+unixansi.mak [1.26]: 2002/10/24 12:57:57 giles)
+
+Rename the makefile variable UFST_CFLAG to the more conventional
+UFST_CFLAGS. (int.mak [1.88], lib.mak [1.106], msvc32.mak [1.35]: 2002/10/24
+16:07:20 giles)
+
+Removes the alpha storage device. This code is obsolete and has been unused
+for some time. Closes SourceForge bug #592164. (lib.mak [1.107]: 2002/10/25
+12:14:54 giles)
+
+Bump version after the 7.31 release. (version.mak [1.54]: 2002/10/28
+20:11:08 giles)
+
+Remove some interpreter references from the graphics library. Partial fix
+for SourceForge bug #542848, "library #includes interpreter headers".
+(lib.mak [1.109], msvclib.mak [1.21], msvctail.mak [1.9], pcwin.mak [1.5]:
+2002/10/29 09:22:29 ghostgum)
+
+Changes to Windows and OS/2 files to allow ghostscript to compile with the
+graphics library and interpreter in separate source directories. Partial fix
+for SourceForge bug #542848, "library #includes interpreter headers".
+(bcwin32.mak [1.22], int.mak [1.90], msvc32.mak [1.36], os2.mak [1.28],
+watcw32.mak [1.19], winint.mak [1.16]: 2002/10/29 09:44:40 ghostgum)
+
+Encapsulate EPS files to make sure that at least one page is printed. Add
+command line options -dNOEPS, -dEPSCrop and -dEPSFitPage for customizing
+handling of EPS files. Warn if EPS bounding box does not fit in clipping
+box. Enable EPS and DOS EPS processing for several platforms.
+(bcwin32.mak [1.23], dvx-gcc.mak [1.21], msvc32.mak [1.37],
+openvms.mak [1.27], os2.mak [1.29], unixansi.mak [1.27], watcw32.mak [1.20]:
+2002/10/31 09:22:13 ghostgum)
+
+Remove the obsolete mswindll and mswinprn devices from the standard Windows
+build. (bcwin32.mak [1.24], msvc32.mak [1.38], watcw32.mak [1.21]:
+2002/10/31 10:11:03 ghostgum)
+
+Reinstate the mswindll device because removing it also requires modifying
+the exports in gsdll32.def. (bcwin32.mak [1.25], msvc32.mak [1.39],
+watcw32.mak [1.22]: 2002/10/31 10:51:29 ghostgum)
+
+Add a utility that draws glyphs on top of the character box defined in the
+given AFM. Goes throuh each glyph in the AFM. (toolbin/drawafm.ps [1.1]:
+2002/10/31 18:08:49 ray)
+
+Module gslib removed from the library archive. Further fix for [ 538311 ]
+files missing from library archive. (ugcclib.mak [1.22]: 2002/11/02 04:28:15
+ghostgum)
+
+First commit for 7.32 release: update version numbers and dates, News.htm.
+(version.mak [1.55]: 2002/11/02 08:11:09 raph)
+
+</pre><h2><a name="7.32-Utilities"></a>Utilities</h2><pre>
+
+Fixes problems:
+	- Several problems have been fixed in pf2afm.ps (1) security code is
+updated to use the new interface (2) PFM encoding is considered during the
+kerning pair table generation (3) string overflow during PFA header printing
+is fixed Bug #567421 (lib/pf2afm.ps [1.7]: 2002/10/25 02:30:04 alexcher)
+
+Add a usage example to make better connection between the script options and
+ghostscript. Closes SourceForge bug #620865. (lib/ps2ps [1.6],
+lib/ps2ps.bat [1.7]: 2002/10/24 14:23:15 giles)
+
+Improve the wording and correct typos in the the comment header.
+(lib/xlatmap [1.6]: 2002/10/31 16:01:58 giles)
+
+</pre><h2><a name="7.32-Drivers"></a>Drivers</h2><pre>
+
+Fixes problems:
+	- Language level 3 is added to the list of supported language levels
+in pswrite and epswrite devices. Currently it generates the same code as 2.
+Bug #626497 (gdevps.c [1.31]: 2002/10/24 20:28:43 alexcher)
+	- This is the change to the permute device to include the
+SeparationColorNames if we are permuting the color components.
+(gdevperm.c [1.3]: 2002/10/25 23:04:16 dan)
+	- correctly initializes the color_info structure when opening the
+ijs device. Closes SourceForge Bug #630542. (gdevijs.c [1.6]: 2002/10/30
+12:35:11 giles)
+	- Propagate error codes from gs_distance_transform_inverse. Patch
+from Forrest Cahoon, improved. (gdevpsdi.c [1.23]: 2002/10/31 09:00:28 igor)
+
+Removed some warning errors. (gdevpsd.c [1.3]: 2002/10/23 19:59:26 jeong)
+
+Remove some interpreter references from the graphics library. Partial fix
+for SourceForge bug #542848, "library #includes interpreter headers".
+(gdevmswn.c [1.9]: 2002/10/29 09:22:29 ghostgum)
+
+OS/2 updates for the DeviceN changes. (gdevos2p.c [1.7], gdevpm.c [1.8]:
+2002/10/29 09:51:33 ghostgum)
+
+Windows updates for the DeviceN changes. (gdevmswn.c [1.10],
+gdevwpr2.c [1.13], gdevwprn.c [1.8]: 2002/10/31 10:06:01 ghostgum)
+
+</pre><h2><a name="7.32-PDF_writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- Fix (pdfwrite) : Encoding was ignored with standard fonts. Source
+Forge bug #624082 "(pdfwrite) Wrong encoding with std fonts".
+(gdevpdtt.c [1.20], gdevpdtw.c [1.9]: 2002/10/18 14:06:27 igor)
+	- Fix (pdfwrite) : Don't write StandardEncoding name, which is
+default one. (gdevpdtw.c [1.10]: 2002/10/18 14:39:58 igor)
+	- Fix (pdfwrite) : Don't fill paths outside the clipping path.
+Source Forge bug "[ 624168 ] poor performance on patterns".
+(gdevpdfd.c [1.20]: 2002/10/18 17:41:51 igor)
+	- Fix (pdfwrite) : Enhancing font_orig_scale with upside-down font
+matrices. Source Forge bug "[ 620968 ] text inverted in pdf".
+(gdevpdtt.c [1.21]: 2002/10/21 17:06:37 igor)
+	- Fix (pdfwrite) : Account Tc and Tw values while computing TJ
+offsets. Source Forge bugs "[ 627036 ] (pdfwrite) wrong spacing
+000040cf.000_60", (gdevpdte.c [1.19], gdevpdts.c [1.19]: 2002/10/25 10:53:33
+igor)
+	- Fix (pdfwrite) : Wrong allocator was used for pdfmark objects.
+Source Forge bug "[ 611463 ] Crash on Adobe Photoshop 7 EPS". Also cleaning
+up other modules dealing with PDF memory. (gdevpdfm.c [1.27],
+gdevpdfu.c [1.33], gdevpdtt.c [1.22]: 2002/10/25 15:42:39 igor)
+	- Propagate error codes from gs_distance_transform_inverse. Patch
+from Forrest Cahoon, improved. (gdevpdts.c [1.20]: 2002/10/31 09:00:28 igor)
+
+</pre><h2><a name="7.32-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
+
+Fixes problems:
+	- Fix to PDF interpreter : Report error and stop on unsupported
+halftone type. (lib/pdf_draw.ps [1.56]: 2002/10/18 11:32:38 igor)
+	- Fix to PDF interpreter : Cache original fonts to prevent
+adjustfont to accumulate changes. Source Forge bug #621293 "(PDF
+interpreter)Possibly wrong encoding". (lib/pdf_font.ps [1.49]: 2002/10/23
+05:08:50 igor)
+	- GS didn't restore graphic state after execution of Form XObject
+leaking PDF graphic state changes out of the form procedure. Bug #626507
+from customer #1. Fix developed by Alex Cherepanov. (lib/pdf_draw.ps [1.57]:
+2002/10/23 15:15:30 ray)
+	- Pop useless widget /AP dictionary if missing all of /N, /R, and /D
+keys to keep opstack from collecting extra elements leading to error during
+restore. Fixes SF bug #538428 for customer #440. (lib/pdf_draw.ps [1.58]:
+2002/10/23 23:16:20 ray)
+	- Scale factor for Stamp Annotations was incorrect. The
+calcstampscale function was quite wrong. Fixes SourceForge bug #628440 for
+customer #531. (lib/pdf_draw.ps [1.60]: 2002/10/25 04:47:23 ray)
+	- Optional /Name in Type 3 font is generated from current file
+position when missing. This is a temporary fix till while are not accessed
+by PDF resource names. Bug #573744 from lpd (lib/pdf_font.ps [1.50]:
+2002/10/31 23:41:09 alexcher)
+	- Apply SubFileDecode filter during stream resolution to unfiltered
+streams (except inline images) to prevent merging of the last token of the
+stream with endstream operator. (jointly with Ray Johnston) Bug #628097 from
+customer #1 (lib/pdf_base.ps [1.30], lib/pdf_draw.ps [1.61]: 2002/11/01
+20:00:12 alexcher)
+
+Moved the redefinition of the DefaultGray, DefaultRGB, and DefaultCMYK
+instances of the ColorSpace resource category to the pdfopen procedure, as
+opposed to the runpdf procedure. This avoids unintended color space
+substitution when using utilities such as gv, gsview, etc., which do not
+invoke the runpdf procedure. Thanks to both Raph Levien and Russell Lang for
+suggesting this modification. (lib/pdf_main.ps [1.58]: 2002/10/17 21:33:03
+dan)
+
+Moved the invocation of pdfshowpage_setcspacesub from pdfshowpage to
+pdfshowpage_finish. This is done to accommodate gsview, which does not
+invoke pdfshowpage. Thanks to Russell Lang for pointing this out.
+(lib/pdf_main.ps [1.59]: 2002/10/18 17:31:26 dan)
+
+This is a fix to handle the "slow rendering for PDF files with color space
+substitution" ("-dUseCIEColor") problem. The code for the patches is the
+same as in yesterday's message; some comments have been added, and some of
+the earlier comments made more clear (we hope). Modified Files:
+lib/gs_cspace.ps Modified the _setcolorspace procedure to ignore redundant
+settings of the current color space for PDF files, even if color space
+substitution is in effect. lib/pdf_main.ps Modified pdfshowpage_setcspacesub
+to "transition" the current color space if color space substitution is in
+effect and the current color space is a device-dependent color space.
+(lib/pdf_main.ps [1.60]: 2002/10/24 04:13:50 dan)
+
+Change some pdfformaterror messages to "Warning" to avoid user confusion and
+alleviate concern. Also this should help bug reports to be less misleading.
+(lib/pdf_base.ps [1.29], lib/pdf_draw.ps [1.59], lib/pdf_main.ps [1.61]:
+2002/10/24 18:29:34 ray)
+
+When ghostscript is given a PDF file on standard input, copy it to a
+temporary file before processing. Prior to version 7, ghostscript could read
+PDF from standard input redirected from a file, but not from a pipe.
+Standard input was changed in version 7 to use callouts, which prevented PDF
+reading from standard input. Fixes SourceForge bug #583413, /ioerror with gs
+- &lt; file.pdf vers 7.xx (lib/pdf_main.ps [1.62]: 2002/10/31 10:23:08
+ghostgum)
+
+</pre><h2><a name="7.32-Interpreter"></a>Interpreter</h2><pre>
+
+Fixes problems:
+	- A typo in .locksafe procedure left 2 boolean parameters on the
+stack causing PS errors in some files produced by "dvips(k) 5.86" that
+depend on empty initial operand stack. Bug #626437 (lib/gs_init.ps [1.67]:
+2002/10/24 20:37:29 alexcher)
+	- currentcolorspace didn't check whether the current device is a
+cache device and always returned the value set by setcolorspace in the
+current graphic state. The fix returns [/DeviceGray] as the current color
+space in cache device. Bug #627169 (zcolor.c [1.13]: 2002/10/24 22:48:41
+alexcher)
+	- provided a meaningful error message when an immediately evaluated
+name can not be found. Fixes SourceForge bug #543185, Confusing diagnostics
+for //undefined. (interp.c [1.13], ziodev.c [1.11]: 2002/10/29 09:57:53
+ghostgum)
+	- Temporarily disable processing of DSC comments while a font is
+being loaded. Fixes SourceForge bug #605830, DSC parser shouldn't parse
+fonts. (lib/gs_fonts.ps [1.22], lib/gs_lev2.ps [1.22]: 2002/10/31 10:26:00
+ghostgum)
+	- Restore ps2ascii operation (1) use .bind instead of bind in
+operator redefinition to support GS operation in NOBIND mode. (2) increase
+the size of operator procedure tables. Bug #628820 from Ryan Pinto
+(iinit.c [1.8], lib/gs_cspace.ps [1.3], lib/gs_pdfwr.ps [1.20]: 2002/10/31
+15:53:32 alexcher)
+	- Adobe interpreters accept numbers as values of /C0 or /C1
+parameters of Type 2 function contrary to PLRM. Adobe has also published
+smooth shading examples that use this feature. So GS has to follow. Bug
+#595375. (ifunc.h [1.10], zfunc.c [1.13], zfunc3.c [1.6]: 2002/10/31
+18:34:25 alexcher)
+	- Accept any objects as Font, CIDFont, and CMap resource keys, not
+just strings or names. Ignore keys other than strings or names in
+&lt;CIDFontName&gt;- -&lt;CMapName&gt; pair construction because it is
+defined only for strings. Bug #602739 (lib/gs_cidcm.ps [1.10]: 2002/10/31
+20:37:50 alexcher)
+	- Immediate evaluation of //null. //true, //false prevents PS errors
+when these names are redefined in the user's program. Bug #539239
+(lib/gs_setpd.ps [1.17]: 2002/11/01 04:04:10 alexcher)
+	- Redefine .runstdin with one bound to EPSF 'run' operator so that
+EPS files are handled correctly from %stdin. Code for skipping DOS EPS
+header now uses the EPS encapsulating run, instead of directly calling
+.runexec. (lib/gs_epsf.ps [1.6]: 2002/11/01 23:41:18 ghostgum)
+	- Provide a meaningful error message when an immediately evaluated
+name in a procedure can not be found. Additional fix for SourceForge bug
+#543185, Confusing diagnostics for //undefined. (iscan.c [1.13],
+ziodev.c [1.12]: 2002/11/01 23:43:09 ghostgum)
+
+Corrects some typos in a comment. (zcolor.c [1.12]: 2002/10/23 22:44:31
+giles)
+
+This is a fix to handle the "slow rendering for PDF files with color space
+substitution" ("-dUseCIEColor") problem. The code for the patches is the
+same as in yesterday's message; some comments have been added, and some of
+the earlier comments made more clear (we hope). Modified Files:
+lib/gs_cspace.ps Modified the _setcolorspace procedure to ignore redundant
+settings of the current color space for PDF files, even if color space
+substitution is in effect. lib/pdf_main.ps Modified pdfshowpage_setcspacesub
+to "transition" the current color space if color space substitution is in
+effect and the current color space is a device-dependent color space.
+(lib/gs_cspace.ps [1.2]: 2002/10/24 04:13:50 dan)
+
+Bump version after the 7.31 release. (lib/gs_init.ps [1.68]: 2002/10/28
+20:11:08 giles)
+
+Changes to Windows and OS/2 files to allow ghostscript to compile with the
+graphics library and interpreter in separate source directories. Partial fix
+for SourceForge bug #542848, "library #includes interpreter headers".
+(dwmain.c [1.12]: 2002/10/29 09:44:40 ghostgum)
+
+Encapsulate EPS files to make sure that at least one page is printed. Add
+command line options -dNOEPS, -dEPSCrop and -dEPSFitPage for customizing
+handling of EPS files. Warn if EPS bounding box does not fit in clipping
+box. Enable EPS and DOS EPS processing for several platforms.
+(lib/gs_epsf.ps [1.5], lib/gs_init.ps [1.69]: 2002/10/31 09:22:13 ghostgum)
+
+Proposed log message: According to PLRM 3rd ed, p. 264 "indexed color space
+is not allowed in any shading whose color values are generated by a
+function; this applies to any shading dictionary that contains a Function
+entry." Adobe interpreters follow PLRM in this respect and we follow them.
+Bug #591768 (zshade.c [1.14]: 2002/10/31 16:19:48 alexcher)
+
+Adds UseWTS user parameter to enable WTS, rather than a compile-time #define
+USE_WTS as before. Also, WTS is now only enabled when AccurateScreens is
+selected. (zusparam.c [1.8]: 2002/11/02 07:33:48 raph)
+
+</pre><h2><a name="7.32-Streams"></a>Streams</h2><pre>
+
+Remove some interpreter references from the graphics library. Partial fix
+for SourceForge bug #542848, "library #includes interpreter headers".
+(sarc4.c [1.8]: 2002/10/29 09:22:29 ghostgum)
+
+</pre><h2><a name="7.32-Library"></a>Library</h2><pre>
+
+Fixes problems:
+	- adds a missing header to gxshade for indexed color routines.
+(gxshade.c [1.15]: 2002/10/22 13:31:37 giles)
+	- On gcc 2.95.4 for Alpha all structures are padded to 8 byte
+boundary but sizeof(bool) == 4. First member of the subclass is restored
+because it is overwritten by padding data. Bug #613909 (gximage3.c [1.11]:
+2002/10/25 00:27:10 alexcher)
+	- correct some dependencies against the include lists in the
+relevent C files. Also reorder them to facilitate easer checking next time.
+Closes SourceForge bug #607819. (gscolor2.c [1.14], gxclrast.c [1.26]:
+2002/10/28 19:17:19 giles)
+	- For Type9 fonts (CIDFontType 0 with Type 1 or Type 2 leaf fonts),
+the leaf's FontMatrix was being ignored. Catch the change of leaf font index
+in select_descendant_font, and for Type9 (ft_CID_encrypted) concatenate the
+leaf's FontMatrix in show_state_setup. Fixes SourceForge bug #576591 for
+Artifex customer #1110 [footnotes rendered too large: badcharsize.pdf]
+(gschar0.c [1.8], gsfcid.c [1.11], gxchar.c [1.17], gxfcid.h [1.13]:
+2002/10/31 08:34:51 ray)
+	- Propagate error codes from gs_distance_transform_inverse. Patch
+from Forrest Cahoon, improved. (gxstroke.c [1.7]: 2002/10/31 09:00:28 igor)
+	- Fix incorrect calculation of the clipping path around the pattern
+tile. Old code used bounding box of the tile in device coordinate system as
+a clippin path. When the tile was not aligned with device coordinates the
+box extended beyond the tile parallelogram causing incorrect rendering of a
+pattern depending on clipping path. New code draws correct clipping path by
+taking advantage of high level functions. Also gs_bbox_transform() was moved
+out of compute_inst_matrix() to improve readability. Bug #595378
+(gsptype1.c [1.13]: 2002/10/31 16:34:01 alexcher)
+	- Default allocator added to the stable allocator because it is used
+in s_zlib_alloc() when the clist is stored in memory. According to
+doc/Develop.htm: "Every allocator has an associated stable allocator, which
+tags pointers with the same VM space number but which is not subject to save
+and restore. System VM is intrinsically stable (its associated stable
+allocator is the same allocator)" Bug #530588 (gsmalloc.c [1.11]: 2002/10/31
+16:52:18 alexcher)
+
+Bump version after the 7.31 release. (gscdef.c [1.28]: 2002/10/28 20:11:08
+giles)
+
+Remove some interpreter references from the graphics library. Partial fix
+for SourceForge bug #542848, "library #includes interpreter headers".
+(gsargs.c [1.8]: 2002/10/29 09:22:29 ghostgum)
+
+Revert previous 1.13 patch since it fails on several Genoa tests including
+012-09.ps (gsptype1.c [1.14]: 2002/11/02 00:23:06 ray)
+
+Adds WTS cases for 0 and 45 degree angles, called "Screen H" in the code.
+(gswts.c [1.4], gswts.h [1.2], gxwts.c [1.5], gxwts.h [1.2]: 2002/11/02
+07:31:45 raph)
+
+Adds UseWTS user parameter to enable WTS, rather than a compile-time #define
+USE_WTS as before. Also, WTS is now only enabled when AccurateScreens is
+selected. (gsht1.c [1.13], gshtscr.c [1.11], gxht.h [1.8]: 2002/11/02
+07:33:48 raph)
+
+First commit for 7.32 release: update version numbers and dates, News.htm.
+(gscdef.c [1.29]: 2002/11/02 08:11:09 raph)
+
+</pre><h2><a name="7.32-Other"></a>Other</h2><pre>
+
+Add real 'make distclean' and 'make maintainer-clean' targets. These are no
+longer general no-ops but are the responsibility of the platform-specific
+makefiles. The autoconf build now removes its generated files from the
+top-level directory when requested. (Makefile.in [1.18]: 2002/10/24 12:57:57
+giles)
+
+Remove configure.ac only on maintainer-clean. It's more transparent to
+distribute this file as well along with configure. (Makefile.in [1.19]:
+2002/10/24 13:25:01 giles)
 
 </pre></body></html>
