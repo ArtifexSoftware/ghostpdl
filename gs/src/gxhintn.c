@@ -900,10 +900,10 @@ int t1_hinter__hint_mask(t1_hinter * this, byte *mask)
 
 		if (code < 0)
 		   return code;
-		hint_range->next = hint->range_index;
-		hint->range_index = this->hint_range_count;
 		hint_range->beg_pole = (hint->range_index == -1 ? hint->start_pole : this->pole_count);
 		hint_range->end_pole = -1;
+		hint_range->next = hint->range_index;
+		hint->range_index = this->hint_range_count;
 		this->hint_range_count++;
 	    }
 	} else { 
