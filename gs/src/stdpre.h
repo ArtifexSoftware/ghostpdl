@@ -266,7 +266,7 @@ typedef unsigned long ulong;
 # include <stdint.h>
 # define STDINT_TYPES_DEFINED
 #else
-# ifdef __WIN32__ /* MSVC currently doesn't proved C99 headers */
+# if defined(__WIN32__) /* MSVC currently doesn't provide C99 headers */
    typedef signed char             int8_t;
    typedef short int               int16_t;
    typedef int                     int32_t;
@@ -279,6 +279,14 @@ typedef unsigned long ulong;
 # endif
 # if defined(__VMS) /* OpenVMS provides these types in inttypes.h */
 #  include <inttypes.h>
+#  define STDINT_TYPES_DEFINED
+# endif
+# if defined(__CYGWIN__)
+   /* Cygwin defines the signed versions in sys/types.h */
+   typedef unsigned char           uint8_t;
+   typedef unsigned short          uint16_t;
+   typedef unsigned int            uint32_t;
+   typedef unsigned long long      uint64_t;
 #  define STDINT_TYPES_DEFINED
 # endif
    /* other archs may want to add defines here, 
