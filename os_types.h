@@ -25,6 +25,6 @@
 #include "config_win32.h"
 #endif
 
-#ifdef HAVE_STDINT_H
++#if defined(HAVE_STDINT_H) || defined(__MACOS__)
 #include <stdint.h>
 #endif
