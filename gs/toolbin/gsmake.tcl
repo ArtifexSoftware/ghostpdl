@@ -441,7 +441,7 @@ proc check_makefile {args} {
     init_files
     makefile_init MF
     foreach f $args {
-	while {[catch {set f [file readlink $f]}]} {}
+	while {![catch {set f [file readlink $f]}]} {}
 	puts "Reading makefile $f"
 	set dir [file dirname $f]
 	if {![info exists dirs($dir)]} {
@@ -467,5 +467,5 @@ init_files
 #check_makefile pcl_ugcc.mak
 #check_makefile makefile
 if {$argv == [list "check"]} {
-    check_makefile
+    eval check_makefile [lreplace $argv 0 0]
 }
