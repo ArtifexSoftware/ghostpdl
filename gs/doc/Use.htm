@@ -553,19 +553,19 @@ The PDF language, unlike the PostScript language, inherently requires
 random access to the file.
 If you provide PDF to standard input using the 
 special filename <a href="#Pipes">'<tt>-</tt>'</a>,
-ghostscript will copy it to a temporary file before interpreting the PDF. 
+Ghostscript will copy it to a temporary file before interpreting the PDF. 
 
 <h2><a name="EPS"></a>Using Ghostscript with EPS files</h2>
 <p>
-Encapsulated PostScript (EPS) files are intended to be encapsulated 
-in another PostScript document and may not display or print on their 
+Encapsulated PostScript (EPS) files are intended to be incorporated 
+in other PostScript documents and may not display or print on their 
 own.  An EPS file must conform to the Document Structuring Conventions,
-must include a <b><tt>%%BoundingBox:</tt></b> line to indicate the 
+must include a <b><tt>%%BoundingBox</tt></b> line to indicate the 
 rectangle in which it will draw, must not use PostScript commands
 which will interfere with the document importing the EPS,
 and can have either zero pages or one page.
 Ghostscript has support for handling EPS files, but requires
-that the <b><tt>%%BoundingBox:</tt></b> be in the header,
+that the <b><tt>%%BoundingBox</tt></b> be in the header,
 not the trailer.
 To customize EPS handling, see <a href="#EPS_parameters">EPS parameters</a>.
 
