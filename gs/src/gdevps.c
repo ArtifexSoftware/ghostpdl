@@ -251,7 +251,7 @@ private const char *const psw_prolog[] =
     "/p{N 2 idiv{N -2 roll rlineto}repeat}!",
     "/f{P fill}!/f*{P eofill}!/s{H stroke}!/S{P stroke}!",
     "/q/gsave #/Q/grestore #/rf{re fill}!",
-    "/Y{initclip P clip newpath}!/Y*{initclip P eoclip newpath}!/rY{re Y}!",
+    "/Y{P clip newpath}!/Y*{P eoclip newpath}!/rY{re Y}!",
 	/* <w> <h> <name> <data> <?> |= <w> <h> <data> */
     "/|={pop exch 4 1 roll 3 array astore cvx exch 1 index def exec}!",
 	/* <w> <h> <name> <length> <src> | <w> <h> <data> */
@@ -643,7 +643,7 @@ psw_beginpage(gx_device_vector * vdev)
 	}
     }
     pputs(s, "/pagesave save store 100 dict begin\n");
-    pprintg2(s, "%g %g scale\n%%%%EndPageSetup\nmark\n",
+    pprintg2(s, "%g %g scale\n%%%%EndPageSetup\nq mark\n",
 	     72.0 / vdev->HWResolution[0], 72.0 / vdev->HWResolution[1]);
     return 0;
 }
@@ -718,6 +718,16 @@ psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 
     pdev->path_state.num_points = 0;
     pdev->path_state.move = 0;
+    if (type & gx_path_type_clip) {
+	/*
+	 * This approach doesn't work for clip + fill or stroke, but that
+	 * combination can't occur.
+	 */
+	stream *s = gdev_vector_stream(vdev);
+
+	pputs(s, "Q q\n");
+	gdev_vector_reset(vdev);
+    }
     return 0;
 }
 
@@ -1113,6 +1123,8 @@ psw_fill_path(gx_device * dev, const gs_imager_state * pis,
 {
     if (gx_path_is_void(ppath))
 	return 0;
+    /* Update the clipping path now. */
+    gdev_vector_update_clip_path((gx_device_vector *)dev, pcpath);
     return gdev_vector_fill_path(dev, pis, ppath, params, pdevc, pcpath);
 }
 private int
@@ -1127,6 +1139,8 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	 gs_currentlinecap((const gs_state *)pis) != gs_cap_round)
 	)
 	return 0;
+    /* Update the clipping path now. */
+    gdev_vector_update_clip_path(vdev, pcpath);
     /* Do the right thing for oddly transformed coordinate systems.... */
     {
 	gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
@@ -1190,6 +1204,8 @@ psw_fill_mask(gx_device * dev,
     (*dev_proc(vdev->bbox_device, fill_mask))
 	((gx_device *) vdev->bbox_device, data, data_x, raster, id,
 	 x, y, w, h, pdcolor, depth, lop, pcpath);
+    /* Update the clipping path now. */
+    gdev_vector_update_clip_path(vdev, pcpath);
     return psw_image_write(pdev, ",", data, data_x, raster, id,
 			   x, y, w, h, 1);
 }
@@ -1296,6 +1312,8 @@ psw_begin_image(gx_device * dev,
 	return gx_default_begin_image(dev, pis, pim, format, prect,
 				      pdcolor, pcpath, mem, pinfo);
     }
+    /* Update the clipping path now. */
+    gdev_vector_update_clip_path(vdev, pcpath);
     /* Write the image/colorimage/imagemask preamble. */
     {
 	stream *s = gdev_vector_stream((gx_device_vector *) pdev);
