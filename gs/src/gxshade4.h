@@ -141,6 +141,7 @@ struct shading_vertex_s {
 typedef struct patch_curve_s {
     mesh_vertex_t vertex;
     gs_fixed_point control[2];
+    bool straight;
 } patch_curve_t;
 
 /* Initialize the fill state for triangle shading. */

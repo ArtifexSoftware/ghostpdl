@@ -22,6 +22,7 @@
 #include "gserrors.h"
 #include "gsmatrix.h"		/* for gscoord.h */
 #include "gscoord.h"
+#include "gsptype2.h"
 #include "gxcspace.h"
 #include "gxdcolor.h"
 #include "gxdevcli.h"
@@ -52,7 +53,7 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
     shade_init_fill_state((shading_fill_state_t *) pfs,
 			  (const gs_shading_t *)psh, dev, pis);
     pfs->pshm = psh;
-    return shade_bbox_transform2fixed(rect, pis, &pfs->rect);
+    return gx_dc_pattern2_shade_bbox_transform2fixed(rect, pis, &pfs->rect);
 }
 
 /* Initialize the recursion state for filling one triangle. */

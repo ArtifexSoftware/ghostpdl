@@ -87,7 +87,7 @@ shade_next_curve(shade_coord_stream_t * cs, patch_curve_t * curve)
  */
 private int
 shade_next_patch(shade_coord_stream_t * cs, int BitsPerFlag,
-patch_curve_t curve[4], gs_fixed_point interior[4] /* 0 for Coons patch */ )
+	patch_curve_t curve[4], gs_fixed_point interior[4] /* 0 for Coons patch */ )
 {
     int flag = shade_next_flag(cs, BitsPerFlag);
     int num_colors, code;
@@ -636,8 +636,8 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	/* vd_erase(RGB(192, 192, 192)); */
     }
 
-    shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
-		    pis);
+    curve[0].straight = curve[1].straight = curve[2].straight = curve[3].straight = false;
+    shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params, pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
 				    curve, NULL)) == 0 &&
 	   (code = patch_fill(&state, curve, NULL, Cp_transform)) >= 0
@@ -731,8 +731,8 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_origin(0, 0);
 	/* vd_erase(RGB(192, 192, 192)); */
     }
-    shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
-		    pis);
+    curve[0].straight = curve[1].straight = curve[2].straight = curve[3].straight = false;
+    shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params, pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
 				    curve, interior)) == 0) {
 	/*
@@ -2840,8 +2840,8 @@ small_mesh_triangle(patch_fill_state_t *pfs,
     return terminate_wedge_vertex_list(pfs, &l[2], &p2->c, &p0->c);
 }
 
-int
-mesh_triangle(patch_fill_state_t *pfs, 
+private int
+mesh_triangle_rec(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
     pfs->unlinear = !is_linear_color_applicable(pfs);
@@ -2875,17 +2875,54 @@ mesh_triangle(patch_fill_state_t *pfs,
 	code = fill_triangle_wedge(pfs, p2, p0, &p20);
 	if (code < 0)
 	    return code;
-	code = mesh_triangle(pfs, p0, &p01, &p20);
+	code = mesh_triangle_rec(pfs, p0, &p01, &p20);
 	if (code < 0)
 	    return code;
-	code = mesh_triangle(pfs, p1, &p12, &p01);
+	code = mesh_triangle_rec(pfs, p1, &p12, &p01);
 	if (code < 0)
 	    return code;
-	code = mesh_triangle(pfs, p2, &p20, &p12);
+	code = mesh_triangle_rec(pfs, p2, &p20, &p12);
 	if (code < 0)
 	    return code;
-	return mesh_triangle(pfs, &p01, &p12, &p20);
+	return mesh_triangle_rec(pfs, &p01, &p12, &p20);
     }
+}
+
+int
+mesh_triangle(patch_fill_state_t *pfs, 
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
+{
+#if PS2WRITE
+    if ((*dev_proc(pfs->dev, pattern_manage))(pfs->dev, 
+	    gs_no_id, NULL, pattern_manage__shading_area) > 0) {
+	/* Inform the device with the shading coverage area. 
+	   First compute the sign of the area, because
+	   all areas to be clipped in same direction. */
+	gx_device *pdev = pfs->dev;
+	gx_path path;
+	int code;
+	fixed d01x = p1->p.x - p0->p.x, d01y = p1->p.y - p0->p.y;
+	fixed d12x = p2->p.x - p1->p.x, d12y = p2->p.y - p1->p.y;
+	int64_t s1 = (int64_t)d01x * d12y - (int64_t)d01y * d12x;
+
+	gx_path_init_local(&path, pdev->memory);
+	code = gx_path_add_point(&path, p0->p.x, p0->p.y);
+	if (code >= 0 && s1 >= 0)
+	    code = gx_path_add_line(&path, p1->p.x, p1->p.y);
+	if (code >= 0)
+	    code = gx_path_add_line(&path, p2->p.x, p2->p.y);
+	if (code >= 0 && s1 < 0)
+	    code = gx_path_add_line(&path, p1->p.x, p1->p.y);
+	if (code >= 0)
+	    code = gx_path_close_subpath(&path);
+	if (code >= 0)
+	    code = (*dev_proc(pfs->dev, fill_path))(pdev, NULL, &path, NULL, NULL, NULL);
+	gx_path_free(&path, "mesh_triangle");
+	if (code < 0)
+	    return code;
+    }
+#endif
+    return mesh_triangle_rec(pfs, p0, p1, p2);
 }
 
 private inline int 
@@ -3406,7 +3443,7 @@ vector_pair_orientation(const gs_fixed_point *p0, const gs_fixed_point *p1, cons
 }
 
 private inline bool
-is_bended(const tensor_patch *p)
+is_x_bended(const tensor_patch *p)
 {   
     int sign = vector_pair_orientation(&p->pole[0][0], &p->pole[0][1], &p->pole[1][0]);
 
@@ -3442,6 +3479,47 @@ is_bended(const tensor_patch *p)
     if (neqs(&sign, -vector_pair_orientation(&p->pole[3][2], &p->pole[3][3], &p->pole[2][2])))
 	return true;
     if (neqs(&sign, vector_pair_orientation(&p->pole[3][3], &p->pole[3][2], &p->pole[2][3])))
+	return true;
+    return false;
+}
+
+private inline bool
+is_y_bended(const tensor_patch *p)
+{   
+    int sign = vector_pair_orientation(&p->pole[0][0], &p->pole[1][0], &p->pole[0][1]);
+
+    if (neqs(&sign, vector_pair_orientation(&p->pole[1][0], &p->pole[2][0], &p->pole[1][1])))
+	return true;
+    if (neqs(&sign, vector_pair_orientation(&p->pole[2][0], &p->pole[3][0], &p->pole[2][1])))
+	return true;
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[3][0], &p->pole[2][0], &p->pole[3][1])))
+	return true;
+
+    if (neqs(&sign, vector_pair_orientation(&p->pole[1][1], &p->pole[2][1], &p->pole[1][2])))
+	return true;
+    if (neqs(&sign, vector_pair_orientation(&p->pole[1][1], &p->pole[2][1], &p->pole[1][2])))
+	return true;
+    if (neqs(&sign, vector_pair_orientation(&p->pole[2][1], &p->pole[3][1], &p->pole[2][2])))
+	return true;
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[2][1], &p->pole[3][2])))
+	return true;
+
+    if (neqs(&sign, vector_pair_orientation(&p->pole[1][2], &p->pole[2][2], &p->pole[1][3])))
+	return true;
+    if (neqs(&sign, vector_pair_orientation(&p->pole[1][2], &p->pole[2][2], &p->pole[1][3])))
+	return true;
+    if (neqs(&sign, vector_pair_orientation(&p->pole[2][2], &p->pole[3][2], &p->pole[2][3])))
+	return true;
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[3][2], &p->pole[2][2], &p->pole[3][3])))
+	return true;
+
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[1][3], &p->pole[2][3], &p->pole[1][2])))
+	return true;
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[1][3], &p->pole[2][3], &p->pole[1][2])))
+	return true;
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[2][3], &p->pole[3][3], &p->pole[2][2])))
+	return true;
+    if (neqs(&sign, vector_pair_orientation(&p->pole[3][3], &p->pole[2][3], &p->pole[3][2])))
 	return true;
     return false;
 }
@@ -3524,7 +3602,7 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
 		if (code > 0)
 		    b = true;
 	    }
-	    if ((b || !is_color_span_v_big(pfs, p)) && !is_bended(p))
+	    if ((b || !is_color_span_v_big(pfs, p)) && !is_x_bended(p))
 		return fill_stripe(pfs, p);
 	}
     }
@@ -3710,21 +3788,49 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     /*if (dbg_patch_cnt != 67 && dbg_patch_cnt != 78)
 	return 0;*/
 #endif
+    /* We decompose the patch into tiny quadrangles,
+       possibly inserting wedges between them against a dropout. */
+    make_tensor_patch(pfs, &p, curve, interior);
+    pfs->unlinear = !is_linear_color_applicable(pfs);
 #if PS2WRITE
     if ((*dev_proc(pfs->dev, pattern_manage))(pfs->dev, 
 	    gs_no_id, NULL, pattern_manage__shading_area) > 0) {
-	/* Inform the device with the shading coverage area. */
+	/* Inform the device with the shading coverage area. 
+	   First compute the sign of the area, because
+	   all areas to be clipped in same direction. */
 	gx_device *pdev = pfs->dev;
 	gx_path path;
-	int i;
+	fixed d01x = (curve[1].vertex.p.x - curve[0].vertex.p.x) >> 1;
+	fixed d01y = (curve[1].vertex.p.y - curve[0].vertex.p.y) >> 1;
+	fixed d12x = (curve[2].vertex.p.x - curve[1].vertex.p.x) >> 1;
+	fixed d12y = (curve[2].vertex.p.y - curve[1].vertex.p.y) >> 1;
+	fixed d23x = (curve[3].vertex.p.x - curve[2].vertex.p.x) >> 1;
+	fixed d23y = (curve[3].vertex.p.y - curve[2].vertex.p.y) >> 1;
+	int64_t s1 = (int64_t)d01x * d12y - (int64_t)d01y * d12x;
+	int64_t s2 = (int64_t)d12x * d23y - (int64_t)d12y * d23x;
+	int s = (s1 + s2 > 0 ? 1 : 3), i, j, k, jj, l = (s == 1 ? 0 : 1);
 
+	if (is_x_bended(&p) || is_y_bended(&p)) {
+	    /* fixme: this method can't give a correct rtesult
+	       with self_overlapped patches, because in this case
+	       boundaries of the coverage area are not boundaries of the patch.
+	       A coverage boundary may be a "twist line" of the patch coverage.
+	       Will fix later with masked images. */
+	    dlprintf("A self-overlapping tensor or Coons patch can't clip correctly.\n");
+	}
 	gx_path_init_local(&path, pdev->memory);
 	code = gx_path_add_point(&path, curve[0].vertex.p.x, curve[0].vertex.p.y);
-
-	for (i = 0; i < 4 && code >= 0; i ++) 
-	    code = gx_path_add_curve(&path, curve[i].control[0].x, curve[i].control[0].y, 
-					    curve[i].control[1].x, curve[i].control[1].y,
-					    curve[(i + 1) % 4].vertex.p.x, curve[(i + 1) % 4].vertex.p.y);
+	for (i = k = 0; k < 4 && code >= 0; i = j, k++) {
+	    j = (i + s) % 4, jj = (s == 1 ? i : j);
+	    if (curve[jj].straight)
+		code = gx_path_add_line(&path, curve[j].vertex.p.x, 
+					       curve[j].vertex.p.y);
+	    else
+		code = gx_path_add_curve(&path, curve[jj].control[l].x, curve[jj].control[l].y, 
+						curve[jj].control[(l + 1) & 1].x, curve[jj].control[(l + 1) & 1].y,
+						curve[j].vertex.p.x, 
+						curve[j].vertex.p.y);
+	}
 	if (code >= 0)
 	    code = gx_path_close_subpath(&path);
 	if (code >= 0)
@@ -3734,10 +3840,6 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 	    return code;
     }
 #endif
-    /* We decompose the patch into tiny quadrangles,
-       possibly inserting wedges between them against a dropout. */
-    make_tensor_patch(pfs, &p, curve, interior);
-    pfs->unlinear = !is_linear_color_applicable(pfs);
     /* draw_patch(&p, true, RGB(0, 0, 0)); */
     kv[0] = curve_samples(pfs, &p.pole[0][0], 4, pfs->fixed_flat);
     kv[1] = curve_samples(pfs, &p.pole[0][1], 4, pfs->fixed_flat);

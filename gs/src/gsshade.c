@@ -20,6 +20,7 @@
 #include "gscspace.h"
 #include "gserrors.h"
 #include "gsstruct.h"
+#include "gsptype2.h"
 #include "gxdevcli.h"
 #include "gxcpath.h"
 #include "gxcspace.h"
@@ -471,7 +472,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 	    gs_fixed_rect bbox_fixed;
 
 	    if ((is_xxyy(pmat) || is_xyyx(pmat)) &&
-		(code = shade_bbox_transform2fixed(&psh->params.BBox, pis,
+		(code = gx_dc_pattern2_shade_bbox_transform2fixed(&psh->params.BBox, pis,
 						&bbox_fixed)) >= 0
 		) {
 		/* We can fold BBox into the clipping rectangle. */

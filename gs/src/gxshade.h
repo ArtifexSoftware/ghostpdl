@@ -201,11 +201,6 @@ void shade_init_fill_state(shading_fill_state_t * pfs,
 			   const gs_shading_t * psh, gx_device * dev,
 			   gs_imager_state * pis);
 
-/* Transform a bounding box into device space. */
-int shade_bbox_transform2fixed(const gs_rect * rect,
-			       const gs_imager_state * pis,
-			       gs_fixed_rect * rfixed);
-
 /* Fill one piece of a shading. */
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED

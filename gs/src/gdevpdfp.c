@@ -316,7 +316,9 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		 * Must be 1.2, 1.3, or 1.4.  Per Adobe documentation, substitute
 		 * the nearest achievable value.
 		 */
-		if (cl < (float)1.25)
+		if (PS2WRITE && cl < (float)1.15)
+		    cl = (float)1.1;
+		else if (cl < (float)1.25)
 		    cl = (float)1.2;
 		else if (cl >= (float)1.35)
 		    cl = (float)1.4;

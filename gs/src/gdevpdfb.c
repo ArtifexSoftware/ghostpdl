@@ -330,7 +330,7 @@ gdev_pdf_copy_mono(gx_device * dev,
 }
 
 /* Copy a color bitmap.  for_pattern = -1 means put the image in-line, */
-/* 1 means put the image in a resource. */
+/* 1 means put the image in a resource, 2 means image is a rasterized shading. */
 int
 pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 		    int raster, gx_bitmap_id id, int x, int y, int w, int h,
@@ -354,7 +354,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     pim->BitsPerComponent = 8;
     nbytes = (ulong)w * bytes_per_pixel * h;
 
-    if (for_pattern) {
+    if (for_pattern == 1) {
 	/*
 	 * Patterns must be emitted in order of increasing user Y, i.e.,
 	 * the opposite of PDF's standard image order.
@@ -391,9 +391,12 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line, 1)) < 0 ||
 	(code = pdf_color_space(pdev, &cs_value, NULL, &cs,
 				&piw->pin->color_spaces, in_line)) < 0 ||
-	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
-					    &piw->binary[0],
-					    (gs_pixel_image_t *)pim)) < 0 ||
+	(for_pattern < 2 ?
+	    (code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
+			&piw->binary[0], (gs_pixel_image_t *)pim)) :
+	    (code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+			&piw->binary[0], (gs_pixel_image_t *)pim, NULL, NULL, false))
+	) < 0 ||
 	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
 				     &cs_value, 0)) < 0
 	)

@@ -418,14 +418,28 @@ currentdict end readonly def
 
 /MakeStreamDumper % <file> MakeStreamDumper <file>
 { % Debug purpose only.
+  //PDFR_DEBUG {
+    (MakeStreamDumper beg.) =
+  } if
   currentglobal exch dup gcheck setglobal
-  [ exch
-    { //StreamDumperBuffer 
-      readstring pop
-      (StreamDumper <) print dup print (>\n) print
+  [ exch                      % f
+    1 dict dup /c 0 put exch  % d f
+    { //StreamDumperBuffer    % d f s
+      readstring pop          % d s
+      (StreamDumper ) print 1 index /c get =string cvs print ( ) print 
+      dup length =string cvs print ( <) print dup print (>\n) print
+      dup length              % d s l
+      3 2 roll                % s l d
+      dup /c get              % s l d c
+      3 2 roll                % s d c l
+      add /c exch put         % s
     } /exec load    
-  ] cvx 0 () /SubFileDecode filter
+  ] 
+  cvx 0 () /SubFileDecode filter
   exch setglobal
+  //PDFR_DEBUG {
+    (MakeStreamDumper end.) =
+  } if
 } bind def
 
 /AppendFilters  % <file> <dict> AppendFilters <file>
@@ -446,7 +460,7 @@ currentdict end readonly def
         filter
       } for
     } ifelse
-    //PDFR_DEBUG {
+    //PDFR_DEBUG //PDFR_DUMP and  {
       //MakeStreamDumper exec
     } if
   } if
@@ -2333,6 +2347,7 @@ currentdict end readonly def
   /Separation { [0 1] } def
   /CIEBasedA { [0 1] } def
   /CIEBasedABC { [0 1 0 1 0 1] } def
+  /CalRGB { [0 1 0 1 0 1] } def
 currentdict end readonly def
 
 /Substitute % <key> <dict> Substitute <key>
@@ -2350,8 +2365,11 @@ currentdict end readonly def
   } if
 } bind def
 
-/CompleteImage	% <dict> CompleteInlineImage <image_dict>
+/CompleteImage	% <dict> CompleteImage <image_dict>
 {
+  dup /ColorSpace known {
+    dup /ColorSpace //CheckColorSpace //ResolveD exec pop
+  } if
   dup /Decode known not {
     dup /ColorSpace //knownget exec { 
       dup type /arraytype eq {
@@ -2365,16 +2383,14 @@ currentdict end readonly def
   } if
   dup /ImageMatrix [2 index /Width get 0 0 5 index /Height get neg 
 					0 7 index /Height get] put % Not sure why upside down ?
-  dup /Filter known {
-    dup dup dup /DataSource get
-    exch //AppendFilters exec
-    /DataSource exch put
-  } if
   //DebugImagePrinting exec
 } bind def
 
 /CompleteInlineImage  % <dict> CompleteInlineImage <image_dict>
 {
+  //PDFR_DEBUG {
+    (CompleteInlineImage beg) =
+  } if
   dup /ImageType known not {
     dup /ImageType 1 put
   } if
@@ -2396,11 +2412,22 @@ currentdict end readonly def
     2 index 3 1 roll put
   } forall
   //CompleteImage exec
+  dup /DataSource 2 copy get                        % d d /n f
+  2 index //AppendFilters exec put
+  //PDFR_DEBUG {
+    (CompleteInlineImage end) =
+  } if
 } bind def
 
 /CompleteOutlineImage  % <dict> CompleteOutlineImage <image_dict>
 { 
+  //PDFR_DEBUG {
+    (CompleteOutlineImage beg) =
+  } if
+  % todo: ResetStreamReader if DataSource already exists.
+  dup dup //MakeStreamReader exec /DataSource exch put
   dup /ImageType known not {
+    //CompleteImage exec
     dup /ImageType 1 put
     dup /ColorSpace known {
       dup /ColorSpace //CheckColorSpace //ResolveD exec
@@ -2412,19 +2439,25 @@ currentdict end readonly def
 	pop
       } ifelse
     } if
-    //CompleteImage exec
   } if
-  dup dup //MakeStreamReader exec /DataSource exch put
-  % todo: ResetStreamReader if DataSource already exists.
+  //PDFR_DEBUG {
+    (CompleteOutlineImage end) =
+  } if
 } bind def
 
 /DoImage % <image_dict> DoImage -
 {
+  //PDFR_DEBUG {
+    (DoImage beg) =
+  } if
   gsave
   dup /ColorSpace //knownget exec { setcolorspace } if
   dup /ImageMask //knownget exec not { false } if
   { imagemask } { image } ifelse 
   grestore
+  //PDFR_DEBUG {
+    (DoImage end) =
+  } if
 } bind def
 
 % ===================== Viewer State ===============

@@ -263,4 +263,37 @@ gx_dc_pattern2_save_dc(
     psdc->colors.pattern2.id = pinst->pattern_id;
 }
 
+/* Transform a shading bounding box into device space. */
+/* This is just a bridge to an old code. */
+int
+gx_dc_pattern2_shade_bbox_transform2fixed(const gs_rect * rect, const gs_imager_state * pis,
+			   gs_fixed_rect * rfixed)
+{
+    gs_rect dev_rect;
+    int code = gs_bbox_transform(rect, &ctm_only(pis), &dev_rect);
 
+    if (code >= 0) {
+	rfixed->p.x = float2fixed(dev_rect.p.x);
+	rfixed->p.y = float2fixed(dev_rect.p.y);
+	rfixed->q.x = float2fixed(dev_rect.q.x);
+	rfixed->q.y = float2fixed(dev_rect.q.y);
+    }
+    return code;
+}
+
+/* Get a shading bbox. Returns 1 on success. */
+int
+gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox)
+{
+    gs_pattern2_instance_t *pinst =
+        (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+    int code;
+
+    if (!pinst->template.Shading->params.have_BBox)
+	return 0;
+    code = gx_dc_pattern2_shade_bbox_transform2fixed(
+		&pinst->template.Shading->params.BBox, (gs_imager_state *)pinst->saved, bbox);
+    if (code < 0)
+	return code;
+    return 1;
+}

@@ -23,6 +23,7 @@
 #include "gsmatrix.h"		/* for gscoord.h */
 #include "gscoord.h"
 #include "gspath.h"
+#include "gsptype2.h"
 #include "gxcspace.h"
 #include "gxdcolor.h"
 #include "gxfarith.h"
@@ -367,6 +368,7 @@ make_other_poles(patch_curve_t curve[4])
 	curve[i].control[0].y = (curve[i].vertex.p.y * 2 + curve[j].vertex.p.y) / 3;
 	curve[i].control[1].x = (curve[i].vertex.p.x + curve[j].vertex.p.x * 2) / 3;
 	curve[i].control[1].y = (curve[i].vertex.p.y + curve[j].vertex.p.y * 2) / 3;
+	curve[i].straight = true;
     }
 }
 
@@ -391,7 +393,7 @@ Fb_fill_region(Fb_fill_state_t * pfs, const gs_rect *rect)
 	return code;
     pfs1.maybe_self_intersecting = false;
     pfs1.n_color_args = 2;
-    code = shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
+    code = gx_dc_pattern2_shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
     if (code < 0)
 	return code;
     gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.p.y, &curve[0].vertex.p);
@@ -637,7 +639,7 @@ A_fill_region(A_fill_state_t * pfs, const gs_rect *rect)
     code = init_patch_fill_state(&pfs1);
     if (code < 0)
 	return code;
-    code = shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
+    code = gx_dc_pattern2_shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
     if (code < 0)
 	return code;
     pfs1.maybe_self_intersecting = false;
@@ -986,6 +988,7 @@ R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
 			p[j * 3 + 2].x, p[j * 3 + 2].y, &curve[jj].control[1]);
 	    if (code < 0)
 		return code;
+	    curve[j].straight = ((j & 1) != 0);
 	}
 #	if NEW_RADIAL_SHADINGS
 	    curve[(0 + inside) % 4].vertex.cc[0] = t0;
@@ -1441,7 +1444,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	code = init_patch_fill_state(&pfs1);
 	if (code < 0)
 	    return code;
-	code = shade_bbox_transform2fixed(rect, pis, &pfs1.rect);
+	code = gx_dc_pattern2_shade_bbox_transform2fixed(rect, pis, &pfs1.rect);
 	if (code < 0)
 	    return code;
 	pfs1.maybe_self_intersecting = false;

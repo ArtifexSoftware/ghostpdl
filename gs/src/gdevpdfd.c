@@ -487,7 +487,7 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
     gdev_vector_dopath((gx_device_vector *)pdev, ppath,
 			gx_path_type_fill | gx_path_type_optimize,
 			NULL);
-    stream_puts(pdev->strm, "h W n\n");
+    stream_puts(pdev->strm, "h\n");
     return 0;
 }
 
@@ -547,7 +547,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    pdf_lcvd_t cvd;
 	    gs_matrix_fixed save_ctm = pis->ctm;
 	    int sx, sy;
-	    gs_fixed_rect bbox;
+	    gs_fixed_rect bbox, bbox1;
 	    gs_imager_state *pis1 = (gs_imager_state *)pis; /* Break 'const'. */
 	    const int sourcex = 0;
 	    gs_point p;
@@ -556,12 +556,17 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    if (code < 0)
 		return code;
 	    rect_intersect(bbox, box);
-	    sx = fixed2int(box.p.x);
-	    sy = fixed2int(box.p.y);
+	    code = gx_dc_pattern2_get_bbox(pdcolor, &bbox1);
+	    if (code < 0)
+		return code;
+	    if (code)
+		rect_intersect(bbox, bbox1);
+	    sx = fixed2int(bbox.p.x);
+	    sy = fixed2int(bbox.p.y);
 	    gs_make_mem_device(&cvd.mdev, gdev_mem_device_for_bits(dev->color_info.depth),
 			pdev->memory, 0, (gx_device *)pdev);
-	    cvd.mdev.width  = fixed2int(box.q.x + fixed_half) - sx;
-	    cvd.mdev.height = fixed2int(box.q.y + fixed_half) - sy;
+	    cvd.mdev.width  = fixed2int(bbox.q.x + fixed_half) - sx;
+	    cvd.mdev.height = fixed2int(bbox.q.y + fixed_half) - sy;
 	    cvd.mdev.mapped_x = sx;
 	    cvd.mdev.mapped_y = sy;
 	    cvd.mdev.bitmap_memory = pdev->memory;
@@ -583,10 +588,10 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 		gs_image_t image;
 		pdf_image_writer writer;
 
-		pprintg2(pdev->strm, "1 0 0 1 %g %g cm\n", p.x, p.y);
+		pprintg2(pdev->strm, "W n 1 0 0 1 %g %g cm\n", p.x, p.y);
 		code = pdf_copy_color_data(pdev, cvd.mdev.base, sourcex,  
 			    cvd.mdev.raster, gx_no_bitmap_id, 0, 0, cvd.mdev.width, cvd.mdev.height,
-			    &image, &writer, 0);
+			    &image, &writer, 2);
 		if (code == 1)
 		    code = 0; /* Empty image. */
 		else if (code == 0)
