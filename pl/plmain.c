@@ -336,6 +336,9 @@ main(
 		    while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0)
 			if (pl_main_cursor_next(&r) <= 0)
 			    goto next;
+		    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
+				     inst.error_report > 0, gs_stdout);
+		    /* Print PDL status if applicable, then dnit PDL job */
 		    code = 0;
 		    new_job = true;
 		    /* go back to pjl */
