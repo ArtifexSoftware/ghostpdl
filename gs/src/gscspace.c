@@ -485,7 +485,7 @@ interpolate_cc(gs_client_color *c,
 }
 
 private inline bool
-is_dc_nearly_linear(const gx_device_color *c, 
+is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c, 
 	const gx_device_color *c0, const gx_device_color *c1, 
 	double t, int n, float smoothness)
 {
@@ -496,14 +496,16 @@ is_dc_nearly_linear(const gx_device_color *c,
 	gx_color_index pure = c->colors.pure;
 
 	for (i = 0; i < n; i++) {
-	    int b0 = pure0 & 255, b1 = pure1 & 255, b = pure & 255;
-	    int bb = (byte)(b0 * t + b1 * (1 - t));
+	    int shift = dev->color_info.comp_shift[i];
+	    int mask = (1 << dev->color_info.comp_bits[i]) - 1;
+	    int max_color = (i == dev->color_info.gray_index ? dev->color_info.max_gray 
+							     : dev->color_info.max_color);
+	    int b0 = (pure0 >> shift) & mask, b1 = (pure1 >> shift) & mask; 
+	    int b = (pure >> shift) & mask;
+	    double bb = b0 * t + b1 * (1 - t);
 
-	    if (any_abs(b - bb) > 255 * smoothness)
+	    if (any_abs(b - bb) > max_color * smoothness)
 		return false;
-	    pure0 >>= 8;
-	    pure1 >>= 8;
-	    pure >>= 8;
 	}
 	return true;
     } else {
@@ -518,7 +520,7 @@ private int
 gx_cspace_is_linear_in_triangle(gs_direct_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, const gs_client_color *c, float smoothness)
 {
-    /* We check 4 points - the median center, and medians of 3 sides. 
+    /* We check 4 points - the median center, and middle points of 3 sides. 
        Hopely this is enough for reasonable color spaces and color renderings. 
        Note it gives 7 points for a quadrangle. */
     gs_client_color c01, c12, c20, c012;
@@ -540,28 +542,28 @@ gx_cspace_is_linear_in_triangle(gs_direct_color_space *cs, const gs_imager_state
     code = cc2dc(cs, pis, dev, &d01, &c01);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(&d01, &d[0], &d[1], 0.5, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d01, &d[0], &d[1], 0.5, n, smoothness))
 	return 0;
 
     interpolate_cc(&c012, &c[2], &c01, 2.0 / 3, n);
     code = cc2dc(cs, pis, dev, &d012, &c012);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(&d012, &d[2], &d01, 2.0 / 3, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d012, &d[2], &d01, 2.0 / 3, n, smoothness))
 	return 0;
 
     interpolate_cc(&c12, &c[1], &c[2], 0.5, n);
     code = cc2dc(cs, pis, dev, &d12, &c12);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(&d12, &d[1], &d[2], 0.5, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d12, &d[1], &d[2], 0.5, n, smoothness))
 	return 0;
 
     interpolate_cc(&c20, &c[2], &c[0], 0.5, n);
     code = cc2dc(cs, pis, dev, &d20, &c20);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(&d20, &d[2], &d[0], 0.5, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d20, &d[2], &d[0], 0.5, n, smoothness))
 	return 0;
     return 1;
 }
