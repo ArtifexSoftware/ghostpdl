@@ -341,20 +341,28 @@ pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_matrix *pfmat)
  */
 int
 pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
-	       gs_id descriptor_id)
+	       const pdf_font_descriptor_t *pfd_in)
 {
     gs_memory_t *mem = pdev->v_memory;
     pdf_font_descriptor_t *pfd = 0;
+    gs_string chars_used;
     int code;
     pdf_font_t *pfres;
 
-    if (descriptor_id != gs_no_id) {
+    chars_used.data = 0;
+    if (pfd_in != 0) {
 	code = pdf_alloc_resource(pdev, resourceFontDescriptor,
-				  descriptor_id, (pdf_resource_t **)&pfd, 0L);
+				  pfd_in->rid, (pdf_resource_t **)&pfd, 0L);
 	if (code < 0)
 	    return code;
-	memset(&pfd->values, 0, sizeof(pfd->values));
-	memset(pfd->chars_used, 0, sizeof(pfd->chars_used));
+	chars_used.size = pfd_in->chars_used.size;
+	chars_used.data = gs_alloc_string(mem, chars_used.size,
+					  "pdf_alloc_font(chars_used)");
+	if (chars_used.data == 0)
+	    goto fail;
+	memset(chars_used.data, 0, chars_used.size);
+	pfd->values = pfd_in->values;
+	pfd->chars_used = chars_used;
 	pfd->subset_ok = true;
 	pfd->FontFile_id = 0;
 	pfd->base_font = 0;
@@ -363,10 +371,8 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     }
     code = pdf_alloc_resource(pdev, resourceFont, rid,
 			      (pdf_resource_t **)ppfres, 0L);
-    if (code < 0) {
-	gs_free_object(mem, pfd, "pdf_alloc_font(descriptor)");
-	return code;
-    }
+    if (code < 0)
+	goto fail;
     pfres = *ppfres;
     memset((byte *)pfres + sizeof(pdf_resource_t), 0,
 	   sizeof(*pfres) - sizeof(pdf_resource_t));
@@ -380,6 +386,12 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     pfres->char_procs = 0;
     pfres->skip = false;
     return 0;
+ fail:
+    if (chars_used.data)
+	gs_free_string(mem, chars_used.data, chars_used.size,
+		       "pdf_alloc_font(chars_used)");
+    gs_free_object(mem, pfd, "pdf_alloc_font(descriptor)");
+    return code;
 }
 
 /*

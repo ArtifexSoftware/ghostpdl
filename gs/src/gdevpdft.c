@@ -31,6 +31,7 @@
 #include "gxfont1.h"
 #include "gxfont42.h"
 #include "gxfcache.h"		/* for orig_fonts list */
+#include "gxfcid.h"
 #include "gxpath.h"		/* for getting current point */
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
@@ -414,7 +415,7 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	    have_widths = true;
 	}
 	if (pfd) {
-	    code = pdf_alloc_font(pdev, font->id, &ppf, gs_no_id);
+	    code = pdf_alloc_font(pdev, font->id, &ppf, NULL);
 	    if (code < 0)
 		return code;
 	    if_debug4('_',
@@ -425,7 +426,22 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	} else {
 	    int name_index = index;
 
-	    code = pdf_alloc_font(pdev, font->id, &ppf, base_font->id);
+	    fdesc.rid = base_font->id;
+	    switch (base_font->FontType) {
+	    case ft_CID_encrypted:
+		fdesc.chars_used.size =
+		    (((const gs_font_cid0 *)base_font)->
+		     cidata.common.CIDCount + 7) >> 3;
+		break;
+	    case ft_CID_TrueType:
+		fdesc.chars_used.size =
+		    (((const gs_font_cid2 *)base_font)->
+		     cidata.common.CIDCount + 7) >> 3;
+		break;
+	    default:
+		fdesc.chars_used.size = 256/8; /* Encoding size */
+	    }
+	    code = pdf_alloc_font(pdev, font->id, &ppf, &fdesc);
 	    if (code < 0)
 		return code;
 	    pfd = ppf->FontDescriptor;
@@ -439,7 +455,6 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		memcpy(pfd->FontName.chars, base_font->font_name.chars,
 		       base_font->font_name.size);
 		pfd->FontName.size = base_font->font_name.size;
-		pfd->values = fdesc.values;
 		pfd->FontFile_id = ffid;
 		pfd->base_font = base_font;
 		pfd->orig_matrix = *pomat;
@@ -454,6 +469,7 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 
 		memcpy(pfd->FontName.chars, fnchars, fnsize);
 		pfd->FontName.size = fnsize;
+		memset(&pfd->values, 0, sizeof(&pfd->values));
 	    }
 	    if (!is_standard) {
 		code = pdf_adjust_font_name(pdev, pfd, name_index >= 0);
@@ -487,6 +503,7 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	     * every character in the font that is ever used.
 	     * Furthermore, if there are several subsets of the same
 	     * font in a document, it appears to be random as to which
+    case ft_CID_TrueType:
 	     * one Acrobat Reader uses to decide what the FirstChar and
 	     * LastChar values are.  Therefore, we must write the Widths
 	     * array for the entire font even for subsets.
@@ -556,6 +573,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 	break;
     case ft_encrypted:
     case ft_encrypted2:
+    case ft_CID_encrypted:
 	gs_make_scaling(0.001, 0.001, &orig_matrix);
 	break;
     default:
@@ -664,7 +682,7 @@ encoding_has_glyph(gs_font_base *bfont, gs_glyph font_glyph,
 inline private void
 record_used(pdf_font_descriptor_t *pfd, int c)
 {
-    pfd->chars_used[c >> 3] |= 1 << (c & 7);
+    pfd->chars_used.data[c >> 3] |= 1 << (c & 7);
 }
 private int
 pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
@@ -701,7 +719,7 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
      */
     gs_glyph font_glyph, glyph;
 #define IS_USED(c)\
-  (((pfd)->chars_used[(c) >> 3] & (1 << ((c) & 7))) != 0)
+  (((pfd)->chars_used.data[(c) >> 3] & (1 << ((c) & 7))) != 0)
 
     if (ei == bei && ei != ENCODING_INDEX_UNKNOWN && pdiff == 0) {
 	/*
@@ -1305,7 +1323,7 @@ assign_char_code(gx_device_pdf * pdev)
     }
     if (font == 0 || font->num_chars == 256) {
 	/* Start a new synthesized font. */
-	int code = pdf_alloc_font(pdev, gs_no_id, &font, gs_no_id);
+	int code = pdf_alloc_font(pdev, gs_no_id, &font, NULL);
 	char *pc;
 
 	if (code < 0)

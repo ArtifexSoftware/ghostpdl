@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -104,7 +104,7 @@ struct pdf_font_descriptor_s {
     pdf_font_name_t FontName;
     pdf_font_descriptor_values_t values;
     gs_matrix orig_matrix;	/* unscaled font matrix */
-    byte chars_used[32];	/* 1 bit per character code */
+    gs_string chars_used;	/* 1 bit per character code or CID */
     bool subset_ok;		/* if false, don't subset the font -- */
 				/* see gdevpdft.c */
     long FontFile_id;		/* non-0 iff the font is embedded */
@@ -139,10 +139,14 @@ struct pdf_font_descriptor_s {
  * Font descriptors are pseudo-resources, so their GC descriptors
  * must be public.
  */
-#define public_st_pdf_font_descriptor()\
-  gs_public_st_suffix_add1(st_pdf_font_descriptor, pdf_font_descriptor_t,\
-    "pdf_font_descriptor_t", pdf_font_desc_enum_ptrs,\
-    pdf_font_desc_reloc_ptrs, st_pdf_resource, base_font)
+#define public_st_pdf_font_descriptor()	/* in gdevpdff.c */\
+  BASIC_PTRS(pdf_font_descriptor_ptrs) {\
+    GC_STRING_ELT(pdf_font_descriptor_t, chars_used),\
+    GC_OBJ_ELT(pdf_font_descriptor_t, base_font)\
+  };\
+  gs_public_st_basic_super(st_pdf_font_descriptor, pdf_font_descriptor_t,\
+    "pdf_font_descriptor_t", pdf_font_descriptor_ptrs,\
+    pdf_font_descriptor_data, &st_pdf_resource, 0)
 
 /* Font resources */
 typedef struct pdf_char_proc_s pdf_char_proc_t;	/* forward reference */
@@ -270,11 +274,11 @@ pdf_font_embed_t pdf_font_embed_status(P4(gx_device_pdf *pdev, gs_font *font,
 					  int *pindex, int *psame));
 
 /*
- * Allocate a font resource.  If descriptor_id is gs_no_id, no
- * FontDescriptor is allocated.
+ * Allocate a font resource.  If pfd != 0, a FontDescriptor is allocated,
+ * with its id, values, and chars_used.size taken from *pfd.
  */
 int pdf_alloc_font(P4(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
-		      gs_id descriptor_id));
+		      const pdf_font_descriptor_t *pfd));
 
 /*
  * Determine whether a font is a subset font by examining the name.
@@ -324,5 +328,23 @@ int pdf_register_font(P3(gx_device_pdf *pdev, gs_font *font, pdf_font_t *ppf));
 
 /* Write out the font resources when wrapping up the output. */
 int pdf_write_font_resources(P1(gx_device_pdf *pdev));
+
+/*
+ * Write a font descriptor.
+ * (Exported only for gdevpdfe.c.)
+ */
+int pdf_write_FontDescriptor(P2(gx_device_pdf *pdev,
+				const pdf_font_descriptor_t *pfd));
+
+
+/* ---------------- Exported by gdevpdfe.c ---------------- */
+
+/*
+ * Write the FontDescriptor and FontFile* data for an embedded font.
+ * Return a rangecheck error if the font can't be embedded.
+ * (Exported only for gdevpdfw.c.)
+ */
+int pdf_write_embedded_font(P2(gx_device_pdf *pdev,
+			       pdf_font_descriptor_t *pfd));
 
 #endif /* gdevpdff_INCLUDED */

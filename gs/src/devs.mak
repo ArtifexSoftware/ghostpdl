@@ -689,12 +689,13 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
 # includes a PostScript interpreter.
 
 pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ)
-pdfwrite2_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfm.$(OBJ)
-pdfwrite3_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ) $(GLOBJ)gdevpdfr.$(OBJ)
-pdfwrite4_=$(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
-pdfwrite5_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
-pdfwrite6_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
-pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_) $(pdfwrite5_) $(pdfwrite6_)
+pdfwrite2_=$(GLOBJ)gdevpdfe.$(OBJ) $(GLOBJ)gdevpdff.$(OBJ)
+pdfwrite3_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfm.$(OBJ)
+pdfwrite4_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ) $(GLOBJ)gdevpdfr.$(OBJ)
+pdfwrite5_=$(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
+pdfwrite6_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
+pdfwrite7_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
+pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_) $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_)
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev\
@@ -705,6 +706,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite4_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite5_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite6_)
+	$(ADDMOD) $(DD)pdfwrite $(pdfwrite7_)
 	$(ADDMOD) $(DD)pdfwrite -ps gs_pdfwr
 	$(ADDMOD) $(DD)pdfwrite -ps gs_css_e gs_lgo_e gs_lgx_e gs_mex_e
 	$(ADDMOD) $(DD)pdfwrite -ps gs_mgl_e gs_mro_e gs_wan_e
@@ -728,6 +730,14 @@ $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
  $(gx_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gdevpdfd.$(OBJ) $(C_) $(GLSRC)gdevpdfd.c
+
+$(GLOBJ)gdevpdfe.$(OBJ) : $(GLSRC)gdevpdfe.c\
+ $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdff_h) $(gdevpdfx_h) $(gdevpsf_h)\
+ $(gserrors_h) $(gsmatrix_h)\
+ $(gxfcid_h) $(gxfont_h) $(gxfont0_h)\
+ $(scommon_h)
+	$(GLCC) $(GLO_)gdevpdfe.$(OBJ) $(C_) $(GLSRC)gdevpdfe.c
 
 $(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
  $(ctype__h) $(math__h) $(memory__h) $(string__h) $(gx_h)\

@@ -58,7 +58,8 @@ overview</a>.
 <h1><a name="Version6.21"></a>Version 6.21 (2000-xx-xx)</h1>
 
 <p>
-xxxxxxx
+This fileset includes more PDF writer enhancements: conversion of embedded
+Type 1 fonts to CFF Type 2 (more compact, and also compresses better).
 
 <p>
 All problems registered on SourceForge numbered 103963 or lower are closed,
@@ -67,8 +68,10 @@ except for the following: 101549, 101814, 101829, 101905, 101955, 102046,
 
 <pre>
 
-<h2><a name="6.20_Incompatible_changes"></a>Incompatible changes</h2>
+<h2><a name="6.21_Incompatible_changes"></a>Incompatible changes</h2>
 
+(PDF writer)
+	- The last argument of pdf_alloc_font has changed.
 (Library)
 	- The internal representation of CMaps is changed completely.
 	- gs_cmap is renamed gs_cmap_t; gx_code_map is renamed
@@ -91,7 +94,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 6.20, 6 April 2000
+Ghostscript version 6.21, 9 April 2000
 
 </font>
 
