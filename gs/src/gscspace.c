@@ -123,7 +123,7 @@ gs_cspace_init_DeviceGray(const gs_memory_t *mem, gs_color_space *pcs)
     if (dev_gray_proto.id == 0)
         gs_cspace_init( &dev_gray_proto,
                         &gs_color_space_type_DeviceGray,
-                        mem, false );
+                        (gs_memory_t *)mem, false );
     *pcs = dev_gray_proto;
     return 0;
 }
@@ -146,7 +146,7 @@ gs_cspace_init_DeviceRGB(const gs_memory_t *mem, gs_color_space *pcs)
     if (dev_rgb_proto.id == 0)
         gs_cspace_init( &dev_rgb_proto,
                         &gs_color_space_type_DeviceRGB,
-                        mem, false );
+                        (gs_memory_t *)mem, false );
     *pcs = dev_rgb_proto;
     return 0;
 }
@@ -169,7 +169,7 @@ gs_cspace_init_DeviceCMYK(const gs_memory_t *mem, gs_color_space *pcs)
     if (dev_cmyk_proto.id == 0)
         gs_cspace_init( &dev_cmyk_proto,
                         &gs_color_space_type_DeviceCMYK,
-                        mem, false );
+                        (gs_memory_t *)mem, false );
     *pcs = dev_cmyk_proto;
     return 0;
 }

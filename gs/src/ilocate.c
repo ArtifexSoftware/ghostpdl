@@ -317,7 +317,7 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 	gs_ptr_type_t ptype;
 
 	if (proc != gs_no_struct_enum_ptrs)
-	    for (; (ptype = (*proc) (gcst_get_memory_ptr(gcst), 
+	    for (; (ptype = (*proc) ((const gs_memory_t *)gcst_get_memory_ptr(gcst), 
 				     pre + 1, size, index, &eptr, 
 				     pre->o_type, gcst)) != 0; ++index) {
 		if (eptr.ptr == 0)

@@ -65,7 +65,7 @@ int obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, 
  */
 #define CVP_MAX_STRING 200  /* strings are truncated here if full_print = 1 */
 int obj_cvp(const ref * op, byte *str, uint len, uint * prlen,
-	    int full_print, uint start_pos, gs_memory_t *mem);
+	    int full_print, uint start_pos, const gs_memory_t *mem);
 
 /*
  * Create a printable representation of an object, a la cvs and =.  Return 0

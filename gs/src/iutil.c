@@ -247,7 +247,7 @@ obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint
 private void ensure_dot(char *);
 int
 obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
-	int full_print, uint start_pos, gs_memory_t *mem)
+	int full_print, uint start_pos, const gs_memory_t *mem)
 {
     char buf[50];  /* big enough for any float, double, or struct name */
     const byte *data = (const byte *)buf;
@@ -402,8 +402,8 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	    }
 	    data = (const byte *)
 		gs_struct_type_name_string(
-			gs_object_type(mem,
-			       (const obj_header_t *)op->value.pstruct));
+		     gs_object_type((gs_memory_t *)mem,
+				    (const obj_header_t *)op->value.pstruct));
 	    size = strlen((const char *)data);
 	    if (size > 4 && !memcmp(data + size - 4, "type", 4))
 		size -= 4;

@@ -563,7 +563,7 @@ gx_device_TrayOrientationRotate(gx_device *dev)
      * HWResolution, HWSize, and MediaSize parameters interact, 
      * and must be set before TrayOrientation
      */
-    floatp tmp = dev->height;
+    int tmp = dev->height;
     dev->height = dev->width;
     dev->width = tmp;
   }

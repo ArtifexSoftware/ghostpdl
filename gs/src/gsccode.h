@@ -134,7 +134,8 @@ typedef enum gs_glyph_space_s {
  * currently used only for CMaps: it is *not* the same as the glyph_name
  * procedure in fonts.
  */
-typedef int (*gs_glyph_name_proc_t)(gs_glyph glyph, gs_const_string *pstr,
+typedef int (*gs_glyph_name_proc_t)(const gs_memory_t *mem, 
+				    gs_glyph glyph, gs_const_string *pstr,
 				    void *proc_data);
 
 #endif /* gsccode_INCLUDED */

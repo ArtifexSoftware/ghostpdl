@@ -251,7 +251,7 @@ dict_unpack(ref * pdref, dict_stack_t *pds)
 	    return code;
 	for (nkp = pdict->keys.value.refs; count--; okp++, nkp++)
 	    if (r_packed_is_name(okp)) {
-	        packed_get(mem, okp, nkp);
+	        packed_get((const gs_memory_t *)mem, okp, nkp);
 		ref_mark_new_in(mem, nkp);
 	    } else if (*okp == packed_key_deleted)
 		r_set_attrs(nkp, a_executable);

@@ -22,6 +22,7 @@ typedef struct name_table_s *name_table_ptr;
 
 typedef struct gs_lib_ctx_s
 {  
+    gs_memory_t *memory;  /* mem->gs_lib_ctx->memory == mem */
     FILE *fstdin;
     FILE *fstdout;
     FILE *fstderr;

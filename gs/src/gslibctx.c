@@ -58,7 +58,8 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 						"gs_lib_ctx_init");
     if( pio == 0 ) 
 	return -1;
-    
+    pio->memory = mem;
+
     gs_lib_ctx_get_real_stdio(&pio->fstdin, &pio->fstdout, &pio->fstderr );
 
     pio->fstdout2 = NULL;

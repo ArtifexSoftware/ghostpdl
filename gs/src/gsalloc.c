@@ -2112,7 +2112,9 @@ debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
 	    enum_ptr_t eptr;
 
 	    if (proc)		/* doesn't trace refs */
-		for (; (*proc)(mem, pre + 1, size, index, &eptr, pre->o_type, NULL); ++index)
+		for (; (*proc)((const gs_memory_t *)mem, pre + 1, size, index, 
+			       &eptr, pre->o_type, NULL); 
+		     ++index)
 		    if (eptr.ptr == target) {
 			dprintf1("Index %d in", index);
 			debug_print_object((const gs_memory_t *)mem, pre + 1, &control);

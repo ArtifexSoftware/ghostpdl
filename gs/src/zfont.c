@@ -454,6 +454,7 @@ void
 font_restore(const alloc_save_t * save)
 {
     gs_font_dir *pdir = ifont_dir;
+    const gs_memory_t *mem = 0;
 
     if (pdir == 0)		/* not initialized yet */
 	return;
@@ -467,6 +468,7 @@ otop:
 	for (pfont = pdir->orig_fonts; pfont != 0;
 	     pfont = pfont->next
 	    ) {
+	    mem = pfont->memory;
 	    if (alloc_is_since_save((char *)pfont, save)) {
 		gs_purge_font(pfont);
 		goto otop;

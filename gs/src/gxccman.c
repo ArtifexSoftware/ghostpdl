@@ -140,7 +140,9 @@ gx_char_cache_init(register gs_font_dir * dir)
 /* a client-supplied procedure. */
 void
 gx_purge_selected_cached_chars(gs_font_dir * dir,
-		   bool(*proc) (cached_char *, void *), void *proc_data)
+			       bool(*proc) (const gs_memory_t *mem, 
+					    cached_char *, void *), 
+			       void *proc_data)
 {
     int chi;
     int cmax = dir->ccache.table_mask;
@@ -148,7 +150,7 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
     for (chi = 0; chi <= cmax;) {
 	cached_char *cc = dir->ccache.table[chi];
 
-	if (cc != 0 && (*proc) (cc, proc_data)) {
+	if (cc != 0 && (*proc) (dir->memory, cc, proc_data)) {
 	    hash_remove_cached_char(dir, chi);
 	    gx_free_cached_char(dir, cc);
 	} else
@@ -309,12 +311,12 @@ gx_lookup_xfont(const gs_state * pgs, cached_fm_pair * pair, int encoding_index)
 /* or just characters that depend on its xfont. */
 #define cpair ((cached_fm_pair *)vpair)
 private bool
-purge_fm_pair_char(cached_char * cc, void *vpair)
+purge_fm_pair_char(const gs_memory_t *mem, cached_char * cc, void *vpair)
 {
     return cc_pair(cc) == cpair;
 }
 private bool
-purge_fm_pair_char_xfont(cached_char * cc, void *vpair)
+purge_fm_pair_char_xfont(const gs_memory_t *mem, cached_char * cc, void *vpair)
 {
     return cc_pair(cc) == cpair && cpair->xfont == 0 && !cc_has_bits(cc);
 }

@@ -114,7 +114,7 @@ typedef struct {
     gs_font *font;
 } font_cid_range_t;
 private bool
-select_cid_range(cached_char * cc, void *range_ptr)
+select_cid_range(const gs_memory_t *mem, cached_char * cc, void *range_ptr)
 {
     const font_cid_range_t *range = range_ptr;
 

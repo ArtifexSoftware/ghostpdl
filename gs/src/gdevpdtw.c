@@ -680,7 +680,7 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	if (code < 0)
 	    return code;
     }
-    code = psf_write_cmap(writer.binary.strm, pcmap,
+    code = psf_write_cmap(pdev->memory, writer.binary.strm, pcmap,
 			  pdf_put_name_chars_proc(pdev), NULL, font_index_only);
     if (code < 0)
 	return code;
