@@ -1334,5 +1334,3 @@ pattern_do_reset(
 }
 
 const pcl_init_t    pcl_pattern_init = { pattern_do_init, pattern_do_reset, 0 };
-    
-  
