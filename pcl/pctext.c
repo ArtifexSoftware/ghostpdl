@@ -820,7 +820,8 @@ pcl_text(
 	 (pcs->source_transparent) &&
 	 (!pcs->last_was_BS) &&
 	 (!pcs->end_of_line_wrap) &&
-	 (pcl_tpm_is_single_byte(pcs->text_parsing_method)) )
+	 (pcl_tpm_is_single_byte(pcs->text_parsing_method)) &&
+         (false))
 	code = pcl_show_chars_fast(pcs, &scale, str, size, literal);
     else 
 	code = pcl_show_chars_slow(pcs, &scale, str, size, literal);

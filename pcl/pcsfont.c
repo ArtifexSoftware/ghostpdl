@@ -154,7 +154,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
                                                   pcs->memory,
                                                   "pcl_font_control()");
                 if ( plfont == 0 )
-                    return_error(e_Memory);
+                    return 0;
                 code = gs_definefont(pcs->font_dir, plfont->pfont);
                 if ( code < 0 )
                     return code;
@@ -351,7 +351,7 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
             }
             /* pfh->Pitch is design unit width for scalable fonts. */
             { uint pitch_cp =
-                pl_get_uint16(pfh->Pitch) * 100 * pfont->FontMatrix.xx;
+                pl_get_uint16(pfh->Pitch) * 100 / 8782.0;
               pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
             }
             break;

@@ -338,8 +338,9 @@ install_cid_data(
     pcl_cid_data_t      cid;
     int                 code = 0;
 
-    if ((cid.len = len) < 6)
+    if ( len < 6 )
         return e_Range;
+    cid.len = len;
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
     /* check if we should substitute colometric for a device color space */
     if ( (pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&

@@ -199,8 +199,8 @@ x:	pr->ptr = p;
  */
 private const hpgl_value_t *
 hpgl_arg(hpgl_parser_state_t *pst)
-{	const byte *p = pst->source.ptr;
-	const byte *rlimit = pst->source.limit;
+{	const byte *p;
+	const byte *rlimit;
 	hpgl_value_t *pvalue;
 
 #define parg (&pst->arg)
@@ -210,6 +210,8 @@ hpgl_arg(hpgl_parser_state_t *pst)
 	  }
 	if ( pst->done )
 	  return 0;
+        p = pst->source.ptr;
+        rlimit = pst->source.limit;
 	pvalue = &parg->scanned[parg->count];
 #define check_value()\
   if ( parg->have_value ) goto done
