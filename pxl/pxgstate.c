@@ -123,7 +123,7 @@ px_paint_rc_adjust(px_paint_t *ppt, int delta, gs_memory_t *mem)
 	    cspace.type = &gs_color_space_type_Pattern;
 	    cspace.params.pattern.has_base_space = false;
 	    (*cspace.type->adjust_color_count)(&ppt->value.pattern.color,
-					       &cspace, NULL, delta);
+					       &cspace, delta);
 	    rc_adjust_only(ppt->value.pattern.pattern, delta,
 			   "px_paint_rc_adjust");
 	  }
