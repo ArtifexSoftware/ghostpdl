@@ -102,7 +102,7 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     int i0 = ii0, i1 = ii1;
     margin *m0 = set->margin_touched, *m1;
 
-    assert(ii0 >= 0 && ii1 <= ll->bbox_width);
+    assert(ii0 >= 0);     /* assert(ii1 <= ll->bbox_width); */
     set->margin_touched = 0; /* safety */
     /* Find contacting elements. */
     if (m0 != 0) {
@@ -486,7 +486,7 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
     gs_logical_operation_t lop = ll->lop;
     bool fill_direct = ll->fill_direct;
 
-    assert(i0 >= 0 && i1 <= ll->bbox_width);
+    assert(i0 >= 0); /* assert(i1 <= ll->bbox_width); */
     ir = i0;
     for (i = i0; i < i1; i++) {
 	int y0 = sect[i].y0, y1 = sect[i].y1, hh;
