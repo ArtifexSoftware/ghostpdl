@@ -38,6 +38,7 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "sstring.h"
+#include "szlibx.h"
 
 /* ---------------- Color spaces ---------------- */
 
@@ -701,6 +702,8 @@ pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
     gs_image_t_init_mask_adjust(&image, true, false);
     pdf_set_pattern_image((gs_data_image_t *)&image, &m_tile->tmask);
     if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
+	(pdev->params.MonoImage.Encode &&
+	 (code = psdf_CFE_binary(&writer.binary, w, h, true)) < 0) ||
 	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, NULL)) < 0
 	)
 	return code;
@@ -736,6 +739,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     cos_value_t v;
     long pos;
     int code = pdf_cs_Pattern_colored(pdev, &v);
+    gx_device_psdf ipdev;	/* copied device for image params */
 
     if (code < 0)
 	return code;
@@ -751,7 +755,24 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	if ((code = pdf_put_pattern_mask(pdev, m_tile, &pcs_mask)) < 0)
 	    return code;
     }
+    /*
+     * Set up a device with modified parameters for computing the image
+     * compression filters.  Don't allow downsampling or lossy compression.
+     */
+    ipdev = *(const gx_device_psdf *)pdev;
+    ipdev.params.ColorImage.AutoFilter = false;
+    ipdev.params.ColorImage.Downsample = false;
+    ipdev.params.ColorImage.Filter = "FlateEncode";
+    ipdev.params.ColorImage.filter_template = &s_zlibE_template;
+    ipdev.params.ConvertCMYKImagesToRGB = false;
+    ipdev.params.GrayImage.AutoFilter = false;
+    ipdev.params.GrayImage.Downsample = false;
+    ipdev.params.GrayImage.Filter = "FlateEncode";
+    ipdev.params.GrayImage.filter_template = &s_zlibE_template;
     if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
+	(code = psdf_setup_image_filters(&ipdev, &writer.binary,
+					 (gs_pixel_image_t *)&image,
+					 NULL, NULL)) < 0 ||
 	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, &cs_value)) < 0
 	)
 	return code;
