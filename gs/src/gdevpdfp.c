@@ -415,7 +415,6 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 	    key = "/Author";
 	else {
 	    pdf_page_dsc_info_t *ppdi;
-	    int orient;
 
 	    if (!pdev->ParseDSCComments)
 		continue;
@@ -427,15 +426,16 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 		if (pvalue->size == 1 && pvalue->data[0] >= '0' &&
 		    pvalue->data[0] <= '3'
 		    )
-		    orient = pvalue->data[0] - '0';
+		    ppdi->orientation = pvalue->data[0] - '0';
 		else
-		    orient = -1;
+		    ppdi->orientation = -1;
 	    } else if ((ppdi = &pdev->doc_dsc_info,
 			pdf_key_eq(pkey, "ViewingOrientation")) ||
 		       (ppdi = &pdev->page_dsc_info,
 			pdf_key_eq(pkey, "PageViewingOrientation"))
 		       ) {
 		gs_matrix mat;
+		int orient;
 
 		if (sscanf((const char *)pvalue->data, "[%g %g %g %g]",
 			   &mat.xx, &mat.xy, &mat.yx, &mat.yy) != 4
@@ -448,6 +448,7 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 		}
 		if (orient == 4) /* error */
 		    orient = -1;
+		ppdi->viewing_orientation = orient;
 	    } else {
 		gs_rect box;
 
@@ -473,7 +474,6 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 		ppdi->bounding_box = box;
 		continue;
 	    }
-	    ppdi->orientation = orient;
 	    continue;
 	}
 	if (pdev->ParseDSCCommentsForDocInfo)

@@ -191,8 +191,8 @@ const gx_device_pdf gs_pdfwrite_device =
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
  0 /*false*/,			/* is_EPS */
- {-1},				/* doc_dsc_info */
- {-1},				/* page_dsc_info */
+ {-1, -1},			/* doc_dsc_info */
+ {-1, -1},			/* page_dsc_info */
  0 /*false*/,			/* fill_overprint */
  0 /*false*/,			/* stroke_overprint */
  0,				/* overprint_mode */
@@ -560,6 +560,35 @@ pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
     return angles[imax];
 }
 
+/* Print a Rotate command for an orientation specified by a DSC comment. */
+private void
+pdf_print_dsc_rotate(stream *s, const gs_point *pbox, int orient)
+{
+    int ori = orient;
+
+    if (pbox->x > pbox->y) {
+	/*
+	 * The page is in landscape format.  Adjust the rotation
+	 * accordingly.
+	 */
+	ori ^= 1;
+    }
+    pprintd1(s, "/Rotate %d", ori * 90);
+}
+private bool
+pdf_print_dsc_orientation(stream *s, const gs_point *pbox,
+			  const pdf_page_dsc_info_t *ppdi)
+{
+    if (ppdi->viewing_orientation >= 0) {
+	pdf_print_dsc_rotate(s, pbox, ppdi->viewing_orientation);
+	return true;
+    } else if (ppdi->orientation >= 0) {
+	pdf_print_dsc_rotate(s, pbox, ppdi->orientation);
+	return true;
+    }
+    return false;
+}
+
 /* Close the current page. */
 private int
 pdf_close_page(gx_device_pdf * pdev)
@@ -656,10 +685,13 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
 	     round_box_coord(page->MediaBox.x),
 	     round_box_coord(page->MediaBox.y));
-    if (page->text_rotation.Rotate >= 0)
-	pprintd1(s, "/Rotate %d", page->text_rotation.Rotate);
-    else if (page->dsc_info.orientation >= 0)
-	pprintd1(s, "/Rotate %d", page->dsc_info.orientation * 90);
+    /*
+     * In decreasing priority order, check for %%PageViewingOrientation,
+     * %%PageOrientation, and AutoRotatePages == /PageByPage.
+     */
+    if (!pdf_print_dsc_orientation(s, &page->MediaBox, &page->dsc_info))
+	if (page->text_rotation.Rotate >= 0)
+	    pprintd1(s, "/Rotate %d", page->text_rotation.Rotate);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
     stream_puts(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)
@@ -776,9 +808,21 @@ pdf_close(gx_device * dev)
 	    pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
     }
     pprintd1(s, "] /Count %d\n", pdev->next_page);
-    if (pdev->params.AutoRotatePages == arp_All)
-	pprintd1(s, "/Rotate %d\n",
-		 pdf_dominant_rotation(&pdev->text_rotation));
+    /*
+     * In decreasing priority order, check for %%ViewingOrientation,
+     * %%Orientation, and AutoRotatePages == /All.  Use the MediaBox of
+     * the first page to determine the document's native portrait vs.
+     * landscape orientation.
+     */
+    {
+	const pdf_page_t *page = &pdev->pages[0];
+
+	if (!pdf_print_dsc_orientation(s, &page->MediaBox,
+				       &pdev->doc_dsc_info))
+	    if (pdev->params.AutoRotatePages == arp_All)
+		pprintd1(s, "/Rotate %d\n",
+			 pdf_dominant_rotation(&pdev->text_rotation));
+    }
     cos_dict_elements_write(pdev->Pages, pdev);
     stream_puts(s, ">>\n");
     pdf_end_obj(pdev);

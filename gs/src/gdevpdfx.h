@@ -314,6 +314,7 @@ typedef struct pdf_text_rotation_s {
  */
 typedef struct pdf_page_dsc_info_s {
     int orientation;		/* -1 .. 3 */
+    int viewing_orientation;	/* -1 .. 3 */
     gs_rect bounding_box;
 } pdf_page_dsc_info_t;
 
