@@ -322,7 +322,8 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
 #define MAX_DSC_MSG_SIZE (DSC_LINE_LENGTH + 4)	/* Allow for %% and CR/LF */
     os_ptr const opString = osp;
     os_ptr const opDict = opString - 1;
-    uint ssize, comment_code, code;
+    uint ssize;
+    int comment_code, code;
     char dsc_buffer[MAX_DSC_MSG_SIZE + 2];
     const cmdlist_t *pCmdList = DSCcmdlist;
     const char * const *pBadList = BadCmdlist;
