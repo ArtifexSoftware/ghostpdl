@@ -385,7 +385,8 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
 {
     pdf_char_proc_t *pcp;
     pdf_resource_t *pres;
-    int code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(1), &pres, false);
+    int code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(1), &pres, 
+		false, pdev->CompressFonts);
 
     if (code < 0)
        return code;
@@ -446,7 +447,7 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
  */
 int
 pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
-			    gs_id id, pdf_resource_t **ppres, bool reserve_object_id) 
+	gs_id id, pdf_resource_t **ppres, bool reserve_object_id, bool compress) 
 {
     int sbstack_ptr = pdev->sbstack_depth;
     stream *s, *save_strm = pdev->strm;
@@ -475,7 +476,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->strm = s;
     code = pdf_begin_data_stream(pdev, &writer,
 			     DATA_STREAM_NOT_BINARY | DATA_STREAM_NOLENGTH |
-			     (pdev->CompressFonts ? DATA_STREAM_COMPRESS : 0), 0);
+			     (compress ? DATA_STREAM_COMPRESS : 0), 0);
     if (code < 0) {
 	pdev->strm = save_strm;
 	return code;

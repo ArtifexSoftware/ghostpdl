@@ -1075,7 +1075,7 @@ int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font);
 
 /* Enter the substream accumulation mode. */
 int pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
-			gs_id id, pdf_resource_t **ppres, bool reserve_object_id);
+		gs_id id, pdf_resource_t **ppres, bool reserve_object_id, bool compress);
 
 /* Exit the substream accumulation mode. */
 int pdf_exit_substream(gx_device_pdf *pdev);

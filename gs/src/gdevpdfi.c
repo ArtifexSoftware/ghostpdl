@@ -890,7 +890,8 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	case pattern_manage__can_accum:
 	    return 1;
 	case pattern_manage__start_accum:
-	    code = pdf_enter_substream(pdev, resourcePattern, id, &pres, true);
+	    code = pdf_enter_substream(pdev, resourcePattern, id, &pres, true, 
+		    pdev->CompressFonts/* Have no better switch.*/);
 	    if (code < 0)
 		return code;
 	    pres->rid = id;

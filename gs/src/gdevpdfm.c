@@ -1396,7 +1396,8 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
-	code = pdf_enter_substream(pdev, resourceXObject, gs_no_id, &pres, true);
+	code = pdf_enter_substream(pdev, resourceXObject, gs_no_id, &pres, true, 
+		    pdev->CompressFonts /* Have no better switch*/);
 	if (code < 0)
 	    return code;
 	pcs = (cos_stream_t *)pres->object;

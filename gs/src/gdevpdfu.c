@@ -279,7 +279,8 @@ none_to_stream(gx_device_pdf * pdev)
     if (pdev->OrderResources) {
 	pdf_resource_t *pres;
 
-	code = pdf_enter_substream(pdev, resourcePage, gs_no_id, &pres, true);
+	code = pdf_enter_substream(pdev, resourcePage, gs_no_id, &pres, 
+		    true, pdev->CompressPages);
 	if (code < 0)
 	    return code;
 	pdev->contents_id = pres->object->id;
