@@ -20,12 +20,56 @@
 #include "string_.h"
 #include "jpeglib_.h"
 #include "jerror_.h"
-#include "jmemsys.h"		/* for prototypes */
 #include "gx.h"
 #include "gserrors.h"
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
+
+/*
+  Ghostscript uses a non-public interface to libjpeg in order to
+  override the library's default memory manager implementation.
+  Since many users will want to compile Ghostscript using the
+  shared jpeg library, we provide these prototypes so that a copy
+  of the libjpeg source distribution is not needed.
+
+  The presence of the jmemsys.h header file is detected in
+  unix-aux.mak, and written to gconfig_.h
+ */
+
+#include "gconfig_.h"
+#ifdef DONT_HAVE_JMEMSYS_H
+
+void *
+jpeg_get_small(j_common_ptr cinfo, size_t size);
+
+void
+jpeg_free_small(j_common_ptr cinfo, void *object, size_t size);
+
+void FAR *
+jpeg_get_large(j_common_ptr cinfo, size_t size);
+
+void
+jpeg_free_large(j_common_ptr cinfo, void FAR * object, size_t size);
+typedef void *backing_store_ptr;
+
+long
+jpeg_mem_available(j_common_ptr cinfo, long min_bytes_needed,
+		   long max_bytes_needed, long already_allocated);
+
+void
+jpeg_open_backing_store(j_common_ptr cinfo, backing_store_ptr info,
+			long total_bytes_needed);
+
+long
+jpeg_mem_init(j_common_ptr cinfo);
+
+void
+jpeg_mem_term(j_common_ptr cinfo);
+
+#else
+#include "jmemsys.h"		/* for prototypes */
+#endif
 
 private_st_jpeg_block();
 

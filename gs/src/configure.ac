@@ -79,66 +79,77 @@ dnl --------------------------------------------------
 AC_CHECK_LIB(m, cos)
 dnl AC_CHECK_LIB(pthread, pthread_create)
 
-dnl we need to check for the blocknum patch in the shared
-dnl libjpeg. in the meantime, always require local source
-AC_CHECK_LIB(jpeg, jpeg_set_defaults)
 AC_MSG_CHECKING([for local jpeg library source])
+dnl At present, we give the local source priority over the shared
+dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.
+dnl A more sophisticated approach would be to test the shared lib
+dnl to see whether it has already been patched.
+LIBJPEGDIR=src
 if test -d jpeg; then
 	AC_MSG_RESULT([yes])
-	JPEGDIR=jpeg
+	SHARE_LIBJPEG=0
+	LIBJPEGDIR=jpeg
 else
 	AC_MSG_RESULT([no])
-	AC_MSG_ERROR([I wasn't able to find a local copy
-  of the jpeg library source. This is required for
-  compiling ghostscript. Please download a copy,
+	AC_CHECK_LIB(jpeg, jpeg_set_defaults, [SHARE_LIBJPEG=1], [
+		AC_MSG_ERROR([I wasn't able to find a copy
+  of the jpeg library. This is required for compiling
+  ghostscript. Please download a copy of the source,
   e.g. from http://www.ijg.org/, unpack it at the
   top level of the gs source tree, and rename
   the directory to 'jpeg'.
-])
+		])
+	])
 fi
-AC_SUBST(JPEGDIR)
+AC_SUBST(SHARE_LIBJPEG)
+AC_SUBST(LIBJPEGDIR)
 
 dnl these are technically optional
+
+AC_MSG_CHECKING([for local zlib source])
 dnl zlib is needed for language level 3, and libpng
 # we must define ZLIBDIR regardless because libpng.mak does a -I$(ZLIBDIR)
 # this seems a harmless default
 ZLIBDIR=src
-AC_CHECK_LIB(z, deflate, [SHARE_ZLIB=1], [
+if test -d zlib; then
+	AC_MSG_RESULT([yes])
 	SHARE_ZLIB=0
-	AC_MSG_CHECKING([for local zlib source])
-	if test -d zlib; then
-		AC_MSG_RESULT([yes])
-		ZLIBDIR=zlib
-	else
-		AC_MSG_ERROR([I did not find a copy of libz on your system.
+	ZLIBDIR=zlib
+else
+	AC_MSG_RESULT([no])
+	AC_CHECK_LIB(z, deflate, [SHARE_ZLIB=1], [
+		AC_MSG_ERROR([I did not find a copy of zlib on your system.
 Please either install it, or unpack a copy of the source in a
-local directory named 'zlib'.
-])
-	fi
-])
+local directory named 'zlib'. See http://www.gzip.org/zlib/
+for more information.
+		])
+	])
+fi
 AC_SUBST(SHARE_ZLIB)
 AC_SUBST(ZLIBDIR)
 
 dnl png for the png output device; it also requires zlib
-PNGDIR=src
-AC_CHECK_LIB(png, png_check_sig, [
-	SHARE_LIBPNG=1
-	PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev'
-], [
+LIBPNGDIR=src
+AC_MSG_CHECKING([for local png library source])
+if test -d libpng; then
+	AC_MSG_RESULT([yes])
 	SHARE_LIBPNG=0
-	AC_MSG_CHECKING([for local png library source])
-	if test -d libpng; then
-		AC_MSG_RESULT([yes])
-		PNGDIR=libpng
+	LIBPNGDIR=libpng
+	PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev'
+else
+	AC_MSG_RESULT([no])
+	AC_CHECK_LIB(png, png_check_sig, [
+		SHARE_LIBPNG=1
 		PNGDEVS='$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)png256.dev $(DD)png16.dev'
-	else
+	], [
+		SHARE_LIBPNG=0
 		AC_MSG_RESULT([no])
 		AC_MSG_NOTICE([disabling png output devices])
 		PNGDEVS=''
 	fi
 ])
 AC_SUBST(SHARE_LIBPNG)
-AC_SUBST(PNGDIR)
+AC_SUBST(LIBPNGDIR)
 AC_SUBST(PNGDEVS)
 
 dnl look for IJS implementation
