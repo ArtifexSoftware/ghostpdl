@@ -288,6 +288,11 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    pnamed = (cos_dict_t *)ni_value.contents.object;
     }
 
+    /* An initialization for pdf_end_and_do_image :
+       We need to delay adding the "Mask" entry into a type 3 image dictionary
+       until the mask is completed due to equal image merging. */
+    pdev->image_mask_id = gs_no_id;
+
     /* Check for the image types we can handle. */
     switch (pic->type->index) {
     case 1: {
@@ -811,12 +816,12 @@ typedef enum {
     USE_AS_MASK,
     USE_AS_IMAGE,
     USE_AS_PATTERN
-} pdf_image_useage_t;
+} pdf_image_usage_t;
 
 /* Close PDF image and do it. */
 private int
 pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw, 
-		     const gs_matrix *mat, gs_id ps_bitmap_id, pdf_image_useage_t do_image)
+		     const gs_matrix *mat, gs_id ps_bitmap_id, pdf_image_usage_t do_image)
 {
     int code = pdf_end_write_image(pdev, piw);
     const pdf_resource_t *pres = piw->pres;
@@ -828,9 +833,17 @@ pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw,
 	code = 0;
 	break;
     case 0:
-	if (do_image == USE_AS_IMAGE)
+	if (do_image == USE_AS_IMAGE) {
+	    if (pdev->image_mask_id != gs_no_id) {
+		char buf[20];
+
+		sprintf(buf, "%ld 0 R", pdev->image_mask_id);
+		code = cos_dict_put_string_copy((cos_dict_t *)pres->object, "/Mask", buf);
+		if (code < 0)
+		    return code;
+	    }
 	    code = pdf_do_image(pdev, pres, mat, true);
-	else if (do_image == USE_AS_MASK) {
+	} else if (do_image == USE_AS_MASK) {
 	    /* Provide data for pdf_do_image_by_id, which will be called through 
 		use_image_as_pattern during the next call to this function. 
 		See pdf_do_image about the meaning of 'scale'. */
@@ -848,7 +861,7 @@ pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw,
 /* Clean up by releasing the buffers. */
 private int
 pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
-			 pdf_image_useage_t do_image)
+			 pdf_image_usage_t do_image)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)info->dev;
     pdf_image_enum *pie = (pdf_image_enum *)info;
@@ -1013,8 +1026,10 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	/* Don't add 'Mask" since we convert into 'imagemask' with a pattern. */
 	return 0;
     }
-    return cos_dict_put_c_key_object(cos_stream_dict(pmcs), "/Mask",
-				     pmie->writer.pres->object);
+    /* Due to equal image merging, we delay the adding of the "Mask" entry into 
+       a type 3 image dictionary until the mask is completed. 
+       Will do in pdf_end_and_do_image.*/
+    return 0;
 }
 
 /* ---------------- Type 3x images ---------------- */
