@@ -380,23 +380,15 @@ dup null eq { pop pop pop pop } {	%**** WRONG ****
 % ------ CIDFontType 2 ------ %
 
 % BuildGlyph procedure for CIDFontType 2.
-% ****** ADD THE OUTLINE STRING AS AN ARGUMENT TO .type42execchar. ******
 % The name %Type11BuildGlyph is known to the interpreter.
 (%Type11BuildGlyph) cvn {	% <cidfont> <cid> %Type11BuildGlyph -
-  .currentglobal 3 1 roll 1 index gcheck .setglobal
-  1 index begin
 		% We must be prepared for out-of-range CIDs.
-  dup GDBytes mul GDBytes string CIDMap
-  mark 4 1 roll { .stringsreadstring } .internalstopped {
+  2 copy { .type11mapcid } .internalstopped {
 		%**** 0 IS WRONG
-    cleartomark 0 GDBytes string CIDMap .stringsreadstring
-  } {
-    exch pop
-  } ifelse .cvbsi
+    pop /CharStrings get /.notdef get
+  } if
 			% Stack: cidfont cid glyphindex
   1 index exch .type42execchar
-  end
-  .setglobal
 } bind def
 
 % ---------------- Define resources ---------------- %

@@ -34,6 +34,8 @@
 #include "ifont42.h"
 #include "store.h"
 
+/* ---------------- Shared utilities ---------------- */
+
 /* Get the CIDSystemInfo of a CIDFont. */
 private int
 cid_font_system_info_param(gs_cid_system_info_t *pcidsi, const ref *prfont)
@@ -67,6 +69,8 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
 	return 0;
     }
 }
+
+/* ---------------- CIDFontType 0 (FontType 9) ---------------- */
 
 /* Get one element of a FDArray. */
 private int
@@ -178,6 +182,8 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     return define_gs_font((gs_font *)pfont);
 }
 
+/* ---------------- CIDFontType 1 (FontType 10) ---------------- */
+
 /* <string|name> <font_dict> .buildfont10 <string|name> <font> */
 private int
 zbuildfont10(i_ctx_t *i_ctx_p)
@@ -204,6 +210,8 @@ zbuildfont10(i_ctx_t *i_ctx_p)
     ((gs_font_cid1 *)pfont)->cidata.CIDSystemInfo = cidsi;
     return define_gs_font((gs_font *)pfont);
 }
+
+/* ---------------- CIDFontType 2 (FontType 11) ---------------- */
 
 /* Map a glyph CID to a TrueType glyph number using the CIDMap. */
 private int
@@ -355,6 +363,28 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     return define_gs_font((gs_font *)pfont);
 }
 
+/* <cid11font> <cid> .type11mapcid <glyph_index> */
+private int
+ztype11mapcid(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_font *pfont;
+    int code = font_param(op - 1, &pfont);
+
+    if (code < 0)
+	return code;
+    if (pfont->FontType != ft_CID_TrueType)
+	return_error(e_invalidfont);
+    check_type(*op, t_integer);
+    code = z11_CIDMap_proc((gs_font_cid2 *)pfont,
+			   (gs_glyph)(gs_min_cid_glyph + op->value.intval));
+    if (code < 0)
+	return code;
+    make_int(op - 1, code);
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfcid_op_defs[] =
@@ -362,5 +392,6 @@ const op_def zfcid_op_defs[] =
     {"2.buildfont9", zbuildfont9},
     {"2.buildfont10", zbuildfont10},
     {"2.buildfont11", zbuildfont11},
+    {"2.type11mapcid", ztype11mapcid},
     op_def_end(0)
 };
