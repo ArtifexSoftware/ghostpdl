@@ -580,13 +580,9 @@ end readonly def
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
   4 dict begin		% for setpagedevice
 	% Stack: pagedict
-	% We want to look at Rotate for displays, but not for printers.
-	% The following is a hack, but we don't know a better way to do this.
-  currentpagedevice dup /OutputFile known not {
-    /Orientation 2 index /Rotate pget not { 0 } if 90 idiv
+  currentpagedevice /Orientation 2 index /Rotate pget not { 0 } if 90 idiv
 	% Rotate specifies *clockwise* rotation!
     neg 3 and def
-  } if
 	% Stack: pagedict currentpagedict
   1 index /MediaBox pget {
 			% Set the page size.
