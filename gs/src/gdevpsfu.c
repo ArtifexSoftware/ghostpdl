@@ -330,13 +330,30 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
 	int code = psf_add_subset_pieces(subset_glyphs, &subset_size,
 					  countof(pglyphs->subset_data) - 1, 2,
 					  (gs_font *)pfont);
+	uint keep_size, i;
 
 	if (code < 0)
 	    return code;
 	/* Subset fonts require .notdef. */
 	if (notdef == gs_no_glyph)
 	    return_error(gs_error_rangecheck);
-	/* Sort the glyphs now.  Make sure .notdef is included. */
+	/* Remove undefined glyphs. */
+	for (i = 0, keep_size = 0; i < subset_size; ++i) {
+	    gs_glyph_info_t info;
+	    gs_glyph glyph = subset_glyphs[i];
+
+	    /*
+	     * The documentation for the glyph_info procedure says that
+	     * using members = 0 is an inexpensive way to find out
+	     * whether a given glyph exists, but the implementations
+	     * don't actually do this.  Request an inexpensive value.
+	     */
+	    if (pfont->procs.glyph_info((gs_font *)pfont, glyph, NULL,
+					GLYPH_INFO_NUM_PIECES, &info) >= 0)
+		subset_glyphs[keep_size++] = glyph;
+	}
+	subset_size = keep_size;
+	/* Sort the glyphs.  Make sure .notdef is included. */
 	subset_glyphs[subset_size++] = notdef;
 	subset_size = psf_sort_glyphs(subset_glyphs, subset_size);
     }
