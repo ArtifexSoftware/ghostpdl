@@ -55,9 +55,12 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version8.34"></a>Version 8.34 (CVS PRE-RELEASE)</h3>
+<h3><a name="Version8.50"></a>Version 8.50 (2004-12-10)</h3>
 
-<p><strong>This is an unreleased cvs snapshot.</strong>
+<p>This is the first release in the new stable series of Ghostscript.
+In addition to many bug fixes it contains numerous new features. Most
+obvious will be improved font handling and rasterization, and better
+support for PDF 1.4 and 1.5 documents.
 
 <p> 
 New features since the last stable release:
@@ -84,8 +87,13 @@ customizable routines for filling areas with a linearly varying color.
 functions.
 
 <li><p>
-This version contains the first release of Rinkj, an
-experimental new driver for some inkjet printers using ETS screening.
+Better support for running Ghostscript in "Job Server" mode as a daemon
+to continually accept and convert a series of independent files.
+
+<li><p>
+Also new is the Rinkj deivce, an
+experimental new driver for some inkjet printers using ETS screening
+and color profiles to achieve very high quality output for tuned output.
 See the <a href="Devices.htm#Rinkj">Rinkj</a> section for more information.
 
 <li><p>
@@ -94,15 +102,20 @@ and encryption modes.
 
 <li><p>
 We have beta support for JPEG 2000 compressed images, using the JasPer
-compression library. This is only enabled as part of the default build
-in the autoconf (POSIX) build system in this release.
+compression library. In this release this support is only enabled as in 
+the default autoconf (POSIX) and MSVC builds.
 
 </ul>
 
 <p>
-The following <a href="http://bugs.ghostscript.com/">bug</a> numbers were open at
-the time of the last release:
-<blockquote>
+This release also has major internal improvements toward thread safety, 
+although we have not yet reached this goal. Nevertheless Ghostscript  
+should be more robust when used as a library, and these changes were
+an important precursor to complete virtualization.
+
+
+<p> The following <a href="http://bugs.ghostscript.com/">bug</a> numbers
+were open at the time of the last release: <blockquote>
 405501,
 430175,
 446344,
@@ -122,7 +135,6 @@ the time of the last release:
 610478,
 614298,
 626295,
-645316,
 674418,
 677324,
 685335,
@@ -144,6 +156,7 @@ the time of the last release:
 687012,
 687013,
 687039,
+687059,
 687063,
 687084,
 687086,
@@ -154,7 +167,6 @@ the time of the last release:
 687122,
 687125,
 687146,
-687157,
 687168,
 687174,
 687193,
@@ -223,7 +235,6 @@ the time of the last release:
 687559,
 687560,
 687561,
-687575,
 687583,
 687593,
 687595,
@@ -235,7 +246,6 @@ the time of the last release:
 687628,
 687630,
 687633,
-687637,
 687642,
 687643,
 687644,
@@ -269,7 +279,6 @@ the time of the last release:
 687728,
 687729,
 687731,
-687732,
 687735,
 687738,
 687754,
@@ -286,18 +295,44 @@ the time of the last release:
 687793,
 687795,
 687796,
-687798,
-687799,
 687800,
-687801,
 687802,
 687803,
-687804,
 687805,
-687806.
+687806,
+687808,
+687809,
+687813,
+687814,
+687815,
+687816,
+687820,
+687822,
+687823,
+687825,
+687826,
+687827,
+687828,
+687830,
+687831,
+687832,
+687834,
+687835,
+687836,
+687837,
+687838,
+687840,
+687842,
+687843,
+687844,
+687845,
+687846,
+687847,
+687848,
+687849.
 </blockquote>
 
-<h3><a name="8.34_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="8.50_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
 No known incompatible changes at this point
@@ -327,7 +362,7 @@ contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <p>
-<small>Ghostscript version 8.34, 22 November 2004
+<small>Ghostscript version 8.50, 10 December 2004
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
