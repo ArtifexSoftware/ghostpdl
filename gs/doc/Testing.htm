@@ -125,11 +125,21 @@ generally the first investigative step.
 </dl>
 
 <dl>
+<dt><a href="../toolbin/tests/make_two_pdfversions"><tt>make_two_pdfversions</tt></a>
+<dd>Same as above, except for pdfwrite regressions.
+</dl>
+
+<dl>
 <dt><a href="../toolbin/tests/revert_baseline"><tt>revert_baseline</tt></a>
 <dd>This script is invoked to update the MD5 sum in the test database when a
 nightly regression is really a progression.  Generally after noticing that
 the output from make_two_versions is acceptable or better, this script is
 run to log the changes to the database.
+</dl>
+
+<dl>
+<dt><a href="../toolbin/tests/revert_pdfbaseline"><tt>revert_pdfbaseline</tt></a>
+<dd>Same as above, except for pdfwrite baselines.
 </dl>
 
 <dl>
@@ -152,6 +162,11 @@ tests get run and with what options.
 nightly test run.  It's responsible for checking the latest code out of CVS,
 building a new Ghostscript to compare with and launching the test suite via
 run_regression.
+</dl>
+
+<dl>
+<dt><a href="../toolbin/tests/update_pdfbaseline"><tt>update_pdfbaseline</tt></a>
+<dd>Same as above, except for pdfwrite baselines.
 </dl>
 
 <h4>Support files</h4>
