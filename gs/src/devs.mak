@@ -108,7 +108,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 # *	lp2563	H-P 2563B line printer
 # *	oce9050  OCE 9050 printer
 #	(pxlmono) H-P black-and-white PCL XL printers (LaserJet 5 and 6 family)
-#	(pxlcolor) H-P color PCL XL printers (none available yet)
+#	(pxlcolor) H-P color PCL XL printers (e.g. Color LaserJet 4500)
 # Fax file format:
 #   ****** NOTE: all of these drivers normally adjust the page size to match
 #   ****** one of the three CCITT standard sizes (U.S. letter with A4 width,
