@@ -352,6 +352,9 @@ gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
     else if (pfont->PaintType != 0) {
 	/* Don't oversample artificially stroked fonts. */
 	log2_scale.x = log2_scale.y = 0;
+    } else if (!gs_color_writes_pure(penum->pgs)) {
+	/* Don't oversample characters for rendering in non-pure color. */
+	log2_scale.x = log2_scale.y = 0;
     } else {
 	/* Get maximal scale according to cached bitmap size. */
 	show_set_scale(penum, &log2_scale);
@@ -405,7 +408,8 @@ gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
 /* Compute glyph raster parameters */
 private int
 compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *alpha_bits, 
-		    gs_fixed_point *subpix_origin, gs_log2_scale_point *log2_scale)
+		    int *depth,
+                    gs_fixed_point *subpix_origin, gs_log2_scale_point *log2_scale)
 {
     gs_state *pgs = penum->pgs;
     gx_device *dev = gs_currentdevice_inline(pgs);
@@ -427,6 +431,13 @@ compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *al
 	*log2_scale = penum->fapi_log2_scale;
     else
 	gx_compute_text_oversampling(penum, penum->current_font, *alpha_bits, log2_scale);
+    /*	We never oversample over the device alpha_bits,
+     * so that we don't need to scale down. Perhaps it may happen 
+     * that we underuse alpha_bits due to a big character raster,
+     * so we must compute log2_depth more accurately :
+     */
+    *depth = (log2_scale->x + log2_scale->y == 0 ?
+        1 : min(log2_scale->x + log2_scale->y, *alpha_bits));
     if (gs_currentaligntopixels(penum->current_font->dir) == 0) {
 	int scx = -1L << (_fixed_shift - log2_scale->x);
 	int scy = -1L << (_fixed_shift - log2_scale->y);
@@ -474,7 +485,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
     } {
 	const gs_font *pfont = pgs->font;
 	gs_font_dir *dir = pfont->dir;
-        int alpha_bits;
+        int alpha_bits, depth;
 	gs_log2_scale_point log2_scale;
 	gs_fixed_point subpix_origin;
         static const fixed max_cdim[3] =
@@ -521,7 +532,8 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	if (clr.y < cll.y)
 	    cll.y = clr.y, cur.y = cul.y;
 	/* Now cll and cur are the extrema of the box. */
-	code = compute_glyph_raster_params(penum, true, &alpha_bits, &subpix_origin, &log2_scale);
+	code = compute_glyph_raster_params(penum, true, &alpha_bits, &depth,
+           &subpix_origin, &log2_scale);
 	if (code < 0)
 	    return code;
 #ifdef DEBUG
@@ -562,7 +574,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 				(iwidth > MAX_TEMP_BITMAP_BITS / iheight &&
 				 log2_scale.x + log2_scale.y > alpha_bits ?
 				 penum->dev_cache2 : NULL),
-				iwidth, iheight, &log2_scale, alpha_bits);
+				iwidth, iheight, &log2_scale, depth);
 	if (cc == 0)
 	    return 0;		/* too big for cache */
 	/* The mins handle transposed coordinate systems.... */
@@ -928,15 +940,15 @@ show_proceed(gs_show_enum * penum)
 		    if (pair == 0)
 			pair = gx_lookup_fm_pair(pfont, pgs);
 		    {
-			int alpha_bits;
+			int alpha_bits, depth;
 			gs_log2_scale_point log2_scale;
 			gs_fixed_point subpix_origin;
 
-			code = compute_glyph_raster_params(penum, false, &alpha_bits, &subpix_origin, &log2_scale);
+			code = compute_glyph_raster_params(penum, false, &alpha_bits, &depth, &subpix_origin, &log2_scale);
 			if (code < 0)
 			    return code;
 			cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
-						   alpha_bits, &subpix_origin);
+						   depth, &subpix_origin);
 		    }
 		    if (cc == 0) {
 			/* Character is not in cache. */

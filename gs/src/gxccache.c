@@ -98,12 +98,11 @@ gx_lookup_fm_pair(gs_font * pfont, register const gs_state * pgs)
     return gx_add_fm_pair(dir, pfont, &uid, pgs);
 }
 
-/* Look up a glyph in the cache. */
-/* The character depth must be either 1 or alt_depth. */
+/* Look up a glyph with the right depth in the cache. */
 /* Return the cached_char or 0. */
 cached_char *
 gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
-		      gs_glyph glyph, int wmode, int alt_depth, 
+		      gs_glyph glyph, int wmode, int depth, 
 		      gs_fixed_point *subpix_origin)
 {
     gs_font_dir *dir = pfont->dir;
@@ -114,7 +113,7 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
 	if (cc->code == glyph && cc_pair(cc) == pair &&
 	    cc->subpix_origin.x == subpix_origin->x && 
 	    cc->subpix_origin.y == subpix_origin->y &&
-	    cc->wmode == wmode && (cc_depth(cc) == 1 || cc_depth(cc) == alt_depth)
+	    cc->wmode == wmode && cc_depth(cc) == depth
 	    ) {
 	    if_debug4('K', "[K]found 0x%lx (depth=%d) for glyph=0x%lx, wmode=%d\n",
 		      (ulong) cc, cc_depth(cc), (ulong) glyph, wmode);
@@ -122,8 +121,8 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
 	}
 	chi++;
     }
-    if_debug3('K', "[K]not found: glyph=0x%lx, wmode=%d, alt_depth=%d\n",
-	      (ulong) glyph, wmode, alt_depth);
+    if_debug3('K', "[K]not found: glyph=0x%lx, wmode=%d, depth=%d\n",
+	      (ulong) glyph, wmode, depth);
     return 0;
 }
 
@@ -436,7 +435,15 @@ compress_alpha_bits(const cached_char * cc, gs_memory_t * mem)
     const byte *data = cc_const_bits(cc);
     uint width = cc->width;
     uint height = cc->height;
+#   if DROPOUT_PREVENTION
+    /* With 4x2 scale, depth == 3. 
+     * An example is -dTextAlphaBits=4 comparefiles/fonttest.pdf .
+     * We need to map 4 bitmap bits to 2 alpha bits.
+     */
+    int depth = (cc_depth(cc) == 3 ? 2 : cc_depth(cc));
+#   else
     int depth = cc_depth(cc);
+#   endif
     uint sraster = cc_raster(cc);
     uint sskip = sraster - ((width * depth + 7) >> 3);
     uint draster = bitmap_raster(width);
