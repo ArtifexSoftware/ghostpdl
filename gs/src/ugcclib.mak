@@ -145,6 +145,6 @@ $(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
 	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(LIB_ONLY) -s
 	cat $(ld_tr) >>$(ldt_tr)
 	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
-	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; $(SH) <$(ldt_tr)
+	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; $(SH) <$(ldt_tr)
 
 include $(GLSRCDIR)/unix-end.mak
