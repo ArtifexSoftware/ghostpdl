@@ -112,6 +112,8 @@ typedef enum {
     pxaStreamDataLength,
 
     pxaErrorReport = 143,
+    pxaVUExtension = 145,
+    pxaVUAttr1 = 147,
 
     pxaCharAngle = 161,
     pxaCharCode,
