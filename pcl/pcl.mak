@@ -59,7 +59,10 @@ pcl.clean-not-config-clean:
 # generated files are not "cleaned".
 pcl.config-clean:
 	$(RM_) $(PCLOBJ)*.dev
-	$(RM_) *.dev
+	$(RM_) $(PCLOBJ)devs.tr5
+	make -f $(GLSRCDIR)$(D)ugcclib.mak \
+	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
+	GLOBJDIR='$(GLOBJDIR)' clean
 
 ################ Remaining task list:
 # PCL5C drawing commands
