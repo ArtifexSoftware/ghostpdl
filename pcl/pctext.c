@@ -97,7 +97,8 @@ map_symbol(
 
     /*
      * If chr is double-byte but the symbol map is only single-byte,
-     * just return chr (it is not clear this make any sense - jan).
+     * just return chr (it is not clear this make any sense - jan, I
+     * agree - henry).  
      */
     if ((chr < first_code) || (chr > last_code))
 	return ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
@@ -154,9 +155,6 @@ is_printable(
  *
  * Both the string pointer and the length are modified.
  *
- * NB: this routine MAY INSTALL A SUBSTITUTE FONT. this is the case even if
- *     the return value indicates that a character has not been found.
- *
  * The final operand is true if the text was provided via the literal
  * (transparent) text command: ESC & p <nbytes> X. This distinction is
  * important for characters that are not considered printable by the
@@ -183,14 +181,13 @@ get_next_char(
     uint *          plen,
     gs_char *       pchr,
     bool *          pis_space,
-    bool            literal
+    bool            literal,
+    gs_point *      pwidth
 )
 {
     const byte *    pb = *ppb;
     int             len = *plen;
     gs_char         chr;
-    gs_matrix       dummy_mat;
-
     if (len <= 0)
         return 2;
     chr = *pb++;
@@ -219,51 +216,21 @@ get_next_char(
         return 0;
     }
 
-    /* check if the character is in the font */
-    if (pl_font_includes_char(pcs->font, NULL, &dummy_mat, chr))
-        return 0;
-
+    /* check if the character is in the font and get the character
+       width at the same time */
+    {
+	const gs_matrix identity_matrix = { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
+	if (pl_font_char_width(pcs->font, pcs->map, &identity_matrix, chr, pwidth) == 0)
+	    return 0;
+    }
     /*
-     * The character is not in the font. For unbound fonts, a substitute font
-     * may be used.
+     * The character is not in the font.
      */
     if (pcs->map == 0) {
         *pis_space = true;
         *pchr = 0xffff;
-        return 0;
     }
-    pcl_decache_font(pcs, pcs->font_selected);
-    if (pcl_recompute_substitute_font(pcs, chr) < 0) {
-        *pis_space = true;
-        *pchr = 0xffff;
-    } else
-        set_gs_font(pcs);
     return 0;
-}
-
-/*
- * Determine the advance vector of a character. In PCL, advance vectors are
- * one-dimensional.
- */
-  private int
-char_width(
-    const pcl_state_t * pcs,
-    const char *        pbuff,
-    floatp *            pwidth
-)
-{
-    gs_show_enum *      penum = pcs->penum;
-    int                 code = gs_stringwidth_n_init(penum, pcs->pgs, pbuff, 2);
-
-    if (code >= 0)
-        code = gs_show_next(penum);
-    if (code >= 0) {
-        gs_point    ppt;
-
-        gs_show_width(penum, &ppt);
-        *pwidth = ppt.x;
-    }
-    return code;
 }
 
 /*
@@ -400,6 +367,27 @@ show_char_foreground(
 }
 
 /*
+ * get the advance width.
+ */
+ private floatp
+pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale, gs_char chr, bool is_space)
+{
+    pcl_font_selection_t *  pfp = &(pcs->font_selection[pcs->font_selected]);
+    floatp width;
+    if (chr != 0xffff) { 
+	if (!pfp->params.proportional_spacing || is_space)
+	    width = pcl_hmi(pcs);
+	else {
+	    width = advance_vector->x * pscale->x;
+	}
+    } else if (is_space)
+	width = pcl_hmi(pcs);
+    else
+	width = 0.0;
+    return width;
+}
+    
+/*
  * Show a string of characters.
  *
  * As is the case for other parts of this code, this code is made more complex
@@ -467,45 +455,27 @@ pcl_show_chars(
 {
     gs_state *              pgs = pcs->pgs;
     char                    buff[2];
-    floatp                  limit1 = pcs->margins.right;
-    floatp                  limit2 = pcs->xfm_state.pd_size.x;
+    floatp                  rmargin = pcs->margins.right;
+    floatp                  page_size = pcs->xfm_state.pd_size.x;
     bool                    opaque = !pcs->source_transparent;
     bool                    wrap = pcs->end_of_line_wrap;
     bool                    is_space = false;
-    bool                    use_limit1 = (pcs->cap.x <= limit1);
+    bool                    use_rmargin = (pcs->cap.x <= rmargin);
     gs_char                 chr;
     int                     code = 0;
     floatp                  width;
     gs_point                cpt;
-
-    /* the following are saved in case a substitute font must be used */
-    floatp                  hmi = pcl_hmi(pcs);
-    pcl_font_selection_t *  pfp = &(pcs->font_selection[pcs->font_selected]);
-    pcl_font_selection_t    saved_font = *pfp;
+    gs_point                advance_vector;
 
     cpt.x = pcs->cap.x;
     cpt.y = pcs->cap.y;
-    while (get_next_char(pcs, &str, &size, &chr, &is_space, literal) == 0) {
+    while (get_next_char(pcs, &str, &size, &chr, &is_space, literal, &advance_vector) == 0) {
         floatp  tmp_x;
 
         /* check if a character was found */
         buff[0] = (chr >> 8);
         buff[1] = (chr & 0xff);
-        width = 0;
-
-        /* advance and check for exceeding the right boundary */
-        if (chr != 0xffff) { 
-            if (!pfp->params.proportional_spacing || is_space)
-                width = hmi;
-            else {
-                if ((code = char_width(pcs, buff, &width)) < 0)
-                    break;
-                width *= pscale->x;
-            }
-        } else if (is_space)
-            width = hmi;
-        else
-            width = 0.0;
+	width = pcl_get_width(pcs, &advance_vector, pscale, chr, is_space);
 
         /*
          * Check for transitions of the left margin; this check is
@@ -526,19 +496,19 @@ pcl_show_chars(
          */
         if (!pcs->last_was_BS) {
             if (wrap) {
-                if ( (use_limit1 && (cpt.x + width > limit1)) ||
-                     (cpt.x + width > limit2)                   ) {
+                if ( (use_rmargin && (cpt.x + width > rmargin)) ||
+                     (cpt.x + width > page_size)                   ) {
 	            pcl_do_CR(pcs);
                     pcl_do_LF(pcs);
                     cpt.x = pcs->cap.x;
                     cpt.y = pcs->cap.y;
-                    use_limit1 = true;
+                    use_rmargin = true;
 		}
             } else {
-                if (use_limit1 && (cpt.x == limit1))
+                if (use_rmargin && (cpt.x == rmargin))
                     break;
-                else if (cpt.x >= limit2) {
-                    cpt.x = limit2;
+                else if (cpt.x >= page_size) {
+                    cpt.x = page_size;
                     break;
                 }
             }
@@ -578,30 +548,14 @@ pcl_show_chars(
 
         /* check for going beyond the margin if not wrapping */
         if (!wrap) {
-	    if (use_limit1 && (cpt.x > limit1)) {
-                cpt.x = limit1;
+	    if (use_rmargin && (cpt.x > rmargin)) {
+                cpt.x = rmargin;
                 break;
-            } else if (cpt.x >= limit2) {
-                cpt.x = limit2;
+            } else if (cpt.x >= page_size) {
+                cpt.x = page_size;
                 break;
 	    }
 	}
-
-        /* check if a font substitution occurred */
-        if (saved_font.font != pcs->font) {
-            pcl_decache_font(pcs, pcs->font_selected);
-            *pfp = saved_font;
-            if ((code = pcl_recompute_font(pcs)) < 0)
-                break;
-            set_gs_font(pcs);
-        }
-    }
-
-    /* check if a font substitution occurred */
-    if (saved_font.font != pcs->font) {
-        pcl_decache_font(pcs, pcs->font_selected);
-        *pfp = saved_font;
-        code = pcl_recompute_font(pcs);
     }
 
     /* record the last width */
