@@ -25,7 +25,7 @@
  * Ghostscript APIs in the following order:
  *  gsapi_new_instance(&minst);
  *  gsapi_set_display_callback(minst, callback);
- *  gsapi_init_with_arg(minst, argc, argv);
+ *  gsapi_init_with_args(minst, argc, argv);
  *
  * Supported parameters and default values are:
  * -dDisplayHandle=0                      long
