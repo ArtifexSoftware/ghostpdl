@@ -228,9 +228,11 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
 	if (map->proc == gs_identity_transfer)
 	    i = transfer_map_size;
 	else
-	    for (i = 0; i < transfer_map_size; ++i)
-		if (map->values[i] != bits2frac(i, log2_transfer_map_size))
-		    break;
+ 	    for (i = 0; i < transfer_map_size; ++i) {
+ 		fixed d = map->values[i] - bits2frac(i, log2_transfer_map_size);
+ 		if (any_abs(d) > fixed_epsilon) /* ignore small noise */
+  		    break;
+ 	    }
 	if (i == transfer_map_size) {
 	    strcpy(ids, key);
 	    strcat(ids, "/Identity");
