@@ -36,8 +36,6 @@ languagelevel 2 .setlanguagelevel
   { % We know that currentdict is the category.
     /Substitute get FindResource            % /Name <<CIDFont>>
     dup length dict copy                    % /Name <<CIDFont>>
-    dup /CIDFontName                        % /Name <<CIDFont>> <<CIDFont>> /CIDFontName
-    3 index put                             % /Name <<CIDFont>>
     1 index ResourceStatus pop exch pop     % /Name <<CIDFont>> size
   } bind def
 

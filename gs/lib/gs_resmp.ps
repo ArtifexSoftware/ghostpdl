@@ -398,7 +398,10 @@ setpacking
   % fixme : remove .forceput, replacing the array with a dictionary.
 
   MapFileName .libfile {
+    1 dict begin
+    /; {} def
     mark exch cvx exec .dicttomark           % <<map>>
+    end
     dup VerifyMap                            % <<map>>
   } {
     QUIET not {

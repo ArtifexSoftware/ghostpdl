@@ -26,7 +26,21 @@
 %
 % Examples :
 %
-%  /ArialTT     << /Path (arial.ttf) /FontType 1 /FAPI /AgfaUFST >>
-%  /CourierTT   << /Path (F:/WIN2000/Fonts/cour.ttf) /FontType 1 /FAPI /AgfaUFST >>
-%  /FCO1        << /Path (F:/AFPL/Agfa/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__G.FCO) /FontType 42 /FAPI /AgfaUFST /SubfontId 10 >>
+%  /ArialTT     << /Path (arial.ttf) /FontType 1 /FAPI /AgfaUFST >> ;
+%  /CourierTT   << /Path (F:/WIN2000/Fonts/cour.ttf) /FontType 1 /FAPI /AgfaUFST >> ;
+%  /FCO1        << /Path (F:/AFPL/Agfa/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__G.FCO) /FontType 42 /FAPI /AgfaUFST /SubfontId 10 >> ;
 %
+
+
+
+
+/ArialTT     << /Path (arial.ttf) /FontType 1 /FAPI /AgfaUFST >> ;
+/CourierTT   << /Path (F:/WIN2000/Fonts/cour.ttf) /FontType 1 /FAPI /AgfaUFST >> ;
+/CourierFT   << /Path (F:/WIN2000/Fonts/cour.ttf) /FontType 1 /FAPI /FreeType2 >> ;
+/CourierTT42 << /Path (F:/WIN2000/Fonts/cour.ttf) /FontType 42 /FAPI /AgfaUFST >> ;
+/ArtroTT42   << /Path (F:/WIN2000/Fonts/artro.ttf) /FontType 42 /FAPI /AgfaUFST >> ;
+/CourierPS   << /Path (F:/WIN2000/Fonts/COB_____.PFB) /FontType 1 /FAPI /AgfaUFST >> ;
+/HelveticaPS << /Path (Helvetica) /FontType 1 /FAPI /AgfaUFST >> ;
+
+/FCO0        << /Path (F:/AFPL/Agfa/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__G.FCO) /FontType 1  /FAPI /AgfaUFST >> ;
+/FCO1        << /Path (F:/AFPL/Agfa/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__G.FCO) /FontType 42 /FAPI /AgfaUFST /SubfontId 10 >> ;

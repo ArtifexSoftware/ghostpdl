@@ -16,10 +16,16 @@
 % copies.
 
 % $Id$
-% Define CIDDecoding resource category and related procsets.
+% Define Decoding and CIDDecoding resource categories and related procsets.
 
 languagelevel 2 .setlanguagelevel
 currentglobal true setglobal
+
+%----------------Decoding category----------------------------
+
+/Generic /Category findresource dup length dict copy
+dup /InstanceType /dicttype put
+/Decoding exch /Category defineresource pop
 
 %----------------ParseCMap_Inverse procset----------------------------
 
@@ -172,9 +178,6 @@ begin
 
 currentdict end
 /CIDDecoding exch /Category defineresource pop
-
-%----------------CIDDecoding procset----------------------------
-
 
 setglobal
 .setlanguagelevel

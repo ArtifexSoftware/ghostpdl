@@ -25,9 +25,10 @@
 /TrueType
 [ % Each entry is pair :
   % a string PlatformID.SpecificID and a name of Decoding resource.
-  (3.1) /Latin1 %/Unicode
+  (3.0) /Symbol   % Symbol
+  (3.1) /Unicode  % Unicode
   (3.2) /ShiftJIS % Japanese
-  (3.3) /GB2312   % Simplified Chinese
+  (3.3) /PRC      % Simplified Chinese, GB2312
   (3.4) /Big5     % Traditional Chinese
   (3.5) /Wansung  % Korean
   (3.6) /Johab    % Korean
@@ -36,13 +37,13 @@
 
 /PostScript
 [ % Since PostScript fonts were designed especially for PostScript,
-  % there is no need to specify additional information here.
+  (*) /Latin1 % fixme : other charsets
 ]
 
 /Intellifont
-[ % todo
+[ (*) /Latin1 % fixme : other charsets
 ]
 
 /Microtype
-[ % todo
+[ (*) /Latin1 % fixme : other charsets
 ]
