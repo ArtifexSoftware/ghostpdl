@@ -625,18 +625,20 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
     ulong new_size_rounded = obj_align_round(new_size);
     void *new_obj = NULL;
 
-    if (old_size_rounded == new_size_rounded)
-	return obj;
-    if ((byte *)obj + old_size_rounded == imem->cc.cbot &&
-	imem->cc.ctop - (byte *)obj >= new_size_rounded ) {
-	imem->cc.cbot = (byte *)obj + new_size_rounded;
+    if (old_size_rounded == new_size_rounded) {
 	pp->o_size = new_size;
 	new_obj = obj;
-    } else /* try and trim the object -- but only if room for a dummy header */
-	if (new_size_rounded + sizeof(obj_header_t) <= old_size_rounded) {
-	    trim_obj(imem, obj, new_size_rounded, (chunk_t *)0);
+    } else
+	if ((byte *)obj + old_size_rounded == imem->cc.cbot &&
+	    imem->cc.ctop - (byte *)obj >= new_size_rounded ) {
+	    imem->cc.cbot = (byte *)obj + new_size_rounded;
+	    pp->o_size = new_size;
 	    new_obj = obj;
-	}
+	} else /* try and trim the object -- but only if room for a dummy header */
+	    if (new_size_rounded + sizeof(obj_header_t) <= old_size_rounded) {
+		trim_obj(imem, obj, new_size, (chunk_t *)0);
+		new_obj = obj;
+	    }
     if (new_obj) {
 	if_debug8('A', "[a%d:%c%c ]%s %s(%lu=>%lu) 0x%lx\n",
 		  alloc_trace_space(imem),
@@ -1325,9 +1327,9 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp)
     uint excess_size = old_rounded_size - rounded_size - sizeof(obj_header_t);
 
     /* trim object's size to desired */
-    if (old_rounded_size == rounded_size)
-	return;	/* nothing to do here */
     pre_obj->o_size = size;
+    if (old_rounded_size == rounded_size)
+	return;	/* nothing more to do here */
     /*
      * If the object is alone in its chunk, move cbot to point to the end
      * of the object.
