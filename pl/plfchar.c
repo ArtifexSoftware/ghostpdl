@@ -700,8 +700,8 @@ ft_get_face(const pl_font_t *plfont, const void *pgs, uint char_code, FT_Face *p
     {
         FT_Matrix m;
         m.xx = ( 1 << 16 ) * mat.xx / hx;
-        m.xy = ( 1 << 16 ) * -mat.xy / hx;
-        m.yx = ( 1 << 16 ) * mat.yx / hy;
+        m.xy = ( 1 << 16 ) * mat.xy / hx;
+        m.yx = ( 1 << 16 ) * -mat.yx / hy;
         m.yy = ( 1 << 16 ) * -mat.yy / hy;
         FT_Set_Transform(*pface, &m, 0);
     }
