@@ -18,6 +18,7 @@ ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 SHARE_ZLIB=0
 
+
 # specify the locate of the jpeg library.
 JSRCDIR=../gs/jpeg
 JGENDIR=$(GENDIR)
@@ -97,7 +98,7 @@ CCLD=gcc
 DD='$(GLGENDIR)$(D)'
 
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
- $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
+ $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev $(DD)bitcmyk.dev\
  $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite2.dev\
  $(DD)pxlmono.dev $(DD)pxlcolor.dev\
  $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
