@@ -1201,9 +1201,12 @@ cos_stream_add_stream_contents(cos_stream_t *pcs, stream *s)
     int code = 0;
     byte sbuff[200];	/* arbitrary */
     uint cnt;
+    int status = sseek(s, 0);
 
+    if (status < 0)
+	return_error(gs_error_ioerror);
     do {
-	int status = sgets(s, sbuff, sizeof(sbuff), &cnt);
+	status = sgets(s, sbuff, sizeof(sbuff), &cnt);
 
 	if (cnt == 0) {
 	    if (status == EOFC)
