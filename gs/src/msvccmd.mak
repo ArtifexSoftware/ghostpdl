@@ -70,7 +70,7 @@ PCFBASM=
 # Make sure we get the right default target for make.
 
 dosdefault: default
-	@attrib -H dosdefault
+	@attrib -H dosdefault > nul:
 	@echo Done. > dosdefault
 	@attrib +H dosdefault
 
