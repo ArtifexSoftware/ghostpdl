@@ -385,11 +385,12 @@ download_pcl_pattern(
 {
     uint                    count = arg_data_size(pargs);
     const pcl_upattern0_t * puptrn0 = (pcl_upattern0_t *)arg_data(pargs);
-    uint                    format, depth, rsize;
+    uint                    format, depth, rsize, patsize;
     gs_depth_bitmap         pixinfo;
     int                     xres = 300, yres = 300;
     pcl_pattern_t *         pptrn = 0;
     int                     code = 0;
+    int                     i;
 
     if (count < 8)
 	return e_Range;
@@ -402,6 +403,7 @@ download_pcl_pattern(
     pixinfo.pix_depth = depth;
     pixinfo.raster = (pixinfo.size.x * depth + 7) / 8;
     rsize = pixinfo.raster * pixinfo.size.y;
+    patsize = (((pixinfo.size.y) * (pixinfo.size.x) * depth) + 7) / 8;
 
     /* check for legitimate format */
     if ((format == 0) || (format == 20)) {
@@ -419,12 +421,24 @@ download_pcl_pattern(
         return e_Memory;
 
     /* check for resolution fields; note that HP allows count < rsize + 8 */
-    if (count >= rsize + 12) {
+    /* -JJG rather than ensuring that there is at least 12 bytes of header */
+    /* data (which a proper header should contain if it has the resolution */
+    /* fields) instead determine if there are more than is necessary for   */
+    /* headers not containing resolution data.                             */
+    if (count >= patsize + 9) {
         pcl_upattern1_t *   puptrn1 = (pcl_upattern1_t *)puptrn0;
 
         xres = (((uint)puptrn1->xres[0]) << 8) + puptrn1->xres[1];
         yres = (((uint)puptrn1->yres[0]) << 8) + puptrn1->yres[1];
         memcpy(pixinfo.data, puptrn1->data, rsize);
+
+        /* -JJG If the pattern data was not sufficient to complete the full  */
+        /* length indicated by the resolution fields, pad the remainder with */
+        /* zeroes.                                                           */
+        for (i=count-12;i<rsize; i++)
+         {
+          pixinfo.data[i] = 0x00;
+         }
 
     } else {
         uint    tmp_cnt = min(count - 8, rsize);
