@@ -55,7 +55,6 @@ fi # update NEWS file condition
 
 
 perl -pi -e s/^PJLVERSION=.\*/PJLVERSION=$VERSION/ $RELEASE_DIR/pl/pl.mak
-perl -pi -e s/^PJLVERSION=.\*/PJLVERSION=$VERSION/ $RELEASE_DIR/pl/plps.mak
 
 echo ""
 echo "Committing pl.mak (y/n)"
@@ -63,7 +62,6 @@ read COMMIT
 if test $COMMIT = "y" || test $COMMIT = "Y"
 then
     cvs commit $RELEASE_DIR/pl/pl.mak
-    cvs commit $RELEASE_DIR/pl/plps.mak
 fi
 
 
