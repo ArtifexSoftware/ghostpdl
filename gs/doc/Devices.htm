@@ -31,6 +31,7 @@
 <li><a href="#fax">fax file formats</a>
 <li><a href="#BMP">BMP file format</a>
 <li><a href="#PCX">PCX file format</a>
+<li><a href="#PSD">PSD file format (DeviceN color model)</a>
 </ul>
 <li><a href="#High-level">High level formats</a>
 <ul>
@@ -53,9 +54,11 @@
 <li><a href="#SPARC_problems">Problems</a>
 </ul>
 <li><a href="#Apple">Apple dot matrix printer</a>
-<li><a href="#Test">Test devices
+<li><a href="#Test">Test devices</a>
 <ul>
 <li><a href="#Permute">Permutation (DeviceN color model)</a>
+<li><a href="#SPOT">spotcmyk (DeviceN color model)</a> 
+<li><a href="#XCF">XCF (DeviceN color model)</a>
 <li><a href="#bitraw">Raw 'bit' devices</a>
 </ul>
 </ul></blockquote>
@@ -69,9 +72,9 @@ overview</a>.  You may also be interested in <a href="Make.htm">how to
 build Ghostscript</a> and <a href="Install.htm">install it</a>, as well as
 the description of the <a href="Drivers.htm">driver interface</a>.
 
-<p>Documentation for some older, superceeded devices has been moved to
+<p>Documentation for some older, superceded devices has been moved to
 <a href="Deprecated.htm">another document</a>. In general such devices are deprecated
-and will be removed in future versions of ghostscript. In general all older printer
+and will be removed in future versions of Ghostscript. In general all older printer
 drivers can be replaced by the ijs interface and one of the available 3rd party raster
 driver collections. We recommend moving to the ijs device for all such printing.</p>
 
@@ -120,7 +123,7 @@ printing resolution in the US.</dd>
 
 <dt>Bits per pixel</dt>
 <dd>Commonly abbreviated <dfn><abbr>bpp</abbr></dfn> this is the number of 
-digital bits used to represent the color of each pixel. This is also refered
+digital bits used to represent the color of each pixel. This is also referred
 to as 'bit depth' or 'pixel depth'.</dd>
 
 </dl>
@@ -144,10 +147,10 @@ sections below.</p>
 <blockquote><dl>
 
 <dt>-sOutputFile=<em>filename</em></dt>
-<dd><p>This is a general option telling ghostscript what to name the output. 
+<dd><p>This is a general option telling Ghostscript what to name the output. 
 It can either be a single filename '<tt>tiger.png</tt>' or a template
 '<tt>figure-%03d.jpg</tt>' where the <tt>%03d</tt> is replaced by the page number.</p>
-</dt>
+
 
 <dt>-r<em>res</em></dt>
 <dt>-r<em>xres</em>x<em>yres</em></dt>
@@ -164,7 +167,7 @@ rendering. Antialiasing is enabled separately for text and graphics content.</p>
 </dl></blockquote>
 
 <p>
-It is also conventional to call ghostscript with the '<tt>-dSAFER -dBATCH -dNOPAUSE</tt>' trio
+It is also conventional to call Ghostscript with the '<tt>-dSAFER -dBATCH -dNOPAUSE</tt>' trio
 of options when rasterizing to a file. These suppress interactive prompts and enable some 
 security checks on the file to be run. Please see the <a href="Use.htm">Use documentation</a>
 for a complete description.
@@ -179,7 +182,7 @@ and is widely supported. Please see the
 <a href="http://www.libpng.org/pub/png/pngintro.html" class="offsite">PNG website</a>
 for a complete description of the format.</p>
 
-<p>Ghostscript provides a variety of devices for <acronymn>PNG</acronym> output
+<p>Ghostscript provides a variety of devices for <acronymn>PNG output
 varying by bit depth. For normal use we recommend <tt>png16m</tt> for 24-bit RGB color,
 or <tt>pnggray</tt> for grayscale. The png256, png16 and pngmono devices respectively
 provide 8-bit color, 4-bit color and black-and-white for special needs.</p>
@@ -190,7 +193,7 @@ provide 8-bit color, 4-bit color and black-and-white for special needs.</p>
 
 <h4>Examples</h4>
 
-<p>Examples of how to use ghostscript to convert postscript to PNG image files:
+<p>Examples of how to use Ghostscript to convert postscript to PNG image files:
 
 <blockquote>
 <pre>
@@ -201,7 +204,7 @@ provide 8-bit color, 4-bit color and black-and-white for special needs.</p>
       -sOutputFile=doc-%02d.png doc.pdf</kbd>
 </pre>
 </blockquote>
-</p> 
+<p></p> 
 
 <h3><a name="JFIF"></a>JPEG file format (JFIF)</h3>
 
@@ -217,7 +220,7 @@ JFIF (JPEG File Interchange Format) files, the common sort found on the web.</p>
 JPEG is a compression method specifically intended for continuous-tone
 images such as photographs, not for graphics, and it is therefore quite
 unsuitable for the vast majority of page images produced with PostScript.
-For anthing other than pages containing simple images the lossy compression
+For anything other than pages containing simple images the lossy compression
 of the jpeg format will result in poor quality output regardless of the input.
 To learn more about the distinction, consult a reference about uses and abuses of JPEG,
 such as the JPEG FAQ
@@ -284,7 +287,7 @@ utility.</p>
 <h3><a name="TIFF"></a>TIFF file formats</h3>
 
 <p><acronym>TIFF</acronym> is a loose collection of formats, now largely
-superceeded by <acronym>PNG</acronym> except in applications where backward
+superceded by <acronym>PNG</acronym> except in applications where backward
 compatibility or special compression is required. The <acronym>TIFF</acronym> 
 file format is described in the
 <a href="http://partners.adobe.com/asn/developer/pdfs/tn/TIFF6.pdf" class="offset">TIFF 6.0 Specification</a> 
@@ -396,6 +399,24 @@ It is supported by the <tt>pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk</tt>
 series of devices.
 </p>
 
+<h3><a name="PSD"></a>PSD</h3>
+
+<p>
+PSD is the image format used by Adobe Photoshop.
+It is supported by the <tt>psdcmyk</tt> and <tt>psdrgb</tt> devices.
+Of special interest with the <tt>psdcmyk</tt> device is that it supports spot
+colors.  The names of the spot colors
+must be specified prior to opening a page. This can be done via adding the
+following to the command line: <b><tt>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
+>> setpagedevice" -f</tt></b>. The <tt>psdcmyk</tt> device will support up to four
+spot colors.
+To view the results properly, a color needs to be assigned to each of
+the spot color planes within Photoshop.  (Ghostscript assigns black as
+the default color for all spot colors in the psdcmyk device.)
+
+
+
+</p>
 
 <h2><a name="High-level"></a>High-level devices</h2>
 
@@ -448,14 +469,14 @@ a graphic language understood by many recent laser printers.</p>
 
 <p>
 Ghostscript is often used for screen display of postscript and pdf documents.
-In many cases, a client or 'viewer' application calls the ghostscript engine
+In many cases, a client or 'viewer' application calls the Ghostscript engine
 to do the rasterization and handles the display of the resulting image itself,
-but it is also possible to invoke ghostscript directly and select an output
+but it is also possible to invoke Ghostscript directly and select an output
 device which directly handles displaying the image on screen.
 
 <p>
 This section describes the various display-oriented devices that are available
-in ghostscript.
+in Ghostscript.
 
 <h3><a name="x11_devices"></a>X Window System</h3>
 
@@ -477,7 +498,7 @@ invoking the x11 device with the options <tt>-dGraphicsAlphaBits=4
 -dTextAlphaBits=4 -dMaxBitmap=50000000</tt>.
 
 <dt><b>x11cmyk</b>
-<dd>This device rasterizes the image in the CMKY color space, then flattens
+<dd>This device rasterizes the image in the CMYK color space, then flattens
 it to RGB for display. It's intended for testing only.
 
 <dt><b>x11mono</b>
@@ -616,7 +637,7 @@ DEVICE_DEVS2=$(DD)ijs.dev
 </blockquote>
 
 <p> Next, make sure that the path and execution type are set in
-the toplevel makefile. The values for Unix are as follows:
+the top level makefile. The values for Unix are as follows:
 
 <blockquote>
 IJSSRCDIR=ijs
@@ -627,7 +648,7 @@ IJSEXECTYPE=unix
 IJSEXECTYPE. If neither sounds appropriate for your system, it's
 possible that more porting work is needed.
 
-<p> Last, make sure that ijs.mak is included in the toplevel makefile.
+<p> Last, make sure that ijs.mak is included in the top level makefile.
 It should be present right after the include of icclib.mak.
 
 <p> IJS is not inherently platform-specific. We're very much interested
@@ -644,7 +665,7 @@ well as Ghostscript, available from <a
 href="http://hpinkjet.sourceforge.net">http://hpinkjet.sourceforge.net</a>.
 This version of Ghostscript includes the patch from version 0.97 of
 the hpijs software. If you are installing hpijs from an RPM, you will
-only need the hpijs RPM, not the ghostscript-hpijs one, as the code
+only need the hpijs RPM, not the Ghostscript-hpijs one, as the code
 needed to work with hpijs is already included.
 
 <p>
@@ -672,7 +693,7 @@ As of the 0.97 version, hpijs supports the following printer models:
  <dd>930/932C, 950/952C, 970C, PhotoSmart 1000/1100
 <dt><b>DeskJet 990C, PhotoSmart:</b>
  <dd>960C, 980C, 990C, PhotoSmart 1215/1218
-</ul>
+
 </dl>
 
 <p>You will need to add the following line to your makefile:
@@ -689,13 +710,13 @@ especially David Suffield for making this driver available and working to
 integrate it with Ghostscript.
 </p>
 
-<h2><a name="gimp-print"></a>Gimp-Print driver collection</a></h2>
+<h2><a name="gimp-print"></a>Gimp-Print driver collection</h2>
 
 <p>
 The Gimp-Print project provides a large collection of printer drivers 
 with an IJS interface. Please see their 
 <a href="http://gimp-print.sourceforge.net/" class="offsite">website</a> 
-for details.</a>
+for details.
 </p>
 
 <hr>
@@ -910,14 +931,14 @@ currentpagedevice /UserSettings get     % get the additional options..
 us /DocumentName get ==     % displays the document name
 us /SelectedRange get ==    % displays the selected page range
 
-% other misc. informations (don't rely on them)
+% other misc. information (don't rely on them)
 
 us /Color get ==            % 1 => monochrome output, 2 => color output
 us /PrintCopies get ==      % displays the number of copies requested
 </pre></blockquote>
 
 <p>
-There are a few undocumented informations stored in the <tt><b>UserSettings</b></tt>
+There are a few undocumented parameters stored in the <tt><b>UserSettings</b></tt>
 dictionary. You should not rely on them. Their use is still experimental and
 they could be removed in a future version.
 </p>
@@ -927,7 +948,7 @@ they could be removed in a future version.
 <p>
 If the Windows printer supports the duplex printing feature, then it will
 also be available through the <b><tt>mswinpr2</tt></b> device. You can query
-for this support through the <b><tt>/Duplex</tt></b> propery of the
+for this support through the <b><tt>/Duplex</tt></b> property of the
 <b><tt>currentpagedevice</tt></b>. If it returns <b><tt>null</tt></b>, then
 the feature is not supported by the selected printer. Otherwise, <b><tt>true</tt></b>
 means that the printer is currently set up to print on both faces of the paper
@@ -1089,7 +1110,7 @@ It prints the output in a format like this:
 <pre><b><tt>%%BoundingBox: 14 37 570 719
 %%HiResBoundingBox: 14.308066 37.547999 569.495061 718.319158
 </tt></b></pre></blockquote>
-</p>
+<p></p>
 
 <p>
 Currently, it always prints the bounding box on <b><tt>stderr</tt></b>;
@@ -1139,7 +1160,106 @@ important to permute the planes of the default halftone accordingly, and
 that any file which sets halftones explicitly will fail a consistency
 check.
 
+<h3><a name="SPOT"></a>spotcmyk (DeviceN color model)</h3>
 
+<p>
+The <tt>spotcmyk</tt> device was created for debugging and testing of the DeviceN
+extensions to Ghostscript that were released in version 8.0.
+There are also two other devices (<tt>spotrgb</tt> and <tt>devicen</tt>) in the same
+source file.  These were created for testing however they are not actually useful
+except as example code.
+
+<p>The <tt>spotcmyk</tt> device was also designed to provide example code for a
+device which supports spot colors.
+Spot colors need to be specified prior to opening the
+first page.
+This can be done via adding the
+following to the command line: <b><tt>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
+>> setpagedevice" -f</tt></b>.
+
+<p>
+The <tt>spotcmyk</tt> device produces a binary data file (similar to the bitcmyk
+device) for the CMYK data.  This data file has the name specified by the "OutputFile"
+parameter.
+The device also produces a binary data file (similar to the bitmono device)
+for each spot color plane.
+These data files have the name specified by the "OutputFile"
+parameter with "sn" appended to the end (where "n" is the spot color number 0 to 12)".
+
+<p>
+After the <tt>spotcmyk</tt> device produces the binary data files, the files are read
+and PCX format versions of these files are created with ".pcx" appended to the binary
+source file name.
+
+<p> If the the <tt>spotcmyk</tt> is being used with three spot colors and the 
+"OutputFile" parameter is <tt>xxx</tt> then the following files would be created 
+by the device:
+
+<blockquote>
+<pre>xxx - binary CMYK data
+xxxs0 - binary data for first spot color
+xxxs1 - binary data for second spot color
+xxxs2 - binary data for third spot color
+xxx.pcx - CMYK data in PCX format
+xxxs0.pcx - first spot color in PCX format
+xxxs1.pcx - second spot color in PCX format
+xxxs2.pcx - third spot color in PCX format
+</pre>
+</blockquote>
+
+<p>
+The <tt>spotcmyk</tt> device has the creation of the binary data files separated
+from the creation of the PCX files since the source file is intended as example
+code and many people may not be interested in the PCX format. The PCX format was
+chosen because it was simple to implement from preexisting code and viewers are
+available.  The PCX format does have the disadvantage that most of those viewers
+are on Windows.
+
+
+<h3><a name="XCF"></a>XCF (DeviceN color model)</h3>
+
+<p>
+The XCF file format is the native image format for the GIMP program. This format
+is currently supported by two devices: <tt> xcfrgb</tt> and <tt>xcfcmyk</tt>.
+
+<blockquote><em>
+We have been warned by the people supporting the GIMP program that they reserve
+the right to change the
+XCF format at anytime and thus these devices may become invalid. They are being
+included in the documentation because we have received some questions about
+these devices do.
+</em></blockquote>
+
+<p>
+The XCF devices were created for testing of the DeviceN extensions to Ghostscript
+which were released in version 8.0.
+
+<p>
+The <tt>xcfrgb</tt> device uses a DeviceRGB process color model and creates
+a normal XCF file.
+
+<p>
+The <tt>xcfcmyk</tt> device was created as a means of viewing spot colors for
+those users that do not have access to either Photoshop <a href=PSD">(see the PSD
+devices)</a> or a PCX viewer <a href=SPOT">(see the <tt>spotcmyk</tt> device)</a>.
+
+<p>
+The <tt>xcfcmyk</tt> device starts by using a DeviceCMYK process color model. The
+DeviceCMYK process color model allows the <tt>xcfcmyk</tt> device to also
+support spot colors. Spot colors need to be specified prior to opening the
+first page.
+This can be done via adding the
+following to the command line: <b><tt>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
+>> setpagedevice" -f</tt></b>.
+
+<p>
+After a page is complete, the <tt>xcfcmyk</tt> converts the CMYK image data into
+RGB for storing in the XCF output file.  The XCF format does not currently
+support CMYK data directly. The spot color planes are converted into alpha
+channel planes. This is done because the XCF format does not currently support
+spot colors.
+
+</p>
 
 <!-- [2.0 end contents] ==================================================== -->
 
@@ -1169,6 +1289,6 @@ San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
-</body>
+</small></body>
 </html>
 
