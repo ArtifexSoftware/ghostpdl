@@ -434,7 +434,6 @@ CC=$(COMPDIR)\$(COMP) $(CCFLAGS0)
 CC_=$(CC)
 CC_D=$(CC) $(CO)
 CC_INT=$(CC)
-CC_LEAF=$(CC_)
 CC_NO_WARN=$(CC_)
 
 # ------ Devices and features ------ #

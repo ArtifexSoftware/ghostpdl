@@ -435,7 +435,6 @@ CONFLDTR=-o
 
 CC_=$(COMP)
 CC_INT=$(CC_)
-CC_LEAF=$(CC_)
 CC_NO_WARN=$(CC_)
 
 # ------------------- Include the generic makefiles ---------------------- #

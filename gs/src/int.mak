@@ -31,7 +31,6 @@ PSO_=$(O_)$(PSOBJ)
 PSI_=$(PSSRCDIR) $(II)$(PSGENDIR) $(II)$(GLI_)
 PSF_=
 PSCC=$(CC_) $(I_)$(PSI_)$(_I) $(PSF_)
-PSCCLEAF=$(CC_LEAF) $(I_)$(PSI_)$(_I) $(PSF_)
 PSJBIG2CC=$(CC_) $(I_)$(PSI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(PSF_)
 # All top-level makefiles define PSD.
 #PSD=$(PSGEN)

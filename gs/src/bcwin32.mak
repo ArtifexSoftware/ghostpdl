@@ -470,7 +470,6 @@ CC_WX=$(CC) $(WX)
 CC_=$(CC_WX) $(CO)
 CC_D=$(CC_WX)
 CC_INT=$(CC_WX)
-CC_LEAF=$(CC_)
 CC_NO_WARN=$(CC_)
 
 # No additional flags are needed for Windows compilation.

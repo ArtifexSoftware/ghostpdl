@@ -174,10 +174,6 @@
 #		normally the same as CC_: this is needed because the
 #		Borland compiler generates *worse* code for this module
 #		(but only this module) when optimization (-O) is turned on.
-#	CCLEAF - the C invocation for compiling modules that contain only
-#		leaf procedures, which don't need to build stack frames.
-#		This is needed only because many compilers aren't able to
-#		recognize leaf procedures on their own.
 #	AK - if a particular platform requires any programs or data files
 #		to be built before compiling the source code, AK must list
 #		them.

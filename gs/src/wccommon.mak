@@ -227,5 +227,4 @@ CCAUX=$(COMP) -oi $(CCOPT) $(FPFLAGS)
 CC_=$(CC)
 CC_D=$(CC)
 CC_INT=$(COMP) -oit $(CCFLAGS)
-CC_LEAF=$(CC_) -s
 CC_NO_WARN=$(CC_)
