@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* Unix-specific routines for Ghostscript */
+
 #include "pipe_.h"
 #include "string_.h"
 #include "time_.h"
@@ -36,7 +37,6 @@
 #else
 extern void exit(int);
 extern char *getenv(const char *);
-
 #endif
 
 /* Do platform-dependent initialization. */

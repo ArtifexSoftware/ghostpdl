@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1996-2003 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1989, 1996-2004 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -29,6 +29,8 @@
 #	GS - the name of the executable (without the extension, if any).
 #	GS_LIB_DEFAULT - the default directory/ies for searching for the
 #	    initialization and font files at run time.
+#	GS_CACHE_DIR - the default directory for caching data between
+#	    ghostscript invocations.
 #	SEARCH_HERE_FIRST - the default setting of -P (whether or not to
 #	    look for files in the current directory first).
 #	GS_DOCDIR - the directory where documentation will be available
@@ -399,6 +401,7 @@ $(gconfig_h) : \
   $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfig_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_CACHE_DIR -x 2022 $(GS_CACHE_DIR) -x 22
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u SEARCH_HERE_FIRST -s $(SEARCH_HERE_FIRST)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_DOCDIR -x 2022 $(GS_DOCDIR) -x 22
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_INIT -x 2022 $(GS_INIT) -x 22

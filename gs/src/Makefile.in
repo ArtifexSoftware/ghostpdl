@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2003 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1997, 2003-2004 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -71,6 +71,11 @@ GS_DOCDIR=$(docdir)
 # initialization and font files.  Separate multiple directories with a :.
 
 GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts
+
+# Define the default directory for cached data files
+# this must be a single path.
+
+GS_CACHE_DIR="~/.ghostscript/cache/"
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security

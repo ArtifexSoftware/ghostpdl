@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000-2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -91,6 +91,23 @@ void
 gp_do_exit(int exit_status)
 {
     exit(exit_status);
+}
+
+/* ------ Persistent data cache ------*/
+
+/* insert a buffer under a (type, key) pair */
+int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
+{
+    /* not yet implemented */
+    return 0;
+}
+
+/* look up a (type, key) in the cache */
+int gp_cache_query(int type, byte* key, int keylen, void **buffer,
+    gp_cache_alloc alloc, void *userdata)
+{
+    /* not yet implemented */
+    return -1;
 }
 
 /* ------ Printer accessing ------ */
