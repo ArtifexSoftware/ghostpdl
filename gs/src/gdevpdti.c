@@ -500,6 +500,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->skip_colors = false;
     pdev->sbstack_depth++;
     pdev->procsets = 0;
+    pdev->font3 = 0;
     pdev->context = PDF_IN_STREAM;
     pdf_reset_graphics(pdev);
     *ppres = pres;
@@ -553,6 +554,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->sbstack[sbstack_ptr].substream_Resources = 0;
     pdev->skip_colors = pdev->sbstack[sbstack_ptr].skip_colors;
     pdev->font3 = pdev->sbstack[sbstack_ptr].font3;
+    pdev->sbstack[sbstack_ptr].font3 = 0;
     pdev->sbstack_depth = sbstack_ptr;
     return code;
 }

@@ -1003,6 +1003,8 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 		return code;
 	    }
 	    count += char_code_length;
+	    if (pte->text.operation & TEXT_INTERVENE)
+		break; /* Just do one character. */
 	}
 	encoded = true;
     } else
