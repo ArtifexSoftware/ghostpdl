@@ -3,12 +3,21 @@
 # Return the cvs repository - see CVS/Repository.
 def GetCVSRepository():
     try:
-	fp = open('CVS/Repository', 'r')
+	fp = open('CVS/Root', 'r')
     except:
-	return None
-    repos = fp.readline()
+        try:
+            # should search but we cheat.
+            fp = open('pcl/CVS/Root', 'r')
+        except:
+            return None
+    # get the Root name and strip off the newline
+    repos = fp.readline()[:-1]
     fp.close()
     return repos
+
+def GetCurrentWorkingDirectory():
+    import os
+    return os.getcwd()
 
 # figure out what day it is given year month and day
 
@@ -70,7 +79,7 @@ def ChangeLogDateNameHeader(date, author, hostname, tabsize):
 	author_name = pwd.getpwnam(author)[4]
     except:
 	author_name = ''
-    return time.asctime(date) + seperator + author_name +\
+    return time.asctime(date) + ' GMT' + seperator + author_name +\
 	   seperator + author + '@' + hostname + '\n'
 
 # build change log entries with file name, revisions, etc. lumping
@@ -94,14 +103,14 @@ def ChangeLogFileRevDesc(entry_dict, indent, line_length):
 	    pos = pos + len(rcs_file + ' [' + revision + ']' + ', ')
 	# replace last ', ' with a semicolon - strings are immutable so
 	# an inplace assignment won't do.
-	change_log_entry = change_log_entry[:-2] + ':\n'
+	change_log_entry = change_log_entry[:-2] + ':\n\n'
 	# add on the current description
 	change_log_entry = change_log_entry + description + '\n'
     return change_log_entry
 
 
 # Build the cvs log.
-def BuildLog(log_date_command, cvsrepository):
+def BuildLog(log_date_command):
     import os, string
     reading_description = 0
     description = []
@@ -113,7 +122,7 @@ def BuildLog(log_date_command, cvsrepository):
 	    if description != []:
 		# append these items in the sort order we'll want later on.
 		log.append(RcsDate2CtimeTuple(date), author, description,
-			   rcs_file[len(cvsrepository):-3], revision[:-1])
+			   rcs_file[len(GetCVSRepository()):-3], revision[:-1])
 	    reading_description = 0
 	    description = []
 	elif not reading_description and line[:len("RCS file: ")] == "RCS file: ":
@@ -134,8 +143,9 @@ def BuildLog(log_date_command, cvsrepository):
 def main():
     import sys, getopt, time, string, socket
     try:
-	opts, args = getopt.getopt(sys.argv[1:], "i:h:l:u:r:Rt:DL:",
-				   ["indent",
+	opts, args = getopt.getopt(sys.argv[1:], "d:i:h:l:u:r:Rt:DL:",
+				   ["date",
+                                    "indent",
 				    "hostname",
 				    "length",
 				    "user",
@@ -149,7 +159,7 @@ def main():
 	print msg
 	print "Usage: Options:"
 	print "[-h hostname] [-i indent] [-l length] [-R]"
-	print "[-r rlog_option]\n[-t tabwidth] [-u 'login<TAB>fullname<TAB>mailaddr']..."
+	print "[-r rlog_option] [-d rcs date]\n[-t tabwidth] [-u 'login<TAB>fullname<TAB>mailaddr']..."
 	sys.exit(2)
 
     # Set up defaults for all of the command line options.
@@ -167,6 +177,10 @@ def main():
     diffs=1
     logfile="ChangeLog"
 
+    # set up the cvs log command arguments.  If a logfile is specified
+    # we get all dates later than the logfile.
+    date_option = "'" + "-d" + time.asctime(LastLogDate2CtimeTuple(logfile)) + "'"
+
     # override defaults if specified on the command line
     for o, a in opts:
 	if o == '-h' : hostname = a
@@ -176,16 +190,14 @@ def main():
 	elif o == '-u' : user = a
 	elif o == '-r' : rlog_options = a
 	elif o == '-R' : recursive = 1
+        elif o == '-d' : date_option = "-d " + "'" + a + "'"
 	elif o == '-D' : diffs = 0
 	elif o == '-L' : logfile = a
 	else: print "getopt should have failed already"
 
-    # set up the cvs log command arguments.  If a logfile is specified
-    # we get all dates later than the logfile.
-    date = time.asctime(LastLogDate2CtimeTuple(logfile))
-    log_date_command= 'cvs log -N ' + "'" + '-d>' + date + "'"
+    log_date_command= 'cvs -d ' + GetCVSRepository() + ' -Q log -N ' + date_option
     # build the logs.
-    log = BuildLog(log_date_command, cvsrepository)
+    log = BuildLog(log_date_command)
     # chronologically reversed.  We reverse everything in the list as
     # well.
     log.sort()
