@@ -2010,11 +2010,14 @@ fonts not found on the search path, overriding the environment variable
 <dd>Causes the given font to be substituted for all unknown fonts, instead
 of using the normal intelligent substitution algorithm.  Also, in this
 case, the font returned by <b><tt>findfont</tt></b> is the actual font
-named "<em>fontname</em>", not a copy of the font with the
+named <em>fontname</em>, not a copy of the font with its
 <b><tt>FontName</tt></b> changed to the requested one.
-THIS OPTION SHOULD NOT USE WITH HIGH LEVEL DREVICES, such as <b><tt>pdfwrite</tt></b>,
-because it can't provide original font names to the output document
-when they are substituted. The <em>fontname</em> font will be embedded instead them.
+THIS OPTION SHOULD NOT BE USED WITH HIGH LEVEL DEVICES, such as 
+<b><tt>pdfwrite</tt></b>, because it prevents such devices from 
+providing the original font names in the output document. The
+font specified (<em>fontname</em>) will be embedded instead,
+limiting all future users of the document to the same approximate 
+rendering.
 </dl>
 
 <h4><a name="Resource_related_parameters"></a>Resource-related parameters</h4>
