@@ -708,6 +708,7 @@ x_gray_alt_map_color(gx_device * dev, gx_color_index color,
     return -1;
 }
 
+#ifdef USE_BROKEN_X11ALPHA
 /* ---------------- Alpha procedures ---------------- */
 
 /* Device procedures */
@@ -760,7 +761,7 @@ x_alpha_alt_map_color(gx_device * dev, gx_color_index color,
 {
     return color & 0xffffff;	/* just remove alpha */
 }
-
+#endif
 /* Device procedures */
 
 /* We encode a complemented alpha value in the top 8 bits of the */
@@ -782,6 +783,7 @@ x_alpha_map_rgb_alpha_color(gx_device * dev,
 	    ((gx_color_index) (abyte ^ 0xff) << 24) + color);
 }
 
+#ifdef USE_BROKEN_X11ALPHA
 private int
 x_alpha_copy_alpha(gx_device * dev, const unsigned char *base, int sourcex,
 		   int raster, gx_bitmap_id id, int x, int y, int w, int h,
@@ -856,6 +858,7 @@ x_alpha_copy_alpha(gx_device * dev, const unsigned char *base, int sourcex,
     }
     return 0;
 }
+#endif
 
 /* ---------------- Permuted RGB16/32 procedures ---------------- */
 
