@@ -42,7 +42,7 @@ pcl_delete_soft_font(pcl_state_t *pcls, const byte *key, uint ksize,
 	if ( pcls->font_selection[1].font == value )
 	  pcls->font_selection[1].font = 0;
 	pcls->font = pcls->font_selection[pcls->font_selected].font;
-	pl_dict_undef_purge_links(&pcls->soft_fonts, key, ksize);
+	pl_dict_undef_purge_synonyms(&pcls->soft_fonts, key, ksize);
 }
 
 /* ------ Commands ------ */
@@ -322,7 +322,6 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 #define plfont ((pl_font_t *)value)
 	pcl_font_header_format_t format;
 	byte *char_data = 0;
-	uint char_data_size;
 
 	if ( !pl_dict_find(&pcls->soft_fonts, current_font_id,
 			   current_font_id_size, &value) )
@@ -365,15 +364,13 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		    if ( char_data == 0 )
 		      return_error(e_Memory);
 		    memcpy(char_data, data, 16);
-		    char_data_size = width_bytes * height;
-		    memset(char_data + 16, 0, char_data_size);
+		    memset(char_data + 16, 0, width_bytes * height);
 		    row = char_data + 16;
 		    while ( src < end && y < height )
 		      { /* Read the next compressed row. */
 		        uint x;
 			int color = 0;
 			uint reps = *src++;
-
 			for ( x = 0; src < end && x < width; color ^= 1 )
 			  { /* Read the next run. */
 			    uint rlen = *src++;
@@ -382,11 +379,15 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 			      return e_Range;  /* row overrun */
 			    if ( color )
 			      { /* Set the run to black. */
-				bits_fill_rectangle(row, x, width_bytes,
-						    ~(mono_fill_chunk)0,
-						    rlen, 1);
+				char *data = row;
+				while ( rlen-- )
+				  {
+				    data[x >> 3] |= (128 >> (x & 7));
+				    x++;
+				  }
 			      }
-			    x += rlen;
+			    else
+			      x += rlen;
 			  }
 			row += width_bytes;
 			++y;
@@ -419,7 +420,6 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		  uint metric_offset = pl_get_uint16(data + 8);
 		  uint outline_offset = pl_get_uint16(data + 10);
 		  uint xy_offset = pl_get_uint16(data + 12);
-
 		  /* The contour data excludes 4 initial bytes of header */
 		  /* and 2 final bytes of padding/checksum. */
 		  if ( data_size != count - 6 ||
@@ -443,7 +443,6 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		   * correctly as a UB on p. 11-70, however.)
 		   */
 		  uint num_components = data[6];
-
 		  if ( count != 8 + num_components * 6 + 2 )
 		    return e_Range;
 		}
@@ -471,9 +470,8 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	    if ( char_data == 0 )
 	      return_error(e_Memory);
 	    memcpy(char_data, data, count);
-	    char_data_size = count;
 	  }
-	return pl_font_add_glyph(plfont, pcls->character_code, char_data, char_data_size);
+	return pl_font_add_glyph(plfont, pcls->character_code, char_data);
 #undef plfont
 }
 
@@ -504,7 +502,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	      if ( new_id == 0 ) 
 		return_error(e_Memory);
 	      /* release the previous id, if necessary */
-	      if ( pcls->alpha_font_id.size )
+	      if ( pcls->alpha_font_id.id )
 		gs_free_object( pcls->memory,
 				pcls->alpha_font_id.id,
 				"pcl_free_string_id" );
@@ -528,7 +526,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 				 string_id_size,
 				 &value) )
 		return 0;
-	      pl_dict_put_link(&pcls->soft_fonts, alpha_data->string_id,
+	      pl_dict_put_synonym(&pcls->soft_fonts, alpha_data->string_id,
 			       string_id_size, current_font_id,
 			       current_font_id_size);
 	    }
@@ -570,7 +568,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	      if ( new_id == 0 ) 
 		return_error(e_Memory);
 	      /* release the previous id, if necessary */
-	      if ( pcls->alpha_macro_id.size )
+	      if ( pcls->alpha_macro_id.id )
 		gs_free_object( pcls->memory,
 				pcls->alpha_macro_id.id,
 				"pcl_free_string_id" );
@@ -592,7 +590,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 				 string_id_size,
 				 &value) )
 		return 0;
-	      pl_dict_put_link(&pcls->macros, alpha_data->string_id, string_id_size,
+	      pl_dict_put_synonym(&pcls->macros, alpha_data->string_id, string_id_size,
 			       current_macro_id, current_macro_id_size );
 	    }
 	    break;
@@ -647,20 +645,18 @@ pcsfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    id_set_value(pcls->font_id, 0);
 	    pcls->character_code = 0;
 	    pcls->font_id_type = numeric_id;
-	    pcls->alpha_font_id.size = 0;
 	    if ( !(type & pcl_reset_initial) )
 	      { pcl_args_t args;
 	        arg_set_uint(&args, 1); /* delete temporary fonts */
 		pcl_font_control(&args, pcls);
+		if ( pcls->alpha_font_id.id != 0 )
+		  gs_free_object(pcls->memory,
+				 pcls->alpha_font_id.id,
+				 "pcsfont_do_reset");
+		pcls->alpha_font_id.id = 0;
 	      }
-
-	  }
-	if ( pcls->alpha_font_id.size )
-	  {
-	    gs_free_object( pcls->memory,
-			    pcls->alpha_font_id.id,
-			    "pcsfont_do_reset" );
-	    pcls->alpha_font_id.size = 0;
+	    else /* pcl_reset_initial case */
+	      pcls->alpha_font_id.id = 0;
 	  }
 }
 private int
