@@ -186,17 +186,17 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 	if (code < 0)
 	    return code;
 	/* Get the definition from GlyphDirectory. */
-	if (gdata.bits.data) {
-	    code = get_index(&gdata, pfont->cidata.FDBytes, &fidx);
-	    if (code < 0)
-		return code;
-	    if (fidx >= pfont->cidata.FDArray_size)
-		return_error(e_rangecheck);
-	    if (pgd)
-		*pgd = gdata;
-	    *pfidx = (int)fidx;
+	if (!gdata.bits.data)
+	    return_error(e_rangecheck);
+	code = get_index(&gdata, pfont->cidata.FDBytes, &fidx);
+	if (code < 0)
 	    return code;
-	}
+	if (fidx >= pfont->cidata.FDArray_size)
+	    return_error(e_rangecheck);
+	if (pgd)
+	    *pgd = gdata;
+	*pfidx = (int)fidx;
+	return code;
     }
     /* Get the definition from the binary data (GlyphData or DataSource). */
     if (glyph_index < 0 || glyph_index >= pfont->cidata.common.CIDCount) {
