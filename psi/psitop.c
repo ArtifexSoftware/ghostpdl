@@ -132,9 +132,14 @@ ps_impl_allocate_interp_instance(
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
 	{
+#if 0
 	    // foo try segregation of memory spaces
 	    gs_memory_t * psmem = gs_malloc_init(mem);
 	    psi->minst = gs_main_alloc_instance(psmem);
+#else
+	    // use one memory space
+	    psi->minst = gs_main_alloc_instance(mem);
+#endif
 	}
 	code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
 	if (code<0)
@@ -354,12 +359,10 @@ ps_impl_process_eof(
 
 /* Report any errors after running a job */
 private int   /* ret 0 ok, else -ve error code */
-ps_impl_report_errors(
-	pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
-   int                  code,              /* prev termination status */
-   long                 file_position,     /* file position of error, -1 if unknown */
-   bool                 force_to_cout,     /* force errors to cout */
-   FILE                 *cout              /* stream for back-channel reports */
+ps_impl_report_errors(pl_interp_instance_t *instance,      /* interp instance to wrap up job in */
+		      int                  code,           /* prev termination status */
+		      long                 file_position,  /* file position of error, -1 if unknown */
+		      bool                 force_to_cout    /* force errors to cout */
 )
 {
     /*    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
@@ -399,8 +402,8 @@ ps_impl_dnit_job(
            considered fatal but pdf runs the spooled job when the job
            is deinitialized so handle error processing here and return code is always 0. */
         if ( code < 0 ) {
-            fprintf(gs_stderr, "PDF interpreter exited with exit code %d\n", exit_code);
-            fprintf(gs_stderr, "Flushing to EOJ\n");
+            errprintf(psi->minst->heap, "PDF interpreter exited with exit code %d\n", exit_code);
+            errprintf(psi->minst->heap, "Flushing to EOJ\n");
         }
         code = 0;
     }
