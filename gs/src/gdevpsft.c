@@ -290,7 +290,7 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 		U16(cmap_data + 18) + num_entries * 2);  /* offset */
 	put_u16(cmap_data + 22,
 		U16(cmap_data + 22) + num_entries * 2);  /* length */
-	put_u16(cmap_data + 26, first_code + first_entry);
+	put_u16(cmap_data + 26, first_entry);
 	put_u16(cmap_data + 28, num_entries);
 	stream_write(s, cmap_data, sizeof(cmap_data));
 	stream_write(s, entries + first_entry * 2, num_entries * 2);
@@ -307,8 +307,8 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 
     memcpy(cmap_sub, cmap_sub_initial, sizeof(cmap_sub_initial));
     put_u16(cmap_sub + 2, U16(cmap_sub + 2) + num_entries * 2); /* length */
-    put_u16(cmap_sub + 14, first_code + end_entry - 1); /* endCount[0] */
-    put_u16(cmap_sub + 20, first_code + first_entry); /* startCount[0] */
+    put_u16(cmap_sub + 14, end_entry - 1); /* endCount[0] */
+    put_u16(cmap_sub + 20, first_entry); /* startCount[0] */
     stream_write(s, cmap_sub, sizeof(cmap_sub));
     stream_write(s, entries + first_entry * 2, num_entries * 2);
     put_pad(s, cmap_length);
