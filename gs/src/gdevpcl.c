@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,10 +30,11 @@ gdev_pcl_paper_size(gx_device * dev)
     float height_inches = dev->height / dev->y_pixels_per_inch;
 
     return
-	(height_inches >= 44.4 ? PAPER_SIZE_A0 :
-	 height_inches >= 32.0 ? PAPER_SIZE_A1 :
-	 height_inches >= 22.2 ? PAPER_SIZE_A2 :
-	 height_inches >= 15.9 ? PAPER_SIZE_A3 :
+	(height_inches >= 33.2 ? PAPER_SIZE_A0 :
+	 height_inches >= 23.5 ? PAPER_SIZE_A1 :
+	 height_inches >= 17.1 ? PAPER_SIZE_A2 :
+	 height_inches >= 16.6 ? PAPER_SIZE_LEDGER :
+	 height_inches >= 14.1 ? PAPER_SIZE_A3 :
 	 height_inches >= 11.8 ? PAPER_SIZE_LEGAL :
 	 height_inches >= 11.1 ? PAPER_SIZE_A4 :
 	 PAPER_SIZE_LETTER);

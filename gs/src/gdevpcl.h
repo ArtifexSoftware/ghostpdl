@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,10 +24,11 @@
 #  define gdevpcl_INCLUDED
 
 /* Define the PCL paper size codes. */
-#define PAPER_SIZE_LETTER 2
-#define PAPER_SIZE_LEGAL 3
-#define PAPER_SIZE_A4 26
-#define PAPER_SIZE_A3 27
+#define PAPER_SIZE_LETTER 2	/* 8.5" x 11" */
+#define PAPER_SIZE_LEGAL 3	/* 8.5" x 14" */
+#define PAPER_SIZE_LEDGER 6	/* 11" x 17" */
+#define PAPER_SIZE_A4 26	/* 21.0 cm x 29.7 cm */
+#define PAPER_SIZE_A3 27	/* 29.7 cm x 42.0 cm */
 #define PAPER_SIZE_A2 28
 #define PAPER_SIZE_A1 29
 #define PAPER_SIZE_A0 30
