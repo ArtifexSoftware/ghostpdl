@@ -1,4 +1,4 @@
-/* Copyright (C) 1996-1998, Russell Lang.  All rights reserved.
+/* Copyright (C) 1996-2000, Russell Lang.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -63,6 +63,7 @@ typedef char FAR * FARARGV_PTR;
 int rc;
 
     setmode(fileno(stdin), O_BINARY);
+    setmode(fileno(stdout), O_BINARY);
 
     // load DLL
     if (gsdll.load(ghInstance, szDllName, GSREVISION)) {

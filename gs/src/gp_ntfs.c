@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -39,10 +39,20 @@
 /* Put a printer file (which might be stdout) into binary or text mode. */
 /* This is not a standard gp procedure, */
 /* but all MS-DOS configurations need it. */
+private int
+setmode_binary(int fno, bool binary)
+{
+    /* Use non-standard setmode that almost all NT compilers offer. */
+#if defined(__STDC__) && !defined(__WATCOMC__)
+    return _setmode(prnfno, binary ? _O_BINARY : _O_TEXT);
+#else
+    return setmode(prnfno, binary ? O_BINARY : O_TEXT);
+#endif
+}
 void
 gp_set_file_binary(int prnfno, int binary)
 {
-    /* UNIMPLEMENTED */
+    DISCARD(setmode_binary(prnfno, binary != 0));
 }
 
 /* ------ File accessing -------- */
@@ -51,14 +61,11 @@ gp_set_file_binary(int prnfno, int binary)
 int
 gp_setmode_binary(FILE * pfile, bool binary)
 {
-    /*
-     * Use non-standard setmode & fileno fn's that almost all NT compilers
-     * offer.
-     */
+    /* Use non-standard fileno that almost all NT compilers offer. */
 #if defined(__STDC__) && !defined(__WATCOMC__)
-    int code = _setmode(_fileno(pfile), binary == 0 ? _O_TEXT : _O_BINARY);
+    int code = setmode_binary(_fileno(pfile), binary);
 #else
-    int code = setmode(fileno(pfile), binary == 0 ? O_TEXT : O_BINARY);
+    int code = setmode_binary(fileno(pfile), binary);
 #endif
 
     return (code == -1 ? -1 : 0);
