@@ -168,8 +168,16 @@ pcl_enter_graphics_mode(
     int                     rot;
     int                     code = 0;
 
-    /* determine the orientation of raster space */
-    rot = pcs->xfm_state.lp_orient + pcs->xfm_state.print_dir;
+    /*
+     * Check if the raster is to be clipped fully; see rtrstst.h for details.
+     * Since this is a discontinuous effect, the equality checks below
+     * should be made while still in centipoings.
+     */
+    prstate->clip_all = ( (pcl_cap.x == pxfmst->pd_size.x) ||
+                          (pcl_cap.y == pxfmst->pd_size.y)   );
+
+    /* create to raster space to logical page space transformation */
+    rot = pxfmst->lp_orient + pxfmst->print_dir;
     if (prstate->pres_mode_3)
         rot &= 0x2;
     rot = (rot - pxfmst->lp_orient) & 0x3;

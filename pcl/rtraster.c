@@ -35,7 +35,6 @@
 
 /*
  * Structure to describe a PCL raster
- *
  */
 typedef struct pcl_raster_s {
 
@@ -676,6 +675,16 @@ process_zero_rows(
     int                 code = 0;
     int                 i;
 
+    /* don't bother going beyond the end of the image */
+    if (nrows > rem_rows)
+        nrows = rem_rows;
+
+    /* if clipping the whole raster, just update rendered rows */
+    if (prast->pcs->raster_state.clip_all) {
+        prast->rows_rendered += nrows;
+        return 0;
+    }
+
     /* clear the seed rows */
     for (i = 0; i < nplanes; i++) {
         if (!pseed_rows[i].is_blank) {
@@ -683,10 +692,6 @@ process_zero_rows(
             pseed_rows[i].is_blank = true;
         }
     }
-
-    /* don't bother going beyond the end of the image */
-    if (nrows > rem_rows)
-        nrows = rem_rows;
 
     /* render as raster or rectangle */
     if ( ((nrows * nbytes > 1024) || (prast->pen == 0)) && 
@@ -779,6 +784,10 @@ process_row(
     /* check if there is anything to do */
     if (prast->rows_rendered >= prast->src_height)
         return 0;
+    else if (prast->pcs->raster_state.clip_all) {
+        prast->rows_rendered++;
+        return 0;
+    }
 
     /* handle any planes not provided */
     for (i = prast->plane_index; i < nplanes; i++) {
@@ -887,6 +896,15 @@ process_adaptive_compress(
             uint            rem_rows = prast->src_height - prast->rows_rendered;
             gs_image_enum * pen = prast->pen;
 
+            if (param > rem_rows)
+                param = rem_rows;
+
+            /* if clipping the raster, just update lines rendered */
+            if (prast->pcs->raster_state.clip_all) {
+                prast->rows_rendered += param;
+                continue;
+            }
+
             /* create the image enumerator if it does not already exist */
             if (pen == 0) {
                 if ((code = create_image_enumerator(prast)) < 0)
@@ -894,8 +912,6 @@ process_adaptive_compress(
                 pen = prast->pen;
             }
 
-            if (param > rem_rows)
-                param = rem_rows;
             if (prast->nplanes == 1) {
                 prast->rows_rendered += param;
                 while ((param-- > 0) && (code >= 0)) {

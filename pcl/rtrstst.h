@@ -51,7 +51,7 @@
  *    documentation states ("PCL 5 Color Technical Reference Manual", May
  *    1996 ed., p. 6-42) that "This command is valid only after a Start
  *    Raster command (<esc>*r#A) with scale mode ON." While this might indicate
- *    that the scale algorithm is not a state variable, we tend to thing the
+ *    that the scale algorithm is not a state variable, we tend to think the
  *    statement merely reflects a poor choice of wording. We believe it
  *    would have been better stated as "this command is not effective except
  *    after ..." A reason for this belief is that all of the commands that
@@ -59,6 +59,38 @@
  *    the scale algorithm command is of the form <esc>*t#, as are the source
  *    resolution and destination dimension commands (all of which are state
  *    variables).
+ *
+ * 4. Clipping or rasters in PCL is handled in a manner similar to that of
+ *    text, which leads to some curious behavior. Normally, rasters are clipped
+ *    to the printable page boundary. However, if the raster orgin is at
+ *    the logical page "right" or "bottom" boundary relative to the print
+ *    direction, the raster is clipped completely, even in cases in which the
+ *    logical page boundary is inside the printable region.
+ *
+ *    Centi-point precision is used to determine whether or not the raster
+ *    origin is at the logical page boundary. For logical orientation 0 and
+ *    2, the the logical page is either 25 or 21 pixels (at 300 dpi) inside
+ *    the printable region, depending on the page size. Hence, it is possible
+ *    to relocate a raster by one centipoint, and have a 25 pixel extent of
+ *    that raster either appear or disappear.
+ *
+ *    This clipping is inconsistently applied when presentation mode 3 is
+ *    used and the print direction is not along with width of the "physical"
+ *    page. In this case, the perpendicular of the raster scanline direction
+ *    points in the opposite of the print direction, thus the raster could
+ *    move off the "left" edge of the logical page. No clipping is performed
+ *    in this case, most likely due to the implementation method chosen by HP.
+ *
+ *    The field clip_all is set to true if the raster output is to be suppressed
+ *    because the raster origin is at the logical page boundary. The motion
+ *    implied by rendered scanlines must still be accounted for, hence the
+ *    need for this field.
+ *
+ *    Because of the dis-continuous nature of this effect, it is sensitive to
+ *    to arithmetic precision. It is possible to set up situations in practice
+ *    in which the last bit of precision of a floating-point calculation will
+ *    determine whether a raster is clipped or not. Fortunately, these
+ *    situations do not arise in practice.
  */
 
 typedef struct pcl_raster_state_s {
@@ -85,6 +117,10 @@ typedef struct pcl_raster_state_s {
     uint    dest_height_cp;     /* destination height, centi-points */
 
     coord   gmargin_cp;         /* "horizontal" displacement of raster origin */
+
+    int     clip_all;           /* on last entry into raster mode, the raster
+                                 * origin was at the logical page edge, hence
+                                 * the raster needs to be clipped */
 } pcl_raster_state_t;
 
 #endif			/* rtrstst_INCLUDED */
