@@ -69,10 +69,21 @@ typedef struct trap_line_s {
     int di;
     fixed df;
 	/*
-	 * The current position within the scan line is x + xf/h + 1.
+	 * The intersection of the line with a scan line is x + xf/h.
 	 * (The 1 refers to the least significant bit of x, not fixed_1;
 	 * similarly, the quotient refers to the l.s.b. of x.)
 	 * We know -h <= xf < 0.
+	 *
+	 * This rational value preciselly represents the mathematical line
+	 * (with no machine arithmetic error).
+	 *
+	 * Note that the fractional part is negative to simplify
+	 * some conditions in the Bresenham algorithm.
+	 * Due to that some expressions are inobvious.
+	 * We believe that it's a kind of archaic
+	 * for the modern hyperthreading architecture,
+	 * we still keep it because the code passed a huge testing
+	 * on various platforms.
 	 */
     fixed x, xf;
 	/*

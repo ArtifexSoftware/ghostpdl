@@ -36,6 +36,23 @@
  * for an early floating point version of this algorithm.
  */
 
+/*
+ * With CONTIGUOUS_FILL is off, 
+ * this algorithm paints pixels, which centers fall between
+ * the left and the right side of the trapezoid, excluding the 
+ * right side (see PLRM3, 7.5. Scan conversion details). 
+ * Particularly 0-width trapezoids are not painted.
+ *
+ * Similarly, it paints pixels, which centers
+ * fall between ybot and ytop, excluding ytop.
+ * Particularly 0-height trapezoids are not painted.
+ *
+ * With CONTIGUOUS_FILL is on, it paints a contigous area,
+ * adding a minimal number of pixels outside the trapezoid.
+ * Particularly it may paint pixels on the right and on the top sides,
+ * if they are necessary for the contiguity.
+ */
+
 GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
     const gs_fixed_edge * right, fixed ybot, fixed ytop, int flags,
     const gx_device_color * pdevc, gs_logical_operation_t lop)
