@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1999, 2000, Ghostgum Software Pty Ltd.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -49,12 +49,12 @@
 //   fonts\n019003l.pfb
 //   fonts\n019023l.pfb
 //
-// The default install directory is c:\Aladdin.
+// The default install directory is c:\gs.
 // The default Start Menu Folder is Aladdin.
 // These are set in the resources.
 // The setup program will create the following uninstall log files
-//   c:\Aladdin\gs#.##\uninstal.txt
-//   c:\Aladdin\fonts\uninstal.txt
+//   c:\gs\gs#.##\uninstal.txt
+//   c:\gs\fonts\uninstal.txt
 // The uninstall program (accessed through control panel) will not 
 // remove directories nor will it remove itself.
 //
