@@ -58,7 +58,10 @@ private int
 set_mask_value(i_ctx_t *i_ctx_p,
 	       int (*set_mask)(P2(gs_state *, const gs_soft_mask_t *)))
 {
+    os_ptr op = osp;
+
     /****** NYI ******/
+    pop(1);
     return 0;
 }
 
@@ -66,7 +69,11 @@ private int
 current_mask_value(i_ctx_t *i_ctx_p,
 		   gs_soft_mask_t * (*current_mask)(P1(const gs_state *)))
 {
+    os_ptr op = osp;
+
     /****** NYI ******/
+    push(1);
+    make_null(op);
     return 0;
 }
 
