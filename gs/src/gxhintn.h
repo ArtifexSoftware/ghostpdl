@@ -129,6 +129,7 @@ typedef struct t1_hinter_s
     bool keep_stem_width;
     bool suppress_overshoots;
     bool disable_hinting;
+    bool grid_fit_x, grid_fit_y;
     bool charpath_flag;
     double font_size;
     double resolution;
@@ -149,7 +150,6 @@ int  t1_hinter__init(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox
 			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix);
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
 			bool charpath_flag, fixed origin_x, fixed origin_y);
-void t1_hinter__reset_outline(t1_hinter * this);
 
 int  t1_hinter__sbw(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_space_coord sby
                                     , t1_glyph_space_coord wx,  t1_glyph_space_coord wy);

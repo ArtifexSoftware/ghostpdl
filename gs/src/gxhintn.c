@@ -459,6 +459,7 @@ void t1_hinter__reset(t1_hinter * this, gs_memory_t * mem)
     this->keep_stem_width = false;
     this->charpath_flag = false;
     this->disable_hinting = false;
+    this->grid_fit_x = this->grid_fit_y = true;
     this->import_shift = 0;
     this->memory = mem;
 }
@@ -481,7 +482,7 @@ private void t1_hinter__free_arrays(t1_hinter * this)
     this->hint_range = 0;
 }
 
-void t1_hinter__reset_outline(t1_hinter * this)
+private void t1_hinter__reset_outline(t1_hinter * this)
 {   this->contour_count = 0;
     this->pole_count = 0;
     this->contour[0] = 0;
@@ -561,6 +562,12 @@ int t1_hinter__init(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox,
         this->base_font_scale = d0;
         this->font_size =  floor(d1 / d0 * 10000 + 0.5) / 10000;
         this->resolution = floor(d2 / (1 << this->import_shift) / d1 * 10000000 + 0.5) / 10000000;
+    }
+    {	/* Enable grid fitting setarately for axes : */
+	this->grid_fit_x = (any_abs(this->ctmf.xy) * 10 < any_abs(this->ctmf.xx)) ||
+			   (any_abs(this->ctmf.xx) * 10 < any_abs(this->ctmf.xy));
+	this->grid_fit_y = (any_abs(this->ctmf.yx) * 10 < any_abs(this->ctmf.yy)) ||
+			   (any_abs(this->ctmf.yy) * 10 < any_abs(this->ctmf.yx));
     }
 #   if VD_DRAW_IMPORT
     vd_get_dc('h');
@@ -1014,7 +1021,7 @@ private inline int t1_hinter__segment_end(t1_hinter * this, int pole_index)
 }
 
 private void t1_hinter__simplify_representation(t1_hinter * this)
-{   int i;
+{   int i, j;
 
     /*  moveto's were needed to decode path correctly.
         We don't need them so far.
@@ -1023,6 +1030,18 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
     for (i = 0; i < this->contour_count; i++)
         if (this->pole[this->contour[i]].type == moveto)
             this->pole[this->contour[i]].type = oncurve;
+    /* Remove hints which are disabled with !grid_fit_x, !grid_fit_y.
+     * We can't do before import is completed due to hint mask commands.
+     */
+    if (!this->grid_fit_x || !this->grid_fit_y)
+	for (i = j = 0; i < this->contour_count; i++)
+	    if ((this->hint[i].type == vstem && !this->grid_fit_x) ||
+		(this->hint[i].type == hstem && !this->grid_fit_y))
+		continue; /* skip it. */
+	    else {
+		this->hint[j] = this->hint[i];
+		j++;
+	    }
     if (this->FontType == 1) {
 	/*  After the decoding, hint commands refer to the last pole before HR occures.
 	    Move pointers to the beginning segment pole, so as they
@@ -1221,11 +1240,15 @@ private void t1_hinter__align_to_grid(t1_hinter * this, long div, t1_glyph_space
         {   t1_glyph_space_coord gxd, gyd;
 
             o2g(this, dx, dy, &gxd, &gyd);
-            *x -= gxd;
-            *y -= gyd;
+	    if (this->grid_fit_x)
+		*x -= gxd;
+	    if (this->grid_fit_y)
+		*y -= gyd;
             /* hack: round to suppress small noise : */
-            *x = (*x + 7) & ~15;
-            *y = (*y + 7) & ~15;
+	    if (this->grid_fit_x)
+		*x = (*x + 7) & ~15;
+	    if (this->grid_fit_y)
+		*y = (*y + 7) & ~15;
         }
     }
 }
@@ -1915,7 +1938,7 @@ int t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s)
     if (code < 0)
 	goto exit;
     t1_hinter__paint_glyph(this, false);
-    if (!this->disable_hinting) {
+    if (!this->disable_hinting && (this->grid_fit_x || this->grid_fit_y)) {
         /* t1_hinter__add_full_width_hint(this); Gives worse results. */
         t1_hinter__make_complexes(this);
 	if (this->FontType == 1)
