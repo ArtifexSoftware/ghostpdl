@@ -99,7 +99,7 @@ typedef struct Fb_frame_s {	/* recursion frame */
     gs_client_color cc[4];	/* colors at 4 corners */
     gs_paint_color c_min, c_max; /* estimated color range for the region */
     bool painted;
-    bool devide_X;
+    bool divide_X;
     int state;
 } Fb_frame_t;
 
@@ -166,8 +166,8 @@ Fb_build_half_region(Fb_fill_state_t * pfs, int h, bool use_old)
     const double x0 = fp0->region.p.x, y0 = fp0->region.p.y,
 		 x1 = fp0->region.q.x, y1 = fp0->region.q.y;
     float v[2];
-    int code;
-    if (fp0->devide_X) {
+
+    if (fp0->divide_X) {
 	double xm = (x0 + x1) * 0.5;
 	int h10 = (!h ? 1 : 0), h32 = (!h ? 3 : 2);
 	int h01 = (!h ? 0 : 1), h23 = (!h ? 2 : 3);
@@ -281,7 +281,7 @@ Fb_fill_region_lazy(Fb_fill_state_t * pfs)
 		}
 		if (single_extreme || pfs->depth >= Fb_max_depth - 1)
 		    small_color_diff = Fb_build_color_range(pfs, fp, &pfs->c_min, &pfs->c_max);
-		if (single_extreme && small_color_diff || 
+		if ((single_extreme && small_color_diff) || 
 		    single_pixel ||
 		    pfs->depth >= Fb_max_depth - 1) {
 		    Fb_build_color_range(pfs, fp, &pfs->c_min, &pfs->c_max);
@@ -290,7 +290,7 @@ Fb_fill_region_lazy(Fb_fill_state_t * pfs)
 		    break;
 		}
 		fp->state = 1;
-		fp->devide_X = (size_x > size_y);
+		fp->divide_X = (size_x > size_y);
 		CheckRET(Fb_build_half_region(pfs, 0, false));
 		++ pfs->depth; /* Do recur, left branch. */
 		pfs->frames[pfs->depth].state = 0;
