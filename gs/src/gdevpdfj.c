@@ -277,9 +277,13 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	pxo->data_height = h;
 	piw->data = pcos;
     }
-    piw->height = h;
     pdev->strm = pdev->streams.strm;
+    pdev->strm = cos_write_stream_alloc(piw->data, pdev, "pdf_begin_write_image");
+    if (pdev->strm == 0)
+	return_error(gs_error_VMerror);
+    piw->height = h;
     code = psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary);
+    piw->binary.target = NULL; /* We don't need target with cos_write_stream. */
     pdev->strm = save_strm;
     return code;
 }
@@ -306,12 +310,8 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
 int
 pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
 {
-    long pos = stell(pdev->streams.strm);  /* piw->binary.target */
-    int ecode = psdf_end_binary(&piw->binary);
-    int code = cos_stream_add_since(piw->data, pos);
-
-    if (ecode < 0)
-	return ecode;
+    int code = psdf_end_binary(&piw->binary);
+    
     if (code < 0)
 	return code;
     /* If the image ended prematurely, update the Height. */

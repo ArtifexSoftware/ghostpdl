@@ -52,7 +52,6 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     int code;
     const byte *row_base;
     int row_step;
-    long pos;
     bool in_line;
 
     gs_image_t_init_mask(pim, true);
@@ -97,9 +96,7 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 				     NULL)) < 0
 	)
 	return code;
-    pos = stell(pdev->streams.strm);
     pdf_copy_mask_bits(piw->binary.strm, row_base, sourcex, row_step, w, h, 0);
-    cos_stream_add_since(piw->data, pos);
     pdf_end_image_binary(pdev, piw, piw->height);
     return pdf_end_write_image(pdev, piw);
 }
@@ -122,7 +119,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
     pdf_resource_t *pres = 0;
     byte invert = 0;
     bool in_line = false;
-    long pos;
 
     /* Update clipping. */
     if (pdf_must_put_clip_path(pdev, pcpath)) {
@@ -272,12 +268,10 @@ pdf_copy_mono(gx_device_pdf *pdev,
     }
     pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image,
 			 pcsvalue);
-    pos = stell(pdev->streams.strm);
     code = pdf_copy_mask_bits(writer.binary.strm, base, sourcex, raster,
 			      w, h, invert);
     if (code < 0)
 	return code;
-    code = cos_stream_add_since(writer.data, pos);
     pdf_end_image_binary(pdev, &writer, writer.height);
     if (!pres) {
 	switch ((code = pdf_end_write_image(pdev, &writer))) {
@@ -343,7 +337,6 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     int code = pdf_cspace_init_Device(&cs, bytes_per_pixel);
     const byte *row_base;
     int row_step;
-    long pos;
     bool in_line;
 
     if (code < 0)
@@ -397,10 +390,8 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 				     &cs_value)) < 0
 	)
 	return code;
-    pos = stell(pdev->streams.strm);
     pdf_copy_color_bits(piw->binary.strm, row_base, sourcex, row_step, w, h,
 			bytes_per_pixel);
-    cos_stream_add_since(piw->data, pos);
     pdf_end_image_binary(pdev, piw, piw->height);
     return pdf_end_write_image(pdev, piw);
 }

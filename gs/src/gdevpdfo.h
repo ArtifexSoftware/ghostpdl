@@ -243,7 +243,6 @@ int cos_dict_put_string(P5(cos_dict_t *, const byte *, uint, const byte *,
 int cos_dict_put_c_strings(P3(cos_dict_t *, const char *, const char *));
     /* stream */
 int cos_stream_add(P2(cos_stream_t *, uint));
-int cos_stream_add_since(P2(cos_stream_t *, long /*start_pos*/));
 int cos_stream_add_bytes(P3(cos_stream_t *, const byte *, uint));
 cos_dict_t *cos_stream_dict(P1(cos_stream_t *));
 

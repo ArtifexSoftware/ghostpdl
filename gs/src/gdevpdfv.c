@@ -206,7 +206,6 @@ pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
     gs_image1_t image;
     pdf_image_writer writer;
     cos_stream_t *pcs_image;
-    long pos;
     int code;
 
     gs_image_t_init_mask_adjust(&image, true, false);
@@ -218,10 +217,8 @@ pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
 	)
 	return code;
     pcs_image = (cos_stream_t *)writer.pres->object;
-    pos = stell(pdev->streams.strm);
     /* Pattern masks are specified in device coordinates, so invert Y. */
     if ((code = pdf_copy_mask_bits(writer.binary.strm, m_tile->tmask.data + (h - 1) * m_tile->tmask.raster, 0, -m_tile->tmask.raster, w, h, 0)) < 0 ||
-	(code = cos_stream_add_since(pcs_image, pos)) < 0 ||
 	(code = pdf_end_image_binary(pdev, &writer, h)) < 0 ||
 	(code = pdf_end_write_image(pdev, &writer)) < 0
 	)
@@ -285,7 +282,6 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     cos_stream_t *pcs_image;
     cos_stream_t *pcs_mask = 0;
     cos_value_t v;
-    long pos;
     int code;
 
     /*
@@ -373,10 +369,8 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	)
 	return code;
     pcs_image = (cos_stream_t *)writer.pres->object;
-    pos = stell(pdev->streams.strm);
     /* Pattern masks are specified in device coordinates, so invert Y. */
     if ((code = pdf_copy_color_bits(writer.binary.strm, p_tile->tbits.data + (h - 1) * p_tile->tbits.raster, 0, -p_tile->tbits.raster, w, h, pdev->color_info.depth >> 3)) < 0 ||
-	(code = cos_stream_add_since(pcs_image, pos)) < 0 ||
 	(code = pdf_end_image_binary(pdev, &writer, h)) < 0
 	)
 	return code;

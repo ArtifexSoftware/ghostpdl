@@ -1122,12 +1122,6 @@ cos_stream_add(cos_stream_t *pcs, uint size)
     pcs->length += size;
     return 0;
 }
-int
-cos_stream_add_since(cos_stream_t *pcs, long start_pos)
-{
-    return cos_stream_add(pcs,
-			  (uint)(stell(pcs->pdev->streams.strm) - start_pos));
-}
 
 /* Add bytes to a stream object. */
 int
@@ -1151,6 +1145,7 @@ gs_private_st_suffix_add4(st_cos_write_stream_state, cos_write_stream_state_t,
 			  "cos_write_stream_state_t",
 			  cos_ws_state_enum_ptrs, cos_ws_state_reloc_ptrs,
 			  st_stream_state, pcs, pdev, s, target);
+
 private int
 cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
@@ -1165,7 +1160,7 @@ cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
     stream_write(target, pr->ptr + 1, count);
     pr->ptr = pr->limit;
     sflush(target);
-    code = cos_stream_add_since(ss->pcs, start_pos);
+    code = cos_stream_add(ss->pcs, (uint)(stell(pdev->streams.strm) - start_pos));
     return (code < 0 ? ERRC : 0);
 }
 private int
