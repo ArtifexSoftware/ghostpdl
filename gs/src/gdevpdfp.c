@@ -297,7 +297,7 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	 * Set ProcessColorModel now, because gx_default_put_params checks
 	 * it.
 	 */
-	static const char *pcm_names[] = {
+	static const char *const pcm_names[] = {
 	    "DeviceGray", "DeviceRGB", "DeviceCMYK", 0
 	};
 	static const gx_device_color_info pcm_color_info[] = {
