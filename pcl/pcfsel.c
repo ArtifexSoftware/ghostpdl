@@ -294,7 +294,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
                we attempt to reselect the font by id.  As a fallback
                we use family selection.  NB We do not correctly handle
                the fonts with alphanumeric id's */
-	    if ( pfs->selected_id ) {
+	    if ( (int)pfs->selected_id >= 0 ) {
 		byte id_key[2];
 		void *value;
 		id_key[0] = pfs->selected_id >> 8;
@@ -347,7 +347,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 	    pfs->font = best_font;
 	    pfs->map = best_map;
 	  }
-	pfs->selected_id = 0;
+	pfs->selected_id = (uint)-1;
 	return 0;
 }
 

@@ -59,7 +59,7 @@ pcl_decache_font(pcl_state_t *pcs, int set)
 	else
 	  {
 	    pcs->font_selection[set].font = NULL;
-	    pcs->font_selection[set].selected_id = 0;
+	    pcs->font_selection[set].selected_id = -1;
 	    pcs->g.font_selection[set].font = NULL;
 	    if ( pcs->font_selected == set )
 	      {
@@ -166,7 +166,7 @@ pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
 	if ( pitch_cp != pl_fp_pitch_cp(&pfs->params) )
 	  {
 	    pl_fp_set_pitch_cp(&pfs->params, pitch_cp);
-	    if ( !pfs->selected_id )
+	    if ( (int)pfs->selected_id < 0)
 	      pcl_decache_font(pcs, set);
 	  }
 	return 0;
@@ -189,7 +189,7 @@ pcl_height(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	if ( height_4ths != pfs->params.height_4ths )
 	  {
 	    pfs->params.height_4ths = height_4ths;
-	    if ( !pfs->selected_id )
+	    if ( (int)pfs->selected_id < 0)
 	      pcl_decache_font(pcs, set);
 	  }
 	return 0;
@@ -570,7 +570,7 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 		pcs->font_selection[0].params.height_4ths =
                     pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0;
 		pcs->font_selection[0].font = 0;
-		pcs->font_selection[0].selected_id = 0;
+		pcs->font_selection[0].selected_id = (uint)-1;
 		pcs->font_selection[1] = pcs->font_selection[0];
 		pcs->font_selected = primary;
 		pcs->font = 0;
