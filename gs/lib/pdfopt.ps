@@ -511,16 +511,15 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 
 % ---------------- Create the LPDict ---------------- %
 
-% Create the contents of the LPDict.  Free variables:
-%   PHSStart PHSEnd FirstPageEnd Xref0Start FileEnd
+% Create the contents of the LPDict.
 /createLPDict {			% <phsstart> <phsend> <firstpageend>
 				%   <xref0start> <filelength> createLPDict -
   LPDict
   dup /Linearized 1 put
-  dup /L 4 -1 roll put
-  dup /T 4 -1 roll put
-  dup /E 4 -1 roll put
-  dup /H 5 -2 roll 1 index sub 2 array astore put
+  dup /L 4 -1 roll put		% filelength
+  dup /T 4 -1 roll put		% xref0start
+  dup /E 4 -1 roll put		% firstpageend
+  dup /H 5 -2 roll 1 index sub 2 array astore put	% phsstart, end-start
   dup /O 1 pdffindpageref 0 get omap put
   /N pdfpagecount put
 } bind def
@@ -543,80 +542,116 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 % ---------------- Write the output file ---------------- %
 
 % Write objects identified by object number.
-/writeobjn {		% <obj#> writeobjn
+/writeobjn {		% <obj#> writeobjn -
   Generations 1 index lget pdfwriteobj
 } bind def
 /writeobjns {		% <obj#s> writeobjns -
   { writeobjn } forall
 } bind def
 
+% Write a part of the output file.
+/writePart {		% <proc> <label> writePart -
+  PDEBUG {
+    dup print ( start=) print
+    OFile { .fileposition } stopped { pop (???) } if =
+    2 .execn
+    print ( end=) print
+    OFile { .fileposition } stopped { pop (???) } if =
+  } {
+    pop exec
+  } ifelse
+} bind def
+
 % Write the header.
 /writePart1 {		% - writePart1 -
-  pdfwriteheader
+  {
+    pdfwriteheader
+  } (part1) writePart
 } bind def
 
 % Write the linearization parameters dictionary.
 /writePart2 {		% - writePart2 -
-  LPDictN writeobjn
+  {
+(LPDict: ) print LPDict ===
+    LPDictN writeobjn
+  } (part2) writePart
 } bind def
 
 % Write the First Page xref table and trailer.
 % Free variables: FirstPageXN.
 /writePart3 {		% <xrefstart> writePart3 -
-  FirstPageXN NObjects 1 add 1 index sub pdfwritexref
-  Trailer dup length 1 add dict copy
-  dup /Size NObjects 1 add put
-  dup /Prev 4 -1 roll put
-  pdfwritetrailer
-  0 pdfwritestartxref
+  {
+    FirstPageXN NObjects 1 add 1 index sub pdfwritexref
+    Trailer dup length 1 add dict copy
+    dup /Size NObjects 1 add put
+    dup /Prev 4 -1 roll put
+    pdfwritetrailer
+    0 pdfwritestartxref
+  } (part3) writePart
 } bind def
 
 % Write the Catalog and other required document-level objects.
 % Free variables: CatalogNs.
 /writePart4 {		% - writePart4 -
-  CatalogNs writeobjns
+  {
+    CatalogNs writeobjns
+  } (part4) writePart
 } bind def
 
 % Write the Primary Hint Stream.
 /writePart5 {		% - writePart5 -
-  PHSN writeobjn
+  {
+    PHSN writeobjn
+  } (part5) writePart
 } bind def
 
 % Write the First Page's objects.
 % Free variables: FirstPageNs.
 /writePart6 {		% - writePart6 -
-  FirstPageNs writeobjns
+  {
+    FirstPageNs writeobjns
+  } (part6) writePart
 } bind def
 
 % Write the objects of other pages (Page + non-shared objects).
 % Free variables: OtherPageNs.
 /writePart7 {		% - writePart7 <lengths>
-  [ OtherPageNs {
-    OFile fileposition exch
-    writeobjns OFile fileposition exch sub
-  } forall ]
+  {
+    [ OtherPageNs {
+      OFile fileposition exch
+      writeobjns OFile fileposition exch sub
+    } forall ]
+  } (part7) writePart
 } bind def
 
 % Write the shared objects of other pages.
 % Free variables: SharedNs.
 /writePart8 {		% - writePart8 -
-  SharedNs writeobjns
+  {
+    SharedNs writeobjns
+  } (part8) writePart
 } bind def
 
 % Write the other objects not associated with pages.
 % Free variables: NonPageNs.
 /writePart9 {		% - writePart9 -
-  NonPageNs writeobjns
+  {
+    NonPageNs writeobjns
+  } (part9) writePart
 } bind def
 
 % Write the main xref table and trailer.
 % Free variables: FirstPageXN.
 /writePart11xref {	% writePart11 -
-  0 FirstPageXN pdfwritexref
+  {
+    0 FirstPageXN pdfwritexref
+  } (part11xref) writePart
 } bind def
 /writePart11rest {	% <part3start> writePart11rest -
-  << /Size FirstPageXN >> pdfwritetrailer
-  pdfwritestartxref
+  {
+    << /Size FirstPageXN >> pdfwritetrailer
+    pdfwritestartxref
+  } (part11rest) writePart
 } bind def
 
 % ---------------- Write hint tables ---------------- %
