@@ -218,8 +218,13 @@ struct pdf_article_s {
 /* ---------------- The device structure ---------------- */
 
 /* Text state */
+#ifndef pdf_font_descriptor_DEFINED
+#  define pdf_font_descriptor_DEFINED
+typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;
+#endif
 typedef struct pdf_std_font_s {
     gs_font *font;		/* weak pointer, may be 0 */
+    pdf_font_descriptor_t *pfd;  /* *not* a weak pointer */
     gs_matrix orig_matrix;
     gs_uid uid;			/* UniqueID, not XUID */
 } pdf_std_font_t;
@@ -441,7 +446,8 @@ struct gx_device_pdf_s {
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
   (st_device_psdf_max_ptrs + gx_device_pdf_num_ptrs +\
-   gx_device_pdf_num_strings + PDF_NUM_STD_FONTS /* std_fonts[].font */ +\
+   gx_device_pdf_num_strings +\
+   PDF_NUM_STD_FONTS * 2 /* std_fonts[].{font,pfd} */ +\
    NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS /* resources[].chains[] */ +\
    MAX_OUTLINE_DEPTH * 2 /* outline_levels[].{first,last}.action */
 

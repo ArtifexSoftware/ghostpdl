@@ -357,11 +357,12 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 {
     gs_memory_t *mem = pdev->v_memory;
     pdf_font_descriptor_t *pfd = 0;
-    gs_string chars_used;
+    gs_string chars_used, glyphs_used;
     int code;
     pdf_font_t *pfres;
 
     chars_used.data = 0;
+    glyphs_used.data = 0;
     if (pfd_in != 0) {
 	code = pdf_alloc_resource(pdev, resourceFontDescriptor,
 				  pfd_in->rid, (pdf_resource_t **)&pfd, 0L);
@@ -375,6 +376,7 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 	memset(chars_used.data, 0, chars_used.size);
 	pfd->values = pfd_in->values;
 	pfd->chars_used = chars_used;
+	pfd->glyphs_used = glyphs_used;
 	pfd->subset_ok = true;
 	pfd->FontFile_id = 0;
 	pfd->base_font = 0;
@@ -399,6 +401,9 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     pfres->skip = false;
     return 0;
  fail:
+    if (glyphs_used.data)
+	gs_free_string(mem, glyphs_used.data, glyphs_used.size,
+		       "pdf_alloc_font(glyphs_used)");
     if (chars_used.data)
 	gs_free_string(mem, chars_used.data, chars_used.size,
 		       "pdf_alloc_font(chars_used)");

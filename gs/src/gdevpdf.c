@@ -58,6 +58,9 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
     if (index < PDF_NUM_STD_FONTS)
 	ENUM_RETURN(pdev->std_fonts[index].font);
     index -= PDF_NUM_STD_FONTS;
+    if (index < PDF_NUM_STD_FONTS)
+	ENUM_RETURN(pdev->std_fonts[index].pfd);
+    index -= PDF_NUM_STD_FONTS;
     if (index < NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS)
 	ENUM_RETURN(pdev->resources[index / NUM_RESOURCE_CHAINS].chains[index % NUM_RESOURCE_CHAINS]);
     index -= NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS;
@@ -88,8 +91,10 @@ private RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
     {
 	int i, j;
 
-	for (i = 0; i < PDF_NUM_STD_FONTS; ++i)
+	for (i = 0; i < PDF_NUM_STD_FONTS; ++i) {
 	    RELOC_PTR(gx_device_pdf, std_fonts[i].font);
+	    RELOC_PTR(gx_device_pdf, std_fonts[i].pfd);
+	}
 	for (i = 0; i < NUM_RESOURCE_TYPES; ++i)
 	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
 		RELOC_PTR(gx_device_pdf, resources[i].chains[j]);
