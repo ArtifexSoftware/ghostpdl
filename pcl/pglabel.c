@@ -61,27 +61,14 @@ hpgl_points_2_plu(const hpgl_state_t *pgls, floatp points)
  * a double-byte character.
  */
 private int
-hpgl_next_char(gs_show_enum *penum, const hpgl_state_t *pgls, gs_char *pchr)
-{	uint i = penum->index;
-	uint size = penum->text.size;
-	const byte *p;
-
-	if ( i >= size )
-	  return 2;
-	p = penum->text.data.bytes;
-	if ( pgls->g.label.double_byte ) {
-	    if ( i + 1 >= size ) {
-		/* lose the first byte of 16bit terminator 
-		 */
-		return 2;
-	    }
-	  *pchr = (*p << 8) + p[1];
-	  penum->index = i + 2;
-	} else {
-	  *pchr = *p + pgls->g.label.row_offset;
-	  penum->index = i + 1;
-	}
-	return 0;
+hpgl_next_char(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
+{	
+    if ( penum->index == 1 )
+        return 2;
+    *pglyph = gs_no_glyph;
+    *pchr = penum->text.data.chars[0];
+    penum->index++;
+    return 0;
 }
 
 /* is it a printable character - duplicate of pcl algorithm in
@@ -114,28 +101,6 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
     
     return pl_map_symbol(psm, chr,
                          pfs->font->storage == pcds_internal);
-}
-
-/* Next-character procedure for fonts in GL/2 mode. NB.  this need to
-   be reworked. */
-private int
-hpgl_next_char_proc(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
-{	const pcl_state_t *pcs = gs_state_client_data(penum->pis);
-#define pgls pcs
-	int code = hpgl_next_char(penum, pgls, pchr);
-	if ( code )
-	  return code;
-        *pglyph = gs_no_glyph;
-	/* Don't map stick or arc fonts */
-	{
-	    pcl_font_selection_t *pfs =
-		&pgls->g.font_selection[pgls->g.font_selected];
-
-	    if ( ((pfs->font->params.typeface_family & 0xfff) != STICK_FONT_TYPEFACE) )
-		*pchr = hpgl_map_symbol(*pchr, pgls);
-	}
-#undef pgls
-	return 0;
 }
 
 /* ------ Font selection ------- */
@@ -770,7 +735,7 @@ hpgl_print_char(
 	/*
 	 * Patch the next-character procedure.
 	 */
-	pfont->procs.next_char_glyph = (void *)hpgl_next_char_proc; /* FIX ME (void *) */
+	pfont->procs.next_char_glyph = hpgl_next_char; /* FIX ME (void *) */
 	gs_setfont(pgs, pfont);
 
 	/*
@@ -831,6 +796,8 @@ hpgl_print_char(
 	/* If SP is a control code, get the width of the space character. */
 	if (ch == ' ') {
             space_code = hpgl_get_char_width(pgls, ' ', &space_width);
+            // NB fix me.  hpgl_get_width lies.
+            space_code = 1;
 	    if (space_code == 1) {
                 /* Space is a control code. */
 		if ( pl_font_is_scalable(font) ) {
@@ -857,15 +824,20 @@ hpgl_print_char(
             /* at this point we will assume the page is marked */
             pgls->page_marked = true;
 	} else {
+            gs_text_params_t text;
+            gs_char mychar_buff[1];
+            mychar_buff[0] = hpgl_map_symbol(ch, pgls);
             if (use_show) {
+                /* not a character path */
 		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
-
-                // NB		if ( pgls->g.label.double_byte ) /* tell pdfwrite about 16bit chars */
-		// NB    code = gs_ushow_begin(pgs, (char *)str, 1, pgls->memory, &penum);
-		// NB else
-		    code = gs_show_begin(pgs, (char *)str, 1, pgls->memory, &penum);
+                text.operation = TEXT_FROM_CHARS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
 	    } else 
-		code = gs_charpath_begin(pgs, (char *)str, 1, true, pgls->memory, &penum);
+                /* character path */
+                text.operation = TEXT_FROM_CHARS | TEXT_DO_TRUE_CHARPATH | TEXT_RETURN_WIDTH;
+            text.data.chars = mychar_buff;
+            /* always on char (gs_chars (ints)) at a time */
+            text.size = 1;
+            code = gs_text_begin(pgs, &text, pgls->memory, &penum);
 	    if ( code >= 0 )
 		code = gs_text_process(penum);
 
