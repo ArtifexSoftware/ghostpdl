@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -377,10 +377,9 @@ gp_init(void)
 #ifdef __EMX__
     _emxload_env("GS_LOAD");
 #endif
+
     /* Set up the handler for numeric exceptions. */
     signal(SIGFPE, handle_FPE);
-
-    gp_init_console();
 }
 
 
