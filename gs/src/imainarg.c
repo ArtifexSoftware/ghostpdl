@@ -74,14 +74,10 @@ extern int zflushpage(P1(i_ctx_t *));
 /* Note: sscanf incorrectly defines its first argument as char * */
 /* rather than const char *.  This accounts for the ugly casts below. */
 
-/* Redefine puts to use fprintf, so it will work even without stdio. */
+/* Redefine puts to use outprintf, */
+/* so it will work even without stdio. */
 #undef puts
-private void
-fpputs(const gs_main_instance *minst, const char *str)
-{
-    fprintf(minst->fstdout, "%s\n", str);
-}
-#define puts(str) fpputs(minst, str)
+#define puts(str) outprintf("%s\n", str)
 
 /* Forward references */
 #define runInit 1
@@ -194,8 +190,7 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 		if (code < 0)
 		    return code;
 		if (code > 0)
-		    fprintf(minst->fstdout,
-			    "Unknown switch %s - ignoring\n", arg);
+		    outprintf("Unknown switch %s - ignoring\n", arg);
 		break;
 	    default:
 		code = argproc(minst, arg);
@@ -272,8 +267,7 @@ run_stdin:
 		if (code < 0)
 		    return e_Fatal;
 		if (psarg == 0) {
-		    fprintf(minst->fstdout,
-			    "Usage: gs ... -%c file.ps arg1 ... argn\n", sw);
+		    outprintf("Usage: gs ... -%c file.ps arg1 ... argn\n", sw);
 		    arg_finit(pal);
 		    return e_Fatal;
 		}
@@ -321,7 +315,7 @@ run_stdin:
 		if (sscanf((const char *)arg, "%u", &bsize) != 1 ||
 		    bsize <= 0 || bsize > MAX_BUFFERED_SIZE
 		    ) {
-		    fprintf(minst->fstdout, "-B must be followed by - or size between 1 and %u\n", MAX_BUFFERED_SIZE);
+		    outprintf("-B must be followed by - or size between 1 and %u\n", MAX_BUFFERED_SIZE);
 		    return e_Fatal;
 		}
 		minst->run_buffer_size = bsize;
@@ -424,8 +418,7 @@ run_stdin:
 
 		sscanf((const char *)arg, "%ld", &msize);
 		if (msize <= 0 || msize > max_long >> 10) {
-		    fprintf(minst->fstdout,
-			    "-K<numK> must have 1 <= numK <= %ld\n",
+		    outprintf("-K<numK> must have 1 <= numK <= %ld\n",
 			    max_long >> 10);
 		    return e_Fatal;
 		}
@@ -681,7 +674,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
     int code;
 
     if (in == 0) {
-	fprintf(minst->fstdout, "Unable to open %s for reading", arg);
+	outprintf("Unable to open %s for reading", arg);
 	return_error(e_invalidfileaccess);
     }
     code = gs_main_init2(minst);
@@ -798,8 +791,7 @@ print_help(gs_main_instance * minst)
     print_devices(minst);
     print_paths(minst);
     if (gs_init_string_sizeof > 0) {
-        fprintf(minst->fstdout,
-		"Initialization files are compiled into the executable.\n");
+        outprintf("Initialization files are compiled into the executable.\n");
     }
     print_help_trailer(minst);
 }
@@ -808,10 +800,8 @@ print_help(gs_main_instance * minst)
 private void
 print_revision(const gs_main_instance *minst)
 {
-    FILE *out = minst->fstdout;
-
-    printf_program_ident(out, gs_product, gs_revision);
-    fprintf(out, " (%d-%02d-%02d)\n%s\n",
+    printf_program_ident(gs_product, gs_revision);
+    outprintf(" (%d-%02d-%02d)\n%s\n",
 	    (int)(gs_revisiondate / 10000),
 	    (int)(gs_revisiondate / 100 % 100),
 	    (int)(gs_revisiondate % 100),
@@ -822,28 +812,22 @@ print_revision(const gs_main_instance *minst)
 private void
 print_version(const gs_main_instance *minst)
 {
-    FILE *out = minst->fstdout;
-
-    printf_program_ident(out, NULL, gs_revision);
+    printf_program_ident(NULL, gs_revision);
 }
 
 /* Print usage information. */
 private void
 print_usage(const gs_main_instance *minst)
 {
-    FILE *out = minst->fstdout;
-
-    fprintf(out, "%s", help_usage1);
-    fprintf(out, "%s", help_usage2);
+    outprintf("%s", help_usage1);
+    outprintf("%s", help_usage2);
 }
 
 /* Print the list of available devices. */
 private void
 print_devices(const gs_main_instance *minst)
 {
-    FILE *out = minst->fstdout;
-
-    fprintf(out, "%s", help_devices);
+    outprintf("%s", help_devices);
     {
 	int i;
 	int pos = 100;
@@ -854,21 +838,19 @@ print_devices(const gs_main_instance *minst)
 	    int len = strlen(dname);
 
 	    if (pos + 1 + len > 76)
-		fprintf(out, "\n  "), pos = 2;
-	    fprintf(out, " %s", dname);
+		outprintf("\n  "), pos = 2;
+	    outprintf(" %s", dname);
 	    pos += 1 + len;
 	}
     }
-    fprintf(out, "\n");
+    outprintf("\n");
 }
 
 /* Print the list of language emulators. */
 private void
 print_emulators(const gs_main_instance *minst)
 {
-    FILE *out = minst->fstdout;
-
-    fprintf(out, "%s", help_emulators);
+    outprintf("%s", help_emulators);
     {
 	const ref *pes;
 
@@ -880,18 +862,16 @@ print_emulators(const gs_main_instance *minst)
 	     * an array of string refs, each string is actually a
 	     * (null terminated) C string.
 	     */
-	    fprintf(out, " %s", (const char *)pes->value.const_bytes);
+	    outprintf(" %s", (const char *)pes->value.const_bytes);
     }
-    fprintf(out, "\n");
+    outprintf("\n");
 }
 
 /* Print the search paths. */
 private void
 print_paths(gs_main_instance * minst)
 {
-    FILE *out = minst->fstdout;
-
-    fprintf(out, "%s", help_paths);
+    outprintf("%s", help_paths);
     gs_main_set_lib_paths(minst);
     {
 	uint count = r_size(&minst->lib_path.list);
@@ -908,35 +888,33 @@ print_paths(gs_main_instance * minst)
 	    const char *sepr = (i == count - 1 ? "" : fsepr);
 
 	    if (1 + pos + strlen(sepr) + len > 76)
-		fprintf(out, "\n  "), pos = 2;
-	    fprintf(out, " ");
+		outprintf("\n  "), pos = 2;
+	    outprintf(" ");
 	    /*
 	     * This is really ugly, but it's necessary because some
 	     * platforms rely on all console output being funneled through
-	     * fprintf.  We wish we could just do:
-	     fwrite(prdir->value.bytes, 1, len, out);
+	     * outprintf.  We wish we could just do:
+	     fwrite(prdir->value.bytes, 1, len, minst->fstdout);
 	     */
 	    {
 		const char *p = (const char *)prdir->value.bytes;
 		uint j;
 
 		for (j = len; j; j--)
-		    fprintf(out, "%c", *p++);
+		    outprintf("%c", *p++);
 	    }
-	    fprintf(out, sepr);
+	    outprintf("%s", sepr);
 	    pos += 1 + len + strlen(sepr);
 	}
     }
-    fprintf(out, "\n");
+    outprintf("\n");
 }
 
 /* Print the help trailer. */
 private void
 print_help_trailer(const gs_main_instance *minst)
 {
-    FILE *out = minst->fstdout;
-
-    fprintf(out, help_trailer, gs_doc_directory,
+    outprintf(help_trailer, gs_doc_directory,
 	    gp_file_name_concat_string(gs_doc_directory,
 				       strlen(gs_doc_directory),
 				       "Use.htm", 7),

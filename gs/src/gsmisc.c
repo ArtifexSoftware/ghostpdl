@@ -54,6 +54,52 @@ orig_sqrt(double x)
 /* Define private replacements for stdin, stdout, and stderr. */
 FILE *gs_stdio[3];
 
+
+/* ------ Redirected stdout and stderr  ------ */
+
+#include <stdarg.h>
+#define PRINTF_BUF_LENGTH 1024
+
+int outprintf(const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+
+    count = vsprintf(buf, fmt, args);
+    outwrite(buf, count);
+    if (count >= PRINTF_BUF_LENGTH) {
+	count = sprintf(buf, 
+	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
+	    PRINTF_BUF_LENGTH);
+	outwrite(buf, count);
+    }
+    va_end(args);
+    return count;
+}
+
+int errprintf(const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+
+    count = vsprintf(buf, fmt, args);
+    errwrite(buf, count);
+    if (count >= PRINTF_BUF_LENGTH) {
+	count = sprintf(buf, 
+	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
+	    PRINTF_BUF_LENGTH);
+	errwrite(buf, count);
+    }
+    va_end(args);
+    return count;
+}
+
 /* ------ Debugging ------ */
 
 /* Ghostscript writes debugging output to gs_debug_out. */
@@ -78,13 +124,13 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
 /*
  * Define the trace printout procedures.  We always include these, in case
  * other modules were compiled with DEBUG set.  Note that they must use
- * fprintf, not fput[cs], because of the way that stdout is implemented on
- * Windows platforms.
+ * out/errprintf, not fprintf nor fput[cs], because of the way that 
+ * stdout/stderr are implemented on DLL/shared library builds.
  */
 void
 dflush(void)
 {
-    fflush(dstderr);
+    errflush();
 }
 private const char *
 dprintf_file_tail(const char *file)
@@ -99,53 +145,58 @@ dprintf_file_tail(const char *file)
 }
 #if __LINE__			/* compiler provides it */
 void
-dprintf_file_and_line(FILE * f, const char *file, int line)
+dprintf_file_and_line(const char *file, int line)
 {
     if (gs_debug['/'])
-	fprintf(f, dprintf_file_and_line_format,
+	dpf(dprintf_file_and_line_format,
 		dprintf_file_tail(file), line);
 }
 #else
 void
-dprintf_file_only(FILE * f, const char *file)
+dprintf_file_only(const char *file)
 {
     if (gs_debug['/'])
-	fprintf(f, dprintf_file_only_format, dprintf_file_tail(file));
+	dpf(dprintf_file_only_format, dprintf_file_tail(file));
 }
 #endif
 void
-printf_program_ident(FILE * f, const char *program_name,
-		     long revision_number)
+printf_program_ident(const char *program_name, long revision_number)
 {
     if (program_name)
-	fprintf(f, (revision_number ? "%s " : "%s"), program_name);
+	outprintf((revision_number ? "%s " : "%s"), program_name);
     if (revision_number) {
 	int fpart = revision_number % 100;
 
-	fprintf(f, (fpart == 0 ? "%d.%d" : "%d.%02d"),
+	outprintf((fpart == 0 ? "%d.%d" : "%d.%02d"),
 		(int)(revision_number / 100), fpart);
     }
 }
 void
-eprintf_program_ident(FILE * f, const char *program_name,
+eprintf_program_ident(const char *program_name,
 		      long revision_number)
 {
     if (program_name) {
-	printf_program_ident(f, program_name, revision_number);
-	fprintf(f, ": ");
+	epf((revision_number ? "%s " : "%s"), program_name);
+	if (revision_number) {
+	    int fpart = revision_number % 100;
+
+	    epf((fpart == 0 ? "%d.%d" : "%d.%02d"),
+		    (int)(revision_number / 100), fpart);
+	}
+	epf(": ");
     }
 }
 #if __LINE__			/* compiler provides it */
 void
-lprintf_file_and_line(FILE * f, const char *file, int line)
+lprintf_file_and_line(const char *file, int line)
 {
-    fprintf(f, "%s(%d): ", file, line);
+    epf("%s(%d): ", file, line);
 }
 #else
 void
 lprintf_file_only(FILE * f, const char *file)
 {
-    fprintf(f, "%s(?): ", file);
+    epf("%s(?): ", file);
 }
 #endif
 

@@ -315,7 +315,7 @@ win_pr2_open(gx_device * dev)
 	pd.hDevNames = NULL;
     }
     if (!(GetDeviceCaps(wdev->hdcprn, RASTERCAPS) != RC_DIBTODEV)) {
-	fprintf(stderr, "Windows printer does not have RC_DIBTODEV\n");
+	errprintf( "Windows printer does not have RC_DIBTODEV\n");
 	DeleteDC(wdev->hdcprn);
 	return gs_error_limitcheck;
     }
@@ -340,7 +340,7 @@ win_pr2_open(gx_device * dev)
     }
 
     if (StartDoc(wdev->hdcprn, &docinfo) <= 0) {
-	fprintf(stderr, "Printer StartDoc failed (error %08x)\n", GetLastError());
+	errprintf("Printer StartDoc failed (error %08x)\n", GetLastError());
 	DeleteDC(wdev->hdcprn);
 	return gs_error_limitcheck;
     }

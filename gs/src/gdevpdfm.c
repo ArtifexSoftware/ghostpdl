@@ -959,9 +959,11 @@ ps_source_ok(const gs_param_string * psource)
 	)
 	return true;
     else {
+	int i;
 	lprintf("bad PS passthrough: ");
-	fwrite(psource->data, 1, psource->size, estderr);
-	fputs("\n", estderr);
+	for (i=0; i<psource->size; i++)
+	    errprintf("%c", psource->data[i]);
+	errprintf("\n");
 	return false;
     }
 }

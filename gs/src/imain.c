@@ -830,3 +830,32 @@ gs_debug_dump_stack(int code, ref * perror_object)
 {
     gs_main_dump_stack(gs_main_instance_default(), code, perror_object);
 }
+
+
+/* Provide a single point for all "C" stdout and stderr.
+ * Eventually these will always be referenced through an instance structure. 
+ */
+
+int outwrite(const char *str, int len)
+{
+    /* When DLL/shared object build is added, this fwrite will */
+    /* be replaced with a call to the caller supplied function */
+    return fwrite(str, 1, len, gs_stdout);
+}
+
+int errwrite(const char *str, int len)
+{
+    return fwrite(str, 1, len, gs_stderr);
+}
+
+void outflush()
+{
+    fflush(gs_stdout);
+}
+
+void errflush()
+{
+    fflush(gs_stderr);
+}
+
+

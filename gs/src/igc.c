@@ -128,7 +128,7 @@ end_phase(const char *str)
     if (gs_debug_c('6')) {
 	dlprintf1("[6]---------------- end %s ----------------\n",
 		  (const char *)str);
-	fflush(dstderr);
+	errflush();
     }
 }
 static const char *const depth_dots_string = "..........";

@@ -557,7 +557,7 @@ win_ddb_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
 	    ReleaseDC(wdev->hwndimg, hdc);
 	    return win_nomemory();
 	}
-	fprintf(stderr, "\nNot enough memory for bitmap.  Halving resolution... ");
+	errprintf("\nNot enough memory for bitmap.  Halving resolution... ");
 	param_dev->x_pixels_per_inch /= 2;
 	param_dev->y_pixels_per_inch /= 2;
 	param_dev->width /= 2;

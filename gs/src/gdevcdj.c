@@ -1915,7 +1915,7 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
     memset(ep_storage, 0, ep_storage_size_words * W);
     return 0;
   default:			/* This should not happen */
-    fprintf(stderr, "ep_print_image: illegal command character `%c'.\n", cmd);
+    errprintf("ep_print_image: illegal command character `%c'.\n", cmd);
     return 1;
   }
 
@@ -3606,7 +3606,7 @@ bjc_fscmyk(byte** inplanes, byte* outplanes[4][4], int** errplanes,
       }
 
 #ifdef CDJ_DEBUG_FS
-      for(i = 0; i < 4; ++i) fprintf(stderr,
+      for(i = 0; i < 4; ++i) errprintf(
          "CMYK_THRESHOLD(%d)=%5d, spotsize(%d)=%5d, emin(%d)=%5d, emax(%d)=%5d\n",
          i,CMYK_THRESHOLD(i),i,SPOTSIZE(i),i,EMIN(i),i,EMAX(i));
 #endif

@@ -1041,14 +1041,14 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
  */
    if(!upd || B_OK4GO != (upd->flags & (B_OK4GO | B_ERROR))) {
 #if UPD_MESSAGES & (UPD_M_ERROR | UPD_M_TOPCALLS)
-         fprintf(stderr,"CALL-REJECTED upd_print_page(0x%05lx,0x%05lx)\n",
+         errprintf("CALL-REJECTED upd_print_page(0x%05lx,0x%05lx)\n",
              (long) udev,(long) out);
 #endif
       return gs_error_undefined;
    }
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-   fprintf(stderr,"CALL: upd_print_page(0x%05lx,0x%05lx)\n",
+   errprintf("CALL: upd_print_page(0x%05lx,0x%05lx)\n",
       (long) udev,(long) out);
 #endif
 
@@ -1114,7 +1114,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
             if(0 > (*dev_proc(udev,get_bits))((gx_device *) udev,
                                    upd->yscnbuf,upd->gsbuf,&upd->gsscan)) {
 #if UPD_MESSAGES & UPD_M_WARNING
-               fprintf(stderr,"get_bits aborted with error, yscnbuf = %4d\n",
+               errprintf("get_bits aborted with error, yscnbuf = %4d\n",
                   upd->yscnbuf);
 #endif
                break;
@@ -1127,7 +1127,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
 
          if(0 > (*upd->render)(upd)) {
 #if UPD_MESSAGES & UPD_M_WARNING
-            fprintf(stderr,"Rendering aborted with error, yscnbuf = %4d\n",
+            errprintf("Rendering aborted with error, yscnbuf = %4d\n",
                upd->yscnbuf);
 #endif
             break;
@@ -1150,7 +1150,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
           if(upd->yscan >= upd->pheight) break;
           if(upd->flags  & B_ABORT ) {
 #if UPD_MESSAGES & UPD_M_WARNING
-             fprintf(stderr,"Printing aborted upon interrupt, yscan = %4d\n",
+             errprintf("Printing aborted upon interrupt, yscan = %4d\n",
                 upd->yscan);
 #endif
              break;
@@ -1201,7 +1201,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
    else                          error = 0;
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-   fprintf(stderr,"RETURN: %d = upd_print_page(0x%05lx,0x%05lx)\n",
+   errprintf("RETURN: %d = upd_print_page(0x%05lx,0x%05lx)\n",
       error,(long) udev,(long)out);
 #endif
 
@@ -1237,7 +1237,7 @@ upd_open(gx_device *pdev)
    int              error;
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-      fprintf(stderr,"CALL: upd_open(0x%05lx)\n",(long) pdev);
+      errprintf("CALL: upd_open(0x%05lx)\n",(long) pdev);
 #endif
 
 /** enforce the UPD-Margins */
@@ -1313,31 +1313,31 @@ buffer for the raw raster-data
 #if UPD_MESSAGES & UPD_M_SETUP
       if((upd->flags & (B_OK4GO | B_ERROR)) == B_OK4GO) {
         int i,j,l,ln,lv;
-        fprintf(stderr,"\nupd->flags    = 0x%05lx\n",(unsigned long)upd->flags);
-        fprintf(stderr,  "upd->pdwidth  = %5d\n",upd->pdwidth);
-        fprintf(stderr,  "upd->pdheight = %5d\n",upd->pdheight);
-        fprintf(stderr,  "upd->ngsbuf   = %5u\n",upd->ngsbuf);
-        fprintf(stderr,  "upd->gswidth  = %5d\n",upd->gswidth);
-        fprintf(stderr,  "upd->gsheight = %5d\n",upd->gsheight);
-        fprintf(stderr,  "upd->rwidth   = %5d\n",upd->rwidth);
-        fprintf(stderr,  "upd->pwidth   = %5d\n",upd->pwidth);
-        fprintf(stderr,  "upd->pheight  = %5d\n",upd->pheight);
-        fprintf(stderr,  "upd->nvalbuf  = %5u\n",upd->nvalbuf);
-        fprintf(stderr,  "upd->nscnbuf  = %5d\n",upd->nscnbuf);
-        fprintf(stderr,  "upd->ncomp    = %5d\n",upd->ncomp);
-        fprintf(stderr,  "upd->ocomp    = %5d\n",upd->ocomp);
-        fprintf(stderr,  "upd->nbytes   = %5d\n",upd->nbytes);
-        fprintf(stderr,  "upd->nlimits  = %5d\n",upd->nlimits);
-        fprintf(stderr,  "upd->scnmsk   = %5d\n",upd->scnmsk);
-        fprintf(stderr,  "upd->noutbuf  = %5u\n",upd->noutbuf);
-        fprintf(stderr,  "upd->ixpass   = %5d\n",upd->ixpass);
-        fprintf(stderr,  "upd->ipass    = %5d\n",upd->ipass);
-        fprintf(stderr,  "upd->icomp    = %5d\n",upd->icomp);
-        fprintf(stderr,  "upd->lf       = %5d\n",upd->lf);
-        fprintf(stderr,  "upd->xprinter = %5d\n",upd->xprinter);
-        fprintf(stderr,  "upd->yscan    = %5d\n",upd->yscan);
-        fprintf(stderr,  "upd->yprinter = %5d\n",upd->yprinter);
-        fprintf(stderr,  "upd->yscnbuf  = %5d\n",upd->yscnbuf);
+        errprintf("\nupd->flags    = 0x%05lx\n",(unsigned long)upd->flags);
+        errprintf(  "upd->pdwidth  = %5d\n",upd->pdwidth);
+        errprintf(  "upd->pdheight = %5d\n",upd->pdheight);
+        errprintf(  "upd->ngsbuf   = %5u\n",upd->ngsbuf);
+        errprintf(  "upd->gswidth  = %5d\n",upd->gswidth);
+        errprintf(  "upd->gsheight = %5d\n",upd->gsheight);
+        errprintf(  "upd->rwidth   = %5d\n",upd->rwidth);
+        errprintf(  "upd->pwidth   = %5d\n",upd->pwidth);
+        errprintf(  "upd->pheight  = %5d\n",upd->pheight);
+        errprintf(  "upd->nvalbuf  = %5u\n",upd->nvalbuf);
+        errprintf(  "upd->nscnbuf  = %5d\n",upd->nscnbuf);
+        errprintf(  "upd->ncomp    = %5d\n",upd->ncomp);
+        errprintf(  "upd->ocomp    = %5d\n",upd->ocomp);
+        errprintf(  "upd->nbytes   = %5d\n",upd->nbytes);
+        errprintf(  "upd->nlimits  = %5d\n",upd->nlimits);
+        errprintf(  "upd->scnmsk   = %5d\n",upd->scnmsk);
+        errprintf(  "upd->noutbuf  = %5u\n",upd->noutbuf);
+        errprintf(  "upd->ixpass   = %5d\n",upd->ixpass);
+        errprintf(  "upd->ipass    = %5d\n",upd->ipass);
+        errprintf(  "upd->icomp    = %5d\n",upd->icomp);
+        errprintf(  "upd->lf       = %5d\n",upd->lf);
+        errprintf(  "upd->xprinter = %5d\n",upd->xprinter);
+        errprintf(  "upd->yscan    = %5d\n",upd->yscan);
+        errprintf(  "upd->yprinter = %5d\n",upd->yprinter);
+        errprintf(  "upd->yscnbuf  = %5d\n",upd->yscnbuf);
 
         ln = 13;
         lv = 5;
@@ -1395,20 +1395,20 @@ buffer for the raw raster-data
 
         for(i = 0; countof(upd_choice) > i; ++i) {
           if(upd_choice[i]) {
-            fprintf(stderr,"%*s = %-*s (%2d)\n",ln,upd_choice[i][0],
+            errprintf("%*s = %-*s (%2d)\n",ln,upd_choice[i][0],
                lv,upd_choice[i][upd->choice[i]],upd->choice[i]);
           } else {
-            fprintf(stderr,"%*s[%2d] = %2d\n",ln-4,"upd_choice",i,
+            errprintf("%*s[%2d] = %2d\n",ln-4,"upd_choice",i,
                upd->choice[i]);
           }
         }
 
         for(i = 0; countof(upd_flags) > i; ++i) {
           if(upd_flags[i]) {
-            fprintf(stderr,"%*s = %s\n",ln,upd_flags[i],
+            errprintf("%*s = %s\n",ln,upd_flags[i],
                ((uint32) 1 << i) & upd->flags ? "true" : "false");
           } else {
-            fprintf(stderr,"%*s[%2d] = %s\n",ln-4,"upd_flags",i,
+            errprintf("%*s[%2d] = %s\n",ln-4,"upd_flags",i,
                ((uint32) 1 << i) & upd->flags ? "true" : "false");
 
           }
@@ -1416,16 +1416,16 @@ buffer for the raw raster-data
 
         for(i = 0; countof(upd_ints) > i; ++i) {
           if(upd_ints[i]) {
-            fprintf(stderr,"%*s = %5d\n",ln,upd_ints[i],upd->ints[i]);
+            errprintf("%*s = %5d\n",ln,upd_ints[i],upd->ints[i]);
           } else {
-            fprintf(stderr,"%*s[%2d] = %5d\n",ln-4,"upd_ints",i,upd->ints[i]);
+            errprintf("%*s[%2d] = %5d\n",ln-4,"upd_ints",i,upd->ints[i]);
           }
         }
 
       }
 
 
-      fprintf(stderr,"\n%sready to print\n\n",
+      errprintf("\n%sready to print\n\n",
          B_OK4GO != (upd->flags & (B_OK4GO | B_ERROR)) ?
          "NOT " : "");
 #endif
@@ -1433,7 +1433,7 @@ buffer for the raw raster-data
    }
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-      fprintf(stderr,"RETURN: %d = upd_open(0x%05lx)\n",
+      errprintf("RETURN: %d = upd_open(0x%05lx)\n",
          error,(long) pdev);
 #endif
 
@@ -1453,7 +1453,7 @@ upd_close(gx_device *pdev)
    int         code;
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-   fprintf(stderr,"CALL: upd_close(0x%05lx)\n",(long)pdev);
+   errprintf("CALL: upd_close(0x%05lx)\n",(long)pdev);
 #endif
 
 /** If necessary, write the close-sequence **/
@@ -1500,7 +1500,7 @@ upd_close(gx_device *pdev)
 
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-      fprintf(stderr,"RETURN: %d = upd_close(0x%05lx)\n",
+      errprintf("RETURN: %d = upd_close(0x%05lx)\n",
          error,(long) pdev);
 #endif
 
@@ -1514,7 +1514,7 @@ upd_close(gx_device *pdev)
 #if UPD_MESSAGES & UPD_M_TOPCALLS
 #define UPD_EXIT_GET(Err,Dev,List)                                      \
    if(0 > Err) {                                                        \
-      fprintf(stderr,"RETURN-%d: %d upd_get_params(0x%05lx,0x%05lx)\n", \
+      errprintf("RETURN-%d: %d upd_get_params(0x%05lx,0x%05lx)\n", \
          __LINE__,Err,(long) Dev,(long) List);                          \
       return_error(Err);                                                \
    }
@@ -1530,7 +1530,7 @@ upd_get_params(gx_device *pdev, gs_param_list *plist)
    int               error,i;
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-      fprintf(stderr,"CALL: upd_get_params(0x%05lx,0x%05lx)\n",
+      errprintf("CALL: upd_get_params(0x%05lx,0x%05lx)\n",
          (long) udev,(long) plist);
 #endif
 
@@ -1633,7 +1633,7 @@ upd_get_params(gx_device *pdev, gs_param_list *plist)
    }
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-   fprintf(stderr,"RETURN: %d = upd_get_params(0x%05lx,0x%05lx)\n",
+   errprintf("RETURN: %d = upd_get_params(0x%05lx,0x%05lx)\n",
        error,(long) udev,(long) plist);
 #endif
 
@@ -1681,7 +1681,7 @@ is carried out by upd_open.
 #define UPD_PUT_CHANGEDSIZE 0x0100
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-      fprintf(stderr,"CALL: upd_put_params(0x%05lx,0x%05lx)\n",
+      errprintf("CALL: upd_put_params(0x%05lx,0x%05lx)\n",
          (long)udev,(long)plist);
 #endif
 
@@ -1740,7 +1740,7 @@ setting data and size to 0.
       code = param_read_null(plist,Name);            \
       if(0 == code) memset(&Object,0,sizeof(Object));\
    }                                                 \
-   if(!code) fprintf(stderr,                         \
+   if(!code) errprintf(                         \
       "upd_put_params: retrieved parameter \"%s\"\n",\
       Name);                                         \
    if(0 > code) {                                    \
@@ -2128,7 +2128,7 @@ transferred into the device-structure. In the case of "uniprint", this may
 
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
-      fprintf(stderr,"RETURN: %d = upd_put_params(0x%05lx,0x%05lx)\n",
+      errprintf("RETURN: %d = upd_put_params(0x%05lx,0x%05lx)\n",
          error,(long) udev, (long) plist);
 #endif
 
@@ -2179,7 +2179,7 @@ in the W- or K-Component.
 
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-  fprintf(stderr,
+  errprintf(
 "cmyk_icolor: (%5.1f,%5.1f,%5.1f,%5.1f) : (%5.1f,%5.1f,%5.1f,%5.1f) : 0x%0*lx\n",
    255.0 * (double) c / (double) gx_max_color_value,
    255.0 * (double) m / (double) gx_max_color_value,
@@ -2234,7 +2234,7 @@ upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-   fprintf(stderr,
+   errprintf(
     "icolor_rgb: 0x%0*lx -> (%5.1f,%5.1f,%5.1f,%5.1f) -> (%5.1f,%5.1f,%5.1f,%5.1f) -> (%5.1f,%5.1f,%5.1f)\n",
     (pdev->color_info.depth + 3)>>2,color,
     255.0 * (double) ((color >> upd->cmap[1].bitshf) & upd->cmap[1].bitmsk)
@@ -2271,7 +2271,7 @@ upd_rgb_1color(gx_device *pdev,
    rv = upd_truncate(upd,0,r);
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-   fprintf(stderr,
+   errprintf(
       "rgb_1color: (%5.1f,%5.1f,%5.1f) : (%5.1f) : 0x%0*lx\n",
       255.0 * (double) r  / (double) gx_max_color_value,
       255.0 * (double) g  / (double) gx_max_color_value,
@@ -2300,7 +2300,7 @@ upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
    prgb[2] = prgb[1] = prgb[0];
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-   fprintf(stderr,"1color_rgb: 0x%0*lx -> %5.1f -> (%5.1f,%5.1f,%5.1f)\n",
+   errprintf("1color_rgb: 0x%0*lx -> %5.1f -> (%5.1f,%5.1f,%5.1f)\n",
       (pdev->color_info.depth + 3)>>2,color,
       255.0 * (double) ((color >> upd->cmap[0].bitshf) & upd->cmap[0].bitmsk)
                        / (double) upd->cmap[0].bitmsk,
@@ -2327,7 +2327,7 @@ upd_rgb_3color(gx_device *pdev,
    if(rv == gx_no_color_index) rv ^= 1;
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-  fprintf(stderr,
+  errprintf(
    "rgb_3color: (%5.1f,%5.1f,%5.1f) : (%5.1f,%5.1f,%5.1f) : 0x%0*lx\n",
    255.0 * (double) r / (double) gx_max_color_value,
    255.0 * (double) g / (double) gx_max_color_value,
@@ -2358,7 +2358,7 @@ upd_3color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
    prgb[2] = upd_expand(upd,2,color);
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-   fprintf(stderr,
+   errprintf(
      "3color_rgb: 0x%0*lx -> (%5.1f,%5.1f,%5.1f) -> (%5.1f,%5.1f,%5.1f)\n",
       (pdev->color_info.depth + 3)>>2,color,
       255.0 * (double) ((color >> upd->cmap[0].bitshf) & upd->cmap[0].bitmsk)
@@ -2404,7 +2404,7 @@ upd_rgb_4color(gx_device *pdev,
    }
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-  fprintf(stderr,
+  errprintf(
    "rgb_4color: (%5.1f,%5.1f,%5.1f) : (%5.1f,%5.1f,%5.1f,%5.1f) : 0x%0*lx\n",
    255.0 * (double) r / (double) gx_max_color_value,
    255.0 * (double) g / (double) gx_max_color_value,
@@ -2445,7 +2445,7 @@ upd_4color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-   fprintf(stderr,
+   errprintf(
     "4color_rgb: 0x%0*lx -> (%5.1f,%5.1f,%5.1f,%5.1f) -> (%5.1f,%5.1f,%5.1f)\n",
     (pdev->color_info.depth + 3)>>2,color,
     255.0 * (double) ((color >> upd->cmap[1].bitshf) & upd->cmap[1].bitmsk)
@@ -2500,7 +2500,7 @@ upd_cmyk_kcolor(gx_device *pdev,
 
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-  fprintf(stderr,
+  errprintf(
 "cmyk_kcolor: (%5.1f,%5.1f,%5.1f,%5.1f) : (%5.1f,%5.1f,%5.1f,%5.1f) : 0x%0*lx\n",
    255.0 * (double) c / (double) gx_max_color_value,
    255.0 * (double) m / (double) gx_max_color_value,
@@ -2552,7 +2552,7 @@ upd_kcolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
    }
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-   fprintf(stderr,
+   errprintf(
     "kcolor_rgb: 0x%0*lx -> (%5.1f,%5.1f,%5.1f,%5.1f) -> (%5.1f,%5.1f,%5.1f,%5.1f) -> (%5.1f,%5.1f,%5.1f)\n",
     (pdev->color_info.depth + 3)>>2,color,
     255.0 * (double) ((color >> upd->cmap[1].bitshf) & upd->cmap[1].bitmsk)
@@ -2637,7 +2637,7 @@ upd_rgb_ovcolor(gx_device *pdev,
    }
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-  fprintf(stderr,
+  errprintf(
    "rgb_ovcolor: (%5.1f,%5.1f,%5.1f) : (%5.1f,%5.1f,%5.1f,%5.1f) : 0x%0*lx\n",
    255.0 * (double) r / (double) gx_max_color_value,
    255.0 * (double) g / (double) gx_max_color_value,
@@ -2695,7 +2695,7 @@ upd_rgb_novcolor(gx_device *pdev,
    }
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
-  fprintf(stderr,
+  errprintf(
    "rgb_ovcolor: (%5.1f,%5.1f,%5.1f) : (%5.1f,%5.1f,%5.1f,%5.1f) : 0x%0*lx\n",
    255.0 * (double) r / (double) gx_max_color_value,
    255.0 * (double) g / (double) gx_max_color_value,
@@ -2842,11 +2842,11 @@ upd_open_map(upd_device *udev)
          default:
 #if         UPD_MESSAGES & UPD_M_WARNING
                if(upd_choice[C_MAPPER][0])
-                  fprintf(stderr,
+                  errprintf(
                      "upd_open_map: unsupported %s=%d\n",
                      upd_choice[C_MAPPER][0],upd->choice[C_MAPPER]);
                else
-                  fprintf(stderr,
+                  errprintf(
                      "upd_open_map: unsupported choce[%d]=%d\n",
                      C_MAPPER,upd->choice[C_MAPPER]);
 #endif
@@ -2874,7 +2874,7 @@ upd_open_map(upd_device *udev)
             (upd->int_a[IA_COMPBITS].data[imap] >
              (udev->color_info.depth - upd->int_a[IA_COMPSHIFT].data[imap]))) {
 #if         UPD_MESSAGES & UPD_M_WARNING
-               fprintf(stderr,
+               errprintf(
                   "upd_open_map: %d Bits << %d is illegal for %d. Component\n",
                   upd->int_a[IA_COMPBITS].data[imap],
                   upd->int_a[IA_COMPSHIFT].data[imap],imap+1);
@@ -2919,7 +2919,7 @@ upd_open_map(upd_device *udev)
 
             if(0 <= n) {
 #if            UPD_MESSAGES & UPD_M_WARNING
-               fprintf(stderr,
+               errprintf(
                   "upd_open_map: %d. Component has non monoton Xfer\n",imap+1);
 #endif
                success = false;
@@ -2931,7 +2931,7 @@ upd_open_map(upd_device *udev)
                bitmsk   = ((uint32) 1 << upd->int_a[IA_COMPBITS].data[imap]) -1;
                bitmsk <<= upd->int_a[IA_COMPSHIFT].data[imap];
 
-               if(used & bitmsk) fprintf(stderr,
+               if(used & bitmsk) errprintf(
                   "upd_open_map: %d. Component overlaps with others\n",imap+1);
 
                used |= bitmsk;
@@ -2971,7 +2971,7 @@ upd_open_map(upd_device *udev)
          imap = 0;
 
 #if      UPD_MESSAGES & UPD_M_ERROR
-            fprintf(stderr,"upd_open_map: could not allocate code-arrays\n");
+            errprintf("upd_open_map: could not allocate code-arrays\n");
 #        endif
 
       }
@@ -3078,7 +3078,7 @@ upd_open_map(upd_device *udev)
          default:
            imap = 0;
 #if        UPD_MESSAGES & UPD_M_WARNING
-              fprintf(stderr,
+              errprintf(
                  "upd_open: Mapping %d unknown\n",upd->choice[C_MAPPER]);
 #endif
 
@@ -3243,7 +3243,7 @@ upd_open_render(upd_device *udev)
          break;
          default:
 #if UPD_MESSAGES & UPD_M_WARNING
-            fprintf(stderr,"upd_open_render: Unknown rendering type %d\n",
+            errprintf("upd_open_render: Unknown rendering type %d\n",
                 upd->choice[C_RENDER]);
 #endif
          break;
@@ -3324,7 +3324,7 @@ initial test checks it's integrity.
                (UPD_CMAP_MAX <= order[icomp])   ) {
                success = false;
 #if UPD_MESSAGES & UPD_M_WARNING
-                  fprintf(stderr,
+                  errprintf(
                    "upd_open_fscomp: %d is illegal component-index\n",
                    order[icomp]);
 #endif
@@ -3345,7 +3345,7 @@ If anything was ok. up to now, memory get's allocated.
          upd->valptr[icomp] = gs_malloc(1,sizeof(updcomp_t),"upd/fscomp");
          if(NULL == upd->valptr[icomp]) {
 #if UPD_MESSAGES & UPD_M_ERROR
-            fprintf(stderr,
+            errprintf(
                "upd_open_fscomp: could not allocate %d. updcomp\n",
                icomp);
 #endif
@@ -3366,7 +3366,7 @@ If anything was ok. up to now, memory get's allocated.
          memset(upd->valbuf,0,need*sizeof(upd->valbuf[0]));
       } else {
 #if UPD_MESSAGES & UPD_M_ERROR
-         fprintf(stderr,
+         errprintf(
             "upd_open_fscomp: could not allocate %u words for valbuf\n",need);
 #endif
          icomp = 0;
@@ -3432,21 +3432,21 @@ If anything was ok. up to now, memory get's allocated.
          comp->threshold = comp->spotsize / 2;
 
 #if UPD_MESSAGES & UPD_M_SETUP
-         fprintf(stderr,
+         errprintf(
              "Values for %d. Component after %d iterations\n",comp->cmap+1,i);
-         fprintf(stderr,
+         errprintf(
              "steps:     %10ld, Bits: %d\n",(long) comp->bitmsk,comp->bits);
-         fprintf(stderr,
+         errprintf(
              "xfer:      %10d Points, %s\n",
              upd->float_a[upd->cmap[comp->cmap].xfer].size,
              upd->cmap[comp->cmap].rise ? "rising" : "falling");
-         fprintf(stderr,
+         errprintf(
              "offset:    %10d 0x%08x\n",comp->offset,comp->offset);
-         fprintf(stderr,
+         errprintf(
              "scale:     %10d 0x%08x\n",comp->scale,comp->scale);
-         fprintf(stderr,
+         errprintf(
              "threshold: %10d 0x%08x\n",comp->threshold,comp->threshold);
-         fprintf(stderr,
+         errprintf(
              "spotsize:  %10d 0x%08x\n",comp->spotsize,comp->spotsize);
 #endif
       }
@@ -3501,7 +3501,7 @@ upd_close_fscomp(upd_device *udev)
          updcomp_p comp = upd->valptr[icomp];
          if(!comp) continue;
          if(!comp->spotsize) continue;
-         fprintf(stderr,"%d. Component: %6.3f <= error <= %6.3f\n",
+         errprintf("%d. Component: %6.3f <= error <= %6.3f\n",
              icomp+1,
              (double) fs_emin[icomp] / (double) comp->spotsize,
              (double) fs_emax[icomp] / (double) comp->spotsize);
@@ -4245,7 +4245,7 @@ upd_open_writer(upd_device *udev)
 
    if(upd->ints[I_NPASS] > upd->int_a[IA_STD_DY].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
         "upd_open_writer: Only %d instead of %d normal Feeds\n",
         (int) upd->int_a[IA_STD_DY].size,upd->ints[I_NPASS]);
 #endif
@@ -4253,7 +4253,7 @@ upd_open_writer(upd_device *udev)
 
    } else if(upd->int_a[IA_STD_IX].size < upd->int_a[IA_STD_DY].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
         "upd_open_writer: Only %d instead of %d normal Xstarts\n",
         (int) upd->int_a[IA_STD_IX].size,
         (int) upd->int_a[IA_STD_DY].size);
@@ -4269,7 +4269,7 @@ upd_open_writer(upd_device *udev)
       for(i = 0; upd->ints[I_NPASS] > i; ++i)
          sum += upd->int_a[IA_STD_DY].data[i];
       if((upd->ints[I_NYPASS]*upd->ints[I_PINS2WRITE]) != sum)
-         fprintf(stderr,
+         errprintf(
          "upd_open_writer: Sum of normal Feeds is %d rather than %d\n",
          sum,upd->ints[I_NYPASS]*upd->ints[I_PINS2WRITE]);
    }
@@ -4277,7 +4277,7 @@ upd_open_writer(upd_device *udev)
 
    if(upd->int_a[IA_BEG_IX].size < upd->int_a[IA_BEG_DY].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
         "upd_open_writer: Only %d instead of %d initial Xstarts\n",
         (int) upd->int_a[IA_BEG_IX].size,
         (int) upd->int_a[IA_BEG_DY].size);
@@ -4287,7 +4287,7 @@ upd_open_writer(upd_device *udev)
 
    if(upd->int_a[IA_BEGBOT].size < upd->int_a[IA_BEG_DY].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
         "upd_open_writer: Only %d instead of %d initial Pins\n",
         (int) upd->int_a[IA_BEGBOT].size,
         (int) upd->int_a[IA_BEG_DY].size);
@@ -4303,7 +4303,7 @@ upd_open_writer(upd_device *udev)
 
       if(i < upd->int_a[IA_BEG_DY].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-         fprintf(stderr,
+         errprintf(
            "upd_open_writer: Only %d is invalid initial Pins\n",
            upd->int_a[IA_BEGBOT].data[i]);
 #endif
@@ -4320,7 +4320,7 @@ upd_open_writer(upd_device *udev)
       for(i = 0;  upd->int_a[IA_BEG_DY].size > i; ++i)
          sum += upd->int_a[IA_BEG_DY].data[i];
       if(upd->ints[I_BEG_Y] != sum)
-         fprintf(stderr,
+         errprintf(
          "upd_open_writer: Sum of initial Feeds is %d rather than %d\n",
          sum,upd->ints[I_BEG_Y]);
    }
@@ -4328,7 +4328,7 @@ upd_open_writer(upd_device *udev)
 
    if(upd->int_a[IA_END_IX].size < upd->int_a[IA_END_DY].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
         "upd_open_writer: Only %d instead of %d final Xstarts\n",
         (int) upd->int_a[IA_END_IX].size,
         (int) upd->int_a[IA_END_DY].size);
@@ -4338,7 +4338,7 @@ upd_open_writer(upd_device *udev)
 
    if(upd->int_a[IA_ENDTOP].size < upd->int_a[IA_END_DY].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
         "upd_open_writer: Only %d instead of %d Final Pins\n",
         (int) upd->int_a[IA_ENDTOP].size,
         (int) upd->int_a[IA_END_DY].size);
@@ -4354,7 +4354,7 @@ upd_open_writer(upd_device *udev)
 
       if(i < upd->int_a[IA_END_DY].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-         fprintf(stderr,
+         errprintf(
            "upd_open_writer: Only %d is invalid initial Pins\n",
            upd->int_a[IA_ENDTOP].data[i]);
 #endif
@@ -4366,7 +4366,7 @@ upd_open_writer(upd_device *udev)
    if((0 < upd->string_a[SA_SETCOMP].size) &&
       (upd->ocomp > upd->string_a[SA_SETCOMP].size)) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
          "upd_open_writer: Only %d SETCOMP-Commands (%d required)\n",
          (int) upd->string_a[SA_SETCOMP].size,upd->ocomp);
 #endif
@@ -4433,7 +4433,7 @@ upd_open_writer(upd_device *udev)
          default:
             success = false;
 #if UPD_MESSAGES & UPD_M_WARNING
-            fprintf(stderr,"upd_open_writer: Unknown writer-type %d\n",
+            errprintf("upd_open_writer: Unknown writer-type %d\n",
                 upd->choice[C_FORMAT]);
 #endif
          break;
@@ -4853,7 +4853,7 @@ upd_open_wrtescp(upd_device *udev)
    if((0 == upd->strings[S_SETLF].size) &&
       (0 == upd->strings[S_YMOVE].size)   ) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
         "ESC/P-Open: Either SETLF- or YMOVE-Command must be present\n");
 #endif
       error = -1;
@@ -4866,7 +4866,7 @@ upd_open_wrtescp(upd_device *udev)
        (0 == upd->strings[S_XMOVE].size) &&
        (0 == upd->strings[S_XSTEP].size)   )   ) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
          "ESC/P-Open: Missing XSTEP- and/or XMOVE-Command\n");
 #endif
       error = -1;
@@ -4875,7 +4875,7 @@ upd_open_wrtescp(upd_device *udev)
 /** SA_WRITECOMP must be valid */
    if(upd->ncomp > upd->string_a[SA_WRITECOMP].size) { /* ??? upd->ocomp */
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
          "ESC/P-Open: WRITECOMP-Commands must be given\n");
 #endif
       error = -1;
@@ -4936,7 +4936,7 @@ It must hold:
       } else {
          error = -1;
 #if      UPD_MESSAGES & UPD_M_WARNING
-            fprintf(stderr,
+            errprintf(
               "ESC/P-Open: %ld is unreasonable size of Outputbuffer\n",
               (long) noutbuf);
 #endif
@@ -5329,7 +5329,7 @@ upd_open_wrtescp2(upd_device *udev)
    if((1 < upd->ints[I_XSTEP]) && (0 == upd->strings[S_XSTEP].size)) {
 
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
          "ESC/P2-Open: XSTEP-Command required for XSTEP=%d\n",
          upd->ints[I_XSTEP]);
 #endif
@@ -5478,7 +5478,7 @@ upd_open_wrtescp2(upd_device *udev)
 /** SA_WRITECOMP must be valid */
    if(upd->ocomp > upd->string_a[SA_WRITECOMP].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
          "ESC/P2-Open: WRITECOMP-Commands must be given\n");
 #endif
       error = -1;
@@ -5489,7 +5489,7 @@ upd_open_wrtescp2(upd_device *udev)
       case FMT_ESCP2Y:
          if(1 < upd->ints[I_NXPASS]) {
 #if         UPD_MESSAGES & UPD_M_WARNING
-               fprintf(stderr,
+               errprintf(
                   "ESC/P2-Open: FMT_ESCP2Y cannot handle multiple X-Passes\n");
 #endif
             error = -1;
@@ -5502,14 +5502,14 @@ upd_open_wrtescp2(upd_device *udev)
          upd->nlimits = upd->ints[I_NXPASS];
 #if      UPD_MESSAGES & UPD_M_WARNING
             if(1 == upd->ints[I_NXPASS])
-               fprintf(stderr,
+               errprintf(
                   "ESC/P2-Open: FMT_ESCP2XY should not be used with 1X-Pass\n");
 #endif
       break;
       case FMT_ESCNMY:
          if(1 < upd->ints[I_NXPASS]) {
 #if         UPD_MESSAGES & UPD_M_WARNING
-               fprintf(stderr,
+               errprintf(
                   "ESC/P2-Open: FMT_ESCNMY cannot handle multiple X-Passes\n");
 #endif
             error = -1;
@@ -5519,7 +5519,7 @@ upd_open_wrtescp2(upd_device *udev)
       break;
       default:
 #if      UPD_MESSAGES & UPD_M_WARNING
-            fprintf(stderr,
+            errprintf(
                "ESC/P2-Open: %d is not a ESC/P2-Format\n",
                upd->choice[C_FORMAT]);
 #endif
@@ -6915,7 +6915,7 @@ upd_open_wrtrtl(upd_device *udev)
 
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           fprintf(stderr,"UNIPRINT-Coding error, wrrtl, state = %d\n",state);
+           errprintf("UNIPRINT-Coding error, wrrtl, state = %d\n",state);
 #endif
            state = 0;
          break;
@@ -6926,7 +6926,7 @@ upd_open_wrtrtl(upd_device *udev)
 /** SA_WRITECOMP must be valid */
    if(upd->ocomp > upd->string_a[SA_WRITECOMP].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
-      fprintf(stderr,
+      errprintf(
          "PCL-Open: WRITECOMP-Commands must be given\n");
 #endif
       error = -1;
@@ -6962,7 +6962,7 @@ It must hold:
       } else {
          error = -1;
 #if      UPD_MESSAGES & UPD_M_WARNING
-            fprintf(stderr,
+            errprintf(
               "PCL-Open: %ld is unreasonable size of Outputbuffer\n",
               (long) noutbuf);
 #endif
@@ -7252,7 +7252,7 @@ upd_pxlfwd(upd_p upd)
          case 32: upd->pxlget = upd_pxlget32f; break;
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           fprintf(stderr,"upd_pxlfwd: unsupported depth (%d)\n",
+           errprintf("upd_pxlfwd: unsupported depth (%d)\n",
               upd->int_a[IA_COLOR_INFO].data[1]);
 #endif
            upd->pxlget = upd_pxlgetnix;
@@ -7468,7 +7468,7 @@ upd_pxlrev(upd_p upd)
             break;
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           fprintf(stderr,"upd_pxlrev: unsupported depth (%d)\n",
+           errprintf("upd_pxlrev: unsupported depth (%d)\n",
               upd->int_a[IA_COLOR_INFO].data[1]);
 #endif
            upd->pxlget = upd_pxlgetnix;

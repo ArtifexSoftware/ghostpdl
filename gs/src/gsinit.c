@@ -68,7 +68,6 @@ gs_lib_init1(gs_memory_t * mem)
 void
 gs_lib_finit(int exit_status, int code)
 {
-    fflush(stderr);		/* in case of error exit */
     /* Do platform-specific cleanup. */
     gp_exit(exit_status, code);
     gs_malloc_release();

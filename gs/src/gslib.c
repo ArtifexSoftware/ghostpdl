@@ -92,6 +92,31 @@ extern_gs_lib_device_list();
 /* Forward references */
 private float odsf(P2(floatp, floatp));
 
+/* Provide a single point for all "C" stdout and stderr.
+ * Eventually these will always be referenced through an instance structure. 
+ */
+
+int outwrite(const char *str, int len)
+{
+    return fwrite(str, 1, len, gs_stdout);
+}
+
+int errwrite(const char *str, int len)
+{
+    return fwrite(str, 1, len, gs_stderr);
+}
+
+void outflush()
+{
+    fflush(gs_stdout);
+}
+
+void errflush()
+{
+    fflush(gs_stderr);
+}
+
+
 int
 main(int argc, const char *argv[])
 {

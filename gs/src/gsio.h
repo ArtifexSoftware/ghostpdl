@@ -41,22 +41,17 @@ extern FILE *gs_stdio[3];
 #define stdout stdout_not_available
 #undef stderr
 #define stderr stderr_not_available
-/* However, for the moment, lprintf must be able to reference stderr. */
-#undef dstderr
-#define dstderr gs_stderr
-#undef estderr
-#define estderr gs_stderr
 
 /*
  * Redefine all the relevant stdio functions to reference stdin/out/err
  * explicitly, or to be illegal.
  */
 #undef fgetchar
-#define fgetchar() fgetc(stdin)
+#define fgetchar() Function._fgetchar_.unavailable
 #undef fputchar
-#define fputchar(c) fputc(c, stdout)
+#define fputchar(c) Function._fputchar_.unavailable
 #undef getchar
-#define getchar() getc(stdin)
+#define getchar() Function._getchar_.unavailable
 #undef gets
 #define gets Function._gets_.unavailable
 /* We should do something about perror, but since many Unix systems */
@@ -65,9 +60,9 @@ extern FILE *gs_stdio[3];
 #undef printf
 #define printf Function._printf_.unavailable
 #undef putchar
-#define putchar(c) fputc(c, stdout)
+#define putchar(c) Function._putchar_.unavailable
 #undef puts
-#define puts(s) (fputs(s, stdout), putchar('\n'))
+#define puts(s) Function._putchar_.unavailable
 #undef scanf
 #define scanf Function._scanf_.unavailable
 #undef vprintf

@@ -187,7 +187,7 @@ debug_print_ref_packed(const ref_packed *rpp)
 	debug_print_packed_ref(rpp);
     else
 	debug_print_full_ref((const ref *)rpp);
-    fflush(dstderr);
+    errflush();
 }
 void
 debug_print_ref(const ref * pref)
@@ -219,7 +219,7 @@ debug_dump_one_ref(const ref * p)
 	    dputc(ap->print);
     dprintf2(" 0x%04x 0x%08lx", r_size(p), *(const ulong *)&p->value);
     print_ref_data(p);
-    fflush(dstderr);
+    errflush();
 }
 private void
 print_ref_data(const ref *p)

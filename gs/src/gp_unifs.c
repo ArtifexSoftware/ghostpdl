@@ -129,10 +129,13 @@ wmatch(const byte * str, uint len, const byte * pstr, uint plen,
     bool match = string_match(str, len, pstr, plen, psmp);
 
     if (gs_debug_c('e')) {
+	int i;
 	dlputs("[e]string_match(\"");
-	fwrite(str, 1, len, dstderr);
+	for (i=0; i<len; i++)
+	    errprintf("%c", str[i]);
 	dputs("\", \"");
-	fwrite(pstr, 1, plen, dstderr);
+	for (i=0; i<plen; i++)
+	    errprintf("%c", pstr[i]);
 	dprintf1("\") = %s\n", (match ? "TRUE" : "false"));
     }
     return match;

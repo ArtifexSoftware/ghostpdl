@@ -31,7 +31,7 @@
 The device-driver (normally) returns two differnt types of Error-Conditions,
 FATALS and WARNINGS. In case of a fatal, the print routine returns -1, in
 case of a warning (such as paper out), a string describing the error is
-printed to stdout and the output-operation is repeated after five seconds.
+printed to stderr and the output-operation is repeated after five seconds.
 
 A problem is that not all possible errors seem to return the correct error,
 under some circumstance I get the same response as if an error repeated,
@@ -120,7 +120,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
   int out_size;
   if (ioctl(fileno(prn),LPVIIOC_GETPAGE,&lpvipage)!=0)
     {
-    fprintf(stderr,"sparc_print_page: LPVIIOC_GETPAGE failed\n");
+    errprintf("sparc_print_page: LPVIIOC_GETPAGE failed\n");
     return -1;
     }
   lpvipage.bitmap_width=gdev_mem_bytes_per_scan_line((gx_device *)pdev);
@@ -129,7 +129,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
   lpvipage.resolution = (pdev->x_pixels_per_inch == 300 ? DPI300 : DPI400);
   if (ioctl(fileno(prn),LPVIIOC_SETPAGE,&lpvipage)!=0)
     {
-    fprintf(stderr,"sparc_print_page: LPVIIOC_SETPAGE failed\n");
+    errprintf(sparc_print_page: LPVIIOC_SETPAGE failed\n");
     return -1;
     }
   out_size=lpvipage.bitmap_width*lpvipage.page_length;
@@ -139,7 +139,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
     {
     if (ioctl(fileno(prn),LPVIIOC_GETERR,&lpvierr)!=0)
       {
-      fprintf(stderr,"sparc_print_page: LPVIIOC_GETERR failed\n");
+      errprintf(sparc_print_page: LPVIIOC_GETERR failed\n");
       return -1;
       }
     switch (lpvierr.err_type)
@@ -147,33 +147,33 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
       case 0:
 	if (warning==0)
           {
-          fprintf(stderr,
+          errprintf(
             "sparc_print_page: Printer Problem with unknown reason...");
-          fflush(stderr);
+          errflush();
           warning=1;
           }
 	sleep(5);
 	break;
       case ENGWARN:
-	fprintf(stderr,
+	errprintf(
           "sparc_print_page: Printer-Warning: %s...",
           err_code_string(lpvierr.err_code));
-	fflush(stderr);
+	errflush();
 	warning=1;
 	sleep(5);
 	break;
       case ENGFATL:
-	fprintf(stderr,
+	errprintf(
           "sparc_print_page: Printer-Fatal: %s\n",
           err_code_string(lpvierr.err_code));
 	return -1;
       case EDRVR:
-	fprintf(stderr,
+	errprintf(
           "sparc_print_page: Interface/driver error: %s\n",
           err_code_string(lpvierr.err_code));
 	return -1;
       default:
-	fprintf(stderr,
+	errprintf(
           "sparc_print_page: Unknown err_type=%d(err_code=%d)\n",
           lpvierr.err_type,lpvierr.err_code);
 	return -1;
@@ -181,7 +181,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
     }
   if (warning==1)
     {
-    fprintf(stderr,"OK.\n");
+    errprintf("OK.\n");
     warning=0;
     }
   gs_free(out_buf,out_size,1,"sparc_print_page: out_buf");
