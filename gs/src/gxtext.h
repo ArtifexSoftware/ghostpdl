@@ -153,7 +153,7 @@ rc_free_proc(rc_free_text_enum);
  * approach will fail.
  */
 
-#define st_gs_text_enum_max_ptrs (st_gs_text_params_max_ptrs + 7)
+#define st_gs_text_enum_max_ptrs (st_gs_text_params_max_ptrs + 8)
 /*extern_st(st_gs_text_enum); */
 #define public_st_gs_text_enum()	/* in gstext.c */\
   gs_public_st_composite(st_gs_text_enum, gs_text_enum_t, "gs_text_enum_t",\
