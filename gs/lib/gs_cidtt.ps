@@ -30,24 +30,6 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 
 %-------Auxiliary procedures for building CIDFontType 2 from TT file -----------
 
-/put_to_CIDMap    % <cid> <gid> [CIDmap] put_to_CIDMap <cid> 
-{                                       % cid gid []
-  2 index 2 mul exch                    % cid gid i []
-  {                                     % cid gid i ()
-    dup length dup                      % cid gid i () l l
-    3 index lt {                        % cid gid i () l
-      exch pop sub                      % cid gid i'
-    } {                                 % cid gid i () l
-      pop exch                          % cid gid () i
-      3 2 roll                          % cid () i gid
-      3 copy 256 idiv put               % cid () i gid
-      exch 1 add exch 256 mod put       % cid
-      dup dup exit                      % cid cid cid
-    } ifelse
-  } forall                              % cid ? ?
-  pop pop                               % cid
-} bind def
-
 /GenerateCIDMap   % <font> GenerateCIDMap <font>
 { begin
     % Obtain the maximal CID :
