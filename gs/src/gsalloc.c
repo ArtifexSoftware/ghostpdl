@@ -333,8 +333,12 @@ ialloc_reset_free(gs_ref_memory_t * mem)
     mem->largest_free_size = 0;
 }
 
-/* The following limit is rather arbitrary. Benchmarks have shown that */
-/* the resulting GC's are not so freqnent that oerformance is degraded */
+/*
+ * Set an arbitrary limit so that the amount of allocated VM does not grow
+ * indefinitely even when GC is disabled.  Benchmarks have shown that
+ * the resulting GC's are infrequent enough not to degrade performance
+ * significantly.
+ */
 #define FORCE_GC_LIMIT 8000000
 
 /* Set the allocation limit after a change in one or more of */
