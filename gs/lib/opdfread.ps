@@ -111,10 +111,6 @@ true setglobal
 { dup (A) 0 get ge exch (Z) 0 get le and
 } bind def
 
-/MacGlyphEncoding
-{ /MacGlyphEncoding findencoding
-} bind def
-
 % ===================== Work Data =========================================
 
 /BlockBuffer 65535 string def % Make it big to load entire TrueType font
@@ -998,6 +994,27 @@ end
   setglobal
 } bind def
 
+% ================= Auxiliary procedures for True Type cmap Decoder =============
+
+/.knownget 
+{ 2 copy known {
+    get true
+  } {
+    pop pop false
+  } ifelse
+} bind def
+
+/.min 
+{ 2 copy lt {
+    exch
+  } if
+  pop
+} bind def
+
+/.dicttomark
+{ >>
+} bind def
+
 % ===================== True Type cmap Decoder =============
 % The following procedures are copied from gs/lib/gs_ttf.ps with no change.
 
@@ -1466,7 +1483,7 @@ end
   dup null eq {
     pop
     256 dict begin
-      /MacRomanEncoding findencoding 
+      MacRomanEncoding
       dup length 1 sub -1 0 {
         2 copy get
 	exch def

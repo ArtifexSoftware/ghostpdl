@@ -212,6 +212,7 @@ typedef enum {
 	psdf_version version;\
 	bool binary_ok;		/* derived from ASCII85EncodePages */\
 	bool OrderResources;\
+	int  PSVersion;\
 	psdf_distiller_params params
 #else
 #define gx_device_psdf_common\
@@ -231,6 +232,7 @@ typedef struct gx_device_psdf_s {
 	version,\
 	!(ascii),\
 	false,\
+	3010,\
 	 { psdf_general_param_defaults(ascii),\
 	   psdf_color_image_param_defaults,\
 	   psdf_gray_image_param_defaults,\

@@ -73,61 +73,16 @@ errordict /handleerror
 } bind readonly put
 
 end % A dictionary for local binding
-/.findencoding { findencoding } bind def
+
 
 /.registerencoding
 { pop pop
 } bind def
 
 /.defineencoding
-{ Encs 3 1 roll put
+{ def
 } bind def
 
-/findencoding
-{ Encs exch get
-} bind def
-
-/Encs 20 dict def
-Encs /StandardEncoding StandardEncoding put
-
-/.dicttomark { >> } bind def
-
-/.knownget 
-{ 2 copy known {
-    get true
-  } {
-    pop pop false
-  } ifelse
-} bind def
-
-/.min 
-{ 2 copy lt {
-    exch
-  } if
-  pop
-} bind def
-
-/findresource
-{ dup /Encoding eq {
-    pop findencoding
-  } {
-    findresource
-  } ifelse
-} bind def
-
-{
-  /awidthshow
-  { /Courier 12 selectfont awidthshow
-  } bind def
-} pop
-
-{ % A temporary hack for debugging fonts
-  /noaccess
-  {
-  } def
-} pop
-
-% CPSI doesn't love packed encodings, so disable packedarray for encoding files.
-/packedarray 
-{ array astore
+/.findencoding
+{ load
 } bind def

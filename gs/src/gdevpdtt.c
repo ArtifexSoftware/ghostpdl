@@ -920,8 +920,22 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
  * Refine index of BaseEncoding.
  */
 private int 
-pdf_refine_encoding_index(int index, bool is_standard)
+pdf_refine_encoding_index(const gx_device_pdf *pdev, int index, bool is_standard)
 {
+#if PS2WRITE
+    if (pdev->OrderResources) {
+	/*
+	* Allow Postscript encodings only.
+	*/
+	switch (index) {
+
+	    case ENCODING_INDEX_STANDARD: return index;
+	    case ENCODING_INDEX_ISOLATIN1: return index;
+	    default:
+		return ENCODING_INDEX_STANDARD;
+	}
+    }
+#endif
     /*
      * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
      * values allowed for non-embedded fonts.  Pick one here.
@@ -963,7 +977,7 @@ pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
     }
     memset(cached, 0, 256 / 8);
     pdfont->u.simple.s.type3.bitmap_font = false;
-    pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(
+    pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(pdev,
 			bfont->nearest_encoding_index, true);
     pdfont->u.simple.s.type3.char_procs = NULL;
     pdfont->u.simple.s.type3.cached = cached;
@@ -1022,7 +1036,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		return code;
 	    if (psf->pdfont == NULL)
 		psf->pdfont = *ppdfont;
-	    (*ppdfont)->u.simple.BaseEncoding = pdf_refine_encoding_index(
+	    (*ppdfont)->u.simple.BaseEncoding = pdf_refine_encoding_index(pdev,
 		((const gs_font_base *)base_font)->nearest_encoding_index, true);
 	    code = 1;
 	} else
@@ -1093,7 +1107,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	 * Hopely other viewers can ignore Encoding in such case. Actually in this case 
 	 * an Encoding doesn't add an useful information.
 	 */
-	BaseEncoding = pdf_refine_encoding_index(
+	BaseEncoding = pdf_refine_encoding_index(pdev,
 	    ((const gs_font_base *)base_font)->nearest_encoding_index, false);
     }
     if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
