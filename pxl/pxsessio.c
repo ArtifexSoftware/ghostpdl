@@ -258,7 +258,9 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	    if ( pl_load_built_in_fonts(pjl_proc_fontsource_to_path(pxs->pjls, "I"),
 					pxs->memory,
 					&pxs->font_dict,
-					pxs->font_dir, (int)pxfsInternal, true /* use unicode key names */) < 0 ) {
+					pxs->font_dir, 
+					(int)pxfsInternal, 
+					true /* use unicode key names */) < 0 ) {
 		dprintf( "Fatal error - no resident fonts\n");
 		return -1;
 
@@ -346,12 +348,17 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	    } else if ( par->pv[2]->value.i ) { /* it's an enumeration */
 		ms_enum = par->pv[2]->value.i;
 	    }
-	    for ( pm = known_media, i = 0; i < countof(known_media); ++pm, ++i )
-		if ( pm->ms_enum == ms_enum )
-		    break;
-	    if ( i == countof(known_media) ) { /* No match, select default media. */
+	    if ( ms_enum == eDefaultPaperSize ) {
 		pm = px_get_default_media(pxs);
-		px_record_warning("IllegalMediaSize", false, pxs);
+	    }
+	    else {
+	        for ( pm = known_media, i = 0; i < countof(known_media); ++pm, ++i )
+		    if ( pm->ms_enum == ms_enum )
+		       break;
+		if ( i == countof(known_media) ) { /* No match, select default media. */
+		   pm = px_get_default_media(pxs);
+		   px_record_warning("IllegalMediaSize", false, pxs);
+		}
 	    }
 	    pxs->media_size = pm->ms_enum;
 	    media_size.x = pm->width * media_size_scale;
@@ -486,6 +493,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	      orient.tx = orient.ty = 0;
 	    switch ( pxs->orientation )
 	      {
+	      case eDefaultOrientation:
 	      case ePortraitOrientation:
 		code = gs_translate(pgs, 0.0, media_size.y);
 		orient.xx = 1, orient.yy = -1;
