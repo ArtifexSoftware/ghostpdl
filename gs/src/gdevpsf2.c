@@ -881,7 +881,8 @@ cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont,
 	if (code >= 0 && gdata.bits.size >= extra_lenIV)
 	    offset += gdata.bits.size - extra_lenIV;
 	put_offset(pcw, offset);
-	gs_glyph_data_free(&gdata, "cff_write_Subrs_offsets");
+	if (code >= 0)
+	    gs_glyph_data_free(&gdata, "cff_write_Subrs_offsets");
     }
     *pcount = j;
     return offset - 1;

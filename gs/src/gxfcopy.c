@@ -237,8 +237,10 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
 	 (code = pfont->data.procs.subr_data(pfont, i, global, &gdata)) !=
 	     gs_error_rangecheck;
 	 ++i) {
-	size += gdata.bits.size;
-	gs_glyph_data_free(&gdata, "copy_subrs");
+	if (code >= 0) {
+	    size += gdata.bits.size;
+	    gs_glyph_data_free(&gdata, "copy_subrs");
+	}
     }
     if (size == 0)
 	data = 0, starts = 0, i = 0;
@@ -259,9 +261,11 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
 		 gs_error_rangecheck;
 	     ++i) {
 	    starts[i] = size;
-	    memcpy(data + size, gdata.bits.data, gdata.bits.size);
-	    size += gdata.bits.size;
-	    gs_glyph_data_free(&gdata, "copy_subrs");
+	    if (code >= 0) {
+		memcpy(data + size, gdata.bits.data, gdata.bits.size);
+		size += gdata.bits.size;
+		gs_glyph_data_free(&gdata, "copy_subrs");
+	    }
 	}
 	starts[i] = size;
     }

@@ -250,7 +250,8 @@ write_Private(stream *s, gs_font_type1 *pfont,
 		 gs_error_rangecheck;
 	     ) {
 	    ++n;
-	    gs_glyph_data_free(&gdata, "write_Private(Subrs)");
+	    if (code >= 0)
+		gs_glyph_data_free(&gdata, "write_Private(Subrs)");
 	}
 	pprintd1(s, "/Subrs %d array\n", n);
 	for (i = 0; i < n; ++i)
