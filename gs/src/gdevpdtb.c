@@ -610,9 +610,9 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 		    return code;
 		code = psf_write_type1_font(writer.binary.strm,
 				    (gs_font_type1 *)out_font,
-				    WRITE_TYPE1_WITH_LENIV || 
-				    WRITE_TYPE1_EEXEC || 
-				    WRITE_TYPE1_EEXEC_PAD,
+				    WRITE_TYPE1_WITH_LENIV |
+				    ( pdev->OrderResources/* a temporary debug purpose hack. */ 
+					? 0 : WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_PAD),
 				    NULL, 0, &fnstr, lengths);
 		if (lengths[0] > 0) {
 		    if (code < 0)
