@@ -137,11 +137,11 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
  * Return the current setting of the use_cie_color graphic state parameter,
  * which tracks the UseCIEColor page device parameter. This parameter may be
  * read (via this operator) at all language leves, but may only be set (via
- * the .setuseciecolor operator; see zcolor2.c) only in language level 3.
+ * the .setuseciecolor operator; see zcolor3.c) only in language level 3.
  *
- * We hanlde this parameter separately from the page device primarily for
+ * We handle this parameter separately from the page device primarily for
  * performance reasons (the parameter may be queried frequently), but as a
- * side effect achieve proper behavior relative to the langauge level. The
+ * side effect achieve proper behavior relative to the language level. The
  * interpreter is always initialized with this parameter set to false, and
  * it can only be updated (via setpagedevice) in language level 3.
  */
