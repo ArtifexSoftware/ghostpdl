@@ -73,7 +73,6 @@ hpgl_get_current_cell_width(const hpgl_state_t *pgls, hpgl_real_t *width)
 	   1.5 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0));
 	return 0;
 }
-
 private int
 hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height)
 {
@@ -264,19 +263,15 @@ hpgl_print_char(hpgl_state_t *pgls, hpgl_character_point *character)
 	  &pgls->g.font_selection[pgls->g.font_selected];
 	double scale = (pfs->params.height_4ths / 4.0) / 32;
 
-	/* clear the current path, if there is one */
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-
 	/* Set up the graphics state. */
 	pgls->g.current_render_mode = hpgl_rm_character;
-	hpgl_call(hpgl_set_graphics_state(pgls, hpgl_rm_character));
-
-	/* Always use round caps and joins. */
-	gs_setlinecap(pgls->pgs, gs_cap_round);
-	gs_setlinejoin(pgls->pgs, gs_join_round);
 
 	/* all character data is absolute */
 	pgls->g.relative = false;
+	/* Reset the 'have path' flag so that the CTM gets reset.
+	   This is a hack; doing things properly requires a more subtle
+	   approach to handling pen up/down and path construction. */
+	hpgl_call(hpgl_clear_current_path(pgls));
 	while (character->operation != hpgl_char_end)
 	  {
 	    hpgl_args_t args;
@@ -432,7 +427,6 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 {
 	gs_point offset;
 	hpgl_args_t args;
-	hpgl_pen_state_t pen_state;
 
 	/* Compute the label length.  (Future performance improvement: */
 	/* only do this if we need it to compute the offset.) */
@@ -487,10 +481,10 @@ shift:		  hpgl_call(hpgl_recompute_font(pgls));
 	  hpgl_call(hpgl_get_character_origin_offset(pgls, label_length, &offset));
 	}
 
-	hpgl_save_pen_state(pgls, &pen_state, hpgl_pen_relative);
+	hpgl_args_setup(&args);
+	hpgl_PU(&args, pgls);
 	hpgl_args_set_real2(&args, -offset.x, -offset.y);
 	hpgl_PR(&args, pgls);
-	hpgl_restore_pen_state(pgls, &pen_state, hpgl_pen_relative);
 
 	{
 	  int i;
@@ -562,14 +556,16 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( pargs->phase == 0 )
 	  {
 	    gs_point pt;
-	    /* HAS need to figure out what gets saved here -- relative,
-	       pen_down, position ?? */
-	    hpgl_call(hpgl_clear_current_path(pgls));
+
+	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    /* set the carriage return point and initialize the character
 	       buffer first time only */
 	    hpgl_call(hpgl_get_current_position(pgls, &pt));
 	    hpgl_call(hpgl_set_carriage_return_pos(pgls, &pt));
 	    hpgl_call(hpgl_init_label_buffer(pgls));
+	    /* Remember the pen state so we can restore it at the end. */
+	    hpgl_save_pen_state(pgls, &pgls->g.label.pen_state,
+				hpgl_pen_relative | hpgl_pen_down);
 	    pargs->phase = 1;
 	  }
 
@@ -586,6 +582,8 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    hpgl_call(hpgl_process_buffer(pgls));
 		    hpgl_call(hpgl_destroy_label_buffer(pgls));
 		    pargs->source.ptr = p;
+		    hpgl_restore_pen_state(pgls, &pgls->g.label.pen_state,
+					   hpgl_pen_relative | hpgl_pen_down);
 		    return 0;
 		  }
 		/*
@@ -601,14 +599,13 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
                treat the label origin correctly, and initialize a new
                buffer */
 
+	    hpgl_call(hpgl_buffer_char(pgls, ch));
 	    if ( ch == CR && !pgls->g.transparent_data )
 	      {
 		hpgl_call(hpgl_process_buffer(pgls));
 		hpgl_call(hpgl_destroy_label_buffer(pgls));
 		hpgl_call(hpgl_init_label_buffer(pgls));
 	      }
-	    else
-	      hpgl_call(hpgl_buffer_char(pgls, ch));
 	  }
 	pargs->source.ptr = p;
 	return e_NeedData;

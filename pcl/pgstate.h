@@ -16,14 +16,32 @@
    edge and Y increasing up the long edge.  Note the Y direction is
    opposite PCL's. */
 
-
 #include "gslparam.h"
 #include "gsuid.h"		/* for gxbitmap.h */
 #include "gstypes.h"		/* for gxbitmap.h */
 #include "gxbitmap.h"
+/*#include "gzpath.h"*/		/* for gx_path_s */
+#include "gxfixed.h"
+#ifndef gs_imager_state_DEFINED
+#  define gs_imager_state_DEFINED
+typedef struct gs_imager_state_s gs_imager_state;
+#endif
+#include "gzpath.h"
+
+/* Opaque type for a path */
+#ifndef gx_path_DEFINED
+#  define gx_path_DEFINED
+typedef struct gx_path_s gx_path;
+#endif
 
 /* Define a type for HP-GL/2 floating point values. */
 typedef double hpgl_real_t;
+
+/* scaling definition */
+typedef struct hpgl_scaling_type_s {
+  gs_point pmin, pmax, factor;
+  float left, bottom;
+} hpgl_scaling_type_t;
 
 /* Define a line type (a.k.a. dash pattern). */
 typedef struct hpgl_line_type_s {
@@ -31,13 +49,22 @@ typedef struct hpgl_line_type_s {
   hpgl_real_t gap[20];
 } hpgl_line_type_t;
 
+typedef struct hpgl_path_state_s {
+  bool have_first_moveto;  
+  gx_path path; 
+} hpgl_path_state_t;
+
 /* Define the current rendering mode - character, polygon, or vector.
    This will affect the line attributes chosen see
-   hpgl_set_graphics_line_attribute_state */
+   hpgl_set_graphics_line_attribute_state.  And defines if we use
+   stroke or fill on the path.  */
 typedef enum {
 	hpgl_rm_vector,
 	hpgl_rm_character,
 	hpgl_rm_polygon,
+	hpgl_rm_vector_fill,
+	hpgl_rm_clip_and_fill_polygon, /* for hpgl/2 line type filling */
+	hpgl_rm_nop            /* don't do anything with the path. future use */
 } hpgl_rendering_mode_t;
 
 /* state of lost mode */
@@ -50,6 +77,15 @@ typedef enum {
 	hpgl_even_odd_rule,
 	hpgl_winding_number_rule
 } hpgl_render_fill_type_t;
+
+/* Define the structure for saving the pen state temporarily. */
+/* HAS: note don't mix and match save a restores.  perhaps there
+   should be a type check field in the structure.  */
+typedef struct hpgl_pen_state_s {
+	bool relative;
+	bool pen_down;
+	gs_point pos;
+} hpgl_pen_state_t;
 
 typedef struct pcl_hpgl_state_s {
 		/* Chapter 17 lost mode (pgmisc.c) */
@@ -83,10 +119,7 @@ typedef struct pcl_hpgl_state_s {
 	  hpgl_scaling_isotropic = 1,
 	  hpgl_scaling_point_factor = 2
 	} scaling_type;
-	struct sc_ {
-	  gs_point pmin, pmax, factor;
-	  float left, bottom;
-	} scaling_params;
+	hpgl_scaling_type_t scaling_params;
 	gs_rect window;          /* clipping window (IW) */
 	int rotation;
 	gs_point P1, P2;	/* in plotter units */
@@ -96,6 +129,7 @@ typedef struct pcl_hpgl_state_s {
   
 	bool pen_down;
 	bool have_first_moveto;  
+	bool saved_have_first_moveto; /* used with gsave and grestore */
 	bool relative;		/* true if relative coordinates */
         gs_point pos;
         /* used to track the line drawing state in hpgl */
@@ -108,13 +142,14 @@ typedef struct pcl_hpgl_state_s {
 		/* Chapter 22 (pglfill.c) */
 
 	struct lp_ {
-	  int last_type; /* used by line type 99 */
-	  int type;
-	  float pattern_length;
-	  bool pattern_length_relative;
+	  struct ltl_ {
+	    int type;
+	    float pattern_length;
+	    bool pattern_length_relative;
+	    bool is_solid;
+	  } current, saved;	/* enable saving for LT99 */
 	  int cap;
 	  int join;
-	  bool is_solid;
 	} line;
 	float miter_limit;
 	/**** FOLLOWING SHOULD BE [number_of_pens] ****/
@@ -204,6 +239,7 @@ typedef struct pcl_hpgl_state_s {
 	  byte *buffer;         /* start of line buffer pointer */
           unsigned int buffer_size; /* size of the current buffer */
 	  unsigned int char_count;  /* count of chars in the buffer */
+	  hpgl_pen_state_t pen_state; /* save pen state during LB */
 	} label;
 	bool transparent_data;
 	uint font_id[2];
@@ -217,15 +253,11 @@ typedef struct pcl_hpgl_state_s {
 	uint number_of_pens;
 	struct { hpgl_real_t cmin, cmax; } color_range[3];
 	hpgl_rendering_mode_t current_render_mode; /* HAS revisit */
+	/* structure used to maintain a copy of the polygon path */
+	hpgl_path_state_t polygon_buffer;
+	/* used to construct filling paths */
+	hpgl_path_state_t fill_path;
 } pcl_hpgl_state_t;
-
-/* HAS: note don't mix and match save a restores.  peharps there
-   should be a type check field in the structure.  */
-typedef struct hpgl_pen_state_s {
-	bool relative;
-	bool pen_down;
-	gs_point pos;
-} hpgl_pen_state_t;
 
 #define hpgl_pen_relative (1)
 #define hpgl_pen_down (1<<1)
@@ -253,10 +285,5 @@ do {\
     ((pgls)->g.pos = (save)->pos);\
 } while (0)
 
-/* save the current line to be used when lt99 is issued */
-#define hpgl_set_line_type99(pgls) ((pgls)->g.line99 = (pgls)->g.line)
-
-/* restore previous line type */
-#define hpgl_restore_line_type99(pgls) ((pgls)->g.line = (pgls)->g.line99)
 #endif				/* pgstate_INCLUDED */
 

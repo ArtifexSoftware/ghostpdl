@@ -93,7 +93,7 @@ $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c $(std_h)\
 $(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c $(std_h) $(math__h)\
  $(gscolor2_h) $(gscoord_h) $(gscspace_h) $(gsdcolor_h) $(gsimage_h)\
  $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h) $(gsutil_h)\
- $(gxfixed_h) $(gxpath_h) $(gxstate_h)\
+ $(gxfixed_h) $(gxstate_h)\
  $(pcdraw_h) $(pcommand_h) $(pcfont_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcdraw.c $(PCLO_)pcdraw.$(OBJ)
 
@@ -367,7 +367,7 @@ pgmisc_h=$(PCLSRC)pgmisc.h
 $(PCLOBJ)pgdraw.$(OBJ): $(PCLSRC)pgdraw.c $(math__h) $(stdio__h)\
  $(gdebug_h) $(gscoord_h) $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
  $(gsstate_h) $(gstypes_h)\
- $(gxfixed_h) $(gxpath_h)\
+ $(gxfixed_h)\
  $(pcdraw_h)\
  $(pgdraw_h) $(pggeom_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)pgdraw.c $(PCLO_)pgdraw.$(OBJ)

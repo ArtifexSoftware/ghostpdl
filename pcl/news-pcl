@@ -6,13 +6,10 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
-Version 0.25 (5/12/97)
-======================
+Version 0.26 (6/3/97)
+=====================
 
-More bug fixes.  This fileset produces halfway reasonable output from many
-of the Genoa FTS files.
-
-This version requires pl library version 1.14 or later.
+More bug fixes, and the first implementation of vector fills.
 
 FTS problems:
     0060:
@@ -20,13 +17,12 @@ FTS problems:
 	.2 GL/2 filled wedges missing (all 4)
 	.3 GL/2 stuff is displaced in landscape orientations
     1060:
-	.1 Unsupported fill types are replaced with a black fill.
 	.2 Dashed line offset is not correct so most of the graphics that use
 	  dashing dash out of phase.
-	.3 In order to recover the missing diagonal lines in several panels the
-	  PCL Reset command will have to be redefined to stroke the current gl2
-	  path.  This is because the test file issues the PCL reset in GL/2
-	  stream without using the exit to PCL command.
+	.3 In order to recover the missing diagonal lines in several panels
+	  the PCL Reset command will have to be redefined to stroke the
+	  current gl2 path.  This is because the test file issues the PCL
+	  reset in GL/2 stream without using the exit to PCL command.
 CET problems:
 	- The width of Intellifont characters is wrong.  (CET 14_01)
 	- Positioning of characters is off -- requires "real" fonts.
@@ -38,6 +34,111 @@ Unimplemented features (PCL):
 	- Font Control 6 (copy font & assign ID) (CET 14_04)
 	- Continuation blocks for downloaded characters.
 	- User-defined line type (99).
+
+(LPD) Fixes bugs:
+	- gxpath.h was included twice, causing compilation errors.  (This
+file should really be protected against double inclusion.)  (pcdraw.c,
+pgdraw.c)
+
+(HAS)
+	* rtmisc.c (rtl_enter_pcl_mode): releases the polygon buffer.
+
+	* pgvector.c (hpgl_draw_arc): routine to draw the path if we are
+	not in polygon mode.  
+	(hpgl_AR): added draw arc routine
+	(hpgl_AT): ""
+	(hpgl_AA): ""
+	(hpgl_CI): new implementation.
+
+	* pgstate.h: new data structures and pulled in gzpath.h
+	interfaces.  Also new definitions for vector fills and saved line
+	types.
+
+	* pgpoly.c (hpgl_wedge): Fixed incorrect calculation of vector
+	endpoints.
+	(hpgl_EA): changed to use polygon buffer.
+	(hpgl_EP): ""
+	(hpgl_ER): ""
+	(hpgl_EW): ""
+	(hpgl_FP): ""
+	(hpgl_RA): ""
+	(hpgl_RR): ""
+	(hpgl_WG): ""
+	(hpgl_get_poly_render_mode): routine to get distinguish between
+	rendering with hpgl/2 line fills vs. pcl fills.
+
+	* pglfill.c (hpgl_AC): added defaults for AC.
+	(hpgl_FT): local used before all error checking.
+	(hpgl_LT): saving and restoring of line type implemented.  Removed
+	recursion.
+
+	* pglabel.c (hpgl_print_char): removed setting of cap and join.
+
+	* pginit.c (hpgl_do_reset): initialization code for polygon
+	buffer. 
+
+	* pggeom.h: added epsilon for all routines comparing floating
+	point values.
+
+	* pgdraw.h: removed hpgl_set_graphics_state() from interface.
+  	comments and new parameter for hpgl_add_arc_to_path()
+ 	prototypes for hpgl_gsave, hpgl_grestore,
+ 	hpgl_copy_polygon_buffer_to_current_path,
+ 	hpgl_copy_current_path_to_polygon_buffer  (details below)
+	removed hpgl_draw_and_preserve_path().
+
+	* pgdraw.c (hpgl_set_graphics_dash_state): hpgl/2 dot dash support
+	(LT0) implemented properly.
+	(hpgl_polyfill_bbox): new routine to create a bounding box used
+ 	for hpgl vector style fills.
+	(hpgl_set_clipping_region): modified to not clip if vector
+ 	filling, gs_clip() is used instead.
+	(hpgl_set_plu_to_device_ctm): removed unnecessary inner block.
+	(hpgl_set_user_units_to_plu_ctm): modified to attempt scaling if
+ 	scaling is on, this is not complete.
+	(hpgl_set_ctm): changed from private to public.  Needed by
+ 	routines that must maintain the current device space position (SC,
+ 	RO, etc.)
+	(hpgl_polyfill): new routine for polygon vector filling algorithm.
+  	See comments in code for problems being worked on.
+	(hpgl_polyfill_using_current_line_type): new routine to setup
+ 	vector filling code -- gsave and clipping.
+	(hpgl_map_fill_type): modified not to fall back to solid when the
+ 	fill type is vector.
+	(hpgl_set_drawing_color): added call to fill polygon with current
+ 	line type if appropriate.
+	(hpgl_set_graphics_state): changed back to a private routine.
+	(hpgl_start_path): removed obsolete comments.
+	(hpgl_add_arc_to_path): boolean parameter for an implicit moveto
+	to the first position irrepective of pen up/down state.  CI uses
+	this.
+	(hpgl_draw_current_path): Changed comment.
+	(hpgl_draw_current_path): support for new line fill render mode.
+	(hpgl_copy_current_path_to_polygon_buffer): new routine to save
+	the current path to gl/2's polygon buffer.
+	(hpgl_copy_polygon_buffer_to_current_path): the opposite.
+	(hpgl_gsave): just gs_gsave plus maintenance of gl/2's first
+	moveto state
+	(hpgl_grestore): same
+
+	* pgconfig.c (hpgl_DF): removed call to hpgl_SC and simply set
+	scaling to scaling_none.  This is a workaround to the more elaborate
+	problem that the gl/2 graphics state is not adequately initialized
+	when the first SC is used implicitly.  
+	(hpgl_RO): simplification of RO and now maintains current point by
+	tranforming current device position.
+	(hpgl_SC): Like RO now maintains current device point and changes
+	to use a local structure instead of using the state structure
+	prior to all error checking.
+
+
+Version 0.25 (5/12/97)
+======================
+
+More bug fixes.  This fileset produces halfway reasonable output from many
+of the Genoa FTS files.
+
+This version requires pl library version 1.14 or later.
 
 (LPD) Fixes bugs:
 	- The 3-point arc algorithms often drew incorrect portions of the

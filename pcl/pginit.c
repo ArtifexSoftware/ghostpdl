@@ -104,19 +104,19 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 
 	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold ))
 	  {
+
 	    hpgl_clear_state(pcls);
+	    gx_path_init(&pcls->g.polygon_buffer.path,
+			 pcls->memory);
 	    /* provide default anchor point, plot size and picture
                frame size */
 	    hpgl_default_coordinate_system(pcls);
 	    /* set rendering mode to default */
-
 	    hpgl_default_render_mode(pcls);
 	    /* execute IN */
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IN(&hpgl_args, pcls);
-
 	  }   
-	    
 	if ( type & (pcl_reset_page_params) )
 	  {
 	    hpgl_default_coordinate_system(pcls);

@@ -8,10 +8,8 @@
 #ifndef pgdraw_INCLUDED
 #  define pgdraw_INCLUDED
 
-/* Set up the graphics state for drawing. */
-/* We export this for drawing characters. */
-int hpgl_set_graphics_state(P2(hpgl_state_t *pgls, 
-			       hpgl_rendering_mode_t render_mode));
+/* set ctm global for SC command only */
+int hpgl_set_ctm(hpgl_state_t *pgls);
 
 /* function to get and set the current hpgl/2 state position */
 int hpgl_get_current_position(P2(hpgl_state_t *pgls, gs_point *pt));
@@ -24,11 +22,12 @@ int hpgl_add_point_to_path(P4(hpgl_state_t *pgls, floatp x, floatp y,
 			       int (*gs_func)(gs_state *pgs, 
 					      floatp x, floatp y)));
 
-/* puts an arc into the current path */
-int hpgl_add_arc_to_path(P7(hpgl_state_t *pgls, floatp center_x, 
+/* puts an arc into the current path.  start moveto indicates that we
+   use moveto to go from the arc center to arc circumference. */
+int hpgl_add_arc_to_path(P8(hpgl_state_t *pgls, floatp center_x, 
 			  floatp center_y, floatp radius, 
 			  floatp start_angle, floatp sweep_angle, 
-			  floatp chord_angle));
+			  floatp chord_angle, bool start_moveto));
 
 /* put bezier into the current path uses */
 int hpgl_add_bezier_to_path(P9(hpgl_state_t *pgls, floatp x1, 
@@ -39,6 +38,21 @@ int hpgl_add_bezier_to_path(P9(hpgl_state_t *pgls, floatp x1,
 /* clears the current path with stroke or fill */
 int hpgl_draw_current_path(P2(hpgl_state_t *pgls, 
 			      hpgl_rendering_mode_t render_mode));
+
+/* save gs graphics state + HPGL/2's first moveto state */
+int hpgl_gsave(P1(hpgl_state_t *pgls));
+
+/* restore gs graphics state + HPGL/2's first moveto state */
+int hpgl_grestore(P1(hpgl_state_t *pgls));
+
+/* path copying for polygons rendering */
+int hpgl_copy_polygon_buffer_to_current_path(P1(hpgl_state_t *pgls));
+
+int hpgl_copy_current_path_to_polygon_buffer(P1(hpgl_state_t *pgls));
+
+/* draw the current path with stroke or fill, but do not clear */
+int hpgl_draw_and_preserve_path(P2(hpgl_state_t *pgls, 
+				   hpgl_rendering_mode_t render_mode));
 
 /* utility routine to add a 2 points and stroke/fill */
 int hpgl_draw_line(P5(hpgl_state_t *pgls, floatp x1, floatp y1, 

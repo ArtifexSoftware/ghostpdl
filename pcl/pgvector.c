@@ -18,7 +18,7 @@
 /* ------ Internal procedures ------ */
 
 /* Draw an arc (AA, AR). */
-private int
+ private int
 hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	
 	hpgl_real_t x_center, y_center, sweep, x_current, y_current, chord_angle = 5;
@@ -31,8 +31,6 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	  return e_Range;
 
 	hpgl_arg_c_real(pargs, &chord_angle);
-
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
 	x_current = pgls->g.pos.x;
 	y_current = pgls->g.pos.y;
@@ -52,10 +50,8 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	hpgl_call(hpgl_add_arc_to_path(pgls, x_center, y_center, 
 				       radius, start_angle, sweep, 
 				       (sweep < 0.0 ) ?
-				       -chord_angle : chord_angle));
-
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-
+				       -chord_angle : chord_angle, false));
+	
 	return 0;
 }
 
@@ -100,7 +96,7 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 					 (y_start + y_inter) / 2.0,
 					 (hypot((x_inter - x_start),
 						(y_inter - y_start)) / 2.0),
-					 0.0, 360.0, chord_angle));
+					 0.0, 360.0, chord_angle, false));
 
 	else if ( hpgl_3_colinear_points(x_start, y_start, x_inter, 
 					 y_inter, x_end, y_end) ) 
@@ -275,32 +271,47 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls,
 	      }
 	  }
 
-	/* set the current state position */
 	return 0;
 }
 
 /* ------ Commands ------ */
+ private int
+hpgl_draw_arc(hpgl_state_t *pgls)
+{
+	if ( !pgls->g.polygon_mode )
+	  hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	return 0;
+}
 
 /* AA xcenter,ycenter,sweep[,chord]; */
-int
+ int
 hpgl_AA(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	return hpgl_arc(pargs, pgls, false);
+{	
+        hpgl_call(hpgl_arc(pargs, pgls, false));
+	hpgl_call(hpgl_draw_arc(pgls));
+	return 0;
 }
 
 /* AR xcenter,ycenter,sweep[,chord]; */
-int
+ int
 hpgl_AR(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	return hpgl_arc(pargs, pgls, true);
+{	
+        hpgl_call(hpgl_arc(pargs, pgls, true));
+	hpgl_call(hpgl_draw_arc(pgls));
+	return 0;
 }
 
 /* AT xinter,yinter,xend,yend[,chord]; */
-int
+ int
 hpgl_AT(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	return hpgl_arc_3_point(pargs, pgls, false);
+{	
+	hpgl_call(hpgl_arc_3_point(pargs, pgls, false));
+	hpgl_call(hpgl_draw_arc(pgls));
+	return 0;
 }
 
 /* BR x1,y1,x2,y2,x3,y3...; */
-int
+ int
 hpgl_BR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	return hpgl_bezier(pargs, pgls, true);
 }
@@ -320,21 +331,33 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( !hpgl_arg_units(pargs, &radius) )
 	  return e_Range;
 	hpgl_arg_c_real(pargs, &chord);
-	/* draw the current path if there is one */
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 
+	/* HAS * FIXME */
 	pgls->g.pen_down = true;
 
 	/* draw the arc/circle */
 	hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-			       radius, 0.0, 360.0, chord);
+			       radius, 0.0, 360.0, chord, true);
 	/* restore pen state */
 
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-
+	/* It appears from experiment that a CI in polygon mode leaves
+	   the pen up .. or something like that. */
+	if ( pgls->g.polygon_mode )
+	  {
+	    /* HAS investigate commands added after CI in polygon mode */
+	    hpgl_args_t args;
+	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
+	    hpgl_args_setup(&args);
+	    hpgl_PU(&args, pgls);
+	  }
+	else
+	  {
+	    hpgl_call(hpgl_draw_arc(pgls));
+	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
+	  }
 	return 0;
+
 }
 
 /* PA x,y...; */

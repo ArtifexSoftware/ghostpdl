@@ -85,8 +85,9 @@ rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 {	bool b = int_arg(pargs) & 1;
 
 	if ( pcls->parse_data )
-	  { /* We were in HP-GL/2 mode.  Conditionally copy back */
-	    /* the cursor position. */
+	  { /* We were in HP-GL/2 mode.  Destroy the gl/2 polygon path
+	    and conditionally copy back the cursor position. */
+	    gx_path_release(&(pcls->g.polygon_buffer.path));
 	    if ( b )
 	      { /****** WRONG, COORDINATE SYSTEMS ARE DIFFERENT ******/
 		pcls->cap.x = pcls->g.pos.x;

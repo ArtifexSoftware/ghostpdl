@@ -25,10 +25,14 @@ hpgl_AC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  { if ( !hpgl_arg_units(pargs, &y) )
 	      return e_Range;
 	  }
+	else
+	  {
+	    x = 0.0;
+	    y = 0.0;
+	  }
 
 	/* draw the current path */
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-
 	pgls->g.anchor_corner.x = x;
 	pgls->g.anchor_corner.y = y;
 
@@ -66,12 +70,12 @@ hpgl_FT(hpgl_args_t *pargs, hpgl_state_t *pgls)
                    each fill type. */
 
 		{ 
-		  pgls->g.fill.param.hatch.spacing = 
+		  spacing = 
 		    0.01 * hpgl_compute_distance(pgls->g.P1.x,
 						 pgls->g.P1.y,
 						 pgls->g.P2.x,
 						 pgls->g.P2.y);
-		  pgls->g.fill.param.hatch.angle = 0.0;
+		  angle = 0.0;
 		  
 		}
 	      pgls->g.fill.param.hatch.spacing = spacing;
@@ -209,12 +213,8 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
                otherwise the instruction is ignored. */
 	    if ( type == 99 )
 	      {
-		if ( pgls->g.line.is_solid == true )
-		  {
-		    hpgl_args_t args;
-		    hpgl_args_set_int(&args, pgls->g.line.last_type);
-		    hpgl_LT(&args, pgls);
-		  }
+		if ( pgls->g.line.current.is_solid == true )
+		  pgls->g.line.current = pgls->g.line.saved;
 		return 0;
 	      }
 	    else
@@ -228,9 +228,9 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		       (hpgl_arg_c_int(pargs, &mode) && (mode & ~1))))
 		     )
 		  return e_Range;
-		pgls->g.line.pattern_length = length;
-		pgls->g.line.pattern_length_relative = mode == 0;
-		pgls->g.line.is_solid = false;
+		pgls->g.line.current.pattern_length = length;
+		pgls->g.line.current.pattern_length_relative = mode == 0;
+		pgls->g.line.current.is_solid = false;
 	      }
 	  } else
 	    {
@@ -239,8 +239,8 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      /* HAS **BUG**BUG** initial value of line type
                  is not supplied unless it gets set by previous LT
                  command. */
-	      pgls->g.line.last_type = pgls->g.line.type;
-	      pgls->g.line.is_solid = true;
+	      pgls->g.line.saved = pgls->g.line.current;
+	      pgls->g.line.current.is_solid = true;
 	      memcpy(&pgls->g.fixed_line_type, 
 		     &hpgl_fixed_pats, 
 		     sizeof(hpgl_fixed_pats));
@@ -249,7 +249,7 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		     sizeof(hpgl_adaptive_pats));
 	    }
 	
-	pgls->g.line.type = type;
+	pgls->g.line.current.type = type;
 	return 0;
 }
 

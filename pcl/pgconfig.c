@@ -89,8 +89,8 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_setup(&args);
 	hpgl_LT(&args, pgls);
 
-	hpgl_args_setup(&args);
-	hpgl_SC(&args, pgls);
+	/* we do this instead of calling SC directly */
+	pgls->g.scaling_type = hpgl_scaling_none;
 
 	hpgl_args_set_real2(&args, 0.0, 0.0);
 	hpgl_PA(&args, pgls);
@@ -330,7 +330,15 @@ hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* RO; */
 int
 hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	int angle=0;
+{	
+	int angle=0;
+	gs_point point, dev_pt;
+
+	/* this business is used by both SC and RO -- perhaps it needs
+           a new home */
+	hpgl_call(hpgl_set_ctm(pgls));
+	hpgl_call(hpgl_get_current_position(pgls, &point));
+	hpgl_call(gs_transform(pgls->pgs, point.x, point.y, &dev_pt));
 
 	if ( hpgl_arg_c_int(pargs, &angle) )
 	    switch ( angle )
@@ -341,16 +349,25 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		return e_Range;
 	      }
 
-	/* new angle clears the pen.  Note that we delay rotating
-           system until the ctm is set up */
+	/* HAS need documentation */
         if ( angle != pgls->g.rotation )
 	  {
-	    /* HAS -- I believe we must maintain the device
-               coordinates of the current pen.  I need to check this */
-	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	    pgls->g.rotation = angle;
-	  }
+	    hpgl_args_t args;
 	    
+	    hpgl_pen_state_t saved_pen_state;
+	    hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
+	    hpgl_call(hpgl_clear_current_path(pgls));
+	    hpgl_call(hpgl_set_ctm(pgls));
+	    hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
+	    pgls->g.rotation = angle;
+	    /* now add a moveto the using the current ctm */
+	    hpgl_args_set_real(&args, point.x);
+	    hpgl_args_add_real(&args, point.y);
+	    hpgl_call(hpgl_PU(&args, pgls));
+	    /* HAS this is added to clear first moveto yuck */
+	    hpgl_call(hpgl_clear_current_path(pgls));
+	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
+	  }
 	return 0;
 }
 
@@ -370,11 +387,13 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t xy[4];
 	int i;
 	int type;
+	hpgl_scaling_type_t scale_params;
+	gs_point point, dev_pt;
 
-	/* we must clear the current path because we set up the CTM
-           when issuing the first point, and the CTM is a function of
-           SC. */
-	/*	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector)); */
+	scale_params = pgls->g.scaling_params;
+	hpgl_call(hpgl_set_ctm(pgls));
+	hpgl_call(hpgl_get_current_position(pgls, &point));
+	hpgl_call(gs_transform(pgls->pgs, point.x, point.y, &dev_pt));
 
 	for ( i = 0; i < 4 && hpgl_arg_real(pargs, &xy[i]); ++i )
 	  ;
@@ -393,10 +412,10 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      case hpgl_scaling_anisotropic: /* 0 */
 		if ( xy[0] == xy[1] || xy[2] == xy[3] )
 		  return e_Range;
-pxy:		pgls->g.scaling_params.pmin.x = xy[0];
-		pgls->g.scaling_params.pmax.x = xy[1];
-		pgls->g.scaling_params.pmin.y = xy[2];
-		pgls->g.scaling_params.pmax.y = xy[3];
+pxy:		scale_params.pmin.x = xy[0];
+		scale_params.pmax.x = xy[1];
+		scale_params.pmin.y = xy[2];
+		scale_params.pmax.y = xy[3];
 		break;
 	      case hpgl_scaling_isotropic: /* 1 */
 		if ( xy[0] == xy[1] || xy[2] == xy[3] )
@@ -408,23 +427,47 @@ pxy:		pgls->g.scaling_params.pmin.x = xy[0];
 			 bottom < 0 || bottom > 100))
 		     )
 		    return e_Range;
-		  pgls->g.scaling_params.left = left;
-		  pgls->g.scaling_params.bottom = bottom;
+		  scale_params.left = left;
+		  scale_params.bottom = bottom;
 		}
 		goto pxy;
 	      case hpgl_scaling_point_factor: /* 2 */
 		if ( xy[1] == 0 || xy[3] == 0 )
 		  return e_Range;
-		pgls->g.scaling_params.pmin.x = xy[0];
-		pgls->g.scaling_params.factor.x = xy[1];
-		pgls->g.scaling_params.pmin.y = xy[2];
-		pgls->g.scaling_params.factor.y = xy[3];
+		scale_params.pmin.x = xy[0];
+		scale_params.factor.x = xy[1];
+		scale_params.pmin.y = xy[2];
+		scale_params.factor.y = xy[3];
 		break;
 	      default:
 		return e_Range;
 	      }
 	  }
-	pgls->g.scaling_type = type;
+
+	{
+	  hpgl_args_t args;
+	    
+	  hpgl_pen_state_t saved_pen_state;
+	  hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
+	  hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	  pgls->g.scaling_params = scale_params;
+	  pgls->g.scaling_type = type;
+	  
+	  /* HAS probably only needs to be done if the scaling state
+	     has changed */
+	  hpgl_call(hpgl_set_ctm(pgls));
+	  hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
+	  /* we must clear the current path because we set up the CTM
+	     when issuing the first point, and the CTM is a function of
+	     SC. */
+
+	  /* now add a moveto the using the current ctm */
+	  hpgl_args_set_real(&args, point.x);
+	  hpgl_args_add_real(&args, point.y);
+	  hpgl_call(hpgl_PU(&args, pgls));
+	  hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
+	}
+
 	return 0;
 }
 
@@ -451,3 +494,4 @@ pgconfig_do_init(gs_memory_t *mem)
 const pcl_init_t pgconfig_init = {
   pgconfig_do_init, 0
 };
+

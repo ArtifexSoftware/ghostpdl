@@ -17,7 +17,6 @@
 #include "gsimage.h"
 #include "gsutil.h"
 #include "gxfixed.h"
-#include "gxpath.h"
 #include "gxstate.h"
 #include "plvalue.h"
 #include "pcommand.h"
