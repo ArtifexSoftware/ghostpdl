@@ -200,6 +200,15 @@ psdf_adjust_color_index(gx_device_vector *vdev, gx_color_index color)
     return (color == (gx_no_color_index ^ 1) ? gx_no_color_index : color);
 }
 
+/*
+ * Since we only have 8 bits of color to start with, round the
+ * values to 3 digits for more compact output.
+ */
+private double
+round_byte_color(int cv)
+{
+    return (int)(cv * (1000.0 / 255.0)) / 1000.0;
+}
 int
 psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	       const psdf_set_color_commands_t *ppscc)
@@ -212,11 +221,11 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	stream *s = gdev_vector_stream(vdev);
 	gx_color_index color =
 	    psdf_adjust_color_index(vdev, gx_dc_pure_color(pdc));
-	float
-	    v0 = (color >> 24) / 255.0,
-	    v1 = ((color >> 16) & 0xff) / 255.0,
-	    v2 = ((color >> 8) & 0xff) / 255.0,
-	    v3 = (color & 0xff) / 255.0;
+	double
+	    v0 = round_byte_color(color >> 24),
+	    v1 = round_byte_color((color >> 16) & 0xff),
+	    v2 = round_byte_color((color >> 8) & 0xff),
+	    v3 = round_byte_color(color & 0xff);
 
 	switch (vdev->color_info.num_components) {
 	case 4:
