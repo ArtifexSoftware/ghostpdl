@@ -6,6 +6,28 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.16 (xx/xx/98)
+======================
+
+Fixes bugs
+
+- defaults build parameters to build only in one
+directory. (ugcc_top.mak)
+- removes pxsymbol.c, pxsymbol.h and pxbfont.h - not sure why this was
+taken out. (pxl.mak)
+- adds note to fix problem with building devices in the current
+working directory (pxl_ugcc.mak)
+- adds intermediate files for generating pxsymbol.h pxsymbol.c and
+pxbfont.c.  This avoids a circular reference in the makefile when
+PXLGEN==PXLSRC and it's generally better not to be have a different
+file for each output.
+
+Known Problems:
+
+- leaves build generated files in the object directory after
+make clean.
+
+
 Version 1.15 (8/6/98)
 =====================
 

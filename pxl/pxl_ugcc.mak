@@ -7,24 +7,29 @@
 # Define the name of this makefile.
 MAKEFILE=../pxl/pxl_ugcc.mak
 
-# Directories
-GLSRCDIR=/home/henrys/tmp/gs5.28
-GLGENDIR=../pxl/obj
-GLOBJDIR=../pxl/obj
+# The build process will put all of its output in this directory:
+GENDIR=./obj
+
+# The sources are taken from these directories:
+GLSRCDIR=../gs
 PLSRCDIR=../pl
-PLGENDIR=../pxl/obj
-PLOBJDIR=../pxl/obj
 PXLSRCDIR=../pxl
-PXLGENDIR=../pxl/obj
-PXLOBJDIR=../pxl/obj
 COMMONDIR=../common
-GENDIR=$(PXLGENDIR)
+
+# If you want to build the individual packages in their own directories,
+# you can define this here, although normally you won't need to do this:
+GLGENDIR=$(GENDIR)
+GLOBJDIR=$(GENDIR)
+PLGENDIR=$(GENDIR)
+PLOBJDIR=$(GENDIR)
+PXLGENDIR=$(GENDIR)
+PXLOBJDIR=$(GENDIR)
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
 CONFIG=6
 TARGET_DEVS=$(PXLOBJDIR)/pxl.dev
-TARGET_XE=pclxl
+TARGET_XE=$(PXLOBJDIR)/pclxl
 MAIN_OBJ=$(PXLOBJDIR)/pxmain.$(OBJ)
 
 # Assorted definitions.  Some of these should probably be factored out....

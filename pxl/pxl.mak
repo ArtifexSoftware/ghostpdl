@@ -25,13 +25,15 @@ PXL_MAK=$(PXLSRC)pxl.mak
 
 pxl.clean: pxl.config-clean pxl.clean-not-config-clean
 
-# We don't delete these files, just in case PXLGEN = PXLSRC.
-#	$(RMN_) $(PXLGEN)pxbfont.c $(PXLGEN)pxsymbol.c $(PXLGEN)pxsymbol.h
 pxl.clean-not-config-clean:
 	$(RM_) $(PXLOBJ)*.$(OBJ)
+	$(RMN_) $(PXLGEN)pxbfont.c $(PXLGEN)pxsymbol.c $(PXLGEN)pxsymbol.h
 
+# devices are still created in the current directory.  Until that 
+# is fixed we will have to remove them from both directories.
 pxl.config-clean:
 	$(RM_) $(PXLOBJ)*.dev
+	$(RM_) *.dev
 
 ################ PCL XL ################
 
@@ -59,12 +61,14 @@ pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h)
 # To avoid having to build the Ghostscript interpreter to generate pxbfont.c,
 # we normally ship a pre-constructed pxbfont.c with the source code.
 # If the following rule doesn't work, try:
-#    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxbfont.ps >pxbfont.c
-$(PXLSRC)pxbfont.c: $(PXLSRC)pxbfont.ps
-	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxbfont.ps >$(PXLSRC)pxbfont.c
-
-$(PXLGEN)pxbfont.c: $(PXLSRC)pxbfont.c
-	$(CP_) $(PXLSRC)pxbfont.c $(PXLGEN)pxbfont.c
+#    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxbfont.ps >pxbfont.psc
+# .psc is an intermediate .c file created by postscript
+$(PXLSRC)pxbfont.psc: $(PXLSRC)pxbfont.ps
+	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxbfont.ps >$(PXLSRC)pxbfont.psc
+	
+$(PXLGEN)pxbfont.c: $(PXLSRC)pxbfont.psc
+	$(CP_) $(PXLSRC)pxbfont.psc $(PXLGEN)pxbfont.c
+	$(RM_) $(PXLSRC)pxbfont.psc
 
 $(PXLOBJ)pxbfont.$(OBJ): $(PXLGEN)pxbfont.c $(AK) $(stdpre_h)\
  $(pxbfont_h)
@@ -91,20 +95,24 @@ $(PXLOBJ)pxstate.$(OBJ): $(PXLSRC)pxstate.c $(AK) $(stdio__h)\
 	$(PXLCCC) $(PXLSRC)pxstate.c $(PXLO_)pxstate.$(OBJ)
 
 # See the comment above under pxbfont.c.
-#    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxsymbol.ps >pxsymbol.c
-$(PXLSRC)pxsymbol.h: $(PXLSRC)pxsymbol.ps
-	$(GS_XE) -q -dNODISPLAY -dHEADER $(PXLSRC)pxsymbol.ps >$(PXLSRC)pxsymbol.h
+#    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY -dHEADER pxsymbol.ps >pxsymbol.psh
+# .psh is an intermediate .h file file created by postscript.
+$(PXLSRC)pxsymbol.psh: $(PXLSRC)pxsymbol.ps
+	$(GS_XE) -q -dNODISPLAY -dHEADER $(PXLSRC)pxsymbol.ps >$(PXLSRC)pxsymbol.psh
 
-$(PXLGEN)pxsymbol.h: $(PXLSRC)pxsymbol.h
-	$(CP_) $(PXLSRC)pxsymbol.h $(PXLGEN)pxsymbol.h
+$(PXLGEN)pxsymbol.h: $(PXLSRC)pxsymbol.psh
+	$(CP_) $(PXLSRC)pxsymbol.psh $(PXLGEN)pxsymbol.h
+	$(RM_) $(PXLSRC)pxsymbol.psh
 
 # See the comment above under pxbfont.c.
-#    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY -dHEADER pxsymbol.ps >pxsymbol.h
-$(PXLSRC)pxsymbol.c: $(PXLSRC)pxsymbol.ps
-	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxsymbol.ps >$(PXLSRC)pxsymbol.c
+#    /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxsymbol.ps >pxsymbol.psc
+# .psc is an intermediate .c file created by postscript
+$(PXLSRC)pxsymbol.psc: $(PXLSRC)pxsymbol.ps
+	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxsymbol.ps >$(PXLSRC)pxsymbol.psc
 
-$(PXLGEN)pxsymbol.c: $(PXLSRC)pxsymbol.c
-	$(CP_) $(PXLSRC)pxsymbol.c $(PXLGEN)pxsymbol.c
+$(PXLGEN)pxsymbol.c: $(PXLSRC)pxsymbol.psc
+	$(CP_) $(PXLSRC)pxsymbol.psc $(PXLGEN)pxsymbol.c
+	$(RM_) $(PXLSRC)pxsymbol.psc
 
 $(PXLOBJ)pxsymbol.$(OBJ): $(PXLGEN)pxsymbol.c $(AK) $(pxsymbol_h)
 	$(PXLCCC) $(PXLGEN)pxsymbol.c $(PXLO_)pxsymbol.$(OBJ)
