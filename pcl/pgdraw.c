@@ -1220,7 +1220,7 @@ hpgl_draw_current_path(
 		if (pgls->g.bitmap_fonts_allowed)
 		    break;	/* no edging */
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-                if ((code = set_proc(pgls, pgls->g.character.edge_pen, 0)) < 0)
+                if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), 0)) < 0)
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
 		gs_setlinewidth(pgs, 0.1);
@@ -1234,14 +1234,15 @@ hpgl_draw_current_path(
 		if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
 		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines))
 		    hpgl_call((*fill)(pgs));
+		else
+		    hpgl_call(hpgl_clear_current_path(pgls));
 		break;
-
 	    case hpgl_char_fill_edge:
 		if (pgls->g.bitmap_fonts_allowed)
 		    break;	/* no edging */
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
 		hpgl_call(hpgl_gsave(pgls));
-                if ((code = set_proc(pgls, pgls->g.character.edge_pen, 0)) < 0)
+                if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), 0)) < 0)
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
 		gs_setlinewidth(pgs, 0.1);
@@ -1253,6 +1254,9 @@ hpgl_draw_current_path(
 		if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
 		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines))
 		    hpgl_call((*fill)(pgs));
+		else
+		    hpgl_call(hpgl_clear_current_path(pgls));
+		break;
 	    }
 	}
 	break;

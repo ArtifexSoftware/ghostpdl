@@ -9,6 +9,9 @@
 #  define pgmisc_INCLUDED
 
 extern void hpgl_set_lost_mode(P2(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode));
+/* get the current setting of the edge pen set by CF, NB this should
+   be in a different header file */
+int32 hpgl_get_character_edge_pen(P1(hpgl_state_t *pgls));
 
 /* macro to see if we are in lost mode */
 #define hpgl_lost (pgls->g.lost_mode == hpgl_lost_mode_entered)

@@ -185,6 +185,23 @@ hpgl_AD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return hpgl_font_definition(pargs, pgls, 1);
 }
 
+#define CHAR_EDGE_PEN_UNSET -1
+
+/* return the current edge pen based on whethere or not the interpreter specifically set the pen */
+ int32
+hpgl_get_character_edge_pen(
+    hpgl_state_t *  pgls
+)
+{
+    /* if the character edge pen has not been set then we return the
+       current pen number, otherwise the state value as set in the CF
+       command is used.  (see hpgl_CF) */
+    return (pgls->g.character.edge_pen == CHAR_EDGE_PEN_UNSET ? 
+	    pgls->g.pen.selected :
+	    pgls->g.character.edge_pen);
+
+}
+    
 /*
  * CF [mode[,pen]];
  */
@@ -201,25 +218,22 @@ hpgl_CF(
     if (hpgl_arg_c_int(pargs, &mode)) {
         if ((mode & ~3) != 0)
 	    return e_Range;
-	/* a careful read of the PCLTRM indicates the default values
-           for CF edge pen are the current pen for modes 3 & 4.  NB
-           not sure if it is the current pen at the time the character
-           is rendered or at the time of the CF but this passes the
-           relevant fts test. */
-	if (mode == 0 || mode == 3)
-	    pen = pgls->g.pen.selected;
-
-	/* With only 1 argument, leave the current pen unchanged. */
+	/* With only 1 argument, we "unset" the current pen.  This
+           causes the drawing machinery to use the current pen when
+           the stroke is rendered (i.e. a subsequent SP will change
+           the character edge pen */
 	if (hpgl_arg_int(pargs, &pen)) {
-            if ((pen < 0) || (pen >= npen)) 
+            if ((pen < 0) || (pen >= npen))
 		return e_Range;
 	} else
-	      pen = pgls->g.character.edge_pen;
+	    pen = CHAR_EDGE_PEN_UNSET;
     }
     pgls->g.character.fill_mode = mode;
     pgls->g.character.edge_pen = pen;
     return 0;
 }
+
+#undef CHAR_EDGE_PEN_UNSET
 
 /* DI [run,rise]; */
  int
