@@ -42,7 +42,7 @@ pcl_register_command(byte *pindex, const pcl_command_definition_t *pcmd,
 	else if ( index != 0 && pcl_parser_state->definitions->pcl_command_list[index] == pcmd )
 	  ;
 	else
-	  pcl_parser_state->definitions->pcl_command_list[pcl_parser_state->definitions->pcl_command_next_index = ++index] = pcmd;
+            pcl_parser_state->definitions->pcl_command_list[pcl_parser_state->definitions->pcl_command_next_index = ++index] = (pcl_command_definition_t *)pcmd;
 	*pindex = index;
 	return (prev != 0 && prev != index);
 }
