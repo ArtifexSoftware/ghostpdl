@@ -177,6 +177,7 @@ cos_object_init(cos_object_t *pco, gx_device_pdf *pdev,
 	pco->is_open = true;
 	pco->is_graphics = false;
 	pco->written = false;
+ 	pco->length = 0;
     }
 }
 
@@ -1025,15 +1026,10 @@ cos_stream_release(cos_object_t *pco, client_name_t cname)
 }
 
 /* Find the total length of a stream. */
-private long
+long
 cos_stream_length(const cos_stream_t *pcs)
 {
-    const cos_stream_piece_t *pcsp = pcs->pieces;
-    long length;
-
-    for (length = 0; pcsp; pcsp = pcsp->next)
-	length += pcsp->size;
-    return length;
+    return pcs->length;
 }
 
 /* Write the (dictionary) elements of a stream. */
@@ -1123,6 +1119,7 @@ cos_stream_add(cos_stream_t *pcs, uint size)
 	pcsp->next = pcs->pieces;
 	pcs->pieces = pcsp;
     }
+    pcs->length += size;
     return 0;
 }
 int
@@ -1216,4 +1213,16 @@ cos_write_stream_alloc(cos_stream_t *pcs, gx_device_pdf *pdev,
     gs_free_object(mem, ss, cname);
     gs_free_object(mem, s, cname);
     return 0;
+}
+
+/* Get cos stream from pipeline. */
+cos_stream_t *
+cos_write_stream_from_pipeline(stream *s)
+{
+    cos_write_stream_state_t *ss;
+
+    while(s->procs.process != cos_s_procs.process)
+	s = s->strm;
+    ss = (cos_write_stream_state_t *)s->state;
+    return ss->pcs;
 }

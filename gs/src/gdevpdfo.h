@@ -111,6 +111,7 @@ struct otype_s {\
     byte is_open;		/* see above */\
     byte is_graphics;		/* see above */\
     byte written;		/* see above */\
+    long length;                /* only for stream objects */\
 }
 cos_object_struct(cos_object_s, cos_element_t);
 #define private_st_cos_object()	/* in gdevpdfo.c */\
@@ -283,6 +284,10 @@ int cos_param_list_writer_init(P3(cos_param_list_writer_t *, cos_dict_t *,
 stream *cos_write_stream_alloc(P3(cos_stream_t *pcs, gx_device_pdf *pdev,
 				  client_name_t cname));
 
+/* Get cos stream from pipeline. */
+cos_stream_t *
+cos_write_stream_from_pipeline(P1(stream *s));
+
 /* Write a Cos value on the output. */
 int cos_value_write(P2(const cos_value_t *, gx_device_pdf *));
 
@@ -290,6 +295,9 @@ int cos_value_write(P2(const cos_value_t *, gx_device_pdf *));
 int cos_dict_elements_write(P2(const cos_dict_t *, gx_device_pdf *));
 int cos_stream_elements_write(P2(const cos_stream_t *, gx_device_pdf *)); /* = dict_elements_write */
 int cos_stream_contents_write(P2(const cos_stream_t *, gx_device_pdf *));
+
+/* Find the total length of a stream. */
+long cos_stream_length(P1(const cos_stream_t *pcs));
 
 /* Write/delete definitions of named objects. */
 /* This is a special-purpose facility for pdf_close. */
