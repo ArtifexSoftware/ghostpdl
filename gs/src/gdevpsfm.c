@@ -106,7 +106,7 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 
 	    pprintd1(s, "%d ", ni - i);
 	    if (pclr->key_is_range) {
-		if (pclr->value_type == CODE_VALUE_CID) {
+		if (pclr->value_type == CODE_VALUE_CID || pclr->value_type == CODE_VALUE_NOTDEF) {
 		    stream_puts(s, pcmo->beginrange);
 		    end = pcmo->endrange;
 		} else {	/* must be def, not notdef */
@@ -114,7 +114,7 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		    end = "endbfrange\n";
 		}
 	    } else {
-		if (pclr->value_type == CODE_VALUE_CID) {
+		if (pclr->value_type == CODE_VALUE_CID || pclr->value_type == CODE_VALUE_NOTDEF) {
 		    stream_puts(s, pcmo->beginchar);
 		    end = pcmo->endchar;
 		} else {	/* must be def, not notdef */
@@ -158,7 +158,7 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		}
 		    break;
 		default:	/* not possible */
-		    return_error(gs_error_rangecheck);
+		    return_error(gs_error_unregistered);
 		}
 		stream_putc(s, '\n');
 	    }
@@ -257,11 +257,16 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 
     {
 	int font_index = (pcmap->num_fonts <= 1 ? 0 : -1);
+	int code;
 
-	cmap_put_code_map(s, &pcmap->notdef, pcmap, &cmap_notdef_operators,
-			  put_name_chars, &font_index);
-	cmap_put_code_map(s, &pcmap->def, pcmap, &cmap_cid_operators,
-			  put_name_chars, &font_index);
+	code = cmap_put_code_map(s, &pcmap->notdef, pcmap, &cmap_notdef_operators,
+			         put_name_chars, &font_index);
+	if (code < 0)
+	    return code;
+	code = cmap_put_code_map(s, &pcmap->def, pcmap, &cmap_cid_operators,
+			         put_name_chars, &font_index);
+	if (code < 0)
+	    return code;
     }
 
     /* Write the trailer. */

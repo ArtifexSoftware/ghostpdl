@@ -24,6 +24,11 @@
 % ---------------- Public operators ---------------- %
 
 /.rewriteTempMapsNotDef {
+  %
+  % Before building .CodeMapData from .TempMaps,
+  % we need to replace dst type codes in the notdef map with the value 3,
+  % which corresponds to CODE_VALUE_NOTDEF, see gxfcmap.h .
+  %
   DEBUG { (rewriting TempMapsNotDef\n) print flush } if
   .TempMaps 2 get
   dup length 0 gt {
@@ -242,10 +247,10 @@
 			%   .addbfrange <<same as .addbfchar>>
   4 string dup 3
   3 index type /nametype eq {
-    2 index 2 1 put
+    2 index 2 1 put % dst = CODE_VALUE_GLYPH, see gxfcmap.h .
     4 -1 roll 1 array astore 4 1 roll 4
   } {
-    2 index 2 2 put
+    2 index 2 2 put % dst = CODE_VALUE_CHARS, see gxfcmap.h .
     3 index length
   } ifelse put
 			% Stack: code_lo code_hi value params

@@ -65,6 +65,18 @@ typedef struct gx_code_space_s {
  * associated sorted lookup table, indexed by the num_key_bytes low-order
  * code bytes.  If key_is_range is true, each key is a range (2 x key_size
  * bytes); if false, each key is a single code (key_size bytes).
+ *
+ * The only difference between CODE_VALUE_CID and CODE_VALUE_NOTDEF is
+ * that after looking up a CID in a table, for CODE_VALUE_CID the result
+ * is incremented by the difference between the input code and the key
+ * (i.e., a single CODE_VALUE_CID entry actually represents a range of
+ * CIDs), whereas for CODE_VALUE_NOTDEF, the result is not incremented.
+ * The defined-character map for a CMap uses the former behavior; the
+ * notdef map uses the latter.
+ *
+ * CODE_VALUE_GLYPH and CODE_VALUE_CHARS are reserved for
+ * rearranged font CMaps, which are not implemented yet.
+ *
  */
 typedef enum {
     CODE_VALUE_CID,		/* CIDs */
