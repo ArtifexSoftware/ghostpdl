@@ -385,7 +385,7 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
 {
     pdf_char_proc_t *pcp;
     pdf_resource_t *pres;
-    int code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(1), &pres);
+    int code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(1), &pres, false);
 
     if (code < 0)
        return code;
@@ -446,7 +446,7 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw,
  */
 int
 pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
-			    gs_id id, pdf_resource_t **ppres) 
+			    gs_id id, pdf_resource_t **ppres, bool reserve_object_id) 
 {
     int sbstack_ptr = pdev->sbstack_depth;
     stream *s, *save_strm = pdev->strm;
@@ -460,7 +460,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     if (pdev->sbstack_depth >= pdev->sbstack_size)
 	return_error(gs_error_unregistered); /* Must not happen. */
     code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, id),
-		pdf_resource_type_structs[rtype], &pres, 0);
+		pdf_resource_type_structs[rtype], &pres, reserve_object_id ? 0 : -1);
     if (code < 0)
 	return code;
     cos_become(pres->object, cos_type_stream);
@@ -646,7 +646,7 @@ int
 pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font) 
 {
     int code;
-    pdf_font_resource_t *pres = (pdf_font_resource_t *)pdev->accumulating_substream_resource;
+    pdf_resource_t *pres = (pdf_resource_t *)pdev->accumulating_substream_resource;
     /* We could use pdfont->u.simple.s.type3.char_procs insted the thing above
        unless the font is defined recursively.
        But we don't want such assumption. */
@@ -699,7 +699,8 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font)
 		    return code;
 	    }
 	}
-    }
+    } 
+    pdf_reserve_object_id(pdev, pres, 0);
     code = pdf_attached_font_resource(pdev, font, &pdfont,
 		&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     if (code < 0)
