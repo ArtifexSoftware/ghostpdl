@@ -76,7 +76,7 @@ inamedef_h=$(PSSRC)inamedef.h\
  $(gsstruct_h) $(inameidx_h) $(inames_h) $(inamestr_h)
 store_h=$(PSSRC)store.h $(ialloc_h) $(idosave_h)
 iplugin_h=$(PSSRC)iplugin.h
-ifapi_h=$(PSSRC)ifapi.h $(PSSRC)iplugin.h
+ifapi_h=$(PSSRC)ifapi.h $(iplugin_h)
 
 GH=$(AK) $(ghost_h)
 
@@ -200,8 +200,9 @@ $(PSOBJ)iutil.$(OBJ) : $(PSSRC)iutil.c $(GH) $(math__h) $(memory__h) $(string__h
  $(iname_h) $(ipacked_h) $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)iutil.$(OBJ) $(C_) $(PSSRC)iutil.c
 
-$(PSOBJ)iplugin.$(OBJ) : $(PSSRC)iplugin.c $(GH) $(ghost_h) $(iplugin_h) $(icstate_h)\
- $(ialloc_h) $(errors_h)
+$(PSOBJ)iplugin.$(OBJ) : $(PSSRC)iplugin.c $(GH) $(malloc__h) $(string__h)\
+ $(gxalloc_h)\
+ $(errors_h) $(ialloc_h) $(icstate_h) $(iplugin_h)
 	$(PSCC) $(PSO_)iplugin.$(OBJ) $(C_) $(PSSRC)iplugin.c
 
 # ======================== PostScript Level 1 ======================== #
@@ -239,7 +240,7 @@ iscanbin_h=$(PSSRC)iscanbin.h
 iscannum_h=$(PSSRC)iscannum.h
 istream_h=$(PSSRC)istream.h
 itoken_h=$(PSSRC)itoken.h
-main_h=$(PSSRC)main.h $(imain_h) $(iminst_h)
+main_h=$(PSSRC)main.h $(iapi_h) $(imain_h) $(iminst_h)
 sbwbs_h=$(PSSRC)sbwbs.h
 shcgen_h=$(PSSRC)shcgen.h
 smtf_h=$(PSSRC)smtf.h
@@ -312,8 +313,9 @@ $(PSOBJ)zdict.$(OBJ) : $(PSSRC)zdict.c $(OP)\
 	$(PSCC) $(PSO_)zdict.$(OBJ) $(C_) $(PSSRC)zdict.c
 
 $(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP) $(memory__h) $(string__h) $(gp_h)\
- $(gscdefs_h) $(gsfname_h) $(gsstruct_h) $(gxalloc_h) $(gxiodev_h)\
- $(ialloc_h) $(estack_h) $(files_h) $(ilevel_h) $(interp_h) $(iutil_h)\
+ $(gscdefs_h) $(gsfname_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxiodev_h)\
+ $(dstack_h) $(estack_h) $(files_h)\
+ $(ialloc_h) $(idict_h) $(ilevel_h) $(iname_h) $(interp_h) $(iutil_h)\
  $(isave_h) $(main_h) $(sfilter_h) $(stream_h) $(strimpl_h) $(store_h)
 	$(PSCC) $(PSO_)zfile.$(OBJ) $(C_) $(PSSRC)zfile.c
 
@@ -352,7 +354,7 @@ $(PSOBJ)ziodev.$(OBJ) : $(PSSRC)ziodev.c $(OP)\
 $(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) : $(PSSRC)ziodevs$(STDIO_IMPLEMENTATION).c $(OP) $(stdio__h)\
  $(gpcheck_h)\
  $(gxiodev_h)\
- $(files_h) $(store_h) $(stream_h)
+ $(files_h) $(ifilter_h) $(istream_h) $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) $(C_) $(PSSRC)ziodevs$(STDIO_IMPLEMENTATION).c
 
 $(PSOBJ)zmath.$(OBJ) : $(PSSRC)zmath.c $(OP) $(math__h) $(gxfarith_h) $(store_h)
@@ -438,8 +440,10 @@ $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
 	$(PSCC) $(PSO_)zdevice.$(OBJ) $(C_) $(PSSRC)zdevice.c
 
 $(PSOBJ)zdfilter.$(OBJ) : $(PSSRC)zdfilter.c $(OP) $(string__h)\
+ $(gsdfilt_h) $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h)\
+ $(gdevp14_h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
- $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h) $(gsdfilt_h)
+ $(store_h)
 	$(PSCC) $(PSO_)zdfilter.$(OBJ) $(C_) $(PSSRC)zdfilter.c
 
 $(PSOBJ)zfont.$(OBJ) : $(PSSRC)zfont.c $(OP)\
@@ -948,7 +952,8 @@ $(PSD)ccfonts.dev : $(TOP_MAKEFILES) $(INT_MAK)\
 	$(ADDMOD) $(PSD)ccfonts -ps $(ccfonts_ps)
 
 $(PSOBJ)iccfont.$(OBJ) : $(PSSRC)iccfont.c $(GH) $(string__h)\
- $(gsstruct_h) $(ccfont_h) $(errors_h)\
+ $(gsmatrix_h) $(gsstruct_h) $(gxfont_h)\
+ $(ccfont_h) $(errors_h)\
  $(ialloc_h) $(idict_h) $(ifont_h) $(iname_h) $(isave_h) $(iutil_h)\
  $(oper_h) $(ostack_h) $(store_h) $(stream_h) $(strimpl_h) $(sfilter_h) $(iscan_h)
 	$(PSCC) $(PSO_)iccfont.$(OBJ) $(C_) $(PSSRC)iccfont.c
@@ -1273,7 +1278,7 @@ $(PSD)farc4.dev : $(INT_MAK) $(ECHOGS_XE) $(farc4_) $(GLD)sarc4.dev
 	$(ADDMOD) $(PSD)farc4 -oper zfarc4
 
 $(PSOBJ)zfarc4.$(OBJ) : $(PSSRC)zfarc4.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(ifilter_h)\
+ $(gsstruct_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
  $(sarc4_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfarc4.$(OBJ) $(C_) $(PSSRC)zfarc4.c
 
@@ -1518,8 +1523,9 @@ $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zcssepr.$(OBJ) $(C_) $(PSSRC)zcssepr.c
 
 $(PSOBJ)zfsample.$(OBJ) : $(PSSRC)zfsample.c $(OP) $(memory__h)\
- $(gxcspace_h) $(estack_h) $(ialloc_h) $(idict_h) $(idparam_h)\
- $(ifunc_h) $(ostack_h) $(gsfunc0_h)
+ $(gsfunc0_h) $(gxcspace_h)\
+ $(estack_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(ostack_h)\
+ $(store_h)
 	$(PSCC) $(PSO_)zfsample.$(OBJ) $(C_) $(PSSRC)zfsample.c
 
 # ---------------- DCT filters ---------------- #
@@ -1706,7 +1712,7 @@ $(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)transpar -oper ztrans
 	$(ADDMOD) $(PSD)transpar -include $(PSD)psl2read $(GLD)translib
 
-$(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
+$(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(memory__h) $(string__h)\
  $(gscolor2_h) $(gscspace_h) $(gsipar3x_h) $(gstrans_h) $(gxiparam_h)\
  $(idict_h) $(idparam_h) $(ifunc_h) $(igstate_h) $(iimage_h) $(iimage2_h) $(iname_h)\
  $(store_h)
@@ -1783,11 +1789,14 @@ $(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
 	$(ADDMOD) $(PSD)fapi -ps gs_fapi
 	$(ADDMOD) $(PSD)fapi -include $(PSD)fapiu$(UFST_BRIDGE)
 
-$(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) \
- $(memory__h) $(math__h) $(ghost_h) $(gp_h) $(oper_h) $(gxdevice_h) $(gxfont_h) $(gxfont1_h) \
- $(gxchar_h) $(gxpath_h) $(gxchrout_h) $(gscoord_h) $(gspaint_h) $(gsfont_h) $(gspath_h) $(bfont_h) $(dstack_h) \
- $(ichar_h) $(idict_h) $(iddict_h) $(idparam_h) $(iname_h) $(ifont_h) $(igstate_h) $(icharout_h) $(ifapi_h) \
- $(iplugin_h) $(store_h) $(gzstate_h) $(stream_h) $(files_h) $(gscrypt1_h) $(gsfcid_h) 
+$(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(gp_h)\
+ $(gscoord_h) $(gscrypt1_h) $(gsfont_h) $(gspaint_h) $(gspath_h)\
+ $(gxchar_h) $(gxchrout_h) $(gxdevice_h) $(gxfcache_h) $(gxfcid_h)\
+ $(gxfont_h) $(gxfont1_h) $(gxpath_h) $(gzstate_h) $(gdevpsf_h)\
+ $(bfont_h) $(dstack_h) $(files_h) \
+ $(ichar_h) $(idict_h) $(iddict_h) $(idparam_h) $(iname_h) $(ifont_h)\
+ $(igstate_h) $(icharout_h) $(ifapi_h) $(iplugin_h) \
+ $(oper_h) $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)zfapi.$(OBJ) $(C_) $(PSSRC)zfapi.c
 
 # UFST bridge :
@@ -1808,8 +1817,9 @@ $(PSD)fapiu1.dev : $(INT_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(PSD)fapiu1 -link $(UFST_LIB)if_lib$(UFST_LIB_EXT) $(UFST_LIB)fco_lib$(UFST_LIB_EXT)
 	$(ADDMOD) $(PSD)fapiu1 -link $(UFST_LIB)tt_lib$(UFST_LIB_EXT) $(UFST_LIB)psi_lib$(UFST_LIB_EXT)
 
-$(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(OP) \
- $(memory__h) $(stdio__h) $(math__h) $(errors_h) $(iplugin_h) $(ifapi_h) $(gserror_h) $(gxfapi_h) \
+$(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
+ $(memory__h) $(stdio__h) $(math__h)\
+ $(errors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)port.h\
@@ -1831,11 +1841,11 @@ GENINIT_DEPS=$(stdpre_h)
 # ============================= Main program ============================== #
 
 $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\
- $(imain_h) $(imainarg_h) $(iminst_h)
+ $(errors_h) $(iapi_h) $(imain_h) $(imainarg_h) $(iminst_h)
 	$(PSCC) $(PSO_)gs.$(OBJ) $(C_) $(PSSRC)gs.c
 
-$(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(GH)\
- $(string__h) $(errors_h) $(gsargs_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
+$(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK)\
+ $(string__h) $(errors_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
  $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h)
 	$(PSCC) $(PSO_)iapi.$(OBJ) $(C_) $(PSSRC)iapi.c
 
@@ -1849,9 +1859,10 @@ $(PSOBJ)icontext.$(OBJ) : $(PSSRC)icontext.c $(GH)\
 gdevdsp_h=$(GLSRC)gdevdsp.h
 gdevdsp2_h=$(GLSRC)gdevdsp2.h
 
-$(PSOBJ)idisp.$(OBJ) : $(PSSRC)idisp.c\
- $(iapi_h) $(ghost_h) $(gp_h)\
- $(imain_h) $(iminst_h) $(idisp_h)\
+$(PSOBJ)idisp.$(OBJ) : $(PSSRC)idisp.c $(OP) $(stdio__h) $(gp_h)\
+ $(stdpre_h) $(gscdefs_h) $(gsdevice_h) $(gsmemory_h) $(gstypes_h)\
+ $(iapi_h) $(iref_h)\
+ $(imain_h) $(iminst_h) $(idisp_h) $(ostack_h)\
  $(gx_h) $(gxdevice_h) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
 	$(PSCC) $(PSO_)idisp.$(OBJ) $(C_) $(PSSRC)idisp.c
 
@@ -1861,17 +1872,18 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(gsargs_h) $(gscdefs_h) $(gsdevice_h) $(gsmalloc_h) $(gsmdebug_h)\
  $(gxdevice_h) $(gxdevmem_h)\
  $(errors_h) $(estack_h) $(files_h)\
- $(ialloc_h) $(iconf_h) $(imain_h) $(imainarg_h) $(iminst_h)\
+ $(iapi_h) $(ialloc_h) $(iconf_h) $(imain_h) $(imainarg_h) $(iminst_h)\
  $(iname_h) $(interp_h) $(iscan_h) $(iutil_h) $(ivmspace_h)\
  $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h) \
  $(vdtrace_h)
 	$(PSCC) $(PSO_)imainarg.$(OBJ) $(C_) $(PSSRC)imainarg.c
 
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
- $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsalloc_h) $(gsutil_h) $(gxdevice_h)\
+ $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxalloc_h) $(gxdevice_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(idisp_h) $(iinit_h)\
- $(iname_h) $(interp_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
+ $(iname_h) $(interp_h) $(iplugin_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
  $(main_h) $(oper_h) $(ostack_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)imain.$(OBJ) $(C_) $(PSSRC)imain.c
