@@ -278,6 +278,8 @@ pdfdict begin
      /Printed currentpagedevice /OutputFile known def
    } ifelse
    /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
+   % NB: PDFfile is used outside of the PDF code to determine that a
+   % PDF job is being processed; to not change or hide this key.
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
    /Repaired false def
@@ -864,16 +866,43 @@ end readonly def
 % must be bracketed by the save/restore operation for the page, to avoid
 % unintended affects on other pages.
 %
+% If any color space substitution is used, and the current color space is a
+% device dependent color space, make sure the current color space is updated.
+% There is an optimization in the setcolorspace pseudo-operator that does
+% nothing if both the current and operand color spaces are the same. For
+% PostScript this optimization is disabled if the UseCIEColor page device
+% parameter is true. This is not the case for PDF, as performance suffers
+% significantly on some PDF files if color spaces are set repeatedly. Hence,
+% if color space substitution is to be used, and the current color space
+% is a device dependent color space, we must make sure to "transition" the
+% current color space.
+%
 /pdfshowpage_setcspacesub
   {
+    false
       { /DefaultGray /DefaultRGB /DefaultCMYK }
       {
-        dup 2 index /ColorSpace //rget exec
+        dup 3 index /ColorSpace //rget exec
           { resolvecolorspace /ColorSpace defineresource pop }
           { pop }
         ifelse
       }
     forall
+
+    % if using color space substitution, "transition" the current color space
+      {
+        currentcolorspace dup length 1 eq   % always an array
+          {
+            0 get
+            dup /DeviceGray eq 1 index /DeviceRGB eq or 1 index /DeviceCMYK or
+              { /Pattern setcolorspace setcolorspace }
+              { pop }
+            ifelse
+          }
+          { pop }
+        if
+      }
+    if
   }
 bind def
 

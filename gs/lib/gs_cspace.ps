@@ -425,12 +425,18 @@ systemdict /setcolor .undef
 % setcolorspace operator is removed from systemdict as soon as this
 % procedure is defined.
 %
-% Because some jobs repeatedly set the same color space, this procedure
-% will check if the operand and current color spaces are the same. The
-% check is absolute for parameterless color spaces, conservative for
-% other color spaces. We can only do this if color space substitution
-% is disabled, as otherwise we need to account for the possible changes
-% in the /Default* resources.
+% Because some jobs, in particular PDF jobs, repeatedly set the same
+% color space, this procedure will check if the operand and current
+% color spaces are the same. The check is absolute for parameterless
+% color spaces, conservative for others. For PostScript, this
+% optimization can only be employed if color space substitution is
+% disabled, as otherwise there is no way to account for  possible changes
+% in the /Default* instances of the ColorSpace resource category. For PDF
+% jobs, resource category instances can only be changed at very specific
+% times (typically page boundaries), so the "operand color space is the
+% same as current color space" optimization may be used even if color
+% space substitution is in effect. The optimization is also highly
+% desirable in such cases, as it greatly improves performance.
 %
 % In certain situations, it is critical that a color space be set,
 % even if it is the same as the current color space. This is the case
@@ -471,7 +477,17 @@ systemdict /setcolor .undef
           { 2 index }
         ifelse
         eq and dup
-          { .getuseciecolor not and }   % check that UseCIEColor is off
+          {
+            %
+            % If PDFfile is defined on the dictionary stack, this is a
+            % PDF job. No additional check is required in this case (see
+            % comment above).
+            %
+            /PDFfile where
+              { pop }
+              { .getuseciecolor not and }   % check that UseCIEColor is off
+            ifelse
+          }
         if
           { //.cs_get_default_color exec setcolor }
           {
