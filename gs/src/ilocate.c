@@ -477,8 +477,10 @@ ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
 	(oname = struct_type_name_string(otype),
 	 *oname < 33 || *oname > 126)
 	) {
-	lprintf4("Bad object 0x%lx(%lu), ssize = %u, in chunk 0x%lx!\n",
-		 (ulong) ptr, (ulong) size, otype->ssize, (ulong) cp);
+	lprintf2("Bad object 0x%lx(%lu),\n",
+		 (ulong) ptr, (ulong) size);
+	dprintf2(" ssize = %u, in chunk 0x%lx!\n",
+		 otype->ssize, (ulong) cp);
 	gs_abort();
     }
 }
