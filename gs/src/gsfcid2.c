@@ -266,7 +266,7 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
     gs_cmap_tt_16bit_format4_t *pcmap;
     int code;
     const byte *ttdata;
-    ulong offset;
+    ulong offset = origin;
     uint segCount2;
 
     if (origin == 0)
@@ -278,7 +278,7 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
     {
 	uint cmap_count;
 	uint i;
-
+	
 	ACCESS(origin + 2, 2, ttdata);
 	cmap_count = U16(ttdata);
 	for (i = 0; i < cmap_count; ++i) {
