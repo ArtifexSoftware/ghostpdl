@@ -17,6 +17,7 @@
 /*$Id$ */
 /* Extended halftone operators for Ghostscript library */
 #include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"

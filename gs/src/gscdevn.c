@@ -16,7 +16,9 @@
 
 /* $Id$ */
 /* DeviceN color space and operation definition */
+
 #include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscdevn.h"

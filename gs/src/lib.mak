@@ -1905,7 +1905,7 @@ $(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev
 	$(SETMOD) $(GLD)cmaplib $(cmaplib_)
 	$(ADDMOD) $(GLD)cmaplib -include $(GLD)cidlib
 
-$(GLOBJ)gsfcmap.$(OBJ) : $(GLSRC)gsfcmap.c $(GXERR) $(memory__h)\
+$(GLOBJ)gsfcmap.$(OBJ) : $(GLSRC)gsfcmap.c $(GXERR) $(memory__h) $(string__h)\
  $(gsstruct_h) $(gsutil_h) $(gxfcmap_h)
 	$(GLCC) $(GLO_)gsfcmap.$(OBJ) $(C_) $(GLSRC)gsfcmap.c
 
@@ -2130,7 +2130,7 @@ $(GLOBJ)gscolor1.$(OBJ) : $(GLSRC)gscolor1.c $(GXERR)\
  $(gzstate_h) $(gxhttype_h)
 	$(GLCC) $(GLO_)gscolor1.$(OBJ) $(C_) $(GLSRC)gscolor1.c
 
-$(GLOBJ)gsht1.$(OBJ) : $(GLSRC)gsht1.c $(GXERR) $(memory__h)\
+$(GLOBJ)gsht1.$(OBJ) : $(GLSRC)gsht1.c $(GXERR) $(memory__h) $(string__h)\
  $(gsstruct_h) $(gsutil_h) $(gxdevice_h) $(gzht_h) $(gzstate_h)\
  $(gxwts_h) $(gswts_h)
 	$(GLCC) $(GLO_)gsht1.$(OBJ) $(C_) $(GLSRC)gsht1.c
@@ -2402,7 +2402,7 @@ $(GLD)dpnxtlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_)
 
 # ================ PostScript LanguageLevel 3 support ================ #
 
-$(GLOBJ)gscdevn.$(OBJ) : $(GLSRC)gscdevn.c $(GXERR) $(memory__h)\
+$(GLOBJ)gscdevn.$(OBJ) : $(GLSRC)gscdevn.c $(GXERR) $(memory__h) $(string__h)\
  $(gscdevn_h) $(gsfunc_h) $(gsmatrix_h) $(gsrefct_h) $(gsstruct_h)\
  $(gxcspace_h) $(gxcdevn_h) $(gxfarith_h) $(gxfrac_h) $(gxcmap_h)\
  $(gxistate_h) $(gscoord_h) $(gzstate_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h)

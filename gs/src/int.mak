@@ -322,8 +322,8 @@ $(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP)\
  $(isave_h) $(main_h) $(sfilter_h) $(stream_h) $(strimpl_h) $(store_h)
 	$(PSCC) $(PSO_)zfile.$(OBJ) $(C_) $(PSSRC)zfile.c
 
-$(PSOBJ)zfile1.$(OBJ) : $(PSSRC)zfile1.c $(OP) $(memory__h) $(gp_h)\
- $(ierrors_h) $(oper_h) $(opcheck_h) $(ialloc_h) $(opdef_h) $(store_h)
+$(PSOBJ)zfile1.$(OBJ) : $(PSSRC)zfile1.c $(OP) $(memory__h) $(string__h)\
+ $(gp_h) $(ierrors_h) $(oper_h) $(opcheck_h) $(ialloc_h) $(opdef_h) $(store_h)
 	$(PSCC) $(PSO_)zfile1.$(OBJ) $(C_) $(PSSRC)zfile1.c
 
 $(PSOBJ)zfileio.$(OBJ) : $(PSSRC)zfileio.c $(OP) $(memory__h) $(gp_h)\
