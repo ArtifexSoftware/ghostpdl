@@ -303,7 +303,7 @@ PCL5_OPS=$(PCL5_OPS1) $(PCL5_OPS2) $(PCL5_OPS3) $(PCL5_OPS4)
 # Note: we have to initialize the cursor after initializing the logical
 # page dimensions, so we do it last.  This is a hack.
 $(PCLOBJ)pcl5.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL_COMMON) $(PCL5_OPS) $(PCLOBJ)pcl5base.dev $(PCLOBJ)rtlbase.dev
-	$(SETMOD) $(PCLOJB)pcl5 $(PCL_COMMON)
+	$(SETMOD) $(PCLOBJ)pcl5 $(PCL_COMMON)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS1)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS2)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS3)
@@ -356,7 +356,7 @@ $(PCLOBJ)pcl5c.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5C_OPS) $(PCLOBJ)pcl5.dev $(PCL
 
 pgdraw_h=$(PCLSRC)pgdraw.h
 pgfont_h=$(PCLSRC)pgfont.h $(stdpre_h) $(gstypes_h)
-pggeom_h=$(PCLSRC)pggeom.h $(math__h)
+pggeom_h=$(PCLSRC)pggeom.h $(math__h) $(gstypes_h)
 pginit_h=$(PCLSRC)pginit.h
 pgmisc_h=$(PCLSRC)pgmisc.h
 

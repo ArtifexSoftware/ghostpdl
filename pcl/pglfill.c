@@ -199,20 +199,33 @@ private const hpgl_line_type_t hpgl_adaptive_pats[8] = {
 /* LT; */
 int
 hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	int type = 0;
+{	
+	int type = 0;
 
 	if ( hpgl_arg_c_int(pargs, &type) )
-	  { if ( type == 99 )
-	      ;
+	  { 
+	    /* restore old saved line if we have a solid line,
+               otherwise the instruction is ignored. */
+	    if ( type == 99 )
+	      {
+		if ( pgls->g.line.is_solid == true )
+		  {
+		    hpgl_args_t args;
+		    hpgl_args_set_int(&args, pgls->g.line.last_type);
+		    hpgl_LT(&args, pgls);
+		  }
+		return 0;
+	      }
 	    else
-	      {	hpgl_real_t length = 0.04;
-	        int mode = 0;
+	      {	
+		hpgl_real_t length = 0.04;
+		int mode = 0;
 
 		if ( type < -8 || type > 8 ||
 		     (hpgl_arg_c_real(pargs, &length) &&
 		      (length <= 0 ||
 		       (hpgl_arg_c_int(pargs, &mode) && (mode & ~1))))
-		   )
+		     )
 		  return e_Range;
 		pgls->g.line.pattern_length = length;
 		pgls->g.line.pattern_length_relative = mode == 0;
@@ -220,8 +233,12 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      }
 	  } else
 	    {
-	      /* no args restore defaults */
-	      /*** HAS, need to save the current line type also ***/
+	      /* no args restore defaults and set previous line
+                 type. */
+	      /* HAS **BUG**BUG** initial value of line type
+                 is not supplied unless it gets set by previous LT
+                 command. */
+	      pgls->g.line.last_type = pgls->g.line.type;
 	      pgls->g.line.is_solid = true;
 	      memcpy(&pgls->g.fixed_line_type, 
 		     &hpgl_fixed_pats, 
@@ -458,7 +475,7 @@ hpgl_UL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      hpgl_line_type_t *fixed_plt =
 		&pgls->g.fixed_line_type[(index < 0 ? -index : index) - 1];
 	      hpgl_line_type_t *adaptive_plt =
-		&pgls->g.fixed_line_type[(index < 0 ? -index : index) - 1];
+		&pgls->g.adaptive_line_type[(index < 0 ? -index : index) - 1];
 	      fixed_plt->count = adaptive_plt->count = i;
 	      memcpy(fixed_plt->gap, gap, i * sizeof(hpgl_real_t));
 	      memcpy(adaptive_plt->gap, gap, i * sizeof(hpgl_real_t));

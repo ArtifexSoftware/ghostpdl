@@ -8,6 +8,15 @@
 #ifndef pgstate_INCLUDED
 #  define pgstate_INCLUDED
 
+/* HPGL/2 coordinates are internally represented in plotter units
+   1/1024" when scaling is off and user units when scaling is in
+   effect.  The data structure g.pos maintains the coordinates in the
+   hpgl/2 state.  By default the coordinate system sets up the origin
+   in the lower left of the page with X increasing along the short
+   edge and Y increasing up the long edge.  Note the Y direction is
+   opposite PCL's. */
+
+
 #include "gslparam.h"
 #include "gsuid.h"		/* for gxbitmap.h */
 #include "gstypes.h"		/* for gxbitmap.h */
@@ -95,6 +104,7 @@ typedef struct pcl_hpgl_state_s {
 		/* Chapter 22 (pglfill.c) */
 
 	struct lp_ {
+	  int last_type; /* used by line type 99 */
 	  int type;
 	  float pattern_length;
 	  bool pattern_length_relative;
@@ -237,4 +247,11 @@ do {\
   if ( (restore_flags) & hpgl_pen_pos )\
     ((pgls)->g.pos = (save)->pos);\
 } while (0)
+
+/* save the current line to be used when lt99 is issued */
+#define hpgl_set_line_type99(pgls) ((pgls)->g.line99 = (pgls)->g.line)
+
+/* restore previous line type */
+#define hpgl_restore_line_type99(pgls) ((pgls)->g.line = (pgls)->g.line99)
 #endif				/* pgstate_INCLUDED */
+

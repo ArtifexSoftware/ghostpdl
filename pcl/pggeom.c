@@ -97,7 +97,7 @@ hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2,
 	 *	y = (a*f - c*d) / denom
 	 */
 	denom = dx3 * dy2 - dx2 * dy3;
-	if ( denom < 1.0e-6 )
+	if ( fabs(denom) < 1.0e-6 )
 	  return -1;		/* degenerate */
 
 	t2 = ((px3 - px2) * (-dy3) - (-dx3) * (py3 - py2)) / denom;
@@ -135,4 +135,20 @@ hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
 	return hpgl_compute_arc_coords(magnitude, x, y,
 				       angle_degrees * (M_PI/180.0),
 				       endx, endy);
+}
+
+ int 
+hpgl_compute_dot_product(gs_point *pt1, gs_point *pt2, floatp *result)
+{
+	*result = ((pt1->x * pt2->x) + (pt1->y * pt2->y));
+	return 0;
+}
+
+/* scales a 2d vector */
+ int 
+hpgl_scale_vector(gs_point *pt1, floatp scale, gs_point *result)
+{
+	result->x = scale * pt1->x;
+	result->y = scale * pt1->y;
+	return 0;
 }

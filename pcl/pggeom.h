@@ -9,6 +9,7 @@
 #  define pggeom_INCLUDED
 
 #include "math_.h"
+#include "gstypes.h" /* for gs_point */
 
 /* ------ Useful conversions ------ */
 
@@ -60,6 +61,12 @@ int hpgl_compute_arc_coords(P6(floatp radius, floatp center_x,
 int hpgl_compute_vector_endpoints(P6(floatp magnitude, floatp x, floatp y, 
 				     floatp angle_degrees, floatp *endx,
 				     floatp *endy));
+
+/* calculates the dot product of 2 2d vectors */
+int hpgl_compute_dot_product(P3(gs_point *pt1, gs_point *pt2, floatp *result));
+
+/* scales a 2d vector */
+int hpgl_scale_vector(P3(gs_point *pt1, floatp scale, gs_point *result));
 
 /* ------ 3-point arcs ------ */
 

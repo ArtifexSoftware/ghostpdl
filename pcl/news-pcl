@@ -6,10 +6,11 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
-Version 0.23 (4/16/97)
-======================
+Version 0.24 (5/7/97)
+=====================
 
-More bug fixes.  Labels now appear in the correct place.
+More bug fixes.  This is an intermediate fileset to synchronize LPD's and
+HAS's changes.
 
 Known problems (PCL):
 	- The width of Intellifont characters is wrong.  (CET 14_01)
@@ -26,6 +27,22 @@ Unimplemented features (PCL):
 	- Continuation blocks for downloaded characters.
 	- Text clipping at the right margin.
 	- User-defined line type (99).
+
+(LPD) Fixes bugs:
+	- The makefile rule for pcl5.dev had a typo (PCLOJB for PCLOBJ).
+(pcl.mak)
+
+(LPD) Makes stick font characters always use round caps and joins, for
+visual consistency.  (pgdraw.h, pgdraw.c, pglabel.c)
+
+(HAS) Numerous fixes to graphics -- changes will be included in the log for
+the next fileset.  (pggeom.h, pgstate.h, pggeom.c, pgdraw.c, pglfill.c,
+pgvector.c)
+
+Version 0.23 (4/16/97)
+======================
+
+More bug fixes.  Labels now appear in the correct place.
 
 (LPD) Splits off functionality from two existing files:
 	- pcfont.c => pcfsel.h, pcfsel.c (font selection machinery used by

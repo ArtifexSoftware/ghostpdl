@@ -15,6 +15,7 @@
 #include "pggeom.h"
 #include "pgmisc.h"
 #include "pcfsel.h"
+#include "gsline.h"
 
 /* Define a bogus pl_font_t for the stick font. */
 /* Eventually this will be a real one.... */
@@ -270,6 +271,10 @@ hpgl_print_char(hpgl_state_t *pgls, hpgl_character_point *character)
 	pgls->g.current_render_mode = hpgl_rm_character;
 	hpgl_call(hpgl_set_graphics_state(pgls, hpgl_rm_character));
 
+	/* Always use round caps and joins. */
+	gs_setlinecap(pgls->pgs, gs_cap_round);
+	gs_setlinejoin(pgls->pgs, gs_join_round);
+
 	/* all character data is absolute */
 	pgls->g.relative = false;
 	while (character->operation != hpgl_char_end)
@@ -513,10 +518,12 @@ shift:		  hpgl_call(hpgl_recompute_font(pgls));
 		      do_CR = true;
 		      break;
 		    case FF :
-		      /****** WHAT TO DO? ******/
+		      /* does nothing */
+		      spaces = 0, lines = 0;
 		      break;
 		    case HT :
-		      /****** WHAT TO DO? ******/
+		      /* appears to expand to 5 spaces */
+		      spaces = 5, lines = 0;
 		      break;
 		    case SI :
 		      pgls->g.font_selected = 0;

@@ -46,11 +46,13 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	radius = 
 	  hpgl_compute_distance(x_current, y_current, x_center, y_center);
 
-	start_angle = 
+	start_angle = radians_to_degrees *
 	  hpgl_compute_angle(x_current - x_center, y_current - y_center);
 
 	hpgl_add_arc_to_path(pgls, x_center, y_center, 
-			     radius, start_angle, sweep, chord_angle);
+			     radius, start_angle, sweep, 
+			     (sweep < 0.0 ) ?
+			     -chord_angle : chord_angle);
 
 	hpgl_draw_current_path(pgls, hpgl_rm_vector);
 
@@ -88,10 +90,7 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 
 	x_start = pgls->g.pos.x;
 	y_start = pgls->g.pos.y;
-
-	/* HAS check this */
-	/* hpgl_draw_current_path(pgls, hpgl_rm_vector); */
-
+	
 	if ( hpgl_3_same_points(x_start, y_start, x_inter, 
 				y_inter, x_end, y_end) ) 
 	  hpgl_draw_dot(pgls, x_start, y_start);
@@ -127,24 +126,70 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 				    x_inter, y_inter, 
 				    x_end, y_end, &x_center, &y_center);
 	    
-	    radius = hpgl_compute_distance(x_start, y_start, 
-					   x_center, y_center);
+	    radius = hypot(x_start - x_center, y_start - y_center);
 	    
 	    counter_clockwise = 
-	      hpgl_compute_arc_direction(x_start, y_start, x_end, y_end);
+	      hpgl_compute_arc_direction(x_start, y_start, x_inter, y_inter);
 	    
-	    start_angle = 
+	    start_angle = radians_to_degrees *
 	      hpgl_compute_angle(x_start - x_center, y_start - y_center);
 
-	    end_angle = 
+	    end_angle = radians_to_degrees *
 	      hpgl_compute_angle(x_end - x_center, y_end - y_center);
 	    
-	    hpgl_add_arc_to_path(pgls, x_center, y_center, radius, 
-				 start_angle, 
-				 (counter_clockwise ? 
-				  -(end_angle - start_angle) :
-				  (start_angle - end_angle)), 
-				 chord_angle);
+	    {
+	      floatp sweep_angle, dot_product;
+	      hpgl_args_t args;
+	      gs_point u, v, u_scaled, v_scaled;
+
+	      /* calculate angle x between start vector (u) and end vector 
+		 (v) using:
+		            u         v
+		  cos(x) =----   .  ----
+		          ||u||     ||v||      
+	       */
+
+	      u.x = x_start - x_center;
+	      u.y = y_start - y_center;
+	      
+	      v.x = x_end - x_center;
+	      v.y = y_end - y_center;
+	      
+	      hpgl_call(hpgl_scale_vector(&u, (1.0 / radius), &u_scaled));
+	      hpgl_call(hpgl_scale_vector(&v, (1.0 / radius), &v_scaled));
+	      
+	      hpgl_call(hpgl_compute_dot_product(&u_scaled, 
+						 &v_scaled,
+						 &dot_product));
+	      			
+	      /* HAS annoying imprecision -- clamp for now but needs
+                 to be done correctly later specifically dot_product
+                 +- NOISE results in acos returning NaN */
+	      dot_product = (dot_product > 1.0) ? 1.0 : dot_product;
+	      dot_product = (dot_product < -1.0) ? -1.0 : dot_product;
+	      sweep_angle = radians_to_degrees * acos(dot_product);
+
+
+
+	      if ( hpgl_compute_arc_direction(x_start, y_start, 
+					      x_inter, y_inter) )
+		{
+		  sweep_angle = -sweep_angle;
+		  sweep_angle += 360.0;
+		  sweep_angle = -sweep_angle;
+		}
+	      else
+		sweep_angle = 360.0 - sweep_angle;
+		  
+	      /* reverse the direction if necessary.  hpgl_arc handles
+                 changing the chord value. */
+
+	      hpgl_args_set_real(&args, x_center);
+	      hpgl_args_add_real(&args, y_center);
+	      hpgl_args_add_real(&args, sweep_angle);
+	      hpgl_args_add_real(&args, chord_angle);
+	      hpgl_arc(&args, pgls, false);
+	    }
 	  }
 	return 0;
 }
@@ -293,35 +338,24 @@ int
 hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_real_t radius, chord = 5;
+	hpgl_pen_state_t saved_pen_state;
 	if ( !hpgl_arg_units(pargs, &radius) )
 	  return e_Range;
 	hpgl_arg_c_real(pargs, &chord);
-	{
-	  hpgl_args_t args;
-	  bool down = pgls->g.pen_down;
+	/* draw the current path if there is one */
+	hpgl_draw_current_path(pgls, hpgl_rm_vector);
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 
-	  hpgl_clear_current_path(pgls);
+	pgls->g.pen_down = true;
 
-	  /* implicit pen down */
-	  hpgl_args_setup(&args); 
-	  hpgl_PU(&args, pgls);
-
-	  hpgl_args_setup(&args);
-	  hpgl_PD(&args, pgls);
-
-	  /* draw the arc/circle */
-	  hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
+	/* draw the arc/circle */
+	hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
 			       radius, 0.0, 360.0, chord);
-	  /* restore pen state */
-	  hpgl_args_setup(&args); 
-	  if (down) 
-	    hpgl_PD(&args, pgls);
-	  else
-	    hpgl_PU(&args, pgls);
-	}
+	/* restore pen state */
 
-	/* HAS check this */
-	/* hpgl_draw_current_path(pgls, hpgl_rm_vector); */
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
+	hpgl_draw_current_path(pgls, hpgl_rm_vector);
+
 	return 0;
 }
 
