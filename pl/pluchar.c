@@ -609,9 +609,6 @@ pl_ufst_make_char(
     tmp_ctm.tx = sv_ctm.tx;
     tmp_ctm.ty = sv_ctm.ty;
     gs_setmatrix(pgs, &tmp_ctm);
-    /* gs_setcharmatrix(pgs, &tmp_ctm);
-     * force valid charmatrix to enable character caching.
-     */
     pgs->char_tm_valid = wasValid;
 
     if (FC_ISBITMAP(pfc)) {
