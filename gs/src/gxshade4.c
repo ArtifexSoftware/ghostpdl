@@ -35,6 +35,12 @@
 
 /* ---------------- Triangle mesh filling ---------------- */
 
+private void 
+patch_set_color_values(const mesh_fill_state_t * pfs, float *cc, const patch_color_t *c)
+{
+    memcpy(cc, c->cc.paint.values, sizeof(c->cc.paint.values[0]) * pfs->num_components);
+}
+
 /* Initialize the fill state for triangle shading. */
 void
 mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
@@ -48,6 +54,20 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
 }
 
 /* Initialize the recursion state for filling one triangle. */
+void
+shading_init_fill_triangle(mesh_fill_state_t * pfs,
+  const shading_vertex_t *va, const shading_vertex_t *vb, const shading_vertex_t *vc,
+  bool check_clipping)
+{
+    pfs->depth = 1;
+    pfs->frames[0].va.p = va->p;
+    patch_set_color_values(pfs, pfs->frames[0].va.cc, &va->c);
+    pfs->frames[0].vb.p = va->p;
+    patch_set_color_values(pfs, pfs->frames[0].vb.cc, &va->c);
+    pfs->frames[0].vc.p = va->p;
+    patch_set_color_values(pfs, pfs->frames[0].vc.cc, &va->c);
+    pfs->frames[0].check_clipping = check_clipping;
+}
 void
 mesh_init_fill_triangle(mesh_fill_state_t * pfs,
   const mesh_vertex_t *va, const mesh_vertex_t *vb, const mesh_vertex_t *vc,
@@ -326,13 +346,6 @@ mesh_fill_triangle(mesh_fill_state_t *pfs)
 
 /* ---------------- Gouraud triangle shadings ---------------- */
 
-private void 
-patch_set_color_values(const mesh_fill_state_t * pfs, float *cc, const patch_color_t *c)
-{
-    memcpy(cc, c->cc.paint.values, sizeof(c->cc.paint.values[0]) * pfs->num_components);
-}
-
-
 private int
 Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 	       shading_vertex_t * vertex)
@@ -352,35 +365,31 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 }
 
 inline private int
-Gt_fill_triangle(mesh_fill_state_t * pfs, const mesh_vertex_t * va,
-		 const mesh_vertex_t * vb, const mesh_vertex_t * vc)
+Gt_fill_triangle(mesh_fill_state_t * pfs, const shading_vertex_t * va,
+		 const shading_vertex_t * vb, const shading_vertex_t * vc)
 {
 #   if !NEW_SHADINGS
-	mesh_init_fill_triangle(pfs, va, vb, vc, true);
+	shading_init_fill_triangle(pfs, va, vb, vc, true);
 	return mesh_fill_triangle(pfs);
 #   else
-	patch_color_t c0, c1, c2;
 	patch_fill_state_t pfs1;
 	int code;
 
 	memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
 	pfs1.Function = pfs->pshm->params.Function;
 	init_patch_fill_state(&pfs1);
-	patch_set_color(&pfs1, &c0, va->cc);
-	patch_set_color(&pfs1, &c1, vb->cc);
-	patch_set_color(&pfs1, &c2, vb->cc);
 	if (INTERPATCH_PADDING) {
-	    code = padding(&pfs1, &va->p, &vb->p, &c0, &c1);
+	    code = padding(&pfs1, &va->p, &vb->p, &va->c, &vb->c);
 	    if (code < 0)
 		return code;
-	    code = padding(&pfs1, &vb->p, &vc->p, &c1, &c2);
+	    code = padding(&pfs1, &vb->p, &vc->p, &vb->c, &vc->c);
 	    if (code < 0)
 		return code;
-	    code = padding(&pfs1, &vc->p, &va->p, &c2, &c0);
+	    code = padding(&pfs1, &vc->p, &va->p, &vc->c, &va->c);
 	    if (code < 0)
 		return code;
 	}
-	return triangle(&pfs1, &va->p, &vb->p, &vc->p, &c0, &c1, &c2);
+	return triangle(&pfs1, va, vb, vc);
 #   endif
 }
 
@@ -394,7 +403,6 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     int num_bits = psh->params.BitsPerFlag;
     int flag;
     shading_vertex_t va, vb, vc;
-    mesh_vertex_t p0, p1, p2;
 
     mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
 			 dev, pis);
@@ -420,13 +428,7 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 		vb = vc;
 v2:		if ((code = Gt_next_vertex(state.pshm, &cs, &vc)) < 0)
 		    return code;
-		patch_set_color_values(&state, p0.cc, &va.c);
-		p0.p = va.p;
-		patch_set_color_values(&state, p1.cc, &vb.c);
-		p1.p = vb.p;
-		patch_set_color_values(&state, p2.cc, &vc.c);
-		p2.p = vc.p;
-		if ((code = Gt_fill_triangle(&state, &p0, &p1, &p2)) < 0)
+		if ((code = Gt_fill_triangle(&state, &va, &vb, &vc)) < 0)
 		    return code;
 	}
     }
@@ -468,28 +470,14 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	if (code < 0)
 	    goto out;
 	for (i = 1; i < per_row; ++i) {
-	    mesh_vertex_t p0, p1, p2;
-
-	    patch_set_color_values(&state, p0.cc, &vertex[i - 1].c);
-	    p0.p = vertex[i - 1].p;
-	    patch_set_color_values(&state, p1.cc, &vertex[i].c);
-	    p1.p = vertex[i].p;
-	    patch_set_color_values(&state, p2.cc, &next.c);
-	    p2.p = next.p;
-	    code = Gt_fill_triangle(&state, &p0, &p1, &p2);
+	    code = Gt_fill_triangle(&state, &vertex[i - 1], &vertex[i], &next);
 	    if (code < 0)
 		goto out;
 	    vertex[i - 1] = next;
 	    code = Gt_next_vertex(state.pshm, &cs, &next);
 	    if (code < 0)
 		goto out;
-	    patch_set_color_values(&state, p0.cc, &vertex[i].c);
-	    p0.p = vertex[i].p;
-	    patch_set_color_values(&state, p1.cc, &vertex[i - 1].c);
-	    p1.p = vertex[i - 1].p;
-	    patch_set_color_values(&state, p2.cc, &next.c);
-	    p2.p = next.p;
-	    code = Gt_fill_triangle(&state, &p0, &p1, &p2);
+	    code = Gt_fill_triangle(&state, &vertex[i], &vertex[i - 1], &next);
 	    if (code < 0)
 		goto out;
 	}

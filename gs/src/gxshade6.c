@@ -1422,32 +1422,6 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
     return wedge_by_triangles(pfs, ka / 2, q[1], &c, c1);
 }
 
-private inline int 
-triangles(patch_fill_state_t *pfs, const tensor_patch *p)
-{
-    int code;
-    double d0011 = color_span(pfs, &p->c[0][0], &p->c[1][1]);
-    double d0110 = color_span(pfs, &p->c[0][1], &p->c[1][0]);
-
-    draw_quadrangle(p, RGB(0, 255, 0));
-    /* Divide at the smaller color variation to reduce the number of costant color areas. */
-    if (d0011 < d0110) {
-	code = triangle(pfs, &p->pole[0][0], &p->pole[0][3], &p->pole[3][3], 
-				&p->c[0][0], &p->c[0][1], &p->c[1][1]);
-	if (code < 0)
-	    return code;
-	return triangle(pfs, &p->pole[0][0], &p->pole[3][3], &p->pole[3][0], 
-				&p->c[0][0], &p->c[1][1], &p->c[1][0]);
-    } else {
-	code = triangle(pfs, &p->pole[0][0], &p->pole[0][3], &p->pole[3][0], 
-				&p->c[0][0], &p->c[0][1], &p->c[1][0]);
-	if (code < 0)
-	    return code;
-	return triangle(pfs, &p->pole[0][3], &p->pole[3][3], &p->pole[3][0], 
-				&p->c[0][1], &p->c[1][1], &p->c[1][0]);
-    }
-}
-
 int
 padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1)
@@ -1608,29 +1582,28 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 
 private int 
 constant_color_triangle(patch_fill_state_t *pfs,
-	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
-	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2)
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
     patch_color_t c, cc;
     gs_fixed_edge le, re;
     fixed dx0, dy0, dx1, dy1;
-    const gs_fixed_point *pp;
+    const shading_vertex_t *pp;
     int i;
 
-    draw_triangle(p0, p1, p2, RGB(255, 0, 0));
+    draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
 #   if TENSOR_SHADING_DEBUG
     if (dbg_nofill)
 	return 0;
     triangle_cnt++;
 #   endif
-    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
-    patch_interpolate_color(&cc, c2, &c, pfs, 0.5);
+    patch_interpolate_color(&c, &p0->c, &p1->c, pfs, 0.5);
+    patch_interpolate_color(&cc, &p2->c, &c, pfs, 0.5);
     for (i = 0; i < 3; i++) {
 	/* fixme : does optimizer compiler expand this cycle ? */
-	if (p0->y <= p1->y && p0->y <= p2->y) {
-	    le.start = re.start = *p0;
-	    le.end = *p1; 
-	    re.end = *p2;
+	if (p0->p.y <= p1->p.y && p0->p.y <= p2->p.y) {
+	    le.start = re.start = p0->p;
+	    le.end = p1->p; 
+	    re.end = p2->p;
 
 	    dx0 = le.end.x - le.start.x;
 	    dy0 = le.end.y - le.start.y;
@@ -1648,7 +1621,7 @@ constant_color_triangle(patch_fill_state_t *pfs,
 
 
 private int 
-constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
+constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p, bool self_intersecting)
 {
     /* Assuming the XY span lesser than sqrt(max_fixed). 
        It helps for intersection_of_small_bars to comppute faster. */
@@ -1721,7 +1694,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	orient = (dx1 * dy3 > dy1 * dx3);
     }
     if (q[1].y <= q[2].y && q[2].y <= q[3].y) {
-	if (intersection_of_small_bars(q, 0, 3, 1, 2, &ry, &ey)) {
+	if (self_intersecting && intersection_of_small_bars(q, 0, 3, 1, 2, &ry, &ey)) {
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, q[1].y, swap_axes, &dc, orient)) < 0)
 		return code;
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 3, 1, 2, q[1].y, ry + ey, swap_axes, &dc, orient)) < 0)
@@ -1737,7 +1710,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    return gx_shade_trapezoid(pfs, q, 2, 3, 0, 3, q[2].y, q[3].y, swap_axes, &dc, orient);
 	}
     } else if (q[1].y <= q[3].y && q[3].y <= q[2].y) {
-	if (intersection_of_small_bars(q, 0, 3, 1, 2, &ry, &ey)) {
+	if (self_intersecting && intersection_of_small_bars(q, 0, 3, 1, 2, &ry, &ey)) {
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, q[1].y, swap_axes, &dc, orient)) < 0)
 		return code;
 	    if ((code = gx_shade_trapezoid(pfs, q, 1, 2, 0, 3, q[1].y, ry + ey, swap_axes, &dc, orient)) < 0)
@@ -1753,7 +1726,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    return gx_shade_trapezoid(pfs, q, 1, 2, 3, 2, q[3].y, q[2].y, swap_axes, &dc, orient);
 	}
     } else if (q[2].y <= q[1].y && q[1].y <= q[3].y) {
-	if (intersection_of_small_bars(q, 0, 1, 2, 3, &ry, &ey)) {
+	if (self_intersecting && intersection_of_small_bars(q, 0, 1, 2, 3, &ry, &ey)) {
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, ry + ey, swap_axes, &dc, orient)) < 0)
 		return code;
 	    if ((code = gx_shade_trapezoid(pfs, q, 2, 1, 2, 3, q[2].y, ry + ey, swap_axes, &dc, orient)) < 0)
@@ -1761,7 +1734,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    if ((code = gx_shade_trapezoid(pfs, q, 2, 1, 0, 1, ry, q[1].y, swap_axes, &dc, orient)) < 0)
 		return code;
 	    return gx_shade_trapezoid(pfs, q, 2, 3, 0, 3, ry, q[3].y, swap_axes, &dc, orient);
-	} else if (intersection_of_small_bars(q, 0, 3, 1, 2, &ry, &ey)) {
+	} else if (self_intersecting && intersection_of_small_bars(q, 0, 3, 1, 2, &ry, &ey)) {
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, ry + ey, swap_axes, &dc, orient)) < 0)
 		return code;
 	    if ((code = gx_shade_trapezoid(pfs, q, 2, 1, 2, 3, q[2].y, ry + ey, swap_axes, &dc, orient)) < 0)
@@ -1777,7 +1750,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    return gx_shade_trapezoid(pfs, q, 2, 3, 0, 3, q[1].y, q[3].y, swap_axes, &dc, orient);
 	}
     } else if (q[2].y <= q[3].y && q[3].y <= q[1].y) {
-	if (intersection_of_small_bars(q, 0, 1, 2, 3, &ry, &ey)) {
+	if (self_intersecting && intersection_of_small_bars(q, 0, 1, 2, 3, &ry, &ey)) {
 	    /* Same code as someone above. */
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, ry + ey, swap_axes, &dc, orient)) < 0)
 		return code;
@@ -1786,7 +1759,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    if ((code = gx_shade_trapezoid(pfs, q, 2, 1, 0, 1, ry, q[1].y, swap_axes, &dc, orient)) < 0)
 		return code;
 	    return gx_shade_trapezoid(pfs, q, 2, 3, 0, 3, ry, q[3].y, swap_axes, &dc, orient);
-	} else if (intersection_of_small_bars(q, 0, 3, 2, 1, &ry, &ey)) {
+	} else if (self_intersecting && intersection_of_small_bars(q, 0, 3, 2, 1, &ry, &ey)) {
 	    /* Same code as someone above. */
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, ry + ey, swap_axes, &dc, orient)) < 0)
 		return code;
@@ -1803,7 +1776,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    return gx_shade_trapezoid(pfs, q, 0, 1, 2, 1, q[2].y, q[1].y, swap_axes, &dc, orient);
 	}
     } else if (q[3].y <= q[1].y && q[1].y <= q[2].y) {
-	if (intersection_of_small_bars(q, 0, 1, 3, 2, &ry, &ey)) {
+	if (self_intersecting && intersection_of_small_bars(q, 0, 1, 3, 2, &ry, &ey)) {
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, q[3].y, swap_axes, &dc, orient)) < 0)
 		return code;
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 3, 2, q[3].y, ry + ey, swap_axes, &dc, orient)) < 0)
@@ -1819,7 +1792,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    return gx_shade_trapezoid(pfs, q, 1, 2, 3, 2, q[1].y, q[2].y, swap_axes, &dc, orient);
 	}
     } else if (q[3].y <= q[2].y && q[2].y <= q[1].y) {
-	if (intersection_of_small_bars(q, 0, 1, 2, 3, &ry, &ey)) {
+	if (self_intersecting && intersection_of_small_bars(q, 0, 1, 2, 3, &ry, &ey)) {
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, q[3].y, swap_axes, &dc, orient)) < 0)
 		return code;
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 3, 2, q[3].y, ry + ey, swap_axes, &dc, orient)) < 0)
@@ -2008,156 +1981,185 @@ quadrangle_bbox_covers_pixel_centers(const tensor_patch *p)
 
 private inline int 
 divide_quadrangle_by_parallels(patch_fill_state_t *pfs, 
-	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, const gs_fixed_point *p3,
-	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2, const patch_color_t *c3,
-	double d01)
+	const shading_vertex_t *p0, const shading_vertex_t *p1, 
+	const shading_vertex_t *p2, const shading_vertex_t *p3, double d01)
 {
     if (d01 < pfs->pis->smoothness ||
-	    (any_abs(p1->x - p0->x) < fixed_1 && any_abs(p1->y - p0->y) < fixed_1 &&
-	     any_abs(p3->x - p2->x) < fixed_1 && any_abs(p3->y - p2->y) < fixed_1)) {
+	    (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1 &&
+	     any_abs(p3->p.x - p2->p.x) < fixed_1 && any_abs(p3->p.y - p2->p.y) < fixed_1)) {
 	tensor_patch p;
 	
-	p.pole[0][0] = *p0;
-	p.pole[0][3] = *p1;
-	p.pole[3][3] = *p2;
-	p.pole[3][0] = *p3;
-	p.c[0][0] = *c0;
-	p.c[0][1] = *c1;
-	p.c[1][1] = *c2;
-	p.c[1][0] = *c3;
-	return constant_color_quadrangle(pfs, &p);
+	p.pole[0][0] = p0->p;
+	p.pole[0][3] = p1->p;
+	p.pole[3][3] = p2->p;
+	p.pole[3][0] = p3->p;
+	p.c[0][0] = p0->c;
+	p.c[0][1] = p1->c;
+	p.c[1][1] = p2->c;
+	p.c[1][0] = p3->c;
+	return constant_color_quadrangle(pfs, &p, false);
 	/* fixme: this quadrangle isn't self-intersecting, so we could use a simpler function. */
     } else {
-	gs_fixed_point q[4], q0, q1;
-	patch_color_t d0, d1;
+	gs_fixed_point q[4];
+	shading_vertex_t q0, q1;
 	int code;
 
-	q[0] = *p0;
-	q[1] = *p1;
-	q[2].x = (p0->x + p1->x) / 2;
-	q[2].y = (p0->y + p1->y) / 2;
-	q0 = q[2];
-	code = fill_triangle_wedge(pfs, q, c0, c1, 0.5);
+	q[0] = p0->p;
+	q[1] = p1->p;
+	q[2].x = (p0->p.x + p1->p.x) / 2;
+	q[2].y = (p0->p.y + p1->p.y) / 2;
+	q0.p = q[2];
+	code = fill_triangle_wedge(pfs, q, &p0->c, &p1->c, 0.5);
 	if (code < 0)
 	    return code;
-	q[0] = *p3;
-	q[1] = *p2;
-	q[2].x = (p3->x + p2->x) / 2;
-	q[2].y = (p3->y + p2->y) / 2;
-	q1 = q[2];
-	code = fill_triangle_wedge(pfs, q, c3, c2, 0.5);
+	q[0] = p3->p;
+	q[1] = p2->p;
+	q[2].x = (p3->p.x + p2->p.x) / 2;
+	q[2].y = (p3->p.y + p2->p.y) / 2;
+	q1.p = q[2];
+	code = fill_triangle_wedge(pfs, q, &p3->c, &p2->c, 0.5);
 	if (code < 0)
 	    return code;
-	patch_interpolate_color(&d0, c0, c1, pfs, 0.5);
-	patch_interpolate_color(&d1, c3, c2, pfs, 0.5);
-	code = divide_quadrangle_by_parallels(pfs, p0, &q0, &q1, p3, c0, &d0, &d1, c3, d01 / 2);
+	patch_interpolate_color(&q0.c, &p0->c, &p1->c, pfs, 0.5);
+	patch_interpolate_color(&q1.c, &p3->c, &p2->c, pfs, 0.5);
+	code = divide_quadrangle_by_parallels(pfs, p0, &q0, &q1, p3, d01 / 2);
 	if (code < 0)
 	    return code;
-	return divide_quadrangle_by_parallels(pfs, &q0, p1, p2, &q1, &d0, c1, c2, &d1, d01 / 2);
+	return divide_quadrangle_by_parallels(pfs, &q0, p1, p2, &q1, d01 / 2);
     }
 }
 
 private int 
 divide_triangle_by_parallels(patch_fill_state_t *pfs, 
-	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
-	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2,
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
 	double d01)
 {
     /* fixme : clone the case of small triangles. */
     int n = (int)ceil(d01 / pfs->pis->smoothness), i;
-    gs_fixed_point q[3], q0, q1;
-    patch_color_t d0, d1;
+    shading_vertex_t q0, q1;
+    gs_fixed_point q[3];
     double t = 1.0 / n;
     int code;
 
     if (n == 1)
-	return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
-    if (any_abs(p1->x - p2->x) < fixed_1 && any_abs(p1->y - p2->y) < fixed_1 &&
-	any_abs(p0->x - p2->x) < fixed_1 && any_abs(p0->y - p2->y) < fixed_1)
-	return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
-    q[0] = *p2; 
-    q[1] = *p0;
-    q[2].x = (fixed)((int64_t)p2->x * (n - 1) + p0->x) / n;
-    q[2].y = (fixed)((int64_t)p2->y * (n - 1) + p0->y) / n;
-    q0 = q[2];
-    code = fill_triangle_wedge(pfs, q, c2, c0, 1.0 / n);
+	return constant_color_triangle(pfs, p0, p1, p2);
+    if (any_abs(p1->p.x - p2->p.x) < fixed_1 && any_abs(p1->p.y - p2->p.y) < fixed_1 &&
+	any_abs(p0->p.x - p2->p.x) < fixed_1 && any_abs(p0->p.y - p2->p.y) < fixed_1)
+	return constant_color_triangle(pfs, p0, p1, p2);
+    q[0] = p2->p; 
+    q[1] = p0->p;
+    q[2].x = (fixed)((int64_t)p2->p.x * (n - 1) + p0->p.x) / n;
+    q[2].y = (fixed)((int64_t)p2->p.y * (n - 1) + p0->p.y) / n;
+    q0.p = q[2];
+    code = fill_triangle_wedge(pfs, q, &p2->c, &p0->c, 1.0 / n);
     if (code < 0)
 	return code;
-    q[0] = *p2; 
-    q[1] = *p1;
-    q[2].x = (fixed)((int64_t)p2->x * (n - 1) + p1->x) / n;
-    q[2].y = (fixed)((int64_t)p2->y * (n - 1) + p1->y) / n;
-    q1 = q[2];
-    code = fill_triangle_wedge(pfs, q, c2, c1, t);
+    q[0] = p2->p; 
+    q[1] = p1->p;
+    q[2].x = (fixed)((int64_t)p2->p.x * (n - 1) + p1->p.x) / n;
+    q[2].y = (fixed)((int64_t)p2->p.y * (n - 1) + p1->p.y) / n;
+    q1.p = q[2];
+    code = fill_triangle_wedge(pfs, q, &p2->c, &p1->c, t);
     if (code < 0)
 	return code;
-    patch_interpolate_color(&d0, c2, c0, pfs, t);
-    patch_interpolate_color(&d1, c2, c1, pfs, t);
-    code = divide_quadrangle_by_parallels(pfs, &q0, p0, p1, &q1, 
-					       &d0, c0, c1, &d1, d01 * (n - 1) / n);
+    patch_interpolate_color(&q0.c, &p2->c, &p0->c, pfs, t);
+    patch_interpolate_color(&q1.c, &p2->c, &p1->c, pfs, t);
+    code = divide_quadrangle_by_parallels(pfs, &q0, p0, p1, &q1, d01 * (n - 1) / n);
     if (code < 0)
 	return code;
-    return constant_color_triangle(pfs, p2, &q0, &q1, c2, &d0, &d1);
+    return constant_color_triangle(pfs, p2, &q0, &q1);
 }
 
 private inline int 
 divide_triangle(patch_fill_state_t *pfs, 
-	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
-	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2,
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2,
 	double d01, double d12, double d20)
 {
-    gs_fixed_point q[3], q0;
-    patch_color_t c;
+    gs_fixed_point q[3];
+    shading_vertex_t p;
     int code;
     double t0 = d20 / (d12 + d20);
 
-    draw_triangle(p0, p1, p2, RGB(255, 0, 0));
-    patch_interpolate_color(&c, c0, c1, pfs, t0);
-    q[0] = *p0;
-    q[1] = *p1;
-    q[2].x = (fixed)((p0->x * d12 + p1->x * d20) / (d12 + d20)); /* Don't need rounding due to wedges. */
-    q[2].y = (fixed)((p0->y * d12 + p1->y * d20) / (d12 + d20)); /* A rounding runs out the interval. */
-    q0 = q[2];
-    code = fill_triangle_wedge(pfs, q, c0, c1, t0);
+    draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
+    patch_interpolate_color(&p.c, &p0->c, &p1->c, pfs, t0);
+    q[0] = p0->p;
+    q[1] = p1->p;
+    q[2].x = (fixed)((p0->p.x * d12 + p1->p.x * d20) / (d12 + d20)); /* Don't need rounding due to wedges. */
+    q[2].y = (fixed)((p0->p.y * d12 + p1->p.y * d20) / (d12 + d20)); /* A rounding runs out the interval. */
+    p.p = q[2];
+    code = fill_triangle_wedge(pfs, q, &p0->c, &p1->c, t0);
     if (code < 0)
 	return code;
-    code = triangle(pfs, &q0, p2, p0, &c, c2, c0);
+    code = triangle(pfs, &p, p2, p0);
     if (code < 0)
 	return code;
-    return triangle(pfs, p2, &q0, p1, c2, &c, c1);
+    return triangle(pfs, p2, &p, p1);
 }
 
 int 
 triangle(patch_fill_state_t *pfs, 
-	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
-	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2)
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {   /* fixme : optimize prototype with mesh_vertex_t. */
-    double d01 = color_span(pfs, c1, c0);
-    double d12 = color_span(pfs, c2, c1);
-    double d20 = color_span(pfs, c0, c2);
+    double d01 = color_span(pfs, &p1->c, &p0->c);
+    double d12 = color_span(pfs, &p2->c, &p1->c);
+    double d20 = color_span(pfs, &p0->c, &p2->c);
 
-    draw_triangle(p0, p1, p2, RGB(255, 0, 0));
+    draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
     if (d01 < pfs->pis->smoothness && d12 < pfs->pis->smoothness && d20 < pfs->pis->smoothness)
-	return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
+	return constant_color_triangle(pfs, p0, p1, p2);
     if (d01 < pfs->pis->smoothness)
-	return divide_triangle_by_parallels(pfs, p0, p1, p2, c0, c1, c2, (d12 + d20) / 2);
+	return divide_triangle_by_parallels(pfs, p0, p1, p2, (d12 + d20) / 2);
     if (d12 < pfs->pis->smoothness)
-	return divide_triangle_by_parallels(pfs, p1, p2, p0, c1, c2, c0, (d20 + d01) / 2);
+	return divide_triangle_by_parallels(pfs, p1, p2, p0, (d20 + d01) / 2);
     if (d20 < pfs->pis->smoothness)
-	return divide_triangle_by_parallels(pfs, p2, p0, p1, c2, c0, c1, (d01 + d12) / 2);
-    if (any_abs(p1->x - p0->x) < fixed_1 && any_abs(p1->y - p0->y) < fixed_1)
-	return divide_triangle_by_parallels(pfs, p0, p1, p2, c0, c1, c2, (d12 + d20) / 2);
-    if (any_abs(p2->x - p1->x) < fixed_1 && any_abs(p2->y - p1->y) < fixed_1)
-	return divide_triangle_by_parallels(pfs, p1, p2, p0, c1, c2, c0, (d20 + d01) / 2);
-    if (any_abs(p1->x - p0->x) < fixed_1 && any_abs(p1->y - p0->y) < fixed_1)
-	return divide_triangle_by_parallels(pfs, p2, p0, p1, c2, c0, c1, (d01 + d12) / 2);
+	return divide_triangle_by_parallels(pfs, p2, p0, p1, (d01 + d12) / 2);
+    if (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1)
+	return divide_triangle_by_parallels(pfs, p0, p1, p2, (d12 + d20) / 2);
+    if (any_abs(p2->p.x - p1->p.x) < fixed_1 && any_abs(p2->p.y - p1->p.y) < fixed_1)
+	return divide_triangle_by_parallels(pfs, p1, p2, p0, (d20 + d01) / 2);
+    if (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1)
+	return divide_triangle_by_parallels(pfs, p2, p0, p1, (d01 + d12) / 2);
     if (d01 >= d12 && d01 >= d20 && d01 > pfs->pis->smoothness)
-	return divide_triangle(pfs, p0, p1, p2, c0, c1, c2, d01, d12, d20);
+	return divide_triangle(pfs, p0, p1, p2, d01, d12, d20);
     if (d12 >= d20 && d12 >= d01 && d12 > pfs->pis->smoothness)
-	return divide_triangle(pfs, p1, p2, p0, c1, c2, c0, d12, d20, d01);
+	return divide_triangle(pfs, p1, p2, p0, d12, d20, d01);
     if (d20 >= d12 && d20 >= d01 && d20 > pfs->pis->smoothness)
-	return divide_triangle(pfs, p2, p0, p1, c2, c0, c1, d20, d01, d12);
-    return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
+	return divide_triangle(pfs, p2, p0, p1, d20, d01, d12);
+    return constant_color_triangle(pfs, p0, p1, p2);
+}
+
+private inline int 
+triangles(patch_fill_state_t *pfs, const tensor_patch *p, bool dummy_argument)
+{   /*	Assuming that self-overlapped stripes are enough narrow,
+        so that the decomposition into 2 triangles doesn't give too many
+	excessive pixels covered.
+     */
+    int code;
+    double d0011 = color_span(pfs, &p->c[0][0], &p->c[1][1]);
+    double d0110 = color_span(pfs, &p->c[0][1], &p->c[1][0]);
+    shading_vertex_t p00, p01, p10, p11;
+
+    draw_quadrangle(p, RGB(0, 255, 0));
+    p00.p = p->pole[0][0];
+    p00.c = p->c[0][0];
+    p01.p = p->pole[0][3];
+    p01.c = p->c[0][1];
+    p10.p = p->pole[3][0];
+    p10.c = p->c[1][0];
+    p11.p = p->pole[3][3];
+    p11.c = p->c[1][1];
+    /* Divide at the smaller color variation to reduce the number of costant color areas. */
+    if (d0011 < d0110) {
+	code = triangle(pfs, &p00, &p01, &p11);
+	if (code < 0)
+	    return code;
+	return triangle(pfs, &p00, &p11, &p10);
+    } else {
+	code = triangle(pfs, &p00, &p01, &p10);
+	if (code < 0)
+	    return code;
+	return triangle(pfs, &p01, &p11, &p10);
+    }
 }
 
 private int 
@@ -2182,14 +2184,14 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	any_abs(p->pole[0][0].y - p->pole[3][0].y) > fixed_1 ||
 	any_abs(p->pole[0][3].y - p->pole[3][3].y) > fixed_1) {
 	if (!is_big_v && !is_big_u)
-	    return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p);
+	    return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p, true);
 	is_big_v = true;
     }
     divide = !is_patch_color_monotonic(pfs, p, &color_u) || 
 		(QUADRANGLES ? is_patch_color_span_big(pfs, p, &color_u)
 		            : !is_patch_color_linear(pfs, p, &color_u));
     if (!divide)
-	return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p);
+	return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p, true);
     if (!color_u && is_big_v || color_u && !is_big_u) {
 	divide_quadrangle_by_v(pfs, &s0, &s1, p);
 	q[0] = s0.pole[0][0], q[2] = s0.pole[3][0], q[1] = s1.pole[3][0];
@@ -2470,7 +2472,7 @@ lcp2(fixed p0, fixed p3)
     return (p0 + p3 + p3) / 3;
 }
 
-void
+private void
 patch_set_color(const patch_fill_state_t * pfs, patch_color_t *c, const float *cc)
 {
     if (pfs->Function) 
