@@ -208,12 +208,14 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 #if NEW_TT_INTERPRETER
     pair->ttf = 0;
     pair->ttr = 0;
+    pair->design_grid = false;
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
 	int code; 
 	float cxx, cxy, cyx, cyy;
 	gs_matrix m;
 	gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
 
+	pair->design_grid = design_grid;
 	m.xx = cxx;
 	m.xy = cxy;
 	m.yx = cyx;

@@ -75,7 +75,9 @@ gx_compute_ccache_key(gs_font * pfont, const gs_matrix *char_tm,
 	 * the rounding to pixels and applies projections,
 	 * which may depend on resolution. What we want here
 	 * is to emulate an infinite resolution interpreting a TT bytecode.
-	 * The zero scale is a special magic constant for that. 
+	 * We use the design grid as an emulation of the infinite resolution.
+	 * Since a single face satisfies all font sizes,
+	 * we use a zero matrix as the cache entry key.
 	 */
 	*mxx = *mxy = *myx = *myy = 0;
     } else
@@ -93,6 +95,7 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
     register cached_fm_pair *pair =
     dir->fmcache.mdata + dir->fmcache.mnext;
     int count = dir->fmcache.mmax;
+    bool design_grid1 = (font->FontType == ft_composite || font->PaintType != 0 ? design_grid : false);
     gs_uid uid;
 
     gx_compute_ccache_key(pfont, char_tm, log2_scale, design_grid,
@@ -123,6 +126,9 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 	}
 	if (pair->mxx == mxx && pair->mxy == mxy &&
 	    pair->myx == myx && pair->myy == myy
+#if NEW_TT_INTERPRETER
+	    && pair->design_grid == design_grid
+#endif
 	    ) {
 	    if (pair->font == 0) {
 		pair->font = pfont;

@@ -81,6 +81,7 @@ struct cached_fm_pair_s {
 #if NEW_TT_INTERPRETER
     ttfFont *ttf;		/* True Type interpreter data. */
     gx_ttfReader *ttr;		/* True Type interpreter data. */
+    bool design_grid;           /* A charpath font face.  */
 #endif
 };
 
