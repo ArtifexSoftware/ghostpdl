@@ -18,6 +18,9 @@
 
 // $Id$
 
+#ifndef dwinst_INCLUDED
+#  define dwinst_INCLUDED
+
 // Definitions for Ghostscript installer
 
 #ifndef MAXSTR
@@ -111,3 +114,5 @@ private:
 
 };
 
+
+#endif /* dwinst_INCLUDED */

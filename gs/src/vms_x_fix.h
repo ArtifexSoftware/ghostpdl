@@ -9,8 +9,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef VMS_X_FIX
-#define VMS_X_FIX
+#ifndef vms_x_fix_INCLUDED
+#  define vms_x_fix_INCLUDED
 
 #define DtSaverGetWindows DTSAVERGETWINDOWS
 #define XAddHosts XADDHOSTS
@@ -887,4 +887,4 @@ extern void XtFree(char*);
 }
 #endif
 
-#endif
+#endif /* vms_x_fix_INCLUDED */

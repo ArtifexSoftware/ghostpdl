@@ -2,6 +2,9 @@
 
 /* $Id$ */
 
+#ifndef gdevmacttf_INCLUDED
+#  define gdevmacttf_INCLUDED
+
 /* Font Directory Component */
 
 typedef struct {
@@ -45,3 +48,5 @@ typedef struct {
 	UInt16				offset;
 } TTFontNamingTable;
 
+
+#endif /* gdevmacttf_INCLUDED */

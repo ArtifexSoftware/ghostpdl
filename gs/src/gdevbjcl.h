@@ -21,8 +21,8 @@
 
 /****** PRELIMINARY, SUBJECT TO CHANGE WITHOUT NOTICE. ******/
 
-#ifndef gdevcbjc_INCLUDED
-#  define gdevcbjc_INCLUDED
+#ifndef gdevbjcl_INCLUDED
+#  define gdevbjcl_INCLUDED
 
 #include <stdio.h>			/* ****** PATCH FOR stream.h ****** */
 #include "stream.h"
@@ -398,4 +398,4 @@ void bjc_put_continue_image(P3(stream *s, const byte *data, int count));
 void bjc_put_indexed_image(P4(stream *s, int dot_rows, int dot_cols,
 			      int layers));
 
-#endif				/* gdevcbjc_INCLUDED */
+#endif				/* gdevbjcl_INCLUDED */

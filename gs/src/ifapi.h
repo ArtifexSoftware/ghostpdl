@@ -19,6 +19,9 @@
 /*$Id$ */
 /* Font API interface */
 
+#ifndef ifapi_INCLUDED
+#  define ifapi_INCLUDED
+
 #include "iplugin.h"
 
 typedef int FracInt; /* A fractional integer with statically unknown number of fraction bits. 
@@ -160,3 +163,5 @@ struct FAPI_server_s {
     */
 };
 
+
+#endif /* ifapi_INCLUDED */

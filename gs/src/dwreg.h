@@ -18,6 +18,11 @@
 
 /*$Id$ */
 
+#ifndef dwreg_INCLUDED
+#  define dwreg_INCLUDED
+
 /* Get and set named registry values for Ghostscript application. */
 int win_get_reg_value(const char *name, char *ptr, int *plen);
 int win_set_reg_value(const char *name, const char *value);
+
+#endif /* dwreg_INCLUDED */

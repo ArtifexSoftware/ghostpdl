@@ -20,6 +20,9 @@
 */
 /*$Id$ */
 
+#ifndef gsdfilt_INCLUDED
+#  define gsdfilt_INCLUDED
+
 /* The device filter stack lives in the gs_state structure. It represents
    a chained sequence of devices that filter device requests, each forwarding
    to its target. The last such target is the physical device as set by
@@ -89,3 +92,5 @@ int gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs);
  **/
 int gs_clear_device_filters(gs_memory_t *mem, gs_state *pgs);
 
+
+#endif /* gsdfilt_INCLUDED */

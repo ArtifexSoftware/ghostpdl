@@ -17,10 +17,10 @@
  */
 
 /* $Id$ */
-/* gdevdisp.h - callback structure for DLL based display device */
+/* gdevdsp.h - callback structure for DLL based display device */
 
-#ifndef gdevdisp_INCLUDED
-#  define gdevdisp_INCLUDED
+#ifndef gdevdsp_INCLUDED
+#  define gdevdsp_INCLUDED
 
 /*
  * The callback structure must be provided by calling the
@@ -201,4 +201,4 @@ struct display_callback_s {
 };
 
 
-#endif /* gdevdisp_INCLUDED */
+#endif /* gdevdsp_INCLUDED */

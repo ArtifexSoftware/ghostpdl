@@ -25,11 +25,10 @@
  * API.htm and iapi.h.
  */
 
-#include "iapi.h"
-
 #ifndef gsdll_INCLUDED
 #  define gsdll_INCLUDED
-  
+
+#include "iapi.h"
 
 #ifdef __MACINTOSH__
 #define HWND char *

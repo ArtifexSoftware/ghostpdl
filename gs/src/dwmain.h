@@ -18,9 +18,14 @@
 
 /* $Id$ */
 
+#ifndef dwmain_INCLUDED
+#  define dwmain_INCLUDED
+
 /* Icon index definitions - needed by resources */
 
 #define GSTEXT_ICON	50
 #define GSIMAGE_ICON	51
 
 extern HWND hwndtext;
+
+#endif /* dwmain_INCLUDED */

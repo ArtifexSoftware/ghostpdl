@@ -19,6 +19,10 @@
 
 // $Id$
 
+#ifndef dwuninst_INCLUDED
+#  define dwuninst_INCLUDED
+
+
 // Definitions for Ghostscript installer
 
 #define ID_UNINSTGS	1
@@ -31,3 +35,5 @@
 #define IDC_T1		111
 #define IDC_T2		112
 
+
+#endif /* dwuninst_INCLUDED */

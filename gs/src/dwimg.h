@@ -18,6 +18,9 @@
 
 /* $Id$ */
 
+#ifndef dwimg_INCLUDED
+#  define dwimg_INCLUDED
+
 
 /* Windows Image Window structure */
 
@@ -73,3 +76,5 @@ void image_presize(IMAGE *img, int new_width, int new_height, int new_raster,
    unsigned int new_format);
 void image_poll(IMAGE *img);
 
+
+#endif /* dwimg_INCLUDED */

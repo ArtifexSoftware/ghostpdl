@@ -19,6 +19,9 @@
 /*$Id$*/
 /* Interface for the DSC parser. */
 
+#ifndef dscparse_INCLUDED
+#  define dscparse_INCLUDED
+
 /* Some local types that may need modification */
 typedef int GSBOOL;
 typedef unsigned long GSDWORD;	/* must be at least 32 bits */
@@ -453,3 +456,5 @@ int dsc_add_page(P3(CDSC *dsc, int ordinal, char *label));
 int dsc_add_media(P2(CDSC *dsc, CDSCMEDIA *media));
 int dsc_set_page_bbox(P6(CDSC *dsc, unsigned int page_number, 
     int llx, int lly, int urx, int ury));
+
+#endif /* dscparse_INCLUDED */

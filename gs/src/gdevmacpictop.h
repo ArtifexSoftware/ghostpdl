@@ -1,5 +1,8 @@
 /* $Id$ */
 
+#ifndef gdevmacpictop_INCLUDED
+#  define gdevmacpictop_INCLUDED
+
 #include <QDOffscreen.h>
 
 
@@ -665,3 +668,5 @@
 
 
 
+
+#endif /* gdevmacpictop_INCLUDED */
