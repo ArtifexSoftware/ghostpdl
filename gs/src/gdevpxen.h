@@ -57,7 +57,7 @@ typedef enum {
     eNoColorSpace = 0,		/* Note: for this enumeration, 0 is not a valid value */
     eGray,
     eRGB,
-    eSRGB,			/* 2.0 */
+    eSRGB = 6,			/* 2.0, Note: HP value is 6 not the expected 3 */
     pxeColorSpace_next
 } pxeColorSpace_t;
 
