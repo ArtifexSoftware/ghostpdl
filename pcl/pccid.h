@@ -143,16 +143,16 @@ typedef struct pcl_cid_data_s {
                           )
 
 /*
- * Macros to getting configuration parameters from the first six bytes of
+ * Functions for getting configuration parameters from the first six bytes of
  * the configure image data structure.
  */
-pcl_cspace_type_t pcl_cid_get_cspace(pcl_cid_data_t *pcid);
+pcl_cspace_type_t pcl_cid_get_cspace(const pcl_cid_data_t *pcid);
 
-pcl_encoding_type_t pcl_cid_get_encoding(pcl_cid_data_t *pcid);
+pcl_encoding_type_t pcl_cid_get_encoding(const pcl_cid_data_t *pcid);
 
-byte pcl_cid_get_bits_per_index(pcl_cid_data_t *pcid);
+byte pcl_cid_get_bits_per_index(const pcl_cid_data_t *pcid);
 
-byte pcl_cid_get_bits_per_primary(pcl_cid_data_t *pcid, int index);
+byte pcl_cid_get_bits_per_primary(const pcl_cid_data_t *pcid, int index);
 
 /*
  * Implement the GL/2 IN command. This is probably better done via a reset flag,

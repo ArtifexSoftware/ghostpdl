@@ -21,30 +21,27 @@
 #include "pccid.h"
 
 
-/* GC memory descriptor for the pcl_cid_data_t structure */
-private_st_cid_data_t();
-
 /* CID accessors */
 pcl_cspace_type_t
-pcl_cid_get_cspace(pcl_cid_data_t *pcid) 
+pcl_cid_get_cspace(const pcl_cid_data_t *pcid) 
 {
     return pcid->u.hdr.cspace;
 }
 
 pcl_encoding_type_t
-pcl_cid_get_encoding(pcl_cid_data_t *pcid)
+pcl_cid_get_encoding(const pcl_cid_data_t *pcid)
 {
     return pcid->u.hdr.bits_per_index;
 }
 
 byte
-pcl_cid_get_bits_per_index(pcl_cid_data_t *pcid)
+pcl_cid_get_bits_per_index(const pcl_cid_data_t *pcid)
 {
     return pcid->u.hdr.bits_per_index;
 }
 
 byte
-pcl_cid_get_bits_per_primary(pcl_cid_data_t *pcid, int index)
+pcl_cid_get_bits_per_primary(const pcl_cid_data_t *pcid, int index)
 {
     return pcid->u.hdr.bits_per_primary[index];
 }
