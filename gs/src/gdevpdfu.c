@@ -36,6 +36,8 @@
 #include "slzwx.h"
 #include "spngpx.h"
 #include "srlx.h"
+#include "sarc4.h"
+#include "smd5.h"
 #include "sstring.h"
 #include "szlibx.h"
 
@@ -190,11 +192,69 @@ private const context_proc context_procs[4][4] =
     {string_to_text, string_to_text, string_to_text, 0}
 };
 
+/* Compute an object encryption key. */
+int
+pdf_object_key(gx_device_pdf * pdev, gs_id object_id, byte key[16])
+{
+    md5_state_t md5;
+    md5_byte_t zero[2] = {0, 0}, t;
+    int KeySize = pdev->KeyLength / 8;
+
+    md5_init(&md5);
+    md5_append(&md5, pdev->EncryptionKey, KeySize);
+    t = (byte)(object_id >>  0);  md5_append(&md5, &t, 1);
+    t = (byte)(object_id >>  8);  md5_append(&md5, &t, 1);
+    t = (byte)(object_id >> 16);  md5_append(&md5, &t, 1);
+    md5_append(&md5, zero, 2);
+    md5_finish(&md5, key);
+    return min(KeySize + 5, 16);
+}
+
+/* Add the encryption filter. */
+int
+pdf_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id)
+{
+    gs_memory_t *mem = pdev->v_memory;
+    stream_arcfour_state *ss;
+    md5_byte_t key[16];
+    int code, keylength;
+
+    if (!pdev->KeyLength)
+	return 0;
+    keylength = pdf_object_key(pdev, object_id, key);
+    ss = gs_alloc_struct(mem, stream_arcfour_state, 
+		    s_arcfour_template.stype, "psdf_encrypt");
+    if (ss == NULL)
+	return_error(gs_error_VMerror);
+    code = s_arcfour_set_key(ss, key, keylength);
+    if (code < 0)
+	return code;
+    if (s_add_filter(s, &s_arcfour_template, (stream_state *)ss, mem) == 0)
+	return_error(gs_error_VMerror);
+    return 0;
+}
+
+/* Remove the encryption filter. */
+void
+pdf_encrypt_end(gx_device_pdf * pdev)
+{
+    if (pdev->KeyLength) {
+	stream *s = pdev->strm;
+	stream *fs = s->strm;
+
+	sclose(s);
+	gs_free_object(pdev->pdf_memory, s->cbuf, "encrypt buffer");
+	gs_free_object(pdev->pdf_memory, s, "encrypt stream");
+	pdev->strm = fs;
+    }
+}
+
 /* Enter stream context. */
 private int
 none_to_stream(gx_device_pdf * pdev)
 {
     stream *s;
+    int code;
 
     if (pdev->contents_id != 0)
 	return_error(gs_error_Fatal);	/* only 1 contents per page */
@@ -206,6 +266,10 @@ none_to_stream(gx_device_pdf * pdev)
 	pprints1(s, "/Filter /%s", compression_filter_name);
     stream_puts(s, ">>\nstream\n");
     pdev->contents_pos = pdf_stell(pdev);
+    code = pdf_encrypt(pdev, &s, pdev->contents_id);
+    if (code < 0)
+	return code;
+    pdev->strm = s;
     if (pdev->compression == pdf_compress_Flate) {	/* Set up the Flate filter. */
 	const stream_template *template = &compression_filter_template;
 	stream *es = s_alloc(pdev->pdf_memory, "PDF compression stream");
@@ -309,6 +373,8 @@ stream_to_none(gx_device_pdf * pdev)
 	gs_free_object(pdev->pdf_memory, s, "zlib stream");
 	pdev->strm = s = fs;
     }
+    pdf_encrypt_end(pdev);
+    s = pdev->strm;
     length = pdf_stell(pdev) - pdev->contents_pos;
     stream_puts(s, "endstream\n");
     pdf_end_obj(pdev);
@@ -652,15 +718,17 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 
 /* Copy data from a temporary file to a stream. */
 void
-pdf_copy_data(stream *s, FILE *file, long count)
+pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 {
     long left = count;
     byte buf[sbuf_size];
-
+    
     while (left > 0) {
 	uint copy = min(left, sbuf_size);
 
-	fread(buf, 1, sbuf_size, file);
+	fread(buf, 1, copy, file);
+	if (ss)
+	    s_arcfour_process_buffer(ss, buf, copy);
 	stream_write(s, buf, copy);
 	left -= copy;
     }
@@ -1154,6 +1222,10 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	s = cos_write_stream_alloc(pcos, pdev, "pdf_function");
 	if (s == 0)
 	    return_error(gs_error_VMerror);
+	pdev->strm = s;
+	code = pdf_encrypt(pdev, &s, pres->object->id);
+	if (code < 0)
+	    return code;
 	pdev->strm = s;
 	code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
 	if (code >= 0 && info.data_size > 30	/* 30 is arbitrary */

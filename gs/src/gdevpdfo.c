@@ -27,6 +27,7 @@
 #include "strimpl.h"
 #include "sa85x.h"
 #include "slzwx.h"
+#include "sarc4.h"
 #include "sstring.h"
 #include "szlibx.h"
 
@@ -1195,7 +1196,17 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
     long end_pos;
     bool same_file = (pdev->sbstack_depth > 0);
     int code;
+    byte key[16];
+    stream_arcfour_state sarc4, *ss = NULL;
 
+    if (pdev->KeyLength) {
+	int keylength = pdf_object_key(pdev, pcs->id, key);
+
+	code = s_arcfour_set_key(&sarc4, key, keylength);
+	if (code < 0)
+	    return code;
+	ss = &sarc4;
+    }
     sflush(s);
     sflush(pdev->streams.strm);
 
@@ -1208,7 +1219,7 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
 	else {
 	    end_pos = ftell(sfile);
 	    fseek(sfile, pcsp->position, SEEK_SET);
-	    pdf_copy_data(s, sfile, pcsp->size);
+	    pdf_copy_data(s, sfile, pcsp->size, ss);
 	    fseek(sfile, end_pos, SEEK_SET);
 	}
     }

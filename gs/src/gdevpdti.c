@@ -267,6 +267,9 @@ pdf_begin_char_proc_generic(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
 	stream_puts(s, "<</Length       >>stream\n");
 	ppos->start_pos = stell(s);
     }
+    code = pdf_encrypt(pdev, &pdev->strm, pres->object->id);
+    if (code < 0)
+	return code;
     *ppcp = pcp;
     return 0;
 }
@@ -300,11 +303,14 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 int
 pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
 {
-    stream *s = pdev->strm;
-    long start_pos = ppos->start_pos;
-    long end_pos = stell(s);
-    long length = end_pos - start_pos;
+    stream *s;
+    long start_pos, end_pos, length;
 
+    pdf_encrypt_end(pdev);
+    s = pdev->strm;
+    start_pos = ppos->start_pos;
+    end_pos = stell(s);
+    length = end_pos - start_pos;
     if (length > 999999)
 	return_error(gs_error_limitcheck);
     sseek(s, start_pos - 15);

@@ -124,8 +124,8 @@ s_arcfour_process_buffer(stream_arcfour_state *ss, byte *buf, int buf_size)
     stream_cursor_write w;
     const bool unused = false;
 
-    r.ptr = w.ptr = buf;
-    r.limit = w.limit = buf + buf_size;
+    r.ptr = w.ptr = buf - 1;
+    r.limit = w.limit = buf - 1 + buf_size;
     return s_arcfour_process((stream_state *)ss, &r, &w, unused);
 }
 

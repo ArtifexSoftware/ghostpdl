@@ -466,17 +466,15 @@ copy_padded(byte buf[32], gs_const_string *str)
 {
     memcpy(buf, str->data, min(str->size, 32));
     if (32 > str->size)
-	memcpy(buf, pad, 32 - str->size);
+	memcpy(buf + str->size, pad, 32 - str->size);
 }
 
 private int
 pdf_compute_encryption_data(gx_device_pdf * pdev)
 {
-    gs_memory_t *mem = pdev->pdf_memory;
-    uint ignore;
     int code;
-    stream *s;
-    byte digest[16], buf[32];
+    md5_state_t md5;
+    byte digest[16], buf[32], t;
     stream_arcfour_state sarc4;
 
     if (pdev->KeyLength == 0)
@@ -494,13 +492,10 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 	return_error(gs_error_rangecheck);
     }
     /* Compute O : */
-    s = s_MD5E_make_stream(mem, digest, sizeof(digest));
-    if (s == NULL)
-	return_error(gs_error_VMerror);
+    md5_init(&md5);
     copy_padded(buf, &pdev->OwnerPassword);
-    sputs(s, buf, sizeof(buf), &ignore);
-    sclose(s);
-    gs_free_object(mem, s, "pdf_compute_encryption_data");
+    md5_append(&md5, buf, sizeof(buf));
+    md5_finish(&md5, digest);
     copy_padded(pdev->EncryptionO, &pdev->UserPassword);
     code = s_arcfour_set_key(&sarc4, digest, pdev->KeyLength / 8);
     if (code < 0)
@@ -510,19 +505,16 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 	return code;
 
     /* Compute Key : */
-    s = s_MD5E_make_stream(mem, digest, sizeof(digest));
-    if (s == NULL)
-	return_error(gs_error_VMerror);
+    md5_init(&md5);
     copy_padded(buf, &pdev->UserPassword);
-    sputs(s, buf, sizeof(buf), &ignore);
-    sputs(s, pdev->EncryptionO, sizeof(pdev->EncryptionO), &ignore);
-    sputs(s, (byte *)&pdev->Permissions + 3, 1, &ignore);
-    sputs(s, (byte *)&pdev->Permissions + 2, 1, &ignore);
-    sputs(s, (byte *)&pdev->Permissions + 1, 1, &ignore);
-    sputs(s, (byte *)&pdev->Permissions + 0, 1, &ignore);
-    sputs(s, pdev->fileID, sizeof(pdev->fileID), &ignore);
-    sclose(s);
-    gs_free_object(mem, s, "pdf_compute_encryption_data");
+    md5_append(&md5, buf, sizeof(buf));
+    md5_append(&md5, pdev->EncryptionO, sizeof(pdev->EncryptionO));
+    t = (byte)(pdev->Permissions >>  0);  md5_append(&md5, &t, 1);
+    t = (byte)(pdev->Permissions >>  8);  md5_append(&md5, &t, 1);
+    t = (byte)(pdev->Permissions >> 16);  md5_append(&md5, &t, 1);
+    t = (byte)(pdev->Permissions >> 24);  md5_append(&md5, &t, 1);
+    md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
+    md5_finish(&md5, digest);
     memcpy(pdev->EncryptionKey, digest, pdev->KeyLength / 8);
 
     /* Compute U : */
@@ -684,7 +676,11 @@ pdf_open(gx_device * dev)
 	code = pdf_compute_encryption_data(pdev);
 	if (code < 0)
 	    goto fail;
+    } else if(pdev->UserPassword.size > 0) {
+	eprintf("User password is specified. Need an Owner password or both.");
+	return_error(gs_error_rangecheck);
     }
+
     /* Now create a new dictionary for the local named objects. */
     pdev->local_named_objects =
 	cos_dict_alloc(pdev, "pdf_open(local_named_objects)");
@@ -979,7 +975,7 @@ pdf_close(gx_device * dev)
     long xref;
     long resource_pos;
     long Catalog_id = pdev->Catalog->id, Info_id = pdev->Info->id,
-	Pages_id = pdev->Pages->id;
+	Pages_id = pdev->Pages->id, Encrypt_id = 0;
     long Threads_id = 0;
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
     int code = 0, code1;
@@ -1161,7 +1157,28 @@ pdf_close(gx_device * dev)
 	long res_end = ftell(rfile);
 
 	fseek(rfile, 0L, SEEK_SET);
-	pdf_copy_data(s, rfile, res_end);
+	pdf_copy_data(s, rfile, res_end, NULL);
+    }
+
+    /* Write Encrypt. */
+    if (pdev->OwnerPassword.size > 0) {
+	Encrypt_id = pdf_obj_ref(pdev);
+
+	pdf_open_obj(pdev, Encrypt_id);
+	s = pdev->strm;
+	stream_puts(s, "<<");
+	stream_puts(s, "/Filter /Standard ");
+	pprintld1(s, "/V %ld ", pdev->KeyLength == 40 ? 1 : 2);
+	pprintld1(s, "/Length %ld ", pdev->KeyLength);
+	pprintld1(s, "/R %ld ", security_revision(pdev));
+	pprintld1(s, "/P %ld ", pdev->Permissions);
+	stream_puts(s, "/O ");
+	pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));
+	stream_puts(s, "\n/U ");
+	pdf_put_string(pdev, pdev->EncryptionU, sizeof(pdev->EncryptionU));
+	stream_puts(s, ">>\n");
+	pdf_end_obj(pdev);
+	s = pdev->strm;
     }
 
     /* Write the cross-reference section. */
@@ -1200,17 +1217,7 @@ pdf_close(gx_device * dev)
     pdf_put_string(pdev, pdev->fileID, sizeof(pdev->fileID));
     stream_puts(s, "]\n");
     if (pdev->OwnerPassword.size > 0) {
-	stream_puts(s, "/Encrypt <<");
-	stream_puts(s, "/Filter /Standard ");
-	pprintld1(s, "/V %ld ", pdev->KeyLength == 40 ? 1 : 2);
-	pprintld1(s, "/Length %ld ", pdev->KeyLength);
-	pprintld1(s, "/R %ld ", security_revision(pdev));
-	pprintld1(s, "/P %ld ", pdev->Permissions);
-	stream_puts(s, "/O ");
-	pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));
-	stream_puts(s, "\n/U ");
-	pdf_put_string(pdev, pdev->EncryptionU, sizeof(pdev->EncryptionU));
-	stream_puts(s, ">>\n");
+	pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
     }
     stream_puts(s, ">>\n");
     pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);

@@ -29,6 +29,11 @@
 #include "spprint.h"
 #include "gdevpsdf.h"
 
+#ifndef stream_arcfour_state_DEFINED
+#define stream_arcfour_state_DEFINED
+typedef struct stream_arcfour_state_s stream_arcfour_state;
+#endif
+
 /* ---------------- Acrobat limitations ---------------- */
 
 /*
@@ -731,8 +736,16 @@ int pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype);
 int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page);
 
 /* Copy data from a temporary file to a stream. */
-void pdf_copy_data(stream *s, FILE *file, long count);
+void pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss);
 void pdf_copy_data_safe(stream *s, FILE *file, long position, long count);
+
+/* Compute an object encryption key. */
+int pdf_object_key(gx_device_pdf * pdev, gs_id object_id, byte key[16]);
+/* Add the encryption filter. */
+int pdf_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id);
+/* Remove the encryption filter. */
+void pdf_encrypt_end(gx_device_pdf * pdev);
+
 
 /* ------ Pages ------ */
 
