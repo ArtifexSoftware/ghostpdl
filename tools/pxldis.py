@@ -184,6 +184,7 @@ pxl_attribute_name_to_attribute_number_dict = {
     'BlockHeight' : 99,
     'BoldValue' : 177,
     'BoundingBox' : 66,
+    'ColorimetricColorSpace': 17,
     'CharAngle' : 161,
     'CharCode' : 162,
     'CharDataSize' : 163,
@@ -200,6 +201,7 @@ pxl_attribute_name_to_attribute_number_dict = {
     'CompressMode' : 101,
     'ControlPoint1' : 81,
     'ControlPoint2' : 82,
+    'CRGBMinMax' : 20,
     'CustomMediaSize' : 47,
     'CustomMediaSizeUnits' : 48,
     'DashOffset' : 67,
@@ -220,6 +222,7 @@ pxl_attribute_name_to_attribute_number_dict = {
     'FontFormat' : 169,
     'FontHeaderLength' : 167,
     'FontName' : 168,
+    'GammaGain' : 21,
     'GrayLevel' : 9,
     'LineCapStyle' : 71,
     'LineDashStyle' : 74,
@@ -266,8 +269,10 @@ pxl_attribute_name_to_attribute_number_dict = {
     'TextData' : 171,
     'TxMode' : 45,
     'UnitsPerMeasure' : 137,
+    'WhiteReferencePoint' : 19,
     'WritingMode' : 173,
     'XSpacingData' : 175,
+    'XYChromaticities' : 18,
     'YSpacingData' : 176,
 }
 
@@ -289,7 +294,7 @@ class pxl_dis:
         self.revision = data[14]
 
         # check binding NB - should check other stuff too:
-        # example: )<SP>HP-PCL XL;1;1<CR><LF>
+        # example: )<SP>HP-PCL XL;2;0<CR><LF>
         if self.binding not in ['(', ')', '`']:
             raise(SyntaxError)
 
@@ -301,6 +306,9 @@ class pxl_dis:
             self.index = self.index + 1
         self.index = self.index + 1
 
+        # print out ascii protocol and revision.  NB should check
+        # revisions are the same.
+        print "` HP-PCL XL;2;0"
         # saved size of last array parsed
         self.size_of_element = -1;
         self.size_of_array = -1;
@@ -478,7 +486,7 @@ class pxl_dis:
         if ( self.getTag( pxl_tags_dict['ubyte_xy'] ) ):
             print "ubyte_xy %d %d" % \
                   self.unpack('BB', self.data[self.index:self.index+2]),
-            self.index = self.index + 4
+            self.index = self.index + 2
             return 1
         return 0
 
@@ -589,8 +597,16 @@ class pxl_dis:
         for byte in self.data[self.index:self.index+length]:
             print ord(byte),
         print " ]"
+        # for some screwed up reason trailing nulls can comme after
+        # embedded data
         self.index = self.index + length
-
+        while ( 1 ):
+            if ( self.data[self.index] == "\0" ):
+                self.index = self.index + 1
+            else:
+                break
+            
+                 
     def Tag_attr_ubyte(self):
         if ( self.getTag( pxl_tags_dict['attr_ubyte'] ) ):
             tag = unpack('B', self.data[self.index] )[0]
