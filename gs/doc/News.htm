@@ -56,30 +56,13 @@ overview</a>.
 <!-- [2.0 begin contents] ================================================== -->
 
 <pre>
-<h1><a name="Version6.01"></a>Version 6.01 (2000-03-17)</h1>
+<h1><a name="Version6.20"></a>Version 6.20 (2000-xx-xx)</h1>
 
-This is a bug-fix release for 6.0.
+This fileset includes major additions and revisions to bring the pdfwrite
+driver closer to matching Acrobat Distiller 4.  This also requires upgrading
+several aspects of the library and the PostScript and PDF interpreters.
 
-This release fixes the following reported bugs: #101555, #101813, #101816,
-#101818, #101827, #101830, #101871, #101853, #101906, #101949, #101950,
-#102003, #102004, #102038, #102081, #102936.
-
-<h2><a name="6.01_Incompatible_changes"></a>Incompatible changes</h2>
-
-(Platforms)
-	- OpenVMS using VAX C is no longer supported.  (OpenVMS with DEC C
-and gcc are still supported.)
-(Drivers)
-	- The third argument of psdf_set_color is changed from const char *
-to const psdf_set_color_commands_t *.
-(Interpreter)
-	- The non-standard feature of writing dictionaries in binary object
-output is now disabled by default, but can now be enabled dynamically.
-(Library)
-	- The definition of TRANSPARENCY_PER_H_P is moved from gdevmrop.h to
-gsropt.h.
-	- The handling of the source opaque, texture transparent case of
-RasterOp when TRANSPARENCY_PER_H_P is defined is changed slightly.
+<h2><a name="6.20_Incompatible_changes"></a>Incompatible changes</h2>
 
 </pre>
 
@@ -98,7 +81,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 6.01, 17 March 2000
+Ghostscript version 6.20, xx xxxxxx 2000
 
 </font>
 
