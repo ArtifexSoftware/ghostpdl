@@ -31,7 +31,6 @@ goto end
 rem	Run pcl2pdf on Windows NT.
 
 :nt
-set PS2PDFGS=gswin32c
 if not CMDEXTVERSION 1 goto run
 if "%1"=="" goto ntusage
 if "%2"=="" goto nooutfile
