@@ -349,6 +349,9 @@ struct line_list_s {
     margin local_margins[MAX_LOCAL_ACTIVE];
     section local_section0[MAX_LOCAL_SECTION];
     section local_section1[MAX_LOCAL_SECTION];
+    const gx_device_color * pdevc;
+    gs_logical_operation_t lop;
+    bool fill_direct;
 };
 typedef struct line_list_s line_list;
 typedef line_list *ll_ptr;
@@ -536,6 +539,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     /* Initialize the active line list. */
     init_line_list(&lst, ppath->memory);
     lst.pseudo_rasterization = pseudo_rasterization;
+    lst.pdevc = pdevc;
+    lst.lop = lop;
     /*
      * We have a choice of two different filling algorithms:
      * scan-line-based and trapezoid-based.  They compare as follows:
@@ -1100,7 +1105,7 @@ end_x_line(active_line *alp, bool update)
   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop)
 #define LOOP_FILL_RECTANGLE_DIRECT(x, y, w, h)\
   (fill_direct ?\
-   (*fill_rect)(dev, x, y, w, h, cindex) :\
+   (*fill_rect)(dev, x, y, w, h, pdevc->colors.pure) :\
    gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
 
 private inline void init_section(section *sect, int i0, int i1)
@@ -1547,13 +1552,15 @@ private inline int compute_padding(section *s)
 	    fixed_half - s->y0 < s->y1 - fixed_half ? 1 : 0);
 }
 
-private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0, int i1,
-			bool fill_direct, gx_color_index cindex, const gx_device_color * pdevc, 
-			gs_logical_operation_t lop, dev_t_proc_fill_rectangle(fill_rect, gx_device))
+private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0, int i1)
 {   /* Returns the new index (positive) or return code (negative). */
     section *sect = ms->sect;
     int iy = fixed2int_var_pixround(ms->y);
     int i, ir, h = -2, code;
+    dev_proc_fill_rectangle((*fill_rect)) = dev_proc(dev, fill_rectangle);
+    const gx_device_color * pdevc = ll->pdevc;
+    gs_logical_operation_t lop = ll->lop;
+    bool fill_direct = ll->fill_direct;
 
     assert(i0 >= 0 && i1 <= ll->bbox_width);
     ir = i0;
@@ -1644,15 +1651,12 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
  */
 }
 
-private int close_margins(gx_device * dev, line_list * ll, margin_set *ms, 
-			  bool fill_direct, gx_color_index cindex, 
-			  const gx_device_color * pdevc, gs_logical_operation_t lop, 
-			  dev_t_proc_fill_rectangle(fill_rect, gx_device))
+private int close_margins(gx_device * dev, line_list * ll, margin_set *ms)
 {   margin *m = ms->margin_list;
     int code;
 
     for (; m != 0; m = m->next) {
-	code = fill_margin(dev, ll, ms, m->ibeg, m->iend, fill_direct, cindex, pdevc, lop, fill_rect);
+	code = fill_margin(dev, ll, ms, m->ibeg, m->iend);
 	if (code < 0)
 	    return code;
     }
@@ -1660,9 +1664,7 @@ private int close_margins(gx_device * dev, line_list * ll, margin_set *ms,
     return 0;
 }
 
-private int start_margin_set(gx_device * dev, line_list * ll, fixed y0, bool fill_direct, gx_color_index cindex, 
-			  const gx_device_color * pdevc, gs_logical_operation_t lop,
-			  dev_t_proc_fill_rectangle(fill_rect, gx_device))
+private int start_margin_set(gx_device * dev, line_list * ll, fixed y0)
 {   int code;
     fixed ym = fixed_pixround(y0) - fixed_half;
     margin_set s;
@@ -1672,19 +1674,172 @@ private int start_margin_set(gx_device * dev, line_list * ll, fixed y0, bool fil
     s = ll->margin_set1;
     ll->margin_set1 = ll->margin_set0;
     ll->margin_set0 = s;
-    code = close_margins(dev, ll, &ll->margin_set0, fill_direct, cindex, pdevc, lop, fill_rect);
+    code = close_margins(dev, ll, &ll->margin_set0);
     ll->margin_set0.y = ym;
     return code;
 }
 
-/* ---------------- Trapezoid filling loop ---------------- */
+/* ---------------- Trapezoid filling loop helpers ---------------- */
 
 /* Forward references */
-private int fill_slant_adjust(fixed, fixed, fixed, fixed, fixed,
-			      fixed, fixed, fixed, const gs_fixed_rect *,
-	     const gx_device_color *, gx_device *, gs_logical_operation_t);
-private void resort_x_line(active_line *);
-private void move_al_by_y(ll_ptr ll, fixed y1);
+/*
+ * Handle the case of a slanted trapezoid with adjustment.
+ * To do this exactly right requires filling a central trapezoid
+ * (or rectangle) plus two horizontal almost-rectangles.
+ */
+private int
+fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
+		  fixed xltop, fixed xtop, fixed height, fixed adjust_below,
+		  fixed adjust_above, const gs_fixed_rect * pbox,
+		  const gx_device_color * pdevc, gx_device * dev,
+		  gs_logical_operation_t lop)
+{
+    fixed y1 = y + height;
+
+    dev_proc_fill_trapezoid((*fill_trap)) =
+	dev_proc(dev, fill_trapezoid);
+    const fixed yb = y - adjust_below;
+    const fixed ya = y + adjust_above;
+    const fixed y1b = y1 - adjust_below;
+    const fixed y1a = y1 + adjust_above;
+    const gs_fixed_edge *plbot;
+    const gs_fixed_edge *prbot;
+    const gs_fixed_edge *pltop;
+    const gs_fixed_edge *prtop;
+    gs_fixed_edge vert_left, slant_left, vert_right, slant_right;
+    int code;
+
+    INCR(slant);
+    vd_quad(xlbot, y, xbot, y, xtop, y + height, xltop, y + height, 1, VD_TRAP_COLOR);
+
+    /* Set up all the edges, even though we may not need them all. */
+
+    if (xlbot < xltop) {	/* && xbot < xtop */
+	vert_left.start.x = vert_left.end.x = xlbot;
+	vert_left.start.y = yb, vert_left.end.y = ya;
+	vert_right.start.x = vert_right.end.x = xtop;
+	vert_right.start.y = y1b, vert_right.end.y = y1a;
+	slant_left.start.y = ya, slant_left.end.y = y1a;
+	slant_right.start.y = yb, slant_right.end.y = y1b;
+	plbot = &vert_left, prbot = &slant_right,
+	    pltop = &slant_left, prtop = &vert_right;
+    } else {
+	vert_left.start.x = vert_left.end.x = xltop;
+	vert_left.start.y = y1b, vert_left.end.y = y1a;
+	vert_right.start.x = vert_right.end.x = xbot;
+	vert_right.start.y = yb, vert_right.end.y = ya;
+	slant_left.start.y = yb, slant_left.end.y = y1b;
+	slant_right.start.y = ya, slant_right.end.y = y1a;
+	plbot = &slant_left, prbot = &vert_right,
+	    pltop = &vert_left, prtop = &slant_right;
+    }
+    slant_left.start.x = xlbot, slant_left.end.x = xltop;
+    slant_right.start.x = xbot, slant_right.end.x = xtop;
+
+    if (ya >= y1b) {
+	/*
+	 * The upper and lower adjustment bands overlap.
+	 * Since the entire entity is less than 2 pixels high
+	 * in this case, we could handle it very efficiently
+	 * with no more than 2 rectangle fills, but for right now
+	 * we don't attempt to do this.
+	 */
+	int iyb = fixed2int_var_pixround(yb);
+	int iya = fixed2int_var_pixround(ya);
+	int iy1b = fixed2int_var_pixround(y1b);
+	int iy1a = fixed2int_var_pixround(y1a);
+
+	INCR(slant_shallow);
+	if (iy1b > iyb) {
+	    code = (*fill_trap) (dev, plbot, prbot,
+				 yb, y1b, false, pdevc, lop);
+	    if (code < 0)
+		return code;
+	}
+	if (iya > iy1b) {
+	    int ix = fixed2int_var_pixround(vert_left.start.x);
+	    int iw = fixed2int_var_pixround(vert_right.start.x) - ix;
+
+	    code = LOOP_FILL_RECTANGLE(ix, iy1b, iw, iya - iy1b);
+	    if (code < 0)
+		return code;
+	}
+	if (iy1a > iya)
+	    code = (*fill_trap) (dev, pltop, prtop,
+				 ya, y1a, false, pdevc, lop);
+	else
+	    code = 0;
+    } else {
+	/*
+	 * Clip the trapezoid if possible.  This can save a lot
+	 * of work when filling paths that cross band boundaries.
+	 */
+	fixed yac;
+
+	if (pbox->p.y < ya) {
+	    code = (*fill_trap) (dev, plbot, prbot,
+				 yb, ya, false, pdevc, lop);
+	    if (code < 0)
+		return code;
+	    yac = ya;
+	} else
+	    yac = pbox->p.y;
+	if (pbox->q.y > y1b) {
+	    code = (*fill_trap) (dev, &slant_left, &slant_right,
+				 yac, y1b, false, pdevc, lop);
+	    if (code < 0)
+		return code;
+	    code = (*fill_trap) (dev, pltop, prtop,
+				 y1b, y1a, false, pdevc, lop);
+	} else
+	    code = (*fill_trap) (dev, &slant_left, &slant_right,
+				 yac, pbox->q.y, false, pdevc, lop);
+    }
+    return code;
+}
+
+/* Re-sort the x list by moving alp backward to its proper spot. */
+private void
+resort_x_line(active_line * alp)
+{
+    active_line *prev = alp->prev;
+    active_line *next = alp->next;
+
+    prev->next = next;
+    if (next)
+	next->prev = prev;
+    while (x_order(prev, alp) > 0) {
+	if_debug2('F', "[F]swap 0x%lx,0x%lx\n",
+		  (ulong) alp, (ulong) prev);
+	next = prev, prev = prev->prev;
+    }
+    alp->next = next;
+    alp->prev = prev;
+    /* next might be null, if alp was in the correct spot already. */
+    if (next)
+	next->prev = alp;
+    prev->next = alp;
+}
+
+/* Move active lines by Y. */
+private void
+move_al_by_y(ll_ptr ll, fixed y1)
+{
+    fixed x;
+    active_line *alp, *nlp;
+
+    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
+	fixed xtop = alp->x_current = alp->x_next;
+
+	nlp = alp->next;
+	if (alp->end.y != y1 || !end_x_line(alp, true)) {
+	    if (xtop <= x)
+		resort_x_line(alp);
+	    else
+		x = xtop;
+	}
+    }
+}
 
 private int
 loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
@@ -1712,6 +1867,100 @@ loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
 	(dev, &left, &right, ybot, ytop, false, pdevc, lop);
 }
 
+private int
+fill_trap_slanted(gx_device * dev, const gs_fixed_rect * pbox,
+	    const gx_device_color * pdevc, gs_logical_operation_t lop,
+	    bool fill_direct, 
+	    fixed xlbot, fixed xbot, fixed xltop, fixed xtop, fixed y, fixed y1,
+	    fixed adjust_below, fixed adjust_above)
+{
+    /*
+     * We want to get the effect of filling an area whose
+     * outline is formed by dragging a square of side adj2
+     * along the border of the trapezoid.  This is *not*
+     * equivalent to simply expanding the corners by
+     * adjust: There are 3 cases needing different
+     * algorithms, plus rectangles as a fast special case.
+     */
+    fixed wbot = xbot - xlbot;
+    fixed wtop = xtop - xltop;
+    fixed height = y1 - y;
+    dev_proc_fill_rectangle((*fill_rect)) = dev_proc(dev, fill_rectangle);
+    int xli = fixed2int_var_pixround(xltop);
+    int code = 0;
+    /*
+     * Define a faster test for
+     *	fixed2int_pixround(y - below) != fixed2int_pixround(y + above)
+     * where we know
+     *	0 <= below <= _fixed_pixround_v,
+     *	0 <= above <= min(fixed_half, fixed_1 - below).
+     * Subtracting out the integer parts, this is equivalent to
+     *	fixed2int_pixround(fixed_fraction(y) - below) !=
+     *	  fixed2int_pixround(fixed_fraction(y) + above)
+     * or to
+     *	fixed2int(fixed_fraction(y) + _fixed_pixround_v - below) !=
+     *	  fixed2int(fixed_fraction(y) + _fixed_pixround_v + above)
+     * Letting A = _fixed_pixround_v - below and B = _fixed_pixround_v + above,
+     * we can rewrite this as
+     *	fixed2int(fixed_fraction(y) + A) != fixed2int(fixed_fraction(y) + B)
+     * Because of the range constraints given above, this is true precisely when
+     *	fixed_fraction(y) + A < fixed_1 && fixed_fraction(y) + B >= fixed_1
+     * or equivalently
+     *	fixed_fraction(y + B) < B - A.
+     * i.e.
+     *	fixed_fraction(y + _fixed_pixround_v + above) < below + above
+     */
+    fixed y_span_delta = _fixed_pixround_v + adjust_above;
+    fixed y_span_limit = adjust_below + adjust_above;
+
+#define ADJUSTED_Y_SPANS_PIXEL(y)\
+  (fixed_fraction((y) + y_span_delta) < y_span_limit)
+
+    if (xltop <= xlbot) {
+	if (xtop >= xbot) {	/* Top wider than bottom. */
+	    code = loop_fill_trap(dev, xlbot, wbot, y - adjust_below,
+			xltop, wtop, height, pbox, pdevc, lop, 0);
+	    if (ADJUSTED_Y_SPANS_PIXEL(y1)) {
+		if (code < 0)
+		    return code;
+		INCR(afill);
+		code = LOOP_FILL_RECTANGLE_DIRECT(
+		 xli, fixed2int_pixround(y1 - adjust_below),
+		     fixed2int_var_pixround(xtop) - xli, 1);
+		vd_rect(xltop, y1 - adjust_below, xtop, y1, 1, VD_TRAP_COLOR);
+	    }
+	} else {	/* Slanted trapezoid. */
+	    code = fill_slant_adjust(xlbot, xbot, y,
+			  xltop, xtop, height, adjust_below,
+				     adjust_above, pbox,
+				     pdevc, dev, lop);
+	}
+    } else {
+	if (xtop <= xbot) {	/* Bottom wider than top. */
+	    if (ADJUSTED_Y_SPANS_PIXEL(y)) {
+		INCR(afill);
+		xli = fixed2int_var_pixround(xlbot);
+		code = LOOP_FILL_RECTANGLE_DIRECT(
+		  xli, fixed2int_pixround(y - adjust_below),
+		     fixed2int_var_pixround(xbot) - xli, 1);
+		vd_rect(xltop, y - adjust_below, xbot, y, 1, VD_TRAP_COLOR);
+		if (code < 0)
+		    return code;
+	    }
+	    code = loop_fill_trap(dev, xlbot, wbot, y + adjust_above,
+			xltop, wtop, height, pbox, pdevc, lop, 0);
+	} else {	/* Slanted trapezoid. */
+	    code = fill_slant_adjust(xlbot, xbot, y,
+			  xltop, xtop, height, adjust_below,
+				     adjust_above, pbox,
+				     pdevc, dev, lop);
+	}
+    }
+    return code;
+}
+
+/* ---------------- Trapezoid filling loop ---------------- */
+
 /* Main filling loop.  Takes lines off of y_list and adds them to */
 /* x_list as needed.  band_mask limits the size of each band, */
 /* by requiring that ((y1 - 1) & band_mask) == (y0 & band_mask). */
@@ -1729,43 +1978,17 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
     int code;
     bool fill_direct = color_writes_pure(pdevc, lop);
     const bool pseudo_rasterization = ll->pseudo_rasterization;
-    gx_color_index cindex;
 
     dev_proc_fill_rectangle((*fill_rect));
-/*
- * Define a faster test for
- *	fixed2int_pixround(y - below) != fixed2int_pixround(y + above)
- * where we know
- *	0 <= below <= _fixed_pixround_v,
- *	0 <= above <= min(fixed_half, fixed_1 - below).
- * Subtracting out the integer parts, this is equivalent to
- *	fixed2int_pixround(fixed_fraction(y) - below) !=
- *	  fixed2int_pixround(fixed_fraction(y) + above)
- * or to
- *	fixed2int(fixed_fraction(y) + _fixed_pixround_v - below) !=
- *	  fixed2int(fixed_fraction(y) + _fixed_pixround_v + above)
- * Letting A = _fixed_pixround_v - below and B = _fixed_pixround_v + above,
- * we can rewrite this as
- *	fixed2int(fixed_fraction(y) + A) != fixed2int(fixed_fraction(y) + B)
- * Because of the range constraints given above, this is true precisely when
- *	fixed_fraction(y) + A < fixed_1 && fixed_fraction(y) + B >= fixed_1
- * or equivalently
- *	fixed_fraction(y + B) < B - A.
- * i.e.
- *	fixed_fraction(y + _fixed_pixround_v + above) < below + above
- */
-    fixed y_span_delta = _fixed_pixround_v + adjust_above;
-    fixed y_span_limit = adjust_below + adjust_above;
-
-#define ADJUSTED_Y_SPANS_PIXEL(y)\
-  (fixed_fraction((y) + y_span_delta) < y_span_limit)
 
     if (yll == 0)
 	return 0;		/* empty list */
     if (fill_direct)
-	cindex = pdevc->colors.pure,
-	    fill_rect = dev_proc(dev, fill_rectangle);
+	fill_rect = dev_proc(dev, fill_rectangle);
+    else
+	fill_rect = 0; /* unused. */
     y = yll->start.y;		/* first Y value */
+    ll->fill_direct = fill_direct;
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
     ll->margin_set0.y = fixed_pixround(y) - fixed_half;
@@ -1956,7 +2179,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	}
 #endif
 	if (pseudo_rasterization) {
-	    code = start_margin_set(dev, ll, y1, fill_direct, cindex, pdevc, lop, fill_rect);
+	    code = start_margin_set(dev, ll, y1);
 	    if (code < 0)
 		return code;
 	}
@@ -2057,56 +2280,8 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			plp = alp;
 		    }
 		} else if ((adjust_below | adjust_above) != 0) {
-		    /*
-		     * We want to get the effect of filling an area whose
-		     * outline is formed by dragging a square of side adj2
-		     * along the border of the trapezoid.  This is *not*
-		     * equivalent to simply expanding the corners by
-		     * adjust: There are 3 cases needing different
-		     * algorithms, plus rectangles as a fast special case.
-		     */
-		    fixed wbot = xbot - xlbot;
-
-		    if (xltop <= xlbot) {
-			if (xtop >= xbot) {	/* Top wider than bottom. */
-			    code = loop_fill_trap(dev, xlbot, wbot, y - adjust_below,
-					xltop, wtop, height, pbox, pdevc, lop, 0);
-			    if (ADJUSTED_Y_SPANS_PIXEL(y1)) {
-				if (code < 0)
-				    return code;
-				INCR(afill);
-				code = LOOP_FILL_RECTANGLE_DIRECT(
-				 xli, fixed2int_pixround(y1 - adjust_below),
-				     fixed2int_var_pixround(xtop) - xli, 1);
-				vd_rect(xltop, y1 - adjust_below, xtop, y1, 1, VD_TRAP_COLOR);
-			    }
-			} else {	/* Slanted trapezoid. */
-			    code = fill_slant_adjust(xlbot, xbot, y,
-					  xltop, xtop, height, adjust_below,
-						     adjust_above, pbox,
-						     pdevc, dev, lop);
-			}
-		    } else {
-			if (xtop <= xbot) {	/* Bottom wider than top. */
-			    if (ADJUSTED_Y_SPANS_PIXEL(y)) {
-				INCR(afill);
-				xli = fixed2int_var_pixround(xlbot);
-				code = LOOP_FILL_RECTANGLE_DIRECT(
-				  xli, fixed2int_pixround(y - adjust_below),
-				     fixed2int_var_pixround(xbot) - xli, 1);
-				vd_rect(xltop, y - adjust_below, xbot, y, 1, VD_TRAP_COLOR);
-				if (code < 0)
-				    return code;
-			    }
-			    code = loop_fill_trap(dev, xlbot, wbot, y + adjust_above,
-					xltop, wtop, height, pbox, pdevc, lop, 0);
-			} else {	/* Slanted trapezoid. */
-			    code = fill_slant_adjust(xlbot, xbot, y,
-					  xltop, xtop, height, adjust_below,
-						     adjust_above, pbox,
-						     pdevc, dev, lop);
-			}
-		    }
+		    code = fill_trap_slanted(dev, pbox, pdevc, lop, fill_direct, 
+				xlbot, xbot, xltop, xtop, y, y1, adjust_below, adjust_above);
 		} else {	/* No Y adjustment. */
 		    int flags = 0;
 
@@ -2186,171 +2361,12 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	code = process_h_lists(ll, 0, 0, 0);
 	if (code < 0)
 	    return code;
-	code = close_margins(dev, ll, &ll->margin_set1, fill_direct, cindex, pdevc, lop, fill_rect);
+	code = close_margins(dev, ll, &ll->margin_set1);
 	if (code < 0)
 	    return code;
-	return close_margins(dev, ll, &ll->margin_set0, fill_direct, cindex, pdevc, lop, fill_rect);
+	return close_margins(dev, ll, &ll->margin_set0);
     } 
     return 0;
-}
-
-/*
- * Handle the case of a slanted trapezoid with adjustment.
- * To do this exactly right requires filling a central trapezoid
- * (or rectangle) plus two horizontal almost-rectangles.
- */
-private int
-fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
-		  fixed xltop, fixed xtop, fixed height, fixed adjust_below,
-		  fixed adjust_above, const gs_fixed_rect * pbox,
-		  const gx_device_color * pdevc, gx_device * dev,
-		  gs_logical_operation_t lop)
-{
-    fixed y1 = y + height;
-
-    dev_proc_fill_trapezoid((*fill_trap)) =
-	dev_proc(dev, fill_trapezoid);
-    const fixed yb = y - adjust_below;
-    const fixed ya = y + adjust_above;
-    const fixed y1b = y1 - adjust_below;
-    const fixed y1a = y1 + adjust_above;
-    const gs_fixed_edge *plbot;
-    const gs_fixed_edge *prbot;
-    const gs_fixed_edge *pltop;
-    const gs_fixed_edge *prtop;
-    gs_fixed_edge vert_left, slant_left, vert_right, slant_right;
-    int code;
-
-    INCR(slant);
-    vd_quad(xlbot, y, xbot, y, xtop, y + height, xltop, y + height, 1, VD_TRAP_COLOR);
-
-    /* Set up all the edges, even though we may not need them all. */
-
-    if (xlbot < xltop) {	/* && xbot < xtop */
-	vert_left.start.x = vert_left.end.x = xlbot;
-	vert_left.start.y = yb, vert_left.end.y = ya;
-	vert_right.start.x = vert_right.end.x = xtop;
-	vert_right.start.y = y1b, vert_right.end.y = y1a;
-	slant_left.start.y = ya, slant_left.end.y = y1a;
-	slant_right.start.y = yb, slant_right.end.y = y1b;
-	plbot = &vert_left, prbot = &slant_right,
-	    pltop = &slant_left, prtop = &vert_right;
-    } else {
-	vert_left.start.x = vert_left.end.x = xltop;
-	vert_left.start.y = y1b, vert_left.end.y = y1a;
-	vert_right.start.x = vert_right.end.x = xbot;
-	vert_right.start.y = yb, vert_right.end.y = ya;
-	slant_left.start.y = yb, slant_left.end.y = y1b;
-	slant_right.start.y = ya, slant_right.end.y = y1a;
-	plbot = &slant_left, prbot = &vert_right,
-	    pltop = &vert_left, prtop = &slant_right;
-    }
-    slant_left.start.x = xlbot, slant_left.end.x = xltop;
-    slant_right.start.x = xbot, slant_right.end.x = xtop;
-
-    if (ya >= y1b) {
-	/*
-	 * The upper and lower adjustment bands overlap.
-	 * Since the entire entity is less than 2 pixels high
-	 * in this case, we could handle it very efficiently
-	 * with no more than 2 rectangle fills, but for right now
-	 * we don't attempt to do this.
-	 */
-	int iyb = fixed2int_var_pixround(yb);
-	int iya = fixed2int_var_pixround(ya);
-	int iy1b = fixed2int_var_pixround(y1b);
-	int iy1a = fixed2int_var_pixround(y1a);
-
-	INCR(slant_shallow);
-	if (iy1b > iyb) {
-	    code = (*fill_trap) (dev, plbot, prbot,
-				 yb, y1b, false, pdevc, lop);
-	    if (code < 0)
-		return code;
-	}
-	if (iya > iy1b) {
-	    int ix = fixed2int_var_pixround(vert_left.start.x);
-	    int iw = fixed2int_var_pixround(vert_right.start.x) - ix;
-
-	    code = LOOP_FILL_RECTANGLE(ix, iy1b, iw, iya - iy1b);
-	    if (code < 0)
-		return code;
-	}
-	if (iy1a > iya)
-	    code = (*fill_trap) (dev, pltop, prtop,
-				 ya, y1a, false, pdevc, lop);
-	else
-	    code = 0;
-    } else {
-	/*
-	 * Clip the trapezoid if possible.  This can save a lot
-	 * of work when filling paths that cross band boundaries.
-	 */
-	fixed yac;
-
-	if (pbox->p.y < ya) {
-	    code = (*fill_trap) (dev, plbot, prbot,
-				 yb, ya, false, pdevc, lop);
-	    if (code < 0)
-		return code;
-	    yac = ya;
-	} else
-	    yac = pbox->p.y;
-	if (pbox->q.y > y1b) {
-	    code = (*fill_trap) (dev, &slant_left, &slant_right,
-				 yac, y1b, false, pdevc, lop);
-	    if (code < 0)
-		return code;
-	    code = (*fill_trap) (dev, pltop, prtop,
-				 y1b, y1a, false, pdevc, lop);
-	} else
-	    code = (*fill_trap) (dev, &slant_left, &slant_right,
-				 yac, pbox->q.y, false, pdevc, lop);
-    }
-    return code;
-}
-
-/* Re-sort the x list by moving alp backward to its proper spot. */
-private void
-resort_x_line(active_line * alp)
-{
-    active_line *prev = alp->prev;
-    active_line *next = alp->next;
-
-    prev->next = next;
-    if (next)
-	next->prev = prev;
-    while (x_order(prev, alp) > 0) {
-	if_debug2('F', "[F]swap 0x%lx,0x%lx\n",
-		  (ulong) alp, (ulong) prev);
-	next = prev, prev = prev->prev;
-    }
-    alp->next = next;
-    alp->prev = prev;
-    /* next might be null, if alp was in the correct spot already. */
-    if (next)
-	next->prev = alp;
-    prev->next = alp;
-}
-
-/* Move active lines by Y. */
-private void
-move_al_by_y(ll_ptr ll, fixed y1)
-{
-    fixed x;
-    active_line *alp, *nlp;
-
-    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
-	fixed xtop = alp->x_current = alp->x_next;
-
-	nlp = alp->next;
-	if (alp->end.y != y1 || !end_x_line(alp, true)) {
-	    if (xtop <= x)
-		resort_x_line(alp);
-	    else
-		x = xtop;
-	}
-    }
 }
 
 /* ---------------- Range list management ---------------- */
@@ -2596,7 +2612,6 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
     int rule = params->rule;
     fixed fixed_flat = float2fixed(params->flatness);
     bool fill_direct = color_writes_pure(pdevc, lop);
-    gx_color_index cindex;
     dev_proc_fill_rectangle((*fill_rect));
     active_line *yll = ll->y_list;
     fixed y_limit = pbox->q.y;
@@ -2625,8 +2640,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 	return 0;
     range_list_init(&rlist, rlocal, countof(rlocal), ll->memory);
     if (fill_direct)
-	cindex = pdevc->colors.pure,
-	    fill_rect = dev_proc(dev, fill_rectangle);
+	fill_rect = dev_proc(dev, fill_rectangle);
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
     while (code >= 0) {
