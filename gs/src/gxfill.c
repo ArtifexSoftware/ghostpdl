@@ -41,7 +41,6 @@
 /*
  * Configuration flags for dropout prevention code.
  */
-#define PSEUDO_RASTERIZATION 1 /* Reserved for further development. */
 #define ADJUST_SERIF 1 /* See comments near occurances. */
 #define CHECK_SPOT_CONTIGUITY 1 /* See comments near occurances. */
 
@@ -455,8 +454,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 #   define SMALL_CHARACTER 500
     lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
     lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
-    pseudo_rasterization = PSEUDO_RASTERIZATION && 
-			    ((adjust.x | adjust.y) == 0 && 
+    pseudo_rasterization = ((adjust.x | adjust.y) == 0 && 
 			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
 			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
     if (params->fill_zero_width && !pseudo_rasterization)
@@ -638,7 +636,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	else
 	    fill_loop = fill_loop_by_scan_lines;
 	/* We assume (adjust.x | adjust.y) == 0 iff it's a character. */
-#	if PSEUDO_RASTERIZATION
 	if (lst.bbox_width > MAX_LOCAL_SECTION && lst.pseudo_rasterization) {
 	    /*
 	     * Note that execution pass here only for character size
@@ -657,7 +654,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    init_section(lst.margin_set0.sect, 0, lst.bbox_width);
 	    init_section(lst.margin_set1.sect, 0, lst.bbox_width);
 	}
-#	endif
 	code = (*fill_loop)
 	    (&lst, dev, params, pdevc, lop, &ibox,
 	     adjust_left, adjust_right, adjust_below, adjust_above,
@@ -833,9 +829,7 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
     fixed ymin = pbox->p.y;
     /* fixed xmax = pbox->q.x; *//* not currently used */
     fixed ymax = pbox->q.y;
-#   if PSEUDO_RASTERIZATION
     bool pseudo_rasterization = ll->pseudo_rasterization;
-#   endif
     int code;
 
     while (pseg) {
@@ -889,10 +883,7 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
 	    if (dir == 2) {	/* Put horizontal lines on the list */
 		/* if they would color any pixels. */
 		if (
-#		    if PSEUDO_RASTERIZATION
 		    (pseudo_rasterization && (prev->pt.x != pseg->pt.x)) ||  /* Since TT characters are not hinted. */
-				    /* Note this disturbs the benchmarking. */
-#		    endif
 		    fixed2int_pixround(iy - adjust_below) <
 		    fixed2int_pixround(iy + adjust_above)
 		    ) {
@@ -1714,11 +1705,9 @@ loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
     left.end.y = right.end.y = fy1;
     right.start.x = (left.start.x = fx0) + fw0;
     right.end.x = (left.end.x = fx1) + fw1;
-#if PSEUDO_RASTERIZATION
     if (flags & ftf_pseudo_rasterization)
 	return gx_fill_trapezoid_narrow
 	    (dev, &left, &right, ybot, ytop, flags, pdevc, lop);
-#endif
     return (*fill_trap)
 	(dev, &left, &right, ybot, ytop, false, pdevc, lop);
 }
@@ -1793,7 +1782,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
 
 	    if (yll->direction == DIR_HORIZONTAL) {
-		if (!PSEUDO_RASTERIZATION || !pseudo_rasterization) {
+		if (!pseudo_rasterization) {
 		    /*
 		     * This is a hack to make sure that isolated horizontal
 		     * lines get stroked.
@@ -1882,11 +1871,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    if (nx >= x)
 		x = nx;
 	    else if (
-#	    if PSEUDO_RASTERIZATION
 		     (pseudo_rasterization || draw >= 0) &&	/* don't bother if no pixels with no pseudo_rasterization */
-#	    else
-		     draw >= 0 &&	/* don't bother if no pixels */
-#	    endif
 		     (dx_old = alp->x_current - endp->x_current) >= 0 &&
 		     (dx_den = dx_old + endp->x_next - nx) > dx_old
 		) {		/* Make a good guess at the intersection */
@@ -1970,13 +1955,11 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    print_line_list(ll->x_list);
 	}
 #endif
-#	if PSEUDO_RASTERIZATION
 	if (pseudo_rasterization) {
 	    code = start_margin_set(dev, ll, y1, fill_direct, cindex, pdevc, lop, fill_rect);
 	    if (code < 0)
 		return code;
 	}
-#	endif
 	/* Fill a multi-trapezoid band for the active lines. */
 	/* Don't bother if no pixel centers lie within the band. */
 	if (draw > 0 || (draw == 0 && HAVE_PIXELS())) {
@@ -2036,21 +2019,13 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		    xtop += adjust_right;
 		    wtop = xtop - xltop;
 		}
-#		if !PSEUDO_RASTERIZATION
-		if ((xli = fixed2int_var_pixround(xltop)) ==
-		    fixed2int_var_pixround(xlbot) &&
-		    (xi = fixed2int_var_pixround(xtop)) ==
-		    fixed2int_var_pixround(xbot)
-		    ) 		/* Rectangle. */
-#		else
 		xli = fixed2int_var_pixround(xltop);
 		xi = fixed2int_var_pixround(xtop);
 		if (xltop == xlbot && xtop == xbot)
-#		endif
 		{   int yi = fixed2int_pixround(y - adjust_below);
 		    int wi = fixed2int_pixround(y1 + adjust_above) - yi;
 
-		    if (PSEUDO_RASTERIZATION && pseudo_rasterization && xli == xi) {
+		    if (pseudo_rasterization && xli == xi) {
 			/*
 			 * The scan is empty but we should paint something 
 			 * against a dropout. Choose one of two pixels which 
@@ -2066,7 +2041,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		    code = LOOP_FILL_RECTANGLE_DIRECT(xli, yi,
 						      xi - xli, wi);
 		    vd_rect(xltop, y, xtop, y1, 1, VD_TRAP_COLOR);
-#		    if PSEUDO_RASTERIZATION
 		    if (pseudo_rasterization) {
 			if (code < 0)
 			    return code;
@@ -2082,7 +2056,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			code = process_h_lists(ll, plp, &flp, alp);
 			plp = alp;
 		    }
-#		    endif
 		} else if ((adjust_below | adjust_above) != 0) {
 		    /*
 		     * We want to get the effect of filling an area whose
@@ -2137,7 +2110,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		} else {	/* No Y adjustment. */
 		    int flags = 0;
 
-#		    if PSEUDO_RASTERIZATION
 		    if (pseudo_rasterization) {
 			flags |= ftf_pseudo_rasterization;
 			if (flp.start.x == alp->start.x && flp.start.y == y)
@@ -2145,10 +2117,8 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			if (flp.end.x == alp->end.x && flp.end.y == y1)
 			    flags |= ftf_peak0;
 		    }
-#		    endif
 		    code = loop_fill_trap(dev, xlbot, xbot - xlbot, y, xltop, wtop, height, 
 						    pbox, pdevc, lop, flags);
-#		    if PSEUDO_RASTERIZATION
 		    if (pseudo_rasterization) {
 			if (code < 0)
 			    return code;
@@ -2164,7 +2134,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			code = process_h_lists(ll, plp, &flp, alp);
 			plp = alp;
 		    }
-#		    endif
 		}
 		if (code < 0)
 		    return code;
@@ -2176,7 +2145,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 
 	    /* Process dropouts near trapezoids. */
 
-#	    if PSEUDO_RASTERIZATION
 	    if (pseudo_rasterization) {
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		    alp->x_current = alp->x_next;
@@ -2203,7 +2171,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			return code;
 		}
 	    }
-#	    endif
 	}
 	if (plp != 0) {
 	    code = process_h_lists(ll, plp, 0, 0);
@@ -2215,7 +2182,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	ll->h_list1 = ll->h_list0;
 	ll->h_list0 = 0;
     }
-#   if PSEUDO_RASTERIZATION
     if (pseudo_rasterization) {
 	code = process_h_lists(ll, 0, 0, 0);
 	if (code < 0)
@@ -2225,7 +2191,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    return code;
 	return close_margins(dev, ll, &ll->margin_set0, fill_direct, cindex, pdevc, lop, fill_rect);
     } 
-#   endif
     return 0;
 }
 
