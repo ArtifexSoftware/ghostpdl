@@ -41,7 +41,7 @@ import gssum
 import gsparamsets
 import rasterdb
 
-def norm_entry(cmd, ifile, device, dpi, band):
+def norm_entry(cmd, ifile, device, dpi, band, datespec):
     ofile = "%s.%s.%d.%d" % (ifile, device, dpi, band)
     print "updating entry: " + ofile + "...",
     sys.stdout.flush()
@@ -60,7 +60,8 @@ def norm_entry(cmd, ifile, device, dpi, band):
         try:
  	    if gsconf.log_baseline:
 	        log = open(gsconf.log_baseline, "a")
-	        log.write(time.ctime() + " " + ifile + " updated\n")
+	        log.write(time.ctime() + " " + ifile + " updated "\
+			  "[" + datespec + "]\n")
 	        log.close()
             gssum.add_file(ofile)
             rasterdb.put_file(ofile)
@@ -71,7 +72,7 @@ def norm_entry(cmd, ifile, device, dpi, band):
     else:
 	print "error."
 
-def pdf_entry(cmd, ifile, device, dpi, band):
+def pdf_entry(cmd, ifile, device, dpi, band, datespec):
     ofile = "%s.pdf.%s.%d.%d" % (ifile, device, dpi, band)
     print "updating entry: " + ofile + "...",
     sys.stdout.flush()
@@ -104,7 +105,8 @@ def pdf_entry(cmd, ifile, device, dpi, band):
         try:
 	    if gsconf.log_baseline:
 	        log = open(gsconf.log_baseline, "a")
-		log.write(time.ctime() + " " + ifile + " updated (pdfwrite)\n")
+		log.write(time.ctime() + " " + ifile + " updated (pdfwrite) "\
+			  "[" + datespec + "]\n")
 		log.close()
             gssum.add_file(ofile)
             rasterdb.put_file(ofile)
@@ -255,11 +257,11 @@ try:
     for f in normset:
         for params in gsparamsets.testparamsets:
             norm_entry(gscmd, f, params.device, params.resolution,
-                       params.banding)
+                       params.banding, datespec)
     for f in pdfset:
         for params in gsparamsets.testparamsets:
             pdf_entry(gscmd, f, params.device, params.resolution,
-                      params.banding)
+                      params.banding, datespec)
     
 except StandardError, e:
     print "ERROR:", e
