@@ -1,13 +1,13 @@
 %!
 %    Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -23,19 +23,19 @@
 % represent them in a compact format described in src/gscencs.c.
 % The generated files are named gscedata.[ch] and are included in the
 % source distribution in the src directory.  The canonical invocation is
-%	gs -dNODISPLAY -q -SO=gscedata.h toolbin/encs2c.ps > src/gscedata.h
-%	gs -dNODISPLAY -q -SO=gscedata.c toolbin/encs2c.ps > src/gscedata.c
+%   gs -dNODISPLAY -q -SO=gscedata.h toolbin/encs2c.ps > src/gscedata.h
+%   gs -dNODISPLAY -q -SO=gscedata.c toolbin/encs2c.ps > src/gscedata.c
 %
 % NOTE: If the C representation of encodings changes, this file
 % (toolbin/encs2c.ps), src/gscencs.h, and src/gscencs.c must be kept
 % consistent with each other.
 %
-% This program also generates a table of glyphs available in 
+% This program also generates a table of glyphs available in
 % WinAnsiEncoding, StandardEncoding, MacExpertEncoding, SymbolEncoding
 % for pdfwrite device.
 %
-%	gs -dNODISPLAY -q -SO=gdevpdtv.h toolbin/encs2c.ps > src/gdevpdtv.h
-%	gs -dNODISPLAY -q -SO=gdevpdtv.c toolbin/encs2c.ps > src/gdevpdtv.c
+%   gs -dNODISPLAY -q -SO=gdevpdtv.h toolbin/encs2c.ps > src/gdevpdtv.h
+%   gs -dNODISPLAY -q -SO=gdevpdtv.c toolbin/encs2c.ps > src/gdevpdtv.c
 
 % ================ Write header file ================ %
 
@@ -56,7 +56,9 @@
   (extern const ushort gs_c_known_encoding_offsets[];) =
   (extern const int gs_c_known_encoding_count;) =
   (extern const ushort *const gs_c_known_encodings[];) =
+  (extern const ushort *const gs_c_known_encodings_reverse[];) =
   (extern const ushort gs_c_known_encoding_lengths[];) =
+  (extern const ushort gs_c_known_encoding_reverse_lengths[];) =
   () =
   (#endif /* gscedata_INCLUDED */) =
 } def
@@ -65,6 +67,7 @@
 
 % Free variables: encnames, encodings, estrs, maxlen.
 /writedata {
+  /reverse_lengths encnames length array def
 
   (#include "stdpre.h") =
   (#include "gstypes.h") =
@@ -124,7 +127,29 @@ const int gs_c_known_encoding_count = ) print
       (N\() print dup length =only (,) print
       estrs 1 index get =only (\),  /*) print .namestring print (*/) =
     } forall (0};) =
-    /i i 1 add def
+
+    (static const ushort gs_c_known_encoding_reverse_) print i =only ([] = {) =
+    [
+    /code 0 def
+    e {
+      dup /.notdef eq {
+        pop
+      } {
+        [ exch estrs 1 index get lenbits bitshift 1 index length add code ] %[/name N code]
+      } ifelse
+      /code code 1 add def
+    } forall
+    ]
+    reverse_lengths i 2 index length put
+    {1 get exch 1 get exch lt} .sort {
+      aload pop
+      =only
+      pop
+      (,   /* N\() print dup length =only (,) print
+      estrs 1 index get =only (\): ) print .namestring print (*/) =
+    } forall (0};) =
+
+  /i i 1 add def
   } forall
 
 	% Write the table of pointers to the encodings.
@@ -136,12 +161,25 @@ const ushort *const gs_c_known_encodings[] = {) =
   } for (    0
   };) =
 
+  (const ushort *const gs_c_known_encodings_reverse[] = {) =
+  0 1 encodings length 1 sub {
+    (    gs_c_known_encoding_reverse_) print dup =only (, /* ) print
+    encnames exch get =only ( */) =
+  } for (    0
+  };) =
+
+
 	% Write the table of encoding lengths.
   (
 const ushort gs_c_known_encoding_lengths[] = {) =
   0 1 encodings length 1 sub {
     encodings exch get length =only (,) print
   } for (0};) =
+
+  (const ushort gs_c_known_encoding_reverse_lengths[] = {) =
+  reverse_lengths {
+    =only (,) print
+  } forall (0};) =
 
 } def
 

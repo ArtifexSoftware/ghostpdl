@@ -1,12 +1,12 @@
 /* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
-  
+
   This software is provided AS-IS with no warranty, either express or
   implied.
-  
+
   This software is distributed under license and may not be copied,
   modified or distributed except as expressly authorized under the terms
   of the license contained in the file LICENSE in this distribution.
-  
+
   For more information about licensing, please refer to
   http://www.ghostscript.com/licensing/. For information on
   commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -62,19 +62,30 @@ gs_c_known_encode(gs_char ch, int ei)
     return gs_c_min_std_encoding_glyph + gs_c_known_encodings[ei][ch];
 }
 
+
 /*
  * Decode a gs_c_glyph_name glyph with a known encoding.
  */
 gs_char
 gs_c_decode(gs_glyph glyph, int ei)
 {
-    /* fixme: optimize. */
-    gs_char ch;
-    
-    for (ch = 0; ch <= 255; ch++) 
-	if (glyph == gs_c_min_std_encoding_glyph + gs_c_known_encodings[ei][ch])
-	    return ch;
-    return gs_no_char;
+    /* Do a binary search for glyph, using gx_c_known_encodings_reverse */
+    const ushort *const encoding = gs_c_known_encodings[ei];
+    const ushort *const reverse = gs_c_known_encodings_reverse[ei];
+    int first_index = 0;
+    int last_index = gs_c_known_encoding_reverse_lengths[ei];
+    while (first_index < last_index) {
+        const int test_index = (first_index + last_index) / 2;
+        const gs_glyph test_glyph =
+         gs_c_min_std_encoding_glyph + encoding[reverse[test_index]];
+        if (glyph < test_glyph)
+            last_index = test_index;
+        else if (glyph > test_glyph)
+            first_index = test_index + 1;
+        else
+            return reverse[test_index];
+    }
+    return GS_NO_CHAR;
 }
 
 
@@ -156,13 +167,15 @@ gs_c_name_glyph(const byte *str, uint len)
 #define I_circlemultiply N(14,168)
 #define I_numbersign N(10,270)
 #define I_copyright N(9,180)
+#define I_notdefined N(7, 0)
 
 /* Test */
 #include <stdio.h>
 main()
 {
     gs_glyph g;
-    gs_const_string str;
+	gs_char c;
+    gs_const_string str;	
 
     /* Test with a short name. */
     g = gs_c_known_encode((gs_char)0237, 1); /* caron */
@@ -190,6 +203,17 @@ main()
     g = gs_c_name_glyph((const byte *)"copyright", 9);
     printf("copyright is %u, should be %u\n",
 	   g - gs_c_min_std_encoding_glyph, I_copyright);
+
+    /* Test reverse lookup */
+    c = gs_c_decode(I_caron + gs_c_min_std_encoding_glyph, 1);
+    printf("%u (caron) looked up as %u, should be %u\n",
+     I_caron, c, 0237);
+    c = gs_c_decode(I_carriagereturn + gs_c_min_std_encoding_glyph, 2);
+    printf("%u (carriagereturn) looked up as %u, should be %u\n",
+     I_carriagereturn, c, 0277);
+    c = gs_c_decode(I_notdefined + gs_c_min_std_encoding_glyph, 1); /* undef'd */
+    printf("%u (notdefined) looked up as %d , should be %d\n",
+     I_notdefined, c, GS_NO_CHAR);
 
     exit(0);
 }
