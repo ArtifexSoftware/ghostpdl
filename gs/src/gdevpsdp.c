@@ -398,7 +398,7 @@ psdf_read_string_param(gs_param_list *plist, const char *key,
     switch (code = param_read_string(plist, key, &ps)) {
     case 0: {
 	uint size = ps.size;
-	byte *data = gs_alloc_bytes(mem, size, "psdf_read_string_param");
+	byte *data = gs_alloc_string(mem, size, "psdf_read_string_param");
 
 	if (data == 0)
 	    return_error(gs_error_VMerror);
