@@ -188,41 +188,6 @@ pdfdict begin
   count pdfemptycount sub
 } bind def
 
-% ------ File reading ------ %
-
-% Read the cross-reference entry for an (unresolved) object.
-% The caller must save and restore the PDFfile position if desired.
-% For invalid (free) objects, we return 0.
-/readxrefentry		% <object#> readxrefentry <objpos>
- { dup Objects exch lget
-   PDFfile exch setfileposition
-   PDFfile token pop		% object position
-   PDFfile token pop		% generation #
-   PDFfile token pop		% n or f
-   dup /n eq
-    { pop 1 add dup 255 gt
-       { Generations ltype /stringtype eq
-	  {		% Convert Generations from a string to an array.
-	    larray Generations llength lgrowto dup
-	    0 1 2 index llength 1 sub
-	     { Generations 1 index lget lput dup
-	     }
-	    for pop /Generations exch store
-	  }
-	 if
-       }
-      if
-    }
-    { /f eq
-       { pop 0 }
-       { /readxrefentry cvx /syntaxerror signalerror }
-      ifelse
-    }
-   ifelse
-		% Stack: obj# objpos 1+gen#
-   Generations 4 -1 roll 3 -1 roll lput
- } bind def
-
 % ================================ Objects ================================ %
 
 % Since we may have more than 64K objects, we have to use a 2-D array to
@@ -407,20 +372,18 @@ pdfdict begin
   valueopdict { } forall
   /endobj dup cvx
 .dicttomark readonly def
+
 /obj {			% <object#> <generation#> obj <object>
   PDFfile objopdict .pdfrun
 } bind def
+
 /endobj {		% <object#> <generation#> <object> endobj <object>
   3 1 roll
 		% Read the xref entry if we haven't yet done so.
 		% This is only needed for generation # checking.
   1 index resolved? {
     pop
-  } {
-    PDFfile fileposition
-    2 index readxrefentry pop
-    PDFoffset add PDFfile exch setfileposition
-  } ifelse
+  } if
   checkgeneration {
 		% The only global objects we bother to save are
 		% (resource) dictionaries.
@@ -443,13 +406,14 @@ pdfdict begin
                 % objects. AR ignores this. So we have to do it too.
   /obj { pop pop endobj exit } bind
 .dicttomark readonly def
+
 /resolveR {		% <object#> <generation#> resolveR <object>
   PDFDEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
   1 index resolved? {
     exch pop exch pop
   } {
     PDFfile fileposition 3 1 roll
-    1 index readxrefentry
+    1 index Objects exch lget
     3 1 roll checkgeneration {
 			% Stack: savepos objpos obj#
 	 exch PDFoffset add PDFfile exch setfileposition

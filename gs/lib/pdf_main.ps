@@ -211,9 +211,10 @@ pdfdict begin
  } bind def
 /linene { lineeq not } bind def
 
-% Read (mostly scan) the cross-reference table.
+% Read the cross-reference table.
 /readxref		% <pos> readxref <trailerdict>
- { PDFoffset add PDFfile exch setfileposition
+ {
+   PDFoffset add PDFfile exch setfileposition
 		% In some PDF files, this position actually points to
 		% white space before the xref line.  Skip over this here.
    { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
@@ -221,43 +222,59 @@ pdfdict begin
    PDFfile exch setfileposition
    0		% Initialize xref table error counter
 
-	% The PDF specification says that the 'xref' must be on a line
-	% by itself. The code here formerly used readline and linene to
-	% check this. However, Acrobat Reader only requires the line to
-	% begin with 'xref', and there are enough applications producing
-	% non-compliant PDF files that we have to do this too.
+		% The PDF specification says that the 'xref' must be on a line
+		% by itself. The code here formerly used readline and linene to
+		% check this. However, Acrobat Reader only requires the line to
+		% begin with 'xref', and there are enough applications producing
+		% non-compliant PDF files that we have to do this too.
    PDFfile pdfstring 0 4 getinterval readstring pop
    (xref) ne { /readxref cvx /syntaxerror signalerror } if
 		% Store the xref table entry position for each object.
-		% We only need to read the run headers, not every entry.
-    { PDFfile token pop		% first object # or trailer
-      dup /trailer eq { pop exit } if
-      PDFfile pdfstring readline pop
-      token pop			% entry count
-      exch pop exch
+   { PDFfile token pop		% first object # or trailer
+     dup /trailer eq { pop exit } if
+     PDFfile pdfstring readline pop
+     token pop			% entry count
+     exch pop			% remove last
 		% This section might be adding new objects:
 		% ensure that Objects and Generations are big enough.
-		% Stack: count obj#
-      2 copy add growPDFobjects
-      PDFfile fileposition 3 -1 roll
-	{ Objects 2 index lget null eq {	% later update might have set it
-	    Objects 2 index 2 index cvx lput
-	  } if exch 1 add exch
-	  PDFfile dup
-	  pdfstring readline pop pop
-	  fileposition
-	  dup 3 2 roll sub
-	  20 ne {
-	    3 2 roll 1 add 3 1 roll
-	  } if
-	}
-      repeat pop pop
-    } loop
+		% stack: <err count> <first obj> <entry count>
+     2 copy add growPDFobjects
+     PDFfile fileposition
+     3 1 roll			% stack: <err count> <filepos> <first obj> <entry count>
+     {				% stack: <err count> <file pos> <obj num>
+		% Read xref line
+       PDFfile pdfstring readline pop  
+       token pop		% object position
+       exch token pop		% generation #
+       exch token pop		% n or f
+       exch pop			% Stack: <err count> <file pos> <obj#> <loc> <gen#> <tag>
+       dup /n eq {		% xref line tag is /n
+	 pop			% pop dup of line tag
+         Objects 3 index lget null eq {	% later update might have set it
+	   setxrefentry
+         } if
+       }
+       {			% xref line tag was not /n
+	 /f ne			% verify that the tag was /f
+         { /setxrefentry cvx /syntaxerror signalerror
+	 } if
+       } ifelse
+       pop pop			% pop <obj location> and <gen num>
+		% Check if line length is 20 chars (Adobe spec.)
+       exch			% stack: <err count> <obj num> <file pos>
+       PDFfile fileposition	% <err count> <obj#> <old pos> <new pos>
+       dup 4 1 roll		% <err count> <new Pos> <obj#> <old pos> <new pos>
+       exch sub 20 ne		% <err count> <new Pos> <obj#> <bool>
+       { 3 -1 roll 1 add 3 1 roll % Increment error count
+       } if
+       1 add			% increment object number
+     } repeat
+     pop pop			% pop <file pos> <obj #>
+   } loop
    0 ne {
      (   **** Warning: length of some xref entries is not equal to 20 bytes.\n)
      pdfformaterror
    } if
-   count /pdfemptycount exch def
    PDFfile traileropdict .pdfrun
  } bind def
 
@@ -298,12 +315,14 @@ pdfdict begin
   } if		% end .writepdfmarks
   currentdict end
 } bind def
+
 /pdfopencache {		% - pdfopencache -
 	% Create and initialize some caches.
   /PageCount pdfpagecount def
   /PageNumbers PageCount 65534 .min dict def
   /PageIndex PageCount 65534 .min array def
 } bind def
+
 /pdfopenfile {		% <file> pdfopenfile <dict>
    pdfdict readonly pop		% can't do it any earlier than this
    15 dict begin
@@ -325,14 +344,34 @@ pdfdict begin
    length /PDFoffset exch def pop cvr /PDFversion exch def
    findxref
    initPDFobjects
+	% we currently have one object on stack.
+	% we doo not include it in pdfemptycount
+   count 1 sub /pdfemptycount exch def
 	% Read the last cross-reference table.
-   readxref /Trailer exch def
-   Trailer /Encrypt known
-    { pdf_process_Encrypt	% signal error
-    }
-   if
+   { readxref } .internalstopped {
+     print_xref_warning 
+     count pdfemptycount sub { pop } repeat % remove anything left by readxref
+     search_objects
+     count /pdfemptycount exch def
+     search_trailer
+     Trailer /Encrypt known {
+       pdf_process_Encrypt	% signal error
+     } if
+   } { /Trailer exch def
+     Trailer /Encrypt known {
+       pdf_process_Encrypt	% signal error
+     } if
 	% Read any previous cross-reference tables.
-   Trailer { /Prev knownoget not { exit } if readxref } loop
+     Trailer
+     { /Prev knownoget not { exit } if
+       { readxref } .internalstopped {
+         print_xref_warning
+         count pdfemptycount sub { pop } repeat	% remove anything left by readxref
+	 search_objects
+	 exit
+       } if
+     } loop
+   } ifelse
    currentdict end
  } bind def
 
