@@ -859,14 +859,6 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    if (composite) {
 		gs_font *subfont = pte->fstack.items[pte->fstack.depth].font;
 
-		if (font->WMode && pdf_is_CID_font(subfont)) {
-		    /* PDF viewers assume that X-component of a
-		       displacement vector is always half glyph width.
-		       See the PDF spec, the section "Glyph metrics in CIDFonts".
-		       Compensate it here. Bug 687753.
-		     */
-		    glyph_origin_shift.x += cw.real_width.w * scale0 / 2;
-		}
 		gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
 				      &subfont->FontMatrix, &glyph_origin_shift);
 	    }

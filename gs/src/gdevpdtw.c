@@ -246,8 +246,9 @@ pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode,
      * and use the corresponding sign.
      * fixme : implement 2 hystograms.
      */
-    psf_enumerate_bits_begin(&genum, NULL, pdfont->used, pdfont->count,
-			     GLYPH_SPACE_INDEX);
+    psf_enumerate_bits_begin(&genum, NULL, 
+			     wmode ? pdfont->u.cidfont.used2 : pdfont->used, 
+			     pdfont->count, GLYPH_SPACE_INDEX);
     memset(counts, 0, sizeof(counts));
     while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
         int i = glyph - GS_MIN_CID_GLYPH;
@@ -256,7 +257,10 @@ pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode,
 	    int width = (int)(w[i] + 0.5);
 
 	    counts[min(any_abs(width), countof(counts) - 1)]++;
-	    (*(width < 0 ? &neg_count : &pos_count))++;
+	    if (width > 0)
+		pos_count++;
+	    else if (width < 0)
+		neg_count++;
 	}
     }
     for (i = 1; i < countof(counts); ++i)
@@ -316,8 +320,9 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
      * Now write all widths different from the default one.  Currently we make no
      * attempt to optimize this: we write every width individually.
      */
-    psf_enumerate_bits_begin(&genum, NULL, pdfont->used, pdfont->count,
-			     GLYPH_SPACE_INDEX);
+    psf_enumerate_bits_begin(&genum, NULL, 
+			     wmode ? pdfont->u.cidfont.used2 : pdfont->used, 
+			     pdfont->count, GLYPH_SPACE_INDEX);
     {
 	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
 	    int cid = glyph - GS_MIN_CID_GLYPH;
@@ -347,7 +352,10 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 		    pprintd3(s, "\n%d %d %d", width, vx, vy);
 		} else
 		    pprintd1(s, "\n%d", width);
-	    } else if (width == dw)
+	    } else if (width == dw && 
+		    (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5) == 
+				(int)(pdfont->Widths[cid] / 2 + 0.5)) &&
+		    (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5) == dv))
 		continue;
 	    else {
 		if (prev >= 0)

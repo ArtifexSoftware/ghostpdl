@@ -201,6 +201,7 @@ struct pdf_font_resource_s {
  	    gs_id glyphshow_font_id;
 	    double *Widths2;	/* [count * 2] (x, y) */
 	    double *v;		/* [count] */
+	    byte *used2;	/* [(count + 7) / 8] */
 	    pdf_font_resource_t *parent;
 
 	} cidfont;

@@ -1851,21 +1851,30 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     if (glyph == GS_NO_GLYPH)
 	return get_missing_width(cfont, wmode, scale_c, pwidths);
     code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
+				    GLYPH_INFO_WIDTH0 |
 				    (GLYPH_INFO_WIDTH0 << wmode) |
 				    GLYPH_INFO_OUTLINE_WIDTHS |
 				    (GLYPH_INFO_VVECTOR0 << wmode),
 				    &info);
+    /* For CID fonts the PDF spec requires the x-component of v-vector
+       to be equal to half glyph width, and AR5 takes it from W, DW.
+       So make a compatibe data here.
+     */
     if (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode))) {
 	code = get_missing_width(cfont, wmode, scale_c, pwidths);
 	if (code < 0)
-	    return code;
-	v = pwidths->Width.v;
-	if (wmode && !(info.members & GLYPH_INFO_VVECTOR1)) {
-	    /* After get_missing_width code == 1, so store_glyph_width skips it.
-	       Thus will write DW2[0 0], so make a compatible Widths.
-	       Bug 687603. */
 	    v.y = 0;
-	}
+	else 
+	    v.y = pwidths->Width.v.y;
+	if (wmode && pdf_is_CID_font(ofont)) {
+	    pdf_glyph_widths_t widths1;
+
+	    if (get_missing_width(cfont, 0, scale_c, &widths1) < 0)
+		v.x = 0;
+	    else
+		v.x = widths1.Width.w / 2;
+	} else
+	    v.x = pwidths->Width.v.x;
     } else if (code < 0)
 	return code;
     else {
@@ -1873,15 +1882,36 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	if (code < 0)
 	    return code;
 	rcode |= code;
-	if (info.members & (GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1)) {
-	    v.x = info.v.x * scale_c;
+	if (info.members & (GLYPH_INFO_VVECTOR0 << wmode)) {
 	    v.y = info.v.y * scale_c;
 	} else
-	    v.x = v.y = 0;
+	    v.y = 0;
+	if (wmode && pdf_is_CID_font(ofont)) {
+	    if (info.members & (GLYPH_INFO_WIDTH0 << wmode)) {
+		v.x = info.width[0].x * scale_c / 2;
+	    } else {
+		pdf_glyph_widths_t widths1;
+		
+		if (get_missing_width(cfont, 0, scale_c, &widths1) < 0)
+		    v.x = 0;
+		else
+		    v.x = widths1.Width.w / 2;
+	    }
+	} else {
+	    if (info.members  & (GLYPH_INFO_VVECTOR0 << wmode)) {
+		v.x = info.v.x * scale_c;
+	    } else
+		v.x = 0;
+	}
     }
     pwidths->Width.v = v;
+#if 0
     if (code > 0)
 	pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
+#else /* Skip only if not paralel to the axis. */
+    if (code > 0 && !pdf_is_CID_font(ofont))
+	pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
+#endif
     if (cdevproc_result == NULL) {
 	code = ofont->procs.glyph_info(ofont, glyph, NULL,
 					    (GLYPH_INFO_WIDTH0 << wmode) |

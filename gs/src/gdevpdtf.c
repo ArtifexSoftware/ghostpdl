@@ -43,7 +43,7 @@ private_st_pdf_outline_fonts();
 
 private
 ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont)
-ENUM_PREFIX(st_pdf_resource, 10);
+ENUM_PREFIX(st_pdf_resource, 12);
 case 0: return ENUM_STRING(&pdfont->BaseFont);
 case 1: ENUM_RETURN(pdfont->FontDescriptor);
 case 2: ENUM_RETURN(pdfont->base_font);
@@ -93,6 +93,13 @@ case 10: switch (pdfont->FontType) {
  default:
      ENUM_RETURN(0);
 }
+case 11: switch (pdfont->FontType) {
+ case ft_CID_encrypted:
+ case ft_CID_TrueType:
+     ENUM_RETURN(pdfont->u.cidfont.used2);
+ default:
+     ENUM_RETURN(0);
+}
 ENUM_PTRS_END
 private
 RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
@@ -123,6 +130,7 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 	RELOC_VAR(pdfont->u.cidfont.v);
 	RELOC_VAR(pdfont->u.cidfont.CIDToGIDMap);
 	RELOC_VAR(pdfont->u.cidfont.parent);
+	RELOC_VAR(pdfont->u.cidfont.used2);
 	break;
     default:
 	RELOC_VAR(pdfont->u.simple.Encoding);
@@ -496,6 +504,15 @@ pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, int 
 		return code;
 	}
     }
+    if (pfres->FontType == ft_CID_encrypted || pfres->FontType == ft_CID_TrueType) {
+	if (pfres->u.cidfont.used2 != NULL) {
+	    code = pdf_resize_array(mem, (void **)&pfres->u.cidfont.used2, 
+		    sizeof(*pfres->u.cidfont.used2), 
+		    (pfres->count + 7) / 8, (chars_count + 7) / 8);
+	    if (code < 0)
+		return code;
+	}
+    }
     pfres->count = chars_count;
     return 0;
 }
@@ -839,6 +856,13 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pdfont->u.cidfont.Widths2 = NULL;
     pdfont->u.cidfont.v = NULL;
     pdfont->u.cidfont.parent = NULL;
+    /* Don' know whether the font will use WMode 1,
+       so reserve it now. */
+    pdfont->u.cidfont.used2 = gs_alloc_bytes(pdev->pdf_memory, 
+		(chars_count + 7) / 8, "pdf_font_cidfont_alloc");
+    if (pdfont->u.cidfont.used2 == NULL)
+        return_error(gs_error_VMerror);
+    memset(pdfont->u.cidfont.used2, 0, (chars_count + 7) / 8);
     /*
      * Write the CIDSystemInfo now, so we don't try to access it after
      * the font may no longer be available.
@@ -864,7 +888,7 @@ pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfon
     double *ww, *vv = 0, *ww0 = 0;
     int chars_count = pdfont->count;
 
-    *w0 = NULL;
+    *w0 = (wmode ? pdfont->Widths : NULL);
     *v = (wmode ? pdfont->u.cidfont.v : NULL);
     *w = (wmode ? pdfont->u.cidfont.Widths2 : pdfont->Widths);
     if (*w == NULL) {

@@ -448,7 +448,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 				    pte->cdevproc_callout ? pte->cdevproc_result : NULL);
 		    if (code < 0)
 			return code;
-		    w[cid] = widths.Width.w;
+		    w0[cid] = widths.Width.w;
 		}
 		if (pdsubf->u.cidfont.CIDToGIDMap != 0) {
 		    gs_font_cid2 *subfont2 = (gs_font_cid2 *)subfont;
@@ -458,6 +458,8 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		}
 	    }
 	    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
+	    if (wmode)
+		pdsubf->u.cidfont.used2[cid >> 3] |= 0x80 >> (cid & 7);
 	    if (pte->cdevproc_callout) {
 		 /* Only handle a single character because its width is stored 
 		    into pte->cdevproc_result, and process_text_modify_width neds it. 
