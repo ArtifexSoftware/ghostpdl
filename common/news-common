@@ -1,0 +1,24 @@
+   Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, NEWS-COM, describes the changes in the most recent releases of
+Aladdin's library code that is shared between all Aladdin products, in
+reverse chronological order.
+
+Version 1.02 (8/6/98)
+=====================
+
+Updates the files for compatibility with the directory structures in
+Ghostscript release 5.30.  (generic.mak, pcdefs.mak, sgi_top.mak,
+ugcc_top.mak) ****** THE Watcom AND Microsoft MAKEFILES HAVE NOT BEEN
+UPDATED, AND WILL NOT WORK. ******
+
+Brings in a few MS-DOS utility scripts.  (cp.bat, mv.bat, rm.bat)
+
+Versions before 1.02
+====================
+
+These versions were not version-numbered.  No information about them is
+available.
