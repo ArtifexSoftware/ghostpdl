@@ -283,10 +283,22 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	make_istruct(esp - 1, 0, pdht);
 	make_op_estack(esp, sethalftone_finish);
 	for (j = 0; j < count; j++) {
-	    gx_ht_order *porder =
-		(pdht->components == 0 ? &pdht->order :
-		 &pdht->components[j].corder);
+	    gx_ht_order *porder = NULL;
 
+	    if (pdht->components == 0)
+		porder = &pdht->order;
+	    else {
+		/* Find the component in pdht that matches component j in
+		   the pht; gs_sethalftone_prepare() may permute these. */
+		int k;
+		int comp_number = phtc[j].comp_number;
+		for (k = 0; k < count; k++) {
+		    if (pdht->components[k].comp_number == comp_number) {
+			porder = &pdht->components[k].corder;
+			break;
+		    }
+		}
+	    }
 	    switch (phtc[j].type) {
 	    case ht_type_spot:
 		code = zscreen_enum_init(i_ctx_p, porder,
