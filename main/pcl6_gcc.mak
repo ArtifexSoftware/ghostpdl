@@ -81,14 +81,6 @@ EXTRALIBS=-lif -lfco -ltt
 AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -DAGFA_FONT_TABLE
 endif
 
-ifeq ($(PL_SCALER), fts)
-XLDFLAGS=
-EXTRALIBS=-lfreetype
-# the second include is to find ftbuild.h referenced in the FT
-# tutorial.
-FT_INCLUDES=-I/usr/include/freetype2 -I/usr/include/freetype2/freetype/config/
-endif
-
 ifeq ($(PL_SCALER), afs)
 LDFLAGS=
 EXTRALIBS=
