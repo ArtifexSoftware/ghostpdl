@@ -362,8 +362,10 @@ gx_cpath_path_list_new(gs_memory_t *mem, gx_clip_path *pcpath, int rule,
 	if (code < 0)
 	    return code;
 	code = gx_cpath_to_path(pcpath, &pcplist->path);
-    } else 
-	code = gx_path_init_contained_shared(&pcplist->path, ppfrom, mem, cname);
+    } else {
+	gx_path_init_local(&pcplist->path, mem);
+	code = gx_path_assign_preserve(&pcplist->path, ppfrom);
+    }
     if (code < 0)
 	return code;
     pcplist->next = next;
