@@ -490,6 +490,8 @@ horiz_cursor_pos_units(
     pcl_state_t *   pcs
 )
 {
+    if ( pcs->personality == rtl )
+        dprintf( "Warning: device/resolution dependent units used\n" );
     do_horiz_motion(pargs, pcs, pcs->uom_cp);
     return 0;
 }
@@ -579,6 +581,8 @@ vert_cursor_pos_units(
     pcl_state_t *   pcs
 )
 {
+    if ( pcs->personality == rtl )
+        dprintf( "Warning: device/resolution dependent units used\n" );
     do_vertical_move(pcs, pargs, pcs->uom_cp, false, false);
 }
 

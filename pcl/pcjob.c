@@ -230,20 +230,29 @@ pcjob_do_registration(
 }
 private void
 pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	  { pcs->num_copies = pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "copies"));
-	    pcs->duplex =
-		!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "duplex"), "off") ? false : true;
-	    pcs->bind_short_edge =
-		!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "binding"), "longedge") ? false : true;
-	    pcs->back_side = false;
-	    pcs->output_bin = 1;
-          }
-        if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
-	  { pcl_args_t args;
-	    arg_set_uint(&args, 300);
-	    pcl_set_unit_of_measure(&args, pcs);
-	  }
+{	
+    if ( type & (pcl_reset_initial | pcl_reset_printer) ) { 
+        pcs->num_copies = pjl_proc_vartoi(pcs->pjls,
+            pjl_proc_get_envvar(pcs->pjls, "copies"));
+        pcs->duplex = !pjl_proc_compare(pcs->pjls,
+            pjl_proc_get_envvar(pcs->pjls, "duplex"), "off") ? false : true;
+        pcs->bind_short_edge = !pjl_proc_compare(pcs->pjls,
+            pjl_proc_get_envvar(pcs->pjls, "binding"), "longedge") ? false : true;
+        pcs->back_side = false;
+        pcs->output_bin = 1;
+    }
+    if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
+        /* rtl always uses native units for user units.  The hp
+           documentation does not say what to do if the resolution is
+           assymetric... */
+        pcl_args_t args;
+        if ( pcs->personality == rtl )
+            arg_set_uint(&args,
+                         gs_currentdevice(pcs->pgs)->HWResolution[0]);
+        else
+            arg_set_uint(&args, 300);
+        pcl_set_unit_of_measure(&args, pcs);
+    }
 }
 const pcl_init_t pcjob_init = {
   pcjob_do_registration, pcjob_do_reset, 0
