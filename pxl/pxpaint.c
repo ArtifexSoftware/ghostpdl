@@ -257,7 +257,7 @@ setup_arc(px_arc_params_t *params, const px_value_t *pbox,
 	params->origin.y = y1;
 	xr = (x2 - x1) * 0.5;
 	yr = (y2 - y1) * 0.5;
-	if ( xr == 0 || yr == 0 )
+	if ( xr == 0 && yr == 0 )
 	  { /* The bounding box is degenerate, set what we can and exit. */
 	    params->center.x = xc;
 	    params->center.y = yc;
