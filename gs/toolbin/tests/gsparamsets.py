@@ -61,3 +61,12 @@ testparamsets = [
     #_GSParamSet('pkmraw', 600, 1)
 
 ]
+
+pdftestparamsets = [
+    # color
+    _GSParamSet('ppmraw', 72, 0),
+    _GSParamSet('ppmraw', 300, 0),
+    
+    # 1-bit CMYK
+    _GSParamSet('pkmraw', 300, 0)
+]

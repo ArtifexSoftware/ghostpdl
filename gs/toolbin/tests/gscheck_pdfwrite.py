@@ -85,7 +85,7 @@ def addTests(suite, gsroot, **args):
 
 	for f in comparefiles:
 		if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
-			for params in gsparamsets.testparamsets:
+			for params in gsparamsets.pdftestparamsets:
 				add_compare_test(suite, f, params.device, params.resolution, params.banding)
 
 if __name__ == "__main__":

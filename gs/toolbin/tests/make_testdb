@@ -113,4 +113,5 @@ for f in files:
     if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
 	for params in gsparamsets.testparamsets:
             make_compare_entry(f, params.device, params.resolution, params.banding)
+	for params in gsparamsets.pdftestparamsets:
             make_pdfcompare_entry(f, params.device, params.resolution, params.banding)
