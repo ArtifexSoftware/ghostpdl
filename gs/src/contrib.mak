@@ -38,7 +38,8 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 #	ap3250	Epson AP3250 printer
 #	appledmp  Apple Dot Matrix Printer (should also work with Imagewriter)
 #	bj10e	Canon BubbleJet BJ10e
-#	bj200	Canon BubbleJet BJ200
+#	bj200	Canon BubbleJet BJ200; also good for BJ300 in ProPrinter mode
+#		(see comments in source code)
 #	bjc600   Canon Color BubbleJet BJC-600, BJC-4000 and BJC-70
 #               also good for Apple printers like the StyleWriter 2x00
 #	bjc800   Canon Color BubbleJet BJC-800
