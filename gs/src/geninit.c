@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -213,8 +213,8 @@ doit(char *line)
      * Copy the string over itself removing:
      *  - All comments not within string literals;
      *  - Whitespace adjacent to []{};
-     *  - Whitespace before /(;
-     *  - Whitespace after ).
+     *  - Whitespace before /(<;
+     *  - Whitespace after )>.
      */
     for (to = from = str; (*to = *from) != 0; ++from, ++to) {
 	switch (*from) {
@@ -224,17 +224,12 @@ doit(char *line)
 		continue;
 	    case ' ':
 	    case '\t':
-		if (to > str && !in_string && strchr(" \t[]{})", to[-1]))
+		if (to > str && !in_string && strchr(" \t>[]{})", to[-1]))
 		    --to;
 		continue;
 	    case '(':
-		if (to > str && !in_string && strchr(" \t", to[-1]))
-		    *--to = *from;
 		++in_string;
-		continue;
-	    case ')':
-		--in_string;
-		continue;
+	    case '<':
 	    case '/':
 	    case '[':
 	    case ']':
@@ -242,6 +237,9 @@ doit(char *line)
 	    case '}':
 		if (to > str && !in_string && strchr(" \t", to[-1]))
 		    *--to = *from;
+		continue;
+	    case ')':
+		--in_string;
 		continue;
 	    case '\\':
 		if (from[1] == '\\' || from[1] == '(' || from[1] == ')')
