@@ -761,7 +761,7 @@ pl_afs_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 
 	/* Get the metrics and set the cache device. */
 	code = pl_tt_get_metrics(pfont42, glyph, pfont->WMode, sbw);
-	//code = gs_type42_get_metrics(pfont42, glyph, sbw);
+
 	if ( code < 0 )
 	  return code;
 	w2[0] = sbw[2], w2[1] = sbw[3];
