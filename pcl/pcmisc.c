@@ -35,9 +35,13 @@ pcl_disable_display_functions(pcl_args_t *pargs, pcl_state_t *pcls)
 private int
 pcmisc_do_init(gs_memory_t *mem)
 {		/* Register commands */
-	DEFINE_CLASS_COMMAND_ARGS('&', 's', 'C', pcl_end_of_line_wrap, pca_neg_error|pca_big_error)
-	DEFINE_ESCAPE_ARGS('Y', pcl_enable_display_functions, pca_in_macro)
-	DEFINE_ESCAPE_ARGS('Z', pcl_disable_display_functions, pca_in_macro)
+	DEFINE_CLASS_COMMAND_ARGS('&', 's', 'C', "End of Line Wrap",
+				  pcl_end_of_line_wrap,
+				  pca_neg_error|pca_big_error)
+	DEFINE_ESCAPE_ARGS('Y', "Enable Display Functions",
+			   pcl_enable_display_functions, pca_in_macro)
+	DEFINE_ESCAPE_ARGS('Z', "Disable Display Functions",
+			   pcl_disable_display_functions, pca_in_macro)
 	return 0;
 }
 private void

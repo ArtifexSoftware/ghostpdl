@@ -184,7 +184,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	      }
 	    else
 	      plfont->resolution.x = plfont->resolution.y = 300;
-	    /* pitch_100ths is 100ths of characters per inch; */
+	    /* pitch_100ths is 100ths of points (nominal em units); */
 	    /* the Pitch value in the header is in quarter dots. */
 	    { ulong pitch_1024th_dots =
 		((ulong)pl_get_uint16(pfh->Pitch) << 8) + pfh->PitchExtended;
@@ -194,9 +194,9 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 		}
 	      else
 		{ plfont->params.pitch_100ths = (uint)
-		    (plfont->resolution.x /* dots/inch */
-		     / (pitch_1024th_dots / 1024.0) /* dots/char => char/in */
-		     * 100);
+		    (pitch_1024th_dots / 1024.0	/* dots */
+		     / plfont->resolution.x	/* => inches */
+		     * 7200.0);
 		}
 	    }
 	    plfont->params.height_4ths = pl_get_uint16(pfh->Height);
@@ -331,12 +331,19 @@ private int
 pcsfont_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
-	  {'c', 'D', {pcl_assign_font_id, pca_neg_error|pca_big_error}},
-	  {'c', 'F', {pcl_font_control, pca_neg_error|pca_big_error}},
+	  {'c', 'D',
+	     PCL_COMMAND("Assign Font ID", pcl_assign_font_id,
+			 pca_neg_error|pca_big_error)},
+	  {'c', 'F',
+	     PCL_COMMAND("Font Control", pcl_font_control,
+			 pca_neg_error|pca_big_error)},
 	END_CLASS
-	DEFINE_CLASS_COMMAND_ARGS(')', 's', 'W', pcl_font_header, pca_bytes)
-	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'E', pcl_character_code, pca_neg_error|pca_big_ok)
-	DEFINE_CLASS_COMMAND_ARGS('(', 's', 'W', pcl_character_data, pca_bytes)
+	DEFINE_CLASS_COMMAND_ARGS(')', 's', 'W', "Font Header",
+				  pcl_font_header, pca_bytes)
+	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'E', "Character Code",
+				  pcl_character_code, pca_neg_error|pca_big_ok)
+	DEFINE_CLASS_COMMAND_ARGS('(', 's', 'W', "Character Data",
+				  pcl_character_data, pca_bytes)
 	return 0;
 }
 private void

@@ -6,6 +6,49 @@
 This file, NEWS-5, describes the changes in the most recent releases of
 Aladdin's PCL 5 code, in reverse chronological order.
 
+Version 0.21 (4/1/97)
+=====================
+
+This fileset, like many to come, mostly fixes bugs.
+
+(LPD) Fixes bugs:
+	- White rectangles weren't drawn properly (they could be drawn with
+random data or not at all).  (pcstate.h, pcrect.c)
+	- Re-entering PCL from HP-GL/2 didn't copy back the cursor position
+if requested.  (rtmisc.c)
+	- Shading and pattern filling weren't implemented in PCL mode!
+(pcstate.h, pcdraw.c)
+	- The initial cursor position didn't reflect the initial top margin.
+(pcl.mak, pcursor.c)
+	- Setting the PCL CTM didn't take the left offset of the logical
+page into account.  (We aren't sure what we did is correct.)  (pcdraw.c)
+	- The definition of paper sizes used long and int rather than coord.
+(pcstate.h)
+	- The HP-GL/2 FN command incorrectly set the primary rather than the
+secondary font.  (pgchar.c)
+	- Some private procedures were declared 'static' rather than
+'private'.  (pgchar.c)
+	- Bitmap fonts were rendered upside-down.  (pcfont.c)
+	- If the current font didn't define the 'space' character, spaces
+were ignored, rather than moving by the HMI.  (pcfont.c, pcursor.c)
+	- Scalable fonts weren't scaled correctly.  (pcfont.c)
+	- Text didn't properly select the current color and pattern.
+(pcfont.c)
+	- Switching fonts didn't reset the HMI.  (pcdraw.h, pcstate.h,
+pcursor.c, pcdraw.c, pcfont.c, pcpage.c)
+	- The pitch value of bitmap fonts was computed incorrectly.
+(pcsfont.c)
+
+(LPD) Adds command names to PCL command tracing output.  (pcommand.h, pc*.c,
+rt*.c)
+
+(HAS) ChangeLog:
+
+* pgstate.h,pginit.c,pgframe.c,pginit.c,pgframe.c,*.[ch].
+coordinate changes for pcl picture frame and plot size.
+
+* pgchar.c: changed static function declarations to private.
+
 Version 0.20 (3/26/97)
 ======================
 

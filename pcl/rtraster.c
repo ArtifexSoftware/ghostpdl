@@ -642,14 +642,32 @@ private int
 rtraster_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
-	  {'t', 'R', {pcl_raster_graphics_resolution, pca_neg_error|pca_big_error|pca_raster_graphics}},
-	  {'r', 'T', {pcl_raster_height, pca_neg_error|pca_big_error|pca_raster_graphics}},
-	  {'r', 'S', {pcl_raster_width, pca_neg_error|pca_big_error|pca_raster_graphics}},
-	  {'r', 'A', {pcl_start_raster_graphics, pca_neg_error|pca_big_error}},
-	  {'b', 'M', {pcl_set_compression_method, pca_neg_ignore|pca_big_ignore|pca_raster_graphics}},
-	  {'b', 'W', {pcl_transfer_raster_data, pca_bytes|pca_raster_graphics}},
-	  {'b', 'Y', {pcl_raster_y_offset, pca_neg_ok|pca_big_clamp|pca_raster_graphics}},
-	  {'r', 'C', {pcl_end_clear_raster_graphics, pca_raster_graphics}},
+	  {'t', 'R',
+	     PCL_COMMAND("Raster Graphics Resolution",
+			 pcl_raster_graphics_resolution,
+			 pca_neg_error|pca_big_error|pca_raster_graphics)},
+	  {'r', 'T',
+	     PCL_COMMAND("Raster Height", pcl_raster_height,
+			 pca_neg_error|pca_big_error|pca_raster_graphics)},
+	  {'r', 'S',
+	     PCL_COMMAND("Raster Width", pcl_raster_width,
+			 pca_neg_error|pca_big_error|pca_raster_graphics)},
+	  {'r', 'A',
+	     PCL_COMMAND("Start Raster Graphics", pcl_start_raster_graphics,
+			 pca_neg_error|pca_big_error)},
+	  {'b', 'M',
+	     PCL_COMMAND("Set Compression Method", pcl_set_compression_method,
+			 pca_neg_ignore|pca_big_ignore|pca_raster_graphics)},
+	  {'b', 'W',
+	     PCL_COMMAND("Transfer Raster Data", pcl_transfer_raster_data,
+			 pca_bytes|pca_raster_graphics)},
+	  {'b', 'Y',
+	     PCL_COMMAND("Raster Y Offset", pcl_raster_y_offset,
+			 pca_neg_ok|pca_big_clamp|pca_raster_graphics)},
+	  {'r', 'C',
+	     PCL_COMMAND("End Clear Raster Graphics",
+			 pcl_end_clear_raster_graphics,
+			 pca_raster_graphics)},
 	END_CLASS
 	return 0;
 }
@@ -683,9 +701,16 @@ private int
 rtraster_pcl_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
-	  {'r', 'F', {pcl_raster_graphics_presentation, pca_neg_error|pca_big_error|pca_raster_graphics}},
-	  {'b', 'S', {pcl_seed_row_source, pca_raster_graphics}},
-	  {'r', 'B', {pcl_end_raster_graphics, pca_raster_graphics}},
+	  {'r', 'F',
+	     PCL_COMMAND("Raster Graphics Presentation",
+			 pcl_raster_graphics_presentation,
+			 pca_neg_error|pca_big_error|pca_raster_graphics)},
+	  {'b', 'S',
+	     PCL_COMMAND("Seed Row Source", pcl_seed_row_source,
+			 pca_raster_graphics)},
+	  {'r', 'B',
+	     PCL_COMMAND("End Raster Graphics", pcl_end_raster_graphics,
+			 pca_raster_graphics)},
 	END_CLASS
 	return 0;
 }

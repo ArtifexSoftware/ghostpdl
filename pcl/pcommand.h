@@ -120,6 +120,12 @@ pcl_command_proc(pcl_plain_char);
 typedef struct {
   pcl_command_proc_t proc;
   byte/*pcl_command_action_t*/ actions;
+#ifdef DEBUG
+  const char *cname;
+#  define PCL_COMMAND(cname, proc, actions) { proc, actions, cname }
+#else
+#  define PCL_COMMAND(cname, proc, actions) { proc, actions }
+#endif
 } pcl_command_definition_t;
 /* Define actions associated with a command. */
 typedef enum {
@@ -156,26 +162,26 @@ typedef struct {
 /* Register (a) command definition(s). */
 void pcl_define_control_command(P2(int/*char*/,
 				   const pcl_command_definition_t *));
-#define DEFINE_CONTROL(chr, proc)\
-{ static const pcl_command_definition_t defn_ = { proc };\
+#define DEFINE_CONTROL(chr, cname, proc)\
+{ static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, 0);\
   pcl_define_control_command(chr, &defn_);\
 }
 void pcl_define_escape_command(P2(int/*char*/,
 				  const pcl_command_definition_t *));
-#define DEFINE_ESCAPE_ARGS(chr, proc, acts)\
-{ static const pcl_command_definition_t defn_ = { proc, acts };\
+#define DEFINE_ESCAPE_ARGS(chr, cname, proc, acts)\
+{ static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, acts);\
   pcl_define_escape_command(chr, &defn_);\
 }
-#define DEFINE_ESCAPE(chr, proc)\
-  DEFINE_ESCAPE_ARGS(chr, proc, 0)
+#define DEFINE_ESCAPE(chr, cname, proc)\
+  DEFINE_ESCAPE_ARGS(chr, cname, proc, 0)
 void pcl_define_class_command(P4(int/*char*/, int/*char*/, int/*char*/,
 				 const pcl_command_definition_t *));
-#define DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, proc, acts)\
-{ static const pcl_command_definition_t defn_ = { proc, acts };\
+#define DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, cname, proc, acts)\
+{ static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, acts);\
   pcl_define_class_command(cls, group, chr, &defn_);\
 }
-#define DEFINE_CLASS_COMMAND(cls, group, chr, proc)\
-  DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, proc, 0)
+#define DEFINE_CLASS_COMMAND(cls, group, chr, cname, proc)\
+  DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, cname, proc, 0)
 void pcl_define_class_commands(P2(int/*char*/,
 				  const pcl_grouped_command_definition_t *));
 #define DEFINE_CLASS(cls)\

@@ -187,12 +187,26 @@ private int
 pcprint_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
-	  {'v', 'O', {pcl_pattern_transparency_mode, pca_neg_ignore|pca_big_ignore}},
-	  {'c', 'G', {pcl_pattern_id, pca_neg_ignore|pca_big_ignore}},
-	  {'v', 'T', {pcl_select_pattern, pca_neg_ignore|pca_big_ignore}},
-	  {'c', 'W', {pcl_user_defined_pattern, pca_bytes}},
-	  {'p', 'R', {pcl_set_pattern_reference_point, pca_neg_ignore|pca_big_ignore}},
-	  {'c', 'Q', {pcl_pattern_control, pca_neg_ignore|pca_big_ignore}},
+	  {'v', 'O',
+	     PCL_COMMAND("Pattern Transparency Mode",
+			 pcl_pattern_transparency_mode,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'c', 'G',
+	     PCL_COMMAND("Pattern ID", pcl_pattern_id,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'v', 'T',
+	     PCL_COMMAND("Select Pattern", pcl_select_pattern,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'c', 'W',
+	     PCL_COMMAND("User Defined Pattern", pcl_user_defined_pattern,
+			 pca_bytes)},
+	  {'p', 'R',
+	     PCL_COMMAND("Set Pattern Reference Point",
+			 pcl_set_pattern_reference_point,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'c', 'Q',
+	     PCL_COMMAND("Pattern Control", pcl_pattern_control,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
 	return 0;
 }

@@ -9,6 +9,7 @@
 #include "pgmand.h"
 #include "gsrop.h"
 #include "pgdraw.h" /* for hpgl_add_pcl_point_to_path() */
+
 /* ---------------- Chapter 4 ---------------- */
 
 /* Import the table of pointers to initialization data. */
@@ -83,9 +84,15 @@ int /* ESC % <enum> A */
 rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 {	bool b = int_arg(pargs) & 1;
 
-	/**** PARTIAL IMPLEMENTATION ****/
 	if ( pcls->parse_data )
-	  { gs_free_object(pcls->memory, pcls->parse_data,
+	  { /* We were in HP-GL/2 mode.  Conditionally copy back */
+	    /* the cursor position. */
+	    if ( b )
+	      { /****** WRONG, COORDINATE SYSTEMS ARE DIFFERENT ******/
+		pcls->cap.x = pcls->g.pos.x;
+	        pcls->cap.y = pcls->g.pos.y;
+	      }
+	    gs_free_object(pcls->memory, pcls->parse_data,
 			   "hpgl parser data(enter pcl mode)");
 	    pcls->parse_data = 0;
 	  }
@@ -128,21 +135,35 @@ private int
 rtmisc_do_init(gs_memory_t *mem)
 {		/* Register commands */
 		/* Chapter 4 */
-	DEFINE_ESCAPE('E', rtl_printer_reset)
+	DEFINE_ESCAPE('E', "Printer Reset", rtl_printer_reset)
 	DEFINE_CLASS('%')
-	  {0, 'X', {rtl_exit_language, pca_neg_ok|pca_big_error}},
+	  {0, 'X',
+	     PCL_COMMAND("Exit Language", rtl_exit_language,
+			 pca_neg_ok|pca_big_error)},
 		/* Chapter 18 */
-	  {0, 'B', {rtl_enter_hpgl_mode, pca_neg_ok|pca_big_ok|pca_in_macro}},
-	  {0, 'A', {rtl_enter_pcl_mode, pca_neg_ok|pca_big_ok|pca_in_macro}},
+	  {0, 'B',
+	     PCL_COMMAND("Enter HP-GL/2 Mode", rtl_enter_hpgl_mode,
+			 pca_neg_ok|pca_big_ok|pca_in_macro)},
+	  {0, 'A',
+	     PCL_COMMAND("Enter PCL Mode", rtl_enter_pcl_mode,
+			 pca_neg_ok|pca_big_ok|pca_in_macro)},
 	END_CLASS
 		/* Chapter 13 */
 	DEFINE_CLASS('*')
-	  {'v', 'N', {pcl_source_transparency_mode, pca_neg_ignore|pca_big_ignore}},
+	  {'v', 'N',
+	     PCL_COMMAND("Source Transparency Mode",
+			 pcl_source_transparency_mode,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
 		/* Comparison Guide */
 	DEFINE_CLASS('&')
-	  {'b', 'W', {pcl_appletalk_configuration, pca_bytes}},
-	  {'a', 'N', {pcl_negative_motion, pca_neg_error|pca_big_error}},
+	  {'b', 'W',
+	     PCL_COMMAND("Appletalk Configuration",
+			 pcl_appletalk_configuration,
+			 pca_bytes)},
+	  {'a', 'N',
+	     PCL_COMMAND("Negative Motion", pcl_negative_motion,
+			 pca_neg_error|pca_big_error)},
 	END_CLASS
 	return 0;
 }

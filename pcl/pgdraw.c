@@ -178,12 +178,8 @@ hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
 			       pgls->g.picture_frame.anchor_point.y));
 
 	{
-	  /* picture frame dimensinsions in plu */
-	  hpgl_real_t pic_w = (pgls->g.picture_frame.width);
-	  hpgl_real_t pic_h = (pgls->g.picture_frame.height);
-
 	  /* move the origin */
-	  hpgl_call(gs_translate(pgls->pgs, 0, (pic_h)));
+	  hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
 
 	  hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
 
@@ -191,16 +187,24 @@ hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
 	  switch (pgls->g.rotation)
 	    {
 	    case 0 :
-	      hpgl_call(gs_translate(pgls->pgs, 0, 0));
+	      hpgl_call(gs_translate(pgls->pgs, 
+				     0, 
+				     0));
 	      break;
 	    case 90 : 
-	      hpgl_call(gs_translate(pgls->pgs, 0, -(pic_h)));
+	      hpgl_call(gs_translate(pgls->pgs, 
+				     0, 
+				     pgls->g.picture_frame_height));
 	      break;
 	    case 180 :
-	      hpgl_call(gs_translate(pgls->pgs, -(pic_w), -(pic_h)));
+	      hpgl_call(gs_translate(pgls->pgs, 
+				     -(pgls->g.picture_frame_width), 
+				     -(pgls->g.picture_frame_height)));
 	      break;
 	    case 270 :
-	      hpgl_call(gs_translate(pgls->pgs, -(pic_w), 0));
+	      hpgl_call(gs_translate(pgls->pgs, 
+				     -(pgls->g.picture_frame_width), 
+				     0));
 	      break;
 	      }
 	}
@@ -212,17 +216,17 @@ hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
 	   assymetric !!  */
 
 	/* if any of these are zero something is wrong */
-        if ( (pgls->g.picture_frame.height == 0.0) ||
-	     (pgls->g.picture_frame.width == 0.0) ||
-	     (pgls->g.plot_width == 0.0) ||
-	     (pgls->g.plot_height == 0.0) )
+        if ( (pgls->g.picture_frame_height == 0) ||
+	     (pgls->g.picture_frame_width == 0) ||
+	     (pgls->g.plot_width == 0) ||
+	     (pgls->g.plot_height == 0) )
 	  return 1;
 	
 	hpgl_call(gs_scale(pgls->pgs, 
-			   (pgls->g.picture_frame.height /
-			    pgls->g.plot_height),
-			   (pgls->g.picture_frame.width /
-			    pgls->g.plot_width)));
+			   ((hpgl_real_t)pgls->g.picture_frame_height /
+			    (hpgl_real_t)pgls->g.plot_height),
+			   ((hpgl_real_t)pgls->g.picture_frame_width /
+			    (hpgl_real_t)pgls->g.plot_width)));
 
 	return 0;
 
@@ -300,7 +304,7 @@ hpgl_map_fill_type(hpgl_state_t *pgls)
 	  case hpgl_fill_pcl_crosshatch : return pcpt_cross_hatch;
 	  case hpgl_fill_shaded : return pcpt_shading;
 	  case hpgl_fill_pcl_user_defined : 
-	    dprintf("No key mapping support flling back to solid");
+	    dprintf("No key mapping support falling back to solid\n");
 	    break;
 	  default : 
 	    dprintf1("Unsupported fill type %d falling back to solid\n",
@@ -468,20 +472,26 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 		     floatp radius, floatp start_angle, floatp sweep_angle,
 		     floatp chord_angle)
 {
-	int num_chords=
-	  hpgl_compute_number_of_chords(sweep_angle, chord_angle);
+	int num_chords;
 	floatp start_angle_radians = start_angle * (M_PI/180.0);
 	floatp chord_angle_radians = chord_angle * (M_PI/180.0);
 	int i;
 	floatp arccoord_x, arccoord_y;
-	  
+
+	/* compute the number of chords */
+	num_chords = hpgl_compute_number_of_chords(sweep_angle, chord_angle);
+
+	/* adjust the sweep angle to be an even multiple of the chord angle */
+	sweep_angle = hpgl_adjust_arc_angle(num_chords, chord_angle);
+
+	/* recompute the number of chords with the adjusted sweep */
+	num_chords = hpgl_compute_number_of_chords(sweep_angle, chord_angle);
 	hpgl_compute_arc_coords(radius, center_x, center_y, 
 				start_angle_radians, 
 				&arccoord_x, &arccoord_y);
 	hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
 					 (pgls->g.pen_down) ? 
 					 gs_lineto : gs_moveto));
-	num_chords--;
 	/* HAS - pen up/down is invariant in the loop */
 	for ( i = 0; i < num_chords; i++ ) 
 	  {

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -259,17 +259,35 @@ rtcolor_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
 		/* Chapter 2 */
-	  {'r', 'U', {pcl_simple_color, pca_neg_ok|pca_big_error}},
-	  {'v', 'W', {pcl_configure_image_data, pca_bytes}},
+	  {'r', 'U',
+	     PCL_COMMAND("Simple Color", pcl_simple_color,
+			 pca_neg_ok|pca_big_error)},
+	  {'v', 'W',
+	     PCL_COMMAND("Configure Image Data", pcl_configure_image_data,
+			 pca_bytes)},
 		/* Chapter 3 */
-	  {'p', 'P', {pcl_push_pop_palette}},
-	  {'v', 'S', {pcl_foreground_color, pca_neg_error|pca_big_error}},
-	  {'v', 'A', {pcl_color_component_1, pca_neg_ok|pca_big_error}},
-	  {'v', 'B', {pcl_color_component_2, pca_neg_ok|pca_big_error}},
-	  {'v', 'C', {pcl_color_component_3, pca_neg_ok|pca_big_error}},
-	  {'v', 'I', {pcl_assign_color_index, pca_neg_ignore|pca_big_ignore}},
+	  {'p', 'P',
+	     PCL_COMMAND("Push/Pop Palette", pcl_push_pop_palette,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'v', 'S',
+	     PCL_COMMAND("Foreground Color", pcl_foreground_color,
+			 pca_neg_error|pca_big_error)},
+	  {'v', 'A',
+	     PCL_COMMAND("Color Component 1", pcl_color_component_1,
+			 pca_neg_ok|pca_big_error)},
+	  {'v', 'B',
+	     PCL_COMMAND("Color Component 2", pcl_color_component_2,
+			 pca_neg_ok|pca_big_error)},
+	  {'v', 'C',
+	     PCL_COMMAND("Color Component 3", pcl_color_component_3,
+			 pca_neg_ok|pca_big_error)},
+	  {'v', 'I',
+	     PCL_COMMAND("Assign Color Index", pcl_assign_color_index,
+			 pca_neg_ignore|pca_big_ignore)},
 		/* Chapter 4 */
-	  {'t', 'J', {pcl_render_algorithm, pca_neg_ignore|pca_big_ignore}},
+	  {'t', 'J',
+	     PCL_COMMAND("Render Algorithm", pcl_render_algorithm,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
 	return 0;
 }

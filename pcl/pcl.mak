@@ -81,7 +81,7 @@ pgstate_h=$(PCLSRC)pgstate.h $(gslparam_h) $(gsuid_h) $(gstypes_h) $(gxbitmap_h)
 pcommand_h=$(PCLSRC)pcommand.h $(gserror_h) $(gserrors_h) $(scommon_h)
 pcdraw_h=$(PCLSRC)pcdraw.h
 pcparam_h=$(PCLSRC)pcparam.h $(gsparam_h)
-pcstate_h=$(PCLSRC)pcstate.h $(gsiparam_h) $(gsmatrix_h) $(pldict_h) $(plfont_h) $(pgstate_h)
+pcstate_h=$(PCLSRC)pcstate.h $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h) $(pldict_h) $(plfont_h) $(pgstate_h)
 
 $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c $(std_h)\
  $(gsmatrix_h) $(gsmemory_h) $(gsdevice_h) $(gstypes_h)\
@@ -90,7 +90,8 @@ $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c $(std_h)\
 	$(PCLCCC) $(PCLSRC)pcommand.c $(PCLO_)pcommand.$(OBJ)
 
 $(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c $(std_h)\
- $(gscoord_h) $(gsdcolor_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
+ $(gscolor2_h) $(gscoord_h) $(gscspace_h) $(gsdcolor_h)\
+ $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
  $(gxfixed_h) $(gxpath_h)\
  $(pcdraw_h) $(pcommand_h) $(pcfont_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcdraw.c $(PCLO_)pcdraw.$(OBJ)
@@ -131,7 +132,7 @@ rtraster_h=$(PCLSRC)rtraster.h
 # Chapters 4, 13, 18, and Comparison Guide
 $(PCLOBJ)rtmisc.$(OBJ): $(PCLSRC)rtmisc.c $(std_h)\
  $(gsmemory_h) $(gsrop_h)\
- $(pgmand_h)
+ $(pgdraw_h) $(pgmand_h)
 	$(PCLCCC) $(PCLSRC)rtmisc.c $(PCLO_)rtmisc.$(OBJ)
 
 # Chapter 6
@@ -222,7 +223,8 @@ $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c $(std_h)\
 	$(PCLCCC) $(PCLSRC)pcursor.c $(PCLO_)pcursor.$(OBJ)
 
 # Chapter 8
-$(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c $(std_h) $(stdio__h)\
+$(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c\
+ $(memory__h) $(stdio__h) $(string__h) $(gp_h)\
  $(gschar_h) $(gscoord_h) $(gsfont_h) $(gsmatrix_h) $(gspaint_h) $(gspath_h)\
  $(gsstate_h) $(gsutil_h)\
  $(plvalue_h)\
@@ -230,7 +232,7 @@ $(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c $(std_h) $(stdio__h)\
 	$(PCLCCC) $(PCLSRC)pcfont.c $(PCLO_)pcfont.$(OBJ)
 
 # Chapter 10
-$(PCLOBJ)pcsymbol.$(OBJ): $(PCLSRC)pcsymbol.c $(std_h)\
+$(PCLOBJ)pcsymbol.$(OBJ): $(PCLSRC)pcsymbol.c $(stdio__h)\
  $(plvalue_h)\
  $(pcommand_h) $(pcfont_h) $(pcstate_h) $(pcsymbol_h)
 	$(PCLCCC) $(PCLSRC)pcsymbol.c $(PCLO_)pcsymbol.$(OBJ)
@@ -243,13 +245,13 @@ $(PCLOBJ)pcsfont.$(OBJ): $(PCLSRC)pcsfont.c $(stdio__h)\
 	$(PCLCCC) $(PCLSRC)pcsfont.c $(PCLO_)pcsfont.$(OBJ)
 
 # Chapter 12
-$(PCLOBJ)pcmacros.$(OBJ): $(PCLSRC)pcmacros.c $(std_h)\
+$(PCLOBJ)pcmacros.$(OBJ): $(PCLSRC)pcmacros.c $(stdio__h)\
  $(pcommand_h) $(pcparse_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcmacros.c $(PCLO_)pcmacros.$(OBJ)
 
 # Chapter 13
 # Some of these are in rtmisc.c.
-$(PCLOBJ)pcprint.$(OBJ): $(PCLSRC)pcprint.c $(std_h)\
+$(PCLOBJ)pcprint.$(OBJ): $(PCLSRC)pcprint.c $(stdio__h)\
  $(gsbitops_h) $(gscoord_h) $(gsmatrix_h) $(gsrop_h) $(gsstate_h)\
  $(gxbitmap_h)\
  $(plvalue_h)\
@@ -258,7 +260,7 @@ $(PCLOBJ)pcprint.$(OBJ): $(PCLSRC)pcprint.c $(std_h)\
 
 # Chapter 14
 $(PCLOBJ)pcrect.$(OBJ): $(PCLSRC)pcrect.c $(math__h)\
- $(gspaint_h) $(gspath_h) $(gspath2_h)\
+ $(gspaint_h) $(gspath_h) $(gspath2_h) $(gsrop_h)\
  $(pcdraw_h) $(pcommand_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcrect.c $(PCLO_)pcrect.$(OBJ)
 
@@ -281,15 +283,18 @@ PCL5_OPS2=$(PCLOBJ)pcsymbol.$(OBJ) $(PCLOBJ)pcsfont.$(OBJ) $(PCLOBJ)pcmacros.$(O
 PCL5_OPS3=$(PCLOBJ)pcrect.$(OBJ) $(PCLOBJ)pcstatus.$(OBJ) $(PCLOBJ)pcmisc.$(OBJ)
 PCL5_OPS=$(PCL5_OPS1) $(PCL5_OPS2) $(PCL5_OPS3)
 
+# Note: we have to initialize the cursor after initializing the logical
+# page dimensions, so we do it last.  This is a hack.
 $(PCLOBJ)pcl5.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5_OPS) $(PCLOBJ)pcl5base.dev $(PCLOBJ)rtlbase.dev
 	$(SETMOD) $(PCLOBJ)pcl5 $(PCL5_OPS1)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS2)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS3)
 	$(ADDMOD) $(PCLOBJ)pcl5 -include $(PCLOBJ)rtlbase
-	$(ADDMOD) $(PCLOBJ)pcl5 -init pcjob pcpage pcursor pcfont
+	$(ADDMOD) $(PCLOBJ)pcl5 -init pcjob pcpage pcdraw pcfont
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcsymbol pcsfont pcmacros
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcprint pcrect rtraster_pcl pcstatus
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcmisc
+	$(ADDMOD) $(PCLOBJ)pcl5 -init   pcursor
 
 #### PCL5c commands
 # These are organized by chapter # in the PCL 5 Color Technical Reference
@@ -300,7 +305,8 @@ $(PCLOBJ)pcl5.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5_OPS) $(PCLOBJ)pcl5base.dev $(P
 
 # Chapter 3
 # Some of these are in rtcolor.c.
-$(PCLOBJ)pccpalet.$(OBJ): $(PCLSRC)pccpalet.c $(std_h) $(pcommand_h) $(pcstate_h)
+$(PCLOBJ)pccpalet.$(OBJ): $(PCLSRC)pccpalet.c $(stdio__h)\
+ $(pcommand_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pccpalet.c $(PCLO_)pccpalet.$(OBJ)
 
 # Chapter 4

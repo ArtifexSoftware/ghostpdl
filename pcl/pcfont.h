@@ -15,6 +15,10 @@
  * set == -1 means all. */
 void pcl_decache_font(P2(pcl_state_t *pcls, int set));
 
+/* Recompute the font if necessary. */
+/* This is exported for recomputing the HMI. */
+int pcl_recompute_font(P1(pcl_state_t *pcls));
+
 /* Do any underlining just before a break in motion (vertical motion or
  * negative horizontal motion)... */
 #define	pcl_break_underline(pcls)	if ( pcls->underline_enabled ) \

@@ -141,9 +141,14 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcls)
 private int
 pcsymbol_do_init(gs_memory_t *mem)
 {		/* Register commands */
-	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'R', pcl_symbol_set_id_code, pca_neg_error|pca_big_error)
-	DEFINE_CLASS_COMMAND_ARGS('(', 'f', 'W', pcl_define_symbol_set, pca_bytes)
-	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'S', pcl_symbol_set_control, pca_neg_ignore|pca_big_ignore)
+	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'R', "Symbol Set ID Code",
+				  pcl_symbol_set_id_code,
+				  pca_neg_error|pca_big_error)
+	DEFINE_CLASS_COMMAND_ARGS('(', 'f', 'W', "Define Symbol Set",
+				  pcl_define_symbol_set, pca_bytes)
+	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'S', "Symbol Set Control",
+				  pcl_symbol_set_control,
+				  pca_neg_ignore|pca_big_ignore)
 	return 0;
 }
 

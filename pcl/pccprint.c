@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -40,8 +40,12 @@ private int
 pccprint_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
-	  {'l', 'O', {pcl_logical_operation, pca_neg_error|pca_big_error}},
-	  {'l', 'R', {pcl_pixel_placement, pca_neg_ignore|pca_big_ignore}},
+	  {'l', 'O',
+	     PCL_COMMAND("Logical Operation", pcl_logical_operation,
+			 pca_neg_error|pca_big_error)},
+	  {'l', 'R',
+	     PCL_COMMAND("Pixel Placement", pcl_pixel_placement,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
 	return 0;
 }

@@ -42,6 +42,11 @@ void pcl_set_cursor_y(P3(pcl_state_t *pcls, coord cy, bool to_margins));
 /* Set the HMI. */
 void pcl_set_hmi(P3(pcl_state_t *pcls, coord hmi, bool explicit));
 
+/* Get the HMI.  This may require recomputing it from the font. */
+#define pcl_hmi(pcls)\
+  ((pcls)->hmi_set == hmi_not_set ? pcl_updated_hmi(pcls) : pcls->hmi)
+coord pcl_updated_hmi(P1(pcl_state_t *pcls));
+
 /* ------ Color / pattern ------ */
 
 /* Define the header of a pattern definition, */

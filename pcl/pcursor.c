@@ -54,7 +54,7 @@ pcl_do_LF(pcl_state_t *pcls)
 
 int /* ESC & a <cols> C */
 pcl_horiz_cursor_pos_columns(pcl_args_t *pargs, pcl_state_t *pcls)
-{	float x = float_arg(pargs) * pcls->hmi;
+{	float x = float_arg(pargs) * pcl_hmi(pcls);
 	pcl_set_cursor_x(pcls,
 			 (coord)(arg_is_signed(pargs) ? pcls->cap.x + x : x),
 			 false);
@@ -89,12 +89,7 @@ pcl_CR(pcl_args_t *pargs, pcl_state_t *pcls)
 	return code;
 }
 
-int /* SP */
-pcl_SP(pcl_args_t *pargs, pcl_state_t *pcls)
-{	/**** DOESN'T HANDLE PRINTABLE SPACES ****/
-	pcl_set_cursor_x(pcls, pcls->cap.x + pcls->hmi, true);
-	return 0;
-}
+/* SP is handled in pcl_text */
 
 int /* BS */
 pcl_BS(pcl_args_t *pargs, pcl_state_t *pcls)
@@ -107,9 +102,10 @@ pcl_BS(pcl_args_t *pargs, pcl_state_t *pcls)
 
 int /* HT */
 pcl_HT(pcl_args_t *pargs, pcl_state_t *pcls)
-{	if ( pcls->hmi == 0 )
+{	coord hmi = pcl_hmi(pcls);
+	if ( hmi == 0 )
 	  return 0;
-	{ coord tab = pcls->hmi * 8;
+	{ coord tab = hmi * 8;
 	  pcl_set_cursor_x(pcls, (pcls->cap.x / tab + 1) * tab, true);
 	}
 	return 0;
@@ -203,29 +199,51 @@ private int
 pcursor_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('&')
-	  {'a', 'C', {pcl_horiz_cursor_pos_columns, pca_neg_ok|pca_big_ok}},
-	  {'a', 'H', {pcl_horiz_cursor_pos_decipoints, pca_neg_ok|pca_big_ok}},
+	  {'a', 'C',
+	     PCL_COMMAND("Horizontal Cursor Position Columns",
+			 pcl_horiz_cursor_pos_columns,
+			 pca_neg_ok|pca_big_ok)},
+	  {'a', 'H',
+	     PCL_COMMAND("Horizontal Cursor Position Decipoints",
+			 pcl_horiz_cursor_pos_decipoints,
+			 pca_neg_ok|pca_big_ok)},
 	END_CLASS
 	DEFINE_CLASS('*')
-	  {'p', 'X', {pcl_horiz_cursor_pos_units, pca_neg_ok|pca_big_ok}},
+	  {'p', 'X',
+	     PCL_COMMAND("Horizontal Cursor Position Units",
+			 pcl_horiz_cursor_pos_units,
+			 pca_neg_ok|pca_big_ok)},
 	END_CLASS
-	DEFINE_CONTROL(CR, pcl_CR)
-	DEFINE_CONTROL(SP, pcl_SP)
-	DEFINE_CONTROL(BS, pcl_BS)
-	DEFINE_CONTROL(HT, pcl_HT)
+	DEFINE_CONTROL(CR, "CR", pcl_CR)
+	/*DEFINE_CONTROL(SP, "SP", pcl_SP)*/	/* handled in pcl_text */
+	DEFINE_CONTROL(BS, "BS", pcl_BS)
+	DEFINE_CONTROL(HT, "HT", pcl_HT)
 	DEFINE_CLASS('&')
-	  {'a', 'R', {pcl_vert_cursor_pos_rows, pca_neg_ok|pca_big_ok}},
-	  {'a', 'V', {pcl_vert_cursor_pos_decipoints, pca_neg_ok|pca_big_ok}},
+	  {'a', 'R',
+	     PCL_COMMAND("Vertical Cursor Position Rows",
+			 pcl_vert_cursor_pos_rows,
+			 pca_neg_ok|pca_big_ok)},
+	  {'a', 'V',
+	     PCL_COMMAND("Vertical Cursor Position Decipoints",
+			 pcl_vert_cursor_pos_decipoints,
+			 pca_neg_ok|pca_big_ok)},
 	END_CLASS
 	DEFINE_CLASS('*')
-	  {'p', 'Y', {pcl_vert_cursor_pos_units, pca_neg_ok|pca_big_ok}},
+	  {'p', 'Y',
+	     PCL_COMMAND("Vertical Cursor Position Units",
+			 pcl_vert_cursor_pos_units,
+			 pca_neg_ok|pca_big_ok)},
 	END_CLASS
-	DEFINE_ESCAPE('=', pcl_half_line_feed)
-	DEFINE_CONTROL(LF, pcl_LF)
-	DEFINE_CONTROL(FF, pcl_FF)
+	DEFINE_ESCAPE('=', "Half Line Feed", pcl_half_line_feed)
+	DEFINE_CONTROL(LF, "LF", pcl_LF)
+	DEFINE_CONTROL(FF, "FF", pcl_FF)
 	DEFINE_CLASS('&')
-	  {'k', 'G', {pcl_line_termination, pca_neg_error|pca_big_error}},
-	  {'f', 'S', {pcl_push_pop_cursor, pca_neg_ignore|pca_big_ignore}},
+	  {'k', 'G',
+	     PCL_COMMAND("Line Termination", pcl_line_termination,
+			 pca_neg_error|pca_big_error)},
+	  {'f', 'S',
+	     PCL_COMMAND("Push/Pop Cursor", pcl_push_pop_cursor,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
 	return 0;
 }
@@ -233,12 +251,8 @@ private void
 pcursor_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { pcls->line_termination = 0;
-	    if ( type & pcl_reset_initial )
-	      { /**** SHOULD reset_printer ALSO RESET THESE? ****/
-		pcls->cap.x = 0;
-	        pcls->cap.y = 0;
-		pcls->cursor_stack.depth = 0;
-	      }
+	    pcl_home_cursor(pcls);
+	    pcls->cursor_stack.depth = 0;
 	  }
 }
 const pcl_init_t pcursor_init = {

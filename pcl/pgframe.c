@@ -19,25 +19,15 @@ extern pcl_command_proc(rtl_enter_pcl_mode);
 /* Even though these are PCL commands, */
 /* they are only relevant to HPGL. */
 
-
-/* HAS move to .h file */
-
-/* useful for floating point comparisons */
-
-#define hpgl_epsilon   (1.0/1024.0)
-
-#define almost_equal(a, b) \
-   (fabs((a) - (b)) < hpgl_epsilon)
-
 int /* ESC * c <w_dp> X */ 
 pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {
 	float size = float_arg(pargs) * 10.0; /* --> centipoints */
 	
-	if ( almost_equal(size, 0.0) )
-	  pcls->g.picture_frame.width = pcls->logical_page_width;
+	if ( (coord)size == 0 )
+	  pcls->g.picture_frame_width = pcls->logical_page_width;
 	else
-	  pcls->g.picture_frame.width = size;
+	  pcls->g.picture_frame_width = (coord)size;
 
 	{
 	  hpgl_args_t args;
@@ -62,10 +52,11 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	float size = float_arg(pargs) * 10.0; /* --> centipoints */
 	
 	/* default to pcl logical page */
-	if ( almost_equal(size, 0.0) )
-	  pcls->g.picture_frame.height = pcls->text_length * (float)(pcls->vmi);
+	if ( (coord)size == 0.0 )
+	  pcls->g.picture_frame_height = 
+	    (coord)(pcls->text_length * (float)(pcls->vmi));
 	else
-	  pcls->g.picture_frame.height = size;
+	  pcls->g.picture_frame_height = (coord)size;
 
 	{
 	  hpgl_args_t args;
@@ -118,10 +109,10 @@ pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls)
 	/* convert to centipoints as to match the picture frame */
   	float size = float_arg(pargs) * 7200.0;
 	
-	if ( almost_equal(size, 0.0) )
-	  pcls->g.plot_width = pcls->g.picture_frame.width;
+	if ( (coord)size == 0 )
+	  pcls->g.plot_width = pcls->g.picture_frame_width;
 	else
-	  pcls->g.plot_width = size;
+	  pcls->g.plot_width = (coord)size;
 	return 0;
 }
 
@@ -130,10 +121,10 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
 	/* convert to centipoints as to match the picture frame */
   	float size = float_arg(pargs) * 7200.0;
-	if ( almost_equal(size,0.0) )
-	  pcls->g.plot_height = pcls->g.picture_frame.height;
+	if ( (coord)size == 0 )
+	  pcls->g.plot_height = pcls->g.picture_frame_height;
 	else
-	  pcls->g.plot_height = size;
+	  pcls->g.plot_height = (coord)size;
 	return 0;
 }
 

@@ -197,10 +197,10 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, hpgl_real_t *coords)
 #define y1 coords[1]
 #define x2 coords[2]
 #define y2 coords[3]
-  	x1 = centipoints_2_plu(0.0);
-	y1 = centipoints_2_plu(0.0);
-	x2 = centipoints_2_plu(pgls->g.picture_frame.width);
-	y2 = centipoints_2_plu(pgls->g.picture_frame.height);
+  	x1 = coord_2_plu(0.0);
+	y1 = coord_2_plu(0.0);
+	x2 = coord_2_plu(pgls->g.picture_frame_width);
+	y2 = coord_2_plu(pgls->g.picture_frame_height);
 #undef x1
 #undef y1
 #undef x2

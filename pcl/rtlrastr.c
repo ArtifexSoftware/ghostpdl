@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -23,7 +23,9 @@ private int
 rtlrastr_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
-	  {'b', 'L', {pcl_line_path, pca_neg_ignore|pca_big_ignore}},
+	  {'b', 'L',
+	     PCL_COMMAND("Line Path", pcl_line_path,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
 	return 0;
 }

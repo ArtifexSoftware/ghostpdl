@@ -29,6 +29,16 @@
 #define	dots(n)	((float)(7200 / 300 * n))
 
 
+/*
+ * Decache the HMI after resetting the font.
+ */
+#define pcl_decache_hmi(pcls)\
+  do {\
+    if ( pcls->hmi_set == hmi_set_from_font )\
+      pcls->hmi_set = hmi_not_set;\
+  } while (0)\
+
+
 /* Clear the font pointer cache after changing a font parameter.  set
  * indicates which font (0/1 for primary/secondary).  -1 means both. */
 void
@@ -36,10 +46,8 @@ pcl_decache_font(pcl_state_t *pcls, int set)
 {	
 	if ( set < 0 )
 	  {
-	    pcls->font_selection[0].font = NULL;
-	    pcls->font_selection[1].font = NULL;
-	    pcls->font = NULL;
-	    pcls->map = NULL;
+	    pcl_decache_font(pcls, 0);
+	    pcl_decache_font(pcls, 1);
 	  }
 	else
 	  {
@@ -48,6 +56,7 @@ pcl_decache_font(pcl_state_t *pcls, int set)
 	      {
 	        pcls->font = NULL;
 		pcls->map = NULL;
+		pcl_decache_hmi(pcls);
 	      }
 	  }
 }
@@ -230,8 +239,9 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 
 
 /* Recompute the current font from the descriptive parameters. */
-private int
-recompute_font(pcl_state_t *pcls)
+/* We export this so we can call it for setting the HMI. */
+int
+pcl_recompute_font(pcl_state_t *pcls)
 {	int set = pcls->font_selected;
 	pcl_font_selection_t *pfs = &pcls->font_selection[set];
 
@@ -277,6 +287,43 @@ recompute_font(pcl_state_t *pcls)
 	return 0;
 }
 
+/* Show a string using an enumerator. */
+private int
+pcl_show_chars(gs_show_enum *penum, gs_state *pgs, floatp scaled_hmi,
+  const char *str, uint size)
+{	int code;
+
+	if ( (code = gs_show_n_init(penum, pgs, str, size)) < 0 )
+	  return code;
+	return gs_show_next(penum);
+}
+/* Show a string, treating spaces as control characters. */
+private int
+pcl_show_chars_SP(gs_show_enum *penum, gs_state *pgs, floatp scaled_hmi,
+  const char *str, uint size)
+{	uint start = 0, i;
+	int code;
+
+	while ( start < size )
+	  { /* Scan for the next space character, if any. */
+	    for ( i = start; i < size && str[i] != ' '; ++i )
+	      ;
+	    /* Show the characters up to the space. */
+	    if ( i > start )
+	      { code = pcl_show_chars(penum, pgs, scaled_hmi, str + start, i - start);
+	        if ( code != 0 )
+		  return code;
+	      }
+	    if ( i == size )
+	      break;
+	    code = gs_rmoveto(pgs, scaled_hmi, 0.0);
+	    if ( code < 0 )
+	      return code;
+	    start = i + 1;
+	  }
+	return 0;
+}
+
 /* Commands */
 
 int
@@ -288,17 +335,24 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	pcl_font_selection_t *pfp;
 	coord_point initial;
 	gs_point gs_width;
-	float scale_x, scale_y;
+	float scale_x, scale_y, scale_sign;
+	int (*show_chars)(P5(gs_show_enum *, gs_state *, floatp,
+			     const char *, uint)) = pcl_show_chars;
+	floatp scaled_hmi = 0.0;
 	int code = 0;
 
 	if ( pcls->font == 0 )
-	  { int code = recompute_font(pcls);
+	  { code = pcl_recompute_font(pcls);
 	    if ( code < 0 )
 	      return code;
 	  }
 	pfp = &pcls->font_selection[pcls->font_selected];
 	/**** WE COULD CACHE MORE AND DO LESS SETUP HERE ****/
 	pcl_set_graphics_state(pcls, true);
+	code = pcl_set_drawing_color(pcls, pcls->pattern_type,
+				     &pcls->pattern_id);
+	if ( code < 0 )
+	  return code;
 	gs_setfont(pgs, (gs_font *)pcls->font->pfont);
 	penum = gs_show_enum_alloc(mem, pgs, "pcl_plain_char");
 	if ( penum == 0 )
@@ -309,18 +363,25 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	  {
 	    scale_x = pcl_coord_scale / pcls->font->resolution.x;
 	    scale_y = pcl_coord_scale / pcls->font->resolution.y;
+	    /*
+	     * Bitmap fonts use an inverted coordinate system,
+	     * the same as the usual PCL system.
+	     */
+	    scale_sign = 1;
 	  }
 	else
 	  {
-	    /* XXX LPD I doubt that either of the following computations is
-	     * correct.  The first one was there before I touched the code;
-	     * the second one is my attempt at an update to use the new
-	     * setting of params.pitch_100ths for scalable fonts. */
-	    if ( pfp->params.proportional_spacing )
-	      scale_x = scale_y = pfp->params.height_4ths * 25.0;
-	    else
-	      scale_x = scale_y = 72.0 * pfp->params.pitch_100ths /
-		pcls->font->params.pitch_100ths;
+	    /*
+	     * Outline fonts are 1-point; the font height is given in
+	     * (quarter-)points.
+	     */
+	    scale_x = scale_y = pfp->params.height_4ths * 0.25
+	      * inch2coord(1.0/72);
+	    /*
+	     * Scalable fonts use an upright coordinate system,
+	     * the opposite from the usual PCL system.
+	     */
+	    scale_sign = -1;
 	  }
 
 	/* If floating underline is on, since we're about to print a real
@@ -345,9 +406,24 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	 * correct through orientation changes.  Various parts of this should
 	 * be cleaned up when performance time rolls around. */
 	gs_currentmatrix(pgs, &user_ctm);
-	/* invert text because HP coordinate system is inverted */
-	gs_scale(pgs, scale_x, -scale_y);
+	/* possibly invert text because HP coordinate system is inverted */
+	gs_scale(pgs, scale_x, scale_y * scale_sign);
 	gs_currentmatrix(pgs, &font_ctm);
+
+	/*
+	 * If the string has any spaces and the font doesn't define the
+	 * space character, we have to do something special.
+	 */
+	{ uint i;
+	  for ( i = 0; i < size; ++i )
+	    if ( str[i] == ' ' )
+	      { if ( !pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ') )
+		  { show_chars = pcl_show_chars_SP;
+		    scaled_hmi = pcl_hmi(pcls) / scale_x;
+		  }
+	        break;
+	      }
+	}
 
 	/* Overstrike-center if needed.  Enter here in font space. */
 	if ( pcls->last_was_BS )
@@ -357,7 +433,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 
 	    /* Scale the width only by the font part of transformation so
 	     * it ends up in PCL coordinates. */
-	    gs_make_scaling(scale_x, -scale_y, &font_only_mat);
+	    gs_make_scaling(scale_x, scale_y * scale_sign, &font_only_mat);
 	    if ( (code = pl_font_char_width(pcls->font, pcls->map,
 		&font_only_mat, str[0], &gs_width)) != 0 )
 	      goto x;
@@ -373,9 +449,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 		gs_moveto(pgs, initial.x, initial.y);
 		gs_setmatrix(pgs, &font_ctm);
 	      }
-	    if ( (code = gs_show_n_init(penum, pgs, str, 1)) < 0 )
-	      goto x;
-	    if ( (code = gs_show_next(penum)) != 0 )
+	    if ( (code = (*show_chars)(penum, pgs, scaled_hmi, str, 1)) != 0 )
 	      goto x;
 	    str++;  size--;
 	    /* Now reposition to "un-backspace", *regardless* of the
@@ -393,9 +467,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	  { gs_point pt;
 	    if ( size > 1 )
 	      {
-		if ( (code = gs_show_n_init(penum, pgs, str, size - 1)) < 0 )
-		  goto x;
-		if ( (code = gs_show_next(penum)) != 0)
+		if ( (code = (*show_chars)(penum, pgs, scaled_hmi, str, size - 1)) != 0 )
 		  goto x;
 		str += size - 1;
 		size = 1;
@@ -408,9 +480,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	    initial.x = pt.x;
 	    initial.y = pt.y;
 	    gs_setmatrix(pgs, &font_ctm);
-	    if ( (code = gs_show_n_init(penum, pgs, str, 1)) < 0 )
-	      goto x;
-	    if ( (code = gs_show_next(penum)) != 0)
+	    if ( (code = (*show_chars)(penum, pgs, scaled_hmi, str, 1)) != 0 )
 	      goto x;
 	    gs_setmatrix(pgs, &user_ctm);
 	    gs_currentpoint(pgs, &pt);
@@ -639,6 +709,7 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 
 	/* Transfer parameters from the selected font into the selection
 	 * parameters, being careful with the softer parameters. */
+	/****** WRONG -- DOESN'T SCALE FONT PER HEIGHT ******/
 	pfs->font = fp;
 	if ( pl_font_is_bound(fp) )
 	    pfs->params.symbol_set = fp->params.symbol_set;
@@ -652,6 +723,7 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 	pfs->params.typeface_family = fp->params.typeface_family;
 	if ( pcls->font_selected == set )
 	  pcls->font = fp;
+	pcl_decache_hmi(pcls);
 	return 0;
 }
 private int /* ESC ( <font_id> X */
@@ -717,6 +789,7 @@ pcl_SO(pcl_args_t *pargs, pcl_state_t *pcls)
 {	if ( pcls->font_selected != 1 )
 	  { pcls->font_selected = 1;
 	    pcls->font = pcls->font_selection[1].font;
+	    pcl_decache_hmi(pcls);
 	  }
 	return 0;
 }
@@ -726,6 +799,7 @@ pcl_SI(pcl_args_t *pargs, pcl_state_t *pcls)
 {	if ( pcls->font_selected != 0 )
 	  { pcls->font_selected = 0;
 	    pcls->font = pcls->font_selection[0].font;
+	    pcl_decache_hmi(pcls);
 	  }
 	return 0;
 }
@@ -780,7 +854,7 @@ pcl_set_pitch_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 private int
 pcfont_do_init(gs_memory_t *mem)
 {		/* Register commands */
-	DEFINE_CONTROL(0, pcl_plain_char);
+	DEFINE_CONTROL(0, "(plain char)", pcl_plain_char);
 	{ int chr;
 	  /*
 	   * The H-P manual only talks about A through Z, but it appears
@@ -788,43 +862,96 @@ pcfont_do_init(gs_memory_t *mem)
 	   */
 	  for ( chr = 'A'; chr <= '^'; ++chr )
 	    if ( chr != 'X' )
-	      { DEFINE_CLASS_COMMAND_ARGS('(', 0, chr, pcl_primary_symbol_set, pca_neg_error|pca_big_error);
-	        DEFINE_CLASS_COMMAND_ARGS(')', 0, chr, pcl_secondary_symbol_set, pca_neg_error|pca_big_error);
+	      { DEFINE_CLASS_COMMAND_ARGS('(', 0, chr, "Primary Symbol Set",
+					  pcl_primary_symbol_set,
+					  pca_neg_error|pca_big_error);
+	        DEFINE_CLASS_COMMAND_ARGS(')', 0, chr, "Secondary Symbol Set",
+					  pcl_secondary_symbol_set,
+					  pca_neg_error|pca_big_error);
 	      }
 	}
 	DEFINE_CLASS('(')
-	  {'s', 'P', {pcl_primary_spacing, pca_neg_ignore|pca_big_ignore}},
-	  {'s', 'H', {pcl_primary_pitch, pca_neg_error|pca_big_error}},
-	  {'s', 'V', {pcl_primary_height, pca_neg_error|pca_big_error}},
-	  {'s', 'S', {pcl_primary_style, pca_neg_error|pca_big_clamp}},
-	  {'s', 'B', {pcl_primary_stroke_weight, pca_neg_ok|pca_big_error}},
-	  {'s', 'T', {pcl_primary_typeface, pca_neg_error|pca_big_ok}},
-	  {0, 'X', {pcl_primary_font_selection_id, pca_neg_error|pca_big_error}},
-	  {0, '@', {pcl_select_default_font_primary, pca_neg_error|pca_big_error}},
+	  {'s', 'P',
+	     PCL_COMMAND("Primary Spacing", pcl_primary_spacing,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'s', 'H',
+	     PCL_COMMAND("Primary Pitch", pcl_primary_pitch,
+			 pca_neg_error|pca_big_error)},
+	  {'s', 'V',
+	     PCL_COMMAND("Primary Height", pcl_primary_height,
+			 pca_neg_error|pca_big_error)},
+	  {'s', 'S',
+	     PCL_COMMAND("Primary Style", pcl_primary_style,
+			 pca_neg_error|pca_big_clamp)},
+	  {'s', 'B',
+	     PCL_COMMAND("Primary Stroke Weight", pcl_primary_stroke_weight,
+			 pca_neg_ok|pca_big_error)},
+	  {'s', 'T',
+	     PCL_COMMAND("Primary Typeface", pcl_primary_typeface,
+			 pca_neg_error|pca_big_ok)},
+	  {0, 'X',
+	     PCL_COMMAND("Primary Font Selection ID",
+			 pcl_primary_font_selection_id,
+			 pca_neg_error|pca_big_error)},
+	  {0, '@',
+	     PCL_COMMAND("Default Font Primary",
+			 pcl_select_default_font_primary,
+			 pca_neg_error|pca_big_error)},
 	END_CLASS
 	DEFINE_CLASS(')')
-	  {'s', 'P', {pcl_secondary_spacing, pca_neg_ignore|pca_big_ignore}},
-	  {'s', 'H', {pcl_secondary_pitch, pca_neg_error|pca_big_error}},
-	  {'s', 'V', {pcl_secondary_height, pca_neg_error|pca_big_error}},
-	  {'s', 'S', {pcl_secondary_style, pca_neg_error|pca_big_clamp}},
-	  {'s', 'B', {pcl_secondary_stroke_weight, pca_neg_ok|pca_big_error}},
-	  {'s', 'T', {pcl_secondary_typeface, pca_neg_error|pca_big_ok}},
-	  {0, 'X', {pcl_secondary_font_selection_id, pca_neg_error|pca_big_error}},
-	  {0, '@', {pcl_select_default_font_secondary, pca_neg_error|pca_big_error}},
+	  {'s', 'P',
+	     PCL_COMMAND("Secondary Spacing", pcl_secondary_spacing,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'s', 'H',
+	     PCL_COMMAND("Secondary Pitch", pcl_secondary_pitch,
+			 pca_neg_error|pca_big_error)},
+	  {'s', 'V',
+	     PCL_COMMAND("Secondary Height", pcl_secondary_height,
+			 pca_neg_error|pca_big_error)},
+	  {'s', 'S',
+	     PCL_COMMAND("Secondary Style", pcl_secondary_style,
+			 pca_neg_error|pca_big_clamp)},
+	  {'s', 'B',
+	     PCL_COMMAND("Secondary Stroke Weight",
+			 pcl_secondary_stroke_weight,
+			 pca_neg_ok|pca_big_error)},
+	  {'s', 'T',
+	     PCL_COMMAND("Secondary Typeface", pcl_secondary_typeface,
+			 pca_neg_error|pca_big_ok)},
+	  {0, 'X',
+	     PCL_COMMAND("Secondary Font Selection ID",
+			 pcl_secondary_font_selection_id,
+			 pca_neg_error|pca_big_error)},
+	  {0, '@',
+	     PCL_COMMAND("Default Font Secondary",
+			 pcl_select_default_font_secondary,
+			 pca_neg_error|pca_big_error)},
 	END_CLASS
 	DEFINE_CLASS('&')
-	  {'p', 'X', {pcl_transparent_mode, pca_bytes}},
-	  {'d', 'D', {pcl_enable_underline, pca_neg_ignore|pca_big_ignore}},
-	  {'d', '@', {pcl_disable_underline, pca_neg_ignore|pca_big_ignore}},
+	  {'p', 'X',
+	     PCL_COMMAND("Transparent Mode", pcl_transparent_mode,
+			 pca_bytes)},
+	  {'d', 'D',
+	     PCL_COMMAND("Enable Underline", pcl_enable_underline,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'d', '@',
+	     PCL_COMMAND("Disable Underline", pcl_disable_underline,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
-	DEFINE_CONTROL(SO, pcl_SO)
-	DEFINE_CONTROL(SI, pcl_SI)
+	DEFINE_CONTROL(SO, "SO", pcl_SO)
+	DEFINE_CONTROL(SI, "SI", pcl_SI)
 	DEFINE_CLASS('&')
-	  {'t', 'P', {pcl_text_parsing_method, pca_neg_error|pca_big_error}},
-	  {'c', 'T', {pcl_text_path_direction, pca_neg_ok|pca_big_error}},
-	  {'k', 'S', {pcl_set_pitch_mode, pca_neg_error|pca_big_error}},
+	  {'t', 'P',
+	     PCL_COMMAND("Text Parsing Method", pcl_text_parsing_method,
+			 pca_neg_error|pca_big_error)},
+	  {'c', 'T',
+	     PCL_COMMAND("Text Path Direction", pcl_text_path_direction,
+			 pca_neg_ok|pca_big_error)},
+	  {'k', 'S',
+	     PCL_COMMAND("Set Pitch Mode", pcl_set_pitch_mode,
+			 pca_neg_error|pca_big_error)},
 	END_CLASS
-	DEFINE_CONTROL(1, pcl_plain_char);	/* default "command" */
+	DEFINE_CONTROL(1, "(plain char)", pcl_plain_char);	/* default "command" */
 	return 0;
 }
 private void

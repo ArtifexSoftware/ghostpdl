@@ -53,9 +53,15 @@ private int
 pccpalet_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('&')
-	  {'p', 'S', {pcl_select_palette, pca_neg_ignore|pca_big_ignore}},
-	  {'p', 'I', {pcl_palette_control_id, pca_neg_ignore|pca_big_ignore}},
-	  {'p', 'C', {pcl_palette_control, pca_neg_ignore|pca_big_ignore}},
+	  {'p', 'S',
+	     PCL_COMMAND("Select Palette", pcl_select_palette,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'p', 'I',
+	     PCL_COMMAND("Palette Control ID", pcl_palette_control_id,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'p', 'C',
+	     PCL_COMMAND("Palette Control", pcl_palette_control,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
 	return 0;
 }

@@ -9,13 +9,15 @@
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"
+#include "gscspace.h"		/* for gscolor2.h */
+#include "gscolor2.h"		/* for gs_makebitmappattern */
 #include "gscoord.h"
 #include "gsdcolor.h"
 #include "gxfixed.h"
 #include "gxpath.h"
 #include "pcommand.h"
 #include "pcstate.h"
-#include "pcfont.h"		/* for underline break/continue */
+#include "pcfont.h"		/* for underline break/continue, HMI */
 #include "pcdraw.h"
 
 /* ------ Coordinate system ------ */
@@ -52,20 +54,23 @@ pcl_set_ctm(pcl_state_t *pcls, bool print_direction)
 	switch ( pcls->orientation )
 	  {
 	  case 0:
-	    gs_translate(pgs, pcls->left_offset_cp, pcls->top_offset_cp);
+	    gs_translate(pgs, psize->offset_portrait.x + pcls->left_offset_cp,
+			 pcls->top_offset_cp);
 	    break;
 	  case 1:
 	    gs_rotate(pgs, 90.0);
-	    gs_translate(pgs, -(psize->height + pcls->top_offset_cp),
+	    gs_translate(pgs, psize->offset_landscape.x -
+			   (psize->height + pcls->top_offset_cp),
 			 pcls->left_offset_cp);
 	  case 2:
 	    gs_rotate(pgs, 180.0);
-	    gs_translate(pgs, -(psize->width + pcls->left_offset_cp),
+	    gs_translate(pgs, psize->offset_portrait.x -
+			   (psize->width + pcls->left_offset_cp),
 			 -(psize->height + pcls->top_offset_cp));
 	    break;
 	  case 3:
 	    gs_rotate(pgs, 270.0);
-	    gs_translate(pgs, pcls->top_offset_cp,
+	    gs_translate(pgs, psize->offset_landscape.x + pcls->top_offset_cp,
 			 -(psize->width + pcls->left_offset_cp));
 	    break;
 	  }
@@ -151,13 +156,38 @@ pcl_set_cursor_y(pcl_state_t *pcls, coord cy, bool to_margins)
 void
 pcl_set_hmi(pcl_state_t *pcls, coord hmi, bool explicit)
 {	pcls->hmi_unrounded = hmi;
-	pcls->hmi_set = explicit;
+	pcls->hmi_set = (explicit ? hmi_set_explicitly : hmi_set_from_font);
 	/* See the description of the Units of Measure command */
 	/* in the PCL5 documentation for an explanation of the following. */
 	pcls->hmi =
 	  (explicit ? hmi :
 	   (hmi + (pcls->uom_cp >> 1)) / pcls->uom_cp * pcls->uom_cp);
 }	  
+
+/* Update the HMI by recomputing it from the font. */
+coord
+pcl_updated_hmi(pcl_state_t *pcls)
+{	coord hmi;
+	int code = pcl_recompute_font(pcls);
+	const pl_font_t *plfont = pcls->font;
+
+	if ( code < 0 )
+	  { /* Bad news.  Don't mark the HMI as valid. */
+	    return pcls->hmi;
+	  }
+	if ( pl_font_is_scalable(plfont) )
+	  { /* Scale the font's pitch by the requested height. */
+	    hmi =
+	      inch2coord(plfont->params.pitch_100ths
+			 * pcls->font_selection[pcls->font_selected].params.height_4ths
+			 / (7200.0 * 4));
+	  }
+	else
+	  { hmi = inch2coord(plfont->params.pitch_100ths / 7200.0);
+	  }
+	pcl_set_hmi(pcls, hmi, false);
+	return pcls->hmi;
+}
 
 /* ------ Color / pattern ------ */
 
@@ -244,9 +274,8 @@ int
 pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
   const pcl_id_t *pid)
 {	gs_state *pgs = pcls->pgs;
-	/* We construct a device halftone by hand here: */
-	gx_device_color dev_color;
-	gx_ht_tile tile;
+	int pattern_index;
+	gx_tile_bitmap tile;
 
 	switch ( type )
 	  {
@@ -262,35 +291,38 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 		{ gs_setgray(pgs, 1.0);
 		  return 0;
 		}
-#define else_if_percent(maxp, shade)\
-  else if ( percent <= maxp ) tile.tiles.data = (const byte *)shade
-	      else_if_percent(2, shade_1_2);
-	      else_if_percent(10, shade_3_10);
-	      else_if_percent(20, shade_11_20);
-	      else_if_percent(35, shade_21_35);
-	      else_if_percent(55, shade_36_55);
-	      else_if_percent(80, shade_56_80);
-	      else_if_percent(99, shade_81_99);
+#define else_if_percent(maxp, shade, index)\
+  else if ( percent <= maxp )\
+    tile.data = (const byte *)shade,\
+    pattern_index = index
+	      else_if_percent(2, shade_1_2, 0);
+	      else_if_percent(10, shade_3_10, 1);
+	      else_if_percent(20, shade_11_20, 2);
+	      else_if_percent(35, shade_21_35, 3);
+	      else_if_percent(55, shade_36_55, 4);
+	      else_if_percent(80, shade_56_80, 5);
+	      else_if_percent(99, shade_81_99, 6);
 #undef else_if_percent
 	      else
 		{ gs_setgray(pgs, 0.0);
 		  return 0;
 		}
-	      tile.tiles.raster = 8;
-	      tile.tiles.size.x = 64;
-	      tile.tiles.size.y = 16;
-	      tile.tiles.rep_width = 8;
-	      tile.tiles.rep_height = (percent <= 2 ? 16 : 8);
+	      tile.raster = 8;
+	      tile.size.x = 64;
+	      tile.size.y = 16;
+	      tile.rep_width = 8;
+	      tile.rep_height = (percent <= 2 ? 16 : 8);
 	    }
 	    break;
 	  case pcpt_cross_hatch:
-	    tile.tiles.data =
-	      (const byte *)cross_hatch_patterns[id_value(*pid)];
-	    tile.tiles.raster = 8;
-	    tile.tiles.size.x = 64;
-	    tile.tiles.size.y = 16;
-	    tile.tiles.rep_width = 16;
-	    tile.tiles.rep_height = 16;
+	    pattern_index = id_value(*pid) - 1 + 7;
+	    tile.data =
+	      (const byte *)cross_hatch_patterns[pattern_index - 7];
+	    tile.raster = 8;
+	    tile.size.x = 64;
+	    tile.size.y = 16;
+	    tile.rep_width = 16;
+	    tile.rep_height = 16;
 	    break;
 	  case pcpt_user_defined:
 	    { void *value;
@@ -306,12 +338,16 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 		  return 0;
 		}
 #define ppt ((pcl_pattern_t *)value)
-	      tile.tiles.data = (byte *)value + pattern_data_offset;
-	      tile.tiles.size.x = tile.tiles.rep_width =
-		(ppt->width[0] << 8) + ppt->width[1];
-	      tile.tiles.size.y = tile.tiles.rep_height =
-		(ppt->height[0] << 8) + ppt->height[1];
-	      tile.tiles.raster = bitmap_raster(tile.tiles.size.x);
+	      tile.data =
+		(byte *)value + pattern_data_offset;
+	      tile.size.x =
+		tile.rep_width =
+		  (ppt->width[0] << 8) + ppt->width[1];
+	      tile.size.y =
+		tile.rep_height =
+		  (ppt->height[0] << 8) + ppt->height[1];
+	      tile.raster =
+		bitmap_raster(tile.size.x);
 #undef ppt
 	    }
 	    /**** HANDLE ROTATION & SCALING ****/
@@ -320,8 +356,38 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 	  default:
 	    return_error(gs_error_rangecheck);
 	  }
-	tile.tiles.id = gx_no_bitmap_id;
-	tile.tiles.rep_shift = tile.tiles.shift = 0;
-	color_set_binary_tile(&dev_color, 0, 1, &tile);
+	tile.id = gx_no_bitmap_id;
+	/* 
+	 * Create a bitmap pattern if one doesn't already exist.
+	 * We should track changes in orientation, but we don't yet.
+	 */
+	{ gs_client_color ccolor;
+	  ccolor.pattern = pcls->cached_patterns[pattern_index];
+	  if ( ccolor.pattern == 0 )
+	    { int code = gs_makebitmappattern(&ccolor, &tile, false, pgs, NULL);
+
+	      if ( code < 0 )
+		return code;
+	      pcls->cached_patterns[pattern_index] = ccolor.pattern;
+	    }
+	  gs_setpattern(pgs, &ccolor);
+	}
 	return 0;
 }
+
+/* Initialization */
+private int
+pcdraw_do_init(gs_memory_t *mem)
+{	return 0;
+}
+private void
+pcdraw_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
+{	if ( type & pcl_reset_initial )
+	  { int i;
+	    for ( i = 0; i < countof(pcls->cached_patterns); ++i )
+	      pcls->cached_patterns[i] = 0;
+	  }
+}
+const pcl_init_t pcdraw_init = {
+  pcdraw_do_init, pcdraw_do_reset
+};

@@ -378,13 +378,13 @@ hpgl_FI(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_FN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	return hpgl_select_font(pargs, pgls, 0);
+	return hpgl_select_font(pargs, pgls, 1);
 }
 
 /* updates the current cursor position, which is the same as the
    current pen postion */
 
-static int
+ private int
 hpgl_update_label_pos(hpgl_state_t *pgls, byte ch)
 {
 	int spaces = 1, lines = 0;
@@ -415,7 +415,7 @@ hpgl_update_label_pos(hpgl_state_t *pgls, byte ch)
 }
 
 /* build the path and render it */
-static int
+ private int
 hpgl_print_char(hpgl_state_t *pgls,  hpgl_character_point *character)
 {
 	hpgl_rendering_mode_t rm = pgls->g.current_render_mode;
@@ -463,7 +463,7 @@ hpgl_print_char(hpgl_state_t *pgls,  hpgl_character_point *character)
 	return 0;
 }
 	    
- static int
+ private int
 hpgl_process_char(hpgl_state_t *pgls, byte ch)
 {
 	hpgl_pen_state_t saved_pen_state;
@@ -485,18 +485,20 @@ hpgl_process_char(hpgl_state_t *pgls, byte ch)
 hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
+	gs_point pt;
 
 	/* HAS need to figure out what gets saved here -- relative,
            pen_down, position ?? */
 	hpgl_call(hpgl_clear_current_path(pgls));
-	/* set the carriage return point */
-	{
-	  /* HAS this should only happen the first time that we call
-             LB ?? */
-	  gs_point pt;
-	  hpgl_call(hpgl_get_current_position(pgls, &pt));
-	  hpgl_call(hpgl_set_carriage_return_pos(pgls, &pt));
-	}
+
+	/* set the carriage return point the first time through */
+	if ( pargs->phase == 0 )
+	  {
+	    hpgl_call(hpgl_get_current_position(pgls, &pt));
+	    hpgl_call(hpgl_set_carriage_return_pos(pgls, &pt));
+	    pargs->phase = 1;
+	  }
+
 	while ( p < rlimit )
 	  { byte ch = *++p;
 	    if_debug1('I',

@@ -16,7 +16,7 @@
  * Convert various other kinds of units to plotter units
  * (1 plu = 1/40 mm = 1/1016 inch).
  */
-#define centipoints_2_plu(a) (((a) / 7200.0) * 1016.0)
+#define coord_2_plu(a) (((a) / 7200.0) * 1016.0)
 #define points_2_plu(a) (((a) / 72.0) * 1016.0)
 #define mm_2_plu(a) ((a) * 40.0)
 #define inches_2_plu(a) ((a) * 1016.0)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -279,13 +279,23 @@ private int
 pccrendr_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
-	  {'m', 'W', {pcl_download_dither_matrix, pca_bytes}},
-	  {'l', 'W', {pcl_color_lookup_tables, pca_bytes}},
-	  {'t', 'I', {pcl_gamma_correction, pca_neg_ignore|pca_big_ignore}},
-	  {'i', 'W', {pcl_viewing_illuminant, pca_bytes}},
+	  {'m', 'W',
+	     PCL_COMMAND("Download Dither Matrix", pcl_download_dither_matrix,
+			 pca_bytes)},
+	  {'l', 'W',
+	     PCL_COMMAND("Color Lookup Tables", pcl_color_lookup_tables,
+			 pca_bytes)},
+	  {'t', 'I',
+	     PCL_COMMAND("Gamma Correction", pcl_gamma_correction,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'i', 'W',
+	     PCL_COMMAND("Viewing Illuminant", pcl_viewing_illuminant,
+			 pca_bytes)},
 	END_CLASS
-	DEFINE_CLASS_COMMAND('&', 'b', 'M', pcl_monochrome_print_mode)
-	DEFINE_CLASS_COMMAND_ARGS('*', 'o', 'W', pcl_driver_configuration, pca_bytes)
+	DEFINE_CLASS_COMMAND('&', 'b', 'M', "Monochrome Print Mode",
+			     pcl_monochrome_print_mode)
+	DEFINE_CLASS_COMMAND_ARGS('*', 'o', 'W', "Driver Configuration",
+				  pcl_driver_configuration, pca_bytes)
 	return 0;
 }
 private void

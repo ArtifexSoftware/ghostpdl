@@ -14,8 +14,8 @@
 #include "gsmatrix.h"		/* for gsdevice.h */
 #include "gsdevice.h"
 #include "gspaint.h"
-# include "gxdevice.h"
-# include "gdevbbox.h"
+#include "gxdevice.h"
+#include "gdevbbox.h"
 
 /* Define the default margin and text length values. */
 #define left_margin_default 0
@@ -183,7 +183,7 @@ pcl_page_orientation(pcl_args_t *pargs, pcl_state_t *pcls)
 	  return 0;
 	pcls->orientation = i;
 	reset_margins(pcls);
-	pcl_set_hmi(pcls, hmi_default, false);
+	pcls->hmi_set = hmi_not_set;
 	pcls->vmi = vmi_default;
 	pcl_home_cursor(pcls);
 	pcls->overlay_enabled = false;
@@ -208,7 +208,7 @@ pcl_print_direction(pcl_args_t *pargs, pcl_state_t *pcls)
 
 private int /* ESC & a <col> L */
 pcl_left_margin(pcl_args_t *pargs, pcl_state_t *pcls)
-{	coord lmarg = int_arg(pargs) * pcls->hmi;
+{	coord lmarg = int_arg(pargs) * pcl_hmi(pcls);
 	if ( lmarg < pcls->right_margin )
 	  { pcls->left_margin = lmarg;
 	    pcl_clamp_cursor_x(pcls, true);
@@ -322,24 +322,52 @@ private int
 pcpage_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('&')
-	  {'l', 'A', {pcl_page_size, pca_neg_ignore|pca_big_ignore}},
-	  {'l', 'H', {pcl_paper_source, pca_neg_error|pca_big_error}},
-	  {'l', 'O', {pcl_page_orientation, pca_neg_ignore|pca_big_ignore}},
-	  {'a', 'P', {pcl_print_direction, pca_neg_ignore|pca_big_ignore}},
-	  {'a', 'L', {pcl_left_margin, pca_neg_error|pca_big_error}},
-	  {'a', 'M', {pcl_right_margin, pca_neg_error|pca_big_error}},
+	  {'l', 'A',
+	     PCL_COMMAND("Page Size", pcl_page_size,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'l', 'H',
+	     PCL_COMMAND("Paper Source", pcl_paper_source,
+			 pca_neg_error|pca_big_error)},
+	  {'l', 'O',
+	     PCL_COMMAND("Page Orientation", pcl_page_orientation,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'a', 'P',
+	     PCL_COMMAND("Print Direction", pcl_print_direction,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'a', 'L',
+	     PCL_COMMAND("Left Margin", pcl_left_margin,
+			 pca_neg_error|pca_big_error)},
+	  {'a', 'M',
+	     PCL_COMMAND("Right Margin", pcl_right_margin,
+			 pca_neg_error|pca_big_error)},
 	END_CLASS
-	DEFINE_ESCAPE('9', pcl_clear_horizontal_margins)
+	DEFINE_ESCAPE('9', "Clear Horizontal Margins",
+		      pcl_clear_horizontal_margins)
 	DEFINE_CLASS('&')
-	  {'l', 'E', {pcl_top_margin, pca_neg_ignore|pca_big_error}},
-	  {'l', 'F', {pcl_text_length, pca_neg_ignore|pca_big_error}},
-	  {'l', 'L', {pcl_perforation_skip, pca_neg_error|pca_big_error}},
-	  {'k', 'H', {pcl_horiz_motion_index, pca_neg_error|pca_big_error}},
-	  {'l', 'C', {pcl_vert_motion_index, pca_neg_error|pca_big_error}},
-	  {'l', 'D', {pcl_line_spacing, pca_neg_ignore|pca_big_ignore}},
-	  {'l', 'M', {pcl_media_type, pca_neg_error|pca_big_ignore}},
+	  {'l', 'E',
+	     PCL_COMMAND("Top Margin", pcl_top_margin,
+			 pca_neg_ignore|pca_big_error)},
+	  {'l', 'F',
+	     PCL_COMMAND("Text Length", pcl_text_length,
+			 pca_neg_ignore|pca_big_error)},
+	  {'l', 'L',
+	     PCL_COMMAND("Perforation Skip", pcl_perforation_skip,
+			 pca_neg_error|pca_big_error)},
+	  {'k', 'H',
+	     PCL_COMMAND("Horizontal Motion Index", pcl_horiz_motion_index,
+			 pca_neg_error|pca_big_error)},
+	  {'l', 'C',
+	     PCL_COMMAND("Vertical Motion Index", pcl_vert_motion_index,
+			 pca_neg_error|pca_big_error)},
+	  {'l', 'D',
+	     PCL_COMMAND("Line Spacing", pcl_line_spacing,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'l', 'M',
+	     PCL_COMMAND("Media Type", pcl_media_type,
+			 pca_neg_error|pca_big_ignore)},
 	END_CLASS
-	DEFINE_CLASS_COMMAND_ARGS('*', 'o', 'Q', pcl_print_quality, pca_neg_ok|pca_big_error)
+	DEFINE_CLASS_COMMAND_ARGS('*', 'o', 'Q', "Print Quality",
+				  pcl_print_quality, pca_neg_ok|pca_big_error)
 	return 0;
 }
 private void
@@ -354,7 +382,7 @@ pcpage_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pcls->orientation = 0;
 	    reset_margins(pcls);
 	    pcls->perforation_skip = true;
-	    pcl_set_hmi(pcls, hmi_default, false);
+	    pcls->hmi_set = hmi_not_set;
 	    pcls->vmi = vmi_default;
 	    pcl_compute_logical_page_size(pcls);
 	    reset_text_length(pcls);

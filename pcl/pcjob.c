@@ -179,19 +179,38 @@ pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcls)
 private int
 pcjob_do_init(gs_memory_t *mem)
 {		/* Register commands */
-	DEFINE_ESCAPE('E', pcl_printer_reset)
+	DEFINE_ESCAPE('E', "Printer Reset", pcl_printer_reset)
 	DEFINE_CLASS('%')
 	  {0, 'X', {pcl_exit_language, pca_neg_ok|pca_big_error}},
 	END_CLASS
 	DEFINE_CLASS('&')
-	  {'l', 'X', {pcl_number_of_copies, pca_neg_ignore|pca_big_clamp}},
-	  {'l', 'S', {pcl_simplex_duplex_print, pca_neg_ignore|pca_big_ignore}},
-	  {'l', 'U', {pcl_left_offset_registration, pca_neg_ok|pca_big_error}},
-	  {'l', 'Z', {pcl_top_offset_registration, pca_neg_ok|pca_big_error}},
-	  {'a', 'G', {pcl_duplex_page_side_select, pca_neg_ignore|pca_big_ignore}},
-	  {'l', 'T', {pcl_job_separation, pca_neg_error|pca_big_error}},
-	  {'l', 'G', {pcl_output_bin_selection, pca_neg_error|pca_big_error}},
-	  {'u', 'D', {pcl_set_unit_of_measure, pca_neg_error|pca_big_error}},
+	  {'l', 'X',
+	     PCL_COMMAND("Number of Copies", pcl_number_of_copies,
+			 pca_neg_ignore|pca_big_clamp)},
+	  {'l', 'S',
+	     PCL_COMMAND("Simplex/Duplex Print", pcl_simplex_duplex_print,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'l', 'U',
+	     PCL_COMMAND("Left Offset Registration",
+			 pcl_left_offset_registration,
+			 pca_neg_ok|pca_big_error)},
+	  {'l', 'Z',
+	     PCL_COMMAND("Top Offset Registration",
+			 pcl_top_offset_registration,
+			 pca_neg_ok|pca_big_error)},
+	  {'a', 'G',
+	     PCL_COMMAND("Duplex Page Side Select",
+			 pcl_duplex_page_side_select,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'l', 'T',
+	     PCL_COMMAND("Job Separation", pcl_job_separation,
+			 pca_neg_error|pca_big_error)},
+	  {'l', 'G',
+	     PCL_COMMAND("Output Bin Selection", pcl_output_bin_selection,
+			 pca_neg_error|pca_big_error)},
+	  {'u', 'D',
+	     PCL_COMMAND("Set Unit of Measure", pcl_set_unit_of_measure,
+			 pca_neg_error|pca_big_error)},
 	END_CLASS	  
 	return 0;
 }

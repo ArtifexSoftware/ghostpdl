@@ -55,13 +55,12 @@ hpgl_default_pen_color(hpgl_state_t *pgls, int pen)
 private void
 hpgl_default_coordinate_system(hpgl_state_t *pcls)
 {
-	pcls->g.plot_width = pcls->g.picture_frame.width = 
+	pcls->g.plot_width = pcls->g.picture_frame_width = 
 	  pcls->logical_page_width;
-	pcls->g.plot_height = pcls->g.picture_frame.height = 
-	  pcls->text_length * ((float)pcls->vmi / 48.0);
+	pcls->g.plot_height = pcls->g.picture_frame_height = 
+	  pcls->text_length * (pcls->vmi);
 	pcls->g.picture_frame.anchor_point.x = pcls->left_margin;
 	pcls->g.picture_frame.anchor_point.y = pcls->top_margin;
-	pcls->g.plot_width = pcls->g.picture_frame.width;
 }
 
 	

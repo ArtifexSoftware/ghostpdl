@@ -5,6 +5,7 @@
 /* pcstate.h */
 /* Definition of PCL5 state */
 
+#include "gsdcolor.h"		/* for gx_ht_tile */
 #include "gsmatrix.h"		/* for gsiparam.h */
 #include "gsiparam.h"
 #include "pldict.h"
@@ -32,12 +33,12 @@ typedef struct coord_point_s {
 } coord_point;
 
 /* Define the structure for paper size parameters. */
-/* Note that these values are all in centipoints. */
+/* Note that these values are all coords (centipoints). */
 typedef struct pcl_paper_size_s {
-  long width, height;		/* physical page size */
-  gs_int_point offset_portrait;	/* offsets of logical page from physical */
+  coord width, height;		/* physical page size */
+  coord_point offset_portrait;	/* offsets of logical page from physical */
 				/* page in portrait orientations */
-  gs_int_point offset_landscape; /* ditto for landscape orientations */
+  coord_point offset_landscape; /* ditto for landscape orientations */
 } pcl_paper_size_t;
 
 /* Define the parameters for one font set (primary or secondary). */
@@ -246,7 +247,11 @@ struct pcl_state_s {
 	int text_length;
 	bool perforation_skip;
 	coord hmi, hmi_unrounded, vmi;
-	bool hmi_set;
+	enum {
+	  hmi_not_set,		/* must be recomputed from font */
+	  hmi_set_from_font,
+	  hmi_set_explicitly
+	} hmi_set;
 	int (*end_page)(P3(pcl_state_t *pcls, int num_copies, int flush));
 		/* Internal variables */
 	bool have_page;		/* true if anything has been written on page */
@@ -316,6 +321,8 @@ struct pcl_state_s {
 		/* Internal variables */
 	pcl_id_t current_pattern_id;	/* at last select_pattern */
 	bool pattern_set;	/* true if pattern set in graphics state */
+	gx_ht_tile pattern_tile;	/* set by pcl_set_drawing_color */
+	gs_pattern_instance *cached_patterns[7+6];  /* create as needed */
 
 		/* Chapter 14 (pcrect.c) */
 

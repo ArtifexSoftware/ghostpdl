@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -40,11 +40,20 @@ private int
 rtcursor_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('&')
-	  {'a', 'H', {rtl_horiz_cursor_pos_decipoints, pca_neg_ok|pca_big_ok}},
+	  {'a', 'H',
+	     PCL_COMMAND("Horizontal Cursor Position Decipoints",
+			 rtl_horiz_cursor_pos_decipoints,
+			 pca_neg_ok|pca_big_ok)},
 	END_CLASS
 	DEFINE_CLASS('*')
-	  {'p', 'X', {rtl_horiz_cursor_pos_units, pca_neg_ok|pca_big_ok}},
-	  {'p', 'Y', {rtl_vert_cursor_pos_units, pca_neg_ok|pca_big_ok}},
+	  {'p', 'X',
+	     PCL_COMMAND("Horizontal Cursor Position Units",
+			 rtl_horiz_cursor_pos_units,
+			 pca_neg_ok|pca_big_ok)},
+	  {'p', 'Y',
+	     PCL_COMMAND("Vertical Cursor Position Units",
+			 rtl_vert_cursor_pos_units,
+			 pca_neg_ok|pca_big_ok)},
 	END_CLASS
 	return 0;
 }

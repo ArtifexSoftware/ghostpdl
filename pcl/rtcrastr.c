@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -150,11 +150,21 @@ private int
 rtcrastr_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('*')
-	  {'r', 'A', {pcl_c_start_raster_graphics, pca_neg_error|pca_big_error|pca_raster_graphics}},
-	  {'b', 'W', {pcl_c_transfer_raster_data, pca_bytes|pca_raster_graphics}},
-	  {'b', 'V', {pcl_transfer_raster_planes, pca_bytes|pca_raster_graphics}},
-	  {'t', 'H', {pcl_dest_raster_width, pca_neg_ignore|pca_big_ignore}},
-	  {'t', 'V', {pcl_dest_raster_height, pca_neg_ignore|pca_big_ignore}},
+	  {'r', 'A',
+	     PCL_COMMAND("Start Raster Graphics", pcl_c_start_raster_graphics,
+			 pca_neg_error|pca_big_error|pca_raster_graphics)},
+	  {'b', 'W',
+	     PCL_COMMAND("Transfer Raster Data", pcl_c_transfer_raster_data,
+			 pca_bytes|pca_raster_graphics)},
+	  {'b', 'V',
+	     PCL_COMMAND("Transfer Raster Planes", pcl_transfer_raster_planes,
+			 pca_bytes|pca_raster_graphics)},
+	  {'t', 'H',
+	     PCL_COMMAND("Destination Raster Width", pcl_dest_raster_width,
+			 pca_neg_ignore|pca_big_ignore)},
+	  {'t', 'V',
+	     PCL_COMMAND("Destination Raster Height", pcl_dest_raster_height,
+			 pca_neg_ignore|pca_big_ignore)},
 	END_CLASS
 		/* Register compression mode 9 */
 	pcl_register_compression_method(9, uncompress_row_9, false);

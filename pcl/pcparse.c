@@ -415,7 +415,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 							   pst->param_group,
 							   chr);
 			if ( cdefn )
-			  { code = pcl_adjust_arg(&pst->args, cdefn);
+			  { if_debug1('i', "   [%s]\n", cdefn->cname);
+			    code = pcl_adjust_arg(&pst->args, cdefn);
 			    if ( code < 0 )
 			      goto x;
 			    if ( cdefn->actions & pca_byte_data )
@@ -509,6 +510,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 					    --p;
 					    continue;
 					  }
+					if_debug1('i', "   [%s]\n",
+						  cdefn->cname);
 				  }
 				else
 				  {	if ( p >= rlimit ) { p -= 2; goto x; }

@@ -190,8 +190,12 @@ private int
 pcmacros_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('&')
-	  {'f', 'X', {pcl_macro_control, pca_neg_error|pca_big_error|pca_in_macro}},
-	  {'f', 'Y', {pcl_assign_macro_id, pca_neg_error|pca_big_error}},
+	  {'f', 'X',
+	     PCL_COMMAND("Macro Control", pcl_macro_control,
+			 pca_neg_error|pca_big_error|pca_in_macro)},
+	  {'f', 'Y',
+	     PCL_COMMAND("Assign Macro ID", pcl_assign_macro_id,
+			 pca_neg_error|pca_big_error)},
 	END_CLASS
 	return 0;
 }
