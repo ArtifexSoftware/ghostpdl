@@ -385,3 +385,29 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
     }
     return code;
 }
+
+/* Set up compression filters for a lossless image, with no downsampling, */
+/* no color space conversion, and only lossless filters. */
+/* Note that this may modify the image parameters. */
+int
+psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
+			    gs_pixel_image_t *pim)
+{
+    /*
+     * Set up a device with modified parameters for computing the image
+     * compression filters.  Don't allow downsampling or lossy compression.
+     */
+    gx_device_psdf ipdev;
+
+    ipdev = *pdev;
+    ipdev.params.ColorImage.AutoFilter = false;
+    ipdev.params.ColorImage.Downsample = false;
+    ipdev.params.ColorImage.Filter = "FlateEncode";
+    ipdev.params.ColorImage.filter_template = &s_zlibE_template;
+    ipdev.params.ConvertCMYKImagesToRGB = false;
+    ipdev.params.GrayImage.AutoFilter = false;
+    ipdev.params.GrayImage.Downsample = false;
+    ipdev.params.GrayImage.Filter = "FlateEncode";
+    ipdev.params.GrayImage.filter_template = &s_zlibE_template;
+    return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL);
+}

@@ -335,6 +335,13 @@ int psdf_setup_image_filters(P5(gx_device_psdf *pdev, psdf_binary_writer *pbw,
 				gs_pixel_image_t *pim, const gs_matrix *pctm,
 				const gs_imager_state * pis));
 
+/* Set up compression filters for a lossless image, with no downsampling, */
+/* no color space conversion, and only lossless filters. */
+/* Note that this may modify the image parameters. */
+int psdf_setup_lossless_filters(P3(gx_device_psdf *pdev,
+				   psdf_binary_writer *pbw,
+				   gs_pixel_image_t *pim));
+
 /* Finish writing binary data. */
 int psdf_end_binary(P1(psdf_binary_writer * pbw));
 

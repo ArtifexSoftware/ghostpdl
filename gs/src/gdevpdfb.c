@@ -93,8 +93,9 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     if (for_pattern < 0)
 	pputs(pdev->strm, "q ");
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
-	(code = psdf_setup_image_filters((gx_device_psdf *) pdev, &piw->binary,
-					 (gs_pixel_image_t *)pim, NULL, NULL)) < 0 ||
+	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
+					    &piw->binary,
+					    (gs_pixel_image_t *)pim)) < 0 ||
 	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
 				     NULL)) < 0
 	)
@@ -385,8 +386,9 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
 	(code = pdf_color_space(pdev, &cs_value, &cs,
 				&piw->pin->color_spaces, in_line)) < 0 ||
-	(code = psdf_setup_image_filters((gx_device_psdf *) pdev, &piw->binary,
-					 (gs_pixel_image_t *)pim, NULL, NULL)) < 0 ||
+	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
+					    &piw->binary,
+					    (gs_pixel_image_t *)pim)) < 0 ||
 	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
 				     &cs_value)) < 0
 	)
