@@ -1,8 +1,6 @@
 #!/usr/bin/perl
 # $Id$
 
-# $Id$
-
 #   (C) 1997 Anthony Shipman
 # 
 #   This software is provided 'as-is', without any express or implied
