@@ -713,35 +713,6 @@ readonly def
   1 index /Subtype get /CIDFontType2 eq {
     .loadttcidfont
 		% Stack: filepos fontres cidfont
-    1 index /CIDToGIDMap knownoget {
-      dup /Identity eq {
-	pop
-      } {
-	true resolvestream
-		% Stack: filepos fontres font mapstream
-	dup 2 index /CIDCount oget dup 32767 le {
-          2 mul string readstring pop
-        } {
-	  % Length exceeded max string size, use an array of two strings
-          % stack: filepos fontres font mapstream mapstream CIDCount
-          1 index 32767 string readstring not {
-            (   **** Warning: CIDToGIDMap length of ) pdfformaterror
-            dup length 2 div cvi =string cvs pdfformaterror
-            (, expected length of ) pdfformaterror
-            exch =string cvs pdfformaterror
-            (.\n) pdfformaterror
-            exch pop
-          } {
-	    3 1 roll 32767 sub string readstring pop 
-	    2 array astore
-          } ifelse
-        } ifelse
-	exch closefile exch dup length 5 add dict .copydict
-	dup /FID undef
-	dup /CIDMap 4 -1 roll put
-	dup /CIDFontName get exch /CIDFont defineresource
-      } ifelse
-    } if
   } {
 		                          % filepos fontres stream
     1 index /FontDescriptor oget          % filepos fontres stream fd   
@@ -1142,13 +1113,56 @@ readonly def
 
 /buildCIDType0 {	% <CIDFontType0-font-resource> buildCIDType0 <font>
   dup /BaseFont get exch 1 index findCIDFont
-  addCIDmetrics /CIDFont defineresource
 } bdef
 
 /buildCIDType2 {	% <CIDFontType2-font-resource> buildCIDType2 <font>
   dup /BaseFont get exch 1 index findCIDFont
-  addCIDmetrics /CIDFont defineresource
 } bdef
+
+/processCIDToGIDMap { % <fontres> <cidfont> processCIDToGIDMap <fontres> <cidfont>
+  1 index /CIDToGIDMap knownoget {
+    PDFfile fileposition 4 1 roll
+    dup /Identity eq {
+      pop
+    } {
+      true resolvestream
+		% Stack: filepos fontres font mapstream
+      dup 2 index /CIDCount oget dup 32767 le {
+        2 mul string readstring pop
+      } {
+	  % Length exceeded max string size, use an array of two strings
+          % stack: filepos fontres font mapstream mapstream CIDCount
+        1 index 32767 string readstring not {
+          (   **** Warning: CIDToGIDMap length of ) pdfformaterror
+          dup length 2 div cvi =string cvs pdfformaterror
+          (, expected length of ) pdfformaterror
+          exch =string cvs pdfformaterror
+          (.\n) pdfformaterror
+          exch pop
+        } {
+          3 1 roll 32767 sub string readstring pop 
+	  2 array astore
+        } ifelse
+      } ifelse
+      exch closefile exch
+      dup /CIDMap 4 -1 roll put
+    } ifelse
+    3 2 roll PDFfile exch setfileposition
+  } if
+} bdef
+
+% Adjust a CIDFontType0 DW[2] in the font resource.
+/adjustCIDType0 {		% <font-resource> <font> adjustfont <font'>
+  addCIDmetrics
+  dup /CIDFontName get exch /CIDFont defineresource
+} bind def
+
+% Adjust a CIDFontType2 DW[2] and CIDToGIDMap in the font resource.
+/adjustCIDType2 {		% <font-resource> <font> adjustfont <font'>
+  addCIDmetrics
+  processCIDToGIDMap
+  dup /CIDFontName get exch /CIDFont defineresource
+} bind def
 
 % ---------------- Other embedded fonts ---------------- %
 
@@ -1204,6 +1218,8 @@ readonly def
   /Type1 //adjustfont
   /MMType1 //adjustfont
   /TrueType //adjustfont
+  /CIDFontType0 //adjustCIDType0
+  /CIDFontType2 //adjustCIDType2
 .dicttomark readonly def
 
 /resourcefont			% <font-resource> resourcefont <font>
