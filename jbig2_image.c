@@ -71,7 +71,7 @@ Jbig2Image* jbig2_image_clone(Jbig2Ctx *ctx, Jbig2Image *image)
 void jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image)
 {
 	image->refcount--;
-	if (!image->refcount) jbig2_image_free(image);
+	if (!image->refcount) jbig2_image_free(ctx, image);
 }
 
 /* free a Jbig2Image structure and its associated memory */
