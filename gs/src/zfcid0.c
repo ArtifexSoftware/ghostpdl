@@ -26,6 +26,7 @@
 #include "gsstruct.h"
 #include "gxfcid.h"
 #include "gxfont1.h"
+#include "gxalloc.h"		/* for gs_ref_memory_t */
 #include "stream.h"		/* for files.h */
 #include "bfont.h"
 #include "files.h"
@@ -485,7 +486,11 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
 				    &gstr, &fidx);
     if (code < 0)
 	return code;
-    make_const_string(op - 1, a_readonly, gstr.size, gstr.data);
+
+    make_const_string(op - 1, 
+		      a_readonly | imemory_space((gs_ref_memory_t *)pfont->memory), 
+		      gstr.size, 
+		      gstr.data);
     make_int(op, fidx);
     return 0;
 }
