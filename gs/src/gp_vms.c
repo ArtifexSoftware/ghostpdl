@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989-2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* VAX/VMS specific routines for Ghostscript */
+
 #include "string_.h"
 #include "memory_.h"
 #include "gx.h"
@@ -220,10 +221,10 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 {
     FILE *f;
     char tmpdir[gp_file_name_sizeof];
-   int tdlen;
-   int flen[1];
+    int tdlen = gp_file_name_sizeof;
+    int flen[1];
 
-   if (!gp_file_name_is_absolute(prefix, strlen(prefix)) &&
+    if (!gp_file_name_is_absolute(prefix, strlen(prefix)) &&
 	gp_gettmpdir(tmpdir, &tdlen) == 0) {
       flen[0] = gp_file_name_sizeof;
 	if (gp_file_name_combine(tmpdir, tdlen, prefix, strlen(prefix),
