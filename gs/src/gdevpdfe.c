@@ -62,7 +62,7 @@ private bool
 pdf_do_subset_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
     gs_font *font = pfd->base_font;
-    bool do_subset;
+    bool do_subset = false;
 
     /*
      * Adobe's Distiller Parameters documentation for Acrobat Distiller 5

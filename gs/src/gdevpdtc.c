@@ -41,7 +41,7 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 {
     byte *const buf = vbuf;
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
-    int index = 0, code = 0;
+    int code = 0;
     gs_string str;
     pdf_text_process_state_t text_state;
     pdf_text_enum_t curr, prev;
@@ -63,7 +63,7 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     /* Scan runs of characters in the same leaf font. */
     for ( ; ; ) {
 	int font_code, buf_index;
-	gs_font *new_font;
+	gs_font *new_font = 0;
 
 	for (buf_index = 0; ; ++buf_index) {
 	    gs_char chr;

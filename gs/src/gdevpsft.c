@@ -651,12 +651,12 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     ulong max_glyph;
     uint glyf_length, glyf_checksum = 0 /****** NO CHECKSUM ******/;
     uint loca_length, loca_checksum[2];
-    uint numGlyphs;		/* original value from maxp */
+    uint numGlyphs = 0;		/* original value from maxp */
     byte head[56];		/* 0 mod 4 */
     gs_type42_mtx_t mtx[2];
     post_t post;
     ulong head_checksum, file_checksum = 0;
-    int indexToLocFormat;
+    int indexToLocFormat = 0;
     bool
 	writing_cid = (options & WRITE_TRUETYPE_CID) != 0,
 	writing_stripped = (options & WRITE_TRUETYPE_STRIPPED) != 0,
@@ -667,8 +667,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	have_OS_2 = no_generate,
 	have_post = no_generate;
     int have_hvhea[2];
-    uint cmap_length;
-    ulong OS_2_start;
+    uint cmap_length = 0;
+    ulong OS_2_start = 0;
     uint OS_2_length = OS_2_LENGTH;
     int code;
 
