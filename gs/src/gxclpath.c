@@ -232,7 +232,7 @@ cmd_drawing_colors_used(gx_device_clist_writer *cldev,
 void
 cmd_clear_known(gx_device_clist_writer * cldev, uint known)
 {
-    ushort unknown = ~known;
+    uint unknown = ~known;
     gx_clist_state *pcls = cldev->states;
     int i;
 
@@ -255,10 +255,31 @@ cmd_check_clip_path(gx_device_clist_writer * cldev, const gx_clip_path * pcpath)
     return true;
 }
 
+/* Check whether we need to update an opacity or shape mask. */
+private bool
+cmd_check_transparency_mask(const gs_soft_mask_t *psm1,
+			    const gs_soft_mask_t *psm2)
+{
+    return (psm1 == 0 ? psm2 != 0 : psm2 == 0 ? true :
+	    psm1->id != psm2->id || psm1->id == gs_no_id);
+}
+
+/* Write out a transparency mask. */
+private int
+cmd_write_transparency_mask(gx_device_clist_writer *cdev,
+			    const gs_soft_mask_t *psm)
+{
+    /****** NYI ******/
+}
+
 /*
  * Check the graphics state elements that need to be up to date for filling
  * or stroking.
  */
+#define FILL_KNOWN\
+ (cj_ac_sa_known | flatness_known | op_bm_tk_known | opacity_alpha_known |\
+  opacity_mask_known | shape_alpha_known | shape_mask_known |\
+  fill_adjust_known | alpha_known | clip_path_known)
 private void
 cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 		     floatp flatness, const gs_fixed_point *padjust,
@@ -289,13 +310,25 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 	state_update(blend_mode);
 	state_update(text_knockout);
     }
-    if (state_neq(opacity.alpha) /****** DOESN'T HANDLE MASK ******/) {
-	*punknown |= opacity_known;
-	state_update(opacity);
+    if (state_neq(opacity.alpha)) {
+	*punknown |= opacity_alpha_known;
+	state_update(opacity.alpha);
     }
-    if (state_neq(shape.alpha) /****** DOESN'T HANDLE MASK ******/) {
-	*punknown |= shape_known;
-	state_update(shape);
+    if (cmd_check_transparency_mask(&cdev->imager_state.opacity.mask,
+				    &pis->opacity.mask)
+	) {
+	*punknown |= opacity_mask_known;
+	state_update(opacity.mask);
+    }
+    if (state_neq(shape.alpha)) {
+	*punknown |= shape_alpha_known;
+	state_update(shape.alpha);
+    }
+    if (cmd_check_transparency_mask(&cdev->imager_state.shape.mask,
+				    &pis->shape.mask)
+	) {
+	*punknown |= shape_mask_known;
+	state_update(shape.mask);
     }
     if (cdev->imager_state.fill_adjust.x != padjust->x ||
 	cdev->imager_state.fill_adjust.y != padjust->y
@@ -329,7 +362,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		 sizeof(float) +	/* line width */
 		 sizeof(float) +	/* miter limit */
 		 1 +		/* op_bm_tk */
-		 (sizeof(float)) * 2 +  /* opacity/shape ****** MASK NYI ****** */
+		 sizeof(float) * 2 +  /* opacity/shape alpha */
 		 sizeof(cldev->imager_state.alpha)
 	];
 	byte *bp = buf;
@@ -367,15 +400,13 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		(cldev->imager_state.overprint_mode << 1) +
 		cldev->imager_state.overprint;
 	}
-	if (unknown & opacity_known) {
+	if (unknown & opacity_alpha_known) {
 	    memcpy(bp, &cldev->imager_state.opacity.alpha, sizeof(float));
 	    bp += sizeof(float);
-	    /****** mask is NYI ******/
 	}
-	if (unknown & shape_known) {
+	if (unknown & shape_alpha_known) {
 	    memcpy(bp, &cldev->imager_state.shape.alpha, sizeof(float));
 	    bp += sizeof(float);
-	    /****** mask is NYI ******/
 	}
 	if (unknown & alpha_known) {
 	    memcpy(bp, &cldev->imager_state.alpha,
@@ -387,7 +418,8 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	if (code < 0)
 	    return 0;
 	memcpy(cmd_put_w(misc2_unknown, dp + 1), buf, bp - buf);
-	pcls->known |= misc2_unknown;
+	pcls->known |= misc2_unknown &
+	    ~(opacity_mask_known | shape_mask_known);
     }
     if (unknown & fill_adjust_known) {
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_fill_adjust,
@@ -560,6 +592,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	dp[1] = cldev->color_space.byte1;
 	pcls->known |= color_space_known;
     }
+    /****** HANDLE masks ******/
     return 0;
 }
 
@@ -607,10 +640,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     if (unknown)
 	cmd_clear_known(cdev, unknown);
     FOR_RECTS_NO_ERROR {
-	int code =
-	    cmd_do_write_unknown(cdev, pcls,
-				 flatness_known | fill_adjust_known |
-				 alpha_known | clip_path_known);
+	int code = cmd_do_write_unknown(cdev, pcls, FILL_KNOWN);
 
 	if (code < 0)
 	    return code;

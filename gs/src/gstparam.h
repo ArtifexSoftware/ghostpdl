@@ -23,8 +23,9 @@
 #  define gstparam_INCLUDED
 
 #include "gsiparam.h"		/* for soft masks */
-#include "gsrefct.h"		/* for soft masks */
-#include "stream.h"		/* for soft masks */
+#include "gsmatrix.h"		/* ibid. */
+#include "gsrefct.h"		/* ibid. */
+#include "stream.h"		/* ibid. */
 
 /* Define the names of the known blend modes. */
 typedef enum {
@@ -70,14 +71,17 @@ typedef struct gs_soft_mask_s {
     rc_header rc;
     gs_id id;
     /*
-     * In the image structure, ColorSpace is ignored (but it must be a
-     * valid 1-component color space); ImageMask must be false; Alpha
-     * must be "none".
+     * In the image structure, ColorSpace must be NULL;
+     * ImageMask must be false; Alpha must be "none".
      */
     gs_image1_t image;
     stream *DataSource;
+    /*
+     * The CTM is set by gs_set{opacity,shape}mask.
+     */
+    gs_matrix save_ctm;
 } gs_soft_mask_t;
-#define private_st_gs_soft_mask()\
+#define private_st_gs_soft_mask()	/* in gstrans.c */\
   gs_private_st_suffix_add1(st_gs_soft_mask, gs_soft_mask_t, "gs_soft_mask_t",\
     soft_mask_enum_ptrs, soft_mask_reloc_ptrs, st_gs_image1, DataSource)
 

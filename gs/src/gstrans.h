@@ -31,13 +31,17 @@ gs_blend_mode_t gs_currentblendmode(P1(const gs_state *));
 int gs_setopacityalpha(P2(gs_state *, floatp));
 float gs_currentopacityalpha(P1(const gs_state *));
 int gs_setopacitymask(P2(gs_state *, const gs_soft_mask_t *));
-gs_soft_mask_t * gs_currentopacitymask(P1(const gs_state *));
+const gs_soft_mask_t * gs_currentopacitymask(P1(const gs_state *));
 int gs_setshapealpha(P2(gs_state *, floatp));
 float gs_currentshapealpha(P1(const gs_state *));
 int gs_setshapemask(P2(gs_state *, const gs_soft_mask_t *));
-gs_soft_mask_t * gs_currentshapemask(P1(const gs_state *));
+const gs_soft_mask_t * gs_currentshapemask(P1(const gs_state *));
 int gs_settextknockout(P2(gs_state *, bool));
 bool gs_currenttextknockout(P1(const gs_state *));
+
+/* Allocate/initialize a soft mask. */
+int gs_soft_mask_alloc(P3(gs_memory_t *, gs_soft_mask_t **, client_name_t));
+void gs_soft_mask_init(P1(gs_soft_mask_t *));
 
 /* Begin / end / discard a transparency group. */
 int gs_begintransparencygroup(P4(gs_state *pgs, bool isolated, bool knockout,

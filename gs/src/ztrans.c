@@ -21,10 +21,14 @@
 #include "string_.h"
 #include "ghost.h"
 #include "oper.h"
+#include "gsiparam.h"		/* for iimage2.h */
+#include "gstrans.h"
+#include "stream.h"		/* for files.h */
+#include "files.h"
 #include "igstate.h"
+#include "iimage2.h"
 #include "iname.h"
 #include "store.h"
-#include "gstrans.h"
 
 /* ------ Utilities ------ */
 
@@ -55,25 +59,46 @@ current_float_value(i_ctx_t *i_ctx_p,
 }
 
 private int
-set_mask_value(i_ctx_t *i_ctx_p,
+set_mask_value(i_ctx_t *i_ctx_p, ref *pmref,
 	       int (*set_mask)(P2(gs_state *, const gs_soft_mask_t *)))
 {
     os_ptr op = osp;
+    int code;
 
-    /****** NYI ******/
+    if (r_has_type(pmref, t_null)) {
+	code = set_mask(igs, NULL);
+    } else {
+	gs_soft_mask_t mask;
+	image_params params;
+	stream *s;
+
+	gs_soft_mask_init(&mask);
+	code = data_image_params(op, (gs_data_image_t *)&mask.image,
+				 &params, true, 1, 16);
+	if (code < 0)
+	    return code;
+	if (params.MultipleDataSources)
+	    return_error(e_rangecheck);
+	check_read_file(s, &params.DataSource[0]);
+	if (s->close_at_eod)
+	    return_error(e_invalidfileaccess); /* not reusable */
+	mask.DataSource = s;
+	code = set_mask(igs, &mask);
+    }
+    if (code < 0)
+	return code;
+    ref_assign(pmref, op);
     pop(1);
     return 0;
 }
 
 private int
-current_mask_value(i_ctx_t *i_ctx_p,
-		   gs_soft_mask_t * (*current_mask)(P1(const gs_state *)))
+current_mask_value(i_ctx_t *i_ctx_p, const ref *pmref)
 {
     os_ptr op = osp;
 
-    /****** NYI ******/
     push(1);
-    make_null(op);
+    ref_assign(op, pmref);
     return 0;
 }
 
@@ -141,14 +166,14 @@ zcurrentopacityalpha(i_ctx_t *i_ctx_p)
 private int
 zsetopacitymask(i_ctx_t *i_ctx_p)
 {
-    return set_mask_value(i_ctx_p, gs_setopacitymask);
+    return set_mask_value(i_ctx_p, &istate->opacity_mask, gs_setopacitymask);
 }
 
 /* - .currentopacitymask <maskdict|null> */
 private int
 zcurrentopacitymask(i_ctx_t *i_ctx_p)
 {
-    return current_mask_value(i_ctx_p, gs_currentopacitymask);
+    return current_mask_value(i_ctx_p, &istate->opacity_mask);
 }
 
 /* <0..1> .setshapealpha - */
@@ -169,14 +194,14 @@ zcurrentshapealpha(i_ctx_t *i_ctx_p)
 private int
 zsetshapemask(i_ctx_t *i_ctx_p)
 {
-    return set_mask_value(i_ctx_p, gs_setshapemask);
+    return set_mask_value(i_ctx_p, &istate->shape_mask, gs_setshapemask);
 }
 
 /* - .currentshapemask <maskdict|null> */
 private int
 zcurrentshapemask(i_ctx_t *i_ctx_p)
 {
-    return current_mask_value(i_ctx_p, gs_currentshapemask);
+    return current_mask_value(i_ctx_p, &istate->shape_mask);
 }
 
 /* <bool> .settextknockout - */
@@ -239,6 +264,33 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
     return gs_endtransparencygroup(igs);
 }
 
+/* ------ Redefined operators ------ */
+
+/* We redefine .image1 to recognize the Matte key. */
+/* <dict> .image1 - */
+private int
+zimage1t(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_image1_t image;
+    image_params ip;
+    int num_components =
+	gs_color_space_num_components(gs_currentcolorspace(igs));
+    int code;
+
+    gs_image_t_init(&image, gs_currentcolorspace(igs));
+    code = pixel_image_params(i_ctx_p, op, (gs_pixel_image_t *)&image, &ip,
+			      12);
+    if (code < 0)
+	return code;
+    code = dict_floats_param(op, "Matte", num_components, image.Matte);
+    if (code < 0)
+	return code;
+    image.has_Matte = code != 0; /* == num_components */
+    return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
+			image.CombineWithColor, 1);
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def ztrans_op_defs[] = {
@@ -257,5 +309,6 @@ const op_def ztrans_op_defs[] = {
     {"6.begintransparencygroup", zbegintransparencygroup},
     {"0.discardtransparencygroup", zdiscardtransparencygroup},
     {"0.endtransparencygroup", zendtransparencygroup},
+    {"1.image1", zimage1t},
     op_def_end(0)
 };

@@ -1620,13 +1620,15 @@ $(PSD)trapping.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)traplib.dev $(PSD)trapread.de
 # ---------------- Transparency ---------------- #
 
 transread_=$(PSOBJ)ztrans.$(OBJ)
-$(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)translib.dev $(transread_)
+$(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE)\
+ $(PSD)psl2read.dev $(GLD)translib.dev $(transread_)
 	$(SETMOD) $(PSD)transpar $(transread_)
 	$(ADDMOD) $(PSD)transpar -oper ztrans
-	$(ADDMOD) $(PSD)transpar -include $(GLD)translib
+	$(ADDMOD) $(PSD)transpar -include $(PSD)psl2read $(GLD)translib
 
 $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
- $(gstrans_h) $(igstate_h) $(iname_h) $(store_h)
+ $(gsiparam_h) $(gstrans_h) $(stream_h)\
+ $(files_h) $(igstate_h) $(iimage2_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c
 
 # ================================ PDF ================================ #

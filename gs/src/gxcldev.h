@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -262,8 +262,8 @@ struct gx_clist_state_s {
 				/* -1 is used internally */
     short clip_enabled;		/* 0 = don't clip, 1 = do clip, */
 				/* -1 is used internally */
-    ushort color_is_alpha;	/* (Boolean) for copy_color_alpha */
-    ushort known;		/* flags for whether this band */
+    bool color_is_alpha;	/* for copy_color_alpha */
+    uint known;			/* flags for whether this band */
 				/* knows various misc. parameters */
     /* We assign 'known' flags here from the high end; */
     /* gxclpath.h assigns them from the low end. */
