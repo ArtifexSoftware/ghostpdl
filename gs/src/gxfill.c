@@ -290,7 +290,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 {
     gs_fixed_point adjust;
     gs_logical_operation_t lop = pis->log_op;
-    gs_fixed_rect ibox, bbox;
+    gs_fixed_rect ibox, bbox, sbox;
     gx_device_clip cdev;
     gx_device *dev = pdev;
     gx_device *save_dev = dev;
@@ -404,6 +404,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	fo.adjust_below = fo.adjust_above = adjust.y;
     /* Initialize the active line list. */
     init_line_list(&lst, ppath->memory);
+    sbox.p.x = ibox.p.x - adjust.x;
+    sbox.p.y = ibox.p.y - adjust.y;
+    sbox.q.x = ibox.q.x + adjust.x;
+    sbox.q.y = ibox.q.y + adjust.y;
     fo.pseudo_rasterization = pseudo_rasterization;
     fo.pdevc = pdevc;
     fo.lop = lop;
@@ -412,7 +416,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     fo.ymax = ibox.q.y;
     fo.dev = dev;
     fo.lop = lop;
-    fo.pbox = &ibox;
+    fo.pbox = &sbox;
     fo.rule = params->rule;
     fo.is_spotan = is_spotan_device(dev);
     fo.fill_direct = color_writes_pure(pdevc, lop);

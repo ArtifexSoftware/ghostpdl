@@ -39,7 +39,7 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 {
     const fill_options fo = *ll->fo;
     int rule = fo.rule;
-    const fixed y_limit = fo.pbox->q.y;
+    const fixed y_limit = fo.ymax;
     active_line *yll = ll->y_list;
     fixed y;
     int code;
