@@ -310,10 +310,11 @@ fn_1ItSg_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
     b0 = (i == 0 ? pfn->params.Domain[0] : pfn->params.Bounds[i - 1]);
     b1 = (i == k - 1 ? pfn->params.Domain[1] : pfn->params.Bounds[i]);
     e0 = pfn->params.Encode[2 * i];
-    encoded =
-		(arg - b0) * (pfn->params.Encode[2 * i + 1] - e0) / 
-			((b1 == b0) ? 1.0 : (b1 - b0)) +
-				e0;
+    if (b1 == b0)
+	encoded = e0;
+    else
+	encoded =
+	    (arg - b0) * (pfn->params.Encode[2 * i + 1] - e0) / (b1 - b0) + e0;
     if_debug3('~', "[~]1ItSg %g in %d => %g\n", arg, i, encoded);
     return gs_function_evaluate(pfn->params.Functions[i], &encoded, out);
 }
