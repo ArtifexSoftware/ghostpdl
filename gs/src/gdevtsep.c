@@ -381,24 +381,32 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 	{ 0 }			/* separation files */
 
 /*
+ * Select the default number of components based upon the number of bits
+ * that we have in a gx_color_index
+ */
+#define NC ((sizeof(gx_color_index) <= 8) ? sizeof(gx_color_index) : 8)
+
+/*
  * TIFF device with CMYK process color model and spot color support.
  */
 private const gx_device_procs spot_cmyk_procs = device_procs;
 
 const tiffsep_device gs_tiffsep_device =
 {   
-    tiffsep_device_body(spot_cmyk_procs, "tiffsep", 8, GX_CINFO_POLARITY_SUBTRACTIVE, 64, MAX_COLOR_VALUE, MAX_COLOR_VALUE, "DeviceCMYK"),
+    tiffsep_device_body(spot_cmyk_procs, "tiffsep", NC, GX_CINFO_POLARITY_SUBTRACTIVE, NC * 8, MAX_COLOR_VALUE, MAX_COLOR_VALUE, "DeviceCMYK"),
     /* devn_params specific parameters */
-    { 8,	/* Bits per color - must match ncomp, depth, etc. above */
+    { 8,		/* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
-      8,			/* MaxSeparations:  our current limit is 8 bytes */
+      NC,			/* MaxSeparations:  our current limit is 8 bytes */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     { true },			/* equivalent CMYK colors for spot colors */
 };
+
+#undef NC
 
 /*
  * The following procedures are used to map the standard color spaces into

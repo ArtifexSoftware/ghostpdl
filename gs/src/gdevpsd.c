@@ -245,6 +245,12 @@ const psd_device gs_psdrgb_device =
 };
 
 /*
+ * Select the default number of components based upon the number of bits
+ * that we have in a gx_color_index
+ */
+#define NC ((sizeof(gx_color_index) <= 8) ? sizeof(gx_color_index) : 8)
+
+/*
  * PSD device with CMYK process color model and spot color support.
  */
 private const gx_device_procs spot_cmyk_procs
@@ -252,7 +258,7 @@ private const gx_device_procs spot_cmyk_procs
 
 const psd_device gs_psdcmyk_device =
 {   
-    psd_device_body(spot_cmyk_procs, "psdcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
+    psd_device_body(spot_cmyk_procs, "psdcmyk", NC, GX_CINFO_POLARITY_SUBTRACTIVE, NC * 8, 255, 255, "DeviceCMYK"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,	/* Names of color model colorants */
@@ -266,6 +272,8 @@ const psd_device gs_psdcmyk_device =
     /* PSD device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
 };
+
+#undef NC
 
 /*
  * The following procedures are used to map the standard color spaces into

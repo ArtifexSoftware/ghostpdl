@@ -2002,7 +2002,7 @@ or uses a non-separable or a non-linear color model.
 It fills a triangle with a linearly varying color.
 Arguments specify 3 points in the device space - vertices of a triangle, and their colors.
 The colors are represented as vectors of positive fractional numbers, each of which
-represents a color component value in the interval <b><tt>[0,1]</b></tt>.
+represents a color component value in the interval <b><tt>[0,1]</tt></b>.
 The number of components in a vector in the number of color
 components in the device (process) color model.
 <dd>
@@ -2016,37 +2016,37 @@ for filling in a single action. For doing that the implementation returns 0 and 
 paint any pixel. In this case the graphics library will perform a subdivision of the area
 into smaller triangles and call the function again with smaller areas.
 <dd>
-<b><em>Important note :</b></em> Do not try to decompose the area within
+<b><em>Important note :</em></b> Do not try to decompose the area within
 the implementation of <b><tt> fill_linear_color_triangle </tt></b>, because
 it can break the plane coverage contiguity and cause a dropout.
 Instead that request graphics library to perform the decomposition.
 The graphics libary is smart enough to do that properly.
 <dd>
-<b><em>Important note :</b></em>
+<b><em>Important note :</em></b>
 The implementation must handle a special case, when only 2 colors are specified.
-It happens if <b><tt>p3</b></tt> one is <b><tt>NULL</b></tt>. 
+It happens if <b><tt>p3</tt></b> one is <b><tt>NULL</tt></b>. 
 This means that the color does not depend on the X coordinate,
 i.e. it forms a linear gradient along the Y axis.
 The implementation must not reject (return 0) such cases.
 <dd>
-<b><em>Important note :</b></em>The device color component
+<b><em>Important note :</em></b>The device color component
 value 1 may be represented with several hexadecimal values :
-<b><tt>0x7FFF0000</b></tt>, <b><tt>0x7FFFF000</b></tt>, <b><tt>0x7FFFFF00</b></tt>, etc.,
+<b><tt>0x7FFF0000</tt></b>, <b><tt>0x7FFFF000</tt></b>, <b><tt>0x7FFFFF00</tt></b>, etc.,
 because the precision here exceeds the color precision of the device.
-To convert a <b><tt>frac31</b></tt> value into a device color component value,
+To convert a <b><tt>frac31</tt></b> value into a device color component value,
 fist drop (ignore) the sign bit, then drop least significant bits -
 so many ones as you need to fit the device color precision.
 <dd>
-<b><em>Important note :</b></em> The <b><tt>fa</b></tt> argument may contain
-the <b><tt>swap_axes</b></tt> bit set. In this case the implementation must swap (transpoze)
-<b><tt>X</b></tt> and <b><tt>Y</b></tt> axes.
+<b><em>Important note :</em></b> The <b><tt>fa</tt></b> argument may contain
+the <b><tt>swap_axes</tt></b> bit set. In this case the implementation must swap (transpoze)
+<b><tt>X</tt></b> and <b><tt>Y</tt></b> axes.
 <dd>
-<b><em>Important note :</b></em> The implementation must not paint outside the
-clipping rectangle specified in the <b><tt>fa</b></tt> argument.
-If <b><tt>fa->swap_axes</b></tt> is true, the clipping rectangle is transposed.
+<b><em>Important note :</em></b> The implementation must not paint outside the
+clipping rectangle specified in the <b><tt>fa</tt></b> argument.
+If <b><tt>fa->swap_axes</tt></b> is true, the clipping rectangle is transposed.
 <dd>
-See <b><tt> gx_default_fill_linear_color_triangle </b></tt>
-in <b><tt>gdevddrw.c</b></tt> as a sample code.
+See <b><tt> gx_default_fill_linear_color_triangle </tt></b>
+in <b><tt>gdevddrw.c</tt></b> as a sample code.
 </dl>
 
 
@@ -2067,7 +2067,7 @@ when a decomposition into triangles appears undiserable.
 <dd>
 Rather the prototype can specify a bilinear color,
 we assume that the implementation handles linear colors only.
-This means that the implementation can ignore any of <b><tt> c0, c1, c2, c3 </b></tt>.
+This means that the implementation can ignore any of <b><tt> c0, c1, c2, c3 </tt></b>.
 The graphics library takes a special care of the color linearity 
 when calling this function. The reason for passing all 4 color arguments
 is to avoid color precision problems.
@@ -2076,8 +2076,8 @@ Similarly to <b><tt> fill_linear_color_triangle </tt></b>,
 this function may be called with only 2 colors, and may reject too comple areas.
 All those important notes are applicable here.
 <dd>
-A sample code may be found in in <b><tt>gxdtfill.h</b></tt>, rather it's a kind of complicated.
-A linear color function is generated from it as <b><tt> gx_fill_trapezoid_ns_lc </b></tt>
+A sample code may be found in in <b><tt>gxdtfill.h</tt></b>, rather it's a kind of complicated.
+A linear color function is generated from it as <b><tt> gx_fill_trapezoid_ns_lc </tt></b>
 with the following template parametres :
 
 <pre>
@@ -2088,10 +2088,10 @@ with the following template parametres :
 #define SWAP_AXES 0
 #define FILL_DIRECT 1
 </pre>
-See the helplers <b><tt>init_gradient</b></tt>,
-<b><tt>step_gradient</b></tt> (defined in in <b><tt>gdevddrw.c</b></tt>), how to manage colors.
-See <b><tt>check_gradient_overflow</b></tt>
-(defined in in <b><tt>gdevddrw.c</b></tt>), as an example of an area
+See the helplers <b><tt>init_gradient</tt></b>,
+<b><tt>step_gradient</tt></b> (defined in in <b><tt>gdevddrw.c</tt></b>), how to manage colors.
+See <b><tt>check_gradient_overflow</tt></b>
+(defined in in <b><tt>gdevddrw.c</tt></b>), as an example of an area
 that can't be painted paint in a single action due to 64-bits fixed overflows.
 
 </dl>
@@ -2114,41 +2114,41 @@ Thus if the device implements <b><tt> fill_linear_color_triangle </tt></b> and
 <b><tt> fill_linear_color_trapezoid </tt></b> by own means,
 this function may be left unimplemented.
 <dd>
-<b><tt>i</b></tt> and <b><tt>j</b></tt> specify device coordinates (indices)
-of the starting pixel of the scanline, <b><tt>w</b></tt> specifies the 
+<b><tt>i</tt></b> and <b><tt>j</tt></b> specify device coordinates (indices)
+of the starting pixel of the scanline, <b><tt>w</tt></b> specifies the 
 width of the scanline, i.e. the number of pixels to be painted to the right from
 the starting pixel, including the starting pixel.
 <dd>
-<b><tt>c0</b></tt> specifies the color for the starting pixel
+<b><tt>c0</tt></b> specifies the color for the starting pixel
 as a vector of fraction values, each of which represents 
-a color value in the interval <b><tt>[0,1]</b></tt>.
+a color value in the interval <b><tt>[0,1]</tt></b>.
 <dd>
-<b><tt>c0_f</b></tt> specify a fraction part of the color for the starting pixel.
+<b><tt>c0_f</tt></b> specify a fraction part of the color for the starting pixel.
 See the formula below about using it.
 <dd>
-<b><tt>cg_num</b></tt> specify a numerator for the color gradient -
-a vector of values in <b><tt>[-1,1]</b></tt>, each of which correspond to a color component.
+<b><tt>cg_num</tt></b> specify a numerator for the color gradient -
+a vector of values in <b><tt>[-1,1]</tt></b>, each of which correspond to a color component.
 <dd>
-<b><tt>cg_den</b></tt> specify the denominator for the color gradient -
-a vector of values in <b><tt>[-1,1]</b></tt>, each of which correspond to a color component.
+<b><tt>cg_den</tt></b> specify the denominator for the color gradient -
+a vector of values in <b><tt>[-1,1]</tt></b>, each of which correspond to a color component.
 <dd>
-The color for the pixel <b><tt>[i + k, j]</b></tt> to be computed like this :
+The color for the pixel <b><tt>[i + k, j]</tt></b> to be computed like this :
 <pre><b><tt>
          (double)(c0[n] + (c0_f[n] + cg_num[n] * k) / cg_den) / (1 ^ 31 - 1)
-</b></tt></pre>
-<dd>where <b><tt>0 <= k <= w </b></tt>, and <b><tt>n</b></tt> is a device color component index.
+</tt></b></pre>
+<dd>where <b><tt>0 <= k <= w </tt></b>, and <b><tt>n</tt></b> is a device color component index.
 
 <dd>
-<b><em>Important note :</b></em> The <b><tt>fa</b></tt> argument may contain
-the <b><tt>swap_axes</b></tt> bit set. In this case the implementation must swap (transpose)
-<b><tt>X</b></tt> and <b><tt>Y</b></tt> axes.
+<b><em>Important note :</em></b> The <b><tt>fa</tt></b> argument may contain
+the <b><tt>swap_axes</tt></b> bit set. In this case the implementation must swap (transpose)
+<b><tt>X</tt></b> and <b><tt>Y</tt></b> axes.
 <dd>
-<b><em>Important note :</b></em> The implementation must not paint outside the
-clipping rectangle specified in the <b><tt>fa</b></tt> argument.
-If <b><tt>fa->swap_axes</b></tt> is true, the clipping rectangle is transposed.
+<b><em>Important note :</em></b> The implementation must not paint outside the
+clipping rectangle specified in the <b><tt>fa</tt></b> argument.
+If <b><tt>fa->swap_axes</tt></b> is true, the clipping rectangle is transposed.
 <dd>
-See <b><tt> gx_default_fill_linear_color_scanline</b></tt>
-in <b><tt>gdevdsha.c</b></tt> as a sample code.
+See <b><tt> gx_default_fill_linear_color_scanline</tt></b>
+in <b><tt>gdevdsha.c</tt></b> as a sample code.
 </dl>
 
 
@@ -2727,23 +2727,23 @@ comments in <a href="../src/gxtext.h">gxtext.h</a> for details.
 <h4><a name="Unicode"></a>Unicode support for high level devices</h4>
 
 <p>
-<p>Implementing a new high level device, one may need to translate <b><tt>Postscript</b></tt>
-character codes into <b><tt>Unicode</b></tt>. This can be done pretty simply.
+<p>Implementing a new high level device, one may need to translate <b><tt>Postscript</tt></b>
+character codes into <b><tt>Unicode</tt></b>. This can be done pretty simply.
 
-<p>For translating a <b><tt>Postscript</b></tt> text you need to inplement the device
-virtual function <b><tt>text_begin</b></tt>. It should create a new instance of
-<b><tt>gs_text_enum_t</b></tt> in the heap (let its pointer be <b><tt>pte</b></tt>),
-and assign a special function to <b><tt>gs_text_enum_t::procs.process</b></tt>.
-The function will receive <b><tt>pte</b></tt>. It should take the top level font from
-<b><tt>pte->orig_font</b></tt>,
-and iterate with <b><tt>font->procs.next_char_glyph(pte, ..., &glyph)</b></tt>.
-The last argument receives a <b><tt>gs_glyph</b></tt> value, which encodes a
-<b><tt>Postscript</b></tt> character name or CID (and also stores it into
-<b><tt>pte->returned.current_glyph</b></tt>).
-Then obtain the current subfont with <b><tt>gs_text_current_font(pte)</b></tt>
+<p>For translating a <b><tt>Postscript</tt></b> text you need to inplement the device
+virtual function <b><tt>text_begin</tt></b>. It should create a new instance of
+<b><tt>gs_text_enum_t</tt></b> in the heap (let its pointer be <b><tt>pte</tt></b>),
+and assign a special function to <b><tt>gs_text_enum_t::procs.process</tt></b>.
+The function will receive <b><tt>pte</tt></b>. It should take the top level font from
+<b><tt>pte->orig_font</tt></b>,
+and iterate with <b><tt>font->procs.next_char_glyph(pte, ..., &glyph)</tt></b>.
+The last argument receives a <b><tt>gs_glyph</tt></b> value, which encodes a
+<b><tt>Postscript</tt></b> character name or CID (and also stores it into
+<b><tt>pte->returned.current_glyph</tt></b>).
+Then obtain the current subfont with <b><tt>gs_text_current_font(pte)</tt></b>
 (it can differ from the font)
-and call <b><tt>subfont->procs.decode_glyph(subfont, glyph)</b></tt>.
-The return value will be an <b><tt>Unicode</b></tt> code, or <b><tt>GS_NO_CHAR</b></tt>
+and call <b><tt>subfont->procs.decode_glyph(subfont, glyph)</tt></b>.
+The return value will be an <b><tt>Unicode</tt></b> code, or <b><tt>GS_NO_CHAR</tt></b>
 if the glyph can't be translated to Unicode.
 
 <h3><a name="Reading_bits_back"></a>Reading bits back</h3>
