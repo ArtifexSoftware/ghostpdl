@@ -12,6 +12,10 @@ install:
 test: pcl6
 	cd tools; ../main/obj/pcl6 -sDEVICE=x11alpha owl.pcl frs96.pxl # test with PCL and PXL test file 
 
+# NB - this does not remove the fonts.  blowing away /windows/fonts
+# might be unexpected on some systems and we don't enumerate the font
+# names here so they could be removed individually.
+
 clean:
 	make -C main -f pcl6_gcc.mak clean
 	rm -rf fonts main/obj /usr/local/bin/pcl6
