@@ -559,7 +559,7 @@ hpgl_polyfill(
     gs_point                    spacing;
     hpgl_real_t                 direction = params->angle;
     float saved_line_pattern_offset = pgls->g.line.current.pattern_offset;
-    int lines_filled = 0;
+    int lines_filled;
     /* initilialize spacing between fill line vector */
     spacing.x = spacing.y = params->spacing;
     /* save the pen position */
@@ -574,7 +574,6 @@ hpgl_polyfill(
 							      pgls->g.P2.x,
 							      pgls->g.P2.y
                                                 );
-	/****** WHAT IF ANISOTROPIC SCALING? ******/
 	spacing.x /= fabs(mat.xx);
 	spacing.y /= fabs(mat.yy);
     }
@@ -608,6 +607,7 @@ hpgl_polyfill(
     /* get rid of the current path */
     hpgl_call(hpgl_clear_current_path(pgls));
 start:
+    lines_filled = 0;
     gs_sincos_degrees(direction, &sincos);
     if (sin_dir < 0)
 	sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
@@ -629,6 +629,7 @@ start:
     diag_mag = hpgl_compute_distance(start.x, start.y, bbox.q.x, bbox.q.y);
     endx = (diag_mag * cos_dir) + start.x;
     endy = (diag_mag * sin_dir) + start.y;
+    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
     hpgl_call( hpgl_draw_vector_absolute( pgls,
                                           start.x,
                                           start.y,
@@ -636,11 +637,12 @@ start:
                                           endy,
                                           render_mode
                                           ) );
-    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
     /* Travel along +x using current spacing. */
     if (x_fill_increment != 0) {
 	while ( endx += x_fill_increment,
 		(start.x += x_fill_increment) <= bbox.q.x ) {
+
+	    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
 	    hpgl_call( hpgl_draw_vector_absolute( pgls,
                                                   start.x,
                                                   start.y,
@@ -648,7 +650,6 @@ start:
                                                   endy,
                                                   render_mode
                                                   ) );
-	    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
 	}
     }
 
@@ -673,6 +674,7 @@ start:
 
 	while ( endy += y_fill_increment,
 		(start.y += y_fill_increment) <= bbox.q.y ) {
+	    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
 	    hpgl_call( hpgl_draw_vector_absolute( pgls,
                                                   start.x,
                                                   start.y,
@@ -680,7 +682,6 @@ start:
                                                   endy,
                                                   render_mode
                                                   ) );
-	    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
 	}
 	
     }
