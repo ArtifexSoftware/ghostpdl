@@ -270,11 +270,11 @@ EXTRALIBS=
 # This can be null if handled in some other way (e.g., the files are
 # in /usr/include, or the directory is supplied by an environment variable);
 # in particular, SCO Xenix, Unix, and ODT just want
-#XINCLUDE=
+XINCLUDE=
 # Note that x_.h expects to find the header files in $(XINCLUDE)/X11,
 # not in $(XINCLUDE).
 
-XINCLUDE=-I/usr/X11R6/include
+#XINCLUDE=-I/usr/X11R6/include
 
 # Define the directory/ies and library names for the X11 library files.
 # XLIBDIRS is for ld and should include -L; XLIBDIR is for LD_RUN_PATH
@@ -282,16 +282,17 @@ XINCLUDE=-I/usr/X11R6/include
 # Newer SVR4 systems can use -R in XLIBDIRS rather than setting XLIBDIR.
 # Both can be null if these files are in the default linker search path;
 # in particular, SCO Xenix, Unix, and ODT just want
-#XLIBDIRS=
+XLIBDIRS=
 # Solaris and other SVR4 systems with dynamic linking probably want
 #XLIBDIRS=-L/usr/openwin/lib -R/usr/openwin/lib
 # X11R6 (on any platform) may need
 #XLIBS=Xt SM ICE Xext X11
 
 #XLIBDIRS=-L/usr/local/X/lib
-XLIBDIRS=-L/usr/X11R6/lib
+#XLIBDIRS=-L/usr/X11R6/lib
 XLIBDIR=
-XLIBS=Xt Xext X11
+#XLIBS=Xt Xext X11
+XLIBS=
 
 # Define whether this platform has floating point hardware:
 #	FPU_TYPE=2 means floating point is faster than fixed point.
