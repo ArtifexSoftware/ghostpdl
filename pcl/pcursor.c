@@ -128,7 +128,7 @@
  *             subsequent page; if the subsequent page will not accommodate
  *             n - m rows, the process is repeated
  *         after an implicit page eject (see below), the cursor is positioned
- *             one VMI distance below the "top" logical page boundary plus
+ *             75% of the VMI distance below the "top" logical page boundary plus
  *             
  *         top text boundary is ignored
  *         bottom text boundary is ignored
@@ -161,7 +161,8 @@
  */
 
 #define HOME_X(pcs) (pcs->margins.left)
-#define HOME_Y(pcs) (pcs->margins.top + (3L * pcs->vmi_cp) / 4L)
+#define DEFAULT_Y_START(pcs) ((3L * pcs->vmi_cp) / 4L)
+#define HOME_Y(pcs) (pcs->margins.top + DEFAULT_Y_START(pcs))
 
   void
 pcl_set_cap_x(
@@ -239,7 +240,7 @@ pcl_set_cap_y(
             if (code < 0)
                 return code;
             y -= (y0 <= max_y ? max_y : y0);
-            y0 = (use_margins ? HOME_Y(pcs) : vmi_cp);
+            y0 = (use_margins ? HOME_Y(pcs) : DEFAULT_Y_START(pcs));
 
             /* if one VMI distance or less remains, always exit */
             if ((vmi_cp == 0) || (y <= vmi_cp)) {
