@@ -125,6 +125,7 @@ private int pnga_output_page(gx_device * pdev, int num_copies, int flush);
 private dev_proc_fill_rectangle(pnga_fill_rectangle);
 private dev_proc_fill_path(pnga_fill_path);
 private dev_proc_stroke_path(pnga_stroke_path);
+private dev_proc_begin_typed_image(pnga_begin_typed_image);
 private dev_proc_text_begin(pnga_text_begin);
 private dev_proc_begin_transparency_group(pnga_begin_transparency_group);
 private dev_proc_end_transparency_group(pnga_end_transparency_group);
@@ -177,7 +178,7 @@ private const gx_device_procs pnga_procs =
 	NULL,	/* strip_tile_rectangle */
 	NULL,	/* strip_copy_rop, */
 	NULL,	/* get_clipping_box */
-	NULL,	/* begin_typed_image */
+	pnga_begin_typed_image,	/* begin_typed_image */
 	NULL,	/* get_bits_rectangle */
 	NULL,	/* map_color_rgb_alpha */
 	NULL,	/* create_compositor */
@@ -838,6 +839,29 @@ pnga_stroke_path(gx_device *dev, const gs_imager_state *pis,
 	return_error(gs_error_VMerror);
     code = gx_default_stroke_path(mdev, pis, ppath, params, pdcolor, pcpath);
     pnga_release_marking_device(mdev);
+    return code;
+}
+
+private int
+pnga_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
+			   const gs_matrix *pmat, const gs_image_common_t *pic,
+			   const gs_int_rect * prect,
+			   const gx_drawing_color * pdcolor,
+			   const gx_clip_path * pcpath, gs_memory_t * mem,
+			   gx_image_enum_common_t ** pinfo)
+{
+    gx_device *mdev = pnga_get_marking_device(dev, pis);
+    int code;
+
+    if (mdev == 0)
+	return_error(gs_error_VMerror);
+    rc_decrement_only(mdev, "pnga_begin_typed_image");
+
+    code = gx_default_begin_typed_image(mdev, pis, pmat, pic, prect, pdcolor,
+					pcpath, mem, pinfo);
+
+    rc_decrement_only(mdev, "pnga_begin_typed_image");
+
     return code;
 }
 
