@@ -1224,13 +1224,13 @@ pjl_process_init(gs_memory_t *mem)
            environment variable to override the font default PJL font
            path for desktop setups */
 	pathlen = 0;
-	if ( (code = gp_getenv( "FONTSOURCE", (char *)0, &pathlen)) < 0 ) {
+	if ( (code = gp_getenv( "PCLFONTSOURCE", (char *)0, &pathlen)) < 0 ) {
 	    char *path = (char *)gs_alloc_bytes(mem, pathlen, "pjl_font_path");
 	    /* if the allocation fails we use the pjl fontsource */
 	    if ( path == NULL )
 		pjlstate->environment_font_path = NULL;
 	    else {
-		gp_getenv("FONTSOURCE", path, &pathlen);   /* can't fail */
+		gp_getenv("PCLFONTSOURCE", path, &pathlen);   /* can't fail */
 		pjlstate->environment_font_path = path;
 	    }
 	} else /* environmet variable does not exist use pjl fontsource */
