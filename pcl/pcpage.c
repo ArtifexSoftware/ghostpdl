@@ -406,6 +406,46 @@ pcl_mark_page_for_path(pcl_state_t *pcs)
         return;
     }
 }
+
+void
+pcl_mark_page_for_current_pos(pcl_state_t *pcs)
+{
+    /* nothing to do */
+    if ( pcs->page_marked )
+        return;
+
+    /* convert current point to device space and check if it is inside
+       device rectangle for the page */
+    {
+        gs_fixed_rect page_bbox_fixed = pcs->xfm_state.dev_print_rect;
+        gs_rect page_bbox_float;
+        gs_point current_pt, dev_pt;
+
+        page_bbox_float.p.x = fixed2float(page_bbox_fixed.p.x);
+        page_bbox_float.p.y = fixed2float(page_bbox_fixed.p.y);
+        page_bbox_float.q.x = fixed2float(page_bbox_fixed.q.x);
+        page_bbox_float.q.y = fixed2float(page_bbox_fixed.q.y);
+        
+        if ( gs_currentpoint(pcs->pgs, &current_pt) < 0 ) {
+             dprintf( "Not expected to fail\n" );
+             return;
+        }
+             
+	if ( gs_transform(pcs->pgs, current_pt.x, current_pt.y, &dev_pt) ) {
+             dprintf( "Not expected to fail\n" );
+             return;
+        }
+
+        /* half-open lower - not sure this is correct */
+        if ( dev_pt.x >= page_bbox_float.p.x &&
+             dev_pt.y >= page_bbox_float.p.y &&
+             dev_pt.x < page_bbox_float.q.x &&
+             dev_pt.y < page_bbox_float.q.y )
+            pcs->page_marked = true;
+        
+    }
+}
+
 /* returns the bounding box coordinates for the current device and a
    boolean to indicate marked status. 0 - unmarked 1 - marked -1 error */
  int

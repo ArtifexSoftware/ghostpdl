@@ -26,6 +26,7 @@
 #include "pgdraw.h"
 #include "pggeom.h"
 #include "pgmisc.h"
+#include "pcpage.h"
 #include "pcfsel.h"
 #include "pcsymbol.h"
 #include "pcpalet.h"
@@ -860,9 +861,6 @@ hpgl_print_char(
             }
 	}
 
-        /* at this point we will assume the page is marked */
-        pgls->page_marked = true;
-
 	/* Check for SP control code. */
 	if (ch == ' ' && space_code != 0) {
             /* Space is a control code.  Just advance the position. */
@@ -870,6 +868,8 @@ hpgl_print_char(
 	    hpgl_call(hpgl_add_point_to_path(pgls, space_width, 0.0,
 					     hpgl_plot_move_relative, false));
 	    hpgl_call(gs_currentpoint(pgs, &end_pt));
+            /* at this point we will assume the page is marked */
+            pgls->page_marked = true;
 	} else {
             if (use_show) {
 		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
@@ -882,6 +882,13 @@ hpgl_print_char(
 		code = gs_charpath_begin(pgs, (char *)str, 1, true, pgls->memory, &penum);
 	    if ( code >= 0 )
 		code = gs_text_process(penum);
+
+            if ( code >= 0 ) {
+                /* we just check the current position for
+                   "insidedness" - this seems to address the dirty
+                   page issue in practice. */
+                pcl_mark_page_for_current_pos(pgls);
+            }
 	    gs_text_release(penum, "hpgl_print_char");
 	    if ( code < 0 )
 		return code;
