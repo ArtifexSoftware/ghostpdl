@@ -702,7 +702,7 @@ $(GLOBJ)gxstroke.$(OBJ) : $(GLSRC)gxstroke.c $(GXERR) $(math__h) $(gpcheck_h)\
  $(gscoord_h) $(gsdcolor_h) $(gsdevice_h)\
  $(gxdevice_h) $(gxfarith_h) $(gxfixed_h)\
  $(gxhttile_h) $(gxistate_h) $(gxmatrix_h) $(gxpaint_h)\
- $(gzcpath_h) $(gzline_h) $(gzpath_h)
+ $(gzcpath_h) $(gzline_h) $(gzpath_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxstroke.$(OBJ) $(C_) $(GLSRC)gxstroke.c
 
 ###### Higher-level facilities

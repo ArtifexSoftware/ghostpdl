@@ -33,6 +33,7 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gxpaint.h"
+#include "vdtrace.h"
 
 /*
  * We don't really know whether it's a good idea to take fill adjustment
@@ -228,8 +229,22 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		       const gx_drawing_color * pdcolor,
 		       const gx_clip_path * pcpath)
 {
-    return gx_stroke_path_only(ppath, (gx_path *) 0, dev, pis, params,
+    int code;
+
+    if (vd_allowed('s')) {
+	vd_get_dc('s');
+	if (vd_enabled) {
+	    vd_set_shift(0, 100);
+	    vd_set_scale(0.03);
+	    vd_set_origin(0, 0);
+	    vd_erase(RGB(192, 192, 192));
+	}
+    }
+    code = gx_stroke_path_only(ppath, (gx_path *) 0, dev, pis, params,
 			       pdcolor, pcpath);
+    if (vd_allowed('s'))
+	vd_release_dc;
+    return code;
 }
 
 /* Fill a partial stroked path.  Free variables: */
@@ -1061,6 +1076,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
   done:
     if (code < 0)
 	return code;
+    vd_closepath;
     return gx_path_close_subpath(ppath);
 }
 
@@ -1069,14 +1085,20 @@ private int
 add_points(gx_path * ppath, const gs_fixed_point * points, int npoints,
 	   bool moveto_first)
 {
+    vd_setcolor(0);
+    vd_setlinewidth(0);
     if (moveto_first) {
 	int code = gx_path_add_point(ppath, points[0].x, points[0].y);
 
+	vd_moveto(points[0].x, points[0].y);
 	if (code < 0)
 	    return code;
+	vd_lineto_multi(points + 1, npoints - 1);
 	return gx_path_add_lines(ppath, points + 1, npoints - 1);
-    } else
+    } else {
+	vd_lineto_multi(points, npoints);
 	return gx_path_add_lines(ppath, points, npoints);
+    }
 }
 
 /* ---------------- Join computation ---------------- */

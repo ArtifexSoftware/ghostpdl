@@ -97,7 +97,7 @@ void vd_setflag(char f, char v);
 #    define vd_allowed(f)       (vd_flags[(f) & 127]) 
 #    define vd_get_dc(f)        while (vd_trace0 && vd_allowed(f)) { vd_trace0->get_dc(vd_trace0, &vd_trace1); break; }
 #    define vd_release_dc       BEGIN if (vd_trace1) vd_trace1->release_dc(vd_trace1, &vd_trace1); END
-#    define vd_enabled          (vd_trace1) 
+#    define vd_enabled          (vd_trace1 != 0) 
 #    define vd_get_size_unscaled_x      (vd_trace1 ? vd_trace1->get_size_x(vd_trace1) : 100)
 #    define vd_get_size_unscaled_y      (vd_trace1 ? vd_trace1->get_size_y(vd_trace1) : 100)
 #    define vd_get_size_scaled_x        (vd_trace1 ? vd_trace1->get_size_x(vd_trace1) / vd_trace1->scale_x : 100)
