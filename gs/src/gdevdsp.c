@@ -1592,6 +1592,10 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     check_device_separable(pdev);
     switch (nFormat & DISPLAY_COLORS_MASK) {
 	case DISPLAY_COLORS_NATIVE:
+	    ddev->color_info.gray_index = GX_CINFO_COMP_NO_INDEX;
+	    if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_1)
+	        ddev->color_info.gray_index = 0;
+	    break;
 	case DISPLAY_COLORS_RGB:
 	    ddev->color_info.gray_index = GX_CINFO_COMP_NO_INDEX;
 	    break;
