@@ -1220,6 +1220,58 @@ typedef enum {
 #define dev_proc_include_color_space(proc)\
   dev_t_proc_include_color_space(proc, gx_device)
 
+		/* Shading support. */
+
+typedef ulong frac32; /* A fraction value from [0,1]. */
+
+typedef struct {
+      gx_device *pdev; 
+      const gs_fixed_rect *clip;
+      const gx_device_halftone *ht;
+      bool swap_axes;
+      gs_logical_operation_t lop;
+} gs_fill_attributes;
+
+/* Paint a pixel. */
+
+#define dev_t_proc_fill_pixel(proc, dev_t)\
+  int proc(const gs_fill_attributes *fa, int i, int j, const frac32 *c)
+#define dev_proc_fill_pixel(proc)\
+  dev_t_proc_fill_pixel(proc, gx_device)
+
+/* Fill a linear color trapezoid. */
+/* The server assumes a strongly linear color, 
+   i.e. it can ignore any of c0, c1, c2, c3. */
+/* Return values : 
+  1 - success;
+  0 - Too big. The area isn't filled. The client must decompose the area.
+  <0 - error.
+ */
+
+#define dev_t_proc_fill_linear_color_trapezoid(proc, dev_t)\
+  int proc(const gs_fill_attributes *fa,\
+	const gs_fixed_point *p0, const gs_fixed_point *p1,\
+	const gs_fixed_point *p2, const gs_fixed_point *p3,\
+	const frac32 *c0, const frac32 *c1,\
+	const frac32 *c2, const frac32 *c3)
+#define dev_proc_fill_linear_color_trapezoid(proc)\
+  dev_t_proc_fill_linear_color_trapezoid(proc, gx_device)
+
+/* Fill a linear color triangle. */
+/* Return values : 
+  1 - success;
+  0 - Too big. The area isn't filled. The client must decompose the area.
+  <0 - error.
+ */
+
+#define dev_t_proc_fill_linear_color_triangle(proc, dev_t)\
+  int proc(const gs_fill_attributes *fa,\
+	const gs_fixed_point *p0, const gs_fixed_point *p1,\
+	const gs_fixed_point *p2,\
+	const frac32 *c0, const frac32 *c1, const frac32 *c2)
+#define dev_proc_fill_linear_color_triangle(proc)\
+  dev_t_proc_fill_linear_color_triangle(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1279,6 +1331,9 @@ typedef enum {
 	dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
 	dev_t_proc_fill_rectangle_hl_color((*fill_rectangle_hl_color), dev_t); \
 	dev_t_proc_include_color_space((*include_color_space), dev_t); \
+	dev_t_proc_fill_pixel((*fill_pixel), dev_t); \
+	dev_t_proc_fill_linear_color_trapezoid((*fill_linear_color_trapezoid), dev_t); \
+	dev_t_proc_fill_linear_color_triangle((*fill_linear_color_triangle), dev_t); \
 }
 
 

@@ -1028,6 +1028,10 @@ $(GLOBJ)gdevddrw.$(OBJ) : $(GLSRC)gdevddrw.c $(GXERR) $(math__h) $(memory__h)\
  $(gdevddrw_h) $(gxdtfill_h) $(vtrace_h)
 	$(GLCC) $(GLO_)gdevddrw.$(OBJ) $(C_) $(GLSRC)gdevddrw.c
 
+$(GLOBJ)gdevdsha.$(OBJ) : $(GLSRC)gdevdsha.c $(GXERR) $(gserrors_h)\
+ $(gxdevice_h)
+	$(GLCC) $(GLO_)gdevdsha.$(OBJ) $(C_) $(GLSRC)gdevdsha.c
+
 $(GLOBJ)gdevdflt.$(OBJ) : $(GLSRC)gdevdflt.c $(GXERR)\
  $(gsropt_h) $(gxcomp_h) $(gxdevice_h)
 	$(GLCC) $(GLO_)gdevdflt.$(OBJ) $(C_) $(GLSRC)gdevdflt.c
@@ -1079,11 +1083,12 @@ LIB1d=$(GLOBJ)gdevabuf.$(OBJ) $(GLOBJ)gdevdbit.$(OBJ) $(GLOBJ)gdevddrw.$(OBJ) $(
 LIB2d=$(GLOBJ)gdevdgbr.$(OBJ) $(GLOBJ)gdevnfwd.$(OBJ) $(GLOBJ)gdevmem.$(OBJ) $(GLOBJ)gdevplnx.$(OBJ)
 LIB3d=$(GLOBJ)gdevm1.$(OBJ) $(GLOBJ)gdevm2.$(OBJ) $(GLOBJ)gdevm4.$(OBJ) $(GLOBJ)gdevm8.$(OBJ)
 LIB4d=$(GLOBJ)gdevm16.$(OBJ) $(GLOBJ)gdevm24.$(OBJ) $(GLOBJ)gdevm32.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
-LIB4e=$(GLOBJ)gdevm40.$(OBJ) $(GLOBJ)gdevm48.$(OBJ) $(GLOBJ)gdevm56.$(OBJ) $(GLOBJ)gdevm64.$(OBJ)
+LIB5d=$(GLOBJ)gdevm40.$(OBJ) $(GLOBJ)gdevm48.$(OBJ) $(GLOBJ)gdevm56.$(OBJ) $(GLOBJ)gdevm64.$(OBJ)
+LIB6d=$(GLOBJ)gdevdsha.$(OBJ)
 LIBs=$(LIB0s) $(LIB1s) $(LIB2s) $(LIB3s) $(LIB4s) $(LIB5s) $(LIB6s) $(LIB7s)\
  $(LIB8s) $(LIB9s) $(LIB10s) $(LIB11s) $(LIB12s) $(LIB13s)
 LIBx=$(LIB1x) $(LIB2x) $(LIB3x) $(LIB4x) $(LIB5x) $(LIB6x) $(LIB7x) $(LIB8x) $(LIB9x) $(LIB10x)
-LIBd=$(LIB1d) $(LIB2d) $(LIB3d) $(LIB4d) $(LIB4e)
+LIBd=$(LIB1d) $(LIB2d) $(LIB3d) $(LIB4d) $(LIB5d) $(LIB6d)
 LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 # We include some optional library modules in the dependency list,
 # but not in the link, to catch compilation problems.
@@ -1126,7 +1131,8 @@ $(GLD)libd.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
 	$(ADDMOD) $(GLD)libd $(LIB2d)
 	$(ADDMOD) $(GLD)libd $(LIB3d)
 	$(ADDMOD) $(GLD)libd $(LIB4d)
-	$(ADDMOD) $(GLD)libd $(LIB4e)
+	$(ADDMOD) $(GLD)libd $(LIB5d)
+	$(ADDMOD) $(GLD)libd $(LIB6d)
 
 $(GLD)libcore.dev : $(LIB_MAK) $(ECHOGS_XE)\
  $(GLD)libs.dev $(GLD)libx.dev $(GLD)libd.dev\

@@ -531,6 +531,9 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, pattern_manage, gx_default_pattern_manage);
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
     fill_dev_proc(dev, include_color_space, gx_default_include_color_space);
+    fill_dev_proc(dev, fill_pixel, gx_default_fill_pixel);
+    fill_dev_proc(dev, fill_linear_color_trapezoid, gx_default_fill_linear_color_trapezoid);
+    fill_dev_proc(dev, fill_linear_color_triangle, gx_default_fill_linear_color_triangle);
 }
 
 int
