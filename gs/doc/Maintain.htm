@@ -171,6 +171,14 @@ keep the style of the descriptions similar to those in the current
 History#.htm files.
 
 <p>
+Log messages beginning with 'Fix' are treated specially. Such messages are
+put under the "Fixes problems" heading when the History files are
+generated. Additionally, if the first four characters are 'Fix:' this is removed
+(i.e., "Fix: The xyz" becomes "The xyz", but "Fixes xyz" is copied unchanged). 
+This feature is intended for explicit bugfixes and should be avoided for 
+enhancements or commits with long explanations.
+
+<p>
 Information about who changed what, when, and why is maintained in the
 CVS logs. In general, a file should be a clean representation of the
 current version rather than a history trail of how it got
