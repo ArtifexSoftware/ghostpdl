@@ -52,7 +52,10 @@ DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
  pcxmono.dev pcxcmyk.dev pcxgray.dev\
  pbmraw.dev pgmraw.dev ppmraw.dev pkmraw.dev\
  pxlmono.dev pxlcolor.dev\
- paintjet.dev cljet5.dev
+ tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev\
+ tifflzw.dev tiffpack.dev\
+ tiff12nc.dev tiff24nc.dev\
+ cljet5.dev
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak
