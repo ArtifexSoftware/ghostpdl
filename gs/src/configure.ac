@@ -312,6 +312,46 @@ if test x$with_jasper != xno; then
   done
   if test "x$JASPERDIR" != xsrc; then
     AC_MSG_RESULT([$JASPERDIR])
+    AC_MSG_CHECKING([for local jasper config header])
+    if test -r $JASPERDIR/src/libjasper/include/jasper/jas_config.h; then
+      AC_MSG_RESULT([yes])
+    else
+      AC_MSG_RESULT([no])
+      AC_MSG_CHECKING([for local jasper configure script])
+      if test -x $JASPERDIR/configure; then
+        AC_MSG_RESULT([yes])
+        echo
+        echo "Running jasper configure script..."
+	olddir=`pwd`
+        cd $JASPERDIR && ./configure
+        cd $olddir
+        echo
+        echo "Continuing with Ghostscript configuration..."
+      else
+        AC_MSG_RESULT([no])
+        AC_MSG_CHECKING([for local jasper autogen.sh script])
+        if test -x $JASPERDIR/autogen.sh; then
+          AC_MSG_RESULT([yes])
+          echo
+          echo "Running jasper autogen script..."
+	  olddir=`pwd`
+          cd $JASPERDIR && ./autogen.sh
+          cd $olddir
+          echo
+          echo "Continuing with Ghostscript configuration..."
+        else
+          AC_MSG_ERROR([
+Unable to find $JASPERDIR/src/libjasper/include/jas_config.h,
+or generate generate such a file for this system. You will
+have to build one by hand, or configure, build and install
+the jasper library separately.
+
+You can also pass --without-jasper to configure to disable
+JPEG 2000 PDF image support entirely.
+])
+        fi
+      fi
+    fi
   else
     AC_MSG_RESULT([no])
     AC_CHECK_LIB([jasper], [jas_image_create], [
