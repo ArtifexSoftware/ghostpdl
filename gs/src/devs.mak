@@ -1110,9 +1110,6 @@ $(DD)cgm24.dev : $(DEVS_MAK) $(cgm_)
 
 devn_=$(GLOBJ)gdevdevn.$(OBJ)
 
-$(DD)spotrgb.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
-	$(SETDEV) $(DD)spotrgb $(devn_)
-
 $(DD)spotcmyk.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
 	$(SETDEV) $(DD)spotcmyk $(devn_)
 
