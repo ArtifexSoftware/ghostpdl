@@ -1353,7 +1353,11 @@ retry_oversampling:
         if (r_has_type(op, t_integer))
             cr.char_code = client_char_code;
         else {
-            /* Reverse Encoding here, because it is incremental. */
+            /* 
+	     * Reverse Encoding here, because it can be an incremental one. 
+	     * Note that this can cause problems with UFST (see the comment above),
+	     * if the encoding doesn't contain the glyph name rendered with glyphshow.
+	     */
             ref *Encoding;
             if (dict_find_string(osp - 1, "Encoding", &Encoding) > 0)
                 cr.char_code = (uint)array_find(Encoding, op);
