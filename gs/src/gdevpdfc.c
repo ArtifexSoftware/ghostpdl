@@ -372,6 +372,17 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	break;
     }
 
+    /* Check whether we already have a PDF object for this color space. */
+    if (pcs->id != gs_no_id) {
+	pdf_resource_t *pres =
+	    pdf_find_resource_by_gs_id(pdev, resourceColorSpace, pcs->id);
+
+	if (pres) {
+	    pca = (cos_array_t *)pres->object;
+	    goto ret;
+	}
+    }
+
     /* Space has parameters -- create an array. */
     pca = cos_array_alloc(pdev, "pdf_color_space");
     if (pca == 0)
@@ -733,7 +744,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pdf_resource_t *pres;
 
 	code =
-	    pdf_alloc_resource(pdev, resourceColorSpace, gs_no_id, &pres, 0L);
+	    pdf_alloc_resource(pdev, resourceColorSpace, pcs->id, &pres, 0L);
 	if (code < 0) {
 	    COS_FREE(pca, "pdf_color_space");
 	    return code;
@@ -743,6 +754,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pres->object = (cos_object_t *)pca;
 	cos_write_object(COS_OBJECT(pca), pdev);
     }
+ ret:
     if (by_name) {
 	/* Return a resource name rather than an object reference. */
 	discard(COS_RESOURCE_VALUE(pvalue, pca));
