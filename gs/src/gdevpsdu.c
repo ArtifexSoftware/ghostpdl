@@ -147,7 +147,9 @@ psdf_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
 	     gx_path_type_t type)
 {
-    if (x1 == x0 && y1 == y0)
+    if (x1 == x0 && y1 == y0 && x2 == x3 && y2 == y3)
+	pprintg2(gdev_vector_stream(vdev), "%g %g l\n", x3, y3);
+    else if (x1 == x0 && y1 == y0)
 	pprintg4(gdev_vector_stream(vdev), "%g %g %g %g v\n",
 		 x2, y2, x3, y3);
     else if (x3 == x2 && y3 == y2)
