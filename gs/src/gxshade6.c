@@ -33,8 +33,11 @@
 #include "vdtrace.h"
 
 #define NEW_TENSOR_SHADING 0 /* Old code = 0, new code = 1. */
+#define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
 #define TENSOR_SHADING_DEBUG 0
 #define VD_DRAW_CIRCLES 0
+#define VD_TRACE_DOWN 1
+
 
 #if TENSOR_SHADING_DEBUG
 static int patch_cnt = 0; /* Temporary for a debug purpose.*/
@@ -200,8 +203,15 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 inline private void
 patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t * pfs)
 {
-    if (pfs->Function)
+    if (pfs->Function) {
 	gs_function_evaluate(pfs->Function, &ppcr->t, ppcr->cc.paint.values);
+#	if NEW_TENSOR_SHADING
+	{   const gs_color_space *pcs = pfs->direct_space;
+
+	    pcs->type->restrict_color(&ppcr->cc, pcs);
+	}
+#	endif
+    }
 }
 
 /* ================ Specific shadings ================ */
@@ -504,7 +514,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 			mu1v1.p.x, mu1v1.p.y, 
 			mu1v0.p.x, mu1v0.p.y, 
 			0, RGB(0, 255, 0));
-		if (vd_allowed('s'))
+		if (!VD_TRACE_DOWN && vd_allowed('s'))
 		    vd_release_dc;
 
 /* Make this a procedure later.... */
@@ -535,7 +545,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		    FILL_TRI(&mu0v1, &mu0v0, &mmid);
 		}
 #endif
-		if (vd_allowed('s'))
+		if (!VD_TRACE_DOWN && vd_allowed('s'))
 		    vd_get_dc('s');
 	    }
 	}
@@ -593,12 +603,12 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     mesh_init_fill_state((mesh_fill_state_t *) & state,
 			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
     state.Function = psh->params.Function;
-#if NEW_TENSOR_SHADING
-    init_patch_fill_state(&state);
-#endif
 #if TENSOR_SHADING_DEBUG
     patch_cnt++;
     /*if (patch_cnt == 11)*/
+#endif
+#if NEW_TENSOR_SHADING
+    init_patch_fill_state(&state);
 #endif
     if (vd_allowed('s')) {
 	vd_get_dc('s');
@@ -824,6 +834,19 @@ draw_patch(tensor_patch *p, bool interior, ulong rgbcolor)
 }
 
 private inline void
+draw_triangle(const gs_fixed_point *p0, const gs_fixed_point *p1, 
+		const gs_fixed_point *p2, ulong rgbcolor)
+{
+#ifdef DEBUG
+#   if TENSOR_SHADING_DEBUG
+    if (dbg_nofill) /* A switch for a better view with a specific purpose. 
+	    Feel free to change the condition if needed. */
+#   endif
+	vd_quad(p0->x, p0->y, p0->x, p0->y, p1->x, p1->y, p2->x, p2->y, 0, rgbcolor);
+#endif
+}
+
+private inline void
 draw_quadrangle(const tensor_patch *p, ulong rgbcolor)
 {
 #ifdef DEBUG
@@ -1003,7 +1026,6 @@ patch_color_to_device_color(const patch_fill_state_t * pfs, const patch_color_t 
     int n = pcs->type->num_components(pcs);
 
     memcpy(fcc.paint.values, c->cc.paint.values, sizeof(fcc.paint.values[0]) * n);
-    pcs->type->restrict_color(&fcc, pcs);
     pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pis,
 			      pfs->dev, gs_color_select_texture);
 }
@@ -1409,7 +1431,80 @@ wrap_vertices_by_y(gs_fixed_point q[4], const gs_fixed_point s[4])
 }
 
 private int 
-constant_color_quadrangle(patch_fill_state_t * pfs, const tensor_patch *p)
+ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, patch_color_t *c)
+{
+    gs_fixed_edge ue;
+    int code;
+    gx_device_color dc;
+    patch_color_t cc = *c;
+
+    patch_resolve_color(&cc, pfs);
+    patch_color_to_device_color(pfs, &cc, &dc);
+    if (le->end.y < re->end.y) {
+	code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+	    le, re, le->start.y, le->end.y, false, &dc, pfs->pis->log_op);
+	if (code < 0)
+	    return code;
+	ue.start = le->end;
+	ue.end = re->end;
+	return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+	    &ue, re, le->end.y, re->end.y, false, &dc, pfs->pis->log_op);
+    } else if (le->end.y > re->end.y) {
+	code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+	    le, re, le->start.y, re->end.y, false, &dc, pfs->pis->log_op);
+	if (code < 0)
+	    return code;
+	ue.start = re->end;
+	ue.end = le->end;
+	return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+	    le, &ue, re->end.y, le->end.y, false, &dc, pfs->pis->log_op);
+    } else
+	return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+	    le, re, le->start.y, le->end.y, false, &dc, pfs->pis->log_op);
+}
+
+private int 
+constant_color_triangle(patch_fill_state_t *pfs,
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
+	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2)
+{
+    patch_color_t c, cc;
+    gs_fixed_edge le, re;
+    fixed dx0, dy0, dx1, dy1;
+    const gs_fixed_point *pp;
+    int i, code;
+
+    draw_triangle(p0, p1, p2, RGB(255, 0, 0));
+#   if TENSOR_SHADING_DEBUG
+    if (dbg_nofill)
+	return 0;
+#   endif
+    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
+    patch_interpolate_color(&cc, c2, &c, pfs, 0.5);
+    for (i = 0; i < 3; i++) {
+	/* fixme : does optimizer compiler expand this cycle ? */
+	if (p0->y <= p1->y && p0->y <= p2->y) {
+	    le.start = re.start = *p0;
+	    le.end = *p1; 
+	    re.end = *p2;
+
+	    dx0 = le.end.x - le.start.x;
+	    dy0 = le.end.y - le.start.y;
+	    dx1 = re.end.x - re.start.x;
+	    dy1 = re.end.y - re.start.y;
+	    if ((int64_t)dx0 * dy1 < (int64_t)dy0 * dx1)
+    		return ordered_triangle(pfs, &le, &re, &c);
+	    else
+    		return ordered_triangle(pfs, &re, &le, &c);
+	}
+	pp = p0; p0 = p1; p1 = p2; p2 = pp;
+    }
+    return 0;
+}
+
+
+private int 
+constant_color_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 {
     /* Assuming the XY span lesser than sqrt(max_fixed). 
        It helps for intersection_of_small_bars to comppute faster. */
@@ -1661,6 +1756,48 @@ is_patch_color_span_big(const patch_fill_state_t * pfs, const tensor_patch *p, b
 }
 
 private inline bool
+is_patch_color_linear(const patch_fill_state_t * pfs, const tensor_patch *p, bool *uv)
+{
+    
+#   if 1
+    {	patch_color_t d0, d1;
+	double D;
+
+	patch_interpolate_color(&d0, &p->c[0][0], &p->c[1][1], pfs, 0.5); /* diagonal 1 */
+	patch_interpolate_color(&d1, &p->c[0][1], &p->c[1][0], pfs, 0.5); /* diagonal 2 */
+	D = color_span(pfs, &d0, &d1);
+	if (D <= pfs->pis->smoothness * 2)
+	    return false;
+    }
+#   else
+    {	/* fixme : is this same as above ? */
+	patch_color_t c0, c1, c, d0, d1;
+	double D0, D1;
+
+	patch_interpolate_color(&c0, &p->c[0][0], &p->c[0][1], pfs, 0.5);
+	patch_interpolate_color(&c1, &p->c[1][0], &p->c[1][1], pfs, 0.5);
+	patch_interpolate_color(&c, &c0, &c1, pfs, 0.5); /* centre */
+	patch_interpolate_color(&d0, &p->c[0][0], &p->c[1][1], pfs, 0.5); /* diagonal 1 */
+	patch_interpolate_color(&d1, &p->c[0][1], &p->c[1][0], pfs, 0.5); /* diagonal 2 */
+	D0 = color_span(pfs, &d0, &c);
+	D1 = color_span(pfs, &d1, &c);
+	if (D0 <= pfs->pis->smoothness && D1 <= pfs->pis->smoothness)
+	    return false;
+    }
+#   endif
+    {	double d0001 = color_span(pfs, &p->c[0][0], &p->c[0][1]);
+	double d1011 = color_span(pfs, &p->c[1][0], &p->c[1][1]);
+	double du = max(d0001, d1011);
+     	double d0010 = color_span(pfs, &p->c[0][0], &p->c[1][0]);
+	double d0111 = color_span(pfs, &p->c[0][1], &p->c[1][1]);
+	double dv = max(d0010, d0111);
+
+	*uv = du > dv;
+    }
+    return false;
+}
+
+private inline bool
 is_color_span_v_big(const patch_fill_state_t * pfs, const tensor_patch *p)
 {
     if (color_span(pfs, &p->c[0][0], &p->c[1][0]) > pfs->pis->smoothness)
@@ -1726,7 +1863,7 @@ quadrangle_bbox_covers_pixel_centers(const tensor_patch *p)
 }
 
 private inline int 
-fill_linear_wedge(patch_fill_state_t *pfs, gs_fixed_point q[3], 
+fill_triangle_wedge(patch_fill_state_t *pfs, gs_fixed_point q[3], 
 		    const patch_color_t *c0, const patch_color_t *c1)
 {
     patch_color_t c;
@@ -1754,6 +1891,69 @@ fill_linear_wedge(patch_fill_state_t *pfs, gs_fixed_point q[3],
     return fill_wedge_trap(pfs, &q[2], &q[1], q, &c, c1, swap_axes);
 }
 
+private int triangle(patch_fill_state_t *pfs, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
+	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2);
+
+private inline int 
+divide_triangle(patch_fill_state_t *pfs, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
+	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2)
+{
+    gs_fixed_point p;
+    patch_color_t c;
+    gs_fixed_point q[3]; /* fixme : optimize. */
+    int code;
+
+    p.x = (p0->x + p1->x) / 2;
+    p.y = (p0->y + p1->y) / 2;
+    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
+    q[0] = *p0; q[1] = *p1; q[2] = p;
+    code = fill_triangle_wedge(pfs, q, c0, c1);
+    if (code < 0)
+	return code;
+    code = triangle(pfs, p0, &p, p2, c0, &c, c2);
+    if (code < 0)
+	return code;
+    return triangle(pfs, &p, p1, p2, &c, c1, c2);
+}
+
+private int 
+triangle(patch_fill_state_t *pfs, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
+	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2)
+{
+    int code;
+    double d01 = color_span(pfs, c1, c0);
+    double d12 = color_span(pfs, c2, c1);
+    double d20 = color_span(pfs, c0, c2);
+
+    if (d01 >= d12 && d01 >= d20 && d01 > pfs->pis->smoothness &&
+	(any_abs(p1->x - p0->x) > fixed_1 || any_abs(p1->y - p0->y) > fixed_1))
+	return divide_triangle(pfs, p0, p1, p2, c0, c1, c2);
+    if (d12 >= d20 && d12 >= d01 && d12 > pfs->pis->smoothness &&
+	(any_abs(p1->x - p2->x) > fixed_1 || any_abs(p1->y - p2->y) > fixed_1))
+	return divide_triangle(pfs, p1, p2, p0, c1, c2, c0);
+    if (d20 >= d12 && d20 >= d01 && d20 > pfs->pis->smoothness &&
+	(any_abs(p2->x - p0->x) > fixed_1 || any_abs(p2->y - p0->y) > fixed_1))
+	return divide_triangle(pfs, p1, p2, p0, c1, c2, c0);
+    return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
+}
+
+private inline int 
+triangles(patch_fill_state_t *pfs, const tensor_patch *p)
+{
+    int code;
+
+    draw_quadrangle(p, RGB(0, 255, 0));
+    code = triangle(pfs, &p->pole[0][0], &p->pole[0][3], &p->pole[3][3], 
+			    &p->c[0][0], &p->c[0][1], &p->c[1][1]);
+    if (code < 0)
+	return code;
+    return triangle(pfs, &p->pole[0][0], &p->pole[3][3], &p->pole[3][0], 
+			    &p->c[0][0], &p->c[1][1], &p->c[1][0]);
+}
+
 private int 
 fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 {
@@ -1766,44 +1966,40 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 
     if (!pfs->vectorization && !quadrangle_bbox_covers_pixel_centers(p))
 	return 0;
-    if (!is_big_u && any_abs(p->pole[0][0].x - p->pole[0][3].x) > pfs->fixed_flat)
+    if (any_abs(p->pole[0][0].x - p->pole[0][3].x) > fixed_1 ||
+	any_abs(p->pole[3][0].x - p->pole[3][3].x) > fixed_1 ||
+	any_abs(p->pole[0][0].y - p->pole[0][3].y) > fixed_1 ||
+	any_abs(p->pole[3][0].y - p->pole[3][3].y) > fixed_1)
 	is_big_u = true;
-    if (!is_big_u && any_abs(p->pole[3][0].x - p->pole[3][3].x) > pfs->fixed_flat)
-	is_big_u = true;
-    if (!is_big_u && any_abs(p->pole[0][0].y - p->pole[0][3].y) > pfs->fixed_flat)
-	is_big_u = true;
-    if (!is_big_u && any_abs(p->pole[3][0].y - p->pole[3][3].y) > pfs->fixed_flat)
-	is_big_u = true;
-    if (!is_big_v && any_abs(p->pole[0][0].x - p->pole[3][0].x) > pfs->fixed_flat)
+    if (any_abs(p->pole[0][0].x - p->pole[3][0].x) > fixed_1 ||
+	any_abs(p->pole[0][3].x - p->pole[3][3].x) > fixed_1 ||
+	any_abs(p->pole[0][0].y - p->pole[3][0].y) > fixed_1 ||
+	any_abs(p->pole[0][3].y - p->pole[3][3].y) > fixed_1) {
+	if (!is_big_v && !is_big_u)
+	    return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p);
 	is_big_v = true;
-    if (!is_big_v && any_abs(p->pole[0][3].x - p->pole[3][3].x) > pfs->fixed_flat)
-	is_big_v = true;
-    if (!is_big_v && any_abs(p->pole[0][0].y - p->pole[3][0].y) > pfs->fixed_flat)
-	is_big_v = true;
-    if (!is_big_v && any_abs(p->pole[0][3].y - p->pole[3][3].y) > pfs->fixed_flat)
-	is_big_v = true;
-    if (!is_big_v && !is_big_u)
-	return constant_color_quadrangle(pfs, p);
+    }
     color_big = !is_patch_color_monotonic(pfs, p, &color_u) || 
-		is_patch_color_span_big(pfs, p, &color_u);
-    if (is_big_v && (color_big && !color_u)) {
+		(QUADRANGLES ? is_patch_color_span_big(pfs, p, &color_u)
+		            : is_patch_color_linear(pfs, p, &color_u));
+    if (is_big_v && color_big && !color_u) {
 	divide_quadrangle_by_v(pfs, &s0, &s1, p);
 	q[0] = s0.pole[0][0], q[2] = s0.pole[3][0], q[1] = s1.pole[3][0];
-	fill_linear_wedge(pfs, q, &p->c[0][0], &p->c[1][0]); /* smashes q. */
+	fill_triangle_wedge(pfs, q, &p->c[0][0], &p->c[1][0]); /* smashes q. */
 	q[0] = s0.pole[0][3], q[2] = s0.pole[3][3], q[1] = s1.pole[3][3];
-	fill_linear_wedge(pfs, q, &p->c[0][1], &p->c[1][1]); /* smashes q. */
+	fill_triangle_wedge(pfs, q, &p->c[0][1], &p->c[1][1]); /* smashes q. */
 	/* draw_quadrangle(&s0, RGB(255, 0, 0)); */
 	/* draw_quadrangle(&s1, RGB(255, 0, 0)); */
 	code = fill_quadrangle(pfs, &s0);
 	if (code < 0)
 	    return code;
 	return fill_quadrangle(pfs, &s1);
-    } else if (is_big_u && (color_big && color_u)) {
+    } else if (is_big_u && color_big && color_u) {
 	divide_quadrangle_by_u(pfs, &s0, &s1, p);
 	q[0] = s0.pole[0][0], q[2] = s0.pole[0][3], q[1] = s1.pole[0][3];
-	fill_linear_wedge(pfs, q, &p->c[0][0], &p->c[0][1]); /* smashes q. */
+	fill_triangle_wedge(pfs, q, &p->c[0][0], &p->c[0][1]); /* smashes q. */
 	q[0] = s0.pole[3][0], q[2] = s0.pole[3][3], q[1] = s1.pole[3][3];
-	fill_linear_wedge(pfs, q, &p->c[1][0], &p->c[1][1]); /* smashes q. */
+	fill_triangle_wedge(pfs, q, &p->c[1][0], &p->c[1][1]); /* smashes q. */
 	/* draw_quadrangle(&s0, RGB(255, 0, 0)); */
 	/* draw_quadrangle(&s1, RGB(255, 0, 0)); */
 	code = fill_quadrangle(pfs, &s0);
@@ -1811,7 +2007,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    return code;
 	return fill_quadrangle(pfs, &s1);
     } else
-	return constant_color_quadrangle(pfs, p);
+	return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p);
 }
 
 private inline void
@@ -2070,7 +2266,7 @@ patch_set_color(const patch_fill_state_t * pfs, patch_color_t *c, const float *c
     int n = pcs->type->num_components(pcs);
 
     if (pfs->Function) 
-	c->t = cc[0];\
+	c->t = cc[0];
     else 
 	memcpy(c->cc.paint.values, cc, sizeof(c->cc.paint.values[0]) * n);
 }
@@ -2079,6 +2275,8 @@ private void
 make_tensor_patch(const patch_fill_state_t * pfs, tensor_patch *p, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4])
 {
+    const gs_color_space *pcs = pfs->direct_space;
+
     p->pole[0][0] = curve[0].vertex.p;
     p->pole[0][1] = curve[0].control[0];
     p->pole[0][2] = curve[0].control[1];
@@ -2130,12 +2328,17 @@ make_tensor_patch(const patch_fill_state_t * pfs, tensor_patch *p, const patch_c
 			  lcp2(p->pole[2][0].y, p->pole[2][3].y) -
 			  lcp2(lcp2(p->pole[0][0].y, p->pole[0][3].y),
 			       lcp2(p->pole[3][0].y, p->pole[3][3].y));
-
     }
     patch_set_color(pfs, &p->c[0][0], curve[0].vertex.cc);
     patch_set_color(pfs, &p->c[0][1], curve[1].vertex.cc);
     patch_set_color(pfs, &p->c[1][1], curve[2].vertex.cc);
     patch_set_color(pfs, &p->c[1][0], curve[3].vertex.cc);
+    if (!pfs->Function) {
+	pcs->type->restrict_color(&p->c[0][0].cc, pcs);
+	pcs->type->restrict_color(&p->c[0][1].cc, pcs);
+	pcs->type->restrict_color(&p->c[1][0].cc, pcs);
+	pcs->type->restrict_color(&p->c[1][1].cc, pcs);
+    }
 }
 
 private int
