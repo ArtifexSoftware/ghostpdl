@@ -69,7 +69,7 @@
 #endif
 /* Define an arbitrary size for the operator procedure tables. */
 #ifndef OP_ARRAY_TABLE_SIZE
-#  define OP_ARRAY_TABLE_SIZE 180
+#  define OP_ARRAY_TABLE_SIZE 300
 #endif
 #ifndef OP_ARRAY_TABLE_GLOBAL_SIZE
 #  define OP_ARRAY_TABLE_GLOBAL_SIZE OP_ARRAY_TABLE_SIZE

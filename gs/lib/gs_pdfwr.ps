@@ -588,7 +588,7 @@ currentdict /.pdfmarkparams .undef
   } {
     known
   } ifelse
-} bind odef
+} .bind odef
 
 % Set a predefined configuration if PDFSETTINGS is defined.
 /PDFSETTINGS where { pop /PDFSETTINGS load } { /default } ifelse
