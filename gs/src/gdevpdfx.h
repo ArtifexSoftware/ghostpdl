@@ -28,6 +28,7 @@
 #include "stream.h"
 #include "spprint.h"
 #include "gdevpsdf.h"
+#include "gxdevmem.h"
 
 #define PDFW_DELAYED_STREAMS (PS2WRITE & 1) /* Old code = 0, new code = 1 */
 #define CONVERT_CFF_TO_TYPE1 (PS2WRITE & 0) /* Old code = 0, new code = 1 */
@@ -900,6 +901,33 @@ bool pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);
 
 /* Write and update the clip path. */
 int pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);
+
+/* ------ Masked image convertion ------ */
+
+typedef struct {
+    gx_device_memory mdev;
+    gx_device_memory *mask;
+    gx_device_pdf *pdev;
+    dev_t_proc_fill_rectangle((*std_fill_rectangle), gx_device);
+    dev_t_proc_close_device((*std_close_device), gx_device);
+    bool mask_is_empty;
+    bool path_is_empty;
+    bool mask_is_clean;
+    gs_matrix m;
+} pdf_lcvd_t;
+
+#define public_st_pdf_lcvd_t()\
+  gs_public_st_suffix_add2(st_pdf_lcvd_t, pdf_lcvd_t,\
+    "pdf_lcvd_t", pdf_lcvd_t_enum_ptrs,\
+    pdf_lcvd_t_reloc_ptrs, st_device_memory, mask, pdev)
+#define pdf_lcvd_t_max_ptrs (gx_device_memory_max_ptrs + 2)
+
+
+int pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs_matrix *m, pdf_lcvd_t *cvd, 
+				 bool need_mask, int x, int y, int w, int h, bool autorelease);
+int pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd);
+void pdf_remove_masked_image_converter(gx_device_pdf *pdev, pdf_lcvd_t *cvd, bool need_mask);
+
 
 /* ------ Miscellaneous output ------ */
 

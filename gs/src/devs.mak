@@ -857,7 +857,7 @@ $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
  $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfg.$(OBJ) $(C_) $(GLSRC)gdevpdfg.c
 
-$(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c $(memory__h)\
+$(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c $(memory__h) $(math__h)\
  $(gx_h)\
  $(gserrors_h) $(gsdevice_h) $(gsflip_h) $(gsiparm4_h) $(gsstate_h) $(gscolor2_h)\
  $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdfo_h)\

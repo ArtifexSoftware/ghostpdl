@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Image handling for PDF-writing driver */
 #include "memory_.h"
+#include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsdevice.h"
@@ -955,12 +956,33 @@ private int
 pdf_image3_make_mid(gx_device **pmidev, gx_device *dev, int width, int height,
 		    gs_memory_t *mem)
 {
-    int code = pdf_make_mxd(pmidev, dev, mem);
+    gx_device_pdf *pdev = (gx_device_pdf *)dev;
 
-    if (code < 0)
-	return code;
-    set_dev_proc(*pmidev, begin_typed_image, pdf_mid_begin_typed_image);
-    return 0;
+    if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
+	gs_matrix m;
+	pdf_lcvd_t *cvd;
+	extern_st(st_pdf_lcvd_t);
+	int code;
+        
+	gs_make_identity(&m);
+	cvd = gs_alloc_struct(mem, pdf_lcvd_t, &st_pdf_lcvd_t, "pdf_image3_make_mid");
+	if (cvd == NULL)
+	    return_error(gs_error_VMerror);
+	code = pdf_setup_masked_image_converter(pdev, mem, &m, cvd, 
+					true, 0, 0, width, height, true);
+	if (code < 0)
+	    return code;
+	cvd->mask_is_empty = false;
+	*pmidev = (gx_device *)cvd->mask;
+	return 0;
+    } else {
+	int code = pdf_make_mxd(pmidev, dev, mem);
+
+	if (code < 0)
+	    return code;
+	set_dev_proc(*pmidev, begin_typed_image, pdf_mid_begin_typed_image);
+	return 0;
+    }
 }
 private int
 pdf_mid_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
@@ -999,32 +1021,43 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
 		     gx_image_enum_common_t *pminfo,
 		     const gs_int_point *origin)
 {
-    int code = pdf_make_mxd(pmcdev, midev, mem);
-    pdf_image_enum *pmie;
-    pdf_image_enum *pmce;
-    cos_stream_t *pmcs;
+    int code;
+    gx_device_pdf *pdev = (gx_device_pdf *)dev;
 
-    if (code < 0)
-	return code;
-    code = pdf_begin_typed_image
-	((gx_device_pdf *)dev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
-	 pinfo, PDF_IMAGE_TYPE3_DATA);
-    if (code < 0)
-	return code;
-    /* Add the /Mask entry to the image dictionary. */
-    if ((*pinfo)->procs != &pdf_image_enum_procs &&
-	    (!PS2WRITE || !((gx_device_pdf *)dev)->OrderResources)) {
-	/* We couldn't handle the image.  Bail out. */
-	gx_image_end(*pinfo, false);
-	gs_free_object(mem, *pmcdev, "pdf_image3_make_mcde");
-	return_error(gs_error_rangecheck);
-    }
-    pmie = (pdf_image_enum *)pminfo;
-    pmce = (pdf_image_enum *)(*pinfo);
-    pmcs = (cos_stream_t *)pmce->writer.pres->object;
-    if (PS2WRITE && ((gx_device_pdf *)dev)->OrderResources) {
-	/* Don't add 'Mask" since we convert into 'imagemask' with a pattern. */
-	return 0;
+    if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
+	/* pdf_image3_make_mid must set midev with a pdf_lcvd_t instance.*/
+	pdf_lcvd_t *cvd = (pdf_lcvd_t *)((gx_device_memory *)midev)->target; 
+	gs_point p;
+
+	((gx_device_memory *)midev)->target = NULL;
+	cvd->m.xx = pis->ctm.xx * 72 / pdev->HWResolution[0];
+	cvd->m.xy = pis->ctm.xy * 72 / pdev->HWResolution[0];
+	cvd->m.yx = pis->ctm.yx * 72 / pdev->HWResolution[1];
+	cvd->m.yy = pis->ctm.yy * 72 / pdev->HWResolution[1];
+	gs_distance_transform_inverse(origin->x * pdev->HWResolution[0] / 72, 
+				      origin->y * pdev->HWResolution[0] / 72, &ctm_only(pis), &p);
+	cvd->m.tx = p.x;
+	cvd->m.ty = p.y;
+	cvd->mdev.mapped_x = origin->x;
+	cvd->mdev.mapped_y = origin->y;
+	*pmcdev = (gx_device *)&cvd->mdev;
+	code = gx_default_begin_typed_image
+	    ((gx_device *)&cvd->mdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+	    pinfo);
+    } else {
+	code = pdf_make_mxd(pmcdev, midev, mem);
+	if (code < 0)
+	    return code;
+	code = pdf_begin_typed_image
+	    ((gx_device_pdf *)dev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+	    pinfo, PDF_IMAGE_TYPE3_DATA);
+	if ((*pinfo)->procs != &pdf_image_enum_procs &&
+		(!PS2WRITE || !((gx_device_pdf *)dev)->OrderResources)) {
+	    /* We couldn't handle the image.  Bail out. */
+	    gx_image_end(*pinfo, false);
+	    gs_free_object(mem, *pmcdev, "pdf_image3_make_mcde");
+	    return_error(gs_error_rangecheck);
+	}
     }
     /* Due to equal image merging, we delay the adding of the "Mask" entry into 
        a type 3 image dictionary until the mask is completed. 
