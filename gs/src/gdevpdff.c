@@ -212,8 +212,9 @@ scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
 	    /* Is it one of the standard fonts? */
 	    int i = pdf_find_standard_font(orig->key_name.chars,
 					   orig->key_name.size);
+	    pdf_std_font_t *psf;
 
-	    if (i >= 0 && pdev->std_fonts[i].font == 0) {
+	    if (i >= 0 && (psf = &pdev->std_fonts[i])->font == 0) {
 		pdf_std_font_notify_t *psfn =
 		    gs_alloc_struct(pdev->pdf_memory, pdf_std_font_notify_t,
 				    &st_pdf_std_font_notify,
@@ -228,9 +229,9 @@ scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
 			  "[_]register 0x%lx: gs_font 0x%lx, id %ld, index=%d\n",
 			  (ulong)psfn, (ulong)orig, orig->id, i);
 		gs_font_notify_register(orig, pdf_std_font_notify_proc, psfn);
-		pdev->std_fonts[i].uid = obfont->UID;
-		pdev->std_fonts[i].orig_matrix = obfont->FontMatrix;
-		pdev->std_fonts[i].font = orig;
+		psf->font = orig;
+		psf->orig_matrix = obfont->FontMatrix;
+		psf->uid = obfont->UID;
 		found = true;
 	    }
 	}
@@ -536,7 +537,8 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
     bool have_widths = false;
     bool is_standard = false;
     long ffid = 0;
-    pdf_font_descriptor_t *pfd;
+    pdf_font_descriptor_t *pfd = 0;
+    pdf_std_font_t *psf = 0;
     gs_font *base_font = font;
     gs_font *below;
     pdf_font_descriptor_t fdesc;
@@ -554,10 +556,17 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	base_same = same;
     else
 	embed = pdf_font_embed_status(pdev, base_font, &index, &base_same);
-    if (embed == FONT_EMBED_STANDARD && pdev->std_fonts[index].font != 0) {
-	/* Use the standard font as the base font. */
-	base_font = pdev->std_fonts[index].font;
-	is_standard = true;
+    if (embed == FONT_EMBED_STANDARD) {
+	psf = &pdev->std_fonts[index];
+	if (psf->font != 0 || psf->pfd != 0) {
+	    /*
+	     * Use the standard font as the base font.  Either base_font
+	     * or pfd may be zero, but not both.
+	     */
+	    base_font = psf->font;
+	    pfd = psf->pfd;
+	    is_standard = true;
+	}
     } else if (embed == FONT_EMBED_YES &&
 	       base_font->FontType != ft_composite &&
 	       uid_is_valid(BASE_UID(base_font)) &&
@@ -601,9 +610,10 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
     }
 
     /* See if we already have a descriptor for this base font. */
-    pfd = (pdf_font_descriptor_t *)
-	pdf_find_resource_by_gs_id(pdev, resourceFontDescriptor,
-				   base_font->id);
+    if (pfd == 0)		/* if non-zero, was standard font */
+	pfd = (pdf_font_descriptor_t *)
+	    pdf_find_resource_by_gs_id(pdev, resourceFontDescriptor,
+				       base_font->id);
     if (pfd != 0 && pfd->base_font != base_font)
 	pfd = 0;
 
@@ -745,7 +755,11 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	    pfd->FontName.size = fnsize;
 	    memset(&pfd->values, 0, sizeof(&pfd->values));
 	}
-	if (!is_standard) {
+	if (is_standard) {
+	    psf->pfd = pfd;
+	    if (embed == FONT_EMBED_STANDARD)
+		pfd->base_font = 0;
+	} else {
 	    code = pdf_adjust_font_name(pdev, pfd, name_index >= 0);
 	    if (code < 0)
 		return code;
