@@ -53,7 +53,7 @@ Background information for new users of Ghostscript
 <li><a href="#Reporting_bugs">Reporting bugs</a>
 </ul>
 <li><a href="#Aladdin">Contacting Aladdin Enterprises</a>
-<li><a href="#How_to_help">Things you can do to help</a>
+<li><a href="#How_to_help">How you can help improve Ghostscript</a>
 <li><a href="#Acknowledgments">Acknowledgements</a>
 </ul></blockquote>
 
@@ -321,8 +321,8 @@ Artifex Software Inc.<br>
 San Rafael, CA 94903  U.S.A.<br>
 +1-415-492-9861 Voice<br>
 +1-415-492-9862 Fax<br>
-<a href="mailto:info@arsoft.com">info@arsoft.com</a><br>
-<a href="http://www.arsoft.com/">http://www.arsoft.com/</a>
+<a href="mailto:info@artifex.com">info@artifex.com</a><br>
+<a href="http://www.artifex.com/">http://www.artifex.com/</a>
 </address></blockquote>
 
 <p>
@@ -719,13 +719,13 @@ one of these Usenet newsgroups:
 <dl>
 <dt><b><tt><a href="news:gnu.ghostscript.bug">gnu.ghostscript.bug</a></tt></b>
 <dd>if your question is about <b>GNU Ghostscript</b> (currently versions
-4.03 and below).  If you have access to Internet mail, but not Usenet news,
+5.10 and below).  If you have access to Internet mail, but not Usenet news,
 write to <b><tt>bug-ghostscript@gnu.org</tt></b>, which is equivalent to
 posting to that newsgroup.
 
 <dt><b><tt><a href="news:comp.lang.postscript">comp.lang.postscript</a></tt></b>
 <dd>if your question is about <b>Aladdin Ghostscript</b> (currently
-versions above 4.03).  If you have access to Internet mail, but not Usenet
+versions 5.50 and above).  If you have access to Internet mail, but not Usenet
 news, write to <b><tt>comp.lang.postscript@aladdin.com</tt></b>, which is
 equivalent to posting to that newsgroup.  We hope to establish a separate
 newsgroup for Aladdin Ghostscript in the future, since
@@ -740,7 +740,7 @@ specific device driver, look at <b><tt>devs.mak</tt></b> and
 <b><tt>contrib.mak</tt></b> in the Ghostscript source directory to see in
 which file the driver is defined.  If it's defined in
 <b><tt>contrib.mak</tt></b>, the list of contributed drivers, please
-contact the author directly.  Aladdin Enterprises can't help you with
+contact the author directly: Aladdin Enterprises can't help you with
 user-maintained drivers.
 
 <h2><a name="Reporting_bugs"></a>Reporting bugs</h2>
@@ -761,8 +761,8 @@ release.
 
 <p>
 We will consider investigating problems reported to those newsgroups, or
-e-mailed directly to &lt;<a href="mailto:ghost@aladdin.com">ghost@aladdin.com</a>&gt;,
-if (and only if) the report meets all the following conditions:
+e-mailed directly to &lt;<a href="mailto:bug-gs@aladdin.com">bug-gs@aladdin.com</a>&gt;, if (and only
+if) the report meets all the following conditions:
 
 <ol>
 <li>You are using the most recent version of Aladdin Ghostscript.
@@ -777,14 +777,14 @@ on other input data.
 
 <li>Your problem is reproducible, and you can provide the input data that
 evokes it, either by e-mail in the problem report itself
-(if data is less than 100K bytes) or by anonymous FTP or HTTP.
+(if data is less than 500K bytes) or by anonymous FTP or HTTP.
 
 <li>Your problem is reproducible with Ghostscript alone, without using a
 viewer such as Ghostview or GSview.  (If a problem happens only with
 Ghostview, write to Tim Theisen
 &lt;<a href="mailto:ghostview@cs.wisc.edu">ghostview@cs.wisc.edu</a>&gt;.
 If it happens only with GSview, contact Russell Lang
-&lt;<a href="mailto:rjl@aladdin.com">rjl@aladdin.com</a>&gt;.)
+&lt;<a href="mailto:gsview@ghostgum.com.au">gsview@ghostgum.com.au</a>&gt;.)
 
 <li>You created the bug report by filling out the
 <a href="Bug-form.htm">bug form</a> <em>completely</em>.  We really do
@@ -863,11 +863,43 @@ Menlo Park, CA 94025 U.S.A.<br>
 
 <hr>
 
-<h1><a name="How_to_help"></a>Things you can do to help</h1>
+<h1><a name="How_to_help"></a>How you can help improve Ghostscript</h1>
 
 <p>
-There are some projects that users could do that are somewhat independent
-of the main body of the code, and that would help improve Ghostscript.
+The most valuable thing you can do to help improve Ghostscript is to help
+test it.  Aladdin makes three different grades of release available, each of
+which needs a different kind of testing.
+
+<ul>
+<li><em>Public</em> releases are made available about every 9 months, after
+a beta test period.  Reporting problems as described <a
+href="#Reporting_bugs">above</a> often results in a fix being posted on our
+Web site.
+</ul>
+
+<ul>
+<li><em>Beta</em> releases are posted starting about 6 weeks before a
+planned public release.  These are candidates for public release, and need
+intensive testing.
+</ul>
+
+<ul>
+<li><em>Tester</em> releases are posted every few weeks.  These are not
+supposed to be good enough for general use, but testing them is still very
+helpful, since it gets problems corrected before the intensive beta test
+period.
+</ul>
+
+<p>
+You can always find the current public release and the current beta or
+tester release on our <a href="http://www.cs.wisc.edu/~ghost/index.html">Web
+site</a>.  If you would like to be notified when new beta or tester releases
+are posted, please <a href="#Aladdin">contact Aladdin</a>.
+
+<p>
+There are also some projects that users could do that are somewhat
+independent of the main body of the code, and that would help improve
+Ghostscript.
 
 <ul>
 <li>Make Ghostscript work with the free <b><tt>emx/gcc</tt></b> and
@@ -891,6 +923,14 @@ and then <a href="#Aladdin">contact Aladdin</a> if you want to do the work.
 for Ghostscript, but the specifications for these protocols are not
 published.  If you can provide them to us without violating any agreements,
 please <a href="#Aladdin">contact Aladdin</a>.
+</ul>
+
+<ul>
+<li>There is a project to create a GNU implementation of the OPENStep API,
+which involves extending Ghostscript to provide the full functionality of
+Adobe's Display PostScript system with some of the NeXT extensions.
+For more information, please contact Net-Community
+&lt;<a href="mailto:scottc@net-community.com">scottc@net-community.com</a>&gt;.
 </ul>
 
 <hr>

@@ -23,7 +23,14 @@ Ghostscript bug report form
 <!-- [2.0 begin contents] -------------------------------------------------- -->
 
 <p>
-Before completing this form, first check the "known bugs" notice at
+Before using this form, please verify that your problem can be reproduced
+using Ghostscript alone, without using any front end viewer such as GSview,
+Ghostview, or gv.  If your problem only shows up when you use a viewer,
+please report the problem to the author of the viewer.
+
+<p>
+If the problem is really in Ghostscript, please check the "known bugs"
+notice at
 
 <blockquote>
 <a href="http://www.cs.wisc.edu/~ghost/aladdin/relnotes/">http://www.cs.wisc.edu/~ghost/aladdin/relnotes/</a>gs###/index.html
@@ -36,15 +43,23 @@ bugs</a>" in the <a href="New-user.htm">documentation for new users</a>.
 For other information, see the <a href="Readme.htm">Ghostscript
 overview</a>.
 
+<p>
+If the problem is not already known, please fill out this form and e-mail it
+to <a href="mailto:bug-gs@aladdin.com">bug-gs@aladdin.com</a>.  You must
+fill out <strong>all</strong> applicable items in this form.  In particular,
+you <strong>must</strong> include all data (PostScript files, PDF files,
+batch/script files, and/or fonts) involved in the problem, either by giving
+a URL from which we can download the data, or by including the data with the
+report itself.  If you don't include this information, we can't investigate
+the problem.
+
+<p>
+Fully completed problem reports help us improve Ghostscript.  Thanks in
+advance.
+
 <font size="+1"><pre>
 ------------------------------------------------------------------------
 Symptoms:
-
-
-
-
-
-
 
 
 
@@ -55,7 +70,12 @@ Ghostscript version (or include output from "gs -h"):
 Where you got Ghostscript:
 
 ------------------------------------------------------------------------
-Hardware system you are using:
+Hardware system you are using (including printer model if the problem
+involves printing):
+
+------------------------------------------------------------------------
+If you are using X Windows, the output from running xdpyinfo and
+xwininfo:
 
 ------------------------------------------------------------------------
 Operating system you are using:
@@ -68,7 +88,7 @@ Ghostscript yourself:
 If you compiled Ghostscript yourself, changes you made to the makefiles:
 
 ------------------------------------------------------------------------
-Environment variables
+Environment variables:
 
 	GS_DEVICE
 
@@ -83,27 +103,15 @@ Command line:
 
 ------------------------------------------------------------------------
 URL or FTP location of test files (include the data at the end of this
-form if short):
+form if 500K or less):
 
 ------------------------------------------------------------------------
-Suggested fix (if any):
-
-
-
-
-
-
+Suggested fix, if any:
 
 
 
 ------------------------------------------------------------------------
 Other comments:
-
-
-
-
-
-
 
 
 
@@ -116,7 +124,7 @@ Other comments:
 
 <font size=2>
 
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+<p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
 <p>This file is part of Aladdin Ghostscript.  See the
 <a href="Public.htm">Aladdin Free Public License</a> (the "License") for

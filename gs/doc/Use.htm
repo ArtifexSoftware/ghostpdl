@@ -51,6 +51,7 @@ How to use Ghostscript
 <ul>
 <li><a href="#PDF_stdin">PDF files from standard input</a>
 <li><a href="#PDF_switches">Switches for PDF files</a>
+<li><a href="#PDF_problems">Problems interpreting a PDF file</a>
 </ul>
 <li><a href="#Platforms">Notes on specific platforms</a>
 <ul>
@@ -70,14 +71,22 @@ How to use Ghostscript
 </ul>
 <li><a href="#Switches">Switches</a>
 <ul>
-<li><a href="#Normal_switches">Normal switches</a>
+<li><a href="#General_switches">General switches</a>
 <ul>
 <li><a href="#Input_control">Input control</a>
 <li><a href="#File_searching">File searching</a>
 <li><a href="#Parameters">Setting parameters</a>
 <li><a href="#Quiet">Suppress messages</a>
 </ul>
-<li><a href="#Special_names">Special names (with <b><tt>-d</tt></b> and <b><tt>-s</tt></b>)</a>
+<li><a href="#Parameter_switches">Parameter switches (<b><tt>-d</tt></b> and <b><tt>-s</tt></b>)</a>
+<ul>
+<li><a href="#Rendering_parameters">Rendering parameters</a>
+<li><a href="#Page_parameters">Page parameters</a>
+<li><a href="#Font_related_parameters">Font-related parameters</a>
+<li><a href="#Interaction_related_parameters">Interaction-related parameters</a>
+<li><a href="#Output_selection_parameters">Device and output selection parameters</a>
+<li><a href="#Other_parameters">Other parameters</a>
+</ul>
 </ul>
 <li><a href="#Debugging">Debugging</a>
 <li><a href="#Known_paper_sizes">Appendix: Paper sizes known to Ghostscript</a>
@@ -200,23 +209,33 @@ for this executable
 <p>
 As noted above, one normally specifies input with file names on the command
 line.  However, one can also "pipe" input into Ghostscript by using the
-special file name "<b><tt>-</tt></b>", for instance
+special file name "<b><tt>-</tt></b>" or "<b><tt>-_</tt></b>", for instance
 
 <blockquote>
 {some program producing PS} <b><tt>| gs</tt></b> {...options...} <b><tt>-</tt></b>
+<br>
+{some program producing PS} <b><tt>| gs</tt></b> {...options...} <b><tt>-_</tt></b>
 </blockquote>
 
 <p>
-"<b><tt>-</tt></b>" differs from a named file in two respects:
+These switches differ from a named file in two respects:
 
 <ol>
 <li>When Ghostscript finishes reading from the pipe, it quits rather than
-going into interactive mode.  Because of this, "<b><tt>-</tt></b>" is
+going into interactive mode.  Because of this, these switches are
 really only useful as the last argument on the command line.
 
-<li>"<b><tt>-</tt></b>" can't be used to pipe PDF input to Ghostscript.
+<li>These switches can't be used to pipe PDF input to Ghostscript.
 See "<a href="#PDF">Using Ghostscript with PDF files</a>" below.
 </ol>
+
+<p>
+
+The difference between "<b><tt>-</tt></b>" and "<b><tt>-_</tt></b>" is that
+"<b><tt>-</tt></b>" reads the input one character at a time, which is useful
+for programs such as GSview that generate input for Ghostscript dynamically
+and watch for some response, whereas "<b><tt>-_</tt></b>" reads the input in
+blocks, which is more efficient for ordinary (batch) execution.
 
 <h1><a name="Output_device"></a>Selecting an output device</h1>
 
@@ -843,16 +862,18 @@ PDF to (Level 2) PostScript.
 <h2><a name="PDF_stdin"></a>PDF files from standard input</h2>
 
 <p>
-Using the <a href="#Pipe_input">"<b><tt>-</tt></b>" switch</a> you can
-provide PDF input from a file, but not from a pipe, because the PDF
-language, unlike the PostScript language, inherently requires random access
-to the file, while a pipe is always sequential.  That is,
+
+Using the <a href="#Pipe_input">"<b><tt>-</tt></b>" or "<b><tt>-_</tt></b>"
+switch</a> you can provide PDF input from a file, but not from a pipe,
+because the PDF language, unlike the PostScript language, inherently
+requires random access to the file, while a pipe is always sequential.  That
+is,
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr>	<td><b><tt>gs - &lt;somefile.pdf</tt></b>
+<tr>	<td><b><tt>gs -_ &lt; somefile.pdf</tt></b>
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 	<td>(<b><em>is</em></b> permissible)
-<tr>	<td>{some program producing PDF} <b><tt>| gs -</tt></b>
+<tr>	<td>{some program producing PDF} <b><tt>| gs -_</tt></b>
 	<td>&nbsp;
 	<td>(is <b><em>not</em></b> permissible)
 </table></blockquote>
@@ -869,10 +890,63 @@ to the file, while a pipe is always sequential.  That is,
 <dd>Stops interpreting after the designated page of the document.
 </dl>
 
-<dl>
-<dt><b><tt>-sPSFile=filename</tt></b>
-<dd>Writes the PostScript equivalent of the PDF input into the given file.
-</dl>
+<h2><a name="PDF_problems"></a>Problems interpreting a PDF file</h2>
+
+<p>
+Occasionally you may try to read or print a <b><tt>*.pdf</tt></b> file that
+Ghostscript doesn't recognize as PDF, but the same file <b><em>can</em></b>
+be opened and interpreted by an Adobe Acrobat viewer.  This can happen
+when, for instance, a PDF file produced on a Macintosh is carelessly moved
+to another kind of system, leaving now-useless Macintosh-specific data
+before the standard header.  Ghostscript can't read these files because
+they don't conform to the PDF standard, Adobe's
+"<a href="http://www.adobe.com/supportservice/devrelations/PDFS/TN/PDFSPEC.PDF"><b><em>Portable
+Document Format Reference Manual</em></b></a>", version 1.2, which states:
+
+<blockquote>
+The first line of a PDF file specifies the version number of the PDF
+specification to which the file adheres....  [T]he first line of a
+1.2-conforming PDF file should be <b><tt>%PDF-1.2</tt></b>.
+</blockquote>
+
+<p>
+However, in an appendix the manual also says that Adobe
+
+<blockquote>
+Acrobat viewers are very liberal in their check for a valid PDF header.
+All viewers allow the header to appear anywhere in the first 1,000 bytes of
+the file.
+</blockquote>
+
+<p>
+Ghostscript doesn't do this: it expects PDF files to conform to the
+standard, because that's how it recognizes them among other formats it
+handles, unlike Acrobat viewers which need deal only with PDF and can
+therefore afford to be more liberal with PDF.  So if you encounter a file
+with useless characters before the header and you want to use it with
+Ghostscript, you can fix it by stripping the extra characters from before
+the standard header.  The file should begin with exactly the characters
+
+<blockquote><b><tt>
+%PDF
+</tt></b></blockquote>
+
+<p>
+PDF files are binary, not text, so be careful to edit the file as a binary,
+not as text.  On Unix, after determining the length of the useless prefix
+string, which you can do with <b><tt>od</tt></b>, you can use
+<b><tt>tail</tt></b> to strip them off.  For instance:
+
+<blockquote>
+<b><tt>od -c Macintosh.pdf | more</tt></b> ;# <em>shows that <b><tt>%PDF</tt></b> occurs after 128 characters</em><br>
+<b><tt>tail +128c Macintosh.pdf &gt;Legal.pdf</tt></b>
+</blockquote>
+
+<p>
+On PCs and other systems you can use the <b><tt>hexl</tt></b> program
+distributed with GNU emacs to convert the PDF file to editable text form.
+After editing, <b><tt>hexl</tt></b> can convert the text form back to
+binary.
 
 <hr>
 
@@ -982,7 +1056,9 @@ $ gs "-Isys$login:"
 <li>If you write printer output to a file with
 <b><tt>-sOutputFile=</tt></b> and then want to print the file later, use
 "<b><tt>PRINT/PASSALL</tt></b>".
+</ul>
 
+<ul>
 <li>PDF files (or PostScript files that use the
 <b><tt>setfileposition</tt></b> operator) must be "stream LF" type files to
 work properly on VMS systems. (<b><em>Note:</em></b> This matters only if
@@ -1069,9 +1145,8 @@ where <em>NNN</em> is the display mode number in decimal.  Here are modes
 for some popular display chipsets; the ones that use the default value are
 marked "*".  If your card's chipset doesn't appear on this list, or if you
 try the value here and it doesn't work, please send the name of the chipset
-and its correct display mode to Aladdin
-&lt;<a href="mailto:ghost@aladdin.com">ghost@aladdin.com</a>&gt; to include
-in future releases.
+and its correct display mode to &lt;<a href="mailto:bug-gs@aladdin.com">bug-gs@aladdin.com</a>&gt; to include in
+future releases.
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><th colspan=6 bgcolor="#CCCC00"><hr><font size="+1">Display modes for PC display chipsets</font><hr>
@@ -1504,7 +1579,7 @@ terminal output to a file.
 <p>
 Unless otherwise noted, these switches can be used on all platforms.
 
-<h2><a name="Normal_switches"></a>Normal switches</h2>
+<h2><a name="General_switches"></a>General switches</h2>
 
 <h3><a name="Input_control"></a>Input control</h3>
 
@@ -1531,6 +1606,15 @@ Ghostscript finishes executing the file, it exits back to the shell.
 <dt><b><tt>-@</tt></b> <em>filename arg1 ...</em>
 <dd>Does the same thing as <b><tt>--</tt></b> and <b><tt>-+</tt></b>, but
 expands <b><tt>@</tt></b><em>filename</em> arguments.
+</dl>
+
+<dl>
+<dt><b><tt>-</tt></b>
+<br><b><tt>-_</tt></b>
+<dd>These are not really switches: they tell Ghostscript to read from
+standard input, which is coming from a file or a pipe,
+with or without buffering.
+See <a href="#Pipe_input">"Input from a pipe"</a> above.
 </dl>
 
 <dl>
@@ -1662,14 +1746,21 @@ devices such as printers that support multiple X and Y resolutions.
 equivalent of <a href="#dQUIET"><b><tt>-dQUIET</tt></b></a>.
 </dl>
 
-<h2><a name="Special_names"></a>Special names (with <b><tt>-d</tt></b> and <b><tt>-s</tt></b>)</h2>
+<h2><a name="Parameter_switches"></a>Parameter switches (<b><tt>-d</tt></b> and <b><tt>-s</tt></b>)</h2>
 
-<dl>
-<dt><b><tt>-dBATCH</tt></b>
-<dd>Causes Ghostscript to exit after processing all files named on the
-command line, rather than going into an interactive loop reading PostScript
-commands.  Equivalent to putting -c quit at the end of the command line.
-</dl>
+<p>
+As noted above, <b><tt>-d</tt></b> and <b><tt>-s</tt></b> define initial
+values for PostScript names.  Some of these names are parameters that
+control the interpreter or the graphics engine.  You can also use
+<b><tt>-d</tt></b> or <b><tt>-s</tt></b> to define a value for any device
+parameter of the initial device (the one defined with
+<b><tt>-sDEVICE=</tt></b>, or the default device if this switch is not
+used).  For example, since the <b><tt>ppmraw</tt></b> device has a numeric
+<b><tt>GrayValues</tt></b> parameter that controls the number of bits per
+component, <b><tt>-sDEVICE=ppmraw -dGrayValues=16</tt></b> will make this
+the default device and set the number of bits per component to 4 (log2(16)).
+
+<h3><a name="Rendering_parameters"></a>Rendering parameters</h3>
 
 <dl>
 <dt><b><tt>-dCOLORSCREEN
@@ -1688,24 +1779,6 @@ actually used under normal circumstances) on all other devices.
 </dl>
 
 <dl>
-<dt><b><tt>-dDELAYBIND</tt></b>
-<dd>Causes <b><tt>bind</tt></b> to remember all its invocations, but not
-actually execute them until the <b><tt>.bindnow</tt></b> procedure is
-called.  Useful only for certain specialized packages like
-<b><tt>pstotext</tt></b> that redefine operators.
-</dl>
-
-<dl>
-<dt><a name="DISKFONTS"></a><b><tt>-dDISKFONTS</tt></b>
-<dd>Causes individual character outlines to be loaded from the disk the
-first time they are encountered.  (Normally Ghostscript loads all the
-character outlines when it loads a font.)  This may allow loading more
-fonts into memory at the expense of slower rendering.
-<b><tt>DISKFONTS</tt></b> is effective only if the diskfont feature was
-built into the executable; otherwise it is ignored.
-</dl>
-
-<dl>
 <dt><b><tt>-dDITHERPPI=</tt></b><em>lpi</em>
 <dd>Forces all devices to be considered high-resolution, and forces use of
 a halftone screen or screens with <em>lpi</em> lines per inch, disregarding
@@ -1713,6 +1786,30 @@ the actual device resolution.  Reasonable values for <em>lpi</em> are
 <b><em>N</em></b>/5 to <b><em>N</em></b>/20, where <b><em>N</em></b> is the
 resolution in dots per inch.
 </dl>
+
+<dl>
+<dt><b><tt>-dDOINTERPOLATE</tt></b>
+<dd>Turns on image interpolation for all images, improving image quality for
+scaled images at the expense of speed.  Note that
+<b><tt>-dNOINTERPOLATE</tt></b> overrides <b><tt>-dDOINTERPOLATE</tt></b> if
+both are specified.
+</dl>
+
+<dl>
+<dt><b><tt>-dNOCIE</tt></b>
+<dd>Substitutes <b><tt>DeviceGray</tt></b> and <b><tt>DeviceRGB</tt></b>
+for CIEBasedA and CIEBasedABC color spaces respectively.  Useful only on
+very slow systems where color accuracy is less important.
+</dl>
+
+<dl>
+<dt><b><tt>-dNOINTERPOLATE</tt></b>
+<dd>Turns off image interpolation, improving performance on interpolated
+images at the expense of image quality.  <b><tt>-dNOINTERPOLATE</tt></b>
+overrides <b><tt>-dDOINTERPOLATE</tt></b>.
+</dl>
+
+<h3><a name="Page_parameters"></a>Page parameters</h3>
 
 <dl>
 <dt><a name="FIXEDMEDIA"></a><b><tt>-dFIXEDMEDIA</tt></b>
@@ -1731,36 +1828,37 @@ automatically sets <b><tt>-dFIXEDRESOLUTION</tt></b>.
 </dl>
 
 <dl>
+<dt><b><tt>-dORIENT1=true
+<br>-dORIENT1=false</tt></b>
+<dd>Defines the meaning of the 0 and 1 orientation values for the
+setpage[params] compatibility operators.  The default value of
+<b><tt>ORIENT1</tt></b> is true (set in <b><tt>gs_init.ps</tt></b>), which
+is the correct value for most files that use setpage[params] at all,
+namely, files produced by badly designed applications that "know" that the
+output will be printed on certain roll-media printers: these applications
+use 0 to mean landscape and 1 to mean portrait.
+<b><tt>-dORIENT1=false</tt></b> declares that 0 means portrait and 1 means
+landscape, which is the convention used by a smaller number of files
+produced by properly written applications.
+</dl>
+
+<h3><a name="Font_related_parameters"></a>Font-related parameters</h3>
+
+<dl>
+<dt><a name="DISKFONTS"></a><b><tt>-dDISKFONTS</tt></b>
+<dd>Causes individual character outlines to be loaded from the disk the
+first time they are encountered.  (Normally Ghostscript loads all the
+character outlines when it loads a font.)  This may allow loading more
+fonts into memory at the expense of slower rendering.
+<b><tt>DISKFONTS</tt></b> is effective only if the diskfont feature was
+built into the executable; otherwise it is ignored.
+</dl>
+
+<dl>
 <dt><b><tt>-dLOCALFONTS</tt></b>
 <dd>Causes Type 1 fonts to be loaded into the current VM -- normally local
 VM -- instead of always being loaded into global VM.  Useful only for
 compatibility with Adobe printers for loading some obsolete fonts.
-</dl>
-
-<dl>
-<dt><b><tt>-dNOBIND</tt></b>
-<dd>Disables the <b><tt>bind</tt></b> operator.  Useful only for debugging.
-</dl>
-
-<dl>
-<dt><b><tt>-dNOCACHE</tt></b>
-<dd>Disables character caching.  Useful only for debugging.
-</dl>
-
-<dl>
-<dt><b><tt>-dNOCIE</tt></b>
-<dd>Substitutes <b><tt>DeviceGray</tt></b> and <b><tt>DeviceRGB</tt></b>
-for CIEBasedA and CIEBasedABC color spaces respectively.  Useful only on
-very slow systems where color accuracy is less important.
-</dl>
-
-<dl>
-<dt><b><tt>-dNODISPLAY</tt></b>
-<dd>Initializes Ghostscript with a null device (a device that discards the
-output image) rather than the default device or the device selected with
-<b><tt>-sDEVICE=</tt></b>.  This is usually useful only when running
-PostScript code whose purpose is to compute something rather than to
-produce an output image; for instance, when converting PostScript to PDF.
 </dl>
 
 <dl>
@@ -1776,101 +1874,10 @@ useful for debugging.
 </dl>
 
 <dl>
-<dt><b><tt>-dNOGC</tt></b>
-<dd>Suppresses the initial automatic enabling of the garbage collector in
-Level 2 systems.  (The <b><tt>vmreclaim</tt></b> operator is not disabled.)
-Useful only for debugging.
-</dl>
-
-<dl>
-<dt><b><tt>-dNOINTERPOLATE</tt></b>
-<dd>Turns off image interpolation, improving performance on interpolated
-images at the expense of image quality.
-</dl>
-
-<dl>
-<dt><b><tt>-dNOPAGEPROMPT</tt></b>
-<dd>Disables only the prompt, but not the pause, at the end of each page.
-This may be useful on PC displays that get confused if a program attempts
-to write text to the console while the display is in a graphics mode.
-</dl>
-
-<dl>
-<dt><a name="NoPause"></a><b><tt>-dNOPAUSE</tt></b>
-<dd>Disables the prompt and pause at the end of each page.  Normally one
-should use this (along with <b><tt>-dBATCH</tt></b>) when producing output
-on a printer or to a file; it also may be desirable for applications where
-another program is "driving" Ghostscript.
-</dl>
-
-<dl>
 <dt><b><tt>-dNOPLATFONTS</tt></b>
 <dd>Disables the use of fonts supplied by the underlying platform (X
 Windows or Microsoft Windows).  This may be needed if the platform fonts
 look undesirably different from the scalable fonts.
-</dl>
-
-<dl>
-<dt><b><tt>-dNOPROMPT</tt></b>
-<dd>Disables the prompt printed by Ghostscript when it expects interactive
-input, as well as the end-of-page prompt (<b><tt>-dNOPAGEPROMPT</tt></b>);
-also disables the implicit <b><tt>flushpage</tt></b> that normally occurs
-each time Ghostscript asks for more input.  This allows piping input
-directly into Ghostscript, as long as the data doesn't refer to
-<b><tt>currentfile</tt></b>.
-</dl>
-
-<dl>
-<dt><b><tt>-dORIENT1=true
-<br>-dORIENT1=false</tt></b>
-<dd>Defines the meaning of the 0 and 1 orientation values for the
-setpage[params] compatibility operators.  The default value of
-<b><tt>ORIENT1</tt></b> is true (set in <b><tt>gs_init.ps</tt></b>), which
-is the correct value for most files that use setpage[params] at all,
-namely, files produced by badly designed applications that "know" that the
-output will be printed on certain roll-media printers: these applications
-use 0 to mean landscape and 1 to mean portrait.
-<b><tt>-dORIENT1=false</tt></b> declares that 0 means portrait and 1 means
-landscape, which is the convention used by a smaller number of files
-produced by properly written applications.
-</dl>
-
-<dl>
-<dt><a name="dQUIET"></a><b><tt>-dQUIET</tt></b>
-<dd>Suppresses routine information comments on standard output.  This is
-currently necessary when redirecting device output to standard output.
-</dl>
-
-<dl>
-<dt><a name="Safer"></a><b><tt>-dSAFER</tt></b>
-<dd>Disables the <b><tt>deletefile</tt></b> and <b><tt>renamefile</tt></b>
-operators, and the ability to open files in any mode other than read-only.
-This may be desirable for spoolers or other sensitive environments.
-</dl>
-
-<dl>
-<dt><b><tt>-dSHORTERRORS</tt></b>
-<dd>Makes certain error and information messages more Adobe-compatible.
-</dl>
-
-<dl>
-<dt><b><tt>-dSTRICT</tt></b>
-<dd>Disables as many Ghostscript extensions as feasible, to be more helpful
-in debugging applications that produce output for Adobe and other RIPs.
-</dl>
-
-<dl>
-<dt><b><tt>-dWRITESYSTEMDICT</tt></b>
-<dd>Leaves <b><tt>systemdict</tt></b> writable.  This is necessary when
-running special utility programs such as <b><tt>font2c</tt></b> and
-<b><tt>pcharstr</tt></b>, which must bypass normal PostScript access
-protection.
-</dl>
-
-<dl>
-<dt><a name="DEVICE_switch"></a><b><tt>-sDEVICE=</tt></b><em>device</em>
-<dd>Selects an alternate <a href="#Output_device">initial output
-device</a>.
 </dl>
 
 <dl>
@@ -1889,18 +1896,136 @@ fonts not found on the search path, overriding the environment variable
 </dl>
 
 <dl>
-<dt><b><tt>-sOutputFile=</tt></b><em>filename</em>
-<dd>Selects an alternate output file (or pipe) for the initial output
-device, as described above.
-</dl>
-
-<dl>
 <dt><b><tt>-sSUBSTFONT=</tt></b><em>fontname</em>
 <dd>Causes the given font to be substituted for all unknown fonts, instead
 of using the normal intelligent substitution algorithm.  Also, in this
 case, the font returned by <b><tt>findfont</tt></b> is the actual font
 named "<em>fontname</em>", not a copy of the font with the
 <b><tt>FontName</tt></b> changed to the requested one.
+</dl>
+
+<h3><a name="Interaction_related_parameters"></a>Interaction-related parameters</h3>
+
+<dl>
+<dt><b><tt>-dBATCH</tt></b>
+<dd>Causes Ghostscript to exit after processing all files named on the
+command line, rather than going into an interactive loop reading PostScript
+commands.  Equivalent to putting -c quit at the end of the command line.
+</dl>
+
+<dl>
+<dt><b><tt>-dNOPAGEPROMPT</tt></b>
+<dd>Disables only the prompt, but not the pause, at the end of each page.
+This may be useful on PC displays that get confused if a program attempts
+to write text to the console while the display is in a graphics mode.
+</dl>
+
+<dl>
+<dt><a name="NoPause"></a><b><tt>-dNOPAUSE</tt></b>
+<dd>Disables the prompt and pause at the end of each page.  Normally one
+should use this (along with <b><tt>-dBATCH</tt></b>) when producing output
+on a printer or to a file; it also may be desirable for applications where
+another program is "driving" Ghostscript.
+</dl>
+
+<dl>
+<dt><b><tt>-dNOPROMPT</tt></b>
+<dd>Disables the prompt printed by Ghostscript when it expects interactive
+input, as well as the end-of-page prompt (<b><tt>-dNOPAGEPROMPT</tt></b>);
+also disables the implicit <b><tt>flushpage</tt></b> that normally occurs
+each time Ghostscript asks for more input.  This allows piping input
+directly into Ghostscript, as long as the data doesn't refer to
+<b><tt>currentfile</tt></b>.
+</dl>
+
+<dl>
+<dt><a name="dQUIET"></a><b><tt>-dQUIET</tt></b>
+<dd>Suppresses routine information comments on standard output.  This is
+currently necessary when redirecting device output to standard output.
+</dl>
+
+<dl>
+<dt><b><tt>-dSHORTERRORS</tt></b>
+<dd>Makes certain error and information messages more Adobe-compatible.
+</dl>
+
+<dl>
+<dt><b><tt>-dTTYPAUSE</tt></b>
+<dd>Causes Ghostscript to read a character from <b><tt>/dev/tty</tt></b>,
+rather than standard input, at the end of each page.  This may be useful if
+input is coming from a pipe.  Note that <b><tt>-dTTYPAUSE</tt></b>
+overrides <b><tt>-dNOPAUSE</tt></b>.
+</dl>
+
+<h3><a name="Output_selection_parameters"></a>Device and output selection parameters</h3>
+
+<dl>
+<dt><b><tt>-dNODISPLAY</tt></b>
+<dd>Initializes Ghostscript with a null device (a device that discards the
+output image) rather than the default device or the device selected with
+<b><tt>-sDEVICE=</tt></b>.  This is usually useful only when running
+PostScript code whose purpose is to compute something rather than to
+produce an output image; for instance, when converting PostScript to PDF.
+</dl>
+
+<dl>
+<dt><a name="DEVICE_switch"></a><b><tt>-sDEVICE=</tt></b><em>device</em>
+<dd>Selects an alternate <a href="#Output_device">initial output
+device</a>.
+</dl>
+
+<dl>
+<dt><b><tt>-sOutputFile=</tt></b><em>filename</em>
+<dd>Selects an alternate output file (or pipe) for the initial output
+device, as described above.
+</dl>
+
+<h3><a name="Other_parameters"></a>Other parameters</h3>
+
+<dl>
+<dt><b><tt>-dDELAYBIND</tt></b>
+<dd>Causes <b><tt>bind</tt></b> to remember all its invocations, but not
+actually execute them until the <b><tt>.bindnow</tt></b> procedure is
+called.  Useful only for certain specialized packages like
+<b><tt>pstotext</tt></b> that redefine operators.
+</dl>
+
+<dl>
+<dt><b><tt>-dNOBIND</tt></b>
+<dd>Disables the <b><tt>bind</tt></b> operator.  Useful only for debugging.
+</dl>
+
+<dl>
+<dt><b><tt>-dNOCACHE</tt></b>
+<dd>Disables character caching.  Useful only for debugging.
+</dl>
+
+<dl>
+<dt><b><tt>-dNOGC</tt></b>
+<dd>Suppresses the initial automatic enabling of the garbage collector in
+Level 2 systems.  (The <b><tt>vmreclaim</tt></b> operator is not disabled.)
+Useful only for debugging.
+</dl>
+
+<dl>
+<dt><a name="Safer"></a><b><tt>-dSAFER</tt></b>
+<dd>Disables the <b><tt>deletefile</tt></b> and <b><tt>renamefile</tt></b>
+operators, and the ability to open files in any mode other than read-only.
+This may be desirable for spoolers or other sensitive environments.
+</dl>
+
+<dl>
+<dt><b><tt>-dSTRICT</tt></b>
+<dd>Disables as many Ghostscript extensions as feasible, to be more helpful
+in debugging applications that produce output for Adobe and other RIPs.
+</dl>
+
+<dl>
+<dt><b><tt>-dWRITESYSTEMDICT</tt></b>
+<dd>Leaves <b><tt>systemdict</tt></b> writable.  This is necessary when
+running special utility programs such as <b><tt>font2c</tt></b> and
+<b><tt>pcharstr</tt></b>, which must bypass normal PostScript access
+protection.
 </dl>
 
 <hr>
@@ -2045,6 +2170,7 @@ usage.
 <dt><b><tt>~</tt></b><dd>math functions
 <dt><b><tt>'</tt></b><dd>contexts, create/destroy
 <dt>&nbsp;&nbsp;&nbsp;<b><tt>"</tt></b><dd>contexts, every operation
+<dt><b><tt>^</tt></b><dd>reference counting
 <dt><b><tt>|</tt></b><dd>(reserved for experimental code)
 </dl>
 
@@ -2064,6 +2190,7 @@ These switches select debugging options other than what should be printed:
 identifiable garbage values
 <dt><b><tt>+</tt></b><dd>use minimum-size stack blocks
 <dt><b><tt>,</tt></b><dd>don't use path-based banding
+<dt><b><tt>`</tt></b><dd>don't use high-level banded images
 <dt><b><tt>.</tt></b><dd>use small-memory table sizes even on large-memory
 machines
 <dt><b><tt>?</tt></b><dd>validate pointers before, during and after garbage
@@ -2352,7 +2479,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.50, 16 September 1998
+Ghostscript version 5.50, 28 October 1998
 
 </font>
 

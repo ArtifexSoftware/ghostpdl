@@ -531,10 +531,10 @@ number of auxiliary files required at run time.  Fonts precompiled and
 built into Ghostscript this way need not appear in Fontmap, although if
 they do appear there, no harm is done.
 
-<p><a name="font2c"></a> The utility for precompiling fonts is
-"<tt><b>font2c</b></tt>".  Note that since
+<p><a name="font2c"></a> The utility for precompiling fonts is named
+<tt><b>font2c</b></tt>.  Note that since
 <tt><b>font2c</b></tt> uses the PostScript language program
-"<tt><b>font2c.ps</b></tt>", Ghostscript must already be
+<tt><b>font2c.ps</b></tt>, Ghostscript must already be
 available to run it, and Fontmap must contain entries for the fonts you
 want to compile.  For example, to precompile the Times-Italic font,
 
@@ -561,15 +561,15 @@ name's mixed upper and lower case.  For VMS environments in general see
 building Ghostscript, and ignore the rest of this section.
 
 <p>
-Note that fonts are not supplied with Ghostscript in precompiled form,
-since those files are quite large and can easily be recreated
-<a href="#font2c">using <tt><b>font2c</b></tt></a>.  A makefile
-"<b><tt>cfonts.mak</tt></b>" runs <tt><b>font2c</b></tt> on all the
-fonts supplied with Ghostscript.  Invoke it with
+Note that fonts are not supplied with Ghostscript in precompiled form, since
+those files are quite large and can easily be recreated using <a
+href="#font2c"><tt><b>font2c</b></tt></a>.  There is a makefile target to
+run <tt><b>font2c</b></tt> on all the fonts supplied with Ghostscript.
+Invoke it with
 
 <blockquote><tt><b>
-make -f cfonts.mak</b></tt> (on some systems <tt><b>make -fcfonts.mak</b></tt>)
-</blockquote>
+make fonts_standard_c
+</blockquote></tt></b>
 
 <p>Besides running <tt><b>font2c</b></tt>, you must compile the fonts and
 link them into the executable.  To do this, add the compiled fonts feature
@@ -580,14 +580,14 @@ platform.  Find the definition of the <tt><b>FEATURE_DEVS</b></tt> macro in
 the makefile, which looks something like this:
 
 <blockquote><tt><b>
-FEATURE_DEVS=psl3.dev&nbsp;pdf.dev&nbsp;dpsnext.dev&nbsp;pipe.dev&nbsp;rasterop.dev
+FEATURE_DEVS=$(PSD)psl3.dev&nbsp;$(PSD)pdf.dev&nbsp;$(PSD)dpsnext.dev&nbsp;$(PSD)pipe.dev
 </b></tt></blockquote>
 
 <p>
 and add "ccfonts.dev":
 
 <blockquote><tt><b>
-FEATURE_DEVS=psl3.dev&nbsp;pdf.dev&nbsp;dpsnext.dev&nbsp;pipe.dev&nbsp;rasterop.dev&nbsp;ccfonts.dev
+FEATURE_DEVS=$(PSD)psl3.dev&nbsp;$(PSD)pdf.dev&nbsp;$(PSD)dpsnext.dev&nbsp;$(PSD)pipe.dev&nbsp;$(PSD)ccfonts.dev
 </b></tt></blockquote>
 
 <p>
@@ -600,12 +600,12 @@ or Kana fonts, or your own fonts.
 
 <p>
 Suppose you want to compile the Kana fonts into the executable.  First pick
-one of <b><tt>ccfonts10</tt></b>" through <b><tt>ccfonts15</tt></b> as the
+one of <b><tt>ccfonts10</tt></b> through <b><tt>ccfonts15</tt></b> as the
 place you will do this, say <b><tt>ccfonts10</tt></b>.  Add your compiled
 font file names, for instance
 
 <blockquote><tt><b>
-ccfonts10_=fhirw.$(OBJ)
+ccfonts10_=$(CFOBJ)fhirw.$(OBJ)
 </b></tt></blockquote>
 
 <p>
@@ -613,7 +613,7 @@ ccfonts10_=fhirw.$(OBJ)
 line of the same form, for instance,
 
 <blockquote><tt><b>
-ccfonts11_=fkarw.$(OBJ)
+ccfonts11_=$(CFOBJ)fkarw.$(OBJ)
 </b></tt></blockquote>
 
 <p>
@@ -646,13 +646,11 @@ separating these entries from the "ccfonts*" lines and from each other with
 a blank line.  In our example this becomes
 
 <blockquote><b><tt>
-<pre>fhirw.$(OBJ):
-	fhirw.c $(CCFONT)
-	$(CCCF) fhirw.c
+<pre>$(CFOBJ)fhirw.$(OBJ): $(CFGEN)fhirw.c $(CCFONT)
+	$(CFCC) $(CFO_)fhirw.$(OBJ) $(C_) $(CFGEN)fhirw.c
 
-fkarw.$(OBJ):
-	fkarw.c $(CCFONT)
-	$(CCCF) fkarw.c</pre>
+$(CFOBJ)fkarw.$(OBJ): $(CFGEN)fkarw.c $(CCFONT)
+	$(CFCC) $(CFO_)fkarw.$(OBJ) $(C_) $(CFGEN)fkarw.c</pre>
 </tt></b></blockquote>
 
 <p>

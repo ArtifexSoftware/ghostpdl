@@ -43,10 +43,10 @@ Aladdin's C coding guidelines
 <li><a href="#Pointers_structures">Pointers and structures</a>
 <li><a href="#Scalars">Scalars</a>
 </ul>
-<li><a href="#Scoping">Scoping</a>
+<li><a href="#Static_extern_scoping"><b><tt>static</tt></b> and <b><tt>extern</tt></b> scoping</a>
 <li><a href="#Other">Miscellany</a>
 </ul>
-<li><a href="#File_structuring">File structuring</a>
+<li><a href="#File_structuring_naming">File structuring and naming</a>
 <ul>
 <li><a href="#All_files">All files</a>
 <li><a href="#Makefiles">Makefiles</a>
@@ -75,7 +75,8 @@ Aladdin's C coding guidelines
 <ul>
 <li><a href="#Single_use_procedures">Single-use procedures</a>
 <li><a href="#Local_variables">Local variables</a>
-<li><a href="#Error_handling">Error-handling</a>
+<li><a href="#Error_handling">Error handling</a>
+<li><a href="#Compiler_warnings">Compiler warnings</a>
 </ul>
 </ul></blockquote>
 
@@ -139,12 +140,12 @@ and around each use of an argument.
 <li>Don't declare procedure parameters of type <b><tt>float</tt></b>,
 <b><tt>short</tt></b>, or <b><tt>char</tt></b>.
 
-<li>Never explicitly cast float to double.
+<li>Never explicitly cast <b><tt>float</tt></b> to <b><tt>double</tt></b>.
 
 <li>Use "<b><tt>private</tt></b>" instead of "<b><tt>static</tt></b>" at
 the top level of a file.
 
-<li>Don't create any new non-const static variables.
+<li>Don't create any new non-<b><tt>const</tt></b> static variables.
 
 <li>Put externs in <b><tt>.h</tt></b> files, not <b><tt>.c</tt></b> files.
 </ul>
@@ -308,7 +309,7 @@ variables, list them all in a comment at the point where the macro is
 defined.
 
 <p>
-Preferably <b>CAPITALIZE</b> macro names.
+Preferably <b><tt>CAPITALIZE</tt></b> macro names.
 
 <h2><a name="Types_declarations"></a>Types and declarations</h2>
 
@@ -371,16 +372,18 @@ instead of <b><tt>short</tt></b> or <b><tt>char</tt></b>.
 
 <p>
 ANSI compilers in their default mode do all floating point computations in
-double precision, so never cast a float to a double explicitly.
+double precision, so never cast a <b><tt>float</tt></b> to a
+<b><tt>double</tt></b> explicitly.
 
 <p>
+
 Unless there's a good reason for doing otherwise, return
 <b><tt>floatp</tt></b> (<b><tt>double</tt></b>) rather than
-<b><tt>float</tt></b> values.  Many floating point units do everything in
-double internally and have to do extra work to convert between double and
-float.
+<b><tt>float</tt></b> values.  Floating point hardware often does everything
+in double precision internally and has to do extra work to convert between
+double and single precision.
 
-<h2><a name="Scoping"></a>Scoping</h2>
+<h2><a name="Static_extern_scoping"></a>Static and extern scoping</h2>
 
 <p>
 Use "<b><tt>private</tt></b>" instead of "<b><tt>static</tt></b>" for
@@ -423,6 +426,21 @@ accept the latter form, use it in new code.
 <h2><a name="All_files"></a>All files</h2>
 
 <p>
+Keep file names within the "8.3" format for portability
+(the "long file name" facilities of MS Windows are a hack that sometimes
+doesn't work properly with code written by parties other than Microsoft):
+<ul>
+<li>Use only letters, digits, dash, and underscore in file names.
+<li>Don't assume upper and lower case letters are distinct.
+<li>Put no more than 8 characters before the ".", if any.
+<li>If there is a ".", put between 1 and 3 characters after the ".".
+</ul>
+
+<p>
+For files other than documentation files, use only lower case letters
+in the names; for HTML documentation files, capitalize the first letter.
+
+<p>
 Every code file should start with comments containing
 
 <ol>
@@ -430,7 +448,7 @@ Every code file should start with comments containing
 <li>the name of the file in the form of an RCS Id:
 
 <blockquote><b><tt>
-/*Id$: filename.c $*/
+/*Id$: filename.ext $*/
 </tt></b></blockquote>
 
 <p>
@@ -444,6 +462,9 @@ If you create a file by copying the beginning of another file, be sure to
 update the copyright year and change the file name.
 
 <h2><a name="Makefiles"></a>Makefiles</h2>
+
+<p>
+Use the extension <b><tt>.mak</tt></b> for makefiles.
 
 <p>
 For each
@@ -471,6 +492,10 @@ statements themselves; within each level, list them alphabetically.  Do
 this also with <b><tt>#include</tt></b> statements themselves whenever
 possible (but sometimes there are inter-header dependencies that require
 bending this rule).
+
+<p>
+For compatibility with the build utilities on OpenVMS, always put a space
+before the colon that separates the target(s) of a rule from the dependents.
 
 <h2><a name="C_code_generally"></a>C code in general</h2>
 
@@ -594,7 +619,7 @@ If it has a multi-line body, use this:
 
 <blockquote>
 ... control construct ... <b><tt>{</tt></b><br>
-&nbsp;&nbsp;&nbsp;... subordinate code ...
+&nbsp;&nbsp;&nbsp;... subordinate code ...<br>
 <b><tt>}</tt></b>
 </blockquote>
 
@@ -615,6 +640,22 @@ For if-else statements, do this:
 </blockquote>
 
 <p>
+When there are more than two alternatives, as in the example above, use the
+above ("parallel") syntax rather than the following ("nested") syntax:
+
+<blockquote>
+<b><tt>if (</tt></b> ...<b><tt> ) {</tt></b><br>
+&nbsp;&nbsp;&nbsp;... subordinate code ...<br>
+<b><tt>} else {</tt></b><br>
+<b><tt>&nbsp;&nbsp;&nbsp;if (</tt></b> ...<b><tt> ) {</tt></b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;... subordinate code ...<br>
+<b><tt>&nbsp;&nbsp;&nbsp;} else {</tt></b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;... subordinate code ...<br>
+<b><tt>&nbsp;&nbsp;&nbsp;}</tt></b><br>
+<b><tt>}</tt></b>
+</blockquote>
+
+<p>
 Similarly, for do-while statements, do this:
 
 <blockquote>
@@ -631,7 +672,7 @@ Do put a space:
 <li>after every comma and semicolon, unless it ends a line;
 <li>around every binary operator, although you can omit the spaces around
 the innermost operator in a nested expression if you like;
-<li>on both sides of the parentheses of an if, for, or while.
+<li>on both sides of the parentheses of an <b><tt>if</tt></b>, <b><tt>for</tt></b>, or <b><tt>while</tt></b>.
 </ul>
 
 <p>
@@ -707,7 +748,7 @@ hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,<br>
 Use fully spelled-out English words in names, rather than contractions.
 This is most important for procedure and macro names, global variables and
 constants, values of <b><tt>#define</tt></b> and <b><tt>enum</tt></b>,
-<b><tt>structure</tt></b> and other <b><tt>typedef</tt></b> names, and
+<b><tt>struct</tt></b> and other <b><tt>typedef</tt></b> names, and
 structure member names, and for argument and variable names which have
 uninformative types like <b><tt>int</tt></b>.  It's not very important for
 arguments or local variables of distinctive types, or for local index or
@@ -823,7 +864,7 @@ someproc(... <b><tt>gx_device *dev</tt></b> ...)<br>
 <b><tt>}</tt></b>
 </blockquote>
 
-<h2><a name="Error_handling"></a>Error-handling</h2>
+<h2><a name="Error_handling"></a>Error handling</h2>
 
 <p>
 Every caller should check for error returns and, in general, propagate them
@@ -841,6 +882,41 @@ to <b>its</b> callers.  By convention, nearly every procedure returns an
 	<td>&nbsp;
 	<td>Non-error return other than the normal case
 </table></blockquote>
+
+<p>
+See the file <b><tt>gserrors.h</tt></b> for
+the error return codes used by the graphics library,
+most of which correspond directly to PostScript error conditions.
+
+<h2><a name="Compiler_warnings"></a>Compiler warnings</h2>
+
+<p>
+The following section refers to the warnings produced by <b><tt>gcc</tt></b>:
+your compiler may produce different ones.
+
+<p>
+It's OK if compilation produces the following warnings:
+
+<ul>
+<li><b><tt>&lt;name&gt; might be used uninitialized in this function</b></tt>
+<li><b><tt>cast discards `const' from pointer target type</b></tt>
+</ul>
+
+<p>
+The first of these often occurs because the compiler isn't aware of control
+flow restrictions that guarantee the variable will be initialized before
+use: if it occurs in new code, check the code carefully, but don't worry
+about the message.  The second is often unavoidable in code that initializes
+or frees a structure that is otherwise <b><tt>const</tt></b> during its
+lifetime.
+<p>
+
+Do work hard to eliminate all warnings other than these,
+since they often indicate the possible presence of coding errors.
+In particular, get rid of warnings about parameter passing or
+initialization that discards <b><tt>const</tt></b>,
+by using explicit casts.
+
 
 <!-- [2.0 end contents] ---------------------------------------------------- -->
 

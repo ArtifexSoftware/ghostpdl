@@ -78,7 +78,11 @@ properly any source program written in the (Level 2) <b>PostScript</b>
 language as defined in the December 1990 printing of the
 <a href="http://cseng.awl.com/bookdetail.qry?ISBN=0-201-18127-4&ptype=0"><em>PostScript
 Language Reference Manual</em> (Second Edition, ISBN 0-201-18127-4)</a>
-published by Addison-Wesley.  However, the interpreter is configurable in
+published by Addison-Wesley, augmented by most of the features defined
+in Adobe's PostScript Language Supplements through release 2017
+and a subset of the features defined in the PostScript Language Supplement
+for release 3010 (PostScript LanguageLevel 3).
+However, the interpreter is configurable in
 ways that can restrict it to various subsets of this language.
 Specifically, the base interpreter accepts the Level 1 subset of the
 PostScript language, as defined in the first edition of the <em>PostScript
@@ -129,6 +133,11 @@ section A.1.1 of the Second Edition and not listed in any of the other
 A.1.n sections.  These facilities are available only if the
 <b><tt>level2</tt></b> feature was selected when Ghostscript was built.
 
+<li>A subset of PostScript LanguageLevel 3 operators and facilities listed
+in Adobe's PostScript Language Supplement for version 3010.
+These facilities are available only if the
+<b><tt>psl3</tt></b> feature was selected when Ghostscript was built.
+
 <li>The ability to recognize DOS EPSF files and process only the PostScript
 part, ignoring bitmap previews or other information.  This facility is
 available only if the <b><tt>epsf</tt></b> feature was selected when
@@ -137,7 +146,7 @@ Ghostscript was built.
 
 <p>
 Adding all of these produces a full Level 2 PostScript language
-interpreter.
+interpreter, plus a subset of PostScript LanguageLevel 3.
 
 <p><a name="PDF1.2"></a>
 Ghostscript can also interpret files in the Portable Document Format (PDF)
@@ -175,20 +184,12 @@ limits in the Second Edition.
 	<td>single-precision IEEE float
 <tr valign=top>	<td>array
 	<td>&nbsp;
-	<td>*
-	<td>8191 elements (16-bit systems)
-<tr valign=top>	<td>&nbsp;
 	<td>&nbsp;
-	<td>&nbsp;
-	<td>65535 elements (32-bit systems)
+	<td>65535 elements
 <tr valign=top>	<td>dictionary
 	<td>&nbsp;
-	<td>*
-	<td>8190 elements (16-bit systems)
-<tr valign=top>	<td>&nbsp;
 	<td>&nbsp;
-	<td>&nbsp;
-	<td>65534 elements (32-bit systems)
+	<td>65534 elements
 <tr valign=top>	<td>string
 	<td>&nbsp;
 	<td>*
@@ -1112,7 +1113,7 @@ In addition, Ghostscript supports the following parameter for
 <b><em>not</em></b> a device parameter per se:
 
 <dl>
-<dt><b><tt>ViewerPreProcess procedure</tt></b>
+<dt><b><tt>ViewerPreProcess &lt;procedure&gt;</tt></b>
 <dd>Specifies a procedure to be applied to the page device dictionary
 before any other processing is done.  The procedure may not alter the
 dictionary, but it may return a modified copy.  This "hook" is provided for

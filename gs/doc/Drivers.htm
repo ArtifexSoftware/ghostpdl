@@ -113,12 +113,15 @@ following lines:
 <blockquote>
 <pre># ------ The SMURF device ------ #
 
-smurf_=joe.$(OBJ) fred.$(OBJ)
-smurf.dev: $(smurf_)
-        $(SETDEV) smurf $(smurf_)
+smurf_=$(GLOBJ)joe.$(OBJ) $(GLOBJ)fred.$(OBJ)
+$(DD)smurf.dev: $(smurf_)
+        $(SETDEV) $(DD)smurf $(smurf_)
 
-joe.$(OBJ): joe.c
-fred.$(OBJ): fred.c</pre>
+$(GLOBJ)joe.$(OBJ) : $(GLSRC)joe.c
+	$(GLCC) $(GLO_)joe.$(OBJ) $(C_) $(GLSRC)joe.c
+
+$(GLOBJ)fred.$(OBJ) : $(GLSRC)fred.c
+	$(GLCC) $(GLO_)fred.$(OBJ) $(C_) $(GLSRC)fred.c</pre>
 </blockquote>
 
 <p>
@@ -127,9 +130,9 @@ If the smurf driver also needs special libraries, for instance a library
 named "<b><tt>gorf</tt></b>", then the entry should look like this:
 
 <blockquote>
-<pre>smurf.dev: $(smurf_)
-        $(SETDEV) smurf $(smurf_)
-        $(ADDMOD) smurf -lib gorf</pre>
+<pre>$(DD)smurf.dev : $(smurf_)
+        $(SETDEV) $(DD)smurf $(smurf_)
+        $(ADDMOD) $(DD)smurf -lib gorf</pre>
 </blockquote>
 
 <p>
@@ -138,18 +141,22 @@ If, as will usually be the case, your driver is a printer driver (as
 look like this:
 
 <blockquote>
-<pre>smurf.dev: $(smurf_) page.dev
-        $(SETPDEV) smurf $(smurf_)</pre>
+<pre>$(DD)smurf.dev : $(smurf_) $(GLD)page.dev
+        $(SETPDEV) $(DD)smurf $(smurf_)</pre>
 </blockquote>
 
 <p>
 or
 
 <blockquote>
-<pre>smurf.dev: $(smurf_) page.dev
-        $(SETPDEV) smurf $(smurf_)
-        $(ADDMOD) smurf -lib gorf</pre>
+<pre>$(DD)smurf.dev : $(smurf_) $(GLD)page.dev
+        $(SETPDEV) $(DD)smurf $(smurf_)
+        $(ADDMOD) $(DD)smurf -lib gorf</pre>
 </blockquote>
+
+<p>
+Note that the space before the :, and the explicit compilation rules for the
+.c files, are required for portability,
 </ol>
 
 <hr>
@@ -191,7 +198,7 @@ are good examples of this approach.
 A device is represented by a structure divided into three parts:
 
 <ul>
-<li>procedures that are shared by all instances of each device;
+<li>procedures that are (normally) shared by all instances of each device;
 
 <li>parameters that are present in all devices but may be different for
 each device or instance; and
@@ -205,7 +212,7 @@ time.  A prototype of the parameter structure (including both generic and
 device-specific parameters) is defined and initialized at compile time, but
 is copied and filled in when an instance of the device is created.  Both of
 these structures should be declared as <b><tt>const</tt></b>, but for backward
-compatibility reasons are not.
+compatibility reasons the latter is not.
 
 <p>
 The <b><tt>gx_device_common</tt></b> macro defines the common structure
@@ -220,7 +227,7 @@ purpose in <b><tt>gxdevice.h</tt></b> or, if applicable,
         gx_device_common;
         <b><em>... device-specific parameters ...</em></b>
 } smurf_device;
-smurf_device far_data gs_smurf_device = {
+smurf_device gs_smurf_device = {
         <b><em>... macro for generic parameter values ...,</em></b>
         { <b><em>... procedures ...</em></b> },         /* std_procs */
         <b><em>... device-specific parameter values if any ...</em></b>
@@ -241,10 +248,11 @@ their first argument, and must cast it to
 <b><tt>smurf_device&nbsp;*</tt></b> internally.  For example, in the code
 for the "memory" device, the first argument to all routines is called
 <b><tt>dev</tt></b>, but the routines actually use <b><tt>mdev</tt></b> to
-refer to elements of the full structure, by virtue of the definition
+refer to elements of the full structure, using the following standard
+initialization statement at the beginning of each procedure:
 
 <blockquote>
-<pre>#define mdev ((gx_device_memory *)dev)</pre>
+<pre>gx_memory_device *const mdev = (gx_device_memory *)dev;</pre>
 </blockquote>
 
 <p>
@@ -775,9 +783,13 @@ corresponding 'save';
 
 <dl>
 <dt><b><tt>int (*open_device)(P1(gx_device *))</tt></b> <b><em>[OPTIONAL]</em></b>
-<dd>Open the device: do any initialization associated with making the
-device instance valid.  This must be done before any output to the device.
-The default implementation does nothing.
+
+<dd>Open the device: do any initialization associated with making the device
+instance valid.  This must be done before any output to the device.  The
+default implementation does nothing.  <b>NOTE</b>: Clients should never call
+a device's <b><tt>open_device</tt></b> procedure directly: they should
+always call <b><tt>gs_opendevice</tt></b> instead.
+
 </dl>
 
 <dl>
@@ -819,7 +831,9 @@ printing and ejecting the page.
 <dt><b><tt>int (*close_device)(P1(gx_device *))</tt></b> <b><em>[OPTIONAL]</em></b>
 <dd>Close the device: release any associated resources.  After this, output
 to the device is no longer allowed.  The default implementation does
-nothing.
+nothing.  <b>NOTE</b>: Clients should never call a device's
+<b><tt>close_device</tt></b> procedure directly: they should always call
+<b><tt>gs_closedevice</tt></b> instead.
 </dl>
 
 <h2><a name="Color_mapping"></a>Color and alpha mapping</h2>
@@ -829,6 +843,13 @@ A given driver normally implements either <b><tt>map_rgb_color</tt></b> or
 <b><tt>map_cmyk_color</tt></b>, but not both.  Black-and-white drivers need
 implement neither.  Note that the <b><tt>map_xxx_color</tt></b> procedures
 must not return <b><tt>gx_no_color_index</tt></b> (all 1s).
+
+<p>
+Note that code in the Ghostscript library may cache the results of calling
+one or more of the color mapping procedures.  If the result returned by any
+of these procedures would change (other than as a result of a change made by
+the driver's <b><tt>put_params</tt></b> procedure), the driver must call
+<b><tt>gx_device_decache_colors(dev)</tt></b>.
 
 <dl>
 <dt><b><tt>gx_color_index (*map_rgb_color)(P4(gx_device&nbsp;*,
@@ -1671,7 +1692,7 @@ bitmap images is defined by:
 
 <blockquote>
 <pre>typedef struct {
-        int ImageType;
+	const gx_image_type_t *type;
         gs_matrix ImageMatrix;
 } gs_image_common_t;</pre>
 </blockquote>
@@ -1696,7 +1717,15 @@ typedef struct {
 Images that supply pixel (as opposed to mask) data are defined by:
 
 <blockquote>
-<pre>typedef struct {
+<pre>typedef enum {
+	/* Single plane, chunky pixels. */
+	gs_image_format_chunky = 0,
+	/* num_components planes, chunky components. */
+	gs_image_format_component_planar = 1,
+	/* BitsPerComponent * num_components planes, 1 bit per plane */
+	gs_image_format_bit_planar = 2
+} gs_image_format_t;
+typedef struct {
         &lt;&lt; gs_data_image_t &gt;&gt;
         const gs_color_space *ColorSpace;
         bool CombineWithColor;
@@ -1704,35 +1733,45 @@ Images that supply pixel (as opposed to mask) data are defined by:
 </blockquote>
 
 <p>
-Ordinary PostScript Level 1 or Level 2 (<b><tt>ImageType</tt></b> 1) images are defined by:
+Ordinary PostScript Level 1 or Level 2 (<b><tt>ImageType</tt></b> 1) images
+are defined by:
 
 <blockquote>
-<pre>typedef struct {
+<pre>typedef enum {
+	/* No alpha. */
+	gs_image_alpha_none = 0,
+	/* Alpha precedes color components. */
+	gs_image_alpha_first,
+	/* Alpha follows color components. */
+	gs_image_alpha_last
+} gs_image_alpha_t;
+typedef struct {
         &lt;&lt; gs_pixel_image_t &gt;&gt;
         bool ImageMask;
         bool adjust;
-        bool HasAlpha;		/* DPNEXT configurations only */
+	gs_image_alpha_t Alpha;
 } gs_image1_t;
-typedef gs_image1_t gs_image_t;
-
-typedef enum {
-        gs_image_format_chunky = 0,
-        gs_image_format_component_planar = 1
-} gs_image_format_t;</pre>
+typedef gs_image1_t gs_image_t;</pre>
 </blockquote>
 
 <p>
-For more details, consult the source code in <b><tt>gsiparam.h</tt></b>, defines parameters for an image.
+Of course, standard PostScript images don't have an alpha component.  For
+more details, consult the source code in <b><tt>gsiparam.h</tt></b> and
+<b><tt>gsiparm*.h</tt></b>, which define parameters for an image.
 
-The <b><tt>begin[_typed_]image</tt></b> driver procedures return image enumeration
-structures.  The common part of these structures consists of:
+<p>
+The <b><tt>begin[_typed_]image</tt></b> driver procedures create image
+enumeration structures.  The common part of these structures consists of:
 
 <blockquote>
 <pre>typedef struct gx_image_enum_common_s {
         const gx_image_type_t *image_type;
-        gx_image_enum_procs_t procs;
+	const gx_image_enum_procs_t *procs;
+	gx_device *dev;
+	gs_id id;
         int num_planes;
-        int plane_depths[gs_image_max_components];  /* [num_planes] */
+        int plane_depths[gs_image_max_planes];  /* [num_planes] */
+	int plane_widths[gs_image_max_planes]	/* [num_planes] */
 } gx_image_enum_common_t;</pre>
 </blockquote>
 
@@ -1753,14 +1792,24 @@ where <b><tt>procs</tt></b> consists of:
         image_enum_proc_plane_data((*plane_data));
 
         /*
-         * End processing an image.  We keep this procedure last,
-         * so that we can detect obsolete static initializers.
+         * End processing an image, freeing the enumerator.
          */
 #define image_enum_proc_end_image(proc)\
   int proc(P3(gx_device *dev,\
     gx_image_enum_common_t *info, bool draw_last))
 
         image_enum_proc_end_image((*end_image));
+
+	/*
+	 * Flush any intermediate buffers to the target device.
+	 * We need this for situations where two images interact
+	 * (currently, only the mask and the data of ImageType 3).
+	 * This procedure is optional (may be 0).
+	 */
+#define image_enum_proc_flush(proc)\
+  int proc(P1(gx_image_enum_common_t *info))
+
+	image_enum_proc_flush((*flush));
 
 } gx_image_enum_procs_t;</pre>
 </blockquote>
@@ -1774,12 +1823,14 @@ one of your own you should probably read an existing implementation of
 <b><tt>gdevbbox.c</tt></b> or <b><tt>gdevps.c</tt></b>.
 
 <p>
-The data passed at each call of <b><tt>image_plane_data</tt></b> consists of one or more
-planes, as appropriate for the type of image.  <b><tt>begin[_typed]_image</tt></b> must
-initialize the <b><tt>plane_depths</tt></b> array in the enumeration structure with the
-depths (bits per element) of the planes.  The array of <b><tt>gx_image_plane_t</tt></b>
-structures passed to each call of <b><tt>image_plane_data</tt></b> then defines where the
-data are stored, as follows:
+The data passed at each call of <b><tt>image_plane_data</tt></b> consists of
+one or more planes, as appropriate for the type of image.
+<b><tt>begin[_typed]_image</tt></b> must initialize the
+<b><tt>plane_depths</tt></b> array in the enumeration structure with the
+depths (bits per element) of the planes.  The array of
+<b><tt>gx_image_plane_t</tt></b> structures passed to each call of
+<b><tt>image_plane_data</tt></b> then defines where the data are stored, as
+follows:
 
 <blockquote>
 <pre>typedef struct gx_image_plane_s {
@@ -1797,7 +1848,7 @@ const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
 gx_image_enum_common_t&nbsp;**pinfo))</tt></b> <b><em>[OPTIONAL]</em></b>
 <dd>Begin the transmission of an image.  Zero or more calls of
-<b><tt>plane_data</tt></b> will follow, and then a call of
+<b><tt>image_plane_data</tt></b> will follow, and then a call of
 <b><tt>end_image</tt></b>.  The parameters of <b><tt>begin_image</tt></b>
 are as follows:
 
@@ -1815,13 +1866,13 @@ are as follows:
 <tr valign=top>	<td><b><tt>format</tt></b>
 	<td>&nbsp;
 	<td>defines how pixels are represented for
-	    <b><tt>plane_data</tt></b>.  See the description of
-	    <b><tt>plane_data</tt></b> below
+	    <b><tt>image_plane_data</tt></b>.  See the description of
+	    <b><tt>image_plane_data</tt></b> below
 <tr valign=top>	<td><b><tt>prect</tt></b>
 	<td>&nbsp;
 	<td>if not <b><tt>NULL</tt></b>, defines a subrectangle of the
 	    image; only the data for this subrectangle will be passed to
-	    <b><tt>plane_data</tt></b>, and only this subrectangle should
+	    <b><tt>image_plane_data</tt></b>, and only this subrectangle should
 	    be drawn
 <tr valign=top>	<td><b><tt>pdcolor</tt></b>
 	<td>&nbsp;
@@ -1843,7 +1894,7 @@ are as follows:
 <p>
 <b><tt>begin_image</tt></b> is expected to allocate a structure for its
 bookkeeping needs, using the allocator defined by the memory parameter, and
-return it in *pinfo.  <b><tt>begin_image</tt></b> should not assume that
+return it in <b><tt>*pinfo</tt></b>.  <b><tt>begin_image</tt></b> should not assume that
 the structures in <b><tt>*pim</tt></b>, <b><tt>*prect</tt></b>, or
 <b><tt>*pdcolor</tt></b> will survive the call on
 <b><tt>begin_image</tt></b> (except for the color space in
@@ -1852,6 +1903,11 @@ them into its own bookkeeping structure.  It may, however, assume that
 <b><tt>*pis</tt></b>, <b><tt>*pcpath</tt></b>, and of course
 <b><tt>*memory</tt></b> will live at least until <b><tt>end_image</tt></b>
 is called.
+
+<p>
+<b><tt>begin_image</tt></b> returns 0 normally, or 1 if the image does not
+need any data.  In the latter case, <b><tt>begin_image</tt></b> does not
+allocate an enumeration structure.
 </dl>
 
 <dl>
@@ -1861,7 +1917,7 @@ const&nbsp;gs_image_common_t&nbsp;*pim, gs_int_rect&nbsp;*prect,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
 gx_image_enum_common_t&nbsp;**pinfo))</tt></b> <b><em>[OPTIONAL]</em></b>
-<dd>This has exactly the same function as <b><tt>begin_image</tt></b>, except
+<dd>This has the same function as <b><tt>begin_image</tt></b>, except
 <ul>
 <li>The image may be of any <b><tt>ImageType</tt></b>, not only
 <b><tt>image_type_simple</tt></b> (1);
@@ -1893,41 +1949,51 @@ each row.
 
 <p>
 The data for each row are packed big-endian within each byte, as for
-<b><tt>copy_color</tt></b>.  The <b><tt>data_x</tt></b> (starting X position within the row) and raster
-(number of bytes per row) are specified separately for each plane, and may
-include some padding at the beginning or end of each row.  Note that for
-non-mask images, the input data may be in any color space and may have any
-number of bits per component (1, 2, 4, 8, 12); currently mask images always
-have 1 bit per component, but in the future, they might allow multiple bits
-of alpha.  Note also that each call of <b><tt>plane_data</tt></b> passes complete pixels:
-for example, for a chunky image with 24 bits per pixel, each call of <b><tt>plane_data</tt></b>
-passes 3N bytes of data (specifically, 3&nbsp;&times;&nbsp;Width&nbsp;&times;&nbsp;height).
+<b><tt>copy_color</tt></b>.  The <b><tt>data_x</tt></b> (starting X position
+within the row) and <b><tt>raster</tt></b> (number of bytes per row) are
+specified separately for each plane, and may include some padding at the
+beginning or end of each row.  Note that for non-mask images, the input data
+may be in any color space and may have any number of bits per component (1,
+2, 4, 8, 12); currently mask images always have 1 bit per component, but in
+the future, they might allow multiple bits of alpha.  Note also that each
+call of <b><tt>image_plane_data</tt></b> passes complete pixels: for example, for
+a chunky image with 24 bits per pixel, each call of
+<b><tt>image_plane_data</tt></b> passes 3N bytes of data (specifically,
+3&nbsp;&times;&nbsp;Width&nbsp;&times;&nbsp;height).
 
 <p>
-The interpretation of planes depends on the format argument of
-<b><tt>begin_image</tt></b>:
+The interpretation of planes depends on the <b><tt>format</tt></b> member of
+the <b><tt>gs_image[_common]_t</tt></b> structure:
 
 <ul>
-<li>If format is <b><tt>gs_image_format_chunky</tt></b>, <b><tt>planes[0].data</tt></b> points to
-data in "chunky" format, in which the components follow each other (for instance,
-RGBRGBRGB....)
+<li>If the format is <b><tt>gs_image_format_chunky</tt></b>,
+<b><tt>planes[0].data</tt></b> points to data in "chunky" format, in which
+the components follow each other (for instance, RGBRGBRGB....)
 
-<li>If format is <b><tt>gs_image_format_component_planar</tt></b>, <b><tt>planes[0&nbsp;..&nbsp;N-1].data</tt></b> point to data for the <b><em>N</em></b> components (for example, <b><em>N</em></b>=3 for RGB data);
-each plane contains samples for a single component, for instance, RR..., GG...,
-BB....  Note that the planes are divided by component, not by bit: for
-example, for 24-bit RGB data, <b><em>N</em></b>=3, with 8-bit values in each plane of data.
-Someday we may add <b><tt>gs_image_format_bit_planar</tt></b>, specifying that each plane
-would contain only a single bit of the pixel value, but this is not
-currently implemented.
+<li>If the format is <b><tt>gs_image_format_component_planar</tt></b>,
+<b><tt>planes[0&nbsp;..&nbsp;N-1].data</tt></b> point to data for the
+<b><em>N</em></b> components (for example, <b><em>N</em></b>=3 for RGB
+data); each plane contains samples for a single component, for instance,
+RR..., GG..., BB....  Note that the planes are divided by component, not by
+bit: for example, for 24-bit RGB data, <b><em>N</em></b>=3, with 8-bit
+values in each plane of data.
+
+<li>If the format is <b><tt>gs_image_format_bit_planar</tt></b>,
+<b><tt>planes[0&nbsp;..&nbsp;N*B-1].data</tt></b> point to data for the
+<b><em>N</em></b> components of <b><em>B</em></b> bits each (for example,
+<b><em>N</em></b>=3 and <b><em>B</em></b>=4 for RGB data with 4 bits per
+component); each plane contains samples for a single bit, for instance, R0
+R1 R2 R3 G0 G1 G2 G3 B0 B1 B2 B3.  Note that the most significant bit of
+each plane comes first.
 </ul>
 
 <p>
-If, as a result of this call, <b><tt>plane_data</tt></b> has been called with all
+If, as a result of this call, <b><tt>image_plane_data</tt></b> has been called with all
 the data for the (sub-)image, it returns 1; otherwise, it returns 0 or an
 error code as usual.
 
 <p>
-<b><tt>plane_data</tt></b>, unlike most other procedures that take bitmaps as
+<b><tt>image_plane_data</tt></b>, unlike most other procedures that take bitmaps as
 arguments, does not require the data to be aligned in any way.
 
 <p>
@@ -1936,7 +2002,7 @@ numbers of bits per pixel, as defined in the <b><tt>plane_depths</tt></b> array.
 </dl>
 
 <dl>
-<dt><b><tt>int end_image(P3(gx_device&nbsp;*dev, void&nbsp;*info,
+<dt><b><tt>int (*end_image)(P3(gx_device&nbsp;*dev, void&nbsp;*info,
 bool&nbsp;draw_last))</tt></b>
 <dd>Finish processing an image, either because all data have been supplied
 or because the caller has decided to abandon this image.

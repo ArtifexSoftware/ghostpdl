@@ -169,8 +169,9 @@ they do not actually do any caching; <b><tt>setucacheparams</tt></b> and
 not functionality.)
 
 <p>
-The <b><tt>image</tt></b> operator only honors the
-<b><tt>Interpolate</tt></b> flag in the image dictionary if the combined
+The <b><tt>image</tt></b> operator honors only the
+<b><tt>Interpolate</tt></b> flag in the image dictionary
+only for ImageType 1 and 3 images, and only if the combined
 transformation (<b><tt>ImageMatrix</tt></b> + CTM) doesn't involve
 rotation, skewing, or X-reflection; <b><tt>imagemask</tt></b> doesn't honor
 <b><tt>Interpolate</tt></b> at all.
