@@ -35,7 +35,7 @@
  * requirement that the client provide a buffer of this size: the parser
  * will buffer data internally if necessary.
  */
-#define px_parser_max_token_size 500
+#define px_parser_max_token_size 1024
 #define px_parser_min_input_size px_parser_max_token_size
 
 /* Define the parser macro-states (used only for checking). */

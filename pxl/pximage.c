@@ -152,6 +152,13 @@ begin_bitmap(px_bitmap_params_t *params, px_bitmap_enum_t *benum,
 	return 0;
 }
 
+private int
+stream_error(stream_state * st, const char *str)
+{
+    dprintf1( "pxl stream error %s\n", str );
+    return 0;
+}
+
 /*
  * Read a (possibly partial) row of bitmap data.  This is most of the
  * implementation of ReadImage and ReadRastPattern.  We use source.position
@@ -177,9 +184,13 @@ read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 	    input_per_row = benum->data_per_row;
 
 	end_pos = (ulong)input_per_row * par->pv[1]->value.i;
-
-	if ( par->source.position >= end_pos )
-	  return 0;
+	if ( par->source.position >= end_pos ) {
+	    /* shutdown jpeg filter if necessar */
+	    if ( (par->pv[2]->value.i == eJPEGCompression) &&
+		 (benum->initialized) )
+		gs_jpeg_destroy((&benum->dct_stream_state));
+	    return 0;
+	}
 	{ uint data_per_row = benum->data_per_row;
 	  uint pos_in_row = par->source.position % input_per_row;
 	  const byte *data = par->source.data;
@@ -235,6 +246,7 @@ read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 		      jpeg_decompress_data *jddp = &(benum->jdd);
 		      /* use the graphics library support for DCT streams */
 		      s_DCTD_template.set_defaults((stream_state *)ss);
+		      ss->report_error = stream_error;
 		      ss->data.decompress = jddp;
 		      jddp->memory = ss->jpeg_memory = benum->mem; 	/* set now for allocation */
 		      jddp->scanline_buffer = NULL;                     /* set this early for safe error exit */
@@ -387,7 +399,7 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 }
 
 const byte apxReadImage[] = {
-  pxaStartLine, pxaBlockHeight, pxaCompressMode, 0, pxaPadBytesMultiple, pxaBlockByteLength
+    pxaStartLine, pxaBlockHeight, pxaCompressMode, 0, pxaPadBytesMultiple, pxaBlockByteLength, 0
 };
 
 int
@@ -536,7 +548,7 @@ pxBeginRastPattern(px_args_t *par, px_state_t *pxs)
 }
 
 const byte apxReadRastPattern[] = {
-  pxaStartLine, pxaBlockHeight, pxaCompressMode, 0, pxaPadBytesMultiple, pxaBlockByteLength
+    pxaStartLine, pxaBlockHeight, pxaCompressMode, 0, pxaPadBytesMultiple, pxaBlockByteLength, 0
 };
 
 int
