@@ -94,7 +94,7 @@ typedef struct xcf_device_s {
      * list (below).
      */
     fixed_colorant_names_list * std_colorant_names;
-    const int num_std_colorant_names;	/* Number of names in list */
+    int num_std_colorant_names;	/* Number of names in list */
 
     /*
     * Separation names (if any).

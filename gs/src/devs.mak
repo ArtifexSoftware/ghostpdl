@@ -1216,6 +1216,17 @@ $(GLOBJ)gdevxcf.$(OBJ) : $(GLSRC)gdevxcf.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)
 	$(GLICCCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
 
+### ----------------------- The permutation device --------------------- ###
+
+perm_=$(GLOBJ)gdevperm.$(OBJ)
+
+$(DD)perm.dev : $(DEVS_MAK) $(perm_) $(GLD)page.dev
+	$(SETDEV) $(DD)perm $(perm_)
+
+$(GLOBJ)gdevperm.$(OBJ) : $(GLSRC)gdevperm.c $(PDEVH) $(math__h)\
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)
+	$(GLICCCC) $(GLO_)gdevperm.$(OBJ) $(C_) $(GLSRC)gdevperm.c
+
 ### ------------------------- JPEG file format ------------------------- ###
 
 jpeg_=$(GLOBJ)gdevjpeg.$(OBJ)
