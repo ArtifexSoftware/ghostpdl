@@ -141,7 +141,7 @@ class _GSTextTestResult(unittest._TextTestResult):
         if self.showAll:
             self.stream.writeln("DIFFER")
         elif self.dots:
-            self.stream.writeln("D")
+            self.stream.write("D")
     
     def printErrorList(self, flavor, errors):
         handoff = []
