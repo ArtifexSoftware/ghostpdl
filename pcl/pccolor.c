@@ -103,6 +103,7 @@ color_do_registration(
     gs_memory_t *   pmem
 )
 {
+#ifndef PCL5EMONO
     /* Register commands */
     DEFINE_CLASS('*')
     {
@@ -134,6 +135,7 @@ color_do_registration(
                      )
     },
     END_CLASS
+#endif
     return 0;
 }
 

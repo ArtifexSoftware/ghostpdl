@@ -855,6 +855,7 @@ palette_do_registration(
     gs_memory_t *    pmem
 )
 {
+#ifndef PCL5EMONO
     DEFINE_CLASS('*')
     {
         'p', 'P',
@@ -902,6 +903,7 @@ palette_do_registration(
                      )
     },
     END_CLASS
+#endif
     return 0;
 }
 

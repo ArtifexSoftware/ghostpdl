@@ -537,6 +537,9 @@ hpgl_RF(
         hpgl_next_phase(pargs);
     }
 
+#ifdef PCL5EMONO
+    is_mask = true; /* always for a monochrome configuration */
+#endif
     /* if the pattern is uncolored, collapse it to 1-bit per pixel */
     if (is_mask) {
         int     raster = (width + 7) / 8;

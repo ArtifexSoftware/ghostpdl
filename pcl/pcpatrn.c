@@ -1346,6 +1346,7 @@ pattern_do_registration(
                      pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
+#ifndef PCL5EMONO
     {
         'o', 'W',
         PCL_COMMAND( "Driver Configuration Command",
@@ -1353,6 +1354,7 @@ pattern_do_registration(
                      pca_bytes | pca_in_rtl
                      )
     },
+#endif
     END_CLASS
     return 0;
  

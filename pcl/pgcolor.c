@@ -123,6 +123,7 @@ pgcolor_do_registration(
     gs_memory_t *mem
 )
 {
+#ifndef PCL5EMONO
     /* Register commands */
     DEFINE_HPGL_COMMANDS
     HPGL_COMMAND('C', 'R', hpgl_CR, hpgl_cdf_pcl_rtl_both),
@@ -130,6 +131,7 @@ pgcolor_do_registration(
     HPGL_COMMAND('P', 'C', hpgl_PC, hpgl_cdf_pcl_rtl_both),
     END_HPGL_COMMANDS
     return 0;
+#endif
 }
 
 const pcl_init_t    pgcolor_init = { pgcolor_do_registration, 0, 0 };

@@ -1,7 +1,7 @@
 /* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights
    reserved.  Unauthorized use, copying, and/or distribution
    prohibited.  */
-
+ 
 /* pccid.c - PCL configure image data command and  object implementation */
 #include "gx.h"
 #include "gsmemory.h"
@@ -201,6 +201,9 @@ check_cid_hdr(
 {
     int             i;
 
+#ifdef PCL5EMONO
+    pcid->bits_per_index = 1;
+#endif
     if ((pcid->cspace >= pcl_cspace_num) || (pcid->encoding >= pcl_penc_num))
         return -1;
 
@@ -339,6 +342,9 @@ pcl_configure_image_data(
     pcl_state_t *       pcs
 )
 {
+#ifdef PCL5EMONO
+    return 0;
+#endif
     return install_cid_data( uint_arg(pargs),
                              arg_data(pargs),
                              pcs,
@@ -439,6 +445,7 @@ pcl_cid_do_registration(
         'v', 'W',
         PCL_COMMAND("Configure Image Data", pcl_configure_image_data, pca_bytes | pca_in_rtl)
     },
+#ifndef PCL5EMONO
     {
         'r', 'U',
         PCL_COMMAND("Simple Color Mode", pcl_simple_color_space, pca_neg_ok | pca_in_rtl)
@@ -447,6 +454,7 @@ pcl_cid_do_registration(
         'i', 'W',
         PCL_COMMAND("Set Viewing Illuminant", set_view_illuminant, pca_bytes | pca_in_rtl)
     },
+#endif
     END_CLASS
     return 0;
 }
