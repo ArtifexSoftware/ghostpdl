@@ -1876,16 +1876,27 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
 # This is not really a library facility, but one piece of interpreter test
 # code uses it.
 
+# C representation of known encodings.
+
+gscencs_h=$(GLSRC)gscencs.h $(stdpre_h) $(gstypes_h) $(gsccode_h)
+
+# gscedata.c is generated automatically by lib/encs2c.ps.
+$(GLOBJ)gscencs.$(OBJ) : $(GLSRC)gscencs.c $(GLSRC)gscedata.c\
+ $(memory__h) $(gscencs_h)
+	$(GLCC) $(GLO_)gscencs.$(OBJ) $(C_) $(GLSRC)gscencs.c
+
 # Support for PostScript and PDF font writing
 
 gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h) $(gsgdata_h)
 
 psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ) $(GLOBJ)gdevpsfm.$(OBJ)
-psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ) $(GLOBJ)spsdf.$(OBJ)
-psf_=$(psf_1) $(psf_2)
+psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
+psf_3=$(GLOBJ)gscencs.$(OBJ) $(GLOBJ)spsdf.$(OBJ)
+psf_=$(psf_1) $(psf_2) $(psf_3)
 $(GLD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
 	$(SETMOD) $(DD)psf $(psf_1)
 	$(ADDMOD) $(DD)psf -obj $(psf_2)
+	$(ADDMOD) $(DD)psf -obj $(psf_3)
 
 $(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h)\
@@ -1896,7 +1907,7 @@ $(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
 
 $(GLOBJ)gdevpsf2.$(OBJ) : $(GLSRC)gdevpsf2.c $(GXERR)\
  $(math__h) $(memory__h)\
- $(gsccode_h) $(gscrypt1_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gsccode_h) $(gscencs_h) $(gscrypt1_h) $(gsmatrix_h) $(gsutil_h)\
  $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
  $(sfilter_h) $(stream_h)\
  $(gdevpsf_h)
@@ -1909,7 +1920,8 @@ $(GLOBJ)gdevpsfm.$(OBJ) : $(GLSRC)gdevpsfm.c $(GXERR)\
 	$(GLCC) $(GLO_)gdevpsfm.$(OBJ) $(C_) $(GLSRC)gdevpsfm.c
 
 $(GLOBJ)gdevpsft.$(OBJ) : $(GLSRC)gdevpsft.c $(GXERR) $(memory__h)\
- $(gsmatrix_h) $(gsutil_h) $(gxfcid_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
+ $(gscencs_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcid_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
  $(spprint_h) $(stream_h)\
  $(gdevpsf_h)
 	$(GLCC) $(GLO_)gdevpsft.$(OBJ) $(C_) $(GLSRC)gdevpsft.c

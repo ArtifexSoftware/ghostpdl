@@ -713,34 +713,34 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
  $(gdevpsdf_h) $(gdevpsu_h) $(spprint_h)
 	$(GLCC) $(GLO_)gdevps.$(OBJ) $(C_) $(GLSRC)gdevps.c
 
+################ BEGIN PDF WRITER ################
+
 # PDF writer
 # Note that gs_pdfwr.ps will only actually be loaded if the configuration
 # includes a PostScript interpreter.
 
 # We reserve slots here for gdevpdfa...z, just in case we need them.
 pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfb.$(OBJ)
-pdfwrite2_=$(GLOBJ)gdevpdfc.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ) $(GLOBJ)gdevpdfe.$(OBJ)
-pdfwrite3_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfg.$(OBJ)
+pdfwrite2_=$(GLOBJ)gdevpdfc.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ)
+pdfwrite3_=$(GLOBJ)gdevpdfg.$(OBJ)
 pdfwrite4_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfj.$(OBJ) $(GLOBJ)gdevpdfk.$(OBJ)
 pdfwrite5_=$(GLOBJ)gdevpdfm.$(OBJ)
 pdfwrite6_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ)
-pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ) $(GLOBJ)gdevpdfs.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ)
-pdfwrite8_=$(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfv.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
+pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ)
+pdfwrite8_=$(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfv.$(OBJ)
 pdfwrite9_=
-pdfwrite10_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsfont0c.$(OBJ)
+pdfwrite10_=$(GLOBJ)gsflip.$(OBJ)
 pdfwrite11_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
 pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
  $(pdfwrite10_) $(pdfwrite11_)
 # Including the DSC parser here is clearly wrong: it requires a PostScript
 # interpreter.  We aren't sure what to do about this yet.
-# Including macglyph is also wrong: loading the Mac glyph table also
-# requires a PostScript interpreter.
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
- $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)psf.dev\
- $(PSD)dscparse.dev $(PSD)macglyph.dev
+ $(GLD)szlibe.dev $(GLD)psdf.dev $(PSD)dscparse.dev\
+ $(DD)pdftext.dev
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite3_)
@@ -753,13 +753,12 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite10_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite11_)
 	$(ADDMOD) $(DD)pdfwrite -ps gs_pdfwr
-	$(ADDMOD) $(DD)pdfwrite -ps gs_css_e gs_lgo_e gs_lgx_e gs_mex_e
-	$(ADDMOD) $(DD)pdfwrite -ps gs_wan_e
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)smd5 $(GLD)szlibe
-	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf $(GLD)psf
-	$(ADDMOD) $(DD)pdfwrite -include $(PSD)dscparse $(PSD)macglyph
+	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf
+	$(ADDMOD) $(DD)pdfwrite -include $(PSD)dscparse
+	$(ADDMOD) $(DD)pdfwrite -include $(DD)pdftext
 
 gdevpdfc_h=$(GLSRC)gdevpdfc.h
 gdevpdff_h=$(GLSRC)gdevpdff.h
@@ -791,23 +790,6 @@ $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
  $(gx_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gdevpdfd.$(OBJ) $(C_) $(GLSRC)gdevpdfd.c
-
-$(GLOBJ)gdevpdfe.$(OBJ) : $(GLSRC)gdevpdfe.c\
- $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfx_h) $(gdevpsf_h)\
- $(gserrors_h) $(gsmatrix_h)\
- $(gxfcid_h) $(gxfont_h) $(gxfont0_h)\
- $(scommon_h)
-	$(GLCC) $(GLO_)gdevpdfe.$(OBJ) $(C_) $(GLSRC)gdevpdfe.c
-
-$(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
- $(ctype__h) $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpsf_h)\
- $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gspath_h) $(gsutil_h)\
- $(gxfcache_h) $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxfont42_h)\
- $(gxpath_h)\
- $(scommon_h)
-	$(GLCC) $(GLO_)gdevpdff.$(OBJ) $(C_) $(GLSRC)gdevpdff.c
 
 $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
@@ -857,6 +839,54 @@ $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
  $(scanchar_h) $(sstring_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfr.$(OBJ) $(C_) $(GLSRC)gdevpdfr.c
 
+$(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
+ $(jpeglib__h) $(memory__h) $(string__h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gscdefs_h)\
+ $(gsdsrc_h) $(gsfunc_h) $(gsfunc3_h)\
+ $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
+ $(srlx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
+	$(GLCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
+
+$(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
+ $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gscindex_h) $(gscoord_h) $(gsiparm3_h) $(gsmatrix_h) $(gsptype2_h)\
+ $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h) $(gxshade_h)\
+ $(szlibx_h)
+	$(GLCC) $(GLO_)gdevpdfv.$(OBJ) $(C_) $(GLSRC)gdevpdfv.c
+
+# The text facilities for the PDF writer are so large and complex that
+# we give them their own module name and file name prefix.
+# However, logically they are part of pdfwrite and cannot be used separately.
+
+pdftext1_=$(GLOBJ)gdevpdfe.$(OBJ) $(GLOBJ)gdevpdff.$(OBJ)
+pdftext2_=$(GLOBJ)gdevpdfs.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
+pdftext10_=$(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gsfont0c.$(OBJ)
+pdftext_=$(pdftext1_) $(pdftext2_)\
+ $(pdftext10_)
+$(DD)pdftext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdftext_)\
+ $(GLD)psf.dev
+	$(SETMOD) $(DD)pdftext $(pdftext1_)
+	$(ADDMOD) $(DD)pdftext $(pdftext2_)
+	$(ADDMOD) $(DD)pdftext $(pdftext10_)
+	$(ADDMOD) $(DD)pdftext -include $(GLD)psf
+
+$(GLOBJ)gdevpdfe.$(OBJ) : $(GLSRC)gdevpdfe.c\
+ $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdff_h) $(gdevpdfx_h) $(gdevpsf_h)\
+ $(gserrors_h) $(gsmatrix_h)\
+ $(gxfcid_h) $(gxfont_h) $(gxfont0_h)\
+ $(scommon_h)
+	$(GLCC) $(GLO_)gdevpdfe.$(OBJ) $(C_) $(GLSRC)gdevpdfe.c
+
+$(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
+ $(ctype__h) $(math__h) $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpsf_h)\
+ $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gspath_h) $(gsutil_h)\
+ $(gxfcache_h) $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxfont42_h)\
+ $(gxpath_h)\
+ $(scommon_h)
+	$(GLCC) $(GLO_)gdevpdff.$(OBJ) $(C_) $(GLSRC)gdevpdff.c
+
 $(GLOBJ)gdevpdfs.$(OBJ) : $(GLSRC)gdevpdfs.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
  $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpsf_h)\
@@ -873,21 +903,6 @@ $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
 
-$(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
- $(jpeglib__h) $(memory__h) $(string__h)\
- $(gdevpdfo_h) $(gdevpdfx_h) $(gscdefs_h)\
- $(gsdsrc_h) $(gsfunc_h) $(gsfunc3_h)\
- $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
- $(srlx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
-	$(GLCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
-
-$(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
- $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
- $(gscindex_h) $(gscoord_h) $(gsiparm3_h) $(gsmatrix_h) $(gsptype2_h)\
- $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h) $(gxshade_h)\
- $(szlibx_h)
-	$(GLCC) $(GLO_)gdevpdfv.$(OBJ) $(C_) $(GLSRC)gdevpdfv.c
-
 $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
  $(memory__h) $(string__h) $(gx_h)\
  $(gdevpdff_h) $(gdevpdfx_h) $(gdevpsf_h)\
@@ -895,6 +910,8 @@ $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
  $(gxfcid_h) $(gxfcmap_h) $(gxfont_h) $(gxfont0_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdfw.$(OBJ) $(C_) $(GLSRC)gdevpdfw.c
+
+################ END PDF WRITER ################
 
 # High-level PCL XL writer
 

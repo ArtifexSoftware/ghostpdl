@@ -19,6 +19,7 @@
 #include "memory_.h"
 #include <stdlib.h>		/* for qsort */
 #include "gx.h"
+#include "gscencs.h"
 #include "gserrors.h"
 #include "gsmatrix.h"
 #include "gsutil.h"
@@ -181,13 +182,10 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
 	    mac_char = ch - 30;
 	else
 	    return -1;
-	mac_glyph =
-	    font->procs.callbacks.known_encode(mac_char,
-					       ENCODING_INDEX_MACGLYPH);
+	mac_glyph = gs_c_known_encode(mac_char, ENCODING_INDEX_MACGLYPH);
 	if (mac_glyph == gs_no_glyph)
 	    return -1;
-	mstr.data =(const byte *)
-	    font->procs.callbacks.glyph_name(mac_glyph, &mstr.size);
+	mstr.data = (const byte *)gs_c_glyph_name(mac_glyph, &mstr.size);
 	if (!bytes_compare(pstr->data, pstr->size, mstr.data, mstr.size))
 	    return (int)mac_char;
     }

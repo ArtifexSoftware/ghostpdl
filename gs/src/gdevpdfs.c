@@ -20,6 +20,7 @@
 #include "memory_.h"
 #include "string_.h"
 #include "gx.h"
+#include "gscencs.h"
 #include "gserrors.h"
 #include "gsmatrix.h"
 #include "gsutil.h"		/* for bytes_compare */
@@ -1155,6 +1156,32 @@ base_encoding_index(const pdf_font_t *ppf)
 	 ppf->index >= 0 ? pdf_standard_fonts[ppf->index].base_encoding :
 	 ENCODING_INDEX_UNKNOWN);
 }
+private bool
+glyph_eq(gs_font *font, gs_glyph g1, gs_glyph g2)
+{
+    /*
+     * Compare two glyphs for equality, given that each one may
+     * independently be in either the normal glyph space or the C encoding
+     * glyph space.
+     */
+    const char *str1;
+    const char *str2;
+    uint len1, len2;
+
+    if (g1 < gs_c_min_std_encoding_glyph) {
+	if (g2 < gs_c_min_std_encoding_glyph)
+	    return g1 == g2;
+	str1 = font->procs.callbacks.glyph_name(g1, &len1);
+	str2 = gs_c_glyph_name(g2, &len2);
+    } else {
+	if (g2 >= gs_c_min_std_encoding_glyph)
+	    return g1 == g2;
+	str1 = gs_c_glyph_name(g1, &len1);
+	str2 = font->procs.callbacks.glyph_name(g2, &len2);
+    }
+    return (str1 != 0 && str2 != 0 && len1 == len2 &&
+	    !memcmp(str1, str2, len1));
+}
 
 private int
 pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
@@ -1201,12 +1228,28 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
     if (!is_standard && !have_font)
 	return_error(gs_error_undefined); /* can't encode */
 
+/*
+ * Encode a character using the encoding of bfont/bei, ignoring any
+ * Differences.  Free variables: base_font, bfont, bei.
+ */
 #define ENCODE_NO_DIFF(ch)\
    (bei != ENCODING_INDEX_UNKNOWN ?\
-    bfont->procs.callbacks.known_encode((gs_char)(ch), bei) :\
+    gs_c_known_encode((gs_char)(ch), bei) :\
     /* have_font */ bfont->procs.encode_char(base_font, ch, GLYPH_SPACE_NAME))
+/*
+ * Test whether a given character appears in the Differences from the
+ * font's built-in encoding.  Free variables: pdiff.
+ */
 #define HAS_DIFF(ch) (pdiff != 0 && pdiff[ch].str.data != 0)
+/*
+ * Encode a character using its Differences entry.  Free variables: pdiff.
+ */
 #define ENCODE_DIFF(ch) (pdiff[ch].glyph)
+/*
+ * Encode a character using its Differences entry if any, otherwise using
+ * the font's built-in encoding.  Free variables: base_font, bfont, bei,
+ * pdiff.
+ */
 #define ENCODE(ch)\
   (HAS_DIFF(ch) ? ENCODE_DIFF(ch) : ENCODE_NO_DIFF(ch))
 
@@ -1214,12 +1257,21 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
     glyph =
 	(ei == ENCODING_INDEX_UNKNOWN ?
 	 bfont->procs.encode_char((gs_font *)bfont, chr, GLYPH_SPACE_NAME) :
-	 bfont->procs.callbacks.known_encode(chr, ei));
-    if (glyph == font_glyph) {
+	 gs_c_known_encode(chr, ei));
+    if (glyph_eq((gs_font *)bfont, glyph, font_glyph)) {
 	record_used(pfd, chr);
 	return chr;
     }
 
+    /* pdf_encode_glyph requires a glyph in the normal glyph space. */
+    if (glyph >= gs_c_min_std_encoding_glyph) {
+	/*
+	 * Ask the font to encode the glyph, even though the font has a
+	 * known encoding.
+	 */
+	glyph = bfont->procs.encode_char((gs_font *)bfont, chr,
+					 GLYPH_SPACE_NAME);
+    }
     return pdf_encode_glyph(pdev, chr, glyph, bfont, ppf);
 }
 /*
@@ -1256,7 +1308,7 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 	    int c;
 
 	    for (c = 0; c < 256; ++c)
-		if (ENCODE_NO_DIFF(c) == glyph) {
+		if (glyph_eq((gs_font *)bfont, ENCODE_NO_DIFF(c), glyph)) {
 		    record_used(pfd, c);
 		    return c;
 		}
@@ -1317,7 +1369,7 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 		int c;
 
 		for (c = 0; c < 256; ++c)
-		    if (ENCODE_NO_DIFF(c) == glyph)
+		    if (glyph_eq((gs_font *)bfont, ENCODE_NO_DIFF(c), glyph))
 			break;
 		if (c < 256)	/* found */
 		    record_used(pfd, c);
@@ -1339,9 +1391,9 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 
 	for (c = 0; c < 256; ++c) {
 	    if (HAS_DIFF(c)) {
-		if (ENCODE_DIFF(c) == glyph)
+		if (glyph_eq((gs_font *)bfont, ENCODE_DIFF(c), glyph))
 		    return c;
-	    } else if (ENCODE_NO_DIFF(c) == glyph) {
+	    } else if (glyph_eq((gs_font *)bfont, ENCODE_NO_DIFF(c), glyph)) {
 		record_used(pfd, c);
 		return c;
 	    }
@@ -1603,13 +1655,26 @@ encoding_find_glyph(gs_font_base *bfont, gs_glyph font_glyph,
 		    gs_encoding_index_t index)
 {
     int ch;
+    gs_glyph find_glyph;
     gs_glyph glyph;
 
+    if (font_glyph >= gs_c_min_std_encoding_glyph)
+	find_glyph = font_glyph;
+    else {
+	uint len;
+	const char *str = bfont->procs.callbacks.glyph_name(font_glyph, &len);
+
+	if (str == 0)
+	    return -1;
+	find_glyph = gs_c_name_glyph(str, len);
+	if (find_glyph == gs_no_glyph)
+	    return -1;
+    }
+
     for (ch = 0;
-	 (glyph = bfont->procs.callbacks.known_encode((gs_char)ch, index)) !=
-	     gs_no_glyph;
+	 (glyph = gs_c_known_encode((gs_char)ch, index)) != gs_no_glyph;
 	 ++ch)
-	if (glyph == font_glyph)
+	if (glyph == find_glyph)
 	    return ch;
     return -1;
 }

@@ -19,6 +19,7 @@
 #include "math_.h"		/* for fabs */
 #include "memory_.h"
 #include "gx.h"
+#include "gscencs.h"
 #include "gserrors.h"
 #include "gsccode.h"
 #include "gscrypt1.h"
@@ -1230,12 +1231,11 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     /* Initialize the string tables. */
     cff_string_table_init(&writer.std_strings, std_string_items,
 			  countof(std_string_items));
-    for (j = 0; (glyph = pfont->procs.callbacks.known_encode((gs_char)j,
+    for (j = 0; (glyph = gs_c_known_encode((gs_char)j,
 				ENCODING_INDEX_CFFSTRINGS)) != gs_no_glyph;
 	 ++j) {
 	uint size;
-	const byte *str = (const byte *)
-	    pfont->procs.callbacks.glyph_name(glyph, &size);
+	const byte *str = (const byte *)gs_c_glyph_name(glyph, &size);
 	int ignore;
 
 	cff_string_index(&writer.std_strings, str, size, true, &ignore);
