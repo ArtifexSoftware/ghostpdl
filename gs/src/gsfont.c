@@ -31,9 +31,6 @@
 #include "gxfcache.h"
 #include "gxpath.h"		/* for default implementation */
 
-/* Imported procedures */
-void gs_purge_font_from_char_caches(P2(gs_font_dir *, const gs_font *));
-
 /* Define the sizes of the various aspects of the font/character cache. */
 /*** Big memory machines ***/
 #define smax_LARGE 50		/* smax - # of scaled fonts */

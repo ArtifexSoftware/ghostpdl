@@ -265,5 +265,6 @@ cached_fm_pair *
                gx_add_fm_pair(P4(gs_font_dir *, gs_font *, const gs_uid *, const gs_state *));
 void gx_lookup_xfont(P3(const gs_state *, cached_fm_pair *, int));
 void gs_purge_fm_pair(P3(gs_font_dir *, cached_fm_pair *, int));
+void gs_purge_font_from_char_caches(P2(gs_font_dir *, const gs_font *));
 
 #endif /* gxfcache_INCLUDED */
