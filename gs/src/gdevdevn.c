@@ -250,10 +250,10 @@ const devicen_device gs_devicen_device =
 private void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 {
-    int i = dev->color_info.num_components;
+    int i = dev->color_info.num_components - 1;
     int * map = (int *)(&((devicen_device *) dev)->separation_order_map);
 
-    for(; i>0; i--)			/* Clear colors */
+    for(; i >= 0; i--)			/* Clear colors */
         out[i] = frac_0;
     if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
         out[i] = frac_1 - gray;
@@ -263,11 +263,11 @@ private void
 rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
-    int i = dev->color_info.num_components;
+    int i = dev->color_info.num_components - 1;
     int * map = (int *)(&((devicen_device *) dev)->separation_order_map);
     frac cmyk[4];
 
-    for(; i>0; i--)			/* Clear colors */
+    for(; i >= 0; i--)			/* Clear colors */
         out[i] = frac_0;
     color_rgb_to_cmyk(r, g, b, pis, cmyk);
     if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
@@ -283,10 +283,10 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 private void
 cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-    int i = dev->color_info.num_components;
+    int i = dev->color_info.num_components - 1;
     int * map = (int *)(&((devicen_device *) dev)->separation_order_map);
 
-    for(; i>0; i--)			/* Clear colors */
+    for(; i >= 0; i--)			/* Clear colors */
         out[i] = frac_0;
     if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
         out[i] = c;
