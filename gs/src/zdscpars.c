@@ -85,6 +85,8 @@
 #include "gsstruct.h"
 #include "ialloc.h"
 #include "iname.h"
+#include "istack.h"		/* for iparam.h */
+#include "iparam.h"
 #include "ivmspace.h"
 #include "oper.h"
 #include "estack.h"
@@ -94,18 +96,22 @@
 #include "dscparse.h"
 
 /*
- * This structure id used to save a pointer to Russell's data structure.
+ * Declare the structure we use to represent an instance of the parser
+ * as a t_struct.  Currently it just saves a pointer to Russell's
+ * data structure.
  */
 typedef struct dsc_data_s {
     CDSC *dsc_data_ptr;
 } dsc_data_t;
 
-private void dsc_finalize(P1(void *vptr));
-
 /* Structure descriptors */
+private void dsc_finalize(P1(void *vptr));
 gs_private_st_simple_final(st_dsc_data_t, dsc_data_t, "dsc_data_struct", dsc_finalize);
 
+/* Define the key name for storing the instance pointer in a dictionary. */
 private const char * const dsc_dict_name = "DSC_struct";
+
+/* ---------------- Initialization / finalization ---------------- */
 
 /*
  * If we return CDSC_OK then Russell's parser will make it best guess when
@@ -159,70 +165,96 @@ dsc_finalize(void *vptr)
 }
 
 
-/*
- * This routine will put an integer value into the specified dictionary
- * using the given string for the key name.
- */
-private int
-dsc_put_integer(i_ctx_t *i_ctx_p, ref *pdict, const char *keyname, int value)
-{
-    ref local_ref;
+/* ---------------- Parsing ---------------- */
 
-    make_int(&local_ref, value);
-    return idict_put_string(pdict, keyname, &local_ref);
+/* ------ Utilities for returning values ------ */
+
+/* Return an integer value. */
+private int
+dsc_put_int(gs_param_list *plist, const char *keyname, int value)
+{
+    return param_write_int(plist, keyname, &value);
 }
 
-/*
- * This routine will put a string value into the specified dictionary
- * using the given string for the key name.
- */
+/* Return a string value. */
 private int
-dsc_put_string(i_ctx_t *i_ctx_p, ref *opdict, const char *keyname,
+dsc_put_string(gs_param_list *plist, const char *keyname,
 	       const char *string)
 {
-    ref local_ref;
-    dict * const pdict = opdict->value.pdict;
-    gs_ref_memory_t * const mem = dict_memory(pdict);
-    int code = string_to_ref(string, &local_ref, mem, "DSC string");
+    gs_param_string str;
 
-    if (code < 0)
-	return code;
-    return idict_put_string(opdict, keyname, &local_ref);
+    param_string_from_transient_string(str, string);
+    return param_write_string(plist, keyname, &str);
 }
+
+/* Return a BoundingBox value. */
+private int
+dsc_put_bounding_box(gs_param_list *plist, const char *keyname,
+		     const CDSCBBOX *pbbox)
+{
+    /* pbbox is NULL iff the bounding box values was "(atend)". */
+    int values[4];
+    gs_param_int_array va;
+
+    if (!pbbox)
+	return 0;
+    values[0] = pbbox->llx;
+    values[1] = pbbox->lly;
+    values[2] = pbbox->urx;
+    values[3] = pbbox->ury;
+    va.data = values;
+    va.size = 4;
+    va.persistent = false;
+    return param_write_int_array(plist, keyname, &va);
+}
+
+/* ------ Return values for individual comment types ------ */
 
 /*
  * These routines transfer data from the C structure into Postscript
  * key/value pairs in a dictionary.
  */
 private int
-dsc_adobe_header(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_adobe_header(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_integer(i_ctx_p, pDict, "EPSF", (int)(pData->epsf? 1: 0));
+    return dsc_put_int(plist, "EPSF", (int)(pData->epsf? 1: 0));
 }
 
 private int
-dsc_creator(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_creator(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_string(i_ctx_p, pDict, "Creator", pData->dsc_creator );
+    return dsc_put_string(plist, "Creator", pData->dsc_creator );
 }
 
 private int
-dsc_creation_date(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_creation_date(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_string(i_ctx_p, pDict, "CreationDate", pData->dsc_date );
+    return dsc_put_string(plist, "CreationDate", pData->dsc_date );
 }
 
 private int
-dsc_page(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_bounding_box(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_integer(i_ctx_p, pDict, "PageNum",
-			   pData->page[pData->page_count - 1].ordinal );
+    return dsc_put_bounding_box(plist, "BoundingBox", pData->bbox);
 }
 
 private int
-dsc_pages(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_page(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_integer(i_ctx_p, pDict, "NumPages", pData->page_pages);
+    return dsc_put_int(plist, "PageNum",
+		       pData->page[pData->page_count - 1].ordinal );
+}
+
+private int
+dsc_pages(gs_param_list *plist, const CDSC *pData)
+{
+    return dsc_put_int(plist, "NumPages", pData->page_pages);
+}
+
+private int
+dsc_page_bounding_box(gs_param_list *plist, const CDSC *pData)
+{
+    return dsc_put_bounding_box(plist, "PageBoundingBox", pData->page_bbox);
 }
 
 /*
@@ -235,39 +267,39 @@ convert_orient(CDSC_ORIENTATION_ENUM orient)
 }
 
 private int
-dsc_pageorientation(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_page_orientation(gs_param_list *plist, const CDSC *pData)
 {
     int page_num = pData->page_count;
 
     /*
      * The pageOrientation comment might be either in the 'defaults'
      * section or in a page section.  If in the defaults then fhe value
-     * will be in page_orienation.
+     * will be in page_orientation.
      */
     if (page_num && pData->page[page_num - 1].orientation != CDSC_ORIENT_UNKNOWN)
-	return dsc_put_integer(i_ctx_p, pDict, "PageOrientation",
+	return dsc_put_int(plist, "PageOrientation",
 			convert_orient(pData->page[page_num - 1].orientation));
     else
-        return dsc_put_integer(i_ctx_p, pDict, "Orientation",
+        return dsc_put_int(plist, "Orientation",
 			       convert_orient(pData->page_orientation));
 }
 
 private int
-dsc_orientation(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_orientation(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_integer(i_ctx_p, pDict, "Orientation", 
+    return dsc_put_int(plist, "Orientation", 
 			   convert_orient(pData->page_orientation));
 }
 
 
 private int
-dsc_title(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_title(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_string(i_ctx_p, pDict, "Title", pData->dsc_title );
+    return dsc_put_string(plist, "Title", pData->dsc_title );
 }
 
 private int
-dsc_for(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
+dsc_for(gs_param_list *plist, const CDSC *pData)
 {
     return 0;		        /* To be completed */
 }
@@ -279,7 +311,7 @@ dsc_for(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
 typedef struct cmd_list_s {
     int code;			/* Russell's DSC parser code (see dsc.h) */
     const char *comment_name;	/* A name to be returned to postscript caller */
-    int (*dsc_proc) (P3(i_ctx_t *, ref *, const CDSC * const));
+    int (*dsc_proc) (P2(gs_param_list *, const CDSC *));
 				/* A routine for transferring parameter values
 				   from C data structure to postscript dictionary
 				   key/value pairs. */
@@ -291,13 +323,19 @@ private const cmdlist_t DSCcmdlist[] = {
     { CDSC_CREATIONDATE,    "CreationDate",	dsc_creation_date },
     { CDSC_TITLE,	    "Title",		dsc_title },
     { CDSC_FOR,		    "For",		dsc_for },
+    { CDSC_BOUNDINGBOX,     "BoundingBox",	dsc_bounding_box },
     { CDSC_ORIENTATION,	    "Orientation",	dsc_orientation },
+    { CDSC_BEGINDEFAULTS,   "BeginDefaults",	NULL },
+    { CDSC_ENDDEFAULTS,     "BeginDefaults",	NULL },
     { CDSC_PAGE,	    "Page",		dsc_page },
     { CDSC_PAGES,	    "Pages",		dsc_pages },
-    { CDSC_PAGEORIENTATION, "PageOrientation",  dsc_pageorientation },
+    { CDSC_PAGEORIENTATION, "PageOrientation",  dsc_page_orientation },
+    { CDSC_PAGEBOUNDINGBOX, "PageBoundingBox",	dsc_page_bounding_box },
     { CDSC_EOF,		    "EOF",		NULL },
     { 0,		    "NOP",		NULL }  /* Table terminator */
 };
+
+/* ------ Parser interface ------ */
 
 /*
  * There are a few comments that we do not want to send to Russell's
@@ -329,6 +367,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     const char * const *pBadList = BadCmdlist;
     ref * pvalue;
     CDSC * dsc_data;
+    dict_param_list list;
 
     /*
      * Verify operand types and length of DSC comment string.
@@ -374,7 +413,11 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     while (pCmdList->code && pCmdList->code != comment_code )
 	pCmdList++;
     if (pCmdList->dsc_proc) {
-	code = (pCmdList->dsc_proc)(i_ctx_p, opDict, dsc_data);
+	code = dict_param_list_write(&list, opDict, NULL, iimemory);
+	if (code < 0)
+	    return code;
+	code = (pCmdList->dsc_proc)((gs_param_list *)&list, dsc_data);
+	iparam_list_release(&list);
 	if (code < 0)
 	    return code;
     }
