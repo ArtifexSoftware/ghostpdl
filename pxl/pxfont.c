@@ -351,7 +351,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 #endif
     /* set the writing mode */
 	
-    /* stefan NB
+    /* NB
      * writing mode is h or v; seems to only applies to two byte chars ?
      * sub_mode is used to check for vert substitutions
      * WMode is miss used to indicated vertical substitutions which is independent of rotation
@@ -359,7 +359,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     if ( pxgs->char_sub_mode == eNoSubstitution ) 
 	pfont->WMode = 0;
     else 
-	pfont->WMode = 1; // stefan foo causes ufst to crash
+	pfont->WMode = 1; /* NB: ufst seg fault issues. */ 
     
     pfont->procs.next_char_glyph =
 	(!index_shift ? px_next_char_8 :
