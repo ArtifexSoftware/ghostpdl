@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zshade.c  */
+/*$Id$ */
 /* PostScript language interface to shading */
 #include "memory_.h"
 #include "ghost.h"

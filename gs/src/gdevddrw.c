@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevddrw.c  */
+/*$Id$ */
 /* Default polygon and image drawing device procedures */
 #include "math_.h"
 #include "memory_.h"
@@ -576,9 +576,8 @@ gx_default_begin_typed_image(gx_device * dev,
 }
 
 int
-gx_device_image_data(gx_device * dev,
-	gx_image_enum_common_t * info, const byte ** plane_data, int data_x,
-		     uint raster, int height)
+gx_image_data(gx_image_enum_common_t * info, const byte ** plane_data,
+	      int data_x, uint raster, int height)
 {
     int num_planes = info->num_planes;
     gx_image_plane_t planes[gs_image_max_components];
@@ -596,21 +595,35 @@ gx_device_image_data(gx_device * dev,
 	planes[i].data_x = data_x;
 	planes[i].raster = raster;
     }
-    return gx_device_image_plane_data(dev, info, planes, height);
+    return gx_image_plane_data(info, planes, height);
 }
 
 int
-gx_device_image_plane_data(gx_device * dev,
- gx_image_enum_common_t * info, const gx_image_plane_t * planes, int height)
+gx_image_plane_data(gx_image_enum_common_t * info,
+		    const gx_image_plane_t * planes, int height)
 {
-    /* We must use the device in the enumerator, not the argument. */
     return info->procs->plane_data(info->dev, info, planes, height);
 }
 
 int
-gx_device_end_image(gx_device * dev,
-		    gx_image_enum_common_t * info, bool draw_last)
+gx_image_end(gx_image_enum_common_t * info, bool draw_last)
 {
-    /* We must use the device in the enumerator, not the argument. */
     return info->procs->end_image(info->dev, info, draw_last);
+}
+
+/* Backward compatibility for obsolete driver procedures. */
+
+int
+gx_default_image_data(gx_device *dev, gx_image_enum_common_t * info,
+		      const byte ** plane_data,
+		      int data_x, uint raster, int height)
+{
+    return gx_image_data(info, plane_data, data_x, raster, height);
+}
+
+int
+gx_default_end_image(gx_device *dev, gx_image_enum_common_t * info,
+		     bool draw_last)
+{
+    return gx_image_end(info, draw_last);
 }

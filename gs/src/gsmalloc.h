@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsmalloc.h  */
+/*$Id$ */
 /* Client interface to default (C heap) allocator */
 /* Requires gsmemory.h */
 
@@ -37,15 +37,16 @@ typedef struct gs_malloc_memory_s {
 gs_malloc_memory_t *gs_malloc_memory_init(P0());
 
 /* Release all the allocated blocks, and free the memory manager. */
-void gs_malloc_memory_release(P1(gs_malloc_memory_t *));
+/* The cast is unfortunate, but unavoidable. */
+#define gs_malloc_memory_release(mem)\
+  gs_memory_free_all((gs_memory_t *)mem, FREE_ALL_EVERYTHING,\
+		     "gs_malloc_memory_release")
 
 /*
  * Define a default allocator that allocates from the C heap.
  * (We would really like to get rid of this.)
  */
-
 extern gs_malloc_memory_t *gs_malloc_memory_default;
-
 #define gs_memory_default (*(gs_memory_t *)gs_malloc_memory_default)
 
 /*

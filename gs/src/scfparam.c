@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: scfparam.c  */
+/*$Id$ */
 /* CCITTFax filter parameter setting and reading */
 #include "std.h"
 #include "gserror.h"

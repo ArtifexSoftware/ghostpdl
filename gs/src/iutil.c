@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iutil.c  */
+/*$Id$ */
 /* Utilities for Ghostscript interpreter */
 #include "math_.h"		/* for fabs */
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zarray.c  */
+/*$Id$ */
 /* Array operators */
 #include "memory_.h"
 #include "ghost.h"

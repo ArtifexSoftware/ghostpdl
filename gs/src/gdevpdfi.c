@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpdfi.c  */
+/*$Id$ */
 /* Image handling for PDF-writing driver */
 #include "math_.h"
 #include "memory_.h"
@@ -1031,8 +1031,7 @@ pdf_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
     byte row[row_bytes];
 
     if (pie->default_info)
-	return gx_device_image_plane_data(dev, pie->default_info, planes,
-					  height);
+	return gx_image_plane_data(pie->default_info, planes, height);
     if (h > pie->rows_left)
 	h = pie->rows_left;
     pie->rows_left -= h;

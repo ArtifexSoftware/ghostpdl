@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsfcmap.h  */
+/*$Id$ */
 /* CMap data definition */
 /* Requires gsstruct.h */
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevbbox.c  */
+/*$Id$ */
 /* Device for tracking bounding box */
 #include "math_.h"
 #include "memory_.h"
@@ -809,7 +809,7 @@ bbox_image_copy_target_info(bbox_image_enum * pbe, gx_device_bbox * dev)
     memcpy(pbe->plane_depths, target_info->plane_depths,
 	   pbe->num_planes * sizeof(pbe->plane_depths[0]));
     if (dev->target == 0) {
-	gx_device_end_image((gx_device *) dev, pbe->target_info, false);
+	gx_image_end(pbe->target_info, false);
 	pbe->target_info = 0;
     }
 }
@@ -918,8 +918,7 @@ bbox_image_plane_data(gx_device * dev,
     }
     /* Skip the call if there is no target. */
     return (tdev == 0 ? pbe->y >= pbe->height :
-	    gx_device_image_plane_data(tdev, pbe->target_info, planes,
-				       height));
+	    gx_image_plane_data(pbe->target_info, planes, height));
 }
 
 private int
@@ -933,8 +932,7 @@ bbox_image_end_image(gx_device * dev, gx_image_enum_common_t * info,
     /* Skip the call if there is no target. */
     gx_device *tdev = bdev->target;
     int code =
-    (tdev == 0 ? 0 :
-     gx_device_end_image(tdev, target_info, draw_last));
+	(tdev == 0 ? 0 : gx_image_end(target_info, draw_last));
 
     gs_free_object(pbe->memory, pbe, "bbox_end_image");
     return code;

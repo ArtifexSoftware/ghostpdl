@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: int.mak 
+# $Id$
 # (Platform-independent) makefile for PostScript and PDF language
 # interpreters.
 # Users of this makefile must define the following:
@@ -50,7 +50,7 @@ idictdef_h=$(PSSRC)idictdef.h
 igcstr_h=$(PSSRC)igcstr.h
 inames_h=$(PSSRC)inames.h
 iname_h=$(PSSRC)iname.h $(inames_h)
-inamedef_h=$(PSSRC)inamedef.h $(gconfigv_h) $(inames_h)
+inamedef_h=$(PSSRC)inamedef.h $(gconfigv_h) $(gsstruct_h) $(inames_h)
 ipacked_h=$(PSSRC)ipacked.h
 iref_h=$(PSSRC)iref.h
 isave_h=$(PSSRC)isave.h
@@ -1312,7 +1312,7 @@ fzlib.dev: $(INT_MAK) $(ECHOGS_XE) $(fzlib_) szlibe.dev szlibd.dev
 $(PSOBJ)zfzlib.$(OBJ): $(PSSRC)zfzlib.c $(OP)\
  $(idict_h) $(ifilter_h)\
  $(spdiffx_h) $(spngpx_h) $(strimpl_h) $(szlibx_h)
-	$(CC_) $(I_)$(PSI_) $(II)$(ZSRCDIR)$(_I) $(PSF_) $(PSO_)zfzlib.$(OBJ) $(C_) $(PSSRC)zfzlib.c
+	$(PSCC) $(PSO_)zfzlib.$(OBJ) $(C_) $(PSSRC)zfzlib.c
 
 # ================ Display PostScript ================ #
 
@@ -1395,7 +1395,7 @@ $(PSOBJ)zimage3.$(OBJ): $(PSSRC)zimage3.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zimage3.$(OBJ) $(C_) $(PSSRC)zimage3.c
 
 $(PSOBJ)zmisc3.$(OBJ): $(PSSRC)zmisc3.c $(GH)\
- $(oper_h) $(store_h)
+ $(gsclipsr_h) $(igstate_h) $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)zmisc3.$(OBJ) $(C_) $(PSSRC)zmisc3.c
 
 $(PSOBJ)zshade.$(OBJ): $(PSSRC)zshade.c $(memory__h) $(OP)\

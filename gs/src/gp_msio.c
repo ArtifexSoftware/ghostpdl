@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_msio.c  */
+/*$Id$ */
 /*
  * Streams for Windows text window
  * Original version by Russell Lang and Maurice Castro with help from

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevokii.c */
+/*$Id$*/
 /*
  * Okidata IBM compatible dot-matrix printer driver for Ghostscript.
  *

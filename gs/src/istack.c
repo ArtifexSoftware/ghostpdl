@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: istack.c  */
+/*$Id$ */
 /* Ghostscript expandable stack manager */
 #include "memory_.h"
 #include "ghost.h"

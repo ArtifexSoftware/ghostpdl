@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sbwbs.h  */
+/*$Id$ */
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
 #ifndef sbwbs_INCLUDED

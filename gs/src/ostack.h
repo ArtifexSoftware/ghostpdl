@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ostack.h  */
+/*$Id$ */
 /* Definitions for Ghostscript operand stack */
 
 #ifndef ostack_INCLUDED

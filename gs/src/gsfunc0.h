@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsfunc0.h  */
+/*$Id$ */
 /* Definitions for FunctionType 0 (Sampled) Functions */
 
 #ifndef gsfunc0_INCLUDED

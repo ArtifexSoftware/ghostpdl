@@ -19,7 +19,7 @@
 #include "gdevprn.h"
 
 
-/*Id: gdevdm24.c */
+/*$Id$*/
 /* High-res 24Dot-matrix printer driver */
 
 /* Supported printers 

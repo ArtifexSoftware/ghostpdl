@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: inames.h  */
+/*$Id$ */
 /* Name table interface */
 
 #ifndef inames_INCLUDED

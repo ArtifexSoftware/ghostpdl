@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevvec.c  */
+/*$Id$ */
 /* Utilities for "vector" devices */
 #include "math_.h"
 #include "memory_.h"
@@ -628,18 +628,16 @@ gdev_vector_end_image(gx_device_vector * vdev,
 /****** FILL VALUE IS WRONG ******/
 	    memset(row, (byte) pad, bytes_per_row);
 	    for (; pie->y < pie->height; pie->y++)
-		gx_device_image_data((gx_device *) vdev,
-				     (gx_image_enum_common_t *) pie,
-				     (const byte **)&row, 0,
-				     bytes_per_row, 1);
+		gx_image_data((gx_image_enum_common_t *) pie,
+			      (const byte **)&row, 0,
+			      bytes_per_row, 1);
 	    gs_free_object(pie->memory, row,
 			   "gdev_vector_end_image(fill)");
 	}
 	code = 1;
     }
     if (vdev->bbox_device) {
-	int bcode = gx_device_end_image((gx_device *) vdev->bbox_device,
-					pie->bbox_info, draw_last);
+	int bcode = gx_image_end(pie->bbox_info, draw_last);
 
 	if (bcode < 0)
 	    code = bcode;

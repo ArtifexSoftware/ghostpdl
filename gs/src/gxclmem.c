@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclmem.c  */
+/*$Id$ */
 /* RAM-based command list implementation */
 #include "memory_.h"
 #include "gx.h"

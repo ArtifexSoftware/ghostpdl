@@ -16,9 +16,10 @@
   all copies.
 */
 
-/*Id: gdevsnfb.c */
+/*$Id$*/
 /* Sony News frame buffer driver for GhostScript */
 #include "gdevprn.h"
+#define prn_dev ((gx_device_printer *)dev) /* needed in 5.31 et seq */
 /*#include <sys/types.h> problems with ushort! */
 typedef	char *	caddr_t;
 typedef	long	off_t;

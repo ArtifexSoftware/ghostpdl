@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxdither.h  */
+/*$Id$ */
 /* Interface to gxdither.c */
 
 #ifndef gxdither_INCLUDED

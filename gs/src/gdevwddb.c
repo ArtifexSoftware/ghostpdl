@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevwddb.c  */
+/*$Id$ */
 /*
  * Microsoft Windows 3.n driver for Ghostscript,
  * using device-dependent bitmap.

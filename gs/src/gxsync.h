@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxsync.h  */
+/*$Id$ */
 /* Interface to synchronization primitives */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -36,7 +36,7 @@
 typedef struct gx_semaphore_s {
     gs_memory_t *memory;	/* allocator to free memory */
     gp_semaphore native;	/* MUST BE LAST last since length is undef'd */
-    /*  platform-dep impl, len is gp_semaphore_sizeof */
+    /*  platform-dep impl, len is gp_semaphore_sizeof() */
 } gx_semaphore_t;
 
 gx_semaphore_t *		/* returns a new semaphore, 0 if error */
@@ -57,7 +57,7 @@ void
 /* the event count is set to 1 (1st 'enter' succeeds immediately). */
 typedef struct gx_monitor_s {
     gs_memory_t *memory;	/* allocator to free memory */
-    gp_monitor native;		/* platform-dep impl, len is gp_monitor_sizeof */
+    gp_monitor native;		/* platform-dep impl, len is gp_monitor_sizeof() */
 } gx_monitor_t;
 
 gx_monitor_t *			/* returns a new monitor, 0 if error */

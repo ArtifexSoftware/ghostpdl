@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscdevn.c  */
+/*$Id$ */
 /* DeviceN color space and operation definition */
 #include "gx.h"
 #include "gserrors.h"
@@ -144,11 +144,10 @@ gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
 
 /* Adjust the reference count of a DeviceN color space. */
 private void
-gx_adjust_cspace_DeviceN(const gs_color_space * pcs, gs_memory_t * mem,
-			 int delta)
+gx_adjust_cspace_DeviceN(const gs_color_space * pcs, int delta)
 {
     (*pcs->params.device_n.alt_space.type->adjust_cspace_count)
-	((const gs_color_space *)&pcs->params.device_n.alt_space, mem, delta);
+	((const gs_color_space *)&pcs->params.device_n.alt_space, delta);
 }
 
 /* GC procedures */

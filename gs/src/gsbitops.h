@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsbitops.h  */
+/*$Id$ */
 /* Interface for bitmap operations */
 
 #ifndef gsbitops_INCLUDED

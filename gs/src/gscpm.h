@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscpm.h  */
+/*$Id$ */
 /* Charpath mode definitions */
 
 #ifndef gscpm_INCLUDED

@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: xfonts.txt 
+$Id$
 This file, xfonts.txt, describes the interface between Ghostscript and the
 routines that access externally supplied font and text facilities.
 

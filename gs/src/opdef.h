@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: opdef.h  */
+/*$Id$ */
 /* Operator definition interface for Ghostscript */
 
 #ifndef opdef_INCLUDED

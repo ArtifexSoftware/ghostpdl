@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsccolor.h  */
+/*$Id$ */
 /* Client color structure definition */
 
 #ifndef gsccolor_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxcpath.h  */
+/*$Id$ */
 /* Requires gxdevice.h */
 
 #ifndef gxcpath_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zmisc.c  */
+/*$Id$ */
 /* Miscellaneous operators */
 #include "errno_.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxpcache.h  */
+/*$Id$ */
 /* Definition of Pattern cache */
 
 #ifndef gxpcache_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevcgm.c  */
+/*$Id$ */
 /* CGM (Computer Graphics Metafile) driver */
 #include "memory_.h"
 #include "gx.h"

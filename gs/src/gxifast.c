@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxifast.c  */
+/*$Id$ */
 /* Fast monochrome image rendering */
 #include "gx.h"
 #include "memory_.h"
@@ -600,69 +600,65 @@ image_render_landscape(gx_image_enum * penum, const byte * buffer, int data_x,
     else
 	xinc = 1;
     /*
-     * Because of clipping, there may be discontinuous jumps in the
-     * values of ix (xci).  If this happens, flush the flipping buffer.
+     * Because of clipping, there may be discontinuous jumps in the values
+     * of ix (xci).  If this happens, or if we are at the end of the data or
+     * a client has requested flushing, flush the flipping buffer.
      */
-    if (ix != penum->xi_next) {
+    if (ix != penum->xi_next || h == 0) {
 	int xi = penum->xi_next;
 	int code =
-	(xinc > 0 ?
-	 copy_landscape(penum, penum->line_xy, xi, y_neg, dev) :
-	 copy_landscape(penum, xi, penum->line_xy, y_neg, dev));
+	    (xinc > 0 ?
+	     copy_landscape(penum, penum->line_xy, xi, y_neg, dev) :
+	     copy_landscape(penum, xi, penum->line_xy, y_neg, dev));
 
 	if (code < 0)
 	    return code;
 	penum->line_xy = ix;
+	if (h == 0)
+	    return code;
     }
-    if (h != 0) {
-	for (; iw != 0; iw -= xinc) {
-	    if (xinc < 0)
-		--ix;
-	    xmod = ix & 7;
-	    row = line + xmod * raster;
-	    if (orig_row == 0) {
-		image_simple_expand(row, 0, raster,
-				    buffer, data_x, w,
-				    dda_current(penum->dda.pixel0.y),
-				    penum->x_extent.y, 0);
-		orig_row = row;
-	    } else
-		memcpy(row, orig_row, raster);
-	    if (xinc > 0) {
-		++ix;
-		if (xmod == 7) {
-		    int code =
+    for (; iw != 0; iw -= xinc) {
+	if (xinc < 0)
+	    --ix;
+	xmod = ix & 7;
+	row = line + xmod * raster;
+	if (orig_row == 0) {
+	    image_simple_expand(row, 0, raster,
+				buffer, data_x, w,
+				dda_current(penum->dda.pixel0.y),
+				penum->x_extent.y, 0);
+	    orig_row = row;
+	} else
+	    memcpy(row, orig_row, raster);
+	if (xinc > 0) {
+	    ++ix;
+	    if (xmod == 7) {
+		int code =
 		    copy_landscape(penum,
 				   penum->line_xy, ix,
 				   y_neg, dev);
 
-		    if (code < 0)
-			return code;
-		    orig_row = 0;
-		    penum->line_xy = ix;
-		}
-	    } else {
-		if (xmod == 0) {
-		    int code =
+		if (code < 0)
+		    return code;
+		orig_row = 0;
+		penum->line_xy = ix;
+	    }
+	} else {
+	    if (xmod == 0) {
+		int code =
 		    copy_landscape(penum, ix,
 				   penum->line_xy,
 				   y_neg, dev);
 
-		    if (code < 0)
-			return code;
-		    orig_row = 0;
-		    penum->line_xy = ix;
-		}
+		if (code < 0)
+		    return code;
+		orig_row = 0;
+		penum->line_xy = ix;
 	    }
 	}
-	penum->xi_next = ix;
-	return 0;
-    } else {			/* Put out any left-over bits. */
-	return
-	    (xinc > 0 ?
-	     copy_landscape(penum, penum->line_xy, ix, y_neg, dev) :
-	     copy_landscape(penum, ix, penum->line_xy, y_neg, dev));
     }
+    penum->xi_next = ix;
+    return 0;
 }
 
 /* Flip and copy one group of scan lines. */

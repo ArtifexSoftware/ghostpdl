@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gx.h  */
+/*$Id$ */
 /* Common internal definitions for Ghostscript library */
 
 #ifndef gx_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxshade.h  */
+/*$Id$ */
 /* Internal definitions for shading rendering */
 
 #ifndef gxshade_INCLUDED

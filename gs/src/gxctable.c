@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxctable.c  */
+/*$Id$ */
 /* Color table lookup and interpolation */
 #include "gx.h"
 #include "gxfixed.h"

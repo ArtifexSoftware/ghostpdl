@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gximage3.c  */
+/*$Id$ */
 /* ImageType 3 image implementation */
 #include "math_.h"		/* for ceil, floor */
 #include "memory_.h"
@@ -244,8 +244,9 @@ gx_begin_image3(gx_device * dev,
 	 * create another imager state with default log_op, etc.
 	 */
 	code = gx_device_begin_typed_image((gx_device *)mdev, NULL, &m_mat,
-					 (const gs_image_common_t *)&i_mask,
-			    prect, &dcolor, pcpath, mem, &penum->mask_info);
+					   (const gs_image_common_t *)&i_mask,
+					   prect, &dcolor, NULL, mem,
+					   &penum->mask_info);
 	if (code < 0)
 	    goto out5;
     }
@@ -280,7 +281,7 @@ gx_begin_image3(gx_device * dev,
     }
     *pinfo = (gx_image_enum_common_t *) penum;
     return 0;
-  out6:gx_device_end_image((gx_device *) mdev, penum->mask_info, false);
+  out6:gx_image_end(penum->mask_info, false);
   out5:gs_closedevice((gx_device *) pcdev);
   out4:gs_closedevice((gx_device *) mdev);
   out3:gs_free_object(mem, pcdev, "gx_begin_image3(pcdev)");
@@ -320,7 +321,8 @@ gx_image3_plane_data(gx_device * dev,
 		    mask_plane.data += mask_plane.raster;
 		} while (--h);
 		return 0;
-	    } {			/* Pull apart the source data and the mask data. */
+	    } {
+		/* Pull apart the source data and the mask data. */
 		int bpc = penum->bpc;
 		int num_components = penum->num_components;
 		int width = penum->pixel_width;
@@ -372,18 +374,21 @@ gx_image3_plane_data(gx_device * dev,
      * device for clipping the pixel data.
      */
     if (mask_plane.data) {
-	int code = gx_device_image_plane_data((gx_device *) penum->mdev,
-					      penum->mask_info,
-					      &mask_plane, h);
+	int code = gx_image_plane_data(penum->mask_info, &mask_plane, h);
 
 	if (code < 0)
 	    return code;
     }
     if (pixel_planes[0].data) {
-	int code = gx_device_image_plane_data((gx_device *) penum->pcdev,
-					      penum->pixel_info,
-					      pixel_planes, h);
+	int code;
 
+	/*
+	 * If necessary, flush any buffered mask data to the mask clipping
+	 * device.
+	 */
+	if (penum->mask_info->procs->flush)
+	    (*penum->mask_info->procs->flush)(penum->mask_info);
+	code = gx_image_plane_data(penum->pixel_info, pixel_planes, h);
 	if (code < 0)
 	    return code;
 	penum->y += h;
@@ -399,11 +404,9 @@ gx_image3_end_image(gx_device * dev, gx_image_enum_common_t * info,
     gx_image3_enum_t *penum = (gx_image3_enum_t *) info;
     gs_memory_t *mem = penum->memory;
     gx_device_memory *mdev = penum->mdev;
-    int mcode = gx_device_end_image((gx_device *) mdev,
-				    penum->mask_info, draw_last);
+    int mcode = gx_image_end(penum->mask_info, draw_last);
     gx_device_mask_clip *pcdev = penum->pcdev;
-    int pcode = gx_device_end_image((gx_device *) pcdev,
-				    penum->pixel_info, draw_last);
+    int pcode = gx_image_end(penum->pixel_info, draw_last);
 
     gs_closedevice((gx_device *) pcdev);
     gs_closedevice((gx_device *) mdev);

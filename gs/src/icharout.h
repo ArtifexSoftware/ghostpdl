@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: icharout.h  */
+/*$Id$ */
 /* Interface to zcharout.c */
 
 #ifndef icharout_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: dstack.h  */
+/*$Id$ */
 /* Definitions for the interpreter's dictionary stack */
 
 #ifndef dstack_INCLUDED

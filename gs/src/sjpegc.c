@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sjpegc.c  */
+/*$Id$ */
 /* Interface routines for IJG code, common to encode/decode. */
 #include "stdio_.h"
 #include "string_.h"

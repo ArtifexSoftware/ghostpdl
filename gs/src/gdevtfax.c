@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevtfax.c  */
+/*$Id$ */
 /* TIFF and fax devices */
 #include "gdevprn.h"
 #include "gdevtifs.h"		/* for TIFF output only */

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: devs.mak 
+# $Id$
 # makefile for Aladdin's device drivers.
 
 # Define the name of this makefile.
@@ -542,12 +542,12 @@ $(GLOBJ)gdevpsdi.$(OBJ): $(GLSRC)gdevpsdi.c $(GXERR) $(math__h)\
  $(strimpl_h) $(szlibx_h)\
  $(gdevpsdf_h) $(gdevpsds_h)\
  $(GLGEN)jpeglib.h
-	$(GLJZCC) $(GLO_)gdevpsdi.$(OBJ) $(C_) $(GLSRC)gdevpsdi.c
+	$(GLJCC) $(GLO_)gdevpsdi.$(OBJ) $(C_) $(GLSRC)gdevpsdi.c
 
 $(GLOBJ)gdevpsdp.$(OBJ): $(GLSRC)gdevpsdp.c $(GDEVH) $(string__h)\
  $(scfx_h) $(sdct_h) $(slzwx_h) $(srlx_h) $(strimpl_h) $(szlibx_h)\
  $(gdevpsdf_h) $(gdevpstr_h) $(GLGEN)jpeglib.h
-	$(GLJZCC) $(GLO_)gdevpsdp.$(OBJ) $(C_) $(GLSRC)gdevpsdp.c
+	$(GLJCC) $(GLO_)gdevpsdp.$(OBJ) $(C_) $(GLSRC)gdevpsdp.c
 
 $(GLOBJ)gdevpsds.$(OBJ): $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
  $(gdevpsds_h) $(gserrors_h) $(gxdcconv_h)
@@ -606,7 +606,7 @@ $(GLOBJ)gdevpdf.$(OBJ): $(GLSRC)gdevpdf.c $(GDEVH)\
  $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzpath_h)\
  $(scanchar_h) $(scfx_h) $(slzwx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
-	$(GLZCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
+	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 
 $(GLOBJ)gdevpdfd.$(OBJ): $(GLSRC)gdevpdfd.c $(math__h)\
  $(gdevpdfx_h)\
@@ -622,7 +622,7 @@ $(GLOBJ)gdevpdfi.$(OBJ): $(GLSRC)gdevpdfi.c\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h) $(srlx_h) $(strimpl_h)\
  $(szlibx_h)\
  $(GLGEN)jpeglib.h
-	$(GLJZCC) $(GLO_)gdevpdfi.$(OBJ) $(C_) $(GLSRC)gdevpdfi.c
+	$(GLJCC) $(GLO_)gdevpdfi.$(OBJ) $(C_) $(GLSRC)gdevpdfi.c
 
 $(GLOBJ)gdevpdfm.$(OBJ): $(GLSRC)gdevpdfm.c\
  $(memory__h) $(string__h) $(gx_h)\

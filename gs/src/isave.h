@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: isave.h  */
+/*$Id$ */
 /* Requires imemory.h */
 
 #ifndef isave_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevdjet.c  */
+/*$Id$ */
 /* HP LaserJet/DeskJet driver for Ghostscript */
 #include "gdevprn.h"
 #include "gdevpcl.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsfunc.h  */
+/*$Id$ */
 /* Generic definitions for Functions */
 
 #ifndef gsfunc_INCLUDED

@@ -1,11 +1,11 @@
-.\" Id: ps2epsi.1 
-.TH PS2EPSI 1 "23 June 1998" 5.24 "Ghostscript Tools" \" -*- nroff -*-
+.\" $Id$
+.TH PS2EPSI 1 "16 August 1998" 5.30 "Ghostscript Tools" \" -*- nroff -*-
 .SH NAME
 ps2epsi \- generate conforming Encapsulated PostScript
 .SH SYNOPSIS
 \fBps2epsi\fR \fIinfile.ps\fR [ \fIoutfile.epsi\fR ] \fB(Unix)\fR
 .br
-\fBps2epsi\fR \fIinfile.ps\fR [ \fIoutfile.epi\fR ] \fB(MS-DOS)\fR
+\fBps2epsi\fR \fIinfile.ps\fR [ \fIoutfile.epi\fR ] \fB(DOS)\fR
 .SH DESCRIPTION
 \fBps2epsi\fR uses \fBgs\fR(1) to process a \fBPostScript\fR(tm) file and
 generate as output a new file which conforms to Adobe's \fBEncapsulated
@@ -23,13 +23,11 @@ On Unix systems invoke \fBps2epsi\fR like this:
 .br
 	\fBps2epsi\fR \fIinfile.ps\fR [ \fIoutfile.epsi\fR ]
 .PP
-where "infile.ps" is the input file and "outfile.epsi" is the
-resulting EPSI file.  If the output filename is omitted, it is generated
-from the input filename.  When a standard extension (".ps", ".cps",
-".eps" or "\.epsf") is used, it is replaced with the output
-extension "\.epsi".
-.PP
-On MS-DOS systems the command is:
+where "infile.ps" is the input file and "outfile.epsi" is the resulting
+EPSI file.  If the output filename is omitted, it is generated from the
+input filename.  When a standard extension (".ps", ".cps", ".eps" or
+".epsf") is used, it is replaced with the output extension ".epsi".  On
+DOS systems the command is:
 .PP
 .br
 	\fBps2epsi\fR \fIinfile.ps outfile.epi\fR
@@ -61,5 +59,7 @@ ps2epsi.ps>the Ghostscript program which does the work
 .fi
 .SH SEE ALSO
 gs (1)
+.SH VERSION
+This document was last revised for Ghostscript version 5.30.
 .SH AUTHOR
 George Cameron

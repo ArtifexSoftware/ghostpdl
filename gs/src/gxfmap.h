@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxfmap.h  */
+/*$Id$ */
 /* Fraction map representation for Ghostscript */
 
 #ifndef gxfmap_INCLUDED

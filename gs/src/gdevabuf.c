@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevabuf.c  */
+/*$Id$ */
 /* Alpha-buffering memory devices */
 #include "memory_.h"
 #include "gx.h"
@@ -65,6 +65,7 @@ private gx_color_index
 mem_alpha_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 			gx_color_value b)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     gx_color_index color = gx_forward_map_rgb_color(dev, r, g, b);
 
     return (color == 0 || color == gx_no_color_index ? color :
@@ -83,6 +84,7 @@ private gx_color_index
 mem_alpha_map_rgb_alpha_color(gx_device * dev, gx_color_value r,
 		   gx_color_value g, gx_color_value b, gx_color_value alpha)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     gx_color_index color = gx_forward_map_rgb_color(dev, r, g, b);
 
     return (color == 0 || color == gx_no_color_index ? color :
@@ -92,6 +94,8 @@ mem_alpha_map_rgb_alpha_color(gx_device * dev, gx_color_value r,
 private int
 mem_alpha_get_alpha_bits(gx_device * dev, graphics_object_type type)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     return 1 << mdev->log2_alpha_bits;
 }
 /* Implement alpha copying. */
@@ -247,6 +251,7 @@ abuf_flush(gx_device_memory * adev)
 private int
 mem_abuf_close(gx_device * dev)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     int code = abuf_flush(mdev);
 
     if (code < 0)
@@ -267,6 +272,7 @@ typedef struct y_transfer_s {
 private void near
 y_transfer_init(y_transfer * pyt, gx_device * dev, int ty, int th)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     int bh = 1 << mdev->log2_scale.y;
 
     if (ty < mdev->mapped_y || ty > mdev->mapped_y + mdev->mapped_height) {
@@ -283,6 +289,7 @@ y_transfer_init(y_transfer * pyt, gx_device * dev, int ty, int th)
 private void near
 y_transfer_next(y_transfer * pyt, gx_device * dev)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     int my = mdev->mapped_y, mh = mdev->mapped_height;
     int ms = mdev->mapped_start;
     int ty = pyt->y_next += pyt->transfer_height;
@@ -331,6 +338,7 @@ mem_abuf_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     y_transfer yt;
 
     if (zero != gx_no_color_index || one == gx_no_color_index)
@@ -357,6 +365,7 @@ private int
 mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     y_transfer yt;
 
     x -= mdev->mapped_x;
@@ -378,6 +387,7 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 private void
 mem_abuf_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     gx_device *tdev = mdev->target;
 
     (*dev_proc(tdev, get_clipping_box)) (tdev, pbox);

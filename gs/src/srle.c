@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: srle.c  */
+/*$Id$ */
 /* RunLengthEncode filter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"

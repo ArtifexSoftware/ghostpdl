@@ -15,7 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-% Id: Fontmap.Sol 
+% $Id$
 % Fontmap.Solaris - Ghostscript Fontmap for Solaris 2.3 and above
 % ===============================================================
 %

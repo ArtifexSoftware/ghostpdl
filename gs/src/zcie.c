@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zcie.c  */
+/*$Id$ */
 /* CIE color operators */
 #include "math_.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gzstate.h  */
+/*$Id$ */
 /* Private graphics state definition for Ghostscript library */
 
 #ifndef gzstate_INCLUDED

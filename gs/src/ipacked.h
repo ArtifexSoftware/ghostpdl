@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ipacked.h  */
+/*$Id$ */
 /* Packed array format for Ghostscript */
 
 #ifndef ipacked_INCLUDED

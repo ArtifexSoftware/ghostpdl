@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gstype2.c  */
+/*$Id$ */
 /* Adobe Type 2 charstring interpreter */
 #include "math_.h"
 #include "memory_.h"
@@ -286,7 +286,7 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 		}
 		goto pp;
 	    case cx_rrcurveto:
-rrc:		for (ap = cstack; ap + 5 <= csp; ap += 6) {
+		for (ap = cstack; ap + 5 <= csp; ap += 6) {
 		    code = gs_op1_rrcurveto(&s, ap[0], ap[1], ap[2],
 					    ap[3], ap[4], ap[5]);
 		    if (code < 0)
@@ -317,6 +317,13 @@ rrc:		for (ap = cstack; ap + 5 <= csp; ap += 6) {
 		check_first_operator(csp >= cstack);
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {
+		    /*
+		     * Reset the total hint count so that hintmask will
+		     * parse its following data correctly.
+		     * (gs_type1_endchar already reset the actual hint
+		     * tables.)
+		     */
+		    pcis->num_hints = 0;
 		    /* do accent of seac */
 		    spt = pcis->position;
 		    ipsp = &pcis->ipstack[pcis->ips_count - 1];

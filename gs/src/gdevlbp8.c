@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevlbp8.c */
+/*$Id$*/
 /* Canon LBP-8II and LIPS III driver */
 #include "gdevprn.h"
 

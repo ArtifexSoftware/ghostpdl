@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gspcolor.c  */
+/*$Id$ */
 /* Pattern color operators and procedures for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -197,7 +197,8 @@ gs_makepattern(gs_client_color * pcc, const gs_client_pattern * pcp,
 	      inst.step_matrix.xx, inst.step_matrix.xy,
 	      inst.step_matrix.yx, inst.step_matrix.yy,
 	      inst.size.x, inst.size.y);
-    inst.opaque_background = false;
+    /* Absent other information, instances always require a mask. */
+    inst.uses_mask = true;
     gx_translate_to_fixed(saved, float2fixed(mat.tx - bbox.p.x),
 			  float2fixed(mat.ty - bbox.p.y));
     mat.tx = bbox.p.x;
@@ -292,6 +293,20 @@ gs_setpatternspace(gs_state * pgs)
     return code;
 }
 
+/*
+ * Adjust the reference count of a pattern. This is intended to support
+ * applications (such as PCL) which maintain client colors outside of the
+ * graphic state. Since the pattern instance structure is opaque to these
+ * applications, they need some way to release or retain the instances as
+ * needed.
+ */
+void
+gs_pattern_reference(gs_client_color * pcc, int delta)
+{
+    if (pcc->pattern != 0)
+        rc_adjust(pcc->pattern, delta, "gs_pattern_reference");
+}
+
 /* getpattern */
 /* This is only intended for the benefit of pattern PaintProcs. */
 const gs_client_pattern *
@@ -360,7 +375,6 @@ mask_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 private int
 image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 {
-    const gs_pattern_instance *pinst = pcolor->pattern;
     const pixmap_info *ppmap = gs_getpattern(pcolor)->client_data;
     const gs_depth_bitmap *pbitmap = &(ppmap->bitmap);
     gs_image_enum *pen =
@@ -387,19 +401,6 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     if (ppmap->pcspace == 0) {
 	image.Decode[0] = 1.0;
 	image.Decode[1] = 0.0;
-    }
-    if (pinst->opaque_background) {
-	/*
-	 * We need to fill the background with white, but without setting
-	 * the corresponding bits in the opacity mask.  "Reach through"
-	 * the pattern accumulator device to fill its underlying image
-	 * directly.
-	 */
-	gx_device *dev = pgs->device;
-
-	dev = ((gx_device_forward *) dev)->target;
-	(*dev_proc(dev, fill_rectangle)) (dev, 0, 0, dev->width, dev->height,
-					  ppmap->white_index);
     }
     code = gs_image_begin_typed((const gs_image_common_t *)&image, pgs,
 				false, &pie);
@@ -509,8 +510,15 @@ gs_makepixmappattern(
 	pmat = &mat;
     if ((code = gs_makepattern(pcc, &pat, pmat, pgs, mem)) != 0)
 	gs_free_object(mem, ppmap, "makebitmappattern_xform");
-    else if (white_index != gx_no_color_index)
-	pcc->pattern->opaque_background = true;		/* for PCL */
+    else {
+	/*
+	 * If this is not a masked pattern and if the white pixel index
+	 * is outside of the representable range, we don't need to go to
+	 * the trouble of accumulating a mask that will just be all 1s.
+	 */
+	if (!mask && (white_index >= (1 << pbitmap->pix_depth)))
+	    pcc->pattern->uses_mask = false;
+    }
     gs_setmatrix(pgs, &smat);
     return code;
 }
@@ -831,12 +839,18 @@ gx_init_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 }
 
 /* Force a Pattern color into legal range. */
+/* Note that if the pattern is uncolored (PaintType = 2), */
+/* the color space must have a base space: we check this here only */
+/* to prevent accessing uninitialized data, but if there is no base space, */
+/* it is an error that we count on being detected elsewhere. */
 private void
 gx_restrict_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 {
-    if (pcs->params.pattern.has_base_space) {
+    if (pcc->pattern->template.PaintType == 2 &&
+	pcs->params.pattern.has_base_space
+	) {
 	const gs_color_space *pbcs =
-	(const gs_color_space *)&pcs->params.pattern.base_space;
+	    (const gs_color_space *)&pcs->params.pattern.base_space;
 
 	(*pbcs->type->restrict_color) (pcc, pbcs);
     }
@@ -854,25 +868,24 @@ gx_install_Pattern(gs_color_space * pcs, gs_state * pgs)
 
 /* Adjust the reference counts for Pattern color spaces or colors. */
 private void
-gx_adjust_cspace_Pattern(const gs_color_space * pcs, gs_memory_t * mem,
-			 int delta)
+gx_adjust_cspace_Pattern(const gs_color_space * pcs, int delta)
 {
     if (pcs->params.pattern.has_base_space)
 	(*pcs->params.pattern.base_space.type->adjust_cspace_count)
-	    ((const gs_color_space *)&pcs->params.pattern.base_space, mem, delta);
+	    ((const gs_color_space *)&pcs->params.pattern.base_space, delta);
 }
 
 private void
-gx_adjust_color_Pattern(const gs_client_color * pcc, const gs_color_space * pcs,
-			gs_memory_t * mem, int delta)
+gx_adjust_color_Pattern(const gs_client_color * pcc,
+			const gs_color_space * pcs, int delta)
 {
     gs_pattern_instance *pinst = pcc->pattern;
 
     rc_adjust_only(pinst, delta, "gx_adjust_color_Pattern");
-    if (pcs->params.pattern.has_base_space)
+    if (pcs && pcs->params.pattern.has_base_space)
 	(*pcs->params.pattern.base_space.type->adjust_color_count)
 	    (pcc, (const gs_color_space *)&pcs->params.pattern.base_space,
-	     mem, delta);
+	     delta);
 }
 
 /* GC procedures */

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: spngpx.h  */
+/*$Id$ */
 /* Requires strimpl.h */
 
 #ifndef spngpx_INCLUDED

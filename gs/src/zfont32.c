@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfont32.c  */
+/*$Id$ */
 /* Type 32 font operators */
 #include "ghost.h"
 #include "oper.h"

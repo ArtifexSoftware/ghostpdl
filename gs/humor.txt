@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: humor.txt 
+$Id$
 This file, humor.txt, contains a humorous message, verbatim except for
 minor spelling corrections, received from a friend out in network-land.
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevdrop.c  */
+/*$Id$ */
 /* Default and device-independent RasterOp algorithms */
 #include "memory_.h"
 #include "gx.h"

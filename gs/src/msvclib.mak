@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: msvclib.mak 
+# $Id$
 # makefile for Microsoft Visual C++ 4.1 or later, Windows NT or Windows 95 LIBRARY.
 #
 # All configurable options are surrounded by !ifndef/!endif to allow 
@@ -225,7 +225,7 @@ FPU_TYPE=0
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=patlib.dev path1lib.dev hsblib.dev
+FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.dev roplib.dev devcmap.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -260,7 +260,7 @@ FILE_IMPLEMENTATION=stdio
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=ljet2p.dev
+DEVICE_DEVS=ljet2p.dev bbox.dev
 DEVICE_DEVS2=
 DEVICE_DEVS3=
 DEVICE_DEVS4=
@@ -325,28 +325,12 @@ PLATFORM=mslib32_
 $(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(AK)
 	$(GLCCWIN) $(GLO_)gp_mslib.$(OBJ) $(C_) $(GLSRC)gp_mslib.c
 
-$(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
- $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \
- $(gx_h) $(gp_h) $(gpcheck_h) $(gserrors_h) $(gsexit_h)
-	$(GLCCWIN) $(GLO_)gp_mswin.$(OBJ) $(C_) $(GLSRC)gp_mswin.c
+mslib32__=$(GLOBJ)gp_mslib.$(OBJ)
 
-$(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
- $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
-	$(GLCCWIN) $(GLO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
+mslib32_.dev: $(mslib32__) $(ECHOGS_XE) msw32nc_.dev
+        $(SETMOD) mslib32_ $(mslib32__)
+	$(ADDMOD) mslib32_ -include msw32nc_
 
-$(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
- $(dos__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h)
-	$(GLCCWIN) $(GLO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
-
-mslib32_1=$(GLOBJ)gp_mslib.$(OBJ) $(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_win32.$(OBJ)
-mslib32_2=$(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_ntfs.$(OBJ)
-mslib32__=$(mslib32_1) $(mslib32_2)
-
-mslib32_.dev: $(mslib32__) $(ECHOGS_XE)
-        $(SETMOD) mslib32_ $(mslib32_1)
-	$(ADDMOD) mslib32_ -obj $(mslib32_2)
 
 # ----------------------------- Main program ------------------------------ #
 
@@ -362,6 +346,3 @@ $(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR)
         $(LINK) $(LCT) @gslib32.rsp gslib @gslib32.tr @$(LIBCTR) $(INTASM) @lib.tr
 	-del gslib32.rsp
 	-del gslib32.tr
-
-
-# end of msvclib.mak

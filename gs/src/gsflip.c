@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsflip.c  */
+/*$Id$ */
 /* Routines for "flipping" image data */
 #include "gx.h"
 #include "gsbittab.h"

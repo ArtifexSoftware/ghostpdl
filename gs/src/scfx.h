@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: scfx.h  */
+/*$Id$ */
 /* CCITTFax filter state definition */
 /* Requires strimpl.h */
 

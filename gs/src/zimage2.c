@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zimage2.c  */
+/*$Id$ */
 /* image operator extensions for Level 2 PostScript */
 #include "math_.h"
 #include "memory_.h"

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: unix-cc.mak 
+# $Id$
 # makefile for Unix/cc/X11 configuration.
 
 # ------------------------------- Options ------------------------------- #
@@ -39,6 +39,7 @@ PSOBJDIR=./obj
 #include $(COMMONDIR)/generic.mak
 GLSRC=$(GLSRCDIR)/
 include $(GLSRC)version.mak
+PSSRC=$(PSSRCDIR)/
 
 # ------ Generic options ------ #
 

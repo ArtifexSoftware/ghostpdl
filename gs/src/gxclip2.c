@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclip2.c  */
+/*$Id$ */
 /* Mask clipping for patterns */
 #include "memory_.h"
 #include "gx.h"

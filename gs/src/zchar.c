@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zchar.c  */
+/*$Id$ */
 /* Character operators */
 #include "ghost.h"
 #include "oper.h"
@@ -416,8 +416,7 @@ op_show_continue_dispatch(register os_ptr op, int code)
     switch (code) {
 	case 0: {		/* all done */
 	    os_ptr save_osp = osp;
-
-	    osp = op;
+	    osp = op;
 	    code = (*real_opproc(&seproc)) (op);
 	    op_show_free(code);
 	    if (code < 0) {
@@ -513,9 +512,9 @@ err:
 		code = gs_note_error(e_invalidfont);
 	    return op_show_free(code);
     }
+}
 /* Reverse-map a glyph name to a character code for glyphshow. */
 private bool
-map_glyph_to_char(const ref * pgref, const ref * pencoding, ref * pch)
 map_glyph_to_char(const ref * pgref, const ref * pencoding, ref * pch)
 {
     uint esize = r_size(pencoding);
@@ -530,12 +529,12 @@ map_glyph_to_char(const ref * pgref, const ref * pencoding, ref * pch)
 	}
     }
     return false;
+}
 
 /* Find the index of the e-stack mark for the current show enumerator. */
 /* Return 0 if we can't find the mark. */
 uint
 op_show_find_index(void)
-{
 {
     ref_stack_enum_t rsenum;
     uint count = 0;
@@ -550,11 +549,11 @@ op_show_find_index(void)
 		return count;
     } while (ref_stack_enum_next(&rsenum));
     return 0;		/* no mark */
+}
 
 /* Find the current show enumerator on the e-stack. */
 gs_show_enum *
 op_show_find(void)
-{
 {
     uint index = op_show_find_index();
 
@@ -562,6 +561,7 @@ op_show_find(void)
 	return 0;		/* no mark */
     return r_ptr(ref_stack_index(&e_stack, index - (snumpush - 1)),
 		 gs_show_enum);
+}
 
 /* Shortcut the BuildChar or BuildGlyph procedure at the point */
 /* of the setcharwidth or the setcachedevice[2] if we are in */
@@ -569,7 +569,6 @@ op_show_find(void)
 /* width for an xfont character. */
 private int
 op_show_return_width(os_ptr op, uint npop, double *pwidth)
-{
 {
     uint index = op_show_find_index();
     es_ptr ep = (es_ptr) ref_stack_index(&e_stack, index - (snumpush - 1));
@@ -597,6 +596,7 @@ op_show_return_width(os_ptr op, uint npop, double *pwidth)
     /* procedure (op_show_continue or cshow_continue). */
     pop_estack(index - snumpush);
     return o_pop_estack;
+}
 
 /*
  * Restore state after finishing, or unwinding from an error within, a show
@@ -604,7 +604,6 @@ op_show_return_width(os_ptr op, uint npop, double *pwidth)
  */
 private int
 op_show_restore(bool for_error)
-{
 {
     register es_ptr ep = esp + snumpush;
     gs_show_enum *penum = esenum(ep);
@@ -641,26 +640,26 @@ op_show_restore(bool for_error)
     }
     gs_show_enum_release(penum, (gs_memory_t *) imemory);
     return code;
+}
 /* Clean up after an error. */
 private int
 op_show_cleanup(os_ptr op)
 {
-{
     return op_show_restore(true);
+}
 /* Clean up after termination of a show operation. */
 int
 op_show_free(int code)
-{
 {
     int rcode;
 
     esp -= snumpush;
     rcode = op_show_restore(code < 0);
     return (rcode < 0 ? rcode : code);
+}
 
 /* Get a FontBBox parameter from a font dictionary. */
 int
-font_bbox_param(const ref * pfdict, double bbox[4])
 font_bbox_param(const ref * pfdict, double bbox[4])
 {
     ref *pbbox;
@@ -698,6 +697,7 @@ font_bbox_param(const ref * pfdict, double bbox[4])
 		(ratio = dy / dx) < 0.125 || ratio > 8.0
 		)
 		bbox[0] = bbox[1] = bbox[2] = bbox[3] = 0.0;
-    }
+	}
     }
     return 0;
+}

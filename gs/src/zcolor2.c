@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zcolor2.c  */
+/*$Id$ */
 /* Level 2 color operators */
 #include "ghost.h"
 #include "oper.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevx.c  */
+/*$Id$ */
 /* X Windows driver for Ghostscript library */
 /* The X include files include <sys/types.h>, which, on some machines */
 /* at least, define uint, ushort, and ulong, which std.h also defines. */

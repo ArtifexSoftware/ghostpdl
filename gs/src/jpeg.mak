@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: jpeg.mak 
+# $Id$
 # makefile for Independent JPEG Group library code.
 # Users of this makefile must define the following:
 #	GSSRCDIR - the GS library source directory

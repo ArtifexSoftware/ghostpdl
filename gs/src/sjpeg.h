@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sjpeg.h  */
+/*$Id$ */
 /* Requires sdct.h, jpeg/jpeglib.h */
 
 #ifndef sjpeg_INCLUDED

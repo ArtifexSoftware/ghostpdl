@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zdps1.c  */
+/*$Id$ */
 /* Level 2 / Display PostScript graphics extensions */
 #include "ghost.h"
 #include "oper.h"

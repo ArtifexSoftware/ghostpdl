@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: idstack.c  */
+/*$Id$ */
 /* Implementation of dictionary stacks */
 #include "ghost.h"
 #include "idict.h"

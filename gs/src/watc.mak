@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: watc.mak 
+# $Id$
 # makefile for MS-DOS/Watcom C386 platform.
 # We strongly recommend that you read the Watcom section of make.txt
 # before attempting to build Ghostscript with the Watcom compiler.
@@ -217,9 +217,10 @@ DEVICE_DEVS15=pdfwrite.dev
 watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
 watc_2=$(GLOBJ)gp_dosfb.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ)
 watc__=$(watc_1) $(watc_2)
-watc_.dev: $(watc__)
+watc_.dev: $(watc__) nosync.dev
 	$(SETMOD) watc_ $(watc_1)
 	$(ADDMOD) watc_ -obj $(watc_2)
+	$(ADDMOD) watc_ -include nosync
 
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
  $(gx_h) $(gp_h)

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxhttile.h  */
+/*$Id$ */
 /* Halftone tile definition */
 /* Requires gxbitmap.h */
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: icontext.c  */
+/*$Id$ */
 /* Context state operations */
 #include "ghost.h"
 #include "gsstruct.h"		/* for gxalloc.h */

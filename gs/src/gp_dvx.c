@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_dvx.c  */
+/*$Id$ */
 /* Desqview/X-specific routines for Ghostscript */
 #include "string_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdev4081.c */
+/*$Id$*/
 /* Ricoh 4081 laser printer driver */
 #include "gdevprn.h"
 

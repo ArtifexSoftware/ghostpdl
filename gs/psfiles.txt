@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: psfiles.txt 
+$Id$
 This file, psfiles.txt, describes the .ps files distributed with
 Ghostscript, other than fonts.
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: stdpre.h  */
+/*$Id$ */
 /* Standard definitions for Aladdin Enterprises code not needing arch.h */
 
 #ifndef stdpre_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevprn.c  */
+/*$Id$ */
 /* Generic printer driver support */
 #include "ctype_.h"
 #include "gdevprn.h"
@@ -25,13 +25,6 @@
 #include "gxclio.h"
 
 /* ---------------- Standard device procedures ---------------- */
-
-/* Macros for casting the pdev argument */
-#define ppdev ((gx_device_printer *)pdev)
-#define pmemdev ((gx_device_memory *)pdev)
-#define pcldev (&((gx_device_clist *)pdev)->common)
-#define pcwdev (&((gx_device_clist *)pdev)->writer)
-#define pcrdev (&((gx_device_clist *)pdev)->reader)
 
 /* Define the standard printer procedure vector. */
 const gx_device_procs prn_std_procs =
@@ -49,6 +42,7 @@ int gdev_prn_maybe_reallocate_memory(P4(gx_device_printer *pdev,
 int
 gdev_prn_open(gx_device * pdev)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int code;
 
     ppdev->file = NULL;
@@ -65,6 +59,8 @@ gdev_prn_open(gx_device * pdev)
 int
 gdev_prn_close(gx_device * pdev)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+
     gdev_prn_free_memory(pdev);
     if (ppdev->file != NULL) {
 	if (ppdev->file != stdout)
@@ -80,9 +76,11 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
 			       const gdev_prn_space_params *space_params,
 			       bool bufferSpace_is_exact)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     uint space;
     int code;
     gx_device_clist *const pclist_dev = (gx_device_clist *)pdev;
+    gx_device_clist_common * const pcldev = &pclist_dev->common;
     bool reallocate = *the_memory != 0;
     byte *base;
 
@@ -153,6 +151,10 @@ open_c:
 private bool	/* ret true if device was cmd list, else false */
 gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device_memory * const pmemdev = (gx_device_memory *)pdev;
+    gx_device_clist *const pclist_dev = (gx_device_clist *)pdev;
+    gx_device_clist_common * const pcldev = &pclist_dev->common;
     bool is_command_list;
 
     if (ppdev->buffer_space != 0) {
@@ -181,6 +183,8 @@ private int
 gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		  int new_width, int new_height, bool reallocate)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device_memory * const pmemdev = (gx_device_memory *)pdev;
     byte *the_memory = 0;
     gdev_prn_space_params save_params;
     int save_width, save_height;
@@ -201,7 +205,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
     for ( pass = 1; pass <= (reallocate ? 2 : 1); ++pass ) {
 	ulong mem_space;
 	byte *base = 0;
-	int bufferSpace_is_default = false;
+	bool bufferSpace_is_default = false;
 	gdev_prn_space_params space_params = ppdev->space_params;
 
 	if (reallocate)
@@ -238,7 +242,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	    if (space_params.band.BandBufferSpace > 0)
 	        space_params.BufferSpace = space_params.band.BandBufferSpace;
 	    else {
-		space_params.BufferSpace = PRN_BUFFER_SPACE;
+		space_params.BufferSpace = ppdev->space_params.BufferSpace;
 		bufferSpace_is_default = true;
 	    }
 	}
@@ -288,7 +292,8 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		continue;
 	    }
 	    code = gdev_prn_setup_as_command_list(pdev, buffer_memory,
-						  &the_memory, &space_params, !bufferSpace_is_default);
+						  &the_memory, &space_params,
+						  !bufferSpace_is_default);
 	    if (ecode == 0)
 		ecode = code;
 
@@ -370,14 +375,15 @@ gdev_prn_reallocate_memory(gx_device *pdev,
 int
 gdev_prn_free_memory(gx_device *pdev)
 {
-	byte *the_memory = 0;
-	gs_memory_t *buffer_memory =
-	    (ppdev->buffer_memory == 0 ? &gs_memory_default :
-	     ppdev->buffer_memory);
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    byte *the_memory = 0;
+    gs_memory_t *buffer_memory =
+	(ppdev->buffer_memory == 0 ? &gs_memory_default :
+	 ppdev->buffer_memory);
 
-	gdev_prn_tear_down(pdev, &the_memory);
-	gs_free_object(buffer_memory, the_memory, "gdev_prn_free_memory");
-	return 0;
+    gdev_prn_tear_down(pdev, &the_memory);
+    gs_free_object(buffer_memory, the_memory, "gdev_prn_free_memory");
+    return 0;
 }
 
 /* ------------- Stubs related only to async rendering ------- */
@@ -410,6 +416,7 @@ gx_default_close_render_device(gx_device_printer *pdev)
 int
 gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int code = gx_default_get_params(pdev, plist);
     gs_param_string ofns;
 
@@ -490,6 +497,7 @@ validate_output_file(const gs_param_string * ofs)
 int
 gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int ecode = 0;
     int code;
     const char *param_name;
@@ -667,6 +675,7 @@ gdev_prn_default_get_space_params(const gx_device_printer *printer_dev,
 int	/* 0 ok, -ve error, or 1 if successfully upgraded to buffer_page */
 gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int outcode = 0, closecode = 0, errcode = 0, endcode;
     bool upgraded_copypage = false;
 
@@ -763,6 +772,8 @@ int
 gdev_prn_open_printer_positionable(gx_device *pdev, bool binary_mode,
 				   bool positionable)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+
     if (ppdev->file != 0) {
 	ppdev->file_is_new = false;
 	return 0;
@@ -839,6 +850,8 @@ gdev_prn_get_overlay_bits(gx_device_printer *pdev, int y, int lineCount,
 int	/* rets # lines from y till end of buffer, or -ve error code */
 gdev_prn_locate_overlay_buffer(gx_device_printer *pdev, int y, byte **data)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+
     if (ppdev->buffer_space) {
 	  /* Command lists have built-in support for this function */
 	  return clist_locate_overlay_buffer(pdev, y, data);
@@ -852,6 +865,8 @@ gdev_prn_locate_overlay_buffer(gx_device_printer *pdev, int y, byte **data)
 int
 gdev_prn_close_printer(gx_device * pdev)
 {
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+
     if (strchr(ppdev->fname, '%') /* file per page */ ||
 	ppdev->ReopenPerPage	/* close and reopen for each page */
 	) {
@@ -888,4 +903,3 @@ gdev_prn_maybe_reallocate_memory(gx_device_printer *prdev,
     }
     return code;
 }
-

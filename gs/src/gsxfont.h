@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsxfont.h  */
+/*$Id$ */
 /* External font client definitions for Ghostscript library */
 
 #ifndef gsxfont_INCLUDED

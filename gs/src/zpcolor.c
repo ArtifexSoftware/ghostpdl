@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zpcolor.c  */
+/*$Id$ */
 /* Pattern color */
 #include "ghost.h"
 #include "oper.h"

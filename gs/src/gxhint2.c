@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxhint2.c  */
+/*$Id$ */
 /* Character level hints for Type 1 fonts. */
 #include "memory_.h"
 #include "gx.h"

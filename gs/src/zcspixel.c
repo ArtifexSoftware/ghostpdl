@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zcspixel.c  */
+/*$Id$ */
 /* DevicePixel color space support */
 #include "ghost.h"
 #include "oper.h"

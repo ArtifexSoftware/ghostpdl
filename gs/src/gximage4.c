@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gximage4.c  */
+/*$Id$ */
 /* ImageType 4 image implementation */
 #include "memory_.h"
 #include "gx.h"
@@ -99,15 +99,13 @@ gx_begin_image4(gx_device * dev,
 	int i;
 
 	for (i = 0; i < num_components * 2; i += 2) {
-	    int c0, c1;
+	    uint c0, c1;
 
 	    if (pim->MaskColor_is_range)
 		c0 = pim->MaskColor[i], c1 = pim->MaskColor[i + 1];
 	    else
 		c0 = c1 = pim->MaskColor[i >> 1];
 
-	    if (c0 < 0)
-		c0 = 0;
 	    if (c1 > max_value)
 		c1 = max_value;
 	    if (c0 > c1) {
@@ -200,7 +198,7 @@ gx_image4_plane_data(gx_device * dev,
     int h = min(height, penum->height - penum->y);
 
     if (penum->mask == 0)	/* opaque image */
-	return gx_device_image_plane_data(dev, penum->info, planes, height);
+	return gx_image_plane_data(penum->info, planes, height);
     if (mask_size > penum->mask_size) {
 	mask = gs_resize_object(penum->memory, mask, mask_size,
 				"gx_image4_data(resize mask)");
@@ -266,7 +264,7 @@ gx_image4_plane_data(gx_device * dev,
 		    mbit = 0x80, ++mptr;
 	    }
 	}
-	code = gx_device_image_plane_data(dev, penum->info, sources, 1);
+	code = gx_image_plane_data(penum->info, sources, 1);
 	if (code < 0)
 	    return code;
 	for (pi = 1; pi <= num_planes; ++pi)
@@ -285,7 +283,7 @@ gx_image4_end_image(gx_device * dev, gx_image_enum_common_t * info,
     gs_memory_t *mem = penum->memory;
 
     /* Finish processing the ImageType 3 (or 1) image. */
-    int code = gx_device_end_image(dev, penum->info, draw_last);
+    int code = gx_image_end(penum->info, draw_last);
 
     gs_free_object(mem, penum->mask, "gx_image4_end_image(mask)");
     gs_free_object(mem, penum, "gx_image4_end_image");

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sfilter.h  */
+/*$Id$ */
 /* Definitions for simple Ghostscript streams */
 /* Requires scommon.h; should require strimpl.h only if any templates */
 /* are referenced, but some compilers always require strimpl.h. */

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevwdib.c  */
+/*$Id$ */
 /* MS Windows 3.n driver for Ghostscript using a DIB for buffering. */
 #include "gdevmswn.h"
 #include "gxdevmem.h"

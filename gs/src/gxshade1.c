@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxshade1.c  */
+/*$Id$ */
 /* Rendering for non-mesh shadings */
 #include "math_.h"
 #include "gx.h"

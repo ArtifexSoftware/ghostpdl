@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevm32.c  */
+/*$Id$ */
 /* 32-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -38,7 +38,7 @@ mem_full_device("image32", 24, 8, mem_open,
 		gx_default_map_rgb_color, gx_default_map_color_rgb,
      mem_true32_copy_mono, mem_true32_copy_color, mem_true32_fill_rectangle,
 	    gx_default_cmyk_map_cmyk_color, gx_default_strip_tile_rectangle,
-		gx_no_strip_copy_rop, mem_get_bits_rectangle);
+		gx_default_strip_copy_rop, mem_get_bits_rectangle);
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte
@@ -59,6 +59,7 @@ private int
 mem_true32_fill_rectangle(gx_device * dev,
 			  int x, int y, int w, int h, gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     bits32 a_color;
 
     declare_scan_ptr(dest);
@@ -132,6 +133,7 @@ mem_true32_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     bits32 a_zero = arrange_bytes(zero);
     bits32 a_one = arrange_bytes(one);
     const byte *line;
@@ -174,6 +176,8 @@ mem_true32_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		      int x, int y, int w, int h)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h);
     return 0;
@@ -223,6 +227,7 @@ mem32_word_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		      int x, int y, int w, int h)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
     uint raster;
 

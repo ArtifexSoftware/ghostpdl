@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfont.c  */
+/*$Id$ */
 /* Generic font operators */
 #include "ghost.h"
 #include "oper.h"

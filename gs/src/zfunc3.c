@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfunc3.c  */
+/*$Id$ */
 /* PostScript language interface to LL3 Functions */
 #include "memory_.h"
 #include "ghost.h"

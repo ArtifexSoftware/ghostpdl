@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zvmem.c  */
+/*$Id$ */
 /* "Virtual memory" operators */
 #include "ghost.h"
 #include "gsstruct.h"

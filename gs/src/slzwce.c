@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: slzwce.c  */
+/*$Id$ */
 /* Simple encoder compatible with LZW decoding filter */
 #include "stdio_.h"		/* includes std.h */
 #include "gdebug.h"

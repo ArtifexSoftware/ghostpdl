@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclist.c  */
+/*$Id$ */
 /* Command list document- and page-level code. */
 #include "memory_.h"
 #include "string_.h"
@@ -29,8 +29,6 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gsparams.h"
-
-#define cdev cwdev
 
 /* Forward declarations of driver procedures */
 private dev_proc_open_device(clist_open);
@@ -154,9 +152,10 @@ clist_tile_cache_size(const gx_device * target, uint data_size)
 private int
 clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     byte *data = init_data;
     uint bits_size = data_size;
-
     /*
      * Partition the bits area between the hash table and the actual
      * bitmaps.  The per-bitmap overhead is about 24 bytes; if the
@@ -201,6 +200,8 @@ private int
 clist_init_bands(gx_device * dev, uint data_size, int band_width,
 		 int band_height)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     gx_device *target = cdev->target;
     int nbands;
 
@@ -226,6 +227,8 @@ clist_init_bands(gx_device * dev, uint data_size, int band_width,
 private int
 clist_init_states(gx_device * dev, byte * init_data, uint data_size)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     ulong state_size = cdev->nbands * (ulong) sizeof(gx_clist_state);
 
     /*
@@ -249,6 +252,8 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
 private int
 clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     gx_device *target = cdev->target;
     const int band_width =
     cdev->page_info.band_params.BandWidth =
@@ -305,6 +310,8 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 private int
 clist_reset(gx_device * dev)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int code = clist_init_data(dev, cdev->data, cdev->data_size);
     int nbands;
 
@@ -369,20 +376,25 @@ clist_reset(gx_device * dev)
 private int
 clist_init(gx_device * dev)
 {
-	int code = clist_reset(dev);
-	if (code >= 0) {
-	  cdev->image_enum_id = gs_no_id;
-	  cdev->error_is_retryable = 0;
-	  cdev->driver_call_nesting = 0;
-	  cdev->ignore_lo_mem_warnings = 0;
-	}
-	return code;
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
+    int code = clist_reset(dev);
+
+    if (code >= 0) {
+	cdev->image_enum_id = gs_no_id;
+	cdev->error_is_retryable = 0;
+	cdev->driver_call_nesting = 0;
+	cdev->ignore_lo_mem_warnings = 0;
+    }
+    return code;
 }
 
 /* (Re)init open band files for output (set block size, etc). */
 private int	/* ret 0 ok, -ve error code */
 clist_reinit_output_file(gx_device *dev)
-{	int code = 0;
+{    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
+    int code = 0;
 
 	/* bfile needs to guarantee cmd_blocks for: 1 band range, nbands */
 	/*  & terminating entry */
@@ -410,23 +422,29 @@ clist_reinit_output_file(gx_device *dev)
 /* if async rendering is in effect */
 private int
 clist_emit_page_header(gx_device *dev)
-{	int code = 0;
-	if ( (cdev->disable_mask & clist_disable_pass_thru_params) )
-	  { do
-	      if (  ( code = clist_put_current_params(cdev) ) >= 0  )
+{
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
+    int code = 0;
+
+    if ( (cdev->disable_mask & clist_disable_pass_thru_params) )
+	{ do
+	    if (  ( code = clist_put_current_params(cdev) ) >= 0  )
 	        break;
-	    while (  ( code = clist_VMerror_recover(cdev, code) ) < 0  );
-	    cdev->permanent_error = (code < 0) ? code : 0;
-		if (cdev->permanent_error < 0)
-			cdev->error_is_retryable = 0;
-	  }
-	return code;
+	  while (  ( code = clist_VMerror_recover(cdev, code) ) < 0  );
+	cdev->permanent_error = (code < 0) ? code : 0;
+	if (cdev->permanent_error < 0)
+	    cdev->error_is_retryable = 0;
+	}
+    return code;
 }
 
 /* Open the device's bandfiles */
 private int
 clist_open_output_file(gx_device *dev)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     char fmode[4];
     int code;
 
@@ -462,6 +480,9 @@ clist_open_output_file(gx_device *dev)
 int
 clist_close_output_file(gx_device *dev)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
+
     if (cdev->page_cfile != NULL) {
 	clist_fclose(cdev->page_cfile, cdev->page_cfname, true);
 	cdev->page_cfile = NULL;
@@ -478,6 +499,8 @@ clist_close_output_file(gx_device *dev)
 private int
 clist_open(gx_device *dev)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int code;
 
     cdev->permanent_error = 0;
@@ -493,6 +516,9 @@ clist_open(gx_device *dev)
 private int
 clist_close(gx_device *dev)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
+
     if (cdev->do_not_open_or_close_bandfiles)
 	return 0;	
     return clist_close_output_file(dev);
@@ -509,6 +535,8 @@ clist_output_page(gx_device * dev, int num_copies, int flush)
 int
 clist_finish_page(gx_device *dev, bool flush)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int code;
 
     if (flush) {
@@ -653,9 +681,12 @@ clist_put_current_params(gx_device_clist_writer *cldev)
     gs_c_param_list param_list;
     int code;
 
-    /* To avoid attempts to write to unallocated memory, no attempt */
-    /* is made to write to the command list if permanent_error is set. */
-    /* This typically happens if a previous put_params failed. */
+    /*
+     * If a put_params call fails, the device will be left in a closed
+     * state, but higher-level code won't notice this fact.  We flag this by
+     * setting permanent_error, which prevents writing to the command list.
+     */
+
     if (cldev->permanent_error)
 	return cldev->permanent_error;
     gs_c_param_list_write(&param_list, cldev->memory);
@@ -675,6 +706,8 @@ clist_put_current_params(gx_device_clist_writer *cldev)
 private int
 clist_get_band(gx_device * dev, int y, int *band_start)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int band_height = cdev->page_band_height;
     int start;
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxfcmap.h  */
+/*$Id$ */
 /* Internal CMap data definition */
 
 /* This file should be called gxcmap.h, except that name is already used. */

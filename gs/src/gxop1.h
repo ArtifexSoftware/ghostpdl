@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxop1.h  */
+/*$Id$ */
 /* Type 1 state shared between interpreter and compiled fonts. */
 
 #ifndef gxop1_INCLUDED

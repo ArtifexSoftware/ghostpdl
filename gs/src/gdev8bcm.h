@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdev8bcm.h  */
+/*$Id$ */
 /* Requires gxdevice.h (for gx_color_value) */
 
 #ifndef gdev8bcm_INCLUDED

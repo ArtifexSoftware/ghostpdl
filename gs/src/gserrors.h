@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gserrors.h  */
+/*$Id$ */
 /* Error code definitions */
 
 #ifndef gserrors_INCLUDED

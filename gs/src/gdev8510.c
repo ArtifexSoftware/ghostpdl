@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdev8510.c */
+/*$Id$*/
 /*
  * C.Itoh M8510 printer driver for ghostscript.
  * by Bob Smith <bob@snuffy.penfield.ny.us>

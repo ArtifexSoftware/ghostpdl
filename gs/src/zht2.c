@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zht2.c  */
+/*$Id$ */
 /* Level 2 sethalftone operator */
 #include "ghost.h"
 #include "oper.h"

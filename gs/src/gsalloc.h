@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsalloc.h  */
+/*$Id$ */
 /* Memory allocator extensions for standard allocator */
 
 #ifndef gsalloc_INCLUDED
@@ -46,13 +46,22 @@ typedef struct gs_memory_gc_status_s {
 void gs_memory_gc_status(P2(const gs_ref_memory_t *, gs_memory_gc_status_t *));
 void gs_memory_set_gc_status(P2(gs_ref_memory_t *, const gs_memory_gc_status_t *));
 
-/* ------ Internal routines ------ */
+/* ------ Initialization ------ */
 
 /*
  * Allocate and mostly initialize the state of an allocator (system, global,
  * or local).  Does not initialize global or space.
  */
 gs_ref_memory_t *ialloc_alloc_state(P2(gs_raw_memory_t *, uint));
+
+/*
+ * Add a chunk to an externally controlled allocator.  Such allocators
+ * allocate all objects as immovable, are not garbage-collected, and
+ * don't attempt to acquire additional memory on their own.
+ */
+int ialloc_add_chunk(P3(gs_ref_memory_t *, ulong, client_name_t));
+
+/* ------ Internal routines ------ */
 
 /* Prepare for a GC. */
 void ialloc_gc_prepare(P1(gs_ref_memory_t *));

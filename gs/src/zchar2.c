@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zchar2.c  */
+/*$Id$ */
 /* Level 2 character operators */
 #include "ghost.h"
 #include "oper.h"

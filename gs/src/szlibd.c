@@ -16,13 +16,13 @@
    all copies.
  */
 
-/*Id: szlibd.c  */
+/*$Id$ */
 /* zlib decoding (decompression) filter stream */
 #include "std.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"		/* for gs_memory_default */
 #include "strimpl.h"
-#include "szlibx.h"
+#include "szlibxx.h"
 
 /* Initialize the filter. */
 private int

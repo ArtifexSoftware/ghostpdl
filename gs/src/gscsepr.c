@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscsepr.c  */
+/*$Id$ */
 /* Separation color space and operation definition */
 #include "gx.h"
 #include "gserrors.h"
@@ -105,13 +105,12 @@ gx_install_Separation(gs_color_space * pcs, gs_state * pgs)
 
 /* Adjust the reference count of a Separation color space. */
 private void
-gx_adjust_cspace_Separation(const gs_color_space * pcs, gs_memory_t * mem,
-			    int delta)
+gx_adjust_cspace_Separation(const gs_color_space * pcs, int delta)
 {
     rc_adjust_const(pcs->params.separation.map, delta,
 		    "gx_adjust_Separation");
     (*pcs->params.separation.alt_space.type->adjust_cspace_count)
-	((const gs_color_space *)&pcs->params.separation.alt_space, mem, delta);
+	((const gs_color_space *)&pcs->params.separation.alt_space, delta);
 }
 
 /* ------ Constructors/accessors ------ */

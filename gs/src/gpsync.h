@@ -16,13 +16,15 @@
    all copies.
  */
 
-/*Id: gpsync.h  */
+/*$Id$ */
 /* Interface to platform-dependent synchronization primitives */
 
 #if !defined(gpsync_INCLUDED)
  #define gpsync_INCLUDED
 
 /* Initial version 4/1/98 by John Desrosiers (soho@crl.com). */
+/* 8/9/98 L. Peter Deutsch (ghost@aladdin.com) Changed ...sizeof to
+   procedures, added some comments. */
 
 /* -------- Synchronization primitives ------- */
 
@@ -34,8 +36,12 @@
 typedef struct {
     void *dummy_;
 } gp_semaphore;
-extern const uint gp_semaphore_sizeof;
 
+uint gp_semaphore_sizeof(P0());
+/*
+ * Hack: gp_semaphore_open(0) succeeds iff it's OK for the memory manager
+ * to move a gp_semaphore in memory.
+ */
 int gp_semaphore_open(P1(gp_semaphore * sema));
 void gp_semaphore_close(P1(gp_semaphore * sema));
 int gp_semaphore_wait(P1(gp_semaphore * sema));
@@ -48,8 +54,12 @@ int gp_semaphore_signal(P1(gp_semaphore * sema));
 typedef struct {
     void *dummy_;
 } gp_monitor;
-extern const uint gp_monitor_sizeof;
 
+uint gp_monitor_sizeof(P0());
+/*
+ * Hack: gp_monitor_open(0) succeeds iff it's OK for the memory manager
+ * to move a gp_monitor in memory.
+ */
 int gp_monitor_open(P1(gp_monitor * mon));
 void gp_monitor_close(P1(gp_monitor * mon));
 int gp_monitor_enter(P1(gp_monitor * mon));

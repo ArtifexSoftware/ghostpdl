@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gspcolor.h  */
+/*$Id$ */
 /* Client interface to Pattern color */
 
 #ifndef gspcolor_INCLUDED
@@ -68,5 +68,14 @@ int gs_setpatternspace(P1(gs_state *));
 int gs_make_pattern(P5(gs_client_color *, const gs_pattern_template_t *,
 		       const gs_matrix *, gs_state *, gs_memory_t *));
 const gs_pattern_template_t *gs_get_pattern(P1(const gs_client_color *));
+
+/*
+ * Adjust the reference count of a pattern. This is intended to support
+ * applications (such as PCL) which maintain client colors outside of the
+ * graphic state. Since the pattern instance structure is opaque to these
+ * applications, they need some way to release or retain the instances as
+ * needed.
+ */
+void gs_pattern_reference(P2(gs_client_color * pcc, int delta));
 
 #endif /* gspcolor_INCLUDED */

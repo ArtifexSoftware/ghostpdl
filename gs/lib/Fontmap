@@ -15,7 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-% Id: Fontmap.GS 
+% $Id$
 % Fontmap - standard font catalog for Ghostscript.
 
 % ----------------------------------------------------------------

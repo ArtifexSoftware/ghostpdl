@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: os2.mak 
+# $Id$
 # makefile for MS-DOS or OS/2 GCC/EMX platform.
 # Uses Borland (MSDOS) MAKER or 
 # Uses IBM NMAKE.EXE Version 2.000.000 Mar 27 1992
@@ -395,7 +395,7 @@ BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
 
 # Choose the device(s) to include.  See devs.mak for details,
-# devs.mak and contrib.mak for the list of available devices.
+# devs.mak, pcwin.mak, and contrib.mak for the list of available devices.
 
 !if $(MAKEDLL)
 DEVICE_DEVS=os2pm.dev os2dll.dev os2prn.dev
@@ -403,6 +403,7 @@ DEVICE_DEVS=os2pm.dev os2dll.dev os2prn.dev
 DEVICE_DEVS=os2pm.dev
 !endif
 #DEVICE_DEVS1=x11.dev x11alpha.dev x11cmyk.dev x11mono.dev
+DEVICE_DEVS1=
 DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
 DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
 DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
@@ -427,6 +428,7 @@ DEVICE_DEVS15=pdfwrite.dev
 !include "zlib.mak"
 !include "libpng.mak"
 !include "devs.mak"
+!include "pcwin.mak"
 !include "contrib.mak"
 !include "int.mak"
 
@@ -435,8 +437,8 @@ DEVICE_DEVS15=pdfwrite.dev
 # The GCC/EMX platform
 
 os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_os2.$(OBJ)
-os2_.dev: $(os2__)
-	$(SETMOD) os2_ $(os2__)
+os2_.dev: $(os2__) nosync.dev
+	$(SETMOD) os2_ $(os2__) -include nosync
 !if $(MAKEDLL)
 # Using a file device resource to get the console streams re-initialized 
 # is bad architecture (an upward reference to ziodev),                   

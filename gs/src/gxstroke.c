@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxstroke.c  */
+/*$Id$ */
 /* Path stroking procedures for Ghostscript library */
 #include "math_.h"
 #include "gx.h"

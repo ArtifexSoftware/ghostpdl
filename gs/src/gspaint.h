@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gspaint.h  */
+/*$Id$ */
 /* Requires gsstate.h */
 
 #ifndef gspaint_INCLUDED

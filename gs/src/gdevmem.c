@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevmem.c  */
+/*$Id$ */
 /* Generic "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -156,6 +156,8 @@ void
 gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
 			gx_device * target)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     *dev = mem_mono_device;
     dev->memory = mem;
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
@@ -216,16 +218,23 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size)
 
 /* Open a memory device, allocating the data area if appropriate, */
 /* and create the scan line table. */
-private void mem_set_line_ptrs(P3(gx_device_memory *, byte **, byte *));
+private void mem_set_line_ptrs(P4(gx_device_memory *, byte **, byte *, int));
 int
 mem_open(gx_device * dev)
 {
+    return gdev_mem_open_scan_lines((gx_device_memory *)dev, dev->height);
+}
+int
+gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
+{
+    if (setup_height < 0 || setup_height > mdev->height)
+	return_error(gs_error_rangecheck);
     if (mdev->bitmap_memory != 0) {	/* Allocate the data now. */
 	ulong size = gdev_mem_bitmap_size(mdev);
 
 	if ((uint) size != size)
 	    return_error(gs_error_limitcheck);
-	mdev->base = gs_alloc_bytes(mdev->bitmap_memory, (uint) size,
+	mdev->base = gs_alloc_bytes(mdev->bitmap_memory, (uint)size,
 				    "mem_open");
 	if (mdev->base == 0)
 	    return_error(gs_error_VMerror);
@@ -242,18 +251,19 @@ mem_open(gx_device * dev)
 		      huge_ptr_add(mdev->base,
 				   mem_bitmap_bits_size(mdev, mdev->width,
 							mdev->height)),
-		      mdev->base);
+		      mdev->base, setup_height);
     return 0;
 }
 /* Set up the scan line pointers of a memory device. */
-/* Sets line_ptrs, base, raster; uses width, height, color_info.depth. */
+/* Sets line_ptrs, base, raster; uses width, color_info.depth. */
 private void
-mem_set_line_ptrs(gx_device_memory * devm, byte ** line_ptrs, byte * base)
+mem_set_line_ptrs(gx_device_memory * mdev, byte ** line_ptrs, byte * base,
+		  int count /* >= 0 */)
 {
-    byte **pptr = devm->line_ptrs = line_ptrs;
-    byte **pend = pptr + devm->height;
-    byte *scan_line = devm->base = base;
-    uint raster = devm->raster = gdev_mem_raster(devm);
+    byte **pptr = mdev->line_ptrs = line_ptrs;
+    byte **pend = pptr + count;
+    byte *scan_line = mdev->base = base;
+    uint raster = mdev->raster = gdev_mem_raster(mdev);
 
     while (pptr < pend) {
 	*pptr++ = scan_line;
@@ -265,6 +275,8 @@ mem_set_line_ptrs(gx_device_memory * devm, byte ** line_ptrs, byte * base)
 void
 mem_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     pmat->xx = mdev->initial_matrix.xx;
     pmat->xy = mdev->initial_matrix.xy;
     pmat->yx = mdev->initial_matrix.yx;
@@ -292,6 +304,8 @@ gs_device_is_memory(const gx_device * dev)
 int
 mem_close(gx_device * dev)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     if (mdev->bitmap_memory != 0)
 	gs_free_object(mdev->bitmap_memory, mdev->base, "mem_close");
     return 0;
@@ -304,6 +318,7 @@ int
 mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     gs_get_bits_options_t options = params->options;
     int x = prect->p.x, w = prect->q.x - x, y = prect->p.y, h = prect->q.y - y;
 
@@ -392,6 +407,7 @@ int
 mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *src;
     uint dev_raster = gx_device_raster(dev, 1);
     int x = prect->p.x;
@@ -428,6 +444,7 @@ gx_color_index
 mem_mapped_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 			 gx_color_value b)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte br = gx_color_value_to_byte(r);
     byte bg = gx_color_value_to_byte(g);
     byte bb = gx_color_value_to_byte(b);
@@ -465,6 +482,7 @@ int
 mem_mapped_map_color_rgb(gx_device * dev, gx_color_index color,
 			 gx_color_value prgb[3])
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     const byte *pptr = mdev->palette.data + (int)color * 3;
 
     prgb[0] = gx_color_value_from_byte(pptr[0]);

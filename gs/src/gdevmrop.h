@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevmrop.h  */
+/*$Id$ */
 /* Definitions for device RasterOp implementations. */
 /* Requires gxdevmem.h, gsropt.h */
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxpcmap.c  */
+/*$Id$ */
 /* Pattern color mapping for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"
@@ -152,17 +152,19 @@ gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
     return adev;
 }
 
-/* Initialize a pattern accumulator. */
-/* Client must already have set instance and bitmap_memory. */
+/*
+ * Initialize a pattern accumulator.
+ * Client must already have set instance and bitmap_memory.
+ *
+ * Note that mask and bits accumulators are only created if necessary.
+ */
 private int
 pattern_accum_open(gx_device * dev)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
     const gs_pattern_instance *pinst = padev->instance;
     gs_memory_t *mem = padev->bitmap_memory;
-    gx_device_memory *mask =
-    gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
-		    "pattern_accum_open(mask)");
+    gx_device_memory *mask = 0;
     gx_device_memory *bits = 0;
     /*
      * The client should preset the target, because the device for which the
@@ -174,23 +176,37 @@ pattern_accum_open(gx_device * dev)
 	 padev->target);
     int width = pinst->size.x;
     int height = pinst->size.y;
-    int code;
+    int code = 0;
+    bool mask_open = false;
 
-    if (mask == 0)
-	return_error(gs_error_VMerror);
 #define PDSET(dev)\
   (dev)->width = width, (dev)->height = height,\
   (dev)->x_pixels_per_inch = target->x_pixels_per_inch,\
   (dev)->y_pixels_per_inch = target->y_pixels_per_inch
+
     PDSET(padev);
     padev->color_info = target->color_info;
-    gs_make_mem_mono_device(mask, mem, 0);
-    PDSET(mask);
-    mask->bitmap_memory = mem;
-    mask->base = 0;
-    code = (*dev_proc(mask, open_device)) ((gx_device *) mask);
+
+    if (pinst->uses_mask) {
+        mask = gs_alloc_struct( mem,
+                                gx_device_memory,
+                                &st_device_memory,
+		                "pattern_accum_open(mask)"
+                                );
+        if (mask == 0)
+	    return_error(gs_error_VMerror);
+        gs_make_mem_mono_device(mask, mem, 0);
+        PDSET(mask);
+        mask->bitmap_memory = mem;
+        mask->base = 0;
+        code = (*dev_proc(mask, open_device)) ((gx_device *) mask);
+        if (code >= 0) {
+	    mask_open = true;
+	    memset(mask->base, 0, mask->raster * mask->height);
+	}
+    }
+
     if (code >= 0) {
-	memset(mask->base, 0, mask->raster * mask->height);
 	switch (pinst->template.PaintType) {
 	    case 2:		/* uncolored */
 		padev->target = target;
@@ -200,23 +216,28 @@ pattern_accum_open(gx_device * dev)
 				       &st_device_memory,
 				       "pattern_accum_open(bits)");
 		if (bits == 0)
-		    return_error(gs_error_VMerror);
-		padev->target = (gx_device *) bits;
-		gs_make_mem_device(bits,
-			 gdev_mem_device_for_bits(target->color_info.depth),
-				   mem, -1, target);
-		PDSET(bits);
+		    code = gs_note_error(gs_error_VMerror);
+		else {
+		    padev->target = (gx_device *) bits;
+		    gs_make_mem_device(bits,
+			gdev_mem_device_for_bits(target->color_info.depth),
+				       mem, -1, target);
+		    PDSET(bits);
 #undef PDSET
-		bits->color_info = target->color_info;
-		bits->bitmap_memory = mem;
-		code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
+		    bits->color_info = target->color_info;
+		    bits->bitmap_memory = mem;
+		    code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
+		}
 	}
     }
     if (code < 0) {
 	if (bits != 0)
 	    gs_free_object(mem, bits, "pattern_accum_open(bits)");
-	(*dev_proc(mask, close_device)) ((gx_device *) mask);
-	gs_free_object(mem, mask, "pattern_accum_open(mask)");
+        if (mask != 0) {
+	    if (mask_open)
+		(*dev_proc(mask, close_device)) ((gx_device *) mask);
+	    gs_free_object(mem, mask, "pattern_accum_open(mask)");
+        }
 	return code;
     }
     padev->mask = mask;
@@ -236,9 +257,11 @@ pattern_accum_close(gx_device * dev)
 	gs_free_object(mem, padev->bits, "pattern_accum_close(bits)");
 	padev->bits = 0;
     }
-    (*dev_proc(padev->mask, close_device)) ((gx_device *) padev->mask);
-    gs_free_object(mem, padev->mask, "pattern_accum_close(mask)");
-    padev->mask = 0;
+    if (padev->mask != 0) {
+        (*dev_proc(padev->mask, close_device)) ((gx_device *) padev->mask);
+        gs_free_object(mem, padev->mask, "pattern_accum_close(mask)");
+        padev->mask = 0;
+    }
     return 0;
 }
 
@@ -252,8 +275,11 @@ pattern_accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (padev->bits)
 	(*dev_proc(padev->target, fill_rectangle))
 	    (padev->target, x, y, w, h, color);
-    return (*dev_proc(padev->mask, fill_rectangle))
-	((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
+    if (padev->mask)
+        return (*dev_proc(padev->mask, fill_rectangle))
+	    ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
+     else
+        return 0;
 }
 
 /* Copy a monochrome bitmap. */
@@ -268,17 +294,20 @@ pattern_accum_copy_mono(gx_device * dev, const byte * data, int data_x,
 	(*dev_proc(padev->target, copy_mono))
 	    (padev->target, data, data_x, raster, id, x, y, w, h,
 	     color0, color1);
-    if (color0 != gx_no_color_index)
-	color0 = 1;
-    if (color1 != gx_no_color_index)
-	color1 = 1;
-    if (color0 == 1 && color1 == 1)
-	return (*dev_proc(padev->mask, fill_rectangle))
-	    ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
-    else
-	return (*dev_proc(padev->mask, copy_mono))
-	    ((gx_device *) padev->mask, data, data_x, raster, id, x, y, w, h,
-	     color0, color1);
+    if (padev->mask) {
+        if (color0 != gx_no_color_index)
+	    color0 = 1;
+        if (color1 != gx_no_color_index)
+	    color1 = 1;
+        if (color0 == 1 && color1 == 1)
+	    return (*dev_proc(padev->mask, fill_rectangle))
+	        ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
+        else
+	    return (*dev_proc(padev->mask, copy_mono))
+	        ((gx_device *) padev->mask, data, data_x, raster, id, x, y, w, h,
+	         color0, color1);
+    } else
+        return 0;
 }
 
 /* Copy a color bitmap. */
@@ -291,8 +320,11 @@ pattern_accum_copy_color(gx_device * dev, const byte * data, int data_x,
     if (padev->bits)
 	(*dev_proc(padev->target, copy_color))
 	    (padev->target, data, data_x, raster, id, x, y, w, h);
-    return (*dev_proc(padev->mask, fill_rectangle))
-	((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
+    if (padev->mask)
+        return (*dev_proc(padev->mask, fill_rectangle))
+	    ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
+    else
+        return 0;
 }
 
 /* Read back a rectangle of bits. */
@@ -442,7 +474,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
      * If so, we can avoid the expensive masking operations
      * when using the pattern.
      */
-    {
+    if (mmask != 0) {
 	int y;
 
 	for (y = 0; y < mmask->height; y++) {
@@ -577,8 +609,9 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     (*dev_proc(&adev, close_device)) ((gx_device *) & adev);
 #ifdef DEBUG
     if (gs_debug_c('B')) {
-	debug_dump_bitmap(adev.mask->base, adev.mask->raster,
-			  adev.mask->height, "[B]Pattern mask");
+        if (adev.mask)
+	    debug_dump_bitmap(adev.mask->base, adev.mask->raster,
+			      adev.mask->height, "[B]Pattern mask");
 	if (adev.bits)
 	    debug_dump_bitmap(((gx_device_memory *) adev.target)->base,
 			      ((gx_device_memory *) adev.target)->raster,

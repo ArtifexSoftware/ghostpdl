@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: helpers.txt 
+$Id$
 This file, helpers.txt, is a note of thanks to all the people who
 have helped in the development of Ghostscript.
 
@@ -36,6 +36,7 @@ Ghostscript since its inception in 1986:
 	Pierre Arnaud (for bug reports and fixes),
 	William Bader (for several drivers and bug reports),
 	Alan Barclay (for the RGB TIFF drivers),
+	Nelson H. F. Beebe (for testing on a wide variety of systems),
 	Karl Berry and Kathy Hargreaves (for helping create the fonts
 	  originally distributed with Ghostscript),
 	James W. Birdsall (for the IBM ProPrinter driver),
@@ -68,11 +69,12 @@ Ghostscript since its inception in 1986:
 	Thomas Hiller (for the Trident TVGA driver),
 	Frans van Hoesel (for improvements to the DeskJet driver),
 	Berthold K. P. Horn (for a better spot halftone screen),
+	B. Jackowski and GUST (the Polish TeX users group)
+	  (for improvements to the TrueType font reader, and for the
+	  tiff2ps and ttf2pf utilities),
 	Earl Johnson (for the motivation for the ps2ascii utility),
 	Ray Johnston (for a first draft of FAKEFONTS and EPSF recognition,
 	  and for many small bug fixes),
-	Pete Kaiser (for beta testing, several versions of the OSF/1
-	  font map, and an HTML version of the documentation),
 	Norio Katayama (for the first implementation of composite fonts,
 	  and for testing and helping debug the later implementation),
 	Alfred Kayser (for a DeskJet 500C driver and beta testing),

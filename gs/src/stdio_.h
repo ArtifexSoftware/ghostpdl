@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: stdio_.h  */
+/*$Id$ */
 /* Generic substitute for stdio.h */
 
 #ifndef stdio__INCLUDED

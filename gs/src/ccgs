@@ -1,5 +1,5 @@
 #!/bin/sh
-# Id: ccgs 
+# $Id$
 # Pre-process ANSI C files with ansi2knr before compiling.
 # Usage: ccgs "cc switches..." ...switches... -c inputfile ... -o outputfile
 

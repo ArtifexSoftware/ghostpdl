@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: use.txt 
+$Id$
 This file, use.txt, describes how to use the Ghostscript language
 interpreter.
 

@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: drivers.txt 
+$Id$
 This file, drivers.txt, describes the interface between Ghostscript and
 device drivers.
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscolor.h  */
+/*$Id$ */
 /* Client interface to color routines */
 
 #ifndef gscolor_INCLUDED

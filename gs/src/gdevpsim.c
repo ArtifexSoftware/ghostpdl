@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpsim.c  */
+/*$Id$ */
 /* PostScript image output device */
 #include "gdevprn.h"
 

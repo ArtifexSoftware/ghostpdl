@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsparams.c  */
+/*$Id$ */
 /* Generic parameter list serializer & expander */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -186,7 +186,9 @@ gs_param_list_serialize(
 					    write_buf.buf,
 		     write_buf.buf ? write_buf.buf_end - write_buf.buf : 0);
 
-		    temp_code = param_end_read_dict(list, key.data, &value.value.d);
+		    temp_code = param_end_read_dict(list,
+						    (const char *)key.data,
+						    &value.value.d);
 		    if (bytes_written < 0)
 			code = bytes_written;
 		    else {

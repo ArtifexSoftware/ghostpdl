@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iscan.c  */
+/*$Id$ */
 /* Token scanner for Ghostscript interpreter */
 #include "ghost.h"
 #include "memory_.h"

@@ -1,4 +1,4 @@
-// Id: dwmain.h 
+// $Id$
 
 #define GSTEXT_ICON	50
 #define GSIMAGE_ICON	51

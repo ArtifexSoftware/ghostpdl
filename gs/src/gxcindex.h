@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxcindex.h  */
+/*$Id$ */
 /* Define the device color index type and macros */
 
 #ifndef gxcindex_INCLUDED

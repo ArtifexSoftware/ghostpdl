@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ilevel.h  */
+/*$Id$ */
 /* Interpreter language level interface */
 
 #ifndef ilevel_INCLUDED

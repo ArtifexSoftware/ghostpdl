@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxcomp.h  */
+/*$Id$ */
 /* Definitions for implementing compositing functions */
 
 #ifndef gxcomp_INCLUDED

@@ -15,7 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-% Id: pdf_base.ps 
+% $Id$
 % pdf_base.ps
 % Basic parser for PDF reader.
 
@@ -71,27 +71,27 @@ pdfdict begin
 
 % Read a token from a file, recognizing the PDF 1.2 #nn escape convention.
 % This should be done in C!
-/.pdftoken			% <file> .pdftoken <obj> -true-
+/.pdftoken {			% <file> .pdftoken <obj> -true-
 				% <file> .pdftoken -false-
-{ token
-   { dup type /nametype eq
-      { dup xcheck
-	 { true
-	 }
-	 { dup .namestring (#) search
-	    { name#escape cvn exch pop }
-	    { pop }
-	   ifelse true
-	 }
-	ifelse
-      }
-      { true
-      }
-     ifelse
-   }
-   { false
-   }
-  ifelse
+  token {
+    dup type /nametype eq {
+      dup xcheck {
+	true
+      } {
+	PDFversion 1.2 ge {
+	  dup .namestring (#) search {
+	    name#escape cvn exch pop
+	  } {
+	    pop
+	  } ifelse
+	} if true
+      } ifelse
+    } {
+      true
+    } ifelse
+  } {
+    false
+  } ifelse
 } bind def
 /name#escape			% <post> <(#)> <pre> name#escape <string>
 { exch pop

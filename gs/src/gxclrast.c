@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclrast.c  */
+/*$Id$ */
 /* Command list interpreter/rasterizer */
 #include "memory_.h"
 #include "gx.h"
@@ -1391,8 +1391,7 @@ in:				/* Initialize for a new page. */
 			    cmd_getw(height, cbp);
 			    if (height == 0) {
 				if_debug0('L', " done image\n");
-				code = gx_device_end_image(tdev,
-							   image_info, true);
+				code = gx_image_end(image_info, true);
 			    } else {
 				uint bytes_per_plane, nbytes;
 				const byte *data;
@@ -1449,9 +1448,9 @@ in:				/* Initialize for a new page. */
 					planes[plane] = data +
 					    bytes_per_plane * height * plane;
 				}
-				code = gx_device_image_data(tdev,
-						 image_info, planes, data_x,
-						   bytes_per_plane, height);
+				code = gx_image_data(image_info, planes,
+						     data_x, bytes_per_plane,
+						     height);
 				if (data_on_heap)
 				    gs_free_object(mem, data_on_heap,
 						   "clist image_data");

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsdparam.c  */
+/*$Id$ */
 /* Default device parameters for Ghostscript library */
 #include "memory_.h"		/* for memcpy */
 #include "string_.h"		/* for strlen */

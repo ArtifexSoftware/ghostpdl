@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxdevcli.h  */
+/*$Id$ */
 /* Definitions for device clients */
 
 #ifndef gxdevcli_INCLUDED
@@ -680,9 +680,24 @@ typedef struct gx_image_plane_s {
 #define gx_device_begin_typed_image(dev, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo)\
   ((*dev_proc(dev, begin_typed_image))\
    (dev, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo))
-dev_proc_image_data(gx_device_image_data);
-image_enum_proc_plane_data(gx_device_image_plane_data);
-dev_proc_end_image(gx_device_end_image);
+
+/*
+ * The driver-like procedures gx_device_{image_data, image_plane_data,
+ * end_image} are now DEPRECATED and will eventually be removed.
+ * Their replacements no longer take an ignored dev argument.
+ */
+int gx_image_data(P5(gx_image_enum_common_t *info, const byte **planes,
+		     int data_x, uint raster, int height));
+int gx_image_plane_data(P3(gx_image_enum_common_t *info,
+			   const gx_image_plane_t *planes, int height));
+int gx_image_end(P2(gx_image_enum_common_t *info, bool draw_last));
+
+#define gx_device_image_data(dev, info, planes, data_x, raster, height)\
+  gx_image_data(info, planes, data_x, raster, height)
+#define gx_device_image_plane_data(dev, info, planes, height)\
+  gx_image_plane_data(info, planes, height)
+#define gx_device_end_image(dev, info, draw_last)\
+  gx_image_end(info, draw_last)
 
 /* A generic device procedure record. */
 struct gx_device_procs_s gx_device_proc_struct(gx_device);

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zdevice2.c  */
+/*$Id$ */
 /* Level 2 device operators */
 #include "math_.h"
 #include "memory_.h"
@@ -86,18 +86,26 @@ zcurrentpagedevice(register os_ptr op)
     return 0;
 }
 
-/* <dict|null> .setpagedevice - */
+/* <local_dict|null> .setpagedevice - */
 private int
 zsetpagedevice(register os_ptr op)
 {
     int code;
 
 /******
-	if ( igs->in_cachedevice )
-	  return_error(e_undefined);
+    if ( igs->in_cachedevice )
+	return_error(e_undefined);
  ******/
     if (r_has_type(op, t_dictionary)) {
 	check_dict_read(*op);
+#if 0	/****************/
+	/*
+	 * In order to avoid invalidaccess errors on setpagedevice,
+	 * the dictionary must be allocated in local VM.
+	 */
+	if (!(r_is_local(op)))
+	    return_error(e_invalidaccess);
+#endif	/****************/
 	/* Make the dictionary read-only. */
 	code = zreadonly(op);
 	if (code < 0)

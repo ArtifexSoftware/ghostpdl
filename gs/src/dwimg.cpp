@@ -16,7 +16,7 @@
   all copies.
 */
 
-// Id: dwimg.cpp 
+// $Id$
 
 
 #define STRICT

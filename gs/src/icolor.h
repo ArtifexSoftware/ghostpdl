@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: icolor.h  */
+/*$Id$ */
 /* Declarations for transfer function & similar cache remapping */
 
 #ifndef icolor_INCLUDED

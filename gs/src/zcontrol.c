@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zcontrol.c  */
+/*$Id$ */
 /* Control operators */
 #include "string_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: imemory.h  */
+/*$Id$ */
 /* Ghostscript memory allocator extensions for interpreter level */
 
 #ifndef imemory_INCLUDED
@@ -60,20 +60,12 @@ void gs_free_ref_array(P3(gs_ref_memory_t * mem, ref * paref,
 int gs_alloc_string_ref(P5(gs_ref_memory_t * mem, ref * psref,
 			   uint attrs, uint nbytes, client_name_t cname));
 
-/*
- * Define the pointer type for refs.  Note that if a structure contains refs,
- * both its clear_marks and its reloc_ptrs procedure must unmark them,
- * since the GC will never see the refs during the unmarking sweep.
- */
-extern const gs_ptr_procs_t ptr_ref_procs;
-
-#define ptr_ref_type (&ptr_ref_procs)
-
-/* Register a ref root. */
+/* Register a ref root.  This just calls gs_register_root. */
 /* Note that ref roots are a little peculiar: they assume that */
 /* the ref * that they point to points to a *statically* allocated ref. */
-#define gs_register_ref_root(mem, root, rp, cname)\
-  gs_register_root(mem, root, ptr_ref_type, rp, cname)
+int gs_register_ref_root(P4(gs_memory_t *mem, gs_gc_root_t *root,
+			    void **pp, client_name_t cname));
+
 
 /*
  * The interpreter allocator can allocate in either local or global VM,

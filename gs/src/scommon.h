@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: scommon.h  */
+/*$Id$ */
 /* Definitions common to stream clients and implementors */
 
 #ifndef scommon_DEFINED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: srlx.h  */
+/*$Id$ */
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
 #ifndef srlx_INCLUDED

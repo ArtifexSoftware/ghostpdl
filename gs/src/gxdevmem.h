@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxdevmem.h  */
+/*$Id$ */
 /* Requires gxdevice.h */
 
 #ifndef gxdevmem_INCLUDED
@@ -145,6 +145,12 @@ void gs_make_mem_abuf_device(P6(gx_device_memory * adev, gs_memory_t * mem,
 				int alpha_bits, int mapped_x));
 void gs_make_mem_alpha_device(P4(gx_device_memory * adev, gs_memory_t * mem,
 				 gx_device * target, int alpha_bits));
+
+/*
+ * Open a memory device, only setting line pointers to a subset of its
+ * scan lines.  Banding devices use this (see gxclread.c).
+ */
+int gdev_mem_open_scan_lines(P2(gx_device_memory *mdev, int setup_height));
 
 /* Define whether a monobit memory device is inverted (black=1). */
 void gdev_mem_mono_set_inverted(P2(gx_device_memory * mdev, bool black_is_1));

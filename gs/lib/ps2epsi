@@ -1,5 +1,5 @@
 #!/bin/sh
-# Id: ps2epsi 
+# $Id$
 
 tmpfile=/tmp/ps2epsi$$
 

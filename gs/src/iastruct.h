@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iastruct.h  */
+/*$Id$ */
 /* Interpreter memory manager implementation structures */
 
 #ifndef iastruct_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zdict.c  */
+/*$Id$ */
 /* Dictionary operators */
 #include "ghost.h"
 #include "oper.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zusparam.c  */
+/*$Id$ */
 /* User and system parameter operators */
 #include "memory_.h"
 #include "string_.h"

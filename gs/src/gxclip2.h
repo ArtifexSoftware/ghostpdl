@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclip2.h  */
+/*$Id$ */
 /* Tiled mask clipping device and interface */
 
 #ifndef gxclip2_INCLUDED

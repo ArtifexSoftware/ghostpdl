@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevdflt.c  */
+/*$Id$ */
 /* Default device implementation */
 #include "gx.h"
 #include "gserrors.h"
@@ -81,10 +81,10 @@ gx_device_fill_in_procs(register gx_device * dev)
 #  define CHECK_NON_DEFAULT(proc, default, procname)\
     DO_NOTHING
 #endif
-    CHECK_NON_DEFAULT(image_data, gx_device_image_data, "image_data");
-    set_dev_proc(dev, image_data, gx_device_image_data);
-    CHECK_NON_DEFAULT(end_image, gx_device_end_image, "end_image");
-    set_dev_proc(dev, end_image, gx_device_end_image);
+    CHECK_NON_DEFAULT(image_data, gx_default_image_data, "image_data");
+    set_dev_proc(dev, image_data, gx_default_image_data);
+    CHECK_NON_DEFAULT(end_image, gx_default_end_image, "end_image");
+    set_dev_proc(dev, end_image, gx_default_end_image);
 #undef CHECK_NON_DEFAULT
     fill_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     fill_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);

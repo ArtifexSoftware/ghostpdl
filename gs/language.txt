@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: language.txt 
+$Id$
 This file, language.txt, describes the relationship between the Ghostscript
 interpreter and the PostScript language.
 

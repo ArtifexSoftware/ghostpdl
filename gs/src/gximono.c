@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gximono.c  */
+/*$Id$ */
 /* General mono-component image rendering */
 #include "gx.h"
 #include "memory_.h"
@@ -98,9 +98,13 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     gs_client_color cc;
     gx_device_color *pdevc = &penum->icolor1;	/* color for masking */
 
-    /* Make sure the cache setup matches the graphics state. */
-    /* Also determine whether all tiles fit in the cache. */
-    int tiles_fit = gx_check_tile_cache(pis);
+    /*
+     * Make sure the cache setup matches the graphics state.  Also determine
+     * whether all tiles fit in the cache.  We may bypass the latter check
+     * for masked images with a pure color.
+     */
+    bool tiles_fit =
+	(pis ? gx_check_tile_cache(pis) : false);
 
 #define image_set_gray(sample_value)\
    { pdevc = &penum->clues[sample_value].dev_color;\

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_os9.c  */
+/*$Id$ */
 /* OSK-specific routines for Ghostscript */
 #include "pipe_.h"
 #include "string_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxline.h  */
+/*$Id$ */
 /* Private line parameter definitions */
 
 #ifndef gxline_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: isave.c  */
+/*$Id$ */
 /* Save/restore manager for Ghostscript interpreter */
 #include "ghost.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevcmap.h  */
+/*$Id$ */
 /* Interface to special color mapping device */
 
 #ifndef gdevcmap_INCLUDED

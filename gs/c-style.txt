@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: c-style.txt 
+$Id$
 This file, c-style.txt, describes Aladdin's C coding guidelines.
 
 For an overview of Ghostscript and a list of the documentation files, see

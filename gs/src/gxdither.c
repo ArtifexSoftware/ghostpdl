@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxdither.c  */
+/*$Id$ */
 #include "gx.h"
 #include "gsstruct.h"
 #include "gsdcolor.h"

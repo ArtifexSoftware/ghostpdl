@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zvmem2.c  */
+/*$Id$ */
 /* Level 2 "Virtual memory" operators */
 #include "ghost.h"
 #include "oper.h"

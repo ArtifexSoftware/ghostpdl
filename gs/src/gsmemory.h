@@ -16,19 +16,20 @@
    all copies.
  */
 
-/*Id: gsmemory.h  */
+/*$Id$ */
 /* Client interface for memory allocation */
 
 /*
  * The allocator knows about two basic kinds of memory: objects, which are
- * aligned and cannot have pointers to their interior, and strings, which are
- * not aligned and which can have interior references.
+ * aligned and cannot have pointers to their interior, and strings, which
+ * are not aligned and which can have interior references.
  *
- * The standard allocator includes a garbage collector.  The garbage
- * collector normally may move objects, relocating pointers to them;
- * however, objects may be declared immovable at the time of allocation.
- * Clients must not attempt to resize immovable objects, and must not create
- * references to substrings of immovable strings.
+ * The standard allocator is designed to interface to a garbage collector,
+ * although it does not include or call one.  The allocator API recognizes
+ * that the garbage collector may move objects, relocating pointers to them;
+ * the API provides for allocating both movable (the default) and immovable
+ * objects.  Clients must not attempt to resize immovable objects, and must
+ * not create references to substrings of immovable strings.
  */
 
 #ifndef gsmemory_INCLUDED
@@ -36,11 +37,20 @@
 
 #include "gsmemraw.h"
 
-/*
- * Define the (opaque) type for a structure descriptor.
- */
+/* Define the opaque type for a structure descriptor. */
 typedef struct gs_memory_struct_type_s gs_memory_struct_type_t;
 typedef const gs_memory_struct_type_t *gs_memory_type_ptr_t;
+
+/* Define the opaque type for an allocator. */
+/* (The actual structure is defined later in this file.) */
+typedef struct gs_memory_s gs_memory_t;
+
+/* Define the opaque type for a pointer type. */
+typedef struct gs_ptr_procs_s gs_ptr_procs_t;
+typedef const gs_ptr_procs_t *gs_ptr_type_t;
+
+/* Define the opaque type for a GC root. */
+typedef struct gs_gc_root_s gs_gc_root_t;
 
 	/* Accessors for structure types. */
 
@@ -55,83 +65,9 @@ struct_name_t gs_struct_type_name(P1(gs_memory_type_ptr_t));
 #define gs_struct_type_name_string(styp)\
   ((const char *)gs_struct_type_name(styp))
 
-/* An opaque type for the garbage collector state. */
-/* We need this because it is passed to pointer implementation procedures. */
-typedef struct gc_state_s gc_state_t;
-
-/*
- * A pointer type defines how to mark the referent of the pointer.
- * We define it here so that we can define ptr_struct_type,
- * which is needed so we can define gs_register_struct_root.
- */
-typedef struct gs_ptr_procs_s {
-
-    /* Unmark the referent of a pointer. */
-
-#define ptr_proc_unmark(proc)\
-  void proc(P2(void *, gc_state_t *))
-    ptr_proc_unmark((*unmark));
-
-    /* Mark the referent of a pointer. */
-    /* Return true iff it was unmarked before. */
-
-#define ptr_proc_mark(proc)\
-  bool proc(P2(void *, gc_state_t *))
-    ptr_proc_mark((*mark));
-
-    /* Relocate a pointer. */
-    /* Note that the argument is const, but the */
-    /* return value is not: this shifts the compiler */
-    /* 'discarding const' warning from the call sites */
-    /* (the reloc_ptr routines) to the implementations. */
-
-#define ptr_proc_reloc(proc, typ)\
-  typ *proc(P2(const typ *, gc_state_t *))
-    ptr_proc_reloc((*reloc), void);
-
-} gs_ptr_procs_t;
-typedef const gs_ptr_procs_t *gs_ptr_type_t;
-
-/* Define the pointer type for ordinary structure pointers. */
-extern const gs_ptr_procs_t ptr_struct_procs;
-
-#define ptr_struct_type (&ptr_struct_procs)
-
-/* Define the pointer types for a pointer to a gs_[const_]string. */
-extern const gs_ptr_procs_t ptr_string_procs;
-
-#define ptr_string_type (&ptr_string_procs)
-extern const gs_ptr_procs_t ptr_const_string_procs;
-
-#define ptr_const_string_type (&ptr_const_string_procs)
-
-/* Register a structure root. */
-#define gs_register_struct_root(mem, root, pp, cname)\
-  gs_register_root(mem, root, ptr_struct_type, pp, cname)
-
-/*
- * Define the type for a GC root.
- */
-typedef struct gs_gc_root_s gs_gc_root_t;
-struct gs_gc_root_s {
-    gs_gc_root_t *next;
-    gs_ptr_type_t ptype;
-    void **p;
-};
-
-#define public_st_gc_root_t()	/* in gsmemory.c */\
-  gs_public_st_ptrs1(st_gc_root_t, gs_gc_root_t, "gs_gc_root_t",\
-    gc_root_enum_ptrs, gc_root_reloc_ptrs, next)
-
-/* Print a root debugging message. */
-#define if_debug_root(c, msg, rp)\
-  if_debug4(c, "%s 0x%lx: 0x%lx -> 0x%lx\n",\
-	    msg, (ulong)(rp), (ulong)(rp)->p, (ulong)*(rp)->p)
-
 /*
  * Define the memory manager procedural interface.
  */
-typedef struct gs_memory_s gs_memory_t;
 typedef struct gs_memory_procs_s {
 
     gs_raw_memory_procs(gs_memory_t);	/* defined in gsmemraw.h */
@@ -260,19 +196,20 @@ typedef struct gs_memory_procs_s {
     /*
      * Register a root for the garbage collector.  root = NULL
      * asks the memory manager to allocate the root object
-     * itself (immovable, in the manager's parent).
+     * itself (immovable, in the manager's parent): this is the usual
+     * way to call this procedure.
      */
 
 #define gs_memory_proc_register_root(proc)\
-  void proc(P5(gs_memory_t *mem, gs_gc_root_t *root, gs_ptr_type_t ptype,\
+  int proc(P5(gs_memory_t *mem, gs_gc_root_t *root, gs_ptr_type_t ptype,\
     void **pp, client_name_t cname))
 #define gs_register_root(mem, root, ptype, pp, cname)\
   (*(mem)->procs.register_root)(mem, root, ptype, pp, cname)
     gs_memory_proc_register_root((*register_root));
 
     /*
-     * Unregister a root.  Note that this can only be used with
-     * roots that were allocated by the client.
+     * Unregister a root.  The root object itself will be freed iff
+     * it was allocated by gs_register_root.
      */
 
 #define gs_memory_proc_unregister_root(proc)\
@@ -297,6 +234,10 @@ typedef struct gs_memory_procs_s {
     gs_memory_proc_enable_free((*enable_free));
 
 } gs_memory_procs_t;
+
+/* Register a structure root.  This just calls gs_register_root. */
+int gs_register_struct_root(P4(gs_memory_t *mem, gs_gc_root_t *root,
+			       void **pp, client_name_t cname));
 
 /* Define no-op freeing procedures for use by enable_free. */
 gs_memory_proc_free_object(gs_ignore_free_object);

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxistate.h  */
+/*$Id$ */
 /* Imager state definition */
 
 #ifndef gxistate_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclip.c  */
+/*$Id$ */
 /* Implementation of (path-based) clipping */
 #include "gx.h"
 #include "gxdevice.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zdpnext.c  */
+/*$Id$ */
 /* NeXT Display PostScript extensions */
 #include "math_.h"
 #include "ghost.h"

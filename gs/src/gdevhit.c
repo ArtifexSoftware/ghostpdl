@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevhit.c  */
+/*$Id$ */
 /* Hit detection device */
 #include "std.h"
 #include "gserror.h"

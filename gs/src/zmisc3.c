@@ -16,11 +16,27 @@
    all copies.
  */
 
-/*Id: zmisc3.c  */
+/*$Id$ */
 /* Miscellaneous LanguageLevel 3 operators */
 #include "ghost.h"
+#include "gsclipsr.h"
 #include "oper.h"
+#include "igstate.h"
 #include "store.h"
+
+/* - clipsave - */
+private int
+zclipsave(os_ptr op)
+{
+    return gs_clipsave(igs);
+}
+
+/* - cliprestore - */
+private int
+zcliprestore(os_ptr op)
+{
+    return gs_cliprestore(igs);
+}
 
 /* <proc1> <proc2> .eqproc <bool> */
 /*
@@ -54,10 +70,10 @@ zeqproc(register os_ptr op)
 	    continue;
 	}
 	/* Look at the next elements of the arrays. */
-	r_dec_size(&top->proc1, 1);
-	i = r_size(&top->proc1);
+	i = r_size(&top->proc1) - 1;
 	array_get(&top->proc1, i, &top[1].proc1);
 	array_get(&top->proc2, i, &top[1].proc2);
+	r_dec_size(&top->proc1, 1);
 	++top;
 	/*
 	 * Amazingly enough, the objects' executable attributes are not
@@ -100,6 +116,8 @@ zeqproc(register os_ptr op)
 const op_def zmisc3_op_defs[] =
 {
     op_def_begin_ll3(),
+    {"0cliprestore", zcliprestore},
+    {"0clipsave", zclipsave},
     {"2.eqproc", zeqproc},
     op_def_end(0)
 };

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zdouble.c  */
+/*$Id$ */
 /* Double-precision floating point arithmetic operators */
 #include "math_.h"
 #include "memory_.h"

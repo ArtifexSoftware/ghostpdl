@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zchar1.c  */
+/*$Id$ */
 /* Type 1 character display operator */
 #include "ghost.h"
 #include "oper.h"

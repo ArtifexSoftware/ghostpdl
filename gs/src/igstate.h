@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: igstate.h  */
+/*$Id$ */
 /* Ghostscript interpreter graphics state definition */
 
 #ifndef igstate_INCLUDED

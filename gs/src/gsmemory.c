@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsmemory.c  */
+/*$Id$ */
 /* Generic allocator support */
 #include "memory_.h"
 #include "gstypes.h"
@@ -107,6 +107,14 @@ gs_struct_type_name(gs_memory_type_ptr_t pstype)
     return pstype->sname;
 }
 
+/* Register a structure root. */
+int
+gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
+			void **pp, client_name_t cname)
+{
+    return gs_register_root(mem, root, ptr_struct_type, pp, cname);
+}
+
 /* Normal freeing routine for reference-counted structures. */
 void
 rc_free_struct_only(gs_memory_t * mem, void *data, client_name_t cname)
@@ -172,63 +180,3 @@ RELOC_PTRS_BEGIN(basic_reloc_ptrs)
 		      (void *)((char *)vptr + psd->super_offset),
 		      pstype->ssize);
 } RELOC_PTRS_END
-
-/* ---------------- Implement memory using raw memory ---------------- */
-
-/*
- * This allocator implements the full gs_memory_t API using an underlying
- * raw memory allocator in a minimal way, by ignoring garbage collection
- * issues and passing through all other requests.  Note that because raw
- * memory is always immovable, the movable and immovable allocation
- * procedures are the same here.
- */
-
-#if 0				/* ****** NYI ****** */
-
-/* Raw memory procedures */
-private gs_memory_proc_alloc_bytes(gs_on_raw_alloc_bytes);
-private gs_memory_proc_resize_object(gs_on_raw_resize_object);
-private gs_memory_proc_free_object(gs_on_raw_free_object);
-private gs_memory_proc_status(gs_on_raw_status);
-private gs_memory_proc_free_all(gs_on_raw_free_all);
-
-/* Object memory procedures */
-private gs_memory_proc_alloc_struct(gs_on_raw_alloc_struct);
-private gs_memory_proc_alloc_byte_array(gs_on_raw_alloc_byte_array);
-private gs_memory_proc_alloc_struct_array(gs_on_raw_alloc_struct_array);
-private gs_memory_proc_object_size(gs_on_raw_object_size);
-private gs_memory_proc_object_type(gs_on_raw_object_type);
-private gs_memory_proc_alloc_string(gs_on_raw_alloc_string);
-private gs_memory_proc_resize_string(gs_on_raw_resize_string);
-private gs_memory_proc_free_string(gs_on_raw_free_string);
-private gs_memory_proc_register_root(gs_on_raw_register_root);
-private gs_memory_proc_unregister_root(gs_on_raw_unregister_root);
-private gs_memory_proc_enable_free(gs_on_raw_enable_free);
-private const gs_memory_procs_t gs_on_raw_memory_procs =
-{
-    /* Raw memory procedures */
-    gs_on_raw_alloc_bytes,
-    gs_on_raw_resize_object,
-    gs_on_raw_free_object,
-    gs_on_raw_status,
-    gs_on_raw_free_all,
-    /* Object memory procedures */
-    gs_on_raw_alloc_bytes,
-    gs_on_raw_alloc_struct,
-    gs_on_raw_alloc_struct,
-    gs_on_raw_alloc_byte_array,
-    gs_on_raw_alloc_byte_array,
-    gs_on_raw_alloc_struct_array,
-    gs_on_raw_alloc_struct_array,
-    gs_on_raw_object_size,
-    gs_on_raw_object_type,
-    gs_on_raw_alloc_string,
-    gs_on_raw_alloc_string,
-    gs_on_raw_resize_string,
-    gs_on_raw_free_string,
-    gs_on_raw_register_root,
-    gs_on_raw_unregister_root,
-    gs_on_raw_enable_free
-};
-
-#endif /* ****** NYI ****** */

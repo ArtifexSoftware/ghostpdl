@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iimage.h  */
+/*$Id$ */
 /* Requires gscspace.h, gxiparam.h */
 
 #ifndef iimage_INCLUDED

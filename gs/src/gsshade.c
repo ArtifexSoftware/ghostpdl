@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsshade.c  */
+/*$Id$ */
 /* Constructors for shadings */
 #include "gx.h"
 #include "gscspace.h"

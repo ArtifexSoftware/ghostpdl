@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: new-user.txt 
+$Id$
 This file, new-user.txt, provides background information for new users.
 
 For an overview of Ghostscript and a list of the documentation files, see
@@ -621,6 +621,9 @@ Special thanks are due to URW++ Design and Development Incorporated, of
 Hamburg, Germany (http://www.urwpp.de), for making a commercial-quality set
 of the 35 standard PostScript Type 1 fonts available for free distribution
 under the GNU and Aladdin licenses.
+
+Special thanks are due to Pete Kaiser for redoing the entire Ghostscript
+documentation in HTML.
 
 Special thanks are due to Richard Stallman and the Free Software Foundation
 for originating the GNU License, for originally motivating Aladdin's

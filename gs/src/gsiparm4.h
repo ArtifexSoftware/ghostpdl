@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsiparm4.h  */
+/*$Id$ */
 /* ImageType 4 image parameter definition */
 
 #ifndef gsiparm4_INCLUDED
@@ -33,11 +33,15 @@ typedef struct gs_image4_s {
     gs_pixel_image_common;
     /*
      * If MaskColor_is_range is false, the first N elements of
-     * MaskColor are pixel values; if MaskColor_is_range is true,
-     * the first 2*N elements are ranges of pixel values.
+     * MaskColor are sample values; if MaskColor_is_range is true,
+     * the first 2*N elements are ranges of sample values.
+     *
+     * Currently, the largest sample values supported by the library are 12
+     * bits, but eventually we want to support DevicePixel images with
+     * samples up to 32 bits as well.
      */
     bool MaskColor_is_range;
-    int MaskColor[gs_image_max_components * 2];
+    uint MaskColor[gs_image_max_components * 2];
 } gs_image4_t;
 
 #define image4_type_data\

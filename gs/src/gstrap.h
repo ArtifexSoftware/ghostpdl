@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gstrap.h  */
+/*$Id$ */
 /* Definitions for trapping parameters and zones */
 
 #ifndef gstrap_INCLUDED

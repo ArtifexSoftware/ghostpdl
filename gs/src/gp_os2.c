@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_os2.c  */
+/*$Id$ */
 /* Common platform-specific routines for OS/2 and MS-DOS */
 /* compiled with GCC/EMX */
 

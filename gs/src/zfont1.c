@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfont1.c  */
+/*$Id$ */
 /* Type 1 and Type 4 font creation operator */
 #include "ghost.h"
 #include "oper.h"

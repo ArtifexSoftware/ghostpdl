@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: main.h  */
+/*$Id$ */
 /* Backward-compatible interface to gsmain.c */
 
 #ifndef main_INCLUDED

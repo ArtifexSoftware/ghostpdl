@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: store.h  */
+/*$Id$ */
 /* Assignment-related macros */
 
 #ifndef store_INCLUDED

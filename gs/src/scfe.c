@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: scfe.c  */
+/*$Id$ */
 /* CCITTFax encoding filter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ztoken.c  */
+/*$Id$ */
 /* Token reading operators */
 #include "ghost.h"
 #include "oper.h"

@@ -1,5 +1,5 @@
 @echo off 
-@rem Id: ps2ps.bat 
+@rem $Id$
 @rem "Distill" PostScript.
 
 if "%1"=="" goto usage

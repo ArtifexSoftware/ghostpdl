@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevmiff.c  */
+/*$Id$ */
 /* MIFF file format driver */
 #include "gdevprn.h"
 

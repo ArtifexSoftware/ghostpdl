@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevdgbr.c  */
+/*$Id$ */
 /* Default implementation of device get_bits[_rectangle] */
 #include "gx.h"
 #include "gserrors.h"

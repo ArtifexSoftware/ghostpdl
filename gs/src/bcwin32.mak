@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: bcwin32.mak 
+# $Id$
 # makefile for (MS-Windows 3.1/Win32s / Windows 95 / Windows NT) +
 #   Borland C++ 4.5 platform.
 
@@ -55,18 +55,18 @@ GS_INIT=gs_init.ps
 # Code runs substantially slower even if no debugging switches are set,
 # and also takes about another 25K of memory.
 
-DEBUG=1
+DEBUG=0
 
 # Setting TDEBUG=1 includes symbol table information for the debugger,
 # and also enables stack checking.  Code is substantially slower and larger.
 
-TDEBUG=1
+TDEBUG=0
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables public,
 # so they are visible to the debugger and profiler.
 # No execution time or space penalty, just larger .OBJ and .EXE files.
 
-NOPRIVATE=1
+NOPRIVATE=0
 
 # Define the names of the executable files.
 
@@ -402,16 +402,18 @@ $(GS_OBJ).res
 # The big DLL
 $(GSDLL_OBJ).dll: $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
  $(GSDLL_OBJ).res $(GSDLL_SRC).def
-	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + > gswin32.tr
-	copy /Y gswin32.tr+$(ld_tr)
+	-del gswin32.tr
+	copy $(ld_tr) gswin32.tr
+	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + >> gswin32.tr
 	$(LINK) $(LCT) /Tpd @gswin32.tr $(INTASM) ,$(GSDLL_OBJ).dll,$(GSDLL),@lib.tr @$(LIBCTR),$(GSDLL_SRC).def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
 $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
  $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(GLSRC)dwmain32.def
-	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + > gswin32.tr
-	copy /Y gswin32.tr+$(ld_tr)
+	-del gswin32.tr
+	copy $(ld_tr) gswin32.tr
+	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> gswin32.tr
 	echo $(DWOBJNO) $(INTASM) >> gswin32.tr
 	$(LINK) $(LCT) /Tpe @gswin32.tr ,$(GS_XE),$(GS),@lib.tr @$(LIBCTR),$(GLSRC)dwmain32.def,$(GS_OBJ).res
 	-del gswin32.tr
@@ -419,8 +421,9 @@ $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
  $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(GLSRC)dw32c.def
-	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + > gswin32.tr
-	copy /Y gswin32.tr+$(ld_tr)
+	-del gswin32.tr
+	copy $(ld_tr) gswin32.tr
+	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> gswin32.tr
 	echo $(OBJCNO) $(INTASM) >> gswin32.tr
 	$(LINK) $(LCT) /Tpe /ap @gswin32.tr ,$(GSCONSOLE_XE),$(GSCONSOLE),@lib.tr @$(LIBCTR),$(GLSRC)dw32c.def,$(GS_OBJ).res
 	-del gswin32.tr

@@ -1,5 +1,5 @@
 @echo off
-@rem Id: pftogsf.bat 
+@rem $Id$
 rem
 rem ******************************
 rem * Convert .pf? files to .gsf *

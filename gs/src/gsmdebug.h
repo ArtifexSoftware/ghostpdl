@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsmdebug.h  */
+/*$Id$ */
 /* Requires gdebug.h (for gs_debug) */
 
 #ifndef gsmdebug_INCLUDED

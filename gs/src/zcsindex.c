@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zcsindex.c  */
+/*$Id$ */
 /* Indexed color space support */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gspenum.h  */
+/*$Id$ */
 /* Common definitions for client interface to path enumeration */
 
 #ifndef gspenum_INCLUDED

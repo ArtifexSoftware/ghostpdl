@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxidata.c  */
+/*$Id$ */
 /* Generic image enumeration and cleanup */
 #include "gx.h"
 #include "memory_.h"
@@ -27,8 +27,8 @@
 
 /* Process the next piece of an ImageType 1 image. */
 int
-gx_image1_plane_data(gx_device * dev,
- gx_image_enum_common_t * info, const gx_image_plane_t * planes, int height)
+gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
+		     const gx_image_plane_t * planes, int height)
 {
     gx_image_enum *penum = (gx_image_enum *) info;
     int y = penum->y;
@@ -168,29 +168,7 @@ gx_image1_plane_data(gx_device * dev,
 	goto out;
     }
     /* End of data.  Render any left-over buffered data. */
-    switch (penum->posture) {
-	case image_portrait:
-	    {
-		fixed yc = dda_current(penum->dda.row.y);
-
-		penum->yci = fixed2int_rounded(yc - adjust);
-		penum->hci = fixed2int_rounded(yc + adjust) - penum->yci;
-	    }
-	    break;
-	case image_landscape:
-	    {
-		fixed xc = dda_current(penum->dda.row.x);
-
-		penum->xci = fixed2int_rounded(xc - adjust);
-		penum->wci = fixed2int_rounded(xc + adjust) - penum->xci;
-	    }
-	    break;
-	case image_skewed:	/* pacify compilers */
-	    ;
-    }
-    dda_translate(penum->dda.pixel0.x, penum->cur.x - penum->prev.x);
-    dda_translate(penum->dda.pixel0.y, penum->cur.y - penum->prev.y);
-    code = (*penum->render) (penum, NULL, 0, width_spp, 0, dev);
+    code = gx_image1_flush(info);
     if (code < 0) {
 	penum->y--;
 	goto err;
@@ -208,10 +186,46 @@ gx_image1_plane_data(gx_device * dev,
   out:return code;
 }
 
+/* Flush any buffered data. */
+int
+gx_image1_flush(gx_image_enum_common_t * info)
+{
+    gx_image_enum *penum = (gx_image_enum *)info;
+    int width_spp = penum->rect.w * penum->spp;
+    fixed adjust = penum->adjust;
+
+    penum->cur.x = dda_current(penum->dda.row.x);
+    penum->cur.y = dda_current(penum->dda.row.y);
+    switch (penum->posture) {
+	case image_portrait:
+	    {
+		fixed yc = penum->cur.y;
+
+		penum->yci = fixed2int_rounded(yc - adjust);
+		penum->hci = fixed2int_rounded(yc + adjust) - penum->yci;
+	    }
+	    break;
+	case image_landscape:
+	    {
+		fixed xc = penum->cur.x;
+
+		penum->xci = fixed2int_rounded(xc - adjust);
+		penum->wci = fixed2int_rounded(xc + adjust) - penum->xci;
+	    }
+	    break;
+	case image_skewed:	/* pacify compilers */
+	    ;
+    }
+    dda_translate(penum->dda.pixel0.x, penum->cur.x - penum->prev.x);
+    dda_translate(penum->dda.pixel0.y, penum->cur.y - penum->prev.y);
+    penum->prev = penum->cur;
+    return (*penum->render)(penum, NULL, 0, width_spp, 0, penum->dev);
+}
+
 /* Clean up by releasing the buffers. */
 /* Currently we ignore draw_last. */
 int
-gx_image1_end_image(gx_device * dev, gx_image_enum_common_t * info,
+gx_image1_end_image(gx_device *ignore_dev, gx_image_enum_common_t * info,
 		    bool draw_last)
 {
     gx_image_enum *penum = (gx_image_enum *) info;

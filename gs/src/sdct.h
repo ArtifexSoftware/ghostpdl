@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sdct.h  */
+/*$Id$ */
 /* Requires stream.h, strimpl.h, jpeg/jpeglib.h */
 
 #ifndef sdct_INCLUDED

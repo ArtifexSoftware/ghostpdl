@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxfarith.h  */
+/*$Id$ */
 /* Floating point arithmetic macros for Ghostscript library */
 
 #ifndef gxfarith_INCLUDED

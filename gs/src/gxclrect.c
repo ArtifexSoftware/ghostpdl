@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclrect.c  */
+/*$Id$ */
 /* Rectangle-oriented command writing for command list */
 #include "gx.h"
 #include "gserrors.h"
@@ -24,8 +24,6 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"
-
-#define cdev cwdev
 
 /* ---------------- Writing utilities ---------------- */
 
@@ -145,6 +143,8 @@ int
 clist_fill_rectangle(gx_device * dev, int x, int y, int width, int height,
 		     gx_color_index color)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int code;
 
     fit_fill(dev, x, y, width, height);
@@ -167,6 +167,8 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 			   int x, int y, int width, int height,
 	       gx_color_index color0, gx_color_index color1, int px, int py)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int depth =
 	(color1 == gx_no_color_index && color0 == gx_no_color_index ?
 	 dev->color_info.depth : 1);
@@ -222,6 +224,8 @@ clist_copy_mono(gx_device * dev,
 		int x, int y, int width, int height,
 		gx_color_index color0, gx_color_index color1)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int y0;
     gx_bitmap_id orig_id = id;
 
@@ -311,6 +315,8 @@ clist_copy_color(gx_device * dev,
 		 const byte * data, int data_x, int raster, gx_bitmap_id id,
 		 int x, int y, int width, int height)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int depth = dev->color_info.depth;
     int y0;
     int data_x_bit;
@@ -400,6 +406,8 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
 		 gx_color_index color, int depth)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     /* I don't like copying the entire body of clist_copy_color */
     /* just to change 2 arguments and 1 opcode, */
     /* but I don't see any alternative that doesn't require */
@@ -503,6 +511,8 @@ clist_strip_copy_rop(gx_device * dev,
 		     int x, int y, int width, int height,
 		     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     gs_rop3_t rop = lop_rop(lop);
     gx_strip_bitmap tile_with_id;
     const gx_strip_bitmap *tiles = textures;

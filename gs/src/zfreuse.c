@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfreuse.c  */
+/*$Id$ */
 /* ReusableStreamDecode filter support */
 #include "memory_.h"
 #include "ghost.h"

@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: devices.txt 
+$Id$
 This file, devices.txt, gives more detailed documentation about
 certain specific devices for which Ghostscript can produce output.
 

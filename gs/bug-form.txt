@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: bug-form.txt 
+$Id$
 This file, bug-form.txt, contains an e-mailable form for reporting problems.
 Please read the section titled "If you need help" in new-user.txt before
 using the form below.  For an overview of Ghostscript and a list of the

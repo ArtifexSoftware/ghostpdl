@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxsync.c  */
+/*$Id$ */
 /* Interface to platform-based synchronization primitives */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -45,7 +45,7 @@ gx_semaphore_alloc(
 
     /* sizeof decl'd sema struct, minus semaphore placeholder's size, + actual semaphore size */
     unsigned semaSizeof
-    = sizeof(*sema) - sizeof(sema->native) + gp_semaphore_sizeof;
+    = sizeof(*sema) - sizeof(sema->native) + gp_semaphore_sizeof();
 
     if (gp_semaphore_open(0) == 0)	/* see if gp_semaphores are movable */
 	/* movable */
@@ -99,7 +99,7 @@ gx_monitor_alloc(
 
     /* sizeof decl'd mon struct, minus monitor placeholder's size, + actual monitor size */
     unsigned monSizeof
-    = sizeof(*mon) - sizeof(mon->native) + gp_monitor_sizeof;
+    = sizeof(*mon) - sizeof(mon->native) + gp_monitor_sizeof();
 
     if (gp_monitor_open(0) == 0)	/* see if gp_monitors are movable */
 	/* movable */

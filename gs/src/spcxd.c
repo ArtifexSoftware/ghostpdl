@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: spcxd.c  */
+/*$Id$ */
 /* PCXDecode filter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"

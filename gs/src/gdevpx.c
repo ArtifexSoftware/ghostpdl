@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpx.c  */
+/*$Id$ */
 /* H-P PCL XL driver */
 #include "math_.h"
 #include "memory_.h"
@@ -1636,8 +1636,7 @@ pclxl_image_plane_data(gx_device * dev,
     pclxl_image_enum_t *pie = (pclxl_image_enum_t *) info;
 
     if (pie->default_info)
-	return gx_device_image_plane_data(dev, pie->default_info, planes,
-					  height);
+	return gx_image_plane_data(pie->default_info, planes, height);
     if (height > pie->height - pie->y)
 	height = pie->height - pie->y;
     pclxl_write_image_data(xdev, planes[0].data,

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxiinit.c  */
+/*$Id$ */
 /* Image setup procedures for Ghostscript library */
 #include "gx.h"
 #include "math_.h"
@@ -414,7 +414,7 @@ gx_begin_image1(gx_device * dev,
 	/* Try to transform non-default RasterOps to something */
 	/* that we implement less expensively. */
 	if (!pim->CombineWithColor)
-	    lop = rop3_know_T_0(lop);
+	    lop = rop3_know_T_0(lop) & ~lop_T_transparent;
 	else {
 	    if (rop3_uses_T(lop))
 		switch (color_draws_b_w(dev, pdcolor)) {

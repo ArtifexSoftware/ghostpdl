@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gpcheck.h  */
+/*$Id$ */
 /* Interrupt check interface */
 
 #ifndef gpcheck_INCLUDED

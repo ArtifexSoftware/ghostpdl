@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsnorop.c  */
+/*$Id$ */
 /* Stubs for unimplemented RasterOp */
 #include "gx.h"
 #include "gserrors.h"

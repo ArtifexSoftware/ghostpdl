@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsargs.c  */
+/*$Id$ */
 /* Command line argument list management */
 #include "ctype_.h"
 #include "stdio_.h"

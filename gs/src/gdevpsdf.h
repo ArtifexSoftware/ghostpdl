@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpsdf.h  */
+/*$Id$ */
 /* Common output syntax and parameters for PostScript and PDF writers */
 
 #ifndef gdevpsdf_INCLUDED

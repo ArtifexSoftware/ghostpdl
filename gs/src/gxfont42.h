@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxfont42.h  */
+/*$Id$ */
 /* Type 42 font data definition */
 
 #ifndef gxfont42_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gstype42.c  */
+/*$Id$ */
 /* Type 42 (TrueType) font library routines */
 #include "memory_.h"
 #include "gx.h"

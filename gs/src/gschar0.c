@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gschar0.c  */
+/*$Id$ */
 /* Composite font decoding for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxpdash.c  */
+/*$Id$ */
 /* Dash expansion for paths */
 #include "math_.h"
 #include "gx.h"

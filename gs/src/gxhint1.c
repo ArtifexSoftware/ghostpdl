@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxhint1.c  */
+/*$Id$ */
 /* Font level hints for Type 1 fonts */
 #include "gx.h"
 #include "gserrors.h"
@@ -29,26 +29,25 @@
 
 /* Define whether to use font hints. */
 /* Only set this to false for debugging the hint machinery. */
-#define USE_HINTS true
+static bool USE_HINTS = true;
 
 /* ------ Initialization ------ */
 
-typedef 
-zone_table(1) a_zone_table;
-     typedef stem_table(1) a_stem_table;
-     private void
-          compute_snaps(P6(const gs_matrix_fixed *, const a_stem_table *,
-			   stem_snap_table *, int, int, const char *));
-     private alignment_zone *
-                    compute_zones(P6(const gs_matrix_fixed *, const font_hints *,
+typedef zone_table(1) a_zone_table;
+typedef stem_table(1) a_stem_table;
+private void
+    compute_snaps(P6(const gs_matrix_fixed *, const a_stem_table *,
+		     stem_snap_table *, int, int, const char *));
+private alignment_zone *
+    compute_zones(P6(const gs_matrix_fixed *, const font_hints *,
 	const a_zone_table *, const a_zone_table *, alignment_zone *, int));
-     private int
-         transform_zone(P4(const gs_matrix_fixed *, const font_hints *,
-			   const float *, alignment_zone *));
+private int
+    transform_zone(P4(const gs_matrix_fixed *, const font_hints *,
+		      const float *, alignment_zone *));
 
 /* Reset the font-level hints. */
-     void
-          reset_font_hints(font_hints * pfh, const gs_log2_scale_point * plog2_scale)
+void
+reset_font_hints(font_hints * pfh, const gs_log2_scale_point * plog2_scale)
 {
     set_pixel_scale(&pfh->scale.x, plog2_scale->x);
     set_pixel_scale(&pfh->scale.y, plog2_scale->y);

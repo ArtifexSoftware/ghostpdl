@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsccode.h  */
+/*$Id$ */
 /* Types for character codes */
 
 #ifndef gsccode_INCLUDED

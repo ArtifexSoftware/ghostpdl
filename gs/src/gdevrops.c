@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevrops.c  */
+/*$Id$ */
 /* RasterOp source device */
 #include "gx.h"
 #include "gserrors.h"
@@ -122,6 +122,8 @@ gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
 		   NULL, true);
     /* Drawing operations are defaulted, non-drawing are forwarded. */
     gx_device_fill_in_procs((gx_device *) dev);
+    dev->width = target->width;
+    dev->height = target->height;
     dev->color_info = target->color_info;
     dev->target = target;
     dev->log_op = log_op;

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxdht.h  */
+/*$Id$ */
 /* Definition of device halftones */
 
 #ifndef gxdht_INCLUDED

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: winlib.mak 
+# $Id$
 # Common makefile section for 32-bit MS Windows.
 
 # This makefile must be acceptable to Microsoft Visual C++, Watcom C++,
@@ -136,22 +136,31 @@ $(gconfigv_h): $(MAKEFILE) $(ECHOGS_XE)
 
 # The Windows Win32 platform
 
-mswin32_1=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_msio.$(OBJ) $(GLOBJ)gp_win32.$(OBJ)
-mswin32_2=$(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_ntfs.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
-mswin32__=$(mswin32_1) $(mswin32_2)
-mswin32_.dev: $(mswin32__)
-        $(SETMOD) mswin32_ $(mswin32_1)
-	$(ADDMOD) mswin32_ -obj $(mswin32_2)
+mswin32__=$(GLOBJ)gp_msio.$(OBJ)
+mswin32_.dev: $(mswin32__) $(ECHOGS_XE) msw32nc_.dev
+        $(SETMOD) mswin32_ $(mswin32__)
+	$(ADDMOD) mswin32_ -include msw32nc_
         $(ADDMOD) mswin32_ -iodev wstdio
+
+$(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
+ $(gsdll_h) $(stdio__h) $(gxiodev_h) $(stream_h) $(gx_h) $(gp_h) $(windows__h)
+	$(GLCCWIN) $(GLO_)gp_msio.$(OBJ) $(C_) $(GLSRC)gp_msio.c
+
+# Hack: we need a version of the platform code that doesn't include the
+# console I/O module gp_msio.c, because this incorrectly refers to gsdll.c,
+# which in turn incorrectly refers to PostScript interpreter code.
+
+msw32nc_1=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_win32.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
+msw32nc_2=$(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_ntfs.$(OBJ)
+msw32nc__=$(msw32nc_1) $(msw32nc_2)
+msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE)
+        $(SETMOD) msw32nc_ $(msw32nc_1)
+	$(ADDMOD) msw32nc_ -obj $(msw32nc_2)
 
 $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
  $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \
  $(gx_h) $(gp_h) $(gpcheck_h) $(gserrors_h) $(gsexit_h)
 	$(GLCCWIN) $(GLO_)gp_mswin.$(OBJ) $(C_) $(GLSRC)gp_mswin.c
-
-$(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
- $(gsdll_h) $(stdio__h) $(gxiodev_h) $(stream_h) $(gx_h) $(gp_h) $(windows__h)
-	$(GLCCWIN) $(GLO_)gp_msio.$(OBJ) $(C_) $(GLSRC)gp_msio.c
 
 $(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
  $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\

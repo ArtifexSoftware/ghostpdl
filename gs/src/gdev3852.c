@@ -24,7 +24,7 @@ Modified 3/93 to dimension page back to 8.5, which seems to
 	the full printing width of the printer.
 	It was modeled after the V2.4.1 HP Paintjet driver (gdevpjet.c) */
 
-/*Id: gdev3852.c */
+/*$Id$*/
 /* IBM 3852 JetPrinter color ink jet driver for Ghostscript */
 
 #include "gdevprn.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevmrop.c  */
+/*$Id$ */
 /* RasterOp / transparency implementation for memory devices */
 #include "memory_.h"
 #include "gx.h"
@@ -34,9 +34,10 @@
 /* implement it as documented in the H-P manuals. */
 #define TRANSPARENCY_PER_H_P
 
-/**************** NOTE: ****************
- * The 16- and 32-bit cases aren't implemented.
- ***************** ****************/
+/*
+ * NOTE: The 16- and 32-bit cases aren't implemented: they just fall back to
+ * the default implementation.  This is very slow and will be fixed someday.
+ */
 
 #define chunk byte
 

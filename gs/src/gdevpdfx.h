@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpdfx.h  */
+/*$Id$ */
 /* Internal definitions for PDF-writing driver. */
 
 #ifndef gdevpdfx_INCLUDED

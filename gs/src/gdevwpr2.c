@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevwpr2.c  */
+/*$Id$ */
 /*
  * Microsoft Windows 3.n printer driver for Ghostscript.
  * Original version by Russell Lang and

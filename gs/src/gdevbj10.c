@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevbj10.c */
+/*$Id$*/
 /* Canon Bubble Jet BJ-10e and BJ200 printer driver */
 #include "gdevprn.h"
 

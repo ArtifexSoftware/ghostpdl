@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxgetbit.h  */
+/*$Id$ */
 /* Interface for get_bits_rectangle driver procedure */
 
 #ifndef gxgetbit_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxiscale.c  */
+/*$Id$ */
 /* Interpolated image procedures */
 #include "gx.h"
 #include "math_.h"
@@ -108,7 +108,14 @@ image_strategy_interpolate(gx_image_enum * penum)
     penum->line = line;
     penum->scaler = pss;
     penum->line_xy = 0;
-    penum->xyi.x = fixed2int_pixround(dda_current(penum->dda.pixel0.x));
+    {
+	gx_dda_fixed x0;
+
+	x0 = penum->dda.pixel0.x;
+	if (penum->matrix.xx < 0)
+	    dda_advance(x0, penum->rect.w);
+	penum->xyi.x = fixed2int_pixround(dda_current(x0));
+    }
     penum->xyi.y = fixed2int_pixround(dda_current(penum->dda.pixel0.y));
     if_debug0('b', "[b]render=interpolate\n");
     return image_render_interpolate;

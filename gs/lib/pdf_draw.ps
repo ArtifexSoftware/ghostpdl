@@ -15,7 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-% Id: pdf_draw.ps 
+% $Id$
 % pdf_draw.ps
 % PDF drawing operations (graphics, text, and images).
 
@@ -72,7 +72,7 @@ pdfdict begin
 } bdef
 
 /resolveidfunction {
-  dup /Identity eq { { } } { resolvefunction } ifelse
+  dup /Identity eq { pop { } } { resolvefunction } ifelse
 } bdef
 
 % ---------------- Halftones ---------------- %
@@ -515,6 +515,7 @@ end
 } bdef
 
 /DoForm {
+  dup length dict copy
   dup [ /pop load 2 index /Resources knownoget { oforce } { 0 dict } ifelse
   3 index false /resolvestream cvx
   pdfopdict /.pdfruncontext cvx

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gslib.c  */
+/*$Id$ */
 /* Test program for Ghostscript library */
 /* Capture stdin/out/err before gsio.h redefines them. */
 #include "stdio_.h"
@@ -257,6 +257,15 @@ gs_exit(int exit_status)
 }
 
 
+/* Return the number with the magnitude of x and the sign of y. */
+/* This is a BSD addition to libm; not all compilers have it. */
+private double
+gs_copysign(floatp x, floatp y)
+{
+   return ( y >= 0  ? fabs(x) : -fabs(x) );
+}
+
+
 /* ---------------- Test program 1 ---------------- */
 /* Draw a colored kaleidoscope. */
 
@@ -490,8 +499,8 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	gs_matrix mat;
 
 	gs_currentmatrix(pgs, &mat);
-	mat.xx = copysign(98.6, mat.xx);
-	mat.yy = copysign(98.6, mat.yy);
+	mat.xx = gs_copysign(98.6, mat.xx);
+	mat.yy = gs_copysign(98.6, mat.yy);
 	mat.tx = floor(mat.tx) + 0.499;
 	mat.ty = floor(mat.ty) + 0.499;
 	gs_setmatrix(pgs, &mat);
@@ -515,9 +524,9 @@ test5(gs_state * pgs, gs_memory_t * mem)
   planes[0].data = idata;\
   planes[0].data_x = 0;\
   planes[0].raster = (image.Height * image.BitsPerComponent + 7) >> 3;\
-  code = gx_device_image_plane_data(dev, info, planes, image.Height);\
+  code = gx_image_plane_data(info, planes, image.Height);\
   /****** TEST code == 1 ******/\
-  code = gx_device_end_image(dev, info, true);\
+  code = gx_image_end(info, true);\
   /****** TEST code >= 0 ******/\
   END
 
@@ -550,10 +559,10 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	planes[0].raster =
 	    (image1.Height * image1.BitsPerComponent + 7) >> 3;
 	/* Use the old image_data API. */
-	code = gx_device_image_data(dev, info1, &planes[0].data, 0,
-				    planes[0].raster, image1.Height);
+	code = gx_image_data(info1, &planes[0].data, 0,
+			     planes[0].raster, image1.Height);
 /****** TEST code == 1 ******/
-	code = gx_device_end_image(dev, info1, true);
+	code = gx_image_end(info1, true);
 /****** TEST code >= 0 ******/
     }
     gs_grestore(pgs);
@@ -610,9 +619,9 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	planes[1].data_x = 0;
 	planes[1].raster =
 	    (image3.Height * image3.BitsPerComponent + 7) >> 3;
-	code = gx_device_image_plane_data(dev, info, planes, image3.Height);
+	code = gx_image_plane_data(info, planes, image3.Height);
 /****** TEST code == 1 ******/
-	code = gx_device_end_image(dev, info, true);
+	code = gx_image_end(info, true);
 /****** TEST code >= 0 ******/
 
 	/* Display with 2-for-1 mask and image. */
@@ -633,17 +642,17 @@ test5(gs_state * pgs, gs_memory_t * mem)
 
 	    for (i = 0; i < H; ++i) {
 		planes[1].data = 0;
-		code = gx_device_image_plane_data(dev, info, planes, 1);
+		code = gx_image_plane_data(info, planes, 1);
 		planes[0].data += planes[0].raster;
 /****** TEST code == 0 ******/
 		planes[1].data = data3 + i * planes[1].raster;
-		code = gx_device_image_plane_data(dev, info, planes, 1);
+		code = gx_image_plane_data(info, planes, 1);
 		planes[0].data += planes[0].raster;
 /****** TEST code >= 0 ******/
 	    }
 	}
 /****** TEST code == 1 ******/
-	code = gx_device_end_image(dev, info, true);
+	code = gx_image_end(info, true);
 /****** TEST code >= 0 ******/
     }
     gs_grestore(pgs);

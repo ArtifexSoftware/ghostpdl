@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevo182.c */
+/*$Id$*/
 /* Okidata Microline 182 printer driver */
 
 /* Contributed by Maarten Koning (smeg@bnr.ca) April 4, 1993 */

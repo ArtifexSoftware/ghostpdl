@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gspaint.c  */
+/*$Id$ */
 /* Painting procedures for Ghostscript library */
 #include "math_.h"		/* for fabs */
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: dirent_.h  */
+/*$Id$ */
 /* Generic substitute for Unix dirent.h */
 
 #ifndef dirent__INCLUDED

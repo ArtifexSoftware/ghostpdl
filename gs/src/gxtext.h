@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gstext.h  */
+/*$Id$ */
 /* Driver text interface implementation support */
 
 #ifndef gxtext_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsgc.h  */
+/*$Id$ */
 /* Library-level interface to garbage collector */
 
 /*

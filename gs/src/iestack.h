@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iestack.h  */
+/*$Id$ */
 /* Generic execution stack API */
 
 #ifndef iestack_INCLUDED

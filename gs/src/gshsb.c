@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gshsb.c  */
+/*$Id$ */
 /* HSB color operators for Ghostscript library */
 #include "gx.h"
 #include "gscolor.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zsysvm.c  */
+/*$Id$ */
 /* System VM and VM-specific operators */
 #include "ghost.h"
 #include "oper.h"

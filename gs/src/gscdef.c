@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscdef.c  */
+/*$Id$ */
 /* Configuration scalars */
 #include "stdpre.h"
 #include "gscdefs.h"		/* interface */

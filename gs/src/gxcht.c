@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxcht.c  */
+/*$Id$ */
 /* Color halftone rendering for Ghostscript imaging library */
 #include "memory_.h"
 #include "gx.h"
@@ -171,7 +171,7 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 						     &tiles, NULL,
 						     x, y, w, h,
 					     pdevc->phase.x, pdevc->phase.y,
-						     rop3_know_S_0(lop));
+                                                lop);
 	}
     }
     tiles.id = gx_no_bitmap_id;
@@ -216,21 +216,21 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	    set_color_ht(&tiles, x, cy, dw, ch,
 			 depth, nplanes, colors,
 			 (const gx_strip_bitmap **)sbits);
-	    if (lop_no_S_is_T(lop)) {
+	    if (source == NULL && lop_no_S_is_T(lop)) {
 		code = (*dev_proc(dev, copy_color)) (dev,
 						     tiles.data, 0, raster,
 					    gx_no_bitmap_id, x, cy, dw, ch);
 	    } else {
-		gs_logical_operation_t lop_st = rop3_swap_S_T(lop);
+                if (source == NULL)
+                    set_rop_no_source(source, no_source, dev);
 
-		code = (*dev_proc(dev, strip_copy_rop)) (dev,
-						      tiles.data, 0, raster,
-							 gx_no_bitmap_id,
-							 NULL,
-							 NULL,
-				       pdevc->colors.binary.color /*arb */ ,
-							 x, cy, dw, ch, 0, 0,
-						     rop3_know_T_0(lop_st));
+	        return (*dev_proc(dev, strip_copy_rop)) (dev, source->sdata,
+			       source->sourcex, source->sraster, source->id,
+			     (source->use_scolors ? source->scolors : NULL),
+						     &tiles, NULL,
+						     x, cy, dw, ch,
+					     pdevc->phase.x, pdevc->phase.y,
+                                                lop);
 	    }
 	    if (code < 0)
 		return code;

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsmemlok.h  */
+/*$Id$ */
 /* Interface to monitor-locked heap memory allocator */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -27,6 +27,12 @@
 #include "gsmemory.h"
 #include "gxsync.h"
 
+/*
+ * This allocator encapsulates another allocator with a mutex.
+ * Note that it does not keep track of memory that it acquires:
+ * thus free_all with FREE_ALL_DATA is a no-op.
+ */
+
 typedef struct gs_memory_locked_s {
     gs_memory_common;		/* interface outside world sees */
     gs_memory_t *target;	/* allocator to front */
@@ -36,23 +42,17 @@ typedef struct gs_memory_locked_s {
 /* ---------- Public constructors/destructors ---------- */
 
 /* Initialize a locked memory manager. */
-int				/* -ve error code or 0 */
-    gs_memory_locked_init(P2(
-				gs_memory_locked_t * lmem,	/* allocator to init */
-				gs_memory_t * target	/* allocator to monitor lock */
-			  ));
+int gs_memory_locked_init(P2(
+			     gs_memory_locked_t * lmem,	/* allocator to init */
+			     gs_memory_t * target	/* allocator to monitor lock */
+			     ));
 
 /* Release a locked memory manager. */
 /* Note that this has no effect on the target. */
-void
-     gs_memory_locked_release(P1(
-				    gs_memory_locked_t * lmem	/* allocator to dnit */
-			      ));
+#define gs_memory_locked_release(lmem)\
+  gs_memory_free_all(lmem, FREE_STRUCTURES, "gs_memory_locked_release")
 
 /* Get the target of a locked memory manager. */
-gs_memory_t *			/* returns target of this allocator */
-            gs_memory_locked_target(P1(
-					  const gs_memory_locked_t * lmem	/* allocator to query */
-				    ));
+gs_memory_t * gs_memory_locked_target(P1(const gs_memory_locked_t *lmem));
 
 #endif /*!defined(gsmemlok_INCLUDED) */

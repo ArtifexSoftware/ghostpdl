@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iconf.c  */
+/*$Id$ */
 /* Configuration-dependent tables and initialization for interpreter */
 #include "stdio_.h"		/* stdio for stream.h */
 #include "gstypes.h"

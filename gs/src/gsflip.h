@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsflip.h  */
+/*$Id$ */
 /* Interface to routines for "flipping" image data */
 
 #ifndef gsflip_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: scf.h  */
+/*$Id$ */
 /* Common definitions for CCITTFax encoding and decoding filters */
 
 #ifndef scf_INCLUDED

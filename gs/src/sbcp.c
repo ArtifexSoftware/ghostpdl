@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sbcp.c  */
+/*$Id$ */
 /* BCP and TBCP filters */
 #include "stdio_.h"
 #include "strimpl.h"

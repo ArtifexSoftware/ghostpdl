@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zmatrix.c  */
+/*$Id$ */
 /* Matrix operators */
 #include "ghost.h"
 #include "oper.h"
@@ -81,7 +81,8 @@ zsetmatrix(register os_ptr op)
 /* <matrix|null> .setdefaultmatrix - */
 private int
 zsetdefaultmatrix(register os_ptr op)
-{    int code;
+{
+    int code;
 
     if (r_has_type(op, t_null))
 	code = gs_setdefaultmatrix(igs, NULL);
@@ -97,20 +98,12 @@ zsetdefaultmatrix(register os_ptr op)
 	return code;
     pop(1);
     return 0;
-d92 7
 }
 
 /* <tx> <ty> translate - */
 /* <tx> <ty> <matrix> translate <matrix> */
 private int
 ztranslate(register os_ptr op)
-{	int code;
-	double trans[2];
-
-	if ( (code = num_params(op, 2, trans)) >= 0 )
-	{	code = gs_translate(igs, trans[0], trans[1]);
-		if ( code < 0 )
-		  return code;
 {
     int code;
     double trans[2];
@@ -259,15 +252,15 @@ zitransform(register os_ptr op)
 /* <dxt> <dyt> <matrix> idtransform <dx> <dy> */
 private int
 zidtransform(register os_ptr op)
-	int (*ptproc)(P4(gs_state *, floatp, floatp, gs_point *)),
-	int (*matproc)(P4(floatp, floatp, const gs_matrix *, gs_point *)))
+{
+    return common_transform(op, gs_idtransform, gs_distance_transform_inverse);
 }
 
 /* Common logic for [i][d]transform */
-private int near
+private int
 common_transform(register os_ptr op,
-		 int (*ptproc) (P4(gs_state *, floatp, floatp, gs_point *)),
-	 int (*matproc) (P4(floatp, floatp, const gs_matrix *, gs_point *)))
+	int (*ptproc)(P4(gs_state *, floatp, floatp, gs_point *)),
+	int (*matproc)(P4(floatp, floatp, const gs_matrix *, gs_point *)))
 {
     double opxy[2];
     gs_point pt;
@@ -276,6 +269,13 @@ common_transform(register os_ptr op,
     /* Optimize for the non-matrix case */
     switch (r_type(op)) {
 	case t_real:
+	    opxy[1] = op->value.realval;
+	    break;
+	case t_integer:
+	    opxy[1] = op->value.intval;
+	    break;
+	case t_array:		/* might be a matrix */
+	case t_shortarray:
 	case t_mixedarray: {
 	    gs_matrix mat;
 	    gs_matrix *pmat = &mat;
@@ -286,18 +286,11 @@ common_transform(register os_ptr op,
 		) {		/* Might be a stack underflow. */
 		check_op(3);
 		return code;
-		    ) {		/* Might be a stack underflow. */
+	    }
 	    op--;
 	    pop(1);
 	    goto out;
 	}
-		    check_op(3);
-		    return code;
-		}
-		op--;
-		pop(1);
-		goto out;
-	    }
 	default:
 	    return_op_typecheck(op);
     }
@@ -306,15 +299,15 @@ common_transform(register os_ptr op,
 	    opxy[0] = (op - 1)->value.realval;
 	    break;
 	case t_integer:
-out:
-    make_real(op - 1, pt.x);
+	    opxy[0] = (op - 1)->value.intval;
 	    break;
 	default:
 	    return_op_typecheck(op - 1);
     }
     if ((code = (*ptproc) (igs, opxy[0], opxy[1], &pt)) < 0)
 	return code;
-  out:make_real(op - 1, pt.x);
+out:
+    make_real(op - 1, pt.x);
     make_real(op, pt.y);
     return 0;
 }
@@ -336,22 +329,22 @@ zinvertmatrix(register os_ptr op)
     return code;
 }
 
-    {"0.currentmatrix", zcurrentmatrix},
+/* ------ Initialization procedure ------ */
 
 const op_def zmatrix_op_defs[] =
 {
     {"1concat", zconcat},
     {"2dtransform", zdtransform},
     {"3concatmatrix", zconcatmatrix},
-    {"1currentmatrix", zcurrentmatrix},
-    {"6.setmatrix", zsetmatrix},
+    {"0.currentmatrix", zcurrentmatrix},
+    {"1defaultmatrix", zdefaultmatrix},
     {"2idtransform", zidtransform},
     {"0initmatrix", zinitmatrix},
     {"2invertmatrix", zinvertmatrix},
     {"2itransform", zitransform},
     {"1rotate", zrotate},
     {"2scale", zscale},
-    {"1setmatrix", zsetmatrix},
+    {"6.setmatrix", zsetmatrix},
     {"1.setdefaultmatrix", zsetdefaultmatrix},
     {"2transform", ztransform},
     {"2translate", ztranslate},

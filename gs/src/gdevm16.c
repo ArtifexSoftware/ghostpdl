@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevm16.c  */
+/*$Id$ */
 /* 16-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -39,7 +39,7 @@ const gx_device_memory mem_true16_device =
 mem_device("image16", 16, 0,
 	   mem_true16_map_rgb_color, mem_true16_map_color_rgb,
      mem_true16_copy_mono, mem_true16_copy_color, mem_true16_fill_rectangle,
-	   gx_no_strip_copy_rop);
+	   gx_default_strip_copy_rop);
 
 /* Map a r-g-b color to a color index. */
 private gx_color_index
@@ -75,6 +75,7 @@ private int
 mem_true16_fill_rectangle(gx_device * dev,
 			  int x, int y, int w, int h, gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
 #if arch_is_big_endian
 #  define color16 ((ushort)color)
 #else
@@ -103,13 +104,13 @@ mem_true16_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
 #if arch_is_big_endian
 #  define zero16 ((ushort)zero)
 #  define one16 ((ushort)one)
 #else
     ushort zero16 = ((uint) (byte) zero << 8) + ((ushort) zero >> 8);
     ushort one16 = ((uint) (byte) one << 8) + ((ushort) one >> 8);
-
 #endif
     const byte *line;
     int first_bit;
@@ -153,6 +154,8 @@ mem_true16_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		      int x, int y, int w, int h)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h);
     return 0;

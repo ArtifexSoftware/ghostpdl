@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iscannum.c  */
+/*$Id$ */
 /* Number scanner for Ghostscript interpreter */
 #include "math_.h"
 #include "ghost.h"

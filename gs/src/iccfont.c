@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iccfont.c  */
+/*$Id$ */
 /* Initialization support for compiled fonts */
 #include "string_.h"
 #include "ghost.h"

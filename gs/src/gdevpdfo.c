@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpdfo.c  */
+/*$Id$ */
 /* Named object pdfmark processing */
 #include "memory_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sfilter2.c  */
+/*$Id$ */
 /* Simple Level 2 filters */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"

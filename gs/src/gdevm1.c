@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevm1.c  */
+/*$Id$ */
 /* Monobit "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -68,6 +68,8 @@ private gx_color_index
 mem_mono_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 		       gx_color_value b)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     return (gx_default_w_b_map_rgb_color(dev, r, g, b) ^
 	    mdev->palette.data[0]) & 1;
 }
@@ -75,6 +77,8 @@ private int
 mem_mono_map_color_rgb(gx_device * dev, gx_color_index color,
 		       gx_color_value prgb[3])
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     return gx_default_w_b_map_color_rgb(dev,
 					(color ^ mdev->palette.data[0]) & 1,
 					prgb);
@@ -85,6 +89,8 @@ private int
 mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
 #ifdef USE_COPY_ROP
     return mem_mono_copy_rop(dev, NULL, 0, 0, gx_no_bitmap_id, NULL,
 			     NULL, NULL,
@@ -207,6 +213,8 @@ mem_mono_copy_mono(gx_device * dev,
  const byte * source_data, int source_x, int source_raster, gx_bitmap_id id,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
 #ifdef USE_COPY_ROP
     return mem_mono_copy_rop(dev, source_data, source_x, source_raster,
 			     id, NULL, NULL, NULL,
@@ -469,6 +477,8 @@ mem_mono_strip_tile_rectangle(gx_device * dev,
 int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 			      int px, int py)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
 #ifdef USE_COPY_ROP
     return mem_mono_strip_copy_rop(dev, NULL, 0, 0, tile->id, NULL,
 				   tiles, NULL,
@@ -705,6 +715,7 @@ private int
 mem1_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			 gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *base;
     uint raster;
 
@@ -723,6 +734,7 @@ mem1_word_copy_mono(gx_device * dev,
  const byte * source_data, int source_x, int source_raster, gx_bitmap_id id,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
     uint raster;
     bool store;

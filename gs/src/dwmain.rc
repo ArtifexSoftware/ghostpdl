@@ -17,7 +17,7 @@
 */
 
 
-/*Id: dwmain.rc */
+/*$Id$*/
 #include <windows.h>
 #include "dwmain.h"
 

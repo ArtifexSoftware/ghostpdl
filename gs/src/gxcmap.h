@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxcmap.h  */
+/*$Id$ */
 /* Requires gxdcolor.h, gxdevice.h. */
 
 #ifndef gxcmap_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxshade.c  */
+/*$Id$ */
 /* Shading rendering support */
 #include "math_.h"
 #include "gx.h"
@@ -247,7 +247,7 @@ gs_shading_fill_rectangle(const gs_shading_t * psh, const gs_rect * rect,
     } else {
 	prect = rect;
     }
-    return (*psh->head.fill_rectangle) (psh, rect, dev, pis);
+    return (*psh->head.fill_rectangle)(psh, prect, dev, pis);
 }
 
 /* Initialize the common parts of the recursion state. */

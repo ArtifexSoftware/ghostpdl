@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_win32.c  */
+/*$Id$ */
 /* Common platform-specific routines for MS-Windows WIN32 */
 /* hacked from gp_msdos.c by Russell Lang */
 #include "stdio_.h"
@@ -126,7 +126,12 @@ const char gp_current_directory_name[] = ".";
 typedef struct win32_semaphore_s {
     HANDLE handle;		/* returned from CreateSemaphore */
 } win32_semaphore;
-const uint gp_semaphore_sizeof = sizeof(win32_semaphore);
+
+uint
+gp_semaphore_sizeof(void)
+{
+    return sizeof(win32_semaphore);
+}
 
 int				/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
 gp_semaphore_open(
@@ -186,7 +191,12 @@ gp_semaphore_signal(
 typedef struct win32_monitor_s {
     CRITICAL_SECTION lock;	/* critical section lock */
 } win32_monitor;
-const uint gp_monitor_sizeof = sizeof(win32_monitor);
+
+uint
+gp_monitor_sizeof(void)
+{
+    return sizeof(win32_monitor);
+}
 
 int				/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
 gp_monitor_open(
@@ -252,6 +262,7 @@ gp_thread_begin_wrapper(
 
     free(thread_data);
     (*closure.function)(closure.data);
+    _endthread();
     return 0;
 }
 
@@ -262,8 +273,6 @@ gp_create_thread(
 		    void *data	/* magic data to pass to thread fn */
 )
 {
-    DWORD threadID;
-
     /* Create the magic closure that thread_wrapper gets passed */
     gp_thread_creation_closure *closure =
 	(gp_thread_creation_closure *)malloc(sizeof(*closure));
@@ -275,6 +284,6 @@ gp_create_thread(
 
     /* Start thread_wrapper */
     return
-	(CreateThread(NULL, 0, gp_thread_begin_wrapper, closure, 0, &threadID)
+	(_beginthread(gp_thread_begin_wrapper, 0, closure)
 	 ? 0 : gs_note_error(gs_error_unknownerror));
 }

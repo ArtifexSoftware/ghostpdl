@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: spcxx.h  */
+/*$Id$ */
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
 #ifndef spcxx_INCLUDED

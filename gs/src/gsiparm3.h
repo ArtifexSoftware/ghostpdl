@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsiparm3.h  */
+/*$Id$ */
 /* LanguageLevel 3 (ImageType 3 & 4) image parameter definition */
 
 #ifndef gsiparm3_INCLUDED

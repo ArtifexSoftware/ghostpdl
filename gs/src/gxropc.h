@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxropc.h  */
+/*$Id$ */
 /* Internals for RasterOp compositing */
 
 #ifndef gxropc_INCLUDED

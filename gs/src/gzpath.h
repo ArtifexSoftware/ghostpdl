@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gzpath.h  */
+/*$Id$ */
 /* Requires gxfixed.h */
 
 #ifndef gzpath_INCLUDED

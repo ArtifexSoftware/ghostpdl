@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxtype1.h  */
+/*$Id$ */
 /* Private Adobe Type 1 / Type 2 charstring interpreter definitions */
 
 #ifndef gxtype1_INCLUDED

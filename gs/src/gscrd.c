@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscrd.c  */
+/*$Id$ */
 /* CIE color rendering dictionary creation */
 #include "math_.h"
 #include "memory_.h"

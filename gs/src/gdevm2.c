@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevm2.c  */
+/*$Id$ */
 /* 2-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -57,6 +57,8 @@ private int
 mem_mapped2_fill_rectangle(gx_device * dev,
 			   int x, int y, int w, int h, gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     fit_fill(dev, x, y, w, h);
     bits_fill_rectangle(scan_line_base(mdev, y), x << 1, mdev->raster,
 			tile_patterns[color], w << 1, h);
@@ -69,6 +71,7 @@ mem_mapped2_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     const byte *line;
     int first_bit;
     byte first_mask, b0, b1, bxor, left_mask, right_mask;
@@ -192,6 +195,7 @@ private int
 mem2_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			 gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *base;
     uint raster;
 
@@ -211,6 +215,7 @@ mem2_word_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
     uint raster;
     bool store;

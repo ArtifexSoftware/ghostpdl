@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zgstate.c  */
+/*$Id$ */
 /* Graphics state operators */
 #include "math_.h"
 #include "ghost.h"

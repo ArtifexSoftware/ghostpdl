@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: siscale.h  */
+/*$Id$ */
 /* Requires strimpl.h */
 
 #ifndef siscale_INCLUDED

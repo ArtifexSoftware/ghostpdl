@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: idparam.c  */
+/*$Id$ */
 /* Utilities for getting parameters out of dictionaries. */
 #include "memory_.h"
 #include "string_.h"		/* for strlen */

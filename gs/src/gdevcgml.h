@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevcgml.h  */
+/*$Id$ */
 /* Interface definitions for CGM-writing library */
 
 #ifndef gdevcgml_INCLUDED

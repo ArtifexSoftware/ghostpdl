@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscie.c  */
+/*$Id$ */
 /* CIE color rendering for Ghostscript */
 #include "math_.h"
 #include "gx.h"

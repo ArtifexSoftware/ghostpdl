@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zhsb.c  */
+/*$Id$ */
 /* HSB color operators */
 #include "ghost.h"
 #include "oper.h"

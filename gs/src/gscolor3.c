@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscolor3.c  */
+/*$Id$ */
 /* "Operators" for LanguageLevel 3 color facilities */
 #include "gx.h"
 #include "gserrors.h"
@@ -53,7 +53,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 
     if (code < 0)
 	return code;
-/****** DOESN'T USE Background, BBox ******/
+    /****** DOESN'T USE Background, BBox ******/
     if ((code = gs_setcolorspace(pgs, psh->params.ColorSpace)) < 0 ||
 	(code = gs_clippath(pgs)) < 0 ||
 	(code = gs_pathbbox(pgs, &rect)) < 0 ||

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iostack.h  */
+/*$Id$ */
 /* Generic operand stack API */
 
 #ifndef iostack_INCLUDED

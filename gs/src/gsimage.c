@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsimage.c  */
+/*$Id$ */
 /* Image setup procedures for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"
@@ -166,7 +166,7 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 	    const gs_data_image_t * pim, gs_memory_t * mem, gx_device * dev)
 {
     if (pim->Width == 0 || pim->Height == 0) {
-	gx_device_end_image(dev, pie, false);
+	gx_image_end(pie, false);
 	return 1;
     }
     image_enum_init(penum);
@@ -198,11 +198,12 @@ gs_image_bytes_per_plane_row(const gs_image_enum * penum, int plane)
 
 /* Process the next piece of an image. */
 private int
-copy_planes(gx_device * dev, gs_image_enum * penum, const byte ** planes, int h)
+copy_planes(gx_device * dev, gs_image_enum * penum, const byte ** planes,
+	    int h)
 {
     int code =
-    (penum->dev == 0 ? (penum->y + h < penum->height ? 0 : 1) :
-     gx_device_image_data(dev, penum->info, planes, 0, penum->raster, h));
+	(penum->dev == 0 ? (penum->y + h < penum->height ? 0 : 1) :
+	 gx_image_data(penum->info, planes, 0, penum->raster, h));
 
     if (code < 0)
 	penum->error = true;
@@ -315,6 +316,6 @@ gs_image_cleanup(gs_image_enum * penum)
 	gs_free_string(penum->memory, penum->rows[i].data,
 		       penum->rows[i].size, "gs_image_cleanup(row)");
     if (penum->dev != 0)
-	gx_device_end_image(dev, penum->info, !penum->error);
+	gx_image_end(penum->info, !penum->error);
     /* Don't free the local enumerator -- the client does that. */
 }

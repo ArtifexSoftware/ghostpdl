@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscompt.h  */
+/*$Id$ */
 /* Abstract types for compositing objects */
 
 #ifndef gscompt_INCLUDED

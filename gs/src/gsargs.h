@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsargs.h  */
+/*$Id$ */
 /* Command line argument list management */
 
 #ifndef gsargs_INCLUDED

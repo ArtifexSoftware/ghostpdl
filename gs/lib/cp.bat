@@ -1,4 +1,4 @@
-@rem Id: cp.bat 
+@rem $Id$
 @echo off
 if "%2"=="." goto ne
 erase _.tmp

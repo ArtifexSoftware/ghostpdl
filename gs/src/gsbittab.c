@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsbittab.c  */
+/*$Id$ */
 /* Tables for bit operations */
 #include "stdpre.h"
 #include "gsbittab.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfile.c  */
+/*$Id$ */
 /* Non-I/O file operators */
 #include "memory_.h"
 #include "string_.h"
@@ -314,9 +314,29 @@ zstatus(register os_ptr op)
 						       pname.fname, &fstat);
 		switch (code) {
 		    case 0:
+			check_ostack(4);
+			/*
+			 * Check to make sure that the file size fits into
+			 * a PostScript integer.  (On some systems, long is
+			 * 32 bits, but file sizes are 64 bits.)
+			 */
 			push(4);
 			make_int(op - 4, stat_blocks(&fstat));
 			make_int(op - 3, fstat.st_size);
+			/*
+			 * We can't check the value simply by using ==,
+			 * because signed/unsigned == does the wrong thing.
+			 * Instead, since integer assignment only keeps the
+			 * bottom bits, we convert the values to double
+			 * and then test for equality.  This handles all
+			 * cases of signed/unsigned or width mismatch.
+			 */
+			if ((double)op[-4].value.intval !=
+			      (double)stat_blocks(&fstat) ||
+			    (double)op[-3].value.intval !=
+			      (double)fstat.st_size
+			    )
+			    return_error(e_limitcheck);
 			make_int(op - 2, fstat.st_mtime);
 			make_int(op - 1, fstat.st_ctime);
 			make_bool(op, 1);

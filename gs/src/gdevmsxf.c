@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevmsxf.c  */
+/*$Id$ */
 /* External font (xfont) implementation for Microsoft Windows. */
 #include "ctype_.h"
 #include "math_.h"

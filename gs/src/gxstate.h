@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxstate.h  */
+/*$Id$ */
 /* Internal graphics state API */
 
 #ifndef gxstate_INCLUDED

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevcdj.c */
+/*$Id$*/
 /* H-P and Canon colour printer drivers */
 
 /****************************************************************

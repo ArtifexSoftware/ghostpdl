@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ifilter.h  */
+/*$Id$ */
 /* Requires oper.h, stream.h, strimpl.h */
 
 #ifndef ifilter_INCLUDED

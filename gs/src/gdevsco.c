@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevsco.c  */
+/*$Id$ */
 /* 17Jul91 - wb - based on gdevpcfb.c */
 /* 31Jul91 - Rick Calder rick@rick.att.com - ifdefs for AT&T UNIX 4.0 2.1 */
 /* 13Sep91 - wb - modify for gs24b2 */

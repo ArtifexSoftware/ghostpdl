@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevmswn.c  */
+/*$Id$ */
 /*
  * Microsoft Windows 3.n driver for Ghostscript.
  * Original version by Russell Lang and Maurice Castro with help from

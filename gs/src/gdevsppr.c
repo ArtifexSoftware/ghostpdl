@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevsppr.c */
+/*$Id$*/
 /* SPARCprinter driver for Ghostscript */
 #include "gdevprn.h"
 #include <stdio.h>

@@ -15,14 +15,9 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-% Id: pdf_main.ps 
+% $Id$
 % pdf_main.ps
 % PDF file- and page-level operations.
-
-% We handle the following PDF 1.2 constructs:
-%	page number rather than page object in Dest array
-% We explicitly ignore the following PDF 1.2 constructs:
-%	"Marked content" operators
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal true .setglobal
@@ -192,7 +187,7 @@ pdfdict begin
    PDFfile traileropdict .pdfrun
  } bind def
 
-% Open a PDF file and read the trailer and cross-reference.
+% Open a PDF file and read the header, trailer, and cross-reference.
 /pdfopen		% <file> pdfopen <dict>
  { pdfdict readonly pop		% can't do it any earlier than this
    15 dict begin
@@ -203,7 +198,7 @@ pdfdict begin
    PDFfile dup 0 setfileposition pdfstring readstring 
    not {/pdfopen cvx /syntaxerror signalerror} if
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
-   length /PDFoffset exch def pop pop
+   length /PDFoffset exch def pop cvr /PDFversion exch def
    PDFfile dup dup 0 setfileposition bytesavailable 
 	% Scan backwards over trailing control-character garbage
 	% (nulls, ^Zs, EOLs).

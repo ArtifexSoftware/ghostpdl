@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscrypt1.h  */
+/*$Id$ */
 /* Interface to Adobe Type 1 encryption/decryption. */
 
 #ifndef gscrypt1_INCLUDED

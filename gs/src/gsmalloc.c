@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsmalloc.c  */
+/*$Id$ */
 /* C heap allocator */
 #include "malloc_.h"
 #include "gdebug.h"
@@ -276,10 +276,9 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
     gs_malloc_block_t *bp = mmem->allocated;
 
-    if (gs_debug_c('a'))
-	dlprintf3("[a-]gs_free(%s) 0x%lx(%u)\n",
-		  client_name_string(cname), (ulong) ptr,
-		  (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
+    if_debug3('a', "[a-]gs_free(%s) 0x%lx(%u)\n",
+	      client_name_string(cname), (ulong) ptr,
+	      (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
     if (ptr == 0)
 	return;
     if (ptr == bp + 1) {
@@ -329,13 +328,14 @@ private void
 gs_heap_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 		    client_name_t cname)
 {
-/****** SHOULD CHECK SIZE IF DEBUGGING ******/
+    /****** SHOULD CHECK SIZE IF DEBUGGING ******/
     gs_heap_free_object(mem, data, cname);
 }
-private void
-gs_heap_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
-		      void **up, client_name_t cname)
+private int
+gs_heap_register_root(gs_memory_t * mem, gs_gc_root_t * rp,
+		      gs_ptr_type_t ptype, void **up, client_name_t cname)
 {
+    return 0;
 }
 private void
 gs_heap_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp,
@@ -363,27 +363,23 @@ gs_heap_enable_free(gs_memory_t * mem, bool enable)
 
 /* Release all memory acquired by this allocator. */
 private void
-gs_heap_free_all(gs_memory_t * mem)
+gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 {
     gs_malloc_memory_t *const mmem = (gs_malloc_memory_t *) mem;
-    gs_malloc_block_t *bp = mmem->allocated;
-    gs_malloc_block_t *np;
 
-    for (; bp != 0; bp = np) {
-	np = bp->next;
-	if (gs_debug_c('a'))
-	    dlprintf3("[a]gs_malloc_release(%s) 0x%lx(%u)\n",
+    if (free_mask & FREE_ALL_DATA) {
+	gs_malloc_block_t *bp = mmem->allocated;
+	gs_malloc_block_t *np;
+
+	for (; bp != 0; bp = np) {
+	    np = bp->next;
+	    if_debug3('a', "[a]gs_heap_free_all(%s) 0x%lx(%u)\n",
 		      client_name_string(bp->cname), (ulong) (bp + 1),
 		      bp->size);
-	gs_alloc_fill(bp + 1, gs_alloc_fill_free, bp->size);
-	free(bp);
+	    gs_alloc_fill(bp + 1, gs_alloc_fill_free, bp->size);
+	    free(bp);
+	}
     }
-}
-
-/* Release all malloc'ed blocks, and free the allocator. */
-void
-gs_malloc_memory_release(gs_malloc_memory_t * mem)
-{
-    gs_free_all((gs_memory_t *) mem);
-    free(mem);
+    if (free_mask & FREE_ALL_ALLOCATOR)
+	free(mem);
 }

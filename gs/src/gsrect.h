@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsrect.h  */
+/*$Id$ */
 /* Rectangle utilities */
 
 #ifndef gsrect_INCLUDED

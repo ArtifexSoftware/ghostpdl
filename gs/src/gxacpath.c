@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxacpath.c  */
+/*$Id$ */
 /* Accumulator for clipping paths */
 #include "gx.h"
 #include "gserrors.h"
@@ -96,7 +96,8 @@ private const gx_device_cpath_accum gs_cpath_accum_device =
 void
 gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem)
 {
-    gx_device_init((gx_device *) padev, (gx_device *) & gs_cpath_accum_device,
+    gx_device_init((gx_device *) padev,
+		   (const gx_device *) & gs_cpath_accum_device,
 		   NULL /* allocated on stack */ , true);
     padev->list_memory = mem;
     (*dev_proc(padev, open_device)) ((gx_device *) padev);
@@ -188,12 +189,12 @@ gx_cpath_intersect_slow(gs_state * pgs, gx_clip_path * pcpath, gx_path * ppath,
 
 /* ------ Device implementation ------ */
 
-#define adev ((gx_device_cpath_accum *)dev)
-
 /* Initialize the accumulation device. */
 private int
 accum_open(register gx_device * dev)
 {
+    gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
+
     gx_clip_list_init(&adev->list);
     adev->bbox.p.x = adev->bbox.p.y = max_int;
     adev->bbox.q.x = adev->bbox.q.y = min_int;
@@ -206,6 +207,8 @@ accum_open(register gx_device * dev)
 private int
 accum_close(gx_device * dev)
 {
+    gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
+
 #ifdef DEBUG
     if (gs_debug_c('q')) {
 	gx_clip_rect *rp =
@@ -316,13 +319,12 @@ private int
 accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		     gx_color_index color)
 {
+    gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
     int xe = x + w, ye = y + h;
     gx_clip_rect *nr;
     gx_clip_rect *ar;
     register gx_clip_rect *rptr;
     int ymin, ymax;
-
-#define adev ((gx_device_cpath_accum *)dev)
 
     /* Clip the rectangle being added. */
     if (y < adev->clip_box.p.y)
@@ -468,5 +470,4 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	goto top;
     }
     return 0;
-#undef adev
 }

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevxalt.c  */
+/*$Id$ */
 /* Alternative X Windows drivers for help in driver debugging */
 #include "gx.h"			/* for gx_bitmap; includes std.h */
 #include "math_.h"

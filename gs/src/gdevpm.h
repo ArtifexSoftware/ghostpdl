@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpm.h  */
+/*$Id$ */
 /* Defines common to gdevpm.c, gspmdrv.c and PM GSview */
 
 #ifndef gdevpm_INCLUDED

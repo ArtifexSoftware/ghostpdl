@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscolor.c  */
+/*$Id$ */
 /* Color and halftone operators for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"
@@ -99,7 +99,8 @@ gx_restrict01_paint_4(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* Null reference count adjustment procedure. */
 void
-gx_no_adjust_color_count(const gs_client_color * pcc, const gs_color_space * pcs, gs_memory_t * mem, int delta)
+gx_no_adjust_color_count(const gs_client_color * pcc,
+			 const gs_color_space * pcs, int delta)
 {
 }
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gstext.c  */
+/*$Id$ */
 /* Driver text interface support */
 #include "std.h"
 #include "gstypes.h"

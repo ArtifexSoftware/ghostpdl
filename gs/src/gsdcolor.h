@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsdcolor.h  */
+/*$Id$ */
 /* Device color representation for drivers */
 
 #ifndef gsdcolor_INCLUDED

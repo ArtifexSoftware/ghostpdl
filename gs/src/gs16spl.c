@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gs16spl.c  */
+/*$Id$ */
 /* 16-bit access to print spooler from Win32s */
 /* by Russell Lang */
 /* 1995-11-23 */

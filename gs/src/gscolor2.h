@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscolor2.h  */
+/*$Id$ */
 /* Client interface to Level 2 color facilities */
 /* (requires gscspace.h, gsmatrix.h) */
 

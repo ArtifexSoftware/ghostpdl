@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxccache.c  */
+/*$Id$ */
 /* Fast case character cache routines for Ghostscript library */
 #include "gx.h"
 #include "gpcheck.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxftype.h  */
+/*$Id$ */
 /* Definition of font type and bitmap font behavior */
 
 #ifndef gxftype_INCLUDED

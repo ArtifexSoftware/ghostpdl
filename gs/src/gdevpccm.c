@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpccm.c  */
+/*$Id$ */
 /* Support routines for PC color mapping */
 #include "gx.h"
 #include "gsmatrix.h"		/* for gxdevice.h */

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: pipe_.h  */
+/*$Id$ */
 /* Declaration of popen and pclose */
 
 #ifndef pipe__INCLUDED

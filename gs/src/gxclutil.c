@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclutil.c  */
+/*$Id$ */
 /* Command list writing utilities. */
 
 #include "memory_.h"
@@ -30,8 +30,6 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gsparams.h"
-
-#define cdev cwdev
 
 /* ---------------- Statistics ---------------- */
 

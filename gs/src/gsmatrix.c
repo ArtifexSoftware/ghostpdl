@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsmatrix.c  */
+/*$Id$ */
 /* Matrix operators for Ghostscript library */
 #include "math_.h"
 #include "gx.h"

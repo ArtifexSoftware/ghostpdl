@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsstate.h  */
+/*$Id$ */
 /* Public graphics state API */
 
 #ifndef gsstate_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gzline.h  */
+/*$Id$ */
 /* Line parameter implementation */
 
 #ifndef gzline_INCLUDED

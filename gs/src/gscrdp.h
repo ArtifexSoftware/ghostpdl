@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscrdp.h  */
+/*$Id$ */
 /* Interface for device-specified CRDs */
 
 #ifndef gscrdp_INCLUDED

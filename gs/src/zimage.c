@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zimage.c  */
+/*$Id$ */
 /* Image operators */
 #include "ghost.h"
 #include "oper.h"
@@ -106,8 +106,8 @@ zimage_setup(const gs_pixel_image_t * pim, const ref * sources,
 {
     gx_image_enum_common_t *pie;
     int code =
-    gs_image_begin_typed((const gs_image_common_t *)pim, igs,
-			 uses_color, &pie);
+	gs_image_begin_typed((const gs_image_common_t *)pim, igs,
+			     uses_color, &pie);
 
     if (code < 0)
 	return code;

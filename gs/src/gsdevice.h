@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsdevice.h  */
+/*$Id$ */
 /* Device and page control API */
 
 #ifndef gsdevice_INCLUDED

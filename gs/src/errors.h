@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: errors.h  */
+/*$Id$ */
 /* Definition of error codes */
 
 #ifndef errors_INCLUDED

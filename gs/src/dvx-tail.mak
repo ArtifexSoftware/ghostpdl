@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: dvx-tail.mak 
+# $Id$
 # Partial makefile, common to all Desqview/X configurations.
 # This is the last part of the makefile for Desqview/X configurations.
 
@@ -30,8 +30,8 @@
 ## The Desqview/X platform
 
 dvx__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_dvx.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ)
-dvx_.dev: $(dvx__)
-	$(SETMOD) dvx_ $(dvx__)
+dvx_.dev: $(dvx__) nosync.dev
+	$(SETMOD) dvx_ $(dvx__) -include nosync
 
 $(GLOBJ)gp_dvx.$(OBJ): $(GLSRC)gp_dvx.c $(AK) $(string__h) $(gx_h) $(gsexit_h) $(gp_h) \
   $(time__h) $(dos__h)

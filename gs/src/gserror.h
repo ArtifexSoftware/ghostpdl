@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gserror.h  */
+/*$Id$ */
 /* Error return macros */
 
 #ifndef gserror_INCLUDED

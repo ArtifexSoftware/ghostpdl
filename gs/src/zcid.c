@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zcid.c  */
+/*$Id$ */
 /* CID-keyed font operators */
 #include "ghost.h"
 #include "oper.h"

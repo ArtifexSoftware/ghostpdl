@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gschar.h  */
+/*$Id$ */
 /* Client interface to character operations */
 
 #ifndef gschar_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zcontext.c  */
+/*$Id$ */
 /* Display PostScript context operators */
 #include "memory_.h"
 #include "ghost.h"

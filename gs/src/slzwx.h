@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: slzwx.h  */
+/*$Id$ */
 /* Requires strimpl.h */
 
 #ifndef slzwx_INCLUDED

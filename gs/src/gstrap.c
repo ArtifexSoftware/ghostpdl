@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gstrap.c  */
+/*$Id$ */
 /* Setting trapping parameters and zones */
 #include "string_.h"
 #include "gx.h"

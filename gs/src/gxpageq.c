@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxpageq.c  */
+/*$Id$ */
 /* Page queue implementation */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -40,6 +40,14 @@ private gx_page_queue_entry *	/* removed entry, 0 if none avail */
 
 
 /* --------------------Procedures------------------------- */
+
+/* Allocate a page queue. */
+gx_page_queue *
+gx_page_queue_alloc(gs_memory_t *mem)
+{
+    return gs_alloc_struct(mem, gx_page_queue, &st_gx_page_queue,
+			   "gx_page_queue_alloc");
+}
 
 /* ------- page_queue_entry alloc/free --------- */
 /* Allocate & init a gx_page_queue_entry */

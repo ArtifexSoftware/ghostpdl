@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevprna.h  */
+/*$Id$ */
 /* Generic asynchronous printer driver support */
 
 /* Initial version 2/1/1998 by John Desrosiers (soho@crl.com) */
@@ -173,9 +173,10 @@ int gdev_prn_async_write_open(P4(gx_device_printer *pdev, int max_raster,
 int gdev_prn_async_render_open(P1(gx_device_printer *prdev));
 
 /*
- * Called directly by the real driver of an async device. This is the
- * rendering loop, which requires its own thread for as long as the
- * device is open. This proc only returns after the device is closed.
+ * Must be called by async device driver implementation (see
+ * gdevprna.h under "Synchronizing the Instances"). This is the
+ * rendering loop, which requires its own thread for as long as
+ * the device is open. This proc only returns after the device is closed.
  */
 int	/* rets 0 ok, -ve error code */
 gdev_prn_async_render_thread(P1(gdev_prn_start_render_params *));

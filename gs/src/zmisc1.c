@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zmisc1.c  */
+/*$Id$ */
 /* Miscellaneous Type 1 font operators */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_unifn.c  */
+/*$Id$ */
 /* Unix-like file name syntax platform routines for Ghostscript */
 #include "gx.h"
 #include "gp.h"

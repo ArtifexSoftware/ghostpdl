@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_unifs.c  */
+/*$Id$ */
 /* "Unix-like" file system platform routines for Ghostscript */
 #include "memory_.h"
 #include "string_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpcfb.c  */
+/*$Id$ */
 /* IBM PC frame buffer (EGA/VGA) drivers */
 #include "memory_.h"
 #include "gconfigv.h"		/* for USE_ASM */

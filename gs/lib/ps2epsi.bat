@@ -1,5 +1,5 @@
 @echo off 
-@rem Id: ps2epsi.bat 
+@rem $Id$
 if "%1"=="" goto usage
 if "%2"=="" goto usage
 

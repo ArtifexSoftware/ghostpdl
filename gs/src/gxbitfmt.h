@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxbitfmt.h  */
+/*$Id$ */
 /* Definitions for bitmap storage formats */
 
 #ifndef gxbitfmt_INCLUDED

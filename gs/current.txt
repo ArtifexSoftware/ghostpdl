@@ -17,9 +17,9 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: current.txt 
+$Id$
 This file, current.txt, describes problems and new features in the current
-release of Ghostscript.  This file describes version 5.27 of Ghostscript.
+release of Ghostscript.  This file describes version 5.31 of Ghostscript.
 
 For an overview of Ghostscript and a list of the documentation files, see
 README.
@@ -28,6 +28,17 @@ New features (since release 5.10)
 ============
 
 (This is not a complete list of new features: see NEWS for details.)
+
+A number of PostScript LanguageLevel 3 features are implemented: ImageType 4
+images, CIEBasedDEF[G] color spaces, idiom recognition, shfill (partial
+support), CloseSource/CloseTarget.
+
+More of Display PostScript is implemented: view clipping, DevicePixel color
+space, context creation with private local VM, ImageType 2 images,
+compositing (NeXT extension).
+
+The PDF interpreter now handles double-byte fonts.  Ghostscript now handles
+essentially all of PDF 1.2 (Acrobat 3.x compatibility).
 
 The PDF writer now implements the xxxImageFilter, EncodexxxImage, and
 ConvertCMYKImagesToRGB distiller parameters, which provide the ability to
@@ -39,6 +50,8 @@ the Distiller 3.0 "named object" pdfmarks.
 It is now possible (in fact, easy) to build Ghostscript with the source and
 object files in different directories.
 
+There is a new PostScript-to-PostScript distiller, ps2ps.
+
 Changes
 =======
 
@@ -46,6 +59,12 @@ Contributed drivers now have their own makefile (contrib.mak).
 
 The IJG JPEG library is now in a directory named jpeg rather than
 jpeg-<version>.
+
+The pdf2ps utility has been completely rewritten.  It should be much more
+reliable, at the expense of possibly producing larger, lower-level output.
+
+Running tar_cat after editing makefiles is no longer needed.  Users should
+edit the unix*.mak makefiles now.
 
 Known problems
 ==============

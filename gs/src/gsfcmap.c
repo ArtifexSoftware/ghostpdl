@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsfcmap.c  */
+/*$Id$ */
 /* CMap character decoding */
 #include "gx.h"
 #include "gserrors.h"

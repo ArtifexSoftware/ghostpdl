@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxp1fill.c  */
+/*$Id$ */
 /* PatternType 1 filling algorithms */
 #include "math_.h"
 #include "gx.h"
@@ -76,17 +76,11 @@ typedef struct tile_fill_state_s {
 /* Initialize the filling state. */
 private int
 tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
-	       gx_device * dev, gs_logical_operation_t * plop)
+	       gx_device * dev)
 {
     gx_color_tile *m_tile = pdevc->mask.m_tile;
 
     ptfs->pdevc = pdevc;
-    if (pdevc->mask.ccolor.pattern->opaque_background) {	/* disregard mask */
-	if (*plop & lop_T_transparent)
-	    *plop -= lop_T_transparent;
-	else
-	    m_tile = 0;
-    }
     if (m_tile == 0) {		/* no clipping */
 	ptfs->pcdev = dev;
 	return 0;
@@ -249,7 +243,7 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     if (rop_source == NULL)
 	set_rop_no_source(rop_source, no_source, dev);
     bits = &ptile->tbits;
-    code = tile_fill_init(&state, pdevc, dev, &lop);
+    code = tile_fill_init(&state, pdevc, dev);
     if (code < 0)
 	return code;
     if (ptile->is_simple) {
@@ -319,7 +313,7 @@ gx_dc_pure_masked_fill_rect(const gx_device_color * pdevc,
     tile_fill_state_t state;
     int code;
 
-    code = tile_fill_init(&state, pdevc, dev, &lop);
+    code = tile_fill_init(&state, pdevc, dev);
     if (code < 0)
 	return code;
     if (state.pcdev == dev || ptile->is_simple)
@@ -343,7 +337,7 @@ gx_dc_binary_masked_fill_rect(const gx_device_color * pdevc,
     tile_fill_state_t state;
     int code;
 
-    code = tile_fill_init(&state, pdevc, dev, &lop);
+    code = tile_fill_init(&state, pdevc, dev);
     if (code < 0)
 	return code;
     if (state.pcdev == dev || ptile->is_simple)
@@ -367,7 +361,7 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
     tile_fill_state_t state;
     int code;
 
-    code = tile_fill_init(&state, pdevc, dev, &lop);
+    code = tile_fill_init(&state, pdevc, dev);
     if (code < 0)
 	return code;
     if (state.pcdev == dev || ptile->is_simple)

@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: history3.txt 
+$Id$
 This file, history3.txt, describes the changes in older releases of
 Ghostscript numbered 3.n.  For more recent changes, see the NEWS file.
 
@@ -6104,7 +6104,7 @@ Documentation
 -------------
 
 Notes that on Unix systems, one should not edit 'makefile', but should edit
-the individual subfile and run tar_cat.  THIS IQ A NON-BACKWARD-COMPATIBLE
+the individual subfile and run tar_cat.  THIS IS A NON-BACKWARD-COMPATIBLE
 CHANGE.  (make.doc)
 
 Adds information on the Macintosh implementation.  (readme)

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpsde.c  */
+/*$Id$ */
 /* Embedded font writing */
 #include "memory_.h"
 #include "gx.h"

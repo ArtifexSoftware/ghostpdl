@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevbbox.h  */
+/*$Id$ */
 /* Requires gxdevice.h */
 
 #ifndef gdevbbox_INCLUDED

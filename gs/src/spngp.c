@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: spngp.c  */
+/*$Id$ */
 /* PNG pixel prediction filters */
 #include "memory_.h"
 #include "strimpl.h"

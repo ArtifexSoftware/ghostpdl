@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gendev.c  */
+/*$Id$ */
 /* Generate .dev configuration files */
 #include "stdpre.h"
 #include <assert.h>

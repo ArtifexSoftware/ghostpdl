@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpsdi.c  */
+/*$Id$ */
 /* Image compression for PostScript and PDF writers */
 #include "math_.h"
 #include "gx.h"

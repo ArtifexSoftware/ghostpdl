@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: winint.mak 
+# $Id$
 # Common interpreter makefile section for 32-bit MS Windows.
 
 # This makefile must be acceptable to Microsoft Visual C++, Watcom C++,

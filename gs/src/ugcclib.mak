@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: ugcclib.mak 
+# $Id$
 # makefile for Unix / gcc library testing.
 
 GLSRCDIR=.
@@ -115,8 +115,8 @@ include $(GLSRCDIR)/contrib.mak
 
 # Following is from unixtail.mak, we have a different link step.
 unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ)
-unix_.dev: $(unix__)
-	$(SETMOD) unix_ $(unix__)
+unix_.dev: $(unix__) nosync.dev
+	$(SETMOD) unix_ $(unix__) -include nosync
 
 $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(pipe__h) $(string__h) $(time__h)\

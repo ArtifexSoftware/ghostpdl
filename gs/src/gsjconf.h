@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsjconf.h  */
+/*$Id$ */
 /* jconfig.h file for Independent JPEG Group code */
 
 #ifndef gsjconf_INCLUDED

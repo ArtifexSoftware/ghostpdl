@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevm8.c  */
+/*$Id$ */
 /* 8-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -53,6 +53,8 @@ private int
 mem_mapped8_fill_rectangle(gx_device * dev,
 			   int x, int y, int w, int h, gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     fit_fill(dev, x, y, w, h);
     bytes_fill_rectangle(scan_line_base(mdev, y) + x, mdev->raster,
 			 (byte) color, w, h);
@@ -72,6 +74,7 @@ mem_mapped8_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     const byte *line;
     int first_bit;
 
@@ -151,6 +154,8 @@ mem_mapped8_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		       int x, int y, int w, int h)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h);
     return 0;
@@ -179,6 +184,7 @@ private int
 mem8_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			 gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *base;
     uint raster;
 
@@ -197,6 +203,7 @@ mem8_word_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
     uint raster;
     bool store;
@@ -218,6 +225,7 @@ mem8_word_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		     int x, int y, int w, int h)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
     uint raster;
 

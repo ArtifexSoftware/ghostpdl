@@ -1,5 +1,5 @@
 #!/bin/sh
-# Id: ps2ps 
+# $Id$
 # "Distill" PostScript.
 
 OPTIONS=""

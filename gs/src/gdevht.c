@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevht.c  */
+/*$Id$ */
 /* Halftoning device implementation */
 #include "gx.h"
 #include "gserrors.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxht.h  */
+/*$Id$ */
 /* Rest of (client) halftone definitions */
 
 #ifndef gxht_INCLUDED

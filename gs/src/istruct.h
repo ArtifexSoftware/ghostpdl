@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: istruct.h  */
+/*$Id$ */
 /* Interpreter-level extension of gsstruct.h */
 
 #ifndef istruct_INCLUDED
@@ -25,6 +25,14 @@
 #include "gsstruct.h"
 
 /* ================ Refs ================ */
+
+/*
+ * Define the pointer type for refs.  Note that if a structure contains refs,
+ * both its clear_marks and its reloc_ptrs procedure must unmark them,
+ * since the GC will never see the refs during the unmarking sweep.
+ */
+extern const gs_ptr_procs_t ptr_ref_procs;
+#define ptr_ref_type (&ptr_ref_procs)
 
 /* The structure type descriptor for (blocks of) refs. */
 /* This is defined in igc.c and exported for isave.c. */

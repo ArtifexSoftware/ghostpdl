@@ -17,7 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Id: NEWS 
+$Id$
 This file, NEWS, describes the changes in the most recent releases of
 Ghostscript.  Changes in older releases are described in history*.txt.
 
@@ -29,112 +29,235 @@ Procedures, Utilities, Drivers, Platforms, Fonts, Interpreter, Streams
 (included under Interpreter through release 2.9.9), Library.  Changes marked
 with a * were made available as patches to a previous release.
 
-Version 5.30(limited) (xx/xx/98)
-================================
+Version 5.34(beta) (8/16/98)
+============================
+
+More updates for 5.3x.
+
+Documentation
+-------------
+
+Updates all of the man pages to new versions.  (gs-vms.hlp, gs.1, pdf2dsc.1,
+pdf2ps.1, ps2ascii.1, ps2epsi.1, ps2pdf.1, ps2ps.1)
+
+Procedures
+----------
+
+Fixes problems:
+	- The MSVC library makefile incorrectly included gp_msio.c.
+(msvclib.mak, winlib.mak)
+
+Drivers
+-------
+
+Fixes problems:
+	- The PDF writer unnecessarily checked for other parameters after a
+failing show or pdfmark.  (gdevpdfp.c)
+	- The device's BufferSpace parameter was ignored.  (bug introduced
+by async rendering code in 5.30) (gdevprn.c)
+	- Banding devices smashed the first 4 bytes of each scan line.  (bug
+introduced in 5.28) (gxdevmem.h, gdevmem.c, gxclread.c)
+	- The phase for colored halftones was set wrong.  (We have "fixed"
+this innumerable times, and it is still probably wrong.)  (gxclrast.c)
+
+Replaces the deprecated gx_device_image_xxx calls with the new gx_image_xxx
+calls.  (gdevpdfi.c, gdevps.c, gdevpx.c, gdevvec.c)
+
+Interpreter
+-----------
+
+Fixes problems:
+	- The equality test for idiom recognition sometimes incorrectly
+returned false.  (zmisc3.c)
+	- shfill didn't take the BBox into account.  (It still doesn't.)
+(gxshade.c)
+	- The status operator could return an incorrect pages or bytes value
+for files larger than 2 Gb, rather than giving an error.  (zfile.c)
+
+Library
+-------
+
+Fixes problems:
+	- The hint tables weren't reset after processing the base character
+of a 'seac', leading to incorrect hinting and (for Type 2 CharStrings)
+possible mis-parsing of the outline data.  (gstype2.c)
+	- When processing a 'seac', the left side bearing was added in
+twice, displacing characters to the right.  (bug probably introduced in
+5.20) (gstype1.c)
+	- RasterOps didn't set the size of the RasterOp texture device,
+which caused filling operations involving a colored halftone to be clipped
+to an empty rectangle.  (gdevrops.c)
+	- When filling with a colored halftone, the RasterOp source was
+often disregarded.  (gxcht.c)
+	- gx_device_image[_plane]_data and gx_device_end_image took an
+unused dev argument, leading to potential confusion.  We deprecated the
+gx_device_image_plane_data and gx_device_end_image procedures, replacing
+them with macros that call their replacements gx_image_plane_data and
+gx_image_end (which no longer have the spurious dev argument).  (gxdevcli.h,
+gxdevice.h, gxiparam.h, gdevbbox.c, gdevddrw.c, gdevdflt.c, gsimage.c,
+gslib.c, gxclimag.c, gxclrast.c, gximage2.c, gximage3.c, gximage4.c)
+	- gs_color_adjust_count, introduced in 5.33 to address the problem
+of freeing free-standing patterns, just made things worse.  We are replacing
+them with gs_pattern_reference, essentially the procedure introduced in 5.31
+that we deleted in 5.33.  (gsccolor.h, gspcolor.h, gscolor.c, gspcolor.c)
+
+Changes hint suppression from a #define to a debugger-settable static.
+(gxhint1.c)
+
+Version 5.33(beta) (8/14/98)
+============================
+
+This is the third set of updates for 5.30.  These updates have been driven
+mostly by the needs of another Aladdin project, so they haven't included as
+many problem fixes as we would normally make.
+
+Platforms
+---------
+
+Fixes problems:
+	- The thread creation procedure for Win32 called a Windows function
+rather than the proper C library function.  (gp_win32.c)
+	- In some MS-DOS implementations, the copy command doesn't recognize
+the /Y switch.  (bcwin32.mak)
+
+Fonts
+-----
+
+Fixes problems:
+	- TrueType fonts with *less* than 64K of glyf data stopped working.
+(bug introduced in 5.31) (gs_ttf.ps)
+
+Interpreter (PDF)
+-----------------
+
+Fixes problems:
+	- Using an Identity function left an extra element on the stack.
+(pdf_draw.ps)
+	- The syntax of # in names is different in PDF 1.1 and PDF 1.2, but
+the PDF 1.2 syntax was always used.  (pdf_base.ps, pdf_main.ps)
+
+Library
+-------
+
+Fixes problems:
+	- Color images still always caused an error. (bug introduced in
+5.32) (gxicolor.c)
+	- Because of a typo, the implementation of image types didn't
+compile. (bug introduced in 5.32)  (gxiparam.h)
+	- Free-standing colors (specifically pattern colors) and color
+spaces couldn't be freed.  This required a NON-BACKWARD-COMPATIBLE change in
+an internal API used for managing color and color space reference counts.
+(gxcspace.h, gsccolor.h, gscdevn.c, gscolor.c, gscolor2.c, gscscie.c,
+gscsepr.c, gscspace.c, gspcolor.c)
+
+Cleans up a little more formatting.  (gscspace.h)
+
+Version 5.32(beta) (8/13/98)
+============================
+
+This is the second set of updates for 5.30.
+
+Procedures
+----------
+
+Fixes problems:
+	- The OS/2 makefile accidentally omitted the OS/2-PM driver.
+(os2.mak)
+	- The MSVC library makefile didn't work.  (msvclib.mak)
+	- Debugging was turned on in the Borland Windows makefile.
+(bcwin32.mak)
+	- The BEGINFILES2 list was too long in the MSVC makefile.
+(msvc32.mak)
+
+Interpreter
+-----------
+
+Fixes problems:
+	- .execn wouldn't accept pseudo-operators.  (iref.h)
+	- inustroke with a matrix operand didn't work correctly.  (zupath.c)
+	- ImageType 4 images didn't work.  (bug introduced in 5.31)
+(zimage3.c)
+
+Interpreter (PDF)
+-----------------
+
+Fixes problems:
+	- Forms used more than once caused an invalidaccess error.
+(pdf_draw.ps)
+
+Library
+-------
+
+Fixes problems:
+	- Using a colored pattern with a Pattern color space that included a
+base space could access uninitialized floating point values, possibly
+causing an arithmetic trap.  (gspcolor.c)
+	- RasterOp wasn't implemented for 16- and 32- bit devices.
+(gdevm16.c, gdevm32.c, gdevmrop.c)
+	- The library test program relied on copysign, which some C
+libraries lack.  (gslib.c)
+	- The gs_free and gs_heap_free_all debugging printout were included
+even if DEBUG wasn't defined. (bug introduced in 5.30) (gsmalloc.c)
+	- Color images always caused an error. (bug introduced in 5.30)
+(gxicolor.c)
+	- Masked images with pis = NULL could cause an error.  (gximono.c)
+	- In landscape orientation, masked images didn't guarantee that the
+buffer of mask scan lines would be flushed to the mask clipping device
+before processing the data being masked.  (gxiparam.h, gxidata.c, gxifast.c,
+gximage3.c)
+	- Images with source transparency set but CombineWithColor = false
+could get an error because of trying to paint with an unloaded
+color. (caused by a bug fix in 5.30) (gxdcolor.c, gxiinit.c)
+
+Version 5.31(beta) (8/11/98)
+============================
+
+This is the first set of updates for 5.30.  They fix a few minor build
+problems, and some significant problems with bitmap patterns that do not
+affect the PostScript or PDF interpreters.
+
+Drivers
+-------
+
+Moves some casting macros from generic files to the few specific files that
+use them.  (gdev4693.c, gdevn533.c, gdevsnfb.c)
+
+Interpreter
+-----------
+
+Changes ImageType 4 images to match the change in the library interface.
+(zimage3.c)
+
+Library
+-------
+
+Fixes bugs:
+	- The MaskColor elements of ImageType 4 images were defined as int
+rather than uint, truncating the range by 1 bit and causing problems in
+comparing the mask color against the pixel samples.  (gsiparm4.h,
+gximage4.c)
+	- A needed cast was missing from gs_malloc_memory_release.
+(gsmalloc.h)
+	- A needed cast from byte to char was missing.  (gsparams.c)
+	- Patterns always allocated a mask for rendering, which for large
+patterns specified directly as bitmaps allocated a lot of unnecessary
+memory.  (gxcolor2.h, gspcolor.c, gxp1fill.c, gxpcmap.c)
+	- Macros simply defining casted versions of variables made the code
+hard to debug.  We have only removed the ones that are in generic code (not
+drivers) and that cast pointers to gx_device or its subclasses: the only
+ones removed from header files were prn_dev in gdevprn.h, mdev in gdevmem.h,
+and ccdev, crdev, and cwdev in gxcldev.h.  (gdevmem.h, gdevprn.h, gxclist.h,
+gdevabuf.c, gdevm1.c, gdevm2.c, gdevm4.c, gdevm8.c, gdevm16.c, gdevm24.c,
+gdevm32.c, gdevmpla.c, gdevnfwd.c, gdevprn.c, gxacpath.c, gxclimag.c,
+gxclist.c, gxclpage.c, gxclpath.c, gxclread.c, gxclrect.c)
+	- There was no way to free a pattern instance outside the graphics
+state.  (gspcolor.h, gspcolor.c)
+
+Version 5.30(beta) (8/10/98)
+============================
 
 This is the first beta candidate for the 5.50 release.  It completes the
 merge of the overlapped rasterizing code into the main development line.
-
-Missing DPS functionality:
-	Contexts:
-		Free L/G VM when num_contexts goes to 0
-		quit should terminate only the current context
-		  Contexts terminated on quit or error destroy stacks &
-		    close stdin/out
-		Monitor-lock oparrays?
-		Global VM GC should collect (or at least scan) *all* local
-		  VMs that reference it
-		How to handle multi-client input?
-	Type 2 images:
-		UnpaintedPath (generating X exposure events)
-		Transformed source
-		Overlapping source/dest (affects order)
-	NeXT extensions:
-		Compositing
-		    Storing alpha with X windows
-		    Halftoning
-
-Other partially implemented functionality:
-  Internal:
-	Directory restructuring
-	  Create .dev files in GEN directories
-	  'make clean' do the right thing
-	Typed images in band list
-	  (wrong in gxclimag.c, not implemented in gxclread.c)
-	General image_plane_data for banding
-	alpha/compositing-related:
-	  Image alpha data in band list (gxclimag.c?)
-	  Compositing through band list (stubbed in gxclimag.c)
-	Driver text API (barely started, not documented)
-  PDF-related:
-	Acrobat Distiller 3.0 pdfmarks (see under Drivers) - untested
-	Double-byte fonts (Type 0, CID fonts)
-  PostScript Level 2+ leftovers:
-	HalftoneTypes 6, 10, and 16 (in gs_ll3.ps)
-	Type 32 fonts (gs_typ32.ps, zchar32.c, zfont32.c)
-  PostScript LanguageLevel 3:
-	DeviceN color space (zcsdevn.c, gscdevn.c)
-	  How to handle arbitrary numbers of colorants?
-	  Caching transformed values
-	ImageType 3 images (zimage3.c)
-	  Library doesn't check ImageMatrix compatibility
-	    (see Table 4.24 in PS3 RM draft)
-	DevicePixel color space
-	  Not enough bits in client or concrete color!
-	  What is initial value?
-	PatternTypes other than 1
-	Functions
-	  Monotonicity is implemented only for Exponential and ArrayedOutput
-	    (may not be needed at all....)
-	Shading
-	  Doesn't handle Background, BBox, Extend, or clipping
-	Streams
-	  LZWDecode LowBitFirst
-	  ReusableStreamDecode
-	UseCIEColor (see Section 4.8.3 in PS3 RM draft)
-
-Known problems:
-	- Setting HWSize by itself with setpagedevice has no effect.
-	- When shrinking oversize halftone cells, the current algorithm,
-which progressively halves the size, can produce non-monotonic behavior; GS
-should either use a monotonic algorithm or give a limitcheck.
-(k/jdscreen.ps)
-	- In Type 1 fonts, almost-vertical lines that straddle a stem edge
-produce uneven output.
-	- At some resolutions, gaps occur in some character outlines with
-certain Type 1 fonts.  (? - no test file)
-	- The Watcom MS Windows makefile (watcw32.mak) doesn't work.
-	- The uniprint driver sometimes drops some output, and is very slow
-at 720x720 resolution.
-	- Halftones look relatively coarse: we should be using a small-scale
-version of AccurateScreens (multiple small dot cells with an ordered dither
-cell visiting pattern) to get both fine screens and many levels.
-	- Since the x11alpha device uses saturation to emulate alpha,
-writing anti-aliased objects over dark areas produces incorrect output.
-(gdevxalt.c)
-	- Setting OutputFile=- should redirect stdout to stderr (or provide
-some other way to redirect stdout).
-	- Type 0 (Japanese / Chinese / ...) fonts are not supported in PDF
-files.  (k/microw-j.pdf)
-	- Ghostscript can't handle double-byte TrueType fonts.
-(/import/fonts/cyberbit/CYBERBIT.TTF)
-	- Ghostscript apparently has a problem with TrueType fonts with cmap
-type 6.  (k/ttf-cmap6.pdf)
-	- High-level output devices ([e]pswrite, pdfwrite, pxl*) always
-produce a single output file rather than a separate file for each page, even
-if there is a %d in the OutputFile name.
-	- ps2pdf doesn't handle the Distiller 3.0 BP/EP/SP pdfmarks.
-(k/pdfmark3.ps)
-	- CTM is not set correctly for PostScript pass-throughs in the PDF
-interpreter.
-	- When attempting both RasterOp and anti-aliasing, the anti-aliasing
-takes effect rather than the RasterOp.
-	- Selecting the nullpage device initially, gsave, change page
-device, grestore produces infinite recursion.
-	- The MSVC library and Watcom makefiles are broken.
-	*** copy_rop doesn't work for 2- or 4-bit devices, because the
-monobit case may call other device procedures (fill_rectangle, copy_mono,
-tile_rectangle).
 
 Documentation
 -------------
@@ -176,6 +299,15 @@ really maintain standard, debugging, and profiling builds simultaneously.
 This is a hack, but a fairly reliable one.  (gs.mak, unixhead.mak,
 unix-end.mak)
 
+Adds a dummy thread / semaphore / monitor implementation to all platforms
+other than Windows.  (dvx-tail.mak, openvms.mak, os2.mak, ugcclib.mak,
+unixtail.mak, watc.mak, watclib.mak)
+
+Drivers
+-------
+
+Updates driver support to use the new write-position stream.  (gdevpsdf.c)
+
 Platforms
 ---------
 
@@ -183,19 +315,53 @@ Fixes bugs:
 	- The Windows Registry calls didn't deal properly with a null
 pointer.  (gp_wgetv.c)
 
+Makes a small change in the platform semaphore / monitor API.  (gpsync.h,
+gxsync.h, gp_win32.c, gxsync.c)
+
+Adds a dummy thread / semaphore / monitor implementation.  Note that with
+this implementation, async rendering WILL NOT WORK.  (gp_nsync.c)
+
+Adds pthreads thread creation and POSIX semaphores for Unix platforms.  (We
+still need to add System V semaphores, which is all that is available on
+Solaris and BSDI.)  (gp_semon.c, gp_posem.c, gp_pthr.c).
+
 Fonts
 -----
 
 Fixes bugs:
 	- CIDFontType 0 fonts didn't select the proper VM space for adding
 entries to font dictionaries, and for loading Subrs strings.  (gs_cidfn.ps)
+	- TrueType fonts with an odd glyfs length didn't work.  (gs_ttf.ps)
+	- TrueType fonts with a Format 3 'post' table didn't work.
+(gs_ttf.ps)
+	- TrueType fonts where the encoding in the 'post' table didn't cover
+the entire set of glyfs didn't work.  (gs_ttf.ps)
+	- TrueType fonts with more than 128K of glyfs didn't work.
+(gs_ttf.ps)
+	- TrueType cmap format 6 didn't work.  (gs_ttf.ps)
+	- CIDFontType 0 fonts with hex data didn't skip over the > at the
+end of the data.  (gs_cidfn.ps)
 
 Interpreter
 -----------
 
-Works around the ****** BUG ****** that gs_shfill can't do a
-gs_setcolorspace for color spaces that require interpreter assistance.
-(gs_ll3.ps)
+Works around the fact that gs_shfill can't do a gs_setcolorspace for color
+spaces that require interpreter assistance.  (gs_ll3.ps)
+
+Moves clipsave and cliprestore to C code.  (gs_ll3.ps, zmisc3.c)
+
+Updates some files to reflect the redivision of gsmemory.h and gsstruct.h.
+(imemory.h, istruct.h, ialloc.c)
+
+Streams
+-------
+
+Adds a stream that just keeps track of the write position.  (stream.h,
+stream.c)
+
+Removes the compilation dependency that required all clients of the zlib
+filters to be compiled with the zlib source directory in the search path.
+(szlibx.h, szlibxx.h, szlib[cde].c)
 
 Library
 -------
@@ -231,24 +397,40 @@ Pattern color was used wasn't the same as the current device when the
 Pattern instance was created.  (gxpcmap.c)
 	- The target of forwarding devices wasn't reference-counted
 properly.  (gsdevice.c) ****** FIXING THIS PROPERLY WILL BE A LOT OF WORK:
-we only fixed gs_setdevice_no_erase ******
+WE ONLY FIXED gs_setdevice_no_erase ******
+	- As a result of fixing a typo, the structure declaration for
+gx_page_queue was private, causing clients not to compile.  We left it
+private and added an instance allocation procedure.  (gxpageq.h, gdevprna.c,
+gxpageq.c)
+	- The mask for ImageType 3 images was clipped (incorrectly).
+(gximage3.c)
+	- Interpolated images with negative X->X values in the CTM were
+displaced on the page.  (gxiscale.c)
 
-Finishes integrating the asynchronous rendering code.  (gxclimag.c,
-gxclpath.c, gxclutil.c)
+Finishes integrating the asynchronous rendering code.  (gpsync.h, gxclist.h,
+gdevprna.c, gsmemlok.c, gxclimag.c, gxclpath.c, gxclutil.c)
 
-****** STILL TO REVIEW: gdevprna.c (NEEDS TO INTERACT WITH gsmemfix/raw)
-******
+Updates the memory manager API for additional flexibility needed for
+asynchronous rendering.  (gsmalloc.h, gsmemlok.h, gsmemraw.h, gsalloc.c,
+gsmalloc.c, gsmemlok.c)
+
+Updates the standard memory manager to work with a fixed (externally
+supplied) set of chunks, needed for asynchronous rendering, removing some
+macros in the process.  (gsalloc.h, gsalloc.c)
 
 Updates some code to use more mnemonic variable names.  (gstype2.c,
 gxicolor.c)
 
 Removes some macros for better readability.  (gdevmrop.c)
 
-Changes the CRD initialization code so that intermediate steps can be
-skipped.  (gscie.c)
+Adds dummy implementations of clipsave and cliprestore.  (gsclipsr.h,
+gsclipsr.c)
 
-In DEBUG configurations, makes the standard allocator check for structures
-whose size is 0 or unreasonably large.  (gsalloc.c)
+Implements an alternative, but completely untested, parameter list
+serializer based on streams.  (gsparam2.c)
+
+Moves more of the internal memory manager structures from gsmemory.h to
+gsstruct.h.  (gsmemory.h, gsstruct.h, gsmemory.c)
 
 Version 5.28(limited) (8/3/98)
 ==============================
@@ -1697,7 +1879,7 @@ Removes pdf_2ps.ps from the fileset.  (int.mak, unixinst.mak,
 pdf_2ps.ps[deleted])
 
 Ensures that every file that is copyright, maintained, and distributed by
-Aladdin Enterprises has a RCS $Id$ line (actually, Id: <filename> ).  In
+Aladdin Enterprises has a RCS $Id$ line (actually, $Id$).  In
 .c and .h files, these lines currently are only comments, but they could be
 converted easily to static strings later if we want to.  We had to touch
 almost every file in the fileset to do this, but we did *not* change the

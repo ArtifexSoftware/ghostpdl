@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gsos2.rc */
+/*$Id$*/
 /* Resources for gsos2.exe, Ghostscript for OS/2 */
 
 ICON 1 gsos2.ico

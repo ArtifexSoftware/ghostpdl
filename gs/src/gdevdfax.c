@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevdfax.c */
+/*$Id$*/
 /* DigiBoard fax device. */
 /***
  *** Note: this driver is maintained by a user: please contact

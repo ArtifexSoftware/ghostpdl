@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclist.h  */
+/*$Id$ */
 /* Command list definitions for Ghostscript. */
 /* Requires gxdevice.h and gxdevmem.h */
 
@@ -154,7 +154,7 @@ extern const gs_imager_state clist_imager_state_initial;
  */
 typedef struct gx_clist_state_s gx_clist_state;
 
-#define gx_device_clist_common\
+#define gx_device_clist_common_members\
 	gx_device_forward_common;	/* (see gxdevice.h) */\
 		/* Following must be set before writing or reading. */\
 		/* See gx_device_clist_writer, below, for more that must be init'd */\
@@ -180,6 +180,10 @@ typedef struct gx_clist_state_s gx_clist_state;
 	gx_band_page_info page_info;	/* page information */\
 	int nbands		/* # of bands */
 
+typedef struct gx_device_clist_common_s {
+    gx_device_clist_common_members;
+} gx_device_clist_common;
+
 #define clist_band_height(cldev) ((cldev)->page_info.band_height)
 #define clist_cfname(cldev) ((cldev)->page_info.cfname)
 #define clist_cfile(cldev) ((cldev)->page_info.cfile)
@@ -192,7 +196,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 
 /* Define the state of a band list when writing. */
 typedef struct gx_device_clist_writer_s {
-    gx_device_clist_common;	/* (must be first) */
+    gx_device_clist_common_members;	/* (must be first) */
     int error_code;		/* error returned by cmd_put_op */
     gx_clist_state *states;	/* current state of each band */
     byte *cbuf;			/* start of command buffer */
@@ -244,15 +248,13 @@ typedef struct gx_device_clist_writer_s {
 /* Define the state of a band list when reading. */
 /* For normal rasterizing, pages and num_pages are both 0. */
 typedef struct gx_device_clist_reader_s {
-    gx_device_clist_common;	/* (must be first) */
+    gx_device_clist_common_members;	/* (must be first) */
     const gx_placed_page *pages;
     int num_pages;
 } gx_device_clist_reader;
 
 typedef union gx_device_clist_s {
-    struct _clc {
-	gx_device_clist_common;
-    } common;
+    gx_device_clist_common common;
     gx_device_clist_reader reader;
     gx_device_clist_writer writer;
 } gx_device_clist;
@@ -288,9 +290,8 @@ int clist_close_output_file(P1(gx_device *dev));
 typedef struct gx_device_printer_s gx_device_printer;
 #endif
 
-/* Set the device's geometry to that in cmd list: for async rendering only */
-/****** FORMERLY NAMED clist_setup_params ******/
-int clist_set_geometry(P1(gx_device *dev));
+/* Do device setup from params passed in the command list. */
+int clist_setup_params(P1(gx_device *dev));
 
 /* Do more rendering to a client-supplied memory image, return results */
 int clist_get_overlay_bits(P4(gx_device_printer *pdev, int y, int line_count,

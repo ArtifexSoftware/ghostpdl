@@ -17,7 +17,7 @@
  */
 
 
-// Id: dwdll.h 
+// $Id$
 
 // gsdll_class for MS-Windows
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfont2.c  */
+/*$Id$ */
 /* Font creation utilities */
 #include "memory_.h"
 #include "string_.h"

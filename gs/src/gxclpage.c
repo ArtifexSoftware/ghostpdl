@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclpage.c  */
+/*$Id$ */
 /* Page object management */
 #include "gdevprn.h"
 #include "gxcldev.h"
@@ -27,27 +27,29 @@ int
 gdev_prn_save_page(gx_device_printer * pdev, gx_saved_page * page,
 		   int num_copies)
 {
-    int code;
-
     /* Make sure we are banding. */
     if (!pdev->buffer_space)
 	return_error(gs_error_rangecheck);
     if (strlen(pdev->dname) >= sizeof(page->dname))
 	return_error(gs_error_limitcheck);
-#define pcldev ((gx_device_clist_writer *)pdev)
-    if ((code = clist_end_page(pcldev)) < 0 ||
-	(code = clist_fclose(pcldev->page_cfile, pcldev->page_cfname, false)) < 0 ||
-    (code = clist_fclose(pcldev->page_bfile, pcldev->page_bfname, false)) < 0
-	)
-	return code;
-    /* Save the device information. */
-    memcpy(&page->device, pdev, sizeof(gx_device));
-    strcpy(page->dname, pdev->dname);
-    /* Save the page information. */
-    page->info = pcldev->page_info;
-    page->info.cfile = 0;
-    page->info.bfile = 0;
-#undef pcldev
+    {
+	gx_device_clist_writer * const pcldev =
+	    (gx_device_clist_writer *)pdev;
+	int code;
+
+	if ((code = clist_end_page(pcldev)) < 0 ||
+	    (code = clist_fclose(pcldev->page_cfile, pcldev->page_cfname, false)) < 0 ||
+	    (code = clist_fclose(pcldev->page_bfile, pcldev->page_bfname, false)) < 0
+	    )
+	    return code;
+	/* Save the device information. */
+	memcpy(&page->device, pdev, sizeof(gx_device));
+	strcpy(page->dname, pdev->dname);
+	/* Save the page information. */
+	page->info = pcldev->page_info;
+	page->info.cfile = 0;
+	page->info.bfile = 0;
+    }
     /* Save other information. */
     page->num_copies = num_copies;
     return (*gs_clist_device_procs.open_device) ((gx_device *) pdev);
@@ -58,7 +60,8 @@ int
 gdev_prn_render_pages(gx_device_printer * pdev,
 		      const gx_placed_page * ppages, int count)
 {
-#define pcldev ((gx_device_clist_reader *)pdev)
+    gx_device_clist_reader * const pcldev =
+	(gx_device_clist_reader *)pdev;
 
     /* Check to make sure the pages are compatible with the device. */
     {
@@ -95,15 +98,14 @@ gdev_prn_render_pages(gx_device_printer * pdev,
 	}
     }
     /* Set up the page list in the device. */
-/****** SHOULD FACTOR THIS OUT OF clist_render_init ******/
+    /****** SHOULD FACTOR THIS OUT OF clist_render_init ******/
     pcldev->ymin = pcldev->ymax = 0;
     pcldev->pages = ppages;
     pcldev->num_pages = count;
-#undef pcldev
     /* Render the pages. */
     {
 	int code = (*dev_proc(pdev, output_page))
-	((gx_device *) pdev, ppages[0].page->num_copies, true);
+	    ((gx_device *) pdev, ppages[0].page->num_copies, true);
 
 	/* Delete the temporary files. */
 	int i;

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscsepr.h  */
+/*$Id$ */
 /* Client interface to Separation color */
 
 #ifndef gscsepr_INCLUDED

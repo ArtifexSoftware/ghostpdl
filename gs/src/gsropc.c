@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsropc.c  */
+/*$Id$ */
 /* RasterOp-compositing implementation */
 #include "gx.h"
 #include "gserrors.h"

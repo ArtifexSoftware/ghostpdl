@@ -1,2 +1,2 @@
-@rem Id: mv.bat 
+@rem $Id$
 @rename %1 %2

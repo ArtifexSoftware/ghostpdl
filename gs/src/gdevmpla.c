@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevmpla.c  */
+/*$Id$ */
 /* Any-depth planar "memory" (stored bitmap) devices */
 #include "memory_.h"
 #include "gx.h"
@@ -94,6 +94,7 @@ private int
 mem_planar_fill_rectangle(gx_device * dev,
 			  int x, int y, int w, int h, gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte **ptrs = mdev->line_ptrs;
     int i;
 
@@ -112,6 +113,7 @@ mem_planar_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte **ptrs = mdev->line_ptrs;
     int i;
 
@@ -135,6 +137,7 @@ mem_planar_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		      int x, int y, int w, int h)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte **ptrs = mdev->line_ptrs;
     int depth = dev->color_info.depth;
     int wleft = w;

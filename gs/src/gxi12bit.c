@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxi12bit.c  */
+/*$Id$ */
 /* 12-bit image procedures */
 #include "gx.h"
 #include "memory_.h"

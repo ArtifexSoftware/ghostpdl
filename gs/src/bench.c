@@ -17,7 +17,7 @@
    all copies.
  */
 
-/*Id: bench.c  */
+/*$Id$ */
 /* Simple hardware benchmarking suite (C and PostScript) */
 #include <stdio.h>
 #include <stdlib.h>
@@ -85,7 +85,7 @@ imul(int a, int n, char **msg)
 static int
 idiv(int a, int n, char **msg)
 {
-    int b = 1, i;
+  ( int b = 1, i;
 
     for (i = n / 20; --i > 0;) {
 	b += 999999;

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sbtx.h  */
+/*$Id$ */
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
 #ifndef sbtx_INCLUDED

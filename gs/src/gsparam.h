@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsparam.h  */
+/*$Id$ */
 /* Client interface to parameter dictionaries */
 
 #ifndef gsparam_INCLUDED

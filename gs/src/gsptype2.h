@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsptype2.h  */
+/*$Id$ */
 /* Client interface to PatternType 2 Patterns */
 
 #ifndef gsptype2_INCLUDED

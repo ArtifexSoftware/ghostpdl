@@ -17,7 +17,7 @@
  */
 
 
-// Id: dwtext.h 
+// $Id$
 // Text Window class
 
 

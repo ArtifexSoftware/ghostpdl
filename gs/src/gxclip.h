@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclip.h  */
+/*$Id$ */
 /* Internal definitions for clipping */
 
 #ifndef gxclip_INCLUDED

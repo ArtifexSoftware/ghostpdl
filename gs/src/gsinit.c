@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsinit.c  */
+/*$Id$ */
 /* Initialization for the imager */
 #include "stdio_.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevmem.h  */
+/*$Id$ */
 /* Private definitions for memory devices. */
 
 #ifndef gdevmem_INCLUDED
@@ -192,9 +192,6 @@ void mem_swap_byte_rect(P6(byte *, uint, int, int, int, bool));
 		       (mdev)->raster,\
 		       base + x_to_byte(sourcex), sraster,\
 		       x_to_byte(w), h)
-
-/* Macro for casting gx_device argument */
-#define mdev ((gx_device_memory *)dev)
 
 /* ------ Implementations ------ */
 

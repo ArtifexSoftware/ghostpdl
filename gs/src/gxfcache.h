@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxfcache.h  */
+/*$Id$ */
 /* Requires gsfont.h */
 
 #ifndef gxfcache_INCLUDED

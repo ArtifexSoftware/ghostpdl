@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_sysv.c  */
+/*$Id$ */
 /* System V Unix-specific routines for Ghostscript */
 
 /* This file contains a couple of standard Unix library procedures */

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: istack.h  */
+/*$Id$ */
 /* Definitions for expandable Ghostscript stacks */
 /* Requires iref.h */
 

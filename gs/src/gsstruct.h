@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsstruct.h  */
+/*$Id$ */
 /* Definitions for Ghostscript modules that define allocatable structures */
 /* Requires gstypes.h */
 
@@ -92,6 +92,72 @@
 typedef struct obj_header_s obj_header_t;
 
 #endif
+
+/* Define an opaque type for the garbage collector state. */
+typedef struct gc_state_s gc_state_t;
+
+/*
+ * Define pointer types, which define how to mark the referent of the
+ * pointer.
+ */
+/*typedef struct gs_ptr_procs_s gs_ptr_procs_t;*/  /* in gsmemory.h */
+struct gs_ptr_procs_s {
+
+    /* Unmark the referent of a pointer. */
+
+#define ptr_proc_unmark(proc)\
+  void proc(P2(void *, gc_state_t *))
+    ptr_proc_unmark((*unmark));
+
+    /* Mark the referent of a pointer. */
+    /* Return true iff it was unmarked before. */
+
+#define ptr_proc_mark(proc)\
+  bool proc(P2(void *, gc_state_t *))
+    ptr_proc_mark((*mark));
+
+    /* Relocate a pointer. */
+    /* Note that the argument is const, but the */
+    /* return value is not: this shifts the compiler */
+    /* 'discarding const' warning from the call sites */
+    /* (the reloc_ptr routines) to the implementations. */
+
+#define ptr_proc_reloc(proc, typ)\
+  typ *proc(P2(const typ *, gc_state_t *))
+    ptr_proc_reloc((*reloc), void);
+
+};
+/*typedef const gs_ptr_procs_t *gs_ptr_type_t;*/  /* in gsmemory.h */
+
+/* Define the pointer type for ordinary structure pointers. */
+extern const gs_ptr_procs_t ptr_struct_procs;
+#define ptr_struct_type (&ptr_struct_procs)
+
+/* Define the pointer types for a pointer to a gs_[const_]string. */
+extern const gs_ptr_procs_t ptr_string_procs;
+#define ptr_string_type (&ptr_string_procs)
+extern const gs_ptr_procs_t ptr_const_string_procs;
+#define ptr_const_string_type (&ptr_const_string_procs)
+
+/*
+ * Define the type for a GC root.
+ */
+/*typedef struct gs_gc_root_s gs_gc_root_t;*/  /* in gsmemory.h */
+struct gs_gc_root_s {
+    gs_gc_root_t *next;
+    gs_ptr_type_t ptype;
+    void **p;
+    bool free_on_unregister;
+};
+
+#define public_st_gc_root_t()	/* in gsmemory.c */\
+  gs_public_st_ptrs1(st_gc_root_t, gs_gc_root_t, "gs_gc_root_t",\
+    gc_root_enum_ptrs, gc_root_reloc_ptrs, next)
+
+/* Print a root debugging message. */
+#define if_debug_root(c, msg, rp)\
+  if_debug4(c, "%s 0x%lx: 0x%lx -> 0x%lx\n",\
+	    msg, (ulong)(rp), (ulong)(rp)->p, (ulong)*(rp)->p)
 
 /*
  * We don't want to tie the allocator to using a single garbage collector,

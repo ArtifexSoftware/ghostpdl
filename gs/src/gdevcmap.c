@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevcmap.c  */
+/*$Id$ */
 /* Special color mapping device */
 #include "gx.h"
 #include "gserrors.h"

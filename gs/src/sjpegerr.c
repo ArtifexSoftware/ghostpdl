@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sjpegerr.c  */
+/*$Id$ */
 /* IJG error message table for Ghostscript. */
 #include "stdio_.h"
 #include "jpeglib.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsexit.h  */
+/*$Id$ */
 /* Declarations for exits */
 
 #ifndef gsexit_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: imain.c  */
+/*$Id$ */
 /* Common support for interpreter front ends */
 #include "memory_.h"
 #include "string_.h"

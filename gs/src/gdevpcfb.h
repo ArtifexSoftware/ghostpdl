@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpcfb.h  */
+/*$Id$ */
 /* IBM PC frame buffer definitions */
 
 #ifndef gdevpcfb_INCLUDED

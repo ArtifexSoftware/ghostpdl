@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfont0.c  */
+/*$Id$ */
 /* Composite font creation operator */
 #include "ghost.h"
 #include "oper.h"

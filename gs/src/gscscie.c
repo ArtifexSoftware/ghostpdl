@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscscie.c  */
+/*$Id$ */
 /* CIE color space management */
 #include "math_.h"
 #include "gx.h"
@@ -147,29 +147,25 @@ gx_install_CIE(gs_color_space * pcs, gs_state * pgs)
 
 /* Adjust reference counts for a CIE color space */
 private void
-gx_adjust_cspace_CIEDEFG(const gs_color_space * pcs, gs_memory_t * mem,
-			 int delta)
+gx_adjust_cspace_CIEDEFG(const gs_color_space * pcs, int delta)
 {
     rc_adjust_const(pcs->params.defg, delta, "gx_adjust_cspace_CIEDEFG");
 }
 
 private void
-gx_adjust_cspace_CIEDEF(const gs_color_space * pcs, gs_memory_t * mem,
-			int delta)
+gx_adjust_cspace_CIEDEF(const gs_color_space * pcs, int delta)
 {
     rc_adjust_const(pcs->params.def, delta, "gx_adjust_cspace_CIEDEF");
 }
 
 private void
-gx_adjust_cspace_CIEABC(const gs_color_space * pcs, gs_memory_t * mem,
-			int delta)
+gx_adjust_cspace_CIEABC(const gs_color_space * pcs, int delta)
 {
     rc_adjust_const(pcs->params.abc, delta, "gx_adjust_cspace_CIEABC");
 }
 
 private void
-gx_adjust_cspace_CIEA(const gs_color_space * pcs, gs_memory_t * mem,
-		      int delta)
+gx_adjust_cspace_CIEA(const gs_color_space * pcs, int delta)
 {
     rc_adjust_const(pcs->params.a, delta, "gx_adjust_cspace_CIEA");
 }

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iparam.c  */
+/*$Id$ */
 /* Interpreter implementations of parameter dictionaries */
 #include "memory_.h"
 #include "string_.h"

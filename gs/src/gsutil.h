@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsutil.h  */
+/*$Id$ */
 /* Prototypes for procedures in gsutil.c */
 
 #ifndef gsutil_INCLUDED

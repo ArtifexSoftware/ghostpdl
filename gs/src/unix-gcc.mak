@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: unix-gcc.mak 
+# $Id$
 # makefile for Unix/gcc/X11 configuration.
 
 # ------------------------------- Options ------------------------------- #
@@ -39,6 +39,7 @@ PSOBJDIR=./obj
 #include $(COMMONDIR)/generic.mak
 GLSRC=$(GLSRCDIR)/
 include $(GLSRC)version.mak
+PSSRC=$(PSSRCDIR)/
 
 # ------ Generic options ------ #
 
@@ -267,9 +268,8 @@ FPU_TYPE=1
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=psl3.dev pdf.dev dpsnext.dev pipe.dev rasterop.dev
-#FEATURE_DEVS=psl3.dev pdf.dev dpsnext.dev pipe.dev
-#FEATURE_DEVS=psl3.dev rasterop.dev
+#FEATURE_DEVS=psl3.dev pdf.dev dpsnext.dev epsf.dev pipe.dev rasterop.dev
+FEATURE_DEVS=psl3.dev pdf.dev dpsnext.dev pipe.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -296,6 +296,7 @@ FILE_IMPLEMENTATION=stdio
 # devs.mak and contrib.mak for the list of available devices.
 
 DEVICE_DEVS=x11.dev x11alpha.dev x11cmyk.dev x11gray2.dev x11mono.dev
+#DEVICE_DEVS1=bmpmono.dev bmpamono.dev posync.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=
 DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev

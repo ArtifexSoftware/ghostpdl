@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscpixel.c  */
+/*$Id$ */
 /* DevicePixel color space and operation definition */
 #include "gx.h"
 #include "gserrors.h"

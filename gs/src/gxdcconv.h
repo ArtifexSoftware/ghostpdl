@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxdcconv.h  */
+/*$Id$ */
 /* Internal device color conversion interfaces */
 
 #ifndef gxdcconv_INCLUDED

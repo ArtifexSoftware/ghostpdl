@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevescp.c */
+/*$Id$*/
 /*
  * Epson 'ESC/P 2' language printer driver.
  *

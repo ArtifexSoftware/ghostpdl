@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zht.c  */
+/*$Id$ */
 /* Halftone definition operators */
 #include "ghost.h"
 #include "memory_.h"

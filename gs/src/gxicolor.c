@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxicolor.c  */
+/*$Id$ */
 /* Color image rendering */
 #include "gx.h"
 #include "memory_.h"
@@ -69,7 +69,7 @@ image_render_color(gx_image_enum * penum, const byte * buffer, int data_x,
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
-    fixed xl, ytf;
+    fixed xprev, yprev;
     fixed pdyx, pdyy;		/* edge of parallelogram */
     int vci, vdi;
     const gs_color_space *pcs = penum->pcs;
@@ -93,18 +93,15 @@ image_render_color(gx_image_enum * penum, const byte * buffer, int data_x,
     int irun;			/* int x/rrun */
     color_samples run;		/* run value */
     color_samples next;		/* next sample value */
-    bool small =
-	fixed2int(any_abs(penum->x_extent.x)) < penum->rect.w &&
-	fixed2int(any_abs(penum->x_extent.y)) < penum->rect.w;
     const byte *bufend = psrc + w;
     bool use_cache = spp * penum->bps <= 12;
-    int code;
+    int code = 0;
 
     if (h == 0)
 	return 0;
     pnext = penum->dda.pixel0;
-    xrun = xl = dda_current(pnext.x);
-    yrun = ytf = dda_current(pnext.y);
+    xrun = xprev = dda_current(pnext.x);
+    yrun = yprev = dda_current(pnext.y);
     pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
     switch (posture) {
@@ -119,7 +116,7 @@ image_render_color(gx_image_enum * penum, const byte * buffer, int data_x,
     }
 
     if_debug4('b', "[b]y=%d w=%d xt=%f yt=%f\n",
-	      penum->y, w, fixed2float(xl), fixed2float(ytf));
+	      penum->y, w, fixed2float(xprev), fixed2float(yprev));
     run.all = 0;
     next.all = 0;
     /* Ensure that we don't get any false dev_color_eq hits. */
@@ -133,18 +130,10 @@ image_render_color(gx_image_enum * penum, const byte * buffer, int data_x,
     run.v[0] = ~psrc[0];	/* force remap */
     while (psrc < bufend) {
 	dda_next(pnext.x);
-#define xn dda_current(pnext.x)
 	dda_next(pnext.y);
-#define yn dda_current(pnext.y)
-#define includes_pixel_center(a, b)\
-  (fixed_floor(a < b ? (a - (fixed_half + fixed_epsilon)) ^ (b - fixed_half) :\
-	       (b - (fixed_half + fixed_epsilon)) ^ (a - fixed_half)) != 0)
-#define paint_no_pixels()\
-  (small && !includes_pixel_center(xl, xn) &&\
-   !includes_pixel_center(ytf, yn) && psrc <= bufend)
-#define clue_hash3(next)\
+#define CLUE_HASH3(penum, next)\
   &penum->clues[(next.v[0] + (next.v[1] << 2) + (next.v[2] << 4)) & 255];
-#define clue_hash4(next)\
+#define CLUE_HASH4(penum, next)\
   &penum->clues[(next.v[0] + (next.v[1] << 2) + (next.v[2] << 4) +\
 		 (next.v[3] << 6)) & 255]
 
@@ -154,10 +143,10 @@ image_render_color(gx_image_enum * penum, const byte * buffer, int data_x,
 	    next.v[2] = psrc[2];
 	    next.v[3] = psrc[3];
 	    psrc += 4;
-map4:	    if (next.all == run.all || paint_no_pixels())
+map4:	    if (next.all == run.all)
 		goto inc;
 	    if (use_cache) {
-		pic_next = clue_hash4(next);
+		pic_next = CLUE_HASH4(penum, next);
 		if (pic_next->key == next.all)
 		    goto f;
 		/*
@@ -185,10 +174,10 @@ map4:	    if (next.all == run.all || paint_no_pixels())
 	    next.v[1] = psrc[1];
 	    next.v[2] = psrc[2];
 	    psrc += 3;
-	    if (next.all == run.all || paint_no_pixels())
+	    if (next.all == run.all)
 		goto inc;
 	    if (use_cache) {
-		pic_next = clue_hash3(next);
+		pic_next = CLUE_HASH3(penum, next);
 		if (pic_next->key == next.all)
 		    goto f;
 		/* See above re the following check. */
@@ -248,65 +237,63 @@ f:	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
 	/* the device colors might. */
 	if (dev_color_eq(*pdevc, *pdevc_next))
 	    goto set;
-fill:	{	/* Fill the region between */
-		/* xrun/irun and xl */
-	    switch (posture) {
-		case image_portrait:
-		    {		/* Rectangle */
-			int xi = irun;
-			int wi =
-			    (irun = fixed2int_var_rounded(xl)) - xi;
+fill:	/* Fill the region between */
+	/* xrun/irun and xprev */
+	switch (posture) {
+	case image_portrait:
+	    {		/* Rectangle */
+		int xi = irun;
+		int wi =
+		    (irun = fixed2int_var_rounded(xprev)) - xi;
 
-			if (wi < 0)
-			    xi += wi, wi = -wi;
-			code =
-			    gx_fill_rectangle_device_rop(xi, vci,
-						  wi, vdi, pdevc, dev, lop);
-			xrun = xl;	/* for sake of final run */
-		    }
-		    break;
-		case image_landscape:
-		    {		/* 90 degree rotated rectangle */
-			int yi = irun;
-			int hi =
-			    (irun = fixed2int_var_rounded(ytf)) - yi;
-
-			if (hi < 0)
-			    yi += hi, hi = -hi;
-			code = gx_fill_rectangle_device_rop(vci, yi,
-						  vdi, hi, pdevc, dev, lop);
-			yrun = ytf;	/* for sake of final run */
-		    }
-		    break;
-		default:
-		    {		/* Parallelogram */
-			code = (*dev_proc(dev, fill_parallelogram))
-			    (dev, xrun, yrun,
-			     xl - xrun, ytf - yrun, pdyx, pdyy,
-			     pdevc, lop);
-			xrun = xl;
-			yrun = ytf;
-		    }
+		if (wi < 0)
+		    xi += wi, wi = -wi;
+		if (wi > 0)
+		    code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
+							pdevc, dev, lop);
+		xrun = xprev;	/* for sake of final run */
 	    }
-	    if (code < 0)
-		return code;
-	    if (use_cache)
-		pic = pic_next;
-	    else {
-		gx_image_clue *ptemp = pic;
+	    break;
+	case image_landscape:
+	    {		/* 90 degree rotated rectangle */
+		int yi = irun;
+		int hi =
+		    (irun = fixed2int_var_rounded(yprev)) - yi;
 
-		pic = pic_next;
-		pic_next = ptemp;
+		if (hi < 0)
+		    yi += hi, hi = -hi;
+		if (hi < 0)
+		    code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
+							pdevc, dev, lop);
+		yrun = yprev;	/* for sake of final run */
+	    }
+	    break;
+	default:
+	    {		/* Parallelogram */
+		code = (*dev_proc(dev, fill_parallelogram))
+		    (dev, xrun, yrun,
+		     xprev - xrun, yprev - yrun, pdyx, pdyy,
+		     pdevc, lop);
+		xrun = xprev;
+		yrun = yprev;
 	    }
 	}
+	if (code < 0)
+	    return code;
+	if (use_cache)
+	    pic = pic_next;
+	else {
+	    gx_image_clue *ptemp = pic;
+
+	    pic = pic_next;
+	    pic_next = ptemp;
+	}
 set:	run.all = next.all;
-inc:	xl = xn;
-	ytf = yn;		/* harmless if no skew */
-#undef xn
-#undef yn
+inc:	xprev = dda_current(pnext.x);
+	yprev = dda_current(pnext.y);	/* harmless if no skew */
     }
     /* Fill the last run. */
     code = (*dev_proc(dev, fill_parallelogram))
-	(dev, xrun, yrun, xl - xrun, ytf - yrun, pdyx, pdyy, pdevc, lop);
+	(dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy, pdevc, lop);
     return (code < 0 ? code : 1);
 }

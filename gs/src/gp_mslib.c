@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_mslib.c  */
+/*$Id$ */
 /*
  * Microsoft Windows 3.n platform support for Graphics Library
  *

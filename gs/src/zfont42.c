@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfont42.c  */
+/*$Id$ */
 /* Type 42 font creation operator */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpdfp.c  */
+/*$Id$ */
 /* Get/put parameters for PDF-writing driver */
 #include "gx.h"
 #include "gserrors.h"
@@ -95,8 +95,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		    return code;
 		/* falls through for errors */
 	    default:
-		ecode = code;
-		param_signal_error(plist, param_name, ecode);
+		param_signal_error(plist, param_name, code);
+		return code;
 	    case 1:
 		break;
 	}
@@ -114,8 +114,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		    return code;
 		/* falls through for errors */
 	    default:
-		ecode = code;
-		param_signal_error(plist, param_name, ecode);
+		param_signal_error(plist, param_name, code);
+		return code;
 	    case 1:
 		break;
 	}

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sfxstdio.c  */
+/*$Id$ */
 /* File stream implementation using stdio */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"

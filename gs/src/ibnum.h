@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ibnum.h  */
+/*$Id$ */
 /* Requires stream.h */
 
 #ifndef ibnum_INCLUDED

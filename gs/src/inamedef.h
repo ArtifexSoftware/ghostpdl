@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: inamedef.h  */
+/*$Id$ */
 /* Name table definition */
 
 #ifndef inamedef_INCLUDED
@@ -24,6 +24,7 @@
 
 #include "inames.h"
 #include "gconfigv.h"		/* defines EXTEND_NAMES */
+#include "gsstruct.h"		/* for gc_state_t */
 
 /*
  * The name table machinery has two slightly different configurations:

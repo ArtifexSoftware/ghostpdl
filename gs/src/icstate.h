@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: icstate.h  */
+/*$Id$ */
 /* Externally visible context state */
 /* Requires iref.h */
 

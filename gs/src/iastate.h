@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iastate.h  */
+/*$Id$ */
 /* Requires gsmemory.h, gsstruct.h */
 
 #ifndef iastate_INCLUDED

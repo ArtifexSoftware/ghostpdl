@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_unix.c  */
+/*$Id$ */
 /* Unix-specific routines for Ghostscript */
 #include "pipe_.h"
 #include "string_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclbits.c  */
+/*$Id$ */
 /* Halftone and bitmap writing for command lists */
 #include "memory_.h"
 #include "gx.h"

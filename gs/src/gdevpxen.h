@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpxen.h  */
+/*$Id$ */
 /* Enumerated attribute value definitions for PCL XL */
 
 #ifndef gdevpxen_INCLUDED

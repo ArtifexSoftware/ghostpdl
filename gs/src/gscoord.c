@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscoord.c  */
+/*$Id$ */
 /* Coordinate system operators for Ghostscript library */
 #include "math_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: igcstr.h  */
+/*$Id$ */
 /* Internal interface to string garbage collector */
 
 #ifndef igcstr_INCLUDED

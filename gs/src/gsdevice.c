@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsdevice.c  */
+/*$Id$ */
 /* Device operators for Ghostscript library */
 #include "ctype_.h"
 #include "memory_.h"		/* for memcpy */

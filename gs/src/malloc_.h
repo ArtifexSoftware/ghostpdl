@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: malloc_.h  */
+/*$Id$ */
 /* Generic substitute for Unix malloc.h */
 
 #ifndef malloc__INCLUDED

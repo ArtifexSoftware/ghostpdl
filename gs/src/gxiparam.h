@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxiparam.h  */
+/*$Id$ */
 /* Definitions for implementors of image types */
 
 #ifndef gxiparam_INCLUDED
@@ -36,12 +36,12 @@ typedef struct gx_image_enum_common_s gx_image_enum_common_t;
  * Note that image_plane_data and end_image used to be device procedures;
  * they still take the device argument first for compatibility.  However, in
  * order to make forwarding begin_image work, the intermediary routines
- * gx_device_image_[plane_]data and gx_device_end_image substitute the
- * device from the enumerator for the explicit device argument, which is
- * ignored.  Eventually we should fix this by removing the device argument
- * from gx_device..., just as we have done for text enumeration; but this
- * would have caused major difficulties with 5.1x retrofitting of this code,
- * and it's too much work to fix right now.  ****** FIX THIS SOMEDAY ******
+ * gx_image_[plane_]data and gx_image_end substitute the device from the
+ * enumerator for the explicit device argument, which is ignored.
+ * Eventually we should fix this by removing the device argument from
+ * gx_device..., just as we have done for text enumeration; but this would
+ * have caused major difficulties with 5.1x retrofitting of this code, and
+ * it's too much work to fix right now.  ****** FIX THIS SOMEDAY ******
  */
 typedef struct gx_image_enum_procs_s {
 
@@ -53,14 +53,25 @@ typedef struct gx_image_enum_procs_s {
     image_enum_proc_plane_data((*plane_data));
 
     /*
-     * End processing an image.  We keep this procedure last,
-     * so that we can detect obsolete static initializers.
-     * dev_proc_end_image is defined in gxdevcli.h.
+     * End processing an image.  We keep this procedure as the last one that
+     * requires initialization, so that we can detect obsolete static
+     * initializers.  dev_proc_end_image is defined in gxdevcli.h.
      */
 #define image_enum_proc_end_image(proc)\
   dev_proc_end_image(proc)
 
     image_enum_proc_end_image((*end_image));
+
+    /*
+     * Flush any intermediate buffers to the target device.
+     * We need this for situations where two images interact
+     * (currently, only the mask and the data of ImageType 3).
+     * This procedure is optional (may be 0).
+     */
+#define image_enum_proc_flush(proc)\
+  int proc(P1(gx_image_enum_common_t *info))
+
+    image_enum_proc_flush((*flush));
 
 } gx_image_enum_procs_t;
 
@@ -151,9 +162,10 @@ image_enum_proc_end_image(gx_ignore_end_image);
 dev_proc_begin_typed_image(gx_begin_image1);
 image_enum_proc_plane_data(gx_image1_plane_data);
 image_enum_proc_end_image(gx_image1_end_image);
+image_enum_proc_flush(gx_image1_flush);
 #define image1_type_data\
   gx_begin_image1, gx_data_image_source_size, 1
 #define image1_enum_procs_data\
-  gx_image1_plane_data, gx_image1_end_image
+  gx_image1_plane_data, gx_image1_end_image, gx_image1_flush
 
 #endif /* gxiparam_INCLUDED */

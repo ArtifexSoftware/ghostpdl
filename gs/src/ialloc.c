@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ialloc.c  */
+/*$Id$ */
 /* Memory allocator for Ghostscript interpreter */
 #include "gx.h"
 #include "memory_.h"
@@ -91,6 +91,14 @@ ialloc_reset_requested(gs_dual_memory_t * dmem)
 }
 
 /* ================ Refs ================ */
+
+/* Register a ref root. */
+int
+gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t *root,
+		     void **pp, client_name_t cname)
+{
+    return gs_register_root(mem, root, ptr_ref_type, pp, cname);
+}
 
 /*
  * As noted in iastate.h, every run of refs has an extra ref at the end

@@ -17,7 +17,7 @@
 */
 
 
-// Id: dwmainc.cpp 
+// $Id$
 // Ghostscript DLL loader for Windows 95/NT
 // For WINDOWCOMPAT (console mode) application
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gshtx.c  */
+/*$Id$ */
 /* Stand-alone halftone/transfer function related code */
 #include "memory_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zht1.c  */
+/*$Id$ */
 /* setcolorscreen operator */
 #include "ghost.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevprn.h  */
+/*$Id$ */
 /* Common header file for memory-buffered printers */
 
 #ifndef gdevprn_INCLUDED
@@ -285,9 +285,6 @@ struct gx_device_printer_s {
     gx_device_common;
     gx_prn_device_common;
 };
-
-/* Macro for casting gx_device argument */
-#define prn_dev ((gx_device_printer *)dev)
 
 /* Define a typedef for the sake of ansi2knr. */
 typedef dev_proc_print_page((*dev_proc_print_page_t));

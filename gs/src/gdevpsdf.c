@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpsdf.c  */
+/*$Id$ */
 /* Common utilities for PostScript and PDF writers */
 #include "string_.h"
 #include "gx.h"
@@ -354,23 +354,14 @@ psdf_write_string(stream * s, const byte * str, uint size, int print_ok)
 }
 
 /* Set up a write stream that just keeps track of the position. */
-private int
-s_write_position_process(stream_state * st, stream_cursor_read * pr,
-			 stream_cursor_write * ignore_pw, bool last)
-{
-    pr->ptr = pr->limit;	/* discard input */
-    return 0;
-}
 int
 psdf_alloc_position_stream(stream ** ps, gs_memory_t * mem)
 {
     stream *s = *ps = s_alloc(mem, "psdf_alloc_position_stream");
-    static byte buf[50];	/* arbitrary */
 
     if (s == 0)
 	return_error(gs_error_VMerror);
-    swrite_string(s, buf, sizeof(buf));
-    s->procs.process = s_write_position_process;
+    swrite_position_only(s);
     return 0;
 }
 

@@ -15,7 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-% Id: gs_cidfn.ps 
+% $Id$
 % ProcSet for implementing CIDFont and CIDMap resources.
 % When this is run, systemdict is still writable.
 
@@ -126,6 +126,10 @@ end		% .cidfonttypes
       }
      ifelse
      /GlyphData exch def
+		% If we were reading hex data, skip past the >.
+     /ReadString load 2 get { readhexstring } 0 get eq {
+       currentfile 0 (>) /SubFileDecode filter dup flushfile closefile
+     } if
      /.vmreadstring cvx
    }
    {		% File is positionable, just save a pointer.

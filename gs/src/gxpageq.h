@@ -16,12 +16,13 @@
    all copies.
  */
 
-/*Id: gxpageq.h  */
+/*$Id$ */
 /* Page queue implementation */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
-/* Edited to Ghostscript coding standards 7/17/98 L. Peter Deutsch
-   (ghost@aladdin.com) */
+/* 7/17/98 L. Peter Deutsch (ghost@aladdin.com) edited to conform to
+   Ghostscript coding standards */
+/* 8/7/98 ghost@aladdin.com fixed bugs in #define st_... statements */
 
 #ifndef gxpageq_INCLUDED
 # define gxpageq_INCLUDED
@@ -85,6 +86,9 @@ struct gx_page_queue_s {
     monitor, first_in, last_in, reserve_entry);
 
 /* -------------- Public Procedure Declaraions --------------------- */
+
+/* Allocate a page queue. */
+gx_page_queue *gx_page_queue_alloc(P1(gs_memory_t *mem));
 
 /* All page queue entries must be allocated by this routine. Allocated */
 /* entries are initialized & ready to go */

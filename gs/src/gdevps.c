@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevps.c  */
+/*$Id$ */
 /* PostScript-writing driver */
 #include "math_.h"
 #include "memory_.h"
@@ -1050,10 +1050,8 @@ psw_image_plane_data(gx_device * dev,
     gdev_vector_image_enum_t *pie = (gdev_vector_image_enum_t *) info;
 
     if (pie->default_info)
-	return gx_device_image_plane_data(dev, pie->default_info, planes,
-					  height);
-    gx_device_image_plane_data((gx_device *) vdev->bbox_device,
-			       pie->bbox_info, planes, height);
+	return gx_image_plane_data(pie->default_info, planes, height);
+    gx_image_plane_data(pie->bbox_info, planes, height);
     {
 	int pi;
 

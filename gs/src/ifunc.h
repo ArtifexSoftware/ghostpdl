@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ifunc.h  */
+/*$Id$ */
 /* Internal interpreter interfaces for Functions */
 
 #ifndef ifunc_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ziodev2.c  */
+/*$Id$ */
 /* (Level 2) IODevice operators */
 #include "string_.h"
 #include "ghost.h"

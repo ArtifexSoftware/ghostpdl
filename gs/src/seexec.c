@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: seexec.c  */
+/*$Id$ */
 /* eexec filters */
 #include "stdio_.h"		/* includes std.h */
 #include "strimpl.h"

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevepsn.c */
+/*$Id$*/
 /*
  * Epson (and similar) dot-matrix printer driver for Ghostscript.
  *

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsfunc.c  */
+/*$Id$ */
 /* Generic Function support */
 #include "gx.h"
 #include "gserrors.h"

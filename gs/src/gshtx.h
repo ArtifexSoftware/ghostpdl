@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gshtx.h  */
+/*$Id$ */
 /* High-level interface to stand-alone halftone/transfer objects */
 
 #ifndef gshtx_INCLUDED

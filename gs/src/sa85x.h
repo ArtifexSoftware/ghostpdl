@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sa85x.h  */
+/*$Id$ */
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
 #ifndef sa85x_INCLUDED

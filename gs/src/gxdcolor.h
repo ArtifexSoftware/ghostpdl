@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxdcolor.h  */
+/*$Id$ */
 /* Device color representation for Ghostscript */
 
 #ifndef gxdcolor_INCLUDED

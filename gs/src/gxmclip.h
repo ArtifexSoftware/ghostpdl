@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxmclip.h  */
+/*$Id$ */
 /* Mask clipping device and interface */
 /* Requires gxdevice.h, gxdevmem.h */
 

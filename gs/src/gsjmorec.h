@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsjmorec.h  */
+/*$Id$ */
 /* "Wrapper" for Independent JPEG Group code jmorecfg.h */
 
 #ifndef gsjmorec_INCLUDED

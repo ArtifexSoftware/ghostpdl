@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: strimpl.h  */
+/*$Id$ */
 /* Definitions for stream implementors */
 /* Requires stdio.h */
 

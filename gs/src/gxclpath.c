@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclpath.c  */
+/*$Id$ */
 /* Higher-level path operations for band lists */
 #include "math_.h"
 #include "memory_.h"
@@ -31,8 +31,6 @@
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
 #include "gzpath.h"
 #include "gzcpath.h"
-
-#define cdev cwdev
 
 /* Statistics */
 #ifdef DEBUG
@@ -474,6 +472,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    const gx_fill_params * params, const gx_drawing_color * pdcolor,
 		const gx_clip_path * pcpath)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     uint unknown = 0;
     int y, height, y0, y1;
     gs_logical_operation_t lop = pis->log_op;
@@ -554,6 +554,8 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 		  const gx_stroke_params * params,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int pattern_size = pis->line_params.dash.pattern_size;
     uint unknown = 0;
     gs_fixed_rect bbox;

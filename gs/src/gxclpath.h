@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclpath.h  */
+/*$Id$ */
 /* Extends (requires) gxcldev.h */
 
 #ifndef gxclpath_INCLUDED

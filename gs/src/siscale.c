@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: siscale.c  */
+/*$Id$ */
 /* Image scaling filters */
 #include "math_.h"
 #include "memory_.h"

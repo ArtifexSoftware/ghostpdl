@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxcldev.h  */
+/*$Id$ */
 /* Internal definitions for Ghostscript command lists. */
 
 #ifndef gxcldev_INCLUDED
@@ -30,11 +30,6 @@
 #include "strimpl.h"		/* for compressed bitmaps */
 #include "scfx.h"		/* ditto */
 #include "srlx.h"		/* ditto */
-
-/* The implementation files define cdev as either crdev or cwdev. */
-#define ccdev (&((gx_device_clist *)dev)->common)
-#define cwdev (&((gx_device_clist *)dev)->writer)
-#define crdev (&((gx_device_clist *)dev)->reader)
 
 /* ---------------- Commands ---------------- */
 
@@ -549,8 +544,10 @@ int cmd_update_lop(P3(gx_device_clist_writer *, gx_clist_state *,
  * convention, calls to cmd_put_xxx or cmd_set_xxx never attempt recovery
  * and so never require NEST_RECTs.
  *
- * Note that, to avoid attempts to write to unallocated memory, no attempt
- * is made to write to the command list if permanent_error is set.  */
+ * If a put_params call fails, the device will be left in a closed state,
+ * but higher-level code won't notice this fact.  We flag this by setting
+ * permanent_error, which prevents writing to the command list.
+ */
 
 #define FOR_RECTS\
     BEGIN\

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: szlibc.c  */
+/*$Id$ */
 /* Code common to zlib encoding and decoding streams */
 #include "std.h"
 #include "gserror.h"
@@ -26,7 +26,7 @@
 #include "gsmalloc.h"
 #include "gsstruct.h"
 #include "strimpl.h"
-#include "szlibx.h"
+#include "szlibxx.h"
 #include "zconf.h"
 
 private_st_zlib_block();

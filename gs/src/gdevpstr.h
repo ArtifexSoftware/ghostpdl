@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpstr.h  */
+/*$Id$ */
 /* Stream output for PostScript- and PDF-writing drivers. */
 
 #ifndef gdevpstr_INCLUDED

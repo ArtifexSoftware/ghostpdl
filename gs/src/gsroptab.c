@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsroptab.c  */
+/*$Id$ */
 /* Table of RasterOp procedures */
 #include "stdpre.h"
 #include "gsropt.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: igcref.c  */
+/*$Id$ */
 /* ref garbage collector for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"

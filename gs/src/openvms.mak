@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: openvms.mak 
+# $Id$
 # makefile for OpenVMS VAX and Alpha
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.
@@ -362,8 +362,8 @@ $(GS_XE): openvms gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
 # OpenVMS.dev
 
 openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ)
-openvms_.dev: $(openvms__)
-	$(SETMOD) openvms_ $(openvms__)
+openvms_.dev: $(openvms__) nosync.dev
+	$(SETMOD) openvms_ $(openvms__) -include nosync
 
 # Interpreter AUX programs
 

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: watclib.mak 
+# $Id$
 # makefile for MS-DOS / Watcom C/C++ library testing.
 
 libdefault: $(GLOBJ)gslib.exe
@@ -92,9 +92,10 @@ FILE_IMPLEMENTATION=stdio
 watclib_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
 watclib_2=$(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ)
 watclib__=$(watclib_1) $(watclib_2)
-watclib_.dev: $(watclib__)
+watclib_.dev: $(watclib__) nosync.dev
 	$(SETMOD) watclib_ $(watclib_1)
 	$(ADDMOD) watclib_ -obj $(watclib_2)
+	$(ADDMOD) watclib_ -include nosync
 
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
  $(gx_h) $(gp_h)

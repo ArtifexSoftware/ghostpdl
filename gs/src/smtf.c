@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: smtf.c  */
+/*$Id$ */
 /* MoveToFront filters */
 #include "stdio_.h"
 #include "strimpl.h"

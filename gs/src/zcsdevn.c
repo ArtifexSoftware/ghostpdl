@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zcsdevn.c  */
+/*$Id$ */
 /* DeviceN color space support */
 #include "ghost.h"
 #include "oper.h"

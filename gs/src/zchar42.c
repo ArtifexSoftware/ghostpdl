@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zchar42.c  */
+/*$Id$ */
 /* Type 42 character display operator */
 #include "ghost.h"
 #include "oper.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxtmap.h  */
+/*$Id$ */
 /* Definition of transfer mapping function */
 /* (also used for black generation and undercolor removal) */
 

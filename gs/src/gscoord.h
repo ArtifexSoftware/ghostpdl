@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscoord.h  */
+/*$Id$ */
 /* Requires gsmatrix.h and gsstate.h */
 
 #ifndef gscoord_INCLUDED

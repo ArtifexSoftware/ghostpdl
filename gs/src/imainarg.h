@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: imainarg.h  */
+/*$Id$ */
 /* argv/argc interface to imainarg.c */
 
 #ifndef imainarg_INCLUDED

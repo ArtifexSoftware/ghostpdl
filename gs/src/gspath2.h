@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gspath2.h  */
+/*$Id$ */
 /* Requires gsmatrix.h */
 
 #ifndef gspath2_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxchar.h  */
+/*$Id$ */
 /* Internal character definition for Ghostscript library */
 /* Requires gsmatrix.h, gxfixed.h */
 

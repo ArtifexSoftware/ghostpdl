@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gximage2.c  */
+/*$Id$ */
 /* ImageType 2 image implementation */
 #include "math_.h"
 #include "memory_.h"
@@ -297,14 +297,14 @@ gx_begin_image2(gx_device * dev,
 						 int2fixed(unread[i].q.y));
 		gs_free_object(dev->memory, unread, "UnpaintedPath unread");
 	    }
-	    code = gx_device_image_data(dev, info, &data, 0, row_size, 1);
+	    code = gx_image_data(info, &data, 0, row_size, 1);
 	    rect.p.y = rect.q.y;
 	}
 	if (!direct_copy) {
 	    if (code >= 0)
-		code = gx_device_end_image(dev, info, true);
+		code = gx_image_end(info, true);
 	    else
-		discard(gx_device_end_image(dev, info, false));
+		discard(gx_image_end(info, false));
 	}
     }
     gs_free_object(mem, row, "gx_begin_image2");

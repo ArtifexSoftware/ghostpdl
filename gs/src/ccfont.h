@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ccfont.h  */
+/*$Id$ */
 /* Header for fonts compiled into C. */
 
 #ifndef ccfont_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevlj56.c  */
+/*$Id$ */
 /* H-P LaserJet 5 & 6 drivers for Ghostscript */
 #include "gdevprn.h"
 #include "gdevpcl.h"

@@ -16,7 +16,7 @@
   all copies.
 */
  
-/*Id: gdevimgn.c */
+/*$Id$*/
 /* ---------------------------------------------------------- */ 
 /* gdevimgn.c - version 1.4 */
 /* Imagen ImPRESS printer driver */

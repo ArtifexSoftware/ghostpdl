@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: oper.h  */
+/*$Id$ */
 /* Definitions for Ghostscript operators */
 
 #ifndef oper_INCLUDED

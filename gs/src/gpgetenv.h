@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gpgetenv.h  */
+/*$Id$ */
 /* Interface to platform-specific getenv routine */
 
 #ifndef gpgetenv_INCLUDED

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: msvc32.mak 
+# $Id$
 # makefile for 32-bit Microsoft Visual C++, Windows NT or Windows 95 platform.
 #
 # All configurable options are surrounded by !ifndef/!endif to allow 
@@ -328,10 +328,7 @@ MAKEFILE=msvc32.mak msvccmd.mak msvctail.mak winlib.mak winint.mak
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-BEGINFILES2=gsdll32.exp gsdll32.ilk gsdll32.pdb gsdll32.lib\
-   gswin32.exp gswin32.ilk gswin32.pdb gswin32.lib\
-   gswin32c.exp gswin32c.ilk gswin32c.pdb gswin32c.lib
-
+BEGINFILES2=gs*32*.exp gs*32*.ilk gs*32*.pdb gs*32*.lib
 
 !include msvccmd.mak
 !include winlib.mak

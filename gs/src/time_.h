@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: time_.h  */
+/*$Id$ */
 /* Generic substitute for Unix sys/time.h */
 
 #ifndef time__INCLUDED

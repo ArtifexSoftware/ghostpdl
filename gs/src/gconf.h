@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gconf.h  */
+/*$Id$ */
 /* Wrapper for gconfig.h or a substitute. */
 
 /*

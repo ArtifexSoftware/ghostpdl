@@ -15,7 +15,7 @@
   all copies.
 */
 
-/*Id: gdevstc.c */
+/*$Id$*/
 /* Epson Stylus-Color Printer-Driver */
 
 /***

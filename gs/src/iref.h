@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: iref.h  */
+/*$Id$ */
 /* Object structure and type definitions for Ghostscript */
 
 #ifndef iref_INCLUDED
@@ -177,7 +177,7 @@ extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
   0,				/* t_save */\
   _rtype_uses_access | _rtype_uses_size, /* t_string */\
   _rtype_uses_access,		/* t_device */\
-  _rtype_uses_access | _rtype_uses_size, /* t_oparray */\
+  _rtype_uses_size,		/* t_oparray */\
     /*\
      * The remaining types are the extended pseudo-types used by the\
      * interpreter for operators.  We need to fill up the table.\

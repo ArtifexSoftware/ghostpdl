@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpdf.c  */
+/*$Id$ */
 /* PDF-writing driver */
 #include "math_.h"
 #include "memory_.h"

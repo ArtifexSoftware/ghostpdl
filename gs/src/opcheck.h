@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: opcheck.h  */
+/*$Id$ */
 /* Requires ialloc.h (for imemory), iref.h, errors.h */
 
 #ifndef opcheck_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclread.c  */
+/*$Id$ */
 /* Command list reading for Ghostscript. */
 #include "memory_.h"
 #include "gx.h"
@@ -148,6 +148,8 @@ private int clist_rasterize_lines(P6(gx_device *dev, int y, int lineCount,
 int
 clist_setup_params(gx_device *dev)
 {
+    gx_device_clist_reader * const crdev =
+	&((gx_device_clist *)dev)->reader;
     int code = clist_render_init((gx_device_clist *)dev);
     if ( code < 0 )
 	return code;
@@ -169,6 +171,8 @@ clist_setup_params(gx_device *dev)
 int	/* rets # lines from y till end of buffer, or -ve error code */
 clist_locate_overlay_buffer(gx_device_printer *pdev, int y, byte **data)
 {
+    gx_device_clist_reader * const crdev =
+	&((gx_device_clist *)pdev)->reader;
     gx_device * const dev = (gx_device *)pdev;
     gx_device *target = crdev->target;
 
@@ -196,6 +200,8 @@ int
 clist_get_overlay_bits(gx_device_printer *pdev, int y, int line_count,
 		       byte *data)
 {
+    gx_device_clist_reader * const crdev =
+	&((gx_device_clist *)pdev)->reader;
     byte *data_orig = data;
     gx_device * const dev = (gx_device *)pdev;
     gx_device *target = crdev->target;
@@ -312,6 +318,8 @@ private int	/* returns -ve error code, or # scan lines copied */
 clist_rasterize_lines(gx_device *dev, int y, int line_count, byte *data_in,
 		      gx_device_memory *mdev, int *pmy)
 {
+    gx_device_clist_reader * const crdev =
+	&((gx_device_clist *)dev)->reader;
     gx_device *target = crdev->target;
     uint raster = gx_device_raster(target, true);
     byte *mdata = crdev->data + crdev->page_tile_cache_size;
@@ -415,14 +423,13 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count, byte *data_in,
 	    return code;
 	*pmy = y - crdev->ymin;
     } else {
-	/*
-	 * Just fill in enough of the memory device to access the
-	 * already-rasterized scan lines; in particular, only set up
-	 * scan line pointers for the requested Y range.
+	/* Just fill in enough of the memory device to access the
+	 * already-rasterized scan lines; in particular, only set up scan
+	 * line pointers for the requested Y range.
 	 */
 	mdev->base = mdata + (y - crdev->ymin) * raster;
-	mdev->height = min(line_count, crdev->ymax - y);
-	(*dev_proc(mdev, open_device))((gx_device *)mdev);
+	mdev->height = crdev->ymax - y;
+	gdev_mem_open_scan_lines(mdev, min(line_count, mdev->height));
 	*pmy = 0;
     }
     return (line_count > crdev->ymax - y ? crdev->ymax - y : line_count);
@@ -432,6 +439,8 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count, byte *data_in,
 private int
 clist_render_init(gx_device_clist *dev /******, gx_device_ht *hdev ******/)
 {
+    gx_device_clist_reader * const crdev = &dev->reader;
+
     crdev->ymin = crdev->ymax = 0;
     /* For normal rasterizing, pages and num_pages are zero. */
     crdev->pages = 0;

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: lib.mak 
+# $Id$
 # (Platform-independent) makefile for Ghostscript graphics library
 # and other support code.
 # Users of this makefile must define the following:
@@ -32,7 +32,6 @@ GLF_=
 GLCC=$(CC_) $(I_)$(GLI_)$(_I) $(GLF_)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(GLF_)
-GLJZCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_) $(II)$(ZI_)$(_I) $(GLF_)
 GLCCLEAF=$(CC_LEAF) $(I_)$(GLI_)$(_I) $(GLF_)
 
 # Define the name of this makefile.
@@ -116,7 +115,6 @@ gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
 gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 # Out of order
 gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
-gsstrtab_h=$(GLSRC)gsstrtab.h $(gsstruct_h)
 
 GX=$(AK) $(gx_h)
 GXERR=$(GX) $(gserrors_h)
@@ -147,7 +145,7 @@ stream_h=$(GLSRC)stream.h $(scommon_h)
 
 ### Memory manager
 
-$(GLOBJ)gsalloc.$(OBJ): $(GLSRC)gsalloc.c $(GX) $(memory__h) $(string__h)\
+$(GLOBJ)gsalloc.$(OBJ): $(GLSRC)gsalloc.c $(GXERR) $(memory__h) $(string__h)\
  $(gsmdebug_h) $(gsstruct_h) $(gxalloc_h)\
  $(stream_h)
 	$(GLCC) $(GLO_)gsalloc.$(OBJ) $(C_) $(GLSRC)gsalloc.c
@@ -245,7 +243,7 @@ gslparam_h=$(GLSRC)gslparam.h
 gsmatrix_h=$(GLSRC)gsmatrix.h
 gspaint_h=$(GLSRC)gspaint.h
 gsparam_h=$(GLSRC)gsparam.h
-gsparams_h=$(GLSRC)gsparams.h $(gsparam_h)
+gsparams_h=$(GLSRC)gsparams.h $(gsparam_h) $(stream_h)
 gspath2_h=$(GLSRC)gspath2.h
 gspcolor_h=$(GLSRC)gspcolor.h $(gsccolor_h) $(gsuid_h)
 gspenum_h=$(GLSRC)gspenum.h
@@ -364,6 +362,7 @@ srlx_h=$(GLSRC)srlx.h
 sstring_h=$(GLSRC)sstring.h
 strimpl_h=$(GLSRC)strimpl.h $(scommon_h) $(gstypes_h) $(gsstruct_h)
 szlibx_h=$(GLSRC)szlibx.h
+szlibxx_h=$(GLSRC)szlibxx.h $(szlibx_h)
 # Out of order
 scf_h=$(GLSRC)scf.h $(shc_h)
 scfx_h=$(GLSRC)scfx.h $(shc_h)
@@ -441,7 +440,7 @@ $(GLOBJ)gxdcconv.$(OBJ): $(GLSRC)gxdcconv.c $(GX)\
 	$(GLCC) $(GLO_)gxdcconv.$(OBJ) $(C_) $(GLSRC)gxdcconv.c
 
 $(GLOBJ)gxdcolor.$(OBJ): $(GLSRC)gxdcolor.c $(GX)\
- $(gsbittab_h) $(gxdcolor_h) $(gxdevice_h)
+ $(gsbittab_h) $(gserrors_h) $(gxdcolor_h) $(gxdevice_h)
 	$(GLCC) $(GLO_)gxdcolor.$(OBJ) $(C_) $(GLSRC)gxdcolor.c
 
 $(GLOBJ)gxdither.$(OBJ): $(GLSRC)gxdither.c $(GX)\
@@ -621,6 +620,11 @@ $(GLOBJ)gspaint.$(OBJ): $(GLSRC)gspaint.c $(GXERR) $(math__h) $(gpcheck_h)\
 $(GLOBJ)gsparam.$(OBJ): $(GLSRC)gsparam.c $(GXERR) $(memory__h) $(string__h)\
  $(gsparam_h) $(gsstruct_h)
 	$(GLCC) $(GLO_)gsparam.$(OBJ) $(C_) $(GLSRC)gsparam.c
+
+# Future replacement for gsparams.c
+$(GLOBJ)gsparam2.$(OBJ): $(GLSRC)gsparam2.c $(GXERR) $(memory__h)\
+ $(gsparams_h)
+	$(GLCC) $(GLO_)gsparam2.$(OBJ) $(C_) $(GLSRC)gsparam2.c
 
 $(GLOBJ)gsparams.$(OBJ): $(GLSRC)gsparams.c $(GXERR) $(memory__h)\
  $(gsparams_h)
@@ -1079,7 +1083,7 @@ szlibc_=$(GLOBJ)szlibc.$(OBJ)
 $(GLOBJ)szlibc.$(OBJ): $(GLSRC)szlibc.c $(AK) $(std_h)\
  $(gserror_h) $(gserrors_h) $(gsmalloc_h) $(gsmemory_h)\
  $(gsstruct_h) $(gstypes_h)\
- $(strimpl_h) $(szlibx_h)
+ $(strimpl_h) $(szlibxx_h)
 	$(GLZCC) $(GLO_)szlibc.$(OBJ) $(C_) $(GLSRC)szlibc.c
 
 szlibe_=$(szlibc_) $(GLOBJ)szlibe.$(OBJ)
@@ -1088,7 +1092,7 @@ szlibe.dev: $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibe.dev $(szlibe_)
 	$(ADDMOD) szlibe -include $(ZGENDIR)$(D)zlibe
 
 $(GLOBJ)szlibe.$(OBJ): $(GLSRC)szlibe.c $(AK) $(std_h)\
- $(gsmalloc_h) $(gsmemory_h) $(strimpl_h) $(szlibx_h)
+ $(gsmalloc_h) $(gsmemory_h) $(strimpl_h) $(szlibxx_h)
 	$(GLZCC) $(GLO_)szlibe.$(OBJ) $(C_) $(GLSRC)szlibe.c
 
 szlibd_=$(szlibc_) $(GLOBJ)szlibd.$(OBJ)
@@ -1097,7 +1101,7 @@ szlibd.dev: $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibd.dev $(szlibd_)
 	$(ADDMOD) szlibd -include $(ZGENDIR)$(D)zlibd
 
 $(GLOBJ)szlibd.$(OBJ): $(GLSRC)szlibd.c $(AK) $(std_h)\
- $(gsmalloc_h) $(gsmemory_h) $(strimpl_h) $(szlibx_h)
+ $(gsmalloc_h) $(gsmemory_h) $(strimpl_h) $(szlibxx_h)
 	$(GLZCC) $(GLO_)szlibd.$(OBJ) $(C_) $(GLSRC)szlibd.c
 
 # ---------------- Page devices ---------------- #
@@ -1180,7 +1184,7 @@ $(GLOBJ)gxclrect.$(OBJ): $(GLSRC)gxclrect.c $(GXERR)\
 $(GLOBJ)gxclimag.$(OBJ): $(GLSRC)gxclimag.c $(GXERR) $(math__h) $(memory__h)\
  $(gscspace_h)\
  $(gxarith_h) $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h)\
- $(gxfmap_h) $(gxiparam_h)\
+ $(gxfmap_h) $(gxiparam_h) $(gxpath_h)\
  $(siscale_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gxclimag.$(OBJ) $(C_) $(GLSRC)gxclimag.c
 
@@ -1229,7 +1233,7 @@ $(GLOBJ)gxcllzw.$(OBJ): $(GLSRC)gxcllzw.c $(std_h)\
 
 $(GLOBJ)gxclzlib.$(OBJ): $(GLSRC)gxclzlib.c $(std_h)\
  $(gsmemory_h) $(gstypes_h) $(gxclmem_h) $(szlibx_h)
-	$(GLZCC) $(GLO_)gxclzlib.$(OBJ) $(C_) $(GLSRC)gxclzlib.c
+	$(GLCC) $(GLO_)gxclzlib.$(OBJ) $(C_) $(GLSRC)gxclzlib.c
 
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.
@@ -1328,27 +1332,22 @@ $(GLOBJ)gsropc.$(OBJ): $(GLSRC)gsropc.c $(GXERR)\
 
 # ---------------- Async rendering ---------------- #
 
-gsmemfix_h=$(GLSRC)gsmemfix.h $(gsmemraw_h)
 gxpageq_h=$(GLSRC)gxpageq.h $(gsmemory_h) $(gxband_h) $(gxsync_h)
 gdevprna_h=$(GLSRC)gdevprna.h $(gdevprn_h) $(gxsync_h)
 
 async1_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gxpageq.$(OBJ)
-async2_=$(GLOBJ)gsmemfix.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ) $(GLOBJ)gxsync.$(OBJ)
+async2_=$(GLOBJ)gsmemlok.$(OBJ) $(GLOBJ)gxsync.$(OBJ)
 async_=$(async1_) $(async2_)
 async.dev: $(LIB_MAK) $(ECHOGS_XE) $(async_) clist.dev
 	$(SETMOD) async $(async1_)
 	$(ADDMOD) async $(async2_)
 	$(ADDMOD) async -include clist
 
-$(GLOBJ)gdevprna.$(OBJ): $(GLSRC)gdevprna.c $(AK) $(ctype__h)\
- $(gdevprna_h) $(gsparam_h)\
- $(gsdevice_h) $(gxcldev_h) $(gxclpath_h) $(gxpageq_h) $(gsmemory_h)\
- $(gsmemlok_h) $(gsmemfix_h)
+$(GLOBJ)gdevprna.$(OBJ): $(GLSRC)gdevprna.c $(AK)\
+ $(gdevprna_h)\
+ $(gsalloc_h) $(gsdevice_h) $(gsmemlok_h)\
+ $(gxcldev_h) $(gxclpath_h) $(gxpageq_h) $(gzht_h)
 	$(GLCC) $(GLO_)gdevprna.$(OBJ) $(C_) $(GLSRC)gdevprna.c
-
-$(GLOBJ)gsmemfix.$(OBJ): $(GLSRC)gsmemfix.c $(AK) $(memory__h)\
- $(gsmemraw_h) $(gsmemfix_h)
-	$(GLCC) $(GLO_)gsmemfix.$(OBJ) $(C_) $(GLSRC)gsmemfix.c
 
 $(GLOBJ)gxpageq.$(OBJ): $(GLSRC)gxpageq.c $(GXERR)\
  $(gxdevice_h) $(gxclist_h) $(gxpageq_h)
@@ -1736,6 +1735,7 @@ dpnxtlib.dev: $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_)
 
 # ================ PostScript LanguageLevel 3 support ================ #
 
+gsclipsr_h=$(GLSRC)gsclipsr.h
 gstrap_h=$(GLSRC)gstrap.h $(gsparam_h)
 
 $(GLOBJ)gscdevn.$(OBJ): $(GLSRC)gscdevn.c $(GXERR)\
@@ -1746,7 +1746,11 @@ $(GLOBJ)gstrap.$(OBJ): $(GLSRC)gstrap.c $(string__h) $(GXERR)\
  $(gstrap_h)
 	$(GLCC) $(GLO_)gstrap.$(OBJ) $(C_) $(GLSRC)gstrap.c
 
-psl3lib_=$(GLOBJ)gscdevn.$(OBJ) $(GLOBJ)gstrap.$(OBJ)
+$(GLOBJ)gsclipsr.$(OBJ): $(GLSRC)gsclipsr.c $(GXERR)\
+ $(gsclipsr_h)
+	$(GLCC) $(GLO_)gsclipsr.$(OBJ) $(C_) $(GLSRC)gsclipsr.c
+
+psl3lib_=$(GLOBJ)gscdevn.$(OBJ) $(GLOBJ)gstrap.$(OBJ) $(GLOBJ)gsclipsr.$(OBJ)
 psl3lib.dev: $(LIB_MAK) $(ECHOGS_XE) $(psl3lib_) imasklib.dev shadelib.dev
 	$(SETMOD) psl3lib $(psl3lib_)
 	$(ADDMOD) psl3lib -include imasklib shadelib
@@ -1775,7 +1779,7 @@ $(GLOBJ)gsshade.$(OBJ): $(GLSRC)gsshade.c $(GXERR)\
 	$(GLCC) $(GLO_)gsshade.$(OBJ) $(C_) $(GLSRC)gsshade.c
 
 $(GLOBJ)gxshade.$(OBJ): $(GLSRC)gxshade.c $(GXERR) $(math__h)\
- $(gsrect_h)\
+ $(gscie_h) $(gsrect_h)\
  $(gxcspace_h) $(gxdevcli_h) $(gxdht_h) $(gxistate_h) $(gxpaint_h) $(gxshade_h)
 	$(GLCC) $(GLO_)gxshade.$(OBJ) $(C_) $(GLSRC)gxshade.c
 
@@ -1824,6 +1828,8 @@ $(GLOBJ)gp_dosfb.$(OBJ): $(GLSRC)gp_dosfb.c $(AK) $(malloc__h) $(memory__h)\
  $(gx_h) $(gp_h) $(gserrors_h) $(gxdevice_h)
 	$(GLCC) $(GLO_)gp_dosfb.$(OBJ) $(C_) $(GLSRC)gp_dosfb.c
 
+# File system implementation.
+
 # MS-DOS file system, also used by Desqview/X.
 $(GLOBJ)gp_dosfs.$(OBJ): $(GLSRC)gp_dosfs.c $(AK) $(dos__h) $(gp_h) $(gx_h)
 	$(GLCC) $(GLO_)gp_dosfs.$(OBJ) $(C_) $(GLSRC)gp_dosfs.c
@@ -1834,12 +1840,6 @@ $(GLOBJ)gp_dosfe.$(OBJ): $(GLSRC)gp_dosfe.c $(AK)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(gp_h) $(gsutil_h)
 	$(GLCC) $(GLO_)gp_dosfe.$(OBJ) $(C_) $(GLSRC)gp_dosfe.c
 
-# Other MS-DOS facilities.
-$(GLOBJ)gp_msdos.$(OBJ): $(GLSRC)gp_msdos.c $(AK)\
- $(dos__h) $(stdio__h) $(string__h)\
- $(gsmemory_h) $(gstypes_h) $(gp_h)
-	$(GLCC) $(GLO_)gp_msdos.$(OBJ) $(C_) $(GLSRC)gp_msdos.c
-
 # Unix(-like) file system, also used by Desqview/X.
 $(GLOBJ)gp_unifs.$(OBJ): $(GLSRC)gp_unifs.c $(AK)\
  $(memory__h) $(string__h) $(gx_h) $(gp_h)\
@@ -1849,6 +1849,49 @@ $(GLOBJ)gp_unifs.$(OBJ): $(GLSRC)gp_unifs.c $(AK)\
 # Unix(-like) file name syntax, *not* used by Desqview/X.
 $(GLOBJ)gp_unifn.$(OBJ): $(GLSRC)gp_unifn.c $(AK) $(gx_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_unifn.$(OBJ) $(C_) $(GLSRC)gp_unifn.c
+
+# Thread / semaphore / monitor implementation.
+
+# Dummy implementation.
+nosync_=$(GLOBJ)gp_nsync.$(OBJ)
+nosync.dev: $(LIB_MAK) $(ECHOGS_XE) $(nosync_)
+	$(SETMOD) nosync $(nosync_)
+
+$(GLOBJ)gp_nsync.$(OBJ): $(GLSRC)gp_nsync.c $(AK) $(std_h)\
+ $(gpsync_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gp_nsync.$(OBJ) $(C_) $(GLSRC)gp_nsync.c
+
+# POSIX semaphores.
+$(GLOBJ)gp_posem.$(OBJ): $(GLSRC)gp_posem.c $(AK) $(std_h)\
+ $(gpsync_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gp_posem.$(OBJ) $(C_) $(GLSRC)gp_posem.c
+
+# Monitors built out of semaphores.
+$(GLOBJ)gp_semon.$(OBJ): $(GLSRC)gp_semon.c $(AK) $(std_h)\
+ $(gpsync_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gp_semon.$(OBJ) $(C_) $(GLSRC)gp_semon.c
+
+# pthreads threads.
+pthreads_=$(GLOBJ)gp_pthr.$(OBJ)
+pthreads.dev: $(LIB_MAK) $(ECHOGS_XE) $(pthreads_)
+	$(SETMOD) pthreads $(pthreads_) -lib pthread
+
+$(GLOBJ)gp_pthr.$(OBJ): $(GLSRC)gp_pthr.c $(AK) $(std_h)\
+ $(gpsync_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gp_pthr.$(OBJ) $(C_) $(GLSRC)gp_pthr.c
+
+# Replace the dummy implementation with POSIX semaphores + pthreads.
+posync_=$(GLOBJ)gp_posem.$(OBJ) $(GLOBJ)gp_semon.$(OBJ)
+posync.dev: $(LIB_MAK) $(ECHOGS_XE) $(posync_) pthreads.dev
+	$(SETMOD) posync $(posync_) -include pthreads -replace nosync
+
+# Other stuff.
+
+# Other MS-DOS facilities.
+$(GLOBJ)gp_msdos.$(OBJ): $(GLSRC)gp_msdos.c $(AK)\
+ $(dos__h) $(stdio__h) $(string__h)\
+ $(gsmemory_h) $(gstypes_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_msdos.$(OBJ) $(C_) $(GLSRC)gp_msdos.c
 
 # ----------------------------- Main program ------------------------------ #
 

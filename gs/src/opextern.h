@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: opextern.h  */
+/*$Id$ */
 /* Externally accessible operator declarations */
 
 #ifndef opextern_INCLUDED

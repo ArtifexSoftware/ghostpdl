@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gslparam.h  */
+/*$Id$ */
 /* Line parameter definitions */
 
 #ifndef gslparam_INCLUDED

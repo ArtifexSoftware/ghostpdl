@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxbcache.h  */
+/*$Id$ */
 /* Bitmap cache structures */
 
 #ifndef gxbcache_INCLUDED

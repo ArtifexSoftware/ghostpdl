@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_mswin.c  */
+/*$Id$ */
 /*
  * Microsoft Windows 3.n platform support for Ghostscript.
  * Original version by Russell Lang and Maurice Castro with help from

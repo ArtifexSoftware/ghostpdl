@@ -1,7 +1,7 @@
 #!/usr/bin/perl
-# Id: fixmswrd.pl 
+# $Id$
 
-# Id: fixmswrd.pl,v 1.2 1997/12/12 15:09:32 felix Exp 
+# $Id$
 
 #   (C) 1997 Anthony Shipman
 # 

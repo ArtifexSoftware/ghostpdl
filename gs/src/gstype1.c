@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gstype1.c  */
+/*$Id$ */
 /* Adobe Type 1 charstring interpreter */
 #include "math_.h"
 #include "memory_.h"
@@ -279,16 +279,20 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 		goto cc;
 	    case c1_hsbw:
 		gs_type1_sbw(pcis, cs0, fixed_0, cs1, fixed_0);
-	      rsbw:		/* Give the caller the opportunity to intervene. */
+rsbw:		/* Give the caller the opportunity to intervene. */
 		pcis->os_count = 0;	/* clear */
 		ipsp->ip = cip, ipsp->dstate = state;
 		pcis->ips_count = ipsp - &pcis->ipstack[0] + 1;
 		/* If we aren't in a seac, do nothing else now; */
 		/* finish_init will take care of the rest. */
-		if (pcis->init_done < 0) {	/* Finish init when we return. */
+		if (pcis->init_done < 0) {
+		    /* Finish init when we return. */
 		    pcis->init_done = 0;
-		} else {	/* Do accumulate the side bearing now. */
-		    accum_xy(pcis->lsb.x, pcis->lsb.y);
+		} else {
+		    /* Accumulate the side bearing now, but don't do it */
+		    /* a second time for the base character of a seac. */
+		    if (pcis->seac_accent < 0)
+			accum_xy(pcis->lsb.x, pcis->lsb.y);
 		    pcis->position.x = ptx;
 		    pcis->position.y = pty;
 		}

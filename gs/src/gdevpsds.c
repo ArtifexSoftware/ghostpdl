@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpsds.c  */
+/*$Id$ */
 /* Image processing streams for PostScript and PDF writers */
 #include "gx.h"
 #include "memory_.h"

@@ -1,13 +1,13 @@
-%    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-% 
+%    Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%
 % This file is part of Aladdin Ghostscript.
-% 
+%
 % Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
 % or distributor accepts any responsibility for the consequences of using it,
 % or for whether it serves any particular purpose or works at all, unless he
 % or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
 % License (the "License") for full details.
-% 
+%
 % Every copy of Aladdin Ghostscript must include a copy of the License,
 % normally in a plain ASCII text file named PUBLIC.  The License grants you
 % the right to copy, modify and redistribute Aladdin Ghostscript, but only
@@ -15,24 +15,28 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% $Id$
 % Support code for direct use of TrueType fonts.
 % (Not needed for Type 42 fonts.)
+
+% Thanks to B. Jackowski and GUST (the Polish TeX Users' Group) for
+% improvements to this code.
 
 % ---------------- Font loading machinery ---------------- %
 
 % Augment the FONTPATH machinery so it recognizes TrueType fonts.
 
-/.scanfontheaders where		% only defined if DISKFONTS is recognized
+/.scanfontheaders where         % only defined if DISKFONTS is recognized
  { pop
    /.scanfontheaders [ .scanfontheaders aload pop (\000\001\000\000*) ] def
  }
 if
 /.findnonttfontvalue /.findfontvalue load def
-/.findfontvalue		% <file> <key> .findfontvalue <value> true
+/.findfontvalue         % <file> <key> .findfontvalue <value> true
 			% <file> <key> .findfontvalue false
 			% Closes the file in either case.
  { 1 index read pop 2 index 1 index unread 0 eq
-    {		% If this is a font at all, it's a TrueType font.
+    {           % If this is a font at all, it's a TrueType font.
       dup /FontType eq
        { pop closefile 42 true }
        { dup /FontName eq
@@ -42,12 +46,12 @@ if
        }
       ifelse
     }
-    {		% Not a TrueType font.
+    {           % Not a TrueType font.
       .findnonttfontvalue
     }
    ifelse
  } bind def
-/.findttfontname	% <file> .findttfontname <fname> true
+/.findttfontname        % <file> .findttfontname <fname> true
 			% <file> .findttfontname false
 			% Closes the file in either case.
  { .loadttfonttables
@@ -65,12 +69,12 @@ if
 % Load a font file that might be a TrueType font.
 
 /.loadnonttfontfile /.loadfontfile load def
-/.loadfontfile		% <file> .loadfontfile -
+/.loadfontfile          % <file> .loadfontfile -
  { dup read pop 2 copy unread 0 eq
-    {		% If this is a font at all, it's a TrueType font.
+    {           % If this is a font at all, it's a TrueType font.
       .loadttfont pop
     }
-    {		% Not a TrueType font.
+    {           % Not a TrueType font.
       .loadnonttfontfile
     }
    ifelse
@@ -81,20 +85,20 @@ if
 % Load a TrueType font from a file as a Type 42 PostScript font.
 % The thing that makes this really messy is the handling of encodings.
 % There are 3 interacting tables that affect the encoding:
-%	'cmap' provides multiple maps from character codes to glyph indices
-%	'glyf' maps glyph indices to outlines
-%	'post' maps glyph indices to glyph names (if present)
+%       'cmap' provides multiple maps from character codes to glyph indices
+%       'glyf' maps glyph indices to outlines
+%       'post' maps glyph indices to glyph names (if present)
 % What we need to get out of this is:
-%	Encoding mapping character codes to glyph names
-%	  (the composition of cmap and post)
-%	CharStrings mapping glyph names to glyph indices
-%	  (the inverse of post)
+%       Encoding mapping character codes to glyph names
+%         (the composition of cmap and post)
+%       CharStrings mapping glyph names to glyph indices
+%         (the inverse of post)
 % If the post table is missing, we have to take a guess based on the cmap
 % table.
 
 /.loadttfontdict mark
-/orgXUID 107 def	% Aladdin Enterprises organization XUID
-/maxstring 65500 def	% maximum length of a PostScript string
+/orgXUID 107 def        % Aladdin Enterprises organization XUID
+/maxstring 32000 def    % a half of the maximum length of a PostScript string
 
 % Define the Macintosh standard mapping from characters to glyph indices.
 /MacRomanEncoding dup .findencoding def
@@ -131,32 +135,44 @@ MacRomanEncoding 249 7 getinterval aload pop
 ifelse def
 
 % Procedures
-/getu16			% <string> <index> getu16 <integer>
+/getu16                 % <string> <index> getu16 <integer>
  { 2 copy get 8 bitshift 3 1 roll 1 add get add
  } bind def
-/gets16			% <string> <index> gets16 <integer>
+/gets16                 % <string> <index> gets16 <integer>
  { getu16 16#8000 xor 16#8000 sub
  } bind def
-/getu32			% <string> <index> getu32 <integer>
+/getu32                 % <string> <index> getu32 <integer>
  { 2 copy getu16 16 bitshift 3 1 roll 2 add getu16 add
  } bind def
-/gets32			% <string> <index> gets32 <integer>
+/gets32                 % <string> <index> gets32 <integer>
  { getu32 dup 16#7fffffff gt { 4 { 16#40000000 sub } repeat } if
  } bind def
-/getrange		% <offset> <length> getrange <string>
+/checkget {		% <string|array> <index> checkget <element>
+  dup 0 lt 1 index 3 index length ge or {
+    (Malformed font \(?\)\n) print quit
+  } if get
+} bind def
+/checkgetinterval {	% <string> <offset> <length> checkgetinterval <substr>
+  1 index 0 lt 1 index 0 lt or
+  2 index 2 index add 4 index length gt or {
+    (Malformed font \(?\)\n) print quit
+  } if getinterval
+} bind def
+/getrange {		% <offset> <length> getrange <string>
 			% Free variables: sfnts
- { () sfnts
-    {		% Stack: offset length () sfnt
-      dup length 4 index gt { exch pop exit } if
-      4 -1 roll exch length sub 3 1 roll
-    }
-   forall 3 1 roll getinterval
- } bind def
-/findtableentry		% <name4> findtableentry <tableentry> true
+  sfnts {
+	% Stack: offset length sfnt
+    dup length 3 index gt { exit } if
+    3 -1 roll exch length sub exch
+  } forall
+  dup type /stringtype ne { () } if	% fail if out of range
+  3 1 roll checkgetinterval
+} bind def
+/findtableentry         % <name4> findtableentry <tableentry> true
 			% <name4> findtableentry false
 			% Free variables: tables
  { false 0 16 tables length 16 sub
-    {		% Stack: name4 false toffset
+    {           % Stack: name4 false toffset
       tables 1 index 4 getinterval 3 index eq
        { tables exch 16 getinterval
 	 exch pop exch true exit
@@ -165,7 +181,7 @@ ifelse def
     }
    for exch pop
  } bind def
-/findtable		% <name4> findtable <table> true
+/findtable              % <name4> findtable <table> true
 			% <name4> findtable false
 			% Free variables: tables
  { findtableentry
@@ -173,13 +189,13 @@ ifelse def
     { false }
    ifelse
  } bind def
-/findname		% <nametable> <nameid> findname <string> true
+/findname               % <nametable> <nameid> findname <string> true
 			% <nametable> <nameid> findname false
  { false 3 1 roll 0 1 3 index 2 getu16 1 sub
-    {		% Stack: false table id index
+    {           % Stack: false table id index
       12 mul 6 add 2 index exch 12 getinterval
       dup 6 getu16 2 index eq
-       {	% We found the name we want.
+       {        % We found the name we want.
 	 exch pop
 		% Stack: false table record
 	 dup 10 getu16 2 index 4 getu16 add
@@ -192,16 +208,16 @@ ifelse def
     }
    for pop pop
  } bind def
-/is2byte		% <namerecord> is2byte <bool>
+/is2byte                % <namerecord> is2byte <bool>
  { dup 0 getu16
-    { { pop true }		% Apple Unicode
-      { pop false }		% Macintosh Script manager
-      { 1 getu16 1 eq }		% ISO
-      { 1 getu16 1 eq }		% Microsoft
+    { { pop true }              % Apple Unicode
+      { pop false }             % Macintosh Script manager
+      { 1 getu16 1 eq }         % ISO
+      { 1 getu16 1 eq }         % Microsoft
     }
    exch get exec
  } bind def
-/string2to1		% <string2> string2to1 <string>
+/string2to1             % <string2> string2to1 <string>
  { dup length 2 idiv string dup
    0 1 3 index length 1 sub
     { 3 index 1 index 2 mul 1 add get put dup }
@@ -209,11 +225,11 @@ ifelse def
  } bind def
 /cmapformats mark
 		% Each procedure in this dictionary is called as follows:
-		%	-mark- encodingtable <<proc>> -mark- glyphindices...
-  0		% Apple standard 1-to-1 mapping.
+		%       -mark- encodingtable <<proc>> -mark- glyphindices...
+  0             % Apple standard 1-to-1 mapping.
     { 6 256 getinterval { } forall
     } bind
-  4		% Microsoft/Adobe segmented mapping.
+  4             % Microsoft/Adobe segmented mapping.
     { /etab exch def
       /nseg2 etab 6 getu16 def
       14 /endc etab 2 index nseg2 getinterval def
@@ -228,14 +244,14 @@ ifelse def
       /firstcode startc 0 getu16 16#ff00 and def
       pop 0 2 nseg2 3 sub
        { /i2 exch def
-         /scode startc i2 getu16 def
+	 /scode startc i2 getu16 def
 	 counttomark scode firstcode sub 256 min exch sub 0 max { 0 } repeat
 	 /ecode endc i2 getu16 def
 	 /delta iddelta i2 getu16 def
 	 idroff i2 getu16 dup 0 eq
 	  { pop scode 1 ecode { delta add 65535 and } for
 	  }
-	  {	% The +2 is for the 'reserved pad'.
+	  {     % The +2 is for the 'reserved pad'.
 	    /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
 	    0 1 ecode scode sub
 	     { 2 mul gloff add etab exch getu16
@@ -247,14 +263,14 @@ ifelse def
        }
       for
     } bind
-  6		% Single interval lookup.
+  6             % Single interval lookup.
     { dup 6 getu16 { 0 exch } repeat
       dup 8 getu16 0 exch 1 exch 1 sub
        { 2 mul 10 add 2 copy getu16 exch pop exch }
-      repeat pop
+      for pop
     } bind
-.dicttomark readonly def		% cmapformats
-/cmaparray		% <cmaptab> cmaparray -mark- <glyphs> ...
+.dicttomark readonly def                % cmapformats
+/cmaparray              % <cmaptab> cmaparray -mark- <glyphs> ...
  { mark exch dup 0 getu16 cmapformats exch .knownget
     { exec }
     { (Can't handle format ) print 0 getu16 = flush
@@ -264,9 +280,12 @@ ifelse def
  } bind def
 /postformats mark
 		% Each procedure in this dictionary is called as follows:
-		%	posttable <<proc>> glyphencoding
-  16#00020000	% Detailed map, required by Microsoft fonts.
-    { /postglyphs exch def
+		%       posttable <<proc>> glyphencoding
+  16#00010000  {	% 258 standard Macintosh glyphs.
+    MacGlyphEncoding
+  }
+  16#00020000  {	% Detailed map, required by Microsoft fonts.
+    /postglyphs exch def
       postglyphs 32 getu16 /numglyphs exch def
       /glyphnames numglyphs 2 mul 34 add def
       [ 0 1 numglyphs 1 sub
@@ -277,15 +296,18 @@ ifelse def
 	  { 258 sub glyphnames exch
 	     { postglyphs 1 index get 1 add add }
 	    repeat
-	    1 add postglyphs exch 2 copy 1 sub get getinterval cvn
+	    1 add postglyphs exch 2 copy 1 sub checkget checkgetinterval cvn
 	  }
 	 ifelse
        }
       for ]
-    } bind
-.dicttomark readonly def		% postformats
-.dicttomark readonly def		% .loadttfontdict
-/.loadttfonttables	% <file> .loadttfonttables -
+  } bind
+  16#00030000  {	% No map.
+    pop [ ]
+  } bind
+.dicttomark readonly def                % postformats
+.dicttomark readonly def                % .loadttfontdict
+/.loadttfonttables      % <file> .loadttfonttables -
 			% Pushes .loadttfontdict & scratch dict on d-stack,
 			% defines f, offsets, tables
  { .loadttfontdict begin
@@ -294,7 +316,7 @@ ifelse def
    /offsets f 12 string readstring pop def
    /tables f offsets 4 getu16 16 mul string readstring pop def
  } bind def
-/.readsfnts0 {		% <len0> .readsfnts0 <string>
+/.readsfnts0 {          % <len0> .readsfnts0 <string>
    dup string
      dup 0 offsets putinterval
      dup offsets length tables putinterval
@@ -304,54 +326,102 @@ ifelse def
        f exch dup length 0 ne { readstring } if pop pop
    exch pop
 } bind def
-/.dividesfnts {		% <length> .dividesfnts -
-   (glyf) findtableentry pop
-   dup 8 getu32 /len0 exch def
-   12 getu32 /len1 exch def
-   len0 len1 add sub /len2 exch def
-   /sfnts [
-   len0 .readsfnts0
-   len1 dup maxstring gt
-    {		% Bad news: we'll have to split the glyfs.
-		% Right now we only provide for splitting into 2 parts,
-		% but we could generalize this without too much trouble.
+/.dividesfnts {         % <length> .dividesfnts -
+  (glyf) findtableentry pop
+  dup 8 getu32 /len0 exch def
+  12 getu32
+	% If there is any data beyond the glyfs, round up the length
+	% of the glyfs to an even value.  This is complete garbage,
+	% of course, but some TrueType fonts seem to be formatted
+	% this way (with an odd glyfs length and an unaccounted-for
+	% pad byte immediately following).
+  dup 1 and add
+  /len1 exch def
+  len0 len1 add sub /len2 exch def
+  /sfnts [
+		% First approximation of sfnts; string boundaries will be
+		% moved to coincide with glyph boundaries.
+    len0 .readsfnts0
+    len1 {
+      dup maxstring le { exit } if
       f maxstring string readstring pop
       exch maxstring sub
-    }
-   if string f exch readstring pop
-   len2 0 ne { f len2 string readstring pop } if
-   ] def
-   /head (head) findtable pop def
-   len1 maxstring gt
-    {		% Determine where to split the glyfs by scanning loca.
+    } loop
+    string f exch readstring pop
+    len2 0 eq { 0 string } { f len2 string readstring pop } ifelse
+  ] def
+  .setloca
+  len1 maxstring gt {
+		% Determine where to split the glyfs by scanning loca.
 		% The very last entry in loca may be bogus.
 		% What a nuisance!
-      (loca) findtable pop dup length
-      head 50 getu16 0 ne
-       {	% 32-bit loca
-	 8 sub -4 0
-	  { 1 index exch getu32 dup maxstring le { exch pop exit } if pop }
-       }
-       {	% 16-bit loca
-	 4 sub -2 0
-	  { 1 index exch getu16 1 bitshift dup maxstring le { exch pop exit } if pop }
-       }
-      ifelse for
-		% Now the top element of the stack is the length of
-		% the first glyf string.
-      sfnts 1 get dup 0 3 index getinterval
-	sfnts exch 1 exch put
-      exch 1 index length 1 index sub getinterval
-	sfnts 2 get concatstrings sfnts exch 2 exch put
-    }
-   if
+		%
+		% Construct splitarray, the array of final lengths of
+		% the sfnts entries covering the glyfs (i.e., all but
+		% the first and last sfnts entries).
+    /prevsplit 0 def
+    /prevboundary 0 def
+    /splitarray [
+      loca32 {		% 32-bit loca
+	/getloca { getu32 } def
+	0 4 locatable length 8 sub
+      } {		% 16-bit loca
+	/getloca { getu16 1 bitshift } def
+	0 2 locatable length 4 sub
+      } ifelse {
+	locatable exch getloca dup prevsplit maxstring add gt {
+	  prevboundary prevsplit sub exch
+	  /prevsplit prevboundary def
+	} if
+	/prevboundary exch def
+      } for
+      len1 prevsplit sub
+    ] def
+    /sfnts [
+		% Re-split the sfnts glyfs strings according to splitarray.
+      sfnts 0 get	% everything before glyfs
+      sfnts 1 get
+      /split_idx 0 def
+      /sfnt_idx 2 def {
+		% Stack: [ ...strings... current_string
+        dup length splitarray split_idx get ge {
+		% The next split falls within the current string.
+	  dup 0 splitarray split_idx get getinterval exch
+	  1 index length dup 2 index length exch sub getinterval
+	  split_idx splitarray length 1 sub lt {
+	    /split_idx split_idx 1 add def
+	  }{
+	    length 0 ne {
+	      (Shouldn't happen1 -- malformed splitarray\n) print quit
+	    } if
+	    exit
+	  } ifelse
+	} {
+		% The next split falls beyond the current string.
+		% Concatenate another sfnts string onto the current one.
+	  sfnt_idx sfnts length 1 sub lt {
+	    sfnts sfnt_idx get concatstrings
+	    /sfnt_idx sfnt_idx 1 add def
+	  } {
+	    (Shouldn't happen2 -- malformed splitarray\n) print quit
+	  } ifelse
+	} ifelse
+      } loop
+      sfnts dup length 1 sub get	% everything after glyfs
+    ] def
+  } if
 } bind def
-/.makesfnts		% - .makesfnts -
+/.setloca {		% - .setloca -
+  /head (head) findtable pop def
+  /locatable (loca) findtable pop def
+  /loca32 head 50 getu16 0 ne def
+} bind def
+/.makesfnts             % - .makesfnts -
 			% Defines head, sfnts
- {		% Find the end of the last table, and also the end of
+ {              % Find the end of the last table, and also the end of
 		% the last table below the 64K mark.
    0 8 16 tables length
-    {		% Stack: end toffset
+    {           % Stack: end toffset
       DEBUG
        { tables 1 index 8 sub 4 getinterval print ( ) print
 	 tables 1 index getu32 =only ( ) print
@@ -368,22 +438,22 @@ ifelse def
        <00> concatstrings
      } if
      1 array astore /sfnts exch def
-     /head (head) findtable pop def
+     .setloca
    } {
 		% If the total length exceeds maxstring, divide the data
 		% into 2+n strings: before glyf, glyfs, after glyf
      .dividesfnts
    } ifelse
  } bind def
-/.loadttfont		% <file> .loadttfont <type42font>
+/.loadttfont            % <file> .loadttfont <type42font>
  { .loadttfonttables
    .makesfnts
    /upem head 18 getu16 def
    (cmap) findtable pop
-   		% The Apple cmap format is no help in determining the encoding.
+		% The Apple cmap format is no help in determining the encoding.
 		% Look for a Microsoft table.  If we can't find one,
 		% just use the first table, whatever it is.
-   dup 4 8 getinterval exch		% the default
+   dup 4 8 getinterval exch             % the default
    0 1 2 index 2 getu16 1 sub
     { 8 mul 4 add 1 index exch 8 getinterval
       dup 0 getu16 3 eq { exch 3 -1 roll pop exit } if pop
@@ -395,14 +465,20 @@ ifelse def
    /cmaptab exch def
 		% See if we have PostScript glyph name information.
    /post (post) findtable not { null } if def
-   /glyphencoding post null eq
-    { MacGlyphEncoding }
-    { postformats post 0 getu32 .knownget
-       { post exch exec }
-       { MacGlyphEncoding }
-     ifelse
-    }
-   ifelse def
+   /glyphencoding post null eq {
+     [ ]
+   } {
+     postformats post 0 getu32 .knownget { post exch exec } { [ ] } ifelse
+   } ifelse
+		% If necessary, fabricate additional glyphencoding entries
+		% to cover all of loca.
+   /numglyphs locatable length loca32 { 4 } { 2 } ifelse idiv 1 sub def
+   dup length numglyphs lt {
+     [ exch aload pop
+     counttomark 1 numglyphs 1 sub {
+	=string cvs (_) exch concatstrings cvn
+     } for ]
+   } if def
    /checksum head 8 getu32 def
    mark
      /FontType 42
@@ -410,7 +486,7 @@ ifelse def
      /PaintType 0
      /FontBBox [ 36 2 42 { head exch gets16 upem div } for ]
      (name) findtable
-      {		% Find the names from the 'name' table.
+      {         % Find the names from the 'name' table.
 	/names exch def
 	/FontName names 6 findname not { checksum 16 8 string cvrs } if
 	/FontInfo mark
@@ -419,7 +495,7 @@ ifelse def
 	  names 4 findname { /FullName exch } if
 	  names 5 findname { /Version exch } if
       }
-      {		% No name table, fabricate a FontName.
+      {         % No name table, fabricate a FontName.
 	/FontName checksum 16 8 string cvrs
 	/FontInfo mark
       }
@@ -438,7 +514,8 @@ ifelse def
      ifelse
      /Encoding
        cmaptab cmaparray
-       counttomark array astore { glyphencoding exch get } forall
+       counttomark array astore
+       { glyphencoding exch get } forall
        counttomark 256 sub dup 0 ge
 	{ { pop } repeat }
 	{ neg { /.notdef } repeat }
@@ -448,7 +525,7 @@ ifelse def
      /XUID [orgXUID 42 checksum]
      /CharStrings glyphencoding dup length dict
        0 1 3 index length 1 sub
-	{	% Stack: glyphencoding dict index
+	{       % Stack: glyphencoding dict index
 	  2 index 1 index get 2 index 1 index known
 	   { pop pop }
 	   { 2 index exch 3 -1 roll put }

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zimage3.c  */
+/*$Id$ */
 /* LanguageLevel 3 ImageTypes (3 & 4 - masked images) */
 #include "memory_.h"
 #include "ghost.h"
@@ -89,20 +89,34 @@ zimage4(register os_ptr op)
     gs_image4_t image;
     image_params ip;
     int num_components =
-    gs_color_space_num_components(gs_currentcolorspace(igs));
+	gs_color_space_num_components(gs_currentcolorspace(igs));
+    int colors[countof(image.MaskColor)];
     int code;
+    int i;
 
     gs_image4_t_init(&image, NULL);
     code = pixel_image_params(op, (gs_pixel_image_t *)&image, &ip, 12);
     if (code < 0)
 	return code;
     code = dict_int_array_param(op, "MaskColor", num_components * 2,
-				image.MaskColor);
-    if (code == num_components)
+				colors);
+    /* Clamp the color values to the unsigned range. */
+    if (code == num_components) {
 	image.MaskColor_is_range = false;
-    else if (code == num_components * 2)
+	for (i = 0; i < code; ++i)
+	    image.MaskColor[i] = (colors[i] < 0 ? ~(uint)0 : colors[i]);
+    }
+    else if (code == num_components * 2) {
 	image.MaskColor_is_range = true;
-    else
+	for (i = 0; i < code; i += 2) {
+	    if (colors[i+1] < 0) /* no match possible */
+		image.MaskColor[i] = 1, image.MaskColor[i+1] = 0;
+	    else {
+		image.MaskColor[i+1] = colors[i+1];
+		image.MaskColor[i] = max(colors[i], 0);
+	    }
+	}
+    } else
 	return_error(code < 0 ? code : gs_note_error(e_rangecheck));
     return zimage_setup((gs_pixel_image_t *)&image, &ip.DataSource[0],
 			image.CombineWithColor, 1);

@@ -16,10 +16,11 @@
    all copies.
  */
 
-/*Id: gsalloc.c  */
+/*$Id$ */
 /* Standard memory allocator */
 #include "gx.h"
 #include "memory_.h"
+#include "gserrors.h"
 #include "gsmdebug.h"
 #include "gsstruct.h"
 #include "gxalloc.h"
@@ -89,10 +90,9 @@ RELOC_PTRS_END
 /* Forward references */
 private ulong compute_free_objects(P1(gs_ref_memory_t *));
 private obj_header_t *alloc_obj(P5(gs_ref_memory_t *, ulong, gs_memory_type_ptr_t, bool, client_name_t));
-private chunk_t *alloc_add_chunk(P4(gs_ref_memory_t *, ulong, bool, client_name_t));
+private chunk_t *alloc_acquire_chunk(P4(gs_ref_memory_t *, ulong, bool, client_name_t));
+private chunk_t *alloc_add_chunk(P3(gs_ref_memory_t *, ulong, client_name_t));
 void alloc_close_chunk(P1(gs_ref_memory_t *));
-
-#define imem ((gs_ref_memory_t *)mem)
 
 /*
  * Define the standard implementation (with garbage collection)
@@ -219,14 +219,50 @@ ialloc_solo(gs_raw_memory_t * parent, gs_memory_type_ptr_t pstype,
     return (void *)(obj + 1);
 }
 
+/*
+ * Add a chunk to an externally controlled allocator.  Such allocators
+ * allocate all objects as immovable, are not garbage-collected, and
+ * don't attempt to acquire additional memory on their own.
+ */
+int
+ialloc_add_chunk(gs_ref_memory_t *imem, ulong space, client_name_t cname)
+{
+    chunk_t *cp;
+
+    /* Allow acquisition of this chunk. */
+    imem->large_size = imem->chunk_size;
+    imem->limit = max_long;
+    imem->gc_status.max_vm = max_long;
+
+    /* Acquire the chunk. */
+    cp = alloc_add_chunk(imem, space, cname);
+
+    /*
+     * Make all allocations immovable.  Since the "movable" allocators
+     * allocate within existing chunks, whereas the "immovable" ones
+     * allocate in new chunks, we equate the latter to the former, even
+     * though this seems backwards.
+     */
+    imem->procs.alloc_bytes_immovable = imem->procs.alloc_bytes;
+    imem->procs.alloc_struct_immovable = imem->procs.alloc_struct;
+    imem->procs.alloc_byte_array_immovable = imem->procs.alloc_byte_array;
+    imem->procs.alloc_struct_array_immovable = imem->procs.alloc_struct_array;
+    imem->procs.alloc_string_immovable = imem->procs.alloc_string;
+
+    /* Disable acquisition of additional chunks. */
+    imem->limit = 0;
+
+    return (cp ? 0 : gs_note_error(gs_error_VMerror));
+}
+
 /* Prepare for a GC by clearing the stream list. */
 /* This probably belongs somewhere else.... */
 void
 ialloc_gc_prepare(gs_ref_memory_t * mem)
-{				/*
-				 * We have to unlink every stream from its neighbors,
-				 * so that referenced streams don't keep all streams around.
-				 */
+{	/*
+	 * We have to unlink every stream from its neighbors,
+	 * so that referenced streams don't keep all streams around.
+	 */
     while (mem->streams != 0) {
 	stream *s = mem->streams;
 
@@ -305,20 +341,34 @@ ialloc_set_limit(register gs_ref_memory_t * mem)
  * is responsible for restoring to the outermost level if desired.
  */
 private void
-i_free_all(gs_memory_t * mem)
+i_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     chunk_t *cp;
-    chunk_t *csucc;
 
-    /*
-     * Free the chunks in reverse order, to encourage LIFO behavior.
-     * Don't free the chunk holding the allocator itself!
-     */
-    for (cp = imem->clast; cp != 0; cp = csucc) {
-	csucc = cp->cprev;	/* save before freeing */
-	if (cp->cbase + sizeof(obj_header_t) != (byte *) mem)
-	    alloc_free_chunk(cp, imem);
+    if (free_mask & FREE_ALL_DATA) {
+	chunk_t *csucc;
+
+	/*
+	 * Free the chunks in reverse order, to encourage LIFO behavior.
+	 * Don't free the chunk holding the allocator itself.
+	 */
+	for (cp = imem->clast; cp != 0; cp = csucc) {
+	    csucc = cp->cprev;	/* save before freeing */
+	    if (cp->cbase + sizeof(obj_header_t) != (byte *)mem)
+		alloc_free_chunk(cp, imem);
+	}
     }
+    if (free_mask & FREE_ALL_STRUCTURES) {
+	/* Note that the allocator is unusable after doing this. */
+	for (cp = imem->clast; cp != 0; cp = cp->cprev)
+	    if (cp->cbase + sizeof(obj_header_t) == (byte *)mem) {
+		gs_free_object(imem->parent, cp, cname);
+		break;
+	    }
+    }
+    if (free_mask & FREE_ALL_ALLOCATOR)
+	gs_free_object(imem->parent, imem, cname);
 }
 
 /* ================ Accessors ================ */
@@ -390,6 +440,7 @@ gs_memory_set_gc_status(gs_ref_memory_t * mem, const gs_memory_gc_status_t * pst
 private byte *
 i_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
     obj_header_t **pfl;
 
@@ -409,6 +460,7 @@ i_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 private byte *
 i_alloc_bytes_immovable(gs_memory_t * mem, uint size, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj = alloc_obj(imem, size, &st_bytes, true, cname);
 
     if (obj == 0)
@@ -420,6 +472,7 @@ private void *
 i_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 	       client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     uint size = pstype->ssize;
     obj_header_t *obj;
     obj_header_t **pfl;
@@ -442,6 +495,7 @@ private void *
 i_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 			 client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     uint size = pstype->ssize;
     obj_header_t *obj;
 
@@ -454,6 +508,7 @@ private byte *
 i_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
 		   client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj = alloc_obj(imem, (ulong) num_elements * elt_size,
 				  &st_bytes, false, cname);
 
@@ -467,6 +522,7 @@ private byte *
 i_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
 			     uint elt_size, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj = alloc_obj(imem, (ulong) num_elements * elt_size,
 				  &st_bytes, true, cname);
 
@@ -480,6 +536,7 @@ private void *
 i_alloc_struct_array(gs_memory_t * mem, uint num_elements,
 		     gs_memory_type_ptr_t pstype, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
 
     ALLOC_CHECK_SIZE(pstype);
@@ -497,6 +554,7 @@ private void *
 i_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
 			   gs_memory_type_ptr_t pstype, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
 
     ALLOC_CHECK_SIZE(pstype);
@@ -514,6 +572,7 @@ private void *
 i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
 		client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *pp = (obj_header_t *) obj - 1;
     gs_memory_type_ptr_t pstype = pp->o_type;
     ulong old_size = pre_obj_contents_size(pp);
@@ -546,6 +605,7 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
 private void
 i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *pp;
     gs_memory_type_ptr_t pstype;
 
@@ -608,11 +668,12 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	imem->cc.cbot = (byte *) pp;
 	return;
     }
-    if (pp->o_large) {		/*
-				 * We gave this object its own chunk.  Free the entire chunk,
-				 * unless it belongs to an older save level, in which case
-				 * we mustn't overwrite it.
-				 */
+    if (pp->o_large) {
+		/*
+		 * We gave this object its own chunk.  Free the entire chunk,
+		 * unless it belongs to an older save level, in which case
+		 * we mustn't overwrite it.
+		 */
 	chunk_locator_t cl;
 
 #ifdef DEBUG
@@ -637,11 +698,12 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     }
     if (size <= max_freelist_size &&
 	obj_align_round(size) >= sizeof(obj_header_t *)
-	) {			/*
-				 * Put the object on a freelist, unless it belongs to
-				 * an older save level, in which case we mustn't
-				 * overwrite it.
-				 */
+	) {
+			/*
+			 * Put the object on a freelist, unless it belongs to
+			 * an older save level, in which case we mustn't
+			 * overwrite it.
+			 */
 	imem->cfreed.memory = imem;
 	if (chunk_locate(ptr, &imem->cfreed)) {
 	    obj_header_t **pfl =
@@ -666,9 +728,10 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 private byte *
 i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
 
-  top:if (imem->cc.ctop - imem->cc.cbot > nbytes) {
+top:if (imem->cc.ctop - imem->cc.cbot > nbytes) {
 	if_debug4('A', "[a%d:+> ]%s(%u) = 0x%lx\n", imem->space,
 		  client_name_string(cname), nbytes,
 		  (ulong) (imem->cc.ctop - nbytes));
@@ -685,8 +748,7 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 	return i_alloc_string_immovable(mem, nbytes, cname);
     } else {			/* Add another chunk. */
 	chunk_t *cp =
-	alloc_add_chunk(imem, (ulong) imem->chunk_size, true,
-			"chunk");
+	    alloc_acquire_chunk(imem, (ulong) imem->chunk_size, true, "chunk");
 
 	if (cp == 0)
 	    return 0;
@@ -701,12 +763,12 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 private byte *
 i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
-
     /* Give it a chunk all its own. */
     uint asize = string_chunk_space(nbytes) + sizeof(chunk_head_t);
-    chunk_t *cp = alloc_add_chunk(imem, (ulong) asize, true,
-				  "large string chunk");
+    chunk_t *cp = alloc_acquire_chunk(imem, (ulong) asize, true,
+				      "large string chunk");
 
     if (cp == 0)
 	return 0;
@@ -720,6 +782,7 @@ private byte *
 i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 		client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *ptr;
 
     if (data == imem->cc.ctop &&
@@ -753,6 +816,7 @@ private void
 i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 	      client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     if (data == imem->cc.ctop) {
 	if_debug4('A', "[a%d:-> ]%s(%u) 0x%lx\n", imem->space,
 		  client_name_string(cname), nbytes, (ulong) data);
@@ -768,6 +832,7 @@ i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 private void
 i_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     ulong unused = imem->lost.refs + imem->lost.strings;
     ulong inner = 0;
 
@@ -835,13 +900,12 @@ alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
 
     if (lsize >= mem->large_size || immovable) {
 	ulong asize =
-	((lsize + obj_align_mask) & -obj_align_mod) +
-	sizeof(obj_header_t);
-
+	    ((lsize + obj_align_mask) & -obj_align_mod) +
+	    sizeof(obj_header_t);
 	/* Give it a chunk all its own. */
 	chunk_t *cp =
-	alloc_add_chunk(mem, asize + sizeof(chunk_head_t), false,
-			"large object chunk");
+	    alloc_acquire_chunk(mem, asize + sizeof(chunk_head_t), false,
+				"large object chunk");
 
 	if (cp == 0)
 	    return 0;
@@ -854,18 +918,13 @@ alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
 
 	while (mem->cc.ctop -
 	       (byte *) (ptr = (obj_header_t *) mem->cc.cbot)
-	       <= asize + sizeof(obj_header_t)) {	/* Add another chunk. */
+	       <= asize + sizeof(obj_header_t)) {
+	    /* Add another chunk. */
 	    chunk_t *cp =
-	    alloc_add_chunk(mem, (ulong) mem->chunk_size,
-			    true, "chunk");
+		alloc_add_chunk(mem, (ulong)mem->chunk_size, "chunk");
 
 	    if (cp == 0)
 		return 0;
-	    alloc_close_chunk(mem);
-	    mem->pcc = cp;
-	    mem->cc = *mem->pcc;
-	    gs_alloc_fill(mem->cc.cbase, gs_alloc_fill_free,
-			  mem->cc.climit - mem->cc.cbase);
 	}
 	mem->cc.cbot = (byte *) ptr + asize;
 	ptr->o_large = 0;
@@ -880,29 +939,34 @@ alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
 /* ================ Roots ================ */
 
 /* Register a root. */
-private void
+private int
 i_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
 		void **up, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
+
     if (rp == NULL) {
 	rp = gs_raw_alloc_struct_immovable(imem->parent, &st_gc_root_t,
 					   "i_register_root");
-	if (rp == 0) {
-	    lprintf1("Unable to allocate root for %s!\n",
-		     client_name_string(cname));
-	    return;		/*gs_abort(); */
-	}
-    }
+	if (rp == 0)
+	    return_error(gs_error_VMerror);
+	rp->free_on_unregister = true;
+    } else
+	rp->free_on_unregister = false;
     if_debug3('8', "[8]register root(%s) 0x%lx -> 0x%lx\n",
-	      client_name_string(cname), (ulong) rp, (ulong) up);
-    rp->ptype = ptype, rp->p = up;
-    rp->next = imem->roots, imem->roots = rp;
+	      client_name_string(cname), (ulong)rp, (ulong)up);
+    rp->ptype = ptype;
+    rp->p = up;
+    rp->next = imem->roots;
+    imem->roots = rp;
+    return 0;
 }
 
 /* Unregister a root. */
 private void
 i_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     gs_gc_root_t **rpp = &imem->roots;
 
     if_debug2('8', "[8]unregister root(%s) 0x%lx\n",
@@ -910,6 +974,8 @@ i_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
     while (*rpp != rp)
 	rpp = &(*rpp)->next;
     *rpp = (*rpp)->next;
+    if (rp->free_on_unregister)
+	gs_free_object(imem->parent, rp, "i_unregister_root");
 }
 
 /* ================ Chunks ================ */
@@ -919,13 +985,13 @@ public_st_chunk();
 /* Insert a chunk in the chain.  This is exported for the GC and for */
 /* the forget_save operation. */
 void
-alloc_link_chunk(chunk_t * cp, gs_ref_memory_t * mem)
+alloc_link_chunk(chunk_t * cp, gs_ref_memory_t * imem)
 {
     byte *cdata = cp->cbase;
     chunk_t *icp;
     chunk_t *prev;
 
-    for (icp = mem->cfirst; icp != 0 && ptr_ge(cdata, icp->ctop);
+    for (icp = imem->cfirst; icp != 0 && ptr_ge(cdata, icp->ctop);
 	 icp = icp->cnext
 	);
     cp->cnext = icp;
@@ -947,23 +1013,40 @@ alloc_link_chunk(chunk_t * cp, gs_ref_memory_t * mem)
     }
 }
 
-/* Allocate a chunk.  If we would exceed MaxLocalVM (if relevant), */
+/* Add a chunk for ordinary allocation. */
+private chunk_t *
+alloc_add_chunk(gs_ref_memory_t * mem, ulong csize, client_name_t cname)
+{
+    chunk_t *cp = alloc_acquire_chunk(mem, csize, true, cname);
+
+    if (cp) {
+	alloc_close_chunk(mem);
+	mem->pcc = cp;
+	mem->cc = *mem->pcc;
+	gs_alloc_fill(mem->cc.cbase, gs_alloc_fill_free,
+		      mem->cc.climit - mem->cc.cbase);
+    }
+    return cp;
+}
+
+/* Acquire a chunk.  If we would exceed MaxLocalVM (if relevant), */
 /* or if we would exceed the VMThreshold and psignal is NULL, */
 /* return 0; if we would exceed the VMThreshold but psignal is valid, */
 /* just set the signal and return successfully. */
 private chunk_t *
-alloc_add_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
-		client_name_t cname)
+alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
+		    client_name_t cname)
 {
     gs_raw_memory_t *parent = mem->parent;
-    chunk_t *cp =
-    gs_raw_alloc_struct_immovable(parent, &st_chunk, cname);
+    chunk_t *cp;
     byte *cdata;
 
+#if arch_sizeof_long > arch_sizeof_int
     /* If csize is larger than max_uint, punt. */
     if (csize != (uint) csize)
 	return 0;
-
+#endif
+    cp = gs_raw_alloc_struct_immovable(parent, &st_chunk, cname);
     if ((ulong) (mem->allocated + mem->inherited) >= mem->limit) {
 	mem->gc_status.requested += csize;
 	if (mem->limit >= mem->gc_status.max_vm ||
@@ -1135,7 +1218,7 @@ alloc_free_chunk(chunk_t * cp, gs_ref_memory_t * mem)
 /* of that chunk, we can stop when is_within_chunk succeeds, and just test */
 /* is_in_inner_chunk then. */
 bool
-chunk_locate_ptr(const void *vptr, chunk_locator_t * clp)
+chunk_locate_ptr(const void *ptr, chunk_locator_t * clp)
 {
     register chunk_t *cp = clp->cp;
 
@@ -1144,7 +1227,6 @@ chunk_locate_ptr(const void *vptr, chunk_locator_t * clp)
 	if (cp == 0)
 	    return false;
     }
-#define ptr (const byte *)vptr
     if (ptr_lt(ptr, cp->cbase)) {
 	do {
 	    cp = cp->cprev;
@@ -1165,16 +1247,9 @@ chunk_locate_ptr(const void *vptr, chunk_locator_t * clp)
     }
     clp->cp = cp;
     return !ptr_is_in_inner_chunk(ptr, cp);
-#undef ptr
 }
 
 /* ------ Debugging printout ------ */
-
-/*
- * All of this code should be in a separate file, but we added it just
- * before a release, and it would have been too disruptive to add a new
- * file at this point.
- */
 
 #ifdef DEBUG
 
@@ -1203,9 +1278,15 @@ typedef struct dump_control_s {
     const byte *top;
 } dump_control_t;
 
-#define obj_in_control_region(obot, otop, pdc)\
-  ( ((pdc)->bottom == NULL || (const byte *)(otop) > (pdc)->bottom) &&\
-    ((pdc)->top == NULL || (const byte *)(obot) < (pdc)->top) )
+inline private bool
+obj_in_control_region(const void *obot, const void *otop,
+		      const dump_control_t *pdc)
+{
+    return
+	((pdc->bottom == NULL || ptr_gt(otop, pdc->bottom)) &&
+	 (pdc->top == NULL || ptr_lt(obot, pdc->top)));
+}
+
 const dump_control_t dump_control_default =
 {
     dump_do_default, NULL, NULL

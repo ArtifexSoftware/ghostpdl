@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: idebug.h  */
+/*$Id$ */
 /* Prototypes for debugging procedures in idebug.c */
 
 #ifndef idebug_INCLUDED

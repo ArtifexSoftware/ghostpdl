@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gp_getnv.c  */
+/*$Id$ */
 /* Standard implementation of gp_getenv */
 #include "stdio_.h"
 #include "string_.h"

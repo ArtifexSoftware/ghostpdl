@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: stream.c  */
+/*$Id$ */
 /* Stream package for Ghostscript interpreter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -94,8 +94,8 @@ stream_finalize(void *vptr)
 #undef st
 
 /* Dummy template for streams that don't have a separate state. */
-private const stream_template s_no_template =
-{&st_stream_state, 0, 0, 1, 1, 0
+private const stream_template s_no_template = {
+    &st_stream_state, 0, 0, 1, 1, 0
 };
 
 /* ------ Generic procedures ------ */
@@ -255,7 +255,7 @@ s_disable(register stream * s)
     s->strm = 0;
     s->state = (stream_state *) s;
     s->template = &s_no_template;
-/****** SHOULD DO MORE THAN THIS ******/
+    /****** SHOULD DO MORE THAN THIS ******/
     if_debug1('s', "[s]disable 0x%lx\n", (ulong) s);
 }
 
@@ -878,4 +878,28 @@ s_string_write_process(stream_state * st, stream_cursor_read * pr,
 		       stream_cursor_write * ignore_pw, bool last)
 {
     return (last ? EOFC : ERRC);
+}
+
+/* ------ Position-tracking stream ------ */
+
+private int
+    s_write_position_process(P4(stream_state *, stream_cursor_read *,
+				stream_cursor_write *, bool));
+
+/* Set up a write stream that just keeps track of the position. */
+void
+swrite_position_only(stream *s)
+{
+    static byte buf[50];	/* size is arbitrary */
+
+    swrite_string(s, buf, sizeof(buf));
+    s->procs.process = s_write_position_process;
+}
+
+private int
+s_write_position_process(stream_state * st, stream_cursor_read * pr,
+			 stream_cursor_write * ignore_pw, bool last)
+{
+    pr->ptr = pr->limit;	/* discard data */
+    return 0;
 }

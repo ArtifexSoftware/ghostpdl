@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscie.h  */
+/*$Id$ */
 /* Structures for CIE color algorithms */
 /* (requires gscspace.h, gscolor2.h) */
 

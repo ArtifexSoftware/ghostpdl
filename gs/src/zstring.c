@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zstring.c  */
+/*$Id$ */
 /* String operators */
 #include "memory_.h"
 #include "ghost.h"

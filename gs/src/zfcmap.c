@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfcmap.c  */
+/*$Id$ */
 /* CMap creation operator */
 #include "ghost.h"
 #include "oper.h"

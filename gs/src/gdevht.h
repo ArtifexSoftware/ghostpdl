@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevht.h  */
+/*$Id$ */
 /* Requires gxdevice.h */
 
 #ifndef gdevht_INCLUDED

@@ -16,15 +16,13 @@
    all copies.
  */
 
-/*Id: gdevnfwd.c  */
+/*$Id$ */
 /* Null and forwarding device implementation */
 #include "gx.h"
 #include "gserrors.h"
 #include "gxdevice.h"
 
 /* ---------------- Forwarding procedures ---------------- */
-
-#define fdev ((gx_device_forward *)dev)
 
 /* Fill in NULL procedures in a forwarding device procedure record. */
 /* We don't fill in: open_device, close_device, or the lowest-level */
@@ -93,6 +91,7 @@ gx_device_forward_color_procs(gx_device_forward * dev)
 void
 gx_forward_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
@@ -104,6 +103,7 @@ gx_forward_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 int
 gx_forward_sync_output(gx_device * dev)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_sync_output(dev) :
@@ -113,6 +113,7 @@ gx_forward_sync_output(gx_device * dev)
 int
 gx_forward_output_page(gx_device * dev, int num_copies, int flush)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_output_page(dev, num_copies, flush) :
@@ -123,6 +124,7 @@ gx_color_index
 gx_forward_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 			 gx_color_value b)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_map_rgb_color(dev, r, g, b) :
@@ -133,6 +135,7 @@ int
 gx_forward_map_color_rgb(gx_device * dev, gx_color_index color,
 			 gx_color_value prgb[3])
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_map_color_rgb(dev, color, prgb) :
@@ -143,6 +146,7 @@ int
 gx_forward_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			  gx_color_index color)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
@@ -155,6 +159,7 @@ gx_forward_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1,
 			  int px, int py)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_tile_rectangle((*proc));
@@ -171,6 +176,7 @@ gx_forward_copy_mono(gx_device * dev, const byte * data,
 	    int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h,
 		     gx_color_index zero, gx_color_index one)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
@@ -183,6 +189,7 @@ int
 gx_forward_copy_color(gx_device * dev, const byte * data,
 	    int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
@@ -194,6 +201,7 @@ gx_forward_copy_color(gx_device * dev, const byte * data,
 int
 gx_forward_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_get_bits(dev, y, data, actual_data) :
@@ -203,6 +211,7 @@ gx_forward_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 int
 gx_forward_get_params(gx_device * dev, gs_param_list * plist)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_get_params(dev, plist) :
@@ -212,6 +221,7 @@ gx_forward_get_params(gx_device * dev, gs_param_list * plist)
 int
 gx_forward_put_params(gx_device * dev, gs_param_list * plist)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_put_params(dev, plist) :
@@ -222,6 +232,7 @@ gx_color_index
 gx_forward_map_cmyk_color(gx_device * dev, gx_color_value c, gx_color_value m,
 			  gx_color_value y, gx_color_value k)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_map_cmyk_color(dev, c, m, y, k) :
@@ -231,6 +242,7 @@ gx_forward_map_cmyk_color(gx_device * dev, gx_color_value c, gx_color_value m,
 const gx_xfont_procs *
 gx_forward_get_xfont_procs(gx_device * dev)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_get_xfont_procs(dev) :
@@ -240,6 +252,7 @@ gx_forward_get_xfont_procs(gx_device * dev)
 gx_device *
 gx_forward_get_xfont_device(gx_device * dev)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_get_xfont_device(dev) :
@@ -250,6 +263,7 @@ gx_color_index
 gx_forward_map_rgb_alpha_color(gx_device * dev, gx_color_value r,
 		   gx_color_value g, gx_color_value b, gx_color_value alpha)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ?
@@ -260,6 +274,7 @@ gx_forward_map_rgb_alpha_color(gx_device * dev, gx_color_value r,
 gx_device *
 gx_forward_get_page_device(gx_device * dev)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
     gx_device *pdev;
 
@@ -272,6 +287,7 @@ gx_forward_get_page_device(gx_device * dev)
 int
 gx_forward_get_alpha_bits(gx_device * dev, graphics_object_type type)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ?
@@ -282,6 +298,7 @@ gx_forward_get_alpha_bits(gx_device * dev, graphics_object_type type)
 int
 gx_forward_get_band(gx_device * dev, int y, int *band_start)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ?
@@ -297,7 +314,8 @@ gx_forward_copy_rop(gx_device * dev,
 		    int x, int y, int width, int height,
 		    int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    gx_device *tdev = ((gx_device_forward *) dev)->target;
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
 
     dev_proc_copy_rop((*proc));
 
@@ -315,6 +333,7 @@ gx_forward_fill_path(gx_device * dev, const gs_imager_state * pis,
 		     gx_path * ppath, const gx_fill_params * params,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_fill_path((*proc));
@@ -331,6 +350,7 @@ gx_forward_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		       gx_path * ppath, const gx_stroke_params * params,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_stroke_path((*proc));
@@ -349,6 +369,7 @@ gx_forward_fill_mask(gx_device * dev,
 		     const gx_drawing_color * pdcolor, int depth,
 		     gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_fill_mask((*proc));
@@ -367,6 +388,7 @@ gx_forward_fill_trapezoid(gx_device * dev,
 			  fixed ybot, fixed ytop, bool swap_axes,
 	       const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_fill_trapezoid((*proc));
@@ -383,6 +405,7 @@ gx_forward_fill_parallelogram(gx_device * dev,
 		 fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
 	       const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_fill_parallelogram((*proc));
@@ -399,6 +422,7 @@ gx_forward_fill_triangle(gx_device * dev,
 		 fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
 	       const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_fill_triangle((*proc));
@@ -415,6 +439,7 @@ gx_forward_draw_thin_line(gx_device * dev,
 			  fixed fx0, fixed fy0, fixed fx1, fixed fy1,
 	       const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_draw_thin_line((*proc));
@@ -433,6 +458,7 @@ gx_forward_begin_image(gx_device * dev,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
 		       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_begin_image((*proc));
@@ -450,6 +476,7 @@ gx_forward_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1,
 				int px, int py)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_strip_tile_rectangle((*proc));
@@ -469,7 +496,8 @@ gx_forward_strip_copy_rop(gx_device * dev,
 			  int x, int y, int width, int height,
 		       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    gx_device *tdev = ((gx_device_forward *) dev)->target;
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
 
     dev_proc_strip_copy_rop((*proc));
 
@@ -485,6 +513,7 @@ gx_forward_strip_copy_rop(gx_device * dev,
 void
 gx_forward_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
@@ -500,6 +529,7 @@ gx_forward_begin_typed_image(gx_device * dev,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
 		      gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_begin_typed_image((*proc));
@@ -516,6 +546,7 @@ int
 gx_forward_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_get_bits_rectangle((*proc));
@@ -531,6 +562,7 @@ int
 gx_forward_map_color_rgb_alpha(gx_device * dev, gx_color_index color,
 			       gx_color_value prgba[4])
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_map_color_rgb_alpha(dev, color, prgba) :
@@ -540,6 +572,7 @@ gx_forward_map_color_rgb_alpha(gx_device * dev, gx_color_index color,
 int
 gx_forward_get_hardware_params(gx_device * dev, gs_param_list * plist)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_get_hardware_params(dev, plist) :
@@ -552,6 +585,7 @@ gx_forward_text_begin(gx_device * dev, gs_imager_state * pis,
 gx_path * path, const gx_device_color * pdcolor, const gx_clip_path * pcpath,
 		      gs_memory_t * memory, gs_text_enum_t ** ppenum)
 {
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     dev_proc_text_begin((*proc));
@@ -673,6 +707,7 @@ null_put_params(gx_device * dev, gs_param_list * plist)
      * If this is not a page device, we must defeat attempts to reset
      * the size; otherwise this is equivalent to gx_forward_put_params.
      */
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
     int code;
 
@@ -754,5 +789,3 @@ null_strip_copy_rop(gx_device * dev,
 {
     return 0;
 }
-
-#undef fdev

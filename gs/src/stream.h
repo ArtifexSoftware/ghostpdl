@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: stream.h  */
+/*$Id$ */
 /* Definitions for Ghostscript stream package */
 /* Requires stdio.h */
 
@@ -296,10 +296,16 @@ int spseek(P2(stream *, long));
 stream *s_alloc(P2(gs_memory_t *, client_name_t));
 stream_state *s_alloc_state(P3(gs_memory_t *, gs_memory_type_ptr_t, client_name_t));
 
-/* Stream creation procedures */
-void sread_string(P3(stream *, const byte *, uint)), swrite_string(P3(stream *, byte *, uint));
-void sread_file(P4(stream *, FILE *, byte *, uint)), swrite_file(P4(stream *, FILE *, byte *, uint)),
-     sappend_file(P4(stream *, FILE *, byte *, uint));
+/* Create a stream on a string or a file. */
+void sread_string(P3(stream *, const byte *, uint)),
+    swrite_string(P3(stream *, byte *, uint));
+void sread_file(P4(stream *, FILE *, byte *, uint)),
+    swrite_file(P4(stream *, FILE *, byte *, uint)),
+    sappend_file(P4(stream *, FILE *, byte *, uint));
+
+/* Create a stream that tracks the position, */
+/* for calculating how much space to allocate when actually writing. */
+void swrite_position_only(P1(stream *));
 
 /* Standard stream initialization */
 void s_std_init(P5(stream *, byte *, uint, const stream_procs *, int /*mode */ ));

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsparam.c  */
+/*$Id$ */
 /* Support for parameter lists */
 #include "memory_.h"
 #include "string_.h"

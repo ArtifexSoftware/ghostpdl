@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zrelbit.c  */
+/*$Id$ */
 /* Relational, boolean, and bit operators */
 #include "ghost.h"
 #include "oper.h"

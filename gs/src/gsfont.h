@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsfont.h  */
+/*$Id$ */
 /* Requires gsmatrix.h */
 
 #ifndef gsfont_INCLUDED

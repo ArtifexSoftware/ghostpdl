@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclimag.c  */
+/*$Id$ */
 /* Higher-level image operations for band lists */
 #include "math_.h"
 #include "memory_.h"
@@ -38,8 +38,6 @@
 /* (See below for additional restrictions.) */
 static bool USE_HL_IMAGES = true;
 
-#define cdev cwdev
-
 /* Forward references */
 private int cmd_put_color_mapping(P3(gx_device_clist_writer * cldev,
 				     const gs_imager_state * pis,
@@ -58,6 +56,8 @@ clist_fill_mask(gx_device * dev,
 		const gx_drawing_color * pdcolor, int depth,
 		gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     const byte *orig_data = data;	/* for writing tile */
     int orig_data_x = data_x;	/* ditto */
     int orig_x = x;		/* ditto */
@@ -288,6 +288,8 @@ clist_begin_image(gx_device * dev,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
 		  gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     clist_image_enum *pie;
     int base_index;
     bool indexed;
@@ -333,7 +335,7 @@ clist_begin_image(gx_device * dev,
 	uses_color = pim->CombineWithColor && rop3_uses_T(pis->log_op);
     }
     code = gx_image_enum_common_init((gx_image_enum_common_t *) pie,
-				     (gs_image_common_t *) pim,
+				     (const gs_image_common_t *) pim,
 				     &clist_image_enum_procs, dev,
 				     pim->BitsPerComponent,
 				     num_components, format);
@@ -459,6 +461,8 @@ private int
 clist_image_plane_data(gx_device * dev,
      gx_image_enum_common_t * info, const gx_image_plane_t * planes, int yh)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     clist_image_enum *pie = (clist_image_enum *) info;
     gs_rect sbox, dbox;
     int y0, y1;
@@ -466,8 +470,7 @@ clist_image_plane_data(gx_device * dev,
     int code;
 
     if (pie->default_info)
-	return gx_device_image_plane_data(dev, pie->default_info, planes,
-					  yh);
+	return gx_image_plane_data(pie->default_info, planes, yh);
 #ifdef DEBUG
     if (pie->id != cdev->image_enum_id) {
 	lprintf2("end_image id = %lu != clist image id = %lu!\n",
@@ -650,6 +653,8 @@ private int
 clist_image_end_image(gx_device * dev, gx_image_enum_common_t * info,
 		      bool draw_last)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     clist_image_enum *pie = (clist_image_enum *) info;
     int code;
 
@@ -1064,6 +1069,8 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 private uint	/* mask of unknown properties(see pcls->known) */
 clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     const gs_imager_state *const pis = pie->pis;
     uint unknown = 0;
 
@@ -1254,6 +1261,8 @@ cmd_image_plane_data(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 private int	/* ret 0 ok, else -ve error status */
 write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 {
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
     int code;
     int y = pie->ymin;
     int height = pie->ymax - y;

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevbmp.c  */
+/*$Id$ */
 /* .BMP file format output drivers */
 #include "gdevprn.h"
 #include "gdevpccm.h"

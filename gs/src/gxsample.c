@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxsample.c  */
+/*$Id$ */
 /* Sample unpacking procedures */
 #include "gx.h"
 #include "gxsample.h"

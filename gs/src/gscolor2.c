@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscolor2.c  */
+/*$Id$ */
 /* Level 2 color operators for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"
@@ -34,7 +34,6 @@
 int
 gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 {
-    gs_memory_t *mem = pgs->memory;
     int code;
     gs_color_space cs_old;
     gs_client_color cc_old;
@@ -43,18 +42,18 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 	return_error(gs_error_undefined);
     cs_old = *pgs->color_space;
     cc_old = *pgs->ccolor;
-    (*pcs->type->adjust_cspace_count) (pcs, mem, 1);
+    (*pcs->type->adjust_cspace_count)(pcs, 1);
     *pgs->color_space = *pcs;
-    if ((code = (*pcs->type->install_cspace) (pcs, pgs)) < 0)
+    if ((code = (*pcs->type->install_cspace)(pcs, pgs)) < 0)
 	goto rcs;
     cs_full_init_color(pgs->ccolor, pcs);
-    (*cs_old.type->adjust_color_count) (&cc_old, &cs_old, mem, -1);
-    (*cs_old.type->adjust_cspace_count) (&cs_old, mem, -1);
+    (*cs_old.type->adjust_color_count)(&cc_old, &cs_old, -1);
+    (*cs_old.type->adjust_cspace_count)(&cs_old, -1);
     gx_unset_dev_color(pgs);
     return code;
     /* Restore the color space if installation failed. */
-  rcs:*pgs->color_space = cs_old;
-    (*pcs->type->adjust_cspace_count) (pcs, mem, -1);
+rcs:*pgs->color_space = cs_old;
+    (*pcs->type->adjust_cspace_count)(pcs, -1);
     return code;
 }
 
@@ -69,15 +68,14 @@ gs_currentcolorspace(const gs_state * pgs)
 int
 gs_setcolor(gs_state * pgs, const gs_client_color * pcc)
 {
-    gs_memory_t *mem = pgs->memory;
     gs_color_space *pcs = pgs->color_space;
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
-    (*pcs->type->adjust_color_count) (pcc, pcs, mem, 1);
-    (*pcs->type->adjust_color_count) (pgs->ccolor, pcs, mem, -1);
+    (*pcs->type->adjust_color_count)(pcc, pcs, 1);
+    (*pcs->type->adjust_color_count)(pgs->ccolor, pcs, -1);
     *pgs->ccolor = *pcc;
-    (*pcs->type->restrict_color) (pgs->ccolor, pcs);
+    (*pcs->type->restrict_color)(pgs->ccolor, pcs);
     gx_unset_dev_color(pgs);
     return 0;
 }
@@ -206,15 +204,14 @@ gx_install_Indexed(gs_color_space * pcs, gs_state * pgs)
 /* Color space reference count adjustment ditto. */
 
 private void
-gx_adjust_cspace_Indexed(const gs_color_space * pcs, gs_memory_t * mem,
-			 int delta)
+gx_adjust_cspace_Indexed(const gs_color_space * pcs, int delta)
 {
     if (pcs->params.indexed.use_proc) {
 	rc_adjust_const(pcs->params.indexed.lookup.map, delta,
 			"gx_adjust_Indexed");
     }
     (*pcs->params.indexed.base_space.type->adjust_cspace_count)
-	((const gs_color_space *)&pcs->params.indexed.base_space, mem, delta);
+	((const gs_color_space *)&pcs->params.indexed.base_space, delta);
 }
 
 /*

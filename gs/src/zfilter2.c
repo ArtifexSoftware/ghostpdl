@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfilter2.c  */
+/*$Id$ */
 /* Additional filter creation */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscspace.h  */
+/*$Id$ */
 /* Client interface to color spaces */
 
 #ifndef gscspace_INCLUDED
@@ -158,6 +158,7 @@ typedef enum {
     gs_color_space_index_Separation,
     gs_color_space_index_Indexed,
     gs_color_space_index_Pattern
+
 } gs_color_space_index;
 
 /* Define an abstract type for color space types (method structures). */
@@ -295,7 +296,6 @@ struct gs_color_space_s {
 #ifndef gs_color_space_DEFINED
 #  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
-
 #endif
 
 					/*extern_st(st_color_space); *//* in gxcspace.h */
@@ -341,9 +341,12 @@ typedef struct gs_color_space_s gs_color_space;
  */
 
 extern int
-    gs_cspace_build_DeviceGray(P2(gs_color_space ** ppcspace, gs_memory_t * pmem)),
-    gs_cspace_build_DeviceRGB(P2(gs_color_space ** ppcspace, gs_memory_t * pmem)),
-    gs_cspace_build_DeviceCMYK(P2(gs_color_space ** ppcspace, gs_memory_t * pmem));
+    gs_cspace_build_DeviceGray(P2(gs_color_space ** ppcspace,
+				  gs_memory_t * pmem)),
+    gs_cspace_build_DeviceRGB(P2(gs_color_space ** ppcspace,
+				 gs_memory_t * pmem)),
+    gs_cspace_build_DeviceCMYK(P2(gs_color_space ** ppcspace,
+				  gs_memory_t * pmem));
 
 /*
  * We preallocate instances of the 3 device color spaces, and provide

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevpccm.h  */
+/*$Id$ */
 /* Requires gxdevice.h */
 
 #ifndef gdevpccm_INCLUDED

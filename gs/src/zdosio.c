@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zdosio.c  */
+/*$Id$ */
 /* MS-DOS direct I/O operators. */
 /* These should NEVER be included in a released configuration! */
 #include "dos_.h"

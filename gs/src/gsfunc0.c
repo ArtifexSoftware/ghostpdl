@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsfunc0.c  */
+/*$Id$ */
 /* Implementation of FunctionType 0 (Sampled) Functions */
 #include "math_.h"
 #include "gx.h"

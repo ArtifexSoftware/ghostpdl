@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevrun.c  */
+/*$Id$ */
 /* Run-length encoded "device" */
 #include "memory_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxcspace.h  */
+/*$Id$ */
 /* Implementation of color spaces */
 /* Requires gsstruct.h */
 
@@ -158,22 +158,29 @@ struct gs_color_space_type_s {
     /* Adjust reference counts of indirect color space components. */
 
 #define cs_proc_adjust_cspace_count(proc)\
-  void proc(P3(const gs_color_space *, gs_memory_t *, int))
+  void proc(P2(const gs_color_space *, int))
 #define cs_adjust_cspace_count(pgs, delta)\
-  (*(pgs)->color_space->type->adjust_cspace_count)((pgs)->color_space, (pgs)->memory, delta)
-                         cs_proc_adjust_cspace_count((*adjust_cspace_count));
+  (*(pgs)->color_space->type->adjust_cspace_count)((pgs)->color_space, delta)
+	 cs_proc_adjust_cspace_count((*adjust_cspace_count));
 
     /* Adjust reference counts of indirect color components. */
+    /*
+     * Note: the color space argument may be NULL, which indicates that the
+     * caller warrants that any subsidiary colors don't have allocation
+     * issues.  This is a hack for an application that needs to be able to
+     * release Pattern colors.
+     */
 
 #define cs_proc_adjust_color_count(proc)\
-  void proc(P4(const gs_client_color *, const gs_color_space *, gs_memory_t *, int))
+  void proc(P3(const gs_client_color *, const gs_color_space *, int))
 #define cs_adjust_color_count(pgs, delta)\
-  (*(pgs)->color_space->type->adjust_color_count)((pgs)->ccolor, (pgs)->color_space, (pgs)->memory, delta)
-                         cs_proc_adjust_color_count((*adjust_color_count));
+  (*(pgs)->color_space->type->adjust_color_count)\
+    ((pgs)->ccolor, (pgs)->color_space, delta)
+	 cs_proc_adjust_color_count((*adjust_color_count));
 
 /* Adjust both reference counts. */
 #define cs_adjust_counts(pgs, delta)\
-  cs_adjust_color_count(pgs, delta), cs_adjust_cspace_count(pgs, delta)
+  (cs_adjust_color_count(pgs, delta), cs_adjust_cspace_count(pgs, delta))
 
 };
 
@@ -182,7 +189,7 @@ extern_st(st_base_color_space);
 #define public_st_base_color_space()	/* in gscspace.c */\
   gs_public_st_simple(st_base_color_space, gs_base_color_space,\
     "gs_base_color_space")
-					/*extern_st(st_paint_color_space); *//* (not needed) */
+/*extern_st(st_paint_color_space); *//* (not needed) */
 
 /* Standard color space procedures */
 cs_proc_num_components(gx_num_components_1);

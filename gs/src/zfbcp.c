@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zfbcp.c  */
+/*$Id$ */
 /* (T)BCP filter creation */
 #include "memory_.h"
 #include "ghost.h"

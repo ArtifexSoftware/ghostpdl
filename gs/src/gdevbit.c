@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevbit.c  */
+/*$Id$ */
 /* "Plain bits" devices to measure rendering time. */
 #include "gdevprn.h"
 #include "gsparam.h"

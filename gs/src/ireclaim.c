@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: ireclaim.c  */
+/*$Id$ */
 /* Interpreter's interface to garbage collector */
 #include "ghost.h"
 #include "errors.h"

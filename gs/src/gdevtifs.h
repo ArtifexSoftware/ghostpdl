@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevtifs.h  */
+/*$Id$ */
 /* Definitions for writing TIFF file formats. */
 
 #ifndef gdevtifs_INCLUDED

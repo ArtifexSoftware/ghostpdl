@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zupath.c  */
+/*$Id$ */
 /* Operators related to user paths */
 #include "ghost.h"
 #include "oper.h"
@@ -44,7 +44,7 @@ extern const int gs_hit_detected;
 
 /* Forward references */
 private int upath_append(P2(os_ptr, os_ptr));
-private int upath_stroke(P1(os_ptr));
+private int upath_stroke(P2(os_ptr, gs_matrix *));
 
 /* ---------------- Insideness testing ---------------- */
 
@@ -97,17 +97,20 @@ zinufill(os_ptr op)
 }
 
 /* <x> <y> <userpath> inustroke <bool> */
+/* <x> <y> <userpath> <matrix> inustroke <bool> */
 /* <userpath1> <userpath2> inustroke <bool> */
+/* <userpath1> <userpath2> <matrix> inustroke <bool> */
 private int
 zinustroke(os_ptr op)
 {	/* This is different because of the optional matrix operand. */
     int code = gs_gsave(igs);
     int spop, npop;
+    gs_matrix mat;
     gx_device hdev;
 
     if (code < 0)
 	return code;
-    if ((spop = upath_stroke(op)) < 0) {
+    if ((spop = upath_stroke(op, &mat)) < 0) {
 	gs_grestore(igs);
 	return spop;
     }
@@ -115,7 +118,10 @@ zinustroke(os_ptr op)
 	gs_grestore(igs);
 	return npop;
     }
-    code = gs_stroke(igs);
+    if (npop > 1)		/* matrix was supplied */
+	code = gs_concat(igs, &mat);
+    if (code >= 0)
+	code = gs_stroke(igs);
     return in_upath_result(op, npop + spop, code);
 }
 
@@ -354,7 +360,7 @@ zustroke(register os_ptr op)
 
     if (code < 0)
 	return code;
-    if ((code = npop = upath_stroke(op)) >= 0)
+    if ((code = npop = upath_stroke(op, NULL)) >= 0)
 	code = gs_stroke(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -374,7 +380,7 @@ zustrokepath(register os_ptr op)
     /* Save and reset the path. */
     gx_path_init_local(&save, imemory);
     gx_path_assign_preserve(&save, igs->path);
-    if ((code = npop = upath_stroke(op)) < 0 ||
+    if ((code = npop = upath_stroke(op, NULL)) < 0 ||
 	(code = gs_strokepath(igs)) < 0
 	) {
 	gx_path_assign_free(igs->path, &save);
@@ -612,20 +618,26 @@ upath_append(os_ptr oppath, os_ptr op)
     return 0;
 }
 
-/* Append a user path to the current path, and then apply */
+/* Append a user path to the current path, and then apply or return */
 /* a transformation if one is supplied. */
 private int
-upath_stroke(register os_ptr op)
+upath_stroke(os_ptr op, gs_matrix *pmat)
 {
     int code, npop;
     gs_matrix mat;
 
     if ((code = read_matrix(op, &mat)) >= 0) {
-	if ((code = upath_append(op - 1, op)) >= 0)
-	    code = gs_concat(igs, &mat);
+	if ((code = upath_append(op - 1, op)) >= 0) {
+	    if (pmat)
+		*pmat = mat;
+	    else
+		code = gs_concat(igs, &mat);
+	}
 	npop = 2;
     } else {
-	code = upath_append(op, op);
+	if ((code = upath_append(op, op)) >= 0)
+	    if (pmat)
+		gs_make_identity(pmat);
 	npop = 1;
     }
     return (code < 0 ? code : npop);

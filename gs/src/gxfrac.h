@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxfrac.h  */
+/*$Id$ */
 /* Fraction representation for Ghostscript */
 
 #ifndef gxfrac_INCLUDED

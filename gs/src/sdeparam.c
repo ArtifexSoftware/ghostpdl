@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: sdeparam.c  */
+/*$Id$ */
 /* DCTEncode filter parameter setting and reading */
 #include "memory_.h"
 #include "jpeglib.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: shcgen.h  */
+/*$Id$ */
 /* Requires shc.h */
 
 #ifndef shcgen_INCLUDED

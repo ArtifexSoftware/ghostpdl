@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsmemraw.h  */
+/*$Id$ */
 /* Client interface for "raw memory" allocator */
 
 /* Initial version 02/03/1998 by John Desrosiers (soho@crl.com) */
@@ -30,7 +30,7 @@
  * It is meant to be used for "wholesale" allocation of blocks -- typically,
  * but not only, via malloc -- which are then divided up into "retail"
  * objects.  However, since it is a subset (superclass) of the "retail"
- * interface defined in gsmemory.h, retail allocators can implement it as
+ * interface defined in gsmemory.h, retail allocators implement it as
  * well, and in fact the malloc interface defined in gsmalloc.h is used for
  * both wholesale and retail allocation.
  */
@@ -58,13 +58,8 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 /* Define the procedures for raw memory management.  Memory managers have no
  * standard constructor: each implementation defines its own, and is
  * responsible for calling its superclass' initialization code first.
- * Similarly, each implementation's destructor (free_all) must first take
- * care of its own cleanup and then call the superclass' free_all.
- *
- * Note that calling free_all does *not* imply calling free_all for the
- * allocator from which this allocator obtains its underlying memory (if the
- * concept is even meaningful, which for some allocators it is not): this is
- * an ordinary reference relationship, not a subclass/superclass one.
+ * Similarly, each implementation's destructor (release) must first take
+ * care of its own cleanup and then call the superclass' release.
  */
 
 		/*
@@ -80,7 +75,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
   byte *proc(P3(mem_t *mem, uint nbytes, client_name_t cname))
 
 #define gs_alloc_bytes_immovable(mem, nbytes, cname)\
-  (*(mem)->procs.alloc_bytes_immovable)(mem, nbytes, cname)
+  ((mem)->procs.alloc_bytes_immovable(mem, nbytes, cname))
 
 		/*
 		 * Resize an object to a new number of elements.  At the raw
@@ -95,7 +90,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 		client_name_t cname))
 
 #define gs_resize_object(mem, obj, newn, cname)\
-  (*(mem)->procs.resize_object)(mem, obj, newn, cname)
+  ((mem)->procs.resize_object(mem, obj, newn, cname))
 
 		/*
 		 * Free an object (at the object memory level, this includes
@@ -107,7 +102,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
   void proc(P3(mem_t *mem, void *data, client_name_t cname))
 
 #define gs_free_object(mem, data, cname)\
-  (*(mem)->procs.free_object)(mem, data, cname)
+  ((mem)->procs.free_object(mem, data, cname))
 
 		/*
 		 * Report status (assigned, used).
@@ -117,19 +112,31 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
   void proc(P2(mem_t *mem, gs_memory_status_t *status))
 
 #define gs_memory_status(mem, pst)\
-  (*(mem)->procs.status)(mem, pst)
+  ((mem)->procs.status(mem, pst))
 
 		/*
-		 * Free all memory owned by the allocator.  Note that
-		 * this requires allocators to keep track of all the memory
-		 * they have ever acquired, and where they acquired it.
+		 * Free one or more of: data memory acquired by the allocator
+		 * (FREE_ALL_DATA), overhead structures other than the
+		 * allocator itself (FREE_ALL_STRUCTURES), and the allocator
+		 * itself (FREE_ALL_ALLOCATOR).  Note that this requires
+		 * allocators to keep track of all the memory they have ever
+		 * acquired, and where they acquired it.
 		 */
 
-#define gs_memory_t_proc_free_all(proc, mem_t)\
-  void proc(P1(mem_t *mem))
+#define FREE_ALL_DATA 1
+#define FREE_ALL_STRUCTURES 2
+#define FREE_ALL_ALLOCATOR 4
+#define FREE_ALL_EVERYTHING\
+  (FREE_ALL_DATA | FREE_ALL_STRUCTURES | FREE_ALL_ALLOCATOR)
 
+#define gs_memory_t_proc_free_all(proc, mem_t)\
+  void proc(P3(mem_t *mem, uint free_mask, client_name_t cname))
+
+#define gs_memory_free_all(mem, free_mask, cname)\
+  (*(mem)->procs.free_all)(mem, free_mask, cname)
+/* Backward compatibility */
 #define gs_free_all(mem)\
-  (*(mem)->procs.free_all)(mem)
+  gs_memory_free_all(mem, FREE_ALL_DATA, "(free_all)")
 
 /* Define the members of the procedure structure. */
 #define gs_raw_memory_procs(mem_t)\
@@ -139,7 +146,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
     gs_memory_t_proc_status((*status), mem_t);\
     gs_memory_t_proc_free_all((*free_all), mem_t)
 
-/* Procedure vector for accessing raw memory allocator */
+/* Define the procedure vector for a raw memory allocator. */
 typedef struct gs_raw_memory_procs_s {
     gs_raw_memory_procs(gs_raw_memory_t);
 } gs_raw_memory_procs_t;

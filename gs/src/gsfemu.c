@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsfemu.c  */
+/*$Id$ */
 /* Floating point emulator for gcc */
 
 /* We actually only need arch.h + uint and ulong, but because signal.h */

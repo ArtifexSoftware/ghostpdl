@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxshade4.h  */
+/*$Id$ */
 /* Internal definitions for triangle shading rendering */
 
 #ifndef gxshade4_INCLUDED

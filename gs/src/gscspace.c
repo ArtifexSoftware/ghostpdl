@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscspace.c  */
+/*$Id$ */
 /* Color space operators and support */
 #include "memory_.h"
 #include "gx.h"
@@ -115,7 +115,7 @@ void
 gs_cspace_init_from(gs_color_space * pcsto, const gs_color_space * pcsfrom)
 {
     cs_copy(pcsto, pcsfrom);
-    (*pcsto->type->adjust_cspace_count) (pcsto, pcsto->pmem, 1);
+    (*pcsto->type->adjust_cspace_count)(pcsto, 1);
 }
 
 /* Assign a color space into a previously initialized one. */
@@ -125,8 +125,8 @@ gs_cspace_assign(gs_color_space * pdest, const gs_color_space * psrc)
     /* check for a = a */
     if (pdest == psrc)
 	return;
-    (*psrc->type->adjust_cspace_count) (psrc, psrc->pmem, 1);
-    (*pdest->type->adjust_cspace_count) (pdest, pdest->pmem, -1);
+    (*psrc->type->adjust_cspace_count)(psrc, 1);
+    (*pdest->type->adjust_cspace_count)(pdest, -1);
     cs_copy(pdest, psrc);
 }
 
@@ -135,7 +135,7 @@ gs_cspace_assign(gs_color_space * pdest, const gs_color_space * psrc)
 void
 gs_cspace_release(gs_color_space * pcs)
 {
-    (*pcs->type->adjust_cspace_count) (pcs, pcs->pmem, -1);
+    (*pcs->type->adjust_cspace_count)(pcs, -1);
 }
 
 /* ------ Accessors ------ */
@@ -197,8 +197,7 @@ gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
 
 /* Null reference count adjustment procedure. */
 void
-gx_no_adjust_cspace_count(const gs_color_space * pcs, gs_memory_t * mem,
-			  int delta)
+gx_no_adjust_cspace_count(const gs_color_space * pcs, int delta)
 {
 }
 

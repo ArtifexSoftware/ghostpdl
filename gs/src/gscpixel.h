@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gscpixel.h  */
+/*$Id$ */
 /* Requires gscspace.h */
 
 #ifndef gscpixel_INCLUDED

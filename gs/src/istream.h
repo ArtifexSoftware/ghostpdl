@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: istream.h  */
+/*$Id$ */
 /* Requires scommon.h, ostack.h */
 
 #ifndef istream_INCLUDED

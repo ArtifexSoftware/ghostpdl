@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# Id: unixtail.mak 
+# $Id$
 # Partial makefile common to all Unix configurations.
 # This is the last part of the makefile for Unix configurations.
 
@@ -49,8 +49,8 @@ $(GLOBJ)gdevpipe.$(OBJ): $(GLSRC)gdevpipe.c $(AK) $(errno__h) $(pipe__h) $(stdio
 # Unix platforms other than System V, and also System V Release 4
 # (SVR4) platforms.
 unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ)
-unix_.dev: $(unix__)
-	$(SETMOD) unix_ $(unix__)
+unix_.dev: $(unix__) nosync.dev
+	$(SETMOD) unix_ $(unix__) -include nosync
 
 $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(pipe__h) $(string__h) $(time__h)\
@@ -60,8 +60,8 @@ $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
 # System V platforms other than SVR4, which lack some system calls,
 # but have pipes.
 sysv__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_sysv.$(OBJ)
-sysv_.dev: $(sysv__)
-	$(SETMOD) sysv_ $(sysv__)
+sysv_.dev: $(sysv__) nosync.dev
+	$(SETMOD) sysv_ $(sysv__) -include nosync
 
 $(GLOBJ)gp_sysv.$(OBJ): $(GLSRC)gp_sysv.c $(stdio__h) $(time__h) $(AK)
 	$(GLCC) $(GLO_)gp_sysv.$(OBJ) $(C_) $(GLSRC)gp_sysv.c

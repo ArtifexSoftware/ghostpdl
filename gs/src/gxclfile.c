@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxclfile.c  */
+/*$Id$ */
 /* File-based command list implementation */
 #include "stdio_.h"
 #include "string_.h"

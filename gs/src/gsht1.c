@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gsht1.c  */
+/*$Id$ */
 /* Extended halftone operators for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"

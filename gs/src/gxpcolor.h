@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxpcolor.h  */
+/*$Id$ */
 /* Requires gsmatrix.h, gxdevice.h, gxdevmem.h, gxcolor2.h, gxdcolor.h */
 
 #ifndef gxpcolor_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gdevm24.c  */
+/*$Id$ */
 /* 24-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -84,6 +84,7 @@ private int
 mem_true24_fill_rectangle(gx_device * dev,
 			  int x, int y, int w, int h, gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     declare_unpack_color(r, g, b, color);
     declare_scan_ptr(dest);
 
@@ -269,6 +270,7 @@ mem_true24_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     const byte *line;
     int sbit;
     int first_bit;
@@ -385,6 +387,8 @@ mem_true24_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		      int x, int y, int w, int h)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h);
     return 0;
@@ -396,6 +400,7 @@ mem_true24_copy_alpha(gx_device * dev, const byte * base, int sourcex,
 		   int sraster, gx_bitmap_id id, int x, int y, int w, int h,
 		      gx_color_index color, int depth)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     const byte *line;
 
     declare_scan_ptr(dest);
@@ -457,6 +462,7 @@ private int
 mem24_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			  gx_color_index color)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *base;
     uint raster;
 
@@ -475,6 +481,7 @@ mem24_word_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
     uint raster;
     bool store;
@@ -496,6 +503,7 @@ mem24_word_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		      int x, int y, int w, int h)
 {
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
     uint raster;
 

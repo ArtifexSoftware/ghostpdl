@@ -17,7 +17,7 @@
  */
 
 
-// Id: dwimg.h 
+// $Id$
 
 class ImageWindow {
     static ImageWindow *first;

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: zmisc2.c  */
+/*$Id$ */
 /* Miscellaneous Level 2 operators */
 #include "memory_.h"
 #include "string_.h"

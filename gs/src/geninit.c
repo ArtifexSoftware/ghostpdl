@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: geninit.c  */
+/*$Id$ */
 /* Utility for merging all the Ghostscript initialization files */
 /* (gs_*.ps) into a single file, optionally converting them to C data. */
 #include "stdpre.h"

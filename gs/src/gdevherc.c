@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevherc.c */
+/*$Id$*/
 /* IBM PC-compatible Hercules Graphics display driver */
 /* using direct access to frame buffer */
 

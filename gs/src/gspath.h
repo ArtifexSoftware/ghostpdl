@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gspath.h  */
+/*$Id$ */
 /* Requires gsstate.h */
 
 #ifndef gspath_INCLUDED

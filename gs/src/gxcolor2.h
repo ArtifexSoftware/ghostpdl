@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*Id: gxcolor2.h  */
+/*$Id$ */
 /* Internal definitions for Level 2 color routines */
 /* Requires gsstruct.h, gxfixed.h */
 
@@ -71,8 +71,11 @@ struct gs_pattern_instance_s {
     gs_matrix step_matrix;	/* tiling space -> device space */
     gs_rect bbox;		/* bbox of tile in tiling space */
     bool is_simple;		/* true if xstep/ystep = tile size */
-    bool opaque_background;	/* if true, disregard mask if texture */
-    /* transparency = false -- a hack for PCL */
+    /*
+     * uses_mask is always true for PostScript patterns, but is false
+     * for bitmap patterns that don't have explicit transparent pixels.
+     */
+    bool uses_mask;	        /* if true, pattern mask must be created */
     gs_int_point size;		/* in device coordinates */
     gx_bitmap_id id;		/* key for cached bitmap */
     /* (= id of mask) */

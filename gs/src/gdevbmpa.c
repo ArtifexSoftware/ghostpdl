@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*Id: gdevbmpa.c  */
+/*$Id$ */
 /* .BMP file format output drivers: Demo of ASYNC rendering */
 
 /* Initial version 2/2/98 by John Desrosiers (soho@crl.com) */
