@@ -294,4 +294,8 @@ void hpgl_reset_overlay(P1(hpgl_state_t *pgls));
 
 /* this should find a new home but for now we list it here. */
 int hpgl_print_symbol_mode_char(P1(hpgl_state_t *pgls));
+
+/* reset LT parameters */
+void hpgl_set_line_pattern_defaults(P1(hpgl_state_t *pgls));
+
 #endif                                         /* pgmand_INCLUDED */

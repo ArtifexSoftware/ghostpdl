@@ -119,8 +119,7 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_IW(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_LA(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_LT(&args, pgls);
+	hpgl_set_line_pattern_defaults(pgls);
 	hpgl_args_setup(&args);
 	hpgl_RF(&args, pgls);
 	hpgl_args_setup(&args);

@@ -256,10 +256,28 @@ private const hpgl_line_type_t  hpgl_adaptive_pats[8] = {
     { 9, { 0.25, 0.1, 0.0, 0.1, 0.1, 0.1, 0.0, 0.1, 0.25 } }
 };
 
+ void
+hpgl_set_line_pattern_defaults(hpgl_state_t *pgls)
+{
+    pgls->g.line.current.pattern_length_relative = 0; /* relative */
+    pgls->g.line.current.is_solid = true;
+    memcpy( &pgls->g.fixed_line_type,
+	    &hpgl_fixed_pats,
+	    sizeof(hpgl_fixed_pats)
+	    );
+    memcpy( &pgls->g.adaptive_line_type,
+	    &hpgl_adaptive_pats,
+	    sizeof(hpgl_adaptive_pats)
+	    );
+}
+
+
+
 /*
  * LT type[,length[,mode]];
  * LT99;
  * LT;
+ * NB - needs reorganizing 
  */
   int
 hpgl_LT(
@@ -287,7 +305,7 @@ hpgl_LT(
 	    return 0;
         } else {	
 	    hpgl_real_t length_or_percent = 4.0;  /* units are mm or percentage */
-	    int         mode = 0;
+	    int         mode = 2;
 
 	    /* set the offset this is not part of the command but is
                used internally (see pgstate.h) */
@@ -298,32 +316,25 @@ hpgl_LT(
 		 ( hpgl_arg_c_real(pargs, &length_or_percent)                 &&
 		   ((length_or_percent <= 0)                                  || 
                     (hpgl_arg_c_int(pargs, &mode) && ((mode & ~1) != 0))  )  )  )
-		  return e_Range;
-	    pgls->g.line.current.pattern_length_relative = (mode == 0);
-	    if ( pgls->g.line.current.pattern_length_relative )
+		return e_Range;
+	    
+	    if ( mode != 2 ) {
+		pgls->g.line.current.pattern_length_relative = mode;
+	    }
+	    if ( pgls->g.line.current.pattern_length_relative == 0 ) /* relative */
 		pgls->g.line.current.pattern_length = length_or_percent / 100.0;
-	    else
+	    else /* absolute */
 		pgls->g.line.current.pattern_length = length_or_percent;
 	    pgls->g.line.current.is_solid = false;
 	}
     } else {
-	/* no args restore defaults and set previous line type. */
-	/*
-         * HAS **BUG**BUG** initial value of line type
-         * is not supplied unless it gets set by previous LT command.
-         */
+	/* no args save in case we get a 99 next and set the current
+           line to solid.  HP does not restore the state of the
+           current line pattern. */
 	pgls->g.line.saved = pgls->g.line.current;
 	pgls->g.line.current.is_solid = true;
-	memcpy( &pgls->g.fixed_line_type,
-                &hpgl_fixed_pats,
-                sizeof(hpgl_fixed_pats)
-                );
-	memcpy( &pgls->g.adaptive_line_type,
-		&hpgl_adaptive_pats,
-		sizeof(hpgl_adaptive_pats)
-                );
+	return 0;
     }
-
     pgls->g.line.current.type = type;
     return 0;
 }
@@ -765,7 +776,7 @@ hpgl_UL(
 )
 {
     int             index;
-
+    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     if (hpgl_arg_c_int(pargs, &index)) {
 	hpgl_real_t gap[20];
         double      total = 0;
@@ -796,11 +807,8 @@ hpgl_UL(
 	}
 
     } else {
-	/* no args same as LT; */
-	hpgl_args_setup(pargs);
-	hpgl_LT(pargs, pgls);
+	hpgl_set_line_pattern_defaults(pgls);
     }
-
     return 0;
 }
 

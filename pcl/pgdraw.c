@@ -190,7 +190,7 @@ hpgl_set_ctm(hpgl_state_t *pgls)
  private int
 hpgl_get_line_pattern_length(hpgl_state_t *pgls)
 {
-    return ((pgls->g.line.current.pattern_length_relative) ?
+    return ((pgls->g.line.current.pattern_length_relative == 0) ?
 	    (pgls->g.line.current.pattern_length *
 	     hpgl_compute_distance(pgls->g.P1.x,
 				   pgls->g.P1.y,
