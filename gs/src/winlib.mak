@@ -81,6 +81,12 @@ UFST_BRIDGE = 1
 UFST_LIB_EXT=.lib
 !endif
 
+# Define conditinal name for FreeType bridge :
+!ifdef FT_ROOT
+FT_BRIDGE = 1
+FT_LIB_EXT=.lib
+!endif
+
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.

@@ -1784,11 +1784,12 @@ $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE)\
 # ---------------- Font API ---------------- #
 
 $(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
- $(PSD)fapiu$(UFST_BRIDGE).dev
+ $(PSD)fapiu$(UFST_BRIDGE).dev $(PSD)fapif$(FT_BRIDGE).dev
 	$(SETMOD) $(PSD)fapi $(PSOBJ)zfapi.$(OBJ)
 	$(ADDMOD) $(PSD)fapi -oper zfapi
 	$(ADDMOD) $(PSD)fapi -ps gs_fapi
 	$(ADDMOD) $(PSD)fapi -include $(PSD)fapiu$(UFST_BRIDGE)
+	$(ADDMOD) $(PSD)fapi -include $(PSD)fapif$(FT_BRIDGE)
 
 $(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(gp_h)\
  $(gscoord_h) $(gscrypt1_h) $(gsfont_h) $(gspaint_h) $(gspath_h)\
@@ -1834,6 +1835,52 @@ $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
 
 $(PSD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(PSD)fapiu
+
+# FreeType bridge :
+
+FT_LIB=$(FT_ROOT)$(D)objs$(D)freetype211MT_D
+FT_INC=$(I_)$(FT_ROOT)$(D)include$(_I)
+
+wrfont_h=$(stdpre_h) $(PSSRC)wrfont.h
+write_t1_h=$(ifapi_h) $(PSSRC)write_t1.h
+write_t2_h=$(ifapi_h) $(PSSRC)write_t2.h
+
+$(PSD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) \
+ $(FT_LIB)$(FT_LIB_EXT) \
+ $(PSOBJ)fapi_ft.$(OBJ) \
+ $(PSOBJ)write_t1.$(OBJ) $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ)
+	$(SETMOD) $(PSD)fapif1 $(PSOBJ)fapi_ft.$(OBJ) $(PSOBJ)write_t1.$(OBJ)
+	$(ADDMOD) $(PSD)fapif1 $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ)
+	$(ADDMOD) $(PSD)fapif1 -plugin fapi_ft
+	$(ADDMOD) $(PSD)fapif1 -link $(FT_LIB)$(FT_LIB_EXT)
+
+$(PSOBJ)fapi_ft.$(OBJ) : $(PSSRC)fapi_ft.c $(AK)\
+ $(memory__h) $(stdio__h) $(math__h)\
+ $(errors_h) $(iplugin_h) $(ifapi_h)\
+ $(ghost_h) $(oper_h) $(gxfont_h) $(bfont_h) $(gxfont42_h) $(idict_h)\
+ $(FT_ROOT)$(D)include$(D)freetype$(D)freetype.h\
+ $(FT_ROOT)$(D)include$(D)freetype$(D)ftincrem.h\
+ $(FT_ROOT)$(D)include$(D)freetype$(D)ftglyph.h\
+ $(FT_ROOT)$(D)include$(D)freetype$(D)ftoutln.h\
+ $(write_t1_h) $(write_t2_h)
+	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)fapi_ft.$(OBJ) $(C_) $(PSSRC)fapi_ft.c
+
+$(PSOBJ)write_t1.$(OBJ) : $(PSSRC)write_t1.c $(AK)\
+ $(wrfont_h) $(write_t1_h) 
+	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)write_t1.$(OBJ) $(C_) $(PSSRC)write_t1.c
+
+$(PSOBJ)write_t2.$(OBJ) : $(PSSRC)write_t2.c $(AK)\
+ $(wrfont_h) $(write_t2_h) $(stdio_h) $(iref_h) $(dict_h)
+	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
+
+$(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
+ $(wrfont_h) $(stdio_h)
+	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)wrfont.$(OBJ) $(C_) $(PSSRC)wrfont.c
+
+# stub for FreeType bridge :
+
+$(PSD)fapif.dev : $(INT_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(PSD)fapif
 
 # ================ Dependencies for auxiliary programs ================ #
 
