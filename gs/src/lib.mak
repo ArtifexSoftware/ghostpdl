@@ -128,7 +128,7 @@ gsnotify_h=$(GLSRC)gsnotify.h $(gsstype_h)
 gsstruct_h=$(GLSRC)gsstruct.h $(gsstype_h)
 vdtrace_h=$(GLSRC)vdtrace.h
 
-GX=$(AK) $(gx_h) $(vdtrace_h)
+GX=$(AK) $(gx_h)
 GXERR=$(GX) $(gserrors_h)
 
 ###### Support

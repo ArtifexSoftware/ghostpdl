@@ -1848,7 +1848,8 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(errors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iconf_h) $(imain_h) $(imainarg_h) $(iminst_h)\
  $(iname_h) $(interp_h) $(iscan_h) $(iutil_h) $(ivmspace_h)\
- $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+ $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h) \
+ $(vdtrace_h)
 	$(PSCC) $(PSO_)imainarg.$(OBJ) $(C_) $(PSSRC)imainarg.c
 
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
