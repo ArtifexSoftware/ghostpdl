@@ -453,8 +453,11 @@ buildfontdict 3 /.buildfont3 cvx put
  {		% Some buggy fonts leave extra junk on the stack,
 		% so we have to make a closure that records the stack depth
 		% in a fail-safe way.
-   {{.loadfontfile} .execasresource} count 1 sub 2 .execn
-   count exch sub { pop } repeat
+   { /FAPI_hook_disable pop % gs_fapi accesses this with execstack_lookup - don't remove !
+     {{.loadfontfile} .execasresource} count 1 sub 2 .execn
+     count exch sub { pop } repeat
+     exit
+   } loop % this loop is a pattern for execstack_lookup, don't remove !
  } bind def
 
 % Find an alternate font to substitute for an unknown one.
@@ -848,8 +851,7 @@ $error /SubstituteFont { .stdsubstfont } put
 			% -or-
 			%   <fontname> false
 			% See above regarding the use of 'loop'.
-    { /FAPI_hook_disable pop % gs_fapi accesses this through execstack - don't remove !
-			% Is the font name a string?
+    { 			% Is the font name a string?
 	dup type /stringtype ne
 	 { QUIET not
 	    { (Can't find font with non-string name: ) print dup =only (.) = flush

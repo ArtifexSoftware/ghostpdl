@@ -272,17 +272,17 @@ currentdict end Redefine
 %
 % 2. If the font dictionary has /Path entry, and has no /FAPI entry,
 %    it is an installed PS font, which is described in lib/fontmap or
-%    in GS_FONTPATH. .loadfontloop inserts /Path entry for this case
+%    in GS_FONTPATH. .loadfont inserts /Path entry for this case
 %    (see gs_fonts.ps).
 %
-% 3. Executing .loadfontloop, we place /FAPI_hook_disable in the 0th
+% 3. Executing .loadfont, we place /FAPI_hook_disable in the 0th
 %    element of some procedure on the execution stack - see gs_fonts.ps .
 %    If FAPI_hook finds /FAPI_hook_disable in there, 
 %    it knows that it is called for a disk font during 
 %    its internal definefont.
 %
 % 4. If font dictionary has no /FAPI entry, and has no /Path entry,
-%    and if we are not in .loadfontloop context, it is an embedded font.
+%    and if we are not in .loadfont context, it is an embedded font.
 %
 % 5. Two entries to be defined in lib/FAPIconfig to control the hooking of PS fonts :
 %    Hook_Disk_Fonts and Hook_Embedded_Fonts .
@@ -362,11 +362,17 @@ bind def
 } bind def
 
 /PrintFontRef      % <string|name> <font> PrintFontRef <string|name> <font>
-{ dup /FontName known {
-    (Font )    print 1 index =string cvs print ( \( aliased from ) print dup    /FontName get =string cvs print ( \)) print
+{ dup /FontName known { (Font ) } { (CIDFont ) } ifelse print
+  1 index =string cvs print
+  dup /FontName .knownget not {
+    dup /CIDFontName get
+  } if                               % <string|name> <font> <fontname>
+  dup 3 index ne {
+    ( \( aliased from ) print
+    =string cvs print ( \)) print
   } {
-    (CIDFont ) print 1 index =string cvs print ( \( aliased from ) print dup /CIDFontName get =string cvs print ( \)) print
-  } ifelse 
+    pop
+  } ifelse
 } bind def
 
 /FindInArray    % <array> <elem> .array_find <bool>
@@ -399,7 +405,7 @@ bind def
     } {
       pop //FAPI_is_hook_disabled exec dup
       { pop
-        { (FAPIhook is in .loadfontloop context for the font ) print //PrintFontRef exec (.) = } //FAPI_hook_debug exec
+        { (FAPIhook is in .loadfont context for the font ) print //PrintFontRef exec (.) = } //FAPI_hook_debug exec
         true
       } if
     } ifelse
