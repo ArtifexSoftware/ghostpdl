@@ -43,6 +43,45 @@
 #define recognize_btokens()\
   (ref_binary_object_format.value.intval != 0 && level2_enabled)
 
+#ifdef GS_DEBUGGER
+bool file_table_init = false;
+char *file_table[2048];
+bool trace_line_number = false; /* NB bad name */
+
+private 
+int find_file_index(const char *filename)
+{
+    int i;
+    char *bp;
+
+    /* 0 is special gs_init.ps */
+    if ( filename == NULL ) 
+        return 0;
+    if ( !file_table_init ) {
+        /* 0 reserved */
+        for ( i = 1; i < 2048; i++ ) {
+            file_table[i] = (char *)NULL;
+        }
+        file_table_init = true;
+    }
+    
+    for ( i = 1; i < 2048; i++ )
+        if ( file_table[i] && (strcmp(file_table[i], filename) == 0) )
+            return i;
+    /* add it */
+    bp = malloc(strlen(filename) + 1);
+    if ( !bp ) return 0;
+
+    strcpy(bp, filename);
+    for ( i = 1; i < 2048; i++ ) {
+        if ( file_table[i] == NULL ) {
+            file_table[i] = bp;
+            return i;
+        }
+    }
+    return 0;
+}
+#endif
 /* Procedure for handling DSC comments if desired. */
 /* Set at initialization if a DSC handling module is included. */
 int (*scan_dsc_proc) (const byte *, uint) = NULL;
@@ -395,7 +434,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     int retcode = 0;
     int c;
 
-    s_declare_inline(s, sptr, endptr);
+    register const byte *sptr; const byte *endptr;
 #define scan_begin_inline() s_begin_inline(s, sptr, endptr)
 #define scan_getc() sgetc_inline(s, sptr, endptr)
 #define scan_putback() sputback_inline(s, sptr, endptr)
@@ -407,14 +446,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
   { retcode = gs_note_error(s->memory, code); goto sret; }
 #define sreturn_no_error(code)\
   { scan_end_inline(); return(code); }
-#define if_not_spush1()\
-  if ( osp < ostop ) osp++;\
-  else if ( (retcode = ref_stack_push(&o_stack, 1)) >= 0 )\
-    ;\
-  else
-#define spop1()\
-  if ( osp >= osbot ) osp--;\
-  else ref_stack_pop(&o_stack, 1)
+
     int max_name_ctype =
     (recognize_btokens()? ctype_name : ctype_btoken);
 
@@ -444,34 +476,37 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 
     sptr = endptr = NULL; /* Quiet compiler */
     if (pstate->s_pstack != 0) {
-	if_not_spush1()
-	    return retcode;
-	myref = osp;
-    }
-    /* Check whether we are resuming after an interruption. */
+        if (osp < ostop)
+            osp++; 
+        else if ( (retcode = ref_stack_push(&o_stack, 1)) >= 0 )
+            ; 
+        else
+            return retcode;
+        myref = osp;
+    }    /* Check whether we are resuming after an interruption. */
     if (pstate->s_scan_type != scanning_none) {
 	sstate = *pstate;
-	if (!da.is_dynamic && da.base != da.buf) {
-	    /* The da contains some self-referencing pointers. */
-	    /* Fix them up now. */
-	    uint next = da.next - da.base;
-	    uint limit = da.limit - da.base;
+        if (!sstate.s_da.is_dynamic && sstate.s_da.base != sstate.s_da.buf) {
+            /* The da contains some self-referencing pointers. */
+            /* Fix them up now. */
+            uint next = sstate.s_da.next - sstate.s_da.base;
+            uint limit = sstate.s_da.limit - sstate.s_da.base;
 
-	    da.base = da.buf;
-	    da.next = da.buf + next;
-	    da.limit = da.buf + limit;
-	}
-	daptr = da.next;
+            sstate.s_da.base = sstate.s_da.buf;
+            sstate.s_da.next = sstate.s_da.buf + next;
+            sstate.s_da.limit = sstate.s_da.buf + limit;
+        }
+        daptr = sstate.s_da.next;
 	switch (scan_type) {
 	    case scanning_binary:
 		retcode = (*sstate.s_ss.binary.cont)
 		    (i_ctx_p, s, myref, &sstate);
-		scan_begin_inline();
+                sptr = (s)->cursor.r.ptr, endptr = (s)->cursor.r.limit;
 		if (retcode == scan_Refill)
 		    goto pause;
 		goto sret;
 	    case scanning_comment:
-		scan_begin_inline();
+                sptr = (s)->cursor.r.ptr, endptr = (s)->cursor.r.limit;
 		goto cont_comment;
 	    case scanning_name:
 		goto cont_name;
@@ -483,11 +518,10 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     }
     /* Fetch any state variables that are relevant even if */
     /* scan_type == scanning_none. */
-    pstack = pstate->s_pstack;
-    pdepth = pstate->s_pdepth;
+    sstate.s_pstack = pstate->s_pstack;
+    sstate.s_pdepth = pstate->s_pdepth;
     sstate.s_options = pstate->s_options;
-    scan_begin_inline();
-    /*
+    sptr = (s)->cursor.r.ptr, endptr = (s)->cursor.r.limit;    /*
      * Loop invariants:
      *      If pstack != 0, myref = osp, and *osp is a valid slot.
      */
@@ -580,6 +614,27 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		    ;
 	    }
 	    retcode = dynamic_make_string(i_ctx_p, myref, &da, da.next);
+#if 0
+#ifdef GS_DEBUGGER
+    if ( s->file ) {
+        uint file_index;
+        myref->pfile = file_index = find_file_index(s->file_name.data);
+        myref->pfile |= ( pstack << 16 );
+        myref->offset = ftell(s->file) - (s->cursor.r.limit - s->cursor.r.ptr);
+        if ( trace_line_number ) {
+            dprintf3(s->memory, "%s:%d:%d ",
+                     file_index == 0 ?
+                     /* nb hack because gs_init doesn't set stream data */
+                     "./gs_init.ps" :
+                     s->file_name.data,
+                     myref->offset,
+                     pstack);
+            debug_print_ref( s->memory, myref );
+            dprintf(s->memory, "\n");
+        }
+    }
+#endif
+#endif
 	    if (retcode < 0) {	/* VMerror */
 		sputback(s);	/* rescan ) */
 		scan_type = scanning_string;
@@ -595,7 +650,11 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	    goto str;
 	case '{':
 	    if (pstack == 0) {	/* outermost procedure */
-		if_not_spush1() {
+                if (osp < ostop)
+                    osp++;
+                else if ( (retcode = ref_stack_push(&o_stack, 1)) >= 0 )
+                    ; 
+                else {
 		    scan_putback();
 		    scan_type = scanning_none;
 		    goto pause_ret;
@@ -663,8 +722,11 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		    }
 		    ref_stack_pop(&o_stack, size);
 		}
-		if (pstack == pdepth) {		/* This was the top-level procedure. */
-		    spop1();
+		if (pstack == pdepth) {	/* This was the top-level procedure. */
+                    if (osp >= osbot)
+                        osp--;
+                    else 
+                        ref_stack_pop(&o_stack, 1);
 		    pstack = 0;
 		} else {
 		    if (osp < osbot)
@@ -1120,16 +1182,43 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	}
 	return retcode;
     }
+#ifdef GS_DEBUGGER
+    if ( s->file ) {
+        uint file_index;
+        myref->pfile = file_index = find_file_index(s->file_name.data);
+        myref->pfile |= ( pstack << 16 );
+        // myref->offset = ftell(s->file) - (s->cursor.r.limit - s->cursor.r.ptr);
+        /* ftell can't be zero since we have read a non empty stream
+           from the file. */
+        myref->offset = (ftell(s->file) - 1) - (endptr - sptr);
+        if ( trace_line_number ) {
+            dprintf3(s->memory, "%s:%d:%d ",
+                     file_index == 0 ?
+                     /* nb hack because gs_init doesn't set stream data */
+                     "./gs_init.ps" :
+                     s->file_name.data,
+                     myref->offset,
+                     pstack);
+            debug_print_ref( s->memory, myref );
+            dprintf(s->memory, "\n");
+        }
+    }
+#endif
     /* If we are at the top level, return the object, */
     /* otherwise keep going. */
     if (pstack == 0) {
 	scan_end_inline();
 	return retcode;
     }
-  snext:if_not_spush1() {
-	scan_end_inline();
-	scan_type = scanning_none;
-	goto save;
+ snext:
+    if (osp < ostop)
+        osp++;
+    else if ( (retcode = ref_stack_push(&o_stack, 1)) >= 0 )
+     ; 
+    else {
+        scan_end_inline();
+        scan_type = scanning_none;
+        goto save;
     }
     myref = osp;
     goto top;

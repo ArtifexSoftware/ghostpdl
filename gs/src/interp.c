@@ -23,6 +23,9 @@
 #include "iastruct.h"
 #include "icontext.h"
 #include "icremap.h"
+#ifdef GS_DEBUGGER
+#include "idebug.h"
+#endif
 #include "igstate.h"		/* for handling e_RemapColor */
 #include "inamedef.h"
 #include "iname.h"		/* for the_name_table */
@@ -447,6 +450,285 @@ gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
     set_gc_signal(i_ctx_p, NULL, 0);
     return code;
 }
+#ifdef GS_DEBUGGER
+/* read character at file position offset and don't update the file pointer */
+private int
+read_at_dont_move(FILE *fp, unsigned long offset, char *ch)
+{
+    
+    if ( fseek( fp, offset, SEEK_SET ) ) {
+        printf( "seek failed\n" );
+        return 1;
+    }
+    if ( fread( ch, 1, 1, fp ) != 1 ) {
+        printf( "read failed\n" );
+        return 1;
+    }
+    if ( fseek( fp, offset, SEEK_SET ) ) {
+        printf( "seek failed\n" );
+        return 1;
+    }
+    return 0;
+}
+
+private int
+print_line_and_pos(FILE *fp, unsigned long start_offset)
+{
+    char current_char;    
+    int offset = start_offset;
+    char line_buffer[1024];
+    char *pline_buffer;
+    if ( fseek( fp, offset, SEEK_SET ) ) {
+        printf( "seek failed\n" );
+        return 1;
+    }
+
+    /* see the crazy scanner (iscan.c) to understand why we need this. */
+    while ( (read_at_dont_move(fp, offset, &current_char)  == 0) ) {
+        if (!isspace(current_char))
+            break;
+        if (offset == 0)
+            break;
+        offset--;
+    }
+    /* beginning of file nothing to search for */
+    if ( offset == 0 )
+        ;
+    /* starting at newline shouldn't usualy happen */
+    else if ( 0 ) /* ( current_char == '\n' ) */ {
+        printf( "newline is not a possible token\n" );
+        return 1;
+    } else {
+        while ( 1 ) {
+            /* backed up to the beginning */
+            if ( offset == 0 )
+                break;
+            if ( read_at_dont_move(fp, offset, &current_char)  != 0 )
+                return 1;
+            /* backed up to end of last line */
+            if ( current_char == '\n' ) {
+                offset++;
+                break;
+            } else
+                offset--;
+        }
+    }
+    if ( fseek( fp, offset, SEEK_SET ) ) {
+        printf( "seek failed\n" );
+        return 1;
+    }
+    pline_buffer = fgets( &line_buffer, sizeof(line_buffer), fp );
+    if ( pline_buffer == 0 ) {
+        printf( "fgets failed\n" );
+        return 1;
+    }
+    /* restore position */
+    if ( fseek( fp, start_offset, SEEK_SET ) ) {
+        printf( "seek failed\n" );
+        return 1;
+    }
+    {
+        int line_delta = start_offset - offset;
+        int i;
+        /* hack */
+        if ( line_delta < 0 ) line_delta = 0;
+        for ( i = 0 ; i < line_delta; i++ )
+            printf("%c", line_buffer[i]);
+        printf("<<");
+
+        for ( i = line_delta; line_buffer[i] != '\0'; i++ )
+            printf("%c", line_buffer[i]);
+    }
+    return 0;
+}
+extern bool trace_line_number;
+
+static char global_filename[1024];
+static char Next_filename[1024];
+static bool have_filename = false;
+static bool checking_for_new_file_name = false;
+static char last_command[1024];
+static char bp_file_buffer[1024];
+static bool inited = false;
+static bool just_file_set = false;
+static char just_file[1024];
+private int stop_buffer[1024];
+private bool stop_set = false;
+static bool debug_init_files = true;
+
+int
+interact_at_offset(gs_memory_t *mem, char *filename, ref *pref, i_ctx_t *i_ctx_p, uint depth)
+{
+    char line_buffer[1024];
+    char *pline_buffer = line_buffer;
+    unsigned long offset = pref->offset;
+    FILE *fp = fopen( filename, "r" );
+    bool done = false;
+    bool is_lib_file = (filename[0] == '.' && filename[1] == '/');
+    int code = 0;
+    static bool stepping = true;
+    static bool nexting = false;
+    static bool upping = false;
+    static int current_depth = 0;
+    static bool bp_name_set = false;
+    static bool bp_offset_set = false;
+    static bool tracing = false;
+    
+    static long bp_offset;
+    /* probably a file reference should check better */
+    if ( offset == 0 ) {
+        fclose(fp);
+        return 0;
+    }
+
+    if ( inited == false ) {
+        strcpy(last_command, "n");
+        inited = true;
+        just_file_set = false;
+    }
+    
+    if ( just_file_set && ( strcmp(filename, just_file) != 0 ) ) {
+        fclose(fp);
+        return 0;
+    }
+
+    if ( !have_filename || (strcmp(filename, global_filename) != 0) ) {
+        have_filename = true;
+        strcpy(global_filename, filename);
+    }
+
+    if ( checking_for_new_file_name ) {
+        /* file hasn't changed  continue */
+        if (strcmp(filename, Next_filename) == 0) {
+            fclose(fp);
+            return 0;
+        } else {
+            checking_for_new_file_name = false;
+            /* drop through */
+        }
+    }
+
+ l:  if ( ( stepping ) ||
+          ( tracing ) ||
+          ( bp_offset_set && bp_offset == offset && bp_name_set && !strcmp(bp_file_buffer, filename) ) ||
+          (nexting && depth <= current_depth ) ||
+          (upping && depth < current_depth)) {
+        code = print_line_and_pos(fp, offset);
+        printf("PSDB %s:%d ->", filename, offset);
+        if ( tracing ) {
+            printf("\n");
+            goto j;
+        }
+        pline_buffer = gets(pline_buffer);
+p:     if ( pline_buffer == NULL ) {
+            printf("Bye\n");
+            done = true;
+        } else if ( strlen(pline_buffer) == 0 ) {
+            strcpy(pline_buffer, last_command);
+            goto p;
+        } else if ( strncmp(pline_buffer, "w", 1) == 0 ) {
+            printf( "filename %s offset %d\n", filename, offset );
+            goto l;
+        } else if ( strncmp(pline_buffer, "o", 1) == 0 ) {
+            debug_dump_stack(mem, &o_stack, "Operand stack");
+            goto l;
+        } else if ( strncmp(pline_buffer, "e", 1) == 0 ) {
+            debug_dump_stack(mem, &e_stack, "Exec stack");
+            goto l;
+        } else if ( strncmp(pline_buffer, "l", 1) == 0 ) {
+            debug_init_files = !debug_init_files;
+            goto l;
+        } else if ( strncmp(pline_buffer, "d", 1) == 0 ) {
+            debug_dump_stack(mem, &d_stack, "Dictionary stack");
+            goto l;
+        } else if ( strncmp(pline_buffer, "r", 1) == 0 ) {
+            debug_print_ref(mem, pref);
+            printf("\n");
+            goto l;
+        } else if ( strncmp(pline_buffer, "c", 1) == 0 ) {
+            stepping = false;
+            nexting = false;
+        } else if ( strncmp(pline_buffer, "t", 1) == 0 ) {
+            tracing = !tracing;
+        } else if ( strncmp(pline_buffer, "N", 1) == 0 ) {
+            checking_for_new_file_name = true;
+            strcpy(Next_filename, filename);
+            stepping = false;
+        } else if ( strncmp(pline_buffer, "n", 1) == 0 ) {
+            current_depth = depth;
+            nexting = true;
+            stepping = false;
+            upping = false;
+        } else if ( strncmp(pline_buffer, "s", 1) == 0 ) {
+            stepping = true;
+            nexting = false;
+            upping = false;
+        } else if ( strncmp(pline_buffer, "u", 1) == 0 ) {
+            current_depth = depth;
+            stepping = false;
+            nexting = false;
+            upping = true;
+        } else if ( strncmp(pline_buffer, "j", 1) == 0 ) {
+            just_file_set = !just_file_set;
+            strcpy(just_file, filename);
+            goto l;
+        } else if ( strncmp(pline_buffer, "b", 1) == 0 ) {
+            
+            char *colon_offset = index(pline_buffer, ':');
+            if ( colon_offset ) {
+                if (strncpy(bp_file_buffer, pline_buffer + 2, colon_offset - pline_buffer - 2) ) {
+                    bp_name_set = true;
+                    if ( strstr( pline_buffer, colon_offset + 1 ) ) {
+                        long tmp;
+                        tmp = strtol(strstr( pline_buffer, colon_offset + 1), (char **)NULL, 10);
+                        /* reasonable values hack nb */
+                        if ( tmp >= 0 && tmp < 0xfffffff ) {
+                            bp_offset_set = true;
+                            bp_offset = tmp;
+                        }
+                    }
+                }
+            }
+            goto l;
+        } else if ( strncmp(pline_buffer, "a", 1) == 0 ) {
+            char *colon_offset = index(pline_buffer, ':');
+            if ( colon_offset ) {
+                if (strncpy(bp_file_buffer, pline_buffer + 2, colon_offset - pline_buffer - 2) ) {
+                    bp_name_set = true;
+                    if ( strstr( pline_buffer, colon_offset + 1 ) ) {
+                        long tmp;
+                        tmp = strtol(strstr( pline_buffer, colon_offset + 1), (char **)NULL, 10);
+                        /* reasonable values hack nb */
+                        if ( tmp >= 0 && tmp < 0xfffffff ) {
+                            bp_offset_set = true;
+                            bp_offset = tmp;
+                        }
+                    }
+                }
+            }
+            goto l;
+        } else if ( strncmp(pline_buffer, "h", 1) == 0 ) {
+            printf("Data\n");
+            printf("o Operand Stack           e Exec Stack\n");
+            printf("d Dictionary Stack        r Current Reference\n");
+            printf("Control\n");
+            printf("w Where (NI)              n Next (current level or higher)\n");
+            printf("s Step                    u Up one level\n");
+            printf("c Continue                b Break\n");
+            printf("j Just file for bp        t toggle tracing\n");
+            printf("l toggle init file debugging\n");
+            goto l;
+        }
+    }
+
+    if ( pline_buffer && (strlen( pline_buffer ) != 0) )
+        strcpy(last_command, pline_buffer);
+j:  fclose(fp);
+    return code;
+}
+
+#endif /* GS_DEBUGGER */
+
 private int
 gs_call_interp(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
 	       int *pexit_code, ref * perror_object)
@@ -885,6 +1167,52 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	osp = save_osp;
 	esp = save_esp;
     }
+#ifdef GS_DEBUGGER
+    {
+        os_ptr save_osp = osp;	/* avoid side-effects */
+	es_ptr save_esp = esp;
+        if ( (long) IREF->pfile != -1 ) {
+            uint file_index = IREF->pfile & 0x0000ffff;
+            uint depth = (IREF->pfile >> 16);
+
+            /* check for reasonable values */
+            if (depth > 100) {
+                dprintf(imemory, "corrupt reference\n");
+                debug_print_ref(imemory, IREF);
+                dputc(imemory, '\n');
+            } else {
+                bool interact;
+                if ( debug_init_files ) {
+                    interact = true;
+                } else { /* user disabled debugging of init file */
+                    if (file_index == 0 ||
+                        (strncmp( file_table[file_index], "./", 2 ) == 0)) {
+                        interact = false;
+                    } else {
+                        interact = true;
+                    }
+                }
+                if ( interact )
+                    interact_at_offset(imemory,
+                                       file_index == 0 ?
+                                       /* nb hack because gs_init doesn't set stream data */
+                                       "./gs_init.ps" :
+                                       file_table[file_index],
+                                       IREF, i_ctx_p, depth);
+            }
+        } else {
+            static int print_all_refs_without_symbols = false;
+            if ( print_all_refs_without_symbols ) {
+                dprintf(imemory, "debugger could not set file or offset for:\n");
+                debug_print_ref(imemory, IREF);
+                dputc(imemory, '\n');
+            }
+        }
+        osp = save_osp;
+	esp = save_esp;
+
+    }
+#endif
 #endif
 /* Objects that have attributes (arrays, dictionaries, files, and strings) */
 /* use lit and exec; other objects use plain and plain_exec. */

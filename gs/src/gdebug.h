@@ -109,4 +109,8 @@ void debug_dump_bitmap(const gs_memory_t *mem, const byte * from, uint raster, u
 void debug_print_string(const gs_memory_t *mem, const byte * str, uint len);
 void debug_print_string_hex(const gs_memory_t *mem, const byte * str, uint len);
 
+#ifdef GS_DEBUGGER
+extern char *file_table[2048];
+#endif
+
 #endif /* gdebug_INCLUDED */

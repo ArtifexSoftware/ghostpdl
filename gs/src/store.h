@@ -65,9 +65,18 @@
  * and on Watcom C when one or both of the addresses are
  * already known or in a register.
  */
+#ifdef GS_DEBUGGER
 #define ref_assign_inline(pto,pfrom)\
 	((pto)->value = (pfrom)->value,\
-	 (pto)->tas = (pfrom)->tas)
+	 (pto)->tas = (pfrom)->tas,\
+         (pto)->pfile = (pfrom)->pfile,\
+         (pto)->offset = (pfrom)->offset)
+#else
+  #define ref_assign_inline(pto,pfrom)\
+  	((pto)->value = (pfrom)->value,\
+ 	 (pto)->tas = (pfrom)->tas)
+#endif
+
 #ifdef __TURBOC__
 	/*
 	 * Move the data in two 32-bit chunks, because
@@ -129,16 +138,28 @@
 /* that aren't being set to anything useful. */
 
 #ifdef DEBUG
+#ifdef GS_DEBUGGER
+#  define and_fill_s(pref)\
+    , (pref)->pfile = -1, (pref)->offset = -1, (gs_debug['$'] ? r_set_size(pref, 0xfeed) : 0)
+#else
 #  define and_fill_s(pref)\
     , (gs_debug['$'] ? r_set_size(pref, 0xfeed) : 0)
+#endif
+
 /*
  * The following nonsense avoids compiler warnings about signed/unsigned
  * integer constants.
  */
 #define DEADBEEF ((int)(((uint)0xdead << 16) | 0xbeef))
+#ifdef GS_DEBUGGER
+#  define and_fill_sv(pref)\
+    , (pref)->pfile = -1, (pref)->offset = -1, (gs_debug['$'] ? (r_set_size(pref, 0xfeed),\
+			(pref)->value.intval = DEADBEEF) : 0)
+#else
 #  define and_fill_sv(pref)\
     , (gs_debug['$'] ? (r_set_size(pref, 0xfeed),\
 			(pref)->value.intval = DEADBEEF) : 0)
+#endif /* GS_DEBUGGER */
 #else /* !DEBUG */
 #  define and_fill_s(pref)	/* */
 #  define and_fill_sv(pref)	/* */
@@ -174,10 +195,19 @@
 #define make_tv_old(pcont,pref,t,vf,v,cname)\
   make_tav_old(pcont,pref,t,0,vf,v,cname)
 
+#ifdef GS_DEBUGGER
+#define make_tasv(pref,newtype,newattrs,newsize,valfield,newvalue)\
+  ((pref)->value.valfield = (newvalue),\
+   r_set_type_attrs(pref, newtype, newattrs),\
+   (pref)->offset = (pref)->pfile = -1,\
+   r_set_size(pref, newsize))
+#else
 #define make_tasv(pref,newtype,newattrs,newsize,valfield,newvalue)\
   ((pref)->value.valfield = (newvalue),\
    r_set_type_attrs(pref, newtype, newattrs),\
    r_set_size(pref, newsize))
+#endif
+
 #define make_tasv_new(pref,t,a,s,vf,v)\
   make_tasv(pref,t,(a)|ialloc_new_mask,s,vf,v)
 #define make_tasv_old(pcont,pref,t,a,s,vf,v,cname)\

@@ -99,6 +99,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 
     for (i = size; i != 0; i--) {
 	pref = ref_stack_index(pstack, i - 1);
+#ifndef GS_DEBUGGER
 	switch (r_btype(pref)) {	/* not r_type, opers are special */
 	    case t_name:
 		if (name_index(imem, pref) >= packed_name_max_index)
@@ -132,6 +133,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 		/* Check for local-into-global store. */
 		store_check_space(space, pref);
 	}
+#endif
 	/* Can't pack this element, use a full ref. */
 	/* We may have to unpack up to align_packed_per_ref - 1 */
 	/* preceding short elements. */
@@ -167,6 +169,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 
     for (i = size; i != 0; i--) {
 	pref = ref_stack_index(pstack, i - 1);
+#ifndef GS_DEBUGGER
 	switch (r_btype(pref)) {	/* not r_type, opers are special */
 	    case t_name:
 		{
@@ -202,6 +205,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 		}
 		continue;
 	}
+#endif
 	/* Can't pack this element, use a full ref. */
 	/* We may have to unpack up to align_packed_per_ref - 1 */
 	/* preceding short elements. */

@@ -37,6 +37,7 @@
 #define fputchar(c) Function._fputchar_.unavailable
 #undef getchar
 #define getchar() Function._getchar_.unavailable
+#ifndef GS_DEBUGGER
 #undef gets
 #define gets Function._gets_.unavailable
 /* We should do something about perror, but since many Unix systems */
@@ -44,12 +45,16 @@
 /* code uses perror.) */
 #undef printf
 #define printf Function._printf_.unavailable
+#endif
+
 #undef putchar
 #define putchar(c) Function._putchar_.unavailable
 #undef puts
 #define puts(s) Function._putchar_.unavailable
+#ifndef GS_DEBUGGER
 #undef scanf
 #define scanf Function._scanf_.unavailable
+#endif
 #undef vprintf
 #define vprintf Function._vprintf_.unavailable
 #undef vscanf

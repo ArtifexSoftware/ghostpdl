@@ -30,7 +30,13 @@ const gs_main_instance gs_main_instance_init_values =
 
 /* Set up the .ps file name string array. */
 /* We fill in the lengths at initialization time. */
-#define ref_(t) struct { struct tas_s tas; t value; }
+#ifdef GS_DEBUGGER
+#define ref_debug unsigned long line_number; unsigned long line_number2
+#else
+#define ref_debug
+#endif
+
+#define ref_(t) struct { struct tas_s tas; t value; ref_debug}
 #define string_(s,len)\
  { { (t_string<<r_type_shift) + a_readonly + avm_foreign, len }, s },
 #define psfile_(fns,len) string_(fns,len)
