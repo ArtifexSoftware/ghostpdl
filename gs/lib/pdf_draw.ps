@@ -822,9 +822,13 @@ end
     } if
   } ifelse
 		% Stack: datasource imagemask
-   { currentdict end setfillstate imagemask }
-   { ColorSpace setcolorspace currentdict end setfillblend image }
+   % image and imagemask can be redefined in gs_init.ps to tweak interpolation
+   % after device-specific files are run. Don't bind them here.
+   { currentdict end setfillstate /imagemask }
+   { ColorSpace setcolorspace currentdict end setfillblend /image }
   ifelse
+  .systemvar exec
+   
 		% Close the input stream, unless it is PDFfile or
 		% PDFsource.
   dup dup PDFfile eq exch PDFsource eq or { pop } { closefile } ifelse
