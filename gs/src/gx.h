@@ -32,7 +32,7 @@
 /* Temporary switch for a new type 1 hinter : */
 #define NEW_TYPE1_HINTER 1 /* 0 = old, 1 = new */
 /* A temporary switch to pattern stream accumulation in a device. */
-#define PATTERN_STREAM_ACCUMULATION 0 /* old code = 0, new code = 1 */
+#define PATTERN_STREAM_ACCUMULATION 1 /* old code = 0, new code = 1 */
 
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */
