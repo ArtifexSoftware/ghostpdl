@@ -10,6 +10,15 @@ def GetCVSRepository():
     fp.close()
     return repos
 
+# figure out what day it is given year month and day
+
+def weekday(year, month, day):
+    import time
+    seconds = time.mktime(year, month, day, 0, 0, 0, 0, 0, 0)
+    tm = time.localtime(seconds)
+    return tm[6]
+
+
 # convert an rcs time to a tuple that C/python time functions can work
 # with.  No error checking here.  Precision to hours only.
 def RcsDate2CtimeTuple(date_data):
@@ -17,9 +26,11 @@ def RcsDate2CtimeTuple(date_data):
     (date, time) = string.splitfields(date_data, ' ')
     (year, month, day) = string.splitfields(date, '/')
     (hours, mins, secs) = string.splitfields(time, ':')
-    return (string.atoi(year), string.atoi(month), 
-	    string.atoi(day), string.atoi(hours),
-	    0, 0, 0, 0, 0)
+    year = string.atoi(year)
+    month = string.atoi(month)
+    day = string.atoi(day)
+    hours = string.atoi(hours)
+    return (year, month, day, hours, 0, 0, weekday(year, month, day), 0, 0)
 
 # get the last date from a log file return the time tuple of the last
 # log entry or return or return Jan 1, 1970.  This date is the start
@@ -41,12 +52,13 @@ def LastLogDate2CtimeTuple(filename):
 	if line[0:3] in day_abbr and line[4:7] in month_abbr and (0 <= string.atoi(string.strip(line[8:10])) <= 31):
 	    (dd, mm, dn, t, yy) = string.split(line[:24])
 	    (th, tm, ts) =  string.splitfields(t, ':')
+	    dd=day_abbr.index(dd)
 	    yy=string.atoi(yy)
             mm=month_abbr.index(mm) + 1
 	    dn=string.atoi(dn)
 	    th=string.atoi(th)
 	    tm=string.atoi(tm)
-	    date_tuple = (yy, mm, dn, th, tm, 0, 0, 0, 0)
+	    date_tuple = (yy, mm, dn, th, tm, 0, dd, 0, 0)
 	    break
     return date_tuple
 
