@@ -306,7 +306,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		    code = pdf_put_colored_pattern(pdev, pdc, ppscc, &pres);
 		else if (pdc->type == &gx_dc_pure_masked) {
 		    code = pdf_put_uncolored_pattern(pdev, pdc, 
-				&pcs->params.pattern.base_space, ppscc, &pres);
+				pcs, ppscc, &pres);
 		    if (code < 0)
 			return code;
 		    code = pdf_write_ccolor(pdev, pis, pcc);

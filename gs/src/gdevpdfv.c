@@ -164,7 +164,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
 /* Write an uncolored Pattern color. */
 int
 pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
-			  const gs_paint_color_space *base_space,
+			  const gs_color_space *pcs,
 			  const psdf_set_color_commands_t *ppscc,
 			  pdf_resource_t **ppres)
 {
@@ -175,7 +175,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
     if (!tile_size_ok(pdev, NULL, m_tile))
 	return_error(gs_error_limitcheck);
-    code = pdf_cs_Pattern_uncolored_hl(pdev, base_space, &v);
+    code = pdf_cs_Pattern_uncolored_hl(pdev, pcs, &v);
     if (code < 0)
 	return code;
     *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, pdc->mask.id);

@@ -925,29 +925,10 @@ pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue)
 }
 int
 pdf_cs_Pattern_uncolored_hl(gx_device_pdf *pdev, 
-		const gs_paint_color_space *base_space, cos_value_t *pvalue)
+		const gs_color_space *pcs, cos_value_t *pvalue)
 {
     /* Only for high level colors. */
-    const unsigned char ps[] = "[/Pattern ", pse[] = "]";
-    unsigned char buf[30];
-    cos_value_t cs_value;
-    pdf_resource_t *pres = NULL;
-    int code = pdf_color_space(pdev, &cs_value, NULL,
-		(gs_color_space *)base_space, &pdf_color_space_names, false);
-    stream s, *s_save = pdev->strm;
-    uint ignore;
-
-    if (code < 0)
-	return code;
-    swrite_string(&s, buf, sizeof(buf));
-    sputs(&s, ps, sizeof(ps) - 1, &ignore);
-    pdev->strm = &s;
-    cos_value_write(&cs_value, pdev);
-    pdev->strm = s_save;
-    sputs(&s, pse, 2, &ignore);
-    sclose(&s);
-    /* fixme : find old resource pres */
-    return pdf_pattern_space(pdev, pvalue, &pres, (const char *)buf);
+    return pdf_color_space(pdev, pvalue, NULL, pcs, &pdf_color_space_names, true);
 }
 
 /* Set the ProcSets bits corresponding to an image color space. */

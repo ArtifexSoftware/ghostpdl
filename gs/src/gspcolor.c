@@ -347,5 +347,5 @@ gx_serialize_Pattern(const gs_color_space * pcs, stream * s)
 	return code;
     if (!p->has_base_space)
 	return 0;
-    return cs_serialize((const gs_color_space *)&p->has_base_space, s);
+    return cs_serialize((const gs_color_space *)&p->base_space, s);
 }
