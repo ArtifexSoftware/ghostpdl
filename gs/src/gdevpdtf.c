@@ -539,14 +539,15 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	code = pdf_compute_BaseFont(pdev, pdsubf);
 	if (code < 0)
 	    return code;
+	fname = pdsubf->BaseFont;
 	if (pdsubf->FontType == ft_CID_encrypted)
 	    extra = 1 + pdfont->u.type0.CMapName.size;
     }
     else if (pdfont->FontDescriptor == 0) {
 	/* Type 3 font, or has its BaseFont computed in some other way. */
 	return 0;
-    }
-    fname = *pdf_font_descriptor_base_name(pdsubf->FontDescriptor);
+    } else
+	fname = *pdf_font_descriptor_base_name(pdsubf->FontDescriptor);
     size = fname.size;
     data = gs_alloc_string(pdev->pdf_memory, size + extra,
 			   "pdf_compute_BaseFont");
@@ -591,7 +592,8 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     }
     pdfont->BaseFont.data = fname.data = data;
     pdfont->BaseFont.size = fname.size = size;
-    *pdf_font_descriptor_name(pdsubf->FontDescriptor) = fname;
+    if (pdsubf->FontDescriptor)
+	*pdf_font_descriptor_name(pdsubf->FontDescriptor) = fname;
     return 0;
 }
 
@@ -640,7 +642,7 @@ pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, true)) < 0
 	)
 	return code;
-    pdfont->BaseFont.data = (byte *)psfi->fname;
+    pdfont->BaseFont.data = (byte *)psfi->fname; /* break const */
     pdfont->BaseFont.size = strlen(psfi->fname);
     pdfont->copied_font = pdf_base_font_font(pdfont->base_font);
     set_is_MM_instance(pdfont, pfont);

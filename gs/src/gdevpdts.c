@@ -32,6 +32,8 @@
  * on the font's writing direction), until forced to emit them.  This
  * happens when changing text state parameters, when the buffer is full, or
  * when exiting text mode.
+ *
+ * Note that movement distances are measured in unscaled text space.
  */
 typedef struct pdf_text_move_s {
     int index;			/* within buffer.chars */
@@ -74,8 +76,6 @@ struct pdf_text_state_s {
     pdf_text_buffer_t buffer;
     int wmode;			/* WMode of in.font */
     /* State relative to content stream */
-    int members;		/* which members of 'out' to update, */
-				/* TEXT_STATE_SET_xxx (see gdevpdts.h) */
     pdf_text_state_values_t out; /* see above */
     double leading;		/* TL (not settable, only used internally) */
     bool use_leading;		/* if true, use T* or ' */
@@ -88,7 +88,6 @@ private const pdf_text_state_t ts_default = {
     { TEXT_BUFFER_DEFAULT },	/* buffer */
     0,				/* wmode */
     /* State relative to content stream */
-    0,				/* members */
     { TEXT_STATE_VALUES_DEFAULT },	/* out */
     0,				/* leading */
     0 /*false*/,		/* use_leading */
@@ -116,21 +115,21 @@ append_text_move(pdf_text_state_t *pts, floatp dw)
     int pos = pts->buffer.count_chars;
     double rounded;
 
-    if (dw == 0)
-	return 0;
-    if (count == MAX_TEXT_BUFFER_MOVES)
-	return -1;
+    if (count > 0 && pts->buffer.moves[count - 1].index == pos) {
+	/* Merge adjacent moves. */
+	dw += pts->buffer.moves[--count].amount;
+    }
     /* Round dw if it's very close to an integer. */
     if (fabs(dw - (rounded = floor(dw + 0.5))) < fabs(dw * 0.001))
 	dw = rounded;
-    if (count > 0 && pts->buffer.moves[count - 1].index == pos) {
-	/* Merge adjacent moves. */
-	pts->buffer.moves[count - 1].amount += dw;
-    } else {
+    if (dw != 0) {
+	if (count == MAX_TEXT_BUFFER_MOVES)
+	    return -1;
 	pts->buffer.moves[count].index = pos;
 	pts->buffer.moves[count].amount = dw;
-	pts->buffer.count_moves = count + 1;
+	++count;
     }
+    pts->buffer.count_moves = count;
     return 0;
 }
 
@@ -174,11 +173,12 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 
     if (matrix_is_compatible(pmat, &pts->in.matrix)) {
 	pdf_font_resource_t *const pdfont = pts->in.pdfont;
+	double dx = pmat->tx - pts->in.matrix.tx,
+	    dy = pmat->ty - pts->in.matrix.ty;
 	gs_point dist;
 	double dw, dnotw, tdw;
 
-	set_text_distance(&dist, pmat->tx - pts->in.matrix.tx,
-			  pmat->ty - pts->in.matrix.ty, pmat);
+	set_text_distance(&dist, dx, dy, pmat);
 	if (pts->wmode)
 	    dw = dist.y, dnotw = dist.x;
 	else
@@ -187,20 +187,12 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	    pdfont->FontType == ft_user_defined
 	    ) {
 	    /* Use a pseudo-character. */
-	    int dspace = (int)dw;
-	    int code = pdf_space_char(pdev, pdfont, dspace);
+	    int code = pdf_space_char(pdev, pdfont, (int)dw);
 
 	    if (code >= 0) {
 		byte space_char = (byte)code;
 
-		if (pts->wmode)
-		    pdf_append_chars(pdev, &space_char, 1,
-				     dspace * pts->in.matrix.yx,
-				     dspace * pts->in.matrix.yy);
-		else
-		    pdf_append_chars(pdev, &space_char, 1,
-				     dspace * pts->in.matrix.xx,
-				     dspace * pts->in.matrix.xy);
+		pdf_append_chars(pdev, &space_char, 1, dx, dy);
 		goto finish;
 	    }
 	}
@@ -264,7 +256,7 @@ pdf_set_text_matrix(gx_device_pdf * pdev)
 	}
     } else {			/* Use Tm. */
 	/*
-	 * See stream_to_text in gdevpdf.c for why we need the following
+	 * See stream_to_text in gdevpdfu.c for why we need the following
 	 * matrix adjustments.
 	 */
 	double sx = 72.0 / pdev->HWResolution[0],
@@ -317,6 +309,7 @@ pdf_reset_text_state(pdf_text_data_t *ptd)
     pdf_text_state_t *pts = ptd->text_state;
 
     pts->out = ts_default.out;
+    pts->leading = 0;
 }
 
 /*
@@ -348,63 +341,52 @@ sync_text_state(gx_device_pdf *pdev)
 	return 0;		/* nothing to output */
 
     /* Bring text state parameters up to date. */
-    if (pts->members) {
-	if (pts->members & TEXT_STATE_SET_CHARACTER_SPACING) {
-	    if (pts->out.character_spacing != pts->in.character_spacing) {
-		pprintg1(s, "%g Tc\n", pts->in.character_spacing);
-		pts->out.character_spacing = pts->in.character_spacing;
-	    }
-	    pts->members -= TEXT_STATE_SET_CHARACTER_SPACING;
-	}
-	/*
-	 * NOTE: we must update the font before the matrix, because
-	 * pdf_set_text_matrix assumes out.pdfont == in.pdfont.
-	 */
-	if (pts->members & TEXT_STATE_SET_FONT_AND_SIZE) {
-	    if (pts->out.pdfont != pts->in.pdfont ||
-		pts->out.size != pts->in.size
-		) {
-		pdf_font_resource_t *pdfont = pts->in.pdfont;
 
-		pprints1(s, "/%s ", ((pdf_resource_t *)pts->in.pdfont)->rname);
-		pprintg1(s, "%g Tf\n", pts->in.size);
-		pts->out.pdfont = pdfont;
-		pts->out.size = pts->in.size;
-		/*
-		 * In PDF, the only place to specify WMode is in the CMap
-		 * (a.k.a. Encoding) of a Type 0 font.
-		 */
-		pts->wmode =
-		    (pdfont->FontType == ft_composite ?
-		     pdfont->u.type0.WMode : 0);
-		((pdf_resource_t *)pdfont)->where_used |= pdev->used_mask;
-	    }
-	    pts->members -= TEXT_STATE_SET_FONT_AND_SIZE;
-	}
-	if (pts->members & TEXT_STATE_SET_MATRIX) {
-	    /*
-	     * NOTE: pdf_set_text_matrix may add characters to the buffer.
-	     */
-	    code = pdf_set_text_matrix(pdev);
-	    if (code < 0)
-		return code;
-	    pts->members -= TEXT_STATE_SET_MATRIX;
-	}
-	if (pts->members & TEXT_STATE_SET_RENDER_MODE) {
-	    if (pts->out.render_mode != pts->in.render_mode) {
-		pprintg1(s, "%g Tr\n", pts->in.render_mode);
-		pts->out.render_mode = pts->in.render_mode;
-	    }
-	    pts->members -= TEXT_STATE_SET_RENDER_MODE;
-	}
-	if (pts->members & TEXT_STATE_SET_WORD_SPACING) {
-	    if (pts->out.word_spacing == pts->in.word_spacing)
-		pts->members -= TEXT_STATE_SET_WORD_SPACING;
-	    else if (memchr(pts->buffer.chars, 32, pts->buffer.count_chars)) {
-		pprintg1(s, "%g Tw\n", pts->in.word_spacing);
-		pts->out.word_spacing = pts->in.word_spacing;
-		pts->members -= TEXT_STATE_SET_WORD_SPACING;
-	    }
+    if (pts->out.character_spacing != pts->in.character_spacing) {
+	pprintg1(s, "%g Tc\n", pts->in.character_spacing);
+	pts->out.character_spacing = pts->in.character_spacing;
+    }
+
+    /*
+     * NOTE: we must update the font before the matrix, because
+     * pdf_set_text_matrix assumes out.pdfont == in.pdfont.
+     */
+    if (pts->out.pdfont != pts->in.pdfont || pts->out.size != pts->in.size) {
+	pdf_font_resource_t *pdfont = pts->in.pdfont;
+
+	pprints1(s, "/%s ", ((pdf_resource_t *)pts->in.pdfont)->rname);
+	pprintg1(s, "%g Tf\n", pts->in.size);
+	pts->out.pdfont = pdfont;
+	pts->out.size = pts->in.size;
+	/*
+	 * In PDF, the only place to specify WMode is in the CMap
+	 * (a.k.a. Encoding) of a Type 0 font.
+	 */
+	pts->wmode =
+	    (pdfont->FontType == ft_composite ?
+	     pdfont->u.type0.WMode : 0);
+	((pdf_resource_t *)pdfont)->where_used |= pdev->used_mask;
+    }
+
+    /*
+     * NOTE: pdf_set_text_matrix may add characters to the buffer.
+     */
+    if (memcmp(&pts->in.matrix, &pts->out.matrix, sizeof(pts->in.matrix))) {
+	/* pdf_set_text_matrix sets out.matrix = in.matrix */
+	code = pdf_set_text_matrix(pdev);
+	if (code < 0)
+	    return code;
+    }
+
+    if (pts->out.render_mode != pts->in.render_mode) {
+	pprintg1(s, "%g Tr\n", pts->in.render_mode);
+	pts->out.render_mode = pts->in.render_mode;
+    }
+
+    if (pts->out.word_spacing != pts->in.word_spacing) {
+	if (memchr(pts->buffer.chars, 32, pts->buffer.count_chars)) {
+	    pprintg1(s, "%g Tw\n", pts->in.word_spacing);
+	    pts->out.word_spacing = pts->in.word_spacing;
 	}
     }
 
@@ -470,64 +452,45 @@ pdf_render_mode_uses_stroke(const gx_device_pdf *pdev,
 }
 
 /*
- * Set text state values (as seen by client).
+ * Read the stored client view of text state values.
+ */
+void
+pdf_get_text_state_values(gx_device_pdf *pdev, pdf_text_state_values_t *ptsv)
+{
+    *ptsv = pdev->text->text_state->in;
+}
+
+/*
+ * Set the stored client view of text state values.
  */
 int
-pdf_set_text_state_values(gx_device_pdf *pdev, pdf_text_state_values_t *ptsv,
-			  int members)
+pdf_set_text_state_values(gx_device_pdf *pdev,
+			  const pdf_text_state_values_t *ptsv)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
-    int reset = members & pts->members;
 
-    if (members & TEXT_STATE_SET_MATRIX) {
-	int code = add_text_delta_move(pdev, &ptsv->matrix);
+    if (pts->buffer.count_chars > 0) {
+	int code;
 
-	if (code >= 0)
-	    members &= ~TEXT_STATE_SET_MATRIX;
-    }
-
-    if ((reset & TEXT_STATE_SET_CHARACTER_SPACING) &&
-	pts->in.character_spacing == ptsv->character_spacing)
-	members -= TEXT_STATE_SET_CHARACTER_SPACING;
-    if ((reset & TEXT_STATE_SET_FONT_AND_SIZE) &&
-	pts->in.pdfont == ptsv->pdfont && pts->in.size == ptsv->size)
-	members -= TEXT_STATE_SET_FONT_AND_SIZE;
-    if ((reset & TEXT_STATE_SET_RENDER_MODE) &&
-	pts->in.render_mode == ptsv->render_mode)
-	members -= TEXT_STATE_SET_RENDER_MODE;
-    if ((reset & TEXT_STATE_SET_WORD_SPACING) &&
-	pts->in.word_spacing == ptsv->word_spacing)
-	members -= TEXT_STATE_SET_WORD_SPACING;
-
-    if (pts->buffer.count_chars > 0 && members != 0) {
-	int code = sync_text_state(pdev);
-
+	if (pts->in.character_spacing == ptsv->character_spacing &&
+	    pts->in.pdfont == ptsv->pdfont && pts->in.size == ptsv->size &&
+	    pts->in.render_mode == ptsv->render_mode &&
+	    pts->in.word_spacing == ptsv->word_spacing
+	    ) {
+	    if (!memcmp(&pts->in.matrix, &ptsv->matrix,
+			sizeof(pts->in.matrix)))
+		return 0;
+	    /* add_text_delta_move sets pts->in.matrix if successful */
+	    code = add_text_delta_move(pdev, &ptsv->matrix);
+	    if (code >= 0)
+		return 0;
+	}
+	code = sync_text_state(pdev);
 	if (code < 0)
 	    return code;
     }
 
-    if (members & TEXT_STATE_SET_CHARACTER_SPACING)
-	pts->in.character_spacing = ptsv->character_spacing;
-    else
-	ptsv->character_spacing = pts->in.character_spacing;
-    if (members & TEXT_STATE_SET_FONT_AND_SIZE)
-	pts->in.pdfont = ptsv->pdfont, pts->in.size = ptsv->size;
-    else
-	ptsv->pdfont = pts->in.pdfont, ptsv->size = pts->in.size;
-    if (members & TEXT_STATE_SET_MATRIX)
-	pts->in.matrix = ptsv->matrix;
-    else
-	ptsv->matrix = pts->in.matrix;
-    if (members & TEXT_STATE_SET_RENDER_MODE)
-	pts->in.render_mode = ptsv->render_mode;
-    else
-	ptsv->render_mode = pts->in.render_mode;
-    if (members & TEXT_STATE_SET_WORD_SPACING)
-	pts->in.word_spacing = ptsv->word_spacing;
-    else
-	ptsv->word_spacing = pts->in.word_spacing;
-
-    pts->members |= members;
+    pts->in = *ptsv;
     return 0;
 }
 

@@ -25,6 +25,62 @@
  * gdevpdtt.c, gdevpdtc.c, and gdevpdte.c.
  */
 
+/* ---------------- Coordinate systems ---------------- */
+
+/*
+
+  The current text code has to deal with 6 different coordinate systems.
+  This situation is complex, confusing, and fragile, but despite literally
+  years of struggle we have been unable to understand how to simplify it.
+
+  1) PostScript user space at the time a text operator is invoked.  The
+     width values for ashow, xshow, etc. are specified in this space: these
+     values appear in the delta_all, delta_space, x_widths, and y_widths
+     members of the text member of the common part of the text enumerator
+     (pdf_text_enum_t).
+
+  2) Device space.  For the pdfwrite device, this is a straightforward space
+     with (0,0) in the lower left corner.  The usual resolution is 720 dpi,
+     but this is user-settable to provide a tradeoff between file size and
+     bitmap resolution (for rendered Patterns and fonts that have to be
+     converted to bitmaps).
+
+  3) PDF user space.  During the processing of text operators, this is
+     always the same as the default PDF user space, in which 1 unit = 1/72",
+     because an Acrobat quirk apparently requires this.  (See stream_to_text
+     in gdevpdfu.c.)
+
+  4) Font design space.  This is the space in which the font's character
+     outlines and advance widths are specified, including the width values
+     returned by font->procs.glyph_info and by pdf_char_widths.
+
+  5) PDF unscaled text space.  This space is used for the PDF width
+     adjustment values (Tc, Tw, and TL parameters, and " operator) and
+     positioning coordinates (Td and TD operators).
+
+  6) PDF text space.  This space is used for the width adjustments for the
+     TJ operator.
+
+  The following convert between these spaces:
+
+  - The PostScript CTM (pte->pis->ctm) maps #1 to #2.
+
+  - The mapping from #3 to #2 is a scaling by pdev->HWResolution / 72.
+
+  - The mapping from #5 to #6 is a scaling by the size member of
+    pdf_text_state_values_t, which is the size value for the Tf operator.
+
+  - The matrix member of pdf_text_state_values_t maps #5 to #2, which is the
+    matrix for the Tm operator or its abbreviations.
+
+  - The FontMatrix of a font maps #4 to #1.
+
+  Note that the PDF text matrix (set by the Tm operator) maps #5 to #3.
+  However, this is not actually stored anywhere: it is computed by
+  multiplying the #5->#2 matrix by the #2->#3 scaling.
+
+*/
+
 /* ---------------- Types and structures ---------------- */
 
 /* Define the text enumerator. */
@@ -46,16 +102,24 @@ typedef struct pdf_text_enum_s {
  */
 typedef struct pdf_text_process_state_s {
     pdf_text_state_values_t values;
-    int members;		/* which values need to be set */
     gs_font *font;
 } pdf_text_process_state_t;
 
 /*
- * Define the structure used to return glyph width information.
+ * Define the structure used to return glyph width information.  Note that
+ * there are two different sets of width information: real-number (x,y)
+ * values, which give the true advance width, and an integer value, which
+ * gives an X advance width for WMode = 0 or a Y advance width for WMode = 1.
+ * The return value from pdf_glyph_width() indicates which of these is/are
+ * valid.
  */
+typedef struct pdf_glyph_width_s {
+    int w;
+    gs_point xy;
+} pdf_glyph_width_t;
 typedef struct pdf_glyph_widths_s {
-    int Width;			/* unmodified, for Widths */
-    int real_width;		/* possibly modified, for rendering */
+    pdf_glyph_width_t Width;		/* unmodified, for Widths */
+    pdf_glyph_width_t real_width;	/* possibly modified, for rendering */
 } pdf_glyph_widths_t;
 
 /* ---------------- Procedures ---------------- */
@@ -84,29 +148,30 @@ int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 
 /*
  * Compute the cached values in the text processing state from the text
- * parameters, current_font, and pis->ctm.  Return either an error code (<
- * 0) or a mask of operation attributes that the caller must emulate.
- * Currently the only such attributes are TEXT_ADD_TO_ALL_WIDTHS and
- * TEXT_ADD_TO_SPACE_WIDTH.  Note that this procedure fills in all the
- * values in ppts->values, not just the ones that need to be set now.
+ * parameters, pdfont, and pis->ctm.  Return either an error code (< 0) or a
+ * mask of operation attributes that the caller must emulate.  Currently the
+ * only such attributes are TEXT_ADD_TO_ALL_WIDTHS and
+ * TEXT_ADD_TO_SPACE_WIDTH.
  */
 int pdf_update_text_state(pdf_text_process_state_t *ppts,
 			  const pdf_text_enum_t *penum,
-			  pdf_font_resource_t *pdfont, const gs_matrix *pfmat);
+			  pdf_font_resource_t *pdfont,
+			  const gs_matrix *pfmat);
 
 /*
  * Set up commands to make the output state match the processing state.
  * General graphics state commands are written now; text state commands
- * are written later.  Update ppts->values to reflect all current values.
+ * are written later.
  */
 int pdf_set_text_process_state(gx_device_pdf *pdev,
-			const gs_text_enum_t *pte, /* for pdcolor, pis */
-			       pdf_text_process_state_t *ppts,
-			       const gs_const_string *pstr);
+			       const gs_text_enum_t *pte, /*for pdcolor, pis*/
+			       pdf_text_process_state_t *ppts);
 
 /*
  * Get the widths (unmodified and possibly modified) of a glyph in a (base)
- * font.  Return 1 if the width should not be cached.
+ * font.  If the width is cachable (implying that the w values area valid),
+ * return 0; if only the xy values are valid, or the width is not cachable
+ * for some other reason, return 1.
  */
 int pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 		     gs_font_base *font, pdf_glyph_widths_t *pwidths);

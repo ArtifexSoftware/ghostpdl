@@ -180,7 +180,12 @@ pdf_write_contents_type0(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s = pdev->strm;
 
-    pprints1(s, "/Encoding %s", pdfont->u.type0.Encoding_name);
+    /*
+     * The Encoding name might be missing if an error occurred when
+     * creating the font resource.
+     */
+    if (pdfont->u.type0.Encoding_name[0])
+	pprints1(s, "/Encoding %s", pdfont->u.type0.Encoding_name);
     pprintld1(s, "/DescendantFonts[%ld 0 R]",
 	      pdf_font_id(pdfont->u.type0.DescendantFont));
     stream_puts(s, "/Subtype/Type0>>\n");

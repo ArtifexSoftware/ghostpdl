@@ -406,9 +406,9 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		    font->procs.encode_char(font, (gs_char)i,
 					    GLYPH_SPACE_INDEX);
 
-		if (glyph == gs_no_glyph ||
-		    (glyph >= gs_min_cid_glyph &&
-		     glyph <= gs_min_cid_glyph + 0xff)
+		if (glyph == GS_NO_GLYPH ||
+		    (glyph >= GS_MIN_CID_GLYPH &&
+		     glyph <= GS_MIN_CID_GLYPH + 0xff)
 		    )
 		    continue;
 		/* Can't embed, punt. */
@@ -518,6 +518,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 	sx = pdev->HWResolution[0] / 72.0,
 	sy = pdev->HWResolution[1] / 72.0;
     float size;
+    float c_s = 0, w_s = 0;
     int mask = 0;
     int code = gx_path_current_point(penum->path, &cpt);
 
@@ -546,40 +547,33 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     /* Try to find a reasonable size value.  This isn't necessary, */
     /* but it's worth a little effort. */
 
-    size = fabs(tmat.yy) / sy;
+    size = hypot(tmat.yx, tmat.yy) / sy;
     if (size < 0.01)
-	size = fabs(tmat.xx) / sx;
+	size = hypot(tmat.xx, tmat.xy) / sx;
     if (size < 0.01)
 	size = 1;
 
     /* Check for spacing parameters we can handle, and transform them. */
 
-    ppts->members = TEXT_STATE_SET_FONT_AND_SIZE |
-	TEXT_STATE_SET_MATRIX | TEXT_STATE_SET_RENDER_MODE;
-
     if (penum->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	gs_point pt;
 
 	code = transform_delta_inverse(&penum->text.delta_all, &smat, &pt);
-	if (code >= 0 && pt.y == 0) {
-	    ppts->values.character_spacing = pt.x * size;
-	    ppts->members |= TEXT_STATE_SET_CHARACTER_SPACING;
-	} else
+	if (code >= 0 && pt.y == 0)
+	    c_s = pt.x * size;
+	else
 	    mask |= TEXT_ADD_TO_ALL_WIDTHS;
     }
-
+    
     if (penum->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
 	gs_point pt;
 
 	code = transform_delta_inverse(&penum->text.delta_space, &smat, &pt);
-	if (code >= 0 && pt.y == 0 && penum->text.space.s_char == 32) {
-	    ppts->values.word_spacing = pt.x * size;
-	    ppts->members |= TEXT_STATE_SET_WORD_SPACING;
-	} else {
+	if (code >= 0 && pt.y == 0 && penum->text.space.s_char == 32)
+	    w_s = pt.x * size;
+	else
 	    mask |= TEXT_ADD_TO_SPACE_WIDTH;
-	}
     }
-
     /* Store the updated values. */
 
     tmat.xx /= size;
@@ -589,19 +583,23 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     tmat.tx += fixed2float(cpt.x);
     tmat.ty += fixed2float(cpt.y);
 
+    ppts->values.character_spacing = c_s;
     ppts->values.pdfont = pdfont;
     ppts->values.size = size;
     ppts->values.matrix = tmat;
     ppts->values.render_mode = (font->PaintType == 0 ? 0 : 1);
+    ppts->values.word_spacing = w_s;
     ppts->font = font;
 
-    return mask;
+    code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
+				      ppts);
+    return (code < 0 ? code : mask);
 }
 
 /*
  * Set up commands to make the output state match the processing state.
  * General graphics state commands are written now; text state commands
- * are written later.  Update ppts->values to reflect all current values.
+ * are written later.
  */
 private double
 font_matrix_scaling(const gs_font *font)
@@ -612,8 +610,7 @@ font_matrix_scaling(const gs_font *font)
 int
 pdf_set_text_process_state(gx_device_pdf *pdev,
 			   const gs_text_enum_t *pte,	/* for pdcolor, pis */
-			   pdf_text_process_state_t *ppts,
-			   const gs_const_string *pstr)
+			   pdf_text_process_state_t *ppts)
 {
     /*
      * Setting the stroke parameters may exit text mode, causing the
@@ -655,15 +652,15 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
 
     /* Now set all the other parameters. */
 
-    return pdf_set_text_state_values(pdev, &ppts->values, ppts->members);
+    return pdf_set_text_state_values(pdev, &ppts->values);
 }
 
 /*
  * Get the widths (unmodified and possibly modified) of a glyph in a (base)
  * font.  Return 1 if the width was defaulted to MissingWidth.
  */
-private int store_glyph_width(int *pwidth, int wmode, double scale,
-			      const gs_glyph_info_t *pinfo);
+private int store_glyph_width(pdf_glyph_width_t *pwidth, int wmode,
+			      double scale, const gs_glyph_info_t *pinfo);
 int
 pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 		 gs_font_base *font, pdf_glyph_widths_t *pwidths)
@@ -674,31 +671,43 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
      * orig_scale is 1.0 for TrueType, 0.001 or 1.0/2048 for Type 1.
      */
     double scale = font_orig_scale((const gs_font *)pdf_font_resource_font(pdfont)) * 1000.0;
-    int code;
+    int code, rcode = 0;
 
-    if (glyph != gs_no_glyph &&
+    if (glyph != GS_NO_GLYPH &&
 	(code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
 				       (GLYPH_INFO_WIDTH0 << wmode) |
 				       GLYPH_INFO_OUTLINE_WIDTHS,
-				       &info)) >= 0 &&
-	(code = store_glyph_width(&pwidths->Width, wmode, scale, &info)) >= 0 &&
-	(/*
-	  * Only ask for modified widths if they are different, i.e.,
-	  * if GLYPH_INFO_OUTLINE_WIDTHS was set in the response.
-	  */
-	 (info.members & GLYPH_INFO_OUTLINE_WIDTHS) == 0 ||
-	 (code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
-					GLYPH_INFO_WIDTH0 << wmode,
-					&info)) >= 0) &&
-	(code = store_glyph_width(&pwidths->real_width, wmode, scale, &info)) >= 0
+				       &info)) != gs_error_undefined
 	) {
+	if (code < 0 ||
+	    (code = store_glyph_width(&pwidths->Width, wmode, scale, &info)) < 0
+	    )
+	    return code;
+	rcode |= code;
+	/*
+	 * Only ask for modified widths if they are different, i.e.,
+	 * if GLYPH_INFO_OUTLINE_WIDTHS was set in the response.
+	 */
+	if ((info.members & GLYPH_INFO_OUTLINE_WIDTHS) != 0 &&
+	    (code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
+					   GLYPH_INFO_WIDTH0 << wmode,
+					   &info)) != gs_error_undefined
+	    ) {
+	    if (code < 0 ||
+		(code = store_glyph_width(&pwidths->real_width, wmode, scale, &info)) < 0
+		)
+		return code;
+	    rcode |= code;
+	} else
+	    pwidths->real_width = pwidths->Width;
 	/*
 	 * If the character is .notdef, don't cache the width,
 	 * just in case this is an incrementally defined font.
 	 */
-	return (gs_font_glyph_is_notdef(font, glyph) ? 1 : 0);
-    } else {
-	/* Try for MissingWidth. */
+	return (gs_font_glyph_is_notdef(font, glyph) ? 1 : rcode);
+    }
+    /* Try for MissingWidth. */
+    {
 	gs_point scale2;
 	const gs_point *pscale = 0;
 	gs_font_info_t finfo;
@@ -709,7 +718,17 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 				     FONT_INFO_MISSING_WIDTH, &finfo);
 	if (code < 0)
 	    return code;
-	pwidths->Width = pwidths->real_width = finfo.MissingWidth;
+	if (wmode) {
+	    pwidths->Width.xy.x = pwidths->real_width.xy.x = 0;
+	    pwidths->Width.w = pwidths->real_width.w =
+		pwidths->Width.xy.y = pwidths->real_width.xy.y =
+		finfo.MissingWidth * pscale->y;
+	} else {
+	    pwidths->Width.w = pwidths->real_width.w =
+		pwidths->Width.xy.x = pwidths->real_width.xy.x =
+		finfo.MissingWidth * pscale->x;
+	    pwidths->Width.xy.y = pwidths->real_width.xy.y = 0;
+	}
 	/*
 	 * Don't mark the width as known, just in case this is an
 	 * incrementally defined font.
@@ -718,18 +737,19 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
     }
 }
 private int
-store_glyph_width(int *pwidth, int wmode, double scale,
+store_glyph_width(pdf_glyph_width_t *pwidth, int wmode, double scale,
 		  const gs_glyph_info_t *pinfo)
 {
     double w, v;
 
-    if (wmode && (w = pinfo->width[wmode].y) != 0)
-	v = pinfo->width[wmode].x;
+    pwidth->xy = pinfo->width[wmode];
+    if (wmode)
+	w = pwidth->xy.y, v = pwidth->xy.x;
     else
-	w = pinfo->width[wmode].x, v = pinfo->width[wmode].y;
+	w = pwidth->xy.x, v = pwidth->xy.y;
     if (v != 0)
-	return_error(gs_error_rangecheck);
-    *pwidth = (int)(w * scale);
+	return 1;
+    pwidth->w = (int)(w * scale);
     return 0;
 }
 

@@ -107,11 +107,11 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    const gs_matrix *psmat =
 		&curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
 	    gs_matrix fmat;
+	    int used = 0;
 
-	    gs_matrix_multiply(&curr.current_font->FontMatrix, psmat,
-			       &fmat);
+	    gs_matrix_multiply(&curr.current_font->FontMatrix, psmat, &fmat);
 	    code = pdf_encode_process_string(&curr, &str, &fmat, &text_state,
-					     &index);
+					     &used);
 	    if (code < 0)
 		return code;
 	    gs_text_enum_copy_dynamic(pte, (gs_text_enum_t *)&curr, true);
@@ -188,8 +188,9 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 {
     pdf_font_descriptor_t *pfd = pdsubf->FontDescriptor;
     gs_text_enum_t scan = *pte;
-    double w = 0;
+    gs_point w;
 
+    w.x = w.y = 0;
     for ( ; ; ) {
 	gs_char chr;
 	gs_glyph glyph;
@@ -205,6 +206,8 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	    code = pdf_font_used_glyph(pfd, glyph, subfont);
 	    if (code < 0)
 		return code;
+	    if (cid >= pdsubf->count)
+		cid = 0, code = 1; /* undefined CID */
 	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
 		pdf_glyph_widths_t widths;
 
@@ -212,20 +215,27 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 		if (code < 0)
 		    return code;
 		if (code == 0) { /* OK to cache */
-		    pdsubf->Widths[cid] = widths.Width;
-		    pdsubf->real_widths[cid] = widths.real_width;
+		    pdsubf->Widths[cid] = widths.Width.w;
+		    pdsubf->real_widths[cid] = widths.real_width.w;
 		}
-		w += widths.real_width;
-	    } else
-		w += pdsubf->real_widths[cid];
-	    if (cid < pdsubf->count)
-		pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
+		w.x += widths.real_width.xy.x;
+		w.y += widths.real_width.xy.y;
+		if (pdsubf->u.cidfont.CIDToGIDMap != 0) {
+		    gs_font_cid2 *subfont2 = (gs_font_cid2 *)subfont;
+
+		    pdsubf->u.cidfont.CIDToGIDMap[cid] =
+			subfont2->cidata.CIDMap_proc(subfont2, glyph);
+		}
+	    } else {
+		if (font->WMode)
+		    w.y += pdsubf->real_widths[cid];
+		else
+		    w.x += pdsubf->real_widths[cid];
+	    }
+	    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 	}
     }
-    if (font->WMode)
-	pwxy->x = 0, pwxy->y = w;
-    else
-	pwxy->x = w, pwxy->y = 0;
+    *pwxy = w;
     return 0;
 }
 
@@ -297,10 +307,8 @@ process_cmap_text_common(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	   it's too much trouble to calculate the width to pass to
 	   pdf_append_chars.
     ******/
-    if (((text_state.members & TEXT_ADD_TO_ALL_WIDTHS) &&
-	 text_state.values.character_spacing != 0) ||
-	((text_state.members & TEXT_ADD_TO_SPACE_WIDTH) &&
-	 text_state.values.word_spacing != 0)
+    if (text_state.values.character_spacing != 0 ||
+	text_state.values.word_spacing != 0
 	)
 	return_error(gs_error_rangecheck);
 	    
@@ -366,6 +374,7 @@ process_cmap_text_common(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	gs_const_string str;
 	int acode;
 	gs_point dist;
+	double scale = 0.001 * text_state.values.size;
 
 	text = pte->text;
 	if (text.operation & TEXT_DO_DRAW)
@@ -376,8 +385,8 @@ process_cmap_text_common(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    return code;
 	str.data = vdata;
 	str.size = size;
-	if ((acode = pdf_set_text_process_state(pdev, pte, &text_state, &str)) < 0 ||
-	    (acode = pdf_text_distance_transform(wxy.x, wxy.y,
+	if ((acode = pdf_set_text_process_state(pdev, pte, &text_state)) < 0 ||
+	    (acode = pdf_text_distance_transform(wxy.x * scale, wxy.y * scale,
 						 pdev->text->text_state,
 						 &dist)) < 0 ||
 	    (acode = pdf_append_chars(pdev, str.data, str.size, dist.x, dist.y)) < 0
@@ -396,35 +405,14 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 		  uint size)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
-    gs_font *font = pte->current_font; /* Type 0, fmap_CMap */
-    gs_font_type0 *const pfont = (gs_font_type0 *)font;
-    gs_font *subfont = pfont->data.FDepVector[0];
     pdf_font_resource_t *pdfont; /* Type 0, fmap_CMap */
-    pdf_font_resource_t *pdsubf; /* CIDFont */
-    int code;
+    /* Create a pdf font resource for the composite font and the subfont. */
+    int code = pdf_make_font_resource(pdev, pte->current_font, &pdfont);
 
-    /* Create pdf font resources for the composite font and the CIDFont. */
-    /****** SOME OF THIS IS REDUNDANT -- SEE pdf_make_font_resource ******/
-
-    code = pdf_make_font_resource(pdev, subfont, &pdsubf);
     if (code < 0)
 	return code;
-    code = pdf_make_font_resource(pdev, font, &pdfont);
-    if (code < 0)
-	return code;
-    pdfont->u.type0.DescendantFont = pdsubf;
-    /* Copy the subfont name to the composite font. */
-    /****** FIXME ******
-	pdf_put_name(pdev, chars, size);
-	if (pef->sub_font_type == ft_CID_encrypted &&
-	    pef->cmapname[0] == '/'
-	    ) {
-	    stream_putc(s, '-');
-	    pdf_put_name_chars(pdev, (const byte*) (pef->cmapname + 1),
-			       strlen(pef->cmapname + 1));
-	}
-     ****** FIXME ******/
-    return process_cmap_text_common(pte, vdata, vbuf, size, pdfont, pdsubf);
+    return process_cmap_text_common(pte, vdata, vbuf, size, pdfont,
+				    pdfont->u.type0.DescendantFont);
 }
 
 /* ---------------- CIDFont ---------------- */
@@ -454,7 +442,8 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     /*
      * PDF doesn't support glyphshow directly: we need to create a Type 0
      * font with an Identity CMap.  Make sure all the glyph numbers fit
-     * into 16 bits.  (Eventually we should support wider glyphs too.)
+     * into 16 bits.  (Eventually we should support wider glyphs too,
+     * but this would require a different CMap.)
      */
     {
 	int i;
@@ -503,7 +492,6 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    return code;
 	pdfont->u.cidfont.glyphshow_font = font0;
     }
-    font0->data.FDepVector[0] = scaled_font;
 
     /* Now handle the glyphshow as a show in the Type 0 font. */
 

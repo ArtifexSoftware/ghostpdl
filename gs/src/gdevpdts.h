@@ -22,6 +22,11 @@
 
 #include "gsmatrix.h"
 
+/*
+ * See gdevpdtt.h for a discussion of the multiple coordinate systems that
+ * the text code must use.
+ */
+
 /* ================ Types and structures ================ */
 
 #ifndef pdf_text_state_DEFINED
@@ -36,17 +41,17 @@ typedef struct pdf_text_state_s pdf_text_state_t;
  */
 typedef struct pdf_text_state_values_s {
     float character_spacing;	/* Tc */
-#define TEXT_STATE_SET_CHARACTER_SPACING 1
     pdf_font_resource_t *pdfont; /* for Tf */
     double size;		/* for Tf */
-#define TEXT_STATE_SET_FONT_AND_SIZE 2
-    gs_matrix matrix;		/* Tm et al (relative to device space, */
-				/* not user space) */
-#define TEXT_STATE_SET_MATRIX 4
+    /*
+     * The matrix is the transformation from text space to user space, which
+     * in pdfwrite text output is the same as device space.  Thus this
+     * matrix combines the effect of the PostScript CTM and the FontMatrix,
+     * scaled by the inverse of the font size value.
+     */
+    gs_matrix matrix;		/* Tm et al */
     int render_mode;		/* Tr */
-#define TEXT_STATE_SET_RENDER_MODE 8
     float word_spacing;		/* Tw */
-#define TEXT_STATE_SET_WORD_SPACING 16
 } pdf_text_state_values_t;
 #define TEXT_STATE_VALUES_DEFAULT\
     0,				/* character_spacing */\
@@ -102,12 +107,16 @@ bool pdf_render_mode_uses_stroke(const gx_device_pdf *pdev,
 				 const pdf_text_state_values_t *ptsv);
 
 /*
- * Set text state values (as seen by client).  Also update any values in
- * *ptsv that are not being set.
+ * Read the stored client view of text state values.
+ */
+void pdf_get_text_state_values(gx_device_pdf *pdev,
+			       pdf_text_state_values_t *ptsv);
+
+/*
+ * Set the stored client view of text state values.
  */
 int pdf_set_text_state_values(gx_device_pdf *pdev,
-			      pdf_text_state_values_t *ptsv,
-			      int members);
+			      const pdf_text_state_values_t *ptsv);
 
 /*
  * Transform a distance from unscaled text space (text space ignoring the
