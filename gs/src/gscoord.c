@@ -451,8 +451,8 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
 	scale -= shift;
     }
 #define SET_C(c)\
-  if ( is_fzero(ctm.c) ) pfc->c.f = 0, pfc->c.l = 0;\
-  else pfc->c.f = ldexp(ctm.c, _fixed_shift), pfc->c.l = (long)ldexp(ctm.c, scale)
+  if ( is_fzero(ctm.c) ) pfc->c = 0;\
+  else pfc->c = (long)ldexp(ctm.c, scale)
     SET_C(xx);
     SET_C(xy);
     SET_C(yx);
@@ -463,7 +463,7 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
 	dlprintf6("[x]ctm: [%6g %6g %6g %6g %6g %6g]\n",
 		  ctm.xx, ctm.xy, ctm.yx, ctm.yy, ctm.tx, ctm.ty);
 	dlprintf6("   scale=%d fc: [0x%lx 0x%lx 0x%lx 0x%lx] shift=%d\n",
-		  scale, pfc->xx.l, pfc->xy.l, pfc->yx.l, pfc->yy.l,
+		  scale, pfc->xx, pfc->xy, pfc->yx, pfc->yy,
 		  pfc->shift);
     }
 #endif

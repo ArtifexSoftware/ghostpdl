@@ -53,11 +53,7 @@ int gs_distance_transform2fixed(P4(const gs_matrix_fixed *, floatp, floatp,
  * The setup is in gscoord.c.
  */
 typedef struct {
-    long l;
-    fixed f;
-} coeff1;
-typedef struct {
-    coeff1 xx, xy, yx, yy;
+    long xx, xy, yx, yy;
     int skewed;
     int shift;			/* see m_fixed */
     int max_bits;		/* max bits of coefficient */
@@ -85,7 +81,7 @@ fixed fixed_coeff_mult(P4(fixed, long, const fixed_coeff *, int));
 #define m_fixed(v, c, fc, maxb)\
   (((v) + (fixed_1 << (maxb - 1))) &\
     ((-fixed_1 << maxb) | _fixed_fraction_v) ?	/* out of range, or has fraction */\
-    fixed_coeff_mult((v), (fc).c.l, &(fc), maxb) : \
-   arith_rshift(fixed2int_var(v) * (fc).c.l + (fc).round, (fc).shift))
+    fixed_coeff_mult((v), (fc).c, &(fc), maxb) : \
+   arith_rshift(fixed2int_var(v) * (fc).c + (fc).round, (fc).shift))
 
 #endif /* gxmatrix_INCLUDED */
