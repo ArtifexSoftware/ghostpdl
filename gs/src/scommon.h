@@ -35,8 +35,8 @@
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
-
 #endif
+
 /*
  * A stream_state records the state specific to a given variety of stream.
  * The buffer processing function of a stream maintains this state.
@@ -60,6 +60,14 @@ typedef struct stream_template_s stream_template;
  * we use negative values to indicate exceptional conditions.
  * (We cast these values to int explicitly, because some compilers
  * don't do this if the other arm of a conditional is a byte.)
+ *
+ * Note that when a stream reaches an exceptional condition, that condition
+ * remains set until the client does something explicit to reset it.
+ * (There should be a 'sclearerr' procedure to do that, but there isn't.)
+ * In particular, if a read stream encounters an exceptional condition,
+ * it delivers the data it has in its buffer, and then all subsequent
+ * calls to read data (sgetc, sgets, etc.) will return the exceptional
+ * condition without reading any more actual data.
  */
 /* End of data */
 #define EOFC ((int)(-1))
