@@ -56,7 +56,7 @@ DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
  tifflzw.dev tiffpack.dev\
  tiff12nc.dev tiff24nc.dev\
  bit.dev bitrgb.dev bitcmyk.dev\
- bmpmono.dev bmpamono.dev posync.dev
+ bmpmono.dev bmpamono.dev bmpa16m.dev posync.dev
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak
