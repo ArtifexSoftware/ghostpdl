@@ -81,13 +81,27 @@ struct gs_copied_glyph_s {
     byte used;			/* non-zero iff this entry is in use */
 				/* (if not, gdata.{data,size} = 0) */
 };
-gs_private_st_const_strings1(st_gs_copied_glyph, gs_copied_glyph_t,
-			     "gs_copied_glyph_t", gs_copied_glyph_enum_ptrs,
-			     gs_copied_glyph_reloc_ptrs, gdata);
-gs_private_st_element(st_gs_copied_glyph_element, gs_copied_glyph_t,
-		      "gs_copied_glyph_t[]",
-		      copied_glyph_element_enum_ptrs,
-		      copied_glyph_element_reloc_ptrs, st_gs_copied_glyph);
+/*
+ * We use a special GC descriptor to avoid large GC overhead.
+ */
+gs_private_st_composite(st_gs_copied_glyph_element, gs_copied_glyph_t,
+			"gs_copied_glyph_t[]", copied_glyph_element_enum_ptrs,
+			copied_glyph_element_reloc_ptrs);
+private ENUM_PTRS_WITH(copied_glyph_element_enum_ptrs, gs_copied_glyph_t *pcg)
+     if (index < size / (uint)sizeof(gs_copied_glyph_t))
+	 return ENUM_CONST_STRING(&pcg[index].gdata);
+     return 0;
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(copied_glyph_element_reloc_ptrs, gs_copied_glyph_t *pcg)
+{
+    uint count = size / (uint)sizeof(gs_copied_glyph_t);
+    gs_copied_glyph_t *p = pcg;
+
+    for (; count > 0; --count, ++p)
+	if (p->gdata.size > 0)
+	    RELOC_CONST_STRING_VAR(p->gdata);
+}
+RELOC_PTRS_END
 
 /*
  * Type 1 and TrueType fonts also have a 'names' table, parallel to the
@@ -102,15 +116,29 @@ typedef struct gs_copied_glyph_name_s {
     gs_glyph glyph;		/* key (for comparison and glyph_name only) */
     gs_const_string str;	/* glyph name */
 } gs_copied_glyph_name_t;
-gs_private_st_const_strings1(st_gs_copied_glyph_name, gs_copied_glyph_name_t,
-			     "gs_copied_glyph_name_t",
-			     gs_copied_glyph_name_enum_ptrs,
-			     gs_copied_glyph_name_reloc_ptrs, str);
-gs_private_st_element(st_gs_copied_glyph_name_element, gs_copied_glyph_name_t,
-		      "gs_copied_glyph_name_t[]",
-		      copied_glyph_name_element_enum_ptrs,
-		      copied_glyph_name_element_reloc_ptrs,
-		      st_gs_copied_glyph_name);
+/*
+ * We use the same special GC descriptor as above.
+ */
+gs_private_st_composite(st_gs_copied_glyph_name_element,
+			gs_copied_glyph_name_t,
+			"gs_copied_glyph_name_t[]",
+			copied_glyph_name_enum_ptrs,
+			copied_glyph_name_reloc_ptrs);
+private ENUM_PTRS_WITH(copied_glyph_name_enum_ptrs, gs_copied_glyph_name_t *pcgn)
+     if (index < size / (uint)sizeof(gs_copied_glyph_name_t))
+	 return ENUM_CONST_STRING(&pcgn[index].str);
+     return 0;
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(copied_glyph_name_reloc_ptrs, gs_copied_glyph_name_t *pcgn)
+{
+    uint count = size / (uint)sizeof(gs_copied_glyph_name_t);
+    gs_copied_glyph_name_t *p = pcgn;
+
+    for (; count > 0; --count, ++p)
+	if (p->str.size > 0)
+	    RELOC_CONST_STRING_VAR(p->str);
+}
+RELOC_PTRS_END
 
 /*
  * The client_data of copied fonts points to an instance of
@@ -1375,7 +1403,7 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
     int code;
 #define MAX_GLYPH_PIECES 32	/* arbitrary, but 10 is too small */
     gs_glyph glyphs[MAX_GLYPH_PIECES];
-    uint count = 0, i;
+    uint count = 1, i;
 
     if (copied->procs.font_info != copied_font_info)
 	return_error(gs_error_rangecheck);
@@ -1383,11 +1411,12 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
     if (code != 0)
 	return code;
     /* Copy any sub-glyphs. */
+    glyphs[0] = glyph;
     psf_add_subset_pieces(glyphs, &count, MAX_GLYPH_PIECES, MAX_GLYPH_PIECES,
 			  font);
     if (count > MAX_GLYPH_PIECES)
 	return_error(gs_error_limitcheck);
-    for (i = 0; i < count; ++i) {
+    for (i = 1; i < count; ++i) {
 	code = gs_copy_glyph_options(font, glyphs[i], copied,
 				     options & ~COPY_GLYPH_NO_OLD);
 	if (code < 0)
@@ -1452,5 +1481,12 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
 		code = gs_copied_font_add_encoding(copied, (gs_char)index,
 						   glyph);
 	}
+    if (copied->FontType != ft_composite) {
+	gs_font_base *bfont = (gs_font_base *)font;
+	gs_font_base *bcopied = (gs_font_base *)copied;
+
+	bcopied->encoding_index = bfont->encoding_index;
+	bcopied->nearest_encoding_index = bfont->nearest_encoding_index;
+    }
     return code;
 }
