@@ -68,6 +68,8 @@ several aspects of the library and the PostScript and PDF interpreters.
 	- The default BufferSpace for printer drivers is now 4 Mb.
 	- Device halftone order implementations must now provide a new
 bit_index procedure.
+	- The image argument for psdf_setup_image_filters is changed from
+gs_image_t to gs_pixel_image_t.
 (Streams)
 	- The interface to the [T]BCP filters is now in a separate file,
 sbcp.h.

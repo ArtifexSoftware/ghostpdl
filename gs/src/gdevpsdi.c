@@ -28,18 +28,15 @@
 #include "strimpl.h"
 #include "scfx.h"
 #include "sdct.h"
+#include "sjpeg.h"
 #include "slzwx.h"
 #include "spngpx.h"
 #include "srlx.h"
 #include "szlibx.h"
 
-/******
- ****** HACK: The DCTEncode filter causes a crash, because of its
- ****** complex initialization requirements.  Substitute FlateEncode
- ****** if available, otherwise don't compress.
- ******/
-/* Define whether to substitute for the DCTEncode filter. */
-#define SUBSTITUTE_FOR_DCT_ENCODE
+/* Define parameter-setting procedures. */
+extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
+extern stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);
 
 /* ---------------- Image compression ---------------- */
 
@@ -89,25 +86,38 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
 /* Add the appropriate image compression filter, if any. */
 private int
 setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
-			const gs_image_t * pim)
+			const gs_pixel_image_t * pim)
 {
     gx_device_psdf *pdev = pbw->dev;
+    gs_memory_t *mem = pdev->v_memory;
     const stream_template *template = pdip->filter_template;
+    const stream_template *orig_template = template;
+    const stream_template *lossless_template =
+	(pdev->params.UseFlateCompression &&
+	 pdev->version >= psdf_version_ll3 ?
+	 &s_zlibE_template : &s_LZWE_template);
+    int Colors = (pim->ColorSpace ?
+		  gs_color_space_num_components(pim->ColorSpace) : 0);
+    gs_c_param_list *dict = pdip->Dict;
     stream_state *st;
+    int code;
 
+    if (!pdip->Encode)		/* no compression */
+	return 0;
     if (pdip->AutoFilter) {
-	/****** AutoFilter IS NYI ******/
 	/*
+	 * Disregard the requested filter: use DCTEncode with ACSDict
+	 * instead (or the lossless filter if the conditions for JPEG
+	 * encoding aren't met).
+	 *
 	 * Even though this isn't obvious from the Adobe Tech Note,
 	 * it appears that if UseFlateCompression is true, the default
 	 * compressor for AutoFilter is FlateEncode, not LZWEncode.
 	 */
-	template =
-	    (pdev->params.UseFlateCompression &&
-	     pdev->version >= psdf_version_ll3 ?
-	     &s_zlibE_template : &s_LZWE_template);
+	orig_template = template = &s_DCTE_template;
+	dict = pdip->ACSDict;
     }
-    if (!pdip->Encode || template == 0)	/* no compression */
+    if (template == 0)	/* no compression */
 	return 0;
     if (pim->Width * pim->Height <= 16)	/* not worth compressing */
 	return 0;
@@ -118,18 +128,10 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	  (pdip->Depth == -1 && pim->BitsPerComponent == 8) :
 	  pim->BitsPerComponent == 8)
 	) {
-	/* Use LZW instead. */
-	template = &s_LZWE_template;
+	/* Use LZW/Flate instead. */
+	template = lossless_template;
     }
-#ifdef SUBSTITUTE_FOR_DCT_ENCODE
-    if (template == &s_DCTE_template) {
-	if (pdev->version < psdf_version_ll3)
-	    return 0;		/* FlateEncode is not available */
-	template = &s_zlibE_template;
-    }
-#endif
-    st = s_alloc_state(pdev->v_memory, template->stype,
-		       "setup_image_compression");
+    st = s_alloc_state(mem, template->stype, "setup_image_compression");
     if (st == 0)
 	return_error(gs_error_VMerror);
     if (template->set_defaults)
@@ -137,12 +139,9 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     if (template == &s_CFE_template) {
 	stream_CFE_state *const ss = (stream_CFE_state *) st;
 
-	if (pdip->Dict != 0 && pdip->Dict->template == &s_CFE_template) {
-	    stream_state common;
-
-	    common = *st;	/* save generic info */
-	    *ss = *(const stream_CFE_state *)pdip->Dict;
-	    *st = common;
+	if (pdip->Dict != 0 && pdip->filter_template == template) {
+	    s_CF_put_params((gs_param_list *)pdip->Dict,
+			    (stream_CF_state *)ss); /* ignore errors */
 	} else {
 	    ss->K = -1;
 	    ss->BlackIs1 = true;
@@ -153,47 +152,113 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 		template == &s_zlibE_template) &&
 	       pdev->version >= psdf_version_ll3) {
 	/* Add a PNGPredictor filter. */
-	int code = psdf_encode_binary(pbw, template, st);
-
-	if (code < 0) {
-	    gs_free_object(pdev->v_memory, st, "setup_image_compression");
-	    return code;
-	}
+	code = psdf_encode_binary(pbw, template, st);
+	if (code < 0)
+	    goto fail;
 	template = &s_PNGPE_template;
-	st = s_alloc_state(pdev->v_memory, template->stype,
-			   "setup_image_compression");
-	if (st == 0)
-	    return_error(gs_error_VMerror);
+	st = s_alloc_state(mem, template->stype, "setup_image_compression");
+	if (st == 0) {
+	    code = gs_note_error(gs_error_VMerror);
+	    goto fail;
+	}
 	if (template->set_defaults)
 	    (*template->set_defaults) (st);
 	{
 	    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
 
-	    ss->Colors = gs_color_space_num_components(pim->ColorSpace);
+	    ss->Colors = Colors;
 	    ss->Columns = pim->Width;
 	}
     } else if (template == &s_DCTE_template) {
-	/****** ADD PARAMETERS FROM pdip->Dict ******/
-    }
-    {
-	int code = psdf_encode_binary(pbw, template, st);
+	/*
+	 * The DCTEncode filter has complex setup requirements.
+	 * The code here is mostly copied from zfdcte.c: someday we should
+	 * factor it out for common use.
+	 */
+	stream_DCT_state *const ss = (stream_DCT_state *) st;
+	jpeg_compress_data *jcdp;
+	gs_c_param_list rcc_list;
 
-	if (code < 0) {
-	    gs_free_object(pdev->v_memory, st, "setup_image_compression");
-	    return code;
+	/*
+	 * "Wrap" the actual Dict or ACSDict parameter list in one that
+	 * sets Rows, Columns, and Colors.
+	 */
+	gs_c_param_list_write(&rcc_list, pdev->v_memory);
+	if ((code = param_write_int((gs_param_list *)&rcc_list, "Rows",
+				    &pim->Height)) < 0 ||
+	    (code = param_write_int((gs_param_list *)&rcc_list, "Columns",
+				    &pim->Width)) < 0 ||
+	    (code = param_write_int((gs_param_list *)&rcc_list, "Colors",
+				    &Colors)) < 0
+	    ) {
+	    goto rcc_fail;
 	}
+	gs_c_param_list_read(&rcc_list);
+	if (dict != 0 && orig_template == template)
+	    gs_c_param_list_set_target(&rcc_list, (gs_param_list *)dict);
+	/* Allocate space for IJG parameters. */
+	jcdp = (jpeg_compress_data *)
+	    gs_alloc_bytes_immovable(mem, sizeof(*jcdp), "zDCTE");
+	if (jcdp == 0) {
+	    code = gs_note_error(gs_error_VMerror);
+	    goto fail;
+	}
+	ss->data.compress = jcdp;
+	jcdp->memory = ss->jpeg_memory = mem;	/* set now for allocation */
+	if ((code = gs_jpeg_create_compress(ss)) < 0)
+	    goto dcte_fail;	/* correct to do jpeg_destroy here */
+	/* Read parameters from dictionary */
+	s_DCTE_put_params((gs_param_list *)&rcc_list, ss); /* ignore errors */
+	/* Create the filter. */
+	jcdp->template = s_DCTE_template;
+	/* Make sure we get at least a full scan line of input. */
+	ss->scan_line_size = jcdp->cinfo.input_components *
+	    jcdp->cinfo.image_width;
+	jcdp->template.min_in_size =
+	    max(s_DCTE_template.min_in_size, ss->scan_line_size);
+	/* Make sure we can write the user markers in a single go. */
+	jcdp->template.min_out_size =
+	    max(s_DCTE_template.min_out_size, ss->Markers.size);
+	code = psdf_encode_binary(pbw, &jcdp->template, st);
+	if (code >= 0) {
+	    gs_c_param_list_release(&rcc_list);
+	    return 0;
+	}
+    dcte_fail:
+	gs_jpeg_destroy(ss);
+	gs_free_object(mem, jcdp, "setup_image_compression");
+    rcc_fail:
+	gs_c_param_list_release(&rcc_list);
+	goto fail;
     }
-    return 0;
+    code = psdf_encode_binary(pbw, template, st);
+    if (code >= 0)
+	return 0;
+ fail:
+    gs_free_object(mem, st, "setup_image_compression");
+    return code;
+}
+
+/* Determine whether an image should be downsampled. */
+private bool
+do_downsample(const psdf_image_params *pdip, const gs_pixel_image_t *pim,
+	      floatp resolution)
+{
+    floatp factor = (int)(resolution / pdip->Resolution);
+
+    return (pdip->Downsample && factor >= pdip->DownsampleThreshold &&
+	    factor <= pim->Width && factor <= pim->Height);
 }
 
 /* Add downsampling, antialiasing, and compression filters. */
-/* Uses AntiAlias, Depth, DownsampleType, Resolution. */
+/* Uses AntiAlias, Depth, DownsampleThreshold, DownsampleType, Resolution. */
+/* Assumes do_downsampling() is true. */
 private int
 setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
-		   gs_image_t * pim, floatp resolution)
+		   gs_pixel_image_t * pim, floatp resolution)
 {
     gx_device_psdf *pdev = pbw->dev;
-    /* Note: Bicubic is currently intepreted as Average. */
+    /* Note: Bicubic is currently interpreted as Average. */
     const stream_template *template =
 	(pdip->DownsampleType == ds_Subsample ?
 	 &s_Subsample_template : &s_Average_template);
@@ -204,8 +269,6 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
     stream_state *st;
     int code;
 
-    if (factor <= 1 || pim->Width < factor || pim->Height < factor)
-	return setup_image_compression(pbw, pdip, pim);		/* no downsampling */
     st = s_alloc_state(pdev->v_memory, template->stype,
 		       "setup_downsampling");
     if (st == 0)
@@ -246,7 +309,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 /* Note that this may modify the image parameters. */
 int
 psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
-			 gs_image_t * pim, const gs_matrix * pctm,
+			 gs_pixel_image_t * pim, const gs_matrix * pctm,
 			 const gs_imager_state * pis)
 {
     /*
@@ -260,7 +323,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
     int code = 0;
     psdf_image_params params;
 
-    if (pim->ImageMask) {
+    if (pim->ColorSpace == NULL) { /* mask image */
 	params = pdev->params.MonoImage;
 	params.Depth = 1;
     } else {
@@ -295,7 +358,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	    if (params.Depth == -1)
 		params.Depth = bpc;
 	    /* Check for downsampling. */
-	    if (params.Downsample && params.Resolution <= resolution / 2) {
+	    if (do_downsample(&params, pim, resolution)) {
 		/* Use the downsampled depth, not the original data depth. */
 		if (params.Depth == 1) {
 		    params.Filter = pdev->params.MonoImage.Filter;
@@ -326,7 +389,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	    params = pdev->params.ColorImage;
 	    if (params.Depth == -1)
 		params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
-	    if (params.Downsample && params.Resolution <= resolution / 2) {
+	    if (do_downsample(&params, pim, resolution)) {
 		code = setup_downsampling(pbw, &params, pim, resolution);
 	    } else {
 		code = setup_image_compression(pbw, &params, pim);

@@ -22,14 +22,17 @@
 #ifndef gdevpsdf_INCLUDED
 #  define gdevpsdf_INCLUDED
 
+/*
+ * This file should really be named gdevpsd.h or gdevpsdx.h, but we're
+ * keeping its current name for backward compatibility.
+ */
+
 #include "gdevvec.h"
 #include "gsparam.h"
 #include "strimpl.h"
 #include "sa85x.h"
 #include "scfx.h"
 #include "spsdf.h"
-
-/*#define POST60*/
 
 extern const stream_template s_DCTE_template; /* don't want all of sdct.h */
 
@@ -41,28 +44,22 @@ extern const stream_template s_DCTE_template; /* don't want all of sdct.h */
 
 /* ---------------- Distiller parameters ---------------- */
 
-#ifdef POST60
-#define POST60_VALUE(v) v,
-#else
-#define POST60_VALUE(v) /* */
-#endif
-
 /* Parameters for controlling distillation of images. */
 typedef struct psdf_image_params_s {
-    stream_state *ACSDict;	/* JPEG */
+    gs_c_param_list *ACSDict;	/* JPEG */
     bool AntiAlias;
     bool AutoFilter;
     int Depth;
-    stream_state *Dict;		/* JPEG or CCITTFax */
+    gs_c_param_list *Dict;	/* JPEG or CCITTFax */
     bool Downsample;
-#ifdef POST60
     float DownsampleThreshold;
-#endif
     enum psdf_downsample_type {
 	ds_Average,
 	ds_Bicubic,
 	ds_Subsample
     } DownsampleType;
+#define psdf_ds_names\
+	"Average", "Bicubic", "Subsample"
     bool Encode;
     const char *Filter;
     int Resolution;
@@ -70,8 +67,8 @@ typedef struct psdf_image_params_s {
 } psdf_image_params;
 
 #define psdf_image_param_defaults(af, res, dst, f, ft)\
-  NULL/*ACSDict*/, 0/*false*/, af, -1, NULL/*Dict*/, 0/*false*/,\
-  POST60_VALUE(dst) ds_Subsample, 1/*true*/, f, res, ft
+  NULL/*ACSDict*/, 0/*false*/, af, -1, NULL/*Dict*/, 1/*true*/,\
+  dst, ds_Subsample, 1/*true*/, f, res, ft
 
 /* Declare templates for default image compression filters. */
 extern const stream_template s_CFE_template;
@@ -87,14 +84,15 @@ typedef struct psdf_distiller_params_s {
 	arp_All,
 	arp_PageByPage
     } AutoRotatePages;
-#ifdef POST60
+#define psdf_arp_names\
+	"None", "All", "PageByPage"
     enum psdf_binding {
 	binding_Left,
 	binding_Right
     } Binding;
-#endif
+#define psdf_binding_names\
+	"Left", "Right"
     bool CompressPages;
-#ifdef POST60
     enum psdf_default_rendering_intent {
 	ri_Default,
 	ri_Perceptual,
@@ -102,79 +100,81 @@ typedef struct psdf_distiller_params_s {
 	ri_RelativeColorimetric,
 	ri_AbsoluteColorimetric
     } DefaultRenderingIntent;
+#define psdf_ri_names\
+	"Default", "Perceptual", "Saturation", "RelativeColorimetric",\
+	"AbsoluteColorimetric"
     bool DetectBlends;
     bool DoThumbnails;
-    int EndPage;
-#endif
     long ImageMemory;
-#ifdef POST60
     bool LockDistillerParams;
-#endif
     bool LZWEncodePages;
-#ifdef POST60
     int OPM;
-#endif
-    bool PreserveHalftoneInfo;
     bool PreserveOPIComments;
+    bool UseFlateCompression;
+
+    /* Color processing parameters */
+
+    gs_const_string CalCMYKProfile;
+    gs_const_string CalGrayProfile;
+    gs_const_string CalRGBProfile;
+    gs_const_string sRGBProfile;
+    enum psdf_color_conversion_strategy {
+	ccs_LeaveColorUnchanged,
+	ccs_UseDeviceDependentColor, /* not in Acrobat Distiller 4.0 */
+	ccs_UseDeviceIndependentColor,
+	ccs_UseDeviceIndependentColorForImages,
+	ccs_sRGB
+    } ColorConversionStrategy;
+#define psdf_ccs_names\
+	"LeaveColorUnchanged", "UseDeviceDependentColor",\
+	"UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
+	"sRGB"
+    bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
-#ifdef POST60
-    int StartPage;
-#endif
     enum psdf_transfer_function_info {
 	tfi_Preserve,
 	tfi_Apply,
 	tfi_Remove
     } TransferFunctionInfo;
+#define psdf_tfi_names\
+	"Preserve", "Apply", "Remove"
     enum psdf_ucr_and_bg_info {
 	ucrbg_Preserve,
 	ucrbg_Remove
     } UCRandBGInfo;
-    bool UseFlateCompression;
+#define psdf_ucrbg_names\
+	"Preserve", "Remove"
+
 #define psdf_general_param_defaults(ascii)\
-  ascii, arp_None, POST60_VALUE(binding_Left) 1/*true*/,\
-  POST60_VALUE(ri_Default) POST60_VALUE(0 /*false*/)\
-  POST60_VALUE(0 /*false*/) POST60_VALUE(-1)\
-  250000, POST60_VALUE(0 /*false*/) 0/*false*/, POST60_VALUE(0)\
-  0/*false*/, 0/*false*/, 0/*false*/, POST60_VALUE(-1)\
-  tfi_Apply, ucrbg_Remove, 1 /*true*/
+  ascii, arp_None, binding_Left, 1/*true*/,\
+  ri_Default, 1 /*true*/, 0 /*false*/,\
+  500000, 0 /*false*/, 0/*false*/, 1,\
+  0 /*false*/, 1 /*true*/,\
+	/* Color processing parameters */\
+  {0}, {0}, {0}, {0},\
+  ccs_LeaveColorUnchanged, 0/*false*/, 0/*false*/, tfi_Preserve, ucrbg_Remove
 
     /* Color sampled image parameters */
 
     psdf_image_params ColorImage;
-#ifdef POST60
-    /* We're guessing that the xxxProfile parameters are ICC profiles. */
-    gs_const_string CalCMYKProfile;
-    gs_const_string CalGrayProfile;
-    gs_const_string CalRGBProfile;
-    gs_const_string sRGBProfile;
-#endif
-    enum psdf_color_conversion_strategy {
-	ccs_LeaveColorUnchanged,
-#ifdef POST60
-	ccs_UseDeviceIndependentColor,
-	ccs_UseDeviceIndependentColorForImages,
-	ccs_sRGB
-#else
-	ccs_UseDeviceDependentColor,
-	ccs_UseDeviceIndependentColor
-#endif
-    } ColorConversionStrategy;
     bool ConvertCMYKImagesToRGB;
     bool ConvertImagesToIndexed;
+
 #define psdf_color_image_param_defaults\
   { psdf_image_param_defaults(1/*true*/, 72, 1.5, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) },\
-  POST60_VALUE({0}) POST60_VALUE({0}) POST60_VALUE({0}) POST60_VALUE({0})\
-  ccs_LeaveColorUnchanged, 1/*true*/, 0/*false */
+  0/*false*/, 1/*true*/
 
     /* Grayscale sampled image parameters */
 
     psdf_image_params GrayImage;
+
 #define psdf_gray_image_param_defaults\
-  { psdf_image_param_defaults(1/*true*/, 72, 2.0, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) }
+  { psdf_image_param_defaults(1/*true*/, 72, 1.5, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) }
 
     /* Monochrome sampled image parameters */
 
     psdf_image_params MonoImage;
+
 #define psdf_mono_image_param_defaults\
   { psdf_image_param_defaults(0/*false*/, 300, 2.0, "CCITTFaxEncode", &s_CFE_template) }
 
@@ -182,18 +182,19 @@ typedef struct psdf_distiller_params_s {
 
     gs_param_string_array AlwaysEmbed;
     gs_param_string_array NeverEmbed;
-#ifdef POST60
     enum psdf_cannot_embed_font_policy {
 	cefp_OK,
 	cefp_Warning,
 	cefp_Error
     } CannotEmbedFontPolicy;
-#endif
+#define psdf_cefp_names\
+	"OK", "Warning", "Error"
     bool EmbedAllFonts;
     int MaxSubsetPct;
     bool SubsetFonts;
+
 #define psdf_font_param_defaults\
-  {0}, {0}, POST60_VALUE(cefp_OK) 1/*true*/, 35, 1/*true*/
+  {0}, {0}, cefp_Warning, 1/*true*/, 100, 1/*true*/
 
 } psdf_distiller_params;
 
@@ -234,10 +235,10 @@ extern_st(st_device_psdf);
   BASIC_PTRS(device_psdf_ptrs) {\
     GC_OBJ_ELT2(gx_device_psdf, params.ColorImage.ACSDict,\
 		params.ColorImage.Dict),\
-    POST60_VALUE(GC_CONST_STRING_ELT(gx_device_psdf, CalCMYKProfile))\
-    POST60_VALUE(GC_CONST_STRING_ELT(gx_device_psdf, CalGrayProfile))\
-    POST60_VALUE(GC_CONST_STRING_ELT(gx_device_psdf, CalRGBProfile))\
-    POST60_VALUE(GC_CONST_STRING_ELT(gx_device_psdf, sRGBProfile))\
+    GC_CONST_STRING_ELT(gx_device_psdf, params.CalCMYKProfile),\
+    GC_CONST_STRING_ELT(gx_device_psdf, params.CalGrayProfile),\
+    GC_CONST_STRING_ELT(gx_device_psdf, params.CalRGBProfile),\
+    GC_CONST_STRING_ELT(gx_device_psdf, params.sRGBProfile),\
     GC_OBJ_ELT2(gx_device_psdf, params.GrayImage.ACSDict,\
 		params.GrayImage.Dict),\
     GC_OBJ_ELT2(gx_device_psdf, params.MonoImage.ACSDict,\
@@ -320,7 +321,7 @@ int psdf_CFE_binary(P4(psdf_binary_writer * pbw, int w, int h, bool invert));
 /* If pctm is NULL, downsampling is not used. */
 /* pis only provides UCR and BG information for CMYK => RGB conversion. */
 int psdf_setup_image_filters(P5(gx_device_psdf *pdev, psdf_binary_writer *pbw,
-				gs_image_t *pim, const gs_matrix *pctm,
+				gs_pixel_image_t *pim, const gs_matrix *pctm,
 				const gs_imager_state * pis));
 
 /* Finish writing binary data. */

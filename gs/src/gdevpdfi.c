@@ -361,9 +361,11 @@ pdf_write_image_filters(stream *s, gs_memory_t *mem,
 	const stream_state *st = fs->state;
 	const stream_template *template = st->template;
 
-	if (template == &s_A85E_template)
+#define TEMPLATE_IS(atemp)\
+  (template->process == (atemp).process)
+	if (TEMPLATE_IS(s_A85E_template))
 	    binary_ok = false;
-	else if (template == &s_CFE_template) {
+	else if (TEMPLATE_IS(s_CFE_template)) {
 	    param_printer_params_t ppp;
 	    stream_CF_state cfs;
 	    int code;
@@ -386,13 +388,13 @@ pdf_write_image_filters(stream *s, gs_memory_t *mem,
 	    if (code < 0)
 		return code;
 	    filter_name = pin->CCITTFaxDecode;
-	} else if (template == &s_DCTE_template)
+	} else if (TEMPLATE_IS(s_DCTE_template))
 	    filter_name = pin->DCTDecode;
-	else if (template == &s_zlibE_template)
+	else if (TEMPLATE_IS(s_zlibE_template))
 	    filter_name = pin->FlateDecode;
-	else if (template == &s_LZWE_template)
+	else if (TEMPLATE_IS(s_LZWE_template))
 	    filter_name = pin->LZWDecode;
-	else if (template == &s_PNGPE_template) {
+	else if (TEMPLATE_IS(s_PNGPE_template)) {
 	    /* This is a predictor for FlateDecode or LZWEncode. */
 	    const stream_PNGP_state *const ss =
 	    (const stream_PNGP_state *)st;
@@ -404,8 +406,9 @@ pdf_write_image_filters(stream *s, gs_memory_t *mem,
 	    if (ss->BitsPerComponent != 8)
 		pprintd1(&s_parms, "/BitsPerComponent %d", ss->BitsPerComponent);
 	    pputs(&s_parms, ">>");
-	} else if (template == &s_RLE_template)
+	} else if (TEMPLATE_IS(s_RLE_template))
 	    filter_name = pin->RunLengthDecode;
+#undef TEMPLATE_IS
     }
     spputc(&s_parms, 0);	/* null terminator */
     sclose(&s_parms);
@@ -818,7 +821,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     } else {
 	/* Use the Distiller compression parameters. */
 	psdf_setup_image_filters((gx_device_psdf *) pdev, &writer.binary,
-				 &image, NULL, NULL);
+				 (gs_pixel_image_t *)&image, NULL, NULL);
     }
     pdf_begin_image_data(pdev, &writer, &image, h);
     pos = stell(pdev->streams.strm);
@@ -951,7 +954,8 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 	return code;
     pdf_begin_image_binary(pdev, piw);
     code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-				    &piw->binary, pim, NULL, NULL);
+				    &piw->binary, (gs_pixel_image_t *)pim,
+				    NULL, NULL);
     if (code < 0)
 	return code;
     code = pdf_begin_image_data(pdev, piw, pim, h);
@@ -1323,7 +1327,8 @@ gdev_pdf_begin_image(gx_device * dev,
     pdf_begin_image_binary(pdev, &pie->writer);
 /****** pctm IS WRONG ******/
     code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-				    &pie->writer.binary, pim,
+				    &pie->writer.binary,
+				    (gs_pixel_image_t *)pim,
 				    &ctm_only(pis), pis);
     if (code < 0)
 	return code;
