@@ -1220,6 +1220,8 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 			      } else
   				  label_advance = hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) /
 								    pl_fp_pitch_cp(&pfs->font->params) );
+			      if ( hpgl_get_character_extra_space_x(pgls) != 0 ) 
+				  label_advance *= 1.0 + hpgl_get_character_extra_space_x(pgls);
 			  } else {
 			      /*
 			       * Note that the CTM takes P1/P2 into account unless
