@@ -1172,6 +1172,11 @@ readonly def
       } {
 	dup /FontFile knownoget
 	{ exch pop readtype1 }
+	{ dup /Length oget 0 eq
+	  { pop pop dup /Subtype get fonttypeprocs exch get exec }
+	  { exch pop readtype1 }
+	  ifelse
+	}
 	{ dup /FontFile2 knownoget
 	  { exch pop readtruetype }
 	  { /FontFile3 knownoget
