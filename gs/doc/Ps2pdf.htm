@@ -319,7 +319,20 @@ color space specified by <b><tt>ProcessColorModel</tt></b> rather than
 always to <b><tt>/DeviceRGB</tt></b>.
 
 <p>
-The following "job control" parameters are recognized:
+The following "job control" parameters have their proper effect:
+
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr valign=bottom>
+	<th align=left>Parameter name
+	<td>&nbsp;&nbsp;
+	<th align=left>Initial value
+<tr>	<td colspan=5><hr>
+<tr valign=top><td><b><tt>ParseDSCComments</tt></b><td><td>true
+<tr valign=top><td><b><tt>ParseDSCCommentsForDocInfo</tt></b><td><td>true
+</table></blockquote>
+
+<p>
+The following "job control" parameters are parsed, but have no effect:
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=bottom>
@@ -330,16 +343,10 @@ The following "job control" parameters are recognized:
 <tr valign=top><td><b><tt>AutoPositionEPSFiles</tt></b><td><td>true
 <tr valign=top><td><b><tt>CreateJobTicket</tt></b><td><td>false for default or screen, true for printer or prepress
 <tr valign=top><td><b><tt>EmitDSCWarnings</tt></b><td><td>false
-<tr valign=top><td><b><tt>ParseDSCComments</tt></b><td><td>true
-<tr valign=top><td><b><tt>ParseDSCCommentsForDocInfo</tt></b><td><td>true
 <tr valign=top><td><b><tt>PreserveCopyPage</tt></b><td><td>true
 <tr valign=top><td><b><tt>PreserveEPSInfo</tt></b><td><td>true
 <tr valign=top><td><b><tt>UsePrologue</tt></b><td><td>false
 </table></blockquote>
-
-<p>
-The only one of these that currently has any effect is
-<b><tt>ParseDSCCommentsForDocInfo</tt></b>.
 
 <hr>
 

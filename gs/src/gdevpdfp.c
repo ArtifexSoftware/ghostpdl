@@ -168,7 +168,6 @@ private const gs_param_item_t pdf_param_items[] = {
 
   ---- Job-level control ----
 
-  ParseDSCComments
   EmitDSCWarnings
     Require DSC parser / interceptor
   CreateJobTicket
@@ -397,11 +396,10 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
      * looks at DSC comments, but it doesn't say which ones.  We look at
      * the ones that we see how to map directly to obvious PDF constructs.
      */
+    int code = 0;
     int i;
 
-    if (!pdev->ParseDSCCommentsForDocInfo)
-	return 0;
-    for (i = 0; i + 1 < pma->size; i += 2) {
+    for (i = 0; i + 1 < pma->size && code >= 0; i += 2) {
 	const gs_param_string *pkey = &pma->data[i];
 	const gs_param_string *pvalue = &pma->data[i + 1];
 	const char *key;
@@ -416,17 +414,72 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 	else if (pdf_key_eq(pkey, "For"))
 	    key = "/Author";
 	else {
-	    /*
-	     * Should handle:
-	     * Orientation, PageOrientation, ViewingOrientation;
-	     * perhaps BoundingBox, PageBoundingBox.
-	     */
+	    pdf_page_dsc_info_t *ppdi;
+	    int orient;
+
+	    if (!pdev->ParseDSCComments)
+		continue;
+	    if ((ppdi = &pdev->doc_dsc_info,
+		 pdf_key_eq(pkey, "Orientation")) ||
+		(ppdi = &pdev->page_dsc_info,
+		 pdf_key_eq(pkey, "PageOrientation"))
+		) {
+		if (pvalue->size == 1 && pvalue->data[0] >= '0' &&
+		    pvalue->data[0] <= '3'
+		    )
+		    orient = pvalue->data[0] - '0';
+		else
+		    orient = -1;
+	    } else if ((ppdi = &pdev->doc_dsc_info,
+			pdf_key_eq(pkey, "ViewingOrientation")) ||
+		       (ppdi = &pdev->page_dsc_info,
+			pdf_key_eq(pkey, "PageViewingOrientation"))
+		       ) {
+		gs_matrix mat;
+
+		if (sscanf((const char *)pvalue->data, "[%g %g %g %g]",
+			   &mat.xx, &mat.xy, &mat.yx, &mat.yy) != 4
+		    )
+		    continue;	/* error */
+		for (orient = 0; orient < 4; ++orient) {
+		    if (mat.xx == 1 && mat.xy == 0 && mat.yx == 0 && mat.yy == 1)
+			break;
+		    gs_matrix_rotate(&mat, -90.0, &mat);
+		}
+		if (orient == 4) /* error */
+		    orient = -1;
+	    } else {
+		gs_rect box;
+
+		if (pdf_key_eq(pkey, "EPSF")) {
+		    pdev->is_EPS = (pkey->size >= 1 && pkey->data[0] != '0');
+		    continue;
+		}
+		/*
+		 *
+		 * We only parse the BoundingBox for the sake of
+		 * AutoPositionEPSFiles.
+		 */
+		if (pdf_key_eq(pkey, "BoundingBox"))
+		    ppdi = &pdev->doc_dsc_info;
+		else if (pdf_key_eq(pkey, "PageBoundingBox"))
+		    ppdi = &pdev->page_dsc_info;
+		else
+		    continue;
+		if (sscanf((const char *)pvalue->data, "[%lg %lg %lg %lg]",
+			   &box.p.x, &box.p.y, &box.q.x, &box.q.y) != 4
+		    )
+		    continue;	/* error */
+		ppdi->bounding_box = box;
+		continue;
+	    }
+	    ppdi->orientation = orient;
 	    continue;
 	}
-	code = cos_dict_put_string(pdev->Info, (const byte *)key,
-				   strlen(key), pvalue->data, pvalue->size);
-	if (code < 0)
-	    return code;
+	if (pdev->ParseDSCCommentsForDocInfo)
+	    code = cos_dict_put_string(pdev->Info, (const byte *)key,
+				       strlen(key), pvalue->data,
+				       pvalue->size);
     }
-    return 0;
+    return code;
 }

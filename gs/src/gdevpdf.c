@@ -193,6 +193,9 @@ const gx_device_pdf gs_pdfwrite_device =
  1 /*true*/,			/* ReAssignCharacters */
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
+ 0 /*false*/,			/* is_EPS */
+ {-1},				/* doc_dsc_info */
+ {-1},				/* page_dsc_info */
  0 /*false*/,			/* fill_overprint */
  0 /*false*/,			/* stroke_overprint */
  0,				/* overprint_mode */
@@ -292,6 +295,7 @@ pdf_close_files(gx_device_pdf * pdev, int code)
 private void
 pdf_reset_page(gx_device_pdf * pdev)
 {
+    pdev->page_dsc_info = gs_pdfwrite_device.page_dsc_info;
     pdev->contents_id = 0;
     pdf_reset_graphics(pdev);
     pdev->procsets = NoMarks;
@@ -675,6 +679,18 @@ pdf_close_page(gx_device_pdf * pdev)
 	    pdev->text_rotation.counts[i] += page->text_rotation.counts[i];
     }
 
+    /* Record information from DSC comments. */
+
+    page->dsc_info = pdev->page_dsc_info;
+    if (page->dsc_info.orientation < 0)
+	page->dsc_info.orientation = pdev->doc_dsc_info.orientation;
+    if (page->dsc_info.bounding_box.p.x >= page->dsc_info.bounding_box.q.x ||
+	page->dsc_info.bounding_box.p.y >= page->dsc_info.bounding_box.q.y
+	)
+	page->dsc_info.bounding_box = pdev->doc_dsc_info.bounding_box;
+
+    /* Finish up. */
+
     pdf_reset_page(pdev);
     return (pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) : 0);
 }
@@ -693,6 +709,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 	     page->MediaBox.x, page->MediaBox.y);
     if (page->text_rotation.Rotate >= 0)
 	pprintd1(s, "/Rotate %d", page->text_rotation.Rotate);
+    else if (page->dsc_info.orientation >= 0)
+	pprintd1(s, "/Rotate %d", page->dsc_info.orientation * 90);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
     pputs(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)

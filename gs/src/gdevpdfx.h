@@ -293,6 +293,14 @@ typedef struct pdf_text_rotation_s {
 #define pdf_text_rotation_angle_values 0, 90, 180, 270, -1
 
 /*
+ * Define document and page information derived from DSC comments.
+ */
+typedef struct pdf_page_dsc_info_s {
+    int orientation;		/* -1 .. 3 */
+    gs_rect bounding_box;
+} pdf_page_dsc_info_t;
+
+/*
  * Define the stored information for a page.  Because pdfmarks may add
  * information to any page anywhere in the document, we have to wait
  * until the end to write out the page dictionaries.
@@ -306,6 +314,7 @@ typedef struct pdf_page_s {
     long fonts_id;
     cos_array_t *Annots;
     pdf_text_rotation_t text_rotation;
+    pdf_page_dsc_info_t dsc_info;
 } pdf_page_t;
 #define private_st_pdf_page()	/* in gdevpdf.c */\
   gs_private_st_ptrs2(st_pdf_page, pdf_page_t, "pdf_page_t",\
@@ -349,6 +358,10 @@ struct gx_device_pdf_s {
     bool ReEncodeCharacters;
     long FirstObjectNumber;
     /* End of parameters */
+    /* Values derived from DSC comments */
+    bool is_EPS;
+    pdf_page_dsc_info_t doc_dsc_info; /* document default */
+    pdf_page_dsc_info_t page_dsc_info; /* current page */
     /* Additional graphics state */
     bool fill_overprint, stroke_overprint;
     int overprint_mode;
