@@ -64,6 +64,11 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 		    status = 1;
 		    break;
 		}
+		/* Check for overflow condition, throw ioerror if so */
+		if (word >= 0x03030303 && ccode > 0) {
+		    status = ERRC;
+	            break;
+	        }
 		word = word * 85 + ccode;
 		q[1] = (byte) (word >> 24);
 		q[2] = (byte) (word >> 16);
@@ -156,13 +161,13 @@ a85d_finish(int ccount, ulong word, stream_cursor_write * pw)
 	    status = ERRC;
 	    break;
 	case 2:		/* 1 odd byte */
-	    word = word * (85L * 85 * 85) + 0xffffffL;
+	    word = word * (85L * 85 * 85) + 85L * 85 * 85 - 1L;
 	    goto o1;
 	case 3:		/* 2 odd bytes */
-	    word = word * (85L * 85) + 0xffffL;
+	    word = word * (85L * 85) + 85L * 85L - 1L;
 	    goto o2;
 	case 4:		/* 3 odd bytes */
-	    word = word * 85 + 0xffL;
+	    word = word * 85L + 84L;
 	    q[3] = (byte) (word >> 8);
 o2:	    q[2] = (byte) (word >> 16);
 o1:	    q[1] = (byte) (word >> 24);
