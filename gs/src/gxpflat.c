@@ -174,7 +174,7 @@ print_points(const gs_fixed_point *points, int count)
  */
 
 int
-gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
+gx_subdivide_curve(gx_path * ppath, int k, curve_segment * pc,
 		  segment_notes notes)
 {
     fixed x0, y0;
@@ -337,7 +337,7 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 
 	k--;
 	split_curve_midpoint(x0, y0, pc, &cseg, pc);
-	code = gx_flatten_sample(ppath, k, &cseg, notes);
+	code = gx_subdivide_curve(ppath, k, &cseg, notes);
 	if (code < 0)
 	    return code;
 	notes |= sn_not_first;
@@ -489,27 +489,67 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 #undef x3
 #undef y3
 
+bool
+curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
+		    fixed y0, fixed y1, fixed y2, fixed y3, 
+		    fixed *ax, fixed *bx, fixed *cx, 
+		    fixed *ay, fixed *by, fixed *cy, 
+		    int k)
+{
+    fixed x01, x12, y01, y12;
+
+    curve_points_to_coefficients(x0, x1, x2, x3, 
+				 *ax, *bx, *cx, x01, x12);
+    curve_points_to_coefficients(y0, y1, y2, y3, 
+				 *ay, *by, *cy, y01, y12);
+#   define max_fast (max_fixed / 6)
+#   define min_fast (-max_fast)
+#   define in_range(v) (v < max_fast && v > min_fast)
+    if (k > k_sample_max ||
+	!in_range(*ax) || !in_range(*ay) ||
+	!in_range(*bx) || !in_range(*by) ||
+	!in_range(*cx) || !in_range(*cy)
+	)
+	return false;
+#undef max_fast
+#undef min_fast
+#undef in_range
+    return true;
+}
+
 /*  Initialize the iterator. 
     Momotonic curves with non-zero length are only allowed.
  */
 bool
 gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this, 
-	    fixed x0, fixed y0, const curve_segment *pc, int k, segment_notes notes)
+	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes)
 {
     /* Note : Immediately after the ininialization it keeps an invalid (zero length) segment. */
-    const fixed x1 = pc->p1.x, y1 = pc->p1.y, x2 = pc->p2.x, y2 = pc->p2.y;
+    fixed x1, y1, x2, y2;
     const int k2 = k << 1, k3 = k2 + k;
     fixed bx2, by2, ax6, ay6;
 
-    this->x0 = this->lx0 = this->lx1 = x0;
-    this->y0 = this->ly0 = this->ly1 = y0;
-    this->x3 = pc->pt.x;
-    this->y3 = pc->pt.y;
+    if (!reverse) {
+	x1 = pc->p1.x;
+	y1 = pc->p1.y;
+	x2 = pc->p2.x;
+	y2 = pc->p2.y;
+	this->x0 = this->lx0 = this->lx1 = x0;
+	this->y0 = this->ly0 = this->ly1 = y0;
+	this->x3 = pc->pt.x;
+	this->y3 = pc->pt.y;
+    } else {
+	x1 = pc->p2.x;
+	y1 = pc->p2.y;
+	x2 = pc->p1.x;
+	y2 = pc->p1.y;
+	this->x0 = this->lx0 = this->lx1 = pc->pt.x;
+	this->y0 = this->ly0 = this->ly1 = pc->pt.y;
+	this->x3 = x0;
+	this->y3 = y0;
+    }
+    vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
     this->k = k;
-    this->rmask = (1 << k3) - 1;
-    this->i = (1 << k);
-    this->notes = notes;
-    this->rx = this->ry = 0;
 #   ifdef DEBUG
 	if (gs_debug_c('3')) {
 	    dlprintf4("[3]x0=%f y0=%f x1=%f y1=%f\n",
@@ -520,14 +560,21 @@ gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this,
 		      fixed2float(this->x3), fixed2float(this->y3), this->k);
 	}
 #   endif
-    {
-	fixed x01, x12, y01, y12;
-
-	curve_points_to_coefficients(this->x0, x1, x2, this->x3, 
-				     this->ax, this->bx, this->cx, x01, x12);
-	curve_points_to_coefficients(this->y0, y1, y2, this->y3, 
-				     this->ay, this->by, this->cy, y01, y12);
+    if (!curve_coeffs_ranged(this->x0, x1, x2, this->x3,
+			     this->y0, y1, y2, this->y3, 
+			     &this->ax, &this->bx, &this->cx, 
+			     &this->ay, &this->by, &this->cy, k))
+	return false;
+    if (k == -1) {
+	/* A special hook for gx_subdivide_curve_rec.
+	   Only checked the range. 
+	   Returning with no initialization. */
+	return true;
     }
+    this->rmask = (1 << k3) - 1;
+    this->i = (1 << k);
+    this->notes = notes;
+    this->rx = this->ry = 0;
     if_debug6('3', "[3]ax=%f bx=%f cx=%f\n   ay=%f by=%f cy=%f\n",
 	      fixed2float(this->ax), fixed2float(this->bx), fixed2float(this->cx),
 	      fixed2float(this->ay), fixed2float(this->by), fixed2float(this->cy));
@@ -568,18 +615,7 @@ gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this,
     adjust_rem(this->rd2x, this->id2x, this->rmask);
     adjust_rem(this->rd2y, this->id2y, this->rmask);
 #   undef adjust_rem
-
-#   define max_fast (max_fixed / 6)
-#   define min_fast (-max_fast)
-#   define in_range(v) (v < max_fast && v > min_fast)
-    if (k <= k_sample_max &&
-	in_range(this->ax) && in_range(this->ay) &&
-	in_range(this->bx) && in_range(this->by) &&
-	in_range(this->cx) && in_range(this->cy)
-	)
-	return true;
-#undef in_range
-    return false;
+    return true;
 }
 
 /*  Initialize the iterator with a line. */
@@ -590,7 +626,7 @@ gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this,
     this->x0 = this->lx0 = this->lx1 = x0;
     this->y0 = this->ly0 = this->ly1 = y0;
     this->x3 = pc->pt.x;
-    this->y3 = pc->pt.x;
+    this->y3 = pc->pt.y;
     this->k = 1;
     this->i = 1;
     return true;
@@ -661,7 +697,7 @@ gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this)
 		  fixed2float(x), fixed2float(y), x, y);
 	if (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)) {
 	    this->lx1 = x, this->ly1 = y;
-	    vd_lineto(this->lx1, this->ly1);
+	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
 	    return true;
 	}
     } else {
@@ -704,7 +740,7 @@ gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this)
 	if (this->i) {
 	    this->lx1 = x;
 	    this->ly1 = y;
-	    vd_lineto(this->lx1, this->ly1);
+	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
 	    return true;
 	}
     }
@@ -713,7 +749,7 @@ last:
     this->ly1 = this->y3;
     if_debug4('3', "[3]last x=%g, y=%g x=%d y=%d\n",
 	      fixed2float(this->lx1), fixed2float(this->ly1), this->lx1, this->ly1);
-    vd_lineto(this->lx1, this->ly1);
+    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
     return false;
 }
 
@@ -756,7 +792,7 @@ generate_segments(gx_path * ppath, const gs_fixed_point *points,
 }
 
 private int
-gx_flatten_sample_rec(gx_flattened_curve_iterator *this, 
+gx_subdivide_curve_rec(gx_flattened_curve_iterator *this, 
 		  gx_path * ppath, int k, curve_segment * pc,
 		  segment_notes notes, gs_fixed_point *points)
 {
@@ -764,17 +800,21 @@ gx_flatten_sample_rec(gx_flattened_curve_iterator *this,
 
 top :
     if (!gx_flattened_curve_iterator__init(this, 
-		ppath->position.x, ppath->position.y, pc, k, notes)) {
+		ppath->position.x, ppath->position.y, pc, k, false, notes)) {
 	/* Curve is too long.  Break into two pieces and recur. */
 	curve_segment cseg;
 
 	k--;
 	split_curve_midpoint(ppath->position.x, ppath->position.y, pc, &cseg, pc);
-	code = gx_flatten_sample_rec(this, ppath, k, &cseg, notes, points);
+	code = gx_subdivide_curve_rec(this, ppath, k, &cseg, notes, points);
 	if (code < 0)
 	    return code;
 	notes |= sn_not_first;
 	goto top;
+    } else if (k == -1) {
+	/* fixme : Don't need to init the iterator. Just wanted to check in_range. */
+	return gx_path_add_curve_notes(ppath, pc->p1.x, pc->p1.y, pc->p2.x, pc->p2.y, 
+			pc->pt.x, pc->pt.y, notes);
     } else {
 	gs_fixed_point *ppt = points;
 	bool not_last;
@@ -853,13 +893,12 @@ top :
  */
 
 int
-gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
-		  segment_notes notes)
+gx_subdivide_curve(gx_path * ppath, int k, curve_segment * pc, segment_notes notes)
 {
     gs_fixed_point points[max_points + 1];
     gx_flattened_curve_iterator iter;
 
-    return gx_flatten_sample_rec(&iter, ppath, k, pc, notes, points);
+    return gx_subdivide_curve_rec(&iter, ppath, k, pc, notes, points);
 }
 
 #undef max_points

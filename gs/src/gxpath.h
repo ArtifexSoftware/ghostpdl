@@ -188,7 +188,11 @@ int gx_path_subpath_start_point(const gx_path *, gs_fixed_point *);
 bool gx_path_has_curves(const gx_path *),
     gx_path_is_void(const gx_path *),	/* no segments */
     gx_path_is_null(const gx_path *),	/* nothing at all */
-    gx_path_is_monotonic(const gx_path *);
+#if CURVED_TRAPEZIOD_FILL
+    gx_path__check_curves(const gx_path * ppath, bool small_curves, fixed fixed_flat);
+#else
+    gx_path_is_monotonic(const gx_path * ppath);
+#endif
 typedef enum {
     prt_none = 0,
     prt_open = 1,		/* only 3 sides */
@@ -213,6 +217,9 @@ typedef enum {
     pco_monotonize = 1,		/* make curves monotonic */
     pco_accurate = 2,		/* flatten with accurate tangents at ends */
     pco_for_stroke = 4		/* flatten taking line width into account */
+#if CURVED_TRAPEZIOD_FILL
+    , pco_small_curves = 8	/* make curves small */
+#endif
 } gx_path_copy_options;
 /* The imager state is only needed when flattening for stroke. */
 #ifndef gs_imager_state_DEFINED

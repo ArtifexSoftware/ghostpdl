@@ -433,14 +433,39 @@ private inline int process_h_list(line_list * ll, active_line * hlp, active_line
     return 0;
 }
 
-int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active_line * alp)
-{   if (ll->h_list0 != 0) {
+int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active_line * alp,
+		    fixed y0, fixed y1)
+{   
+#   if CURVED_TRAPEZIOD_FILL
+	if (y0 == y1) {
+	    /*  This may happen with CURVED_TRAPEZIOD_FILL, when a curve piece is horizontal.
+		Currently we skip such pieces from the H list processing.
+		We could determine whether a piece is upper or below the h-line
+		analyzing the Y-coordinates of the curve ends,
+		but we don't think that it is important for the dropout prevention,
+		because the piece was processed as a margine boundary,
+		knowing its proper orientation.
+	     */
+	    return 0;
+	}
+#   endif
+    if (ll->h_list0 != 0
+#	if CURVED_TRAPEZIOD_FILL
+	    /* Likely a bug in the !CURVED_TRAPEZIOD_FILL code. */
+	    && y0 <= ll->h_list0->start.y && ll->h_list0->start.y <= y1
+#	endif
+       ) {
 	int code = process_h_list(ll, ll->h_list0, plp, flp, alp, 1);
 
 	if (code < 0)
 	    return code;
     }
-    if (ll->h_list1 != 0) {
+    if (ll->h_list1 != 0
+#	if CURVED_TRAPEZIOD_FILL
+	    /* Likely a bug in the !CURVED_TRAPEZIOD_FILL code. */
+	    && y0 <= ll->h_list1->start.y && ll->h_list1->start.y <= y1
+#	endif
+       ) {
 	int code = process_h_list(ll, ll->h_list1, plp, flp, alp, -1);
 
 	if (code < 0)

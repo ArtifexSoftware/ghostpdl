@@ -105,7 +105,7 @@ typedef struct margin_set_s
 extern_st(st_section);
 
 /* vd_trace helpers. */
-#define VD_SCALE 0.04
+#define VD_SCALE 0.03
 #define VD_RECT(x, y, w, h, c) vd_rect(int2fixed(x), int2fixed(y), int2fixed(x + w), int2fixed(y + h), 1, c)
 #define VD_TRAP_COLOR RGB(0, 255, 255)
 #define VD_MARG_COLOR RGB(255, 0, 0)
@@ -113,7 +113,7 @@ extern_st(st_section);
 void init_section(section *sect, int i0, int i1);
 void free_all_margins(line_list * ll);
 int close_margins(gx_device * dev, line_list * ll, margin_set *ms);
-int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active_line * alp);
+int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active_line * alp, fixed y0, fixed y1);
 int margin_interior(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1);
 int start_margin_set(gx_device * dev, line_list * ll, fixed y0);
 int continue_margin_common(line_list * ll, margin_set * set, active_line * flp, active_line * alp, fixed y0, fixed y1);

@@ -166,7 +166,7 @@ void gx_curve_split(fixed, fixed, const curve_segment *, double,
 		    curve_segment *, curve_segment *);
 
 /* Flatten a partial curve by sampling (internal procedure). */
-int gx_flatten_sample(gx_path *, int, curve_segment *, segment_notes);
+int gx_subdivide_curve(gx_path *, int, curve_segment *, segment_notes);
 
 /* Initialize a cursor for rasterizing a monotonic curve. */
 typedef struct curve_cursor_s {
@@ -395,8 +395,6 @@ extern_st(st_path_enum);
    (ppath->position.x += dx, ppath->position.y += dy,\
     path_update_moveto(ppath), 0) )
 
-#define FLATTENED_CURVE_ITERATOR 1 /* Old code = 0, new code = 1. */
-
 #if FLATTENED_CURVE_ITERATOR
 /* An iterator of flattened segments for a minotonic curve. */
 typedef struct gx_flattened_curve_iterator_s gx_flattened_curve_iterator;
@@ -414,10 +412,16 @@ struct gx_flattened_curve_iterator_s {
 };
 
 bool gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this, 
-	    fixed x0, fixed y0, const curve_segment *pc, int k, segment_notes notes);
+	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes);
 bool gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this, 
 	    fixed x0, fixed y0, const line_segment *pc, segment_notes notes);
 bool gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this);
+
+bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
+		    fixed y0, fixed y1, fixed y2, fixed y3, 
+		    fixed *ax, fixed *bx, fixed *cx, 
+		    fixed *ay, fixed *by, fixed *cy, 
+		    int k);
 #endif
 
 #endif /* gzpath_INCLUDED */

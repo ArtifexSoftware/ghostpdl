@@ -77,6 +77,11 @@ struct active_line_s {
 #define DIR_DOWN (-1)
     int curve_k;		/* # of subdivisions for curves,-1 for lines */
     curve_cursor cursor;	/* cursor for curves, unused for lines */
+#if CURVED_TRAPEZIOD_FILL
+    /* fixme : use an union {cursor, {fi, last}}, because they are used exclusively. */
+    gx_flattened_curve_iterator fi;
+    bool more_flattened;
+#endif
 /*
  * "Pending" lines (not reached in the Y ordering yet) use next and prev
  * to order lines by increasing starting Y.  "Active" lines (being scanned)
@@ -127,6 +132,10 @@ struct line_list_s {
     const gx_device_color * pdevc;
     gs_logical_operation_t lop;
     bool fill_direct;
+    fixed fixed_flat;
+#if CURVED_TRAPEZIOD_FILL
+    bool fill_by_trapezoids;
+#endif
 };
 
 #define LOOP_FILL_RECTANGLE(x, y, w, h)\

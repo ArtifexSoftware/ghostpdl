@@ -36,6 +36,7 @@
 #   include "gzspotan.h" /* Only for gx_san_trap_store. */
 #endif
 #include "vdtrace.h"
+#include <assert.h>
 
 /*
  * Define which fill algorithm(s) to use.  At least one of the following
@@ -165,6 +166,16 @@ print_al(const char *label, const active_line * alp)
 #define print_al(label,alp) DO_NOTHING
 #endif
 
+#if TT_GRID_FITTING
+private inline bool
+is_spotan_device(gx_device * dev)
+{
+    return dev->memory != NULL && 
+	    gs_object_type(dev->memory, dev) == &st_device_spot_analyzer;
+}
+#endif
+
+
 
 /* Forward declarations */
 private void init_line_list(line_list *, gs_memory_t *);
@@ -174,7 +185,7 @@ private int add_y_list(gx_path *, line_list *, fixed, fixed,
 		       const gs_fixed_rect *);
 private int add_y_line(const segment *, const segment *, int, line_list *);
 private void insert_x_new(active_line *, line_list *);
-private bool end_x_line(active_line *, bool);
+private bool end_x_line(active_line *, const line_list *, bool);
 
 #define FILL_LOOP_PROC(proc)\
 int proc(line_list *, gx_device *,\
@@ -267,7 +278,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     pseudo_rasterization = ((adjust.x | adjust.y) == 0 && 
 #			    if TT_GRID_FITTING
-				gs_object_type(dev->memory, dev) != &st_device_spot_analyzer &&
+				!is_spotan_device(dev) &&
 #			    else
 				1 &&
 #			    endif
@@ -354,6 +365,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     lst.pseudo_rasterization = pseudo_rasterization;
     lst.pdevc = pdevc;
     lst.lop = lop;
+    lst.fixed_flat = float2fixed(params->flatness);
     /*
      * We have a choice of two different filling algorithms:
      * scan-line-based and trapezoid-based.  They compare as follows:
@@ -382,7 +394,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     fill_by_trapezoids = true;
 #endif
 #if TT_GRID_FITTING
-    if (gs_object_type(dev->memory, dev) == &st_device_spot_analyzer)
+    if (is_spotan_device(dev))
 	fill_by_trapezoids = true;
 #endif
 #ifdef FILL_TRAPEZOIDS
@@ -416,7 +428,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	/* Filling curves is possible. */
 #  ifdef FILL_TRAPEZOIDS
 	/* Not filling curves is also possible. */
-    if (fill_by_trapezoids)
+    if (fill_by_trapezoids && !CURVED_TRAPEZIOD_FILL)
 #  endif
 #endif
 #if !defined(FILL_CURVES) || defined(FILL_TRAPEZOIDS)
@@ -437,16 +449,40 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     /* Not filling curves is also possible. */
     else
 #  endif
-    if (gx_path_is_monotonic(ppath))
+    if (
+#   if CURVED_TRAPEZIOD_FILL
+	gx_path__check_curves(ppath, fill_by_trapezoids, lst.fixed_flat)
+#   else
+	gx_path_is_monotonic(ppath)
+#   endif
+	)
 	pfpath = ppath;
     else {
 	gx_path_init_local(&ffpath, ppath->memory);
-	code = gx_path_add_monotonized(ppath, &ffpath);
+	code = gx_path_copy_reducing(ppath, &ffpath, 
+#		    if CURVED_TRAPEZIOD_FILL
+		    max_fixed,
+#		    else
+		    (fill_by_trapezoids ? lst.fixed_flat : max_fixed),
+#		    endif
+		    NULL, 
+		    
+#		    if CURVED_TRAPEZIOD_FILL
+			pco_monotonize 
+			    | (fill_by_trapezoids ? pco_small_curves : pco_none)
+			    | (pis->accurate_curves ? pco_accurate : pco_none)
+#		    else
+			pco_monotonize
+#		    endif
+		    );
 	if (code < 0)
 	    return code;
 	pfpath = &ffpath;
     }
 #endif
+#   if CURVED_TRAPEZIOD_FILL
+	lst.fill_by_trapezoids = fill_by_trapezoids;
+#   endif
     if ((code = add_y_list(pfpath, &lst, adjust_below, adjust_above, &ibox)) < 0)
 	goto nope;
     {
@@ -737,6 +773,52 @@ add_y_list(gx_path * ppath, line_list *ll, fixed adjust_below, fixed adjust_abov
     }
     return close_count;
 }
+
+#if CURVED_TRAPEZIOD_FILL
+private void 
+step_al(active_line *alp)
+{
+    alp->more_flattened = gx_flattened_curve_iterator__next(&alp->fi);
+    /* Note that we can get alp->fi.ly0 == alp->fi.ly1 
+       with the first or the last piece of the line. */
+    alp->start.x = alp->fi.lx0;
+    alp->start.y = alp->fi.ly0;
+    alp->end.x = alp->fi.lx1;
+    alp->end.y = alp->fi.ly1;
+    alp->diff.x = alp->end.x - alp->start.x;
+    alp->diff.y = alp->end.y - alp->start.y;
+    SET_NUM_ADJUST(alp);
+    (alp)->y_fast_max = MAX_MINUS_NUM_ADJUST(alp) /
+      ((alp->diff.x >= 0 ? alp->diff.x : -alp->diff.x) | 1) + alp->start.y;
+}
+
+private void
+init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat)
+{
+    /* Warning : p0 may be equal to &alp->end. */
+
+    if ((alp->direction == DIR_UP ? s1 : s0)->type == s_curve) {
+	if (alp->direction == DIR_UP) {
+	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (curve_segment *)s1, fixed_flat);
+
+	    assert(gx_flattened_curve_iterator__init(&alp->fi, 
+		s0->pt.x, s0->pt.y, (curve_segment *)s1, k, false, 0));
+	} else {
+	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (curve_segment *)s0, fixed_flat);
+
+	    assert(gx_flattened_curve_iterator__init(&alp->fi, 
+		s1->pt.x, s1->pt.y, (curve_segment *)s0, k, true, 0));
+	}
+    } else {
+	assert(gx_flattened_curve_iterator__init_line(&alp->fi, 
+		s0->pt.x, s0->pt.y, (line_segment *)s1, 0));
+    }
+    alp->pseg = s1;
+    step_al(alp);
+}
+#endif
+
+
 /*
  * Internal routine to test a segment and add it to the pending list if
  * appropriate.
@@ -762,16 +844,31 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
     this.y = lp->pt.y;
     prev.x = prev_lp->pt.x;
     prev.y = prev_lp->pt.y;
+#   if CURVED_TRAPEZIOD_FILL
+	alp->more_flattened = false;
+#   endif
     switch ((alp->direction = dir)) {
 	case DIR_UP:
 	    y_start = prev.y;
-	    SET_AL_POINTS(alp, prev, this);
-	    alp->pseg = lp;
+#	    if CURVED_TRAPEZIOD_FILL
+		if (ll->fill_by_trapezoids)
+		    init_al(alp, prev_lp, lp, ll->fixed_flat);
+		else
+#	    endif
+	    {	SET_AL_POINTS(alp, prev, this);
+		alp->pseg = lp;
+	    }
 	    break;
 	case DIR_DOWN:
 	    y_start = this.y;
-	    SET_AL_POINTS(alp, this, prev);
-	    alp->pseg = prev_lp;
+#	    if CURVED_TRAPEZIOD_FILL
+		if (ll->fill_by_trapezoids)
+		    init_al(alp, lp, prev_lp, ll->fixed_flat);
+		else
+#	    endif
+	    {	SET_AL_POINTS(alp, this, prev);
+		alp->pseg = prev_lp;
+	    }
 	    break;
 	case DIR_HORIZONTAL:
 	    y_start = this.y;	/* = prev.y */
@@ -873,7 +970,7 @@ insert_h_new(active_line * alp, line_list *ll)
  * the end of a line sequence.
  */
 private bool
-end_x_line(active_line *alp, bool update)
+end_x_line(active_line *alp, const line_list *ll, bool update)
 {
     const segment *pseg = alp->pseg;
     /*
@@ -895,6 +992,10 @@ end_x_line(active_line *alp, bool update)
 	);
     gs_fixed_point npt;
 
+#   if CURVED_TRAPEZIOD_FILL
+    if (alp->more_flattened)
+	return false;
+#   endif
     npt.y = next->pt.y;
     if (!update)
 	return npt.y <= pseg->pt.y;
@@ -910,9 +1011,15 @@ end_x_line(active_line *alp, bool update)
 	if_debug1('F', "[F]drop 0x%lx\n", (ulong) alp);
 	return true;
     }
-    alp->pseg = next;
-    npt.x = next->pt.x;
-    SET_AL_POINTS(alp, alp->end, npt);
+#   if CURVED_TRAPEZIOD_FILL
+	if (ll->fill_by_trapezoids)
+	    init_al(alp, pseg, next, ll->fixed_flat);
+	else
+#   endif
+    {	alp->pseg = next;
+	npt.x = next->pt.x;
+	SET_AL_POINTS(alp, alp->end, npt);
+    }
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 128));
     print_al("repl", alp);
     return false;
@@ -1083,11 +1190,18 @@ move_al_by_y(line_list *ll, fixed y1)
     fixed x;
     active_line *alp, *nlp;
 
+#   if CURVED_TRAPEZIOD_FILL
+    for (alp = ll->x_list; alp != 0; alp = alp->next) {
+	if (alp->end.y == y1)
+	    if (alp->more_flattened)
+		step_al(alp);
+    }
+#   endif
     for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
 	fixed xtop = alp->x_current = alp->x_next;
 
 	nlp = alp->next;
-	if (alp->end.y != y1 || !end_x_line(alp, true)) {
+	if (alp->end.y != y1 || !end_x_line(alp, ll, true)) {
 	    if (xtop <= x)
 		resort_x_line(alp);
 	    else
@@ -1233,7 +1347,7 @@ fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
 #if TT_GRID_FITTING
     /* We can't pass data through the device interface because 
        we need to pass segment pointers. We're unhappy of that. */
-    if (gs_object_type(dev->memory, dev) == &st_device_spot_analyzer) {
+    if (is_spotan_device(dev)) {
 	return gx_san_trap_store((gx_device_spot_analyzer *)dev, 
 	    y, y1, xlbot, xbot, xltop, xtop, flp->pseg, alp->pseg);
     }
@@ -1362,6 +1476,14 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
     active_line *alp, *stopx = NULL, *endp;
 
     /* don't bother if no pixels with no pseudo_rasterization */
+#if CURVED_TRAPEZIOD_FILL
+    if (y == y1) {
+	/* Rather the intersection algorithm can handle this case with
+	   retrieving x_next equal to x_current, 
+	   we bypass it for safety reason.
+	 */
+    } else
+#endif
     if (ll->pseudo_rasterization || draw >= 0) {
 	/*
 	 * Loop invariants:
@@ -1381,8 +1503,8 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 		x = nx;
 	    else if (alp->x_current >= endp->x_current &&
 		     intersect(endp, alp, y, y1, &y_new)) {
-		stopx = alp;
 		if (y_new < y1) {
+		    stopx = alp;
 		    y1 = y_new;
 		    alp->x_next = nx = AL_X_AT_Y(alp, y1);
 		    draw = 0;
@@ -1424,7 +1546,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
     bool fill_direct = color_writes_pure(pdevc, lop);
     const bool pseudo_rasterization = ll->pseudo_rasterization;
 #if TT_GRID_FITTING
-    const bool all_bands = (gs_object_type(dev->memory, dev) == &st_device_spot_analyzer);
+    const bool all_bands = (is_spotan_device(dev));
 #endif
 
     dev_proc_fill_rectangle((*fill_rect));
@@ -1586,7 +1708,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 			code = add_margin(ll, flp, alp, y, y1);
 			if (code < 0)
 			    return code;
-			code = process_h_lists(ll, plp, flp, alp);
+			code = process_h_lists(ll, plp, flp, alp, y, y1);
 			plp = alp;
 		    }
 		}
@@ -1616,7 +1738,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		    code = continue_margin(ll, flp, alp, y, y1);
 		    if (code < 0)
 			return code;
-		    code = process_h_lists(ll, plp, flp, alp);
+		    code = process_h_lists(ll, plp, flp, alp, y, y1);
 		    plp = alp;
 		    if (code < 0)
 			return code;
@@ -1624,7 +1746,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    }
 	}
 	if (plp != 0) {
-	    code = process_h_lists(ll, plp, 0, 0);
+	    code = process_h_lists(ll, plp, 0, 0, y, y1);
 	    if (code < 0)
 		return code;
 	}
@@ -1634,7 +1756,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	ll->h_list0 = 0;
     }
     if (pseudo_rasterization) {
-	code = process_h_lists(ll, 0, 0, 0);
+	code = process_h_lists(ll, 0, 0, 0, y, y);
 	if (code < 0)
 	    return code;
 	code = close_margins(dev, ll, &ll->margin_set1);
@@ -1886,7 +2008,6 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 			fixed band_mask)
 {
     int rule = params->rule;
-    fixed fixed_flat = float2fixed(params->flatness);
     bool fill_direct = color_writes_pure(pdevc, lop);
     dev_proc_fill_rectangle((*fill_rect));
     active_line *yll = ll->y_list;
@@ -1938,7 +2059,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 	    if (yll != 0)
 		y = min(y, yll->start.y);
 	    for (alp = ll->x_list; alp != 0; alp = alp->next)
-		if (!end_x_line(alp, false))
+		if (!end_x_line(alp, ll, false))
 		    y = min(y, alp->end.y);
 	}
 
@@ -1951,7 +2072,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 		/* Ignore for now. */
 	    } else {
 		insert_x_new(yll, ll);
-		set_scan_line_points(yll, fixed_flat);
+		set_scan_line_points(yll, ll->fixed_flat);
 	    }
 	    yll = ynext;
 	}
@@ -1964,9 +2085,9 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 
 	    nlp = alp->next;
 	  e:if (alp->end.y <= y) {
-		if (end_x_line(alp, true))
+		if (end_x_line(alp, ll, true))
 		    continue;
-		set_scan_line_points(alp, fixed_flat);
+		set_scan_line_points(alp, ll->fixed_flat);
 		goto e;
 	    }
 	    nx = alp->x_current =
