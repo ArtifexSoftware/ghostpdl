@@ -7,6 +7,13 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.20 (9/24/98)
+======================
+
+Sat Sep 26 18:51:14 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pl.mak: changes to support msvc builds
+
 Version 1.19 (8/17/98)
 =======================
 

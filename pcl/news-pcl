@@ -10,6 +10,13 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.01 (9/26/98)
+=====================
+
+Sat Sep 26 18:50:50 1998  Red Hat Linux User  <henrys@warthog>
+
+	* Attic/pcl_conf.mak, pcl.mak, pcl_msvc.mak, pcl_top.mak, pcl_watc.mak:
+	changes to support msvc builds
 
 Version 1.00 (9/18/98)
 =======================

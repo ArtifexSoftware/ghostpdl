@@ -7,8 +7,18 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
-Version 1.04 (???)
+Version 1.04 (9/24/98)
 =====================
+
+Sat Sep 26 18:51:54 1998  Red Hat Linux User  <henrys@warthog>
+
+	* sgi_top.mak, sgidefs.mak, ugcc_top.mak, watc_top.mak,
+	watcdefs.mak, gccdefs.mak, generic.mak, msvc_top.mak, msvcdefs.mak:
+	changes to support msvc builds
+
+Sat Sep 19 05:36:27 1998  Red Hat Linux User  <henrys@warthog>
+
+	* NEWS-COM: notes for new news file.
 
 Thu Sep 10 17:06:48 1998  Henry Stiles  <henrys@meerkat>
 
