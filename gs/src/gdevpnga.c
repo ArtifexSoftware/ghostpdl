@@ -855,7 +855,6 @@ pnga_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 
     if (mdev == 0)
 	return_error(gs_error_VMerror);
-    rc_decrement_only(mdev, "pnga_begin_typed_image");
 
     code = gx_default_begin_typed_image(mdev, pis, pmat, pic, prect, pdcolor,
 					pcpath, mem, pinfo);
