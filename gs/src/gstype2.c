@@ -66,12 +66,8 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	wx = pcis->pfont->data.defaultWidthX;
     gs_type1_sbw(pcis, fixed_0, fixed_0, wx, fixed_0);
     /* Back up the interpretation pointer. */
-    {
-	ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
-
-	ipsp->ip--;
-	decrypt_skip_previous(*ipsp->ip, ipsp->dstate);
-    }
+    ipsp->ip--;
+    decrypt_skip_previous(*ipsp->ip, ipsp->dstate);
     /* Save the interpreter state. */
     pcis->os_count = csp + 1 - cstack;
     pcis->ips_count = ipsp - &pcis->ipstack[0] + 1;
