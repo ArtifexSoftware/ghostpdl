@@ -377,7 +377,7 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 	pfd->values = pfd_in->values;
 	pfd->chars_used = chars_used;
 	pfd->glyphs_used = glyphs_used;
-	pfd->subset_ok = true;
+	pfd->do_subset = FONT_SUBSET_OK;
 	pfd->FontFile_id = 0;
 	pfd->base_font = 0;
 	pfd->notified = false;

@@ -292,8 +292,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     gs_const_string font_name;
     byte *fnchars = pfd->FontName.chars;
     uint fnsize = pfd->FontName.size;
-    bool do_subset = pfd->subset_ok && pdev->params.SubsetFonts &&
-	pdev->params.MaxSubsetPct > 0;
+    bool do_subset;
     long FontFile_id = pfd->FontFile_id;
     gs_glyph subset_glyphs[256];
     gs_glyph *subset_list = 0;	/* for non-CID fonts */
@@ -303,6 +302,17 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     int code;
 
     /* Determine whether to subset the font. */
+    switch (pfd->do_subset) {
+    case FONT_SUBSET_OK:
+	do_subset = pdev->params.SubsetFonts && pdev->params.MaxSubsetPct > 0;
+	break;
+    case FONT_SUBSET_YES:
+	do_subset = true;
+	break;
+    case FONT_SUBSET_NO:
+	do_subset = false;
+	break;
+    }
     if (do_subset) {
 	int used, i, total, index;
 	gs_glyph ignore_glyph;

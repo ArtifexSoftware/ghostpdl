@@ -106,6 +106,15 @@ typedef struct pdf_font_descriptor_values_s {
 typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;
 #endif
 
+/*
+ * Define whether an embedded font must, may, or must not be subsetted.
+ */
+typedef enum {
+    FONT_SUBSET_OK,
+    FONT_SUBSET_YES,
+    FONT_SUBSET_NO
+} pdf_font_do_subset_t;
+
 struct pdf_font_descriptor_s {
     pdf_resource_common(pdf_font_descriptor_t);
     pdf_font_name_t FontName;
@@ -113,8 +122,7 @@ struct pdf_font_descriptor_s {
     gs_matrix orig_matrix;	/* unscaled font matrix */
     gs_string chars_used;	/* 1 bit per character code or CID */
     gs_string glyphs_used;	/* 1 bit per glyph, for TrueType fonts */
-    bool subset_ok;		/* if false, don't subset the font -- */
-				/* see gdevpdft.c */
+    pdf_font_do_subset_t do_subset;
     long FontFile_id;		/* non-0 iff the font is embedded */
     gs_font *base_font;		/* unscaled font defining the base encoding, */
 				/* matrix, and character set, 0 iff */

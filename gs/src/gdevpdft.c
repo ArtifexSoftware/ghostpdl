@@ -841,8 +841,11 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
 			break;
 		if (c < 256)	/* found */
 		    record_used(pfd, c);
-		else		/* not found */
-		    pfd->subset_ok = false;
+		else {		/* not found */
+		    if (pfd->do_subset == FONT_SUBSET_YES)
+			return_error(gs_error_undefined);
+		    pfd->do_subset = FONT_SUBSET_NO;
+		}
 		return chr;
 	    }
 	}
@@ -890,7 +893,9 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
 	if (code < 0)
 	    return code;
 	/* See under ReAssignCharacters above regarding the following: */
-	pfd->subset_ok = false;
+	if (pfd->do_subset == FONT_SUBSET_YES)
+	    return_error(gs_error_undefined);
+	pfd->do_subset = FONT_SUBSET_NO;
 	return c;
     }
 
