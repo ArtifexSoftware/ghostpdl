@@ -214,7 +214,12 @@ cntdict /dicttype {
   dup length 0 3 -1 roll
 	% Stack: file tag -mark- #refs #chars array
   dup 4 1 roll {
-    dup type //cntdict exch get exec
+      dup type /arraytype eq {
+	  % Nested array. An element of the array is also
+	  % an array(sub array). Push the sub array to the stack.
+	  dup 4 1 roll
+      } if
+      dup type //cntdict exch get exec
    } forall
 
 	% Write the header.
@@ -289,7 +294,7 @@ cntdict /dicttype {
 /.objectprinttest {		% <obj> .objectprinttest -
 		% This is a pseudo-operator so it will restore the stack
 		% if it gets an error.
-  0 0 2 index dup type //cntdict exch get exec pop pop
+  0 0 2 index roll dup type //cntdict exch get exec pop pop pop
 } bind odef
 /.printerror {
   $error /binary get .languagelevel 2 ge and {
