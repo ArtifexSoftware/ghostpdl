@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002 artofcode LLC.
+    Copyright (c) 2002-2004 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -13,10 +13,10 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
         
-    $Id: jbig2_generic.h,v 1.7 2002/07/04 13:34:29 giles Exp $
+    $Id$
 */
 
-/* Table 2 */
+/* 6.4 Table 2 */
 typedef struct {
   bool MMR;
   /* GBW */
@@ -28,7 +28,6 @@ typedef struct {
   byte gbat[8];
 } Jbig2GenericRegionParams;
 
-/* 6.2 */
 int
 jbig2_decode_generic_region(Jbig2Ctx *ctx,
 			    Jbig2Segment *segment,
@@ -38,3 +37,21 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 			    Jbig2ArithCx *GB_stats);
 
 
+/* 6.3 Table 6 */
+typedef struct {
+  /* GRW */
+  /* GRH */
+  bool GRTEMPLATE;
+  Jbig2Image *reference;
+  int32_t DX, DY;
+  bool TPGDON;
+  byte grat[4];
+} Jbig2RefinementRegionParams;
+
+int
+jbig2_decode_refinement_region(Jbig2Ctx *ctx,
+                            Jbig2Segment *segment,
+                            const Jbig2RefinementRegionParams *params,
+                            Jbig2ArithState *as,
+                            Jbig2Image *image,
+                            Jbig2ArithCx *GB_stats);

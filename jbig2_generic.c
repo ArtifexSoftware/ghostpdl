@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002 artofcode LLC.
+    Copyright (c) 2002-2004 artofcode LLC.
     
     This software is provided AS-IS with no warranty,
     either express or implied.
@@ -317,14 +317,14 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
 /**
  * jbig2_decode_generic_region: Decode a generic region.
  * @ctx: The context for allocation and error reporting.
- * @params: Parameters, as specified in Table 2.
+ * @segment: A segment reference for error reporting.
+ * @params: Decoding parameter set.
  * @as: Arithmetic decoder state.
- * @gbreg: Where to store the decoded data.
+ * @image: Where to store the decoded data.
  * @GB_stats: Arithmetic stats.
  *
  * Decodes a generic region, according to section 6.2. The caller should
- * have allocated the memory for @gbreg, which is packed 8 pixels to a
- * byte, scanlines aligned to one byte boundaries.
+ * pass an already allocated Jbig2Image object for @image
  *
  * Because this API is based on an arithmetic decoding state, it is
  * not suitable for MMR decoding.
@@ -457,3 +457,33 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
   return code;
 }
+
+
+/**
+ * jbig2_decode_refinement_region: Decode a generic refinement region.
+ * @ctx: The context for allocation and error reporting.
+ * @segment: A segment reference for error reporting.
+ * @params: Decoding parameter set.
+ * @as: Arithmetic decoder state.
+ * @image: Where to store the decoded data.
+ * @GB_stats: Arithmetic stats.
+ *
+ * Decodes a generic region, according to section 6.2. The caller should
+ * pass an already allocated Jbig2Image object for @image
+ *
+ * Because this API is based on an arithmetic decoding state, it is
+ * not suitable for MMR decoding.
+ *
+ * Return code: 0 on success.
+ **/
+int
+jbig2_decode_refinement_region(Jbig2Ctx *ctx,
+			    Jbig2Segment *segment,
+			    const Jbig2RefinementRegionParams *params,
+			    Jbig2ArithState *as,
+			    Jbig2Image *image,
+			    Jbig2ArithCx *GB_stats)
+{
+
+}
+
