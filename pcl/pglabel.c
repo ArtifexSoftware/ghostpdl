@@ -1072,6 +1072,7 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 	    break;
 	case 21:
 	    {
+		/* // LO21 prints at the current position  not pcl CAP.
 		gs_matrix save_ctm;
 		gs_point pcl_pos_dev, label_origin;
 
@@ -1083,7 +1084,8 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 		hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
 					(floatp)pcl_pos_dev.y, &label_origin));
 		pos_x = -(pgls->g.pos.x - label_origin.x);
-		pos_y = (pgls->g.pos.y - label_origin.y);
+	        pos_y = (pgls->g.pos.y - label_origin.y);
+		*/
 	    }
 	    break;
 	default:
