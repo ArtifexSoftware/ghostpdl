@@ -609,6 +609,12 @@ DEBUG { (Merging.) = pstack flush } if
     { dup /PageSize 4 index /PageSize get put
       dup /HWSize 4 index /HWSize get put
     } if
+		% Hack: to work around some PageMaker files that take a
+		% PageSize from InputAttributes and impose it, discard any
+		% attempt to set PageSize to a 4-element value.
+    dup /PageSize .knownget {
+      dup length 2 ne { dup /PageSize undef } if
+    } if
 
 		% Select input and output media.
 		% Stack: mark <orig> <request> <merged>
