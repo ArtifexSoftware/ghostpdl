@@ -112,8 +112,8 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 }
 
 /* Make an instance of a PatternType 1 pattern. */
-private int compute_inst_matrix(gs_pattern1_instance_t * pinst,
-				const gs_state * saved, gs_rect * pbbox);
+private void compute_inst_matrix(gs_pattern1_instance_t * pinst,
+				const gs_state * saved);
 int
 gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
 	       const gs_matrix * pmat, gs_state * pgs, gs_memory_t * mem)
@@ -156,7 +156,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	    goto fsaved;
     }
     inst.template = *pcp;
-    code = compute_inst_matrix(&inst, saved, &bbox);
+    compute_inst_matrix(&inst, saved);
+    code = gs_bbox_transform(&inst.template.BBox, &ctm_only(saved), &bbox);
     if (code < 0)
 	goto fsaved;
 #define mat inst.step_matrix
@@ -191,7 +192,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 		) {
 		gs_scale(saved, fabs(inst.size.x / mat.xx),
 			 fabs(inst.size.y / mat.yy));
-		code = compute_inst_matrix(&inst, saved, &bbox);
+		compute_inst_matrix(&inst, saved);
+                code = gs_bbox_transform(&inst.template.BBox, &ctm_only(saved), &bbox);
 		if (code < 0)
 		    goto fsaved;
 		if_debug2('t',
@@ -213,33 +215,38 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	      inst.step_matrix.xx, inst.step_matrix.xy,
 	      inst.step_matrix.yx, inst.step_matrix.yy,
 	      inst.size.x, inst.size.y);
-    /* Absent other information, instances always require a mask. */
-    inst.uses_mask = true;
-    gx_translate_to_fixed(saved, float2fixed(mat.tx - bbox.p.x),
-			  float2fixed(mat.ty - bbox.p.y));
+
+    if ((code = gx_translate_to_fixed(saved, float2fixed(mat.tx - bbox.p.x),
+		  float2fixed(mat.ty - bbox.p.y))) < 0 )
+	goto fsaved;
     mat.tx = bbox.p.x;
     mat.ty = bbox.p.y;
 #undef mat
-    cbox.p.x = fixed_0;
-    cbox.p.y = fixed_0;
-    cbox.q.x = int2fixed(inst.size.x);
-    cbox.q.y = int2fixed(inst.size.y);
-    code = gx_clip_to_rectangle(saved, &cbox);
-    if (code < 0)
+
+    /* Absent other information, instances always require a mask. */
+    inst.uses_mask = true;
+    if ((code = gs_newpath(saved) < 0) ||
+        (code = gs_moveto(saved, inst.template.BBox.p.x, inst.template.BBox.p.y) < 0) ||
+        (code = gs_lineto(saved, inst.template.BBox.p.x, inst.template.BBox.q.y) < 0) ||
+        (code = gs_lineto(saved, inst.template.BBox.q.x, inst.template.BBox.q.y) < 0) ||
+        (code = gs_lineto(saved, inst.template.BBox.q.x, inst.template.BBox.p.y) < 0) ||
+        (code = gs_closepath(saved) < 0) ||
+        (code = gs_eoclip(saved) < 0))
 	goto fsaved;
+
     inst.id = gs_next_ids(1);
     *pinst = inst;
     return 0;
-#undef mat
-  fsaved:gs_state_free(saved);
+
+  fsaved: 
+    gs_state_free(saved);
     gs_free_object(mem, pinst, "gs_makepattern");
     return code;
 }
 /* Compute the stepping matrix and device space instance bounding box */
 /* from the step values and the saved matrix. */
-private int
-compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
-		    gs_rect * pbbox)
+private void
+compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved)
 {
     double xx = pinst->template.XStep * saved->ctm.xx;
     double xy = pinst->template.XStep * saved->ctm.xy;
@@ -264,8 +271,6 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
     pinst->step_matrix.yy = yy;
     pinst->step_matrix.tx = saved->ctm.tx;
     pinst->step_matrix.ty = saved->ctm.ty;
-    return gs_bbox_transform(&pinst->template.BBox, &ctm_only(saved),
-			     pbbox);
 }
 
 /* Test whether a PatternType 1 pattern uses a base space. */
