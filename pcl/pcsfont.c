@@ -82,6 +82,41 @@ pcl_assign_font_id(pcl_args_t *pargs, pcl_state_t *pcs)
         return 0;
 }
 
+/* Supports copy or assignment of resident fonts.  Copying a soft font
+   involves a deep copy and a new font.  Copying a resident font
+   creates a link to the original (source) font */
+
+private int
+pcl_make_resident_font_copy(pcl_state_t *pcs)
+{
+    pl_dict_enum_t dictp;
+    gs_const_string key;
+    void * value;
+    bool found = false;
+
+    /* first check for a duplicate key, if found remove it */
+    if ( pl_dict_lookup(&pcs->built_in_fonts, current_font_id, current_font_id_size,
+                        &value, false, (pl_dict_t **)0) )
+        if ( pl_dict_undef(&pcs->built_in_fonts, current_font_id, current_font_id_size) == false )
+                /* shouldn't fail */
+                return -1;
+
+    /* now search for the value */
+    pl_dict_enum_begin(&pcs->built_in_fonts, &dictp);
+    while ( pl_dict_enum_next(&dictp, &key, &value ) )
+        if ( (void *)(pcs->font) == value ) {
+            found = true;
+            break;
+        }
+    if ( found == false )
+        return -1;
+    pl_dict_put_synonym(&pcs->built_in_fonts, key.data,
+                        key.size, current_font_id,
+                        current_font_id_size);
+    return 0;
+}
+
+
 private int /* ESC * c <fc_enum> F */
 pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
 {       
@@ -151,33 +186,16 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
                 if ( code < 0 )
                     return code;
             }
-            {
-                if ( pcs->font->storage == pcds_internal ) {
-                    pl_dict_enum_t dictp;
-                    gs_const_string key;
-                    void * value;
-                    bool found = false;
-                    pl_dict_enum_begin(&pcs->built_in_fonts, &dictp);
-                    while ( pl_dict_enum_next(&dictp, &key, &value ) )
-                        if ( (void *)(pcs->font) == value ) {
-                            found = true;
-                            break;
-                        }
-                    if ( found == false )
-                        return -1;
-                    pl_dict_put_synonym(&pcs->built_in_fonts, key.data,
-                                        key.size, current_font_id,
-                                        current_font_id_size);
-                    return 0;
-                }
-                    
-                    
-                    
+            if ( pcs->font->storage == pcds_internal ) {
+                return pcl_make_resident_font_copy(pcs);
+            } else {
                 pl_font_t *plfont = pl_clone_font(pcs->font,
                                                   pcs->memory,
                                                   "pcl_font_control()");
-                if ( plfont == 0 )
+                if ( plfont == 0 ) {
+                    dprintf("pcsfont.c clone font FIXME\n");
                     return 0;
+                }
                 code = gs_definefont(pcs->font_dir, plfont->pfont);
                 if ( code < 0 )
                     return code;
