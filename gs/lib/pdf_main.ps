@@ -492,6 +492,10 @@ end readonly def
  { /DSCPageCount DSCPageCount 1 add store
  } bind def
 
+/.pdfshowpage_Install {	% <tx> <ty> [<prevproc>] .pdfshowpage_Install -
+  3 1 roll translate 0 get exec
+} bind def
+
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
   4 dict begin		% for setpagedevice
 	% Stack: pagedict
@@ -510,11 +514,30 @@ end readonly def
     /PageSize exch def
 			% Set the offset on the page.
 	% Stack: pagedict currentpagedict llx lly width height
-    pop pop exch neg exch neg
+			% Make the page offset values reals to simplify the
+			% testing of the Install procedure below.
+    pop pop exch 0.0 exch sub exch 0.0 exch sub
 	% Stack: pagedict currentpagedict -llx -lly
-    [ 3 1 roll /translate load 4 index /Install .knownget {
-      1 array astore 0 /get load /exec load
-    } if ] cvx
+    [ 3 1 roll 3 index /Install .knownget {
+			% Don't let the Install procedure get more deeply
+			% nested after every page.
+      dup type /arraytype eq {
+	dup length 5 eq {
+	  dup 3 get /.pdfshowpage_Install load eq {
+	% Stack: mark tx ty [oldtx oldty [oldproc] .pdfshowpage_Install exec]
+	    aload pop pop pop
+	    5 2 roll 3 -1 roll add
+	% Stack: mark oldty [oldproc] ty newtx
+	    exch 4 -1 roll add
+	% Stack: mark [oldproc] newtx newty
+	    3 -1 roll 0 get
+	  } if
+	} if
+      } if
+      1 array astore /.pdfshowpage_Install load /exec load
+    } {
+      /translate load
+    } ifelse ] cvx
 	% Stack: pagedict currentpagedict installproc
     /Install exch def
   } if
