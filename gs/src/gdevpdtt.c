@@ -286,6 +286,9 @@ pdf_remove_font_cache_elem(pdf_font_cache_elem_t *e0)
 				"pdf_remove_font_cache_elem");
 	    gs_free_object(pdev->pdf_memory, e0, 
 				"pdf_remove_font_cache_elem");
+	    e0->glyph_usage = 0;
+	    e0->real_widths = 0;
+	    e0->next = 0;
 	    return;
 	}
 }
