@@ -210,15 +210,15 @@ pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
 
     gs_image_t_init_mask_adjust(&image, true, false);
     pdf_set_pattern_image((gs_data_image_t *)&image, &m_tile->tmask);
-    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
+    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false, 1)) < 0 ||
 	(pdev->params.MonoImage.Encode &&
 	 (code = psdf_CFE_binary(&writer.binary, w, h, true)) < 0) ||
-	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, NULL)) < 0
+	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, NULL, 0)) < 0
 	)
 	return code;
     pcs_image = (cos_stream_t *)writer.pres->object;
     /* Pattern masks are specified in device coordinates, so invert Y. */
-    if ((code = pdf_copy_mask_bits(writer.binary.strm, m_tile->tmask.data + (h - 1) * m_tile->tmask.raster, 0, -m_tile->tmask.raster, w, h, 0)) < 0 ||
+    if ((code = pdf_copy_mask_bits(writer.binary[0].strm, m_tile->tmask.data + (h - 1) * m_tile->tmask.raster, 0, -m_tile->tmask.raster, w, h, 0)) < 0 ||
 	(code = pdf_end_image_binary(pdev, &writer, h)) < 0 ||
 	(code = pdf_end_write_image(pdev, &writer)) < 0
 	)
@@ -361,16 +361,16 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	if ((code = pdf_put_pattern_mask(pdev, m_tile, &pcs_mask)) < 0)
 	    return code;
     }
-    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false)) < 0 ||
+    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false, 1)) < 0 ||
 	(code = psdf_setup_lossless_filters((gx_device_psdf *)pdev,
-					    &writer.binary,
+					    &writer.binary[0],
 					    (gs_pixel_image_t *)&image)) < 0 ||
-	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, &cs_value)) < 0
+	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, &cs_value, 0)) < 0
 	)
 	return code;
     pcs_image = (cos_stream_t *)writer.pres->object;
     /* Pattern masks are specified in device coordinates, so invert Y. */
-    if ((code = pdf_copy_color_bits(writer.binary.strm, p_tile->tbits.data + (h - 1) * p_tile->tbits.raster, 0, -p_tile->tbits.raster, w, h, pdev->color_info.depth >> 3)) < 0 ||
+    if ((code = pdf_copy_color_bits(writer.binary[0].strm, p_tile->tbits.data + (h - 1) * p_tile->tbits.raster, 0, -p_tile->tbits.raster, w, h, pdev->color_info.depth >> 3)) < 0 ||
 	(code = pdf_end_image_binary(pdev, &writer, h)) < 0
 	)
 	return code;

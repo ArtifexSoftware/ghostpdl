@@ -216,7 +216,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 		      pdf_typed_image_context_t context)
 {
     const gs_pixel_image_t *pim;
-    int code;
+    int code, i;
     pdf_image_enum *pie;
     gs_image_format_t format;
     const gs_color_space *pcs;
@@ -240,6 +240,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     ulong nbytes;
     int width, height;
     const gs_range_t *pranges = 0;
+    int alt_writer_count;
 
     /* Check for the image types we can handle. */
     switch (pic->type->index) {
@@ -351,6 +352,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 			  "pdf_begin_image");
     if (pie == 0)
 	return_error(gs_error_VMerror);
+    memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
     *pinfo = (gx_image_enum_common_t *) pie;
     gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim,
 			      (context == PDF_IMAGE_TYPE3_MASK ?
@@ -392,8 +394,11 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    return code;
 	}
     }
+    alt_writer_count = (in_line || 
+				    (pim->Width <= 64 && pim->Height <= 64) ||
+				    pdev->transfer_not_identity ? 1 : 2);
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
-				      height, NULL, in_line)) < 0 ||
+				      height, NULL, in_line, alt_writer_count)) < 0 ||
 	/*
 	 * Some regrettable PostScript code (such as LanguageLevel 1 output
 	 * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
@@ -403,13 +408,13 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * filters if the transfer function(s) is/are other than the
 	 * identity.
 	 */
-	(code = (pdev->transfer_not_identity ?
+	(code = (pie->writer.alt_writer_count == 1 ?
 		 psdf_setup_lossless_filters((gx_device_psdf *) pdev,
-					     &pie->writer.binary,
+					     &pie->writer.binary[0],
 					     &image.pixel) :
 		 psdf_setup_image_filters((gx_device_psdf *) pdev,
-					  &pie->writer.binary, &image.pixel,
-					  pmat, pis))) < 0 ||
+					  &pie->writer.binary[0], &image.pixel,
+					  pmat, pis, true))) < 0 ||
 	/* SRZB 2001-04-25/Bl
 	 * Since psdf_setup_image_filters may change the color space
 	 * (in case of pdev->params.ConvertCMYKImagesToRGB == true),
@@ -435,10 +440,29 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    decode[0] = vmin - base;
 	}
     }
-    if ((code = pdf_begin_image_data(pdev, &pie->writer,
-				     (const gs_pixel_image_t *)&image,
-				     &cs_value)) < 0)
-	goto fail;
+    if (pie->writer.alt_writer_count > 1) {
+        code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
+        if (code)
+            goto fail;
+	code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+				  &pie->writer.binary[1], &image.pixel,
+				  pmat, pis, false);
+        if (code)
+            goto fail;
+	pie->writer.alt_writer_count = 2;
+    }
+    for (i = 0; i < pie->writer.alt_writer_count; i++) {
+        if ((code = pdf_begin_image_data(pdev, &pie->writer,
+				         (const gs_pixel_image_t *)&image,
+				         &cs_value, i)) < 0)
+  	    goto fail;
+    }
+    if (pie->writer.alt_writer_count == 2) {
+        pdf_setup_compression_chooser(&pie->writer.binary[2], 
+	     (gx_device_psdf *)pdev, pim->Width, pim->Height, 
+	     num_components, pim->BitsPerComponent);
+	pie->writer.alt_writer_count = 3;
+    }
     return 0;
  fail:
     /****** SHOULD FREE STRUCTURES AND CLEAN UP HERE ******/
@@ -465,9 +489,9 @@ gdev_pdf_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 
 /* Process the next piece of an image. */
 private int
-pdf_image_plane_data(gx_image_enum_common_t * info,
+pdf_image_plane_data_alt(gx_image_enum_common_t * info,
 		     const gx_image_plane_t * planes, int height,
-		     int *rows_used)
+		     int *rows_used, int alt_writer_index)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)info->dev;
     pdf_image_enum *pie = (pdf_image_enum *) info;
@@ -484,7 +508,6 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 
     if (h > pie->rows_left)
 	h = pie->rows_left;
-    pie->rows_left -= h;
     for (y = 0; y < h; ++y) {
 	if (nplanes > 1) {
 	    /*
@@ -520,15 +543,15 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 		}
 		image_flip_planes(row, bit_planes, offset, flip_count,
 				  nplanes, pie->plane_depths[0]);
-		status = sputs(pie->writer.binary.strm, row, flipped_count,
-			       &ignore);
+		status = sputs(pie->writer.binary[alt_writer_index].strm, row, 
+			       flipped_count, &ignore);
 		if (status < 0)
 		    break;
 		offset += flip_count;
 		count -= flip_count;
 	    }
 	} else {
-	    status = sputs(pie->writer.binary.strm,
+	    status = sputs(pie->writer.binary[alt_writer_index].strm,
 			   planes[0].data + planes[0].raster * y, bcount,
 			   &ignore);
 	}
@@ -540,6 +563,24 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 	return_error(gs_error_ioerror);
     return !pie->rows_left;
 #undef ROW_BYTES
+}
+
+private int
+pdf_image_plane_data(gx_image_enum_common_t * info,
+		     const gx_image_plane_t * planes, int height,
+		     int *rows_used)
+{
+    pdf_image_enum *pie = (pdf_image_enum *) info;
+    int i;
+    for (i = 0; i < pie->writer.alt_writer_count; i++) {
+        int code = pdf_image_plane_data_alt(info, planes, height, rows_used, i);
+        if (code)
+            return code;
+    }
+    pie->rows_left -= *rows_used;
+    if (pie->writer.alt_writer_count > 1)
+        pdf_choose_compression(&pie->writer, false);
+    return !pie->rows_left;
 }
 
 /* Clean up by releasing the buffers. */

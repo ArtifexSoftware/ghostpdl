@@ -147,4 +147,34 @@ typedef struct stream_Average_state_s {
     "stream_Average_state", avg_enum_ptrs, avg_reloc_ptrs, sums)
 extern const stream_template s_Average_template;
 
+/* ---------------- Image compression chooser ---------------- */
+
+typedef struct cos_stream_s cos_stream_t;
+
+typedef struct stream_compr_chooser_state_s {
+    stream_state_common;
+    uint choice;
+    uint width, height, depth, bits_per_sample;
+    uint samples_count, bits_left;
+    ulong packed_data;
+    byte *sample;
+    ulong upper_plateaus, lower_plateaus;
+    ulong gradients;
+} stream_compr_chooser_state;
+
+#define private_st_compr_chooser_state()	/* in gdevpsds.c */\
+  gs_private_st_ptrs1(st_compr_chooser_state, stream_compr_chooser_state, \
+    "stream_compr_chooser_state",\
+    compr_chooser_enum_ptrs, compr_chooser_reloc_ptrs, sample)
+
+extern const stream_template s_compr_chooser_template;
+
+/* Set image dimensions. */
+int
+s_compr_chooser_set_dimensions(P5(stream_compr_chooser_state * st, int width, 
+		    int height, int depth, int bits_per_sample));
+
+/* Get choice */
+uint s_compr_chooser__get_choice(P2(stream_compr_chooser_state *st, bool force));
+
 #endif /* gdevpsds_INCLUDED */

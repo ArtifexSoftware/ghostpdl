@@ -84,7 +84,7 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
 /* Add the appropriate image compression filter, if any. */
 private int
 setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
-			const gs_pixel_image_t * pim)
+			const gs_pixel_image_t * pim, bool lossless)
 {
     gx_device_psdf *pdev = pbw->dev;
     gs_memory_t *mem = pdev->v_memory;
@@ -115,10 +115,11 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 * lossless filter, while using DCTEncode may produce very
 	 * bad-looking output, we always use the lossless filter.
 	 */
-	orig_template = template = 
-	    (pim->Width < 64 || pim->Height < 64 ?
-	     lossless_template :
-	     lossless_template /*&s_DCTE_template*/);
+        if (lossless) {
+            orig_template = template = lossless_template;
+        } else {
+            orig_template = template = &s_DCTE_template;
+        }
 	dict = pdip->ACSDict;
     }
     gs_c_param_list_read(dict);	/* ensure param list is in read mode */
@@ -211,7 +212,7 @@ do_downsample(const psdf_image_params *pdip, const gs_pixel_image_t *pim,
 /* Assumes do_downsampling() is true. */
 private int
 setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
-		   gs_pixel_image_t * pim, floatp resolution)
+		   gs_pixel_image_t * pim, floatp resolution, bool lossless)
 {
     gx_device_psdf *pdev = pbw->dev;
     /* Note: Bicubic is currently interpreted as Average. */
@@ -251,7 +252,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 			(double)pim->Height / orig_height,
 			&pim->ImageMatrix);
 	/****** NO ANTI-ALIASING YET ******/
-	if ((code = setup_image_compression(pbw, pdip, pim)) < 0 ||
+	if ((code = setup_image_compression(pbw, pdip, pim, lossless)) < 0 ||
 	    (code = pixel_resize(pbw, pim->Width, ss->Colors,
 				 8, pdip->Depth)) < 0 ||
 	    (code = psdf_encode_binary(pbw, template, st)) < 0 ||
@@ -270,7 +271,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 int
 psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 			 gs_pixel_image_t * pim, const gs_matrix * pctm,
-			 const gs_imager_state * pis)
+			 const gs_imager_state * pis, bool lossless)
 {
     /*
      * The following algorithms are per Adobe Tech Note # 5151,
@@ -342,9 +343,9 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 		params.filter_template = pdev->params.GrayImage.filter_template;
 		params.Dict = pdev->params.GrayImage.Dict;
 	    }
-	    code = setup_downsampling(pbw, &params, pim, resolution);
+	    code = setup_downsampling(pbw, &params, pim, resolution, lossless);
 	} else {
-	    code = setup_image_compression(pbw, &params, pim);
+	    code = setup_image_compression(pbw, &params, pim, lossless);
 	}
 	if (code < 0)
 	    return code;
@@ -362,9 +363,9 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	if (params.Depth == -1)
 	    params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
 	if (do_downsample(&params, pim, resolution)) {
-	    code = setup_downsampling(pbw, &params, pim, resolution);
+	    code = setup_downsampling(pbw, &params, pim, resolution, lossless);
 	} else {
-	    code = setup_image_compression(pbw, &params, pim);
+	    code = setup_image_compression(pbw, &params, pim, lossless);
 	}
 	if (cmyk_to_rgb) {
 	    gs_memory_t *mem = pdev->v_memory;
@@ -411,5 +412,28 @@ psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
     ipdev.params.GrayImage.Downsample = false;
     ipdev.params.GrayImage.Filter = "FlateEncode";
     ipdev.params.GrayImage.filter_template = &s_zlibE_template;
-    return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL);
+    return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL, true);
 }
+
+/* Set up image compression chooser. */
+int
+pdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
+		    int width, int height, int depth, int bits_per_samile)
+{
+    int code;
+    stream_state *ss = s_alloc_state(pdev->memory, s_compr_chooser_template.stype, 
+                                     "pdf_setup_compression_chooser");
+
+    if (ss == 0)
+	return_error(gs_error_VMerror);
+    pbw->memory = pdev->memory;
+    pbw->strm = pdev->strm; /* just a stub - will not write to it. */
+    pbw->dev = pdev;
+    code = psdf_encode_binary(pbw, &s_compr_chooser_template, ss);
+    if (code < 0)
+	return code;
+    code = s_compr_chooser_set_dimensions((stream_compr_chooser_state *)ss, 
+		    width, height, depth, bits_per_samile);
+    return code;
+}
+

@@ -755,3 +755,227 @@ const stream_template s_Average_template = {
     &st_Average_state, s_Average_init, s_Average_process, 4, 4,
     s_Average_release, s_Average_set_defaults
 };
+
+/* ---------------- Image compression chooser ---------------- */
+
+private_st_compr_chooser_state();
+
+/* Initialize the state. */
+private int
+s_compr_chooser_init(stream_state * st)
+{
+    stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;
+
+    ss->choice = 0;
+    ss->width = ss->height = ss->depth = ss->bits_per_sample = 0;
+    ss->sample = 0;
+    ss->samples_count = 0;
+    ss->bits_left = 0;
+    ss->packed_data = 0;
+    ss->lower_plateaus = ss->upper_plateaus = 0;
+    ss->gradients = 0;
+    return 0;
+}
+
+/* Set image dimensions. */
+int
+s_compr_chooser_set_dimensions(stream_compr_chooser_state * ss, int width, 
+		    int height, int depth, int bits_per_sample)
+{
+    ss->width = width;
+    ss->height = height;
+    ss->depth = depth;
+    ss->bits_per_sample = bits_per_sample;
+    ss->sample = gs_alloc_bytes(ss->memory, width * depth, "s_compr_chooser_set_dimensions");
+    if (ss->sample == 0)
+	return gs_error_VMerror;
+    return 0;
+}
+
+/* Release state. */
+private void
+s_compr_chooser_release(stream_state * st)
+{
+    stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;
+
+    gs_free_object(ss->memory, ss->sample, "s_compr_chooser_release");
+}
+
+/* An auxiliary proc for the choice. */
+private inline bool
+much_bigger__PLR(int n1, int n2)
+{
+    return n1 >= 10000 && n2 < n1 / 3 && n2 > 100; /* arbitrary */
+}
+
+/* Estimate a row for photo/lineart recognition. */
+private void
+s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
+{   
+    /*	This function uses a statistical algorithm being not well defined.
+
+	We compute areas covered by gradients,
+	separately with small width (line art)
+	and with big width (photo).
+	Making the choice based on the areas.
+
+	Note that we deal with horizontal frequencies only.
+	Dealing with vertical ones would be too expensive.
+    */
+    const int delta = 256 / 16; /* about 1/16 of the range */
+    const max_lineart_boundary_width = 3/* pixels */;
+    int i, j0 = 0, j1 = 0;
+    int w0 = p[0], w1 = p[0], v;
+    ulong plateau_count = 0, lower_plateaus = 0;
+    ulong upper_plateaus = 0, gradients = 0;
+    bool lower = false, upper = false;
+
+    for (i = 1; i < ss->width; i++) {
+	v = p[i];
+	if (!lower)
+	    if (w1 < v)
+		w1 = v, upper = true;
+	    else if (upper && w1 - delta > v) {
+		/* end of upper plateau at w1-delta...w1 */
+		for (j0 = i - 1; j0 > j1 && w1 - delta <= p[j0]; j0--) DO_NOTHING;
+		/* upper plateau j0+1...i-1 */
+		if(j0 > 0 && i < ss->width - 1) /* ignore sides */
+		    upper_plateaus += i - j0;
+		plateau_count ++;
+		if (j0 > j1) {
+		    /* upgrade j1...j0 */
+		    if (j0 > j1 + max_lineart_boundary_width)
+			gradients += j0 - j1;
+		}
+		j1 = i;
+		upper = false;
+	    }
+	if (!upper)
+	    if (w0 > v)
+		w0 = v, lower = true;
+	    else if (lower && w0 + delta < v) {
+		/* end of lower plateau at w0...w0+delta */
+		for (j0 = i - 1; j0 > j1 && w0 + delta >= p[j0]; j0--) DO_NOTHING;
+		/* lower plateau j0+1...i-1 */
+		if(j0 > 0 && i < ss->width - 1) /* ignore sides */
+		    lower_plateaus += i - j0;
+		plateau_count ++;
+		if (j0 > j1) {
+		    /* downgrade j1...j0 */
+		    if (j0 > j1 + max_lineart_boundary_width)
+			gradients += j0 - j1;
+		}
+		j1 = i;
+		lower = false;
+	    }
+    }
+    if (plateau_count > ss->width / 6) {
+	/*  Possibly a dithering, can't recognize.
+	    It would be better to estimate frequency histogram rather than 
+	    rough quantity, but we hope that the simpler test can work fine.
+	*/
+    } else if (!plateau_count) /* a pseudo-constant color through entire row */
+	DO_NOTHING; /* ignore such lines */
+    else {
+	int plateaus;
+	ss->lower_plateaus += lower_plateaus;
+	ss->upper_plateaus += upper_plateaus;
+	ss->gradients += gradients;
+	plateaus = min(ss->lower_plateaus, ss->upper_plateaus); /* (fore/back)ground */
+	if (much_bigger__PLR(plateaus, ss->gradients))
+	    ss->choice = 2; /* choice is made : lineart */
+	else if (much_bigger__PLR(ss->gradients, plateaus))
+	    ss->choice = 1; /* choice is made : photo */
+    }
+}
+
+/* Recognize photo/lineart. */
+private void
+s_compr_chooser__recognize(stream_compr_chooser_state * ss)
+{
+    int i;
+    byte *p = ss->sample;
+
+    for (i = 0; i < ss->depth; i++, p += ss->width)
+	s_compr_chooser__estimate_row(ss, p);
+    /* todo: make decision */
+}
+
+/* Uppack data and recognize photo/lineart. */
+private void
+s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss, 
+				      const byte *data, int length)
+{   
+    ulong mask = (1 << ss->bits_per_sample) - 1;
+    uint i = ss->samples_count / ss->width * ss->width;
+    uint j = ss->samples_count % ss->width;
+    const byte *p = data;
+    int l = length;
+
+    while (l) {
+	if (ss->bits_left < 8) {
+	    uint k = (sizeof(ss->packed_data) * 8 - ss->bits_left) / 8;
+
+	    k = min(k, l);
+	    for (; k; k--, l--, p++, ss->bits_left += 8)
+		ss->packed_data = (ss->packed_data << 8) + *p;
+	}
+	while (ss->bits_left >= ss->bits_per_sample) {
+	    uint k = ss->bits_left - ss->bits_per_sample;
+	    ulong v = ss->packed_data >> k;
+
+	    ss->packed_data -= (v << k);
+	    ss->bits_left -= ss->bits_per_sample;
+	    if (ss->bits_per_sample > 8)
+		v >>= ss->bits_per_sample - 8;
+	    else
+		v <<= 8 - ss->bits_per_sample;
+	    ss->sample[i + j] = (byte)v;  /* scaled to 0...255 */
+	    i += ss->width;
+	    if (i >= ss->width * ss->depth)
+		i = 0, j++;
+	    ss->samples_count++;
+	    if (ss->samples_count >= ss->width * ss->depth) {
+		s_compr_chooser__recognize(ss);
+		ss->packed_data = 0;
+		ss->bits_left = 0;
+		ss->samples_count = 0;
+		i = j = 0;
+	    }
+	}
+    }
+}
+
+/* Process a buffer. */
+private int
+s_compr_chooser_process(stream_state * st, stream_cursor_read * pr,
+	     stream_cursor_write * pw, bool last)
+{
+    stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;
+    int l = pr->limit - pr->ptr;
+
+    if (ss->width >= 3) /* Can't process narrow images. */
+	s_compr_chooser__unpack_and_recognize(ss, pr->ptr + 1, l);
+    pr->ptr += l;
+    return 0;
+}
+
+const stream_template s_compr_chooser_template = {
+    &st_compr_chooser_state, s_compr_chooser_init, s_compr_chooser_process, 1, 1,
+    s_compr_chooser_release, 0 /* NULL */
+};
+
+/* Get choice */
+uint 
+s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
+{
+    ulong plateaus = min(ss->lower_plateaus, ss->upper_plateaus);
+
+    if (force)
+	if (ss->gradients > plateaus / 3/* arbitrary */)
+	    return 2;
+	else if (plateaus > ss->gradients)
+	    return 1;
+    return ss->choice;
+}
+

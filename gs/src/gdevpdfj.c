@@ -238,12 +238,13 @@ pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 int
 pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 		      gx_bitmap_id id, int w, int h, pdf_resource_t *pres,
-		      bool in_line)
+		      bool in_line, int alt_writer_count)
 {
     /* Patch pdev->strm so the right stream gets into the writer. */
     stream *save_strm = pdev->strm;
     int code;
 
+    piw->alt_writer_count = alt_writer_count;
     if (in_line) {
 	piw->pres = 0;
 	piw->pin = &pdf_image_names_short;
@@ -282,22 +283,45 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
     if (pdev->strm == 0)
 	return_error(gs_error_VMerror);
     piw->height = h;
-    code = psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary);
-    piw->binary.target = NULL; /* We don't need target with cos_write_stream. */
+    code = psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary[0]);
+    piw->binary[0].target = NULL; /* We don't need target with cos_write_stream. */
     pdev->strm = save_strm;
     return code;
+}
+
+/*
+ *  Make alternative stream for image compression choice.
+ */
+pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * pbw)
+{
+    cos_stream_t *pcos = cos_stream_alloc(pdev, "pdf_make_alt_stream");
+    int code;
+
+    if (pcos == 0)
+        return_error(gs_error_VMerror);
+    pcos->id = 0;
+    CHECK(cos_dict_put_c_strings(cos_stream_dict(pcos), "/Subtype", "/Image"));
+    pbw->strm = cos_write_stream_alloc(pcos, pdev, "pdf_make_alt_stream");
+    if (pbw->strm == 0)
+        return_error(gs_error_VMerror);
+    pbw->dev = pdev;
+    pbw->memory = pdev->memory;
+    return 0;
 }
 
 /* Begin writing the image data, setting up the dictionary and filters. */
 int
 pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
-		     const gs_pixel_image_t * pim, const cos_value_t *pcsvalue)
+		     const gs_pixel_image_t * pim, const cos_value_t *pcsvalue,
+		     int alt_writer_index)
 {
-    cos_dict_t *pcd = cos_stream_dict(piw->data);
+    
+    cos_stream_t *s = cos_write_stream_from_pipeline(piw->binary[alt_writer_index].strm);
+    cos_dict_t *pcd = cos_stream_dict(s);
     int code = pdf_put_image_values(pcd, pdev, pim, piw->pin, pcsvalue);
 
     if (code >= 0)
-	code = pdf_put_image_filters(pcd, pdev, &piw->binary, piw->pin);
+	code = pdf_put_image_filters(pcd, pdev, &piw->binary[alt_writer_index], piw->pin);
     if (code < 0) {
 	if (!piw->pres)
 	    COS_FREE(piw->data, "pdf_begin_image_data");
@@ -310,8 +334,12 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
 int
 pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
 {
-    int code = psdf_end_binary(&piw->binary);
-    
+    int code;
+
+    if (piw->alt_writer_count > 1)
+	code = pdf_choose_compression(piw, true);
+    else
+	code = psdf_end_binary(&piw->binary);
     if (code < 0)
 	return code;
     /* If the image ended prematurely, update the Height. */
@@ -395,5 +423,61 @@ pdf_copy_color_bits(stream *s, const byte *base, int sourcex, int raster,
 	sputs(s, base + sourcex * bytes_per_pixel + yi * raster,
 	      w * bytes_per_pixel, &ignore);
     }
+    return 0;
+}
+
+/* Choose image compression - auxiliary procs */
+private inline bool much_bigger__DL(long l1, long l2)
+{
+    return l1 > 1024*1024 && l2 < l1 / 3;
+}
+private void
+pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force)
+{   /*	Assume s[0] is Flate, s[1] is DCT, s[2] is chooser. */
+    long l0, l1;
+    int k0, k1;
+    cos_stream_t *pcs;
+
+    l0 = cos_stream_length(s[0]);
+    l1 = cos_stream_length(s[1]);
+    k0 = s_compr_chooser__get_choice(piw->binary[2].strm->state, force);
+    if (k0)
+	k0--;
+    else if (much_bigger__DL(l0, l1))
+	k0 = 0; 
+    else if (much_bigger__DL(l1, l0) || force)
+	k0 = 1; 
+    else
+       return;
+    k1 = 1 - k0;
+    s_close_filters(&piw->binary[k0].strm, piw->binary[k0].target);
+    s[k0]->cos_procs->release((cos_object_t *)s[k0], "pdf_image_choose_filter");
+    s[k0]->written = 1;
+    piw->binary[0].strm = piw->binary[k1].strm;
+    sclose(piw->binary[2].strm);
+    piw->binary[1].strm = piw->binary[2].strm = 0; /* for GC */
+    s[k1]->id = piw->pres->object->id;
+    piw->pres->object = (cos_object_t *)s[k1];
+    piw->alt_writer_count = 1;
+}
+
+/* End binary with choosing image compression. */
+int
+pdf_choose_compression(pdf_image_writer * piw, bool end_binary)
+{
+    cos_stream_t *s[2];
+    s[0] = cos_write_stream_from_pipeline(piw->binary[0].strm);
+    s[1] = cos_write_stream_from_pipeline(piw->binary[1].strm);
+    if (end_binary) {
+	int status;
+
+    	status = s_close_filters(&piw->binary[0].strm, piw->binary[0].target);
+	if (status < 0)
+	    return status;
+	status = s_close_filters(&piw->binary[1].strm, piw->binary[1].target);
+	if (status < 0)
+	    return status;
+    } else
+	pdf_choose_compression_cos(piw, s, end_binary);
     return 0;
 }

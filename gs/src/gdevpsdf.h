@@ -328,9 +328,9 @@ int psdf_DCT_filter(P6(gs_param_list *plist /* may be NULL */,
 /* Note that this may modify the image parameters. */
 /* If pctm is NULL, downsampling is not used. */
 /* pis only provides UCR and BG information for CMYK => RGB conversion. */
-int psdf_setup_image_filters(P5(gx_device_psdf *pdev, psdf_binary_writer *pbw,
+int psdf_setup_image_filters(P6(gx_device_psdf *pdev, psdf_binary_writer *pbw,
 				gs_pixel_image_t *pim, const gs_matrix *pctm,
-				const gs_imager_state * pis));
+				const gs_imager_state * pis, bool lossless));
 
 /* Set up compression filters for a lossless image, with no downsampling, */
 /* no color space conversion, and only lossless filters. */
@@ -341,6 +341,10 @@ int psdf_setup_lossless_filters(P3(gx_device_psdf *pdev,
 
 /* Finish writing binary data. */
 int psdf_end_binary(P1(psdf_binary_writer * pbw));
+
+/* Set up image compression chooser. */
+int pdf_setup_compression_chooser(P6(psdf_binary_writer *pbw, gx_device_psdf *pdev,
+			  int width, int height, int depth, int bits_per_samile));
 
 /* ---------------- Symbolic data printing ---------------- */
 

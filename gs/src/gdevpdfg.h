@@ -189,7 +189,8 @@ int pdf_do_image(P4(gx_device_pdf * pdev, const pdf_resource_t * pres,
 
 /* Define the structure for writing an image. */
 typedef struct pdf_image_writer_s {
-    psdf_binary_writer binary;
+    psdf_binary_writer binary[3];
+    int alt_writer_count; /* no. of active elements in writer[] (1,2,3) */
     const pdf_image_names_t *pin;
     pdf_resource_t *pres;	/* XObject resource iff not in-line */
     int height;			/* initially specified image height */
@@ -207,14 +208,16 @@ extern_st(st_pdf_image_writer);	/* public for gdevpdfi.c */
  * Begin writing an image, creating the resource if not in-line and
  * pres == 0, and setting up the binary writer.
  */
-int pdf_begin_write_image(P7(gx_device_pdf * pdev, pdf_image_writer * piw,
+int pdf_begin_write_image(P8(gx_device_pdf * pdev, pdf_image_writer * piw,
 			     gx_bitmap_id id, int w, int h,
-			     pdf_resource_t *pres, bool in_line));
+			     pdf_resource_t *pres, bool in_line,
+			     int alt_writer_count));
 
 /* Begin writing the image data, setting up the dictionary and filters. */
-int pdf_begin_image_data(P4(gx_device_pdf * pdev, pdf_image_writer * piw,
+int pdf_begin_image_data(P5(gx_device_pdf * pdev, pdf_image_writer * piw,
 			    const gs_pixel_image_t * pim,
-			    const cos_value_t *pcsvalue));
+			    const cos_value_t *pcsvalue, 
+			    int alt_writer_index));
 
 /* Copy the data for a mask or monobit bitmap. */
 int pdf_copy_mask_bits(P7(stream *s, const byte *base, int sourcex,
@@ -233,6 +236,16 @@ int pdf_end_image_binary(P3(gx_device_pdf *pdev, pdf_image_writer *piw,
  * return 1; if a resource, write the resource definition and return 0.
  */
 int pdf_end_write_image(P2(gx_device_pdf * pdev, pdf_image_writer * piw));
+
+/*
+ *  Make alternative stream for image compression choice.
+ */
+int pdf_make_alt_stream(P2(gx_device_pdf * pdev, psdf_binary_writer * piw));
+
+/* 
+ * End binary with choosing image compression. 
+ */
+int pdf_choose_compression(P2(pdf_image_writer * piw, bool end_binary));
 
 /* ---------------- Exported by gdevpdfv.c ---------------- */
 

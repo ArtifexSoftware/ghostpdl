@@ -88,15 +88,15 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      */
     if (for_pattern < 0)
 	stream_puts(pdev->strm, "q ");
-    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
+    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line, 1)) < 0 ||
 	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
-					    &piw->binary,
+					    &piw->binary[0],
 					    (gs_pixel_image_t *)pim)) < 0 ||
 	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
-				     NULL)) < 0
+				     NULL, 0)) < 0
 	)
 	return code;
-    pdf_copy_mask_bits(piw->binary.strm, row_base, sourcex, row_step, w, h, 0);
+    pdf_copy_mask_bits(piw->binary[0].strm, row_base, sourcex, row_step, w, h, 0);
     pdf_end_image_binary(pdev, piw, piw->height);
     return pdf_end_write_image(pdev, piw);
 }
@@ -157,7 +157,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 			 w, h + y_offset);
 		pprintd3(pdev->strm, "%d 0 0 %d 0 %d cm\n", w, h,
 			 y_offset);
-		code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true);
+		code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true, 1);
 		if (code < 0)
 		    return code;
 		pres = (pdf_resource_t *) pcp;
@@ -222,7 +222,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
-	code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, in_line);
+	code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, in_line, 1);
 	if (code < 0)
 	    return code;
     }
@@ -259,16 +259,16 @@ pdf_copy_mono(gx_device_pdf *pdev,
 
 	image.Decode[0] = image.Decode[1];
 	image.Decode[1] = d0;
-	psdf_CFE_binary(&writer.binary, image.Width, image.Height, true);
+	psdf_CFE_binary(&writer.binary[0], image.Width, image.Height, true);
 	invert ^= 0xff;
     } else {
 	/* Use the Distiller compression parameters. */
-	psdf_setup_image_filters((gx_device_psdf *) pdev, &writer.binary,
-				 (gs_pixel_image_t *)&image, NULL, NULL);
+	psdf_setup_image_filters((gx_device_psdf *) pdev, &writer.binary[0],
+				 (gs_pixel_image_t *)&image, NULL, NULL, true);
     }
     pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image,
-			 pcsvalue);
-    code = pdf_copy_mask_bits(writer.binary.strm, base, sourcex, raster,
+			 pcsvalue, 0);
+    code = pdf_copy_mask_bits(writer.binary[0].strm, base, sourcex, raster,
 			      w, h, invert);
     if (code < 0)
 	return code;
@@ -380,17 +380,17 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      * We don't have to worry about color space scaling: the color
      * space is always a Device space.
      */
-    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
+    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line, 1)) < 0 ||
 	(code = pdf_color_space(pdev, &cs_value, NULL, &cs,
 				&piw->pin->color_spaces, in_line)) < 0 ||
 	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
-					    &piw->binary,
+					    &piw->binary[0],
 					    (gs_pixel_image_t *)pim)) < 0 ||
 	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
-				     &cs_value)) < 0
+				     &cs_value, 0)) < 0
 	)
 	return code;
-    pdf_copy_color_bits(piw->binary.strm, row_base, sourcex, row_step, w, h,
+    pdf_copy_color_bits(piw->binary[0].strm, row_base, sourcex, row_step, w, h,
 			bytes_per_pixel);
     pdf_end_image_binary(pdev, piw, piw->height);
     return pdf_end_write_image(pdev, piw);
