@@ -855,7 +855,7 @@ end
   checkaltimage dup length 6 add dict
   1 index /SMask knownoget { 1 index exch /SMask exch put } if
   1 index /Mask knownoget { 1 index exch /Mask exch put } if
-  makeimagedict doimage
+  makeimagedict doimagesmask
 } bdef
 /makemaskimage {	% <datasource> <imagemask> <Mask> makemaskimage
 			%   <datasource> <imagemask>, updates currentdict =
@@ -886,6 +886,26 @@ end
     /DataDict exch def
     /MaskDict exch def
     /ColorSpace DataDict /ColorSpace get def
+  } ifelse
+} bdef
+/doimagesmask { % <imagemask> doimagesmask -
+  PDFusingtransparency { currentdict /SMask knownoget } { false } ifelse {
+    << /Subtype /Luminosity >> 0 0 0 0 .begintransparencymask
+    PDFfile fileposition exch
+    gsave //nodict begin
+    null /SoftMask gput
+    1 .setopacityalpha 1 .setshapealpha
+    0 .inittransparencymask 1 .inittransparencymask
+    /Compatible .setblendmode
+    DoImage
+    end grestore
+    PDFfile exch setfileposition
+    0 .endtransparencymask
+    << /Subtype /Group /Isolated true >> 0 0 0 0 .begintransparencygroup
+    doimage
+    .endtransparencygroup
+  } {
+    doimage
   } ifelse
 } bdef
 /doimage {	% <imagemask> doimage -
