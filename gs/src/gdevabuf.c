@@ -84,7 +84,7 @@ mem_alpha_map_rgb_alpha_color(gx_device * dev, gx_color_value r,
     gx_color_value cv[3];
 
     cv[0] = r; cv[1] = g; cv[2] = b;
-    gx_forward_map_rgb_color(dev, cv);
+    color = gx_forward_map_rgb_color(dev, cv);
 
     return (color == 0 || color == gx_no_color_index ? color :
 	    (gx_color_index) (alpha >> (gx_color_value_bits -
