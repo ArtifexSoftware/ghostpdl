@@ -260,7 +260,7 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->scaled_fonts = 0;
     pdir->ssize = 0;
     pdir->smax = smax;
-    pdir->align_to_pixels = true;
+    pdir->align_to_pixels = false;
     pdir->glyph_to_unicode_table = NULL;
     pdir->grid_fit_tt = 2;
     pdir->memory = struct_mem;
