@@ -314,8 +314,10 @@ px_initgraphics(px_state_t *pxs)
 	/* we always clamp coordinates hp does not seem to report
            limit checks in paths */
 	gs_setlimitclamp(pgs, true);
+#if NB
         build_crd(pxs->pgs);
         build_sRGB_space(&pxs->pxgs->cie_color_space, pxs->memory);
+#endif
 	return 0;
 }
 
@@ -335,7 +337,7 @@ px_gstate_reset(px_gstate_t *pxgs)
 	pxgs->char_transforms[2] = pxct_scale;
 	pxgs->char_sub_mode = eNoSubstitution;
 	pxgs->clip_mode = eNonZeroWinding;
-	pxgs->color_space = eSRGB;
+	pxgs->color_space = eRGB;
 	pxgs->palette.size = 0;
 	pxgs->palette.data = 0;
 	pxgs->palette_is_shared = false;
@@ -378,7 +380,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     case eCRGB:
         gs_cspace_init_DeviceRGB(pcs);
 #ifdef NB
-        /* crd - not sure */
+        /* device independent color setup */
         build_sRGB_space(&pcs, gs_state_memory(pgs));
         build_crd(pgs);
 #endif
@@ -393,17 +395,8 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
 	pcs->params.indexed.use_proc = 0;
 	pcs->type = &gs_color_space_type_Indexed;
     }
-#ifdef NB
-    if ( params->color_space == eSRGB || params->color_space == eCRGB || params->color_space == eRGB ) {
-	gs_image_t_init(pim, pcs);
-        pim->ColorSpace =  pcs;
-    } else {
-#endif
-	gs_image_t_init_rgb(pim, (const gs_imager_state *)pgs);
-	pim->ColorSpace = pcs;
-#ifdef NB
-    }
-#endif
+    gs_image_t_init_rgb(pim, (const gs_imager_state *)pgs);
+    pim->ColorSpace = pcs;
     pim->BitsPerComponent = depth;
     if ( params->indexed )
 	pim->Decode[1] = (1 << depth) - 1;

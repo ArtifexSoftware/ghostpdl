@@ -534,7 +534,8 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	if ( pxgs->color_space != eRGB && pxgs->color_space != eSRGB )
 	    return_error(errorColorSpaceMismatch);
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
-	ppt->type = pxpSRGB;
+        /* always use device rgb */
+	ppt->type = pxpRGB;
 	for ( i = 0; i < 3; ++i )
 	    if ( prgb->type & pxd_any_real )
 		ppt->value.rgb[i] = real_elt(prgb, i);
@@ -556,11 +557,11 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
     } else if ( par->pv[aPrimaryDepth] && par->pv[aPrimaryArray] ) {
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
 	if ( pxgs->color_space == eRGB )
-	    ppt->type = pxpSRGB;
+	    ppt->type = pxpRGB;
 	else if ( pxgs->color_space == eGray )
 	    ppt->type = pxpGray;
 	else if ( pxgs->color_space == eSRGB )
-	    ppt->type = pxpSRGB;
+	    ppt->type = pxpRGB;
 	else {
 	    dprintf1("Warning unknown color space %d\n", pxgs->color_space);
 	    ppt->type = pxpGray;
@@ -598,12 +599,14 @@ px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
     case pxpNull:
 	gs_setnullcolor(pgs);
 	return 0;
+    case pxpRGB:
+        return gs_setrgbcolor(pgs, ppt->value.rgb[0], ppt->value.rgb[1],
+                              ppt->value.rgb[2]);
     case pxpGray:
 	return gs_setgray(pgs, ppt->value.gray);
     case pxpPattern:
 	return gs_setpattern(pgs, &ppt->value.pattern.color);
     case pxpSRGB:
-    case pxpRGB:
         {
             gs_client_color color;
             gs_setcolorspace(pgs, pxs->pxgs->cie_color_space);
@@ -828,9 +831,9 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	    if ( par->pv[5] )
 		dprintf( "Warning - PXL 2.0 GammaGain not documented or supported\n" );
 	}
-	if ( cspace == eCRGB ) {
+	if ( cspace == eCRGB || cspace == eSRGB ) {
 	    dprintf( "Warning - PXL 2.0 eCRGB colorspace not implemented using sRGB\n");
-	    cspace = eSRGB;
+	    cspace = eRGB;
 	}
 	if ( par->pv[6] && par->pv[7] )
 	  { int ncomp = (( cspace == eRGB || cspace == eSRGB || cspace == eCRGB ) ? 3 : 1);
@@ -877,7 +880,7 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	pxgs->color_space = cspace;
 	/* build a color space if necessary and NB free the
 	   existing one */
-	if ( cspace == eSRGB || cspace == eCRGB || cspace == eRGB ) {
+	if ( cspace == eSRGB || cspace == eCRGB ) {
 	    /* NB free the old cie color space if necessary */
 	    build_crd(pxs->pgs);
 	    build_sRGB_space(&pxgs->cie_color_space, pxs->memory);
