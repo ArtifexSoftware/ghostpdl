@@ -31,6 +31,7 @@
 #include "idict.h"
 #include "idparam.h"
 #include "ifont1.h"
+#include "ifont2.h"
 #include "ifont42.h"
 #include "store.h"
 
@@ -81,23 +82,45 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, /*const*/ ref *prfd)
     build_proc_refs build;
     gs_font_base *pbfont;
     gs_font_type1 *pfont;
+    /*
+     * Standard CIDFontType 0 fonts have Type 1 fonts in the FDArray, but
+     * CFF CIDFontType 0 fonts have Type 2 fonts there.
+     */
+    int fonttype = 1;		/* default */
     int code = charstring_font_get_refs(prfd, &refs);
 
-    if (code < 0)
+    if (code < 0 ||
+	(code = dict_int_param(prfd, "FontType", 1, 2, 1, &fonttype)) < 0
+	)
 	return code;
     /****** HANDLE ALTERNATE SUBR REPRESENTATION ******/
-    data1.interpret = gs_type1_interpret;
-    data1.subroutineNumberBias = 0;
-    data1.lenIV = DEFAULT_LENIV_1;
-    code = charstring_font_params(prfd, &refs, &data1);
+    switch (fonttype) {
+    case 1:
+	data1.interpret = gs_type1_interpret;
+	data1.subroutineNumberBias = 0;
+	data1.lenIV = DEFAULT_LENIV_1;
+	code = charstring_font_params(prfd, &refs, &data1);
+	if (code < 0)
+	    return code;
+	code = build_proc_name_refs(&build,
+				    "%Type1BuildChar", "%Type1BuildGlyph");
+	break;
+    case 2:
+	code = type2_font_params(prfd, &refs, &data1);
+	if (code < 0)
+	    return code;
+	code = charstring_font_params(prfd, &refs, &data1);
+	if (code < 0)
+	    return code;
+	code = build_proc_name_refs(&build,
+				    "%Type2BuildChar", "%Type2BuildGlyph");
+	break;
+    default:			/* can't happen */
+	return_error(e_Fatal);
+    }
     if (code < 0)
 	return code;
-    /****** CHANGE THIS FOR 3011 TO HANDLE FontType 2 ******/
-    code = build_proc_name_refs(&build,
-				"%Type1BuildChar", "%Type1BuildGlyph");
-    if (code < 0)
-	return code;
-    code = build_gs_FDArray_font(i_ctx_p, prfd, &pbfont, ft_encrypted,
+    code = build_gs_FDArray_font(i_ctx_p, prfd, &pbfont, fonttype,
 				 &st_gs_font_type1, &build);
     if (code < 0)
 	return code;

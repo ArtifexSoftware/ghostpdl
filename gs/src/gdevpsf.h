@@ -133,8 +133,9 @@ int psf_check_outline_glyphs(P3(gs_font_base *pfont,
 /*
  * Gather glyph information for a Type 1, Type 2, or CIDFontType 0 font.
  * Note that the glyph_data procedure returns both the outline string and
- * a Type 1 font: for Type 1 or Type 2 fonts, this is the original font,
- * but for CIDFontType 0 fonts, it is the FDArray element.
+ * a gs_font_type1 (Type 1 or Type 2) font: for Type 1 or Type 2 fonts,
+ * this is the original font, but for CIDFontType 0 fonts, it is the
+ * FDArray element.
  */
 int psf_get_outline_glyphs(P5(psf_outline_glyphs_t *pglyphs,
 			      gs_font_base *pfont, gs_glyph *subset_glyphs,

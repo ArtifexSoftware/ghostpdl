@@ -217,6 +217,7 @@ icsmap_h=$(PSSRC)icsmap.h
 ifilter2_h=$(PSSRC)ifilter2.h
 ifont_h=$(PSSRC)ifont.h $(gsccode_h) $(gsstype_h)
 ifont1_h=$(PSSRC)ifont1.h
+ifont2_h=$(PSSRC)ifont2.h
 ifrpred_h=$(PSSRC)ifrpred.h
 ifwpred_h=$(PSSRC)ifwpred.h
 iht_h=$(PSSRC)iht.h
@@ -695,7 +696,7 @@ $(PSOBJ)zchar2.$(OBJ) : $(PSSRC)zchar2.c $(OP)\
 
 $(PSOBJ)zfont2.$(OBJ) : $(PSSRC)zfont2.c $(OP)\
  $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(bfont_h) $(idict_h) $(idparam_h) $(ifont1_h)
+ $(bfont_h) $(idict_h) $(idparam_h) $(ifont1_h) $(ifont2_h)
 	$(PSCC) $(PSO_)zfont2.$(OBJ) $(C_) $(PSSRC)zfont2.c
 
 type2_=$(PSOBJ)zchar2.$(OBJ) $(PSOBJ)zfont2.$(OBJ)
@@ -1276,7 +1277,7 @@ $(PSOBJ)zcid.$(OBJ) : $(PSSRC)zcid.c $(OP)\
 
 $(PSOBJ)zfcid.$(OBJ) : $(PSSRC)zfcid.c $(OP) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h) $(gxfont1_h)\
- $(bfont_h) $(icid_h) $(idict_h) $(idparam_h) $(ifont1_h) $(ifont42_h) $(store_h)
+ $(bfont_h) $(icid_h) $(idict_h) $(idparam_h) $(ifont1_h) $(ifont2_h) $(ifont42_h) $(store_h)
 	$(PSCC) $(PSO_)zfcid.$(OBJ) $(C_) $(PSSRC)zfcid.c
 
 # ---------------- CIE color ---------------- #
