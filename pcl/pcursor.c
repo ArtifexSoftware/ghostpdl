@@ -14,6 +14,7 @@
 #include "pcursor.h"
 #include "pcpage.h"
 #include "gscoord.h"
+#include "pjtop.h"
 
 /*
  * Hoizontal and vertical movement.
@@ -786,7 +787,8 @@ pcursor_do_reset(
 
     pcs->line_termination = 0;
     pcs->hmi_cp = HMI_DEFAULT;
-    pcs->vmi_cp = pcs->margins.length / pjl_vartoi(pjl_get_envvar(pcs->pjls, "formlines"));
+    pcs->vmi_cp = pcs->margins.length
+	  / pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "formlines"));
 
     if ( (type & pcl_reset_overlay) == 0 ) {
         pcs->cursor_stk_size = 0;

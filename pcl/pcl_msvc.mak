@@ -5,7 +5,9 @@
 # Top-level makefile for PCL5* on Win32 platforms using MS Visual C 4.1 or later
 
 # Define the name of this makefile.
+!ifndef MAKEFILE
 MAKEFILE=..\pcl\pcl_msvc.mak
+!endif
 
 # The build process will put all of its output in this directory:
 !ifndef GENDIR
@@ -69,7 +71,8 @@ CONFIG=5
 TARGET_DEVS=$(PCLOBJDIR)$(D)pcl5c.dev $(PCLOBJDIR)$(D)hpgl2c.dev
 
 # Main file's name
-MAIN_OBJ=$(PCLOBJDIR)$(D)pcmain.$(OBJ)
+MAIN_OBJ=$(PLOBJDIR)$(D)plmain.$(OBJ) $(PCLOBJDIR)$(D)pcimpl.$(OBJ)
+TOP_OBJ=$(PCLOBJDIR)$(D)pctop.$(OBJ)
 
 # Executable path\name w/o the .EXE extension
 !ifndef TARGET_XE
@@ -131,7 +134,8 @@ DEVICE_DEVS=	$(DD)djet500.dev\
 !endif
 
 # GS options
-#DEVICE_DEVS is defined in the platform-specific file.
+# Even though FEATURE_DEVS is defined in pcl_top.mak, define identically here
+# for msvc_top.mak because nmake defines macros eagerly (i.e. here & now).
 FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)path1lib.dev  \
                   $(DD)patlib.dev    \

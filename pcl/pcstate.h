@@ -32,7 +32,7 @@
 #include "pccsbase.h"           
 
 /*#include "pgstate.h"*/	/* HP-GL/2 state, included below */
-#include "pjparse.h"
+#include "pjtop.h"
 
 /* type for string id's */
 typedef struct pcl_string_id_s {
@@ -333,7 +333,7 @@ struct pcl_state_s {
     /* ---------------- HP-GL/2 state ---------------- */
     pcl_hpgl_state_t    g;	/* see pgstate.h */
     /* ---------------- PJL state -------------------- */
-    pjl_parser_state *pjls;
+    pl_interp_instance_t *pjls;
     /* yet another poorly documented pjl variable - this should widen
        the margins on A4 paper to support 80 10 pitch characters but
        it appears to affect letter paper as well */
@@ -348,15 +348,17 @@ struct pcl_state_s {
     
     /* store a pointer to the command definitions for use by macros */
     void *pcl_commands;
+
+    /* end page procedure to use */
+    int (*end_page)( pcl_state_t * pcs, int num_copies, int flush );
 };
 
 /* accessor functions for the pcl target device.  These live in
-   pcmain.c for now */
+   pctop.c for now */
 void pcl_set_target_device(P2(pcl_state_t *pcs, gx_device *pdev));
 gx_device *pcl_get_target_device(P1(pcl_state_t *pcs));
 int pcl_load_cartridge_fonts(P2(pcl_state_t *pcs, const char *pathname));
 int pcl_load_simm_fonts(P2(pcl_state_t *pcs, const char *pathname));
 int pcl_load_built_in_fonts(P2(pcl_state_t *pcs, const char *pathname));
 int pcl_set_current_font_environment(P1(pcl_state_t *pcs));
-
 #endif 						/* pcstate_INCLUDED */

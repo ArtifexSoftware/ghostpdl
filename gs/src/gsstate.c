@@ -396,9 +396,9 @@ fail:
     return code;
 }
 
-/* Restore the graphics state. */
-int
-gs_grestore(gs_state * pgs)
+/* Restore the graphics state. Can fully empty graphics stack */
+int	/* return 0 if ok, 1 if stack was empty */
+gs_grestore_no_wraparound(gs_state * pgs)
 {
     gs_state *saved = pgs->saved;
     void *pdata = pgs->client_data;
@@ -406,8 +406,8 @@ gs_grestore(gs_state * pgs)
 
     if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
-    if (!saved)			/* shouldn't happen */
-	return gs_gsave(pgs);
+    if (!saved)
+	return 1;
     sdata = saved->client_data;
     if (saved->pattern_cache == 0)
 	saved->pattern_cache = pgs->pattern_cache;
@@ -421,6 +421,20 @@ gs_grestore(gs_state * pgs)
     if (pgs->show_gstate == saved)
 	pgs->show_gstate = pgs;
     gs_free_object(pgs->memory, saved, "gs_grestore");
+    return 0;
+}
+
+/* Restore the graphics state per PostScript semantics */
+int gs_grestore(gs_state * pgs)
+{
+    int code;
+    if (!pgs->saved)
+	return gs_gsave(pgs);	/* shouldn't ever happen */
+    code = gs_grestore_no_wraparound(pgs);
+    if (code < 0)
+	return code;
+
+    /* Wraparound: make sure there are always >= 1 saves on stack */
     if (pgs->saved)
 	return 0;
     return gs_gsave(pgs);

@@ -101,6 +101,7 @@ int gs_flushpage(P1(gs_state *));
 int gs_copypage(P1(gs_state *));
 int gs_output_page(P3(gs_state *, int, int));
 int gs_nulldevice(P1(gs_state *));
+int gs_opendevice(P1(gx_device *dev));
 int gs_setdevice(P2(gs_state *, gx_device *));
 int gs_setdevice_no_erase(P2(gs_state *, gx_device *));		/* returns 1 */
 						/* if erasepage required */

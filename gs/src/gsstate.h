@@ -35,6 +35,7 @@ int gs_state_free(P1(gs_state *));
 
 /* Initialization, saving, restoring, and copying */
 int gs_gsave(P1(gs_state *)), gs_grestore(P1(gs_state *)), gs_grestoreall(P1(gs_state *));
+int gs_grestore_no_wraparound(P1(gs_state *));
 int gs_gsave_for_save(P2(gs_state *, gs_state **)), gs_grestoreall_for_restore(P2(gs_state *, gs_state *));
 gs_state *gs_gstate(P1(gs_state *));
 gs_state *gs_state_copy(P2(gs_state *, gs_memory_t *));

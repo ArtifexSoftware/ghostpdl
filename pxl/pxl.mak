@@ -10,6 +10,7 @@
 #	PXLSRCDIR - the source directory
 #	PXLGENDIR - the directory for source files generated during building
 #	PXLOBJDIR - the object / executable directory
+#	TOP_OBJ - object file to top-level interpreter API
 
 PLOBJ=$(PLOBJDIR)$(D)
 
@@ -43,11 +44,14 @@ pxl.config-clean:
 #### Other stuff:
 #	Free subsidiary objects when freeing patterns
 
+PXLVERSION=1.20
+
 pxattr_h=$(PXLSRC)pxattr.h $(gdevpxat_h)
 pxbfont_h=$(PXLSRC)pxbfont.h
 pxenum_h=$(PXLSRC)pxenum.h $(gdevpxen_h)
 pxerrors_h=$(PXLSRC)pxerrors.h
 pxfont_h=$(PXLSRC)pxfont.h $(plfont_h)
+pxlver_h=$(PXLSRC)pxlver.h
 pxptable_h=$(PXLSRC)pxptable.h
 pxtag_h=$(PXLSRC)pxtag.h $(gdevpxop_h)
 pxsymbol_h=$(PXLGEN)pxsymbol.h
@@ -57,7 +61,7 @@ pxdict_h=$(PXLSRC)pxdict.h $(pldict_h) $(pxvalue_h)
 pxgstate_h=$(PXLSRC)pxgstate.h $(gsccolor_h) $(gsiparam_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h) $(plsymbol_h) $(pxdict_h) $(pxenum_h)
 pxoper_h=$(PXLSRC)pxoper.h $(gserror_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
-pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pjparse_h)
+pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
 
 # To avoid having to build the Ghostscript interpreter to generate pxbfont.c,
 # we normally ship a pre-constructed pxbfont.psc with the source code.
@@ -88,6 +92,12 @@ $(PXLOBJ)pxerrors.$(OBJ): $(PXLSRC)pxerrors.c $(AK)\
  $(gxchar_h) $(gxfixed_h) $(gxfont_h) $(scommon_h)\
  $(pxbfont_h) $(pxerrors_h) $(pxfont_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)
 	$(PXLCCC) $(PXLSRC)pxerrors.c $(PXLO_)pxerrors.$(OBJ)
+
+$(PXLSRC)pxlver.h: $(PXLSRC)pxl.mak
+	$(PXLGEN)echogs$(XE) -e .h -w $(PXLSRC)pxlver -n "#define PXLVERSION"
+	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 $(PXLVERSION) -x 22
+	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -n "#define PXLBUILDDATE"
+	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 -d -x 22
 
 $(PXLOBJ)pxparse.$(OBJ): $(PXLSRC)pxparse.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gserror_h) $(gstypes_h)\
@@ -185,8 +195,8 @@ $(PXLOBJ)pxpaint.$(OBJ): $(PXLSRC)pxpaint.c $(AK) $(math__h) $(stdio__h)\
 
 $(PXLOBJ)pxsessio.$(OBJ): $(PXLSRC)pxsessio.c $(AK) $(math__h) $(stdio__h)\
  $(gschar_h) $(gscoord_h) $(gserrors_h) $(gspaint_h) $(gsparam_h) $(gsstate_h)\
- $(gxfcache_h) $(gxfixed_h) \
- $(pxfont_h) $(pxoper_h) $(pxstate_h)
+ $(gxfcache_h) $(gxfixed_h)\
+ $(pxfont_h) $(pxoper_h) $(pxstate_h) $(pjtop_h)
 	$(PXLCCC) $(PXLSRC)pxsessio.c $(PXLO_)pxsessio.$(OBJ)
 
 $(PXLOBJ)pxstream.$(OBJ): $(PXLSRC)pxstream.c $(AK) $(memory__h)\
@@ -199,6 +209,16 @@ $(PXLOBJ)pxstream.$(OBJ): $(PXLSRC)pxstream.c $(AK) $(memory__h)\
 pxl_ops_obj1=$(PXLOBJ)pxffont.$(OBJ) $(PXLOBJ)pxfont.$(OBJ) $(PXLOBJ)pxgstate.$(OBJ) $(PXLOBJ)pximage.$(OBJ)
 pxl_ops_obj2=$(PXLOBJ)pxink.$(OBJ) $(PXLOBJ)pxpaint.$(OBJ) $(PXLOBJ)pxsessio.$(OBJ) $(PXLOBJ)pxstream.$(OBJ)
 pxl_ops_obj=$(pxl_ops_obj1) $(pxl_ops_obj2)
+
+# Top-level API
+$(TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
+ $(gdebug_h) $(gp_h) $(gsdevice_h) $(gserrors_h) $(gsmemory_h)\
+ $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
+ $(pltop_h) $(pxtop_h) $(plparse_h)\
+ $(pxattr_h) $(pxerrors_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)\
+ $(pxlver_h) $(pxvalue_h) $(PXLGEN)pconf.h
+	$(CP_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
+	$(PXLCCC) $(PXLSRC)pxtop.c $(PXLO_)pxtop.$(OBJ)
 
 # Note that we must initialize pxfont before pxerrors.
 $(PXLOBJ)pxl.dev: $(PXL_MAK) $(ECHOGS_XE) $(pxl_other_obj) $(pxl_ops_obj)\

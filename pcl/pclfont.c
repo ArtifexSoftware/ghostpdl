@@ -219,7 +219,7 @@ pcl_load_built_in_fonts(pcl_state_t *pcs, const char *pathname)
 	    }
 	    memcpy(plfont->character_complement,
 		   residentp->character_complement, 8);
-	    plfont->params.pjl_font_number = pjl_get_pcl_internal_font_number(residentp->ext_name);
+	    plfont->params.pjl_font_number = pjl_proc_get_pcl_internal_font_number(pcs->pjls, residentp->ext_name);
 	    pl_dict_put(&pcs->built_in_fonts, key, sizeof(key), plfont);
 	    key[sizeof(key) - 1]++;
 	    font_found[residentp - resident_table] = plfont;

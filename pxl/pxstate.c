@@ -11,7 +11,7 @@
 #include "gsstruct.h"
 #include "pxstate.h"
 
-/* Import the initialization procedure table from pxmain.c. */
+/* Import the initialization procedure table from pxtop.c. */
 typedef int (*px_init_proc)(P1(px_state_t *));
 extern const px_init_proc px_init_table[];
 
@@ -82,6 +82,14 @@ px_state_alloc(gs_memory_t *memory)
 	    (*init)(pxs);
 	}
 	return pxs;
+}
+
+/* Release a px_state_t */
+void
+px_state_release(px_state_t *pxs)
+{
+	/* Don't free pxgs since it'll get freed as pgs' client */
+	gs_free_object(pxs->memory, pxs, "px_state_release");
 }
 
 /* Do one-time state initialization. */

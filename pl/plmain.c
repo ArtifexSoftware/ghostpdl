@@ -3,7 +3,7 @@
  */
 
 /* plmain.c */
-/* Main program utilities for PCL interpreters */
+/* Main program command-line interpreter for PCL interpreters */
 #undef DEBUG
 #define DEBUG			/* always enable debug output */
 #include "stdio_.h"
@@ -17,78 +17,627 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 }
 #include "string_.h"
 #include "gdebug.h"
+#include "gscdefs.h"
 #include "gsio.h"
 #include "gstypes.h"
+#include "gserrors.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
 #include "gsstruct.h"
+#include "gxalloc.h"
+#include "gsalloc.h"
+#include "gsargs.h"
 #include "gp.h"
-#include "gsmatrix.h"
-#include "gscdefs.h"
 #include "gsdevice.h"
-#include "gslib.h"
 #include "gsparam.h"
-#include "gsstate.h"
-#include "plmain.h"
+#include "plparse.h"
+#include "plplatf.h"
+#include "pltop.h"
+#include "pltoputl.h"
+
+/*
+ * Define the parameters for running the interpreter.
+ */
+typedef struct pl_main_instance_s {
+	/* The following are set at initialization time. */
+  gs_memory_t *memory;
+  long base_time[2];		/* starting usertime */
+  int error_report;		/* -E# */
+  bool pause;			/* -dNOPAUSE => false */
+  int first_page;		/* -dFirstPage= */
+  int last_page;		/* -dLastPage= */
+  gx_device *device;
+  pl_interp_implementation_t const *implementation; /*-L<Language>*/
+	/* The following are updated dynamically. */
+  int page_count;		/* # of pages printed */
+} pl_main_instance_t;
+
+/*
+ * Define bookeeping for interperters and devices 
+ */
+typedef struct pl_main_universe_s {
+    gs_memory_t             *mem;                /* mem alloc to dealloc devices */
+    pl_interp_implementation_t const * const *
+                            pdl_implementation;  /* implementations to choose from */
+    pl_interp_instance_t *  pdl_instance_array[100];	/* parallel to pdl_implementation */
+    pl_interp_t *           pdl_interp_array[100];	/* parallel to pdl_implementation */
+    pl_interp_implementation_t const
+                            *curr_implementation;
+    pl_interp_instance_t *  curr_instance;
+    gx_device               *curr_device;
+} pl_main_universe_t;
+
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
 
+/* Extern for PJL */
+extern pl_interp_implementation_t pjl_implementation;
+
+/* Extern for PDL(s): currently in one of: plimpl.c (XL & PCL), */
+/* pcimpl.c (PCL only), or pximpl (XL only) depending on make configuration.*/
+extern pl_interp_implementation_t const * const pdl_implementation[];	/* zero-terminated list */
+
 /* Define the usage message. */
 private const char *pl_usage = "\
-Usage: %s option* file...\n\
-Options: -dNOPAUSE -E[#] -h -K<maxK> -Z...\n\
+Usage: %s [option* file]+...\n\
+Options: -dNOPAUSE -E[#] -h -L<PCL5|PCL/XL> -K<maxK> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
 ";
 
-/* ---------------- Public procedures ---------------- */
+/* ---------------- Forward decls ------------------ */
+/* Functions to encapsulate pl_main_universe_t */
+int   /* 0 ok, else -1 error */
+pl_main_universe_init(P8(
+	pl_main_universe_t     *universe,            /* universe to init */
+	char                   *err_str,             /* RETURNS error str if error */
+	gs_memory_t            *mem,                 /* deallocator for devices */
+	pl_interp_implementation_t const * const
+	                       pdl_implementation[], /* implementations to choose from */
+	pl_interp_instance_t   *pjl_instance,        /* pjl to reference */
+	pl_main_instance_t     *inst,                /* instance for pre/post print */
+	pl_page_action_t       pl_pre_finish_page,   /* pre-page action */
+	pl_page_action_t       pl_post_finish_page   /* post-page action */
+));
+int   /* 0 ok, else -1 error */
+pl_main_universe_dnit(P2(
+	pl_main_universe_t     *universe,            /* universe to dnit */
+	char                   *err_str              /* RETRUNS errmsg if error return */
+));
+pl_interp_instance_t *    /* rets current interp_instance, 0 if err */
+pl_main_universe_select(P5(
+	pl_main_universe_t               *universe,              /* universe to select from */
+	char                             *err_str,               /* RETURNS error str if error */
+	pl_interp_implementation_t const *desired_implementation,/* impl to select */
+	gx_device                        *desired_device,        /* device to select */
+	gs_param_list                    *params                 /* device params to use */
+));
 
-void
-pl_main_init_standard_io()
+/* Process the options on the command line. */
+private FILE *pl_main_arg_fopen(P2(const char *fname, void *ignore_data));
+
+/* Initialize the instance parameters. */
+void pl_main_init_instance(P2(pl_main_instance_t *pmi, gs_memory_t *memory));
+void pl_main_reinit_instance(P1(pl_main_instance_t *pmi));
+
+#ifdef DEBUG
+/* Print memory and time usage. */
+void pl_print_usage(P3(gs_memory_t *mem, const pl_main_instance_t *pmi,
+		       const char *msg));
+#endif
+
+/* Process the options on the command line, including making the
+   initial device and setting its parameters.  Clients can also pass
+   in a version number and build date that will be printed as part of
+   the "usage" statement */
+int pl_main_process_options(P6(pl_main_instance_t *pmi, arg_list *pal,
+			       gs_c_param_list *params,
+                               pl_interp_implementation_t const * const impl_array[],
+                               const char *version, const char *build_date));
+
+/* Find default language implementation */
+pl_interp_implementation_t const *
+pl_default_implementation_for_file(P2(const char* name,
+   pl_interp_implementation_t const * const impl_array[]));
+
+/* Pre-page portion of page finishing routine */
+int	/* ret 0 if page should be printed, 1 if no print, else -ve error */
+pl_pre_finish_page(P2(pl_interp_instance_t *interp, void *closure));
+
+/* Post-page portion of page finishing routine */
+int	/* ret 0, else -ve error */
+pl_post_finish_page(P2(pl_interp_instance_t *interp, void *closure));
+
+      /* -------------- Read file cursor operations ---------- */
+/* Open a read cursor w/specified file */
+int pl_main_cursor_open(P4(pl_top_cursor_t *, const char *, byte *, unsigned));
+
+#ifdef DEBUG
+/* Refill from input, avoid extra call level for efficiency */
+int pl_main_cursor_next(P1(pl_top_cursor_t *cursor));
+#else
+ #define pl_main_cursor_next(curs) (pl_top_cursor_next(curs))
+#endif
+
+/* Read back curr file position */
+long pl_main_cursor_position(P1(pl_top_cursor_t *cursor));
+
+/* Close read cursor */
+void pl_main_cursor_close(P1(pl_top_cursor_t *cursor));
+
+
+/* ----------- Command-line driver for pl_interp's  ------ */
+/* 
+ * Here is the real main program.
+ */
+  int
+main(
+    int                 argc,
+    char **             argv
+)
 {
-    /* set up in, our err - not much we can do here if this fails */
+    gs_ref_memory_t *       imem;
+#define mem ((gs_memory_t *)imem)
+    pl_main_instance_t       inst;
+    arg_list                args;
+    const char *            arg;
+    char                    err_buf[256];
+    pl_main_universe_t      universe;
+    pl_interp_t *           pjl_interp;
+    pl_interp_instance_t *  pjl_instance;
+    pl_interp_instance_t *  curr_instance = 0;
+    gs_c_param_list         params;
+
+    /* Init std io: set up in, our err - not much we can do here if this fails */
     pl_get_real_stdio(&gs_stdin, &gs_stdout, &gs_stderr);
+
+    /* Initialize the platform. */
+    pl_platform_init(gs_stderr);
+#ifdef DEBUG
+    gs_debug_out = gs_stdout;
+#endif
+
+    /* Create a memory allocator to allocate various states from */
+    imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
+    imem->space = 0;		/****** WRONG ******/
+
+    /* Init the top-level instance */
+    gs_c_param_list_write(&params, mem);
+    pl_main_init_instance(&inst, mem);
+    arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL);
+
+    /* Create PJL instance */
+    if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, mem) < 0
+	 || pl_allocate_interp_instance(&pjl_instance, pjl_interp, mem) < 0 ) {
+	fprintf(gs_stderr, "Unable to create PJL interpreter");
+	exit(1);
+    }
+
+    /* Create PDL instances, etc */
+    if (pl_main_universe_init(&universe, err_buf, mem, pdl_implementation,
+			      pjl_instance, &inst, &pl_pre_finish_page, &pl_post_finish_page) < 0) {
+	fputs(err_buf, gs_stderr);
+	exit(1);
+    }
+
+#ifdef DEBUG
+    if (gs_debug_c(':'))
+	pl_print_usage(mem, &inst, "Start");
+#endif
+
+    /* ------ Begin Main LOOP ------- */
+    for (;;) {
+	/* Process one input file. */
+	byte                buf[10000];
+	pl_top_cursor_t     r;
+	int                 code = 0;
+	bool                in_pjl = true;
+	bool                skipping = false;
+	pl_interp_implementation_t const *desired_implementation;
+
+	/* Process any new options. May request new device. */
+	if (pl_main_process_options(&inst, &args, &params, pdl_implementation,
+				    pl_characteristics(&pjl_implementation)->version,
+				    pl_characteristics(&pjl_implementation)->build_date) < 0) {
+	    fprintf(gs_stderr, pl_usage);
+	    exit(1);
+	}
+
+	/* Process the next file. process_options leaves next non-option on arg list*/
+	if ((arg = arg_next(&args)) == 0)
+	    break;  /* no nore files to process */
+
+	/* Determine language of file to interpret. We're making the incorrect */
+	/* assumption that any file only contains jobs in one PDL. The correct */
+	/* way to implement this would be to have a language auto-detector. */
+	if (inst.implementation)
+	    desired_implementation = inst.implementation;  /* was specified as cmd opt */
+	else
+	    desired_implementation
+		= pl_default_implementation_for_file(arg, pdl_implementation);
+
+	/* Select desired language & device */
+	if ( (curr_instance = pl_main_universe_select(&universe, err_buf,
+						      desired_implementation, inst.device, (gs_param_list *)&params)) == 0) {
+	    fputs(err_buf, gs_stderr);
+	    exit(1);
+	}
+
+#ifdef DEBUG
+        if (gs_debug_c(':'))
+            dprintf1("%% Reading %s:\n", arg);
+#endif
+
+	/* open file for reading */
+        if (pl_main_cursor_open(&r, arg, buf, sizeof(buf)) < 0) {
+            fprintf(gs_stderr, "Unable to open %s for reading.\n", arg);
+            exit(1);
+        }
+
+        /* reinit per-job instance vars */
+        pl_main_reinit_instance(&inst);
+
+        if ( pl_init_job(pjl_instance) < 0 ) {
+            fprintf(gs_stderr, "Unable to init PJL job.\n");
+            exit(1);
+        }
+
+	/* pump data thru PJL/PDL until EOD or error */
+        in_pjl = true;
+        skipping = false;
+        for (;;) {
+            if_debug1('i', "[i][file pos=%ld]\n", pl_main_cursor_position(&r));
+            if (pl_main_cursor_next(&r) <= 0)
+    	        break;
+	process:
+            if (in_pjl) {
+                if (skipping) {
+		    code = pl_flush_to_eoj(pjl_instance, &r.cursor);
+		    if (code < 0)
+			break;   /* flushing error, blow away the remaining file */
+		    else {
+			skipping = !code;
+			if (!skipping)
+			    code = e_ExitLanguage;
+		    }
+                } else
+		    code = pl_process(pjl_instance, &r.cursor);
+                if (code == e_ExitLanguage) {
+		    in_pjl = false;
+		    if ( pl_init_job(curr_instance) < 0 ) {
+			fprintf(gs_stderr, "Unable to init PDL job.\n");
+			exit(1);
+		    }
+		    goto process;
+    	        } else if (code < 0) {
+		    skipping = 1;   /* PJL error */
+		    goto process;
+                }
+    	    } else {
+                if (skipping) {
+		    code = pl_flush_to_eoj(curr_instance, &r.cursor);
+		    if (code < 0)
+			break;   /* flushing error, blow away the remaining file */
+		    else {
+			skipping = !code;
+			if (!skipping)
+			    code = e_ExitLanguage;
+		    }
+                } else
+		    code = pl_process(curr_instance, &r.cursor);
+    	        if (code == e_ExitLanguage) {
+    	            in_pjl = true;
+                    /* Really should switch back to language auto-sense,*/
+		    /* but don't have one...*/
+                    if ( pl_dnit_job(curr_instance) < 0 ) {
+			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
+			exit(1);
+                    }
+                } else if (code < 0) {
+		    /* Error: Print PDL status if applicable, dnit PDL job, & skip to eoj */
+		    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
+				     inst.error_report > 0, gs_stdout);
+		    skipping = 1;
+		    goto process;
+                }
+    	    }
+        }
+#if 0
+#ifdef DEBUG
+        if (gs_debug_c(':'))
+            dprintf3( "Final file position = %ld, exit code = %d, mode = %s\n",
+    	              pl_main_cursor_position(&r),
+                      code,
+    	              (in_pjl ? "PJL" : "PDL")
+                      );
+#endif
+#endif
+        /* Print PDL status if applicable, then dnit PDL job */
+        if (!in_pjl) {
+	    pl_process_eof(curr_instance);
+	    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
+			     inst.error_report > 0, gs_stdout);
+	    if ( pl_dnit_job(curr_instance) < 0 ) {
+		fprintf(gs_stderr, "Unable to deinit PDL job.\n");
+		exit(1);
+	    }
+        } else {
+	    pl_process_eof(pjl_instance);
+	    if ( pl_dnit_job(pjl_instance) < 0 ) {
+		fprintf(gs_stderr, "Unable to deinit PJL.\n");
+		exit(1);
+	    }
+        }
+
+        /* close input file */
+        pl_dnit_job(pjl_instance);
+        pl_main_cursor_close(&r);
+    }
+
+    /* ----- End Main loop ----- */
+
+    /* Dnit PDLs */
+    if (pl_main_universe_dnit(&universe, err_buf)) {
+	fputs(err_buf, gs_stderr);
+	exit(1);
+    }
+
+    /* dnit pjl */
+    if ( pl_deallocate_interp_instance(pjl_instance) < 0
+	 || pl_deallocate_interp(pjl_interp) < 0 ) {
+	fprintf(gs_stderr, "Unable to close out PJL instance\n");
+	exit(1);
+    }
+
+#ifdef DEBUG
+    if ( gs_debug_c(':') ) {
+        pl_print_usage(mem, &inst, "Final");
+        dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
+    }
+    if (gs_debug_c('!'))
+        debug_dump_memory(imem, &dump_control_default);
+#endif
+
+    /* release param list */
+    gs_c_param_list_release(&params);
+    arg_finit(&args);
+
+    pl_platform_dnit(0);
+    return 0;
+#undef mem
 }
+
+/* --------- Functions operating on pl_main_universe_t ----- */
+/* Init main_universe from pdl_implementation */
+int   /* 0 ok, else -1 error */
+pl_main_universe_init(
+	pl_main_universe_t     *universe,            /* universe to init */
+	char                   *err_str,             /* RETURNS error str if error */
+	gs_memory_t            *mem,                 /* deallocator for devices */
+	pl_interp_implementation_t const * const
+	                       pdl_implementation[], /* implementations to choose from */
+	pl_interp_instance_t   *pjl_instance,        /* pjl to reference */
+	pl_main_instance_t     *inst,                /* instance for pre/post print */
+	pl_page_action_t       pl_pre_finish_page,   /* pre-page action */
+	pl_page_action_t       pl_post_finish_page   /* post-page action */
+)
+{
+	int index;
+
+	/* 0-init everything */
+	memset(universe, 0, sizeof(*universe));
+	universe->pdl_implementation = pdl_implementation;
+	universe->mem = mem;
+
+	/* Create & init PDL all instances. Could do this lazily to save memory, */
+	/* but for now it's simpler to just create all instances up front. */
+	for (index = 0; pdl_implementation[index] != 0; ++index) {
+	  pl_interp_instance_t *instance;
+
+	  if ( pl_allocate_interp(&universe->pdl_interp_array[index],
+	    pdl_implementation[index], mem) < 0
+	  || pl_allocate_interp_instance(&universe->pdl_instance_array[index],
+	   universe->pdl_interp_array[index], mem) < 0 ) {
+	      if (err_str)
+	        sprintf(err_str, "Unable to create %s interpreter",
+	         pl_characteristics(pdl_implementation[index])->language);
+	      goto pmui_err;
+	  }
+
+	  instance = universe->pdl_instance_array[index];
+	  if ( pl_set_client_instance(instance, pjl_instance) < 0
+	   || pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0
+	   || pl_set_post_page_action(instance, pl_post_finish_page, inst) < 0 ) {
+	    if (err_str)
+	      sprintf(err_str, "Unable to init %s interpreter",
+	       pl_characteristics(pdl_implementation[index])->language);
+	    goto pmui_err;
+	  }
+	}
+	return 0;
+
+pmui_err:
+	pl_main_universe_dnit(universe, 0);
+	return -1;
+}
+
+/* Undo pl_main_universe_init */
+int   /* 0 ok, else -1 error */
+pl_main_universe_dnit(
+	pl_main_universe_t     *universe,            /* universe to dnit */
+	char                   *err_str              /* RETRUNS errmsg if error return */
+)
+{
+    int index;
+
+    /* Deselect last-selected device */
+    if (universe->curr_instance
+     && pl_remove_device(universe->curr_instance) < 0) {
+      if (err_str)
+        sprintf(err_str, "Unable to close out PDL instance\n");
+      return -1;
+    }
+
+    /* dnit interps */
+    for (index = 0; universe->pdl_implementation[index] != 0; ++index)
+      if ( (universe->pdl_instance_array[index]
+        && pl_deallocate_interp_instance(universe->pdl_instance_array[index]) < 0)
+       || (universe->pdl_interp_array[index]
+        && pl_deallocate_interp(universe->pdl_interp_array[index]) < 0 )) {
+          if (err_str)
+            sprintf(err_str, "Unable to close out %s instance\n",
+             pl_characteristics(universe->pdl_implementation[index])->language);
+          return -1;
+      }
+
+    /* dealloc device if sel'd */
+    if (universe->curr_device) {
+      gs_closedevice(universe->curr_device);
+      gs_free_object(universe->mem, universe->curr_device,
+       "pl_main_universe_dnit(gx_device)");
+    }
+
+    return 0;
+}
+
+/* Select new device and/or implementation, deselect one one (opt) */
+pl_interp_instance_t *    /* rets current interp_instance, 0 if err */
+pl_main_universe_select(
+	pl_main_universe_t               *universe,              /* universe to select from */
+	char                             *err_str,               /* RETURNS error str if error */
+	pl_interp_implementation_t const *desired_implementation,/* impl to select */
+	gx_device                        *desired_device,        /* device to select */
+	gs_param_list                    *params                 /* device params to set */
+)
+{	
+    int params_are_set = 0;
+
+    /* If new interpreter/device is different, deselect it from old interp */
+    if ((universe->curr_implementation
+	 && universe->curr_implementation != desired_implementation)
+	|| (universe->curr_device && universe->curr_device != desired_device)) {
+	if (universe->curr_instance
+	    && pl_remove_device(universe->curr_instance) < 0) {
+	    if (err_str)
+		strcpy(err_str, "Unable to deselect device from interp instance\n");
+	    return 0;
+	}
+	if (universe->curr_device && universe->curr_device != desired_device) {
+	    /* Here, we close the device. Note that this is not an absolute */
+	    /* requirement: we could have a pool of open devices & select them */
+	    /* into interp_instances as needed. The reason we force a close */
+	    /* here is that multiple *async* devices would need coordination */
+	    /* since an async device is not guaranteed to have completed */
+	    /* rendering until it is closed. So, we close devices here to */
+	    /* avoid things like intermingling of output streams. */
+	    if (gs_closedevice(universe->curr_device) < 0) {
+		if (err_str)
+		    strcpy(err_str, "Unable to close device\n");
+		return 0;
+	    } else {
+		/* Delete the device. */
+		gs_free_object(universe->mem,
+			       universe->curr_device, "pl_main_universe_select(gx_device)");
+		universe->curr_device = 0;
+	    }
+	}
+    }
+
+    /* Switch to/select new interperter if indicated. */
+    /* Here, we assume that instances of all interpreters are open & ready */
+    /* to go. If memory were scarce, we could dynamically destroy/create */
+    /* interp_instances here (or even de/init the entire interp for greater */
+    /* memory savings). */
+    if ((!universe->curr_implementation
+	 || universe->curr_implementation != desired_implementation)
+	|| !universe->curr_device) {
+	int index;
+
+	/* Select/change PDL if needed */
+	if (!universe->curr_implementation
+	    || universe->curr_implementation != desired_implementation) {
+	    /* find instance corresponding to implementation */
+	    for (index = 0;
+		 desired_implementation != universe->pdl_implementation[index];
+		 ++index)
+		;
+	    universe->curr_instance = universe->pdl_instance_array[index];
+	    universe->curr_implementation = desired_implementation;
+	}
+
+	/* Open a new device if needed. */
+	if (!universe->curr_device)  /* remember that curr_device==0 if we closed it above */
+	    if (gs_opendevice(desired_device) < 0) {
+		if (err_str)
+		    strcpy(err_str, "Unable to open new device\n");
+		return 0;
+	    } else
+		universe->curr_device = desired_device;
+
+	/* Set latest params into device BEFORE setting into device. */
+	/* Do this here because PCL5 will do some 1-time initializations based */
+	/* on device geometry when pl_set_device, below, selects the device. */
+	if ( gs_putdeviceparams(universe->curr_device, params) < 0 ) {
+	    strcpy(err_str, "Unable to set params into device\n");
+	    return 0;
+	}
+	params_are_set = 1;
+
+	/* Select curr/new device into PDL instance */
+	if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
+	    if (err_str)
+		strcpy(err_str, "Unable to install device into PDL interp");
+	    return 0;
+	}
+    }
+
+    /* Set latest params into device. Write them all in case any changed */
+    if ( !params_are_set
+	 && gs_putdeviceparams(universe->curr_device, params) < 0 ) {
+	strcpy(err_str, "Unable to set params into device\n");
+	return 0;
+    }
+
+    return universe->curr_instance;
+}
+
+/* ------- Functions related to pl_main_instance_t ------ */
+
 /* Initialize the instance parameters. */
 void
-pl_main_init(pl_main_instance_t *pmi, gs_memory_t *mem)
-{	pmi->memory = mem;
-	{ int i;
-	  for ( i = 0; i < countof(pmi->spaces.memories.indexed); ++i )
-	    pmi->spaces.memories.indexed[i] = 0;
-	  pmi->spaces.memories.named.local = pmi->spaces.memories.named.global =
-	    (gs_ref_memory_t *)mem;
-	}
-	gp_get_usertime(pmi->base_time);
-	pmi->error_report = -1;
-	pmi->pause = true;
-	pmi->first_page = 1;
-	pmi->last_page = max_int;
-	pmi->device = 0;
-	pmi->page_count = 0;
-	{ gs_memory_status_t status;
-	  gs_memory_status(mem, &status);
-	  pmi->prev_allocated = status.allocated;
-	}
+pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
+{	pti->memory = mem;
+	pti->error_report = -1;
+	pti->pause = true;
+	pti->device = 0;
+	pti->implementation = 0;
+	gp_get_usertime(pti->base_time);
+	pl_main_reinit_instance(pti);
 }
 
-/* Create a default device if necessary. */
-private int
-pl_main_create_device(pl_main_instance_t *pmi, int index)
-{	if ( !pmi->device )
+/* Re-initialize the instance parameters after each job. */
+void
+pl_main_reinit_instance(pl_main_instance_t *pti)
+{
+	pti->first_page = 1;
+	pti->last_page = max_int;
+	pti->page_count = 0;
+}
+
+/* -------- Command-line processing ------ */
+
+/* Create a default device if not already defined. */
+int
+pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
+{	int code = 0;
+	if ( !is_default || !pti->device )
 	  { const gx_device **list;
-	    int code;
 
 	    gs_lib_device_list((const gx_device * const **)&list, NULL);
-	    code = gs_copydevice(&pmi->device, list[index], pmi->memory);
-	    if ( code < 0 )
-	      { fprintf(gs_stderr, "Fatal error: gs_copydevice returned %d\n",
-			code);
-	        exit(1);
-	      }
+	    code = gs_copydevice(&pti->device, list[index], pti->memory);
 	  }
-	return 0;
+	return code;
 }
 
 /* Process the options on the command line. */
@@ -96,28 +645,27 @@ private FILE *
 pl_main_arg_fopen(const char *fname, void *ignore_data)
 {	return fopen(fname, "r");
 }
+
 #define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
-pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
-  int argc, char *version, char *build_date)
-{	gs_memory_t *mem = pmi->memory;
-	const gx_device **dev_list;
+pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
+ gs_c_param_list *params, pl_interp_implementation_t const * const impl_array[],
+ const char *version, const char *build_date)
+{	const gx_device **dev_list;
 	int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
 	int code = 0;
 	bool help = false;
 	const char *arg;
-	gs_c_param_list params;
-#define plist ((gs_param_list *)&params)
+#define plist ((gs_param_list *)params)
 
-	gs_c_param_list_write(&params, mem);
-	arg_init(pal, (const char **)argv, argc, pl_main_arg_fopen, NULL);
+	gs_c_param_list_rewrite(params);
 	while ( (arg = arg_next(pal)) != 0 && *arg == '-' )
 	  { arg += 2;
 	    switch ( arg[-1] )
 	      {
 	      default:
 		fprintf(gs_stderr, "Unrecognized switch: %s\n", arg);
-		exit(1);
+		return -1;
 	      case 'd':
 	      case 'D':
 		if ( !strcmp(arg, "BATCH") )
@@ -140,7 +688,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		    value = "true";
 		  if ( sscanf(value, "%d", &vi) != 1 )
 		    { fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
-		      exit(1);
+		      return -1;
 		    }
 		  if ( !strcmp(arg, "FirstPage") )
 		    pmi->first_page = max(vi, 1);
@@ -163,7 +711,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		  if ( sscanf(arg, "%ux%u", &geom[0], &geom[1]) != 2 )
 		  { fputs("-g must be followed by <width>x<height>\n",
 			  gs_stderr);
-		    exit(1);
+		    return -1;
 		  }
 		  ia.data = geom;
 		  ia.size = 2;
@@ -179,7 +727,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 
 		  if ( sscanf(arg, "%d", &maxk) != 1 )
 		    { fputs("-K must be followed by a number\n", gs_stderr);
-		      exit(1);
+		      return -1;
 		    }
 		  gs_malloc_limit = (long)maxk << 10;
 		}
@@ -193,7 +741,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		    default:
 		      fputs("-r must be followed by <res> or <xres>x<yres>\n",
 			    gs_stderr);
-		      exit(1);
+		      return -1;
 		    case 1:	/* -r<res> */
 		      res[1] = res[0];
 		    case 2:	/* -r<xres>x<yres> */
@@ -215,25 +763,20 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 
 		  if ( !(eqp || (eqp = strchr(arg, '#'))) )
 		    { fputs("Usage for -s is -s<option>=<string>\n", gs_stderr);
-		      exit(1);
+		      return -1;
 		    }
 		  eqchar = *eqp, *eqp = 0, value = eqp + 1;
 		  if ( !strcmp(arg, "DEVICE") )
 		  { int di;
 
-		    if ( pmi->device )
-		      { fputs("-sDEVICE= must precede any input files\n",
-			      gs_stderr);
-		        exit(1);
-		      }
 		    for ( di = 0; di < num_devs; ++di )
 		      if ( !strcmp(gs_devicename(dev_list[di]), value) )
 			break;
 		    if ( di == num_devs )
 		      { fprintf(gs_stderr, "Unknown device name %s.\n", value);
-		        exit(1);
+		        return -1;
 		      }
-		    pl_main_create_device(pmi, di);
+		    pl_top_create_device(pmi, di, false);
 		  }
 		  else
 		    { param_string_from_string(str, value);
@@ -247,13 +790,32 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		  for ( ; *p; ++p )
 		    gs_debug[(int)*p] = 1;
 		}
+	        break;
+	      case 'L': /* language */
+	        {
+	          int index;
+	          for (index = 0; impl_array[index] != 0; ++index)
+	            if (!strcmp(arg,
+	             pl_characteristics(impl_array[index])->language))
+	              break;
+	          if (impl_array[index] != 0)
+	            pmi->implementation = impl_array[index];
+	          else {
+	            fputs("Choose language in -L<language> from: ", gs_stderr);
+	            for (index = 0; impl_array[index] != 0; ++index)
+	              fprintf(gs_stderr, "%s ",
+	               pl_characteristics(impl_array[index])->language);
+	            fputs("\n", gs_stderr);
+	            return -1;
+	          }
+	          break;
+	        }
 	      }
 	  }
-out:	if ( arg == 0 || help )
+out:	if ( help )
 	  { int i;
 	    arg_finit(pal);
-	    gs_c_param_list_release(&params);
-	    fprintf(gs_stderr, pl_usage, argv[0]);
+	    gs_c_param_list_release(params);
 	    if (version)
 		fprintf(gs_stderr, "Version: %s\n", version);
 	    if (build_date)
@@ -265,37 +827,56 @@ out:	if ( arg == 0 || help )
 		fprintf(gs_stderr, " %s", gs_devicename(dev_list[i]));
 	    }
 	    fputs("\n", gs_stderr);
-	    exit(1);
+	    return -1;
 	  }
-	gs_c_param_list_read(&params);
-	pl_main_create_device(pmi, 0); /* create default device if needed */
-	code = gs_putdeviceparams(pmi->device, plist);
-	gs_c_param_list_release(&params);
+	gs_c_param_list_read(params);
+	pl_top_create_device(pmi, 0, true); /* create default device if needed */
 #undef plist
 	/* The last argument wasn't a switch, so push it back. */
-	arg_push_string(pal, arg);
+	if (arg)
+	  arg_push_string(pal, arg);
 	return 0;
 }
 
-/* Allocate and initialize the first graphics state. */
-int
-pl_main_make_gstate(pl_main_instance_t *pmi, gs_state **ppgs)
-{	gs_state *pgs;
-	int code = pl_main_create_device(pmi, 0);
+/* Find default language implementation */
+pl_interp_implementation_t const *
+pl_default_implementation_for_file(
+   const char*                      name,         /* filename (hint) */
+   pl_interp_implementation_t const * const impl_array[] /* implementations to choose from */
+)
+{
+	/* known filename extension-->language name mappings: 0-terminated */
+	static const char* extension_to_language[] = {
+	  "pcl", "PCL5",
+	  "pxl", "PCL/XL",
+	  0
+	};
 
-	if ( code < 0 )
-	  return code;
-	pgs = gs_state_alloc(pmi->memory);
-	gs_setdevice_no_erase(pgs, pmi->device);	/* can't erase yet */
-	/* All H-P languages want accurate curves. */
-	gs_setaccuratecurves(pgs, true);
-	*ppgs = pgs;
-	return 0;
+	/* Try to get filename's extension & look it up in database */
+	const char* extension = strrchr(name, '.');
+	if (extension) {
+	  const char** lookup;
+	  pl_interp_implementation_t const * const * impl;
+	  ++extension;
+
+	  for (lookup = extension_to_language; *lookup; lookup += 2)
+	    if (!strcmp(extension, *lookup)) {
+	      /* Found match, lookup language name */
+	      for (impl = impl_array; *impl != 0; ++impl)
+	        if (!strcmp(*(lookup + 1),
+	         pl_characteristics(*impl)->language))
+	          return *impl;
+	      break;  /* filename extension matched, but that language not avail */
+	    }
+	}
+
+	/* Filename mapping doesn't work. Use first interpreter in list */
+	return impl_array[0];
 }
 
 /* Print memory and time usage. */
 void
-pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
+pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pti,
   const char *msg)
 {	gs_memory_status_t status;
 	long utime[2];
@@ -303,58 +884,112 @@ pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
 	gs_memory_status(mem, &status);
 	gp_get_usertime(utime);
 	dprintf5("%% %s time = %g, pages = %d, memory allocated = %lu, used = %lu\n",
-		 msg, utime[0] - pmi->base_time[0] +
-		 (utime[1] - pmi->base_time[1]) / 1000000000.0,
-		 pmi->page_count, status.allocated, status.used);
+		 msg, utime[0] - pti->base_time[0] +
+		 (utime[1] - pti->base_time[1]) / 1000000000.0,
+		 pti->page_count, status.allocated, status.used);
 }
 
-/* Finish a page, possibly printing usage statistics and/or pausing. */
-int
-pl_finish_page(pl_main_instance_t *pmi, gs_state *pgs, int num_copies,
-  int flush)
-{	int code = 0;
+/* Log a string to console, optionally wait for input */
+void
+pl_log_string(char *str, int wait_for_key)
+{	fputs(str, gs_stderr);
+	if (wait_for_key)
+	  getchar();
+}
 
-	++(pmi->page_count);
-	if ( pmi->page_count >= pmi->first_page &&
-	     pmi->page_count <= pmi->last_page
+/* Pre-page portion of page finishing routine */
+int	/* ret 0 if page should be printed, 1 if no print, else -ve error */
+pl_pre_finish_page(pl_interp_instance_t *interp, void *closure)
+{
+	pl_main_instance_t *pti = (pl_main_instance_t *)closure;
+	++(pti->page_count);
+	if ( pti->page_count >= pti->first_page &&
+	     pti->page_count <= pti->last_page
 	   )
 	  {
-	    if ( !pmi->pause && gs_debug_c(':') )
-	      pl_print_usage(pmi->memory, pmi, "render:");
-	    code = gs_output_page(pgs, num_copies, flush);
-	    if ( pmi->pause )
-	      { fprintf(gs_stderr, "End of page %d, press <enter> to continue.\n",
-			pmi->page_count);
-	        getchar();
-	      }
-	    else if ( gs_debug_c(':') )
-	      pl_print_usage(pmi->memory, pmi, " done :");
+	    if ( !pti->pause && gs_debug_c(':') )
+	      pl_print_usage(pti->memory, pti, "render:");
+	    return 0;   /* allow printing to proceed */
 	  }
-	return code;
+	else
+	  {
+	    /* prevent printing (& pl_post_finish_page) from occurring */
+	    return 1;
+	  }
+}
+
+/* Post-page portion of page finishing routine */
+int	/* ret 0, else -ve error */
+pl_post_finish_page(pl_interp_instance_t *interp, void *closure)
+{
+	pl_main_instance_t *pti = (pl_main_instance_t *)closure;
+	if ( pti->pause )
+	  { char strbuf[256];
+	    sprintf(strbuf, "End of page %d, press <enter> to continue.\n",
+		  pti->page_count);
+	    pl_log_string(strbuf, 1);
+	  }
+	else if ( gs_debug_c(':') )
+	  pl_print_usage(pti->memory, pti, " done :");
+
+	return 0;
 }
 
 /* ---------------- Stubs ---------------- */
-
-/* Stubs for GC */
-const gs_ptr_procs_t ptr_struct_procs = { NULL, NULL, NULL };
-const gs_ptr_procs_t ptr_string_procs = { NULL, NULL, NULL };
-const gs_ptr_procs_t ptr_const_string_procs = { NULL, NULL, NULL };
-void * /* obj_header_t * */
-gs_reloc_struct_ptr(const void * /* obj_header_t * */ obj, gc_state_t *gcst)
-{	return (void *)obj;
-}
+/* Error termination, called back from plplatf.c */
+/* Only called back if abnormal termination */
 void
-gs_reloc_string(gs_string *sptr, gc_state_t *gcst)
+pl_exit(int exit_status)
 {
-}
-void
-gs_reloc_const_string(gs_const_string *sptr, gc_state_t *gcst)
-{
-}
-
-/* Other stubs */
-void
-gs_exit(int exit_status)
-{	gs_lib_finit(exit_status, 0);
 	exit(exit_status);
 }
+
+/* -------------- Read file cursor operations ---------- */
+/* Open a read cursor w/specified file */
+int	/* returns 0 ok, else -ve error code */
+pl_main_cursor_open(
+	pl_top_cursor_t  *cursor,        /* cursor to init/open */
+   const char       *fname,         /* name of file to open */
+	byte             *buffer,        /* buffer to use for reading */
+   unsigned         buffer_length   /* length of *buffer */
+)
+{
+	/* try to open file */
+	cursor->strm = fopen(fname, "rb");
+	if (!cursor->strm)
+	  return gs_error_ioerror;
+
+	return pl_top_cursor_init(cursor, cursor->strm, buffer, buffer_length);
+}
+
+#ifdef DEBUG
+/* Refill from input */
+int    /* rets 1 ok, else 0 EOF, -ve error */
+pl_main_cursor_next(
+	pl_top_cursor_t *cursor       /* cursor to operate on */
+)
+{
+	return pl_top_cursor_next(cursor);
+}
+#endif /* DEBUG */
+
+/* Read back curr file position */
+long    /* offset from beginning of file */
+pl_main_cursor_position(
+	pl_top_cursor_t *cursor     /* cursor to operate on */
+)
+{
+	return (long)ftell(cursor->strm)
+	 - (cursor->cursor.limit - cursor->cursor.ptr);
+}
+
+/* Close read cursor */
+void
+pl_main_cursor_close(
+	pl_top_cursor_t *cursor       /* cursor to operate on */
+)
+{
+	pl_top_cursor_dnit(cursor);
+	fclose(cursor->strm);
+}
+

@@ -5,9 +5,9 @@
 # Generic top-level makefile for Unix/gcc platforms.
 
 # The product-specific top-level makefile defines the following:
-#	MAKEFILE, CCLD, COMMONDIR, CONFIG, DEVICE_DEVS, GCFLAGS, GENDIR,
-#	GLSRCDIR, GLGENDIR, GLOBJDIR,
-#	MAIN_OBJ, TARGET_DEVS, TARGET_XE
+#	MAKEFILE, CCLD, COMMONDIR, CONFIG, DEVICE_DEVS,
+#	GCFLAGS, GENDIR, GLSRCDIR, GLGENDIR, GLOBJDIR,
+#	TOP_OBJ, MAIN_OBJ, TARGET_DEVS, TARGET_XE
 # It also must include the product-specific *.mak.
 
 default: $(TARGET_XE)
@@ -73,9 +73,9 @@ $(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
 	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf.h -p "%s&s&&" -o $(GENDIR)/ldconf.tr
 
 # Link a Unix executable.
-$(TARGET_XE): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ)
+$(TARGET_XE): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
 	cat $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) -lm

@@ -151,7 +151,8 @@ pcl_do_registrations(
     const pcl_init_t ** init;
     int code;
     /* initialize gl/2 command counter */
-    hpgl_init_command_index(pst->hpgl_parser_state);
+    hpgl_init_command_index(&pst->hpgl_parser_state, pcs->memory);
+    pcs->parse_data = pst->hpgl_parser_state;
     /* initialize pcl's command counter */
     code = pcl_init_command_index(pst, pcs);
     if ( code < 0 )

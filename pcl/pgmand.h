@@ -121,7 +121,7 @@ typedef struct {
   char char1, char2;
   hpgl_command_definition_t defn;
 } hpgl_named_command_t;
-void hpgl_init_command_index(P1(hpgl_parser_state_t *pgl_parser_state));
+int hpgl_init_command_index(P2(hpgl_parser_state_t **pgl_parser_state, gs_memory_t *mem));
 void hpgl_define_commands(P2(const hpgl_named_command_t *, hpgl_parser_state_t *pgl_parser_state));
 #define DEFINE_HPGL_COMMANDS \
 { static const hpgl_named_command_t defs_[] = {

@@ -49,7 +49,7 @@ pcl_delete_soft_font(pcl_state_t *pcs, const byte *key, uint ksize,
 	/* if this is permanent font we need to tell PJL we are
            removing it */
 	if ( plfontp->storage & pcds_permanent )
-	    if ( pjl_register_permanent_soft_font_deletion(pcs->pjls,
+	    if ( pjl_proc_register_permanent_soft_font_deletion(pcs->pjls,
 		       plfontp->params.pjl_font_number) > 0 )
 		pcl_set_current_font_environment(pcs);
 	pcs->font = pcs->font_selection[pcs->font_selected].font;
@@ -114,7 +114,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
 	    if ( pl_dict_find(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) ) {
 		((pl_font_t *)value)->storage = pcds_permanent;
 		((pl_font_t *)value)->params.pjl_font_number = 
-		    pjl_register_permanent_soft_font_addition(pcs->pjls);
+		    pjl_proc_register_permanent_soft_font_addition(pcs->pjls);
 	    }
 	break;
     case 6:

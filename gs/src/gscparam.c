@@ -96,13 +96,12 @@ private const gs_param_list_procs c_write_procs =
 void
 gs_c_param_list_write(gs_c_param_list * plist, gs_memory_t * mem)
 {
-    plist->procs = &c_write_procs;
     plist->memory = mem;
     plist->head = 0;
     plist->target = 0;		/* not used for writing */
     plist->count = 0;
     plist->any_requested = false;
-    plist->coll_type = gs_param_collection_dict_any;
+    gs_c_param_list_rewrite(plist);
 }
 
 /* Set the target of a list.  Only relevant for reading. */
@@ -110,6 +109,15 @@ void
 gs_c_param_list_set_target(gs_c_param_list *plist, gs_param_list *target)
 {
     plist->target = target;
+}
+
+/* Re-enable a list for writing, without clearing it. */
+/* gs_c_parram_list_write must have been called previously. */
+void
+gs_c_param_list_rewrite(gs_c_param_list * plist)
+{
+    plist->procs = &c_write_procs;
+    plist->coll_type = gs_param_collection_dict_any;
 }
 
 /* Release a list. */

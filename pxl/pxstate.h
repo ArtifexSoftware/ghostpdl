@@ -10,7 +10,8 @@
 
 #include "gsmemory.h"
 #include "pxgstate.h"
-#include "pjparse.h"
+#include "pltop.h"
+
 /* Define an abstract type for a font directory. */
 #ifndef gs_font_dir_DEFINED
 #  define gs_font_dir_DEFINED	
@@ -128,7 +129,7 @@ struct px_state_s {
   uint warning_length;
   char warnings[px_max_warning_message + 1];
   /* ---------------- PJL state -------------------- */
-  pjl_parser_state *pjls;
+  pl_interp_instance_t *pjls;
 };
 #define private_st_px_state()		/* in pxstate.c */\
   gs_private_st_composite(st_px_state, px_state_t, "px_state",\
@@ -150,6 +151,9 @@ struct px_state_s {
 
 /* Allocate a px_state_t. */
 px_state_t *px_state_alloc(P1(gs_memory_t *));
+
+/* Release a px_state_t */
+void px_state_release(P1(px_state_t *pxs));
 
 /* Do one-time state initialization. */
 void px_state_init(P2(px_state_t *, gs_state *));

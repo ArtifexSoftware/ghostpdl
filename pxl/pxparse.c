@@ -172,6 +172,12 @@ px_process_alloc(gs_memory_t *memory)
 	return st;
 }
 
+/* Release a parser state. */
+void
+px_process_release(px_parser_state_t *st)
+{	gs_free_object(st->memory, st, "px_process_alloc");
+}
+
 /* Initialize the parser state. */
 void
 px_process_init(px_parser_state_t *st, bool big_endian)

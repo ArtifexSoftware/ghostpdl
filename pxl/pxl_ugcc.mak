@@ -37,7 +37,8 @@ PXLOBJDIR=$(GENDIR)
 CONFIG=6
 TARGET_DEVS=$(PXLOBJDIR)/pxl.dev
 TARGET_XE=$(PXLOBJDIR)/pclxl
-MAIN_OBJ=$(PXLOBJDIR)/pxmain.$(OBJ)
+MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ)  $(PXLOBJDIR)/pximpl.$(OBJ)
+TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.

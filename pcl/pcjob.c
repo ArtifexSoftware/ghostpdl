@@ -13,6 +13,7 @@
 #include "pcparam.h"
 #include "pcdraw.h"
 #include "pcpage.h"
+#include "pjtop.h"
 
 /* Commands */
 
@@ -197,11 +198,11 @@ pcjob_do_registration(
 private void
 pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	  { pcs->num_copies = pjl_vartoi(pjl_get_envvar(pcs->pjls, "copies"));
+	  { pcs->num_copies = pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "copies"));
 	    pcs->duplex =
-		!pjl_compare(pjl_get_envvar(pcs->pjls, "duplex"), "off") ? false : true;
+		!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "duplex"), "off") ? false : true;
 	    pcs->bind_short_edge =
-		!pjl_compare(pjl_get_envvar(pcs->pjls, "binding"), "longedge") ? false : true;
+		!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "binding"), "longedge") ? false : true;
 	    pcs->back_side = false;
 	    pcs->output_bin = 1;
           }

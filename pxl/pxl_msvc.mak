@@ -5,7 +5,9 @@
 # Top-level makefile for PCL XL on Win32 platforms using MS Visual C 4.1 or later
 
 # Define the name of this makefile.
+!ifndef MAKEFILE
 MAKEFILE=..\pxl\pxl_msvc.mak
+!endif
 
 # The build process will put all of its output in this directory:
 !ifndef GENDIR
@@ -65,7 +67,8 @@ CONFIG=6
 TARGET_DEVS=$(PXLOBJDIR)$(D)pxl.dev
 
 # Main file's name
-MAIN_OBJ=$(PXLOBJDIR)$(D)pxmain.$(OBJ)
+MAIN_OBJ=$(PLOBJDIR)$(D)plmain.$(OBJ) $(PXLOBJDIR)$(D)pximpl.$(OBJ)
+TOP_OBJ=$(PXLOBJDIR)$(D)pxtop.$(OBJ)
 
 # Executable path\name w/o the .EXE extension
 !ifndef TARGET_XE

@@ -363,14 +363,22 @@ hpgl_arg_units(hpgl_args_t *pargs, hpgl_real_t *pu)
 }
 
 /* initialize the HPGL command counter */
-void
-hpgl_init_command_index(hpgl_parser_state_t *pgl_parser_state)
+ int
+hpgl_init_command_index(hpgl_parser_state_t **pgl_parser_state, gs_memory_t *mem)
 {
-    pgl_parser_state->hpgl_command_next_index = 0;
+    hpgl_parser_state_t *pgst = 
+	(hpgl_parser_state_t *)gs_alloc_bytes(mem, sizeof(hpgl_parser_state_t),
+					      "hpgl_init_command_index");
+    /* fatal */
+    if ( pgst == 0 )
+	return -1;
+	
+    pgst->hpgl_command_next_index = 0;
     /* NB fix me the parser should not depend on this behavior the
        previous design had these in bss which was automatically
        cleared to zero. */
-    memset(pgl_parser_state->hpgl_command_indices, 0,
-	   sizeof(pgl_parser_state->hpgl_command_indices));
-    hpgl_process_init(pgl_parser_state);
+    memset(pgst->hpgl_command_indices, 0, sizeof(pgst->hpgl_command_indices));
+    hpgl_process_init(pgst);
+    *pgl_parser_state = pgst;
+    return 0;
 }

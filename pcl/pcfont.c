@@ -18,6 +18,7 @@
 #include "pcursor.h"
 #include "pcfont.h"
 #include "pcfsel.h"
+#include "pjtop.h"
 
 /*
  * Decache the HMI after resetting the font.  According to TRM 5-22,
@@ -470,11 +471,11 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
     pcl_data_storage_t pcl_data_storage;
     while( 1 ) {
 	/* get current font source */
-	pjl_envvar_t *fontsource = pjl_get_envvar(pcs->pjls, "fontsource");
+	pjl_envvar_t *fontsource = pjl_proc_get_envvar(pcs->pjls, "fontsource");
 	switch (fontsource[0]) {
 	case 'I':
 	    if (!pcl_load_built_in_fonts(pcs, 
-					 pjl_fontsource_to_path(pcs->pjls, fontsource))) {
+					 pjl_proc_fontsource_to_path(pcs->pjls, fontsource))) {
 		if ( pcs->personality == rtl )
 		    /* rtl doesn't use fonts */
 		    return 0;
@@ -492,8 +493,8 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	    /* NB we incorrectly treat C, C1, C2... as one collective resource */
 	case 'C':
 	    if ( !pcl_load_cartridge_fonts(pcs,
-					   pjl_fontsource_to_path(pcs->pjls, fontsource)) ) {
-		pjl_set_next_fontsource(pcs->pjls);
+					   pjl_proc_fontsource_to_path(pcs->pjls, fontsource)) ) {
+		pjl_proc_set_next_fontsource(pcs->pjls);
 		continue; /* try next resource */
 	    }
 	    pcl_data_storage = pcds_all_cartridges;
@@ -501,8 +502,8 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	    /* NB we incorrectly treat M, M1, M2... as one collective resource */
 	case 'M':
 	    if ( !pcl_load_simm_fonts(pcs,
-				      pjl_fontsource_to_path(pcs->pjls, fontsource)) ) {
-		pjl_set_next_fontsource(pcs->pjls);
+				      pjl_proc_fontsource_to_path(pcs->pjls, fontsource)) ) {
+		pjl_proc_set_next_fontsource(pcs->pjls);
 		continue; /* try next resource */
 	    }
 	    pcl_data_storage = pcds_all_simms;
@@ -514,7 +515,9 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	{
 	    int code;
 	    pl_font_params_t params;
-	    code =  pcl_lookup_pjl_font(pcs, pjl_vartoi(pjl_get_envvar(pcs->pjls, "fontnumber")),
+	    code =  pcl_lookup_pjl_font(pcs, 
+			pjl_proc_vartoi(pcs->pjls,
+					pjl_proc_get_envvar(pcs->pjls, "fontnumber")),
 					pcl_data_storage, &params);
 	    /* resource found, but if code is 1 we did not match the
                font number.  NB unsure what to do when code == 1. */
@@ -538,10 +541,10 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
                    interpreter does not currently do this.
                    Consequently wrong selections are possible. */
 		pcs->default_symbol_set_value = pcs->font_selection[0].params.symbol_set =
-		    pjl_map_pjl_sym_to_pcl_sym(pjl_get_envvar(pcs->pjls, "symset"));
+		    pjl_proc_map_pjl_sym_to_pcl_sym(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "symset"));
 		pl_fp_set_pitch_per_inch(&pcs->font_selection[0].params,
-					 pjl_vartof(pjl_get_envvar(pcs->pjls, "pitch")));
-		pcs->font_selection[0].params.height_4ths = pjl_vartof(pjl_get_envvar(pcs->pjls, "ptsize")) * 4.0;
+					 pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "pitch")));
+		pcs->font_selection[0].params.height_4ths = pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0;
 		pcs->font_selection[1] = pcs->font_selection[0];
 		pcs->font_selected = primary;
 		pcs->font = 0;
@@ -551,7 +554,7 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 		   is a double check, since we should have failed when
 		   checking for the resource Note this is fatal for
 		   internal resources but should be caught above. */
-		pjl_set_next_fontsource(pcs->pjls);
+		pjl_proc_set_next_fontsource(pcs->pjls);
 		continue; /* try next resource */
 		
 	    }

@@ -25,17 +25,30 @@ pl.clean-not-config-clean:
 pl.config-clean:
 	$(RM_) $(PLOBJ)*.dev
 
+########### Common definitions ######
+pltop_h=$(PLSRC)pltop.h $(scommon_h) $(gsgc_h)
+pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
+
+
 ################ PJL ################
 
 # Currently we only parse PJL enough to detect UELs.
 
 pjparse_h=$(PLSRC)pjparse.h
+pjtop_h=$(PLSRC)pjtop.h $(pltop_h)
 
 $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c $(memory__h)\
  $(scommon_h) $(pjparse_h)
 	$(PLCCC) $(PLSRC)pjparse.c $(PLO_)pjparse.$(OBJ)
 
-pjl_obj=$(PLOBJ)pjparse.$(OBJ)
+$(PLOBJ)pjparsei.$(OBJ): $(PLSRC)pjparsei.c $(memory__h)\
+ $(scommon_h) $(pjparsei_h) $(plparse_h) $(string__h) $(gserrors_h)
+	$(PLCCC) $(PLSRC)pjparsei.c $(PLO_)pjparsei.$(OBJ)
+
+$(PLOBJ)pjtop.$(OBJ): $(PLSRC)pjtop.c $(AK) $(pjtop_h) $(string__h)
+	$(PLCCC) $(PLSRC)pjtop.c $(PLO_)pjtop.$(OBJ)
+
+pjl_obj=$(PLOBJ)pjparse.$(OBJ) $(PLOBJ)pjparsei.$(OBJ) $(PLOBJ)pjtop.$(OBJ) $(PLOBJ)pltop.$(OBJ)
 $(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj)
 	$(SETMOD) $(PLOBJ)pjl $(pjl_obj)
 
@@ -43,7 +56,7 @@ $(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj)
 
 pldict_h=$(PLSRC)pldict.h
 pldraw_h=$(PLSRC)pldraw.h $(gsiparam_h)
-plmain_h=$(PLSRC)plmain.h $(gsargs_h) $(gsgc_h)
+plplatf_h=$(PLSRC)plplatf.h
 plsymbol_h=$(PLSRC)plsymbol.h
 plvalue_h=$(PLSRC)plvalue.h
 plvocab_h=$(PLSRC)plvocab.h
@@ -78,11 +91,18 @@ $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(PLSRC)plfont.c $(PLO_)plfont.$(OBJ)
 
-$(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(stdio__h) $(string__h)\
- $(gdebug_h) $(gp_h) $(gscdefs_h) $(gsdevice_h) $(gsio_h) $(gslib_h)\
- $(gsmatrix_h) $(gsmemory_h) $(gsparam_h) $(gsstate_h) $(gstypes_h)\
- $(plmain_h)
-	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
+$(PLOBJ)plplatf.$(OBJ): $(PLSRC)plplatf.c $(AK) $(stdio__h) $(string__h)\
+ $(gdebug_h) $(gp_h) $(gsio_h) $(gslib_h) $(gsmemory_h) $(gstypes_h)\
+ $(plplatf_h)
+	$(PLCCC) $(PLSRC)plplatf.c $(PLO_)plplatf.$(OBJ)
+
+$(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(stdio__h) $(string__h)\
+ $(gdebug_h) $(gsdevice_h) $(gsmemory_h) $(gstypes_h) $(pltop_h)
+	$(PLCCC) $(PLSRC)pltop.c $(PLO_)pltop.$(OBJ)
+
+$(PLOBJ)pltoputl.$(OBJ): $(PLSRC)pltoputl.c $(AK) $(string__h)\
+ $(gdebug_h) $(gsmemory_h) $(gstypes_h) $(pltoputl_h)
+	$(PLCCC) $(PLSRC)pltoputl.c $(PLO_)pltoputl.$(OBJ)
 
 $(PLOBJ)plsymbol.$(OBJ): $(PLSRC)plsymbol.c $(AK) $(stdpre_h)\
  $(plsymbol_h)
@@ -97,9 +117,27 @@ $(PLOBJ)plvocab.$(OBJ): $(PLSRC)plvocab.c $(AK) $(stdpre_h)\
 	$(PLCCC) $(PLSRC)plvocab.c $(PLO_)plvocab.$(OBJ)
 
 pl_obj1=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plfont.$(OBJ)
-pl_obj2=$(PLOBJ)plmain.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ)
-pl_obj=$(pl_obj1) $(pl_obj2)
+pl_obj2=$(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ)
+pl_obj3=$(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ) $(PLOBJ)plplatf.$(OBJ)
+pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
 
 $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
+	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
+
+###### Command-line driver's main program #####
+
+$(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(stdio__h) $(string__h)\
+ $(gdebug_h) $(gp_h) $(gsdevice_h) $(gsio_h) $(gsmemory_h) $(gsparam_h)\
+ $(gstypes_h) $(gserrors_h) $(gsmalloc_h) $(gsstruct_h) $(gxalloc_h)\
+ $(gsalloc_h) $(plparse_h) $(pltop_h) $(pltoputl_h)
+	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
+
+$(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \
+                        $(AK)                       \
+                        $(memory__h)                \
+                        $(scommon_h)                \
+                        $(gxdevice_h)               \
+                        $(pltop_h)
+	$(PLCCC) $(PLSRC)plimpl.c $(PLO_)plimpl.$(OBJ)

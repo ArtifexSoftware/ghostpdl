@@ -19,6 +19,7 @@
 #include "gxfixed.h"
 #include "gxfcache.h"
 #include "gxdevice.h"
+#include "pjtop.h"
 
 /* Imported operators */
 px_operator_proc(pxCloseDataSource);
@@ -164,15 +165,20 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	/* This is obviously device-dependent. */
 	/* get the pjl state */
 	{
-	    pjl_envvar_t *pjl_psize = pjl_get_envvar(pxs->pjls, "paper");
+	    pjl_envvar_t *pjl_psize = pjl_proc_get_envvar(pxs->pjls, "paper");
 	    /* NB.  We are not sure about the interaction of pjl's
                wide a4 commands so we don't attempt to implement
                it. */
-	    /* bool pjl_widea4 = pjl_compare(pjl_get_envvar(pxs->pjls, "widea4"), "no"); */
-	    int pjl_copies = pjl_vartoi(pjl_get_envvar(pxs->pjls, "copies"));
-	    bool pjl_duplex = pjl_compare(pjl_get_envvar(pxs->pjls, "duplex"), "off");
-	    bool pjl_bindshort = pjl_compare(pjl_get_envvar(pxs->pjls, "binding"), "longedge");
-	    bool pjl_manualfeed = pjl_compare(pjl_get_envvar(pxs->pjls, "manualfeed"), "off");
+	    /* bool pjl_widea4
+	     = pjl_proc_compare(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "widea4"), "no"); */
+	    int pjl_copies
+	     = pjl_proc_vartoi(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "copies"));
+	    bool pjl_duplex
+	     = pjl_proc_compare(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "duplex"), "off");
+	    bool pjl_bindshort
+	     = pjl_proc_compare(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "binding"), "longedge");
+	    bool pjl_manualfeed
+	     = pjl_proc_compare(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "manualfeed"), "off");
 	    /* table to map pjl paper type strings to pxl enums */
 	    private const struct {
 		const char *pname;

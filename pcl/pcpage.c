@@ -26,6 +26,7 @@
 #include "gxdevice.h"
 #include "gdevbbox.h"
 #include "gdevcmap.h"
+#include "pjtop.h"
 
 /*
  * The PCL printable region. HP always sets the boundary of this region to be
@@ -429,7 +430,7 @@ pcl_end_page(
     }
     gs_nogc_reclaim(&(pmi->spaces), true);
     /* output the page */
-    pl_finish_page(pmi, pcs->pgs, pcs->num_copies, /* flush = */ true);
+    (*pcs->end_page)(pcs, pcs->num_copies, true);
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     code = gs_erasepage(pcs->pgs);
     /*
@@ -890,12 +891,12 @@ get_default_paper(
 )
 {
     int i;
-    pjl_envvar_t *psize = pjl_get_envvar(pcs->pjls, "paper");
+    pjl_envvar_t *psize = pjl_proc_get_envvar(pcs->pjls, "paper");
     pcs->wide_a4 = false;
     for (i = 0; i < countof(paper_sizes); i++)
-        if (!pjl_compare(psize, paper_sizes[i].pname)) {
+        if (!pjl_proc_compare(pcs->pjls, psize, paper_sizes[i].pname)) {
 	    /* we are not sure if widea4 applies to all paper sizes */
-	    if (!pjl_compare(pjl_get_envvar(pcs->pjls, "widea4"), "YES"))
+	    if (!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "widea4"), "YES"))
 		pcs->wide_a4 = true;
 	    return &(paper_sizes[i].psize);
 	}
@@ -915,7 +916,7 @@ pcpage_do_reset(
         pcs->xfm_state.top_offset_cp = 0.0;
 	pcs->perforation_skip = 1;
         new_logical_page( pcs,
-			  !pjl_compare(pjl_get_envvar(pcs->pjls,
+			  !pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls,
 						 "orientation"),
 				       "portrait") ? 0 : 1,
                           get_default_paper(pcs),

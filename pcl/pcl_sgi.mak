@@ -28,7 +28,8 @@ MAKEFILE    = $(PCLSRCDIR)/pcl_sgi.mak
 CONFIG      = 5
 TARGET_DEVS = $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
 TARGET_XE   = pcl5
-MAIN_OBJ    = $(PCLOBJDIR)/pcmain.$(OBJ)
+MAIN_OBJ    = $(PLOBJDIR)/plmain.$(OBJ) $(PCLOBJDIR)/pcimpl.$(OBJ)
+TOP_OBJ    = $(PCLOBJDIR)/pctop.$(OBJ)
 
 # Assorted definitions.  Some of these should probably be factored out....
 #

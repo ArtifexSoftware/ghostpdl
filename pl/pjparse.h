@@ -18,14 +18,16 @@
 #ifndef pjparse_INCLUDED
 #  define pjparse_INCLUDED
 
-#include "scommon.h"  /* stream_cursor_pead */
+#include "scommon.h"  /* stream_cursor_read */
 
 /* opaque definition for the parser state */
 typedef struct pjl_parser_state_s pjl_parser_state;
 
 /* type definition for environment variable */
+#ifndef PJL_ENVAR_T
+#define PJL_ENVAR_T
 typedef char pjl_envvar_t;
-
+#endif PJL_ENVVAR_T
 /* ---------------- Procedural interface ---------------- */
 
 /* Initialize the PJL parser and state. */

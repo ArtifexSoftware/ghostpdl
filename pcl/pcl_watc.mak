@@ -71,7 +71,8 @@ CONFIG=5
 TARGET_DEVS=$(PCLOBJDIR)$(D)pcl5c.dev $(PCLOBJDIR)$(D)hpgl2c.dev
 
 # Main file's name
-MAIN_OBJ=$(PCLOBJDIR)$(D)pcmain.$(OBJ)
+MAIN_OBJ=$(PLOBJDIR)$(D)plmain.$(OBJ) $(PCLOBJDIR)$(D)pcimpl.$(OBJ)
+TOP_OBJ=$(PCLOBJDIR)$(D)pctop.$(OBJ)
 
 # Executable path\name w/o the .EXE extension
 !ifndef TARGET_XE

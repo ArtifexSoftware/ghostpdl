@@ -10,7 +10,6 @@
 #	PCLSRCDIR - the source directory
 #	PCLGENDIR - the directory for source files generated during building
 #	PCLOBJDIR - the object / executable directory
-
 # PLOBJ       = $(PLOBJDIR)$(D)
 
 PCLSRC      = $(PCLSRCDIR)$(D)
@@ -36,7 +35,10 @@ pcl.config-clean: clean_gs
 
 #### Miscellaneous
 
+PCLVERSION=1.07
+
 # pgstate.h is out of order because pcstate.h includes it.
+pclver_h    = $(PCLSRC)pclver.h
 pgstate_h   = $(PCLSRC)pgstate.h  \
               $(gx_h)             \
               $(gxfixed_h)        \
@@ -98,7 +100,8 @@ pcstate_h   = $(PCLSRC)pcstate.h  \
               $(pcpattyp_h)       \
               $(pcdict_h)         \
               $(rtrstst_h)        \
-              $(pgstate_h)
+              $(pgstate_h)        \
+              $(pjtop_h)
 
 pccid_h     = $(PCLSRC)pccid.h    \
               $(gx_h)             \
@@ -226,6 +229,8 @@ pcpatxfm_h  = $(PCLSRC)pcpatxfm.h \
               $(pcommand_h)       \
               $(pcpatrn_h)
 
+pctop_h	    = $(PCLSRC)pctop.h
+
 pcuptrn_h   = $(PCLSRC)pcuptrn.h  \
               $(gx_h)             \
               $(pcommand_h)       \
@@ -254,6 +259,12 @@ rtrstcmp_h  = $(PCLSRC)rtrstcmp.h \
               $(gx_h)             \
               $(gsstruct_h)
 
+
+$(PCLSRC)pclver.h: $(PCLSRC)pcl_top.mak
+	$(PCLGEN)echogs$(XE) -e .h -w $(PCLSRC)pclver -n -x 23 "define PCLVERSION"
+	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -s -x 22 $(PCLVERSION) -x 22
+	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -n -x 23 "define PCLBUILDDATE"
+	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -s -x 22 -d -x 22
 
 
 $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c   \
@@ -624,6 +635,31 @@ $(PCLOBJ)pcfsel.$(OBJ): $(PCLSRC)pcfsel.c   \
                         $(pcsymbol_h)
 	$(PCLCCC) $(PCLSRC)pcfsel.c $(PCLO_)pcfsel.$(OBJ)
 
+$(TOP_OBJ):             $(PCLSRC)pctop.c            \
+                        $(AK)                       \
+                        $(malloc__h)                \
+                        $(math__h)                  \
+                        $(memory__h)                \
+                        $(stdio__h)                 \
+                        $(scommon_h)                \
+                        $(pcparse_h)                \
+                        $(pcstate_h)                \
+                        $(gdebug_h)                 \
+                        $(gsmatrix_h)               \
+                        $(gsstate_h)                \
+                        $(gxalloc_h)                \
+                        $(gxdevice_h)               \
+                        $(gxstate_h)                \
+                        $(gdevbbox_h)               \
+                        $(pjparse_h)                \
+                        $(plmain_h)                 \
+                        $(pltop_h)                  \
+                        $(pclver_h)                 \
+                        $(pctop_h)                  \
+                        $(PCLGEN)pconf.h
+	$(CP_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
+	$(PCLCCC) $(PCLSRC)pctop.c $(PCLO_)pctop.$(OBJ)
+
 PCL_COMMON  = $(PCLOBJ)pcfsel.$(OBJ)
 
 #### PCL5(e) commands
@@ -642,7 +678,8 @@ $(PCLOBJ)pcjob.$(OBJ): $(PCLSRC)pcjob.c \
                        $(pcparam_h)     \
                        $(pcdraw_h)      \
                        $(pcpage_h)      \
-		       $(pjparse_h)
+		       $(pjparse_h)     \
+                       $(pjtop_h)
 	$(PCLCCC) $(PCLSRC)pcjob.c $(PCLO_)pcjob.$(OBJ)
 
 # Chapter 5
@@ -665,7 +702,8 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
                         $(gsdevice_h)       \
                         $(gspaint_h)        \
                         $(gxdevice_h)       \
-                        $(gdevbbox_h)
+                        $(gdevbbox_h)       \
+                        $(pjtop_h)
 	$(PCLCCC) $(PCLSRC)pcpage.c $(PCLO_)pcpage.$(OBJ)
 
 # Chapter 6
@@ -680,6 +718,7 @@ $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c \
                          $(pcursor_h)       \
                          $(pcpage_h)        \
 			 $(pjparse_h)       \
+                         $(pjtop_h)         \
                          $(gscoord_h)
 	$(PCLCCC) $(PCLSRC)pcursor.c $(PCLO_)pcursor.$(OBJ)
 
@@ -697,7 +736,8 @@ $(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c   \
                         $(pcursor_h)        \
                         $(pcfont_h)         \
                         $(pcfsel_h)         \
-			$(pjparse_h)
+			$(pjparse_h)        \
+                        $(pjtop_h)
 	$(PCLCCC) $(PCLSRC)pcfont.c $(PCLO_)pcfont.$(OBJ)
 
 $(PCLOBJ)pclfont.$(OBJ): $(PCLSRC)pclfont.c \
@@ -1155,5 +1195,5 @@ HPGL2C_OPS  = $(PCLOBJ)pgcolor.$(OBJ)
 $(PCLOBJ)hpgl2c.dev: $(PCL_MAK) $(ECHOGS_XE) $(HPGL2C_OPS) $(PCLOBJ)hpgl2.dev
 	$(SETMOD) $(PCLOBJ)hpgl2c $(HPGL2C_OPS)
 	$(ADDMOD) $(PCLOBJ)hpgl2c -include $(PCLOBJ)hpgl2
-	$(ADDMOD) $(PCLOBJ)hpgl2c -init pgcolor
+	$(ADDMOD) $(PCLOBJ)hpgl2cc -init pgcolor
 
