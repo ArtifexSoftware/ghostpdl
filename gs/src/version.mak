@@ -24,8 +24,8 @@ VERSION_MAK=$(GLSRC)version.mak
 # Major and minor version numbers.
 # MINOR0 is different from MINOR only if MINOR is a single digit.
 GS_VERSION_MAJOR=5
-GS_VERSION_MINOR=50
-GS_VERSION_MINOR0=50
+GS_VERSION_MINOR=55
+GS_VERSION_MINOR0=55
 # Revision date: year x 10000 + month x 100 + day.
 GS_REVISIONDATE=19980916
 
