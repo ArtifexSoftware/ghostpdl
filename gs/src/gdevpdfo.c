@@ -582,8 +582,9 @@ cos_array_add_object(cos_array_t *pca, cos_object_t *pco)
 }
 
 /*
- * Remove and return the last element of an array.  Note that this gives an
- * error unless the array is fully populated (no gaps in indexes).
+ * Remove and return the last element of an array.  Since this is intended
+ * specifically for arrays used as stacks, it gives an error if there is a
+ * gap in indices between the last element and the element before it.
  */
 int
 cos_array_unadd(cos_array_t *pca, cos_value_t *pvalue)
