@@ -1715,13 +1715,13 @@ dsc_scan_type(CDSC *dsc)
     if (dsc_read_line(dsc) <= 0)
 	return CDSC_NEEDMORE;
 	
-    dsc->dsc_version = dsc_add_line(dsc, (const char *)line, dsc->line_length);
-    if (COMPARE(line, "%!PS-Adobe")) {
+    dsc->dsc_version = dsc_add_line(dsc, dsc->line, dsc->line_length);
+    if (COMPARE(dsc->line, "%!PS-Adobe")) {
 	dsc->dsc = TRUE;
 	dsc->begincomments = DSC_START(dsc);
 	if (dsc->dsc_version == NULL)
 	    return CDSC_ERROR;	/* no memory */
-	p = line + 14;
+	p = (unsigned char *)dsc->line + 14;
 	while (IS_WHITE(*p))
 	    p++;
 	if (COMPARE(p, "EPSF-"))
@@ -1729,7 +1729,7 @@ dsc_scan_type(CDSC *dsc)
 	dsc->scan_section = scan_comments;
 	return CDSC_PSADOBE;
     }
-    if (COMPARE(line, "%!")) {
+    if (COMPARE(dsc->line, "%!")) {
 	dsc->scan_section = scan_comments;
 	return CDSC_NOTDSC;
     }
