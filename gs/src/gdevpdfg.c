@@ -1165,6 +1165,7 @@ pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
 	    code = pdf_cancel_resource(pdev, (pdf_resource_t *)pres1, resourceExtGState);
 	    if (code < 0)
 		return code;
+	    pdf_forget_resource(pdev, pres1, resourceExtGState);
 	} else {
 	    pdf_reserve_object_id(pdev, pres, gs_no_id);
 	    code = cos_write_object(pres->object, pdev);

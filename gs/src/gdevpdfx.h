@@ -133,7 +133,7 @@ typedef enum {
 #define PDF_RESOURCE_TYPE_STRUCTS\
   &st_pdf_color_space,		/* gdevpdfg.h / gdevpdfc.c */\
   &st_pdf_resource,		/* see below */\
-  &st_pdf_resource,\
+  &st_pdf_pattern,\
   &st_pdf_resource,\
   &st_pdf_x_object,		/* see below */\
   &st_pdf_resource,\
@@ -150,7 +150,7 @@ typedef enum {
 #define PDF_RESOURCE_TYPE_STRUCTS\
   &st_pdf_color_space,		/* gdevpdfg.h / gdevpdfc.c */\
   &st_pdf_resource,		/* see below */\
-  &st_pdf_resource,\
+  &st_pdf_pattern,\
   &st_pdf_resource,\
   &st_pdf_x_object,		/* see below */\
   &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
@@ -168,7 +168,7 @@ typedef enum {
 #define PDF_RESOURCE_TYPE_STRUCTS\
   &st_pdf_color_space,		/* gdevpdfg.h / gdevpdfc.c */\
   &st_pdf_resource,		/* see below */\
-  &st_pdf_resource,\
+  &st_pdf_pattern,\
   &st_pdf_resource,\
   &st_pdf_x_object,		/* see below */\
   &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
@@ -454,6 +454,7 @@ struct gx_device_pdf_s {
     bool ReEncodeCharacters;
     long FirstObjectNumber;
     bool CompressFonts;
+    bool PrintStatistics;
     long MaxInlineImageSize;
     /* Encryption parameters */
     gs_const_string OwnerPassword;
@@ -626,6 +627,8 @@ struct gx_device_pdf_s {
 			for pdf_is_same_charproc1.
 			Must be NULL when the garbager is invoked, 
 			because it points from global to local memory. */
+    int substituted_pattern_count;
+    int substituted_pattern_drop_page;
 };
 
 #define is_in_page(pdev)\
@@ -782,8 +785,19 @@ pdf_resource_t *pdf_find_resource_by_gs_id(gx_device_pdf * pdev,
 					   pdf_resource_type_t rtype,
 					   gs_id rid);
 
+void pdf_drop_resources(gx_device_pdf * pdev, pdf_resource_type_t rtype, 
+	int (*cond)(gx_device_pdf * pdev, pdf_resource_t *pres));
+
+/* Print resource statistics. */
+void pdf_print_resource_statistics(gx_device_pdf * pdev);
+
+
 /* Cancel a resource (do not write it into PDF). */
 int pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, 
+	pdf_resource_type_t rtype);
+
+/* Remove a resource. */
+void pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1, 
 	pdf_resource_type_t rtype);
 
 /* Get the object id of a resource. */

@@ -199,6 +199,7 @@ const gx_device_pdf gs_pdfwrite_device =
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
  1 /*true*/,			/* CompressFonts */
+ 0 /*false*/,			/* PrintStatistics */
  4000,				/* MaxInlineImageSize */
  {0, 0},			/* OwnerPassword */
  {0, 0},			/* UserPassword */
@@ -288,7 +289,10 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* font3 */
  0,				/* accumulating_substream_resource */
  {0,0,0,0,0,0,0,0,0},		/* charproc_ctm */
- 0				/* charproc_just_accumulated */
+ 0,				/* charproc_just_accumulated */
+ 0,				/* cgp */
+ 0,				/* substituted_pattern_count */
+ 0				/* substituted_pattern_drop_page */
 };
 
 /* ---------------- Device open/close ---------------- */
@@ -1077,6 +1081,9 @@ pdf_close(gx_device * dev)
 	for (i = 1; i <= pdev->next_page; ++i)
 	    pdf_write_page(pdev, i);
     }
+
+    if (pdev->PrintStatistics)
+	pdf_print_resource_statistics(pdev);
 
     /* Write the font resources and related resources. */
     code1 = pdf_write_resource_objects(pdev, resourceXObject);

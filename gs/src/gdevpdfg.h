@@ -154,6 +154,21 @@ int pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s);
 int pdf_string_to_cos_name(gx_device_pdf *pdev, const byte *str, uint len, 
 		       cos_value_t *pvalue);
 
+/* ---------------- Exported by gdevpdfi.c ---------------- */
+
+typedef struct pdf_pattern_s pdf_pattern_t;
+struct pdf_pattern_s {
+    pdf_resource_common(pdf_pattern_t);
+    pdf_pattern_t *substitute;
+};
+/* The descriptor is public because it is for a resource type. */
+#define private_st_pdf_pattern()  /* in gdevpdfc.c */\
+  gs_private_st_suffix_add1(st_pdf_pattern, pdf_pattern_t,\
+    "pdf_pattern_t", pdf_pattern_enum_ptrs,\
+    pdf_pattern_reloc_ptrs, st_pdf_resource, substitute)
+
+pdf_resource_t *pdf_substitute_pattern(pdf_resource_t *pres);
+
 /* ---------------- Exported by gdevpdfj.c ---------------- */
 
 /* ------ Image stream dictionaries ------ */

@@ -70,6 +70,7 @@ extern_st(st_pdf_char_proc);
 extern_st(st_pdf_font_descriptor);
 public_st_pdf_resource();
 private_st_pdf_x_object();
+private_st_pdf_pattern();
 
 /* ---------------- Utilities ---------------- */
 
@@ -492,6 +493,34 @@ pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_typ
     return 0;
 }
 
+/* Remove a resource. */
+void
+pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_type_t rtype)
+{   /* fixme : optimize. */
+    pdf_resource_t **pchain = pdev->resources[rtype].chains;
+    pdf_resource_t *pres;
+    pdf_resource_t **pprev = &pdev->last_resource;
+    int i;
+
+    for (; (pres = *pprev) != 0; pprev = &pres->prev)
+	if (pres == pres1) {
+	    *pprev = pres->prev;
+	    break;
+	}
+    for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
+	pprev = pchain + i;
+	for (; (pres = *pprev) != 0; pprev = &pres->next)
+	    if (pres == pres1) {
+		*pprev = pres->next;
+		COS_RELEASE(pres->object, "pdf_forget_resource");
+		gs_free_object(pdev->pdf_memory, pres->object, "pdf_forget_resource");
+		gs_free_object(pdev->pdf_memory, pres, "pdf_forget_resource");
+		break;
+	    }
+    }
+}
+
+
 /* Find a resource of a given type by gs_id. */
 pdf_resource_t *
 pdf_find_resource_by_gs_id(gx_device_pdf * pdev, pdf_resource_type_t rtype,
@@ -546,6 +575,59 @@ pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_reso
     return 0;
 }
 
+/* Drop resources by a condition. */
+void
+pdf_drop_resources(gx_device_pdf * pdev, pdf_resource_type_t rtype, 
+	int (*cond)(gx_device_pdf * pdev, pdf_resource_t *pres))
+{
+    pdf_resource_t **pchain = pdev->resources[rtype].chains;
+    pdf_resource_t **pprev;
+    pdf_resource_t *pres;
+    int i;
+
+    for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
+	pprev = pchain + i;
+	for (; (pres = *pprev) != 0; ) {
+	    if (cond(pdev, pres)) {
+		*pprev = pres->next;
+		pres->next = pres; /* A temporary mark - see below */
+	    } else
+		pprev = &pres->next;
+	}
+    }
+    pprev = &pdev->last_resource;
+    for (; (pres = *pprev) != 0; )
+	if (pres->next == pres) {
+	    *pprev = pres->prev;
+	    COS_RELEASE(pres->object, "pdf_drop_resources");
+	    gs_free_object(pdev->pdf_memory, pres->object, "pdf_drop_resources");
+	    gs_free_object(pdev->pdf_memory, pres, "pdf_drop_resources");
+	} else
+	    pprev = &pres->prev;
+}
+
+/* Print resource statistics. */
+void
+pdf_print_resource_statistics(gx_device_pdf * pdev)
+{
+
+    int rtype;
+
+    for (rtype = 0; rtype < NUM_RESOURCE_TYPES; rtype++) {
+	pdf_resource_t **pchain = pdev->resources[rtype].chains;
+	pdf_resource_t *pres;
+	const char *name = pdf_resource_type_names[rtype];
+	int i, n = 0;
+    
+	for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
+	    for (pres = pchain[i]; pres != 0; pres = pres->next, n++);
+	}
+	dprintf3("Resource type %d (%s) has %d instances.\n", rtype, 
+		(name ? name : ""), n);
+    }
+}
+
+
 /* Begin an object logically separate from the contents. */
 long
 pdf_open_separate(gx_device_pdf * pdev, long id)
@@ -581,10 +663,12 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
 	pst = &st_pdf_resource;
     pres = gs_alloc_struct(pdev->pdf_memory, pdf_resource_t, pst,
 			   "pdf_alloc_aside(resource)");
-    object = cos_object_alloc(pdev, "pdf_alloc_aside(object)");
-    if (pres == 0 || object == 0) {
+    if (pres == 0)
 	return_error(gs_error_VMerror);
-    }
+    object = cos_object_alloc(pdev, "pdf_alloc_aside(object)");
+    if (object == 0)
+	return_error(gs_error_VMerror);
+    memset(pres + 1, 0, pst->ssize - sizeof(*pres));
     pres->object = object;
     if (id < 0) {
 	object->id = -1L;

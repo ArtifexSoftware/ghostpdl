@@ -468,6 +468,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 		code = pdf_cancel_resource(pdev, pres, resourceXObject);
 		if (code < 0)
 		    return code;
+		pdf_forget_resource(pdev, pres, resourceXObject);
 		piw->pres->where_used |= pdev->used_mask;
 	    } else if (pres->object->id < 0)
 		pdf_reserve_object_id(pdev, pres, 0);

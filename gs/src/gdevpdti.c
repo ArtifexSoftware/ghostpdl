@@ -726,9 +726,10 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
 	    if (code < 0)
 		return code;
 	    if (code != 0) {
-		code = pdf_cancel_resource(pdev, (pdf_resource_t *)pres, resourceCharProc);
+		code = pdf_cancel_resource(pdev, pres, resourceCharProc);
 		if (code < 0)
 		    return code;
+		pdf_forget_resource(pdev, pres, resourceCharProc);
 		if (pcp->font != pdfont) {
 		    code = pdf_attach_font_resource(pdev, font, pcp->font);
 		    if (code < 0)

@@ -501,6 +501,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	if (code == gs_error_rangecheck) {
 	    /* setup_image_compression rejected rthe alternative compression. */
 	    pie->writer.alt_writer_count = 1;
+	    memset(pie->writer.binary + 1, 0, sizeof(pie->writer.binary[1]));
+	    memset(pie->writer.binary + 2, 0, sizeof(pie->writer.binary[1]));
 	} else if (code)
 	    goto fail;
     }
@@ -876,6 +878,30 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 				     pmie->writer.pres->object);
 }
 
+pdf_resource_t *pdf_substitute_pattern(pdf_resource_t *pres)
+{
+    pdf_pattern_t *ppat = (pdf_pattern_t *)pres;
+    
+    return (pdf_resource_t *)(ppat->substitute != 0 ? ppat->substitute : ppat);
+}
+
+
+private int 
+check_unsubstituted2(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
+{
+    pdf_pattern_t *ppat = (pdf_pattern_t *)pres0;
+
+    return ppat->substitute == NULL;
+}
+
+private int 
+check_unsubstituted1(gx_device_pdf * pdev, pdf_resource_t *pres0)
+{
+    pdf_pattern_t *ppat = (pdf_pattern_t *)pres0;
+
+    return ppat->substitute != NULL;
+}
+
 /*
    The pattern management device method.
    See gxdevcli.h about return codes.
@@ -886,13 +912,13 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 {   
     gx_device_pdf *pdev = (gx_device_pdf *)pdev1;
     int code;
-    pdf_resource_t *pres;
+    pdf_resource_t *pres, *pres1;
 
     switch (function) {
 	case pattern_manage__can_accum:
 	    return 1;
 	case pattern_manage__start_accum:
-	    code = pdf_enter_substream(pdev, resourcePattern, id, &pres, true, 
+	    code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false, 
 		    pdev->CompressFonts/* Have no better switch.*/);
 	    if (code < 0)
 		return code;
@@ -905,14 +931,37 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
 	    if (code < 0)
 		return code;
+	    pres = pres1 = pdev->accumulating_substream_resource;
 	    code = pdf_exit_substream(pdev);
 	    if (code < 0)
 		return code;
+	    if (pdev->substituted_pattern_count > 300 && 
+		    pdev->substituted_pattern_drop_page != pdev->next_page) { /* arbitrary */
+		pdf_drop_resources(pdev, resourcePattern, check_unsubstituted1);
+		pdev->substituted_pattern_count = 0;
+		pdev->substituted_pattern_drop_page = pdev->next_page;
+	    }
+	    code = pdf_find_same_resource(pdev, resourcePattern, &pres, check_unsubstituted2);
+	    if (code < 0)
+		return code;
+	    if (code > 0) {
+		pdf_pattern_t *ppat = (pdf_pattern_t *)pres1;
+
+		code = pdf_cancel_resource(pdev, pres1, resourcePattern);
+		if (code < 0)
+		    return code;
+		/* Do not remove pres1, because it keeps the substitution. */
+		ppat->substitute = (pdf_pattern_t *)pres;
+		pres->where_used |= pdev->used_mask;
+		pdev->substituted_pattern_count++;
+	    } else if (pres->object->id < 0)
+		pdf_reserve_object_id(pdev, pres, 0);
 	    return 1;
 	case pattern_manage__load:
 	    pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);
 	    if (pres == 0)
 		return gs_error_undefined;
+	    pres = pdf_substitute_pattern(pres);
 	    code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
 	    if (code < 0)
 		return code;

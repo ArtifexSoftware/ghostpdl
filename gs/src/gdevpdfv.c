@@ -320,6 +320,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	    if (code < 0)
 		return code;
 	    *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, pdc->mask.id);
+	    *ppres = pdf_substitute_pattern(*ppres);
 	    if (!pdev->AR4_save_bug && pdev->CompatibilityLevel <= 1.3) {
 		/* We reconnized AR4 behavior as reserving "q Q" stack elements 
 		 * on demand. It looks as processing a pattern stream
@@ -464,8 +465,10 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	code = pdf_pattern(pdev, pdc, p_tile, m_tile, pcs_image, ppres);
 	if (code < 0)
 	    return code;
-    } else
+    } else {
 	*ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, p_tile->id);
+	*ppres = pdf_substitute_pattern(*ppres);
+    }
     cos_value_write(&v, pdev);
     pprints1(pdev->strm, " %s", ppscc->setcolorspace);
     return 0;

@@ -225,6 +225,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    code = pdf_cancel_resource(pdev, pres, resourceCharProc);
 	    if (code < 0)
 		return code;
+	    pdf_forget_resource(pdev, pres, resourceCharProc);
 	    /* pdf_text_process had set an identity CTM for the
 	       charproc stream accumulation, but now we re-decided
 	       to go with the default implementation.
