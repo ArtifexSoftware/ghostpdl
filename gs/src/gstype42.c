@@ -807,7 +807,7 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
 	return 0;
     numContours = S16(gdata);
     if (numContours >= 0) {
-	simple_glyph_metrics(pfont, glyph_index, pfont->WMode, sbw);
+	gs_type42_wmode_metrics(pfont, glyph_index, pfont->WMode, sbw);
 	code = append_simple(gdata, sbw, pmat, ppath, ppts, pfont);
 	if (code == FREE_ME) 
 	    gs_free_const_string(pfont->memory, gdata, glyph_string.size,
