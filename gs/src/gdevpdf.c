@@ -372,6 +372,13 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     pdf_create_named_dict(pdev, NULL, &pdev->Pages, 0L);
 }
 
+#ifdef __DECC
+/* The ansi alias rules are violated in this next routine.  Tell the compiler
+   to ignore this.
+ */
+#pragma optimize save
+#pragma optimize ansi_alias=off
+#endif
 /* Update the color mapping procedures after setting ProcessColorModel. */
 void
 pdf_set_process_color_model(gx_device_pdf * pdev)
@@ -391,14 +398,8 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
     case 4:
 	set_dev_proc(pdev, map_rgb_color, NULL);
 	set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
-#ifdef VMS
-#pragma message disable BADANSIALIAS
-#endif
        /* possible problems with aliassing on next statement */
 	set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
-#ifdef VMS
-#pragma message enable BADANSIALIAS
-#endif
         color = gx_map_cmyk_color((gx_device *)pdev,
 		      frac2cv(frac_0), frac2cv(frac_0),
 		      frac2cv(frac_0), frac2cv(frac_1));
@@ -409,6 +410,9 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
     color_set_pure(&pdev->fill_color, color);
     color_set_pure(&pdev->stroke_color, color);
 }
+#ifdef __DECC
+#pragma optimize restore
+#endif
 
 /*
  * Reset the text state parameters to initial values.  This isn't a very
