@@ -37,6 +37,19 @@
 #include "gxfcache.h"
 #include "gzstate.h"
 
+/*
+ * As of gs library version 5.86, the log2_current_scale member of the
+ * gs_show_enum structure is renamed log2_scale.  The following test
+ * handles this, by checking for a #define that was added in the same
+ * version.
+ */
+#ifdef TEXT_FROM_ANY
+# define log2_current_scale log2_scale
+#endif
+
+# undef gs_show_move
+# define gs_show_move TEXT_PROCESS_INTERVENE
+
 /* Define whether to cache bitmap characters. */
 /* Logically this seems unnecessary, but it enables a much faster path */
 /* through the character rendering code. */
