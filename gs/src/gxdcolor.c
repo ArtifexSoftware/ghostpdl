@@ -289,6 +289,12 @@ gx_complete_rgb_halftone(gx_device_color *pdevc,
 	(pdevc->colors.colored.c_level[0] != 0) |
 	((pdevc->colors.colored.c_level[1] != 0) << 1) |
 	((pdevc->colors.colored.c_level[2] != 0) << 2);
+    /*
+     * Color rendering won't use the fourth component, but the code that
+     * writes and reads colored halftones in the band list doesn't know that.
+     */
+    pdevc->colors.colored.c_base[3] = 0;
+    pdevc->colors.colored.c_level[3] = 0;
 }
 
 void

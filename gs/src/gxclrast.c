@@ -230,7 +230,7 @@ clist_playback_band(clist_playback_action playback_action,
     tile_slot *state_slot;
     gx_strip_bitmap state_tile;	/* parameters for reading tiles */
     tile_slot tile_bits;	/* parameters of current tile */
-    gs_int_point tile_phase;
+    gs_int_point tile_phase, color_phase;
     gx_path path;
     bool in_path;
     gs_fixed_point ppos;
@@ -290,8 +290,8 @@ in:				/* Initialize for a new page. */
     }
     state_tile.id = gx_no_bitmap_id;
     state_tile.shift = state_tile.rep_shift = 0;
-    tile_phase.x = x0;
-    tile_phase.y = y0;
+    tile_phase.x = color_phase.x = x0;
+    tile_phase.y = color_phase.y = y0;
     gx_path_init_local(&path, mem);
     in_path = false;
     /*
@@ -805,13 +805,32 @@ in:				/* Initialize for a new page. */
 		    state_slot->y_reps;
 		state_tile.rep_shift = state_slot->rep_shift;
 		state_tile.shift = state_slot->shift;
-	      set_phase:tile_phase.x =
-		    (state.tile_phase.x + x0) % state_tile.size.x;
+set_phase:	/*
+		 * state.tile_phase is overloaded according to the command
+		 * to which it will apply:
+		 *	For fill_path, stroke_path, fill_triangle/p'gram,
+		 * fill_mask, and (mask or CombineWithColor) images,
+		 * it is pdcolor->phase.  For these operations, we
+		 * precompute the color_phase values.
+		 *	For strip_tile_rectangle and strip_copy_rop,
+		 * it is the phase arguments of the call, used with
+		 * state_tile.  For these operations, we precompute the
+		 * tile_phase values.
+		 *
+		 * Note that control may get here before one or both of
+		 * state_tile or dev_ht has been set.
+		 */
+		if (state_tile.size.x)
+		    tile_phase.x =
+			(state.tile_phase.x + x0) % state_tile.size.x;
+		if (dev_ht.lcm_width)
+		    color_phase.x =
+			(state.tile_phase.x + x0) % dev_ht.lcm_width;
 		/*
 		 * The true tile height for shifted tiles is not
 		 * size.y: see gxbitmap.h for the computation.
 		 */
-		{
+		if (state_tile.size.y) {
 		    int full_height;
 
 		    if (state_tile.shift == 0)
@@ -824,6 +843,9 @@ in:				/* Initialize for a new page. */
 		    tile_phase.y =
 			(state.tile_phase.y + y0) % full_height;
 		}
+		if (dev_ht.lcm_height)
+		    color_phase.y =
+			(state.tile_phase.y + y0) % dev_ht.lcm_height;
 		gx_imager_setscreenphase(&imager_state,
 					 -(state.tile_phase.x + x0),
 					 -(state.tile_phase.y + y0),
@@ -1198,7 +1220,7 @@ idata:			data_size = 0;
 #undef dcb
 #undef dcl
 			}
-			continue;
+			goto set_phase;
 		    case cmd_opv_put_params:
 			cbuf.ptr = cbp;
 			code = read_put_params(&cbuf, cdev, mem);
@@ -1321,7 +1343,7 @@ idata:			data_size = 0;
 			case cmd_opv_coloreofill:
 			    fill_params.rule = gx_rule_even_odd;
 			  fill_color:pdevc = &dev_color;
-			    pdevc->phase = tile_phase;
+			    pdevc->phase = color_phase;
 			    code =
 				gx_color_load(pdevc, &imager_state, tdev);
 			    if (code < 0)
@@ -1348,7 +1370,7 @@ idata:			data_size = 0;
 			    goto stroke;
 			case cmd_opv_colorstroke:
 			    pdevc = &dev_color;
-			    pdevc->phase = tile_phase;
+			    pdevc->phase = color_phase;
 			    code =
 				gx_color_load(pdevc, &imager_state, tdev);
 			    if (code < 0)
@@ -1374,7 +1396,7 @@ idata:			data_size = 0;
 			    goto poly;
 			case cmd_opv_colorpolyfill:
 			    pdevc = &dev_color;
-			    pdevc->phase = tile_phase;
+			    pdevc->phase = color_phase;
 			    code = gx_color_load(pdevc, &imager_state, tdev);
 			    if (code < 0)
 				break;
