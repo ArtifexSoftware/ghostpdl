@@ -239,7 +239,7 @@ pl_main(
     gs_c_param_list_write(&params, pjl_mem);
     gs_param_list_set_persistent_keys((gs_param_list*)&params, false);
     pl_main_init_instance(&inst, mem);
-    arg_init(&args, argv, argc, pl_main_arg_fopen, NULL);
+    arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL);
 
     
     /* Create PJL instance */
@@ -1164,7 +1164,7 @@ pl_post_finish_page(pl_interp_instance_t *interp, void *closure)
 void
 pl_exit(int exit_status)
 {
-	exit(exit_status);
+    gp_do_exit(exit_status);
 }
 
 /* -------------- Read file cursor operations ---------- */
