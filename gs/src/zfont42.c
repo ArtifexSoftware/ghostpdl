@@ -172,6 +172,8 @@ string_array_access_proc(const ref *psa, int modulus, ulong offset,
     ulong left = offset;
     uint index = 0;
 
+    if (length == 0)
+        return 0;
     for (;; ++index) {
 	ref rstr;
 	int code = array_get(psa, index, &rstr);
