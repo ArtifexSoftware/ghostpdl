@@ -227,3 +227,164 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
                                              as, image, GB_stats);
 }
 
+/**
+ * Find the first referred-to intermediate region segment
+ * with a non-NULL result for use as a reference image
+ */
+Jbig2Segment *
+jbig2_region_find_referred(Jbig2Ctx *ctx,Jbig2Segment *segment)
+{
+  const int nsegments = segment->referred_to_segment_count;
+  Jbig2Segment *rsegment;
+  int index;
+
+  for (index = 0; index < nsegments; index++) {
+    rsegment = jbig2_find_segment(ctx, 
+      segment->referred_to_segments[index]);
+    if (rsegment == NULL) {
+      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+        "could not find referred to segment %d",
+        segment->referred_to_segments[index]);
+      continue;
+    }
+    switch (rsegment->flags & 63) {
+      case 4:  /* intermediate text region */
+      case 20: /* intermediate halftone region */
+      case 36: /* intermediate generic region */
+      case 40: /* intermediate generic refinement region */
+        if (rsegment->result) return rsegment;
+	break;
+      default: /* keep looking */
+        break;
+    }
+  }
+  /* no appropriate reference was found. */
+  return NULL;
+}
+
+/** 
+ * Handler for immediate generic region segments
+ */
+int
+jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
+                               const byte *segment_data)
+{
+  Jbig2RefinementRegionParams params;
+  Jbig2RegionSegmentInfo rsi;
+  int offset = 0;
+  byte seg_flags;
+  
+  /* 7.4.7 */
+  if (segment->data_length < 18)
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                       "Segment too short");
+
+  jbig2_get_region_segment_info(&rsi, segment_data);
+  jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
+              "generic region: %d x %d @ (%d, %d), flags = %02x",
+              rsi.width, rsi.height, rsi.x, rsi.y, rsi.flags);
+
+  /* 7.4.7.2 */
+  seg_flags = segment_data[17];
+  params.GRTEMPLATE = seg_flags & 0x01;
+  params.TPGDON = seg_flags & 0x02;
+  jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
+              "segment flags = %02x %s%s", seg_flags,
+              params.GRTEMPLATE ? " GRTEMPLATE" :"",
+              params.TPGDON ? " TPGON" : "" );
+  if (seg_flags & 0xFC)
+    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+                "reserved segment flag bits are non-zero");
+  offset += 18;
+
+  /* 7.4.7.3 */
+  if (params.GRTEMPLATE) {
+    if (segment->data_length < 22)
+      return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                         "Segment too short");
+    params.grat[0] = (signed char)segment_data[offset + 0];
+    params.grat[1] = (signed char)segment_data[offset + 1];
+    params.grat[2] = (signed char)segment_data[offset + 2];
+    params.grat[3] = (signed char)segment_data[offset + 3];
+    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
+                   "grat1: (%d, %d) grat2: (%d, %d)", 
+                   params.grat[0], params.grat[1],
+                   params.grat[2], params.grat[3]);
+    offset += 4;
+  }
+
+  /* 7.4.7.4 - set up the reference image */
+  if (segment->referred_to_segment_count) {
+    Jbig2Segment *ref;
+
+    ref = jbig2_region_find_referred(ctx, segment);
+    if (ref == NULL)
+      return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+        "could not find reference bitmap!");
+    /* the reference bitmap is the result of a previous 
+       intermediate region segment; the reference selection
+       rules say to use the first one available, and not to
+       reuse any intermediate result, so we simply clone it
+       and free the original to keep track of this. */
+    params.reference = jbig2_image_clone(ctx, ref->result);
+    jbig2_image_release(ctx, ref->result);
+    ref->result = NULL;
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+      "found reference bitmap in segment %d", ref->number);
+    jbig2_image_write_pbm_file(params.reference, "ref.pbm");
+  } else {
+    /* the reference is just (a subset of) the page buffer */
+    params.reference = jbig2_image_clone(ctx, 
+      ctx->pages[ctx->current_page].image);
+    /* TODO: subset the image if appropriate */
+  }
+
+  /* 7.4.7.5 */
+  params.DX = 0;
+  params.DY = 0;
+  {
+    Jbig2WordStream *ws;
+    Jbig2ArithState *as;
+    Jbig2ArithCx *GB_stats = NULL;
+    int stats_size;
+    Jbig2Image *image;
+    int code;
+
+    image = jbig2_image_new(ctx, rsi.width, rsi.height);
+    if (image == NULL)
+      return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+               "unable to allocate image storage");
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+      "allocated %d x %d image buffer for region decode results",
+          rsi.width, rsi.height);
+
+    stats_size = params.GRTEMPLATE ? 1 << 13 : 1 << 10;
+    GB_stats = jbig2_alloc(ctx->allocator, stats_size);
+    memset(GB_stats, 0, stats_size);
+
+    ws = jbig2_word_stream_buf_new(ctx, segment_data + offset,
+           segment->data_length - offset);
+    as = jbig2_arith_new(ctx, ws);
+    code = jbig2_decode_refinement_region(ctx, segment, &params,
+                              as, image, GB_stats);
+    jbig2_image_write_pbm_file(image, "result.pbm");
+
+    /* TODO: free ws, as */
+    jbig2_free(ctx->allocator, GB_stats);
+
+    if ((segment->flags & 63) == 40) {
+        /* intermediate region. save the result for later */
+	segment->result = image;
+    } else {
+	/* immediate region. composite onto the page */
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+            "composing %dx%d decoded refinement region onto page at (%d, %d)",
+            rsi.width, rsi.height, rsi.x, rsi.y);
+	jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image,
+          image, rsi.x, rsi.y, JBIG2_COMPOSE_OR);
+        jbig2_image_release(ctx, image);
+    }
+  }
+
+  return 0;
+}
