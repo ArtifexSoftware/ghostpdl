@@ -930,6 +930,32 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 #define gs_private_st_suffix_add6(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6)\
   gs__st_suffix_add6(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6)
 
+	/* Suffix subclasses with 7 additional pointers. */
+
+#define gs__st_suffix_add7(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6),\
+    GC_OBJ_ELT(stype, e7)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add7(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7)\
+  gs__st_suffix_add7(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7)
+#define gs_private_st_suffix_add7(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7)\
+  gs__st_suffix_add7(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7)
+
+	/* Suffix subclasses with 8 additional pointers. */
+
+#define gs__st_suffix_add8(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6),\
+    GC_OBJ_ELT2(stype, e7, e8)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add8(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8)\
+  gs__st_suffix_add8(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8)
+#define gs_private_st_suffix_add8(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8)\
+  gs__st_suffix_add8(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8)
+
 	/* Suffix subclasses with 9 additional pointers. */
 
 #define gs__st_suffix_add9(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9)\
