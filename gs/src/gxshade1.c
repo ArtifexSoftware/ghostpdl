@@ -69,17 +69,17 @@ shade_fill_device_rectangle(const shading_fill_state_t * pfs,
 	ymin = p0->y, ymax = p1->y;
     else
 	ymin = p1->y, ymax = p0->y;
-    /****** NOT QUITE RIGHT FOR PIXROUND ******/
+
     xmin -= pis->fill_adjust.x;
     xmax += pis->fill_adjust.x;
     ymin -= pis->fill_adjust.y;
     ymax += pis->fill_adjust.y;
-    x = fixed2int_var(xmin);
-    y = fixed2int_var(ymin);
+    x = fixed2int_var_pixround(xmin);
+    y = fixed2int_var_pixround(ymin);
     return
 	gx_fill_rectangle_device_rop(x, y,
-				     fixed2int_var(xmax) - x,
-				     fixed2int_var(ymax) - y,
+				     fixed2int_var_pixround(xmax) - x,
+				     fixed2int_var_pixround(ymax) - y,
 				     pdevc, pfs->dev, pis->log_op);
 }
 
