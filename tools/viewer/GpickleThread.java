@@ -4,13 +4,18 @@ import java.awt.image.*;
 /** Thread calls Gpickle asking for a page
  * this tread will send the BufferedImage to
  * the registered PickleObserver
+ *
+ * startCountingPages() uses the same thread to count the number of pages in a job
+ * since it maybe desirable to count while viewing a second GpickeTread is 
+ * needed.  One generates pages, the other counts the total number of pages.
+ *
  * @author Stefan Kemper
  * @version $Revision$
  */
 public class GpickleThread extends Gpickle implements Runnable {
 
   /** debug printf control */
-  private final static boolean debug = false;
+  private final static boolean debug = true;
 
   private long gotItTime = 0;
 
@@ -26,6 +31,9 @@ public class GpickleThread extends Gpickle implements Runnable {
   * we were busy, fetch it when we are not busy.
   */
   private volatile int nextPage = 0;
+
+  /** true if getting page count, false if getting a page */
+  private volatile boolean getPageCount = false;
 
   private Thread myThread;
 
@@ -56,8 +64,14 @@ public class GpickleThread extends Gpickle implements Runnable {
              }
           }
 
-          // generate page and return it to the observer
-          observer.imageIsReady( getPrinterOutputPage() );
+	  if (getPageCount) {
+	      // generate page and return it to the observer
+	      observer.pageCountIsReady( getPrinterPageCount() );
+	      getPageCount = false;
+	  } 
+	  else {
+	      observer.imageIsReady( getPrinterOutputPage() );
+	  }
 
           if (debug) {
              gotItTime = System.currentTimeMillis() - gotItTime;	
@@ -105,7 +119,28 @@ public class GpickleThread extends Gpickle implements Runnable {
      }
 
      resume(); // kickStartTread
+  }  
+
+  /** if not generating then start generated requested pageCount
+   */
+  public void startCountingPages(  )
+  {
+     if (debug) System.out.println("Request PageCount");	
+
+     if (goFlag) {   // one at a time please
+        return;
+     }
+     
+     getPageCount = true;
+
+     if (debug) {
+        gotItTime = System.currentTimeMillis();	
+        System.out.println("Getting Page Count");
+     }
+
+     resume(); // kickStartTread
   }
+
   public boolean busy() {
      if (nextPage > 0)
         return true;

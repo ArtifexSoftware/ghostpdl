@@ -57,7 +57,10 @@ public class Gview
     protected int pageNumber = 1;
     protected int totalPageCount = 1;
     protected BufferedImage currentPage;
+    /** fetches images page at a time */
     protected GpickleThread pickle;
+    /** counts the number of pages in document */
+    protected GpickleThread pageCounter;  
     protected double desiredRes;
     protected double origRes;
     protected double origH;
@@ -113,6 +116,7 @@ public class Gview
 	super( "Ghost Pickle Viewer" );
 	pageNumber = 1;
 	pickle = new GpickleThread(this);
+	pageCounter = new GpickleThread(this);
 
 	addKeyListener(this);
 	addMouseListener(this);
@@ -588,9 +592,13 @@ public class Gview
 
 	// update menu status 
 	menuDPI.setLabel("dpi: " + desiredRes);
-	menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
-	setTitle("GhostPickle " + pageNumber + " of " + totalPageCount);
+	setPageCount( totalPageCount );
 	repaint();
+    }
+
+    /** count of pages done, update status display */
+    public void pageCountIsReady( int pageCount ) {
+	setPageCount( pageCount );
     }
 
     /** starts drag translation, or popup menu
@@ -826,6 +834,7 @@ public class Gview
     protected void setPageCount( int pageCount ) {
 	totalPageCount = pageCount;
 	menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
+	setTitle("GhostPickle " + pageNumber + " of " + totalPageCount);
     }
 
     /** Sets the job, opening/reopening the window based on resolution.
@@ -838,7 +847,8 @@ public class Gview
 
 	if (getPageCount == true) {
 	    // get the total page count for the job
-	    setPageCount(pickle.getPrinterPageCount());
+	    pageCounter.setJob(args[0]);  
+	    pageCounter.startCountingPages();
 	}
 
 	pageNumber = 1;
@@ -847,7 +857,6 @@ public class Gview
 	setSize(pickle.getImgWidth(), pickle.getImgHeight());
 	origW = pickle.getImgWidth();
 	origH = pickle.getImgHeight();    	
-	//setTitle("GhostPickle " + pageNumber + " of " + totalPageCount);
 	show();
 	repaint();
     }

@@ -37,14 +37,15 @@ public class Nav extends Gview  {
 
     public void runMain(String[] args) {
 
-	// this window is smaller/lower res, don't count pages now.
-	runJob(args, startingRes / zoomWindowRatio, false);
+	// this window is smaller/lower res, count pages now.
+	runJob(args, startingRes / zoomWindowRatio, true);
 
-	// zoom window is higher res, count pages now.
-	pageView.runJob(args, startingRes, true);
+	// zoom window is higher res, don't count pages now.
+	pageView.runJob(args, startingRes, false);
 
-	// set the total page count based on pageView.
-        setPageCount(pageView.totalPageCount);
+	// set the total page count as unknown for now 
+        setPageCount(-1);
+	pageView.setPageCount(-1);
     }
 
     /** main program */
@@ -81,6 +82,12 @@ public class Nav extends Gview  {
 	if (pickle.busy() == false && pageView.pickle.busy() == false) {
 	    pageView.pickle.startProduction(pageNumber);
 	}
+    }
+
+    /** thread counting pages is finished update status display */
+    public void pageCountIsReady( int pageCount ) {
+	setPageCount( pageCount );
+	pageView.setPageCount( pageCount );
     }
 
     /** moves/drags zoomin box and causes regerenation of a new viewport
