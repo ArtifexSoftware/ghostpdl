@@ -523,6 +523,7 @@ pxBeginFontHeader(px_args_t *par, px_state_t *pxs)
 	if ( pxfont == 0 )
 	  return_error(errorInsufficientMemory);
 	pxfont->storage = pxfsDownLoaded;
+	pxfont->data_are_permanent = false;
 	code = px_dict_put(&pxs->font_dict, par->pv[0], pxfont);
 	if ( code < 0 )
 	  { gs_free_object(mem, pxfont, "pxBeginFontHeader(pxfont)");

@@ -136,6 +136,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
 		    return code;
 		pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
 		plfont->storage = pcds_temporary;
+		plfont->data_are_permanent = false;
 		pl_dict_put(&pcs->soft_fonts, current_font_id, current_font_id_size, plfont);
 	    }
 	}
@@ -189,6 +190,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
 	  return_error(e_Memory);
 	memcpy(header, data, count);
 	plfont->storage = pcds_temporary;
+	plfont->data_are_permanent = false;
 	plfont->header = header;
 	plfont->header_size = count;
 	plfont->scaling_technology = fst;

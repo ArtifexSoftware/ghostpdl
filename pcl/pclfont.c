@@ -205,6 +205,7 @@ pcl_load_built_in_fonts(pcl_state_t *pcs, const char *pathname)
 		continue;
 	    }
 	    plfont->storage = pcds_internal;
+	    plfont->data_are_permanent = false;
 	    if ( residentp->params.symbol_set != 0 )
 		plfont->font_type = plft_8bit;
 	    /*

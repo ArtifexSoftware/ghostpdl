@@ -88,8 +88,19 @@ px_state_alloc(gs_memory_t *memory)
 void
 px_state_release(px_state_t *pxs)
 {
-	/* Don't free pxgs since it'll get freed as pgs' client */
-	gs_free_object(pxs->memory, pxs, "px_state_release");
+    px_value_t val = {0}; /* arbitrary */
+    /* delete the pxl error page and error page enumeration, the
+       following deletes the font without having to import the font
+       freeing procedure.  We add the font to the font dictionary and
+       then release all of the fonts */
+    px_dict_put(&pxs->font_dict, &val, pxs->error_page_font);
+    px_dict_release(&pxs->font_dict);
+    gs_free_object(pxs->memory, pxs->error_page_show_enum,
+		   "px_state_release(pxs->error_page_show_enum)");
+    /* free gs font dir */
+    gs_free_object(pxs->memory, pxs->font_dir, "px_state_release(gs_font_dir)");
+    /* Don't free pxgs since it'll get freed as pgs' client */
+    gs_free_object(pxs->memory, pxs, "px_state_release");
 }
 
 /* Do one-time state initialization. */

@@ -41,19 +41,21 @@ void
 pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 {	pl_font_t *plfont = plf;
 	/* Free the characters. */
-	if ( plfont->glyphs.table )
-	  { uint i;
-	    for ( i = plfont->glyphs.size; i > 0; )
-	      { void *data = plfont->glyphs.table[--i].data;
-	        if ( data )
-		  gs_free_object(mem, data, cname);
-	      }
+        if ( !plfont->data_are_permanent )
+	  { if ( plfont->glyphs.table )
+	     { uint i;
+	       for ( i = plfont->glyphs.size; i > 0; )
+	         { void *data = plfont->glyphs.table[--i].data;
+	           if ( data )
+		     gs_free_object(mem, data, cname);
+	         }  
+	     }
+	     gs_free_object(mem, (void *)plfont->header, cname);
+	     plfont->header = 0; /* see hack note above */
 	  }
 	/* Free the font data itself. */
 	gs_free_object(mem, (void *)plfont->char_glyphs.table, cname);
 	gs_free_object(mem, (void *)plfont->glyphs.table, cname);
-	gs_free_object(mem, (void *)plfont->header, cname);
-	plfont->header = 0; /* see hack note above */
 	if ( plfont->pfont )	/* might be only partially constructed */
 	  { gs_purge_font(plfont->pfont);
 	    gs_free_object(mem, plfont->pfont, cname);

@@ -585,6 +585,7 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
     if ( type & pcl_reset_permanent ) {
 	pl_dict_release(&pcs->soft_fonts);
 	pl_dict_release(&pcs->built_in_fonts);
+	gs_free_object(pcs->memory, pcs->font_dir, "pcfont_do_reset");
     }
 }
 

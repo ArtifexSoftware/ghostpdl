@@ -139,6 +139,7 @@ typedef struct pl_font_s pl_font_t;
 struct pl_font_s {
   gs_font *pfont;	/* Type 42 if TrueType, Type 3 if bitmap. */
   int storage;		/* where the font is stored */
+  bool data_are_permanent;  /* glyph data stored in rom */
   byte *header;	        /* downloaded header, or built-in font data */
   ulong header_size;
 	/* Information extracted from the font or supplied by the client. */

@@ -461,6 +461,7 @@ px_find_existing_font(px_value_t *pfnv, px_font_t **ppxfont,
 			      &pxfont);
 	    if ( code >= 0 )
 	      { pxfont->storage = pxfsInternal;
+                pxfont->data_are_permanent = false;
 	        pxfont->params.symbol_set = 0;	/* not known */
 		/* The character complements are bogus.... */
 	        memcpy(pxfont->character_complement,
