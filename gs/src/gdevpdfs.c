@@ -1139,10 +1139,14 @@ record_used(pdf_font_descriptor_t *pfd, int c)
 {
     pfd->chars_used.data[c >> 3] |= 0x80 >> (c & 7);
 }
-#define BASE_ENCODING(ppf)\
-  (ppf->BaseEncoding != ENCODING_INDEX_UNKNOWN ? ppf->BaseEncoding :\
-   ppf->index >= 0 ? pdf_standard_fonts[ppf->index].base_encoding :\
-   ENCODING_INDEX_UNKNOWN)
+inline private gs_encoding_index_t
+base_encoding_index(const pdf_font_t *ppf)
+{
+    return
+	(ppf->BaseEncoding != ENCODING_INDEX_UNKNOWN ? ppf->BaseEncoding :
+	 ppf->index >= 0 ? pdf_standard_fonts[ppf->index].base_encoding :
+	 ENCODING_INDEX_UNKNOWN);
+}
 
 private int
 pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
@@ -1167,7 +1171,7 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
     gs_font *base_font = pfd->base_font;
     bool have_font = base_font != 0 && base_font->FontType != ft_composite;
     bool is_standard = ppf->index >= 0;
-    gs_encoding_index_t bei = BASE_ENCODING(ppf);
+    gs_encoding_index_t bei = base_encoding_index(ppf);
     pdf_encoding_element_t *pdiff = ppf->Differences;
     /*
      * If set, font_glyph is the glyph currently associated with chr in
@@ -1221,7 +1225,7 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
     pdf_font_descriptor_t *const pfd = ppf->FontDescriptor;
     pdf_encoding_element_t *pdiff = ppf->Differences;
     gs_font *base_font = pfd->base_font;
-    gs_encoding_index_t bei = BASE_ENCODING(ppf);
+    gs_encoding_index_t bei = base_encoding_index(ppf);
 
     if (ppf->index < 0 && pfd->FontFile_id == 0 &&
 	pdev->CompatibilityLevel <= 1.2
