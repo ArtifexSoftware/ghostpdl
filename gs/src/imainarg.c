@@ -67,7 +67,7 @@ extern int zflushpage(P1(i_ctx_t *));
 #endif
 
 #ifndef GS_BUG_MAILBOX
-#  define GS_BUG_MAILBOX "bug-gs@aladdin.com"
+#  define GS_BUG_MAILBOX "bug-gs@ghostscript.com"
 #endif
 
 #define MAX_BUFFERED_SIZE 1024
