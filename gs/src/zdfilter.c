@@ -38,6 +38,7 @@
 #include "gxgetbit.h"
 #include "store.h"
 #include "gsdfilt.h"
+#include "gdevp14.h"
 
 #ifdef DFILTER_TEST
 private int
@@ -56,6 +57,26 @@ zpushtestdevicefilter(i_ctx_t *i_ctx_p)
 }
 #endif
 
+private int
+/* depth .pushpdf14devicefilter - */
+zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
+{
+    gs_device_filter_t *df;
+    int code;
+    gs_memory_t *mem = gs_memory_stable(imemory);
+    os_ptr op = osp;
+
+    check_type(*op, t_integer);
+    code = gs_pdf14_device_filter(&df, op->value.intval, mem);
+    if (code < 0)
+	return code;
+    code = gs_push_device_filter(mem, igs, df); 
+    if (code < 0)
+	return code;
+    pop(1);
+    return 0;
+}
+
 /* - .popdevicefilter - */
 private int
 zpopdevicefilter(i_ctx_t *i_ctx_p)
@@ -70,6 +91,7 @@ const op_def zdfilter_op_defs[] =
 #ifdef DFILTER_TEST
     {"0.pushtestdevicefilter", zpushtestdevicefilter},
 #endif
+    {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
     {"0.popdevicefilter", zpopdevicefilter},
     op_def_end(0)
 };

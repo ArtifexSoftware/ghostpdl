@@ -97,7 +97,7 @@ gs_test_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
 
     fdev = gs_alloc_struct_immovable(mem, gx_device_forward,
 				     &st_device_forward,
-				     "gs_test_device_filter");
+				     "gs_test_device_filter_push");
     if (fdev == 0)
 	return_error(gs_error_VMerror);
     gx_device_init((gx_device *)fdev,
@@ -112,7 +112,7 @@ gs_test_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
 
 private int
 gs_test_device_filter_pop(gs_device_filter_t *self, gs_memory_t *mem,
-			  gx_device *dev)
+			  gs_state *pgs, gx_device *dev)
 {
     gx_device_set_target((gx_device_forward *)dev, NULL);
     gs_free_object(mem, dev, "gs_test_device_filter_pop");
@@ -126,7 +126,7 @@ gs_test_device_filter(gs_device_filter_t **pdf, gs_memory_t *mem)
     gs_device_filter_t *df;
 
     df = gs_alloc_struct(mem, gs_device_filter_t,
-			 &st_gs_device_filter, "gs_test_device_filter_push");
+			 &st_gs_device_filter, "gs_test_device_filter");
     if (df == 0)
 	return_error(gs_error_VMerror);
     df->push = gs_test_device_filter_push;
@@ -171,7 +171,7 @@ gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs)
     if (dfs_tos == NULL)
 	return_error(gs_error_rangecheck);
     df = dfs_tos->df;
-    code = df->pop(df, mem, pgs->device);
+    code = df->pop(df, mem, pgs, pgs->device);
     pgs->dfilter_stack = dfs_tos->next;
     gs_setdevice_no_init(pgs, dfs_tos->next_device);
     rc_decrement_only(dfs_tos->next_device, "gs_pop_device_filter");
