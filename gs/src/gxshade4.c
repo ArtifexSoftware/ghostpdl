@@ -35,11 +35,13 @@
 
 /* ---------------- Triangle mesh filling ---------------- */
 
+#if !NEW_SHADINGS 
 private void 
 patch_set_color_values(const mesh_fill_state_t * pfs, float *cc, const patch_color_t *c)
 {
     memcpy(cc, c->cc.paint.values, sizeof(c->cc.paint.values[0]) * pfs->num_components);
 }
+#endif
 
 /* Initialize the fill state for triangle shading. */
 void
@@ -346,13 +348,12 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
     int code = shade_next_vertex(cs, vertex);
 
     if (code >= 0 && psh->params.Function) {
-#	if !NEW_SHADINGS
-	    /* Decode the color with the function. */
-	    code = gs_function_evaluate(psh->params.Function, &vertex->c.t,
-					vertex->c.cc.paint.values);
-#	else
+#	if NEW_SHADINGS
 	    vertex->c.t = vertex->c.cc.paint.values[0];
 #	endif
+	/* Decode the color with the function. */
+	code = gs_function_evaluate(psh->params.Function, &vertex->c.t,
+				    vertex->c.cc.paint.values);
     }
     return code;
 }
@@ -372,17 +373,17 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const shading_vertex_t * va,
 	pfs1.Function = pfs->pshm->params.Function;
 	init_patch_fill_state(&pfs1);
 	if (INTERPATCH_PADDING) {
-	    code = padding(&pfs1, &va->p, &vb->p, &va->c, &vb->c);
+	    code = mesh_padding(&pfs1, &va->p, &vb->p, &va->c, &vb->c);
 	    if (code < 0)
 		return code;
-	    code = padding(&pfs1, &vb->p, &vc->p, &vb->c, &vc->c);
+	    code = mesh_padding(&pfs1, &vb->p, &vc->p, &vb->c, &vc->c);
 	    if (code < 0)
 		return code;
-	    code = padding(&pfs1, &vc->p, &va->p, &vc->c, &va->c);
+	    code = mesh_padding(&pfs1, &vc->p, &va->p, &vc->c, &va->c);
 	    if (code < 0)
 		return code;
 	}
-	return triangle(&pfs1, va, vb, vc);
+	return mesh_triangle(&pfs1, va, vb, vc);
 #   endif
 }
 

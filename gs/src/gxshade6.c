@@ -1438,7 +1438,7 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
 }
 
 int
-padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
+mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1)
 {
     gs_fixed_point q0, q1;
@@ -1505,7 +1505,7 @@ fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka,
     } else {
 	if (INTERPATCH_PADDING && (wedge_type & interpatch_padding)) {
 	    vd_bar(pole[0].x, pole[0].y, pole[3].x, pole[3].y, 0, RGB(255, 0, 0));
-	    code = padding(pfs, &pole[0], &pole[3], c0, c1);
+	    code = mesh_padding(pfs, &pole[0], &pole[3], c0, c1);
 	    if (code < 0)
 		return code;
 	}
@@ -2089,14 +2089,14 @@ divide_triangle(patch_fill_state_t *pfs,
     code = fill_triangle_wedge(pfs, p0, p1, &p);
     if (code < 0)
 	return code;
-    code = triangle(pfs, &p, p2, p0);
+    code = mesh_triangle(pfs, &p, p2, p0);
     if (code < 0)
 	return code;
-    return triangle(pfs, p2, &p, p1);
+    return mesh_triangle(pfs, p2, &p, p1);
 }
 
 int 
-triangle(patch_fill_state_t *pfs, 
+mesh_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
     if (DIVIDE_BY_PARALLELS) {
@@ -2163,15 +2163,15 @@ triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argumen
     draw_quadrangle(p, RGB(0, 255, 0));
     /* Divide at the smaller color variation to reduce the number of costant color areas. */
     if (d0011 < d0110) {
-	code = triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][1]);
+	code = mesh_triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][1]);
 	if (code < 0)
 	    return code;
-	return triangle(pfs, p->p[0][0], p->p[1][1], p->p[1][0]);
+	return mesh_triangle(pfs, p->p[0][0], p->p[1][1], p->p[1][0]);
     } else {
-	code = triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][0]);
+	code = mesh_triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][0]);
 	if (code < 0)
 	    return code;
-	return triangle(pfs, p->p[0][1], p->p[1][1], p->p[1][0]);
+	return mesh_triangle(pfs, p->p[0][1], p->p[1][1], p->p[1][0]);
     }
 }
 
@@ -2186,16 +2186,16 @@ triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argumen
     divide_bar(pfs, p->p[0][0], p->p[0][1], 2, &p0001);
     divide_bar(pfs, p->p[1][0], p->p[1][1], 2, &p1011);
     divide_bar(pfs, &p0001, &p1011, 2, &q);
-    code = triangle(pfs, p->p[0][0], p->p[0][1], &q);
+    code = mesh_triangle(pfs, p->p[0][0], p->p[0][1], &q);
     if (code < 0)
 	return code;
-    code = triangle(pfs, p->p[0][1], p->p[1][1], &q);
+    code = mesh_triangle(pfs, p->p[0][1], p->p[1][1], &q);
     if (code < 0)
 	return code;
-    code = triangle(pfs, p->p[1][1], p->p[1][0], &q);
+    code = mesh_triangle(pfs, p->p[1][1], p->p[1][0], &q);
     if (code < 0)
 	return code;
-    return triangle(pfs, p->p[1][0], p->p[0][0], &q);
+    return mesh_triangle(pfs, p->p[1][0], p->p[0][0], &q);
 }
 
 #endif

@@ -133,10 +133,10 @@ int mesh_fill_triangle(mesh_fill_state_t * pfs);
 #if NEW_SHADINGS
 void init_patch_fill_state(patch_fill_state_t *pfs);
 
-int triangle(patch_fill_state_t *pfs, 
+int mesh_triangle(patch_fill_state_t *pfs, 
     const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);
 
-int padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
+int mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1);
 #endif
 
