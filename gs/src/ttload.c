@@ -133,10 +133,10 @@
 
     face->cvtSize = font->t_cvt_.nLen / 2;
 
-    #if 0
+#   if 0
     if(face->cvtSize < 300)
       face->cvtSize = 300; /* Work around DynaLab bug in DingBat1. */
-    #endif
+#   endif
 
     if(face->cvtSize > 0) {  /* allow fonts with a CVT table */
 	face->cvt = mem->alloc_bytes(mem, face->cvtSize * sizeof(Short), "Load_TrueType_CVT");
