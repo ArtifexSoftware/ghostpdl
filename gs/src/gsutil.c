@@ -20,6 +20,8 @@
 #include "memory_.h"
 #include "gstypes.h"
 #include "gconfigv.h"		/* for USE_ASM */
+#include "gserror.h"
+#include "gserrors.h"
 #include "gsmemory.h"		/* for init procedure */
 #include "gsrect.h"		/* for prototypes */
 #include "gsuid.h"
@@ -233,6 +235,23 @@ uid_equal(register const gs_uid * puid1, register const gs_uid * puid2)
 	!memcmp((const char *)puid1->xvalues,
 		(const char *)puid2->xvalues,
 		(uint) - (puid1->id) * sizeof(long));
+}
+
+/* Copy the XUID data for a uid, if needed, updating the uid in place. */
+int
+uid_copy(gs_uid *puid, gs_memory_t *mem, client_name_t cname)
+{
+    if (uid_is_XUID(puid)) {
+	uint xsize = uid_XUID_size(puid);
+	long *xvalues = (long *)
+	    gs_alloc_byte_array(mem, xsize, sizeof(long), cname);
+
+	if (xvalues == 0)
+	    return_error(gs_error_VMerror);
+	memcpy(xvalues, uid_XUID_values(puid), xsize * sizeof(long));
+	puid->xvalues = xvalues;
+    }
+    return 0;
 }
 
 /* ------ Rectangle utilities ------ */

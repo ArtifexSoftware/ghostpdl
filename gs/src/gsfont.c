@@ -647,22 +647,8 @@ int
 gs_base_make_font(gs_font_dir * pdir, const gs_font * pfont,
 		  const gs_matrix * pmat, gs_font ** ppfont)
 {
-    gs_font_base *const pbfont = (gs_font_base *)*ppfont;
-
-    if (uid_is_XUID(&pbfont->UID)) {
-	uint xsize = uid_XUID_size(&pbfont->UID);
-	long *xvalues = (long *)
-	    gs_alloc_byte_array(pbfont->memory, xsize, sizeof(long),
-				"gs_base_make_font(XUID)");
-
-	if (xvalues == 0)
-	    return_error(gs_error_VMerror);
-	memcpy(xvalues, uid_XUID_values(&pbfont->UID),
-	       xsize * sizeof(long));
-
-	pbfont->UID.xvalues = xvalues;
-    }
-    return 0;
+    return uid_copy(&((gs_font_base *)*ppfont)->UID, (*ppfont)->memory,
+		    "gs_base_make_font(XUID)");
 }
 
 /* Default font info procedure */
