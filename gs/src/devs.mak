@@ -741,7 +741,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
  $(GLD)szlibe.dev $(GLD)psdf.dev $(PSD)dscparse.dev\
- $(DD)pdftext.dev
+ $(DD)pdtext.dev
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite3_)
@@ -759,7 +759,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)smd5 $(GLD)szlibe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf
 	$(ADDMOD) $(DD)pdfwrite -include $(PSD)dscparse
-	$(ADDMOD) $(DD)pdfwrite -include $(DD)pdftext
+	$(ADDMOD) $(DD)pdfwrite -include $(DD)pdtext
 
 gdevpdfc_h=$(GLSRC)gdevpdfc.h
 gdevpdfg_h=$(GLSRC)gdevpdfg.h $(gscspace_h)
@@ -855,9 +855,28 @@ $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
  $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfv.$(OBJ) $(C_) $(GLSRC)gdevpdfv.c
 
+######## pdfwrite text
+
 # The text facilities for the PDF writer are so large and complex that
-# we give them their own module name and file name prefix.
+# we give them their own module name and (for the new code) file name prefix.
 # However, logically they are part of pdfwrite and cannot be used separately.
+
+#### Select old vs. new text code
+# The following makefile rule always compiles both old and new code, but
+# only links in one of the two.  For the old code, the SETMOD line should be
+# (removing the initial #, of course):
+#	$(SETMOD) $(DD)pdtext -include $(DD)pdftext
+# For the new code, the SETMOD line should be
+#	$(SETMOD) $(DD)pdtext -include $(DD)pdxtext
+
+$(DD)pdtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(DD)pdftext.dev $(DD)pdxtext.dev
+	$(SETMOD) $(DD)pdtext -include $(DD)pdftext
+
+#### Old text code
+# The next section should be removed when the new code is fully stable.
+# The following files should also be deleted from the fileset:
+#   gdevpdf[ft].h
+#   gdevpdf[efstw].c
 
 gdevpdff_h=$(GLSRC)gdevpdff.h
 gdevpdft_h=$(GLSRC)gdevpdft.h
@@ -914,6 +933,105 @@ $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
  $(gxfcid_h) $(gxfcmap_h) $(gxfont_h) $(gxfont0_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdfw.$(OBJ) $(C_) $(GLSRC)gdevpdfw.c
+
+#### New text code
+# For a code roadmap, see gdevpdtx.h.
+# **************** THIS CODE IS NOT CLOSE TO WORKING YET.
+# **************** DO NOT USE IT.
+
+# gdevpdt_h will eventually be moved up and #included in gdevpdfx.h
+gdevpdt_h=$(GLSRC)gdevpdt.h
+gdevpdtx_h=$(GLSRC)gdevpdtx.h $(gdevpdt_h)
+gdevpdtb_h=$(GLSRC)gdevpdtb.h $(gdevpdtx_h)
+gdevpdtd_h=$(GLSRC)gdevpdtd.h $(gdevpdtb_h) $(gdevpdtx_h)
+gdevpdtf_h=$(GLSRC)gdevpdtf.h $(gdevpdtx_h)
+gdevpdti_h=$(GLSRC)gdevpdti.h $(gdevpdt_h)
+gdevpdts_h=$(GLSRC)gdevpdts.h $(gsmatrix_h)
+gdevpdtt_h=$(GLSRC)gdevpdtt.h
+gdevpdtw_h=$(GLSRC)gdevpdtw.h
+
+# We reserve space for all of a..z, just in case.
+pdxtext_ab=$(GLOBJ)gdevpdt.$(OBJ) $(GLOBJ)gdevpdtb.$(OBJ)
+pdxtext_cde=$(GLOBJ)gdevpdtc.$(OBJ) $(GLOBJ)gdevpdtd.$(OBJ) $(GLOBJ)gdevpdte.$(OBJ)
+pdxtext_fgh=$(GLOBJ)gdevpdtf.$(OBJ)
+pdxtext_ijk=$(GLOBJ)gdevpdti.$(OBJ)
+pdxtext_lmn=
+pdxtext_opq=
+pdxtext_rst=$(GLOBJ)gdevpdts.$(OBJ) $(GLOBJ)gdevpdtt.$(OBJ)
+pdxtext_uvw=$(GLOBJ)gdevpdtw.$(OBJ)
+pdxtext_xyz=
+pdxtext_=$(pdxtext_ab) $(pdxtext_cde) $(pdxtext_fgh) $(pdxtext_ijk)\
+ $(pdxtext_lmn) $(pdxtext_opq) $(pdxtext_rst) $(pdxtext_uvw) $(pdxtext_xyz)\
+ $(pdftext10_)
+$(DD)pdxtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdxtext_)\
+ $(GLD)fcopy.dev $(GLD)psf.dev
+	$(SETMOD) $(DD)pdxtext $(pdxtext_ab)
+	$(ADDMOD) $(DD)pdxtext $(pdxtext_cde)
+	$(ADDMOD) $(DD)pdxtext $(pdxtext_fgh)
+	$(ADDMOD) $(DD)pdxtext $(pdxtext_ijk)
+	$(ADDMOD) $(DD)pdxtext $(pdxtext_lmn)
+	$(ADDMOD) $(DD)pdxtext $(pdxtext_opq)
+	$(ADDMOD) $(DD)pdxtext $(pdxtext_rst)
+	$(ADDMOD) $(DD)pdxtext $(pdxtext_uvw)
+	$(ADDMOD) $(DD)pdxtext $(pdxtext_xyz)
+	$(ADDMOD) $(DD)pdxtext $(pdftext10_)
+	$(ADDMOD) $(DD)pdxtext -include $(GLD)fcopy $(GLD)psf
+
+$(GLOBJ)gdevpdt.$(OBJ) : $(GLSRC)gdevpdt.c $(gx_h) $(memory__h)\
+ $(gdevpdfx_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdts_h) $(gdevpdtx_h)
+	$(GLCC) $(GLO_)gdevpdt.$(OBJ) $(C_) $(GLSRC)gdevpdt.c
+
+$(GLOBJ)gdevpdtb.$(OBJ) : $(GLSRC)gdevpdtb.c $(memory__h) $(gx_h)\
+ $(gserrors_h) $(gsutil_h)\
+ $(gxfcid_h) $(gxfcopy_h) $(gxfont_h) $(gxfont42_h)\
+ $(gdevpsf_h) $(gdevpdfx_h) $(gdevpdtb_h)
+	$(GLCC) $(GLO_)gdevpdtb.$(OBJ) $(C_) $(GLSRC)gdevpdtb.c
+
+$(GLOBJ)gdevpdtc.$(OBJ) : $(GLSRC)gdevpdtc.c $(gx_h) $(memory__h)\
+ $(gserrors_h) $(gxfcmap_h) $(gxfont_h) $(gxfont0_h) $(gxfont0c_h)\
+ $(gdevpdfx_h) $(gdevpdtx_h)\
+ $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdts_h) $(gdevpdtt_h)
+	$(GLCC) $(GLO_)gdevpdtc.$(OBJ) $(C_) $(GLSRC)gdevpdtc.c
+
+$(GLOBJ)gdevpdte.$(OBJ) : $(GLSRC)gdevpdte.c $(gx_h) $(math__h) $(memory__h)\
+ $(gserrors_h) $(gxfcmap_h) $(gxfont_h) $(gxfont0_h) $(gxfont0c_h) $(gxpath_h)\
+ $(gdevpsf_h) $(gdevpdfx_h) $(gdevpdfg_h)\
+ $(gdevpdtx_h) $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdts_h) $(gdevpdtt_h)
+	$(GLCC) $(GLO_)gdevpdte.$(OBJ) $(C_) $(GLSRC)gdevpdte.c
+
+$(GLOBJ)gdevpdtd.$(OBJ) : $(GLSRC)gdevpdtd.c $(math__h) $(memory__h) $(gx_h)\
+ $(gserrors_h) $(gsrect_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gdevpdtb_h) $(gdevpdtd_h)
+	$(GLCC) $(GLO_)gdevpdtd.$(OBJ) $(C_) $(GLSRC)gdevpdtd.c
+
+$(GLOBJ)gdevpdtf.$(OBJ) : $(GLSRC)gdevpdtf.c $(gx_h) $(memory__h)\
+ $(gserrors_h) $(gsutil_h)\
+ $(gxfcache_h) $(gxfcid_h) $(gxfcmap_h) $(gxfont_h) $(gxfont1_h)\
+ $(gdevpdfx_h) $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdtw_h)
+	$(GLCC) $(GLO_)gdevpdtf.$(OBJ) $(C_) $(GLSRC)gdevpdtf.c
+
+$(GLOBJ)gdevpdti.$(OBJ) : $(GLSRC)gdevpdti.c $(memory__h) $(string__h) $(gx_h)\
+ $(gserrors_h)\
+ $(gdevpdfx_h)\
+ $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdts_h) $(gdevpdtw_h)
+	$(GLCC) $(GLO_)gdevpdti.$(OBJ) $(C_) $(GLSRC)gdevpdti.c
+
+$(GLOBJ)gdevpdts.$(OBJ) : $(GLSRC)gdevpdts.c $(gx_h) $(math__h) $(memory__h)\
+ $(gdevpdfx_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdts_h) $(gdevpdtx_h)
+	$(GLCC) $(GLO_)gdevpdts.$(OBJ) $(C_) $(GLSRC)gdevpdts.c
+
+$(GLOBJ)gdevpdtt.$(OBJ) : $(GLSRC)gdevpdtt.c $(gx_h) $(math__h)\
+ $(gserrors_h) $(gxfont_h) $(gxfont0_h) $(gxpath_h)\
+ $(gdevpdfx_h) $(gdevpdfg_h)\
+ $(gdevpdtx_h) $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdts_h) $(gdevpdtt_h)
+	$(GLCC) $(GLO_)gdevpdtt.$(OBJ) $(C_) $(GLSRC)gdevpdtt.c
+
+$(GLOBJ)gdevpdtw.$(OBJ) : $(GLSRC)gdevpdtw.c $(gx_h) $(memory__h)\
+ $(gxfcmap_h) $(gxfont_h)\
+ $(gdevpsf_h) $(gdevpdfx_h) $(gdevpdfo_h)\
+ $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdtw_h)
+	$(GLCC) $(GLO_)gdevpdtw.$(OBJ) $(C_) $(GLSRC)gdevpdtw.c
 
 ################ END PDF WRITER ################
 

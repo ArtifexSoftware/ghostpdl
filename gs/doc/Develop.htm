@@ -1555,6 +1555,14 @@ of the PDF driver, since the latter is far more sophisticated (in
 particular, it has extensive facilities for image compression and for
 handling text and fonts).
 
+<p>
+The PDF code for handling text and fonts is complex and fragile.  A major
+rewrite in June 2002 was intended to make it more robust and somewhat easier
+to understand, but also increased its size by about 40%, contrary to the
+expectation that it would shrink.  Currently both sets of code are in the
+code base, with compatible APIs, selected by a line in <a
+href="../src/devs.mak">src/devs.mak</a>.
+
 <dl>
 
 <dt>
@@ -1609,7 +1617,7 @@ Substrate:
 <a href="../src/gdevpdfu.c">src/gdevpdfu.c</a>.
 
 <dt>
-Text and fonts:
+Old text and fonts:
 <dd>
 <a href="../src/gdevpdfe.c">src/gdevpdfe.c</a>,
 <a href="../src/gdevpdff.c">src/gdevpdff.c</a>,
@@ -1618,6 +1626,29 @@ Text and fonts:
 <a href="../src/gdevpdft.c">src/gdevpdft.c</a>,
 <a href="../src/gdevpdft.h">src/gdevpdft.h</a>,
 <a href="../src/gdevpdfw.c">src/gdevpdfw.c</a>.
+
+<dt>
+New text and fonts:
+<dd>
+<a href="../src/gdevpdt.c">src/gdevpdt.c</a>,
+<a href="../src/gdevpdt.h">src/gdevpdt.h</a>,
+<a href="../src/gdevpdtb.c">src/gdevpdtb.c</a>,
+<a href="../src/gdevpdtb.h">src/gdevpdtb.h</a>,
+<a href="../src/gdevpdtc.c">src/gdevpdtc.c</a>,
+<a href="../src/gdevpdtd.c">src/gdevpdtd.c</a>,
+<a href="../src/gdevpdtd.h">src/gdevpdtd.h</a>,
+<a href="../src/gdevpdtf.c">src/gdevpdte.c</a>,
+<a href="../src/gdevpdtf.c">src/gdevpdtf.c</a>,
+<a href="../src/gdevpdtf.h">src/gdevpdtf.h</a>,
+<a href="../src/gdevpdti.c">src/gdevpdti.c</a>,
+<a href="../src/gdevpdti.h">src/gdevpdti.h</a>,
+<a href="../src/gdevpdts.c">src/gdevpdts.c</a>,
+<a href="../src/gdevpdts.h">src/gdevpdts.h</a>,
+<a href="../src/gdevpdtt.c">src/gdevpdtt.c</a>,
+<a href="../src/gdevpdtt.h">src/gdevpdtt.h</a>,
+<a href="../src/gdevpdtw.c">src/gdevpdtw.c</a>,
+<a href="../src/gdevpdtw.h">src/gdevpdtw.h</a>,
+<a href="../src/gdevpdtx.h">src/gdevpdtx.h</a>.
 
 <dt>
 Graphics:
