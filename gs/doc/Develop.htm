@@ -43,7 +43,8 @@
 <li><a href="#Device_drivers">Device drivers</a>
 <ul>
 <li><a href="#Internal_devices">Internal devices</a>,
-    <a href="#High_level_devices">High-level devices</a>,
+    <a href="#PS_and_PDF_writers">PostScript and PDF writers</a>,
+    <a href="#High_level_devices">Other high-level devices</a>,
     <a href="#Other_maintained_drivers">Other maintained drivers</a>,
     <a href="#Contributed_drivers">Contributed drivers</a>
 </ul>
@@ -293,11 +294,12 @@ Framework, file and string streams:
 <dt>
 Standard filters:
 <dd>
-<a href="../src/gsjconf.h">src/gsjconf.h</a>,
-<a href="../src/gsjmorec.h">src/gsjmorec.h</a>,
-<a href="../src/sa85d.c">src/sa85d.c</a>,
-<a href="../src/sa85d.h">src/sa85d.h</a>,
-<a href="../src/sa85x.h">src/sa85x.h</a>,
+
+<dl>
+
+<dt>
+CCITTFax:
+<dd>
 <a href="../src/scf.h">src/scf.h</a>,
 <a href="../src/scfd.c">src/scfd.c</a>,
 <a href="../src/scfdgen.c">src/scfdgen.c</a>,
@@ -305,7 +307,13 @@ Standard filters:
 <a href="../src/scfe.c">src/scfe.c</a>,
 <a href="../src/scfetab.c">src/scfetab.c</a>,
 <a href="../src/scfparam.c">src/scfparam.c</a>,
-<a href="../src/scfx.h">src/scfx.h</a>,
+<a href="../src/scfx.h">src/scfx.h</a>.
+
+<dt>
+DCT (JPEG):
+<dd>
+<a href="../src/gsjconf.h">src/gsjconf.h</a>,
+<a href="../src/gsjmorec.h">src/gsjmorec.h</a>,
 <a href="../src/sdcparam.c">src/sdcparam.c</a>,
 <a href="../src/sdcparam.h">src/sdcparam.h</a>,
 <a href="../src/sdct.h">src/sdct.h</a>,
@@ -314,21 +322,34 @@ Standard filters:
 <a href="../src/sdcte.c">src/sdcte.c</a>,
 <a href="../src/sddparam.c">src/sddparam.c</a>,
 <a href="../src/sdeparam.c">src/sdeparam.c</a>,
-<a href="../src/sfilter1.c">src/sfilter1.c</a>,
-<a href="../src/sfilter2.c">src/sfilter2.c</a>,
 <a href="../src/sjpeg.h">src/sjpeg.h</a>,
 <a href="../src/sjpegc.c">src/sjpegc.c</a>,
 <a href="../src/sjpegd.c">src/sjpegd.c</a>,
-<a href="../src/sjpege.c">src/sjpege.c</a>,
+<a href="../src/sjpege.c">src/sjpege.c</a>.
+
+<dt>
+Other compression/decompression:
+<dd>
 <a href="../src/slzwc.c">src/slzwc.c</a>,
 <a href="../src/slzwce.c">src/slzwce.c</a>,
 <a href="../src/slzwd.c">src/slzwd.c</a>,
 <a href="../src/slzwx.h">src/slzwx.h</a>,
 <a href="../src/srld.c">src/srld.c</a>,
 <a href="../src/srle.c">src/srle.c</a>,
-<a href="../src/srlx.h">src/srlx.h</a>,
+<a href="../src/srlx.h">src/srlx.h</a>.
+
+<dt>
+Other:
+<dd>
+<a href="../src/sa85d.c">src/sa85d.c</a>,
+<a href="../src/sa85d.h">src/sa85d.h</a>,
+<a href="../src/sa85x.h">src/sa85x.h</a>,
+<a href="../src/sfilter1.c">src/sfilter1.c</a>,
+<a href="../src/sfilter2.c">src/sfilter2.c</a>,
 <a href="../src/sstring.c">src/sstring.c</a>,
 <a href="../src/sstring.h">src/sstring.h</a>.
+
+</dl>
 
 <dt>
 Non-standard filters used to implement standard filters:
@@ -1061,6 +1082,17 @@ Banding:
 
 <h3><a name="Device_drivers"></a>Device drivers</h3>
 
+<p>
+See <a href="Drivers.htm">doc/Drivers.htm</a> for extensive documentation on
+the interface between the core code and drivers.
+
+<p>
+The driver API includes high-level (path / image / text), mid-level
+(polygon), and low-level (rectangle / raster) operations.  Most devices
+implement only the low-level operations, and let generic code break down the
+high-level operations.  However, some devices produce high-level output, and
+therefore must implement the high-level operations.
+
 <h4><a name="Internal_devices"></a>Internal devices</h4>
 
 <p>
@@ -1071,10 +1103,19 @@ device pipelines.  The rendering targets are:
 <dl>
 
 <dt>
-Memory devices:
+Memory devices, depth-independent:
 <dd>
 <a href="../src/gdevmem.c">src/gdevmem.c</a>,
 <a href="../src/gdevmem.h">src/gdevmem.h</a>,
+<a href="../src/gdevmpla.c">src/gdevmpla.c</a>,
+<a href="../src/gdevmpla.h">src/gdevmpla.h</a>,
+<a href="../src/gdevmrop.h">src/gdevmrop.h</a>,
+<a href="../src/gsdevmem.c">src/gsdevmem.c</a>,
+<a href="../src/gxdevmem.h">src/gxdevmem.h</a>.
+
+<dt>
+Memory devices, specific depths:
+<dd>
 <a href="../src/gdevm1.c">src/gdevm1.c</a>,
 <a href="../src/gdevm2.c">src/gdevm2.c</a>,
 <a href="../src/gdevm4.c">src/gdevm4.c</a>,
@@ -1082,14 +1123,9 @@ Memory devices:
 <a href="../src/gdevm16.c">src/gdevm16.c</a>,
 <a href="../src/gdevm24.c">src/gdevm24.c</a>,
 <a href="../src/gdevm32.c">src/gdevm32.c</a>,
-<a href="../src/gdevmpla.c">src/gdevmpla.c</a>,
-<a href="../src/gdevmpla.h">src/gdevmpla.h</a>,
-<a href="../src/gdevmrop.h">src/gdevmrop.h</a>,
 <a href="../src/gdevmr1.c">src/gdevmr1.c</a>,
 <a href="../src/gdevmr2n.c">src/gdevmr2n.c</a>,
-<a href="../src/gdevmr8n.c">src/gdevmr8n.c</a>,
-<a href="../src/gsdevmem.c">src/gsdevmem.c</a>,
-<a href="../src/gxdevmem.h">src/gxdevmem.h</a>.
+<a href="../src/gdevmr8n.c">src/gdevmr8n.c</a>.
 
 <dt>
 Alpha-related devices:
@@ -1145,30 +1181,26 @@ Other devices:
 
 </dl>
 
-<h4><a name="High_level_devices"></a>High-level devices</h4>
+<h4><a name="PS_and_PDF_writers"></a>PostScript and PDF writers</h4>
 
 <p>
-The driver API includes high-level (path / image / text), mid-level
-(polygon), and low-level (rectangle / raster) operations.  Most devices
-implement only the low-level operations, and let generic code break down the
-high-level operations.  However, some devices produce high-level output, and
-therefore must implement the high-level operations.
-
-<p>
-Currently, the CGM driver is raster-only.  If anyone cares seriously about
-CGM in the future, this driver should be upgraded to a higher level.
+Because PostScript and PDF have the same graphics model, lexical syntax, and
+stack-based execution model, the drivers that produce PostScript and PDF
+output share a significant amount of support code.  In the future, the
+PostScript output driver should be replaced with a slightly modified version
+of the PDF driver, since the latter is far more sophisticated (in
+particular, it has extensive facilities for image compression and for
+handling text and fonts).
 
 <dl>
 
 <dt>
-PostScript/PDF output device support:
+Shared support:
 <dd>
-<a href="../src/gdevpsdf.h">src/gdevpsdf.h</a>,
-<a href="../src/gdevpsdi.c">src/gdevpsdi.c</a>,
-<a href="../src/gdevpsdp.c">src/gdevpsdp.c</a>,
-<a href="../src/gdevpsds.c">src/gdevpsds.c</a>,
-<a href="../src/gdevpsds.h">src/gdevpsds.h</a>,
-<a href="../src/gdevpsdu.c">src/gdevpsdu.c</a>,
+
+<dl>
+Writing fonts:
+<dd>
 <a href="../src/gdevpsf.h">src/gdevpsf.h</a>,
 <a href="../src/gdevpsf1.c">src/gdevpsf1.c</a>,
 <a href="../src/gdevpsf2.c">src/gdevpsf2.c</a>,
@@ -1178,36 +1210,82 @@ PostScript/PDF output device support:
 <a href="../src/gdevpsfx.c">src/gdevpsfx.c</a>.
 
 <dt>
-PostScript output device ([e]pswrite):
+Other:
 <dd>
-b<a href="../src/gdevps.c">src/gdevps.c</a>,
+<a href="../src/gdevpsdf.h">src/gdevpsdf.h</a>,
+<a href="../src/gdevpsdi.c">src/gdevpsdi.c</a>,
+<a href="../src/gdevpsdp.c">src/gdevpsdp.c</a>,
+<a href="../src/gdevpsds.c">src/gdevpsds.c</a>,
+<a href="../src/gdevpsds.h">src/gdevpsds.h</a>,
+<a href="../src/gdevpsdu.c">src/gdevpsdu.c</a>.
+
+</dl>
+
+<dt>
+PostScript output driver ([e]pswrite):
+<dd>
+<a href="../src/gdevps.c">src/gdevps.c</a>,
 <a href="../src/gdevpsu.c">src/gdevpsu.c</a>,
 <a href="../src/gdevpsu.h">src/gdevpsu.h</a>.
 
 <dt>
-PDF output device (pdfwrite):
+PDF output driver (pdfwrite):
 <dd>
-<a href="../src/gdevpdf.c">src/gdevpdf.c</a>,
-<a href="../src/gdevpdfb.c">src/gdevpdfb.c</a>,
-<a href="../src/gdevpdfc.c">src/gdevpdfc.c</a>,
-<a href="../src/gdevpdfd.c">src/gdevpdfd.c</a>,
+<dl>
+
+<dt>
+Substrate:
+<dd>
+<a href="../src/gdevpdfo.c">src/gdevpdfo.c</a>,
+<a href="../src/gdevpdfo.h">src/gdevpdfo.h</a>,
+<a href="../src/gdevpdfr.c">src/gdevpdfr.c</a>,
+<a href="../src/gdevpdfu.c">src/gdevpdfu.c</a>.
+
+<dt>
+Text and fonts:
+<dd>
 <a href="../src/gdevpdfe.c">src/gdevpdfe.c</a>,
 <a href="../src/gdevpdff.c">src/gdevpdff.c</a>,
 <a href="../src/gdevpdff.h">src/gdevpdff.h</a>,
+<a href="../src/gdevpdft.c">src/gdevpdfs.c</a>,
+<a href="../src/gdevpdft.c">src/gdevpdft.c</a>,
+<a href="../src/gdevpdfw.c">src/gdevpdfw.c</a>.
+
+<dt>
+Graphics:
+<dd>
+<a href="../src/gdevpdfc.c">src/gdevpdfc.c</a>,
+<a href="../src/gdevpdfd.c">src/gdevpdfd.c</a>,
 <a href="../src/gdevpdfg.c">src/gdevpdfg.c</a>,
 <a href="../src/gdevpdfg.h">src/gdevpdfg.h</a>,
+<a href="../src/gdevpdfv.c">src/gdevpdfv.c</a>.
+
+<dt>
+Images:
+<dd>
+<a href="../src/gdevpdfb.c">src/gdevpdfb.c</a>,
 <a href="../src/gdevpdfi.c">src/gdevpdfi.c</a>,
-<a href="../src/gdevpdfj.c">src/gdevpdfj.c</a>,
+<a href="../src/gdevpdfj.c">src/gdevpdfj.c</a>.
+
+<dt>
+Other:
+<dd>
+<a href="../src/gdevpdf.c">src/gdevpdf.c</a>,
 <a href="../src/gdevpdfm.c">src/gdevpdfm.c</a>,
-<a href="../src/gdevpdfo.c">src/gdevpdfo.c</a>,
-<a href="../src/gdevpdfo.h">src/gdevpdfo.h</a>,
 <a href="../src/gdevpdfp.c">src/gdevpdfp.c</a>,
-<a href="../src/gdevpdfr.c">src/gdevpdfr.c</a>,
-<a href="../src/gdevpdft.c">src/gdevpdft.c</a>,
-<a href="../src/gdevpdfu.c">src/gdevpdfu.c</a>,
-<a href="../src/gdevpdfv.c">src/gdevpdfv.c</a>,
-<a href="../src/gdevpdfw.c">src/gdevpdfw.c</a>,
 <a href="../src/gdevpdfx.h">src/gdevpdfx.h</a>.
+
+</dl>
+
+</dl>
+
+<h4><a name="High_level_devices"></a>Other high-level devices</h4>
+
+<p>
+Currently, the CGM driver is raster-only.  If anyone cares seriously about
+CGM in the future, this driver should be upgraded to a higher level.
+
+<dl>
 
 <dt>
 PCL XL output device (pxlmono, pxlcolor):
@@ -1256,11 +1334,12 @@ Display drivers:
 <dt>
 Window system drivers:
 <dd>
-<a href="../src/gdevmswn.c">src/gdevmswn.c</a>,
-<a href="../src/gdevmswn.h">src/gdevmswn.h</a>,
-<a href="../src/gdevmsxf.c">src/gdevmsxf.c</a>,
-<a href="../src/gdevpm.c">src/gdevpm.c</a>,
-<a href="../src/gdevpm.h">src/gdevpm.h</a>,
+
+<dl>
+
+<dt>
+X Windows:
+<dd>
 <a href="../src/gdevx.c">src/gdevx.c</a>,
 <a href="../src/gdevx.h">src/gdevx.h</a>,
 <a href="../src/gdevxalt.c">src/gdevxalt.c</a>,
@@ -1269,6 +1348,21 @@ Window system drivers:
 <a href="../src/gdevxini.c">src/gdevxini.c</a>,
 <a href="../src/gdevxres.c">src/gdevxres.c</a>,
 <a href="../src/gdevxxf.c">src/gdevxxf.c</a>.
+
+<dt>
+Microsoft Windows:
+<dd>
+<a href="../src/gdevmswn.c">src/gdevmswn.c</a>,
+<a href="../src/gdevmswn.h">src/gdevmswn.h</a>,
+<a href="../src/gdevmsxf.c">src/gdevmsxf.c</a>.
+
+<dt>
+OS/2 Presentation Manager:
+<dd>
+<a href="../src/gdevpm.c">src/gdevpm.c</a>,
+<a href="../src/gdevpm.h">src/gdevpm.h</a>.
+
+</dl>
 
 <dt>
 Raster file output drivers:
@@ -1358,38 +1452,74 @@ Data structures (stacks, names, dicts, contexts)
 <dt>
 General data structures:
 <dd>
+
+<dl>
+
+<dt>
+Contexts:
+<dd>
 <a href="../src/icontext.c">src/icontext.c</a>,
 <a href="../src/icontext.h">src/icontext.h</a>,
-<a href="../src/icstate.h">src/icstate.h</a>,
+<a href="../src/icstate.h">src/icstate.h</a>.
+
+<dt>
+Dictionaries:
+<dd>
 <a href="../src/iddict.h">src/iddict.h</a>,
 <a href="../src/idict.h">src/idict.h</a>,
 <a href="../src/idict.c">src/idict.c</a>,
-<a href="../src/idictdef.h">src/idictdef.h</a>,
+<a href="../src/idictdef.h">src/idictdef.h</a>.
+
+<dt>
+Names:
+<dd>
 <a href="../src/iname.c">src/iname.c</a>,
 <a href="../src/iname.h">src/iname.h</a>,
 <a href="../src/inamedef.h">src/inamedef.h</a>,
 <a href="../src/inameidx.h">src/inameidx.h</a>,
 <a href="../src/inames.h">src/inames.h</a>,
-<a href="../src/inamestr.h">src/inamestr.h</a>,
+<a href="../src/inamestr.h">src/inamestr.h</a>.
+
+<dt>
+Stacks:
+<dd>
 <a href="../src/isdata.h">src/isdata.h</a>,
 <a href="../src/istack.c">src/istack.c</a>,
 <a href="../src/istack.h">src/istack.h</a>,
 <a href="../src/istkparm.h">src/istkparm.h</a>.
 
+</dl>
+
 <dt>
-Specific stacks (dictionary, execution, operand):
+Specific stacks:
+<dd>
+
+<dl>
+
+<dt>
+Dictionary stack:
 <dd>
 <a href="../src/dstack.h">src/dstack.h</a>,
 <a href="../src/estack.h">src/estack.h</a>,
 <a href="../src/iddstack.h">src/iddstack.h</a>,
 <a href="../src/idsdata.h">src/idsdata.h</a>,
 <a href="../src/idstack.c">src/idstack.c</a>,
-<a href="../src/idstack.h">src/idstack.h</a>,
+<a href="../src/idstack.h">src/idstack.h</a>.
+
+<dt>
+Execution stack:
+<dd>
 <a href="../src/iesdata.h">src/iesdata.h</a>,
-<a href="../src/iestack.h">src/iestack.h</a>,
+<a href="../src/iestack.h">src/iestack.h</a>.
+
+<dt>
+Operand stack:
+<dd>
 <a href="../src/iosdata.h">src/iosdata.h</a>,
 <a href="../src/iostack.h">src/iostack.h</a>,
 <a href="../src/ostack.h">src/ostack.h</a>.
+
+</dl>
 
 <dt>
 File implementation:
@@ -1459,6 +1589,8 @@ Files:
 <a href="../src/itoken.h">src/itoken.h</a>,
 <a href="../src/scanchar.h">src/scanchar.h</a>,
 <a href="../src/scantab.c">src/scantab.c</a>.
+
+</dl>
 
 <h4><a name="Standard_operators"></a>Standard operators</h4>
 
@@ -1622,20 +1754,164 @@ egrep '    [{]["].[.]' src/z*.c
 
 <h4><a name="PostScript_code"></a>PostScript code</h4>
 
-<p>
-Resources
+<dl>
 
-<p>
-setpagedevice
+<dt>
+Initialization and language support:
+<dd>
 
-<p>
-Font loading
+<dl>
 
-<p>
-Encodings
+<dt>
+All configurations:
+<dd>
+<a href="../lib/gs_init.ps">lib/gs_init.ps</a>,
+<a href="../lib/gs_statd.ps">lib/gs_statd.ps</a>.
 
-<p>
-Miscellaneous
+<dt>
+Level 2:
+<dd>
+<a href="../lib/gs_btokn.ps">lib/gs_btokn.ps</a>,
+<a href="../lib/gs_dps1.ps">lib/gs_dps1.ps</a>,
+<a href="../lib/gs_dps2.ps">lib/gs_dps2.ps</a>,
+<a href="../lib/gs_lev2.ps">lib/gs_lev2.ps</a>,
+<a href="../lib/gs_res.ps">lib/gs_res.ps</a>,
+<a href="../lib/gs_setpd.ps">lib/gs_setpd.ps</a>.
+
+<dt>
+LanguageLevel 3:
+<dd>
+<a href="../lib/gs_frsd.ps">lib/gs_frsd.ps</a>,
+<a href="../lib/gs_ll3.ps">lib/gs_ll3.ps</a>,
+<a href="../lib/gs_trap.ps">lib/gs_trap.ps</a>.
+
+<dt>
+Display PostScript:
+<dd>
+<a href="../lib/gs_dpnxt.ps">lib/gs_dpnxt.ps</a>,
+<a href="../lib/gs_dps.ps">lib/gs_dps.ps</a>.
+
+</dl>
+
+<dt>
+Font loading and support:
+<dd>
+
+<dl>
+
+<dt>
+Generic:
+<dd>
+<a href="../lib/gs_ccfnt.ps">lib/gs_ccfnt.ps</a>,
+<a href="../lib/gs_fonts.ps">lib/gs_fonts.ps</a>.
+
+<dt>
+Type 1 and CFF:
+<dd>
+<a href="../lib/gs_cff.ps">lib/gs_cff.ps</a>,
+<a href="../lib/gs_diskf.ps">lib/gs_diskf.ps</a>,
+<a href="../lib/gs_type1.ps">lib/gs_type1.ps</a>.
+
+<dt>
+TrueType:
+<dd>
+<a href="../lib/gs_ttf.ps">lib/gs_ttf.ps</a>,
+<a href="../lib/gs_typ42.ps">lib/gs_typ42.ps</a>.
+
+<dt>
+CID-keyed:
+<dd>
+<a href="../lib/gs_cidcm.ps">lib/gs_cidcm.ps</a>,
+<a href="../lib/gs_cidfn.ps">lib/gs_cidfn.ps</a>,
+<a href="../lib/gs_cmap.ps">lib/gs_cmap.ps</a>.
+
+<dt>
+Other:
+<dd>
+<a href="../lib/gs_kanji.ps">lib/gs_kanji.ps</a>,
+<a href="../lib/gs_typ32.ps">lib/gs_typ32.ps</a>.
+
+</dl>
+
+<dt>
+Encodings:
+<dd>
+
+<dl>
+
+<dt>
+Adobe-specified:
+<dd>
+<a href="../lib/gs_ce_e.ps">lib/gs_ce_e.ps</a>,
+<a href="../lib/gs_dbt_e.ps">lib/gs_dbt_e.ps</a>,
+<a href="../lib/gs_il1_e.ps">lib/gs_il1_e.ps</a>,
+<a href="../lib/gs_mex_e.ps">lib/gs_mex_e.ps</a>,
+<a href="../lib/gs_mro_e.ps">lib/gs_mro_e.ps</a>,
+<a href="../lib/gs_pdf_e.ps">lib/gs_pdf_e.ps</a>,
+<a href="../lib/gs_std_e.ps">lib/gs_std_e.ps</a>,
+<a href="../lib/gs_sym_e.ps">lib/gs_sym_e.ps</a>,
+<a href="../lib/gs_wan_e.ps">lib/gs_wan_e.ps</a>.
+
+<dt>
+Additional:
+<dd>
+<a href="../lib/gs_il2_e.ps">lib/gs_il2_e.ps</a>,
+<a href="../lib/gs_ksb_e.ps">lib/gs_ksb_e.ps</a>,
+<a href="../lib/gs_wl1_e.ps">lib/gs_wl1_e.ps</a>,
+<a href="../lib/gs_wl2_e.ps">lib/gs_wl2_e.ps</a>,
+<a href="../lib/gs_wl5_e.ps">lib/gs_wl5_e.ps</a>.
+
+<dt>
+Pseudo-encodings for internal use:
+<dd>
+<a href="../lib/gs_css_e.ps">lib/gs_css_e.ps</a>,
+<a href="../lib/gs_lgo_e.ps">lib/gs_lgo_e.ps</a>,
+<a href="../lib/gs_lgx_e.ps">lib/gs_lgx_e.ps</a>,
+<a href="../lib/gs_mgl_e.ps">lib/gs_mgl_e.ps</a>.
+
+</dl>
+
+<dt>
+Miscellaneous:
+<dd>
+
+<dl>
+
+<dt>
+Other support:
+<dd>
+<a href="../lib/gs_agl.ps">lib/gs_agl.ps</a>,
+<a href="../lib/gs_dscp.ps">lib/gs_dscp.ps</a>,
+<a href="../lib/gs_epsf.ps">lib/gs_epsf.ps</a>,
+<a href="../lib/gs_pdfwr.ps">lib/gs_pdfwr.ps</a>,
+<a href="../lib/gs_rdlin.ps">lib/gs_rdlin.ps</a>,
+
+<dt>
+X Windows icon bitmaps:
+<dd>
+<a href="../lib/gs_l.xbm">lib/gs_l.xbm</a>,
+<a href="../lib/gs_l.xpm">lib/gs_l.xpm</a>,
+<a href="../lib/gs_l_m.xbm">lib/gs_l_m.xbm</a>,
+<a href="../lib/gs_m.xbm">lib/gs_m.xbm</a>,
+<a href="../lib/gs_m.xpm">lib/gs_m.xpm</a>,
+<a href="../lib/gs_m_m.xbm">lib/gs_m_m.xbm</a>,
+<a href="../lib/gs_s.xbm">lib/gs_s.xbm</a>,
+<a href="../lib/gs_s.xpm">lib/gs_s.xpm</a>,
+<a href="../lib/gs_s_m.xbm">lib/gs_s_m.xbm</a>,
+<a href="../lib/gs_t.xbm">lib/gs_t.xbm</a>,
+<a href="../lib/gs_t.xpm">lib/gs_t.xpm</a>,
+<a href="../lib/gs_t_m.xbm">lib/gs_t_m.xbm</a>.
+
+<dt>
+Not currently used:
+<dd>
+<a href="../lib/gs_cmdl.ps">lib/gs_cmdl.ps</a>,
+<a href="../lib/gs_fform.ps">lib/gs_fform.ps</a>,
+<a href="../lib/gs_l2img.ps">lib/gs_l2img.ps</a>.
+
+</dl>
+
+</dl>
 
 <h3><a name="PDF_interpreter"></a>PDF interpreter</h3>
 
