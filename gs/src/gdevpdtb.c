@@ -42,20 +42,24 @@
 
 struct pdf_base_font_s {
     /*
-     * 'copied' is a (partial) copy of the original font.
+     * For the standard 14 fonts, copied == complete is a complete copy
+     * of the font, and DO_SUBSET = NO.
+     *
+     * For fonts that MAY be subsetted, copied is a partial copy,
+     * complete is a complete copy, and DO_SUBSET = UNKNOWN until
+     * pdf_font_do_subset is called.
+     *
+     * For fonts that MUST be subsetted, copied == complete is a partial
+     * copy, and DO_SUBSET = YES.
      */
     gs_font_base *copied;
-    /*
-     * For fonts that do not mandate subsetting, 'complete' is a complete
-     * copy of the original font.  For fonts that do mandate subsetting,
-     * complete == copied.
-     */
     gs_font_base *complete;
     enum {
 	DO_SUBSET_UNKNOWN = 0,
 	DO_SUBSET_NO,
 	DO_SUBSET_YES
     } do_subset;
+    bool is_complete;
     /*
      * For CIDFonts, which are always subsetted, num_glyphs is CIDCount.
      * For optionally subsetted fonts, num_glyphs is the count of glyphs
@@ -152,11 +156,12 @@ pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
 /*
  * Allocate and initialize a base font structure, making the required
  * stable copy/ies of the gs_font.  Note that this removes any XXXXXX+
- * font name prefix from the copy.
+ * font name prefix from the copy.  If do_complete is true, the copy is
+ * a complete one, and adding glyphs or Encoding entries is not allowed.
  */
 int
 pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
-		    gs_font_base *font)
+		    gs_font_base *font, bool do_complete)
 {
     gs_memory_t *mem = pdev->pdf_memory;
     gs_font *copied;
@@ -179,7 +184,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     switch (font->FontType) {
     case ft_encrypted:
     case ft_encrypted2:
-	pbfont->do_subset = DO_SUBSET_UNKNOWN;
+	pbfont->do_subset = (do_complete ? DO_SUBSET_NO : DO_SUBSET_UNKNOWN);
 	/* We will count the number of glyphs below. */
 	pbfont->num_glyphs = -1;
 	break;
@@ -211,7 +216,10 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     }
     if (pbfont->do_subset != DO_SUBSET_YES) {
 	/* The only possibly non-subsetted fonts are Type 1/2 and Type 42. */
-	code = gs_copy_font((gs_font *)font, mem, &complete);
+	if (do_complete)
+	    complete = copied, code = 0;
+	else
+	    code = gs_copy_font((gs_font *)font, mem, &complete);
 	if (code >= 0)
 	    code = gs_copy_font_complete((gs_font *)font, complete);
 	if (pbfont->num_glyphs < 0) { /* Type 1 */
@@ -230,6 +238,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	complete = copied;
     pbfont->copied = (gs_font_base *)copied;
     pbfont->complete = (gs_font_base *)complete;
+    pbfont->is_complete = do_complete;
     if (pfname->size > 0) {
 	font_name.data = pfname->chars;
 	font_name.size = pfname->size;
@@ -288,7 +297,9 @@ pdf_base_font_copy_glyph(pdf_base_font_t *pbfont, gs_glyph glyph,
 			 gs_font_base *font)
 {
     int code =
-	gs_copy_glyph((gs_font *)font, glyph, (gs_font *)pbfont->copied);
+	gs_copy_glyph_options((gs_font *)font, glyph,
+			      (gs_font *)pbfont->copied,
+			      (pbfont->is_complete ? COPY_GLYPH_NO_NEW : 0));
 
     if (code < 0)
 	return code;

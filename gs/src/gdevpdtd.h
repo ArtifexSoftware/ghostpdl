@@ -82,6 +82,11 @@ long pdf_font_descriptor_id(const pdf_font_descriptor_t *pfd);
 font_type pdf_font_descriptor_FontType(const pdf_font_descriptor_t *pfd);
 
 /*
+ * Get the embedding status of a FontDescriptor.
+ */
+bool pdf_font_descriptor_embedding(const pdf_font_descriptor_t *pfd);
+
+/*
  * Return a reference to the FontName of a FontDescriptor, similar to
  * pdf_base_font_name.
  */

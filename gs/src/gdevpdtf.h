@@ -29,8 +29,9 @@
 /*
  * pdfwrite manages several different flavors of font resources:
  *
- *  Those that do not have a FontDescriptor:
+ *  Those that have neither a FontDescriptor nor a base_font:
  *	Type 0 (composite) fonts
+ *  Those that have no FontDescriptor, but do have a base_font:
  *	Standard 14 fonts
  *  Those that have a FontDescriptor but no base_font:
  *	Type 3 bitmap fonts
@@ -93,6 +94,11 @@ typedef struct gs_cmap_s gs_cmap_t;
 typedef struct gs_font_type0_s gs_font_type0;
 #endif
 
+#ifndef pdf_base_font_DEFINED
+#  define pdf_base_font_DEFINED
+typedef struct pdf_base_font_s pdf_base_font_t;
+#endif
+
 #ifndef pdf_font_descriptor_DEFINED
 #  define pdf_font_descriptor_DEFINED
 typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;
@@ -144,6 +150,13 @@ struct pdf_font_resource_s {
     gs_string BaseFont;		/* (not used for Type 3) */
     pdf_font_descriptor_t *FontDescriptor; /* (not used for Type 0, Type 3, */
 				/* or standard 14 fonts) */
+    /*
+     * Currently, the base_font and copied_font members are only used for
+     * the standard 14 fonts, which do not have a FontDescriptor.
+     * Eventually we may decide to use them for other types as well.
+     */
+    pdf_base_font_t *base_font;	/* == FontDescriptor->base_font */
+    gs_font_base *copied_font;	/* == base_font->copied */
     uint count;			/* # of chars/CIDs */
     int *Widths;		/* [count] (not used for Type 0) */
     int *real_widths;		/* [count] (not used for Type 0) */
@@ -263,10 +276,12 @@ typedef enum {
   m("ZapfDingbats", ENCODING_INDEX_DINGBATS)
 /*
  * Define a structure for keeping track of the (unique) resource for
- * each standard font.  Note that standard fonts do not have descriptors.
+ * each standard font.  Note that standard fonts do not have descriptors:
+ * the base_font and copied_font members of the font resource provide the
+ * necessary information.
  */
 typedef struct pdf_standard_font_s {
-    gs_font_base *font;		/* complete copy of font */
+    pdf_font_resource_t *pdfont;
     gs_matrix orig_matrix;	/* ****** do we need this? */
     /*
      * Standard fonts have a UniqueID, not a XUID.  However, we store this
@@ -278,7 +293,7 @@ typedef struct pdf_standard_font_s {
 #define private_st_pdf_standard_font() /* gdevpdtf.c */\
   gs_private_st_ptrs1(st_pdf_standard_font, pdf_standard_font_t,\
     "pdf_standard_font_t", pdf_std_font_enum_ptrs, pdf_std_font_reloc_ptrs,\
-    font)
+    pdfont)
 #define private_st_pdf_standard_font_element() /* gdevpdtf.c */\
   gs_private_st_element(st_pdf_standard_font_element, pdf_standard_font_t,\
     "pdf_standard_font_t[]", pdf_std_font_elt_enum_ptrs,\
@@ -310,6 +325,11 @@ struct pdf_outline_fonts_s {
 pdf_outline_fonts_t *pdf_outline_fonts_alloc(gs_memory_t *mem);
 
 /*
+ * Return the standard fonts array.
+ */
+pdf_standard_font_t *pdf_standard_fonts(const gx_device_pdf *pdev);
+
+/*
  * Allocate specific types of font resource.
  */
 int pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
@@ -317,7 +337,7 @@ int pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 int pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			 pdf_font_write_contents_proc_t write_contents);
 int pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		       gs_id rid, gs_font_base *pfont);
+		       gs_id rid, gs_font_base *pfont, int index);
 int pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			  gs_id rid, pdf_font_descriptor_t *pfd);
 int pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,

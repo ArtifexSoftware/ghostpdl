@@ -216,7 +216,7 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
 {
     pdf_font_descriptor_t *pfd;
     pdf_base_font_t *pbfont;
-    int code = pdf_base_font_alloc(pdev, &pbfont, font);
+    int code = pdf_base_font_alloc(pdev, &pbfont, font, false);
 
     if (code < 0)
 	return code;
@@ -250,6 +250,15 @@ font_type
 pdf_font_descriptor_FontType(const pdf_font_descriptor_t *pfd)
 {
     return pfd->FontType;
+}
+
+/*
+ * Get the embedding status of a FontDescriptor.
+ */
+bool
+pdf_font_descriptor_embedding(const pdf_font_descriptor_t *pfd)
+{
+    return pfd->embed;
 }
 
 /*

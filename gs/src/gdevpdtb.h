@@ -70,10 +70,11 @@ typedef struct pdf_base_font_s pdf_base_font_t;
 /*
  * Allocate and initialize a base font structure, making the required
  * stable copy/ies of the gs_font.  Note that this removes any XXXXXX+
- * font name prefix from the copy.
+ * font name prefix from the copy.  If complete is true, the copy is
+ * a complete one, and adding glyphs or Encoding entries is not allowed.
  */
 int pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
-			gs_font_base *font);
+			gs_font_base *font, bool complete);
 
 /*
  * Return a reference to the name of a base font.  This name is guaranteed

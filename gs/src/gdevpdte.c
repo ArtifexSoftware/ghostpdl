@@ -109,27 +109,9 @@ pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
      * This crude version of the code simply uses pdf_make_font_resource,
      * and never re-encodes characters.
      */
-
-    while (bfont->base != bfont)
-	bfont = bfont->base;
     code = pdf_make_font_resource(pdev, bfont, &pdfont);
-    switch (code) {
-    default:			/* code < 0 */
+    if (code < 0)
 	return code;
-    case 1:			/* new font resource */
-	if (pdfont->FontType == ft_TrueType)
-	    switch (pdfont->u.simple.BaseEncoding) {
-	    default:
-		pdfont->u.simple.BaseEncoding = ENCODING_INDEX_WINANSI;
-	    case ENCODING_INDEX_WINANSI:
-	    case ENCODING_INDEX_MACROMAN:
-	    case ENCODING_INDEX_MACEXPERT:
-		break;
-	    }
-    case 0:			/* existing font resource */
-	break;
-    }
-    /****** CHECK FOR SAME METRICS ******/
     base_font = pdf_font_resource_font(pdfont);
 
     for (i = *pindex; i < pstr->size; ++i) {
@@ -144,13 +126,17 @@ pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
 	code = font->procs.glyph_name((gs_font *)font, glyph, &gnstr);
 	if (code < 0)
 	    break;		/* can't get name of glyph */
-	code = pdf_font_used_glyph(pdfont->FontDescriptor, glyph, font);
+	/* The standard 14 fonts don't have a FontDescriptor. */
+	code = (pdfont->base_font != 0 ?
+		pdf_base_font_copy_glyph(pdfont->base_font, glyph, font) :
+		pdf_font_used_glyph(pdfont->FontDescriptor, glyph, font));
 	if (code < 0)
 	    break;		/* can't copy the glyph */
 	pet->glyph = glyph;
 	pet->str = gnstr;
 	/****** SET is_difference CORRECTLY ******/
-	pet->is_difference = true;
+	if (pdfont->FontDescriptor != 0)
+	    pet->is_difference = true;
     }
     *pindex = i;
     *ppdfont = pdfont;

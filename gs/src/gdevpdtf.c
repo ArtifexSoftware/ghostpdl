@@ -17,15 +17,17 @@
 /* $Id$ */
 /* Font and CMap resource implementation for pdfwrite text */
 #include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */
 #include "gxfcache.h"		/* for orig_fonts list */
-#include "gxfont.h"
-#include "gxfont1.h"
 #include "gxfcid.h"
 #include "gxfcmap.h"
+#include "gxfont.h"
+#include "gxfont1.h"
 #include "gdevpdfx.h"
+#include "gdevpdtb.h"
 #include "gdevpdtd.h"
 #include "gdevpdtf.h"
 #include "gdevpdtw.h"
@@ -38,18 +40,18 @@ private_st_pdf_standard_font();
 private_st_pdf_standard_font_element();
 private_st_pdf_outline_fonts();
 
-/* ---------------- Private ---------------- */
-
 private
 ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont)
-ENUM_PREFIX(st_pdf_resource, 8);
+ENUM_PREFIX(st_pdf_resource, 10);
 case 0: return ENUM_STRING(&pdfont->BaseFont);
 case 1: ENUM_RETURN(pdfont->FontDescriptor);
-case 2: ENUM_RETURN(pdfont->Widths);
-case 3: ENUM_RETURN(pdfont->real_widths);
-case 4: ENUM_RETURN(pdfont->used);
-case 5: ENUM_RETURN(pdfont->ToUnicode);
-case 6: switch (pdfont->FontType) {
+case 2: ENUM_RETURN(pdfont->base_font);
+case 3: ENUM_RETURN(pdfont->copied_font);
+case 4: ENUM_RETURN(pdfont->Widths);
+case 5: ENUM_RETURN(pdfont->real_widths);
+case 6: ENUM_RETURN(pdfont->used);
+case 7: ENUM_RETURN(pdfont->ToUnicode);
+case 8: switch (pdfont->FontType) {
  case ft_composite:
      ENUM_RETURN(pdfont->u.type0.DescendantFont);
  case ft_CID_encrypted:
@@ -57,7 +59,8 @@ case 6: switch (pdfont->FontType) {
      ENUM_RETURN(pdfont->u.cidfont.glyphshow_font);
  default:
      ENUM_RETURN(pdfont->u.simple.Encoding);
-case 7: switch (pdfont->FontType) {
+}
+case 9: switch (pdfont->FontType) {
  case ft_composite:
      return (pdfont->u.type0.cmap_is_standard ? ENUM_OBJ(0) :
 	     ENUM_CONST_STRING(&pdfont->u.type0.CMapName));
@@ -68,7 +71,6 @@ case 7: switch (pdfont->FontType) {
  default:
      ENUM_RETURN(0);
 }
-}
 ENUM_PTRS_END
 private
 RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
@@ -76,8 +78,11 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
     RELOC_PREFIX(st_pdf_resource);
     RELOC_STRING_VAR(pdfont->BaseFont);
     RELOC_VAR(pdfont->FontDescriptor);
+    RELOC_VAR(pdfont->base_font);
+    RELOC_VAR(pdfont->copied_font);
     RELOC_VAR(pdfont->Widths);
     RELOC_VAR(pdfont->real_widths);
+    RELOC_VAR(pdfont->used);
     RELOC_VAR(pdfont->ToUnicode);
     switch (pdfont->FontType) {
     case ft_composite:
@@ -101,17 +106,179 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 }
 RELOC_PTRS_END
 
+/* ---------------- Initialization ---------------- */
+
+/*
+ * Allocate and initialize bookkeeping for outline fonts.
+ */
+pdf_outline_fonts_t *
+pdf_outline_fonts_alloc(gs_memory_t *mem)
+{
+    pdf_outline_fonts_t *pofs =
+	gs_alloc_struct(mem, pdf_outline_fonts_t, &st_pdf_outline_fonts,
+			"pdf_outline_fonts_alloc(outline_fonts)");
+    pdf_standard_font_t *ppsf =
+	gs_alloc_struct_array(mem, PDF_NUM_STANDARD_FONTS,
+			      pdf_standard_font_t,
+			      &st_pdf_standard_font_element,
+			      "pdf_outline_fonts_alloc(standard_fonts)");
+
+    if (pofs == 0 || ppsf == 0)
+	return 0;
+    memset(ppsf, 0, PDF_NUM_STANDARD_FONTS * sizeof(*ppsf));
+    memset(pofs, 0, sizeof(*pofs));
+    pofs->standard_fonts = ppsf;
+    return pofs;
+}
+
+/*
+ * Return the standard fonts array.
+ */
+pdf_standard_font_t *
+pdf_standard_fonts(const gx_device_pdf *pdev)
+{
+    return pdev->text->outline_fonts->standard_fonts;
+}
+
+/* ---------------- Standard fonts ---------------- */
+
+/* ------ Private ------ */
+
 /* Define the 14 standard built-in fonts. */
 typedef struct pdf_standard_font_info_s {
     const char *fname;
     gs_encoding_index_t base_encoding;
 } pdf_standard_font_info_t;
-private const pdf_standard_font_info_t pdf_standard_font_info[] = {
+private const pdf_standard_font_info_t standard_font_info[] = {
 #define m(name, enc) {name, enc},
     pdf_do_standard_fonts(m)
 #undef m
     {0}
 };
+
+/* Return the index of a standard font name, or -1 if missing. */
+private int
+pdf_find_standard_font_name(const byte *str, uint size)
+{
+    const pdf_standard_font_info_t *ppsf;
+
+    for (ppsf = standard_font_info; ppsf->fname; ++ppsf)
+	if (strlen(ppsf->fname) == size &&
+	    !strncmp(ppsf->fname, (const char *)str, size)
+	    )
+	    return ppsf - standard_font_info;
+    return -1;
+}
+
+/*
+ * If there is a standard font with the same appearance (CharStrings,
+ * Private, WeightVector) as the given font, set *psame to the mask of
+ * identical properties, and return the standard-font index; otherwise,
+ * set *psame to 0 and return -1.
+ */
+private int
+find_std_appearance(const gx_device_pdf *pdev, const gs_font_base *bfont,
+		    int mask, int *psame)
+{
+    bool has_uid = uid_is_UniqueID(&bfont->UID) && bfont->UID.id != 0;
+    const pdf_standard_font_t *psf = pdf_standard_fonts(pdev);
+    int i;
+
+    mask |= FONT_SAME_OUTLINES;
+    for (i = 0; i < PDF_NUM_STANDARD_FONTS; ++psf, ++i) {
+	if (!psf->pdfont || (has_uid && !uid_equal(&bfont->UID, &psf->uid)))
+	    continue;
+	*psame = bfont->procs.same_font((const gs_font *)bfont,
+				(const gs_font *)psf->pdfont->copied_font,
+					mask);
+	if (*psame & FONT_SAME_OUTLINES)
+	    return i;
+    }
+    *psame = 0;
+    return -1;
+}
+
+/*
+ * Scan a font directory for standard fonts.  Return true if any new ones
+ * were found.
+ */
+private bool
+scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
+{
+    bool found = false;
+    gs_font *orig = dir->orig_fonts;
+
+    for (; orig; orig = orig->next) {
+	gs_font_base *obfont;
+
+	if (orig->FontType == ft_composite || !orig->is_resource)
+	    continue;
+	obfont = (gs_font_base *)orig;
+	if (uid_is_UniqueID(&obfont->UID)) {
+	    /* Is it one of the standard fonts? */
+	    int i = pdf_find_standard_font_name(orig->key_name.chars,
+						orig->key_name.size);
+	    pdf_font_resource_t *pdfont;
+
+	    if (i >= 0 && pdf_standard_fonts(pdev)[i].pdfont == 0) {
+		int code = pdf_font_std_alloc(pdev, &pdfont, orig->id, obfont,
+					      i);
+
+		if (code < 0)
+		    continue;
+		found = true;
+	    }
+	}
+    }
+    return found;
+}
+
+/* ------ Public ------ */
+
+/*
+ * Find the original (unscaled) standard font corresponding to an
+ * arbitrary font, if any.  Return its index in standard_fonts, or -1.
+ */
+int
+pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_matrix *pfmat)
+{
+    bool scan = true;
+    int i;
+
+    if (font->FontType == ft_composite)
+	return -1;
+    for (;; font = font->base) {
+	gs_font_base *bfont = (gs_font_base *)font;
+	int same;
+
+	/* Look for a standard font with the same appearance. */
+	i = find_std_appearance(pdev, bfont, 0, &same);
+	if (i >= 0)
+	    break;
+	if (scan) {
+	    /*
+	     * Scan for fonts that were loaded as resources, have one of the
+	     * standard names, and have a UID.
+	     */
+	    bool found = scan_for_standard_fonts(pdev, font->dir);
+
+	    scan = false;
+	    if (found) {
+		i = find_std_appearance(pdev, bfont, 0, &same);
+		if (i >= 0)
+		    break;
+	    }
+	}
+	if (font->base == font)
+	    return -1;
+    }
+    *pfmat = pdf_standard_fonts(pdev)[i].orig_matrix;
+    return i;
+}
+
+/* ---------------- Font resources ---------------- */
+
+/* ------ Private ------ */
 
 /*
  * Allocate and (minimally) initialize a font resource.
@@ -182,6 +349,34 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     *ppfres = pfres;
     return 0;
 }
+private int
+font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
+			    gs_id rid, font_type ftype,
+			    pdf_font_write_contents_proc_t write_contents)
+{
+    pdf_encoding_element_t *Encoding =
+	gs_alloc_struct_array(pdev->pdf_memory, 256, pdf_encoding_element_t,
+			      &st_pdf_encoding_element,
+			      "font_resource_encoded_alloc");
+    pdf_font_resource_t *pdfont;
+    int code, i;
+
+    if (Encoding == 0)
+	return_error(gs_error_VMerror);
+    code = font_resource_simple_alloc(pdev, &pdfont, rid, ftype,
+				      256, write_contents);
+    if (code < 0) {
+	gs_free_object(pdev->pdf_memory, Encoding,
+		       "font_resource_encoded_alloc");
+	return code;
+    }
+    memset(Encoding, 0, 256 * sizeof(*Encoding));
+    for (i = 0; i < 256; ++i)
+	Encoding[i].glyph = GS_NO_GLYPH;
+    pdfont->u.simple.Encoding = Encoding;
+    *ppfres = pdfont;
+    return 0;
+}
 
 /*
  * Record whether a Type 1 or Type 2 font is a Multiple Master instance.
@@ -199,30 +394,7 @@ set_is_MM_instance(pdf_font_resource_t *pdfont, const gs_font_base *pfont)
     }
 }
 
-/* ---------------- Font resources ---------------- */
-
-/*
- * Allocate and initialize bookkeeping for outline fonts.
- */
-pdf_outline_fonts_t *
-pdf_outline_fonts_alloc(gs_memory_t *mem)
-{
-    pdf_outline_fonts_t *pofs =
-	gs_alloc_struct(mem, pdf_outline_fonts_t, &st_pdf_outline_fonts,
-			"pdf_outline_fonts_alloc(outline_fonts)");
-    pdf_standard_font_t *ppsf =
-	gs_alloc_struct_array(mem, PDF_NUM_STANDARD_FONTS,
-			      pdf_standard_font_t,
-			      &st_pdf_standard_font_element,
-			      "pdf_outline_fonts_alloc(standard_fonts)");
-
-    if (pofs == 0 || ppsf == 0)
-	return 0;
-    memset(ppsf, 0, PDF_NUM_STANDARD_FONTS * sizeof(*ppsf));
-    memset(pofs, 0, sizeof(*pofs));
-    pofs->standard_fonts = ppsf;
-    return pofs;
-}
+/* ------ Generic public ------ */
 
 /* Get the object ID of a font resource. */
 long
@@ -233,143 +405,16 @@ pdf_font_id(const pdf_font_resource_t *pdfont)
 
 /*
  * Return the (copied, subset) font associated with a font resource.
- * If this font resource doesn't have a descriptor (Type 0, Type 3, or
- * base 14), return 0.
+ * If this font resource doesn't have one (Type 0 or Type 3), return 0.
  */
 gs_font_base *
 pdf_font_resource_font(const pdf_font_resource_t *pdfont)
 {
+    if (pdfont->copied_font != 0)
+	return pdfont->copied_font;
     if (pdfont->FontDescriptor == 0)
 	return 0;
     return pdf_font_descriptor_font(pdfont->FontDescriptor);
-}
-
-/* Return the index of a standard font name, or -1 if missing. */
-private int
-pdf_find_standard_font(const byte *str, uint size)
-{
-    const pdf_standard_font_info_t *ppsf;
-
-    for (ppsf = pdf_standard_font_info; ppsf->fname; ++ppsf)
-	if (strlen(ppsf->fname) == size &&
-	    !strncmp(ppsf->fname, (const char *)str, size)
-	    )
-	    return ppsf - pdf_standard_font_info;
-    return -1;
-}
-
-/*
- * If there is a standard font with the same appearance (CharStrings,
- * Private, WeightVector) as the given font, set *psame to the mask of
- * identical properties, and return the standard-font index; otherwise,
- * set *psame to 0 and return -1.
- */
-private int
-find_std_appearance(const gx_device_pdf *pdev, const gs_font_base *bfont,
-		    int mask, int *psame)
-{
-    bool has_uid = uid_is_UniqueID(&bfont->UID) && bfont->UID.id != 0;
-    const pdf_standard_font_t *psf = pdev->text->outline_fonts->standard_fonts;
-    int i;
-
-    mask |= FONT_SAME_OUTLINES;
-    for (i = 0; i < PDF_NUM_STANDARD_FONTS; ++psf, ++i) {
-	if (has_uid) {
-	    if (!uid_equal(&bfont->UID, &psf->uid))
-		continue;
-	    if (!psf->font) {
-		/*
-		 * Identity of UIDs is supposed to guarantee that the
-		 * fonts have the same outlines and metrics.
-		 */
-		*psame = FONT_SAME_OUTLINES | FONT_SAME_METRICS;
-		return i;
-	    }
-	}
-	if (psf->font) {
-	    int same = *psame =
-		bfont->procs.same_font((const gs_font *)bfont,
-				       (const gs_font *)psf->font,
-				       mask);
-
-	    if (same & FONT_SAME_OUTLINES)
-		return i;
-	}
-    }
-    *psame = 0;
-    return -1;
-}
-
-/*
- * Scan a font directory for standard fonts.  Return true if any new ones
- * were found.
- */
-private bool
-scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
-{
-    bool found = false;
-    gs_font *orig = dir->orig_fonts;
-
-    for (; orig; orig = orig->next) {
-	gs_font_base *obfont;
-
-	if (orig->FontType == ft_composite || !orig->is_resource)
-	    continue;
-	obfont = (gs_font_base *)orig;
-	if (uid_is_UniqueID(&obfont->UID)) {
-	    /* Is it one of the standard fonts? */
-	    int i = pdf_find_standard_font(orig->key_name.chars,
-					   orig->key_name.size);
-	    pdf_standard_font_t *psf;
-
-	    if (i >= 0 && (psf = &pdev->text->outline_fonts->standard_fonts[i])->font == 0) {
-		psf->font = obfont;
-		psf->orig_matrix = obfont->FontMatrix;
-		psf->uid = obfont->UID;
-		found = true;
-	    }
-	}
-    }
-    return found;
-}
-
-/*
- * Find the original (unscaled) standard font corresponding to an
- * arbitrary font, if any.  Return its index in standard_fonts, or -1.
- */
-int
-pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_matrix *pfmat)
-{
-    bool scan = true;
-    int i;
-
-    if (font->FontType == ft_composite)
-	return -1;
-    for (;; font = font->base) {
-	gs_font_base *bfont = (gs_font_base *)font;
-	int same;
-
-	/* Look for a standard font with the same appearance. */
-	i = find_std_appearance(pdev, bfont, 0, &same);
-	if (i >= 0)
-	    break;
-	if (scan) {
-	    /* Scan for fonts with any of the standard names that */
-	    /* have a UID. */
-	    bool found = scan_for_standard_fonts(pdev, font->dir);
-
-	    scan = false;
-	    if (found) {
-		i = find_std_appearance(pdev, bfont, 0, &same);
-		if (i >= 0)
-		    break;
-	    }
-	}
-	if (font->base == font)
-	    return -1;
-    }
-    *pfmat = pdev->text->outline_fonts->standard_fonts[i].orig_matrix;
-    return i;
 }
 
 /*
@@ -422,7 +467,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 {
     const byte *chars = font->font_name.chars;
     uint size = font->font_name.size;
-    int index = pdf_find_standard_font(chars, size);
+    int index = pdf_find_standard_font_name(chars, size);
     int discard_same;
 
     /*
@@ -493,16 +538,18 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	}
 	break;
     case ft_encrypted:
-    case ft_encrypted2: {
-	/****** if not embedded & MM: ******/
-	/* Replace spaces by underscores in the base name. */
-	uint i;
+    case ft_encrypted2:
+	if (pdfont->u.simple.s.type1.is_MM_instance &&
+	    !pdf_font_descriptor_embedding(pdfont->FontDescriptor)
+	    ) {
+	    /* Replace spaces by underscores in the base name. */
+	    uint i;
 
-	for (i = 0; i < size; ++i)
-	    if (data[i] == ' ')
-		data[i] = '_';
+	    for (i = 0; i < size; ++i)
+		if (data[i] == ' ')
+		    data[i] = '_';
+	}
 	break;
-    }
     case ft_TrueType:
     case ft_CID_TrueType: {
 	/* Remove spaces from the base name. */
@@ -558,15 +605,26 @@ pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 /* Allocate a standard (base 14) font resource. */
 int
 pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		   gs_id rid, gs_font_base *pfont)
+		   gs_id rid, gs_font_base *pfont, int index)
 {
-    int code = font_resource_alloc(pdev, ppfres, resourceFont, rid,
-				   pfont->FontType, 0, pdf_write_contents_std);
+    pdf_font_resource_t *pdfont;
+    int code = font_resource_encoded_alloc(pdev, &pdfont, rid, pfont->FontType,
+					   pdf_write_contents_std);
+    const pdf_standard_font_info_t *psfi = &standard_font_info[index];
+    pdf_standard_font_t *psf = &pdf_standard_fonts(pdev)[index];
 
-    if (code < 0)
+    if (code < 0 ||
+	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, true)) < 0
+	)
 	return code;
-    set_is_MM_instance(*ppfres, pfont);
-    /****** SET BaseFont ******/
+    pdfont->BaseFont.data = (const byte *)psfi->fname;
+    pdfont->BaseFont.size = strlen(psfi->fname);
+    pdfont->copied_font = pdf_base_font_font(pdfont->base_font);
+    set_is_MM_instance(pdfont, pfont);
+    psf->pdfont = pdfont;
+    psf->orig_matrix = pfont->FontMatrix;
+    psf->uid = pfont->UID;
+    *ppfres = pdfont;
     return 0;
 }
 
@@ -577,29 +635,14 @@ int
 pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		      gs_id rid, pdf_font_descriptor_t *pfd)
 {
-    pdf_encoding_element_t *Encoding =
-	gs_alloc_struct_array(pdev->pdf_memory, 256, pdf_encoding_element_t,
-			      &st_pdf_encoding_element,
-			      "pdf_font_simple_alloc(Encoding)");
     pdf_font_resource_t *pdfont;
-    int i, code;
+    int code = font_resource_encoded_alloc(pdev, &pdfont, rid,
+					   pdf_font_descriptor_FontType(pfd),
+					   pdf_write_contents_simple);
 
-    if (Encoding == 0)
-	return_error(gs_error_VMerror);
-    code = font_resource_simple_alloc(pdev, &pdfont, rid,
-				      pdf_font_descriptor_FontType(pfd),
-				      256, pdf_write_contents_simple);
-
-    if (code < 0) {
-	gs_free_object(pdev->pdf_memory, Encoding,
-		       "pdf_font_simple_alloc(Encoding)");
+    if (code < 0)
 	return code;
-    }
     pdfont->FontDescriptor = pfd;
-    memset(Encoding, 0, 256 * sizeof(*Encoding));
-    for (i = 0; i < 256; ++i)
-	Encoding[i].glyph = GS_NO_GLYPH;
-    pdfont->u.simple.Encoding = Encoding;
     set_is_MM_instance(pdfont, pdf_font_descriptor_font(pfd));
     *ppfres = pdfont;
     return pdf_compute_BaseFont(pdev, pdfont);
