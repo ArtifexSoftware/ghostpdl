@@ -47,7 +47,10 @@ def get_sum(file, dbname=gsconf.testdatadb):
     return sum
 
 def make_sum(file):
-    mode = os.stat(file)[ST_MODE]
+    try:
+	mode = os.stat(file)[ST_MODE]
+    except OSError:
+	return None
     if S_ISREG(mode):
 	sum = md5.new()
 	f = open(file, "r")
@@ -59,4 +62,4 @@ def make_sum(file):
 
         return sum.hexdigest()
     
-    return 0
+    return None

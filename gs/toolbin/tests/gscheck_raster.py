@@ -34,9 +34,16 @@ class GSCompareTestCase(gstestgs.GhostscriptTestCase):
         file = "%s.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
 	rasterfilename = gsconf.rasterdbdir + file + ".gz"
 	if not os.access(rasterfilename, os.F_OK):
-		os.system(gsconf.codedir + "update_baseline " + os.path.basename(self.file))	
-	ct = time.localtime(os.stat(rasterfilename)[9])
-	baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
+		os.system(gsconf.codedir + "update_baseline " + os.path.basename(self.file))
+	try:
+		ct = time.localtime(os.stat(rasterfilename)[9])
+		baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
+	except:
+		if self.band:
+			banded = "banded"
+		else:
+			banded = "noband"
+		return "Skipping %s (%s/%ddpi/%s) [no previous raster data found]" % (os.path.basename(self.file), self.device, self.dpi, banded)
 
 	if self.band:
 	    return "Checking %s (%s/%ddpi/banded) against baseline set on %s" % (os.path.basename(self.file), self.device, self.dpi, baseline_date)
@@ -96,7 +103,6 @@ def addTests(suite, gsroot, **args):
 
     # get a list of test files
     comparefiles = os.listdir(gsconf.comparefiledir)
-
 
     for f in comparefiles:
         if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
