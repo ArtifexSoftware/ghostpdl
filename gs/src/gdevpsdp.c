@@ -652,7 +652,6 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 		    plvalue = *pplvalue;
 		}
 	    }
-	    break;
 	}
 	param_end_read_dict(plist, pname, &dict);
 	break;
