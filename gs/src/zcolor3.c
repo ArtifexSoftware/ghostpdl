@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$Id:*/
+/*$Id$*/
 /* Level 3 color operators */
 #include "ghost.h"
 #include "oper.h"
