@@ -30,6 +30,7 @@
 #include "gsiparm3.h"		/* for pattern colors */
 #include "gsmatrix.h"		/* for gspcolor.h */
 #include "gxcolor2.h"		/* for gxpcolor.h */
+#include "gxdcolor.h"		/* for gxpcolor.h */
 #include "gxpcolor.h"		/* for pattern device color types */
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
