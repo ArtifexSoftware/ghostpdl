@@ -176,7 +176,6 @@ mesh_subdivide_triangle(mesh_fill_state_t *pfs, mesh_frame_t *fp)
 int
 mesh_fill_triangle(mesh_fill_state_t *pfs)
 {
-    const gs_shading_mesh_t *psh = pfs->pshm;
     gs_imager_state *pis = pfs->pis;
     mesh_frame_t *fp = &pfs->frames[pfs->depth - 1];
     int ci;
@@ -224,7 +223,7 @@ mesh_fill_triangle(mesh_fill_state_t *pfs)
 	/* Fill the triangle with the color. */
 	{
 	    gx_device_color dev_color;
-	    const gs_color_space *pcs = psh->params.ColorSpace;
+	    const gs_color_space *pcs = pfs->direct_space;
 	    gs_client_color fcc;
 	    int code;
 

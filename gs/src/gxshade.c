@@ -22,6 +22,7 @@
 #include "gsrect.h"
 #include "gxcspace.h"
 #include "gscie.h"		/* requires gscspace.h */
+#include "gscindex.h"
 #include "gxdevcli.h"
 #include "gxistate.h"
 #include "gxdht.h"		/* for computing # of different colors */
@@ -117,7 +118,10 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
     return 0;
 }
 
-/* Get the next (integer) value from an unpacked array. */
+/*
+ * Get the next (integer) value from an unpacked array.  Note that
+ * num_bits may be 0 if we are reading a coordinate or color value.
+ */
 private int
 cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 {
@@ -125,8 +129,10 @@ cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
     uint read;
 
     if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
-	read != sizeof(float) || value < 0 || value >= (1 << num_bits) ||
-	value != (int)value
+	read != sizeof(float) || value < 0 ||
+	(num_bits != 0 && num_bits < sizeof(uint) * 8 &&
+	 value >= (1 << num_bits)) ||
+	value != (uint)value
 	)
 	return_error(gs_error_rangecheck);
     *pvalue = (uint) value;
@@ -216,12 +222,21 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
     int num_bits = cs->params->BitsPerComponent;
 
     if (index == gs_color_space_index_Indexed) {
-	uint i;
-	int code = cs->get_value(cs, num_bits, &i);
+	int ncomp = gs_color_space_num_components(gs_cspace_base_space(pcs));
+	uint ci;
+	int code = cs->get_value(cs, num_bits, &ci);
+	gs_client_color cc;
+	int i;
 
 	if (code < 0)
 	    return code;
-	/****** DO INDEXED LOOKUP TO pc[] ******/
+	if (ci >= gs_cspace_indexed_num_entries(pcs))
+	    return_error(gs_error_rangecheck);
+	code = gs_cspace_indexed_lookup(&pcs->params.indexed, (int)ci, &cc);
+	if (code < 0)
+	    return code;
+	for (i = 0; i < ncomp; ++i)
+	    pc[i] = cc.paint.values[i];
     } else {
 	int i, code;
 	int ncomp = gs_color_space_num_components(pcs);
@@ -265,8 +280,9 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
 
     pfs->dev = dev;
     pfs->pis = pis;
-    pfs->num_components = gs_color_space_num_components(pcs);
 top:
+    pfs->direct_space = pcs;
+    pfs->num_components = gs_color_space_num_components(pcs);
     switch ( gs_color_space_get_index(pcs) )
 	{
 	case gs_color_space_index_Indexed:

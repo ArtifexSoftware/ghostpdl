@@ -173,11 +173,19 @@ int shade_next_vertex(P2(shade_coord_stream_t * cs, mesh_vertex_t * vertex));
 
  */
 
-/* Define the common structure for recursive subdivision. */
+/*
+ * Define the common structure for recursive subdivision.
+ *
+ * direct_space is the same as the original ColorSpace unless the
+ * original space is an Indexed space, in which case direct_space is the
+ * base space of the original space.  This is the space in which color
+ * computations are done.
+ */
 #define shading_fill_state_common\
   gx_device *dev;\
   gs_imager_state *pis;\
-  int num_components;		/* # of color components */\
+  const gs_color_space *direct_space;\
+  int num_components;		/* # of color components in direct_space */\
   float cc_max_error[GS_CLIENT_COLOR_MAX_COMPONENTS]
 typedef struct shading_fill_state_s {
     shading_fill_state_common;
