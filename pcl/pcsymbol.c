@@ -74,12 +74,10 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	    return e_Range;
 	  header =
 	    (pl_symbol_map_t *)gs_alloc_bytes(mem,
-					      sizeof(pl_symbol_map_t) +
-					        num_codes * sizeof(ushort),
+					      sizeof(pl_symbol_map_t),
 					      "pcl_font_header(header)");
 	  if ( header == 0 )
 	    return_error(e_Memory);
-	  /* copy in the data that is the same between the structures (HACK) */
 	  memcpy((void *)header, (void *)psm, psm_header_size);
 	  /* specify that we do not allow these sets to map to and fro
              msl and unicode */
