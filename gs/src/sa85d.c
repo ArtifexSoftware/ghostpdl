@@ -87,6 +87,8 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	} else if (scan_char_decoder[ch] == ctype_space)
 	    DO_NOTHING;
 	else if (ch == '~') {
+	    int i = 1;
+
 	    /* Handle odd bytes. */
 	    if (p == rlimit) {
 		if (last)
@@ -106,19 +108,18 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	     * And any other characters should raise an ioerror.
 	     * But Adobe Acrobat allows CR/LF between ~ and >.
 	     * So we allow CR/LF between them. */
-	    ++p;
-	    while (*p == 13 || *p == 10) {
-		if (p < rlimit) {
-		    ++p;
-		} else {
-		    break;
+	    while ((p[i] == 13 || p[i] == 10) && (p+i <= rlimit)) 
+		i++;
+	    if (p[i] != '>') {
+		if (p+i == rlimit) {
+		    if (last)
+			status = ERRC;
+		    else
+			p--;	/* we'll see the '~' after filling the buffer */
 		}
-	    }
-	    if (p == rlimit || *p != '>') {
-		status = ERRC;
 		break;
 	    }
-
+	    p += i;		/* advance to the '>' */
 	    pw->ptr = q;
 	    status = a85d_finish(ccount, word, pw);
 	    q = pw->ptr;
