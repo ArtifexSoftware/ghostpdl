@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -24,10 +24,17 @@
  *
  * The original code was borrowed from the
  * HP LaserJet/DeskJet driver for Ghostscript.
- * The code specific to the Brother HL 720 was written by : 
- *       Pierre-Olivier Gaillard (pierre.gaillard@hol.fr) 
+ * The code specific to the Brother HL 720 was written by :
+ *       Pierre-Olivier Gaillard (pierre.gaillard@hol.fr)
  * Thanks to the documentation kindly provided by :
  *        Richard Thomas <RICHARDT@brother.co.uk>
+ *
+ * Removal of compression code on 1/17/00 by Ross Martin
+ * (ross@ross.interwrx.com, martin@walnut.eas.asu.edu)
+ * enables this driver to correctly print tiger.ps on a
+ * Brother MFC6550MC Fax Machine.  Change to the Horizontal
+ * Offset fixes incorrect page alignment at 300dpi in
+ * Landscape mode with a2ps.
  */
 #include "gdevprn.h"
 /* The following line is used though these printers are not PCL printers*/
@@ -276,6 +283,8 @@ gx_device_printer far_data gs_hl7x0_device =
 	0, 0, 0, 0,		/* margins filled in by hl7x0_open */
 	1, hl720_print_page); /* The hl720 and hl730 can both use the same print method */
 
+
+
 /* Open the printer, adjusting the margins if necessary. */
 
 private int 
@@ -310,7 +319,7 @@ hl7x0_close(gx_device *pdev)
 private int
 hl720_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
-        Byte prefix[] ={
+	Byte prefix[] ={
    0x1B,'%','-','1','2','3','4','5','X'
   ,'@','P','J','L',0x0A                         /* set PJL mode */
   ,'@','P','J','L',' ','E','N','T','E','R',' '
@@ -344,9 +353,9 @@ private int
 hl7x0_print_page(gx_device_printer *pdev, FILE *printStream, int ptype,
   int dots_per_inch, ByteList *initCommand)
 {
-        /* UTILE*/
+	/* UTILE*/
   /* Command for a formFeed (we can't use strings because of the zeroes...)*/
-  char FormFeed[] = {'@','G',0x00,0x00,0x01,0xFF,'@','F'};
+  Byte FormFeed[] = {'@','G',0x00,0x00,0x01,0xFF,'@','F'};
   ByteList formFeedCommand;
   /* Main characteristics of the page */
   int line_size       = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
@@ -417,10 +426,22 @@ private short stripTrailingBlanks(Byte * line, short length){
   return 0;
 }
 
+/*
+ * Changed the horizontalOffset function 1/17/00 Ross Martin.
+ * ross@ross.interwrx.com or martin@walnut.eas.asu.edu
+ *
+ * The equation used to muliply pixWidth by resolution/600 
+ * also.  This didn't work right at resolution 300; it caused
+ * landscape pages produced by a2ps to be half off the
+ * page, when they were not at 600dpi or on other
+ * devices.  I'm not sure the equation below is exactly
+ * correct, but it now looks to be pretty close visually,
+ * and works correctly at 600dpi and 300dpi.
+ */
 private short horizontalOffset(short pixWidth,
 			      short pixOffset,
 			      short resolution){
-return (((LETTER_WIDTH - pixWidth) + pixOffset * 2)  * resolution / 600 + 7) / 8; 
+return (((LETTER_WIDTH * resolution/600 - pixWidth) + pixOffset * 2) + 7) / 8; 
 
 } 
 
@@ -614,13 +635,8 @@ private void makeFullLine( Byte      * pCurrentLine,
 
   /* Build vector of differences with a Xor */
 
-  for (loopCounter = (lineWidth >> 2) ;  0 < loopCounter ; loopCounter -- ) {
-    *((unsigned long *) pPreviousTmp)++ ^= *((unsigned long *) pCurrentTmp)++;
-    
-  }
-  for (loopCounter = (lineWidth & 3) ;  0 < loopCounter ; loopCounter -- ) {
-    *(pPreviousTmp++) ^=  *(pCurrentTmp++);
-  }
+  for (loopCounter = lineWidth ;  0 < loopCounter ; loopCounter -- )
+    *pPreviousTmp++ ^= *pCurrentTmp++;
  
   /* Find sequences that are different from the corresponding (i.e. vertically aligned)
    * one of the previous line. Make commands for them.
@@ -630,6 +646,33 @@ private void makeFullLine( Byte      * pCurrentLine,
   remainingWidth = lineWidth;
 
   while (true) {
+
+    /*
+     * Disabled line-to-line compression, 1/17/00 Ross Martin
+     * ross@ross.interwrx.com and/or martin@walnut.eas.asu.edu
+     *
+     * The compression here causes problems printing tiger.ps.
+     * The problem is vertical streaks.  The printer I'm printing
+     * to is a Brother MFC6550MC Fax Machine, which may be
+     * slightly different from the hl720 and hl730.  Note that
+     * this fax machine does support HP LaserJet 2p emulation,
+     * but in order to enable it I believe one needs special
+     * setup from a DOS program included with the printer.  Thus,
+     * the hl7x0 driver seems a better choice.  In any case,
+     * on the MFC6550MC, some files print fine with compression
+     * turned on, but others such as tiger.ps print with streaks.
+     * disabling the compression fixes the problem, so I haven't
+     * looked any further at the cause.  It may be that the
+     * compression is correct for the hl720 and hl730, and only
+     * different for the MFC6550MC, or it may be that tiger.ps
+     * won't print correctly with compression enabled on any
+     * of these.  It may be that the problem is only with color
+     * and/or grayscale prints.  YMMV.  I don't think it likely
+     * that turning off compression will cause problems with
+     * other printers, except that they may possibly print slower.
+     */
+
+#ifdef USE_POSSIBLY_FLAWED_COMPRESSION
     /* Count and skip bytes that are not "new" */
     while (true) {
       if (remainingWidth == 0)  /* There is nothing left to do */
@@ -642,16 +685,22 @@ private void makeFullLine( Byte      * pCurrentLine,
       horizontalOffset ++; /* the offset takes count of the bytes that are not "new" */
       --remainingWidth;
     }
+#endif
     
     pPreviousTmp = pStartOfSequence + 1; /* The sequence contains at least this byte */
     --remainingWidth; 
     
     /* Find the end of the sequence of "new" bytes */
     
+#ifdef USE_POSSIBLY_FLAWED_COMPRESSION
     while (remainingWidth != 0 && *pPreviousTmp != 0) {
       ++pPreviousTmp; /* Enlarge the sequence Of new bytes */
       --remainingWidth;
     }
+#else
+   pPreviousTmp += remainingWidth;
+   remainingWidth = 0;
+#endif
 
     makeCommandsForSequence(pCurrentLine + (pStartOfSequence - pPreviousLine),
 			     pPreviousTmp - pStartOfSequence,

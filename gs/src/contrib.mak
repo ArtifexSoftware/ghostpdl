@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -64,7 +64,8 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	eps9high  Epson-compatible 9-pin, interleaved lines
 #		(triple resolution)
 # *	epsonc	Epson LQ-2550 and Fujitsu 3400/2400/1200 color printers
-# *	hl7x0   Brother HL 720 and HL 730 (HL 760 is PCL compliant)
+# *	hl7x0   Brother HL 720 and HL 730 (HL 760 is PCL compliant);
+#		also usable with the MFC6550MC Fax Machine.
 # *	ibmpro  IBM 9-pin Proprinter
 # *	imagen	Imagen ImPress printers
 # *	iwhi	Apple Imagewriter in high-resolution mode
@@ -490,9 +491,11 @@ $(DD)pjetxl.dev : $(PJET) $(DD)page.dev
 	$(SETPDEV) $(DD)pjetxl $(PJET)
 
 ###--------------------- The Brother HL 7x0 printer --------------------- ### 
-###                    This driver was contributed by a user :            ###
-###  Please contact Pierre-Olivier Gaillard (pierre.gaillard@hol.fr)      ###
-### if you have any questions.                                            ###
+### Note: this driver was contributed by users: please contact            ###
+###       Pierre-Olivier Gaillard (pierre.gaillard@hol.fr)                ###
+###         for questions about the basic driver;                         ###
+###       Ross Martin (ross@ross.interwrx.com, martin@walnut.eas.asu.edu) ###
+###         for questions about usage with the MFC6550MC Fax Machine.     ###
 
 hl7x0_=$(GLOBJ)gdevhl7x.$(OBJ)
 $(DD)hl7x0.dev : $(hl7x0_) $(DD)page.dev
