@@ -205,11 +205,11 @@ nodict readonly pop
 
 % Establish a given color (and color space) as current.
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
-  /.setshapemask where {
+  /.begintransparencymask where {
     pop AlphaIsShape {
-      1 .setopacityalpha 0 .inittransparencyymask exch .setshapealpha 1
+      1 .setopacityalpha 0 .inittransparencymask exch .setshapealpha 1
     } {
-      1 .setshapealpha 1 .inittransparencymask exch .setopacityalpha 1
+      1 .setshapealpha 1 .inittransparencymask exch .setopacityalpha 0
     } ifelse
 	% Set the soft mask by rendering the XObject.  Doing this every time
 	% is obviously very inefficient; we'll improve it later.
@@ -222,18 +222,18 @@ nodict readonly pop
   exch dup null eq {
     pop .inittransparencymask
   } {
-    dup dup /BBox get aload pop .begintransparencymask {
-      /Draw get exec .endtransparencymask
-    } .internalstopped {
-      .discardtransparencymask stop
-    } if
+    dup /Draw get exec
   } ifelse
 } bdef
-/setfillcolor {
-  FillColor FillColorSpace setgcolor FillOverprint setoverprint
+% (Non-mask) images must execute setfillblend.
+/setfillblend {
+  FillOverprint setoverprint
   FillConstantAlpha SoftMask .settransparencyparams
 } def
-/setstrokecolor {
+/setfillstate {
+  FillColor FillColorSpace setgcolor setfillblend
+} def
+/setstrokestate {
   StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
   StrokeConstantAlpha SoftMask .settransparencyparams
 } def
@@ -271,22 +271,22 @@ end def
 
 % ---------------- Path painting and clipping ---------------- %
 
-/S { setstrokecolor /stroke fsexec } bdef
-/f { setfillcolor /fill fsexec } bdef
-/f* { setfillcolor /eofill fsexec } bdef
+/S { setstrokestate /stroke fsexec } bdef
+/f { setfillstate /fill fsexec } bdef
+/f* { setfillstate /eofill fsexec } bdef
 /n { newpath } bdef		% don't allow n to get bound in
 /s { closepath S } bdef
-/B { gsave setfillcolor fill grestore S } bdef
+/B { gsave setfillstate fill grestore S } bdef
 /b { closepath B } bdef
-/B* { gsave setfillcolor eofill grestore S } bdef
+/B* { gsave setfillstate eofill grestore S } bdef
 /b* { closepath B* } bdef
 
 % Clipping:
 
 /Wdict 4 dict dup begin
-/S { gsave setstrokecolor stroke grestore n } bdef
-/f { gsave setfillcolor fill grestore n } bdef
-/f* { gsave setfillcolor eofill grestore n } bdef
+/S { gsave setstrokestate stroke grestore n } bdef
+/f { gsave setfillstate fill grestore n } bdef
+/f* { gsave setfillstate eofill grestore n } bdef
 /n { end clip newpath } bdef
 end readonly def
 /W { //Wdict begin } bdef
@@ -446,16 +446,16 @@ end readonly def
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and
     { TextRenderingMode 0 eq
-       { { setfillcolor show } }
+       { { setfillstate show } }
        { { false charpath textrenderingprocs TextRenderingMode get exec } }
       ifelse
     }
     { TextRenderingMode 0 eq
        { WordSpacing 0 eq
-          { { setfillcolor TextSpacing exch 0 exch ashow } }
+          { { setfillstate TextSpacing exch 0 exch ashow } }
 	  { TextSpacing 0 eq
-	     { { setfillcolor WordSpacing exch 0 exch 32 exch widthshow } }
-	     { { setfillcolor WordSpacing exch TextSpacing exch 0 32 4 2 roll 0 exch awidthshow } }
+	     { { setfillstate WordSpacing exch 0 exch 32 exch widthshow } }
+	     { { setfillstate WordSpacing exch TextSpacing exch 0 32 4 2 roll 0 exch awidthshow } }
 	    ifelse
 	  }
 	 ifelse
@@ -495,13 +495,13 @@ end readonly def
   } forall settextposition
 } bdef
 
-/tf { setfillcolor currentpoint fill moveto } bdef
+/tf { setfillstate currentpoint fill moveto } bdef
 /tn { currentpoint newpath moveto } bdef
 % For stroking characters, temporarily restore the graphics CTM so that
 % the line width will be transformed properly.
 /Tmatrix matrix def
 /tS
- { setstrokecolor
+ { setstrokestate
    currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix stroke
    setmatrix moveto
  } bdef

@@ -199,7 +199,11 @@ end
 
 .imagetypes
   dup 3 /.image3 load put
-  4 /.image4 load put
+  dup 4 /.image4 load put
+% We also detect ImageType 103 here: it isn't worth making a separate file
+% just for this.
+  /.image3x where { pop dup 103 /.image3x load put } if
+pop
 
 % ------ Functions ------ %
 

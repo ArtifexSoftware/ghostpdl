@@ -399,7 +399,7 @@ see Adobe Technical Note #5407, "Transparency in PDF".  Note, however, that
 Ghostscript's model generalizes that of PDF 1.4 in that Ghostscript
 maintains separate alpha and mask values for opacity and shape, rather than
 a single value with a Boolean that says whether it represents opacity or
-shape.
+shape.  EVERYTHING IN THIS SECTION IS SUBJECT TO CHANGE.
 
 <h4><a name="Transparency_graphics_state_operators">Graphics state operators</h4>
 
@@ -451,14 +451,20 @@ The initial value of the text knockout flag is <b><tt>true</tt></b>.
 <h4><a name="Transparency_rendering_stack_operators">Rendering stack operators</h4>
 
 <p>
-The interpreter state is extended to include a rendering stack for handling
-transparency groups and masks.  Groups accumulate a full value for each
-pixel (paint plus transparency); masks accumulate only a coverage value.
-The stack is per-context and is saved and restored by <b><tt>save</tt></b>
-and <b><tt>restore</tt></b>.  There may be other as yet undefined
-constraints on how it interacts with the graphics state stack.  Groups and
-masks must be properly nested, i.e., the 'end' or 'discard' operator must
-match the corresponding 'begin' operator.
+The interpreter state is extended to include a (per-context) rendering stack
+for handling transparency groups and masks (generically, "layers").  Groups
+accumulate a full value for each pixel (paint plus transparency); masks
+accumulate only a coverage value.  Layers must be properly nested, i.e., the
+'end' or 'discard' operator must match the corresponding 'begin' operator.
+
+<p>
+Beginning and ending layers must nest properly with respect to
+<b><tt>save</tt></b> and <b><tt>restore</tt></b>: <b><tt>save</tt></b> and
+<b><tt>restore</tt></b> do not save and restore the layer stack.  Currently,
+layers are not required to nest with respect to <b><tt>gsave</tt></b> and
+<b><tt>grestore</tt></b>, except that the device that is current in the
+graphics state when ending a layer must be the same as the device that was
+current when beginning the layer.  THIS AREA IS SUBJECT TO CHANGE.
 
 <dl>
 <dt><b><tt>&lt;paramdict&gt; &lt;llx&gt; &lt;lly&gt; &lt;urx&gt; &lt;ury&gt;
@@ -467,25 +473,16 @@ match the corresponding 'begin' operator.
 are the bounding box of the group in the current user coordinate system.
 <b><tt>paramdict</tt></b> has the following keys:
 <dl>
-<dt><b><tt>Isolated</tt></b>
-<dd>(optional) Boolean; default value = false.
-<dt><b><tt>Knockout</tt></b>
-<dd>(optional) Boolean; default value = false.
+<dt><b><tt>/Isolated</tt></b>
+<dd>(optional) Boolean; default value = <b><tt>false</tt></b>.
+<dt><b><tt>/Knockout</tt></b>
+<dd>(optional) Boolean; default value = <b><tt>false</tt></b>.
 </dl>
 </dl>
 
 <dl>
 <dt><b><tt>- .discardtransparencygroup -</tt></b>
-
 <dd>Ends and discards the current transparency group.
-<b><tt>restore</tt></b> will implicitly execute
-<b><tt>.discardtransparencygroup</tt></b> for every unmatched
-<b><tt>.begintransparencygroup</tt></b> since the corresponding
-<b><tt>save</tt></b>.  Executing
-<b><tt>.{end,discard}transparencygroup</tt></b> if the corresponding
-<b><tt>.begintransparencygroup</tt></b> was not executed within the
-innermost currently unmatched <b><tt>save</tt></b> will cause an
-<b><tt>invalidaccess</tt></b> error.
 </dl>
 
 <dl>
@@ -501,32 +498,34 @@ onto the group that now becomes current.
 are the bounding box of the mask in the current user coordinate system.
 <b><tt>paramdict</tt></b> has the following keys:
 <dl>
-<dt><b><tt>Subtype</tt></b>
-<dd>(required) Name, either /Alpha or /Luminosity.
-<dt><b><tt>Background</tt></b>
+<dt><b><tt>/Subtype</tt></b>
+<dd>(required) Name, either <b><tt>/Alpha</tt></b> or
+<b><tt>/Luminosity</tt></b>.
+<dt><b><tt>/Background</tt></b>
 <dd>(optional) Array of number.
-<dt><b><tt>TransferFunction</tt></b>
-<dd>(optional) Function dictionary.
+<dt><b><tt>/TransferFunction</tt></b>
+<dd>(optional) Function object (produced by applying
+<b><tt>.buildfunction</tt></b> to a Function dictionary).
 </dl>
 </dl>
 
 <dl>
 <dt><b><tt>- .discardtransparencymask -</tt></b>
-<dd>Ends and discards the current transparency mask.  See
-<b><tt>.discardtransparencygroup</tt></b> for interactions with
-<b><tt>save</tt></b> and <b><tt>restore</tt></b>.
+<dd>Ends and discards the current transparency mask.
 </dl>
 
 <dl>
 <dt><b><tt>&lt;masknum&gt; .endtransparencymask -</tt></b>
 <dd>Ends the current transparency mask, installing it as the current opacity
-(masknum = 0) or shape (masknum = 1) mask in the graphics state.
+(<b><tt>masknum</tt></b> = 0) or shape (<b><tt>masknum</tt></b> = 1) mask in
+the graphics state.
 </dl>
 
 <dl>
 <dt><b><tt>&lt;masknum&gt; .inittransparencymask -</tt></b>
-<dd>Resets the current opacity (masknum = 0) or shape (masknum = 1) mask
-to an infinite mask with alpha = 1 everywhere.
+<dd>Resets the current opacity (<b><tt>masknum</tt></b> = 0) or shape
+(<b><tt>masknum</tt></b> = 1) mask to an infinite mask with alpha = 1
+everywhere.
 </dl>
 
 <h4><a name="Transparency_ImageType">New ImageType</h4>
@@ -547,16 +546,14 @@ mask values.
 
 <li><b><tt>InterleaveType</tt></b> appears in the <b><tt>MaskDict</tt></b>s,
 not the <b><tt>DataDict</tt></b>, because each mask has its own
-<b><tt>InterleaveType</tt></b>.
+<b><tt>InterleaveType</tt></b>.  <b><tt>InterleaveType</tt></b> 2
+(interlaced scan lines) is not supported.
 
 <li>A new <b><tt>Matte</tt></b> entry may be present in the top-level image
 dictionary.  If <b><tt>Matte</tt></b> is present, each
 <b><tt>MaskDict</tt></b> has an optional <b><tt>Matted</tt></b> entry
 (defaulting to <b><tt>true</tt></b>), indicating whether that mask
 participates in the premultiplication.
-
-<li><b><tt>InterleaveType</tt></b> 2 (interlaced scan lines) is not
-supported.
 
 </ul>
 

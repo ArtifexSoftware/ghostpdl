@@ -646,14 +646,80 @@ end readonly def
     boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
   } if
   dictbeginpage /DefaultMatrix 1 index store setmatrix
-   dup /Contents knownoget not { 0 array } if
-   dup type /arraytype ne { 1 array astore } if
-   count 1 sub /pdfemptycount exch store
-    { oforce false resolvestream pdfopdict .pdfrun
-    } forall
+  count 1 sub /pdfemptycount exch store
+	% If the page uses any transparency features, show it within
+	% a transparency group.
+  dup pageusestransparency {
+	%****** NYI ******
+    showpagecontents
+  } {
+    showpagecontents
+  } ifelse
    /Annots knownoget { { oforce drawannot } forall } if
    endpage
    end			% scratch dict
+} bind def
+/showpagecontents {	% <pagedict> showpagecontents -
+  dup /Group known PDFversion 1.4 ge and {
+	% In PDF 1.4, Group overrides Contents.
+    DoForm
+  } {
+    dup /Contents knownoget not { 0 array } if
+    dup type /arraytype ne { 1 array astore } if {
+      oforce false resolvestream pdfopdict .pdfrun
+    } forall
+  } ifelse
+} bind def
+
+% ------ Transparency support ------ %
+
+% Determine whether a page might invoke any transparency features:
+%	- Group in the page dictionary
+%	- Non-default ca, CA, or SMask in an ExtGState
+%	- Form XObject with Group
+%	- Image XObject with SMask
+% ****** DO WE NEED TO LOOK IN RESOURCE DICTS OF OTHER CONTENT STREAMS? ******
+/pageusestransparency {		% <pagedict> pageusestransparency <bool>
+  PDFversion 1.4 lt {
+    pop false
+  } {
+    dup /Group known {
+      pop true
+    } {
+      false exch {
+	dup resourceusestransparency { pop not exit } if
+	/Parent knownoget not { exit } if
+      } loop
+    } ifelse
+  } ifelse
+} bind def
+% Check the Resources of a page or Form.
+/resourceusestransparency {	% <dict> resourceusestransparency <bool>
+  {	% Use loop to provide an exitable context.
+    /Resources knownoget not { 0 dict } if
+    dup /ExtGState knownoget {
+      false exch {
+	exch pop oforce
+	dup /ca knownoget { 1 ne { pop not exit } if } if
+	dup /CA knownoget { 1 ne { pop not exit } if } if
+	dup /SMask knownoget { /None ne { pop not exit } if } if
+	pop
+      } forall { pop true exit } if
+    } if
+    dup /XObject knownoget {
+      false exch {
+	exch pop oforce dup /Subtype get
+	dup /Image eq { pop /SMask known { not exit } if } if
+	/Form eq {
+	  dup /Group known { pop not exit } if
+	  resourceusestransparency { not exit } if
+	} {
+	  pop
+	} ifelse
+      } forall { pop true exit } if
+    } if
+    pop false exit
+  } loop
 } bind def
 
 end			% pdfdict

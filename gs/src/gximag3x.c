@@ -211,10 +211,15 @@ gx_begin_image3x_generic(gx_device * dev,
 	 * of the correct depth so that no color mapping will occur.
 	 */
 	/****** FREE COLOR SPACE ON ERROR OR AT END ******/
-	gs_color_space *pmcs =
-	    gs_alloc_struct(mem, gs_color_space, &st_color_space,
-			    "gx_begin_image3x_generic");
+	gs_color_space *pmcs;
 
+	if (penum->mask[i].depth == 0) {	/* mask not supplied */
+	    midev[0] = 0;
+	    minfo[0] = 0;
+	    continue;
+	}
+	pmcs =  gs_alloc_struct(mem, gs_color_space, &st_color_space,
+				"gx_begin_image3x_generic");
 	if (pmcs == 0)
 	    return_error(gs_error_VMerror);
 	gs_cspace_init_DevicePixel(pmcs, penum->mask[i].depth);

@@ -323,7 +323,7 @@ end
   } if
 } bdef
 
-% Transparency support
+% ------ Transparency support ------ %
 
 /gssmask {
   dup /None eq {
@@ -344,30 +344,42 @@ end
   } ifelse SMask
 } bdef
 
-% This procedure is called within a .{begin,end}transparencymask to
-% actually render the soft mask.
-/.execmaskgroup {	% <groupdict> .execmaskgroup -
-  dup /Resources knownoget { oforce } { 0 dict } ifelse
-  exch false resolvestream
-  .execgroup
+% This procedure is called to actually render the soft mask.
+/.execmaskgroup {	% <masknum> <paramdict> <formdict> .execmaskgroup -
+	% Save our place in PDFfile, and do a gsave to avoid resetting
+	% the color space.
+  gsave PDFfile fileposition 4 1 roll
+	% We have to select the group's color space so that the
+	% background color will be interpreted correctly.
+  dup /Group oget /CS knownoget { csresolve setcolorspace } if
+  exch dup /BBox get aload pop .begintransparencymask {
+    dup /Resources knownoget { oforce } { 0 dict } ifelse
+    exch false resolvestream
+    .execgroup .endtransparencymask
+  } .internalstopped {
+    .discardtransparencymask stop
+  } if
+  PDFfile exch setfileposition grestore
 } bdef
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
-% ****** NEEDS A LOT OF WORK ******
 /.execgroup {		% <resdict> <stream> .execgroup -
-%  1 .setopacityalpha 1 .setshapealpha
-%  0 .inittransparencymask 1 .inittransparencymask
-%  /Compatible .setblendmode
+  gsave
+  1 .setopacityalpha 1 .setshapealpha
+  0 .inittransparencymask 1 .inittransparencymask
+  /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
   pdfopdict .pdfruncontext
+  grestore
 } bdef
 
 % .paintgroupform implements the Form PaintProc in the case where the
 % Form XObject dictionary includes a Group key.  See .paintform below.
 /.paintgroupform {	% <resdict> <stream> <formdict> .paintform -
-  mark exch
-  dup /I knownoget { /Isolated exch 3 2 roll } if
-  dup /K knownoget { /Knockout exch 3 2 roll } if
-  counttomark 1 add 1 roll .dicttomark
+  mark exch dup /Group oget
+  dup /CS knownoget { csresolve setcolorspace } if
+  dup /I knownoget { /Isolated exch 4 2 roll } if
+  dup /K knownoget { /Knockout exch 4 2 roll } if
+  pop counttomark 1 add 1 roll .dicttomark
 		% Stack: resdict stream formdict paramdict
   exch /BBox oget aload pop
   .begintransparencygroup {
@@ -375,6 +387,40 @@ end
   } .internalstopped {
     .discardtransparencygroup stop
   } if .endtransparencygroup
+} bdef
+
+% Make an ImageType 103 (soft-masked) image.
+/makesoftmaskimage {	% <datasource> <imagemask> <SMask> makesoftmaskimage
+			%   <datasource> <imagemask>, updates currentdict =
+			%   imagedict
+		% See the ImageType 3 case of makemaskimage below.
+		% SMask is a stream, another Image XObject.
+		% Stack: datasource imagemask(false) smaskstreamdict
+  PDFfile fileposition exch
+  dup /Matte knownoget { /Matte exch def } if
+  dup length dict makeimagedict pop
+		% In order to prevent the two data sources from being
+		% aliased, we need to make at least one a reusable stream.
+		% We pick the mask, since it's smaller (in case we need to
+		% read all its data now).
+		% Stack: datasource imagemask(false) savedpos
+		% maskdict is currentdict
+  /DataSource DataSource mark
+    /Intent 1
+    /AsyncRead true
+  .dicttomark .reusablestreamdecode def
+  PDFfile exch setfileposition
+  currentdict end currentdict end
+  5 dict begin
+  /ImageType 103 def
+  /DataDict exch def
+  dup /InterleaveType 3 put
+  DataDict /Matte .knownget {
+    /Matte exch def
+    dup /Matted true put
+  } if
+  AlphaIsShape { /ShapeMaskDict } { /OpacityMaskDict } ifelse exch def
+  /ColorSpace DataDict /ColorSpace get def
 } bdef
 
 % ---------------- Color setting ---------------- %
@@ -730,44 +776,54 @@ end
 
 /DoImage {
   checkaltimage dup length 6 add dict
+  1 index /SMask knownoget { 1 index exch /SMask exch put } if
   1 index /Mask knownoget { 1 index exch /Mask exch put } if
   makeimagedict doimage
 } bdef
-/doimage {	% <imagemask> doimage -
-		% imagedict is currentdict, gets popped from dstack
-  DataSource exch
-  currentdict /Mask knownoget {
-    dup type /arraytype eq {
-      /ImageType 4 def
-      /MaskColor exch def
-    } {
+/makemaskimage {	% <datasource> <imagemask> <Mask> makemaskimage
+			%   <datasource> <imagemask>, updates currentdict =
+			%   imagedict
+  dup type /arraytype eq {
+    /ImageType 4 def
+    /MaskColor exch def
+  } {
 		% Mask is a stream, another Image XObject.
 		% Stack: datasource imagemask(false) maskstreamdict
-      PDFfile fileposition exch
-      dup length dict makeimagedict pop
+    PDFfile fileposition exch
+    dup length dict makeimagedict pop
 		% In order to prevent the two data sources from being
 		% aliased, we need to make at least one a reusable stream.
 		% We pick the mask, since it's smaller (in case we need to
 		% read all its data now).
 		% Stack: datasource imagemask(false) savedpos
 		% maskdict is currentdict
-      /DataSource DataSource mark
-	/Intent 1
-	/AsyncRead true
-      .dicttomark .reusablestreamdecode def
-      PDFfile exch setfileposition
-      currentdict end currentdict end
-      5 dict begin
-      /ImageType 3 def
-      /InterleaveType 3 def
-      /DataDict exch def
-      /MaskDict exch def
-      /ColorSpace DataDict /ColorSpace get def
-    } ifelse
-  } if
+    /DataSource DataSource mark
+      /Intent 1
+      /AsyncRead true
+    .dicttomark .reusablestreamdecode def
+    PDFfile exch setfileposition
+    currentdict end currentdict end
+    5 dict begin
+    /ImageType 3 def
+    /InterleaveType 3 def
+    /DataDict exch def
+    /MaskDict exch def
+    /ColorSpace DataDict /ColorSpace get def
+  } ifelse
+} bdef
+/doimage {	% <imagemask> doimage -
+		% imagedict is currentdict, gets popped from dstack
+  DataSource exch
+  PDFversion 1.4 ge { currentdict /SMask knownoget } { false } ifelse {
+    makesoftmaskimage
+  } {
+    currentdict /Mask knownoget {
+      makemaskimage
+    } if
+  } ifelse
 		% Stack: datasource imagemask
-   { currentdict end setfillcolor imagemask }
-   { ColorSpace setcolorspace currentdict end image }
+   { currentdict end setfillstate imagemask }
+   { ColorSpace setcolorspace currentdict end setfillblend image }
   ifelse
 		% Close the input stream, unless it is PDFfile or
 		% PDFsource.

@@ -28,6 +28,7 @@
 #include "gxiparam.h"		/* for image enumerator */
 #include "idict.h"
 #include "idparam.h"
+#include "ifunc.h"
 #include "igstate.h"
 #include "iimage.h"
 #include "iimage2.h"
@@ -242,6 +243,7 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
 }
 
 /* <paramdict> <llx> <lly> <urx> <ury> .begintransparencymask - */
+private int tf_using_function(P3(floatp, float *, void *));
 private int
 zbegintransparencymask(i_ctx_t *i_ctx_p)
 {
@@ -270,15 +272,31 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
 	return code;
     else if (code > 0)
 	params.has_Background = true;
-    /****** TransferFunction ******/
+    if (dict_find_string(dop, "TransferFunction", &pparam) >0) {
+	gs_function_t *pfn = ref_function(pparam);
+
+	if (pfn == 0)
+	    return_error(e_rangecheck);
+	params.TransferFunction = tf_using_function;
+	params.TransferFunction_data = pfn;
+    }
     code = rect_param(&bbox, op);
     if (code < 0)
 	return code;
     code = gs_begin_transparency_mask(igs, &params, &bbox);
     if (code < 0)
 	return code;
-    pop(1);
+    pop(5);
     return code;
+}
+/* Implement the TransferFunction using a Function. */
+private int
+tf_using_function(floatp in_val, float *out, void *proc_data)
+{
+    float in = in_val;
+    gs_function_t *const pfn = proc_data;
+
+    return gs_function_evaluate(pfn, &in, out);
 }
 
 /* - .discardtransparencymask - */
