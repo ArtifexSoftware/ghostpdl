@@ -231,6 +231,30 @@ extern_st(st_chunk);
 			gs_exit(1);\
 		}\
 	}
+
+/*
+ * Define the options for a memory dump.  These may be or'ed together.
+ */
+typedef enum {
+     dump_do_default = 0,	/* pro forma */
+     dump_do_strings = 1,
+     dump_do_type_addresses = 2,
+     dump_do_no_types = 4,
+     dump_do_pointers = 8,
+     dump_do_pointed_strings = 16,	/* only if do_pointers also set */
+     dump_do_contents = 32,
+     dump_do_marks = 64
+} dump_options_t;
+
+/*
+ * Define all the parameters controlling what gets dumped.
+ */
+typedef struct dump_control_s {
+     dump_options_t options;
+     const byte *bottom;
+     const byte *top;
+} dump_control_t;
+
 #else
 #  define END_OBJECTS_SCAN END_OBJECTS_SCAN_INCOMPLETE
 #endif
