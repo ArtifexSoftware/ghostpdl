@@ -99,6 +99,7 @@ then
                     fi
                 done
                 cp $NEWS_FILE.tmp $NEWS_FILE
+                rm $NEWS_FILE.tmp
             fi # merge logs - yes
         fi # LOG not null case.
         # back to release directory and continue.
