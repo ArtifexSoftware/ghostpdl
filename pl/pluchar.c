@@ -1179,6 +1179,16 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
         return gs_no_glyph;
 }
 
+/* unfortunately we have to maintain a global buffer to store the byte
+   swapped data to pass to the UFST.  The legacy UFST code does not
+   intelligently handle big endian vs. little endian data.  The big
+   endian pcl font header and character data is swapped to little
+   endian format on little endian architectures.  The pcl component
+   expects header data to be in the documented format, thus on little
+   endian platforms. */
+
+UB8 global_font_header_buffer[512];
+
 /*
  * Set the current UFST font to be a TrueType font.
  */
@@ -1189,8 +1199,9 @@ pl_set_tt_font(
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
-    pfc->font_hdr = (LPUB8)plfont->header;
+    pl_init_fc(plfont, pgs, need_outline, pfc,
+               /* width request iff */ pgs == NULL);
+    pfc->font_hdr = plfont->header;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_TT_TYPE;
     return pl_set_ufst_font(plfont, pfc);
 }
@@ -1199,12 +1210,32 @@ pl_set_tt_font(
 private int
 pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {
-    FONTCONTEXT fc;
+    gs_font *pfont = plfont->pfont;
+    gs_char chr = char_code;
+    gs_glyph unused_glyph = gs_no_glyph;
+    gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
+    int code;
+    float sbw[4];
+	
+    pwidth->x = pwidth->y = 0;
 
-    if (pl_set_tt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
-        return 0;
-    else
-        return pl_ufst_char_width(char_code, pgs, pwidth, &fc);
+    /* Check for a vertical substitute. */
+    if ( pfont->WMode & 1 ) {
+        gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
+        if ( vertical != gs_no_glyph )
+            glyph = vertical;
+    }
+
+    /* undefined character */
+    if ( glyph == 0xffff || glyph == gs_no_glyph )
+        return 1;
+
+    code = gs_type42_get_metrics((gs_font_type42 *)pfont, glyph, sbw);
+    if ( code < 0 )
+        return code;
+    /* character exists */
+    pwidth->x = sbw[2];
+    return 0;
 }
 
 /* Get metrics */
@@ -1229,7 +1260,6 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 
     if (plfont->scaling_technology == plfst_TrueType && plfont->large_sizes) {
         dprintf( "UFST configuration does not properly support TT large sizes yet\n");
-        return 0;
     }
     if ( pl_set_tt_font( pgs,
                          plfont,
@@ -1394,7 +1424,11 @@ pl_set_if_font(
     FONTCONTEXT *       pfc )
 {
     pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
-    pfc->font_hdr = (LPUB8)plfont->header;
+    memcpy(global_font_header_buffer, plfont->header, plfont->header_size);
+#if (BYTEORDER == LOHI)
+    PCLswapHdr(FSA global_font_header_buffer);
+#endif
+    pfc->font_hdr = &global_font_header_buffer;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_IF_TYPE;
     return pl_set_ufst_font(plfont, pfc);
 }
@@ -1407,8 +1441,6 @@ pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     const pl_font_t *   plfont = (const pl_font_t *)pfont->client_data;
     FONTCONTEXT         fc;
 
-    dprintf( "UFST plugins required for downloaded fonts\n" );
-    return 0;
     if ( pl_set_if_font( pgs,
                          plfont,
                          gs_show_in_charpath(penum),
@@ -1416,7 +1448,6 @@ pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
         return 0;
     return pl_ufst_make_char(penum, pgs, pfont, chr, &fc);
 }
-
 
 /* Get character existence and escapement for an Intellifont. */
 int
@@ -1426,7 +1457,53 @@ pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, 
 
     if (pl_set_if_font(NULL /* graphics state */, plfont, false, &fc) != 0)
         return 0;
-    return pl_ufst_char_width(char_code, pgs, pwidth, &fc);
+    {
+        const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
+	int wx;
+
+	if ( !pwidth )
+            return (cdata == 0 ? 1 : 0);
+	if ( cdata == 0 )
+            { pwidth->x = pwidth->y = 0;
+	    return 1;
+            }
+	switch ( cdata[3] )
+            {
+            case 3:		/* non-compound character */
+                cdata += 4;		/* skip PCL character header */
+                { 
+#if (BYTEORDER == LOHI)
+                    UW16 offset = *(UW16 *)(cdata + 2);
+#else
+                    UW16 offset = pl_get_uint16(cdata + 2);
+#endif
+                    
+                    const intelli_metrics_t *metrics =
+                      (const intelli_metrics_t *)(cdata + offset);
+                wx =
+#if (BYTEORDER == LOHI)
+                    *(SW16 *)(metrics->charEscapementBox[2]) -
+                    *(SW16 *)(metrics->charEscapementBox[0]);
+#else
+                    pl_get_int16(metrics->charEscapementBox[2]) -
+                    pl_get_int16(metrics->charEscapementBox[0]);
+#endif
+                }
+                break;
+            case 4:		/* compound character */
+#if (BYTEORDER == LOHI)
+                wx = *(SW16 *)(cdata + 4);
+#else
+                wx = pl_get_int16(cdata + 4);
+#endif
+                break;
+            default:		/* shouldn't happen */
+                pwidth->x = pwidth->y = 0;
+                return 0;
+            }
+	pwidth->x = (floatp)wx / 8782.0;
+	return 0;
+    }   
 }
 
 private int
@@ -1451,16 +1528,28 @@ pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code
     cdata += 4;
     
     {
+
+#if (BYTEORDER == LOHI)
+        UW16 offset = *(UW16 *)(cdata + 2);
+#else
+        UW16 offset = pl_get_uint16(cdata + 2);
+#endif
         const intelli_metrics_t *intelli_metrics =
-            (const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
+            (const intelli_metrics_t *)(cdata + offset);
 
         /* NB probably not right */
         /* never a vertical substitute, doesn't yet handle compound characters */
-        metrics[0] = (float)pl_get_int16(intelli_metrics->charSymbolBox[0]);
-        metrics[0] /= 8782.0;
-        if ( pl_intelli_char_width(plfont, pgs, char_code, &width) )
-            metrics[2] = width.x;
-        return 0;
+        {
+#if (BYTEORDER == LOHI)
+            metrics[0] = (float)*(SW16 *)(intelli_metrics->charSymbolBox[0]);
+#else
+            metrics[0] = (float)pl_get_int16(intelli_metrics->charSymbolBox[0]);
+#endif
+            metrics[0] /= 8782.0;
+            if ( pl_intelli_char_width(plfont, pgs, char_code, &width) )
+                metrics[2] = width.x;
+            return 0;
+        }
     }
 }
 
@@ -1567,8 +1656,7 @@ PCLchId2ptr(UW16 chId)
             return NULL;    /* something wrong */
         chId = ptcg->glyph;
     }
-
-    return (LPUB8)(pl_font_lookup_glyph(plfont, chId)->data);
+    return (LPUB8)pl_font_lookup_glyph(plfont, chId)->data;
 }
 
 /*
@@ -1837,6 +1925,11 @@ fg:     pfg = pl_font_lookup_glyph(plfont, key);
             ptcg->glyph = key;
           }
         pfg->glyph = key;
+        /* swap data for intellifont downloaded fonts */
+#if (BYTEORDER == LOHI)
+        if ( plfont->scaling_technology == plfst_Intellifont )
+            PCLswapChar(FSA cdata);
+#endif
         pfg->data = cdata;
         return 0;
 }

@@ -159,6 +159,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	plfont->large_sizes = src->large_sizes;
 	plfont->resolution = src->resolution;
 	plfont->params = src->params;
+        plfont->pts_per_inch = src->pts_per_inch;
 	plfont->font_file_loaded = src->font_file_loaded;
 	plfont->landscape = src->landscape;
 	plfont->bold_fraction = src->bold_fraction;
