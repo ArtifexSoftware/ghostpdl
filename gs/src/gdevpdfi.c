@@ -318,9 +318,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    /* Undo the pop of the NI stack if necessary. */
 	    if (pnamed)
 		cos_array_add_object(pdev->NI_stack, COS_OBJECT(pnamed));
+	    /* stefan: using pdcolor instead of icolor, making the assumption
+	     * that raster code checks number of components and colorspace code doesn't
+	     */
 	    return pdf_begin_typed_image(pdev, pis, pmat,
 					 (gs_image_common_t *)&image[0].type1,
-					 prect, &icolor, pcpath, mem,
+					 prect, pdcolor, pcpath, mem,
 					 pinfo, context);
 	}
 	/* No luck.  Masked images require PDF 1.3 or higher. */
