@@ -179,7 +179,7 @@ hpgl_fill_in_stick_arc_font(gs_font_base *pfont, long unique_id)
 	pfont->ExactSize = fbit_use_outlines;
 	pfont->InBetweenSize = fbit_use_outlines;
 	pfont->TransformedChar = fbit_use_outlines;
-	pfont->procs.encode_char = hpgl_stick_arc_encode_char;
+	pfont->procs.encode_char = (void *)hpgl_stick_arc_encode_char; /* FIX ME (void *) */
 	/* p.y of the FontBBox is a guess, because of descenders. */
 	/* Because of descenders, we have no real idea what the */
 	/* FontBBox should be. */
@@ -196,7 +196,7 @@ hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
 	pfont->StrokeWidth = 22.5;
 #define plfont ((pl_font_t *)pfont->client_data)
-	pfont->procs.build_char = hpgl_stick_build_char;
+	pfont->procs.build_char = (void *)hpgl_stick_build_char; /* FIX ME (void *) */
 	plfont->char_width = hpgl_stick_char_width;
 #undef plfont
 }
@@ -205,7 +205,7 @@ hpgl_fill_in_arc_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
 	pfont->StrokeWidth = 0;  /* don't flatten arcs */
 #define plfont ((pl_font_t *)pfont->client_data)
-	pfont->procs.build_char = hpgl_arc_build_char;
+	pfont->procs.build_char = (void *)hpgl_arc_build_char; /* FIX ME (void *) */
 	plfont->char_width = hpgl_arc_char_width;
 #undef plfont
 }

@@ -691,7 +691,7 @@ hpgl_print_char(
 	/*
 	 * Patch the next-character procedure.
 	 */
-	pfont->procs.next_char_glyph = hpgl_next_char_proc;
+	pfont->procs.next_char_glyph = (void *)hpgl_next_char_proc; /* FIX ME (void *) */
 	gs_setfont(pgs, pfont);
 
 	/*
