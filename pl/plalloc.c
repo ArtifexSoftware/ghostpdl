@@ -510,12 +510,14 @@ const gs_malloc_memory_t pl_malloc_memory = {
     0  /* max used */
 };
 
+#ifndef PSI_INCLUDED
 /* retrun the c-heap manager set the global default as well. */
 private gs_memory_t *
 pl_malloc_init(void)
 {
     return (gs_memory_t *)&pl_malloc_memory;
 }
+#endif
 
 gs_memory_t *
 pl_alloc_init()
