@@ -813,13 +813,17 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * data before destruction. pdfwrite needs so.
      */
     if (minst->init_done >= 1) {
-	int code = interp_reclaim(&minst->i_ctx_p, avm_global);
+	int code;
 
-	if (code < 0) {
-	    eprintf1("ERROR %d reclaiming the memory while the interpreter finalization.\n", code);
-	    return e_Fatal;
+	if (idmemory->reclaim != 0) {
+	    code = interp_reclaim(&minst->i_ctx_p, avm_global);
+
+	    if (code < 0) {
+		eprintf1("ERROR %d reclaiming the memory while the interpreter finalization.\n", code);
+		return e_Fatal;
+	    }
+	    i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
 	}
-	i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
 
