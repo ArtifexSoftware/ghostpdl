@@ -22,6 +22,7 @@
 #include "pcfont.h"
 #include "pcfsel.h"
 #include "pjtop.h"
+#include "pllfont.h"
 
 /*
  * Decache the HMI after resetting the font.  According to TRM 5-22,
@@ -469,8 +470,11 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	switch (fontsource[0]) {
 	case 'I':
 	    /* NB what happens if pjl command is not I - hmmph? */
-	    if (!pcl_load_built_in_fonts(pcs,
-			pjl_proc_fontsource_to_path(pcs->pjls, fontsource))) {
+	    if (!pl_load_built_in_fonts(pjl_proc_fontsource_to_path(pcs->pjls, fontsource),
+					pcs->memory,
+					&pcs->built_in_fonts,
+					pcs->font_dir, (int)pcds_internal,
+					false /* do not use unicode font names for keys */ )) {
 		if ( pcs->personality == rtl )
 		    /* rtl doesn't use fonts */
 		    return 0;
@@ -487,8 +491,10 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	    break;
 	    /* NB we incorrectly treat C, C1, C2... as one collective resource */
 	case 'C':
-	    if ( !pcl_load_cartridge_fonts(pcs,
-					   pjl_proc_fontsource_to_path(pcs->pjls, fontsource)) ) {
+	    if ( !pl_load_cartridge_fonts(pjl_proc_fontsource_to_path(pcs->pjls, fontsource),
+					  pcs->memory,
+					  &pcs->cartridge_fonts,
+					  pcs->font_dir, (int)pcds_all_cartridges)) {
 		pjl_proc_set_next_fontsource(pcs->pjls);
 		continue; /* try next resource */
 	    }
@@ -496,9 +502,11 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	    break;
 	    /* NB we incorrectly treat M, M1, M2... as one collective resource */
 	case 'M':
-	    if ( !pcl_load_simm_fonts(pcs,
-				      pjl_proc_fontsource_to_path(pcs->pjls, fontsource)) ) {
-		pjl_proc_set_next_fontsource(pcs->pjls);
+	    if ( !pl_load_simm_fonts(pjl_proc_fontsource_to_path(pcs->pjls, fontsource),
+				     pcs->memory,
+				     &pcs->simm_fonts,
+				     pcs->font_dir, (int)pcds_all_simms)) {
+
 		continue; /* try next resource */
 	    }
 	    pcl_data_storage = pcds_all_simms;
@@ -593,7 +601,11 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	pcs->font_dir = gs_font_dir_alloc(pcs->memory);
 	pl_dict_init(&pcs->built_in_fonts, pcs->memory, pl_free_font);
 	pl_dict_init(&pcs->soft_fonts, pcs->memory, pl_free_font);
+	pl_dict_init(&pcs->cartridge_fonts, pcs->memory, pl_free_font);
+	pl_dict_init(&pcs->simm_fonts, pcs->memory, pl_free_font);
 	pl_dict_set_parent(&pcs->soft_fonts, &pcs->built_in_fonts);
+	pl_dict_set_parent(&pcs->cartridge_fonts, &pcs->soft_fonts);
+	pl_dict_set_parent(&pcs->simm_fonts, &pcs->cartridge_fonts);
     }
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
 	int code = 0;
@@ -609,6 +621,9 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
     if ( type & pcl_reset_permanent ) {
 	pl_dict_release(&pcs->soft_fonts);
 	pl_dict_release(&pcs->built_in_fonts);
+	pl_dict_release(&pcs->cartridge_fonts);
+	pl_dict_release(&pcs->simm_fonts);
+
 	gx_purge_selected_cached_chars(pcs->font_dir,
 				       purge_all,
 				       (void *)NULL);
