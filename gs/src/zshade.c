@@ -277,13 +277,15 @@ build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     gs_shading_Fb_params_t params;
     int code;
     static const float default_Domain[4] = {0, 1, 0, 1};
+    ref *pmatrix;
 
     *(gs_shading_params_t *)&params = *pcommon;
     gs_make_identity(&params.Matrix);
     params.Function = 0;
     if ((code = dict_floats_param(op, "Domain", 4, params.Domain,
 				  default_Domain)) < 0 ||
-	(code = dict_matrix_param(op, "Matrix", &params.Matrix)) < 0 ||
+	(dict_find_string(op, "Matrix", &pmatrix) > 0 &&
+	 (code = read_matrix(pmatrix, &params.Matrix)) < 0) ||
 	(code = build_shading_function(i_ctx_p, op, &params.Function, 2, mem)) < 0 ||
 	(code = gs_shading_Fb_init(ppsh, &params, mem)) < 0
 	) {
