@@ -98,6 +98,26 @@
     return TT_Err_Ok;
   }
 
+/*******************************************************************
+ *
+ *  Function    :  Unset_CodeRange
+ *
+ *  Description :  Unsets the code range pointer.
+ *
+ *  Input  :  exec    target execution context
+ *
+ *  Output :  
+ *
+ *  Note   : The pointer must be unset after used to avoid pending pointers
+ *           while a garbager invokation.
+ *
+ *****************************************************************/
+
+  void  Unset_CodeRange( PExecution_Context  exec )
+  {
+    exec->code = 0;
+    exec->codeSize = 0;
+  }
 
 /*******************************************************************
  *
@@ -188,7 +208,7 @@
  *                                                                 *
  *******************************************************************/
 
-#define FREE(ptr) mem->free(mem, ptr, "ttobjs.c")
+#define FREE(ptr) { mem->free(mem, ptr, "ttobjs.c"); ptr = NULL; }
 #define ALLOC_ARRAY(ptr, count, type) !(ptr = mem->alloc_bytes(mem, (count) * sizeof(type), "ttobjs.c"))
 
 /*******************************************************************
@@ -200,7 +220,7 @@
  TT_Error  Context_Destroy( void*  _context )
  {
    PExecution_Context  exec = (PExecution_Context)_context;
-   ttfMemory *mem = exec->owner->font->memory;
+   ttfMemory *mem = exec->owner->font->ttf_memory;
 
    if ( !exec )
      return TT_Err_Ok;
@@ -250,7 +270,7 @@
    PExecution_Context  exec = (PExecution_Context)_context;
 
    PFace        face = (PFace)_face;
-   ttfMemory   *mem = face->font->memory;
+   ttfMemory   *mem = face->font->ttf_memory;
    TMaxProfile *maxp = &face->maxProfile;
    Int          n_points, n_twilight;
 
@@ -377,8 +397,19 @@
    Int  i;
 
 
-   for ( i = 0; i < MAX_CODE_RANGES; i++ )
+   for ( i = 0; i < MAX_CODE_RANGES; i++ ) {
      ins->codeRangeTable[i] = exec->codeRangeTable[i];
+     exec->codeRangeTable[i].Base = 0;
+     exec->codeRangeTable[i].Size = 0;
+   }
+   exec->numFDefs = 0;
+   exec->numIDefs = 0;
+   exec->FDefs    = 0;
+   exec->IDefs    = 0;
+   exec->cvtSize = 0;
+   exec->cvt     = 0;
+   exec->storeSize = 0;
+   exec->storage   = 0;
 
    return TT_Err_Ok;
  }
@@ -421,9 +452,11 @@
    exec->top     = 0;
    exec->callTop = 0;
 
-   if ( !debug )
-     return RunIns( exec );
-   else
+   if ( !debug ) {
+     error = RunIns( exec );
+     Unset_CodeRange(exec);    
+     return error;
+   } else
      return TT_Err_Ok;
  }
 
@@ -463,7 +496,7 @@
   TT_Error  Instance_Destroy( void* _instance )
   {
     PInstance  ins = (PInstance)_instance;
-    ttfMemory *mem = ins->owner->font->memory;
+    ttfMemory *mem = ins->owner->font->ttf_memory;
 
     if ( !_instance )
       return TT_Err_Ok;
@@ -503,7 +536,7 @@
   {
     PInstance ins  = (PInstance)_instance;
     PFace     face = (PFace)_face;
-    ttfMemory *mem = face->font->memory;
+    ttfMemory *mem = face->font->ttf_memory;
     PMaxProfile  maxp = &face->maxProfile;
     Int       i;
 
@@ -540,6 +573,9 @@
          ALLOC_ARRAY( ins->cvt, ins->cvtSize, Long )           ||
          ALLOC_ARRAY( ins->storage, ins->storeSize, Long )     )
       goto Fail_Memory;
+
+    memset (ins->FDefs, 0, ins->numFDefs * sizeof(TDefRecord));
+    memset (ins->IDefs, 0, ins->numIDefs * sizeof(TDefRecord));
 
     ins->GS = Default_GraphicsState;
 
@@ -621,6 +657,7 @@
         goto Fin;
 
       error = RunIns( exec );
+      Unset_CodeRange(exec);    
     }
     else
       error = TT_Err_Ok;
@@ -733,6 +770,7 @@
         goto Fin;
 
       error = RunIns( exec );
+      Unset_CodeRange(exec);    
     }
     else
       error = TT_Err_Ok;
@@ -771,7 +809,7 @@
 
   TT_Error  Face_Destroy( PFace face )
   {
-    ttfMemory *mem = face->font->memory;
+    ttfMemory *mem = face->font->ttf_memory;
     if ( !face )
       return TT_Err_Ok;
 

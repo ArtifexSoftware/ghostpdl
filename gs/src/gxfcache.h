@@ -80,10 +80,17 @@ struct cached_fm_pair_s {
 #endif
 };
 
+#if NEW_TT_INTERPRETER
+#define private_st_cached_fm_pair() /* in gxccman.c */\
+  gs_private_st_ptrs5(st_cached_fm_pair, cached_fm_pair,\
+    "cached_fm_pair", fm_pair_enum_ptrs, fm_pair_reloc_ptrs,\
+    font, UID.xvalues, xfont, ttf, ttr)
+#else
 #define private_st_cached_fm_pair() /* in gxccman.c */\
   gs_private_st_ptrs3(st_cached_fm_pair, cached_fm_pair,\
     "cached_fm_pair", fm_pair_enum_ptrs, fm_pair_reloc_ptrs,\
     font, UID.xvalues, xfont)
+#endif
 #define private_st_cached_fm_pair_elt()	/* in gxccman.c */\
   gs_private_st_element(st_cached_fm_pair_element, cached_fm_pair,\
     "cached_fm_pair[]", fm_pair_element_enum_ptrs, fm_pair_element_reloc_ptrs,\
@@ -142,6 +149,9 @@ struct cached_char_s {
 #define cc_depth(cc) ((cc)->cb_depth)
 #define cc_set_depth(cc, d) ((cc)->cb_depth = (d))
     cached_fm_pair *pair;
+#if NEW_TT_INTERPRETER
+    bool linked;
+#endif
 #define cc_pair(cc) ((cc)->pair)
 #define cc_set_pair_only(cc, p) ((cc)->pair = (p))
     gs_glyph code;		/* glyph code */
@@ -268,6 +278,11 @@ struct gs_font_dir_s {
 
     /* A table for converting glyphs to Unicode */
     void *glyph_to_unicode_table; /* closure data */
+
+#if NEW_TT_INTERPRETER
+    /* An allocator for extension structures */
+    gs_memory_t *memory;
+#endif
 };
 
 #define private_st_font_dir()	/* in gsfont.c */\

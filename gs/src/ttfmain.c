@@ -201,13 +201,13 @@ void ttfFont__init(ttfFont *this, ttfMemory *mem,
 		    void (*DebugPrint)(ttfFont *, const char *s, ...))
 {
     memset(this, 0, sizeof(*this));
-    this->memory = mem;
+    this->ttf_memory = mem;
     this->DebugRepaint = DebugRepaint;
     this->DebugPrint = DebugPrint;
 }
 
 void ttfFont__finit(ttfFont *this)
-{   ttfMemory *mem = this->memory;
+{   ttfMemory *mem = this->ttf_memory;
 
     if (this->exec)
 	Context_Destroy(this->exec);
@@ -233,7 +233,8 @@ void ttfFont__finit(ttfFont *this)
 }
 
 private bool ttfFont__ExpandContoursBuffer(ttfFont *this, int nStored, int nAddition)
-{   int n = ExpandBuffer(this->memory, (void **)&this->endPoints, this->nMaxContours, nStored, nAddition, sizeof(this->endPoints[0]));
+{   int n = ExpandBuffer(this->ttf_memory, (void **)&this->endPoints, this->nMaxContours, nStored, 
+			    nAddition, sizeof(this->endPoints[0]));
 
     if(!n)
 	return FALSE;
@@ -242,9 +243,12 @@ private bool ttfFont__ExpandContoursBuffer(ttfFont *this, int nStored, int nAddi
 }
 
 private bool ttfFont__ExpandPointsBuffer(ttfFont *this, int nStored, int nAddition)
-{   int n1 = ExpandBuffer(this->memory, (void **)&this->onCurve, this->nMaxPoints, nStored, nAddition, sizeof(this->onCurve[0]));
-    int n2 = ExpandBuffer(this->memory, (void **)&this->x, this->nMaxPoints, nStored, nAddition, sizeof(this->x[0]));
-    int n3 = ExpandBuffer(this->memory, (void **)&this->y, this->nMaxPoints, nStored, nAddition, sizeof(this->y[0]));
+{   int n1 = ExpandBuffer(this->ttf_memory, (void **)&this->onCurve, this->nMaxPoints, nStored, 
+				    nAddition, sizeof(this->onCurve[0]));
+    int n2 = ExpandBuffer(this->ttf_memory, (void **)&this->x, this->nMaxPoints, nStored, 
+				    nAddition, sizeof(this->x[0]));
+    int n3 = ExpandBuffer(this->ttf_memory, (void **)&this->y, this->nMaxPoints, nStored, 
+				    nAddition, sizeof(this->y[0]));
 
     if (!n1 || !n2 || !n3)
 	return FALSE;
@@ -324,13 +328,18 @@ FontError ttfFont__Open(ttfFont *this, ttfReader *r, unsigned int nTTC)
 	this->nLongMetricsVert = ttfReader__UShort(r);
     } else
 	this->nLongMetricsVert = 0;
-    this->x = (F26Dot6 *)this->memory->alloc_bytes(this->memory, (this->nMaxPoints + 2) * sizeof(*this->x), "ttfFont__Open");
-    this->y = (F26Dot6 *)this->memory->alloc_bytes(this->memory, (this->nMaxPoints + 2) * sizeof(*this->y), "ttfFont__Open");
-    this->onCurve = (byte *)this->memory->alloc_bytes(this->memory, (this->nMaxPoints + 2) * sizeof(*this->onCurve), "ttfFont__Open");
-    this->endPoints = (short *)this->memory->alloc_bytes(this->memory, this->nMaxContours * sizeof(*this->endPoints), "ttfFont__Open");
+    this->x = (F26Dot6 *)this->ttf_memory->alloc_bytes(this->ttf_memory, 
+			    (this->nMaxPoints + 2) * sizeof(*this->x), "ttfFont__Open");
+    this->y = (F26Dot6 *)this->ttf_memory->alloc_bytes(this->ttf_memory, 
+			    (this->nMaxPoints + 2) * sizeof(*this->y), "ttfFont__Open");
+    this->onCurve = (byte *)this->ttf_memory->alloc_bytes(this->ttf_memory, 
+			    (this->nMaxPoints + 2) * sizeof(*this->onCurve), "ttfFont__Open");
+    this->endPoints = (short *)this->ttf_memory->alloc_bytes(this->ttf_memory, 
+			    this->nMaxContours * sizeof(*this->endPoints), "ttfFont__Open");
     if(this->x==NULL || this->y==NULL || this->onCurve==NULL || this->endPoints==NULL)
 	return fMemoryError;
-    this->face = this->memory->alloc_struct(this->memory, (const ttfMemoryDescriptor *)&st_TFace, "ttfFont__Open");
+    this->face = this->ttf_memory->alloc_struct(this->ttf_memory, 
+			    (const ttfMemoryDescriptor *)&st_TFace, "ttfFont__Open");
     if (this->face==NULL)
 	return fMemoryError;
     memset(this->face, 0, sizeof(*this->face));
@@ -339,11 +348,13 @@ FontError ttfFont__Open(ttfFont *this, ttfReader *r, unsigned int nTTC)
     code = Face_Create(this->face);
     if (code)
 	return fMemoryError;
-    this->inst = this->memory->alloc_struct(this->memory, (const ttfMemoryDescriptor *)&st_TInstance, "ttfFont__Open");
+    this->inst = this->ttf_memory->alloc_struct(this->ttf_memory, 
+			    (const ttfMemoryDescriptor *)&st_TInstance, "ttfFont__Open");
     if (this->inst == NULL)
 	return fMemoryError;
     memset(this->inst, 0, sizeof(*this->inst));
-    this->exec = this->memory->alloc_struct(this->memory, (const ttfMemoryDescriptor *)&st_TExecution_Context, "ttfFont__Open");
+    this->exec = this->ttf_memory->alloc_struct(this->ttf_memory, 
+			    (const ttfMemoryDescriptor *)&st_TExecution_Context, "ttfFont__Open");
     if (this->exec==NULL)
 	return fMemoryError;
     memset(this->exec, 0, sizeof(*this->exec));
@@ -361,15 +372,14 @@ FontError ttfFont__Open(ttfFont *this, ttfReader *r, unsigned int nTTC)
     I.z = this->inst;
     code = TT_Set_Instance_CharSizes(I, shortToF26Dot6(this->nUnitsPerEm), shortToF26Dot6(this->nUnitsPerEm));
     /* Note : Free memory before checking the return code. */
-    this->memory->free(this->memory, this->exec->pts.touch, "ttfFont__Open");
+    this->ttf_memory->free(this->ttf_memory, this->exec->pts.touch, "ttfFont__Open");
     this->exec->pts.touch = NULL;
-    this->memory->free(this->memory, this->exec->pts.org_y, "ttfFont__Open");
+    this->ttf_memory->free(this->ttf_memory, this->exec->pts.org_y, "ttfFont__Open");
     this->exec->pts.org_y = NULL;
-    this->memory->free(this->memory, this->exec->pts.org_x, "ttfFont__Open");
+    this->ttf_memory->free(this->ttf_memory, this->exec->pts.org_x, "ttfFont__Open");
     this->exec->pts.org_x = NULL;
-    this->memory->free(this->memory, this->exec->pts.contours, "ttfFont__Open");
+    this->ttf_memory->free(this->ttf_memory, this->exec->pts.contours, "ttfFont__Open");
     this->exec->pts.contours = NULL;
-    Context_Save(this->exec, this->inst);
     this->inst->metrics  = this->exec->metrics;
     if (code == TT_Err_Invalid_Engine) {
 	this->patented = true;
@@ -639,7 +649,7 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	unsigned int n_ins;
 
 	gOutline->bCompound = TRUE;
-	usage = pFont->memory->alloc_bytes(pFont->memory, pFont->nMaxComponents * sizeof(ttfSubGlyphUsage), "ttfOutliner__BuildGlyphOutline");
+	usage = pFont->ttf_memory->alloc_bytes(pFont->ttf_memory, pFont->nMaxComponents * sizeof(ttfSubGlyphUsage), "ttfOutliner__BuildGlyphOutline");
 	if (usage == NULL) {
 	    error = fMemoryError; goto ex;
         }
@@ -918,7 +928,7 @@ errex:;
     error = fBadFontData;
 ex:;
     if (usage != NULL)
-	pFont->memory->free(pFont->memory, usage, "ttfOutliner__BuildGlyphOutline");
+	pFont->ttf_memory->free(pFont->ttf_memory, usage, "ttfOutliner__BuildGlyphOutline");
     r->ReleaseExtraGlyph(r, glyphIndex);
     return error;
 }

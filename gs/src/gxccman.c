@@ -132,6 +132,10 @@ gx_char_cache_init(register gs_font_dir * dir)
 	) {
 	pair->index = i;
 	fm_pair_init(pair);
+#if NEW_TT_INTERPRETER
+	pair->ttf = 0;
+	pair->ttr = 0;
+#endif
     }
 }
 
@@ -205,6 +209,8 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->xfont_tried = false;
     pair->xfont = 0;
 #if NEW_TT_INTERPRETER
+    pair->ttf = 0;
+    pair->ttr = 0;
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
 	int code; 
 
@@ -212,18 +218,15 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	    Do we here create pointers from global to local memory ?
 	    Maybe we should pass another allocator to the calls below.
 	 */
-	pair->ttr = gx_ttfReader__create(font->memory, (gs_font_type42 *)font);
+	pair->ttr = gx_ttfReader__create(dir->memory, (gs_font_type42 *)font);
 	if (!pair->ttr)
 	    return_error(gs_error_VMerror);
-	pair->ttf = ttfFont__create(font->memory);
+	pair->ttf = ttfFont__create(dir->memory);
 	if (!pair->ttf)
 	    return_error(gs_error_VMerror);
 	code = ttfFont__Open_aux(pair->ttf, &pair->ttr->super, (gs_font_type42 *)font);
 	if (code < 0)
 	    return code; /* fixme : propagate error. */
-    } else {
-	pair->ttf = 0;
-	pair->ttr = 0;
     }
 #endif
     pair->memory = 0;
@@ -481,6 +484,9 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     cc_set_pair_only(cc, 0);	/* not linked in yet */
     cc->id = gx_no_bitmap_id;
     cc->subpix_origin.x = cc->subpix_origin.y = 0;
+#if NEW_TT_INTERPRETER
+    cc->linked = false;
+#endif
 
     /* Open the cache device(s). */
 
@@ -521,9 +527,14 @@ gx_free_cached_char(gs_font_dir * dir, cached_char * cc)
 
     dir->ccache.chunks = cck;
     dir->ccache.cnext = (byte *) cc - cck->data;
+#if NEW_TT_INTERPRETER
+    if (cc->linked)
+	cc_pair(cc)->num_chars--;
+#else
     if (cc_pair(cc) != 0) {	/* might be allocated but not added to table yet */
 	cc_pair(cc)->num_chars--;
     }
+#endif
     if_debug2('k', "[k]freeing char 0x%lx, pair=0x%lx\n",
 	      (ulong) cc, (ulong) cc_pair(cc));
     gx_bits_cache_free((gx_bits_cache *) & dir->ccache, &cc->head, cck);
@@ -556,6 +567,7 @@ cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 	dir->ccache.table[chi] = cc;
 #if NEW_TT_INTERPRETER
 	assert(cc->pair == pair);
+	cc->linked = true;
 #endif
 	cc_set_pair(cc, pair);
 	pair->num_chars++;

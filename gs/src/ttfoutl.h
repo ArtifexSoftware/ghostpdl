@@ -115,7 +115,7 @@ struct ttfFont_s {
     TFace *face;
     TInstance *inst;
     TExecution_Context  *exec;
-    ttfMemory *memory;
+    ttfMemory *ttf_memory;
     void (*DebugRepaint)(ttfFont *);
     void (*DebugPrint)(ttfFont *, const char *s, ...);
 };

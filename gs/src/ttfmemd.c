@@ -136,7 +136,7 @@ ENUM_PTRS_BEGIN(ttfFont_enum_ptrs) return 0;
     ENUM_PTR(4, ttfFont, face);
     ENUM_PTR(5, ttfFont, inst);
     ENUM_PTR(6, ttfFont, exec);
-    ENUM_PTR(7, ttfFont, memory);
+    ENUM_PTR(7, ttfFont, ttf_memory);
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(ttfFont_reloc_ptrs, ttfFont *mptr)
@@ -147,7 +147,7 @@ private RELOC_PTRS_WITH(ttfFont_reloc_ptrs, ttfFont *mptr)
     RELOC_PTR(ttfFont, face);
     RELOC_PTR(ttfFont, inst);
     RELOC_PTR(ttfFont, exec);
-    RELOC_PTR(ttfFont, memory);
+    RELOC_PTR(ttfFont, ttf_memory);
     DISCARD(mptr);
 RELOC_PTRS_END
 

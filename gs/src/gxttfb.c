@@ -36,8 +36,14 @@ gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
 private 
 ENUM_PTRS_WITH(gx_ttfReader_enum_ptrs, gx_ttfReader *mptr)
     {
+	/* The field 'glyph_data' may contain pointers from global to local memory
+	   ( see a comment in gxttfb.h).
+	   They must be NULL when a garbager is invoked.
+	   Due to that we don't enumerate and don't relocate them.
 	if (index < 2 + ST_GLYPH_DATA_NUM_PTRS)
 	    return ENUM_USING(st_glyph_data, &mptr->glyph_data, sizeof(mptr->glyph_data), index - 2);
+	 */
+	DISCARD(mptr);
 	return 0;
     }
     ENUM_PTR(0, gx_ttfReader, pfont);
@@ -225,9 +231,8 @@ typedef struct gx_ttfMemory_s {
     gs_memory_t *memory;
 } gx_ttfMemory;
 
-gs_private_st_ptrs1(st_gx_ttfMemory, gx_ttfMemory, "gx_ttfMemory", 
-    gx_ttfMemory_enum_ptrs, gx_ttfMemory_reloc_ptrs, 
-    memory);
+gs_private_st_simple(st_gx_ttfMemory, gx_ttfMemory, "gx_ttfMemory");
+/* st_gx_ttfMemory::memory points to a root. */
 
 private void *gx_ttfMemory__alloc_bytes(ttfMemory *this, int size,  const char *cname)
 {
@@ -271,7 +276,7 @@ ttfFont *ttfFont__create(gs_memory_t *mem)
 }
 
 void ttfFont__destroy(ttfFont *this)
-{   ttfMemory *mem = this->memory;
+{   ttfMemory *mem = this->ttf_memory;
 
     ttfFont__finit(this);
     mem->free(mem, this, "ttfFont__destroy");

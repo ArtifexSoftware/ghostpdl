@@ -37,9 +37,18 @@ struct gx_ttfReader_s {
     int pos;
     bool error;
     int extra_glyph_index;
-    gs_glyph_data_t glyph_data;
     gs_font_type42 *pfont;
     gs_memory_t *memory;
+    gs_glyph_data_t glyph_data;
+    /*  When TT interpreter is invoked, a font and the TT interpreter instance
+	may use different memory allocators (local and global correspondingly).
+	Since we don't want to change Free Type function prototypes, 
+	we place the gx_ttfReader instance into the global memory,
+	to provide an access to it through TExecution_Context.
+	Due to that, the field 'glyph_data' may contain pointers from global 
+	to local memory. They must be NULL when a garbager is invoked.
+	We reset them whan the TT interpreter exits.
+     */
 };
 
 gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont);
