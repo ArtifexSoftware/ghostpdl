@@ -1,3 +1,7 @@
+Version 0.5 (2003 December 31)
+
+ * minor portability fix for cygwin
+
 Version 0.5 (2003 December 4)
 
  * compiler warning fixes
