@@ -106,8 +106,8 @@ def update_ghostscript():
 	
     os.unlink("%s/src/gscdef.c" % (HEAD_DIR,))
     
-    if os.system("date > " + CVS_LOG_STDOUT) != 0: return 1
-    if os.system("date > " + CVS_LOG_STDERR) != 0: return 1
+    if os.system("date >> " + CVS_LOG_STDOUT) != 0: return 1
+    if os.system("date >> " + CVS_LOG_STDERR) != 0: return 1
     if os.system("cvs update -Pd >> " + CVS_LOG_STDOUT + " 2>> " +
                  CVS_LOG_STDERR) != 0: return 1
     
