@@ -633,7 +633,7 @@ $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(P
 !if $(MAKEDLL)
 
 $(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)dwsetup.def
-	echo /DEF:$(PSSRC)dwsetup.def > $(PSGEN)dwsetup.rsp
+	echo /DEF:$(PSSRC)dwsetup.def /OUT:$(SETUP_XE) > $(PSGEN)dwsetup.rsp
 	echo $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj >> $(PSGEN)dwsetup.rsp
 	copy $(LIBCTR) $(PSGEN)dwsetup.tr
 	echo ole32.lib >> $(PSGEN)dwsetup.tr
@@ -643,7 +643,7 @@ $(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)
 	del $(PSGEN)dwsetup.tr
 
 $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def
-	echo /DEF:$(PSSRC)dwuninst.def > $(PSGEN)dwuninst.rsp
+	echo /DEF:$(PSSRC)dwuninst.def /OUT:$(UNINSTALL_XE) > $(PSGEN)dwuninst.rsp
 	echo $(PSOBJ)dwuninst.obj >> $(PSGEN)dwuninst.rsp
 	copy $(LIBCTR) $(PSGEN)dwuninst.tr
 	echo ole32.lib >> $(PSGEN)dwuninst.tr
