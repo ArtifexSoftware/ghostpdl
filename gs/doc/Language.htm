@@ -1765,6 +1765,9 @@ and <b><tt>PageSize</tt></b>.  The null device ignores attempts to set
 <b><tt>PageSize</tt></b>; its size is always <b><tt>[0&nbsp;0]</tt></b>.
 
 <p>
+It should be noted that calling <tt>setpagedevice</tt> with one of the above keys may reset the effects of any <b><tt>pdfmark</tt></b> commands up to that point. In particular this is true of HWResolution, a behavior that differs from Adobe Distiller.
+
+<p>
 For printers these are also defined:
 
 <dl>
