@@ -194,6 +194,10 @@ pdfdict begin
    pdfdict readonly pop		% can't do it any earlier than this
    15 dict begin
    /LocalResources 0 dict def
+   /Printed where { pop } {
+		% Guess whether the output device is a printer.
+     /Printed currentpagedevice /OutputFile known def
+   } ifelse
    /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
