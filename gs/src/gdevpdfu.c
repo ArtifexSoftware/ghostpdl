@@ -799,7 +799,7 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 		stream_puts(s, hex);
 		break;
 	    case 0:
-		stream_putc(s, '?');
+		stream_puts(s, "BnZr"); /* arbitrary */
 	}
     }
     return 0;
