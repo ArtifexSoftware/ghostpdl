@@ -504,7 +504,7 @@ set_default_entries(
 
     /* set the default widths; for the moment, this is 0.35 */
     for (i = start; i < start + num; i++)
-        pindexed->pen_widths[i] = 0.35;
+        pindexed->pen_widths[i] = 14.0;
 
     return 0;
 }
@@ -1054,8 +1054,8 @@ pcl_cs_indexed_build_special(
     }
 
     /* the latter are not strictly necessary */
-    pindexed->pen_widths[0] = 0.35;
-    pindexed->pen_widths[1] = 0.35;
+    pindexed->pen_widths[0] = 14.0;
+    pindexed->pen_widths[1] = 14.0;
 
     return 0;
 }
