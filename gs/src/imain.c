@@ -22,6 +22,7 @@
 #include "string_.h"
 /* Capture stdin/out/err before gs.h redefines them. */
 #include <stdio.h>
+#include <stdlib.h>
 private void
 set_stdfiles(FILE * stdfiles[3])
 {

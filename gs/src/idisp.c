@@ -35,6 +35,7 @@
 #include "gscdefs.h"
 #include "gsmemory.h"
 #include "gstypes.h"
+#include "gsdevice.h"
 #include "iref.h"
 #include "imain.h"
 #include "iminst.h"

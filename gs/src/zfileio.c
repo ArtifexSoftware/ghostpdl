@@ -651,8 +651,8 @@ zfilename(i_ctx_t *i_ctx_p)
 	return_error(e_VMerror);
     memcpy(str, fname.data, fname.size);
     push(1);			/* can't fail */
-    make_const_string(op - 1, 
-		      a_all | imemory_space(imemory), 
+    make_const_string( op - 1 , 
+		      a_all | imemory_space((const struct gs_ref_memory_s*) imemory), 
 		      fname.size, 
 		      str);
     make_true(op);
