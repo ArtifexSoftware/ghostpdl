@@ -143,8 +143,11 @@ px_set_char_matrix(px_state_t *pxs)
 	      switch ( pxgs->char_transforms[i] )
 		{
 		case pxct_rotate:
-		  if ( pxgs->char_angle != 0 )
-		    gs_matrix_rotate(&mat, pxgs->char_angle, &mat);
+		  if ( pxgs->char_angle != 0 || pxgs->writing_mode )
+		    gs_matrix_rotate(&mat, 
+				     pxgs->char_angle + 
+				     (90 * (pxgs->writing_mode)), 
+				     &mat);
 		  break;
 		case pxct_shear:
 		  if ( pxgs->char_shear.x != 0 || pxgs->char_shear.y != 0 )
@@ -276,133 +279,265 @@ private font_proc_next_char_glyph(px_next_char_16big);
 private font_proc_next_char_glyph(px_next_char_16little);
 int
 px_text(px_args_t *par, px_state_t *pxs, bool to_path)
-{	gs_memory_t *mem = pxs->memory;
-	gs_state *pgs = pxs->pgs;
-	px_gstate_t *pxgs = pxs->pxgs;
-	gs_text_enum_t *penum;
-	const px_value_t *pstr = par->pv[0];
-	int index_shift = (pstr->type & pxd_ubyte ? 0 : 1);
-	const char *str = (const char *)pstr->value.array.data;
-	uint len = pstr->value.array.size;
-	const px_value_t *pxdata = par->pv[1];
-	const px_value_t *pydata = par->pv[2];
-       	gs_matrix save_ctm;
-	gs_font *pfont = gs_currentfont(pgs);
-	font_proc_next_char_glyph((*save_next_char));
-	int code = 0;
+{
+    gs_memory_t *mem = pxs->memory;
+    gs_state *pgs = pxs->pgs;
+    px_gstate_t *pxgs = pxs->pxgs;
+    gs_text_enum_t *penum;
+    const px_value_t *pstr = par->pv[0];
+    int index_shift = (pstr->type & pxd_ubyte ? 0 : 1);
+    const char *str = (const char *)pstr->value.array.data;
+    uint len = pstr->value.array.size;
+    const px_value_t *pxdata = par->pv[1];
+    const px_value_t *pydata = par->pv[2];
+    gs_matrix save_ctm;
+    gs_font *pfont = gs_currentfont(pgs);
+    font_proc_next_char_glyph((*save_next_char));
+    int code = 0;
 
-	if ( pfont == 0 )
-	  return_error(errorNoCurrentFont);
-	save_next_char = pfont->procs.next_char_glyph;
+    if ( pfont == 0 )
+	return_error(errorNoCurrentFont);
+    save_next_char = pfont->procs.next_char_glyph;
 
-	if ( (pxdata != 0 && pxdata->value.array.size != len) ||
-	     (pydata != 0 && pydata->value.array.size != len)
-	   )
-	  return_error(errorIllegalArraySize);
-	if ( !pxgs->base_font )
-	  return_error(errorNoCurrentFont);
-	if ( !pxgs->char_matrix_set )
-	  { code = px_set_char_matrix(pxs);
-	    if ( code < 0 )
-	      return code;
-	  }
-	gs_currentmatrix(pgs, &save_ctm);
+    if ( (pxdata != 0 && pxdata->value.array.size != len) ||
+	 (pydata != 0 && pydata->value.array.size != len)
+	)
+	return_error(errorIllegalArraySize);
+    if ( !pxgs->base_font )
+	return_error(errorNoCurrentFont);
+    if ( !pxgs->char_matrix_set )
+    { code = px_set_char_matrix(pxs);
+    if ( code < 0 )
+	return code;
+    }
+    gs_currentmatrix(pgs, &save_ctm);
 
-	if ( pxgs->base_font->scaling_technology == plfst_bitmap )
-	  { /*
-	     * Bitmap fonts don't scale or rotate: the char_matrix is the
-	     * actual matrix to use, aside from translation.
-	     */
-	    gs_matrix mat;
-	    mat = pxgs->char_matrix;
-	    mat.tx = save_ctm.tx;
-	    mat.ty = save_ctm.ty;
-	    gs_setmatrix(pgs, &mat);
-	  }
-	else
+    if ( pxgs->base_font->scaling_technology == plfst_bitmap )
+    { /*
+       * Bitmap fonts don't scale or rotate: the char_matrix is the
+       * actual matrix to use, aside from translation.
+       */
+	gs_matrix mat;
+	mat = pxgs->char_matrix;
+	mat.tx = save_ctm.tx;
+	mat.ty = save_ctm.ty;
+	gs_setmatrix(pgs, &mat);
+    }
+    else
 #ifdef TRANSFORM_TEXT_AS_OBJECTS
 	/* Keep the current translation, but post-scale and rotate. */
-	{ gs_matrix tmat, rmat;
-	  tmat = pxs->initial_matrix;
-	  gs_matrix_rotate(&tmat, 90 * (int)pxs->orientation, &tmat);
-	  gs_matrix_multiply(&tmat, &pxgs->text_ctm, &tmat);
-	  gs_make_rotation(-90 * (int)pxs->orientation, &rmat);
-	  gs_matrix_multiply(&tmat, &rmat, &tmat);
-	  tmat.tx = save_ctm.tx;
-	  tmat.ty = save_ctm.ty;
-	  gs_setmatrix(pgs, &tmat);
-	}
+    { 
+	gs_matrix tmat, rmat;
+	tmat = pxs->initial_matrix;
+	gs_matrix_rotate(&tmat, 90 * (int)pxs->orientation, &tmat);
+	gs_matrix_multiply(&tmat, &pxgs->text_ctm, &tmat);
+	gs_make_rotation(-90 * (int)pxs->orientation, &rmat);
+	gs_matrix_multiply(&tmat, &rmat, &tmat);
+	tmat.tx = save_ctm.tx;
+	tmat.ty = save_ctm.ty;
+	gs_setmatrix(pgs, &tmat);
+    }
 #endif
 #ifdef POST_TRANSFORM_CHARS
-	{ gs_matrix cmat, mat;
-	  gs_currentmatrix(pgs, &cmat);
-	  gs_matrix_multiply(&cmat, &pxgs->char_matrix, &mat);
-	  gs_setmatrix(pgs, &mat);
-	}
+    {
+	gs_matrix cmat, mat;
+	gs_currentmatrix(pgs, &cmat);
+	gs_matrix_multiply(&cmat, &pxgs->char_matrix, &mat);
+	gs_setmatrix(pgs, &mat);
+    }
 #else
-	gs_concat(pgs, &pxgs->char_matrix);
+
+    gs_concat(pgs, &pxgs->char_matrix);
 #endif
-	/* set the writing mode */
-	if ( pxgs->writing_mode == eHorizontal )
-	    pfont->WMode = 0;
-	else /* vertical mode */
-	    pfont->WMode = 1;
-	pfont->procs.next_char_glyph =
-	  (!index_shift ? px_next_char_8 :
-	   pstr->type & pxd_big_endian ? px_next_char_16big :
-	   px_next_char_16little);
-	{
-	    pl_font_t *plfont = (pl_font_t *)pfont->client_data;
-	    plfont->bold_fraction = pxgs->char_bold_value * 1.625;
-	    /* we have to invalidate the cache for algorithmic bolding
-	       or vertical substitutes.  For the agfa scaler in
-	       particular there is no way of determining if the
-	       metrics are different resulting in false cache hits */
-	    if ( plfont->bold_fraction != 0 || pfont->WMode != 0 )
-                px_purge_character_cache(pxs);
-	}
-	if ( to_path )
-	  { /* TextPath */
-	    /*
-	     **** We really want a combination of charpath & kshow,
-	     **** maybe by adding flags to show*_init?
-	     * Lacking this, we have to add each character individually.
-	     */
-	    uint i;
-	    for ( i = 0; i < len; ++i )
-	      { gs_fixed_point origin, dist;
-		code = gx_path_current_point(pgs->path, &origin);
-		if ( code < 0 )
-		  break;
-		
-		code = gs_charpath_begin(pgs, str + (i << index_shift), 1, false,
-					 mem, &penum);
-		if ( code >= 0 )
-		    code = gs_text_process(penum);
-		gs_text_release(penum, "px_text");
-		if ( code != 0 )
-		    break;
+    /* set the writing mode */
+	
+    /* stefan NB
+     * writing mode is h or v; seems to only applies to two byte chars ?
+     * sub_mode is used to check for vert substitutions
+     * WMode is miss used to indicated vertical substitutions which is independent of rotation
+     */ 
+    if ( pxgs->char_sub_mode == eNoSubstitution ) 
+	pfont->WMode = 0;
+    else 
+	pfont->WMode = 1; // stefan foo causes ufst to crash
+    
+    pfont->procs.next_char_glyph =
+	(!index_shift ? px_next_char_8 :
+	 pstr->type & pxd_big_endian ? px_next_char_16big :
+	 px_next_char_16little);
+    {
+	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
+	plfont->bold_fraction = pxgs->char_bold_value * 1.625;
+	/* we have to invalidate the cache for algorithmic bolding
+	   or vertical substitutes.  For the agfa scaler in
+	   particular there is no way of determining if the
+	   metrics are different resulting in false cache hits */
+	if ( plfont->bold_fraction != 0 || pfont->WMode != 0 )
+	    px_purge_character_cache(pxs);
+    }
+    if ( to_path )
+    {   /* TextPath */
+	/*
+         **** We really want a combination of charpath & kshow,
+	 **** maybe by adding flags to show*_init?
+	 * Lacking this, we have to add each character individually.
+	 */
+	uint i;
+	int rotate = pxgs->writing_mode;
+	for ( i = 0; i < len; ++i )
+	{ 
+	    gs_fixed_point origin, dist;
+	    
+	    if ( rotate ) {
+		if ( pstr->type & pxd_ubyte ) { 
+		    pxgs->writing_mode = 0;	/* don't rotate 1 byte chars */
+		}
+		else {
+		    /* rotated 90 pre move to translate rotation point */
+		    int highbyte = pstr->type & pxd_big_endian ? 0 : 1;
+
+		    if ( (byte)str[i*2+highbyte] > 0 ) { 	
+			code = gx_path_current_point(pgs->path, &origin);	
+			if ( code < 0 )
+			    break;
+			gs_distance_transform2fixed((const gs_matrix_fixed *)&save_ctm,
+						    (pxdata ? real_elt(pxdata, i) : 0.0),
+						    (pydata ? real_elt(pydata, i) : 0.0),
+						    &dist);
+			code = gx_path_add_point(pgs->path,
+						 origin.x + dist.x, origin.y + dist.y);	
+			if ( code < 0 )
+			    break;
+			pxgs->writing_mode = 1;
+		    }
+		    else {   
+			code = gx_path_current_point(pgs->path, &origin);	
+			if ( code < 0 )
+			    break;
+			gs_distance_transform2fixed((const gs_matrix_fixed *)&save_ctm,
+						    (pxdata ? real_elt(pxdata, i) : 0.0),
+						    (pydata ? real_elt(pydata, i) : 0.0),
+						    &dist);
+			code = gx_path_add_point(pgs->path,
+						 origin.x + dist.x, origin.y + dist.y);	
+			if ( code < 0 )
+			    break;
+			pxgs->writing_mode = 0;
+		    }
+		}
+		pxgs->char_matrix_set = 0;
+		gs_setmatrix(pgs, &save_ctm);
+		code = px_set_char_matrix(pxs);
+		gs_concat(pgs, &pxgs->char_matrix);
+	    }
+	    code = gx_path_current_point(pgs->path, &origin);
+	    if ( code < 0 )
+		break;
+		  
+	    code = gs_charpath_begin(pgs, str + (i << index_shift), 1, false,
+				     mem, &penum);
+	    if ( code >= 0 )
+		code = gs_text_process(penum);
+	    gs_text_release(penum, "px_text");
+	    if ( code != 0 )
+		break;
+	    if (!rotate) {
 		/* We cheat here, knowing that gs_d_t2f doesn't actually */
 		/* require a gs_matrix_fixed but only a gs_matrix. */
 		gs_distance_transform2fixed((const gs_matrix_fixed *)&save_ctm,
-					(pxdata ? real_elt(pxdata, i) : 0.0),
-					(pydata ? real_elt(pydata, i) : 0.0),
-					&dist);
+					    (pxdata ? real_elt(pxdata, i) : 0.0),
+					    (pydata ? real_elt(pydata, i) : 0.0),
+					    &dist);
+		
 		code = gx_path_add_point(pgs->path,
 					 origin.x + dist.x, origin.y + dist.y);
 		if ( code < 0 )
-		  break;
-	      }
-	  }
-	else
-	  { /* Text */
-	    uint i;
-	    float *fvals = 0;
-	    if ( len > 0 ) {
-		fvals = (float *)gs_alloc_byte_array(mem, len, sizeof(float) * 2, "pxtext");
-		if ( fvals == 0 )
-		    return_error(errorInsufficientMemory);
+		    break;
 	    }
+	}
+	pxgs->writing_mode = rotate;
+    }
+    else
+    { /* Text */
+	uint i;
+	float *fvals = 0;
+	
+	if ( len > 0 ) {
+	    fvals = (float *)gs_alloc_byte_array(mem, len+1, sizeof(float) * 2, "pxtext");
+	    if ( fvals == 0 )
+		return_error(errorInsufficientMemory);
+	}
+	
+	if ( pxgs->writing_mode ) { /* rotated writing mode */
+	    /* hack: char origin is lower left corner, 
+	     * rotate 90 should have translation component, 
+	     * instead move before placement approximates this 
+	     */
+	    bool preMove = false;
+	    
+	    fvals[0] = fvals[1] = fvals[2] = fvals[3] = 0.0f;
+	    for ( i = 0; i < len; i++ ) { 
+		
+		gs_point device_distance;
+		gs_point font_distance;
+		gs_matrix current_mat;
+
+		if ( pstr->type & pxd_ubyte ) {
+		    if ( i == 0 ) {
+			preMove = false;
+		    }
+		    pxgs->writing_mode = 0;
+		}
+		else {
+		    int highbyte = pstr->type & pxd_big_endian ? 0 : 1;
+		    
+		    if ( (byte)str[i*2+highbyte] > 0 ) {
+			if ( i == 0 ) {
+			    preMove = true;
+			}
+			pxgs->writing_mode = 1;
+		    }
+		    else {   
+			if ( i == 0 ) 
+			    preMove = false;
+			pxgs->writing_mode = 0;
+		    }
+		}  
+		pxgs->char_matrix_set = 0;
+		gs_setmatrix(pgs, &save_ctm);
+		code = px_set_char_matrix(pxs);
+		gs_concat(pgs, &pxgs->char_matrix);
+		
+		gs_currentmatrix(pgs, &current_mat);
+		gs_distance_transform(pxdata ? real_elt(pxdata, i) : 0.0,
+				      pydata ? real_elt(pydata, i) : 0.0,
+				      &save_ctm,
+				      &device_distance);
+		gs_distance_transform_inverse(device_distance.x, 
+					      device_distance.y, 
+					      &current_mat, 
+					      &font_distance);
+		if (!preMove || font_distance.x || font_distance.y) {
+		    /* hack: preMove on last char of string with 0 escapement */
+		    fvals[0] = font_distance.x;
+		    fvals[1] = font_distance.y;
+		}
+		    
+		if ( preMove )
+		    gs_rmoveto(pxs->pgs, fvals[0], fvals[1]);
+		/* else post move using xyshow */
+		code = gs_xyshow_begin(pgs, &str[i*(index_shift+1)], 
+				       1, &fvals[2*preMove], &fvals[2*preMove], 
+				       2, mem, &penum);
+
+		    
+		if ( code >= 0 )
+		    code = gs_text_process(penum);
+		gs_text_release(penum, "pxtext");
+	    }
+	    pxgs->writing_mode = 1;
+	}
+	else {  /* horizontal text, show string at a time */
 	    for ( i = 0; i < len; i++ ) { 
 		/* NB this will not work in practice too slow */
 		gs_point device_distance;
@@ -413,22 +548,27 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 				      pydata ? real_elt(pydata, i) : 0.0,
 				      &save_ctm,
 				      &device_distance);
-		gs_distance_transform_inverse(device_distance.x, device_distance.y, 
-					      &current_mat, &font_distance);
+		gs_distance_transform_inverse(device_distance.x, 
+					      device_distance.y, 
+					      &current_mat, 
+					      &font_distance);
 		fvals[i * 2] = font_distance.x;
 		fvals[i * 2 + 1] = font_distance.y;
 	    }
-	    code = gs_xyshow_begin(pgs, str, len, fvals, fvals, len * 2, mem, &penum);
+	    code = gs_xyshow_begin(pgs, str, len, fvals, fvals, 
+				   len * 2, mem, &penum);
 	    if ( code >= 0 )
 		code = gs_text_process(penum);
 	    gs_text_release(penum, "pxtext");
-	    if ( fvals ) gs_free_object( mem, fvals, "pxtext" );
-	  }
-	gs_setmatrix(pgs, &save_ctm);
-	pfont->WMode = 0;
-	pfont->procs.next_char_glyph = save_next_char;
-	return (code == gs_error_invalidfont ?
-		gs_note_error(errorBadFontData) : code);
+	}
+	if ( fvals ) 
+	    gs_free_object( mem, fvals, "pxtext" );
+    }
+    gs_setmatrix(pgs, &save_ctm);
+    pfont->WMode = 0;
+    pfont->procs.next_char_glyph = save_next_char;
+    return (code == gs_error_invalidfont ?
+	    gs_note_error(errorBadFontData) : code);
 }
 /* Next-character procedures, with symbol mapping. */
 private gs_char
