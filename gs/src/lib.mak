@@ -1898,7 +1898,7 @@ $(GLOBJ)gxhint3.$(OBJ) : $(GLSRC)gxhint3.c $(GXERR)\
 
 $(GLOBJ)gxhintn.$(OBJ) : $(GLSRC)gxhintn.c $(GXERR)\
  $(gxfixed_h) $(gxarith_h) $(gstypes_h) $(gxmatrix_h)\
- $(gxop1_h) $(gxpath_h) $(gxhintn_h) $(gxfont_h) $(gxfont1_h) $(gxtype1_h)\
+ $(gxpath_h) $(gzpath_h) $(gxhintn_h) $(gxfont_h) $(gxfont1_h) $(gxtype1_h)\
  $(vdtrace_h)
 	$(GLCC) $(GLO_)gxhintn.$(OBJ) $(C_) $(GLSRC)gxhintn.c
 

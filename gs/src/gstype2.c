@@ -176,7 +176,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
     switch (pcis->init_done) {
 	case -1:
-	    NEW(t1_hinter__init(h, pcis->pis->memory));
+	    NEW(t1_hinter__init(h, pcis->path));
 	    break;
 	case 0:
 	    gs_type1_finish_init(pcis, &s);	/* sets sfc, ptx, pty, origin */
@@ -406,7 +406,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		if (code < 0)
 		    return code;
 		if (pcis->seac_accent < 0) {
-		    code = t1_hinter__endglyph(h, &s);
+		    code = t1_hinter__endglyph(h);
 		    if (code < 0)
 			return code;
 		}

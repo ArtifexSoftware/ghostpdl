@@ -25,10 +25,16 @@
 typedef struct gs_type1_data_s gs_type1_data;
 #endif
 
+#ifndef gx_path_DEFINED
+#  define gx_path_DEFINED
+typedef struct gx_path_s gx_path;
+#endif
+
+
 #define T1_MAX_STEM_SNAPS 12
 #define T1_MAX_ALIGNMENT_ZONES 6
 #define T1_MAX_CONTOURS 10
-#define T1_MAX_POLES (100 + T1_MAX_CONTOURS)
+#define T1_MAX_POLES (100 + T1_MAX_CONTOURS) /* Must be grater than 8 for 'flex'. */
 #define T1_MAX_HINTS 30
 
 typedef int int32;
@@ -101,12 +107,17 @@ typedef struct t1_hinter_s
     t1_glyph_space_coord orig_gx, orig_gy; /* glyph origin in glyph space */
     t1_glyph_space_coord subglyph_orig_gx, subglyph_orig_gy; /* glyph origin in glyph space */
     fixed orig_dx, orig_dy; /* glyph origin in device space */
+    fixed orig_ox, orig_oy; /* glyph origin in hinter space */
     t1_glyph_space_coord width_gx, width_gy; /* glyph space coords of the glyph origin */
     t1_glyph_space_coord cx, cy; /* current point */
     t1_glyph_space_coord bx, by; /* starting point of a contour */
     uint subpixels_x, subpixels_y; /* Number of subpixels in a pixel (by an axis) */
     bool transposed;
-    double BlueScale;
+    bool align_to_subpixels;
+    bool disable_hinting;
+    bool grid_fit_x, grid_fit_y;
+    bool charpath_flag;
+    bool path_opened;
     t1_glyph_space_coord blue_shift, blue_fuzz;
     t1_pole pole0[T1_MAX_POLES], *pole;
     t1_hint hint0[T1_MAX_HINTS], *hint;
@@ -128,9 +139,7 @@ typedef struct t1_hinter_s
     bool seac_flag;
     bool keep_stem_width;
     bool suppress_overshoots;
-    bool disable_hinting;
-    bool grid_fit_x, grid_fit_y;
-    bool charpath_flag;
+    double BlueScale;
     double font_size;
     double resolution;
     double heigt_transform_coef;
@@ -142,10 +151,11 @@ typedef struct t1_hinter_s
     int19 width_transform_coef_inv;
     int19 heigt_transform_coef_inv;
     t1_glyph_space_coord overshoot_threshold;
+    gx_path *output_path;
     gs_memory_t *memory;
 } t1_hinter;
 
-void t1_hinter__init(t1_hinter * this, gs_memory_t * mem);
+void t1_hinter__init(t1_hinter * this, gx_path *output_path);
 int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
 			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix,
 			fixed unit_x, fixed unit_y,
@@ -174,6 +184,6 @@ int  t1_hinter__hstem3(t1_hinter * this, fixed x0, fixed y1, fixed x2, fixed y3,
 int  t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, fixed y4, fixed y5);
 
 int  t1_hinter__endchar(t1_hinter * this, bool seac_flag);
-int  t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s);
+int  t1_hinter__endglyph(t1_hinter * this);
 
 #endif /* gxhintn_INCLUDED */
