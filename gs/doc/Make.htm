@@ -59,7 +59,7 @@
 <li><a href="#Mac_build">How to build Ghostscript from source (Mac version)</a>
 <ul>
 <li><a href="#MacOS">Traditional MacOS</a>
-<li><a href="#Rhapsody">Rhapsody OS</a>
+<li><a href="#MacOSX">MacOS X</a>
 </ul>
 <li><a href="#Unix_build">How to build Ghostscript from source (Unix version)</a>
 <ul>
@@ -173,8 +173,8 @@ Ghostscript</a>.  The authoritative distribution site for AFPL
 Ghostscript is
 
 <blockquote>
-<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/APFL/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/APFL/</a>gs###
+<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/" 
+class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/</a>gs###
 </blockquote>
 
 <p>
@@ -1346,6 +1346,22 @@ compiler from Intel's Software Performance Tools web site:
 <h3><a name="MacOS"></a>Traditional MacOS</h3>
 
 <p>
+The macintosh port is being revamped for the 7.0 release and will come out
+somewhat later than the other platforms. In the meantime, the last stable release of
+ghostscript for the classic enviromnent is version 5.50 available from
+
+<blockquote>
+<a href="ftp://ftp.cs.wisc.edu/pub/ghost/aladdin/mac/"
+ class="offsite">ftp://ftp.cs.wisc.edu/pub/ghost/aladdin/mac/</a>
+</blockquote>
+
+<p>
+There are also some experimental 6.x releases available in the 'test' directories
+on the same site.
+
+<!-- obsolete material commented out pending the macgs 7.0 release
+
+<p>
 There are additional Mac-specific source files in a distribution
 separate from the rest of Ghostscript.  In addition to the standard Ghostscript
 sources, you will need the following files:
@@ -1428,16 +1444,19 @@ Code Gen:
 <br>Level 3
 </tt></b></blockquote>
 
-<h3><a name="Rhapsody"></a>Rhapsody OS</h3>
+-->
+
+<h3><a name="MacOSX"></a>MacOS X</h3>
 
 <p>
-Currently, building with Rhapsody is only supported with non-display
+Currently, building on MacOS X/Darwin is only supported with non-display
 devices, such as <b><tt>pdfwrite</tt></b> for converting PostScript to PDF,
-raster file devices such as <b><tt>pbmraw</tt></b>, and printers.  For this
-environment, use <b><tt>unixansi.mak</tt></b> with these additional
+raster file devices such as <b><tt>png16m</tt></b>, and printers. You can
+generally use the unix-gcc or unixansi makefiles. For this
+environment, build with these additional
 definitions in the <b><tt>make</tt></b> command line: <b><tt>SYNC=nosync
-STDLIBS= DEVICE_DEVS=</tt></b> (yes, there is really just a space after the
-second and third '=').
+STDLIBS= DEVICE_DEVS= </tt></b> (yes, there is really just a space after the
+second and third '=') or modify the makefile to set them directly.
 
 <hr>
 
