@@ -371,6 +371,13 @@ AK=
 
 # Define the compilation rules and flags.
 
+# If you system has a 64 bit type you should pass it through
+# CCFLAGS to improve support for multiple colorants. e.g.:
+#     -DGX_COLOR_INDEX_TYPE='unsigned long long'
+# or use the autoconf build, which sets this automatically.
+# If you do not define a 64 bit type, there may be some warnings
+# about oversize shifts. It's a bug if these are not harmless.
+
 CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
