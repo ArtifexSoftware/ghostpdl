@@ -62,7 +62,6 @@ bindir = $(exec_prefix)/bin
 scriptdir = $(bindir)
 mandir = $(prefix)/man
 man1ext = 1
-man1dir = $(mandir)/man$(man1ext)
 datadir = $(prefix)/share
 gsdir = $(datadir)/ghostscript
 gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
