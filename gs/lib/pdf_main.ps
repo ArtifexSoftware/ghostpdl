@@ -998,7 +998,7 @@ end readonly def
       % (Adobe Tech Note 5407, sec 9.2)
       dup /Group knownoget {
 	1 index /CropBox knownoget not {
-	  1 index /MediaBox oget
+	  1 index /MediaBox pget pop
 	} if oforce_array .beginformgroup {
 	  showpagecontents
 	} .internalstopped {
