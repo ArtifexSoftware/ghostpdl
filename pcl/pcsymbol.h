@@ -1,4 +1,4 @@
-/* Copyr/* Portions Copyright (C) 2001 artofcode LLC.
+/* Portions Copyright (C) 2001 artofcode LLC.
    Portions Copyright (C) 1996, 2001 Artifex Software Inc.
    Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
    This software is based in part on the work of the Independent JPEG Group.
