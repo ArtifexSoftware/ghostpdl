@@ -105,7 +105,10 @@ jpeglib__h=$(GLGEN)jpeglib_.h
 
 # Miscellaneous
 
-gslibctx_h=$(std_h)
+gsio_h=$(GLSRC)gsio.h
+gxstdio_h=$(GLSRC)gxstdio.h $(gsio_h)
+gs_dll_call_h=$(GLSRC)gs_dll_call.h
+gslibctx_h=$(GLSRC)gslibctx.h $(std_h) $(gs_dll_call_h)
 gdebug_h=$(GLSRC)gdebug.h
 gsalloc_h=$(GLSRC)gsalloc.h
 gsargs_h=$(GLSRC)gsargs.h
@@ -113,7 +116,6 @@ gserror_h=$(GLSRC)gserror.h
 gserrors_h=$(GLSRC)gserrors.h
 gsexit_h=$(GLSRC)gsexit.h
 gsgc_h=$(GLSRC)gsgc.h
-gsio_h=$(GLSRC)gsio.h
 gsmalloc_h=$(GLSRC)gsmalloc.h
 gsmdebug_h=$(GLSRC)gsmdebug.h
 gsmemraw_h=$(GLSRC)gsmemraw.h
@@ -125,7 +127,6 @@ gsserial_h=$(GLSRC)gsserial.h
 gsstype_h=$(GLSRC)gsstype.h
 gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
  $(gserror_h) $(gsio_h) $(gsmemory_h) $(gstypes_h)
-gxstdio_h=$(GLSRC)gxstdio.h $(gsio_h)
 gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 # Out of order
 gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
