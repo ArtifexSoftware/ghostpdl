@@ -512,7 +512,7 @@ pdfdict begin
     { filtername filter }
   } {
     {		% Stack: parms stream filtername
-      2 index 0 get dup null eq { pop } { exch } ifelse filtername filter
+      2 index 0 oget dup null eq { pop } { exch } ifelse filtername filter
       exch dup length 1 sub 1 exch getinterval exch
     }
   } ifelse forall exch pop
