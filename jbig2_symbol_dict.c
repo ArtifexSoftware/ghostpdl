@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2001-2004 artofcode LLC.
+    Copyright (C) 2001-2005 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -361,7 +361,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		  } else {
 		      code = jbig2_arith_int_decode(IAAI, as, &REFAGGNINST);
 		  }
-		  if (code || REFAGGNINST <= 0)
+		  if (code || (int32_t)REFAGGNINST <= 0)
 		      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			"invalid number of symbols or OOB in aggregate glyph");
 
