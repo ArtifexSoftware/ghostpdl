@@ -115,7 +115,7 @@ proc maketars {} {
 
     file delete $agz $abz2 $Dir
     ln-s . $Dir
-    sh tar -chf ghostscript-$Dot.tar --exclude=\\*CVS\\* --exclude=\\*.mak.tcl $Dir/src $Dir/doc $Dir/lib $Dir/man $Dir/examples $Dir/toolbin
+    sh tar -chf ghostscript-$Dot.tar --exclude=\\*CVS\\* --exclude=\\*.mak.tcl $Dir/src $Dir/icclib $Dir/doc $Dir/lib $Dir/man $Dir/examples $Dir/toolbin
     file delete $Dir
     sh time bzip2 -c4 ghostscript-$Dot.tar > $abz2
     sh time gzip ghostscript-$Dot.tar
@@ -393,7 +393,7 @@ proc makewin {} {
     puts $out "cd $Dir"
     close $out
 
-    sh zip -q -l $atmp $asetup $Dir/src/* $Dir/man/* -x $Dir/\\*/CVS/ $Dir/\\*.mak.tcl
+    sh zip -q -l $atmp $asetup $Dir/src/* $Dir/icclib $Dir/man/* -x $Dir/\\*/CVS/ $Dir/\\*.mak.tcl
     sh zip -q -l -g $atmp $Dir/lib/* $Dir/doc/* $Dir/examples/* $Dir/toolbin/* -x $Dir/\\*/CVS/
     sh zip -q -l -r -g $atmp $Dir/jpeg $Dir/libpng $Dir/zlib
     
