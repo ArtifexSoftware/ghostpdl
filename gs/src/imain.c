@@ -742,6 +742,54 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 
 /* ------ Termination ------ */
 
+/* Get the names of temporary files.
+ * Each name is null terminated, and the last name is 
+ * terminated by a double null.
+ * We retrieve the names of temporary files just before
+ * the interpreter finishes, and then delete the files 
+ * after the interpreter has closed all files.
+ */
+private char *gs_main_tempnames(gs_main_instance *minst)
+{
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    ref *SAFETY;
+    ref *tempfiles;
+    ref keyval[2];	/* for key and value */
+    char *tempnames = NULL;
+    int i;
+    int idict;
+    int len = 0;
+    const byte *data = NULL;
+    uint size;
+    if (minst->init_done >= 2) {
+        if (dict_find_string(systemdict, "SAFETY", &SAFETY) <= 0 ||
+	    dict_find_string(SAFETY, "tempfiles", &tempfiles) <= 0)
+	    return NULL;
+	/* get lengths of temporary filenames */
+	idict = dict_first(tempfiles);
+	while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
+	    if (obj_string_data(&keyval[0], &data, &size) >= 0)
+		len += size + 1;
+	}
+	if (len != 0)
+	    tempnames = (char *)malloc(len+1);
+	if (tempnames) {
+	    memset(tempnames, 0, len+1);
+	    /* copy temporary filenames */
+	    idict = dict_first(tempfiles);
+	    i = 0;
+	    while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
+		if (obj_string_data(&keyval[0], &data, &size) >= 0) {
+		    memcpy(tempnames+i, (char *)data, size);
+		    i+= size;
+		    tempnames[i++] = '\0';
+		}
+	    }
+	}
+    }
+    return tempnames;
+}
+
 /* Free all resources and return. */
 void
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
@@ -749,12 +797,14 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
     int exit_code;
     ref error_object;
+    char *tempnames;
     /*
      * Previous versions of this code closed the devices in the
      * device list here.  Since these devices are now prototypes,
      * they cannot be opened, so they do not need to be closed;
      * alloc_restore_all will close dynamically allocated devices.
      */
+    tempnames = gs_main_tempnames(minst);
     /* Flush stdout and stderr */
     if (minst->init_done >= 2)
       gs_main_run_string(minst, 
@@ -779,6 +829,15 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     }
     minst->stdout_is_redirected = 0;
     minst->stdout_to_stderr = 0;
+    /* remove any temporary files, after ghostscript has closed files */
+    if (tempnames) {
+	char *p = tempnames;
+	while (*p) {
+	    unlink(p);
+	    p += strlen(p) + 1;
+	}
+	free(tempnames);
+    }
     gs_lib_finit(exit_status, code);
 }
 void
