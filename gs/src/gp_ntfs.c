@@ -52,7 +52,7 @@ int
 gp_setmode_binary(FILE * pfile, bool binary)
 {
     /* Use non-standard setmode & fileno fn's that all NT compilers offer */
-#ifdef __STDC__
+#if defined(__STDC__) && !defined(__WATCOMC__)
     int code = _setmode(_fileno(pfile), binary == 0 ? _O_TEXT : _O_BINARY);
 
 #else
