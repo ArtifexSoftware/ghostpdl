@@ -117,6 +117,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 	    }
 	}
 #ifdef DEBUG
+	if (gs_debug_c('b'))
+	    dprintf1("[b]image1 y=%d\n", y);
 	if (gs_debug_c('B')) {
 	    int i, n = width_spp;
 
