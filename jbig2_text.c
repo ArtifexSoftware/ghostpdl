@@ -332,9 +332,9 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         if ((params.SBREFINE) && !(params.SBRTEMPLATE))
           {
             sbrat[0] = segment_data[offset];
-            sbrat[0] = segment_data[offset + 1];
-            sbrat[0] = segment_data[offset + 2];
-            sbrat[0] = segment_data[offset + 3];
+            sbrat[1] = segment_data[offset + 1];
+            sbrat[2] = segment_data[offset + 2];
+            sbrat[3] = segment_data[offset + 3];
             offset += 4;
       }
     
