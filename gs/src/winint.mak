@@ -31,7 +31,7 @@ WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
 
 # Define the setup and install programs, which are only suitable
 # for the DLL build.
-!if $(MAKEDLL)
+!ifeq $(MAKEDLL) 1
 !ifndef SETUP_XE_NAME
 SETUP_XE_NAME=setupgs.exe
 !endif
@@ -133,7 +133,7 @@ $(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.cpp $(AK) $(dwdll_h) $(gsdll_h)
 
 # ---------------------- Setup and uninstall program ---------------------- #
 
-!if $(MAKEDLL)
+!ifeq $(MAKEDLL) 1
 
 # Modules for setup program
 
