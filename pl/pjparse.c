@@ -184,6 +184,13 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
     /* skip any whitespace if we need to.  */
     while((c = pst->line[pst->pos]) == ' ' || c == '\t') pst->pos++;
 
+    /* special case to allow = with no intevervening spaces between
+       lhs and rhs */
+    if ( c == '=' ) {
+	pst->pos++;
+	return EQUAL;
+    }
+
     /* set the starting position */
     start_pos = pst->pos;
 
@@ -196,6 +203,7 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 	  c != '\t' &&
 	  c != '\r' &&
 	  c != '\n' &&
+	  c != '=' &&
 	  c != '\0')
 	pst->pos++;
 
@@ -204,6 +212,7 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 	int slength = pst->pos - start_pos;
 	int i;
 
+	/* we allow = to special case for allowing 
 	/* token doesn't fit or is empty */
 	if (( slength > PJL_STRING_LENGTH) || slength == 0)
 	    return DONE;
