@@ -387,9 +387,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		          code = jbig2_arith_int_decode(IARDY, as, &RDY);
 		      }
 
-		      if (ID >= ninsyms+NSYMSDECODED)
-			return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+
+		      if (ID >= ninsyms+NSYMSDECODED) {
+			jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			  "refinement references unknown symbol %d", ID);
+			return NULL;
+		      }
    
 		      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 			"symbol is a refinement of id %d with the refinement applied at (%d,%d)",
