@@ -1,0 +1,27 @@
+/* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
+
+/*$RCSfile$ $Revision$ */
+/* Type 2 font utilities 2 */
+
+#ifndef ifont2_INCLUDED
+#  define ifont2_INCLUDED
+
+/* Declare the Type 2 interpreter. */
+extern charstring_interpret_proc(gs_type2_interpret);
+
+/* Default value of lenIV */
+#define DEFAULT_LENIV_2 (-1)
+
+/*
+ * Get the additional parameters for a Type 2 font (or FontType 2 FDArray
+ * entry in a CIDFontType 0 font), beyond those common to Type 1 and Type 2
+ * fonts.
+ */
+int type2_font_params(P3(const_os_ptr op, charstring_font_refs_t *pfr,
+			 gs_type1_data *pdata1));
+
+#endif /* ifont2_INCLUDED */
