@@ -71,6 +71,7 @@ typedef enum {
     eNoCompression = 0,
     eRLECompression,
     eJPEGCompression,		/* 2.0 */
+    eDeltaRowCompression,       /* 2.1 */
     pxeCompressMode_next
 } pxeCompressMode_t;
 
@@ -178,20 +179,27 @@ typedef enum {
     eJB4Paper,
     eJB5Paper,
     eB5Envelope,
+    eB5Paper,                   /* 2.1 */
     eJPostcard,
     eJDoublePostcard,
     eA5Paper,
     eA6Paper,			/* 2.0 */
     eJB6Paper,			/* 2.0 */
+    eJIS8K,                      /* 2.1 */
+    eJIS16K,                     /* 2.1 */
+    eJISExec,                    /* 2.1 */
+    eDefaultPaperSize = 96,     /* 2.1 */
     pxeMediaSize_next
-} pxeMediaSize_t;
+} pxeMediaSize_t;                              
 
 /*
  * Apply a macro (or procedure) to all known paper sizes.
  * The arguments are:
  *      media size code, resolution for width/height, width, height.
+ * NB - todo ( -1, -1, -1 ) see below.
  */
 #define px_enumerate_media(m)\
+  m(eDefaultPaperSize, -1, -1, -1)\
   m(eLetterPaper, 300, 2550, 3300)\
   m(eLegalPaper, 300, 2550, 5300)\
   m(eA4Paper, 300, 2480, 3507)\
@@ -202,7 +210,18 @@ typedef enum {
   m(eMonarchEnvelope, 300, 1162, 2250)\
   m(eC5Envelope, 300, 1913, 2704)\
   m(eDLEnvelope, 300, 1299, 2598)\
-  m(eB5Envelope, 300, 2078, 2952)
+  m(eJB4Paper, -1, -1, -1)\
+  m(eJB5Paper, -1, -1, -1)\
+  m(eB5Envelope, 300, 2078, 2952)\
+  m(eB5Paper, -1, -1, -1)\
+  m(eJPostcard,  -1, -1, -1)\
+  m(eJDoublePostcard, -1, -1, -1)\
+  m(eA5Paper,-1, -1, -1)\
+  m(eA6Paper,-1, -1, -1)\
+  m(eJB6Paper,-1, -1, -1)\
+  m(eJIS8K, -1, -1, -1)\
+  m(eJIS16K, -1, -1, -1)\
+  m(eJISExec, -1, -1, -1)
 
 typedef enum {
     eDefaultSource = 0,
@@ -212,7 +231,7 @@ typedef enum {
     eUpperCassette,
     eLowerCassette,
     eEnvelopeTray,
-    eThirdCassette,		/* 2.0 */
+    eThirdCassette,
     pxeMediaSource_next
 } pxeMediaSource_t;
 
@@ -227,6 +246,7 @@ typedef enum {
     eLandscapeOrientation,
     eReversePortrait,
     eReverseLandscape,
+    eDefaultOrientation, /* 2.1 */
     pxeOrientation_next
 } pxeOrientation_t;
 
@@ -254,4 +274,42 @@ typedef enum {
     pxeWritingMode_next
 } pxeWritingMode_t;		/* 2.0 */
 
+/* the following 4 enumerations are new with XL 3.0 */
+
+typedef enum {
+    eDisableAH = 0,   /* the documentation uses a eDisable here and in
+                         Trapping - add AH to avoid duplicate
+                         identifier. */
+    eEnableAH,
+    pxeAdaptive_Halftoning_next
+} pxeAdaptiveHalftone_t;
+
+typedef enum {
+    eHighLPI = 0,
+    eMediumLPI,
+    eLowLPI,
+    pxeeHalftoneMethod_next
+} pxeHalftoneMethod_t;
+
+typedef enum {
+    eDisableCT = 0,
+    eMax,
+    eNormal,
+    eLight,
+    pxeColorTrapping_next
+} pxeColorTrapping_t;
+
+typedef enum {
+    eTonerBlack = 0,
+    eProcessBlack,
+    pxeNeutralAxis_next
+} pxeNeutralAxis_t;
+
+typedef enum {
+    eNoTreatment = 0,
+    eScreenMatch,
+    eVivid,
+    pxeColorTreatment_next
+} pxeColorTreatment;
+    
 #endif /* gdevpxen_INCLUDED */

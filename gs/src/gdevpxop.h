@@ -45,7 +45,7 @@ typedef enum {
 /*5x */
     pxtReadFontHeader, pxtEndFontHeader, pxtBeginChar, pxtReadChar,
     pxtEndChar, pxtRemoveFont, pxtSetCharAttributes /*2.0 */ , pxt57,
-    pxt58, pxt59, pxt5a, pxtBeginStream,
+    pxtSetColorTreatment, pxt59, pxt5a, pxtBeginStream,
     pxtReadStream, pxtEndStream, pxtExecStream, pxtRemoveStream /*2.0 */ ,
 /*6x */
     pxtPopGS, pxtPushGS, pxtSetClipReplace, pxtSetBrushSource,
@@ -56,15 +56,15 @@ typedef enum {
     pxtSetLineDash, pxtSetLineCap, pxtSetLineJoin, pxtSetMiterLimit,
     pxtSetPageDefaultCTM, pxtSetPageOrigin, pxtSetPageRotation, pxtSetPageScale,
     pxtSetPaintTxMode, pxtSetPenSource, pxtSetPenWidth, pxtSetROP,
-    pxtSetSourceTxMode, pxtSetCharBoldValue, pxt7e, pxtSetClipMode,
+    pxtSetSourceTxMode, pxtSetCharBoldValue, pxtSetNeutralAxis, pxtSetClipMode,
 /*8x */
-    pxtSetPathToClip, pxtSetCharSubMode, pxt82, pxt83,
+    pxtSetPathToClip, pxtSetCharSubMode, pxtBeginUserDefinedLineCap, pxtEndUserDefinedLineCap,
     pxtCloseSubPath, pxtNewPath, pxtPaintPath, pxt87,
     pxt88, pxt89, pxt8a, pxt8b,
     pxt8c, pxt8d, pxt8e, pxt8f,
 /*9x */
-    pxt90, pxtArcPath, pxt92, pxtBezierPath,
-    pxt94, pxtBezierRelPath, pxtChord, pxtChordPath,
+    pxt90, pxtArcPath, pxtSetColorTrapping, pxtBezierPath,
+    pxtSetAdaptiveHalftoning, pxtBezierRelPath, pxtChord, pxtChordPath,
     pxtEllipse, pxtEllipsePath, pxt9a, pxtLinePath,
     pxt9c, pxtLineRelPath, pxtPie, pxtPiePath,
 /*ax */
@@ -76,7 +76,7 @@ typedef enum {
     pxtBeginImage, pxtReadImage, pxtEndImage, pxtBeginRastPattern,
     pxtReadRastPattern, pxtEndRastPattern, pxtBeginScan, pxtb7,
     pxtEndScan, pxtScanLineRel, pxtba, pxtbb,
-    pxtbc, pxtbd, pxtbe, pxtbf,
+    pxtbc, pxtbd, pxtbe, pxtPassthrough,
 /*cx */
     pxt_ubyte, pxt_uint16, pxt_uint32, pxt_sint16,
     pxt_sint32, pxt_real32, pxtc6, pxtc7,

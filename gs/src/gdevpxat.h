@@ -39,7 +39,11 @@ typedef enum {
     pxaCRGBMinMax,		/* 2.0 */
     pxaGammaGain,		/* 2.0 */
 
-    pxaDeviceMatrix = 33,
+    pxaAllObjectTypes = 29,     /* 3.0 */
+    pxaTextObjects,             /* 3.0 */
+    pxaVectorObjects,           /* 3.0 */
+    pxaRasterObjects,           /* 3.0 */
+    pxaDeviceMatrix,
     pxaDitherMatrixDataType,
     pxaDitherOrigin,
     pxaMediaDestination,
@@ -100,6 +104,8 @@ typedef enum {
 
     pxaNumberOfScanLines = 115,
 
+    pxaColorTreatment = 120,
+
     pxaCommentData = 129,
     pxaDataOrg,
 
@@ -127,8 +133,9 @@ typedef enum {
     pxaSymbolSet,
     pxaTextData,
     pxaCharSubModeArray,
-    pxaWritingMode,		/* 2.0 */
-
+    /* BACKWARD INCOMPATIBILITY pxaWritingMode (2.0) and
+       pxlPCLSelectFont (3.0) == 173 */
+    pxaPCLSelectFont,           /* 3.0 */
     pxaXSpacingData = 175,
     pxaYSpacingData,
     pxaCharBoldValue,
