@@ -23,6 +23,8 @@
 #include "gzstate.h"
 #include "gxdevcli.h"
 
+#define PUSH_TS 0
+
 /* ------ Transparency-related graphics state elements ------ */
 
 int
@@ -183,6 +185,7 @@ gs_current_transparency_type(const gs_state *pgs)
 gs_private_st_ptrs1(st_transparency_state, gs_transparency_state_t,
 		    "gs_transparency_state_t", transparency_state_enum_ptrs,
 		    transparency_state_reloc_ptrs, saved);
+#if PUSH_TS
 private int
 push_transparency_stack(gs_state *pgs, gs_transparency_state_type_t type,
 			client_name_t cname)
@@ -198,6 +201,7 @@ push_transparency_stack(gs_state *pgs, gs_transparency_state_type_t type,
     pgs->transparency_stack = pts;
     return 0;
 }
+#endif
 private void
 pop_transparency_stack(gs_state *pgs, client_name_t cname)
 {
@@ -245,7 +249,7 @@ gs_begin_transparency_group(gs_state *pgs,
 								   NULL, NULL);
     else
 	return 0;
-#if 0
+#if PUSH_TS
     return push_transparency_stack(pgs, TRANSPARENCY_STATE_Group,
 				   "gs_begin_transparency_group");
 #endif
@@ -304,7 +308,7 @@ gs_begin_transparency_mask(gs_state *pgs,
     else
 	return 0;
 	     
-#if 0
+#if PUSH_TS
     return push_transparency_stack(pgs, TRANSPARENCY_STATE_Mask,
 				   "gs_begin_transparency_group");
 #endif
