@@ -181,7 +181,7 @@ pxl_impl_characteristics(
 #define PXLBUILDDATE NULL
   static pl_interp_characteristics_t pxl_characteristics = {
     "PCLXL",
-    ") HP-PCL XL;1;1",
+    ") HP-PCL XL",
     "Artifex",
     PXLVERSION,
     PXLBUILDDATE,
