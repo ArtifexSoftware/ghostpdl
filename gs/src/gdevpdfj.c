@@ -128,15 +128,22 @@ pdf_put_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 	 * add the Mask entry to the main image stream (dictionary).
 	 */
 	/*const gs_image3_t *pim = (const gs_image3_t *)pic;*/
+
+	/* Masked images are only supported starting in PDF 1.3. */
+	if (pdev->CompatibilityLevel < 1.3)
+	    return_error(gs_error_rangecheck);
     }
 	break;
     case 4: {
 	const gs_image4_t *pim = (const gs_image4_t *)pic;
 	int num_components = gs_color_space_num_components(pcs);
-	cos_array_t *pca =
-	    cos_array_alloc(pdev, "pdf_put_image_values(mask)");
+	cos_array_t *pca;
 	int i;
     
+	/* Masked images are only supported starting in PDF 1.3. */
+	if (pdev->CompatibilityLevel < 1.3)
+	    return_error(gs_error_rangecheck);
+	pca = cos_array_alloc(pdev, "pdf_put_image_values(mask)");
 	if (pca == 0)
 	    return_error(gs_error_VMerror);
 	for (i = 0; i < num_components; ++i) {

@@ -221,8 +221,12 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     cos_stream_t *pcs_mask = 0;
     cos_value_t v;
     long pos;
-    int code = pdf_cs_Pattern_colored(pdev, &v);
+    int code;
 
+    /* Masked images are only supported starting in PDF 1.3. */
+    if (m_tile && pdev->CompatibilityLevel < 1.3)
+	return_error(gs_error_rangecheck);
+    code = pdf_cs_Pattern_colored(pdev, &v);
     if (code < 0)
 	return code;
     pdf_cspace_init_Device(&cs_Device, pdev->color_info.num_components);
