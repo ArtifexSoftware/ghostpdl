@@ -240,6 +240,12 @@ end
  { 3 -1 roll //.rfnstring cvs concatstrings exch copy
  } bind def
 
+% Define a procedure for making a packed array in local VM.
+/.localpackedarray {	% <obj1> ... <objn> <n> .localpackedarray <packedarray>
+  .currentglobal false .setglobal 1 index 2 add 1 roll
+  packedarray exch .setglobal
+} bind def
+
 % Define the Generic category.
 
 /Generic mark
@@ -249,6 +255,41 @@ end
 % We're still running in Level 1 mode, so dictionaries won't expand.
 % Leave room for the /Category entry.
 /Category null
+
+% Implement the body of Generic resourceforall for local, global, and
+% external cases.  'args' is [template proc scratch resdict].
+/.enumerateresource {	% <key> [- <proc> <scratch>] .enumerateresource -
+  1 index type dup /stringtype eq exch /nametype eq or {
+    exch 1 index 2 get cvs exch
+  } if
+	% Use .setstackprotect to prevent the stacks from being restored if
+	% an error occurs during execution of proc.
+  1 get false .setstackprotect exec true .setstackprotect
+} bind def
+/.localresourceforall {		% <key> <value> <args> .localr'forall -
+  exch pop
+  2 copy 0 get .stringmatch { .enumerateresource } { pop pop } ifelse
+} bind def
+/.globalresourceforall {	% <key> <value> <args> .globalr'forall -
+  exch pop
+  2 copy 0 get .stringmatch {
+    dup 3 get begin .LocalInstances end 2 index known not {
+      .enumerateresource
+    } if
+  } {
+    pop pop
+  } ifelse
+} bind def
+/.externalresourceforall {	% <filename> <len> <args> .externalr'forall -
+  3 1 roll 1 index length 1 index sub getinterval exch
+  dup 3 get begin .Instances .LocalInstances end
+		% Stack: key args insts localinsts
+  3 index known {
+    pop pop pop
+  } {
+    2 index known { pop pop } { .enumerateresource } ifelse
+  } ifelse
+} bind def
 
 /DefineResource
 	{ .CheckResource
@@ -317,45 +358,37 @@ end
 	   }
 	  ifelse
 	} bind
-/ResourceForAll
-	{	% **************** Doesn't present instance groups in
+/ResourceForAll {
+		% **************** Doesn't present instance groups in
 		% **************** the correct order yet.
 		% Construct a new procedure to hold the arguments.
-		% It must be in local VM to avoid a possible invalidaccess.
-	  .currentglobal 4 1 roll false .setglobal
-	  3 packedarray		% template, proc, scratch
-	  { exch pop	% stack contains: key, {template, proc, scratch}
-	    2 copy 0 get .stringmatch
-	     { 1 index type dup /stringtype eq exch /nametype eq or
-		{ 2 copy 2 get cvs
-		  exch 1 get 3 -1 roll pop
-		}
-		{ 1 get
-		}
-	       ifelse
-		% Prevent the stacks from being restored if an error occurs
-		% during execution of proc.
-	       false .setstackprotect exec true .setstackprotect
-	     }
-	     { pop pop
-	     }
-	    ifelse
-	  } /exec cvx 3 packedarray
-		% Stack: global? iterproc
+		% All objects constructed here must be in local VM to avoid
+		% a possible invalidaccess.
+	currentdict 4 .localpackedarray	% template, proc, scratch, resdict
+	//.localresourceforall {exec} 0 get 3 .localpackedarray
+		% Stack: iterproc
 		% We must pop the resource dictionary off the dict stack
 		% when doing the actual iteration, and restore it afterwards.
-	  exch {
-	    true .setglobal
-	  } {
-	    .LocalInstances length 0 ne {
+	.currentglobal not {
+	  .LocalInstances length 0 ne {
 		% We must do local instances, and do them first.
-	      .LocalInstances exch cvx /forall cvx 1 index cvlit
-	      currentdict end 3 .execn begin
-	    } if
-	  } ifelse
-	  .Instances exch cvx
-	  /forall cvx currentdict end 2 .execn begin
-	} bind
+	    .LocalInstances exch cvx {forall} 0 get 1 index cvlit
+	    currentdict end 3 .execn begin
+	  } if
+	} if
+		% Do global instances next.
+	0 get //.globalresourceforall {exec} 0 get 3 .localpackedarray
+	.Instances exch cvx {forall} 0 get 1 index cvlit
+	currentdict /ResourceFileName known {
+	  currentdict end 3 .execn begin
+		% Finally, do instances stored on files.
+	  dup 0 get 0 get 100 string ResourceFileName
+	  dup length 3 index 0 get length sub 3 -1 roll 0 get
+	  //.externalresourceforall {exec} 0 get 4 .localpackedarray cvx
+	  100 string {filenameforall} 0 get
+	} if
+	currentdict end 2 .execn begin
+} bind
 /ResourceFileName
 	{ /GenericResourceDir getsystemparam 
 	  Category .namestring concatstrings
