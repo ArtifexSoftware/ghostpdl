@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-2003 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-2004 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -109,12 +109,13 @@ GS_INIT=gs_init.ps
 
 # Choose generic configuration options.
 
-# Setting DEBUG=1 includes debugging features in the algorithm :
+# Setting DEBUG=1 includes debugging features in the build:
 # 1. It defines the C preprocessor symbol DEBUG. The latter includes
 #    tracing and self-validation code fragments into compilation.
-#    Particularly it compiles the handling of -Z and -T switches in Ghostscript.
-# 2. It compiles code fragments for the C stack overflow checks.
-# Code runs some slower and becomes some larger.
+#    Particularly it enables the -Z and -T switches in Ghostscript.
+# 2. It compiles code fragments for C stack overflow checks.
+# Code produced with this option is somewhat larger and runs 
+# somewhat slower.
 
 !ifndef DEBUG
 DEBUG=0
@@ -122,7 +123,7 @@ DEBUG=0
 
 # Setting TDEBUG=1 disables code optimization in the C compiler and
 # includes symbol table information for the debugger.
-# Code is substantially slower and larger.
+# Code is substantially larger and slower.
 
 # NOTE: The MSVC++ 5.0 compiler produces incorrect output code with TDEBUG=0.
 # Also MSVC 6 must be service pack >= 3 to prevent INTERNAL COMPILER ERROR
@@ -132,10 +133,11 @@ DEBUG=0
 TDEBUG=0
 !endif
 
-# Setting DEBUGSYM=1 is only useful with TDEBUG=0 for advanced developers.
-# It includes symbol table information for the debugger to the release build.
-# NOTE: The debug information generated for the optimized code may be
-# significantly misleading. For inadvanced MSVC users we recommend TDEBUG=1.
+# Setting DEBUGSYM=1 is only useful with TDEBUG=0 
+# This option is for advanced developers. It includes symbol table
+# information for the debugger with in an optimized (release) build.
+# NOTE: The debugging information generated for the optimized code may be
+# significantly misleading. For general MSVC users we recommend TDEBUG=1.
 
 !ifndef DEBUGSYM
 DEBUGSYM=0
