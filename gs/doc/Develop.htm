@@ -3595,6 +3595,12 @@ ordinary single-context usage: system VM, stable global VM, ordinary global
 VM, stable local VM, ordinary local VM.
 
 <p>
+The reason that we cannot simply allocate all stable objects in system VM is
+that their refs must still be tagged with the correct VM space number, so
+that the check against storing pointers from global VM to local VM can be
+enforced properly.
+
+<p>
 All PostScript objects are normally allocated with the non-stable
 allocators.  The stable allocators should be used with care, since using
 them can easily create dangling pointers: if storage allocated with a stable
