@@ -239,7 +239,9 @@ userdict /.pdfcvstring () put
 /.pdfcvsloop {		% -mark- values ... markname start step .pdfcvsloop
 			%   [values ... ctm markname]
    matrix currentmatrix .pdfcvs 4 1 roll
-   counttomark 1 add 2 roll ] 3 1 roll
+   counttomark 1 add 2 roll 
+   counttomark .localvmarray astore exch pop
+   3 1 roll
 			% Stack: values start step
    2 index length 3 sub { 2 copy 2 copy get .pdfcvs put pop } for
 } bind def
