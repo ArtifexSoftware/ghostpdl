@@ -21,6 +21,29 @@
 languagelevel 2 .setlanguagelevel
 currentglobal true setglobal
 
+%----------------ParseDecoding procset----------------------------
+
+/ParseDecoding <<
+
+/Parse    % <resource_name> <num_tokens> Parse -
+{ dict begin                                  % /ResName
+  0                                           % /ResName nCode
+  { currentfile token not {
+      exit
+    } if                                      % /ResName nCode token
+    dup type /integertype eq {                % /ResName nCode
+       exch pop
+    } {
+      1 index def                             % /ResName nCode
+    } ifelse
+  } loop                                      % /ResName nCode
+  pop                                         % /ResName
+  currentdict end /Decoding                   % /ResName <<inst>> /Decoding
+  defineresource pop
+} bind
+
+>> /ProcSet defineresource pop
+
 %----------------Decoding category----------------------------
 
 /Generic /Category findresource dup length dict copy
@@ -60,6 +83,7 @@ dup /InstanceType /dicttype put
 dup length 5 add dict begin
 
   /.Ranges 40 dict def % Key = CID/256, value = array of 256 integer codes.
+  //.Ranges /CIDCount 0 put
 
   /.StringToInt     % <string> .StringToInt <integer>
   { 0 exch { exch 8 bitshift add } forall
@@ -81,13 +105,17 @@ dup length 5 add dict begin
     counttomark 3 idiv {                    % (b) (e) I
       exch .StringToInt                     % (b) I e
       3 2 roll .StringToInt                 % I e b
-      % fixme : This code does't handle multidimentional CID ranges.
-      % fixme : optimize belov.
+      % Note : this code does't handle multidimentional CID ranges.
+      % fixme : optimize below.
       dup 3 2 roll exch sub 1 add           % I b d
       { 2 copy //.SetCouple exec            % I b
         1 add exch 1 add exch
       } repeat                              % I b
-      pop pop
+      pop                                   % I
+      dup //.Ranges /CIDCount get gt {      % I
+        dup //.Ranges exch /CIDCount exch put
+      } if                                  % I
+      pop
     } repeat
     pop % mark
   } bind def
@@ -106,6 +134,7 @@ dup length 5 add dict begin
   /.GetCIDDecoding         % - .GetCIDDEcoding <dict>
   { //.Ranges dup length dict copy
     //.Ranges //.PurgeDict exec
+    //.Ranges /CIDCount 0 put
   } bind def
 
 currentdict end
@@ -132,7 +161,7 @@ begin
     /GB1.GB2312      [ /GBK-EUC-H /GBK-EUC-V ]
     /GB1.Unicode     [ /Unicode-GB1-ATI ]
     /Japan1.ShiftJIS [ /90ms-RKSJ-H /90ms-RKSJ-V ]
-    /Japan1.Unicode  [ /Unicode-Japan1-ATI /UniJIS-UCS2-H ]
+    /Japan1.Unicode  [ /UniJIS-UCS2-H  /UniJIS-UCS2-V]
     /Japan2.ShiftJIS [ /90ms-RKSJ-H /90ms-RKSJ-V ]
     /Japan2.Unicode  [ /UniJoho-UCS2-H ]
     /Korea1.Johab    [ /KSC-Johab-V /KSC-Johab-H ]

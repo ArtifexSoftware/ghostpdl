@@ -100,18 +100,17 @@ struct FAPI_path_s {
     int (*closepath)(FAPI_path *);
 };
 
-typedef struct { /* 1bit/pixel only, rows are byte-aligned. */
-    void *p;
-    int width, height, line_step;
-} FAPI_raster;
-
 typedef struct FAPI_metrics_s {
     int bbox_x0, bbox_y0, bbox_x1, bbox_y1; /* design units */
     int escapement; /* design units */
-    int orig_x, orig_y; /* origin, 1/16s pixel */
     int em_x, em_y; /* design units */
-    FracInt esc_x, esc_y; /* escapement, device units */
 } FAPI_metrics;
+
+typedef struct { /* 1bit/pixel only, rows are byte-aligned. */
+    void *p;
+    int width, height, line_step;
+    int orig_x, orig_y; /* origin, 1/16s pixel */
+} FAPI_raster;
 
 #ifndef FAPI_server_DEFINED
 #define FAPI_server_DEFINED
@@ -125,12 +124,15 @@ struct FAPI_server_s {
     FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);
-    FAPI_retcode (*can_retrieve_char_by_name)(FAPI_server *server, FAPI_font *ff, int *result);
-    FAPI_retcode (*outline_char)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_path *p, FAPI_metrics *metrics);
-    FAPI_retcode (*get_char_width)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FracInt *wx, FracInt *wy);
+    FAPI_retcode (*get_font_proportional_feature)(FAPI_server *server, FAPI_font *ff, int subfont, bool *bProportional);
+    FAPI_retcode (*can_retrieve_char_by_name)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result);
+    //FAPI_retcode (*outline_char)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_path *p, FAPI_metrics *metrics);
+    FAPI_retcode (*get_char_width)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *escapement);
     FAPI_retcode (*get_char_raster_metrics)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics);
-    FAPI_retcode (*get_char_raster)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_raster *r);
-    FAPI_retcode (*release_char_raster)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c);
+    FAPI_retcode (*get_char_raster)(FAPI_server *server, FAPI_raster *r);
+    FAPI_retcode (*get_char_outline_metrics)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics);
+    FAPI_retcode (*get_char_outline)(FAPI_server *server, FAPI_path *p);
+    FAPI_retcode (*release_char_data)(FAPI_server *server);
     FAPI_retcode (*release_typeface)(FAPI_server *server, void *server_font_data);
     /*  Some people get confused with terms "font cache" and "character cache".
         "font cache" means a cache for scaled font objects, which mainly
@@ -150,9 +152,9 @@ struct FAPI_server_s {
         The server must cache scaled fonts, and close ones which were
         not in use during a long time.
     */
-    /*  With current version of UFST server, 
+    /*  Due to the interpreter fallback with CDevProc,
         get_char_raster_metrics leaves some data kept by the server,
-	so get_char_raster uses them and release_char_raster releases them.
+	so taht get_char_raster uses them and release_char_data releases them.
         Therefore calls from GS to these functions must not 
         interfer with different characters.
     */
