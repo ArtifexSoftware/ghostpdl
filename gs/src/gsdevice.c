@@ -647,6 +647,64 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 #undef COPY_PARAM
 
 /*
+ * Parse the output file name detecting and validating any %nnd format
+ * for inserting the page count.  If a format is present, store a pointer
+ * to its last character in *pfmt, otherwise store 0 there.
+ * Note that we assume devices have already been scanned, and any % must
+ * precede a valid format character.
+ *
+ * If there was a format, then return the max_width
+ */
+private int
+gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
+{
+    int code;
+    bool have_format = false, field = 0;
+    int width[2], int_width = sizeof(int) * 3, w = 0;
+    uint i;
+
+    /* Scan the file name for a format string, and validate it if present. */
+    width[0] = width[1] = 0;
+    for (i = 0; i < pfn->len; ++i)
+	if (pfn->fname[i] == '%') {
+	    if (i + 1 < pfn->len && pfn->fname[i + 1] == '%')
+		continue;
+	    if (have_format)	/* more than one % */
+		return_error(gs_error_undefinedfilename);
+	    have_format = true;
+	sw:
+	    if (++i == pfn->len)
+		return_error(gs_error_undefinedfilename);
+	    switch (pfn->fname[i]) {
+		case 'l':
+		    int_width = sizeof(long) * 3;
+		case ' ': case '#': case '+': case '-':
+		    goto sw;
+		case '.':
+		    if (field)
+			return_error(gs_error_undefinedfilename);
+		    field = 1;
+		    continue;
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+		    width[field] = width[field] * 10 + pfn->fname[i] - '0';
+		    goto sw;
+		case 'd': case 'i': case 'u': case 'o': case 'x': case 'X':
+		    *pfmt = &pfn->fname[i];
+		    continue;
+		default:
+		    return_error(gs_error_undefinedfilename);
+	    }
+	}
+    if (have_format) {
+	/* Calculate a conservative maximum width. */
+	w = max(width[0], width[1]);
+	w = max(w, int_width) + 5;
+    }
+    return w;
+}
+
+/*
  * Parse the output file name for a device, recognizing "-" and "|command",
  * and also detecting and validating any %nnd format for inserting the
  * page count.  If a format is present, store a pointer to its last
@@ -658,30 +716,27 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
 			  const char *fname, uint fnlen)
 {
     int code;
-    bool have_format = false, field = 0;
-    int width[2], int_width = sizeof(int) * 3, w = 0;
-    uint i;
+    int i;
 
     *pfmt = 0;
-    if (fnlen == 0) {		/* allow null name */
-	pfn->memory = 0;
-	pfn->iodev = NULL;
-	pfn->fname = 0;		/* irrelevant since length = 0 */
-	pfn->len = 0;
+    pfn->memory = 0;
+    pfn->iodev = NULL;
+    pfn->fname = NULL;		/* irrelevant since length = 0 */
+    pfn->len = 0;
+    if (fnlen == 0)  		/* allow null name */
 	return 0;
-    }
     /*
      * If the file name begins with a %, it might be either an IODevice
-     * or a %nnd format.  Distinguish the two by searching for a second %.
+     * or a %nnd format.  Check (carefully) for this case.
      */
-    if (fname[0] == '%' && !memchr(fname + 1, '%', fnlen - 1)) {
-	/* This is a file name starting with a format. */
-	pfn->memory = 0;
-	pfn->iodev = NULL;
-	pfn->fname = fname;
-	pfn->len = fnlen;
-    } else {
-	code = gs_parse_file_name(pfn, fname, fnlen);
+    code = gs_parse_file_name(pfn, fname, fnlen);
+    if (code < 0) {
+	if (fname[0] == '%') {
+	    /* not a recognized iodev -- may be a leading format descriptor */
+	    pfn->len = fnlen;
+	    pfn->fname = fname;
+	    code = gx_parse_output_format(pfn, pfmt);
+	} 
 	if (code < 0)
 	    return code;
     }
@@ -699,46 +754,11 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
     }
     if (!pfn->fname)
 	return 0;
-    /* Scan the file name for a format string, and validate it if present. */
-    width[0] = width[1] = 0;
-    for (i = 0; i < pfn->len; ++i)
-	if (pfn->fname[i] == '%') {
-	    if (i + 1 < pfn->len && pfn->fname[i + 1] == '%')
-		continue;
-	    if (have_format)	/* more than one % */
-		return_error(gs_error_rangecheck);
-	    have_format = true;
-	sw:
-	    if (++i == pfn->len)
-		return_error(gs_error_rangecheck);
-	    switch (pfn->fname[i]) {
-		case 'l':
-		    int_width = sizeof(long) * 3;
-		case ' ': case '#': case '+': case '-':
-		    goto sw;
-		case '.':
-		    if (field)
-			return_error(gs_error_rangecheck);
-		    field = 1;
-		    continue;
-		case '0': case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7': case '8': case '9':
-		    width[field] = width[field] * 10 + pfn->fname[i] - '0';
-		    goto sw;
-		case 'd': case 'i': case 'u': case 'o': case 'x': case 'X':
-		    *pfmt = &pfn->fname[i];
-		    continue;
-		default:
-		    return_error(gs_error_rangecheck);
-	    }
-	}
-    if (have_format) {
-	/* Calculate a conservative maximum width. */
-	w = max(width[0], width[1]);
-	w = max(w, int_width) + 5;
-    }
-    if (strlen(pfn->iodev->dname) + pfn->len + w >= gp_file_name_sizeof)
-	return_error(gs_error_rangecheck);
+    code = gx_parse_output_format(pfn, pfmt);
+    if (code < 0)
+        return code;
+    if (strlen(pfn->iodev->dname) + pfn->len + code >= gp_file_name_sizeof)
+	return_error(gs_error_undefinedfilename);
     return 0;
 }
 
