@@ -275,6 +275,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     int width, height;
     const gs_range_t *pranges = 0;
     const pdf_color_space_names_t *names;
+    bool convert_to_process_colors = false;
+    gs_color_space_index output_cspace_index = gs_color_space_index_DeviceGray;
 
     /*
      * Pop the image name from the NI stack.  We must do this, to keep the
@@ -509,8 +511,23 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	code = pdf_color_space(pdev, &cs_value, &pranges,
 				 image[0].pixel.ColorSpace,
 				 names, in_line);
-	if (code < 0)
-	    goto fail;
+	if (code < 0) {
+	    const char *sname;
+
+	    if (!PS2WRITE || !pdev->OrderResources)
+		goto fail;
+	    convert_to_process_colors = true;
+	    output_cspace_index = gs_color_space_index_DeviceGray;/*fixme : pdev->pcm_color_info_index*/
+	    switch (output_cspace_index) {
+		case gs_color_space_index_DeviceGray: sname = names->DeviceGray; break;
+		case gs_color_space_index_DeviceRGB:  sname = names->DeviceRGB;  break;
+		case gs_color_space_index_DeviceCMYK: sname = names->DeviceCMYK; break;
+		default:
+		    eprintf("Unsupported ProcessColorModel.");
+		    return_error(gs_error_undefined);
+	    }
+	    cos_c_string_value(&cs_value, sname);
+	}
     }
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 		    height, pnamed, in_line)) < 0 ||
@@ -532,6 +549,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 					  pmat, pis, true))) < 0
 	)
 	goto fail;
+    if (convert_to_process_colors) {
+	code = psdf_setup_image_colors_filter(&pie->writer.binary[0], 
+		    (gx_device_psdf *)pdev, &image[0].pixel, output_cspace_index);
+	if (code < 0)
+  	    goto fail;
+    }
     if (pie->writer.alt_writer_count > 1) {
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
         if (code)
@@ -546,6 +569,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    memset(pie->writer.binary + 2, 0, sizeof(pie->writer.binary[1]));
 	} else if (code)
 	    goto fail;
+	else if (convert_to_process_colors) {
+	    code = psdf_setup_image_colors_filter(&pie->writer.binary[1], 
+		    (gx_device_psdf *)pdev, &image[1].pixel, output_cspace_index);
+	    if (code < 0)
+  		goto fail;
+	}
     }
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
 	code = pdf_begin_image_data_decoded(pdev, num_components, pranges, i,

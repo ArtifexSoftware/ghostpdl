@@ -385,6 +385,11 @@ int psdf_setup_compression_chooser(psdf_binary_writer *pbw,
 int psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 	    int width, int height, int depth, int bits_per_sample, uint *MaskColor);
 
+/* Set up an image colors filter. */
+int psdf_setup_image_colors_filter(psdf_binary_writer *pbw, 
+	gx_device_psdf *pdev, gs_pixel_image_t * pim, 
+	gs_color_space_index output_cspace_index);
+
 /* ---------------- Symbolic data printing ---------------- */
 
 /* Backward compatibility definitions. */

@@ -1032,7 +1032,7 @@ s_image_to_mask_set_dimensions(stream_image_to_mask_state * ss,
     ss->bits_per_sample = bits_per_sample;
     ss->row_bits = bits_per_sample * depth * width;
     ss->raster = bitmap_raster(ss->row_bits);
-    ss->row_alignment_bytes = (ss->raster * 8 - ss->row_bits) / 8;
+    ss->row_alignment_bytes = 0; /* (ss->raster * 8 - ss->row_bits) / 8); */
     memcpy(ss->MaskColor, MaskColor, ss->depth * sizeof(MaskColor[0]) * 2);
 }
 
@@ -1051,7 +1051,7 @@ s_image_to_mask_process(stream_state * st, stream_cursor_read * pr,
 	    ss->input_bits_buffered = 0;
 	    ss->input_bits_buffer = 0; /* Just to simplify the debugging. */
 	    if (ss->output_bits_buffered) {
-		*(pw->ptr++) = ss->output_bits_buffer;
+		*(++pw->ptr) = ss->output_bits_buffer;
 		ss->output_bits_buffered = 0;
 		ss->output_bits_buffer = 0;
 	    }
@@ -1071,16 +1071,16 @@ s_image_to_mask_process(stream_state * st, stream_cursor_read * pr,
 	if (ss->input_bits_buffered < ss->bits_per_sample) {
 	    if (pr->ptr >= pr->limit)
 		break;
-	    ss->input_bits_buffer = (ss->input_bits_buffer << 8) | *pr->ptr;
+	    ss->input_bits_buffer = (ss->input_bits_buffer << 8) | *++pr->ptr;
 	    ss->input_bits_buffered += 8;
-	    pr->ptr++;
+	    /* fixme: delay shifting the input ptr until input_bits_buffer is cleaned. */
 	}
 	if (ss->input_bits_buffered >= ss->bits_per_sample) {
 	    uint w;
 
 	    ss->input_bits_buffered -= ss->bits_per_sample;
 	    ss->color[ss->input_component_index] = w = ss->input_bits_buffer >> ss->input_bits_buffered;
-	    ss->input_bits_buffer &= ~w << ss->input_bits_buffered;
+	    ss->input_bits_buffer &= ~(w << ss->input_bits_buffered);
 	    ss->input_component_index++;
 	    if (ss->input_component_index >= ss->depth) {
 		uint i, ii;
@@ -1089,12 +1089,11 @@ s_image_to_mask_process(stream_state * st, stream_cursor_read * pr,
 		    if (ss->color[i] < ss->MaskColor[ii] ||
 			ss->color[i] > ss->MaskColor[ii + 1])
 			break;
-		ss->output_bits_buffer <<= 1;
 		if (i < ss->depth)
-		    ss->output_bits_buffer |= 1;
+		    ss->output_bits_buffer |= 1 << (7 - ss->output_bits_buffered);
 		ss->output_bits_buffered++;
 		if (ss->output_bits_buffered == 8) {
-		    *(pw->ptr++) = ss->output_bits_buffer;
+		    *(++pw->ptr) = ss->output_bits_buffer;
 		    ss->output_bits_buffered = 0;
 		    ss->output_bits_buffer = 0;
 		}

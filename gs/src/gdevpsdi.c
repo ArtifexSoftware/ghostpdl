@@ -486,3 +486,55 @@ psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 		    width, height, depth, bits_per_sample, MaskColor);
     return 0;
 }
+
+/* Set up an image colors filter. */
+int
+psdf_setup_image_colors_filter(psdf_binary_writer *pbw, 
+			       gx_device_psdf *pdev, gs_pixel_image_t * pim, 
+			       gs_color_space_index output_cspace_index)
+{   /* fixme: currently it's a stub convertion to mask. */
+    int code;
+    extern_st(st_color_space);
+    gs_memory_t *mem = pdev->v_memory;
+    stream_state *ss = s_alloc_state(pdev->memory, s__image_to_mask_template.stype, 
+	"psdf_setup_image_to_mask_filter");
+    gs_color_space *cs;
+    uint MaskColor[] = {0,0,0,0,0,0,0,0,0};/* a stub. fixme: maybe insufficient components. */
+
+    if (ss == 0)
+	return_error(gs_error_VMerror);
+    pbw->memory = pdev->memory;
+    pbw->dev = pdev;
+    code = psdf_encode_binary(pbw, &s__image_to_mask_template, ss);
+    if (code < 0)
+	return code;
+    s_image_to_mask_set_dimensions((stream_image_to_mask_state *)ss, 
+		    pim->Width, pim->Height, 
+		    gs_color_space_num_components(pim->ColorSpace), 
+		    pim->BitsPerComponent, MaskColor);
+    pim->BitsPerComponent = 1; /* fixme */
+    cs = gs_alloc_struct(mem, gs_color_space, &st_color_space, 
+			    "psdf_setup_image_colors_filter");
+    if (cs == NULL)
+	return_error(gs_error_VMerror);
+    switch (output_cspace_index) {
+	case gs_color_space_index_DeviceGray:
+	    gs_cspace_init_DeviceGray(mem, cs); 
+	    break;
+	case gs_color_space_index_DeviceRGB:
+	    gs_cspace_init_DeviceRGB(mem, cs); 
+	    break;
+	case gs_color_space_index_DeviceCMYK:
+	    gs_cspace_init_DeviceCMYK(mem, cs); 
+	    break;
+	default:
+	    /* Notify the user and terminate.
+	       Don't emit rangecheck becuause it would fall back
+	       to a default implementation (rasterisation). 
+	     */
+	    eprintf("Unsupported ProcessColorModel");
+	    return_error(gs_error_undefined);
+    }
+    pim->ColorSpace = cs;
+    return 0;
+}

@@ -615,7 +615,7 @@ struct gx_device_pdf_s {
 
     /* Accessories */
     cos_dict_t *substream_Resources;     /* Substream resources */
-    int pcm_color_info_index;    /* Index to pcm_color_info. */
+    gs_color_space_index pcm_color_info_index; /* Index of the ProcessColorModel space. */
     bool skip_colors; /* Skip colors while a pattern/charproc accumulation. */
     bool AR4_save_bug; /* See pdf_put_uncolored_pattern */
     pdf_resource_t *font3; /* The owner of the accumulated charstring. */
