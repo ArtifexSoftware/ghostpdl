@@ -484,6 +484,8 @@ currentsystemparams
 
 % The following do not depend on the presence of setpagedevice.
 /buildtime 1 index /BuildTime get def
+% Also define /buildtime in systemdict because Adobe does so and some fonts use it as ID
+systemdict /buildtime dup load put
 /byteorder 1 index /ByteOrder get def
 /checkpassword { .checkpassword 0 gt } bind def
 dup /DoStartPage known
