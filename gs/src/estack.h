@@ -25,7 +25,7 @@
 #include "iestack.h"
 #include "icstate.h"		/* for access to exec_stack */
 
-/* There's only one exec stack right now.... */
+/* Define access to the cached current_file pointer. */
 #define esfile (iexec_stack.current_file)
 #define esfile_clear_cache() estack_clear_cache(&iexec_stack)
 #define esfile_set_cache(pref) estack_set_cache(&iexec_stack, pref)
@@ -40,33 +40,75 @@
 #define estop (e_stack.top)
 
 /*
- * The execution stack is used for three purposes:
+ * The execution stack holds several different kinds of objects (refs)
+ * related to executing PostScript code:
  *
  *      - Procedures being executed are held here.  They always have
  * type = t_array, t_mixedarray, or t_shortarray, with a_executable set.
  * More specifically, the e-stack holds the as yet unexecuted tail of the
  * procedure.
  *
- *      - if, ifelse, etc. push arguments to be executed here.
- * They may be any kind of object whatever.
+ *      - if, ifelse, etc. push arguments to be executed here.  They may be
+ * any kind of object whatever.  Similarly, looping operators (forall, for,
+ * etc.) push the procedure that is to be executed for each iteration.
  *
  *      - Control operators (filenameforall, for, repeat, loop, forall,
- * pathforall, run, stopped, ...) mark the stack by pushing whatever state
- * they need to save or keep track of and then an object with type = t_null,
- * attrs = a_executable, size = es_xxx (see below), and value.opproc = a
- * cleanup procedure that will get called whenever the execution stack is
- * about to get cut back beyond this point because of an error, stop, exit,
- * or quit.  (Executable null objects can't ever appear on the e-stack
- * otherwise: if a control operator pushes one, it gets popped immediately.)
- * The cleanup procedure is called with esp pointing just BELOW the mark,
- * i.e., the mark has already been popped.
+ * pathforall, run, stopped, ...) use continuations as described below.
  *
- * The loop operators also push whatever state they need,
- * followed by an operator object that handles continuing the loop.
+ * Note that there are many internal operators that need to use
+ * continuations -- for example, all the 'show' operators, since they may
+ * call out to BuildChar procedures.
+ */
+
+/*
+ * Because the Ghostscript architecture doesn't allow recursive calls to the
+ * interpreter, any operator that needs to call out to PostScript code (for
+ * example, the 'show' operators calling a BuildChar procedure, or setscreen
+ * sampling a spot function) must use a continuation -- an internal
+ * "operator" procedure that continues the logical thread of execution after
+ * the callout.  Operators needing to use continuations push the following
+ * onto the execution stack (from bottom to top):
  *
- * Note that there are many internal operators that need to be handled like
- * looping operators -- for example, all the 'show' operators, since they
- * may call out to BuildChar procedures.
+ *	- An e-stack mark -- an executable null that indicates the bottom of
+ *	the block associated with a callout.  (This should not be confused
+ *	with a PostScript mark, a ref of type t_mark on the operand stack.)
+ *	See make_mark_estack and push_mark_estack below.  The value.opproc
+ *	member of the e-stack mark contains a procedure to execute in case
+ *	the e-stack is stripped back beyond this point by a 'stop' or
+ *	'exit': see pop_estack in zcontrol.c for details.
+ *
+ *	- Any number of refs holding information that the continuation
+ *	operator needs -- i.e., the saved logical state of the thread of
+ *	execution.  For example, 'for' stores the procedure, the current
+ *	value, the increment, and the limit here.
+ *
+ *	- The continuation procedure itself -- the pseudo-operator to be
+ *	called after returns from the interpreter callout.  See
+ *	make_op_estack and push_op_estack below.
+ *
+ *	- The PostScript procedure for the interpreter to execute.
+ *
+ * The operator then returns o_push_estack, indicating to the interpreter
+ * that the operator has pushed information on the e-stack for the
+ * interpreter to process.
+ *
+ * When the interpreter finishes executing the PostScript procedure, it pops
+ * the next item off the e-stack, which is the continuation procedure.  When
+ * the continuation procedure gets control, the top of the e-stack (esp)
+ * points just below the continuation procedure slot -- i.e., to the topmost
+ * saved state item.  The continuation procedure normally pops all of the
+ * saved state, and the e-stack mark, and continues execution normally,
+ * eventually returning o_pop_estack to tell the interpreter that the
+ * "operator" has popped information off the e-stack.  (Loop operators do
+ * something a bit more efficient than popping the information and then
+ * pushing it again: refer to the examples in zcontrol.c for details.)
+ *
+ * Continuation procedures are called just like any other operator, so they
+ * can call each other, or be called from ordinary operator procedures, as
+ * long as the e-stack is in the right state.  The most complex example of
+ * this is probably the Type 1 character rendering code in zchar1.c, where
+ * continuation procedures either call each other directly or call out to
+ * the interpreter to execute optional PostScript procedures like CDevProc.
  */
 
 /* Macro for marking the execution stack */

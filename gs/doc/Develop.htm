@@ -54,6 +54,7 @@
 <ul>
 <li><a href="#Main_program">Main program</a>,
     <a href="#Data_structures">Data structures</a>,
+    <a href="#Stacks">Stacks</a>,
     <a href="#Interpreter_loop">Interpreter loop</a>,
     <a href="#Scanning_parsing">Scanning/parsing</a>,
     <a href="#Standard_operators">Standard operators</a>,
@@ -1876,11 +1877,13 @@ interpreter never implements PostScript recursion by C recursion.  This
 means that any C code that logically needs to call the interpreter must
 instead push a continuation (including all necessary state information) on
 the PostScript execution stack, followed by the PostScript object to be
-executed, and then <em>return</em> to the interpreter.  Unfortunately, since
-PostScript Level 2 introduces streams whose data source can be a PostScript
-procedure, any code that reads or writes stream data must be prepared to
-suspend itself, storing all necessary state in a continuation.  There are
-some places where this is extremely awkward, such as the scanner/parser.
+executed, and then <em>return</em> to the interpreter.  (See <a
+href="../src/estack.h">src/estack.h</a> for more details about
+continuations.)  Unfortunately, since PostScript Level 2 introduces streams
+whose data source can be a PostScript procedure, any code that reads or
+writes stream data must be prepared to suspend itself, storing all necessary
+state in a continuation.  There are some places where this is extremely
+awkward, such as the scanner/parser.
 
 <p>
 The use of continuations affects many places in the interpreter, and even
@@ -1973,21 +1976,6 @@ separately from the lookup cache information, so that in the future, most of
 the former can be compiled into the executable and shared or put in ROM.
 (This is not actually done yet.)
 
-<p>
-As mentioned above, each stack is allocated as a linked list of blocks.
-However, for reasonable performance, operators must normally be able to
-access their operands and produce their results using indexing rather than
-an access procedure.  This is implemented by ensuring that all the operands
-of an operator are in the topmost block of the stack, using guard entries
-that cause an internal error if the condition isn't met.  See <a
-href="../src/iostack.h">src/iostack.h</a> for more details.
-
-<dl>
-
-<dt>
-General data structures:
-<dd>
-
 <dl>
 
 <dt>
@@ -2015,15 +2003,28 @@ Names:
 <a href="../src/inames.h">src/inames.h</a>,
 <a href="../src/inamestr.h">src/inamestr.h</a>.
 
+</dl>
+
+<h4><a name="Stacks"></a>Stacks</h4>
+
+<p>
+As mentioned above, each stack is allocated as a linked list of blocks.
+However, for reasonable performance, operators must normally be able to
+access their operands and produce their results using indexing rather than
+an access procedure.  This is implemented by ensuring that all the operands
+of an operator are in the topmost block of the stack, using guard entries
+that cause an internal error if the condition isn't met.  See <a
+href="../src/iostack.h">src/iostack.h</a> for more details.
+
+<dl>
+
 <dt>
-Stacks:
+Generic stacks:
 <dd>
 <a href="../src/isdata.h">src/isdata.h</a>,
 <a href="../src/istack.c">src/istack.c</a>,
 <a href="../src/istack.h">src/istack.h</a>,
 <a href="../src/istkparm.h">src/istkparm.h</a>.
-
-</dl>
 
 <dt>
 Specific stacks:
@@ -2035,7 +2036,6 @@ Specific stacks:
 Dictionary stack:
 <dd>
 <a href="../src/dstack.h">src/dstack.h</a>,
-<a href="../src/estack.h">src/estack.h</a>,
 <a href="../src/iddstack.h">src/iddstack.h</a>,
 <a href="../src/idsdata.h">src/idsdata.h</a>,
 <a href="../src/idstack.c">src/idstack.c</a>,
@@ -2044,6 +2044,7 @@ Dictionary stack:
 <dt>
 Execution stack:
 <dd>
+<a href="../src/estack.h">src/estack.h</a>,
 <a href="../src/iesdata.h">src/iesdata.h</a>,
 <a href="../src/iestack.h">src/iestack.h</a>.
 
