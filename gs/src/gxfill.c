@@ -2029,7 +2029,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 	if (ll->x_list != NULL) {
 	    for (;;) {
 		fixed x1;
-		double sx; /* 'fixed' can overflow. */
+		double sx; /* 'fixed' can overflow. We operate 7-bytes integers. */
 		int k, n;
 
 		endp = ll->x_list;
@@ -2040,14 +2040,22 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 		if (alp == NULL)
 		    break;
 		x1 = endp->x_next;
-		sx = x1;
-		n = 1;
-		k = (endp->start.x == endp->end.x ? -1 : 1);
+		n = 0;
 		for (alp = endp->next; alp != NULL; alp = alp->next) {
 		     x = alp->x_next;
 		     if (x < x1) {
+			if (n == 0) {
+			    if (endp->diff.x == 0) {
+				k = -1;
+				sx = x1;
+			    } else {
+				k = 1 + (int)min(any_abs(endp->diff.y * 8.0 / endp->diff.x), 256.0);
+				sx = (double)x1 * k;
+			    }
+			    n = 1;
+			}
 			n++;
-			if (alp->start.x == alp->end.x) {
+			if (alp->diff.x == 0) {
 			    /* Vertical lines have a higher priority. */
 			    if (k <= -1) {
 				sx += x;
@@ -2057,8 +2065,10 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 				sx = x;
 			    }
 			} else if (k > 0) {
-			    sx += x;
-			    k++;
+			    int w = 1 + (int)min(any_abs(alp->diff.y * 8.0 / alp->diff.x), 256.0);
+
+			    sx += (double)x * w;
+			    k += w;
 			}
 		     } else {
 			if (n > 1) { 
@@ -2066,9 +2076,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 			    set_x_next(endp, alp, (fixed)((sx + k / 2) / k));
 			}
 			x1 = alp->x_next;
-			sx = x1;
-			k = 1;
-			n = 1;
+			n = 0;
 			endp = alp;
 		     }
 		}
