@@ -1,2 +1,13 @@
 Ghostscript PCL5e, PCL5c and PXL documentation is in doc/index.htm
 License is in Public.htm
+
+We encourage you to read the documentation and licence information but
+the software can be quickly built and installed on many unix systems
+by executing these commands.
+
+make
+make test
+make install
+
+`make test' will run the pcl6 interpreter with the X11 device in
+interactive mode.  You must press return after each page is displayed.
