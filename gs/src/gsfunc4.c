@@ -293,7 +293,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    vsp->value.f = ceil(vsp->value.f);
 	    continue;
 	case PtCr_cos:
-	    vsp->value.f = cos(vsp->value.f);
+	    vsp->value.f = gs_cos_degrees(vsp->value.f);
 	    continue;
 	case PtCr_cvi:
 	    vsp->value.i = (int)(vsp->value.f);
@@ -366,7 +366,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    vsp->value.f = floor(vsp->value.f + 0.5);
 	    continue;
 	case PtCr_sin:
-	    vsp->value.f = sin(vsp->value.f);
+	    vsp->value.f = gs_sin_degrees(vsp->value.f);
 	    continue;
 	case PtCr_sqrt:
 	    vsp->value.f = sqrt(vsp->value.f);
