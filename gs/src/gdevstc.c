@@ -2411,7 +2411,8 @@ stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
 
    c    =   stc_expand(sd,3,(color>>2)&0x3ff);
 
-   switch(color & 3) {
+   /* cast the 64 bit switch argument to work around broken HPUX 10 cc */
+   switch((int)(color & 3)) {
      case 0:
         m = stc_expand(sd,1,(color>>22) & 0x3ff);
         y = stc_expand(sd,2,(color>>12) & 0x3ff);
