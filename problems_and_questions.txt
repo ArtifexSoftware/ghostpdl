@@ -1,0 +1,24 @@
+? - question.
++ note.
+- problem or bug.
+
+
+? legality of calling Helvetica Helvetica?  font alias names.
+- GS_FONTPATH does not work have to set GS_LIB to font directory.
+- rename font files (.*)\.ttf -> $1
+- recompiled with compile inits off for debugging
+- command line option to specify init lib probably broken.
++ -Z# is useless because int control flow 
+- vintage of parameter setting code?
++ annoying - chess requires cheq.ps in the working directory.
++ GS_VERSION_MAJOR=7 GS_VERSION_MINOR=01 GS_VERSION_MINOR0=01
+- ridt91.ps never paints anything - showpage commented works on
+  regular gs.
+- Searches current directory before GS_LIB environment setting.
+- waterfal.ps broken - (landscape??).
+- alphabet - wrong colors in bmp devices, ppm crashes -Z@ error bad
+  output w/o -Z@.
+- more on ppm crashes above - in memory locking allocator - should get
+  rid of locking allocator this code.  happens after the show
+  pl_main_universe_dnit. - free call removed alphabet prints with gray back remove -Z@ black background
+- boldening of fonts will have to be integrated in order to do testing.
