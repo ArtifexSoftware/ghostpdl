@@ -335,6 +335,11 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 #else
 	gs_concat(pgs, &pxgs->char_matrix);
 #endif
+	/* set the writing mode */
+	if ( pxgs->writing_mode == eHorizontal )
+	    pfont->WMode = 0;
+	else /* vertical mode */
+	    pfont->WMode = 1;
 	pfont->procs.next_char_glyph =
 	  (!index_shift ? px_next_char_8 :
 	   pstr->type & pxd_big_endian ? px_next_char_16big :
