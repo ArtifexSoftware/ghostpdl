@@ -21,6 +21,7 @@
 #  define gxdevcli_INCLUDED
 
 #include "std.h"		/* for FILE */
+#include "stdint_.h"
 #include "gscompt.h"
 #include "gsdcolor.h"
 #include "gsmatrix.h"
@@ -186,7 +187,7 @@ typedef struct gx_device_anti_alias_info_s {
     int graphics_bits;		/* ditto */
 } gx_device_anti_alias_info;
 
-typedef long frac31; /* A fraction value in [-1,1]. 
+typedef int32_t frac31; /* A fraction value in [-1,1]. 
     Represents a color (in [0,1]) 
     or a color difference (in [-1,1]) in shadings. */
 

@@ -386,7 +386,7 @@ gxdcolor_h=$(GLSRC)gxdcolor.h\
  $(gscsel_h) $(gsdcolor_h) $(gsropt_h) $(gsstruct_h)
 gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
 gscssub_h=$(GLSRC)gscssub.h $(gscspace_h)
-gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h)\
+gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h) $(stdint__h)\
  $(gscompt_h) $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h)\
  $(gsrefct_h) $(gsropt_h) $(gsstruct_h) $(gstparam_h) $(gsxfont_h)\
  $(gxbitmap_h) $(gxcindex_h) $(gxcvalue_h) $(gxfixed_h)\
