@@ -403,6 +403,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 		   gs_memory_t *mem)
 {
     int code;
+    float *data = 0;
     ref *pDataSource;
 
     *pDecode = 0;
@@ -411,11 +412,9 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 	return_error(e_rangecheck);
     if (r_is_array(pDataSource)) {
 	uint size = r_size(pDataSource);
-	float *data =
-	    (float *)gs_alloc_byte_array(mem, size, sizeof(float),
-					 "build_mesh_shading");
-	int code;
 
+	data = (float *)gs_alloc_byte_array(mem, size, sizeof(float),
+					    "build_mesh_shading");
 	if (data == 0)
 	    return_error(e_VMerror);
 	code = float_params(pDataSource->value.refs + size - 1, size, data);
@@ -442,36 +441,44 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 	    default:
 		return_error(e_typecheck);
 	}
+    code = build_shading_function(i_ctx_p, op, pFunction, 1, mem);
+    if (code < 0) {
+	gs_free_object(mem, data, "build_mesh_shading");
+	return code;
+    }
     if (data_source_is_array(params->DataSource)) {
 	params->BitsPerCoordinate = 0;
 	params->BitsPerComponent = 0;
     } else {
-	int num_decode =
-	    4 + gs_color_space_num_components(params->ColorSpace) * 2;
+	int num_decode = 4 +
+	    (*pFunction != 0 ? 1 :
+	     gs_color_space_num_components(params->ColorSpace)) * 2;
 
-/****** FREE FLOAT ARRAY DATA ON ERROR ******/
 	if ((code = dict_int_param(op, "BitsPerCoordinate", 1, 32, 0,
-				   &params->BitsPerCoordinate)) < 0 ||
+				   &params->BitsPerCoordinate)) >= 0 &&
 	    (code = dict_int_param(op, "BitsPerComponent", 1, 16, 0,
-				   &params->BitsPerComponent)) < 0
-	    )
-	    return code;
-	*pDecode = (float *)
-	    gs_alloc_byte_array(mem, num_decode, sizeof(float),
-				"build_mesh_shading");
-	if (*pDecode == 0)
-	    return_error(e_VMerror);
-	code = dict_floats_param(op, "Decode", num_decode, *pDecode, NULL);
-	if (code < 0) {
-	    gs_free_object(mem, *pDecode, "build_mesh_shading");
-	    *pDecode = 0;
-	    return code;
+				   &params->BitsPerComponent)) >= 0
+	    ) {
+	    *pDecode = (float *)
+		gs_alloc_byte_array(mem, num_decode, sizeof(float),
+				    "build_mesh_shading");
+	    if (*pDecode == 0)
+		code = gs_note_error(e_VMerror);
+	    else {
+		code = dict_floats_param(op, "Decode", num_decode, *pDecode, NULL);
+		if (code < 0) {
+		    gs_free_object(mem, *pDecode, "build_mesh_shading");
+		    *pDecode = 0;
+		}
+	    }
 	}
     }
-    code = build_shading_function(i_ctx_p, op, pFunction, 1, mem);
     if (code < 0) {
-	gs_free_object(mem, *pDecode, "build_mesh_shading");
-	*pDecode = 0;
+	if (*pFunction != 0) {
+	    gs_function_free(*pFunction, true, mem);
+	    *pFunction = 0;
+	}
+	gs_free_object(mem, data, "build_mesh_shading");
     }
     return code;
 }
