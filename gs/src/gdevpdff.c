@@ -1068,24 +1068,11 @@ pdf_char_widths(pdf_font_t *ppf, int ch, gs_font *font,
 }
 
 /*
- * Get the widths (unmodified and possibly modified of a glyph in a (base)
+ * Get the widths (unmodified and possibly modified) of a glyph in a (base)
  * font.  Return 1 if the width was defaulted to MissingWidth.
  */
-private int
-store_glyph_width(int *pwidth, int wmode, double scale,
-		  const gs_glyph_info_t *pinfo)
-{
-    double w, v;
-
-    if (wmode && (w = pinfo->width[wmode].y) != 0)
-	v = pinfo->width[wmode].x;
-    else
-	w = pinfo->width[wmode].x, v = pinfo->width[wmode].y;
-    if (v != 0)
-	return_error(gs_error_rangecheck);
-    *pwidth = (int)(w * scale);
-    return 0;
-}
+private int store_glyph_width(int *pwidth, int wmode, double scale,
+			      const gs_glyph_info_t *pinfo);
 int
 pdf_glyph_widths(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 		 pdf_glyph_widths_t *pwidths)
@@ -1104,9 +1091,14 @@ pdf_glyph_widths(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 				       GLYPH_INFO_OUTLINE_WIDTHS,
 				       &info)) >= 0 &&
 	(code = store_glyph_width(&pwidths->Width, wmode, scale, &info)) >= 0 &&
-	(code = font->procs.glyph_info(font, glyph, NULL,
-				       GLYPH_INFO_WIDTH0 << wmode,
-				       &info)) >= 0 &&
+	(/*
+	  * Only ask for modified widths if they are different, i.e.,
+	  * if GLYPH_INFO_OUTLINE_WIDTHS was set in the response.
+	  */
+	 (info.members & GLYPH_INFO_OUTLINE_WIDTHS) == 0 ||
+	 (code = font->procs.glyph_info(font, glyph, NULL,
+					GLYPH_INFO_WIDTH0 << wmode,
+					&info)) >= 0) &&
 	(code = store_glyph_width(&pwidths->real_width, wmode, scale, &info)) >= 0
 	) {
 	/*
@@ -1133,6 +1125,21 @@ pdf_glyph_widths(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 	 */
 	return 1;
     }
+}
+private int
+store_glyph_width(int *pwidth, int wmode, double scale,
+		  const gs_glyph_info_t *pinfo)
+{
+    double w, v;
+
+    if (wmode && (w = pinfo->width[wmode].y) != 0)
+	v = pinfo->width[wmode].x;
+    else
+	w = pinfo->width[wmode].x, v = pinfo->width[wmode].y;
+    if (v != 0)
+	return_error(gs_error_rangecheck);
+    *pwidth = (int)(w * scale);
+    return 0;
 }
 
 /*

@@ -110,15 +110,19 @@ typedef struct gs_font_info_s {
 } gs_font_info_t;
 
 /*
- * Define the structure used to return information about a glyph.  Note that
- * a glyph may have two different sets of widths: those stored in the
- * outline (which includes hmtx for TrueType fonts), and those actually used
- * when rendering the glyph.  Currently, these differ only for Type 1 fonts
- * that use Metrics or CDevProc to change the widths.  The glyph_info
+ * Define the structure used to return information about a glyph.
+ *
+ * Note that a glyph may have two different sets of widths: those stored in
+ * the outline (which includes hmtx for TrueType fonts), and those actually
+ * used when rendering the glyph.  Currently, these differ only for Type 1
+ * fonts that use Metrics or CDevProc to change the widths.  The glyph_info
  * procedure normally returns the rendering widths: to get the outline
- * widths, clients use GLYPH_INFO_OUTLINE_WIDTHS.  (Fonts that don't
- * distinguish the two sets of widths don't need to do anything special, and
- * don't need to test for GLYPH_INFO_OUTLINE_WIDTHS.)
+ * widths, clients use GLYPH_INFO_OUTLINE_WIDTHS.  The glyph_info procedure
+ * should set GLYPH_INFO_OUTLINE_WIDTHS in the response (the `members' in
+ * the gs_glyph_info_t structure) iff it was set in the request *and* the
+ * glyph actually has two different sets of widths.  With this arrangement,
+ * fonts that don't distinguish the two sets of widths don't need to do
+ * anything special, and don't need to test for GLYPH_INFO_OUTLINE_WIDTHS.
  */
 typedef struct gs_glyph_info_s {
     int members;		/* mask of which members are valid */

@@ -1016,18 +1016,19 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     const ref *pfdict = &pfont_data(pbfont)->dict;
     double sbw[4];
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
-    int default_members = members - width_members;
+    int outline_widths = members & GLYPH_INFO_OUTLINE_WIDTHS;
+    bool modified_widths = false;
+    int default_members = members - (width_members + outline_widths);
     int done_members = 0;
     int code;
 
-    if (!width_members || (members & GLYPH_INFO_OUTLINE_WIDTHS))
+    if (!width_members)
 	return gs_type1_glyph_info(font, glyph, pmat, members, info);
-    if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
-	return_error(e_rangecheck); /* can't handle it */
     glyph_ref(glyph, &gref);
     if (width_members == GLYPH_INFO_WIDTH1) {
 	code = zchar_get_metrics2(pbfont, &gref, sbw);
 	if (code > 0) {
+	    modified_widths = true;
 	    info->width[1].x = sbw[2];
 	    info->width[1].y = sbw[3];
 	    done_members = width_members;
@@ -1037,11 +1038,23 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     if (width_members) {
 	code = zchar_get_metrics(pbfont, &gref, sbw);
 	if (code > 0) {
+	    modified_widths = true;
 	    info->width[wmode].x = sbw[2];
 	    info->width[wmode].y = sbw[3];
 	    done_members = width_members;
 	    width_members = 0;
 	}
+    }
+
+    if (outline_widths) {
+	if (modified_widths || dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0) {
+	    /* Discard the modified widths, but indicate they exist. */
+	    width_members |= done_members;
+	    done_members = outline_widths;
+	}
+    } else {
+	if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
+	    return_error(e_rangecheck); /* can't handle it */
     }
     default_members |= width_members;
     if (default_members) {
