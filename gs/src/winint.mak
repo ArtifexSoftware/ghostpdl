@@ -74,12 +74,12 @@ i_INCDIR=-i$(INCDIR)
 ICONS=$(GLGEN)gswin.ico $(GLGEN)gswin16.ico
 
 GS_ALL=$(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(GLGEN)lib.tr $(ld_tr) $(GSDLL_OBJ).res $(GLSRC)$(GSDLL).def $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(GLGEN)lib.tr $(ld_tr) $(GSDLL_OBJ).res $(PSSRC)$(GSDLL).def $(ICONS)
 
-dwdll_h=$(GLSRC)dwdll.h
+dwdll_h=$(PSSRC)dwdll.h
 dwimg_h=$(GLSRC)dwimg.h
 dwtrace_h=$(GLSRC)dwtrace.h
-dwmain_h=$(GLSRC)dwmain.h
+dwmain_h=$(PSSRC)dwmain.h
 dwtext_h=$(GLSRC)dwtext.h
 dwreg_h=$(GLSRC)dwreg.h
 
@@ -92,20 +92,20 @@ $(GLGEN)gswin16.ico: $(GLSRC)gswin16.icx $(ECHOGS_XE) $(WININT_MAK)
 	$(ECHOGS_XE) -wb $(GLGEN)gswin16.ico -n -X -r $(GLSRC)gswin16.icx
 
 # resources for short EXE loader (no dialogs)
-$(GS_OBJ).res: $(GLSRC)dwmain.rc $(dwmain_h) $(ICONS) $(WININT_MAK)
-	$(ECHOGS_XE) -w $(GLGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
-	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
-	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -R $(GLSRC)dwmain.rc
-	$(RCOMP) -I$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GS_OBJ).res $(GLGEN)_exe.rc
-	del $(GLGEN)_exe.rc
+$(GS_OBJ).res: $(PSSRC)dwmain.rc $(dwmain_h) $(ICONS) $(WININT_MAK)
+	$(ECHOGS_XE) -w $(PSGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
+	$(ECHOGS_XE) -a $(PSGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
+	$(ECHOGS_XE) -a $(PSGEN)_exe.rc -R $(PSSRC)dwmain.rc
+	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) $(i_INCDIR) -r $(RO_)$(GS_OBJ).res $(PSGEN)_exe.rc
+	del $(PSGEN)_exe.rc
 
 # resources for main program (includes dialogs)
-$(GSDLL_OBJ).res: $(GLSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
-	$(ECHOGS_XE) -w $(GLGEN)_dll.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
-	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
-	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -R $(GLSRC)gsdll32.rc
-	$(RCOMP) -I$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GSDLL_OBJ).res $(GLGEN)_dll.rc
-	del $(GLGEN)_dll.rc
+$(GSDLL_OBJ).res: $(PSSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
+	$(ECHOGS_XE) -w $(PSGEN)_dll.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
+	$(ECHOGS_XE) -a $(PSGEN)_dll.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
+	$(ECHOGS_XE) -a $(PSGEN)_dll.rc -R $(PSSRC)gsdll32.rc
+	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GSDLL_OBJ).res $(PSGEN)_dll.rc
+	del $(PSGEN)_dll.rc
 
 
 # Modules for big EXE
@@ -117,47 +117,47 @@ DWTRACE=
 !endif
 
 
-DWOBJNO = $(GLOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwmain.obj \
+DWOBJNO = $(PSOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(PSOBJ)dwmain.obj \
 $(GLOBJ)dwtext.obj $(GLOBJ)dwreg.obj
 
-$(GLOBJ)dwnodll.obj: $(GLSRC)dwnodll.c $(AK)\
+$(PSOBJ)dwnodll.obj: $(PSSRC)dwnodll.c $(AK)\
  $(dwdll_h) $(iapi_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwnodll.obj $(C_) $(GLSRC)dwnodll.c
+	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwnodll.obj $(C_) $(PSSRC)dwnodll.c
 
 # Compile gsdll.c, the main program of the DLL.
 
-$(GLOBJ)gsdll.obj: $(GLSRC)gsdll.c $(AK) $(iapi_h) $(ghost_h)
-	$(PSCCWIN) $(COMPILE_FOR_DLL) $(GLO_)gsdll.$(OBJ) $(C_) $(GLSRC)gsdll.c
+$(PSOBJ)gsdll.obj: $(PSSRC)gsdll.c $(AK) $(iapi_h) $(ghost_h)
+	$(PSCCWIN) $(COMPILE_FOR_DLL) $(PSO_)gsdll.$(OBJ) $(C_) $(PSSRC)gsdll.c
 
 $(GLOBJ)gp_msdll.obj: $(GLSRC)gp_msdll.c $(AK) $(iapi_h)
 	$(PSCCWIN) $(COMPILE_FOR_DLL) $(GLO_)gp_msdll.$(OBJ) $(C_) $(GLSRC)gp_msdll.c
 
 # Modules for console mode EXEs
 
-OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj \
+OBJC=$(PSOBJ)dwmainc.obj $(PSOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj \
 $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
 
-OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
+OBJCNO=$(PSOBJ)dwmainc.obj $(PSOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
 
-$(GLOBJ)dwmainc.obj: $(GLSRC)dwmainc.c $(AK) \
+$(PSOBJ)dwmainc.obj: $(PSSRC)dwmainc.c $(AK) \
   $(iapi_h) $(vdtrace_h) $(gdevdsp_h) $(dwdll_h) $(dwimg_h) $(dwtrace_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj $(C_) $(GLSRC)dwmainc.c
+	$(PSCCWIN) $(COMPILE_FOR_CONSOLE_EXE) $(PSO_)dwmainc.obj $(C_) $(PSSRC)dwmainc.c
 
-$(GLOBJ)dwdllc.obj: $(GLSRC)dwdll.c $(AK) $(dwdll_h) $(iapi_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwdllc.obj $(C_) $(GLSRC)dwdll.c
+$(PSOBJ)dwdllc.obj: $(PSSRC)dwdll.c $(AK) $(dwdll_h) $(iapi_h)
+	$(PSCCWIN) $(COMPILE_FOR_CONSOLE_EXE) $(PSO_)dwdllc.obj $(C_) $(PSSRC)dwdll.c
 
-$(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.c $(AK) $(dwdll_h) $(iapi_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwnodllc.obj $(C_) $(GLSRC)dwnodll.c
+$(PSOBJ)dwnodllc.obj: $(PSSRC)dwnodll.c $(AK) $(dwdll_h) $(iapi_h)
+	$(PSCCWIN) $(COMPILE_FOR_CONSOLE_EXE) $(PSO_)dwnodllc.obj $(C_) $(PSSRC)dwnodll.c
 
 
 # Modules for small EXE loader.
 
-DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwmain.obj \
+DWOBJ=$(PSOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(PSOBJ)dwmain.obj \
 $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwreg.obj
 
-$(GLOBJ)dwdll.obj: $(GLSRC)dwdll.c $(AK)\
+$(PSOBJ)dwdll.obj: $(PSSRC)dwdll.c $(AK)\
  $(dwdll_h) $(iapi_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwdll.obj $(C_) $(GLSRC)dwdll.c
+	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwdll.obj $(C_) $(PSSRC)dwdll.c
 
 $(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
  $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h)\
@@ -169,15 +169,15 @@ $(GLOBJ)dwtrace.obj: $(GLSRC)dwtrace.c $(AK)\
  $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtrace.obj $(GLSRC)dwtrace.c
 
-$(GLOBJ)dwmain.obj: $(GLSRC)dwmain.c $(AK)\
+$(PSOBJ)dwmain.obj: $(PSSRC)dwmain.c $(AK)\
  $(iapi_h) $(vdtrace_h) $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(dwtrace_h) \
  $(dwreg_h) $(gdevdsp_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwmain.obj $(C_) $(GLSRC)dwmain.c
+	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwmain.obj $(C_) $(PSSRC)dwmain.c
 
 $(GLOBJ)dwtext.obj: $(GLSRC)dwtext.c $(AK) $(dwtext_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtext.obj $(C_) $(GLSRC)dwtext.c
 
-$(GLOBJ)dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
+$(GLOBJ)dwreg.obj: $(PSSRC)dwreg.c $(AK) $(dwreg_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwreg.obj $(C_) $(GLSRC)dwreg.c
 
 
@@ -188,22 +188,22 @@ $(GLOBJ)dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
 # These modules shouldn't be referenced if MAKEDDLL==0,but dependencies here
 # don't hurt.
 
-$(GLOBJ)dwsetup.res: $(GLSRC)dwsetup.rc $(GLSRC)dwsetup.h $(GLGEN)gswin.ico
-	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) $(i_INCDIR) -r $(RO_)$(GLOBJ)dwsetup.res $(GLSRC)dwsetup.rc
+$(PSOBJ)dwsetup.res: $(PSSRC)dwsetup.rc $(PSSRC)dwsetup.h $(GLGEN)gswin.ico
+	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(PSOBJDIR) $(i_INCDIR) -r $(RO_)$(PSOBJ)dwsetup.res $(PSSRC)dwsetup.rc
 
-$(GLOBJ)dwsetup.obj: $(GLSRC)dwsetup.cpp $(GLSRC)dwsetup.h $(GLSRC)dwinst.h
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwsetup.obj $(C_) $(GLSRC)dwsetup.cpp
+$(PSOBJ)dwsetup.obj: $(PSSRC)dwsetup.cpp $(PSSRC)dwsetup.h $(PSSRC)dwinst.h
+	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwsetup.obj $(C_) $(PSSRC)dwsetup.cpp
 
-$(GLOBJ)dwinst.obj: $(GLSRC)dwinst.cpp $(GLSRC)dwinst.h
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwinst.obj $(C_) $(GLSRC)dwinst.cpp
+$(PSOBJ)dwinst.obj: $(PSSRC)dwinst.cpp $(PSSRC)dwinst.h
+	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwinst.obj $(C_) $(PSSRC)dwinst.cpp
 
 # Modules for uninstall program
 
-$(GLOBJ)dwuninst.res: $(GLSRC)dwuninst.rc $(GLSRC)dwuninst.h $(GLGEN)gswin.ico
-	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) $(i_INCDIR) -r $(RO_)$(GLOBJ)dwuninst.res $(GLSRC)dwuninst.rc
+$(PSOBJ)dwuninst.res: $(PSSRC)dwuninst.rc $(PSSRC)dwuninst.h $(GLGEN)gswin.ico
+	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(PSOBJDIR) $(i_INCDIR) -r $(RO_)$(PSOBJ)dwuninst.res $(PSSRC)dwuninst.rc
 
-$(GLOBJ)dwuninst.obj: $(GLSRC)dwuninst.cpp $(GLSRC)dwuninst.h
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwuninst.obj $(C_) $(GLSRC)dwuninst.cpp
+$(PSOBJ)dwuninst.obj: $(PSSRC)dwuninst.cpp $(PSSRC)dwuninst.h
+	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwuninst.obj $(C_) $(PSSRC)dwuninst.cpp
 
 
 # ------------------------- Distribution archive -------------------------- #
@@ -271,29 +271,29 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 
 # Now convert to a self extracting archive.
 # This involves making a few temporary files.
-ZIP_RSP = $(GLOBJ)setupgs.rsp
+ZIP_RSP = $(PSOBJ)setupgs.rsp
 # Note that we use ECHOGS_XE rather than echo for the .txt files
 # to avoid ANSI/OEM character mapping.
 # Use a special icon WinZip SE can't handle 48 pixel 32-bit icons 
 # as used by Windows XP.
-archive: zip $(GLOBJ)gswin16.ico $(ECHOGS_XE)
+archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(ZIP_RSP) -q "-win32 -setup"
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -st -x 22 AFPL Ghostscript $(GS_DOT_VERSION) for Win32 -x 22
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -i -s $(GLOBJ)gswin16.ico
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -a -s $(GLOBJ)about.txt
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(GLOBJ)dialog.txt
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -i -s $(PSOBJ)gswin16.ico
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -a -s $(PSOBJ)about.txt
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(PSOBJ)dialog.txt
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -c -s $(SETUP_XE_NAME)
-	$(ECHOGS_XE) -w $(GLOBJ)about.txt "AFPL Ghostscript is Copyright " -x A9 " 2002 artofcode LLC."
-	$(ECHOGS_XE) -a $(GLOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\PUBLIC.
-	$(ECHOGS_XE) -a $(GLOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
-	$(ECHOGS_XE) -w $(GLOBJ)dialog.txt This installs AFPL Ghostscript $(GS_DOT_VERSION).
-	$(ECHOGS_XE) -a $(GLOBJ)dialog.txt AFPL Ghostscript displays, prints and converts PostScript and PDF files.
-	$(WINZIPSE_XE) ..\gs$(GS_VERSION)w32 @$(GLOBJ)setupgs.rsp
+	$(ECHOGS_XE) -w $(PSOBJ)about.txt "AFPL Ghostscript is Copyright " -x A9 " 2002 artofcode LLC."
+	$(ECHOGS_XE) -a $(PSOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\PUBLIC.
+	$(ECHOGS_XE) -a $(PSOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
+	$(ECHOGS_XE) -w $(PSOBJ)dialog.txt This installs AFPL Ghostscript $(GS_DOT_VERSION).
+	$(ECHOGS_XE) -a $(PSOBJ)dialog.txt AFPL Ghostscript displays, prints and converts PostScript and PDF files.
+	$(WINZIPSE_XE) ..\gs$(GS_VERSION)w32 @$(PSOBJ)setupgs.rsp
 # Don't delete temporary files, because make continues
 # before these files are used.
 #	-del $(ZIP_RSP)
-#	-del $(GLOBJ)about.txt
-#	-del $(GLOBJ)dialog.txt
+#	-del $(PSOBJ)about.txt
+#	-del $(PSOBJ)dialog.txt
 
 
 # end of winint.mak

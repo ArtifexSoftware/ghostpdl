@@ -249,7 +249,7 @@ PLATFORM=os2_
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(GLSRCDIR)\os2.mak
+MAKEFILE=$(PSSRCDIR)\os2.mak
 TOP_MAKEFILES=$(MAKEFILE)
 
 # Define the files to be deleted by 'make clean'.
@@ -510,8 +510,8 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 !include "$(GLSRCDIR)\devs.mak"
 !include "$(GLSRCDIR)\pcwin.mak"
 !include "$(GLSRCDIR)\contrib.mak"
-!include "$(GLSRCDIR)\int.mak"
-!include "$(GLSRCDIR)\cfonts.mak"
+!include "$(PSSRCDIR)\int.mak"
+!include "$(PSSRCDIR)\cfonts.mak"
 
 # -------------------------------- Library -------------------------------- #
 
@@ -602,7 +602,7 @@ $(GENINIT_XE): $(PSSRC)geninit.c $(GENINIT_DEPS)
 $(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfig__h) /* This file deliberately left blank. */
 
-$(gconfigv_h): $(GLSRCDIR)\os2.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
+$(gconfigv_h): $(PSSRCDIR)\os2.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
@@ -614,58 +614,58 @@ gsdllos2_h=$(GLSRC)gsdllos2.h
 
 # Interpreter main program
 
-ICONS=$(GLOBJ)gsos2.ico $(GLOBJ)gspmdrv.ico
+ICONS=$(PSOBJ)gsos2.ico $(GLOBJ)gspmdrv.ico
 
-$(GLOBJ)dpmain.$(OBJ): $(GLSRC)dpmain.c $(AK)\
+$(PSOBJ)dpmain.$(OBJ): $(PSSRC)dpmain.c $(AK)\
  $(gdevdsp_h) $(iapi_h) $(gscdefs_h) $(errors_h)
-	$(CC) $(CEXE) -I$(GLSRCDIR) -I$(GLGENDIR) $(GLO_)dpmain.$(OBJ) $(C_) $(GLSRC)dpmain.c
+	$(CC) $(CEXE) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(PSO_)dpmain.$(OBJ) $(C_) $(PSSRC)dpmain.c
 
 !if $(MAKEDLL)
 #making a DLL
-GS_ALL=$(GLOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GLOBJ)$(GS).res $(ICONS)
+GS_ALL=$(PSOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(PSOBJ)$(GS).res $(ICONS)
 
-$(GS_XE): $(BINDIR)\$(GSDLL).dll $(GLSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(GLSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
+$(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(PSSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
 !if $(EMX)
-	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(GLSRCDIR) -I$(GLOBJDIR) -o$(GS_XE) $(GLSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ) $(GLSRC)gsos2.def
+	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(PSOBJDIR) -I$(GLOBJDIR) -o$(GS_XE) $(PSSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ) $(PSSRC)gsos2.def
 !endif
 !if $(IBMCPP)
-	$(CCAUX) -I$(GLSRCDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(GLSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ)
+	$(CCAUX) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(PSOBJDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(PSSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ)
 !endif
-	rc $(GLOBJ)$(GS).res $(GS_XE)
+	rc $(PSOBJ)$(GS).res $(GS_XE)
 
-$(GLOBJ)gsdll.$(OBJ): $(GLSRC)gsdll.c $(gsdll_h) $(ghost_h) $(gscdefs_h)
-	$(PSCC) $(GLO_)gsdll.$(OBJ) $(C_) $(GLSRC)gsdll.c
+$(PSOBJ)gsdll.$(OBJ): $(PSSRC)gsdll.c $(gsdll_h) $(ghost_h) $(gscdefs_h)
+	$(PSCC) $(PSO_)gsdll.$(OBJ) $(C_) $(PSSRC)gsdll.c
 
-$(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(GLOBJ)gsdll.$(OBJ)
+$(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(PSOBJ)gsdll.$(OBJ)
 !if $(EMX)
-	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(GLOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(GLSRC)gsdll2.def
+	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(PSSRC)gsdll2.def
 !endif
 !if $(IBMCPP)
-	LINK386 /NOE /DEBUG @$(ld_tr) $(GLOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, , , $(GLSRC)gsdll2.def
+	LINK386 /NOE /DEBUG @$(ld_tr) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, , , $(PSSRC)gsdll2.def
 !endif
 
 !else
 #making an EXE
-GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GLOBJ)$(GS).res $(ICONS)
+GS_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(PSOBJ)$(GS).res $(ICONS)
 
 $(GS_XE): $(GS_ALL) $(ALL_DEVS)
-	$(COMPDIR)\$(COMP) $(CGDB) -I$(GLSRCDIR) -o $(GLOBJ)$(GS) $(GLOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
-	$(COMPDIR)\emxbind -r$(GLOBJ)$(GS).res $(COMPDIR)\emxl.exe $(GLOBJ)$(GS) $(GS_XE) -ac
-	del $(GLOBJ)$(GS)
+	$(COMPDIR)\$(COMP) $(CGDB) I$(PSSRCDIR) -I$(GLSRCDIR) -o $(PSOBJ)$(GS) $(PSOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
+	$(COMPDIR)\emxbind -r$(PSOBJ)$(GS).res $(COMPDIR)\emxl.exe $(PSOBJ)$(GS) $(GS_XE) -ac
+	del $(PSOBJ)$(GS)
 !endif
 
 # Make the icons from their text form.
 
-$(GLOBJ)gsos2.ico: $(GLSRC)gsos2.icx $(ECHOGS_XE)
-	$(ECHOGS_XE) -wb $(GLOBJ)gsos2.ico -n -X -r $(GLSRC)gsos2.icx
+$(PSOBJ)gsos2.ico: $(PSSRC)gsos2.icx $(ECHOGS_XE)
+	$(ECHOGS_XE) -wb $(PSOBJ)gsos2.ico -n -X -r $(PSSRC)gsos2.icx
 
 $(GLOBJ)gspmdrv.ico: $(GLSRC)gspmdrv.icx $(ECHOGS_XE)
 	$(ECHOGS_XE) -wb $(GLOBJ)gspmdrv.ico -n -X -r $(GLSRC)gspmdrv.icx
 
-$(GLOBJ)$(GS).res: $(GLSRC)$(GS).rc $(GLOBJ)gsos2.ico
-	rc -i $(COMPBASE)\include -i $(GLSRCDIR) -i $(GLOBJDIR) -r $(GLSRC)$(GS).rc $(GLOBJ)$(GS).res
+$(PSOBJ)$(GS).res: $(PSSRC)$(GS).rc $(PSOBJ)gsos2.ico
+	rc -i $(COMPBASE)\include -i $(PSSRCDIR) -i $(PSOBJDIR) -r $(PSSRC)$(GS).rc $(PSOBJ)$(GS).res
 	
 
 # PM driver program

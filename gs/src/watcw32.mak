@@ -200,7 +200,7 @@ SYNC=winsync
 NUL=
 DD=$(GLGENDIR)\$(NUL)
 GLD=$(GLGENDIR)\$(NUL)
-PSD=$(GLGENDIR)\$(NUL)
+PSD=$(PSGENDIR)\$(NUL)
 
 # ------ Devices and features ------ #
 
@@ -263,8 +263,8 @@ DEVICE_DEVS20=
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(GLSRCDIR)\watcw32.mak
-TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
+MAKEFILE=$(PSSRCDIR)\watcw32.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(PSSRCDIR)\winint.mak
 
 # Define the executable and shell invocations.
 
@@ -398,7 +398,7 @@ RO_=$(O_)
 
 !include $(GLSRCDIR)\version.mak
 !include $(GLSRCDIR)\winlib.mak
-!include $(GLSRCDIR)\winint.mak
+!include $(PSSRCDIR)\winint.mak
 
 # -------------------------- Auxiliary programs --------------------------- #
 
@@ -461,10 +461,10 @@ LIBCTR=
 GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 
-DWOBJLINK=$(GLOBJ)dwdll.obj, $(GLOBJ)dwimg.obj, $(GLOBJ)dwmain.obj, $(GLOBJ)dwtext.obj, $(GLOBJ)gscdefw.obj, $(GLOBJ)gp_wgetw.obj
-DWOBJNOLINK= $(GLOBJ)dwnodll.obj, $(GLOBJ)dwimg.obj, $(GLOBJ)dwmain.obj, $(GLOBJ)dwtext.obj
-OBJCLINK=$(GLOBJ)dwmainc.obj, $(GLOBJ)dwdllc.obj, $(GLOBJ)gscdefw.obj, $(GLOBJ)gp_wgetw.obj
-OBJCNOLINK=$(GLOBJ)dwmainc.obj, $(GLOBJ)dwnodllc.obj
+DWOBJLINK=$(PSOBJ)dwdll.obj, $(GLOBJ)dwimg.obj, $(PSOBJ)dwmain.obj, $(GLOBJ)dwtext.obj, $(PSOBJ)gscdefw.obj, $(PSOBJ)gp_wgetw.obj
+DWOBJNOLINK= $(PSOBJ)dwnodll.obj, $(GLOBJ)dwimg.obj, $(PSOBJ)dwmain.obj, $(GLOBJ)dwtext.obj
+OBJCLINK=$(PSOBJ)dwmainc.obj, $(PSOBJ)dwdllc.obj, $(PSOBJ)gscdefw.obj, $(PSOBJ)gp_wgetw.obj
+OBJCNOLINK=$(PSOBJ)dwmainc.obj, $(PSOBJ)dwnodllc.obj
 
 !ifneq MAKEDLL 0
 
@@ -476,30 +476,30 @@ $(GLOBJ)gscdefw.$(OBJ): $(GLGEN)gscdefs.c $(AK) $(gscdefs_h)
 	$(CC) $(COMPILE_FOR_CONSOLE_EXE) $(GLCCFLAGS) $(CCWINFLAGS) $(I_)$(GLI_)$(_I) $(GLF_) $(GLO_)gscdefw.$(OBJ) $(C_) $(GLGEN)gscdefs.c
 
 # The graphical small EXE loader
-$(GS_XE): $(GSDLL_DLL) $(GLOBJ)$(GSDLL).lib $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)$(GS).res \
+$(GS_XE): $(GSDLL_DLL) $(PSOBJ)$(GSDLL).lib $(DWOBJ) $(GSCONSOLE_XE) $(PSOBJ)$(GS).res \
 		$(GLOBJ)gp_wgetw.obj $(GLOBJ)gscdefw.obj
-	$(LINK) system nt_win $(LCT) Name $(GS_XE) File $(DWOBJLINK) Library $(GLOBJ)$(GSDLL).lib
+	$(LINK) system nt_win $(LCT) Name $(GS_XE) File $(DWOBJLINK) Library $(PSOBJ)$(GSDLL).lib
 
 # The console mode small EXE loader
-$(GSCONSOLE_XE): $(OBJC) $(GLOBJ)$(GS).res $(GLSRCDIR)\dw32c.def \
+$(GSCONSOLE_XE): $(OBJC) $(PSOBJ)$(GS).res $(PSSRCDIR)\dw32c.def \
 		$(GLOBJ)gp_wgetw.obj $(GLOBJ)gscdefw.obj
-	$(LINK) system nt option map $(LCT) Name $(GSCONSOLE_XE) File $(OBJCLINK) Library $(GLOBJ)$(GSDLL).lib
+	$(LINK) system nt option map $(LCT) Name $(GSCONSOLE_XE) File $(OBJCLINK) Library $(PSOBJ)$(GSDLL).lib
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(GLOBJ)$(GSDLL).res 
-	$(LINK) system nt_dll initinstance terminstance $(LCT) Name $(GSDLL_DLL) File $(GLOBJ)gsdll.obj, $(GLOBJ)gp_mktmp.obj @$(ld_tr) @$(GLSRC)gsdll32w.lnk
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(PSOBJ)$(GSDLL).res 
+	$(LINK) system nt_dll initinstance terminstance $(LCT) Name $(GSDLL_DLL) File $(GLOBJ)gsdll.obj, $(GLOBJ)gp_mktmp.obj @$(ld_tr) @$(PSSRC)gsdll32w.lnk
 
-$(GLOBJ)$(GSDLL).lib: $(GSDLL_DLL)
-	erase $(GLOBJ)$(GSDLL).lib
-	wlib $(GLOBJ)$(GSDLL) +$(GSDLL_DLL)
+$(PSOBJ)$(GSDLL).lib: $(GSDLL_DLL)
+	erase $(PSOBJ)$(GSDLL).lib
+	wlib $(PSOBJ)$(GSDLL) +$(GSDLL_DLL)
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(DWOBJNO) $(GLOBJ)$(GS).res $(GLOBJ)dwmain32.def
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(DWOBJNO) $(PSOBJ)$(GS).res $(PSOBJ)dwmain32.def
 	$(LINK) option map $(LCT) Name $(GS) File $(GLOBJ)gsdll,$(GLOBJ)gp_mktmp.obj, $(DWOBJNOLINK) @$(ld_tr) 
 
 # The big console mode EXE
-$(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(OBJCNO) $(GLOBJ)$(GS).res $(GLSRCDIR)\dw32c.def
+$(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(OBJCNO) $(PSOBJ)$(GS).res $(PSSRCDIR)\dw32c.def
 	$(LINK) option map $(LCT) Name $(GSCONSOLE_XE) File $(GLOBJ)gsdll, $(GLOBJ)gp_mktmp.obj, $(OBJCNOLINK), @$(ld_tr) 
 !endif
 

@@ -514,7 +514,7 @@ Z10OPS=zht zimage zmatrix
 Z11OPS=zpaint zpath
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
-INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ) $(GLOBJ)idisp.$(OBJ)
+INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ) $(PSOBJ)idisp.$(OBJ)
 INT_OBJS=$(INT_MAIN)\
  $(INT1) $(INT2) $(INT3) $(INT4) $(INT5) $(INT6) $(INT7)\
  $(Z1) $(Z2) $(Z3) $(Z4) $(Z5) $(Z6) $(Z7) $(Z8) $(Z9) $(Z10) $(Z11)
@@ -1251,7 +1251,7 @@ $(PSOBJ)zfilterx.$(OBJ) : $(PSSRC)zfilterx.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zfilterx.$(OBJ) $(C_) $(PSSRC)zfilterx.c
 
 # MD5 digest filter
-fmd5_=$(GLOBJ)zfmd5.$(OBJ)
+fmd5_=$(PSOBJ)zfmd5.$(OBJ)
 $(PSD)fmd5.dev : $(INT_MAK) $(ECHOGS_XE) $(fmd5_) $(GLD)smd5.dev
 	$(SETMOD) $(PSD)fmd5 $(fmd5_)
 	$(ADDMOD) $(PSD)fmd5 -include $(GLD)smd5
@@ -1263,7 +1263,7 @@ $(PSOBJ)zfmd5.$(OBJ) : $(PSSRC)zfmd5.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zfmd5.$(OBJ) $(C_) $(PSSRC)zfmd5.c
 
 # Arcfour cipher filter
-farc4_=$(GLOBJ)zfarc4.$(OBJ)
+farc4_=$(PSOBJ)zfarc4.$(OBJ)
 $(PSD)farc4.dev : $(INT_MAK) $(ECHOGS_XE) $(farc4_) $(GLD)sarc4.dev
 	$(SETMOD) $(PSD)farc4 $(farc4_)
 	$(ADDMOD) $(PSD)farc4 -include $(GLD)sarc4

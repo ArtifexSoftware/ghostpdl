@@ -51,7 +51,7 @@ const LPSTR szIniSection = "Text";
 
 
 GSDLL gsdll;
-struct gs_main_instance_s *instance;
+gs_main_instance *instance;
 HWND hwndtext;
 
 char start_string[] = "systemdict /start get exec\n";

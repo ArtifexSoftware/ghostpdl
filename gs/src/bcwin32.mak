@@ -336,8 +336,8 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(GLSRCDIR)\bcwin32.mak
-TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
+MAKEFILE=$(PSSRCDIR)\bcwin32.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(PSSRCDIR)\winint.mak
 
 # Define the current directory prefix and shell invocations.
 
@@ -471,7 +471,7 @@ BEGINFILES2=$(BINDIR)\gs16spl.exe *.tr
 # Include the generic makefiles.
 
 !include $(GLSRCDIR)\winlib.mak
-!include $(GLSRCDIR)\winint.mak
+!include $(PSSRCDIR)\winint.mak
 
 # -------------------------- Auxiliary programs --------------------------- #
 
@@ -519,7 +519,7 @@ $(GENINIT_XE): $(PSSRCDIR)\geninit.c $(GENINIT_DEPS)
 
 # ----------------------------- Main program ------------------------------ #
 
-LIBCTR=$(GLGEN)libc32.tr
+LIBCTR=$(PSGEN)libc32.tr
 GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 
@@ -537,69 +537,69 @@ SETUP_TARGETS=$(SETUP_XE) $(UNINSTALL_XE)
 !if $(MAKEDLL)
 # The graphical small EXE loader
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)\
- $(GS_OBJ).res $(GLSRCDIR)\dwmain32.def $(SETUP_TARGETS)
+ $(GS_OBJ).res $(PSSRCDIR)\dwmain32.def $(SETUP_TARGETS)
 	$(LINK) /Tpe /aa $(LCT) @&&!
 $(LIBDIR)\c0w32 +
 $(DWOBJ) +
-,$(GS_XE),$(GLOBJ)$(GS), +
+,$(GS_XE),$(PSOBJ)$(GS), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
-$(GLSRCDIR)\dwmain32.def, +
+$(PSSRCDIR)\dwmain32.def, +
 $(GS_OBJ).res
 !
 
 # The console mode small EXE loader
 !if $(BUILDER_VERSION) == 5
-$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
 	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0x32 +
 $(OBJC) +
-,$(GSCONSOLE_XE),$(GLOBJ)$(GSCONSOLE), +
+,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32mt, +
-$(GLSRCDIR)\dw32c.def, +
+$(PSSRCDIR)\dw32c.def, +
 $(GS_OBJ).res
 !
 !else
 
-$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
 	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0w32 +
 $(OBJC) +
-,$(GSCONSOLE_XE),$(GLOBJ)$(GSCONSOLE), +
+,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
-$(GLSRCDIR)\dw32c.def, +
+$(PSSRCDIR)\dw32c.def, +
 $(GS_OBJ).res
 !
 !endif
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
- $(GSDLL_OBJ).res $(GLSRCDIR)\gsdll32.def
-	-del $(GLGEN)gswin32.tr
-	copy $(ld_tr) $(GLGEN)gswin32.tr
-	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpd /aa @$(GLGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(GLOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ)\
+ $(GSDLL_OBJ).res $(PSSRCDIR)\gsdll32.def
+	-del $(PSGEN)gswin32.tr
+	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo $(LIBDIR)\c0d32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
 $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
- $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(GLSRCDIR)\dwmain32.def
-	-del $(GLGEN)gswin32.tr
-	copy $(ld_tr) $(GLGEN)gswin32.tr
-	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
-	echo $(DWOBJNO) $(INTASM) >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe /aa @$(GLGEN)gswin32.tr ,$(GS_XE),$(GLOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dwmain32.def,$(GS_OBJ).res
+ $(PSOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(PSSRCDIR)\dwmain32.def
+	-del $(PSGEN)gswin32.tr
+	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
+	echo $(DWOBJNO) $(INTASM) >> $(PSGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
- $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
-	-del $(GLGEN)gswin32.tr
-	copy $(ld_tr) $(GLGEN)gswin32.tr
-	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
-	echo $(OBJCNO) $(INTASM) >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe /ap @$(GLGEN)gswin32.tr ,$(GSCONSOLE_XE),$(GLOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dw32c.def,$(GS_OBJ).res
+ $(PSOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
+	-del $(PSGEN)gswin32.tr
+	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
+	echo $(OBJCNO) $(INTASM) >> $(PSGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 
 # Access to 16 spooler from Win32s
@@ -632,28 +632,28 @@ $(GLSRCDIR)\gs16spl.def
 
 !if $(MAKEDLL)
 
-$(SETUP_XE): $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj $(GLOBJ)dwsetup.res $(GLSRC)dwsetup.def
+$(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)dwsetup.def
 	$(LINK) /Tpe /aa $(LCT) $(DEBUGLINK) -L$(LIBDIR) @&&!
 $(LIBDIR)\c0w32 +
-$(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj +
-,$(SETUP_XE),$(GLOBJ)dwsetup, +
+$(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj +
+,$(SETUP_XE),$(PSOBJ)dwsetup, +
 $(LIBDIR)\import32 +
 $(LIBDIR)\ole2w32 +
 $(LIBDIR)\cw32, +
-$(GLSRCDIR)\dwsetup.def, +
-$(GLOBJ)dwsetup.res
+$(PSSRCDIR)\dwsetup.def, +
+$(PSOBJ)dwsetup.res
 !
 
-$(UNINSTALL_XE): $(GLOBJ)dwuninst.obj $(GLOBJ)dwuninst.res $(GLSRC)dwuninst.def
+$(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def
 	$(LINK) /Tpe /aa $(LCT) $(DEBUGLINK) -L$(LIBDIR) @&&!
 $(LIBDIR)\c0w32 +
-$(GLOBJ)dwuninst.obj +
-,$(UNINSTALL_XE),$(GLOBJ)dwuninst, +
+$(PSOBJ)dwuninst.obj +
+,$(UNINSTALL_XE),$(PSOBJ)dwuninst, +
 $(LIBDIR)\import32 +
 $(LIBDIR)\ole2w32 +
 $(LIBDIR)\cw32, +
-$(GLSRCDIR)\dwuninst.def, +
-$(GLOBJ)dwuninst.res
+$(PSSRCDIR)\dwuninst.def, +
+$(PSOBJ)dwuninst.res
 !
 
 
