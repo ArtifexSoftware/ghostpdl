@@ -255,7 +255,7 @@ systemdict /.reuseparamdict mark
 	% The .buildshading operators use the current color space
 	% for ColorSpace.
   dup /ShadingType get //.shadingtypes exch get
-  1 index /ColorSpace get setcolorspace exec
+  1 index /ColorSpace get .dosetcolorspace exec
 } bind def
 systemdict /.reuseparamdict undef
 
@@ -268,10 +268,10 @@ systemdict /.reuseparamdict undef
   counttomark 4 add -3 roll mark 4 1 roll
 	% Stack: -mark- ..color.. cspace -mark- template matrix shadingdict
   { .buildshading } stopped {
-    cleartomark setcolorspace setcolor pop stop
+    cleartomark .dosetcolorspace setcolor pop stop
   } if
   .buildshadingpattern
-  3 -1 roll pop counttomark 1 add 2 roll setcolorspace setcolor pop
+  3 -1 roll pop counttomark 1 add 2 roll .dosetcolorspace setcolor pop
 } bind def
 
 .patterntypes
@@ -323,12 +323,12 @@ systemdict /.reuseparamdict undef
   currentdevice //.useciecolorkeydict .getdeviceparams exch pop exch pop
   mark 5 -2 roll
 	% Stack: cspace UseCIEColor mark index value
-   { setcolorspace true .setsubstitutecolorspace }
+   { .dosetcolorspace true .setsubstitutecolorspace }
   stopped counttomark 1 add 1 roll cleartomark
 	% Stack: cspace UseCIEColor stopped?
   3 1 roll
   currentdevice null true mark /UseCIEColor 6 -1 roll .putdeviceparams pop pop
-  setcolorspace { stop } if
+  .dosetcolorspace { stop } if
 } bind def
 currentdict /.useciecolorkeydict undef
 
@@ -436,7 +436,7 @@ currentdict /.useciecolorkeydict undef
 
 /.setdevicenspace where {
   pop colorspacedict /DeviceN {
-    dup 2 get setcolorspace dup
+    dup 2 get .dosetcolorspace dup
     dup 1 get length		% # of components
     .converttinttransform .setdevicenspace
   } bind put

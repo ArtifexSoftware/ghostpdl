@@ -729,15 +729,16 @@ end def
 } odef
 currentdict /.devcs .undef
 
-/setcolorspace {		% <name|array> setcolorspace -
-  currentcolorspace 1 index ne {
-    dup dup dup type /nametype ne { 0 get } if
-    //colorspacedict exch get exec
-    dup null eq { pop } { .setcolorspace } ifelse pop
-  } { 
-    pop		% skip the setcolorspace in case it is expensive
-  }
-  ifelse
+% Actual setcolorspace procedure - used internally
+/.dosetcolorspace {		% <name|array> .dosetcolorspace -
+  dup dup dup type /nametype ne { 0 get } if
+  //colorspacedict exch get exec
+  dup null eq { pop } { .setcolorspace } ifelse pop
+} bind def
+
+% external setcolorspace optimized to avoid duplicate actions
+/setcolorspace {
+  currentcolorspace 1 index ne { .dosetcolorspace } { pop } ifelse
 } odef
 
 colorspacedict
@@ -759,16 +760,16 @@ colorspacedict
    { pop dup /CIEBasedDEFG { NOCIE { pop 0 0 0 1 setcmykcolor null } { dup 1 get .setciedefgspace } ifelse } bind put
    } if
   /.setseparationspace where
-   { pop dup /Separation { dup 2 get setcolorspace dup 1 .converttinttransform .setseparationspace } bind put
+   { pop dup /Separation { dup 2 get .dosetcolorspace dup 1 .converttinttransform .setseparationspace } bind put
    } if
   /.setindexedspace where
-   { pop dup /Indexed { dup 1 get setcolorspace dup .setindexedspace } bind put
+   { pop dup /Indexed { dup 1 get .dosetcolorspace dup .setindexedspace } bind put
    } if
   /.nullpatternspace [/Pattern] readonly def
   /.setpatternspace where
    { pop dup /Pattern
       { dup type /nametype eq { pop //.nullpatternspace } if
-	dup length 1 gt { dup 1 get setcolorspace } if
+	dup length 1 gt { dup 1 get .dosetcolorspace } if
         dup .setpatternspace
       } bind put
    } if
@@ -929,7 +930,7 @@ def
 
 /setpattern {			% [<comp1> ...] <pattern> setpattern -
   currentcolorspace 0 get /Pattern ne {
-    [ /Pattern currentcolorspace ] setcolorspace
+    [ /Pattern currentcolorspace ] .dosetcolorspace
   } if setcolor
 } odef
 

@@ -89,7 +89,7 @@ colorspacedict /ICCBased
     dup 1 get /Alternate .knownget not
       { dup 1 get /N get //.icc_comp_map_dict exch get }
     if
-    setcolorspace
+    .dosetcolorspace
 
     % if CIE spaces are not use, just take the alternate space
     NOCIE
