@@ -1,7 +1,7 @@
 IJS 0.35
 
 News as of 0.35:
-10 Feb 2004
+11 Feb 2004
 
 The autoconf build system has been moderized and we now use 
 libtool for portable shared library building. Thanks to Roger

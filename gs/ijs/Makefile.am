@@ -82,8 +82,10 @@ pkgconfigdata_DATA = ijs.pc
 
 man_MANS = ijs-config.1
 
-EXTRA_DIST = common.mak unix.mak windows.mak ijs_spec.sgml state.eps state.fig $(man_MANS)
-# ijs.m4.top 
+EXTRA_DIST = \
+	common.mak unix.mak windows.mak \
+	ijs_spec.sgml state.eps state.fig ijs_spec.pdf \
+	$(man_MANS)
 
 ## Rules
 
@@ -100,6 +102,8 @@ ijs_spec.ps: ijs_spec.sgml
 ijs_spec.pdf: ijs_spec.ps
 	$(PS2PDF) ijs_spec.ps
 
+# Note that ijs_spec.pdf is included in the dist list above,
+# so the 'doc' target needs to be build for 'make dist' to work.
 
 ## Clean
 
