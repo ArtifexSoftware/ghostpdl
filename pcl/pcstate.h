@@ -41,6 +41,18 @@ typedef struct pcl_paper_size_s {
   coord_point offset_landscape; /* ditto for landscape orientations */
 } pcl_paper_size_t;
 
+/* Define the structure for margins. */
+typedef struct pcl_margins_s {
+  coord left;			/* measured from left edge */
+  coord right;			/* measured from *left* edge */
+  coord top;			/* measured from top */
+  coord length;			/* text_length, distance from top to bottom */
+} pcl_margins_t;
+
+/* Define the default margin values. */
+#define left_margin_default 0
+#define top_margin_default inch2coord(0.5)
+
 /* Define the parameters for one font set (primary or secondary). */
 #ifndef pl_font_t_DEFINED
 #  define pl_font_t_DEFINED
@@ -262,9 +274,11 @@ struct pcl_state_s {
 	int paper_source;
 	int print_direction;	/* 0..3 */
 	int orientation;	/* 0..3 */
-	coord left_margin, right_margin;
-	coord top_margin;
-	coord text_length;
+	pcl_margins_t margins;	/* relative to current print_direction */
+#define pcl_left_margin(pcls) ((pcls)->margins.left)
+#define pcl_right_margin(pcls) ((pcls)->margins.right)
+#define pcl_top_margin(pcls) ((pcls)->margins.top)
+#define pcl_text_length(pcls) ((pcls)->margins.length)
 	bool perforation_skip;
 	coord hmi, hmi_unrounded, vmi;
 	enum {

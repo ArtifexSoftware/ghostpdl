@@ -99,9 +99,11 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_set_int(&args,2);
 	hpgl_PM(&args, pgls);
 
+	hpgl_args_setup(&args);
+	hpgl_RF(&args, pgls);
+
 	hpgl_args_set_int(&args,0);
 	hpgl_SB(&args, pgls);
-	
 
 	hpgl_args_setup(&args);
 	hpgl_SV(&args, pgls);
@@ -316,7 +318,8 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t wxy[4];
 	int i;
 	gs_rect win;
-	/* get the default picture frame coordinates */
+	/* get the default picture frame coordinates.  HAS this need
+           to be redone.  I don't think it is necessary. */
 	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
 	wxy[0] = win.p.x;
 	wxy[1] = win.p.y;
@@ -327,12 +330,18 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( i & 3 )
 	  return e_Range;
 	
+	/* no args case disables the soft clip window */
+	if ( i == 0 ) {
+	  pgls->g.soft_clip_window.state = inactive;
+	  return 0;
+	}
+	
 	/* HAS needs error checking */
-	pgls->g.window.p.x = wxy[0];
-	pgls->g.window.p.y = wxy[1];
-	pgls->g.window.q.x = wxy[2];
-	pgls->g.window.q.y = wxy[3];
-
+	pgls->g.soft_clip_window.rect.p.x = wxy[0];
+	pgls->g.soft_clip_window.rect.p.y = wxy[1];
+	pgls->g.soft_clip_window.rect.q.x = wxy[2];
+	pgls->g.soft_clip_window.rect.q.y = wxy[3];
+	pgls->g.soft_clip_window.state = active;
 	return 0;
 }
 

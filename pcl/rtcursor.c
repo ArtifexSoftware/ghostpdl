@@ -29,9 +29,10 @@ rtl_horiz_cursor_pos_units(pcl_args_t *pargs, pcl_state_t *pcls)
 
 int /* ESC * p <units> Y */
 rtl_vert_cursor_pos_units(pcl_args_t *pargs, pcl_state_t *pcls)
-{	float y = float_arg(pargs) * pcls->uom_cp;	/* centipoints */
+{	coord y = (coord)(float_arg(pargs) * pcls->uom_cp);  /* centipoints */
+
 	pcls->cap.y =
-	  (coord)((arg_is_signed(pargs) ? pcls->cap.y : pcls->top_margin) + y);
+	  ((arg_is_signed(pargs) ? pcls->cap.y : pcl_top_margin(pcls)) + y);
 	return 0;
 }
 

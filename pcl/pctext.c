@@ -107,7 +107,7 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 	int code;
 	floatp scaled_hmi = pcl_hmi(pcls) / pscale->x;
 	floatp diff;
-	floatp limit = (pcls->right_margin + 0.5) / pscale->x;
+	floatp limit = (pcl_right_margin(pcls) + 0.5) / pscale->x;
 
 	/* Compute any width adjustment. */
 	switch ( adjust )
@@ -253,17 +253,17 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	  if ( !pcls->within_text )
 	    {
 	      /* Decide now whether to clip and wrap. */
-	      pcls->check_right_margin = pcls->cap.x < pcls->right_margin;
+	      pcls->check_right_margin = pcls->cap.x < pcl_right_margin(pcls);
 	      pcls->within_text = true;
 	    }
 	  gs_initclip(pgs);
 	  gs_clippath(pgs);
 	  gs_pathbbox(pgs, &text_clip);
 	  gs_newpath(pgs);
-	  text_clip.p.y = pcls->top_margin;
+	  text_clip.p.y = pcl_top_margin(pcls);
 	  if ( pcls->check_right_margin )
-	    text_clip.q.x = pcls->right_margin;
-	  text_clip.q.y = pcls->top_margin + pcls->text_length;
+	    text_clip.q.x = pcl_right_margin(pcls);
+	  text_clip.q.y = pcl_top_margin(pcls) + pcl_text_length(pcls);
 	  code = gs_rectclip(pgs, &text_clip, 1);
 	  if ( code < 0 )
 	    return code;

@@ -13,6 +13,7 @@
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"            
 #include "pcdraw.h"
+#include "pcfont.h"		/* for pcl_continue_underline */
 
 /* Import the RTL implementation of ESC % # A. */
 extern pcl_command_proc(rtl_enter_pcl_mode);
@@ -23,12 +24,12 @@ extern pcl_command_proc(rtl_enter_pcl_mode);
 int /* ESC * c <w_dp> X */ 
 pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {
-	float size = float_arg(pargs) * 10.0; /* --> centipoints */
+	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
-	if ( (coord)size == 0 )
+	if ( size == 0 )
 	  pcls->g.picture_frame_width = pcls->logical_page_width;
 	else
-	  pcls->g.picture_frame_width = (coord)size;
+	  pcls->g.picture_frame_width = size;
 
 	{
 	  hpgl_args_t args;
@@ -50,13 +51,18 @@ pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 int /* ESC * c <h_dp> Y */ 
 pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
-	float size = float_arg(pargs) * 10.0; /* --> centipoints */
+	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
 	/* default to pcl logical page */
-	if ( size == 0.0 )
-	  pcls->g.picture_frame_height = pcls->text_length;
+	if ( size == 0 )
+	  { pcl_margins_t default_margins;
+
+	    pcl_default_margins(&default_margins, 0, pcls);
+	    /* Use the default PCL text length. */
+	    pcls->g.picture_frame_height = default_margins.length;
+	  }
 	else
-	  pcls->g.picture_frame_height = (coord)size;
+	  pcls->g.picture_frame_height = size;
 
 	{
 	  hpgl_args_t args;
@@ -133,12 +139,24 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-/* We redefine this command so we can draw the current GL path. */
+/* We redefine this command so we can draw the current GL path */
+/* and, if appropriate, reset the underline bookkeeping. */
 private int /* ESC % <enum> A */ 
 pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
-{	
+{	int code;
+
 	hpgl_call(hpgl_draw_current_path(pcls, hpgl_rm_vector));
-	return rtl_enter_pcl_mode(pargs, pcls);
+	code = rtl_enter_pcl_mode(pargs, pcls);
+	switch ( code )
+	  {
+	  default:		/* error */
+	    return code;
+	  case 1:		/* CAP changed */
+	    pcl_continue_underline(pcls);
+	  case 0:		/* CAP not changed */
+	    break;
+	  }
+	return 0;
 }
 
 /* Initialization */

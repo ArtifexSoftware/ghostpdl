@@ -265,14 +265,11 @@ hpgl_polyfill_bbox(hpgl_state_t *pgls, gs_rect *bbox)
 	return 0;
 }
 
-/* set up an hpgl clipping region wrt last IW command */
+/* set up an hpgl clipping region -- intersection of IW command and
+   picture frame. */
  private int
 hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-	/* use the path for the current clipping region.  Note this is
-           incorrect as it should be the intersection of IW and
-           the bounding box of the current clip region. */
-
 	/* if we are doing vector fill a clipping path has already
            been set up using the last polygon */
 	if ( render_mode == hpgl_rm_vector_fill )
@@ -280,32 +277,53 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	else
 	  {
 	    gs_fixed_rect fixed_box;
-	    gs_rect float_box;
-	    gs_matrix save_ctm, mat;
+	    gs_rect pcl_clip_box;
+	    gs_rect dev_clip_box; 
+	    gs_matrix save_ctm;
+	    gs_matrix pcl_ctm;
 
-	    /*
-	     * We have no idea what the CTM is, but we mustn't disturb it;
-	     * however, the clipping coordinates are all defined in
-	     * absolute PLU.
-	     */
-	    gs_currentmatrix(pgls->pgs, &save_ctm);
-	    hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
-	    hpgl_call(gs_currentmatrix(pgls->pgs, &mat));
+	    /* get pcl to device ctm and restore the current ctm */
+	    hpgl_call(gs_currentmatrix(pgls->pgs, &save_ctm));
+	    hpgl_call(pcl_set_ctm(pgls, false));
+	    hpgl_call(gs_currentmatrix(pgls->pgs, &pcl_ctm));
+	    hpgl_call(gs_setmatrix(pgls->pgs, &save_ctm));
+	    
+	    /* find the clipping region defined by the picture frame
+               which is defined in pcl coordinates */
+	    pcl_clip_box.p.x = pgls->g.picture_frame.anchor_point.x;
+	    pcl_clip_box.p.y = pgls->g.picture_frame.anchor_point.y;
+	    pcl_clip_box.q.x = pcl_clip_box.p.x + pgls->g.picture_frame_width;
+	    pcl_clip_box.q.y = pcl_clip_box.p.y + pgls->g.picture_frame_height;
+	    hpgl_call(gs_bbox_transform(&pcl_clip_box,
+					&pcl_ctm,
+					&dev_clip_box));
 
-	    hpgl_call(gs_bbox_transform(&pgls->g.window, 
-					&mat,
-					&float_box));
+	    /* if the clipping window is active calculate the new clip
+               box derived from IW and the intersection of the device
+               space boxes replace the current box.  Note that IW
+               coordinates are in current units and and the picture
+               frame in pcl coordinates. */
+	    if ( pgls->g.soft_clip_window.state == active )
+	      {
+		gs_rect dev_soft_window_box;
+		gs_matrix ctm;
+		hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
+		hpgl_call(gs_bbox_transform(&pgls->g.soft_clip_window.rect, 
+					    &ctm,
+					    &dev_soft_window_box));
+	        dev_clip_box.p.x = max(dev_clip_box.p.x, dev_soft_window_box.p.x);  
+		dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y); 
+	    	dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x); 
+		dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y); 
+	      }
 
-	    /* HAS maybe a routine that does this?? */
-	    fixed_box.p.x = float2fixed(float_box.p.x);
-	    fixed_box.p.y = float2fixed(float_box.p.y);
-	    fixed_box.q.x = float2fixed(float_box.q.x);
-	    fixed_box.q.y = float2fixed(float_box.q.y);
-
+	    /* convert intersection box to fixed point and clip */
+	    fixed_box.p.x = float2fixed(dev_clip_box.p.x);
+	    fixed_box.p.y = float2fixed(dev_clip_box.p.y);
+	    fixed_box.q.x = float2fixed(dev_clip_box.q.x);
+	    fixed_box.q.y = float2fixed(dev_clip_box.q.y);
 	    hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box));
-	    gs_setmatrix(pgls->pgs, &save_ctm);
-
-	  }
+	  } 
 	return 0;
 }
 
@@ -415,11 +433,14 @@ hpgl_polyfill(hpgl_state_t *pgls)
 #define sin_dir sincos.sin
 #define cos_dir sincos.cos
 	gs_rect bbox;
+	hpgl_pen_state_t saved_pen_state;
 	bool cross = (pgls->g.fill.type == hpgl_fill_crosshatch);
 	const hpgl_hatch_params_t *params =
 	  (cross ? &pgls->g.fill.param.crosshatch : &pgls->g.fill.param.hatch);
 	hpgl_real_t spacing = params->spacing;
 	hpgl_real_t direction = params->angle;
+	/* save the pen position */
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
 	/* get the bounding box */
         hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
 	/* HAS calculate the offset for dashing - we do not need this
@@ -506,6 +527,7 @@ start:	gs_sincos_degrees(direction, &sincos);
 	    direction += 90;
 	    goto start;
 	  }
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
 	return 0;
 #undef sin_dir
 #undef cos_dir
@@ -539,13 +561,13 @@ hpgl_map_fill_type(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	  case hpgl_rm_character:
 	    switch (pgls->g.character.fill_mode)
 	      {
-	      case 0: return pcpt_solid_black;
-	      case 1: /* HAS unsupported */
-	      case 2: /* HAS unsupported */
-	      case 3: /* HAS unsupported */
-	      default: break;
+	      case hpgl_char_solid_edge:
+	      case hpgl_char_edge:	/* (value is irrelevant) */
+		return pcpt_solid_black;
+	      default:
+		break;
 	      }
-	    break;
+	    /* fill like a polygon */
 	  case hpgl_rm_polygon:
 	    switch (pgls->g.fill.type)
 	      {
@@ -593,15 +615,16 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 {
 	switch ( render_mode )
 	  {
-	  case hpgl_rm_character: break; /* HAS unsupported */
+	  case hpgl_rm_character:
 	    switch ( pgls->g.character.fill_mode )
 	      {
-	      case 0: return pcpt_solid_black;
-	      case 1: /* HAS unsupported */
-	      case 2: /* HAS unsupported */
-	      case 3: /* HAS unsupported */
-	      default: break;
+	      case hpgl_char_solid_edge:
+	      case hpgl_char_edge:	/* (value is irrelevant) */
+		return NULL;
+	      default:
+		break;
 	      }
+	    /* fill like a polygon */
 	  case hpgl_rm_polygon:
 	    switch ( pgls->g.fill.type )
 	      {
@@ -626,11 +649,11 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 	      {
 	      case hpgl_screen_none: return NULL;
 	      case hpgl_screen_shaded_fill: 
-		return 
+		return
 		  hpgl_setget_pcl_id(id, pgls->g.screen.param.shading);
 	      case hpgl_screen_hpgl_user_defined: break; /* unsupported */
 	      case hpgl_screen_crosshatch: 
-		return
+		return 
 		  hpgl_setget_pcl_id(id, pgls->g.screen.param.pattern_type);
 	      case hpgl_screen_pcl_user_defined: /* unsupported */
 	      default: break;
@@ -646,11 +669,30 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	pcl_id_t pcl_id;
-	if ( render_mode == hpgl_rm_vector_fill ) return 0;
-	hpgl_call(pcl_set_drawing_color(pgls,
-					hpgl_map_fill_type(pgls, 
-							   render_mode),
-					hpgl_map_id_type(pgls, &pcl_id, render_mode)));
+
+	if ( render_mode == hpgl_rm_vector_fill )
+	  return 0;
+	/* set the pattern orientation */
+	/*
+	 * pcl_set_... expects the rotation to be 0..3;
+	 * we store it as an angle in degrees.
+	 */
+#if 0
+	/*
+	 * Also, since the PCL and GL/2 coordinate systems have opposite
+	 * handedness, we need to negate the angle as well.
+	 * (This is actually handled in pcl_makebitmappattern.)
+	 */
+#  define pcl_angle(pgls) (-(pgls->g.rotation / 90) & 3)
+#else
+#  define pcl_angle(pgls) (pgls->g.rotation)
+#endif
+	hpgl_call(pcl_set_drawing_color_rotation(pgls,
+			hpgl_map_fill_type(pgls, render_mode),
+			hpgl_map_id_type(pgls, &pcl_id, render_mode), 
+			pcl_angle(pgls)));
+#undef pcl_angle
+
 	if ( render_mode == hpgl_rm_clip_and_fill_polygon )
 	  hpgl_call(hpgl_polyfill_using_current_line_type(pgls));
 	return 0;
@@ -971,20 +1013,45 @@ hpgl_close_path(hpgl_state_t *pgls)
  int
 hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-	if ( gx_path_is_null(gx_current_path(pgls->pgs)) ) return 0;
+	gs_state *pgs = pgls->pgs;
+
+	if ( gx_path_is_null(gx_current_path(pgs)) )
+	  return 0;
 
 	hpgl_call(hpgl_close_path(pgls));
-
 	hpgl_call(hpgl_set_drawing_state(pgls, render_mode));
 	
 	switch ( render_mode )
 	  {
 	  case hpgl_rm_character:
+	    switch ( pgls->g.character.fill_mode )
+	      {
+	      case hpgl_char_solid_edge:
+		gs_setgray(pgs, 0.0);	/* solid fill */
+		hpgl_call(gs_fill(pgs));
+		/* falls through */
+	      case hpgl_char_edge:
+char_edge:	if ( pgls->g.character.edge_pen != 0 )
+		  { gs_setgray(pgs, 0.0);	/* solid edge */
+		    gs_setlinewidth(pgs, 0.1);
+		    hpgl_call(gs_stroke(pgs));
+		  }
+		break;
+	      case hpgl_char_fill:
+		/****** SHOULD USE VECTOR FILL ******/
+		hpgl_call(gs_fill(pgs));
+		break;
+	      case hpgl_char_fill_edge:
+		/****** SHOULD USE VECTOR FILL ******/
+		hpgl_call(gs_fill(pgs));
+		goto char_edge;
+	      }
+	    break;
 	  case hpgl_rm_polygon:
 	    if ( pgls->g.fill_type == hpgl_even_odd_rule )
-	      hpgl_call(gs_eofill(pgls->pgs));
+	      hpgl_call(gs_eofill(pgs));
 	    else /* hpgl_winding_number_rule */
-	      hpgl_call(gs_fill(pgls->pgs));
+	      hpgl_call(gs_fill(pgs));
 	    break;
 	  case hpgl_rm_clip_and_fill_polygon:
 	    /* HACK handled by hpgl_set_drawing_color */
@@ -994,7 +1061,7 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    /* we reset the ctm before stroking to preserve the line width
 	       information */
 	    hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
-	    hpgl_call(gs_stroke(pgls->pgs));
+	    hpgl_call(gs_stroke(pgs));
 	    break;
 	  default :
 	    dprintf("unknown render mode\n");

@@ -59,9 +59,9 @@ hpgl_default_coordinate_system(hpgl_state_t *pcls)
 	pcls->g.plot_width = pcls->g.picture_frame_width = 
 	  pcls->logical_page_width;
 	pcls->g.plot_height = pcls->g.picture_frame_height = 
-	  pcls->text_length;
-	pcls->g.picture_frame.anchor_point.x = pcls->left_margin;
-	pcls->g.picture_frame.anchor_point.y = pcls->top_margin;
+	  pcl_text_length(pcls);
+	pcls->g.picture_frame.anchor_point.x = pcl_left_margin(pcls);
+	pcls->g.picture_frame.anchor_point.y = pcl_top_margin(pcls);
 	/* The default coordinate system is absolute with the origin at 0,0 */
 	pcls->g.move_or_draw = hpgl_plot_move;
 	pcls->g.relative_coords = hpgl_plot_absolute;
@@ -77,10 +77,19 @@ hpgl_default_coordinate_system(hpgl_state_t *pcls)
 void
 hpgl_default_fill_pattern(hpgl_state_t *pgls, int index, bool free)
 {	int index0 = index - 1;
+
 	if ( free )
 	  gs_free_object(pgls->memory, pgls->g.fill_pattern[index0].data,
 			 "fill pattern(reset)");
 	pgls->g.fill_pattern[index0].data = 0;
+}
+/* Reset all the fill patterns to solid fill. */
+void
+hpgl_default_all_fill_patterns(hpgl_state_t *pgls, bool free)
+{	int i;
+
+        for ( i = 1; i <= countof(pgls->g.fill_pattern); ++i )
+	  hpgl_default_fill_pattern(pgls, i, free);
 }
 
 /* HAS this is necessary to support graphics operations in character
@@ -110,12 +119,19 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
            be done away with */
 	hpgl_args_t hpgl_args;
 
-	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold ))
+	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold) )
 	  {
-
-	    hpgl_clear_state(pcls);
-	    gx_path_init(&pcls->g.polygon.buffer.path,
-			 pcls->memory);
+	    if ( type & (pcl_reset_initial | pcl_reset_cold) )
+	      {
+		hpgl_clear_state(pcls);
+		hpgl_default_all_fill_patterns(pcls, false);
+		gx_path_init(&pcls->g.polygon.buffer.path,
+			     pcls->memory);
+	      }
+	    else
+	      {
+		gx_path_release(&pcls->g.polygon.buffer.path);
+	      }
 	    /* provide default anchor point, plot size and picture
                frame size */
 	    hpgl_default_coordinate_system(pcls);
@@ -126,8 +142,10 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    /* set rendering mode to default */
 	    hpgl_default_render_mode(pcls);
 	    /* Initialize stick/arc font instances */
-	    pcls->g.stick_font[0].pfont =
-	      pcls->g.stick_font[1].pfont = 0;
+	    pcls->g.stick_font[0][0].pfont =
+	      pcls->g.stick_font[0][1].pfont =
+	      pcls->g.stick_font[1][0].pfont =
+	      pcls->g.stick_font[1][1].pfont = 0;
 	    /* execute IN */
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IN(&hpgl_args, pcls);

@@ -43,15 +43,16 @@ private int /* ESC * c <fill_enum> P */
 pcl_fill_rect_area(pcl_args_t *pargs, pcl_state_t *pcls)
 {	gs_state *pgs = pcls->pgs;
 	int type = int_arg(pargs);
-	int code =
-	  (type == pcpt_current_pattern ?
-	   pcl_set_drawing_color(pcls, pcls->pattern_type,
-				 &pcls->current_pattern_id) :
-	   pcl_set_drawing_color(pcls, type, &pcls->pattern_id));
+	/* We must set the CTM before a possible pattern, */
+	/* so the pattern will be scaled and rotated properly. */
+	int code = pcl_set_graphics_state(pcls, true);
 
 	if ( code < 0 )
 	  return code;
-	code = pcl_set_graphics_state(pcls, true);
+	code = (type == pcpt_current_pattern ?
+		pcl_set_drawing_color(pcls, pcls->pattern_type,
+				      &pcls->current_pattern_id) :
+		pcl_set_drawing_color(pcls, type, &pcls->pattern_id));
 	if ( code < 0 )
 	  return code;
 	{ gs_rect r;

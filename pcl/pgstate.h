@@ -147,7 +147,14 @@ typedef struct pcl_hpgl_state_s {
 	  hpgl_scaling_point_factor = 2
 	} scaling_type;
 	hpgl_scaling_params_t scaling_params;
-	gs_rect window;          /* clipping window (IW) */
+  	struct soft_clip_window_ {
+	  enum {
+	    active,                /* current unit window has be given */
+	    inactive,              /* use picture frame */
+	    bound                  /* bound to plotter units */
+	  } state;
+	  gs_rect rect;		/* clipping window (IW) */
+	} soft_clip_window;
 	int rotation;
 	gs_point P1, P2;	/* in plotter units */
 
@@ -227,7 +234,7 @@ typedef struct pcl_hpgl_state_s {
 	    hpgl_screen_pcl_user_defined = 22
 	  } type;
 	  union su_ {
-	    float shading;
+	    int shading;	/* 0..100 */
 	    struct { int pattern_index; bool use_current_pen; } user_defined;
 	    int pattern_type;
 	    uint pattern_id;
@@ -246,11 +253,17 @@ typedef struct pcl_hpgl_state_s {
 	int font_selected;	/* 0 or 1 */
 	pl_font_t *font;	/* 0 means recompute from params */
 	pl_symbol_map_t *map;	/* map for current font */
-	pl_font_t stick_font[2];  /* stick font, if currently selected */
+	pl_font_t stick_font[2][2];  /* stick/arc fonts */
 	struct ch_ {
 	  gs_point direction;
 	  bool direction_relative;
-	  int text_path;
+	  enum {
+	    hpgl_text_right = 0,
+	    hpgl_text_down = 1,
+	    hpgl_text_left = 2,
+	    hpgl_text_up = 3
+	  } text_path;
+#define hpgl_text_is_vertical(path) (((path) & 1) != 0)
 	  int line_feed_direction; /* +1 = normal, -1 = reversed */
 	  gs_point extra_space;
 	  gs_point size;

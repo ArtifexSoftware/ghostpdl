@@ -15,9 +15,14 @@
 /* We export this only for HP-GL/2. */
 int pcl_set_ctm(P2(pcl_state_t *pcls, bool print_direction));
 
-/* Compute the logical page size from physical size, orientation, */
+/* Compute and set the logical page size from physical size, orientation, */
 /* and offsets. */
 void pcl_compute_logical_page_size(P1(pcl_state_t *pcls));
+
+/* Compute the default margins for a given orientation. */
+/* The pcl_state_t supplies the page dimensions. */
+void pcl_default_margins(P3(pcl_margins_t *pmar, int orientation /*0..3*/,
+			    const pcl_state_t *pcls));
 
 /* Set all necessary graphics state parameters for PCL drawing */
 /* (currently only CTM and clipping region). */

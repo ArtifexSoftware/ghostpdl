@@ -27,7 +27,7 @@
 
 /* ------ Coordinate system ------ */
 
-/* Compute the logical page size from physical size, orientation, */
+/* Compute and set the logical page size from physical size, orientation, */
 /* and offsets. */
 void
 pcl_compute_logical_page_size(pcl_state_t *pcls)
@@ -49,6 +49,29 @@ pcl_compute_logical_page_size(pcl_state_t *pcls)
 	    pcls->rotated_page_size.y = pcls->logical_page_size.x;
 	else
 	  pcls->rotated_page_size = pcls->logical_page_size;
+}
+
+/* Compute the default margins for a given orientation. */
+/* The pcl_state_t supplies the page dimensions. */
+void
+pcl_default_margins(pcl_margins_t *pmar, int orientation /*0..3*/,
+  const pcl_state_t *pcls)
+{	coord page_width, page_height;
+
+	if ( orientation & 1 )
+	  page_width = pcls->logical_page_height,
+	    page_height = pcls->logical_page_width;
+	else
+	  page_height = pcls->logical_page_height,
+	    page_width = pcls->logical_page_width;
+	pmar->left = left_margin_default;
+	pmar->right = page_width;
+	pmar->top =
+	  (top_margin_default > page_height ? 0 : top_margin_default);
+	pmar->length =
+	  page_height - pmar->top - inch2coord(0.5);
+	if ( pmar->length < inch2coord(0.5) )
+	  pmar->length = page_height - pmar->top;
 }
 
 /* Set the CTM from the current left and top offset, orientation, */
@@ -143,10 +166,10 @@ pcl_set_print_direction(pcl_state_t *pcls, int print_direction)
 	    /* Transform the CAP and margins to device space. */
 	    pcl_set_ctm(pcls, true);
 	    gs_transform(pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y, &capt);
-	    gs_transform(pgs, (floatp)pcls->left_margin,
-			 (floatp)pcls->top_margin, &mp);
-	    gs_transform(pgs, (floatp)pcls->right_margin,
-			 (floatp)(pcls->top_margin + pcls->text_length),
+	    gs_transform(pgs, (floatp)pcl_left_margin(pcls),
+			 (floatp)pcl_top_margin(pcls), &mp);
+	    gs_transform(pgs, (floatp)pcl_right_margin(pcls),
+			 (floatp)(pcl_top_margin(pcls) + pcl_text_length(pcls)),
 			 &mq);
 	    /* Now we can reset the print direction. */
 	    pcls->print_direction = print_direction;
@@ -170,10 +193,10 @@ pcl_set_print_direction(pcl_state_t *pcls, int print_direction)
 	      { double mt;
 	        mt = mp.y; mp.y = mq.y; mq.y = mt;
 	      }
-	    pcls->left_margin = mp.x;
-	    pcls->top_margin = mp.y;
-	    pcls->right_margin = mq.x;
-	    pcls->text_length = mq.y - pcls->top_margin;
+	    pcl_left_margin(pcls) = mp.x;
+	    pcl_top_margin(pcls) = mp.y;
+	    pcl_right_margin(pcls) = mq.x;
+	    pcl_text_length(pcls) = mq.y - pcl_top_margin(pcls);
 	  }
 	return 0;
 }
@@ -187,7 +210,7 @@ pcl_home_cursor(pcl_state_t *pcls)
 	pcl_break_underline(pcls);
 	pcls->cap.x = 0;
 	/* See TRM 5-18 for the following computation. */
-	pcls->cap.y = pcls->top_margin + 0.75 * pcls->vmi;
+	pcls->cap.y = pcl_top_margin(pcls) + 0.75 * pcls->vmi;
 	pcl_continue_underline(pcls);
 }
 
@@ -197,10 +220,10 @@ void
 pcl_set_cursor_x(pcl_state_t *pcls, coord cx, bool to_margins)
 {	/* Note that the cursor position is relative to the logical page. */
 	if ( to_margins )
-	  { if ( cx < pcls->left_margin )
-	      cx = pcls->left_margin;
-	    if ( cx > pcls->right_margin )
-	      cx = pcls->right_margin;
+	  { if ( cx < pcl_left_margin(pcls) )
+	      cx = pcl_left_margin(pcls);
+	    if ( cx > pcl_right_margin(pcls) )
+	      cx = pcl_right_margin(pcls);
 	  }
 	else
 	  { if ( cx < 0 )
@@ -305,10 +328,13 @@ private const uint32
     p2x8(0xbf, 0x1f, 0xbf, 0xff, 0xfb, 0xf1, 0xfb, 0xff)
   };
 
-/* Define the built-in cross-hatch patterns. */
-/* These are 16x16 bits, replicated horizontally to 64x16. */
-/* Note that the 45-degree patterns are swapped because of the inverted-Y */
-/* coordinate system. */
+/*
+ * Define the built-in cross-hatch patterns.
+ * These are 16x16 bits, replicated horizontally to 64x16.
+ * Note that the patterns are stored top-to-bottom, to agree with
+ * user-defined patterns in the inverted-Y coordinate system.
+ * (This only affects the 45- and 135-degree patterns.)
+ */
 private const uint32
   ch_horizontal[] = {
     p8(0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00),
@@ -321,16 +347,16 @@ private const uint32
     r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80), r2(0x01, 0x80)
   },
   ch_45_degree[] = {
-    r2(0x80, 0x01), r2(0xc0, 0x00), r2(0x60, 0x00), r2(0x30, 0x00),
-    r2(0x18, 0x00), r2(0x0c, 0x00), r2(0x06, 0x00), r2(0x03, 0x00),
-    r2(0x01, 0x80), r2(0x00, 0xc0), r2(0x00, 0x60), r2(0x00, 0x30),
-    r2(0x00, 0x18), r2(0x00, 0x0c), r2(0x00, 0x06), r2(0x00, 0x03)
-  },
-  ch_135_degree[] = {
     r2(0x00, 0xc0), r2(0x01, 0x80), r2(0x03, 0x00), r2(0x06, 0x00),
     r2(0x0c, 0x00), r2(0x18, 0x00), r2(0x30, 0x00), r2(0x60, 0x00),
     r2(0xc0, 0x00), r2(0x80, 0x01), r2(0x00, 0x03), r2(0x00, 0x06),
     r2(0x00, 0x0c), r2(0x00, 0x18), r2(0x00, 0x30), r2(0x00, 0x60)
+  },
+  ch_135_degree[] = {
+    r2(0x80, 0x01), r2(0xc0, 0x00), r2(0x60, 0x00), r2(0x30, 0x00),
+    r2(0x18, 0x00), r2(0x0c, 0x00), r2(0x06, 0x00), r2(0x03, 0x00),
+    r2(0x01, 0x80), r2(0x00, 0xc0), r2(0x00, 0x60), r2(0x00, 0x30),
+    r2(0x00, 0x18), r2(0x00, 0x0c), r2(0x00, 0x06), r2(0x00, 0x03)
   },
   ch_square[] = {
     r2(0x01, 0x80), r2(0x01, 0x80), r2(0xff, 0xff), r2(0xff, 0xff),
@@ -356,7 +382,8 @@ int
 pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
   gs_state *pgs, floatp scale_x, floatp scale_y, int rotation /* 0..3 */)
 {	gs_client_pattern pat;
-	gs_matrix mat, smat;
+	gs_matrix mat, dmat, smat;
+	bool d_reflected, s_reflected;
 	int angle = rotation * 90;
 
 	if ( tile->raster != bitmap_raster(tile->size.x) )
@@ -372,12 +399,22 @@ pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
 	pat.YStep = tile->rep_height;
 	pat.PaintProc = pcl_bitmap_PaintProc;
 	pat.client_data = tile->data;
+	gs_defaultmatrix(pgs, &dmat);
 	gs_currentmatrix(pgs, &smat);
 	gs_make_identity(&mat);
 	gs_setmatrix(pgs, &mat);
 	gs_make_scaling(scale_x, scale_y, &mat);
-	if ( smat.yy > 0 )
-	  mat.yy = -mat.yy, angle = -angle;
+	/*
+	 * We know that the default matrix imposes a PCL coordinate system,
+	 * i.e., (0,0) in the upper left corner.  Check whether the current
+	 * matrix is reflected with respect to this, e.g., for HP-GL/2.
+	 */
+	d_reflected = dmat.xy * dmat.yx > dmat.xx * dmat.yy;
+	s_reflected = smat.xy * smat.yx > smat.xx * smat.yy;
+	if ( s_reflected != d_reflected )
+	  mat.yy = -mat.yy;
+	else
+	  angle = -angle;
 	gs_matrix_rotate(&mat, angle, &mat);
 	gs_makepattern(pcc, &pat, &mat, pgs, (gs_memory_t *)0);
 	gs_setmatrix(pgs, &smat);

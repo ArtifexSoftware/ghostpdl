@@ -6,10 +6,10 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
-Version 0.32 (7/28/97)
+Version 0.33 (7/31/97)
 ======================
 
-Fixes many more problems uncovered by the Genoa FTS.
+Fixes more FTS problems.
 
 Here is the current bug list: bugs believed fixed are marked with a *; bugs
 deliberately (or necessarily) not fixed at this time are marked with (*).
@@ -31,7 +31,7 @@ missing on display: printer is OK, so we won't bother tracking it down now)
 12. missing glyphs - 260, 261, 270, 271, 420, 421, 1151, 1300-1470, 2330.
 13. symbol set selection side effect - 274, 2050, 2130, 2261.
 *14. pitch mode - 320
-15. extra underlines - 412-415
+*15. extra underlines - 412-415
 *16. raster y offset - 600, 602, 2250
 *17. extra pages in raster mode - 600-
 *18. extra raster row - 618
@@ -40,16 +40,16 @@ missing on display: printer is OK, so we won't bother tracking it down now)
 *21. pattern/raster interaction - 661-663, 1851.
 *22. pattern selection - 665
 23. transparency / bounding box of outline glyph - 670, 682, 683, 701, 790.
-24. pattern rotation text direction interaction - 742, *2011, *2013
+*24. pattern rotation text direction interaction - 742, 2011, 2013
 *25. missing macro line 791.
 *26. missing several pages, blows up when starting gl/2 characters - 820, 960,
 1480, 1810, 2350.
 27. out of phase dashed line 1062, 1082, 1116, 1132.
-28. misplaced line - probably position error after hpgl/2 line fill - 1094
+*28. misplaced line - probably position error after hpgl/2 line fill - 1094
 *29. wrong fill - 1113.
 30. spacing/proportional font problem - 1161.
-31. font height - 1181.
-32. stroke weight - 1201.
+*31. font height - 1181.
+*32. stroke weight - 1201.
 33. outline fonts not filled or edged - 1220-1223.
 34. bitmap font at non-orthogonal skew - 1241.
 35. variable text path - 1270-1274.
@@ -57,12 +57,91 @@ missing on display: printer is OK, so we won't bother tracking it down now)
 *37. missing wedges 1472.
 *38. raster graphics restoring X=0 position 1840, 1841
 *39. extra black rectangles 1860, 1861-1890.
-40. captions misplaced 2013, 2020
+*40. captions misplaced 2013, 2020
 41. text & bitmap transparency 2020, 2021
 42. hpgl/2 pcl user defined patterns unsupported - 2030-2042, 2290, 2291
-43. test pages rotated 180 degrees. 2221-
+*43. test pages rotated 180 degrees. 2221-
 *44. si enhanced 2253
 *45. bezier 2340-2330.
+
+(LPD) Fixes bugs:
+	- Patterns sometimes weren't created properly, because the CTM
+wasn't set before creating them.  (pcrect.c)
+	- The right margin wasn't initialized properly, causing anomalies if
+the PCL file didn't explicitly set the page size or orientation.  (pcdraw.c)
+	- Diagonal patterns sometimes came out mirrored, because of errors
+in handling coordinate transformations.  Fixes #24 for frame 742.
+(pcdraw.c)
+	- GL/2 labels didn't set up the CTM explicitly, possibly causing
+text to be misplaced after drawing in a rotated coordinate system.
+(pglabel.c)
+	- The default GL/2 picture frame size was the current PCL text
+length, not the default PCL text length for the current page orientation.
+Fixing this required a structural change in the handling of margins.  Fixes
+#40.  (pcdraw.h, pcstate.h, pcdraw.c, pcpage.c, pctext.c, pcursor.c,
+pgframe.c, pginit.c, rtcursor.c)
+	- Transitions from HP-GL/2 to PCL didn't reset the bookkeeping for
+underlining, which could produce stray underlines.  Fixes #15.  (pgframe.c,
+rtmisc.c)
+	- All GL/2 fonts were scaled by height, instead of scaling
+proportional fonts by height and fixed-width fonts by pitch.  Fixes #31.
+(pcfont.c, pglabel.c)
+	- The stick font didn't have the correct pitch, making it scale
+incorrectly.  (pglabel.c)
+	- The computation of stroke width from weight didn't match H-P's
+closely enough.  Fixes #32.  (pglabel.c)
+	- The stick font could be selected (incorrectly) even if a
+non-upright posture was requested.  Fixes a problem in FTS frame 1191.
+(pglabel.c)
+	- CF with only a single parameter reset the character edge pen to 0,
+rather than leaving it alone.  (pgchar.c)
+	- Characters were always filled with black, rather than being filled
+and/or edged according to the character fill mode.  ****** IN PROGRESS
+****** Fixes #33 (when completed: only fixes frames 1220 and 1221 so far).
+(pgdraw.c)
+	- The table of RF patterns wasn't initialized to 0, causing memory
+access errors.  (pginit.h, pginit.c, pglfill.c)
+	- DF didn't clear the RF pattern table.  (pgconfig.c)
+	- In a debugging configuration, the GL/2 state was cleared at times
+other than printer reset, smashing the RF pattern table.  (pginit.c)
+	- Printer reset cleared the polygon buffer without freeing its
+contents.  (pginit.c)
+	- GL/2 extra space for text was used incorrectly to compute
+displacements.  Fixes #36 for frame 1281 and the vertical aspect of frame
+1282.  (pglabel.c)
+	- GL/2 DV (variable text path) didn't correctly affect the
+extra-space computation.  (pgstate.h, pglabel.c)
+
+Sets the miter limit for the stick font to bevel angles less than 45
+degrees, to avoid anomalies on sharp points like those in a 'w'.  (pgfont.c)
+
+Creates a bogus arc font by condensing the stick font by 25% in X.
+Eventually we will add proportional spacing.  (pgstate.h, pgfont.c,
+pginit.c, pglabel.c)
+
+Some other fix apparently fixed #43.
+
+(HAS) Fixes bugs:
+
+	* pgdraw.c (hpgl_set_clipping_region): fixed missing wedges in #37
+ 	(1472), by properly defining the clipping region.  Clipping
+        code rewritten.
+
+	* pgdraw.c (hpgl_set_drawing_color()): uses pcl routine for
+        rotation.
+
+	* pgpoly.c (hpgl_polyfill()): #28 fix.  hpgl_polyfill() was corrupting
+	the pen position.
+
+	* pgstate.h, pgconfig.c pgdraw.c (hpgl_IW()) - added soft clip window
+	state values part of #37 (1472).
+
+	* pgstate.h - screen shading value changed from float to int.
+
+Version 0.32 (7/28/97)
+======================
+
+Fixes many more problems uncovered by the Genoa FTS.
 
 (LPD) Fixes bugs:
 	- Macros could only be nested once rather than twice (TRM 12-9).

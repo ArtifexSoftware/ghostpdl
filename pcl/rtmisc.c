@@ -84,9 +84,10 @@ rtl_enter_hpgl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 }
 
 /* We export this so we can call it from HP-GL/2 configurations. */
+/* Note that it returns 1 iff it changed the PCL CAP. */
 int /* ESC % <enum> A */ 
 rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
-{	bool b = int_arg(pargs) & 1;
+{	int b = int_arg(pargs) & 1;
 
 	if ( pcls->parse_data )
 	  { /* We were in HP-GL/2 mode.  Destroy the gl/2 polygon path
@@ -113,8 +114,10 @@ rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 			   "hpgl parser data(enter pcl mode)");
 	    pcls->parse_data = 0;
 	  }
+	else
+	  b = 0;
 	pcls->parse_other = 0;
-	return 0;
+	return b;		/* not 0, see comment above */
 }
 
 /* ---------------- Comparison Guide ---------------- */

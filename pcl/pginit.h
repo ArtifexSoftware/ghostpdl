@@ -15,5 +15,8 @@ void hpgl_default_pen_color(P2(hpgl_state_t *pgls, int pen));
 /* as for the RF command.  free = true means free the old pattern if any. */
 void hpgl_default_fill_pattern(P3(hpgl_state_t *pgls, int index, bool free));
 
+/* Reset all the fill patterns to solid fill. */
+void hpgl_default_all_fill_patterns(P2(hpgl_state_t *pgls, bool free));
+
 /* Reset (parts of) the HP-GL/2 state. */
 void hpgl_do_reset(P2(pcl_state_t *pcls, pcl_reset_type_t type));

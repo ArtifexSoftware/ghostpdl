@@ -318,9 +318,7 @@ hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( pargs->phase == 0 )
 	  { if ( !hpgl_arg_c_int(pargs, &index) )
-	      { int i;
-	        for ( i = 1; i <= countof(pgls->g.fill_pattern); ++i )
-		  hpgl_default_fill_pattern(pgls, i, true);
+	      { hpgl_default_all_fill_patterns(pgls, true);
 	        /**** INVALIDATE ANY CACHED VALUES ****/
 		return 0;
 	      }

@@ -18,7 +18,7 @@ int
 pcl_do_CR(pcl_state_t *pcls)
 {	
 	pcl_break_underline(pcls);
-	pcls->cap.x = pcls->left_margin;
+	pcls->cap.x = pcl_left_margin(pcls);
 	pcl_continue_underline(pcls);
 	return 0;
 }
@@ -29,7 +29,7 @@ pcl_do_FF(pcl_state_t *pcls)
 	code = pcl_end_page_always(pcls);
 	if ( code < 0 )
 	  return code;
-	pcls->cap.y = pcls->top_margin + (0.75 * pcls->vmi);
+	pcls->cap.y = pcl_top_margin(pcls) + (0.75 * pcls->vmi);
 	pcl_continue_underline(pcls);	/* (after adjusting y!) */
 	return 0;
 }
@@ -39,7 +39,7 @@ private int
 move_down(pcl_state_t *pcls, coord dy)
 {	coord y = pcls->cap.y + pcls->vmi;
 	if ( pcls->perforation_skip &&
-	     y > pcls->top_margin + pcls->text_length
+	     y > pcl_top_margin(pcls) + pcl_text_length(pcls)
 	   )
 	  return pcl_do_FF(pcls);
 	pcl_set_cursor_y(pcls, y, false);
@@ -108,12 +108,12 @@ pcl_HT(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( hmi == 0 )
 	  return 0;
 	{ coord tab = hmi * 8;
-	  coord x_pos = pcls->cap.x - pcls->left_margin;
+	  coord x_pos = pcls->cap.x - pcl_left_margin(pcls);
 
 	  if ( x_pos < 0 )
 	    x_pos = 0;
 	  pcl_set_cursor_x(pcls,
-			   ((int)(x_pos / tab) + 1) * tab + pcls->left_margin,
+			   ((int)(x_pos / tab) + 1) * tab + pcl_left_margin(pcls),
 			   true);
 	}
 	return 0;
@@ -127,7 +127,7 @@ pcl_vert_cursor_pos_rows(pcl_args_t *pargs, pcl_state_t *pcls)
 	/* cursor positioning command). */
 	pcl_set_cursor_y(pcls,
 			 (coord)((arg_is_signed(pargs) ? pcls->cap.y :
-				  pcls->top_margin + 0.75 * pcls->vmi) + y),
+				  pcl_top_margin(pcls) + 0.75 * pcls->vmi) + y),
 			 false);
 	return 0;
 }
@@ -137,7 +137,7 @@ pcl_vert_cursor_pos_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {	float y = float_arg(pargs) * 10;		/* centipoints */
 	pcl_set_cursor_y(pcls,
 			 (coord)((arg_is_signed(pargs) ? pcls->cap.y :
-				  pcls->top_margin) + y),
+				  pcl_top_margin(pcls)) + y),
 			 false);
 	return 0;
 }
@@ -147,7 +147,7 @@ pcl_vert_cursor_pos_units(pcl_args_t *pargs, pcl_state_t *pcls)
 {	float y = float_arg(pargs) * pcls->uom_cp;	/* centipoints */
 	pcl_set_cursor_y(pcls,
 			 (coord)((arg_is_signed(pargs) ? pcls->cap.y :
-				  pcls->top_margin) + y),
+				  pcl_top_margin(pcls)) + y),
 			 false);
 	return 0;
 }

@@ -18,9 +18,8 @@
 #include "gxdevice.h"
 #include "gdevbbox.h"
 
-/* Define the default margin and text length values. */
-#define left_margin_default 0
-#define top_margin_default inch2coord(0.5)
+/* Note that the commands for setting the margin parameters have */
+/* different names, to avoid conflict with accessor functions in pcstate.h. */
 
 /* Define the default HMI and VMI values. */
 #define hmi_default inch2coord(12.0/120)
@@ -77,25 +76,19 @@ pcl_default_end_page(pcl_state_t *pcls, int num_copies, int flush)
 {	return gs_output_page(pcls->pgs, num_copies, flush);
 }
 
-/* Reset the margins. */
-private void
-reset_margins(pcl_state_t *pcls)
-{	pcls->left_margin = left_margin_default;
-	pcls->right_margin = pcls->rotated_page_width;
-	pcls->top_margin =
-	  (top_margin_default > pcls->rotated_page_height ? 0 :
-	   top_margin_default);
-}
+/* Reset the margins and text length. */
+#define reset_margins(pcls)\
+  pcl_default_margins(&pcls->margins, pcls->print_direction, pcls)
 
 /* Reset the text length to the default. */
 private void
 reset_text_length(pcl_state_t *pcls)
 {	if ( pcls->vmi != 0 )
 	  { coord len =
-	      pcls->rotated_page_height - pcls->top_margin - inch2coord(0.5);
+	      pcls->rotated_page_height - pcl_top_margin(pcls) - inch2coord(0.5);
 
 	    /* We suppose that the minimum text length is 1 line.... */
-	    pcls->text_length = max(len, pcls->vmi);
+	    pcl_text_length(pcls) = max(len, pcls->vmi);
 	  }
 }
 
@@ -152,7 +145,7 @@ pcl_page_size(pcl_args_t *pargs, pcl_state_t *pcls)
 				 psize->width * 0.01,
 				 psize->height * 0.01);
 	reset_margins(pcls);
-	reset_text_length(pcls);
+	reset_text_length(pcls);	/* use current VMI if applicable */
 	pcl_home_cursor(pcls);
 	pcls->overlay_enabled = false;
 	return 0;
@@ -194,13 +187,12 @@ pcl_page_orientation(pcl_args_t *pargs, pcl_state_t *pcls)
 	    return code;
 	}
 	pcls->orientation = i;
-	reset_margins(pcls);
 	pcls->hmi_set = hmi_not_set;
 	pcls->vmi = vmi_default;
-	pcl_home_cursor(pcls);
 	pcls->overlay_enabled = false;
 	pcl_compute_logical_page_size(pcls);
-	reset_text_length(pcls);
+	reset_margins(pcls);
+	pcl_home_cursor(pcls);
 	hpgl_do_reset(pcls, pcl_reset_page_params);
 	return 0;
 }
@@ -219,18 +211,18 @@ pcl_print_direction(pcl_args_t *pargs, pcl_state_t *pcls)
 }
 
 private int /* ESC & a <col> L */
-pcl_left_margin(pcl_args_t *pargs, pcl_state_t *pcls)
+pcmd_left_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 {	coord lmarg = int_arg(pargs) * pcl_hmi(pcls);
 
-	if ( lmarg < pcls->right_margin )
-	  { pcls->left_margin = lmarg;
+	if ( lmarg < pcl_right_margin(pcls) )
+	  { pcl_left_margin(pcls) = lmarg;
 	    pcl_clamp_cursor_x(pcls, true);
 	  }
 	return 0;
 }
 
 private int /* ESC & a <col> M */
-pcl_right_margin(pcl_args_t *pargs, pcl_state_t *pcls)
+pcmd_right_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 {	/*
 	 * The right margin is set to the *right* edge of the specified
 	 * column, so we need to add 1 to the column number.
@@ -239,8 +231,8 @@ pcl_right_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	if ( rmarg > pcls->rotated_page_width )
 	  rmarg = pcls->rotated_page_width;
-	if ( rmarg > pcls->left_margin )
-	  { pcls->right_margin = rmarg;
+	if ( rmarg > pcl_left_margin(pcls) )
+	  { pcl_right_margin(pcls) = rmarg;
 	    pcl_clamp_cursor_x(pcls, true);
 	  }
 	return 0;
@@ -248,33 +240,33 @@ pcl_right_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 
 private int /* ESC 9 */
 pcl_clear_horizontal_margins(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->left_margin = 0;
-	pcls->right_margin = pcls->rotated_page_width;
+{	pcl_left_margin(pcls) = 0;
+	pcl_right_margin(pcls) = pcls->rotated_page_width;
 	pcl_clamp_cursor_x(pcls, true);
 	return 0;
 }
 
 private int /* ESC & l <line> E */
-pcl_top_margin(pcl_args_t *pargs, pcl_state_t *pcls)
+pcmd_top_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 {	coord tmarg = int_arg(pargs) * pcls->vmi;
 	if ( pcls->vmi == 0 || tmarg > pcls->rotated_page_height )
 	  return 0;
-	pcls->top_margin = tmarg;
+	pcl_top_margin(pcls) = tmarg;
 	reset_text_length(pcls);
 	/* The manual doesn't call for clamping the cursor here.... */
 	return 0;
 }
 
 private int /* ESC & l <lines> F */
-pcl_text_length(pcl_args_t *pargs, pcl_state_t *pcls)
+pcmd_text_length(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int num_lines = int_arg(pargs);
 
 	if ( pcls->vmi == 0 )
 	  return 0;
 	{ coord len = num_lines * pcls->vmi;
 
-	  if ( pcls->top_margin + len <= pcls->rotated_page_height )
-	    pcls->text_length = len;
+	  if ( pcl_top_margin(pcls) + len <= pcls->rotated_page_height )
+	    pcl_text_length(pcls) = len;
 	}
 	return 0;
 }
@@ -293,7 +285,7 @@ pcl_perforation_skip(pcl_args_t *pargs, pcl_state_t *pcls)
            length and text length and margins to their defaults */
 	if ( new_skip != pcls->perforation_skip )
 	  {
-	    pcls->top_margin = 
+	    pcl_top_margin(pcls) = 
 	      (top_margin_default > pcls->rotated_page_height ? 0 : 
 	       top_margin_default);
 	    reset_text_length(pcls);
@@ -371,20 +363,20 @@ pcpage_do_init(gs_memory_t *mem)
 	     PCL_COMMAND("Print Direction", pcl_print_direction,
 			 pca_neg_ignore|pca_big_ignore)},
 	  {'a', 'L',
-	     PCL_COMMAND("Left Margin", pcl_left_margin,
+	     PCL_COMMAND("Left Margin", pcmd_left_margin,
 			 pca_neg_error|pca_big_error)},
 	  {'a', 'M',
-	     PCL_COMMAND("Right Margin", pcl_right_margin,
+	     PCL_COMMAND("Right Margin", pcmd_right_margin,
 			 pca_neg_error|pca_big_error)},
 	END_CLASS
 	DEFINE_ESCAPE('9', "Clear Horizontal Margins",
 		      pcl_clear_horizontal_margins)
 	DEFINE_CLASS('&')
 	  {'l', 'E',
-	     PCL_COMMAND("Top Margin", pcl_top_margin,
+	     PCL_COMMAND("Top Margin", pcmd_top_margin,
 			 pca_neg_ignore|pca_big_error)},
 	  {'l', 'F',
-	     PCL_COMMAND("Text Length", pcl_text_length,
+	     PCL_COMMAND("Text Length", pcmd_text_length,
 			 pca_neg_ignore|pca_big_error)},
 	  {'l', 'L',
 	     PCL_COMMAND("Perforation Skip", pcl_perforation_skip,
@@ -416,12 +408,13 @@ pcpage_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pcls->paper_source = 0;		/* ??? */
 	    pcls->print_direction = 0;
 	    pcls->orientation = 0;
+	    /* We must compute the logical page size before setting */
+	    /* the margins. */
+	    pcl_compute_logical_page_size(pcls);
 	    reset_margins(pcls);
 	    pcls->perforation_skip = true;
 	    pcls->hmi_set = hmi_not_set;
 	    pcls->vmi = vmi_default;
-	    pcl_compute_logical_page_size(pcls);
-	    reset_text_length(pcls);
 	    pcls->have_page = false;
 	  }
 }

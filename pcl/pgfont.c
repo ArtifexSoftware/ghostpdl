@@ -24,6 +24,10 @@
 
 #define num_arc_symbols (256+20) /* HACK forward reference */
 
+/* The arc font is just a condensed version of the stick font, */
+/* with minimal inter-character spacing. */
+#define arc_font_condensation 0.70
+
 /* The client handles all encoding issues for these fonts. */
 private gs_glyph
 hpgl_stick_arc_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
@@ -46,7 +50,12 @@ hpgl_stick_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
 private int
 hpgl_arc_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
   const gs_matrix *pmat, uint char_code, gs_point *pwidth)
-{	return hpgl_stick_char_width(plfont, map, pmat, char_code, pwidth);
+{	int code = hpgl_stick_char_width(plfont, map, pmat, char_code, pwidth);
+
+	if ( code > 0 && pwidth != 0 )
+	  pwidth->x *= arc_font_condensation,
+	    pwidth->y *= arc_font_condensation;
+	return code;
 }
 
 /*
@@ -82,7 +91,7 @@ private int hpgl_arc_add_arc(P6(gs_state *pgs, int cx, int cy,
 /* Add a symbol to the path. */
 private int
 hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
-  gs_char ignore_chr, gs_glyph char_index)
+  gs_glyph char_index, floatp condensation)
 {	double chord_angle = pfont->StrokeWidth;
 	const byte *ptr;
 	const byte *end;
@@ -99,7 +108,7 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 
 	if ( char_index < 0x20 || char_index >= 0x20 + num_arc_symbols )
 	  return 0;
-	gs_setcharwidth(penum, pgs, 0.667, 0.0);
+	gs_setcharwidth(penum, pgs, 0.667 * condensation, 0.0);
 	ptr = &arc_symbol_strokes[arc_symbol_offsets[char_index - 0x20]];
 	end = ptr + arc_symbol_counts[char_index - 0x20];
 	prev.x = prev.y = 0;
@@ -110,7 +119,7 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	/* Also, per TRM 23-18, the character cell is only 2/3 the */
 	/* point size. */
 #define scale (1.0 / 15 * 2 / 3)
-	gs_scale(pgs, scale, scale);
+	gs_scale(pgs, scale * condensation, scale);
 #undef scale
 	gs_moveto(pgs, 0.0, 0.0);
 
@@ -235,9 +244,21 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	if ( code < 0 )
 	  return code;
 	/* Set predictable join and cap styles. */
-	gs_setlinejoin(pgs, gs_join_miter);
+	gs_setlinejoin(pgs, gs_join_bevel);
+	gs_setmiterlimit(pgs, 2.61); /* start beveling at 45 degrees */
 	gs_setlinecap(pgs, gs_cap_triangle);
 	return gs_stroke(pgs);
+}
+private int
+hpgl_stick_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
+  gs_char ignore_chr, gs_glyph char_index)
+{	return hpgl_stick_arc_build_char(penum, pgs, pfont, char_index, 1.0);
+}
+private int
+hpgl_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
+  gs_char ignore_chr, gs_glyph char_index)
+{	return hpgl_stick_arc_build_char(penum, pgs, pfont, char_index,
+					 arc_font_condensation);
 }
 
 /* Add an arc given the center, start point, and sweep angle. */
@@ -246,8 +267,6 @@ hpgl_arc_add_arc(gs_state *pgs, int cx, int cy, const gs_int_point *start,
   floatp sweep_angle, floatp chord_angle)
 {	int dx = start->x - cx, dy = start->y - cy;
 	double radius, angle;
-	int count = (int)ceil(fabs(sweep_angle) / chord_angle);
-	double delta = sweep_angle / count;
 	int code = 0;
 
 	if ( dx == 0 ) {
@@ -260,15 +279,27 @@ hpgl_arc_add_arc(gs_state *pgs, int cx, int cy, const gs_int_point *start,
 	  radius = hypot((floatp)dx, (floatp)dy);
 	  angle = atan2((floatp)dy, (floatp)dx) * radians_to_degrees;
 	}
-	while ( count-- ) {
-	  gs_sincos_t sincos;
+	if ( chord_angle == 0 ) {
+	  /* Just add the arc. */
+	  code = (sweep_angle < 0 ?
+		  gs_arcn(pgs, (floatp)cx, (floatp)cy, radius, angle,
+			  angle + sweep_angle) :
+		  gs_arc(pgs, (floatp)cx, (floatp)cy, radius, angle,
+			 angle + sweep_angle));
+	} else {
+	  int count = (int)ceil(fabs(sweep_angle) / chord_angle);
+	  double delta = sweep_angle / count;
 
-	  angle += delta;
-	  gs_sincos_degrees(angle, &sincos);
-	  code = gs_lineto(pgs, cx + sincos.cos * radius,
-			   cy + sincos.sin * radius);
-	  if ( code < 0 )
-	    break;
+	  while ( count-- ) {
+	    gs_sincos_t sincos;
+
+	    angle += delta;
+	    gs_sincos_degrees(angle, &sincos);
+	    code = gs_lineto(pgs, cx + sincos.cos * radius,
+			     cy + sincos.sin * radius);
+	    if ( code < 0 )
+	      break;
+	  }
 	}
 	return code;
 }
@@ -285,7 +316,6 @@ hpgl_fill_in_stick_arc_font(gs_font_base *pfont, long unique_id)
 	pfont->InBetweenSize = fbit_use_outlines;
 	pfont->TransformedChar = fbit_use_outlines;
 	pfont->procs.encode_char = hpgl_stick_arc_encode_char;
-	pfont->procs.build_char = hpgl_stick_arc_build_char;
 	/* p.y of the FontBBox is a guess, because of descenders. */
 	/* Because of descenders, we have no real idea what the */
 	/* FontBBox should be. */
@@ -302,13 +332,16 @@ hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
 	pfont->StrokeWidth = 22.5;
 #define plfont ((pl_font_t *)pfont->client_data)
+	pfont->procs.build_char = hpgl_stick_build_char;
 	plfont->char_width = hpgl_stick_char_width;
 #undef plfont
 }
 void
 hpgl_fill_in_arc_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
+	pfont->StrokeWidth = 0;  /* don't flatten arcs */
 #define plfont ((pl_font_t *)pfont->client_data)
+	pfont->procs.build_char = hpgl_arc_build_char;
 	plfont->char_width = hpgl_arc_char_width;
 #undef plfont
 }

@@ -176,10 +176,13 @@ hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_int(pargs, &mode) )
 	  { if ( mode & ~3 )
 	      return e_Range;
+	    /* With only 1 argument, leave the current pen unchanged. */
 	    if ( hpgl_arg_int(pargs, &pen) )
 	      { if ( pen < 0 || pen >= pgls->g.number_of_pens )
 		  return e_Range;
 	      }
+	    else
+	      pen = pgls->g.character.edge_pen;
 	  }
 	pgls->g.character.fill_mode = mode;
 	pgls->g.character.edge_pen = pen;
