@@ -130,7 +130,6 @@ typedef struct px_gstate_s {
   pxeWritingMode_t writing_mode;
   pxeClipMode_t clip_mode;
   pxeColorSpace_t color_space;
-  gs_color_space *cie_color_space;
   gs_const_string palette;
   bool palette_is_shared;	/* with next higher gstate */
   float char_size;

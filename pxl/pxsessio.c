@@ -193,6 +193,7 @@ px_end_session_cleanup(px_state_t *pxs)
 	px_dict_release(&pxs->stream_dict);
 	/* delete downloaded fonts on end of session */
 	px_dict_release(&pxs->font_dict);
+        pl_free_crd(pxs->pgs);
 }
 
 /* ---------------- Non-operator procedures ---------------- */
@@ -254,6 +255,8 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	    pxs->copies = pjl_copies;
 	    pxs->media_destination = eDefaultDestination;
 	    pxs->media_type = eDefaultType;
+            pxs->useciecolor =  !pjl_proc_compare(pxs->pjls,
+                  pjl_proc_get_envvar(pxs->pjls, "useciecolor"), "on");
 	    /* install the built in fonts */
 	    if ( pl_load_built_in_fonts(pjl_proc_fontsource_to_path(pxs->pjls, "I"),
 					pxs->memory,
