@@ -91,8 +91,9 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *                is never freed;
  *              view_clip, which is associated with the current
  *                save level (effectively, with the gstate sub-stack
- *                back to the save) and is managed specially.
- *		The transparency group stack, TBD.
+ *                back to the save) and is managed specially;
+ *		transparency_stack, which is associated with the entire
+ *		  stack but only stored in the topmost graphics state.
  *
  * (4) Objects that are referenced directly by exactly one gstate and that
  *      are not referenced (except transiently) from any other object.
@@ -403,6 +404,7 @@ gs_grestore_only(gs_state * pgs)
     gs_state *saved = pgs->saved;
     void *pdata = pgs->client_data;
     void *sdata;
+    gs_transparency_state_t *tstack = pgs->transparency_stack;
 
     if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
@@ -416,8 +418,8 @@ gs_grestore_only(gs_state * pgs)
     saved->client_data = pdata;
     if (pdata != 0 && sdata != 0)
 	gstate_copy_client_data(pgs, pdata, sdata, copy_for_grestore);
-    gstate_free_contents(pgs);
     *pgs = *saved;
+    pgs->transparency_stack = tstack;
     if (pgs->show_gstate == saved)
 	pgs->show_gstate = pgs;
     gs_free_object(pgs->memory, saved, "gs_grestore");
@@ -558,6 +560,7 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
     gs_state *saved_show = pgs->show_gstate;
     int level = pgs->level;
     gx_clip_path *view_clip = pgs->view_clip;
+    gs_transparency_state_t *tstack = pgs->transparency_stack;
     int code;
 
     pgs->view_clip = 0;		/* prevent refcount decrementing */
@@ -568,6 +571,7 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
     pgs->view_clip = view_clip;
     pgs->show_gstate =
 	(pgs->show_gstate == pfrom ? pgs : saved_show);
+    pgs->transparency_stack = tstack;
     return 0;
 }
 
@@ -775,6 +779,7 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	return 0;
     GSTATE_ASSIGN_PARTS(&parts, pgs);
     *pgs = *pfrom;
+    pgs->transparency_stack = 0;
     /* Copy the dash pattern if necessary. */
     if (pgs->line_params.dash.pattern) {
 	int code;

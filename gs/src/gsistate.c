@@ -66,7 +66,8 @@ ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     ENUM_PTR(1, gs_imager_state, client_data);
     ENUM_PTR(2, gs_imager_state, opacity.mask);
     ENUM_PTR(3, gs_imager_state, shape.mask);
-#define E1(i,elt) ENUM_PTR(i+4,gs_imager_state,elt);
+    ENUM_PTR(4, gs_imager_state, transparency_stack);
+#define E1(i,elt) ENUM_PTR(i+5,gs_imager_state,elt);
     gs_cr_state_do_ptrs(E1)
 #undef E1
 ENUM_PTRS_END
@@ -77,6 +78,7 @@ private RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
     RELOC_PTR(gs_imager_state, client_data);
     RELOC_PTR(gs_imager_state, opacity.mask);
     RELOC_PTR(gs_imager_state, shape.mask);
+    RELOC_PTR(gs_imager_state, transparency_stack);
 #define R1(i,elt) RELOC_PTR(gs_imager_state,elt);
     gs_cr_state_do_ptrs(R1)
 #undef R1
@@ -144,6 +146,10 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 	}
 	pis->shared = shared;
     }
+    pis->opacity.mask = 0;
+    pis->shape.mask = 0;
+    pis->transparency_stack = 0;
+    /* Color rendering state */
     pis->halftone = 0;
     {
 	int i;
@@ -177,7 +183,8 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 
 /*
  * Make a temporary copy of a gs_imager_state.  Note that this does not
- * do all the necessary reference counting, etc.
+ * do all the necessary reference counting, etc.  However, it does
+ * clear out the transparency stack in the destination.
  */
 gs_imager_state *
 gs_imager_state_copy(const gs_imager_state * pis, gs_memory_t * mem)
@@ -186,8 +193,10 @@ gs_imager_state_copy(const gs_imager_state * pis, gs_memory_t * mem)
 	gs_alloc_struct(mem, gs_imager_state, &st_imager_state,
 			"gs_imager_state_copy");
 
-    if (pis_copy)
+    if (pis_copy) {
 	*pis_copy = *pis;
+	pis_copy->transparency_stack = 0;
+    }
     return pis_copy;
 }
 

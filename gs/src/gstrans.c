@@ -180,6 +180,36 @@ gs_current_transparency_type(const gs_state *pgs)
 	    pgs->transparency_stack->type);
 }
 
+/* Support for dummy implementation */
+gs_private_st_ptrs1(st_transparency_state, gs_transparency_state_t,
+		    "gs_transparency_state_t", transparency_state_enum_ptrs,
+		    transparency_state_reloc_ptrs, saved);
+private int
+push_transparency_stack(gs_state *pgs, gs_transparency_state_type_t type,
+			client_name_t cname)
+{
+    gs_transparency_state_t *pts =
+	gs_alloc_struct(pgs->memory, gs_transparency_state_t,
+			&st_transparency_state, cname);
+
+    if (pts == 0)
+	return_error(gs_error_VMerror);
+    pts->saved = pgs->transparency_stack;
+    pts->type = type;
+    pgs->transparency_stack = pts;
+    return 0;
+}
+private void
+pop_transparency_stack(gs_state *pgs, client_name_t cname)
+{
+    gs_transparency_state_t *pts = pgs->transparency_stack; /* known non-0 */
+    gs_transparency_state_t *saved = pts->saved;
+
+    gs_free_object(pgs->memory, pts, cname);
+    pgs->transparency_stack = saved;
+
+}
+
 void
 gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
 {
@@ -193,6 +223,7 @@ gs_begin_transparency_group(gs_state *pgs,
 			    const gs_transparency_group_params_t *ptgp,
 			    const gs_rect *pbbox)
 {
+    /****** NYI, DUMMY ******/
 #ifdef DEBUG
     if (gs_debug_c('v')) {
 	static const char *const cs_names[] = {
@@ -210,15 +241,20 @@ gs_begin_transparency_group(gs_state *pgs,
 		 ptgp->Isolated, ptgp->Knockout);
     }
 #endif
-    /****** NYI ******/
-    return 0;
+    return push_transparency_stack(pgs, TRANSPARENCY_STATE_Group,
+				   "gs_begin_transparency_group");
 }
 
 int
 gs_end_transparency_group(gs_state *pgs)
 {
+    /****** NYI, DUMMY ******/
+    gs_transparency_state_t *pts = pgs->transparency_stack;
+
     if_debug1('v', "[v](0x%lx)end_transparency_group\n", (ulong)pgs);
-    /****** NYI ******/
+    if (!pts || pts->type != TRANSPARENCY_STATE_Group)
+	return_error(gs_error_rangecheck);
+    pop_transparency_stack(pgs, "gs_end_transparency_group");
     return 0;
 }
 
@@ -243,31 +279,42 @@ gs_begin_transparency_mask(gs_state *pgs,
 			   const gs_transparency_mask_params_t *ptmp,
 			   const gs_rect *pbbox)
 {
+    /****** NYI, DUMMY ******/
     if_debug8('v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
       subtype=%d has_Background=%d %s\n",
 	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.x,
 	      (int)ptmp->subtype, ptmp->has_Background,
 	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
-    /****** NYI ******/
-    return 0;
+    return push_transparency_stack(pgs, TRANSPARENCY_STATE_Mask,
+				   "gs_begin_transparency_group");
 }
 
 int
 gs_end_transparency_mask(gs_state *pgs,
 			 gs_transparency_channel_selector_t csel)
 {
+    /****** NYI, DUMMY ******/
+    gs_transparency_state_t *pts = pgs->transparency_stack;
+
     if_debug2('v', "[v](0x%lx)end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
-    /****** NYI ******/
+    if (!pts || pts->type != TRANSPARENCY_STATE_Mask)
+	return_error(gs_error_rangecheck);
+    pop_transparency_stack(pgs, "gs_end_transparency_mask");
     return 0;
 }
 
 int
 gs_discard_transparency_layer(gs_state *pgs)
 {
+    /****** NYI, DUMMY ******/
+    gs_transparency_state_t *pts = pgs->transparency_stack;
+
     if_debug1('v', "[v](0x%lx)discard_transparency_layer\n", (ulong)pgs);
-    /****** NYI ******/
+    if (!pts)
+	return_error(gs_error_rangecheck);
+    pop_transparency_stack(pgs, "gs_discard_transparency_layer");
     return 0;
 }
 
@@ -275,8 +322,17 @@ int
 gs_init_transparency_mask(gs_state *pgs,
 			  gs_transparency_channel_selector_t csel)
 {
+    /****** NYI, DUMMY ******/
+    gs_transparency_source_t *ptm;
+
     if_debug2('v', "[v](0x%lx)init_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
-    /****** NYI ******/
+    switch (csel) {
+    case TRANSPARENCY_CHANNEL_Opacity: ptm = &pgs->opacity; break;
+    case TRANSPARENCY_CHANNEL_Shape: ptm = &pgs->shape; break;
+    default: return_error(gs_error_rangecheck);
+    }
+    rc_decrement_only(ptm->mask, "gs_init_transparency_mask");
+    ptm->mask = 0;
     return 0;
 }

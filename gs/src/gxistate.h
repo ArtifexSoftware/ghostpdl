@@ -228,7 +228,7 @@ typedef struct gs_transparency_source_s {
 	  (*get_cmap_procs)(P2(const gs_imager_state *, const gx_device *));\
 	gs_color_rendering_state_common
 #define st_imager_state_num_ptrs\
-  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 4)
+  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 5)
 /* Access macros */
 #define ctm_only(pis) (*(const gs_matrix *)&(pis)->ctm)
 #define ctm_only_writable(pis) (*(gs_matrix *)&(pis)->ctm)

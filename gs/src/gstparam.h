@@ -58,11 +58,12 @@ typedef enum {
     TRANSPARENCY_STATE_Mask
 } gs_transparency_state_type_t;
 #define GS_TRANSPARENCY_STATE_COMMON\
-    rc_header rc;\
+    gs_transparency_state_t *saved;\
     gs_transparency_state_type_t type
-typedef struct gs_transparency_state_s {
+typedef struct gs_transparency_state_s gs_transparency_state_t;
+struct gs_transparency_state_s {
     GS_TRANSPARENCY_STATE_COMMON;
-} gs_transparency_state_t;
+};
 
 /* Define the common part for a cached transparency mask. */
 #define GS_TRANSPARENCY_MASK_COMMON\
