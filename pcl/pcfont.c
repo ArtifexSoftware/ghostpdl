@@ -298,10 +298,23 @@ pcl_secondary_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs)
 
 private int
 pcl_select_default_font(pcl_args_t *pargs, pcl_state_t *pcs, int set)
-{	if ( int_arg(pargs) != 3 )
-	  return e_Range;
-	pcl_decache_font(pcs, set);
-	return e_Unimplemented;
+{	
+    if ( int_arg(pargs) != 3 )
+	return e_Range;
+
+    pcs->font_selection[set].params.proportional_spacing = false;
+    pcs->font_selection[set].params.symbol_set = pcs->default_symbol_set_value;
+    pl_fp_set_pitch_per_inch(&pcs->font_selection[set].params,
+			     pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "pitch")));
+    pcs->font_selection[set].params.height_4ths =
+	pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0;
+
+    pcs->font_selection[set].params.style = 0;
+    pcs->font_selection[set].params.stroke_weight = 0;
+    pcs->font_selection[set].params.typeface_family = 3;	/* courier */
+    pcs->font_selection[set].font = 0;			/* not looked up yet */
+    pcl_decache_font(pcs, set);
+    return e_Unimplemented;
 }
 private int /* ESC ( 3 @ */
 pcl_select_default_font_primary(pcl_args_t *pargs, pcl_state_t *pcs)
