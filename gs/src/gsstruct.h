@@ -515,6 +515,13 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 #define gs_private_st_simple(stname, stype, sname)\
   gs__st_simple(private_st, stname, stype, sname)
 
+#define gs__st_simple_final(scope_st, stname, stype, sname, pfinal)\
+  scope_st stname = { sizeof(stype), sname, 0, 0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, pfinal }
+#define gs_public_st_simple_final(stname, stype, sname, pfinal)\
+  gs__st_simple_final(public_st, stname, stype, sname, pfinal)
+#define gs_private_st_simple_final(stname, stype, sname, pfinal)\
+  gs__st_simple_final(private_st, stname, stype, sname, pfinal)
+
 /* ---------------- Structures with explicit procedures. ---------------- */
 
 /*
