@@ -21,11 +21,23 @@ import com.sun.image.codec.jpeg.*;
 public class Gpickle {
     /** debug printf control */
     private static boolean debug = false;
-    /** here are some defaults that might be overriden will probably be
-    * overriden.
-    */
+
+    /** Render resolution */
     private double xRes = 75f;
     private double yRes = 75f;
+
+    /** translate origin */
+    private double xTrans = 0.0;    
+    private double yTrans = 0.0;
+
+    /** scalefactor */
+    private double xScale = 1.0;
+    private double yScale = 1.0;
+
+    /** RTL PS command override */
+    private double plotsize1 = 1.0;
+    private double plotsize2 = 1.0;
+
     private String jobList = "startpage.pcl";
     protected int pageToDisplay = 1;
     /** This is a local counter */
@@ -42,43 +54,38 @@ public class Gpickle {
      */
     private int width;
 
-    private String rtl = "";
-    private final static String cRTLstr = " -PRTL";
+    private boolean bRtl = false;
+    private final static String cRTLstr = "-PRTL";
+
+    /** set -PRTL mode we do not force other modes to allow language switching
+     * it maybe desireable to select mono/color 
+     */
     public void setRTL( boolean on ) {
-        if (on)
-           rtl = cRTLstr;
-        else
-           rtl = "";
+	bRtl = on;
     }
     public boolean getRTL() {
-       return( rtl.equals(cRTLstr) );
+       return( bRtl );
     }
 
     private boolean bTextAlpha = true;
-    private String textAlphaOptStr = " -dTextAlphaBits=2";
+    private String textAlphaOptStr = "-dTextAlphaBits=2";
     public boolean getTextAlpha() {
         return bTextAlpha;
     }
     public void setTextAlpha( boolean textAlpha ) {
         bTextAlpha = textAlpha;
-        if ( bTextAlpha )
-            textAlphaOptStr = " ";
-        else
-            textAlphaOptStr =  " -dTextAlphaBits=2";
     }
-
-    private String deviceOptions =  " ";
 
     /** GhostPrinter application path */
     private String ghostAppStr;
 
     /** look for relative path executable first */
-    //private String ghostAppRelStr =  "../../language_switch/obj/pspcl6";
-    private String ghostAppRelStr =  "../../main/obj/pcl6";
+    private String ghostAppRelStr =  "../../language_switch/obj/pspcl6";
+    //private String ghostAppRelStr =  "../../main/obj/pcl6";
 
     /** look for executable in path next */
-    //private String ghostAppPathStr =  "pspcl6";
-    private String ghostAppPathStr =  "pcl6";
+    private String ghostAppPathStr =  "pspcl6";
+    //private String ghostAppPathStr =  "pcl6";
 
     /** find the GhostPrinter application
      * first relative path
@@ -96,11 +103,14 @@ public class Gpickle {
                 testIt = new File(ghostAppStr);
                 if (!testIt.exists()) {
                     ghostAppStr = ghostAppPathStr + ".exe";
+		    // defaults to pcl6.exe, windows requires extension foo 
+		    /*
                     testIt = new File(ghostAppStr);
                     if (!testIt.exists()) {
                         System.out.println("Missing file " + ghostAppStr);
                         System.exit(1);
                     }
+		    */
                 }
             }
         }
@@ -110,18 +120,44 @@ public class Gpickle {
      * "command line" used to run interpreter.
      * NB Client should be able to modify settings.
      */
-    private String runString( int page )
+    private String[] runString( int page )
     {
-        return ghostAppStr
-            + deviceOptions
-            + rtl
-            + textAlphaOptStr
-            + " -dFirstPage=" + page + " -dLastPage="
-            + page
-            + " -r" + xRes + "x" + yRes
-            + " -sDEVICE=" + deviceName
-            + " -dNOPAUSE "
-            + " -sOutputFile=- " + jobList + " \n";
+	int i = 0;
+	int numCommands = 14;
+	if ( bTextAlpha )
+	    ++numCommands;
+	if (bRtl)
+	    numCommands += 5;
+        String[] commandArr = new String[numCommands];
+        commandArr[i++] = ghostAppStr;
+	if ( bTextAlpha ) {
+	    commandArr[i++] = textAlphaOptStr;
+	}
+        commandArr[i++] = "-dViewTransX= "+ Double.toString(xTrans);
+        commandArr[i++] = "-dViewTransY= "+ Double.toString(yTrans);
+        commandArr[i++] = "-dViewScaleX= "+ Double.toString(xScale);
+        commandArr[i++] = "-dViewScaleY= "+ Double.toString(yScale);
+        commandArr[i++] = "-dFirstPage=" + Integer.toString(page); 
+        commandArr[i++] = "-dLastPage=" + Integer.toString(page);
+        commandArr[i++] = "-r" + Double.toString(xRes) + "x" + Double.toString(yRes);
+        commandArr[i++] = "-sDEVICE=" + deviceName;
+        commandArr[i++] = "-dNOPAUSE";
+	commandArr[i++] = "-J@PJL SET USECIECOLOR=ON";
+	commandArr[i++] = "-J@PJL SET VIEWER=ON";
+	if (bRtl) {
+	    commandArr[i++] = cRTLstr;
+	    commandArr[i++] = "-J@PJL SET PLOTSIZEOVERRIDE=OFF";
+	    commandArr[i++] = "-J@PJL SET PLOTSIZE1"+ Double.toString(plotsize1);	
+	    commandArr[i++] = "-J@PJL SET PLOTSIZE2"+ Double.toString(plotsize2);
+	    commandArr[i++] = "-J@PJL SET PLOTSIZEROTATE=OFF";
+	}
+        commandArr[i++] = "-sOutputFile=-";
+        commandArr[i++] = jobList;   
+	if (debug) {
+	    for (int j = 0; j < commandArr.length; j++)
+		System.out.println( commandArr[j] );
+	}
+        return commandArr;
     }
 
     /**
@@ -130,7 +166,7 @@ public class Gpickle {
     private String pageCountString()
     {
         return ghostAppStr
-            + " -C -r25 -dNOPAUSE -sDEVICE=nullpage "
+            + " -C -r10 -dNOPAUSE -sDEVICE=nullpage "
             + jobList;
     }
 
@@ -165,10 +201,13 @@ public class Gpickle {
         return myTotalPageCount;
     }
 
-    // public methods.
 
-    public void setDeviceOptions( String options ) {
-       deviceOptions = options;
+    /** translation and scale options */
+    public void setTranslateScaleOptions( double tx, double ty, double sx, double sy ) {
+	xTrans = tx;
+	yTrans = ty;
+	xScale = sx;
+	yScale = sy;
     }
 
     /** size of page cache */
@@ -201,7 +240,12 @@ public class Gpickle {
 		hit = i;
 	    }
 	}
-	int hashCode = runString( page ).hashCode();
+	// hash all strings together; only called from here.
+	int hashCode = 0;
+	String[] cmdStr = runString( page );
+	for (i = 0; i<cmdStr.length; i++)
+	    hashCode += cmdStr[i].hashCode();
+
 	BufferedImage bi = null;
 	if ( hit >= 0 ) {
 	    bi = pageCache[hit];
@@ -240,7 +284,6 @@ public class Gpickle {
         Process p = null;
 
         try {
-            if (debug) System.out.println("runstring=" + runString( page ));
             p = Runtime.getRuntime().exec(runString( page ));
             // read process output and return a buffered image.
             JPEGImageDecoder decoder = JPEGCodec.createJPEGDecoder(p.getInputStream());
