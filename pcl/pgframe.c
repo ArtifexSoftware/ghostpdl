@@ -66,8 +66,10 @@ pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcs)
 	
 	if ( size == 0 )
 	  size = pcs->xfm_state.lp_size.x;
-	pcs->g.picture_frame_width = size;
-	pcl_set_picture_frame_side_effects(pcs);
+	if ( size != pcs->g.picture_frame_width ) {
+	    pcs->g.picture_frame_width = size;
+	    pcl_set_picture_frame_side_effects(pcs);
+	}
 	return 0;
 }
 
@@ -82,8 +84,10 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcs)
 	if ( pcs->personality != rtl )
 	    size -= inch2coord(1.0);
     }
-    pcs->g.picture_frame_height = size;
-    pcl_set_picture_frame_side_effects(pcs);
+    if ( size != pcs->g.picture_frame_height ) {
+	pcs->g.picture_frame_height = size;
+	pcl_set_picture_frame_side_effects(pcs);
+    }
     return 0;
 }
 
@@ -106,9 +110,12 @@ pcl_set_pic_frame_anchor_point(
     tmp_pt.x = pcs->cap.x;
     tmp_pt.y = pcs->cap.y;
     pcl_xfm_to_logical_page_space(pcs, &tmp_pt);
-    pcs->g.picture_frame.anchor_point.x = tmp_pt.x;
-    pcs->g.picture_frame.anchor_point.y = tmp_pt.y;
-    pcl_set_picture_frame_side_effects(pcs);
+    if ( ( tmp_pt.x != pcs->g.picture_frame.anchor_point.x ) ||
+	 ( tmp_pt.y != pcs->g.picture_frame.anchor_point.y ) ) {
+	pcs->g.picture_frame.anchor_point.x = tmp_pt.x;
+	pcs->g.picture_frame.anchor_point.y = tmp_pt.y;
+	pcl_set_picture_frame_side_effects(pcs);
+    }
     return 0;
 }
 

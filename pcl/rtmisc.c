@@ -53,6 +53,7 @@ rtl_enter_hpgl_mode(
         hpgl_add_pcl_point_to_path(pcs, &pcl_pt);
 	hpgl_update_carriage_return_pos(pcs);
     }
+    hpgl_call(hpgl_set_ctm(pcs));
     return 0;
 }
 
