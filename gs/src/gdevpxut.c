@@ -32,9 +32,13 @@
 int
 px_write_file_header(stream *s, const gx_device *dev)
 {
+    static const char *const enter_pjl_header =
+        "\033%-12345X@PJL SET RENDERMODE=";
+    static const char *const rendermode_gray = "GRAYSCALE";
+    static const char *const rendermode_color = "COLOR";
     static const char *const file_header =
-	"\033%-12345X@PJL ENTER LANGUAGE = PCLXL\n\
-) HP-PCL XL;1;1;Comment Copyright Aladdin Enterprises 1996\000\n";
+	"\n@PJL ENTER LANGUAGE = PCLXL\n\
+) HP-PCL XL;1;1;Comment Copyright artofcode LLC 2005\000\n";
     static const byte stream_header[] = {
 	DA(pxaUnitsPerMeasure),
 	DUB(0), DA(pxaMeasure),
@@ -44,6 +48,16 @@ px_write_file_header(stream *s, const gx_device *dev)
 	DUB(eBinaryLowByteFirst), DA(pxaDataOrg),
 	pxtOpenDataSource
     };
+
+    px_put_bytes(s, (const byte *)enter_pjl_header,
+		 strlen(enter_pjl_header));
+
+    if (dev->color_info.num_components == 1)
+	px_put_bytes(s, (const byte *)rendermode_gray,
+		     strlen(rendermode_gray));
+    else
+	px_put_bytes(s, (const byte *)rendermode_color,
+		     strlen(rendermode_color));
 
     /* We have to add 2 to the strlen because the next-to-last */
     /* character is a null. */
