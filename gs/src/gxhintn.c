@@ -961,7 +961,6 @@ private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, uns
     hint->complex_link = -1;
     hint->contour_index = this->contour_count;
     hint->range_index = -1;
-    hint->completed = false;
     this->hint_count++;
     return 0;
 }
@@ -1071,12 +1070,13 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
 private void t1_hinter__make_complexes(t1_hinter * this)
 {   int i,j;
 
-    for (i = 0; i<this->hint_count; i++)
-        if (this->hint[i].type == hstem || this->hint[i].type == vstem) 
+    for (i = 0; i < this->hint_count; i++)
+        if (this->hint[i].type == hstem || this->hint[i].type == vstem) {
             if (this->hint[i].complex_link == -1) {
                 t1_hint *hint = & this->hint[i];
 
-                for (j = i + 1; j<this->hint_count; j++)
+		hint->complex_link = i;
+                for (j = this->hint_count - 1; j > i; j--)
                     if (this->hint[j].type == hint->type)
                         if (this->hint[j].g0 == hint->g0 &&
                             this->hint[j].g1 == hint->g1) {
@@ -1084,6 +1084,7 @@ private void t1_hinter__make_complexes(t1_hinter * this)
                             hint->complex_link = j;
                         }
             }
+	}
 }
 
 private inline bool t1_hinter__is_small_angle(t1_hinter * this, int pole_index0, int pole_index1, long tan_x, long tan_y, int alpha)
@@ -1456,7 +1457,7 @@ private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
     int i, j;
 
     for (i = 0; i < this->hint_count; i++)
-        if (!this->hint[i].completed &&
+        if (this->hint[i].complex_link <= i /* the last one in the complex */ &&
             (this->hint[i].type == vstem || this->hint[i].type == hstem)) {
             bool horiz = (this->hint[i].type == hstem);
             t1_glyph_space_coord pixel_g = (horiz ? pixel_gh : pixel_gw);
@@ -1468,7 +1469,7 @@ private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
             int19 cf = (horiz ? this->heigt_transform_coef_rat : this->width_transform_coef_rat);
             int19 ci = (horiz ? this->heigt_transform_coef_inv : this->width_transform_coef_inv);
 
-            for (j = this->hint[i].complex_link; j != -1; j = this->hint[j].complex_link) {
+            for (j = this->hint[i].complex_link; j != i; j = this->hint[j].complex_link) {
                 if (this->hint[j].aligned0 > aligned0)
                     ag0 = this->hint[j].ag0, aligned0 = this->hint[j].aligned0;
                 else if (aligned0 == unaligned && this->hint[j].ag0 != this->hint[j].g0)
@@ -1557,11 +1558,11 @@ private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
 			ag0 = ag1 - gw;
 		}
             }
-            for (j = i; j != -1; j = this->hint[j].complex_link) {
+            for (j = this->hint[i].complex_link; ; j = this->hint[j].complex_link) {
                 this->hint[j].ag0 = ag0;
                 this->hint[j].ag1 = ag1;
-		/*this->hint[j].aligned0 = this->hint[j].aligned1 = max(aligned0, aligned1);*/
-                this->hint[j].completed = true; /* Prevents redundant processing. */
+		if (this->hint[j].complex_link <= j)
+		    break;
             }
         }
 }
@@ -1956,7 +1957,6 @@ int t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s)
     t1_hinter__paint_glyph(this, false);
     if (!this->disable_hinting && (this->grid_fit_x || this->grid_fit_y)) {
         /* t1_hinter__add_full_width_hint(this); Gives worse results. */
-        t1_hinter__make_complexes(this);
 	if (this->FontType == 1)
 	    t1_hinter__compute_stem_ranges(this);
 	else {
@@ -1964,6 +1964,7 @@ int t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s)
 	    if (code < 0)
 		goto exit;
 	}
+        t1_hinter__make_complexes(this);
         t1_hinter__align_stem_commands(this);
         t1_hinter__compute_opposite_stem_coords(this);
         /* todo :  t1_hinter__align_stem3(this); */

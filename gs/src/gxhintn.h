@@ -82,7 +82,6 @@ typedef struct t1_hint_s
     short complex_link; /* the index of next member of same complex */
     int contour_index;
     int range_index; /* type 2 only */
-    bool completed;
 } t1_hint;
 
 typedef struct t1_hint_range_s
