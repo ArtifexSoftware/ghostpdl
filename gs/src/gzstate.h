@@ -133,4 +133,19 @@ struct gs_state_s {
   gs_public_st_composite(st_gs_state, gs_state, "gs_state",\
     gs_state_enum_ptrs, gs_state_reloc_ptrs)
 
+/*
+ * Enumerate the pointers in a graphics state, other than the ones in the
+ * imager state, and device, which must be handled specially.
+ */
+#define gs_state_do_ptrs(m)\
+  m(0,saved) m(1,path) m(2,clip_path) m(3,clip_stack)\
+  m(4,view_clip) m(5,effective_clip_path)\
+  m(6,color_space) m(7,ccolor) m(8,dev_color)\
+  m(9,font) m(10,root_font) m(11,show_gstate) /*m(---,device)*/\
+  m(12,transparency_group_stack)\
+  m(13,device_color_spaces.named.Gray)\
+  m(14,device_color_spaces.named.RGB)\
+  m(15,device_color_spaces.named.CMYK)
+#define gs_state_num_ptrs 16
+
 #endif /* gzstate_INCLUDED */
