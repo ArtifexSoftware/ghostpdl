@@ -48,6 +48,7 @@
 private dev_proc_open_device(psw_open);
 private dev_proc_output_page(psw_output_page);
 private dev_proc_close_device(psw_close);
+private dev_proc_fill_rectangle(psw_fill_rectangle);
 private dev_proc_copy_mono(psw_copy_mono);
 private dev_proc_copy_color(psw_copy_color);
 private dev_proc_put_params(psw_put_params);
@@ -86,6 +87,10 @@ typedef struct gx_device_pswrite_s {
 #define image_cache_reprobe_step 121
     psw_image_params_t image_cache[image_cache_size];
     bool cache_toggle;
+    struct pf_ {
+	gs_int_rect rect;
+	gx_color_index color;
+    } page_fill;
     /* Temporary state while writing a path */
     psw_path_state_t path_state;
 } gx_device_pswrite;
@@ -104,7 +109,7 @@ gs_private_st_suffix_add1_final(st_device_pswrite, gx_device_pswrite,
 		psw_close,\
 		gx_default_rgb_map_rgb_color,\
 		gx_default_rgb_map_color_rgb,\
-		gdev_vector_fill_rectangle,\
+		psw_fill_rectangle,\
 		NULL,			/* tile_rectangle */\
 		psw_copy_mono,\
 		psw_copy_color,\
@@ -569,6 +574,33 @@ psw_put_matrix(stream * s, const gs_matrix * pmat)
 	     pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
 }
 
+/* Check for a deferred erasepage. */
+private int
+psw_check_erasepage(gx_device_pswrite *pdev)
+{
+    int code = 0;
+
+    if (pdev->page_fill.color != gx_no_color_index) {
+	code = gdev_vector_fill_rectangle((gx_device *)pdev,
+					  pdev->page_fill.rect.p.x,
+					  pdev->page_fill.rect.p.y,
+					  pdev->page_fill.rect.q.x -
+					    pdev->page_fill.rect.p.x,
+					  pdev->page_fill.rect.q.y -
+					    pdev->page_fill.rect.p.y,
+					  pdev->page_fill.color);
+	pdev->page_fill.color = gx_no_color_index;
+    }
+    return code;
+}
+#define CHECK_BEGIN_PAGE(pdev)\
+  BEGIN\
+    int code_ = psw_check_erasepage(pdev);\
+\
+    if (code_ < 0)\
+      return code_;\
+  END
+
 /* ---------------- Vector device implementation ---------------- */
 
 private int
@@ -580,6 +612,7 @@ psw_beginpage(gx_device_vector * vdev)
     if (pdev->first_page)
 	psw_begin_file(pdev, NULL);
     psw_write_page_header(s, (gx_device *)vdev, &pdev->pswrite_common, true);
+    pdev->page_fill.color = gx_no_color_index;
     return 0;
 }
 
@@ -651,6 +684,14 @@ psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
+    if (type & (gx_path_type_fill | gx_path_type_stroke)) {
+	/*
+	 * fill_path and stroke_path call CHECK_BEGIN_PAGE themselves:
+	 * we do it here to handle polygons (trapezoid, parallelogram,
+	 * triangle), which don't go through fill_path.
+	 */
+	CHECK_BEGIN_PAGE(pdev);
+    }
     pdev->path_state.num_points = 0;
     pdev->path_state.move = 0;
     if (type & gx_path_type_clip) {
@@ -834,6 +875,8 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     stream *s = gdev_vector_stream(vdev);
 
+    /* Check for a legitimate empty page. */
+    CHECK_BEGIN_PAGE(pdev);
     sflush(s);			/* sync stream and file */
     psw_write_page_trailer(vdev->file, num_copies, flush);
     vdev->in_page = false;
@@ -947,6 +990,36 @@ psw_put_params(gx_device * dev, gs_param_list * plist)
     return code;
 }
 
+/* ---------------- Rectangles ---------------- */
+
+private int
+psw_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
+		   gx_color_index color)
+{
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)dev;
+
+    /*
+     * If the transfer function doesn't map 1 setgray to device white,
+     * the first rectangle fill on a page (from erasepage) will be with
+     * some color other than white, which gdev_vector_fill_rectangle
+     * won't handle correctly.  Note that this doesn't happen on the
+     * very first page of a document.
+     */
+    if (!pdev->in_page && !pdev->first_page) {
+	if (pdev->page_fill.color == gx_no_color_index) {
+	    /* Save, but don't output, the erasepage. */
+	    pdev->page_fill.rect.p.x = x;
+	    pdev->page_fill.rect.p.y = y;
+	    pdev->page_fill.rect.q.x = x + w;
+	    pdev->page_fill.rect.q.y = y + h;
+	    pdev->page_fill.color = color;
+	    return 0;
+	}
+    }
+    return gdev_vector_fill_rectangle(dev, x, y, w, h, color);
+}
+
+
 /* ---------------- Images ---------------- */
 
 /* Copy a monochrome bitmap. */
@@ -961,6 +1034,7 @@ psw_copy_mono(gx_device * dev, const byte * data,
     const char *op;
     int code = 0;
 
+    CHECK_BEGIN_PAGE(pdev);
     if (w <= 0 || h <= 0)
 	return 0;
     (*dev_proc(vdev->bbox_device, copy_mono))
@@ -1006,6 +1080,7 @@ psw_copy_color(gx_device * dev,
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
+    CHECK_BEGIN_PAGE(pdev);
     if (w <= 0 || h <= 0)
 	return 0;
     (*dev_proc(vdev->bbox_device, copy_color))
@@ -1034,6 +1109,7 @@ psw_fill_path(gx_device * dev, const gs_imager_state * pis,
 	      gx_path * ppath, const gx_fill_params * params,
 	      const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
+    CHECK_BEGIN_PAGE((gx_device_pswrite *)dev);
     if (gx_path_is_void(ppath))
 	return 0;
     /* Update the clipping path now. */
@@ -1047,6 +1123,7 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
 
+    CHECK_BEGIN_PAGE((gx_device_pswrite *)dev);
     if (gx_path_is_void(ppath) &&
 	(gx_path_is_null(ppath) ||
 	 gs_currentlinecap((const gs_state *)pis) != gs_cap_round)
@@ -1105,6 +1182,7 @@ psw_fill_mask(gx_device * dev,
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
+    CHECK_BEGIN_PAGE(pdev);
     if (w <= 0 || h <= 0)
 	return 0;
     if (depth > 1 ||
@@ -1141,9 +1219,7 @@ psw_begin_image(gx_device * dev,
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
-    gdev_vector_image_enum_t *pie =
-	gs_alloc_struct(mem, gdev_vector_image_enum_t,
-			&st_vector_image_enum, "psw_begin_image");
+    gdev_vector_image_enum_t *pie;
     const gs_color_space *pcs = pim->ColorSpace;
     const gs_color_space *pbcs = pcs;
     const char *base_name;
@@ -1155,6 +1231,9 @@ psw_begin_image(gx_device * dev,
 #define MAX_IMAGE_OP 10		/* imagemask\n */
     int code;
 
+    CHECK_BEGIN_PAGE(pdev);
+    pie = gs_alloc_struct(mem, gdev_vector_image_enum_t,
+			  &st_vector_image_enum, "psw_begin_image");
     if (pie == 0)
 	return_error(gs_error_VMerror);
     if (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
