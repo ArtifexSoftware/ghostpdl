@@ -185,8 +185,11 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 
     if (pfmat == 0)
 	pfmat = &font->FontMatrix;
-    if (text->operation & TEXT_RETURN_WIDTH)
-	gx_path_current_point(pte->path, &penum->origin);
+    if (text->operation & TEXT_RETURN_WIDTH) {
+	code = gx_path_current_point(pte->path, &penum->origin);
+	if (code < 0)
+	    return code;
+    }
 
     /*
      * Note that pdf_update_text_state sets all the members of ppts->values

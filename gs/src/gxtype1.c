@@ -231,36 +231,38 @@ gs_op1_closepath(register is_ptr ps)
     int code;
 
     /* Check for and suppress a microscopic closing line. */
-    if ((psub = ppath->current_subpath) != 0 &&
-	(pseg = psub->last) != 0 &&
-	(dx = pseg->pt.x - psub->pt.x,
-	 any_abs(dx) < float2fixed(0.1)) &&
-	(dy = pseg->pt.y - psub->pt.y,
-	 any_abs(dy) < float2fixed(0.1))
-	)
-	switch (pseg->type) {
-	    case s_line:
-		code = gx_path_pop_close_subpath(sppath);
-		break;
-	    case s_curve:
-		/*
-		 * Unfortunately, there is no "s_curve_close".  (Maybe there
-		 * should be?)  Just adjust the final point of the curve so it
-		 * is identical to the closing point.
-		 */
-		pseg->pt = psub->pt;
+    if (ppath->segments != 0) {
+	if ((psub = ppath->current_subpath) != 0 &&
+	    (pseg = psub->last) != 0 &&
+	    (dx = pseg->pt.x - psub->pt.x,
+	     any_abs(dx) < float2fixed(0.1)) &&
+	    (dy = pseg->pt.y - psub->pt.y,
+	     any_abs(dy) < float2fixed(0.1))
+	    )
+	    switch (pseg->type) {
+		case s_line:
+		    code = gx_path_pop_close_subpath(sppath);
+		    break;
+		case s_curve:
+		    /*
+		     * Unfortunately, there is no "s_curve_close".  (Maybe there
+		     * should be?)  Just adjust the final point of the curve so it
+		     * is identical to the closing point.
+		     */
+		    pseg->pt = psub->pt;
 #define pcseg ((curve_segment *)pseg)
-		pcseg->p2.x -= dx;
-		pcseg->p2.y -= dy;
+		    pcseg->p2.x -= dx;
+		    pcseg->p2.y -= dy;
 #undef pcseg
-		/* falls through */
-	    default:
-		/* What else could it be?? */
-		code = gx_path_close_subpath(sppath);
-    } else
-	code = gx_path_close_subpath(sppath);
-    if (code < 0)
-	return code;
+		    /* falls through */
+		default:
+		    /* What else could it be?? */
+		    code = gx_path_close_subpath(sppath);
+	} else
+	    code = gx_path_close_subpath(sppath);
+	if (code < 0)
+	    return code;
+    }
     return gx_path_add_point(ppath, ptx, pty);	/* put the point where it was */
 }
 

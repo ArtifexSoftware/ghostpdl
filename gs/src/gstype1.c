@@ -26,7 +26,7 @@
 #include "gxmatrix.h"
 #include "gxcoord.h"
 #include "gxistate.h"
-#include "gzpath.h"
+#include "gxpath.h"
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxtype1.h"
@@ -220,7 +220,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		cs0 = 0;
 		accum_y(cs1);
 	      move:		/* cs0 = dx, cs1 = dy for hint checking. */
-		if ((pcis->hint_next != 0 || path_is_drawing(sppath)) &&
+		if ((pcis->hint_next != 0 || gx_path_is_drawing(sppath)) &&
 		    pcis->flex_count == flex_max
 		    )
 		    apply_path_hints(pcis, true);
@@ -266,10 +266,14 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		goto move;
 	    case cx_vhcurveto:
 		{
-		    gs_fixed_point pt1, pt2;
-		    fixed ax0 = sppath->position.x - ptx;
-		    fixed ay0 = sppath->position.y - pty;
+		    gs_fixed_point pt1, pt2, p;
+		    fixed ax0, ay0;
 
+		    code = gx_path_current_point(sppath, &p);
+		    if (code < 0)
+			return code;
+		    ax0 = p.x - ptx;
+		    ay0 = p.y - pty;
 		    accum_y(cs0);
 		    pt1.x = ptx + ax0, pt1.y = pty + ay0;
 		    accum_xy(cs1, cs2);
@@ -280,10 +284,14 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		goto cc;
 	    case cx_hvcurveto:
 		{
-		    gs_fixed_point pt1, pt2;
-		    fixed ax0 = sppath->position.x - ptx;
-		    fixed ay0 = sppath->position.y - pty;
+		    gs_fixed_point pt1, pt2, p;
+		    fixed ax0, ay0;
 
+		    code = gx_path_current_point(sppath, &p);
+		    if (code < 0)
+			return code;
+		    ax0 = p.x - ptx;
+		    ay0 = p.y - pty;
 		    accum_x(cs0);
 		    pt1.x = ptx + ax0, pt1.y = pty + ay0;
 		    accum_xy(cs1, cs2);
@@ -434,10 +442,12 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 					csp[-4] = csp[-3] - pcis->asb_diff;
 					csp[-3] = csp[-2];
 					csp -= 3;
-					gx_path_current_point(sppath, &ept);
+					code = gx_path_current_point(sppath, &ept);
+					if (code < 0)
+					    return code;
 					gx_path_add_point(sppath, fpts[0].x, fpts[0].y);
-					sppath->state_flags =	/* <--- sleaze */
-					    pcis->flex_path_state_flags;
+					gx_path_set_state_flags(sppath, 
+					    pcis->flex_path_state_flags); /* <--- sleaze */
 #if defined(DEBUG) || !ALWAYS_DO_FLEX_AS_CURVE
 					/* Decide whether to do the flex as a curve. */
 					hpt.x = fpts[1].x - fpts[4].x;
@@ -473,17 +483,21 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				    pcis->flex_count = flex_max;	/* not inside flex */
 				    inext;
 				case 1:
-				    gx_path_current_point(sppath, &fpts[0]);
+				    code = gx_path_current_point(sppath, &fpts[0]);
+				    if (code < 0)
+					return code;
 				    pcis->flex_path_state_flags =	/* <--- more sleaze */
-					sppath->state_flags;
+					gx_path_get_state_flags(sppath);
 				    pcis->flex_count = 1;
 				    csp -= 2;
 				    inext;
 				case 2:
 				    if (pcis->flex_count >= flex_max)
 					return_error(gs_error_invalidfont);
-				    gx_path_current_point(sppath,
+				    code = gx_path_current_point(sppath,
 						 &fpts[pcis->flex_count++]);
+				    if (code < 0)
+					return code;
 				    csp -= 2;
 				    inext;
 				case 3:

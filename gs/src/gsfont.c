@@ -27,7 +27,7 @@
 #include "gxdevice.h"		/* must precede gxfont */
 #include "gxfont.h"
 #include "gxfcache.h"
-#include "gxpath.h"		/* for default implementation */
+#include "gzpath.h"		/* for default implementation */
 
 /* Define the sizes of the various aspects of the font/character cache. */
 /*** Big memory machines ***/
@@ -835,16 +835,15 @@ int
 gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		      int members, gs_glyph_info_t *info)
 {
-    gx_path *ppath = gx_path_alloc(font->memory, "glyph_path");
+    gx_path path;
     int returned = 0;
     int code;
 
-    if (ppath == 0)
-	return_error(gs_error_VMerror);
-    code = gx_path_add_point(ppath, fixed_0, fixed_0);
+    gx_path_init_bbox_accumulator(&path);
+    code = gx_path_add_point(&path, fixed_0, fixed_0);
     if (code < 0)
 	goto out;
-    code = font->procs.glyph_outline(font, glyph, pmat, ppath);
+    code = font->procs.glyph_outline(font, glyph, pmat, &path);
     if (code < 0)
 	goto out;
     if (members & GLYPH_INFO_WIDTHS) {
@@ -854,7 +853,7 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	if (members & wmask) {
 	    gs_fixed_point pt;
 
-	    code = gx_path_current_point(ppath, &pt);
+	    code = gx_path_current_point(&path, &pt);
 	    if (code < 0)
 		goto out;
 	    info->width[wmode].x = fixed2float(pt.x);
@@ -865,7 +864,7 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     if (members & GLYPH_INFO_BBOX) {
 	gs_fixed_rect bbox;
 
-	code = gx_path_bbox(ppath, &bbox);
+	code = gx_path_bbox(&path, &bbox);
 	if (code < 0)
 	    goto out;
 	info->bbox.p.x = fixed2float(bbox.p.x);
@@ -880,7 +879,6 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     }
     returned |= members & GLYPH_INFO_PIECES; /* no pieces stored */
  out:
-    gx_path_free(ppath, "gs_default_glyph_bbox");
     info->members = returned;
     return code;
 }

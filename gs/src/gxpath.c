@@ -111,6 +111,41 @@ gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
 }
 
 /*
+ * Define the default virtual path interface implementation.
+ */
+private int 
+    gz_path_add_point(gx_path *, fixed, fixed),
+    gz_path_add_line_notes(gx_path *, fixed, fixed, segment_notes),
+    gz_path_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
+    gz_path_close_subpath_notes(gx_path *, segment_notes);
+private byte gz_path_state_flags(gx_path *ppath, byte flags);
+
+private gx_path_procs default_path_procs = {
+    gz_path_add_point,
+    gz_path_add_line_notes,
+    gz_path_add_curve_notes,
+    gz_path_close_subpath_notes,
+    gz_path_state_flags
+};
+
+/*
+ * Define virtual path interface implementation for computing a path bbox.
+ */
+private int 
+    gz_path_bbox_add_point(gx_path *, fixed, fixed),
+    gz_path_bbox_add_line_notes(gx_path *, fixed, fixed, segment_notes),
+    gz_path_bbox_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
+    gz_path_bbox_close_subpath_notes(gx_path *, segment_notes);
+
+private gx_path_procs path_bbox_procs = {
+    gz_path_bbox_add_point,
+    gz_path_bbox_add_line_notes,
+    gz_path_bbox_add_curve_notes,
+    gz_path_bbox_close_subpath_notes,
+    gz_path_state_flags
+};
+
+/*
  * Allocate a path on the heap, and initialize it.  If shared is NULL,
  * allocate a segments object; if shared is an existing path, share its
  * segments.
@@ -123,6 +158,7 @@ gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
 
     if (ppath == 0)
 	return 0;
+    ppath->procs = &default_path_procs;
     if (shared) {
 	if (shared->segments == &shared->local_segments) {
 	    lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
@@ -170,7 +206,31 @@ gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
     }
     ppath->memory = mem;
     ppath->allocation = path_allocated_on_stack;
+    ppath->procs = &default_path_procs;
     return 0;
+}
+
+/*
+ * Initialize a stack-allocated pseudo-path for computing a bbox
+ * for a dynamic path.
+ */
+void
+gx_path_init_bbox_accumulator(gx_path * ppath)
+{
+    ppath->box_last = 0;
+    ppath->subpath_count = 0;
+    ppath->curve_count = 0;
+    ppath->local_segments.contents.subpath_first = 0;
+    ppath->local_segments.contents.subpath_current = 0;
+    ppath->segments = 0;
+    path_update_newpath(ppath);
+    ppath->bbox.p.x = ppath->bbox.q.x = 0;
+    ppath->bbox.p.y = ppath->bbox.q.y = 0;
+    ppath->bbox_set = 0;
+    ppath->bbox_accurate = 1;
+    ppath->memory = NULL; /* Won't allocate anything. */
+    ppath->allocation = path_allocated_on_stack;
+    ppath->procs = &path_bbox_procs;
 }
 
 /*
@@ -409,15 +469,56 @@ gx_path_new_subpath(gx_path * ppath)
     return 0;
 }
 
+private inline void
+gz_path_bbox_add(gx_path * ppath, fixed x, fixed y)
+{
+    if (!ppath->bbox_set) {
+	ppath->bbox.p.x = ppath->bbox.q.x = x;
+	ppath->bbox.p.y = ppath->bbox.q.y = y;
+	ppath->bbox_set = 1;
+    } else {
+	if (ppath->bbox.p.x > x)
+	    ppath->bbox.p.x = x;
+	if (ppath->bbox.p.y > y)
+	    ppath->bbox.p.y = y;
+	if (ppath->bbox.q.x < x)
+	    ppath->bbox.q.x = x;
+	if (ppath->bbox.q.y < y)
+	    ppath->bbox.q.y = y;
+    }
+}
+
+private inline void
+gz_path_bbox_move(gx_path * ppath, fixed x, fixed y)
+{
+    /* a trick : we store 'fixed' into 'double'. */
+    ppath->position.x = x;
+    ppath->position.y = y;
+    ppath->state_flags |= psf_position_valid;
+}
+
 /* Add a point to the current path (moveto). */
 int
 gx_path_add_point(gx_path * ppath, fixed x, fixed y)
+{
+    return ppath->procs->add_point(ppath, x, y);
+}
+private int
+gz_path_add_point(gx_path * ppath, fixed x, fixed y)
 {
     if (ppath->bbox_set)
 	check_in_bbox(ppath, x, y);
     ppath->position.x = x;
     ppath->position.y = y;
     path_update_moveto(ppath);
+    return 0;
+}
+private int
+gz_path_bbox_add_point(gx_path * ppath, fixed x, fixed y)
+{
+    ppath->outside_start.x = x;
+    ppath->outside_start.y = y;
+    gz_path_bbox_move(ppath, x, y);
     return 0;
 }
 
@@ -455,6 +556,11 @@ gx_path_add_relative_point(gx_path * ppath, fixed dx, fixed dy)
 int
 gx_path_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
 {
+    return ppath->procs->add_line(ppath, x, y, notes);
+}
+private int
+gz_path_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
+{
     subpath *psub;
     line_segment *lp;
 
@@ -467,6 +573,13 @@ gx_path_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
     path_set_point(lp, x, y);
     path_update_draw(ppath);
     trace_segment("[P]", (segment *) lp);
+    return 0;
+}
+private int
+gz_path_bbox_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
+{
+    gz_path_bbox_add(ppath, x, y);
+    gz_path_bbox_move(ppath, x, y);
     return 0;
 }
 
@@ -554,6 +667,13 @@ gx_path_add_curve_notes(gx_path * ppath,
 		 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
 			segment_notes notes)
 {
+    return ppath->procs->add_curve(ppath, x1, y1, x2, y2, x3, y3, notes);
+}
+private int
+gz_path_add_curve_notes(gx_path * ppath,
+		 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
+			segment_notes notes)
+{
     subpath *psub;
     curve_segment *lp;
 
@@ -575,6 +695,17 @@ gx_path_add_curve_notes(gx_path * ppath,
     ppath->curve_count++;
     path_update_draw(ppath);
     trace_segment("[P]", (segment *) lp);
+    return 0;
+}
+private int
+gz_path_bbox_add_curve_notes(gx_path * ppath,
+		 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
+			segment_notes notes)
+{
+    gz_path_bbox_add(ppath, x1, y1);
+    gz_path_bbox_add(ppath, x2, y2);
+    gz_path_bbox_add(ppath, x3, y3);
+    gz_path_bbox_move(ppath, x3, y3);
     return 0;
 }
 
@@ -689,6 +820,11 @@ gx_path_add_char_path(gx_path * to_path, gx_path * from_path,
 int
 gx_path_close_subpath_notes(gx_path * ppath, segment_notes notes)
 {
+    return ppath->procs->close_subpath(ppath, notes);
+}
+private int
+gz_path_close_subpath_notes(gx_path * ppath, segment_notes notes)
+{
     subpath *psub;
     line_close_segment *lp;
     int code;
@@ -711,6 +847,41 @@ gx_path_close_subpath_notes(gx_path * ppath, segment_notes notes)
     trace_segment("[P]", (segment *) lp);
     return 0;
 }
+private int
+gz_path_bbox_close_subpath_notes(gx_path * ppath, segment_notes notes)
+{
+    gz_path_bbox_move(ppath, (fixed)ppath->outside_start.x, 
+			     (fixed)ppath->outside_start.y);
+    return 0;
+}
+
+/* Access path state flags */
+byte 
+gz_path_state_flags(gx_path *ppath, byte flags)
+{
+    byte flags_old = ppath->state_flags;
+    ppath->state_flags = flags;
+    return flags_old;
+}
+byte 
+gx_path_get_state_flags(gx_path *ppath)
+{
+    byte flags = ppath->procs->state_flags(ppath, 0);
+    ppath->procs->state_flags(ppath, flags);
+    return flags;
+}
+void 
+gx_path_set_state_flags(gx_path *ppath, byte flags)
+{
+    ppath->procs->state_flags(ppath, flags);
+}
+bool
+gx_path_is_drawing(gx_path *ppath)
+{
+  return path_is_drawing(ppath);
+}
+
+
 
 /* Remove the last line from the current subpath, and then close it. */
 /* The Type 1 font hinting routines use this if a path ends with */

@@ -26,7 +26,7 @@
 #include "gxmatrix.h"
 #include "gxcoord.h"
 #include "gxistate.h"
-#include "gzpath.h"
+#include "gxpath.h"
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxtype1.h"
@@ -385,10 +385,14 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case cx_hvcurveto:
 		vertical = false;
 	      hvc:for (ap = cstack; ap + 3 <= csp; vertical = !vertical, ap += 4) {
-		    gs_fixed_point pt1, pt2;
-		    fixed ax0 = sppath->position.x - ptx;
-		    fixed ay0 = sppath->position.y - pty;
+		    gs_fixed_point pt1, pt2, p;
+		    fixed ax0, ay0;
 
+		    code = gx_path_current_point(sppath, &p);
+		    if (code < 0)
+			return code;
+		    ax0 = p.x - ptx;
+		    ay0 = p.y - pty;
 		    if (vertical)
 			accum_y(ap[0]);
 		    else

@@ -368,7 +368,7 @@ apply_wrapped_hints(gs_type1_state * pcis, subpath * psub, segment * pseg,
  * the hints.
  */
 void
-type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
+type1_do_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
 {
     segment *pseg = pcis->hint_next;
     segment *pnext;
@@ -474,6 +474,15 @@ type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
     } else {
 	pcis->hint_next = pseg;
 	pcis->hints_pending = hints;
+    }
+}
+void
+type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
+{
+    if (ppath->segments != 0)
+	type1_do_apply_path_hints(pcis, closing, ppath);
+    else {
+	/* We compute glyph bbox without hinting */
     }
 }
 

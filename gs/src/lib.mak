@@ -757,7 +757,7 @@ $(GLOBJ)gsfname.$(OBJ) : $(GLSRC)gsfname.c $(memory__h)\
 $(GLOBJ)gsfont.$(OBJ) : $(GLSRC)gsfont.c $(GXERR) $(memory__h)\
  $(gsstruct_h) $(gsutil_h)\
  $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gxfont_h) $(gxfcache_h)\
- $(gxpath_h)\
+ $(gzpath_h)\
  $(gzstate_h)
 	$(GLCC) $(GLO_)gsfont.$(OBJ) $(C_) $(GLSRC)gsfont.c
 
@@ -1937,7 +1937,7 @@ $(GLOBJ)gstype1.$(OBJ) : $(GLSRC)gstype1.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h)\
  $(gxarith_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxistate_h) $(gxtype1_h)\
- $(gzpath_h)
+ $(gxpath_h)
 	$(GLCC) $(GLO_)gstype1.$(OBJ) $(C_) $(GLSRC)gstype1.c
 
 # Type 2 charstrings
@@ -1951,7 +1951,7 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h)\
  $(gxarith_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxistate_h) $(gxtype1_h)\
- $(gzpath_h)
+ $(gxpath_h)
 	$(GLCC) $(GLO_)gstype2.$(OBJ) $(C_) $(GLSRC)gstype2.c
 
 # ---------------- Font writing ---------------- #

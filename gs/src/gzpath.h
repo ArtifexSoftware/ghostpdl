@@ -288,6 +288,19 @@ typedef enum {
     path_allocated_on_heap	/* on the heap */
 } gx_path_allocation_t;
 
+/*
+ * Define virtual path interface functions.
+ * This is a minimal set of functions required by
+ * Type 1,2, TrueType interpreters.
+ */
+typedef struct gx_path_procs_s {
+    int (*add_point)(gx_path *, fixed, fixed);
+    int (*add_line)(gx_path *, fixed, fixed, segment_notes);
+    int (*add_curve)(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes);
+    int (*close_subpath)(gx_path *, segment_notes);
+    byte (*state_flags)(gx_path *, byte);
+} gx_path_procs;
+
 /* Here is the actual structure of a path. */
 struct gx_path_s {
     /*
@@ -326,6 +339,7 @@ struct gx_path_s {
     gs_fixed_point position;	/* current position */
     gs_point outside_position;	/* position if outside_range is set */
     gs_point outside_start;	/* outside_position of last moveto */
+    gx_path_procs *procs;
 };
 
 /* st_path should be private, but it's needed for the clip_path subclass. */
@@ -360,13 +374,13 @@ extern_st(st_path_enum);
 #define gx_path_has_curves(ppath)\
   gx_path_has_curves_inline(ppath)
 #define gx_path_is_void_inline(ppath)\
-  ((ppath)->first_subpath == 0)
+  ((ppath)->segments != 0 && (ppath)->first_subpath == 0)
 #define gx_path_is_void(ppath)\
   gx_path_is_void_inline(ppath)
 #define gx_path_subpath_count(ppath)\
   ((ppath)->subpath_count)
 #define gx_path_is_shared(ppath)\
-  ((ppath)->segments->rc.ref_count > 1)
+  ((ppath)->segments != 0 && (ppath)->segments->rc.ref_count > 1)
 
 /* Macros equivalent to a few heavily used procedures. */
 /* Be aware that these macros may evaluate arguments more than once. */

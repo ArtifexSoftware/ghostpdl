@@ -100,6 +100,12 @@ int gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
   (void)gx_path_init_local_shared(ppath, NULL, mem)	/* can't fail */
 
 /*
+ * Initialize a stack-allocated pseudo-path for computing a bbox
+ * for a dynamic path.
+ */
+void gx_path_init_bbox_accumulator(gx_path * ppath);
+
+/*
  * Ensure that a path owns its segments, by copying the segments if
  * they currently have multiple references.
  */
@@ -144,6 +150,11 @@ int gx_path_new(gx_path *),
 	  /* We have to remove the 'subpath' from the following name */
 	  /* to keep it unique in the first 23 characters. */
     gx_path_pop_close_notes(gx_path *, segment_notes);
+
+/* Access path state flags */
+byte gx_path_get_state_flags(gx_path *ppath);
+void gx_path_set_state_flags(gx_path *ppath, byte flags);
+bool gx_path_is_drawing(gx_path *ppath);
 
 /*
  * The last argument to gx_path_add_partial_arc is a fraction for computing
