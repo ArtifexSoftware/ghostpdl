@@ -93,7 +93,7 @@ PL_SCALER=afs
 # directory is under the shared pcl pxl library ..\pl
 AGFA_ROOT=\cygwin\home\Administrator\ufst
 UFST_LIBDIR=$(AGFA_ROOT)\rts\lib
-AGFA_INCLUDES=$(I_)$(AGFA_ROOT)\rts\inc $(I_)$(AGFA_ROOT)\sys\inc $(I_)$(AGFA_ROOT)\rts\fco -DMSVC
+AGFA_INCLUDES=$(I_)$(AGFA_ROOT)\rts\inc $(I_)$(AGFA_ROOT)\sys\inc $(I_)$(AGFA_ROOT)\rts\fco $(I_)$(AGFA_ROOT)\rts\gray -DMSVC
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.

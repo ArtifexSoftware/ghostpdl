@@ -75,7 +75,7 @@ XLDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
 EXTRALIBS=-lif -lfco -ltt
-AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/
+AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/
 endif
 
 ifeq ($(PL_SCALER), fts)
