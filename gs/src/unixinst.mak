@@ -43,7 +43,7 @@ install-scripts: $(PSLIBDIR)/gsnd
 	-mkdir $(scriptdir)
 	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
-bdftops dvipdf font2c \
+bdftops dvipdf eps2eps font2c \
 pdf2dsc pdf2ps pf2afm pfbtopfa printafm \
 ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdfwr ps2ps wftopfa \
 fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
@@ -54,8 +54,9 @@ PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-MAN1_PAGES=gs pdf2dsc pdf2ps ps2ascii ps2epsi ps2pdf ps2ps \
-	   gslp gsnd dvipdf font2c pf2afm pfbtopfa printafm ps2pdfwr wftopfa
+MAN1_PAGES=gs gslp gsnd dvipdf eps2eps font2c pdf2dsc pdf2ps \
+	   pf2afm pfbtopfa printafm ps2ascii ps2epsi \
+	   ps2pdf ps2pdfwr ps2ps wftopfa
 MAN1_PS2PDF_LINKS=ps2pdf12 ps2pdf13
 MAN1_GSLP_LINKS=gsbj gsdj gsdj500 gslj
 # There's no point in providing a complete dependency list: we include
