@@ -527,7 +527,7 @@ pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force
     l1 = cos_stream_length(s[1]);
     k0 = s_compr_chooser__get_choice(
 	(stream_compr_chooser_state *)piw->binary[2].strm->state, force);
-    if (k0)
+    if (k0 && l0 > 0 && l1 > 0)
 	k0--;
     else if (much_bigger__DL(l0, l1))
 	k0 = 0; 
@@ -564,7 +564,7 @@ pdf_choose_compression(pdf_image_writer * piw, bool end_binary)
 	status = s_close_filters(&piw->binary[1].strm, piw->binary[1].target);
 	if (status < 0)
 	    return status;
-    } else
-	pdf_choose_compression_cos(piw, s, end_binary);
+    }
+    pdf_choose_compression_cos(piw, s, end_binary);
     return 0;
 }
