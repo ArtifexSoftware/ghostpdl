@@ -613,8 +613,7 @@ set_top_offset_registration(
 /*
  * ESC & l <orient> O
  *
- * Set logical page orientation. In apparent contradiction to TRM 5-6,
- * setting the orientation to the same value is a no-op.
+ * Set logical page orientation.
  */
   private int
 set_logical_page_orientation(
@@ -626,7 +625,6 @@ set_logical_page_orientation(
     int             code = 0;
 
     if ( (i <= 3)                                   &&
-         (i != pcs->xfm_state.lp_orient)            &&
          ((code = pcl_end_page_if_marked(pcs)) >= 0)  )
         new_logical_page(pcs, i, pcs->xfm_state.paper_size, false);
     return code;
@@ -726,9 +724,16 @@ set_top_margin(
     coord           tmarg = uint_arg(pargs) * pcs->vmi_cp;
 
     if ((pcs->vmi_cp != 0) && (tmarg <= hgt)) {
+	int code;
+	gs_rect bbox;
         pcs->margins.top = tmarg;
         pcs->margins.length = PAGE_LENGTH(hgt - tmarg, DFLT_BOTTOM_MARGIN);
-	return pcl_set_cap_y(pcs, 0L, false, false, true);
+	/* The pcl manual implies the cursor is only adjusted for the
+           first line of text we approximate this language by checking
+           that the page is blank.  If it is we "home" the cursor. */
+	code = pcl_current_bounding_box(pcs, &bbox) ;
+	if ( (bbox.p.x >= bbox.q.x) || (bbox.p.y >= bbox.q.y) ) 
+	    return pcl_set_cap_y(pcs, 0L, false, false, true);
     }
     return 0;
 }
