@@ -28,6 +28,102 @@ languagelevel 2 .setlanguagelevel
 
 currentdict /super.complete_instance currentdict /complete_instance get put
 
+%-------Auxiliary procedures for building CIDFontType 2 from TT file -----------
+
+/put_to_CIDMap    % <cid> <gid> [CIDmap] put_to_CIDMap <cid> 
+{                                       % cid gid []
+  2 index 2 mul exch                    % cid gid i []
+  {                                     % cid gid i ()
+    dup length dup                      % cid gid i () l l
+    3 index lt {                        % cid gid i () l
+      exch pop sub                      % cid gid i'
+    } {                                 % cid gid i () l
+      pop exch                          % cid gid () i
+      3 2 roll                          % cid () i gid
+      3 copy 256 idiv put               % cid () i gid
+      exch 1 add exch 256 mod put       % cid
+      dup dup exit                      % cid cid cid
+    } ifelse
+  } forall                              % cid ? ?
+  pop pop                               % cid
+} bind def
+
+/GenerateCIDMap   % <font> GenerateCIDMap <font>
+{
+  (GenerateCIDMap : Incomplete implementation. See lib/gs_cidtt.ps .) =
+  begin
+
+    % Obtain the maximal CID :
+    %   fixme : this incomplete implementation doesn't check whether glyphs really present.
+    Decoding /CIDCount get /CIDCount exch def
+
+    % Prepare the CIDMap structure :
+    /CIDMap [
+      CIDCount 32767 le {
+                % Use a single string.
+        CIDCount 2 mul string
+      } {
+                % We must use 2 strings.
+        32767 2 mul string
+        CIDCount 32767 sub 2 mul string
+      } ifelse
+    ] def
+
+    % Now build it :
+    %   fixme : account SubstNWP. See zfapi.c .
+    %   fixme : C code would be faster. 
+    Decoding {
+      exch                                   % [dec] key
+      dup type /integertype eq {             % [dec] cidHigh
+        256 mul                              % [dec] cid
+        exch {                               % cid value
+          dup type /integertype eq {
+            exch                             % cc cid
+            TT_cmap % fixme : optimize.
+            dup length                       % cc cid [cmap] l
+            2 index le {                     % cc cid [cmap]
+              pop exch pop                   % cid
+            } {                              % cc cid [cmap]
+              3 2 roll                       % cid [cmap] cc
+              dup 2 index length lt {
+                get                          % cid gid
+                CIDMap % fixme : optimize    % cid gid [CIDmap]
+                //put_to_CIDMap exec         % cid
+              } {
+                pop pop
+              } ifelse
+            } ifelse
+          } {
+            pop                              % cid
+          } ifelse                           
+          1 add                              % cid'
+        } forall
+        pop                                  %
+      } {
+        pop pop                              %
+      } ifelse
+    } forall  
+  currentdict end
+} bind def
+
+/load_sfnts  % <FontDict> load_sfnts <FontDict> 
+{ % Read the True Type file from the path /Path, and buld /sfnts,
+  % skipping glyf and loca. 
+  % The following code is a temporary implementation,
+  % which loads entire font.
+  dup /SubfontID known not {
+    dup /SubfontID 0 put  
+  } if
+  dup /Path get (r) file .load_tt_font_stripped exch copy  % <font>
+  dup dup /CIDSystemInfo get /Ordering get (.)             % <font> () ()
+  (Unicode) % fixme : Compute from the cmap of the font 
+            % using the dictionary .xlatmap_dict defined 
+            % in systemdict.
+  concatstrings concatstrings cvn /Decoding exch put       % <font>
+  //ChooseDecoding exec                                    % <font>
+  //GenerateCIDMap exec                                    % <font>
+} bind def
+
 %-----------TrueType-specific methods for category redefinition : -----------
 
 /RefinePath      % <FontDict> RefinePath <FontDict>
@@ -39,18 +135,6 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   } if
   pop
   currentdict end
-} bind def
-
-/load_sfnts  % <FontDict> load_sfnts <FontDict> 
-{ % Read the True Type file from the path /Path, and buld /sfnts,
-  % skipping glyf and loca. Use functions from lib/gs_ttf.ps .
-  % Refine other CID font dictionary entries.
-  % Store glyf and loca offsets to load glyphs by demand.
-
-  % The following code is a temporary implementation,
-  % which loads entire font.
-  (Read a CJK True Type font file : Incomplete implementation. See lib/gs_cidtt.ps .) =
-  dup /Path get (r) file .loadttcidfont exch copy
 } bind def
 
 /complete_instance  % <font_name> <FontDict> <Options> complete_FAPI_Font <font_name> <FontDict>

@@ -939,6 +939,28 @@ end readonly def                % .loadttfontdict
   .ttkeys
   .definettcidfont
 } bind def
+% <file> .loadttcidfont <cidtype2font>
+
+% <file> .load_tt_font_stripped <font_data>
+% The font_data includes sfnts, NumGlyphs, TT_cmap.
+% CIDMap to be created later from TT_cmap.
+/.load_tt_font_stripped {
+  (.load_tt_font_stripped : Incomplete implementation. See lib/gs_ttf.ps .) =
+  % This incomplete implementation loads entire font into VM.
+  % After we implement an access to glyphs by demand, it should skip glyf and loca.
+  % Also SubfontID to be accounted, and a cmap to be choosen with
+  % using .xlatmap_dict .
+  .xlatmap_dict pop    % just check that it presents.
+  .loadttfonttables
+  .makesfnts
+  .pickcmap
+  mark
+  .ttkeys
+  /NumGlyphs numloca
+  /TT_cmap cmaptab cmaparray
+  .dicttomark
+  end end 
+} bind def
 
 % ---------------- PDF TrueType font loading ---------------- %
 

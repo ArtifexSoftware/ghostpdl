@@ -21,6 +21,24 @@
 
 languagelevel 2 .setlanguagelevel
 
+%========================= Process xlatmap ====================
+mark
+%% Replace 1 (xlatmap)
+(xlatmap) .runlibfile
+.dicttomark dup systemdict exch /.xlatmap_dict exch put
+
+% Convert it into a plain text to simplify the processing in C :
+% *(fontkind\0\0\ *(charmap\0decoding\0) ) \0
+
+() exch {
+  3 1 roll =string cvs concatstrings (\0\0) concatstrings
+  exch
+  { =string cvs concatstrings (\0) concatstrings
+  } forall
+} forall
+(\0) concatstrings
+systemdict exch /.xlatmap exch put
+
 /FontEmulationProcs 10 dict begin
 
 %-------------------------------Font--------------------------------
@@ -80,7 +98,7 @@ currentdict end def
 { /CIDSystemInfo currentdict //TranslateCSI exec def
   currentdict /CSI undef
   /FontBBox [-128 -128 1024 1024] def % zfapi.ps refines it.
-  /CIDCount 1 def % FAPI_choose_decoding will set a reasonable value.
+  /CIDCount 1 def % ChooseDecoding will set a reasonable value.
 } bind def
 
 % GFlyph substitution table for narrow, wide, proportional glyphs - 
@@ -238,7 +256,7 @@ currentdict end def
  if
 .dicttomark def
 
-/ChooseDecoding  % <font> FAPI_choose_decoding <font>
+/ChooseDecoding  % <font> ChooseDecoding <font>
 { { % A loop for 'exit' context.
     dup /Decoding .knownget {
       dup type /nametype eq {
