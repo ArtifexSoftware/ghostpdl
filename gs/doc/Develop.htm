@@ -61,6 +61,7 @@
 <li><a href="#Build_process">Build process</a>
 <ul>
 <li><a href="#Makefile_structure">Makefile structure</a>,
+    <a href="#dev_files">.dev files</a>,
     <a href="#Generators">Generators</a>,
     <a href="#Build_support">Support</a>
 </ul>
@@ -2051,7 +2052,7 @@ directories are used for normal production builds, the
 <b><tt>pgobj</tt></b> directory for profiling builds; other platforms may
 use different conventions.  The Unix makefiles support targets named
 <b><tt>debug</tt></b> and <b><tt>pg</tt></b> for debugging and profiling
-builds respectively; other platforms do not.
+builds respectively; other platforms generally do not.
 
 <li>Makefiles will be maintained by hand.  This requires editing the
 following makefile elements whenever the relevant source files changes:
@@ -2117,23 +2118,84 @@ configuration-specific data.
 <p>
 We have seriously considered writing our own build program in Tcl or Python
 that would eliminate these problems, or perhaps porting the tools developed
-in Digital's Vesta research project (if we can get access to them); however,
+by Digital's Vesta research project (if we can get access to them); however,
 either of these approaches would create potential portability problems of
 its own, not to mention difficulties in integrating with others' build
 systems.
 
 <p>
-Beyond the general assumptions of the makefiles, ****** STILL NEED TO
-DESCRIBE .dev FILES AND genconf.
+For more information about makefiles:
+
+<ul>
+
+<li>For a detailed list of makefiles, and a discussion of makefile issues
+related to portability, see the <a href="#Makefiles">Makefiles</a> section
+below.
+
+<li>For more detailed information about editing configuration information in
+makefiles, see <a
+href="Make.htm#Makefile_overview">doc/Make.htm#Makefile_overview</a>.
+
+<li>For a complete example of adding a new driver to a makefile, see <a
+href="Drivers.htm#Adding_drivers">doc/Drivers.htm#Adding_drivers</a>.
+
+<li>For a few more notes on makefile coding conventions, see <a
+href="C-style.htm#Makefiles">doc/C-style.htm#Makefiles</a>.
+
+</ul>
+
+<h4><a name="dev_files"></a>.dev files</h4>
 
 <p>
-For a detailed list of makefiles, and a discussion of makefile issues
-related to portability, see the <a href="#Makefiles">Makefiles</a> section
-below; for more detailed information about editing configuration information
-in makefiles, see <a
-href="Make.htm#Makefile_overview">doc/Make.htm#Makefile_overview</a>; and
-for a few more notes on makefile coding conventions, see <a
-href="C-style.htm#Makefiles">doc/C-style.htm#Makefiles</a>.
+On top of the general conventions just described, Ghostscript's makefiles
+add a further layer of structure in order to support an open-ended set of
+fine-grained, flexible configuration options.  Selecting an option (usually
+called a "module") for inclusion in the build may affect the build in many
+ways:
+
+<ul>
+
+<li>Almost always, it requires linking in some compiled code files.
+
+<li>It may require running some additional initialization procedures at
+startup.
+
+<li>It may require reading in some additional PostScript files at startup.
+For example, a Level 2 PostScript build requires support for PostScript
+resources and for setpagedevice, which are implemented in PostScript code.
+
+<li>It may require adding entries to a variety of internal tables that
+catalogue such things as drivers, IODevices, Function types, etc.
+
+<li>It may require that other particular modules be included.  For example,
+the "PostScript Level 2" module requires the modules for various filters,
+color spaces, etc.
+
+<li>It may require <em>removing</em> some other (default) module from the
+build.  For example, the core (Level 1) PostScript build has a "stub" for
+binary tokens, which are a Level 2 feature but are referenced by the core
+scanner: a Level 2 build must remove the stub.  For more information about
+this, look for the string <b><tt>-replace</tt></b> in the makefiles and in
+<a href="../src/genconf.c">src/genconf.c</a>.
+
+</ul>
+
+<p>
+Each module is defined in the makefiles by rules that create a file named
+<b><em>xxx</em><tt>.dev</tt></b>.  The dependencies of the rule include all
+the files that make up the module (compiled code files, PostScript files,
+etc.); the body of the rule creates the .dev file by writing the description
+of the module into it.  A program called <b><tt>genconf</tt></b>, described
+in the next section, merges all the relevant .dev files together.  For
+examples of .dev rules, see any of the Ghostscript makefiles.
+
+<p>
+Ultimately, a person must specify the root set of modules to include in a
+build (which of course may require other modules, recursively).
+Ghostscript's makefiles do this with a set of macros called
+<b><tt>FEATURE_DEVS</tt></b> and <b><tt>DEVICE_DEVS</tt>n</b>, defined in
+each top-level makefile, but nothing in the module machinery depends on
+this.
 
 <h4><a name="Generators"></a>Generators</h4>
 
@@ -2141,25 +2203,101 @@ href="C-style.htm#Makefiles">doc/C-style.htm#Makefiles</a>.
 Ghostscript's build procedure is somewhat unusual in that it compiles and
 then executes some support programs during the build process.  These
 programs then generate data or source code that is used later on in the
-build.  See the individual programs for information about what they do.
+build.
+
+<p>
+The most important and complex of the generator programs is
+<b><tt>genconf</tt></b>.  <b><tt>genconf</tt></b> merges all the .dev files
+that make up the build, and creates three or more output files used in later
+stages:
+
+<ul>
+
+<li><b><tt>gconfig.h</tt></b>, consisting mainly of macro calls, one call
+per "resource" making up the build, other than "resources" listed in the
+other output files.
+
+<li><b><tt>gconfigf.h</tt></b>, produced only for PostScript builds with
+compiled-in fonts, consisting of one macro call per font.
+
+<li>A linker control file whose name varies from one platform to another,
+containing the list of compiled code files to be linked.
+
+<li>If necessary, another linker control file, also varying between
+platforms, that contains other information for the linker such as the list
+of system libraries to be searched.  (On Unix platforms, the two linker
+control functions are combined in a single file.)
+
+</ul>
 
 <dl>
 
 <dt>
 Source generators:
 <dd>
-<a href="../src/ansi2knr.c">src/ansi2knr.c</a>,
-<a href="../src/genarch.c">src/genarch.c</a>,
-<a href="../src/genconf.c">src/genconf.c</a> (also generates non-source),
-<a href="../src/genht.c">src/genht.c</a>,
-<a href="../src/geninit.c">src/geninit.c</a>.
+
+<dl>
+
+<dt>
+<a href="../src/ansi2knr.c">src/ansi2knr.c</a>
+<dd>
+Converts ANSI C source to traditional (also known as "K&amp;R") C.  Used if
+and only if compiling with a pre-ANSI C compiler.
+
+<dt>
+<a href="../src/genarch.c">src/genarch.c</a>
+<dd>
+Creates a header file containing a variety of information about the hardware
+and compiler that isn't provided in any standard system header file.  Always
+used.
+
+<dt>
+<a href="../src/genconf.c">src/genconf.c</a> (also generates non-source)
+<dd>
+Constructs header files and linker control files from the collection of
+options and modules that make up the build.  See above.  Always used.
+
+<dt>
+<a href="../src/genht.c">src/genht.c</a>
+<dd>
+Converts a PostScript halftone (in a particular constrained format) to a C
+data structure that can be compiled into an executable.  Only used if any
+such halftones are included in the build.
+
+<dt>
+<a href="../src/geninit.c">src/geninit.c</a>
+<dd>
+Converts PostScript initialization files to C data structures that can be
+compiled into an executable.  Only used when building a PostScript
+interpreter, and only if <b><tt>COMPILE_INITS</tt></b> was set to 1 in the
+makefile.
+
+</dl>
 
 <dt>
 Other generators:
 <dd>
-<a href="../src/echogs.c">src/echogs.c</a>,
-<a href="../src/genconf.c">src/genconf.c</a> (also generates source),
-<a href="../src/gendev.c">src/gendev.c</a> (not used).
+
+<dl>
+
+<dt>
+<a href="../src/echogs.c">src/echogs.c</a>
+<dd>
+Implements a variety of shell-like functions to get around quirks,
+limitations, and omissions in the shells on various platforms.  Always used.
+
+<dt>
+<a href="../src/genconf.c">src/genconf.c</a> (also generates source)
+<dd>
+See above.
+
+<dt>
+<a href="../src/gendev.c">src/gendev.c</a> (not used)
+<dd>
+Was intended as a replacement for <b><tt>genconf</tt></b>, but was never
+completed.
+
+</dl>
 
 </dl>
 
