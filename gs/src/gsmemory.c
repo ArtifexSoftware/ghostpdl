@@ -306,7 +306,7 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
 #ifdef DEBUG
 	/* some extra checking to make sure we aren't out of bounds */
 	if (ppe->offset > size - sizeof(void *)) {
-	    dprintf2("  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
+	    dprintf4("  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
 		    ppe->offset, size, vptr, pstype->sname);
 	    return 0;
 	}
