@@ -12,9 +12,8 @@ dnl --------------------------------------------------
 dnl Check for programs
 dnl --------------------------------------------------  
 
-dnl AC_PROG_CC likes to add '-g -O2' to CFLAGS, but
-dnl we do not worry since our makefile discards the env
-dnl CFLAGS
+dnl AC_PROG_CC likes to add '-g -O2' to CFLAGS. however,
+dnl we ignore those flags and construct our own.
 AC_PROG_CC
 AC_PROG_CPP
 
@@ -29,7 +28,8 @@ dnl --------------------------------------------------
 
 AC_MSG_CHECKING([supported compiler flags])
 cflags_to_try="-Wall -Wstrict-prototypes -Wmissing-declarations \
--Wmissing-prototypes -fno-builtin -fno-common"
+-Wmissing-prototypes -Wqual-cast -Wwrite-strings \
+-fno-builtin -fno-common"
 old_cflags=$CFLAGS
 echo
 for flag in $cflags_to_try; do
@@ -40,7 +40,6 @@ for flag in $cflags_to_try; do
 	])
 	CFLAGS=$old_cflags
 done
-AC_SUBST(GCFLAGS)
 AC_MSG_RESULT([ ...done.])
 
 dnl --------------------------------------------------
@@ -66,6 +65,12 @@ AC_TYPE_SIZE_T
 AC_STRUCT_ST_BLOCKS
 AC_HEADER_TIME
 AC_STRUCT_TM
+
+dnl we aren't interested in all of DEFS, so manually insert
+dnl the flags we care about
+if test "$ac_cv_c_const" = yes; then
+	GCCFLAGS="$GCCFLAGS -Dconst="
+fi
 
 dnl --------------------------------------------------
 dnl Check for libraries
@@ -185,4 +190,5 @@ dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
 
+AC_SUBST(GCFLAGS)
 AC_OUTPUT(Makefile)

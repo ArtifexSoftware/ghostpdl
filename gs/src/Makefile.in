@@ -219,6 +219,9 @@ CFLAGS_SO=-fPIC
 #   gcc to accept ANSI-style function prototypes and function definitions.
 XCFLAGS=
 
+# defines from autoconf; note that we don't use these at present.
+ACDEFS=@DEFS@
+
 CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
 
 # Define platform flags for ld.
@@ -352,27 +355,6 @@ EXTEND_NAMES=0
 #DEVICE_DEVS=$(DISPLAY_DEV) $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
 DEVICE_DEVS=$(DISPLAY_DEV) @X11DEVS@
 
-#DEVICE_DEVS1=
-#DEVICE_DEVS2=
-#DEVICE_DEVS3=
-#DEVICE_DEVS4=
-#DEVICE_DEVS5=
-#DEVICE_DEVS6=
-#DEVICE_DEVS7=
-#DEVICE_DEVS8=
-#DEVICE_DEVS9=
-#DEVICE_DEVS10=
-#DEVICE_DEVS11=
-#DEVICE_DEVS12=
-#DEVICE_DEVS13=
-#DEVICE_DEVS14=
-#DEVICE_DEVS15=
-#DEVICE_DEVS16=
-#DEVICE_DEVS17=
-#DEVICE_DEVS18=
-#DEVICE_DEVS19=
-#DEVICE_DEVS20=
-
 DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
 DEVICE_DEVS2=
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj5mono.dev $(DD)lj5gray.dev
@@ -404,23 +386,21 @@ DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
 MAKEFILE=Makefile
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
-# Define the ANSI-to-K&R dependency.  There isn't one, but we do have to
-# detect whether we're running a version of gcc with the const optimization
-# bug.
+# This defines the ANSI-to-K&R dependency. No longer supported.
 
-AK=$(GLGENDIR)/cc.tr
+AK=
 
 # Define the compilation rules and flags.
 
 CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
-CC_=$(CC) `cat $(AK)` $(CCFLAGS)
-CCAUX=$(CC) `cat $(AK)`
-CC_LEAF=$(CC_) -fomit-frame-pointer
-# gcc can't use -fomit-frame-pointer with -pg.
+CC_=$(CC) $(CCFLAGS)
+CCAUX=$(CC) 
+CC_LEAF=$(CC_)
+# note gcc can't use -fomit-frame-pointer with -pg.
 CC_LEAF_PG=$(CC_)
 # These are the specific warnings we have to turn off to compile those
 # specific few files that need this.  We may turn off others in the future.
-CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
+CC_NO_WARN=$(CC_)
 
 # ---------------- End of platform-specific section ---------------- #
 
@@ -442,7 +422,3 @@ include $(GLSRCDIR)/unixlink.mak
 include $(GLSRCDIR)/unix-dll.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/unixinst.mak
-
-# This has to come last so it won't be taken as the default target.
-$(AK):
-	if ( $(CC) --version | egrep "^2\.7\.([01]|2(\.[^1-9]|$$))" >/dev/null ); then echo -Dconst= >$(AK); else echo -Wcast-qual -Wwrite-strings >$(AK); fi
