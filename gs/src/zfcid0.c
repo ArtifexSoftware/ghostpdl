@@ -392,11 +392,11 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 	GlyphData = *pGlyphData;
 	if (r_has_type(&GlyphData, t_integer)) {
 	    ref *pds;
-	    stream *discard;
+	    stream *ignore_s;
 
 	    if ((code = dict_find_string(op, "DataSource", &pds)) < 0)
 		return code;
-	    check_read_file(discard, pds);
+	    check_read_file(ignore_s, pds);
 	    DataSource = *pds;
 	} else {
 	    if (!r_has_type(&GlyphData, t_string) && !r_is_array(&GlyphData))

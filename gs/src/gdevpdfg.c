@@ -713,7 +713,7 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 		    char *trs)
 {
     int i;
-    bool single = true, update = false;
+    bool multiple = false, update = false;
     gs_id transfer_ids[4];
     int code = 0;
 
@@ -722,10 +722,10 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 	if (pdev->transfer_ids[i] != transfer_ids[i])
 	    update = true;
 	if (transfer_ids[i] != transfer_ids[0])
-	    single = false;
+	    multiple = true;
     }
     if (update) {
-	if (single) {
+	if (!multiple) {
 	    code = pdf_write_transfer(pdev, pis->set_transfer.indexed[0],
 				      "/TR", trs);
 	    if (code < 0)

@@ -282,7 +282,7 @@ build_gs_FDArray_font(i_ctx_t *i_ctx_p, ref *op,
     int code = build_gs_outline_font(i_ctx_p, op, &pfont, ftype, pstype,
 				     pbuild, bf_options_none,
 				     build_FDArray_sub_font);
-    const double bbox[4] = { 0, 0, 0, 0 };
+    static const double bbox[4] = { 0, 0, 0, 0 };
     gs_uid uid;
 
     if (code < 0)

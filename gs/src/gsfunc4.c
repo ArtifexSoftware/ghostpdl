@@ -519,10 +519,10 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    p += 2 + (p[0] << 8) + p[1];
 	    continue;
 	case PtCr_return:
-	    goto out;
+	    goto fin;
 	}
     }
- out:
+ fin:
 
     if (vsp != vstack + pfn->params.n)
 	return_error(gs_error_rangecheck);
@@ -614,7 +614,7 @@ calc_put_ops(stream *s, const byte *ops, uint size)
 	    return 1;
 	/*case PtCr_return:*/	/* not possible */
 	default: {		/* must be < PtCr_NUM_OPS */
-		const char *op_names[] = {
+		static const char *const op_names[] = {
 		    /* Keep this consistent with opcodes in gsfunc4.h! */
 		    "abs", "add", "and", "atan", "bitshift",
 		    "ceiling", "cos", "cvi", "cvr", "div", "exp",
