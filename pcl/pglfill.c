@@ -514,7 +514,8 @@ hpgl_RF(
 	pgls->g.raster_fill.index = index;
         /* set bitmap to 0, as not all pens need be provided */
 	memset(data, 0, width * height);
-	pargs->phase = 1;
+	/* prepare to read the pixel values */
+	hpgl_next_phase(pargs);
 
     } else {
         width = pgls->g.raster_fill.width;
