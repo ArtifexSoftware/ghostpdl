@@ -671,7 +671,11 @@ gmode_do_reset(
     pcl_reset_type_t    type
 )
 {
-    if ( (type & (pcl_reset_initial | pcl_reset_printer)) != 0 ) {
+    static  const uint  mask = (  pcl_reset_initial
+                                | pcl_reset_printer
+                                | pcl_reset_overlay );
+
+    if ((type & mask) != 0) {
         pcl_raster_state_t *    prstate = &(pcs->raster_state);
 
         prstate->resolution = 75;
