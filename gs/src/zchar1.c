@@ -174,14 +174,6 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
 
-#if DEBUG
-    int char_code = 0;
-    if (r_type(op - 2) == t_integer) {
-        char_code = op[-2].value.intval;
-        char_code += 0; /* just a place for debugger breakpoint */
-    }
-#endif
-
     if (code < 0)
 	return code;
     if (penum == 0 ||
