@@ -29,6 +29,8 @@
 #include "sdct.h"
 #include "sjpeg.h"
 
+public_st_jpeg_compress_data();
+
 /* ------ DCTEncode ------ */
 
 /* JPEG destination manager procedures */
