@@ -38,10 +38,4 @@
 #  include <unistd.h>
 #endif
 
-/*
- * unistd.h may declare unlink in a way that conflicts with stdio_.h if
- * const has been disabled.
- */
-#define unlink unlink_
-
 #endif   /* unistd__INCLUDED */

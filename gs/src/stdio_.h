@@ -38,11 +38,14 @@
 #    define unlink(fname) delete(fname)
 #  endif
 #else
+#if !defined(const)
 /*
  * Other systems may or may not declare unlink in stdio.h;
- * if they do, the declaration will be compatible with this one.
+ * if they do, the declaration will be compatible with this one, as long
+ * as const has not been disabled by defining it to be the empty string.
  */
 int unlink(P1(const char *));
+#endif
 
 #endif
 
