@@ -14,8 +14,10 @@ dnl --------------------------------------------------
 
 dnl AC_PROG_CC likes to add '-g -O2' to CFLAGS. however,
 dnl we ignore those flags and construct our own.
+save_cflags=$CFLAGS
 AC_PROG_CC
 AC_PROG_CPP
+CFLAGS=$save_cflags
 
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
