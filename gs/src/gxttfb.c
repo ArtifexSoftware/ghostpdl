@@ -24,6 +24,9 @@
 #include "gxfixed.h"
 #include "gxpath.h"
 #include "gxfcache.h"
+#include "gxmatrix.h"
+#include "gxhintn.h"
+#include "gzpath.h"
 #include "ttfmemd.h"
 #include "gsstruct.h"
 #include "gserrors.h"
@@ -339,7 +342,7 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     if(ttfInterpreter__obtain(&m->super, &dir->tti))
 	return 0;
 #if TT_GRID_FITTING
-    if(gx_san__obtain(mem, &dir->san))
+    if(gx_san__obtain(mem->stable_memory, &dir->san))
 	return 0;
 #endif
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
@@ -470,22 +473,87 @@ private void gx_ttfExport__DebugPaint(ttfExport *this)
 
 #if TT_GRID_FITTING
 
-int stem_hint_handler(void *client_data, gx_san_sect *ss)
-{
-    /* Not completed yet. */
+private int
+path_to_hinter(t1_hinter *h, gx_path *path)
+{   int code;
+    gs_path_enum penum;
+    gs_fixed_point pts[3], p;
+    bool first = true;
+    int op;
+
+    code = gx_path_enum_init(&penum, path);
+    if (code < 0)
+	return code;
+    while ((op = gx_path_enum_next(&penum, pts)) != 0) {
+	switch (op) {
+	    case gs_pe_moveto:
+		if (first) {
+		    first = false;
+		    p = pts[0];
+		    code = t1_hinter__rmoveto(h, p.x, p.y);
+		} else
+		    code = t1_hinter__rmoveto(h, pts[0].x - p.x, pts[0].y - p.y);
+		break;
+	    case gs_pe_lineto:
+		code = t1_hinter__rlineto(h, pts[0].x - p.x, pts[0].y - p.y);
+		break;
+	    case gs_pe_curveto:
+		code = t1_hinter__rcurveto(h, pts[0].x - p.x, pts[0].y - p.y,
+					pts[1].x - pts[0].x, pts[1].y - pts[0].y,
+					pts[2].x - pts[1].x, pts[2].y - pts[1].y);
+		pts[0] = pts[2];
+		break;
+	    case gs_pe_closepath:
+		code = t1_hinter__closepath(h);
+		break;
+	    default:
+		return_error(gs_error_unregistered);
+	}
+	if (code < 0)
+	    return code;
+	p = pts[0];
+    }
     return 0;
 }
 
-private int grid_fit(gx_device_spot_analyzer *padev, 
-	    gx_path *path, const gs_log2_scale_point *pscale)
+int stem_hint_handler(void *client_data, gx_san_sect *ss)
+{
+    t1_hinter *h = (t1_hinter *)client_data;
+
+    return t1_hinter__hstem(h, ss->xl, ss->xl);
+}
+
+private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
+	gs_font_type42 *pfont, const gs_log2_scale_point *pscale, gx_ttfExport *e)
 {
     /* Not completed yet. */
     gs_imager_state is_stub;
     gx_fill_params params;
     gx_device_color devc_stub;
-    void *client_data = NULL; /* stub */
     int code;
+    t1_hinter h;
+    gs_matrix m;
+    gs_matrix_fixed ctm_temp;
+    bool atp = gs_currentaligntopixels(pfont->dir);
+    fixed origin_x = 0, origin_y = 0; /* fixme */
+    int FontType = 1; /* Will apply Type 1 hinter. */
+    fixed sbx = 0, sby = 0; /* fixme */
 
+    gs_make_identity(&m);
+    code = gs_matrix_fixed_from_matrix(&ctm_temp, &m);
+    if (code < 0)
+	return code;
+    t1_hinter__init(&h, path); /* Will export to */
+    code = t1_hinter__set_mapping(&h, &ctm_temp,
+			&pfont->FontMatrix, &pfont->base->FontMatrix,
+			pscale->x, pscale->x,
+			atp ? 0 : pscale->x, atp ? 0 : pscale->y, /* Not sure */
+			origin_x, origin_y, atp);
+    if (code < 0)
+	return code;
+    code = t1_hinter__set_font42_data(&h, FontType, &pfont->data, false);
+    if (code < 0)
+	return code;
     memset(&is_stub, 0, sizeof(is_stub));
     set_nonclient_dev_color(&devc_stub, 1);
     params.rule = gx_rule_winding_number;
@@ -496,7 +564,19 @@ private int grid_fit(gx_device_spot_analyzer *padev,
     code = dev_proc(padev, fill_path)((gx_device *)padev, 
 		    &is_stub, path, &params, &devc_stub, NULL);
     gx_san_end(padev);
-    code = gx_san_generate_stems(padev, client_data, stem_hint_handler);
+    code = gx_san_generate_stems(padev, &h, stem_hint_handler);
+    if (code < 0)
+	return code;
+    code = t1_hinter__sbw(&h, sbx, sby, e->w.x, e->w.y);
+    if (code < 0)
+	return code;
+    code = path_to_hinter(&h, path);
+    if (code < 0)
+	return code;
+    code = gx_path_new(path);
+    if (code < 0)
+	return code;
+    code = t1_hinter__endglyph(&h);
     return code;
 }
 #endif
@@ -540,7 +620,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
 	case fNoError:
 #	    if TT_GRID_FITTING
 		if (!gs_currentgridfittt(pfont->dir))
-		    return grid_fit(pfont->dir->san, path, pscale);
+		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e);
 #	    endif
 	    return 0;
 	case fMemoryError:
@@ -552,7 +632,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
 	    WarnPatented(pfont, ttf, "Some glyphs of the font");
 #	    if TT_GRID_FITTING
 		if (!gs_currentgridfittt(pfont->dir))
-		    return grid_fit(pfont->dir->san, path, pscale);
+		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e);
 #	    endif
 	    return 0;
 	default:

@@ -1841,14 +1841,15 @@ $(GLOBJ)ttobjs.$(OBJ) : $(GLSRC)ttobjs.c $(GXERR) $(ttmisc_h)\
 	$(GLCC) $(GLO_)ttobjs.$(OBJ) $(C_) $(GLSRC)ttobjs.c
 
 $(GLOBJ)gxttfb.$(OBJ) : $(GLSRC)gxttfb.c $(GXERR) \
- $(gx_h) $(gxfont_h) $(gxfont42_h) $(gxttfb_h) $(gxfcache_h) $(ttfmemd_h)\
+ $(gx_h) $(gxfont_h) $(gxfont42_h) $(gxttfb_h) $(gxfcache_h)\
+ $(gxmatrix_h) $(gxhintn_h) $(gzpath_h) $(ttfmemd_h)\
  $(gsstruct_h) $(gserrors_h) $(gsfont_h) $(gsdebug_h) $(memory__h) $(math__h)\
  $(gxistate_h) $(gxpaint_h) $(gzspotan_h)
 	$(GLCC) $(GLO_)gxttfb.$(OBJ) $(C_) $(GLSRC)gxttfb.c
 
 $(GLOBJ)gzspotan.$(OBJ) : $(GLSRC)gzspotan.c $(GXERR)\
  $(gx_h) $(gserrors_h) $(gsdevice_h) $(gzspotan_h)\
- $(gsfixed_h) $(gxdevice_h) $(gxfdrop_h)\
+ $(gsfixed_h) $(gxdevice_h) $(gxfdrop_h) $(gzpath_h)\
  $(memory__h) $(math__h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gzspotan.$(OBJ) $(C_) $(GLSRC)gzspotan.c
 

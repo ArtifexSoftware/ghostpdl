@@ -83,7 +83,7 @@ struct gx_san_trap_contact_s {
 /* A stem section. */
 typedef struct gx_san_sect_s gx_san_sect;
 struct gx_san_sect_s {
-    fixed y, xl, xr;
+    fixed xl, yl, xr, yr;
     const segment *l, *r;
 };
 
@@ -125,7 +125,7 @@ void gx_san_begin(gx_device_spot_analyzer *padev);
 /* Assumes an Y-band scanning order with increasing X inside a band. */
 int gx_san_trap_store(gx_device_spot_analyzer *padev, 
     fixed ybot, fixed ytop, fixed xlbot, fixed xrbot, fixed xltop, fixed xrtop,
-    const segment *r, const segment *l);
+    const segment *l, const segment *r);
 
 /* Finish accumulating a path. */
 void gx_san_end(const gx_device_spot_analyzer *padev);

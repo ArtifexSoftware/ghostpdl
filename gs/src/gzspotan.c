@@ -23,6 +23,7 @@
 #include "gxfixed.h"
 #include "gxdevice.h"
 #include "gxfdrop.h" /* Only for VD_* constants. */
+#include "gzpath.h"
 #include "memory_.h"
 #include "math_.h"
 #include "vdtrace.h"
@@ -446,7 +447,7 @@ gx_san_begin(gx_device_spot_analyzer *padev)
 int
 gx_san_trap_store(gx_device_spot_analyzer *padev, 
     fixed ybot, fixed ytop, fixed xlbot, fixed xrbot, fixed xltop, fixed xrtop,
-    const segment *r, const segment *l)
+    const segment *l, const segment *r)
 {
     gx_san_trap *last;
 
@@ -517,6 +518,114 @@ gx_san_end(const gx_device_spot_analyzer *padev)
 {
 }
 
+private int
+hint_by_trap(void *client_data, gx_san_trap *t0, gx_san_trap *t1, double ave_width,
+		int (*handler)(void *client_data, gx_san_sect *ss))
+{   gx_san_trap *t;
+    double w, wd, best_width_diff = ave_width * 10;
+    gx_san_trap *best_trap = NULL;
+    bool at_top = false;
+    gx_san_sect sect;
+    int code;
+
+    for (t = t0; ; t = t->upper->upper) {
+	w = t->xrbot - t->xlbot;
+	wd = any_abs(w - ave_width);
+	if (w > 0 && wd < best_width_diff) {
+	    best_width_diff = wd;
+	    best_trap = t;
+	}
+	if (t == t1)
+	    break;
+    }
+    w = t->xrtop - t->xltop;
+    wd = any_abs(w - ave_width);
+    if (w > 0 && wd < best_width_diff) {
+	best_width_diff = wd;
+	best_trap = t;
+	at_top = true;
+    }
+    if (best_trap != NULL) {
+	/* Make a stem section hint at_top of best_trap : */
+	sect.yl = at_top ? best_trap->ytop : best_trap->ybot; 
+	sect.yr = sect.yl;
+	sect.xl = at_top ? best_trap->xltop : best_trap->xlbot; 
+	sect.xr = at_top ? best_trap->xrtop : best_trap->xrbot;
+	sect.l = best_trap->l; 
+	sect.r = best_trap->r;
+	vd_bar(sect.xl, sect.yl, sect.xr, sect.yr, 0, VD_HINT_COLOR);
+	code = handler(client_data, &sect);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+
+private inline void
+choose_by_vector(fixed x0, fixed y0, fixed x1, fixed y1, const segment *s, 
+	double *slope, const segment **store_segm, fixed *store_x, fixed *store_y)
+{
+    if (y0 != y1) {
+	double t = (double)any_abs(x1 - x0) / any_abs(y1 - y0);
+
+	if (*slope > t) {
+	    *slope = t;
+	    *store_segm = s;
+	    *store_x = x1;
+	    *store_y = y1;
+	}
+    }
+}
+
+private inline void
+choose_by_tangent(const segment *p, const segment *s, 
+	double *slope, const segment **store_segm, fixed *store_x, fixed *store_y)
+{
+    if (s->type == s_curve) {
+	curve_segment *c = (curve_segment *)s;
+	vd_curve(p->pt.x, p->pt.y, c->p1.x, c->p1.y, c->p2.x, c->p2.y, 
+		 s->pt.x, s->pt.y, 0, RGB(255, 0, 0));
+	choose_by_vector(c->p1.x, c->p1.y, p->pt.x, p->pt.y, s, slope, store_segm, store_x, store_y);
+	choose_by_vector(c->p2.x, c->p2.y, s->pt.x, s->pt.y, s, slope, store_segm, store_x, store_y);
+    } else {
+	vd_bar(p->pt.x, p->pt.y, s->pt.x, s->pt.y, 0, RGB(255, 0, 0));
+	choose_by_vector(s->pt.x, s->pt.y, p->pt.x, p->pt.y, s, slope, store_segm, store_x, store_y);
+    }
+}
+
+private int
+hint_by_tangent(void *client_data, gx_san_trap *t0, gx_san_trap *t1, double ave_width,
+    int (*handler)(void *client_data, gx_san_sect *ss))
+{   gx_san_trap *t;
+    gx_san_sect sect;
+    double slope0 = 1, slope1 = 1;
+    const segment *s0 = NULL, *p0 = NULL, *s1 = NULL, *p1 = NULL;
+    int code;
+    
+    sect.l = sect.r = NULL;
+    for (t = t0; ; t = t->upper->upper) {
+	if (t->r != s0) {
+	    p0 = t->l;
+	    s0 = p0->next;
+	    choose_by_tangent(p0, s0, &slope0, &sect.l, &sect.xl, &sect.yl);
+	}
+	if (t->l != s1) {
+	    s1 = t->r;
+	    p1 = s1->prev;
+	    choose_by_tangent(p1, s1, &slope1, &sect.r, &sect.xr, &sect.yr);
+	}
+	if (t == t1)
+	    break;
+    }
+    if (sect.l != NULL && sect.r != NULL) {
+	vd_bar(sect.xl, sect.yl, sect.xr, sect.yr, 0, VD_HINT_COLOR);
+	code = handler(client_data, &sect);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+
 /* Generate stems. */
 private int 
 gx_san_generate_stems_aux(gx_device_spot_analyzer *padev, 
@@ -524,6 +633,7 @@ gx_san_generate_stems_aux(gx_device_spot_analyzer *padev,
 		int (*handler)(void *client_data, gx_san_sect *ss))
 {
     gx_san_trap *t0 = padev->trap_buffer;
+    const bool by_trap = false;
 
     for (; t0 != padev->trap_free; t0 = t0->link) {
 	if (!t0->visited) {
@@ -560,41 +670,11 @@ gx_san_generate_stems_aux(gx_device_spot_analyzer *padev,
 		ave_width = area / length;
 		if (length > ave_width / ( 2.0 /* arbitrary */)) {
 		    /* We've got a stem from t0 to t1. */
-		    double w, wd, best_width_diff = ave_width * 10;
-		    gx_san_trap *best_trap = NULL;
-		    bool at_top = false;
-		    gx_san_sect sect;
-		    int code;
+		    int code = (by_trap ? hint_by_trap : hint_by_tangent)(client_data, 
+			t0, t1, ave_width, handler);
 
-		    for (t = t0; ; t = t->upper->upper) {
-			w = t->xrbot - t->xlbot;
-			wd = any_abs(w - ave_width);
-			if (w > 0 && wd < best_width_diff) {
-			    best_width_diff = wd;
-			    best_trap = t;
-			}
-			if (t == t1)
-			    break;
-		    }
-		    w = t->xrtop - t->xltop;
-		    wd = any_abs(w - ave_width);
-		    if (w > 0 && wd < best_width_diff) {
-			best_width_diff = wd;
-			best_trap = t;
-			at_top = true;
-		    }
-		    if (best_trap != NULL) {
-			/* Make a stem section hint at_top of best_trap : */
-			sect.y = at_top ? best_trap->ytop : best_trap->ybot; 
-			sect.xl = at_top ? best_trap->xltop : best_trap->xlbot; 
-			sect.xr = at_top ? best_trap->xrtop : best_trap->xrbot;
-			sect.l = best_trap->l; 
-			sect.r = best_trap->r;
-			vd_bar(sect.xl, sect.y, sect.xr, sect.y, 0, VD_HINT_COLOR);
-			code = handler(client_data, &sect);
-			if (code < 0)
-			    return code;
-		    }
+		    if (code < 0)
+			return code;
 		}
 	    }
 	}
@@ -610,7 +690,7 @@ gx_san_generate_stems(gx_device_spot_analyzer *padev,
 {
     int code;
 
-    vd_get_dc('f');
+    vd_get_dc('h');
     vd_set_shift(0, 0);
     vd_set_scale(VD_SCALE);
     vd_set_origin(0, 0);

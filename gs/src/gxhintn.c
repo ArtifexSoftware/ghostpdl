@@ -665,7 +665,6 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     vd_set_scale(VD_SCALE);
     vd_set_origin(0,0);
     vd_erase(RGB(255, 255, 255));
-    t1_hinter__paint_raster_grid(this);
     vd_setcolor(VD_IMPORT_COLOR);
     vd_setlinewidth(0);
 #   endif
@@ -778,6 +777,24 @@ int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdat
     if (code >= 0)
 	code = t1_hinter__set_stem_snap(this, pdata->StemSnapV.values, pdata->StemSnapV.count, 1);
     return code;
+}
+
+int t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *pdata, bool no_grid_fitting)
+{   
+    t1_hinter__init_outline(this);
+    this->FontType = FontType;
+    this->BlueScale = 0.039625;	/* A Type 1 spec default. */
+    this->blue_shift = 7;	/* A Type 1 spec default. */
+    this->blue_fuzz  = 1;	/* A Type 1 spec default. */
+    this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / (1 << this->log2_pixels_y) - 0.00020417);
+    this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half * (1 << this->log2_pixels_y) / this->heigt_transform_coef) : 0);
+    this->ForceBold = false;
+    this->disable_hinting |= no_grid_fitting;
+    this->charpath_flag = no_grid_fitting;
+    if (this->disable_hinting)
+	return 0;
+    /* Currently we don't provice alignments zones or stem snap. */
+    return 0;
 }
 
 private inline int t1_hinter__can_add_pole(t1_hinter * this, t1_pole **pole)

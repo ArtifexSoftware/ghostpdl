@@ -25,6 +25,11 @@
 typedef struct gs_type1_data_s gs_type1_data;
 #endif
 
+#ifndef gs_type42_data_DEFINED
+#define gs_type42_data_DEFINED
+typedef struct gs_type42_data_s gs_type42_data;
+#endif
+
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
@@ -162,6 +167,8 @@ int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
 			int log2_subpixels_x, int log2_subpixels_y,
 			fixed origin_x, fixed origin_y, bool align_to_pixels);
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
+			bool no_grid_fitting);
+int  t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *pdata, 
 			bool no_grid_fitting);
 
 int  t1_hinter__sbw(t1_hinter * this, fixed sbx, fixed sby, fixed wx,  fixed wy);
