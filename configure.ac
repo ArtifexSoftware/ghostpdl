@@ -1,13 +1,13 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_INIT([jbig2dec], [0.1], [jbig2-dev@ghostscript.com])
-AC_PREREQ(2.52)
+AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR([jbig2dec.c])
 
 AM_INIT_AUTOMAKE([AC_PACKAGE_NAME], [AC_PACKAGE_VERSION])
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.7 $])
+AC_REVISION([$Revision: 1.8 $])
 
 # Checks for programs.
 AC_PROG_CC
@@ -18,7 +18,7 @@ AC_CHECK_LIB([png], [png_check_sig], [
   AC_CHECK_LIB([z], [deflate], [
     AC_DEFINE(HAVE_LIBPNG, 1, [Define if libpng is available (-lpng)])
     LIBS="$LIBS -lpng -lz"
-    LIBOBJS="$LIBOBJS jbig2_image_png.o"
+    AC_LIBOBJ([jbig2_image_png])
   ])
 ])
 
@@ -99,7 +99,8 @@ AC_CHECK_FUNCS([memset strdup])
 dnl use our included getopt if the system doesn't have getopt_long()
 AC_CHECK_FUNC(getopt_long, 
 	[AC_DEFINE(HAVE_GETOPT_LONG,,[Define if the local libc includes getopt_long()])],
-	[LIBOBJS="$LIBOBJS getopt.o getopt1.o"]
+	AC_LIBOBJ([getopt])
+	AC_LIBOBJ([getopt1])
 )
 
 # generate output
