@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1999-2002, Ghostgum Software Pty Ltd.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -305,6 +305,13 @@ BOOL CInstall::MakeDir(const char *dirname)
     return SetCurrentDirectory(dirname);
 }
 
+void CInstall::ResetReadonly(const char *filename)
+{
+    DWORD dwAttr = GetFileAttributes(filename);
+    if (dwAttr & FILE_ATTRIBUTE_READONLY)
+        SetFileAttributes(filename, dwAttr & (~FILE_ATTRIBUTE_READONLY));
+}
+
 BOOL CInstall::InstallFile(char *filename, BOOL bNoCopy)
 {
 	char existing_name[MAXSTR];
@@ -352,6 +359,7 @@ BOOL CInstall::InstallFile(char *filename, BOOL bNoCopy)
 			AddMessage(message);
 			return FALSE;
 		}
+		ResetReadonly(new_name);
 		fputs(new_name, m_fLogNew);
 		fputs("\n", m_fLogNew);
 	}
@@ -726,6 +734,7 @@ BOOL CInstall::WriteUninstall(const char *szProg, BOOL bNoCopy)
 		AddMessage(message);
 		return FALSE;
 	}
+	ResetReadonly(ungsprog);
 	
 	/* write registry entries for uninstall */
 	if ((rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, UNINSTALLKEY, 0, 

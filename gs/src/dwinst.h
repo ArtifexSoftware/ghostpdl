@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1999-2002, Ghostgum Software Pty Ltd.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -107,6 +107,7 @@ private:
 	BOOL SetRegistryValue(HKEY hkey, const char *value_name, const char *value);
 	BOOL CreateShellLink(LPCSTR description, LPCSTR program, LPCSTR arguments, LPCSTR icon = NULL, int nIconIndex = 0);
 	void CopyFileContents(FILE *df, FILE *sf);
+	void ResetReadonly(const char *filename);
 
 	void(*AddMessageFn)(const char *);
 
