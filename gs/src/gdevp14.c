@@ -79,6 +79,8 @@ struct pdf14_buf_s {
     int n_planes; /* total number of planes including alpha, shape, alpha_g */
     byte *data;
 
+    byte *transfer_fn;
+
     gs_int_rect bbox;
 };
 
@@ -97,6 +99,7 @@ ENUM_PTRS_WITH(pdf14_buf_enum_ptrs, pdf14_buf *buf)
     return 0;
     case 0: return ENUM_OBJ(buf->saved);
     case 1: return ENUM_OBJ(buf->data);
+    case 2: return ENUM_OBJ(buf->transfer_fn);
 ENUM_PTRS_END
 
 private
@@ -104,6 +107,7 @@ RELOC_PTRS_WITH(pdf14_buf_reloc_ptrs, pdf14_buf *buf)
 {
     RELOC_VAR(buf->saved);
     RELOC_VAR(buf->data);
+    RELOC_VAR(buf->transfer_fn);
 }
 RELOC_PTRS_END
 
@@ -356,6 +360,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool has_shape,
 	gs_free_object(memory, result, "pdf_buf_new");
 	return NULL;
     }
+    result->transfer_fn = NULL;
     if (has_alpha_g) {
 	int alpha_g_plane = n_chan + (has_shape ? 1 : 0);
 	memset (result->data + alpha_g_plane * planestride, 0, planestride);
@@ -370,6 +375,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool has_shape,
 private void
 pdf14_buf_free(pdf14_buf *buf, gs_memory_t *memory)
 {
+    gs_free_object(memory, buf->transfer_fn, "pdf14_buf_free");
     gs_free_object(memory, buf->data, "pdf14_buf_free");
     gs_free_object(memory, buf, "pdf14_buf_free");
 }
@@ -537,6 +543,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 	(tos->has_shape ? tos_planestride : 0);
     int nos_shape_offset = n_chan * nos_planestride;
     bool nos_has_shape = nos->has_shape;
+    byte *mask_tr_fn;
 
     if (nos == NULL)
 	return_error(gs_error_rangecheck);
@@ -553,6 +560,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 	    (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
 	mask_planestride = maskbuf->planestride;
 	mask_bg_alpha = maskbuf->alpha;
+	mask_tr_fn = maskbuf->transfer_fn;
     }
 
     for (y = y0; y < y1; ++y) {
@@ -576,6 +584,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 		    int t2 = (mask_ptr[x] - mask_bg_alpha) * mask_alpha + 0x80;
 		    mask = mask_bg_alpha + ((t2 + (t2 >> 8)) >> 8);
 		}
+		mask = mask_tr_fn[mask];
 		tmp = pix_alpha * mask + 0x80;
 		pix_alpha = (tmp + (tmp >> 8)) >> 8;
 	    }
@@ -635,7 +644,8 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 }
 
 private int
-pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect, byte bg_alpha)
+pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect, byte bg_alpha,
+			     byte *transfer_fn)
 {
     pdf14_buf *buf;
 
@@ -649,6 +659,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect, byte bg_alpha)
     buf->alpha = bg_alpha;
     buf->shape = 0xff;
     buf->blend_mode = BLEND_MODE_Normal;
+    buf->transfer_fn = transfer_fn;
 
     buf->saved = ctx->stack;
     ctx->stack = buf;
@@ -1183,11 +1194,22 @@ pdf14_begin_transparency_mask(gx_device *dev,
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     byte bg_alpha = 0;
+    byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
+					       "pdf14_push_transparency_mask");
+    int i;
 
     if (ptmp->has_Background)
 	bg_alpha = (int)(255 * ptmp->Background[0] + 0.5);
-    if_debug1('v', "begin transparency mask, bg_alpha = %d!\n", bg_alpha);
-    return pdf14_push_transparency_mask(pdev->ctx, &pdev->ctx->rect, bg_alpha);
+    if_debug1('v', "begin transparency mask, bg_alpha = %d\n", bg_alpha);
+    for (i = 0; i < 256; i++) {
+	float in = i * (1.0 / 255.0);
+	float out;
+
+	ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
+	transfer_fn[i] = (byte)floor(out * 255 + 0.5);
+    }
+    return pdf14_push_transparency_mask(pdev->ctx, &pdev->ctx->rect, bg_alpha,
+					transfer_fn);
 }
 
 private int

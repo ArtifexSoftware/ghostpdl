@@ -367,7 +367,12 @@ end
     dup /S oget /Subtype exch 3 2 roll
 			% Stack: mark ... smaskdict
     dup /BC knownoget {
-      gsave aload pop setcolor [ currentgray ] grestore
+      gsave
+        1 index /G oget /Group oget /CS knownoget {
+	  csresolve setgcolorspace
+	} if
+        aload pop setcolor [ currentgray ]
+      grestore
       /Background exch 3 2 roll
     } if
     dup /TR knownoget {
