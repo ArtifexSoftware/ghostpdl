@@ -525,13 +525,14 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	 */
 	bool encrypted = pdata->lenIV >= 0;
 	fixed cstack[ostack_size];
-	fixed *csp = cstack - 1;
+	fixed *csp;
 	ip_state ipstack[ipstack_size + 1];
 	ip_state *ipsp = &ipstack[0];
 	const byte *cip;
 	crypt_state state;
 	int c;
     
+	CLEAR_CSTACK(cstack, csp);
 	info->num_pieces = 0;	/* default */
 	cip = str.data;
     call:
@@ -563,7 +564,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		    return_error(gs_error_invalidfont);
 		continue;
 	    }
-#define cnext csp = cstack - 1; goto top
+#define cnext CLEAR_CSTACK(cstack, csp); goto top
 	    switch ((char_command) c) {
 	    default:
 		goto out;
