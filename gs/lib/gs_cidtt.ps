@@ -95,13 +95,16 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 
 /RefinePath      % <FontDict> RefinePath <FontDict>
 { dup begin
-  Path .pathstring_not_bare not {	% only add prefix is path is bare
-    % See how Fontmap fonts are being located. Use same procedure.
-    (Resolve a relative path to a True Type font : Incomplete implementation. See lib/gs_cidtt.ps .) =
-    /RefinePath cvx /invalidfont .signalerror
-  } if
-  pop
-  currentdict end
+  Path .libfile {
+      dup .filename {
+        currentdict exch /Path exch put
+      } if
+      closefile
+  } {
+    (Can't find the font file ) print =
+    /findfont cvx /undefinedfilename signalerror
+  } ifelse
+  end
 } bind def
 
 /complete_instance  % <font_name> <FontDict> <Options> complete_FAPI_Font <font_name> <FontDict>
