@@ -981,7 +981,7 @@ $(PSD)fzlib.dev : $(INT_MAK) $(ECHOGS_XE) $(fzlib_)\
 	$(ADDMOD) $(PSD)fzlib -oper zfzlib
 
 $(PSOBJ)zfzlib.$(OBJ) : $(PSSRC)zfzlib.c $(OP)\
- $(idict_h) $(ifilter_h) $(ifrpred_h) $(ifwpred_h)\
+ $(idict_h) $(idparam_h) $(ifilter_h) $(ifrpred_h) $(ifwpred_h)\
  $(spdiffx_h) $(spngpx_h) $(strimpl_h) $(szlibx_h)
 	$(PSCC) $(PSO_)zfzlib.$(OBJ) $(C_) $(PSSRC)zfzlib.c
 
