@@ -38,6 +38,7 @@
     <a href="#Text">Text</a>,
     <a href="#Images">Images</a>,
     <a href="#Paint">Paint</a>,
+    <a href="#Clipping">Clipping</a>,
     <a href="#Other_graphics">Other graphics</a>,
     <a href="#Driver_support">Driver support</a>
 </ul>
@@ -717,9 +718,7 @@ Path rendering:
 <dt>
 Clipping:
 <dd>
-<a href="../src/gxcpath.c">src/gxcpath.c</a>,
-<a href="../src/gxcpath.h">src/gxcpath.h</a>,
-<a href="../src/gzcpath.h">src/gzcpath.h</a>.
+See under <a href="#Clipping">Clipping</a> below.
 
 </dl>
 
@@ -1218,6 +1217,95 @@ Advanced transparency:
 
 </dl>
 
+<h4><a name="Clipping"></a>Clipping</h4>
+
+<p>
+The Ghostscript graphics library implements clipping by inserting a clipping
+device in the device pipeline.  The clipping device modifies all drawing
+operations to confine them to the clipping region.
+
+<p>
+The library supports three different kinds of clipping:
+
+<dl>
+
+<dt>
+Region/path clipping
+<dd>
+This corresponds to the PostScript concept of a clipping path.  The clipping
+region is specified either by a list of rectangles (subject to the
+constraints documented in <a href="../src/gxcpath.h">src/gxcpath.h</a>), or
+by a path that is converted to such a list of rectangles.
+
+<dt>
+Stationary mask clipping
+<dd>
+This corresponds to the mask operand of a PostScript ImageType 3 image.  The
+clipping region is specified by a bitmap and an (X,Y) offset in the
+coordinate space.
+
+<dt>
+Tiled mask clipping
+<dd>
+This corresponds to the region painted by a PostScript Pattern, for the case
+where the Pattern does not completely cover its bounding box but the
+combined transformation matrix has no skew or non-orthogonal rotation (i.e.,
+XStep and YStep map respectively to (X,0) and (0,Y) or vice versa).  The
+clipping region is specified by a bitmap and an (X,Y) offset in the
+coordinate space, and is replicated indefinitely in both X and Y.
+
+</dl>
+
+<p>
+Note that simply scan-converting a clipping path in the usual way does not
+produce a succession of rectangles that can simply be stored as the list for
+region-based clipping: in general, the rectangles do not satisfy the
+constraint for rectangle lists specified in <a
+href="../src/gxcpath.h">src/gxcpath.h</a>, since they may overlap in X, Y,
+or both.  A non-trivial "clipping list accumulator" device is needed to
+produce a rectangle list that does satisfy the constraint.
+
+<dl>
+
+<dt>
+Clipping support:
+<dd>
+<a href="../src/gxclip.c">src/gxclip.c</a>,
+<a href="../src/gxclip.h">src/gxclip.h</a>.
+
+<dt>
+Region/path clipping:
+<dd>
+<a href="../src/gxcpath.c">src/gxcpath.c</a>,
+<a href="../src/gxcpath.h">src/gxcpath.h</a>,
+<a href="../src/gzcpath.h">src/gzcpath.h</a>.
+
+<dt>
+Clipping list accumulator:
+<dd>
+<a href="../src/gxacpath.c">src/gxacpath.c</a>,
+<a href="../src/gzacpath.h">src/gzacpath.h</a>.
+
+<dt>
+Mask clipping support:
+<dd>
+<a href="../src/gxmclip.c">src/gxmclip.c</a>,
+<a href="../src/gxmclip.h">src/gxmclip.h</a>.
+
+<dt>
+Stationary mask clipping:
+<dd>
+<a href="../src/gxclipm.c">src/gxclipm.c</a>,
+<a href="../src/gxclipm.h">src/gxclipm.h</a>.
+
+<dt>
+Tiled mask clipping:
+<dd>
+<a href="../src/gxclip2.c">src/gxclip2.c</a>,
+<a href="../src/gxclip2.h">src/gxclip2.h</a>.
+
+</dl>
+
 <h4><a name="Other_graphics"></a>Other graphics</h4>
 
 <dl>
@@ -1385,8 +1473,6 @@ Other devices:
 <a href="../src/gdevmrun.h">src/gdevmrun.h</a>,
 <a href="../src/gdevplnx.c">src/gdevplnx.c</a>,
 <a href="../src/gdevplnx.h">src/gdevplnx.h</a>,
-<a href="../src/gxacpath.c">src/gxacpath.c</a>,
-<a href="../src/gzacpath.h">src/gzacpath.h</a>.
 
 </dl>
 
@@ -1404,14 +1490,7 @@ The bounding box device:
 <dt>
 Clipping devices:
 <dd>
-<a href="../src/gxclip.c">src/gxclip.c</a>,
-<a href="../src/gxclip.h">src/gxclip.h</a>,
-<a href="../src/gxclip2.c">src/gxclip2.c</a>,
-<a href="../src/gxclip2.h">src/gxclip2.h</a>,
-<a href="../src/gxclipm.c">src/gxclipm.c</a>,
-<a href="../src/gxclipm.h">src/gxclipm.h</a>,
-<a href="../src/gxmclip.c">src/gxmclip.c</a>,
-<a href="../src/gxmclip.h">src/gxmclip.h</a>.
+See under <a href="#Clipping">Clipping</a> above.
 
 <dt>
 Device filter stack:
