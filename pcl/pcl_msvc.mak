@@ -9,12 +9,12 @@ MAKEFILE=..\pcl\pcl_msvc.mak
 
 # The build process will put all of its output in this directory:
 !ifndef GENDIR
-GENDIR=.\obj
+GENDIR=..\pcl\obj
 !endif
 
 # The sources are taken from these directories:
 !ifndef GLSRCDIR
-GLSRCDIR=..\gs
+GLSRCDIR=..\gs\src
 !endif
 !ifndef PLSRCDIR
 PLSRCDIR=..\pl
@@ -26,15 +26,15 @@ PCLSRCDIR=..\pcl
 COMMONDIR=..\common
 !endif
 !ifndef JSRCDIR
-JSRCDIR=$(GLSRCDIR)\jpeg
+JSRCDIR=..\gs\jpeg
 JVERSION=6
 !endif
 !ifndef PSRCDIR
-PSRCDIR=$(GLSRCDIR)\libpng
+PSRCDIR=..\gs\libpng
 PVERSION=96
 !endif
 !ifndef ZSRCDIR
-ZSRCDIR=$(GLSRCDIR)\zlib
+ZSRCDIR=..\gs\zlib
 !endif
 
 
@@ -57,6 +57,10 @@ PCLGENDIR=$(GENDIR)
 !endif
 !ifndef PCLOBJDIR
 PCLOBJDIR=$(GENDIR)
+!endif
+
+!ifndef DD
+DD=$(GLGENDIR)$(D)
 !endif
 
 # Language and configuration.  These are actually platform-independent,
@@ -102,14 +106,28 @@ MSVC_VERSION=5
 !endif
 
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=$(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5c.dev\
- $(DD)pcx16.dev $(DD)pcx256.dev\
- $(DD)pcxmono.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev\
- $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev\
- $(DD)pxlmono.dev $(DD)pxlcolor.dev\
- $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
- $(DD)tifflzw.dev $(DD)tiffpack.dev\
- $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS=	$(DD)djet500.dev\
+                $(DD)ljet4.dev\
+		$(DD)cljet5c.dev\
+ 		$(DD)pcx16.dev\
+		$(DD)pcx256.dev\
+ 		$(DD)pcxmono.dev\
+		$(DD)pcxcmyk.dev\
+		$(DD)pcxgray.dev\
+ 		$(DD)pbmraw.dev\
+		$(DD)pgmraw.dev\
+		$(DD)ppmraw.dev\
+		$(DD)pkmraw.dev\
+		$(DD)pxlmono.dev\
+		$(DD)pxlcolor.dev\
+		$(DD)tiffcrle.dev\
+		$(DD)tiffg3.dev\
+		$(DD)tiffg32d.dev\
+		$(DD)tiffg4.dev\
+		$(DD)tifflzw.dev\
+		$(DD)tiffpack.dev\
+		$(DD)tiff12nc.dev\
+		$(DD)tiff24nc.dev
 !endif
 
 # GS options

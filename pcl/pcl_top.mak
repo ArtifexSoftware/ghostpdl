@@ -27,8 +27,8 @@ clean-not-config-clean: pl.clean-not-config-clean pcl.clean-not-config-clean
 	$(RM_) $(TARGET_XE)$(XE)
 
 config-clean: pl.config-clean pcl.config-clean
-	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld$(CONFIG).tr
-	$(RMN_) $(PCLGEN)pconf$(CONFIG).h $(PCLGEN)pconfig.h
+	$(RMN_) *.tr $(GD)devs.tr $(GD)ld.tr
+	$(RMN_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
 	$(RM_) $(PCLSRC)pclver.h
 
 #### Main program
@@ -76,6 +76,6 @@ $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c           \
                         $(pjparse_h)                \
                         $(pgmand_h)                 \
                         $(plmain_h)                 \
-                        $(PCLGEN)pconf$(CONFIG).h
-	$(CP_) $(PCLGEN)pconf$(CONFIG).h $(PCLGEN)pconfig.h
+                        $(PCLGEN)pconf.h
+	$(CP_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
 	$(PCLCCC) $(PCLSRC)pcmain.c $(PCLO_)pcmain.$(OBJ)
