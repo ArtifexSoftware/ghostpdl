@@ -322,6 +322,7 @@ gslib_h=$(GLSRC)gslib.h
 gslparam_h=$(GLSRC)gslparam.h
 gsmatrix_h=$(GLSRC)gsmatrix.h
 # Out of order
+gxbitfmt_h=$(GLSRC)gxbitfmt.h
 gxcomp_h=$(GLSRC)gxcomp.h $(gscompt_h) $(gsrefct_h) $(gxbitfmt_h)
 gsovrc_h=$(GLSRC)gsovrc.h $(gsstype_h) $(gxcomp_h)
 gspaint_h=$(GLSRC)gspaint.h
@@ -346,7 +347,6 @@ gstparam_h=$(GLSRC)gstparam.h $(gsccolor_h) $(gsrefct_h)
 
 gxalpha_h=$(GLSRC)gxalpha.h
 gxbcache_h=$(GLSRC)gxbcache.h $(gxbitmap_h)
-gxbitfmt_h=$(GLSRC)gxbitfmt.h
 gxcvalue_h=$(GLSRC)gxcvalue.h
 gxclio_h=$(GLSRC)gxclio.h $(gp_h)
 gxclip_h=$(GLSRC)gxclip.h
