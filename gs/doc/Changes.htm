@@ -1,23 +1,663 @@
 <html><head>
-<title>Ghostscript 6.23 change history as of 2000-04-29 09:47:37</title>
+<title>Ghostscript 6.22 change history as of 2000-07-05 10:17:49</title>
 </head><body>
 
 <blockquote><ul>
-<li><a href="#6.23 Documentation">Documentation</a>,
-    <a href="#6.23 Interpreter">Interpreter</a>
+<li><a href="#6.22 Documentation">Documentation</a>,
+    <a href="#6.22 Procedures">Procedures</a>,
+    <a href="#6.22 Utilities">Utilities</a>,
+    <a href="#6.22 Drivers">Drivers</a>,
+    <a href="#6.22 PDF writer">PDF writer</a>,
+    <a href="#6.22 Interpreter (PDF)">Interpreter (PDF)</a>,
+    <a href="#6.22 Interpreter">Interpreter</a>,
+    <a href="#6.22 Streams">Streams</a>,
+    <a href="#6.22 Library">Library</a>
 </ul>
 </ul></blockquote>
 
-<h2><a name="6.23 Documentation"></a>Documentation</h2><pre>
+<h2><a name="6.22 Documentation"></a>Documentation</h2><pre>
+
+Fixes problems:
+	- The batch files for MS-DOS, MS Windows, and OS/2 referred to the
+executable by the name 'gs'. They now use environment variables GS
+(graphical) and GSC (console) for the executable names, defaulting to
+gswin32 and gswin32c respectively. (doc/News.htm [1.45], doc/Use.htm [1.6]:
+2000/05/20 20:53:04 lpd)
+	- The -dCompatibilityLevel= switch was incorrectly identified in one
+place as -dCompatibility=. (doc/Ps2pdf.htm [1.11]: 2000/05/22 21:29:45 lpd)
+	- [gs_]currentgray didn't return the correct value if the current
+color space was a DeviceN space using the alternate space.
+(doc/News.htm [1.49]: 2000/07/03 15:28:26 lpd)
+	- Fixes a couple of typos. (doc/Release.htm [1.12]: 2000/07/04
+19:19:38 lpd)
+	- The "smoke test" procedure for fileset releases didn't stress the
+banding code nearly as hard as intended. (doc/Release.htm [1.13]: 2000/07/05
+04:50:13 lpd)
 
 Adds predefined pdfwrite settings similar to the three standard settings in
 Adobe Acrobat Distiller 4, plus a "default" setting, with
 -dPDFSETTINGS=/settingname. (doc/Ps2pdf.htm [1.10]: 2000/04/29 02:29:20 lpd)
 
-</pre><h2><a name="6.23 Interpreter"></a>Interpreter</h2><pre>
+Increments the version number to 6.23. From now on, we use odd numbers
+during development, even numbers for released filesets.
+(doc/Changes.htm [1.12], doc/History6.htm [1.7], doc/News.htm [1.40],
+doc/Release.htm [1.11]: 2000/04/29 16:49:43 lpd)
+
+Implements ImageType 3 images in the PDF writer. (doc/News.htm [1.41]:
+2000/04/30 06:21:58 lpd)
+
+Creates a procs structure for shadings, moving the fill_rectangle procedure
+into it, in anticipation of adding a get_params procedure.
+(doc/News.htm [1.42]: 2000/04/30 19:37:37 lpd)
+
+Implements PatternType 2 patterns and shfill in the PDF writer.
+(doc/News.htm [1.43]: 2000/05/02 07:14:58 lpd)
+
+Adds a reference to Karel Kulhavy's pdf2html program.
+(doc/New-user.htm [1.6]: 2000/05/04 21:16:44 lpd)
+
+Adds a small project to remove the limit on the length of the OutputFile
+parameter for printer drivers. (doc/Projects.htm [1.9]: 2000/05/06 00:32:08
+lpd)
+
+Documents the addition of TMPDIR for specifying the directory for temporary
+files. (doc/News.htm [1.44], doc/Use.htm [1.5]: 2000/05/19 17:59:28 lpd)
+
+Adds (more) user-contributed uniprint parameter files for the Epson Stylus
+Color 640. (doc/Devices.htm [1.8]: 2000/05/23 18:58:56 lpd)
+
+Adds implementation of the %font% IODevice to the list of projects.
+(doc/Projects.htm [1.10]: 2000/05/24 23:30:15 lpd)
+
+Documents the change in the paper size selection for PCL drivers.
+(doc/News.htm [1.46]: 2000/05/30 03:26:15 lpd)
+
+Adds glyph decaching notification to the list of projects.
+(doc/Projects.htm [1.11]: 2000/05/30 05:54:23 lpd)
+
+Documents that user_names_p and system_names_p may now be NULL.
+(doc/News.htm [1.47]: 2000/06/05 01:26:05 lpd)
+
+Adds the ability to write multi-strip monochrome TIFF files, controlled by a
+new MaxStripSize parameter for the monochrome TIFF drivers.
+(doc/Devices.htm [1.9]: 2000/06/05 05:41:55 lpd)
+
+Updates the open ICC color support project to reference Graeme Gill's icclib
+package. (doc/Projects.htm [1.12]: 2000/06/08 02:55:37 lpd)
+
+Adds an umbrella document for maintenance procedures, initially describing
+the procedure for uploading bug report test data to SourceForge.
+(doc/Maintain.htm [1.1], doc/Readme.htm [1.8]: 2000/06/13 20:27:26 lpd)
+
+Updates documentation to reflect the use of the GSC environment variable to
+set the name of the executable for ps2pdf. (doc/Ps2pdf.htm [1.12]:
+2000/06/21 17:10:41 lpd)
+
+Updates documentation on the ProcessColorModel and ColorConversionStrategy
+parameters. (doc/Ps2pdf.htm [1.13]: 2000/06/21 18:06:07 lpd)
+
+Adds user parameters ProcessComment and ProcessDSCComment. If not null,
+these procedures are called with the file and the comment line whenever the
+scanner detects a comment (or non-DSC comment) or DSC comment. NOTE: the
+interpreter is currently patched so that ProcessComment is never called.
+(doc/Language.htm [1.4], doc/News.htm [1.48]: 2000/06/27 00:53:38 lpd)
+
+Adds a reference to a user-maintained Czech translation of the Ghostscript
+'man' pages. (doc/Readme.htm [1.9]: 2000/06/27 14:03:29 lpd)
+
+Brings the language documentation (more) up to date.
+(doc/Language.htm [1.5]: 2000/06/29 16:00:48 lpd)
+
+Improves the documentation of copydevice regarding where it allocates the
+copy, and documents finddevice. (doc/Drivers.htm [1.2],
+doc/Language.htm [1.6]: 2000/06/30 00:09:15 lpd)
+
+Adds a findprotodevice "operator", to find a device prototype by name.
+(doc/Language.htm [1.7]: 2000/07/05 04:49:11 lpd)
+
+</pre><h2><a name="6.22 Procedures"></a>Procedures</h2><pre>
+
+Fixes problems:
+	- The rule for the recently-added gdevhl12 driver omitted the space
+before the colon. (contrib.mak [1.12]: 2000/05/02 01:42:12 lpd)
+	- Once again, corrects an incorrect dependency list.
+(lib.mak [1.19]: 2000/05/02 07:14:11 lpd)
+	- smd5.c didn't compile properly with "traditional C" compilers.
+(lib.mak [1.20]: 2000/05/19 06:08:01 lpd)
+	- Temporary files weren't created as private or exclusive.
+(lib.mak [1.21], os2.mak [1.6], watc.mak [1.4], watclib.mak [1.4],
+winlib.mak [1.3]: 2000/05/19 17:52:51 lpd)
+	- The definitions of user names weren't properly associated with
+local VM (they were stored in a static variable). (int.mak [1.22]:
+2000/05/26 02:27:58 lpd)
+	- 'make install' on Unix systems didn't install pdfopt.ps and
+pdfwrite.ps. (unixinst.mak [1.11]: 2000/05/30 23:07:34 lpd)
+	- The dependency list for the new Epson Stylus Photo driver was
+wrong, causing build problems if this driver was included.
+(contrib.mak [1.13]: 2000/06/01 20:25:39 lpd)
+	- The change to implement stripped TIFF files broke non-TIFF fax
+output formats (faxg* drivers). Also factors plain-fax writing from TIFF
+writing. (devs.mak [1.26]: 2000/06/06 06:37:37 lpd)
+	- Corrects a typo introduced by recent changes. (msvctail.mak [1.3]:
+2000/06/07 06:36:54 lpd)
+	- Rendering TrueType fonts didn't adjust the flatness to ensure
+accurate results. (lib.mak [1.23]: 2000/06/20 15:46:53 lpd)
+	- The makefile missed a dependency (CIDFontType 0 fonts require
+FontType 2 fonts). (int.mak [1.23]: 2000/06/27 17:23:13 lpd)
+	- The makefiles didn't include the requirement that gs_mro_e.ps be
+loaded before gs_mgl_e.ps. (devs.mak [1.28], int.mak [1.24]: 2000/06/27
+17:36:42 lpd)
+	- A dependency was missing. (lib.mak [1.24]: 2000/07/04 19:05:12
+lpd)
+	- Fixes a typo; reduces the number of false warnings for
+documentation date mismatches. (toolbin/pre [1.4]: 2000/07/04 19:19:17 lpd)
+	- Fixes a typo. (contrib.mak [1.16]: 2000/07/04 22:30:10 lpd)
+	- Adds a missing dependency. (devs.mak [1.29]: 2000/07/04 22:30:33
+lpd)
+
+Increments the version number to 6.23. From now on, we use odd numbers
+during development, even numbers for released filesets. (version.mak [1.15]:
+2000/04/29 16:49:43 lpd)
+
+Restructures the code for handling ImageType 3 images, for the benefit of
+the PDF writer. (lib.mak [1.18]: 2000/04/30 03:08:15 lpd)
+
+Implements ImageType 3 images in the PDF writer. (devs.mak [1.23]:
+2000/04/30 06:21:58 lpd)
+
+Implements PatternType 2 patterns and shfill in the PDF writer.
+(devs.mak [1.24]: 2000/05/02 07:14:58 lpd)
+
+Adds the first draft of a driver for the Practical Automation ATX-23, -24,
+and -38 label/ticket printers, developed under contract. This has a dual
+GPL/AFPL license. (devs.mak [1.25]: 2000/05/03 20:30:06 lpd)
+
+Works around the fact that Microsoft Visual C++ (only) doesn't define the O_
+flags for the `open' library call. (lib.mak [1.22]: 2000/05/31 20:34:43 lpd)
+
+Makes it possible to build on MSVC++ systems without specifying the paths
+for the tools, headers, or libraries. See msvc{32,lib}.mak for details.
+(msvc32.mak [1.4], msvccmd.mak [1.4], msvclib.mak [1.4], msvctail.mak [1.2],
+winint.mak [1.4]: 2000/06/05 02:46:07 lpd)
+
+Adds a user-contributed driver for SFF (the file format for CAPI fax
+devices). (contrib.mak [1.14]: 2000/06/06 06:38:31 lpd)
+
+Notes that the vgalib driver only suppotrs 16-color modes. (devs.mak [1.27]:
+2000/06/06 15:28:01 lpd)
+
+Removes an obsolete file. (toolbin/package.tcl [1.2]: 2000/06/06 18:05:32
+lpd)
+
+Documents the fact that the IJG JPEG library header files must be available
+when compiling, even if SHARE_JPEG=1. (dvx-gcc.mak [1.3], jpeg.mak [1.2],
+unix-gcc.mak [1.6], unixansi.mak [1.4], unixtrad.mak [1.4]: 2000/06/07
+13:32:44 lpd)
+
+Finishes implementing the Process[DSC]Comment callout. (int.mak [1.25]:
+2000/06/28 20:17:00 lpd)
+
+Removes some third-party drivers with incompatible licenses.
+(contrib.mak [1.15]: 2000/07/02 22:11:31 lpd)
+
+Finishes working around the fact that Microsoft C, in defiance of multiple
+standards, by default doesn't define the O_ flags for 'open' in fcntl.h (or
+anywhere else). (lib.mak [1.25]: 2000/07/05 00:48:21 lpd)
+
+</pre><h2><a name="6.22 Utilities"></a>Utilities</h2><pre>
+
+Fixes problems:
+	- Fixes a couple of minor Windows NT compatibility problems in
+script files. (lib/ps2pdf.bat [1.3], lib/ps2pdfxx.bat [1.5]: 2000/05/05
+03:21:03 lpd)
+	- Temporary files weren't created as private or exclusive.
+(gp_iwatc.c [1.3], gp_mswin.c [1.2], gp_os2.c [1.3]: 2000/05/19 17:52:51
+lpd)
+	- gsdll_init didn't propagate an error return from
+gs_main_init_with_args, causing clients to think Ghostscript was initialized
+properly when it wasn't. (gsdll.c [1.2]: 2000/05/20 14:39:42 lpd)
+	- The batch files for MS-DOS, MS Windows, and OS/2 referred to the
+executable by the name 'gs'. They now use environment variables GS
+(graphical) and GSC (console) for the executable names, defaulting to
+gswin32 and gswin32c respectively. (lib/bdftops.bat [1.2],
+lib/eps2eps.bat [1.3], lib/font2c.bat [1.2], lib/gsbj.bat [1.2],
+lib/gsdj.bat [1.2], lib/gsdj500.bat [1.2], lib/gslj.bat [1.2],
+lib/gslp.bat [1.2], lib/gsnd.bat [1.2], lib/gsndt.bat [1.2],
+lib/gssetgs.bat [1.1], lib/gst.bat [1.2], lib/gstt.bat [1.2],
+lib/lpgs.bat [1.2], lib/lpr2.bat [1.2], lib/pdf2ps.bat [1.3],
+lib/pdfopt.bat [1.2], lib/pftogsf.bat [1.2], lib/ps2ascii.bat [1.3],
+lib/ps2epsi.bat [1.3], lib/ps2pdfxx.bat [1.7], lib/ps2ps.bat [1.3]:
+2000/05/20 20:53:05 lpd)
+	- The ps2pdf.bat script didn't set the default PDF level, so it
+normally produced PDF 1.3 rather than 1.2, which was contrary to the
+documentation and different from the Unix ps2pdf script.
+(lib/ps2pdf.bat [1.4]: 2000/06/08 02:33:09 lpd)
+
+Adds a user-contributed program for displaying the differences between two
+AFM (font metric) files. This has a dual AFPL/GPL copyright.
+(lib/afmdiff.awk [1.1]: 2000/04/29 20:51:41 lpd)
+
+Removes an out-of-date e-mail address. (lib/ps2pdfxx.bat [1.4]: 2000/05/04
+16:40:08 lpd)
+
+Adds -dSAFER to all the format conversion scripts in which the input is
+executed as PostScript or PDF code. (lib/eps2eps [1.2],
+lib/eps2eps.bat [1.2], lib/pdf2dsc [1.2], lib/pdf2ps [1.3],
+lib/pdf2ps.bat [1.2], lib/ps2ascii [1.2], lib/ps2ascii.bat [1.2],
+lib/ps2epsi [1.3], lib/ps2epsi.bat [1.2], lib/ps2pdfwr [1.5],
+lib/ps2pdfxx.bat [1.6], lib/ps2ps [1.2], lib/ps2ps.bat [1.2]: 2000/05/19
+06:38:25 lpd)
+
+Adds -dSAFER to one more script. (lib/pdfopt [1.2]: 2000/05/30 05:28:22 lpd)
+
+Refactors some PDF-writing code for use in a PDF decompressor.
+(lib/pdfwrite.ps [1.2]: 2000/06/27 17:06:32 lpd)
+
+Adds a number of (user-maintained) command files for OS/2.
+(lib/bdftops.cmd [1.1], lib/eps2eps.cmd [1.1], lib/font2c.cmd [1.1],
+lib/pdf2ps.cmd [1.1], lib/pf2afm.cmd [1.1], lib/ps2ascii.cmd [1.1],
+lib/ps2epsi.cmd [1.1], lib/ps2pdf.cmd [1.1], lib/ps2pdf12.cmd [1.1],
+lib/ps2pdf13.cmd [1.1], lib/ps2ps.cmd [1.1]: 2000/07/05 16:21:13 lpd)
+
+</pre><h2><a name="6.22 Drivers"></a>Drivers</h2><pre>
+
+Fixes problems:
+	- The "compressed data" command encoding was wrong in one place in
+the documentation, and the code used the incorrect encoding.
+(gdevatx.c [1.2]: 2000/05/06 00:31:25 lpd)
+	- If a file made no marks at all, ps2[e]ps produced bad output.
+(gdevps.c [1.8]: 2000/05/07 15:38:27 lpd)
+	- Returning an image compression parameter dictionary didn't close
+an enumeration, failing to free a bookkeeping structure. (gdevpsdp.c [1.5]:
+2000/05/11 16:13:16 lpd)
+	- The epswrite driver could produce output that used initclip, which
+is not allowed in EPS files. (gdevps.c [1.9]: 2000/05/20 06:36:30 lpd)
+	- The change to implement stripped TIFF files broke non-TIFF fax
+output formats (faxg* drivers). Also factors plain-fax writing from TIFF
+writing. (gdevfax.c [1.1], gdevfax.h [1.1], gdevtfax.c [1.3],
+gdevtfax.h [1.3]: 2000/06/06 06:37:37 lpd)
+	- In the X driver, resetting MaxBitmap didn't have the proper
+effect, and could cause a crash. (This is probably only a partial fix.)
+(gdevxini.c [1.4]: 2000/06/12 01:52:16 lpd)
+	- Finishes fixing the handling of MaxBitmap in the X driver.
+(gdevxini.c [1.5]: 2000/06/12 02:45:25 lpd)
+	- In the ATX drivers, the word count for compressed scan lines was
+written as 2 bytes rather than 1; the drivers wouldn't accept a page width
+greater than 2400 pixels. (gdevatx.c [1.4]: 2000/06/12 04:39:48 lpd)
+	- Works around a bug in the MSVC++ 5.0 compiler that treats (int <<
+unsigned) as unsigned rather than int. (gdevcd8.c [1.2], gdevcdj.c [1.2],
+gdevdj9.c [1.3]: 2000/06/20 14:21:34 lpd)
+	- Uncolored Patterns used with a gray color produced incorrect PDF
+output. (Bug introduced in 6.2x.) (gdevpsdu.c [1.5]: 2000/06/28 05:13:19
+lpd)
+	- Moves an assignment to eliminate a bogus warning from some picky
+compilers about a variable supposedly clobbered by longjmp.
+(gdevpng.c [1.2]: 2000/07/03 21:10:33 lpd)
+	- Two values were computed and not used. (gdevpx.c [1.3]: 2000/07/03
+21:30:41 lpd)
+	- [e]pswrite didn't guarantee a maximum line length of 255
+characters, and didn't mark binary data with %%BeginData:/%%EndData.
+(gdevps.c [1.10]: 2000/07/04 18:34:38 lpd)
+	- Fixes references to undeclared functions. (gdevdfax.c [1.2],
+gdevl256.c [1.2]: 2000/07/04 22:25:08 lpd)
+
+Improves the test for whether compressing an image is worthwhile.
+(gdevpsdi.c [1.11]: 2000/04/30 01:26:41 lpd)
+
+When printing color values derived from 8-bit fields, rounds the output to 3
+decimal places for compactness with no loss of precision. (gdevpsdu.c [1.4]:
+2000/04/30 19:24:28 lpd)
+
+Adds the first draft of a driver for the Practical Automation ATX-23, -24,
+and -38 label/ticket printers, developed under contract. This has a dual
+GPL/AFPL license. (gdevatx.c [1.1]: 2000/05/03 20:30:06 lpd)
+
+Updates the ATX printer drivers to handle the unprintable margins.
+(gdevatx.c [1.3]: 2000/05/19 05:48:30 lpd)
+
+Adds (more) user-contributed uniprint parameter files for the Epson Stylus
+Color 640. (lib/st640ih.upp [1.1], lib/st640ihg.upp [1.1],
+lib/st640p.upp [1.1], lib/st640pg.upp [1.1], lib/st640pl.upp [1.1],
+lib/st640plg.upp [1.1]: 2000/05/23 18:58:56 lpd)
+
+Adds support for 11x17 paper in PCL printers; changes the paper size tests
+so that paper size N+1 is selected if the requested height is at least 0.1"
+greater than the height of paper size N. (gdevpcl.c [1.2], gdevpcl.h [1.2]:
+2000/05/30 03:24:17 lpd)
+
+Adds comments about H-P's inconsistent use of different names and size codes
+for the 11x17 paper size. (gdevpcl.c [1.3], gdevpcl.h [1.3]: 2000/05/30
+20:45:45 lpd)
+
+Adds the ability to write multi-strip monochrome TIFF files, controlled by a
+new MaxStripSize parameter for the monochrome TIFF drivers.
+(gdevtfax.c [1.2], gdevtfax.h [1.2], gdevtfnx.c [1.2], gdevtifs.c [1.2],
+gdevtifs.h [1.2]: 2000/06/05 05:41:55 lpd)
+
+Adds a user-contributed driver for SFF (the file format for CAPI fax
+devices). (gdevcfax.c [1.1]: 2000/06/06 06:38:31 lpd)
+
+Notes that the vgalib driver only suppotrs 16-color modes.
+(gdevvglb.c [1.2]: 2000/06/06 15:28:01 lpd)
+
+Adds some code contributed by Leon Bottou <leonb@research.att.com> that
+makes the X driver prefer TrueColor visuals. We aren't sure of the
+ramifications of this.... (gdevxini.c [1.6]: 2000/06/12 04:41:15 lpd)
+
+Updates the ATX driver(s) to enforce maximum page width and minimum page
+length. (gdevatx.c [1.5]: 2000/06/22 14:55:53 lpd)
+
+Removes some third-party drivers with incompatible licenses.
+(gdevcd8.c [1.3], gdevdj9.c [1.4], gdevhl12.c [1.2]: 2000/07/02 22:11:31
+lpd)
+
+</pre><h2><a name="6.22 PDF writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- A "0 ||" was omitted, potentially causing some kinds of errors
+that never happen in practice to be overlooked. (gdevpdfi.c [1.17]:
+2000/05/02 01:55:10 lpd)
+	- Fixes minor syntactic incompatibilities with "traditional C"
+compilers. (gdevpdfg.c [1.5]: 2000/05/11 16:14:51 lpd)
+	- The PDF writer could still produce coordinates for paths that
+exceeded Acrobat Reader's user-coordinate limit of +/- 32K.
+(gdevpdfd.c [1.9]: 2000/05/23 21:05:00 lpd)
+	- In PDF 1.2 output, several synthesized Type 3 fonts could have the
+same name, producing errors and/or incorrect output. (bug introduced since
+6.01) (gdevpdf.c [1.17], gdevpdft.c [1.11], gdevpdfx.h [1.18]: 2000/05/24
+20:39:30 lpd)
+	- The FontDescriptor flags for non-embedded alphabetic fonts with
+non-Standard encodings incorrectly identified the font as a small-caps font.
+(gdevpdff.c [1.6]: 2000/05/30 23:04:23 lpd)
+	- Works around the fact that Acrobat Reader won't accept /MMType1
+fonts, but will accept MM Type 1 instances if they're tagged as /Type1
+rather than /MMType1. (gdevpdft.c [1.12], gdevpdfw.c [1.4]: 2000/06/12
+18:13:51 lpd)
+	- Embedded Type 1 (but not Type 2 / 1C) fonts were written without
+eexec encryption. We can't figure out how this happened, because the PDF
+spec requires eexec encryption and the correct code was commented out; we
+suppose this was a debugging or testing modification that got left in. (bug
+introduced since 6.01) (gdevpdfe.c [1.2]: 2000/06/12 18:15:20 lpd)
+	- Text in Type 3 synthesized fonts was often positioned incorrectly,
+usually too far to the left. (bug introduced since 6.01) (gdevpdft.c [1.13]:
+2000/06/13 16:34:42 lpd)
+	- Images that ended prematurely still (again?) weren't written
+correctly. (gdevpdfj.c [1.4]: 2000/06/27 06:32:03 lpd)
+
+Implements ImageType 3 images in the PDF writer. (gdevpdfb.c [1.1],
+gdevpdfg.h [1.6], gdevpdfi.c [1.16], gdevpdfj.c [1.3], gdevpdfx.h [1.16]:
+2000/04/30 06:21:58 lpd)
+
+Implements PatternType 2 patterns and shfill in the PDF writer.
+(gdevpdfc.c [1.11], gdevpdfg.h [1.7], gdevpdfo.c [1.3], gdevpdfo.h [1.3],
+gdevpdfv.c [1.1], gdevpdfx.h [1.17]: 2000/05/02 07:14:58 lpd)
+
+</pre><h2><a name="6.22 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
+
+Fixes problems:
+	- PatternType 2 (shaded) Patterns caused errors.
+(lib/pdf_draw.ps [1.14]: 2000/05/02 07:03:09 lpd)
+	- -q (-dQUIET) didn't suppress all warnings from the PDF
+interpreter. (lib/pdf_base.ps [1.8]: 2000/05/07 15:51:18 lpd)
+	- FunctionType 3 functions with indirect /Bounds or /Encode entries
+caused a typecheck error. (lib/pdf_draw.ps [1.15]: 2000/06/07 19:08:00 lpd)
+	- If the TR element of an ExtGState was an array of Functions (for
+setcolortransfer) rather a single Function (for settransfer), an error
+occurred. (fix from Artifex) (lib/pdf_draw.ps [1.16]: 2000/06/12 00:40:45
+lpd)
+	- The code for keeping the Install procedure from getting more and
+more deeply nested didn't actually work, and also caused pages with a
+non-zero MediaBox offset to be translated incorrectly.
+(lib/pdf_main.ps [1.8]: 2000/06/12 19:17:03 lpd)
+	- PDF files with embedded TrueType fonts didn't map characters to
+glyph indices correctly (i.e., using the same algorithm as Acrobat Reader).
+(lib/pdf_font.ps [1.8]: 2000/06/21 02:15:01 lpd)
+	- The built-in Identity CMaps had an incorrect entry count for
+begincodespacerange and begincidrange; these CMaps, and all Type 0 fonts,
+were constructed in a way that was incompatible with some old Adobe font
+loading software. (lib/pdf_font.ps [1.9]: 2000/06/28 01:36:30 lpd)
+	- If PDF interpretation was included in the build, the very first
+line of a non-PDF file wouldn't be processed (if applicable) as a comment.
+(lib/pdf_main.ps [1.9]: 2000/06/29 15:55:13 lpd)
+
+</pre><h2><a name="6.22 Interpreter"></a>Interpreter</h2><pre>
+
+Fixes problems:
+	- localfork didn't properly initialize userdict in the new context.
+(lib/gs_dps.ps [1.2]: 2000/05/01 07:20:37 lpd)
+	- A null Pattern color caused an error. (zcolor2.c [1.2]: 2000/05/01
+15:15:06 lpd)
+	- Fixes minor syntactic incompatibilities with "traditional C"
+compilers. (zbfont.c [1.5], zfcid0.c [1.3]: 2000/05/11 16:14:51 lpd)
+	- The 'monitor' operator was broken (probably had never been
+tried!). (zcontext.c [1.2]: 2000/05/15 19:14:25 lpd)
+	- -dSTRICT caused an error, /undefined in SIZES.
+(lib/gs_statd.ps [1.3]: 2000/05/17 19:17:40 lpd)
+	- CFF CID fonts in which the FDSelect array occurred before the
+CharStrings caused an error. (lib/gs_cff.ps [1.5]: 2000/05/17 20:39:20 lpd)
+	- dict_matrix3_param didn't work correctly on platforms where the
+compiler aligned structures to a boundary larger than sizeof(float), causing
+incorrect output or arithmetic exceptions for CIE color spaces.
+(zcie.c [1.2]: 2000/05/18 19:02:25 lpd)
+	- Flushing or closing a procedure-based output stream still wasn't
+implemented correctly (it could cause an endless loop). (zfproc.c [1.3]:
+2000/05/19 19:35:01 lpd)
+	- 'monitor' left its operand on the stack. (zcontext.c [1.3]:
+2000/05/22 21:15:23 lpd)
+	- The definitions of user names weren't properly associated with
+local VM (they were stored in a static variable). (btoken.h [1.2],
+iref.h [1.2], iscanbin.c [1.3], zbseq.c [1.2], zdps.c [1.2]: 2000/05/26
+02:27:58 lpd)
+	- Invoking an image operator with an empty string data source caused
+an infinite loop. (zimage.c [1.4]: 2000/05/30 03:43:19 lpd)
+	- The fix for associating the user name array with local VM didn't
+create the user name table properly for new contexts with their own local
+VM. The user name array is now created lazily. (btoken.h [1.3],
+iscanbin.c [1.4], zbseq.c [1.3], zdps.c [1.3]: 2000/05/30 04:38:26 lpd)
+	- As a result of the fix removing the incorrect same-local-VM check
+in context_state_load, userparams wasn't updated properly when switching
+contexts. (icontext.c [1.3]: 2000/05/30 20:40:17 lpd)
+	- MAX_HALF_INTVAL was defined incorrectly, causing the mul operator
+to run slower than necessary when multiplying two small integers.
+(zarith.c [1.2]: 2000/06/04 17:00:29 lpd)
+	- Shadings with an array of Functions caused a rangecheck or
+typecheck error. (zshade.c [1.2]: 2000/06/04 18:26:17 lpd)
+	- If the new value of a device parameter was an array with some
+integers and some reals, and the first element was a real, a typecheck error
+would occur. (iparam.c [1.4]: 2000/06/19 22:22:51 lpd)
+	- PDF files with embedded TrueType fonts didn't map characters to
+glyph indices correctly (i.e., using the same algorithm as Acrobat Reader).
+(lib/gs_agl.ps [1.1], lib/gs_ttf.ps [1.5]: 2000/06/21 02:15:01 lpd)
+	- The dictionary used to hold Encodings wasn't large enough.
+(lib/gs_init.ps [1.10]: 2000/06/27 17:55:05 lpd)
+	- The change in parameter type checking required for the new
+Process[DSC]Comment user parameters broke type checking for system
+parameters. (lib/gs_lev2.ps [1.4]: 2000/06/27 17:56:04 lpd)
+	- Calling out to process a comment during scanning left an extra
+element on the operand stack if the comment appeared within { }.
+(ztoken.c [1.3]: 2000/06/28 00:47:05 lpd)
+	- In some cases, two successive DSC comments produced a syntaxerror.
+(ztoken.c [1.4]: 2000/06/28 05:14:17 lpd)
+	- The code for registering compiled fonts was sensitive to its
+position in the order of loading the initialization files (caused an error
+if loaded too early). (lib/gs_ccfnt.ps [1.3]: 2000/06/29 23:31:14 lpd)
+	- [gs_]currentgray didn't return the correct value if the current
+color space was a DeviceN space using the alternate space. (zcolor.c [1.3],
+zcolor1.c [1.2]: 2000/07/03 15:28:26 lpd)
 
 Adds predefined pdfwrite settings similar to the three standard settings in
 Adobe Acrobat Distiller 4, plus a "default" setting, with
 -dPDFSETTINGS=/settingname. (lib/gs_pdfwr.ps [1.4]: 2000/04/29 02:29:21 lpd)
+
+Increments the version number to 6.23. From now on, we use odd numbers
+during development, even numbers for released filesets.
+(lib/gs_init.ps [1.8]: 2000/04/29 16:49:43 lpd)
+
+Changes .buildfont1 to accept Type 1 fonts with LanguageGroup other than 0
+or 1. This is contrary to the spec, but we've seen a few fonts with other
+values. (zfont1.c [1.5]: 2000/05/06 08:19:37 lpd)
+
+Cleans up code and comments slightly. (lib/gs_dps.ps [1.3]: 2000/05/30
+20:35:56 lpd)
+
+Adds user parameters ProcessComment and ProcessDSCComment. If not null,
+these procedures are called with the file and the comment line whenever the
+scanner detects a comment (or non-DSC comment) or DSC comment. NOTE: the
+interpreter is currently patched so that ProcessComment is never called.
+(interp.c [1.4], iscan.c [1.2], iscan.h [1.2], lib/gs_init.ps [1.9],
+lib/gs_lev2.ps [1.3], ztoken.c [1.2], ztype.c [1.2]: 2000/06/27 00:53:38
+lpd)
+
+Finishes implementing the Process[DSC]Comment callout. (icontext.c [1.4],
+icstate.h [1.3], interp.c [1.5], iscan.h [1.3], itoken.h [1.1],
+lib/gs_init.ps [1.11], ztoken.c [1.5], zusparam.c [1.2]: 2000/06/28 20:17:00
+lpd)
+
+Changes the name of the unread operator to .unread, retaining unread as a
+synonym for backward compatibility. (lib/gs_init.ps [1.12], zfileio.c [1.7]:
+2000/06/29 15:58:24 lpd)
+
+Adds a findprotodevice "operator", to find a device prototype by name.
+(lib/gs_init.ps [1.13]: 2000/07/05 04:49:11 lpd)
+
+</pre><h2><a name="6.22 Streams"></a>Streams</h2><pre>
+
+Fixes problems:
+	- file_limit wasn't initialized properly in some cases.
+(sfxfd.c [1.4], sfxstdio.c [1.3]: 2000/05/02 02:06:41 lpd)
+	- smd5.c didn't compile properly with "traditional C" compilers.
+(smd5.c [1.2]: 2000/05/19 06:08:01 lpd)
+	- The workaround for Microsoft C's omission of O_APPEND et al caused
+warnings or errors with other compilers. (stat_.h [1.3]: 2000/07/03 21:07:05
+lpd)
+
+Works around the fact that Microsoft Visual C++ (only) doesn't define the O_
+flags for the `open' library call. (stat_.h [1.2]: 2000/05/31 20:34:43 lpd)
+
+Finishes working around the fact that Microsoft C, in defiance of multiple
+standards, by default doesn't define the O_ flags for 'open' in fcntl.h (or
+anywhere else). (stat_.h [1.4]: 2000/07/05 00:48:21 lpd)
+
+</pre><h2><a name="6.22 Library"></a>Library</h2><pre>
+
+Fixes problems:
+	- A null Pattern color caused an error. (gspcolor.c [1.2]:
+2000/05/01 15:15:07 lpd)
+	- A procedure name exceeded VMS's 31-character limit.
+(gsparam.h [1.6]: 2000/05/02 01:47:50 lpd)
+	- If the DataSource of a shading was a reusable stream, the stream
+wasn't reset before rendering the shading. (gxshade.c [1.2]: 2000/05/02
+07:05:10 lpd)
+	- shfill didn't go through the device fill_path procedure,
+preventing it from being written out as a high-level PostScript or PDF
+construct. (gscolor3.c [1.2]: 2000/05/02 07:06:23 lpd)
+	- Once again, corrects an incorrect dependency list.
+(gscolor3.c [1.3]: 2000/05/02 07:14:11 lpd)
+	- The code for adding elements to small-string free lists was wrong,
+possibly causing an endless loop. (gsnogc.c [1.3]: 2000/05/04 01:29:53 lpd)
+	- Fixes minor syntactic incompatibilities with "traditional C"
+compilers. (gsfunc4.c [1.2], gstype42.c [1.5]: 2000/05/11 16:14:51 lpd)
+	- CIEBasedDEF[G] color spaces computed incorrect results or caused
+invalid memory accesses, especially if DecodeDEF[G] is not the identity
+function. (This bug had probably been there since these color spaces were
+first implemented, unnoticed because DecodeDEF[G] is almost always the
+identity.) (gscie.c [1.2], gsciemap.c [1.2], gxctable.c [1.2]: 2000/05/15
+19:58:38 lpd)
+	- Temporary files weren't created as private or exclusive.
+(close_.h [1.1], gp_unifs.c [1.2], gpmisc.c [1.1], gpmisc.h [1.1]:
+2000/05/19 17:52:51 lpd)
+	- OutputFile values starting with a %d format string caused an
+error. (bug introduced in 5.85) (gsdevice.c [1.4]: 2000/05/20 06:58:11 lpd)
+	- In rare cases, an overflow could occur in the filling loop,
+producing distorted output. (Fix from Artifex Software.) (gxfill.c [1.3]:
+2000/05/23 05:46:52 lpd)
+	- When writing PDF or PostScript, stroked rectangles could sometimes
+be omitted from the output. (gdevvec.c [1.3]: 2000/05/24 18:48:14 lpd)
+	- In PDF output, the conversion of Type 1 to Type 2 CharStrings
+didn't adjust the X offset of the accent for 'seac', causing accents to be
+displaced to the right. (gdevpsfx.c [1.3]: 2000/05/24 23:20:43 lpd)
+	- The definitions of user names weren't properly associated with
+local VM (they were stored in a static variable). (gsalloc.c [1.3],
+gxalloc.h [1.2]: 2000/05/26 02:27:58 lpd)
+	- The change for local user names didn't update the structure
+descriptor for gs_ref_memory_t. (gsalloc.c [1.4], gxalloc.h [1.3]:
+2000/05/26 02:33:38 lpd)
+	- The fix for 'seac' when converting Type 1 to Type 2 CharStrings
+wasn't quite complete. (gdevpsfx.c [1.4]: 2000/05/26 20:48:37 lpd)
+	- If [eo]clip set a rectangular region, clippath would return the
+rounded clipping box, not the correct clipping path. (gxcpath.c [1.2]:
+2000/05/31 22:20:04 lpd)
+	- ShadingType 2 shadings could cause an invalid memory access.
+(gsfunc3.c [1.3]: 2000/06/04 18:25:33 lpd)
+	- Printer drivers that didn't implement print_page_copies didn't
+print multiple copies of the same page on separate files if the OutputFile
+name included %d, and some drivers (such as the TIFF drivers) produced
+invalid output. (gdevprn.c [1.4]: 2000/06/05 02:04:26 lpd)
+	- 32-bit sample values in shading data didn't work, because some
+CPUs execute (1 << 32) as (1 << 0). (gxshade.c [1.3]: 2000/06/07 19:07:17
+lpd)
+	- Type 1 fonts without eexec encryption still included the 4 eexec
+padding bytes. (bug probably introduced since 6.0) (gdevpsf1.c [1.4]:
+2000/06/12 17:38:48 lpd)
+	- Axial shadings with a non-orthogonal CTM could fail to fill the
+required region. (fix from Artifex) (gxshade1.c [1.4]: 2000/06/12 21:45:19
+lpd)
+	- When allocator debugging was enabled (-Z@), 'restore' didn't clear
+vacated space in inner chunks. (gsalloc.c [1.5]: 2000/06/13 07:04:18 lpd)
+	- the row buffers for images weren't allocated with a stable
+allocator, possibly causing data corruption or invalid accesses if a
+PostScript program invoked save/restore within the data-reading procedure
+for an image. (gsimage.c [1.2]: 2000/06/13 07:05:21 lpd)
+	- Rendering TrueType fonts didn't adjust the flatness to ensure
+accurate results. (gstype42.c [1.6], gxchrout.c [1.1], gxchrout.h [1.1],
+gxtype1.c [1.5]: 2000/06/20 15:46:53 lpd)
+	- Calling get_params with a static (read-only) device prototype
+could cause a memory access error. (gsdparam.c [1.3]: 2000/06/22 14:05:49
+lpd)
+	- [gs_]currentgray didn't return the correct value if the current
+color space was a DeviceN space using the alternate space. (gscolor.c [1.2],
+gscolor.h [1.2], gscolor1.c [1.2]: 2000/07/03 15:28:26 lpd)
+	- Some picky compilers complained about "integer constant is
+unsigned in ANSI C, signed with -traditional". (md5.c [1.2]: 2000/07/03
+21:55:18 lpd)
+	- If TMPDIR wasn't defined, TEMP would be ignored. (bug introduced
+in 6.23) (gpmisc.c [1.4]: 2000/07/04 19:54:00 lpd)
+	- Watcom C requires the non-standard O_BINARY mode flag when opening
+(with open) a file that will later be opened in binary mode with fdopen.
+(gpmisc.c [1.6]: 2000/07/05 17:08:27 lpd)
+
+Restructures the code for handling ImageType 3 images, for the benefit of
+the PDF writer. (gximage3.c [1.3], gximage3.h [1.1]: 2000/04/30 03:08:15
+lpd)
+
+Implements ImageType 3 images in the PDF writer. (gximage3.c [1.4],
+gximage3.h [1.2]: 2000/04/30 06:21:58 lpd)
+
+Creates a procs structure for shadings, moving the fill_rectangle procedure
+into it, in anticipation of adding a get_params procedure. (gsshade.c [1.2],
+gsshade.h [1.2], gxshade.h [1.2]: 2000/04/30 19:37:37 lpd)
+
+Implements PatternType 2 patterns and shfill in the PDF writer.
+(gsptype2.c [1.2]: 2000/05/02 07:14:58 lpd)
+
+Changes gdev_prn_file_is_new from a macro to a procedure. (gdevprn.c [1.3],
+gdevprn.h [1.4]: 2000/05/20 20:25:48 lpd)
+
+Works around the fact that Microsoft Visual C++ defines S_IREAD and S_IWRITE
+but not their newer equivalents S_IRUSR and S_IWUSR. (gpmisc.c [1.2]:
+2000/05/24 18:49:54 lpd)
+
+Changes some assignments to work around over-zealous compiler warnings.
+(gxtype1.c [1.4]: 2000/05/24 23:52:58 lpd)
+
+Works around the fact that Microsoft Visual C++ (only) doesn't define the O_
+flags for the `open' library call. (gpmisc.c [1.3]: 2000/05/31 20:34:43 lpd)
+
+Improves some comments in A_fill_stripe. (gxshade1.c [1.3]: 2000/06/04
+20:58:23 lpd)
+
+Finishes working around the fact that Microsoft C, in defiance of multiple
+standards, by default doesn't define the O_ flags for 'open' in fcntl.h (or
+anywhere else). (fcntl_.h [1.1], gpmisc.c [1.5]: 2000/07/05 00:48:21 lpd)
 
 </pre></body></html>
