@@ -481,7 +481,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	/* Filling curves is possible. */
 #  ifdef FILL_TRAPEZOIDS
 	/* Not filling curves is also possible. */
-    if (fill_by_trapezoids && (!CURVED_TRAPEZOID_FILL || pis->accurate_curves))
+    if (fill_by_trapezoids && !CURVED_TRAPEZOID_FILL)
 #  endif
 #endif
 #if !defined(FILL_CURVES) || defined(FILL_TRAPEZOIDS)
@@ -490,7 +490,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    gx_path_init_local(&ffpath, ppath->memory);
 	    code = gx_path_add_flattened_accurate(ppath, &ffpath,
 						  params->flatness,
-						  pis->accurate_curves);
+						  false);
 	    if (code < 0)
 		return code;
 	    pfpath = &ffpath;
@@ -525,8 +525,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 #		    endif
 		    NULL, 
 #		    if CURVED_TRAPEZOID_FILL
-			    (fill_by_trapezoids ? pco_small_curves : pco_monotonize) |
-			    (pis->accurate_curves ? pco_accurate : pco_none)
+			    (fill_by_trapezoids ? pco_small_curves : pco_monotonize)
 #		    else
 			pco_monotonize
 #		    endif
