@@ -227,8 +227,17 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 		code = pdata->procs.subr_data
 		    (pfont, c, false, &ipsp[1].char_string);
-	      subr:if (code < 0)
-		    return_error(code);
+	      subr:if (code < 0) {
+	            /* Calling a Subr with an out-of-range index is clearly a error:
+	             * the Adobe documentation says the results of doing this are
+	             * undefined. However, we have seen a PDF file produced by Adobe
+	             * PDF Library 4.16 that included a Type 2 font that called an
+	             * out-of-range Subr, and Acrobat Reader did not signal an error.
+	             * Therefore, we ignore such calls.
+	             */
+                    cip++;
+                    goto top;
+                }
 		--csp;
 		ipsp->ip = cip, ipsp->dstate = state;
 		++ipsp;
