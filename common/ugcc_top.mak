@@ -35,11 +35,12 @@ nofp:
 product:
 	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-O -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 CCLEAF='$(CCC)' XOBJS='$(GLOBJDIR)/gsfemu.o'
 
-# Build the required files in the GS directory.
+# Build the required GS library files.
 # It's simplest always to build the floating point emulator,
 # even though we don't always link it in.
-$(GENDIR)/ld$(CONFIG).tr: $(MAKEFILE)
-	-mkdir $(GLGENDIR) $(GLOBJDIR)
+$(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE)
+	-mkdir $(GLGENDIR)
+	-mkdir $(GLOBJDIR)
 	make \
 	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
@@ -51,17 +52,17 @@ $(GENDIR)/ld$(CONFIG).tr: $(MAKEFILE)
 	  $(GLOBJDIR)/ld$(CONFIG).tr \
 	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o $(GLOBJDIR)/gsnogc.o \
 	  $(GLOBJDIR)/gconfig$(CONFIG).o $(GLOBJDIR)/gscdefs$(CONFIG).o
-	-cp $(GLOBJDIR)/ld$(CONFIG).tr $(GENDIR)/ld$(CONFIG).tr
+	cp $(GLOBJDIR)/ld$(CONFIG).tr $(GENDIR)/ldl$(CONFIG).tr
 
 # Build the configuration file.
 $(GENDIR)/pconf$(CONFIG).h $(GENDIR)/ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
 	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf$(CONFIG).h -p "%s&s&&" -o $(GENDIR)/ldconf$(CONFIG).tr
 
 # Link a Unix executable.
-$(TARGET_XE): $(GENDIR)/ld$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr $(MAIN_OBJ)
+$(TARGET_XE): $(GENDIR)/ldl$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr $(MAIN_OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldt.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
 	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -n -s $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsnogc.o $(GLOBJDIR)/gconfig$(CONFIG).o $(GLOBJDIR)/gscdefs$(CONFIG).o -s
 	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -n -s $(XOBJS) -s
-	cat $(GENDIR)/ld$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr >>$(GENDIR)/ldt.tr
+	cat $(GENDIR)/ldl$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr >>$(GENDIR)/ldt.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -s - $(MAIN_OBJ) $(EXTRALIBS) -lm
 	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldt.tr

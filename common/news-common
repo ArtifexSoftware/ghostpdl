@@ -7,14 +7,11 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
-Version 1.03 (xx/xx/98)
+Version 1.03 (8/8/98)
 =====================
 
-added commands to make directories for object and build generated code. 
+Adds commands to make directories for object and build-generated code.
 (ugcc_top.mak)
-
-allow cp to fail and have the make continue.  cp fails
-if it is asked to copy a file to itself. (ugcc_top.mak)
 
 Version 1.02 (8/6/98)
 =====================
