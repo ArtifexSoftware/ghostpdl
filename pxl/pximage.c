@@ -89,6 +89,24 @@ px_purge_pattern_cache(px_state_t *pxs, pxePatternPersistence_t max_persist)
 				(void *)&max_persist);
 }
 
+
+/* pxl delta row decompression state machine states */
+typedef enum {
+  next_is_bytecount,
+  partial_bytecount,
+  next_is_cmd,
+  partial_offset,
+  partial_cnt
+} deltarow_parse_state_t;
+
+/* pxl delta row decompression state storage */
+typedef struct deltarow_state_s {
+  deltarow_parse_state_t state;
+  uint row_byte_count;
+  uint short_cnt; 
+  uint short_offset; 
+} deltarow_state_t;
+
 /* Define the structure for enumerating a bitmap being downloaded. */
 typedef struct px_bitmap_enum_s {
     gs_memory_t *mem;            /* used only for the jpeg filter */
@@ -97,6 +115,7 @@ typedef struct px_bitmap_enum_s {
     stream_RLD_state rld_stream_state;	/* decompressor states */
     stream_DCT_state dct_stream_state;
     jpeg_decompress_data jdd;
+    deltarow_state_t deltarow_state;
 } px_bitmap_enum_t;
 
 /* Define our image enumerator. */
@@ -313,14 +332,171 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
     return (pos_in_row < data_per_row_padded ? pxNeedData : 1);
 }
 
+/** PCL XL delta row decompression 
+ *
+ * delta row Algorithm:  
+ *
+ * Seed Row is initialized with zeros.
+ *
+ * lsb,msb row byte count
+ * delta row data
+ * repeat for each row
+ *
+ * if row byte count is zero duplicate previous row
+ * if row byte count doesn't fill row duplicate remainder and end the row (undocumented)
+ * 
+ * delta row data: command byte, optional extra offset bytes, delta raster snippit
+ * command byte 7-5 delta raster length: 4-0 offset 
+ *
+ * offset = bits 4-0;
+ * if offset == 31 then do { add next byte } repeat while next byte was 0xFF 
+ * example offset = 31 + 255 + 255 + 255 + 4
+ *
+ * delta length = bits 5-7  + 1; range 1 to 8 bytes. 
+ *    
+ * output raster is:
+ * last position + offset; "copies" old data
+ * copy delta length bytes from input to output 
+ *           
+ * Internal Algorithm:
+ *  
+ *  No row padding is used.
+ *  State is need since available data can be short at any time.  
+ *  read = *pin++; // out of data? save state, return eNeedData 
+ *          
+ * deltarow.state maintains state between requests for more data
+ * state             : description
+ *                   -> next state
+ * --------------------------------------- 
+ * next_is_bytecount : lsb of row bytecount 
+ *                   -> partial_bytecount
+ * partial_bytecount : msb of row bytecount
+ *                   -> next_is_cmd
+ * next_is_cmd       : 1 byte cmd contains cnt and partial offset
+ *                   -> partial_offset or partial_cnt
+ * partial_offset    : accumulates extra offset bytes, moves output by offset  
+ *                   -> partial_offset or partial_cnt
+ * partial_cnt       : copies cnt bytes one at a time from input
+ *                   -> partial_cnt or next_is_cmd or (next_bytecount && end_of_row) 
+ *
+ * RETURN values: 
+ *  0 == end of image   // end of row returns, next call returns end of image.
+ *  1 == end of row
+ *  eNeedData == on need more input
+ */
 private int
 read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 {
-    dprintf( "deltarow compression not supported\n" );
-    return -1;
+  deltarow_state_t *deltarow = &benum->deltarow_state;
+  uint avail = par->source.available;
+  const byte *pin = par->source.data;
+  byte *pout = *pdata + par->source.position % benum->data_per_row;
+  const byte *pout_start = pout;
+  bool end_of_row = false;
+
+  /* return end of image */
+  if ( par->source.position >= benum->data_per_row * par->pv[1]->value.i )
+    return 0;  
+
+  /* initialize at begin of image */
+  if ( !benum->initialized ) {	
+    /* zero seed row */
+    memset(*pdata, 0, benum->data_per_row); 
+    deltarow->row_byte_count = 0;
+    deltarow->short_cnt = 0;
+    deltarow->short_offset = 0;
+    deltarow->state = next_is_bytecount;
+    benum->initialized = true;
+  }
+  
+  /* one byte at a time until end of input or end of row */
+  while (avail && !end_of_row) {
+    switch ( deltarow->state ) {
+
+    case next_is_bytecount:{
+      deltarow->short_cnt = *pin++; 
+      --avail; 
+      deltarow->state = partial_bytecount;
+      break;
+    }
+  
+    case partial_bytecount: {
+      deltarow->row_byte_count = deltarow->short_cnt + ((*pin++) << 8 );
+      --avail;
+	
+      if ( deltarow->row_byte_count == 0 ) {
+	/* duplicate the row */
+	deltarow->state = next_is_bytecount;
+	end_of_row = true; 
+      }
+      else
+	deltarow->state = next_is_cmd;
+      break;
+    }
+      
+    case next_is_cmd: {
+      uint val = *pin++;
+
+      --avail;
+      deltarow->row_byte_count--;
+      deltarow->short_cnt = (val >> 5) + 1;  /* 1 to 8 new bytes to copy */
+      deltarow->short_offset = val & 0x1f;   /* num to retain from last row, skip */
+      if (deltarow->short_offset == 0x1f) 
+	deltarow->state = partial_offset;    /* accumulate more offset */
+      else {
+	pout += deltarow->short_offset;      /* skip keeps old data in row */
+	deltarow->state = partial_cnt;       /* done with offset do count */ 
+      }
+      break;
+    }
+
+    case partial_offset: {
+      uint offset = *pin++;
+      avail--;
+      deltarow->row_byte_count--;
+      
+      deltarow->short_offset += offset;
+      
+      if (offset == 0xff) 
+	deltarow->state = partial_offset;  /* 0x1f + ff ff ff ff ff + 1 */ 
+      else {
+	pout += deltarow->short_offset;    /* skip keeps old data in row */
+	deltarow->state = partial_cnt;     /* done with offset do count */ 
+      }
+      break;
+    }
+
+    case partial_cnt: {
+      *pout++ = *pin++;           /* copy new data into row */
+      avail--;
+      deltarow->row_byte_count--;
+      deltarow->short_cnt--;
+      
+      if (deltarow->row_byte_count == 0) {	
+	end_of_row = true;
+	deltarow->state = next_is_bytecount;
+      }
+      else if (deltarow->short_cnt == 0) 
+	deltarow->state = next_is_cmd;
+      /* else more bytes to copy */
+      break;
+    }
+
+    } /* end switch */
+  } /* end of while */
+    
+  par->source.available -= pin - par->source.data;  /* subract comressed data used */
+  par->source.data = pin;                           /* new compressed data position */
+
+  if (end_of_row) {                         
+    /* uncompressed raster position */
+    par->source.position = 
+      (par->source.position / benum->data_per_row + 1) * benum->data_per_row;
+    return 1;
+  }
+  par->source.position += pout - pout_start;       /* amount of raster written */
+  return pxNeedData;                               /* not end of row so request more data */
 }
-
-
 
 /*
  * Read a (possibly partial) row of bitmap data.  This is most of the
@@ -402,7 +578,7 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
                                               "pxReadImage(row)");
 	  if ( pxenum->row == 0 )
 	    code = gs_note_error(errorInsufficientMemory);
-	  else
+	  else 
 	    code = px_image_color_space(&pxenum->color_space, &pxenum->image,
 					&params, &pxgs->palette, pgs);
 	}
