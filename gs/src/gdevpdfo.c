@@ -309,8 +309,11 @@ cos_value_write_spaced(const cos_value_t *pcv, gx_device_pdf *pdev,
     switch (pcv->value_type) {
     case COS_VALUE_SCALAR:
     case COS_VALUE_CONST:
-	if (do_space && pcv->contents.chars.data[0] != '/')
-	    stream_putc(s, ' ');
+	if (do_space)
+	    switch (pcv->contents.chars.data[0]) {
+	    case '/': case '(': case '<': break;
+	    default: stream_putc(s, ' ');
+	    }
 	pdf_write_value(pdev, pcv->contents.chars.data,
 			pcv->contents.chars.size);
 	break;
