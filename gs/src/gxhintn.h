@@ -111,7 +111,8 @@ typedef struct t1_hinter_s
     t1_glyph_space_coord width_gx, width_gy; /* glyph space coords of the glyph origin */
     t1_glyph_space_coord cx, cy; /* current point */
     t1_glyph_space_coord bx, by; /* starting point of a contour */
-    uint subpixels_x, subpixels_y; /* Number of subpixels in a pixel (by an axis) */
+    uint log2_pixels_x, log2_pixels_y; /* log2 of the number of pixels in unit (by an axis) */
+    int log2_subpixels_x, log2_subpixels_y; /* log2 of the number of subpixels in unit (may be negative) */
     bool transposed;
     bool align_to_pixels; /* false == "align to (integral) pixels" */
     bool disable_hinting;
@@ -158,7 +159,8 @@ typedef struct t1_hinter_s
 void t1_hinter__init(t1_hinter * this, gx_path *output_path);
 int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
 			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix,
-			fixed unit_x, fixed unit_y,
+			int log2_pixels_x, int log2_pixels_y,
+			int log2_subpixels_x, int log2_subpixels_y,
 			fixed origin_x, fixed origin_y, bool align_to_pixels);
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
 			bool charpath_flag);

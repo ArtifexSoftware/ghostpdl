@@ -173,6 +173,7 @@ struct gs_type1_state_s {
     fixed_coeff fc;		/* cached fixed coefficients */
     float flatness;		/* flatness for character curves */
     point_scale scale;		/* oversampling scale */
+    gs_log2_scale_point log2_subpixels;	/* log2 of the number of subpixels */
     font_hints fh;		/* font-level hints */
     gs_fixed_point origin;	/* character origin */
     /* The following are updated dynamically */

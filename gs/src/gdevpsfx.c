@@ -65,9 +65,7 @@ private void
 type1_next_init(gs_type1_state *pcis, const gs_glyph_data_t *pgd,
 		gs_font_type1 *pfont)
 {
-    static const gs_log2_scale_point no_scale = {0, 0};
-
-    gs_type1_interp_init(pcis, NULL, NULL, &no_scale, false, 0, pfont);
+    gs_type1_interp_init(pcis, NULL, NULL, NULL, NULL, false, 0, pfont);
     pcis->flex_count = flex_max;
     pcis->dotsection_flag = dotsection_out;
     pcis->ipstack[0].cs_data = *pgd;

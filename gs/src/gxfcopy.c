@@ -952,7 +952,6 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
     int code = pfont1->data.procs.glyph_data(pfont1, glyph, &gdata);
     const gs_glyph_data_t *pgd = &gdata;
     gs_type1_state cis;
-    static const gs_log2_scale_point no_scale = {0, 0};
     gs_imager_state gis;
 
     if (code < 0)
@@ -969,7 +968,7 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 	gs_matrix_fixed_from_matrix(&gis.ctm, &imat);
     }
     gis.flatness = 0;
-    code = gs_type1_interp_init(&cis, &gis, ppath, &no_scale, true, 0,
+    code = gs_type1_interp_init(&cis, &gis, ppath, NULL, NULL, true, 0,
 				pfont1);
     if (code < 0)
 	return code;

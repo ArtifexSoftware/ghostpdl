@@ -91,9 +91,22 @@ type1_exec_init(gs_type1_state *pcis, gs_text_enum_t *penum,
      * the current gstate and path.  This is a design bug that we will
      * have to address someday!
      */
+
+    int alpha_bits = 1; 
+    gs_log2_scale_point log2_subpixels;
     
+    if (color_is_pure(pgs->dev_color)) /* Keep consistency with alpha_buffer_bits() */
+	alpha_bits = (*dev_proc(pgs->device, get_alpha_bits)) (pgs->device, go_text);
+    if (alpha_bits <= 1) {
+	/* We render to cache device or the target device has no alpha bits. */
+	log2_subpixels = penum->log2_scale;
+    } else {
+	/* We'll render to target device through alpha buffer. */
+	/* Keep consistency with alpha_buffer_init() */
+	log2_subpixels.x = log2_subpixels.y = ilog2(alpha_bits); 
+    }
     return gs_type1_interp_init(pcis, (gs_imager_state *)pgs, pgs->path,
-				&penum->log2_scale,
+				&penum->log2_scale, &log2_subpixels,
 				(penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
 				pfont1->PaintType, pfont1);
 }
@@ -1021,7 +1034,6 @@ zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
     int code;
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
-    static const gs_log2_scale_point no_scale = {0, 0};
     const gs_type1_data *pdata;
     const ref *pfdict;
     ref *pcdevproc;
@@ -1062,7 +1074,7 @@ zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
 	gs_matrix_fixed_from_matrix(&gis.ctm, &imat);
     }
     gis.flatness = 0;
-    code = gs_type1_interp_init(&cxs.cis, &gis, ppath, &no_scale, true, 0,
+    code = gs_type1_interp_init(&cxs.cis, &gis, ppath, NULL, NULL, true, 0,
 				pfont1);
     if (code < 0)
 	return code;

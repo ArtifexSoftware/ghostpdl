@@ -102,12 +102,15 @@ accum_xy_proc(register is_ptr ps, fixed dx, fixed dy)
 /* The caller must supply a string to the first call of gs_type1_interpret. */
 int
 gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
-    gx_path * ppath, const gs_log2_scale_point * pscale, bool charpath_flag,
+    gx_path * ppath, const gs_log2_scale_point * pscale, 
+    const gs_log2_scale_point * psubpixels, bool charpath_flag,
 		     int paint_type, gs_font_type1 * pfont)
 {
     static const gs_log2_scale_point no_scale = {0, 0};
     const gs_log2_scale_point *plog2_scale =
-	(FORCE_HINTS_TO_BIG_PIXELS ? pscale : &no_scale);
+	(FORCE_HINTS_TO_BIG_PIXELS && pscale != NULL ? pscale : &no_scale);
+    const gs_log2_scale_point *plog2_subpixels =
+	(FORCE_HINTS_TO_BIG_PIXELS ? (psubpixels != NULL ? psubpixels : plog2_scale) : &no_scale);
 
     if_debug0('1', "[1]gs_type1_interp_init\n");
     pcis->pfont = pfont;
@@ -132,6 +135,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->have_hintmask = false;
     pcis->num_hints = 0;
     pcis->seac_accent = -1;
+    pcis->log2_subpixels = *plog2_subpixels;
 
     /* Set the sampling scale. */
     set_pixel_scale(&pcis->scale.x, plog2_scale->x);
@@ -677,7 +681,6 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	 */
 	gs_imager_state gis;
 	gs_type1_state cis;
-	static const gs_log2_scale_point no_scale = {0, 0};
 	int value;
 
 	/* Initialize just enough of the imager state. */
@@ -691,7 +694,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	}
 	gis.flatness = 0;
 	code = gs_type1_interp_init(&cis, &gis, NULL /* no path needed */,
-				    &no_scale, true, 0, pfont);
+				    NULL, NULL, true, 0, pfont);
 	if (code < 0)
 	    return code;
 	cis.charpath_flag = true;	/* suppress hinting */

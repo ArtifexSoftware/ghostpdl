@@ -186,17 +186,23 @@ private inline int32 import_shift(int32 v, unsigned int s)
 }
 
 private inline int32 Max(int32 a, int32 b)
-{   return a>b ? a : b;
+{   return a > b ? a : b;
 }
 
 private inline int32 Min(int32 a, int32 b)
-{   return a<b ? a : b;
+{   return a < b ? a : b;
 }
 
 private inline double Maxd(double a, double b)
-{   return a>b ? a : b;
+{   return a > b ? a : b;
 }
 
+private inline long rshift(long a, int b)
+{   return b > 0 ? a << b : a >> -b;
+}
+private inline ulong urshift(ulong a, int b)
+{   return b > 0 ? a << b : a >> -b;
+}
 /*---------------------- members of matrix classes -------------------------*/
 
 private inline void double_matrix__set(double_matrix * this, const gs_matrix_fixed * m)
@@ -403,8 +409,8 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
     double j; /* 'long' can overflow */
     unsigned long c0 = RGB(192, 192, 192), c1 = RGB(64, 64, 64);
     t1_hinter_space_coord min_ox, max_ox, min_oy, max_oy;
-    long div_x = this->g2o_fraction, div_xx = div_x * this->subpixels_x; 
-    long div_y = this->g2o_fraction, div_yy = div_y * this->subpixels_y; 
+    long div_x = this->g2o_fraction, div_xx = div_x << this->log2_pixels_x; 
+    long div_y = this->g2o_fraction, div_yy = div_y << this->log2_pixels_y; 
     long ext_x = div_x * 5;
     long ext_y = div_y * 5;
     long sx = this->orig_ox % div_xx;
@@ -531,16 +537,13 @@ private inline void t1_hinter__init_outline(t1_hinter * this)
     this->path_opened = false;
 }
 
-private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy, fixed unit_x, fixed unit_y)
+private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
 {   
-    if (!this->align_to_pixels) {
-	/* Align to subpixels : */
-	this->orig_dx = (dx + fixed_half) & ~(fixed_1 - 1);
-	this->orig_dy = (dy + fixed_half) & ~(fixed_1 - 1);
-    } else {
-	this->orig_dx = (dx + unit_x / 2) & ~(unit_x - 1);
-	this->orig_dy = (dy + unit_y / 2) & ~(unit_y - 1);
-    }
+    uint align_x = urshift(fixed_1, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
+    uint align_y = urshift(fixed_1, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
+
+    this->orig_dx = (dx + align_x / 2) & ~(align_x - 1);
+    this->orig_dy = (dy + align_y / 2) & ~(align_y - 1);
     this->orig_ox = d2o(this, this->orig_dx);
     this->orig_oy = d2o(this, this->orig_dy);
 #   if ADOBE_SHIFT_CHARPATH
@@ -563,7 +566,8 @@ private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy, 
 
 int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
 		    gs_matrix * FontMatrix, gs_matrix * baseFontMatrix,
-		    fixed unit_x, fixed unit_y,
+		    int log2_pixels_x, int log2_pixels_y,
+		    int log2_subpixels_x, int log2_subpixels_y,
 		    fixed origin_x, fixed origin_y, bool align_to_pixels)
 {   float axx = fabs(ctm->xx), axy = fabs(ctm->xy);
     float ayx = fabs(ctm->xx), ayy = fabs(ctm->xy);
@@ -580,8 +584,10 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
     if (scale == 0)
 	return_error(gs_error_invalidfont);
     this->disable_hinting |= (scale < 1/1024. || scale > 4);
-    this->subpixels_x = unit_x / fixed_1;
-    this->subpixels_y = unit_y / fixed_1;
+    this->log2_pixels_x = log2_pixels_x;
+    this->log2_pixels_y = log2_pixels_y;
+    this->log2_subpixels_x = log2_subpixels_x;
+    this->log2_subpixels_y = log2_subpixels_y;
     double_matrix__set(&CTM, ctm);
     double_matrix__scale(&CTM, 1<<this->import_shift, 1<<this->import_shift);
     fraction_matrix__set(&this->ctmf, &CTM);
@@ -644,7 +650,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
     }
     this->transposed = (any_abs(this->ctmf.xy) * 10 > any_abs(this->ctmf.xx));
     this->align_to_pixels = align_to_pixels;
-    t1_hinter__set_origin(this, origin_x, origin_y, unit_x, unit_y);
+    t1_hinter__set_origin(this, origin_x, origin_y);
 #   if VD_DRAW_IMPORT
     vd_get_dc('h');
     vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
@@ -736,8 +742,8 @@ int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdat
     this->BlueScale = pdata->BlueScale;
     this->blue_shift = float2fixed(pdata->BlueShift);
     this->blue_fuzz  = import_shift(float2fixed(pdata->BlueFuzz), this->import_shift);
-    this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / this->subpixels_y / (1 << this->import_shift) - 0.00020417);
-    this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half * this->subpixels_y / this->heigt_transform_coef) : 0);
+    this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / (1 << this->log2_pixels_y) / (1 << this->import_shift) - 0.00020417);
+    this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half * (1 << this->log2_pixels_y) / this->heigt_transform_coef) : 0);
     this->blue_rounding = (t1_hinter_space_coord)((this->BlueScale * 240) * (this->resolution * this->base_font_scale) * this->g2o_fraction);
     this->ForceBold = pdata->ForceBold;
     this->disable_hinting |= charpath_flag;
@@ -998,8 +1004,8 @@ int t1_hinter__flex_point(t1_hinter * this)
 int t1_hinter__flex_end(t1_hinter * this, fixed flex_height)
 {   t1_pole *pole0, *pole1, *pole4;
     t1_hinter_space_coord ox, oy;
-    const int32 div_x = this->g2o_fraction * this->subpixels_x;
-    const int32 div_y = this->g2o_fraction * this->subpixels_y;
+    const int32 div_x = this->g2o_fraction << this->log2_pixels_x;
+    const int32 div_y = this->g2o_fraction << this->log2_pixels_y;
     
     if (this->flex_count != 8)
 	return_error(gs_error_invalidfont);
@@ -1384,8 +1390,8 @@ private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord po
 private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, 
 	    t1_glyph_space_coord *x, t1_glyph_space_coord *y, bool align_to_pixels)
 {   if (unit > 0) {
-	long div_x = unit * (!align_to_pixels ? 1 : this->subpixels_x);
-	long div_y = unit * (!align_to_pixels ? 1 : this->subpixels_y);
+	long div_x = rshift(unit, (align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
+	long div_y = rshift(unit, (align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
         t1_glyph_space_coord gx = *x, gy = *y;
         t1_hinter_space_coord ox, oy;
         int32 dx, dy;
@@ -1599,8 +1605,8 @@ private int t1_hinter__find_best_standard_width(t1_hinter * this, t1_glyph_space
 }
 
 private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
-{   int32 pixel_o_x = this->g2o_fraction * (!this->align_to_pixels ? 1 : this->subpixels_x);
-    int32 pixel_o_y = this->g2o_fraction * (!this->align_to_pixels ? 1 : this->subpixels_y);
+{   int32 pixel_o_x = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
+    int32 pixel_o_y = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
     t1_glyph_space_coord pixel_gh = any_abs(o2g_dist(this, pixel_o_x, this->heigt_transform_coef_inv));
     t1_glyph_space_coord pixel_gw = any_abs(o2g_dist(this, pixel_o_y, this->width_transform_coef_inv));
     int i, j;
