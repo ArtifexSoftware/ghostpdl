@@ -63,7 +63,7 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
        technical reference manual for other possible encodings. */
     fprintf(prn_stream, "\033*v6W%c%c%c%c%c%c", 0, 3, 0, 8, 8, 8);
     /* set up raster width and height, compression mode 3 */
-    fprintf(prn_stream, "\033&l-90u-360Z\033*r1A\033*b3M");
+    fprintf(prn_stream, "\033&l-60u-240Z\033*p0x0Y\033*r1A\033*b3M");
     /* initialize the seed row */
     memset(prow, 0, worst_case_comp_size);
     /* process each scanline */
