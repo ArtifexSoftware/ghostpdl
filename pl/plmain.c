@@ -38,12 +38,14 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "gp.h"
 #include "gsdevice.h"
 #include "gsparam.h"
+#include "gslib.h"
 #include "pjtop.h"
 #include "plparse.h"
 #include "plplatf.h"
 #include "plmain.h"
 #include "pltop.h"
 #include "pltoputl.h"
+#include "plapi.h"
 
 /*
  * Define bookeeping for interperters and devices 
@@ -104,8 +106,8 @@ pl_main_universe_select(P6(
 	char                             *err_str,               /* RETURNS error str if error */
 	pl_interp_implementation_t const *desired_implementation,/* impl to select */
 	gx_device                        *desired_device,        /* device to select */
-	gs_param_list                    *params,                 /* device params to use */
-	char *                           pcl_personality         /* an additional parameter
+	gs_param_list                    *params,                /* device params to use */
+	char                             *pcl_personality        /* an additional parameter
                                                                     for selecting pcl personality */
 ));
 
@@ -180,9 +182,9 @@ void pl_main_cursor_close(P1(pl_top_cursor_t *cursor));
 
 /* return index in gs device list -1 if not found */
 private inline int
-get_device_index(char *value)
+get_device_index(const char *value)
 {
-    gx_device **dev_list;
+    const gx_device *const *dev_list;
     int num_devs = gs_lib_device_list(&dev_list, NULL);
     int di;
 
@@ -227,7 +229,7 @@ close_job(pl_main_universe_t *universe)
 /* 
  * Here is the real main program.
  */
-  int
+GSDLLEXPORT int GSDLLAPI 
 plmain(
     int                 argc,
     char **             argv
@@ -271,14 +273,14 @@ plmain(
     if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, mem) < 0
 	 || pl_allocate_interp_instance(&pjl_instance, pjl_interp, mem) < 0 ) {
 	fprintf(gs_stderr, "Unable to create PJL interpreter");
-	exit(1);
+	return -1;
     }
 
     /* Create PDL instances, etc */
     if (pl_main_universe_init(&universe, err_buf, mem, pdl_implementation,
 			      pjl_instance, &inst, &pl_pre_finish_page, &pl_post_finish_page) < 0) {
 	fputs(err_buf, gs_stderr);
-	exit(1);
+	return -1;
     }
 
 #ifdef DEBUG
@@ -304,7 +306,7 @@ plmain(
 
         if ( pl_init_job(pjl_instance) < 0 ) {
             fprintf(gs_stderr, "Unable to init PJL job.\n");
-            exit(1);
+            return -1;
         }
 
 	/* Process any new options. May request new device. */
@@ -328,7 +330,7 @@ plmain(
 	    }
 	    fputs("\n", gs_stderr);
 
-	    exit(1);
+	    return -1;
 	}
 	if ( gs_debug_c('A') )
 	    dprintf( "memory allocated\n" );
@@ -347,7 +349,7 @@ plmain(
            characteristics structure */
         if (pl_main_cursor_open(&r, arg, buf, sizeof(buf)) < 0) {
             fprintf(gs_stderr, "Unable to open %s for reading.\n", arg);
-            exit(1);
+            return -1;
         }
 
 #ifdef DEBUG
@@ -376,12 +378,12 @@ plmain(
 								  pl_select_implementation(pjl_instance, &inst, r),
 								  inst.device, (gs_param_list *)&params, inst.pcl_personality) ) == 0) {
 			fputs(err_buf, gs_stderr);
-			exit(1);
+			return -1;
 		    }
 
 		    if ( pl_init_job(curr_instance) < 0 ) {
 			fprintf(gs_stderr, "Unable to init PDL job.\n");
-			exit(1);
+			return -1;
 		    }
 		    new_job = false;
 		}
@@ -390,11 +392,11 @@ plmain(
     	            in_pjl = true;
                     if ( close_job(&universe) < 0 ) {
 			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
-			exit(1);
+			return -1;
 		    }
 		    if ( pl_init_job(pjl_instance) < 0 ) {
 			fprintf(gs_stderr, "Unable to init PJL job.\n");
-			exit(1);
+			return -1;
                     }
 		} else if ( code < 0 ) { /* error and not exit language */
 		    dprintf1( "Warning interpreter exited with error code %d\n", code );
@@ -425,13 +427,13 @@ next:	if (code < 0)
 			     inst.error_report > 0, gs_stdout);
 	    if ( close_job(&universe) < 0 ) {
 		fprintf(gs_stderr, "Unable to deinit PDL job.\n");
-		exit(1);
+		return -1;
 	    }
         } else {
 	    pl_process_eof(pjl_instance);
 	    if ( close_job(&universe) < 0 ) {
 		fprintf(gs_stderr, "Unable to deinit PJL.\n");
-		exit(1);
+		return -1;
 	    }
         }
         /* close input file */
@@ -444,14 +446,14 @@ next:	if (code < 0)
     /* Dnit PDLs */
     if (pl_main_universe_dnit(&universe, err_buf)) {
 	fputs(err_buf, gs_stderr);
-	exit(1);
+	return -1;
     }
 
     /* dnit pjl */
     if ( pl_deallocate_interp_instance(pjl_instance) < 0
 	 || pl_deallocate_interp(pjl_interp) < 0 ) {
 	fprintf(gs_stderr, "Unable to close out PJL instance\n");
-	exit(1);
+	return -1;
     }
 
 #ifdef DEBUG
@@ -574,7 +576,7 @@ pl_main_universe_select(
 	pl_interp_implementation_t const *desired_implementation,/* impl to select */
 	gx_device                        *desired_device,        /* device to select */
 	gs_param_list                    *params,                /* device params to set */
-	char *                           pcl_personality         /* an additional parameter
+	char                             *pcl_personality        /* an additional parameter
                                                                     for selecting pcl personality */
 )
 {	
@@ -686,7 +688,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 	pti->last_page = max_int;
 	pti->page_count = 0;
 	pti->print_page_count = false;
-	strcpy(&pti->pcl_personality, "PCL");
+	strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
 /* -------- Command-line processing ------ */
@@ -892,7 +894,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		eqp = strchr(arg, '=');
 		if ( !(eqp || (eqp = strchr(arg, '#'))) ) { 
 		    fputs("Usage for -s is -s<option>=<string>\n", gs_stderr);
-		    return -1;
+	            return -1;
 		}
 		value = eqp + 1;
 		if ( !strncmp(arg, "DEVICE", 6) ) { 
@@ -952,7 +954,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 #endif
     /* The last argument wasn't a switch, so push it back. */
     if (arg)
-	arg_push_string(pal, arg);
+	arg_push_string(pal, (char*)arg);  /* cast const away for bad prototype */
     return 0;
 }
 
@@ -1097,7 +1099,7 @@ pl_main_cursor_open(
 )
 {
 	/* try to open file */
-        if (fname[0] == '-' && fname[1] == NULL)
+        if (fname[0] == '-' && fname[1] == 0)
 	    cursor->strm = gs_stdin;
 	else
 	    cursor->strm = fopen(fname, "rb");
@@ -1138,7 +1140,42 @@ pl_main_cursor_close(
 	fclose(cursor->strm);
 }
 
+
+#ifndef NO_MAIN
+/* ----------- Command-line driver for pl_interp's  ------ */
 int
 main(int argc, char **argv) {
     return plmain(argc, argv);
 }
+#endif /* !defined(NO_MAIN) */
+
+/* Provide a single point for all "C" stdout and stderr.
+ * These are provided here, but library users may want to build
+ * provide their own functions to handle these, thus NO_STDIO_HANDLERS
+ */
+
+#ifndef NO_STDIO_HANDLERS
+int outwrite(const char *str, int len)
+{
+    int c = fwrite(str, 1, len, gs_stdout);
+    fflush(gs_stdout);
+    return c;
+}
+
+int errwrite(const char *str, int len)
+{
+    int c = fwrite(str, 1, len, gs_stderr);
+    fflush(gs_stderr);
+    return c;
+}
+
+void outflush()
+{
+    fflush(gs_stdout);
+}
+
+void errflush()
+{
+    fflush(gs_stderr);
+}
+#endif /* !defined(NO_STDIO_HANDLERS) */
