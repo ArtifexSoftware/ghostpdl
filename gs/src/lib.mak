@@ -151,7 +151,6 @@ gxfarith_h=$(GLSRC)gxfarith.h $(gconfigv_h) $(gxarith_h)
 gxfixed_h=$(GLSRC)gxfixed.h
 gxobj_h=$(GLSRC)gxobj.h $(gxbitmap_h)
 gxrplane_h=$(GLSRC)gxrplane.h
-gxhldevc_h=$(GLSRC)gxhldevc.h $(gsdcolor_h)
 # Out of order
 gsrect_h=$(GLSRC)gsrect.h $(gxfixed_h)
 gxalloc_h=$(GLSRC)gxalloc.h $(gsalloc_h) $(gxobj_h)
@@ -487,6 +486,7 @@ siscale_h=$(GLSRC)siscale.h $(sisparam_h)
 gximage_h=$(GLSRC)gximage.h $(gsiparam_h)\
  $(gxcspace_h) $(gxdda_h) $(gxiclass_h) $(gxiparam_h) $(gxsample_h)\
  $(sisparam_h) $(strimpl_h)
+gxhldevc_h=$(GLSRC)gxhldevc.h $(gsdcolor_h)
 gsptype2_h=$(GLSRC)gsptype2.h $(gspcolor_h) $(gxhldevc_h) $(gxfixed_h)
 gdevddrw_h=$(GLSRC)gdevddrw.h
 gxfill_h=$(GLSRC)gxfill.h
