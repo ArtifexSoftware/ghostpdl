@@ -276,6 +276,18 @@ is difficult.  <I>This would probably involve extending the library APIs for
 images so that they could pass a stream, possibly including filters, instead
 of the (fully decoded) data rows.</I>
 
+<h3>Emit warnings when producing PDF output.</h3>
+
+<p>
+Currently, the PDF writer has no way to emit warnings.  Users would like to
+see warnings when fonts cannot be embedded (this is actually required when
+the value of CannotEmbedFontPolicy is set to /Warning), and for some other
+questionable situations like non-existent Dests (SourceForge "bug" #480853).
+Probably the right way to handle this is with a pseudo device parameter
+called "Warnings" that is a list of strings: the pdfwrite driver would add
+strings to this list, and the ps2pdf script (lib/gs_pdfwr.ps) would read
+them out, print them, and reset them at the end of each page.
+
 <hr>
 
 <h2><a name="Graphics_functionality"></a>Graphics functionality</h2>
