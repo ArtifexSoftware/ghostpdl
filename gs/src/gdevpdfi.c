@@ -1034,6 +1034,8 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     int tw = tiles->rep_width, th = tiles->rep_height;
     double xscale = pdev->HWResolution[0] / 72.0,
 	yscale = pdev->HWResolution[1] / 72.0;
+    bool mask;
+    int depth;
     pdf_resource_t *pres;
 
     if (tiles->id == gx_no_bitmap_id || tiles->shift != 0 ||
@@ -1043,6 +1045,15 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	/* Pattern fills are only available starting in PDF 1.2. */
 	pdev->CompatibilityLevel < 1.2)
 	goto use_default;
+    if (color1 != gx_no_color_index) {
+	/* This is a mask pattern. */
+	mask = true;
+	depth = 1;
+    } else {
+	/* This is a colored pattern. */
+	mask = false;
+	depth = pdev->color_info.depth;
+    }
     if (!pdev->cs_Pattern) {
 	/* Create a single Pattern color space resource named Pattern. */
 	int code = pdf_begin_resource_body(pdev, resourceColorSpace, gs_no_id,
@@ -1061,7 +1072,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	stream *s;
 	gs_image_t image;
 	pdf_image_writer writer;
-	long image_bytes = (long)tw * th * pdev->color_info.depth;
+	long image_bytes = ((long)tw * depth + 7) / 8 * th;
 	bool in_line = image_bytes <= MAX_INLINE_IMAGE_BYTES;
 	ulong tile_id =
 	    (tw == tiles->size.x && th == tiles->size.y ? tiles->id :
