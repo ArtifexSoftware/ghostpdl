@@ -565,32 +565,41 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 
 /* Get the outline data for a glyph in a downloaded TrueType font. */
 int
-pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_const_string *pdata)
+pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_glyph_data_t *pdata)
 {	
     pl_font_t *plfont = pfont->client_data;
     const pl_font_glyph_t *pfg = pl_font_lookup_glyph(plfont, index);
     const byte *cdata = pfg->data;
 
     if ( cdata == 0 ) { 
-	pdata->data = 0;		/* undefined glyph */
-	pdata->size = 0;
+	/* undefined glyph */
+	gs_glyph_data_from_null(pdata);
     }
     else { 
 	uint desc_size	= (*cdata == 15 ? cdata[2] /* PCL5 */ : 0 /* PCL XL */);
 	uint data_size = pl_get_uint16(cdata + 2 + desc_size);
 
 	if ( data_size <= 4 ) { 
-	    pdata->data = 0;		/* empty outline */
-	    pdata->size = 0;
+	    /* empty outline */
+	    gs_glyph_data_from_null(pdata);
 	} else if ( cdata[1] == 0) { 
-	    pdata->data = cdata + 6 + desc_size;
-	    pdata->size = data_size - 4;
-	} else if ( cdata[1] == 1) { 
-	    pdata->data = cdata + 10;
-	    pdata->size = data_size - 8;
-	} else if ( cdata[1] == 2) { 
-	    pdata->data = cdata + 12;
-	    pdata->size = data_size - 10;
+	    gs_glyph_data_from_bytes(pdata, 
+				     cdata,
+				     6 + desc_size, 
+				     data_size - 4, 
+				     NULL);
+	} else if ( cdata[1] == 1) { 	    
+	    gs_glyph_data_from_bytes(pdata, 
+				     cdata,
+				     10, 
+				     data_size - 8, 
+				     NULL);
+	} else if ( cdata[1] == 2) {  
+	    gs_glyph_data_from_bytes(pdata, 
+				     cdata,
+				     12, 
+				     data_size - 10, 
+				     NULL);
 	}
     }
     return 0;

@@ -135,7 +135,7 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 }
 /* import from plchar.c - used to determine if this is a downloaded
    true type font or a resident font - yuck. */
-extern int pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_const_string *pdata);
+extern int pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_glyph_data_t *pdata);
 
 /* Structure descriptors for cloning fonts */
 gs_private_st_ptrs1(st_pl_font_glyph_f, pl_font_glyph_t, "pl_font_glyph_t",
