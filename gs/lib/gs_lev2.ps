@@ -865,5 +865,15 @@ def
   pop				% Remove the input array
 } bind def
 
+% This proc is supposed to implement a version of overprinting. TN 5044 says
+% that this proc is not used by any shipping host-based application. We have
+% only found it being used in a proc set in files by Canvas from Deneba Systems.
+% Even their proc set does not actually do any overprinting.  However their
+% files crash if this is not defined.  Thus we have a copy of this proc but
+% we are simply checking for inputs being -1 and if so then we set the value
+% to 0.
+/setcmykoverprint {
+  4 { dup -1 eq { pop 0 } if 4 1 roll } repeat setcmykcolor
+} bind def
 
 end				% level2dict
