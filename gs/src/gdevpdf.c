@@ -223,6 +223,7 @@ const gx_device_pdf gs_pdfwrite_device =
  gs_no_id,			/* black_generation_id */
  gs_no_id,			/* undercolor_removal_id */
  pdf_compress_none,		/* compression */
+ pdf_compress_none,		/* compression_at_page_start */
  {{0}},				/* xref */
  {{0}},				/* asides */
  {{0}},				/* streams */

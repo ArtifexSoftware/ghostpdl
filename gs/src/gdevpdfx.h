@@ -418,6 +418,13 @@ typedef struct pdf_substream_save_s {
     "pdf_substream_save[]", pdf_substream_save_elt_enum_ptrs,\
     pdf_substream_save_elt_reloc_ptrs, st_pdf_substream_save)
 
+typedef enum {
+    pdf_compress_none,
+    pdf_compress_LZW,	/* not currently used, thanks to Unisys */
+    pdf_compress_Flate
+} pdf_compression_type;
+
+
 /* Define the device structure. */
 struct gx_device_pdf_s {
     gx_device_psdf_common;
@@ -468,11 +475,8 @@ struct gx_device_pdf_s {
     int transfer_not_identity;	/* bitmask */
     gs_id black_generation_id, undercolor_removal_id;
     /* Following are set when device is opened. */
-    enum {
-	pdf_compress_none,
-	pdf_compress_LZW,	/* not currently used, thanks to Unisys */
-	pdf_compress_Flate
-    } compression;
+    pdf_compression_type compression;
+    pdf_compression_type compression_at_page_start;
 #define pdf_memory v_memory
     /*
      * The xref temporary file is logically an array of longs.

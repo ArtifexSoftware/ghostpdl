@@ -275,6 +275,7 @@ none_to_stream(gx_device_pdf * pdev)
 
     if (pdev->contents_id != 0)
 	return_error(gs_error_Fatal);	/* only 1 contents per page */
+    pdev->compression_at_page_start = pdev->compression;
 #if PS2WRITE
     if (pdev->OrderResources) {
 	pdf_resource_t *pres;
@@ -409,7 +410,7 @@ stream_to_none(gx_device_pdf * pdev)
     {
 	if (pdev->vgstack_depth)
 	    pdf_restore_viewer_state(pdev, s);
-	if (pdev->compression == pdf_compress_Flate) {	/* Terminate the Flate filter. */
+	if (pdev->compression_at_page_start == pdf_compress_Flate) {	/* Terminate the Flate filter. */
 	    stream *fs = s->strm;
 
 	    sclose(s);
