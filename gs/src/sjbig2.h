@@ -25,11 +25,7 @@
 #include "scommon.h"
 #include <jbig2.h>
 
-/* Arcfour is a symmetric cipher whose state is maintained
- * in two indices into an accompanying 8x8 S box. this will
- * typically be allocated on the stack, and so has no memory
- * management associated.
- */
+/* JBIG2Decode internal stream state */
 typedef struct stream_jbig2decode_state_s
 {
     stream_state_common;	/* a define from scommon.h */
