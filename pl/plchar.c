@@ -61,7 +61,7 @@
 
 /* Define whether to cache TrueType characters. */
 /* This would only be disabled for debugging. */
-//#define CACHE_TRUETYPE_CHARS
+#define CACHE_TRUETYPE_CHARS
 
 /* Structure descriptors */
 gs_private_st_ptrs1(st_pl_font_glyph, pl_font_glyph_t, "pl_font_glyph_t",
