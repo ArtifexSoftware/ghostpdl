@@ -775,3 +775,24 @@ Difference in specific tests of the PCL 5c FTS
     black entry when rendered with the Artifex PCL 5c interpreter, as compared
     to the output of the CLJ 5/5M. This problem has not been analyzed.
 
+PCL5c ATS Anomalies
+===================
+
+
+ak506k21.bin:
+     
+     A PCL raster does not overlap an HPGL/2 line segment because the
+     line is not positioned exactly like HP due to a rounding
+     difference.  The HP 1600C/CM also images this differently than
+     the HP Color Laserjet breaking only half of the line.  After
+     rounding to the nearest pixel the ASI interpreter places the
+     raster rectangle one 300 dpi pixel below the gl/2 line.  The HP
+     overlaps for at least one pixel on the 1600C/CM and the width of
+     the line on the Color Laserjet.
+
+fp309k22.bin:
+
+     The right edge of the clipboard is missing.  This is a font
+     rasterizer anomaly.  The clipboard is a winding bitmap font and
+     images correctly at 600 dpi but is slightly clipped at 300 dpi.
+
