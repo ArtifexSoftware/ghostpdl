@@ -85,7 +85,7 @@ This supercedes the old <a href="DLL.htm">DLL</a> interface.
 To provide the interface described in the 
 <a href="Use.htm">usage documentation</a>, a smaller independent 
 executable loads the DLL/shared object.
-This executable provides all the interaction with the windowing system, 
+This executable must provide all the interaction with the windowing system, 
 including image windows and, if necessary, a text window.
 
 <p>
@@ -112,12 +112,14 @@ by multiple applications at once.
 <p>
 The source for the executable is in <b><tt>dw</tt></b>*.* (Windows),
 <b><tt>dp</tt></b>*.* (OS/2) and  <b><tt>dx</tt></b>*.* (Linux).  
-See these source files for examples of how to use the DLL.
+See these source files for examples of how to use the DLL. A similar
+example for MacOS using the Carbon API is provided in <b><tt>dm</tt></b>*.*.
 
 <p>
-The source file <tt>dxmainc.c</tt> can serve as an example of how to use the 
-framework shared component on MacOS X. Just change the header includes to use 
-the Ghostscript namespace:
+The source file <tt>dxmainc.c</tt> can also serve as an example of how to use the 
+framework shared component on MacOS X, providing the same command-line tool it does
+on any linux, bsd or similar operating system. Just change the header includes to 
+use the Ghostscript namespace:
 <blockquote><pre><tt>#include &lt;Ghostscript/ierrors.h&gt;
 #include &lt;Ghostscript/iapi.h&gt;</tt></pre></blockquote>
 and link with:
@@ -694,7 +696,8 @@ You are then responsible for displaying this raster.
 Some examples are in 
 <b><tt><a href="../src/dwmain.c">dwmain.c</a></tt></b> (Windows),
 <b><tt><a href="../src/dpmain.c">dpmain.c</a></tt></b> (OS/2) and  
-<b><tt><a href="../src/dxmain.c">dxmain.c</a></tt></b> (X11/Linux).  
+<b><tt><a href="../src/dxmain.c">dxmain.c</a></tt></b> (X11/Linux), and  
+<b><tt><a href="../src/dmmain.c">dmmain.c</a></tt></b> (MacOS Classic or Carbon).  
 
 <p>
 
@@ -705,7 +708,7 @@ Some examples are in
 
 
 <p>
-<small>Copyright &copy; 2001 artofcode LLC.  All rights reserved.</small>
+<small>Copyright &copy; 2003 artofcode LLC.  All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or
