@@ -51,6 +51,7 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 #		also good for DeskJet 510, 520, and 540C (black only)
 # *	cdj500	H-P DeskJet 500C (same as cdjcolor)
 # *	cdj550	H-P DeskJet 550C/560C/660C/660Cse
+# *	cdj970	H-P DeskJet 970Cxi
 # *	cljet5	H-P Color LaserJet 5/5M (see below for some notes)
 # *	cljet5c  H-P Color LaserJet 5/5M (see below for some notes)
 # *	coslw2p  CoStar LabelWriter II II/Plus
@@ -516,6 +517,19 @@ $(GLOBJ)gdevcd8.$(OBJ) : $(GLSRC)gdevcd8.c $(PDEVH) $(math__h)\
 
 $(DD)cdj880.dev : $(cdeskjet8_) $(DD)page.dev
 	$(SETPDEV2) $(DD)cdj880 $(cdeskjet8_)
+
+### ------------- cdj970 - HP 970Cxi Driver under development ------------- ###
+### For questions about this driver, please contact:                        ###
+###            Rene Harsch (rene@harsch.net)                                ###
+
+cdeskjet9_=$(GLOBJ)gdevdj9.$(OBJ) $(HPPCL)
+
+$(DD)cdj970.dev : $(cdeskjet9_) $(DD)page.dev
+	$(SETPDEV2) $(DD)cdj970 $(cdeskjet9_)
+
+$(GLOBJ)gdevdj9.$(OBJ) : $(GLSRC)gdevdj9.c $(PDEVH) $(math__h)\
+ $(gsparam_h) $(gxlum_h) $(gdevpcl_h)
+	$(GLCC) $(GLO_)gdevdj9.$(OBJ) $(C_) $(GLSRC)gdevdj9.c
 
 ### ------------ The H-P PaintJet color printer device ----------------- ###
 ### Note: this driver also supports the DEC LJ250 color printer, which   ###
