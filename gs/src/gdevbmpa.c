@@ -107,6 +107,18 @@ gx_device_async far_data gs_bmpa16m_device =
 	0,0,0,0,			/* margins */
 	24, default_print_page);
 
+/* 32-bit CMYK color (outside the BMP specification). */
+
+private const gx_device_procs bmpa32b_procs = {
+    bmpa_cmyk_procs(gx_default_map_color_rgb, gx_default_cmyk_map_cmyk_color)
+};
+gx_device_printer far_data gs_bmpa32b_device =
+prn_device(bmpa32b_procs, "bmpa32b",
+	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	   X_DPI, Y_DPI,
+	   0, 0, 0, 0,		/* margins */
+	   32, default_print_page);
+
 /* --------- Forward declarations ---------- */
 
 private void bmpa_reader_thread(P1(void *));

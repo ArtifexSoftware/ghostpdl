@@ -129,6 +129,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	bmp16	4-bit (EGA/VGA) .BMP file format
 #	bmp256	8-bit (256-color) .BMP file format
 #	bmp16m	24-bit .BMP file format
+#	bmp32b  32-bit pseudo-.BMP file format
 #	cgmmono  Monochrome (black-and-white) CGM -- LOW LEVEL OUTPUT ONLY
 #	cgm8	8-bit (256-color) CGM -- DITTO
 #	cgm24	24-bit color CGM -- DITTO
@@ -730,6 +731,9 @@ bmp256.dev: $(bmp_) page.dev
 bmp16m.dev: $(bmp_) page.dev
 	$(SETPDEV) bmp16m $(bmp_)
 
+$(DD)bmp32b.dev : $(bmp_) $(GLD)page.dev
+	$(SETPDEV) $(DD)bmp32b $(bmp_)
+
 ### ------------- BMP driver that serves as demo of async rendering ---- ###
 
 bmpa_=$(GLOBJ)gdevbmpa.$(OBJ) $(GLOBJ)gdevbmpc.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
@@ -753,6 +757,10 @@ bmpa256.dev: $(bmpa_) page.dev async.dev
 bmpa16m.dev: $(bmpa_) page.dev async.dev
 	$(SETPDEV) bmpa16m $(bmpa_)
 	$(ADDMOD) bmpa16m -include async
+
+$(DD)bmpa32b.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev
+	$(SETPDEV) $(DD)bmpa32b $(bmpa_)
+	$(ADDMOD) $(DD)bmpa32b -include $(GLD)async
 
 ### -------------------------- CGM file format ------------------------- ###
 ### This driver is under development.  Use at your own risk.             ###
