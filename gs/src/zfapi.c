@@ -65,9 +65,8 @@ private inline int import_shift(int x, int n)
 {   return n > 0 ? x << n : x >> -n;
 }
 
-private inline int fapi_round(double x)
-{   /* Defining it locally because MSVC doesn't define 'round'. */
-    return (int)ceil(x + 0.5);
+private inline int round(double x)
+{   return (int)(x + 0.5);
 }
 
 private int add_closepath(FAPI_path *I)
@@ -1364,9 +1363,9 @@ retry_oversampling:
 	    return code;
 	if (code == metricsNone) {
 	    if (bCID) {
-		cr.sb_x = fapi_round(sbw[2] / 2 * scale);
-		cr.sb_y = fapi_round(pbfont->FontBBox.q.y * scale);
-		cr.aw_y = fapi_round(- pbfont->FontBBox.q.x * scale); /* Sic ! */
+		cr.sb_x = round(sbw[2] / 2 * scale);
+		cr.sb_y = round(pbfont->FontBBox.q.y * scale);
+		cr.aw_y = round(- pbfont->FontBBox.q.x * scale); /* Sic ! */
 		cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
 		cr.metrics_type = FAPI_METRICS_REPLACE;
 		sbw[0] = sbw[2] / 2;
@@ -1377,10 +1376,10 @@ retry_oversampling:
 	    } else
 		bVertical = false;
 	} else {
-	    cr.sb_x = fapi_round(pwv[2] * scale);
-	    cr.sb_y = fapi_round(pwv[3] * scale);
-	    cr.aw_x = fapi_round(pwv[0] * scale);
-	    cr.aw_y = fapi_round(pwv[1] * scale);
+	    cr.sb_x = round(pwv[2] * scale);
+	    cr.sb_y = round(pwv[3] * scale);
+	    cr.aw_x = round(pwv[0] * scale);
+	    cr.aw_y = round(pwv[1] * scale);
 	    cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
 	    cr.metrics_type = (code == metricsSideBearingAndWidth ? 
 				FAPI_METRICS_REPLACE : FAPI_METRICS_REPLACE_WIDTH);
@@ -1400,15 +1399,15 @@ retry_oversampling:
 	    if (pbfont->FontType == 2) {
 		gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
 
-		cr.aw_x = fapi_round(fixed2float(pfont1->data.defaultWidthX * scale));
+		cr.aw_x = round(fixed2float(pfont1->data.defaultWidthX * scale));
 		cr.metrics_scale = 1000;
 		cr.metrics_type = FAPI_METRICS_ADD;
 	    }
 	} else {
-	    cr.sb_x = fapi_round(sbw[2] * scale);
-	    cr.sb_y = fapi_round(sbw[3] * scale);
-	    cr.aw_x = fapi_round(sbw[0] * scale);
-	    cr.aw_y = fapi_round(sbw[1] * scale);
+	    cr.sb_x = round(sbw[2] * scale);
+	    cr.sb_y = round(sbw[3] * scale);
+	    cr.aw_x = round(sbw[0] * scale);
+	    cr.aw_y = round(sbw[1] * scale);
 	    cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
 	    cr.metrics_type = (code == metricsSideBearingAndWidth ? 
 				FAPI_METRICS_REPLACE : FAPI_METRICS_REPLACE_WIDTH);
