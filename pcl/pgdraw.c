@@ -645,8 +645,6 @@ hpgl_polyfill_using_current_line_type(
     hpgl_call(gs_clip(pgls->pgs));
     hpgl_call(hpgl_polyfill(pgls, render_mode));
     hpgl_call(hpgl_grestore(pgls));
-    hpgl_call(hpgl_clear_current_path(pgls));
-
     return 0;
 }
 
@@ -1173,7 +1171,7 @@ hpgl_draw_current_path(
 
     switch (render_mode) {
 
-      case hpgl_rm_character:
+    case hpgl_rm_character:
 	{
 	    /* HAS need to set attributes in set_drawing color (next 2) */
 
@@ -1189,14 +1187,14 @@ hpgl_draw_current_path(
 
 	    switch (pgls->g.character.fill_mode) {
 
-	      case hpgl_char_solid_edge:
+	    case hpgl_char_solid_edge:
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
                 if ((code = set_proc(pgls, pgls->g.pen.selected, 0)) < 0)
                     return code;
 		hpgl_call((*fill)(pgs));
 		/* falls through */
 
-	      case hpgl_char_edge:
+	    case hpgl_char_edge:
 		if (pgls->g.bitmap_fonts_allowed)
 		    break;	/* no edging */
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
@@ -1207,36 +1205,44 @@ hpgl_draw_current_path(
 		hpgl_call(gs_stroke(pgs));
 		break;
 
-	      case hpgl_char_fill:
-		/****** SHOULD USE VECTOR FILL ******/
-		hpgl_call((*fill)(pgs));
+	    case hpgl_char_fill:
+		/* the fill has already been done if the fill type is
+                   hpgl/2 vector fills.  This was handled when we set
+                   the drawing color */
+		if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
+		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines))
+		    hpgl_call((*fill)(pgs));
 		break;
 
-	      case hpgl_char_fill_edge:
-		/****** SHOULD USE VECTOR FILL ******/
+	    case hpgl_char_fill_edge:
 		if (pgls->g.bitmap_fonts_allowed)
 		    break;	/* no edging */
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
 		hpgl_call(hpgl_gsave(pgls));
                 if ((code = set_proc(pgls, pgls->g.character.edge_pen, 0)) < 0)
                     return code;
-		gs_setlinewidth(pgs, 0.1);
 		hpgl_call(hpgl_set_plu_ctm(pgls));
+		gs_setlinewidth(pgs, 0.1);
 		hpgl_call(gs_stroke(pgs));
 		hpgl_call(hpgl_grestore(pgls));
-		hpgl_call((*fill)(pgs));
+		/* the fill has already been done if the fill type is
+                   hpgl/2 vector fills.  This was handled when we set
+                   the drawing color */
+		if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
+		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines))
+		    hpgl_call((*fill)(pgs));
 	    }
 	}
 	break;
 
-      case hpgl_rm_polygon:
+    case hpgl_rm_polygon:
 	if (pgls->g.fill_type == hpgl_even_odd_rule)
 	    hpgl_call(gs_eofill(pgs));
 	else    /* hpgl_winding_number_rule */
 	    hpgl_call(gs_fill(pgs));
 	break;
 
-      case hpgl_rm_clip_and_fill_polygon:
+    case hpgl_rm_clip_and_fill_polygon:
 	/*
 	 * A bizarre HPISM - If the pen is white we do a solid
          * white fill this is true for *all* fill types (arg!) as
@@ -1248,8 +1254,8 @@ hpgl_draw_current_path(
 	    hpgl_call(gs_fill(pgls->pgs));
 	break;
 
-      case hpgl_rm_vector:
-      case hpgl_rm_vector_fill:
+    case hpgl_rm_vector:
+    case hpgl_rm_vector_fill:
 	/*
          * we reset the ctm before stroking to preserve the line width 
          * information
@@ -1258,7 +1264,7 @@ hpgl_draw_current_path(
         hpgl_call(gs_stroke(pgls->pgs));
         break;
 
-      default :
+    default :
         dprintf("unknown render mode\n");
     }
 

@@ -201,6 +201,13 @@ hpgl_CF(
     if (hpgl_arg_c_int(pargs, &mode)) {
         if ((mode & ~3) != 0)
 	    return e_Range;
+	/* a careful read of the PCLTRM indicates the default values
+           for CF edge pen are the current pen for modes 3 & 4.  NB
+           not sure if it is the current pen at the time the character
+           is rendered or at the time of the CF but this passes the
+           relevant fts test. */
+	if (mode == 0 || mode == 3)
+	    pen = pgls->g.pen.selected;
 
 	/* With only 1 argument, leave the current pen unchanged. */
 	if (hpgl_arg_int(pargs, &pen)) {
