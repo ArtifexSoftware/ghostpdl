@@ -138,6 +138,7 @@ currentdict /runpdfstring .undef
       QUIET not { (Page ) print dup == flush } if
       pdfgetpage pdfshowpage
     } for
+   Repaired { printrepaired } if
    currentdict pdfclose
    end			% temporary dict
    end			% pdfdict
@@ -263,7 +264,6 @@ pdfdict begin
    if
 	% Read any previous cross-reference tables.
    Trailer { /Prev .knownget not { exit } if readxref } loop
-   Repaired { printrepaired } if
    currentdict end
  } bind def
 
@@ -303,7 +303,7 @@ pdfdict begin
     exch (%%EOF\r\n) eq or or not
   } ifelse {
     (
-   **** This file has a corrupted %%EOF marker, or garbage after the %%EOF.
+   **** File has a corrupted %%EOF marker, or garbage after the %%EOF.
 ) pdfformaterror
   } if
   PDFfile exch setfileposition
@@ -331,15 +331,16 @@ pdfdict begin
   /Repaired true store
 } bind def
 /printrepaired {
+(
+   **** This file had errors that were repaired or ignored.
+) stderrprint
   Trailer /Info knownoget {
     /Producer knownoget not { null } if
   } {
     null
   } ifelse
   dup null eq {
-    pop (\
-   **** Please notify the author of the software that produced this file
-)
+    pop
   } {
     (   **** The file was produced by: \n   **** >>>> ) stderrprint
 	% Handle a Unicode Producer.
@@ -350,15 +351,13 @@ pdfdict begin
       } for exch pop
     } if
     stderrprint
-    ( <<<<
-   **** please notify the author of this software
-)
-  } ifelse stderrprint
-(\
-   **** that the file does not conform to Adobe's published PDF
-   **** specification.  Processing of the file will continue normally.
-
-) stderrprint
+    ( <<<<\n) stderrprint
+  } ifelse
+  (\
+   **** Please notify the author of the software that produced this
+   **** file that it does not conform to Adobe's published PDF
+   **** specification.\n\n)
+  stderrprint
 } bind def
 
 % Write the outline structure for a file.  Uses linkdest (below).
@@ -583,21 +582,23 @@ end readonly def
  { dup /Page exch store
    pdfshowpage_init 
    pdfshowpage_setpage 
-   dup save /PDFSave exch store
+   save /PDFSave exch store
    /PDFdictstackcount countdictstack store
    (before exec) VMDEBUG
-     pdfshowpage_finish
+   pdfshowpage_finish
    % Some PDF files don't have matching q/Q (gsave/grestore) so we need
    % to clean up any left over dicts from the dictstack
    countdictstack PDFdictstackcount sub dup 0 ne { 
-     (\n   **** File has imbalanced q/Q operators \(too many q's\) ****\n)
+     (   **** File has imbalanced q/Q operators \(too many q's\)\n)
      pdfformaterror
      { end } repeat
    } {
      pop
    } ifelse
    (after exec) VMDEBUG
+   Repaired		% pass Repaired state around the restore
    PDFSave restore
+   /Repaired exch def
  } bind def
 
 /pdfpagecontents	% <pagedict> pdfpagecontents <contents>
@@ -719,6 +720,14 @@ end readonly def
     } {
       showpagecontents
     } ifelse
+  } ifelse
+  % check for extra garbage on the ostack and clean it up
+  count pdfemptycount sub dup 0 ne {
+    (   **** File did not complete the page properly and may be damaged.\n)
+    pdfformaterror
+    { pop } repeat
+  } {
+    pop
   } ifelse
   % todo: mixing drawing ops outside the device filter could cause
   % problems, for example with the pnga device.

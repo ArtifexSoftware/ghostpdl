@@ -853,8 +853,17 @@ end
    { currentdict end setfillstate /imagemask }
    { ColorSpace setgcolorspace currentdict end setfillblend /image }
   ifelse
-  .systemvar exec
-   
+  .systemvar stopped {
+    $error /errorname get dup /ioerror eq {
+      pop (\n   **** File has insufficient data for an image.\n)
+      pdfformaterror
+    } {
+      (\n   **** File encountered an ')
+      exch 40 string cvs concatstrings
+      (' error while processing an image.\n) concatstrings
+      pdfformaterror
+    } ifelse
+  } if
 		% Close the input stream, unless it is PDFfile or
 		% PDFsource.
   dup dup PDFfile eq exch PDFsource eq or { pop } { closefile } ifelse
