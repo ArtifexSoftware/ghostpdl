@@ -23,7 +23,7 @@ include $(GLSRCDIR)/lib.mak
 
 # Configure for debugging
 debug:
-	$(MAKE) -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)'
+	$(MAKE) -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-gdwarf-2 -g3 -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)'
 
 pg-fp-with-cov:
 	$(MAKE) -f $(MAKEFILE) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage -static -ldl'
