@@ -622,8 +622,7 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 	    param_signal_error(plist, pname, code);
 	    return code;
 	case 1:
-	    plvalue = 0;
-	    break;
+	    return 0;
 	case 0: {
 	    /* Check the parameter values now. */
 	    stream_state *ss = s_alloc_state(mem, template->stype, pname);
