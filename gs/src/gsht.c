@@ -960,7 +960,13 @@ gx_imager_dev_ht_install(
     for (i = 0; i < num_comps; i++)
         dht.components[i].comp_number = -1;
 
-    /* assume ownership of the non-default components */
+    /*
+     * Duplicate any of the non-default components, but do not create copies
+     * of the levels or bit_data arrays. If all goes according to plan, the
+     * imager state's device halftone will assume ownership of these arrays
+     * by clearing the corresponding pointers in the operand halftone's
+     * orders.
+     */
     if (pdht->components != 0) {
         int     input_ncomps = pdht->num_comp;
 
@@ -1061,12 +1067,6 @@ gx_imager_dev_ht_install(
                 tile_bytes = porder->raster
                               * (porder->num_bits / porder->width);
                 num_tiles = 1 + max_tile_cache_bytes / tile_bytes;
-
-/* TEMPORARY HACK */
-if (num_tiles < porder->num_levels + 1)
-    num_tiles = porder->num_levels + 1;
-
-
                 pcache = gx_ht_alloc_cache( pis->memory,
                                             num_tiles,
                                             tile_bytes * num_tiles );
@@ -1123,6 +1123,13 @@ if (num_tiles < porder->num_levels + 1)
          * associated references. This includes explicitly releasing
          * any gs_wts_screen_enum_t structures. Since we might have
          * pdht == pis->dev_ht, this must done before updating pis->dev_ht.
+         *
+         * If the default order has been used for a device component, and
+         * any of the source component orders share their levels or bit_data
+         * arrays with the default order, clear the pointers in those orders
+         * now. This is necessary because the default order's pointers will
+         * be cleared immediately below, so subsequently it will not be
+         * possible to tell if that this information is being shared.
          */
         if (pdht->components != 0) {
             int     input_ncomps = pdht->num_comp;
@@ -1137,7 +1144,9 @@ if (num_tiles < porder->num_levels + 1)
                     if (p_s_order->wse != 0)
                         gs_wts_free_enum(p_s_order->wse);
                     memset(p_s_order, 0, sizeof(*p_s_order));
-                }
+                } else if ( comp_num == GX_DEVICE_COLOR_MAX_COMPONENTS &&
+                            used_default                                 )
+                    memset(p_s_order, 0, sizeof(*p_s_order));
             }
         }
         if (used_default) {
