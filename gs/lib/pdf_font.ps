@@ -51,7 +51,7 @@ pdfdict begin
 /getencoding		% <base-encoding> <font-resource> getencoding <enc>
  { /Encoding knownoget
     { dup type /nametype eq
-       {
+       { 
          % The published PDF specification says the Encoding name
          % "must be" one of the 3 predefined Encodings, implying
          % that an error should occur if it isn't.  However, Acrobat
@@ -99,6 +99,16 @@ pdfdict begin
   } ifelse
 } bdef
 
+/find_in_diff     % <Differences> <index> find_in_diff <bool>
+{ false exch 0 4 3 roll
+  { dup type /nametype ne { exch pop } { pop 1 add } ifelse
+    2 copy eq {
+      pop pop pop true 0 0 exit
+    } if
+  } forall
+  pop pop
+} bdef
+
 % Get the metrics of a font, if specified.
 /getfontmetrics {	% <font-resource> <font> <Encoding|null> getfontmetrics
 			%   <font-resource> <font> <Encoding|null>
@@ -123,24 +133,26 @@ pdfdict begin
 	 Widths 2 index 4 index sub oget
 	 	% Stack: font font-res mscale first-char index charname width
 	 4 index mul
+		% The following 'loop' is only context for 'exit'.
+	 {	
+		% Work around a bug in pdfTeX, which can generate Encoding
+		% vectors containing nulls :
+	   1 index null eq { exit } if
 		% There is a hack here to deal with encodings where the
 		% same character appears more than once, because the Metrics
 		% dictionary works by character name, not by character code.
-		% Because of this, we can't deal with Width vectors that
-		% specify different widths for the same character name
-		% appearing multiple times in the Encoding.
-	 Metrics 2 index .knownget not { 0 } if 0 ne {
-	   pop pop
-	 } {
-		% Work around a bug in pdfTeX, which can generate Encoding
-		% vectors containing nulls.
-	   1 index null ne {
-	     Metrics 3 1 roll put
-	   } {
-	     pop pop
-	   } ifelse
-	 }
-	 ifelse pop
+		% We prefer to take (1) non-zero width, and (2) width for 
+		% the character code which appears in Differences.
+	   Metrics 2 index .knownget not { 0 } if 0 ne {
+	     5 index /Encoding knownoget not { exit } if
+	     dup type /dicttype ne { pop exit } if
+	     /Differences knownoget not { exit } if
+	     3 index //find_in_diff exec not { exit } if
+	   } if
+	   2 copy Metrics 3 1 roll put
+	   exit
+	 } loop
+	 pop pop pop
        }
       for pop
 		% Now fill in the MissingWidth for any encoded characters
@@ -168,6 +180,8 @@ pdfdict begin
     null
   } ifelse
 } bdef
+
+currentdict /find_in_diff undef
 
 % ---------------- Descriptors ---------------- %
 
