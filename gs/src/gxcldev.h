@@ -261,7 +261,7 @@ struct gx_clist_state_s {
 /* Define the size of the command buffer used for reading. */
 /* This is needed to split up operations with a large amount of data, */
 /* primarily large copy_ operations. */
-#define cbuf_size 800
+#define cbuf_size 4096
 
 /* ---------------- Driver procedures ---------------- */
 
