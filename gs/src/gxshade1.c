@@ -665,8 +665,10 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 #   endif
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1];
     float dd = d1 - d0;
+#   if NEW_SHADINGS
+    double t0, t1;
+#else
     float t0, t1;
-#   if !NEW_SHADINGS
     float t[2];
 #   endif
     gs_point dist;
@@ -694,8 +696,8 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     cmat.xy = -cmat.yx;
     gs_bbox_transform_inverse(rect, &cmat, &t_rect);
 #   if NEW_SHADINGS
-	t0 = max(t_rect.p.y, 0);
-	t1 = min(t_rect.q.y, 1);
+	t0 = min(max(t_rect.p.y, 0), 1);
+	t1 = max(min(t_rect.q.y, 1), 0);
 	state.v0 = t0;
 	state.v1 = t1;
 	state.u0 = t_rect.p.x;
