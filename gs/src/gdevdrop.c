@@ -251,6 +251,32 @@ pack_cmyk_1bit_from_standard(gx_device * dev, byte * dest, int destx,
 }
 
 private void
+pack_cmyk_8bit_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
+			     int width, int depth, int src_depth)
+{
+    byte *dp = dest;
+    const byte *sp = src;
+    int x;
+
+    for (x = width; --x >= 0;) { 
+	byte c, m, y, k;
+
+	c = 0xff - *sp++;
+	m = 0xff - *sp++;
+	y = 0xff - *sp++;
+	
+	/* 100% undercolor removal */
+	k = (c < m) ? min(c,y) : min(m, y);
+
+	*dp++ = c - k;
+	*dp++ = m - k;
+	*dp++ = y - k;
+	*dp++ = k;
+
+    }
+}
+
+private void
 pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 		   int width, int depth, int src_depth)
 {
@@ -261,7 +287,7 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
     const byte *sp = src;
     int x;
 
-    for (x = width; --x >= 0;) {
+    for (x = width; --x >= 0;) { 
 	byte vr, vg, vb;
 	gx_color_index pixel;
 	byte chop = 0x1;
@@ -276,11 +302,12 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 	 * We have to map back to some pixel value, even if the color
 	 * isn't accurate.
 	 */
-	for (;;) {
+	for (;chop > 0; chop <<= 1) { /* prevent infinite loop on gx_no_color_index */
             gx_color_value cv[3];
 	    cv[0] = gx_color_value_from_byte(vr);
 	    cv[1] = gx_color_value_from_byte(vg);
 	    cv[2] = gx_color_value_from_byte(vb);
+
             pixel = dev_proc(dev, map_rgb_color)(dev, cv);
 	    if (pixel != gx_no_color_index)
 		break;
@@ -288,7 +315,6 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 	    vr = (vr >= 0x80 ? vr | chop : vr & ~chop);
 	    vg = (vg >= 0x80 ? vg | chop : vg & ~chop);
 	    vb = (vb >= 0x80 ? vb | chop : vb & ~chop);
-	    chop <<= 1;
 	}
 	if ((shift -= depth) >= 0)
 	    buf += (byte)(pixel << shift);
@@ -335,7 +361,10 @@ mem_default_strip_copy_rop(gx_device * dev,
     int rop_depth = (gx_device_has_color(dev) ? 24 : 8);
     void (*pack)(gx_device *, byte *, int, const byte *, int, int, int) =
 	(dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color &&
-	 rop_depth == 24 ? pack_cmyk_1bit_from_standard : pack_from_standard);
+	 rop_depth == 24 ? pack_cmyk_1bit_from_standard : 
+	 dev_proc(dev, map_color_rgb) == cmyk_8bit_map_color_rgb &&
+	 rop_depth == 24 ? pack_cmyk_8bit_from_standard : 
+	 pack_from_standard);
     const gx_bitmap_format_t no_expand_options =
 	GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_DEPTH_ALL |
 	GB_PACKING_CHUNKY | GB_RETURN_ALL | GB_ALIGN_STANDARD |
