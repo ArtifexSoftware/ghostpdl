@@ -410,7 +410,6 @@ gscie_h=$(GLSRC)gscie.h $(gconfigv_h) $(gsrefct_h) $(gsstype_h) $(gstypes_h) $(g
 gsicc_h=$(GLSRC)gsicc.h $(gscie_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
 gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
-gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
 gscdevn_h=$(GLSRC)gscdevn.h $(gscspace_h)
 gxdevndi_h=$(GLSRC)gxdevndi.h $(gxfrac_h)
 gscindex_h=$(GLSRC)gscindex.h $(gscspace_h)
