@@ -1414,9 +1414,17 @@ pattern_do_reset(
     if ( type & pcl_reset_permanent || type & pcl_reset_printer ) {
         if (gstate_pattern_cache(pcs->pgs)) {
             (gstate_pattern_cache(pcs->pgs)->free_all)(gstate_pattern_cache(pcs->pgs));
-            gs_free_object(pcs->memory, gstate_pattern_cache(pcs->pgs)->tiles, "gx_pattern_alloc_cache(tiles)");
-            gs_free_object(pcs->memory, gstate_pattern_cache(pcs->pgs), "gx_pattern_alloc_cache(struct)");
-            gstate_set_pattern_cache(pcs->pgs, 0);
+            gs_state *pgs = pcs->pgs;
+            gs_free_object(pcs->memory, 
+                           gstate_pattern_cache(pgs)->tiles, 
+                           "pattern_do_reset(tiles)");
+            gs_free_object(pcs->memory, 
+                           gstate_pattern_cache(pgs), 
+                           "pattern_do_reset(struct)");
+            while (pgs) {
+                gstate_set_pattern_cache(pgs, 0);
+                pgs = gs_state_saved(pgs);
+            }
         }
     }
 }
