@@ -47,9 +47,9 @@ PSD=$(PSGENDIR)/
 # ------ Generic options ------ #
 
 # Define the default directory/ies for the runtime
-# initialization and font files.  Separate multiple directories with a :.
+# initialization, resource and font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=:,:lib,:files,:fonts,:examples
+GS_LIB_DEFAULT=:,:lib,:Resource,:files,:fonts,:examples
 
 GS_DOCDIR=:doc
 

@@ -86,6 +86,7 @@
 <li><a href="#Rendering_parameters">Rendering parameters</a>
 <li><a href="#Page_parameters">Page parameters</a>
 <li><a href="#Font_related_parameters">Font-related parameters</a>
+<li><a href="#Resource_related_parameters">Resource-related parameters</a>
 <li><a href="#Interaction_related_parameters">Interaction-related parameters</a>
 <li><a href="#Output_selection_parameters">Device and output selection parameters</a>
 <li><a href="#EPS_parameters">EPS parameters</a>
@@ -609,30 +610,29 @@ http://partners.adobe.com/asn/developer/technotes/postscript.html</a>
 <p>
 When looking for initialization files (<b><tt>gs_*.ps</tt></b>,
 <b><tt>pdf_*.ps</tt></b>), font files, the <b><tt>Fontmap</tt></b> file,
-and files named on the command line, Ghostscript first tests whether the
-file name specifies an explicit directory.
+files named on the command line, and resource files, Ghostscript first tests whether the
+file name specifies an absolute path.
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Testing a file name for an explicit directory</font><hr>
+<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Testing a file name for an absolute path</font><hr>
 <tr>	<th align=left>System
 	<td>&nbsp;&nbsp;
 	<th align=left>Does the name ...
 <tr>	<td colspan=3><hr>
 <tr>	<td valign=top>Unix
 	<td>&nbsp;
-	<td>Begin with <b><tt><u>/</u></tt></b>, <b><tt><u>./</u></tt></b> or <b><tt><u>../</u></tt></b> ?
+	<td>Begin with <b><tt><u>/</u></tt></b> ?
 <tr>	<td valign=top>MS Windows
 	<td>&nbsp;
 	<td>Have <b><tt><u>:</u></tt></b> as its second character, or
 		begin with <b><tt><u>/</u></tt></b>, <b><tt><u>\</u></tt></b>,
-		<b><tt><u>./</u></tt></b>, <b><tt><u>../</u></tt></b>, <b><tt><u>.\</u></tt></b>, or <b><tt><u>..\</u></tt></b> ?
+		or <b><tt><u>//servername/share/</u></tt></b> ?
 <tr>	<td valign=top>VMS
 	<td>&nbsp;
-	<td>Contain a node, device, root, or directory specification?
+	<td>Contain a node, device, or root specification?
 </table></blockquote>
 
-<p><a name="General_search_path"></a> If the test succeeds, the file name
-specifies an explicit directory and Ghostscript tries to open the file
+<p>If the test succeeds, Ghostscript tries to open the file
 using the name given.  Otherwise it tries directories in this order:
 
 <ol>
@@ -676,23 +676,26 @@ given.  To run a file using the searching algorithm, use
 <h3><a name="PS_resources"></a>Finding PostScript Level 2 resources</h3>
 
 <p>
-Ghostscript uses a completely different rule for looking for files
-containing PostScript Level 2 "resources": per the Adobe documentation, it
-concatenates together
+Adobe specifies that resources are installed in a single directory.
+Instead that, Ghostscript maintains a list of resource directories,
+and uses an extended method for finding resource files.
+
+<p>
+To find a resource file, Ghostscript concatenates together
 
 <ol>
-<li>the value of the system parameter
-<b><tt>GenericResourceDir</tt></b> (initially
-<b><tt>/Resource/</tt></b>)
 
 <li>the name of the resource category (for instance, <b><tt>ProcSet</tt></b>)
 
 <li>the value of the system parameter
 <b><tt>GenericResourcePathSep</tt></b> (initially
-"<b><tt>/</tt></b>")
+"<b><tt>/</tt></b>" on Unix and Windows, "<b><tt>:</tt></b>" on MacOS, "<b><tt>]</tt></b>" on OpenVMS)
 
 <li>the name of the resource instance (for instance, <b><tt>CIDInit</tt></b>)
 </ol>
+
+Then the result is combined with search directories as explained in
+<a href="#Finding_files">How Ghostscript finds files</a>.
 
 <p>
 To look up fonts, after exhausting the search method described in <a href="#Font_lookup">the
@@ -1964,6 +1967,43 @@ case, the font returned by <b><tt>findfont</tt></b> is the actual font
 named "<em>fontname</em>", not a copy of the font with the
 <b><tt>FontName</tt></b> changed to the requested one.
 </dl>
+
+<h4><a name="Resource_related_parameters"></a>Resource-related parameters</h4>
+
+<dl>
+<dt><a name="GenericResourceDir"></a><b><tt>-sGenericResourceDir=path</tt></b>
+<dd>Specifies a path to resource files.
+The value is platform dependent. It must end with a directory separator.
+<p>
+Adobe specifies <b><tt>GenericResourceDir</tt></b> to be an absolute path
+to a single resource directory. Instead that, Ghostscript maintains
+multiple resource directories and uses an extended method for finding
+resources, which is explained in  
+<a href="PS_resources">"Finding PostScript Level 2 resources"</a>.
+<p>
+Due to the extended search method, Ghostscript uses <b><tt>GenericResourceDir</tt></b>
+only as a default directory for resources being not installed.
+Therefore <b><tt>GenericResourceDir</tt></b> may be considered as a place
+where new resources to be installed. The default implementation of the function
+<b><tt>ResourceFileName</tt></b> uses <b><tt>GenericResourceDir</tt></b> when
+(1) it is an absolute path, or (2) the recource file is absent.
+The extended search method does not call <b><tt>ResourceFileName</tt></b> .
+<p>
+Default value is <tt><b>(./Resource/)</tt></b> for Unix, and an equivalent one on other
+platforms.
+</dl>
+
+<dl>
+<dt><a name="FontResourceDir"></a><b><tt>-sFontResourceDir=path</tt></b>
+<dd>Specifies a path where font files are installed.
+It's meaning is similar to <b><tt>GenericResourceDir</tt></b>.
+
+<p>
+Default value is <tt><b>(./Font/)</tt></b> for Unix, and an equivalent one on other
+platforms.
+</dl>
+</dl>
+
 
 <h4><a name="Interaction_related_parameters"></a>Interaction-related parameters</h4>
 

@@ -70,6 +70,7 @@
 <li><a href="#DecodingResources">Decoding resources</a>
 <li><a href="#CIDDecodingResources">CIDDecoding resources</a>
 <li><a href="#GlyphNames2Unicode">GlyphNames2Unicode</a>
+<li><a href="#MultipleResourceDirectories">Multiple Resource directories</a>
 </ul>
 </ul></blockquote>
 
@@ -2030,6 +2031,42 @@ In this dictionary the keys are glyph names, the values are Unicode UTF-16 codes
 The dictionaly is stored in the <b><tt>FontInfo</tt></b> dictionary under
 the key <b><tt>GlyphNames2Unicode</tt></b>. Ghostscript recognises it and uses
 to generate <b><tt>ToUnicode</tt></b> CMaps with pdfwrite.
+<p>
+
+<h3><a name="MultipleResourceDirectories"></a>Multiple Resource directories</h3>
+
+<p>
+Since 8.10 release Ghostscript maintains multiple resource directories.
+
+<p>
+Ghostscript does not distinguish <b><tt>lib</b></tt> and <b><tt>Resource</b></tt> directories.
+There is no file name conflicts because
+<b><tt>lib</b></tt> does not contain subdirectories, but <b><tt>Resource</b></tt>
+always store files in subdirectories.
+
+<p>
+The search method with multiple resource directories
+appears not fully conforming to PLRM. We cannot unconditionally call
+<b><tt>ResourceFileName</b></tt> while executing <b><tt>findresource</b></tt>
+or <b><tt>resourcestatus</b></tt>, <b><tt>resourceforall</b></tt>, because per PLRM it always
+returns a single path. Therefore Ghostscript implements
+an extended search method in <b><tt>findresource</b></tt>,
+<b><tt>resourcestatus</b></tt> and <b><tt>resourceforall</b></tt>, which first calls
+<b><tt>ResourceFileName</b></tt> and checks whether the returned path
+points to an existing file. If yes, the file is used,
+othervise Ghostscript searches all directories specified in
+<b><tt>LIB_PATH</tt></b>. With a single resource directory
+it appears conforming to PLRM and equivalent to Adobe implementations.
+
+<p>
+<b><tt>ResourceFileName</b></tt> may be used for obtaining a path
+where a resource file to be installed. In this case
+Ghostscript to be invoked with <b><tt>-sGenericResourceDir=path</b></tt>,
+specifying an absolute path. The default value for
+<b><tt>GenericResourceDir</b></tt> is a relative path. Therefore
+a default invocation with a Postscript installer
+will install resource files into <b><tt>/gs/Resource</tt></b>.
+
 <p>
 
 <!-- [2.0 end contents] ==================================================== -->

@@ -22,7 +22,7 @@
 #  define gp_INCLUDED
 
 /* A temporary switch for the new logics of file path concatenation : */
-#define NEW_COMBINE_PATH 0 /* 0 = old, 1 = new. */
+#define NEW_COMBINE_PATH 1 /* 0 = old, 1 = new. */
 
 #include "gstypes.h"
 /*
