@@ -216,8 +216,10 @@ close_job(pl_main_universe_t *universe)
     if ( high_level_device(universe->curr_device) ) {
 	 if (gs_closedevice(universe->curr_device) < 0)
 	     return -1;
+	 /* Don't reopen the device before pdfwrite has finished 
 	 if (gs_opendevice(universe->curr_device) < 0)
 	     return -1;
+	 */
     }
     return pl_dnit_job(universe->curr_instance);
 }
