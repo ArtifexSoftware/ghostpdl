@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -22,13 +22,10 @@
 #ifndef gsexit_INCLUDED
 #  define gsexit_INCLUDED
 
+/* These do not call exit() */
+/* You still need to return to the caller.*/
 void gs_exit_with_code(P2(int exit_status, int code));
 void gs_exit(P1(int exit_status));
 void gs_abort(P0());
-
-/* The only reason we export gs_exit_status is so that window systems */
-/* with alert boxes can know whether to pause before exiting if */
-/* the program terminates with an error.  There must be a better way .... */
-extern int gs_exit_status;
 
 #endif /* gsexit_INCLUDED */

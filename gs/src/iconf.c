@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -26,6 +26,7 @@
 #include "ivmspace.h"
 #include "opdef.h"
 #include "ifunc.h"
+#include "iapi.h"
 #include "iminst.h"
 
 /* Define the default values for an interpreter instance. */

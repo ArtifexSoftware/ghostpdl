@@ -43,8 +43,10 @@
 #define _export
 #endif
 
+/* 
 extern HWND hwndtext;
 extern HWND hDlgModeless;
+*/
 extern HINSTANCE phInstance;
 extern const LPSTR szAppName;
 extern BOOL is_win32s;

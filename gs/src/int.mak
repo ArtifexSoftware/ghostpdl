@@ -209,12 +209,14 @@ $(PSOBJ)iutil.$(OBJ) : $(PSSRC)iutil.c $(GH) $(math__h) $(memory__h) $(string__h
 btoken_h=$(PSSRC)btoken.h
 files_h=$(PSSRC)files.h
 fname_h=$(PSSRC)fname.h
+iapi_h=$(PSSRC)iapi.h
 ichar_h=$(PSSRC)ichar.h
 ichar1_h=$(PSSRC)ichar1.h
 icharout_h=$(PSSRC)icharout.h
 icolor_h=$(PSSRC)icolor.h
 icremap_h=$(PSSRC)icremap.h $(gsccolor_h)
 icsmap_h=$(PSSRC)icsmap.h
+idisp_h=$(PSSRC)idisp.h
 ifilter2_h=$(PSSRC)ifilter2.h
 ifont_h=$(PSSRC)ifont.h $(gsccode_h) $(gsstype_h)
 ifont1_h=$(PSSRC)ifont1.h
@@ -475,9 +477,9 @@ $(PSOBJ)zpath.$(OBJ) : $(PSSRC)zpath.c $(OP) $(math__h)\
 # Define the base PostScript language interpreter.
 # This is the subset of PostScript Level 1 required by our PDF reader.
 
-INT1=$(PSOBJ)icontext.$(OBJ) $(PSOBJ)idebug.$(OBJ) $(PSOBJ)idict.$(OBJ)
-INT2=$(PSOBJ)idparam.$(OBJ) $(PSOBJ)idstack.$(OBJ) $(PSOBJ)iinit.$(OBJ)
-INT3=$(PSOBJ)interp.$(OBJ)
+INT1=$(PSOBJ)iapi.$(OBJ) $(PSOBJ)icontext.$(OBJ) $(PSOBJ)idebug.$(OBJ)
+INT2=$(PSOBJ)idict.$(OBJ) $(PSOBJ)idparam.$(OBJ) $(PSOBJ)idstack.$(OBJ)
+INT3=$(PSOBJ)iinit.$(OBJ) $(PSOBJ)interp.$(OBJ)
 INT4=$(PSOBJ)iparam.$(OBJ) $(PSOBJ)ireclaim.$(OBJ)
 INT5=$(PSOBJ)iscan.$(OBJ) $(PSOBJ)iscannum.$(OBJ) $(PSOBJ)istack.$(OBJ)
 INT6=$(PSOBJ)iutil.$(OBJ) $(GLOBJ)sa85d.$(OBJ) $(GLOBJ)scantab.$(OBJ)
@@ -503,7 +505,7 @@ Z10OPS=zht zimage zmatrix
 Z11OPS=zpaint zpath
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
-INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ)
+INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ) $(GLOBJ)idisp.$(OBJ)
 INT_OBJS=$(INT_MAIN)\
  $(INT1) $(INT2) $(INT3) $(INT4) $(INT5) $(INT6) $(INT7)\
  $(Z1) $(Z2) $(Z3) $(Z4) $(Z5) $(Z6) $(Z7) $(Z8) $(Z9) $(Z10) $(Z11)
@@ -1720,12 +1722,23 @@ $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\
  $(imain_h) $(imainarg_h) $(iminst_h)
 	$(PSCC) $(PSO_)gs.$(OBJ) $(C_) $(PSSRC)gs.c
 
+$(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(GH)\
+ $(string__h) $(errors_h) $(gsargs_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
+ $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h)
+	$(PSCC) $(PSO_)iapi.$(OBJ) $(C_) $(PSSRC)iapi.c
+
 $(PSOBJ)icontext.$(OBJ) : $(PSSRC)icontext.c $(GH)\
  $(gsstruct_h) $(gxalloc_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
  $(icontext_h) $(idict_h) $(igstate_h) $(interp_h) $(isave_h) $(store_h)\
  $(stream_h)
 	$(PSCC) $(PSO_)icontext.$(OBJ) $(C_) $(PSSRC)icontext.c
+
+$(PSOBJ)idisp.$(OBJ) : $(PSSRC)idisp.c\
+ $(iapi_h) $(ghost_h) $(gp_h)\
+ $(imain_h) $(iminst_h) $(idisp_h)\
+ $(gx_h) $(gxdevice_h) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
+	$(PSCC) $(PSO_)idisp.$(OBJ) $(C_) $(PSSRC)idisp.c
 
 $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(ctype__h) $(memory__h) $(string__h)\
@@ -1741,8 +1754,8 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
  $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h) $(gxdevice_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
- $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(iinit_h) $(iname_h)\
- $(interp_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
+ $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(idisp_h) $(iinit_h)\
+ $(iname_h) $(interp_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
  $(main_h) $(oper_h) $(ostack_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)imain.$(OBJ) $(C_) $(PSSRC)imain.c

@@ -57,6 +57,7 @@ set_stdfiles(FILE * stdfiles[3])
 #include "isave.h"		/* for prototypes */
 #include "interp.h"
 #include "ivmspace.h"
+#include "idisp.h"		/* for setting display device callback */
 
 /* ------ Exported data ------ */
 
@@ -72,11 +73,6 @@ gs_main_instance_default(void)
 	the_gs_main_instance = gs_main_instance_init_values;
     return &the_gs_main_instance;
 }
-
-/* The only reason we export gs_exit_status is so that window systems */
-/* with alert boxes can know whether to pause before exiting if */
-/* the program terminates with an error.  There must be a better way .... */
-int gs_exit_status;
 
 /* Define the interpreter's name table.  We'll move it somewhere better */
 /* eventually.... */
@@ -224,7 +220,13 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 	    if (r_type(&esp[0]) == t_string) {
 		const char *str = (const char *)(esp[0].value.const_bytes); 
 		int count = esp[0].tas.rsize;
-		fwrite(str, 1, count, minst->fstdout);
+		int rcode = 0;
+		if (minst->stdout_fn)
+		    rcode = (*minst->stdout_fn)(minst->caller_handle, str, count);
+		else 
+		    fwrite(str, 1, count, minst->fstdout);
+		if (rcode < 0)
+		    return_error(e_ioerror);
 	    }
 
 	    /* On return, we need to set 
@@ -242,7 +244,13 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 	    if (r_type(&esp[0]) == t_string) {
 		const char *str = (const char *)(esp[0].value.const_bytes); 
 		int count = esp[0].tas.rsize;
-		fwrite(str, 1, count, minst->fstderr);
+		int rcode = 0;
+		if (minst->stderr_fn)
+		    rcode = (*minst->stderr_fn)(minst->caller_handle, str, count);
+		else 
+		    fwrite(str, 1, count, minst->fstderr);
+		if (rcode < 0)
+		    return_error(e_ioerror);
 	    }
 	    gs_push_string(minst, (byte *)minst->stderr_buf, 
 		sizeof(minst->stderr_buf), false);
@@ -260,7 +268,11 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 	     */
 	    if (gs_stdin_is_interactive)
 		count = 1;
-	    count = fread(minst->stdin_buf, 1, count, minst->fstdin);
+	    if (minst->stdin_fn)
+		count = (*minst->stdin_fn)(minst->caller_handle, 
+			minst->stdin_buf, count);
+	    else
+		count = fread(minst->stdin_buf, 1, count, minst->fstdin);
 
 	    /* On return, we need to set 
 	     *  osp[-1] = string buffer, 
@@ -339,6 +351,10 @@ gs_main_init2(gs_main_instance * minst)
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Start");
     gp_readline_init(&minst->readline_data, imemory_system);
+    if (minst->display)
+	code = display_set_callback(minst, minst->display);
+    if (code < 0)
+	return code;
     return 0;
 }
 
@@ -834,28 +850,38 @@ gs_debug_dump_stack(int code, ref * perror_object)
 
 /* Provide a single point for all "C" stdout and stderr.
  * Eventually these will always be referenced through an instance structure. 
+ * We don't know which instance is running (and currently only one
+ * instance is possible) so use the default instance.
  */
 
 int outwrite(const char *str, int len)
 {
-    /* When DLL/shared object build is added, this fwrite will */
-    /* be replaced with a call to the caller supplied function */
-    return fwrite(str, 1, len, gs_stdout);
+    gs_main_instance * minst = gs_main_instance_default();
+    if (minst->stdout_fn)
+	return (*minst->stdout_fn)(minst->caller_handle, str, len);
+    return fwrite(str, 1, len, minst->fstdout);
 }
 
 int errwrite(const char *str, int len)
 {
-    return fwrite(str, 1, len, gs_stderr);
+    gs_main_instance * minst = gs_main_instance_default();
+    if (minst->stderr_fn)
+	return (*minst->stderr_fn)(minst->caller_handle, str, len);
+    return fwrite(str, 1, len, minst->fstderr);
 }
 
 void outflush()
 {
-    fflush(gs_stdout);
+    gs_main_instance * minst = gs_main_instance_default();
+    if (!minst->stdout_fn)
+        fflush(minst->fstdout);
 }
 
 void errflush()
 {
-    fflush(gs_stderr);
+    gs_main_instance * minst = gs_main_instance_default();
+    if (!minst->stderr_fn)
+        fflush(minst->fstderr);
 }
 
 

@@ -54,82 +54,23 @@
 #include <shellapi.h>
 #include <winspool.h>
 #include "gp_mswin.h"
-#include "gsdll.h"
-/* use longjmp instead of exit when using DLL */
-#include <setjmp.h>
-extern jmp_buf gsdll_env;
 
 /* Library routines not declared in a standard header */
 extern char *getenv(P1(const char *));
 
-/* ------ from gnuplot winmain.c plus new stuff ------ */
-
 /* limits */
 #define MAXSTR 255
 
-/* public handles */
+/* GLOBAL VARIABLE that needs to be removed */
+char win_prntmp[MAXSTR];	/* filename of PRN temporary file */
+
+/* GLOBAL VARIABLES - initialised at DLL load time */
 HINSTANCE phInstance;
-HWND hwndtext = HWND_DESKTOP;	/* would be better to be a real window */
+BOOL is_win32s = FALSE;
 
 const LPSTR szAppName = "Ghostscript";
-BOOL is_win32s = FALSE;
-char FAR win_prntmp[MAXSTR];	/* filename of PRN temporary file */
 private int is_printer(const char *name);
-int win_init = 0;		/* flag to know if gp_exit has been called */
-int win_exit_status;
 
-#ifdef __WIN32__
-/* DLL entry point for Borland C++ */
-BOOL WINAPI _export
-DllEntryPoint(HINSTANCE hInst, DWORD fdwReason, LPVOID lpReserved)
-{
-    /* Win32s: HIWORD bit 15 is 1 and bit 14 is 0 */
-    /* Win95:  HIWORD bit 15 is 1 and bit 14 is 1 */
-    /* WinNT:  HIWORD bit 15 is 0 and bit 14 is 0 */
-    /* WinNT Shell Update Release is WinNT && LOBYTE(LOWORD) >= 4 */
-    DWORD version = GetVersion();
-
-    if (((HIWORD(version) & 0x8000) != 0) && ((HIWORD(version) & 0x4000) == 0))
-	is_win32s = TRUE;
-
-    phInstance = hInst;
-    return TRUE;
-}
-
-/* DLL entry point for Microsoft Visual C++ */
-BOOL WINAPI _export
-DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpReserved)
-{
-    return DllEntryPoint(hInst, fdwReason, lpReserved);
-}
-
-
-#else
-int WINAPI _export
-LibMain(HINSTANCE hInstance, WORD wDataSeg, WORD wHeapSize, LPSTR lpszCmdLine)
-{
-    phInstance = hInstance;
-    return 1;
-}
-
-int WINAPI _export
-WEP(int nParam)
-{
-    return 1;
-}
-#endif
-
-
-/* ------ Process message loop ------ */
-/*
- * Check messages and interrupts; return true if interrupted.
- * This is called frequently - it must be quick!
- */
-int
-gp_check_interrupts(void)
-{
-    return (*pgsdll_callback) (GSDLL_POLL, NULL, 0);
-}
 
 /* ====== Generic platform procedures ====== */
 
@@ -139,24 +80,18 @@ gp_check_interrupts(void)
 void
 gp_init(void)
 {
-    win_init = 1;
 }
 
 /* Do platform-dependent cleanup. */
 void
 gp_exit(int exit_status, int code)
 {
-    win_init = 0;
-    win_exit_status = exit_status;
 }
 
 /* Exit the program. */
 void
 gp_do_exit(int exit_status)
 {
-    /* Use longjmp since exit would terminate caller */
-    /* setjmp code will check gs_exit_status */
-    longjmp(gsdll_env, gs_exit_status);
 }
 
 /* ------ Printer accessing ------ */
@@ -652,3 +587,25 @@ gp_fopen(const char *fname, const char *mode)
 {
     return fopen(fname, mode);
 }
+
+
+#include "iapi.h"
+#include "iref.h"
+#include "iminst.h"
+#include "imain.h"
+
+/* ------ Process message loop ------ */
+/* 
+ * Check messages and interrupts; return true if interrupted.
+ * This is called frequently - it must be quick!
+ */
+#ifdef CHECK_INTERRUPTS
+int
+gp_check_interrupts(void)
+{
+    gs_main_instance *minst = gs_main_instance_default();
+    if (minst && minst->poll_fn)
+	return (*minst->poll_fn)(minst->caller_handle);
+    return 0;
+}
+#endif

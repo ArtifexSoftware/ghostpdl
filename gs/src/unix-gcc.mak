@@ -195,11 +195,13 @@ CCLD=$(CC)
 
 GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -Wtraditional -fno-builtin -fno-common
 
-# Define the added flags for standard, debugging, and profiling builds.
+# Define the added flags for standard, debugging, profiling 
+# and shared object (DLL) builds.
 
 CFLAGS_STANDARD=-O2
 CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg -O2
+CFLAGS_SO=$(CFLAGS_STANDARD) -fPIC
 
 # Define the other compilation flags.  Add at most one of the following:
 #	-DBSD4_2 for 4.2bsd systems.
@@ -333,7 +335,7 @@ EXTEND_NAMES=0
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
+DEVICE_DEVS=$(DISPLAY_DEV) $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
 
 #DEVICE_DEVS1=
 #DEVICE_DEVS2=
@@ -419,6 +421,7 @@ include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak
 include $(GLSRCDIR)/unixlink.mak
+include $(GLSRCDIR)/unix-dll.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/unixinst.mak
 

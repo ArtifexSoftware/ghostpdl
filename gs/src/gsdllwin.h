@@ -1,4 +1,4 @@
-/* Copyright (C) 1994-1996, Russell Lang.  All rights reserved.
+/* Copyright (C) 1994-2001, Ghostgum Software Pty Ltd.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -24,20 +24,20 @@
 
 /* DLL exported functions */
 /* for load time dynamic linking */
-HGLOBAL GSDLLAPI gsdll_copy_dib(unsigned char GSFAR * device);
-HPALETTE GSDLLAPI gsdll_copy_palette(unsigned char GSFAR * device);
-void GSDLLAPI gsdll_draw(unsigned char GSFAR * device, HDC hdc, LPRECT dest,
+GSDLLEXPORT HGLOBAL GSDLLAPI gsdll_copy_dib(unsigned char * device);
+GSDLLEXPORT HPALETTE GSDLLAPI gsdll_copy_palette(unsigned char * device);
+GSDLLEXPORT void GSDLLAPI gsdll_draw(unsigned char * device, HDC hdc, LPRECT dest,
 			 LPRECT src);
-int GSDLLAPI gsdll_get_bitmap_row(unsigned char *device,
+GSDLLEXPORT int GSDLLAPI gsdll_get_bitmap_row(unsigned char *device,
 				  LPBITMAPINFOHEADER pbmih,
 				  LPRGBQUAD prgbquad, LPBYTE * ppbyte,
 				  unsigned int row);
 
 /* Function pointer typedefs */
 /* for run time dynamic linking */
-typedef HGLOBAL (GSDLLAPI * PFN_gsdll_copy_dib)(unsigned char GSFAR *);
-typedef HPALETTE (GSDLLAPI * PFN_gsdll_copy_palette)(unsigned char GSFAR *);
-typedef void (GSDLLAPI * PFN_gsdll_draw) (unsigned char GSFAR *, HDC, LPRECT,
+typedef HGLOBAL (GSDLLAPI * PFN_gsdll_copy_dib)(unsigned char *);
+typedef HPALETTE (GSDLLAPI * PFN_gsdll_copy_palette)(unsigned char *);
+typedef void (GSDLLAPI * PFN_gsdll_draw) (unsigned char *, HDC, LPRECT,
 					  LPRECT);
 typedef int (GSDLLAPI * PFN_gsdll_get_bitmap_row)
      (unsigned char *device, LPBITMAPINFOHEADER pbmih, LPRGBQUAD prgbquad,

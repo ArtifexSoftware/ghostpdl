@@ -63,6 +63,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #   ****** compiler or executable.
 #	vesa	SuperVGA with VESA standard API driver
 # Other displays:
+#	display   For use on any platform that supports DLLs
 #   MS Windows:
 #	mswindll  Microsoft Windows 3.1 DLL  [MS Windows only]
 #	mswinprn  Microsoft Windows 3.0, 3.1 DDB printer  [MS Windows only]
@@ -375,6 +376,21 @@ $(GLOBJ)gdevs3ga.$(OBJ) : $(GLSRC)gdevs3ga.c $(GDEV) $(gdevpcfb_h) $(gdevsvga_h)
 	$(GLCC) $(GLO_)gdevs3ga.$(OBJ) $(C_) $(GLSRC)gdevs3ga.c
 
 ###### ----------------------- Other displays ------------------------ ######
+
+### ------------------ Display device for DLL platforms ----------------- ###
+
+gdevdsp_h=$(GLSRC)gdevdsp.h
+gdevdsp2_h=$(GLSRC)gdevdsp2.h
+
+display_=$(GLOBJ)gdevdsp.$(OBJ)
+$(DD)display.dev: $(display_)
+	$(SETDEV) $(DD)display $(display_)
+
+$(GLOBJ)gdevdsp.$(OBJ): $(GLSRC)gdevdsp.c $(string__h)\
+ $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsexit_h) $(gsparam_h)\
+ $(GDEVH) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
+	$(GLCC) $(GLO_)gdevdsp.$(OBJ) $(C_) $(GLSRC)gdevdsp.c
+
 
 ### ---------------------- Linux PC with vgalib ------------------------- ###
 ### Note: these drivers were contributed by users.                        ###

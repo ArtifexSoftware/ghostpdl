@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -41,6 +41,7 @@
 #include "iconf.h"
 #include "imain.h"
 #include "imainarg.h"
+#include "iapi.h"
 #include "iminst.h"
 #include "iname.h"
 #include "store.h"

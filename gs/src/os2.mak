@@ -43,7 +43,7 @@ PSOBJDIR=obj
 
 # Define the root directory for Ghostscript installation.
 
-AROOTDIR=c:/Aladdin
+AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 
 # Define the directory that will hold documentation at runtime.
@@ -399,6 +399,10 @@ CDLL=/Gd- /Ge- /Gm+ /Gs+ /D__DLL__
 CDLL=
 !endif
 
+!if $(EMX)
+CEXE=-Zomf
+!endif
+
 GENOPT=$(CP) $(CD) $(CGDB) $(CDLL) $(CO)
 
 CCFLAGS0=$(GENOPT) $(PLATOPT) -D__OS2__
@@ -441,13 +445,13 @@ FILE_IMPLEMENTATION=stdio
 # Choose the implementation of stdio: '' for file I/O and 'c' for callouts
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
-STDIO_IMPLEMENTATION= 
+STDIO_IMPLEMENTATION=c
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak, pcwin.mak, and contrib.mak for the list of available devices.
 
 !if $(MAKEDLL)
-DEVICE_DEVS=$(DD)os2pm.dev $(DD)os2dll.dev $(DD)os2prn.dev
+DEVICE_DEVS=$(DD)display.dev $(DD)os2pm.dev $(DD)os2dll.dev $(DD)os2prn.dev
 !else
 DEVICE_DEVS=$(DD)os2pm.dev
 !endif
@@ -498,14 +502,6 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ)
 $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)os2_ $(os2__) -include $(GLD)nosync
-!if $(MAKEDLL)
-# Using a file device resource to get the console streams re-initialized 
-# is bad architecture (an upward reference to ziodev),                   
-# but it will have to do for the moment.                                 
-#   We need to redirect stdin/out/err to gsdll_callback
-        $(ADDMOD) $(GLGEN)os2_ -iodev wstdio
-!endif
-  
 
 $(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c\
  $(dos__h) $(pipe__h) $(string__h) $(time__h)\
@@ -598,17 +594,21 @@ gsdllos2_h=$(GLSRC)gsdllos2.h
 
 ICONS=$(GLOBJ)gsos2.ico $(GLOBJ)gspmdrv.ico
 
+$(GLOBJ)dpmain.$(OBJ): $(GLSRC)dpmain.c $(AK)\
+ $(gdevdsp_h) $(iapi_h) $(gscdefs_h) $(errors_h)
+	$(CC) $(CEXE) -I$(GLSRCDIR) -I$(GLGENDIR) $(GLO_)dpmain.$(OBJ) $(C_) $(GLSRC)dpmain.c
+
 !if $(MAKEDLL)
 #making a DLL
 GS_ALL=$(GLOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GLOBJ)$(GS).res $(ICONS)
 
-$(GS_XE): $(BINDIR)\$(GSDLL).dll $(GLSRC)dpmainc.c $(gsdll_h) $(gsdllos2_h) $(GLSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
+$(GS_XE): $(BINDIR)\$(GSDLL).dll $(GLSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(GLSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
 !if $(EMX)
-	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(GLSRCDIR) -I$(GLOBJDIR) -o$(GS_XE) $(GLSRC)dpmainc.c $(GLOBJ)gscdefs.$(OBJ) $(GLSRC)gsos2.def
+	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(GLSRCDIR) -I$(GLOBJDIR) -o$(GS_XE) $(GLSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ) $(GLSRC)gsos2.def
 !endif
 !if $(IBMCPP)
-	$(CCAUX) -I$(GLSRCDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(GLSRC)dpmainc.c $(GLOBJ)gscdefs.$(OBJ)
+	$(CCAUX) -I$(GLSRCDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(GLSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ)
 !endif
 	rc $(GLOBJ)$(GS).res $(GS_XE)
 

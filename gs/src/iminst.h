@@ -18,7 +18,7 @@
 
 /*$Id$ */
 /* Definition of interpreter instance */
-/* Requires stdio_.h, gsmemory.h, iref.h */
+/* Requires stdio_.h, gsmemory.h, iref.h, iapi.h */
 
 #ifndef iminst_INCLUDED
 #  define iminst_INCLUDED
@@ -84,6 +84,13 @@ struct gs_main_instance_s {
     char stdin_buf[STDIN_BUF_SIZE];	/* for e_NeedStdin callout */
     char stdout_buf[STDOUT_BUF_SIZE];	/* for e_NeedStdout callout */
     char stderr_buf[STDERR_BUF_SIZE];	/* for e_NeedStderr callout */
+    ref error_object;		/* Use by gsapi_*() */
+    void *caller_handle;	/* identifies caller of GS DLL/shared object */
+    int (GSDLLCALL *stdin_fn)(void *caller_handle, char *buf, int len);
+    int (GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len);
+    int (GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len);
+    int (GSDLLCALL *poll_fn)(void *caller_handle);
+    display_callback *display;	/* callback structure for display device */
     /* The following are updated dynamically. */
     i_ctx_t *i_ctx_p;		/* current interpreter context state */
 };

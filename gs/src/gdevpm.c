@@ -443,7 +443,7 @@ pm_do_output_page(gx_device * dev, int copies, int flush)
 	} else if (copies == -1) {
 	    rc = DosWriteQueue(pmdev->drv_queue, GS_BEGIN, 0, NULL, 0);
 	    if (rc)
-		eprintf1(, "pm_output_page: DosWriteQueue error %d\n", rc);
+		eprintf1("pm_output_page: DosWriteQueue error %d\n", rc);
 	} else {
 	    ULONG count;
 
@@ -524,15 +524,6 @@ pm_close(gx_device * dev)
 #endif
     {
 	if (*pmdev->GSVIEW) {
-	    if (gs_exit_status) {
-		ULONG count;
-
-		/* pause so error messages can be read */
-		DosResetEventSem(pmdev->next_event, &count);
-		DosWriteQueue(pmdev->drv_queue, GS_ERROR, 0, NULL, 0);
-		DosWaitEventSem(pmdev->next_event, SEM_INDEFINITE_WAIT);
-		DosResetEventSem(pmdev->next_event, &count);
-	    }
 	    rc = DosWriteQueue(pmdev->drv_queue, GS_CLOSE, 0, NULL, 0);
 	    if (rc)
 		eprintf1("pm_close: DosWriteQueue error %d\n", rc);
@@ -868,7 +859,7 @@ pm_put_params(gx_device * dev, gs_param_list * plist)
 	/* before each use */
 
 #ifdef __DLL__
-	if (pmdev->dll & pgsdll_callback)
+	if (pmdev->dll && pgsdll_callback)
 	    (*pgsdll_callback) (GSDLL_SIZE, (unsigned char *)dev,
 		    (dev->width & 0xffff) + ((dev->height & 0xffff) << 16));
 #endif

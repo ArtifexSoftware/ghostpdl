@@ -127,25 +127,12 @@ $(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 
 # The Windows Win32 platform
 
-mswin32__=$(GLOBJ)gp_msio.$(OBJ)
-$(GLGEN)mswin32_.dev: $(mswin32__) $(ECHOGS_XE) $(GLGEN)msw32nc_.dev
+mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
+mswin32_inc=$(GLD)nosync.dev $(GLD)winplat.dev
+
+$(GLGEN)mswin32_.dev:  $(mswin32__) $(ECHOGS_XE) $(mswin32_inc)
 	$(SETMOD) $(GLGEN)mswin32_ $(mswin32__)
-	$(ADDMOD) $(GLGEN)mswin32_ -include $(GLGEN)msw32nc_.dev
-	$(ADDMOD) $(GLGEN)mswin32_ -iodev wstdio
-
-$(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
- $(gsdll_h) $(stdio__h) $(gxiodev_h) $(stream_h) $(gx_h) $(gp_h) $(windows__h)
-	$(GLCCWIN) $(GLO_)gp_msio.$(OBJ) $(C_) $(GLSRC)gp_msio.c
-
-# Hack: we need a version of the platform code that doesn't include the
-# console I/O module gp_msio.c, because this incorrectly refers to gsdll.c,
-# which in turn incorrectly refers to PostScript interpreter code.
-
-msw32nc__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
-msw32nc_inc=$(GLD)nosync.dev $(GLD)winplat.dev
-$(GLGEN)msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE) $(msw32nc_inc)
-	$(SETMOD) $(GLGEN)msw32nc_ $(msw32nc__)
-	$(ADDMOD) $(GLGEN)msw32nc_ -include $(msw32nc_inc)
+	$(ADDMOD) $(GLGEN)mswin32_ -include $(mswin32_inc)
 
 $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
  $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \

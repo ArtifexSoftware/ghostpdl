@@ -164,7 +164,7 @@ int zreadline_from(P5(stream *s, gs_string *buf, gs_memory_t *bufmem,
 
 /* Procedures exported by zfileio.c. */
 	/* for zfile.c */
-int zfilelineedit(P1(i_ctx_t *i_ctx_p));
+int zfilelineedit(i_ctx_t *i_ctx_p);
 
 	/* for zfproc.c */
 int zneedstdin(P1(i_ctx_t *i_ctx_p));

@@ -78,7 +78,7 @@ ICONS=$(GLGEN)gsgraph.ico $(GLGEN)gstext.ico
 GS_ALL=$(INT_ALL) $(INTASM)\
   $(LIB_ALL) $(LIBCTR) $(GLGEN)lib.tr $(ld_tr) $(GSDLL_OBJ).res $(GLSRC)$(GSDLL).def $(ICONS)
 
-dwdll_h=$(GLSRC)dwdll.h $(gsdllwin_h)
+dwdll_h=$(GLSRC)dwdll.h
 dwimg_h=$(GLSRC)dwimg.h
 dwmain_h=$(GLSRC)dwmain.h
 dwtext_h=$(GLSRC)dwtext.h
@@ -108,53 +108,58 @@ $(GSDLL_OBJ).res: $(GLSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
 	del $(GLGEN)_dll.rc
 
 
-# Modules for small EXE loader.
-
-DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj
-
-$(GLOBJ)dwdll.obj: $(GLSRC)dwdll.cpp $(AK)\
- $(dwdll_h) $(gsdll_h) $(gsdllwin_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwdll.obj $(C_) $(GLSRC)dwdll.cpp
-
-$(GLOBJ)dwimg.obj: $(GLSRC)dwimg.cpp $(AK)\
- $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h)\
- $(gscdefs_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.cpp
-
-$(GLOBJ)dwmain.obj: $(GLSRC)dwmain.cpp $(AK)\
- $(dwdll_h) $(gscdefs_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwmain.obj $(C_) $(GLSRC)dwmain.cpp
-
-$(GLOBJ)dwtext.obj: $(GLSRC)dwtext.cpp $(AK) $(dwtext_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtext.obj $(C_) $(GLSRC)dwtext.cpp
-
 # Modules for big EXE
 
 DWOBJNO = $(GLOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj
 
-$(GLOBJ)dwnodll.obj: $(GLSRC)dwnodll.cpp $(AK)\
- $(dwdll_h) $(gsdll_h) $(gsdllwin_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwnodll.obj $(C_) $(GLSRC)dwnodll.cpp
+$(GLOBJ)dwnodll.obj: $(GLSRC)dwnodll.c $(AK)\
+ $(dwdll_h) $(iapi_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwnodll.obj $(C_) $(GLSRC)dwnodll.c
 
 # Compile gsdll.c, the main program of the DLL.
 
-$(GLOBJ)gsdll.obj: $(GLSRC)gsdll.c $(AK) $(gsdll_h) $(ghost_h)
+$(GLOBJ)gsdll.obj: $(GLSRC)gsdll.c $(AK) $(iapi_h) $(ghost_h)
 	$(PSCCWIN) $(COMPILE_FOR_DLL) $(GLO_)gsdll.$(OBJ) $(C_) $(GLSRC)gsdll.c
+
+$(GLOBJ)gp_msdll.obj: $(GLSRC)gp_msdll.c $(AK) $(iapi_h)
+	$(PSCCWIN) $(COMPILE_FOR_DLL) $(GLO_)gp_msdll.$(OBJ) $(C_) $(GLSRC)gp_msdll.c
 
 # Modules for console mode EXEs
 
-OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj
-OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj
+OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwimg.obj
+OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj
 
-$(GLOBJ)dwmainc.obj: $(GLSRC)dwmainc.cpp $(AK) $(dwmain_h) $(dwdll_h) $(gscdefs_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj $(C_) $(GLSRC)dwmainc.cpp
+$(GLOBJ)dwmainc.obj: $(GLSRC)dwmainc.c $(AK) $(dwmain_h) $(dwdll_h) $(gscdefs_h) $(iapi_h)
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj $(C_) $(GLSRC)dwmainc.c
 
-$(GLOBJ)dwdllc.obj: $(GLSRC)dwdll.cpp $(AK) $(dwdll_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwdllc.obj $(C_) $(GLSRC)dwdll.cpp
+$(GLOBJ)dwdllc.obj: $(GLSRC)dwdll.c $(AK) $(dwdll_h) $(iapi_h)
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwdllc.obj $(C_) $(GLSRC)dwdll.c
 
-$(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.cpp $(AK) $(dwdll_h) $(gsdll_h)
-	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwnodllc.obj $(C_) $(GLSRC)dwnodll.cpp
+$(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.c $(AK) $(dwdll_h) $(iapi_h)
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwnodllc.obj $(C_) $(GLSRC)dwnodll.c
 
+
+# Modules for small EXE loader.
+
+DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj
+
+DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj
+
+$(GLOBJ)dwdll.obj: $(GLSRC)dwdll.c $(AK)\
+ $(dwdll_h) $(iapi_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwdll.obj $(C_) $(GLSRC)dwdll.c
+
+$(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
+ $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h)\
+ $(gscdefs_h) $(iapi_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.c
+
+$(GLOBJ)dwmain.obj: $(GLSRC)dwmain.c $(AK)\
+ $(dwdll_h) $(gscdefs_h) $(iapi_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwmain.obj $(C_) $(GLSRC)dwmain.c
+
+$(GLOBJ)dwtext.obj: $(GLSRC)dwtext.c $(AK) $(dwtext_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtext.obj $(C_) $(GLSRC)dwtext.c
 
 # ---------------------- Setup and uninstall program ---------------------- #
 
@@ -195,12 +200,13 @@ $(GLOBJ)dwuninst.obj: $(GLSRC)dwuninst.cpp $(GLSRC)dwuninst.h
 
 ZIPTEMPFILE=gs$(GS_DOT_VERSION)\obj\dwfiles.rsp
 ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsdll32.dll
-ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gswin32.exe
-ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gswin32c.exe
-ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gs16spl.exe
-ZIPPROGFILE5=gs$(GS_DOT_VERSION)\doc
-ZIPPROGFILE6=gs$(GS_DOT_VERSION)\examples
-ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib
+ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gsdll32.lib
+ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gswin32.exe
+ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gswin32c.exe
+ZIPPROGFILE5=gs$(GS_DOT_VERSION)\bin\gs16spl.exe
+ZIPPROGFILE6=gs$(GS_DOT_VERSION)\doc
+ZIPPROGFILE7=gs$(GS_DOT_VERSION)\examples
+ZIPPROGFILE8=gs$(GS_DOT_VERSION)\lib
 ZIPFONTDIR=fonts
 ZIPFONTFILES=$(ZIPFONTDIR)\*.*
 
@@ -218,6 +224,7 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	echo $(ZIPPROGFILE5) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE6) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE7) >> $(ZIPTEMPFILE)
+	echo $(ZIPPROGFILE8) >> $(ZIPTEMPFILE)
 	$(SETUP_XE_NAME) -title "AFPL Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
 	$(SETUP_XE_NAME) -title "AFPL Ghostscript Fonts" -dir "fonts" -list "$(FONTLIST_TXT)" $(ZIPFONTFILES)
 	-del gs$(GS_VERSION)w32.zip

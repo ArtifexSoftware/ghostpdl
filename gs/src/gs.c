@@ -21,6 +21,7 @@
 #include "ghost.h"
 #include "imain.h"
 #include "imainarg.h"
+#include "iapi.h"
 #include "iminst.h"
 #include "errors.h"
 
@@ -87,7 +88,6 @@ main(int argc, char *argv[])
     }
 
     gs_exit_with_code(exit_status, code);
-    fflush(stderr);		/* in case of error exit */
 
     return exit_status;
 }

@@ -1,5 +1,5 @@
-/* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
-  
+/* Copyright (C) 1996, 2001, Ghostgum Software Pty Ltd.  All rights reserved.
+
   This file is part of AFPL Ghostscript.
   
   AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
@@ -14,11 +14,13 @@
   conditions described in the License.  Among other things, the License
   requires that the copyright notice and this notice be preserved on all
   copies.
-*/
+ */
 
-// $Id$
+/* $Id$ */
 
-// Icon index definitions -- why are these here??
+/* Icon index definitions - needed by resources */
 
 #define GSTEXT_ICON	50
 #define GSIMAGE_ICON	51
+
+extern HWND hwndtext;

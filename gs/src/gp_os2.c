@@ -393,16 +393,10 @@ handle_FPE(int sig)
     exit(1);
 }
 
-extern int gs_exit_status;
-
 /* Do platform-dependent cleanup. */
 void
 gp_exit(int exit_status, int code)
 {
-#ifndef __DLL__
-    if (exit_status && (_osmode == OS2_MODE))
-	DosSleep(2000);
-#endif
 #if defined(__DLL__) && defined(__EMX__)
     if (environ != fake_environ) {
 	free(environ);
@@ -415,13 +409,6 @@ gp_exit(int exit_status, int code)
 void
 gp_do_exit(int exit_status)
 {
-#if defined(__DLL__)
-    /* Use longjmp since exit would terminate caller */
-    /* setjmp code will check gs_exit_status */
-    longjmp(gsdll_env, gs_exit_status);
-#else
-    exit(exit_status);
-#endif
 }
 
 /* ------ Printer accessing ------ */
@@ -777,188 +764,3 @@ gp_fopen(const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
-#ifdef __DLL__
-
-/* The DLL version must not be allowed direct access to stdin and stdout */
-/* Instead these are redirected to the gsdll_callback */
-#include "gsdll.h"
-#include <stdarg.h>
-
-/* for redirecting stdin/out/err */
-#include "stream.h"
-#include "gxiodev.h"		/* must come after stream.h */
-
-
-/* ====== Substitute for stdio ====== */
-
-/* this code has been derived from gp_mswin.c */
-
-/* Forward references */
-private stream_proc_process(pm_std_read_process);
-private stream_proc_process(pm_std_write_process);
-private stream_proc_available(pm_std_available);
-
-/* Use a pseudo IODevice to get pm_stdio_init called at the right time. */
-/* This is bad architecture; we'll fix it later. */
-private iodev_proc_init(pm_stdio_init);
-const gx_io_device gs_iodev_wstdio = {
-    /* The name is null to keep this from showing up as a resource. */
-    0, "Special",
-    {pm_stdio_init, iodev_no_open_device,
-     iodev_no_open_file, iodev_no_fopen, iodev_no_fclose,
-     iodev_no_delete_file, iodev_no_rename_file,
-     iodev_no_file_status, iodev_no_enumerate_files
-    }
-};
-
-/* Discard the contents of the buffer when reading. */
-void
-pm_std_read_reset(stream * s)
-{
-    s_std_read_reset(s);
-    s->end_status = 0;
-}
-
-/* Define alternate 'open' routines for our stdin/out/err streams. */
-
-extern const gx_io_device gs_iodev_stdin;
-private int
-pm_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
-	      gs_memory_t * mem)
-{
-    int code = gs_iodev_stdin.procs.open_device(iodev, access, ps, mem);
-    stream *s = *ps;
-
-    if (code != 1)
-	return code;
-    s->procs.reset = pm_std_read_reset;
-    s->procs.process = pm_std_read_process;
-    s->procs.available = pm_std_available;
-    s->file = NULL;
-    return 0;
-}
-
-extern const gx_io_device gs_iodev_stdout;
-private int
-pm_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
-	       gs_memory_t * mem)
-{
-    int code = gs_iodev_stdout.procs.open_device(iodev, access, ps, mem);
-    stream *s = *ps;
-
-    if (code != 1)
-	return code;
-    s->procs.process = pm_std_write_process;
-    s->procs.available = pm_std_available;
-    s->procs.flush = s_std_write_flush;
-    s->file = NULL;
-    return 0;
-}
-
-extern const gx_io_device gs_iodev_stderr;
-private int
-pm_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
-	       gs_memory_t * mem)
-{
-    int code = gs_iodev_stderr.procs.open_device(iodev, access, ps, mem);
-    stream *s = *ps;
-
-    if (code != 1)
-	return code;
-    s->procs.process = pm_std_write_process;
-    s->procs.available = pm_std_available;
-    s->procs.flush = s_std_write_flush;
-    s->file = NULL;
-    return 0;
-}
-
-/* Patch stdin/out/err to use our windows. */
-private int
-pm_stdio_init(gx_io_device * iodev, gs_memory_t * mem)
-{
-    /* If stdxxx is the console, replace the 'open' routines, */
-    /* which haven't gotten called yet. */
-
-    if (gp_file_is_console(gs_stdin))
-	gs_findiodevice((const byte *)"%stdin", 6)->procs.open_device =
-	    pm_stdin_open;
-
-    if (gp_file_is_console(gs_stdout))
-	gs_findiodevice((const byte *)"%stdout", 7)->procs.open_device =
-	    pm_stdout_open;
-
-    if (gp_file_is_console(gs_stderr))
-	gs_findiodevice((const byte *)"%stderr", 7)->procs.open_device =
-	    pm_stderr_open;
-
-    return 0;
-}
-
-
-/* We should really use a private buffer for line reading, */
-/* because we can't predict the size of the supplied input area.... */
-private int
-pm_std_read_process(stream_state * st, stream_cursor_read * ignore_pr,
-		    stream_cursor_write * pw, bool last)
-{
-    int count = pw->limit - pw->ptr;
-
-    if (count == 0)		/* empty buffer */
-	return 1;
-
-    /* callback to get more input */
-    count = (*pgsdll_callback) (GSDLL_STDIN, pw->ptr + 1, count);
-    if (count == 0) {
-	/* EOF */
-	/* what should we do? */
-	return EOFC;
-    }
-    pw->ptr += count;
-    return 1;
-}
-
-private int
-pm_std_available(register stream * s, long *pl)
-{
-    *pl = -1;		// EOF, since we can't do it
-    return 0;		// OK
-}
-
-
-private int
-pm_std_write_process(stream_state * st, stream_cursor_read * pr,
-		     stream_cursor_write * ignore_pw, bool last)
-{
-    uint count = pr->limit - pr->ptr;
-
-    (*pgsdll_callback) (GSDLL_STDOUT, (char *)(pr->ptr + 1), count);
-    pr->ptr = pr->limit;
-    return 0;
-}
-
-/* This is used instead of the stdio version. */
-/* The declaration must be identical to that in <stdio.h>. */
-#ifdef __EMX__
-int
-fprintf(FILE * file, __const__ char *fmt,...)
-#else
-int
-fprintf(FILE * file, const char *fmt,...)
-#endif
-{
-    int count;
-    va_list args;
-
-    va_start(args, fmt);
-    if (gp_file_is_console(file)) {
-	char buf[1024];
-
-	count = vsprintf(buf, fmt, args);
-	(*pgsdll_callback) (GSDLL_STDOUT, buf, count);
-    } else {
-	count = vfprintf(file, fmt, args);
-    }
-    va_end(args);
-    return count;
-}
-#endif /* __DLL__ */

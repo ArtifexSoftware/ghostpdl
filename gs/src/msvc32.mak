@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-2001 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -393,14 +393,14 @@ FILE_IMPLEMENTATION=stdio
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
 !ifndef STDIO_IMPLEMENTATION
-STDIO_IMPLEMENTATION=
+STDIO_IMPLEMENTATION=c
 !endif
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
@@ -460,6 +460,7 @@ BEGINFILES2=$(GLOBJDIR)\*.exp $(GLOBJDIR)\*.ilk $(GLOBJDIR)\*.pdb $(GLOBJDIR)\*.
 
 GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
+GSDLL_OBJS=$(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
 
 $(GLGEN)lib32.rsp: $(TOP_MAKEFILES)
 	echo /NODEFAULTLIB:LIBC.lib > $(GLGEN)lib32.rsp
@@ -482,15 +483,15 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
 	del $(GLGEN)gswin32.rsp
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GSDLL_OBJ).res $(GLGEN)lib32.rsp
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(GLGEN)lib32.rsp
 	echo /DLL /DEF:$(GLSRCDIR)\gsdll32.def /OUT:$(GSDLL_DLL) > $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GSDLL_OBJ).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GSDLL_OBJS) @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(GLGEN)gswin32.rsp
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GSDLL_OBJ).res $(GLSRCDIR)\dwmain32.def $(GLGEN)lib32.rsp
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL_OBJ).res $(GLSRCDIR)\dwmain32.def $(GLGEN)lib32.rsp
 	copy $(ld_tr) $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwnodll.obj >> $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwimg.obj >> $(GLGEN)gswin32.tr
@@ -503,7 +504,7 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) 
 	del $(GLGEN)gswin32.rsp
 
 # The big console mode EXE
-$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def $(GLGEN)lib32.rsp
+$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def $(GLGEN)lib32.rsp
 	copy $(ld_tr) $(GLGEN)gswin32c.tr
 	echo $(GLOBJ)dwnodllc.obj >> $(GLGEN)gswin32c.tr
 	echo $(GLOBJ)dwmainc.obj >> $(GLGEN)gswin32c.tr
