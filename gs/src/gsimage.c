@@ -161,8 +161,12 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 
     if (code < 0)
 	return code;
-    if (uses_color)
+    if (uses_color) {
 	gx_set_dev_color(pgs);
+        code = gs_state_color_load(pgs);
+        if (code < 0)
+	    return code;
+    }
     return gx_device_begin_typed_image(dev, (const gs_imager_state *)pgs,
 		NULL, pic, NULL, pgs->dev_color, pcpath, pgs->memory, ppie);
 }
