@@ -575,6 +575,8 @@ pxl_impl_deallocate_interp_instance(
 {
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
 	gs_memory_t *mem = pxli->memory;
+	
+	px_dict_release(&pxli->pxs->builtin_font_dict);
 	/* do total dnit of interp state */
 	px_state_finit(pxli->pxs);
 	/* free halftone cache */

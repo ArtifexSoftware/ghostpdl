@@ -142,6 +142,7 @@ px_state_init(px_state_t *pxs, gs_state *pgs)
 	pxs->end_page = px_default_end_page;
 	pxs->data_source_open = false;
 	px_dict_init(&pxs->stream_dict, pxs->memory, NULL);
+	px_dict_init(&pxs->builtin_font_dict, pxs->memory, px_free_font);
 	px_dict_init(&pxs->font_dict, pxs->memory, px_free_font);
 	pxs->warning_length = 0;
 }

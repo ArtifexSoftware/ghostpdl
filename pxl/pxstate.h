@@ -103,6 +103,7 @@ struct px_state_s {
 
 	/* Font dictionary */
   px_dict_t font_dict;
+  px_dict_t builtin_font_dict;
 	/* Font/character downloading state */
   px_font_t *download_font;
   int font_format;

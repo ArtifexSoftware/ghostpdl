@@ -125,17 +125,25 @@ px_find_existing_font(px_value_t *pfnv, px_font_t **ppxfont,
 	if ( code < 0 )
 	  return code;
 
-	if ( px_dict_find(&pxs->font_dict, pfnv, &pxfont) ) { /* Make sure this isn't a partially defined font */
-	      /* in the process of being downloaded. */
+	if ( px_dict_find(&pxs->font_dict, pfnv, &pxfont) ) { 
+	    /* Make sure this isn't a partially defined font */
 	      if ( ((px_font_t *)pxfont)->pfont )
 		*ppxfont = pxfont;
 	      else {
+		  /* in the process of being downloaded. */
 		  dprintf( "font is being downloaded???\n");
 		  return -1;
 	      }
-	} else {
-	    return -1; /* font not found */
-	}
+	} else if ( px_dict_find(&pxs->builtin_font_dict, pfnv, &pxfont) ) 
+	    if ( ((px_font_t *)pxfont)->pfont )
+		*ppxfont = pxfont;
+	    else {
+		dprintf( "corrupt pxl builtin font\n");
+		return -1;
+	    }
+	else
+	    return -1; /* font not found  or corrupt builtin font */
+	
 	return 0;
 }
 

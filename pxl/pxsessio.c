@@ -191,7 +191,7 @@ px_end_session_cleanup(px_state_t *pxs)
 	px_purge_pattern_cache(pxs, eSessionPattern);
 	/* We believe that streams do *not* persist across sessions.... */
 	px_dict_release(&pxs->stream_dict);
-	/* delete fonts on end of session */
+	/* delete downloaded fonts on end of session */
 	px_dict_release(&pxs->font_dict);
 }
 
@@ -257,7 +257,7 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	    /* install the built in fonts */
 	    if ( pl_load_built_in_fonts(pjl_proc_fontsource_to_path(pxs->pjls, "I"),
 					pxs->memory,
-					&pxs->font_dict,
+					&pxs->builtin_font_dict,
 					pxs->font_dir, 
 					(int)pxfsInternal, 
 					true /* use unicode key names */) < 0 ) {
