@@ -314,6 +314,12 @@ static int display_open(void *handle, void *device)
 	return -1;
     memset(img, 0, sizeof(IMAGE));
 
+    if (first_image == NULL) {
+	gdk_rgb_init();
+	gtk_widget_set_default_colormap(gdk_rgb_get_cmap());
+	gtk_widget_set_default_visual(gdk_rgb_get_visual());
+    }
+
     /* add to list */
     if (first_image)
 	img->next = first_image;
@@ -777,9 +783,6 @@ int main(int argc, char *argv[])
     /* Gtk initialisation */
     gtk_set_locale();
     gtk_init (&argc, &argv);
-    gdk_rgb_init();
-    gtk_widget_set_default_colormap(gdk_rgb_get_cmap());
-    gtk_widget_set_default_visual(gdk_rgb_get_visual());
 
     /* set stdin to non-blocking */
     flags = fcntl(fileno(stdin), F_GETFL, 0);
