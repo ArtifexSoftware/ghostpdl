@@ -78,4 +78,8 @@ gs_function_t *gs_cspace_get_devn_function(const gs_color_space *pcspace);
 int map_devn_using_function(const float *in, float *out,
 			const gs_imager_state *pis, void *data);
 
+/* Serialize a DeviceN map. */
+int gx_serialize_device_n_map(const gs_color_space * pcs, gs_device_n_map * m, stream * s);
+
+
 #endif /* gscdevn_INCLUDED */

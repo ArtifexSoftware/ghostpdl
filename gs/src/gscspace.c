@@ -30,6 +30,7 @@
 #include "gsdevice.h"
 #include "gxdevcli.h"
 #include "gzstate.h"
+#include "stream.h"
 
 /*
  * Define the standard color space types.  We include DeviceCMYK in the base
@@ -46,7 +47,8 @@ private const gs_color_space_type gs_color_space_type_DeviceGray = {
     gx_concretize_DeviceGray, gx_remap_concrete_DGray,
     gx_remap_DeviceGray, gx_no_install_cspace,
     gx_spot_colors_set_overprint,
-    gx_no_adjust_cspace_count, gx_no_adjust_color_count
+    gx_no_adjust_cspace_count, gx_no_adjust_color_count,
+    gx_serialize_cspace_type
 };
 private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gs_color_space_index_DeviceRGB, true, true,
@@ -57,7 +59,8 @@ private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gx_concretize_DeviceRGB, gx_remap_concrete_DRGB,
     gx_remap_DeviceRGB, gx_no_install_cspace,
     gx_spot_colors_set_overprint,
-    gx_no_adjust_cspace_count, gx_no_adjust_color_count
+    gx_no_adjust_cspace_count, gx_no_adjust_color_count,
+    gx_serialize_cspace_type
 };
 
 private cs_proc_set_overprint(gx_set_overprint_DeviceCMYK);
@@ -71,7 +74,8 @@ private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
     gx_concretize_DeviceCMYK, gx_remap_concrete_DCMYK,
     gx_remap_DeviceCMYK, gx_no_install_cspace,
     gx_set_overprint_DeviceCMYK,
-    gx_no_adjust_cspace_count, gx_no_adjust_color_count
+    gx_no_adjust_cspace_count, gx_no_adjust_color_count,
+    gx_serialize_cspace_type
 };
 
 /* Structure descriptors */
@@ -450,6 +454,15 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
 void
 gx_no_adjust_cspace_count(const gs_color_space * pcs, int delta)
 {
+}
+
+/* Serialization. */
+int 
+gx_serialize_cspace_type(const gs_color_space * pcs, stream * s)
+{
+    const gs_color_space_type * type = pcs->type;
+    uint n;
+    return sputs(s, (const byte *)&type->index, sizeof(type->index), &n);
 }
 
 /* GC procedures */

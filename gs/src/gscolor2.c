@@ -26,6 +26,7 @@
 #include "gxcolor2.h"
 #include "gzstate.h"
 #include "gxpcolor.h"
+#include "stream.h"
 
 /* ---------------- General colors and color spaces ---------------- */
 
@@ -159,6 +160,7 @@ private cs_proc_concretize_color(gx_concretize_Indexed);
 private cs_proc_install_cspace(gx_install_Indexed);
 private cs_proc_set_overprint(gx_set_overprint_Indexed);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_Indexed);
+private cs_proc_serialize(gx_serialize_Indexed);
 const gs_color_space_type gs_color_space_type_Indexed = {
     gs_color_space_index_Indexed, false, false,
     &st_color_space_Indexed, gx_num_components_1,
@@ -168,7 +170,8 @@ const gs_color_space_type gs_color_space_type_Indexed = {
     gx_concretize_Indexed, NULL,
     gx_default_remap_color, gx_install_Indexed,
     gx_set_overprint_Indexed,
-    gx_adjust_cspace_Indexed, gx_no_adjust_color_count
+    gx_adjust_cspace_Indexed, gx_no_adjust_color_count,
+    gx_serialize_Indexed
 };
 
 /* GC procedures. */
@@ -493,4 +496,41 @@ gs_cspace_indexed_lookup(const gs_indexed_params *pip, int index,
 	}
 	return 0;
     }
+}
+
+/* ---------------- Serialization. -------------------------------- */
+
+private int 
+gx_serialize_Indexed(const gs_color_space * pcs, stream * s)
+{
+    const gs_indexed_params * p = &pcs->params.indexed;
+    uint n;
+    int code = gx_serialize_cspace_type(pcs, s);
+
+    if (code < 0)
+	return code;
+    code = cs_serialize((const gs_color_space *)&p->base_space, s);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->hival, sizeof(p->hival), &n);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->use_proc, sizeof(p->use_proc), &n);
+    if (code < 0)
+	return code;
+    if (p->use_proc) {
+	code = sputs(s, (const byte *)&p->lookup.map->num_values, 
+		sizeof(p->lookup.map->num_values), &n);
+	if (code < 0)
+	    return code;
+	code = sputs(s, (const byte *)&p->lookup.map->values[0], 
+		sizeof(p->lookup.map->values[0]) * p->lookup.map->num_values, &n);
+    } else {
+	code = sputs(s, (const byte *)&p->lookup.table.size, 
+			sizeof(p->lookup.table.size), &n);
+	if (code < 0)
+	    return code;
+	code = sputs(s, p->lookup.table.data, p->lookup.table.size, &n);
+    }
+    return code;
 }

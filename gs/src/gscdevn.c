@@ -34,6 +34,7 @@
 #include "gzstate.h"
 #include "gxdevcli.h"
 #include "gsovrc.h"
+#include "stream.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -53,6 +54,7 @@ private cs_proc_remap_concrete_color(gx_remap_concrete_DeviceN);
 private cs_proc_install_cspace(gx_install_DeviceN);
 private cs_proc_set_overprint(gx_set_overprint_DeviceN);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_DeviceN);
+private cs_proc_serialize(gx_serialize_DeviceN);
 const gs_color_space_type gs_color_space_type_DeviceN = {
     gs_color_space_index_DeviceN, true, false,
     &st_color_space_DeviceN, gx_num_components_DeviceN,
@@ -62,7 +64,8 @@ const gs_color_space_type gs_color_space_type_DeviceN = {
     gx_concretize_DeviceN, gx_remap_concrete_DeviceN,
     gx_default_remap_color, gx_install_DeviceN,
     gx_set_overprint_DeviceN,
-    gx_adjust_cspace_DeviceN, gx_no_adjust_color_count
+    gx_adjust_cspace_DeviceN, gx_no_adjust_color_count,
+    gx_serialize_DeviceN
 };
 
 /* GC procedures */
@@ -173,6 +176,7 @@ alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
     return 0;
 }
 
+#if 0 /* Unused; Unsupported by gx_serialize_device_n_map. */
 /*
  * Set the DeviceN tint transformation procedure.
  */
@@ -196,6 +200,7 @@ gs_cspace_set_devn_proc(gs_color_space * pcspace,
     pimap->cache_valid = false;
     return 0;
 }
+#endif
 
 /*
  * Check if we are using the alternate color space.
@@ -541,4 +546,39 @@ gx_adjust_cspace_DeviceN(const gs_color_space * pcs, int delta)
     rc_adjust_const(pcs->params.device_n.map, delta, "gx_adjust_DeviceN");
     (*pcs->params.device_n.alt_space.type->adjust_cspace_count)
 	((const gs_color_space *)&pcs->params.device_n.alt_space, delta);
+}
+
+/* ---------------- Serialization. -------------------------------- */
+
+int 
+gx_serialize_device_n_map(const gs_color_space * pcs, gs_device_n_map * m, stream * s)
+{
+    const gs_function_t *pfn;
+
+    if (m->tint_transform != map_devn_using_function)
+	return_error(gs_error_unregistered); /* Unimplemented. */
+    pfn = (const gs_function_t *)m->tint_transform_data;
+    return gs_function_serialize(pfn, s);
+}
+
+private int 
+gx_serialize_DeviceN(const gs_color_space * pcs, stream * s)
+{
+    const gs_device_n_params * p = &pcs->params.device_n;
+    uint n;
+    int code = gx_serialize_cspace_type(pcs, s);
+
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->num_components, sizeof(p->num_components), &n);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->names[0], sizeof(p->names[0]) * p->num_components, &n);
+    if (code < 0)
+	return code;
+    code = cs_serialize((const gs_color_space *)&p->alt_space, s);
+    if (code < 0)
+	return code;
+    return gx_serialize_device_n_map(pcs, p->map, s);
+    /* p->use_alt_cspace isn't a property of the space. */
 }

@@ -21,6 +21,7 @@
 #include "gserrors.h"
 #include "gsparam.h"
 #include "gxfunc.h"
+#include "stream.h"
 
 /* GC descriptors */
 public_st_function();
@@ -201,3 +202,29 @@ fn_common_scale(gs_function_t *psfn, const gs_function_t *pfn,
 	return code;
     return 0;
 }
+
+/* Serialize. */
+int
+fn_common_serialize(const gs_function_t * pfn, stream *s)
+{
+    uint n;
+    const gs_function_params_t * p = &pfn->params;
+    int code = sputs(s, (const byte *)&pfn->head.type, sizeof(pfn->head.type), &n);
+
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&pfn->head.is_monotonic, sizeof(pfn->head.is_monotonic), &n);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->m, sizeof(p->m), &n);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->Domain[0], sizeof(p->Domain[0]) * p->m, &n);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->n, sizeof(p->n), &n);
+    if (code < 0)
+	return code;
+    return sputs(s, (const byte *)&p->Range[0], sizeof(p->Range[0]) * p->n, &n);
+}
+

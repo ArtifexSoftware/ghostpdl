@@ -38,6 +38,11 @@ typedef struct gx_device_color_s gx_device_color;
 typedef struct gx_device_s gx_device;
 #endif
 
+#ifndef stream_DEFINED
+#  define stream_DEFINED
+typedef struct stream_s stream;
+#endif
+
 /* Color space types (classes): */
 /*typedef struct gs_color_space_type_s gs_color_space_type; */
 struct gs_color_space_type_s {
@@ -196,6 +201,17 @@ struct gs_color_space_type_s {
 #define cs_adjust_counts(pgs, delta)\
   (cs_adjust_color_count(pgs, delta), cs_adjust_cspace_count(pgs, delta))
 
+    /* Serialization. */
+    /*
+     * Note : We don't include *(pcs)->type into serialization,
+     * because we assume it is a static constant to be processed separately.
+     */
+
+#define cs_proc_serialize(proc)\
+  int proc(const gs_color_space *, stream *)
+#define cs_serialize(pcs, s)\
+  (*(pcs)->type->serialize)(pcs, s)
+	cs_proc_serialize((*serialize));
 };
 
 /* Standard color space structure types */
@@ -224,6 +240,7 @@ cs_proc_install_cspace(gx_no_install_cspace);
 cs_proc_set_overprint(gx_spot_colors_set_overprint);
 cs_proc_adjust_cspace_count(gx_no_adjust_cspace_count);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
+cs_proc_serialize(gx_serialize_cspace_type);
 
 /*
  * Define the implementation procedures for the standard device color

@@ -74,4 +74,7 @@ int fn_scale_pairs(const float **ppvalues, const float *pvalues, int npairs,
 int fn_common_scale(gs_function_t *psfn, const gs_function_t *pfn,
 		    const gs_range_t *pranges, gs_memory_t *mem);
 
+/* Serialize. */
+int fn_common_serialize(const gs_function_t * pfn, stream *s);
+
 #endif /* gxfunc_INCLUDED */

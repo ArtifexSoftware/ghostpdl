@@ -22,6 +22,11 @@
 
 #include "gstypes.h"		/* for gs_range_t */
 
+#ifndef stream_DEFINED
+#  define stream_DEFINED
+typedef struct stream_s stream;
+#endif
+
 /* ---------------- Types and structures ---------------- */
 
 /*
@@ -120,6 +125,11 @@ typedef FN_FREE_PARAMS_PROC((*fn_free_params_proc_t));
   void proc(gs_function_t * pfn, bool free_params, gs_memory_t * mem)
 typedef FN_FREE_PROC((*fn_free_proc_t));
 
+/* Serialize a function. */
+#define FN_SERIALIZE_PROC(proc)\
+  int proc(const gs_function_t * pfn, stream *s)
+typedef FN_SERIALIZE_PROC((*fn_serialize_proc_t));
+
 /* Define the generic function structures. */
 typedef struct gs_function_procs_s {
     fn_evaluate_proc_t evaluate;
@@ -129,6 +139,7 @@ typedef struct gs_function_procs_s {
     fn_make_scaled_proc_t make_scaled;
     fn_free_params_proc_t free_params;
     fn_free_proc_t free;
+    fn_serialize_proc_t serialize;
 } gs_function_procs_t;
 typedef struct gs_function_head_s {
     gs_function_type_t type;
@@ -220,5 +231,9 @@ int alloc_function_array(uint count, gs_function_t *** pFunctions,
 /* Free a function's implementation, optionally including its parameters. */
 #define gs_function_free(pfn, free_params, mem)\
   ((pfn)->head.procs.free(pfn, free_params, mem))
+
+/* Serialize a function. */
+#define gs_function_serialize(pfn, s)\
+  ((pfn)->head.procs.serialize(pfn, s))
 
 #endif /* gsfunc_INCLUDED */

@@ -26,12 +26,14 @@
 #include "gsovrc.h"
 #include "gsstate.h"
 #include "gzstate.h"
+#include "stream.h"
 
 /* Define the DevicePixel color space type. */
 private cs_proc_restrict_color(gx_restrict_DevicePixel);
 private cs_proc_remap_concrete_color(gx_remap_concrete_DevicePixel);
 private cs_proc_concretize_color(gx_concretize_DevicePixel);
 private cs_proc_set_overprint(gx_set_overprint_DevicePixel);
+private cs_proc_serialize(gx_serialize_DevicePixel);
 private const gs_color_space_type gs_color_space_type_DevicePixel = {
     gs_color_space_index_DevicePixel, true, false,
     &st_base_color_space, gx_num_components_1,
@@ -41,7 +43,8 @@ private const gs_color_space_type gs_color_space_type_DevicePixel = {
     gx_concretize_DevicePixel, gx_remap_concrete_DevicePixel,
     gx_default_remap_color, gx_no_install_cspace,
     gx_set_overprint_DevicePixel,
-    gx_no_adjust_cspace_count, gx_no_adjust_color_count
+    gx_no_adjust_cspace_count, gx_no_adjust_color_count,
+    gx_serialize_DevicePixel
 };
 
 /* Initialize a DevicePixel color space. */
@@ -108,4 +111,19 @@ gx_set_overprint_DevicePixel(const gs_color_space * pcs, gs_state * pgs)
     params.retain_any_comps = false;
     pgs->effective_overprint_mode = 0;
     return gs_state_update_overprint(pgs, &params);
+}
+
+
+/* ---------------- Serialization. -------------------------------- */
+
+private int 
+gx_serialize_DevicePixel(const gs_color_space * pcs, stream * s)
+{
+    const gs_device_pixel_params * p = &pcs->params.pixel;
+    uint n;
+    int code = gx_serialize_cspace_type(pcs, s);
+
+    if (code < 0)
+	return code;
+    return sputs(s, (const byte *)&p->depth, sizeof(p->depth), &n);
 }
