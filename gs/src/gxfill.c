@@ -844,6 +844,64 @@ free_line_list(ll_ptr ll)
     free_all_margins(ll);
 }
 
+#   if PSEUDO_RASTERIZATION
+
+/* Compute contour area 
+ * (2 / fixed_1 ^ 2 of square pixels).
+ */
+private double
+compute_contour_area(subpath *psub)
+{
+    double area = 0;
+    segment *pseg = (segment *)psub, *pseg_prev = psub->last;
+
+    for (;; pseg_prev = pseg, pseg = pseg->next) {
+	double dx = pseg->pt.x - pseg_prev->pt.x;
+	double dy = pseg->pt.y - pseg_prev->pt.y;
+	double vp = pseg->pt.x * dy - pseg->pt.y * dx;
+
+	area += vp;
+	if (pseg == psub->last)
+	    break;
+    }
+    return area;
+    /* In general, the products may be truncated here to 1/16 of square pixel.
+     * We believe that such precision is enough. We could improve
+     * the precision with pre-computing the path weight center.
+     * Perhaps if the precision is lost, the sign of area may be random.
+     * This isn't good, but we believe that it must not happen.
+     * fixme : It may be slow on processors which have no floating point.
+     */
+}
+
+/* Compute sign of the maximal contour. */
+private int
+compute_max_contour_sign(gx_path *ppath)
+{
+    /* According to specification all outer contours in characters 
+     * must be positive. Perhaps a font in comparefiles/a.pdf is not such.
+     * The non-zero winding rule implies that inner contours have opposite 
+     * direction to outer ones. We compute sign of the outermost contour,
+     * and if it is in wrong direction, we reverse all horizintal lines
+     * in all contours to allow add_horiz_mrgine to determine properly, 
+     * at which side of the line the spot interior appears.
+     */
+
+    subpath *psub = ppath->first_subpath;
+    double max_area = 0;
+
+    for (; psub != NULL; psub = (subpath *)psub->last->next) {
+	double a = compute_contour_area(psub);
+
+	if (any_abs(a) > any_abs(max_area)) {
+	    max_area = a;
+	}
+    }
+    return max_area < 0 ? -1 : max_area > 0 ? 1 : 0;
+}
+
+#   endif
+
 /*
  * Construct a Y-sorted list of segments for rasterizing a path.  We assume
  * the path is non-empty.  Only include non-horizontal lines or (monotonic)
@@ -861,7 +919,9 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
     /* fixed xmax = pbox->q.x; *//* not currently used */
     fixed ymax = pbox->q.y;
 #   if PSEUDO_RASTERIZATION
-    const bool character = !(adjust_below | adjust_above);
+    const bool small_character = !(adjust_below | adjust_above) &&
+		    pbox->q.x - pbox->p.x < int2fixed(SMALL_CHARACTER);
+    int max_contour_sign;
 #   endif
     int code;
 
@@ -873,6 +933,9 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
 	int first_dir, prev_dir;
 	segment *prev;
 
+#	if PSEUDO_RASTERIZATION
+	max_contour_sign = -2 /* unknown */;
+#	endif
 	if (plast->type != s_line_close) {
 	    /* Create a fake s_line_close */
 	    line_close_segment *lp = &psub->closer;
@@ -917,13 +980,25 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
 		/* if they would color any pixels. */
 		if (
 #		    if PSEUDO_RASTERIZATION
-		    character ||    /* Since TT characters are not hinted. */
+		    (small_character && (prev->pt.x != pseg->pt.x)) ||  /* Since TT characters are not hinted. */
 				    /* Note this disturbs the benchmarking. */
 #		    endif
 		    fixed2int_pixround(iy - adjust_below) <
 		    fixed2int_pixround(iy + adjust_above)
 		    ) {
 		    INCR(horiz);
+#		    if PSEUDO_RASTERIZATION
+		    if (small_character && max_contour_sign == -2)
+			max_contour_sign = compute_max_contour_sign(ppath);
+		    if (small_character && max_contour_sign < 0) {
+			/* Add reversed line, because add_horiz_margin needs a right direction. */
+			if ((code = add_y_line(pseg, prev, 
+					       DIR_HORIZONTAL, ll)) < 0
+			    )
+			    return code;
+		    } else if (!small_character || max_contour_sign > 0)
+			/* Skip zero area contours from characters. */
+#		    endif
 		    if ((code = add_y_line(prev, pseg,
 					   DIR_HORIZONTAL, ll)) < 0
 			)
@@ -991,8 +1066,12 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 	    y_start = this.y;	/* = prev.y */
 	    alp->start = prev;
 	    alp->end = this;
+#	    if !DROPOUT_PREVINTION
 	    /* Don't need to set dx or y_fast_max */
 	    alp->pseg = prev_lp;	/* may not need this either */
+#	    else
+	    alp->pseg = 0;	/* safety (the line may be reversed) */
+#	    endif
 	    break;
 	default:		/* can't happen */
 	    return_error(gs_error_unregistered);
@@ -1120,7 +1199,7 @@ private inline void init_section(section *sect, int i0, int i1)
 {   int i;
 
     for (i = i0; i < i1; i++) {
-#	if CHECK_SPOT_CONTIGUITY
+#	if ADJUST_SERIF && CHECK_SPOT_CONTIGUITY
 	sect[i].x0 = fixed_1;
 	sect[i].x1 = 0;
 #	endif
@@ -1363,6 +1442,7 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
 		if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
 		    *b = h;
 	    }
+#	    if ADJUST_SERIF
 	    {   int x_pixel = int2fixed(i + ll->bbox_left);
 		int xl = max(xmin - x_pixel, 0);
 		int xu = min(xmax - x_pixel, fixed_1);
@@ -1371,6 +1451,7 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
 		s->x1 = max(s->x1, xu);
 		x_pixel+=0; /* Just a place for breakpoint */
 	    }
+#	    endif
 	}
 #	endif
     if (i > i0)
@@ -1432,11 +1513,11 @@ private int complete_margin(line_list * ll, active_line * flp, active_line * alp
 {   
     int i, code;
     section *sect = ll->margin_set1.sect;
-
-#   if !CHECK_SPOT_CONTIGUITY
     int i0 = fixed2int_var_pixround(flp->x_current);
     int i1 = fixed2int_var_pixround(alp->x_current);
     int ii0 = max(0, i0 - ll->bbox_left), ii1 = min(i1 - ll->bbox_left, ll->bbox_width);
+
+#   if !CHECK_SPOT_CONTIGUITY
 	if (ii0 < ii1) {
 	    for (i = ii0; i < ii1; i++)
 		sect[i].y0 = sect[i].y1 = -2;
@@ -1451,6 +1532,7 @@ private int complete_margin(line_list * ll, active_line * flp, active_line * alp
 	int imax = fixed2int_ceiling(xmax) - ll->bbox_left;
 
 	assert(imin >= 0 && imax <= ll->bbox_width);
+#	if ADJUST_SERIF && CHECK_SPOT_CONTIGUITY
 	for (i = imin; i < imax; i++) {
 	    section *s = &sect[i];
 	    int x_pixel = int2fixed(i + ll->bbox_left);
@@ -1459,8 +1541,10 @@ private int complete_margin(line_list * ll, active_line * flp, active_line * alp
 
 	    s->x0 = min(s->x0, xl);
 	    s->x1 = max(s->x1, xu);
-	    sect[i].y0 = sect[i].y1 = -2;
 	}
+	for (i = ii0; i < ii1; i++)
+	    sect[i].y0 = sect[i].y1 = -2;
+#	endif
 	code = store_margin(ll, &ll->margin_set1, imin, imax);
 	if (code < 0)
 	    return code;
