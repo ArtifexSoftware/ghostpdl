@@ -8,32 +8,50 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: pbm2png.c,v 1.1 2002/06/04 16:51:02 giles Exp $
+    $Id: pbm2png.c,v 1.2 2002/07/08 14:11:36 giles Exp $
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
+
+#include "jbig2.h"
 #include "jbig2_image.h"
 
 int main(int argc, char *argv[])
 {
-	Jbig2Image *image;
-        int error;
+    Jbig2Ctx *ctx;
+    Jbig2Image *image;
+    int error;
+    
+    /* we need a context for the allocators */
+    ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
 
-	image = jbig2_image_read_pbm_file(argv[1]);
-	if(image == NULL) {
-            fprintf(stderr, "error reading pbm file '%s'\n", argv[1]);
-            return 1;
-        } else {
-            fprintf(stderr, "converting %dx%d image to png format\n", image->width, image->height);
-        }
-        
-        error = jbig2_image_write_png_file(image, argv[2]);
-        if (error) {
-            fprintf(stderr, "error writing png file '%s' error %d\n", argv[2], error);
-	}
+    if (argc != 3) {
+        fprintf(stderr, "usage: %s <in.pbm> <out.png>\n\n", argv[0]);
+        return 1;
+    }
+    
+    image = jbig2_image_read_pbm_file(ctx, argv[1]);
+    if(image == NULL) {
+        fprintf(stderr, "error reading pbm file '%s'\n", argv[1]);
+        return 1;
+    } else {
+        fprintf(stderr, "converting %dx%d image to png format\n", image->width, image->height);
+    }
+    
+    error = jbig2_image_write_png_file(image, argv[2]);
+    if (error) {
+        fprintf(stderr, "error writing png file '%s' error %d\n", argv[2], error);
+    }
 
-	return (error);
+    return (error);
 }
