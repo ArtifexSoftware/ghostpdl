@@ -5,6 +5,7 @@
 /* pccrd.c - PCL interface to the graphic library color rendering dictionary */
 #include "string_.h"
 #include "gx.h"
+#include "gxdevcli.h"
 #include "gsmatrix.h"
 #include "gsmemory.h"
 #include "gsstruct.h"
@@ -164,7 +165,7 @@ read_device_CRD(
     pcl_state_t *   pcs
 )
 {
-    gx_device *     pdev = gs_currentdevice(pcs->pgs);
+    gx_device *     pdev = pcl_get_target_device(pcs);
     gs_c_param_list list;
     gs_param_string dstring;
     char            nbuff[64];  /* ample size */

@@ -1445,7 +1445,7 @@ pcl_ht_init_render_methods(
 )
 {
     int             i;
-    gx_device *     pcur_dev = gs_currentdevice(pcs->pgs);
+    gx_device *     pcur_dev = pcl_get_target_device(pcs);
     gs_c_param_list list;
 
     ordered_dither.type = pcl_halftone_Threshold;

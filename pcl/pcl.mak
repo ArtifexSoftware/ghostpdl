@@ -116,6 +116,7 @@ pcommand_h  = $(PCLSRC)pcommand.h \
 
 pcstate_h   = $(PCLSRC)pcstate.h  \
               $(gx_h)             \
+	      $(gxdevice_h)	  \
               $(scommon_h)        \
               $(gsdcolor_h)       \
               $(gschar_h)         \

@@ -8,6 +8,7 @@
 #  define pcstate_INCLUDED
 
 #include "gx.h"
+#include "gxdevice.h"
 #include "scommon.h"
 #include "gsdcolor.h"		/* for gx_ht_tile */
 #include "gschar.h"
@@ -257,6 +258,15 @@ struct pcl_state_s {
        the margins on A4 paper to support 80 10 pitch characters but
        it appears to affect letter paper as well */
     bool              wide_a4;
+    /* We store away the target device in the pcl state, since the gs
+       library expects put_params to be applied to the real device and
+       not pcl forwarding devices */
+    gx_device *ptarget_device;
 };
+
+/* accessor functions for the pcl target device.  These live in
+   pcmain.c for now */
+void pcl_set_target_device(P2(pcl_state_t *pcs, gx_device *pdev));
+gx_device *pcl_get_target_device(P1(pcl_state_t *pcs));
 
 #endif 						/* pcstate_INCLUDED */

@@ -94,6 +94,22 @@ pcl_gstate_client_alloc(
     return (void *)1;
 }
 
+/*
+ * set and get for pcl's target device.  This is the device at the end
+ * of the pipeline.  
+ */
+   void
+pcl_set_target_device(pcl_state_t *pcs, gx_device *pdev)
+{
+    pcs->ptarget_device = pdev;
+}
+
+  gx_device *
+pcl_get_target_device(pcl_state_t *pcs)
+{
+    return pcs->ptarget_device;
+}
+
   private int
 pcl_gstate_client_copy_for(
     void *                  to,
@@ -147,10 +163,20 @@ main(
     imem->space = 0;		/****** WRONG ******/
     pl_main_init(&inst, mem);
     pl_main_process_options(&inst, &args, argv, argc);
+    /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
+    pcls = (pcl_state_t *)gs_alloc_bytes( mem,
+                                          sizeof(pcl_state_t),
+    				          "main(pcl_state_t)"
+                                          );
+    /* start off setting everything to 0.  NB this should not be here
+       at all, but I don't have time to analyze the consequences of
+       removing it. */
+    memset(pcls, 0, sizeof(pcl_state_t));
 
     /* call once to set up the free list handlers */
     gs_reclaim(&inst.spaces, true);
-
+    pl_main_make_gstate(&inst, &pgs);
+    pcl_set_target_device(pcls, inst.device);
     /* Insert a bounding box device so we can detect empty pages. */
     {
         gx_device_bbox *    bdev = gs_alloc_struct_immovable(
@@ -165,13 +191,6 @@ main(
         inst.device = (gx_device *)bdev;
     }
 
-    pl_main_make_gstate(&inst, &pgs);
-
-    /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
-    pcls = (pcl_state_t *)gs_alloc_bytes( mem,
-                                          sizeof(pcl_state_t),
-    				          "main(pcl_state_t)"
-                                          );
     pcl_init_state(pcls, mem);
     gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
     gs_clippath(pgs);

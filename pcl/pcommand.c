@@ -59,9 +59,11 @@ end_param1(
     int                 code;
 
     gs_c_param_list_read(alist);
-    code = gs_putdeviceparams( gs_currentdevice(pcs->pgs),
-                               (gs_param_list *)alist
-                               );
+    /* put the parameters using the target device, not the forwarding
+       device */
+    code = gs_putdeviceparams(pcl_get_target_device(pcs),
+                              (gs_param_list *)alist
+                              );
     gs_c_param_list_release(alist);
 
     return code;
@@ -174,9 +176,6 @@ pcl_init_state(
     gs_memory_t *   pmem
 )
 {
-    /* start off setting everything to 0 */
-    memset(pcs, 0, sizeof(pcl_state_t));
-
     /* some elementary fields */
     pcs->memory = pmem;
     pcs->num_copies = 1;
