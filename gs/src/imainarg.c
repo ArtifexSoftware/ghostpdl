@@ -193,7 +193,10 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
     while ((arg = arg_next(&args)) != 0) {
 	switch (*arg) {
 	    case '-':
-		if (swproc(minst, arg, &args) < 0)
+		code = swproc(minst, arg, &args);
+		if (code < 0)
+		    return code;
+		if (code > 0)
 		    fprintf(minst->fstdout,
 			    "Unknown switch %s - ignoring\n", arg);
 		break;
@@ -217,12 +220,14 @@ gs_main_run_start(gs_main_instance * minst)
     run_string(minst, "systemdict /start get exec", runFlush);
 }
 
-/* Process switches */
+/* Process switches.  Return 0 if processed, 1 for unknown switch, */
+/* <0 if error. */
 private int
 swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
 {
     char sw = arg[1];
     ref vtrue;
+    int code;
 #undef initial_enter_name
 #define initial_enter_name(nstr, pvalue)\
   i_initial_enter_name(minst->i_ctx_p, nstr, pvalue)
@@ -231,7 +236,7 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
     arg += 2;			/* skip - and letter */
     switch (sw) {
 	default:
-	    return -1;
+	    return 1;
 	case 0:		/* read stdin as a file char-by-char */
 	    /* This is a ******HACK****** for Ghostview. */
 	    minst->stdin_is_interactive = true;
@@ -241,8 +246,12 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
 run_stdin:
 	    minst->run_start = false;	/* don't run 'start' */
 	    /* Set NOPAUSE so showpage won't try to read from stdin. */
-	    swproc(minst, "-dNOPAUSE", pal);
-	    gs_main_init2(minst);	/* Finish initialization */
+	    code = swproc(minst, "-dNOPAUSE", pal);
+	    if (code)
+		return code;
+	    code = gs_main_init2(minst);	/* Finish initialization */
+	    if (code < 0)
+		return code;
 	    gs_stdin_is_interactive = minst->stdin_is_interactive;
 	    run_string(minst, ".runstdin", runFlush);
 	    break;
@@ -260,7 +269,9 @@ run_stdin:
 		    gs_exit(1);
 		}
 		psarg = arg_heap_copy(psarg);
-		gs_main_init2(minst);
+		code = gs_main_init2(minst);
+		if (code < 0)
+		    return code;
 		run_string(minst, "userdict/ARGUMENTS[", 0);
 		while ((arg = arg_next(pal)) != 0)
 		    runarg(minst, "", arg_heap_copy(arg), "", runInit);
@@ -299,7 +310,9 @@ run_stdin:
 	    {
 		bool ats = pal->expand_ats;
 
-		gs_main_init2(minst);
+		code = gs_main_init2(minst);
+		if (code < 0)
+		    return code;
 		pal->expand_ats = false;
 		while ((arg = arg_next(pal)) != 0) {
 		    char *sarg;
@@ -548,7 +561,9 @@ run_stdin:
 	     * run in place of the normal interpreter code.
 	     */
 	case 'X':
-	    gs_main_init2(minst);
+	    code = gs_main_init2(minst);
+	    if (code < 0)
+		return code;
 	    {
 		int xec;	/* exit_code */
 		ref xeo;	/* error_object */
