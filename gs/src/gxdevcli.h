@@ -1235,9 +1235,9 @@ typedef enum {
 typedef struct gs_fill_attributes_s {
       gx_device *pdev; 
       const gs_fixed_rect *clip;
-      const gx_device_halftone *ht;
       bool swap_axes;
-      gs_logical_operation_t lop;
+      const gx_device_halftone *ht; /* Reserved for possible use in future. */
+      gs_logical_operation_t lop; /* Reserved for possible  use in future. */
 } gs_fill_attributes;
 
 /* Fill a linear color scanline. */

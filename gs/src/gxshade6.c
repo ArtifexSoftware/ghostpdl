@@ -1758,9 +1758,9 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 
 	    fa.pdev = pdev;
 	    fa.clip = &pfs->rect;
-	    fa.ht = NULL; /* fixme */
+	    fa.ht = NULL;
 	    fa.swap_axes = false;
-	    fa.lop = 0; /* fixme */
+	    fa.lop = 0;
 	    code = patch_color_to_device_color(pfs, &p0->c, &dc[0]);
 	    if (code < 0)
 		return code;
@@ -1971,6 +1971,41 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
     le.end.x = q1.x - adjust;
     re.end.x = q1.x + adjust;
     le.end.y = re.end.y = q1.y + adjust;
+#   if USE_LINEAR_COLOR_PROCS
+	if (!pfs->halftoned && 
+		pfs->dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN) {
+	    gx_device *pdev = pfs->dev;
+	    frac32 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    gs_fill_attributes fa;
+	    gx_device_color dc[2];
+	    int code;
+
+	    fa.pdev = pdev;
+	    fa.clip = &pfs->rect;
+	    fa.ht = NULL;
+	    fa.swap_axes = swap_axes;
+	    fa.lop = 0;
+	    code = patch_color_to_device_color(pfs, cc0, &dc[0]);
+	    if (code < 0)
+		return code;
+	    if (dc[0].type == &gx_dc_type_data_pure) {
+		dc2fc(pfs, dc[0].colors.pure, fc[0]);
+		code = patch_color_to_device_color(pfs, cc1, &dc[1]);
+		if (code < 0)
+		    return code;
+		dc2fc(pfs, dc[1].colors.pure, fc[1]);
+		code = dev_proc(pdev, fill_linear_color_trapezoid)(&fa, 
+				&le.start, &le.end, &re.start, &re.end, 
+				fc[0], fc[1], NULL, NULL);
+		if (code == 1)
+		    return 0; /* The area is filled. */
+		if (code < 0)
+		    return code;
+		else /* code == 0, the device requested to decompose the area. */ 
+		    return_error(gs_error_unregistered); /* Must noty happen. */
+	    }
+	}
+#   endif
     return decompose_linear_color(pfs, &le, &re, le.start.y, le.end.y, swap_axes, cc0, cc1);
 }
 
@@ -2433,16 +2468,15 @@ triangle_by_4(patch_fill_state_t *pfs,
 {
     shading_vertex_t p01, p12, p20;
     wedge_vertex_list_t L01, L12, L20, L[3];
-    bool subdivide_to_constant_color = true;
     int code;
     
-    if (sd < fixed_1 * 4)
-	return constant_color_triangle(pfs, p2, p0, p1);
     code = try_device_linear_color(pfs, false, p0, p1, p2);
     switch(code) {
 	case 0: /* The area is filled. */
 	    return 0;
 	case 2: /* decompose to constant color areas */
+	    if (sd < fixed_1 * 4)
+		return constant_color_triangle(pfs, p2, p0, p1);
 	    if (pfs->Function != NULL) {
 		double d01 = color_span(pfs, &p1->c, &p0->c);
 		double d12 = color_span(pfs, &p2->c, &p1->c);
@@ -2456,6 +2490,8 @@ triangle_by_4(patch_fill_state_t *pfs,
 		return constant_color_triangle(pfs, p2, p0, p1);
 	    break;
 	case 1: /* decompose to linear color areas */
+	    if (sd < fixed_1)
+		return constant_color_triangle(pfs, p2, p0, p1);
 	    break;
 	default: /* Error. */
 	    return code;
@@ -2700,10 +2736,11 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
     D0111 = color_span(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
     D0011 = color_span(pfs, &p->p[0][0]->c, &p->p[1][1]->c);
     D0110 = color_span(pfs, &p->p[0][1]->c, &p->p[1][0]->c);
-    if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness &&
-	D0010 <= pfs->smoothness && D0111 <= pfs->smoothness &&
-	D0011 <= pfs->smoothness && D0110 <= pfs->smoothness)
-	return color_change_small;
+    if (!USE_LINEAR_COLOR_PROCS || pfs->halftoned)
+	if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness &&
+	    D0010 <= pfs->smoothness && D0111 <= pfs->smoothness &&
+	    D0011 <= pfs->smoothness && D0110 <= pfs->smoothness)
+	    return color_change_small;
     if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness) {
 	*uv = false;
 	return color_change_gradient;

@@ -25,12 +25,10 @@
 #define USE_LINEAR_COLOR_PROCS 0 /* Old code = 0, new code = 1. */
 
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
-/* The code QUADRANGLES 1 appears unuseful without having a low level function
-   for filling a trapezoid with a linear color. Maybe we'll define sunch function later,
-   therefore we keep this branch. It stores a valuable code for constant_color_quadrangle,
+/* The code QUADRANGLES 1 appears unuseful.
+   We keep it because it stores a valuable code for constant_color_quadrangle,
    which decomposes a random quadrangle into 3 or 4 trapezoids.
-   Without the linear color function, the color approximation looks
-   worse than with triangles, and works some slower.
+   The color approximation looks worse than with triangles, and works some slower.
  */
 #define INTERPATCH_PADDING (fixed_1 / 8) /* Emulate a trapping for poorly designed documents. */
 /* When INTERPATCH_PADDING > 0, it generates paddings between patches.
