@@ -51,7 +51,6 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 #		also good for DeskJet 510, 520, and 540C (black only)
 #	cdj500	H-P DeskJet 500C (same as cdjcolor)
 #	cdj550	H-P DeskJet 550C/560C/660C/660Cse
-#	cdj970	H-P DeskJet 970Cxi
 #	cljet5	H-P Color LaserJet 5/5M (see below for some notes)
 #	cljet5c  H-P Color LaserJet 5/5M (see below for some notes)
 #	coslw2p  CoStar LabelWriter II II/Plus
@@ -67,7 +66,6 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 #	eps9high  Epson-compatible 9-pin, interleaved lines
 #		(triple resolution)
 #	epsonc	Epson LQ-2550 and Fujitsu 3400/2400/1200 color printers
-#	hl1250  Brother HL-1250
 #	hl7x0   Brother HL 720 and HL 730 (HL 760 is PCL compliant);
 #		also usable with the MFC6550MC Fax Machine.
 #	ibmpro  IBM 9-pin Proprinter
@@ -486,53 +484,6 @@ $(DD)uniprint.dev : $(uniprint_) $(DD)page.dev
 $(GLOBJ)gdevupd.$(OBJ) : $(GLSRC)gdevupd.c $(PDEVH) $(gsparam_h)
 	$(GLCC) $(GLO_)gdevupd.$(OBJ) $(C_) $(GLSRC)gdevupd.c
 
-### -------------- cdj850 - HP 850c Driver under development ------------- ###
-### For questions about this driver, please contact:                       ###
-###       Uli Wortmann (uliw@erdw.ethz.ch)                                 ###
-
-cdeskjet8_=$(GLOBJ)gdevcd8.$(OBJ) $(HPPCL)
-
-$(DD)cdj850.dev : $(cdeskjet8_) $(DD)page.dev
-	$(SETPDEV2) $(DD)cdj850 $(cdeskjet8_)
-
-$(DD)cdj670.dev : $(cdeskjet8_) $(DD)page.dev
-	$(SETPDEV2) $(DD)cdj670 $(cdeskjet8_)
-
-$(DD)cdj890.dev : $(cdeskjet8_) $(DD)page.dev
-	$(SETPDEV2) $(DD)cdj890 $(cdeskjet8_)
-
-$(DD)cdj1600.dev : $(cdeskjet8_) $(DD)page.dev
-	$(SETPDEV2) $(DD)cdj1600 $(cdeskjet8_)
-
-$(GLOBJ)gdevcd8.$(OBJ) : $(GLSRC)gdevcd8.c $(PDEVH) $(math__h)\
- $(gsparam_h) $(gxlum_h) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevcd8.$(OBJ) $(C_) $(GLSRC)gdevcd8.c
-
-### -------------- cdj880 - HP 880c Driver under development ------------- ###
-### Since this driver is in the development phase it is not distributed    ###
-### with Ghostscript, but is available from                                ###
-###   http://www.proaxis.com/~mgelhaus/linux/software/hp880c/hp880c.html   ###
-### For questions about this driver, please contact:                       ###
-###       Matthew Gelhaus (mgelhaus@proaxis.com)                           ###
-
-### NOTE:  Depends on the presence of the cdj850 section above.            ###
-
-$(DD)cdj880.dev : $(cdeskjet8_) $(DD)page.dev
-	$(SETPDEV2) $(DD)cdj880 $(cdeskjet8_)
-
-### ------------- cdj970 - HP 970Cxi Driver under development ------------- ###
-### For questions about this driver, please contact:                        ###
-###            Rene Harsch (rene@harsch.net)                                ###
-
-cdeskjet9_=$(GLOBJ)gdevdj9.$(OBJ) $(HPPCL)
-
-$(DD)cdj970.dev : $(cdeskjet9_) $(DD)page.dev
-	$(SETPDEV2) $(DD)cdj970 $(cdeskjet9_)
-
-$(GLOBJ)gdevdj9.$(OBJ) : $(GLSRC)gdevdj9.c $(PDEVH) $(math__h) $(string__h)\
- $(gsparam_h) $(gxlum_h) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevdj9.$(OBJ) $(C_) $(GLSRC)gdevdj9.c
-
 ### ------------ The H-P PaintJet color printer device ----------------- ###
 ### Note: this driver also supports the DEC LJ250 color printer, which   ###
 ###       has a PaintJet-compatible mode, and the PaintJet XL.           ###
@@ -552,19 +503,6 @@ $(DD)paintjet.dev : $(PJET) $(DD)page.dev
 
 $(DD)pjetxl.dev : $(PJET) $(DD)page.dev
 	$(SETPDEV) $(DD)pjetxl $(PJET)
- 
-### -------------------- The Brother HL-1250 printer -------------------- ###
-### Brother HL-1250 (may work with some other models too) -               ###
-### ljet4-compatible, plus support for source tray selection and special  ###
-### 1200x600 dpi mode.  For questions about this driver, please contact   ###
-###       Marek Michalkiewicz <marekm@linux.org.pl>                       ###
-
-hl1250_=$(GLOBJ)gdevhl12.$(OBJ) $(HPDLJM)
-$(DD)hl1250.dev : $(hl1250_) $(DD)page.dev
-	$(SETPDEV) $(DD)hl1250 $(hl1250_)
-
-$(GLOBJ)gdevhl12.$(OBJ) : $(GLSRC)gdevhl12.c $(PDEVH) $(gdevdljm_h)
-	$(GLCC) $(GLO_)gdevhl12.$(OBJ) $(C_) $(GLSRC)gdevhl12.c
 
 ###--------------------- The Brother HL 7x0 printer --------------------- ### 
 ### Note: this driver was contributed by users: please contact            ###
