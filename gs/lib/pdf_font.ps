@@ -1171,7 +1171,6 @@ readonly def
 	3 1 roll pop pop
       } {
 	dup /FontFile knownoget
-	{ exch pop readtype1 }
 	{ dup /Length oget 0 eq
 	  { pop pop dup /Subtype get fonttypeprocs exch get exec }
 	  { exch pop readtype1 }
