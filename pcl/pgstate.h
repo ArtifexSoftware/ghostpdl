@@ -159,6 +159,7 @@ typedef struct pcl_hpgl_state_s {
 	pcl_font_selection_t font_selection[2];
 	int font_selected;	/* 0 or 1 */
 	pl_font_t *font;	/* 0 means recompute from params */
+	pl_symbol_map_t *map;	/* map for current font */
 	struct ch_ {
 	  gs_point direction;
 	  bool direction_relative;
@@ -170,13 +171,12 @@ typedef struct pcl_hpgl_state_s {
 	  bool size_set;
 	  hpgl_real_t slant;
 	  enum {
-	    hpgl_char_solid = -1,
 	    hpgl_char_solid_edge = 0,
 	    hpgl_char_edge = 1,
 	    hpgl_char_fill = 2,
 	    hpgl_char_fill_edge = 3
 	  } fill_mode;
-	  int edge_pen;
+	  int edge_pen;		/* 0 = no edge */
 	} character;
 	struct lb_ {
 	  int origin;
@@ -186,11 +186,9 @@ typedef struct pcl_hpgl_state_s {
              parser can recall hpgl_LB for more data.  So for
              simplicity we make them part of the global state */
 #define hpgl_char_count 128     /* initial buffer size */
-	  byte *line_ptr;       /* start of line buffer pointer */
-	  byte *char_ptr;      /* pointer to the current character */
-	  unsigned int char_count;  /* count of chars in the buffer */
+	  byte *buffer;         /* start of line buffer pointer */
           unsigned int buffer_size; /* size of the current buffer */
-	  hpgl_real_t length; /* length of the current label string */
+	  unsigned int char_count;  /* count of chars in the buffer */
 	} label;
 	bool transparent_data;
 	uint font_id[2];

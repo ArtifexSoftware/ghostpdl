@@ -3,17 +3,16 @@
  */
 
 /* pgchar.c */
-/* HP-GL/2 character commands */
+/* HP-GL/2 font and character commands */
 #include "math_.h"
-#include "ctype_.h"
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
 #include "pgmand.h"
 #include "pginit.h"
 #include "pgfont.h"
-#include "pgdraw.h"
 #include "pggeom.h"
 #include "pgmisc.h"
+#include "pcfsel.h"
 
 /* ------ Internal procedures ------ */
 
@@ -92,6 +91,10 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	/* If there were no arguments at all, default all values. */
 	if ( !pargs->phase )
 	  hpgl_default_font_params(pfs);
+	/* Decache the font. */
+	pfs->font = 0;
+	if ( index == pgls->g.font_selected )
+	  pgls->g.font = 0;
 	return 0;
 }
 /* Define label drawing direction (DI, DR). */
@@ -100,12 +103,12 @@ hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	hpgl_real_t run = 1, rise = 0;
 
 	if ( hpgl_arg_c_real(pargs, &run) )
-	  { double hyp;
-	    if ( !hpgl_arg_c_real(pargs, &rise) || (run == 0 && rise == 0) )
+	  { if ( !hpgl_arg_c_real(pargs, &rise) || (run == 0 && rise == 0) )
 	      return e_Range;
-	    hyp = hypot(run, rise);
-	    run /= hyp;
-	    rise /= hyp;
+	    { double hyp = hypot(run, rise);
+	      run /= hyp;
+	      rise /= hyp;
+	    }
 	  }
 	pgls->g.character.direction.x = run;
 	pgls->g.character.direction.y = rise;
@@ -113,26 +116,39 @@ hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	return 0;
 }
 
-/* Select font (FI, FN). */
+/* Select font by ID (FI, FN). */
 private int
-hpgl_select_font(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
-{	int32 id;
+hpgl_select_font_by_id(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
+{	pcl_font_selection_t *pfs = &pgls->g.font_selection[index];
+	int32 id;
+	int code;
 
 	if ( !hpgl_arg_c_int(pargs, &id) || id < 0 )
 	  return e_Range;
-	return e_Unimplemented;
+	code = pcl_select_font_by_id(pfs, id, pgls /****** NOTA BENE ******/);
+	if ( code < 0 )
+	  return code;
+	pgls->g.font = pfs->font;
+	pgls->g.map = pfs->map;
+	/*
+	 * If we just selected a bitmap font, force the equivalent of SB1.
+	 * See TRM 23-65 and 23-81.
+	 */
+	if ( pfs->font->scaling_technology == plfst_bitmap )
+	  pgls->g.bitmap_fonts_allowed = true;
+	return 0;
 }
 
-/* Set character size (SI, SR). */
+/* Select font (SA, SS). */
 private int
-hpgl_character_size(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
-{	hpgl_real_t width, height;
-
-	if ( hpgl_arg_c_real(pargs, &width) )
-	  { if ( !hpgl_arg_c_real(pargs, &height) )
-	      return e_Range;
+hpgl_select_font(hpgl_state_t *pgls, int index)
+{
+	if ( pgls->g.font_selected != index )
+	  { pgls->g.font_selected = index;
+	    pgls->g.font = pgls->g.font_selection[index].font;
+	    pgls->g.map = pgls->g.font_selection[index].map;
 	  }
-	return e_Unimplemented;
+	return 0;
 }
 
 /* ------ Commands ------ */
@@ -149,144 +165,17 @@ hpgl_AD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 	int32 pen = 0;
+
 	if ( hpgl_arg_c_int(pargs, &mode) )
 	  { if ( mode & ~3 )
 	      return e_Range;
 	    if ( hpgl_arg_int(pargs, &pen) )
-	      { /**** MUST CHANGE FOR COLOR ****/
-		if ( pen & ~1 )
+	      { if ( pen < 0 || pen >= pgls->g.number_of_pens )
 		  return e_Range;
 	      }
 	  }
-	return e_Unimplemented;
-}
-
-private int
-hpgl_get_carriage_return_pos(hpgl_state_t *pgls, gs_point *pt)
-{
-	*pt = pgls->g.carriage_return_pos;
-        return 0;
-}
-
-private int
-hpgl_set_carriage_return_pos(hpgl_state_t *pgls, gs_point *pt)
-{
-	pgls->g.carriage_return_pos = *pt;
-	return 0;
-}
-
-private int
-hpgl_get_current_cell_width(hpgl_state_t *pgls, hpgl_real_t *width)
-{
-	pcl_font_selection_t *pfs = 
-	  &pgls->g.font_selection[pgls->g.font_selected];
-	*width = inches_2_plu((1.0 / (pfs->params.pitch_100ths / 
-				100.0)));
-	*width *= 1.5;
-	return 0;
-}
-
- private int
-hpgl_get_current_cell_height(hpgl_state_t *pgls, hpgl_real_t *height)
-{
-	pcl_font_selection_t *pfs = 
-	  &pgls->g.font_selection[pgls->g.font_selected];
-	*height = points_2_plu((pfs->params.height_4ths) /4.0);
-	*height *= 1.33;
-	return 0;
-}
-
-/* CP [spaces,lines]; HAS -- an arcane implementation, but it is late */
- int
-hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	
-	hpgl_real_t spaces = 0.0;
-	hpgl_real_t lines = 1.0;
-	hpgl_pen_state_t saved_pen_state;	
-	bool crlf = false;
-
-	/* HAS ***HACK **** HACK **** HACK */
-	/* save the current render mode and temporarily set it to
-           vector mode. This allows the HPGL/2 graphics not to apply
-           the character ctm for the label position move.  This must
-           be handled more "pleasantly" in the future */
-
-	hpgl_rendering_mode_t rm = pgls->g.current_render_mode;
-
-	pgls->g.current_render_mode = hpgl_rm_vector;
-
-	/* CP does its work with the pen up -- we restore the current
-           state at the end of the routine.  We will take advantage of
-           PR so save the current relative state as well */
-	hpgl_save_pen_state(pgls,  
-			    &saved_pen_state, 
-			    hpgl_pen_down | hpgl_pen_relative);
-
-	if ( hpgl_arg_c_real(pargs, &spaces) )
-	  { 
-	    if ( !hpgl_arg_c_real(pargs, &lines) )
-	      return e_Range;
-	  }
-	else
-
-	  /* if there are no arguments a carriage return and line feed
-	  is executed */
-	  crlf = true;
-
-	{
-	  hpgl_real_t width, height;
-	  hpgl_args_t args;
-	  gs_point pt, crpt, relpos; /* current pos and carriage return pos */
-
-	  /* get the character cell height and width */
-	  hpgl_call(hpgl_get_current_cell_width(pgls, &width));
-	  hpgl_call(hpgl_get_current_cell_height(pgls, &height));
-	  
-	  /* get the current position and carriage return position */
-	  hpgl_call(hpgl_get_current_position(pgls, &pt));
-	  hpgl_call(hpgl_get_carriage_return_pos(pgls, &crpt));
-	  
-	  /* calculate the next label position in relative
-             coordinates.  If CR/LF the calculate the y coordinate and
-             the X position is simply the x coordinate of the current
-             carriage return point.  We use relative coordinates for
-             the movement in either case. HAS the extra space
-             calculations are incorrect */
-	  if (crlf)
-	    relpos.x = -(pt.x - crpt.x);
-	  else
-	    relpos.x = ((spaces + pgls->g.character.extra_space.x) * width);
-
-	  /* the y coordinate is independant of CR/LF status */
-	  relpos.y = -((lines + pgls->g.character.extra_space.y) * height);
-
-	  /* move to the current position */
-	  hpgl_args_setup(&args);
-	  hpgl_PU(&args, pgls);
-
-	  /* a relative move to the new position */
-	  hpgl_args_set_real(&args, relpos.x);
-	  hpgl_args_add_real(&args, relpos.y);
-	  hpgl_PR(&args, pgls);
-
-	  /* update the carriage return point - the Y is the Y of
-             the current position and the X is the X of the current
-             carriage return point position */
-	  hpgl_call(hpgl_get_current_position(pgls, &pt));
-	  hpgl_call(hpgl_get_carriage_return_pos(pgls, &crpt));
-	  crpt.y = pt.y;
-
-	  /* set the value in the state */
-	  hpgl_call(hpgl_set_carriage_return_pos(pgls, &crpt));
-
-	}
-
-	/* put the pen back the way it was, of course we do not want
-           to restore the pen's position.  And restore the render mode. */
-	hpgl_restore_pen_state(pgls, 
-			       &saved_pen_state, 
-			       hpgl_pen_down | hpgl_pen_relative);
-	pgls->g.current_render_mode = rm;
+	pgls->g.character.fill_mode = mode;
+	pgls->g.character.edge_pen = pen;
 	return 0;
 }
 
@@ -324,7 +213,7 @@ hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      pgls->g.label.terminator = 3;
 	      pgls->g.label.print_terminator = false;
 	      return 0;
-	    case 0: case 5: case 27:
+	    case 0: case 10: case 27:
 	      return e_Range;
 	    default:
 	      if ( p >= rlimit )
@@ -371,404 +260,17 @@ hpgl_ES(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_FI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	return hpgl_select_font(pargs, pgls, 0);
+	return hpgl_select_font_by_id(pargs, pgls, 0);
 }
 
 /* FN fontid; */
  int
 hpgl_FN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	return hpgl_select_font(pargs, pgls, 1);
+	return hpgl_select_font_by_id(pargs, pgls, 1);
 }
 
-/* update the length of the current label */
- private int
-hpgl_update_label_length(hpgl_state_t *pgls, byte ch)
-{
-
-	hpgl_real_t height, width;
-	/* get the character cell height and width */
-  	hpgl_call(hpgl_get_current_cell_width(pgls, &width));
-	hpgl_call(hpgl_get_current_cell_height(pgls, &height));
-	/* HAS missing logic here. */
-	switch (ch) 
-	  {
-	  case BS :
-	    pgls->g.label.length -= width;
-	    if ( pgls->g.label.length < 0.0 ) 
-	      pgls->g.label.length = 0.0;
-	    break;
-	  case LF :
-	    break;
-	  case CR :
-	    break;
-	  default :
-	    pgls->g.label.length += width;
-	    break;
-	  }
-	return 0;
-}
-
-/* updates the current cursor position, which is the same as the
-   current pen postion */
-
- private int
-hpgl_update_label_pos(hpgl_state_t *pgls, byte ch)
-{
-	int spaces = 1, lines = 0;
-  	hpgl_args_t args;
-	/* HAS missing logic here. */
-	switch (ch)
-	  {
-	  case BS :
-	    spaces = -1;
-	    break;
-	  case LF :
-	    spaces = 0;
-	    lines = 1;
-	    break;
-	  case CR :
-	    /* do a CR/LF and a -1 line move */
-	    hpgl_args_setup(&args);
-	    hpgl_CP(&args, pgls);
-	    spaces = 0;
-	    lines = -1;
-	    break;
-	  default :
-	    break;
-	  }
-	hpgl_args_set_real(&args, spaces);
-	hpgl_args_add_real(&args, lines);
-	hpgl_CP(&args, pgls);
-	return 0;
-}
-
-/* build the path and render it */
- private int
-hpgl_print_char(hpgl_state_t *pgls,  hpgl_character_point *character)
-{
-	hpgl_rendering_mode_t rm = pgls->g.current_render_mode;
-
-	/* clear the current path, if there is one */
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-
-	pgls->g.current_render_mode = hpgl_rm_character;
-	/* all character data is absolute */
-	pgls->g.relative = false;
-	while (character->operation != hpgl_char_end)
-	  {
-	    hpgl_args_t args;
-	    /* setup the arguments */
-	    hpgl_args_setup(&args);
-	    /* all character operations supply numeric arguments except: */
-	    if (character->operation != hpgl_char_pen_down_no_args)
-	      {
-		hpgl_args_add_real(&args, character->vertex.x);
-		hpgl_args_add_real(&args, character->vertex.y);
-	      }
-
-	    switch (character->operation)
-	      {
-	      case hpgl_char_pen_up : 
-		hpgl_call(hpgl_PU(&args, pgls));
-		break;
-	      case hpgl_char_pen_down : 
-	      case hpgl_char_pen_down_no_args :
-		hpgl_call(hpgl_PD(&args, pgls));
-		break;
-	      case hpgl_char_pen_relative :
-		hpgl_call(hpgl_PR(&args, pgls));
-		break;
-	      case hpgl_char_arc_relative : /* HAS not yet supported */;
-	      default :
-		dprintf("unsupported character operation\n");
-	      }
-	    character++;
-	  }
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
-	pgls->g.current_render_mode = rm;
-	return 0;
-}
-
-
-/* initialize the character buffer, setting state pointers for the
-   beginning of the character buffer and the current character within
-   the buffer to position 0. */
- private int
-hpgl_init_label_buffer(hpgl_state_t *pgls)
-{
-	return (((pgls->g.label.char_count = 0,
-		  pgls->g.label.length = 0.0,
-		  pgls->g.label.buffer_size = hpgl_char_count,
-		  pgls->g.label.line_ptr =
-		  pgls->g.label.char_ptr =
-		  gs_alloc_bytes(pgls->memory, 
-				 hpgl_char_count,
-				 "hpgl_character_data")) == 0) ? 
-		e_Memory : 
-		0);
-}
-
-/* double the size of the current buffer after filling it */
- private int
-hpgl_resize_label_buffer(hpgl_state_t *pgls)
-{
-	byte *new_mem;
-
-	/* resize the buffer */
-	if ( (new_mem = gs_resize_object(pgls->memory, 
-					 pgls->g.label.line_ptr,
-					 pgls->g.label.buffer_size << 1,
-					 "hpgl_resize_label_buffer")) == 0 )
-	  return e_Memory;
-	
-	/* set the new buffer size and new memory location */
-	pgls->g.label.line_ptr = new_mem;
-	pgls->g.label.buffer_size <<= 1;
-	
-	return 0;
-}
-
-
-/* initializes the character buffer */
- private int
-hpgl_destroy_label_buffer(hpgl_state_t *pgls)
-{
-	gs_free_object(pgls->memory, 
-		       pgls->g.label.line_ptr,
-		       "hpgl_destroy_label_buffer");
-	
-	pgls->g.label.char_count = 0;
-	pgls->g.label.buffer_size = 0;
-	pgls->g.label.line_ptr = 0;
-	pgls->g.label.char_ptr = 0;
-	pgls->g.label.length = 0.0;
-	return 0;
-}
-
-/* places a single character in the line buffer */
- private int
-hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
-{
-	/* check if there is room for the new character and resize if
-           necessary */
-	if ( pgls->g.label.buffer_size == pgls->g.label.char_count )
-	  hpgl_call(hpgl_resize_label_buffer(pgls));
-	/* store the character */
-	*(pgls->g.label.char_ptr++) = ch;
-	pgls->g.label.char_count++;
-	/* update the current buffers length */
-	hpgl_call(hpgl_update_label_length(pgls, ch));
-	return 0;
-}
-
- private int
-hpgl_process_char(hpgl_state_t *pgls, byte ch)
-{
-	hpgl_pen_state_t saved_pen_state;
-	/* we need to keep this pen position, as updating the label
-           origin is relative to the current origin vs. the pen's
-           position after the character is rendered */
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all); 
-	if ( isprint(ch) )
-	  /* ascii is all we have right now */
-	  hpgl_call(hpgl_print_char(pgls, hpgl_ascii_char_set[ch - 0x20]));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all); 
-	hpgl_call(hpgl_update_label_pos(pgls, ch));
-	return 0;
-}
-
- 
-/* return relative coordinates to compensate for origin placement -- LO */
- private int
-hpgl_get_character_origin_offset(hpgl_state_t *pgls, gs_point *offset)
-{
-	hpgl_real_t width, height, label_length, offset_magnitude;
-
-	/* HAS need to account for vertical labels correctly.  The
-           label lengthis always parallel to the x-axis wrt LO.  */
-	
-	label_length = pgls->g.label.length;
-	offset->x = 0.0;
-	offset->y = 0.0;
-	
-	/* HAS just height is used as we do not yet support vertical
-           labels correctly */
-  	hpgl_call(hpgl_get_current_cell_width(pgls, &width));
-	hpgl_call(hpgl_get_current_cell_height(pgls, &height));
-
-	/* HAS no support for label 21 yet */
-	if ( pgls->g.label.origin == 21 )
-	  {
-	    dprintf("no label 21 support yet, LO offsets are 0\n");
-	    return 0;
-	  }
-	    
-	/* HAS does not yet handle 21. */
-	switch(pgls->g.label.origin % 10)
-	  {
-	  case 1:
-	    break;
-	  case 2:
-	    offset->y = .5 * height;
-	    break;
-	  case 3:
-	    offset->y = height;
-	    break;
-	  case 4:
-	    offset->x = .5 * label_length;
-	    break;
-	  case 5:
-	    offset->x = .5 * label_length;
-	    offset->y = .5 * height;
-	    break;
-	  case 6:
-	    offset->x = .5 * label_length;
-	    offset->y = height;
-	    break;
-	  case 7:
-	    offset->x = label_length;
-	    break;
-	  case 8:
-	    offset->x = label_length;
-	    offset->y = .5 * height;
-	    break;
-	  case 9:
-	    offset->x = label_length;
-	    offset->y = height;
-	    break;
-	  default:
-	    dprintf("unknown label parameter");
-
-	  }
-
-	/* stickfonts are offset by 16 grid units or .33 times the
-           point size.  HAS need to support other font types. */
-	
-	if ( pgls->g.label.origin > 10 )
-	  {
-	    offset_magnitude = 33 * width;
-	    switch (pgls->g.label.origin)
-	      {
-	      case 11:
-		offset->x -= offset_magnitude;
-		offset->y -= offset_magnitude;
-		break;
-	      case 12:
-		offset->x -= offset_magnitude;
-		break;
-	      case 13:
-		offset->x -= offset_magnitude;
-		offset->y += offset_magnitude;
-		break;
-	      case 14:
-		offset->y -= offset_magnitude;
-		break;
-	      case 15:
-		/* HAS I don't think 5 & 15 are different but I need
-                   to check */
-		break;
-	      case 16:
-		offset->y += offset_magnitude;
-		break;
-	      case 17:
-		offset->x += offset_magnitude;
-		offset->y += offset_magnitude;
-		break;
-	      case 18:
-		offset->x += offset_magnitude;
-		break;
-	      case 19:
-		offset->x += offset_magnitude;
-		offset->y += offset_magnitude;
-		break;
-	      case 21:
-		dprintf("label 21 not currently supported\n");
-	      default:
-		dprintf("unknown label parameter");
-		  
-	      }
-	  }
-	return 0;
-}
-			  
-/* prints a line of characters.  HAS comment this. */
- private int
-hpgl_process_buffer(hpgl_state_t *pgls)
-{
-	const byte *chp = pgls->g.label.line_ptr;
-	gs_point offset;
-	hpgl_args_t args;
-	hpgl_pen_state_t pen_state;
-
-	hpgl_call(hpgl_get_character_origin_offset(pgls, &offset));
-	hpgl_save_pen_state(pgls, &pen_state, hpgl_pen_relative);
-	hpgl_args_set_real(&args, -offset.x);
-	hpgl_args_add_real(&args, -offset.y);
-	hpgl_PR(&args, pgls);
-	hpgl_restore_pen_state(pgls, &pen_state, hpgl_pen_relative);
-
-        /* process each character updating the current count of
-           buffered characters and the current character pointer */
-	for (; pgls->g.label.char_count; pgls->g.label.char_count--)
-	  hpgl_call(hpgl_process_char(pgls, *(chp++)));
-	return 0;
-}	    
-
-/* LB ..text..terminator */
- int
-hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	const byte *p = pargs->source.ptr;
-	const byte *rlimit = pargs->source.limit;
-
-	/* HAS need to figure out what gets saved here -- relative,
-           pen_down, position ?? */
-	hpgl_call(hpgl_clear_current_path(pgls));
-	/* set the carriage return point and initialize the character
-           buffer first time only */
-	if ( pargs->phase == 0 )
-	  {
-	    gs_point pt;
-	    hpgl_call(hpgl_get_current_position(pgls, &pt));
-	    hpgl_call(hpgl_set_carriage_return_pos(pgls, &pt));
-	    hpgl_call(hpgl_init_label_buffer(pgls));
-	    pargs->phase = 1;
-	  }
-
-	while ( p < rlimit )
-	  { byte ch = *++p;
-	    if_debug1('I',
-		      (ch == '\\' ? " \\%c" : ch >= 33 && ch <= 126 ? " %c" :
-		       " \\%03o"),
-		      ch);
-	    if ( ch == pgls->g.label.terminator )
-	      { 
-		if ( pgls->g.label.print_terminator )
-		    hpgl_call(hpgl_buffer_char(pgls, ch));
-		hpgl_call(hpgl_process_buffer(pgls));
-		hpgl_call(hpgl_destroy_label_buffer(pgls));
-		pargs->source.ptr = p;
-		return 0;
-	      }
-
-	    hpgl_call(hpgl_buffer_char(pgls, ch));
-
-	    /* process the buffer for a carriage return so that we can
-               treat the label origin correctly, and initialize a new
-               buffer */
-
-	    if ( ch == CR )
-	      {
-		hpgl_call(hpgl_process_buffer(pgls));
-		hpgl_call(hpgl_destroy_label_buffer(pgls));
-		hpgl_call(hpgl_init_label_buffer(pgls));
-	      }
-	  }
-	pargs->source.ptr = p;
-	return e_NeedData;
-}
-
-/* LO; */
+/* LO [origin]; */
  int
 hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int origin = 1;
@@ -784,9 +286,7 @@ hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_SA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	pgls->g.font_selected = 1;
-	pgls->g.font = 0;	/* recompute from params */
-	return 0;
+	return hpgl_select_font(pgls, 1);
 }
 
 /* SB [mode]; */
@@ -796,8 +296,28 @@ hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
-	pgls->g.bitmap_fonts_allowed = mode;
-	/**** RESELECT FONT IF NO LONGER ALLOWED ****/
+	if ( pgls->g.bitmap_fonts_allowed != mode )
+	  { int i;
+
+	    pgls->g.bitmap_fonts_allowed = mode;
+	    /*
+	     * A different set of fonts is now available for consideration.
+	     * Decache any affected font(s): those selected by parameter,
+	     * and bitmap fonts selected by ID if bitmap fonts are now
+	     * disallowed.
+	     */
+	    for ( i = 0; i < countof(pgls->g.font_selection); ++i )
+	      { pcl_font_selection_t *pfs = &pgls->font_selection[i];
+	        if ( !pfs->selected_by_id ||
+		     (!mode && pfs->font != 0 &&
+		      pfs->font->scaling_technology == plfst_bitmap)
+		   )
+		  { pfs->font = 0;
+		    if ( i == pgls->g.font_selected )
+		      pgls->g.font = 0;
+		  }
+	      }
+	  }
 	return 0;
 }
 
@@ -811,8 +331,19 @@ hpgl_SD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* SI [width,height]; */
  int
 hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	
-	return hpgl_character_size(pargs, pgls, false);
+{	hpgl_real_t width_cm, height_cm;
+
+	if ( hpgl_arg_c_real(pargs, &width_cm) )
+	  { if ( !hpgl_arg_c_real(pargs, &height_cm) )
+	      return e_Range;
+	    pgls->g.character.size.x = mm_2_plu(width_cm * 10);
+	    pgls->g.character.size.y = mm_2_plu(height_cm * 10);
+	    pgls->g.character.size_relative = false;
+	    pgls->g.character.size_set = true;
+	  }
+	else
+	  pgls->g.character.size_set = false;
+	return 0;
 }
 
 /* SL [slant]; */
@@ -828,17 +359,28 @@ hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* SR [width,height]; */
  int
 hpgl_SR(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	
-	return hpgl_character_size(pargs, pgls, true);
+{	hpgl_real_t width_pct, height_pct;
+
+	if ( hpgl_arg_c_real(pargs, &width_pct) )
+	  { if ( !hpgl_arg_c_real(pargs, &height_pct) )
+	      return e_Range;
+	    pgls->g.character.size.x = width_pct / 100;
+	    pgls->g.character.size.y = height_pct / 100;
+	  }
+	else
+	  { pgls->g.character.size.x = 0.0075;
+	    pgls->g.character.size.y = 0.015;
+	  }
+	pgls->g.character.size_relative = true;
+	pgls->g.character.size_set = true;
+	return 0;
 }
 
 /* SS; */
  int
 hpgl_SS(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	pgls->g.font_selected = 0;
-	pgls->g.font = 0;	/* recompute from params */
-	return 0;
+	return hpgl_select_font(pgls, 0);
 }
 
 /* TD [mode]; */
@@ -859,7 +401,6 @@ pgchar_do_init(gs_memory_t *mem)
 	DEFINE_HPGL_COMMANDS
 	  HPGL_COMMAND('A', 'D', hpgl_AD, 0),		/* kind/value pairs */
 	  HPGL_COMMAND('C', 'F', hpgl_CF, 0),
-	  HPGL_COMMAND('C', 'P', hpgl_CP, hpgl_cdf_lost_mode_cleared),
 	  HPGL_COMMAND('D', 'I', hpgl_DI, 0),
 	  HPGL_COMMAND('D', 'R', hpgl_DR, 0),
 	  /* DT has special argument parsing, so it must handle skipping */
@@ -869,8 +410,6 @@ pgchar_do_init(gs_memory_t *mem)
 	  HPGL_COMMAND('E', 'S', hpgl_ES, 0),
 	  HPGL_COMMAND('F', 'I', hpgl_FI, 0),
 	  HPGL_COMMAND('F', 'N', hpgl_FN, 0),
-	  /* LB also has special argument parsing. */
-	  HPGL_COMMAND('L', 'B', hpgl_LB, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
 	  HPGL_COMMAND('L', 'O', hpgl_LO, 0),
 	  HPGL_COMMAND('S', 'A', hpgl_SA, 0),
 	  HPGL_COMMAND('S', 'B', hpgl_SB, 0),

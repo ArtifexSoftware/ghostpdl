@@ -21,22 +21,19 @@ extern void hpgl_set_lost_mode(P2(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode
 #ifdef DEBUG
 
 extern void hpgl_error(P0());
+extern int hpgl_print_error(P4(const char *function, const char *file, int line, int code));
 
 # ifdef __GNUC__
-#  define hpgl_call_note_error()\
-     dprintf4("hpgl call failed\n\tcalled from: %s\n\tfile: %s\n\tline: %d\n\terror code: %d\n",\
-	      __FUNCTION__, __FILE__, __LINE__, code);\
-     hpgl_error();
+#  define hpgl_call_note_error(code)\
+     hpgl_print_error(__FUNCTION__, __FILE__, __LINE__, code)
 # else
-#  define hpgl_call_note_error()\
-     dprintf3("hpgl call failed\n\tcalled from:\n\tfile: %s\n\tline: %d\n\terror code: %d\n",\
-	      __FILE__, __LINE__, code);\
-     hpgl_error();
+#  define hpgl_call_note_error(code)\
+     hpgl_print_error((const char *)0, __FILE__, __LINE__, code)
 # endif
 
 #else				/* !DEBUG */
 
-#define hpgl_call_note_error() /* */
+#define hpgl_call_note_error(code) (code)
 
 #endif
 
@@ -48,9 +45,7 @@ do {						\
   int code; 					\
   if ((code = (call)) < 0)			\
     { if_check_else()				\
-        { hpgl_call_note_error();		\
-	  return(code);				\
-	}					\
+        return hpgl_call_note_error(code);	\
     }						\
 } while (0)
 

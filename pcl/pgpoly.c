@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -37,20 +37,16 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 	  hpgl_real_t x1 = pgls->g.pos.x; 
 	  hpgl_real_t y1 = pgls->g.pos.y;
 
-	  hpgl_args_set_real(pargs, x1);
-	  hpgl_args_add_real(pargs, y2);
+	  hpgl_args_set_real2(pargs, x1, y2);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 
-	  hpgl_args_set_real(pargs, x2); 
-	  hpgl_args_add_real(pargs, y2);
+	  hpgl_args_set_real2(pargs, x2, y2);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 
-	  hpgl_args_set_real(pargs, x2); 
-	  hpgl_args_add_real(pargs, y1);
+	  hpgl_args_set_real2(pargs, x2, y1);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 
-	  hpgl_args_set_real(pargs, x1);
-	  hpgl_args_add_real(pargs, y1);
+	  hpgl_args_set_real2(pargs, x1, y1);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 	}
 
@@ -94,20 +90,16 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
 				        (start+sweep), &x3, &y3);
 
-	  hpgl_args_set_real(pargs, x1);
-	  hpgl_args_add_real(pargs, y1);
+	  hpgl_args_set_real2(pargs, x1, y1);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 	  
-	  hpgl_args_set_real(pargs, x2);
-	  hpgl_args_add_real(pargs, y2);
+	  hpgl_args_set_real2(pargs, x2, y2);
 	  hpgl_args_add_real(pargs, x3);
 	  hpgl_args_add_real(pargs, y3);
 	  hpgl_args_add_real(pargs, chord);
 	  hpgl_call(hpgl_AT(pargs, pgls));
 
-	  hpgl_args_set_real(pargs, startx);
-	  hpgl_args_add_real(pargs, starty);
-
+	  hpgl_args_set_real2(pargs, startx, starty);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 	}
 	  
@@ -199,8 +191,7 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
                state position to the polygon buffer.  We do a PU to
                guarantee the first point is a moveto.  HAS not sure if
                this is correct. */
-	    hpgl_args_set_real(pargs, pgls->g.pos.x); 
-	    hpgl_args_add_real(pargs, pgls->g.pos.y);
+	    hpgl_args_set_real2(pargs, pgls->g.pos.x, pgls->g.pos.y);
 	    hpgl_call(hpgl_PU(pargs, pgls));
 
 	    pgls->g.polygon_mode = true;

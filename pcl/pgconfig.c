@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -91,8 +91,7 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_setup(&args);
 	hpgl_SC(&args, pgls);
 
-	hpgl_args_set_real(&args, 0.0);
-	hpgl_args_add_real(&args, 0.0);
+	hpgl_args_set_real2(&args, 0.0, 0.0);
 	hpgl_PA(&args, pgls);
 
 	hpgl_args_set_int(&args,0);
@@ -181,8 +180,7 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_PU(&args, pgls);
 	
 	/* absolute positioning at the lower left of the picture frame */
-	hpgl_args_set_real(&args, 0.0);
-	hpgl_args_add_real(&args, 0.0);
+	hpgl_args_set_real2(&args, 0.0, 0.0);
 	hpgl_PA(&args, pgls);
 
 	return 0;

@@ -352,7 +352,7 @@ hpgl_set_drawing_color(hpgl_state_t *pgls)
 	return 0;
 }
 
-private int
+int
 hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
         /* HACK to reset the ctm.  Note that in character mode we
@@ -400,35 +400,52 @@ hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt)
 	return 0;
 }
 
+/* function to set up a new path.  We assume the current path is
+   empty.  Note point is passed by value. */
+ private int
+hpgl_start_path(hpgl_state_t *pgls, gs_point pt)
+{
+	/* set up the ctm for this path */
+	hpgl_call(hpgl_set_ctm(pgls));
+	/* create a new path */
+	hpgl_call(gs_newpath(pgls->pgs));
+	/* if relative mode we use a moveto the current position and
+           an rmoveto otherwise we just need a moveto.  A limitcheck
+           results in GL/2 lost mode */
+	if ( pgls->g.relative )
+	    hpgl_call(hpgl_get_current_position(pgls, &pt));
+
+	/* moveto that position */
+	hpgl_call_check_lost(gs_moveto(pgls->pgs, pt.x, pt.y));
+
+	/* if we are in lost indicate that we do not have a path */
+	if (!hpgl_lost) pgls->g.have_first_moveto = true;
+	
+	return 0;
+}
+
 int
 hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y, 
 		       int (*gs_func)(gs_state *pgs, floatp x, floatp y))
 {	
+        bool new_path = !pgls->g.have_first_moveto;
 	gs_point point;
 	point.x = x;
 	point.y = y;
 
-	if ( !(pgls->g.have_first_moveto) ) 
-	  {
-	    /* initialize the first point so we can implicitly close
-               the path when we stroke and set up the ctm */
-	    pgls->g.first_point = point;
-	    /* initialize the current transformation matrix */
-	    hpgl_call(hpgl_set_ctm(pgls));
-
-	    hpgl_call(gs_newpath(pgls->pgs));
-
-	    hpgl_call_check_lost(gs_moveto(pgls->pgs, point.x, point.y));
-	    /* indicate that there is a current path */
-	    /* we do not want to indicate a first moveto if we went
-               into lost mode */
-	    if (!hpgl_lost) pgls->g.have_first_moveto = true;
-	  }
+	if ( new_path ) 
+	  hpgl_call(hpgl_start_path(pgls, point));
 
 	hpgl_call_check_lost((*gs_func)(pgls->pgs, point.x, point.y));
 
 	/* update hpgl's state position */
 	hpgl_call(hpgl_set_current_position(pgls, &point));
+
+	/* record the first point of the path in gl/2 state so that we
+           can implicitly close the path if necessary */
+	if ( new_path )
+	  hpgl_call(hpgl_get_current_position(pgls, &pgls->g.first_point));
+
 	return 0;
 }
 
@@ -470,8 +487,8 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 		     floatp chord_angle)
 {
 	int num_chords;
-	floatp start_angle_radians = start_angle * (M_PI/180.0);
-	floatp chord_angle_radians = chord_angle * (M_PI/180.0);
+	floatp start_angle_radians = start_angle * degrees_to_radians;
+	floatp chord_angle_radians = chord_angle * degrees_to_radians;
 	int i;
 	floatp arccoord_x, arccoord_y;
 

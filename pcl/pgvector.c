@@ -448,8 +448,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		  else
 		    hpgl_call(hpgl_PD(&args, pgls));
 		
-		  hpgl_args_set_real(&args, (floatp)xy[0]);
-		  hpgl_args_add_real(&args, (floatp)xy[1]);
+		  hpgl_args_set_real2(&args, (floatp)xy[0], (floatp)xy[1]);
 
 		  /* arbitrarily use PA or PR */
 		  if ( pargs->phase & pe_absolute )

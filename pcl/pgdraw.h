@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -7,6 +7,11 @@
 
 #ifndef pgdraw_INCLUDED
 #  define pgdraw_INCLUDED
+
+/* Set up the graphics state for drawing. */
+/* We export this for drawing characters. */
+int hpgl_set_graphics_state(P2(hpgl_state_t *pgls, 
+			       hpgl_rendering_mode_t render_mode));
 
 /* function to get and set the current hpgl/2 state position */
 int hpgl_get_current_position(P2(hpgl_state_t *pgls, gs_point *pt));

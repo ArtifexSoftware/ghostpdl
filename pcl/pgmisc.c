@@ -3,7 +3,7 @@
  */
 
 /* pgmisc.c */
-/* HP-GL/2 lost mode routine (currently ) */
+/* HP-GL/2 miscellaneous support */
 
 #include "pgmand.h"
 #include "pgmisc.h"
@@ -31,8 +31,20 @@ hpgl_set_lost_mode(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode)
 
 }
 
-/* called when there is a graphics error.  Keep a breakpoint on this function */
 #ifdef DEBUG
+
+/* Print an error message.  Note that function may be NULL. */
+/* This procedure must return its 'code' argument: see pgmisc.h. */
+int
+hpgl_print_error(const char *function, const char *file, int line, int code)
+{
+	dprintf4("hpgl call failed\n\tcalled from: %s\n\tfile: %s\n\tline: %d\n\terror code: %d\n",
+		 (function == 0 ? "" : function), file, line, code);
+	hpgl_error();
+	return code;
+}
+
+/* called when there is a graphics error.  Keep a breakpoint on this function */
 void
 hpgl_error()
 {

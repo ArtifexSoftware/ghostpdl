@@ -169,22 +169,31 @@ bool hpgl_arg_units(P2(hpgl_args_t *pargs, hpgl_real_t *pu));
  *		hpgl_args_add_int/real(&args, value);
  *	hpgl_B(&args, pgls);
  */
+#define args_setup_count_(pargs, numargs)\
+  ((void)((pargs)->done = true, (pargs)->arg.count = (numargs),\
+	  (pargs)->arg.next = (pargs)->phase = 0))
 #define hpgl_args_setup(pargs)\
-  ((void)((pargs)->done = true, (pargs)->arg.count = (pargs)->arg.next =\
-	  (pargs)->phase = 0))
+  args_setup_count_(pargs, 0)
+#define args_put_int_(pargs, index, iplus, ival)\
+  ((void)((pargs)->arg.scanned[index].v.i = (ival),\
+	  (pargs)->arg.scanned[iplus].is_real = false))
 #define hpgl_args_add_int(pargs, ival)\
-  ((void)((pargs)->arg.scanned[(pargs)->arg.count].v.i = (ival),\
-	  (pargs)->arg.scanned[(pargs)->arg.count++].is_real = false))
+  args_put_int_(pargs, (pargs)->arg.count, (pargs)->arg.count++, ival)
+#define args_put_real_(pargs, index, iplus, rval)\
+  ((void)((pargs)->arg.scanned[index].v.r = (rval),\
+	  (pargs)->arg.scanned[iplus].is_real = true))
 #define hpgl_args_add_real(pargs, rval)\
-  ((void)((pargs)->arg.scanned[(pargs)->arg.count].v.r = (rval),\
-	  (pargs)->arg.scanned[(pargs)->arg.count++].is_real = true))
+  args_put_real_(pargs, (pargs)->arg.count, (pargs)->arg.count++, rval)
 /*
- * We provide shortcuts for commands that take just 1 argument.
+ * We provide shortcuts for commands that take just 1 or 2 arguments.
  */
 #define hpgl_args_set_int(pargs, ival)\
-  (hpgl_args_setup(pargs), hpgl_args_add_int(pargs, ival))
+  (args_setup_count_(pargs, 1), args_put_int_(pargs, 0, 0, ival))
 #define hpgl_args_set_real(pargs, rval)\
-  (hpgl_args_setup(pargs), hpgl_args_add_real(pargs, rval))
+  (args_setup_count_(pargs, 1), args_put_real_(pargs, 0, 0, rval))
+#define hpgl_args_set_real2(pargs, rval1, rval2)\
+  (args_setup_count_(pargs, 2), args_put_real_(pargs, 0, 0, rval1),\
+   args_put_real_(pargs, 1, 1, rval2))
 
 /*
  * HPGL mnemonics

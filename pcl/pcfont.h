@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -16,7 +16,7 @@
 void pcl_decache_font(P2(pcl_state_t *pcls, int set));
 
 /* Recompute the font if necessary. */
-/* This is exported for recomputing the HMI. */
+/* This is exported for resetting HMI. */
 int pcl_recompute_font(P1(pcl_state_t *pcls));
 
 /* Do any underlining just before a break in motion (vertical motion or

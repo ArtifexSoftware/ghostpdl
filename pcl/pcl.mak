@@ -29,7 +29,7 @@
 #	rt*.[ch]	HP RTL and PCL5e raster commands
 #	rtc*.[ch]	HP RTL color and PCL5C raster commands
 #			  (except rtcursor.c)
-#	pc*.[ch]	PCL5e, and a few files common to all 3 languages
+#	pc*.[ch]	PCL5e, and a few files common to multiple languages
 #	pcc*.[ch]	PCL5c extensions
 #	pg*.[ch]	HP-GL/2
 #	pgcolor.c	HP-GL/2 color
@@ -80,6 +80,7 @@ pcl.config-clean:
 pgstate_h=$(PCLSRC)pgstate.h $(gslparam_h) $(gsuid_h) $(gstypes_h) $(gxbitmap_h)
 pcommand_h=$(PCLSRC)pcommand.h $(gserror_h) $(gserrors_h) $(scommon_h)
 pcdraw_h=$(PCLSRC)pcdraw.h
+pcfont_h=$(PCLSRC)pcfont.h $(plfont_h)
 pcparam_h=$(PCLSRC)pcparam.h $(gsparam_h)
 pcstate_h=$(PCLSRC)pcstate.h $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h) $(pldict_h) $(plfont_h) $(pgstate_h)
 
@@ -195,11 +196,20 @@ $(PCLOBJ)hprtlc.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCLOBJ)rtlbasec.dev
 
 ################ PCL 5e/5c ################
 
+#### Shared support
+
+pcfsel_h=$(PCLSRC)pcfsel.h
+pcsymbol_h=$(PCLSRC)pcsymbol.h $(plsymbol_h)
+
+# Font selection is essentially identical in PCL and HP-GL/2.
+$(PCLOBJ)pcfsel.$(OBJ): $(PCLSRC)pcfsel.c\
+  $(pcommand_h) $(pcfont_h) $(pcfsel_h) $(pcstate_h) $(pcsymbol_h)
+	$(PCLCCC) $(PCLSRC)pcfsel.c $(PCLO_)pcfsel.$(OBJ)
+
+PCL_COMMON=$(PCLOBJ)pcfsel.$(OBJ)
+
 #### PCL5(e) commands
 # These are organized by chapter # in the PCL 5 Technical Reference Manual.
-
-pcfont_h=$(PCLSRC)pcfont.h $(plfont_h)
-pcsymbol_h=$(PCLSRC)pcsymbol.h $(plsymbol_h)
 
 # Chapter 4
 # Some of these replace implementations in rtmisc.c.
@@ -284,17 +294,20 @@ $(PCLOBJ)pcstatus.$(OBJ): $(PCLSRC)pcstatus.c $(memory__h) $(stdio__h) $(string_
 $(PCLOBJ)pcmisc.$(OBJ): $(PCLSRC)pcmisc.c $(std_h) $(pcommand_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcmisc.c $(PCLO_)pcmisc.$(OBJ)
 
-PCL5_OPS1=$(PCLOBJ)pcjob.$(OBJ) $(PCLOBJ)pcpage.$(OBJ) $(PCLOBJ)pcursor.$(OBJ) $(PCLOBJ)pcfont.$(OBJ)
-PCL5_OPS2=$(PCLOBJ)pcsymbol.$(OBJ) $(PCLOBJ)pcifont.$(OBJ) $(PCLOBJ)pcsfont.$(OBJ) $(PCLOBJ)pcmacros.$(OBJ)
-PCL5_OPS3=$(PCLOBJ)pcprint.$(OBJ) $(PCLOBJ)pcrect.$(OBJ) $(PCLOBJ)pcstatus.$(OBJ) $(PCLOBJ)pcmisc.$(OBJ)
-PCL5_OPS=$(PCL5_OPS1) $(PCL5_OPS2) $(PCL5_OPS3)
+PCL5_OPS1=$(PCLOBJ)pcjob.$(OBJ) $(PCLOBJ)pcpage.$(OBJ) $(PCLOBJ)pcursor.$(OBJ)
+PCL5_OPS2=$(PCLOBJ)pcfont.$(OBJ) $(PCLOBJ)pcsymbol.$(OBJ) $(PCLOBJ)pcifont.$(OBJ)
+PCL5_OPS3=$(PCLOBJ)pcsfont.$(OBJ) $(PCLOBJ)pcmacros.$(OBJ) $(PCLOBJ)pcprint.$(OBJ)
+PCL5_OPS4=$(PCLOBJ)pcrect.$(OBJ) $(PCLOBJ)pcstatus.$(OBJ) $(PCLOBJ)pcmisc.$(OBJ)
+PCL5_OPS=$(PCL5_OPS1) $(PCL5_OPS2) $(PCL5_OPS3) $(PCL5_OPS4)
 
 # Note: we have to initialize the cursor after initializing the logical
 # page dimensions, so we do it last.  This is a hack.
-$(PCLOBJ)pcl5.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5_OPS) $(PCLOBJ)pcl5base.dev $(PCLOBJ)rtlbase.dev
-	$(SETMOD) $(PCLOBJ)pcl5 $(PCL5_OPS1)
+$(PCLOBJ)pcl5.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL_COMMON) $(PCL5_OPS) $(PCLOBJ)pcl5base.dev $(PCLOBJ)rtlbase.dev
+	$(SETMOD) $(PCLOJB)pcl5 $(PCL_COMMON)
+	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS1)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS2)
 	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS3)
+	$(ADDMOD) $(PCLOBJ)pcl5 $(PCL5_OPS4)
 	$(ADDMOD) $(PCLOBJ)pcl5 -include $(PCLOBJ)rtlbase
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcjob pcpage pcdraw pcfont
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcsymbol pcsfont pcmacros
@@ -422,22 +435,30 @@ $(PCLOBJ)pglfill.$(OBJ): $(PCLSRC)pglfill.c $(memory__h)\
 	$(PCLCCC) $(PCLSRC)pglfill.c $(PCLO_)pglfill.$(OBJ)
 
 # Chapter 23
-$(PCLOBJ)pgchar.$(OBJ): $(PCLSRC)pgchar.c $(ctype__h) $(math__h) $(stdio__h)\
+$(PCLOBJ)pgchar.$(OBJ): $(PCLSRC)pgchar.c $(math__h) $(stdio__h)\
  $(gdebug_h)\
- $(pgdraw_h) $(pgfont_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)
+ $(pcfsel_h)\
+ $(pgfont_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)pgchar.c $(PCLO_)pgchar.$(OBJ)
 
+$(PCLOBJ)pglabel.$(OBJ): $(PCLSRC)pglabel.c $(ctype__h) $(math__h) $(stdio__h)\
+ $(gdebug_h)\
+ $(pcfsel_h)\
+ $(pgdraw_h) $(pgfont_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)
+	$(PCLCCC) $(PCLSRC)pglabel.c $(PCLO_)pglabel.$(OBJ)
+
 HPGL2_OPS1=$(PCLOBJ)pgframe.$(OBJ) $(PCLOBJ)pgconfig.$(OBJ) $(PCLOBJ)pgvector.$(OBJ)
-HPGL2_OPS2=$(PCLOBJ)pgpoly.$(OBJ) $(PCLOBJ)pglfill.$(OBJ) $(PCLOBJ)pgchar.$(OBJ)
+HPGL2_OPS2=$(PCLOBJ)pgpoly.$(OBJ) $(PCLOBJ)pglfill.$(OBJ) $(PCLOBJ)pgchar.$(OBJ) $(PCLOBJ)pglabel.$(OBJ)
 HPGL2_OPS=$(HPGL2_OPS1) $(HPGL2_OPS2)
 
-$(PCLOBJ)hpgl2.dev: $(PCL_MAK) $(ECHOGS_XE) $(HPGL2_OTHER) $(HPGL2_OPS)
-	$(SETMOD) $(PCLOBJ)hpgl2 $(HPGL2_OTHER1)
+$(PCLOBJ)hpgl2.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL_COMMON) $(HPGL2_OTHER) $(HPGL2_OPS)
+	$(SETMOD) $(PCLOBJ)hpgl2 $(PCL_COMMON)
+	$(ADDMOD) $(PCLOBJ)hpgl2 $(HPGL2_OTHER1)
 	$(ADDMOD) $(PCLOBJ)hpgl2 $(HPGL2_OTHER2)
 	$(ADDMOD) $(PCLOBJ)hpgl2 $(HPGL2_OPS1)
 	$(ADDMOD) $(PCLOBJ)hpgl2 $(HPGL2_OPS2)
 	$(ADDMOD) $(PCLOBJ)hpgl2 -init pginit pgframe pgconfig pgvector
-	$(ADDMOD) $(PCLOBJ)hpgl2 -init pgpoly pglfill pgchar
+	$(ADDMOD) $(PCLOBJ)hpgl2 -init pgpoly pglfill pgchar pglabel
 
 #### Color HP-GL/2 commands
 # These correspond to chapter 7 in the PCL 5 Color Technical Reference

@@ -20,6 +20,7 @@
 #define points_2_plu(a) (((a) / 72.0) * 1016.0)
 #define mm_2_plu(a) ((a) * 40.0)
 #define inches_2_plu(a) ((a) * 1016.0)
+#define plu_2_inches(a) ((a) / 1016.0)
 
 /* ------ Lines, angles, arcs, and chords ------ */
 
