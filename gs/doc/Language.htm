@@ -775,9 +775,9 @@ proper operation.  Recognized dictionary keys are:
 </dl>
 
 <dl>
-<dt><b><tt>&lt;source&gt; /PCXDecode filter &lt;file&gt;</tt></b>
-<dd>Creates a filter that decodes data in the run-length encoding used in
-the PCX graphics file format.
+<dt><b><tt>&lt;target&gt; /MD5Encode filter &lt;file&gt;</tt></b>
+<dd>Creates a filter that produces the 16-byte MD5 digest of the input.
+Note that no output is produced until the filter is closed.
 </dl>
 
 <dl>
@@ -880,7 +880,6 @@ versions.
 
 <blockquote><b><tt>
 &lt;target/source&gt; &lt;string&gt; ByteTranslateEncode/Decode
-<br>&lt;target&gt; &lt;int&gt; BigStringEncode
 <br>&lt;target/source&gt; &lt;dict&gt; BoundedHuffmanEncode/Decode
 <blockquote>
 FirstBitLowOrder &lt;bool&gt; false

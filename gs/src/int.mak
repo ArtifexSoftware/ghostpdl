@@ -1194,6 +1194,18 @@ $(PSOBJ)zfilterx.$(OBJ) : $(PSSRC)zfilterx.c $(OP) $(memory__h)\
  $(smtf_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfilterx.$(OBJ) $(C_) $(PSSRC)zfilterx.c
 
+# MD5 digest filter
+fmd5_=$(GLOBJ)zfmd5.$(OBJ)
+$(PSD)fmd5.dev : $(INT_MAK) $(ECHOGS_XE) $(fmd5_) $(GLD)smd5.dev
+	$(SETMOD) $(PSD)fmd5 $(fmd5_)
+	$(ADDMOD) $(PSD)fmd5 -include $(GLD)smd5
+	$(ADDMOD) $(PSD)fmd5 -oper zfmd5
+
+$(PSOBJ)zfmd5.$(OBJ) : $(PSSRC)zfmd5.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(ialloc_h) $(ifilter_h)\
+ $(smd5_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfmd5.$(OBJ) $(C_) $(PSSRC)zfmd5.c
+
 # ---------------- Binary tokens ---------------- #
 
 nobtoken_=$(PSOBJ)inobtokn.$(OBJ)
@@ -1605,12 +1617,13 @@ $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psbase.dev $(PSD)color.dev $(PSD)compfont.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)fdecode.dev $(PSD)type1.dev $(PSD)pdffonts.dev $(GLD)psl2lib.dev $(PSD)psl2read.dev $(PSD)pdfread.dev\
  $(PSD)cff.dev $(PSD)cidfont.dev $(PSD)cie.dev $(PSD)cmapread.dev $(PSD)dctd.dev\
- $(PSD)func.dev $(PSD)ttfont.dev $(PSD)type2.dev
+ $(PSD)fmd5.dev $(PSD)func.dev $(PSD)ttfont.dev $(PSD)type2.dev
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(PSD)color $(PSD)compfont $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)fdecode $(PSD)type1 $(PSD)pdffonts
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)psl2read $(PSD)pdfread
 	$(ADDMOD) $(PSD)pdf -include $(PSD)cff $(PSD)cidfont $(PSD)cie
-	$(ADDMOD) $(PSD)pdf -include $(PSD)cmapread $(PSD)dctd $(PSD)func $(PSD)ttfont $(PSD)type2
+	$(ADDMOD) $(PSD)pdf -include $(PSD)cmapread $(PSD)dctd $(PSD)fmd5
+	$(ADDMOD) $(PSD)pdf -include $(PSD)func $(PSD)ttfont $(PSD)type2
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
 

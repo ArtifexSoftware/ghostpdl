@@ -414,6 +414,7 @@ shc_h=$(GLSRC)shc.h $(gsbittab_h) $(scommon_h)
 sisparam_h=$(GLSRC)sisparam.h
 sjpeg_h=$(GLSRC)sjpeg.h
 slzwx_h=$(GLSRC)slzwx.h
+smd5_h=$(GLSRC)smd5.h $(md5_h)
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
@@ -1160,6 +1161,15 @@ $(GLD)slzwd.dev : $(GLD)lzwd.dev
 $(GLOBJ)slzwd.$(OBJ) : $(GLSRC)slzwd.c $(AK) $(stdio__h) $(gdebug_h)\
  $(slzwx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)slzwd.$(OBJ) $(C_) $(GLSRC)slzwd.c
+
+# ---------------- MD5 digest filter ---------------- #
+
+smd5_=$(GLOBJ)smd5.$(OBJ)
+$(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_)
+	$(SETMOD) $(GLD)smd5 $(smd5_)
+
+$(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h) $(md5_h) $(GLSRC)md5.c
+	$(GLCC) $(GLO_)smd5.$(OBJ) $(C_) $(GLSRC)smd5.c
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.
