@@ -269,6 +269,7 @@ put
 
 end     % .cspace_util
 
+NOPSICC { (%END PSICC) .skipeof } if
 % Now set up ICC profile loading for PostScript %%BeginICCProfile sections.
 
 systemdict begin
@@ -321,4 +322,5 @@ dup null eq {pop {pop pop}} if /exec load
 << /ProcessDSCComment 3 -1 roll >> setuserparams
 
 end	% systemdict
+%END PSICC
 .setglobal

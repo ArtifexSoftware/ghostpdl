@@ -133,6 +133,7 @@ NOBIND { /bind { } def } if
 currentdict /NOCACHE known   /NOCACHE exch def
 currentdict /NOCCFONTS known   /NOCCFONTS exch def
 currentdict /NOCIE known   /NOCIE exch def
+currentdict /NOPSICC known   /NOPSICC exch def
 currentdict /NODISPLAY known   not /DISPLAYING exch def
 currentdict /NOFONTMAP known   /NOFONTMAP exch def
 currentdict /NOFONTPATH known   /NOFONTPATH exch def
@@ -832,7 +833,10 @@ userdict /.currentresourcefile //null put
     $error /recordstacks get $error /errorname get /VMerror ne and
      {		% Attempt to store the stack contents atomically.
        count array astore dup $error /ostack 4 -1 roll
-       countexecstack array execstack $error /estack 3 -1 roll
+       % Grab the execstack, then remove to two elements that are from
+       % this error handler (not interesting).
+       countexecstack array execstack dup length 2 sub 0 exch getinterval
+       $error /estack 3 -1 roll
        countdictstack array dictstack $error /dstack 3 -1 roll
        put put put aload pop
      }
