@@ -329,6 +329,7 @@ int main(int argc, char *argv[])
     char **nargv;
     char buf[256];
     char dformat[64];
+    char ddpi[64];
 
     if (!_isatty(fileno(stdin)))
         _setmode(fileno(stdin), _O_BINARY);
@@ -379,6 +380,7 @@ int main(int argc, char *argv[])
 		DISPLAY_DEPTH_1 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
 	HDC hdc = GetDC(NULL);	/* get hdc for desktop */
 	int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
+	sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
         ReleaseDC(NULL, hdc);
 	if (depth == 32)
  	    format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_LAST | 
@@ -398,11 +400,12 @@ int main(int argc, char *argv[])
 		DISPLAY_DEPTH_4 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
         sprintf(dformat, "-dDisplayFormat=%d", format);
     }
-    nargc = argc + 1;
+    nargc = argc + 2;
     nargv = (char **)malloc((nargc + 1) * sizeof(char *));
     nargv[0] = argv[0];
     nargv[1] = dformat;
-    memcpy(&nargv[2], &argv[1], argc * sizeof(char *));
+    nargv[2] = ddpi;
+    memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
 
     code = gsdll.init_with_args(instance, nargc, nargv);
     if (code == 0)

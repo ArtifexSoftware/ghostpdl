@@ -204,6 +204,7 @@ const gx_device_display gs_display_device =
     0,				/* nFormat */
     NULL,			/* pBitmap */
     0, 				/* ulBitmapSize */
+    0, 				/* HWResolution_set */
 
     {    /* devn_params specific parameters */
       8,        /* Bits per color - must match ncomp, depth, etc. */
@@ -748,6 +749,8 @@ display_get_params(gx_device * dev, gs_param_list * plist)
 	    "DisplayHandle", (long *)(&ddev->pHandle))) < 0 ||
 	(code = param_write_int(plist, 
 	    "DisplayFormat", &ddev->nFormat)) < 0 ||
+	(code = param_write_float(plist, 
+	    "DisplayResolution", &ddev->HWResolution[1])) < 0 ||
 	(code = devn_get_params(dev, plist, &ddev->devn_params, 
 		&ddev->equiv_cmyk_colors)) < 0);
     return code;
@@ -764,6 +767,8 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     gx_device_display *ddev = (gx_device_display *) dev;
     int ecode = 0, code;
     bool is_open = dev->is_open;
+    gs_param_float_array hwra;
+    float dispres = 0.0;
 
     int old_width = dev->width;
     int old_height = dev->height;
@@ -820,6 +825,31 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	default:
 	    ecode = code;
 	  hdle:param_signal_error(plist, "DisplayHandle", ecode);
+	case 1:
+	    break;
+    }
+
+    /* 
+     * Set the initial display resolution.
+     * If HWResolution is explicitly set, e.g. using -rDPI on the 
+     * command line, then use that.  Otherwise, use DisplayResolution
+     * which is typically set by the client to the display
+     * logical resolution.  Once either of these have been
+     * used, ignore all further DisplayResolution parameters.
+     */
+    if (param_read_float_array(plist, "HWResolution", &hwra) == 0)
+	ddev->HWResolution_set = 1;
+
+    switch (code = param_read_float(plist, "DisplayResolution", &dispres)) {
+	case 0:
+	    if (!ddev->HWResolution_set) {
+	        gx_device_set_resolution(dev, dispres, dispres);
+		ddev->HWResolution_set = 1;
+	    }
+	    break;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, "DisplayResolution", ecode);
 	case 1:
 	    break;
     }

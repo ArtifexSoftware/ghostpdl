@@ -216,6 +216,7 @@ struct display_callback_s {
      * and hence to RGB for display.
      * GS must only use this callback if version_major >= 2.
      * The unsigned short c,m,y,k values are 65535 = 1.0.
+     * This function pointer may be set to NULL if not required.
      */
     int (*display_separation)(void *handle, void *device,
 	int component, const char *component_name,

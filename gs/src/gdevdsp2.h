@@ -29,6 +29,7 @@ typedef struct gx_device_display_s gx_device_display;
 	int nFormat;\
 	void *pBitmap;\
 	unsigned long ulBitmapSize;\
+	int HWResolution_set;\
         gs_devn_params devn_params;\
         equivalent_cmyk_color_params equiv_cmyk_colors
 
