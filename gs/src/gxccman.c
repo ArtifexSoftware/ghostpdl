@@ -168,17 +168,14 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
 int
 gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
-	       cached_fm_pair **ppair)
+	       bool design_grid, cached_fm_pair **ppair)
 {
-    int scale_x = 1 << log2_scale->x;
-    int scale_y = 1 << log2_scale->y;
-    float mxx = char_tm->xx * scale_x, mxy = char_tm->xy * scale_x, 
-          myx = char_tm->yx * scale_y, myy = char_tm->yy * scale_y;
-    register cached_fm_pair *pair =
-    dir->fmcache.mdata + dir->fmcache.mnext;
-    cached_fm_pair *mend =
-    dir->fmcache.mdata + dir->fmcache.mmax;
+    float mxx, mxy, myx, myy;
+    register cached_fm_pair *pair = dir->fmcache.mdata + dir->fmcache.mnext;
+    cached_fm_pair *mend = dir->fmcache.mdata + dir->fmcache.mmax;
 
+    gx_compute_ccache_key(font, char_tm, log2_scale, design_grid,
+			    &mxx, &mxy, &myx, &myy);
     if (dir->fmcache.msize == dir->fmcache.mmax) {	/* cache is full *//* Prefer an entry with num_chars == 0, if any. */
 	int count;
 
@@ -213,12 +210,14 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->ttr = 0;
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
 	int code; 
+	float cxx, cxy, cyx, cyy;
 	gs_matrix m;
-	
-	m.xx = mxx;
-	m.xy = mxy;
-	m.yx = myx;
-	m.yy = myy;
+	gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
+
+	m.xx = cxx;
+	m.xy = cxy;
+	m.yx = cyx;
+	m.yy = cyy;
 	m.tx = m.yx = 0;
 	pair->ttr = gx_ttfReader__create(dir->memory, (gs_font_type42 *)font);
 	if (!pair->ttr)
@@ -228,7 +227,7 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	if (!pair->ttf)
 	    return_error(gs_error_VMerror);
 	code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
-		    (gs_font_type42 *)font, &m, log2_scale);
+		    (gs_font_type42 *)font, &m, log2_scale, design_grid);
 	if (code < 0)
 	    return code;
     }

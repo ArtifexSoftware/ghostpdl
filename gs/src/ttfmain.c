@@ -232,10 +232,11 @@ void ttfFont__finit(ttfFont *this)
 
 #define MAX_SUBGLYPH_NESTING 3 /* Arbitrary. We need this because we don't want 
                                   a ttfOutliner__BuildGlyphOutline recursion 
-				  while a glyph is loaded. */
+				  while a glyph is loaded in ttfReader. */
 
 FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r, 
-				    unsigned int nTTC, float w, float h, bool no_grid_fitting)
+				    unsigned int nTTC, float w, float h, 
+				    bool no_grid_rounding, bool design_grid)
 {   char sVersion[4], sVersion0[4] = {0, 1, 0, 0};
     unsigned int nNumTables, i;
     TT_Error code;
@@ -245,7 +246,8 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     F26Dot6 ww, hh;
 
     this->tti = tti;
-    this->no_grid_fitting = no_grid_fitting;
+    this->no_grid_rounding = no_grid_rounding;
+    this->design_grid = design_grid;
     r->Read(r, sVersion, 4);
     if(!memcmp(sVersion, "ttcf", 4)) {
 	unsigned int nFonts, nPos;
@@ -345,13 +347,11 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     if (code)
 	return fBadFontData;
     I.z = this->inst;
-    if (w != 0 || h != 0) {
+    if (design_grid)
+	ww = hh = shortToF26Dot6(this->nUnitsPerEm);
+    else {
 	ww = floatToF26Dot6(w);
 	hh = floatToF26Dot6(h);
-	this->bOwnScale = false;
-    } else {
-	ww = hh = shortToF26Dot6(this->nUnitsPerEm);
-	this->bOwnScale = true;
     }
     code = TT_Set_Instance_CharSizes(I, ww, hh);
     this->inst->metrics  = this->exec->metrics;
@@ -1064,7 +1064,7 @@ private void ttfOutliner__DrawGlyphOutline(ttfOutliner *this, ttfGlyphOutline* o
 }
 
 FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
-	float orig_x, float orig_y, FloatMatrix *m1, bool grid_fit)
+	float orig_x, float orig_y, FloatMatrix *m1)
 {   ttfFont *pFont = this->pFont;
     ttfExport *exp = this->exp;
     ttfGlyphOutline out;
@@ -1083,7 +1083,7 @@ FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
     ttfFont__StopGlyph(pFont);
     if (pFont->nUnitsPerEm <= 0)
 	pFont->nUnitsPerEm = 1024;
-    if (pFont->bOwnScale) {
+    if (pFont->design_grid) {
 	m.a /= pFont->nUnitsPerEm;
 	m.b /= pFont->nUnitsPerEm;
 	m.c /= pFont->nUnitsPerEm;

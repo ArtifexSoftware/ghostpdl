@@ -40,27 +40,9 @@ typedef struct _TExecution_Context TExecution_Context;
 typedef struct ttfInterpreter_s ttfInterpreter;
 #endif
 
+/* Define auxiliary data types for the TT interpreter. */
+
 typedef struct ttfMemoryDescriptor_s ttfMemoryDescriptor;
-
-typedef signed long F26Dot6;
-
-typedef struct ttfMemory_s ttfMemory;
-struct ttfMemory_s {   
-    void *(*alloc_bytes)(ttfMemory *, int size,  const char *cname);
-    void *(*alloc_struct)(ttfMemory *, const ttfMemoryDescriptor *,  const char *cname);
-    void (*free)(ttfMemory *, void *p,  const char *cname);
-} ;
-
-typedef struct ttfSubGlyphUsage_s ttfSubGlyphUsage;
-
-struct ttfInterpreter_s {
-    TExecution_Context *exec;
-    ttfSubGlyphUsage *usage;
-    int usage_size;
-    int usage_top;
-    int lock;
-    ttfMemory *ttf_memory;
-};
 
 typedef struct {
     double a, b, c, d, tx, ty;
@@ -70,6 +52,29 @@ typedef struct {
     double x, y;
 } FloatPoint;
 
+typedef signed long F26Dot6;
+
+/* Define an abstract class for accessing memory managers from the TT interpreter. */
+typedef struct ttfMemory_s ttfMemory;
+struct ttfMemory_s {   
+    void *(*alloc_bytes)(ttfMemory *, int size,  const char *cname);
+    void *(*alloc_struct)(ttfMemory *, const ttfMemoryDescriptor *,  const char *cname);
+    void (*free)(ttfMemory *, void *p,  const char *cname);
+} ;
+
+typedef struct ttfSubGlyphUsage_s ttfSubGlyphUsage;
+
+/* Define a capsule for the TT interpreter. */
+struct ttfInterpreter_s {
+    TExecution_Context *exec;
+    ttfSubGlyphUsage *usage;
+    int usage_size;
+    int usage_top;
+    int lock;
+    ttfMemory *ttf_memory;
+};
+
+/* Define TT interpreter return codes. */
 typedef enum {
     fNoError,
     fTableNotFound,
@@ -82,6 +87,7 @@ typedef enum {
     fPatented
 } FontError;
 
+/* Define an abstract class for accessing TT data from the TT interpreter. */
 typedef struct ttfReader_s ttfReader;
 struct ttfReader_s {
     bool   (*Eof)(ttfReader *);
@@ -93,10 +99,14 @@ struct ttfReader_s {
     void   (*ReleaseExtraGlyph)(ttfReader *, int nIndex);
 };
 
+/* Define an auxiliary structure for ttfFont. */
 typedef struct {
     int nPos, nLen;
 } ttfPtrElem;
 
+/* Define a capsule for a TT face. 
+   Diue to historical reason the name is some misleading.
+   It should be ttfFace. */
 #ifndef ttfFont_DEFINED
 #  define ttfFont_DEFINED
 typedef struct ttfFont_s ttfFont;
@@ -122,8 +132,8 @@ struct ttfFont_s {
     unsigned int nLongMetricsHorz;
     unsigned int nIndexToLocFormat;
     bool    patented;
-    bool    bOwnScale;
-    bool    no_grid_fitting;
+    bool    design_grid;
+    bool    no_grid_rounding;
     TFace *face;
     TInstance *inst;
     TExecution_Context  *exec;
@@ -137,8 +147,10 @@ void ttfFont__init(ttfFont *this, ttfMemory *mem,
 		    void (*DebugPrint)(ttfFont *, const char *s, ...));
 void ttfFont__finit(ttfFont *this);
 FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r, 
-			unsigned int nTTC, float w, float h, bool no_grid_fitting);
+			unsigned int nTTC, float w, float h, 
+			bool no_grid_rounding, bool design_grid);
 
+/* Define an abstract class for exporting outlines from the TT interpreter. */
 typedef struct ttfExport_s ttfExport;
 struct ttfExport_s {
     bool bPoints, bOutline;
@@ -154,6 +166,7 @@ struct ttfExport_s {
 int ttfInterpreter__obtain(ttfMemory *mem, ttfInterpreter **ptti);
 void ttfInterpreter__release(ttfInterpreter **ptti);
 
+/* Define an class for generating TT outlines. */
 typedef struct {
     bool bOutline;
     bool bFirst;
@@ -169,6 +182,6 @@ typedef struct {
 void ttfOutliner__init(ttfOutliner *, ttfFont *f, ttfReader *r, ttfExport *exp, 
 			bool bOutline, bool bFirst, bool bVertical);
 FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
-	float orig_x, float orig_y, FloatMatrix *m1, bool grid_fit);
+	float orig_x, float orig_y, FloatMatrix *m1);
 
 #endif

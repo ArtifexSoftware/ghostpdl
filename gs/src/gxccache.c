@@ -41,18 +41,53 @@
 private byte *compress_alpha_bits(const cached_char *, gs_memory_t *);
 
 /* Define a scale factor of 1. */
-static const gs_log2_scale_point scale_log2_1 =
+private const gs_log2_scale_point scale_log2_1 =
 {0, 0};
+
+void
+gx_compute_char_matrix(const gs_matrix *char_tm, const gs_log2_scale_point *log2_scale, 
+    float *mxx, float *mxy, float *myx, float *myy)
+{
+    int scale_x = 1 << log2_scale->x;
+    int scale_y = 1 << log2_scale->y;
+
+    *mxx = char_tm->xx * scale_x;
+    *mxy = char_tm->xy * scale_x;
+    *myx = char_tm->yx * scale_y;
+    *myy = char_tm->yy * scale_y;
+}
+
+void
+gx_compute_ccache_key(gs_font * pfont, const gs_matrix *char_tm, 
+    const gs_log2_scale_point *log2_scale, bool design_grid,
+    float *mxx, float *mxy, float *myx, float *myy)
+{
+    if (design_grid && 
+	    (pfont->FontType == ft_TrueType || pfont->FontType == ft_CID_TrueType)) {
+	/* 
+	 * We need a special face for this case, because the TT interpreter
+	 * can't generate both grid_fitted and non-grid-fitted outlines
+	 * with a same face instance. This happens due to control
+	 * values in 'cvt' must be different. 
+	 *
+	 * Note it's a slightly different case than 
+	 * << /GridFitTT 0 >> setuserparams, which skips
+	 * the rounding to pixels and applies projections,
+	 * which may depend on resolution. What we want here
+	 * is to emulate an infinite resolution interpreting a TT bytecode.
+	 * The zero scale is a special magic constant for that. 
+	 */
+	*mxx = *mxy = *myx = *myy = 0;
+    } else
+	gx_compute_char_matrix(char_tm, log2_scale, mxx, mxy, myx, myy);
+}
 
 /* Look up, and if necessary add, a font/matrix pair in the cache */
 int
 gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm, 
-    const gs_log2_scale_point *log2_scale, cached_fm_pair **ppair)
+    const gs_log2_scale_point *log2_scale, bool design_grid, cached_fm_pair **ppair)
 {
-    int scale_x = 1 << log2_scale->x;
-    int scale_y = 1 << log2_scale->y;
-    float mxx = char_tm->xx * scale_x, mxy = char_tm->xy * scale_x, 
-          myx = char_tm->yx * scale_y, myy = char_tm->yy * scale_y;
+    float mxx, mxy, myx, myy;
     gs_font *font = pfont;
     register gs_font_dir *dir = font->dir;
     register cached_fm_pair *pair =
@@ -60,6 +95,8 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
     int count = dir->fmcache.mmax;
     gs_uid uid;
 
+    gx_compute_ccache_key(pfont, char_tm, log2_scale, design_grid,
+			    &mxx, &mxy, &myx, &myy);
     if (font->FontType == ft_composite || font->PaintType != 0) {	/* We can't cache by UID alone. */
 	uid_set_invalid(&uid);
     } else {
@@ -99,7 +136,7 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 	    return 0;
 	}
     }
-    return gx_add_fm_pair(dir, pfont, &uid, char_tm, log2_scale, ppair);
+    return gx_add_fm_pair(dir, pfont, &uid, char_tm, log2_scale, design_grid, ppair);
 }
 
 /* Look up a glyph with the right depth in the cache. */

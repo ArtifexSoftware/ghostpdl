@@ -733,7 +733,7 @@ show_update(gs_show_enum * penum)
 	    {   cached_fm_pair *pair;
 
 		code = gx_lookup_fm_pair(pgs->font, &char_tm_only(pgs), 
-					    &penum->log2_scale, &pair);
+			    &penum->log2_scale, penum->charpath_flag != cpm_show, &pair);
 		if (code < 0)
 		    return code;
 		gx_add_cached_char(pgs->font->dir, penum->dev_cache,
@@ -936,11 +936,13 @@ show_proceed(gs_show_enum * penum)
 			gs_log2_scale_point log2_scale;
 			gs_fixed_point subpix_origin;
 
-			code = compute_glyph_raster_params(penum, false, &alpha_bits, &depth, &subpix_origin, &log2_scale);
+			code = compute_glyph_raster_params(penum, false, 
+				    &alpha_bits, &depth, &subpix_origin, &log2_scale);
 			if (code < 0)
 			    return code;
 			if (pair == 0) {
-			    code = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale, &pair);
+			    code = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale, 
+				penum->charpath_flag != cpm_show, &pair);
 			    if (code < 0)
 				return code;
 			}
@@ -1067,7 +1069,8 @@ show_proceed(gs_show_enum * penum)
 			if (code < 0)
 			    return code;
 			if (pair == 0) {
-			    code = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale, &pair);
+			    code = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale,
+				    penum->charpath_flag != cpm_show, &pair);
 			    if (code < 0)
 				return code;
 			}
