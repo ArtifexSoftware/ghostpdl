@@ -156,4 +156,16 @@ $(GLOBJ)gp_mshdl.$(OBJ): $(GLSRC)gp_mshdl.c $(AK)\
  $(gserror_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)
 	$(GLCC) $(GLO_)gp_mshdl.$(OBJ) $(C_) $(GLSRC)gp_mshdl.c
 
+# Define MS-Windows printer (file system) as a separable feature.
+
+msprinter_=$(GLOBJ)gp_msprn.$(OBJ)
+$(GLD)msprinter.dev: $(ECHOGS_XE) $(msprinter_)
+	$(SETMOD) $(GLD)msprinter $(msprinter_)
+	$(ADDMOD) $(GLD)msprinter -iodev printer
+
+$(GLOBJ)gp_msprn.$(OBJ): $(GLSRC)gp_msprn.c $(AK)\
+ $(ctype__h) $(errno__h) $(stdio__h) $(string__h)\
+ $(gserror_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)
+	$(GLCCWIN) $(GLO_)gp_msprn.$(OBJ) $(C_) $(GLSRC)gp_msprn.c
+
 # end of winlib.mak

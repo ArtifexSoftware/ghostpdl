@@ -168,9 +168,8 @@ is required.
 
 <p>
 To install a self-extracting Ghostscript archive on Windows 95/98 or
-Windows
-NT 4, you need just this self-extracting archive file.  Run this file to
-install Ghostscript.
+Windows NT4/2000, you need just this self-extracting archive file.  
+Run this file to install Ghostscript.
 
 <p>
 Alternatively, if you have the zip file, unzip it to a temporary
@@ -313,13 +312,14 @@ This can be modified as follows.
 <dt><b><tt>-sOutputFile="LPT1:"</tt></b>
 <dd>Output to the named port.
 
-<dt><b><tt>-sOutputFile="\\spool\printer name"</tt></b> (Windows 95 or
-Windows NT)
-<dd>Output to the named printer.
+<dt><b><tt>-sOutputFile="%printer%printer name"</tt></b> (Windows 95, 98,
+NT or 2000)
+<dd>Output to the named printer.  If your printer is named "HP DeskJet 500"
+then you would use <tt>-sOutputFile="%printer%HP DeskJet 500"</tt>.
 
-<dt><b><tt>-sOutputFile="\\spool"</tt></b> (Windows 95 or Windows NT)
-<dd>Prompt for the name of a printer.  Only local printers are
-supported.
+<dt><b><tt>-sOutputFile="\\spool\printer name"</tt></b> (Windows 3.1/Win32s)
+<dd>Output to the named printer.  Note that this is NOT a UNC name.
+
 </dl>
 </blockquote>
 

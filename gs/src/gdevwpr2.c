@@ -197,6 +197,7 @@ struct gx_device_win_pr2_s {
     DLGPROC lpfnCancelProc;
     HWND hDlgModeless;
 
+    bool use_old_spool_name;	/* user prefers old \\spool\ name */
     gx_device_win_pr2* original_device;	/* used to detect copies */
 };
 
@@ -230,6 +231,7 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
     NULL,			/* win32_hdevnames */
     NULL,			/* lpfnAbortProc */
     NULL,			/* lpfnCancelProc */
+    false,			/* use_old_spool_name */
     NULL			/* original_device */
 };
 
@@ -866,11 +868,16 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     HANDLE hprinter;
 
     /* first try to derive the printer name from -sOutputFile= */
-    /* is printer if name prefixed by \\spool\ */
-    if (is_spool(wdev->fname))
+    /* is printer if name prefixed by \\spool\ or by %printer% */
+    if (is_spool(wdev->fname)) {
 	device = wdev->fname + 8;	/* skip over \\spool\ */
-    else
+	wdev->use_old_spool_name = true;
+    } else if (strncmp("%printer%",wdev->fname,9) == 0) {
+	device = wdev->fname + 9;	/* skip over %printer% */
+	wdev->use_old_spool_name = false;
+    } else {
 	return FALSE;
+    }
 
     /* now try to match the printer name against the [Devices] section */
     if ((devices = gs_malloc(4096, 1, "win_pr2_getdc")) == (char *)NULL)
@@ -1388,7 +1395,11 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
     devnames = (LPDEVNAMES) GlobalLock(pd.hDevNames);
 
     wdev->user_changed_settings = TRUE;
-    sprintf(wdev->fname, "\\\\spool\\%s", (char*)(devnames)+(devnames->wDeviceOffset));
+    if (wdev->use_old_spool_name) {
+	sprintf(wdev->fname, "\\\\spool\\%s", (char*)(devnames)+(devnames->wDeviceOffset));
+    } else {
+	sprintf(wdev->fname, "%%printer%%%s", (char*)(devnames)+(devnames->wDeviceOffset));
+    }
 
     if (mode == 3) {
 	devmode->dmCopies = wdev->user_copies * wdev->print_copies;
