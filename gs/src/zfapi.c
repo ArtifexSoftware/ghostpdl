@@ -435,7 +435,6 @@ private ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int ind
                 */
                 return (n1 < n2 ? n2 : n1) * 2;
             }
-            return 0;
     }
     return 0;
 }
@@ -464,7 +463,6 @@ private ulong FAPI_FF_get_long(FAPI_font *ff, fapi_font_feature var_id, int inde
                 }
                 return size;
             }
-            return 0;
         case FAPI_FONT_FEATURE_TT_size:
             return true_type_size(pdr);
     }

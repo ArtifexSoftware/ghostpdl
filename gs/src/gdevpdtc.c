@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Composite and CID-based text processing for pdfwrite. */
 #include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxfcmap.h"
@@ -50,7 +51,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
     gs_point total_width;
     const gs_matrix *psmat = 0;
     gs_font *prev_font = 0;
-    gs_char chr, char_code = 0x0badf00d, space_char = ~0;
+    gs_char chr, char_code = 0x0badf00d, space_char = GS_NO_CHAR;
     int buf_index = 0;
     bool return_width = (penum->text.operation & TEXT_RETURN_WIDTH);
 

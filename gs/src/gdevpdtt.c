@@ -177,8 +177,6 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		 * We also detected that min_int, max_int don't work here with
 		 * comparefiles/Bug687044.ps, therefore we divide them by 2.
 		 */
-		gs_font_base *bfont = (gs_font_base *)font;
-
 		clip_box.p.x = clip_box.p.y = min_int / 2;
 		clip_box.q.x = clip_box.q.y = max_int / 2;
 	    }

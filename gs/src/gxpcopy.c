@@ -281,6 +281,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 #define x3 pc->pt.x
 #define y3 pc->pt.y
 
+#if OLD_MONOTONIZATION
 #ifdef DEBUG
 private void
 dprint_curve(const char *str, fixed x0, fixed y0, const curve_segment * pc)
@@ -291,6 +292,7 @@ dprint_curve(const char *str, fixed x0, fixed y0, const curve_segment * pc)
 	      fixed2float(pc->p2.x), fixed2float(pc->p2.y),
 	      fixed2float(pc->pt.x), fixed2float(pc->pt.y));
 }
+#endif
 #endif
 
 /* Initialize a cursor for rasterizing a monotonic curve. */
