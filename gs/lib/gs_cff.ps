@@ -182,13 +182,13 @@ mark
 
 /advance {	% <n> advance -
   f cff eq { /pos pos 3 -1 roll add store } { pop } ifelse
-} def
+} bind def
 /next {		% - next <byte>
   f read {
     1 advance
     DEBUG { (  ) print dup = } if
   } if
-} def
+} bind def
 /nextstring {	% <length> nextstring <string>
   dup 0 eq {
     pop ()
@@ -196,20 +196,20 @@ mark
     string f exch readstring pop dup length advance
     DEBUG { (  ) print dup == } if
   } ifelse
-} def
+} bind def
 /card8		% - card8 <card8>
  /next load
 def
 /card16 {	% - card16 <card16>
   card8 8 bitshift card8 add
-} def
+} bind def
 /card32 {	% - card32 <card32>
 	% Not used by CFF, only by the OpenType loader.
   card16 16 bitshift card16 add
-} def
+} bind def
 /offset {	% <offsize> offset <offset>
   0 exch { 8 bitshift next add } repeat
-} def
+} bind def
 /sid		% - <sid> sid
   /card16 load
 def
@@ -220,7 +220,7 @@ def
     } repeat pop
   } if pop .packtomark
   [ exch { nextstring } forall ] readonly
-} def
+} bind def
 /tokens {	% - tokens <num1> ... <op#> (op# = 12 means EOF)
   {
     f read not { 12 exit } if
@@ -253,11 +253,11 @@ def
       } ifelse
     } ifelse
   } loop
-} def
+} bind def
 /tokenbuf 100 string def
 /tokenput {	% <index> <char> tokenput <index+1>
   tokenbuf 2 index 3 -1 roll put 1 add
-} def
+} bind def
 /tokenrealarray [
  (0123456789.E) { } forall
  [(E) 0 get /tokenput cvx (-) 0 get] cvx
@@ -273,24 +273,24 @@ def
     1 index 15 and tokenrealarray exch get exec tokenput exch pop
   } loop
   tokenbuf 0 3 -1 roll getinterval cvr exch pop
-} def
+} bind def
 /Dict {		% <opsdict> Dict -
   /opdict exch store {
     mark tokens
     DEBUG { (tokens: ) print ] dup === mark exch aload pop } if
     opdict exch .knownget { exec } if cleartomark
   } loop cleartomark
-} def
+} bind def
 /idstring {	% <sid> idstring <string|name>
   dup 391 lt { StandardStrings } { 391 sub strings } ifelse exch get
-} def
+} bind def
 /idname {	% <sid> idname <name>
   idstring dup type /nametype ne { cvn } if
-} def
+} bind def
 /subfilefilter {	% <file> <length> subfilefilter <filter>
 	% SubFileDecode interprets a length of 0 as infinite.
   dup 0 le { pop pop () 0 } if () /SubFileDecode filter
-} def
+} bind def
 
 % ------ Top dictionary ------ %
 
@@ -298,23 +298,23 @@ def
   DEBUG { (queued: ) print 1 index =only ( ) print dup === } if
   currentdict exch aload length 1 add packedarray cvx
   offsets 3 1 roll put
-} def
+} bind def
 /queueput {	% <font> <proc> queueput -
   16#7fffffff offsets { pop .min } forall
   pos sub nextstring
   3 1 roll aload length 2 add packedarray cvx
   [ queued aload pop counttomark 2 add -1 roll ]
   /queued exch store
-} def
+} bind def
 /xxput {	% <value> <key> <dict> xxput -
   3 1 roll exch put
-} def
+} bind def
 /putfi {	% <value> <key> putfi -
   FontInfo xxput
-} def
+} bind def
 /xdef {		% <value> <key> xdef -
   exch def
-} def
+} bind def
 /topdictops mark
   12 { exit }
   0 { idstring /version putfi }
@@ -391,11 +391,11 @@ def
     16#7fffffff offsets { pop .min } forall
     pos sub false
   } ifelse
-} def
+} bind def
 
 /readCharStrings {	% <font> readCharStrings -
   /CharStringArray Index put
-} def
+} bind def
 
 % ------ Charsets and encodings ------ %
 
@@ -403,7 +403,7 @@ def
 % We'll fix this if it ever becomes necessary.
 /charsetcount {
   charstringcount { 1 sub } { 2 idiv } ifelse
-} def
+} bind def
 /charsetformats [
 { [ 0 3 -1 roll charsetcount { sid } repeat ]
 }
@@ -420,11 +420,11 @@ def
 ] readonly def
 /queuecharset {		% <font> queuecharset -
   { readcharset } queueput
-} def
+} bind def
 /readcharset {		% <data> <font> readcharset -
   begin 0 () /SubFileDecode filter /f exch store
   charsetformats next get currentdict exch exec /charset exch def end
-} def
+} bind def
 
 /encodingformats [
 { 1 1 next { next exch Encoding 3 1 roll put } for
@@ -440,7 +440,7 @@ def
 ] readonly def
 /queueEncoding {	% <font> queueEncoding -
   { readEncoding } queueput
-} def
+} bind def
 /readEncoding {		% <data> <font> readEncoding -
   begin 0 () /SubFileDecode filter /f exch store
   /Encoding [ 256 { /.notdef } repeat ] def
@@ -451,7 +451,7 @@ def
       Encoding next sid idname put
     } repeat
   } if end
-} def
+} bind def
 
 % ------ FDArray and FDSelect ------ %
 
@@ -467,7 +467,7 @@ def
     /Private 20 dict def
     //topdictops Dict currentdict end
   } forall ] /FDArray xdef end end
-} def
+} bind def
 
 % Note: this implementation can overflow the operand stack.
 % We'll fix this if it ever becomes necessary.
@@ -486,7 +486,7 @@ dup
 
 /readFDSelect {		% <font> readFDSelect -
   begin fdselectformats next get currentdict exch exec /FDSelect exch def end
-} def
+} bind def
 
 
 % ------ Private dictionary ------ %
@@ -494,7 +494,7 @@ dup
 /deltarray {		% -mark- <num1> ... deltarray <num1'> ...
   0 counttomark 1 sub { counttomark -1 roll add dup } repeat pop
   counttomark array astore
-} def
+} bind def
 
 /privatedictops mark
   12 { exit }
@@ -535,11 +535,11 @@ dup
   //privatedictops Dict end
   exch /f exch store advance
   end
-} def
+} bind def
 
 /readSubrs {		% <font> readSubrs -
   /Subrs Index put
-} def
+} bind def
 
 % ------ Main program ------ %
 
@@ -611,7 +611,7 @@ dup
 % contains only a single font.
 /StartData {          % <resname> <nbytes> StartData -
   currentfile exch subfilefilter false ReadData
-} def
+} bind def
 /ReadData {           % <resname> <file> <forceresname> ReadData -
 
 	% Initialize.
