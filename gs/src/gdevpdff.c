@@ -696,11 +696,12 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		return_error(gs_error_rangecheck);
 	    }
 	}
-	code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
-	if (code < 0)
-	    return code;
-	if (!pfd)
+	if (!pfd) {
+	    code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
+	    if (code < 0)
+		return code;
 	    ffid = pdf_obj_ref(pdev);
+	}
 	/* The font isn't standard: make sure we write the Widths. */
 	same &= ~FONT_SAME_METRICS;
 	break;
