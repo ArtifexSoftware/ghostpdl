@@ -757,6 +757,9 @@ pdf_glyph_origin(pdf_font_resource_t *pdfont, int ch, int WMode, gs_point *p)
  * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH,
  * and implement TEXT_REPLACE_WIDTHS if requested.
  * Uses and updates ppts->values.matrix; uses ppts->values.pdfont.
+ * 
+ * Destroys the text parameters in *pte. 
+ * The caller must restore them.
  */
 int
 process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
@@ -783,6 +786,8 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
     pte->text.data.bytes = pstr->data;
     pte->text.size = pstr->size;
     pte->index = 0;
+    pte->text.operation &= ~TEXT_FROM_ANY;
+    pte->text.operation |= TEXT_FROM_STRING;
     start.x = ppts->values.matrix.tx;
     start.y = ppts->values.matrix.ty;
     total.x = total.y = 0;	/* user space */
@@ -1038,7 +1043,7 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	    if (code < 0)
 		break;
 	    count += char_code_length;
-	    if (pte->text.operation & TEXT_INTERVENE)
+	    if (operation & TEXT_INTERVENE)
 		break; /* Just do one character. */
 	}
 	if (i < size) {
@@ -1055,10 +1060,15 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	    }
 	    count = size;
 	}
+	/*  So far we will use TEXT_FROM_STRING instead
+	    TEXT_FROM_*_GLYPH*. Since we used a single 
+	    byte encoding, the character index appears invariant
+	    during this substitution.
+	 */
     } else
 	return_error(gs_error_rangecheck);
     str.data = buf;
-    if (count > 1 && (pte->text.operation & TEXT_INTERVENE)) {
+    if (count > 1 && (operation & TEXT_INTERVENE)) {
 	/* Just do one character. */
 	str.size = 1;
 	code = pdf_encode_process_string(penum, &str, gdata, NULL, &text_state);
