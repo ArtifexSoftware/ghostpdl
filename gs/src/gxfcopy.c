@@ -1620,7 +1620,10 @@ copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     int gid;
     int code;
 
-    gid = fcid2->cidata.CIDMap_proc(fcid2, glyph);
+    if (!(options & COPY_GLYPH_BY_INDEX))
+        gid = fcid2->cidata.CIDMap_proc(fcid2, glyph);
+    else
+        gid = cid;
     if (gid < 0 || gid >= cfdata->glyphs_size)
 	return_error(gs_error_rangecheck);
     if (cfdata->CIDMap[cid] != 0 && cfdata->CIDMap[cid] != gid)
@@ -1871,7 +1874,7 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 	return_error(gs_error_limitcheck);
     for (i = 1; i < count; ++i) {
 	code = gs_copy_glyph_options(font, glyphs[i], copied,
-				     options & ~COPY_GLYPH_NO_OLD);
+				     (options & ~COPY_GLYPH_NO_OLD) | COPY_GLYPH_BY_INDEX);
 	if (code < 0)
 	    return code;
     }

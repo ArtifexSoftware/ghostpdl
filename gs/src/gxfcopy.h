@@ -110,6 +110,7 @@ int gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied);
  */
 #define COPY_GLYPH_NO_OLD 1
 #define COPY_GLYPH_NO_NEW 2
+#define COPY_GLYPH_BY_INDEX 4
 int gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 			  int options);
 
