@@ -25,7 +25,6 @@ typedef int FracInt; /* A fractional integer with statically unknown number of f
                         The number of bits depends on plugin and is being specified in
                         FAPI_server::frac_shift.
                      */
-
 typedef int FAPI_retcode;
 
 typedef enum {
@@ -65,13 +64,13 @@ typedef enum {
 
 typedef struct {
     int char_code;
-    bool is_glyph_index; /* true if cahr_code contains glyph index */
+    bool is_glyph_index; /* true if char_code contains glyph index */
     const unsigned char *char_name; /* to be used exclusively with char_code. */
     unsigned int char_name_length;
 } FAPI_char_ref;
 
 typedef struct FAPI_font_s FAPI_font;
-struct FAPI_font_s { /* fixme : bad name */
+struct FAPI_font_s {
     /* server's data : */
     void *server_font_data;
     bool need_decrypt;
@@ -92,7 +91,7 @@ struct FAPI_font_s { /* fixme : bad name */
 
 typedef struct FAPI_path_s FAPI_path;
 struct FAPI_path_s {
-    struct FAPI_outline_handler_s *olh;
+    void *olh; /* Client's data. */
     int shift;
     int (*moveto   )(FAPI_path *, FracInt, FracInt);
     int (*lineto   )(FAPI_path *, FracInt, FracInt);
@@ -100,17 +99,17 @@ struct FAPI_path_s {
     int (*closepath)(FAPI_path *);
 };
 
-typedef struct { /* 1bit/pixel only, lines are byte-aligned. */
+typedef struct { /* 1bit/pixel only, rows are byte-aligned. */
     void *p;
     int width, height, line_step;
 } FAPI_raster;
 
 typedef struct FAPI_metrics_s {
-    int bbox_x0, bbox_y0, bbox_x1, bbox_y1; /* pixels */
+    int bbox_x0, bbox_y0, bbox_x1, bbox_y1; /* design units */
+    int escapement; /* design units */
     int orig_x, orig_y; /* origin, 1/16s pixel */
-    int lsb_x, lsb_y; /* left side bearing */
-    int tsb_x, tsb_y; /* top side bearing */
-    FracInt esc_x, esc_y; /* escapement */
+    int em_x, em_y; /* design units */
+    FracInt esc_x, esc_y; /* escapement, device units */
 } FAPI_metrics;
 
 #ifndef FAPI_server_DEFINED
@@ -120,10 +119,9 @@ typedef struct FAPI_server_s FAPI_server;
 
 struct FAPI_server_s {
     i_plugin_instance ig;
-    int frac_shift; /* number of fractional bits in coordinates */
-    int server_caches_chars; /* boolean */
+    int frac_shift; /* The number of fractional bits in coordinates. */
     FAPI_retcode (*ensure_open)(FAPI_server *server);
-    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, const char *font_file_path, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap, int bCache);
+    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, const char *font_file_path, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);
     FAPI_retcode (*can_retrieve_char_by_name)(FAPI_server *server, FAPI_font *ff, int *result);
@@ -132,37 +130,30 @@ struct FAPI_server_s {
     FAPI_retcode (*get_char_raster_metrics)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics);
     FAPI_retcode (*get_char_raster)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_raster *r);
     FAPI_retcode (*release_char_raster)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c);
-    FAPI_retcode (*release_font_data)(FAPI_server *server, void *server_font_data);
+    FAPI_retcode (*release_typeface)(FAPI_server *server, void *server_font_data);
     /*  Some people get confused with terms "font cache" and "character cache".
         "font cache" means a cache for scaled font objects, which mainly
         keep the font header information and rules for adjusting it to specific raster.
-        "character cahce" is a cache for specific character outlines and character rasters.
+        "character cahce" is a cache for specific character outlines and/or character rasters.
     */
-    /*  get_scaled_font opens typeface with a server and scales it according to CTM and HWResolution.
-        This creates server's scaled font object.
+    /*  get_scaled_font opens a typeface with a server and scales it according to CTM and HWResolution.
+        This creates a server's scaled font object.
         Since UFST doesn't provide a handle to this object,
-        we need to buld the data for it and call this function whenever scaled font data may change.
-        Therefore the server must cahce fonts internally.
+        we need to build the data for it and call this function whenever scaled font data may change.
+        The server must cache scaled fonts internally.
         Note that FreeType doesn't provide internal font cache,
         so the bridge must do.
     */
-    /*  Currently we suppose that GS calls server for direct rendering to clist,
-        without putting rasters to GS character cache. Later we fix it with GS cache.
-	
-        get_char_raster_metrics may leave some data kept by the server,
-	so as get_char_raster uses them and release_char_raster releases them.
-        With current versions of servers calls from GS to these functions must not 
-        interfer with different characters. This constraint was set to provide compatibility \
-        with both GS caching and server caching. Later we'll probably drop
-        this constraint.
-
-	If GS caches characters, FAPI_raster parameter passes information 
-	from GS to server. Othervise it can do backwards - reserved for future.
-    */
     /*  GS cannot provide information when a scaled font to be closed.
-        Therefore we don't provide close_font function in this interface.
+        Therefore we don't provide close_scaled_font function in this interface.
         The server must cache scaled fonts, and close ones which were
-        not in use for a long time.
+        not in use during a long time.
+    */
+    /*  With current version of UFST server, 
+        get_char_raster_metrics leaves some data kept by the server,
+	so get_char_raster uses them and release_char_raster releases them.
+        Therefore calls from GS to these functions must not 
+        interfer with different characters.
     */
 };
 

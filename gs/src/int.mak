@@ -1759,8 +1759,9 @@ $(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
 
 $(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) \
  $(memory__h) $(math__h) $(ghost_h) $(gp_h) $(oper_h) $(gxdevice_h) $(gxfont_h) $(gxfont1_h) \
- $(gxchar_h) $(gxpath_h) $(bfont_h) $(dstack_h) $(ichar_h) $(idict_h) $(iddict_h) $(iname_h) \
- $(igstate_h) $(ifapi_h) $(iplugin_h) $(store_h) $(gzstate_h) $(stream_h) $(files_h) $(gscrypt1_h) 
+ $(gxchar_h) $(gxpath_h) $(gxchrout_h) $(gscoord_h) $(gspaint_h) $(bfont_h) $(dstack_h) \
+ $(ichar_h) $(idict_h) $(iddict_h) $(iname_h) $(igstate_h) $(icharout_h) $(ifapi_h) \
+ $(iplugin_h) $(store_h) $(gzstate_h) $(stream_h) $(files_h) $(gscrypt1_h) 
 	$(PSCC) $(PSO_)zfapi.$(OBJ) $(C_) $(PSSRC)zfapi.c
 
 # UFST bridge :

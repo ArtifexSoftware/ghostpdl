@@ -86,8 +86,7 @@ systemdict /GS_EXTFONTPATH .knownget {
 } bind def
 
 /font_common  % - font_common -
-{ /FontBBox [-128 -128 1024 1024] def %fixme
-  /PaintType 0 def
+{ /PaintType 0 def
   
   currentdict /Encoding .knownget not {
     //StandardEncoding
@@ -104,6 +103,7 @@ systemdict /GS_EXTFONTPATH .knownget {
 
 1
 { /FontMatrix [0.001 0 0 0.001 0 0] def
+  /FontBBox [-128 -128 1024 1024] def %fixme
   /Private 0 dict def
   /CharStrings << /.notdef () >> def
   //font_common exec
@@ -111,8 +111,10 @@ systemdict /GS_EXTFONTPATH .knownget {
 
 42
 { /FontMatrix [1 0 0 1 0 0] def
+  /FontBBox [0 0 1 1] def %fixme
   /CharStrings <<>> def
-  /sfnt [] def
+  /sfnts [<00010000 0000 0000 0000 0000 0000>] def
+  /GlyphDirectory [] def
   //font_common exec
 } bind def
 
@@ -308,9 +310,7 @@ bind def
 .dicttomark def
 
 /FAPI_choose_decoding  % <font> FAPI_choose_decoding <font>
-{ % Since Agfa UFST cannot render characters by character name,
-  % we make Decoding for the font.
-  dup /Decoding .knownget { 
+{ dup /Decoding .knownget { 
     dup type /nametype eq {
           /Decoding findresource 1 index exch /Decoding exch put
         } {
