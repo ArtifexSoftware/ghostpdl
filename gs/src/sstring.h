@@ -17,7 +17,7 @@
 */
 
 /*$Id$ */
-/* are referenced, but some compilers always require strimpl.h. */
+/* String and hexstring streams (filters) */
 
 #ifndef sstring_INCLUDED
 #  define sstring_INCLUDED
