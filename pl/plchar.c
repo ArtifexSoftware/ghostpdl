@@ -1171,8 +1171,8 @@ pl_intelli_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
 /* Initialize the procedures for a bitmap font. */
 void
 pl_bitmap_init_procs(gs_font_base *pfont)
-{	pfont->procs.encode_char = pl_bitmap_encode_char;
-	pfont->procs.build_char = pl_bitmap_build_char;
+{	pfont->procs.encode_char = (void *)pl_bitmap_encode_char; /* FIX ME (void *) */
+	pfont->procs.build_char = (void *)pl_bitmap_build_char; /* FIX ME (void *) */
 #define plfont ((pl_font_t *)pfont->client_data)
 	plfont->char_width = pl_bitmap_char_width;
 #undef plfont
@@ -1181,8 +1181,8 @@ pl_bitmap_init_procs(gs_font_base *pfont)
 /* Initialize the procedures for a TrueType font. */
 void
 pl_tt_init_procs(gs_font_type42 *pfont)
-{	pfont->procs.encode_char = pl_tt_encode_char;
-	pfont->procs.build_char = pl_tt_build_char;
+{	pfont->procs.encode_char = (void *)pl_tt_encode_char; /* FIX ME (void *) */
+	pfont->procs.build_char = (void *)pl_tt_build_char; /* FIX ME (void *) */
 	pfont->data.string_proc = pl_tt_string_proc;
 #define plfont ((pl_font_t *)pfont->client_data)
 	plfont->char_width = pl_tt_char_width;
@@ -1226,8 +1226,8 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
 
 void
 pl_intelli_init_procs(gs_font_base *pfont)
-{	pfont->procs.encode_char = pl_intelli_encode_char;
-	pfont->procs.build_char = pl_intelli_build_char;
+{	pfont->procs.encode_char = (void *)pl_intelli_encode_char;  /* FIX ME (void *) */
+	pfont->procs.build_char = (void *)pl_intelli_build_char; /* FIX ME (void *) */
 #define plfont ((pl_font_t *)pfont->client_data)
 	plfont->char_width = pl_intelli_char_width;
 #undef plfont
