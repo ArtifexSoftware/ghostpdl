@@ -894,13 +894,24 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    }
 	}
     }
-    if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2) {
+    if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2 || 
+	font->FontType == ft_TrueType) {
         /*
-	 * We write True Types with Symbolic flag set,
-	 * so we should not write Encodings for them.
+	 * We write True Types with Symbolic flag set.
+	 * PDF spec says that "symbolic font should not specify Encoding entry"
+	 * (see section 5.5, the article "Encodings for True Type fonts", paragraph 3).
+	 * However Acrobat Reader 4,5,6 fail when TT font with no Encoding
+	 * appears in a document together with a CID font with a non-standard CMap
+	 * (AR 4 and 5 claim "The encoding (CMap) specified by a font is corrupted."
+	 * (we read it as "The encoding or CMap specified by a font is corrupted.",
+	 * and apply the 1st alternative)). We believe that AR is buggy, 
+	 * and therefore we write an Encoding with non-CID True Type fonts.
+	 * Hopely other viewers can ignore Encoding in such case. Actually in this case 
+	 * an Encoding doesn't add an useful information.
 	 */
 	BaseEncoding = pdf_refine_encoding_index(
 	    ((const gs_font_base *)base_font)->nearest_encoding_index, false);
+    } else {
     }
     if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
 					  (gs_font_base *)base_font,
