@@ -212,12 +212,18 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
 	 */
 	if (plen != 0 && plen != gp_file_name_parents((const char *)permstr, permlen))
 	    continue;
+	cwd_len = gp_file_name_cwds((const char *)permstr, permlen);
+	/*
+	 * If the permission starts with "./", absolute paths
+	 * are not permitted.
+	 */
+	if (cwd_len > 0 && gp_file_name_is_absolute(fname, len))
+	    continue;
 	/*
 	 * If the permission starts with "./", relative paths
 	 * with no "./" are allowed as well as with "./".
 	 * 'fname' has no "./" because it is reduced.
 	 */
-	cwd_len = gp_file_name_cwds((const char *)permstr, permlen);
 #endif
         if (string_match( (const unsigned char*) fname, len,
 			  permstr + cwd_len, permlen - cwd_len, 
@@ -763,6 +769,10 @@ ztempfile(i_ctx_t *i_ctx_p)
     FILE *sfile;
     stream *s;
     byte *buf;
+#if NEW_COMBINE_PATH
+    char tdir[gp_file_name_sizeof];
+    bool temp_dir = false;
+#endif
 
     if (code < 0)
 	return code;
@@ -780,6 +790,27 @@ ztempfile(i_ctx_t *i_ctx_p)
 	prefix[psize] = 0;
 	pstr = prefix;
     }
+#if NEW_COMBINE_PATH
+    if (!gp_file_name_is_absolute(pstr, strlen(pstr))) {
+	int tlen = sizeof(tdir);
+	uint flen = sizeof(fname);
+	gp_file_name_combine_result r;
+
+	code = gp_gettmpdir(tdir, &tlen);
+	if (code < 0 || tlen == 0 ) /* A compatibility to old gp_open_scratch_file. */
+	    strcpy(prefix, gp_file_name_current());
+	else
+	    temp_dir = true;
+        tlen = strlen(tdir);
+	r = gp_file_name_combine_generic(tdir, tlen, 
+		    pstr, strlen(pstr), i_ctx_p->LockFilePermissions, fname, &flen);
+	if (r != gp_combine_success)
+	    return_error(e_undefinedfilename);
+	memcpy(prefix, fname, flen);
+	prefix[flen] = 0;
+	pstr = prefix;
+    }
+#endif
     if (i_ctx_p->LockFilePermissions) 
         if (
 #if !NEW_COMBINE_PATH
@@ -788,7 +819,7 @@ ztempfile(i_ctx_t *i_ctx_p)
 	      check_file_permissions(i_ctx_p, pstr, strlen(pstr),
 	      				"PermitFileWriting") < 0 )
 #else
-	    gp_file_name_is_absolute(pstr, strlen(pstr)) &&
+	    !temp_dir &&
 	    check_file_permissions(i_ctx_p, pstr, strlen(pstr),
 	      				"PermitFileWriting") < 0
 #endif

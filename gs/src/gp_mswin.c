@@ -682,9 +682,35 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     char sTempFileName[_MAX_PATH];
 
     memset(fname, 0, gp_file_name_sizeof);
-    l = GetTempPath(sizeof(sTempDir), sTempDir);
+    if (!gp_file_name_is_absolute(prefix, strlen(prefix))) {
+	int plen = sizeof(sTempDir);
+
+	if (gp_gettmpdir(sTempDir, &plen) < 0)
+	    l = GetTempPath(sizeof(sTempDir), sTempDir);
+	else
+	    l = strlen(sTempDir);
+    } else {
+	strncpy(sTempDir, prefix, sizeof(sTempDir));
+	prefix = "";
+    }
     if (l <= sizeof(sTempDir)) {
 	n = GetTempFileName(sTempDir, prefix, 0, sTempFileName);
+	if (n == 0) {
+	    /* If 'prefix' is not a directory, it is a path prefix. */
+	    int l = strlen(sTempDir), i;
+
+	    for (i = l - 1; i > 0; i--) {
+		uint slen = gs_file_name_check_separator(sTempDir + i, l, sTempDir + l);
+
+		if (slen > 0) {
+		    sTempDir[i] = 0;   
+		    i += slen;
+		    break;
+		}
+	    }
+	    if (i > 0)
+		n = GetTempFileName(sTempDir, sTempDir + i, 0, sTempFileName);
+	}
 	if (n != 0) {
 	    hfile = CreateFile(sTempFileName, 
 		GENERIC_READ | GENERIC_WRITE | DELETE,
