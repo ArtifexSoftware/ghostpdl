@@ -1164,7 +1164,7 @@ pl_intelli_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
 	    pwidth->x = pwidth->y = 0;
 	    return 0;
 	  }
-	return gs_distance_transform((floatp)wx, 0.0, pmat, pwidth);
+	return gs_distance_transform(((floatp)wx / 8782.0), 0.0, pmat, pwidth);
 }
 
 /* ---------------- Internal initialization ---------------- */
