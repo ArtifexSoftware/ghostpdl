@@ -193,8 +193,6 @@ zrunandhide(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     es_ptr ep;
-    uint size;
-    int code;
 
     check_op(2);
     if (!r_is_array(op - 1))
