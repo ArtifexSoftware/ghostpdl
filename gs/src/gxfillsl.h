@@ -31,7 +31,7 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
 {
     const fill_options fo = *ll->fo;
     active_line *yll = ll->y_list;
-    fixed y_limit = fo.pbox->q.y;
+    fixed y_limit = fo.ymax;
     /*
      * The meaning of adjust_below (B) and adjust_above (A) is that the
      * pixels that would normally be painted at coordinate Y get "smeared"
