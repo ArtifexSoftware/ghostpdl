@@ -53,6 +53,16 @@ int fn_build_float_array(const ref * op, const char *kstr, bool required,
 			 gs_memory_t *mem);
 
 /*
+ * Similar to fn_build_float_array() except
+ * - numeric parameter is accepted and converted to 1-element array
+ * - number of elements is not checked for even/odd
+ */
+int
+fn_build_float_array_forced(const ref * op, const char *kstr, bool required,
+		     const float **pparray, gs_memory_t *mem);
+
+
+/*
  * If a PostScript object is a Function procedure, return the function
  * object, otherwise return 0.
  */

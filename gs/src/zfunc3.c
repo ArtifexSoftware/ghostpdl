@@ -45,8 +45,8 @@ gs_build_function_2(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     params.C0 = 0;
     params.C1 = 0;
     if ((code = dict_float_param(op, "N", 0.0, &params.N)) != 0 ||
-	(code = n0 = fn_build_float_array(op, "C0", false, false, &params.C0, mem)) < 0 ||
-	(code = n1 = fn_build_float_array(op, "C1", false, false, &params.C1, mem)) < 0
+	(code = n0 = fn_build_float_array_forced(op, "C0", false, &params.C0, mem)) < 0 ||
+	(code = n1 = fn_build_float_array_forced(op, "C1", false, &params.C1, mem)) < 0
 	)
 	goto fail;
     if (params.C0 == 0)
