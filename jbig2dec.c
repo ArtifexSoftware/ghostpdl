@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.38 2002/08/05 21:43:26 giles Exp $
+    $Id: jbig2dec.c,v 1.39 2002/08/05 22:56:51 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -51,7 +51,7 @@ static void
 hash_init(jbig2dec_params_t *params)
 {
     params->hash_ctx = malloc(sizeof(SHA1_CTX));
-    if (params->hash == NULL) {
+    if (params->hash_ctx == NULL) {
         fprintf(stderr, "unable to allocate hash state\n");
         params->hash = 0;
         return;
@@ -72,7 +72,7 @@ hash_print(jbig2dec_params_t *params, FILE *out)
 {
     unsigned char md[SHA1_DIGEST_SIZE];
     char digest[2*SHA1_DIGEST_SIZE + 1];
-    int i, len;
+    int i;
     
     SHA1_Final(params->hash_ctx, md);
     for (i = 0; i < SHA1_DIGEST_SIZE; i++) {
