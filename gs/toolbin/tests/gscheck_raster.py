@@ -64,7 +64,7 @@ class GSCompareTestCase(gstestgs.GhostscriptTestCase):
 	    gssum.add_file(file, dbname=gsconf.get_dailydb_name(), sum=sum)
 
 	if not sum:
-	    self.fail("output file could not be created"\
+	    self.fail("output file could not be created "\
 		      "for file: " + self.file)
         else:
 	    self.assertEqual(sum, gssum.get_sum(file),

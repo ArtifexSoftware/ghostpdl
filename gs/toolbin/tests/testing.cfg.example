@@ -30,6 +30,7 @@ report_from	 gs-regression@ghostscript.com
 
 regression_script	/home/regression/regression/run_regression
 diff_script		/home/regression/regression/testdiff
+diff_script		/home/regression/regression/get_baselines
 
 cvs_log_stdout		/home/regression/regression/logs/cvs-stdout.log
 cvs_log_stderr		/home/regression/regression/logs/cvs-stderr.log

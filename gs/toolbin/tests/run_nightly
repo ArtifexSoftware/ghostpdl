@@ -25,10 +25,12 @@ import time
 import string
 import gsconf
 import anydbm
+from popen2 import Popen4
 
 # configuration variables
 
 YESTERDAY = time.strftime("%Y%m%d", time.localtime(time.time() - (24*60*60)))
+YESTERDAY_CTIME = time.ctime(time.time() - (24*60*60))
 
 def change_gsproduct(file):
     tmpfile = "%s.tmp" % (file,)
@@ -177,6 +179,17 @@ if p:
 diff = diff + "\n\nThe complete list of regressions for today:\n"
 msg = diff + msg
 
+# Get updated baselines
+baselines = 'The following files had their baselines updated:\n'
+p = Popen4(gsconf.get_baselines + " '" + YESTERDAY_CTIME + "'", 1)
+if p:
+    for line in p.fromchild.readlines():
+        baselines = baselines + line
+    p.wait()
+
+baselines = baselines + "\n\n"
+msg = baselines + msg
+  
 # Prepend checkout times
 times = "CVS checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(starttime)) + "\n"
 times = times + "CVS checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n\n"
