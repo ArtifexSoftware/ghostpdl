@@ -469,7 +469,10 @@ pcl_show_chars_slow(
     char                    buff[2];
     floatp                  rmargin = pcs->margins.right;
     floatp                  page_size = pcs->xfm_state.pd_size.x;
-    bool                    opaque = !pcs->source_transparent;
+    bool                    source_opaque = !pcs->source_transparent;
+    bool                    invisible_pattern = 
+        (pcs->pattern_type == pcl_pattern_solid_white &&
+         pcs->pattern_transparent);
     bool                    wrap = pcs->end_of_line_wrap;
     bool                    is_space = false;
     bool                    use_rmargin = (pcs->cap.x <= rmargin);
@@ -547,12 +550,14 @@ pcl_show_chars_slow(
         if (chr != 0xffff) {
 
             /* if source is opaque, show and opaque background */
-            if (opaque) 
-                code = show_char_background(pcs, buff);
-            if (code >= 0)
-                code = show_char_foreground(pcs, buff);
-            if (code < 0)
-                break;
+            if (!invisible_pattern) {
+                if (source_opaque)
+                    code = show_char_background(pcs, buff);
+                if (code >= 0)
+                    code = show_char_foreground(pcs, buff);
+                if (code < 0)
+                    break;
+            }
             /* NB WRONG - */
             pcl_mark_page_for_current_pos(pcs);
         }
