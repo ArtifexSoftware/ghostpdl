@@ -3691,11 +3691,42 @@ them can easily create dangling pointers: if storage allocated with a stable
 allocator contains any references to PostScript objects, the client is
 responsible for ensuring that the references don't outlive the referenced
 objects, normally by ensuring that any such referenced objects are allocated
-at the outermost <b><tt>save</tt></b> level.  (The original reason for
-wanting stable allocators was the PostScript stacks, which are essentially
-PostScript arrays but are not subject to <b><tt>save</tt></b> and
-<b><tt>restore</tt></b>.)  For more examples, search the sources for
-references to <b><tt>gs_memory_stable</tt></b>.
+at the outermost <b><tt>save</tt></b> level.
+
+<p>
+The original reason for wanting stable allocators was the PostScript stacks,
+which are essentially PostScript arrays but are not subject to
+<b><tt>save</tt></b> and <b><tt>restore</tt></b>.  Some other uses of stable
+allocators are:
+
+<ul>
+
+<li>Several per-context structures for DPS.
+
+<li>Paths (see <b><tt>gstate_path_memory</tt></b> in
+<a href="../src/gsstate.c">src/gsstate.c</a>.
+
+<li>Row buffers for images (see <b><tt>gs_image_row_memory</tt></b> in <a
+href="../src/gsimage.c">src/gsimage.c</a>), because the data-reading
+procedure for an image can invoke <b><tt>save</tt></b> and
+<b><tt>restore</tt></b>.
+
+<li>Notification lists for fonts, to handle the sequence allocate .. save
+.. register .. restore.
+
+<li>The parameter lists for pdfwrite and pswrite devices (in <a
+href="../src/gdevpsdp.c">src/gdevpsdp.c</a>), because the whole issue of
+local vs. global VM for setpagedevice is, in the words of Ed Taft of Adobe,
+"a mess".
+
+<li>Many places in the pdfwrite driver, because many of its bookkeeping
+structures must not be restorable.
+
+</ul>
+
+<p>
+For more specific examples, search the sources for references to
+<b><tt>gs_memory_stable</tt></b>.
 
 <h4><a name="Interpreter_GC"></a>Garbage collection</h4>
 
