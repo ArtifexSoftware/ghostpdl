@@ -43,7 +43,8 @@
 
 const char start_string[] = "systemdict /start get exec\n";
 
-static void read_stdin(gpointer data, gint fd, GdkInputCondition condition);
+static void read_stdin_handler(gpointer data, gint fd, 
+	GdkInputCondition condition);
 static int gsdll_stdin(void *instance, char *buf, int len);
 static int gsdll_stdout(void *instance, const char *str, int len);
 static int gsdll_stdout(void *instance, const char *str, int len);
@@ -76,7 +77,8 @@ struct stdin_buf {
 };
 
 /* handler for reading non-blocking stdin */
-static void read_stdin(gpointer data, gint fd, GdkInputCondition condition)
+static void 
+read_stdin_handler(gpointer data, gint fd, GdkInputCondition condition)
 {
     struct stdin_buf *input = (struct stdin_buf *)data;
 
@@ -85,8 +87,10 @@ static void read_stdin(gpointer data, gint fd, GdkInputCondition condition)
 	input->count = 0;	/* EOF */
     }
     else if (condition & GDK_INPUT_READ) {
-	/* read returns -1 if would block, 0 for EOF and +ve for OK */
+	/* read returns -1 for error, 0 for EOF and +ve for OK */
 	input->count = read(fd, input->buf, input->len);
+	if (input->count < 0)
+	    input->count = 0;
     }
     else {
 	g_print("input condition unknown");
@@ -100,25 +104,18 @@ gsdll_stdin(void *instance, char *buf, int len)
 {
     struct stdin_buf input;
     gint input_tag;
-    int flags = fcntl(fileno(stdin), F_GETFL, 0);
 
-    gtk_main_iteration_do(FALSE);
     input.len = len;
     input.buf = buf;
-    fcntl(fileno(stdin), F_SETFL, flags | O_NONBLOCK);
-    input.count = read(fileno(stdin), input.buf, input.len);
-    fcntl(fileno(stdin), F_SETFL, flags);
+    input.count = -1;
 
-    if (input.count < 0) { /* would block, so wait for event */
-	input_tag = gdk_input_add(fileno(stdin), 
-	    (GdkInputCondition)(GDK_INPUT_READ | GDK_INPUT_EXCEPTION),
-	    read_stdin, &input);
+    input_tag = gdk_input_add(fileno(stdin), 
+	(GdkInputCondition)(GDK_INPUT_READ | GDK_INPUT_EXCEPTION),
+	read_stdin_handler, &input);
+    while (input.count < 0)
+	gtk_main_iteration_do(TRUE);
+    gdk_input_remove(input_tag);
 
-	while (input.count < 0)
-	    gtk_main_iteration_do(FALSE);
-
-	gdk_input_remove(input_tag);
-    }
     return input.count;
 }
 
