@@ -73,19 +73,19 @@
 
 
 #ifdef DEBUG
-  #define DBG_PAINT    CUR.current_face->font->DebugRepaint(CUR.current_face->font);
+#  define DBG_PAINT    CUR.current_face->font->DebugRepaint(CUR.current_face->font);
 
-  #define DBG_PRT CUR.current_face->font->DebugPrint(CUR.current_face->font
-  #define DBG_PRINT(fmt) DBG_PRT, fmt);
-  #define DBG_PRINT1(fmt, a) DBG_PRT, fmt, a);
-  #define DBG_PRINT3(fmt, a, b, c) DBG_PRT, fmt, a, b, c);
-  #define DBG_PRINT4(fmt, a, b, c, d) DBG_PRT, fmt, a, b, c, d);
+#  define DBG_PRT CUR.current_face->font->DebugPrint(CUR.current_face->font
+#  define DBG_PRINT(fmt) DBG_PRT, fmt);
+#  define DBG_PRINT1(fmt, a) DBG_PRT, fmt, a);
+#  define DBG_PRINT3(fmt, a, b, c) DBG_PRT, fmt, a, b, c);
+#  define DBG_PRINT4(fmt, a, b, c, d) DBG_PRT, fmt, a, b, c, d);
 #else
-  #define DBG_PAINT
-  #define DBG_PRINT(fmt)
-  #define DBG_PRINT1(fmt, a)
-  #define DBG_PRINT3(fmt, a, b, c)
-  #define DBG_PRINT4(fmt, a, b, c, d)
+#  define DBG_PAINT
+#  define DBG_PRINT(fmt)
+#  define DBG_PRINT1(fmt, a)
+#  define DBG_PRINT3(fmt, a, b, c)
+#  define DBG_PRINT4(fmt, a, b, c, d)
 #endif
 
 static int nInstrCount=0;

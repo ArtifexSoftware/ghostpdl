@@ -632,7 +632,7 @@
                               long*    length );
 
   /* A simply macro to build table tags from ascii chars */
-  #define MAKE_TT_TAG( _x1, _x2, _x3, _x4 ) \
+#  define MAKE_TT_TAG( _x1, _x2, _x3, _x4 ) \
             (_x1 << 24 | _x2 << 16 | _x3 << 8 | _x4)
 
   /* ----------------------- instance management -------------------- */
@@ -845,7 +845,7 @@
                                   TT_Matrix*   matrix );
 
   /* backwards compatibility macro */
-  #define TT_Appy_Outline_Matrix  TT_Transform_Matrix;
+#  define TT_Appy_Outline_Matrix  TT_Transform_Matrix;
 
   /* Apply a translation to a glyph outline */
 
@@ -854,7 +854,7 @@
                                   TT_F26Dot6   y_offset );
 
   /* backwards compatibility */
-  #define TT_Apply_Outline_Translation  TT_Translate_Outline
+#  define TT_Apply_Outline_Translation  TT_Translate_Outline
 
   /* Apply a transformation to a vector */
 
@@ -862,7 +862,7 @@
                                  TT_F26Dot6*  y,
                                  TT_Matrix*   matrix );
   /* backwards compatibility */
-  #define TT_Apply_Vector_Matrix( x, y, m )   \
+#  define TT_Apply_Vector_Matrix( x, y, m )   \
                TT_Transform_Vector( x, y, m )
 
   /* Multiply a matrix with another - computes "b := a*b" */

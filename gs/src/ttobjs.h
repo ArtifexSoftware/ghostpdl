@@ -249,16 +249,16 @@ typedef struct _TExecution_Context TExecution_Context;
   /*                                                           */
   /*************************************************************/
 
-  #define MAX_CODE_RANGES   3
+#  define MAX_CODE_RANGES   3
 
   /* There can only be 3 active code ranges at once:   */
   /*   - the Font Program                              */
   /*   - the CVT Program                               */
   /*   - a glyph's instructions set                    */
 
-  #define TT_CodeRange_Font  1
-  #define TT_CodeRange_Cvt   2
-  #define TT_CodeRange_Glyph 3
+#  define TT_CodeRange_Font  1
+#  define TT_CodeRange_Cvt   2
+#  define TT_CodeRange_Glyph 3
 
 
   struct  _TCodeRange

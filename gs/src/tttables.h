@@ -144,8 +144,8 @@
 
   /* table "gasp" */
 
-  #define GASP_GRIDFIT  0x01
-  #define GASP_DOGRAY   0x02
+#  define GASP_GRIDFIT  0x01
+#  define GASP_DOGRAY   0x02
 
   struct  _GaspRange
   {
