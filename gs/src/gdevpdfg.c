@@ -303,13 +303,15 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 	    {	pdf_resource_t *pres;
 
 		if (pdc->type == gx_dc_type_pattern)
-		    code = pdf_put_colored_pattern(pdev, pdc, ppscc, &pres);
+		    code = pdf_put_colored_pattern(pdev, pdc, pcs,
+				ppscc, pis->have_pattern_streams, &pres);
 		else if (pdc->type == &gx_dc_pure_masked) {
-		    code = pdf_put_uncolored_pattern(pdev, pdc, 
-				pcs, ppscc, &pres);
+		    code = pdf_put_uncolored_pattern(pdev, pdc, pcs, 
+				ppscc, pis->have_pattern_streams, &pres);
 		    if (code < 0)
 			return code;
-		    code = pdf_write_ccolor(pdev, pis, pcc);
+		    if (pis->have_pattern_streams)
+			code = pdf_write_ccolor(pdev, pis, pcc);
 		} else if (pdc->type == &gx_dc_pattern2)
 		    code = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
 		else

@@ -39,6 +39,7 @@
 #include "igstate.h"
 #include "ipcolor.h"
 #include "store.h"
+#include "gzstate.h"
 
 /* Imported from gspcolor.c */
 extern const gs_color_space_type gs_color_space_type_Pattern;
@@ -208,11 +209,13 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     bool internal_accum = true;
 
     check_estack(6);
-    code = dev_proc(cdev, pattern_manage)(cdev, pinst->id, pinst, 
-			    pattern_manage__can_accum);
-    if (code < 0)
-	return code;
-    internal_accum = (code == 0);
+    if (pgs->have_pattern_streams) {
+	code = dev_proc(cdev, pattern_manage)(cdev, pinst->id, pinst, 
+				pattern_manage__can_accum);
+	if (code < 0)
+	    return code;
+	internal_accum = (code == 0);
+    }
     if (internal_accum) {
 	pdev = gx_pattern_accum_alloc(imemory, "pattern_paint_prepare");
 	if (pdev == 0)

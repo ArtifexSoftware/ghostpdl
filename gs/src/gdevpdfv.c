@@ -106,6 +106,92 @@ tile_size_ok(const gx_device_pdf *pdev, const gx_color_tile *p_tile,
     return (max(p_size, m_size) <= 65500);
 }
 
+private int
+pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+	    const gx_color_tile *p_tile, const gx_color_tile *m_tile,
+	    cos_stream_t *pcs_image, pdf_resource_t **ppres)
+{
+    pdf_resource_t *pres;
+    int code = pdf_alloc_resource(pdev, resourcePattern, pdc->mask.id, ppres,
+				  0L);
+    cos_stream_t *pcos;
+    cos_dict_t *pcd;
+    cos_dict_t *pcd_Resources = cos_dict_alloc(pdev, "pdf_pattern(Resources)");
+    const gx_color_tile *tile = (p_tile ? p_tile : m_tile);
+    const gx_strip_bitmap *btile = (p_tile ? &p_tile->tbits : &m_tile->tmask);
+    bool mask = p_tile == 0;
+    gs_point step;
+    gs_matrix smat;
+
+    if (code < 0)
+	return code;
+    if (!tile_size_ok(pdev, p_tile, m_tile))
+	return_error(gs_error_limitcheck);
+    /*
+     * We currently can't handle Patterns whose X/Y step isn't parallel
+     * to the coordinate axes.
+     */
+    if (is_xxyy(&tile->step_matrix))
+	step.x = tile->step_matrix.xx, step.y = tile->step_matrix.yy;
+    else if (is_xyyx(&tile->step_matrix))
+	step.x = tile->step_matrix.yx, step.y = tile->step_matrix.xy;
+    else
+	return_error(gs_error_rangecheck);
+    if (pcd_Resources == 0)
+	return_error(gs_error_VMerror);
+    gs_make_identity(&smat);
+    smat.xx = btile->rep_width / (pdev->HWResolution[0] / 72.0);
+    smat.yy = btile->rep_height / (pdev->HWResolution[1] / 72.0);
+    smat.tx = tile->step_matrix.tx / (pdev->HWResolution[0] / 72.0);
+    smat.ty = tile->step_matrix.ty / (pdev->HWResolution[1] / 72.0);
+    pres = *ppres;
+    {
+	cos_dict_t *pcd_XObject = cos_dict_alloc(pdev, "pdf_pattern(XObject)");
+	char key[MAX_REF_CHARS + 3];
+	cos_value_t v;
+	const cos_value_t *mask_r;
+
+	if (pcd_XObject == 0)
+	    return_error(gs_error_VMerror);
+	sprintf(key, "/R%ld", pcs_image->id);
+	COS_OBJECT_VALUE(&v, pcs_image);
+	if ((code = cos_dict_put(pcd_XObject, (byte *)key, strlen(key), &v)) < 0 ||
+	    (code = cos_dict_put_c_key_object(pcd_Resources, "/XObject",
+					      COS_OBJECT(pcd_XObject))) < 0
+	    )
+	    return code;
+    }
+    if ((code = cos_dict_put_c_strings(pcd_Resources, "/ProcSet",
+				       (mask ? "[/PDF/ImageB]" :
+					"[/PDF/ImageC]"))) < 0)
+	return code;
+    cos_become(pres->object, cos_type_stream);
+    pcos = (cos_stream_t *)pres->object;
+    pcd = cos_stream_dict(pcos);
+    if ((code = cos_dict_put_c_key_int(pcd, "/PatternType", 1)) < 0 ||
+	(code = cos_dict_put_c_key_int(pcd, "/PaintType",
+				       (mask ? 2 : 1))) < 0 ||
+	(code = cos_dict_put_c_key_int(pcd, "/TilingType",
+				       tile->tiling_type)) < 0 ||
+	(code = cos_dict_put_c_key_object(pcd, "/Resources",
+					  COS_OBJECT(pcd_Resources))) < 0 ||
+	(code = cos_dict_put_c_strings(pcd, "/BBox", "[0 0 1 1]")) < 0 ||
+	(code = cos_dict_put_matrix(pcd, "/Matrix", &smat)) < 0 ||
+	(code = cos_dict_put_c_key_real(pcd, "/XStep", step.x / btile->rep_width)) < 0 ||
+	(code = cos_dict_put_c_key_real(pcd, "/YStep", step.y / btile->rep_height)) < 0
+	) {
+	return code;
+    }
+
+    {
+	char buf[MAX_REF_CHARS + 6 + 1]; /* +6 for /R# Do\n */
+
+	sprintf(buf, "/R%ld Do\n", pcs_image->id);
+	cos_stream_add_bytes(pcos, (const byte *)buf, strlen(buf));
+    }
+
+    return 0;
+}
 
 /* Store pattern 1 parameters to cos dictionary. */
 int 
@@ -161,51 +247,178 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     return code;
 }
 
+/* Set the ImageMatrix, Width, and Height for a Pattern image. */
+private void
+pdf_set_pattern_image(gs_data_image_t *pic, const gx_strip_bitmap *tile)
+{
+    pic->ImageMatrix.xx = (float)(pic->Width = tile->rep_width);
+    pic->ImageMatrix.yy = (float)(pic->Height = tile->rep_height);
+}
+
+/* Write the mask for a Pattern (colored or uncolored). */
+private int
+pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
+		     cos_stream_t **ppcs_mask)
+{
+    int w = m_tile->tmask.rep_width, h = m_tile->tmask.rep_height;
+    gs_image1_t image;
+    pdf_image_writer writer;
+    int code;
+
+    gs_image_t_init_mask_adjust(&image, true, false);
+    pdf_set_pattern_image((gs_data_image_t *)&image, &m_tile->tmask);
+    if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false, 1)) < 0 ||
+	(pdev->params.MonoImage.Encode &&
+	 (code = psdf_CFE_binary(&writer.binary[0], w, h, true)) < 0) ||
+	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, NULL, 0)) < 0
+	)
+	return code;
+    /* Pattern masks are specified in device coordinates, so invert Y. */
+    if ((code = pdf_copy_mask_bits(writer.binary[0].strm, m_tile->tmask.data + (h - 1) * m_tile->tmask.raster, 0, -m_tile->tmask.raster, w, h, 0)) < 0 ||
+	(code = pdf_end_image_binary(pdev, &writer, h)) < 0 ||
+	(code = pdf_end_write_image(pdev, &writer)) < 0
+	)
+	return code;
+    *ppcs_mask = (cos_stream_t *)writer.pres->object;
+    return 0;
+}
+
 /* Write an uncolored Pattern color. */
 int
 pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 			  const gs_color_space *pcs,
 			  const psdf_set_color_commands_t *ppscc,
-			  pdf_resource_t **ppres)
+			  bool have_pattern_streams, pdf_resource_t **ppres)
 {
     const gx_color_tile *m_tile = pdc->mask.m_tile;
-    cos_value_t v;
-    stream *s = pdev->strm;
-    int code;
+    gx_drawing_color dc_pure;
 
-    if (!tile_size_ok(pdev, NULL, m_tile))
-	return_error(gs_error_limitcheck);
-    code = pdf_cs_Pattern_uncolored_hl(pdev, pcs, &v);
-    if (code < 0)
-	return code;
-    *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, pdc->mask.id);
-    if (!pdev->AR4_save_bug && pdev->CompatibilityLevel <= 1.3) {
-	/* We reconnized AR4 behavior as reserving "q Q" stack elements 
-	 * on demand. It looks as processing a pattern stream
-	 * with PaintType 1 AR4 replaces the topmost stack element
-	 * instead allocating a new one, if it was not previousely allocated.
-	 * AR 5 doesn't have this bug. Working around the AR4 bug here.
+    if (!have_pattern_streams && m_tile == 0) {
+	/*
+	 * If m_tile == 0, this uncolored Pattern is all 1's,
+	 * equivalent to a pure color.
 	 */
-	stream_puts(pdev->strm, "q q Q Q\n");
-	pdev->AR4_save_bug = true;
+	*ppres = 0;
+	set_nonclient_dev_color(&dc_pure, gx_dc_pure_color(pdc));
+	return psdf_set_color((gx_device_vector *)pdev, &dc_pure, ppscc);
+    } else {
+	cos_value_t v;
+	stream *s = pdev->strm;
+	int code;
+	cos_stream_t *pcs_image;
+	static const psdf_set_color_commands_t no_scc = {0, 0, 0};
+
+	if (!tile_size_ok(pdev, NULL, m_tile))
+	    return_error(gs_error_limitcheck);
+	if (!have_pattern_streams) {
+	    if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
+		(code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
+		(code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
+		)
+		return code;
+	} else {
+	    code = pdf_cs_Pattern_uncolored_hl(pdev, pcs, &v);
+	    if (code < 0)
+		return code;
+	    *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, pdc->mask.id);
+	    if (!pdev->AR4_save_bug && pdev->CompatibilityLevel <= 1.3) {
+		/* We reconnized AR4 behavior as reserving "q Q" stack elements 
+		 * on demand. It looks as processing a pattern stream
+		 * with PaintType 1 AR4 replaces the topmost stack element
+		 * instead allocating a new one, if it was not previousely allocated.
+		 * AR 5 doesn't have this bug. Working around the AR4 bug here.
+		 */
+		stream_puts(pdev->strm, "q q Q Q\n");
+		pdev->AR4_save_bug = true;
+	    }
+	}
+	cos_value_write(&v, pdev);
+	pprints1(s, " %s ", ppscc->setcolorspace);
+	if (have_pattern_streams)
+	    return 0;
+	set_nonclient_dev_color(&dc_pure, gx_dc_pure_color(pdc));
+	return psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
     }
-    cos_value_write(&v, pdev);
-    pprints1(s, " %s ", ppscc->setcolorspace);
-    return 0;
 }
 
-/* Write a colored Pattern color. */
 int
 pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			const gs_color_space *pcs,
 			const psdf_set_color_commands_t *ppscc,
-			pdf_resource_t **ppres)
+			bool have_pattern_streams, pdf_resource_t **ppres)
 {
     const gx_color_tile *p_tile = pdc->colors.pattern.p_tile;
     gs_color_space cs_Device;
     cos_value_t cs_value;
     cos_value_t v;
     int code;
+    gs_image1_t image;
+    const gx_color_tile *m_tile = NULL;
+    pdf_image_writer writer;
+    int w = p_tile->tbits.rep_width, h = p_tile->tbits.rep_height;
 
+    if (!have_pattern_streams) {
+	/*
+	 * NOTE: We assume here that the color space of the cached Pattern
+	 * is the same as the native color space of the device.  This will
+	 * have to change in the future!
+	 */
+	/*
+	 * Check whether this colored pattern is actually a masked pure color,
+	 * by testing whether all the colored pixels have the same color.
+	 */
+	m_tile = pdc->mask.m_tile;
+	if (m_tile) {
+	    if (p_tile && !(p_tile->depth & 7) && p_tile->depth <= sizeof(gx_color_index) * 8) {
+		int depth_bytes = p_tile->depth >> 3;
+		int width = p_tile->tbits.rep_width;
+		int skip = p_tile->tbits.raster -
+		    p_tile->tbits.rep_width * depth_bytes;
+		const byte *bp;
+		const byte *mp;
+		int i, j, k;
+		gx_color_index color = 0; /* init is arbitrary if not empty */
+		bool first = true;
+
+		for (i = 0, bp = p_tile->tbits.data, mp = p_tile->tmask.data;
+		     i < p_tile->tbits.rep_height;
+		     ++i, bp += skip, mp += p_tile->tmask.raster) {
+
+		    for (j = 0; j < width; ++j) {
+			if (mp[j >> 3] & (0x80 >> (j & 7))) {
+			    gx_color_index ci = 0;
+			
+			    for (k = 0; k < depth_bytes; ++k)
+				ci = (ci << 8) + *bp++;
+			    if (first)
+				color = ci, first = false;
+			    else if (ci != color)
+				goto not_pure;
+			} else
+			    bp += depth_bytes;
+		    }
+		}
+		{
+		    /* Set the color, then handle as an uncolored pattern. */
+		    gx_drawing_color dcolor;
+
+		    dcolor = *pdc;
+		    dcolor.colors.pure = color;
+		    return pdf_put_uncolored_pattern(pdev, &dcolor, pcs, ppscc, 
+				have_pattern_streams, ppres);
+		}
+	    not_pure:
+		DO_NOTHING;		/* required by MSVC */
+	    }
+	    if (pdev->CompatibilityLevel < 1.3) {
+		/* Masked images are only supported starting in PDF 1.3. */
+		return_error(gs_error_rangecheck);
+	    }
+	}
+	/* Acrobat Reader has a size limit for image Patterns. */
+	if (!tile_size_ok(pdev, p_tile, m_tile))
+	    return_error(gs_error_limitcheck);
+    }
     code = pdf_cs_Pattern_colored(pdev, &v);
     if (code < 0)
 	return code;
@@ -218,11 +431,47 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 			   &pdf_color_space_names, true);
     if (code < 0)
 	return code;
-    *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, p_tile->id);
+    if (!have_pattern_streams) {
+	cos_stream_t *pcs_mask = 0;
+	cos_stream_t *pcs_image;
+
+	gs_image_t_init_adjust(&image, &cs_Device, false);
+	image.BitsPerComponent = 8;
+	pdf_set_pattern_image((gs_data_image_t *)&image, &p_tile->tbits);
+	if (m_tile) {
+	    if ((code = pdf_put_pattern_mask(pdev, m_tile, &pcs_mask)) < 0)
+		return code;
+	}
+	if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false, 1)) < 0 ||
+	    (code = psdf_setup_lossless_filters((gx_device_psdf *)pdev,
+						&writer.binary[0],
+						(gs_pixel_image_t *)&image)) < 0 ||
+	    (code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, &cs_value, 0)) < 0
+	    )
+	    return code;
+	/* Pattern masks are specified in device coordinates, so invert Y. */
+	if ((code = pdf_copy_color_bits(writer.binary[0].strm, p_tile->tbits.data + (h - 1) * p_tile->tbits.raster, 0, -p_tile->tbits.raster, w, h, pdev->color_info.depth >> 3)) < 0 ||
+	    (code = pdf_end_image_binary(pdev, &writer, h)) < 0
+	    )
+	    return code;
+	pcs_image = (cos_stream_t *)writer.pres->object;
+	if ((pcs_mask != 0 &&
+	     (code = cos_dict_put_c_key_object(cos_stream_dict(pcs_image), "/Mask",
+					       COS_OBJECT(pcs_mask))) < 0) ||
+	    (code = pdf_end_write_image(pdev, &writer)) < 0
+	    )
+	    return code;
+	pcs_image = (cos_stream_t *)writer.pres->object; /* pdf_end_write_image may change it. */
+	code = pdf_pattern(pdev, pdc, p_tile, m_tile, pcs_image, ppres);
+	if (code < 0)
+	    return code;
+    } else
+	*ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, p_tile->id);
     cos_value_write(&v, pdev);
     pprints1(pdev->strm, " %s", ppscc->setcolorspace);
     return 0;
 }
+
 
 /* ---------------- PatternType 2 colors ---------------- */
 
