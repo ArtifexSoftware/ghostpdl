@@ -229,7 +229,7 @@ zimagemask1(i_ctx_t *i_ctx_p)
   ((ep) - 4 - (i) * 2)
 #define ETOP_PLANE_INDEX(ep) ((ep) - 2)
 #define ETOP_NUM_SOURCES(ep) ((ep) - 1)
-int
+private int
 zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 		  gx_image_enum_common_t * pie, const ref * sources, int npop)
 {
