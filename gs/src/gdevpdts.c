@@ -434,7 +434,7 @@ sync_text_state(gx_device_pdf *pdev)
 	pts->wmode =
 	    (pdfont->FontType == ft_composite ?
 	     pdfont->u.type0.WMode : 0);
-	code = pdf_used_charproc_fonts(pdev, pdfont);
+	code = pdf_used_charproc_resources(pdev, pdfont);
 	if (code < 0)
 	    return code;
     }

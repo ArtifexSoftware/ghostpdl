@@ -261,7 +261,7 @@ pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 	pdf_put_image_matrix(pdev, pimat, scale);
     }
     pprintld1(pdev->strm, "/R%ld Do\nQ\n", pdf_resource_id(pres));
-    return 0;
+    return pdf_register_charproc_resource(pdev, pdf_resource_id(pres), resourceXObject);
 }
 
 /* ------ Begin / finish ------ */

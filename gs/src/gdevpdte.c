@@ -121,36 +121,37 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 /*
  * If the current substream is a charproc, register a font used in it.
  */
-private int
-pdf_register_charproc_font(gx_device_pdf *pdev, gs_id id) 
+int
+pdf_register_charproc_resource(gx_device_pdf *pdev, gs_id id, pdf_resource_type_t type) 
 {
     if (pdev->font3 != 0) {
 	pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pdev->font3;
-	gs_id *used_fonts = pdfont->u.simple.s.type3.used_fonts;
-	int i, used_fonts_count = pdfont->u.simple.s.type3.used_fonts_count;
-	int used_fonts_max = pdfont->u.simple.s.type3.used_fonts_max;
+	pdf_resource_ref_t *used_resources = pdfont->u.simple.s.type3.used_resources;
+	int i, used_resources_count = pdfont->u.simple.s.type3.used_resources_count;
+	int used_resources_max = pdfont->u.simple.s.type3.used_resources_max;
 
-	for (i = 0; i < used_fonts_count; i++)
-	    if (used_fonts[i] == id)
+	for (i = 0; i < used_resources_count; i++)
+	    if (used_resources[i].id == id && used_resources[i].type == type)
 		return 0;
-	if (used_fonts_count >= used_fonts_max) {
-	    used_fonts_max += 10;
-	    used_fonts = (gs_id *)gs_alloc_bytes(pdev->pdf_memory, 
-			sizeof(*pdfont->u.simple.s.type3.used_fonts) * used_fonts_max,
-			"pdf_register_charproc_font");
-	    if (!used_fonts)
+	if (used_resources_count >= used_resources_max) {
+	    used_resources_max += 10;
+	    used_resources = (pdf_resource_ref_t *)gs_alloc_bytes(pdev->pdf_memory, 
+			sizeof(pdf_resource_ref_t) * used_resources_max,
+			"pdf_register_charproc_resource");
+	    if (!used_resources)
 		return_error(gs_error_VMerror);
-	    if (used_fonts_count) {
-		memcpy(used_fonts, pdfont->u.simple.s.type3.used_fonts, 
-		    sizeof(*pdfont->u.simple.s.type3.used_fonts) * used_fonts_count);
-		gs_free_object(pdev->pdf_memory, pdfont->u.simple.s.type3.used_fonts, 
-			"pdf_register_charproc_font");
+	    if (used_resources_count) {
+		memcpy(used_resources, pdfont->u.simple.s.type3.used_resources, 
+		    sizeof(pdf_resource_ref_t) * used_resources_count);
+		gs_free_object(pdev->pdf_memory, pdfont->u.simple.s.type3.used_resources, 
+			"pdf_register_charproc_resource");
 	    }
-	    pdfont->u.simple.s.type3.used_fonts = used_fonts;
-	    pdfont->u.simple.s.type3.used_fonts_max = used_fonts_max;
+	    pdfont->u.simple.s.type3.used_resources = used_resources;
+	    pdfont->u.simple.s.type3.used_resources_max = used_resources_max;
 	}
-	used_fonts[used_fonts_count] = id;
-	pdfont->u.simple.s.type3.used_fonts_count = used_fonts_count + 1;
+	used_resources[used_resources_count].id = id;
+	used_resources[used_resources_count].type = type;
+	pdfont->u.simple.s.type3.used_resources_count = used_resources_count + 1;
     }
     return 0;
 }
@@ -159,22 +160,22 @@ pdf_register_charproc_font(gx_device_pdf *pdev, gs_id id)
  * Register charproc fonts with the page or substream.
  */
 int
-pdf_used_charproc_fonts(gx_device_pdf *pdev, pdf_font_resource_t *pdfont) 
+pdf_used_charproc_resources(gx_device_pdf *pdev, pdf_font_resource_t *pdfont) 
 {
     if (pdfont->where_used & pdev->used_mask)
 	return 0;
     pdfont->where_used |= pdev->used_mask;
     if (pdfont->FontType == ft_user_defined) {
-	gs_id *used_fonts = pdfont->u.simple.s.type3.used_fonts;
-	int i, used_fonts_count = pdfont->u.simple.s.type3.used_fonts_count;
+	pdf_resource_ref_t *used_resources = pdfont->u.simple.s.type3.used_resources;
+	int i, used_resources_count = pdfont->u.simple.s.type3.used_resources_count;
 
-	for (i = 0; i < used_fonts_count; i++) {
-	    pdf_font_resource_t *pdfont1 = 
-		    (pdf_font_resource_t *)pdf_find_resource_by_resource_id(pdev, 
-			    resourceFont, used_fonts[i]);
-	    if (pdfont1 == NULL)
+	for (i = 0; i < used_resources_count; i++) {
+	    pdf_resource_t *pres = 
+		    pdf_find_resource_by_resource_id(pdev, 
+			    used_resources[i].type, used_resources[i].id);
+	    if (pres == NULL)
 		return_error(gs_error_unregistered); /* Must not happen. */
-	    pdfont1->where_used |= pdev->used_mask;
+	    pres->where_used |= pdev->used_mask;
 	}
     }
     return 0;
@@ -208,7 +209,7 @@ pdf_encode_string(gx_device_pdf *pdev, pdf_text_enum_t *penum,
     code = pdf_add_resource(pdev, pdev->substream_Resources, "/Font", (pdf_resource_t *)pdfont);
     if (code < 0)
 	return code;
-    code = pdf_register_charproc_font(pdev, pdf_resource_id((pdf_resource_t *)pdfont));
+    code = pdf_register_charproc_resource(pdev, pdf_resource_id((pdf_resource_t *)pdfont), resourceFont);
     if (code < 0)
 	return code;
     cfont = pdf_font_resource_font(pdfont, false);

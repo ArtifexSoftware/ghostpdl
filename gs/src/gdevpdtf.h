@@ -147,6 +147,11 @@ typedef struct pdf_encoding_element_s {
     "pdf_encoding_element_t[]", pdf_encoding_elt_enum_ptrs,\
     pdf_encoding_elt_reloc_ptrs, st_pdf_encoding1)
 
+typedef struct {
+    gs_id id;
+    pdf_resource_type_t type;
+} pdf_resource_ref_t;
+
 /*
  * Widths are the widths in the outlines: this is what PDF interpreters
  * use, and what will be written in the PDF file.  real_widths are the
@@ -237,9 +242,9 @@ struct pdf_font_resource_s {
 		    pdf_char_proc_t *char_procs;
 		    int max_y_offset;
 		    bool bitmap_font;
-		    gs_id *used_fonts; /* IDs of fonts used in charproc streams. */
-		    int used_fonts_count;
-		    int used_fonts_max;
+		    pdf_resource_ref_t *used_resources;
+		    int used_resources_count;
+		    int used_resources_max;
 		    byte *cached;
 		} type3;
 
