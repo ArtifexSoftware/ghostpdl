@@ -1210,7 +1210,10 @@ typedef enum {
     pattern_manage__can_accum,
     pattern_manage__start_accum,
     pattern_manage__finish_accum,
-    pattern_manage__load
+    pattern_manage__load,
+#if PS2WRITE
+    pattern_manage__shading_area
+#endif
 } pattern_manage_t;
 
 #define dev_t_proc_pattern_manage(proc, dev_t)\

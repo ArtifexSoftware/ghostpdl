@@ -22,7 +22,10 @@
 #include "gxfixed.h"
 #include "gxistate.h"
 #include "gxpaint.h"
+#include "gxcoord.h"
+#include "gxdevmem.h"
 #include "gserrors.h"
+#include "gsptype2.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gdevpdfx.h"
@@ -441,6 +444,53 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
     return pdf_put_clip_path(pdev, pcpath);
 }
 
+/* -------------A local shading converter device. -----------------------------*/
+
+typedef struct {
+    gx_device_memory mdev;
+    dev_t_proc_fill_rectangle((*std_fill_rectangle), gx_device);
+} pdf_lcvd_t;
+
+/* A special hackish proc for shifting a sdading raster. */
+private int 
+lcvd_fill_rectangle_shifted(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
+{
+    pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+
+    return cvd->std_fill_rectangle((gx_device *)&cvd->mdev, 
+	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
+}
+private void 
+lcvd_get_clipping_box_from_tadget(gx_device *dev, gs_fixed_rect *pbox)
+{
+    gx_device_memory *mdev = (gx_device_memory *)dev;
+
+    (*dev_proc(mdev->target, get_clipping_box))(mdev->target, pbox);
+}
+private int 
+lcvd_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{
+    if (function == pattern_manage__shading_area)
+	return 1; /* Request shading area. */
+    return 0;
+}
+private int
+lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
+    const gs_imager_state *pis, gx_path *ppath,
+    const gx_fill_params *params,
+    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
+{
+    pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+    gx_device_pdf *pdev = (gx_device_pdf *)cvd->mdev.target;
+
+    gdev_vector_dopath((gx_device_vector *)pdev, ppath,
+			gx_path_type_fill | gx_path_type_optimize,
+			NULL);
+    stream_puts(pdev->strm, "h W n\n");
+    return 0;
+}
+
 /* ------ Driver procedures ------ */
 
 /* Fill a path. */
@@ -482,9 +532,70 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	return 0; /* Nothing to paint. */
     code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
     if (code == gs_error_rangecheck) {
-	/* Fallback to the default implermentation for handling 
-	   a shading with CompatibilityLevel<=1.2 . */
-	return gx_default_fill_path((gx_device *)pdev, pis, ppath, params, pdcolor, pcpath);
+	const bool convert_to_image = (PS2WRITE &&
+		pdev->OrderResources /* temporary for backward compatibility */ &&
+		pdev->CompatibilityLevel <= 1.2 && 
+		gx_dc_is_pattern2_color(pdcolor));
+
+	if (!convert_to_image) {
+	    /* Fallback to the default implermentation for handling 
+	    a shading with CompatibilityLevel<=1.2 . */
+	    code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+	} else {
+	    /* Convert a shading into a bitmap
+	       with CompatibilityLevel<=1.2 . */
+	    pdf_lcvd_t cvd;
+	    gs_matrix_fixed save_ctm = pis->ctm;
+	    int sx, sy;
+	    gs_fixed_rect bbox;
+	    gs_imager_state *pis1 = (gs_imager_state *)pis; /* Break 'const'. */
+	    const int sourcex = 0;
+	    gs_point p;
+
+	    code = gx_path_bbox(ppath, &bbox);
+	    if (code < 0)
+		return code;
+	    rect_intersect(bbox, box);
+	    sx = fixed2int(box.p.x);
+	    sy = fixed2int(box.p.y);
+	    gs_make_mem_device(&cvd.mdev, gdev_mem_device_for_bits(dev->color_info.depth),
+			pdev->memory, 0, (gx_device *)pdev);
+	    cvd.mdev.width  = fixed2int(box.q.x + fixed_half) - sx;
+	    cvd.mdev.height = fixed2int(box.q.y + fixed_half) - sy;
+	    cvd.mdev.mapped_x = sx;
+	    cvd.mdev.mapped_y = sy;
+	    cvd.mdev.bitmap_memory = pdev->memory;
+	    cvd.mdev.color_info = pdev->color_info;
+	    code = (*dev_proc(&cvd.mdev, open_device))((gx_device *)&cvd.mdev);
+	    if (code < 0)
+		return code;
+	    cvd.std_fill_rectangle = dev_proc(&cvd.mdev, fill_rectangle);
+	    dev_proc(&cvd.mdev, fill_rectangle) = lcvd_fill_rectangle_shifted;
+	    dev_proc(&cvd.mdev, get_clipping_box) = lcvd_get_clipping_box_from_tadget;
+	    dev_proc(&cvd.mdev, pattern_manage) = lcvd_pattern_manage;
+	    dev_proc(&cvd.mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
+	    gs_distance_transform_inverse(sx * pdev->HWResolution[0] / 72, 
+					sy * pdev->HWResolution[0] / 72, &ctm_only(pis), &p);
+	    stream_puts(pdev->strm, "q\n");
+	    code = gx_default_fill_path((gx_device *)&cvd.mdev, pis, ppath, params, pdcolor, pcpath);
+	    pis1->ctm = save_ctm;
+	    if (code == 0) {
+		gs_image_t image;
+		pdf_image_writer writer;
+
+		pprintg2(pdev->strm, "1 0 0 1 %g %g cm\n", p.x, p.y);
+		code = pdf_copy_color_data(pdev, cvd.mdev.base, sourcex,  
+			    cvd.mdev.raster, gx_no_bitmap_id, 0, 0, cvd.mdev.width, cvd.mdev.height,
+			    &image, &writer, 0);
+		if (code == 1)
+		    code = 0; /* Empty image. */
+		else if (code == 0)
+		    code = pdf_do_image(pdev, writer.pres, NULL, true);
+		stream_puts(pdev->strm, "Q\n");
+	    }
+	    (*dev_proc(&cvd.mdev, close_device))((gx_device *)&cvd.mdev);
+	}
+	return code; 
     }
     if (code < 0)
 	return code;

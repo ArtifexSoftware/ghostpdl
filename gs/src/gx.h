@@ -27,6 +27,9 @@
 #include "gsmemory.h"
 #include "gdebug.h"
 
+/* A configuration switch for development purpose (please don't modify) : */
+#define PS2WRITE 1 /* Old code = 0, new code = 1 */
+
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */
 /* rather than at a higher level as perhaps would be more appropriate. */

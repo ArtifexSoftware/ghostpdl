@@ -331,7 +331,7 @@ gdev_pdf_copy_mono(gx_device * dev,
 
 /* Copy a color bitmap.  for_pattern = -1 means put the image in-line, */
 /* 1 means put the image in a resource. */
-private int
+int
 pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 		    int raster, gx_bitmap_id id, int x, int y, int w, int h,
 		    gs_image_t *pim, pdf_image_writer *piw,

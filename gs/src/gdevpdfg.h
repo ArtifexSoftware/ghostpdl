@@ -317,4 +317,13 @@ int pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 		 const psdf_set_color_commands_t *ppscc,
 		 pdf_resource_t **ppres);
 
+/* ---------------- Exported by gdevpdfb.c ---------------- */
+
+/* Copy a color bitmap.  for_pattern = -1 means put the image in-line, */
+/* 1 means put the image in a resource. */
+int pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
+		    int raster, gx_bitmap_id id, int x, int y, int w, int h,
+		    gs_image_t *pim, pdf_image_writer *piw,
+		    int for_pattern);
+
 #endif /* gdevpdfg_INCLUDED */

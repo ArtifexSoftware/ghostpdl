@@ -457,64 +457,67 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
     gx_device_clip path_dev;
     int code = 0;
 
-    path_clip = gx_cpath_alloc(mem, "shading_fill_path(path_clip)");
-    if (path_clip == 0) {
-	code = gs_note_error(gs_error_VMerror);
-	goto out;
-    }
-    dev_proc(dev, get_clipping_box)(dev, &path_box);
-    if (prect)
-	rect_intersect(path_box, *prect);
-    if (psh->params.have_BBox) {
-	gs_fixed_rect bbox_fixed;
+    if (!PS2WRITE || (*dev_proc(dev, pattern_manage))(dev, 
+			gs_no_id, NULL, pattern_manage__shading_area) == 0) {
+	path_clip = gx_cpath_alloc(mem, "shading_fill_path(path_clip)");
+	if (path_clip == 0) {
+	    code = gs_note_error(gs_error_VMerror);
+	    goto out;
+	}
+	dev_proc(dev, get_clipping_box)(dev, &path_box);
+	if (prect)
+	    rect_intersect(path_box, *prect);
+	if (psh->params.have_BBox) {
+	    gs_fixed_rect bbox_fixed;
 
-	if ((is_xxyy(pmat) || is_xyyx(pmat)) &&
-	    (code = shade_bbox_transform2fixed(&psh->params.BBox, pis,
-					       &bbox_fixed)) >= 0
-	    ) {
-	    /* We can fold BBox into the clipping rectangle. */
-	    rect_intersect(path_box, bbox_fixed);
-	} else
-	    {
-	    gx_path *box_path;
+	    if ((is_xxyy(pmat) || is_xyyx(pmat)) &&
+		(code = shade_bbox_transform2fixed(&psh->params.BBox, pis,
+						&bbox_fixed)) >= 0
+		) {
+		/* We can fold BBox into the clipping rectangle. */
+		rect_intersect(path_box, bbox_fixed);
+	    } else
+		{
+		gx_path *box_path;
 
+		if (path_box.p.x >= path_box.q.x || path_box.p.y >= path_box.q.y)
+		    goto out;		/* empty rectangle */
+		box_path = gx_path_alloc(mem, "shading_fill_path(box_path)");
+		if (box_path == 0) {
+		    code = gs_note_error(gs_error_VMerror);
+		    goto out;
+		}
+		if ((code = gx_cpath_from_rectangle(path_clip, &path_box)) < 0 ||
+		    (code = shading_path_add_box(box_path, &psh->params.BBox,
+						pmat)) < 0 ||
+		    (code = gx_cpath_intersect(path_clip, box_path,
+					    gx_rule_winding_number, pis)) < 0
+		    )
+		    DO_NOTHING;
+		gx_path_free(box_path, "shading_fill_path(box_path)");
+		if (code < 0)
+		    goto out;
+		path_clip_set = true;
+	    }
+	}
+	if (!path_clip_set) {
 	    if (path_box.p.x >= path_box.q.x || path_box.p.y >= path_box.q.y)
 		goto out;		/* empty rectangle */
-	    box_path = gx_path_alloc(mem, "shading_fill_path(box_path)");
-	    if (box_path == 0) {
-		code = gs_note_error(gs_error_VMerror);
+	    if ((code = gx_cpath_from_rectangle(path_clip, &path_box)) < 0)
 		goto out;
-	    }
-	    if ((code = gx_cpath_from_rectangle(path_clip, &path_box)) < 0 ||
-		(code = shading_path_add_box(box_path, &psh->params.BBox,
-					     pmat)) < 0 ||
-		(code = gx_cpath_intersect(path_clip, box_path,
-					   gx_rule_winding_number, pis)) < 0
-		)
-		DO_NOTHING;
-	    gx_path_free(box_path, "shading_fill_path(box_path)");
-	    if (code < 0)
-		goto out;
-	    path_clip_set = true;
 	}
-    }
-    if (!path_clip_set) {
-	if (path_box.p.x >= path_box.q.x || path_box.p.y >= path_box.q.y)
-	    goto out;		/* empty rectangle */
-	if ((code = gx_cpath_from_rectangle(path_clip, &path_box)) < 0)
+	if (ppath &&
+	    (code =
+	    gx_cpath_intersect(path_clip, ppath, gx_rule_winding_number, pis)) < 0
+	    )
 	    goto out;
+	gx_make_clip_device(&path_dev, &path_clip->rect_list->list);
+	path_dev.target = dev;
+	path_dev.HWResolution[0] = dev->HWResolution[0];
+	path_dev.HWResolution[1] = dev->HWResolution[1];
+	dev = (gx_device *)&path_dev;
+	dev_proc(dev, open_device)(dev);
     }
-    if (ppath &&
-	(code =
-	 gx_cpath_intersect(path_clip, ppath, gx_rule_winding_number, pis)) < 0
-	)
-	goto out;
-    gx_make_clip_device(&path_dev, &path_clip->rect_list->list);
-    path_dev.target = dev;
-    path_dev.HWResolution[0] = dev->HWResolution[0];
-    path_dev.HWResolution[1] = dev->HWResolution[1];
-    dev = (gx_device *)&path_dev;
-    dev_proc(dev, open_device)(dev);
 #if 0 /* NEW_SHADINGS - doesn't work for 478-01.ps, which sets a big smoothness :
          makes an assymmetrix domain, and the patch decomposition
 	 becomes highly irregular. */

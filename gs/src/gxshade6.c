@@ -3706,6 +3706,30 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     /*if (dbg_patch_cnt != 67 && dbg_patch_cnt != 78)
 	return 0;*/
 #endif
+#if PS2WRITE
+    if ((*dev_proc(pfs->dev, pattern_manage))(pfs->dev, 
+	    gs_no_id, NULL, pattern_manage__shading_area) > 0) {
+	/* Inform the device with the shading coverage area. */
+	gx_device *pdev = pfs->dev;
+	gx_path path;
+	int i;
+
+	gx_path_init_local(&path, pdev->memory);
+	code = gx_path_add_point(&path, curve[0].vertex.p.x, curve[0].vertex.p.y);
+
+	for (i = 0; i < 4 && code >= 0; i ++) 
+	    code = gx_path_add_curve(&path, curve[i].control[0].x, curve[i].control[0].y, 
+					    curve[i].control[1].x, curve[i].control[1].y,
+					    curve[(i + 1) % 4].vertex.p.x, curve[(i + 1) % 4].vertex.p.y);
+	if (code >= 0)
+	    code = gx_path_close_subpath(&path);
+	if (code >= 0)
+	    code = (*dev_proc(pfs->dev, fill_path))(pdev, NULL, &path, NULL, NULL, NULL);
+	gx_path_free(&path, "patch_fill");
+	if (code < 0)
+	    return code;
+    }
+#endif
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
     make_tensor_patch(pfs, &p, curve, interior);
