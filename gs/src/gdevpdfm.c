@@ -1250,8 +1250,7 @@ pdfmark_SP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return_error(gs_error_rangecheck);
     if ((code = pdf_get_named(pdev, &pairs[0], cos_type_stream, &pco)) < 0)
 	return code;
-    /****** HOW TO CHECK FOR GRAPHICS STREAM? ******/
-    if (pco->is_open)
+    if (pco->is_open || !pco->is_graphics)
 	return_error(gs_error_rangecheck);
     code = pdf_open_contents(pdev, PDF_IN_STREAM);
     if (code < 0)
