@@ -715,10 +715,6 @@ Difference in specific tests of the PCL 5c FTS
     the behavior of the implementation and different devices (Color
     Laserjet & 6MP) produce different results for each of these test files.
 
-2180, 2190, 2200
-    These file set the top margin inside the imageable region.  We
-    clip to the imageable region.  Applications will not do this.
-
 2210 and 2220 (fourth page):
 
     SI, SR discrenpancy.
