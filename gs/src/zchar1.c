@@ -1119,7 +1119,6 @@ z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 {
     ref gref;
     ref *pcdevproc;
-    gs_font_type1 *const pfont = (gs_font_type1 *)font;
     gs_font_base *const pbfont = (gs_font_base *)font;
     const ref *pfdict = &pfont_data(pbfont)->dict;
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
