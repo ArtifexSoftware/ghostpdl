@@ -65,13 +65,14 @@ Ghostscript</a>.
 <h2><a name="Introduction"></a>Introduction</h2>
 
 <p>
-This document describes the process that Aladdin Enterprises used to make
-new Ghostscript releases.  As time goes on, it will become a more suitable
-document for others wishing to prepare releases for distribution.  Please
-note that although the <a href="Public.htm">Aladdin Free Public License</a>
-allows anyone to prepare and distribute releases in accordance with its
-terms and conditions, this document is really meant only for developers
-working closely with artofcode LLC, the copyright holder of Ghostscript.
+This document describes the process that artofcode LLC, the copyright holder
+of Ghostscript, uses for making new Ghostscript releases.  As time goes on,
+it will become a more suitable document for others wishing to prepare
+releases for distribution.  Please note that although the <a
+href="Public.htm">Aladdin Free Public License</a> allows anyone to prepare
+and distribute releases in accordance with its terms and conditions, this
+document is really meant only for developers working closely with artofcode
+LLC.
 
 <p>
 This document is primarily about AFPL Ghostscript releases.  See the
@@ -160,6 +161,10 @@ class="offsite">ftp://ftp.cs.wisc.edu/ghost/aladdin/test/</a>
 <p>
 When adding or removing files, don't forget to invoke <b><tt>cvs
 add</tt></b> or <b><tt>cvs rm</tt></b>.
+
+<p>
+When adding files, update the file roadmap in
+<b><tt>doc/Develop.htm</tt></b>.
 
 <p>
 When adding or removing files other than .c or .h: If the files will be used
@@ -294,6 +299,15 @@ running:
 toolbin/gsmake.tcl check
 </pre></blockquote>
 
+<p>
+Check that all source and .ps files are documented at least minimally by
+running:
+
+<blockquote><pre>
+toolbin/hrefcov.tcl +src
+toolbin/hrefcov.tcl +lib
+</pre></blockquote>
+
 <h3><a name="Testing"></a>Testing</h3>
 
 <p>
@@ -418,8 +432,8 @@ under <a href="Source_distributions">"Source distributions"</a> above:
 </pre></blockquote>
 
 <p>
-The following procedures are very Aladdin-specific; they rely on a large
-number of MS-DOS batch scripts that are not discussed here.
+The following procedures rely on a large number of MS-DOS batch scripts that
+are not discussed here: they are unlikely to be generally useful.
 
 <p>
 Mount the Windows partition on <b><tt>/c</tt></b>, and create the
@@ -690,9 +704,9 @@ E-mail the full URL and the <b><tt>md5sum</tt></b> of the new archive(s) to
 <p>
 artofcode LLC distributes a package of the base 35 PostScript fonts, and a
 package of other miscellaneous fonts.  As with the Ghostscript code, each
-package is released both with the Aladdin License and with the GPL; however,
-unlike the Ghostscript code, artofcode releases these versions simultaneously
-rather than with a one-version delay.
+package is released both with the AFPL and with the GPL; however, unlike the
+Ghostscript code, artofcode releases these versions simultaneously rather
+than with a one-version delay.
 
 <p>
 To make the font packages, run the command
@@ -712,7 +726,7 @@ gnu-gs-fonts-other-#.#[#].tar.gz
 </pre></blockquote>
 
 <p>
-The first two of these use the Aladdin License, and should be uploaded to
+The first two of these use the AFPL, and should be uploaded to
 <b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/fonts/</tt></b>.  The other two
 use the GPL, and should be uploaded to
 <b><tt>ftp://ftp.cs.wisc.edu/ghost/gnu/fonts/</tt></b>.  For the GNU
