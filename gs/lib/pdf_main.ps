@@ -121,7 +121,8 @@ systemdict begin
 } bind odef
 currentdict /runpdfstring .undef
 
-/runpdf {		% <file> runpdf -
+
+/runpdfbegin {		% <file> runpdf -
    userdict begin
 	% It turns out that the PDF interpreter uses memory more
 	% effectively if it is run under at least one level of save.
@@ -148,21 +149,27 @@ currentdict /runpdfstring .undef
     } {
       1
     } ifelse
-   1
    /LastPage where { pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
-   2 index 1 index gt
+   1 index 1 index gt
     { (   No pages will be processed \(FirstPage > LastPage\).) = flush }
     { QUIET not
-      { (Processing pages ) print 2 index =only ( through ) print dup =only
+      { (Processing pages ) print 1 index =only ( through ) print dup =only
         (.) = flush
       }
      if
     }
    ifelse
+} bind def
+
+/dopdfpages {   % firstpage# lastpage# dopdfpages -
+  1 exch
     { dup /Page# exch store
       QUIET not { (Page ) print dup == flush } if
       pdfgetpage pdfshowpage
     } for
+} bind def
+
+/runpdfend {
    Repaired { printrepaired } if
    currentdict pdfclose
    end			% temporary dict
@@ -171,6 +178,13 @@ currentdict /runpdfstring .undef
    PDFTopSave restore
    end			% userdict
 } bind def
+
+/runpdf {		% <file> runpdf -
+  runpdfbegin
+  dopdfpages
+  runpdfend
+} bind def
+
 end			% systemdict
 % Redefine the procedure that the C code uses for running piped input.
 % It is OK to use { (%stdin) run } here, because a startjob cannot occur.
