@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -63,9 +63,10 @@ extern const byte byte_count_bits[256];
  * the run length is increased by 8.
  */
 extern const byte
-      byte_bit_run_length_0[256], byte_bit_run_length_1[256], byte_bit_run_length_2[256],
-      byte_bit_run_length_3[256], byte_bit_run_length_4[256], byte_bit_run_length_5[256],
-      byte_bit_run_length_6[256], byte_bit_run_length_7[256];
+    byte_bit_run_length_0[256], byte_bit_run_length_1[256],
+    byte_bit_run_length_2[256], byte_bit_run_length_3[256],
+    byte_bit_run_length_4[256], byte_bit_run_length_5[256],
+    byte_bit_run_length_6[256], byte_bit_run_length_7[256];
 
 /*
  * byte_bit_run_length[N] points to byte_bit_run_length_N.

@@ -1304,13 +1304,15 @@ $(GLOBJ)gsnorop.$(OBJ): $(GLSRC)gsnorop.c $(GXERR)\
  $(gdevmrop_h) $(gsrop_h) $(gxdevcli_h)
 	$(GLCC) $(GLO_)gsnorop.$(OBJ) $(C_) $(GLSRC)gsnorop.c
 
-roplib1_=$(GLOBJ)gdevdrop.$(OBJ) $(GLOBJ)gdevmrop.$(OBJ) $(GLOBJ)gdevrops.$(OBJ)
-roplib2_=$(GLOBJ)gsrop.$(OBJ) $(GLOBJ)gsroptab.$(OBJ)
-roplib_=$(roplib1_) $(roplib2_)
+roplib1_=$(GLOBJ)gdevdrop.$(OBJ)
+roplib2_=$(GLOBJ)gdevmr1.$(OBJ) $(GLOBJ)gdevmr2n.$(OBJ) $(GLOBJ)gdevmr8n.$(OBJ)
+roplib3_=$(GLOBJ)gdevrops.$(OBJ) $(GLOBJ)gsrop.$(OBJ) $(GLOBJ)gsroptab.$(OBJ)
+roplib_=$(roplib1_) $(roplib2_) $(roplib3_)
 roplib.dev: $(LIB_MAK) $(ECHOGS_XE) $(roplib_)
 	$(SETMOD) roplib $(roplib1_)
 	$(ADDMOD) roplib $(roplib2_)
-	$(ADDMOD) roplib -replace noroplib
+	$(ADDMOD) roplib $(roplib3_)
+	$(ADDMOD) roplib -replace $(GLD)noroplib
 
 $(GLOBJ)gdevdrop.$(OBJ): $(GLSRC)gdevdrop.c $(GXERR) $(memory__h)\
  $(gsbittab_h) $(gsropt_h)\
@@ -1318,6 +1320,24 @@ $(GLOBJ)gdevdrop.$(OBJ): $(GLSRC)gdevdrop.c $(GXERR) $(memory__h)\
  $(gxgetbit_h)\
  $(gdevmrop_h)
 	$(GLCC) $(GLO_)gdevdrop.$(OBJ) $(C_) $(GLSRC)gdevdrop.c
+
+$(GLOBJ)gdevmr1.$(OBJ): $(GLSRC)gdevmr1.c $(GXERR) $(memory__h)\
+ $(gsbittab_h) $(gsropt_h)\
+ $(gxcindex_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdevrop_h)\
+ $(gdevmrop_h)
+	$(GLCC) $(GLO_)gdevmr1.$(OBJ) $(C_) $(GLSRC)gdevmr1.c
+
+$(GLOBJ)gdevmr2n.$(OBJ): $(GLSRC)gdevmr2n.c $(GXERR) $(memory__h)\
+ $(gsbittab_h) $(gsropt_h)\
+ $(gxcindex_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdevrop_h)\
+ $(gdevmrop_h)
+	$(GLCC) $(GLO_)gdevmr2n.$(OBJ) $(C_) $(GLSRC)gdevmr2n.c
+
+$(GLOBJ)gdevmr8n.$(OBJ): $(GLSRC)gdevmr8n.c $(GXERR) $(memory__h)\
+ $(gsbittab_h) $(gsropt_h)\
+ $(gxcindex_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdevrop_h)\
+ $(gdevmem_h) $(gdevmrop_h)
+	$(GLCC) $(GLO_)gdevmr8n.$(OBJ) $(C_) $(GLSRC)gdevmr8n.c
 
 $(GLOBJ)gdevmrop.$(OBJ): $(GLSRC)gdevmrop.c $(GXERR) $(memory__h)\
  $(gsbittab_h) $(gsropt_h)\
@@ -1636,7 +1656,7 @@ $(GLOBJ)gscpixel.$(OBJ): $(GLSRC)gscpixel.c $(GXERR)\
 
 # ---------------- CIE color ---------------- #
 
-cielib1_=$(GLOBJ)gscie.$(OBJ) $(GLOBJ)gscscie.$(OBJ) $(GLOBJ)gxctable.$(OBJ)
+cielib1_=$(GLOBJ)gscie.$(OBJ) $(GLOBJ)gsciemap.$(OBJ) $(GLOBJ)gscscie.$(OBJ) $(GLOBJ)gxctable.$(OBJ)
 cielib2_=$(GLOBJ)gscrd.$(OBJ) $(GLOBJ)gscrdp.$(OBJ)
 cielib_=$(cielib1_) $(cielib2_)
 cielib.dev: $(LIB_MAK) $(ECHOGS_XE) $(cielib_)
@@ -1647,6 +1667,11 @@ $(GLOBJ)gscie.$(OBJ): $(GLSRC)gscie.c $(GXERR) $(math__h)\
  $(gscie_h) $(gscolor2_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gscie.$(OBJ) $(C_) $(GLSRC)gscie.c
+
+$(GLOBJ)gsciemap.$(OBJ): $(GLSRC)gsciemap.c $(GXERR) $(math__h)\
+ $(gscie_h)\
+ $(gxarith_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gxistate_h)
+	$(GLCC) $(GLO_)gsciemap.$(OBJ) $(C_) $(GLSRC)gsciemap.c
 
 $(GLOBJ)gscrd.$(OBJ): $(GLSRC)gscrd.c $(GXERR) $(math__h) $(memory__h) $(string__h)\
  $(gscdefs_h) $(gscolor2_h) $(gscrd_h) $(gsdevice_h)\

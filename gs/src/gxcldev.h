@@ -503,9 +503,9 @@ int cmd_update_lop(P3(gx_device_clist_writer *, gx_clist_state *,
  * Define macros for dividing up an operation into bands, per the
  * template
 
-    FOR_RECTS {
+    FOR_RECTS[_NO_ERROR] {
 	... process rectangle x, y, width, height in band pcls ...
-    } END_RECTS;
+    } END_RECTS[_NO_ERROR];
 
  * Note that FOR_RECTS resets y and height.  It is OK for the code that
  * processes each band to reset height to a smaller (positive) value; the
@@ -531,6 +531,9 @@ int cmd_update_lop(P3(gx_device_clist_writer *, gx_clist_state *,
  * TRY_RECT. If local recovery is unsuccessful, the local recovery code
  * calls ERROR_RECT.
  *
+ * The band processing loop should use the _NO_ERROR macros iff it doesn't
+ * call ERROR_RECT anywhere.
+ *
  * In a few cases, the band processing code calls other driver procedures
  * (e.g., clist_copy_mono calls itself recursively if it must split up the
  * operation into smaller pieces) or other procedures that may attempt
@@ -549,6 +552,21 @@ int cmd_update_lop(P3(gx_device_clist_writer *, gx_clist_state *,
  * permanent_error, which prevents writing to the command list.
  */
 
+#define FOR_RECTS_NO_ERROR\
+    BEGIN\
+	int yend = y + height;\
+	int band_height = cdev->page_band_height;\
+	/* no band_code */\
+\
+	if (cdev->permanent_error < 0)\
+	  return (cdev->permanent_error);\
+	do {\
+	    int band = y / band_height;\
+	    gx_clist_state *pcls = cdev->states + band;\
+	    int band_end = (band + 1) * band_height;\
+\
+	    height = min(band_end, yend) - y;\
+/* no retry_rect: */
 #define FOR_RECTS\
     BEGIN\
 	int yend = y + height;\
@@ -601,6 +619,9 @@ error_in_rect:\
 	} while ((y += height) < yend);\
     END
 #define END_RECTS END_RECTS_ON_ERROR(DO_NOTHING, 1, 1)
+#define END_RECTS_NO_ERROR\
+	} while ((y += height) < yend);\
+    END
 
 /* ------ Exported by gxclrect.c ------ */
 

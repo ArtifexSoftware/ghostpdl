@@ -150,11 +150,9 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
     }
     nbytes = m * pclt->dims[n - 2] * pclt->dims[n - 1];
     if (n == 3) {
-	/* gs_alloc_byte_array is ****** WRONG ****** */
 	table =
-	    (gs_const_string *) gs_alloc_byte_array(mem, pclt->dims[0],
-						    sizeof(gs_const_string),
-						    "cie_table_param");
+	    gs_alloc_struct_array(mem, pclt->dims[0], gs_const_string,
+				  &st_const_string_element, "cie_table_param");
 	if (table == 0)
 	    return_error(e_VMerror);
 	code = cie_3d_table_param(pta + 3, pclt->dims[0], nbytes, table);
@@ -166,11 +164,9 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
 	check_read_type(pta[4], t_array);
 	if (r_size(pta + 4) != d0)
 	    return_error(e_rangecheck);
-	/* gs_alloc_byte_array is ****** WRONG ****** */
 	table =
-	    (gs_const_string *) gs_alloc_byte_array(mem, ntables,
-						    sizeof(gs_const_string),
-						    "cie_table_param");
+	    gs_alloc_struct_array(mem, ntables, gs_const_string,
+				  &st_const_string_element, "cie_table_param");
 	if (table == 0)
 	    return_error(e_VMerror);
 	psuba = pta[4].value.const_refs;
@@ -443,7 +439,11 @@ cs_install_zCIEDEFG(gs_color_space * pcs, gs_state * pgs)
 private int
 cie_defg_finish(os_ptr op)
 {
-    gs_cie_defg_complete(r_ptr(op, gs_cie_defg));
+    gs_cie_defg *pcie = r_ptr(op, gs_cie_defg);
+
+    pcie->DecodeDEFG = DecodeDEFG_from_cache;
+    pcie->common.DecodeLMN = DecodeLMN_from_cache;
+    gs_cie_defg_complete(pcie);
     pop(1);
     return 0;
 }
@@ -476,7 +476,11 @@ cs_install_zCIEDEF(gs_color_space * pcs, gs_state * pgs)
 private int
 cie_def_finish(os_ptr op)
 {
-    gs_cie_def_complete(r_ptr(op, gs_cie_def));
+    gs_cie_def *pcie = r_ptr(op, gs_cie_def);
+
+    pcie->DecodeDEF = DecodeDEF_from_cache;
+    pcie->common.DecodeLMN = DecodeLMN_from_cache;
+    gs_cie_def_complete(pcie);
     pop(1);
     return 0;
 }
@@ -505,7 +509,11 @@ cs_install_zCIEABC(gs_color_space * pcs, gs_state * pgs)
 private int
 cie_abc_finish(os_ptr op)
 {
-    gs_cie_abc_complete(r_ptr(op, gs_cie_abc));
+    gs_cie_abc *pcie = r_ptr(op, gs_cie_abc);
+
+    pcie->DecodeABC = DecodeABC_from_cache;
+    pcie->common.DecodeLMN = DecodeLMN_from_cache;
+    gs_cie_abc_complete(pcie);
     pop(1);
     return 0;
 }
@@ -535,7 +543,11 @@ cs_install_zCIEA(gs_color_space * pcs, gs_state * pgs)
 private int
 cie_a_finish(os_ptr op)
 {
-    gs_cie_a_complete(r_ptr(op, gs_cie_a));
+    gs_cie_a *pcie = r_ptr(op, gs_cie_a);
+
+    pcie->DecodeA = DecodeA_from_cache;
+    pcie->common.DecodeLMN = DecodeLMN_from_cache;
+    gs_cie_a_complete(pcie);
     pop(1);
     return 0;
 }

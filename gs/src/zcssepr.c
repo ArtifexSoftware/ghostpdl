@@ -18,6 +18,7 @@
 
 
 /* Separation color space support */
+#include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "gsstruct.h"
@@ -102,12 +103,14 @@ zsetseparationspace(register os_ptr op)
     if (code < 0)
 	return code;
     map->proc.tint_transform = lookup_tint;
-    cs.params.separation.alt_space = *(gs_base_color_space *) & cs;
+    /* See zcsindex.c for why we use memmove here. */
+    memmove(&cs.params.separation.alt_space, &cs,
+	    sizeof(cs.params.separation.alt_space));
+    gs_cspace_init(&cs, &gs_color_space_type_Separation, NULL);
     cs.params.separation.map = map;
     cspace_old = istate->colorspace;
     istate->colorspace.procs.special.separation.layer_name = pcsa[0];
     istate->colorspace.procs.special.separation.tint_transform = pcsa[2];
-    cs.type = &gs_color_space_type_Separation;
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	istate->colorspace = cspace_old;

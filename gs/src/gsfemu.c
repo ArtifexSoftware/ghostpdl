@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -202,12 +202,6 @@ __adddf3(double a, double b)
     lc[lsw] = lsa;
     return dc;
 }
-float
-__addsf3(float a, float b)
-{
-    return (float)((double)a + (double)b);
-}
-
 double
 __subdf3(double a, double b)
 {
@@ -217,10 +211,81 @@ __subdf3(double a, double b)
     nb[lsw] = lb[lsw];
     return a + *(const double *)nb;
 }
+
+float
+__addsf3(float a, float b)
+{
+    long lc;
+    int expt = fx(ia);
+    int shift = expt - fx(ib);
+    long sign;
+    ulong ma, mb;
+
+    if (shift < 0) {		/* Swap a and b so that expt(a) >= expt(b). */
+	long temp = ia;
+
+	*(long *)&a = ib;
+	*(long *)&b = temp;
+	expt += (shift = -shift);
+    }
+    if (shift >= 25)		/* also picks up most cases where b == 0 */
+	return a;
+    if (!(ib & 0x7fffffff))
+	return a;
+    sign = ia & 0x80000000;
+    ma = (ia & 0x7fffff) + 0x800000;
+    mb = (ib & 0x7fffff) + 0x800000;
+    if ((ia ^ ib) >= 0) {	/* Adding numbers of the same sign. */
+	if (shift) {
+	    --shift;
+	    mb = ((mb >> shift) + 1) >> 1;
+	}
+	ma += mb;
+	if (ma > 0xffffff) {
+	    ma = (ma + 1) >> 1;
+	    /* In principle, we have to worry about exponent */
+	    /* overflow here, but we don't. */
+	    ++expt;
+	}
+    } else {			/* Adding numbers of different signs. */
+	if (shift > 24)
+	    return a;		/* b can't affect the result, even rounded */
+	if (shift == 0 && mb >= ma) {
+	    /* This is the only case where the sign of the result */
+	    /* differs from the sign of the first operand. */
+	    sign ^= 0x80000000;
+	    ma = mb - ma;
+	} else {
+	    if (shift) {
+		--shift;
+		mb = ((mb >> shift) + 1) >> 1;
+	    }
+	    ma -= mb;
+	}
+	/* Now renormalize the result. */
+	/* For the moment, we do this the slow way. */
+	if (!ma)
+	    return 0;
+	while (ma < 0x800000) {
+	    ma <<= 1;
+	    expt -= 1;
+	}
+	if (expt <= 0) {
+	    /* Underflow.  Return 0 rather than a denorm. */
+	    lc = sign;
+	    return fc;
+	}
+    }
+    lc = sign + ((ulong)expt << 23) + (ma & 0x7fffff);
+    return fc;
+}
+
 float
 __subsf3(float a, float b)
 {
-    return (float)((double)a - (double)b);
+    long lc = ib ^ 0x80000000;
+
+    return a + fc;
 }
 
 /* -------- Multiplication -------- */
@@ -325,13 +390,47 @@ __muldf3(double a, double b)
 float
 __mulsf3(float a, float b)
 {
-    long da[2], db[2];
+    uint au, al, bu, bl, cu, cl, sign;
+    long lc;
+    uint expt;
 
     if (!(ia & 0x7fffffff) || !(ib & 0x7fffffff))
 	return 0;
-    extend(da, ia);
-    extend(db, ib);
-    return (float)(*(const double *)da * *(const double *)db);
+    au = ((ia >> 8) & 0x7fff) | 0x8000;
+    bu = ((ib >> 8) & 0x7fff) | 0x8000;
+    /* Since 0x8000 <= au,bu <= 0xffff, 0x40000000 <= cu <= 0xfffe0001. */
+    cu = au * bu;
+    if ((al = ia & 0xff) != 0) {
+	cl = bu * al;
+    } else
+	cl = 0;
+    if ((bl = ib & 0xff) != 0) {
+	cl += au * bl;
+	if (al)
+	    cl += (al * bl) >> 8;
+    }
+    cu += cl >> 8;
+    sign = (ia ^ ib) & 0x80000000;
+    expt = (ia & 0x7f800000) + (ib & 0x7f800000) - (fx_bias << 23);
+    /* expt is now in the range [-127..383] << 23. */
+    /* Values outside [1..254] are invalid. */
+    if (cu <= 0x7fffffff)
+	cu <<= 1;
+    else
+	expt += 1 << 23;
+    cu = ((cu >> 7) + 1) >> 1;
+    if (expt < 1 << 23)
+	lc = sign;		/* underflow */
+    else if (expt > (uint)(254 << 23)) {
+	if (expt <= 0xc0000000) { /* overflow */
+	    raise(SIGFPE);
+	    lc = sign + 0x7f800000;
+	} else {		/* underflow */
+	    lc = sign;
+	}
+    } else
+	lc = sign + expt + cu - 0x800000;
+    return fc;
 }
 
 /* -------- Division -------- */

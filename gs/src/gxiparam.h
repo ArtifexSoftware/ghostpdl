@@ -24,6 +24,111 @@
 
 #include "gxdevcli.h"
 
+/* ---------------- Image types ---------------- */
+
+/* Define the structure for image types. */
+
+#ifndef stream_DEFINED
+#  define stream_DEFINED
+typedef struct stream_s stream;
+#endif
+
+#ifndef gx_image_type_DEFINED
+#  define gx_image_type_DEFINED
+typedef struct gx_image_type_s gx_image_type_t;
+#endif
+
+struct gx_image_type_s {
+
+    /*
+     * Define the storage type for this type of image.
+     */
+    gs_memory_type_ptr_t stype;
+
+    /*
+     * Provide the default implementation of begin_typed_image for this
+     * type.
+     */
+    dev_proc_begin_typed_image((*begin_typed_image));
+
+    /*
+     * Compute the width and height of the source data.  For images with
+     * explicit data, this information is in the gs_data_image_t
+     * structure, but ImageType 2 images must compute it.
+     */
+#define image_proc_source_size(proc)\
+  int proc(P3(const gs_imager_state *pis, const gs_image_common_t *pic,\
+    gs_int_point *psize))
+
+    image_proc_source_size((*source_size));
+
+    /*
+     * Put image parameters on a stream.  Currently this is used
+     * only for banding.  If the parameters include a color space,
+     * store it in *ppcs.
+     */
+#define image_proc_sput(proc)\
+  int proc(P3(const gs_image_common_t *pic, stream *s,\
+	      const gs_color_space **ppcs))
+
+    image_proc_sput((*sput));
+
+    /*
+     * Get image parameters from a stream.  Currently this is used
+     * only for banding.  If the parameters include a color space,
+     * use pcs.
+     */
+#define image_proc_sget(proc)\
+  int proc(P3(gs_image_common_t *pic, stream *s, const gs_color_space *pcs))
+
+    image_proc_sget((*sget));
+
+    /*
+     * Release any parameters allocated by sget.
+     * Currently this only frees the parameter structure itself.
+     */
+#define image_proc_release(proc)\
+  void proc(P2(gs_image_common_t *pic, gs_memory_t *mem))
+
+    image_proc_release((*release));
+
+    /*
+     * We put index last so that if we add more procedures and some
+     * implementor fails to initialize them, we'll get a type error.
+     */
+    int index;		/* PostScript ImageType */
+};
+
+/*
+ * Define the procedure for getting the source size of an image with
+ * explicit data.
+ */
+image_proc_source_size(gx_data_image_source_size);
+/*
+ * Define dummy sput/sget/release procedures for image types that don't
+ * implement these functions.
+ */
+image_proc_sput(gx_image_no_sput); /* rangecheck error */
+image_proc_sget(gx_image_no_sget); /* rangecheck error */
+image_proc_release(gx_image_default_release); /* just free the params */
+/*
+ * Define sput/sget/release procedures for generic pixel images.
+ * Note that these procedures take different parameters.
+ */
+int gx_pixel_image_sput(P4(const gs_pixel_image_t *pic, stream *s,
+			   const gs_color_space **ppcs, int extra));
+int gx_pixel_image_sget(P3(gs_pixel_image_t *pic, stream *s,
+			   const gs_color_space *pcs));
+void gx_pixel_image_release(P2(gs_pixel_image_t *pic, gs_memory_t *mem));
+
+/* Internal procedures for use in sput/sget implementations. */
+bool gx_image_matrix_is_default(P1(const gs_data_image_t *pid));
+void gx_image_matrix_set_default(P1(gs_data_image_t *pid));
+void sput_variable_uint(P2(stream *s, uint w));
+int sget_variable_uint(P2(stream *s, uint *pw));
+#define DECODE_DEFAULT(i, dd1)\
+  ((i) == 1 ? dd1 : (i) & 1)
+
 /* ---------------- Image enumerators ---------------- */
 
 #ifndef gx_image_enum_common_t_DEFINED
@@ -92,7 +197,7 @@ typedef struct gx_image_enum_procs_s {
 	gx_device *dev;\
 	gs_id id;\
 	int num_planes;\
-	int plane_depths[gs_image_max_components]	/* [num_planes] */
+	int plane_depths[gs_image_max_planes]	/* [num_planes] */
 struct gx_image_enum_common_s {
     gx_image_enum_common;
 };
@@ -113,79 +218,6 @@ int gx_image_enum_common_init(P7(gx_image_enum_common_t * piec,
 				 int bits_per_component, int num_components,
 				 gs_image_format_t format));
 
-/* ---------------- Image types ---------------- */
-
-/* Define the structure for image types. */
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-
-#endif
-
-#ifndef gx_image_type_DEFINED
-#  define gx_image_type_DEFINED
-typedef struct gx_image_type_s gx_image_type_t;
-#endif
-
-struct gx_image_type_s {
-
-    /*
-     * Provide the default implementation of begin_typed_image for this
-     * type.
-     */
-    dev_proc_begin_typed_image((*begin_typed_image));
-
-    /*
-     * Compute the width and height of the source data.  For images with
-     * explicit data, this information is in the gs_data_image_t
-     * structure, but ImageType 2 images must compute it.
-     */
-#define image_proc_source_size(proc)\
-  int proc(P3(const gs_imager_state *pis, const gs_image_common_t *pic,\
-    gs_int_point *psize))
-
-    image_proc_source_size((*source_size));
-
-    /*
-     * Write image parameters on a stream.  Currently this is used
-     * only for banding.
-     */
-#define image_proc_write(proc)\
-  int proc(P2(const gs_image_common_t *pic, stream *s))
-
-    image_proc_write((*write));
-
-    /*
-     * Read image parameters from a stream.  Currently this is used
-     * only for banding.
-     */
-#define image_proc_read(proc)\
-  int proc(P3(gs_image_common_t **ppic, stream *s, gs_memory_t *mem))
-
-    image_proc_read((*read));
-
-    /*
-     * Release any parameters allocated by read.
-     * Currently this only releases non-standard color spaces,
-     * in addition to the parameter structure itself.
-     */
-#define image_proc_release(proc)\
-  void proc(P2(gs_image_common_t *pic, gs_memory_t *mem))
-
-    image_proc_release((*release));
-
-    /*
-     * We put index last so that if we add more procedures and some
-     * implementor fails to initialize them, we'll get a type error.
-     */
-    int index;			/* PostScript ImageType */
-};
-
-/*
- * Define the procedure for getting the source size of an image with
- * explicit data.
- */
-image_proc_source_size(gx_data_image_source_size);
 /*
  * Define image_plane_data and end_image procedures for image types that
  * don't have any source data (ImageType 2 and composite images).
@@ -194,19 +226,11 @@ image_enum_proc_plane_data(gx_no_plane_data);
 image_enum_proc_end_image(gx_ignore_end_image);
 /*
  * Define the procedures and type data for ImageType 1 images,
- * which are always included.
+ * which are always included and which are shared with ImageType 4.
  */
 dev_proc_begin_typed_image(gx_begin_image1);
-image_proc_write(gx_image1_write);
-image_proc_read(gx_image1_read);
 image_enum_proc_plane_data(gx_image1_plane_data);
 image_enum_proc_end_image(gx_image1_end_image);
 image_enum_proc_flush(gx_image1_flush);
-/*
- * Define write/read/release procedures for generic pixel images.
- */
-image_proc_write(gx_pixel_image_write);
-image_proc_read(gx_pixel_image_read);
-image_proc_release(gx_pixel_image_release);
 
 #endif /* gxiparam_INCLUDED */

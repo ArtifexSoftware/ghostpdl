@@ -25,6 +25,12 @@
 #include "gxcpath.h"
 #include "gximage.h"
 
+/* Forward declarations */
+private void repack_bit_planes(P7(const gx_image_plane_t *src_planes,
+				  const ulong *offsets, int num_planes,
+				  byte *buffer, int width,
+				  const sample_lookup_t * ptab, int spread));
+
 /* Process the next piece of an ImageType 1 image. */
 int
 gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
@@ -36,12 +42,14 @@ gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
     int width_spp = penum->rect.w * penum->spp;
     int num_planes = penum->num_planes;
 
-#define bcount(plane)		/* bytes per data row */\
-  (((penum->rect.w + (plane).data_x) * penum->spp / num_planes * penum->bps\
+#define BCOUNT(plane)		/* bytes per data row */\
+  (((penum->rect.w + (plane).data_x) * penum->spp * penum->bps / num_planes\
     + 7) >> 3)
+
     fixed adjust = penum->adjust;
-    ulong offsets[gs_image_max_components];
+    ulong offsets[gs_image_max_planes];
     int ignore_data_x;
+    bool bit_planar = penum->num_planes > penum->spp;
     int code;
 
     if (height == 0)
@@ -66,27 +74,42 @@ gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
     memset(offsets, 0, num_planes * sizeof(offsets[0]));
     for (; penum->y < y_end; penum->y++) {
 	int px;
+	const byte *buffer;
+	int sourcex;
 
-	/*
-	 * Normally, we unpack the data into the buffer, but if
-	 * there is only one plane and we don't need to expand the
-	 * input samples, we may use the data directly.
-	 */
-	int sourcex = planes[0].data_x;
-	const byte *buffer =
-	(*penum->unpack) (penum->buffer, &sourcex,
-			  planes[0].data + offsets[0],
-			  planes[0].data_x, bcount(planes[0]),
-			  &penum->map[0].table, penum->spread);
+	if (bit_planar) {
+	    /* Repack the bit planes into byte-wide samples. */
+	    
+	    buffer = penum->buffer;
+	    sourcex = 0;
+	    for (px = 0; px < num_planes; px += penum->bps)
+		repack_bit_planes(planes, offsets, penum->bps, penum->buffer,
+				  penum->rect.w, &penum->map[0].table,
+				  penum->spread);
+	    for (px = 0; px < num_planes; ++px)
+		offsets[px] += planes[px].raster;
+	} else {
+	    /*
+	     * Normally, we unpack the data into the buffer, but if
+	     * there is only one plane and we don't need to expand the
+	     * input samples, we may use the data directly.
+	     */
+	    sourcex = planes[0].data_x;
+	    buffer =
+		(*penum->unpack)(penum->buffer, &sourcex,
+				 planes[0].data + offsets[0],
+				 planes[0].data_x, BCOUNT(planes[0]),
+				 &penum->map[0].table, penum->spread);
 
-	offsets[0] += planes[0].raster;
-	for (px = 1; px < num_planes; ++px) {
-	    (*penum->unpack) (penum->buffer + (px << penum->log2_xbytes),
-			      &ignore_data_x,
-			      planes[px].data + offsets[px],
-			      planes[px].data_x, bcount(planes[px]),
-			      &penum->map[px].table, penum->spread);
-	    offsets[px] += planes[px].raster;
+	    offsets[0] += planes[0].raster;
+	    for (px = 1; px < num_planes; ++px) {
+		(*penum->unpack)(penum->buffer + (px << penum->log2_xbytes),
+				 &ignore_data_x,
+				 planes[px].data + offsets[px],
+				 planes[px].data_x, BCOUNT(planes[px]),
+				 &penum->map[px].table, penum->spread);
+		offsets[px] += planes[px].raster;
+	    }
 	}
 #ifdef DEBUG
 	if (gs_debug_c('B')) {
@@ -222,6 +245,113 @@ gx_image1_flush(gx_image_enum_common_t * info)
     return (*penum->render)(penum, NULL, 0, width_spp, 0, penum->dev);
 }
 
+/*
+ * Repack 1 to 8 individual bit planes into 8-bit samples.
+ * buffer is aligned, and includes padding to an 8-byte boundary.
+ * This procedure repacks one row, so the only relevant members of
+ * src_planes are data and data_x (not raster).
+ */
+private void
+repack_bit_planes(const gx_image_plane_t *src_planes, const ulong *offsets,
+		  int num_planes, byte *buffer, int width,
+		  const sample_lookup_t * ptab, int spread)
+{
+    gx_image_plane_t planes[8];
+    byte *zeros = 0;
+    byte *dest = buffer;
+    int any_data_x = 0;
+    bool direct = (spread == 1 && ptab->lookup8[0] == 0 &&
+		   ptab->lookup8[255] == 255);
+    int pi, x;
+    gx_image_plane_t *pp;
+
+    /*
+     * Set up the row pointers, taking data_x and null planes into account.
+     * If there are any null rows, we need to create a block of zeros in
+     * order to avoid tests in the loop.
+     */
+    for (pi = 0, pp = planes; pi < num_planes; ++pi, ++pp)
+	if (src_planes[pi].data == 0) {
+	    if (!zeros) {
+		zeros = buffer + width - ((width + 7) >> 3);
+	    }
+	    pp->data = zeros;
+	    pp->data_x = 0;
+	} else {
+	    int dx = src_planes[pi].data_x;
+
+	    pp->data = src_planes[pi].data + (dx >> 3) + offsets[pi];
+	    any_data_x |= (pp->data_x = dx & 7);
+	}
+    if (zeros)
+	memset(zeros, 0, buffer + width - zeros);
+
+    /*
+     * Now process the data, in blocks of one input byte column
+     * (8 output bytes).
+     */
+    for (x = 0; x < width; x += 8) {
+	bits32 w0 = 0, w1 = 0;
+#if arch_is_big_endian
+	static const bits32 expand[16] = {
+	    0x00000000, 0x00000001, 0x00000100, 0x00000101,
+	    0x00010000, 0x00010001, 0x00010100, 0x00010101,
+	    0x01000000, 0x01000001, 0x01000100, 0x01000101,
+	    0x01010000, 0x01010001, 0x01010100, 0x01010101
+	};
+#else
+	static const bits32 expand[16] = {
+	    0x00000000, 0x01000000, 0x00010000, 0x01010000,
+	    0x00000100, 0x01000100, 0x00010100, 0x01010100,
+	    0x00000001, 0x01000001, 0x00010001, 0x01010001,
+	    0x00000101, 0x01000101, 0x00010101, 0x01010101
+	};
+#endif
+
+	if (any_data_x) {
+	    for (pi = 0, pp = planes; pi < num_planes; ++pi, ++pp) {
+		uint b = *(pp->data++);
+		int dx = pp->data_x;
+
+		if (dx) {
+		    b <<= dx;
+		    if (x + 8 - dx < width)
+			b += *pp->data >> (8 - dx);
+		}
+		w0 = (w0 << 1) | expand[b >> 4];
+		w1 = (w1 << 1) | expand[b & 0xf];
+	    }
+	} else {
+	    for (pi = 0, pp = planes; pi < num_planes; ++pi, ++pp) {
+		uint b = *(pp->data++);
+
+		w0 = (w0 << 1) | expand[b >> 4];
+		w1 = (w1 << 1) | expand[b & 0xf];
+	    }
+	}
+	/*
+	 * We optimize spread == 1 and identity ptab together, although
+	 * we could subdivide these 2 cases into 4 if we wanted.
+	 */
+	if (direct) {
+	    ((bits32 *)dest)[0] = w0;
+	    ((bits32 *)dest)[1] = w1;
+	    dest += 8;
+	} else {
+#define MAP_BYTE(v) (ptab->lookup8[(byte)(v)])
+	    dest[0] = MAP_BYTE(w0 >> 24); dest += spread;
+	    dest[1] = MAP_BYTE(w0 >> 16); dest += spread;
+	    dest[2] = MAP_BYTE(w0 >> 8); dest += spread;
+	    dest[3] = MAP_BYTE(w0); dest += spread;
+	    dest[4] = MAP_BYTE(w1 >> 24); dest += spread;
+	    dest[5] = MAP_BYTE(w1 >> 16); dest += spread;
+	    dest[6] = MAP_BYTE(w1 >> 8); dest += spread;
+	    dest[7] = MAP_BYTE(w1); dest += spread;
+#undef MAP_BYTE
+	}
+    }
+}
+
 /* Clean up by releasing the buffers. */
 /* Currently we ignore draw_last. */
 int
@@ -232,10 +362,8 @@ gx_image1_end_image(gx_device *ignore_dev, gx_image_enum_common_t * info,
     gs_memory_t *mem = penum->memory;
     stream_IScale_state *scaler = penum->scaler;
 
-#ifdef DEBUG
     if_debug2('b', "[b]%send_image, y=%d\n",
 	      (penum->y < penum->rect.h ? "premature " : ""), penum->y);
-#endif
     gs_free_object(mem, penum->rop_dev, "image RasterOp");
     gs_free_object(mem, penum->clip_dev, "image clipper");
     if (scaler != 0) {

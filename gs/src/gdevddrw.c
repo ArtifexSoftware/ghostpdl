@@ -580,13 +580,13 @@ gx_image_data(gx_image_enum_common_t * info, const byte ** plane_data,
 	      int data_x, uint raster, int height)
 {
     int num_planes = info->num_planes;
-    gx_image_plane_t planes[gs_image_max_components];
+    gx_image_plane_t planes[gs_image_max_planes];
     int i;
 
 #ifdef DEBUG
-    if (num_planes > gs_image_max_components) {
-	lprintf2("num_planes=%d > gs_image_max_components=%d!\n",
-		 num_planes, gs_image_max_components);
+    if (num_planes > gs_image_max_planes) {
+	lprintf2("num_planes=%d > gs_image_max_planes=%d!\n",
+		 num_planes, gs_image_max_planes);
 	return_error(gs_error_Fatal);
     }
 #endif

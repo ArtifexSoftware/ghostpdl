@@ -78,7 +78,7 @@
  * unless we use the +/- workaround in the next macro.
  */
 #define std_device_part2_(width, height, x_dpi, y_dpi)\
-	width, height,\
+	{ gx_no_color_index, gx_no_color_index }, width, height,\
 	{ (((width) * 72.0 + 0.5) - 0.5) / (x_dpi),\
 	  (((height) * 72.0 + 0.5) - 0.5) / (y_dpi) },\
 	{ 0, 0, 0, 0 }, 0/*false*/, { x_dpi, y_dpi }, { x_dpi, y_dpi }
@@ -228,14 +228,23 @@ dev_proc_get_hardware_params(gx_default_get_hardware_params);
 dev_proc_text_begin(gx_default_text_begin);
 
 /* Color mapping routines for black-on-white, gray scale, true RGB, */
-/* and true CMYK color. */
+/* true CMYK, and 1-bit CMYK color. */
 dev_proc_map_rgb_color(gx_default_b_w_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_b_w_map_color_rgb);
 dev_proc_map_rgb_color(gx_default_gray_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_gray_map_color_rgb);
 dev_proc_map_rgb_color(gx_default_rgb_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_rgb_map_color_rgb);
-dev_proc_map_cmyk_color(gx_default_cmyk_map_cmyk_color);
+#define gx_default_cmyk_map_cmyk_color cmyk_8bit_map_cmyk_color /*see below*/
+/*
+ * The following are defined as "standard" color mapping procedures
+ * that can be propagated through device pipelines and that color
+ * processing code can test for.
+ */
+dev_proc_map_cmyk_color(cmyk_1bit_map_cmyk_color);
+dev_proc_map_color_rgb(cmyk_1bit_map_color_rgb);
+dev_proc_map_cmyk_color(cmyk_8bit_map_cmyk_color);
+dev_proc_map_color_rgb(cmyk_8bit_map_color_rgb);
 
 /* Default implementations for forwarding devices */
 dev_proc_get_initial_matrix(gx_forward_get_initial_matrix);
@@ -297,10 +306,20 @@ void gx_device_forward_fill_in_procs(P1(gx_device_forward *));
 void gx_device_forward_color_procs(P1(gx_device_forward *));
 
 /*
- * Copy device parameters back from a target.  This copies all standard
- * parameters related to page size and resolution, plus color_info.
+ * Copy the color mapping procedures from the target if they are
+ * standard ones (saving a level of procedure call at mapping time).
  */
-void gx_device_copy_params(P2(gx_device *to, const gx_device *from));
+void gx_device_copy_color_procs(P2(gx_device *dev, const gx_device *target));
+
+/* Clear the black/white pixel cache. */
+void gx_device_decache_colors(P1(gx_device *dev));
+
+/*
+ * Copy device parameters back from a target.  This copies all standard
+ * parameters related to page size and resolution, plus color_info
+ * and (if appropriate) color mapping procedures.
+ */
+void gx_device_copy_params(P2(gx_device *dev, const gx_device *target));
 
 /* Open the output file for a device. */
 int gx_device_open_output_file(P5(const gx_device * dev, const char *fname,

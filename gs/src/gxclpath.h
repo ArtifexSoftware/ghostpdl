@@ -51,19 +51,24 @@ typedef enum {
 /* Extend the command set.  See gxcldev.h for more information. */
 typedef enum {
     cmd_op_misc2 = 0xd0,	/* (see below) */
-    cmd_opv_set_flatness = 0xd0,	/* flatness(float) */
+    cmd_opv_set_color = 0xd0,	/* (0000abcd | */
+				/*  0001aaaa abbbbbcc cccddddd), */
+				/* (3|4) x level#: colored halftone */
+				/* with base colors a,b,c,d */
     cmd_opv_set_fill_adjust = 0xd1,	/* adjust_x/y(fixed) */
-    cmd_opv_set_ctm = 0xd2,	/* (0=0,0, 1=V,V, 2=V,-V, 3=U,V)x */
-				/* (xx+yy,yx+xy)(0=0, 1=V)x(tx,ty), */
-				/* 0..5 x coeff(float) */
-    cmd_opv_set_line_width = 0xd3,	/* width(float) */
+    cmd_opv_set_ctm = 0xd2,	/* [per sput/sget_matrix] */
+    cmd_opv_set_color_space = 0xd3,	/* base(4)Indexed?(2)0(3) */
+				/* [, hival#, table|map] */
     cmd_opv_set_misc2 = 0xd4,
-#define cmd_set_misc2_cap_join (0 << 6)		/* 00: cap(3)join(3) */
-#define cmd_set_misc2_ac_op_sa (1 << 6)		/* 01: 0(3)acc.curves(1)overprint(1) */
-				/*   stroke_adj(1) */
-#define cmd_set_misc2_notes (2 << 6)	/* 10: seg.notes(6) */
-#define cmd_set_misc2_alpha (3 << 6)	/* 11: -unused-, alpha  */
-    cmd_opv_set_miter_limit = 0xd5,	/* miter limit(float) */
+#define cmd_set_misc2_cap_join (0x00) /* 00: cap(3)join(3) */
+#define cmd_set_misc2_ac_op_sa (0x40) /* 01: 0(3)acc.curves(1)overprint(1) */
+					/*   stroke_adj(1) */
+#define cmd_set_misc2_notes (0x80)	/* 10: seg.notes(6) */
+#define cmd_set_misc2_value (0xc0)	/* 11: (see below) */
+#define cmd_set_misc2_flatness (0xc0+0)    /* 11000000, flatness(float) */
+#define cmd_set_misc2_line_width (0xc0+1)  /* 11000001, line width(float) */
+#define cmd_set_misc2_miter_limit (0xc0+2) /* 11000010, miter limit(float) */
+#define cmd_set_misc2_alpha (0xc0+3)	   /* 11000011, alpha */
     cmd_opv_set_dash = 0xd6,	/* adapt(1)abs.dot(1)n(6), dot */
 				/* length(float), offset(float), */
 				/* n x (float) */
@@ -71,26 +76,16 @@ typedef enum {
     cmd_opv_disable_clip = 0xd8,	/* (nothing) */
     cmd_opv_begin_clip = 0xd9,	/* (nothing) */
     cmd_opv_end_clip = 0xda,	/* outside? */
-    cmd_opv_set_color_space = 0xdb,	/* base(4)Indexed?(2)0(3) */
-				/* [, hival#, table|map] */
-    cmd_opv_begin_image = 0xdc,	/* BPCi(3)(0=mask) */
-				/* more params(1) */
-				/* Matrix?(1)Decode?(1) */
-				/* adjust/CombineWithColor(1) */
-				/* rect?(1), */
-				/* [format(2)Interpolate(1)Alpha(2) */
-				/* 0(3),] width#, height#, */
-				/* [, aabbcd00, 0..6 x coeff(float)] */
-				/* [, (0=default, 1=swapped default, */
-				/* 2=0,V, 3=U,V)x4, */
-				/* 0..8 x decode(float)], */
-				/* [, x0#, w-x1#, y0#, h-y1#] */
+    cmd_opv_begin_image_rect = 0xdb, /* same as begin_image, followed by */
+				/* x0#, w-x1#, y0#, h-y1# */
+    cmd_opv_begin_image = 0xdc,	/* image_type_table index, */
+				/* [per image type] */
     cmd_opv_image_data = 0xdd,	/* height# (premature EOD if 0), */
 				/* raster#, <data> */
-    cmd_opv_set_color = 0xde,	/* (0000abcd | */
-				/*  0001aaaa abbbbbcc cccddddd), */
-				/* (3|4) x level#: colored halftone */
-				/* with base colors a,b,c,d */
+    cmd_opv_image_plane_data = 0xde, /* height# (premature EOD if 0), */
+				/* flags# (0 = same raster & data_x, */
+				/* 1 = new raster & data_x, lsb first), */
+				/* [raster#, [data_x#,]]* <data> */
     cmd_opv_put_params = 0xdf,	/* (nothing) */
     cmd_op_segment = 0xe0,	/* (see below) */
     cmd_opv_rmoveto = 0xe0,	/* dx%, dy% */
@@ -127,15 +122,14 @@ typedef enum {
     cmd_opv_colorstroke = 0xf8
 } gx_cmd_xop;
 
-static const byte clist_segment_op_num_operands[] =
-{2, 2, 1, 1, 6, 4, 4, 4, 4, 4, 6, 6, 2, 2, 0
-};
+#define cmd_segment_op_num_operands_values\
+  2, 2, 1, 1, 6, 4, 4, 4, 4, 4, 6, 6, 2, 2, 0
 
 #define cmd_misc2_op_name_strings\
-  "set_flatness", "set_fill_adjust", "set_ctm", "set_line_width",\
-  "set_misc2", "set_miter_limit", "set_dash", "enable_clip",\
-  "disable_clip", "begin_clip", "end_clip", "set_color_space",\
-  "begin_image", "image_data", "set_color", "put_params"
+  "set_color", "set_fill_adjust", "set_ctm", "set_color_space",\
+  "set_misc2", "?d5?", "set_dash", "enable_clip",\
+  "disable_clip", "begin_clip", "end_clip", "begin_image_rect",\
+  "begin_image", "image_data", "image_plane_data", "put_params"
 
 #define cmd_segment_op_name_strings\
   "rmoveto", "rlineto", "hlineto", "vlineto",\
@@ -167,9 +161,9 @@ static const byte clist_segment_op_num_operands[] =
 
 /* Compare and update members of the imager state. */
 #define state_neq(member)\
-  cdev->imager_state.member != pis->member
+  (cdev->imager_state.member != pis->member)
 #define state_update(member)\
-  cdev->imager_state.member = pis->member
+  (cdev->imager_state.member = pis->member)
 
 /* ------ Exported by gxclpath.c ------ */
 
@@ -193,9 +187,5 @@ int cmd_write_unknown(P3(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 /* Check whether we need to change the clipping path in the device. */
 bool cmd_check_clip_path(P2(gx_device_clist_writer * cldev,
 			    const gx_clip_path * pcpath));
-
-/* Construct the parameters for writing out a matrix. */
-/* We need a buffer of at least 1 + 6 * sizeof(float) bytes. */
-byte *cmd_for_matrix(P2(byte * cbuf, const gs_matrix * pmat));
 
 #endif /* gxclpath_INCLUDED */

@@ -851,19 +851,61 @@ gx_default_map_cmyk_color(gx_device * dev,
 			    frac2cv(rgb[1]), frac2cv(rgb[2]));
 }
 
-/* CMYK mapping for CMYK devices */
+/* Mapping for CMYK devices */
 
 gx_color_index
-gx_default_cmyk_map_cmyk_color(gx_device * dev,
-     gx_color_value c, gx_color_value m, gx_color_value y, gx_color_value k)
+cmyk_1bit_map_cmyk_color(gx_device * dev,
+			 gx_color_value c, gx_color_value m,
+			 gx_color_value y, gx_color_value k)
+{
+#define CV_BIT(v) ((v) >> (gx_color_value_bits - 1))
+    return (gx_color_index)
+	(CV_BIT(k) + (CV_BIT(y) << 1) + (CV_BIT(m) << 2) + (CV_BIT(c) << 3));
+#undef CV_BIT
+}
+
+int
+cmyk_1bit_map_color_rgb(gx_device * dev, gx_color_index color,
+			gx_color_value prgb[3])
+{
+    if (color & 1)
+	prgb[0] = prgb[1] = prgb[2] = 0;
+    else {
+	prgb[0] = (color & 8 ? 0 : gx_max_color_value);
+	prgb[1] = (color & 4 ? 0 : gx_max_color_value);
+	prgb[2] = (color & 2 ? 0 : gx_max_color_value);
+    }
+    return 0;
+}
+
+gx_color_index
+cmyk_8bit_map_cmyk_color(gx_device * dev,
+			 gx_color_value c, gx_color_value m,
+			 gx_color_value y, gx_color_value k)
 {
     gx_color_index color =
-    (gx_color_value_to_byte(k) +
-     ((uint) gx_color_value_to_byte(y) << 8)) +
-    ((ulong) (gx_color_value_to_byte(m) +
-	      ((uint) gx_color_value_to_byte(c) << 8)) << 16);
+	gx_color_value_to_byte(k) +
+	((uint)gx_color_value_to_byte(y) << 8) +
+	((uint)gx_color_value_to_byte(m) << 16) +
+	((uint)gx_color_value_to_byte(c) << 24);
 
     return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+int
+cmyk_8bit_map_color_rgb(gx_device * dev, gx_color_index color,
+			gx_color_value prgb[3])
+{
+    int
+	not_k = ~color & 0xff,
+	r = not_k - (color >> 24),
+	g = not_k - ((color >> 16) & 0xff),
+	b = not_k - ((color >> 8) & 0xff); 
+
+    prgb[0] = (r < 0 ? 0 : gx_color_value_from_byte(r));
+    prgb[1] = (g < 0 ? 0 : gx_color_value_from_byte(g));
+    prgb[2] = (b < 0 ? 0 : gx_color_value_from_byte(b));
+    return 0;
 }
 
 /* Default mapping between RGB+alpha and RGB. */

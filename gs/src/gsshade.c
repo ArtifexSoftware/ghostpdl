@@ -27,6 +27,8 @@
 #include "gxistate.h"
 #include "gxpath.h"
 #include "gxshade.h"
+#include "gzpath.h"
+#include "gzcpath.h"
 
 /* ================ Initialize shadings ================ */
 
@@ -394,21 +396,22 @@ gs_shading_fill_path(const gs_shading_t *psh, const gx_path *ppath,
     gx_device_clip box_dev, path_dev;
     int code;
 
-#if 0				/****** NOT IMPLEMENTED YET *****/
     if (psh->params.have_BBox) {
+	/****** NOT IMPLEMENTED YET *****/
 	box_clip = gx_cpath_alloc(mem, "shading_fill_path(box_clip)");
 	if (box_clip == 0)
 	    return_error(gs_error_VMerror);
 	/****** APPEND TRANSFORMED BOX ******/
-	gx_make_clip_device(&box_dev, &box_dev, box_clip->list);
+	gx_make_clip_device(&box_dev, &box_dev, &box_clip->rect_list->list);
 	box_dev.target = dev;
+#if 0
 	dev = &box_dev;
 	dev_proc(dev, open_device)(dev);
-    }
 #endif
+    }
     dev_proc(dev, get_clipping_box)(dev, &path_box);
-#if 0				/****** NOT IMPLEMENTED YET *****/
     if (ppath) {
+	/****** NOT IMPLEMENTED YET *****/
 	if (psh->params.Background) {
 	    /****** FILL BOX WITH BACKGROUND ******/
 	}
@@ -418,13 +421,14 @@ gs_shading_fill_path(const gs_shading_t *psh, const gx_path *ppath,
 	    goto out;
 	}
 	/****** SET CLIP PATH ******/
-	gx_make_clip_device(&path_dev, &path_dev, path_clip->list);
+	gx_make_clip_device(&path_dev, &path_dev, &path_clip->rect_list->list);
 	path_dev.target = dev;
+#if 0
 	dev = &path_dev;
 	dev_proc(dev, open_device)(dev);
 	dev_proc(dev, get_clipping_box)(dev, &path_box);
-    }
 #endif
+    }
     {
 	gs_rect path_rect;
 	const gs_matrix *pmat = &ctm_only(pis);

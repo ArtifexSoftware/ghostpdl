@@ -250,11 +250,22 @@ extern int (*gs_charstring_interpreter[3])
       }\
   END
 
-/* Decode and push a 1-byte number. */
+/* Decode a 1-byte number. */
+#define decode_num1(var, c)\
+  (var = c_value_num1(c))
 #define decode_push_num1(csp, c)\
   (*++csp = int2fixed(c_value_num1(c)))
 
-/* Decode and push a 2-byte number. */
+/* Decode a 2-byte number. */
+#define decode_num2(var, c, cip, state, encrypted)\
+  BEGIN\
+    uint c2 = *cip++;\
+    int cn = charstring_this(c2, state, encrypted);\
+\
+    var = (c < c_neg2_0 ? c_value_pos2(c, 0) + cn :\
+	   c_value_neg2(c, 0) - cn);\
+    charstring_skip_next(c2, state, encrypted);\
+  END
 #define decode_push_num2(csp, c, cip, state, encrypted)\
   BEGIN\
     uint c2 = *cip++;\

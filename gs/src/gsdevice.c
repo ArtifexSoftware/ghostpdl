@@ -468,14 +468,47 @@ gx_device_set_media_size(gx_device * dev, floatp media_width, floatp media_heigh
 }
 
 /*
- * Copy device parameters back from a target.  This copies all standard
- * parameters related to page size and resolution, plus color_info.
+ * Copy the color mapping procedures from the target if they are
+ * standard ones (saving a level of procedure call at mapping time).
  */
 void
-gx_device_copy_params(gx_device *to, const gx_device *from)
+gx_device_copy_color_procs(gx_device *dev, const gx_device *target)
 {
-#define COPY_PARAM(p) to->p = from->p
-#define COPY_ARRAY_PARAM(p) memcpy(to->p, from->p, sizeof(to->p))
+    dev_proc_map_cmyk_color((*from_cmyk)) =
+	dev_proc(dev, map_cmyk_color);
+    dev_proc_map_color_rgb((*to_rgb)) =
+	dev_proc(dev, map_color_rgb);
+
+    if (from_cmyk == gx_forward_map_cmyk_color ||
+	from_cmyk == cmyk_1bit_map_cmyk_color ||
+	from_cmyk == cmyk_8bit_map_cmyk_color) {
+	from_cmyk = dev_proc(target, map_cmyk_color);
+	set_dev_proc(dev, map_cmyk_color,
+		     (from_cmyk == cmyk_1bit_map_cmyk_color ||
+		      from_cmyk == cmyk_8bit_map_cmyk_color ?
+		      from_cmyk : gx_forward_map_cmyk_color));
+    }
+    if (to_rgb == gx_forward_map_color_rgb ||
+	to_rgb == cmyk_1bit_map_color_rgb ||
+	to_rgb == cmyk_8bit_map_color_rgb) {
+	to_rgb = dev_proc(target, map_color_rgb);
+	set_dev_proc(dev, map_color_rgb,
+		     (to_rgb == cmyk_1bit_map_color_rgb ||
+		      to_rgb == cmyk_8bit_map_color_rgb ?
+		      to_rgb : gx_forward_map_color_rgb));
+    }
+}
+
+/*
+ * Copy device parameters back from a target.  This copies all standard
+ * parameters related to page size and resolution, plus color_info
+ * and (if appropriate) color mapping procedures.
+ */
+void
+gx_device_copy_params(gx_device *dev, const gx_device *target)
+{
+#define COPY_PARAM(p) dev->p = target->p
+#define COPY_ARRAY_PARAM(p) memcpy(dev->p, target->p, sizeof(dev->p))
 	COPY_PARAM(width);
 	COPY_PARAM(height);
 	COPY_ARRAY_PARAM(MediaSize);
@@ -486,8 +519,10 @@ gx_device_copy_params(gx_device *to, const gx_device *from)
 	COPY_ARRAY_PARAM(Margins);
 	COPY_ARRAY_PARAM(HWMargins);
 	COPY_PARAM(color_info);
+	COPY_PARAM(cached_colors);
 #undef COPY_PARAM
 #undef COPY_ARRAY_PARAM
+	gx_device_copy_color_procs(dev, target);
 }
 
 /* Open the output file for a device. */

@@ -337,33 +337,14 @@ igcd(int x, int y)
  * a trap on every FPU operation).  If there is no FPU, the assembly
  * language version of this code is over 10 times as fast as the emulated FPU.
  */
-/* Some of the following code has been tweaked for the Borland 16-bit */
-/* compiler.  The tweaks do not change the algorithms. */
-#if arch_ints_are_short && !defined(FOR80386)
-#  define SHORT_ARITH
-#endif
 int
 set_fmul2fixed_(fixed * pr, long /*float */ a, long /*float */ b)
 {
-#ifdef SHORT_ARITH
-#  define long_rsh8_ushort(x)\
-    (((ushort)(x) >> 8) | ((ushort)((ulong)(x) >> 16) << 8))
-#  define utemp ushort
-#else
-#  define long_rsh8_ushort(x) ((ushort)((x) >> 8))
-#  define utemp ulong
-#endif
-    /* utemp may be either ushort or ulong.  This is OK because */
-    /* we only use ma and mb in multiplications involving */
-    /* a long or ulong operand. */
-    utemp ma = long_rsh8_ushort(a) | 0x8000;
-    utemp mb = long_rsh8_ushort(b) | 0x8000;
-    int e = 260 + _fixed_shift - ((
-				      (((uint) ((ulong) a >> 16)) & 0x7f80) +
-				      (((uint) ((ulong) b >> 16)) & 0x7f80)
-				  ) >> 7);
+    ulong ma = (ushort)(a >> 8) | 0x8000;
+    ulong mb = (ushort)(b >> 8) | 0x8000;
+    int e = 260 + _fixed_shift - ( ((byte)(a >> 23)) + ((byte)(b >> 23)) );
     ulong p1 = ma * (b & 0xff);
-    ulong p = (ulong) ma * mb;
+    ulong p = ma * mb;
 
 #define p_bits (size_of(p) * 8)
 
@@ -388,17 +369,10 @@ set_fmul2fixed_(fixed * pr, long /*float */ a, long /*float */ b)
 int
 set_dfmul2fixed_(fixed * pr, ulong /*double lo */ xalo, long /*float */ b, long /*double hi */ xahi)
 {
-#ifdef SHORT_ARITH
-#  define long_lsh3(x) ((((x) << 1) << 1) << 1)
-#  define long_rsh(x,ng16) ((uint)((x) >> 16) >> (ng16 - 16))
-#else
-#  define long_lsh3(x) ((x) << 3)
-#  define long_rsh(x,ng16) ((x) >> ng16)
-#endif
     return set_fmul2fixed_(pr,
 			   (xahi & 0xc0000000) +
-			   (long_lsh3(xahi) & 0x3ffffff8) +
-			   long_rsh(xalo, 29),
+			   ((xahi << 3) & 0x3ffffff8) +
+			   (xalo >> 29),
 			   b);
 }
 

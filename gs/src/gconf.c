@@ -24,6 +24,7 @@
 #include "gconf.h"		/* for #defines */
 #include "gxdevice.h"
 #include "gxiodev.h"
+#include "gxiparam.h"
 
 /*
  * The makefile generates the file gconfig.h, which consists of
@@ -34,6 +35,8 @@
  * for each installed device;
  *      emulator_("emulator", strlen("emulator"))
  * for each known emulator;
+ *	image_type(gs_image_type_xxx)
+ * for each known image type;
  *      init_(gs_xxx_init)
  * for each initialization procedure;
  *      io_device_(gs_iodev_xxx)
@@ -50,16 +53,28 @@
 
 /* ---------------- Resources (devices, inits, IODevices) ---------------- */
 
-/* Declare devices, init procedures, and IODevices as extern. */
+/* Declare devices, image types, init procedures, and IODevices as extern. */
 #define device_(dev) extern far_data gx_device dev;
 #define device2_(dev) extern const gx_device dev;
+#define image_type_(type) extern const gx_image_type_t type;
 #define init_(proc) extern void proc(P1(gs_memory_t *));
 #define io_device_(iodev) extern const gx_io_device iodev;
 #include "gconf.h"
-#undef init_
 #undef io_device_
+#undef init_
+#undef image_type_
 #undef device2_
 #undef device_
+
+/* Set up the image type table. */
+extern_gx_image_type_table();
+#define image_type_(type) &type,
+const gx_image_type_t *const gx_image_type_table[] = {
+#include "gconf.h"
+    0
+};
+#undef image_type_
+const uint gx_image_type_table_count = countof(gx_image_type_table) - 1;
 
 /* Set up the initialization procedure table. */
 extern_gx_init_table();

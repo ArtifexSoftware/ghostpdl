@@ -97,6 +97,8 @@ dev_proc_get_bits_rectangle(mem_word_get_bits_rectangle);
 /* The following are used for the non-true-color devices. */
 dev_proc_map_rgb_color(mem_mapped_map_rgb_color);
 dev_proc_map_color_rgb(mem_mapped_map_color_rgb);
+/* Default implementation */
+dev_proc_strip_copy_rop(mem_default_strip_copy_rop);
 
 /*
  * Macro for generating the device descriptor.

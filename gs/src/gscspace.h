@@ -176,6 +176,7 @@ typedef struct gs_color_space_type_s gs_color_space_type;
 #define gs_cspace_common(param_union)   \
     const gs_color_space_type * type;   \
     gs_memory_t *               pmem;   \
+    gs_id                       id;     \
     union {                             \
 	param_union;                    \
     }                           params
@@ -336,15 +337,22 @@ typedef struct gs_color_space_s gs_color_space;
  *     initialized, unpredictable and, most likely, undesirable results will
  *     occur.
  *
- * The constructors will return an integer, which is 0 on success and an
+ * The constructors return an integer, 0 on success and an
  * error code on failure (gs_error_VMerror or gs_error_rangecheck).
+ *
+ * In parallel with the constructors, we provide initializers that assume
+ * the client has allocated the color space object (perhaps on the stack)
+ * and takes responsibility for freeing it.
  */
 
 extern int
+    gs_cspace_init_DeviceGray(P1(gs_color_space *pcs)),
     gs_cspace_build_DeviceGray(P2(gs_color_space ** ppcspace,
 				  gs_memory_t * pmem)),
+    gs_cspace_init_DeviceRGB(P1(gs_color_space *pcs)),
     gs_cspace_build_DeviceRGB(P2(gs_color_space ** ppcspace,
 				 gs_memory_t * pmem)),
+    gs_cspace_init_DeviceCMYK(P1(gs_color_space *pcs)),
     gs_cspace_build_DeviceCMYK(P2(gs_color_space ** ppcspace,
 				  gs_memory_t * pmem));
 

@@ -663,22 +663,37 @@ x_map_color_rgb(register gx_device * dev, gx_color_index color,
 #endif
     /* Check the dither cube/ramp. */
     if (xdev->dither_colors) {
-	int size = xdev->color_info.dither_colors;
-	int size3 = size * size * size;
+	if (gx_device_has_color(xdev)) {
+	    int size = xdev->color_info.dither_colors;
+	    int size3 = size * size * size;
+	    int i;
+
+	    for (i = 0; i < size3; ++i)
+		if (xdev->dither_colors[i] == color) {
+		    uint max_rgb = size - 1;
+		    unsigned long
+			r = i / (size * size),
+			g = (i / size) % size,
+			b = i % size;
+
+		    /*
+		     * See above regarding the choice of color mapping
+		     * algorithm.
+		     */
+		    prgb[0] = r * gx_max_color_value / max_rgb;
+		    prgb[1] = g * gx_max_color_value / max_rgb;
+		    prgb[2] = b * gx_max_color_value / max_rgb;
+		    goto found;
+		}
+	}
+    } else {
+	int size = xdev->color_info.dither_grays;
 	int i;
 
-	for (i = 0; i < size3; ++i)
+	for (i = 0; i < size; ++i)
 	    if (xdev->dither_colors[i] == color) {
-		uint max_rgb = size - 1;
-		unsigned long
-		     r = i / (size * size), g = (i / size) % size, b = i % size;
-
-		/*
-		 * See above regarding the choice of color mapping algorithm.
-		 */
-		prgb[0] = r * gx_max_color_value / max_rgb;
-		prgb[1] = g * gx_max_color_value / max_rgb;
-		prgb[2] = b * gx_max_color_value / max_rgb;
+		prgb[0] = prgb[1] = prgb[2] =
+		    i * gx_max_color_value / (size - 1);
 		goto found;
 	    }
     }
@@ -737,6 +752,7 @@ x_sync(register gx_device * dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
 
+    flush_text(dev);
     update_flush(dev);
     XFlush(xdev->dpy);
     return 0;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,7 +22,7 @@
 #ifndef gscpixel_INCLUDED
 #  define gscpixel_INCLUDED
 
-/* Create a DevicePixel color space. */
-void gs_cs_init_DevicePixel(P2(gs_color_space * pcs, int depth));
+/* Initialize a DevicePixel color space. */
+int gs_cspace_init_DevicePixel(P2(gs_color_space * pcs, int depth));
 
 #endif /* gscpixel_INCLUDED */

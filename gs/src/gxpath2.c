@@ -293,7 +293,6 @@ int
 gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 {
     const subpath *psub = ppath_old->first_subpath;
-    int code;
 
 #ifdef DEBUG
     if (gs_debug_c('P'))
@@ -308,11 +307,14 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 	segment_notes notes;
 
 	if (!psub->is_closed) {
-	    code = gx_path_add_point(ppath, pseg->pt.x, pseg->pt.y);
+	    int code = gx_path_add_point(ppath, pseg->pt.x, pseg->pt.y);
+
 	    if (code < 0)
 		return code;
 	}
 	for (;; pseg = prev, prev_notes = notes) {
+	    int code;
+
 	    prev = pseg->prev;
 	    notes = pseg->notes;
 	    prev_notes = (prev_notes & sn_not_first) |
@@ -349,6 +351,8 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 		    code = gx_path_add_point(ppath, prev->pt.x,
 					     prev->pt.y);
 		    break;
+		default:	/* not possible */
+		    return_error(gs_error_Fatal);
 	    }
 	    if (code < 0)
 		return code;
@@ -359,8 +363,9 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
     if (ppath_old->first_subpath == 0 &&
 	path_last_is_moveto(ppath_old)
 	) {			/* The path consists only of a single moveto. */
-	code = gx_path_add_point(ppath, ppath_old->position.x,
-				 ppath_old->position.y);
+	int code = gx_path_add_point(ppath, ppath_old->position.x,
+				     ppath_old->position.y);
+
 	if (code < 0)
 	    return code;
     }

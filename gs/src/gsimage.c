@@ -45,8 +45,8 @@ struct gs_image_enum_s {
     int plane_index;		/* index of next plane of data */
     int y;
     uint pos;			/* byte position within the scan line */
-    gs_const_string sources[gs_image_max_components];	/* source data */
-    gs_string rows[gs_image_max_components];	/* row buffers */
+    gs_const_string sources[gs_image_max_planes];	/* source data */
+    gs_string rows[gs_image_max_planes];	/* row buffers */
     bool error;
 };
 
@@ -245,7 +245,7 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
     pos = penum->pos;
     code = 0;
     while (left && penum->y < penum->height) {
-	const byte *planes[gs_image_max_components];
+	const byte *planes[gs_image_max_planes];
 	int i;
 
 	for (i = 0; i < num_planes; ++i)

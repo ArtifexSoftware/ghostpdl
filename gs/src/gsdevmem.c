@@ -43,7 +43,6 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
     int bits_per_pixel;
     float x_pixels_per_unit, y_pixels_per_unit;
     byte palette[256 * 3];
-    byte *dev_palette;
     bool has_color;
 
     switch (colors_size) {
@@ -155,29 +154,31 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	x_pixels_per_unit = pmat->yx, y_pixels_per_unit = pmat->xy;
     else
 	return_error(gs_error_undefinedresult);
-    /* All checks done, allocate the device. */
-    if (bits_per_pixel != 1) {
-	dev_palette = gs_alloc_string(mem, pcount,
-				      "gs_makeimagedevice(palette)");
-	if (dev_palette == 0)
-	    return_error(gs_error_VMerror);
-    }
-    gs_make_mem_device(new_dev, proto_dev, mem,
-		       (page_device ? 1 : -1), 0);
-    if (!has_color) {
-	new_dev->color_info.num_components = 1;
-	new_dev->color_info.max_color = 0;
-	new_dev->color_info.dither_colors = 0;
-    }
-    if (bits_per_pixel == 1) {	/* Determine the polarity from the palette. */
+    /* All checks done, initialize the device. */
+    if (bits_per_pixel == 1) {
+	/* Determine the polarity from the palette. */
+	gs_make_mem_device(new_dev, proto_dev, mem,
+			   (page_device ? 1 : -1), 0);
 	/* This is somewhat bogus, but does the right thing */
 	/* in the only cases we care about. */
 	gdev_mem_mono_set_inverted(new_dev,
 			       (palette[0] | palette[1] | palette[2]) != 0);
     } else {
+	byte *dev_palette = gs_alloc_string(mem, pcount,
+					    "gs_makeimagedevice(palette)");
+
+	if (dev_palette == 0)
+	    return_error(gs_error_VMerror);
+	gs_make_mem_device(new_dev, proto_dev, mem,
+			   (page_device ? 1 : -1), 0);
 	new_dev->palette.size = pcount;
 	new_dev->palette.data = dev_palette;
 	memcpy(dev_palette, palette, pcount);
+	if (!has_color) {
+	    new_dev->color_info.num_components = 1;
+	    new_dev->color_info.max_color = 0;
+	    new_dev->color_info.dither_colors = 0;
+	}
     }
     new_dev->initial_matrix = *pmat;
     new_dev->MarginsHWResolution[0] = new_dev->HWResolution[0] =

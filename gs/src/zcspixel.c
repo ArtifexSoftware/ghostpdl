@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -39,19 +39,9 @@ zsetdevicepixelspace(register os_ptr op)
 	return_error(e_rangecheck);
     array_get(op, 1L, &depth);
     check_type_only(depth, t_integer);
-    switch (depth.value.intval) {
-	case 1:
-	case 2:
-	case 4:
-	case 8:
-	case 16:
-	case 24:
-	case 32:
-	    break;
-	default:
-	    return_error(e_rangecheck);
-    }
-    gs_cs_init_DevicePixel(&cs, (int)depth.value.intval);
+    code = gs_cspace_init_DevicePixel(&cs, (int)depth.value.intval);
+    if (code < 0)
+	return code;
     code = gs_setcolorspace(igs, &cs);
     if (code >= 0)
 	pop(1);

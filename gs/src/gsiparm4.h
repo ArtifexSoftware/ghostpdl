@@ -44,6 +44,11 @@ typedef struct gs_image4_s {
     uint MaskColor[gs_image_max_components * 2];
 } gs_image4_t;
 
+#define private_st_gs_image4()	/* in gximage4.c */\
+  extern_st(st_gs_pixel_image);\
+  gs_private_st_suffix_add0(st_gs_image4, gs_image4_t, "gs_image4_t",\
+    image4_enum_ptrs, image4_reloc_ptrs, st_gs_pixel_image)
+
 /*
  * Initialize an ImageType 4 image.  Defaults:
  *      MaskColor_is_range = false

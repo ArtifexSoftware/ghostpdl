@@ -81,7 +81,6 @@ zsetindexedspace(register os_ptr op)
     ref *pproc = &istate->colorspace.procs.special.index_proc;
     const ref *pcsa;
     gs_color_space cs;
-    gs_direct_color_space cs_base;
     ref_colorspace cspace_old;
     uint edepth = ref_stack_count(&e_stack);
     int num_entries;
@@ -109,14 +108,15 @@ zsetindexedspace(register os_ptr op)
      * a direct assignment (and compiles incorrect code for it),
      * defeating our purpose.  Instead, we have to do it by brute force:
      */
-    memcpy(&cs_base, &cs, sizeof(cs_base));
-    cs.params.indexed.base_space = cs_base;
+    memmove(&cs.params.indexed.base_space, &cs,
+	    sizeof(cs.params.indexed.base_space));
     if (r_has_type(&pcsa[2], t_string)) {
 	int num_values = num_entries * cs_num_components(&cs);
 
 	check_read(pcsa[2]);
 	if (r_size(&pcsa[2]) != num_values)
 	    return_error(e_rangecheck);
+	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
 	cs.params.indexed.lookup.table.data =
 	    pcsa[2].value.const_bytes;
 	cs.params.indexed.use_proc = 0;
@@ -131,13 +131,13 @@ zsetindexedspace(register os_ptr op)
 			     indexed_map1);
 	if (code < 0)
 	    return code;
+	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
 	cs.params.indexed.use_proc = 1;
 	*pproc = pcsa[2];
 	map->proc.lookup_index = lookup_indexed;
 	cs.params.indexed.lookup.map = map;
     }
     cs.params.indexed.hival = num_entries - 1;
-    cs.type = &gs_color_space_type_Indexed;
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	istate->colorspace = cspace_old;

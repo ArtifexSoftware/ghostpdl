@@ -27,7 +27,13 @@
 extern const rop_proc rop_proc_table[256];
 
 /* Define the table of RasterOp operand usage. */
-extern const byte /*rop_usage_t */ rop_usage_table[256];
+extern const byte /*rop_usage_t*/ rop_usage_table[256];
+
+/*
+ * Define whether we implement transparency correctly, or whether we
+ * implement it as documented in the H-P manuals.
+ */
+#define TRANSPARENCY_PER_H_P
 
 /*
  * Compute the effective RasterOp for the 1-bit case,
@@ -58,13 +64,11 @@ void trace_copy_rop(P16(const char *cname, gx_device * dev,
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
-
 #endif
 
 #ifndef gx_device_rop_texture_DEFINED
 #  define gx_device_rop_texture_DEFINED
 typedef struct gx_device_rop_texture_s gx_device_rop_texture;
-
 #endif
 
 struct gx_device_rop_texture_s {

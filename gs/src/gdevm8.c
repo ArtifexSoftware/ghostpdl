@@ -24,8 +24,7 @@
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
 
-/**************** NOTE: copy_rop only works for gray scale ****************/
-extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);		/* in gdevmrop.c */
+extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 
 #define mem_gray8_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
 

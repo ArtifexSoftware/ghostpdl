@@ -73,7 +73,7 @@
 	gx_device_bbox *box_device;\
 	/* The following are updated dynamically. */\
 	gs_fixed_rect bbox;\
-	gx_color_index white
+	gx_color_index black, white
 typedef struct gx_device_bbox_s gx_device_bbox;
 struct gx_device_bbox_s {
     gx_device_bbox_common;

@@ -23,6 +23,7 @@
 #ifndef gscie_INCLUDED
 #  define gscie_INCLUDED
 
+#include "gconfigv.h"		/* for USE_FPU */
 #include "gsrefct.h"
 #include "gsstruct.h"		/* for extern_st */
 #include "gxctable.h"
@@ -37,6 +38,9 @@
 
 /* Define whether to use fixed- or floating-point values in the caches. */
 /*#define CIE_CACHE_USE_FIXED */
+#if USE_FPU < 0
+#  define CIE_CACHE_USE_FIXED
+#endif
 
 /* If we are using fixed-point values, define the number of fraction bits. */
 #define CIE_FIXED_FRACTION_BITS 12
@@ -290,12 +294,19 @@ typedef struct gs_cie_wb_s {
  * a scalar, and vector caches, where each value is a gs_cached_vector3.
  * The latter allow us to pre-multiply the values by one column of
  * a gs_matrix3, avoiding multiplications at lookup time.
- * Since we sometimes alias the two types of caches for access to
- * the floats, values must come last.
+ *
+ * If the function being cached is simply a linear transformation,
+ * f(x) = scale * x + origin, then we can fold it into a following or
+ * preceding matrix.
  */
+typedef struct cie_linear_params_s {
+    bool is_linear;
+    float scale, origin;
+} cie_linear_params_t;
 typedef struct cie_cache_params_s {
     bool is_identity;		/* must come first */
     float base, factor;
+    cie_linear_params_t linear;	/* only used in vector_cache.floats? */
 } cie_cache_params;
 typedef struct cie_cache_floats_s {
     cie_cache_params params;
@@ -319,14 +330,13 @@ typedef struct cie_cached_vector3_s {
     cie_cached_value u, v, w;
 } cie_cached_vector3;
 typedef struct cie_vector_cache_params_s {
-    bool is_identity;		/* must come first */
     cie_cached_value base, factor, limit;
 } cie_vector_cache_params;
 typedef struct cie_cache_vectors_s {
-    cie_vector_cache_params params;	/* must come first for is_identity */
+    cie_vector_cache_params params;
     cie_cached_vector3 values[gx_cie_cache_size];
 } cie_cache_vectors;
-typedef union gx_cie_vector_cache_s {
+typedef struct gx_cie_vector_cache_s {
     cie_cache_floats floats;
     cie_cache_vectors vecs;
 } gx_cie_vector_cache;
@@ -443,24 +453,29 @@ struct gs_cie_defg_s {
 /*
  * Default values for components.  Note that for some components, there are
  * two sets of default procedures: _default (identity procedures) and
- * _from_cache (procedures that just return the cached values).  Currently
- * we only provide the latter for the Encode elements of the CRD.
+ * _from_cache (procedures that just return the cached values).
  */
 extern const gs_range3 Range3_default;
 extern const gs_range4 Range4_default;
 extern const gs_cie_defg_proc4 DecodeDEFG_default;
+extern const gs_cie_defg_proc4 DecodeDEFG_from_cache;
 extern const gs_cie_def_proc3 DecodeDEF_default;
+extern const gs_cie_def_proc3 DecodeDEF_from_cache;
 extern const gs_cie_abc_proc3 DecodeABC_default;
+extern const gs_cie_abc_proc3 DecodeABC_from_cache;
 extern const gs_cie_common_proc3 DecodeLMN_default;
+extern const gs_cie_common_proc3 DecodeLMN_from_cache;
 extern const gs_matrix3 Matrix3_default;
 extern const gs_range RangeA_default;
 extern const gs_cie_a_proc DecodeA_default;
+extern const gs_cie_a_proc DecodeA_from_cache;
 extern const gs_vector3 MatrixA_default;
 extern const gs_vector3 BlackPoint_default;
 extern const gs_cie_render_proc3 Encode_default;
 extern const gs_cie_render_proc3 EncodeLMN_from_cache;
 extern const gs_cie_render_proc3 EncodeABC_from_cache;
 extern const gs_cie_transform_proc3 TransformPQR_default;
+extern const gs_cie_transform_proc3 TransformPQR_from_cache;
 extern const gs_cie_transform_proc TransformPQR_lookup_proc_name;
 extern const gs_cie_render_table_procs RenderTableT_default;
 extern const gs_cie_render_table_procs RenderTableT_from_cache;
@@ -492,6 +507,7 @@ typedef enum {
 struct gs_cie_render_s {
     cie_render_status_t status;
     rc_header rc;
+    gs_id id;
     void *client_data;
     gs_cie_wb points;
     gs_matrix3 MatrixPQR;
@@ -529,15 +545,32 @@ extern_st(st_cie_render1);
 
 /* This cache depends on both the color space and the rendering */
 /* dictionary -- see above. */
+typedef enum {
+    CIE_JC_STATUS_BUILT,
+    CIE_JC_STATUS_INITED,
+    CIE_JC_STATUS_COMPLETED
+} cie_joint_caches_status_t;
 
 typedef struct gx_cie_joint_caches_s {
+    /*
+     * The next two items are the "key" in the cache.  id_status refers to
+     * the cache status with respect to these keys; status refers to the
+     * status with respect to the graphics state.  The cache is valid iff
+     * status and id_status are both COMPLETED and the ids here are equal
+     * to those in the graphics state.
+     */
+    gs_id cspace_id;
+    gs_id render_id;
+    cie_joint_caches_status_t id_status;
+    cie_joint_caches_status_t status;
     rc_header rc;
-    bool skipLMN;
+    bool skipDecodeABC;
+    bool skipDecodeLMN;
     gx_cie_vector_cache DecodeLMN[3];	/* mult. by dLMN_PQR */
     gs_cie_wbsd points_sd;
-    gs_matrix3 MatrixLMN_PQR;
     bool skipPQR;
     gx_cie_vector_cache TransformPQR[3];	/* mult. by PQR_inverse_LMN */
+    bool skipEncodeLMN;
 } gx_cie_joint_caches;
 
 #define private_st_joint_caches() /* in gscie.c */\
@@ -547,7 +580,7 @@ typedef struct gx_cie_joint_caches_s {
 /* ------ Internal procedures ------ */
 
 typedef struct gs_for_loop_params_s {
-    float init, step, limit;
+    double init, step, limit;
 } gs_for_loop_params;
 void gs_cie_cache_init(P4(cie_cache_params *, gs_for_loop_params *,
 			  const gs_range *, client_name_t));
@@ -557,17 +590,22 @@ void gs_cie_def_complete(P1(gs_cie_def *));
 void gs_cie_abc_complete(P1(gs_cie_abc *));
 void gs_cie_a_complete(P1(gs_cie_a *));
 gx_cie_joint_caches *gx_currentciecaches(P1(gs_state *));
-const gs_cie_common *gs_cie_cs_common(P1(gs_state *));
+const gs_cie_common *gs_cie_cs_common(P1(const gs_state *));
 int gs_cie_cs_complete(P2(gs_state *, bool));
+int gs_cie_jc_complete(P2(const gs_imager_state *, const gs_color_space *pcs));
+float gs_cie_cached_value(P2(floatp, const cie_cache_floats *));
+
+#define CIE_CLAMP_INDEX(index)\
+  index = (index < 0 ? 0 :\
+	   index >= gx_cie_cache_size ? gx_cie_cache_size - 1 : index)
 
 /*
  * Compute the source and destination WhitePoint and BlackPoint for
  * the TransformPQR procedure.
  */
-int gs_cie_compute_wbsd(P4(gs_cie_wbsd * pwbsd,
-			   const gs_vector3 * cs_WhitePoint,
-			   const gs_vector3 * cs_BlackPoint,
-			   const gs_cie_render * pcrd));
+int gs_cie_compute_points_sd(P3(gx_cie_joint_caches *pjc,
+				const gs_cie_common * pcie,
+				const gs_cie_render * pcrd));
 
 /*
  * Compute the derived values in a CRD that don't involve the cached

@@ -220,10 +220,12 @@ extern const gs_color_space_type
 extern_st(st_color_space);
 
 /*
- * Allocate a color space and initialize its type and memory fields.
- * This is only used by color space implementations.
+ * Initialize the type and memory fields of a color space, possibly
+ * allocating it first.  This is only used by color space implementations.
  */
-
+void gs_cspace_init(P3(gs_color_space *pcs,
+		       const gs_color_space_type *pcstype,
+		       gs_memory_t *mem));
 int gs_cspace_alloc(P3(gs_color_space **ppcspace,
 		       const gs_color_space_type *pcstype,
 		       gs_memory_t *mem));

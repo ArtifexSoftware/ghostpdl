@@ -56,12 +56,15 @@ extern const char *const gs_init_file;
 /* Resource tables.  In order to avoid importing a large number of types, */
 /* we only provide macros for the externs, not the externs themselves. */
 
+#define extern_gx_image_type_table()\
+  extern const gx_image_type_t * const gx_image_type_table[]
+extern const unsigned gx_image_type_table_count;
+
 /* We need the extra typedef so that the const will apply to the table. */
 #define extern_gx_init_table()\
   typedef void (*gx_init_proc)(P1(gs_memory_t *));\
   extern const gx_init_proc gx_init_table[]
 
-/* We need the extra typedef so that the const will apply to the table. */
 #define extern_gx_io_device_table()\
   extern const gx_io_device * const gx_io_device_table[]
 extern const unsigned gx_io_device_table_count;

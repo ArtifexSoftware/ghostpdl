@@ -233,15 +233,15 @@ set_ctbl_defaults(gx_color_lookup_table * plktblp, int num_comps)
  * Return 0 if VMerror, otherwise the parameter structure.
  */
 private void *
-build_cie_space(gs_color_space ** ppcspace, const gs_color_space_type * pcstype,
+build_cie_space(gs_color_space ** ppcspace,
+		const gs_color_space_type * pcstype,
 		gs_memory_type_ptr_t stype, gs_memory_t * pmem)
 {
-    gs_color_space *pcspace =
-    gs_alloc_struct(pmem, gs_color_space, &st_color_space,
-		    "build_cie_space");
+    gs_color_space *pcspace;
+    int code = gs_cspace_alloc(&pcspace, pcstype, pmem);
     gs_cie_common_elements_t *pdata;
 
-    if (pcspace == 0)
+    if (code < 0)
 	return 0;
     rc_alloc_struct_1(pdata, gs_cie_common_elements_t, stype, pmem,
 		      {
@@ -250,8 +250,6 @@ build_cie_space(gs_color_space ** ppcspace, const gs_color_space_type * pcstype,
 		      }
 		      ,
 		      "build_cie_space(data)");
-    pcspace->pmem = pmem;
-    pcspace->type = pcstype;
     *ppcspace = pcspace;
     return (void *)pdata;
 }

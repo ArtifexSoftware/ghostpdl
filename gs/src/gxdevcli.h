@@ -195,6 +195,9 @@ dev_page_proc_end_page(gx_default_end_page);
  * ****** the finalization procedure as gx_device_finalize.  Finalization
  * ****** procedures are not automatically inherited.
  */
+typedef struct gx_device_cached_colors_s {
+    gx_color_index black, white;
+} gx_device_cached_colors_t;
 #define gx_device_common\
 	int params_size;		/* OBSOLETE if stype != 0: */\
 					/* size of this structure */\
@@ -211,6 +214,7 @@ dev_page_proc_end_page(gx_default_end_page);
 					/* must be 0 or a power of 2 */\
 					/* (see gdevabuf.c for more info) */\
 	gx_device_color_info color_info;	/* color information */\
+	gx_device_cached_colors_t cached_colors;\
 	int width;			/* width in pixels */\
 	int height;			/* height in pixels */\
 	float MediaSize[2];		/* media dimensions in points */\

@@ -40,6 +40,10 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
+    if (pcs->id == pgs->color_space->id) {	/* same color space */
+	cs_full_init_color(pgs->ccolor, pcs);
+	return 0;
+    }
     cs_old = *pgs->color_space;
     cc_old = *pgs->ccolor;
     (*pcs->type->adjust_cspace_count)(pcs, 1);

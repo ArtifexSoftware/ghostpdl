@@ -136,7 +136,7 @@ extern const char *const gs_error_names[];
 /*
  * Define which error codes require re-executing the current object.
  */
-#define error_is_interrupt(ecode)\
+#define ERROR_IS_INTERRUPT(ecode)\
   ((ecode) == e_interrupt || (ecode) == e_timeout)
 
 #endif /* errors_INCLUDED */

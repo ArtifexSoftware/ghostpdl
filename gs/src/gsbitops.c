@@ -194,41 +194,61 @@ bits_fill_rectangle(byte * dest, int dest_bit, uint draster,
 void
 bits_replicate_horizontally(byte * data, uint width, uint height,
 		 uint raster, uint replicated_width, uint replicated_raster)
-{				/* The current algorithm is extremely inefficient. */
+{
+    /* The current algorithm is extremely inefficient! */
+    const byte *orig_row = data + (height - 1) * raster;
+    byte *tile_row = data + (height - 1) * replicated_raster;
     uint y;
 
-    for (y = height; y-- > 0;) {
-	const byte *orig_row = data + y * raster;
-	byte *tile_row = data + y * replicated_raster;
-	uint sx;
+    if (!(width & 7)) {
+	uint src_bytes = width >> 3;
+	uint dest_bytes = replicated_width >> 3;
 
-	if (!(width & 7)) {
-	    uint wbytes = width >> 3;
+	for (y = height; y-- > 0;
+	     orig_row -= raster, tile_row -= replicated_raster
+	     ) {
+	    uint move = src_bytes;
+	    const byte *from = orig_row;
+	    byte *to = tile_row + dest_bytes - src_bytes;
 
-	    for (sx = wbytes; sx-- > 0;) {
-		byte sb = orig_row[sx];
-		uint dx;
-
-		for (dx = sx + (replicated_width >> 3); dx >= wbytes;)
-		    tile_row[dx -= wbytes] = sb;
+	    memmove(to, from, move);
+	    while (to - tile_row >= move) {
+		from = to;
+		to -= move;
+		memmove(to, from, move);
+		move <<= 1;
 	    }
-	} else
-	    for (sx = width; sx-- > 0;) {
-		byte sm = orig_row[sx >> 3] & (0x80 >> (sx & 7));
-		uint dx;
+	    if (to != tile_row)
+		memmove(tile_row, to, to - tile_row);
+	}
+    } else {
+	/*
+	 * This algorithm is inefficient, but probably not worth improving.
+	 */
+	uint bit_count = width & -width;  /* lowest bit: 1, 2, or 4 */
+	uint left_mask = (0xff00 >> bit_count) & 0xff;
 
-		for (dx = sx + replicated_width; dx >= width;
-		    ) {
-		    byte *dp =
-		    (dx -= width, tile_row + (dx >> 3));
-		    byte dm = 0x80 >> (dx & 7);
+	for (y = height; y-- > 0;
+	     orig_row -= raster, tile_row -= replicated_raster
+	     ) {
+	    uint sx;
 
-		    if (sm)
-			*dp |= dm;
-		    else
-			*dp &= ~dm;
+	    for (sx = width; sx > 0;) {
+		uint bits, dx;
+
+		sx -= bit_count;
+		bits = (orig_row[sx >> 3] << (sx & 7)) & left_mask;
+		for (dx = sx + replicated_width; dx >= width;) {
+		    byte *dp;
+		    int dbit;
+
+		    dx -= width;
+		    dbit = dx & 7;
+		    dp = tile_row + (dx >> 3);
+		    *dp = (*dp & ~(left_mask >> dbit)) | (bits >> dbit);
 		}
 	    }
+	}
     }
 }
 

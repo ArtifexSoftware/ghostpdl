@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definition of matrices and client interface to matrix routines */
 
 #ifndef gsmatrix_INCLUDED

@@ -571,8 +571,7 @@ dsa_put_params(gx_device * dev, gs_param_list * plist)
 
     if (code < 0)
 	return code;
-/****** DO LIKE bbox, PROPAGATE width/height CHANGE (?) ******/
-/****** NYI ******/
+    gx_device_copy_params(dev, tdev);
     return code;
 }
 

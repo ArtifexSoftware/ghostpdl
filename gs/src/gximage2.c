@@ -36,17 +36,20 @@
 private dev_proc_begin_typed_image(gx_begin_image2);
 private image_proc_source_size(gx_image2_source_size);
 
+/* Structure descriptor */
+private_st_gs_image2();
+
 /* Define the image type for ImageType 2 images. */
-private const gx_image_type_t image2_type = {
-    gx_begin_image2, gx_image2_source_size,
-    0/*gx_write_image2*/, 0/*gx_read_image2*/, 0/*gx_release_image2*/, 2
+const gx_image_type_t gs_image_type_2 = {
+    &st_gs_image2, gx_begin_image2, gx_image2_source_size,
+    gx_image_no_sput, gx_image_no_sget, gx_image_default_release, 2
 };
 
 /* Initialize an ImageType 2 image. */
 void
 gs_image2_t_init(gs_image2_t * pim)
 {
-    pim->type = &image2_type;
+    pim->type = &gs_image_type_2;
     pim->UnpaintedPath = 0;
     pim->PixelCopy = false;
 }
@@ -162,7 +165,7 @@ gx_begin_image2(gx_device * dev,
 	gs_matrix mat;
 
 	idata.image.BitsPerComponent = depth;
-	gs_cs_init_DevicePixel(&cs, depth);
+	gs_cspace_init_DevicePixel(&cs, depth);
 	pcs = &cs;
 	/*
 	 * Figure 7.2 of the Adobe 3010 Supplement says that we should

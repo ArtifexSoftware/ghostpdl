@@ -16,6 +16,7 @@
    all copies.
  */
 
+
 /*
  * H-P Color LaserJet 5/5M contone device; based on the gdevclj.c.
  */
@@ -41,12 +42,15 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *data = 0;
     byte *cdata = 0;
     byte *prow = 0;
+    int code = 0;
 
     /* allocate memory for the raw data and compressed data.  */
     if (((data = gs_malloc(raster, 1, "cljc_print_page(data)")) == 0) ||
 	((cdata = gs_malloc(worst_case_comp_size, 1, "cljc_print_page(cdata)")) == 0) ||
-	((prow = gs_malloc(worst_case_comp_size, 1, "cljc_print_page(prow)")) == 0))
-	return_error(gs_error_VMerror);
+	((prow = gs_malloc(worst_case_comp_size, 1, "cljc_print_page(prow)")) == 0)) {
+	code = gs_note_error(gs_error_VMerror);
+	goto out;
+    }
     /* send a reset and the the paper definition */
     fprintf(prn_stream, "\033E\033&u300D\033&l%dA",
 	    gdev_pcl_paper_size((gx_device *) pdev));
@@ -62,11 +66,11 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fprintf(prn_stream, "\033&l-90u-360Z\033*r1A\033*b3M");
     /* initialize the seed row */
     memset(prow, 0, worst_case_comp_size);
-    /* process each sanline */
+    /* process each scanline */
     for (i = 0; i < pdev->height; i++) {
 	int compressed_size;
-	int code = gdev_prn_copy_scan_lines(pdev, i, (byte *) data, raster);
 
+	code = gdev_prn_copy_scan_lines(pdev, i, (byte *) data, raster);
 	if (code < 0)
 	    break;
 	compressed_size = gdev_pcl_mode3compress(raster, data, prow, cdata);
@@ -75,10 +79,11 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
     /* PCL will take care of blank lines at the end */
     fputs("\033*rC\f", prn_stream);
+out:
     gs_free((char *)data, raster, 1, "cljc_print_page(data)");
     gs_free((char *)cdata, worst_case_comp_size, 1, "cljc_print_page(cdata)");
     gs_free((char *)prow, worst_case_comp_size, 1, "cljc_print_page(prow)");
-    return 0;
+    return code;
 }
 
 /* CLJ device methods */

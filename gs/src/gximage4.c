@@ -26,14 +26,21 @@
 #include "gsiparm4.h"
 #include "gxiparam.h"
 #include "gximage.h"
+#include "stream.h"
 
 /* Forward references */
 private dev_proc_begin_typed_image(gx_begin_image4);
 
+/* Structure descriptor */
+private_st_gs_image4();
+
 /* Define the image type for ImageType 4 images. */
-private const gx_image_type_t image4_type = {
-    gx_begin_image4, gx_data_image_source_size,
-    0/*gx_write_image4*/, 0/*gx_read_image4*/, 0/*gx_release_image4*/, 4
+private image_proc_sput(gx_image4_sput);
+private image_proc_sget(gx_image4_sget);
+private image_proc_release(gx_image4_release);
+const gx_image_type_t gs_image_type_4 = {
+    &st_gs_image4, gx_begin_image4, gx_data_image_source_size,
+    gx_image4_sput, gx_image4_sget, gx_image4_release, 4
 };
 /* The implementation is shared with ImageType 1. */
 private const gx_image_enum_procs_t image4_enum_procs = {
@@ -45,7 +52,7 @@ void
 gs_image4_t_init(gs_image4_t * pim, const gs_color_space * color_space)
 {
     gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);
-    pim->type = &image4_type;
+    pim->type = &gs_image_type_4;
     pim->MaskColor_is_range = false;
 }
 
@@ -59,8 +66,7 @@ gx_begin_image4(gx_device * dev,
 {
     gx_image_enum *penum;
     const gs_image4_t *pim = (const gs_image4_t *)pic;
-    int code = gx_image_enum_alloc(dev, pis, pmat, pic, prect, pdcolor,
-				   pcpath, mem, &penum);
+    int code = gx_image_enum_alloc(pic, prect, mem, &penum);
 
     if (code < 0)
 	return code;
@@ -93,9 +99,58 @@ gx_begin_image4(gx_device * dev,
 	}
 	penum->use_mask_color = !opaque;
     }
-    code = gx_image_enum_begin(dev, pis, pic, prect, pdcolor, pcpath, mem,
+    code = gx_image_enum_begin(dev, pis, pmat, pic, pdcolor, pcpath, mem,
 			       penum);
     if (code >= 0)
 	*pinfo = (gx_image_enum_common_t *)penum;
     return code;
+}
+
+/* Serialization */
+
+private int
+gx_image4_sput(const gs_image_common_t *pic, stream *s,
+	       const gs_color_space **ppcs)
+{
+    const gs_image4_t *pim = (const gs_image4_t *)pic;
+    bool is_range = pim->MaskColor_is_range;
+    int code = gx_pixel_image_sput((const gs_pixel_image_t *)pim, s, ppcs,
+				   is_range);
+    int num_values =
+	gs_color_space_num_components(pim->ColorSpace) * (is_range ? 2 : 1);
+    int i;
+
+    if (code < 0)
+	return code;
+    for (i = 0; i < num_values; ++i)
+	sput_variable_uint(s, pim->MaskColor[i]);
+    *ppcs = pim->ColorSpace;
+    return 0;
+}
+
+private int
+gx_image4_sget(gs_image_common_t *pic, stream *s,
+	       const gs_color_space *pcs)
+{
+    gs_image4_t *const pim = (gs_image4_t *)pic;
+    int num_values;
+    int i;
+    int code = gx_pixel_image_sget((gs_pixel_image_t *)pim, s, pcs);
+
+    if (code < 0)
+	return code;
+    pim->type = &gs_image_type_4;
+    pim->MaskColor_is_range = code;
+    num_values =
+	gs_color_space_num_components(pcs) *
+	(pim->MaskColor_is_range ? 2 : 1);
+    for (i = 0; i < num_values; ++i)
+	sget_variable_uint(s, &pim->MaskColor[i]);
+    return 0;
+}
+
+private void
+gx_image4_release(gs_image_common_t *pic, gs_memory_t *mem)
+{
+    return gx_pixel_image_release((gs_pixel_image_t *)pic, mem);
 }

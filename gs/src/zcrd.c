@@ -243,12 +243,12 @@ cie_cache_render_finish(os_ptr op)
 	    gs_cie_cache_to_fracs(&pcrd->caches.RenderTableT[j]);
     }
     pcrd->status = CIE_RENDER_STATUS_SAMPLED;
+    pcrd->EncodeLMN = EncodeLMN_from_cache;
+    pcrd->EncodeABC = EncodeABC_from_cache;
+    pcrd->RenderTable.T = RenderTableT_from_cache;
     code = gs_cie_render_complete(pcrd);
     if (code < 0)
 	return code;
-    /* Note that the cache holds the only record of the values. */
-    pcrd->EncodeLMN = EncodeLMN_from_cache;
-    pcrd->EncodeABC = EncodeABC_from_cache;
     pop(1);
     return 0;
 }
@@ -262,11 +262,8 @@ int
 cie_cache_joint(const ref_cie_render_procs * pcrprocs, gs_state * pgs)
 {
     const gs_cie_render *pcrd = gs_currentcolorrendering(pgs);
-    /*
-     * The former installation procedures have allocated
-     * the joint caches and filled in points_sd.
-     */
     gx_cie_joint_caches *pjc = gx_currentciecaches(pgs);
+    const gs_cie_common *pcie = gs_cie_cs_common(pgs);
     gs_ref_memory_t *imem = (gs_ref_memory_t *) gs_state_memory(pgs);
     ref pqr_procs;
     uint space;
@@ -275,8 +272,9 @@ cie_cache_joint(const ref_cie_render_procs * pcrprocs, gs_state * pgs)
 
     if (pcrd == 0)		/* cache is not set up yet */
 	return 0;
-    if (pjc == 0)
+    if (pjc == 0)		/* must already be allocated */
 	return_error(e_VMerror);
+    gs_cie_compute_points_sd(pjc, pcie, pcrd);
     code = ialloc_ref_array(&pqr_procs, a_readonly, 3 * (1 + 4 + 4 * 6),
 			    "cie_cache_common");
     if (code < 0)
@@ -347,9 +345,11 @@ private int
 cie_tpqr_finish(os_ptr op)
 {
     gs_state *pgs = r_ptr(op, gs_state);
+    gs_cie_render *pcrd = gs_currentcolorrendering(pgs);
     int code;
 
     ifree_ref_array(op - 1, "cie_tpqr_finish");
+    pcrd->TransformPQR = TransformPQR_from_cache;
     code = gs_cie_cs_complete(pgs, false);
     pop(2);
     return code;

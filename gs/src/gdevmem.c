@@ -139,9 +139,21 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 	    break;
     }
     dev->target = target;
-    if (target != 0) {
+    /* Preload the black and white cache. */
+    if (target == 0) {
+	if (dev->color_info.depth == 1) {
+	    /* The default for black-and-white devices is inverted. */
+	    dev->cached_colors.black = 1;
+	    dev->cached_colors.white = 0;
+	} else {
+	    dev->cached_colors.black = 0;
+	    dev->cached_colors.white = (1 << dev->color_info.depth) - 1;
+	}
+    } else {
 	/* Forward the color mapping operations to the target. */
 	gx_device_forward_color_procs((gx_device_forward *) dev);
+	gx_device_copy_color_procs((gx_device *)dev, target);
+	dev->cached_colors = target->cached_colors;
     }
     if (dev->color_info.depth == 1)
 	gdev_mem_mono_set_inverted(dev,
@@ -308,6 +320,10 @@ mem_close(gx_device * dev)
 
     if (mdev->bitmap_memory != 0) {
 	gs_free_object(mdev->bitmap_memory, mdev->base, "mem_close");
+	/*
+	 * The following assignment is strictly for the benefit of one
+	 * client that is sloppy about using is_open properly.
+	 */
 	mdev->base = 0;
     }
     return 0;

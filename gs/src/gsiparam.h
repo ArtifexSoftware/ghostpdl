@@ -56,7 +56,7 @@ typedef struct gs_image_common_s {
     gs_image_common;
 } gs_image_common_t;
 
-#define public_st_gs_image_common() /* in gxiinit.c */\
+#define public_st_gs_image_common() /* in gximage.c */\
   gs_public_st_simple(st_gs_image_common, gs_image_common_t,\
     "gs_image_common_t")
 
@@ -66,6 +66,15 @@ typedef struct gs_image_common_s {
  * 5 is either CMYK + alpha or mask + CMYK.
  */
 #define gs_image_max_components 5
+
+/*
+ * Define the maximum number of planes in image data.  Since we support
+ * allocating a plane for each bit, the maximum value is the maximum number
+ * of components (see above) times the maximum depth per component
+ * (currently 8 for multi-component bit-planar images, but could be 16
+ * someday; 32 or maybe 64 for DevicePixel images).
+ */
+#define gs_image_max_planes (gs_image_max_components * 8)
 
 /*
  * Define the structure for defining data common to ImageType 1 images,
@@ -111,7 +120,7 @@ typedef struct gs_data_image_s {
     gs_data_image_common;
 } gs_data_image_t;
 
-#define public_st_gs_data_image() /* in gxiinit.c */\
+#define public_st_gs_data_image() /* in gximage.c */\
   gs_public_st_simple(st_gs_data_image, gs_data_image_t,\
     "gs_data_image_t")
 
@@ -127,7 +136,7 @@ typedef struct gs_data_image_s {
  *      ColorSpace is added from PDF.
  *
  *      CombineWithColor is not PostScript or PDF standard: see the
- *      RasterOp section of language.doc for a discussion of
+ *      RasterOp section of Language.htm for a discussion of
  *      CombineWithColor.
  */
 typedef enum {
@@ -136,7 +145,6 @@ typedef enum {
     /* num_components planes, chunky components. */
     gs_image_format_component_planar = 1,
     /* BitsPerComponent * num_components planes, 1 bit per plane */
-/****** NOT SUPPORTED YET, DO NOT USE ******/
     gs_image_format_bit_planar = 2
 } gs_image_format_t;
 
@@ -160,14 +168,14 @@ typedef struct gs_color_space_s gs_color_space;
 		/*\
 		 * Define whether to use the drawing color as the\
 		 * "texture" for RasterOp.  For more information,\
-		 * see the discussion of RasterOp in language.doc.\
+		 * see the discussion of RasterOp in Language.htm.\
 		 */\
 	bool CombineWithColor
 typedef struct gs_pixel_image_s {
     gs_pixel_image_common;
 } gs_pixel_image_t;
 
-#define public_st_gs_pixel_image() /* in gxiinit.c */\
+#define public_st_gs_pixel_image() /* in gximage.c */\
   gs_public_st_ptrs1(st_gs_pixel_image, gs_pixel_image_t,\
     "gs_data_image_t", pixel_image_enum_ptrs, pixel_image_reloc_ptrs,\
     ColorSpace)
@@ -204,6 +212,11 @@ typedef struct gs_image1_s {
      */
     gs_image_alpha_t Alpha;
 } gs_image1_t;
+
+#define private_st_gs_image1()	/* in gximage1.c */\
+  extern_st(st_gs_pixel_image);\
+  gs_private_st_suffix_add0(st_gs_image1, gs_image1_t, "gs_image1_t",\
+    image1_enum_ptrs, image1_reloc_ptrs, st_gs_pixel_image)
 
 /*
  * In standard PostScript Level 1 and 2, this is the only defined ImageType.

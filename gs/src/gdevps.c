@@ -998,7 +998,9 @@ psw_begin_image(gx_device * dev,
     const gs_color_space *pcs = pim->ColorSpace;
     gs_color_space_index index;
     int num_components;
-    bool can_do = prect == 0;
+    bool can_do = prect == 0 &&
+	(pim->format == gs_image_format_chunky ||
+	 pim->format == gs_image_format_component_planar);
     int code;
 
     if (pie == 0)
@@ -1009,10 +1011,11 @@ psw_begin_image(gx_device * dev,
 	index = gs_color_space_get_index(pcs);
 	num_components = gs_color_space_num_components(pcs);
     }
-    if (pdev->LanguageLevel < 2 && !pim->ImageMask) {	/*
-							 * Restrict ourselves to Level 1 images: device color spaces, [0
-							 * 1] decode, bits per component <= 8, no CombineWithColor.
-							 */
+    if (pdev->LanguageLevel < 2 && !pim->ImageMask) {
+	/*
+	 * Restrict ourselves to Level 1 images: device color spaces, [0
+	 * 1] decode, bits per component <= 8, no CombineWithColor.
+	 */
 	if (pim->BitsPerComponent > 8 || pim->CombineWithColor)
 	    can_do = false;
 	else {

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -783,8 +783,17 @@ gdev_x_setup_colors(gx_device_X * xdev)
     xdev->dynamic_colors = NULL;
     xdev->dynamic_size = 0;
     xdev->dynamic_allocs = 0;
-    xdev->color_info.depth = xdev->vinfo->depth;
-
+    switch (xdev->vinfo->depth) {
+    case 1: case 2: case 4: case 8: case 16: case 24: case 32:
+	xdev->color_info.depth = xdev->vinfo->depth;
+	break;
+    case 15:
+	xdev->color_info.depth = 16;
+	break;
+    default:
+	eprintf1("Unsupported X visual depth: %d\n", xdev->vinfo->depth);
+	return_error(gs_error_rangecheck);
+    }
     if (palette == 'C') {
 	xdev->color_info.num_components = 3;
 	xdev->color_info.max_gray =

@@ -218,12 +218,44 @@ gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 /* Render a given level into a halftone cache. */
 private int render_ht(P4(gx_ht_tile *, int, const gx_ht_order *,
 			 gx_bitmap_id));
-gx_ht_tile *
-gx_render_ht(gx_ht_cache * pcache, int b_level)
+private gx_ht_tile *
+gx_render_ht_default(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
     int level = porder->levels[b_level];
     gx_ht_tile *bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+
+    if (bt->level != level) {
+	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
+
+	if (code < 0)
+	    return 0;
+    }
+    return bt;
+}
+/* Faster code if num_tiles == 1. */
+private gx_ht_tile *
+gx_render_ht_1_tile(gx_ht_cache * pcache, int b_level)
+{
+    const gx_ht_order *porder = &pcache->order;
+    int level = porder->levels[b_level];
+    gx_ht_tile *bt = &pcache->ht_tiles[0];
+
+    if (bt->level != level) {
+	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
+
+	if (code < 0)
+	    return 0;
+    }
+    return bt;
+}
+/* Faster code if levels_per_tile == 1. */
+private gx_ht_tile *
+gx_render_ht_1_level(gx_ht_cache * pcache, int b_level)
+{
+    const gx_ht_order *porder = &pcache->order;
+    int level = porder->levels[b_level];
+    gx_ht_tile *bt = &pcache->ht_tiles[level];
 
     if (bt->level != level) {
 	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
@@ -239,8 +271,13 @@ private int
 gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
 		     gx_device * dev, gs_color_select_t select)
 {
-    const gx_ht_order *porder = &pis->dev_ht->order;
-    gx_ht_cache *pcache = pis->ht_cache;
+    int component_index = pdevc->colors.binary.b_index;
+    const gx_ht_order *porder =
+	(component_index < 0 ?
+	 &pdevc->colors.binary.b_ht->order :
+	 &pdevc->colors.binary.b_ht->components[component_index].corder);
+    gx_ht_cache *pcache =
+	(porder->cache == 0 ? pis->ht_cache : porder->cache);
 
     if (pcache->order.bits != porder->bits)
 	gx_ht_init_cache(pcache, porder);
@@ -344,15 +381,16 @@ gx_ht_init_cache(gx_ht_cache * pcache, const gx_ht_order * porder)
 	num_cached = pcache->num_tiles;
     if (num_cached == size &&
 	tile_bytes * num_cached <= pcache->bits_size / 2
-	) {			/*
-				 * We can afford to replicate every tile in the cache,
-				 * which will reduce breakage when tiling.  Since
-				 * horizontal breakage is more expensive than vertical,
-				 * and since wide shallow fills are more common than
-				 * narrow deep fills, we replicate the tile horizontally.
-				 * We do have to be careful not to replicate the tile
-				 * to an absurdly large size, however.
-				 */
+	) {
+	/*
+	 * We can afford to replicate every tile in the cache,
+	 * which will reduce breakage when tiling.  Since
+	 * horizontal breakage is more expensive than vertical,
+	 * and since wide shallow fills are more common than
+	 * narrow deep fills, we replicate the tile horizontally.
+	 * We do have to be careful not to replicate the tile
+	 * to an absurdly large size, however.
+	 */
 	uint rep_raster =
 	((pcache->bits_size / num_cached) / height) &
 	~(align_bitmap_mod - 1);
@@ -387,6 +425,10 @@ gx_ht_init_cache(gx_ht_cache * pcache, const gx_ht_order * porder)
 	bt->tiles.rep_height = height;
 	bt->tiles.shift = bt->tiles.rep_shift = shift;
     }
+    pcache->render_ht =
+	(pcache->num_tiles == 1 ? gx_render_ht_1_tile :
+	 pcache->levels_per_tile == 1 ? gx_render_ht_1_level :
+	 gx_render_ht_default);
 }
 
 /*

@@ -223,9 +223,14 @@ gx_forward_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
+    int code;
 
-    return (tdev == 0 ? gx_default_put_params(dev, plist) :
-	    (*dev_proc(tdev, put_params)) (tdev, plist));
+    if (tdev == 0)
+	return gx_default_put_params(dev, plist);
+    code = (*dev_proc(tdev, put_params))(tdev, plist);
+    if (code >= 0)
+	gx_device_decache_colors(dev);
+    return code;
 }
 
 gx_color_index
@@ -707,14 +712,9 @@ null_put_params(gx_device * dev, gs_param_list * plist)
      * If this is not a page device, we must defeat attempts to reset
      * the size; otherwise this is equivalent to gx_forward_put_params.
      */
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-    int code;
+    int code = gx_forward_put_params(dev, plist);
 
-    if (tdev != 0)
-	return (*dev_proc(tdev, put_params)) (tdev, plist);
-    code = gx_default_put_params(dev, plist);
-    if (code < 0 || (*dev_proc(dev, get_page_device)) (dev) == dev)
+    if (code < 0 || (*dev_proc(dev, get_page_device))(dev) == dev)
 	return code;
     dev->width = dev->height = 0;
     return code;

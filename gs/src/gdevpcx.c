@@ -110,27 +110,6 @@ prn_device(pcx24b_procs, "pcx24b",
 
 private dev_proc_print_page(pcxcmyk_print_page);
 
-private gx_color_index
-pcx_cmyk_map_cmyk_color(gx_device * dev,
-     gx_color_value c, gx_color_value m, gx_color_value y, gx_color_value k)
-{
-#define cv_bit(v) ((v) >> (gx_color_value_bits - 1))
-    return (gx_color_index)
-	(cv_bit(k) + (cv_bit(y) << 1) + (cv_bit(m) << 2) + (cv_bit(c) << 3));
-#undef cv_bit
-}
-private int
-pcx_cmyk_map_color_rgb(gx_device * dev, gx_color_index color,
-		       gx_color_value prgb[3])
-{
-    if (color & 1)
-	prgb[0] = prgb[1] = prgb[2] = 0;
-    else
-	prgb[0] = (color & 8 ? 0 : gx_max_color_value),
-	    prgb[1] = (color & 4 ? 0 : gx_max_color_value),
-	    prgb[2] = (color & 2 ? 0 : gx_max_color_value);
-    return 0;
-}
 private const gx_device_procs pcxcmyk_procs =
 {
     gdev_prn_open,
@@ -139,7 +118,7 @@ private const gx_device_procs pcxcmyk_procs =
     gdev_prn_output_page,
     gdev_prn_close,
     NULL,			/* map_rgb_color */
-    pcx_cmyk_map_color_rgb,
+    cmyk_1bit_map_color_rgb,
     NULL,			/* fill_rectangle */
     NULL,			/* tile_rectangle */
     NULL,			/* copy_mono */
@@ -148,7 +127,7 @@ private const gx_device_procs pcxcmyk_procs =
     NULL,			/* get_bits */
     gdev_prn_get_params,
     gdev_prn_put_params,
-    pcx_cmyk_map_cmyk_color,	/* map_cmyk_color */
+    cmyk_1bit_map_cmyk_color,
     NULL,			/* get_xfont_procs */
     NULL,			/* get_xfont_device */
     NULL,			/* map_rgb_alpha_color */

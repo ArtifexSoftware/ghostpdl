@@ -304,16 +304,21 @@ typedef struct stream_s stream;
 
 #endif
 
-/* Define the number of freelists.  The index in the freelist array */
-/* is the ceiling of the size of the object contents (i.e., not including */
-/* the header) divided by obj_align_mod. There is an extra entry used to */
-/* keep a list of all free blocks > max_freelist_size. */
+/*
+ * Define the number of freelists.  The index in the freelist array
+ * is the ceiling of the size of the object contents (i.e., not including
+ * the header) divided by obj_align_mod. There is an extra entry used to
+ * keep a list of all free blocks > max_freelist_size.
+ */
 #define max_freelist_size 800	/* big enough for gstate & contents */
 #define num_small_freelists\
   ((max_freelist_size + obj_align_mod - 1) / obj_align_mod + 1)
 #define num_freelists (num_small_freelists + 1)
 
-/* Define the index of a freelist containing all free mem blocks > max_freelist_size */
+/*
+ * Define the index of the freelist containing all free blocks >
+ * max_freelist_size.
+ */
 #define LARGE_FREELIST_INDEX	num_small_freelists
 
 /* Define the memory manager subclass for this allocator. */
@@ -350,7 +355,8 @@ struct gs_ref_memory_s {
 				/* inherited >= 0 always) */
     ulong gc_allocated;		/* value of (allocated + */
 				/* previous_status.allocated) after last GC */
-    struct lost_ {		/* space freed and 'lost' */
+    struct lost_ {		/* space freed and 'lost' (not put on a */
+				/* freelist) */
 	ulong objects;
 	ulong refs;
 	ulong strings;

@@ -306,10 +306,10 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 			break;
 		    if (poc != pocs) {
 			gx_ht_cache *pcache =
-			gx_ht_alloc_cache(mem, 1,
+			gx_ht_alloc_cache(mem, 4,
 					  poc->corder.raster *
 					  (poc->corder.num_bits /
-					   poc->corder.width));
+					   poc->corder.width) * 4);
 
 			if (pcache == 0) {
 			    code = gs_note_error(gs_error_VMerror);

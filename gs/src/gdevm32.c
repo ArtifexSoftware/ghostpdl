@@ -38,7 +38,7 @@ mem_full_device("image32", 24, 8, mem_open,
 		gx_default_map_rgb_color, gx_default_map_color_rgb,
      mem_true32_copy_mono, mem_true32_copy_color, mem_true32_fill_rectangle,
 	    gx_default_cmyk_map_cmyk_color, gx_default_strip_tile_rectangle,
-		gx_default_strip_copy_rop, mem_get_bits_rectangle);
+		mem_default_strip_copy_rop, mem_get_bits_rectangle);
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte

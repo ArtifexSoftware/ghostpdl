@@ -58,6 +58,7 @@ x_clear_color_cache(gx_device /*gx_device_X_wrapper */  * dev)
 
     for (i = 0; i < countof(xdev->color_cache); ++i)
 	xdev->color_cache[i] = gx_no_color_index;
+    gx_device_decache_colors(dev);
 }
 
 /* "Wrappers" for driver procedures */
@@ -473,12 +474,14 @@ x_alt_map_color(gx_device * dev, gx_color_index color)
 /* ---------------- CMYK procedures ---------------- */
 
 /* Device procedures */
+private dev_proc_open_device(x_cmyk_open);
+private dev_proc_put_params(x_cmyk_put_params);
 private dev_proc_map_cmyk_color(x_cmyk_map_cmyk_color);
 
 /* The device descriptor */
 private const gx_device_procs x_cmyk_procs =
 {
-    x_wrap_open,
+    x_cmyk_open,
     gx_forward_get_initial_matrix,
     x_forward_sync_output,
     x_forward_output_page,
@@ -492,7 +495,7 @@ private const gx_device_procs x_cmyk_procs =
     gx_default_draw_line,
     x_wrap_get_bits,
     x_wrap_get_params,
-    x_wrap_put_params,
+    x_cmyk_put_params,
     x_cmyk_map_cmyk_color,
     gx_forward_get_xfont_procs,
     gx_forward_get_xfont_device,
@@ -536,7 +539,38 @@ const gx_device_X_wrapper gs_x11cmyk8_device = {
     0				/* target */
 };
 
+/* Set color mapping procedures */
+private void
+x_cmyk_set_procs(gx_device *dev)
+{
+    if (dev->color_info.depth == 4) {
+	set_dev_proc(dev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
+    } else {
+	set_dev_proc(dev, map_cmyk_color, x_cmyk_map_cmyk_color);
+    }
+}
+
 /* Device procedures */
+
+private int
+x_cmyk_open(gx_device *dev)
+{
+    int code = x_wrap_open(dev);
+
+    if (code >= 0)
+	x_cmyk_set_procs(dev);
+    return code;
+}
+
+private int
+x_cmyk_put_params(gx_device * dev, gs_param_list * plist)
+{
+    int code = x_wrap_put_params(dev, plist);
+
+    if (code >= 0)
+	x_cmyk_set_procs(dev);
+    return code;
+}
 
 private gx_color_index
 x_cmyk_map_cmyk_color(gx_device * dev,
@@ -729,9 +763,6 @@ x_alpha_copy_alpha(gx_device * dev, const unsigned char *base, int sourcex,
     gx_color_value rgb[3];
     gx_color_index shades[16];
     int i;
-
-/**************** PATCH for measuring rasterizer speed ****************/
-/*if ( 1 ) return 0; */
 
     set_dev_target(tdev, dev);
     for (i = 0; i < 15; ++i)

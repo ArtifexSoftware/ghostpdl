@@ -27,6 +27,7 @@
 #include "gserrors.h"
 #include "gsmatrix.h"		/* for gscolor2.h */
 #include "gsparam.h"
+#include "gsutil.h"
 #include "gxcspace.h"
 #include "gscolor2.h"		/* for gs_set/currentcolorrendering */
 #include "gscrd.h"
@@ -69,6 +70,19 @@ tpqr_identity(int index, floatp in, const gs_cie_wbsd * pwbsd,
     return 0;
 }
 
+private int
+tpqr_from_cache(int index, floatp in, const gs_cie_wbsd * pwbsd,
+		gs_cie_render * pcrd, float *out)
+{
+    /*
+     * Since the TransformPQR cache is in the joint caches, not in the
+     * CRD cache, we can't actually implement this procedure.
+     * Instead, the place that calls it checks for it specially.
+     */
+    *out = in;
+    return 0;
+}
+
 private float
 render_identity(floatp in, const gs_cie_render * pcrd)
 {
@@ -82,10 +96,6 @@ render_table_identity(byte in, const gs_cie_render * pcrd)
 
 /* Transformation procedures that just consult the cache. */
 
-#define clamp_index(index)\
-  index = (index < 0 ? 0 :\
-	   index >= gx_cie_cache_size ? gx_cie_cache_size - 1 : index)
-
 private float
 EncodeABC_cached(floatp in, const gs_cie_render * pcrd, int i)
 {
@@ -95,18 +105,18 @@ EncodeABC_cached(floatp in, const gs_cie_render * pcrd, int i)
 	int index = (in - pcache->fracs.params.base) *
 	pcache->fracs.params.factor;
 
-	clamp_index(index);
+	CIE_CLAMP_INDEX(index);
 	return frac2float(pcache->fracs.values[index]);
     } else {
 	/****** WRONG IF INTERPOLATING ******/
 	int index = (in - pcache->ints.params.base) *
-	pcache->ints.params.factor;
+	    pcache->ints.params.factor;
 	const gs_range *prange = &pcrd->RangeABC.ranges[i];
 	int m = pcrd->RenderTable.lookup.m;
 	int k = (i == 0 ? 1 : i == 1 ?
 		 m * pcrd->RenderTable.lookup.dims[2] : m);
 
-	clamp_index(index);
+	CIE_CLAMP_INDEX(index);
 	return (double)(pcache->ints.values[index]) / k *
 	    (prange->rmax - prange->rmin) / (gx_cie_cache_size - 1) +
 	    prange->rmin;
@@ -128,34 +138,19 @@ EncodeABC_cached_C(floatp in, const gs_cie_render * pcrd)
     return EncodeABC_cached(in, pcrd, 2);
 }
 private float
-EncodeLMN_cached(floatp in, const gs_cie_render * pcrd, int i)
-{
-    const gx_cie_vector_cache *pcache = &pcrd->caches.EncodeLMN[i];
-    int index = (in - pcache->floats.params.base) *
-    pcache->floats.params.factor;
-
-    clamp_index(index);
-    /* Pick any one of u, v, w.  We should probably pick the one */
-    /* with the largest coefficient.... */
-    return cie_cached2float(pcache->vecs.values[index].u) /
-	(i == 0 ? pcrd->MatrixABCEncode.cu.u :
-	 i == 1 ? pcrd->MatrixABCEncode.cv.u :
-	 pcrd->MatrixABCEncode.cw.u);
-}
-private float
 EncodeLMN_cached_L(floatp in, const gs_cie_render * pcrd)
 {
-    return EncodeLMN_cached(in, pcrd, 0);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[0].floats);
 }
 private float
 EncodeLMN_cached_M(floatp in, const gs_cie_render * pcrd)
 {
-    return EncodeLMN_cached(in, pcrd, 1);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[1].floats);
 }
 private float
 EncodeLMN_cached_N(floatp in, const gs_cie_render * pcrd)
 {
-    return EncodeLMN_cached(in, pcrd, 2);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[2].floats);
 }
 
 private frac
@@ -184,8 +179,6 @@ RTT_cached_3(byte in, const gs_cie_render * pcrd)
 {
     return RTT_cached(in, pcrd, 3);
 }
-
-#undef clamp_index
 
 /* Define the TransformPQR trampoline procedure that looks up proc_name. */
 
@@ -253,6 +246,12 @@ const gs_cie_transform_proc3 TransformPQR_default = {
     {0, 0},			/* proc_data */
     0				/* driver_name */
 };
+const gs_cie_transform_proc3 TransformPQR_from_cache = {
+    tpqr_from_cache,
+    0,				/* proc_name */
+    {0, 0},			/* proc_data */
+    0				/* driver_name */
+};
 const gs_cie_transform_proc TransformPQR_lookup_proc_name = tpqr_lookup;
 const gs_cie_render_proc3 Encode_default = {
     {render_identity, render_identity, render_identity}
@@ -288,6 +287,7 @@ gs_cie_render1_build(gs_cie_render ** ppcrd, gs_memory_t * mem,
 
     rc_alloc_struct_1(pcrd, gs_cie_render, &st_cie_render1, mem,
 		      return_error(gs_error_VMerror), cname);
+    pcrd->id = gs_next_ids(1);
     /* Initialize pointers for the GC. */
     pcrd->client_data = 0;
     pcrd->RenderTable.lookup.table = 0;
@@ -319,6 +319,7 @@ gs_cie_render1_initialize(gs_cie_render * pcrd, void *client_data,
 			  const gs_range3 * RangeABC,
 			  const gs_cie_render_table_t * RenderTable)
 {
+    pcrd->id = gs_next_ids(1);
     pcrd->client_data = client_data;
     pcrd->points.WhitePoint = *WhitePoint;
     pcrd->points.BlackPoint =

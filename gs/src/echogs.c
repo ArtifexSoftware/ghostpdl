@@ -47,7 +47,7 @@ extern int fputc(), fputs();
 /*
  * Usage:
  echogs [-e .extn] [-(w|a)[b][-] file] [-h] [-n]
- (-d|-D | -f|-F | -x hexstring | -(l|q|Q) string | -(l|q|Q)string |
+ (-b|-B | -d|-D | -f|-F | -x hexstring | -(l|q|Q) string | -(l|q|Q)string |
  -s | -u string | -i | -r file | -R file | -X)*
  [-] string*
  * Echoes string(s), or the binary equivalent of hexstring(s).
@@ -59,6 +59,8 @@ extern int fputc(), fputs();
  * -e specifies an extension to be added to the file name.
  * If -h, write the output in hex instead of literally.
  * If -n, does not append a newline to the output.
+ * -b or -B means insert the base part (minus directories) of the file name
+ *   passed as the argument of -w or -a.
  * -d or -D means insert the date and time.
  * -f or -F means insert the file name passed as the argument of -w or -a.
  * -q means write the next string literally.
@@ -200,6 +202,14 @@ main(int argc, char *argv[])
 		case 'i':	/* read interactively */
 		    interact = 1;
 		    in = stdin;
+		    break;
+		case 'b':	/* insert base file name */
+		case 'B':
+		    arg = fnparam + strlen(fnparam);
+		    while (arg > fnparam &&
+			   (isalnum(arg[-1]) || arg[-1] == '_'))
+			--arg;
+		    (*eputs) (arg, out);
 		    break;
 		case 'd':	/* insert date/time */
 		case 'D':

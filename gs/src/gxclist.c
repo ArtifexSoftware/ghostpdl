@@ -50,7 +50,6 @@ extern dev_proc_stroke_path(clist_stroke_path);
 
 /* In gxclimag.c */
 extern dev_proc_fill_mask(clist_fill_mask);
-extern dev_proc_begin_image(clist_begin_image);
 extern dev_proc_begin_typed_image(clist_begin_typed_image);
 extern dev_proc_create_compositor(clist_create_compositor);
 
@@ -93,7 +92,7 @@ const gx_device_procs gs_clist_device_procs = {
     gx_default_fill_parallelogram,
     gx_default_fill_triangle,
     gx_default_draw_thin_line,
-    clist_begin_image,
+    gx_default_begin_image,
     gx_default_image_data,
     gx_default_end_image,
     clist_strip_tile_rectangle,

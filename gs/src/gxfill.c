@@ -358,25 +358,41 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
      *       skip   +draw   0-height horizontal lines
      *       slow   +fast   rectangles
      *      +fast    slow   curves
-     *      +yes     no     write pixels at most once
+     *      +yes     no     write pixels at most once when adjust != 0
      *
      * Normally we use the scan line algorithm for characters, where
      * curve speed is important and no Y adjustment is involved, and for
      * non-idempotent RasterOps, where double pixel writing must be
-     * avoided, and the trapezoid algorithm otherwise.
+     * avoided, and the trapezoid algorithm otherwise.  However, we
+     * always use the trapezoid algorithm for rectangles.
      */
 #define double_write_ok lop_is_idempotent(lop)
 #ifdef FILL_SCAN_LINES
 #  ifdef FILL_TRAPEZOIDS
     fill_by_trapezoids =
 	((adjust_below | adjust_above) != 0 || !gx_path_has_curves(ppath) ||
-	 params->flatness >= 1.0) && double_write_ok;
+	 params->flatness >= 1.0);
 #  else
     fill_by_trapezoids = false;
 #  endif
 #else
-    fill_by_trapezoids = double_write_ok;
+    fill_by_trapezoids = true;
 #endif
+    if (fill_by_trapezoids && !double_write_ok) {
+	/* Avoid filling rectangles by scan line. */
+	gs_fixed_rect rbox;
+
+	if (gx_path_is_rectangular(ppath, &rbox)) {
+	    int x0 = fixed2int_pixround(rbox.p.x - adjust_left);
+	    int y0 = fixed2int_pixround(rbox.p.y - adjust_below);
+	    int x1 = fixed2int_pixround(rbox.q.x + adjust_right);
+	    int y1 = fixed2int_pixround(rbox.q.y + adjust_above);
+
+	    return gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
+						pdevc, dev, lop);
+	}
+	fill_by_trapezoids = false; /* avoid double write */
+    }
 #undef double_write_ok
     /*
      * Pre-process curves.  When filling by trapezoids, we need to
@@ -651,6 +667,8 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 	    /* Don't need to set dx or y_fast_max */
 	    alp->pseg = prev_lp;	/* may not need this either */
 	    break;
+	default:		/* can't happen */
+	    return_error(gs_error_unregistered);
     }
     /* Insert the new line in the Y ordering */
     {

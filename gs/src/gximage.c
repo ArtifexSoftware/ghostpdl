@@ -23,6 +23,7 @@
 #include "gserrors.h"
 #include "gsmatrix.h"
 #include "gsutil.h"
+#include "gxcolor2.h"		/* for lookup map */
 #include "gxiparam.h"
 #include "stream.h"
 
@@ -107,9 +108,7 @@ gx_image_enum_common_init(gx_image_enum_common_t * piec,
 		for (i = 0; i < piec->num_planes; ++i)
 		    piec->plane_depths[i] = 1;
 	    }
-#if 0	/* **************** */
 	    break;
-#endif	/* **************** */
 	default:
 	    return_error(gs_error_rangecheck);
     }
@@ -149,9 +148,67 @@ gx_ignore_end_image(gx_device * dev, gx_image_enum_common_t * info,
 
 /* ---------------- Serialization ---------------- */
 
-/* Define the default Decode values. */
-#define DECODE_DEFAULT(i)\
-  ((i) == 1 ? decode_default_1 : (i) & 1)
+/*
+ * Define dummy sput/sget/release procedures for image types that don't
+ * implement these functions.
+ */
+
+int
+gx_image_no_sput(const gs_image_common_t *pic, stream *s,
+		 const gs_color_space **ppcs)
+{
+    return_error(gs_error_rangecheck);
+}
+
+int
+gx_image_no_sget(gs_image_common_t *pic, stream *s,
+		 const gs_color_space *pcs)
+{
+    return_error(gs_error_rangecheck);
+}
+
+void
+gx_image_default_release(gs_image_common_t *pic, gs_memory_t *mem)
+{
+    gs_free_object(mem, pic, "gx_image_default_release");
+}
+
+#ifdef DEBUG
+private void
+debug_b_print_matrix(const gs_pixel_image_t *pim)
+{
+    if_debug6('b', "      ImageMatrix=[%g %g %g %g %g %g]\n",
+	      pim->ImageMatrix.xx, pim->ImageMatrix.xy,
+	      pim->ImageMatrix.yx, pim->ImageMatrix.yy,
+	      pim->ImageMatrix.tx, pim->ImageMatrix.ty);
+}
+private void
+debug_b_print_decode(const gs_pixel_image_t *pim, int num_decode)
+{
+    if (gs_debug_c('b')) {
+	const char *str = "      Decode=[";
+	int i;
+
+	for (i = 0; i < num_decode; str = " ", ++i)
+	    dprintf2("%s%g", str, pim->Decode[i]);
+	dputs("]\n");
+    }
+}
+#else
+#  define debug_b_print_matrix(pim) DO_NOTHING
+#  define debug_b_print_decode(pim, num_decode) DO_NOTHING
+#endif
+
+/* Test whether an image has a default ImageMatrix. */
+bool
+gx_image_matrix_is_default(const gs_data_image_t *pid)
+{
+    return (is_xxyy(&pid->ImageMatrix) &&
+	    pid->ImageMatrix.xx == pid->Width &&
+	    pid->ImageMatrix.yy == -pid->Height &&
+	    is_fzero(pid->ImageMatrix.tx) &&
+	    pid->ImageMatrix.ty == pid->Height);
+}
 
 /* Put a variable-length uint on a stream. */
 void
@@ -163,100 +220,101 @@ sput_variable_uint(stream *s, uint w)
 }
 
 /*
- * Write generic pixel image parameters.  Note that this does not handle
- * all possible parameter values: currently it only handles a subset of
- * the possible color spaces.  The format is the following:
- *	ABBCDDEE
+ * Write generic pixel image parameters.  The format is the following,
+ * encoded as a variable-length uint in the usual way:
+ *	xxxFEDCCBBBBA
  *	    A = 0 if standard ImageMatrix, 1 if explicit ImageMatrix
- *	    BB = code for BitsPerComponent: 0=1, 1=2, 2=4, 3=8
- *	    C = 0 if 2nd byte defaulted, 1 if present
- *	    DD = format
- *	    EE = (base) color space:
- *		0=DeviceGray, 1=DeviceRGB, 2=DeviceCMYK, 3=DevicePixel
- *	FGHIJ000 (if C = 1)
- *	    F = 0 if BPC <= 8, 1 if BPC = 12
- *	    G = 0 if standard (0..1) Decode, 1 if explicit Decode
- *	    H = Interpolate
- *	    I = CombineWithColor
- *	    J = color space is Indexed ****** NOT SUPPORTED YET ******
- *	Width, 7 bits per byte, low-order bits first, 0x80 = more bytes
- *	Height, encoded like width
+ *	    BBBB = BitsPerComponent - 1
+ *	    CC = format
+ *	    D = 0 if standard (0..1) Decode, 1 if explicit Decode
+ *	    E = Interpolate
+ *	    F = CombineWithColor
+ *	    xxx = extra information from caller
+ */
+#define PI_ImageMatrix 0x001
+#define PI_BPC_SHIFT 1
+#define PI_BPC_MASK 0xf
+#define PI_FORMAT_SHIFT 5
+#define PI_FORMAT_MASK 0x3
+#define PI_Decode 0x080
+#define PI_Interpolate 0x100
+#define PI_CombineWithColor 0x200
+#define PI_BITS 10
+/*
+ *	Width, encoded as a variable-length uint
+ *	Height, encoded ditto
  *	ImageMatrix (if A = 1), per gs_matrix_store/fetch
- *	Decode (if G = 1): blocks of up to 4 components
+ *	Decode (if D = 1): blocks of up to 4 components
  *	    aabbccdd, where each xx is decoded as:
  *		00 = default, 01 = swapped default,
  *		10 = (0,V), 11 = (U,V)
  *	    non-defaulted components (up to 8 floats)
  */
 int
-gx_pixel_image_write(const gs_image_common_t *pic, stream *s)
+gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
+		    const gs_color_space **ppcs, int extra)
 {
-    const gs_pixel_image_t *pim = (const gs_pixel_image_t *)pic;
     const gs_color_space *pcs = pim->ColorSpace;
+    int bpc = pim->BitsPerComponent;
     int num_components = gs_color_space_num_components(pcs);
-    int num_decode = num_components * 2;
-    byte b1 = 0, b2 = 0;
+    int num_decode;
+    uint control = extra << PI_BITS;
     float decode_default_1 = 1;
     int i;
+    uint ignore;
 
-    /* Construct the (first) control byte. */
+    /* Construct the control word. */
 
-    if (!(is_xxyy(&pim->ImageMatrix) &&
-	  pim->ImageMatrix.xx == pim->Width &&
-	  pim->ImageMatrix.yy == -pim->Height &&
-	  is_fzero(pim->ImageMatrix.tx) &&
-	  pim->ImageMatrix.ty == pim->Height))
-	b1 |= 0x80;
-    switch (pim->BitsPerComponent) {
-    case 1: break;
-    case 2: b1 |= 0x20; break;
-    case 4: b1 |= 0x40; break;
-    case 8: b1 |= 0x60; break;
-    case 12: b2 |= 0x80; break;
-    default: return_error(gs_error_rangecheck);
+    if (!gx_image_matrix_is_default((const gs_data_image_t *)pim))
+	control |= PI_ImageMatrix;
+    switch (pim->format) {
+    case gs_image_format_chunky:
+    case gs_image_format_component_planar:
+	switch (bpc) {
+	case 1: case 2: case 4: case 8: case 12: break;
+	default: return_error(gs_error_rangecheck);
+	}
+	break;
+    case gs_image_format_bit_planar:
+	if (bpc < 1 || bpc > 8)
+	    return_error(gs_error_rangecheck);
     }
-    b1 |= pim->format << 2;
-    switch (gs_color_space_get_index(pcs)) {
-    case gs_color_space_index_DeviceGray: break;
-    case gs_color_space_index_DeviceRGB: b1 |= 1; break;
-    case gs_color_space_index_DeviceCMYK: b1 |= 2; break;
-    case gs_color_space_index_DevicePixel: b1 |= 3; break;
-    default: return_error(gs_error_rangecheck);
-    }
-
-    /* Finish the second control byte. */
-
+    control |= (bpc - 1) << PI_BPC_SHIFT;
+    control |= pim->format << PI_FORMAT_SHIFT;
+    num_decode = num_components * 2;
+    if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
+	decode_default_1 = pcs->params.indexed.hival;
     for (i = 0; i < num_decode; ++i)
-	if (pim->Decode[i] != DECODE_DEFAULT(i)) {
-	    b2 |= 0x40;
+	if (pim->Decode[i] != DECODE_DEFAULT(i, decode_default_1)) {
+	    control |= PI_Decode;
 	    break;
 	}
     if (pim->Interpolate)
-	b2 |= 0x20;
+	control |= PI_Interpolate;
     if (pim->CombineWithColor)
-	b2 |= 0x10;
+	control |= PI_CombineWithColor;
 
     /* Write the encoding on the stream. */
 
-    if (b2) {
-	sputc(s, b1 | 0x10);
-	sputc(s, b2);
-    } else
-	sputc(s, b1);
+    if_debug3('b', "[b]put control=0x%x, Width=%d, Height=%d\n",
+	      control, pim->Width, pim->Height);
+    sput_variable_uint(s, control);
     sput_variable_uint(s, (uint)pim->Width);
     sput_variable_uint(s, (uint)pim->Height);
-    if (b1 & 0x80)
+    if (control & PI_ImageMatrix) {
+	debug_b_print_matrix(pim);
 	sput_matrix(s, &pim->ImageMatrix);
-    if (b2 & 0x40) {
+    }
+    if (control & PI_Decode) {
 	int i;
 	uint dflags = 1;
 	float decode[8];
 	int di = 0;
-	uint ignore;
 
+	debug_b_print_decode(pim, num_decode);
 	for (i = 0; i < num_decode; i += 2) {
 	    float u = pim->Decode[i], v = pim->Decode[i + 1];
-	    float dv = DECODE_DEFAULT(i + 1);
+	    float dv = DECODE_DEFAULT(i + 1, decode_default_1);
 
 	    if (dflags >= 0x100) {
 		sputc(s, dflags & 0xff);
@@ -281,7 +339,20 @@ gx_pixel_image_write(const gs_image_common_t *pic, stream *s)
 	sputc(s, (dflags << (8 - num_decode)) & 0xff);
 	sputs(s, (const byte *)decode, di * sizeof(float), &ignore);
     }
+    *ppcs = pcs;
     return 0;
+}
+
+/* Set an image's ImageMatrix to the default. */
+void
+gx_image_matrix_set_default(gs_data_image_t *pid)
+{
+    pid->ImageMatrix.xx = pid->Width;
+    pid->ImageMatrix.xy = 0;
+    pid->ImageMatrix.yx = 0;
+    pid->ImageMatrix.yy = -pid->Height;
+    pid->ImageMatrix.tx = 0;
+    pid->ImageMatrix.ty = pid->Height;
 }
 
 /* Get a variable-length uint from a stream. */
@@ -304,84 +375,79 @@ sget_variable_uint(stream *s, uint *pw)
  * Read generic pixel image parameters.
  */
 int
-gx_pixel_image_read(gs_image_common_t **ppic, stream *s, gs_memory_t *mem)
+gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
+		    const gs_color_space *pcs)
 {
-    byte b1 = sgetc(s);
-    byte b2 = (b1 & 0x10 ? sgetc(s) : 0);
+    uint control;
     float decode_default_1 = 1;
-    gs_color_space *pcs;
     int num_components, num_decode;
     int i;
-    gs_pixel_image_t *pim;
     int code;
+    uint ignore;
 
-    /****** ALLOCATE pim ******/
-    if ((code = sget_variable_uint(s, (uint *)&pim->Width)) < 0 ||
+    if ((code = sget_variable_uint(s, &control)) < 0 ||
+	(code = sget_variable_uint(s, (uint *)&pim->Width)) < 0 ||
 	(code = sget_variable_uint(s, (uint *)&pim->Height)) < 0
 	)
-	goto fail;
-    if (b1 & 0x80) {
+	return code;
+    if_debug3('b', "[b]get control=0x%x, Width=%d, Height=%d\n",
+	      control, pim->Width, pim->Height);
+    if (control & PI_ImageMatrix) {
 	if ((code = sget_matrix(s, &pim->ImageMatrix)) < 0)
-	    goto fail;
-    } else {
-	pim->ImageMatrix.xx = pim->Width;
-	pim->ImageMatrix.xy = 0;
-	pim->ImageMatrix.yx = 0;
-	pim->ImageMatrix.xx = -pim->Height;
-	pim->ImageMatrix.tx = 0;
-	pim->ImageMatrix.ty = pim->Height;
-    }
-    pim->BitsPerComponent =
-	(b2 & 0x80 ? 12 : 1 << ((b1 >> 5) & 3));
-    /****** SET pcs TO COLOR SPACE ******/
+	    return code;
+	debug_b_print_matrix(pim);
+    } else
+	gx_image_matrix_set_default((gs_data_image_t *)pim);
+    pim->BitsPerComponent = ((control >> PI_BPC_SHIFT) & PI_BPC_MASK) + 1;
+    pim->format = (control >> PI_FORMAT_SHIFT) & PI_FORMAT_MASK;
     pim->ColorSpace = pcs;
     num_components = gs_color_space_num_components(pcs);
     num_decode = num_components * 2;
-    if (b2 & 0x40) {
+    if (control & PI_Decode) {
 	uint dflags = 0x10000;
 	float *dp = pim->Decode;
 
+	if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
+	    decode_default_1 = pcs->params.indexed.hival;
 	for (i = 0; i < num_decode; i += 2, dp += 2, dflags <<= 2) {
-	    uint ignore;
-
 	    if (dflags >= 0x10000) {
 		dflags = sgetc(s) + 0x100;
-		if (dflags < 0x100) {
-		    code = gs_note_error(gs_error_ioerror);
-		    goto fail;
-		}
+		if (dflags < 0x100)
+		    return_error(gs_error_ioerror);
 	    }
 	    switch (dflags & 0xc0) {
 	    case 0x00:
-		dp[0] = 0, dp[1] = DECODE_DEFAULT(i + 1);
+		dp[0] = 0, dp[1] = DECODE_DEFAULT(i + 1, decode_default_1);
 		break;
 	    case 0x40:
-		dp[0] = DECODE_DEFAULT(i + 1), dp[1] = 0;
+		dp[0] = DECODE_DEFAULT(i + 1, decode_default_1), dp[1] = 0;
 		break;
 	    case 0x80:
 		dp[0] = 0;
-		if (sgets(s, (byte *)(dp + 1), sizeof(float), &ignore) < 0) {
-		    code = gs_note_error(gs_error_ioerror);
-		    goto fail;
-		}
+		if (sgets(s, (byte *)(dp + 1), sizeof(float), &ignore) < 0)
+		    return_error(gs_error_ioerror);
 		break;
 	    case 0xc0:
-		if (sgets(s, (byte *)dp, sizeof(float) * 2, &ignore) < 0) {
-		    code = gs_note_error(gs_error_ioerror);
-		    goto fail;
-		}
+		if (sgets(s, (byte *)dp, sizeof(float) * 2, &ignore) < 0)
+		    return_error(gs_error_ioerror);
 		break;
 	    }
 	}
+	debug_b_print_decode(pim, num_decode);
     } else {
         for (i = 0; i < num_decode; ++i)
-	    pim->Decode[i] = DECODE_DEFAULT(i);
+	    pim->Decode[i] = DECODE_DEFAULT(i, decode_default_1);
     }
-    pim->Interpolate = (b2 & 0x20) != 0;
-    pim->CombineWithColor = (b2 & 0x10) != 0;
-    *ppic = (gs_image_common_t *)pim;
-    return 0;
-fail:
-    gs_free_object(mem, pim, "gx_pixel_image_read");
-    return code;
+    pim->Interpolate = (control & PI_Interpolate) != 0;
+    pim->CombineWithColor = (control & PI_CombineWithColor) != 0;
+    return control >> PI_BITS;
+}
+
+/*
+ * Release a pixel image object.  Currently this just frees the object.
+ */
+void
+gx_pixel_image_release(gs_pixel_image_t *pic, gs_memory_t *mem)
+{
+    return gx_image_default_release((gs_image_common_t *)pic, mem);
 }

@@ -267,11 +267,12 @@ build_transfer_map(
     }
 
     for (i = 0; i < transfer_map_size; i++) {
-	float fval = (float)i / (transfer_map_size - 1);
+	float fval =
+	    proc(i * (1 / (double)(transfer_map_size - 1)), pmap, client_info);
 
-	fval = proc(fval, pmap, client_info);
-	fval = (fval < 0.0 ? 0.0 : fval > 1.0 ? 1.0 : fval);
-	values[i] = float2frac(fval);
+	values[i] =
+	    (fval <= 0.0 ? frac_0 : fval >= 1.0 ? frac_1 :
+	     float2frac(fval));
     }
 }
 
@@ -459,10 +460,10 @@ gs_ht_install(
 	    gx_ht_cache *pcache;
 
 	    pcache = gx_ht_alloc_cache(pmem,
-				       1,
-				       pocs[j].corder.raster
-				       * (pocs[j].corder.num_bits
-					  / pocs[j].corder.width)
+				       4,
+				       pocs[j].corder.raster *
+				       (pocs[j].corder.num_bits /
+					pocs[j].corder.width) * 4
 		);
 
 	    if (pcache == 0)

@@ -51,7 +51,11 @@ private irender_proc_t
 image_strategy_color(gx_image_enum * penum)
 {
     if (penum->use_mask_color) {
-	/* Set up the quick-filter parameters. */
+	/*
+	 * Scale the mask colors to match the scaling of each sample to
+	 * a full byte, and set up the quick-filter parameters.
+	 */
+	uint scale = 255 / ((1 << penum->bps) - 1);
 	int i;
 	color_samples mask, test;
 	bool exact = true;
@@ -59,8 +63,8 @@ image_strategy_color(gx_image_enum * penum)
 	mask.all = 0;
 	test.all = 0;
 	for (i = 0; i < penum->spp; ++i) {
-	    byte v0 = (byte)penum->mask_color.values[2 * i];
-	    byte v1 = (byte)penum->mask_color.values[2 * i + 1];
+	    byte v0 = (byte)(penum->mask_color.values[2 * i] *= scale);
+	    byte v1 = (byte)(penum->mask_color.values[2 * i + 1] *= scale);
 	    byte match = 0xff;
 
 	    while ((v0 & match) != (v1 & match))

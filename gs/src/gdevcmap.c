@@ -99,6 +99,9 @@ gdev_cmap_set_method(gx_device_cmap * cmdev,
      * If we're transforming the color, we may need to fool the graphics
      * core into not halftoning.
      */
+    set_dev_proc(cmdev, map_cmyk_color, gx_forward_map_cmyk_color);
+    set_dev_proc(cmdev, map_color_rgb, gx_forward_map_color_rgb);
+
     switch (method) {
 
 	case device_cmap_identity:
@@ -106,6 +109,7 @@ gdev_cmap_set_method(gx_device_cmap * cmdev,
 	    cmdev->color_info.max_color = target->color_info.max_color;
 	    cmdev->color_info.num_components =
 		target->color_info.num_components;
+	    gx_device_copy_color_procs((gx_device *)cmdev, target);
 	    break;
 
 	case device_cmap_monochrome:

@@ -37,7 +37,9 @@ typedef struct stream_LZW_state_s {
     int EarlyChange;		/* decoding only */
     /* The following are updated dynamically. */
     uint bits;			/* buffer for input bits */
-    int bits_left;		/* # of valid low bits left */
+    int bits_left;		/* Decode: # of valid bits left, [0..7] */
+				/* (low-order bits if !FirstBitLowOrder, */
+				/* high-order bits if FirstBitLowOrder) */
     int bytes_left;		/* # of bytes left in current block */
 				/* (arbitrary large # if not GIF) */
     union _lzt {

@@ -139,7 +139,7 @@ pgpm_procs(pgm_map_rgb_color, pgm_map_color_rgb, NULL);
 private const gx_device_procs ppm_procs =
 pgpm_procs(ppm_map_rgb_color, ppm_map_color_rgb, NULL);
 private const gx_device_procs pkm_procs =
-pgpm_procs(NULL, pkm_map_color_rgb, pkm_map_cmyk_color);
+pgpm_procs(NULL, cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color);
 
 /* The device descriptors themselves */
 const gx_device_pbm gs_pbm_device =
@@ -186,14 +186,23 @@ pbm_prn_device(pbm_procs, "plan9bm", '9', 1, 1, 1, 1, 1, 1,
 
 /* ------ Initialization ------ */
 
-/* Set the copy_alpha procedure if necessary. */
+/* Set the copy_alpha and color mapping procedures if necessary. */
 private void
-ppm_set_copy_alpha(gx_device * pdev)
+ppm_set_dev_procs(gx_device * pdev)
 {
     if (dev_proc(pdev, copy_alpha) != pnm_copy_alpha) {
 	bdev->save_copy_alpha = dev_proc(pdev, copy_alpha);
 	if (pdev->color_info.depth > 4)
 	    set_dev_proc(pdev, copy_alpha, pnm_copy_alpha);
+    }
+    if (bdev->color_info.num_components == 4) {
+	if (bdev->color_info.depth == 4) {
+	    set_dev_proc(pdev, map_color_rgb, cmyk_1bit_map_color_rgb);
+	    set_dev_proc(pdev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
+	} else {
+	    set_dev_proc(pdev, map_color_rgb, pkm_map_color_rgb);
+	    set_dev_proc(pdev, map_cmyk_color, pkm_map_cmyk_color);
+	}
     }
 }
 
@@ -205,7 +214,7 @@ ppm_open(gx_device * pdev)
     if (code < 0)
 	return code;
     bdev->uses_color = 0;
-    ppm_set_copy_alpha(pdev);
+    ppm_set_dev_procs(pdev);
     return code;
 }
 
@@ -295,24 +304,15 @@ private gx_color_index
 pkm_map_cmyk_color(gx_device * pdev, ushort c, ushort m, ushort y, ushort k)
 {
     uint bpc = pdev->color_info.depth >> 2;
+    uint max_value = pdev->color_info.max_color;
+    uint cc = c * max_value / gx_max_color_value;
+    uint mc = m * max_value / gx_max_color_value;
+    uint yc = y * max_value / gx_max_color_value;
+    uint kc = k * max_value / gx_max_color_value;
+    gx_color_index color =
+	(((((cc << bpc) + mc) << bpc) + yc) << bpc) + kc;
 
-    if (bpc == 1) {		/* also know max_value == 1 */
-	return
-	    ((c == gx_max_color_value) << 3) +
-	    ((m == gx_max_color_value) << 2) +
-	    ((y == gx_max_color_value) << 1) +
-	    (k == gx_max_color_value);
-    } else {
-	ulong max_value = pdev->color_info.max_color;
-	uint cc = c * max_value / gx_max_color_value;
-	uint mc = m * max_value / gx_max_color_value;
-	uint yc = y * max_value / gx_max_color_value;
-	uint kc = k * max_value / gx_max_color_value;
-	gx_color_index color =
-	((((((ulong) cc << bpc) + mc) << bpc) + yc) << bpc) + kc;
-
-	return (color == gx_no_color_index ? color ^ 1 : color);
-    }
+    return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
 /* Map a CMYK pixel value to RGB. */
@@ -320,34 +320,22 @@ private int
 pkm_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 {
     int bpc = dev->color_info.depth >> 2;
+    gx_color_index cshift = color;
+    uint mask = (1 << bpc) - 1;
+    uint k = cshift & mask;
+    uint y = (cshift >>= bpc) & mask;
+    uint m = (cshift >>= bpc) & mask;
+    uint c = cshift >> bpc;
+    uint max_value = dev->color_info.max_color;
+    uint not_k = max_value - k;
 
-    if (bpc == 1) {
-	/* Standard 4-bit CMYK */
-	if (color & 1)
-	    rgb[0] = rgb[1] = rgb[2] = 0;
-	else {
-	    rgb[0] = (color & 8 ? 0 : gx_max_color_value);
-	    rgb[1] = (color & 4 ? 0 : gx_max_color_value);
-	    rgb[2] = (color & 2 ? 0 : gx_max_color_value);
-	}
-    } else {
-	gx_color_index cshift = color;
-	uint mask = (1 << bpc) - 1;
-	uint k = cshift & mask;
-	uint y = (cshift >>= bpc) & mask;
-	uint m = (cshift >>= bpc) & mask;
-	uint c = cshift >> bpc;
-	uint max_value = dev->color_info.max_color;
-	uint not_k = max_value - k;
-
-#define cvalue(c)\
-    ((gx_color_value)((ulong)(c) * gx_max_color_value / max_value))
+#define CVALUE(c)\
+  ((gx_color_value)((ulong)(c) * gx_max_color_value / max_value))
 	/* We use our improved conversion rule.... */
-	rgb[0] = cvalue((max_value - c) * not_k / max_value);
-	rgb[1] = cvalue((max_value - m) * not_k / max_value);
-	rgb[2] = cvalue((max_value - y) * not_k / max_value);
-#undef cvalue
-    }
+	rgb[0] = CVALUE((max_value - c) * not_k / max_value);
+    rgb[1] = CVALUE((max_value - m) * not_k / max_value);
+    rgb[2] = CVALUE((max_value - y) * not_k / max_value);
+#undef CVALUE
     return 0;
 }
 
@@ -442,7 +430,7 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
 	bdev->alpha_graphics = agraphics;
 	pdev->color_info = save_info;
     }
-    ppm_set_copy_alpha(pdev);
+    ppm_set_dev_procs(pdev);
     return code;
 }
 
@@ -735,31 +723,51 @@ pkm_print_row_4(gx_device_printer * pdev, byte * data, int depth,
 {
     byte *bp;
     uint x;
-    int shift;
     byte rv[16], gv[16], bv[16], i;
 
     /* Precompute all the possible pixel values. */
     for (i = 0; i < 16; ++i) {
 	gx_color_value rgb[3];
 
-	pkm_map_color_rgb((gx_device *) pdev, (gx_color_index) i, rgb);
+	cmyk_1bit_map_color_rgb((gx_device *)pdev, (gx_color_index)i, rgb);
 	rv[i] = rgb[0] / gx_max_color_value;
 	gv[i] = rgb[1] / gx_max_color_value;
 	bv[i] = rgb[2] / gx_max_color_value;
     }
-    for (bp = data, x = 0, shift = 4; x < pdev->width;) {
-	int pixel = (*bp >> shift) & 0xf;
-	int r = rv[pixel], g = gv[pixel], b = bv[pixel];
+    /*
+     * Contrary to what the documentation implies, gcc compiles putc
+     * as a procedure call.  This is ridiculous, but since we can't
+     * change it, we buffer groups of pixels ourselves and use fwrite.
+     */
+    if (bdev->is_raw) {
+	for (bp = data, x = 0; x < pdev->width;) {
+	    byte raw[50 * 3];	/* 50 is arbitrary, but must be even */
+	    int end = min(x + sizeof(raw) / 3, pdev->width);
+	    byte *outp = raw;
 
-	shift ^= 4;
-	bp += shift >> 2;
-	++x;
-	if (bdev->is_raw) {
-	    putc(r, pstream);
-	    putc(g, pstream);
-	    putc(b, pstream);
-	} else {
-	    fprintf(pstream, "%d %d %d%c", r, g, b,
+	    for (; x < end; bp++, outp += 6, x += 2) {
+		uint b = *bp;
+		uint pixel = b >> 4;
+
+		outp[0] = rv[pixel], outp[1] = gv[pixel], outp[2] = bv[pixel];
+		pixel = b & 0xf;
+		outp[3] = rv[pixel], outp[4] = gv[pixel], outp[5] = bv[pixel];
+	    }
+	    /* x might overshoot the width by 1 pixel. */
+	    if (x > end)
+		outp -= 3;
+	    fwrite(raw, 1, outp - raw, pstream);
+	}
+    } else {
+	int shift;
+
+	for (bp = data, x = 0, shift = 4; x < pdev->width;) {
+	    int pixel = (*bp >> shift) & 0xf;
+
+	    shift ^= 4;
+	    bp += shift >> 2;
+	    ++x;
+	    fprintf(pstream, "%d %d %d%c", rv[pixel], gv[pixel], bv[pixel],
 		    (x == pdev->width || !(x & 7) ?
 		     '\n' : ' '));
 	}

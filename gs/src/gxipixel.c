@@ -108,8 +108,9 @@ private int color_draws_b_w(P2(gx_device * dev,
 			       const gx_drawing_color * pdcolor));
 private void image_init_map(P3(byte * map, int map_size, const float *decode));
 private void image_init_colors(P9(gx_image_enum * penum, int bps, int spp,
-				  bool multi, const float *decode,
-			       const gs_imager_state * pis, gx_device * dev,
+				  gs_image_format_t format,
+				  const float *decode,
+				  const gs_imager_state * pis, gx_device * dev,
 				  const gs_color_space * pcs, bool * pdcb));
 
 /* Procedures for unpacking the input data into bytes or fracs. */
@@ -123,34 +124,30 @@ sample_unpack_proc((*sample_unpack_12_proc));	/* optional */
 /*
  * Do common initialization for processing an ImageType 1 or 4 image.
  * Allocate the enumerator and fill in the following members:
- *	matrix, rect
+ *	rect
  */
 int
-gx_image_enum_alloc(gx_device * dev,
-		const gs_imager_state * pis, const gs_matrix * pmat,
-		const gs_image_common_t * pic, const gs_int_rect * prect,
-		const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		gs_memory_t * mem, gx_image_enum **ppenum)
+gx_image_enum_alloc(const gs_image_common_t * pic,
+		    const gs_int_rect * prect, gs_memory_t * mem,
+		    gx_image_enum **ppenum)
 {
     const gs_pixel_image_t *pim = (const gs_pixel_image_t *)pic;
     int width = pim->Width, height = pim->Height;
+    int bpc = pim->BitsPerComponent;
     gx_image_enum *penum;
-    gs_matrix mat;
-    int code;
 
     if (width < 0 || height < 0)
 	return_error(gs_error_rangecheck);
     switch (pim->format) {
-	case gs_image_format_chunky:
-	case gs_image_format_component_planar:
-	    break;
-	default:
-	    return_error(gs_error_rangecheck);
-    }
-    switch (pim->BitsPerComponent) {
-	case 1: case 2: case 4: case 8: case 12:
-	    break;
-	default:
+    case gs_image_format_chunky:
+    case gs_image_format_component_planar:
+	switch (bpc) {
+	case 1: case 2: case 4: case 8: case 12: break;
+	default: return_error(gs_error_rangecheck);
+	}
+	break;
+    case gs_image_format_bit_planar:
+	if (bpc < 1 || bpc > 8)
 	    return_error(gs_error_rangecheck);
     }
     if (prect) {
@@ -164,14 +161,6 @@ gx_image_enum_alloc(gx_device * dev,
 			    "gx_default_begin_image");
     if (penum == 0)
 	return_error(gs_error_VMerror);
-    if (pmat == 0)
-	pmat = &ctm_only(pis);
-    if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
-	(code = gs_matrix_multiply(&mat, pmat, &mat)) < 0
-	) {
-	gs_free_object(mem, penum, "gx_default_begin_image");
-	return code;
-    }
     if (prect) {
 	penum->rect.x = prect->p.x;
 	penum->rect.y = prect->p.y;
@@ -181,15 +170,12 @@ gx_image_enum_alloc(gx_device * dev,
 	penum->rect.x = 0, penum->rect.y = 0;
 	penum->rect.w = width, penum->rect.h = height;
     }
-    penum->matrix = mat;
 #ifdef DEBUG
     if (gs_debug_c('b')) {
 	dlprintf2("[b]Image: w=%d h=%d", width, height);
 	if (prect)
 	    dprintf4(" ((%d,%d),(%d,%d))",
 		     prect->p.x, prect->p.y, prect->q.x, prect->q.y);
-	dprintf6(" [%g %g %g %g %g %g]\n",
-		 mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
     }
 #endif
     *ppenum = penum;
@@ -205,7 +191,7 @@ gx_image_enum_alloc(gx_device * dev,
  */
 int
 gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
-		const gs_image_common_t * pic, const gs_int_rect * prect,
+		    const gs_matrix *pmat, const gs_image_common_t * pic,
 		const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
 		gs_memory_t * mem, gx_image_enum *penum)
 {
@@ -216,7 +202,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     const int bps = pim->BitsPerComponent;
     bool masked = penum->masked;
     const float *decode = pim->Decode;
-    bool multi;
+    gs_matrix mat;
     int index_bps;
     const gs_color_space *pcs = pim->ColorSpace;
     gs_logical_operation_t lop = (pis ? pis->log_op : lop_default);
@@ -230,7 +216,17 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     bool device_color;
     gs_fixed_rect obox, cbox;
 
-    multi = format != gs_image_format_chunky;
+    if (pmat == 0)
+	pmat = &ctm_only(pis);
+    if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
+	(code = gs_matrix_multiply(&mat, pmat, &mat)) < 0
+	) {
+	gs_free_object(mem, penum, "gx_default_begin_image");
+	return code;
+    }
+    penum->matrix = mat;
+    if_debug6('b', " [%g %g %g %g %g %g]\n",
+	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
     /* following works for 1, 2, 4, 8, 12 */
     index_bps = (bps < 8 ? bps >> 1 : (bps >> 2) + 1);
     if ((code =
@@ -267,7 +263,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	}
     }
     if (masked) {	/* This is imagemask. */
-	if (bps != 1 || multi || pcs != NULL || penum->alpha ||
+	if (bps != 1 || pcs != NULL || penum->alpha ||
 	    !((decode[0] == 0.0 && decode[1] == 1.0) ||
 	      (decode[0] == 1.0 && decode[1] == 0.0))
 	    ) {
@@ -295,10 +291,20 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	}
 	if (penum->alpha)
 	    ++spp;
-	if (spp == 1)
-	    multi = false;
+	/* Use a less expensive format if possible. */
+	switch (format) {
+	case gs_image_format_bit_planar:
+	    if (bps > 1)
+		break;
+	    format = gs_image_format_component_planar;
+	case gs_image_format_component_planar:
+	    if (spp == 1)
+		format = gs_image_format_chunky;
+	default:		/* chunky */
+	    break;
+	}
 	device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
-	image_init_colors(penum, bps, spp, multi, decode, pis, dev,
+	image_init_colors(penum, bps, spp, format, decode, pis, dev,
 			  pcs, &device_color);
 	/* Try to transform non-default RasterOps to something */
 	/* that we implement less expensively. */
@@ -381,9 +387,22 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->unpack_bps = bps;
     penum->log2_xbytes = log2_xbytes;
     penum->spp = spp;
-    nplanes = (multi ? spp : 1);
+    switch (format) {
+    case gs_image_format_chunky:
+	nplanes = 1;
+	spread = 1 << log2_xbytes;
+	break;
+    case gs_image_format_component_planar:
+	nplanes = spp;
+	spread = spp << log2_xbytes;
+	break;
+    case gs_image_format_bit_planar:
+	nplanes = spp * bps;
+	spread = spp << log2_xbytes;
+	break;
+    /* No other cases are possible (checked by gx_image_enum_alloc). */
+    }
     penum->num_planes = nplanes;
-    spread = nplanes << log2_xbytes;
     penum->spread = spread;
     /*
      * If we're asked to interpolate in a partial image, we have to
@@ -617,13 +636,13 @@ color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor)
 
 /* Initialize the color mapping tables for a non-mask image. */
 private void
-image_init_colors(gx_image_enum * penum, int bps, int spp, bool multi,
-		  const float *decode /*[spp*2] */ , const gs_imager_state * pis, gx_device * dev,
+image_init_colors(gx_image_enum * penum, int bps, int spp,
+		  gs_image_format_t format, const float *decode /*[spp*2] */ ,
+		  const gs_imager_state * pis, gx_device * dev,
 		  const gs_color_space * pcs, bool * pdcb)
 {
     int ci;
-    static const float default_decode[] =
-    {
+    static const float default_decode[] = {
 	0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
     };
 
@@ -674,26 +693,23 @@ image_init_colors(gx_image_enum * penum, int bps, int spp, bool multi,
 
 	const float *this_decode = &decode[ci * 2];
 	const float *map_decode;	/* decoding used to */
-
-	/* construct the expansion map */
-
-	const float *real_decode;	/* decoding for */
-
-	/* expanded samples */
+					/* construct the expansion map */
+	const float *real_decode;	/* decoding for expanded samples */
 
 	bool no_decode;
 
 	map_decode = real_decode = this_decode;
 	if (map_decode[0] == 0.0 && map_decode[1] == 1.0)
 	    no_decode = true;
-	else if (map_decode[0] == 1.0 && map_decode[1] == 0.0)
-	    no_decode = true,
-		real_decode = default_decode;
-	else
-	    no_decode = false,
-		*pdcb = false,
-		map_decode = default_decode;
-	if (bps > 2 || multi) {
+	else if (map_decode[0] == 1.0 && map_decode[1] == 0.0) {
+	    no_decode = true;
+	    real_decode = default_decode;
+	} else {
+	    no_decode = false;
+	    *pdcb = false;
+	    map_decode = default_decode;
+	}
+	if (bps > 2 || format != gs_image_format_chunky) {
 	    if (bps <= 8)
 		image_init_map(&pmap->table.lookup8[0], 1 << bps,
 			       map_decode);

@@ -430,7 +430,7 @@ pdfmark_write_named(gx_device_pdf * pdev, const pdf_named_object * pno)
 	case named_dict:
 	    pdf_open_obj(pdev, pno->id);
 	    pputs(s, "<<");
-	  dict:for (; pne; pne = pne->next) {
+	    for (; pne; pne = pne->next) {
 		pdf_put_value(pdev, pne->key.data, pne->key.size);
 		pputc(s, ' ');
 		pdf_put_value(pdev, pne->value.data, pne->value.size);

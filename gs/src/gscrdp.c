@@ -593,7 +593,13 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
 	if (n > 4 || m > 4)
 	    return_error(gs_error_rangecheck);
 	memcpy(pcrd->RenderTable.lookup.dims, rt_size.data, n * sizeof(int));
-	/****** ALLOCATE table = RenderTable.lookup.table ******/
+	table =
+	    gs_alloc_struct_array(pcrd->rc.memory,
+				  pcrd->RenderTable.lookup.dims[0],
+				  gs_const_string, &st_const_string_element,
+				  "RenderTable table");
+	if (table == 0)
+	    return_error(gs_error_VMerror);
 	for (j = 0; j < pcrd->RenderTable.lookup.dims[0]; ++j) {
 	    table[j].data = rt_values.data[j].data;
 	    table[j].size = rt_values.data[j].size;

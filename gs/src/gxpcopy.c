@@ -75,37 +75,43 @@ gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath,
 			int k = gx_curve_log2_samples(x0, y0, pc,
 						      fixed_flatness);
 			segment_notes notes = pseg->notes;
-			segment *start;
 			curve_segment cseg;
 
-			if (options & pco_accurate) {	/* Add an extra line, which will become */
-			    /* the tangent segment. */
+			if (options & pco_accurate) {
+			    segment *start;
+			    segment *end;
+
+			    /*
+			     * Add an extra line, which will become
+			     * the tangent segment.
+			     */
 			    code = gx_path_add_line_notes(ppath, x0, y0,
 							  notes);
 			    if (code < 0)
 				break;
 			    start = ppath->current_subpath->last;
 			    notes |= sn_not_first;
-			}
-			cseg = *pc;
-			code = gx_flatten_sample(ppath, k, &cseg, notes);
-			if (options & pco_accurate) {	/*
-							 * Adjust the first and last segments so that
-							 * they line up with the tangents.
-							 */
-			    segment *end = ppath->current_subpath->last;
-
-			    if (code < 0 ||
-				(code = gx_path_add_line_notes(ppath,
+			    cseg = *pc;
+			    code = gx_flatten_sample(ppath, k, &cseg, notes);
+			    if (code < 0)
+				break;
+			    /*
+			     * Adjust the first and last segments so that
+			     * they line up with the tangents.
+			     */
+			    end = ppath->current_subpath->last;
+			    if ((code = gx_path_add_line_notes(ppath,
 							  ppath->position.x,
 							  ppath->position.y,
-					    pseg->notes | sn_not_first)) < 0
-				)
+					    pseg->notes | sn_not_first)) < 0)
 				break;
 			    adjust_point_to_tangent(start, start->next,
 						    &pc->p1);
 			    adjust_point_to_tangent(end, end->prev,
 						    &pc->p2);
+			} else {
+			    cseg = *pc;
+			    code = gx_flatten_sample(ppath, k, &cseg, notes);
 			}
 		    }
 		    break;
@@ -129,6 +135,17 @@ gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath,
     if (path_last_is_moveto(ppath_old))
 	gx_path_add_point(ppath, ppath_old->position.x,
 			  ppath_old->position.y);
+    if (ppath_old->bbox_set) {
+	if (ppath->bbox_set) {
+	    ppath->bbox.p.x = min(ppath_old->bbox.p.x, ppath->bbox.p.x);
+	    ppath->bbox.p.y = min(ppath_old->bbox.p.y, ppath->bbox.p.y);
+	    ppath->bbox.q.x = max(ppath_old->bbox.q.x, ppath->bbox.q.x);
+	    ppath->bbox.q.y = max(ppath_old->bbox.q.y, ppath->bbox.q.y);
+	} else {
+	    ppath->bbox_set = true;
+	    ppath->bbox = ppath_old->bbox;
+	}
+    }
 #ifdef DEBUG
     if (gs_debug_c('P'))
 	gx_dump_path(ppath, "after reducing");

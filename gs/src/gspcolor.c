@@ -158,11 +158,6 @@ gs_makepattern(gs_client_color * pcc, const gs_client_pattern * pcp,
 #define mat inst.step_matrix
     if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
-    /* Check for singular stepping matrix. */
-    if (fabs(mat.xx * mat.yy - mat.xy * mat.yx) < 1.0e-6) {
-	code = gs_note_error(gs_error_rangecheck);
-	goto fsaved;
-    }
     if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
 	      bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     {
@@ -173,20 +168,34 @@ gs_makepattern(gs_client_color * pcc, const gs_client_pattern * pcp,
 	/* make them the same. */
 	inst.size.x = (int)(bbw + 0.8);		/* 0.8 is arbitrary */
 	inst.size.y = (int)(bbh + 0.8);
-	if (mat.xy == 0 && mat.yx == 0 &&
-	    fabs(fabs(mat.xx) - bbw) < 0.5 &&
-	    fabs(fabs(mat.yy) - bbh) < 0.5
-	    ) {
-	    gs_scale(saved, fabs(inst.size.x / mat.xx),
-		     fabs(inst.size.y / mat.yy));
-	    code = compute_inst_matrix(&inst, saved, &bbox);
-	    if (code < 0)
+
+	if (inst.size.x == 0 || inst.size.y == 0) {
+	    /*
+	     * The pattern is empty: the stepping matrix doesn't matter.
+	     */
+	    gs_make_identity(&mat);
+	    bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
+	} else {
+	    /* Check for singular stepping matrix. */
+	    if (fabs(mat.xx * mat.yy - mat.xy * mat.yx) < 1.0e-6) {
+		code = gs_note_error(gs_error_rangecheck);
 		goto fsaved;
-	    if_debug2('t',
-		      "[t]adjusted XStep & YStep to size=(%d,%d)\n",
-		      inst.size.x, inst.size.y);
-	    if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
-		      bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+	    }
+	    if (mat.xy == 0 && mat.yx == 0 &&
+		fabs(fabs(mat.xx) - bbw) < 0.5 &&
+		fabs(fabs(mat.yy) - bbh) < 0.5
+		) {
+		gs_scale(saved, fabs(inst.size.x / mat.xx),
+			 fabs(inst.size.y / mat.yy));
+		code = compute_inst_matrix(&inst, saved, &bbox);
+		if (code < 0)
+		    goto fsaved;
+		if_debug2('t',
+			  "[t]adjusted XStep & YStep to size=(%d,%d)\n",
+			  inst.size.x, inst.size.y);
+		if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
+			  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+	    }
 	}
     }
     if ((code = gs_bbox_transform_inverse(&bbox, &mat, &inst.bbox)) < 0)
@@ -284,14 +293,18 @@ gs_setpatternspace(gs_state * pgs)
 {
     int code = 0;
 
+    if (pgs->in_cachedevice)
+	return_error(gs_error_undefined);
     if (pgs->color_space->type->index != gs_color_space_index_Pattern) {
 	gs_color_space cs;
 
+	gs_cspace_init(&cs, &gs_color_space_type_Pattern, NULL);
 	cs.params.pattern.base_space =
 	    *(gs_paint_color_space *) pgs->color_space;
 	cs.params.pattern.has_base_space = true;
-	cs.type = &gs_color_space_type_Pattern;
-	code = gs_setcolorspace(pgs, &cs);
+	*pgs->color_space = cs;
+	cs_full_init_color(pgs->ccolor, &cs);
+	gx_unset_dev_color(pgs);
     }
     return code;
 }

@@ -235,12 +235,14 @@ put_usq_fixed(stream * s, fixed x0, fixed y0, fixed x1, fixed y1)
     put_s(s, fixed2int(y1));
 }
 #define dss(i) pxt_sint16, ds(i)
+#if 0				/* NOT CURRENTLY USED */
 private void
 put_ss(stream * s, int i)
 {
     sputc(s, pxt_sint16);
     put_s(s, (uint) i);
 }
+#endif
 #define dssp(ix,iy) pxt_sint16_xy, ds(ix), ds(iy)
 private void
 put_ssp(stream * s, int ix, int iy)

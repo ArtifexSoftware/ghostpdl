@@ -89,7 +89,7 @@ gx_device_bbox far_data gs_bbox_device =
      NULL,			/* sync_output */
      bbox_output_page,
      bbox_close_device,
-     gx_forward_map_rgb_color,	/* (needed for remapping white) */
+     gx_forward_map_rgb_color,	/* (needed for remapping black/white) */
      NULL,			/* map_color_rgb */
      bbox_fill_rectangle,
      NULL,			/* tile_rectangle */
@@ -99,7 +99,7 @@ gx_device_bbox far_data gs_bbox_device =
      NULL,			/* get_bits */
      bbox_get_params,
      bbox_put_params,
-     gx_forward_map_cmyk_color,	/* (needed for remapping white) */
+     gx_forward_map_cmyk_color,	/* (needed for remapping black/white) */
      NULL,			/* get_xfont_procs */
      NULL,			/* get_xfont_device */
      NULL,			/* map_rgb_alpha_color */
@@ -137,14 +137,16 @@ gx_device_bbox far_data gs_bbox_device =
 
 /* Copy device parameters back from the target. */
 private void
-bbox_copy_params(gx_device_bbox * bdev, bool remap_white)
+bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
 {
     gx_device *tdev = bdev->target;
 
     if (tdev != 0)
 	gx_device_copy_params((gx_device *)bdev, tdev);
-    if (remap_white)
+    if (remap_colors) {
+	bdev->black = gx_device_black((gx_device *)bdev);
 	bdev->white = gx_device_white((gx_device *)bdev);
+    }
 }
 
 #define gx_dc_is_white(pdevc, bdev)\
@@ -225,16 +227,23 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 void
 gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
 {
-    const gx_device_bbox *bbdev = dev->box_device;
-    gs_matrix mat;
-    gs_rect dbox;
+    const gx_device_bbox *const bbdev = dev->box_device;
 
-    gs_deviceinitialmatrix((gx_device *) dev, &mat);
-    dbox.p.x = fixed2float(bbdev->bbox.p.x);
-    dbox.p.y = fixed2float(bbdev->bbox.p.y);
-    dbox.q.x = fixed2float(bbdev->bbox.q.x);
-    dbox.q.y = fixed2float(bbdev->bbox.q.y);
-    gs_bbox_transform_inverse(&dbox, &mat, pbbox);
+    if (bbdev->bbox.p.x > bbdev->bbox.q.x ||
+	bbdev->bbox.p.y > bbdev->bbox.q.y) {
+	/* Nothing has been written on this page. */
+	pbbox->p.x = pbbox->p.y = pbbox->q.x = pbbox->q.y = 0;
+    } else {
+	gs_rect dbox;
+	gs_matrix mat;
+
+	dbox.p.x = fixed2float(bbdev->bbox.p.x);
+	dbox.p.y = fixed2float(bbdev->bbox.p.y);
+	dbox.q.x = fixed2float(bbdev->bbox.q.x);
+	dbox.q.y = fixed2float(bbdev->bbox.q.y);
+	gs_deviceinitialmatrix((gx_device *)dev, &mat);
+	gs_bbox_transform_inverse(&dbox, &mat, pbbox);
+    }
 }
 
 
@@ -636,8 +645,11 @@ bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    ) {
 	    /* Let the target do the drawing, but break down the */
 	    /* fill path into pieces for computing the bounding box. */
+	    gx_drawing_color devc;
+
+	    color_set_pure(&devc, bdev->black);  /* any non-white color will do */
 	    bdev->target = NULL;
-	    gx_default_fill_path(dev, pis, ppath, params, pdevc, pcpath);
+	    gx_default_fill_path(dev, pis, ppath, params, &devc, pcpath);
 	    bdev->target = tdev;
 	} else {		/* Just use the path bounding box. */
 	    bbox_add_rect(&bdev->bbox, ibox.p.x, ibox.p.y, ibox.q.x,
@@ -674,8 +686,11 @@ bbox_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    ) {
 	    /* Let the target do the drawing, but break down the */
 	    /* fill path into pieces for computing the bounding box. */
+	    gx_drawing_color devc;
+
+	    color_set_pure(&devc, bdev->black);  /* any non-white color will do */
 	    bdev->target = NULL;
-	    gx_default_stroke_path(dev, pis, ppath, params, pdevc, pcpath);
+	    gx_default_stroke_path(dev, pis, ppath, params, &devc, pcpath);
 	    bdev->target = tdev;
 	} else {
 	    /* Just use the path bounding box. */
@@ -887,7 +902,7 @@ bbox_image_plane_data(gx_device * dev,
 	gx_make_clip_path_device(&cdev, pcpath);
 	cdev.target = dev;
 	(*dev_proc(&cdev, open_device)) ((gx_device *) & cdev);
-	color_set_pure(&devc, 0);	/* any color will do */
+	color_set_pure(&devc, bdev->black);  /* any non-white color will do */
 	bdev->target = NULL;
 	gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
 				 float2fixed(corners[1].x) - x0,

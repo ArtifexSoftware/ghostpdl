@@ -31,6 +31,7 @@
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
 #include "gzpath.h"
 #include "gzcpath.h"
+#include "stream.h"
 
 /* Statistics */
 #ifdef DEBUG
@@ -137,16 +138,16 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	type = cmd_dc_type_color;
     } else
 	return_error(-1);
-     /* Any non-pure color will require the phase. */
+    /* Any non-pure color will require the phase. */
     {
- 	int px = pdcolor->phase.x, py = pdcolor->phase.y;
- 
- 	if (px != pcls->tile_phase.x || py != pcls->tile_phase.y) {
- 	    int code = cmd_set_tile_phase(cldev, pcls, px, py);
- 
- 	    if (code < 0)
- 		return code;
- 	}
+	int px = pdcolor->phase.x, py = pdcolor->phase.y;
+
+	if (px != pcls->tile_phase.x || py != pcls->tile_phase.y) {
+	    int code = cmd_set_tile_phase(cldev, pcls, px, py);
+
+	    if (code < 0)
+		return code;
+	}
     }
     return type;
 }
@@ -179,55 +180,6 @@ cmd_check_clip_path(gx_device_clist_writer * cldev, const gx_clip_path * pcpath)
     return true;
 }
 
-/* Construct the parameters for writing out a matrix. */
-/* We need a buffer of at least 1 + 6 * sizeof(float) bytes. */
-byte *
-cmd_for_matrix(byte * cbuf, const gs_matrix * pmat)
-{
-    byte *cp = cbuf + 1;
-    byte b = 0;
-    float coeffs[6];
-    int i;
-
-    coeffs[0] = pmat->xx;
-    coeffs[1] = pmat->xy;
-    coeffs[2] = pmat->yx;
-    coeffs[3] = pmat->yy;
-    coeffs[4] = pmat->tx;
-    coeffs[5] = pmat->ty;
-    for (i = 0; i < 4; i += 2) {
-	float u = coeffs[i], v = coeffs[i ^ 3];
-
-	b <<= 2;
-	if (u != 0 || v != 0) {
-	    memcpy(cp, &u, sizeof(float));
-	    cp += sizeof(float);
-
-	    if (v == u)
-		b += 1;
-	    else if (v == -u)
-		b += 2;
-	    else {
-		b += 3;
-		memcpy(cp, &v, sizeof(float));
-		cp += sizeof(float);
-	    }
-	}
-    }
-    for (; i < 6; ++i) {
-	float v = coeffs[i];
-
-	b <<= 1;
-	if (v != 0) {
-	    ++b;
-	    memcpy(cp, &v, sizeof(float));
-	    cp += sizeof(float);
-	}
-    }
-    cbuf[0] = b << 2;
-    return cp;
-}
-
 /* Write out values of any unknown parameters. */
 int
 cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
@@ -238,11 +190,12 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     int code;
 
     if (unknown & flatness_known) {
-	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_flatness,
-			      1 + sizeof(float));
+	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2,
+			      2 + sizeof(float));
 	if (code < 0)
 	    return code;
-	memcpy(dp + 1, &cldev->imager_state.flatness, sizeof(float));
+	dp[1] = cmd_set_misc2_flatness;
+	memcpy(dp + 2, &cldev->imager_state.flatness, sizeof(float));
 	pcls->known |= flatness_known;
     }
     if (unknown & fill_adjust_known) {
@@ -255,34 +208,38 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	pcls->known |= fill_adjust_known;
     }
     if (unknown & ctm_known) {
-	byte cbuf[1 + 6 * sizeof(float)];
-	uint len =
-	    cmd_for_matrix(cbuf,
-			   (const gs_matrix *)&cldev->imager_state.ctm) - cbuf;
+	stream s;
+	uint len;
 
+	swrite_position_only(&s);
+	sput_matrix(&s, (const gs_matrix *)&cldev->imager_state.ctm);
+	len = (uint)stell(&s);
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_ctm, len + 1);
 	if (code < 0)
 	    return code;
-	memcpy(dp + 1, cbuf, len);
+	swrite_string(&s, dp + 1, len);
+	sput_matrix(&s, (const gs_matrix *)&cldev->imager_state.ctm);
 	pcls->known |= ctm_known;
     }
     if (unknown & line_width_known) {
 	float width =
 	    gx_current_line_width(&cldev->imager_state.line_params);
 
-	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_line_width,
-			      1 + sizeof(width));
+	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2,
+			      2 + sizeof(width));
 	if (code < 0)
 	    return code;
-	memcpy(dp + 1, &width, sizeof(width));
+	dp[1] = cmd_set_misc2_line_width;
+	memcpy(dp + 2, &width, sizeof(width));
 	pcls->known |= line_width_known;
     }
     if (unknown & miter_limit_known) {
-	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_miter_limit,
-			      1 + sizeof(float));
+	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2,
+			      2 + sizeof(float));
 	if (code < 0)
 	    return code;
-	memcpy(dp + 1, &cldev->imager_state.line_params.miter_limit,
+	dp[1] = cmd_set_misc2_miter_limit;
+	memcpy(dp + 2, &cldev->imager_state.line_params.miter_limit,
 	       sizeof(float));
 	pcls->known |= miter_limit_known;
     }
@@ -524,7 +481,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	unknown |= clip_path_known;
     if (unknown)
 	cmd_clear_known(cdev, unknown);
-    FOR_RECTS {
+    FOR_RECTS_NO_ERROR {
 	int code =
 	    cmd_do_write_unknown(cdev, pcls,
 				 flatness_known | fill_adjust_known |
@@ -548,7 +505,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    return code;
-    } END_RECTS;
+    } END_RECTS_NO_ERROR;
     return 0;
 }
 
@@ -671,7 +628,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	unknown |= clip_path_known;
     if (unknown)
 	cmd_clear_known(cdev, unknown);
-    FOR_RECTS {
+    FOR_RECTS_NO_ERROR {
 	int code;
 
 	if ((code = cmd_do_write_unknown(cdev, pcls, stroke_all_known)) < 0 ||
@@ -705,7 +662,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    if (code < 0)
 		return code;
 	}
-    } END_RECTS;
+    } END_RECTS_NO_ERROR;
     return 0;
 }
 
@@ -731,9 +688,11 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
 		const fixed * operands, segment_notes notes)
 {
     const fixed *optr = operands;
-
     /* Fetch num_operands before possible command merging. */
-    int i = clist_segment_op_num_operands[op & 0xf];
+    static const byte op_num_operands[] = {
+	cmd_segment_op_num_operands_values
+    };
+    int i = op_num_operands[op & 0xf];
     byte *q = psw->cmd - 1;
 
 #ifdef DEBUG

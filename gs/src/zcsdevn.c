@@ -18,6 +18,7 @@
 
 
 /* DeviceN color space support */
+#include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "gxcspace.h"		/* must precede gscolor2.h */
@@ -29,7 +30,7 @@
 /* Imported from gscdevn.c */
 extern const gs_color_space_type gs_color_space_type_DeviceN;
 
-/* <array> .setdevicepixelspace - */
+/* <array> .setdevicenspace - */
 /* The current color space is the alternate space for the DeviceN space. */
 private int
 zsetdevicenspace(register os_ptr op)
@@ -82,17 +83,17 @@ zsetdevicenspace(register os_ptr op)
 	    }
 	}
     }
-    cs.params.device_n.alt_space = *(gs_base_color_space *) & cs;
+    /* See zcsindex.c for why we use memmove here. */
+    memmove(&cs.params.device_n.alt_space, &cs,
+	    sizeof(cs.params.device_n.alt_space));
+    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, NULL);
     cspace_old = istate->colorspace;
     istate->colorspace.procs.special.device_n.layer_names = pcsa[0];
     istate->colorspace.procs.special.device_n.tint_transform = pcsa[2];
-    cs.type = &gs_color_space_type_DeviceN;
     cs.params.device_n.names = names;
     cs.params.device_n.num_components = num_components;
-    cs.params.device_n.tint_transform = 0;
-/****** ? ******/
-    cs.params.device_n.tint_transform_data = 0;
-/****** ? ******/
+    cs.params.device_n.tint_transform = 0;  /****** ? ******/
+    cs.params.device_n.tint_transform_data = 0;  /****** ? ******/
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	istate->colorspace = cspace_old;

@@ -262,6 +262,7 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
 		  next_code, prev_code, dc_next->datum);
     }
     /* See if there is enough room for the code. */
+reset:
     len = table[code].len;
     if (len == 255) {		/* Check for special code (reset or end). */
 	/* We set their lengths to 255 to avoid doing */
@@ -318,10 +319,48 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
 	    q += len;
     }
   add:				/* Add a new entry to the table */
-    if (prev_code >= 0) {	/* Unfortunately, we have to check for next_code == */
-	/* lzw_decode_max every time: just checking at power */
-	/* of 2 boundaries stops us one code too soon. */
+    if (prev_code >= 0) {
+	/*
+	 * Unfortunately, we have to check for next_code ==
+	 * lzw_decode_max every time: just checking at power
+	 * of 2 boundaries stops us one code too soon.
+	 */
 	if (next_code == lzw_decode_max) {
+	    /*
+	     * A few anomalous files have one data item too many before the
+	     * reset code.  We think this is a bug in the application that
+	     * produced the files, but Acrobat accepts the files, so we do
+	     * too.
+	     */
+	    if (!ss->BlockData) { /* don't do this for GIF */
+		if (bits_left < 8 && p >= rlimit && last) {
+		    /* We're at EOD. */
+		    goto out;
+		}
+		if (bits_left + ((rlimit - p) << 3) < code_size) {
+		    /*
+		     * We need more data to decide whether a reset is next.
+		     ****** PUNT ******
+		     */
+		    status = ERRC;
+		    goto out;
+		}
+		if (low_order) {
+		    code = bits >> (8 - bits_left);
+		    code += (bits = *++p) << bits_left;
+		    if (bits_left + 8 < code_size)
+			code += (bits = *++p) << (bits_left + 8);
+		} else {
+		    code = bits & ((1 << bits_left) - 1);
+		    code = (code << 8) + (bits = *++p);
+		    if (bits_left + 8 < code_size)
+			code = (code << 8) + (bits = *++p);
+		    code >>= (bits_left - code_size) & 7;
+		}
+		bits_left = (bits_left - code_size) & 7;
+		if (code == code_reset)
+		    goto reset;
+	    }
 	    status = ERRC;
 	    goto out;
 	}

@@ -97,6 +97,17 @@ gx_default_strip_copy_rop(gx_device * dev,
     return_error(gs_error_unknownerror);	/* not implemented */
 }
 
+int
+mem_default_strip_copy_rop(gx_device * dev,
+	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+			  const gx_color_index * scolors,
+	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+			  int x, int y, int width, int height,
+		       int phase_x, int phase_y, gs_logical_operation_t lop)
+{
+    return_error(gs_error_unknownerror);	/* not implemented */
+}
+
 /* Stub RasterOp source devices. */
 
 int

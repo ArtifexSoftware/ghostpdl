@@ -62,7 +62,7 @@ RMN_=rm -f
 
 # Define the arguments for genconf.
 
-CONFILES=-p "%s&s&&" -pl "&-l%s&s&&" -pL "&-L%s&s&&"
+CONFILES=-Z -p "%s&s&&" -pl "&-l%s&s&&" -pL "&-L%s&s&&"
 CONFLDTR=-ol
 
 # Define the compilation rules and flags.

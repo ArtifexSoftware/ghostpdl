@@ -23,6 +23,7 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsccolor.h"
+#include "gsutil.h"		/* for gs_next_ids */
 #include "gxcspace.h"
 #include "gxistate.h"
 
@@ -77,6 +78,15 @@ gs_cspace_DeviceCMYK(const gs_imager_state * pis)
 
 /* ------ Create/copy/destroy ------ */
 
+void
+gs_cspace_init(gs_color_space *pcs, const gs_color_space_type * pcstype,
+	       gs_memory_t *mem)
+{
+    pcs->type = pcstype;
+    pcs->pmem = mem;
+    pcs->id = gs_next_ids(1);
+}
+
 int
 gs_cspace_alloc(gs_color_space ** ppcspace,
 		const gs_color_space_type * pcstype,
@@ -88,21 +98,40 @@ gs_cspace_alloc(gs_color_space ** ppcspace,
 
     if (pcspace == 0)
 	return_error(gs_error_VMerror);
-    pcspace->pmem = mem;
-    pcspace->type = pcstype;
+    gs_cspace_init(pcspace, pcstype, mem);
     *ppcspace = pcspace;
     return 0;
 }
 
 int
+gs_cspace_init_DeviceGray(gs_color_space *pcs)
+{
+    gs_cspace_init(pcs, &gs_color_space_type_DeviceGray, NULL);
+    return 0;
+}
+int
 gs_cspace_build_DeviceGray(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
     return gs_cspace_alloc(ppcspace, &gs_color_space_type_DeviceGray, pmem);
+}
+
+int
+gs_cspace_init_DeviceRGB(gs_color_space *pcs)
+{
+    gs_cspace_init(pcs, &gs_color_space_type_DeviceRGB, NULL);
+    return 0;
 }
 int
 gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
     return gs_cspace_alloc(ppcspace, &gs_color_space_type_DeviceRGB, pmem);
+}
+
+int
+gs_cspace_init_DeviceCMYK(gs_color_space *pcs)
+{
+    gs_cspace_init(pcs, &gs_color_space_type_DeviceCMYK, NULL);
+    return 0;
 }
 int
 gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace, gs_memory_t * pmem)

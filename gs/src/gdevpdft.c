@@ -261,7 +261,7 @@ pdfshow_process(gx_device_pdf * pdev, gs_param_list * plist,
 			v_cx = vp[0], v_cy = vp[1], v_cch = (int)vp[2];
 			vp += 3;
 		    case 2:
-		      a:v_ax = vp[0], v_ay = vp[1];
+			v_ax = vp[0], v_ay = vp[1];
 			break;
 		    default:
 			return_error(gs_error_rangecheck);

@@ -31,6 +31,13 @@
 #include "gxgetbit.h"
 #include "gdevmrop.h"
 
+/*
+ * Define the maximum amount of space we are willing to allocate for a
+ * multiple-row RasterOp buffer.  (We are always willing to allocate
+ * one row, no matter how wide.)
+ */
+private const uint max_rop_bitmap = 1000;
+
 /* ---------------- Debugging aids ---------------- */
 
 #ifdef DEBUG
@@ -79,20 +86,117 @@ trace_copy_rop(const char *cname, gx_device * dev,
 
 /* ---------------- Default copy_rop implementations ---------------- */
 
-private void
-unpack_to_standard(gx_device *dev, byte *dest, const byte *src, int sourcex,
-		   int width, gs_get_bits_options_t options,
-		   gs_get_bits_options_t stored)
+/*
+ * The default implementation for non-memory devices uses get_bits_rectangle
+ * to read out the pixels, the memory device implementation to do the
+ * operation, and copy_color to write the pixels back.
+ */
+int
+gx_default_strip_copy_rop(gx_device * dev,
+			  const byte * sdata, int sourcex,
+			  uint sraster, gx_bitmap_id id,
+			  const gx_color_index * scolors,
+			  const gx_strip_bitmap * textures,
+			  const gx_color_index * tcolors,
+			  int x, int y, int width, int height,
+			  int phase_x, int phase_y,
+			  gs_logical_operation_t lop)
 {
-    gs_get_bits_params_t params;
+    int depth = dev->color_info.depth;
+    gs_memory_t *mem = (dev->memory ? dev->memory : &gs_memory_default);
+    const gx_device_memory *mdproto = gdev_mem_device_for_bits(depth);
+    gx_device_memory mdev;
+    uint draster;
+    byte *row = 0;
+    gs_int_rect rect;
+    int max_height;
+    int block_height;
+    int code;
+    int py;
 
-    params.options = options;
-    params.data[0] = dest;
-    params.x_offset = 0;
-    gx_get_bits_copy(dev, sourcex, width, 1, &params, stored,
-		     src, 0 /*raster, irrelevant*/);
+#ifdef DEBUG
+    if (gs_debug_c('b'))
+	trace_copy_rop("gx_default_strip_copy_rop",
+		       dev, sdata, sourcex, sraster,
+		       id, scolors, textures, tcolors,
+		       x, y, width, height, phase_x, phase_y, lop);
+#endif
+    if (mdproto == 0)
+	return_error(gs_error_rangecheck);
+    if (sdata == 0) {
+	fit_fill(dev, x, y, width, height);
+    } else {
+	fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
+    }
+    draster = bitmap_raster(width * depth);
+    max_height = max_rop_bitmap / draster;
+    if (max_height == 0)
+	max_height = 1;
+    block_height = min(height, max_height);
+    gs_make_mem_device(&mdev, mdproto, 0, -1, dev);
+    mdev.width = width;
+    mdev.height = block_height;
+    mdev.bitmap_memory = mem;
+    mdev.color_info = dev->color_info;
+    code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
+    if (code < 0)
+	return code;
+    if (rop3_uses_D(gs_transparent_rop(lop))) {
+	row = gs_alloc_bytes(mem, draster * block_height, "copy_rop row");
+	if (row == 0) {
+	    code = gs_note_error(gs_error_VMerror);
+	    goto out;
+	}
+    }
+    rect.p.x = x;
+    rect.q.x = x + width;
+    for (py = y; py < y + height; py += block_height) {
+	if (block_height > y + height - py)
+	    block_height = y + height - py;
+	rect.p.y = py;
+	rect.q.y = py + block_height;
+	if (row /*uses_d*/) {
+	    gs_get_bits_params_t bit_params;
+
+	    bit_params.options =
+		GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_DEPTH_ALL |
+		GB_PACKING_CHUNKY | GB_RETURN_ALL | GB_ALIGN_STANDARD |
+		GB_OFFSET_0 | GB_OFFSET_ANY | GB_RASTER_STANDARD;
+	    bit_params.data[0] = row;
+	    bit_params.x_offset = 0;
+	    code = (*dev_proc(dev, get_bits_rectangle))
+		(dev, &rect, &bit_params, NULL);
+	    if (code < 0)
+		break;
+	    code = (*dev_proc(&mdev, copy_color))
+		((gx_device *)&mdev, bit_params.data[0], bit_params.x_offset,
+		 draster, gx_no_bitmap_id, 0, 0, width,
+		 block_height);
+	    if (code < 0)
+		return code;
+	}
+	code = (*dev_proc(&mdev, strip_copy_rop))
+	    ((gx_device *)&mdev,
+	     sdata + (py - y) * sraster, sourcex, sraster,
+	     gx_no_bitmap_id, scolors, textures, tcolors,
+	     0, 0, width, block_height, phase_x + x, phase_y + py, lop);
+	if (code < 0)
+	    break;
+	code = (*dev_proc(dev, copy_color))
+	    (dev, scan_line_base(&mdev, 0), 0, draster, gx_no_bitmap_id,
+	     x, py, width, block_height);
+	if (code < 0)
+	    break;
+    }
+out:
+    gs_free_object(mem, row, "copy_rop row");
+    (*dev_proc(&mdev, close_device))((gx_device *)&mdev);
+    return code;
 }
 
+/* ---------------- Default memory device copy_rop ---------------- */
+
+/* Convert color constants to standard RGB representation. */
 private void
 unpack_colors_to_standard(gx_device * dev, gx_color_index real_colors[2],
 			  const gx_color_index * colors, int depth)
@@ -112,6 +216,42 @@ unpack_colors_to_standard(gx_device * dev, gx_color_index real_colors[2],
 	}
 	real_colors[i] = pixel;
     }
+}
+
+/*
+ * Convert RGB to the device's native format.  We special-case this for
+ * 1-bit CMYK devices.
+ */
+private void
+pack_cmyk_1bit_from_standard(gx_device * dev, byte * dest, int destx,
+			     const byte * src, int width, int depth,
+			     int src_depth)
+{
+    /*
+     * This routine is only called if dev_proc(dev, map_cmyk_color) ==
+     * cmyk_1bit_map_cmyk_color (implying depth == 4) and src_depth == 24.
+     */
+    int bit_x = destx * 4;
+    byte *dp = dest + (bit_x >> 3);
+    bool hi = (bit_x & 4) != 0;	 /* true if last nibble filled was hi */
+    byte buf = (hi ? *dp & 0xf0 : 0);
+    const byte *sp = src;
+    int x;
+
+    for (x = width; --x >= 0; sp += 3) {
+	byte r = sp[0], g = sp[1], b = sp[2];
+	byte pixel =
+	    (r | g | b ?
+	     (((r >> 4) & 8) | ((g >> 5) & 4) | ((b >> 6) & 2)) ^ 0xe : 1);
+
+	if ((hi = !hi))
+	    buf = pixel << 4;
+	else
+	    *dp++ = buf | pixel;
+    }
+    if (hi && width > 0)
+	*dp = buf | (*dp & 0xf);
+
 }
 
 private gx_color_index
@@ -191,8 +331,15 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 	*dp = (shift == 0 ? buf : buf + (*dp & ((1 << shift) - 1)));
 }
 
+/*
+ * The default implementation for memory devices uses get_bits_rectangle to
+ * read out the pixels and convert them to standard (8-bit gray or 24-bit
+ * RGB) representation, the standard memory device implementation to do the
+ * operation, pack_from_standard to convert them back to the device
+ * representation, and copy_color to write the pixels back.
+ */
 int
-gx_default_strip_copy_rop(gx_device * dev,
+mem_default_strip_copy_rop(gx_device * dev,
 			  const byte * sdata, int sourcex,
 			  uint sraster, gx_bitmap_id id,
 			  const gx_color_index * scolors,
@@ -202,17 +349,11 @@ gx_default_strip_copy_rop(gx_device * dev,
 			  int phase_x, int phase_y,
 			  gs_logical_operation_t lop)
 {
-    /*
-     * The default implementation uses get_bits_rectangle to read out the
-     * pixels, the memory device implementation to do the operation, and
-     * copy_color to write the pixels back.  Note that if the device is
-     * already a memory device, we need to convert the pixels to standard
-     * representation (8-bit gray or 24-bit RGB), do the operation, and
-     * convert them back.
-     */
-    bool expand = gs_device_is_memory(dev);
     int depth = dev->color_info.depth;
-    int rop_depth = (!expand ? depth : gx_device_has_color(dev) ? 24 : 8);
+    int rop_depth = (gx_device_has_color(dev) ? 24 : 8);
+    void (*pack)(P7(gx_device *, byte *, int, const byte *, int, int, int)) =
+	(dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color &&
+	 rop_depth == 24 ? pack_cmyk_1bit_from_standard : pack_from_standard);
     const gx_bitmap_format_t no_expand_options =
 	GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_DEPTH_ALL |
 	GB_PACKING_CHUNKY | GB_RETURN_ALL | GB_ALIGN_STANDARD |
@@ -225,14 +366,14 @@ gx_default_strip_copy_rop(gx_device * dev,
     gs_memory_t *mem = (dev->memory ? dev->memory : &gs_memory_default);
     const gx_device_memory *mdproto = gdev_mem_device_for_bits(rop_depth);
     gx_device_memory mdev;
-    uint draster = bitmap_raster(width * depth);
+    uint row_raster = bitmap_raster(width * depth);
     bool uses_d = rop3_uses_D(gs_transparent_rop(lop));
     bool expand_s, expand_t;
     byte *row = 0;
-    byte *dest_row = 0;
     byte *source_row = 0;
+    uint source_row_raster;
     byte *texture_row = 0;
-    uint traster;
+    uint texture_row_raster;
     gx_color_index source_colors[2];
     const gx_color_index *real_scolors = scolors;
     gx_color_index texture_colors[2];
@@ -241,12 +382,28 @@ gx_default_strip_copy_rop(gx_device * dev,
     const gx_strip_bitmap *real_texture = textures;
     gs_int_rect rect;
     gs_get_bits_params_t bit_params;
+    gs_get_bits_params_t expand_params;
+    int max_height;
+    int block_height, loop_height;
     int code;
     int py;
 
+/*
+ * Allocate a temporary row buffer.  Free variables: mem, block_height.
+ * Labels used: out.
+ */
+#define ALLOC_BUF(buf, size, cname)\
+	BEGIN\
+	  buf = gs_alloc_bytes(mem, size * block_height, cname);\
+	  if ( buf == 0 ) {\
+	    code = gs_note_error(gs_error_VMerror);\
+	    goto out;\
+	  }\
+	END
+
 #ifdef DEBUG
     if (gs_debug_c('b'))
-	trace_copy_rop("gx_default_strip_copy_rop",
+	trace_copy_rop("mem_default_strip_copy_rop",
 		       dev, sdata, sourcex, sraster,
 		       id, scolors, textures, tcolors,
 		       x, y, width, height, phase_x, phase_y, lop);
@@ -258,139 +415,128 @@ gx_default_strip_copy_rop(gx_device * dev,
     } else {
 	fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
     }
-    gs_make_mem_device(&mdev, mdproto, 0, -1, (expand ? NULL : dev));
+    /* Compute max_height conservatively. */
+    max_height = max_rop_bitmap / (width * rop_depth);
+    if (max_height == 0)
+	max_height = 1;
+    block_height = min(height, max_height);
+    expand_s = scolors == 0 && rop3_uses_S(gs_transparent_rop(lop));
+    expand_t = tcolors == 0 && rop3_uses_T(gs_transparent_rop(lop));
+    if (expand_t) {
+	/*
+	 * We don't want to wrap around more than once in Y when
+	 * copying the texture to the intermediate buffer.
+	 */
+	if (textures->size.y < block_height)
+	    block_height = textures->size.y;
+    }
+    gs_make_mem_device(&mdev, mdproto, 0, -1, NULL);
     mdev.width = width;
-    mdev.height = 1;
+    mdev.height = block_height;
     mdev.bitmap_memory = mem;
-    if (expand) {
-	if (rop_depth == 8) {
-	    /* Mark 8-bit standard device as gray-scale only. */
-	    mdev.color_info.num_components = 1;
-	}
-    } else
-	mdev.color_info = dev->color_info;
-    code = (*dev_proc(&mdev, open_device)) ((gx_device *) & mdev);
+    mdev.color_info.num_components = rop_depth >> 3;
+    code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
     if (code < 0)
 	return code;
-
-#define ALLOC_BUF(buf, size, cname)\
-	BEGIN\
-	  buf = gs_alloc_bytes(mem, size, cname);\
-	  if ( buf == 0 ) {\
-	    code = gs_note_error(gs_error_VMerror);\
-	    goto out;\
-	  }\
-	END
-
-    ALLOC_BUF(row, draster, "copy_rop row");
-    if (expand) {
-	/* We may need intermediate buffers for all 3 operands. */
-	ALLOC_BUF(dest_row, bitmap_raster(width * rop_depth),
-		  "copy_rop dest_row");
-	expand_s = scolors == 0 && rop3_uses_S(gs_transparent_rop(lop));
-	if (expand_s) {
-	    ALLOC_BUF(source_row, bitmap_raster(width * rop_depth),
-		      "copy_rop source_row");
-	}
-	if (scolors) {
-	    unpack_colors_to_standard(dev, source_colors, scolors, rop_depth);
-	    real_scolors = source_colors;
-	}
-	expand_t = tcolors == 0 && rop3_uses_T(gs_transparent_rop(lop));
-	if (expand_t) {
-	    traster = bitmap_raster(textures->rep_width * rop_depth);
-	    ALLOC_BUF(texture_row, traster, "copy_rop texture_row");
-	    rop_texture = *textures;
-	    rop_texture.data = texture_row;
-	    rop_texture.raster = traster;
-	    rop_texture.size.x = rop_texture.rep_width;
-	    rop_texture.id = gs_no_bitmap_id;
-	    real_texture = &rop_texture;
-	}
-	if (tcolors) {
-	    unpack_colors_to_standard(dev, texture_colors, tcolors, rop_depth);
-	    real_tcolors = texture_colors;
-	}
-    } else {
-	dest_row = row;
+    ALLOC_BUF(row, row_raster, "copy_rop row");
+    /* We may need intermediate buffers for all 3 operands. */
+    if (expand_s) {
+	source_row_raster = bitmap_raster(width * rop_depth);
+	ALLOC_BUF(source_row, source_row_raster, "copy_rop source_row");
     }
-
-#undef ALLOC_BUF
-
+    if (scolors) {
+	unpack_colors_to_standard(dev, source_colors, scolors, rop_depth);
+	real_scolors = source_colors;
+    }
+    if (expand_t) {
+	texture_row_raster = bitmap_raster(textures->rep_width * rop_depth);
+	ALLOC_BUF(texture_row, texture_row_raster, "copy_rop texture_row");
+	rop_texture = *textures;
+	rop_texture.data = texture_row;
+	rop_texture.raster = texture_row_raster;
+	rop_texture.size.x = rop_texture.rep_width;
+	rop_texture.id = gs_no_bitmap_id;
+	real_texture = &rop_texture;
+    }
+    if (tcolors) {
+	unpack_colors_to_standard(dev, texture_colors, tcolors, rop_depth);
+	real_tcolors = texture_colors;
+    }
+    expand_params.options = expand_options;
+    expand_params.x_offset = 0;
     rect.p.x = x;
     rect.q.x = x + width;
-
-    for (py = y; py < y + height; ++py) {
-	byte *data;
+    for (py = y; py < y + height; py += loop_height) {
 	int sx = sourcex;
 	const byte *source_data = sdata + (py - y) * sraster;
+	uint source_raster = sraster;
 
+	if (block_height > y + height - py)
+	    block_height = y + height - py;
 	rect.p.y = py;
-	rect.q.y = py + 1;
+	if (expand_t) {
+	    int rep_y = (phase_y + py) % rop_texture.rep_height;
 
+	    loop_height = min(block_height, rop_texture.size.y - rep_y);
+	    rect.q.y = py + loop_height;
+	    expand_params.data[0] = texture_row;
+	    gx_get_bits_copy(dev, 0, textures->rep_width, loop_height,
+			     &expand_params, no_expand_options,
+			     textures->data + rep_y * textures->raster,
+			     textures->raster);
+	    /*
+	     * Compensate for the addition of rep_y * raster
+	     * in the subsidiary strip_copy_rop call.
+	     */
+	    rop_texture.data = texture_row - rep_y * rop_texture.raster;
+	} else {
+	    loop_height = block_height;
+	    rect.q.y = py + block_height;
+	}
 	if (uses_d) {
-	    bit_params.options =
-		(expand ? expand_options : no_expand_options);
-	    bit_params.data[0] = dest_row;
+	    bit_params.options = expand_options;
+	    bit_params.data[0] = scan_line_base(&mdev, 0);
 	    bit_params.x_offset = 0;
 	    code = (*dev_proc(dev, get_bits_rectangle))
 		(dev, &rect, &bit_params, NULL);
 	    if (code < 0)
 		break;
-	    code = (*dev_proc(&mdev, copy_color))
-		((gx_device *)&mdev, bit_params.data[0], bit_params.x_offset,
-		 draster /*irrelevant*/, gx_no_bitmap_id, 0, 0, width, 1);
-	    if (code < 0)
-		return code;
 	}
-	if (expand) {
-	    /* Convert the source and texture to standard format. */
-	    if (expand_s) {
-		unpack_to_standard(dev, source_row, source_data, sx, width,
-				   expand_options, no_expand_options);
-		source_data = source_row;
-		sx = 0;
-	    }
-	    if (expand_t) {
-		int rep_y = (phase_y + py) % rop_texture.rep_height;
-
-		unpack_to_standard(dev, texture_row,
-				   textures->data +
-				   rep_y * textures->raster,
-				   0, textures->rep_width,
-				   expand_options, no_expand_options);
-		/*
-		 * Compensate for the addition of rep_y * raster
-		 * in the subsidiary strip_copy_rop call.
-		 */
-		rop_texture.data = texture_row - rep_y * rop_texture.raster;
-	    }
+	/* Convert the source and texture to standard format. */
+	if (expand_s) {
+	    expand_params.data[0] = source_row;
+	    gx_get_bits_copy(dev, sx, width, loop_height, &expand_params,
+			     no_expand_options, source_data,
+			     sraster);
+	    sx = 0;
+	    source_data = source_row;
+	    source_raster = source_row_raster;
 	}
-	code = (*dev_proc(&mdev, strip_copy_rop)) ((gx_device *) & mdev,
-		     source_data, sx, sraster /*ad lib */ , gx_no_bitmap_id,
-				   real_scolors, real_texture, real_tcolors,
-				  0, 0, width, 1, phase_x + x, phase_y + py,
-						   lop);
+	code = (*dev_proc(&mdev, strip_copy_rop))
+	    ((gx_device *)&mdev, source_data, sx, source_raster,
+	     gx_no_bitmap_id, real_scolors, real_texture, real_tcolors,
+	     0, 0, width, loop_height, phase_x + x, phase_y + py, lop);
 	if (code < 0)
 	    break;
-	data = scan_line_base(&mdev, 0);
-	if (expand) {
+	{
 	    /* Convert the result back to the device's format. */
-	    pack_from_standard(dev, row, 0, data, width, depth, rop_depth);
-	    data = row;
+	    int i;
+	    byte *packed = row;
+	    const byte *unpacked = scan_line_base(&mdev, 0);
+
+	    for (i = 0; i < loop_height;
+		 packed += row_raster, unpacked += mdev.raster, ++i)
+		pack(dev, packed, 0, unpacked, width, depth, rop_depth);
 	}
-	code = (*dev_proc(dev, copy_color))(dev,
-					    data, 0, draster, gx_no_bitmap_id,
-					    x, py, width, 1);
+	code = (*dev_proc(dev, copy_color))
+	    (dev, row, 0, row_raster, gx_no_bitmap_id,
+	     x, py, width, loop_height);
 	if (code < 0)
 	    break;
     }
-  out:
-    if (dest_row != row) {
-	gs_free_object(mem, texture_row, "copy_rop texture_row");
-	gs_free_object(mem, source_row, "copy_rop source_row");
-	gs_free_object(mem, dest_row, "copy_rop dest_row");
-    }
+out:
+    gs_free_object(mem, texture_row, "copy_rop texture_row");
+    gs_free_object(mem, source_row, "copy_rop source_row");
     gs_free_object(mem, row, "copy_rop row");
     (*dev_proc(&mdev, close_device)) ((gx_device *) & mdev);
     return code;
@@ -545,3 +691,4 @@ gs_transparent_rop(gs_logical_operation_t lop)
 #undef MPo
     return (rop & mask) | (rop3_D & ~mask);
 }
+

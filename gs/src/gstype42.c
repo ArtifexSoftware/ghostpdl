@@ -293,8 +293,12 @@ append_simple(const byte * glyph, const gs_matrix_fixed * pmat, gx_path * ppath,
 	uint i, np;
 	gs_fixed_point pt;
 	float scale = pfont->data.unitsPerEm;
-	uint reps = 0;
-	byte flags;
+	/*
+	 * Decode the first flag byte outside the loop, to avoid a
+	 * compiler warning about uninitialized variables.
+	 */
+	byte flags = *pflags++;
+	uint reps = (flags & gf_Repeat ? *pflags++ + 1 : 1);
 
 	gs_point_transform2fixed(pmat, 0.0, 0.0, &pt);
 	for (i = 0, np = 0; i < numContours; ++i) {

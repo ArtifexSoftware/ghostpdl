@@ -22,6 +22,7 @@
 #include "gx.h"
 #include "gp.h"			/* for gp_fmode_rb */
 #include "gpcheck.h"
+#include "gscdefs.h"		/* for image type table */
 #include "gserrors.h"
 #include "gsbitops.h"
 #include "gsparams.h"
@@ -30,6 +31,7 @@
 #include "gxdevice.h"
 #include "gscoord.h"		/* requires gsmatrix.h */
 #include "gsdevice.h"		/* for gs_deviceinitialmatrix */
+#include "gsiparm4.h"
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"
 #include "gxclpath.h"
@@ -38,12 +40,15 @@
 #include "gxgetbit.h"
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
 #include "gxhttile.h"
+#include "gxiparam.h"
 #include "gdevht.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gzacpath.h"
 #include "stream.h"
 #include "strimpl.h"
+
+extern_gx_image_type_table();
 
 /* We need color space types for constructing temporary color spaces. */
 extern const gs_color_space_type gs_color_space_type_Indexed;
@@ -180,8 +185,9 @@ private int read_set_ht_data(P8(command_buf_t *pcb, uint *pdata_index,
 				gs_imager_state *pis,
 				gx_device_clist_reader *cdev,
 				gs_memory_t *mem));
-private int read_begin_image(P5(command_buf_t *pcb, gs_image_t *pim,
-				int *pnum_planes, gs_int_rect *prect,
+private int read_set_misc2(P3(command_buf_t *pcb, gs_imager_state *pis,
+			      segment_notes *pnotes));
+private int read_begin_image(P3(command_buf_t *pcb, gs_image_common_t *pic,
 				const gs_color_space *pcs));
 private int read_put_params(P3(command_buf_t *pcb,
 			       gx_device_clist_reader *cdev,
@@ -211,7 +217,7 @@ clist_playback_band(clist_playback_action playback_action,
     /* data_bits is for short copy_* bits and copy_* compressed, */
     /* must be aligned */
 #define data_bits_size cbuf_size
-    byte *data_bits;
+    byte *data_bits = 0;
     register const byte *cbp;
     int dev_depth = cdev->color_info.depth;
     int dev_depth_bytes = (dev_depth + 7) >> 3;
@@ -243,12 +249,20 @@ clist_playback_band(clist_playback_action playback_action,
     gs_halftone_type halftone_type;
     gx_ht_order *porder;
     uint ht_data_index;
-    gs_image_t image;
-    int image_num_planes;
+    union im_ {
+	gs_image_common_t c;
+	gs_data_image_t d;
+	gs_image1_t i1;
+	gs_image4_t i4;
+    } image;
     gs_int_rect image_rect;
     gs_color_space color_space;	/* only used for indexed spaces */
     const gs_color_space *pcs;
     gx_image_enum_common_t *image_info;
+    gx_image_plane_t planes[32];
+    uint data_height;
+    uint data_size;
+    byte *data_on_heap;
     segment_notes notes;
     int data_x;
     int code = 0;
@@ -814,10 +828,6 @@ in:				/* Initialize for a new page. */
 		continue;
 	    case cmd_op_misc2 >> 4:
 		switch (op) {
-		    case cmd_opv_set_flatness:
-			cmd_get_value(imager_state.flatness, cbp);
-			if_debug1('L', " %g\n", imager_state.flatness);
-			continue;
 		    case cmd_opv_set_fill_adjust:
 			cmd_get_value(imager_state.fill_adjust.x, cbp);
 			cmd_get_value(imager_state.fill_adjust.y, cbp);
@@ -838,62 +848,12 @@ in:				/* Initialize for a new page. */
 				      mat.tx, mat.ty);
 			}
 			continue;
-		    case cmd_opv_set_line_width:
-			{
-			    float width;
-
-			    cmd_get_value(width, cbp);
-			    if_debug1('L', " %g\n", width);
-			    gx_set_line_width(&imager_state.line_params, width);
-			}
-			continue;
 		    case cmd_opv_set_misc2:
-			{
-			    uint cb = *cbp;
-
-			    switch (cb >> 6) {
-				case cmd_set_misc2_cap_join >> 6:
-				    imager_state.line_params.cap =
-					(gs_line_cap) ((cb >> 3) & 7);
-				    imager_state.line_params.join =
-					(gs_line_join) (cb & 7);
-				    if_debug2('L', " cap=%d join=%d\n",
-					      imager_state.line_params.cap,
-					      imager_state.line_params.join);
-				    break;
-				case cmd_set_misc2_ac_op_sa >> 6:
-				    imager_state.accurate_curves =
-					(cb & 4) != 0;
-				    imager_state.overprint = (cb & 2) != 0;
-				    imager_state.stroke_adjust = cb & 1;
-				    if_debug3('L', " AC=%d OP=%d SA=%d\n",
-					      imager_state.accurate_curves,
-					      imager_state.overprint,
-					      imager_state.stroke_adjust);
-				    break;
-				case cmd_set_misc2_notes >> 6:
-				    notes = (segment_notes) (cb & 0x3f);
-				    if_debug1('L', " notes=%d\n", notes);
-				    break;
-				case cmd_set_misc2_alpha >> 6:
-				    memcpy(&imager_state.alpha, cbp + 1,
-					   sizeof(imager_state.alpha));
-				    cbp += sizeof(imager_state.alpha);
-				    break;
-				default:
-				    goto bad_op;
-			    }
-			}
-			cbp++;
-			continue;
-		    case cmd_opv_set_miter_limit:
-			{
-			    float limit;
-
-			    cmd_get_value(limit, cbp);
-			    if_debug1('L', " %g\n", limit);
-			    gx_set_miter_limit(&imager_state.line_params, limit);
-			}
+			cbuf.ptr = cbp;
+			code = read_set_misc2(&cbuf, &imager_state, &notes);
+			cbp = cbuf.ptr;
+			if (code < 0)
+			    goto out;
 			continue;
 		    case cmd_opv_set_dash:
 			{
@@ -1021,99 +981,181 @@ in:				/* Initialize for a new page. */
 			    }
 			}
 			break;
-		    case cmd_opv_begin_image:
+		    case cmd_opv_begin_image_rect:
 			cbuf.ptr = cbp;
-			code = read_begin_image(&cbuf, &image,
-						&image_num_planes,
-						&image_rect, pcs);
+			code = read_begin_image(&cbuf, &image.c, pcs);
 			cbp = cbuf.ptr;
 			if (code < 0)
 			    goto out;
 			{
+			    uint diff;
+
+			    cmd_getw(image_rect.p.x, cbp);
+			    cmd_getw(image_rect.p.y, cbp);
+			    cmd_getw(diff, cbp);
+			    image_rect.q.x = image.d.Width - diff;
+			    cmd_getw(diff, cbp);
+			    image_rect.q.y = image.d.Height - diff;
+			    if_debug4('L', " rect=(%d,%d),(%d,%d)",
+				      image_rect.p.x, image_rect.p.y,
+				      image_rect.q.x, image_rect.q.y);
+			}
+			goto ibegin;
+		    case cmd_opv_begin_image:
+			cbuf.ptr = cbp;
+			code = read_begin_image(&cbuf, &image.c, pcs);
+			cbp = cbuf.ptr;
+			if (code < 0)
+			    goto out;
+			image_rect.p.x = 0;
+			image_rect.p.y = 0;
+			image_rect.q.x = image.d.Width;
+			image_rect.q.y = image.d.Height;
+ibegin:			if_debug0('L', "\n");
+			{
 			    gx_drawing_color devc;
 
 			    color_set_pure(&devc, state.colors[1]);
-			    code = (*dev_proc(tdev, begin_image))
-				(tdev, &imager_state, &image, image.format,
+			    code = (*dev_proc(tdev, begin_typed_image))
+				(tdev, &imager_state, NULL,
+				 (const gs_image_common_t *)&image,
 				 &image_rect, &devc, pcpath, mem,
 				 &image_info);
+			}
+			if (code < 0)
+			    goto out;
+			break;
+		    case cmd_opv_image_plane_data:
+			cmd_getw(data_height, cbp);
+			if (data_height == 0) {
+			    if_debug0('L', " done image\n");
+			    code = gx_image_end(image_info, true);
 			    if (code < 0)
 				goto out;
+			    continue;
 			}
-			break;
-		    case cmd_opv_image_data:
 			{
-			    uint height;
+			    uint flags;
+			    int plane;
+			    uint raster;
 
-			    cmd_getw(height, cbp);
-			    if (height == 0) {
-				if_debug0('L', " done image\n");
-				code = gx_image_end(image_info, true);
-			    } else {
-				uint bytes_per_plane, nbytes;
-				const byte *data;
-				byte *data_on_heap = 0;
-				const byte *planes[64];
-
-/****** DOESN'T HANDLE #PLANES YET *****/
-
-				cmd_getw(bytes_per_plane, cbp);
-				if_debug2('L', " height=%u raster=%u\n",
-					  height, bytes_per_plane);
-				nbytes = bytes_per_plane *
-				    image_num_planes * height;
-				if ( cbuf.end - cbp < nbytes)
-				    cbp = top_up_cbuf(&cbuf, cbp);
-				if (cbuf.end - cbp >= nbytes) {
-				    data = cbp;
-				    cbp += nbytes;
+			    cmd_getw(flags, cbp);
+			    for (plane = 0;
+				 plane < image_info->num_planes;
+				 ++plane, flags >>= 1
+				 ) {
+				if (flags & 1) {
+				    if (cbuf.end - cbp <
+					2 * cmd_max_intsize(sizeof(uint)))
+					cbp = top_up_cbuf(&cbuf, cbp);
+				    cmd_getw(planes[plane].raster, cbp);
+				    if ((raster = planes[plane].raster) != 0)
+					cmd_getw(data_x, cbp);
 				} else {
-				    uint cleft = cbuf.end - cbp;
-				    uint rleft = nbytes - cleft;
-				    byte *rdata;
-
-				    if (nbytes > cbuf.end - cbuf.data) {	/* Allocate a separate buffer. */
-					rdata = data_on_heap =
-					    gs_alloc_bytes(mem, nbytes,
-							"clist image_data");
-					if (rdata == 0) {
-					    code = gs_note_error(gs_error_VMerror);
-					    goto out;
-					}
-				    } else
-					rdata = cbuf.data;
-				    memmove(rdata, cbp, cleft);
-				    sgets(s, rdata + cleft, rleft,
-					  &rleft);
-				    data = rdata;
-				    cbp = cbuf.end;	/* force refill */
+				    planes[plane].raster = raster;
 				}
-#ifdef DEBUG
-				if (gs_debug_c('L'))
-				    cmd_print_bits(data, image_rect.q.x -
-						   image_rect.p.x,
-						   image_num_planes * height,
-						   bytes_per_plane);
-#endif
-				{
-				    int plane;
-
-				    for (plane = 0;
-					 plane < image_num_planes;
-					 ++plane
-					)
-					planes[plane] = data +
-					    bytes_per_plane * height * plane;
-				}
-				code = gx_image_data(image_info, planes,
-						     data_x, bytes_per_plane,
-						     height);
-				if (data_on_heap)
-				    gs_free_object(mem, data_on_heap,
-						   "clist image_data");
-				data_x = 0;
+				planes[plane].data_x = data_x;
 			    }
 			}
+			goto idata;
+		    case cmd_opv_image_data:
+			cmd_getw(data_height, cbp);
+			if (data_height == 0) {
+			    if_debug0('L', " done image\n");
+			    code = gx_image_end(image_info, true);
+			    if (code < 0)
+				goto out;
+			    continue;
+			}
+			{
+			    uint bytes_per_plane;
+			    int plane;
+
+			    cmd_getw(bytes_per_plane, cbp);
+			    if_debug2('L', " height=%u raster=%u\n",
+				      data_height, bytes_per_plane);
+			    for (plane = 0;
+				 plane < image_info->num_planes;
+				 ++plane
+				 ) {
+				planes[plane].data_x = data_x;
+				planes[plane].raster = bytes_per_plane;
+			    }
+			}
+idata:			data_size = 0;
+			{
+			    int plane;
+
+			    for (plane = 0; plane < image_info->num_planes;
+				 ++plane)
+				data_size += planes[plane].raster;
+			}
+			data_size *= data_height;
+			data_on_heap = 0;
+			if (cbuf.end - cbp < data_size)
+			    cbp = top_up_cbuf(&cbuf, cbp);
+			if (cbuf.end - cbp >= data_size) {
+			    planes[0].data = cbp;
+			    cbp += data_size;
+			} else {
+			    uint cleft = cbuf.end - cbp;
+			    uint rleft = data_size - cleft;
+			    byte *rdata;
+
+			    if (data_size > cbuf.end - cbuf.data) {
+				/* Allocate a separate buffer. */
+				rdata = data_on_heap =
+				    gs_alloc_bytes(mem, data_size,
+						   "clist image_data");
+				if (rdata == 0) {
+				    code = gs_note_error(gs_error_VMerror);
+				    goto out;
+				}
+			    } else
+				rdata = cbuf.data;
+			    memmove(rdata, cbp, cleft);
+			    sgets(s, rdata + cleft, rleft,
+				  &rleft);
+			    planes[0].data = rdata;
+			    cbp = cbuf.end;	/* force refill */
+			}
+			{
+			    int plane;
+			    const byte *data = planes[0].data;
+
+			    for (plane = 0;
+				 plane < image_info->num_planes;
+				 ++plane
+				 ) {
+				if (planes[plane].raster == 0)
+				    planes[plane].data = 0;
+				else {
+				    planes[plane].data = data;
+				    data += planes[plane].raster *
+					data_height;
+				}
+			    }
+			}
+#ifdef DEBUG
+			if (gs_debug_c('L')) {
+			    int plane;
+
+			    for (plane = 0; plane < image_info->num_planes;
+				 ++plane)
+				if (planes[plane].data != 0)
+				    cmd_print_bits(planes[plane].data,
+						   image_rect.q.x -
+						   image_rect.p.x,
+						   data_height,
+						   planes[plane].raster);
+			}
+#endif
+			code = gx_image_plane_data(image_info, planes,
+						   data_height);
+			if (data_on_heap)
+			    gs_free_object(mem, data_on_heap,
+					   "clist image_data");
+			data_x = 0;
 			if (code < 0)
 			    goto out;
 			continue;
@@ -1173,6 +1215,9 @@ in:				/* Initialize for a new page. */
 		{
 		    fixed vs[6];
 		    int i, code;
+		    static const byte op_num_operands[] = {
+			cmd_segment_op_num_operands_values
+		    };
 
 		    if (!in_path) {
 			ppos.x = int2fixed(state.rect.x);
@@ -1182,10 +1227,7 @@ in:				/* Initialize for a new page. */
 			notes = sn_none;
 			in_path = true;
 		    }
-		    for (i = 0;
-			 i < clist_segment_op_num_operands[op & 0xf];
-			 ++i
-			) {
+		    for (i = 0; i < op_num_operands[op & 0xf]; ++i) {
 			fixed v;
 			int b = *cbp;
 
@@ -1774,9 +1816,9 @@ read_set_ht_data(command_buf_t *pcb, uint *pdata_index, gx_ht_order *porder,
 
 	    if (!pco->cache) {
 		gx_ht_cache *pcache =
-		    gx_ht_alloc_cache(mem, 1,
-				      pco->raster * (pco->num_bits /
-						     pco->width));
+		    gx_ht_alloc_cache(mem, 4,
+				      pco->raster *
+				      (pco->num_bits / pco->width) * 4);
 
 		if (pcache == 0)
 		    return_error(gs_error_VMerror);
@@ -1796,136 +1838,91 @@ read_set_ht_data(command_buf_t *pcb, uint *pdata_index, gx_ht_order *porder,
 }
 
 private int
-read_begin_image(command_buf_t *pcb, gs_image_t *pim, int *pnum_planes,
-		 gs_int_rect *prect, const gs_color_space *pcs)
+read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 {
     const byte *cbp = pcb->ptr;
-    byte b = *cbp++;
-    int bpci = b >> 5;
-    static const byte bpc[6] = {1, 1, 2, 4, 8, 12};
-    int num_components;
-    gs_image_format_t format;
+    uint cb = *cbp++;
 
-    if (bpci == 0)
-	gs_image_t_init_mask(pim, false);
-    else
-	gs_image_t_init(pim, pcs);
-    if (b & (1 << 4)) {
-	byte b2 = *cbp++;
+    switch (cb >> 6) {
 
-	format = b2 >> 6;
-	pim->Interpolate = (b2 & (1 << 5)) != 0;
-	pim->Alpha = (gs_image_alpha_t) ((b2 >> 3) & 3);
-    } else {
-	format = gs_image_format_chunky;
-    }
-    pim->format = format;
-    cmd_getw(pim->Width, cbp);
-    cmd_getw(pim->Height, cbp);
-    if_debug4('L', " BPCi=%d I=%d size=(%d,%d)",
-	      bpci, (b & 0x10) != 0, pim->Width, pim->Height);
-    if (b & (1 << 3)) {		/* Non-standard ImageMatrix */
-	cbp = cmd_read_matrix(
-			      &pim->ImageMatrix, cbp);
-	if_debug6('L', " matrix=[%g %g %g %g %g %g]",
-		  pim->ImageMatrix.xx, pim->ImageMatrix.xy,
-		  pim->ImageMatrix.yx, pim->ImageMatrix.yy,
-		  pim->ImageMatrix.tx, pim->ImageMatrix.ty);
-    } else {
-	pim->ImageMatrix.xx = pim->Width;
-	pim->ImageMatrix.xy = 0;
-	pim->ImageMatrix.yx = 0;
-	pim->ImageMatrix.yy = -pim->Height;
-	pim->ImageMatrix.tx = 0;
-	pim->ImageMatrix.ty = pim->Height;
-    }
-    pim->BitsPerComponent = bpc[bpci];
-    if (bpci == 0) {
-	num_components = 1;
-    } else {
-	pim->ColorSpace = pcs;
-	if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed) {
-	    pim->Decode[0] = 0;
-	    pim->Decode[1] = (1 << pim->BitsPerComponent) - 1;
-	} else {
-	    static const float decode01[] = {
-		0, 1, 0, 1, 0, 1, 0, 1, 0, 1
-	    };
+    case cmd_set_misc2_cap_join >> 6:
+	pis->line_params.cap = (gs_line_cap)((cb >> 3) & 7);
+	pis->line_params.join = (gs_line_join)(cb & 7);
+	if_debug2('L', " cap=%d join=%d\n",
+		  pis->line_params.cap, pis->line_params.join);
+	break;
 
-	    memcpy(pim->Decode, decode01, sizeof(pim->Decode));
+    case cmd_set_misc2_ac_op_sa >> 6:
+	pis->accurate_curves = (cb & 4) != 0;
+	pis->overprint = (cb & 2) != 0;
+	pis->stroke_adjust = cb & 1;
+	if_debug3('L', " AC=%d OP=%d SA=%d\n",
+		  pis->accurate_curves, pis->overprint, pis->stroke_adjust);
+	break;
+
+    case cmd_set_misc2_notes >> 6:
+	*pnotes = (segment_notes)(cb & 0x3f);
+	if_debug1('L', " notes=%d\n", *pnotes);
+	break;
+
+    case cmd_set_misc2_value >> 6:
+	switch (cb) {
+
+	case cmd_set_misc2_flatness:
+	    cmd_get_value(pis->flatness, cbp);
+	    if_debug1('L', " %g\n", pis->flatness);
+	    break;
+
+	case cmd_set_misc2_line_width: {
+	    float width;
+
+	    cmd_get_value(width, cbp);
+	    if_debug1('L', " %g\n", width);
+	    gx_set_line_width(&pis->line_params, width);
 	}
-	num_components = gs_color_space_num_components(pcs);
-    }
-    switch (format) {
-    case gs_image_format_chunky:
-	*pnum_planes = 1;
 	break;
-    case gs_image_format_component_planar:
-	*pnum_planes = num_components;
+
+	case cmd_set_misc2_miter_limit: {
+	    float limit;
+
+	    cmd_get_value(limit, cbp);
+	    if_debug1('L', " %g\n", limit);
+	    gx_set_miter_limit(&pis->line_params, limit);
+	}
 	break;
-    case gs_image_format_bit_planar:
-	*pnum_planes = num_components * pim->BitsPerComponent;
+
+	case cmd_set_misc2_alpha >> 6:
+	    cmd_get_value(pis->alpha, cbp);
+	    if_debug1('L', " %u\n", pis->alpha);
+	    break;
+
+	default:
+	    return_error(gs_error_rangecheck);
+	}
 	break;
+
     default:
-	return_error(gs_error_unregistered);
+	return_error(gs_error_rangecheck);
     }
-    if (b & (1 << 2)) {		/* Non-standard Decode */
-	byte dflags = *cbp++;
-	int i;
-
-	for (i = 0; i < num_components * 2; dflags <<= 2, i += 2)
-	    switch ((dflags >> 6) & 3) {
-	    case 0:	/* default */
-		break;
-	    case 1:	/* swapped default */
-		pim->Decode[i] = pim->Decode[i + 1];
-		pim->Decode[i + 1] = 0;
-		break;
-	    case 3:
-		cmd_get_value(pim->Decode[i], cbp);
-		/* falls through */
-	    case 2:
-		cmd_get_value(pim->Decode[i + 1], cbp);
-	    }
-#ifdef DEBUG
-	if (gs_debug_c('L')) {
-	    dputs(" decode=[");
-	    for (i = 0; i < num_components * 2; ++i)
-		dprintf1("%g ", pim->Decode[i]);
-	    dputc(']');
-	}
-#endif
-    }
-    pim->adjust = false;
-    if (b & (1 << 1)) {
-	if (pim->ImageMask)
-	    pim->adjust = true;
-	else
-	    pim->CombineWithColor = true;
-	if_debug1('L', " %s",
-		  (pim->ImageMask ? " adjust" : " CWC"));
-    }
-    if (b & (1 << 0)) {		/* Non-standard rectangle */
-	uint diff;
-
-	cmd_getw(prect->p.x, cbp);
-	cmd_getw(prect->p.y, cbp);
-	cmd_getw(diff, cbp);
-	prect->q.x = pim->Width - diff;
-	cmd_getw(diff, cbp);
-	prect->q.y = pim->Height - diff;
-	if_debug4('L', " rect=(%d,%d),(%d,%d)",
-		  prect->p.x, prect->p.y,
-		  prect->q.x, prect->q.y);
-    } else {
-	prect->p.x = 0;
-	prect->p.y = 0;
-	prect->q.x = pim->Width;
-	prect->q.y = pim->Height;
-    }
-    if_debug0('L', "\n");
     pcb->ptr = cbp;
     return 0;
+}
+
+private int
+read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
+		 const gs_color_space *pcs)
+{
+    uint index = *(pcb->ptr)++;
+    const gx_image_type_t *image_type = gx_image_type_table[index];
+    stream s;
+    int code;
+
+    /* This is sloppy, but we don't have enough information to do better. */
+    pcb->ptr = top_up_cbuf(pcb, pcb->ptr);
+    sread_string(&s, pcb->ptr, pcb->end - pcb->ptr);
+    code = image_type->sget(pic, &s, pcs);
+    pcb->ptr = sbufptr(&s);
+    return code;
 }
 
 private int
@@ -2057,41 +2054,11 @@ cmd_read_rect(int op, gx_cmd_rect * prect, const byte * cbp)
 private const byte *
 cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
 {
-    byte b = *cbp++;
-    float coeff[6];
-    int i;
+    stream s;
 
-    for (i = 0; i < 4; i += 2, b <<= 2)
-	if (!(b & 0xc0))
-	    coeff[i] = coeff[i ^ 3] = 0.0;
-	else {
-	    float value;
-
-	    cmd_get_value(value, cbp);
-	    coeff[i] = value;
-	    switch ((b >> 6) & 3) {
-		case 1:
-		    coeff[i ^ 3] = value;
-		    break;
-		case 2:
-		    coeff[i ^ 3] = -value;
-		    break;
-		case 3:
-		    cmd_get_value(coeff[i ^ 3], cbp);
-	    }
-	}
-    for (; i < 6; ++i, b <<= 1)
-	if (b & 0x80) {
-	    cmd_get_value(coeff[i], cbp);
-	} else
-	    coeff[i] = 0.0;
-    pmat->xx = coeff[0];
-    pmat->xy = coeff[1];
-    pmat->yx = coeff[2];
-    pmat->yy = coeff[3];
-    pmat->tx = coeff[4];
-    pmat->ty = coeff[5];
-    return cbp;
+    sread_string(&s, cbp, 1 + sizeof(*pmat));
+    sget_matrix(&s, pmat);
+    return cbp + stell(&s);
 }
 
 /* Select a map for loading with data. */

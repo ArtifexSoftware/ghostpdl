@@ -552,7 +552,7 @@ gs_call_interp(ref * pref, int user_errors, int *pexit_code, ref * perror_object
     doref = *epref;
     epref = &doref;
     /* Push the error object on the operand stack if appropriate. */
-    if (!error_is_interrupt(code))
+    if (!ERROR_IS_INTERRUPT(code))
 	*++osp = *perror_object;
     goto again;
 }
@@ -1490,7 +1490,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	ierror.obj = &ierror.full;
     }
   error_exit:
-    if (error_is_interrupt(ierror.code)) {	/* We must push the current object being interpreted */
+    if (ERROR_IS_INTERRUPT(ierror.code)) {	/* We must push the current object being interpreted */
 	/* back on the e-stack so it will be re-executed. */
 	/* Currently, this is always an executable operator, */
 	/* but it might be something else someday if we check */

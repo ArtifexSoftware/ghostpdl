@@ -61,13 +61,16 @@ image_strategy_mono(gx_image_enum * penum)
 	penum->dxx =
 	    float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
 	/*
-	 * If black or white is transparent, reset icolor0 or icolor1,
-	 * which are used directly in the fast case loop.
+	 * Scale the mask colors to match the scaling of each sample to a
+	 * full byte.  Also, if black or white is transparent, reset icolor0
+	 * or icolor1, which are used directly in the fast case loop.
 	 */
 	if (penum->use_mask_color) {
-	    if (penum->mask_color.values[0] <= 0)
+	    uint scale = 255 / ((1 << penum->bps) - 1);
+
+	    if ((penum->mask_color.values[0] *= scale) <= 0)
 		color_set_null(&penum->icolor0);
-	    if (penum->mask_color.values[1] >= (1 << penum->bps) - 1)
+	    if ((penum->mask_color.values[1] *= scale) >= 255)
 		color_set_null(&penum->icolor1);
 	}
 	return image_render_mono;

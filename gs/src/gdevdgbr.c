@@ -152,6 +152,36 @@ gx_get_bits_return_pointer(gx_device * dev, int x, int h,
 }
 
 /*
+ * Implement gx_get_bits_copy (see below) for the case of converting
+ * 4-bit CMYK to 24-bit RGB with standard mapping, used heavily by PCL.
+ */
+private void
+gx_get_bits_copy_cmyk_1bit(byte *dest_line, uint dest_raster,
+			   const byte *src_line, uint src_raster,
+			   int src_bit, int w, int h)
+{
+    for (; h > 0; dest_line += dest_raster, src_line += src_raster, --h) {
+	const byte *src = src_line;
+	byte *dest = dest_line;
+	bool hi = (src_bit & 4) != 0;  /* last nibble processed was hi */
+	int i;
+
+	for (i = w; i > 0; dest += 3, --i) {
+	    uint pixel =
+		((hi = !hi)? *src >> 4 : *src++ & 0xf);
+
+	    if (pixel & 1)
+		dest[0] = dest[1] = dest[2] = 0;
+	    else {
+		dest[0] = (byte)((pixel >> 3) - 1);
+		dest[1] = (byte)(((pixel >> 2) & 1) - 1);
+		dest[2] = (byte)(((pixel >> 1) & 1) - 1);
+	    }
+	}
+    }
+}
+
+/*
  * Convert pixels between representations, primarily for get_bits_rectangle.
  * stored indicates how the data are actually stored, and includes:
  *      - one option from the GB_PACKING group;
@@ -310,29 +340,55 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 	    return_error(gs_error_rangecheck);
 	} else {
 	    /*
-	     * We have to do some conversion to each pixel.  This is the
-	     * slowest, most general case.
+	     * Convert native colors to standard.
 	     */
 	    int src_bit_offset = x * depth;
 	    const byte *src_line = src_base + (src_bit_offset >> 3);
 	    int ncomp =
-	    (options & (GB_ALPHA_FIRST | GB_ALPHA_LAST) ? 4 : 3);
+		(options & (GB_ALPHA_FIRST | GB_ALPHA_LAST) ? 4 : 3);
 	    byte *dest_line = data + x_offset * ncomp;
+	    byte *mapped[16];
+	    int dest_bytes;
+	    int i;
 
 	    /* Pick the representation that's most likely to be useful. */
 	    if (options & GB_COLORS_RGB)
-		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_RGB;
+		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_RGB,
+		    dest_bytes = 3;
 	    else if (options & GB_COLORS_CMYK)
-		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_CMYK;
+		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_CMYK,
+		    dest_bytes = 4;
 	    else if (options & GB_COLORS_GRAY)
-		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_GRAY;
+		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_GRAY,
+		    dest_bytes = 1;
 	    else
 		return_error(gs_error_rangecheck);
-	    for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
-		int i;
+	    /* Recompute the destination raster based on the color space. */
+	    if (options & GB_RASTER_STANDARD) {
+		uint end_byte = (x_offset + w) * dest_bytes;
 
-		sample_load_declare_setup(src, bit, src_line, src_bit_offset & 7,
-					  depth);
+		raster = std_raster =
+		    (options & GB_ALIGN_STANDARD ?
+		     bitmap_raster(end_byte << 3) : end_byte);
+	    }
+	    /* Check for the one special case we care about. */
+	    if (((options & (GB_COLORS_RGB | GB_ALPHA_FIRST | GB_ALPHA_LAST))
+		 == GB_COLORS_RGB) &&
+		dev_proc(dev, map_color_rgb) ==
+		  cmyk_1bit_map_color_rgb) {
+		gx_get_bits_copy_cmyk_1bit(dest_line, raster,
+					   src_line, dev_raster,
+					   src_bit_offset & 7, w, h);
+		goto done;
+	    }
+	    if (options & (GB_ALPHA_FIRST | GB_ALPHA_LAST))
+		++dest_bytes;
+	    /* Clear the color translation cache. */
+	    for (i = (depth > 4 ? 16 : 1 << depth); --i >= 0; )
+		mapped[i] = 0;
+	    for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
+		sample_load_declare_setup(src, bit, src_line,
+					  src_bit_offset & 7, depth);
 		byte *dest = dest_line;
 
 		for (i = 0; i < w; ++i) {
@@ -340,6 +396,15 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 		    gx_color_value rgba[4];
 
 		    sample_load_next32(pixel, src, bit, depth);
+		    if (pixel < 16) {
+			if (mapped[pixel]) {
+			    /* Use the value from the cache. */
+			    memcpy(dest, mapped[pixel], dest_bytes);
+			    dest += dest_bytes;
+			    continue;
+			}
+			mapped[pixel] = dest;
+		    }
 		    (*dev_proc(dev, map_color_rgb_alpha)) (dev, pixel, rgba);
 		    if (options & GB_ALPHA_FIRST)
 			*dest++ = gx_color_value_to_byte(rgba[3]);
@@ -373,6 +438,7 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 		}
 	    }
 	}
+done:
 	params->options =
 	    (options & (GB_COLORS_ALL | GB_ALPHA_ALL)) | GB_PACKING_CHUNKY |
 	    (options & GB_COLORS_NATIVE ? 0 : options & GB_DEPTH_ALL) |

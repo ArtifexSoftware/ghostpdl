@@ -46,6 +46,11 @@ typedef struct gs_image2_s {
     gx_path *UnpaintedPath;
     bool PixelCopy;
 } gs_image2_t;
+#define private_st_gs_image2()	/* in gximage2.c */\
+  extern_st(st_gs_image_common);\
+  gs_private_st_suffix_add2(st_gs_image2, gs_image2_t, "gs_image2_t",\
+    image2_enum_ptrs, image2_reloc_ptrs, st_gs_image_common,\
+    DataSource, UnpaintedPath)
 
 /*
  * Initialize an ImageType 2 image.  Defaults:

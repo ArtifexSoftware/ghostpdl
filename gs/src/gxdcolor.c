@@ -76,39 +76,58 @@ const gx_device_color_type_t *const gx_dc_type_pure = &gx_dc_type_data_pure;
 gx_color_index
 gx_device_black(gx_device *dev)
 {
-    return
-	(dev->color_info.num_components == 4 ?
-	 (*dev_proc(dev, map_cmyk_color))
-	  (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0,
-	   gx_max_color_value) :
-	 (*dev_proc(dev, map_rgb_color))
-	  (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0));
+    if (dev->cached_colors.black == gx_no_color_index)
+	dev->cached_colors.black =
+	    (dev->color_info.num_components == 4 ?
+	     (*dev_proc(dev, map_cmyk_color))
+	     (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0,
+	      gx_max_color_value) :
+	     (*dev_proc(dev, map_rgb_color))
+	     (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0));
+    return dev->cached_colors.black;
 }
 gx_color_index
 gx_device_white(gx_device *dev)
 {
-    return
-	(dev->color_info.num_components == 4 ?
-	 (*dev_proc(dev, map_cmyk_color))
-	  (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0,
-	   (gx_color_index)0) :
-	 (*dev_proc(dev, map_rgb_color))
-	  (dev, gx_max_color_value, gx_max_color_value, gx_max_color_value));
+    if (dev->cached_colors.white == gx_no_color_index)
+	dev->cached_colors.white =
+	    (dev->color_info.num_components == 4 ?
+	     (*dev_proc(dev, map_cmyk_color))
+	     (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0,
+	      (gx_color_index)0) :
+	     (*dev_proc(dev, map_rgb_color))
+	     (dev, gx_max_color_value, gx_max_color_value, gx_max_color_value));
+    return dev->cached_colors.white;
+}
+
+/* Clear the color cache. */
+void
+gx_device_decache_colors(gx_device *dev)
+{
+    dev->cached_colors.black = dev->cached_colors.white = gx_no_color_index;
 }
 
 /* Set a null RasterOp source. */
 private const gx_rop_source_t gx_rop_no_source_0 = {gx_rop_no_source_body(0)};
+private const gx_rop_source_t gx_rop_no_source_1 = {gx_rop_no_source_body(1)};
 void
 gx_set_rop_no_source(const gx_rop_source_t **psource,
 		     gx_rop_source_t *pno_source, gx_device *dev)
 {
-    gx_color_index black = gx_device_black(dev);
-
-    if ( black == 0 )
+top:
+    switch (dev->cached_colors.black) {
+    case 0:
 	*psource = &gx_rop_no_source_0;
-    else {
+	break;
+    case 1:
+	*psource = &gx_rop_no_source_1;
+	break;
+    case gx_no_color_index:	/* cache not loaded */
+	discard(gx_device_black(dev));
+	goto top;
+    default:
 	*pno_source = gx_rop_no_source_0;
-        gx_rop_source_set_color(pno_source, black);
+        gx_rop_source_set_color(pno_source, dev->cached_colors.black);
 	*psource = pno_source;
     }
 }
@@ -256,6 +275,34 @@ gx_dc_pure_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 {
     return pdevc2->type == pdevc1->type &&
 	gx_dc_pure_color(pdevc1) == gx_dc_pure_color(pdevc2);
+}
+
+/* ------ Halftone color initialization ------ */
+
+void
+gx_complete_rgb_halftone(gx_device_color *pdevc,
+			 const gx_device_halftone *pdht)
+{
+    pdevc->type = gx_dc_type_ht_colored;
+    pdevc->colors.colored.c_ht = pdht;
+    pdevc->colors.colored.plane_mask =
+	(pdevc->colors.colored.c_level[0] != 0) |
+	((pdevc->colors.colored.c_level[1] != 0) << 1) |
+	((pdevc->colors.colored.c_level[2] != 0) << 2);
+}
+
+void
+gx_complete_cmyk_halftone(gx_device_color *pdevc,
+			  const gx_device_halftone *pdht)
+{
+    pdevc->type = gx_dc_type_ht_colored;
+    pdevc->colors.colored.c_ht = pdht;
+    pdevc->colors.colored.alpha = max_ushort;
+    pdevc->colors.colored.plane_mask =
+	(pdevc->colors.colored.c_level[0] != 0) |
+	((pdevc->colors.colored.c_level[1] != 0) << 1) |
+	((pdevc->colors.colored.c_level[2] != 0) << 2) |
+	((pdevc->colors.colored.c_level[3] != 0) << 3);
 }
 
 /* ------ Default implementations ------ */

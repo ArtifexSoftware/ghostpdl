@@ -24,7 +24,7 @@
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
 
-extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);		/* in gdevmrop.c */
+extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 
 #define mem_true24_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
 

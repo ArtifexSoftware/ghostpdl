@@ -42,9 +42,9 @@ extern_st(st_gs_pixel_image);
 public_st_gs_image3();
 
 /* Define the image type for ImageType 3 images. */
-private const gx_image_type_t image3_type = {
-    gx_begin_image3, gx_data_image_source_size,
-    0/*gx_write_image3*/, 0/*gx_read_image3*/, 0/*gx_release_image3*/, 3
+const gx_image_type_t gs_image_type_3 = {
+    &st_gs_image3, gx_begin_image3, gx_data_image_source_size,
+    gx_image_no_sput, gx_image_no_sget, gx_image_default_release, 3
 };
 private const gx_image_enum_procs_t image3_enum_procs = {
     gx_image3_plane_data, gx_image3_end_image
@@ -56,7 +56,7 @@ gs_image3_t_init(gs_image3_t * pim, const gs_color_space * color_space,
 		 gs_image3_interleave_type_t interleave_type)
 {
     gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);
-    pim->type = &image3_type;
+    pim->type = &gs_image_type_3;
     pim->InterleaveType = interleave_type;
     gs_data_image_t_init(&pim->MaskDict, -1);
 }
@@ -292,8 +292,7 @@ gx_begin_image3(gx_device * dev,
   out1:gs_free_object(mem, penum->mask_data, "gx_begin_image3(mask_data)");
     gs_free_object(mem, penum->pixel_data, "gx_begin_image3(pixel_data)");
     gs_free_object(mem, penum, "gx_begin_image3");
-    code = gs_note_error(gs_error_VMerror);
-  out:return code;
+    return_error(gs_error_VMerror);
 }
 
 /* Process the next piece of an ImageType 3 image. */

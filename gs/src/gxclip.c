@@ -296,17 +296,19 @@ clip_enumerate(gx_device_clip * rdev,
 
 /* Open a clipping device */
 private int
-clip_open(register gx_device * dev)
+clip_open(gx_device * dev)
 {
-    gx_device_clip *rdev = (gx_device_clip *) dev;
+    gx_device_clip *const rdev = (gx_device_clip *) dev;
     gx_device *tdev = rdev->target;
 
     /* Initialize the cursor. */
     rdev->current =
 	(rdev->list.head == 0 ? &rdev->list.single : rdev->list.head);
     rdev->color_info = tdev->color_info;
+    rdev->cached_colors = tdev->cached_colors;
     rdev->width = tdev->width;
     rdev->height = tdev->height;
+    gx_device_copy_color_procs(dev, tdev);
     return 0;
 }
 

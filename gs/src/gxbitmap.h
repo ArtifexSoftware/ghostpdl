@@ -47,7 +47,7 @@ typedef gs_bitmap_id gx_bitmap_id;
 #endif
 #define align_bitmap_mod (1 << log2_align_bitmap_mod)
 #define bitmap_raster(width_bits)\
-  ((uint)(((width_bits + (align_bitmap_mod * 8 - 1))\
+  ((uint)((((width_bits) + (align_bitmap_mod * 8 - 1))\
     >> (log2_align_bitmap_mod + 3)) << log2_align_bitmap_mod))
 
 /*

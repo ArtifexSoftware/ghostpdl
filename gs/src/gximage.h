@@ -206,9 +206,9 @@ struct gx_image_enum_s {
 				/* if true, mask/test filter is exact */
     } mask_color;		/* (if ImageType 4) */
     byte use_mask_color;	/* true if color masking is being used */
-    /*byte num_planes; */	/* spp if colors are separated, */
-				/* 1 otherwise (in common part) */
-    byte spread;		/* num_planes << log2_xbytes */
+    /*byte num_planes; */	/* (in common part) */
+    byte spread;		/* (spp if multi-plane, 1 if not) */
+				/* << log2_xbytes */
     byte masked;		/* 0 = [color]image, 1 = imagemask */
     byte interpolate;		/* true if Interpolate requested */
     gs_matrix matrix;		/* image space -> device space */
@@ -297,14 +297,12 @@ struct gx_image_enum_s {
 /*
  * Do common initialization for processing an ImageType 1 or 4 image.
  * Allocate the enumerator and fill in the following members:
- *	matrix, rect
+ *	rect
  */
 int
-gx_image_enum_alloc(P9(gx_device * dev,
-		const gs_imager_state * pis, const gs_matrix * pmat,
-		const gs_image_common_t * pic, const gs_int_rect * prect,
-		const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		gs_memory_t * mem, gx_image_enum **ppenum));
+gx_image_enum_alloc(P4(const gs_image_common_t * pic,
+		       const gs_int_rect * prect,
+		       gs_memory_t * mem, gx_image_enum **ppenum));
 
 /*
  * Finish initialization for processing an ImageType 1 or 4 image.
@@ -315,8 +313,9 @@ gx_image_enum_alloc(P9(gx_device * dev,
  */
 int
 gx_image_enum_begin(P8(gx_device * dev, const gs_imager_state * pis,
-		const gs_image_common_t * pic, const gs_int_rect * prect,
-		const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		gs_memory_t * mem, gx_image_enum *penum));
+		       const gs_matrix *pmat, const gs_image_common_t * pic,
+		       const gx_drawing_color * pdcolor,
+		       const gx_clip_path * pcpath,
+		       gs_memory_t * mem, gx_image_enum *penum));
 
 #endif /* gximage_INCLUDED */

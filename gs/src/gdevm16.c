@@ -39,7 +39,7 @@ const gx_device_memory mem_true16_device =
     mem_device("image16", 16, 0,
 	       mem_true16_map_rgb_color, mem_true16_map_color_rgb,
 	       mem_true16_copy_mono, mem_true16_copy_color,
-	       mem_true16_fill_rectangle, gx_default_strip_copy_rop);
+	       mem_true16_fill_rectangle, mem_default_strip_copy_rop);
 
 /* Map a r-g-b color to a color index. */
 private gx_color_index

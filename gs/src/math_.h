@@ -65,9 +65,8 @@
 #ifdef _IBMR2
 /* The RS/6000 has hypot, but math.h doesn't declare it! */
 extern double hypot(double, double);
-
 #else
-#  if !defined(__TURBOC__) && !defined(BSD4_2) && !defined(VMS)
+#  if !defined(__TURBOC__) && !defined(BSD4_2) && !defined(VMS) && !defined(__MWERKS__)
 #    define hypot(x,y) sqrt((x)*(x)+(y)*(y))
 #  endif
 #endif
@@ -75,17 +74,13 @@ extern double hypot(double, double);
 #ifdef OSK
 /* OSK has atan2 and ldexp, but math.h doesn't declare them! */
 extern double atan2(), ldexp();
-
 #endif
 
 #ifdef DEBUG
-
 /* Intercept calls on sqrt for debugging. */
 extern double gs_sqrt(P3(double, const char *, int));
-
 #undef sqrt
 #define sqrt(x) gs_sqrt(x, __FILE__, __LINE__)
-
 #endif /* DEBUG */
 
 #endif /* math__INCLUDED */

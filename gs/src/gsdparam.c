@@ -693,6 +693,7 @@ nce:
     } else if (ibbnull) {
 	dev->ImagingBBox_set = false;
     }
+    gx_device_decache_colors(dev);
     return 0;
 }
 

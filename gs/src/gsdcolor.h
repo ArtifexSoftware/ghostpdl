@@ -31,7 +31,11 @@
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
+#endif
 
+#ifndef gx_device_halftone_DEFINED
+#  define gx_device_halftone_DEFINED
+typedef struct gx_device_halftone_s gx_device_halftone;
 #endif
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -105,16 +109,20 @@ typedef struct gx_device_color_s gx_device_color;
   color_set_phase(pdc, imod(-(px), tw), imod(-(py), th))
 
 #define color_is_binary_halftone(pdc) gx_dc_is_binary_halftone(pdc)
-#define color_set_binary_halftone(pdc, ht, color0, color1, level)\
+#define color_set_binary_halftone_component(pdc, ht, index, color0, color1, level)\
   ((pdc)->colors.binary.b_ht = (ht),\
+   (pdc)->colors.binary.b_index = (index),\
    (pdc)->colors.binary.color[0] = (color0),\
    (pdc)->colors.binary.color[1] = (color1),\
    (pdc)->colors.binary.b_level = (level),\
    (pdc)->type = gx_dc_type_ht_binary)
+#define color_set_binary_halftone(pdc, ht, color0, color1, level)\
+  color_set_binary_halftone_component(pdc, ht, -1, color0, color1, level)
 #define color_set_binary_tile(pdc, color0, color1, tile)\
   ((pdc)->colors.binary.b_ht = 0,\
    (pdc)->colors.binary.color[0] = (color0),\
    (pdc)->colors.binary.color[1] = (color1),\
+   (pdc)->colors.binary.b_index = -1, /* irrelevant */\
    (pdc)->colors.binary.b_tile = (tile),\
    (pdc)->type = gx_dc_type_ht_binary)
 
@@ -122,18 +130,19 @@ typedef struct gx_device_color_s gx_device_color;
 #define _color_set_c(pdc, i, b, l)\
   ((pdc)->colors.colored.c_base[i] = (b),\
    (pdc)->colors.colored.c_level[i] = (l))
+void gx_complete_rgb_halftone(P2(gx_device_color *pdevc,
+				 const gx_device_halftone *pdht));
 #define color_set_rgb_halftone(pdc, ht, br, lr, bg, lg, bb, lb, a)\
-  ((pdc)->colors.colored.c_ht = (ht),\
-   _color_set_c(pdc, 0, br, lr),\
+  (_color_set_c(pdc, 0, br, lr),\
    _color_set_c(pdc, 1, bg, lg),\
    _color_set_c(pdc, 2, bb, lb),\
    (pdc)->colors.colored.alpha = (a),\
-   (pdc)->type = gx_dc_type_ht_colored)
+   gx_complete_rgb_halftone(pdc, ht))
 /* Some special clients set the individual components separately. */
+void gx_complete_cmyk_halftone(P2(gx_device_color *pdevc,
+				  const gx_device_halftone *pdht));
 #define color_finish_set_cmyk_halftone(pdc, ht)\
-  ((pdc)->colors.colored.c_ht = (ht),\
-   (pdc)->colors.colored.alpha = max_ushort,\
-   (pdc)->type = gx_dc_type_ht_colored)
+  gx_complete_cmyk_halftone(pdc, ht)
 #define color_set_cmyk_halftone(pdc, ht, bc, lc, bm, lm, by, ly, bk, lk)\
    (_color_set_c(pdc, 0, bc, lc),\
     _color_set_c(pdc, 1, bm, lm),\
@@ -160,19 +169,11 @@ typedef struct gx_device_color_s gx_device_color;
 #ifndef gx_ht_tile_DEFINED
 #  define gx_ht_tile_DEFINED
 typedef struct gx_ht_tile_s gx_ht_tile;
-
-#endif
-
-#ifndef gx_device_halftone_DEFINED
-#  define gx_device_halftone_DEFINED
-typedef struct gx_device_halftone_s gx_device_halftone;
-
 #endif
 
 #ifndef gx_color_tile_DEFINED
 #  define gx_color_tile_DEFINED
 typedef struct gx_color_tile_s gx_color_tile;
-
 #endif
 
 /*
@@ -191,6 +192,8 @@ typedef struct gx_color_tile_s gx_color_tile;
  *              colors.pure = the color;
  *      Binary halftone (gx_dc_ht_binary):
  *              colors.binary.b_ht = the device halftone;
+ *		colors.binary.b_index = -1 if b_ht is the halftone,
+ *		  otherwise an index in b_ht.components
  *              colors.binary.color[0] = the color for 0s (darker);
  *              colors.binary.color[1] = the color for 1s (lighter);
  *              colors.binary.b_level = the number of pixels to lighten,
@@ -206,6 +209,7 @@ typedef struct gx_color_tile_s gx_color_tile;
  *                0 <= c_level[i] < P;
  *                0 <= c_base[i] <= dither_rgb;
  *              colors.colored.alpha = the opacity.
+ *		colors.colored.plane_mask: bit 2^i = 1 iff c_level[i] != 0
  *      Colored pattern (gx_dc_pattern):
  *              (mask is also set, see below)
  *      @       colors.pattern.p_tile points to a gx_color_tile in
@@ -257,13 +261,15 @@ struct gx_device_color_s {
 	    const gx_device_halftone *b_ht;
 	    gx_color_index color[2];
 	    uint b_level;
+	    int b_index;
 	    gx_ht_tile *b_tile;
 	} binary;
 	struct _col {
-	    const gx_device_halftone *c_ht;
+	    gx_device_halftone *c_ht; /* non-const for setting cache ptr */
 	    byte c_base[4];
 	    uint c_level[4];
-	         ushort /*gx_color_value */ alpha;
+	    ushort /*gx_color_value */ alpha;
+	    ushort plane_mask;
 	} colored;
 	struct _pat {
 	    gx_color_tile *p_tile;
@@ -297,15 +303,12 @@ struct gx_device_color_s {
  */
 #ifndef gx_dc_type_none
 extern const gx_device_color_type_t *const gx_dc_type_none;	/* gxdcolor.c */
-
 #endif
 #ifndef gx_dc_type_null
 extern const gx_device_color_type_t *const gx_dc_type_null;	/* gxdcolor.c */
-
 #endif
 #ifndef gx_dc_type_pure
 extern const gx_device_color_type_t *const gx_dc_type_pure;	/* gxdcolor.c */
-
 #endif
 		/*
 		 * We don't declare gx_dc_pattern here, so as not to create
@@ -316,11 +319,9 @@ extern const gx_device_color_type_t *const gx_dc_type_pure;	/* gxdcolor.c */
 #endif
 #ifndef gx_dc_type_ht_binary
 extern const gx_device_color_type_t *const gx_dc_type_ht_binary;	/* gxht.c */
-
 #endif
 #ifndef gx_dc_type_ht_colored
 extern const gx_device_color_type_t *const gx_dc_type_ht_colored;	/* gxcht.c */
-
 #endif
 
 #endif /* gsdcolor_INCLUDED */

@@ -650,14 +650,14 @@ gdev_pdf_copy_mono(gx_device * dev,
 	gs_image_t_init_mask(&image, false);
 	pdf_set_color(pdev, zero, &pdev->fill_color, "rg");
     } else if (zero == 0 && one == 0xffffff) {
-	cs.type = &gs_color_space_type_DeviceGray;
+	gs_cspace_init_DeviceGray(&cs);
 	gs_image_t_init(&image, &cs);
     } else if (zero == 0xffffff && one == 0) {
-	cs.type = &gs_color_space_type_DeviceGray;
+	gs_cspace_init_DeviceGray(&cs);
 	gs_image_t_init(&image, &cs);
 	invert = 0xff;
     } else {
-	cs.type = &gs_color_space_type_Indexed;
+	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
 	cs.params.indexed.hival = 1;
 	palette[0] = (byte) (zero >> 16);
 	palette[1] = (byte) (zero >> 8);
@@ -777,9 +777,11 @@ gdev_pdf_copy_color(gx_device * dev,
 	return 0;
     /* Make sure we aren't being clipped. */
     pdf_put_clip_path(pdev, NULL);
-    cs.type = (bytes_per_pixel == 3 ? &gs_color_space_type_DeviceRGB :
-	       bytes_per_pixel == 4 ? &gs_color_space_type_DeviceCMYK :
-	       &gs_color_space_type_DeviceGray);
+    switch(bytes_per_pixel) {
+    case 3: gs_cspace_init_DeviceRGB(&cs); break;
+    case 4: gs_cspace_init_DeviceCMYK(&cs); break;
+    default: gs_cspace_init_DeviceGray(&cs);
+    }
     gs_image_t_init(&image, &cs);
     pdf_make_bitmap_image(&image, x, y, w, h);
     image.BitsPerComponent = 8;
@@ -926,15 +928,24 @@ gdev_pdf_begin_image(gx_device * dev,
 		     gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
-    int code = pdf_open_page(pdev, pdf_in_stream);
+    int code;
     pdf_image_enum *pie;
     const gs_color_space *pcs = pim->ColorSpace;
     int num_components =
-    (pim->ImageMask ? 1 : gs_color_space_num_components(pcs));
+	(pim->ImageMask ? 1 : gs_color_space_num_components(pcs));
     gs_int_rect rect;
     gs_image_t image;		/* we may change some components */
     ulong nbytes;
 
+    switch (format) {
+    case gs_image_format_chunky:
+    case gs_image_format_component_planar:
+	break;
+    default:
+	return gx_default_begin_image(dev, pis, pim, format, prect,
+				      pdcolor, pcpath, mem, pinfo);
+    }
+    code = pdf_open_page(pdev, pdf_in_stream);
     if (code < 0)
 	return code;
     if (prect)

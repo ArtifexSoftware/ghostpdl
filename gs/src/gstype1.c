@@ -132,8 +132,35 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 
 		decode_num4(lw, cip, state, encrypted);
 		*++csp = int2fixed(lw);
-		if (lw != fixed2long(*csp))
-		    return_error(gs_error_rangecheck);
+		if (lw != fixed2long(*csp)) {
+		    /*
+		     * We handle the only case we've ever seen that
+		     * actually uses such large numbers specially.
+		     */
+		    long denom;
+
+		    c0 = *cip++;
+		    charstring_next(c0, state, c, encrypted);
+		    if (c < c_num1)
+			return_error(gs_error_rangecheck);
+		    if (c < c_pos2_0)
+			decode_num1(denom, c);
+		    else if (c < cx_num4)
+			decode_num2(denom, c, cip, state, encrypted);
+		    else if (c == cx_num4)
+			decode_num4(denom, cip, state, encrypted);
+		    else
+			return_error(gs_error_invalidfont);
+		    c0 = *cip++;
+		    charstring_next(c0, state, c, encrypted);
+		    if (c != cx_escape)
+			return_error(gs_error_rangecheck);
+		    c0 = *cip++;
+		    charstring_next(c0, state, c, encrypted);
+		    if (c != ce1_div)
+			return_error(gs_error_rangecheck);
+		    *csp = float2fixed((double)lw / denom);
+		}
 	    } else		/* not possible */
 		return_error(gs_error_invalidfont);
 	  pushed:if_debug3('1', "[1]%d: (%d) %f\n",
@@ -351,7 +378,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			gs_type1_sbw(pcis, cs0, cs1, cs2, cs3);
 			goto rsbw;
 		    case ce1_div:
-			csp[-1] = float2fixed((float)csp[-1] / (float)*csp);
+			csp[-1] = float2fixed((double)csp[-1] / (double)*csp);
 			--csp;
 			goto pushed;
 		    case ce1_undoc15:
