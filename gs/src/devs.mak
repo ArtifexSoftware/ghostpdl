@@ -742,6 +742,14 @@ bmpamono.dev: $(bmpa_) page.dev async.dev
 	$(SETPDEV) bmpamono $(bmpa_)
 	$(ADDMOD) bmpamono -include async
 
+bmpa16.dev: $(bmpa_) page.dev async.dev
+	$(SETPDEV) bmpa16 $(bmpa_)
+	$(ADDMOD) bmpa16 -include async
+
+bmpa256.dev: $(bmpa_) page.dev async.dev
+	$(SETPDEV) bmpa256 $(bmpa_)
+	$(ADDMOD) bmpa256 -include async
+
 bmpa16m.dev: $(bmpa_) page.dev async.dev
 	$(SETPDEV) bmpa16m $(bmpa_)
 	$(ADDMOD) bmpa16m -include async
