@@ -145,7 +145,7 @@ shading_param(const_os_ptr op, const gs_shading_t ** ppsh)
 extern_st(st_color_space);
 
 typedef int (*build_shading_proc_t)
-     (P4(const ref *op, const gs_shading_params_t *params,
+     (P5(i_ctx_t *i_ctx_p, const ref *op, const gs_shading_params_t *params,
 	 gs_shading_t **ppsh, gs_memory_t *mem));
 
 /* Operators */
@@ -210,7 +210,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
     if (code < 0)
 	goto fail;
     /* Finish building the shading. */
-    code = (*proc)(op, &params, &psh, imemory);
+    code = (*proc)(i_ctx_p, op, &params, &psh, imemory);
     if (code < 0)
 	goto fail;
     make_istruct_new(op, 0, psh);
@@ -226,7 +226,7 @@ fail:
 
 /* Collect a Function value. */
 private int
-build_shading_function(const ref * op, gs_function_t ** ppfn, int num_inputs,
+build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn, int num_inputs,
 		       gs_memory_t *mem)
 {
     ref *pFunction;
@@ -251,7 +251,7 @@ build_shading_function(const ref * op, gs_function_t ** ppfn, int num_inputs,
 	    ref rsubfn;
 
 	    array_get(pFunction, (long)i, &rsubfn);
-	    code = fn_build_function(&rsubfn, &Functions[i], mem);
+	    code = fn_build_function(i_ctx_p, &rsubfn, &Functions[i], mem);
 	    if (code < 0)
 		break;
 	}
@@ -266,14 +266,14 @@ build_shading_function(const ref * op, gs_function_t ** ppfn, int num_inputs,
 	    gs_function_AdOt_free_params(&params, mem);
 	return code;
     } else
-	return fn_build_function(pFunction, ppfn, mem);
+	return fn_build_function(i_ctx_p, pFunction, ppfn, mem);
 }
 
 /* ------ Build shadings ------ */
 
 /* Build a ShadingType 1 (Function-based) shading. */
 private int
-build_shading_1(const ref * op, const gs_shading_params_t * pcommon,
+build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
     gs_shading_Fb_params_t params;
@@ -286,7 +286,7 @@ build_shading_1(const ref * op, const gs_shading_params_t * pcommon,
     if ((code = dict_floats_param(op, "Domain", 4, params.Domain,
 				  default_Domain)) < 0 ||
 	(code = dict_matrix_param(op, "Matrix", &params.Matrix)) < 0 ||
-	(code = build_shading_function(op, &params.Function, 2, mem)) < 0 ||
+	(code = build_shading_function(i_ctx_p, op, &params.Function, 2, mem)) < 0 ||
 	(code = gs_shading_Fb_init(ppsh, &params, mem)) < 0
 	) {
 	gs_free_object(mem, params.Function, "Function");
@@ -303,7 +303,7 @@ zbuildshading1(i_ctx_t *i_ctx_p)
 
 /* Collect parameters for an Axial or Radial shading. */
 private int
-build_directional_shading(const ref * op, float *Coords, int num_Coords,
+build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int num_Coords,
 			  float Domain[2], gs_function_t ** pFunction,
 			  bool Extend[2], gs_memory_t *mem)
 {
@@ -315,7 +315,7 @@ build_directional_shading(const ref * op, float *Coords, int num_Coords,
     if (code < 0 ||
 	(code = dict_floats_param(op, "Domain", 2, Domain,
 				  default_Domain)) < 0 ||
-	(code = build_shading_function(op, pFunction, 1, mem)) < 0
+	(code = build_shading_function(i_ctx_p, op, pFunction, 1, mem)) < 0
 	)
 	return code;
     if (dict_find_string(op, "Extend", &pExtend) <= 0)
@@ -338,14 +338,14 @@ build_directional_shading(const ref * op, float *Coords, int num_Coords,
 
 /* Build a ShadingType 2 (Axial) shading. */
 private int
-build_shading_2(const ref * op, const gs_shading_params_t * pcommon,
+build_shading_2(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
     gs_shading_A_params_t params;
     int code;
 
     *(gs_shading_params_t *)&params = *pcommon;
-    if ((code = build_directional_shading(op, params.Coords, 4,
+    if ((code = build_directional_shading(i_ctx_p, op, params.Coords, 4,
 					  params.Domain, &params.Function,
 					  params.Extend, mem)) < 0 ||
 	(code = gs_shading_A_init(ppsh, &params, mem)) < 0
@@ -363,14 +363,14 @@ zbuildshading2(i_ctx_t *i_ctx_p)
 
 /* Build a ShadingType 3 (Radial) shading. */
 private int
-build_shading_3(const ref * op, const gs_shading_params_t * pcommon,
+build_shading_3(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
     gs_shading_R_params_t params;
     int code;
 
     *(gs_shading_params_t *)&params = *pcommon;
-    if ((code = build_directional_shading(op, params.Coords, 6,
+    if ((code = build_directional_shading(i_ctx_p, op, params.Coords, 6,
 					  params.Domain, &params.Function,
 					  params.Extend, mem)) < 0 ||
 	(code = gs_shading_R_init(ppsh, &params, mem)) < 0
@@ -388,7 +388,8 @@ zbuildshading3(i_ctx_t *i_ctx_p)
 
 /* Collect parameters for a mesh shading. */
 private int
-build_mesh_shading(const ref * op, gs_shading_mesh_params_t * params,
+build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
+		   gs_shading_mesh_params_t * params,
 		   float **pDecode, gs_function_t ** pFunction,
 		   gs_memory_t *mem)
 {
@@ -458,7 +459,7 @@ build_mesh_shading(const ref * op, gs_shading_mesh_params_t * params,
 	    return code;
 	}
     }
-    code = build_shading_function(op, pFunction, 1, mem);
+    code = build_shading_function(i_ctx_p, op, pFunction, 1, mem);
     if (code < 0) {
 	gs_free_object(mem, *pDecode, "build_mesh_shading");
 	*pDecode = 0;
@@ -481,7 +482,7 @@ flag_bits_param(const ref * op, const gs_shading_mesh_params_t * params,
 
 /* Build a ShadingType 4 (Free-form Gouraud triangle mesh) shading. */
 private int
-build_shading_4(const ref * op, const gs_shading_params_t * pcommon,
+build_shading_4(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
     gs_shading_FfGt_params_t params;
@@ -489,7 +490,7 @@ build_shading_4(const ref * op, const gs_shading_params_t * pcommon,
 
     *(gs_shading_params_t *)&params = *pcommon;
     if ((code =
-	 build_mesh_shading(op, (gs_shading_mesh_params_t *)&params,
+	 build_mesh_shading(i_ctx_p, op, (gs_shading_mesh_params_t *)&params,
 			    &params.Decode, &params.Function, mem)) < 0 ||
 	(code = flag_bits_param(op, (gs_shading_mesh_params_t *)&params,
 				&params.BitsPerFlag)) < 0 ||
@@ -509,7 +510,7 @@ zbuildshading4(i_ctx_t *i_ctx_p)
 
 /* Build a ShadingType 5 (Lattice-form Gouraud triangle mesh) shading. */
 private int
-build_shading_5(const ref * op, const gs_shading_params_t * pcommon,
+build_shading_5(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
     gs_shading_LfGt_params_t params;
@@ -517,7 +518,7 @@ build_shading_5(const ref * op, const gs_shading_params_t * pcommon,
 
     *(gs_shading_params_t *)&params = *pcommon;
     if ((code =
-	 build_mesh_shading(op, (gs_shading_mesh_params_t *)&params,
+	 build_mesh_shading(i_ctx_p, op, (gs_shading_mesh_params_t *)&params,
 			    &params.Decode, &params.Function, mem)) < 0 ||
 	(code = dict_int_param(op, "VerticesPerRow", 2, max_int, 0,
 			       &params.VerticesPerRow)) < 0 ||
@@ -537,7 +538,7 @@ zbuildshading5(i_ctx_t *i_ctx_p)
 
 /* Build a ShadingType 6 (Coons patch mesh) shading. */
 private int
-build_shading_6(const ref * op, const gs_shading_params_t * pcommon,
+build_shading_6(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
     gs_shading_Cp_params_t params;
@@ -545,7 +546,7 @@ build_shading_6(const ref * op, const gs_shading_params_t * pcommon,
 
     *(gs_shading_params_t *)&params = *pcommon;
     if ((code =
-	 build_mesh_shading(op, (gs_shading_mesh_params_t *)&params,
+	 build_mesh_shading(i_ctx_p, op, (gs_shading_mesh_params_t *)&params,
 			    &params.Decode, &params.Function, mem)) < 0 ||
 	(code = flag_bits_param(op, (gs_shading_mesh_params_t *)&params,
 				&params.BitsPerFlag)) < 0 ||
@@ -565,7 +566,7 @@ zbuildshading6(i_ctx_t *i_ctx_p)
 
 /* Build a ShadingType 7 (Tensor product patch mesh) shading. */
 private int
-build_shading_7(const ref * op, const gs_shading_params_t * pcommon,
+build_shading_7(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
     gs_shading_Tpp_params_t params;
@@ -573,7 +574,7 @@ build_shading_7(const ref * op, const gs_shading_params_t * pcommon,
 
     *(gs_shading_params_t *)&params = *pcommon;
     if ((code =
-	 build_mesh_shading(op, (gs_shading_mesh_params_t *)&params,
+	 build_mesh_shading(i_ctx_p, op, (gs_shading_mesh_params_t *)&params,
 			    &params.Decode, &params.Function, mem)) < 0 ||
 	(code = flag_bits_param(op, (gs_shading_mesh_params_t *)&params,
 				&params.BitsPerFlag)) < 0 ||

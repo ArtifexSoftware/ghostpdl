@@ -57,7 +57,7 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 			    ".buildfunction");
     if (code < 0)
 	return code;
-    code = fn_build_function(op, &pfn, imemory);
+    code = fn_build_function(i_ctx_p, op, &pfn, imemory);
     if (code < 0) {
 	ifree_ref_array(&cref, ".buildfunction");
 	return code;
@@ -135,13 +135,13 @@ zexecfunction(i_ctx_t *i_ctx_p)
 
 /* Build a function structure from a PostScript dictionary. */
 int
-fn_build_function(const ref * op, gs_function_t ** ppfn, gs_memory_t *mem)
+fn_build_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn, gs_memory_t *mem)
 {
-    return fn_build_sub_function(op, ppfn, 0, mem);
+    return fn_build_sub_function(i_ctx_p, op, ppfn, 0, mem);
 }
 int
-fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth,
-		      gs_memory_t *mem)
+fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
+		      int depth, gs_memory_t *mem)
 {
     int code, type, i;
     gs_function_params_t params;
@@ -171,7 +171,7 @@ fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth,
     /* Finish building the function. */
     /* If this fails, it will free all the parameters. */
     return (*build_function_type_table[i].proc)
-	(op, &params, depth + 1, ppfn, mem);
+	(i_ctx_p, op, &params, depth + 1, ppfn, mem);
 fail:
     gs_free_const_object(mem, params.Range, "Range");
     gs_free_const_object(mem, params.Domain, "Domain");

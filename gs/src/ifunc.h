@@ -26,7 +26,7 @@
 
 /* Define build procedures for the various function types. */
 #define build_function_proc(proc)\
-  int proc(P5(const ref *op, const gs_function_params_t *params, int depth,\
+  int proc(P6(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t *params, int depth,\
 	      gs_function_t **ppfn, gs_memory_t *mem))
 typedef build_function_proc((*build_function_proc_t));
 
@@ -39,9 +39,9 @@ extern const build_function_type_t build_function_type_table[];
 extern const uint build_function_type_table_count;
 
 /* Build a function structure from a PostScript dictionary. */
-int fn_build_function(P3(const ref * op, gs_function_t ** ppfn,
+int fn_build_function(P4(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 			 gs_memory_t *mem));
-int fn_build_sub_function(P4(const ref * op, gs_function_t ** ppfn,
+int fn_build_sub_function(P5(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 			     int depth, gs_memory_t *mem));
 
 /* Allocate an array of function objects. */

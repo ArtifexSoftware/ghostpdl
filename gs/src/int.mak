@@ -1626,7 +1626,7 @@ $(PSD)func4.dev : $(INT_MAK) $(ECHOGS_XE) $(func4read_)\
 $(PSOBJ)zfunc4.$(OBJ) : $(PSSRC)zfunc4.c $(memory__h) $(OP)\
  $(gsfunc_h) $(gsfunc4_h) $(gsutil_h)\
  $(idict_h) $(ifunc_h) $(iname_h)\
- $(opextern_h)
+ $(opextern_h) $(dstack_h)
 	$(PSCC) $(PSO_)zfunc4.$(OBJ) $(C_) $(PSSRC)zfunc4.c
 
 $(PSOBJ)zimage3.$(OBJ) : $(PSSRC)zimage3.c $(OP) $(memory__h)\

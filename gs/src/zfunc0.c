@@ -36,7 +36,7 @@ build_function_proc(gs_build_function_0);
 
 /* Finish building a FunctionType 0 (Sampled) function. */
 int
-gs_build_function_0(const ref *op, const gs_function_params_t * mnDR,
+gs_build_function_0(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t * mnDR,
 		    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
 {
     gs_function_Sd_params_t params;

@@ -28,6 +28,7 @@
 #include "idict.h"
 #include "ifunc.h"
 #include "iname.h"
+#include "dstack.h"
 
 /*
  * FunctionType 4 functions are not defined in the PostScript language.  We
@@ -132,7 +133,7 @@ psc_fixup(byte *p, byte *to)
  */
 #define MAX_PSC_FUNCTION_NESTING 10
 private int
-check_psc_function(const ref *pref, int depth, byte *ops, int *psize)
+check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int *psize)
 {
     long i;
     uint size = r_size(pref);
@@ -141,6 +142,7 @@ check_psc_function(const ref *pref, int depth, byte *ops, int *psize)
 	byte no_ops[1 + max(sizeof(int), sizeof(float))];
 	byte *p = (ops ? ops + *psize : no_ops);
 	ref elt, elt2, elt3;
+	ref * delp;
 	int code;
 
 	array_get(pref, i, &elt);
@@ -180,15 +182,26 @@ check_psc_function(const ref *pref, int depth, byte *ops, int *psize)
 		return_error(e_rangecheck);
 	    name_string_ref(&elt, &elt);
 	    if (!bytes_compare(elt.value.bytes, r_size(&elt),
-			       (const byte *)"true", 4))
+			       (const byte *)"true", 4)) {
 		*p = PtCr_true;
-	    else if (!bytes_compare(elt.value.bytes, r_size(&elt),
-				      (const byte *)"false", 5))
+	        ++*psize;
+	        break;
+	    }
+	    if (!bytes_compare(elt.value.bytes, r_size(&elt),
+				      (const byte *)"false", 5)) {
 		*p = PtCr_false;
-	    else
+	        ++*psize;
+	        break;
+	    }
+	    /* Check if the name is a valid operator in systemdict */
+	    if (dict_find(systemdict, &elt, &delp) <= 0)
+		return_error(e_undefined);
+	    if (r_btype(delp) != t_operator)
+		return_error(e_typecheck);
+	    if (!r_has_attr(delp, a_executable))
 		return_error(e_rangecheck);
-	    ++*psize;
-	    break;
+	    elt = *delp;
+	    /* Fall into the operator case */
 	case t_operator: {
 	    int j;
 
@@ -208,7 +221,7 @@ check_psc_function(const ref *pref, int depth, byte *ops, int *psize)
 	    if ((code = array_get(pref, ++i, &elt2)) < 0)
 		return code;
 	    *psize += 3;
-	    code = check_psc_function(&elt, depth + 1, ops, psize);
+	    code = check_psc_function(i_ctx_p, &elt, depth + 1, ops, psize);
 	    if (code < 0)
 		return code;
 	    /* Check for {proc} if | {proc1} {proc2} ifelse */
@@ -232,7 +245,7 @@ check_psc_function(const ref *pref, int depth, byte *ops, int *psize)
 		    *p = PtCr_else;
 		}
 		*psize += 3;
-		code = check_psc_function(&elt2, depth + 1, ops, psize);
+		code = check_psc_function(i_ctx_p, &elt2, depth + 1, ops, psize);
 		if (code < 0)
 		    return code;
 		if (ops)
@@ -254,7 +267,7 @@ build_function_proc(gs_build_function_4);
 
 /* Finish building a FunctionType 4 (PostScript Calculator) function. */
 int
-gs_build_function_4(const ref *op, const gs_function_params_t * mnDR,
+gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t * mnDR,
 		    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
 {
     gs_function_PtCr_params_t params;
@@ -275,7 +288,7 @@ gs_build_function_4(const ref *op, const gs_function_params_t * mnDR,
 	goto fail;
     }
     size = 0;
-    code = check_psc_function(proc, 0, NULL, &size);
+    code = check_psc_function(i_ctx_p, proc, 0, NULL, &size);
     if (code < 0)
 	goto fail;
     ops = gs_alloc_string(mem, size + 1, "gs_build_function_4(ops)");
@@ -284,7 +297,7 @@ gs_build_function_4(const ref *op, const gs_function_params_t * mnDR,
 	goto fail;
     }
     size = 0;
-    check_psc_function(proc, 0, ops, &size); /* can't fail */
+    check_psc_function(i_ctx_p, proc, 0, ops, &size); /* can't fail */
     ops[size] = PtCr_return;
     params.ops.data = ops;
     params.ops.size = size + 1;
