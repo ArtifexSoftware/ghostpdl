@@ -21,9 +21,10 @@
 # Command line syntax:
 set HELP {Usage:
     suite (--[no-]band | --[no-]check | --[no-]debug |
-       --[no-]display[=<device>] | --[no-]missing | --[no-]print[=<device>] |
-       --[no-]profile | --[no-]remote[=<host>] | --[no-]sort |
-       --[no-]together | -<switch> | <dirname>[,<filename>] | <filename>)*
+       --[no-]display[=<device>] | --[no-]missing | --[no-]pause |
+       --[no-]print[=<device>] | --[no-]profile | --[no-]remote[=<host>] |
+       --[no-]sort | --[no-]together | -<switch> |
+       <dirname>[,<filename>] | <filename>)*
 }
 
 # Note: test failure is typically indicated by one or more of the following:
@@ -39,6 +40,7 @@ set SW(debug) 0			;# don't actually execute the test
 set SW(display) 0		;# use display instead of printer
 				;# (or device if value != 1)
 set SW(missing) 0		;# only run if log file is missing
+set SW(pause) 0			;# pause after each page
 set SW(print) 0			;# don't discard output, print for LJ4
 				;# (or device if value != 1)
 set SW(profile) 0		;# assume -pg executable, profile execution
@@ -53,8 +55,11 @@ set SW(together) 0		;# run all files together, not individually
 #	REMOTED(remotename) = 1 if the given file has been copied to
 #	  the given host
 
-proc test_args {band display print xe switches} {
-    set args [list -K40000 -Z@:? -dNOPAUSE -dBATCH]
+proc test_args {band display pause print xe switches output} {
+    set args [list -K40000 -Z@:? -dBATCH]
+    if {!$pause} {
+	lappend args -dNOPAUSE
+    }
     if {$display != "0"} {
 				# Use the default device, or a given device.
 	if {$display != "1"} {
@@ -64,7 +69,7 @@ proc test_args {band display print xe switches} {
 	lappend args -r600 -sDEVICE=pbmraw -sOutputFile=/dev/null
     } else {
 	if {$print == "1"} {set print ljet4}
-	lappend args -r600 -sDEVICE=$print -sOutputFile=t.[exec date +%H%M%S].%03d.$print
+	lappend args -r600 -sDEVICE=$print -sOutputFile=${output}.%03d.$print
     }
     if $band {
 	lappend args -dMaxBitmap=200000 -dBufferSpace=200000
@@ -199,19 +204,26 @@ proc suite {filelist switches} {
     }
     foreach fl $files {
 	set test_xe [test_xe [lindex $fl 0]]
-	set test_args [test_args $SW(band) $SW(display) $SW(print) $test_xe $switches]
 	set output [output_name $fl]
+	set test_args [test_args $SW(band) $SW(display) $SW(pause) $SW(print) $test_xe $switches $output]
+	if $SW(pause) {
+	    set in1 [list]
+	    set in0 [list]
+	} else {
+	    set in1 [list -_ <]
+	    set in0 [list -_]
+	}
 	if {![regexp {gs$} $test_xe]} {
 	    set pre [list]
 	    set post $fl
 	    set lib [glob lib/*.ps]
 	} elseif {[llength $fl] == 1} {
 	    set pre [list]
-	    set post [list -_ < [lindex $fl 0]]
+	    set post [concat $in1 [list [lindex $fl 0]]]
 	    set lib [list]
 	} else {
 	    set pre [concat cat $fl |]
-	    set post [list -_]
+	    set post $in0
 	    set lib [list]
 	}
 	if $SW(check) {
