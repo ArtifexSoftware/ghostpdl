@@ -301,8 +301,8 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
     /* Allocate the CMap. */
     {
 	static const gs_cid_system_info_t null_cidsi = {
-	    { "none", 4 },
-	    { "none", 4 },
+	    { (const byte*) "none", 4 },
+	    { (const byte*) "none", 4 },
 	    0
 	};
 	code = gs_cmap_alloc(ppcmap, &st_cmap_tt_16bit_format4, wmode,
