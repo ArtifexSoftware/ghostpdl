@@ -68,6 +68,8 @@ type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
     font0->data.FDepVector = fdep;
     font0->data.fdep_size = 1;
     font0->data.CMap = pcmap;
+    font0->data.SubsVector.data = 0;
+    font0->data.SubsVector.size = 0;
     *ppfont0 = font0;
     return 0;
 }
