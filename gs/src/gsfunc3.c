@@ -334,7 +334,6 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
     float d0 = pfn->params.Domain[0], d1 = pfn->params.Domain[1];
     int k = pfn->params.k;
     int i;
-    int result = 0;
 
     if (v0 > d1 || v1 < d0)
 	return_error(gs_error_rangecheck);
@@ -347,7 +346,6 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 	float b1 = (i == k - 1 ? d1 : pfn->params.Bounds[i]);
 	float e0, e1;
 	float w0, w1;
-	int code;
 
 	if (v0 >= b1)
 	    continue;
@@ -580,17 +578,16 @@ fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
 {
     const gs_function_AdOt_t *const pfn =
 	(const gs_function_AdOt_t *)pfn_common;
-    int i, result;
+    int i;
 
-    for (i = 0, result = 0; i < pfn->params.n; ++i) {
+    for (i = 0; i < pfn->params.n; ++i) {
 	int code =
 	    gs_function_is_monotonic(pfn->params.Functions[i], lower, upper);
 
 	if (code <= 0)
 	    return code;
-	result |= code << (2 * i);
     }
-    return result;
+    return 1;
 }
 
 /* Return Arrayed Output function information. */
