@@ -26,6 +26,7 @@
 #include "gxfixed.h"
 #include "gxfont.h"
 #include "gxfont1.h"
+#include "strimpl.h"		/* required by Watcom compiler (why?) */
 #include "stream.h"
 #include "sfilter.h"
 #include "spsdf.h"

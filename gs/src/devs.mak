@@ -678,7 +678,7 @@ $(DD)psf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psf_)
 
 $(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(sfilter_h) $(stream_h) $(sstring_h)\
+ $(sfilter_h) $(sstring_h) $(stream_h) $(strimpl_h)\
  $(gdevpsf_h) $(spprint_h) $(spsdf_h)
 	$(GLCC) $(GLO_)gdevpsf1.$(OBJ) $(C_) $(GLSRC)gdevpsf1.c
 
