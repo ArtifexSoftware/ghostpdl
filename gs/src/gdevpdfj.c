@@ -314,9 +314,6 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	pxo->data_height = h;
 	piw->data = pcos;
 	piw->named = named;
-	code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", piw->pres);
-	if (code < 0)
-	    return code;
     }
     pdev->strm = pdev->streams.strm;
     pdev->strm = cos_write_stream_alloc(piw->data, pdev, "pdf_begin_write_image");
@@ -432,6 +429,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	cos_object_t *const pco = pres->object;
 	cos_stream_t *const pcs = (cos_stream_t *)pco;
 	cos_dict_t *named = piw->named;
+	int code;
 
 	if (named) {
 	    /*
@@ -439,8 +437,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	     * from the named dictionary to the image stream, and then
 	     * associate the name with the stream.
 	     */
-	    int code = cos_dict_move_all(cos_stream_dict(pcs), named);
-
+	    code = cos_dict_move_all(cos_stream_dict(pcs), named);
 	    if (code < 0)
 		return code;
 	    pres->named = true;
@@ -454,8 +451,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	    *(cos_object_t *)named = *pco;
 	    pres->object = COS_OBJECT(named);
 	} else if (!pres->named) { /* named objects are written at the end */
-	    int code = pdf_find_same_resource(pdev, resourceXObject, &piw->pres);
-
+	    code = pdf_find_same_resource(pdev, resourceXObject, &piw->pres);
 	    if (code < 0)
 		return code;
 	    if (code > 0) {
@@ -470,6 +466,9 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	    } else if (pres->object->id < 0)
 		pdf_reserve_object_id(pdev, pres, 0);
 	}
+	code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", piw->pres);
+	if (code < 0)
+	    return code;
 	return 0;
     } else {			/* in-line image */
 	stream *s = pdev->strm;
