@@ -107,6 +107,7 @@ private inline bool IsCIDFont(const gs_font_base *pbfont)
 
 private inline bool IsType1GlyphData(const gs_font_base *pbfont)
 {   return pbfont->FontType == ft_encrypted ||
+           pbfont->FontType == ft_encrypted2 ||
            pbfont->FontType == ft_CID_encrypted;
 }
 
@@ -371,7 +372,7 @@ private ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int ind
         case FAPI_FONT_FEATURE_IsFixedPitch: return 0; /* wrong */
         case FAPI_FONT_FEATURE_UnderLinePosition: return 0; /* wrong */
         case FAPI_FONT_FEATURE_UnderlineThickness: return 0; /* wrong */
-        case FAPI_FONT_FEATURE_FontType: return 1;
+        case FAPI_FONT_FEATURE_FontType: return pfont->FontType;
         case FAPI_FONT_FEATURE_FontBBox: 
             switch (index) {
                 case 0 : return (ushort)pfont->FontBBox.p.x;
@@ -963,7 +964,7 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
     int oversampling_x, oversampling_y;
     double FontMatrix_div = (bCID && bIsType1GlyphData && font_file_path == NULL ? 1000 : 1);
     bool bVertical = (gs_rootfont(igs)->WMode != 0);
-    double sbw[2], vsbw[4], *pvsbw = NULL;
+    double sbw[4] = {0, 0}, vsbw[4], *pvsbw = NULL;
     double em_scale_x, em_scale_y;
     gs_rect char_bbox;
     int code;
@@ -1141,21 +1142,27 @@ retry_oversampling:
         }
     }
     compute_em_scale(pbfont, &metrics, FontMatrix_div, &em_scale_x, &em_scale_y);
-    sbw[0] = metrics.escapement / em_scale_x;
-    sbw[1] = 0;
+    code = zchar_get_metrics(pbfont, &char_name, sbw);
+    CheckRET(code);
+    if (code == metricsNone) {
+        sbw[2] = metrics.escapement / em_scale_x;
+        sbw[3] = 0;
+    } else {
+	CheckRET(zchar_get_metrics(pbfont, op, sbw));
+    }
     char_bbox.p.x = metrics.bbox_x0 / em_scale_x;
     char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
     char_bbox.q.x = metrics.bbox_x1 / em_scale_x;
     char_bbox.q.y = metrics.bbox_y1 / em_scale_y;
     if (bVertical) {
-        vsbw[0] = sbw[0] / 2;
+        vsbw[0] = sbw[2] / 2;
         vsbw[1] = pbfont->FontBBox.q.y;
         vsbw[2] = 0;
         vsbw[3] = - pbfont->FontBBox.q.x; /* Sic ! */
         pvsbw = vsbw;
     }
     code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
-		           NULL, sbw, &char_bbox,
+		           NULL, sbw + 2, &char_bbox,
 			   fapi_finish_render, fapi_finish_render, pvsbw);
     if (code != 0) {
         if (code < 0) {
