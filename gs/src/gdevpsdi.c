@@ -97,7 +97,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 pdev->version >= psdf_version_ll3 ?
 	 &s_zlibE_template : &s_LZWE_template);
     const gs_color_space *pcs = pim->ColorSpace; /* null if mask */
-    int Colors = (pcs ? gs_color_space_num_components(pcs) : 0);
+    int Colors = (pcs ? gs_color_space_num_components(pcs) : 1);
     bool Indexed =
 	(pcs != 0 && 
 	 gs_color_space_get_index(pcs) == gs_color_space_index_Indexed);
@@ -122,7 +122,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     }
     if (template == 0)	/* no compression */
 	return 0;
-    if (pim->Width * pim->Height <= 16)	/* not worth compressing */
+    if (pim->Width * pim->Height * Colors * pim->BitsPerComponent <= 160)	/* not worth compressing */
 	return 0;
     /* Only use DCTE for 8-bit, non-Indexed data. */
     if (template == &s_DCTE_template) {
