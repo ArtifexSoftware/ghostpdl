@@ -160,6 +160,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
     int have_cdevproc;
     ref rpop;
     bool metrics2;
+    bool metrics2_use_default = false;
     op_proc_t cont;
     double w2[10];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
@@ -201,6 +202,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
         w2[8] = Metrics2_sbw_default[0];
         w2[9] = Metrics2_sbw_default[1];
 	metrics2 = true;
+	metrics2_use_default = true;
     }
 
     /* Check for CDevProc or "short-circuiting". */
@@ -214,7 +216,13 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 	if (have_cdevproc) {
 	    check_proc_only(*pcdevproc);
 	    zsetc = zsetcachedevice2;
-	    if (!metrics2) {
+	    
+	    /* If we have cdevproc and the font type is CID type 0,
+	       we'll throw away Metrics2_sbw_default that is calculated 
+	       from FontBBox. */
+	    if (!metrics2 
+		|| (penum->current_font->FontType == ft_CID_encrypted
+		    && metrics2_use_default)) {
 		w2[6] = w2[0], w2[7] = w2[1];
 		w2[8] = w2[9] = 0;
 	    }
