@@ -442,21 +442,6 @@ end
   /DeviceN { 1 oget length }
 .dicttomark readonly def
 
-% Perhaps some of the values in the following need to be modified
-% depending on the WhitePoint value....
-/cslabinit mark
-  /DecodeABC [{16 add 116 div} bind {500 div} bind {200 div} bind]
-  /MatrixABC [1 1 1 1 0 0 0 0 -1]
-  /DecodeLMN [
-    {dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse
-     0.9505 mul} bind
-    {dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse
-     } bind
-    {dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse
-     1.0890 mul} bind
-  ]
-.dicttomark readonly def
-
 /csrdict mark
   /DeviceGray {
     /DefaultGray Page /ColorSpace rget { exch pop resolvecolorspace } if
@@ -493,9 +478,22 @@ end
     dup /Range knownoget not { [-100 100 -100 100] } if
     [0 100 null null null null] dup 2 4 -1 roll putinterval
     /RangeABC exch def
-    //cslabinit { def } forall
+    /DecodeABC [{16 add 116 div} bind {500 div} bind {200 div} bind] def
+    /MatrixABC [1 1 1 1 0 0 0 0 -1] def
     dup /BlackPoint knownoget { /BlackPoint exch def } if
-    dup /WhitePoint knownoget { /WhitePoint exch def } if
+    dup /WhitePoint knownoget { /WhitePoint exch def } {
+      (   **** Lab colorspace is missing WhitePoint.\n)
+      pdfformaterror
+      /WhitePoint [0.9505 1 1.089] def
+    } ifelse
+    % scaling function g() for DecodeLMN construction
+    { dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse }
+    /DecodeLMN [
+      % Store white point implicitly inside procedures.
+      [ 3 index aload pop WhitePoint 0 get /mul .systemvar ] cvx bind
+      [ 4 index aload pop WhitePoint 1 get /mul .systemvar ] cvx bind
+      [ 5 index aload pop WhitePoint 2 get /mul .systemvar ] cvx bind
+    ] def pop
     /PDFColorSpace exch def [ /CIEBasedABC currentdict end ]
   }
   /ICCBased {
