@@ -325,7 +325,15 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
      * by taking the high-order alpha bit.
      */
     bits = cc_bits(cc);
+#   if DROPOUT_PREVENTION
+    /* With 4x2 scale, depth == 3. 
+     * An example is -dTextAlphaBits=4 comparefiles/fonttest.pdf .
+     * We need to map 4 bitmap bits to 2 alpha bits.
+     */
+    depth = (cc_depth(cc) == 3 ? 2 : cc_depth(cc));
+#   else
     depth = cc_depth(cc);
+#   endif
     if (dev_proc(orig_dev, fill_mask) != gx_default_fill_mask ||
 	!lop_no_S_is_T(pgs->log_op)
 	) {
