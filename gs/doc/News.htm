@@ -54,16 +54,10 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version7.30"></a>Version 7.30 (2002-09-07)</h3>
+<h3><a name="Version7.31"></a>Version 7.31 (not yet released)</h3>
 
 <p>
-This is an alpha testing release of the new DeviceN
-implementation. In addition, there have been numerous bug fixes and
-further cleanup in the pdfwrite device.
-
-<p>
-Unfortunately, documentation for the DeviceN changes was not available
-in time for this release.
+This is a cvs pre-release version of Ghostscript.
 
 <p>
 The following SourceForge bug numbers were open at the time of the last release:
@@ -173,35 +167,14 @@ The following SourceForge bug numbers were open at the time of the last release:
 605830.
 
 <p>
-In addition, a significant number of regressions remain. See the <a
+In addition, a number of regressions remain. See the <a
 href="http://www.ghostscript.com/pipermail/gs-regression/2002-September/thread.html">archives</>
 of the regression report for more details.
 
-<h3><a name="7.30_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="7.31_Incompatible_changes"></a>Incompatible changes</h3>
 
-<p>
-A number of DeviceN changes can cause incompatibility. They are
-summarized below.
-
+<p>No known incompatible changes since the last release.
 <pre>
-* gx_color_index may now be 32 or 64 bits, determined at compile time.
-
-* The gx_device_color_info field has been updated to include
-  significantly more information about the encoding from colors in the
-  process color model to gx_color_index colors. New fields include:
-  polarity, gray_index, separable_and_linear, comp_shift, and comp_bits.
-  Devices are strongly encouraged to set these new fields correctly.
-  See gxdevcli.h for more information.
-
-* Some existing device procedures for color mapping have changed.
-  map_rgb_color now takes a cv[] array rather than separate red, green,
-  and blue scalar color values, and similarly for map_cmyk_color.
-
-* New device procedures: get_color_mapping_procs, get_color_comp_index,
-  encode_color, decode_color. These device procedures are required for
-  devices defining additional colorant planes, and may be desirable for
-  finer control over color mapping. See gxdevcli.h and gxcmap.c for
-  more information.
 </pre>
 
 <!-- [2.0 end contents] ==================================================== -->
