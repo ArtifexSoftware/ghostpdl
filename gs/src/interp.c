@@ -1376,6 +1376,7 @@ remap:		    if (iesp + 2 >= estop) {
 		scanner_state sstate;
 
 		scanner_state_init_options(&sstate, SCAN_FROM_STRING);
+		s_init(&ss, NULL);
 		sread_string(&ss, IREF->value.bytes, r_size(IREF));
 		osp = iosp;	/* scan_token uses ostack */
 		code = scan_token(i_ctx_p, &ss, &token, &sstate);
