@@ -46,8 +46,8 @@ class Ghostscript:
 		self.log_stderr = self.nullfile
 
 	def process(self):
-		bandsize = 10000
-		if (self.band): bandsize = 30000000
+		bandsize = 30000000
+		if (self.band): bandsize = 10000
 		
 		cmd = self.command
 		cmd = cmd + ' ' + self.gsoptions
