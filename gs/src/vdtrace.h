@@ -74,7 +74,7 @@ extern char vd_flags[];
 
 void vd_impl_moveto(double x, double y);
 void vd_impl_lineto(double x, double y);
-void vd_impl_lineto_multi(struct gs_fixed_point_s *p, int n);
+void vd_impl_lineto_multi(const struct gs_fixed_point_s *p, int n);
 void vd_impl_curveto(double x0, double y0, double x1, double y1, double x2, double y2);
 void vd_impl_bar(double x0, double y0, double x1, double y1, int w, unsigned long c); /* unscaled width */
 void vd_impl_square(double x0, double y0, int w, unsigned int c); /* unscaled width */

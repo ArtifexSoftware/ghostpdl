@@ -80,7 +80,7 @@ void vd_impl_lineto(double x, double y)
     vd_trace1->lineto(vd_trace1, px, py);
 }
 
-void vd_impl_lineto_multi(struct gs_fixed_point_s *p, int n)
+void vd_impl_lineto_multi(const struct gs_fixed_point_s *p, int n)
 {   int i;
     NullRET;
     for (i = 0; i < n; i++) {

@@ -395,4 +395,29 @@ extern_st(st_path_enum);
    (ppath->position.x += dx, ppath->position.y += dy,\
     path_update_moveto(ppath), 0) )
 
+#define FLATTENED_CURVE_ITERATOR 1 /* Old code = 0, new code = 1. */
+
+#if FLATTENED_CURVE_ITERATOR
+/* An iterator of flattened segments for a minotonic curve. */
+typedef struct gx_flattened_curve_iterator_s gx_flattened_curve_iterator;
+struct gx_flattened_curve_iterator_s {
+    /* private : */
+    fixed x0, y0, x3, y3;
+    fixed cx, bx, ax, cy, by, ay;
+    uint i, k;
+    uint rmask;			/* M-1 */
+    fixed idx, idy, id2x, id2y, id3x, id3y;	/* I */
+    uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
+    segment_notes notes;
+    /* public : */
+    fixed lx0, ly0, lx1, ly1;
+};
+
+bool gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this, 
+	    fixed x0, fixed y0, const curve_segment *pc, int k, segment_notes notes);
+bool gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this, 
+	    fixed x0, fixed y0, const line_segment *pc, segment_notes notes);
+bool gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this);
+#endif
+
 #endif /* gzpath_INCLUDED */
