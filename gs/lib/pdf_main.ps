@@ -639,27 +639,16 @@ end readonly def
   } bind def
 end readonly def
 
+% **** The following procedure should not be changed to allow clients
+% **** to directly interface with the constituent procedures. GSview
+% **** and some Artifex customers rely on the pdfshowpage_init,
+% **** pdfshowpage_setpage, pdfshowpage_finish so all logic should be
+% **** implemented in one of those three procedures.
 /pdfshowpage		% <pagedict> pdfshowpage -
  { dup /Page exch store
    pdfshowpage_init 
    pdfshowpage_setpage 
-   save /PDFSave exch store
-   /PDFdictstackcount countdictstack store
-   (before exec) VMDEBUG
    pdfshowpage_finish
-   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
-   % to clean up any left over dicts from the dictstack
-   countdictstack PDFdictstackcount sub dup 0 ne { 
-     (   **** Warning: File has imbalanced q/Q operators \(too many q's\)\n)
-     pdfformaterror
-     { end } repeat
-   } {
-     pop
-   } ifelse
-   (after exec) VMDEBUG
-   Repaired		% pass Repaired state around the restore
-   PDFSave restore
-   /Repaired exch def
  } bind def
 
 /pdfpagecontents	% <pagedict> pdfpagecontents <contents>
@@ -725,6 +714,9 @@ end readonly def
 } bind def
 
 /pdfshowpage_finish {	% <pagedict> pdfshowpage_finish -
+   save /PDFSave exch store
+   /PDFdictstackcount countdictstack store
+   (before exec) VMDEBUG
 
    % set up color space substitution (this must be inside the page save)
    pdfshowpage_setcspacesub
@@ -810,6 +802,19 @@ end readonly def
   /Annots knownoget { { oforce drawannot } forall } if
   endpage
   end			% scratch dict
+  % Some PDF files don't have matching q/Q (gsave/grestore) so we need
+  % to clean up any left over dicts from the dictstack
+  countdictstack PDFdictstackcount sub dup 0 ne { 
+    (   **** Warning: File has imbalanced q/Q operators \(too many q's\)\n)
+    pdfformaterror
+    { end } repeat
+  } {
+    pop
+  } ifelse
+  (after exec) VMDEBUG
+  Repaired		% pass Repaired state around the restore
+  PDFSave restore
+  /Repaired exch def
 } bind def
 /showpagecontents {	% <pagedict> showpagecontents -
   gsave		% preserve gstate for Annotations later
