@@ -372,7 +372,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 
 int
 jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
-			       const uint8_t *segment_data)
+			       const byte *segment_data)
 {
   Jbig2RegionSegmentInfo rsi;
   byte seg_flags;

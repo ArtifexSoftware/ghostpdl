@@ -157,7 +157,7 @@ jbig2_find_segment(Jbig2Ctx *ctx, uint32_t number)
 /* parse the generic portion of a region segment data header */
 void
 jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
-			      const byte *segment_data)
+			      const uint8_t *segment_data)
 {
   /* 7.4.1 */
   info->width = jbig2_get_int32(segment_data);

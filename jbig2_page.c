@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_page.c,v 1.15 2002/08/15 14:54:45 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -63,7 +63,7 @@ dump_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, Jbig2Page *page)
  * buffer for the page (or the first stripe)
  **/
 int
-jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
+jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
     Jbig2Page *page;
 
@@ -178,7 +178,7 @@ jbig2_complete_page (Jbig2Ctx *ctx)
  * jbig2_parse_end_of_page: parse an end of page segment
  **/
 int
-jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
+jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
     uint32_t page_number = ctx->pages[ctx->current_page].number;
 

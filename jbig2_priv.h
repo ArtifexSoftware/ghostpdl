@@ -55,7 +55,7 @@ struct _Jbig2Ctx {
 
   Jbig2FileState state;
 
-  byte file_header_flags;
+  uint8_t file_header_flags;
   int32_t n_pages;
 
   int n_segments_max;
@@ -119,9 +119,9 @@ struct _Jbig2Page {
     Jbig2Image *image;
 };
 
-int jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
-int jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
-int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+int jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
+int jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
+int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
 
 typedef enum {
     JBIG2_COMPOSE_OR = 0,
@@ -139,11 +139,11 @@ typedef struct {
   int32_t height;
   int32_t x;
   int32_t y;
-  byte flags;
+  uint8_t flags;
 } Jbig2RegionSegmentInfo;
 
-void jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info, const byte *segment_data);
-int jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+void jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info, const uint8_t *segment_data);
+int jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
 
 /* 7.4 */
 int jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
