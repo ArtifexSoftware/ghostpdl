@@ -1624,6 +1624,7 @@ pdfmark_NamespacePop(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 {
     if (count != 0)
 	return_error(gs_error_rangecheck);
+    cos_dict_objects_write(pdev->local_named_objects, pdev);
     return pdf_pop_namespace(pdev);
 }
 
