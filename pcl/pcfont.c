@@ -45,6 +45,7 @@ pcl_decache_font(pcl_state_t *pcs, int set)
 	else
 	  {
 	    pcs->font_selection[set].font = NULL;
+	    pcs->font_selection[set].selected_id = 0;
 	    pcs->g.font_selection[set].font = NULL;
 	    if ( pcs->font_selected == set )
 	      {
@@ -270,6 +271,7 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	    return code;
 	  case 0:
 	    pcl_decache_font(pcs, -1);
+	    pfs->selected_id = id;
 	  case 1:		/* not found */
 	    return 0;
 	  }
