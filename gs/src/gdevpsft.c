@@ -663,7 +663,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	writing_stripped = (options & WRITE_TRUETYPE_STRIPPED) != 0,
 	generate_mtx = (options & WRITE_TRUETYPE_HVMTX) != 0,
 	no_generate = writing_cid | writing_stripped,
-	have_cmap = no_generate && !writing_cid,
+	have_cmap = no_generate,
 	have_name = !(options & WRITE_TRUETYPE_NAME),
 	have_OS_2 = no_generate,
 	have_post = no_generate;
@@ -844,7 +844,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     numTables_out = numTables + 1 /* head */
 	+ !writing_stripped * 2	/* glyf, loca */
 	+ generate_mtx * (have_hvhea[0] + have_hvhea[1]) /* hmtx, vmtx */
-	+ !no_generate		/* OS/2 */
+	+ !have_OS_2		/* OS/2 */
 	+ !have_cmap + !have_name + !have_post;
     if (numTables_out >= MAX_NUM_TABLES)
 	return_error(gs_error_limitcheck);
@@ -962,14 +962,26 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    uint length = u32(tab + 12);
 
 	    switch (u32(tab)) {
-	    case W('h','h','e','a'):
-	    case W('v','h','e','a'):
-		if (generate_mtx) {
-		    write_range(s, pfont, start, length - 2); /* 34 */
-		    put_ushort(s, mtx[tab[0] == 'v'].numMetrics);
-		    break;
+	    case W('O','S','/','2'):
+		if (!have_cmap) {
+		    /*
+		     * Adjust the first and last character indices in the OS/2
+		     * table to reflect the values in the generated cmap.
+		     */
+		    const byte *pos2;
+		    ttf_OS_2_t os2;
+
+		    ACCESS(OS_2_start, OS_2_length, pos2);
+		    memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
+		    update_OS_2(&os2, TT_BIAS, 256);
+		    stream_write(s, &os2, OS_2_length);
+		    put_pad(s, OS_2_length);
+		} else {
+		    /* Just copy the existing OS/2 table. */
+		    write_range(s, pfont, OS_2_start, OS_2_length);
+		    put_pad(s, OS_2_length);
 		}
-		/* falls through */
+	    break;
 	    default:
 		write_range(s, pfont, start, length);
 	    }
@@ -1035,29 +1047,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 		       options, cmap_length);
 	if (!have_name)
 	    write_name(s, &font_name);
-#if TT_GENERATE_OS_2
 	if (!have_OS_2)
 	    write_OS_2(s, font, TT_BIAS, 256);
-	else
-#endif
-	    if (!have_cmap) {
-		/*
-		 * Adjust the first and last character indices in the OS/2
-		 * table to reflect the values in the generated cmap.
-		 */
-		const byte *pos2;
-		ttf_OS_2_t os2;
-
-		ACCESS(OS_2_start, OS_2_length, pos2);
-		memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
-		update_OS_2(&os2, TT_BIAS, 256);
-		stream_write(s, &os2, OS_2_length);
-		put_pad(s, OS_2_length);
-	    } else if (!writing_cid) {
-		/* Just copy the existing OS/2 table. */
-		write_range(s, pfont, OS_2_start, OS_2_length);
-		put_pad(s, OS_2_length);
-	    }
 
 	/* If necessary, write [hv]mtx. */
 
