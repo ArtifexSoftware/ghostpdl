@@ -78,7 +78,7 @@ extern pl_interp_implementation_t const * const pdl_implementation[];	/* zero-te
 /* Define the usage message. */
 private const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
-Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
+Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -n -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>";
@@ -489,8 +489,8 @@ pl_main(
 	dprintf( "Final time" );
     pl_platform_dnit(0);
 
-    pl_mem_node_free_all_remaining();
-
+    if ( inst.mem_cleanup )
+        pl_mem_node_free_all_remaining();
     return 0;
 #undef mem
 }
@@ -737,6 +737,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->last_page = max_int;
     pti->page_count = 0;
     pti->saved_hwres = false;
+    pti->mem_cleanup = true;
     strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
@@ -913,8 +914,12 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		gs_malloc_limit = (long)maxk << 10;
 	    }
 	    break;
+        case 'n':
+        case 'N':
+            pmi->mem_cleanup = false;
+            break;
 	case 'p':
-	case 'P': 
+	case 'P':
 	    {
 		if ( !strcmp(arg, "RTL") || !strcmp(arg, "PCL5E") ||
 		     !strcmp(arg, "PCL5C") )
