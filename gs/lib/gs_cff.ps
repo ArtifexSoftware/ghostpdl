@@ -533,17 +533,20 @@ dup
   currentdict /FDSelect undef
   cleanupFont
 } bind def
-
 % We need to pass the file as a parameter for the sake of the PDF
-% interpreter.
-/StartData {		% <resname> <nbytes> StartData -
-  currentfile exch subfilefilter ReadData
+% interpreter. Also for the sake of PDF, a flag forces the font
+% to be defined as <resname> instead of the name embedded in the data.
+% This is needed for subsetted fonts; it is valid if the CFF
+% contains only a single font.
+/StartData {          % <resname> <nbytes> StartData -
+  currentfile exch subfilefilter false ReadData
 } def
-/ReadData {		% <resname> <file> ReadData -
+/ReadData {           % <resname> <file> <forceresname> ReadData -
 
 	% Initialize.
 
   30 dict begin
+  /forceresname exch def
   /cff exch def
   /pos 0 def
   /resname exch cvlit def
@@ -623,6 +626,7 @@ dup
   resname mark 0 1 fonts length 1 sub {
     DEBUG { dup =only ( ) print flush } if
     dup names exch get
+    forceresname { pop resname } if
     DEBUG { dup == flush } if
     exch fonts exch get
     dup /CIDFontType known {

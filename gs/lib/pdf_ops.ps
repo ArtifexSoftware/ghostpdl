@@ -284,7 +284,7 @@ end readonly def
 
 % Read a CFF font.
 /FRD		% <resdict> <file> FRD -
- { /FontSetInit /ProcSet findresource begin ReadData
+ { /FontSetInit /ProcSet findresource begin true ReadData
  } bdef
 
 % Copy a font, removing its FID.  If changed is true, also remove
