@@ -595,7 +595,6 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 	    ShowWindow(wdev->hDlgModeless, SW_HIDE);
     }
 
-  bmp_done:
     GlobalUnlock(hrow);
     GlobalFree(hrow);
 
