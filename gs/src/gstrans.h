@@ -67,6 +67,6 @@ int gs_end_transparency_mask(P2(gs_state *pgs,
 int gs_init_transparency_mask(P2(gs_state *pgs,
 				 gs_transparency_channel_selector_t csel));
 
-int gs_discard_transparency_level(P1(gs_state *pgs));
+int gs_discard_transparency_layer(P1(gs_state *pgs));
 
 #endif /* gstrans_INCLUDED */

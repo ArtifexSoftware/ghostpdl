@@ -232,7 +232,7 @@ zdiscardtransparencygroup(i_ctx_t *i_ctx_p)
 {
     if (gs_current_transparency_type(igs) != TRANSPARENCY_STATE_Group)
 	return_error(e_rangecheck);
-    return gs_discard_transparency_level(igs);
+    return gs_discard_transparency_layer(igs);
 }
 
 /* - .endtransparencygroup - */
@@ -305,7 +305,7 @@ zdiscardtransparencymask(i_ctx_t *i_ctx_p)
 {
     if (gs_current_transparency_type(igs) != TRANSPARENCY_STATE_Mask)
 	return_error(e_rangecheck);
-    return gs_discard_transparency_level(igs);
+    return gs_discard_transparency_layer(igs);
 }
 
 /* <mask#> .endtransparencymask - */

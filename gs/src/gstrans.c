@@ -98,56 +98,80 @@ gs_currenttextknockout(const gs_state *pgs)
 /* ------ Transparency rendering stack ------ */
 
 /*
+  This area of the transparency facilities is in flux.  Here is a proposal
+  for extending the driver interface.  The material below will eventually
+  go in gxdevcli.h.
+*/
 
-This area of the transparency facilities is in flux.  Here is a proposal for
-extending the driver interface.
+/*
+  Push the current transparency state (*ppts) onto the associated stack,
+  and set *ppts to a new transparency state of the given dimension.  The
+  transparency state may copy some or all of the imager state, such as the
+  current alpha and/or transparency mask values, and definitely copies the
+  parameters.
+*/
+#define dev_t_proc_begin_transparency_group(proc, dev_t)\
+  int proc(P6(gx_device *dev,\
+    const gs_transparency_group_params_t *ptgp,\
+    const gs_rect *pbbox,\
+    gs_imager_state *pis,\
+    gs_transparency_state_t **ppts,\
+    gs_memory_t *mem))
+#define dev_proc_begin_transparency_group(proc)\
+  dev_t_proc_begin_transparency_group(proc, gx_device)
 
-int (*begin_transparency_group)(gx_device *dev,
-    const gs_transparency_group_params_t *ptgp,
-    const gs_rect *pbbox,
-    gs_imager_state *pis,
-    gs_transparency_state_t **ppts,
-    gs_memory_t *mem)
+/*
+  End a transparency group: blend the top element of the transparency
+  stack, which must be a group, into the next-to-top element, popping the
+  stack.  If the stack only had a single element, blend into the device
+  output.  Set *ppts to 0 iff the stack is now empty.  If end_group fails,
+  the stack is *not* popped.
+*/
+#define dev_t_proc_end_transparency_group(proc, dev_t)\
+  int proc(P3(gx_device *dev,\
+    gs_imager_state *pis,\
+    gs_transparency_state_t **ppts))
+#define dev_proc_end_transparency_group(proc)\
+  dev_t_proc_end_transparency_group(proc, gx_device)
 
-Pushes the current transparency state (*ppts) onto the associated stack, and
-sets *ppts to a new transparency state of the given dimension.  The
-transparency state may copy some or all of the imager state, such as the
-current alpha and/or transparency mask values, and definitely copies the
-parameters.
+/*
+  Push the transparency state and prepare to render a transparency mask.
+  This is similar to begin_transparency_group except that it only
+  accumulates coverage values, not full pixel values.
+*/
+#define dev_t_proc_begin_transparency_mask(proc, dev_t)\
+  int proc(P6(gx_device *dev,\
+    const gs_transparency_mask_params_t *ptmp,\
+    const gs_rect *pbbox,\
+    gs_imager_state *pis,\
+    gs_transparency_state_t **ppts,\
+    gs_memory_t *mem))
+#define dev_proc_begin_transparency_mask(proc)\
+  dev_t_proc_begin_transparency_mask(proc, gx_device)
 
-int (*end_transparency_group)(gx_device *dev,
-    gs_imager_state *pis,
-    gs_transparency_state_t **ppts)
+/*
+  Store a pointer to the rendered transparency mask into *pptm, popping the
+  stack like end_group.  Normally, the client will follow this by using
+  rc_assign to store the rendered mask into pis->{opacity,shape}.mask.  If
+  end_mask fails, the stack is *not* popped.
+*/
+#define dev_t_proc_end_transparency_mask(proc, dev_t)\
+  int proc(P2(gx_device *dev,\
+    gs_transparency_mask_t **pptm))
+#define dev_proc_end_transparency_mask(proc)\
+  dev_t_proc_end_transparency_mask(proc, gx_device)
 
-Blends the top element of the transparency stack, which must be a group,
-into the next-to-top element, popping the stack.  If the stack only had a
-single element, blends into the device output.  Sets *ppts to 0 iff the
-stack is now empty.  If end_group fails, the stack is *not* popped.
+/*
+  Pop the transparency stack, discarding the top element, which may be
+  either a group or a mask.  Set *ppts to 0 iff the stack is now empty.
+*/
+#define dev_t_proc_discard_transparency_layer(proc, dev_t)\
+  int proc(P2(gx_device *dev,\
+    gs_transparency_state_t **ppts))
+#define dev_proc_discard_transparency_layer(proc)\
+  dev_t_proc_discard_transparency_layer(proc, gx_device)
 
-int (*begin_transparency_mask)(gx_device *dev,
-    const gs_transparency_mask_params_t *ptmp,
-    const gs_rect *pbbox,
-    gs_imager_state *pis,
-    gs_transparency_state_t **ppts,
-    gs_memory_t *mem)
-
-See begin_transparency_group.
-
-int (*end_transparency_mask)(gx_device *dev,
-    gs_transparency_mask_t **pptm)
-
-Stores a pointer to the rendered transparency mask into *pptm, popping the
-stack like end_group.  Normally, the client will follow this by using
-rc_assign to store the rendered mask into pis->{opacity,shape}.mask.  If
-end_mask fails, the stack is *not* popped.
-
-int (*discard_transparency_level)(gx_device *dev,
-    gs_transparency_state_t **ppts)
-
-Pops the transparency stack, discarding the top element, which may be either
-a group or a mask.  Sets *ppts to 0 iff the stack is now empty.
-
- */
+     /* (end of proposed driver interface extensions) */
 
 gs_transparency_state_type_t
 gs_current_transparency_type(const gs_state *pgs)
@@ -240,9 +264,9 @@ gs_end_transparency_mask(gs_state *pgs,
 }
 
 int
-gs_discard_transparency_level(gs_state *pgs)
+gs_discard_transparency_layer(gs_state *pgs)
 {
-    if_debug1('v', "[v](0x%lx)discard_transparency_level\n", (ulong)pgs);
+    if_debug1('v', "[v](0x%lx)discard_transparency_layer\n", (ulong)pgs);
     /****** NYI ******/
     return 0;
 }
