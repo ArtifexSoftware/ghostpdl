@@ -453,6 +453,18 @@ fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
     return result;
 }
 
+/* Return Arrayed Output function information. */
+private void
+fn_AdOt_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
+{
+    const gs_function_AdOt_t *const pfn =
+	(const gs_function_AdOt_t *)pfn_common;
+
+    gs_function_get_info_default(pfn_common, pfi);
+    pfi->Functions = pfn->params.Functions;
+    pfi->num_Functions = pfn->params.n;
+}
+
 /* Free the parameters of an Arrayed Output function. */
 void
 gs_function_AdOt_free_params(gs_function_AdOt_params_t * params,
@@ -472,7 +484,7 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
 	{
 	    (fn_evaluate_proc_t) fn_AdOt_evaluate,
 	    (fn_is_monotonic_proc_t) fn_AdOt_is_monotonic,
-	    gs_function_get_info_default, /****** WRONG ******/
+	    (fn_get_info_proc_t) fn_AdOt_get_info,
 	    fn_common_get_params,	/****** WHAT TO DO ABOUT THIS? ******/
 	    (fn_free_params_proc_t) gs_function_AdOt_free_params,
 	    fn_common_free

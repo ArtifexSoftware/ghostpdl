@@ -24,6 +24,7 @@
 #include "gscdefs.h"
 #include "gsdsrc.h"
 #include "gsfunc.h"
+#include "gsfunc3.h"
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"
 #include "scanchar.h"
@@ -960,6 +961,8 @@ pdf_end_data(pdf_data_writer_t *pdw)
 }
 
 /* Create a Function object. */
+private int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
+			       const gs_function_info_t *pinfo);
 int
 pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	     cos_value_t *pvalue)
@@ -969,13 +972,28 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
     pdf_resource_t *pres;
     cos_object_t *pcfn;
     cos_dict_t *pcd;
-    cos_value_t v;
     int code = pdf_alloc_resource(pdev, resourceFunction, gs_no_id, &pres, 0L);
 
     if (code < 0)
 	return code;
     pcfn = pres->object;
     gs_function_get_info(pfn, &info);
+    if (FunctionType(pfn) == function_type_ArrayedOutput) {
+	/*
+	 * Arrayed Output Functions are used internally to represent
+	 * Shading Function entries that are arrays of Functions.
+	 * They require special handling.
+	 */
+	cos_array_t *pca;
+
+	cos_become(pcfn, cos_type_array);
+	pca = (cos_array_t *)pcfn;
+	code = pdf_function_array(pdev, pca, &info);
+	if (code < 0)
+	    return code;
+	COS_OBJECT_VALUE(pvalue, pca);
+	return 0;
+    }
     if (info.DataSource != 0) {
 	psdf_binary_writer writer;
 	stream *save = pdev->strm;
@@ -1023,23 +1041,16 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	pcd = (cos_dict_t *)pcfn;
     }
     if (info.Functions != 0) {
-	int i;
 	cos_array_t *functions =
 	    cos_array_alloc(pdev, "pdf_function(Functions)");
+	cos_value_t v;
 
 	if (functions == 0)
 	    return_error(gs_error_VMerror);
-	for (i = 0; i < info.num_Functions; ++i) {
-	    if ((code = pdf_function(pdev, info.Functions[i], &v)) < 0 ||
-		(code = cos_array_add(functions, &v)) < 0
-		) {
-		COS_FREE(functions, "pdf_function(Functions)");
-		return code;
-	    }
-	}
-	code = cos_dict_put_c_key(pcd, "/Functions",
-				  COS_OBJECT_VALUE(&v, functions));
-	if (code < 0) {
+	if ((code = pdf_function_array(pdev, functions, &info)) < 0 ||
+	    (code = cos_dict_put_c_key(pcd, "/Functions",
+				       COS_OBJECT_VALUE(&v, functions))) < 0
+	    ) {
 	    COS_FREE(functions, "pdf_function(Functions)");
 	    return code;
 	}
@@ -1053,6 +1064,22 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
     COS_OBJECT_VALUE(pvalue, pcd);
     return 0;
 }
+private int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
+			       const gs_function_info_t *pinfo)
+{
+    int i, code = 0;
+    cos_value_t v;
+
+    for (i = 0; i < pinfo->num_Functions; ++i) {
+	if ((code = pdf_function(pdev, pinfo->Functions[i], &v)) < 0 ||
+	    (code = cos_array_add(pca, &v)) < 0
+	    ) {
+	    break;
+	}
+    }
+    return code;
+}
+
 
 /* Write a Function object. */
 int
