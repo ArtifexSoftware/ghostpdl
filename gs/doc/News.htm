@@ -55,12 +55,32 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<pre>
-<h1><a name="Version6.20"></a>Version 6.20 (2000-xx-xx)</h1>
+<h1><a name="Version6.20"></a>Version 6.20 (2000-04-06)</h1>
 
-This fileset includes major additions and revisions to bring the pdfwrite
-driver closer to matching Acrobat Distiller 4.  This also requires upgrading
-several aspects of the library and the PostScript and PDF interpreters.
+<p>
+This fileset includes the first steps towards bringing the pdfwrite driver
+closer to matching Acrobat Distiller 4.  Highlights:
+
+<ul>
+
+<li> Reimplementation of CIDFontType 0 support in C rather than PostScript;
+
+<li> Parsing (but not functional implementation) of nearly all the Acrobat
+Distiller 4 parameters;
+
+<li> Implementation of AutoRotatePages and DCTEncode filtering in the PDF
+writer;
+
+<li> A PDF linearizer ("optimizer").
+
+</ul>
+
+<p>
+All problems registered on SourceForge numbered 103963 or lower are closed,
+except for the following: 101549, 101814, 101829, 101905, 101955, 102046,
+102047, 102132, 102146, 102735, 102901, 103016, 103528, 103963.
+
+<pre>
 
 <h2><a name="6.20_Incompatible_changes"></a>Incompatible changes</h2>
 
@@ -131,7 +151,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 6.20, xx xxxxxx 2000
+Ghostscript version 6.20, 6 April 2000
 
 </font>
 

@@ -1,5 +1,5 @@
 <html><head>
-<title>Ghostscript 6.20 change history as of 2000-03-30 00:05:44</title>
+<title>Ghostscript 6.20 change history as of 2000-04-06 22:26:58</title>
 </head><body>
 
 <blockquote><ul>
@@ -11,8 +11,7 @@
     <a href="#6.20 Interpreter (PDF)">Interpreter (PDF)</a>,
     <a href="#6.20 Interpreter">Interpreter</a>,
     <a href="#6.20 Streams">Streams</a>,
-    <a href="#6.20 Library">Library</a>,
-    <a href="#6.20 ???Other???">???Other???</a>
+    <a href="#6.20 Library">Library</a>
 </ul>
 </ul></blockquote>
 
@@ -26,6 +25,15 @@ rather than simply setting the procedure to gs_identity_transfer.
 (doc/News.htm [1.13]: 2000/03/19 17:14:47 lpd)
 	- In PDF files, the page CropBox was not being used to clip the
 output. (doc/News.htm [1.18]: 2000/03/21 23:08:32 lpd)
+	- Fixes several problems in resourceforall and resource loading: the
+operands of resourceforall were restored even in the case of an error in the
+client's procedure; the name Instances had special meaning for some Adobe
+code; resourceforall caused an invalidaccess error if an operand was in
+local VM but the current VM was global; loading a resource from a file could
+cause a typecheck error if the file left values on the operand stack.
+(doc/News.htm [1.25]: 2000/04/04 22:26:02 lpd)
+	- The location of the lists of supported and unsupported drivers was
+incorrect. (doc/Bug-info.htm [1.2]: 2000/04/07 03:01:52 lpd)
 
 Undoes an accidental RCS ID substitution in what was supposed to be literal
 text. (doc/Htmstyle.htm [1.2]: 2000/03/18 22:29:03 lpd)
@@ -162,6 +170,37 @@ Changes the procs structure of gs_type1_data to an in-line structure rather
 than a pointer to a const structure. (Needed for moving CIDFontType 0
 support into C.) (doc/News.htm [1.22]: 2000/03/29 22:10:31 lpd)
 
+Updates the change log with recent changes. (doc/Changes.htm [1.8]:
+2000/03/30 07:59:39 lpd)
+
+Creates a real list of projects on which help would be appreciated.
+(doc/Projects.htm [1.2]: 2000/04/01 00:43:11 lpd)
+
+Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
+a surprising number of changes in other font-related files.
+(doc/News.htm [1.23]: 2000/04/02 07:38:46 lpd)
+
+Updates the documentation on preparing releases to reflect the addition of
+the toolbin directory. (doc/Release.htm [1.7]: 2000/04/02 18:56:58 lpd)
+
+Implements the AutoRotatePages distiller parameter. (doc/Ps2pdf.htm [1.5]:
+2000/04/03 02:54:41 lpd)
+
+Updates the problem reporting procedure to use SourceForge; separates the
+description of the procedure from the reporting form.
+(doc/Bug-form.htm [1.4], doc/Bug-info.htm [1.1], doc/New-user.htm [1.4],
+doc/News.htm [1.24], doc/Readme.htm [1.4]: 2000/04/04 04:14:02 lpd)
+
+Updates release dates and version numbers. (doc/Bug-form.htm [1.5],
+doc/Bug-info.htm [1.3], doc/Htmstyle.htm [1.3], doc/Make.htm [1.9],
+doc/New-user.htm [1.5], doc/Projects.htm [1.3], doc/Ps2pdf.htm [1.6],
+doc/Psfiles.htm [1.3], doc/Readme.htm [1.5], man/ps2pdf.1 [1.4],
+man/ps2ps.1 [1.4]: 2000/04/07 05:21:45 lpd)
+
+Removes redundant material, and the www.aladdin.com distribution point, from
+the release procedure documentation. (doc/Release.htm [1.8]: 2000/04/07
+05:24:29 lpd)
+
 </pre><h2><a name="6.20 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
@@ -169,6 +208,12 @@ Fixes problems:
 2000/03/19 02:00:09 lpd)
 	- The referenced libpng version hadn't been updated to 1.0.5.
 (openvms.mmk [1.3]: 2000/03/20 16:38:46 lpd)
+	- The MSVC++ 6 compiler no longer recognizes the /FPi87 switch.
+(msvccmd.mak [1.2]: 2000/03/31 05:06:53 lpd)
+	- MSVC versions before 5, not before 6, recognize /FPi87.
+(msvccmd.mak [1.3]: 2000/03/31 05:50:33 lpd)
+	- Removes some occurrences of $,I,d,: that shouldn't be substituted.
+(toolbin/pre [1.2]: 2000/04/07 05:20:35 lpd)
 
 Increments the version number to 6.20, in anticipation of the next release.
 (We do this at the beginning of the development for a release, not the end.)
@@ -243,12 +288,51 @@ Changes the default value of FPU_TYPE in all Windows and OS/2 makefiles from
 (msvc32.mak [1.3], msvclib.mak [1.3], os2.mak [1.4], watcw32.mak [1.3]:
 2000/03/28 17:03:48 lpd)
 
+Updates the change log with recent changes. (version.mak [1.10]: 2000/03/30
+07:59:39 lpd)
+
+Cleans up some dependencies missed at the last checkin. (devs.mak [1.7],
+int.mak [1.13]: 2000/03/31 05:03:30 lpd)
+
+Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
+a surprising number of changes in other font-related files. (int.mak [1.14]:
+2000/04/02 07:38:46 lpd)
+
+Adds a variety of tools used to build and distribute Ghostscript releases.
+The only documentation is comments in the files themselves, and there isn't
+much of it. All aspects of these tools are subject to change without notice.
+(toolbin/3way.tcl [1.1], toolbin/cvs2hist.py [1.1],
+toolbin/errlist.tcl [1.1], toolbin/gsmake.tcl [1.1],
+toolbin/headers.tcl [1.1], toolbin/leaks.tcl [1.1],
+toolbin/makeset.tcl [1.1], toolbin/package.tcl [1.1], toolbin/pre [1.1],
+toolbin/pre.chk [1.1], toolbin/precheck.tcl [1.1], toolbin/smoke.ps [1.1],
+toolbin/suite.tcl [1.1], toolbin/tmake.tcl [1.1]: 2000/04/02 18:44:27 lpd)
+
+Moves gsindent from src to toolbin. (toolbin/gsindent [1.1]: 2000/04/02
+18:56:25 lpd)
+
+Adds an #include required by the Watcom compiler. (devs.mak [1.8]:
+2000/04/05 19:51:54 lpd)
+
+Adds a missing dependency. (lib.mak [1.8]: 2000/04/07 03:00:56 lpd)
+
+Updates a few dependencies for the release. (int.mak [1.15]: 2000/04/07
+05:23:12 lpd)
+
+Updates the build date for the release. (version.mak [1.11]: 2000/04/07
+05:25:18 lpd)
+
+Adds .cvsignore files, to prevent bogus warnings on cvs update.
+(.cvsignore [1.1], src/.cvsignore [1.1]: 2000/04/05 19:46:04 lpd)
+
 </pre><h2><a name="6.20 Utilities"></a>Utilities</h2><pre>
 
 Fixes problems:
 	- A couple of places in the Windows code didn't correctly handle
 Ghostscript version numbers of the form #.0#. (gp_wgetv.c [1.2]: 2000/03/22
 21:45:03 lpd)
+	- Replaces a final exit() with a return, to avoid a compiler
+warning. (genconf.c [1.2]: 2000/04/05 19:53:27 lpd)
 
 Makes geninit remove whitespace adjacent to hex and base-85 string literals.
 (geninit.c [1.2]: 2000/03/18 22:51:24 lpd)
@@ -268,6 +352,11 @@ Adds invocation scripts and documentation for the PDF "optimizer".
 Splits off the ReusableStreamDecode filter as a separate module, since
 CIDFontType 0 fonts will use it even in LanguageLevels below 3.
 (zfreuse.c [1.2]: 2000/03/21 21:34:57 lpd)
+
+Adds a variety of tools used to build and distribute Ghostscript releases.
+The only documentation is comments in the files themselves, and there isn't
+much of it. All aspects of these tools are subject to change without notice.
+(gsindent [1.2]: 2000/04/02 18:44:27 lpd)
 
 </pre><h2><a name="6.20 Drivers"></a>Drivers</h2><pre>
 
@@ -289,6 +378,12 @@ N-up printing not work properly. (gdevps.c [1.4]: 2000/03/28 00:52:46 lpd)
 	- The PCL XL 2.0 value for sRGB color space was wrong, and the
 attribute for writing mode was missing. (gdevpxat.h [1.2], gdevpxen.h [1.2]:
 2000/03/29 18:19:44 lpd)
+	- When printing on monochrome LaserJet/DeskJet printers, the driver
+didn't set the number of copies to 1; on the LJ 4si, this sometimes caused
+double printing. (gdevdjet.c [1.2]: 2000/04/03 14:36:12 lpd)
+	- Updates clients for the change in the last argument of
+cff_string_index from uint * to int *. (gdevpsf2.c [1.4]: 2000/04/05
+19:55:29 lpd)
 
 Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
 the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
@@ -327,6 +422,16 @@ than a pointer to a const structure. (Needed for moving CIDFontType 0
 support into C.) (gdevpsf1.c [1.2], gdevpsf2.c [1.2], gdevpsfx.c [1.2]:
 2000/03/29 22:10:31 lpd)
 
+Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
+a surprising number of changes in other font-related files.
+(gdevpsf2.c [1.3], gdevpsfu.c [1.2]: 2000/04/02 07:38:45 lpd)
+
+Slightly simplifies the output of the psmono and psgray drivers.
+(gdevpsim.c [1.2]: 2000/04/02 19:57:37 lpd)
+
+Adds an #include required by the Watcom compiler. (gdevpsf1.c [1.3]:
+2000/04/05 19:51:54 lpd)
+
 </pre><h2><a name="6.20 PDF writer"></a>PDF writer</h2><pre>
 
 Fixes problems:
@@ -348,6 +453,9 @@ lpd)
 stream. (gdevpdfm.c [1.4]: 2000/03/24 06:18:39 lpd)
 	- The name of the EndPage Distiller parameter collided with the
 EndPage page device parameter. (gdevpdfp.c [1.4]: 2000/03/28 07:45:25 lpd)
+	- If two embedded fonts had the same base font, the PDF file could
+wind up with an invalid entry in the xref table. (gdevpdft.c [1.4]:
+2000/04/01 01:18:32 lpd)
 
 Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
 the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
@@ -405,6 +513,10 @@ Changes the initial values of the "job control" parameters to match Acrobat
 Distiller 4. (gdevpdf.c [1.7], gdevpdfp.c [1.6], gdevpdfx.h [1.6]:
 2000/03/28 07:57:14 lpd)
 
+Implements the AutoRotatePages distiller parameter. (gdevpdf.c [1.8],
+gdevpdft.c [1.5], gdevpdfu.c [1.5], gdevpdfx.h [1.7]: 2000/04/03 02:54:41
+lpd)
+
 </pre><h2><a name="6.20 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
 
 Fixes problems:
@@ -428,6 +540,14 @@ worse, because the code didn't distinguish between resolving to a PostScript
 function (for shadings) and resolving to a PostScript procedure (for
 halftones, BG/UCR, alternate color space mapping, etc.)
 (lib/pdf_draw.ps [1.7]: 2000/03/23 18:31:46 lpd)
+	- Text with a Pattern color scaled the pattern according to the text
+matrix, not the default matrix of the marking context.
+(lib/pdf_base.ps [1.6], lib/pdf_main.ps [1.5], lib/pdf_ops.ps [1.4]:
+2000/03/30 18:01:58 lpd)
+	- Resolving a Shading didn't create a reusable stream for the
+shading data; since the data was then read at unpredictable times, the
+shading or other constructs in the PDF file could read incorrect data.
+(lib/pdf_draw.ps [1.8]: 2000/04/03 06:01:25 lpd)
 
 Adds a lforall procedure for the PDF linearizer. (lib/pdf_base.ps [1.3]:
 2000/03/19 01:50:05 lpd)
@@ -503,6 +623,41 @@ zfont42.c [1.3]: 2000/03/28 18:20:39 lpd)
 with definefont instead of /CIDFont defineresource, caused an invalidfont
 error or a crash. (lib/gs_cidfn.ps [1.9], lib/gs_fonts.ps [1.4]: 2000/03/28
 18:21:50 lpd)
+	- The new C BuildGlyph code for CIDFontType 0 fonts didn't handle
+GlyphDirectory or Type 2 CharStrings correctly. (lib/gs_cidfn.ps [1.12],
+zfcid.c [1.8]: 2000/03/31 23:21:57 lpd)
+	- The internaldict "operator" was allocated in local VM, preventing
+it from being bound into procedures allocated in global VM.
+(lib/gs_init.ps [1.6]: 2000/04/04 22:16:02 lpd)
+	- If there was a CIDInit ProcSet defined in the filesystem, the code
+for initializing the built-in CIDInit ProcSet became confused.
+(lib/gs_cidfn.ps [1.13]: 2000/04/04 22:17:33 lpd)
+	- Fixes several problems in resourceforall and resource loading: the
+operands of resourceforall were restored even in the case of an error in the
+client's procedure; the name Instances had special meaning for some Adobe
+code; resourceforall caused an invalidaccess error if an operand was in
+local VM but the current VM was global; loading a resource from a file could
+cause a typecheck error if the file left values on the operand stack.
+(interp.c [1.3], lib/gs_ccfnt.ps [1.2], lib/gs_res.ps [1.3]: 2000/04/04
+22:26:02 lpd)
+	- resourceforall didn't enumerate external (loadable) instances, and
+would enumerate an instance twice if it had both a local and a global
+definition. (lib/gs_res.ps [1.4]: 2000/04/05 21:07:02 lpd)
+	- The implementation of resourcestatus wasn't compatible with some
+badly written code in an Adobe font downloader that assumes that the
+implementation of resourcestatus in Generic and Font is the same.
+(lib/gs_res.ps [1.5]: 2000/04/05 21:20:07 lpd)
+	- The just-checked-in fixed for resourceforall didn't work properly
+for the IdiomSet category. (They probably failed for other categories that
+had no instances, but we didn't check this.) (lib/gs_res.ps [1.6]:
+2000/04/05 21:51:43 lpd)
+	- Some Adobe font downloading code assumed that loading a resource
+file would never leave extra values on the stack; our implementation didn't
+ensure this (by popping them if needed). (lib/gs_res.ps [1.8]: 2000/04/06
+04:50:28 lpd)
+	- If an alphabetic font defined and used a .notdef character,
+pdfwrite always converted it to a bitmap. (lib/gs_lgo_e.ps [1.2]: 2000/04/07
+02:48:23 lpd)
 
 Provides a gs_atan2_degrees procedure to parallel sin and cos.
 (zmath.c [1.2]: 2000/03/18 23:10:39 lpd)
@@ -576,8 +731,8 @@ that have a GlyphDirectory (not documented in the PLRM, but clearly
 correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
 and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
 which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
-(icid.h [1.1], ifont.h [1.2], zcid.c [1.2], zfcid.c [1.1], zfcmap.c [1.3],
-zfont42.c [1.2]: 2000/03/20 19:53:06 lpd)
+(icid.h [1.1], ifont.h [1.2], ifont42.h [1.1], zcid.c [1.2], zfcid.c [1.1],
+zfcmap.c [1.3], zfont42.c [1.2]: 2000/03/20 19:53:06 lpd)
 
 Hooks the new CIDMap code into the BuildGlyph procedure for CIDFontType 2
 fonts. (Contrary to a previous log comment, MetricsCount is already hooked
@@ -628,6 +783,39 @@ non-backward-compatible change.) (zfcid.c [1.6]: 2000/03/28 18:47:02 lpd)
 Changes the procs structure of gs_type1_data to an in-line structure rather
 than a pointer to a const structure. (Needed for moving CIDFontType 0
 support into C.) (zfont1.c [1.3]: 2000/03/29 22:10:31 lpd)
+
+Finishes moving support for CIDFontType 0 fonts from PostScript to C.
+(ifont.h [1.3], ifont42.h [1.2], lib/gs_cidfn.ps [1.10], zfcid.c [1.7],
+zfont42.c [1.4]: 2000/03/31 04:55:18 lpd)
+
+Allows dictionaries as the value of CIDMap resources. (Also removes an
+unrelated obsolete comment.) (lib/gs_cidfn.ps [1.11]: 2000/03/31 05:11:30
+lpd)
+
+Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
+a surprising number of changes in other font-related files. (ichar1.h [1.2],
+ifcid.h [1.1], zchar1.c [1.2], zfcid.c [1.9], zfcid0.c [1.1],
+zfcid1.c [1.1], zfont1.c [1.4]: 2000/04/02 07:38:46 lpd)
+
+Makes the .writefont9 operator (used only for testing) available in both
+DEBUG and PROFILE configurations. (zfcid0.c [1.2]: 2000/04/03 02:37:55 lpd)
+
+Extends .forceput to handle arrays as well as dictionaries, required to fix
+a bug with internaldict. (zdict.c [1.2], zgeneric.c [1.2]: 2000/04/04
+22:13:23 lpd)
+
+Works around an Adobe code assumption that the default FindResource
+procedure does *not* call the ResourceStatus procedure if the requested
+instance is already defined in VM. (lib/gs_res.ps [1.7]: 2000/04/05 23:31:54
+lpd)
+
+Implements the framework for superexec (but none of the actual access check
+bypasses). (icontext.c [1.2], icstate.h [1.2], zcontrol.c [1.2]: 2000/04/06
+04:40:06 lpd)
+
+Extends the undocumented CCRun procedure to take an additional argument, a
+Private dictionary, required by some Adobe font downloading code.
+(lib/gs_type1.ps [1.3]: 2000/04/06 05:25:10 lpd)
 
 </pre><h2><a name="6.20 Streams"></a>Streams</h2><pre>
 
@@ -829,15 +1017,11 @@ than a pointer to a const structure. (Needed for moving CIDFontType 0
 support into C.) (gstype1.c [1.4], gstype2.c [1.3], gxfont1.h [1.3],
 gxtype1.c [1.3]: 2000/03/29 22:10:31 lpd)
 
-</pre><h2><a name="6.20 ???Other???"></a>???Other???</h2><pre>
+Finishes moving support for CIDFontType 0 fonts from PostScript to C.
+(gxfcid.h [1.3]: 2000/03/31 04:55:18 lpd)
 
-Starts to move support for CIDFontType 0 and 2 into C code, needed by the
-PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
-CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
-that have a GlyphDirectory (not documented in the PLRM, but clearly
-correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
-and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
-which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
-(ifont42.h [1.1]: 2000/03/20 19:53:06 lpd)
+Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
+a surprising number of changes in other font-related files. (gsfcid.c [1.2],
+gxfcid.h [1.4]: 2000/04/02 07:38:46 lpd)
 
 </pre></body></html>
