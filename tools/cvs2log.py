@@ -217,12 +217,19 @@ def main():
         elif o == '-p' : patches = 1
 	else: print "getopt should have failed already"
 
+    # getopts should have left any filenames behind - convert those to
+    # one string.
+    filenames = ""
+    for file in args:
+        filenames = filenames + " " + file
     # set up the cvs log command arguments.  If a logfile is specified
     # we get all dates later than the logfile.
     if logfile:
 	date_option = "'" + "-d>" + time.asctime(LastLogDate2CtimeTuple(logfile)) + "'"
-    log_date_command= 'cvs -d ' + GetCVSRepository() + ' -Q log -N ' + date_option
+    log_date_command= 'cvs -d ' + GetCVSRepository() + ' -Q log -N ' + date_option + filenames
     # build the logs.
+    print log_date_command
+    
     log = BuildLog(log_date_command)
     # chronologically reversed.  We reverse everything in the list as
     # well.
