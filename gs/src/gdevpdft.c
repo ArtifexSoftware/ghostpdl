@@ -1036,10 +1036,22 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 	case ENCODING_INDEX_ISOLATIN1:
 	case ENCODING_INDEX_WINANSI:
 	case ENCODING_INDEX_MACROMAN:
-	    /* Check the full Adobe glyph set(s). */
-	    if (encoding_find_glyph(bfont, glyph, ENCODING_INDEX_ALOGLYPH) < 0 &&
+	    if (encoding_find_glyph(bfont, glyph, ENCODING_INDEX_ALOGLYPH) < 0
+	    /*
+	     * One would expect that the standard Latin character set in PDF
+	     * 1.3, which was released after PostScript 3, would be the full
+	     * 315-character PostScript 3 set.  However, the PDF 1.3
+	     * reference manual clearly specifies that the PDF 1.3 Latin
+	     * character set is the smaller PostScript Level 2 set,
+	     * and we have verified that this is the case in Acrobat 4.
+	     * Therefore, we have commented out the second part of the
+	     * conditional below.
+	     */
+#if 0
+		&&
 		(pdev->CompatibilityLevel < 1.3 ||
 		 encoding_find_glyph(bfont, glyph, ENCODING_INDEX_ALXGLYPH) < 0)
+#endif
 		)
 		return_error(gs_error_undefined);
 	default:
