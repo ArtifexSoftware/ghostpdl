@@ -308,7 +308,7 @@ specified.");
 
 #ifdef TEST
 
-static unsigned char *test_data[] = {
+static char *test_data[] = {
     "abc",
     "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
     "A million repetitions of 'a'"};
