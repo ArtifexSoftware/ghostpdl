@@ -41,7 +41,7 @@ DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
  pxlmono.dev pxlcolor.dev
 
 # Generic makefile
-include $(PCLSRCDIR)pcl_conf.mak
+include $(PCLSRCDIR)/pcl_conf.mak
 include $(COMMONDIR)/ugcc_top.mak
 
 # Subsystems

@@ -10,10 +10,10 @@
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
 CONFIG=5
-TARGET_DEVS=$(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
+TARGET_DEVS=$(PCLOBJDIR)$(D)pcl5c.dev $(PCLOBJDIR)$(D)hpgl2c.dev
 
 # Main file's name
-MAIN_OBJ=$(PCLOBJDIR)\pcmain.$(OBJ)
+MAIN_OBJ=$(PCLOBJDIR)$(D)pcmain.$(OBJ)
 
 # GS options
 #DEVICE_DEVS is defined in the platform-specific file.
