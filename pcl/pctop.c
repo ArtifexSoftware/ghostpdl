@@ -252,6 +252,10 @@ pcl_impl_allocate_interp_instance(
        removing it. */
     memset( &pcli->pcs, 0, sizeof(pcl_state_t) );
 
+    /* initialize personality here - NB this needs to be associated
+       with the language option. */
+    pcli->pcs.personality = pcl5c;
+
     /* zero-init pre/post page actions for now */
     pcli->pre_page_action = 0;
     pcli->post_page_action = 0;
