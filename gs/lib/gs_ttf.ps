@@ -830,7 +830,9 @@ mark
     } {
       TTFDEBUG { (post: unknown format ) print post 0 getu32 = flush } if [ ]
     } ifelse
-  } ifelse def
+  } ifelse
+  TTFDEBUG { (post=) print dup == } if
+  def
 } bind def
 
 % - .ttkeys <key> <value> ...
@@ -988,8 +990,14 @@ mark
   } if
 		% Hack: if there is no usable post table but the cmap uses
 		% the Microsoft Unicode encoding, use ISOLatin1Encoding.
-  glyphencoding length 0 eq cmapsub 0 4 getinterval <00030001> eq and {
-    /glyphencoding ISOLatin1Encoding dup length array copy def
+  glyphencoding length 0 eq {
+    cmapsub 0 4 getinterval <00030001> eq {
+    PDFDEBUG { (No post but have cmap 3.1, so use ISOLatin1Encoding) } if
+      /glyphencoding ISOLatin1Encoding dup length array copy def
+    } {
+      PDFDEBUG { (No encoding info, use .GS_extended_SymbolEncoding) } if
+      /glyphencoding /.GS_extended_SymbolEncoding findencoding dup length array copy def
+    } ifelse
   } if
 		% If necessary, fabricate additional glyphencoding entries
 		% to cover all of loca, or truncate glyphencoding.
@@ -1245,6 +1253,7 @@ mark
       %
       (   **** Warning: Embedded symbolic TT fonts should not contain a cmap for Platform=3 Encoding=1.\n)
         pdfformaterror
+      TTFDEBUG { (Using cmap 3.1) = } if
       AdobeGlyphList .pdfmapchars 
       /Encoding /WinAnsiEncoding .findencoding
     } {
@@ -1265,11 +1274,16 @@ mark
       %
       <00010000> .findcmap {
         prebuilt_encoding null ne {
+          TTFDEBUG { (Using cmap 1.0 with prebuilt_encoding.) = } if
           prebuilt_encoding .invert_encoding .pdfmapchars
           /Encoding prebuilt_encoding
         } {
-          .symbol_list .pdfmapchars
-          /Encoding /.GS_extended_SymbolEncoding .findencoding
+          % This is a case, in which an obsolete software could stupidly specify Macintosh Roman
+          % for a random encoding. Particulatrly GPL Ghostscript 7.06 does so.
+          % Trying to recover with 'post'.
+          pop  % The table itself doesn't contain useful data.
+          TTFDEBUG { (Using cmap 1.0 with post or .GS_extended_SymbolEncoding) = } if
+          .charkeys
         } ifelse
       } {
         % This is illegal with PDF spec.
@@ -1277,6 +1291,7 @@ mark
         pdfformaterror
         % Try to map Unicode to SymbolEncoding
         <00030001> .findcmap {
+          TTFDEBUG { (Using cmap 3.1) = } if
           AdobeGlyphList .pdfmapchars
           /Encoding /SymbolEncoding .findencoding
         } {
@@ -1294,6 +1309,7 @@ mark
 	      % Try another cmap format 3,0 -- Adobe doesn't mention it, but does
 	      % use it apparently (empirically determined).
 	      <00030000> .findcmap {
+	        TTFDEBUG { (Adding cmap 3.0) = } if
    		5 1 roll pop pop pop pop             
 		prebuilt_encoding null ne {
 		  prebuilt_encoding .invert_encoding .pdfmapchars
@@ -1310,6 +1326,7 @@ mark
     } ifelse
   } {
     <00030001> .findcmap {
+      TTFDEBUG { (Using cmap 3.1 for non-symbolic.) = } if
       AdobeGlyphList .pdfmapchars 
       /Encoding /WinAnsiEncoding .findencoding
         % WinAnsiEncoding is just a stub here. 
@@ -1317,6 +1334,7 @@ mark
         % because PDF spec requires it.
     } {
       <00010000> .findcmap {
+        TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
 	.romanmacdict .pdfmapchars 
         /Encoding /MacRomanEncoding .findencoding
       } {
