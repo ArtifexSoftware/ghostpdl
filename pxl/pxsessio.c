@@ -191,6 +191,8 @@ px_end_session_cleanup(px_state_t *pxs)
 	px_purge_pattern_cache(pxs, eSessionPattern);
 	/* We believe that streams do *not* persist across sessions.... */
 	px_dict_release(&pxs->stream_dict);
+	/* delete fonts on end of session */
+	px_dict_release(&pxs->font_dict);
 }
 
 /* ---------------- Non-operator procedures ---------------- */
