@@ -70,7 +70,10 @@ s_exD_set_defaults(stream_state * st)
 {
     stream_exD_state *const ss = (stream_exD_state *) st;
 
+    ss->binary = -1;		/* unknown */
     ss->lenIV = 4;
+    ss->record_left = max_long;
+    ss->hex_left = max_long;
     /* Clear pointers for GC */
     ss->pfb_state = 0;
 }
@@ -83,8 +86,6 @@ s_exD_init(stream_state * st)
     stream_exD_state *const ss = (stream_exD_state *) st;
 
     ss->odd = -1;
-    ss->binary = -1;		/* unknown */
-    ss->record_left = max_long;
     ss->skip = ss->lenIV;
     return 0;
 }
@@ -151,8 +152,23 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
 	 * keep from reading beyond the end of the encrypted data;
 	 * but some badly coded files require us to ignore % also.
 	 */
-hp:	status = s_hex_process(pr, pw, &ss->odd,
+	stream_cursor_read r;
+	const byte *start;
+
+hp:	r = *pr;
+	start = r.ptr;
+	if (r.limit - r.ptr > ss->hex_left)
+	    r.limit = r.ptr + ss->hex_left;
+	status = s_hex_process(&r, pw, &ss->odd,
 			       hex_ignore_leading_whitespace);
+	pr->ptr = r.ptr;
+	ss->hex_left -= r.ptr - start;
+	/*
+	 * Check for having finished a prematurely decoded hex section of
+	 * a PFB file.
+	 */
+	if (ss->hex_left == 0)
+	    ss->binary = 1;
 	count = pw->ptr - q;
 	if (status < 0 && ss->odd < 0) {
 	    if (count) {

@@ -130,14 +130,33 @@ zexD(i_ctx_t *i_ctx_p)
      * If we're reading a .PFB file, let the filter know about it,
      * so it can read recklessly to the end of the binary section.
      */
-    state.pfb_state = 0;
     if (r_has_type(op - 1, t_file)) {
 	stream *s = (op - 1)->value.pfile;
 
-	if (s->state != 0 && s->state->template == &s_PFBD_template)
-	    state.pfb_state = (stream_PFBD_state *) s->state;
+	if (s->state != 0 && s->state->template == &s_PFBD_template) {
+	    stream_PFBD_state *pss = (stream_PFBD_state *)s->state;
+
+	    state.pfb_state = pss;
+	    /*
+	     * If we're reading the binary section of a PFB stream,
+	     * avoid the conversion from binary to hex and back again.
+	     */
+	    if (pss->record_type == 2) {
+		/*
+		 * The PFB decoder may have converted some data to hex
+		 * already.  Convert it back if necessary.
+		 */
+		if (pss->binary_to_hex && sbufavailable(s) > 0) {
+		    state.binary = 0;	/* start as hex */
+		    state.hex_left = sbufavailable(s);
+		} else {
+		    state.binary = 1;
+		}
+		pss->binary_to_hex = 0;
+	    }
+	    state.record_left = pss->record_left;
+	}
     }
-    state.binary = -1;
     return filter_read(i_ctx_p, code, &s_exD_template, (stream_state *)&state, 0);
 }
 

@@ -55,14 +55,16 @@ typedef struct stream_exD_state_s {
     stream_state_common;
     /* The following parameters are set by the client. */
     ushort cstate;		/* encryption state */
-    stream_PFBD_state *pfb_state;	/* state of underlying */
-				/* PFBDecode stream, if any */
     int binary;			/* 1=binary, 0=hex, -1=don't know yet */
     int lenIV;			/* # of initial decoded bytes to skip */
+    stream_PFBD_state *pfb_state;	/* state of underlying */
+				/* PFBDecode stream, if any */
     /* The following change dynamically. */
     int odd;			/* odd digit */
     long record_left;		/* data left in binary record in .PFB file, */
 				/* max_long if not reading a .PFB file */
+    long hex_left;		/* # of encoded chars to process as hex */
+				/* if binary == 0 */
     int skip;			/* # of decoded bytes to skip */
 } stream_exD_state;
 
