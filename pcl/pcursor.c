@@ -794,12 +794,19 @@ pcursor_do_reset(
     pcl_reset_type_t    type
 )
 {
-    if ( (type & (pcl_reset_initial | pcl_reset_printer)) != 0 ) {
+    static  const uint  mask = (  pcl_reset_initial
+                                | pcl_reset_printer
+                                | pcl_reset_overlay );
 
+    if ((type & mask) == 0)
+        return;
+
+    pcs->line_termination = 0;
+    pcs->hmi_cp = HMI_DEFAULT;
+    pcs->vmi_cp = VMI_DEFAULT;
+
+    if ( (type & pcl_reset_overlay) == 0 ) {
         cursor_stk_size = 0;
-        pcs->line_termination = 0;
-    	pcs->hmi_cp = HMI_DEFAULT;
-	pcs->vmi_cp = VMI_DEFAULT;
 
         /* 
          * If this is an initial reset, make sure underlining is disabled
@@ -807,8 +814,8 @@ pcursor_do_reset(
          */
         if ((type & pcl_reset_initial) != 0)
             pcs->underline_enabled = false;
-        pcl_home_cursor(pcs);
 
+        pcl_home_cursor(pcs);
     }
 }
 
