@@ -1591,6 +1591,12 @@ copied_cid2_CIDMap_proc(gs_font_cid2 *fcid2, gs_glyph glyph)
     return CIDMap[cid];
 }
 
+private uint
+copied_cid2_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
+{
+    return copied_cid2_CIDMap_proc((gs_font_cid2 *)font, glyph);
+}
+
 private int
 copy_font_cid2(gs_font *font, gs_font *copied)
 {
@@ -1616,6 +1622,11 @@ copy_font_cid2(gs_font *font, gs_font *copied)
     cfdata->CIDMap = CIDMap;
     copied2->cidata.MetricsCount = 0;
     copied2->cidata.CIDMap_proc = copied_cid2_CIDMap_proc;
+    {
+	gs_font_type42 *const copied42 = (gs_font_type42 *)copied;
+	
+	copied42->data.get_glyph_index = copied_cid2_get_glyph_index;
+    }
     return 0;
 }
 
