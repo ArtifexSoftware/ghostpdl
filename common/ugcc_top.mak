@@ -35,6 +35,13 @@ nofp:
 product:
 	make GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)'
 
+# We also specify the location of zlib here since we hardwire the
+# banding compresssion method to zlib in the next target.
+ZSRCDIR=$(GLSRCDIR)/zlib
+ZGENDIR=$(GENDIR)
+ZOBJDIR=$(GENDIR)
+SHARE_ZLIB=0
+
 # Build the required GS library files.
 # It's simplest always to build the floating point emulator,
 # even though we don't always link it in.
@@ -47,6 +54,7 @@ $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE)
 	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
           DEVICE_DEVS='$(DEVICE_DEVS) bbox.dev' \
 	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
+	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR) ZLIB_NAME=$(ZLIB_NAME) SHARE_ZLIB=$(SHARE_ZLIB) \
 	  GLSRCDIR='$(GLSRCDIR)' \
 	  GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)' \
 	  -f $(GLSRCDIR)/ugcclib.mak \
