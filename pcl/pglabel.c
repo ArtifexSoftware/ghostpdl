@@ -107,7 +107,7 @@ hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
 /* Select primary (0) or alternate (1) font. */
 #define hpgl_select_font(pgls, i)\
   do {\
-    if ( (pgls)->g.font_selected != (i) )\
+    if ( (pgls)->g.font]selected != (i) )\
       (pgls)->g.font_selected = (i), (pgls)->g.font = 0;\
   } while (0)
 
@@ -504,8 +504,27 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 	return 0;
 }
 
-/* ------ LB command ------ */
+/*
+ * Test whether we can use show instead of charpath followed by
+ * a GL/2 fill.  If so, the library will be able to use its
+ * character cache.
+ */
 
+private bool
+hpgl_use_show(hpgl_state_t *pgls)
+{
+    const pcl_font_selection_t *    pfs =
+	&pgls->g.font_selection[pgls->g.font_selected];
+
+    /* Show cannot be used if CF is not default since the character
+       may require additional processing by the line drawing code. */
+    if ( (pgls->g.character.fill_mode == 0) &&
+	 (pgls->g.character.edge_pen == 0) )
+	return true;
+    else
+	return false;
+}
+ 
 /*
  * build the path and render it
  */
@@ -564,7 +583,7 @@ hpgl_print_char(
         bool            save_relative = pgls->g.pen.width_relative;
         gs_point        scale;
         bool            bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
-        bool            use_show = true;
+        bool            use_show = hpgl_use_show(pgls);
         gs_matrix       pre_rmat, rmat, advance_mat;
         int             angle = -1;	/* a multiple of 90 if used */
         int             weight = pfs->params.stroke_weight;
@@ -742,44 +761,6 @@ hpgl_print_char(
                                 * (1.0 + pgls->g.character.extra_space.x);
             }
 	}
-
-	/*
-	 * Test whether we can use show instead of charpath followed by
-	 * a GL/2 fill.  If so, the library will be able to use its
-	 * character cache.  Note that we must avoid this for the stick
-	 * font because of its dependence on pen width.
-	 */
-	if ((pfs->params.typeface_family & 0xfff) != STICK_FONT_TYPEFACE) {
-	    switch (pgls->g.character.fill_mode) {
-
-	      case hpgl_char_solid_edge:
-	        use_show = bitmaps_allowed;
-	        break;
-
-	      case hpgl_char_fill_edge:
-	        use_show = bitmaps_allowed;
-	        if (!use_show)
-		    break;
-	        /* falls through */
-
-	      case hpgl_char_fill:
-	        switch (pgls->g.fill.type) {
-
-		  case hpgl_FT_pattern_solid_pen1:
-		  case hpgl_FT_pattern_solid_pen2:
-		    break;
-
-		    /* Eventually we will be able to do better than this.... */
-		  default:
-		    use_show = false;
-		}
-	        break;
-
-	      default:
-	        use_show = false;
-	        break;
-	    }
-        }
 
 	/* Check for SP control code. */
 	if (ch == ' ' && space_code != 0) {
