@@ -283,9 +283,10 @@ pdfdict begin
 %	buffer, buffer2 - string
 %	hexify - procedure to convert buffer to hex if needed
 %	leftstr - string containing (non-negative) integer
-%	sectionstr - string containing a character 0 .. 2
+%	sectionstr - string containing a character 0 .. 3
 %	stream - (stream) dictionary
 %	proc - procedure of the form {-dict- type1read}
+%       pfbhdr - string containing 16#80 if PFB, 0 otherwise
 % When the procedure is executing, this dictionary is current.
 % leftstr and sectionstr are strings so that we can change their values
 % reliably in case the font executes a restore!
@@ -305,8 +306,8 @@ pdfdict begin
     //systemdict /definefont get exec
   } bdef
   /eexec {
-		% Assume the font dictionary is on the top of the stack.
-    count 0 gt { /topFontDict 1 index cvlit store } if
+	% Assume the font dictionary is directly below the file on the stack
+    count 0 gt { /topFontDict 2 index cvlit store } if
     55665 /eexecDecode filter
     //systemdict begin readtype1dictcopy begin cvx stopped
     currentdict readtype1dictcopy eq { end } if
@@ -320,10 +321,11 @@ end readonly def
 		% at the right times.
    1 index exch
    PDFfile fileposition 3 1 roll
-   10 dict begin
+   11 dict begin
      /leftstr (          ) 10 string copy def
        dup /Length1 oget leftstr cvs pop
      /sectionstr <00> 1 string copy def
+     /pfbhdr <00> 1 string copy def
      /stream 1 index def
      true resolvestream /data exch def
      /buffer 1000 string def		% arbitrary
@@ -356,7 +358,7 @@ end readonly def
 % Execute the appropriate reading procedure.
 /type1read		% <dict> type1read <string>
  { begin leftstr cvi
-    { type1read1 type1read2 type1read3 } sectionstr 0 get get exec
+    { type1read0 type1read1 type1read2 type1read3 } sectionstr 0 get get exec
    (          ) leftstr copy cvs pop end
  } bdef
 
@@ -374,17 +376,57 @@ end readonly def
     } if
  } bdef
 
+% Read the initial byte to see if we need to skip a 6 byte PFB header
+/type1read0 { 		% <left> type1read0 <string> <left'>
+  sectionstr 0 1 put	% either way we go to the next stage
+  pfbhdr type1readdata
+  1 index 0 get 16#80 eq {
+    (\n   **** Warning: Embedded Type1 font in PFB format is not valid PDF.)
+    pdfformaterror
+    DEBUG { (skipping PFB header) = flush } if
+    exch pop buffer 0 5 getinterval type1readdata exch
+    dup 4 get 256 mul 1 index 3 get add 256 mul
+    1 index 2 get add 256 mul 1 index 1 get add
+    DEBUG { (PFB segment length = ) print dup = } if
+    exch pop  % discard the string keeping the PFB segment length
+    2 copy ne {
+      (\n   **** Warning: Type 1 PFB segment length and Length 1 value do not match.)
+      pdfformaterror
+      exch 	% keep the PFB length instead
+    } if
+    pop
+    buffer type1readdata	% go ahead and read a block
+  }
+  if	% if not PFB, return pfbhdr string (first char of file, usually %).
+} bdef
+
 % Read the next block of the initial text portion.
 /type1read1 {		% <left> type1read1 <string> <left'>
   DEBUG { (read1 ) print } if
   dup 0 eq {
-    pop sectionstr 0 1 put
+    pop sectionstr 0 2 put
     stream /Length2 oget
 			% Determine whether to hexify data for eexec.
     dup 8 lt {
       type1read2	% Hexify.
     } {
       DEBUG { (read2 ) print } if
+      pfbhdr 0 get 16#80 eq {
+        % eat 6 more bytes of PFB junk before proceeding
+	DEBUG { (skipping PFB header in segment 2) = flush } if
+	buffer 0 6 getinterval type1readdata exch
+        dup 5 get 256 mul 1 index 4 get add 256 mul
+	1 index 3 get add 256 mul 1 index 2 get add
+        DEBUG { (PFB segment length = ) print dup = } if
+	exch pop  % discard the string keeping the PFB segment length
+	2 copy ne {
+          (\n   **** Warning: Type 1 PFB segment length and Length 2 value do not match.)
+          pdfformaterror
+	  dup =
+	  exch 		% keep the PFB length instead
+	} if
+	  pop
+      } if
       buffer2 type1readdata exch
 			% The check doesn't have to be 100% accurate:
 			% hexifying is always OK.
@@ -421,13 +463,30 @@ readonly def
 /type1read2 {		% <left> type1read2 <string> <left'>
   DEBUG { (read2 ) print } if
    dup 0 eq
-    { pop sectionstr 0 2 put
+    { pop sectionstr 0 3 put
       stream /Length3 oget
       dup 0 eq
        { DEBUG { (trailer ) print } if
 	 type1trailer exch
        }
-       { type1read3
+       { 
+         pfbhdr 0 get 16#80 eq {
+           % eat 6 more bytes of PFB junk before proceeding
+	   DEBUG { (skipping PFB header in segment 3) = flush } if
+	   buffer 0 6 getinterval type1readdata exch
+           dup 5 get 256 mul 1 index 4 get add 256 mul
+	   1 index 3 get add 256 mul 1 index 2 get add
+           DEBUG { (PFB segment length = ) print dup = } if
+	   exch pop  % discard the string keeping the PFB segment length
+	   2 copy ne {
+           (\n   **** Warning: Type 1 PFB segment length and Length 3 value do not match.)
+           pdfformaterror
+	     exch 	% keep the PFB length instead
+	   } if
+	   pop
+	   (\n) pdfformaterror
+         } if
+         type1read3
        }
       ifelse
     }
