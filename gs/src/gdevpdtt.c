@@ -115,6 +115,8 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	return_error(gs_error_rangecheck);
     }
     if (penum->current_font->FontType == ft_user_defined && 
+	    penum->orig_font->FontType != ft_composite &&
+	    penum->outer_CID == GS_NO_GLYPH &&
 	    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
 	int code;
 	gs_font *font = penum->orig_font;
@@ -2008,6 +2010,14 @@ pdf_text_process(gs_text_enum_t *pte)
 	       a transparency with CompatibilityLevel<=1.3 . */
 	    goto default_impl;
 	}
+	if (penum->outer_CID != GS_NO_GLYPH) {
+	    /* Fallback to the default implermentation for handling 
+	       Type 3 fonts with CIDs, because currently Type 3
+	       font resource arrays' sizes are hardcoded to 256 glyphs. 
+	       A better solution would be to re-encode the CID text with
+	       Type 3 glyph variations. */
+	    goto default_impl;
+	}
 	if (code < 0)
 	    return code;
     }
@@ -2051,6 +2061,8 @@ pdf_text_process(gs_text_enum_t *pte)
 	if (code == TEXT_PROCESS_RENDER) {
 	    pdev->charproc_ctm = penum->pis->ctm;
 	    if (penum->current_font->FontType == ft_user_defined && 
+		    penum->orig_font->FontType != ft_composite &&
+		    penum->outer_CID == GS_NO_GLYPH &&
 		    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
 		/* The condition above must be consistent with one in pdf_text_set_cache,
 		   which decides to apply pdf_set_charproc_attrs. */
