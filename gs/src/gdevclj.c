@@ -487,8 +487,8 @@ private gx_device_procs clj_procs = {
 gx_device_printer   gs_cljet5_device = prn_device_margins(
     clj_procs,              /* procedures */
     "cljet5",               /* device name */
-    110,                    /* width - will be overridden subsequently */
-    85,                     /* height - will be overridden subsequently */
+    85,                    /* width - will be overridden subsequently */
+    110,                     /* height - will be overridden subsequently */
     X_DPI, Y_DPI,           /* resolutions - current must be the same */
     0.0, 0.0,               /* no offset; handled by initial matrix */
     0.167, 0.167,           /* margins (left, bottom, right, top */
