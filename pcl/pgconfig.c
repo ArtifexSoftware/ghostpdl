@@ -150,7 +150,7 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_set_line_pattern_defaults(pgls);
 	hpgl_args_setup(&args);
 	hpgl_RF(&args, pgls);
-	hpgl_args_setup(&args);
+	hpgl_args_set_int(&args, 0);
 	hpgl_SV(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_UL(&args, pgls);
