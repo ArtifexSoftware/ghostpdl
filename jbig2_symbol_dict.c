@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.19 2002/08/15 14:54:45 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.20 2003/03/05 12:25:54 giles Exp $
     
     symbol dictionary segment decode and support
 */
@@ -52,7 +52,7 @@ typedef struct {
   int8_t sdrat[4];
 } Jbig2SymbolDictParams;
 
-#ifdef HAVE_LIBPNG
+#ifdef DEBUG
 void
 jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
 {
@@ -69,7 +69,7 @@ jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
 #endif
     }
 }
-#endif /* HAVE_LIBPNG */
+#endif /* DEBUG */
 
 /* 6.5 */
 static Jbig2SymbolDict *
