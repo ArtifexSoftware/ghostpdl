@@ -819,6 +819,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    eprintf1("ERROR %d reclaiming the memory while the interpreter finalization.\n", code);
 	    return e_Fatal;
 	}
+	i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
 
