@@ -149,25 +149,44 @@ map_symbol(
  */
   private bool
 is_printable(
-    const pl_symbol_map_t * psm,
+    const pcl_state_t * pcs,
     gs_char                 chr,
     bool                    literal
 )
 {
-    /* NB I am not sure if there is historical significance to
-       checking if the type is >= 2 instead of just 2 */
-    if ( (psm == 0) || (literal && (psm->type >= 2)) )
-        return true;
-    /* For type 2, we must be in transparency or display func mode to
-       print codes 0, 7-15, and 27 */
-    else if ( psm->type >= 2 ) {
-        if ( (chr == 0) || (chr == '\033') || 
-	     ((chr >= '\007') && (chr <= '\017')) )
-            return false;
-        return true;
-    } else if ( psm->type == 1 )
-        chr &= 0x7f;
-    return (chr >= ' ') && (chr <= '\177');
+    int map_type;
+    bool printable;
+
+    if (literal) /* transparent data */
+	printable = true;
+    else {
+	if (pcs->map != 0) {
+	    /* PCL TRM 10-7 
+	     * symbol map type overrides, font map type
+	     */
+	    map_type = pcs->map->type;
+	}
+	else {
+	    /* PCL TRM 11-18 */
+	    map_type = pcs->font->font_type;
+	}
+
+	if ( map_type == 0 )
+	    printable = (chr >= ' ') && (chr <= '\177'); 
+	else if ( map_type == 1 ) {
+	    chr &= 0x7f;
+	    printable = (chr >= ' '); /* 0-31 and 128-159 are not printable */
+	}
+	else if ( map_type >= 2 ) {
+	    /* 2 is correct but will force all types above 2 here */
+	    if ( (chr == 0) || (chr == '\033') || 
+		 ((chr >= '\007') && (chr <= '\017')) )
+		printable = false;
+	    else
+		printable = true;
+	}
+    }
+    return printable; 
 }
 
 /*
@@ -222,7 +241,7 @@ get_next_char(
     *plen = len;
 
     /* check if the code is considered "printable" in the current symbol set */
-    if (!is_printable(pcs->map, chr, literal)) {
+    if (!is_printable(pcs, chr, literal)) {
         *pis_space = literal;
         *pchr = 0xffff;
         return 0;
