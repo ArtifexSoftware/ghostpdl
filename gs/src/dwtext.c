@@ -952,7 +952,6 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		SetWindowText(hwnd, title);
 	    }
 	    tw->quitnow = TRUE;
-	    PostQuitMessage(0);
 	    /* wait until Ghostscript exits before destroying window */
 	    return 0;	
 	case WM_DESTROY:

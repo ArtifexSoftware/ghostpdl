@@ -62,9 +62,9 @@ static int poll(void)
 	TranslateMessage(&msg);
 	DispatchMessage(&msg);
 	}
-    /* If text window closed then abort Ghostscript */
-    if (!IsWindow(text_get_handle(tw)))
-	return -1;
+    /* If text window closing then abort Ghostscript */
+    if (tw->quitnow)
+	return 1;
     return 0;
 }
 
@@ -455,7 +455,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
 
     dll_exit_status = new_main(argc, argv);
     
-    if (dll_exit_status && !tw->line_eof) {
+    if (dll_exit_status && !tw->quitnow) {
 	/* display message box so error messages in text window can be read */
 	char buf[80];
 	if (IsIconic(text_get_handle(tw)))
