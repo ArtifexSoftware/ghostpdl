@@ -1154,25 +1154,33 @@ const gx_device_bbox_procs_t gdev_x_box_procs = {
 
 /* ------ Internal procedures ------ */
 
-/* Substitute for XPutImage using XFillRectangle. */
-/* This is a total hack to get around an apparent bug */
-/* in some X servers.  It only works with the specific */
-/* parameters (bit/byte order, padding) used above. */
+/*
+ * Substitute for XPutImage using XFillRectangle.  This is a hack to get
+ * around an apparent bug in some X servers.  It only works with the
+ * specific parameters (bit/byte order, padding) used above.
+ */
 private int
-alt_put_image(gx_device * dev, Display * dpy, Drawable win, GC gc,
-	XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h)
+alt_put_image(gx_device *dev, Display *dpy, Drawable win, GC gc, XImage *pi,
+	      int sx, int sy, int dx, int dy, unsigned w, unsigned h)
 {
     int raster = pi->bytes_per_line;
     byte *data = (byte *) pi->data + sy * raster + (sx >> 3);
     int init_mask = 0x80 >> (sx & 7);
     int invert = 0;
     int yi;
-
-#define nrects 40
-    XRectangle rects[nrects];
+#define NUM_RECTS 40
+    XRectangle rects[NUM_RECTS];
     XRectangle *rp = rects;
-
     XGCValues gcv;
+
+#ifdef DEBUG
+    if (pi->format != XYBitmap || pi->byte_order != MSBFirst ||
+	pi->bitmap_bit_order != MSBFirst || pi->depth != 1
+	) {
+	lprintf("alt_put_image: unimplemented parameter values!\n");
+	return_error(gs_error_rangecheck);
+    }
+#endif
 
     XGetGCValues(dpy, gc, (GCFunction | GCForeground | GCBackground), &gcv);
 
@@ -1181,11 +1189,25 @@ alt_put_image(gx_device * dev, Display * dpy, Drawable win, GC gc,
 	XFillRectangle(dpy, win, gc, dx, dy, w, h);
 	XSetForeground(dpy, gc, gcv.foreground);
     } else if (gcv.function == GXand) {
+	/* The only cases used above are fc = ~0 or bc = ~0. */
+#ifdef DEBUG
+	if (gcv.foreground != ~(x_pixel)0 && gcv.background != ~(x_pixel)0) {
+	    lprintf("alt_put_image: unimplemented GXand case!\n");
+	    return_error(gs_error_rangecheck);
+	}
+#endif
 	if (gcv.background != ~(x_pixel) 0) {
 	    XSetForeground(dpy, gc, gcv.background);
 	    invert = 0xff;
 	}
     } else if (gcv.function == GXor) {
+	/* The only cases used above are fc = 0 or bc = 0. */
+#ifdef DEBUG
+	if (gcv.foreground != 0 && gcv.background != 0) {
+	    lprintf("alt_put_image: unimplemented GXor case!\n");
+	    return_error(gs_error_rangecheck);
+	}
+#endif
 	if (gcv.background != 0) {
 	    XSetForeground(dpy, gc, gcv.background);
 	    invert = 0xff;
@@ -1204,8 +1226,8 @@ alt_put_image(gx_device * dev, Display * dpy, Drawable win, GC gc,
 	    if ((*dp ^ invert) & mask) {
 		int xleft = xi;
 
-		if (rp == &rects[nrects]) {
-		    XFillRectangles(dpy, win, gc, rects, nrects);
+		if (rp == &rects[NUM_RECTS]) {
+		    XFillRectangles(dpy, win, gc, rects, NUM_RECTS);
 		    rp = rects;
 		}
 		/* Scan over a run of 1-bits */
@@ -1214,7 +1236,7 @@ alt_put_image(gx_device * dev, Display * dpy, Drawable win, GC gc,
 		    if (!(mask >>= 1))
 			mask = 0x80, dp++;
 		    xi++;
-		} while (xi < w && (*dp & mask));
+		} while (xi < w && ((*dp ^ invert) & mask));
 		rp->width = xi - xleft, rp->height = 1;
 		rp++;
 	    } else {
@@ -1228,4 +1250,5 @@ alt_put_image(gx_device * dev, Display * dpy, Drawable win, GC gc,
     if (invert)
 	XSetForeground(dpy, gc, gcv.foreground);
     return 0;
+#undef NUM_RECTS
 }
