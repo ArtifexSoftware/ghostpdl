@@ -1120,15 +1120,14 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     gs_font_base *const pbfont = (gs_font_base *)pfont;
     cff_writer_t writer;
     cff_glyph_subset_t subset;
-    cff_string_item_t std_string_items[500]; /* 391 entries used */
-    /****** HOW TO DETERMINE THE SIZE OF STRINGS? ******/
-    cff_string_item_t string_items[MAX_CFF_SUBGLYPHS /* character names */ +
-				   40 /* misc. values */];
+    cff_string_item_t *std_string_items;
+    cff_string_item_t *string_items;
     gs_const_string font_name;
     stream poss;
     uint charstrings_count, charstrings_size;
     uint subrs_count, subrs_size;
     uint gsubrs_count, gsubrs_size, encoding_size, charset_size;
+    uint number_of_glyphs = 0, number_of_strings;
     /*
      * Set the offsets and sizes to the largest reasonable values
      * (see below).
@@ -1148,10 +1147,26 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     gs_glyph glyph;
     long start_pos;
     uint offset;
-    int code =
-	psf_get_type1_glyphs(&subset.glyphs, pfont, subset_glyphs,
-			      subset_size);
+    int code;
 
+    /* Allocate the string tables. */
+    psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont,
+			       NULL, 0, GLYPH_SPACE_NAME);
+    while ((code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1)
+	number_of_glyphs++;
+    subset.glyphs.subset_data = (gs_glyph *)gs_alloc_bytes(pfont->memory,
+		    number_of_glyphs * sizeof(glyph), "psf_write_type2_font");
+    number_of_strings = number_of_glyphs + MAX_CFF_MISC_STRINGS;
+    std_string_items = (cff_string_item_t *)gs_alloc_bytes(pfont->memory,
+		    (MAX_CFF_STD_STRINGS + number_of_strings) * sizeof(cff_string_item_t), 
+		    "psf_write_type2_font");
+    if (std_string_items == NULL || subset.glyphs.subset_data == NULL)
+	return_error(gs_error_VMerror);
+    string_items = std_string_items + MAX_CFF_STD_STRINGS;
+
+    /* Get subset glyphs. */
+    code = psf_get_type1_glyphs(&subset.glyphs, pfont, subset_glyphs,
+			      subset_size);
     if (code < 0)
 	return code;
     if (subset.glyphs.notdef == gs_no_glyph)
@@ -1205,7 +1220,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 	    psf_enumerate_glyphs_reset(&genum);
 	    while ((code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1)
 		if (code == 0) {
-		    if (num_glyphs == countof(subset.glyphs.subset_data))
+		    if (num_glyphs == number_of_glyphs)
 			return_error(gs_error_limitcheck);
 		    subset.glyphs.subset_data[num_glyphs++] = glyph;
 		}
@@ -1250,7 +1265,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 
     /* Initialize the string tables. */
     cff_string_table_init(&writer.std_strings, std_string_items,
-			  countof(std_string_items));
+			  MAX_CFF_STD_STRINGS);
     for (j = 0; (glyph = gs_c_known_encode((gs_char)j,
 				ENCODING_INDEX_CFFSTRINGS)) != gs_no_glyph;
 	 ++j) {
@@ -1261,8 +1276,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 	cff_string_index(&writer.std_strings, str.data, str.size, true,
 			 &ignore);
     }
-    cff_string_table_init(&writer.strings, string_items,
-			  countof(string_items));
+    cff_string_table_init(&writer.strings, string_items, number_of_strings);
 
     /* Enter miscellaneous strings in the string table. */
     cff_write_Top_font(&writer, 0, 0, 0, 0, 0);
@@ -1449,6 +1463,8 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     }
 
     /* All done. */
+    gs_free_object(pfont->memory, std_string_items, "psf_write_type2_font");
+    gs_free_object(pfont->memory, subset.glyphs.subset_data, "psf_write_type2_font");
     return 0;
 }
 
@@ -1497,7 +1513,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     cff_writer_t writer;
     cff_string_item_t std_string_items[500]; /* 391 entries used */
     /****** HOW TO DETERMINE THE SIZE OF STRINGS? ******/
-    cff_string_item_t string_items[MAX_CFF_SUBGLYPHS /* character names */ +
+    cff_string_item_t string_items[500 /* character names */ +
 				   40 /* misc. values */];
     gs_const_string font_name;
     stream poss;
