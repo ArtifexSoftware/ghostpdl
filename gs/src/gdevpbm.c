@@ -408,24 +408,7 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     const char *vname;
 
     save_info = pdev->color_info;
-    if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
-        if (code < 0)
-            ecode = code;
-        else if (t != 0 && t != 90 && t != 180 && t != 270)
-            param_signal_error(plist, "TrayOrientation",
-                               ecode = gs_error_rangecheck);
-        else {
-            if ( t != ((gx_device_pbm *)pdev)->TrayOrientation) {
-                if ( t == 90 || t == 270 ) {
-		    /* page sizes don't rotate, height and width do rotate */
-                    floatp tmp = pdev->height;
-                    pdev->height = pdev->width;
-                    pdev->width = tmp;
-                }
-                ((gx_device_pbm *)pdev)->TrayOrientation = t;
-            }
-        }
-    }
+
     if ((code = param_read_long(plist, (vname = "GrayValues"), &v)) != 1 ||
 	(code = param_read_long(plist, (vname = "RedValues"), &v)) != 1 ||
 	(code = param_read_long(plist, (vname = "GreenValues"), &v)) != 1 ||
@@ -463,10 +446,33 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
 		 pdev->color_info.dither_colors = (int)v) - 1;
 	}
     }
+    /* super->put_parms() set up resolution and page size before TrayOrientation */
     if ((code = ecode) < 0 ||
 	(code = gdev_prn_put_params_planar(pdev, plist, &bdev->UsePlanarBuffer)) < 0
 	)
 	pdev->color_info = save_info;
+
+    if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
+        if (code < 0)
+            ecode = code;
+        else if (t != 0 && t != 90 && t != 180 && t != 270)
+            param_signal_error(plist, "TrayOrientation",
+                               ecode = gs_error_rangecheck);
+        else {
+            if ( t != ((gx_device_pbm *)pdev)->TrayOrientation) {
+                if ( t == 90 || t == 270 ) {
+		    /* page sizes don't rotate, height and width do rotate 
+		     * HWResolution, HWSize, and MediaSize parameters interact, 
+		     * and must be set before TrayOrientation
+		     */
+                    floatp tmp = pdev->height;
+                    pdev->height = pdev->width;
+                    pdev->width = tmp;
+                }
+                ((gx_device_pbm *)pdev)->TrayOrientation = t;
+            }
+        }
+    }
     ppm_set_dev_procs(pdev);
     return code;
 }

@@ -243,7 +243,13 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     else if ( code < 1 ) {
 	ecode = code;
 	param_signal_error(plist, param_name, code);
-    }
+    }  
+
+    /* set up resolution and page size before TrayOrientation */
+    code = gdev_prn_put_params(dev, plist);
+    if (code < 0)
+	return code;
+
     if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
         if (code < 0)
             ecode = code;
@@ -253,7 +259,10 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
         else {
             if ( t != jdev->TrayOrientation) {
                 if ( t == 90 || t == 270 ) {
-		    /* page sizes don't rotate, height and width do rotate */
+		    /* page sizes don't rotate, height and width do rotate 
+		     * HWResolution, HWSize, and MediaSize parameters interact, 
+		     * and must be set before TrayOrientation
+		     */
                     floatp tmp = jdev->height;
                     jdev->height = jdev->width;
                     jdev->width = tmp;
@@ -264,9 +273,6 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     }
     if (ecode < 0)
 	return ecode;
-    code = gdev_prn_put_params(dev, plist);
-    if (code < 0)
-	return code;
 
     jdev->JPEGQ = jq;
     jdev->QFactor = qf;
