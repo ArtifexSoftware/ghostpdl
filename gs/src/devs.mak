@@ -798,7 +798,8 @@ $(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
 $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gsfunc0_h) $(gsstate_h)\
- $(gxbitmap_h) $(gxdht_h) $(gxfmap_h) $(gxht_h) $(gxistate_h) $(gzht_h)\
+ $(gxbitmap_h) $(gxdht_h) $(gxfarith_h) $(gxfmap_h) $(gxht_h) $(gxistate_h)\
+ $(gzht_h)\
  $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfg.$(OBJ) $(C_) $(GLSRC)gdevpdfg.c
 

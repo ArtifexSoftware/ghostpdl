@@ -26,6 +26,7 @@
 #include "gsstate.h"
 #include "gxbitmap.h"		/* for gxhttile.h in gzht.h */
 #include "gxdht.h"
+#include "gxfarith.h"		/* for gs_sin/cos_degrees */
 #include "gxfmap.h"
 #include "gxht.h"
 #include "gxistate.h"
@@ -271,18 +272,94 @@ pdf_write_transfer(gx_device_pdf *pdev, const gx_transfer_map *map,
 
 /* ------ Halftones ------ */
 
-/* Recognize the predefined PDF halftone functions. */
+/*
+ * Recognize the predefined PDF halftone functions.  Note that because the
+ * corresponding PostScript functions use single-precision floats, the
+ * functions used for testing must do the same in order to get identical
+ * results.  Currently we only do this for a few of the functions.
+ */
 #ifdef __PROTOTYPES__
 #define HT_FUNC(name, expr)\
-  private floatp name(floatp x, floatp y) { return expr; }
+  private floatp name(floatp xd, floatp yd) {\
+    float x = (float)xd, y = (float)yd;\
+    return d2f(expr);\
+  }
 #else
 #define HT_FUNC(name, expr)\
-  private floatp name(x, y) floatp x, y; { return expr; }
+  private floatp name(x, y) floatp x, y; {\
+    float x = (float)xd, y = (float)yd;\
+    return d2f(expr);\
+  }
 #endif
-/* Some systems define M_2PI, M_2_PI, ... */
-#ifndef M_2PI
-#  define M_2PI (2 * M_PI)
-#endif
+/*
+ * In most versions of gcc (e.g., 2.7.2.3, 2.95.4), return (float)xxx
+ * doesn't actually do the coercion.  Force this here.  Note that if we
+ * use 'inline', it doesn't work.
+ */
+private float
+d2f(floatp d)
+{
+    float f = (float)d;
+    return f;
+}
+private floatp
+ht_Round(floatp xf, floatp yf)
+{
+    float x = (float)xf, y = (float)yf;
+    float xabs = fabs(x), yabs = fabs(y);
+
+    if (d2f(xabs + yabs) <= 1)
+	return d2f(1 - d2f(d2f(x * x) + d2f(y * y)));
+    xabs -= 1, yabs -= 1;
+    return d2f(d2f(d2f(xabs * xabs) + d2f(yabs * yabs)) - 1);
+}
+private floatp
+ht_Diamond(floatp xf, floatp yf)
+{
+    float x = (float)xf, y = (float)yf;
+    float xabs = fabs(x), yabs = fabs(y);
+
+    if (d2f(xabs + yabs) <= 0.75)
+	return d2f(1 - d2f(d2f(x * x) + d2f(y * y)));
+    if (d2f(xabs + yabs) <= d2f(1.23))
+	return d2f(1 - d2f(d2f(d2f(0.85) * xabs) + yabs));
+    xabs -= 1, yabs -= 1;
+    return d2f(d2f(d2f(xabs * xabs) + d2f(yabs * yabs)) - 1);
+}
+private floatp
+ht_Ellipse(floatp xf, floatp yf)
+{
+    float x = (float)xf, y = (float)yf;
+    float xabs = fabs(x), yabs = fabs(y);
+    /*
+     * The PDF Reference, 2nd edition, incorrectly specifies the
+     * computation w = 4 * |x| + 3 * |y| - 3.  The PostScript code in the
+     * same book correctly implements w = 3 * |x| + 4 * |y| - 3.
+     */
+    float w = (float)(d2f(d2f(3 * xabs) + d2f(4 * yabs)) - 3);
+
+    if (w < 0) {
+	yabs /= 0.75;
+	return d2f(1 - d2f((d2f(x * x) + d2f(yabs * yabs)) / 4));
+    }
+    if (w > 1) {
+	xabs = 1 - xabs, yabs = d2f(1 - yabs) / 0.75;
+	return d2f(d2f((d2f(xabs * xabs) + d2f(yabs * yabs)) / 4) - 1);
+    }
+    return d2f(0.5 - w);
+}
+/*
+ * Most of these are recognized properly even without d2f.  We've only
+ * added d2f where it apparently makes a difference.
+ */
+private float
+d2fsin_d(double x) {
+    return d2f(gs_sin_degrees(d2f(x)));
+}
+private float
+d2fcos_d(double x) {
+    return d2f(gs_cos_degrees(d2f(x)));
+}
 HT_FUNC(ht_EllipseA, 1 - (x * x + 0.9 * y * y))
 HT_FUNC(ht_InvertedEllipseA, x * x + 0.9 * y * y - 1)
 HT_FUNC(ht_EllipseB, 1 - sqrt(x * x + 0.625 * y * y))
@@ -294,18 +371,21 @@ HT_FUNC(ht_LineY, y)
 HT_FUNC(ht_Square, -max(fabs(x), fabs(y)))
 HT_FUNC(ht_Cross, -min(fabs(x), fabs(y)))
 HT_FUNC(ht_Rhomboid, (0.9 * fabs(x) + fabs(y)) / 2)
-HT_FUNC(ht_DoubleDot, (sin(x * M_2PI) + sin(y * M_2PI)) / 2)
-HT_FUNC(ht_InvertedDoubleDot, -(sin(x * M_2PI) + sin(y * M_2PI)) / 2)
-HT_FUNC(ht_SimpleDot, 1 - (x * x + y * y))
-HT_FUNC(ht_InvertedSimpleDot, x * x + y * y - 1)
-HT_FUNC(ht_CosineDot, (cos(x * M_PI) + cos(y * M_PI)) / 2)
-HT_FUNC(ht_Double, (sin(x * M_PI) + sin(y * M_2PI)) / 2)
-HT_FUNC(ht_InvertedDouble, -(sin(x * M_PI) + sin(y * M_2PI)) / 2)
+HT_FUNC(ht_DoubleDot, (d2fsin_d(x * 360) + d2fsin_d(y * 360)) / 2)
+HT_FUNC(ht_InvertedDoubleDot, -(d2fsin_d(x * 360) + d2fsin_d(y * 360)) / 2)
+HT_FUNC(ht_SimpleDot, 1 - d2f(d2f(x * x) + d2f(y * y)))
+HT_FUNC(ht_InvertedSimpleDot, d2f(d2f(x * x) + d2f(y * y)) - 1)
+HT_FUNC(ht_CosineDot, (d2fcos_d(x * 180) + d2fcos_d(y * 180)) / 2)
+HT_FUNC(ht_Double, (d2fsin_d(x * 180) + d2fsin_d(y * 360)) / 2)
+HT_FUNC(ht_InvertedDouble, -(d2fsin_d(x * 180) + d2fsin_d(y * 360)) / 2)
 typedef struct ht_function_s {
     const char *fname;
     floatp (*proc)(P2(floatp, floatp));
 } ht_function_t;
 private const ht_function_t ht_functions[] = {
+    {"Round", ht_Round},
+    {"Diamond", ht_Diamond},
+    {"Ellipse", ht_Ellipse},
     {"EllipseA", ht_EllipseA},
     {"InvertedEllipseA", ht_InvertedEllipseA},
     {"EllipseB", ht_EllipseB},
@@ -453,8 +533,9 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
     }	
     *pid = id = pdf_begin_separate(pdev);
     s = pdev->strm;
+    /* Use the original, requested frequency and angle. */
     pprintg2(s, "<</Type/Halftone/HalftoneType 1/Frequency %g/Angle %g",
-	     psht->screen.actual_frequency, psht->screen.actual_angle);
+	     psht->screen.frequency, psht->screen.angle);
     if (i < countof(ht_functions))
 	pprints1(s, "/SpotFunction/%s", ht_functions[i].fname);
     else
