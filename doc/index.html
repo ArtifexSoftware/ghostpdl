@@ -149,8 +149,8 @@ not require a special directory name.
 rearranged with minor modifications to the makefiles.
 <h2>
 <a NAME="MSVC Compile"></a>Building with Microsoft Visual C/C++</h2>
-The PCL tools are known to build with Visual C/C++ 4.0 and 5.0.&nbsp; There
-are 2 ways of building the PCL components with Microsoft Visual C/C++:&nbsp;
+The PCL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0.&nbsp;
+There are 2 ways of building the PCL components with Microsoft Visual C/C++:&nbsp;
 Convert the current makefile environment to a Visual C/C++ project ; or
 compile the source directly using nmake.&nbsp; The following steps take
 you through converting the supplied makefile environment to a Visual C++
@@ -185,6 +185,10 @@ arrangement for PCL is:</li>
 nmake /f pcl6_msvc.mak
 <p>This will build both the PCL and XL language and supporting language
 switching code.
+<p><b>Note:</b>
+<br>In MSVC 6.0 simply opening the file pcl6_msvc.mak in the IDE will create
+all the necessary project files.&nbsp; Then pcl6 can be built or run using
+menu options or keyboard shortcuts.
 <p>Now PCL6 is set to be compiled, debugged and use other features of the
 MSVC++ IDE.
 <p>Dos hackers can start up a dos window, set the DEVSTUDIO environment
