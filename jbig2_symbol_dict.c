@@ -528,6 +528,10 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	goto too_short;
       memcpy(params.sdrat, segment_data + offset, 4);
       offset += 4;
+  } else {
+      /* sdrat is meaningless if SDRTEMPLATE is 1, but set a value
+         to avoid confusion if anybody looks */ 
+      memset(params.sdrat, 0, 4);
   }
 
   if (offset + 8 > segment->data_length)
