@@ -35,12 +35,12 @@ REGRESSION_SCRIPT = 'run_regression 2>&1'
 DIFF_SCRIPT = 'testdiff %s 2>&1' % (YESTERDAY,)
 LOG_STDOUT = gsconf.log_stdout
 LOG_STDERR = gsconf.log_stderr
-CVS_LOG_STDOUT = /home/regression/cvs-stdout.log
-CVS_LOG_STDERR = /home/regression/cvs-stderr.log
-MAKE_LOG_STDOUT = /home/regression/make-stdout.log
-MAKE_LOG_STDERR = /home/regression/make-stderr.log
-INSTALL_LOG_STDOUT = /home/regression/install-stdout.log
-INSTALL_LOG_STDERR = /home/regression/install-stderr.log
+CVS_LOG_STDOUT = "/home/regression/cvs-stdout.log"
+CVS_LOG_STDERR = "/home/regression/cvs-stderr.log"
+MAKE_LOG_STDOUT = "/home/regression/make-stdout.log"
+MAKE_LOG_STDERR = "/home/regression/make-stderr.log"
+INSTALL_LOG_STDOUT = "/home/regression/install-stdout.log"
+INSTALL_LOG_STDERR = "/home/regression/install-stderr.log"
 
 def change_gsproduct(file):
     tmpfile = "%s.tmp" % (file,)
