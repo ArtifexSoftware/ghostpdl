@@ -172,7 +172,7 @@ private int
 copy_row_yuv(unsigned char *dest, jas_image_t *image,
 	int x, int y, int bytes)
 {
-    int i;
+    int i,j;
     int count = (bytes/3) * 3;
     int shift[3];
     int clut[3];
@@ -181,36 +181,48 @@ copy_row_yuv(unsigned char *dest, jas_image_t *image,
 
     /* get the component mapping */
     clut[0] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_Y);
-    clut[1] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CR);
-    clut[2] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CB);
+    clut[1] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CB);
+    clut[2] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CR);
 
     for (i = 0; i < 3; i++) {
 	/* shift each component down to 8 bits */
-	shift[i] = max(jas_image_cmptprec(image, clut[i]) - 8, 0);
+	shift[i] = 16 - jas_image_cmptprec(image, clut[i]);
 	/* repeat subsampled pixels */
 	hstep[i] = jas_image_cmpthstep(image, clut[i]);
 	vstep[i] = jas_image_cmptvstep(image, clut[i]);
     }
     for (i = 1; i <= count; i+=3) {
-	/* read the sample */
-	//dlprintf2("calling readcmptsample with x = %d, y = %d\n", x, y);
-	p[0] = jas_image_readcmptsample(image, clut[0], x/hstep[0], y/vstep[0]);
-	p[1] = jas_image_readcmptsample(image, clut[1], x/hstep[1], y/vstep[1]);
-	p[2] = jas_image_readcmptsample(image, clut[2], x/hstep[2], y/vstep[2]);
+	/* read the sample values */
+	for (j = 0; j < 3; j++) {
+	    p[j] = jas_image_readcmptsample(image, clut[j], x/hstep[j], y/vstep[j]);
+	    p[j] <<= shift[j];
+	}
 	/* rotate to RGB */
 #if 0
-	q[0] = (1/1.772) * (p[0] + 1.402 * p[2]);
-	q[1] = (1/1.772) * (p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
-	q[2] = (1/1.772) * (p[0] + 1.772 * p[1]);
+	if (p[0] < 0) p[0] = 0;
+	else if (p[0] > 0xFFFF) p[0] = 0xFFFF;
+	p[1] -= 0x8FFF;
+	if (p[1] < -0x8FFF) p[1] = -0x8FFF;
+	else if (p[1] > 0x8FFE) p[1] = 0x8FFE;
+	p[2] -= 0x8FFF;
+	if (p[2] < -0x8FFF) p[2] = -0x8FFF;
+	else if (p[2] > 0x8FFE) p[2] = 0x8FFE;
+	q[0] = (1./1.772) * (p[0] + 1.402 * p[2]);
+	q[1] = (1./1.772) * (p[0] + 1.772 * p[2]);
+	q[2] = (1./1.772) * (p[0] - 0.34413 * p[2] - 0.71414 * p[1]);
+#elif 0
+	q[0] = ((double)p[0] + 1.402 * p[2]);
+	q[1] = ((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
+	q[2] = ((double)p[0] - 1.772 * p[1]);
 #else
-	q[0] = (1/1.772) * ((double)p[0] + 1.402 * p[2]);
-	q[1] = (1/1.772) * ((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
-	q[2] = (1/1.772) * ((double)p[0] - 1.772 * p[1]);
+	q[1] = p[0] - ((p[1] + p[2])>>2);
+	q[0] = p[1] + q[1];
+	q[2] = p[2] + q[1]; 
 #endif
 	/* write out the pixel */
-	dest[i] = q[0] >> shift[0];
-	dest[i+1] = q[1] >> shift[1];
-	dest[i+2] = q[2] >> shift[2];
+	dest[i] = q[0] >> 8;
+	dest[i+1] = q[1] >> 8;
+	dest[i+2] = q[2] >> 8;
 	x++;
     }
 
@@ -276,6 +288,19 @@ s_jpxd_decode_image(stream_jpxd_state *const state)
 	if (image == NULL) {
 	    dprintf("unable to decode JPX image data.\n");
 	    return ERRC;
+	}
+	/* convert non-rgb multicomponent colorspaces to sRGB */
+	if (jas_image_numcmpts(image) > 1 && 
+	    jas_clrspc_fam(jas_image_clrspc(image)) != JAS_CLRSPC_FAM_RGB) {
+	    jas_cmprof_t *outprof;
+	    jas_image_t *rgbimage = NULL;
+	    outprof = jas_cmprof_createfromclrspc(JAS_CLRSPC_SRGB);
+	    if (outprof != NULL)
+		rgbimage = jas_image_chclrspc(image, outprof, JAS_CMXFORM_INTENT_PER);
+	    if (rgbimage != NULL) {
+		jas_image_destroy(image);
+		image = rgbimage;
+	    }
 	}
 	state->image = image;
         state->offset = 0;
