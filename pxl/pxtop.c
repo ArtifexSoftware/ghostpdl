@@ -11,19 +11,6 @@
    San Rafael, CA  94903, (415)492-9861, for further information. */
 /*$Id$ */
 
-/*
-NOTICE from JD: There is still some work to do pending improved PXL
-de/init. Those places are commented and flagged with @@@
-
-I've implemented px_state_release() partially, but there is still
-memory leaking. You can see this by running the interpreter with the
--Z! option -- you'll see several memory blocks left over. Peter says that
-px_state_release() should also call a yet-to-be-written routine in gsfont.c
-which would release the master font directory to allow complete deallocation
-of all memory owned by a PCL instance. This remains to be done,
-maybe by Artifex.
-*/
-
 /* pxtop.c */
 /* Top-level API implementation of PCL/XL */
 
