@@ -1173,7 +1173,14 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
      * See the note on FONT_IS_ADOBE_ROMAN / FONT_USES_STANDARD_ENCODING
      * in gdevpdff.h for why the following substitution is made.
      */
-    if (font_is_symbolic(font)) { 
+#if 0
+#  define CONSIDER_FONT_SYMBOLIC(font) font_is_symbolic(font)
+#else
+#  define CONSIDER_FONT_SYMBOLIC(font)\
+  ((font)->FontType == ft_composite ||\
+   ((const gs_font_base *)(font))->encoding_index != ENCODING_INDEX_STANDARD)
+#endif
+    if (CONSIDER_FONT_SYMBOLIC(font))
 	desc.Flags |= FONT_IS_SYMBOLIC;
     else {
 	/*

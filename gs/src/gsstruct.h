@@ -1010,4 +1010,16 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 #define gs_private_st_ptrs_add2(stname, stype, sname, penum, preloc, supstname, member, e1, e2)\
   gs__st_ptrs_add2(private_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2)
 
+	/* General subclasses with 3 additional pointers. */
+
+#define gs__st_ptrs_add3(scope_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, offset_of(stype, member))
+#define gs_public_st_ptrs_add3(stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)\
+  gs__st_ptrs_add3(public_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)
+#define gs_private_st_ptrs_add3(stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)\
+  gs__st_ptrs_add3(private_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)
+
 #endif /* gsstruct_INCLUDED */

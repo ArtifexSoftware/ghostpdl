@@ -167,15 +167,6 @@ extern_inline int xyz(<<parameters>>)
 #define discard(expr) DISCARD(expr)
 
 /*
- * Some versions of the Watcom compiler give a "Comparison result always
- * 0/1" message that we want to suppress because it gets in the way of
- * meaningful warnings.
- */
-#ifdef __WATCOMC__
-#  pragma disable_message(124);
-#endif
-
-/*
  * Some versions of gcc have a bug such that after
 	byte *p;
 	...

@@ -25,6 +25,16 @@
 #include "spprint.h"
 #include "gdevpsdf.h"
 
+/* ---------------- Acrobat limitations ---------------- */
+
+/*
+ * The PDF reference manual, 2nd ed., claims that the limit for coordinates
+ * is +/- 32767. However, testing indicates that Acrobat Reader 4 for
+ * Windows and Linux fail with coordinates outside +/- 16383. Hence, we
+ * limit coordinates to 16k, with a little slop.
+ */
+#define MAX_USER_COORD 16300
+
 /* ---------------- Statically allocated sizes ---------------- */
 /* These should really be dynamic.... */
 

@@ -9,7 +9,6 @@
    license.  Refer to licensing information at http://www.artifex.com/ or
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
-*/
 
 /*$RCSfile$ $Revision$ */
 /* Interpreter filter support */

@@ -18,6 +18,7 @@
 #include "gsexit.h"
 #include "gsmemory.h"
 #include "gsargs.h"
+#include "errors.h"
 
 /* Initialize an arg list. */
 void
