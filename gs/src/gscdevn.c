@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,11 +20,14 @@
 /* DeviceN color space and operation definition */
 #include "gx.h"
 #include "gserrors.h"
+#include "gscdevn.h"
 #include "gsrefct.h"
 #include "gsmatrix.h"		/* for gscolor2.h */
 #include "gsstruct.h"
 #include "gxcspace.h"
 #include "gxcdevn.h"
+
+/* ---------------- Color space ---------------- */
 
 /* GC descriptors */
 gs_private_st_composite(st_color_space_DeviceN, gs_paint_color_space,
@@ -76,6 +79,40 @@ RELOC_PTRS_END
 
 /* ------ Public procedures ------ */
 
+/*
+ * Build a DeviceN color space.
+ */
+int
+gs_cspace_build_DeviceN(
+			gs_color_space **ppcspace,
+			gs_separation_name *psnames,
+			uint num_components,
+			const gs_color_space *palt_cspace,
+			gs_memory_t *pmem
+			)
+{
+    gs_color_space *pcspace = 0; /* bogus initialization */
+    gs_device_n_params *pcsdevn = 0; /* bogus initialization */
+    int code;
+
+    if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
+	return_error(gs_error_rangecheck);
+
+    code = gs_cspace_alloc(&pcspace, &gs_color_space_type_DeviceN, pmem);
+    if (code < 0)
+	return code;
+    pcsdevn = &pcspace->params.device_n;
+    code = alloc_device_n_map(&pcsdevn->map, pmem, "gs_cspace_build_DeviceN");
+    if (code < 0) {
+	gs_free_object(pmem, pcspace, "gs_cspace_build_DeviceN");
+	return code;
+    }
+    pcsdevn->names = psnames;
+    pcsdevn->num_components = num_components;
+    gs_cspace_init_from((gs_color_space *)&pcsdevn->alt_space, palt_cspace);
+    *ppcspace = pcspace;
+    return 0;
+}
 
 /* Allocate and initialize a DeviceN map. */
 int
@@ -90,6 +127,31 @@ alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
     pimap->tint_transform_data = 0;
     pimap->cache_valid = false;
     *ppmap = pimap;
+    return 0;
+}
+
+/*
+ * Set the DeviceN tint transformation procedure.
+ */
+int
+gs_cspace_set_devn_proc(gs_color_space * pcspace,
+			int (*proc)(P5(const gs_device_n_params *,
+				       const float *,
+				       float *,
+				       const gs_imager_state *,
+				       void *
+				       )),
+			void *proc_data
+			)
+{
+    gs_device_n_map *pimap;
+
+    if (gs_color_space_get_index(pcspace) != gs_color_space_index_DeviceN)
+	return_error(gs_error_rangecheck);
+    pimap = pcspace->params.device_n.map;
+    pimap->tint_transform = proc;
+    pimap->tint_transform_data = proc_data;
+    pimap->cache_valid = false;
     return 0;
 }
 
@@ -219,5 +281,3 @@ gx_adjust_cspace_DeviceN(const gs_color_space * pcs, int delta)
     (*pcs->params.device_n.alt_space.type->adjust_cspace_count)
 	((const gs_color_space *)&pcs->params.device_n.alt_space, delta);
 }
-
-#undef pcs
