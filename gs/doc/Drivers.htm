@@ -58,6 +58,7 @@
    <a href="#Compositing_notes">Notes</a>]
 </ul>
 <li><a href="#Polygon_level_drawing">Polygon-level drawing</a>
+<li><a href="#Linear_color_drawing">Linear color drawing</a>
 <li><a href="#High_level_drawing">High-level drawing</a>
 <ul>
 <li><a href="#Paths">Paths</a>
@@ -1965,6 +1966,176 @@ procedure.  However, still appears in the driver procedure vector for
 backward compatibility.  It should never be called, and drivers should not
 implement it.
 </dl>
+
+<h3><a name="Linear_color_drawing"></a>Linear color drawing</h3>
+
+<p>
+Linear color functions allow fast high quality rendering of 
+shadings on continuous tone devices. They implement filling simple areas
+with a lineary varying color. These functions are not called if the device applies halftones,
+or uses a non-separable or a non-linear color model.
+
+<dl>
+<dt><b><tt> int (*fill_linear_color_triangle)
+  (dev_t *dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2,
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
+</tt></b>
+<b><em>[OPTIONAL]</em></b>
+<dd>This function is the highest level one within the linear color function group.
+It fills a triangle with a linearly varying color.
+Arguments specify 3 points in the device space - vertices of a triangle, and their colors.
+The colors are represented as vectors of positive fractional numbers, each of which
+represents a color component value in the interval <b><tt>[0,1]</b></tt>.
+The number of components in a vector in the number of color
+components in the device (process) color model.
+<dd>
+The implementation fills entire triangle.
+The filling rule is same as for <a href="#Polygon_level_drawing">Polygon-level drawing</a>.
+A color for each pixel within the triangle to be computed as a linear interpolation
+of vertex colors.
+<dd>
+The implementation may reject the request if the area or the color appears too complex
+for filling in a single action. For doing that the implementation returns 0 and must not 
+paint any pixel. In this case the graphics library will perform a subdivision of the area
+into smaller triangles and call the function again with smaller areas.
+<dd>
+<b><em>Important note :</b></em> Do not try to decompose the area within
+the implementation of <b><tt> fill_linear_color_triangle </tt></b>, because
+it can break the plane coverage contiguity and cause a dropout.
+Instead that request graphics library to perform the decomposition.
+The graphics libary is smart enough to do that properly.
+<dd>
+<b><em>Important note :</b></em>
+The implementation must handle a special case, when only 2 colors are specified.
+It happens if <b><tt>p3</b></tt> one is <b><tt>NULL</b></tt>. 
+This means that the color does not depend on the X coordinate,
+i.e. it forms a linear gradient along the Y axis.
+The implementation must not reject (return 0) such cases.
+<dd>
+<b><em>Important note :</b></em>The device color component
+value 1 may be represented with several hexadecimal values :
+<b><tt>0x7FFF0000</b></tt>, <b><tt>0x7FFFF000</b></tt>, <b><tt>0x7FFFFF00</b></tt>, etc.,
+because the precision here exceeds the color precision of the device.
+To convert a <b><tt>frac31</b></tt> value into a device color component value,
+fist drop (ignore) the sign bit, then drop least significant bits -
+so many ones as you need to fit the device color precision.
+<dd>
+<b><em>Important note :</b></em> The <b><tt>fa</b></tt> argument may contain
+the <b><tt>swap_axes</b></tt> bit set. In this case the implementation must swap (transpoze)
+<b><tt>X</b></tt> and <b><tt>Y</b></tt> axes.
+<dd>
+<b><em>Important note :</b></em> The implementation must not paint outside the
+clipping rectangle specified in the <b><tt>fa</b></tt> argument.
+If <b><tt>fa->swap_axes</b></tt> is true, the clipping rectangle is transposed.
+<dd>
+See <b><tt> gx_default_fill_linear_color_triangle </b></tt>
+in <b><tt>gdevddrw.c</b></tt> as a sample code.
+</dl>
+
+
+<dl>
+<dt><b><tt> int (*fill_linear_color_trapezoid)
+  (dev_t *dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2, const gs_fixed_point *p3,
+	const frac31 *c0, const frac31 *c1,
+	const frac31 *c2, const frac31 *c2)
+</tt></b>
+<b><em>[OPTIONAL]</em></b>
+<dd>This function is a lower level one within the linear color function group.
+The default implementation of <b><tt> fill_linear_color_triangle </tt></b>
+calls this function 1-2 times per triangle. Besides that,
+this function may be called by the graphics library for other special cases,
+when a decomposition into triangles appears undiserable.
+<dd>
+Rather the prototype can specify a bilinear color,
+we assume that the implementation handles linear colors only.
+This means that the implementation can ignore any of <b><tt> c0, c1, c2, c3 </b></tt>.
+The graphics library takes a special care of the color linearity 
+when calling this function. The reason for passing all 4 color arguments
+is to avoid color precision problems.
+<dd>
+Similarly to <b><tt> fill_linear_color_triangle </tt></b>,
+this function may be called with only 2 colors, and may reject too comple areas.
+All those important notes are applicable here.
+<dd>
+A sample code may be found in in <b><tt>gxdtfill.h</b></tt>, rather it's a kind of complicated.
+A linear color function is generated from it as <b><tt> gx_fill_trapezoid_ns_lc </b></tt>
+with the following template parametres :
+
+<pre>
+#define LINEAR_COLOR 1 
+#define EDGE_TYPE gs_linear_color_edge
+#define FILL_ATTRS const gs_fill_attributes *
+#define CONTIGUOUS_FILL 0
+#define SWAP_AXES 0
+#define FILL_DIRECT 1
+</pre>
+See the helplers <b><tt>init_gradient</b></tt>,
+<b><tt>step_gradient</b></tt> (defined in in <b><tt>gdevddrw.c</b></tt>), how to manage colors.
+See <b><tt>check_gradient_overflow</b></tt>
+(defined in in <b><tt>gdevddrw.c</b></tt>), as an example of an area
+that can't be painted paint in a single action due to 64-bits fixed overflows.
+
+</dl>
+
+<dl>
+<dt><b><tt> int (*fill_linear_color_scanline)
+  int proc(dev_t *dev, const gs_fill_attributes *fa,
+	int i, int j, int w,
+	const frac31 *c0,
+	const int32_t *c0_f,
+	const int32_t *cg_num,
+	int32_t cg_den)
+</tt></b>
+<b><em>[OPTIONAL]</em></b>
+<dd>This function is the lowest level one within the linear color function group.
+It implements filling a scanline with a linearly varying color.
+The default implementation for <b><tt> fill_linear_color_trapezoid </tt></b>
+calls this function, and there are no other calls to it from the graphics libary.
+Thus if the device implements <b><tt> fill_linear_color_triangle </tt></b> and
+<b><tt> fill_linear_color_trapezoid </tt></b> by own means,
+this function may be left unimplemented.
+<dd>
+<b><tt>i</b></tt> and <b><tt>j</b></tt> specify device coordinates (indices)
+of the starting pixel of the scanline, <b><tt>w</b></tt> specifies the 
+width of the scanline, i.e. the number of pixels to be painted to the right from
+the starting pixel, including the starting pixel.
+<dd>
+<b><tt>c0</b></tt> specifies the color for the starting pixel
+as a vector of fraction values, each of which represents 
+a color value in the interval <b><tt>[0,1]</b></tt>.
+<dd>
+<b><tt>c0_f</b></tt> specify a fraction part of the color for the starting pixel.
+See the formula below about using it.
+<dd>
+<b><tt>cg_num</b></tt> specify a numerator for the color gradient -
+a vector of values in <b><tt>[-1,1]</b></tt>, each of which correspond to a color component.
+<dd>
+<b><tt>cg_den</b></tt> specify the denominator for the color gradient -
+a vector of values in <b><tt>[-1,1]</b></tt>, each of which correspond to a color component.
+<dd>
+The color for the pixel <b><tt>[i + k, j]</b></tt> to be computed like this :
+<pre><b><tt>
+         (double)(c0[n] + (c0_f[n] + cg_num[n] * k) / cg_den) / (1 ^ 31 - 1)
+</b></tt></pre>
+<dd>where <b><tt>0 <= k <= w </b></tt>, and <b><tt>n</b></tt> is a device color component index.
+
+<dd>
+<b><em>Important note :</b></em> The <b><tt>fa</b></tt> argument may contain
+the <b><tt>swap_axes</b></tt> bit set. In this case the implementation must swap (transpose)
+<b><tt>X</b></tt> and <b><tt>Y</b></tt> axes.
+<dd>
+<b><em>Important note :</b></em> The implementation must not paint outside the
+clipping rectangle specified in the <b><tt>fa</b></tt> argument.
+If <b><tt>fa->swap_axes</b></tt> is true, the clipping rectangle is transposed.
+<dd>
+See <b><tt> gx_default_fill_linear_color_scanline</b></tt>
+in <b><tt>gdevdsha.c</b></tt> as a sample code.
+</dl>
+
 
 <h3><a name="High_level_drawing"></a>High-level drawing</h3>
 
