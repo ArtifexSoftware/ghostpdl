@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -248,7 +248,7 @@ CPU_TYPE=486
 # at runtime.
 
 ! ifndef FPU_TYPE
-FPU_TYPE=0
+FPU_TYPE=387
 ! endif
 
 !endif

@@ -205,7 +205,7 @@ CPU_TYPE=386
 # of that type (or higher) is available: this is NOT currently checked
 # at runtime.
 
-FPU_TYPE=0
+FPU_TYPE=387
 
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.  Don't change this unless you really know

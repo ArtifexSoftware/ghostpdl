@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -178,7 +178,7 @@ CPU_TYPE=486
 # of that type (or higher) is available: this is NOT currently checked
 # at runtime.
 
-FPU_TYPE=0
+FPU_TYPE=387
 
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.  Don't change this unless you really know

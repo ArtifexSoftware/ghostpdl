@@ -306,7 +306,7 @@ CPU_TYPE=486
 # at runtime.
 
 ! ifndef FPU_TYPE
-FPU_TYPE=0
+FPU_TYPE=387
 ! endif
 
 !endif
