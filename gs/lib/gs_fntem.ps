@@ -86,12 +86,14 @@ currentdict end def
 %---------------------------CIDFont---------------------------
 
 /TranslateCSI   % <record> TranslateCSI <CSI>
-{ begin
+{ RESMPDEBUG { (fntem TranslateCSI beg ) = } if
+  begin
   << /Registry (Adobe) 
      /Ordering CSI aload pop 
      /Supplement exch 
   >>
   end
+  RESMPDEBUG { (fntem TranslateCSI end ) = } if
 } bind def
 
 /CIDFontCommon

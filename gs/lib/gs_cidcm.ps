@@ -128,19 +128,23 @@ currentdict end def
   %
   % Returns an empty dictionary if no CIDSystemInfo is found.
 
+  RESMPDEBUG { (cidcm GetCIDSystemInfoFromFile beg) = } if
   //.prs_dict begin
   /.prsFile exch def
   /.prsResult //.prs_empty def
   /.prsDictCount countdictstack def
+  RESMPDEBUG { (cidcm GetCIDSystemInfoFromFile will PrescanFile.) = } if
   { //PrescanFile } stopped pop
   //.prs_dict /.prsResult get
   end
+  RESMPDEBUG { (cidcm GetCIDSystemInfoFromFile end) = } if
 } bind def
 
 /GetCIDSystemInfo {     % <InstName> <CatName> GetCIDSystemInfo <CSI>
   
   % Retrieve CSI, using caches.
 
+  RESMPDEBUG { (cidcm GetCIDSystemInfo beg) = } if
   /Category findresource begin                % /InstName
   dup ResourceStatus 
   {
@@ -154,13 +158,17 @@ currentdict end def
       } if
       dup type /nametype eq
       {
+        RESMPDEBUG { (cidcm GetCIDSystemInfo got a name.) = } if
         //.prs_dict Category get              % /InstName CSIs
         dup 2 index known
         //enable_cache and {
+          RESMPDEBUG { (cidcm GetCIDSystemInfo from cache.) = } if
           exch get                            % CSI
         } {
+          RESMPDEBUG { (cidcm GetCIDSystemInfo from file.) = } if
           exch                                % CSIs /InstName
           dup //path_buffer ResourceFileName  % CSIs /InstName (path)
+          RESMPDEBUG { (cidcm GetCIDSystemInfo from file ) print dup = } if
           currentglobal exch true setglobal   % CSIs /InstName g (path)
           mark exch                           % CSIs /InstName g [ (path)
           { (r) file                          % CSIs /InstName g [ file
@@ -173,6 +181,13 @@ currentdict end def
           exch setglobal                      % CSIs /InstName CSI
           dup 4 1 roll                        % CSI CSIs /InstName CSI
           put                                 % CSI
+          RESMPDEBUG {
+            (cidcm GetCIDSystemInfo got from file : <<) print
+            dup { exch //=string cvs print ( ) print
+                       //=string cvs print ( ) print
+            } forall
+            (>>) =
+          } if
         } ifelse
       } if
     } ifelse
@@ -180,6 +195,7 @@ currentdict end def
     pop //.prs_empty
   } ifelse
   end
+  RESMPDEBUG { (cidcm GetCIDSystemInfo end) = } if
 } bind def
 
 /IsCompatibleCSI {  % <CSI-M> <CSI-F> IsCompatibleCSI <bool>

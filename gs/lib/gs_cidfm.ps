@@ -53,7 +53,12 @@ languagelevel 2 .setlanguagelevel
   } bind def
 
   /GetCSI   % <record> GetCSI null
-  { pop null
+  	    % <record> GetCSI dict
+  { % We know that currentdict is the category.
+    RESMPDEBUG { (cidfm GetCSI beg ) = } if
+    /Substitute get			% /Name
+    GetCIDSystemInfoFromMap
+    RESMPDEBUG { (cidfm GetCSI end ) print dup = } if
   } bind def
 
   /IsActive % <record> IsActive <bool>

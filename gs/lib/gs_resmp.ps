@@ -212,7 +212,8 @@ currentpacking false setpacking
     %        - procedures from the original resource category.
 
     /FindResource  % <Name> FindResource <dict>
-    { dup ResourceStatus exec {
+    { RESMPDEBUG { (resmp FindResource beg ) print dup = } if
+      dup ResourceStatus exec {
         pop 2 lt
       } {
         false
@@ -247,11 +248,13 @@ currentpacking false setpacking
           pop FindResource exec            
         } ifelse
       } ifelse
+      RESMPDEBUG { (resmp FindResource end) = } if
     } bind def
 
     /ResourceStatus   % <Name> ResourceStatus <status> <size> true
                       % <Name> ResourceStatus false
-    { dup ResourceStatus exec {            % /Name status size
+    { RESMPDEBUG { (resmp ResourceStatus beg ) print dup == } if
+      dup ResourceStatus exec {            % /Name status size
         1 index 2 lt {
           % In VM - return with it.
           3 2 roll pop true
@@ -280,23 +283,34 @@ currentpacking false setpacking
           pop false
         } ifelse
       } ifelse
+      RESMPDEBUG { (resmp ResourceStatus end) = } if
     } bind def
 
     /ResourceFileName  % <Name> <scratch> ResourceFileName <string>
-    { exch                                                    % (scratch) /Name
+    { RESMPDEBUG { (resmp ResourceFileName beg ) print 1 index = } if
+      exch                                                    % (scratch) /Name
       .map 1 index .knownget {                                % (scratch) /Name <<record>>
+      	RESMPDEBUG { (resmp ResourceFileName : have a map record.) = } if
         dup dup /RecordVirtualMethods get /IsActive get exec {
+          RESMPDEBUG { (resmp ResourceFileName : record is active.) = } if
           dup /RecordVirtualMethods get /GetFilePath get exec % (string)
+          RESMPDEBUG { (resmp ResourceFileName : retrieving ) print dup = } if
         } {                                                   % (scratch) /Name <<record>>
+          RESMPDEBUG { (resmp ResourceFileName : record is NOT active.) = } if
           pop exch ResourceFileName exec
+          RESMPDEBUG { (resmp ResourceFileName : retrieving ) print dup = } if
         } ifelse
       } { 
+        RESMPDEBUG { (resmp ResourceFileName : have NO map record.) = } if
         exch ResourceFileName exec
+        RESMPDEBUG { (resmp ResourceFileName : retrieving ) print dup = } if
       } ifelse
+      RESMPDEBUG { (resmp ResourceFileName end) = } if
     } bind def
 
     /ResourceForAll  % <template> <proc> <scratch> ResourceForAll -
-    { % Create InstancesStatus dictionary :
+    { RESMPDEBUG { (resmp ResourceForAll beg ) print 2 index = } if
+      % Create InstancesStatus dictionary :
       20 dict % IS - Instances Status
       4 1 roll                            % <<IS>> (templ) {proc} (sctarch)
                                           % <<IS>> bOrder (templ) {proc} (sctarch)
@@ -344,19 +358,23 @@ currentpacking false setpacking
 
       % Make the enumerator and apply it :
       //MakeResourceEnumerator exec exec
-
+      RESMPDEBUG { (resmp ResourceForAll end)= } if
     } bind def
 
     /GetCIDSystemInfoFromMap   % <Name> GetCIDSystemInfoFromMap <Name>
                                % <Name> GetCIDSystemInfoFromMap <dict>
-    { % This is a special function for communicating with GetCIDSystemInfo in gs_cidcm.ps .
+    { RESMPDEBUG { (resmp GetCIDSystemInfoFromMap beg ) print dup = } if
+      % This is a special function for communicating with GetCIDSystemInfo in gs_cidcm.ps .
       dup .map exch .knownget {
+        RESMPDEBUG { (resmp GetCIDSystemInfoFromMap : have a map record.) = } if
         dup /RecordVirtualMethods get /GetCSI get exec
         dup null ne {
+          RESMPDEBUG { (resmp GetCIDSystemInfoFromMap : retrieving a dict.) = } if
           exch
         } if
         pop
       } if
+      RESMPDEBUG { (resmp GetCIDSystemInfoFromMap end) = } if
     } bind def
 
 currentdict end def
