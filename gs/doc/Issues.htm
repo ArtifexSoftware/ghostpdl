@@ -148,6 +148,18 @@ The following code fragment should output "3E>". It outputs nothing.
 closefile 
 </pre>
 SourceForge bug #224134, December 2, 2000.
+
+<h3> Bad JPEG stream in PDF generated when source ends prematurely</h3>
+When GS converts the source image to JPEG stream in PDF file and the
+source data end prematurely, it generates bad JPEG stream. 
+tiff2ps from libtiff distribution often generates such files.
+<p>
+<I>
+JPEG stream writes image dimensions in JPEG header when the stream is created.
+When the source data end the dimensions are not updated. There may be other
+problems too.
+</I>
+
 <h3>                                              </h3>
 <p>
 
@@ -330,6 +342,18 @@ On Unix, it should be implemented with a directory /tmp/$$/ (where
 $$ is the process id), which Ghostscript should delete when it exits.
 </I>
 
+<h3> pdfwrite doesn't recognise the image type by content</h3>
+Currently pdfwrite uses JPEG compression for any 8 bit per component
+images >= 64 pixels in both dimensions.
+<p>
+<I>
+pdfwrite needs to be changed to use a reasonable algorithm for deciding
+between JPEG and Flate compression, probably based on sharp vs. smooth
+color transitions in the image; in case of uncertainty, it should use Flate.
+</I>
+<p>
+SourceForge Bug #226391, December 19, 2000.
+<p>
 <h3>                                              </h3>
 <p>
 
