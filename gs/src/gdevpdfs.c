@@ -1409,18 +1409,16 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
 	gs_imager_state *pis = pte->pis;
 	float save_width = pis->line_params.half_width;
 	const gs_font *font = ppts->font;
-	const gs_font *bfont = font;
 	double scaled_width = font->StrokeWidth;
 
-	/*
-	 * The font's StrokeWidth is in the character coordinate system,
-	 * which means that it should be scaled by the inverse of any
-	 * scaling in the FontMatrix.  Do the best we can with this.
+	/* Note that we compute pis->line_params.half_width in device space,
+	 * even though it logically represents a value in user space.  
+	 * The 'scale' value compensates for this.
 	 */
-	while (bfont != bfont->base)
-	    bfont = bfont->base;
-	scaled_width *= font_matrix_scaling(bfont) /
-	    font_matrix_scaling(font);
+	scaled_width *= font_matrix_scaling(font);
+	scaled_width *= min(hypot(pte->pis->ctm.xx, pte->pis->ctm.yx) / 
+                                pdev->HWResolution[0] * pdev->HWResolution[1],
+                            hypot(pte->pis->ctm.xy, pte->pis->ctm.yy));
 	pis->line_params.half_width = scaled_width / 2;
 	code = pdf_prepare_stroke(pdev, pis);
 	if (code >= 0) {
