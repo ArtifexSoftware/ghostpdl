@@ -23,11 +23,11 @@
  * Configuration macros (template arguments) are :
  * 
  *  FILL_DIRECT - See LOOP_FILL_RECTANGLE_DIRECT.
- *  FILL_PROC_NAME - the name of the procedure to generate.
+ *  TEMPLATE_spot_into_scanlines - the name of the procedure to generate.
 */
 
 private int
-FILL_PROC_NAME (line_list *ll, fixed band_mask)
+TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
 {
     const fill_options fo = *ll->fo;
     active_line *yll = ll->y_list;

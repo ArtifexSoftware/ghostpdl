@@ -42,8 +42,6 @@
 #include "gxfillts.h" - Do not remove this comment. "gxfillts.h" is included below.
 */
 
-#define BAND_INDEPENDENT 1 /* Old code 0, new code 1 */
-
 #ifdef DEBUG
 /* Define the statistics structure instance. */
 stats_fill_t stats_fill;
@@ -175,8 +173,8 @@ private void step_al(active_line *alp, bool move_iterator);
 
 
 #define FILL_LOOP_PROC(proc) int proc(line_list *, fixed band_mask)
-private FILL_LOOP_PROC(fill_loop_by_scan_lines);
-private FILL_LOOP_PROC(fill_loop_by_trapezoids);
+private FILL_LOOP_PROC(spot_into_scan_lines);
+private FILL_LOOP_PROC(spot_into_trapezoids);
 
 /*
  * This is the general path filling algorithm.
@@ -464,9 +462,9 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 
 	/* Some short-sighted compilers won't allow a conditional here.... */
 	if (fill_by_trapezoids)
-	    fill_loop = fill_loop_by_trapezoids;
+	    fill_loop = spot_into_trapezoids;
 	else
-	    fill_loop = fill_loop_by_scan_lines;
+	    fill_loop = spot_into_scan_lines;
 	if (lst.bbox_width > MAX_LOCAL_SECTION && fo.pseudo_rasterization) {
 	    /*
 	     * Note that execution pass here only for character size
@@ -1140,7 +1138,7 @@ insert_h_new(active_line * alp, line_list *ll)
     /*
      * h list keeps horizontal lines for a given y.
      * There are 2 lists, corresponding to upper and lower ends 
-     * of the Y-interval, which fill_loop_by_trapezoids currently proceeds.
+     * of the Y-interval, which spot_into_trapezoids currently proceeds.
      * Parts of horizontal lines, which do not contact a filled trapezoid,
      * are parts of the spot bondairy. They to be marked in
      * the 'sect' array.  - see process_h_lists.
@@ -1239,29 +1237,11 @@ fill_slant_adjust(const line_list *ll,
 	const active_line *flp, const active_line *alp, fixed y, fixed y1)
 {
     const fill_options * const fo = ll->fo;
-#   if BAND_INDEPENDENT
-	const fixed ybl = flp->start.y - fo->adjust_below;
-	const fixed yal = flp->start.y + fo->adjust_above;
-	const fixed y1bl = flp->end.y - fo->adjust_below;
-	const fixed y1al = flp->end.y + fo->adjust_above;
-	const fixed ybr = alp->start.y - fo->adjust_below;
-	const fixed yar = alp->start.y + fo->adjust_above;
-	const fixed y1br = alp->end.y - fo->adjust_below;
-	const fixed y1ar = alp->end.y + fo->adjust_above;
-#   else
-	const fixed ybl = y - fo->adjust_below, ybr = ybl;
-	const fixed yal = y + fo->adjust_above, yar = yal;
-	const fixed y1bl = y1 - fo->adjust_below, y1br = y1bl;
-	const fixed y1al = y1 + fo->adjust_above, y1ar = y1al;
-#   endif
     const fixed Yb = y - fo->adjust_below;
     const fixed Ya = y + fo->adjust_above;
     const fixed Y1b = y1 - fo->adjust_below;
     const fixed Y1a = y1 + fo->adjust_above;
-    const gs_fixed_edge *plbot;
-    const gs_fixed_edge *prbot;
-    const gs_fixed_edge *pltop;
-    const gs_fixed_edge *prtop;
+    const gs_fixed_edge *plbot, *prbot, *pltop, *prtop;
     gs_fixed_edge vert_left, slant_left, vert_right, slant_right;
     int code;
 
@@ -1271,36 +1251,33 @@ fill_slant_adjust(const line_list *ll,
 
     /* Set up all the edges, even though we may not need them all. */
 
-    if (BAND_INDEPENDENT ? flp->start.x < flp->end.x : flp->x_current < flp->x_next) {
+    if (flp->start.x < flp->end.x) {
 	vert_left.start.x = vert_left.end.x = flp->x_current - fo->adjust_left;
 	vert_left.start.y = Yb, vert_left.end.y = Ya;
 	vert_right.start.x = vert_right.end.x = alp->x_next + fo->adjust_right;
 	vert_right.start.y = Y1b, vert_right.end.y = Y1a;
-	slant_left.start.y = yal, slant_left.end.y = y1al;
-	slant_right.start.y = ybr, slant_right.end.y = y1br;
-	plbot = &vert_left, prbot = &slant_right,
-	    pltop = &slant_left, prtop = &vert_right;
+	slant_left.start.y = flp->start.y + fo->adjust_above; 
+	slant_left.end.y = flp->end.y + fo->adjust_above;
+	slant_right.start.y = alp->start.y - fo->adjust_below; 
+	slant_right.end.y = alp->end.y - fo->adjust_below;
+	plbot = &vert_left, prbot = &slant_right;
+	pltop = &slant_left, prtop = &vert_right;
     } else {
 	vert_left.start.x = vert_left.end.x = flp->x_next - fo->adjust_left;
 	vert_left.start.y = Y1b, vert_left.end.y = Y1a;
 	vert_right.start.x = vert_right.end.x = alp->x_current + fo->adjust_right;
 	vert_right.start.y = Yb, vert_right.end.y = Ya;
-	slant_left.start.y = ybl, slant_left.end.y = y1bl;
-	slant_right.start.y = yar, slant_right.end.y = y1ar;
-	plbot = &slant_left, prbot = &vert_right,
-	    pltop = &vert_left, prtop = &slant_right;
+	slant_left.start.y = flp->start.y - fo->adjust_below;
+	slant_left.end.y = flp->end.y - fo->adjust_below;
+	slant_right.start.y = alp->start.y + fo->adjust_above;
+	slant_right.end.y = alp->end.y + fo->adjust_above;
+	plbot = &slant_left, prbot = &vert_right;
+	pltop = &vert_left, prtop = &slant_right;
     }
-#   if BAND_INDEPENDENT
-	slant_left.start.x = flp->start.x - fo->adjust_left; 
-	slant_left.end.x = flp->end.x - fo->adjust_left;
-	slant_right.start.x = alp->start.x + fo->adjust_right; 
-	slant_right.end.x = alp->end.x + fo->adjust_right;
-#   else
-	slant_left.start.x = flp->x_current - fo->adjust_left; 
-	slant_left.end.x = flp->x_next - fo->adjust_left;
-	slant_right.start.x = alp->x_current + fo->adjust_right; 
-	slant_right.end.x = alp->x_next + fo->adjust_right;
-#   endif
+    slant_left.start.x = flp->start.x - fo->adjust_left; 
+    slant_left.end.x = flp->end.x - fo->adjust_left;
+    slant_right.start.x = alp->start.x + fo->adjust_right; 
+    slant_right.end.x = alp->end.x + fo->adjust_right;
 
     if (Ya >= Y1b) {
 	/*
@@ -1481,16 +1458,16 @@ loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_e
 }
 
 /* Define variants of the algorithm for filling a slanted trapezoid. */
-#define FILL_TRAP_SLANTED_NAME fill_trap_slanted_fd
+#define TEMPLATE_slant_into_trapezoids slant_into_trapezoids__fd
 #define FILL_DIRECT 1
 #include "gxfillts.h"
-#undef FILL_TRAP_SLANTED_NAME
+#undef TEMPLATE_slant_into_trapezoids
 #undef FILL_DIRECT
 
-#define FILL_TRAP_SLANTED_NAME fill_trap_slanted_nd
+#define TEMPLATE_slant_into_trapezoids slant_into_trapezoids__nd
 #define FILL_DIRECT 0
 #include "gxfillts.h"
-#undef FILL_TRAP_SLANTED_NAME
+#undef TEMPLATE_slant_into_trapezoids
 #undef FILL_DIRECT
 
 
@@ -1738,114 +1715,114 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 #define PSEUDO_RASTERIZATION 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
-#define FILL_PROC_NAME fill_loop_by_trapezoids__spotan
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__spotan
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
 #undef FILL_ADJUST
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 1
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
-#define FILL_PROC_NAME fill_loop_by_trapezoids__pr_fd
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_fd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
 #undef FILL_ADJUST
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 1
 #define FILL_ADJUST 0
 #define FILL_DIRECT 0
-#define FILL_PROC_NAME fill_loop_by_trapezoids__pr_nd
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
 #undef FILL_ADJUST
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 0
 #define FILL_ADJUST 1
 #define FILL_DIRECT 1
-#define FILL_PROC_NAME fill_loop_by_trapezoids__aj_fd
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__aj_fd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
 #undef FILL_ADJUST
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 0
 #define FILL_ADJUST 1
 #define FILL_DIRECT 0
-#define FILL_PROC_NAME fill_loop_by_trapezoids__aj_nd
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__aj_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
 #undef FILL_ADJUST
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
-#define FILL_PROC_NAME fill_loop_by_trapezoids__nj_fd
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_fd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
 #undef FILL_ADJUST
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 0
-#define FILL_PROC_NAME fill_loop_by_trapezoids__nj_nd
+#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
 #undef FILL_ADJUST
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_trapezoids
 
 
 /* Main filling loop.  Takes lines off of y_list and adds them to */
 /* x_list as needed.  band_mask limits the size of each band, */
 /* by requiring that ((y1 - 1) & band_mask) == (y0 & band_mask). */
 private int
-fill_loop_by_trapezoids(line_list *ll, fixed band_mask)
+spot_into_trapezoids(line_list *ll, fixed band_mask)
 {
     /* For better porformance, choose a specialized algorithm : */
     const fill_options * const fo = ll->fo;
 
     if (fo->is_spotan)
-	return fill_loop_by_trapezoids__spotan(ll, band_mask);
+	return spot_into_trapezoids__spotan(ll, band_mask);
     if (fo->pseudo_rasterization) {
 	if (fo->fill_direct)
-	    return fill_loop_by_trapezoids__pr_fd(ll, band_mask);
+	    return spot_into_trapezoids__pr_fd(ll, band_mask);
 	else
-	    return fill_loop_by_trapezoids__pr_nd(ll, band_mask);
+	    return spot_into_trapezoids__pr_nd(ll, band_mask);
     }
     if (fo->adjust_below | fo->adjust_above | fo->adjust_left | fo->adjust_right) {
 	if (fo->fill_direct)
-	    return fill_loop_by_trapezoids__aj_fd(ll, band_mask);
+	    return spot_into_trapezoids__aj_fd(ll, band_mask);
 	else
-	    return fill_loop_by_trapezoids__aj_nd(ll, band_mask);
+	    return spot_into_trapezoids__aj_nd(ll, band_mask);
     } else {
 	if (fo->fill_direct)
-	    return fill_loop_by_trapezoids__nj_fd(ll, band_mask);
+	    return spot_into_trapezoids__nj_fd(ll, band_mask);
 	else
-	    return fill_loop_by_trapezoids__nj_nd(ll, band_mask);
+	    return spot_into_trapezoids__nj_nd(ll, band_mask);
     }
 }
 
@@ -2129,23 +2106,23 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
 /* defina specializations of the scanline algorithm. */
 
 #define FILL_DIRECT 1
-#define FILL_PROC_NAME fill_loop_by_scan_lines_fd
+#define TEMPLATE_spot_into_scanlines spot_into_scan_lines_fd
 #include "gxfillsl.h"
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_scanlines
 
 #define FILL_DIRECT 0
-#define FILL_PROC_NAME fill_loop_by_scan_lines_nd
+#define TEMPLATE_spot_into_scanlines spot_into_scan_lines_nd
 #include "gxfillsl.h"
 #undef FILL_DIRECT
-#undef FILL_PROC_NAME
+#undef TEMPLATE_spot_into_scanlines
 
 private int
-fill_loop_by_scan_lines(line_list *ll, fixed band_mask)
+spot_into_scan_lines(line_list *ll, fixed band_mask)
 {
     if (ll->fo->fill_direct)
-	return fill_loop_by_scan_lines_fd(ll, band_mask);
+	return spot_into_scan_lines_fd(ll, band_mask);
     else
-	return fill_loop_by_scan_lines_nd(ll, band_mask);
+	return spot_into_scan_lines_nd(ll, band_mask);
 }
 

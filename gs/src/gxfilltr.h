@@ -26,7 +26,7 @@
  *  PSEUDO_RASTERIZATION - use pseudo-rasterization.
  *  FILL_ADJUST - fill adjustment is not zero
  *  FILL_DIRECT - See LOOP_FILL_RECTANGLE_DIRECT.
- *  FILL_PROC_NAME - the name of the procedure to generate.
+ *  TEMPLATE_spot_into_trapezoids - the name of the procedure to generate.
 */
 
 /* ---------------- Trapezoid decomposition loop ---------------- */
@@ -35,7 +35,7 @@
 /* x_list as needed.  band_mask limits the size of each band, */
 /* by requiring that ((y1 - 1) & band_mask) == (y0 & band_mask). */
 private int
-FILL_PROC_NAME (line_list *ll, fixed band_mask)
+TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 {
     const fill_options fo = *ll->fo;
     int rule = fo.rule;
@@ -162,49 +162,22 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 	}
 	/* Fill a multi-trapezoid band for the active lines. */
 	if (covering_pixel_centers || all_bands) {
-	    gs_fixed_edge le, re;
 	    int inside = 0;
 	    active_line *flp = NULL;
 	    fixed ybot = max(y, fo.pbox->p.y);
 	    fixed ytop = min(y1, fo.pbox->q.y);
 
 	    INCR(band);
-	    le.start.x = le.end.x = 0xbaadf00d;
-#	    if BAND_INDEPENDENT
-		/* fixme : move the le, re initialization closer to gx_fill_trapezoid_* calls,
-		    because in other places they should be replaced with flp, alp,
-		    and won't generate for some branches.
-    		    Delaying it until dropping the BAND_INDEPENDENT 0 code.
-		*/
-		le.start.y = re.start.y = 0xbaadf00d;
-		le.end.y = re.end.y = 0xbaadf00d;
-#	    else
-		le.start.y = re.start.y = y;
-		le.end.y = re.end.y = y1;
-#	    endif
-
 	    /* Generate trapezoids */
-
 	    for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		int code;
 
 		print_al("step", alp);
-#		if BAND_INDEPENDENT
-		    re.start = alp->start;
-		    re.end = alp->end;
-#		else
-		    re.start.x = alp->x_current;
-		    re.end.x = alp->x_next;
-#		endif
 		INCR(band_step);
 		if (!INSIDE_PATH_P(inside, rule)) { 	/* i.e., outside */
 		    inside += alp->direction;
 		    if (INSIDE_PATH_P(inside, rule))	/* about to go in */
-#			if BAND_INDEPENDENT
-			    le.start = re.start, le.end = re.end, flp = alp;
-#			else
-			    le.start.x = re.start.x, le.end.x = re.end.x, flp = alp;
-#			endif
+			flp = alp;
 		    continue;
 		}
 		/* We're inside a region being filled. */
@@ -213,13 +186,13 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 		    continue;
 		/* We just went from inside to outside, so fill the region. */
 		INCR(band_fill);
-		if (FILL_ADJUST && !(le.end.x == le.start.x && re.end.x == re.start.x) && 
+		if (FILL_ADJUST && !(flp->end.x == flp->start.x && alp->end.x == alp->start.x) && 
 		    (fo.adjust_below | fo.adjust_above) != 0) {
 		    /* Assuming pseudo_rasterization = false. */
 		    if (FILL_DIRECT)
-			code = fill_trap_slanted_fd(ll, flp, alp, y, y1);
+			code = slant_into_trapezoids__fd(ll, flp, alp, y, y1);
 		    else
-			code = fill_trap_slanted_nd(ll, flp, alp, y, y1);
+			code = slant_into_trapezoids__nd(ll, flp, alp, y, y1);
 		} else {
 		    if (IS_SPOTAN) {
 			/* We can't pass data through the device interface because 
@@ -228,11 +201,11 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 			    y, y1, flp->x_current, alp->x_current, flp->x_next, alp->x_next, 
 			    flp->pseg, alp->pseg, flp->direction, alp->direction);
 		    } else {
-			if (le.start.x == le.end.x && re.start.x == re.end.x) {
+			if (flp->end.x == flp->start.x && alp->end.x == alp->start.x) {
 			    int yi = fixed2int_pixround(y - (!FILL_ADJUST ? 0 : fo.adjust_below));
 			    int hi = fixed2int_pixround(y1 + (!FILL_ADJUST ? 0 : fo.adjust_above)) - yi;
-			    int xli = fixed2int_var_pixround(le.end.x - (!FILL_ADJUST ? 0 : fo.adjust_left));
-			    int xi = fixed2int_var_pixround(re.end.x + (!FILL_ADJUST ? 0 : fo.adjust_right));
+			    int xli = fixed2int_var_pixround(flp->end.x - (!FILL_ADJUST ? 0 : fo.adjust_left));
+			    int xi = fixed2int_var_pixround(alp->end.x + (!FILL_ADJUST ? 0 : fo.adjust_right));
 
 			    if (PSEUDO_RASTERIZATION && xli == xi) {
 				/*
@@ -242,14 +215,20 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 				 */
 				fixed xx = int2fixed(xli);
 
-				if (xx - le.end.x < re.end.x - xx)
+				if (xx - flp->end.x < alp->end.x - xx)
 				    ++xi;
 				else
 				    --xli;
 			    }
-			    vd_rect(le.end.x, y, re.end.x, y1, 1, VD_TRAP_COLOR);
+			    vd_rect(flp->end.x, y, alp->end.x, y1, 1, VD_TRAP_COLOR);
 			    code = LOOP_FILL_RECTANGLE_DIRECT(&fo, xli, yi, xi - xli, hi);
 			} else if (ybot < ytop) {
+			    gs_fixed_edge le, re;
+
+			    le.start = flp->start;
+			    le.end = flp->end;
+			    re.start = alp->start;
+			    re.end = alp->end;
 			    vd_quad(flp->x_current, ybot, alp->x_current, ybot, alp->x_next, ytop, flp->x_next, ytop, 1, VD_TRAP_COLOR);
 			    if (PSEUDO_RASTERIZATION) {
 				int flags = ftf_pseudo_rasterization;
