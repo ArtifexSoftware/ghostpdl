@@ -74,7 +74,6 @@ Information for Ghostscript developers
     <a href="#Structure_descriptors">Structure descriptors</a>,
     <a href="#Garbage_collection">Garbage collection</a>,
     <a href="#Movability">Movability</a>,
-    <a href="#Stable_allocators">Stable allocators</a>,
     <a href="#Parent_hierarchy">Parent hierarchy</a>,
     <a href="#Allocator_API">Allocator API</a>
 </ul>
@@ -95,6 +94,7 @@ Information for Ghostscript developers
 <ul>
 <li><a href="#Refs">Refs (PostScript "objects")</a>,
     <a href="#save_forgetsave_restore">save/.forgetsave/restore</a>,
+    <a href="#Stable_allocators">Stable allocators</a>,
     <a href="#Interpreter_GC">Garbage collection</a>
 </ul>
 </ul>
@@ -1685,19 +1685,6 @@ procedures for allocating both movable (default) and immovable objects.
 Note, however, that even immovable objects must be traceable (have a
 structure descriptor), and may be freed, by the garbage collector.
 
-<h3><a name="Stable_allocators"></a>Stable allocators</h3>
-
-<p>
-Even though <b><tt>save</tt></b> and <b><tt>restore</tt></b> are concepts
-from the PostScript interpreter, the allocator architecture includes a
-feature to support them, called <em>stable</em> allocators.  Every allocator
-has an associated stable allocator, which tags pointers with the same VM
-space number but which is not subject to <b><tt>save</tt></b> and
-<b><tt>restore</tt></b>.  System VM is intrinsically stable, so there are
-only 5 allocators: system VM, stable global VM, ordinary global VM, stable
-local VM, ordinary local VM.  The stable allocators should be used with
-care, since using them can easily create dangling pointers.
-
 <h3><a name="Parent_hierarchy">Parent hierarchy</h3>
 
 <p>
@@ -1727,6 +1714,12 @@ the contents insofar as possible.
 
 <p>
 For details, see <a href="../src/gsmemory.h">src/gsmemory.h</a>.
+
+<p>
+The allocator API also includes one special hook for the PostScript
+interpreter: the concept of stable allocators.  See the section on <a
+href="#save_forgetsave_restore"><b><tt>save</tt></b> and
+<b><tt>restore</tt></b></a> below for details.
 
 <p>
 Files:
@@ -1856,6 +1849,13 @@ chunk: when such an object is freed, its chunk is returned to the parent).
 The lists are not sorted; adjacent blocks are only merged if needed.
 
 <p>
+While the standard allocator implements the generic allocator API, and is
+usable with the library alone, it includes a special hook for the PostScript
+interpreter to aid in the efficient allocation of PostScript composite
+objects (arrays and dictionaries).  See the section on <a
+href="#Refs">Refs</a> below for details.
+
+<p>
 Files:
 <a href="../src/gsalloc.c">src/gsalloc.c</a>,
 <a href="../src/gsalloc.h">src/gsalloc.h</a>,
@@ -1895,6 +1895,18 @@ system with multiple contexts and multiple global or local VMs, each global
 or local VM has its own allocator instance(s).
 
 <p>
+Refs that represent PostScript composite objects, and therefore include
+pointers to stored data, include a 2-bit VM space tag to indicate in which
+VM the object data are stored.  In addition to system, global, and local VM,
+there is a tag for "foreign" VM, which means that the memory is not managed
+by a Ghostscript allocator at all.  Every store into a composite object must
+check for <b><tt>invalidaccess</tt></b>: the VM space tag values are chosen
+to help make this check efficient.  See <a
+href="../src/ivmspace.h">src/ivmspace.h</a>, <a
+href="../src/iref.h">src/iref.h</a>, and <a
+href="../src/store.h">src/store.h</a> for details.
+
+<p>
 Files:
 <a href="../src/ivmspace.h">src/ivmspace.h</a>.
 
@@ -1906,8 +1918,11 @@ manager packs multiple composite objects (also called "ref-containing
 objects") into a single memory manager object, similar to the way the memory
 manager packs multiple objects into a chunk (see <a
 href="#Standard_implementation">above</a>).  See <a
-href="../src/gxalloc.h">src/gxalloc.h</a> for details.  Note that the
-<b><tt>value.pdict</tt></b>, <b><tt>value.refs</tt></b>, or
+href="../src/gxalloc.h">src/gxalloc.h</a> for details.  This memory manager
+object has a structure descriptor, like all other memory manager objects.
+
+<p>
+Note that the <b><tt>value.pdict</tt></b>, <b><tt>value.refs</tt></b>, or
 <b><tt>value.packed</tt></b> member of a ref must point to a PostScript
 composite object, and therefore can point into the middle of a memory
 manager object.  This requires special handling by the garbage collector (<a
@@ -1944,6 +1959,32 @@ Files:
 <a href="../src/isave.h">src/isave.h</a>,
 <a href="../src/isstate.h">src/isstate.h</a>,
 <a href="../src/store.h">src/store.h</a>.
+
+<h3><a name="Stable_allocators"></a>Stable allocators</h3>
+
+<p>
+Even though <b><tt>save</tt></b> and <b><tt>restore</tt></b> are concepts
+from the PostScript interpreter, the generic allocator architecture and API
+include a feature to support them, called <em>stable</em> allocators.  Every
+allocator has an associated stable allocator, which tags pointers with the
+same VM space number but which is not subject to <b><tt>save</tt></b> and
+<b><tt>restore</tt></b>.  System VM is intrinsically stable (its associated
+stable allocator is the same allocator), so there are only 5 allocators in
+ordinary single-context usage: system VM, stable global VM, ordinary global
+VM, stable local VM, ordinary local VM.
+
+<p>
+All PostScript objects are normally allocated with the non-stable
+allocators.  The stable allocators should be used with care, since using
+them can easily create dangling pointers: if storage allocated with a stable
+allocator contains any references to PostScript objects, the client is
+responsible for ensuring that the references don't outlive the referenced
+objects, normally by ensuring that any such referenced objects are allocated
+at the outermost <b><tt>save</tt></b> level.  (The original reason for
+wanting stable allocators was the PostScript stacks, which are essentially
+PostScript arrays but are not subject to <b><tt>save</tt></b> and
+<b><tt>restore</tt></b>.)  For more examples, search the sources for
+references to <b><tt>gs_stable_memory</tt></b>.
 
 <h3><a name="Interpreter_GC"></a>Garbage collection</h3>
 
@@ -1982,8 +2023,11 @@ case, all pointers in global VM are treated as roots, and global VM is not
 compacted.
 
 <p>
-The garbage collector marks objects, refs, and strings using 3 different
-mechanisms:
+As noted above, PostScript arrays and strings can have refs that point
+within them (because of <b><tt>getinterval</tt></b>).  Thus the garbage
+collector must mark each element of an array, and even each byte of a
+string, individually.  Specifically, it marks objects, refs, and strings
+using 3 different mechanisms:
 
 <ul>
 <li>Objects have a mark bit in their header: see
@@ -2001,7 +2045,8 @@ strings differently:
 <li>Objects record relocation in the object header.
 <li>Refs record relocation in unused fields of refs such as nulls, which
 don't use their <b><tt>value</tt></b> field.  Every memory manager object
-that holds refs has an extra, unused ref at the end for this purpose.
+that stores ref-containing objects as described above has an extra, unused
+ref at the end for this purpose.
 <li>Strings use a separate relocation table.
 </ul>
 

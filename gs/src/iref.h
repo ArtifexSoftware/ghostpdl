@@ -46,6 +46,11 @@ typedef ushort ref_packed;
  * The types marked with + use the read/write/execute
  * attributes; the rest only use the executable attribute.
  * The types marked with # use the size field.
+ *
+ * Note that for the object types that support getinterval (array and
+ * string types), there is no way to tell whether a given reference
+ * designates an original object or a sub-interval.  This is a deliberate
+ * design decision.
  */
 typedef enum {
 
