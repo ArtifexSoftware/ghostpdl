@@ -24,6 +24,7 @@
 <li><a href="#Architecture">Architecture</a>
 <ul>
 <li><a href="#Design_goals">Design goals</a>
+<li><a href="#Design_principles">Design principles</a>
 <li><a href="#Large_scale_structure">Large-scale structure</a>
 <li><a href="#Object_oriented_constructs">Object-oriented constructs</a>
 </ul>
@@ -202,6 +203,139 @@ XL interpreters, and the ever-changing roster of inkjet printers.
 <p>
 These goals often conflict: part of Ghostscript's claim to quality is that
 the conflicts have been resolved well.
+
+<h3><a name="Design_principles"></a>Design principles</h3>
+
+<p>
+Part of what has kept Ghostscript healthy through many years of major code
+revisions and functional expansion is consistent and conscientious adherence
+to a set of design principles.  We hope the following list captures the most
+important ones.
+
+<h4>Non-preemption</h4>
+
+<p>
+Ghostscript is designed to be used as a component.  As such, it must share
+its environment with other components.  Therefore, it must not require
+ownership of, or make decisions about, inherently shared resources.
+Specifically, it must not assume that it can "own" either the locus of
+control or the management of the address space.
+
+<p>
+Not owning control means that whenever Ghostscript passes control to its
+caller, it must do so in a way that doesn't constrain what the caller can do
+next.  The caller must be able to call any other piece of software, wait for
+an external event, execute another task, etc., without having to worry about
+Ghostscript being in an unknown state.  While this is easy to arrange in a
+multi-threaded environment (by running Ghostscript in a separate thread),
+multi-threading APIs are not well standardized at this time (December 2000),
+and may not be implemented efficiently, or at all, on some platforms.
+Therefore, Ghostscript must choose between only two options for interacting
+with its caller: to <em>return</em>, preserving its own state in data
+structures, or to <em>call back</em> through a caller-supplied procedure.
+Calling back constrains the client program unacceptably: the callback
+procedure only has the options of either returning, or aborting Ghostscript.
+In particular, if it wants (for whatever reason) to multi-task Ghostscript
+with another program, it cannot do so in general, especially if the other
+program also uses callback rather than suspension.  Therefore, Ghostscript
+tries extremely hard to return, rather than calling back, for all caller
+interaction.  In particular:
+
+<ul>
+
+<li>For callers that want to pass input to Ghostscript piece by piece,
+Ghostscript returns with an <b><tt>e_NeedInput</tt></b> code rather than
+using a callback.  This allows the caller complete flexibility in its
+control structure for managing the source of input.  (It might, for example,
+be generating the input dynamically.)
+
+<li>In the future, the same arrangement should be used for input from
+<b><tt>stdin</tt></b> and output to <b><tt>stdout</tt></b> and
+<b><tt>stderr</tt></b>.
+
+<li>Likewise, scheduling of Ghostscript's own threads (contexts), currently
+done with a callback, should be done with suspension.  The Display
+Ghostscript project (GNU DGS) is working on this.
+
+</ul>
+
+<p>
+The one area where suspension is not feasible with Ghostscript's current
+architecture is device output.  Device drivers are called from deep within
+the graphics library.  (If Ghostscript were being redesigned from scratch,
+we might try to do this with suspension as well, or at least optional
+suspension.)
+
+<p>
+Not owning management of the address space means that even though
+Ghostscript supports garbage collection for its own data, it must not do any
+of the things that garbage collection schemes for C often require: it must
+not replace 'malloc' and 'free', must not require its clients to use its own
+allocator, must not rely on manipulating the read/write status of memory
+pages, must not require special compiler or run-time support (e.g., APIs for
+scanning the C stack), must not depend on the availability of
+multi-threading, and must not take possession of one of a limited number of
+timer interrupts.  However, in order not to constrain its own code unduly,
+it must also not require using special macros or calls to enter or leave
+procedures or assign pointers, and must not constrain the variety of C data
+structures any more than absolutely necessary.  It achieves all of these
+goals, at the expense of some complexity, some performance cost (mostly for
+garbage collection), and some extra manual work required for each structure
+type allocated by its allocator.  The details appear in the <a
+href="#Memory_management">Memory management</a> section below.
+
+<h4>Multi-instantiability</h4>
+
+<p>
+From many years of experience with the benefits of object-oriented design,
+we have learned that when the word "the" appears in a software design --
+"the" process scheduler, "the" memory manager, "the" output device, "the"
+interpreter, "the" stack -- it often flags an area in which the software
+will have difficulty adapting to future needs.  For this reason, Ghostscript
+attempts to make every internal structure capable of existing in multiple
+instances.  For example, Ghostscript's memory manager is not a one-of-a-kind
+entity with global state and procedures: it is (or rather they are, since
+Ghostscript has multiple memory managers, some of which have multiple
+instances) objects with their own state and (virtual) procedures.
+Ghostscript's PostScript interpreter has no writable non-local data
+(necessary, but not sufficient, to allow multiple instances), and in the
+future will be extended to be completely reentrant and instantiable.  The
+device driver API is designed to make this easy for drivers as well.  The
+graphics library is currently not completely reentrant or instantiable: we
+hope this will occur in the future.
+
+<h4>Late configuration binding</h4>
+
+<p>
+Ghostscript is designed to make configuration choices as late as possible,
+subject to simplicity and performance considerations.  The major binding
+times for such choices are compilation, linking, startup, and dynamic.
+
+<ul>
+
+<li>Compilation binds only CPU and compiler characteristics (including data
+type size, presence of floating point hardware, and data alignment), and
+whether the code will be used for production, debugging, or profiling.
+
+<li>Linking binds the choice of what features and device drivers will be
+included in the executable.  (Work is underway to make the choice of drivers
+dynamic.)
+
+<li>Startup binds essentially nothing.  Almost every option and parameter
+that can appear on the command line can also be changed dynamically.
+
+<li>The selection of output device, all parameters associated with the
+device, the selection of debugging printout and self-checking (in debugging
+configurations), the macro-allocation of memory, and almost all other
+operational parameters are dynamic.
+
+</ul>
+
+<p>
+In addition, a number of major implementation decisions are made dynamically
+depending on the availability of resources.  For example, Ghostscript
+chooses between banded and non-banded rendering depending on memory
+availability.
 
 <h3><a name="Large_scale_structure"></a>Large-scale structure</h3>
 
