@@ -231,7 +231,16 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
 	if ( (gp_enumerate_files_next(fe, fontfilename, 0 /*??*/) ) == -1 ) {
 	    tmp_pathp = NULL;
 	} else {
-	    gp_enumerate_files_close(fe);
+	    /* wind through the rest of the files.  This should close
+               things up as well.  All we need to do is clean up but
+               gp_enumerate_files_close() does not close the current
+               directory */
+	    while ( 1 ) {
+		int fstatus = (int)gp_enumerate_files_next(fe, fontfilename, 0);
+		/* we don't care if the file does not fit (return +1) */
+		if ( fstatus == -1 )
+		    break;
+	    }
 	    /* NB fix me - replace : separated path with real path.
                We should do this elsewhere */
 	    strcpy(path_list, dirname);
