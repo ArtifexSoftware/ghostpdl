@@ -320,6 +320,9 @@ write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
             case jbig2dec_format_pbm:
               jbig2_image_write_pbm(image, stdout);
               break;
+            default:
+              fprintf(stderr, "unsupported output format.\n");
+              return 1;
           }
         }
       else
@@ -335,6 +338,9 @@ write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
             case jbig2dec_format_pbm:
               jbig2_image_write_pbm_file(image, params->output_file);
               break;
+            default:
+              fprintf(stderr, "unsupported output format.\n");
+              return 1;
           }
         }
         
