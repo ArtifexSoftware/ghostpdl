@@ -1666,7 +1666,9 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 		if (this->pole[beg_range_pole].type == closepath) {
 		    /* A workaround for a buggy font from the Bug 687393,
 		       which defines a range with 'closepath' only. */
-		    continue;
+		    beg_range_pole++;
+		    if (beg_range_pole > end_range_pole)
+			continue;
 		}
 		for (j = beg_range_pole; j <= end_range_pole;) {
 		    if (t1_hinter__is_stem_hint_applicable(this, &this->hint[i], j)) {
