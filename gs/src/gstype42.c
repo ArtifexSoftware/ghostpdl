@@ -122,6 +122,11 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	} else if (!memcmp(tab, "loca", 4)) {
 	    pfont->data.loca = offset;
 	    loca_size = u32(tab + 12);
+	} else if (!memcmp(tab, "maxp", 4)) {
+	    const byte *maxp;
+
+	    ACCESS(offset, 30, maxp);
+	    pfont->data.trueNumGlyphs = U16(maxp + 4);
 	} else if (!memcmp(tab, "vhea", 4)) {
 	    const byte *vhea;
 

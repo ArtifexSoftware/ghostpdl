@@ -52,7 +52,20 @@ struct gs_type42_data_s {
     uint indexToLocFormat;	/* from head */
     gs_type42_mtx_t metrics[2];	/* hhea/hmtx, vhea/vmtx (indexed by WMode) */
     ulong loca;			/* offset to loca table */
+    /*
+     * TrueType fonts specify the number of glyphs in two different ways:
+     * the size of the loca table, and an explicit value in maxp.  Currently
+     * the value of numGlyphs in this structure is computed from the size of
+     * loca.  This is wrong: incrementally downloaded TrueType (or
+     * CIDFontType 2) fonts will have no loca table, but will have a
+     * reasonable glyph count in maxp.  Unfortunately, a significant amount
+     * of code now depends on the incorrect definition of numGlyphs.
+     * Therefore, rather than run the risk of introducing bugs by changing
+     * the definition and/or by changing the name of the data member, we add
+     * another member trueNumGlyphs to hold the value from maxp.
+     */
     uint numGlyphs;		/* from size of loca */
+    uint trueNumGlyphs;		/* from maxp */
 };
 #define gs_font_type42_common\
     gs_font_base_common;\
