@@ -20,34 +20,56 @@
 #include "pcpalet.h"
 #include "pcdraw.h"
 
-/* CO"text" */
+/* contrary to the documentation HP also seems to parse CO.*; as a
+   legitimate comment as well as a string enclosed in quotation marks.  */
 int
 hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 
-	while ( p < rlimit )
-	  if ( !pargs->phase )
-	    { /* Scanning for opening " */
-	      switch ( *++p )
-		{
+	while ( p < rlimit ) {
+	    if ( !pargs->phase ) {
+		switch ( *++p ) {
 		case ' ':
-		  /* Ignore spaces between command and opening ". */
-		  continue;
+		    /* Ignore spaces between command and opening ". */
+		    continue;
 		case '"':
-		  pargs->phase++;
-		  break;
+		    pargs->phase = 1;
+		    break;
 		default:
-		  /* Bad syntax, just terminate the command. */
-		  --p;
-		  return 0;
+		    /* Search for semicolon */
+		    pargs->phase = 2;
+		    break;
+
+		}
+	    } else {
+		/* Scanning for closing " or closing ';' */
+		switch ( pargs->phase ) {
+		case 1:
+		    if ( *++p == '"' ) {
+			pargs->source.ptr = p;
+			return 0;
+		    }
+		    /* syntax error on some hp devices */
+		    if ( *p == '\\' ) {
+			pargs->source.ptr = p;
+			return 0;
+		    }
+		    break;
+		case 2:
+		    if ( *++p == ';' ) {
+			pargs->source.ptr = p;
+			return 0;
+		    }
+		    break;
+		default:
+		    dprintf( "HPGL CO automata is in an unknown state\n" );
+		    pargs->source.ptr = p;
+		    return 0;
 		}
 	    }
-	  else
-	    { /* Scanning for closing " */
-	      if ( *++p == '"' )
-		return 0;
-	    }
+	}
+	pargs->source.ptr = p;
 	return e_NeedData;
 }
 
@@ -532,7 +554,7 @@ pgconfig_do_registration(
 	DEFINE_HPGL_COMMANDS
 	  /* CO has special argument parsing, so it must handle skipping */
 	  /* in polygon mode itself. */
-	  HPGL_COMMAND('C', 'O', hpgl_CO, hpgl_cdf_polygon),
+	  HPGL_COMMAND('C', 'O', hpgl_CO, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('D', 'F', hpgl_DF, hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('I', 'N', hpgl_IN, hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('I', 'P', hpgl_IP, hpgl_cdf_pcl_rtl_both),
