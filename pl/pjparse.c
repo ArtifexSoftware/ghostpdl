@@ -81,7 +81,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
    there is some unnecessary overlap in the factory default and font
    source table. */
 private const pjl_fontsource_t pjl_fontsource_table[] = {
-    { "I", "fonts/:/windows/system/:/windows/fonts/:/win95/fonts/:/winnt/fonts/" },
+    { "I", "fonts/;/windows/system/;/windows/fonts/;/win95/fonts/;/winnt/fonts/" },
     { "C", "CART0/", "" },
     { "C1", "CART1/", "" },
     { "C2", "CART2/", "" },
@@ -258,7 +258,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
     /* for each path search for fonts.  If we find them return we only
        check if the directory resource has files without checking if
        the files are indeed fonts. */
-    while ( (dirname = strtok(tmp_pathp, ":")) != NULL ) {
+    while ( (dirname = strtok(tmp_pathp, ";")) != NULL ) {
 	file_enum *fe;
 	strcpy(tmp_path_and_pattern, dirname);
 	strcat(tmp_path_and_pattern, pattern);
