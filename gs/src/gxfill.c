@@ -1237,6 +1237,8 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 		more = gx_flattened_iterator__next_filtered2(&alp->fi);
 		alp->more_flattened |= more;
 	    } while(more);
+	    if (alp->more_flattened)
+		gx_flattened_iterator__switch_to_backscan2(&alp->fi, true);
 	    step_al(alp, false);
 	}
     } else {

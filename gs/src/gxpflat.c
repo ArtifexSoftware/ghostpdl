@@ -24,11 +24,6 @@
 #include "vdtrace.h"
 #include <assert.h>
 
-/* Define whether to merge nearly collinear line segments when flattening */
-/* curves.  This is very good for performance, but we feel a little */
-/* uneasy about its effects on character appearance. */
-#define MERGE_COLLINEAR_SEGMENTS 1
-
 /* ---------------- Curve flattening ---------------- */
 
 #define x1 pc->p1.x
@@ -541,6 +536,7 @@ gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixe
 private inline bool
 gx_flattened_iterator__next_filtered2_aux(gx_flattened_iterator *this)
 {
+#if MERGE_COLLINEAR_SEGMENTS
     /* fixme: CURVED_TRAPEZOID_FILL0_COMPATIBLE 0 is not implemented yet. */
     if (this->i == 1 << this->k) {
 	/* The first segment. */
@@ -607,6 +603,17 @@ gx_flattened_iterator__next_filtered2_aux(gx_flattened_iterator *this)
     }
     vd_bar(this->fx0, this->fy0, this->fx1, this->fy1, 1, RGB(0, 0, 255));
     return this->ahead || this->i != 0;
+#else
+    int more = 	gx_flattened_iterator__next_filtered1(this);
+
+    this->fx0 = this->gx0;
+    this->fy0 = this->gy0;
+    this->fx1 = this->gx1;
+    this->fy1 = this->gy1;
+    this->prev_filtered2_i = this->prev_filtered1_i;
+    this->filtered2_i = this->filtered1_i;
+    return more;
+#endif
 }
 
 bool
@@ -692,6 +699,7 @@ gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this)
 	When scanning back, the accumulator should stand on the beginning of a segment.
 	Asuuming that at least one forward step is done.
     */
+#if MERGE_COLLINEAR_SEGMENTS
     if (this->i == 0)
 	return;
     if (this->k <= 1)
@@ -702,6 +710,15 @@ gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this)
 	    gx_flattened_iterator__prev(this);
 	}
 #   endif
+#else
+    if (this->i > 0 && this->k != 1 /* This case doesn't use the accumulator. */)
+	gx_flattened_iterator__unaccum(this);
+#   if FLATTENED_ITERATOR_BACKSCAN
+	while (this->i < this->prev_filtered1_i) {
+	    gx_flattened_iterator__prev(this);
+	}
+#   endif
+#endif
 }
 
 #if FLATTENED_ITERATOR_BACKSCAN
@@ -804,6 +821,7 @@ void
 gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, 
 	    bool last_segment)
 {
+#if MERGE_COLLINEAR_SEGMENTS
 #   if FLATTENED_ITERATOR_BACKSCAN
 	if (last_segment)
 	    return;
@@ -819,6 +837,11 @@ gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this,
 	    assert(gx_flattened_iterator__prev_filtered2_aux(this));
 	gx_flattened_iterator__prev_filtered2_aux(this);
 #   endif
+#else
+    gx_flattened_iterator__switch_to_backscan1(this);
+    this->last_filtered2_i = this->i;
+    this->filtered2_i = this->i;
+#endif
 }
 
 #if FLATTENED_ITERATOR_BACKSCAN
@@ -886,6 +909,7 @@ gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this)
 bool
 gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
 {
+#if MERGE_COLLINEAR_SEGMENTS
     /*	This algotithm is based on 2 properties of gx_check_nearly_collinear :
 	If 3 points are nearly collinear, same central point is nearly collinear
 	with any 2 points taken from same interval.
@@ -1035,6 +1059,16 @@ gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
 	}
 
     }
+#else
+    int more = 	gx_flattened_iterator__prev_filtered1(this);
+
+    this->fx0 = this->gx0;
+    this->fy0 = this->gy0;
+    this->fx1 = this->gx1;
+    this->fy1 = this->gy1;
+    this->filtered2_i = this->filtered1_i;
+    return more;
+#endif
 }
 #endif /* FLATTENED_ITERATOR_BACKSCAN */
 
@@ -1164,6 +1198,7 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
 bool
 gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
 {
+#if MERGE_COLLINEAR_SEGMENTS
     this->fx1 = this->fx0;
     this->fy1 = this->fy0;
     this->filtered2_i = this->i;
@@ -1183,6 +1218,16 @@ gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
 	    return false;
 	}
     }
+#else
+    int more = 	gx_flattened_iterator__prev_filtered1(this);
+
+    this->fx0 = this->gx0;
+    this->fy0 = this->gy0;
+    this->fx1 = this->gx1;
+    this->fy1 = this->gy1;
+    this->filtered2_i = this->filtered1_i;
+    return more;
+#endif
 }
 
 #endif /* !FLATTENED_ITERATOR_BACKSCAN */

@@ -32,6 +32,10 @@
 #define NEW_TT_INTERPRETER 1
 #define TT_GRID_FITTING (NEW_TT_INTERPRETER && 1) /* old code = 0, new code = 1. */
 #define CURVED_TRAPEZOID_FILL 1 /* old code = 0, new code = 1. */
+/* Define whether to merge nearly collinear line segments when flattening */
+/* curves.  This is very good for performance, but we feel a little */
+/* uneasy about its effects on character appearance. */
+#define MERGE_COLLINEAR_SEGMENTS 1
 /* The following switches are only important with CURVED_TRAPEZOID_FILL 1. */
 #   define CURVED_TRAPEZOID_FILL_HEAVY_TEST 0  /* Temporarily used for a debug purpose. */
 #   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
