@@ -149,8 +149,8 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	     * the meaning of "close".  They are deliberately NOT #defined
 	     * elsewhere because they have no meaning outside this block.  */
 	    if ( pl_font_is_scalable(fp) )
-	      /* scalable; match is effectively worst possible */
-	      score[score_pitch] = 0;
+	      /* scalable; match is same as exact pitch. */
+	      score[score_pitch] = 0x2000000;
 	    else
 	      { 
 		  int delta = pl_fp_pitch_per_inch_x100(&fp->params) -
@@ -162,7 +162,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 		  score[score_pitch] = 0x2000000;
 		else if ( delta > 0 )
 		  score[score_pitch] = 0x2000000 - delta;
-		else
+		else 
 		  score[score_pitch] = 0x1000000 + delta;
 	      }
 	  }
