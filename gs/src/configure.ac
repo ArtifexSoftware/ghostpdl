@@ -179,8 +179,8 @@ else
 		AC_MSG_RESULT([no])
 		AC_MSG_NOTICE([disabling png output devices])
 		PNGDEVS=''
-	fi
-])
+	])
+fi
 AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
 AC_SUBST(PNGDEVS)
