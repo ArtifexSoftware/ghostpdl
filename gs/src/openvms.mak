@@ -1,4 +1,5 @@
 #    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises. All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -28,6 +29,11 @@ PSSRCDIR=[.src]
 PSLIBDIR=[.lib]
 PSGENDIR=[.obj]
 PSOBJDIR=[.obj]
+# Because of OpenVMS syntactic problems, the following redundant definitions
+# are necessary.  If you are using more than one GENDIR and/or OBJDIR,
+# you will have to edit the code below that creates these directories.
+BIN_DIR=BIN.DIR
+OBJ_DIR=OBJ.DIR
 
 # Do not edit the next group of lines.
 
@@ -208,7 +214,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=1
+COMPILE_INITS=0
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
@@ -284,6 +290,11 @@ _I=)
 
 O_=/OBJECT=
 
+# Define the quoting string for mixed-case arguments.
+# (OpenVMS is the only platform where this isn't an empty string.)
+
+Q="
+
 # Define the extension for executable files (e.g., null or .exe).
 
 XE=.exe
@@ -295,7 +306,7 @@ XEAUX=.exe
 
 # Define the list of files that `make clean' removes.
 
-BEGINFILES=OPENVMS.OPT OPENVMS.COM
+BEGINFILES=$(GLGENDIR)OPENVMS.OPT $(GLGENDIR)OPENVMS.COM
 
 # Define the C invocation for the ansi2knr program.  We don't use this.
 
@@ -367,11 +378,8 @@ std: STDDIRS default
 	WRITE SYS$$OUTPUT "Done."
 
 STDDIRS:
-	$$ If F$$Search("$(BINDIR)")   .EQS. "" Then Create/Directory/Log $(BINDIR)
-	$$ If F$$Search("$(GLGENDIR)") .EQS. "" Then Create/Directory/Log $(GLGENDIR)
-	$$ If F$$Search("$(GLOBJDIR)") .EQS. "" Then Create/Directory/Log $(GLOBJDIR)
-	$$ If F$$Search("$(PSGENDIR)") .EQS. "" Then Create/Directory/Log $(PSGENDIR)
-	$$ If F$$Search("$(PSOBJDIR)") .EQS. "" Then Create/Directory/Log $(PSOBJDIR)
+	$$ If F$$Search("$(BIN_DIR)") .EQS. "" Then Create/Directory/Log $(BINDIR)
+	$$ If F$$Search("$(OBJ_DIR)") .EQS. "" Then Create/Directory/Log $(GLOBJDIR)
 
 # ------------------- Include the generic makefiles ---------------------- #
 

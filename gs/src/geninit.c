@@ -1,19 +1,33 @@
 /* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
-/* Utility for merging all the Ghostscript initialization files */
-/* (gs_*.ps) into a single file, optionally converting them to C data. */
-#include "stdpre.h"
-#include <stdio.h>
-#include <string.h>
-
-/* Usage:
- *    geninit [-I <prefix>] <init-file.ps> <gconfig.h> <merged-init-file.ps>
- *    geninit [-I <prefix>] <init-file.ps> <gconfig.h> -c <merged-init-file.c>
+/*
+ * Utility for merging all the Ghostscript initialization files (gs_*.ps)
+ * into a single file, optionally converting them to C data.  Usage:
+ *    geninit [-(I|i) <prefix>] <init-file.ps> <gconfig.h> <merged-init-file.ps>
+ *    geninit [-(I|i) <prefix>] <init-file.ps> <gconfig.h> -c <merged-init-file.c>
+ *
+ * The following special constructs are recognized in the input files:
+ *	%% Replace <#lines> (<psfile>)
+ *	%% Replace <#lines> INITFILES
+ * If the first non-comment, non-blank line in a file ends with the
+ * LanguageLevel 2 constructs << or <~, its section of the merged file
+ * will begin with
+ *	currentobjectformat 1 setobjectformat
+ * and end with
+ *	setobjectformat
+ * and if any line then ends with with <, the following ASCIIHex string
+ * will be converted to a binary token.
  */
+#include "stdpre.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>		/* for exit() */
+#include <string.h>
 
 /* Forward references */
 private FILE *prefix_open(P2(const char *prefix, const char *inname));
@@ -38,7 +52,7 @@ main(int argc, char *argv[])
     const char *prefix = "";
     bool to_c = false;
 
-    if (arg_c >= 2 && !strcmp(arg_v[1], "-I")) {
+    if (arg_c >= 2 && (!strcmp(arg_v[1], "-I") || !strcmp(arg_v[1], "-i"))) {
 	prefix = arg_v[2];
 	arg_c -= 2;
 	arg_v += 2;
@@ -49,8 +63,8 @@ main(int argc, char *argv[])
 	fin = arg_v[1], fconfig = arg_v[2], fout = arg_v[4], to_c = true;
     else {
 	fprintf(stderr, "\
-Usage: geninit [-I lib/] gs_init.ps gconfig.h gs_xinit.ps\n\
-or     geninit [-I lib/] gs_init.ps gconfig.h -c gs_init.c\n");
+Usage: geninit [-(I|i) lib/] gs_init.ps gconfig.h gs_xinit.ps\n\
+or     geninit [-(I|i) lib/] gs_init.ps gconfig.h -c gs_init.c\n");
 	exit(1);
     }
     in = prefix_open(prefix, fin);
@@ -124,34 +138,42 @@ rl(FILE * in, char *str, int len)
     return true;
 }
 
-/* Write a line on the output. */
+/* Write a string or a line on the output. */
 private void
-wlc(FILE * out, const char *str)
+wsc(FILE * out, const byte *str, int len)
 {
     int n = 0;
-    const char *p = str;
+    const byte *p = str;
+    int i;
 
-    for (; *p; ++p) {
-	char c = *p;
-	const char *format = "%d,";
+    for (i = 0; i < len; ++i) {
+	int c = str[i];
 
-	if (c >= 32 && c < 127)
-	    format = (c == '\'' || c == '\\' ? "'\\%c'," : "'%c',");
-	fprintf(out, format, c);
+	fprintf(out,
+		(c < 32 || c >= 127 ? "%d," :
+		 c == '\'' || c == '\\' ? "'\\%c'," : "'%c',"),
+		c);
 	if (++n == 15) {
 	    fputs("\n", out);
 	    n = 0;
 	}
     }
-    fputs("10,\n", out);
+    if (n != 0)
+	fputc('\n', out);
+}
+private void
+ws(FILE * out, const byte *str, int len, bool to_c)
+{
+    if (to_c)
+	wsc(out, str, len);
+    else
+	fwrite(str, 1, len, out);
 }
 private void
 wl(FILE * out, const char *str, bool to_c)
 {
-    if (to_c)
-	wlc(out, str);
-    else
-	fprintf(out, "%s\n", str);
+    ws(out, (const byte *)str, strlen(str), to_c);
+    ws(out, (const byte *)"\n", 1, to_c);
 }
 
 /*
@@ -225,6 +247,57 @@ doit(char *line)
     return str;
 }
 
+/* Copy a hex string to the output as a binary token. */
+private void
+hex_string_to_binary(FILE *out, FILE *in, bool to_c)
+{
+#define MAX_STR 0xffff	/* longest possible PostScript string token */
+    byte *strbuf = (byte *)malloc(MAX_STR);
+    byte *q = strbuf;
+    int c, digit;
+    bool which = false;
+    int len;
+    byte prefix[3];
+
+    if (strbuf == 0) {
+	fprintf(stderr, "Unable to allocate string token buffer.\n");
+	exit(1);
+    }
+    while ((c = getc(in)) >= 0) {
+	if (isxdigit(c)) {
+	    c -= (isdigit(c) ? '0' : islower(c) ? 'a' : 'A');
+	    if ((which = !which)) {
+		if (q == strbuf + MAX_STR) {
+		    fprintf(stderr, "Can't handle string token > %d bytes.\n",
+			    MAX_STR);
+		    exit(1);
+		}
+		*q++ = c << 4;
+	    } else
+		q[-1] += c;
+	} else if (isspace(c))
+	    continue;
+	else if (c == '>')
+	    break;
+	else
+	    fprintf(stderr, "Unknown character in ASCIIHex string: %c\n", c);
+    }
+    len = q - strbuf;
+    if (len <= 255) {
+	prefix[0] = 142;
+	prefix[1] = (byte)len;
+	ws(out, prefix, 2, to_c);
+    } else {
+	prefix[0] = 143;
+	prefix[1] = (byte)(len >> 8);
+	prefix[2] = (byte)len;
+	ws(out, prefix, 3, to_c);
+    }
+    ws(out, strbuf, len, to_c);
+    free((char *)strbuf);
+#undef MAX_STR
+}
+
 /* Merge a file from input to output. */
 private void
 flush_buf(FILE * out, char *buf, bool to_c)
@@ -241,6 +314,8 @@ mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
     char line[LINE_SIZE + 1];
     char buf[LINE_SIZE + 1];
     char *str;
+    int level = 1;
+    bool first = true;
 
     buf[0] = 0;
     while (rl(in, line, LINE_SIZE)) {
@@ -291,11 +366,30 @@ mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
 	    /* The rest of the file is debugging code, stop here. */
 	    break;
 	} else {
+	    int len;
+
 	    str = doit(line);
 	    if (str == 0)
 		continue;
-	    if (buf[0] != '%' &&	/* special retained comment */
-		strlen(buf) + strlen(str) < LINE_SIZE &&
+	    len = strlen(str);
+	    if (first && len >= 2 && str[len - 2] == '<' &&
+		(str[len - 1] == '<' || str[len - 1] == '~')
+		) {
+		wl(out, "currentobjectformat 1 setobjectformat\n", to_c);
+		level = 2;
+	    }
+	    if (level > 1 && len > 0 && str[len - 1] == '<' &&
+		(len < 2 || str[len - 2] != '<')
+		) {
+		/* Convert a hex string to a binary token. */
+		flush_buf(out, buf, to_c);
+		str[len - 1] = 0;
+		wl(out, str, to_c);
+		hex_string_to_binary(out, in, to_c);
+		continue;
+	    }
+	    if (buf[0] != '%' &&	/* i.e. not special retained comment */
+		strlen(buf) + len < LINE_SIZE &&
 		(strchr("(/[]{}", str[0]) ||
 		 (buf[0] != 0 && strchr(")[]{}", buf[strlen(buf) - 1])))
 		)
@@ -304,9 +398,12 @@ mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
 		flush_buf(out, buf, to_c);
 		strcpy(buf, str);
 	    }
+	    first = false;
 	}
     }
     flush_buf(out, buf, to_c);
+    if (level > 1)
+	wl(out, "setobjectformat", to_c);
     fprintf(stderr, "%s: %ld bytes, output pos = %ld\n",
 	    inname, ftell(in), ftell(out));
     fclose(in);

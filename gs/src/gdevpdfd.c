@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -43,6 +44,27 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 /* ------ Vector device implementation ------ */
 private int
+pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
+	   gx_path_type_t type)
+{
+    if (!(type & gx_path_type_stroke)) {
+	/*
+	 * Clamp coordinates to avoid tripping over Acrobat Reader's limit
+	 * of 32K on user coordinate values.
+	 */
+#define CLAMP_XY(v, m)\
+  if (v < 0) v = 0; else if (v > int2fixed(m)) v = int2fixed(m)
+	CLAMP_XY(x0, vdev->width);
+	CLAMP_XY(x1, vdev->width);
+	CLAMP_XY(y0, vdev->height);
+	CLAMP_XY(y1, vdev->height);
+	if ((x0 == x1 || y0 == y1) && !(type & gx_path_type_clip))
+	    return 0;		/* nothing to fill */
+#undef CLAMP_XY
+    }
+    return psdf_dorect(vdev, x0, y0, x1, y1, type);
+}
+private int
 pdf_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     return 0;			/* always handled by caller */
@@ -64,7 +86,7 @@ private const gx_device_vector_procs pdf_vector_procs =
     psdf_setstrokecolor,
 	/* Paths */
     psdf_dopath,
-    psdf_dorect,
+    pdf_dorect,
     psdf_beginpath,
     psdf_moveto,
     psdf_lineto,

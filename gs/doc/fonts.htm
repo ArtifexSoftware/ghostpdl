@@ -6,19 +6,19 @@
 </head>
 
 <body>
-<!-- [1.0 begin visible header] -------------------------------------------- -->
+<!-- [1.0 begin visible header] ============================================ -->
 
-<!-- [1.1 begin headline] -------------------------------------------------- -->
+<!-- [1.1 begin headline] ================================================== -->
 
-<p><table width="100%" border="0">
+<table width="100%" border="0">
 <tr><th align="center" bgcolor="#CCCC00"><font size=6>
 Fonts and font facilities<br>supplied with Ghostscript
 </font>
 </table>
 
-<!-- [1.1 end headline] ---------------------------------------------------- -->
+<!-- [1.1 end headline] ==================================================== -->
 
-<!-- [1.2 begin table of contents] ----------------------------------------- -->
+<!-- [1.2 begin table of contents] ========================================= -->
 
 <h2>Table of contents</h2>
 
@@ -27,10 +27,11 @@ Fonts and font facilities<br>supplied with Ghostscript
 <li><a href="#Free_fonts">Ghostscript's free fonts</a>
 <li><a href="#Other_fonts">Other free fonts</a>
 <ul>
-<li><a href="#Chinese_font">A free Chinese (Hanzi) font</a>
+<li><a href="#Chinese">Free Chinese (Hanzi) fonts</a>
 <li><a href="#Japanese">Free Japanese (Kanji) fonts</a>
 <li><a href="#Unicode_CMaps">Unicode CMaps</a>
 <li><a href="#Cyrillic">Free Cyrillic fonts</a>
+<li><a href="#Partial_Unicode_fonts">(Partial) Unicode fonts</a>
 </ul>
 <li><a href="#Get_fonts">How Ghostscript gets fonts when it runs</a>
 <li><a href="#Platform_fonts">Platform fonts</a>
@@ -46,22 +47,31 @@ Fonts and font facilities<br>supplied with Ghostscript
 <li><a href="#Unique_IDs">Font names and unique IDs</a>
 <li><a href="#Codes">Codes used to make font file names</a>
 </ul>
+<li><a href="#Use_gs_fonts_with_X">Using Ghostscript fonts on X Windows displays</a>
+<ul>
+<li><a href="#Using_xset">Using <b><tt>xset</tt></b></a>
+<li><a href="#Font_permanent_installation">Permanent installation</a>
+<ul>
+<li><a href="#Configure_xfs">Configuring the <b><tt>xfs</tt></b> font server</a>
+<li><a href="#Configure_Xfree86">Xfree86 display servers</a>
+</ul>
+</ul>
 </ul></blockquote>
 
-<!-- [1.2 end table of contents] ------------------------------------------- -->
+<!-- [1.2 end table of contents] =========================================== -->
 
-<!-- [1.3 begin hint] ------------------------------------------------------ -->
+<!-- [1.3 begin hint] ====================================================== -->
 
 <p>For other information, see the <a href="Readme.htm">Ghostscript
 overview</a>.
 
-<!-- [1.3 end hint] -------------------------------------------------------- -->
+<!-- [1.3 end hint] ======================================================== -->
 
 <hr>
 
-<!-- [1.0 end visible header] ---------------------------------------------- -->
+<!-- [1.0 end visible header] ============================================== -->
 
-<!-- [2.0 begin contents] -------------------------------------------------- -->
+<!-- [2.0 begin contents] ================================================== -->
 
 <h2><a name="About"></a>About Ghostscript fonts</h2>
 
@@ -175,7 +185,7 @@ ftp://ftp.cs.wisc.edu/ghost/aladdin/gs###/ (for a particular version)<br>
 
 <h2><a name="Other_fonts"></a>Other free fonts</h2>
 
-<h3><a name="Chinese_font"></a>A free Chinese (Hanzi) font</h3>
+<h3><a name="Chinese"></a>Free Chinese (Hanzi) fonts</h3>
 
 <p>
 A free Chinese font, originally provided by courtesy of Jackson Technology,
@@ -184,6 +194,29 @@ Group, is available from:
 
 <blockquote>
 <a href="ftp://ftp.cs.wisc.edu/ghost/hanzi/">ftp://ftp.cs.wisc.edu/ghost/hanzi/</a>
+</blockquote>
+
+<p>
+Prof. Wu of the Department of Economics of National Taiwan University has
+created several free Type 1 Chinese fonts designed to be used with TeX.  His
+e-mail is <a
+href="mailto:ntut019@ccms.ntu.edu.tw">ntut019@ccms.ntu.edu.tw</a>.  The
+fonts are available from
+
+<blockquote>
+<a href="ftp://cle.linux.org.tw/pub/fonts/cwfont/">ftp://cle.linux.org.tw/pub/fonts/cwfont/</a><br>
+</blockquote>
+
+<p>
+Arphic Technology Co., Ltd., has made several free TrueType Chinese fonts
+available under the Arphic Public License, a license very similar to the
+GPL.  (Ghostscript can use TrueType fonts if Ghostscript is compiled with
+the <tt><b>ttfont</b></tt> feature included: see <a
+href="Make.htm#Features_and_devices">here</a> for more information.)  The
+fonts and license are available from
+
+<blockquote>
+<a href="ftp://linux.tmtc.edu.tw/pub/arphic/">ftp://linux.tmtc.edu.tw/pub/arphic/</a><br>
 </blockquote>
 
 <h3><a name="Japanese"></a>Free Japanese (Kanji) fonts</h3>
@@ -309,6 +342,18 @@ href="mailto:malyshev@mx.ihep.su">malyshev@mx.ihep.su</a>&gt; 22 December
 </blockquote>
 
 <hr>
+
+<h3><a name="Partial_Unicode_fonts"></a>(Partial) Unicode fonts</h3>
+
+<p>
+George W. Wilson is distributing some free partial Unicode fonts he created.
+These fonts currently lack Arabic and CJK characters, but they include a
+very large subset of the remaining Unicode set.  They are available in both
+Type 1 and TrueType formats.  See
+
+<blockquote>
+<a href="http://bibliofile.mc.duke.edu/gww/fonts/Unicode.html">http://bibliofile.mc.duke.edu/gww/fonts/Unicode.html</a>
+</blockquote>
 
 <h2><a name="Get_fonts"></a>How Ghostscript gets fonts when it runs</h2>
 
@@ -579,9 +624,9 @@ href="#font2c"><tt><b>font2c</b></tt></a>.  There is a makefile target to
 run <tt><b>font2c</b></tt> on all the fonts supplied with Ghostscript.
 Invoke it with
 
-<blockquote><tt><b>
+<blockquote><b><tt>
 make fonts_standard_c
-</blockquote></tt></b>
+</tt></b></blockquote>
 
 <p>Besides running <tt><b>font2c</b></tt>, you must compile the fonts and
 link them into the executable.  To do this, add the compiled fonts feature
@@ -657,13 +702,13 @@ After all the lines of this form, add a pair of lines to compile each font,
 separating these entries from the "ccfonts*" lines and from each other with
 a blank line.  In our example this becomes
 
-<blockquote><b><tt>
+<blockquote>
 <pre>$(CFOBJ)fhirw.$(OBJ): $(CFGEN)fhirw.c $(CCFONT)
 	$(CFCC) $(CFO_)fhirw.$(OBJ) $(C_) $(CFGEN)fhirw.c
 
 $(CFOBJ)fkarw.$(OBJ): $(CFGEN)fkarw.c $(CCFONT)
-	$(CFCC) $(CFO_)fkarw.$(OBJ) $(C_) $(CFGEN)fkarw.c</pre>
-</tt></b></blockquote>
+	$(CFCC) $(CFO_)fkarw.$(OBJ) $(C_) $(CFGEN)fkarw.c
+</pre></blockquote>
 
 <p>
 Finally, run <tt><b>make</b></tt> to build an executable that includes the
@@ -848,19 +893,19 @@ that we are actually distributing.
 	<td>&nbsp;&nbsp;
 	<td>Bitstream
 <tr>	<td><tt><b>f</b></tt>
-	<td>&nbsp
+	<td>&nbsp;
 	<td>Freely distributable and public-domain
 <tr>	<td><tt><b>hr</b></tt>
-	<td>&nbsp
+	<td>&nbsp;
 	<td>Hershey
 <tr>	<td><tt><b>n</b></tt>
-	<td>&nbsp
+	<td>&nbsp;
 	<td>IBM
 <tr>	<td><tt><b>p</b></tt>
-	<td>&nbsp
+	<td>&nbsp;
 	<td>Adobe ("p" for PostScript)
 <tr>	<td><tt><b>u</b></tt>
-	<td>&nbsp
+	<td>&nbsp;
 	<td>URW[++]
 </table></blockquote>
 
@@ -1115,26 +1160,172 @@ that we are actually distributing.
 	<td><tt><b>n</b></tt>
 </table></blockquote>
 
-<!-- [2.0 end contents] ---------------------------------------------------- -->
+<hr>
 
-<!-- [3.0 begin visible trailer] ------------------------------------------- -->
+<h2><a name="Use_gs_fonts_with_X"></a>Using Ghostscript fonts on X Windows displays</h2>
+
+<p>
+The standard X11 distribution can display various kinds of fonts, including
+the Adobe Type 1 format, so font files distributed with Ghostscript can be
+used on X Windows displays.  Beginning with Ghostscript version 6.0, the
+font archive contains the directory files needed to map Ghostscript's font
+files to XLFDs.  Those files are named "<b><tt>fonts.dir</tt></b>" and
+"<b><tt>fonts.scale</tt></b>".  There are two main methods to configure
+your display to use these files.
+
+<ul>
+<li><a href="#Using_xset">With <b><tt>xset</tt></b></a> any user can add a
+new directory to the font search path for the duration of a session.
+<li>An administrator with root access can <a
+href="#Font_permanent_installation">add the Ghostscript font directory
+permanently</a> to the <a href="#X_font_catalog">X font server's
+catalog</a> or to an <a href="#Xfree86_fontpath">X display server's list of
+directories</a>.
+</ul>
+
+<h3><a name="Using_xset"></a>Using <b><tt>xset</tt></b></h3>
+
+<p>
+Users without root access can add the Ghostscript font directories to the
+font search path using <b><tt>xset</tt></b>. Such a setting is transient
+and must be repeated each time the display server is reset or restarted,
+typically at login, so the call to <b><tt>xset</tt></b> should be added to
+the user's "<b><tt>.xsession</tt></b>" or "<b><tt>.xinitrc</tt></b>"
+startup script to make the fonts available at each login.
+
+<p>
+To add a new font directory, invoke <b><tt>xset</tt></b> like this:
+
+<blockquote>
+<b><tt>xset fp+</tt> <em>{directory}</em></b>
+</blockquote>
+
+<p>
+where <b><em>{directory}</em></b> is the full pathname to the directory
+containing the fonts on the host running the X display server.  For common
+Ghostscript installations the path is
+
+<blockquote>
+<b><tt>/usr/local/Ghostscript/share/fonts</tt></b>
+</blockquote>
+
+<h3><a name="Font_permanent_installation"></a>Permanent installation</h3>
+
+<p> A system administrator, or anyone with the necessary root privilege,
+can make Ghostscript's fonts permanently available to the managed X display
+servers.  This setup depends on the servers and the methods used
+to make the fonts available.
+
+<h4><a name="Configure_xfs"></a>Configuring the <b><tt>xfs</tt></b> font server</h4>
+
+<p>
+An X display server can obtain its font resources from a dedicated X font
+server.  <b><tt>xfs</tt></b> is a prototype font server included in the X
+Consortium X11 distribution.  It is configured with a file located in a
+directory whose exact location is installation-dependent and could be any
+of
+
+<blockquote><b><tt>
+/usr/lib/X11/fs/config
+<br>/usr/X11/lib/X11/fs/config
+<br>/usr/X11R6/lib/X11/fs/config
+</tt></b></blockquote>
+
+<p>
+or some similar name. You can also use <b><tt>xfs</tt></b>'s
+"<b><tt>-config</tt></b>" command-line option to specify the location of
+the configuration file.
+
+<p><a name="X_font_catalog"></a>
+The configuration file designates a list ("catalog") of directories, each
+of which contains fonts and a font mapping database (the file
+"<b><tt>fonts.dir</tt></b>").  This list is specified with the
+"<b><tt>catalogue=</tt></b>" keyword followed by a list of absolute
+directory paths separated by commas.  To add the Ghostscript directory,
+include its full name in the catalog list, for example:
+
+<blockquote><b><tt>
+catalogue&nbsp;=&nbsp;/usr/local/share/Ghostscript/fonts/,
+<br>/usr/X11R6/lib/X11/fonts/misc/,
+<br>/usr/X11R6/lib/X11/fonts/Speedo/,
+<br>/usr/X11R6/lib/X11/fonts/Type1/,
+<br>/usr/X11R6/lib/X11/fonts/75dpi/,
+<br>/usr/X11R6/lib/X11/fonts/100dpi/
+</tt></b></blockquote>
+
+<p>
+The fonts are searched in the order the directories are specified, so an
+XLFD mapped by the Ghostscript directory could shadow a previous similar
+description specified in the following directories.  Once the file is
+modified, instruct the font server to reload the configuration file by
+sending it the USR1 signal:
+
+<blockquote>
+<b><tt>kill -HUP</tt> <em>{pid}</em></b>
+</blockquote>
+
+<p>
+where <b><em>{pid}</em></b> is the font server process's numeric process
+ID, as obtained with the "<b><tt>ps</tt></b>" command. Be sure to check
+that the server is still alive after signaling it: it is very picky and
+could decide to shut itself down if something is wrong in the new
+configuration. If this happens, restart the server by hand and try to
+figure out from its output what's happening. If the font server dies,
+display servers using it will experience problems, so be sure to send the
+signal from the console or from a display not using that font server!
+
+<h4><a name="Configure_Xfree86"></a>Xfree86 display servers</h4>
+
+<p><a name="Xfree86_fontpath"></a>
+With the family of Xfree86 display servers, adding a new font directory
+permanently requires editing the "<b><tt>/etc/XF86Config</tt></b>" setup
+file to add a new "<b><tt>FontPath</tt></b>" to the "<b><tt>Files</tt></b>"
+section:
+
+<blockquote>
+<b><tt>Section "Files"
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RgbPath&nbsp;&nbsp;&nbsp;&nbsp;"/usr/X11R6/lib/X11/rgb"
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FontPath&nbsp;&nbsp;&nbsp;"/usr/local/share/Ghostscript/fonts"
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FontPath&nbsp;&nbsp;&nbsp;"/usr/X11R6/lib/X11/fonts/misc:unscaled"
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FontPath&nbsp;&nbsp;&nbsp;"/usr/X11R6/lib/X11/fonts/75dpi:unscaled"
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FontPath&nbsp;&nbsp;&nbsp;"/usr/X11R6/lib/X11/fonts/100dpi:unscaled"
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FontPath&nbsp;&nbsp;&nbsp;"/usr/X11R6/lib/X11/fonts/Type1"
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FontPath&nbsp;&nbsp;&nbsp;"/usr/X11R6/lib/X11/fonts/Speedo"
+<br>EndSection</tt></b>
+</blockquote>
+
+<p>
+The fonts are searched in the order the directories are specified, so an
+XLFD mapped by the Ghostscript directory could shadow a previous similar
+description specified in the following directories.  Once this global
+configuration is edited, the new fonts become available to all Xfree86
+servers in use on that host. If a server is running, it must be restarted
+to take effect: just quit the current session in the usual way.  If the
+server is under the control of <b><tt>xdm</tt></b>, you may have to kill
+it, because it is usually reset only between successive sessions.
+
+<p>
+This section by Bertrand Petit
+&lt;<a href="mailto:eegs@phoe.frmug.org">eegs@phoe.frmug.org</a>&gt;
+
+<!-- [2.0 end contents] ==================================================== -->
+
+<!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <font size=2>
 
 <p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
-<p>This file is part of Aladdin Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-Aladdin Ghostscript.
-
 <p>
-Ghostscript version 5.96, 12 November 1999
+This software is licensed to a single customer by Artifex Software Inc.
+under the terms of a specific OEM agreement.
+<p>
+Artifex version 6.11, Aladdin Ghostscript version 6.0, 3 February 2000
 
 </font>
 
-<!-- [3.0 end visible trailer] --------------------------------------------- -->
+<!-- [3.0 end visible trailer] ============================================= -->
 
 </body>
 </html>

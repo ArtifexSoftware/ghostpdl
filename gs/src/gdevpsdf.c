@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -21,44 +22,6 @@
 /* Structure descriptors */
 public_st_device_psdf();
 public_st_psdf_binary_writer();
-
-/* GC procedures */
-private 
-ENUM_PTRS_WITH(psdf_binary_writer_enum_ptrs, psdf_binary_writer *pbw) {
-    /*
-     * Don't enumerate the stream pointers: they are all either
-     * unused or internal, except for strm.
-     */
-    return 0;
-}
-    case 0: ENUM_RETURN(pbw->target);
-    case 1: ENUM_RETURN((pbw->strm == &pbw->A85E.s ? pbw->A85E.s.strm :
-			 pbw->strm));
-    case 2: ENUM_RETURN(pbw->dev);
-ENUM_PTRS_END
-private
-RELOC_PTRS_WITH(psdf_binary_writer_reloc_ptrs, psdf_binary_writer *pbw)
-{
-    RELOC_VAR(pbw->target);
-    RELOC_VAR(pbw->dev);
-    if (pbw->strm == &pbw->A85E.s) {
-	char *relocated = (char *)RELOC_OBJ(pbw);
-	long reloc = relocated - (char *)pbw;
-
-	/* Fix up the internal pointers. */
-	pbw->A85E.s.cbuf += reloc;
-	pbw->A85E.s.srptr += reloc;
-	pbw->A85E.s.srlimit += reloc;
-	pbw->A85E.s.swlimit += reloc;
-	RELOC_VAR(pbw->A85E.s.strm);
-	pbw->A85E.s.state = (stream_state *)
-	    (relocated + offset_of(psdf_binary_writer, A85E.state));
-	pbw->strm = (stream *)
-	    (relocated + offset_of(psdf_binary_writer, A85E.s));
-    } else
-	RELOC_VAR(pbw->strm);
-}
-RELOC_PTRS_END
 
 /* ---------------- Vector implementation procedures ---------------- */
 
@@ -223,18 +186,31 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 int
 psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 {
+    gs_memory_t *mem = pbw->memory = pdev->v_memory;
+
     pbw->target = pdev->strm;
-    pbw->memory = pdev->v_memory;
     pbw->dev = pdev;
     /* If not binary, set up the encoding stream. */
     if (!pdev->binary_ok) {
-	s_init(&pbw->A85E.s, NULL);
-	s_init_state((stream_state *)&pbw->A85E.state, &s_A85E_template, NULL);
-	s_init_filter(&pbw->A85E.s, (stream_state *)&pbw->A85E.state,
-		      pbw->buf, sizeof(pbw->buf), pdev->strm);
-	pbw->strm = &pbw->A85E.s;
+#define BUF_SIZE 100		/* arbitrary */
+	byte *buf = gs_alloc_bytes(mem, BUF_SIZE, "psdf_begin_binary(buf)");
+	stream_A85E_state *ss = (stream_A85E_state *)
+	    s_alloc_state(mem, s_A85E_template.stype,
+			  "psdf_begin_binary(stream_state)");
+	stream *s = s_alloc(mem, "psdf_begin_binary(stream)");
+
+	if (buf == 0 || ss == 0 || s == 0) {
+	    gs_free_object(mem, s, "psdf_begin_binary(stream)");
+	    gs_free_object(mem, ss, "psdf_begin_binary(stream_state)");
+	    gs_free_object(mem, buf, "psdf_begin_binary(buf)");
+	    return_error(gs_error_VMerror);
+	}
+	ss->template = &s_A85E_template;
+	s_init_filter(s, (stream_state *)ss, buf, BUF_SIZE, pdev->strm);
+#undef BUF_SIZE
+	pbw->strm = pbw->A85E = s;
     } else {
-	memset(&pbw->A85E.s, 0, sizeof(pbw->A85E.s)); /* for GC */
+	pbw->A85E = 0;		/* for GC */
 	pbw->strm = pdev->strm;
     }
     return 0;
@@ -280,7 +256,11 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
 int
 psdf_end_binary(psdf_binary_writer * pbw)
 {
-    return s_close_filters(&pbw->strm, pbw->target);
+    int code = s_close_filters(&pbw->strm, pbw->target);
+
+    /* s_close_filters freed the A85E stream, if any. */
+    pbw->A85E = 0;		/* for GC */
+    return code;
 }
 
 /* ---------------- Embedded font writing ---------------- */
@@ -414,7 +394,9 @@ psdf_sorted_glyphs_include(const gs_glyph *glyphs, int count, gs_glyph glyph)
 {
     int lo = 0, hi = count - 1;
 
-    if (glyph < glyphs[0] || glyph > glyphs[count - 1])
+    if (hi < 0)
+	return false;
+    if (glyph < glyphs[0] || glyph > glyphs[hi])
 	return false;
     /*
      * Loop invariants: hi > lo;

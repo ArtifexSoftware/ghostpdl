@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -287,7 +288,7 @@ int gdev_vector_update_clip_path(P2(gx_device_vector * vdev,
 				    const gx_clip_path * pcpath));
 
 /* Close the output file and stream. */
-void gdev_vector_close_file(P1(gx_device_vector * vdev));
+int gdev_vector_close_file(P1(gx_device_vector * vdev));
 
 /* ---------------- Image enumeration ---------------- */
 

@@ -1,6 +1,7 @@
 /* Copyright (C) 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -239,6 +240,23 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	pdev->version = save_version;
 	return code;
     }
+
+    /*
+     * Acrobat Reader 4.0 and earlier don't handle user-space coordinates
+     * larger than 32K.  To compensate for this, reduce the resolution until
+     * the page size in device space (which we equate to user space)
+     * is significantly less than 32K.  Note
+     * that this still does not protect us against input files that use
+     * coordinates far outside the page boundaries.
+     */
+    /* Changing resolution or page size requires closing the device, */
+    while (dev->height > 16000 || dev->width > 16000) {
+	if (dev->is_open)
+	    gs_closedevice(dev);
+	gx_device_set_resolution(dev, dev->HWResolution[0] / 2,
+				 dev->HWResolution[1] / 2);
+    }
+
     /* Handle the float/double mismatch. */
     pdev->CompatibilityLevel = (int)(cl * 10 + 0.5) / 10.0;
     pdev->ReAssignCharacters = rac;

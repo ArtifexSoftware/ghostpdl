@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -61,10 +62,13 @@ typedef struct x11_cman_s {
      * color_mask is a mask that selects the high-order N bits of an
      * X color value, where N may be the mask width for TrueColor or
      * StaticGray and is bits_per_rgb for the other visual classes.
+     *
+     * match_mask is the mask used for comparing colors.  It may have
+     * fewer bits than color_mask if the device is not using halftones.
      */
     struct cmm_ {
 	X_color_value red, green, blue;
-    } color_mask;
+    } color_mask, match_mask;
 
 #if HaveStdCMap  /* Standard colormap stuff is only in X11R4 and later. */
 

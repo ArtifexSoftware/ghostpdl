@@ -1,4 +1,5 @@
-#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-2000 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -14,6 +15,9 @@
 # Common code factored out 1997-05-22 by L. Peter Deutsch.
 # Made pre-configurable by JD 6/4/98
 # Revised to use subdirectories 1998-11-13 by lpd.
+
+# Note: If you are planning to make self-extracting executables,
+# see winint.mak to find out about third-party software you will need.
 
 # ------------------------------- Options ------------------------------- #
 
@@ -204,7 +208,7 @@ PSD=$(PSGENDIR)\$(NUL)
 # (currently, 4 & 5 are supported).
 
 !ifndef MSVC_VERSION 
-MSVC_VERSION=6
+MSVC_VERSION=5
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
@@ -315,7 +319,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(P
 # See gs.mak for details.
 
 !ifndef COMPILE_INITS
-COMPILE_INITS=1
+COMPILE_INITS=0
 !endif
 
 # Choose whether to store band lists on files or in memory.

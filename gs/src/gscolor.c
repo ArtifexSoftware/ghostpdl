@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -328,13 +329,16 @@ transfer_use_proc(floatp value, const gx_transfer_map * pmap,
 void
 load_transfer_map(gs_state * pgs, gx_transfer_map * pmap, floatp min_value)
 {
-    gs_mapping_closure_proc_t proc =
-    (pmap->proc == 0 ? pmap->closure.proc : transfer_use_proc);
-    const void *proc_data = pmap->closure.data;
+    gs_mapping_closure_proc_t proc;
+    const void *proc_data;
     frac *values = pmap->values;
     frac fmin = float2frac(min_value);
     int i;
 
+    if (pmap->proc == 0)	/* use closure */
+	proc = pmap->closure.proc, proc_data = pmap->closure.data;
+    else			/* use proc */
+	proc = transfer_use_proc, proc_data = 0 /* not used */;
     for (i = 0; i < transfer_map_size; i++) {
 	float fval =
 	(*proc) ((float)i / (transfer_map_size - 1), pmap, proc_data);

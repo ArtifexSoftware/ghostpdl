@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -383,10 +384,16 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
     /*
      * We don't bother to set most of the fields.  The really important
      * ones, which affect character mapping, are usFirst/LastCharIndex.
+     * We also need to set usWeightClass and usWidthClass to avoid
+     * crashing ttfdump.
      */
     memset(&os2, 0, sizeof(os2));
     put_u16(os2.version, 1);
+    put_u16(os2.usWeightClass, 400); /* Normal */
+    put_u16(os2.usWidthClass, 5); /* Normal */
     update_OS_2(&os2, first_glyph, num_glyphs);
+    if (first_glyph >= 0xf000)
+	os2.ulCodePageRanges[3] = 1; /* bit 31, symbolic */
     pwrite(s, &os2, sizeof(os2));
     put_pad(s, sizeof(os2));
 }
@@ -635,8 +642,8 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     for (max_glyph = 0, glyf_length = 0;
 	 (code = psdf_enumerate_glyphs_next(&genum, &glyph)) != 1;
 	 ) {
-	gs_const_string glyph_string;
 	uint glyph_index;
+	gs_const_string glyph_string;
 
 	if (glyph < gs_min_cid_glyph)
 	    return_error(gs_error_invalidfont);
@@ -798,7 +805,8 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     for (offset = 0; psdf_enumerate_glyphs_next(&genum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
 
-	if (pfont->data.get_outline(pfont, glyph, &glyph_string) >= 0) {
+	if (pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
+				    &glyph_string) >= 0) {
 	    pwrite(s, glyph_string.data, glyph_string.size);
 	    offset += glyph_string.size;
 	    if_debug2('L', "[L]glyf index = %u, size = %u\n",
@@ -817,7 +825,8 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 
 	for (; glyph_prev <= glyph; ++glyph_prev)
 	    put_loca(s, offset, indexToLocFormat);
-	if (pfont->data.get_outline(pfont, glyph, &glyph_string) >= 0)
+	if (pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
+				    &glyph_string) >= 0)
 	    offset += glyph_string.size;
     }
     /* Pad to numGlyphs + 1 entries (including the trailing entry). */

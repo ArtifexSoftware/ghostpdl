@@ -1,4 +1,5 @@
 #    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -72,8 +73,10 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	x11gray2  X Windows as a 2-bit gray-scale device
 #	x11gray4  X Windows as a 4-bit gray-scale device
 #	x11mono  X Windows masquerading as a black-and-white device
+#	x11rg16x  X Windows with G5/B5/R6 pixel layout for testing.
+#	x11rg32x  X Windows with G11/B10/R11 pixel layout for testing.
 # Printers:
-# *	cljet5	H-P Color LaserJet 5/5M
+# *	cljet5	H-P Color LaserJet 5/5M (see below for some notes)
 # +	deskjet  H-P DeskJet and DeskJet Plus
 #	djet500  H-P DeskJet 500; use -r600 for DJ 600 series
 # +	fs600	Kyocera FS-600 (600 dpi)
@@ -429,6 +432,8 @@ $(GLOBJ)gdevxxf.$(OBJ) : $(GLSRC)gdevxxf.c $(GDEVX) $(math__h) $(memory__h)\
 # x11gray2 pretends to be a 2-bit gray-scale device.
 # x11gray4 pretends to be a 4-bit gray-scale device.
 # x11mono pretends to be a black-and-white device.
+# x11rg16x pretends to be a G5/B5/R6 color device.
+# x11rg16x pretends to be a G11/B10/R11 color device.
 x11alt_=$(GLOBJ)gdevxalt.$(OBJ)
 $(DD)x11alt_.dev : $(DEVS_MAK) $(x11alt_) $(DD)x11_.dev
 	$(SETMOD) $(DD)x11alt_ $(x11alt_)
@@ -457,6 +462,12 @@ $(DD)x11gray4.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 
 $(DD)x11mono.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 	$(SETDEV2) $(DD)x11mono -include $(DD)x11alt_
+
+$(DD)x11rg16x.dev : $(DEVS_MAK) $(DD)x11alt_.dev
+	$(SETDEV2) $(DD)x11rg16x -include $(DD)x11alt_
+
+$(DD)x11rg32x.dev : $(DEVS_MAK) $(DD)x11alt_.dev
+	$(SETDEV2) $(DD)x11rg32x -include $(DD)x11alt_
 
 $(GLOBJ)gdevxalt.$(OBJ) : $(GLSRC)gdevxalt.c $(GDEVX) $(math__h) $(memory__h)\
  $(gsdevice_h) $(gsparam_h) $(gsstruct_h)
@@ -532,16 +543,17 @@ $(DD)oce9050.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 
 ### -------------------- The H-P Color LaserJet 5/5M -------------------- ###
 
-### There are two different drivers for this device: a general one that is
-### claimed not to work very well, and a more restricted one that does work.
-### For questions about the cljet5 (more general) driver, contact
+### There are two different drivers for this device.
+### For questions about the cljet5/cljet5pr (more general) driver, contact
 ###	Jan Stoeckenius <jan@orimp.com>
 ### For questions about the cljet5c (simple) driver, contact
 ###	Henry Stiles <henrys@meerkat.dimensional.com>
+### Note that this is a long-edge-feed device, so the default page size is
+### wider than it is high.  To print portrait pages, specify the page size
+### explicitly, e.g. -c letter or -c a4 on the command line.
 
 cljet5_=$(GLOBJ)gdevclj.$(OBJ) $(HPPCL)
 
-# The cljet5 driver is well-behaved.
 $(DD)cljet5.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)cljet5 $(cljet5_)
 
@@ -574,8 +586,15 @@ $(GLOBJ)gdevcljc.$(OBJ) : $(GLSRC)gdevcljc.c $(math__h) $(PDEVH) $(gdevpcl_h)
 gdevpxat_h=$(GLSRC)gdevpxat.h
 gdevpxen_h=$(GLSRC)gdevpxen.h
 gdevpxop_h=$(GLSRC)gdevpxop.h
+gdevpxut_h=$(GLSRC)gdevpxut.h
 
-ljet5_=$(GLOBJ)gdevlj56.$(OBJ) $(HPPCL)
+
+$(GLOBJ)gdevpxut.$(OBJ) : $(GLSRC)gdevpxut.c $(math__h) $(string__h)\
+ $(gx_h) $(gxdevcli_h) $(stream_h)\
+ $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevpxut_h)
+	$(GLCC) $(GLO_)gdevpxut.$(OBJ) $(C_) $(GLSRC)gdevpxut.c
+
+ljet5_=$(GLOBJ)gdevlj56.$(OBJ) $(GLOBJ)gdevpxut.$(OBJ) $(HPPCL)
 $(DD)lj5mono.dev : $(DEVS_MAK) $(ljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)lj5mono $(ljet5_)
 
@@ -583,7 +602,7 @@ $(DD)lj5gray.dev : $(DEVS_MAK) $(ljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)lj5gray $(ljet5_)
 
 $(GLOBJ)gdevlj56.$(OBJ) : $(GLSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
- $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h)
+ $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevpxut_h) $(stream_h)
 	$(GLCC) $(GLO_)gdevlj56.$(OBJ) $(C_) $(GLSRC)gdevlj56.c
 
 ###### ------------------- High-level file formats ------------------- ######
@@ -597,14 +616,18 @@ gdevpsds_h=$(GLSRC)gdevpsds.h $(strimpl_h)
 psdf_1=$(GLOBJ)gdevpsd1.$(OBJ) $(GLOBJ)gdevpsdf.$(OBJ) $(GLOBJ)gdevpsdi.$(OBJ)
 psdf_2=$(GLOBJ)gdevpsdp.$(OBJ) $(GLOBJ)gdevpsds.$(OBJ) $(GLOBJ)gdevpsdt.$(OBJ)
 psdf_3=$(GLOBJ)scfparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ) $(GLOBJ)sdeparam.$(OBJ)
-psdf_4=$(GLOBJ)spprint.$(OBJ) $(GLOBJ)spsdf.$(OBJ)
+psdf_4=$(GLOBJ)spprint.$(OBJ) $(GLOBJ)spsdf.$(OBJ) $(GLOBJ)sstring.$(OBJ)
 psdf_=$(psdf_1) $(psdf_2) $(psdf_3) $(psdf_4)
-$(DD)psdf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psdf_) $(GLD)vector.dev $(GLD)pngp.dev
+psdf_inc1=$(GLD)vector.dev $(GLD)pngp.dev $(GLD)seexec.dev
+psdf_inc2=$(GLD)sdcte.dev $(GLD)slzwe.dev $(GLD)szlibe.dev
+psdf_inc=$(psdf_inc1) $(psdf_inc2)
+$(DD)psdf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psdf_) $(psdf_inc)
 	$(SETMOD) $(DD)psdf $(psdf_1)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_2)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_3)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_4)
-	$(ADDMOD) $(DD)psdf -include $(GLD)vector $(GLD)pngp
+	$(ADDMOD) $(DD)psdf -include $(psdf_inc1)
+	$(ADDMOD) $(DD)psdf -include $(psdf_inc2)
 
 $(GLOBJ)gdevpsd1.$(OBJ) : $(GLSRC)gdevpsd1.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
@@ -668,10 +691,10 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
 pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ)
 pdfwrite2_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfm.$(OBJ)
 pdfwrite3_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ) $(GLOBJ)gdevpdfr.$(OBJ)
-pdfwrite4_=$(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfu.$(OBJ)
+pdfwrite4_=$(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
 pdfwrite5_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
-pdfwrite6_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ) $(GLOBJ)sstring.$(OBJ)
-pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_) $(pdfwrite5_)
+pdfwrite6_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
+pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_) $(pdfwrite5_) $(pdfwrite6_)
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev $(GLD)rle.dev\
  $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)szlibe.dev $(GLD)psdf.dev
@@ -688,14 +711,15 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)szlibe $(GLD)psdf
 
+gdevpdff_h=$(GLSRC)gdevpdff.h
 gdevpdfo_h=$(GLSRC)gdevpdfo.h
 gdevpdfx_h=$(GLSRC)gdevpdfx.h\
  $(gsparam_h) $(gsuid_h) $(gxdevice_h) $(gxfont_h) $(gxline_h)\
- $(spprint_h) $(stream_h) $(gdevpsdf_h) $(gdevpdfo_h)
+ $(spprint_h) $(stream_h) $(gdevpsdf_h)
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(memory__h) $(string__h)\
- $(gscdefs_h) $(gdevpdfx_h)
+ $(gscdefs_h) $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 
 $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
@@ -705,8 +729,8 @@ $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
 	$(GLCC) $(GLO_)gdevpdfd.$(OBJ) $(C_) $(GLSRC)gdevpdfd.c
 
 $(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
- $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdfx_h)\
+ $(ctype__h) $(math__h) $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gspath_h) $(gsutil_h)\
  $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxpath_h)\
  $(scommon_h)
@@ -714,7 +738,7 @@ $(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
 
 $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c\
  $(math__h) $(memory__h) $(string__h) $(jpeglib__h) $(gx_h)\
- $(gdevpdfx_h)\
+ $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gscie_h) $(gscolor2_h) $(gserrors_h) $(gsflip_h)\
  $(gxcspace_h) $(gxistate_h)\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h) $(srlx_h) $(strimpl_h)\
@@ -722,8 +746,8 @@ $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c\
 	$(GLJCC) $(GLO_)gdevpdfi.$(OBJ) $(C_) $(GLSRC)gdevpdfi.c
 
 $(GLOBJ)gdevpdfm.$(OBJ) : $(GLSRC)gdevpdfm.c\
- $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdfx_h) $(gserrors_h) $(gsutil_h) $(scanchar_h)
+ $(math__h) $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h) $(scanchar_h)
 	$(GLCC) $(GLO_)gdevpdfm.$(OBJ) $(C_) $(GLSRC)gdevpdfm.c
 
 $(GLOBJ)gdevpdfo.$(OBJ) : $(GLSRC)gdevpdfo.c $(memory__h) $(string__h)\
@@ -738,29 +762,36 @@ $(GLOBJ)gdevpdfp.$(OBJ) : $(GLSRC)gdevpdfp.c $(memory__h) $(gx_h)\
 
 $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
  $(gx_h)\
- $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
  $(scanchar_h) $(sstring_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfr.$(OBJ) $(C_) $(GLSRC)gdevpdfr.c
 
 $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdfx_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxpath_h)\
+ $(gdevpdff_h) $(gdevpdfx_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxfont1_h) $(gxpath_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
 
 $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GDEVH)\
  $(math__h) $(memory__h) $(string__h) $(time__h)\
  $(gp_h)\
- $(gdevpdfx_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzpath_h)\
  $(scanchar_h) $(scfx_h) $(slzwx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
 
+$(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
+ $(memory__h) $(string__h) $(gx_h)\
+ $(gdevpdff_h) $(gdevpdfx_h)\
+ $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h)\
+ $(scommon_h)
+	$(GLCC) $(GLO_)gdevpdfw.$(OBJ) $(C_) $(GLSRC)gdevpdfw.c
+
 # High-level PCL XL writer
 
-pxl_=$(GLOBJ)gdevpx.$(OBJ)
+pxl_=$(GLOBJ)gdevpx.$(OBJ) $(GLOBJ)gdevpxut.$(OBJ)
 $(DD)pxlmono.dev : $(DEVS_MAK) $(pxl_) $(GDEV) $(GLD)vector.dev
 	$(SETDEV2) $(DD)pxlmono $(pxl_)
 	$(ADDMOD) $(DD)pxlmono -include $(GLD)vector
@@ -773,7 +804,7 @@ $(GLOBJ)gdevpx.$(OBJ) : $(GLSRC)gdevpx.c\
  $(math__h) $(memory__h) $(string__h)\
  $(gx_h) $(gsccolor_h) $(gsdcolor_h) $(gserrors_h)\
  $(gxcspace_h) $(gxdevice_h) $(gxpath_h)\
- $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevvec_h)\
+ $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevpxut_h) $(gdevvec_h)\
  $(srlx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpx.$(OBJ) $(C_) $(GLSRC)gdevpx.c
 

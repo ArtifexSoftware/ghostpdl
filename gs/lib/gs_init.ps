@@ -1,4 +1,5 @@
-%    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1989, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -18,7 +19,7 @@
 
 % Check the interpreter revision.  NOTE: the interpreter code requires
 % that the first non-comment token in this file be an integer.
-610
+611		% derived from Aladdin 6.0 version
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
@@ -632,7 +633,7 @@ userdict /.currentresourcefile null put
 % Define the procedure that the C code uses for running files
 % named on the command line.
 /.runfile {
-  { runlibfile } execute
+  { runlibfile } execute0
 } def
 % Define the procedure that the C code uses for running piped input.
 % We don't use the obvious { (%stdin) run }, because we want the file to be
@@ -646,7 +647,7 @@ userdict /.currentresourcefile null put
 /.runstring {
   .currentglobal exch true .setglobal
   0 () .subfiledecode
-  exch .setglobal cvx { .runexec } execute
+  exch .setglobal cvx { .runexec } execute0
 } bind def
 % Define the procedure that the C code uses to set up for executing
 % a string that may be received in pieces.
@@ -681,14 +682,14 @@ userdict /.currentresourcefile null put
 	% or errors outside the scope of a 'stopped'.
    2 copy SHORTERRORS
     { (%%[ Error: ) print =only flush
-      (; OffendingCommand: ) print =only ( ]%%\n) print
+      (; OffendingCommand: ) print =only ( ]%%) =
     }
     { (Unrecoverable error: ) print =only flush
       ( in ) print = flush
       count 2 gt
        { (Operand stack:\n  ) print
 	 2 1 count 3 sub { (  ) print index =only flush } for
-	 (\n) print flush
+	 () = flush
        } if
     }
    ifelse
@@ -755,7 +756,7 @@ userdict /.currentresourcefile null put
 	      { ( ) print =only }
 	    ifelse
 	  } ifelse
-          ( ]%%\n) print flush
+          ( ]%%) = flush
 	}
 	{ (Error: ) print ==only flush
 	  ( in ) print ==only flush
@@ -785,7 +786,7 @@ userdict /.currentresourcefile null put
 	   }
 	   { 
 	     exch print exch		% print heading. stack <==flag> <stack>
-	     1 index not { (\n) print } if
+	     1 index not { () = } if
 	     { 1 index { (\n    ) } { (   ) } ifelse print
 	       dup type /dicttype eq
 	       {
@@ -818,13 +819,13 @@ userdict /.currentresourcefile null put
        (\nExecution stack:) ESTACKPRINT /.printestack /estack 4 index exec
        (\nBacktrace:) true /.printbacktrace /backtrace 4 index exec
        (\nDictionary stack:) false /.printdstack /dstack 4 index exec
-       (\n) print
+       () =
        pop	% printing procedure
 
        errorname /VMerror eq
 	{ (VM status:) print mark vmstatus
 	  counttomark { ( ) print counttomark -1 roll dup =only } repeat
-	  cleartomark (\n) print
+	  cleartomark () =
 	} if
 
        .languagelevel 2 ge
@@ -1071,6 +1072,195 @@ devicedict /Default devicedict .defaultdevicename get put
 
 (END GS_FONTS) VMDEBUG
 
+% Define the default halftone screen and BG/UCR functions now, so that
+% it will bind in the original definitions of set[color]screen.
+% We make this a procedure so we can call it again when switching devices.
+
+% Use an ordered dither for low-resolution devices.
+/.setloreshalftone {	% <dpi> .setloreshalftone -
+	% The following 'ordered dither' spot function was contributed by
+	% Gregg Townsend.  Thanks, Gregg!
+   16.001 div 0			% not 16: avoids rounding problems
+    { 1 add 7.9999 mul cvi exch 1 add 7.9999 mul cvi 16 mul add <
+	0E 8E 2E AE 06 86 26 A6 0C 8C 2C AC 04 84 24 A4
+	CE 4E EE 6E C6 46 E6 66 CC 4C EC 6C C4 44 E4 64
+	3E BE 1E 9E 36 B6 16 96 3C BC 1C 9C 34 B4 14 94
+	FE 7E DE 5E F6 76 D6 56 FC 7C DC 5C F4 74 D4 54
+	01 81 21 A1 09 89 29 A9 03 83 23 A3 0B 8B 2B AB
+	C1 41 E1 61 C9 49 E9 69 C3 43 E3 63 CB 4B EB 6B
+	31 B1 11 91 39 B9 19 99 33 B3 13 93 3B BB 1B 9B
+	F1 71 D1 51 F9 79 D9 59 F3 73 D3 53 FB 7B DB 5B
+	0D 8D 2D AD 05 85 25 A5 0F 8F 2F AF 07 87 27 A7
+	CD 4D ED 6D C5 45 E5 65 CF 4F EF 6F C7 47 E7 67
+	3D BD 1D 9D 35 B5 15 95 3F BF 1F 9F 37 B7 17 97
+	FD 7D DD 5D F5 75 D5 55 FF 7F DF 5F F7 77 D7 57
+	02 82 22 A2 0A 8A 2A AA 00 80 20 A0 08 88 28 A8
+	C2 42 E2 62 CA 4A EA 6A C0 40 E0 60 C8 48 E8 68
+	32 B2 12 92 3A BA 1A 9A 30 B0 10 90 38 B8 18 98
+	F2 72 D2 52 FA 7A DA 5A F0 70 D0 50 F8 78 D8 58
+     > exch get 256 div
+    }
+   bind
+		% Use correct, per-plane screens for CMYK devices only.
+   //systemdict /setcolorscreen known processcolors 4 eq and
+    { 3 copy 6 copy //setcolorscreen }
+    { //setscreen }
+   ifelse
+} bind def
+/.setloresscreen {	% <dpi> .setloresscreen -
+  .setloreshalftone
+  0 array cvx settransfer	% Genoa CET won't accept a packed array!
+  /setstrokeadjust where { pop true setstrokeadjust } if
+} bind def
+% Use a 45-degree spot screen for high-resolution devices.
+/.sethireshalftone {	% <dpi> .sethireshalftone <doscreen>
+	% According to information published by Hewlett-Packard,
+	% they use a 60 line screen on 300 DPI printers and
+	% an 85 line screen on 600 DPI printers.
+	% However, we use a 106 line screen, which produces smoother-
+	% looking shades but fewer of them (32 vs. 50).
+	% 46 was suggested as a good frequency value for printers
+	% between 200 and 400 DPI, so we use it for lower resolutions.
+	% Imagesetters need even higher frequency screens.
+   //systemdict /DITHERPPI known
+    { DITHERPPI
+    }
+    { dup cvi 100 idiv 15 .min
+       {null 46 46 60 60 60 106 106 106 106 133 133 133 133 133 150}
+      exch get
+     }
+   ifelse
+   1 index 4.01 div .min	% at least a 4x4 cell
+   45
+	% The following screen algorithm is used by permission of the author.
+    { 1 add 180 mul cos 1 0.08 add mul exch 2 add 180 mul cos 
+      1 0.08 sub mul add 2 div % (C) 1989 Berthold K.P. Horn
+    }
+   bind
+	% Determine whether we have lots of process colors.
+	% If so, don't bother with color screening or gamma correction.
+	% Also don't do gamma correction on very high-resolution devices.
+	% (This should depend on dot gain, not resolution, but we don't
+	% currently have a way to determine this.)
+   currentdevice mark
+     /RedValues 0 /GreenValues 0 /BlueValues 0 /GrayValues 0
+   .dicttomark .getdeviceparams
+   counttomark 2 idiv 1 sub { exch pop min } repeat
+   exch pop exch pop 32 lt 4 index 800 lt and 5 1 roll
+	% Stack: doscreen dpi freq angle proc
+	% Ghostscript currently doesn't use correct, per-plane halftones
+	% unless setcolorscreen has been executed.  Since these are
+	% computationally much more expensive than binary halftones,
+	% we check to make sure they are really warranted, i.e., we have
+	% a high-resolution CMYK device (i.e., not a display) with
+	% fewer than 5 bits per plane (i.e., not a true-color device).
+   4 -1 roll 150 ge
+    { /setcolorscreen where
+       { pop //systemdict /COLORSCREEN known
+	  { COLORSCREEN }
+	  { 3 index }
+	 ifelse
+	 dup false ne
+	  { 4 1 roll 3 copy 6 copy 13 -1 roll
+	% For really high-quality screening on printers, we need to
+	% give each plane its own screen angle.  Unfortunately,
+	% this currently has very large space and time costs.
+	    true eq		% true => different angles,
+				% 0 => same angles
+	     { { 45 90 15 75 } { 3 1 roll exch pop 12 3 roll } forall
+	     }
+	    if //setcolorscreen
+	  }
+	  { pop //setscreen	% false => single binary screen
+	  }
+	 ifelse
+       }
+       { //setscreen		% setcolorscreen not known
+       }
+      ifelse
+    }
+    { //setscreen			% not high resolution
+    }
+   ifelse
+} bind def
+/.sethiresscreen {	% <dpi> .sethiresscreen -
+  .sethireshalftone
+			% Stack: doscreen
+    {	% Set the transfer function to lighten up the grays.
+	% We correct at the high end so that very light grays
+	% don't disappear completely if they darken <1 screen pixel.
+	% Parameter values closer to 1 are better for devices with
+	% less dot spreading; lower values are better with more spreading.
+	% The value 0.8 is a compromise that will probably please no one!
+	%
+	% Because of a bug in FrameMaker, we have to accept operands
+	% outside the valid range of [0..1].
+      { dup dup 0.0 gt exch 1.0 lt and
+	 { 0.8 exp dup dup 0.9375 gt exch 0.999 lt and	% > 15/16
+	    { .currentscreenlevels 1 sub	% tweak to avoid boundary
+	      1 exch div 1 exch sub .min
+	    }
+	   if
+	 }
+	if
+      }
+    }
+    {	% Set the transfer function to the identity.
+      0 array cvx		% Genoa CET won't accept a packed array!
+    }
+   ifelse settransfer
+   /setstrokeadjust where { pop false setstrokeadjust } if
+	% Increase fill adjustment so that we effectively use Adobe's
+	% any-part-of-pixel rule.
+   0.5 .setfilladjust
+} bind def
+% Set the default screen and BG/UCR.
+/.setdefaultbgucr {
+  systemdict /setblackgeneration known {
+    { } dup setblackgeneration setundercolorremoval
+  } if
+} bind def
+/.useloresscreen {	% - .useloresscreen <bool>
+	% Compute min(|dpi x|,|dpi y|) as the definition of the resolution.
+  72 72 matrix defaultmatrix dtransform abs exch abs .min
+  dup 150 lt //systemdict /DITHERPPI known not and
+} bind def
+
+% The following implementation uses LL2 extensions, but only in stopped
+% contexts so that with LL1, the .set??reshalftone will be used.
+%
+%	- .getdefaulthalftone <halftonedict> true	if default found
+%			      false			
+/.getdefaulthalftone {
+  % try the device to see if it has a default halftone
+  { currentdevice /HalftoneDefault gsgetdeviceprop } stopped
+  { pop pop false }		% no device property
+  { dup type /dicttype eq { true } { pop false } ifelse }
+  ifelse
+  % stack: <halftonedict> true    if default found
+  %         false		  not found
+  dup not
+  { % device did not provide a default, try Resource
+    pop { /Default /Halftone /findresource .systemvar exec } stopped 
+    { pop pop false } { true } ifelse
+  }
+  if
+} bind def
+
+/.setdefaulthalftone {
+  .getdefaulthalftone 
+  { sethalftone }
+  { % default not found
+    .useloresscreen { .setloreshalftone } { .sethireshalftone pop } ifelse
+  }
+  ifelse
+} bind def
+
+/.setdefaultscreen {
+  .useloresscreen { .setloresscreen } { .sethiresscreen } ifelse
+  .setdefaultbgucr
+} bind def
+
 % Load the initialization files for optional features.
 %% Replace 4 INITFILES
 systemdict /INITFILES known
@@ -1172,7 +1362,7 @@ systemdict /DEVICEHEIGHTPOINTS known not and
       if
     }
    forall
-    { (Unknown paper size: ) print PAPERSIZE ==only (.\n) print
+    { (Unknown paper size: ) print PAPERSIZE ==only (.) =
     }
    if
  }
@@ -1229,7 +1419,13 @@ counttomark dup 0 ne
  { 2 add -1 roll putdeviceprops }
  { pop pop }
 ifelse
-setdevice		% does an erasepage
+% If the initial device parameters are invalid, the setdevice may fail.
+% Trap this and produce a reasonable error message.
+{ setdevice }		% does an erasepage
+DEBUG { exec false } { .internalstopped } ifelse {
+  (**** Unable to open the initial device, quitting.) = 1 .quit
+} if
+
 % If the media size is fixed, update the current page device dictionary.
 FIXEDMEDIA
 dup { pop systemdict /.currentpagedevice known } if
@@ -1279,164 +1475,8 @@ NOCACHE { 0 setcachelimit } if
 
 (END CONFIG) VMDEBUG
 
-% Establish an appropriate halftone screen and BG/UCR functions.
-% We make this a procedure so we can call it again when switching devices.
+% Initialize graphics.
 
-% Use an ordered dither for low-resolution devices.
-/.setloreshalftone {	% <dpi> .setloreshalftone -
-	% The following 'ordered dither' spot function was contributed by
-	% Gregg Townsend.  Thanks, Gregg!
-   16.001 div 0			% not 16: avoids rounding problems
-    { 1 add 7.9999 mul cvi exch 1 add 7.9999 mul cvi 16 mul add <
-	0E 8E 2E AE 06 86 26 A6 0C 8C 2C AC 04 84 24 A4
-	CE 4E EE 6E C6 46 E6 66 CC 4C EC 6C C4 44 E4 64
-	3E BE 1E 9E 36 B6 16 96 3C BC 1C 9C 34 B4 14 94
-	FE 7E DE 5E F6 76 D6 56 FC 7C DC 5C F4 74 D4 54
-	01 81 21 A1 09 89 29 A9 03 83 23 A3 0B 8B 2B AB
-	C1 41 E1 61 C9 49 E9 69 C3 43 E3 63 CB 4B EB 6B
-	31 B1 11 91 39 B9 19 99 33 B3 13 93 3B BB 1B 9B
-	F1 71 D1 51 F9 79 D9 59 F3 73 D3 53 FB 7B DB 5B
-	0D 8D 2D AD 05 85 25 A5 0F 8F 2F AF 07 87 27 A7
-	CD 4D ED 6D C5 45 E5 65 CF 4F EF 6F C7 47 E7 67
-	3D BD 1D 9D 35 B5 15 95 3F BF 1F 9F 37 B7 17 97
-	FD 7D DD 5D F5 75 D5 55 FF 7F DF 5F F7 77 D7 57
-	02 82 22 A2 0A 8A 2A AA 00 80 20 A0 08 88 28 A8
-	C2 42 E2 62 CA 4A EA 6A C0 40 E0 60 C8 48 E8 68
-	32 B2 12 92 3A BA 1A 9A 30 B0 10 90 38 B8 18 98
-	F2 72 D2 52 FA 7A DA 5A F0 70 D0 50 F8 78 D8 58
-     > exch get 256 div
-    }
-   bind
-		% Use correct, per-plane screens for CMYK devices only.
-   //systemdict /setcolorscreen known processcolors 4 eq and
-    { 3 copy 6 copy setcolorscreen }
-    { setscreen }
-   ifelse
-} bind def
-/.setloresscreen {	% <dpi> .setloresscreen -
-  .setloreshalftone
-  0 array cvx settransfer	% Genoa CET won't accept a packed array!
-  /setstrokeadjust where { pop true setstrokeadjust } if
-} bind def
-% Use a 45-degree spot screen for high-resolution devices.
-/.sethireshalftone {	% <dpi> .sethireshalftone <doscreen>
-	% According to information published by Hewlett-Packard,
-	% they use a 60 line screen on 300 DPI printers and
-	% an 85 line screen on 600 DPI printers.
-	% However, we use a 106 line screen, which produces smoother-
-	% looking shades but fewer of them (32 vs. 50).
-	% 46 was suggested as a good frequency value for printers
-	% between 200 and 400 DPI, so we use it for lower resolutions.
-	% Imagesetters need even higher frequency screens.
-   //systemdict /DITHERPPI known
-    { DITHERPPI
-    }
-    { dup cvi 100 idiv 15 .min
-       {null 46 46 60 60 60 106 106 106 106 133 133 133 133 133 150}
-      exch get
-     }
-   ifelse
-   1 index 4.01 div .min	% at least a 4x4 cell
-   45
-	% The following screen algorithm is used by permission of the author.
-    { 1 add 180 mul cos 1 0.08 add mul exch 2 add 180 mul cos 
-      1 0.08 sub mul add 2 div % (C) 1989 Berthold K.P. Horn
-    }
-   bind
-	% Determine whether we have lots of process colors.
-	% If so, don't bother with color screening or gamma correction.
-	% Also don't do gamma correction on very high-resolution devices.
-	% (This should depend on dot gain, not resolution, but we don't
-	% currently have a way to determine this.)
-   currentdevice mark
-     /RedValues 0 /GreenValues 0 /BlueValues 0 /GrayValues 0
-   .dicttomark .getdeviceparams
-   counttomark 2 idiv 1 sub { exch pop min } repeat
-   exch pop exch pop 32 lt 4 index 800 lt and 5 1 roll
-	% Stack: doscreen dpi freq angle proc
-	% Ghostscript currently doesn't use correct, per-plane halftones
-	% unless setcolorscreen has been executed.  Since these are
-	% computationally much more expensive than binary halftones,
-	% we check to make sure they are really warranted, i.e., we have
-	% a high-resolution CMYK device (i.e., not a display) with
-	% fewer than 5 bits per plane (i.e., not a true-color device).
-   4 -1 roll 150 ge
-    { /setcolorscreen where
-       { pop //systemdict /COLORSCREEN known
-	  { COLORSCREEN }
-	  { 3 index }
-	 ifelse
-	 dup false ne
-	  { 4 1 roll 3 copy 6 copy 13 -1 roll
-	% For really high-quality screening on printers, we need to
-	% give each plane its own screen angle.  Unfortunately,
-	% this currently has very large space and time costs.
-	    true eq		% true => different angles,
-				% 0 => same angles
-	     { { 45 90 15 75 } { 3 1 roll exch pop 12 3 roll } forall
-	     }
-	    if setcolorscreen
-	  }
-	  { pop setscreen	% false => single binary screen
-	  }
-	 ifelse
-       }
-       { setscreen		% setcolorscreen not known
-       }
-      ifelse
-    }
-    { setscreen			% not high resolution
-    }
-   ifelse
-} bind def
-/.sethiresscreen {	% <dpi> .sethiresscreen -
-  .sethireshalftone
-			% Stack: doscreen
-    {	% Set the transfer function to lighten up the grays.
-	% We correct at the high end so that very light grays
-	% don't disappear completely if they darken <1 screen pixel.
-	% Parameter values closer to 1 are better for devices with
-	% less dot spreading; lower values are better with more spreading.
-	% The value 0.8 is a compromise that will probably please no one!
-	%
-	% Because of a bug in FrameMaker, we have to accept operands
-	% outside the valid range of [0..1].
-      { dup dup 0.0 gt exch 1.0 lt and
-	 { 0.8 exp dup dup 0.9375 gt exch 0.999 lt and	% > 15/16
-	    { .currentscreenlevels 1 sub	% tweak to avoid boundary
-	      1 exch div 1 exch sub .min
-	    }
-	   if
-	 }
-	if
-      }
-    }
-    {	% Set the transfer function to the identity.
-      0 array cvx		% Genoa CET won't accept a packed array!
-    }
-   ifelse settransfer
-   /setstrokeadjust where { pop false setstrokeadjust } if
-	% Increase fill adjustment so that we effectively use Adobe's
-	% any-part-of-pixel rule.
-   0.5 .setfilladjust
-} bind def
-% Set the default screen and BG/UCR.
-/.setdefaultbgucr systemdict /setblackgeneration known { {
-  { } dup setblackgeneration setundercolorremoval
-} } { {
-} } ifelse bind def
-/.useloresscreen {	% - .useloresscreen <bool>
-	% Compute min(|dpi x|,|dpi y|) as the definition of the resolution.
-  72 72 matrix defaultmatrix dtransform abs exch abs .min
-  dup 150 lt //systemdict /DITHERPPI known not and
-} bind def
-/.setdefaulthalftone {
-  .useloresscreen { .setloreshalftone } { .sethireshalftone pop } ifelse
-} bind def
-/.setdefaultscreen {
-  .useloresscreen { .setloresscreen } { .sethiresscreen } ifelse
-  .setdefaultbgucr
-} bind def
 .setdefaultscreen
 initgraphics
 

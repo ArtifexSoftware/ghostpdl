@@ -1,6 +1,7 @@
 /* Copyright (C) 1992, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -263,12 +264,8 @@ main(int argc, char *argv[])
 		    in = fopen(arg, "r");
 		    if (in == NULL)
 			exit(exit_FAILED);
-		    {
-			int count;
-
-			while ((count = fread(line, 1, 1, in)) > 0)
-			    (*eputc) (line[0], out);
-		    }
+		    while (fread(line, 1, 1, in) > 0)
+			(*eputc) (line[0], out);
 		    fclose(in);
 		    break;
 		case 'u':

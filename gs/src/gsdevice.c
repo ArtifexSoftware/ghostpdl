@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -71,9 +72,6 @@ RELOC_PTRS_END
 public_st_device();
 public_st_device_forward();
 public_st_device_null();
-/* A fake descriptor for devices whose descriptor we can't find. */
-gs_private_st_complex_only(st_device_unknown, byte, "gx_device(unknown)",
-    0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, gx_device_finalize);
 
 /* GC utilities */
 /* Enumerate or relocate a device pointer for a client. */
@@ -481,8 +479,8 @@ gx_device_adjust_resolution(gx_device * dev,
     (fit ? min(width_ratio, height_ratio) :
      max(width_ratio, height_ratio));
 
-    dev->x_pixels_per_inch *= ratio;
-    dev->y_pixels_per_inch *= ratio;
+    dev->HWResolution[0] *= ratio;
+    dev->HWResolution[1] *= ratio;
     gx_device_set_width_height(dev, actual_width, actual_height);
     return 0;
 }
@@ -510,16 +508,16 @@ gx_device_set_width_height(gx_device * dev, int width, int height)
 {
     dev->width = width;
     dev->height = height;
-    dev->MediaSize[0] = width * 72.0 / dev->x_pixels_per_inch;
-    dev->MediaSize[1] = height * 72.0 / dev->y_pixels_per_inch;
+    dev->MediaSize[0] = width * 72.0 / dev->HWResolution[0];
+    dev->MediaSize[1] = height * 72.0 / dev->HWResolution[1];
 }
 
 /* Set the resolution, updating width and height to remain consistent. */
 void
 gx_device_set_resolution(gx_device * dev, floatp x_dpi, floatp y_dpi)
 {
-    dev->x_pixels_per_inch = x_dpi;
-    dev->y_pixels_per_inch = y_dpi;
+    dev->HWResolution[0] = x_dpi;
+    dev->HWResolution[1] = y_dpi;
     dev->width = dev->MediaSize[0] * x_dpi / 72.0 + 0.5;
     dev->height = dev->MediaSize[1] * y_dpi / 72.0 + 0.5;
 }
@@ -530,8 +528,8 @@ gx_device_set_media_size(gx_device * dev, floatp media_width, floatp media_heigh
 {
     dev->MediaSize[0] = media_width;
     dev->MediaSize[1] = media_height;
-    dev->width = media_width * dev->x_pixels_per_inch / 72.0 + 0.499;
-    dev->height = media_height * dev->y_pixels_per_inch / 72.0 + 0.499;
+    dev->width = media_width * dev->HWResolution[0] / 72.0 + 0.499;
+    dev->height = media_height * dev->HWResolution[1] / 72.0 + 0.499;
 }
 
 /*

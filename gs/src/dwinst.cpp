@@ -1,19 +1,7 @@
 /* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
   
-  This file is part of Aladdin Ghostscript.
-  
-  This program is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public 
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License, 
-  normally in a plain ASCII text file named PUBLIC.  The License grants you 
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only 
-  under certain conditions described in the License.  Among other things, the 
-  License requires that the copyright notice and this notice be preserved on 
-  all copies.
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
 */
 
 // $RCSfile$ $Revision$
@@ -346,16 +334,18 @@ BOOL CInstall::InstallFile(char *filename, BOOL bNoCopy)
 		}
 		fclose(f);
 	}
-	else if (!CopyFile(existing_name, new_name, FALSE)) {
-		char message[MAXSTR+MAXSTR+100];
-		wsprintf(message, "Failed to copy file %s to %s\n", 
-			existing_name, new_name);
-		AddMessage(message);
-		return FALSE;
+	else {
+		if (!CopyFile(existing_name, new_name, FALSE)) {
+			char message[MAXSTR+MAXSTR+100];
+			wsprintf(message, "Failed to copy file %s to %s\n", 
+				existing_name, new_name);
+			AddMessage(message);
+			return FALSE;
+		}
+		fputs(new_name, m_fLogNew);
+		fputs("\n", m_fLogNew);
 	}
 	
-	fputs(new_name, m_fLogNew);
-	fputs("\n", m_fLogNew);
 	
 	return TRUE;
 }
@@ -811,13 +801,13 @@ BOOL CInstall::MakeLog()
 	lf = fopen(szFileName, "w");
 	if (lf == (FILE *)NULL) {
 		AddMessage("Can't create uninstall log");
+		CleanUp();
 		return FALSE;
 	}
 	fputs(szSection, lf);
 	fputs("UninstallName\n", lf);
 	fputs(m_szUninstallName, lf);
 	fputs("\n\n", lf);
-	
 	
 	if (strlen(m_szRegistryNew) &&
 		(f = fopen(m_szRegistryNew, "r")) != (FILE *)NULL) {

@@ -1,4 +1,5 @@
 #    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -211,10 +212,13 @@ LDFLAGS=$(XLDFLAGS)
 EXTRALIBS=
 
 # Define the standard libraries to search at the end of linking.
+# Most platforms require -lpthread for the POSIX threads library;
+# FreeBSD requires -lc_r instead, BSDI and perhaps some others include
+# pthreads in libc and don't require any additional library.
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
-# two others fold libm into libc and require STDLIBS to be empty.
+# two others fold libm into libc and don't require any additional library.
 
-STDLIBS=-lm
+STDLIBS=-lpthread -lm
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
@@ -268,7 +272,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(G
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=1
+COMPILE_INITS=0
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.

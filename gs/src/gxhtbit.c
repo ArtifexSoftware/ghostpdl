@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -75,32 +76,36 @@ construct_ht_order_short(gx_ht_order *porder, const byte *thresholds)
 	const gx_dht_proc *phtrp = gx_device_halftone_list;
 
 	for (; *phtrp; ++phtrp) {
-	    const gx_device_halftone_resource_t *phtr = (*phtrp)();
+	    const gx_device_halftone_resource_t *const *pphtr = (*phtrp)();
+	    const gx_device_halftone_resource_t *phtr;
 
-	    if (phtr->Width == porder->width &&
-		phtr->Height == porder->height &&
-		phtr->elt_size == sizeof(ushort) &&
-		!memcmp(phtr->levels, levels, num_levels * sizeof(*levels)) &&
-		!memcmp(phtr->bit_data, porder->bit_data,
-			size * phtr->elt_size)
-		) {
-		/*
-		 * This is a predefined halftone.  Free the levels and
-		 * bit_data arrays, replacing them with the built-in ones.
-		 */
-		if (porder->data_memory) {
-		    gs_free_object(porder->data_memory, porder->bit_data,
-				   "construct_ht_order_short(bit_data)");
-		    gs_free_object(porder->data_memory, porder->levels,
-				   "construct_ht_order_short(levels)");
+	    while ((phtr = *pphtr++) != 0) {
+		if (phtr->Width == porder->width &&
+		    phtr->Height == porder->height &&
+		    phtr->elt_size == sizeof(ushort) &&
+		    !memcmp(phtr->levels, levels, num_levels * sizeof(*levels)) &&
+		    !memcmp(phtr->bit_data, porder->bit_data,
+			    size * phtr->elt_size)
+		    ) {
+		    /*
+		     * This is a predefined halftone.  Free the levels and
+		     * bit_data arrays, replacing them with the built-in ones.
+		     */
+		    if (porder->data_memory) {
+			gs_free_object(porder->data_memory, porder->bit_data,
+				       "construct_ht_order_short(bit_data)");
+			gs_free_object(porder->data_memory, porder->levels,
+				       "construct_ht_order_short(levels)");
+		    }
+		    porder->data_memory = 0;
+		    porder->levels = (uint *)phtr->levels; /* actually const */
+		    porder->bit_data = (void *)phtr->bit_data; /* actually const */
+		    goto out;
 		}
-		porder->data_memory = 0;
-		porder->levels = (uint *)phtr->levels; /* actually const */
-		porder->bit_data = (void *)phtr->bit_data; /* actually const */
-		break;
 	    }
 	}
     }
+ out:
     return 0;
 }
 

@@ -1,6 +1,7 @@
 /* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -156,8 +157,8 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 	    break;
     }
 
-    if_debug4('b', "[b]y=%d w=%d xt=%f yt=%f\n",
-	      penum->y, w, fixed2float(xprev), fixed2float(yprev));
+    if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+	      penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
     memset(&run, 0, sizeof(run));
     memset(&next, 0, sizeof(next));
     /* Ensure that we don't get any false dev_color_eq hits. */
@@ -369,8 +370,12 @@ fill:	/* Fill the region between */
 	if (code < 0)
 	    goto err;
 	rsrc = psrc;
-	if ((code = mcode) < 0)
+	if ((code = mcode) < 0) {
+	    /* Invalidate any partially built cache entry. */
+	    if (use_cache)
+		pic_next->key = ~next.all[0];
 	    goto err;
+	}
 	if (use_cache)
 	    pic = pic_next;
 	else {

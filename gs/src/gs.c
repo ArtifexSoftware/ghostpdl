@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -28,9 +29,12 @@ int
 main(int argc, char *argv[])
 {
     gs_main_instance *minst = gs_main_instance_default();
+    int code = gs_main_init_with_args(minst, argc, argv);
 
-    gs_main_init_with_args(minst, argc, argv);
-
+    if (code < 0) {
+	gs_exit_with_code(255, code);
+	/* NOTREACHED */
+    }
 #ifdef RUN_STRINGS
     {				/* Run a list of strings (for testing). */
 	const char **pstr = run_strings;

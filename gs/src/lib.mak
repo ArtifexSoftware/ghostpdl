@@ -1,4 +1,5 @@
 #    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -229,6 +230,13 @@ $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
  $(gsmemory_h) $(gsrect_h) $(gstypes_h) $(gsuid_h) $(gsutil_h)
 	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
+# MD5 digest
+md5_h=$(GLSRC)md5.h
+
+md5_=$(GLOBJ)md5.$(OBJ)
+$(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(md5_h)
+	$(GLCC) $(GLO_)md5.$(OBJ) $(C_) $(GLSRC)md5.c
+
 ###### Low-level facilities and utilities
 
 ### Include files
@@ -268,7 +276,7 @@ gsxfont_h=$(GLSRC)gsxfont.h
 # Out of order
 gschar_h=$(GLSRC)gschar.h $(gsccode_h) $(gscpm_h)
 gscolor2_h=$(GLSRC)gscolor2.h $(gsptype1_h)
-gsiparam_h=$(GLSRC)gsiparam.h $(gsccolor_h) $(gsmatrix_h)
+gsiparam_h=$(GLSRC)gsiparam.h $(gsccolor_h) $(gsmatrix_h) $(gsstype_h)
 gsimage_h=$(GLSRC)gsimage.h $(gsiparam_h)
 gsline_h=$(GLSRC)gsline.h $(gslparam_h)
 gspath_h=$(GLSRC)gspath.h $(gspenum_h)
@@ -290,7 +298,7 @@ gxdda_h=$(GLSRC)gxdda.h
 gxdevbuf_h=$(GLSRC)gxdevbuf.h $(gxrplane_h)
 gxdevrop_h=$(GLSRC)gxdevrop.h
 gxdevmem_h=$(GLSRC)gxdevmem.h $(gxrplane_h)
-gxdhtres_h=$(GLSRC)gxdhtres.h
+gxdhtres_h=$(GLSRC)gxdhtres.h $(stdpre_h)
 gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h)
 gxfont0_h=$(GLSRC)gxfont0.h
 gxfrac_h=$(GLSRC)gxfrac.h
@@ -337,7 +345,7 @@ gxfcache_h=$(GLSRC)gxfcache.h $(gsuid_h) $(gsxfont_h)\
  $(gxbcache_h) $(gxftype_h)
 gxfont_h=$(GLSRC)gxfont.h\
  $(gsccode_h) $(gsfont_h) $(gsnotify_h) $(gsstype_h) $(gsuid_h) $(gxftype_h)
-gxiparam_h=$(GLSRC)gxiparam.h $(gxdevcli_h)
+gxiparam_h=$(GLSRC)gxiparam.h $(gsstype_h) $(gxdevcli_h)
 gscie_h=$(GLSRC)gscie.h $(gconfigv_h) $(gsrefct_h) $(gsstype_h) $(gxctable_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
 gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
@@ -382,6 +390,7 @@ sa85d_h=$(GLSRC)sa85d.h
 sa85x_h=$(GLSRC)sa85x.h $(sa85d_h)
 sbtx_h=$(GLSRC)sbtx.h
 scanchar_h=$(GLSRC)scanchar.h
+sfilter_h=$(GLSRC)sfilter.h $(gstypes_h)
 sdct_h=$(GLSRC)sdct.h
 shc_h=$(GLSRC)shc.h $(gsbittab_h) $(scommon_h)
 sisparam_h=$(GLSRC)sisparam.h
@@ -1612,7 +1621,7 @@ $(GLOBJ)gxpcmap.$(OBJ) : $(GLSRC)gxpcmap.c $(GXERR) $(math__h) $(memory__h)\
 
 # ---------------- PostScript Type 1 (and Type 4) fonts ---------------- #
 
-type1lib_=$(GLOBJ)gxtype1.$(OBJ) $(GLOBJ)gxhint1.$(OBJ) $(GLOBJ)gxhint2.$(OBJ) $(GLOBJ)gxhint3.$(OBJ)
+type1lib_=$(GLOBJ)gxtype1.$(OBJ) $(GLOBJ)gxhint1.$(OBJ) $(GLOBJ)gxhint2.$(OBJ) $(GLOBJ)gxhint3.$(OBJ) $(GLOBJ)gscrypt1.$(OBJ)
 
 gscrypt1_h=$(GLSRC)gscrypt1.h
 gstype1_h=$(GLSRC)gstype1.h
@@ -1642,6 +1651,22 @@ $(GLOBJ)gxhint3.$(OBJ) : $(GLSRC)gxhint3.c $(GXERR)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h)\
  $(gzpath_h)
 	$(GLCC) $(GLO_)gxhint3.$(OBJ) $(C_) $(GLSRC)gxhint3.c
+
+# CharString and eexec encryption
+
+# Note that seexec is not needed for rasterizing Type 1/2/4 fonts,
+# only for reading or writing them.
+seexec_=$(GLOBJ)seexec.$(OBJ) $(GLOBJ)gscrypt1.$(OBJ)
+$(GLD)seexec.dev : $(LIB_MAK) $(ECHOGS_XE) $(seexec_)
+	$(SETMOD) $(GLD)seexec $(seexec_)
+
+$(GLOBJ)seexec.$(OBJ) : $(GLSRC)seexec.c $(AK) $(stdio__h)\
+ $(gscrypt1_h) $(scanchar_h) $(sfilter_h) $(strimpl_h)
+	$(GLCC) $(GLO_)seexec.$(OBJ) $(C_) $(GLSRC)seexec.c
+
+$(GLOBJ)gscrypt1.$(OBJ) : $(GLSRC)gscrypt1.c $(stdpre_h)\
+ $(gscrypt1_h) $(gstypes_h)
+	$(GLCC) $(GLO_)gscrypt1.$(OBJ) $(C_) $(GLSRC)gscrypt1.c
 
 # Type 1 charstrings
 
@@ -2078,40 +2103,15 @@ $(GLOBJ)gp_nsync.$(OBJ) : $(GLSRC)gp_nsync.c $(AK) $(std_h)\
  $(gpsync_h) $(gserror_h) $(gserrors_h)
 	$(GLCC) $(GLO_)gp_nsync.$(OBJ) $(C_) $(GLSRC)gp_nsync.c
 
-# POSIX semaphores.
-$(GLOBJ)gp_posem.$(OBJ) : $(GLSRC)gp_posem.c $(AK) $(std_h)\
- $(gpsync_h) $(gserror_h) $(gserrors_h)
-	$(GLCC) $(GLO_)gp_posem.$(OBJ) $(C_) $(GLSRC)gp_posem.c
-
-# (POSIX) pthreads semaphores.  DOESN'T WORK.
-$(GLOBJ)gp_ptsem.$(OBJ) : $(GLSRC)gp_ptsem.c $(AK) $(std_h)\
- $(gpsync_h) $(gserror_h) $(gserrors_h)
-	$(GLCC) $(GLO_)gp_ptsem.$(OBJ) $(C_) $(GLSRC)gp_ptsem.c
-
-# Monitors built out of semaphores.
-$(GLOBJ)gp_semon.$(OBJ) : $(GLSRC)gp_semon.c $(AK) $(std_h)\
- $(gpsync_h) $(gserror_h) $(gserrors_h)
-	$(GLCC) $(GLO_)gp_semon.$(OBJ) $(C_) $(GLSRC)gp_semon.c
-
-# pthreads threads.
-pthreads_=$(GLOBJ)gp_pthr.$(OBJ)
-$(GLD)pthreads.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_)
-	$(SETMOD) $(GLD)pthreads $(pthreads_) -lib pthread
-
-$(GLOBJ)gp_pthr.$(OBJ) : $(GLSRC)gp_pthr.c $(AK) $(malloc__h) $(std_h)\
- $(gpsync_h) $(gserror_h) $(gserrors_h)
-	$(GLCC) $(GLO_)gp_pthr.$(OBJ) $(C_) $(GLSRC)gp_pthr.c
-
-# Replace the dummy implementation with POSIX semaphores + pthreads.
-posync_=$(GLOBJ)gp_posem.$(OBJ) $(GLOBJ)gp_semon.$(OBJ)
-$(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(posync_) $(GLD)pthreads.dev
-	$(SETMOD) $(GLD)posync $(posync_) -include $(GLD)pthreads
+# POSIX pthreads-based implementation.
+pthreads_=$(GLOBJ)gp_psync.$(OBJ)
+$(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_)
+	$(SETMOD) $(GLD)posync $(pthreads_)
 	$(ADDMOD) $(GLD)posync -replace $(GLD)nosync
 
-# FreeBSD has its own, idiosyncratic pthreads implementation.
-$(GLD)fbsdsync.dev : $(LIB_MAK) $(ECHOGS_XE) $(posync_)
-	$(SETMOD) $(GLD)fbsdsync $(posync_) -lib c_r
-	$(ADDMOD) $(GLD)fbsdsync -replace $(GLD)nosync
+$(GLOBJ)gp_psync.$(OBJ) : $(GLSRC)gp_psync.c $(AK) $(malloc__h) $(std_h)\
+ $(gpsync_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gp_psync.$(OBJ) $(C_) $(GLSRC)gp_psync.c
 
 # Other stuff.
 

@@ -1,6 +1,7 @@
-/* Copyright (C) 1992, 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1992, 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -20,10 +21,11 @@
 static ulong gs_next_id;
 
 init_proc(gs_gsutil_init);	/* check prototype */
-void
+int
 gs_gsutil_init(gs_memory_t *mem)
 {
     gs_next_id = 1;
+    return 0;
 }
 
 ulong

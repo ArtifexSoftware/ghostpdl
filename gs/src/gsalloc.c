@@ -1,6 +1,7 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -188,7 +189,6 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
     iimem->cfirst = iimem->clast = cp;
     ialloc_set_limit(iimem);
     iimem->cc.cbot = iimem->cc.ctop = 0;
-    iimem->cc.int_freed_top = iimem->cc.cbase;
     iimem->pcc = 0;
     iimem->save_level = 0;
     iimem->new_mask = 0;
@@ -1248,7 +1248,7 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp)
 	return;	/* nothing to do here */
     pre_obj->o_size = size;
     /*
-     * If the object is alone in its chunk, move ctop to point to the end
+     * If the object is alone in its chunk, move cbot to point to the end
      * of the object.
      */
     if (pre_obj->o_alone) {
@@ -1260,14 +1260,14 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp)
 	}
 	if (cp) {
 #ifdef DEBUG
-	    if (cp->ctop != (byte *)obj + old_rounded_size) {
-		lprintf3("resizing 0x%lx, old size %u, new size %u, ctop wrong!\n",
+	    if (cp->cbot != (byte *)obj + old_rounded_size) {
+		lprintf3("resizing 0x%lx, old size %u, new size %u, cbot wrong!\n",
 			 (ulong)obj, old_rounded_size, size);
 		/* gs_abort */
 	    } else
 #endif
 		{
-		    cp->ctop = (byte *)excess_pre;
+		    cp->cbot = (byte *)excess_pre;
 		    return;
 		}
 	}

@@ -1,4 +1,5 @@
 #    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -149,7 +150,7 @@ CFLAGS=
 # Define which major version of MSVC is being used (currently, 4 & 5 supported)
 
 !ifndef MSVC_VERSION
-MSVC_VERSION = 6
+MSVC_VERSION = 5
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
@@ -260,7 +261,7 @@ FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.de
 # See gs.mak for details.
 
 !ifndef COMPILED_INITS
-COMPILE_INITS=1
+COMPILE_INITS=0
 !endif
 
 # Choose whether to store band lists on files or in memory.

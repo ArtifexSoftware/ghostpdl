@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -279,24 +280,18 @@ int psdf_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
 
 /* Define the structure for writing binary data. */
 typedef struct psdf_binary_writer_s {
-    /* Preallocate an ASCII85Encode filter. */
-    byte buf[100];		/* arbitrary, but must be first */
-				/* for pointers from A85E.s */
-    struct {
-	stream s;
-	stream_A85E_state state;
-    } A85E;
-    stream *target;		/* underlying stream */
     gs_memory_t *memory;
+    stream *A85E;		/* optional ASCII85Encode stream */
+    stream *target;		/* underlying stream */
     stream *strm;		/* may point to A85E.s */
     gx_device_psdf *dev;	/* may be unused */
 } psdf_binary_writer;
 extern_st(st_psdf_binary_writer);
 #define public_st_psdf_binary_writer() /* in gdevpsdf.c */\
-  gs_public_st_composite(st_psdf_binary_writer, psdf_binary_writer,\
+  gs_public_st_ptrs4(st_psdf_binary_writer, psdf_binary_writer,\
     "psdf_binary_writer", psdf_binary_writer_enum_ptrs,\
-    psdf_binary_writer_reloc_ptrs)
-#define psdf_binary_writer_max_ptrs (stream_num_ptrs + 3)
+    psdf_binary_writer_reloc_ptrs, A85E, target, strm, dev)
+#define psdf_binary_writer_max_ptrs 4
 
 /* Begin writing binary data. */
 int psdf_begin_binary(P2(gx_device_psdf * pdev, psdf_binary_writer * pbw));

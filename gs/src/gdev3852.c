@@ -1,7 +1,8 @@
 /* Copyright (C) 1989, 1992, 1993, 1996, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$*/
 /* IBM 3852 JetPrinter color ink jet driver for Ghostscript */

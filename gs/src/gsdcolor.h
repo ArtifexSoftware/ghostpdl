@@ -1,6 +1,7 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -259,10 +260,10 @@ struct gx_device_color_s {
 	    byte c_base[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    uint c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    ushort /*gx_color_value */ alpha;
-#if GX_DEVICE_COLOR_MAX_COMPONENTS <= arch_sizeof_short
+#if GX_DEVICE_COLOR_MAX_COMPONENTS <= ARCH_SIZEOF_SHORT * 8
 	    ushort plane_mask;
 #else
-#if GX_DEVICE_COLOR_MAX_COMPONENTS <= arch_sizeof_int
+#if GX_DEVICE_COLOR_MAX_COMPONENTS <= ARCH_SIZEOF_INT * 8
 	    uint plane_mask;
 #else
 	    gx_color_index plane_mask;

@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -904,33 +905,9 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
     const fixed litoy = plp->e.p.y;
 
     if (plp->thin) {
-	/* Minimum-width line, don't have to be careful. */
-	/* We do have to check for the entire line being */
-	/* within the clipping rectangle, allowing for some */
-	/* slop at the ends. */
-	fixed x0 = lix, y0 = liy;
-	fixed x1 = litox, y1 = litoy;
-	fixed t;
-
-#define slop int2fixed(2)
-	if (x0 > x1)
-	    t = x0, x0 = x1 - slop, x1 = t + slop;
-	else
-	    x0 -= slop, x1 += slop;
-	if (y0 > y1)
-	    t = y0, y0 = y1 - slop, y1 = t + slop;
-	else
-	    y0 -= slop, y1 += slop;
-#undef slop
-
-	if (pbbox->p.x <= x0 && x1 <= pbbox->q.x &&
-	    pbbox->p.y <= y0 && y1 <= pbbox->q.y
-	    )
-	    return (*dev_proc(dev, draw_thin_line)) (dev,
-						     lix, liy, litox, litoy,
-						     pdevc, pis->log_op);
-	/* We didn't set up the endpoint parameters before, */
-	/* because the line was thin.  stroke_add will do this. */
+	/* Minimum-width line, don't have to be careful with caps/joins. */
+	return (*dev_proc(dev, draw_thin_line))(dev, lix, liy, litox, litoy,
+						pdevc, pis->log_op);
     }
     /* Check for being able to fill directly. */
     {

@@ -1,6 +1,7 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -271,7 +272,7 @@ write_font_info(stream *s, const char *key, const gs_const_string *pvalue,
 {
     if (do_write) {
 	pprints1(s, "\n/%s ", key);
-	s_write_ps_string(s, pvalue->data, pvalue->size, 0);
+	s_write_ps_string(s, pvalue->data, pvalue->size, PRINT_HEX_NOT_OK);
 	pputs(s, " def");
     }
 }
@@ -393,7 +394,8 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     ppp = param_printer_params_default;
     ppp.item_suffix = " def\n";
     ppp.print_ok =
-	(options & WRITE_TYPE1_ASCIIHEX ? 0 : PRINT_BINARY_OK);
+	(options & WRITE_TYPE1_ASCIIHEX ? 0 : PRINT_BINARY_OK) |
+	PRINT_HEX_NOT_OK;
     code = s_init_param_printer(&rlist, &ppp, s);
     if (code < 0)
 	return code;

@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -308,21 +309,31 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
     if (gs_debug_c('P'))
 	gx_dump_path(ppath_old, "before reversepath");
 #endif
-  nsp:while (psub) {
-	const segment *pseg = psub->last;
-	const segment *prev;
-	segment_notes prev_notes =
-	    (pseg == (const segment *)psub ? sn_none :
+ nsp:
+    if (psub) {
+	const segment *prev = psub->last;
+	const segment *pseg;
+	segment_notes notes =
+	    (prev == (const segment *)psub ? sn_none :
 	     psub->next->notes);
-	segment_notes notes;
+	segment_notes prev_notes;
 	int code;
 
 	if (!psub->is_closed) {
-	    code = gx_path_add_point(ppath, pseg->pt.x, pseg->pt.y);
+	    code = gx_path_add_point(ppath, prev->pt.x, prev->pt.y);
 	    if (code < 0)
 		return code;
 	}
-	for (; 1; pseg = prev, prev_notes = notes) {
+	/*
+	 * The do ... while structure of this loop is artificial,
+	 * designed solely to keep compilers from complaining about
+	 * 'statement not reached' or 'end-of-loop code not reached'.
+	 * The normal exit from this loop is the goto statement in
+	 * the s_start arm of the switch.
+	 */
+	do {
+	    pseg = prev;
+	    prev_notes = notes;
 	    prev = pseg->prev;
 	    notes = pseg->notes;
 	    prev_notes = (prev_notes & sn_not_first) |
@@ -361,9 +372,7 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 		default:	/* not possible */
 		    return_error(gs_error_Fatal);
 	    }
-	    if (code < 0)
-		break;
-	}
+	} while (code >= 0);
 	return code;		/* only reached if code < 0 */
     }
 #undef sn_not_end

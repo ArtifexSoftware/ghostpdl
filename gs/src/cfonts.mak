@@ -1,4 +1,5 @@
-#    Copyright (C) 1992, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1992, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -32,7 +33,7 @@ F2CTMP=$(PSGEN)font2c.tmp
 F2CDEP=$(MAKEFILE) $(F2CTMP)
 
 $(F2CTMP) : $(MAKEFILE) $(CFONTS_MAK) $(ECHOGS_XE)
-	$(EXP)$(ECHOGS_XE) -w $(F2CTMP) - -q -dNODISPLAY -dWRITESYSTEMDICT
+	$(EXP)$(ECHOGS_XE) -w $(F2CTMP) -l -q -u -DNODISPLAY -s -u -DWRITESYSTEMDICT
 	$(EXP)$(ECHOGS_XE) -a $(F2CTMP) - -- $(PSLIBDIR)$(D)font2c.ps
 
 FONT2C=$(BUILD_TIME_GS) @$(F2CTMP)
@@ -79,16 +80,16 @@ AvantGarde_c : $(CFGEN)0agk.c $(CFGEN)0agko.c $(CFGEN)0agd.c $(CFGEN)0agdo.c
 	$(NO_OP)
 
 $(CFGEN)0agk.c : $(F2CDEP)
-	$(FONT2C) AvantGarde-Book $(CFGEN)0agk.c agk
+	$(FONT2C) $(Q)AvantGarde-Book$(Q) $(CFGEN)0agk.c agk
 
 $(CFGEN)0agko.c : $(F2CDEP)
-	$(FONT2C) AvantGarde-BookOblique $(CFGEN)0agko.c agko
+	$(FONT2C) $(Q)AvantGarde-BookOblique$(Q) $(CFGEN)0agko.c agko
 
 $(CFGEN)0agd.c : $(F2CDEP)
-	$(FONT2C) AvantGarde-Demi $(CFGEN)0agd.c agd
+	$(FONT2C) $(Q)AvantGarde-Demi$(Q) $(CFGEN)0agd.c agd
 
 $(CFGEN)0agdo.c : $(F2CDEP)
-	$(FONT2C) AvantGarde-DemiOblique $(CFGEN)0agdo.c agdo
+	$(FONT2C) $(Q)AvantGarde-DemiOblique$(Q) $(CFGEN)0agdo.c agdo
 
 AvantGarde_o : $(CFOBJ)0agk.$(OBJ) $(CFOBJ)0agko.$(OBJ) $(CFOBJ)0agd.$(OBJ) $(CFOBJ)0agdo.$(OBJ)
 	$(NO_OP)
@@ -111,16 +112,16 @@ Bookman_c : $(CFGEN)0bkl.c $(CFGEN)0bkli.c $(CFGEN)0bkd.c $(CFGEN)0bkdi.c
 	$(NO_OP)
 
 $(CFGEN)0bkl.c : $(F2CDEP)
-	$(FONT2C) Bookman-Light $(CFGEN)0bkl.c bkl
+	$(FONT2C) $(Q)Bookman-Light$(Q) $(CFGEN)0bkl.c bkl
 
 $(CFGEN)0bkli.c : $(F2CDEP)
-	$(FONT2C) Bookman-LightItalic $(CFGEN)0bkli.c bkli
+	$(FONT2C) $(Q)Bookman-LightItalic$(Q) $(CFGEN)0bkli.c bkli
 
 $(CFGEN)0bkd.c : $(F2CDEP)
-	$(FONT2C) Bookman-Demi $(CFGEN)0bkd.c bkd
+	$(FONT2C) $(Q)Bookman-Demi$(Q) $(CFGEN)0bkd.c bkd
 
 $(CFGEN)0bkdi.c : $(F2CDEP)
-	$(FONT2C) Bookman-DemiItalic $(CFGEN)0bkdi.c bkdi
+	$(FONT2C) $(Q)Bookman-DemiItalic$(Q) $(CFGEN)0bkdi.c bkdi
 
 Bookman_o : $(CFOBJ)0bkl.$(OBJ) $(CFOBJ)0bkli.$(OBJ) $(CFOBJ)0bkd.$(OBJ) $(CFOBJ)0bkdi.$(OBJ)
 	$(NO_OP)
@@ -143,16 +144,16 @@ Courier_c : $(CFGEN)0crr.c $(CFGEN)0cri.c $(CFGEN)0crb.c $(CFGEN)0crbi.c
 	$(NO_OP)
 
 $(CFGEN)0crr.c : $(F2CDEP)
-	$(FONT2C) Courier $(CFGEN)0crr.c crr
+	$(FONT2C) $(Q)Courier$(Q) $(CFGEN)0crr.c crr
 
 $(CFGEN)0cri.c : $(F2CDEP)
-	$(FONT2C) Courier-Italic $(CFGEN)0cri.c cri
+	$(FONT2C) $(Q)Courier-Italic$(Q) $(CFGEN)0cri.c cri
 
 $(CFGEN)0crb.c : $(F2CDEP)
-	$(FONT2C) Courier-Bold $(CFGEN)0crb.c crb
+	$(FONT2C) $(Q)Courier-Bold$(Q) $(CFGEN)0crb.c crb
 
 $(CFGEN)0crbi.c : $(F2CDEP)
-	$(FONT2C) Courier-BoldItalic $(CFGEN)0crbi.c crbi
+	$(FONT2C) $(Q)Courier-BoldItalic$(Q) $(CFGEN)0crbi.c crbi
 
 Courier_o : $(CFOBJ)0crr.$(OBJ) $(CFOBJ)0cri.$(OBJ) $(CFOBJ)0crb.$(OBJ) $(CFOBJ)0crbi.$(OBJ)
 	$(NO_OP)
@@ -177,28 +178,28 @@ $(CFGEN)0hvrorn.c $(CFGEN)0hvbrn.c $(CFGEN)0hvborn.c
 	$(NO_OP)
 
 $(CFGEN)0hvr.c : $(F2CDEP)
-	$(FONT2C) Helvetica $(CFGEN)0hvr.c hvr
+	$(FONT2C) $(Q)Helvetica$(Q) $(CFGEN)0hvr.c hvr
 
 $(CFGEN)0hvro.c : $(F2CDEP)
-	$(FONT2C) Helvetica-Oblique $(CFGEN)0hvro.c hvro
+	$(FONT2C) $(Q)Helvetica-Oblique$(Q) $(CFGEN)0hvro.c hvro
 
 $(CFGEN)0hvb.c : $(F2CDEP)
-	$(FONT2C) Helvetica-Bold $(CFGEN)0hvb.c hvb
+	$(FONT2C) $(Q)Helvetica-Bold$(Q) $(CFGEN)0hvb.c hvb
 
 $(CFGEN)0hvbo.c : $(F2CDEP)
-	$(FONT2C) Helvetica-BoldOblique $(CFGEN)0hvbo.c hvbo
+	$(FONT2C) $(Q)Helvetica-BoldOblique$(Q) $(CFGEN)0hvbo.c hvbo
 
 $(CFGEN)0hvrrn.c : $(F2CDEP)
-	$(FONT2C) Helvetica-Narrow $(CFGEN)0hvrrn.c hvrrn
+	$(FONT2C) $(Q)Helvetica-Narrow$(Q) $(CFGEN)0hvrrn.c hvrrn
 
 $(CFGEN)0hvrorn.c : $(F2CDEP)
-	$(FONT2C) Helvetica-Narrow-Oblique $(CFGEN)0hvrorn.c hvrorn
+	$(FONT2C) $(Q)Helvetica-Narrow-Oblique$(Q) $(CFGEN)0hvrorn.c hvrorn
 
 $(CFGEN)0hvbrn.c : $(F2CDEP)
-	$(FONT2C) Helvetica-Narrow-Bold $(CFGEN)0hvbrn.c hvbrn
+	$(FONT2C) $(Q)Helvetica-Narrow-Bold$(Q) $(CFGEN)0hvbrn.c hvbrn
 
 $(CFGEN)0hvborn.c : $(F2CDEP)
-	$(FONT2C) Helvetica-Narrow-BoldOblique $(CFGEN)0hvborn.c hvborn
+	$(FONT2C) $(Q)Helvetica-Narrow-BoldOblique$(Q) $(CFGEN)0hvborn.c hvborn
 
 Helvetica_o : $(CFOBJ)0hvr.$(OBJ) $(CFOBJ)0hvro.$(OBJ) $(CFOBJ)0hvb.$(OBJ) $(CFOBJ)0hvbo.$(OBJ) \
 $(CFOBJ)0hvrrn.$(OBJ) $(CFOBJ)0hvrorn.$(OBJ) $(CFOBJ)0hvbrn.$(OBJ) $(CFOBJ)0hvborn.$(OBJ)
@@ -235,16 +236,16 @@ $(CFGEN)0ncbi.c
 	$(NO_OP)
 
 $(CFGEN)0ncr.c : $(F2CDEP)
-	$(FONT2C) NewCenturySchlbk-Roman $(CFGEN)0ncr.c ncr
+	$(FONT2C) $(Q)NewCenturySchlbk-Roman$(Q) $(CFGEN)0ncr.c ncr
 
 $(CFGEN)0ncri.c : $(F2CDEP)
-	$(FONT2C) NewCenturySchlbk-Italic $(CFGEN)0ncri.c ncri
+	$(FONT2C) $(Q)NewCenturySchlbk-Italic$(Q) $(CFGEN)0ncri.c ncri
 
 $(CFGEN)0ncb.c : $(F2CDEP)
-	$(FONT2C) NewCenturySchlbk-Bold $(CFGEN)0ncb.c ncb
+	$(FONT2C) $(Q)NewCenturySchlbk-Bold$(Q) $(CFGEN)0ncb.c ncb
 
 $(CFGEN)0ncbi.c : $(F2CDEP)
-	$(FONT2C) NewCenturySchlbk-BoldItalic $(CFGEN)0ncbi.c ncbi
+	$(FONT2C) $(Q)NewCenturySchlbk-BoldItalic$(Q) $(CFGEN)0ncbi.c ncbi
 
 NewCenturySchlbk_o : $(CFOBJ)0ncr.$(OBJ) $(CFOBJ)0ncri.$(OBJ) $(CFOBJ)0ncb.$(OBJ) $(CFOBJ)0ncbi.$(OBJ)
 	$(NO_OP)
@@ -267,16 +268,16 @@ Palatino_c : $(CFGEN)0plr.c $(CFGEN)0plri.c $(CFGEN)0plb.c $(CFGEN)0plbi.c
 	$(NO_OP)
 
 $(CFGEN)0plr.c : $(F2CDEP)
-	$(FONT2C) Palatino-Roman $(CFGEN)0plr.c plr
+	$(FONT2C) $(Q)Palatino-Roman$(Q) $(CFGEN)0plr.c plr
 
 $(CFGEN)0plri.c : $(F2CDEP)
-	$(FONT2C) Palatino-Italic $(CFGEN)0plri.c plri
+	$(FONT2C) $(Q)Palatino-Italic$(Q) $(CFGEN)0plri.c plri
 
 $(CFGEN)0plb.c : $(F2CDEP)
-	$(FONT2C) Palatino-Bold $(CFGEN)0plb.c plb
+	$(FONT2C) $(Q)Palatino-Bold$(Q) $(CFGEN)0plb.c plb
 
 $(CFGEN)0plbi.c : $(F2CDEP)
-	$(FONT2C) Palatino-BoldItalic $(CFGEN)0plbi.c plbi
+	$(FONT2C) $(Q)Palatino-BoldItalic$(Q) $(CFGEN)0plbi.c plbi
 
 Palatino_o : $(CFOBJ)0plr.$(OBJ) $(CFOBJ)0plri.$(OBJ) $(CFOBJ)0plb.$(OBJ) $(CFOBJ)0plbi.$(OBJ)
 	$(NO_OP)
@@ -299,16 +300,16 @@ TimesRoman_c : $(CFGEN)0tmr.c $(CFGEN)0tmri.c $(CFGEN)0tmb.c $(CFGEN)0tmbi.c
 	$(NO_OP)
 
 $(CFGEN)0tmr.c : $(F2CDEP)
-	$(FONT2C) Times-Roman $(CFGEN)0tmr.c tmr
+	$(FONT2C) $(Q)Times-Roman$(Q) $(CFGEN)0tmr.c tmr
 
 $(CFGEN)0tmri.c : $(F2CDEP)
-	$(FONT2C) Times-Italic $(CFGEN)0tmri.c tmri
+	$(FONT2C) $(Q)Times-Italic$(Q) $(CFGEN)0tmri.c tmri
 
 $(CFGEN)0tmb.c : $(F2CDEP)
-	$(FONT2C) Times-Bold $(CFGEN)0tmb.c tmb
+	$(FONT2C) $(Q)Times-Bold$(Q) $(CFGEN)0tmb.c tmb
 
 $(CFGEN)0tmbi.c : $(F2CDEP)
-	$(FONT2C) Times-BoldItalic $(CFGEN)0tmbi.c tmbi
+	$(FONT2C) $(Q)Times-BoldItalic$(Q) $(CFGEN)0tmbi.c tmbi
 
 TimesRoman_o : $(CFOBJ)0tmr.$(OBJ) $(CFOBJ)0tmri.$(OBJ) $(CFOBJ)0tmb.$(OBJ) $(CFOBJ)0tmbi.$(OBJ)
 	$(NO_OP)
@@ -331,7 +332,7 @@ Symbol_c : $(CFGEN)0syr.c
 	$(NO_OP)
 
 $(CFGEN)0syr.c : $(F2CDEP)
-	$(FONT2C) Symbol $(CFGEN)0syr.c syr
+	$(FONT2C) $(Q)Symbol$(Q) $(CFGEN)0syr.c syr
 
 Symbol_o : $(CFOBJ)0syr.$(OBJ)
 	$(NO_OP)
@@ -345,7 +346,7 @@ ZapfChancery_c : $(CFGEN)0zcmi.c
 	$(NO_OP)
 
 $(CFGEN)0zcmi.c : $(F2CDEP)
-	$(FONT2C) ZapfChancery-MediumItalic $(CFGEN)0zcmi.c zcmi
+	$(FONT2C) $(Q)ZapfChancery-MediumItalic$(Q) $(CFGEN)0zcmi.c zcmi
 
 ZapfChancery_o : $(CFOBJ)0zcmi.$(OBJ)
 	$(NO_OP)
@@ -359,7 +360,7 @@ ZapfDingbats_c : $(CFGEN)0zdr.c
 	$(NO_OP)
 
 $(CFGEN)0zdr.c : $(F2CDEP)
-	$(FONT2C) ZapfDingbats $(CFGEN)0zdr.c zdr
+	$(FONT2C) $(Q)ZapfDingbats$(Q) $(CFGEN)0zdr.c zdr
 
 ZapfDingbats_o : $(CFOBJ)0zdr.$(OBJ)
 	$(NO_OP)
@@ -379,16 +380,16 @@ CharterBT_c : $(CFGEN)bchr.c $(CFGEN)bchri.c $(CFGEN)bchb.c $(CFGEN)bchbi.c
 	$(NO_OP)
 
 $(CFGEN)bchr.c : $(F2CDEP)
-	$(FONT2C) Charter-Roman $(CFGEN)bchr.c chr
+	$(FONT2C) $(Q)Charter-Roman$(Q) $(CFGEN)bchr.c chr
 
 $(CFGEN)bchri.c : $(F2CDEP)
-	$(FONT2C) Charter-Italic $(CFGEN)bchri.c chri
+	$(FONT2C) $(Q)Charter-Italic$(Q) $(CFGEN)bchri.c chri
 
 $(CFGEN)bchb.c : $(F2CDEP)
-	$(FONT2C) Charter-Bold $(CFGEN)bchb.c chb
+	$(FONT2C) $(Q)Charter-Bold$(Q) $(CFGEN)bchb.c chb
 
 $(CFGEN)bchbi.c : $(F2CDEP)
-	$(FONT2C) Charter-BoldItalic $(CFGEN)bchbi.c chbi
+	$(FONT2C) $(Q)Charter-BoldItalic$(Q) $(CFGEN)bchbi.c chbi
 
 CharterBT_o : $(CFOBJ)bchr.$(OBJ) $(CFOBJ)bchri.$(OBJ) $(CFOBJ)bchb.$(OBJ) $(CFOBJ)bchbi.$(OBJ)
 	$(NO_OP)
@@ -411,10 +412,10 @@ Cyrillic_c : $(CFGEN)fcyr.c $(CFGEN)fcyri.c
 	$(NO_OP)
 
 $(CFGEN)fcyr.c : $(F2CDEP)
-	$(FONT2C) Cyrillic $(CFGEN)fcyr.c fcyr
+	$(FONT2C) $(Q)Cyrillic$(Q) $(CFGEN)fcyr.c fcyr
 
 $(CFGEN)fcyri.c : $(F2CDEP)
-	$(FONT2C) Cyrillic-Italic $(CFGEN)fcyri.c fcyri
+	$(FONT2C) $(Q)Cyrillic-Italic$(Q) $(CFGEN)fcyri.c fcyri
 
 Cyrillic_o : $(CFOBJ)fcyr.$(OBJ) $(CFOBJ)fcyri.$(OBJ)
 	$(NO_OP)
@@ -431,10 +432,10 @@ Kana_c : $(CFGEN)fhirw.c $(CFGEN)fkarw.c
 	$(NO_OP)
 
 $(CFGEN)fhirw.c : $(F2CDEP)
-	$(FONT2C) Calligraphic-Hiragana $(CFGEN)fhirw.c fhirw
+	$(FONT2C) $(Q)Calligraphic-Hiragana$(Q) $(CFGEN)fhirw.c fhirw
 
 $(CFGEN)fkarw.c : $(F2CDEP)
-	$(FONT2C) Calligraphic-Katakana $(CFGEN)fkarw.c fkarw
+	$(FONT2C) $(Q)Calligraphic-Katakana$(Q) $(CFGEN)fkarw.c fkarw
 
 Kana_o : $(CFOBJ)fhirw.$(OBJ) $(CFOBJ)fkarw.$(OBJ)
 	$(NO_OP)
@@ -451,16 +452,16 @@ Utopia_c : $(CFGEN)putr.c $(CFGEN)putri.c $(CFGEN)putb.c $(CFGEN)putbi.c
 	$(NO_OP)
 
 $(CFGEN)putr.c : $(F2CDEP)
-	$(FONT2C) Utopia-Regular $(CFGEN)putr.c utr
+	$(FONT2C) $(Q)Utopia-Regular$(Q) $(CFGEN)putr.c utr
 
 $(CFGEN)putri.c : $(F2CDEP)
-	$(FONT2C) Utopia-Italic $(CFGEN)putri.c utri
+	$(FONT2C) $(Q)Utopia-Italic$(Q) $(CFGEN)putri.c utri
 
 $(CFGEN)putb.c : $(F2CDEP)
-	$(FONT2C) Utopia-Bold $(CFGEN)putb.c utb
+	$(FONT2C) $(Q)Utopia-Bold$(Q) $(CFGEN)putb.c utb
 
 $(CFGEN)putbi.c : $(F2CDEP)
-	$(FONT2C) Utopia-BoldItalic $(CFGEN)putbi.c utbi
+	$(FONT2C) $(Q)Utopia-BoldItalic$(Q) $(CFGEN)putbi.c utbi
 
 Utopia_o : $(CFOBJ)putr.$(OBJ) $(CFOBJ)putri.$(OBJ) $(CFOBJ)putb.$(OBJ) $(CFOBJ)putbi.$(OBJ)
 	$(NO_OP)

@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -49,10 +50,9 @@ gdev_prn_put_params_planar(gx_device * pdev, gs_param_list * plist,
 {
     bool upb = *pupb;
     int ecode = 0, code;
-    const char *vname;
 
     if (pdev->color_info.num_components > 1)
-	ecode = param_read_bool(plist, (vname = "UsePlanarBuffer"), &upb);
+	ecode = param_read_bool(plist, "UsePlanarBuffer", &upb);
     code = gdev_prn_put_params(pdev, plist);
     if (ecode >= 0)
 	ecode = code;

@@ -1,4 +1,5 @@
-%    Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1999 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -68,7 +69,7 @@ cmddict begin
 % Switches without arguments
 /--
  { nextarg not
-    { (-- and -+ require a file name.\n) print flush }
+    { (-- and -+ require a file name.) = flush }
     { //systemdict /ARGUMENTS argv put /argv [] def runjob }
    ifelse
  } bind def
@@ -95,7 +96,7 @@ cmddict begin
 /d
  { (=) search not { (#) search not { () exch dup } if } if
    exch pop cvn dup where
-    { pop (Redefining ) print print ( is not allowed.\n) print flush pop }
+    { pop (Redefining ) print print ( is not allowed.) = flush pop }
     { exch token
        { exch pop }		% Probably should check for empty.
        { true }
@@ -118,7 +119,7 @@ cmddict begin
  { (=) search not { (#) search not { () exch dup } if } if
    exch pop cvn dup where { pop dup load } { () } ifelse
    type /stringtype ne
-    { (Redefining ) print print ( is not allowed.\n) print flush pop }
+    { (Redefining ) print print ( is not allowed.) = flush pop }
     { exch //systemdict 3 1 roll put }
    ifelse
  } bind def
@@ -153,7 +154,7 @@ cmddict begin
 	     }
 	     { (Ignoring unknown switch ) print
 	       dup length 1 eq { (-) print print } if print
-	       (\n) print flush
+	       () = flush
 	     }
 	    ifelse
 	  }

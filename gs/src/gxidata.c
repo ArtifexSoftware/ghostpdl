@@ -1,6 +1,7 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -13,6 +14,7 @@
 #include "gximage.h"
 
 /* Forward declarations */
+private void update_strip(P1(gx_image_enum *penum));
 private void repack_bit_planes(P7(const gx_image_plane_t *src_planes,
 				  const ulong *offsets, int num_planes,
 				  byte *buffer, int width,
@@ -176,18 +178,14 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 		case image_skewed:
 		    ;
 	    }
-	dda_translate(penum->dda.strip.x,
-		      penum->cur.x - penum->prev.x);
-	dda_translate(penum->dda.strip.y,
-		      penum->cur.y - penum->prev.y);
-	penum->dda.pixel0 = penum->dda.strip;
+	update_strip(penum);
 	if (x_used) {
 	    /*
 	     * Processing was interrupted by an error.  Skip over pixels
 	     * already processed.
 	     */
-	    dda_advance(penum->dda.pixel0.x, penum->used.x);
-	    dda_advance(penum->dda.pixel0.y, penum->used.x);
+	    dda_advance(penum->dda.pixel0.x, x_used);
+	    dda_advance(penum->dda.pixel0.y, x_used);
 	    penum->used.x = 0;
 	}
 	if_debug2('b', "[b]pixel0 x=%g, y=%g\n",
@@ -256,11 +254,18 @@ gx_image1_flush(gx_image_enum_common_t * info)
 	case image_skewed:	/* pacify compilers */
 	    ;
     }
-    dda_translate(penum->dda.pixel0.x, penum->cur.x - penum->prev.x);
-    dda_translate(penum->dda.pixel0.y, penum->cur.y - penum->prev.y);
+    update_strip(penum);
     penum->prev = penum->cur;
     return (*penum->render)(penum, NULL, 0, width_spp, 0,
 			    setup_image_device(penum));
+}
+
+/* Update the strip DDA when moving to a new row. */
+private void update_strip(gx_image_enum *penum)
+{
+    dda_translate(penum->dda.strip.x, penum->cur.x - penum->prev.x);
+    dda_translate(penum->dda.strip.y, penum->cur.y - penum->prev.y);
+    penum->dda.pixel0 = penum->dda.strip;
 }
 
 /*

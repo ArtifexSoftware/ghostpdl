@@ -1,6 +1,7 @@
 /* Copyright (C) 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -30,7 +31,6 @@
 #ifndef gs_main_instance_DEFINED
 #  define gs_main_instance_DEFINED
 typedef struct gs_main_instance_s gs_main_instance;
-
 #endif
 
 /* ================ Exported procedures from imain.c ================ */
@@ -65,21 +65,21 @@ void gs_get_real_stdio(P1(FILE * stdfiles[3]));
  * init0 records the files to be used for stdio, and initializes the
  * graphics library, the file search paths, and other instance data.
  */
-void gs_main_init0(P5(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
-		      int max_lib_paths));
+int gs_main_init0(P5(gs_main_instance *minst, FILE *in, FILE *out, FILE *err,
+		     int max_lib_paths));
 
 /*
  * init1 initializes the memory manager and other internal data
  * structures such as the name table, the token scanner tables,
  * dictionaries such as systemdict, and the interpreter stacks.
  */
-void gs_main_init1(P1(gs_main_instance * minst));
+int gs_main_init1(P1(gs_main_instance * minst));
 
 /*
  * init2 finishes preparing the interpreter for use by running
  * initialization files with PostScript procedure definitions.
  */
-void gs_main_init2(P1(gs_main_instance * minst));
+int gs_main_init2(P1(gs_main_instance * minst));
 
 /*
  * The runlibfile operator uses a search path, as described in
@@ -88,7 +88,7 @@ void gs_main_init2(P1(gs_main_instance * minst));
  * directories to the search path; it is equivalent to the -I command
  * line switch.  It may be called any time after init0.
  */
-void gs_main_add_lib_path(P2(gs_main_instance * minst, const char *path));
+int gs_main_add_lib_path(P2(gs_main_instance * minst, const char *path));
 
 /*
  * Under certain internal conditions, the search path may temporarily
@@ -96,7 +96,7 @@ void gs_main_add_lib_path(P2(gs_main_instance * minst, const char *path));
  * this.  Clients should never need to call this procedure, and
  * eventually it may be removed.
  */
-void gs_main_set_lib_paths(P1(gs_main_instance * minst));
+int gs_main_set_lib_paths(P1(gs_main_instance * minst));
 
 /*
  * Open a PostScript file using the search path.  Clients should

@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -13,9 +14,9 @@
  * Declare initialization procedures exported by iinit.c for imain.c.
  * These must be executed in the order they are declared below.
  */
-void obj_init(P2(i_ctx_t **, gs_dual_memory_t *));
-void zop_init(P1(i_ctx_t *));
-void op_init(P1(i_ctx_t *));
+int obj_init(P2(i_ctx_t **, gs_dual_memory_t *));
+int zop_init(P1(i_ctx_t *));
+int op_init(P1(i_ctx_t *));
 
 /*
  * Test whether there are any Level 2 operators in the executable.

@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -50,7 +51,7 @@
   gs_free_const_string(imemory, data, nbytes, cname)
 
 /* Initialize the interpreter's allocator. */
-void ialloc_init(P4(gs_dual_memory_t *, gs_raw_memory_t *, uint, bool));
+int ialloc_init(P4(gs_dual_memory_t *, gs_raw_memory_t *, uint, bool));
 
 /* ------ Internal routines ------ */
 

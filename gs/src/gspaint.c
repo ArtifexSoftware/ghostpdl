@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -300,7 +301,6 @@ gs_stroke(gs_state * pgs)
 				     pgs->in_charpath);
     } else {
 	int abits, acode;
-	float orig_width;
 
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);
@@ -316,13 +316,14 @@ gs_stroke(gs_state * pgs)
 	    float xxyy = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yy);
 	    float xyyx = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yx);
 	    float scale = 1 << (abits / 2);
-	    float new_width =
-	    (orig_width = gs_currentlinewidth(pgs)) * scale;
+	    float orig_width = gs_currentlinewidth(pgs);
+	    float new_width = orig_width * scale;
 	    fixed extra_adjust =
-	    float2fixed(max(xxyy, xyyx) * new_width / 2);
+		float2fixed(max(xxyy, xyyx) * new_width / 2);
+	    float orig_flatness = gs_currentflat(pgs);
 	    gx_path spath;
 
-	    /* Scale up the line width and dash pattern. */
+	    /* Scale up the line width, dash pattern, and flatness. */
 	    if (extra_adjust < fixed_1)
 		extra_adjust = fixed_1;
 	    acode = alpha_buffer_init(pgs,
@@ -333,6 +334,7 @@ gs_stroke(gs_state * pgs)
 		return acode;
 	    gs_setlinewidth(pgs, new_width);
 	    scale_dash_pattern(pgs, scale);
+	    gs_setflat(pgs, orig_flatness * scale);
 	    /*
 	     * The alpha-buffer device requires that we fill the
 	     * entire path as a single unit.
@@ -346,6 +348,7 @@ gs_stroke(gs_state * pgs)
 				    gx_rule_winding_number,
 				    pgs->fill_adjust.x,
 				    pgs->fill_adjust.y);
+	    gs_setflat(pgs, orig_flatness);
 	    gx_path_free(&spath, "gs_stroke");
 	    if (acode > 0)
 		alpha_buffer_release(pgs, code >= 0);

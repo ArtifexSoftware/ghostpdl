@@ -1,6 +1,7 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -128,7 +129,7 @@ mem_mono_strip_copy_rop(gx_device * dev,
 		    return 0;
 		/* Code no_S inline, then finish with no_T. */
 		fit_fill(dev, x, y, width, height);
-		sdata = mdev->base;
+		sdata = scan_line_base(mdev, 0);
 		sourcex = x;
 		sraster = 0;
 		goto no_T;
@@ -158,7 +159,7 @@ mem_mono_strip_copy_rop(gx_device * dev,
 #undef copy_case
 		fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
 	      no_T:		/* Texture is not used; textures may be garbage. */
-		no_texture.data = mdev->base;	/* arbitrary */
+		no_texture.data = scan_line_base(mdev, 0);  /* arbitrary */
 		no_texture.raster = 0;
 		no_texture.size.x = width;
 		no_texture.size.y = height;
@@ -193,7 +194,7 @@ mem_mono_strip_copy_rop(gx_device * dev,
 		fit_fill(dev, x, y, width, height);
 		/* Source is not used; sdata et al may be garbage. */
 		sdata = mdev->base;	/* arbitrary, as long as all */
-		/* accesses are valid */
+					/* accesses are valid */
 		sourcex = x;	/* guarantee no source skew */
 		sraster = 0;
 		break;

@@ -1,6 +1,7 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /* $RCSfile$ $Revision$ */
@@ -68,8 +69,9 @@ typedef struct clj_paper_size_s {
  * A4 size are supported for color, so we don't bother to list the others.
  */
 private const clj_paper_size    clj_paper_sizes[] = {
-    {   1,  1, 10.50 * 72.0, 7.25 * 72.0, { .200 * 72.0, 0.0 } },
+    /* U.S. letter size comes first so it will be the default. */
     {   2,  1, 11.00 * 72.0, 8.50 * 72.0, { .200 * 72.0, 0.0 } },
+    {   1,  1, 10.50 * 72.0, 7.25 * 72.0, { .200 * 72.0, 0.0 } },
     {  26,  1, 11.69 * 72.0, 8.27 * 72.0, { .197 * 72.0, 0.0 } }
 };
 
@@ -200,6 +202,37 @@ clj_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
         pmat->tx = -psize->offsets.x * fs_res;
         pmat->ty = pdev->height + psize->offsets.y * ss_res;
     }
+}
+
+/*
+ * Get parameters, including InputAttributes for all supported page sizes.
+ * We associate each page size with a different "media source", since that
+ * is currently the only way to register multiple page sizes.
+ */
+private int
+clj_get_params(gx_device *pdev, gs_param_list *plist)
+{
+    gs_param_dict mdict;
+    int code = gdev_prn_get_params(pdev, plist);
+    int ecode = code;
+    int i;
+
+    code = gdev_begin_input_media(plist, &mdict, countof(clj_paper_sizes));
+    if (code < 0)
+	ecode = code;
+    else {
+	for (i = 0; i < countof(clj_paper_sizes); ++i) {
+	    code = gdev_write_input_page_size(i, &mdict,
+					      clj_paper_sizes[i].width,
+					      clj_paper_sizes[i].height);
+	    if (code < 0)
+		ecode = code;
+	}
+	code = gdev_end_input_media(plist, &mdict);
+	if (code < 0)
+	    ecode = code;
+    }
+    return ecode;
 }
 
 /*
@@ -487,7 +520,7 @@ clj_print_page(
     gx_page_device_get_page_device  /* get_page_device */
 
 private gx_device_procs cljet5_procs = {
-    CLJ_PROCS(gdev_prn_get_params, clj_put_params)
+    CLJ_PROCS(clj_get_params, clj_put_params)
 };
 
 /* CLJ device structure */

@@ -1,7 +1,8 @@
 /* Copyright (C) 1990, 1995, 1997 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$*/
 /* Canon Bubble Jet BJ-10e and BJ200 printer driver */

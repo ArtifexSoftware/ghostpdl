@@ -1,6 +1,7 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -37,7 +38,7 @@ s_AXE_process(stream_state * st, stream_cursor_read * pr,
     int wcount = pw->limit - q;
     int count;
     int pos = ss->count;
-    const char *hex_digits = "0123456789abcdef";
+    const char *hex_digits = "0123456789ABCDEF";
     int status = 0;
 
     if (last && ss->EndOfData)

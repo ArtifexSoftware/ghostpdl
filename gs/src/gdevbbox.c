@@ -1,6 +1,7 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -240,12 +241,12 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 		   (target ? target->memory : NULL), true);
     gx_device_forward_fill_in_procs((gx_device_forward *) dev);
     if (target) {
+	set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
 	set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
 	set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
 	set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
 	set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
 	set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
-	set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
 	gx_device_set_target((gx_device_forward *)dev, target);
     }
     dev->box_procs = box_procs_default;

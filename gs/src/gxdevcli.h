@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -288,6 +289,10 @@ typedef struct gx_device_cached_colors_s {
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */
+/*
+ * Note: x/y_pixels_per_inch are here only for backward compatibility.
+ * They should not be used in new code.
+ */
 #define x_pixels_per_inch HWResolution[0]
 #define y_pixels_per_inch HWResolution[1]
 #define offset_margin_values(x, y, left, bot, right, top)\

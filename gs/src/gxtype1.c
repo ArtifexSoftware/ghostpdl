@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -36,42 +37,6 @@
 
 /* Structure descriptor */
 public_st_gs_font_type1();
-
-/* Encrypt a string. */
-int
-gs_type1_encrypt(byte * dest, const byte * src, uint len, crypt_state * pstate)
-{
-    register crypt_state state = *pstate;
-    register const byte *from = src;
-    register byte *to = dest;
-    register uint count = len;
-
-    while (count) {
-	encrypt_next(*from, state, *to);
-	from++, to++, count--;
-    }
-    *pstate = state;
-    return 0;
-}
-/* Decrypt a string. */
-int
-gs_type1_decrypt(byte * dest, const byte * src, uint len, crypt_state * pstate)
-{
-    register crypt_state state = *pstate;
-    register const byte *from = src;
-    register byte *to = dest;
-    register uint count = len;
-
-    while (count) {		/* If from == to, we can't use the obvious */
-	/*      decrypt_next(*from, state, *to);        */
-	register byte ch = *from++;
-
-	decrypt_next(ch, state, *to);
-	to++, count--;
-    }
-    *pstate = state;
-    return 0;
-}
 
 /* Define the structure type for a Type 1 interpreter state. */
 public_st_gs_type1_state();
@@ -127,10 +92,9 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     gx_path * ppath, const gs_log2_scale_point * pscale, bool charpath_flag,
 		     int paint_type, gs_font_type1 * pfont)
 {
-    static const gs_log2_scale_point no_scale =
-    {0, 0};
+    static const gs_log2_scale_point no_scale = {0, 0};
     const gs_log2_scale_point *plog2_scale =
-    (FORCE_HINTS_TO_BIG_PIXELS ? pscale : &no_scale);
+	(FORCE_HINTS_TO_BIG_PIXELS ? pscale : &no_scale);
 
     pcis->pfont = pfont;
     pcis->pis = pis;
@@ -371,7 +335,7 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
     pcis->os_count = 0;		/* clear */
     /* Ask the caller to provide the base character's CharString. */
     code = (*pfont->data.procs->seac_data)
-	(pfont, fixed2int_var(cstack[2]), &bcstr);
+	(pfont, fixed2int_var(cstack[2]), NULL, &bcstr);
     if (code != 0)
 	return code;
     /* Continue with the supplied string. */
@@ -421,7 +385,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	/* Remove any base character hints. */
 	reset_stem_hints(pcis);
 	/* Ask the caller to provide the accent's CharString. */
-	code = (*pfont->data.procs->seac_data) (pfont, achar, &astr);
+	code = (*pfont->data.procs->seac_data)(pfont, achar, NULL, &astr);
 	if (code < 0)
 	    return code;
 	/* Continue with the supplied string. */
@@ -487,9 +451,13 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		    int members, gs_glyph_info_t *info)
 {
     gs_font_type1 *const pfont = (gs_font_type1 *)font;
+    gs_type1_data *const pdata = &pfont->data;
+    int wmode = pfont->WMode;
     int piece_members = members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES);
-    int default_members = members - piece_members;
+    int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
+    int default_members = members - (piece_members + width_members);
     int code = 0;
+    gs_const_string str;
 
     if (default_members) {
 	code = gs_default_glyph_info(font, glyph, pmat, default_members, info);
@@ -498,6 +466,12 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    return code;
     } else
 	info->members = 0;
+
+    if (default_members != members) {
+	if ((code = pdata->procs->glyph_data(pfont, glyph, &str)) < 0)
+	    return code;		/* non-existent glyph */
+    }
+
     if (piece_members) {
 	gs_glyph *pieces =
 	    (members & GLYPH_INFO_PIECES ? info->pieces : (gs_glyph *)0);
@@ -512,9 +486,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	 * code, but factoring out the parser from the interpreter would
 	 * involve more restructuring than we're prepared to do right now.
 	 */
-	gs_type1_data *const pdata = &pfont->data;
 	bool encrypted = pdata->lenIV >= 0;
-	gs_const_string str;
 	fixed cstack[ostack_size];
 	fixed *csp = cstack - 1;
 	ip_state ipstack[ipstack_size + 1];
@@ -523,9 +495,6 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	crypt_state state;
 	int c;
     
-	if ((code = pdata->procs->glyph_data(pfont, glyph, &str)) < 0)
-	    return code;		/* non-existent glyph */
-	info->members |= piece_members;
 	info->num_pieces = 0;	/* default */
 	cip = str.data;
     call:
@@ -601,11 +570,14 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		    if (pieces) {
 			gs_char bchar = fixed2int(csp[-1]);
 			gs_char achar = fixed2int(csp[0]);
+			int bcode =
+			    pdata->procs->seac_data(pfont, bchar,
+						    &pieces[0], NULL);
+			int acode =
+			    pdata->procs->seac_data(pfont, achar,
+						    &pieces[1], NULL);
 
-			pieces[0] = font->procs.encode_char(font, bchar,
-							    GLYPH_SPACE_NAME);
-			pieces[1] = font->procs.encode_char(font, achar,
-							    GLYPH_SPACE_NAME);
+			code = (bcode < 0 ? bcode : acode);
 		    }
 		    info->num_pieces = 2;
 		    goto out;
@@ -629,7 +601,48 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    }
 #undef cnext
 	}
+out:	info->members |= piece_members;
     }
- out:
+
+    if (width_members) {
+	/*
+	 * Interpret the CharString until we get to the [h]sbw.
+	 */
+	gs_imager_state gis;
+	gs_type1_state cis;
+	static const gs_log2_scale_point no_scale = {0, 0};
+	int value;
+
+	/* Initialize just enough of the imager state. */
+	if (pmat)
+	    gs_matrix_fixed_from_matrix(&gis.ctm, pmat);
+	else {
+	    gs_matrix imat;
+
+	    gs_make_identity(&imat);
+	    gs_matrix_fixed_from_matrix(&gis.ctm, &imat);
+	}
+	gis.flatness = 0;
+	code = gs_type1_interp_init(&cis, &gis, NULL /* no path needed */,
+				    &no_scale, true, 0, pfont);
+	if (code < 0)
+	    return code;
+	cis.charpath_flag = true;	/* suppress hinting */
+	code = pdata->interpret(&cis, &str, &value);
+	switch (code) {
+	case 0:		/* done with no [h]sbw, error */
+	    code = gs_note_error(gs_error_invalidfont);
+	default:		/* code < 0, error */
+	    return code;
+	case type1_result_callothersubr:	/* unknown OtherSubr */
+	    return_error(gs_error_rangecheck); /* can't handle it */
+	case type1_result_sbw:
+	    info->width[wmode].x = fixed2float(cis.width.x);
+	    info->width[wmode].y = fixed2float(cis.width.y);
+	    break;
+	}
+	info->members |= width_members;
+    }
+
     return code;
 }

@@ -1,6 +1,7 @@
 /* Copyright (C) 1992, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -68,26 +69,26 @@ more_keys(const key_enum *pke)
 private int
 cfont_next_string(str_enum * pse)
 {
-    const byte *str = pse->str_array;
+    const byte *str = (const byte *)pse->str_array;
     uint len = (str[0] << 8) + str[1];
 
     if (len == 0xffff) {
 	make_null(&pse->next);
-	pse->str_array = str + 2;
+	pse->str_array += 2;
 	return 0;
     } else if (len >= 0xff00) {
 	int code;
 
 	len = ((len & 0xff) << 8) + str[2];
 	code = cfont_ref_from_string(pse->i_ctx_p, &pse->next,
-				     (const char *)str + 3, len);
+				     pse->str_array + 3, len);
 	if (code < 0)
 	    return code;
-	pse->str_array = str + 3 + len;
+	pse->str_array += 3 + len;
 	return 0;
     }
     make_const_string(&pse->next, avm_foreign, len, str + 2);
-    pse->str_array = str + 2 + len;
+    pse->str_array += 2 + len;
     return 1;
 }
 

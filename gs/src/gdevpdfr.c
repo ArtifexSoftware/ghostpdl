@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -11,6 +12,7 @@
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */
 #include "gdevpdfx.h"
+#include "gdevpdfo.h"
 #include "scanchar.h"
 #include "strimpl.h"
 #include "sstring.h"
@@ -210,7 +212,6 @@ int
 pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
 {
     const byte *p = *pscan;
-    int ch;
 
     while (p < end && scan_char_decoder[*p] == ctype_space)
 	++p;
@@ -270,7 +271,7 @@ m2:	*pscan = p + 2;
     default:
 	break;
     }
-    while (p <= end && scan_char_decoder[ch = *p] <= ctype_name)
+    while (p < end && scan_char_decoder[*p] <= ctype_name)
 	++p;
     *pscan = p;
     if (p == *ptoken)		/* no chars scanned, i.e., not ctype_name */

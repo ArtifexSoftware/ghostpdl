@@ -1,4 +1,5 @@
-%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -91,7 +92,7 @@ systemdict begin
    /LastPage where { pop LastPage } { pdfpagecount } ifelse
    QUIET not
     { (Processing pages ) print 2 index =only ( through ) print dup =only
-      (.\n) print flush
+      (.) = flush
     }
    if
     { dup /Page# exch store
@@ -183,40 +184,7 @@ pdfdict begin
    not {/pdfopen cvx /syntaxerror signalerror} if
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
    length /PDFoffset exch def pop cvr /PDFversion exch def
-   PDFfile dup dup 0 setfileposition bytesavailable 
-	% Scan backwards over trailing control-character garbage
-	% (nulls, ^Zs, EOLs, blanks).
-    { 1 sub 2 copy setfileposition 1 index read pop
-      32 gt {exit} if
-    } loop
-	% Stack: PDFfile endpos
-	% The top of the stack is now the file position of the last
-	% non-garbage character.
-	% We can't use prevline to check for the %%EOF, because if the
-	% %%EOF isn't followed by an EOL, prevline will read past the
-	% end of the file, and the file will get closed.
-	% Acrobat apparently accepts files in which the %%EOF was
-	% truncated to %%EO (!); we do the same.
-   5 sub 2 copy setfileposition
-   1 index (xxxxxx) readstring pop
-  (\015%%EO) anchorsearch { pop pop } {
-    (\012%%EO) anchorsearch { pop pop } {
-      pop /pdfopen cvx /syntaxerror signalerror
-    } ifelse
-  } ifelse
-   1 add setfileposition
-   prevline token pop dup type /integertype eq 
-    { exch pop cvi		% xref start position
-      exch PDFfile exch setfileposition
-      prevline (startxref) linene { /pdfopen cvx /syntaxerror signalerror } if
-      pop
-    }	% else, this file has 'startxref #####' format
-    { (startxref) ne { /pdfopen cvx /syntaxerror signalerror } if
-      cvi		% xref start position
-      exch PDFfile exch setfileposition
-    }
-    ifelse
-		% Stack: xrefpos
+   findxref
    initPDFobjects
 	% Read the last cross-reference table.
    readxref /Trailer exch def
@@ -238,6 +206,59 @@ pdfdict begin
    if
    currentdict end
  } bind def
+
+% Skip backward over the %%EOF at the end of the PDF file, and read
+% the preceding startxref line.  We put this in a separate procedure so
+% we can offer the option of accepting certain invalid files that Acrobat
+% Reader also accepts.
+% ****** NOTE: this will be changed in a future release so that %%EO
+% ****** (missing the F), and startxref followed by a blank rather than
+% ****** an EOL, will no longer be accepted.
+/findxref {		% - findxref <xrefpos>
+  PDFfile dup dup 0 setfileposition bytesavailable {
+	% Scan backwards over trailing control-character garbage
+	% (nulls, ^Zs, EOLs, blanks).
+    1 sub 2 copy setfileposition 1 index read pop
+    32 gt {exit} if
+  } loop
+	% Stack: file endpos
+	% The top of the stack is now the file position of the last
+	% non-garbage character.
+	% We can't use prevline to check for the %%EOF, because if the
+	% %%EOF isn't followed by an EOL, prevline will read past the
+	% end of the file, and the file will get closed.
+	% Acrobat apparently accepts files in which the %%EOF was
+	% truncated to %%EO (!); we do the same.
+  5 sub 2 copy setfileposition
+  1 index (xxxxxx) readstring pop
+  (\015%%EO) anchorsearch { pop pop } {
+    (\012%%EO) anchorsearch { pop pop } {
+      pop findxreferror
+    } ifelse
+  } ifelse
+  1 add setfileposition
+	% Now read the startxref and xref start position.
+  prevline token pop dup type /integertype eq {
+    exch pop cvi		% xref start position
+    exch PDFfile exch setfileposition
+    prevline (startxref) linene { findxreferror } if
+    pop
+  } {	% else, this file has 'startxref #####' format
+    (startxref) ne { findxreferror } if
+    cvi		% xref start position
+    exch PDFfile exch setfileposition
+  } ifelse
+} bind def
+/findxreferror {
+  (\n) =
+  (    **** The PDF input file appears to be corrupted, or not a PDF file.) =
+  (    **** Try preceding the input file with lib/pdfeof.ps.) =
+  (    **** If the file then is processed without error, please notify the) =
+  (    **** author of the software that produced the PDF file that the file) =
+  (    **** does not conform to Adobe's published PDF specification.) =
+  (\n) = flush
+  /pdfopen cvx /syntaxerror signalerror
+} bind def
 
 % Write the outline structure for a file.  Uses linkdest (below).
 /writeoutline		% <outlinedict> writeoutline -
@@ -518,8 +539,8 @@ end readonly def
    matrix currentmatrix beginpage setmatrix
    dup /Contents knownoget not { 0 array } if
    dup type /arraytype ne { 1 array astore } if
-    { count 1 sub /pdfemptycount exch store
-      oforce false resolvestream pdfopdict .pdfrun
+   count 1 sub /pdfemptycount exch store
+    { oforce false resolvestream pdfopdict .pdfrun
     } forall
    /Annots knownoget { { oforce drawannot } forall } if
    endpage

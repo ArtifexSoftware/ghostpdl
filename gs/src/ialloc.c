@@ -1,6 +1,7 @@
 /* Copyright (C) 1993, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -23,21 +24,25 @@
 public_st_gs_dual_memory();
 
 /* Initialize the allocator */
-void
+int
 ialloc_init(gs_dual_memory_t *dmem, gs_raw_memory_t * rmem, uint chunk_size,
 	    bool level2)
 {
     gs_ref_memory_t *ilmem = ialloc_alloc_state(rmem, chunk_size);
     gs_ref_memory_t *ilmem_stable = ialloc_alloc_state(rmem, chunk_size);
-    gs_ref_memory_t *igmem;
-    gs_ref_memory_t *igmem_stable;
+    gs_ref_memory_t *igmem = 0;
+    gs_ref_memory_t *igmem_stable = 0;
     gs_ref_memory_t *ismem = ialloc_alloc_state(rmem, chunk_size);
     int i;
 
+    if (ilmem == 0 || ilmem_stable == 0 || ismem == 0)
+	goto fail;
     ilmem->stable_memory = (gs_memory_t *)ilmem_stable;
     if (level2) {
 	igmem = ialloc_alloc_state(rmem, chunk_size);
 	igmem_stable = ialloc_alloc_state(rmem, chunk_size);
+	if (igmem == 0 || igmem_stable == 0)
+	    goto fail;
 	igmem->stable_memory = (gs_memory_t *)igmem_stable;
     } else
 	igmem = ilmem, igmem_stable = ilmem_stable;
@@ -55,6 +60,14 @@ ialloc_init(gs_dual_memory_t *dmem, gs_raw_memory_t * rmem, uint chunk_size,
     ilmem_stable->space = avm_local; /* ditto */
     ismem->space = avm_system;
     ialloc_set_space(dmem, avm_global);
+    return 0;
+ fail:
+    gs_free_object(rmem, igmem_stable, "ialloc_init failure");
+    gs_free_object(rmem, igmem, "ialloc_init failure");
+    gs_free_object(rmem, ismem, "ialloc_init failure");
+    gs_free_object(rmem, ilmem_stable, "ialloc_init failure");
+    gs_free_object(rmem, ilmem, "ialloc_init failure");
+    return_error(e_VMerror);
 }
 
 /* ================ Local/global VM ================ */

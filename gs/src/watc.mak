@@ -1,4 +1,5 @@
 #    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -187,7 +188,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=1
+COMPILE_INITS=0
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
@@ -260,22 +261,27 @@ GLCCWIN=$(GLCC)
 # The Watcom C platform
 
 watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_dosfb.$(OBJ)
+watc_2=$(GLOBJ)gp_mktmp.$(OBJ)
 !ifeq WAT32 0
-watc_2=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
+watc_3=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
 watc_inc=
 !else
-watc_2=
+watc_3=
 watc_inc=$(GLD)winplat.dev
 !endif
-watc__=$(watc_1) $(watc_2)
+watc__=$(watc_1) $(watc_2) $(watc_3)
 $(GLGEN)watc_.dev: $(watc__) $(GLD)nosync.dev $(watc_inc)
 	$(SETMOD) $(GLGEN)watc_ $(watc_1)
-	$(ADDMOD) $(GLGEN)watc_ -obj $(watc_2)
+	$(ADDMOD) $(GLGEN)watc_ $(watc_2)
+	$(ADDMOD) $(GLGEN)watc_ -obj $(watc_3)
 	$(ADDMOD) $(GLGEN)watc_ -include $(GLD)nosync $(watc_inc)
 
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
  $(gx_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_iwatc.$(OBJ) $(C_) $(GLSRC)gp_iwatc.c
+
+$(GLOBJ)gp_mktmp.$(OBJ): $(GLSRC)gp_mktmp.c $(stat__h) $(string__h)
+	$(GLCC) $(GLO_)gp_mktmp.$(OBJ) $(C_) $(GLSRC)gp_mktmp.c
 
 # ----------------------------- Main program ------------------------------ #
 

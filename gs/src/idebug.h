@@ -1,6 +1,7 @@
 /* Copyright (C) 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -11,6 +12,7 @@
 
 /* Print individual values. */
 void debug_print_name(P1(const ref *));
+void debug_print_name_index(P1(uint /*name_index_t*/));
 void debug_print_ref(P1(const ref *));
 void debug_print_ref_packed(P1(const ref_packed *));
 

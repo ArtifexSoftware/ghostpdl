@@ -1,4 +1,5 @@
 %    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -388,11 +389,11 @@ pdfdict begin
        {		% Stack: savepos objpos obj#
 	 exch PDFoffset add PDFfile exch setfileposition
 	 PDFfile token pop 2 copy ne
-	  { (xref error!\n) print /resolveR cvx /rangecheck signalerror
+	  { (xref error!) = /resolveR cvx /rangecheck signalerror
 	  }
 	 if pop PDFfile token pop
 	 PDFfile token pop /obj ne
-	  { (xref error!\n) print /resolveR cvx /rangecheck signalerror
+	  { (xref error!) = /resolveR cvx /rangecheck signalerror
 	  }
 	 if
 	 pdf_run_resolve	% PDFfile resolveopdict .pdfrun
@@ -444,7 +445,7 @@ pdfdict begin
 	% Capture the sub-stream contents in a string.
     dup /Length oget string PDFsource exch readstring
     not {
-      (Unexpected EOF in stream!\n) print
+      (Unexpected EOF in stream!) =
       /stream cvx /rangecheck signalerror
     } if
     1 index exch /File exch put

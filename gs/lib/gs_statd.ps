@@ -1,4 +1,5 @@
 %    Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -31,7 +32,7 @@ userdict begin
  /a4 {595 842 //.setpagesize exec} bind def
 % a4small should be a4 with an ImagingBBox of [25 25 570 817].
  /a4small /a4 load def
- /b5 {501 709 //.setpagesize exec} bind def
+% b5 see below.
  /ledger {1224 792 //.setpagesize exec} bind def  % 11x17 landscape
  /legal {612 1008 //.setpagesize exec} bind def
  /letter {612 792 //.setpagesize exec} bind def
@@ -55,12 +56,28 @@ STRICT { (%END) .skipeof } if
  /a8 {148 210 //.setpagesize exec} bind def
  /a9 {105 148 //.setpagesize exec} bind def
  /a10 {74 105 //.setpagesize exec} bind def
- /b0 {2836 4008 //.setpagesize exec} bind def
- /b1 {2004 2836 //.setpagesize exec} bind def
- /b2 {1418 2004 //.setpagesize exec} bind def
- /b3 {1002 1418 //.setpagesize exec} bind def
- /b4 {709 1002 //.setpagesize exec} bind def
-% /b5 {501 709 //.setpagesize exec} bind def	% defined by Adobe
+% ISO and JIS B sizes are different....
+ /isob0 {2836 4008 //.setpagesize exec} bind def
+ /b0 /isob0 load def
+ /isob1 {2004 2836 //.setpagesize exec} bind def
+ /b1 /isob1 load def
+ /isob2 {1418 2004 //.setpagesize exec} bind def
+ /b2 /isob2 load def
+ /isob3 {1002 1418 //.setpagesize exec} bind def
+ /b3 /isob3 load def
+ /isob4 {709 1002 //.setpagesize exec} bind def
+ /b4 /isob4 load def
+ /isob5 {501 709 //.setpagesize exec} bind def
+ /b5 /isob5 load def
+ /isob6 {354 501 //.setpagesize exec} bind def
+ /b6 /isob6 load def
+ /jisb0 {2916 4128 //.setpagesize exec} bind def
+ /jisb1 {2064 2916 //.setpagesize exec} bind def
+ /jisb2 {1458 2064 //.setpagesize exec} bind def
+ /jisb3 {1032 1458 //.setpagesize exec} bind def
+ /jisb4 {729 1032 //.setpagesize exec} bind def
+ /jisb5 {516 729 //.setpagesize exec} bind def
+ /jisb6 {363 516 //.setpagesize exec} bind def
  /c0 {2600 3677 //.setpagesize exec} bind def
  /c1 {1837 2600 //.setpagesize exec} bind def
  /c2 {1298 1837 //.setpagesize exec} bind def
@@ -93,7 +110,7 @@ statusdict begin
 /.pagetypenames
  { /letter /note /legal 
    /a0 /a1 /a2 /a3 /a4 /a5 /a6 /a7 /a8 /a9 /a10
-   /b0 /b1 /b2 /b3 /b4 /b5 /archE /archD /archC /archB /archA
+   /b0 /b1 /b2 /b3 /b4 /b5 /b6 /archE /archD /archC /archB /archA
    /flsa /flse /halfletter /11x17 /ledger
  } cvlit readonly def
 
@@ -119,18 +136,19 @@ statusdict begin
 
 % Tray and format selection
 
- /11x17tray userdict /11x17 get def
- /a3tray userdict /a3 get def
- /a4tray userdict /a4 get def
- /a5tray userdict /a5 get def
- /a6tray userdict /a6 get def
- /b4tray userdict /b4 get def
- /flsatray userdict /flsa get def
- /flsetray userdict /flse get def
- /halflettertray userdict /halfletter get def
- /ledgertray userdict /ledger get def
- /legaltray userdict /legal get def
- /lettertray userdict /letter get def
+ /11x17tray {/11x17 .uservar exec} bind def
+ /a3tray {/a3 .uservar exec} bind def
+ /a4tray {/a4 .uservar exec} bind def
+ /a5tray {/a5 .uservar exec} bind def
+ /a6tray {/a6 .uservar exec} bind def
+ /b4tray {/b4 .uservar exec} bind def
+ /b5tray {/b5 .uservar exec} bind def
+ /flsatray {/flsa .uservar exec} bind def
+ /flsetray {/flse .uservar exec} bind def
+ /halflettertray {/halfletter .uservar exec} bind def
+ /ledgertray {/ledger .uservar exec} bind def
+ /legaltray {/legal .uservar exec} bind def
+ /lettertray {/letter .uservar exec} bind def
 
 % Per-job parameters
 
@@ -213,7 +231,10 @@ statusdict begin
   } bind def
  /setpagetype
   { statusdict begin
-      dup .pagetypenames exch get //systemdict exch get exec
+		% The Adobe documentation only defines setpagetype
+		% (a Level 1 operator) as accepting the values 0 and 1,
+		% so we do too.
+      dup .pagetypenames 0 2 getinterval exch get //systemdict exch get exec
       /pagetype exch def
     end
   } bind def

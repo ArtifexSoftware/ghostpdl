@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -51,7 +52,8 @@ set_stdfiles(FILE * stdfiles[3])
 private gs_main_instance the_gs_main_instance;
 gs_main_instance *
 gs_main_instance_default(void)
-{				/* Determine whether the instance has been initialized. */
+{
+    /* Determine whether the instance has been initialized. */
     if (the_gs_main_instance.memory_chunk_size == 0)
 	the_gs_main_instance = gs_main_instance_init_values;
     return &the_gs_main_instance;
@@ -92,11 +94,12 @@ gs_get_real_stdio(FILE * stdfiles[3])
 }
 
 /* Initialization to be done before anything else. */
-void
+int
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 	      int max_lib_paths)
 {
     gs_memory_t *heap;
+    ref *paths;
 
     /* Set our versions of stdin/out/err. */
     gs_stdin = minst->fstdin = in;
@@ -110,8 +113,16 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     gp_get_usertime(minst->base_time);
     /* Initialize the imager. */
     heap = gs_lib_init0(gs_stdout);
+    if (heap == 0)
+	return_error(e_VMerror);
     minst->heap = heap;
     /* Initialize the file search paths. */
+    paths = (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
+					"lib_path array");
+    if (paths == 0) {
+	gs_lib_finit(1, e_VMerror);
+	return_error(e_VMerror);
+    }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
 	       (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
 					   "lib_path array"));
@@ -122,35 +133,45 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     minst->lib_path.count = 0;
     minst->user_errors = 1;
     minst->init_done = 0;
+    return 0;
 }
 
 /* Initialization to be done before constructing any objects. */
-void
+int
 gs_main_init1(gs_main_instance * minst)
 {
     if (minst->init_done < 1) {
 	gs_dual_memory_t idmem;
+	int code =
+	    ialloc_init(&idmem, (gs_raw_memory_t *)&gs_memory_default,
+			minst->memory_chunk_size, gs_have_level2());
 
-	ialloc_init(&idmem, (gs_raw_memory_t *)&gs_memory_default,
-		    minst->memory_chunk_size, gs_have_level2());
-	gs_lib_init1((gs_memory_t *)idmem.space_system);
+	if (code < 0)
+	    return code;
+	code = gs_lib_init1((gs_memory_t *)idmem.space_system);
+	if (code < 0)
+	    return code;
 	alloc_save_init(&idmem);
 	{
 	    gs_memory_t *mem = (gs_memory_t *)idmem.space_system;
 	    name_table *nt = names_init(minst->name_table_size,
 					idmem.space_system);
 
-	    if (nt == 0) {
-		puts("name_init failed");
-		gs_exit(1);
-	    }
+	    if (nt == 0)
+		return_error(e_VMerror);
 	    the_gs_name_table = nt;
-	    gs_register_struct_root(mem, NULL, (void **)&the_gs_name_table,
-				    "the_gs_name_table");
+	    code = gs_register_struct_root(mem, NULL,
+					   (void **)&the_gs_name_table,
+					   "the_gs_name_table");
+	    if (code < 0)
+		return code;
 	}
-	obj_init(&minst->i_ctx_p, &idmem);	/* requires name_init */
+	code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
+	if (code < 0)
+	    return code;
 	minst->init_done = 1;
     }
+    return 0;
 }
 
 /* Initialization to be done before running any files. */
@@ -165,18 +186,22 @@ init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
 	      ifp - srefs, const_refs, srefs);
     initial_enter_name(aname, &ifa);
 }
-void
+int
 gs_main_init2(gs_main_instance * minst)
 {
     i_ctx_t *i_ctx_p;
+    int code = gs_main_init1(minst);
 
-    gs_main_init1(minst);
+    if (code < 0)
+	return code;
     i_ctx_p = minst->i_ctx_p;
     if (minst->init_done < 2) {
 	int code, exit_code;
 	ref error_object;
 
-	zop_init(i_ctx_p);
+	code = zop_init(i_ctx_p);
+	if (code < 0)
+	    return code;
 	{
 	    /*
 	     * gs_iodev_init has to be called here (late), rather than
@@ -184,32 +209,36 @@ gs_main_init2(gs_main_instance * minst)
 	     * some hacks specific to MS Windows for patching the
 	     * stdxxx IODevices.
 	     */
-	    extern void gs_iodev_init(P1(gs_memory_t *));
+	    extern init_proc(gs_iodev_init);
 
-	    gs_iodev_init(imemory);
+	    code = gs_iodev_init(imemory);
+	    if (code < 0)
+		return code;
 	}
-	op_init(i_ctx_p);	/* requires obj_init */
+	code = op_init(i_ctx_p);	/* requires obj_init */
+	if (code < 0)
+	    return code;
 
 	/* Set up the array of additional initialization files. */
 	init2_make_string_array(i_ctx_p, gs_init_file_array, "INITFILES");
 	/* Set up the array of emulator names. */
 	init2_make_string_array(i_ctx_p, gs_emulator_name_array, "EMULATORS");
 	/* Pass the search path. */
-	initial_enter_name("LIBPATH", &minst->lib_path.list);
+	code = initial_enter_name("LIBPATH", &minst->lib_path.list);
+	if (code < 0)
+	    return code;
 
 	/* Execute the standard initialization file. */
 	code = gs_run_init_file(minst, &exit_code, &error_object);
-	if (code < 0) {
-	    if (code != e_Fatal)
-		gs_main_dump_stack(minst, code, &error_object);
-	    gs_exit_with_code((exit_code ? exit_code : 2), code);
-	}
+	if (code < 0)
+	    return code;
 	minst->init_done = 2;
 	i_ctx_p = minst->i_ctx_p; /* init file may change it */
     }
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Start");
     gp_readline_init(&minst->readline_data, imemory_system);
+    return 0;
 }
 
 /* ------ Search paths ------ */
@@ -246,20 +275,24 @@ file_path_add(gs_file_path * pfp, const char *dirs)
 }
 
 /* Add a library search path to the list. */
-void
+int
 gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
-{				/* Account for the possibility that the first element */
+{
+    /* Account for the possibility that the first element */
     /* is gp_current_directory name added by set_lib_paths. */
     int first_is_here =
-    (r_size(&minst->lib_path.list) != 0 &&
-     minst->lib_path.container.value.refs[0].value.bytes ==
-     (const byte *)gp_current_directory_name ? 1 : 0);
+	(r_size(&minst->lib_path.list) != 0 &&
+	 minst->lib_path.container.value.refs[0].value.bytes ==
+	 (const byte *)gp_current_directory_name ? 1 : 0);
+    int code;
 
     r_set_size(&minst->lib_path.list, minst->lib_path.count +
 	       first_is_here);
-    file_path_add(&minst->lib_path, lpath);
+    code = file_path_add(&minst->lib_path, lpath);
     minst->lib_path.count = r_size(&minst->lib_path.list) - first_is_here;
-    gs_main_set_lib_paths(minst);
+    if (code < 0)
+	return code;
+    return gs_main_set_lib_paths(minst);
 }
 
 /* ------ Execution ------ */
@@ -267,14 +300,15 @@ gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
 /* Complete the list of library search paths. */
 /* This may involve adding or removing the current directory */
 /* as the first element. */
-void
+int
 gs_main_set_lib_paths(gs_main_instance * minst)
 {
     ref *paths = minst->lib_path.container.value.refs;
     int first_is_here =
-    (r_size(&minst->lib_path.list) != 0 &&
-    paths[0].value.bytes == (const byte *)gp_current_directory_name ? 1 : 0);
+	(r_size(&minst->lib_path.list) != 0 &&
+	 paths[0].value.bytes == (const byte *)gp_current_directory_name ? 1 : 0);
     int count = minst->lib_path.count;
+    int code = 0;
 
     if (minst->search_here_first) {
 	if (!(first_is_here ||
@@ -296,9 +330,10 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     r_set_size(&minst->lib_path.list,
 	       count + (minst->search_here_first ? 1 : 0));
     if (minst->lib_path.env != 0)
-	file_path_add(&minst->lib_path, minst->lib_path.env);
-    if (minst->lib_path.final != 0)
-	file_path_add(&minst->lib_path, minst->lib_path.final);
+	code = file_path_add(&minst->lib_path, minst->lib_path.env);
+    if (minst->lib_path.final != 0 && code >= 0)
+	code = file_path_add(&minst->lib_path, minst->lib_path.final);
+    return code;
 }
 
 /* Open a file, using the search paths. */

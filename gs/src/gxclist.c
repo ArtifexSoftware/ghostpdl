@@ -1,6 +1,7 @@
 /* Copyright (C) 1991, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -171,8 +172,8 @@ clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
      * table.
      */
     uint avg_char_size =
-    (uint) (dev->x_pixels_per_inch * dev->y_pixels_per_inch *
-	    (0.5 * 10 / 72 * 10 / 72 / 8)) + 24;
+	(uint)(dev->HWResolution[0] * dev->HWResolution[1] *
+	       (0.5 * 10 / 72 * 10 / 72 / 8)) + 24;
     uint hc = bits_size / avg_char_size;
     uint hsize;
 
@@ -375,6 +376,7 @@ clist_reset(gx_device * dev)
     cdev->black_generation_id = gs_no_id;
     cdev->undercolor_removal_id = gs_no_id;
     cdev->device_halftone_id = gs_no_id;
+    cdev->image_enum_id = gs_no_id;
     return 0;
 }
 /*

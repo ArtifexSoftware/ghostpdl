@@ -1,4 +1,5 @@
 #    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -16,28 +17,28 @@ SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
 !ifndef DEBUG
-DEBUG=0
+DEBUG=1
 !endif
 !ifndef TDEBUG
-TDEBUG=0
+TDEBUG=1
 !endif
 !ifndef NOPRIVATE
-NOPRIVATE=0
+NOPRIVATE=1
 !endif
 
 GS=gslib
 
 !ifndef BINDIR
-BINDIR=.\obj
+BINDIR=.\debugobj
 !endif
 !ifndef GLSRCDIR
 GLSRCDIR=.\src
 !endif
 !ifndef GLGENDIR
-GLGENDIR=.\obj
+GLGENDIR=.\debugobj
 !endif
 !ifndef GLOBJDIR
-GLOBJDIR=.\obj
+GLOBJDIR=.\debugobj
 !endif
 
 # Do not edit the next group of lines.
@@ -96,7 +97,7 @@ FEATURE_DEVS=$(GLD)patlib.dev $(GLD)path1lib.dev $(GLD)hsblib.dev
 DEVICE_DEVS=$(DD)vga.dev
 !endif
 !ifndef COMPILE_INITS
-COMPILE_INITS=1
+COMPILE_INITS=0
 !endif
 !ifndef BAND_LIST_STORAGE
 BAND_LIST_STORAGE=file

@@ -1,4 +1,5 @@
 %    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -225,7 +226,15 @@ end readonly def
   TextRise 0 ne { 0 TextRise translate } if
   TextFont dup null eq { pop } { setfont } ifelse
 } bdef
-/settextstate { TextSaveMatrix setmatrix settextmatrix } bdef
+/settextstate {
+  TextSaveMatrix setmatrix settextmatrix
+} bdef
+/settextposition {
+		% Update the TextMatrix translation.
+  gsave TextSaveMatrix setmatrix
+  currentpoint TextMatrix 4 2 getinterval astore pop
+  grestore
+} bdef
 
 /BT {
   currentdict /TextLineMatrix .knownget
@@ -235,7 +244,7 @@ end readonly def
     { showfirst } /Show gput
   currentdict /TextSaveMatrix .knownget not
     { matrix dup /TextSaveMatrix gput }
-  if currentmatrix pop settextmatrix 0 0 moveto
+  if currentmatrix pop settextmatrix
 } bdef
 /ET {
   TextSaveMatrix setmatrix
@@ -281,21 +290,27 @@ end readonly def
 % Insert a new Encoding or Metrics into a font if necessary.
 % Return a possibly updated font, and a flag to indicate whether
 % the font was actually copied.
+/.updatefontmetrics {	% <font> <Metrics|null> .updatefontmetrics
+			%   <font'> <copied>
+  dup null ne {
+    exch true .copyfontdict dup /Metrics 4 -1 roll put true
+  } {
+    pop false
+  } ifelse
+} bdef
+/.updatefontencoding {	% <font> <Encoding|null> .updatefontencoding
+			%   <font'> <copied>
+  dup null ne { dup 2 index /Encoding get ne } { false } ifelse {
+    exch false .copyfontdict dup /Encoding 4 -1 roll put true
+  } {
+    pop false
+  } ifelse
+} bdef
 /.updatefont {		% <font> <Encoding|null> <Metrics|null> .updatefont
 			%   <font'> <copied>
-  2 index 4 1 roll
-  dup null ne {
-    3 -1 roll true .copyfontdict dup /Metrics 4 -1 roll put exch
-  } {
-    pop
-  } ifelse
-  dup null ne { 1 index 3 index /Encoding get ne } { false } ifelse {
-    exch false .copyfontdict
-			% Stack: Encoding font'
-    dup /Encoding 4 -1 roll put
-  } {
-    pop
-  } ifelse exch 1 index ne
+  3 -1 roll exch .updatefontmetrics
+			% Stack: enc|null font' copied
+  3 1 roll exch .updatefontencoding 3 -1 roll or
 } bdef
 
 % ---------------- Text positioning ---------------- %
@@ -303,13 +318,11 @@ end readonly def
 /Td {
   TextLineMatrix transform TextLineMatrix 4 2 getinterval astore pop
   TextLineMatrix TextMatrix copy pop settextstate
-  0 0 moveto
 } bdef
 /TD { dup neg /TextLeading gput Td } bdef
 /T* { 0 TextLeading neg Td } bdef
 /Tm {
   TextLineMatrix astore TextMatrix copy pop settextstate
-  0 0 moveto
 } bdef
 
 % ---------------- Text painting ---------------- %
@@ -356,26 +369,20 @@ end readonly def
 /showfirst { setshowstate Show } def
 
 /Tj {
-  Show
-		% Update the TextMatrix translation.
-  gsave TextSaveMatrix setmatrix
-  currentpoint TextMatrix 4 2 getinterval astore pop
-  grestore
+  0 0 moveto Show settextposition
 } bdef
 /' { T* Tj } bdef
 /" { exch Tc exch Tw T* Tj } bdef
-/TJ
- {  { dup type /stringtype eq
-       { Tj
-       }
-       { -1000 div
-	 currentfont /ScaleMatrix .knownget { 0 get mul } if
-	 0 rmoveto
-       }
-      ifelse
-    }
-   forall
- } bdef
+/TJ {
+  0 0 moveto {
+    dup type /stringtype eq {
+      Show
+    } { -1000 div
+      currentfont /ScaleMatrix .knownget { 0 get mul } if
+      0 rmoveto
+    } ifelse
+  } forall settextposition
+} bdef
 
 /tf { setfillcolor currentpoint fill moveto } bdef
 /tn { currentpoint newpath moveto } bdef

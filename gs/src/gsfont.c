@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -368,7 +369,6 @@ int
 gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 	    const gs_matrix * pmat, gs_font ** ppfont)
 {
-    const gs_font_base *const pbfont = (const gs_font_base *)pfont;
     int code;
     gs_font *prev = 0;
     gs_font *pf_out = pdir->scaled_fonts;
@@ -378,11 +378,16 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 
     if ((code = gs_matrix_multiply(&pfont->FontMatrix, pmat, &newmat)) < 0)
 	return code;
-    /* Check for the font already being in the scaled font cache. */
-    /* Only attempt to share fonts if the current font has */
-    /* a valid UniqueID or XUID. */
+    /*
+     * Check for the font already being in the scaled font cache.
+     * Until version 5.97, we only cached scaled fonts if the base
+     * (unscaled) font had a valid UniqueID or XUID; now, we will cache
+     * scaled versions of any non-composite font.
+     */
 #ifdef DEBUG
     if (gs_debug_c('m')) {
+	const gs_font_base *const pbfont = (const gs_font_base *)pfont;
+
 	if (pfont->FontType == ft_composite)
 	    dlprintf("[m]composite");
 	else if (uid_is_UniqueID(&pbfont->UID))
@@ -397,14 +402,14 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 		 pmat->tx, pmat->ty);
     }
 #endif
-    /* The UID of a composite font is of no value in caching.... */
-    if (pfont->FontType != ft_composite &&
-	uid_is_valid(&pbfont->UID)
-	) {
+    /*
+     * Don't try to cache scaled composite fonts, because of the side
+     * effects on FDepVector and descendant fonts that occur in makefont.
+     */
+    if (pfont->FontType != ft_composite) {
 	for (; pf_out != 0; prev = pf_out, pf_out = pf_out->next)
 	    if (pf_out->FontType == pfont->FontType &&
 		pf_out->base == pfont->base &&
-		uid_equal(&((gs_font_base *) pf_out)->UID, &pbfont->UID) &&
 		pf_out->FontMatrix.xx == newmat.xx &&
 		pf_out->FontMatrix.xy == newmat.xy &&
 		pf_out->FontMatrix.yx == newmat.yx &&
@@ -705,10 +710,10 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	info->Flags_returned |= FONT_IS_FIXED_WIDTH;
     } else if (members & FONT_INFO_MISSING_WIDTH) {
 	gs_glyph glyph;
-	int index, code;
+	int index;
 
 	for (index = 0;
-	     (code = font->procs.enumerate_glyph(font, &index, GLYPH_SPACE_NAME, &glyph)) >= 0 &&
+	     font->procs.enumerate_glyph(font, &index, GLYPH_SPACE_NAME, &glyph) >= 0 &&
 		 index != 0;
 	     ) {
 	    gs_const_string gnstr;

@@ -1,17 +1,19 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
 /*
- * Improved Microsoft Windows 3.n printer driver for Ghostscript.
- *
+ * Microsoft Windows 3.n printer driver for Ghostscript.
  * Original version by Russell Lang and
  * L. Peter Deutsch, Aladdin Enterprises.
  * Modified by rjl 1995-03-29 to use BMP printer code
  * Modified by Pierre Arnaud 1999-02-18 (see description below)
  * Modified by lpd 1999-04-03 for compatibility with Borland C++ 4.5.
+ * Modified by Pierre Arnaud 1999-10-03 (accept b&w printing on color printers).
+ * Modified by Pierre Arnaud 1999-11-20 (accept lower resolution)
  */
 
 /* This driver uses the printer default size and resolution and
@@ -29,7 +31,7 @@
  * rjl 1997-11-20
  */
 
-/* Additions by Pierre Arnaud (Pierre.Arnaud@iname.com) 1992-02-18
+/* Additions by Pierre Arnaud (Pierre.Arnaud@iname.com) 1992-11-20
  *
  * The driver has been extended in order to provide some run-time
  * feed-back about the default Windows printer and to give the user
@@ -63,6 +65,21 @@
  *
  *  UserChangedSettings			(bool, read only)
  *	Set to 'true' if the last QueryUser operation succeeded.
+ *
+ *  Paper	   n			(integer, can be set)
+ *	Windows paper selection (0 = automatic).
+ *
+ *  Orient	   n			(integer, can be set)
+ *	Windows paper orientation (0 = automatic).
+ *
+ *  Color	   n			(integer, can be set)
+ *	Windows color (0 = automatic, 1 = monochrome, 2 = color).
+ *
+ *  MaxResolution  n			(integer, can be set)
+ *	Maximum resolution in pixels pet inch (0 = no maximum). If
+ *	the printer has a higher resolution than the maximum, trim
+ *	the used resolution to the best one (dpi_chosen <= dpi_max,
+ *	with dpi_chosen = dpi_printer / ratio).
  */
 
 /* Supported printer parameters are :
@@ -83,6 +100,9 @@
  *     2 => show Print Setup dialog instead
  *     3 => select default printer
  *     other, does nothing
+ *
+ * The /Duplex & /Tumble keys of the setpagedevice dict are supported
+ * if the Windows printer supports duplex printing.
  */
 
 #include "gdevprn.h"
@@ -137,7 +157,13 @@ struct gx_device_win_pr2_s {
     int print_copies;		/* number of times GS should print each page */
     float user_media_size[2];	/* width/height of media selected by user */
     char doc_name[200];		/* name of document for the spooler */
+    char paper_name[64];	/* name of selected paper format */
     bool user_changed_settings;	/* true if user validated dialog */
+    int user_paper;		/* user's choice: paper format */
+    int user_orient;		/* user's choice: paper orientation */
+    int user_color;		/* user's choice: color format */
+    int max_dpi;		/* maximum resolution in DPI */
+    int ratio;			/* stretch ratio when printing */
 
     HANDLE win32_hdevmode;	/* handle to device mode information */
     HANDLE win32_hdevnames;	/* handle to device names information */
@@ -164,7 +190,13 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
     1,				/* print_copies */
     { 0.0, 0.0 },		/* user_media_size */
     { 0 },			/* doc_name */
+    { 0 },			/* paper_name */
     0,				/* user_changed_settings */
+    0,				/* user_paper */
+    0,				/* user_orient */
+    0,				/* user_color */
+    0,				/* max_dpi */
+    0,				/* ratio */
     NULL,			/* win32_hdevmode */
     NULL,			/* win32_hdevnames */
     NULL,			/* lpfnAbortProc */
@@ -174,8 +206,10 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
 
 /********************************************************************************/
 
-private int win_pr2_getdc(gx_device_win_pr2 *);
-private int win_pr2_print_setup_interaction(gx_device_win_pr2 *, int mode);
+private int win_pr2_getdc(gx_device_win_pr2 * dev);
+private int win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode);
+private int win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode);
+private int win_pr2_print_setup_interaction(gx_device_win_pr2 * dev, int mode);
 private int win_pr2_write_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
 private int win_pr2_read_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
 private void win_pr2_copy_check(gx_device_win_pr2 * dev);
@@ -194,7 +228,8 @@ win_pr2_open(gx_device * dev)
     float m[4];
     FILE *pfile;
     DOCINFO docinfo;
-
+    float ratio = 1.0;
+    
     win_pr2_copy_check(wdev);
 
     if ((!wdev->nocancel) && (hDlgModeless)) {
@@ -228,7 +263,10 @@ win_pr2_open(gx_device * dev)
     } else if (!win_pr2_getdc(wdev)) {
 	/* couldn't get a printer from -sOutputFile= */
 	/* Prompt with dialog box */
+	
+	LPDEVMODE devmode = NULL;
 	memset(&pd, 0, sizeof(pd));
+	
 	pd.lStructSize = sizeof(pd);
 	pd.hwndOwner = hwndtext;
 	pd.Flags = PD_RETURNDC;
@@ -237,15 +275,27 @@ win_pr2_open(gx_device * dev)
 	pd.nFromPage = wdev->user_page_begin;
 	pd.nToPage = wdev->user_page_end;
 	pd.nCopies = wdev->user_copies;
+	
 	if (!PrintDlg(&pd)) {
 	    /* device not opened - exit ghostscript */
 	    return gs_error_Fatal;	/* exit Ghostscript cleanly */
 	}
-	GlobalFree(pd.hDevMode);
-	GlobalFree(pd.hDevNames);
+	
+	devmode = GlobalLock(pd.hDevMode);
+	win_pr2_update_dev(wdev,devmode);
+	GlobalUnlock(pd.hDevMode);
+	
+	if (wdev->win32_hdevmode)
+	    GlobalFree(wdev->win32_hdevmode);
+	if (wdev->win32_hdevnames)
+	    GlobalFree(wdev->win32_hdevnames);
+	
+	wdev->hdcprn = pd.hDC;
+	wdev->win32_hdevmode = pd.hDevMode;
+	wdev->win32_hdevnames = pd.hDevNames;
+	
 	pd.hDevMode = NULL;
 	pd.hDevNames = NULL;
-	wdev->hdcprn = pd.hDC;
     }
     if (!(GetDeviceCaps(wdev->hdcprn, RASTERCAPS) != RC_DIBTODEV)) {
 	fprintf(stderr, "Windows printer does not have RC_DIBTODEV\n");
@@ -288,35 +338,44 @@ win_pr2_open(gx_device * dev)
 	DeleteDC(wdev->hdcprn);
 	return gs_error_limitcheck;
     }
+    
     dev->x_pixels_per_inch = (float)GetDeviceCaps(wdev->hdcprn, LOGPIXELSX);
     dev->y_pixels_per_inch = (float)GetDeviceCaps(wdev->hdcprn, LOGPIXELSY);
-#if 1
+    
+    wdev->ratio = 1;
+    
+    if (wdev->max_dpi > 50) {
+	
+	float dpi_x = dev->x_pixels_per_inch;
+	float dpi_y = dev->y_pixels_per_inch;
+	
+	while ((dev->x_pixels_per_inch > wdev->max_dpi)
+	    || (dev->y_pixels_per_inch > wdev->max_dpi)) {
+	    ratio += 1.0;
+	    wdev->ratio ++;
+	    dev->x_pixels_per_inch = dpi_x / ratio;
+	    dev->y_pixels_per_inch = dpi_y / ratio;
+	}
+    }
+    
     size.x = GetDeviceCaps(wdev->hdcprn, PHYSICALWIDTH);
     size.y = GetDeviceCaps(wdev->hdcprn, PHYSICALHEIGHT);
-    gx_device_set_width_height(dev, (int)size.x, (int)size.y);
+    gx_device_set_width_height(dev, (int)(size.x / ratio), (int)(size.y / ratio));
     offset.x = GetDeviceCaps(wdev->hdcprn, PHYSICALOFFSETX);
     offset.y = GetDeviceCaps(wdev->hdcprn, PHYSICALOFFSETY);
-#else
-    Escape(wdev->hdcprn, GETPHYSPAGESIZE, 0, NULL, (LPPOINT) & size);
-    gx_device_set_width_height(dev, (int)size.x, (int)size.y);
-    Escape(wdev->hdcprn, GETPRINTINGOFFSET, 0, NULL, (LPPOINT) & offset);
-#endif
+    
     /* m[] gives margins in inches */
-    m[0] /*left */  = offset.x / dev->x_pixels_per_inch;
-    m[3] /*top */  = offset.y / dev->y_pixels_per_inch;
-    m[2] /*right */  =
-	(size.x - offset.x - GetDeviceCaps(wdev->hdcprn, HORZRES))
-	/ dev->x_pixels_per_inch;
-    m[1] /*bottom */  =
-	(size.y - offset.y - GetDeviceCaps(wdev->hdcprn, VERTRES))
-	/ dev->y_pixels_per_inch;
+    m[0] /*left   */ = offset.x / dev->x_pixels_per_inch / ratio;
+    m[3] /*top    */ = offset.y / dev->y_pixels_per_inch / ratio;
+    m[2] /*right  */ = (size.x - offset.x - GetDeviceCaps(wdev->hdcprn, HORZRES)) / dev->x_pixels_per_inch / ratio;
+    m[1] /*bottom */ = (size.y - offset.y - GetDeviceCaps(wdev->hdcprn, VERTRES)) / dev->y_pixels_per_inch / ratio;
     gx_device_set_margins(dev, m, true);
-
+    
     depth = dev->color_info.depth;
     if (depth == 0) {
 	/* Set parameters that were unknown before opening device */
 	/* Find out if the device supports color */
-	/* We recognize 1, 4 (but uses only 3), 8 and 24 bit color devices */
+	/* We recognize 1, 4 (but use only 3), 8 and 24 bit color devices */
 	depth = GetDeviceCaps(wdev->hdcprn, PLANES) * GetDeviceCaps(wdev->hdcprn, BITSPIXEL);
     }
     win_pr2_set_bpp(dev, depth);
@@ -424,6 +483,7 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
     MSG msg;
     char dlgtext[32];
     HGLOBAL hrow;
+    int ratio = ((gx_device_win_pr2 *)pdev)->ratio;
 
     struct bmi_s {
 	BITMAPINFOHEADER h;
@@ -453,6 +513,8 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
     bmi.h.biXPelsPerMeter = 0;	/* default */
     bmi.h.biYPelsPerMeter = 0;	/* default */
 
+    StartPage(wdev->hdcprn);
+    
     /* Write the palette. */
 
     if (depth <= 8) {
@@ -490,10 +552,18 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 	for (i = 0; i < lines; i++)
 	    gdev_prn_copy_scan_lines(pdev, y + i,
 			      row + (bmp_raster * (lines - 1 - i)), raster);
-	SetDIBitsToDevice(wdev->hdcprn, 0, y, pdev->width, lines,
-			  0, 0, 0, lines,
+	
+	if (ratio > 1) {
+	    StretchDIBits(wdev->hdcprn, 0, y*ratio, pdev->width*ratio, lines*ratio,
+			  0, 0, pdev->width, lines,
 			  row,
-			  (BITMAPINFO FAR *) & bmi, DIB_RGB_COLORS);
+			  (BITMAPINFO FAR *) & bmi, DIB_RGB_COLORS, SRCCOPY);
+	} else {
+	    SetDIBitsToDevice(wdev->hdcprn, 0, y, pdev->width, lines,
+			      0, 0, 0, lines,
+			      row,
+			      (BITMAPINFO FAR *) & bmi, DIB_RGB_COLORS);
+	}
 	y += lines;
 
 	if (!wdev->nocancel) {
@@ -526,6 +596,7 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 	    ShowWindow(hDlgModeless, SW_HIDE);
     }
 
+  bmp_done:
     GlobalUnlock(hrow);
     GlobalFree(hrow);
 
@@ -645,7 +716,17 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
     int bpp = old_bpp;
     bool nocancel = wdev->nocancel;
     int queryuser = 0;
+    bool old_duplex = wdev->Duplex;
+    int  old_orient = wdev->user_orient;
+    int  old_color  = wdev->user_color;
+    int  old_paper  = wdev->user_paper;
+    int  old_mx_dpi = wdev->max_dpi;
 
+    if (wdev->Duplex_set < 0) {
+	wdev->Duplex_set = 0;
+	wdev->Duplex = false;
+    }
+    
     win_pr2_copy_check(wdev);
 
     code = win_pr2_read_user_settings(wdev, plist);
@@ -698,6 +779,24 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 
     if (ecode >= 0)
 	ecode = gdev_prn_put_params(pdev, plist);
+    
+    if (wdev->win32_hdevmode && wdev->hdcprn) {
+	if ( (old_duplex != wdev->Duplex)
+	  || (old_orient != wdev->user_orient)
+	  || (old_color  != wdev->user_color)
+	  || (old_paper  != wdev->user_paper)
+	  || (old_mx_dpi != wdev->max_dpi) ) {
+	    
+	    LPDEVMODE pdevmode = GlobalLock(wdev->win32_hdevmode);
+	    
+	    if (pdevmode) {
+		win_pr2_update_win(wdev, pdevmode);
+		ResetDC(wdev->hdcprn, pdevmode);
+		GlobalUnlock(pdevmode);
+	    }
+	}
+    }
+    
     return ecode;
 }
 
@@ -738,7 +837,6 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 
 #ifdef __WIN32__
     HANDLE hprinter;
-
 #endif
 
     /* first try to derive the printer name from -sOutputFile= */
@@ -754,7 +852,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     GetProfileString("Devices", NULL, "", devices, 4096);
     p = devices;
     while (*p) {
-	if (strcmp(p, device) == 0)
+	if (stricmp(p, device) == 0)
 	    break;
 	p += strlen(p) + 1;
     }
@@ -778,7 +876,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
 #ifdef __WIN32__
 
-    if (!is_win32s) {
+    if (!is_win32s) {		/* Win32 */
 	if (!OpenPrinter(device, &hprinter, NULL))
 	    return FALSE;
 	size = DocumentProperties(NULL, hprinter, device, NULL, NULL, 0);
@@ -837,7 +935,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     papername[0] = '\0';
     papersize = 0;
     paperindex = -1;
-    orientation = DMORIENT_PORTRAIT;
+    orientation = 0;
     pp = (POINT *) devcap;
     for (i = 0; i < n; i++, pp++) {
 	if ((pp->x < paperwidth + 20) && (pp->x > paperwidth - 20) &&
@@ -845,6 +943,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	    paperindex = i;
 	    paperwidth = pp->x;
 	    paperheight = pp->y;
+	    orientation = DMORIENT_PORTRAIT;
 	    break;
 	}
     }
@@ -863,7 +962,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	}
     }
     gs_free(devcap, devcapsize, 1, "win_pr2_getdc");
-
+    
     /* get the dmPaperSize */
     devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERS, NULL, NULL);
     devcapsize *= sizeof(WORD);
@@ -887,62 +986,53 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     memcpy(pidevmode, podevmode, size);
 
     pidevmode->dmFields = 0;
+    
+    wdev->paper_name[0] = 0;
 
+    if ( (wdev->user_paper)
+      && (wdev->user_paper != papersize) ) {
+	papersize = wdev->user_paper;
+	paperheight = 0;
+	paperwidth = 0;
+	papername[0] = 0;
+    }
+    if (wdev->user_orient) {
+	orientation = wdev->user_orient;
+    }
+    
+    pidevmode->dmFields &= ~(DM_PAPERSIZE | DM_ORIENTATION | DM_COLOR | DM_PAPERLENGTH | DM_PAPERWIDTH | DM_DUPLEX);
     pidevmode->dmFields |= DM_DEFAULTSOURCE;
     pidevmode->dmDefaultSource = 0;
-
-    pidevmode->dmFields |= DM_ORIENTATION;
-    pidevmode->dmOrientation = orientation;
-
-    if (papersize)
-	pidevmode->dmFields |= DM_PAPERSIZE;
-    else
-	pidevmode->dmFields &= (~DM_PAPERSIZE);
-    pidevmode->dmPaperSize = papersize;
-
-    pidevmode->dmFields |= (DM_PAPERLENGTH | DM_PAPERWIDTH);
-    pidevmode->dmPaperLength = paperheight;
-    pidevmode->dmPaperWidth = paperwidth;
-
-
+    
+    if (orientation) {
+	wdev->user_orient = orientation;
+    }
+    if (papersize) {
+	wdev->user_paper = papersize;
+	strcpy (wdev->paper_name, papername);
+    }
+    
+    if (paperheight && paperwidth) {
+	pidevmode->dmFields |= (DM_PAPERLENGTH | DM_PAPERWIDTH);
+	pidevmode->dmPaperWidth = paperwidth;
+	pidevmode->dmPaperLength = paperheight;
+        wdev->user_media_size[0] = paperwidth / 254.0 * 72.0;
+	wdev->user_media_size[1] = paperheight / 254.0 * 72.0;
+    }
+    
+    if (DeviceCapabilities(device, output, DC_DUPLEX, NULL, NULL)) {
+	wdev->Duplex_set = 1;
+    }
+    
+    win_pr2_update_win(wdev, pidevmode);
+    
 #ifdef WIN32
     if (!is_win32s) {
-	/* change the page size by changing the form */
-	/* WinNT only */
-	/*  at present, changing the page size isn't working under Win NT */
-	/* Win95 returns FALSE to GetForm */
-	LPBYTE lpbForm;
-	FORM_INFO_1 *fi1;
-	DWORD dwBuf;
-	DWORD dwNeeded;
-
-	dwNeeded = 0;
-	dwBuf = 1024;
-	if ((lpbForm = gs_malloc(dwBuf, 1, "win_pr2_getdc")) == (LPBYTE) NULL) {
-	    gs_free(podevmode, size, 1, "win_pr2_getdc");
-	    gs_free(pidevmode, size, 1, "win_pr2_getdc");
-	    ClosePrinter(hprinter);
-	    return FALSE;
-	}
-	if (GetForm(hprinter, papername, 1, lpbForm, dwBuf, &dwNeeded)) {
-	    fi1 = (FORM_INFO_1 *) lpbForm;
-	    pidevmode->dmFields |= DM_FORMNAME;
-	    SetForm(hprinter, papername, 1, (LPBYTE) fi1);
-	}
-	gs_free(lpbForm, dwBuf, 1, "win_pr2_getdc");
-
-	strcpy(pidevmode->dmFormName, papername);
-	pidevmode->dmFields |= DM_FORMNAME;
-
-/*
-   pidevmode->dmFields &= DM_FORMNAME;
-   pidevmode->dmDefaultSource = 0;
- */
-
+	
 	/* merge the entries */
 	DocumentProperties(NULL, hprinter, device, podevmode, pidevmode, DM_IN_BUFFER | DM_OUT_BUFFER);
-
 	ClosePrinter(hprinter);
+	
 	/* now get a DC */
 	wdev->hdcprn = CreateDC(driver, device, NULL, podevmode);
     } else
@@ -957,6 +1047,18 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	    strtok(driver, ".");	/* remove .drv */
 	wdev->hdcprn = CreateDC(driver, device, output, podevmode);
     }
+    
+    if (wdev->win32_hdevmode == NULL) {
+	wdev->win32_hdevmode = GlobalAlloc(0, sizeof(DEVMODE));
+    }
+    
+    if (wdev->win32_hdevmode) {
+	LPDEVMODE pdevmode = (LPDEVMODE) GlobalLock(GlobalLock(wdev->win32_hdevmode));
+	if (pdevmode) {
+	    memcpy(pdevmode, podevmode, sizeof(DEVMODE));
+	    GlobalUnlock(wdev->win32_hdevmode);
+	}
+    }
 
     gs_free(pidevmode, size, 1, "win_pr2_getdc");
     gs_free(podevmode, size, 1, "win_pr2_getdc");
@@ -966,6 +1068,69 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 
     /* fall back to prompting user */
     return FALSE;
+}
+
+
+/*
+ *  Minimalist update of the wdev parameters (mainly for the
+ *  UserSettings parameters).
+ */
+
+private int
+win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
+{
+    if (pdevmode == 0)
+	return FALSE;
+    
+    if (pdevmode->dmFields & DM_COLOR) {
+	dev->user_color = pdevmode->dmColor;
+    }
+    if (pdevmode->dmFields & DM_ORIENTATION) {
+	dev->user_orient = pdevmode->dmOrientation;
+    }
+    if (pdevmode->dmFields & DM_PAPERSIZE) {
+	dev->user_paper = pdevmode->dmPaperSize;
+        dev->user_media_size[0] = pdevmode->dmPaperWidth / 254.0 * 72.0;
+	dev->user_media_size[1] = pdevmode->dmPaperLength / 254.0 * 72.0;
+	dev->paper_name[0] = 0;	    /* unknown paper size */
+    }
+    if (pdevmode->dmFields & DM_DUPLEX) {
+	dev->Duplex_set = 1;
+	dev->Duplex = pdevmode->dmDuplex == DMDUP_SIMPLEX ? false : true;
+    }
+    
+    return TRUE;
+}
+
+private int
+win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
+{
+    if (dev->Duplex_set > 0) {
+	pdevmode->dmFields |= DM_DUPLEX;
+	pdevmode->dmDuplex = DMDUP_SIMPLEX;
+	if (dev->Duplex) {
+/*	    if (dev->Tumble) {
+		pdevmode->dmDuplex = DMDUP_VERTICAL;
+	    } else */ {
+		pdevmode->dmDuplex = DMDUP_HORIZONTAL;
+	    }
+	}
+    }
+    
+    if (dev->user_color) {
+	pdevmode->dmColor = dev->user_color;
+	pdevmode->dmFields |= DM_COLOR;
+    }
+    
+    if (dev->user_orient) {
+	pdevmode->dmFields |= DM_ORIENTATION;
+	pdevmode->dmOrientation = dev->user_orient;
+    }
+    
+    if (dev->user_paper) {
+	pdevmode->dmFields |= DM_PAPERSIZE;
+	pdevmode->dmPaperSize = dev->user_paper;
+    }
 }
 
 /********************************************************************************/
@@ -1032,6 +1197,10 @@ win_pr2_read_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
 		END_ARRAY_PARAM(ia, sel_range_error)
 		
 		param_read_int(dict.list, "Copies", &wdev->user_copies);
+		param_read_int(dict.list, "Paper", &wdev->user_paper);
+		param_read_int(dict.list, "Orientation", &wdev->user_orient);
+		param_read_int(dict.list, "Color", &wdev->user_color);
+		param_read_int(dict.list, "MaxResolution", &wdev->max_dpi);
 		
 		switch (code = param_read_string(dict.list, (param_name = "DocumentName"), &docn)) {
 		    case 0:
@@ -1061,6 +1230,9 @@ win_pr2_read_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
 		    LPDEVMODE devmode = (LPDEVMODE) GlobalLock(wdev->win32_hdevmode);
 		    if (devmode) {
 			devmode->dmCopies = wdev->user_copies;
+			devmode->dmPaperSize = wdev->user_paper;
+			devmode->dmOrientation = wdev->user_orient;
+			devmode->dmColor = wdev->user_color;
 			GlobalUnlock(wdev->win32_hdevmode);
 		    }
 		}
@@ -1079,11 +1251,12 @@ win_pr2_write_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
     gs_param_int_array range;
     gs_param_float_array box;
     gs_param_string docn;
+    gs_param_string papn;
     int array[2];
     const char* pname = "UserSettings";
     int code;
 
-    dict.size = 7;
+    dict.size = 12;
     code = param_begin_write_dict(plist, pname, &dict, false);
     if (code < 0) return code;
 
@@ -1112,6 +1285,18 @@ win_pr2_write_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
     code = param_write_int(dict.list, "Copies", &wdev->user_copies);
     if (code < 0) goto error;
 
+    code = param_write_int(dict.list, "Paper", &wdev->user_paper);
+    if (code < 0) goto error;
+    
+    code = param_write_int(dict.list, "Orientation", &wdev->user_orient);
+    if (code < 0) goto error;
+    
+    code = param_write_int(dict.list, "Color", &wdev->user_color);
+    if (code < 0) goto error;
+    
+    code = param_write_int(dict.list, "MaxResolution", &wdev->max_dpi);
+    if (code < 0) goto error;
+    
     code = param_write_int(dict.list, "PrintCopies", &wdev->print_copies);
     if (code < 0) goto error;
 
@@ -1120,6 +1305,13 @@ win_pr2_write_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
     docn.persistent = false;
 
     code = param_write_string(dict.list, "DocumentName", &docn);
+    if (code < 0) goto error;
+    
+    papn.data = (const byte*)wdev->paper_name;
+    papn.size = strlen(wdev->paper_name);
+    papn.persistent = false;
+    
+    code = param_write_string(dict.list, "PaperName", &papn);
     if (code < 0) goto error;
 
     code = param_write_bool(dict.list, "UserChangedSettings", &wdev->user_changed_settings);
@@ -1186,6 +1378,14 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
     wdev->print_copies = pd.nCopies;
     wdev->user_media_size[0] = devmode->dmPaperWidth / 254.0 * 72.0;
     wdev->user_media_size[1] = devmode->dmPaperLength / 254.0 * 72.0;
+    wdev->user_paper = devmode->dmPaperSize;
+    wdev->user_orient = devmode->dmOrientation;
+    wdev->user_color = devmode->dmColor;
+    
+    if (devmode->dmFields & DM_DUPLEX) {
+	wdev->Duplex_set = 1;
+	wdev->Duplex = devmode->dmDuplex == DMDUP_SIMPLEX ? false : true;
+    }
 
     {
 	float xppinch = 0;

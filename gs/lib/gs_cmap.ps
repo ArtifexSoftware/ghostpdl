@@ -1,4 +1,5 @@
 %    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -101,7 +102,11 @@
 } bind def
 /.endmap {		% <map> .endmap <map>
   dup type /arraytype eq {
-    dup { .endmap exch } forall astore readonly
+	% This might be a shared read-only array inherited via usecmap.
+	% Don't try to update its elements if this is the case.
+    dup wcheck {
+      dup { .endmap exch } forall astore readonly
+    } if
   } {
     dup type /stringtype eq { readonly } if
   } ifelse
@@ -109,8 +114,8 @@
 
 /usecmap {		% <CMap_name> usecmap -
   /CMap findresource
-  dup length dict .copydict
-  currentdict end exch .copydict begin
+  dup /.CodeMaps get dup length array copy /.CodeMaps exch def
+  /.FontIndices get /.FontIndices exch def
 } bind def
 
 /usefont {		% <fontID> usefont -

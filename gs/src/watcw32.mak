@@ -1,4 +1,5 @@
 #    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -188,7 +189,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=1
+COMPILE_INITS=0
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
@@ -420,6 +421,11 @@ $(GENINIT_XE): $(PSSRCDIR)$(D)geninit.c $(GENINIT_DEPS)
 
 # See winlib.mak
 
+# ---------------------------- Watcom objects ----------------------------- #
+
+$(GLOBJ)gp_mktmp.$(OBJ): $(GLSRC)gp_mktmp.c $(stat__h) $(string__h)
+	$(GLCC) $(GLO_)gp_mktmp.$(OBJ) $(C_) $(GLSRC)gp_mktmp.c
+
 # ----------------------------- Main program ------------------------------ #
 
 #LIBCTR=libc32.tr
@@ -453,8 +459,8 @@ $(GSCONSOLE_XE): $(OBJC) $(GLOBJ)$(GS).res $(GLSRCDIR)\dw32c.def \
 	$(LINK) system nt option map $(LCT) Name $(GSCONSOLE_XE) File $(OBJCLINK) Library $(GLOBJ)$(GSDLL).lib
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)$(GSDLL).res 
-	$(LINK) system nt_dll initinstance terminstance $(LCT) Name $(GSDLL_DLL) File $(GLOBJ)gsdll.obj @$(ld_tr) @$(GLSRC)gsdll32w.lnk
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(GLOBJ)$(GSDLL).res 
+	$(LINK) system nt_dll initinstance terminstance $(LCT) Name $(GSDLL_DLL) File $(GLOBJ)gsdll.obj, $(GLOBJ)gp_mktmp.obj @$(ld_tr) @$(GLSRC)gsdll32w.lnk
 
 $(GLOBJ)$(GSDLL).lib: $(GSDLL_DLL)
 	erase $(GLOBJ)$(GSDLL).lib
@@ -462,13 +468,12 @@ $(GLOBJ)$(GSDLL).lib: $(GSDLL_DLL)
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GLOBJ)$(GS).res $(GLOBJ)dwmain32.def
-	$(LINK) option map $(LCT) Name $(GS) File $(GLOBJ)gsdll, $(DWOBJNOLINK) @$(ld_tr) 
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(DWOBJNO) $(GLOBJ)$(GS).res $(GLOBJ)dwmain32.def
+	$(LINK) option map $(LCT) Name $(GS) File $(GLOBJ)gsdll,$(GLOBJ)gp_mktmp.obj, $(DWOBJNOLINK) @$(ld_tr) 
 
 # The big console mode EXE
-$(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GLOBJ)$(GS).res $(GLSRCDIR)\dw32c.def
-	$(COMPDIR)\$(LINK) option map $(LCT) Name $(GSCONSOLE_XE) File $(GLOBJ)gsdll, $(OBJCNOLINK), @$(ld_tr) 
+$(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(OBJCNO) $(GLOBJ)$(GS).res $(GLSRCDIR)\dw32c.def
+	$(LINK) option map $(LCT) Name $(GSCONSOLE_XE) File $(GLOBJ)gsdll, $(GLOBJ)gp_mktmp.obj, $(OBJCNOLINK), @$(ld_tr) 
 !endif
 
 # end of makefile
-

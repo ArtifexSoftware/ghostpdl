@@ -1,4 +1,5 @@
 %    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -62,16 +63,22 @@ pdfdict begin
 } bind def
 
 % Get the (possibly modified) encoding of a font.
-/getfontencoding	% <font-resource> <font> getfontencoding
-			%   <font-resource> <font> <encoding>
- { dup /Encoding .knownget { 2 index getencoding } { null } ifelse
- } bdef
+/getfontencoding {	% <font-resource> <font> getfontencoding
+			%   <font-resource> <font> <Encoding|null>
+  1 index /Encoding known {
+    dup /Encoding .knownget { 2 index getencoding } { null } ifelse
+  } {
+    null
+  } ifelse
+} bdef
 
 % Get the metrics of a font, if specified.
-/getfontmetrics		% <font-resource> <font> <encoding> getfontmetrics
-			%   <font-resource> <font> <encoding> <Metrics|null>
+/getfontmetrics		% <font-resource> <font> <Encoding|null> getfontmetrics
+			%   <font-resource> <font> <Encoding|null>
+			%   <Metrics|null>
  { 2 index /Widths known
-    { 2 dict begin
+    { dup null eq { pop dup /Encoding get } if
+      2 dict begin
       /Encoding exch def
       /Metrics Encoding length dict def
       exch
@@ -109,20 +116,25 @@ pdfdict begin
        }
       for pop
 		% Now fill in the MissingWidth for any encoded characters
-		% that aren't in Metrics already.
+		% that aren't in Metrics already.  Note that built-in
+		% fonts may have Widths/FirstChar/LastChar but no
+		% FontDescriptor, so we must check for this.
 		% Stack: font font-res mscale
-      Metrics 2 index /FontDescriptor oget
-      /MissingWidth knownoget { 2 index mul } { 0 } ifelse exch
-      Encoding
-       {	% Stack: font font-res mscale missing-width metrics charname
+      1 index /FontDescriptor knownoget {
+	Metrics exch
+	/MissingWidth knownoget { 2 index mul } { 0 } ifelse exch
+	Encoding {
+		% Stack: font font-res mscale missing-width metrics charname
 		% Work around the abovementioned pdfTeX bug.
-	 dup null ne {
-	   2 copy known not { 2 copy 4 index put } if pop
-	 } {
-	   pop
-	 } ifelse
-       }
-      forall pop pop pop
+	  dup null ne {
+	    2 copy known not { 2 copy 4 index put } if pop
+	  } {
+	    pop
+	  } ifelse
+	} forall pop pop pop
+      } {
+	pop
+      } ifelse
       exch Encoding Metrics end
     }
     { null
@@ -191,7 +203,7 @@ pdfdict begin
       } if
       QUIET not {
 	(Substituting font ) print dup =only
-	( for ) print 2 index =only (.\n) print flush
+	( for ) print 2 index =only (.) = flush
       } if
       3 -1 roll pop findfont
 		% Stack: font-res fontdesc font
@@ -268,10 +280,11 @@ pdfdict begin
      { stop } if
   } bdef
 end readonly def
-/readtype1		% <font-resource> <stream-dict> readtype1 <font>
- {		% Read the definition, using a procedure-based filter
+/readtype1 {		% <font-resource> <stream-dict> readtype1 <font>
+		% Read the definition, using a procedure-based filter
 		% that turns binary/hex conversion on and off
 		% at the right times.
+   1 index exch
    PDFfile fileposition 3 1 roll
    7 dict begin
      /leftstr (          ) 10 string copy def
@@ -302,6 +315,7 @@ end readonly def
    count exch sub { pop } repeat
    PDFfile 3 -1 roll setfileposition
    /BaseFont oget findfont
+   adjustfont
  } bdef
 
 % Execute the appropriate reading procedure.
@@ -380,30 +394,49 @@ readonly def
 
 /.notdefEncoding 256 { /.notdef } repeat 256 packedarray def
 
-/buildType3		% <Type3-font-resource> buildType3 <font>
-  { 8 dict begin
+/buildType3 {		% <Type3-font-resource> buildType3 <font>
+  8 dict begin
     /FontType 3 def
     /Resources 1 index /Resources knownoget { oforce } { 0 dict } ifelse def
     /FontBBox 1 index /FontBBox get cvx def
     /FontMatrix 1 index /FontMatrix oget def
     /CharProcs 1 index /CharProcs oget def
+    1 index /Widths knownoget {
+      /Widths exch def
+      /FirstChar 1 index /FirstChar oget def
+      /LastChar 1 index /LastChar oget def
+    } if
     /FontName 1 index /Name get genfontname def
     /Encoding .notdefEncoding 2 index getencoding def
-    /BuildGlyph {
-		% Stack: font glyphname
-       1 index /CharProcs get exch oget
-       PDFfile fileposition exch
-       false resolvestream
-		% Stack: font filepos stream
+		% We have to define BuildChar rather than BuildGlyph:
+		% there is no PDF equivalent of glyphshow, and we need
+		% the character code to access the Widths.
+    /BuildChar {
+		% Stack: font charcode
+      1 index begin 3 dict begin
+      /Font 3 -1 roll def /CharCode 1 index def
+      Encoding exch get CharProcs exch oget
+      PDFfile fileposition exch
+      false resolvestream
+		% Stack: filepos stream
 		% Don't let setgcolor set the color inside the BuildGlyph
 		% procedure, because this causes an /undefined error.
-       q null /FillColor gput null /StrokeColor gput
-       2 index /Resources get exch pdfopdict .pdfruncontext
-       Q
-       PDFfile exch setfileposition pop
+      q null /FillColor gput null /StrokeColor gput
+      Font /Resources get exch pdfopdict .pdfruncontext
+      Q
+      PDFfile exch setfileposition
+      end end
     } bdef
     FontName currentdict end definefont exch pop
-  } bdef
+} bdef
+/.adjustcharwidth {	% <wx> <wy> .adjustcharwidth <wx'> <wy'>
+  /Widths where {
+    begin
+    CharCode FirstChar ge CharCode LastChar le and {
+      exch pop Widths CharCode FirstChar sub get exch
+    } if end
+  } if
+} bdef
 
 % ---------------- TrueType fonts ---------------- %
 
@@ -429,6 +462,7 @@ readonly def
 /readtruetype {		% <font-resource> <stream-dict> readtruetype <font>
 		% This is much simpler than readtype1, because we don't
 		% have to deal with the tripartite .PFB format.
+  1 index exch
   PDFfile fileposition 3 1 roll
   true resolvestream readfontfilter
 		% Stack: filepos fontres stream
@@ -439,6 +473,8 @@ readonly def
   } ifelse
   exch pop
   PDFfile 3 -1 roll setfileposition
+		% Ignore both the Encoding and the Widths.
+  exch pop
 } bdef
 
 % ---------------- Type 0 fonts ---------------- %
@@ -569,15 +605,17 @@ readonly def
 .dicttomark readonly def
 
 % Read an embedded compressed font.
-/readType1C		% <font-resource> <stream-dict> readType1C <font>
- { PDFfile fileposition 3 1 roll
-   dup true resolvestream dup readfontfilter
+/readType1C {		% <font-resource> <stream-dict> readType1C <font>
+  1 index exch
+  PDFfile fileposition 3 1 roll
+  dup true resolvestream dup readfontfilter
 		% Stack: pos resource streamdict stream filter
-   3 index /FontDescriptor oget /FontName oget
-   1 index FRD
-   closefile closefile pop
-   PDFfile 3 -1 roll setfileposition
-   /FontDescriptor oget /FontName oget findfont
+  3 index /FontDescriptor oget /FontName oget
+  1 index FRD
+  closefile closefile pop
+  PDFfile 3 -1 roll setfileposition
+  /FontDescriptor oget /FontName oget findfont
+  adjustfont
  } bdef
 
 % ---------------- Font lookup ---------------- %
@@ -602,11 +640,11 @@ readonly def
     { dup dup /FontDescriptor knownoget
        {	% Stack: font-res font-res font-desc
 	 dup /FontFile knownoget
-	  { exch pop 1 index 3 1 roll readtype1 adjustfont true }
+	  { exch pop readtype1 true }
 	  { dup /FontFile2 knownoget
-	     { exch pop 1 index 3 1 roll readtruetype adjustfont true }
+	     { exch pop readtruetype true }
 	     { /FontFile3 knownoget
-		{ 1 index exch dup /Subtype get fontloadprocs exch get exec adjustfont true }
+		{ dup /Subtype get fontloadprocs exch get exec true }
 		{ false }
 	       ifelse
 	     }
@@ -628,12 +666,16 @@ readonly def
  } bdef
 
 drawopdict begin
-  /d0 /setcharwidth load def
-  /d1 /setcachedevice load def
-  /Tf
-   { 1 index Page /Font rget not { 1 index /invalidfont signalerror } if
-     resourcefont exch Tf pop
-   } bdef
+  /d0 {
+    .adjustcharwidth setcharwidth
+  } bdef
+  /d1 {
+    6 -2 roll .adjustcharwidth 6 2 roll setcachedevice
+  } bdef
+  /Tf {
+    1 index Page /Font rget not { 1 index /invalidfont signalerror } if
+    resourcefont exch Tf pop
+  } bdef
 end
 
 end			% pdfdict

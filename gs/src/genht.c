@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -26,13 +27,20 @@
  * lines and PostScript comments are ignored, but otherwise each halftone
  * in the file (there may be more than one) must follow this format,
  * where ... indicates arbitrary text:
+    (optionally:)
+	/halftone_name ...
+	/HalftoneType 5
+    (zero or more times:)
 	/halftone_name ...
 	/HalftoneType 3
 	/Width xxx
 	/Height xxx
 	/Thresholds ...
 	--hex data terminated by a >--
-	... defineresource
+	(zero or more times:)
+	    /halftone_name 1 index
+    (finally)
+    ... defineresource
  * Lines that don't follow the above syntax may appear anywhere in the file
  * except in the middle of the hex data.  Width and Height must precede
  * Thresholds, but otherwise the 4 parameters may appear in any order.
@@ -89,7 +97,7 @@ top:
 }
 int
 parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
-	       char **pcont)
+	       char **pprefix, char **pcont)
 {
     char *str;
     char *line;
@@ -102,6 +110,8 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
     /* Parse the file. */
     for (str = *pcont; parse_line(&str, &line);) {
 	char *end;
+	char *prefix;
+	char terminator;
 
 	if (line[0] == '%')
 	    continue;
@@ -111,25 +121,42 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 	    break;
 	if (line[0] != '/')
 	    continue;
+	if (strlen(line) >= 8 &&
+	    !strcmp(line + strlen(line) - 8, " 1 index")
+	    )
+	    continue;
 	end = ++line;
 	while (*end && !strchr(" \t<", *end)) /* find end of name */
 	    ++end;
+	terminator = *end;
+	*end = 0;
 	if (rname == 0) { /* first name is halftone name */
-	    *end = 0;
 	    rname = malloc(strlen(line) + 1);
 	    strcpy(rname, line);
 	    continue;
 	}
-	if (*end == 0)		/* name alone */
+	if (terminator == 0)		/* name alone */
 	    continue;
-	*end++ = 0;
+	++end;
 	if (!strcmp(line, "HalftoneType")) {
-	    if (sscanf(end, "%d", &HalftoneType) != 1 ||
-		HalftoneType != 3
-		) {
+	    if (sscanf(end, "%d", &HalftoneType) != 1) {
+		fprintf(stderr, "Invalid HalftoneType syntax: %s\n", line - 1);
+		return -1;
+	    }
+	    switch (HalftoneType) {
+	    case 3:
+		break;
+	    case 5:
+		if (*pprefix)
+		    free(*pprefix);
+		*pprefix = rname;
+		rname = 0;
+		break;
+	    default:
 		fprintf(stderr, "Invalid HalftoneType: %s\n", end);
 		return -1;
 	    }
+	    continue;
 	} else if (!strcmp(line, "Width")) {
 	    if (sscanf(end, "%d", &Width) != 1 ||
 		Width <= 0 || Width > 0x4000
@@ -148,6 +175,7 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 	    uint ignore;
 	    uint num_levels = 256;
 	    uint num_bits = Width * Height;
+	    char *eol = end + strlen(end); /* skip rest of line */
 	    stream_cursor_read r;
 	    stream_cursor_write w;
 
@@ -162,12 +190,13 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 		malloc(num_bits * sizeof(ushort));
 	    Thresholds = malloc(num_bits);
 	    s_AXD_init_inline(&ss);
-	    r.ptr = end + strlen(end); /* skip rest of line */
-	    r.limit = r.ptr + strlen(r.ptr + 1);
+	    r.ptr = (const byte *)eol;
+	    r.limit = (const byte *)eol + strlen(eol + 1);
 	    w.ptr = Thresholds - 1;
 	    w.limit = w.ptr + num_bits;
 	    s_AXD_template.process((stream_state *)&ss, &r, &w, true);
 	    str = (char *)r.ptr + 1;
+	    break;
 	}
     }
 
@@ -195,18 +224,20 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 
 /* Write a halftone as a C procedure. */
 int
-write_halftone(FILE *out, gx_device_halftone_resource_t *phtr)
+write_halftone(FILE *out, gx_device_halftone_resource_t *phtr,
+	       const char *prefix, int index)
 {
-    const char *rname = phtr->rname;
     int num_bits = phtr->Width * phtr->Height;
     int i;
 
-    /* Write the procedure prologue. */
-    fprintf(out, "const gx_device_halftone_resource_t *\ngs_dht_%s(void)\n{\n",
-	    rname);
+    /* Write the initial comment. */
+    fputs("\n/* ", out);
+    if (prefix)
+	fprintf(out, "%s.", prefix);
+    fprintf(out, "%s */\n", phtr->rname);
 
     /* Write the levels array. */
-    fprintf(out, "static const unsigned int levels[] = {");
+    fprintf(out, "static const unsigned int levels_%d[] = {", index);
     for (i = 0; i < phtr->num_levels; ++i) {
 	if (i % 10 == 0)
 	    fputs("\n", out);
@@ -215,7 +246,7 @@ write_halftone(FILE *out, gx_device_halftone_resource_t *phtr)
     fputs("\n0};\n", out);
 
     /* Write the bit_data array. */
-    fprintf(out, "static const unsigned short bit_data[] = {");
+    fprintf(out, "static const unsigned short bit_data_%d[] = {", index);
     for (i = 0; i < num_bits; ++i) {
 	if (i % 10 == 0)
 	    fputs("\n", out);
@@ -223,10 +254,11 @@ write_halftone(FILE *out, gx_device_halftone_resource_t *phtr)
     }
     fputs("\n0};\n", out);
 
-    /* Write the top-level structure and the procedure body and epilogue. */
-    fprintf(out, "static const gx_device_halftone_resource_t res = {\n    \"%s\", %d, %d, %d, %d, levels, bit_data, %u\n};\n    return &res;\n}\n",
-	    rname, phtr->HalftoneType, phtr->Width, phtr->Height,
-	    phtr->num_levels, ht_order_procs_short.bit_data_elt_size);
+    /* Write the top-level structure. */
+    fprintf(out, "static const gx_device_halftone_resource_t res_%d = {\n    \"%s\", %d, %d, %d, %d, levels_%d, bit_data_%d, %u\n};\n",
+	    index, phtr->rname, phtr->HalftoneType, phtr->Width, phtr->Height,
+	    phtr->num_levels, index, index,
+	    ht_order_procs_short.bit_data_elt_size);
 }
 
 /* Main program */
@@ -240,8 +272,10 @@ main(int argc, char *argv[])
     char *cont;
     char *line;
     gx_device_halftone_resource_t res;
+    char *prefix = 0;
     byte *Thresholds;
     gx_ht_order order;
+    int index, i;
 
     if (argc != 3) {
 	fprintf(stderr, "Usage: genht ht_res.ps ht_data.c\n");
@@ -266,23 +300,35 @@ main(int argc, char *argv[])
 	fprintf(stderr, "Can't open %s for output.\n", oname);
 	exit(1);
     }
-    fprintf(out, "/* %s generated from %s by genht.  Do not edit this file. */\n\n", oname, iname);
+    fprintf(out, "/*\n * This file %s was generated from %s by genht.\n * Do not edit this file.\n *\n", oname, iname);
     /* Copy initial comments from the input file. */
     while (parse_line(&cont, &line) && line[0] == '%')
 	if (line[1] != '!')
-	    fprintf(out, "/*%s */\n", line + 1);
+	    fprintf(out, " * %s\n", line + 1);
     cont[-1] = '\n';
     cont = line;
-    fputs("#include \"gxdhtres.h\"\n\n", out);
-    while ((code = parse_halftone(&res, &Thresholds, &cont)) == 0) {
+    fputs(" */\n#include \"gxdhtres.h\"\n", out);
+    for (index = 0;
+	 (code = parse_halftone(&res, &Thresholds, &prefix, &cont)) == 0;
+	 ++index) {
 	order.width = res.Width;
 	order.num_levels = res.num_levels;
 	order.levels = (uint *)res.levels;
 	order.num_bits = res.Width * res.Height;
 	order.bit_data = (void *)res.bit_data;
 	ht_order_procs_short.construct_order(&order, Thresholds);
-	write_halftone(out, &res);
+	write_halftone(out, &res, prefix, index);
     }
+    if (prefix == 0)
+	prefix = res.rname;
+    fputs("/* Check the prototype. */\n", out);
+    fprintf(out, "DEVICE_HALFTONE_RESOURCE_PROC(gs_dht_%s);\n", prefix);
+    fputs("\nconst gx_device_halftone_resource_t *const *\n", out);
+    fprintf(out, "gs_dht_%s(void)\n{\n    static const gx_device_halftone_resource_t *const res[] = {\n\t",
+	    prefix);
+    for (i = 0; i < index; ++i)
+	fprintf(out, "&res_%d, ", i);
+    fputs("0\n    };\n    return res;\n}\n", out);
     fclose(out);
     if (code < 0)
 	exit(1);
@@ -290,9 +336,6 @@ main(int argc, char *argv[])
 }
 
 /* Stubs */
-const gs_ptr_procs_t ptr_struct_procs = {NULL, NULL, NULL};
-const gs_ptr_procs_t ptr_string_procs = {NULL, NULL, NULL};
-const gs_ptr_procs_t ptr_const_string_procs = {NULL, NULL, NULL};
 ENUM_PTRS_BEGIN_PROC(gs_no_struct_enum_ptrs)
 {
     return 0;

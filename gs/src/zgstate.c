@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -16,12 +17,47 @@
 #include "gsmatrix.h"
 #include "store.h"
 
-/* Forward references */
-private int num_param(P2(i_ctx_t *, int (*)(P2(gs_state *, floatp))));
-
 /* Structure descriptors */
 private_st_int_gstate();
 private_st_int_remap_color_info();
+
+/* ------ Utilities ------ */
+
+private int
+zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(P2(gs_state *, floatp)))
+{
+    os_ptr op = osp;
+    double param;
+    int code = real_param(op, &param);
+
+    if (code < 0)
+	return_op_typecheck(op);
+    code = set_proc(igs, param);
+    if (!code)
+	pop(1);
+    return code;
+}
+
+private int
+zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(P2(gs_state *, bool)))
+{
+    os_ptr op = osp;
+
+    check_type(*op, t_boolean);
+    set_proc(igs, op->value.boolval);
+    pop(1);
+    return 0;
+}
+
+private int
+zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(P1(const gs_state *)))
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, current_proc(igs));
+    return 0;
+}
 
 /* ------ Operations on the entire graphics state ------ */
 
@@ -199,7 +235,7 @@ zcurrentlinejoin(i_ctx_t *i_ctx_p)
 private int
 zsetmiterlimit(i_ctx_t *i_ctx_p)
 {
-    return num_param(i_ctx_p, gs_setmiterlimit);
+    return zset_real(i_ctx_p, gs_setmiterlimit);
 }
 
 /* - currentmiterlimit <num> */
@@ -271,7 +307,7 @@ zcurrentdash(i_ctx_t *i_ctx_p)
 private int
 zsetflat(i_ctx_t *i_ctx_p)
 {
-    return num_param(i_ctx_p, gs_setflat);
+    return zset_real(i_ctx_p, gs_setflat);
 }
 
 /* - currentflat <num> */
@@ -291,23 +327,14 @@ zcurrentflat(i_ctx_t *i_ctx_p)
 private int
 zsetaccuratecurves(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp;
-
-    check_type(*op, t_boolean);
-    gs_setaccuratecurves(igs, op->value.boolval);
-    pop(1);
-    return 0;
+    return zset_bool(i_ctx_p, gs_setaccuratecurves);
 }
 
 /* - .currentaccuratecurves <bool> */
 private int
 zcurrentaccuratecurves(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp;
-
-    push(1);
-    make_bool(op, gs_currentaccuratecurves(igs));
-    return 0;
+    return zcurrent_bool(i_ctx_p, gs_currentaccuratecurves);
 }
 
 /* <join_int|-1> .setcurvejoin - */
@@ -373,23 +400,14 @@ zcurrentfilladjust2(i_ctx_t *i_ctx_p)
 private int
 zsetdashadapt(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp;
-
-    check_type(*op, t_boolean);
-    gs_setdashadapt(igs, op->value.boolval);
-    pop(1);
-    return 0;
+    return zset_bool(i_ctx_p, gs_setdashadapt);
 }
 
 /* - .currentdashadapt <bool> */
 private int
 zcurrentdashadapt(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp;
-
-    push(1);
-    make_bool(op, gs_currentdashadapt(igs));
-    return 0;
+    return zcurrent_bool(i_ctx_p, gs_currentdashadapt);
 }
 
 /* <num> <bool> .setdotlength - */
@@ -436,6 +454,20 @@ zdotorientation(i_ctx_t *i_ctx_p)
     return gs_dotorientation(igs);
 }
 
+/* <bool> .setlimitclamp - */
+private int
+zsetlimitclamp(i_ctx_t *i_ctx_p)
+{
+    return zset_bool(i_ctx_p, gs_setlimitclamp);
+}
+
+/* - .currentlimitclamp <bool> */
+private int
+zcurrentlimitclamp(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_bool(i_ctx_p, gs_currentlimitclamp);
+}
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -447,6 +479,7 @@ const op_def zgstate1_op_defs[] = {
     {"0.currentdotlength", zcurrentdotlength},
     {"0.currentfilladjust2", zcurrentfilladjust2},
     {"0currentflat", zcurrentflat},
+    {"0.currentlimitclamp", zcurrentlimitclamp},
     {"0currentlinecap", zcurrentlinecap},
     {"0currentlinejoin", zcurrentlinejoin},
     {"0currentlinewidth", zcurrentlinewidth},
@@ -454,10 +487,10 @@ const op_def zgstate1_op_defs[] = {
     {"0.dotorientation", zdotorientation},
     {"0grestore", zgrestore},
     {"0grestoreall", zgrestoreall},
-    {"0gsave", zgsave},
     op_def_end(0)
 };
 const op_def zgstate2_op_defs[] = {
+    {"0gsave", zgsave},
     {"0initgraphics", zinitgraphics},
     {"1.setaccuratecurves", zsetaccuratecurves},
     {"1.setcurvejoin", zsetcurvejoin},
@@ -466,6 +499,7 @@ const op_def zgstate2_op_defs[] = {
     {"2.setdotlength", zsetdotlength},
     {"0.setdotorientation", zsetdotorientation},
     {"2.setfilladjust2", zsetfilladjust2},
+    {"1.setlimitclamp", zsetlimitclamp},
     {"1setflat", zsetflat},
     {"1.setlinecap", zsetlinecap},
     {"1.setlinejoin", zsetlinejoin},
@@ -496,20 +530,4 @@ private void
 gs_istate_free(void *old, gs_memory_t * mem)
 {
     gs_free_object(mem, old, "int_grestore");
-}
-
-/* Get a numeric parameter */
-private int
-num_param(i_ctx_t *i_ctx_p, int (*pproc)(P2(gs_state *, floatp)))
-{
-    os_ptr op = osp;
-    double param;
-    int code = real_param(op, &param);
-
-    if (code < 0)
-	return_op_typecheck(op);
-    code = (*pproc)(igs, param);
-    if (!code)
-	pop(1);
-    return code;
 }

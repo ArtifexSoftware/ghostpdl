@@ -1,4 +1,5 @@
 %    Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -606,7 +607,10 @@ end
 		% newdict is currentdict
 		% Assumes Width, Height, BPC, Interpolate already copied.
   /ImageType 1 def
-  /ImageMatrix Width 0 0 Height neg 0 Height 6 array astore def
+  /ImageMatrix Width 0 0
+		% Handle 0-height images specially.
+    Height dup 0 eq { pop 1 } if neg 0 1 index neg
+    6 array astore def
   dup /ImageMask knownoget dup { and } if {
 		% Image mask
 		% Decode is required for the PostScript image operators.
@@ -679,7 +683,10 @@ drawopdict begin
   /Do
     { PDFfile fileposition exch
       dup Page /XObject rget not { /undefined cvx signalerror } if
-      exch pop dup /Subtype get xobjectprocs exch get exec
+      exch pop dup /Subtype get xobjectprocs exch get
+		% Don't leave extra objects on the stack while executing
+		% the definition of the form.
+      3 -1 roll 2 .execn
       PDFfile exch setfileposition
     } bdef
 end

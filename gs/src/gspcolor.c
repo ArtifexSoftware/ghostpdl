@@ -1,6 +1,7 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -208,6 +209,10 @@ gx_remap_Pattern(const gs_client_color * pc, const gs_color_space * pcs,
 		 gx_device_color * pdc, const gs_imager_state * pis,
 		 gx_device * dev, gs_color_select_t select)
 {
+    if (pc->pattern == 0) {
+	color_set_null_pattern(pdc);
+	return 0;
+    }
     return
 	pc->pattern->type->procs.remap_color(pc, pcs, pdc, pis, dev, select);
 }

@@ -1,6 +1,7 @@
-/* Copyright (C) 1992, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1992, 1995, 1996, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -109,7 +110,7 @@ typedef struct gx_image_enum_common_s gx_image_enum_common_t;
 #endif
 
 int gs_image_begin_typed(P4(const gs_image_common_t * pic, gs_state * pgs,
-			  bool uses_color, gx_image_enum_common_t ** ppie));
+			    bool uses_color, gx_image_enum_common_t ** ppie));
 
 typedef struct gs_image_enum_s gs_image_enum;
 gs_image_enum *gs_image_enum_alloc(P2(gs_memory_t *, client_name_t));
@@ -156,15 +157,15 @@ const byte *gs_image_planes_wanted(P1(gs_image_enum *penum));
  * details.
  *
  *   plane_data[]  is an array of size num_planes of gs_const_string type
- *                which contains the pointer and the length for each.
+ *                 which contains the pointer and the length for each.
  *   used[]        is also of size num_planes and will be set to the number of
- *                bytes consumed for each plane.
+ *                 bytes consumed for each plane.
  *
  * The amount of data available for a plane (i.e., the size of a
  * plane_data[] element) can be 0 in order to provide data for a single
  * plane or only some of the planes.  Note that if data is retained,
  * it is not "consumed": e.g., if all of the data for a given plane is
- * returned, used[] for that plane will be set to 0.
+ * retained, used[] for that plane will be set to 0.
  *
  * Returns 1 if end of image, < 0 error code, otherwise 0.  In any case,
  * stores pointers to the retained strings into plane_data[].  Note that

@@ -1,7 +1,7 @@
 1 gs
  gs - Aladdin Ghostscript interpreter/previewer
 ! $RCSfile$ $Revision$
-! Ghostscript version 5.96, 12 November 1999
+! Ghostscript version 6.0, 3 February 2000
   Usage:
    $ gs [options] [file ...]
 
@@ -117,6 +117,9 @@
   legal        8.5"       14"        21.59     35.56
   letter       8.5"       11"        21.59     27.94
   note         7.5"       10"        19.05     25.4
+
+  Note that the B paper sizes are ISO sizes: for information about using
+  JIS B sizes, see `Use.htm'.
 
 2 Initialization_files
  When looking for the initialization files (gs_*.ps), the files related

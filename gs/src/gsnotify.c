@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -45,9 +46,14 @@ gs_notify_register(gs_notify_list_t *nlist, gs_notify_proc_t proc,
  * If proc_data is 0, unregister all registrations of that proc; otherwise,
  * unregister only the registration of that procedure with that proc_data.
  */
+private void
+no_unreg_proc(void *pdata)
+{
+}
 int
-gs_notify_unregister(gs_notify_list_t *nlist, gs_notify_proc_t proc,
-		     void *proc_data)
+gs_notify_unregister_calling(gs_notify_list_t *nlist, gs_notify_proc_t proc,
+			     void *proc_data,
+			     void (*unreg_proc)(P1(void *pdata)))
 {
     gs_notify_registration_t **prev = &nlist->first;
     gs_notify_registration_t *cur;
@@ -58,11 +64,18 @@ gs_notify_unregister(gs_notify_list_t *nlist, gs_notify_proc_t proc,
 	    (proc_data == 0 || cur->proc_data == proc_data)
 	    ) {
 	    *prev = cur->next;
+	    unreg_proc(cur->proc_data);
 	    gs_free_object(nlist->memory, cur, "gs_notify_unregister");
 	    found = 1;
 	} else
 	    prev = &cur->next;
     return found;
+}
+int
+gs_notify_unregister(gs_notify_list_t *nlist, gs_notify_proc_t proc,
+		     void *proc_data)
+{
+    return gs_notify_unregister_calling(nlist, proc, proc_data, no_unreg_proc);
 }
 
 /*

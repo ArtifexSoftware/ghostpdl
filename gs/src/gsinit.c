@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -21,10 +22,10 @@ extern FILE *gs_debug_out;
 extern_gx_init_table();
 
 /* Initialization to be done before anything else. */
-void
+int
 gs_lib_init(FILE * debug_out)
 {
-    gs_lib_init1(gs_lib_init0(debug_out));
+    return gs_lib_init1(gs_lib_init0(debug_out));
 }
 gs_memory_t *
 gs_lib_init0(FILE * debug_out)
@@ -38,15 +39,17 @@ gs_lib_init0(FILE * debug_out)
     gs_log_errors = 0;
     return mem;
 }
-void
+int
 gs_lib_init1(gs_memory_t * mem)
-{				/* Run configuration-specific initialization procedures. */
-    {
-	void (*const *ipp) (P1(gs_memory_t *));
+{
+    /* Run configuration-specific initialization procedures. */
+    init_proc((*const *ipp));
+    int code;
 
-	for (ipp = gx_init_table; *ipp != 0; ++ipp)
-	    (**ipp) (mem);
-    }
+    for (ipp = gx_init_table; *ipp != 0; ++ipp)
+	if ((code = (**ipp)(mem)) < 0)
+	    return code;
+    return 0;
 }
 
 /* Clean up after execution. */

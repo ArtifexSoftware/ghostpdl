@@ -1,7 +1,8 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* .BMP file format output drivers: Demo of ASYNC rendering */
@@ -25,11 +26,12 @@
 /*
  * The original version of this driver was restricted to producing a single
  * page per file.  If for some reason you want to reinstate this
- * restriction, uncomment the next line.  Unfortunately, this seems to be
- * necessary: even though the logic for multi-page files is straightforward,
- * it doesn't work.
+ * restriction, uncomment the next line. 
+ * NOTE: Even though the logic for multi-page files is straightforward,
+ * it results in a file that most programs that process BMP format cannot
+ * handle. Most programs will only display the first page.
  */
-#define SINGLE_PAGE
+/*************** #define SINGLE_PAGE ****************/
 
 /* ------ The device descriptors ------ */
 
@@ -40,17 +42,13 @@ typedef struct gx_device_async_s {
     bool UsePlanarBuffer;
     int buffered_page_exists;
     long file_offset_to_data[4];
-    long file_offset_to_page;
-#ifdef SINGLE_PAGE
-    int copies_printed;
-#endif
 } gx_device_async;
 
 /* Define initializer for device */
 #define async_device(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
 { prn_device_std_margins_body(gx_device_async, procs, dname,\
     w10, h10, xdpi, ydpi, lm, tm, lm, bm, rm, tm, color_bits, print_page),\
-  0, 0, { 0 }, 0, 0\
+    0, 0, { 0, 0, 0, 0 }\
 }
 
 private dev_proc_open_device(bmpa_writer_open);
@@ -253,13 +251,12 @@ bmpa_reader_start_render_thread(gdev_prn_start_render_params *params)
 private int
 bmpa_reader_open_render_device(gx_device_printer *ppdev)
 {
-    gx_device_async * const prdev = (gx_device_async *)ppdev;
-	
-    /* Do anything that needs to be done at open time here... */
-#ifdef SINGLE_PAGE
-    prdev->copies_printed = 0;
-#endif
-    prdev->file_offset_to_page = 0;
+    /*
+     * Do anything that needs to be done at open time here.
+     * Since this implementation doesn't do anything, we don't need to
+     * cast the device argument to the more specific type.
+     */
+    /*gx_device_async * const prdev = (gx_device_async *)ppdev;*/
 
     /* Cascade down to the default handler */
     return gdev_prn_async_render_open(ppdev);
@@ -296,28 +293,22 @@ bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
     byte *raster_data;
     int plane;
 
-#ifdef SINGLE_PAGE
-    /*
-     * BMP format is single page, so discard all but 1st printable page
-     * This logic isn't quite right, since we can't truncate file if
-     * num_pages == 0.
-     */
-    if (prdev->copies_printed > 0)
-	return 0;
-#endif
-
     /* If there's data in buffer, need to process w/overlays */
     if (prdev->buffered_page_exists) {
 	code = bmpa_reader_buffer_planes(pdev, prn_stream, num_copies,
 					 first_plane, last_plane, raster);
 	goto done;
     }
-
+#ifdef SINGLE_PAGE
+    /* BMP format is single page, so discard all but 1st printable page */
+    /* Since the OutputFile may have a %d, we use ftell to determine if */
+    /* this is a zero length file, which is legal to write		*/
+    if (ftell(prn_stream) != 0)
+	return 0;
+#endif
     row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     if (row == 0)		/* can't allocate row buffer */
 	return_error(gs_error_VMerror);
-
-    fseek(prn_stream, prdev->file_offset_to_page, SEEK_SET);
 
     for (plane = first_plane; plane <= last_plane; ++plane) {
 	gx_render_plane_t render_plane;
@@ -357,20 +348,6 @@ bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
     }
 done:
     gs_free_object(pdev->memory, row, "bmp file buffer");
-#ifdef SINGLE_PAGE
-    if (code >= 0 && prdev->copies_printed > 0)
-	prdev->copies_printed = num_copies;
-#else
-    /* Save the file offset of the start of the next page. */
-    {
-	long offset = ftell(prn_stream);
-
-	if (offset == -1)
-	    code = gs_note_error(gs_error_ioerror);
-	else
-	    prdev->file_offset_to_page = offset;
-    }
-#endif
     prdev->buffered_page_exists = 0;
     return code;
 }
@@ -402,12 +379,6 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
     gx_device_async * const prdev = (gx_device_async *)pdev;
     gx_device * const dev = (gx_device *)pdev;
     int code = 0;
-
-#ifdef SINGLE_PAGE
-    /* BMP format is single page, so discard all but 1st page */
-    if (prdev->copies_printed > 0)
-	return 0;
-#endif
 
     /* If there's no data in buffer, no need to do any overlays */
     if (!prdev->buffered_page_exists) {
@@ -536,10 +507,6 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
     }
 
  done:
-#ifdef SINGLE_PAGE
-    if (code >= 0 && prdev->copies_printed > 0)
-	prdev->copies_printed = num_copies;
-#endif
     prdev->buffered_page_exists = (code >= 0);
     return code;
 }

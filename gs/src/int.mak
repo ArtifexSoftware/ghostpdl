@@ -1,4 +1,5 @@
-#    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -218,7 +219,6 @@ iscannum_h=$(PSSRC)iscannum.h
 istream_h=$(PSSRC)istream.h
 main_h=$(PSSRC)main.h $(imain_h) $(iminst_h)
 sbwbs_h=$(PSSRC)sbwbs.h
-sfilter_h=$(PSSRC)sfilter.h $(gstypes_h)
 shcgen_h=$(PSSRC)shcgen.h
 smtf_h=$(PSSRC)smtf.h
 # Nested include files
@@ -423,7 +423,7 @@ $(PSOBJ)zht.$(OBJ) : $(PSSRC)zht.c $(OP) $(memory__h)\
  $(ialloc_h) $(estack_h) $(igstate_h) $(iht_h) $(store_h)
 	$(PSCC) $(PSO_)zht.$(OBJ) $(C_) $(PSSRC)zht.c
 
-$(PSOBJ)zimage.$(OBJ) : $(PSSRC)zimage.c $(OP)\
+$(PSOBJ)zimage.$(OBJ) : $(PSSRC)zimage.c $(OP) $(memory__h)\
  $(gscspace_h) $(gscssub_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxiparam_h)\
  $(estack_h) $(ialloc_h) $(ifilter_h) $(igstate_h) $(iimage_h) $(ilevel_h)\
@@ -644,18 +644,15 @@ $(PSOBJ)zrop.$(OBJ) : $(PSSRC)zrop.c $(OP) $(memory__h)\
 $(PSD)type1.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)psf1lib.dev $(PSD)psf1read.dev
 	$(SETMOD) $(PSD)type1 -include $(GLD)psf1lib $(PSD)psf1read
 
-psf1read_1=$(PSOBJ)seexec.$(OBJ) $(PSOBJ)zchar1.$(OBJ) $(PSOBJ)zcharout.$(OBJ)
+psf1read_1=$(PSOBJ)zchar1.$(OBJ) $(PSOBJ)zcharout.$(OBJ)
 psf1read_2=$(PSOBJ)zfont1.$(OBJ) $(PSOBJ)zmisc1.$(OBJ)
 psf1read_=$(psf1read_1) $(psf1read_2)
-$(PSD)psf1read.dev : $(INT_MAK) $(ECHOGS_XE) $(psf1read_)
+$(PSD)psf1read.dev : $(INT_MAK) $(ECHOGS_XE) $(psf1read_) $(GLD)seexec.dev
 	$(SETMOD) $(PSD)psf1read $(psf1read_1)
 	$(ADDMOD) $(PSD)psf1read -obj $(psf1read_2)
+	$(ADDMOD) $(PSD)psf1read -include $(GLD)seexec
 	$(ADDMOD) $(PSD)psf1read -oper zchar1 zfont1 zmisc1
 	$(ADDMOD) $(PSD)psf1read -ps gs_type1
-
-$(PSOBJ)seexec.$(OBJ) : $(PSSRC)seexec.c $(AK) $(stdio__h)\
- $(gscrypt1_h) $(scanchar_h) $(sfilter_h) $(strimpl_h)
-	$(PSCC) $(PSO_)seexec.$(OBJ) $(C_) $(PSSRC)seexec.c
 
 $(PSOBJ)zchar1.$(OBJ) : $(PSSRC)zchar1.c $(OP) $(memory__h)\
  $(gspaint_h) $(gspath_h) $(gsrect_h) $(gsstruct_h)\
@@ -833,7 +830,7 @@ $(gconfigf_h) : $(TOP_MAKEFILES) $(INT_MAK) $(ECHOGS_XE) $(GENCONF_XE)
 	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts13)
 	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts14)
 	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts15)
-	$(GENCONF_XE) $(PSGEN)ccfonts_.dev -n gs -f $(gconfigf_h)
+	$(EXP)$(GENCONF_XE) $(PSGEN)ccfonts_.dev -n gs -f $(gconfigf_h)
 
 # We separate icfontab.dev from ccfonts.dev so that a customer can put
 # compiled fonts into a separate shared library.
@@ -898,25 +895,33 @@ $(PSOBJ)iccinit1.$(OBJ) : $(PSOBJ)gs_init.$(OBJ)
 # All the gs_*.ps files should be prerequisites of gs_init.c,
 # but we don't have any convenient list of them.
 $(PSGEN)gs_init.c : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
-	$(GENINIT_XE) -I $(PSLIB) $(GS_INIT) $(gconfig_h) -c $(PSGEN)gs_init.c
+	$(EXP)$(GENINIT_XE) -I $(PSLIB) $(GS_INIT) $(gconfig_h) -c $(PSGEN)gs_init.c
 
 $(PSOBJ)gs_init.$(OBJ) : $(PSGEN)gs_init.c $(stdpre_h)
 	$(PSCC) $(PSO_)gs_init.$(OBJ) $(C_) $(PSGEN)gs_init.c
 
-# ---------------- Compiled halftone ---------------- #
+# ---------------- Stochastic halftone ---------------- #
 
-compht_=$(PSOBJ)ht_ccbnm.$(OBJ)
+$(PSD)stocht.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)stocht$(COMPILE_INITS).dev
+	$(SETMOD) $(PSD)stocht -include $(PSD)stocht$(COMPILE_INITS)
 
-$(PSD)compht.dev : $(compht_) $(INT_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(PSD)compht $(compht_)
-	$(ADDMOD) $(PSD)compht -halftone BlueNoiseMaskBlack BlueNoiseMaskCyan
-	$(ADDMOD) $(PSD)compht -halftone BlueNoiseMaskMagenta BlueNoiseMaskYellow
+# If we aren't compiling, just include the PostScript code.
+# Note that the resource machinery must be loaded first.
+$(PSD)stocht0.dev : $(INT_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(PSD)stocht0 -ps gs_res ht_ccsto
 
-$(PSOBJ)ht_ccbnm.$(OBJ) : $(PSGEN)ht_ccbnm.c $(gxdhtres_h)
-	$(PSCC) $(PSO_)ht_ccbnm.$(OBJ) $(C_) $(PSGEN)ht_ccbnm.c
+# If we are compiling, a special compilation step is needed.
+stocht1_=$(PSOBJ)ht_ccsto.$(OBJ)
+$(PSD)stocht1.dev : $(stocht1_) $(INT_MAK) $(ECHOGS_XE) $(PSD)stocht0.dev
+	$(SETMOD) $(PSD)stocht1 $(stocht1_)
+	$(ADDMOD) $(PSD)stocht1 -halftone $(Q)StochasticDefault$(Q)
+	$(ADDMOD) $(PSD)stocht1 -include $(PSD)stocht0
 
-$(PSGEN)ht_ccbnm.c : $(PSLIB)ht_ccbnm.ps $(GENHT_XE)
-	$(GENHT_XE) $(PSLIB)ht_ccbnm.ps $(PSGEN)ht_ccbnm.c
+$(PSOBJ)ht_ccsto.$(OBJ) : $(PSGEN)ht_ccsto.c $(gxdhtres_h)
+	$(PSCC) $(PSO_)ht_ccsto.$(OBJ) $(C_) $(PSGEN)ht_ccsto.c
+
+$(PSGEN)ht_ccsto.c : $(PSLIB)ht_ccsto.ps $(GENHT_XE)
+	$(EXP)$(GENHT_XE) $(PSLIB)ht_ccsto.ps $(PSGEN)ht_ccsto.c
 
 # ======================== PostScript Level 2 ======================== #
 

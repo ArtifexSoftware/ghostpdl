@@ -1,6 +1,7 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -452,8 +453,12 @@ sgets(stream * s, byte * buf, uint nmax, uint * pn)
 		cw.limit -= min_left;
 		status = sreadbuf(s, &cw);
 		cw.limit += min_left;
-		/* We know the stream buffer is empty, */
-		/* so it's safe to update position. */
+		/*
+		 * We know the stream buffer is empty, so it's safe to
+		 * update position.  However, we need to reset the read
+		 * cursor to indicate that there is no data in the buffer.
+		 */
+		s->srptr = s->srlimit = s->cbuf - 1;
 		s->position += cw.ptr - wptr;
 		if (status != 1 || cw.ptr == cw.limit)
 		    break;

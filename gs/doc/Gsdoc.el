@@ -4,7 +4,8 @@
 ;; Ghostscript documentation.
 ;;
 ;; Pete Kaiser 8 September 1998 V1.2
-
+;;		2 December 1999 V1.3	Correct improper "--" to "=="
+;;					in HTML marker comments
 ;;============================================================
 ;; One global key setting, which runs the function to bind some keys
 ;; locally -- presumably in a buffer containing HTML code.  Plus that
@@ -461,7 +462,7 @@ be most useful in preparing new sections for the news document."
 (goto-char (point-min))
 (insert "<pre>\n") (setq g~pre-point (point))
 (setq g~ID " [No pre-existing ID] ")
-(if (re-search-forward "^\\$Id:\\( [^ ]+ \\)\\$" nil t) (progn
+(if (re-search-forward "^\\$RCSfile:\\( [^ ]+ \\)\\$ $Revision: $" nil t) (progn
     (setq g~ID (buffer-substring (match-beginning 1) (match-end 1)))
     (next-line 1) (beginning-of-line) (delete-region g~pre-point (point))
     ))
@@ -528,7 +529,7 @@ properly placed markers, but that's history."
       )
     (progn
       (search-forward "</title>" nil t) (end-of-line)
-      (insert (concat "\n<!-- $Id: " g~thisfile " $ -->"))
+      (insert (concat "\n<!-- $RCSfile$ $Revision$ -->"))
       (setq Original "(UNSET by gs-structure)")
       )
     )
@@ -630,7 +631,7 @@ of coming up with a much more useful marking scheme."
 (setq HEAD (concat "<!-- [" basic "] "))
 (concat HEAD
     (substring
-    "---------------------------------------------------------------------- -->"
+    "====================================================================== -->"
     (- (length HEAD) 80)
     ))
 )

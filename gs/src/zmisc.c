@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1997, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -192,7 +193,6 @@ zgetenv(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     char *str;
     byte *value;
-    int code;
     int len = 0;
 
     check_read_type(*op, t_string);
@@ -209,7 +209,7 @@ zgetenv(i_ctx_t *i_ctx_p)
 	ifree_string((byte *) str, r_size(op) + 1, "getenv key");
 	return_error(e_VMerror);
     }
-    code = gp_getenv(str, (char *)value, &len);		/* can't fail */
+    DISCARD(gp_getenv(str, (char *)value, &len));	/* can't fail */
     ifree_string((byte *) str, r_size(op) + 1, "getenv key");
     /* Delete the stupid C string terminator. */
     value = iresize_string(value, len, len - 1,

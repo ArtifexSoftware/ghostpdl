@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1992, 1993, 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -257,7 +258,19 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	    arg = sdecodeushort(p + 1, num_format);
 	    p += 2;
 	  str:
-	    {
+	    if (s->foreign && rlimit - p >= arg) {
+		/*
+		 * Reference the string directly in the buffer.  It is
+		 * marked writable for consistency with the non-direct
+		 * case, but since the "buffer" may be data compiled into
+		 * the executable, it is probably actually read-only.
+		 */
+		s_end_inline(s, p, rlimit);
+		make_string(pref, a_all | avm_foreign, arg,
+			    (byte *)sbufptr(s));
+		sbufskip(s, arg);
+		return 0;
+	    } else {
 		byte *str = ialloc_string(arg, "string token");
 
 		if (str == 0)

@@ -1,7 +1,8 @@
 /* Copyright (C) 1989, 1990, 1991 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$*/
 /* HP DeskJet 500C driver */

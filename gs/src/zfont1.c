@@ -1,6 +1,7 @@
 /* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -23,6 +24,7 @@
 
 /* Type 1 font procedures (defined in zchar1.c) */
 extern const gs_type1_data_procs_t z1_data_procs;
+font_proc_glyph_info(z1_glyph_info);
 font_proc_glyph_outline(zcharstring_glyph_outline);
 /* Font procedures defined here */
 private font_proc_font_info(z1_font_info);
@@ -182,7 +184,7 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
     pfont->data.proc_data = (char *)pdata;
     pfont->procs.font_info = z1_font_info;
     pfont->procs.same_font = z1_same_font;
-    pfont->procs.glyph_info = gs_type1_glyph_info;
+    pfont->procs.glyph_info = z1_glyph_info;
     pfont->procs.enumerate_glyph = z1_enumerate_glyph;
     pfont->procs.glyph_outline = zcharstring_glyph_outline;
     return define_gs_font((gs_font *)pfont);
@@ -329,7 +331,7 @@ z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
 	const gs_font_type1 *pofont1 = (const gs_font_type1 *)ofont;
 	const font_data *const podata = pfont_data(pofont1);
 
-	if ((check & (FONT_SAME_OUTLINES | FONT_SAME_OUTLINES)) &&
+	if ((check & (FONT_SAME_OUTLINES | FONT_SAME_METRICS)) &&
 	    pofont1->data.procs == &z1_data_procs &&
 	    obj_eq(&pdata->CharStrings, &podata->CharStrings) &&
 	    /*
@@ -355,7 +357,7 @@ z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
 	    )
 	    same |= FONT_SAME_ENCODING;
 
-	return same;
+	return same & mask;
     }
 }
 

@@ -1,6 +1,7 @@
 /* Copyright (C) 1994, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -12,7 +13,7 @@
 /* ------ iinit.c ------ */
 
 /* Enter a name and value into systemdict. */
-void i_initial_enter_name(P3(i_ctx_t *, const char *, const ref *));
+int i_initial_enter_name(P3(i_ctx_t *, const char *, const ref *));
 #define initial_enter_name(nstr, pvalue)\
   i_initial_enter_name(i_ctx_p, nstr, pvalue)
 

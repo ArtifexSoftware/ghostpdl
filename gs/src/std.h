@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1992, 1993, 1994, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -277,14 +278,12 @@ void lprintf_file_only(P2(FILE *, const char *));
 /*
  * Define the prototype for module initialization procedures.  This is not
  * a very good place to define this, but we can't find a better one.
- *
- * The return value should probably be int rather than void....
  */
 #ifndef gs_memory_DEFINED
 #  define gs_memory_DEFINED
 typedef struct gs_memory_s gs_memory_t;
 #endif
 #define init_proc(proc)\
-  void proc(P1(gs_memory_t *))
+  int proc(P1(gs_memory_t *))
 
 #endif /* std_INCLUDED */

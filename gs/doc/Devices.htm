@@ -6,19 +6,19 @@
 </head>
 
 <body>
-<!-- [1.0 begin visible header] -------------------------------------------- -->
+<!-- [1.0 begin visible header] ============================================ -->
 
-<!-- [1.1 begin headline] -------------------------------------------------- -->
+<!-- [1.1 begin headline] ================================================== -->
 
-<p><table width="100%" border="0">
+<table width="100%" border="0">
 <tr><th align="center" bgcolor="#CCCC00"><font size=6>
 Details of Ghostscript output devices
 </font>
 </table>
 
-<!-- [1.1 end headline] ---------------------------------------------------- -->
+<!-- [1.1 end headline] ==================================================== -->
 
-<!-- [1.2 begin table of contents] ----------------------------------------- -->
+<!-- [1.2 begin table of contents] ========================================= -->
 
 <h2>Table of contents</h2>
 
@@ -116,22 +116,22 @@ Details of Ghostscript output devices
 <li><a href="#Apple">Apple dot matrix printer</a>
 </ul></blockquote>
 
-<!-- [1.2 end table of contents] ------------------------------------------- -->
+<!-- [1.2 end table of contents] =========================================== -->
 
-<!-- [1.3 begin hint] ------------------------------------------------------ -->
+<!-- [1.3 begin hint] ====================================================== -->
 
 <p>For other information, see the <a href="Readme.htm">Ghostscript
 overview</a>.  You may also be interested in <a href="Make.htm">how to
 build Ghostscript</a> and <a href="Install.htm">install it</a>, as well as
 the description of the <a href="Drivers.htm">driver interface</a>.
 
-<!-- [1.3 end hint] -------------------------------------------------------- -->
+<!-- [1.3 end hint] ======================================================== -->
 
 <hr>
 
-<!-- [1.0 end visible header] ---------------------------------------------- -->
+<!-- [1.0 end visible header] ============================================== -->
 
-<!-- [2.0 begin contents] -------------------------------------------------- -->
+<!-- [2.0 begin contents] ================================================== -->
 
 <h1><a name="Measurements"></a>Notes on measurements</h1>
 
@@ -172,16 +172,23 @@ known to Ghostscript</a> are defined in the initialization file
 
 <h1><a name="Win"></a>MS Windows printers</h1>
 
-<p>
-This section was written by Russell Lang, the author of Ghostscript's MS
-Windows-specific printer driver.
+<h1><a name="Win"></a>MS Windows printers</h1>
 
 <p>
-The <b><tt>mswinpr2</tt></b> device uses MS Windows printer drivers, and
+This section was written by Russell Lang, the author of Ghostscript's
+MS&nbsp;Windows-specific printer driver, and updated by
+<a href="mailto:Pierre.Arnaud@opac.ch">Pierre Arnaud</a>,
+the current maintainer.
+</p>
+
+<p>
+The <b><tt>mswinpr2</tt></b> device uses MS&nbsp;Windows printer drivers, and
 thus should work with any printer with device-independent bitmap (DIB)
-raster capabilities.  The printer resolution cannot be selected using
-PostScript commands from Ghostscript: use the printer setup in the Control
-Panel instead.
+raster capabilities. The printer resolution cannot be selected directly
+using PostScript commands from Ghostscript: use the printer setup in the
+Control Panel instead. It is however possible to specify a maximum resolution
+for the printed document (see below).
+</p>
 
 <p>
 If no Windows printer name is specified in <b><tt>-sOutputFile</tt></b>,
@@ -190,10 +197,12 @@ dialog box.  You must set the orientation to Portrait and the page size to
 that expected by Ghostscript; otherwise the image will be clipped.
 Ghostscript sets the physical device size to that of the Windows printer
 driver, but it does not update the PostScript clipping path.
+</p>
 
 <p>
 If a Windows printer name is specified in <b><tt>-sOutputFile</tt></b> using
-the format "\\spool\printer_name", for instance
+the format <tt>"\\spool\printer_name"</tt>, for instance
+</p>
 
 <blockquote><b><tt>
 gs ... -sOutputFile="\\spool\Apple LaserWriter II NT"
@@ -205,30 +214,211 @@ then Ghostscript attempts to open the Windows printer without prompting
 Ghostscript attempts to set the Windows printer page size and orientation
 to match that expected by Ghostscript, but doesn't always succeed.  It uses
 this algorithm:
+</p>
 
 <ol>
 <li>If the requested page size matches one of the Windows standard page
-sizes +/- 2mm, request that standard size.
+sizes +/- 2mm, request that standard size.</li>
 
 <li>Otherwise if the requested page size matches one of the Windows
 standard page sizes in landscape mode, ask for that standard size in
-landscape.
+landscape.</li>
 
-<li>Otherwise ask for the page size by specifying only its dimensions.
-
-<li>If using Windows NT, select a form that matches the page size.  (This
-isn't working at the moment)
+<li>Otherwise ask for the page size by specifying only its dimensions.</li>
 
 <li>Merge the requests above with the defaults.  If the printer driver
 ignores the requested paper size, no error is generated: it will print on
-the wrong paper size.
+the wrong paper size.</li>
 
-<li>Open the Windows printer with the merged orientation and size.
+<li>Open the Windows printer with the merged orientation and size.</li>
 </ol>
 
 <p>
 The Ghostscript physical device size is updated to match the Windows
 printer physical device.
+</p>
+
+<h2><a name="Win_properties"></a>Supported command-line parameters</h2>
+
+<p>
+The <b><tt>mswinpr2</tt></b> device supports a limited number of command-line
+parameters (e.g. it does not support setting the printer resolution). The
+recognized parameters are the following:
+</p>
+
+<blockquote>
+<dl>
+<dt><b><tt>-sDEVICE=mswinpr2</tt></b></dt>
+<dd>Selects the MS&nbsp;Windows printer device. If Ghostscript was not
+compiled with this device as the default output device, you have to specify
+it on the command line.</dd>
+
+<dt><b><tt>-dNoCancel</tt></b></dt>
+<dd>Hides the progress dialog, which shows the percent of the document page
+already processed and also provides a <em>cancel</em> button. This option
+is useful if GS is intended to print pages in the background, without any
+user intervention.</dd>
+
+<dt><b><tt>-sOutputFile=</tt></b><b>"\\spool\<em>printer_name</em>"</b></dt>
+<dd>Specifies which printer should be used. The <em>printer_name</em> should be
+typed exactly as it appears in the Printers control panel, including spaces.</dd>
+
+</dl>
+</blockquote>
+
+<h2><a name="Win_options"></a>Supported options (device properties)</h2>
+
+<p>
+Several extra options exist which cannot be set through the command-line,
+but only by executing the appropriate PostScript setup code. These options
+can be set through the inclusion of a setup file on the command-line:
+</p>
+
+<blockquote><b><tt>
+gs ... setup.ps ...
+</tt></b></blockquote>
+
+<p>
+The <tt>setup.ps</tt> file is responsible for the device selection, therefore
+you should not specify the <b><tt>-sDEVICE=mswinpr2</tt></b> option on the
+command-line if you are using such a setup file. Here is an example of such
+a setup file:
+</p>
+
+<blockquote><pre>
+mark
+  /NoCancel      true                       % don't show the cancel dialog
+  /BitsPerPixel  4                          % force 4 bits/pixel
+  /UserSettings
+    &lt;&lt;
+      /DocumentName  (Ghostscript document) % name for the Windows spooler
+      /MaxResolution 360                    % maximum document resolution
+    &gt;&gt;
+  (mswinpr2) finddevice                     % select the Windows device driver
+  putdeviceprops
+setdevice
+</pre></blockquote>
+
+<p>
+This example disables the progress dialog (same as the <tt><b>-dNoCancel</b></tt>
+option), forces a 4 bits/pixel output resolution and specifies additional user
+settings, such as the document name (which will be displayed by the Windows
+spooler for the queued document) and the maximum resolution (here 360&nbsp;dpi).
+It then finds and selects an instance of the MS&nbsp;Windows device printer
+and activates it. This will show the standard printer dialog, since no
+<tt><b>/OutputFile</b></tt> property was specified.
+</p>
+
+<p>
+The following options are available:
+</p>
+
+<blockquote>
+<dl>
+<dt><b><tt>/NoCancel <em>boolean</em></tt></b>
+<dd>Disables (hides) the progress dialog when set to <em><tt>true</tt></em> or
+show the progress dialog if not set or set to <em><tt>false</tt></em>.</dd></dt>
+
+<dt><b><tt>/OutputFile <em>string</em></b></tt></dt>
+<dd>Specifies which printer should be used. The string should be of the form
+<tt><b>\\spool\<em>printer_name</em></b></tt>, where the <em>printer_name</em> should be
+typed exactly as it appears in the Printers control panel, including spaces.</dd></dt>
+
+<dt><b><tt>/QueryUser <em>integer</em></tt></b>
+<dd>Shows the standard printer dialog (<tt><b>1</b></tt> or any other value),
+shows the <em>printer setup dialog</em> (<tt><b>2</b></tt>) or selects the
+<em>default Windows printer</em> without any user interaction (<tt><b>3</b></tt>).</dd></dt>
+
+<dt><b><tt>/BitsPerPixel <em>integer</em></tt></b>
+<dd>Sets the device depth to the specified bits per pixel. Currently supported
+values are <tt><b>1</b></tt> (monochrome), <tt><b>4</b></tt> (CMYK with screening
+handled by Ghostscript) and <tt><b>24</b></tt> (True Color, dithering handled by
+the Windows printer driver; this option can produce huge print jobs).</dd></dt>
+
+<dt><b><tt>/UserSettings <em>dict</em></tt></b>
+<dd>Sets additional options, defined in a dictionary. The following properties can
+be set:</dd>
+
+<dl>
+<dt><b><tt>/DocumentName <em>string</em></tt></b>
+<dd>Defines the user friendly document name which will be displayed by the
+Windows spooler.</dd></dt>
+
+<dt><b><tt>/DocumentRange <em>[n1 n2]</em></tt></b>
+<dd>Defines the range of pages contained in the document. This information can
+be used by the printer dialog, in conjunction with the following property.</dd></dt>
+
+<dt><b><tt>/SelectedRange <em>[n1 n2]</em></tt></b>
+<dd>Defines the selected range of pages. This information will be displayed in
+the printer dialog and will be updated after the user interaction. A PostScript
+program could check these values and print only the selected page range.</dd></dt>
+
+<dt><b><tt>/MaxResolution <em>dpi</em></tt></b>
+<dd>Specifies the maximum tolerated output resolution. If the selected printer has
+a higher resolution than <tt><b>dpi</b></tt>, then Ghostscript will render the
+document with a submultiple of the printer resolution. For example, if 
+<tt><b>MaxResolution</b></tt> is set to 360 and the output printer supports
+up to 1200 dpi, then Ghostscript renders the document with an internal
+resolution of 1200/4=300 dpi. This can be very useful to reduce the memory
+requirements when printing in True Color on some high resolution ink-jet color
+printers.</dd></dt>
+
+</dl>
+</dt>
+
+</dl>
+</blockquote>
+
+<p>
+These properties can be queried through the <tt><b>currentpagedevice</b></tt>
+operator. The following PostScript code snippet shows how to do it for some
+of the properties:
+</p>
+
+<blockquote><pre>
+currentpagedevice /BitsPerPixel get ==  % displays the selected depth
+
+currentpagedevice /UserSettings get     % get the additional options..
+/us exch def                            % ..and assign them to a variable
+
+us /DocumentName get ==     % displays the document name
+us /SelectedRange get ==    % displays the selected page range
+
+% other misc. informations (don't rely on them)
+
+us /Color get ==            % 1 => monochrome output, 2 => color output
+us /PrintCopies get ==      % displays the number of copies requested
+</pre></blockquote>
+
+<p>
+There are a few undocumented informations stored in the <tt><b>UserSettings</b></tt>
+dictionary. You should not rely on them. Their use is still experimental and
+they could be removed in a future version.
+</p>
+
+<h2><a name="Win_duplex"></a>Duplex printing</h2>
+
+<p>
+If the Windows printer supports the duplex printing feature, then it will
+also be available through the <b><tt>mswinpr2</tt></b> device. You can query
+for this support through the <b><tt>/Duplex</tt></b> propery of the
+<b><tt>currentpagedevice</tt></b>. If it returns <b><tt>null</tt></b>, then
+the feature is not supported by the selected printer. Otherwise, <b><tt>true</tt></b>
+means that the printer is currently set up to print on both faces of the paper
+and <b><tt>false</tt></b> that it is not, but that it can.
+</p>
+
+<p>
+The following example shows how to print on both faces of the paper (using
+the long side of the paper as the reference):
+</p>
+
+<blockquote><pre>
+&lt;&lt; /Duplex true /Tumble false &gt;&gt; setpagedevice
+</pre></blockquote>
+
+<p>
+</p>
 
 <hr>
 
@@ -329,8 +519,6 @@ The source module <b><tt>gdevcd8.c</tt></b> contains four generic drivers:
 cdj550 driver of George Cameron. The support for the hp670, hp690, hp890
 and hp1600 was added by Martin Gerbershagen.
 
-
-
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=top>	<td>11.11.96
 	<td>&nbsp;&nbsp;&nbsp;
@@ -402,7 +590,7 @@ switches to be invoked except <b><tt>-sDEVICE=cdj850</tt></b>,
 	<td>&nbsp;
 	<td>-1
 	<td>&nbsp;
-	<td>draft     
+	<td>draft
 <tr valign=top>	<td>
 	<td>&nbsp;
 	<td>0
@@ -412,7 +600,7 @@ switches to be invoked except <b><tt>-sDEVICE=cdj850</tt></b>,
 	<td>&nbsp;
 	<td>1
 	<td>&nbsp;
-	<td>presentation 
+	<td>presentation
 <tr valign=top>	<td><b><tt>-dRetStatus=</tt></b>
 	<td>&nbsp;
 	<td>0
@@ -429,7 +617,6 @@ switches to be invoked except <b><tt>-sDEVICE=cdj850</tt></b>,
 	<td>&nbsp;
 	<td>[default = 1.0]
 </table></blockquote>
-
 
 <blockquote>
 <b>Note:</b> To take advantage of the calibrated color-transfer functions,
@@ -1473,14 +1660,14 @@ makes them add magenta in gray levels.  If you experience this problem,
 in the PPD file replace the line
 
 <blockquote><b><tt>
-<b><tt>*DefaultTransfer: Normalized</tt></b>
+*DefaultTransfer: Normalized
 </tt></b></blockquote>
 
 <p>
 with the alternate line
 
 <blockquote><b><tt>
-<b><tt>*DefaultTransfer: Null</tt></b>
+*DefaultTransfer: Null
 </tt></b></blockquote>
 
 <p>
@@ -3469,7 +3656,7 @@ Jason Patterson, ? Rueschstroer, and Steven Singer.
 While I wish to thank everyone mentioned above, they are by no means
 responsible for bugs in the stcolor driver -- just for the features.
 
-<p><address>
+<address>
 Gunther Hess<br>
 Richard Wagner Strasse 112<br>
 D-47057 Duisburg<br>
@@ -4592,7 +4779,7 @@ here for <b><tt>uniprint</tt></b>:
 </dl>
 </blockquote>
 
-<p><address>
+<address>
 Gunther Hess<br>
 Richard Wagner Strasse 112<br>
 D-47057 Duisburg<br>
@@ -4700,26 +4887,24 @@ Finally, you can search <b><tt>devdemp.c</tt></b> for
 initialize the printer and reset things when finished, and change them to
 meet your needs.
 
-<!-- [2.0 end contents] ---------------------------------------------------- -->
+<!-- [2.0 end contents] ==================================================== -->
 
-<!-- [3.0 begin visible trailer] ------------------------------------------- -->
+<!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <font size=2>
 
 <p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-<p>This file is part of Aladdin Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-Aladdin Ghostscript.
-
 <p>
-Ghostscript version 5.96, 12 November 1999
+This software is licensed to a single customer by Artifex Software Inc.
+under the terms of a specific OEM agreement.
+<p>
+Artifex version 6.11, Aladdin Ghostscript version 6.0, 3 February 2000
 
 </font>
 
-<!-- [3.0 end visible trailer] --------------------------------------------- -->
+<!-- [3.0 end visible trailer] ============================================= -->
 
 </body>
 </html>

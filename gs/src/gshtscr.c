@@ -1,6 +1,7 @@
 /* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -79,11 +80,12 @@ gs_currentminscreenlevels(void)
 
 /* Initialize the screen control statics at startup. */
 init_proc(gs_gshtscr_init);	/* check prototype */
-void
+int
 gs_gshtscr_init(gs_memory_t *mem)
 {
     gs_setaccuratescreens(false);
     gs_setminscreenlevels(1);
+    return 0;
 }
 
 /*

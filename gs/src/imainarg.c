@@ -1,6 +1,7 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -79,13 +80,13 @@ extern const ref gs_emulator_name_array[];
 #define runFlush 2
 #define runBuffer 4
 private int swproc(P3(gs_main_instance *, const char *, arg_list *));
-private void argproc(P2(gs_main_instance *, const char *));
-private void run_buffered(P2(gs_main_instance *, const char *));
+private int argproc(P2(gs_main_instance *, const char *));
+private int run_buffered(P2(gs_main_instance *, const char *));
 private int esc_strlen(P1(const char *));
 private void esc_strcat(P2(char *, const char *));
-private void runarg(P5(gs_main_instance *, const char *, const char *, const char *, int));
-private void run_string(P3(gs_main_instance *, const char *, int));
-private void run_finish(P4(gs_main_instance *, int, int, ref *));
+private int runarg(P5(gs_main_instance *, const char *, const char *, const char *, int));
+private int run_string(P3(gs_main_instance *, const char *, int));
+private int run_finish(P4(gs_main_instance *, int, int, ref *));
 
 /* Forward references for help printout */
 private void print_help(P1(gs_main_instance *));
@@ -113,12 +114,15 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
     const char *arg;
     arg_list args;
     FILE *stdfiles[3];
+    int code;
 
     gs_get_real_stdio(stdfiles);
     arg_init(&args, (const char **)argv, argc,
 	     gs_main_arg_fopen, (void *)minst);
-    gs_main_init0(minst, stdfiles[0], stdfiles[1], stdfiles[2],
-		  GS_MAX_LIB_DIRS);
+    code = gs_main_init0(minst, stdfiles[0], stdfiles[1], stdfiles[2],
+			 GS_MAX_LIB_DIRS);
+    if (code < 0)
+	return code;
     {
 	int len = 0;
 	int code = gp_getenv(GS_LIB, (char *)0, &len);
@@ -131,7 +135,9 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 	}
     }
     minst->lib_path.final = gs_lib_default_path;
-    gs_main_set_lib_paths(minst);
+    code = gs_main_set_lib_paths(minst);
+    if (code < 0)
+	return code;
     /* Prescan the command line for --help and --version. */
     {
 	int i;
@@ -180,17 +186,19 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 			    "Unknown switch %s - ignoring\n", arg);
 		break;
 	    default:
-		argproc(minst, arg);
+		code = argproc(minst, arg);
+		if (code < 0)
+		    return code;
 	}
     }
 
-    gs_main_init2(minst);
-
-    return 0;
+    return gs_main_init2(minst);
 }
 
-/* Run the 'start' procedure (after processing the command line). */
-/* Note that this procedure exits rather than returning. */
+/*
+ * Run the 'start' procedure (after processing the command line).
+ * Note that in case of error, this procedure exits rather than returning.
+ */
 void
 gs_main_run_start(gs_main_instance * minst)
 {
@@ -584,18 +592,18 @@ esc_strcat(char *dest, const char *src)
 }
 
 /* Process file names */
-private void
+private int
 argproc(gs_main_instance * minst, const char *arg)
 {
     if (minst->run_buffer_size) {
 	/* Run file with run_string. */
-	run_buffered(minst, arg);
+	return run_buffered(minst, arg);
     } else {
 	/* Run file directly in the normal way. */
-	runarg(minst, "", arg, ".runfile", runInit | runFlush);
+	return runarg(minst, "", arg, ".runfile", runInit | runFlush);
     }
 }
-private void
+private int
 run_buffered(gs_main_instance * minst, const char *arg)
 {
     FILE *in = gp_fopen(arg, gp_fmode_rb);
@@ -605,9 +613,11 @@ run_buffered(gs_main_instance * minst, const char *arg)
 
     if (in == 0) {
 	fprintf(stdout, "Unable to open %s for reading", arg);
-	gs_exit(1);
+	return_error(e_invalidfileaccess);
     }
-    gs_main_init2(minst);
+    code = gs_main_init2(minst);
+    if (code < 0)
+	return code;
     code = gs_main_run_string_begin(minst, minst->user_errors,
 				    &exit_code, &error_object);
     if (!code) {
@@ -630,28 +640,32 @@ run_buffered(gs_main_instance * minst, const char *arg)
     fclose(in);
     zflush(minst->i_ctx_p);
     zflushpage(minst->i_ctx_p);
-    run_finish(minst, code, exit_code, &error_object);
+    return run_finish(minst, code, exit_code, &error_object);
 }
-private void
+private int
 runarg(gs_main_instance * minst, const char *pre, const char *arg,
        const char *post, int options)
 {
     int len = strlen(pre) + esc_strlen(arg) + strlen(post) + 1;
     char *line;
 
-    if (options & runInit)
-	gs_main_init2(minst);	/* Finish initialization */
+    if (options & runInit) {
+	int code = gs_main_init2(minst);	/* Finish initialization */
+
+	if (code < 0)
+	    return code;
+    }
     line = (char *)gs_alloc_bytes(minst->heap, len, "argproc");
     if (line == 0) {
 	lprintf("Out of memory!\n");
-	gs_exit(1);
+	return_error(e_VMerror);
     }
     strcpy(line, pre);
     esc_strcat(line, arg);
     strcat(line, post);
-    run_string(minst, line, options);
+    return run_string(minst, line, options);
 }
-private void
+private int
 run_string(gs_main_instance * minst, const char *str, int options)
 {
     int exit_code;
@@ -663,9 +677,9 @@ run_string(gs_main_instance * minst, const char *str, int options)
 	zflush(minst->i_ctx_p);		/* flush stdout */
 	zflushpage(minst->i_ctx_p);	/* force display update */
     }
-    run_finish(minst, code, exit_code, &error_object);
+    return run_finish(minst, code, exit_code, &error_object);
 }
-private void
+private int
 run_finish(gs_main_instance *minst, int code, int exit_code,
 	   ref * perror_object)
 {
@@ -674,13 +688,19 @@ run_finish(gs_main_instance *minst, int code, int exit_code,
 	    break;
 	case e_Quit:
 	    gs_exit(0);
+	    /* NOTREACHED */
+	    break;
 	case e_Fatal:
 	    eprintf1("Unrecoverable error, exit code %d\n", exit_code);
 	    gs_exit(exit_code);
+	    /* NOTREACHED */
+	    break;
 	default:
 	    gs_main_dump_stack(minst, code, perror_object);
 	    gs_exit_with_code(255, code);
+	    /* NOTREACHED */
     }
+    return code;
 }
 
 /* ---------------- Print information ---------------- */

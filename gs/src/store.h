@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -128,7 +129,7 @@
  * The following nonsense avoids compiler warnings about signed/unsigned
  * integer constants.
  */
-#define DEADBEEF ((0xdeadL << 16) | 0xbeef)
+#define DEADBEEF ((int)(((uint)0xdead << 16) | 0xbeef))
 #  define and_fill_sv(pref)\
     , (gs_debug['$'] ? (r_set_size(pref, 0xfeed),\
 			(pref)->value.intval = DEADBEEF) : 0)

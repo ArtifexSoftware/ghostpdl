@@ -1,6 +1,7 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -205,11 +206,6 @@ gs_type42_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 				       GLYPH_INFO_WIDTH, &info)) < 0
 	)
 	return code;
-    if (pmat) {
-	if ((code = gs_point_transform(info.width[0].x, info.width[0].y,
-				       pmat, &info.width[0])) < 0)
-	    return code;
-    }
     return gx_path_add_point(ppath, origin.x + float2fixed(info.width[0].x),
 			     origin.y + float2fixed(info.width[0].y));
 }

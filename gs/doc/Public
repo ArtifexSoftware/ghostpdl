@@ -1,7 +1,7 @@
                          Aladdin Free Public License
-                         (Version 7, June 4, 1998)
+                       (Version 8, November 18, 1999)
 
-          Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises,
+       Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises,
             Menlo Park, California, U.S.A. All rights reserved.
 
      NOTE: This License is not the same as any of the GNU Licenses
@@ -100,7 +100,10 @@ This license is subject to the following restrictions:
      derived from the Program or any part thereof ("the Work"):
      (i)  If you have modified the Program, you must cause the Work to carry
           prominent notices stating that you have modified the Program's
-          files and the date of any change;
+          files and the date of any change. In each source file that you
+          have modified, you must include a prominent notice that you have
+          modified the file, including your name, your e-mail address (if
+          any), and the date and purpose of the change;
      (ii) You must cause the Work to be licensed as a whole and at no charge
           to all third parties under the terms of this License;
      (iii)

@@ -1,6 +1,7 @@
 /* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -162,10 +163,15 @@ pattern_accum_open(gx_device * dev)
     int code = 0;
     bool mask_open = false;
 
+    /*
+     * C's bizarre coercion rules force us to copy HWResolution in pieces
+     * rather than using a single assignment.
+     */
 #define PDSET(dev)\
-  (dev)->width = width, (dev)->height = height,\
-  (dev)->x_pixels_per_inch = target->x_pixels_per_inch,\
-  (dev)->y_pixels_per_inch = target->y_pixels_per_inch
+  ((dev)->width = width, (dev)->height = height,\
+   /*(dev)->HWResolution = target->HWResolution*/\
+   (dev)->HWResolution[0] = target->HWResolution[0],\
+   (dev)->HWResolution[1] = target->HWResolution[1])
 
     PDSET(padev);
     padev->color_info = target->color_info;
@@ -226,6 +232,8 @@ pattern_accum_open(gx_device * dev)
     }
     padev->mask = mask;
     padev->bits = bits;
+    /* Retain the device, so it will survive anomalous grestores. */
+    gx_device_retain(dev, true);
     return code;
 }
 
@@ -236,18 +244,19 @@ pattern_accum_close(gx_device * dev)
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
     gs_memory_t *mem = padev->bitmap_memory;
 
-    if (padev->bits != 0) {
-	(*dev_proc(padev->bits, close_device)) ((gx_device *) padev->bits);
-	gs_free_object(mem, padev->bits, "pattern_accum_close(bits)");
-	padev->bits = 0;
-	/* target also points to bits: we mustn't let it be finalized. */
-	padev->target = 0;
-    }
+    /*
+     * If bits != 0, it is the target of the device; reference counting
+     * will close and free it.
+     */
+    gx_device_set_target((gx_device_forward *)padev, NULL);
+    padev->bits = 0;
     if (padev->mask != 0) {
         (*dev_proc(padev->mask, close_device)) ((gx_device *) padev->mask);
         gs_free_object(mem, padev->mask, "pattern_accum_close(mask)");
         padev->mask = 0;
     }
+    /* Un-retain the device now, so reference counting will free it. */
+    gx_device_retain(dev, false);
     return 0;
 }
 
@@ -442,10 +451,12 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
     }
 }
 
-/* Add a Pattern cache entry.  This is exported for the interpreter. */
-/* Note that this does not free any of the data in the accumulator */
-/* device, but it may zero out the bitmap_memory pointers to prevent */
-/* the accumulated bitmaps from being freed when the device is closed. */
+/*
+ * Add a Pattern cache entry.  This is exported for the interpreter.
+ * Note that this does not free any of the data in the accumulator
+ * device, but it may zero out the bitmap_memory pointers to prevent
+ * the accumulated bitmaps from being freed when the device is closed.
+ */
 private void make_bitmap(P3(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id));
 int
 gx_pattern_cache_add_entry(gs_imager_state * pis,
@@ -604,9 +615,6 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 	    code = gs_note_error(gs_error_Fatal);
 	}
     }
-    /* Free the bookkeeping structures, except for the bits and mask */
-    /* iff they are still needed. */
-    dev_proc(adev, close_device)((gx_device *)adev);
 #ifdef DEBUG
     if (gs_debug_c('B')) {
         if (adev->mask)
@@ -618,6 +626,9 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 			      adev->target->height, "[B]Pattern bits");
     }
 #endif
+    /* Free the bookkeeping structures, except for the bits and mask */
+    /* data iff they are still needed. */
+    dev_proc(adev, close_device)((gx_device *)adev);
     /* Freeing the state will free the device. */
     gs_state_free(saved);
     return code;

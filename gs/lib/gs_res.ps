@@ -1,4 +1,5 @@
 %    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -17,9 +18,9 @@ level2dict begin
 % for other categories, the values are [instance status size].
 
 % Note that the dictionary that defines a resource category is stored
-% in global memory.  The PostScript manual says that each category must
+% in global VM.  The PostScript manual says that each category must
 % manage global and local instances separately.  However, objects in
-% global memory other than systemdict can't reference objects in local memory.
+% global VM other than systemdict can't reference objects in local VM.
 % This means that the resource category dictionary, which would otherwise be
 % the obvious place to keep track of the instances, can't be used to keep
 % track of local instances.  Instead, we define a dictionary in local VM
@@ -628,6 +629,39 @@ setglobal
 
 % Define the Font category.
 
+/.fontstatus {		% <fontname> .fontstatus <fontname> <found>
+  {		% Create a loop context just so we can exit it early.
+		% Check Fontmap.
+    Fontmap 1 index .knownget {
+      {
+	dup type /nametype eq {
+	  .fontstatus { null exit } if
+	} {
+	  dup type /stringtype eq {
+	    findlibfile { closefile pop null exit } if pop
+	  } {
+		% Procedure, assume success.
+	    pop null exit
+	  } ifelse
+	} ifelse
+      } forall dup null eq { pop true exit } if
+    } if
+		% Convert names to strings; give up on other types.
+    dup type /nametype eq { .namestring } if
+    dup type /stringtype ne { false exit } if
+		% Check the resource directory.
+    dup .fonttempstring /FontResourceDir getsystemparam .genericrfn
+    status {
+      pop pop pop pop pop true exit
+    } if
+		% Check for a file on the search path with the same name
+		% as the font.
+    findlibfile { closefile true exit } if
+		% Scan a FONTPATH directory and try again.
+    .scannextfontdir not { false exit } if
+  } loop
+} bind def
+
 /Font mark
 
 /InstanceType /dicttype
@@ -646,9 +680,16 @@ setglobal
 	   { .loadfont }
 	  ifelse
 	} bind
-/ResourceFileName
-	{ /FontResourceDir getsystemparam .genericrfn
-	} bind
+/ResourceForAll {
+	{ .scannextfontdir not { exit } if } loop
+	/Generic /Category findresource /ResourceForAll get exec
+} bind
+/ResourceStatus {
+	dup .GetInstance {
+	  exch pop dup 1 get exch 2 get true
+	} { .fontstatus { pop 2 -1 true } { pop false } ifelse
+	} ifelse
+} bind
 
 /.loadfont
 	{ dup vmstatus pop exch pop exch

@@ -1,6 +1,7 @@
-/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1989, 1995, 1996, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -417,6 +418,8 @@ win_set_bits_per_pixel(gx_device_win * wdev, int bpp)
     static const gx_device_color_info win_ega_color = dci_pc_4bit;
     static const gx_device_color_info win_vga_color = dci_pc_4bit;
     static const gx_device_color_info win_mono_color = dci_black_and_white;
+    /* remember old anti_alias info */
+    gx_device_anti_alias_info anti_alias = wdev->color_info.anti_alias;
     HDC hdc;
 
     switch (bpp) {
@@ -464,5 +467,7 @@ win_set_bits_per_pixel(gx_device_win * wdev, int bpp)
 	gs_free(wdev->mapped_color_flags, 4096, 1, "win_set_bits_per_pixel");
 	wdev->mapped_color_flags = 0;
     }
+    /* restore old anti_alias info */
+    wdev->color_info.anti_alias = anti_alias;
     return 0;
 }

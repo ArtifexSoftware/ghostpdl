@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -21,6 +22,24 @@
 #define FILL_SCAN_LINES
 #define FILL_CURVES
 #define FILL_TRAPEZOIDS
+
+/* Statistics */
+#ifdef DEBUG
+struct stats_fill_s {
+    long
+	fill, fill_alloc, y_up, y_down, horiz, x_step, slow_x, iter, find_y,
+	band, band_step, band_fill, afill, slant, slant_shallow, sfill,
+	mq_cross, cross_slow, cross_low, order, slow_order;
+} stats_fill;
+
+#  define INCR(x) (++(stats_fill.x))
+#  define INCR_EXPR(x) INCR(x)
+#  define INCR_BY(x,n) (stats_fill.x += (n))
+#else
+#  define INCR(x) DO_NOTHING
+#  define INCR_EXPR(x) discard(0)
+#  define INCR_BY(x,n) DO_NOTHING
+#endif
 
 /* Define the structure for keeping track of active lines. */
 typedef struct active_line_s active_line;
@@ -83,17 +102,59 @@ struct active_line_s {
 };
 
 /*
+ * Define the ordering criterion for active lines that overlap in Y.
+ * Return -1, 0, or 1 if lp1 precedes, coincides with, or follows lp2.
+ *
+ * The lines' x_current values are correct for some Y value that crosses
+ * both of them and that is not both the start of one and the end of the
+ * other.  (Neither line is horizontal.)  We want the ordering at this
+ * Y value, or, of the x_current values are equal, greater Y values
+ * (if any: this Y value might be the end of both lines).
+ */
+private bool
+x_order(const active_line *lp1, const active_line *lp2)
+{
+    bool s1;
+
+    INCR(order);
+    if (lp1->x_current < lp2->x_current)
+	return -1;
+    else if (lp1->x_current > lp2->x_current)
+	return 1;
+    /*
+     * We need to compare the slopes of the lines.  Start by
+     * checking one fast case, where the slopes have opposite signs.
+     */
+    if ((s1 = lp1->start.x < lp1->end.x) != (lp2->start.x < lp2->end.x))
+	return (s1 ? 1 : -1);
+    /*
+     * We really do have to compare the slopes.  Fortunately, this isn't
+     * needed very often.  We want the sign of the comparison
+     * dx1/dy1 - dx2/dy2, or (since we know dy1 and dy2 are positive)
+     * dx1 * dy2 - dx2 * dy1.  However, we can't simply do this using
+     * doubles, since we need complete accuracy and doubles don't have
+     * enough fraction bits.
+     *
+     * ****** FOR THE MOMENT, PUNT. ******
+     */
+    INCR(slow_order);
+    {
+	double diff = ((double)(lp1->end.x - lp1->start.x) *
+		       (lp2->end.y - lp2->start.y)) -
+	    ((double)(lp2->end.x - lp2->start.x) *
+	     (lp1->end.y - lp1->start.y));
+
+	return
+	    (diff < 0 ? -1 : diff > 0 ? 1 : 0);
+    }
+}
+
+/*
  * The active_line structure isn't really simple, but since its instances
  * only exist temporarily during a fill operation, we don't have to
  * worry about a garbage collection occurring.
  */
 gs_private_st_simple(st_active_line, active_line, "active_line");
-
-/* Define the ordering criterion for active lines. */
-/* The xc argument is a copy of lp2->x_current. */
-#define x_precedes(lp1, lp2, xc)\
-  (lp1->x_current < xc || (lp1->x_current == xc &&\
-   (lp1->start.x > lp2->start.x || lp1->end.x < lp2->end.x)))
 
 #ifdef DEBUG
 /* Internal procedures for printing and checking active lines. */
@@ -188,24 +249,6 @@ int proc(P11(ll_ptr, gx_device *,\
   const gs_fixed_rect *, fixed, fixed, fixed, fixed, fixed))
 private fill_loop_proc(fill_loop_by_scan_lines);
 private fill_loop_proc(fill_loop_by_trapezoids);
-
-/* Statistics */
-#ifdef DEBUG
-struct stats_fill_s {
-    long
-	fill, fill_alloc, y_up, y_down, horiz, x_step, slow_x, iter, find_y,
-	band, band_step, band_fill, afill, slant, slant_shallow, sfill,
-	mq_cross;
-} stats_fill;
-
-#  define INCR(x) (++(stats_fill.x))
-#  define INCR_EXPR(x) INCR(x)
-#  define INCR_BY(x,n) (stats_fill.x += (n))
-#else
-#  define INCR(x) DO_NOTHING
-#  define INCR_EXPR(x) discard(0)
-#  define INCR_BY(x,n) DO_NOTHING
-#endif
 
 /*
  * This is the general path filling algorithm.
@@ -464,7 +507,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	gx_path_free(pfpath, "gx_default_fill_path(flattened path)");
 #ifdef DEBUG
     if (gs_debug_c('f')) {
-	dlputs("[f]  # alloc    up  down  horiz step slowx  iter  find  band bstep bfill\n");
+	dlputs("[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");
 	dlprintf5(" %5ld %5ld %5ld %5ld %5ld",
 		  stats_fill.fill, stats_fill.fill_alloc,
 		  stats_fill.y_up, stats_fill.y_down,
@@ -475,10 +518,12 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	dlprintf3(" %5ld %5ld %5ld\n",
 		  stats_fill.band, stats_fill.band_step,
 		  stats_fill.band_fill);
-	dlputs("[f]    afill slant shall sfill\n");
-	dlprintf4("       %5ld %5ld %5ld %5ld\n",
+	dlputs("[f]    afill slant shall sfill mqcrs order slowo\n");
+	dlprintf7("       %5ld %5ld %5ld %5ld %5ld %5ld %5ld\n",
 		  stats_fill.afill, stats_fill.slant,
-		  stats_fill.slant_shallow, stats_fill.sfill);
+		  stats_fill.slant_shallow, stats_fill.sfill,
+		  stats_fill.mq_cross, stats_fill.order,
+		  stats_fill.slow_order);
     }
 #endif
     return code;
@@ -617,12 +662,12 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
 		add_dir_lines(prev->prev, prev, pseg, prev_dir, dir);
 	    } else if (prev_dir == 2)	/* first segment */
 		first_dir = dir;
-	    if (pseg == plast) {	/*
-					 * We skipped the first segment of the
-					 * subpath, so the last segment must receive
-					 * special consideration.  Note that we have
-					 * `closed' all subpaths.
-					 */
+	    if (pseg == plast) {
+		/*
+		 * We skipped the first segment of the subpath, so the last
+		 * segment must receive special consideration.  Note that we
+		 * have `closed' all subpaths.
+		 */
 		if (first_dir > dir) {
 		    add_dir_lines(prev, pseg, psub->next,
 				  dir, first_dir);
@@ -727,11 +772,10 @@ insert_x_new(active_line * alp, ll_ptr ll)
 {
     register active_line *next;
     register active_line *prev = &ll->x_head;
-    register fixed x = alp->start.x;
 
-    alp->x_current = x;
+    alp->x_current = alp->start.x;
     while (INCR_EXPR(x_step),
-	   (next = prev->next) != 0 && x_precedes(next, alp, x)
+	   (next = prev->next) != 0 && x_order(next, alp) < 0
 	)
 	prev = next;
     alp->next = next;
@@ -747,7 +791,6 @@ private bool
 end_x_line(active_line * alp)
 {
     const segment *pseg = alp->pseg;
-
     /*
      * The computation of next relies on the fact that
      * all subpaths have been closed.  When we cycle
@@ -945,21 +988,18 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 		    if (!inside_path_p())
 			break;
 		    /*
-		     * Since we're dealing with closed
-		     * paths, the test for alp == 0
-		     * shouldn't be needed, but we may have
-		     * omitted lines that are to the right
-		     * of the clipping region.  */
+		     * Since we're dealing with closed paths, the test for
+		     * alp == 0 shouldn't be needed, but we may have omitted
+		     * lines that are to the right of the clipping region.
+		     */
 		    if ((alp = alp->next) == 0)
 			goto out;
 		}
 #undef inside_path_p
 		/*
-		 * We just went from inside to outside, so
-		 * fill the region.  Avoid writing pixels
-		 * twice.
+		 * We just went from inside to outside, so fill the region.
+		 * Avoid writing pixels twice.
 		 */
-
 		if (x0 < x1_prev)
 		    x0 = x1_prev;
 		{
@@ -1211,7 +1251,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		/* Y value using only local information. */
 		fixed dy = y1 - y, y_new;
 
-		if_debug3('f', "[f]cross: dy=%g, dx_old=%g, dx_new=%g\n",
+		if_debug3('F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
 			  fixed2float(dy), fixed2float(dx_old),
 			  fixed2float(dx_den - dx_old));
 		/* Do the computation in single precision */
@@ -1224,12 +1264,51 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		/* The crossing value doesn't have to be */
 		/* very accurate, but it does have to be */
 		/* greater than y and less than y1. */
-		if_debug3('f', "[f]cross y=%g, y_new=%g, y1=%g\n",
+		if_debug3('F', "[F]cross y=%g, y_new=%g, y1=%g\n",
 			  fixed2float(y), fixed2float(y_new),
 			  fixed2float(y1));
 		stopx = alp;
-		if (y_new <= y)
-		    y_new = y + 1;
+		if (y_new <= y) {
+		    /*
+		     * This isn't possible.  Recompute the intersection
+		     * accurately.
+		     */
+		    fixed ys, xs0, xs1, ye, xe0, xe1, dy, dx0, dx1;
+
+		    INCR(cross_slow);
+		    if (endp->start.y < alp->start.y)
+			ys = alp->start.y,
+			    xs0 = al_x_at_y(endp, ys), xs1 = alp->start.x;
+		    else
+			ys = endp->start.y,
+			    xs0 = endp->start.x, xs1 = al_x_at_y(alp, ys);
+		    if (endp->end.y > alp->end.y)
+			ye = alp->end.y,
+			    xe0 = al_x_at_y(endp, ye), xe1 = alp->end.x;
+		    else
+			ye = endp->end.y,
+			    xe0 = endp->end.x, xe1 = al_x_at_y(alp, ye);
+		    dy = ye - ys;
+		    dx0 = xe0 - xs0;
+		    dx1 = xe1 - xs1;
+		    /* We need xs0 + cross * dx0 == xs1 + cross * dx1. */
+		    if (dx0 == dx1) {
+			/* The two lines are coincident.  Do nothing. */
+			y_new = y1;
+		    } else {
+			double cross = (double)(xs0 - xs1) / (dx1 - dx0);
+
+			y_new = (fixed)(ys + cross * dy);
+			if (y_new <= y) {
+			    /*
+			     * This can only happen through some kind of
+			     * numeric disaster, but we have to check.
+			     */
+			    INCR(cross_low);
+			    y_new = y + fixed_epsilon;
+			}
+		    }
+		}
 		if (y_new < y1) {
 		    y1 = y_new;
 		    nx = al_x_at_y(alp, y1);
@@ -1329,14 +1408,15 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 
 		    code = loop_fill_rectangle_direct(xli, yi,
 						      xi - xli, wi);
-		} else if ((adjust_below | adjust_above) != 0) {	/*
-									 * We want to get the effect of filling an area whose
-									 * outline is formed by dragging a square of side adj2
-									 * along the border of the trapezoid.  This is *not*
-									 * equivalent to simply expanding the corners by
-									 * adjust: There are 3 cases needing different
-									 * algorithms, plus rectangles as a fast special case.
-									 */
+		} else if ((adjust_below | adjust_above) != 0) {
+		    /*
+		     * We want to get the effect of filling an area whose
+		     * outline is formed by dragging a square of side adj2
+		     * along the border of the trapezoid.  This is *not*
+		     * equivalent to simply expanding the corners by
+		     * adjust: There are 3 cases needing different
+		     * algorithms, plus rectangles as a fast special case.
+		     */
 		    fixed wbot = xbot - xlbot;
 
 		    if (xltop <= xlbot) {
@@ -1479,13 +1559,14 @@ fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
     slant_left.start.x = xlbot, slant_left.end.x = xltop;
     slant_right.start.x = xbot, slant_right.end.x = xtop;
 
-    if (ya >= y1b) {		/*
-				 * The upper and lower adjustment bands overlap.
-				 * Since the entire entity is less than 2 pixels high
-				 * in this case, we could handle it very efficiently
-				 * with no more than 2 rectangle fills, but for right now
-				 * we don't attempt to do this.
-				 */
+    if (ya >= y1b) {
+	/*
+	 * The upper and lower adjustment bands overlap.
+	 * Since the entire entity is less than 2 pixels high
+	 * in this case, we could handle it very efficiently
+	 * with no more than 2 rectangle fills, but for right now
+	 * we don't attempt to do this.
+	 */
 	int iyb = fixed2int_var_pixround(yb);
 	int iya = fixed2int_var_pixround(ya);
 	int iy1b = fixed2int_var_pixround(y1b);
@@ -1511,10 +1592,11 @@ fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
 				 ya, y1a, false, pdevc, lop);
 	else
 	    code = 0;
-    } else {			/*
-				 * Clip the trapezoid if possible.  This can save a lot
-				 * of work when filling paths that cross band boundaries.
-				 */
+    } else {
+	/*
+	 * Clip the trapezoid if possible.  This can save a lot
+	 * of work when filling paths that cross band boundaries.
+	 */
 	fixed yac;
 
 	if (pbox->p.y < ya) {
@@ -1545,13 +1627,12 @@ resort_x_line(active_line * alp)
 {
     active_line *prev = alp->prev;
     active_line *next = alp->next;
-    fixed nx = alp->x_current;
 
     prev->next = next;
     if (next)
 	next->prev = prev;
-    while (!x_precedes(prev, alp, nx)) {
-	if_debug2('f', "[f]swap 0x%lx,0x%lx\n",
+    while (x_order(prev, alp) > 0) {
+	if_debug2('F', "[F]swap 0x%lx,0x%lx\n",
 		  (ulong) alp, (ulong) prev);
 	next = prev, prev = prev->prev;
     }

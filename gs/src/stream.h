@@ -1,6 +1,7 @@
-/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -78,6 +79,27 @@ struct stream_s {
      * definition with the common stream state.
      */
     stream_state_common;
+    /*
+     * The following invariants apply at all times for read streams:
+     *
+     *    s->cbuf - 1 <= s->srptr <= s->srlimit.
+     *
+     *    The amount of data in the buffer is s->srlimit + 1 - s->cbuf.
+     *
+     *    s->position represents the stream position as of the beginning
+     *      of the buffer, so the current position is s->position +
+     *      (s->srptr + 1 - s->cbuf).
+     *
+     * Analogous invariants apply for write streams:
+     *
+     *    s->cbuf - 1 <= s->swptr <= s->swlimit.
+     *
+     *    The amount of data in the buffer is s->swptr + 1 - s->cbuf.
+     *
+     *    s->position represents the stream position as of the beginning
+     *      of the buffer, so the current position is s->position +
+     *      (s->swptr + 1 - s->cbuf).
+     */
     stream_cursor cursor;	/* cursor for reading/writing data */
     byte *cbuf;			/* base of buffer */
     uint bsize;			/* size of buffer, 0 if closed */

@@ -8,11 +8,30 @@
 % PostScript halftone dictionaries, and hereby places this file in the
 % public domain as well.
 
-/StochasticBlack <<
-  /HalftoneType 3
-  /Width 167
-  /Height 167
-  /Thresholds <
+% $RCSfile$ $Revision$
+% This file defines a /StochasticDefault Type 5 Halftone.
+
+% Note that the Black array is used for Default, Black, and Gray
+% (not too surprisingly), as well as for Red, Green, and Blue.
+
+% The reason for using the single Black array for the
+% RGB additive primaries is to make stochastic dither to displays
+% look better since there is no misalignment between primaries to
+% a screen (as there often is printing to paper).
+
+% The CMY components are decorrelated (90 degree rotations of the
+% Black data) so that misalignment doesn't cause color shifts. This
+% is the same reason that conventional ordered screening uses
+% varying angles for C, M, Y, and K inks.
+
+/StochasticDefault <<
+  /HalftoneType 5
+
+  /Black <<
+    /HalftoneType 3
+    /Width 167
+    /Height 167
+    /Thresholds <
 ff51ef01d993ec6bd87ae0b102f24fff9f52da29e9bbff389add8cd834f3a5cf26f879fb
 6afe32d2f8adfe79f7c760d0ea6ad87ae561f804ff53ed2dd95ec5ea52c1ff25f787ff94
 c7b3ff6cf7a7cb86f24388fecc5ce1be6bf356ffaef137cb4fd8b966c1ff43f9cb2fe4bc
@@ -788,13 +807,20 @@ e04adab6eb9343ed28e0a212f0961ffd9dee2fd891d87ddd9ffeba99fd71afdf79d86add
 af52ed1e9edd3ae54eff9fc1e826a1fb7ffecb34d986df66b6e887ff1eafe27edd6ea8ff
 955bfba5c89de403f3bfa8d093e004d9c398df65d82fe6c06afa79ffa5f033d05ded05af
 fe31d3fb52c5e56cc1e067dd97fe12d850d324ff51ed40afd8
-> >> /Halftone defineresource
+    >
+  >>
+  /Gray 1 index
+  /Default 1 index
+% See the beginning of this file regarding the following.
+  /Red 1 index
+  /Green 1 index
+  /Blue 1 index
 
-/StochasticCyan <<
-  /HalftoneType 3
-  /Width 167
-  /Height 167
-  /Thresholds <
+  /Cyan <<
+    /HalftoneType 3
+    /Width 167
+    /Height 167
+    /Thresholds <
 7bb6c793d8a0e14ddb04d951e02dcdb901eca3c572efa5fe78b5d86adcfa3ef584d3b938
 f308ff45f9ca7ad989de80e593bfda7debc76ae0bc679dea874abeecb83af378ff9accaf
 f175d8f36bfcc2a1e5018ebef786ff51ef28d44de122ceb819c974ed86e4ac64ff9bf786
@@ -1570,13 +1596,14 @@ d88df49d03e0a023f056ffc891dcaa5aedb761fe94d8a5c0ea6dcbfe7bde8accff5bdca5
 64e558fb3baae1932bf765fec8e533d80fd09edd88fba0fe7df2a5fcbb10d8bf21ecc50e
 addc1ae5c926e98efea32de7981bed60fd94f305fa9cfeaf45fb9af506a3f0cf23e46afa
 953986ffa2ee2898dd86d874e015b2fa63bdfb0898d95bce1a
-> >> /Halftone defineresource
+    >
+  >>
 
-/StochasticMagenta <<
-  /HalftoneType 3
-  /Width 167
-  /Height 167
-  /Thresholds <
+  /Magenta <<
+    /HalftoneType 3
+    /Width 167
+    /Height 167
+    /Thresholds <
 d8af40ed51ff24d350d812fe97dd67e0c16ce5c552fbd331feaf05ed5dd033f0a5ff79fa
 6ac0e62fd865df98c3d904e093d0a8bff303e49dc8a5fb5b95ffa86edd7ee2af1eff87e8
 b666df86d934cbfe7ffba126e8c19fff4ee53add9e1eed52afdd6ad879dfaf71fd99bafe
@@ -2352,13 +2379,14 @@ e594ed01a5ff8af8b437ff79fbbf4eed1fe969d954f536ee0bbce42fcbf943ffc166b9d8
 4fcb37f1aeff56f36bbee15cccfe8843f286cba7f76cffb3c794ff87f725ffc152eac55e
 d92ded53ff04f861e57ad86aead060c7f779feadf8d232fe6afb79f826cfa5f334d88cdd
 9a38ffbbe929da529fff4ff202b1e07ad86bec93d901ef51ff
-> >> /Halftone defineresource
+    >
+  >>
 
-/StochasticYellow <<
-  /HalftoneType 3
-  /Width 167
-  /Height 167
-  /Thresholds <
+  /Yellow <<
+    /HalftoneType 3
+    /Width 167
+    /Height 167
+    /Thresholds <
 1ace5bd99808fbbd63fab215e074d886dd9828eea2ff863995fa6ae423cff0a306f59afb
 45affe9cfa05f394fd60ed1b98e72da3fe8ee926c9e51adcad0ec5ec21bfd810bbfca5f2
 7dfea0fb88dd9ed00fd833e5c8fe65f72b93e1aa3bfb58e564ed19e05dd1ff62f4c7ff1e
@@ -3134,4 +3162,10 @@ e284c4e516dd52b3d83fabe082cbf54fffce20dd5ff96b9ff286f79bff64ace486ed74c9
 19b8ce22e14dd428ef51ff86f7be8e01e5a1c2fc6bf3d875f1afcc9aff78f33ab8ecbe4a
 87ea9d67bce06ac7eb7ddabf93e580de89d97acaf945ff08f338b9d384f53efadc6ad8b5
 78fea5ef72c5a3ec01b9cd2de051d904db4de1a0d893c7b67b
-> >> /Halftone defineresource
+    >
+  >>
+
+>>
+dup /HalftoneName 3 index put
+/Halftone defineresource
+pop

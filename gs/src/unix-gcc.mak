@@ -1,4 +1,5 @@
-#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -183,8 +184,7 @@ GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -W
 
 # Define the added flags for standard, debugging, and profiling builds.
 
-#CFLAGS_STANDARD=-O2
-CFLAGS_STANDARD=-O
+CFLAGS_STANDARD=-O2
 CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg -O2
 
@@ -224,10 +224,13 @@ LDFLAGS=$(XLDFLAGS) -fno-common
 EXTRALIBS=
 
 # Define the standard libraries to search at the end of linking.
+# Most platforms require -lpthread for the POSIX threads library;
+# FreeBSD requires -lc_r instead, BSDI and perhaps some others include
+# pthreads in libc and don't require any additional library.
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
-# two others fold libm into libc and require STDLIBS to be empty.
+# two others fold libm into libc and don't require any additional library.
 
-STDLIBS=-lm
+STDLIBS=-lpthread -lm
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
@@ -268,8 +271,7 @@ XLIBS=Xt Xext X11
 FPU_TYPE=1
 
 # Define the .dev module that implements thread and synchronization
-# primitives for this platform.  On FreeBSD, change posync to fbsdsync.
-# Otherwise, don't change this unless you really know what you're doing.
+# primitives for this platform.
 
 SYNC=posync
 
@@ -277,16 +279,17 @@ SYNC=posync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev
+#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)compht.dev $(GLD)pipe.dev
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=1
+COMPILE_INITS=0
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
@@ -350,7 +353,7 @@ DEVICE_DEVS16=
 DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=
-DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5pr.dev
+DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
 
 # ---------------------------- End of options --------------------------- #
 

@@ -1,6 +1,7 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -539,6 +540,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
     clist_image_enum *pie = (clist_image_enum *) info;
     gs_rect sbox, dbox;
     int y_orig = pie->y;
+    int yh_used = min(yh, pie->rect.q.y - y_orig);
     int y0, y1;
     int y, height;		/* for BEGIN/END_RECT */
     int code;
@@ -564,7 +566,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
     sbox.p.x = pie->rect.p.x - pie->support.x;
     sbox.p.y = (y0 = y_orig) - pie->support.y;
     sbox.q.x = pie->rect.q.x + pie->support.x;
-    sbox.q.y = (y1 = pie->y += yh) + pie->support.y;
+    sbox.q.y = (y1 = pie->y += yh_used) + pie->support.y;
     gs_bbox_transform(&sbox, &pie->matrix, &dbox);
     /*
      * In order to keep the band list consistent, we must write out
@@ -641,9 +643,13 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 			cmd_put_color_mapping(cdev, pie->pis,
 					      pie->map_rgb_to_cmyk));
 		pie->color_map_is_known = true;
-		if (code >= 0)
-		    code = cmd_do_write_unknown(cdev, pcls,
-			ctm_known | clip_path_known | color_space_known);
+		if (code >= 0) {
+		    uint want_known = ctm_known | clip_path_known |
+			(pie->color_space.id == gs_no_id ? 0 :
+			 color_space_known);
+
+		    code = cmd_do_write_unknown(cdev, pcls, want_known);
+		}
 		if (code >= 0)
 		    code = cmd_do_enable_clip(cdev, pcls, pie->pcpath != NULL);
 		if (code >= 0)
@@ -736,7 +742,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	    --cdev->ignore_lo_mem_warnings;
 	    /* Update sub-rect */
 	    if (!pie->image.Interpolate)
-	        pie->rect.p.y += yh;  /* interpolate & mem recovery currently incompat */
+	        pie->rect.p.y += yh_used;  /* interpolate & mem recovery currently incompat */
 	END,
 	(code < 0 ? (band_code = code) : code) >= 0,
 	(cmd_clear_known(cdev,
@@ -1204,8 +1210,13 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
 	unknown |= ctm_known;
 	cdev->imager_state.ctm = pis->ctm;
     }
-    if (pie->color_space.id != gs_no_id /* i.e., not masked */) {
-	if (cdev->color_space.id != pie->color_space.id) {
+    if (pie->color_space.id == gs_no_id) { /* masked image */
+	cdev->color_space.space = 0; /* for GC */
+    } else {			/* not masked */
+	if (cdev->color_space.id == pie->color_space.id) {
+	    /* The color space pointer might not be valid: update it. */
+	    cdev->color_space.space = pie->color_space.space;
+	} else {
 	    unknown |= color_space_known;
 	    cdev->color_space = pie->color_space;
 	}

@@ -1,4 +1,5 @@
-#    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -30,6 +31,7 @@ _I=
 NO_OP=@:
 O_=-o $(NULL)
 OBJ=o
+Q=
 XE=.exe
 XEAUX=.exe
 

@@ -1,6 +1,7 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -72,6 +73,7 @@ typedef struct gx_image3_enum_s {
     /* The following are the only members that change dynamically. */
     int mask_y;
     int pixel_y;
+    int mask_skip;		/* # of mask rows to skip, see below */
 } gx_image3_enum_t;
 
 extern_st(st_gx_image_enum_common);
@@ -190,6 +192,7 @@ gx_begin_image3(gx_device * dev,
     penum->mask_height = mask_rect.q.y - mask_rect.p.y;
     penum->mask_full_height = pim->MaskDict.Height;
     penum->mask_y = 0;
+    penum->mask_skip = 0;
     penum->pixel_width = data_rect.q.x - data_rect.p.x;
     penum->pixel_height = data_rect.q.y - data_rect.p.y;
     penum->pixel_full_height = pim->Height;
@@ -366,16 +369,30 @@ check_image3_extent(floatp mask_coeff, floatp data_coeff)
  * Return > 0 if we want more mask now, < 0 if we want more data now,
  * 0 if we want both.
  */
-private long
+private int
 planes_next(const gx_image3_enum_t *penum)
 {
     /*
-     * What we need to ensure is that we always have at least as much
-     * mask as pixel data, i.e., mask_y/mask_full_height >=
-     * pixel_y/pixel_full_height.
+     * The invariant we need to maintain is that we always have at least as
+     * much mask as pixel data, i.e., mask_y / mask_full_height >=
+     * pixel_y / pixel_full_height, or, to avoid floating point,
+     * mask_y * pixel_full_height >= pixel_y * mask_full_height.
+     * We know this condition is true now;
+     * return a value that indicates how to maintain it.
      */
-    return (penum->pixel_y + 1) * (long)penum->mask_full_height -
-	(penum->mask_y + 1) * (long)penum->pixel_full_height;
+    int mask_h = penum->mask_full_height;
+    int pixel_h = penum->pixel_full_height;
+    long current = penum->pixel_y * (long)mask_h -
+	penum->mask_y * (long)pixel_h;
+
+#ifdef DEBUG
+    if (current > 0)
+	lprintf4("planes_next invariant fails: %d/%d > %d/%d\n",
+		 penum->pixel_y, penum->pixel_full_height,
+		 penum->mask_y, penum->mask_full_height);
+#endif
+    return ((current += mask_h) <= 0 ? -1 :
+	    current - pixel_h <= 0 ? 0 : 1);
 }
 
 /* Process the next piece of an ImageType 3 image. */
@@ -386,14 +403,17 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 {
     gx_image3_enum_t *penum = (gx_image3_enum_t *) info;
     int pixel_height = penum->pixel_height;
-    int pixel_used = -1;
+    int pixel_used = 0;
     int mask_height = penum->mask_height;
-    int mask_used = -1;
+    int mask_used = 0;
     int h1 = max(pixel_height - penum->pixel_y, mask_height - penum->mask_y);
     int h = min(height, h1);
     const gx_image_plane_t *pixel_planes;
     gx_image_plane_t pixel_plane, mask_plane;
+    int code = 0;
 
+    /* Initialized rows_used in case we get an error. */
+    *rows_used = 0;
     switch (penum->InterleaveType) {
 	case interleave_chunky:
 	    if (h <= 0)
@@ -404,15 +424,15 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 
 		mask_plane = planes[0];
 		do {
-		    int code = gx_image3_plane_data(info, &mask_plane, 1,
-						    rows_used);
-
-		    *rows_used += h_orig - h;
+		    code = gx_image3_plane_data(info, &mask_plane, 1,
+						rows_used);
+		    h -= *rows_used;
 		    if (code)
-			return code;
+			break;
 		    mask_plane.data += mask_plane.raster;
-		} while (--h);
-		return 0;
+		} while (h);
+		*rows_used = h_orig - h;
+		return code;
 	    } {
 		/* Pull apart the source data and the mask data. */
 		int bpc = penum->bpc;
@@ -466,11 +486,16 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 	    }
 	    break;
 	case interleave_separate_source:
+	    /*
+	     * In order to be able to recover from interruptions, we must
+	     * limit separate-source processing to 1 scan line at a time.
+	     */
+	    if (h > 1)
+		h = 1;
 	    mask_plane = planes[0];
 	    pixel_planes = planes + 1;
 	    break;
 	default:		/* not possible */
-	    *rows_used = 0;
 	    return_error(gs_error_rangecheck);
     }
     /*
@@ -478,15 +503,33 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
      * device for clipping the pixel data.
      */
     if (mask_plane.data) {
-	int code = gx_image_plane_data_rows(penum->mask_info, &mask_plane, h,
-					    &mask_used);
+	/*
+	 * If, on the last call, we processed some mask rows successfully
+	 * but processing the pixel rows was interrupted, we set rows_used
+	 * to indicate the number of pixel rows processed (since there is
+	 * no way to return two rows_used values).  If this happened, some
+	 * mask rows may get presented again.  We must skip over them
+	 * rather than processing them again.
+	 */
+	int skip = penum->mask_skip;
 
+	if (skip >= h) {
+	    penum->mask_skip = skip - (mask_used = h);
+	} else {
+	    int mask_h = h - skip;
+
+	    mask_plane.data += skip * mask_plane.raster;
+	    penum->mask_skip = 0;
+	    code = gx_image_plane_data_rows(penum->mask_info, &mask_plane,
+					    mask_h, &mask_used);
+	    mask_used += skip;
+	}
+	*rows_used = mask_used;
+	penum->mask_y += mask_used;
 	if (code < 0)
 	    return code;
     }
     if (pixel_planes[0].data) {
-	int code;
-
 	/*
 	 * If necessary, flush any buffered mask data to the mask clipping
 	 * device.
@@ -494,20 +537,34 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 	gx_image_flush(penum->mask_info);
 	code = gx_image_plane_data_rows(penum->pixel_info, pixel_planes, h,
 					&pixel_used);
-	if (code < 0)
-	    return code;
+	/*
+	 * There isn't any way to set rows_used if different amounts of
+	 * the mask and pixel data were used.  Fake it.
+	 */
+	*rows_used = pixel_used;
+	/*
+	 * Don't return code yet: we must account for the fact that
+	 * some mask data may have been processed.
+	 */
 	penum->pixel_y += pixel_used;
+	if (code < 0) {
+	    /*
+	     * We must prevent the mask data from being processed again.
+	     * We rely on the fact that h > 1 is only possible if the
+	     * mask and pixel data have the same Y scaling.
+	     */
+	    if (mask_used > pixel_used) {
+		int skip = mask_used - pixel_used;
+
+		penum->mask_skip = skip;
+		penum->mask_y -= skip;
+		mask_used = pixel_used;
+	    }
+	}
     }
-    if (mask_plane.data)
-	penum->mask_y += mask_used;
     if_debug5('b', "[b]image3 h=%d %smask_y=%d %spixel_y=%d\n",
 	      h, (mask_plane.data ? "+" : ""), penum->mask_y,
 	      (pixel_planes[0].data ? "+" : ""), penum->pixel_y);
-    /*
-     * There isn't any way to set rows_used if different amounts of
-     * the mask and pixel data were used.  Fake it.
-     */
-    *rows_used = (pixel_used < 0 ? mask_used : pixel_used);
     if (penum->mask_y >= penum->mask_height &&
 	penum->pixel_y >= penum->pixel_height)
 	return 1;
@@ -521,7 +578,11 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 	    penum->plane_depths[0] = penum->pixel_info->plane_depths[0];
 	}
     }
-    return 0;
+    /*
+     * The mask may be complete (gx_image_plane_data_rows returned 1),
+     * but there may still be pixel rows to go, so don't return 1 here.
+     */
+    return (code < 0 ? code : 0);
 }
 
 /* Flush buffered data. */
@@ -552,16 +613,25 @@ gx_image3_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
     case interleave_separate_source: {
 	/*
 	 * We always want at least as much of the mask to be filled as the
-	 * pixel data.  more_data > 0 iff we've processed more data than
-	 * mask.  Plane 0 is the mask, planes [1 .. num_planes - 1] are
-	 * pixel data.
+	 * pixel data.  next > 0 iff we've processed more data than mask.
+	 * Plane 0 is the mask, planes [1 .. num_planes - 1] are pixel data.
 	 */
-	long next = planes_next(penum);
+	int next = planes_next(penum);
 
 	wanted[0] = (next >= 0 ? 0xff : 0);
 	memset(wanted + 1, (next <= 0 ? 0xff : 0), info->num_planes - 1);
-	return (next == 0 &&
-		penum->mask_full_height == penum->pixel_full_height);
+	/*
+	 * In principle, wanted will always be true for both mask and pixel
+	 * data if the full_heights are equal.  Unfortunately, even in this
+	 * case, processing may be interrupted after a mask row has been
+	 * passed to the underlying image processor but before the data row
+	 * has been passed, in which case pixel data will be 'wanted', but
+	 * not mask data, for the next call.  Therefore, we must return
+	 * false.
+	 */
+	return false
+	    /*(next == 0 &&
+	      penum->mask_full_height == penum->pixel_full_height)*/;
     }
     default:			/* can't happen */
 	memset(wanted, 0, info->num_planes);

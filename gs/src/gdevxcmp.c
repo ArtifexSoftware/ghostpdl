@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -275,6 +276,7 @@ gdev_x_setup_colors(gx_device_X * xdev)
     xdev->cman.color_mask.red = xdev->cman.color_mask.green =
 	xdev->cman.color_mask.blue = X_max_color_value -
 	  (X_max_color_value >> xdev->vinfo->bits_per_rgb);
+    xdev->cman.match_mask = xdev->cman.color_mask; /* default */
     xdev->cman.num_rgb = 1 << xdev->vinfo->bits_per_rgb;
 
 #if HaveStdCMap
@@ -427,6 +429,24 @@ monochrome:
 	}
 	return_error(gs_error_rangecheck);
     }
+
+#if HaveStdCMap
+    /*
+     * When comparing colors, if not halftoning, we must only compare as
+     * many bits as actually fit in a pixel, even if the hardware has more.
+     */
+    if (!gx_device_must_halftone(xdev)) {
+	if (xdev->cman.std_cmap.map) {
+	    xdev->cman.match_mask.red &=
+		X_max_color_value << xdev->cman.std_cmap.red.cv_shift;
+	    xdev->cman.match_mask.green &=
+		X_max_color_value << xdev->cman.std_cmap.green.cv_shift;
+	    xdev->cman.match_mask.blue &=
+		X_max_color_value << xdev->cman.std_cmap.blue.cv_shift;
+	}
+    }
+#endif
+
     return 0;
 }
 
@@ -531,25 +551,33 @@ gdev_x_map_rgb_color(gx_device * dev,
 {
     gx_device_X *const xdev = (gx_device_X *) dev;
 
-    /* X and ghostscript both use shorts for color values */
-    X_color_value dr = r & xdev->cman.color_mask.red;  /* Nearest color that */
-    X_color_value dg = g & xdev->cman.color_mask.green;/* the X device can   */
-    X_color_value db = b & xdev->cman.color_mask.blue; /* represent          */
+    /* X and ghostscript both use shorts for color values. */
+    /* Set drgb to the nearest color that the device can represent. */
+    X_color_value dr = r & xdev->cman.color_mask.red;
+    X_color_value dg = g & xdev->cman.color_mask.green;
+    X_color_value db = b & xdev->cman.color_mask.blue;
 
-    /* Foreground and background get special treatment: */
-    /* They may be mapped to other colors. */
-    if ((dr | dg | db) == 0) {	/* i.e., all 0 */
-	if_debug4('C', "[cX]%u,%u,%u => foreground = %lu\n",
-		  r, g, b, (ulong) xdev->foreground);
-	return xdev->foreground;
-    }
-    if (dr == xdev->cman.color_mask.red &&
-	dg == xdev->cman.color_mask.green &&
-	db == xdev->cman.color_mask.blue
-	) {
-	if_debug4('C', "[cX]%u,%u,%u => background = %lu\n",
-		  r, g, b, (ulong) xdev->background);
-	return xdev->background;
+    {
+	/* Foreground and background get special treatment: */
+	/* They may be mapped to other colors. */
+	/* Set mrgb to the color to be used for match testing. */
+	X_color_value mr = r & xdev->cman.match_mask.red;
+	X_color_value mg = g & xdev->cman.match_mask.green;
+	X_color_value mb = b & xdev->cman.match_mask.blue;
+
+	if ((mr | mg | mb) == 0) {	/* i.e., all 0 */
+	    if_debug4('C', "[cX]%u,%u,%u => foreground = %lu\n",
+		      r, g, b, (ulong) xdev->foreground);
+	    return xdev->foreground;
+	}
+	if (mr == xdev->cman.match_mask.red &&
+	    mg == xdev->cman.match_mask.green &&
+	    mb == xdev->cman.match_mask.blue
+	    ) {
+	    if_debug4('C', "[cX]%u,%u,%u => background = %lu\n",
+		      r, g, b, (ulong) xdev->background);
+	    return xdev->background;
+	}
     }
 
 #define CV_DENOM (gx_max_color_value + 1)
@@ -578,9 +606,9 @@ gdev_x_map_rgb_color(gx_device * dev,
 		cvg = X_max_color_value * cg / cmap->green_max;
 		cvb = X_max_color_value * cb / cmap->blue_max;
 	    }
-	    if ((iabs((int)r - (int)cvr) & xdev->cman.color_mask.red) == 0 &&
-		(iabs((int)g - (int)cvg) & xdev->cman.color_mask.green) == 0 &&
-		(iabs((int)b - (int)cvb) & xdev->cman.color_mask.blue) == 0) {
+	    if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0 &&
+		(iabs((int)g - (int)cvg) & xdev->cman.match_mask.green) == 0 &&
+		(iabs((int)b - (int)cvb) & xdev->cman.match_mask.blue) == 0) {
 		gx_color_index pixel =
 		    (xdev->cman.std_cmap.fast ?
 		     (cr << xdev->cman.std_cmap.red.pixel_shift) +
@@ -600,7 +628,7 @@ gdev_x_map_rgb_color(gx_device * dev,
 
 	    cr = r * (cmap->red_max + 1) / CV_DENOM;
 	    cvr = X_max_color_value * cr / cmap->red_max;
-	    if ((iabs((int)r - (int)cvr) & xdev->cman.color_mask.red) == 0) {
+	    if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0) {
 		gx_color_index pixel = cr * cmap->red_mult + cmap->base_pixel;
 
 		if_debug2('C', "[cX]%u (std cmap) => %lu\n", r, pixel);
@@ -633,9 +661,9 @@ gdev_x_map_rgb_color(gx_device * dev,
 		cvg = CV_FRACTION(cg, max_rgb);
 		cvb = CV_FRACTION(cb, max_rgb);
 	    }
-	    if ((iabs((int)r - (int)cvr) & xdev->cman.color_mask.red) == 0 &&
-		(iabs((int)g - (int)cvg) & xdev->cman.color_mask.green) == 0 &&
-		(iabs((int)b - (int)cvb) & xdev->cman.color_mask.blue) == 0) {
+	    if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0 &&
+		(iabs((int)g - (int)cvg) & xdev->cman.match_mask.green) == 0 &&
+		(iabs((int)b - (int)cvb) & xdev->cman.match_mask.blue) == 0) {
 		gx_color_index pixel =
 		    xdev->cman.dither_ramp[CUBE_INDEX(cr, cg, cb)];
 
@@ -652,7 +680,7 @@ gdev_x_map_rgb_color(gx_device * dev,
 
 	    cr = r * dither_grays / CV_DENOM;
 	    cvr = (X_max_color_value * cr / max_gray);
-	    if ((iabs((int)r - (int)cvr) & xdev->cman.color_mask.red) == 0) {
+	    if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0) {
 		gx_color_index pixel = xdev->cman.dither_ramp[cr];
 
 		if_debug2('C', "[cX]%u (dither ramp) => %lu\n", r, pixel);
@@ -770,7 +798,7 @@ gdev_x_map_color_rgb(gx_device * dev, gx_color_index color,
 		 * we can choose to map them to the darkest shades
 		 * (e.g., 0, 1/3, 2/3), to the lightest shades (e.g.,
 		 * 1/3-epsilon, 2/3-epsilon, 1-epsilon), to the middle
-		 * shades (e.g., 1/6, 1/2, 5/6), or for maximum contrast
+		 * shades (e.g., 1/6, 1/2, 5/6), or for maximum range
 		 * (e.g., 0, 1/2, 1).  The last of these matches the
 		 * assumptions of the halftoning code, so that is what
 		 * we choose.

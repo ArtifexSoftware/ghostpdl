@@ -1,6 +1,7 @@
 /* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -170,14 +171,16 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     gx_device_color *pdevc = &devc1;
     gx_device_color *pdevc_next = &devc2;
     int spp = penum->spp;
-    const frac *psrc = (const frac *)buffer + data_x * spp;
+    const frac *psrc_initial = (const frac *)buffer + data_x * spp;
+    const frac *psrc = psrc_initial;
+    const frac *rsrc = psrc + spp; /* psrc + spp at start of run */
     fixed xrun;			/* x at start of run */
     int irun;			/* int xrun */
     fixed yrun;			/* y ditto */
     color_fracs run;		/* run value */
     color_fracs next;		/* next sample value */
     const frac *bufend = psrc + w;
-    int code;
+    int code = 0, mcode = 0;
 
     if (h == 0)
 	return 0;
@@ -187,8 +190,8 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     yrun = ytf = dda_current(pnext.y);
     pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
-    if_debug4('b', "[b]y=%d w=%d xt=%f yt=%f\n",
-	      penum->y, w, fixed2float(xl), fixed2float(ytf));
+    if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+	      penum->y, data_x, w, fixed2float(xl), fixed2float(ytf));
     memset(&run, 0, sizeof(run));
     memset(&next, 0, sizeof(next));
     /* Ensure that we don't get any false dev_color_eq hits. */
@@ -297,10 +300,10 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		}
 		break;
 	}
-	code = remap_color(&cc, pcs, pdevc_next, pis, dev,
+	mcode = remap_color(&cc, pcs, pdevc_next, pis, dev,
 			   gs_color_select_source);
-	if (code < 0)
-	    return code;
+	if (mcode < 0)
+	    goto fill;
 f:
 	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
 		  next.v[0], next.v[1], next.v[2], next.v[3],
@@ -313,6 +316,7 @@ f:
 	    /* Fill the region between xrun/irun and xl */
 	    gx_device_color *ptemp;
 
+fill:
 	    if (posture != image_portrait) {	/* Parallelogram */
 		code = (*dev_proc(dev, fill_parallelogram))
 		    (dev, xrun, yrun,
@@ -328,7 +332,10 @@ f:
 						  wi, iht, pdevc, dev, lop);
 	    }
 	    if (code < 0)
-		return code;
+		goto err;
+	    rsrc = psrc;
+	    if ((code = mcode) < 0)
+		goto err;
 	    ptemp = pdevc;
 	    pdevc = pdevc_next;
 	    pdevc_next = ptemp;
@@ -344,4 +351,10 @@ inc:
     code = (*dev_proc(dev, fill_parallelogram))
 	(dev, xrun, yrun, xl - xrun, ytf - yrun, pdyx, pdyy, pdevc, lop);
     return (code < 0 ? code : 1);
+
+    /* Save position if error, in case we resume. */
+err:
+    penum->used.x = (rsrc - spp - psrc_initial) / spp;
+    penum->used.y = 0;
+    return code;
 }

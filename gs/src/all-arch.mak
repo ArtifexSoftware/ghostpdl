@@ -1,4 +1,5 @@
-#    Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -16,6 +17,11 @@
 # 	WWW URL: http://www.math.utah.edu/~beebe
 # 	Telephone: +1 801 581 5254
 # 	FAX: +1 801 585 1640, +1 801 581 4148
+#
+# /usr/local/src/ghostscript/gs5.94/Makefile, Sun Oct  3 08:07:02 1999
+# Edit by Nelson H. F. Beebe <beebe@math.utah.edu>
+# Major update with rearrangement of target names, and addition of
+# -L/usr/local/lib everywhere.
 #=======================================================================
 # This Makefile is an interface to the UNMODIFIED unix*.mak files for
 # building gs, so as to avoid the need for customizing Makefiles for
@@ -24,7 +30,7 @@
 # Usage:
 #	make <arch-name> TARGETS='...'
 #
-# or, for convenience at Utah,
+# or, for convenience at Utah, 
 #
 #	make `hostname`
 #
@@ -80,7 +86,18 @@
 #	sun-sparc-sunos-gcc-gnu-readline
 #
 # Machine-specific targets (for "make `hostname`"):
-#	XXXXXXXX.math.utah.edu [obscurred]
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
+## XXXXXXXX.YYYYYYYY.utah.edu
 #
 # [29-Apr-1999] -- update for gs-5.82: Add XLIBDIRSALL list for
 #		   install target, and add hostnames as convenience
@@ -106,7 +123,7 @@
 #		   to remember to create the obj subdirectory manually
 # [19-Mar-1998] -- add -32 -mips2 flag to SGI IRIX 6.x targets, so that
 #		   the executables run on every SGI that can run that
-#		   O?S.  Otherwise, when building on XXXXXXXX.math.utah.edu,
+#		   O/S.  Otherwise, when building on XXXXXXXX.YYYYYYYY.utah.edu,
 #		   the compiler chooses a default of -mips4, which won't
 #		   run on Indy and R4400 machines.
 # [23-Feb-1998] -- add -jnnn hint above, and COMMON_DEVICES below
@@ -141,6 +158,8 @@ COMMON_ARGS		= DEVICE_DEVS_EXTRA='$(DEVICE_DEVS_EXTRA)' \
 			  GS_LIB_DEFAULT='$(GS_LIB_DEFAULT)' \
 			  JSRCDIR='$(JSRCDIR)' \
 			  PNGSRCDIR='$(PNGSRCDIR)' \
+			  PSRCDIR='$(PNGSRCDIR)' \
+			  PVERSION=10005 \
 			  SHARE_LIBPNG='$(SHARE_LIBPNG)' \
 			  SHARE_ZLIB='$(SHARE_ZLIB)' \
 			  XCFLAGS='$(XCFLAGS)' \
@@ -200,7 +219,7 @@ SHARE_ZLIB		= 1
 # Use of the shared libraries still requires reference to source code in
 # these directories:
 JSRCDIR			= $(SRCDIR)/jpeg/jpeg-6b
-PNGSRCDIR		= $(SRCDIR)/libpng/libpng-1.0.3
+PNGSRCDIR		= $(SRCDIR)/libpng/libpng-1.0.5
 ZSRCDIR			= $(SRCDIR)/zlib/zlib-1.1.3
 
 # Use this to provide alternate targets to make, instead of the default
@@ -236,6 +255,16 @@ init:
 	-if test ! -d obj ; then mkdir obj ; fi
 
 install:	install-binary install-fontmap install-pdfsec
+
+install-no-X11:
+	$(MAKE) install \
+		FEATURE_DEVS_EXTRA= \
+		DEVICE_DEVS= \
+		SYNC=nosync \
+		STDLIBS= \
+		XLIBDIRS= \
+		XLIBDIRSALL= \
+		EXTRALIBS=
 
 install-gnu-readline:	install-binary-gnu-readline install-fontmap install-pdfsec
 
@@ -305,7 +334,12 @@ apple-powermac-rhapsody5.5 apple-powerpc-rhapsody5.5:
 		SYNC=nosync \
 		STDLIBS= \
 		XLIBDIRS= \
+		XLIBDIRSALL= \
 		EXTRALIBS=
+	@echo "#################################################################"
+	@echo "# To install this program, in the top-level build directory, do #"
+	@echo "#         make install-no-X11                                   #"
+	@echo "#################################################################"
 
 dec-alpha-osf:	init
 	$(MAKE) $(ARGS) \
@@ -546,6 +580,7 @@ sgi-mips-irix6.1:	init
 		XINCLUDE=-I/usr/include/X11 \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lib/X11'
 
+# 
 sgi-mips-irix6.3:	init
 	$(MAKE) $(ARGS) \
 		CC='cc $(SGIARCHFLAGS) -D_POSIX_4SOURCE ' \
@@ -594,7 +629,21 @@ sgi-mips-irix6.3-gnu-readline:	init
 		XLIBDIRS='-L/usr/local/$(SGIARCHLIB) -L/usr/local/lib -L/usr/lib/X11' \
 		$(GNU_READLINE_ARGS)
 
+
+# [06-Jan-2000] Problems have been reported with SGI MIPSpro compilers
+# version 7.x (x <= 3) for at least idict.o and isave.o when those
+# files are compiled with optimization.  We therefore add a step to
+# compile them without optimization.
 sgi-mips-irix6.4:	init
+	$(MAKE) $(ARGS) \
+		CFLAGS_STANDARD= \
+		CC='cc $(SGIARCHFLAGS) -D_POSIX_4SOURCE' \
+		FEATURE_DEVS_EXTRA= \
+		XINCLUDE=-I/usr/include/X11 \
+		XLIBDIRS='-L/usr/lib/X11 -L/usr/local/lib' \
+		$(GLOBJ)idict.o \
+		$(GLOBJ)isave.o
+
 	$(MAKE) $(ARGS) \
 		CC='cc $(SGIARCHFLAGS) -D_POSIX_4SOURCE' \
 		FEATURE_DEVS_EXTRA= \
@@ -626,7 +675,20 @@ sgi-mips-irix6.4-gcc:	init
 		XINCLUDE=-I/usr/include/X11 \
 		XLIBDIRS='-L/usr/local/$(SGIARCHLIB) -L/usr/local/lib -L/usr/lib/X11'
 
+# [06-Jan-2000] Problems have been reported with SGI MIPSpro compilers
+# version 7.x (x <= 3) for at least idict.o and isave.o when those
+# files are compiled with optimization.  We therefore add a step to
+# compile them without optimization.
 sgi-mips-irix6.4-gnu-readline:	init
+	$(MAKE) $(ARGS) \
+		CFLAGS_STANDARD= \
+		CC='cc $(SGIARCHFLAGS) -D_POSIX_4SOURCE' \
+		FEATURE_DEVS_EXTRA= \
+		XINCLUDE=-I/usr/include/X11 \
+		XLIBDIRS='-L/usr/lib/X11 -L/usr/local/lib' \
+		$(GLOBJ)idict.o \
+		$(GLOBJ)isave.o
+
 	$(MAKE) $(ARGS) \
 		CC='cc $(SGIARCHFLAGS) -D_POSIX_4SOURCE' \
 		XINCLUDE=-I/usr/include/X11 \
@@ -649,6 +711,12 @@ sgi-mips-irix6.4-gnu-readline:	init
 		XLIBDIRS='-L/usr/local/$(SGIARCHLIB) -L/usr/local/lib -L/usr/lib/X11' \
 		$(GNU_READLINE_ARGS) \
 		XCFLAGS='-I. -I$(JSRCDIR) -I/usr/local/include -L/usr/local/lib32 -L/usr/local/lib'
+
+
+# IRIX 6.5 can be treated like 6.4 for ghostscript builds:
+sgi-mips-irix6.5: sgi-mips-irix6.4
+
+sgi-mips-irix6.5-gnu-readline: sgi-mips-irix6.4-gnu-readline
 
 sun-sparc-solaris:	init
 	$(MAKE) $(ARGS) \
@@ -728,18 +796,17 @@ sun-sparc-sunos-gcc-gnu-readline:	init
 GNUREADLINE=-gnu-readline
 GNUREADLINE=
 
-# [Hostnames at Utah intentionally obscurred:]
-XXXXXXXX.math.utah.edu:		dec-alpha-osf$(GNUREADLINE)
-XXXXXXXX.physics.utah.edu:	ibm-rs6000-aix-4.2$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		sgi-mips-irix6.4$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		hp-parisc-hpux$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		sgi-mips-irix6.3$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		next-m68K-mach$(GNUREADLINE)
-XXXXXXXX:			apple-powerpc-rhapsody5.5$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		apple-powerpc-rhapsody5.5$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		dec-alpha-osf$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		linux$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		sun-sparc-sunos-gcc$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		sun-sparc-solaris$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		sun-sparc-solaris$(GNUREADLINE)
-XXXXXXXX.math.utah.edu:		sgi-mips-irix5$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		dec-alpha-osf$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:	ibm-rs6000-aix-4.2$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		sgi-mips-irix6.5$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		hp-parisc-hpux$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		sgi-mips-irix6.3$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:	next-m68K-mach$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:			apple-powerpc-rhapsody5.5$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		apple-powerpc-rhapsody5.5$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		dec-alpha-osf$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		linux$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		sun-sparc-sunos-gcc$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		sun-sparc-solaris$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		sun-sparc-solaris$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		sgi-mips-irix5$(GNUREADLINE)

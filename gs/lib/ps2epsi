@@ -61,6 +61,7 @@ countdictstack
 mark
 newpath
 /showpage {} def
+/setpagedevice {pop} def
 %%EndProlog
 %%Page 1 1
 BEGINEPS

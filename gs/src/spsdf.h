@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -22,6 +23,7 @@ typedef struct stream_s stream;
 /* Print a PostScript string in the most efficient form. */
 #define PRINT_BINARY_OK 1
 #define PRINT_ASCII85_OK 2
+#define PRINT_HEX_NOT_OK 4
 void s_write_ps_string(P4(stream * s, const byte * str, uint size,
 			  int print_ok));
 

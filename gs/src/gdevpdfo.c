@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -537,6 +538,18 @@ cos_stream_release(cos_object_t *pco, gs_memory_t *mem, client_name_t cname)
     cos_dict_release(pco, mem, cname);
 }
 
+/* Find the total length of a stream. */
+private long
+cos_stream_length(const cos_stream_t *pcs)
+{
+    const cos_stream_piece_t *pcsp = pcs->pieces;
+    long length;
+
+    for (length = 0; pcsp; pcsp = pcsp->next)
+	length += pcsp->size;
+    return length;
+}
+
 /* Write the (dictionary) elements of a stream. */
 /* (This procedure is exported.) */
 int
@@ -545,37 +558,21 @@ cos_stream_elements_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
     return cos_elements_write(pdev->strm, pcs->elements, pdev);
 }
 
-private int
-cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev)
+/* Write the contents of a stream.  (This procedure is exported.) */
+int
+cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
 {
     stream *s = pdev->strm;
-    const cos_stream_t *const pcs = (const cos_stream_t *)pco;
+    cos_stream_piece_t *pcsp;
     cos_stream_piece_t *last;
     cos_stream_piece_t *next;
-    cos_stream_piece_t *pcsp = pcs->pieces;
     FILE *sfile = pdev->streams.file;
     long end_pos;
-    long length;
     int code;
-
-    /****** DOESN'T ENCODE OR COMPRESS YET ******/
 
     sflush(pdev->streams.strm);
     end_pos = ftell(sfile);
 
-    /* Do a first pass to calculate the length. */
-    {
-	stream poss;
-
-	swrite_position_only(&poss);
-	for (length = stell(&poss); pcsp; pcsp = pcsp->next)
-	    length += pcsp->size;
-    }
-
-    /* Now write the stream. */
-    pputs(s, "<<");
-    cos_elements_write(s, pcs->elements, pdev);
-    pprintld1(s, "/Length %ld>>stream\n", length);
     /* Reverse the elements temporarily. */
     for (pcsp = pcs->pieces, last = NULL; pcsp; pcsp = next)
 	next = pcsp->next, pcsp->next = last, last = pcsp;
@@ -586,9 +583,26 @@ cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev)
     /* Reverse the elements back. */
     for (pcsp = last, last = NULL; pcsp; pcsp = next)
 	next = pcsp->next, pcsp->next = last, last = pcsp;
-    pputs(s, "endstream\n");
 
     fseek(sfile, end_pos, SEEK_SET);
+    return code;
+}
+
+private int
+cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev)
+{
+    stream *s = pdev->strm;
+    const cos_stream_t *const pcs = (const cos_stream_t *)pco;
+    int code;
+
+    /****** DOESN'T ENCODE OR COMPRESS YET ******/
+
+    pputs(s, "<<");
+    cos_elements_write(s, pcs->elements, pdev);
+    pprintld1(s, "/Length %ld>>stream\n", cos_stream_length(pcs));
+    code = cos_stream_contents_write(pcs, pdev);
+    pputs(s, "endstream\n");
+
     return code;
 }
 
@@ -632,6 +646,12 @@ cos_stream_add(cos_stream_t *pcs, gx_device_pdf * pdev, uint size)
 	pcs->pieces = pcsp;
     }
     return 0;
+}
+int
+cos_stream_add_since(cos_stream_t *pcs, gx_device_pdf * pdev, long start_pos)
+{
+    return cos_stream_add(pcs, pdev,
+			  (uint)(stell(pdev->streams.strm) - start_pos));
 }
 
 /* Add bytes to a stream object. */

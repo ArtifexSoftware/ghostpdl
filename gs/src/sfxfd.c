@@ -1,6 +1,7 @@
 /* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -144,7 +145,7 @@ s_fileno_read_close(stream * s)
 
     if (file != 0) {
 	s->file = 0;
-	return fclose(file);
+	return (fclose(file) ? ERRC : 0);
     }
     return 0;
 }

@@ -1,6 +1,7 @@
 /* Copyright (C) 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -53,10 +54,14 @@ typedef struct gs_type1_data_procs_s {
     int (*subr_data) (P4(gs_font_type1 * pfont, int subr_num, bool global,
 			 gs_const_string * psdata));
 
-    /* Get the data for a seac character. */
+    /*
+     * Get the data for a seac character, including the glyph and/or the
+     * outline data.  Any of the pointers for the return values may be 0,
+     * indicating that the corresponding value is not needed.
+     */
 
-    int (*seac_data) (P3(gs_font_type1 * pfont, int ccode,
-			 gs_const_string * pcdata));
+    int (*seac_data) (P4(gs_font_type1 * pfont, int ccode,
+			 gs_glyph * pglyph, gs_const_string * pcdata));
 
     /*
      * Push (a) value(s) onto the client ('PostScript') stack during

@@ -1,10 +1,12 @@
 #    Copyright (C) 1989-1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
 # $RCSfile$ $Revision$
 # makefile for (MS-Windows 3.1/Win32s / Windows 95 / Windows NT) +
 #   Borland C++ 4.5 platform.
+#   Borland C++Builder 3 platform (need BC++ 4.5 for 16-bit code)
 
 # ------------------------------- Options ------------------------------- #
 
@@ -142,6 +144,7 @@ PSD=$(PSGENDIR)\$(NUL)
 # ------ Platform-specific options ------ #
 
 # Define the drive, directory, and compiler name for the Borland C files.
+# BUILDER_VERSION=0 for BC++4.5, 3 for C++Builder3, 4 for C++Builder4
 # COMPDIR contains the compiler and linker (normally \bc\bin).
 # INCDIR contains the include files (normally \bc\include).
 # LIBDIR contains the library files (normally \bc\lib).
@@ -153,15 +156,50 @@ PSD=$(PSGENDIR)\$(NUL)
 # Note that these prefixes are always followed by a \,
 #   so if you want to use the current directory, use an explicit '.'.
 
+!ifndef BUILDER_VERSION
+!if $(__MAKE__) >= 0x520
+# C++Builder4
+BUILDER_VERSION=4
+!elif $(__MAKE__) >= 0x510
+# C++Builder3
+BUILDER_VERSION=3
+!else
+# BC++4.5
+BUILDER_VERSION=0
+!endif
+!endif
+
+!if $(BUILDER_VERSION) == 0
 COMPBASE=c:\bc
+COMPBASE16=$(COMPBASE)
+!endif
+!if $(BUILDER_VERSION) == 3
+COMPBASE=c:\Progra~1\Borland\CBuilder3
+COMPBASE16=c:\bc
+!endif
+!if $(BUILDER_VERSION) == 4
+COMPBASE=c:\Progra~1\Borland\CBuilder4
+COMPBASE16=c:\bc
+!endif
+
 COMPDIR=$(COMPBASE)\bin
 INCDIR=$(COMPBASE)\include
 LIBDIR=$(COMPBASE)\lib
 COMP=$(COMPDIR)\bcc32
 COMPCPP=$(COMP)
-COMPAUX=$(COMPDIR)\bcc
 RCOMP=$(COMPDIR)\brcc32
+
+!if $(BUILDER_VERSION) == 0
+COMPAUX=$(COMPDIR)\bcc
+!else
+COMPAUX=$(COMPDIR)\bcc32
+!endif
+
+!if $(BUILDER_VERSION) == 4
+LINK=$(COMPDIR)\ilink32
+!else
 LINK=$(COMPDIR)\tlink32
+!endif
 
 # If you don't have an assembler, set USE_ASM=0.  Otherwise, set USE_ASM=1,
 # and set ASM to the name of the assembler you are using.  This can be
@@ -206,7 +244,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(P
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=1
+COMPILE_INITS=0
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
@@ -390,7 +428,11 @@ BEGINFILES2=$(BINDIR)\gs16spl.exe *.tr
 
 # Compiler for auxiliary programs
 
+!if $(BUILDER_VERSION) == 0
 CCAUX=$(COMPAUX) -ml -I$(GLSRCDIR) -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O
+!else
+CCAUX=$(COMPAUX) -I$(GLSRCDIR) -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O
+!endif
 CCAUX_TAIL=
 
 $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
@@ -435,15 +477,19 @@ GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 $(LIBCTR): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	echo $(LIBDIR)\import32.lib $(LIBDIR)\$(CLIB) >$(LIBCTR)
 
+!if $(BUILDER_VERSION) == 0
+# Borland C++ 4.5 will not compile the setup program,
+# since a later Windows header file is required.
+SETUP_TARGETS=
+!else
+SETUP_TARGETS=$(SETUP_XE) $(UNINSTALL_XE)
+!endif
+
 !if $(MAKEDLL)
 # The graphical small EXE loader
-# **************** Borland C++ 4.5 will not compile the setup program,
-# **************** since a later Windows header file is required.
-# **************** The following dependency list should include
-# **************** $(SETUP_XE) $(UNINSTALL_XE)
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)\
- $(GS_OBJ).res $(GLSRCDIR)\dwmain32.def
-	$(LINK) /Tpe $(LCT) @&&!
+ $(GS_OBJ).res $(GLSRCDIR)\dwmain32.def $(SETUP_TARGETS)
+	$(LINK) /Tpe /aa $(LCT) @&&!
 $(LIBDIR)\c0w32 +
 $(DWOBJ) +
 ,$(GS_XE),$(GLOBJ)$(GS), +
@@ -471,7 +517,7 @@ $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
 	-del $(GLGEN)gswin32.tr
 	copy $(ld_tr) $(GLGEN)gswin32.tr
 	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpd @$(GLGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(GLOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
+	$(LINK) $(LCT) /Tpd /aa @$(GLGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(GLOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
@@ -481,7 +527,7 @@ $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(GLGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
 	echo $(DWOBJNO) $(INTASM) >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe @$(GLGEN)gswin32.tr ,$(GS_XE),$(GLOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dwmain32.def,$(GS_OBJ).res
+	$(LINK) $(LCT) /Tpe /aa @$(GLGEN)gswin32.tr ,$(GS_XE),$(GLOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
@@ -501,28 +547,28 @@ $(GSSPL_XE): $(GLSRCDIR)\gs16spl.c $(GLSRCDIR)\gs16spl.rc
 	$(ECHOGS_XE) -w $(GLGEN)_spl.rc -x 23 define -s gstext_ico $(GLGENDIR)/gstext.ico
 	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gsgraph.ico
 	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -R $(GLSRC)gs16spl.rc
-	$(CCAUX) -W -ms -v -I$(INCDIR) $(GLO_)gs16spl.obj -c $(GLSRCDIR)\gs16spl.c
-	$(COMPDIR)\brcc -i$(INCDIR) -r -fo$(GLOBJ)gs16spl.res $(GLGEN)_spl.rc
-	$(COMPDIR)\tlink /Twe /c /m /s /l @&&!
-$(LIBDIR)\c0ws +
+	$(COMPBASE16)\bin\bcc -W -ms -v -I$(COMPBASE16)\include $(GLO_)gs16spl.obj -c $(GLSRCDIR)\gs16spl.c
+	$(COMPBASE16)\bin\brcc -i$(COMPBASE16)\include -r -fo$(GLOBJ)gs16spl.res $(GLGEN)_spl.rc
+	$(COMPBASE16)\bin\tlink /Twe /c /m /s /l @&&!
+$(COMPBASE16)\lib\c0ws +
 $(GLOBJ)gs16spl.obj, +
 $(GSSPL_XE),$(GLOBJ)gs16spl, +
-$(LIBDIR)\import +
-$(LIBDIR)\mathws +
-$(LIBDIR)\cws, +
+$(COMPBASE16)\lib\import +
+$(COMPBASE16)\lib\mathws +
+$(COMPBASE16)\lib\cws, +
 $(GLSRCDIR)\gs16spl.def
 !
-	$(COMPDIR)\rlink -t $(GLOBJ)gs16spl.res $(GSSPL_XE)
+	$(COMPBASE16)\bin\rlink -t $(GLOBJ)gs16spl.res $(GSSPL_XE)
 
 # ---------------------- Setup and uninstall programs ---------------------- #
 
 !if $(MAKEDLL)
 
 $(SETUP_XE): $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj $(GLOBJ)dwsetup.res $(GLSRC)dwsetup.def
-	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
+	$(LINK) /Tpe /aa $(LCT) $(DEBUGLINK) -L$(LIBDIR) @&&!
 $(LIBDIR)\c0w32 +
 $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj +
-,$(SETUP_XE),$(GLOBJ)$(dwsetup), +
+,$(SETUP_XE),$(GLOBJ)dwsetup, +
 $(LIBDIR)\import32 +
 $(LIBDIR)\ole2w32 +
 $(LIBDIR)\cw32, +
@@ -531,18 +577,16 @@ $(GLOBJ)dwsetup.res
 !
 
 $(UNINSTALL_XE): $(GLOBJ)dwuninst.obj $(GLOBJ)dwuninst.res $(GLSRC)dwuninst.def
-	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
+	$(LINK) /Tpe /aa $(LCT) $(DEBUGLINK) -L$(LIBDIR) @&&!
 $(LIBDIR)\c0w32 +
 $(GLOBJ)dwuninst.obj +
-,$(UNINSTALL_XE),$(GLOBJ)$(dwuninst), +
+,$(UNINSTALL_XE),$(GLOBJ)dwuninst, +
 $(LIBDIR)\import32 +
 $(LIBDIR)\ole2w32 +
 $(LIBDIR)\cw32, +
 $(GLSRCDIR)\dwuninst.def, +
 $(GLOBJ)dwuninst.res
 !
-	rem echo $(LIBDIR)\ole32.lib >> $(GLGEN)dwuninst.tr
-        rem echo $(LIBDIR)\uuid.lib >> $(GLGEN)dwuninst.tr
 
 
 !endif

@@ -1,6 +1,7 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -155,7 +156,8 @@ zimage_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
  *      for I = num_sources-1 ... 0:
  *          data source I,
  *          aliasing information:
- *              if source is not file, irrelevant;
+ *              if source is not file, 1, except that the topmost value
+ *		  is used for bookkeeping in the procedure case (see below);
  *              if file is referenced by a total of M different sources and
  *                this is the occurrence with the lowest I, M;
  *              otherwise, -J, where J is the lowest I of the same file as
@@ -271,7 +273,12 @@ zimage_pop_estack(es_ptr tep)
 {
     return tep - NUM_PUSH(ETOP_NUM_SOURCES(tep)->value.intval);
 }
-/* Continuation for procedure data source. */
+
+/*
+ * Continuation for procedure data source.  We use the topmost aliasing slot
+ * to remember whether we've just called the procedure (1) or whether we're
+ * returning from a RemapColor callout (0).
+ */
 private int
 image_proc_continue(i_ctx_t *i_ctx_p)
 {
@@ -292,7 +299,7 @@ image_proc_continue(i_ctx_t *i_ctx_p)
 	return_error(!r_has_type(op, t_string) ? e_typecheck : e_invalidaccess);
     }
     size = r_size(op);
-    if (size == 0)
+    if (size == 0 && ETOP_SOURCE(esp, 0)[1].value.intval == 0)
 	code = 1;
     else {
 	for (i = 0; i < num_sources; i++)
@@ -300,9 +307,12 @@ image_proc_continue(i_ctx_t *i_ctx_p)
 	plane_data[px].data = op->value.bytes;
 	plane_data[px].size = size;
 	code = gs_image_next_planes(penum, plane_data, used);
-	if (code == e_RemapColor)
+	if (code == e_RemapColor) {
+	    op->value.bytes += used[px]; /* skip used data */
+	    r_dec_size(op, used[px]);
+	    ETOP_SOURCE(esp, 0)[1].value.intval = 0; /* RemapColor callout */
 	    return code;
-        size -= used[px];	/* how much unused in this string */
+	}
     }
     if (code) {			/* Stop now. */
 	esp = zimage_pop_estack(esp);
@@ -316,7 +326,7 @@ image_proc_continue(i_ctx_t *i_ctx_p)
 	if (++px == num_sources)
 	    px = 0;
     } while (!wanted[px]);
-	ETOP_PLANE_INDEX(esp)->value.intval = px;
+    ETOP_PLANE_INDEX(esp)->value.intval = px;
     return image_proc_process(i_ctx_p);
 }
 private int
@@ -328,6 +338,7 @@ image_proc_process(i_ctx_t *i_ctx_p)
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
     const ref *pp;
 
+    ETOP_SOURCE(esp, 0)[1].value.intval = 0; /* procedure callout */
     while (!wanted[px]) {
 	if (++px == num_sources)
 	    px = 0;
@@ -338,6 +349,7 @@ image_proc_process(i_ctx_t *i_ctx_p)
     *++esp = *pp;
     return o_push_estack;
 }
+
 /* Continue processing data from an image with file data sources. */
 private int
 image_file_continue(i_ctx_t *i_ctx_p)
@@ -397,11 +409,14 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	    plane_data[px].size = avail;
 	}
 
-	/* Now pass the available buffered data to the image processor. */
+	/*
+	 * Now pass the available buffered data to the image processor.
+	 * Even if there is no available data, we must call
+	 * gs_image_next_planes one more time to finish processing any
+	 * retained data.
+	 */
 
-	if (min_avail == 0)
-	    code = 1;
-	else {
+	{
 	    int pi;
 	    uint used[gs_image_max_planes];
 
@@ -414,6 +429,8 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	    if (code == e_RemapColor)
 		return code;
 	}
+	if (min_avail == 0)
+	    code = 1;
 	if (code) {
 	    esp = zimage_pop_estack(esp);
 	    image_cleanup(i_ctx_p);
@@ -439,21 +456,22 @@ image_string_continue(i_ctx_t *i_ctx_p)
 	int code = gs_image_next_planes(penum, sources, used);
 
 	if (code == e_RemapColor)
-		    return code;
-	    if (code) {		/* Stop now. */
-		esp -= NUM_PUSH(num_sources);
-		image_cleanup(i_ctx_p);
-		return (code < 0 ? code : o_pop_estack);
-	    }
+	    return code;
+	if (code) {		/* Stop now. */
+	    esp -= NUM_PUSH(num_sources);
+	    image_cleanup(i_ctx_p);
+	    return (code < 0 ? code : o_pop_estack);
+	}
 	for (px = 0; px < num_sources; ++px)
 	    if (sources[px].size == 0) {
 		const ref *psrc = ETOP_SOURCE(esp, px);
 
 		sources[px].data = psrc->value.bytes;
 		sources[px].size = r_size(psrc);
-	}
+	    }
     }
 }
+
 /* Clean up after enumerating an image */
 private int
 image_cleanup(i_ctx_t *i_ctx_p)

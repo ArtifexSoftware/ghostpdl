@@ -1,6 +1,7 @@
 /* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -515,13 +516,14 @@ type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
      * Since OtherSubrs may push or pop values on the PostScript operand
      * stack, remove the arguments of .type1execchar before calling the
      * Type 1 interpreter, and put them back afterwards unless we're
-     * about to execute an OtherSubr procedure.
+     * about to execute an OtherSubr procedure.  Also, we must set up
+     * the callback data for pushing OtherSubrs arguments.
      */
+    pcxs->i_ctx_p = i_ctx_p;
     pcxs->num_args = num_args;
     memcpy(pcxs->save_args, osp - (num_args - 1), num_args * sizeof(ref));
     osp -= num_args;
-    pcxs->i_ctx_p = i_ctx_p;
-    gs_type1_set_callback_data( &pcxs->cis, pcxs );
+    gs_type1_set_callback_data(&pcxs->cis, pcxs);
     code = pcxs->cis.pfont->data.interpret(&pcxs->cis, pchars, &value);
     switch (code) {
 	case type1_result_callothersubr: {
@@ -778,14 +780,31 @@ z1_subr_data(gs_font_type1 * pfont, int index, bool global,
 }
 
 private int
-z1_seac_data(gs_font_type1 * pfont, int index, gs_const_string * pstr)
+z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
+	     gs_const_string *pstr)
 {
-    ref enc_entry;
-    int code = array_get(&StandardEncoding, (long)index, &enc_entry);
+    ref std_glyph;
+    int code = array_get(&StandardEncoding, (long)ccode, &std_glyph);
 
     if (code < 0)
 	return code;
-    return zchar_charstring_data((gs_font *)pfont, &enc_entry, pstr);
+    if (pglyph) {
+	switch (r_type(&std_glyph)) {
+	case t_name:
+	    *pglyph = name_index(&std_glyph);
+	    break;
+	case t_integer:
+	    *pglyph = gs_min_cid_glyph + std_glyph.value.intval;
+	    if (*pglyph < gs_min_cid_glyph || *pglyph > gs_max_glyph)
+		*pglyph = gs_no_glyph;
+	    break;
+	default:
+	    return_error(e_typecheck);
+	}
+    }
+    if (pstr)
+	code = zchar_charstring_data((gs_font *)pfont, &std_glyph, pstr);
+    return code;
 }
 
 private int
@@ -882,6 +901,7 @@ zcharstring_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 				pfont1);
     if (code < 0)
 	return code;
+    cxs.cis.charpath_flag = true;	/* suppress hinting */
     gs_type1_set_callback_data(pcis, &cxs);
     switch (cxs.present) {
     case metricsSideBearingAndWidth:
@@ -909,4 +929,60 @@ icont:
 	pchars = 0;
 	goto icont;
     }
+}
+
+/*
+ * Redefine glyph_info to take Metrics[2] and CDevProc into account.
+ * (If CDevProc is present, return e_rangecheck, since we can't call the
+ * interpreter from here.)
+ */
+int
+z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+	      int members, gs_glyph_info_t *info)
+{
+    ref gref;
+    ref *pcdevproc;
+    gs_font_type1 *const pfont = (gs_font_type1 *)font;
+    gs_font_base *const pbfont = (gs_font_base *)font;
+    int wmode = pfont->WMode;
+    const ref *pfdict = &pfont_data(pbfont)->dict;
+    double sbw[4];
+    int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
+    int default_members = members - width_members;
+    int done_members = 0;
+    int code;
+
+    if (!width_members)
+	return gs_type1_glyph_info(font, glyph, pmat, members, info);
+    if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
+	return_error(e_rangecheck); /* can't handle it */
+    glyph_ref(glyph, &gref);
+    if (width_members == GLYPH_INFO_WIDTH1) {
+	code = zchar_get_metrics2(pbfont, &gref, sbw);
+	if (code > 0) {
+	    info->width[1].x = sbw[2];
+	    info->width[1].y = sbw[3];
+	    done_members = width_members;
+	    width_members = 0;
+	}
+    }
+    if (width_members) {
+	code = zchar_get_metrics(pbfont, &gref, sbw);
+	if (code > 0) {
+	    info->width[wmode].x = sbw[2];
+	    info->width[wmode].y = sbw[3];
+	    done_members = width_members;
+	    width_members = 0;
+	}
+    }
+    default_members |= width_members;
+    if (default_members) {
+	code = gs_type1_glyph_info(font, glyph, pmat, default_members, info);
+
+	if (code < 0)
+	    return code;
+    } else
+	info->members = 0;
+    info->members |= done_members;
+    return 0;
 }

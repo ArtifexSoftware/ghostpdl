@@ -1,4 +1,5 @@
 #    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises. All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -26,11 +27,16 @@ GLOBJDIR=[.obj]
 PSSRCDIR=[.src]
 PSGENDIR=[.obj]
 PSOBJDIR=[.obj]
+# Because of OpenVMS syntactic problems, the following redundant definitions
+# are necessary.  If you are using more than one GENDIR and/or OBJDIR,
+# you will have to edit the code below that creates these directories.
+BIN_DIR=BIN.DIR
+OBJ_DIR=OBJ.DIR
 
 # create directories
 .first
-	if f$search("BIN.DIR") .eqs. "" then create/directory [.bin]
-	if f$search("OBJ.DIR") .eqs. "" then create/directory [.obj]
+	if f$search("$(BIN_DIR)") .eqs. "" then create/directory/log $(BINDIR)
+	if f$search("$(OBJ_DIR)") .eqs. "" then create/directory/log $(GLOBJDIR)
 
 # Do not edit the next group of lines.
 
@@ -286,6 +292,11 @@ _I=)
 # Define the string for specifying the output file from the C compiler.
 
 O_=/OBJECT=
+
+# Define the quoting string for mixed-case arguments.
+# (OpenVMS is the only platform where this isn't an empty string.)
+
+Q="
 
 # Define the extension for executable files (e.g., null or .exe).
 

@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -67,12 +68,12 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
 	    added += 3;
     }
 
-    if (added < size) {
-	/* More efficient to represent as PostScript string. */
+    if (added < size || (print_ok & PRINT_HEX_NOT_OK)) {
+	/* More efficient, or mandatory, to represent as PostScript string. */
 	template = &s_PSSE_template;
 	pputc(s, '(');
     } else {
-	/* More efficient to represent as hex string. */
+	/* More efficient, and permitted, to represent as hex string. */
 	template = &s_AXE_template;
 	st = (stream_state *) & state;
 	s_AXE_init_inline(&state);

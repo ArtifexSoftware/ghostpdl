@@ -1,4 +1,5 @@
 #    Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
 
@@ -260,15 +261,15 @@ OBJ=obj
 !else
 OBJ=o
 !endif
+Q=
 XE=.exe
 XEAUX=.exe
 
-# Define the current directory prefix, shell quote string, and shell name.
+# Define the current directory prefix and shell name.
 
 D=\#
 
 EXP=
-QQ="
 SH=
 
 # Define generic commands.
@@ -399,7 +400,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=1
+COMPILE_INITS=0
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.

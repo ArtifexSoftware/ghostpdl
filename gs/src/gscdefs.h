@@ -1,6 +1,7 @@
 /* Copyright (C) 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -45,7 +46,7 @@ extern const char *const gs_init_file;
 /* we only provide macros for some externs, not the externs themselves. */
 
 #define extern_gx_device_halftone_list()\
-  typedef const gx_device_halftone_resource_t *(*gx_dht_proc)(P0());\
+  typedef DEVICE_HALFTONE_RESOURCE_PROC((*gx_dht_proc));\
   extern const gx_dht_proc gx_device_halftone_list[]
 
 #define extern_gx_image_class_table()\
@@ -58,7 +59,7 @@ extern const unsigned gx_image_type_table_count;
 
 /* We need the extra typedef so that the const will apply to the table. */
 #define extern_gx_init_table()\
-  typedef void (*gx_init_proc)(P1(gs_memory_t *));\
+  typedef init_proc((*gx_init_proc));\
   extern const gx_init_proc gx_init_table[]
 
 #define extern_gx_io_device_table()\

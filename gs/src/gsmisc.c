@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -82,10 +83,12 @@ printf_program_ident(FILE * f, const char *program_name,
 	if (revision_number)
 	    fputc(' ', f);
     }
-    if (revision_number)
-	fprintf(f, "%d.%02d",
-		(int)(revision_number / 100),
-		(int)(revision_number % 100));
+    if (revision_number) {
+	int fpart = revision_number % 100;
+
+	fprintf(f, (fpart == 0 ? "%d.%d" : "%d.%02d"),
+		(int)(revision_number / 100), fpart);
+    }
 }
 void
 eprintf_program_ident(FILE * f, const char *program_name,

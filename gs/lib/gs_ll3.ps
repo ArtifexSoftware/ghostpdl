@@ -1,4 +1,5 @@
 %    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -150,13 +151,35 @@ currentdict /.bindscratch .undef
   16 /.sethalftone16 load def
 end
 
-% Redefine sethalftone to recognize HalftoneMode.
-% We should redefine setscreen and setcolorscreen as well.
+% Redefine the halftone-setting operators to honor HalftoneMode.
+/setcolorscreen {
+  /HalftoneMode getuserparam 0 eq {
+    //setcolorscreen
+  } {
+    12 { pop } repeat .getdefaulthalftone
+    { //sethalftone }
+    { .setdefaulthalftone }
+    ifelse
+  } ifelse
+} odef
+/setscreen {
+  /HalftoneMode getuserparam 0 eq {
+    //setscreen
+  } {
+    pop pop pop .getdefaulthalftone
+    { //sethalftone }
+    { .setdefaulthalftone }
+    ifelse
+  } ifelse
+} odef
 /sethalftone {
   /HalftoneMode getuserparam 0 eq {
     //sethalftone
   } {
-    pop .setdefaulthalftone
+    pop .getdefaulthalftone
+    { //sethalftone }
+    { .setdefaulthalftone }
+    ifelse
   } ifelse
 } odef
 
@@ -409,10 +432,8 @@ currentdict /.useciecolorkeydict undef
 % ------ Miscellaneous ------ %
 
 % Define additional user and system parameters.
-psuserparams begin
-  /HalftoneMode 0 def
-  /MaxSuperScreen 1016 def
-end
+/HalftoneMode 0 .definepsuserparam
+/MaxSuperScreen 1016 .definepsuserparam
 pssystemparams begin		% read-only, so use .forcedef
   /MaxDisplayAndSourceList 160000 .forcedef
 end

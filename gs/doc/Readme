@@ -234,7 +234,8 @@ Drivers.htm
 
 Fonts.htm
      All about fonts freely available for Ghostscript, and how to add and
-     use new fonts. For both users and developers.
+     use new fonts. Also describes how to use Ghostscript fonts as X Windows
+     fonts. For both users and developers.
 
 Helpers.htm
      A note of thanks to people who have helped in the development of
@@ -339,4 +340,4 @@ This file is part of Aladdin Ghostscript. See the Aladdin Free Public
 License (the "License") for full details of the terms of using, copying,
 modifying, and redistributing Aladdin Ghostscript.
 
-Ghostscript version 5.94, 30 September 1999
+Ghostscript version 6.0, 3 February 2000

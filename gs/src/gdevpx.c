@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -21,6 +22,7 @@
 #include "gdevpxat.h"
 #include "gdevpxen.h"
 #include "gdevpxop.h"
+#include "gdevpxut.h"
 
 /* ---------------- Device definition ---------------- */
 
@@ -149,152 +151,6 @@ const gx_device_pclxl gs_pxlcolor_device = {
     pclxl_device_body("pxlcolor", 24),
     pclxl_device_procs(gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb)
 };
-
-/* ---------------- Output utilities ---------------- */
-
-/* Write a sequence of bytes. */
-#define PX_PUT_LIT(s, bytes) px_put_bytes(s, bytes, sizeof(bytes))
-private void
-px_put_bytes(stream * s, const byte * data, uint count)
-{
-    uint used;
-
-    sputs(s, data, count, &used);
-}
-
-/* Utilities for writing data values. */
-/* H-P printers only support little-endian data, so that's what we emit. */
-#define DA(a) pxt_attr_ubyte, (a)
-private void
-px_put_a(stream * s, px_attribute_t a)
-{
-    sputc(s, pxt_attr_ubyte);
-    sputc(s, a);
-}
-private void
-px_put_ac(stream *s, px_attribute_t a, px_tag_t op)
-{
-    px_put_a(s, a);
-    sputc(s, op);
-}
-
-#define DUB(b) pxt_ubyte, (byte)(b)
-private void
-px_put_ub(stream * s, byte b)
-{
-    sputc(s, pxt_ubyte);
-    sputc(s, b);
-}
-private void
-px_put_uba(stream *s, byte b, px_attribute_t a)
-{
-    px_put_ub(s, b);
-    px_put_a(s, a);
-}
-
-#define DS(i) (byte)(i), (byte)((i) >> 8)
-private void
-px_put_s(stream * s, uint i)
-{
-    sputc(s, (byte) i);
-    sputc(s, (byte) (i >> 8));
-}
-#define DUS(i) pxt_uint16, DS(i)
-private void
-px_put_us(stream * s, uint i)
-{
-    sputc(s, pxt_uint16);
-    px_put_s(s, i);
-}
-private void
-px_put_usa(stream *s, uint i, px_attribute_t a)
-{
-    px_put_us(s, i);
-    px_put_a(s, a);
-}
-private void
-px_put_u(stream * s, uint i)
-{
-    if (i <= 255)
-	px_put_ub(s, i);
-    else
-	px_put_us(s, i);
-}
-
-private void
-px_put_usp(stream * s, uint ix, uint iy)
-{
-    spputc(s, pxt_uint16_xy);
-    px_put_s(s, ix);
-    px_put_s(s, iy);
-}
-private void
-px_put_usq_fixed(stream * s, fixed x0, fixed y0, fixed x1, fixed y1)
-{
-    spputc(s, pxt_uint16_box);
-    px_put_s(s, fixed2int(x0));
-    px_put_s(s, fixed2int(y0));
-    px_put_s(s, fixed2int(x1));
-    px_put_s(s, fixed2int(y1));
-}
-
-#if 0				/* NOT CURRENTLY USED */
-private void
-px_put_ss(stream * s, int i)
-{
-    sputc(s, pxt_sint16);
-    px_put_s(s, (uint) i);
-}
-#endif
-private void
-px_put_ssp(stream * s, int ix, int iy)
-{
-    sputc(s, pxt_sint16_xy);
-    px_put_s(s, (uint) ix);
-    px_put_s(s, (uint) iy);
-}
-
-private void
-px_put_l(stream * s, ulong l)
-{
-    px_put_s(s, (uint) l);
-    px_put_s(s, (uint) (l >> 16));
-}
-
-private void
-px_put_r(stream * s, floatp r)
-{				/* Convert to single-precision IEEE float. */
-    int exp;
-    long mantissa = (long)(frexp(r, &exp) * 0x1000000);
-
-    if (exp < -126)
-	mantissa = 0, exp = 0;	/* unnormalized */
-    if (mantissa < 0)
-	exp += 128, mantissa = -mantissa;
-    /* All quantities are little-endian. */
-    spputc(s, (byte) mantissa);
-    spputc(s, (byte) (mantissa >> 8));
-    spputc(s, (byte) (((exp + 127) << 7) + ((mantissa >> 16) & 0x7f)));
-    spputc(s, (exp + 127) >> 1);
-}
-private void
-px_put_rl(stream * s, floatp r)
-{
-    spputc(s, pxt_real32);
-    px_put_r(s, r);
-}
-
-private void
-px_put_data_length(stream * s, uint num_bytes)
-{
-    if (num_bytes > 255) {
-	spputc(s, pxt_dataLength);
-	px_put_l(s, (ulong) num_bytes);
-    } else {
-	spputc(s, pxt_dataLengthByte);
-	spputc(s, (byte) num_bytes);
-    }
-}
 
 /* ---------------- Other utilities ---------------- */
 
@@ -903,50 +759,8 @@ pclxl_beginpage(gx_device_vector * vdev)
      */
     stream *s = vdev->strm;
 
-    {
-	static const byte page_header_1[] = {
-	    DUB(ePortraitOrientation), DA(pxaOrientation),
-	};
-
-	PX_PUT_LIT(s, page_header_1);
-    }
-    {
-#define MSD(ms, res, w, h)\
-  { ms, (w) * 1.0 / (res), (h) * 1.0 / res },
-	static const struct {
-	    pxeMediaSize_t ms;
-	    float width, height;
-	} media_sizes[] = {
-	    px_enumerate_media(MSD)
-	    { pxeMediaSize_next }
-	};
-#undef MSD
-	float w = vdev->width / vdev->HWResolution[0],
-	    h = vdev->height / vdev->HWResolution[1];
-	int i;
-	pxeMediaSize_t size;
-
-	/* The default is eLetterPaper, media size 0. */
-	for (i = countof(media_sizes) - 2; i > 0; --i)
-	    if (fabs(media_sizes[i].width - w) < 5.0 / 72 &&
-		fabs(media_sizes[i].height - h) < 5.0 / 72
-		)
-		break;
-	size = media_sizes[i].ms;
-	/*
-	 * According to the PCL XL documentation, MediaSize must always
-	 * be specified, but MediaSource is optional.
-	 */
-	px_put_uba(s, size, pxaMediaSize);
-	if (size != xdev->media_size) {
-	    static const byte page_header_2[] = {
-		DUB(eAutoSelect), DA(pxaMediaSource)
-	    };
-
-	    PX_PUT_LIT(s, page_header_2);
-	    xdev->media_size = size;
-	}
-    }
+    px_write_page_header(s, (const gx_device *)vdev);
+    px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size);
     spputc(s, pxtBeginPage);
     return 0;
 }
@@ -1077,6 +891,13 @@ pclxl_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
     stream *s = gdev_vector_stream(vdev);
 
+    /* Check for out-of-range points. */
+#define OUT_OF_RANGE(v) (v < 0 || v >= int2fixed(0x10000))
+    if (OUT_OF_RANGE(x0) || OUT_OF_RANGE(y0) ||
+	OUT_OF_RANGE(x1) || OUT_OF_RANGE(y1)
+	)
+	return_error(gs_error_rangecheck);
+#undef OUT_OF_RANGE
     if (type & (gx_path_type_fill | gx_path_type_stroke)) {
 	pclxl_set_paints(xdev, type);
 	px_put_usq_fixed(s, x0, y0, x1, y1);
@@ -1262,18 +1083,6 @@ pclxl_open_device(gx_device * dev)
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
     int code;
-    static const char *const file_header =
-	"\033%-12345X@PJL ENTER LANGUAGE = PCLXL\n\
-) HP-PCL XL;1;1;Comment Copyright Aladdin Enterprises 1996\000\n";
-    static const byte stream_header[] = {
-	DA(pxaUnitsPerMeasure),
-	DUB(0), DA(pxaMeasure),
-	DUB(eBackChAndErrPage), DA(pxaErrorReport),
-	pxtBeginSession,
-	DUB(0), DA(pxaSourceType),
-	DUB(eBinaryLowByteFirst), DA(pxaDataOrg),
-	pxtOpenDataSource
-    };
 
     vdev->v_memory = dev->memory;
 /****** WRONG ******/
@@ -1282,17 +1091,7 @@ pclxl_open_device(gx_device * dev)
     if (code < 0)
 	return code;
     pclxl_page_init(xdev);
-    {
-	stream *s = vdev->strm;
-
-	/* We have to add 2 to the strlen because the next-to-last */
-	/* character is a null. */
-	px_put_bytes(s, (const byte *)file_header,
-		     strlen(file_header) + 2);
-	px_put_usp(s, (uint) (dev->HWResolution[0] + 0.5),
-		   (uint) (dev->HWResolution[1] + 0.5));
-	PX_PUT_LIT(s, stream_header);
-    }
+    px_write_file_header(vdev->strm, dev);
     xdev->media_size = pxeMediaSize_next;	/* no size selected */
     memset(&xdev->chars, 0, sizeof(xdev->chars));
     xdev->chars.next_in = xdev->chars.next_out = 2;
@@ -1314,6 +1113,8 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
     spputc(s, pxtEndPage);
     sflush(s);
     pclxl_page_init(xdev);
+    if (ferror(xdev->file))
+	return_error(gs_error_ioerror);
     return gx_finish_output_page(dev, num_copies, flush);
 }
 
@@ -1328,18 +1129,8 @@ pclxl_close_device(gx_device * dev)
 
     if (xdev->in_page)
 	fputc(pxtEndPage, file);
-    {
-	static const byte file_trailer[] = {
-	    pxtCloseDataSource,
-	    pxtEndSession,
-	    033, '%', '-', '1', '2', '3', '4', '5', 'X'
-	};
-
-	/* The stream may no longer exist: see above. */
-	fwrite(file_trailer, 1, sizeof(file_trailer), file);
-    }
-    gdev_vector_close_file((gx_device_vector *)dev);
-    return 0;
+    px_write_file_trailer(file);
+    return gdev_vector_close_file((gx_device_vector *)dev);
 }
 
 /* ------ One-for-one images ------ */

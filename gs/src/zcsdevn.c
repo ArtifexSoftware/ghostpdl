@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -183,6 +184,9 @@ devicen_remap_transform(const gs_device_n_params * params, const float *in,
 {
     i_ctx_t *i_ctx_p = data;
     int num_in = params->num_components;
+    int num_out =
+	gs_color_space_num_components((const gs_color_space *)
+				      &params->alt_space);
     int i;
 
     check_estack(num_in + 4);
@@ -197,6 +201,12 @@ devicen_remap_transform(const gs_device_n_params * params, const float *in,
     push_mark_estack(es_other, devicen_remap_cleanup);
     push_op_estack(devicen_remap_finish);
     *++esp = istate->colorspace.procs.special.device_n.tint_transform;
+    /*
+     * Initialize the output values to nominal legal ones so that the
+     * concretize_color procedure doesn't get arithmetic exceptions.
+     */
+    for (i = 0; i < num_out; ++i)
+	out[i] = 0;
     /* Restore the tint_transform in the color space. */
     params->map->tint_transform = ztransform_DeviceN;
     params->map->tint_transform_data = 0;

@@ -1,6 +1,7 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -123,23 +124,25 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 	    decode_sample(sample_value, cc, 0);\
 	    code = (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
 	    if (code < 0)\
-		return code;\
+		goto err;\
 	}\
     } else if (!color_is_pure(pdevc)) {\
 	if (!tiles_fit) {\
 	    code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);\
 	    if (code < 0)\
-		return code;\
+		goto err;\
 	}\
     }\
   END
     gx_dda_fixed_point next;	/* (y not used in fast loop) */
     gx_dda_step_fixed dxx2, dxx3, dxx4;		/* (not used in all loops) */
-    register const byte *psrc = buffer + data_x;
+    const byte *psrc_initial = buffer + data_x;
+    const byte *psrc = psrc_initial;
+    const byte *rsrc = psrc;	/* psrc at start of run */
     const byte *endp = psrc + w;
     const byte *stop = endp;
     fixed xrun;			/* x at start of run */
-    register byte run;		/* run value */
+    byte run;		/* run value */
     int htrun = (masked ? 255 : -2);		/* halftone run value */
     int code = 0;
 
@@ -249,7 +252,8 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 					 xl - xrun + ax, fixed_0, fixed_0, dyy,
 					 pdevc, lop);
 		    if (code < 0)
-			return code;
+			goto err;
+		    rsrc = psrc;
 		    if (psrc >= stop)
 			break;
 		}
@@ -286,7 +290,8 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 					 ytf - yrun + ay, dyx, fixed_0,
 					 pdevc, lop);
 		    if (code < 0)
-			return code;
+			goto err;
+		    rsrc = psrc;
 		    if (psrc >= stop)
 			break;
 		}
@@ -313,7 +318,8 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 		    code = (*fill_pgram)(dev, xrun, yrun, xl - xrun,
 					 ytf - yrun, pdyx, pdyy, pdevc, lop);
 		    if (code < 0)
-			return code;
+			goto err;
+		    rsrc = psrc;
 		    if (psrc >= stop)
 			break;
 		}
@@ -342,9 +348,10 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 					 ytf - yrun, pdyx, pdyy,
 					 pdevc, lop);
 		    if (code < 0)
-			return code;
+			goto err;
 		    yrun = ytf;
 		    xrun = xl;
+		    rsrc = psrc;
 		    if (psrc >= stop)
 			break;
 		    run = *psrc;
@@ -368,7 +375,6 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 		/* We can't skip large constant regions quickly, */
 		/* because this leads to rounding errors. */
 		/* Just fill the region between xrun and xl. */
-		psrc++;
 		if (run != htrun) {
 		    htrun = run;
 		    IMAGE_SET_GRAY(run);
@@ -376,14 +382,13 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 		code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
 				      ytf - yrun, pdyx, pdyy, pdevc, lop);
 		if (code < 0)
-		    return code;
+		    goto err;
 		yrun = ytf;
 		xrun = xl;
-		if (psrc > stop) {
-		    --psrc;
+		rsrc = psrc;
+		if (psrc >= stop)
 		    break;
-		}
-		run = psrc[-1];
+		run = *psrc++;
 		dda_next(next.x);
 		dda_next(next.y);	/* harmless if no skew */
 	    }
@@ -428,7 +433,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 	int bstart;
 	int phase_x;
 	int tile_offset =
-	    (penum->device_color &&
+	    (pis && penum->device_color &&
 	     (*dev_proc(dev, get_band)) (dev, yt, &bstart) == 0 ?
 	     gx_check_tile_size(pis,
 				fixed2int_ceiling(any_abs(dxx) + (xa << 1)),
@@ -545,8 +550,9 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 			    }
 		    }
 		    if (code < 0)
-			return code;
+			goto err;
 		  mt:xrun = xl - xa;	/* original xa << 1 */
+		    rsrc = psrc - 1;
 		    if (psrc > stop) {
 			--psrc;
 			break;
@@ -583,5 +589,11 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 
     }
 #undef xl
-    return (code < 0 ? code : 1);
+    if (code >= 0)
+	return 1;
+    /* Save position if error, in case we resume. */
+err:
+    penum->used.x = rsrc - psrc_initial;
+    penum->used.y = 0;
+    return code;
 }

@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -28,6 +29,11 @@ typedef struct gx_device_s gx_device;
  * the height).  height = 0 is a special call to indicate that there is no
  * more input data; this is necessary because the last scan lines of the
  * source data may not produce any output.
+ *
+ * Note that the 'w' argument of the image_render procedure is the number
+ * of samples, i.e., the number of pixels * the number of samples per pixel.
+ * This is neither the width in pixels nor the width in bytes (in the case
+ * of 12-bit samples, which expand to 2 bytes apiece).
  */
 #define irender_proc(proc)\
   int proc(P6(gx_image_enum *penum, const byte *buffer, int data_x,\

@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -591,9 +592,9 @@ ENUM_PTRS_BEGIN_PROC(name_table_enum_ptrs)
     if (i >= nt->sub_count)
 	return 0;
     if (index & 1)
-	ENUM_RETURN(nt->sub[index].strings);
+	ENUM_RETURN(nt->sub[i].strings);
     else
-	ENUM_RETURN(nt->sub[index].names);
+	ENUM_RETURN(nt->sub[i].names);
 }
 ENUM_PTRS_END_PROC
 private RELOC_PTRS_WITH(name_table_reloc_ptrs, name_table *nt)

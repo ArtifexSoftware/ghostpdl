@@ -1,6 +1,7 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -23,7 +24,7 @@ private int
 cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
-    uint raster = gx_device_raster(pdev, false);
+    uint raster = gx_device_raster((gx_device *)pdev, false);
     int i;
     int worst_case_comp_size = raster + (raster / 8) + 1;
     byte *data = 0;

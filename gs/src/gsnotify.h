@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -62,6 +63,11 @@ int gs_notify_register(P3(gs_notify_list_t *nlist, gs_notify_proc_t proc,
  */
 int gs_notify_unregister(P3(gs_notify_list_t *nlist, gs_notify_proc_t proc,
 			    void *proc_data));
+
+/* Unregister a client, calling a procedure for each unregistration. */
+int gs_notify_unregister_calling(P4(gs_notify_list_t *nlist,
+				    gs_notify_proc_t proc, void *proc_data,
+				    void (*unreg_proc)(P1(void *pdata))));
 
 /*
  * Notify the clients on a list.  If an error occurs, return the first

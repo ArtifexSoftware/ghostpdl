@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -19,6 +20,7 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gdevpdfx.h"
+#include "gdevpdfo.h"
 #include "scanchar.h"
 #include "strimpl.h"		/* for short-sighted compilers */
 #include "scfx.h"		/* s_CFE_template is default */
@@ -42,9 +44,11 @@
 #endif
 
 /* GC descriptors */
-private_st_pdf_resource();
-private_st_pdf_font();
-private_st_pdf_char_proc();
+extern_st(st_pdf_font);
+extern_st(st_pdf_char_proc);
+extern_st(st_pdf_font_descriptor);
+public_st_pdf_resource();
+private_st_pdf_x_object();
 
 /* ---------------- Utilities ---------------- */
 
@@ -553,8 +557,12 @@ int
 pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 			gs_id rid, pdf_resource_t ** ppres)
 {
-    return pdf_begin_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
-			   resource_structs[rtype], ppres);
+    int code = pdf_begin_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
+			       resource_structs[rtype], ppres);
+
+    if (code >= 0)
+	(*ppres)->rid = rid;
+    return code;
 }
 int
 pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
@@ -576,8 +584,19 @@ int
 pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 		   pdf_resource_t ** ppres, long id)
 {
-    return pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
-			   resource_structs[rtype], ppres, id);
+    int code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
+			       resource_structs[rtype], ppres, id);
+
+    if (code >= 0)
+	(*ppres)->rid = rid;
+    return code;
+}
+
+/* Get the object id of a resource. */
+long
+pdf_resource_id(const pdf_resource_t *pres)
+{
+    return pres->object->id;
 }
 
 /* End an aside or other separate object. */

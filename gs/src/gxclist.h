@@ -1,6 +1,7 @@
 /* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -217,7 +218,7 @@ typedef struct gx_device_clist_writer_s {
 				/* only non-transient for images */
     gs_id clip_path_id;		/* id of current clip path */
     clist_color_space_t color_space;	/* current color space, */
-				/* only used for images */
+				/* only used for non-mask images */
     gs_id transfer_ids[4];	/* ids of transfer maps */
     gs_id black_generation_id;	/* id of black generation map */
     gs_id undercolor_removal_id;	/* id of u.c.r. map */
@@ -320,6 +321,13 @@ int clist_setup_params(P1(gx_device *dev));
 /*
  * Render a rectangle to a client-supplied image.  This implements
  * gdev_prn_render_rectangle for devices that are using banding.
+ * 
+ * Note that clist_render_rectangle only guarantees to render *at least* the
+ * requested rectangle to bdev, offset by (-prect->p.x, -prect->p.y):
+ * anything it does to avoid rendering regions outside the rectangle is
+ * merely an optimization.  If the client really wants the output clipped to
+ * some rectangle smaller than ((0, 0), (bdev->width, bdev->height)), it
+ * must set up a clipping device.
  */
 int clist_render_rectangle(P5(gx_device_clist *cdev,
 			      const gs_int_rect *prect, gx_device *bdev,

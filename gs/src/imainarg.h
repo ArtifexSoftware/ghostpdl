@@ -1,6 +1,7 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1996, 1999 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -13,7 +14,6 @@
 #ifndef gs_main_instance_DEFINED
 #  define gs_main_instance_DEFINED
 typedef struct gs_main_instance_s gs_main_instance;
-
 #endif
 
 /*
@@ -28,7 +28,7 @@ int gs_main_init_with_args(P3(gs_main_instance * minst, int argc,
 
 /*
  * Run the 'start' procedure (after processing the command line).
- * Note that this procedure exits rather than returning.
+ * Note that in case of error, this procedure exits rather than returning.
  */
 void gs_main_run_start(P1(gs_main_instance * minst));
 

@@ -1,6 +1,7 @@
 /* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -43,7 +44,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
     const float *pattern = dash->pattern;
     int count, index;
     bool ink_on;
-    float elt_length;
+    double elt_length;
     fixed x0 = psub->pt.x, y0 = psub->pt.y;
     fixed x, y;
     const segment *pseg;

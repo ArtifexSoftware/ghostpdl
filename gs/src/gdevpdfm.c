@@ -1,16 +1,19 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
 /* pdfmark processing for PDF-writing driver */
+#include "math_.h"
 #include "memory_.h"
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */
 #include "gdevpdfx.h"
+#include "gdevpdfo.h"
 #include "scanchar.h"
 
 /* GC descriptors */
@@ -33,6 +36,8 @@ private_st_pdf_graphics_save();
 #define PDFMARK_ODD_OK 2	/* OK if odd # of parameters */
 #define PDFMARK_KEEP_NAME 4	/* don't substitute reference for name */
 				/* in 1st argument */
+#define PDFMARK_NO_REFS 8	/* don't substitute references for names */
+				/* anywhere */
 typedef struct pdfmark_name_s {
     const char *mname;
     pdfmark_proc((*proc));
@@ -186,7 +191,6 @@ pdfmark_scan_rect(gs_rect * prect, const gs_param_string * str,
 {
     uint size = str->size;
     double v[4];
-
 #define MAX_RECT_STRING 100
     char chars[MAX_RECT_STRING + 3];
     int end_check;
@@ -221,6 +225,57 @@ pdfmark_make_rect(char str[MAX_RECT_STRING], const gs_rect * prect)
     str[stell(&s)] = 0;
 }
 
+/* Write a transformed Border value on a stream. */
+private int
+pdfmark_write_border(stream *s, const gs_param_string *str,
+		     const gs_matrix *pctm)
+{
+    /*
+     * We don't preserve the entire CTM in the output, and it isn't clear
+     * what CTM is applicable to annotations anyway: we only attempt to
+     * handle well-behaved CTMs here.
+     */
+    uint size = str->size;
+#define MAX_BORDER_STRING 100
+    char chars[MAX_BORDER_STRING + 1];
+    double bx, by, c;
+    gs_point bpt, cpt;
+    const char *next;
+
+    if (str->size > MAX_BORDER_STRING)
+	return_error(gs_error_limitcheck);
+    memcpy(chars, str->data, size);
+    chars[size] = 0;
+    if (sscanf(chars, "[%lg %lg %lg", &bx, &by, &c) != 3)
+	return_error(gs_error_rangecheck);
+    gs_distance_transform(bx, by, pctm, &bpt);
+    gs_distance_transform(0.0, c, pctm, &cpt);
+    pprintg3(s, "[%g %g %g", fabs(bpt.x), fabs(bpt.y), fabs(cpt.x + cpt.y));
+    /*
+     * We don't attempt to do 100% reliable syntax checking here --
+     * it's just not worth the trouble.
+     */
+    next = strchr(chars + 1, ']');
+    if (next == 0)
+	return_error(gs_error_rangecheck);
+    if (next[1] != 0) {
+	/* Handle a dash array.  This is tiresome. */
+	double v;
+
+	pputc(s, '[');
+	while (next != 0 && sscanf(++next, "%lg", &v) == 1) {
+	    gs_point vpt;
+
+	    gs_distance_transform(0.0, v, pctm, &vpt);
+	    pprintg1(s, "%g ", fabs(vpt.x + vpt.y));
+	    next = strchr(next, ' ');
+	}
+	pputc(s, ']');
+    }
+    pputc(s, ']');
+    return 0;
+}
+
 /* ---------------- Miscellaneous pdfmarks ---------------- */
 
 /*
@@ -249,6 +304,8 @@ pdfmark_make_rect(char str[MAX_RECT_STRING], const gs_rect * prect)
  * respectively.  The pdfmark and PDF documentation is so confused on the
  * issue of when the long and short names should be used that we only give
  * this a 50-50 chance of being right.
+ *
+ * Note that we must transform Rect and Border coordinates.
  */
 
 typedef struct ao_params_s {
@@ -365,14 +422,34 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 		return code;
 	    pdfmark_make_rect(rstr, &rect);
 	    cos_dict_put_c_strings(pcd, pdev, "/Rect", rstr);
+	} else if (pdf_key_eq(pair, "/Border")) {
+	    stream s;
+	    char bstr[MAX_BORDER_STRING + 1];
+	    int code;
+
+	    swrite_string(&s, (byte *)bstr, MAX_BORDER_STRING + 1);
+	    code = pdfmark_write_border(&s, pair + 1, pctm);
+	    if (code < 0)
+		return code;
+	    if (stell(&s) > MAX_BORDER_STRING)
+		return_error(gs_error_limitcheck);
+	    bstr[stell(&s)] = 0;
+	    cos_dict_put_c_strings(pcd, pdev, "/Border", bstr);
 	} else if (for_outline && pdf_key_eq(pair, "/Count"))
 	    DO_NOTHING;
 	else
 	    pdfmark_put_pair(pdev, pcd, pair);
     }
     if (!for_outline && pdf_key_eq(&Subtype, "/Link")) {
-	if (Action)
-	    Dest.data = 0;
+	if (Action) {
+	    /* Don't delete the Dest for GoTo or file-GoToR. */
+	    if (pdf_key_eq(Action + 1, "/GoTo") ||
+		(File && pdf_key_eq(Action + 1, "/GoToR"))
+		)
+		DO_NOTHING;
+	    else
+		Dest.data = 0;
+	}
     }
 
     /* Now handle the deferred keys. */
@@ -490,6 +567,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     }
     params.pdev = pdev;
     params.subtype = subtype;
+    params.pres = 0;
     code = pdf_make_named_dict(pdev, objname, &pcd, true);
     if (code < 0)
 	return code;
@@ -1178,8 +1256,19 @@ pdfmark_OBJ(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	cotype = cos_type_stream;
     else
 	return_error(gs_error_rangecheck);
-    if ((code = pdf_make_named(pdev, objname, cotype, &pco, true)) < 0)
+    if ((code = pdf_make_named(pdev, objname, cotype, &pco, true)) < 0) {
+	/*
+	 * For Distiller compatibility, allows multiple /OBJ pdfmarks with
+	 * the same name and type, even though the pdfmark specification
+	 * doesn't say anything about this being legal.
+	 */
+	if (code == gs_error_rangecheck &&
+	    pdf_refer_named(pdev, objname, &pco) >= 0 &&
+	    cos_type(pco) == cotype
+	    )
+	    return 0;		/* already exists, but OK */
 	return code;
+    }
     return 0;
 }
 
@@ -1207,6 +1296,12 @@ pdfmark_PUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 }
 
 /* [ {dict} key value ... /.PUTDICT pdfmark */
+/* [ {stream} key value ... /.PUTDICT pdfmark */
+/*
+ * Adobe's pdfmark documentation doesn't allow PUTDICT with a stream,
+ * but it's reasonable and unambiguous, and Acrobat Distiller accepts it,
+ * so we do too.
+ */
 private int
 pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		const gs_matrix * pctm, const gs_param_string * no_objname)
@@ -1214,8 +1309,10 @@ pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     cos_object_t *pco;
     int code;
 
-    if ((code = pdf_get_named(pdev, &pairs[0], cos_type_dict, &pco)) < 0)
+    if ((code = pdf_refer_named(pdev, &pairs[0], &pco)) < 0)
 	return code;
+    if (cos_type(pco) != cos_type_dict && cos_type(pco) != cos_type_stream)
+	return_error(gs_error_typecheck);
     return pdfmark_put_pairs(pdev, (cos_dict_t *)pco, pairs + 1, count - 1);
 }
 
@@ -1449,11 +1546,12 @@ private const pdfmark_name mark_names[] =
     {"PUT",          pdfmark_PUT,         PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
     {".PUTDICT",     pdfmark_PUTDICT,     PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
     {".PUTINTERVAL", pdfmark_PUTINTERVAL, PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
-    {".PUTSTREAM",   pdfmark_PUTSTREAM,   PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
+    {".PUTSTREAM",   pdfmark_PUTSTREAM,   PDFMARK_ODD_OK | PDFMARK_KEEP_NAME |
+                                          PDFMARK_NO_REFS},
     {"CLOSE",        pdfmark_CLOSE,       PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
     {"NamespacePush", pdfmark_NamespacePush, 0},
     {"NamespacePop", pdfmark_NamespacePop, 0},
-    {"NI",           pdfmark_NI,           PDFMARK_NAMEABLE},
+    {"NI",           pdfmark_NI,          PDFMARK_NAMEABLE},
 	/* Document structure. */
     {"StRoleMap",    pdfmark_StRoleMap,   0},
     {"StClassMap",   pdfmark_StClassMap,  0},
@@ -1544,13 +1642,15 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 		return_error(gs_error_VMerror);
 	    memcpy(pairs, data, size * sizeof(*data));
 	copied:		/* Substitute object references for names. */
-	    for (j = (pmn->options & PDFMARK_KEEP_NAME ? 1 : 1 - odd_ok);
-		 j < size; j += 2 - odd_ok
-		 ) {
-		code = pdf_replace_names(pdev, &pairs[j], &pairs[j]);
-		if (code < 0) {
-		    gs_free_object(mem, pairs, "pdfmark_process(pairs)");
-		    return code;
+	    if (!(pmn->options & PDFMARK_NO_REFS)) {
+		for (j = (pmn->options & PDFMARK_KEEP_NAME ? 1 : 1 - odd_ok);
+		     j < size; j += 2 - odd_ok
+		     ) {
+		    code = pdf_replace_names(pdev, &pairs[j], &pairs[j]);
+		    if (code < 0) {
+			gs_free_object(mem, pairs, "pdfmark_process(pairs)");
+			return code;
+		    }
 		}
 	    }
 	    code = (*pmn->proc) (pdev, pairs, size, &ctm, objname);

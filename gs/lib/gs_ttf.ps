@@ -1,10 +1,18 @@
-%    Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+%
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
 % $RCSfile$ $Revision$
 % Support code for direct use of TrueType fonts.
 % (Not needed for Type 42 fonts.)
+
+% Note that if you want to use this file without including the ttfont.dev
+% option when you built Ghostscript, you will need to load the following
+% files before this one:
+%	lib/gs_mgl_e.ps
+%	lib/gs_mro_e.ps
+%	lib/gs_wan_e.ps
 
 % Thanks to B. Jackowski and GUST (the Polish TeX Users' Group) for
 % the glyf-splitting code.
@@ -83,7 +91,7 @@
 % table.
 
 /.loadttfontdict mark
-/orgXUID 107 def        % Aladdin Enterprises organization XUID
+/orgXUID AladdinEnterprisesXUID def
 /maxstring 32000 def    % half the maximum length of a PostScript string,
 			% must be a multiple of 4 (for hmtx / loca / vmtx)
 
@@ -177,75 +185,98 @@
 } def
 
 % Each procedure in this dictionary is called as follows:
-%       -mark- encodingtable <<proc>> -mark- glyphindices...
+%       <encodingtable> proc <glypharray>
 /cmapformats mark
-  0             % Apple standard 1-to-1 mapping.
-    { 6 256 getinterval { } forall
-    } bind
-  4             % Microsoft/Adobe segmented mapping.
-    { /etab exch def
-      /nseg2 etab 6 getu16 def
-      14 /endc etab 2 index nseg2 getinterval def
+  0 {		% Apple standard 1-to-1 mapping.
+    6 256 getinterval { } forall 256 packedarray
+  } bind
+  4 {		% Microsoft/Adobe segmented mapping.
+    /etab exch def
+    /nseg2 etab 6 getu16 def
+    14 /endc etab 2 index nseg2 getinterval def
 		% The Apple TrueType documentation omits the 2-byte
 		% 'reserved pad' that follows the endCount vector!
-      2 add
-      nseg2 add /startc etab 2 index nseg2 getinterval def
-      nseg2 add /iddelta etab 2 index nseg2 getinterval def
-      nseg2 add /idroff etab 2 index nseg2 getinterval def
+    2 add
+    nseg2 add /startc etab 2 index nseg2 getinterval def
+    nseg2 add /iddelta etab 2 index nseg2 getinterval def
+    nseg2 add /idroff etab 2 index nseg2 getinterval def
 		% The following hack allows us to properly handle
 		% idiosyncratic fonts that start at 0xf000:
-      /firstcode startc 0 getu16 16#ff00 and dup 16#f000 ne { pop 0 } if def
-      pop /numcodes counttomark 1 sub def
-      0 2 nseg2 3 sub
-       { /i2 exch def
-	 /scode startc i2 getu16 def
-	 /ecode endc i2 getu16 def
-	 numcodes scode firstcode sub
+    pop
+    /firstcode startc 0 getu16 16#ff00 and dup 16#f000 ne { pop 0 } if def
+    /putglyph {
+      glyphs code 3 -1 roll put /code code 1 add def
+    } bind def
+		% Do a first pass to compute the size of the glyphs array.
+    /numcodes 0 def /glyphs 0 0 2 nseg2 3 sub {
+		% Stack: /glyphs numglyphs i2
+      /i2 exch def
+      /scode startc i2 getu16 def
+      /ecode endc i2 getu16 def
+      numcodes scode firstcode sub
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
-	 dup 16#e000 ge { 255 and } if
-	 exch sub 0 max dup { 0 exch } repeat
-	 ecode scode sub 1 add add numcodes add /numcodes exch def
-	 /delta iddelta i2 gets16 def
-	 DEBUG {
-	   (scode=) print scode =only
-	   ( ecode=) print ecode =only
-	   ( delta=) print delta =only
-	   ( droff=) print idroff i2 getu16 =
-	 } if
-	 idroff i2 getu16 dup 0 eq {
-	   pop scode delta add 65535 and 1 ecode delta add 65535 and { } for
-	 }
-	 {     % The +2 is for the 'reserved pad'.
-	   /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
-	   0 1 ecode scode sub {
-	     2 mul gloff add etab exch getu16
-	     dup 0 ne { delta add 65535 and } if
-	   } for
-	 } ifelse
-       }
-      for
-    } bind
-  6             % Single interval lookup.
-    { dup 6 getu16 { 0 exch } repeat
-      dup 8 getu16 0 exch 1 exch 1 sub
-       { 2 mul 10 add 2 copy getu16 exch pop exch }
-      for pop
-    } bind
+      dup 16#e000 ge { 255 and } if
+      exch sub 0 max ecode scode sub 1 add add
+      exch 1 index add exch
+      numcodes add /numcodes exch def
+    } for array def
+		% Now fill in the array.
+    /numcodes 0 def /code 0 def
+    0 2 nseg2 3 sub {
+      /i2 exch def
+      /scode startc i2 getu16 def
+      /ecode endc i2 getu16 def
+      numcodes scode firstcode sub
+		% Hack for fonts that have only 0x0000 and 0xf000 ranges
+      dup 16#e000 ge { 255 and } if
+      exch sub 0 max dup { 0 putglyph } repeat
+      ecode scode sub 1 add add numcodes add /numcodes exch def
+      /delta iddelta i2 gets16 def
+      DEBUG {
+	(scode=) print scode =only
+	( ecode=) print ecode =only
+	( delta=) print delta =only
+	( droff=) print idroff i2 getu16 =
+      } if
+      idroff i2 getu16 dup 0 eq {
+	pop scode delta add 65535 and 1 ecode delta add 65535 and
+	{ putglyph } for
+      } {	% The +2 is for the 'reserved pad'.
+        /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
+        0 1 ecode scode sub {
+	  2 mul gloff add etab exch getu16
+	  dup 0 ne { delta add 65535 and } if putglyph
+	} for
+      } ifelse
+    } for glyphs /glyphs null def	% for GC
+  } bind
+  6 {		% Single interval lookup.
+    dup 6 getu16 /firstcode exch def dup 8 getu16 /ng exch def
+    firstcode ng add array
+		% Stack: tab array
+		% Fill elements 0 .. firstcode-1 with 0
+    0 1 firstcode 1 sub { 2 copy 0 put pop } for
+    dup firstcode ng getinterval
+		% Stack: tab array subarray
+		% Fill elements firstcode .. firstcode+nvalue-1 with glyph values
+    0 1 ng 1 sub {
+      dup 2 mul 10 add 3 index exch getu16 3 copy put pop pop
+    } for pop exch pop
+  } bind
 .dicttomark readonly def                % cmapformats
 
-% <cmaptab> cmaparray -mark- <glyphs> ...
+% <cmaptab> cmaparray <glypharray>
 /cmaparray {
-  mark exch dup 0 getu16 cmapformats exch .knownget {
+  dup 0 getu16 cmapformats exch .knownget {
     DEBUG {
       (cmap: format ) print 1 index 0 getu16 = flush
     } if exec
   } {
     (Can't handle format ) print 0 getu16 = flush
-    0 1 255 { } for
+    0 1 255 { } for 256 packedarray
   } ifelse
   DEBUG {
-    (cmap: length=) print counttomark =
-    ([) print counttomark 1 sub -1 0 { index =only ( ) print } for (]) =
+    (cmap: length=) print dup length = dup ==
   } if
 } bind def
 
@@ -299,7 +330,11 @@
   (cvt ) { .readtable }
   (fpgm) 1 index
   (prep) 1 index
-.dicttomark readonly def                % readtables
+.dicttomark
+% Normally there would be a 'readonly' here, but the ttf2pf utility wants
+% to include the 'kern' table as well, so we leave the readtables dictionary
+% writable.
+def                % readtables
 
 % Read a table as a single string.
 % <file> <length> .readtable <string>
@@ -576,12 +611,17 @@
   /sfnts sfnts
 } bind def
 
+% <glyph> .nname <_name>
+/.nname {
+  =string cvs (_) exch concatstrings cvn
+} bind def
+
 % -mark- <key> <value> ... .definettfont <font>
 /.definettfont {
   /FontType 42
   /PaintType 0
 		% Choose a cmap.
-  /cmapglyphs cmaptab cmaparray ] def
+  /cmapglyphs cmaptab cmaparray def
 		% See if we have PostScript glyph name information.
   /glyphencoding post null eq {
     [ ]
@@ -602,50 +642,37 @@
   } if
 		% Hack: if there is no usable post table but the cmap uses
 		% the Microsoft Unicode encoding, use ISOLatin1Encoding.
-  /addiso
-    glyphencoding length 0 eq cmapsub 0 4 getinterval <00030001> eq and
-    def
+  glyphencoding length 0 eq cmapsub 0 4 getinterval <00030001> eq and {
+    /glyphencoding ISOLatin1Encoding dup length array copy def
+  } if
 		% If necessary, fabricate additional glyphencoding entries
 		% to cover all of loca, or truncate glyphencoding.
   glyphencoding length numloca lt {
     /glyphencoding [ glyphencoding aload pop
-    counttomark 1 numloca 1 sub {
-      =string cvs (_) exch concatstrings cvn
-    } for ] def
+    counttomark 1 numloca 1 sub { .nname } for ] def
   } {
     /glyphencoding glyphencoding 0 numloca getinterval def
   } ifelse
-  /Encoding
-    [ cmapglyphs { glyphencoding exch get } forall
-    counttomark 256 sub dup 0 ge {
-      { pop } repeat
-    } {
-      neg { /.notdef } repeat
-    } ifelse ]
-		% Until we can compute the MD5 fingerprint,
-		% just use the precomputed checksum.
-  DEBUG { (Encoding: ) print dup === flush } if
+		% Some badly designed Chinese fonts have a post table
+		% in which all glyphs other than 0 are named .null.
+		% Use CharStrings to keep track of the reverse map from
+		% names to glyphs, and don't let any name be used for
+		% more than one glyph.
   /CharStrings glyphencoding dup length dict
     0 1 3 index length 1 sub {
 		% Stack: glyphencoding dict index
       2 index 1 index get 2 index 1 index known {
-	pop pop
-      } {
-	2 index exch 3 -1 roll put
-      } ifelse
-    } for exch pop
-  addiso {
-    0 1 4 index length 256 min 1 sub {
-		% Stack: /Encoding encoding /CharStrings charstrings code
-      3 index 1 index get 2 index exch .knownget {
-	dup 0 ne {
-	  2 index ISOLatin1Encoding 3 index get 3 -1 roll put
-	} {
-	  pop
-	} ifelse
-      } if pop
-    } for
-  } if readonly
+		% The same name maps to more than one glyph.
+		% Change the name.
+	pop dup .nname 3 index 2 index 2 index put
+      } if
+      2 index exch 3 -1 roll put
+    } for exch pop readonly
+  /Encoding
+    [ cmapglyphs dup length 256 gt { 0 256 getinterval } if
+    { glyphencoding exch get } forall
+    counttomark 256 exch sub { /.notdef } repeat ]
+  DEBUG { (Encoding: ) print dup === flush } if
   .dicttomark
   end end dup /FontName get exch definefont
 } bind def

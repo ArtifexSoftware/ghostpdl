@@ -1,6 +1,7 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -32,6 +33,17 @@ typedef struct gx_device_pdf_s gx_device_pdf;
 #endif
 
 /* ---------------- Structures ---------------- */
+
+/* Define the abstract types if they aren't defined already (in gdevpdfx.h). */
+#ifndef cos_types_DEFINED
+#  define cos_types_DEFINED
+typedef struct cos_object_s cos_object_t;
+typedef struct cos_stream_s cos_stream_t;
+typedef struct cos_dict_s cos_dict_t;
+typedef struct cos_array_s cos_array_t;
+typedef struct cos_object_procs_s cos_object_procs_t;
+typedef const cos_object_procs_t *cos_type_t;
+#endif
 
 /*
  * Define the generic structure for elements of arrays and
@@ -65,8 +77,8 @@ struct cos_stream_piece_s {
 /*
  * Define the object procedures for Cos objects.
  */
-typedef struct cos_object_s cos_object_t;
-typedef struct cos_object_procs_s {
+/*typedef struct cos_object_s cos_object_t;*/
+/*typedef*/ struct cos_object_procs_s {
 
 #define cos_proc_release(proc)\
   void proc(P3(cos_object_t *pco, gs_memory_t *mem, client_name_t cname))
@@ -76,8 +88,8 @@ typedef struct cos_object_procs_s {
   int proc(P2(const cos_object_t *pco, gx_device_pdf *pdev))
 	cos_proc_write((*write));
 
-} cos_object_procs_t;
-typedef const cos_object_procs_t *cos_type_t;
+} /*cos_object_procs_t*/;
+/*typedef const cos_object_procs_t *cos_type_t;*/
 #define cos_type(pco) ((pco)->cos_procs)
 
 /*
@@ -148,7 +160,8 @@ struct cos_array_element_s {
 #define private_st_cos_array_element()	/* in gdevpdfo.c */\
   gs_private_st_composite(st_cos_array_element, cos_array_element_t,\
     "cos_array_element_t", cos_array_element_enum_ptrs, cos_array_element_reloc_ptrs)
-typedef cos_object_struct(cos_array_s, cos_array_element_t) cos_array_t;
+/*typedef*/ cos_object_struct(cos_array_s, cos_array_element_t)
+     /*cos_array_t*/;
 extern const cos_object_procs_t cos_array_procs;
 #define cos_type_array (&cos_array_procs)
     /* dict */
@@ -161,11 +174,13 @@ struct cos_dict_element_s {
 #define private_st_cos_dict_element()	/* in gdevpdfo.c */\
   gs_private_st_composite(st_cos_dict_element, cos_dict_element_t,\
     "cos_dict_element_t", cos_dict_element_enum_ptrs, cos_dict_element_reloc_ptrs)
-typedef cos_object_struct(cos_dict_s, cos_dict_element_t) cos_dict_t;
+/*typedef*/ cos_object_struct(cos_dict_s, cos_dict_element_t)
+     /*cos_dict_t*/;
 extern const cos_object_procs_t cos_dict_procs;
 #define cos_type_dict (&cos_dict_procs)
     /* stream */
-typedef cos_object_struct(cos_stream_s, cos_dict_element_t) cos_stream_t;
+/*typedef*/ cos_object_struct(cos_stream_s, cos_dict_element_t)
+    /*cos_stream_t*/;
 extern const cos_object_procs_t cos_stream_procs;
 #define cos_type_stream (&cos_stream_procs)
 
@@ -200,6 +215,7 @@ int cos_dict_put_string(P6(cos_dict_t *, gx_device_pdf *, const byte *, uint, co
 int cos_dict_put_c_strings(P4(cos_dict_t *, gx_device_pdf *, const char *, const char *));
     /* stream */
 int cos_stream_add(P3(cos_stream_t *, gx_device_pdf *, uint));
+int cos_stream_add_since(P3(cos_stream_t *, gx_device_pdf *, long /*start_pos*/));
 int cos_stream_add_bytes(P4(cos_stream_t *, gx_device_pdf *, const byte *, uint));
 int cos_stream_put(P5(cos_stream_t *, gx_device_pdf *, const byte *, uint, const cos_value_t *)); /* = dict_put */
 int cos_stream_put_c_strings(P4(cos_stream_t *, gx_device_pdf *, const char *, const char *)); /* = dict_put_c_strings */
@@ -210,6 +226,7 @@ const cos_value_t *cos_dict_find(P3(const cos_dict_t *, const byte *, uint));
 /* Write the elements of a dictionary/stream on the output. */
 int cos_dict_elements_write(P2(const cos_dict_t *, gx_device_pdf *));
 int cos_stream_elements_write(P2(const cos_stream_t *, gx_device_pdf *)); /* = dict_elements_write */
+int cos_stream_contents_write(P2(const cos_stream_t *, gx_device_pdf *));
 
 /* Write a cos object as a PDF object. */
 int cos_write_object(P2(const cos_object_t *pco, gx_device_pdf *pdev));

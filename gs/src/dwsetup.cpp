@@ -1,19 +1,7 @@
 /* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
 
-  This file is part of Aladdin Ghostscript.
-  
-  This program is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public 
-  License (the "License") for full details.
-	
-  Every copy of Aladdin Ghostscript must include a copy of the License, 
-  normally in a plain ASCII text file named PUBLIC.  The License grants you 
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only 
-  under certain conditions described in the License.  Among other things, the 
-  License requires that the copyright notice and this notice be preserved on 
-  all copies.
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
 */
 
 // $RCSfile$ $Revision$
@@ -472,7 +460,7 @@ init()
 		strncpy(g_szTargetDir, argv[1], sizeof(g_szTargetDir));
 		g_bBatch = TRUE;
 		if (is_winnt)
-			cinst.SetAllUsers(TRUE);
+			g_bAllUsers = TRUE;
 	}
 	if (g_bBatch) {
 		if (!install_all()) {
@@ -667,10 +655,21 @@ install_all()
 	
 	gs_addmess("Install successful\n");
 	
+	// show start menu folder
+	if (!g_bBatch) {
+		char szFolder[MAXSTR];
+		szFolder[0] = '\0';
+		cinst.GetPrograms(g_bAllUsers, szFolder, sizeof(szFolder));
+		strcat(szFolder, "\\");
+		strcat(szFolder, g_szTargetGroup);
+		ShellExecute(HWND_DESKTOP, "open", szFolder, 
+			NULL, NULL, SW_SHOWNORMAL);
+	}
+	
 #ifdef DEBUG
 	return FALSE;
 #endif
-	
+
 	return TRUE;
 }
 
@@ -786,17 +785,21 @@ install_prog()
 	}
 	
 	// consolidate logs into one uninstall file
-	if (!cinst.MakeLog()) {
-		gs_addmess("Failed to write uninstall log\n");
-		return FALSE;
+	if (cinst.MakeLog()) {
+		// add uninstall entry for "Add/Remove Programs"
+		gs_addmess("Adding uninstall program\n");
+		if (!cinst.WriteUninstall(UNINSTALLPROG, g_bNoCopy)) {
+			gs_addmess("Failed to write uninstall entry\n");
+			return FALSE;
+		}
 	}
-	if (g_bQuit)
-		return FALSE;
-	
-	// add uninstall entry for "Add/Remove Programs"
-	gs_addmess("Adding uninstall program\n");
-	if (!cinst.WriteUninstall(UNINSTALLPROG, g_bNoCopy)) {
-		gs_addmess("Failed to write uninstall entry\n");
+	else {
+		gs_addmess("Failed to write uninstall log\n");
+		// If batch install, files might be on a server
+		// in a write protected directory.
+		// Don't return an error for batch install.
+		if (g_bBatch)
+			return TRUE;
 		return FALSE;
 	}
 	
@@ -824,17 +827,30 @@ install_fonts()
 	if (g_bQuit)
 		return FALSE;
 	
-	// consolidate logs into one uninstall file
-	if (!cinst.MakeLog()) {
-		gs_addmess("Failed to write uninstall log\n");
-		return FALSE;
+	if (g_bNoCopy) {
+		// Don't write uninstall log or entry
+		// since we didn't copy any files.
+		cinst.CleanUp();
 	}
-	
-	// add uninstall entry for "Add/Remove Programs"
-	gs_addmess("Adding uninstall program\n");
-	if (!cinst.WriteUninstall(UNINSTALLPROG, g_bNoCopy)) {
-		gs_addmess("Failed to write uninstall entry\n");
-		return FALSE;
+	else {
+		// consolidate logs into one uninstall file
+		if (cinst.MakeLog()) {
+			// add uninstall entry for "Add/Remove Programs"
+			gs_addmess("Adding uninstall program\n");
+			if (!cinst.WriteUninstall(UNINSTALLPROG, g_bNoCopy)) {
+				gs_addmess("Failed to write uninstall entry\n");
+				return FALSE;
+			}
+		}
+		else {
+			gs_addmess("Failed to write uninstall log\n");
+			// If batch install, files might be on a server
+			// in a write protected directory.
+			// Don't return an error for batch install.
+			if (g_bBatch)
+				return TRUE;
+			return FALSE;
+		}
 	}
 	
 	gs_addmess("Font install successful\n");

@@ -6,19 +6,19 @@
 </head>
 
 <body>
-<!-- [1.0 begin visible header] -------------------------------------------- -->
+<!-- [1.0 begin visible header] ============================================ -->
 
-<!-- [1.1 begin headline] -------------------------------------------------- -->
+<!-- [1.1 begin headline] ================================================== -->
 
-<p><table width="100%" border="0">
+<table width="100%" border="0">
 <tr><th align="center" bgcolor="#CCCC00"><font size=6>
 How to build Ghostscript from source code
 </font>
 </table>
 
-<!-- [1.1 end headline] ---------------------------------------------------- -->
+<!-- [1.1 end headline] ==================================================== -->
 
-<!-- [1.2 begin table of contents] ----------------------------------------- -->
+<!-- [1.2 begin table of contents] ========================================= -->
 
 <h2>Table of contents</h2>
 
@@ -53,6 +53,7 @@ How to build Ghostscript from source code
 <ul>
 <li><a href="#Borland_build">Borland/Inprise environment</a>
 <li><a href="#Microsoft_build">Microsoft environment</a>
+<li><a href="#Self-extracting_executables">Making self-extracting executables</a>
 <li><a href="#Watcom_build">Watcom environment</a>
 <li><a href="#Cygwin32_build">Cygwin32 gcc</a>
 </ul>
@@ -65,12 +66,12 @@ How to build Ghostscript from source code
 <ul>
 <li><a href="#Multi_architecture_makefile">The multi-architecture makefile</a>
 <li><a href="#UNIX_makefile">Setting up "makefile"</a>
-<li><a href="#Tool_specific_problems">Tool-specific problems</a>
+<li><a href="#Tool_specific_issues">Tool-specific issues</a>
 <ul>
 <li><a href="#gcc_27x">gcc 2.7.*</a>
 <li><a href="#GNU_make">GNU make</a>
 </ul>
-<li><a href="#OS_specific_problems">OS-specific problems</a>
+<li><a href="#OS_specific_issues">OS-specific issues</a>
 <ul>
 <li><a href="#386_Unix">386 Unix</a>
 <li><a href="#BSDI">BSDI</a>
@@ -83,7 +84,7 @@ How to build Ghostscript from source code
 <li><a href="#System_V">System V Unix platforms</a>
 <li><a href="#Unixware">Unixware</a>
 </ul>
-<li><a href="#Hardware_specific_problems">Hardware-specific problems</a>
+<li><a href="#Hardware_specific_issues">Hardware-specific issues</a>
 <ul>
 <li><a href="#Alpha_with_gcc">Alpha with gcc</a>
 <li><a href="#Apollo">H-P Apollo</a>
@@ -119,21 +120,21 @@ How to build Ghostscript from source code
 </ul>
 </ul></blockquote>
 
-<!-- [1.2 end table of contents] ------------------------------------------- -->
+<!-- [1.2 end table of contents] =========================================== -->
 
-<!-- [1.3 begin hint] ------------------------------------------------------ -->
+<!-- [1.3 begin hint] ====================================================== -->
 
 <p>For other information, see the <a href="Readme.htm">Ghostscript
 overview</a> and the instructions on how to <a href="Install.htm">install
 Ghostscript</a>.
 
-<!-- [1.3 end hint] -------------------------------------------------------- -->
+<!-- [1.3 end hint] ======================================================== -->
 
 <hr>
 
-<!-- [1.0 end visible header] ---------------------------------------------- -->
+<!-- [1.0 end visible header] ============================================== -->
 
-<!-- [2.0 begin contents] -------------------------------------------------- -->
+<!-- [2.0 begin contents] ================================================== -->
 
 <h1><a name="General_overview"></a>General overview</h1>
 
@@ -530,10 +531,6 @@ relatively small ones containing platform-specific information.
 <tr>	<td><b><tt>bcwin32.mak</tt></b>
 	<td>&nbsp;
 	<td>MS Windows with Borland/Inprise compilers
-<!-- OBSOLETE|<tr>	<td><b><tt>dvx-gcc.mak</tt></b>
-<!-- OBSOLETE|	<td>&nbsp;
-<!-- OBSOLETE|	<td>DESQview/X with gcc
-<!-- OBSOLETE| -->
 <tr>	<td><b><tt>msvc32.mak</tt></b>
 	<td>&nbsp;
 	<td>MS Windows with Microsoft Visual C++ version 4.n or 5.n
@@ -695,11 +692,12 @@ select an output device</a> at run time using the
 you can't fit all the devices on a single line, you may add lines defining
 
 <blockquote>
-<b><tt>DEVICE_DEVS1=$(DD)</tt></b><em>{dev11}</em><b><tt>.dev</tt></b> ... <tt><b>$(DD)</tt></b><em>{dev1n}</em><b><tt>.dev</tt></b>
-<br><b><tt>DEVICE_DEVS2=$(DD)</tt></b><em>{dev21}</em><b><tt>.dev</tt></b> ... <tt><b>$(DD)</tt></b><em>{dev2n}</em><b><tt>.dev</tt></b>
+<b><tt>DEVICE_DEVS1=$(DD)</tt></b><em>{dev11}</em><b><tt>.dev</tt></b> ... <b><tt>$(DD)</tt></b><em>{dev1n}</em><b><tt>.dev</tt></b>
+<br><b><tt>DEVICE_DEVS2=$(DD)</tt></b><em>{dev21}</em><b><tt>.dev</tt></b> ... <b><tt>$(DD)</tt></b><em>{dev2n}</em><b><tt>.dev</tt></b>
 </blockquote>
 
-etc. up to <b><tt>DEVICE_DEVS15</tt></b>.  Don't use continuation lines --
+<p>
+etc., up to <b><tt>DEVICE_DEVS15</tt></b>.  Don't use continuation lines --
 on some platforms they don't work.
 
 <p>
@@ -743,7 +741,7 @@ href="Fonts.htm#Precompiling">Precompiling fonts</a>.
 To compile threshold-array halftones into the executable, see the "Compiled
 halftone" section of <b><tt>int.mak</tt></b> for a sample makefile fragment,
 <b><tt>genht.c</tt></b> for the syntax of halftone data files, and
-<b><tt>lib/ht_ccbnm.ps</tt></b> for a sample data file.  Note that even
+<b><tt>lib/ht_ccsto.ps</tt></b> for a sample data file.  Note that even
 though the data files use PostScript syntax, compiled halftones do not
 require the PostScript interpreter and may be used with the graphics library
 alone.
@@ -905,7 +903,7 @@ If <b>Z</b> runs Unix, perform the following steps:
 each <b>X</b><em>i</em> that will be used for compilation.
 
 <li>Extract from the file <b><tt>obj/ldt.tr</tt></b> (on <b>Z</b>) the list
-of <b><tt>.o</b></tt> files that will be linked: this gives the list of
+of <b><tt>.o</tt></b> files that will be linked: this gives the list of
 source files that must be compiled.
 
 <li>Do the compilations on <b>X</b><em>i</em>.
@@ -934,7 +932,7 @@ this.</em>
 each <b>X</b><em>i</em> that will be used for compilation.
 
 <li>Extract from the file <b><tt>obj\ldt.tr</tt></b> (on <b>Z</b>) the list
-of <b><tt>.obj</b></tt> files that will be linked: this gives the list of
+of <b><tt>.obj</tt></b> files that will be linked: this gives the list of
 source files that must be compiled.
 
 <li>Do the compilations on <b>X</b><em>i</em>.
@@ -951,9 +949,9 @@ All Ghostscript builds in PC (DOS and MS Windows) environments are 32- or
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><th colspan=5 bgcolor="#CCCC00"><hr><font size="+1">PC makefiles</font><hr>
 <tr>	<th align=left>Makefile
-	<td>&nbsp;&nbsp
+	<td>&nbsp;&nbsp;
 	<th align=left>Construction tools
-	<td>&nbsp;&nbsp
+	<td>&nbsp;&nbsp;
 	<th align=left>For environment
 <tr>	<td colspan=5><hr>
 <tr>	<td valign=top><b><tt>bcwin32.mak</tt></b>
@@ -1180,6 +1178,29 @@ The Microsoft VC++ 5.0 compiler produces a non-working executable if
 compiling without stack checking.  Don't change the setting
 <b><tt>TDEBUG=1</tt></b> in <b><tt>msvc32.mak</tt></b>.
 
+<h2><a name="Self-extracting_executables"></a>Making self-extracting executables</h2>
+
+<p>
+You can build self-extracting Windows executables of Ghostscript.  (This is
+not needed to use Ghostscript.)  Currently this requires both the
+Borland/Inprise and the Microsoft compilers, and also two pieces of
+third-party software:
+
+<ul>
+<li><b><tt>WinZipSE</tt></b>, available from <a
+href="http://www.winzip.com/winzipse.html">http://www.winzip.com/winzipse.html</a>.
+This is not free.
+<li><b><tt>zip</tt></b>, available from <a
+href="http://www.cdrom.com/pub/infozip/Zip.html">
+http://www.cdrom.com/pub/infozip/Zip.html</a>.  This is free.
+</ul>
+
+<p>
+You will have to edit <b><tt>src/winint.mak</tt></b> to define
+<b><tt>WINZIPSE_XE</tt></b> and <b><tt>ZIP_XE</tt></b> respectively as the
+path names of these programs.  See <a href="Release.htm">Release.htm</a> for
+the detailed procedure.
+
 <h2><a name="Watcom_build"></a>Watcom environment</h2>
 
 <p>
@@ -1226,6 +1247,11 @@ To run the <b><tt>make</tt></b> program, give the commmand
 <blockquote>
 <b><tt>wmake -u</tt></b>
 </blockquote>
+
+<p>
+For information on using the GNU <b><tt>make</tt></b> program with the
+Watcom compiler to build MS-DOS executables, which avoids the limitations in
+<b><tt>wmake</tt></b>, see <a href="New-user.htm#MS-DOS">here</a>.
 
 <h2><a name="Cygwin32_build"></a>Cygwin32 gcc</h2>
 
@@ -1324,7 +1350,7 @@ system with either MPW or CodeWarrior.
 <p>
 Some versions of CodeWarrior on the PowerPC have a code generation bug that
 causes the compiled Ghostscript to occasionally produce bad output.  To
-avoid triggering this bug, do not use the "Use FMADD & FMSUB" Code Gen
+avoid triggering this bug, do not use the "Use FMADD &amp; FMSUB" Code Gen
 option.  We recommend using the following options (for CodeWarrior 4, all
 patches applied):
 
@@ -1363,15 +1389,14 @@ have to make some choices, for instance
 <li>which compiler to use;
 <li>what features and devices to include;
 <li>whether to use system libraries for PNG and zlib;
-<li>and how to handle problems and limitations for your particular
-platform.
+<li>and how to handle issues for your particular platform.
 </ul>
 
 <p>
 Be sure to check the sections on <a
-href="#Tool_specific_problems">tool-</a>, <a
-href="#OS_specific_problems">OS-</a>, and <a
-href="#Hardware_specific_problems">hardware-</a>specific problems for notes
+href="#Tool_specific_issues">tool-</a>, <a
+href="#OS_specific_issues">OS-</a>, and <a
+href="#Hardware_specific_issues">hardware-</a>specific issues for notes
 on your particular platform and compiler.  In fact, that is the
 <b><em>first</em></b> place to check if you build Ghostscript and it crashes
 or produces obviously incorrect results.
@@ -1533,12 +1558,12 @@ is included in the makefile rule for compiling <b><tt>.c</tt></b> files.
 code, where <em>$$</em> is the process ID.  If for some reason you want to
 change this name, it is defined in a script file <b><tt>ccgs</tt></b>.
 
-<h2><a name="Tool_specific_problems"></a>Tool-specific problems</h2>
+<h2><a name="Tool_specific_issues"></a>Tool-specific issues</h2>
 
 <h3><a name="gcc_27x"></a>gcc 2.7.*</h3>
 
 <p>
-Some of the problems using gcc are very specific to the particular
+Some of the issues in using gcc are very specific to the particular
 computer, the particular version of the operating system, and the
 particular version of gcc available to you.  You can check the version of
 gcc with the <b><tt>gcc&nbsp;--version</tt></b> command.
@@ -1559,7 +1584,7 @@ Current versions of GNU <b><tt>make</tt></b> have no problems, but GNU
 cases; if this happens, use the platform's standard <b><tt>make</tt></b>,
 typically <b><tt>/bin/make</tt></b>.
 
-<h2><a name="OS_specific_problems"></a>OS-specific problems</h2>
+<h2><a name="OS_specific_issues"></a>OS-specific issues</h2>
 
 <h3><a name="386_Unix"></a>386 Unix</h3>
 
@@ -1578,19 +1603,26 @@ executable unusable.
 
 <h3><a name="BSDI"></a>BSDI</h3>
 
-<p>
-BSDI currently doesn't have a working semaphore / mutex package that
-Ghostscript can use.  See <a href="#No_multi_thread">here</a> for how to
-work around this problem.
+<ul>
 
-<p>
-BSDI's native <b><tt>make</tt></b> program uses a different syntax for its
-<b><tt>include</tt></b> directive than all other versions of
-<b><tt>make</tt></b>.  Use GNU <b><tt>make</tt></b> to build Ghostscript.
+<li>Use <b><tt>unix-gcc.mak</tt></b> and set<blockquote><b><tt>
+STDLIBS=-lm<br>
+XINCLUDE=-I/usr/X11R6/include<br>
+XLIBDIRS=-L/usr/X11R6/lib<br>
+XLIBS=Xt SM ICE Xext X11<br></tt></b></blockquote>
+
+<li>If you want to use the shared versions of the PNG and zlib libraries, set
+<b><tt>SHARE_LIBPNG=1</tt></b> and <b><tt>SHARE_ZLIB=1</tt></b>
+as discussed <a href="#UNIX_makefile">previously</a>.
+
+<li>BSD <b><tt>make</tt></b> uses a different syntax for its
+<b><tt>include</tt></b> directive than Ghostscript;
+use <b><tt>gmake</tt></b> instead.
+</ul>
 
 <h3><a name="Digital_Unix"></a>Digital Unix (Alpha)</h3>
 
-<p><ul>
+<ul>
 
 <li>Use <b><tt>unixansi.mak</tt></b> for all Digital Unix compilers.
 
@@ -1616,12 +1648,12 @@ again, optionally omitting the <b><tt>-g3</tt></b>.
 <p>
 On FreeBSD systems, in the top-level makefile (<b><tt>unixansi.mak</tt></b>,
 <b><tt>unix-gcc.mak</tt></b>, or <b><tt>unixtrad.mak</tt></b>), change the
-value of <b><tt>SYNC</tt></b> from <b><tt>posync</tt></b> to
-<b><tt>fbsdsync</tt></b> before building.
+value of <b><tt>STDLIBS</tt></b> from <b><tt>-lpthread -lm</tt></b> to
+<b><tt>-lc_r -lm</tt></b> before building.
 
 <h3><a name="Linux"></a>Linux</h3>
 
-<p><ul>
+<ul>
 <li>If you build on Linux with X11 R6 or later, you may get link-time error
 messages about undefined references to various functions beginning with
 "SMC" and "ICE".  If this happens, make sure that <b><tt>XLIBS</tt></b> in
@@ -1643,46 +1675,45 @@ If this happens, edit <b><tt>unix-gcc.mak</tt></b> to add the switches
 "<b><tt>make</tt></b>").  If this doesn't help, or if other strange things
 happen, contact your Linux supplier or support resource.
 
-<li>A few of Ghostscript's drivers are multi-threaded (currently only
-those whose names begin with "bmpa").  These drivers require
-<b><tt>libc</tt></b> version 6 or higher.  Some Linux distributions,
-including Red Hat distributions before 5.0, have <b><tt>libc</tt></b>
-version 5, so these drivers will not compile: the symptom is that the
-compiler will not be able to find the file <b><tt>semaphore.h</tt></b>.
-If this happens, remove these drivers (from the definitions of
-<b><tt>DEVICE_DEVS*</tt></b> in <b><tt>unix-gcc.mak</tt></b>), and, if
-you wish, substitute the corresponding single-threaded drivers,
-whose names don't include the "a".
+<li>A few of Ghostscript's drivers are multi-threaded (currently only those
+whose names begin with "bmpa").  These drivers require <b><tt>libc</tt></b>
+version 6 or higher.  Some Linux distributions, including Red Hat
+distributions before 5.0, have <b><tt>libc</tt></b> version 5, so these
+drivers may not compile.  If this happens, remove these drivers (from the
+definitions of <b><tt>DEVICE_DEVS*</tt></b> in
+<b><tt>unix-gcc.mak</tt></b>), and, if you wish, substitute the
+corresponding single-threaded drivers, whose names don't include the "a".
+
 </ul>
 
 <p>
-To create <a href="http://www.rpm.org">RPM</a> 
-(<b>R</b>ed Hat <b>P</b>ackage <b>M</b>anager) 
-files for Ghostscript N.NN: 
+To create <a href="http://www.rpm.org">RPM</a>
+(<b>R</b>ed Hat <b>P</b>ackage <b>M</b>anager)
+files for Ghostscript N.NN:
 
 <ul>
-<li>Change to your source directory (<b><tt>/usr/src/redhat</tt></b> for Red Hat 
+<li>Change to your source directory (<b><tt>/usr/src/redhat</tt></b> for Red Hat
    Linux 5.1).
-<li>Copy <b><tt>ghostscript-N.NN*.tar.gz</tt></b> (4 source files) to the 
+<li>Copy <b><tt>ghostscript-N.NN*.tar.gz</tt></b> (4 source files) to the
 <b><tt>SOURCES</tt></b> subdirectory.
-<li>Copy <b><tt>ghostscript-fonts-5.10a.tar.gz</tt></b> to the 
+<li>Copy <b><tt>ghostscript-fonts-5.10a.tar.gz</tt></b> to the
 <b><tt>SOURCES</tt></b> subdirectory.
-<li>From <b><tt>SOURCES/ghostscript-N.NN.tar.gz</tt></b>, 
+<li>From <b><tt>SOURCES/ghostscript-N.NN.tar.gz</tt></b>,
 <ul>
-<li>extract <b><tt>rpm-conf.dif</tt></b> and copy to 
+<li>extract <b><tt>rpm-conf.dif</tt></b> and copy to
 <b><tt>SOURCES/ghostscript-N.NN-config.patch</tt></b>
-<li>extract <b><tt>gs.rps</tt></b> and copy to 
+<li>extract <b><tt>gs.rps</tt></b> and copy to
 <b><tt>SPECS/ghostscript-N.NN.spec</tt></b>
-<li>extract <b><tt>gs-fonts.rps</tt></b> and copy to 
+<li>extract <b><tt>gs-fonts.rps</tt></b> and copy to
 <b><tt>SPECS/ghostscript-fonts-N.NN.spec</tt></b>
 </ul>
 If the contents of these files have become out of date, you
-will need to update the version number N.NN in the spec files, 
+will need to update the version number N.NN in the spec files,
 and update the patch file.
 <li> Change to the SPECS subdirectory and then execute the commands
 <blockquote><b><tt>
 rpm -ba ghostscript-N.NN.spec<br>
-rpm -ba ghostscript-fonts-N.NN.spec 
+rpm -ba ghostscript-fonts-N.NN.spec
 </tt></b></blockquote>
 This will create the RPM files
 <blockquote><b><tt>
@@ -1710,7 +1741,7 @@ all the source and font kits and patches needed:
 
 <h3><a name="NeXTSTEP"></a>NeXTSTEP</h3>
 
-<p><ul>
+<ul>
 <li>If you are using a NeXTSTEP version before 3.3, please get a no-cost
 upgrade (along with Y2K patches) from Apple.
 
@@ -1835,11 +1866,11 @@ change "<b><tt>PLATFORM=unix_</tt></b>" to
 <b><tt>-O</tt></b>.
 </ul>
 
-<h2><a name="Hardware_specific_problems"></a>Hardware-specific problems</h2>
+<h2><a name="Hardware_specific_issues"></a>Hardware-specific issues</h2>
 
 <h3><a name="Alpha_with_gcc"></a>Alpha with gcc</h3>
 
-<p><ul>
+<ul>
 <li>You don't have to use gcc on Alpha systems, because the bundled
 compiler works.
 
@@ -1880,13 +1911,12 @@ from gcc maintainer Jim Wilson
 !       get_secondary_mem (x, mode, opnum, type);
   #endif
       }
-
 </pre></font>
 </ul>
 
 <h3><a name="Apollo"></a>H-P Apollo</h3>
 
-<p><ul>
+<ul>
 
 <li>You must run the compiler in ANSI-compatible mode (that is, set <b><tt>AK=</tt></b>{null string} in the makefile); otherwise it gives incorrect error
 messages for any function declared as returning a float value.
@@ -1897,14 +1927,14 @@ get unexpected crashes at run time, use gcc.
 
 <h3><a name="ATT_7040"></a>AT&amp;T 7040 R3</h3>
 
-<p><ul>
+<ul>
 <li>If Ghostscript crashes on startup, recompile with <b><tt>-O0</tt></b>
 to work around compiler bugs.
 </ul>
 
 <h3><a name="Convex"></a>Convex</h3>
 
-<p><ul>
+<ul>
 
 <li>Use <b><tt>unixansi.mak</tt></b>.  Do not invoke optimization
 (<b><tt>-O1</tt></b>) because the compiler will produce incorrect code.
@@ -1915,7 +1945,7 @@ to work around compiler bugs.
 
 <h3><a name="DECStations"></a>DECStations with Ultrix</h3>
 
-<p><ul>
+<ul>
 
 <li>If you get the compiler message "cfe: Fatal: _temp_19086.c:
 Segmentation violation" or a similar one, try compiling with the
@@ -1949,7 +1979,7 @@ standard distribution):
 
 <h3><a name="HP_RISC"></a>H-P RISC workstations</h3>
 
-<p><ul>
+<ul>
 
 <li>Ghostscript builds on H-P machines with either GNU gcc or H-P's
 ANSI-capable <b><tt>cc</tt></b>.  The minimal, non-ANSI-capable
@@ -2004,7 +2034,7 @@ executable with an older gcc by removing <b><tt>-O</tt></b> from
 
 <h3><a name="Intergraph"></a>Intergraph Clipper</h3>
 
-<p><ul>
+<ul>
 <li>Recommended settings are:
 
 <p>
@@ -2019,7 +2049,7 @@ PLATFORM=sysv_</tt></b><br>&nbsp;
 
 <h3><a name="MIPS"></a>MIPS</h3>
 
-<p><ul>
+<ul>
 <li>There is apparently a bug in older versions of the MIPS C compiler
 which causes <b><tt>gxdither.c</tt></b> to compile incorrectly if
 optimization is enabled (<b><tt>-O</tt></b>).  However, this bug is
@@ -2029,7 +2059,7 @@ with "<b><tt>-O2 -mips2</tt></b>" produces good output.
 
 <h3><a name="NCR_3550"></a>NCR 3550</h3>
 
-<p><ul>
+<ul>
 <li>With the NCR C Development Toolkit you must use <b><tt>-O0</tt></b>.
 </ul>
 
@@ -2124,11 +2154,12 @@ until you get a working binary:
 
 <ul>
 <li>
-Compile <b><tt>idict.c</tt></b> separately without optimization after
-doing a normal compile; then relink.e.g.:
+Compile <b><tt>idict.c</tt></b> and <b><tt>isave.c</tt></b> separately
+without optimization after doing a normal compile; then relink.e.g.:
 
 <p>
-<b><tt>cc -OPT:Olimit=2500 -I. -I./obj -o ./obj/idict.o -c ./idict.c</tt></b>
+<b><tt>cc -OPT:Olimit=2500 -I. -I./obj -o ./obj/idict.o -c ./idict.c</tt></b><br>
+<b><tt>cc -OPT:Olimit=2500 -I. -I./obj -o ./obj/isave.o -c ./isave.c</tt></b>
 
 <li>
 Set <b><tt>CFLAGS=</tt></b> (no optimization).
@@ -2204,8 +2235,8 @@ for the X11 libraries rather than <b><tt>/usr/local/X/include</tt></b>.
 <li>Solaris 2.<em>n</em> typically has Type 1 fonts in
 <b><tt>/usr/openwin/lib/X11/fonts/Type1/outline</tt></b>.
 
-<li>For Solaris 2.<b><tt>n</tt></b><b><tt> in the makefile you must change
-the definition of <b><tt>INSTALL</tt></b> from "install&nbsp;-c</tt></b>" to
+<li>For Solaris 2.<b><tt>n</tt></b> in the makefile you must change
+the definition of <b><tt>INSTALL</tt></b> from "<b><tt>install&nbsp;-c</tt></b>" to
 "<b><tt>/usr/ucb/install&nbsp;-c</tt></b>".
 
 <li>You may need to set <b><tt>XLIBDIR</tt></b> to the directory that holds
@@ -2237,6 +2268,17 @@ search path.
 
 <h1><a name="OS2_build"></a>How to build Ghostscript from source (OS/2 version)</h1>
 
+<p>
+<em>Note: This section was contributed by a user: please e-mail Hermann
+Ulrichskötter &lt;<a
+href="mailto:ulrichsk@t-online.de">ulrichsk@t-online.de</a>&gt; if you have
+questions or problems.</em>
+
+<p>
+The following instructions are for building with emx 0.9d/Fix2.  Be warned
+that with this version of gcc/emx, compiler optimization flags '-O' or '-O1'
+will produce non-working output.
+
 <ul>
 <li>The relevant makefile is <b><tt>os2.mak</tt></b> The gcc/emx 0.9b (or
 later) compiler and IBM <b><tt>NMAKE.EXE</tt></b> are required.
@@ -2252,13 +2294,39 @@ using 0.9b, delete this file reference before building.
 Some other shells have bugs or differences that cause the makefile not to
 work.
 
-<li>Before compiling or linking, you should execute
-"<b><tt>copy&nbsp;os2.mak&nbsp;makefile</tt></b>".  Then to start the make
-process type "<b><tt>nmake</tt></b>".  One DLL and two EXEs will be
-produced: <b><tt>gsdll2.dll</tt></b> (the Ghostscript DLL),
-<b><tt>gsos2.exe</tt></b> (the Ghostscript executable) and
-<b><tt>gspmdrv.exe</tt></b> (the Presentation Manager display driver).
+<li>Make sure you followed the instructions in "How to unpack the source
+code" and "How to unpack the third-party libraries".
+
+<li>Use jpegsrc_v6b.tar.gz, zlib.tar.gz and libpng-1.0.3.tar.gz.  Earlier
+versions may not work.
 </ul>
+
+<p>
+Before compiling or linking, execute <b><tt>md bin</tt></b> and <b><tt>md
+obj</tt></b> in the <b><tt>gs</tt></b> directory to create the directories
+for the binaries.
+
+<p>
+First, build the standard configuration:
+
+<ul>
+<li>Edit gs/src/os2.mak: find line with 'CO=-O' (Optimizer flag) and edit
+this line to 'CO=-O2' (-O or -O1 do not work!).
+
+<li>To start the make process, type <b><tt>nmake -f .\src\os2.mak</tt></b>,
+from the gs-directory.
+
+<li>One DLL and two EXEs will be produced in <b><tt>gs/bin</tt></b>:
+<b><tt>gsdll2.dll</tt></b> (the Ghostscript DLL), <b><tt>gsos2.exe</tt></b>
+(the Ghostscript executable) and <b><tt>gspmdrv.exe</tt></b> (the
+Presentation Manager display driver).  All other newly generated files will
+be produced in <b><tt>gs/obj</tt></b>.
+</ul>
+
+<p>
+Now, if you wish, you can edit OS2.MAK to suit your needs, and then perform
+<b><tt>nmake -f .\src\os2.mak clean</tt></b> and then <b><tt>nmake -f
+.\src\os2.mak</tt></b>.
 
 <hr>
 
@@ -2324,6 +2392,12 @@ $&nbsp;ccfonts2&nbsp;=&nbsp;"Times_Roman&nbsp;Times_Italic&nbsp;Times_Bold&nbsp;
 </tt></b></blockquote>
 
 <h2><a name="GNU_make_VMS"></a>Building with GNU make on OpenVMS</h2>
+
+<p>
+<em>Note: GNU make on OpenVMS apparently has bugs that make it stop with an
+error when building Ghostscript version 5.80 or later.  Until further
+notice, use MMS or MMK for building Ghostscript on OpenVMS.  See <a
+href="#MMK_MMS_VMS">below</a> for details.</em>
 
 <p>
 As of Ghostscript version 5.0 you can use GNU make -- with the file
@@ -2546,26 +2620,24 @@ to begin
 </pre></font></blockquote>
 </dl>
 
-<!-- [2.0 end contents] ---------------------------------------------------- -->
+<!-- [2.0 end contents] ==================================================== -->
 
-<!-- [3.0 begin visible trailer] ------------------------------------------- -->
+<!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <font size=2>
 
 <p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
-<p>This file is part of Aladdin Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-Aladdin Ghostscript.
-
 <p>
-Ghostscript version 5.96, 12 November 1999
+This software is licensed to a single customer by Artifex Software Inc.
+under the terms of a specific OEM agreement.
+<p>
+Artifex version 6.11, Aladdin Ghostscript version 6.0, 3 February 2000
 
 </font>
 
-<!-- [3.0 end visible trailer] --------------------------------------------- -->
+<!-- [3.0 end visible trailer] ============================================= -->
 
 </body>
 </html>

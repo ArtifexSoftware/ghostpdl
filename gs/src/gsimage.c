@@ -1,6 +1,7 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -207,9 +208,9 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
 			      pgs);
 }
 
-    /*
+/*
  * Return the number of bytes of data per row for a given plane.
-     */
+ */
 inline uint
 gs_image_bytes_per_plane_row(const gs_image_enum * penum, int plane)
 {
@@ -315,7 +316,7 @@ gs_image_planes_wanted(gs_image_enum *penum)
 
     /*
      * A plane is wanted at this interface if it is wanted by the
-     * underlying machinery but has no buffered or retained data.
+     * underlying machinery and has no buffered or retained data.
      */
     for (i = 0; i < penum->num_planes; ++i)
 	penum->client_wanted[i] =
@@ -373,13 +374,24 @@ gs_image_next_planes(gs_image_enum * penum,
     int i;
     int code = 0;
 
+#ifdef DEBUG
+    if (gs_debug_c('b')) {
+	int pi;
+
+	for (pi = 0; pi < num_planes; ++pi)
+	    dprintf6("[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
+		     pi, (ulong)penum->planes[pi].source.data,
+		     penum->planes[pi].source.size, penum->planes[pi].pos,
+		     (ulong)plane_data[pi].data, plane_data[pi].size);
+    }
+#endif
     for (i = 0; i < num_planes; ++i) {
         used[i] = 0;
 	if (penum->wanted[i] && plane_data[i].size != 0) {
-		penum->planes[i].source.size = plane_data[i].size;
-		penum->planes[i].source.data = plane_data[i].data;
-	    }
+	    penum->planes[i].source.size = plane_data[i].size;
+	    penum->planes[i].source.data = plane_data[i].data;
 	}
+    }
     for (;;) {
 	/* If wanted can vary, only transfer 1 row at a time. */
 	int h = (penum->wanted_varies ? 1 : max_int);
@@ -425,8 +437,8 @@ gs_image_next_planes(gs_image_enum * penum,
 		    penum->planes[i].source.size = size -= copy;
 		    penum->planes[i].pos = pos += copy;
 		    used[i] += copy;
-		    }
 		}
+	    }
 	    if (h == 0)
 		continue;	/* can't transfer any data this cycle */
 	    if (pos == raster) {
@@ -442,9 +454,9 @@ gs_image_next_planes(gs_image_enum * penum,
 		penum->image_planes[i].data = penum->planes[i].source.data;
 	    } else
 		h = 0;		/* not enough data in this plane */
-	    }
+	}
 	if (h == 0 || code != 0)
-		break;
+	    break;
 	/* Pass rows to the device. */
 	if (penum->dev == 0) {
 	    /*
@@ -460,10 +472,13 @@ gs_image_next_planes(gs_image_enum * penum,
 	} else {
 	    code = gx_image_plane_data_rows(penum->info, penum->image_planes,
 					    h, &h);
+	    if_debug2('b', "[b]used %d, code=%d\n", h, code);
 	    penum->error = code < 0;
-		}
+	}
 	/* Update positions and sizes. */
-		for (i = 0; i < num_planes; ++i) {
+	if (h == 0)
+	    break;
+	for (i = 0; i < num_planes; ++i) {
 	    int count;
 
 	    if (!penum->wanted[i])
@@ -471,16 +486,16 @@ gs_image_next_planes(gs_image_enum * penum,
 	    count = penum->image_planes[i].raster * h;
 	    if (penum->planes[i].pos) {
 		/* We transferred the row from the row buffer. */
-		    penum->planes[i].pos = 0;
+		penum->planes[i].pos = 0;
 	    } else {
 		/* We transferred the row(s) from the source. */
 		penum->planes[i].source.data += count;
 		penum->planes[i].source.size -= count;
 		used[i] += count;
-		}
 	    }
+	}
 	cache_planes(penum);
-	if (h == 0)
+	if (code > 0)
 	    break;
     }
     /* Return the retained data pointers. */

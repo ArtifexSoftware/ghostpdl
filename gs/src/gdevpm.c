@@ -1,6 +1,7 @@
-/* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -1125,6 +1126,8 @@ pm_set_bits_per_pixel(gx_device_pm * pmdev, int bpp)
     static const gx_device_color_info pm_8bit_color = dci_color(8, 31, 4);
     static const gx_device_color_info pm_4bit_color = dci_pc_4bit;
     static const gx_device_color_info pm_2color = dci_black_and_white;
+    /* remember old anti_alias info */
+    gx_device_anti_alias_info anti_alias = pmdev->color_info.anti_alias;
 
     switch (bpp) {
 	case 24:
@@ -1148,6 +1151,8 @@ pm_set_bits_per_pixel(gx_device_pm * pmdev, int bpp)
 	    return (gs_error_rangecheck);
     }
     pmdev->BitsPerPixel = bpp;
+    /* restore old anti_alias info */
+    pmdev->color_info.anti_alias = anti_alias;
     return 0;
 }
 

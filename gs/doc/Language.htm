@@ -6,19 +6,19 @@
 </head>
 
 <body>
-<!-- [1.0 begin visible header] -------------------------------------------- -->
+<!-- [1.0 begin visible header] ============================================ -->
 
-<!-- [1.1 begin headline] -------------------------------------------------- -->
+<!-- [1.1 begin headline] ================================================== -->
 
-<p><table width="100%" border="0">
+<table width="100%" border="0">
 <tr><th align="center" bgcolor="#CCCC00"><font size=6>
 The relationship between Ghostscript and PostScript
 </font>
 </table>
 
-<!-- [1.1 end headline] ---------------------------------------------------- -->
+<!-- [1.1 end headline] ==================================================== -->
 
-<!-- [1.2 begin table of contents] ----------------------------------------- -->
+<!-- [1.2 begin table of contents] ========================================= -->
 
 <h2>Table of contents</h2>
 
@@ -55,20 +55,20 @@ The relationship between Ghostscript and PostScript
 <li><a href="#Miscellaneous_additions">Miscellaneous additions</a>
 </ul></blockquote>
 
-<!-- [1.2 end table of contents] ------------------------------------------- -->
+<!-- [1.2 end table of contents] =========================================== -->
 
-<!-- [1.3 begin hint] ------------------------------------------------------ -->
+<!-- [1.3 begin hint] ====================================================== -->
 
 <p>For other information, see the <a href="Readme.htm">Ghostscript
 overview</a>.
 
-<!-- [1.3 end hint] -------------------------------------------------------- -->
+<!-- [1.3 end hint] ======================================================== -->
 
 <hr>
 
-<!-- [1.0 end visible header] ---------------------------------------------- -->
+<!-- [1.0 end visible header] ============================================== -->
 
-<!-- [2.0 begin contents] -------------------------------------------------- -->
+<!-- [2.0 begin contents] ================================================== -->
 
 <h1><a name="Capabilities"></a>Ghostscript's capabilities in relation to PostScript</h1>
 
@@ -76,7 +76,7 @@ overview</a>.
 The Ghostscript interpreter, except as noted below, is intended to execute
 properly any source program written in the (LanguageLevel 3)
 <b>PostScript</b> language as defined in the <a
-href="http://cseng.awl.com/bookdetail.qry?ISBN=0-201-37922-8&ptype=0"><em>PostScript
+href="http://cseng.awl.com/bookdetail.qry?ISBN=0-201-37922-8&amp;ptype=0"><em>PostScript
 Language Reference, Third Edition</em> (ISBN 0-201-37922-8)</a> published by
 Addison-Wesley in mid-1999.  However, the interpreter is configurable in
 ways that can restrict it to various subsets of this language.
@@ -588,7 +588,7 @@ bounding box of <b>C</b> <b><em>in device space</em></b> be the four
 character in order, <b><tt>.charboxpath</tt></b> appends the following to
 the current path:
 
-<p><ul><li>If <b><tt>&lt;bool&gt;</tt></b> is true, the equivalent of:
+<ul><li>If <b><tt>&lt;bool&gt;</tt></b> is true, the equivalent of:
 
 <blockquote>
 p1x p1y <b><tt>moveto</tt></b><br>
@@ -603,7 +603,7 @@ p4x p4y <b><tt>lineto</tt></b><br>
 This creates a path whose <b><tt>pathbbox</tt></b> is the
 <b><tt>bbox</tt></b> of the string.
 
-<p><ul><li>If <b><tt>&lt;bool&gt;</tt></b> is false, the equivalent of:
+<ul><li>If <b><tt>&lt;bool&gt;</tt></b> is false, the equivalent of:
 
 <blockquote>
 p1x p1y <b><tt>moveto</tt></b><br>
@@ -879,21 +879,21 @@ made that these filters will exist in compatible form, or at all, in future
 versions.
 
 <blockquote><b><tt>
-<b><tt>&lt;target/source&gt; &lt;string&gt; ByteTranslateEncode/Decode</tt></b>
-<b><tt>&lt;target&gt; &lt;int&gt; BigStringEncode</tt></b>
-<b><tt>&lt;target/source&gt; &lt;dict&gt; BoundedHuffmanEncode/Decode</tt></b>
+&lt;target/source&gt; &lt;string&gt; ByteTranslateEncode/Decode
+<br>&lt;target&gt; &lt;int&gt; BigStringEncode
+<br>&lt;target/source&gt; &lt;dict&gt; BoundedHuffmanEncode/Decode
 <blockquote>
-<b><tt>FirstBitLowOrder &lt;bool&gt; false</tt></b>
-<b><tt>MaxCodeLength &lt;int&gt; 16</tt></b>
-<b><tt>EndOfData &lt;bool&gt; true</tt></b>
-<b><tt>EncodeZeroRuns &lt;int&gt; 256</tt></b>
-<b><tt>Tables &lt;int_array&gt;</tt></b>
+FirstBitLowOrder &lt;bool&gt; false
+<br>MaxCodeLength &lt;int&gt; 16
+<br>EndOfData &lt;bool&gt; true
+<br>EncodeZeroRuns &lt;int&gt; 256
+<br>Tables &lt;int_array&gt;
 </blockquote>
-<b><tt>&lt;target/source&gt; &lt;dict&gt; BWBlockSortEncode/Decode</tt></b>
+&lt;target/source&gt; &lt;dict&gt; BWBlockSortEncode/Decode
 <blockquote>
-<b><tt>BlockSize &lt;int&gt; 16384</tt></b>
+BlockSize &lt;int&gt; 16384
 </blockquote>
-<b><tt>&lt;target/source&gt; MoveToFrontEncode/Decode</tt></b>
+&lt;target/source&gt; MoveToFrontEncode/Decode
 </tt></b></blockquote>
 
 <p>
@@ -1247,26 +1247,24 @@ use by viewing programs such as GSview.
 the latter case, it just runs the file, closing it at the end, and trapping
 errors just as for the string case.
 
-<!-- [2.0 end contents] ---------------------------------------------------- -->
+<!-- [2.0 end contents] ==================================================== -->
 
-<!-- [3.0 begin visible trailer] ------------------------------------------- -->
+<!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <font size=2>
 
 <p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
-<p>This file is part of Aladdin Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-Aladdin Ghostscript.
-
 <p>
-Ghostscript version 5.96, 12 November 1999
+This software is licensed to a single customer by Artifex Software Inc.
+under the terms of a specific OEM agreement.
+<p>
+Artifex version 6.11, Aladdin Ghostscript version 6.0, 3 February 2000
 
 </font>
 
-<!-- [3.0 end visible trailer] --------------------------------------------- -->
+<!-- [3.0 end visible trailer] ============================================= -->
 
 </body>
 </html>

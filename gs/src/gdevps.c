@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -214,8 +215,8 @@ private const char *const psw_header[] =
 private const char *const psw_prolog[] =
 {
     "%%BeginResource: procset GS_pswrite_ProcSet",
-    "/GS_pswrite_ProcSet 40 dict dup begin",
-    "/!{bind def}bind def/#{load def}!",
+    "/GS_pswrite_ProcSet 80 dict dup begin",
+    "/!{bind def}bind def/#{load def}!/N/counttomark #",
 	/* <rbyte> <gbyte> <bbyte> rG - */
 	/* <graybyte> G - */
  "/rG{3{3 -1 roll 255 div}repeat setrgbcolor}!/G{255 div setgray}!/K{0 G}!",
@@ -236,9 +237,9 @@ private const char *const psw_prolog[] =
 	/* <x> <y> <a> <b> ^ <x> <y> <a> <b> <-x> <-y> */
     "/^{3 index neg 3 index neg}!",
 	/* <x> <y> <dx1> <dy1> ... <dxn> <dyn> P - */
-    "/P{count 0 gt{count -2 roll moveto p}if}!",
+    "/P{N 0 gt{N -2 roll moveto p}if}!",
 	/* <dx1> <dy1> ... <dxn> <dyn> p - */
-    "/p{count 2 idiv{count -2 roll rlineto}repeat}!",
+    "/p{N 2 idiv{N -2 roll rlineto}repeat}!",
     "/f{P fill}!/f*{P eofill}!/s{H stroke}!/S{P stroke}!",
     "/q/gsave #/Q/grestore #/rf{re fill}!",
     "/Y{initclip P clip newpath}!/Y*{initclip P eoclip newpath}!/rY{re Y}!",
@@ -285,19 +286,22 @@ private const char *const psw_1_5_prolog[] =
 
 private const char *const psw_2_prolog[] =
 {
-	/* <src> <w> <h> F <g4src> */
-    "/F{<</Columns 4 2 roll/Rows exch/K -1/BlackIs1 true >>/CCITTFaxDecode filter}!",
+	/* <src> <w> <h> -mark- ... F <g4src> */
+	/* <src> <w> <h> FX <g4src> */
+    "/F{/Columns counttomark 3 add -2 roll/Rows exch/K -1/BlackIs1 true>>",
+    "/CCITTFaxDecode filter}!/FX{<</EndOfBlock false F}!",
 	/* <src> X <a85src> */
 	/* - @X <a85src> */
-	/* <w> <h> <src> +F <w> <h> <g4src> */
+	/* <w> <h> <src> /&2 <w> <h> <src> <w> <h> */
+    "/X{/ASCII85Decode filter}!/@X{@ X}!/&2{2 index 2 index}!",
 	/* <w> <h> @F <w> <h> <g4src> */
 	/* <w> <h> @C <w> <h> <g4a85src> */
-    "/X{/ASCII85Decode filter}!/@X{@ X}!/+F{2 index 2 index F}!/@F{@ +F}!/@C{@X +F}!",
+    "/@F{@ &2<<F}!/@C{@X &2 FX}!",
 	/* <w> <h> <name> (<length>|) $X <w> <h> <data> */
-	/* <w> <h> <?> <?> <src> -F <w> <h> <?> <?> <g4src> */
+	/* <w> <h> <?> <?> <src> &4 <w> <h> <?> <?> <src> <w> <h> */
 	/* <w> <h> <name> (<length>|) $F <w> <h> <data> */
 	/* <w> <h> <name> (<length>|) $C <w> <h> <data> */
-    "/$X{+ @X |}!/-F{4 index 4 index F}!/$F{+ @ -F |}!/$C{+ @X -F |}!",
+    "/$X{+ @X |}!/&4{4 index 4 index}!/$F{+ @ &4<<F |}!/$C{+ @X &4 FX |}!",
     0
 };
 
@@ -592,7 +596,7 @@ psw_beginpage(gx_device_vector * vdev)
 	    pprints1(s, "%s PS\n", p->size_name);
 	}
     }
-    pprintg2(s, "%g %g scale\n%%%%EndPageSetup\n",
+    pprintg2(s, "%g %g scale\n%%%%EndPageSetup\nmark\n",
 	     72.0 / vdev->HWResolution[0], 72.0 / vdev->HWResolution[1]);
     return 0;
 }
@@ -823,13 +827,15 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
 
     if (num_copies != 1)
 	pprintd1(s, "userdict /#copies %d put\n", num_copies);
-    pprints1(s, "end %s pagesave restore\n%%%%PageTrailer\n",
+    pprints1(s, "cleartomark end %s pagesave restore\n%%%%PageTrailer\n",
 	     (flush ? "showpage" : "copypage"));
     sflush(s);
     vdev->in_page = false;
     pdev->first_page = false;
     gdev_vector_reset(vdev);
     image_cache_reset(pdev);
+    if (ferror(vdev->file))
+	return_error(gs_error_ioerror);
     return gx_finish_output_page(dev, num_copies, flush);
 }
 
@@ -862,8 +868,7 @@ psw_close(gx_device * dev)
     gs_free_object(pdev->v_memory, pdev->image_writer,
 		   "psw_close(image_writer)");
     pdev->image_writer = 0;
-    gdev_vector_close_file(vdev);
-    return 0;
+    return gdev_vector_close_file(vdev);
 }
 private void
 psw_print_bbox(FILE *f, const gs_rect *pbbox)
@@ -1068,7 +1073,11 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	if (set_ctm)
 	    pputs(s, "Q\n");
     }
-    return 0;
+    /* We must merge in the bounding box explicitly. */
+    return (vdev->bbox_device == 0 ? 0 :
+	    dev_proc(vdev->bbox_device, stroke_path)
+	      ((gx_device *)vdev->bbox_device, pis, ppath, params,
+	       pdcolor, pcpath));
 }
 
 /* Fill a mask. */

@@ -1,4 +1,5 @@
 %    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -23,11 +24,11 @@ pdfdict begin
 
 % Process the encryption information in the Trailer.
 /pdf_process_Encrypt
- { (\n\n) print
-   (    **** The PDF input file uses encryption and cannot be processed.\n) print
-   (    **** Please get and install the patch available from\n) print
-   (    ****     http://www.ozemail.com.au/~geoffk/pdfencrypt/pdf_sec.ps\n) print
-   (\n\n) print flush
+ { (\n) =
+   (    **** The PDF input file uses encryption and cannot be processed.) =
+   (    **** Please get and install the patch available from) =
+   (    ****     http://www.ozemail.com.au/~geoffk/pdfencrypt/pdf_sec.ps) =
+   (\n) = flush
    /pdfopen cvx /invalidfileaccess signalerror
  } bind def
 

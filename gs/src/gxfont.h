@@ -1,6 +1,7 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -250,9 +251,11 @@ typedef struct gs_font_procs_s {
     font_proc_next_char_glyph((*next_char_glyph));
 
     /*
-     * A client-supplied BuildChar/BuildGlyph procedure.
+     * Define a client-supplied BuildChar/BuildGlyph procedure.
      * The gs_char may be gs_no_char (for BuildGlyph), or the gs_glyph
-     * may be gs_no_glyph (for BuildChar), but not both.
+     * may be gs_no_glyph (for BuildChar), but not both.  Return 0 for
+     * success, 1 if the procedure was unable to render the character
+     * (but no error occurred), <0 for error.
      */
 
 #define font_proc_build_char(proc)\

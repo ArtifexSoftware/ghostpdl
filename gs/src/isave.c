@@ -1,6 +1,7 @@
 /* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -627,13 +628,33 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
     gs_ref_memory_t *mem = lmem;
     alloc_save_t *sprev;
 
-    /* Do one (externally visible) step of restoring the state. */
+    /* Finalize all objects before releasing resources or undoing changes. */
     do {
 	ulong sid;
 
 	sprev = mem->saved;
 	sid = sprev->id;
 	restore_finalize(mem);	/* finalize objects */
+	mem = &sprev->state;
+	if (sid != 0)
+	    break;
+    }
+    while (sprev != save);
+    if (mem->save_level == 0) {
+	/* This is the outermost save, which might also */
+	/* need to restore global VM. */
+	mem = gmem;
+	if (mem != lmem && mem->saved != 0)
+	    restore_finalize(mem);
+    }
+
+    /* Do one (externally visible) step of restoring the state. */
+    mem = lmem;
+    do {
+	ulong sid;
+
+	sprev = mem->saved;
+	sid = sprev->id;
 	restore_resources(sprev, mem);	/* release other resources */
 	restore_space(mem, dmem);	/* release memory */
 	if (sid != 0)
@@ -646,7 +667,6 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	/* need to restore global VM. */
 	mem = gmem;
 	if (mem != lmem && mem->saved != 0) {
-	    restore_finalize(mem);
 	    restore_resources(mem->saved, mem);
 	    restore_space(mem, dmem);
 	}
@@ -728,11 +748,11 @@ alloc_restore_all(gs_dual_memory_t * dmem)
 
     /* Finalize memory. */
     restore_finalize(lmem);
-    if ((mem = (gs_ref_memory_t *)lmem) != lmem)
+    if ((mem = (gs_ref_memory_t *)lmem->stable_memory) != lmem)
 	restore_finalize(mem);
     if (gmem != lmem && gmem->num_contexts == 1) {
 	restore_finalize(gmem);
-	if ((mem = (gs_ref_memory_t *)gmem) != gmem)
+	if ((mem = (gs_ref_memory_t *)gmem->stable_memory) != gmem)
 	    restore_finalize(mem);
     }
     restore_finalize(smem);
@@ -749,12 +769,12 @@ alloc_restore_all(gs_dual_memory_t * dmem)
 
     /* Finally, release memory. */
     restore_free(lmem);
-    if ((mem = (gs_ref_memory_t *)lmem) != lmem)
+    if ((mem = (gs_ref_memory_t *)lmem->stable_memory) != lmem)
 	restore_free(mem);
     if (gmem != lmem) {
 	if (!--(gmem->num_contexts)) {
 	    restore_free(gmem);
-	    if ((mem = (gs_ref_memory_t *)gmem) != gmem)
+	    if ((mem = (gs_ref_memory_t *)gmem->stable_memory) != gmem)
 		restore_free(mem);
 	}
     }

@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -155,6 +156,7 @@ typedef struct gx_image_enum_procs_s {
      * Flush any intermediate buffers to the target device.
      * We need this for situations where two images interact
      * (currently, only the mask and the data of ImageType 3).
+     *
      * This procedure is optional (may be 0).
      */
 
@@ -163,16 +165,24 @@ typedef struct gx_image_enum_procs_s {
 
     image_enum_proc_flush((*flush));
 
-    /* 
+    /*
      * Determine which data planes should be passed on the next call to the
      * plane_data procedure, by filling wanted[0 .. num_planes - 1] with 0
-     * for unwanted planes and non-0 for wanted planes.  The procedure
-     * returns true if the returned vector will always be the same *and* if
-     * the plane widths remain constant, false if the wanted planes *or*
-     * plane widths may vary over the course of the image.  By default, all
-     * data planes are always wanted; however, ImageType 3 images with
-     * separate mask and image data sources may want mask data before image
-     * data or vice versa.  This procedure is optional (may be 0).
+     * for unwanted planes and non-0 for wanted planes.  This procedure may
+     * also change the plane_depths[] and/or plane_widths[] values.  The
+     * procedure returns true if the returned vector will always be the same
+     * *and* the plane depths and widths remain constant, false if the
+     * wanted planes *or* plane depths or widths may vary over the course of
+     * the image.  Note also that the only time a plane's status can change
+     * from wanted to not wanted, and the only time a wanted plane's depth
+     * or width can change, is after a call of plane_data that actually
+     * provides data for that plane.
+     *
+     * By default, all data planes are always wanted; however, ImageType 3
+     * images with separate mask and image data sources may want mask data
+     * before image data or vice versa.
+     * 
+     * This procedure is optional (may be 0).
      */
 
 #define image_enum_proc_planes_wanted(proc)\
@@ -190,7 +200,8 @@ typedef struct gx_image_enum_procs_s {
  *
  * Note that the structure includes a unique ID, so that the banding
  * machinery could in principle keep track of multiple enumerations that may
- * be in progress simultaneously.  */
+ * be in progress simultaneously.
+ */
 #define gx_image_enum_common\
 	const gx_image_type_t *image_type;\
 	const gx_image_enum_procs_t *procs;\

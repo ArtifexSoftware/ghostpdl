@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -36,6 +37,14 @@ debug_print_name(const ref * pnref)
 
     name_string_ref(pnref, &sref);
     debug_print_string(sref.value.const_bytes, r_size(&sref));
+}
+void
+debug_print_name_index(name_index_t nidx)
+{
+    ref nref;
+
+    name_index_ref(nidx, &nref);
+    debug_print_name(&nref);
 }
 
 /* Print a ref. */

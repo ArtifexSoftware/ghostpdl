@@ -1,6 +1,7 @@
 /* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -51,26 +52,47 @@ const gx_io_device gs_iodev_os =
 /* ------ Initialization ------ */
 
 init_proc(gs_iodev_init);	/* check prototype */
-void
+int
 gs_iodev_init(gs_memory_t * mem)
 {				/* Make writable copies of all IODevices. */
     gx_io_device **table =
 	gs_alloc_struct_array(mem, gx_io_device_table_count,
 			      gx_io_device *, &st_io_device_ptr_element,
-			      "gsiodev_init(table)");
-    uint i;
+			      "gs_iodev_init(table)");
+    int i, j;
+    int code = 0;
 
+    if (table == 0)
+	return_error(gs_error_VMerror);
     for (i = 0; i < gx_io_device_table_count; ++i) {
-	table[i] = gs_alloc_struct(mem, gx_io_device, &st_io_device,
-				   "gsiodev_init");
+	gx_io_device *iodev =
+	    gs_alloc_struct(mem, gx_io_device, &st_io_device,
+			    "gs_iodev_init(iodev)");
+
+	if (iodev == 0)
+	    goto fail;
+	table[i] = iodev;
 	memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
     }
     io_device_table = table;
-    gs_register_struct_root(mem, NULL, (void **)&io_device_table,
-			    "io_device_table");
+    code = gs_register_struct_root(mem, NULL, (void **)&io_device_table,
+				   "io_device_table");
+    if (code < 0)
+	goto fail;
     /* Run the one-time initialization of each IODevice. */
-    for (i = 0; i < gx_io_device_table_count; ++i)
-	(table[i]->procs.init) (table[i], mem);
+    for (j = 0; j < gx_io_device_table_count; ++j)
+	if ((code = (table[j]->procs.init)(table[j], mem)) < 0)
+	    goto f2;
+    return 0;
+ f2:
+    /****** CAN'T FIND THE ROOT ******/
+    /*gs_unregister_root(mem, root, "io_device_table");*/
+ fail:
+    for (; i >= 0; --i)
+	gs_free_object(mem, table[i - 1], "gs_iodev_init(iodev)");
+    gs_free_object(mem, table, "gs_iodev_init(table)");
+    io_device_table = 0;
+    return (code < 0 ? code : gs_note_error(gs_error_VMerror));
 }
 
 /* ------ Default (unimplemented) IODevice procedures ------ */

@@ -1,6 +1,7 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -63,8 +64,11 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 				   &state.scale_mat, &p);
 	gs_point_transform_inverse((floatp)rbox.q.x, (floatp)rbox.q.y,
 				   &state.scale_mat, &q);
-	return vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
+	code = vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
 				       (fixed)q.x, (fixed)q.y, type);
+	if (code >= 0)
+	    return code;
+	/* If the dorect proc failed, use a general path. */
     }
     code = vdev_proc(vdev, beginpath)(vdev, type);
     if (code < 0)
@@ -652,9 +656,12 @@ gdev_vector_update_clip_path(gx_device_vector * vdev,
 }
 
 /* Close the output file and stream. */
-void
+int
 gdev_vector_close_file(gx_device_vector * vdev)
 {
+    FILE *f = vdev->file;
+    int err;
+
     gs_free_object(vdev->v_memory, vdev->bbox_device,
 		   "vector_close(bbox_device)");
     vdev->bbox_device = 0;
@@ -663,8 +670,12 @@ gdev_vector_close_file(gx_device_vector * vdev)
     vdev->strm = 0;
     gs_free_object(vdev->v_memory, vdev->strmbuf, "vector_close(strmbuf)");
     vdev->strmbuf = 0;
-    fclose(vdev->file);		/* we prevented sclose from doing this */
     vdev->file = 0;
+    err = ferror(f);
+    /* We prevented sclose from closing the file. */
+    if (fclose(f) != 0 || err != 0)
+	return_error(gs_error_ioerror);
+    return 0;
 }
 
 /* ---------------- Image enumeration ---------------- */
@@ -828,7 +839,9 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 	memcpy(vdev->fname, ofns.data, ofns.size);
 	vdev->fname[ofns.size] = 0;
 	if (vdev->file != 0) {
-	    gdev_vector_close_file(vdev);
+	    code = gdev_vector_close_file(vdev);
+	    if (code < 0)
+		return code;
 	    return gdev_vector_open_file(vdev, vdev->strmbuf_size);
 	}
     }

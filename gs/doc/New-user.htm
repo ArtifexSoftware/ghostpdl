@@ -6,19 +6,19 @@
 </head>
 
 <body>
-<!-- [1.0 begin visible header] -------------------------------------------- -->
+<!-- [1.0 begin visible header] ============================================ -->
 
-<!-- [1.1 begin headline] -------------------------------------------------- -->
+<!-- [1.1 begin headline] ================================================== -->
 
-<p><table width="100%" border="0">
+<table width="100%" border="0">
 <tr><th align="center" bgcolor="#CCCC00"><font size=6>
 Background information for new users of Ghostscript
 </font>
 </table>
 
-<!-- [1.1 end headline] ---------------------------------------------------- -->
+<!-- [1.1 end headline] ==================================================== -->
 
-<!-- [1.2 begin table of contents] ----------------------------------------- -->
+<!-- [1.2 begin table of contents] ========================================= -->
 
 <h2>Table of contents</h2>
 
@@ -35,6 +35,9 @@ Background information for new users of Ghostscript
 <li><a href="#Support">What if I want support?</a>
 <li><a href="#Commercial_use">What about commercial use?</a>
 <li><a href="#Platforms">What platforms does Ghostscript run on?</a>
+<ul>
+<li><a href="#Third-party_platforms">Ports done by users</a>
+</ul>
 </ul>
 <li><a href="#Related_work">Related work</a>
 <ul>
@@ -57,20 +60,20 @@ Background information for new users of Ghostscript
 <li><a href="#Acknowledgments">Acknowledgements</a>
 </ul></blockquote>
 
-<!-- [1.2 end table of contents] ------------------------------------------- -->
+<!-- [1.2 end table of contents] =========================================== -->
 
-<!-- [1.3 begin hint] ------------------------------------------------------ -->
+<!-- [1.3 begin hint] ====================================================== -->
 
 <p>For other information, see the <a href="Readme.htm">Ghostscript
 overview</a>.
 
-<!-- [1.3 end hint] -------------------------------------------------------- -->
+<!-- [1.3 end hint] ======================================================== -->
 
 <hr>
 
-<!-- [1.0 end visible header] ---------------------------------------------- -->
+<!-- [1.0 end visible header] ============================================== -->
 
-<!-- [2.0 begin contents] -------------------------------------------------- -->
+<!-- [2.0 begin contents] ================================================== -->
 
 <h1><a name="Overview"></a>An overview of Ghostscript</h1>
 
@@ -405,8 +408,10 @@ these environments.  (Ghostscript does not run well on PC-compatibles with
 Hercules display cards, since text and graphics output interfere with each
 other, but you can work around this by redirecting the text output to a file.)
 
+<h3><a name="Third-party_platforms"></a>Ports done by users</h3>
+
 <p>
-Ghostscript has also been ported to a number of platforms by users, who are
+Ghostscript has been ported to a number of platforms by users, who are
 willing to be contacted about problems on those specific platforms:
 
 <dl>
@@ -465,6 +470,13 @@ or check
 <blockquote>
 <a href="http://www.cotswold.demon.co.uk/dist/gs/">http://www.cotswold.demon.co.uk/dist/gs/</a>
 </blockquote>
+</dl>
+
+<dl>
+<dt><b>MS-DOS</b> <dd>For information on compiling Ghostscript for MS-DOS
+with the Watcom C++ compiler and GNU make (which avoids the severe
+limitations in Watcom's wmake program), contact Boguslaw Jackowski &lt;<a
+href="mailto:B.Jackowski@gust.org.pl">B.Jackowski@gust.org.pl</a>&gt;.
 </dl>
 
 <hr>
@@ -559,12 +571,11 @@ based on Ghostscript, is available from
 </blockquote>
 
 <p>
-For technical information on GSview for Windows or PM GSview, please
-contact Russell Lang
-&lt;<a href="mailto:rjl@aladdin.com">rjl@aladdin.com</a>&gt;.  (Aladdin
-provides Lang with a mail alias, but Lang is not an employee or agent of
-Aladdin.)  These programs are also available for <a
-href="#Commercial_use">commercial licensing</a> from Artifex Software Inc.
+For technical information on GSview for Windows or PM GSview, please contact
+Russell Lang &lt;<a
+href="mailto:gsview@ghostgum.com.au">gsview@ghostgum.com.au</a>&gt;.  These
+programs are also available for <a href="#Commercial_use">commercial
+licensing</a> from Artifex Software Inc.
 </dl>
 
 <dl>
@@ -984,7 +995,9 @@ for creating the freely available libraries that Ghostscript uses.
 Special thanks are due to URW++ Design and Development Incorporated, of
 Hamburg, Germany (<a href="http://www.urwpp.de/">http://www.urwpp.de/</a>)
 for making a commercial-quality set of the 35 standard PostScript Type 1
-fonts available for free distribution under the GNU and Aladdin licenses.
+fonts available for free distribution under the GNU and Aladdin licenses,
+and for updating them to include Adobe's expanded PostScript 3 character
+set.
 
 <p>
 Special thanks are due to Richard Stallman and the
@@ -998,9 +1011,9 @@ Internet.
 See also the <a href="Helpers.htm">list of the many other people</a> who have
 contributed significantly to improving Ghostscript.
 
-<!-- [2.0 end contents] ---------------------------------------------------- -->
+<!-- [2.0 end contents] ==================================================== -->
 
-<!-- [3.0 begin visible trailer] ------------------------------------------- -->
+<!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <font size=2>
@@ -1008,17 +1021,15 @@ contributed significantly to improving Ghostscript.
 <p>Copyright &copy; 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights
 reserved.
 
-<p>This file is part of Aladdin Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-Aladdin Ghostscript.
-
 <p>
-Ghostscript version 5.96, 12 November 1999
+This software is licensed to a single customer by Artifex Software Inc.
+under the terms of a specific OEM agreement.
+<p>
+Artifex version 6.11, Aladdin Ghostscript version 6.0, 3 February 2000
 
 </font>
 
-<!-- [3.0 end visible trailer] --------------------------------------------- -->
+<!-- [3.0 end visible trailer] ============================================= -->
 
 </body>
 </html>

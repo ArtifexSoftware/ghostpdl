@@ -1,15 +1,18 @@
 /* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
 /* H-P LaserJet 5 & 6 drivers for Ghostscript */
 #include "gdevprn.h"
+#include "stream.h"
 #include "gdevpcl.h"
 #include "gdevpxat.h"
 #include "gdevpxen.h"
 #include "gdevpxop.h"
+#include "gdevpxut.h"
 
 /* Define the default resolution. */
 #ifndef X_DPI
@@ -53,49 +56,6 @@ gx_device_printer gs_lj5gray_device = {
 		    1, 8, 255, 0, 256, 1, ljet5_print_page)
 };
 
-/* Write a 'canned' data sequence. */
-#define fwrite_bytes(bytes, strm) fwrite(bytes, 1, sizeof(bytes), strm)
-
-/* Utilities for writing data values. */
-/* H-P printers only support little-endian data, so that's what we emit. */
-#define da(a) pxt_attr_ubyte, (a)
-private void
-put_a(px_attribute_t a, FILE * prn_stream)
-{
-    fputc(pxt_attr_ubyte, prn_stream);
-    fputc(a, prn_stream);
-}
-#define dub(b) pxt_ubyte, (byte)(b)
-#define ds(i) (byte)(i), (byte)((i) >> 8)
-private void
-put_s(uint i, FILE * prn_stream)
-{
-    fputc((byte) i, prn_stream);
-    fputc((byte) (i >> 8), prn_stream);
-}
-#define dus(i) pxt_uint16, ds(i)
-private void
-put_us(uint i, FILE * prn_stream)
-{
-    fputc(pxt_uint16, prn_stream);
-    put_s(i, prn_stream);
-}
-#define dusp(ix,iy) pxt_uint16_xy, ds(ix), ds(iy)
-private void
-put_usp(uint ix, uint iy, FILE * prn_stream)
-{
-    fputc(pxt_uint16_xy, prn_stream);
-    put_s(ix, prn_stream);
-    put_s(iy, prn_stream);
-}
-#define dl(l) ds(l), ds((l) >> 16)
-private void
-put_l(ulong l, FILE * prn_stream)
-{
-    put_s((uint) l, prn_stream);
-    put_s((uint) (l >> 16), prn_stream);
-}
-
 /* Open the printer, writing the stream header. */
 private int
 ljet5_open(gx_device * pdev)
@@ -109,22 +69,13 @@ ljet5_open(gx_device * pdev)
 	return code;
     {
 	gx_device_printer *const ppdev = (gx_device_printer *)pdev;
-	FILE *prn_stream = ppdev->file;
-	static const byte stream_header[] = {
-	    da(pxaUnitsPerMeasure),
-	    dub(0), da(pxaMeasure),
-	    dub(eErrorPage), da(pxaErrorReport),
-	    pxtBeginSession,
-	    dub(0), da(pxaSourceType),
-	    dub(eBinaryLowByteFirst), da(pxaDataOrg),
-	    pxtOpenDataSource
-	};
+	stream fs;
+	stream *const s = &fs;
+	byte buf[50];		/* arbitrary */
 
-	fputs("\033%-12345X@PJL ENTER LANGUAGE = PCLXL\n", prn_stream);
-	fputs(") HP-PCL XL;1;1\n", prn_stream);
-	put_usp((uint) (pdev->HWResolution[0] + 0.5),
-		(uint) (pdev->HWResolution[1] + 0.5), prn_stream);
-	fwrite_bytes(stream_header, prn_stream);
+	swrite_file(s, ppdev->file, buf, sizeof(buf));
+	px_write_file_header(s, pdev);
+	sflush(s);		/* don't close */
     }
     return 0;
 }
@@ -133,21 +84,12 @@ ljet5_open(gx_device * pdev)
 private int
 ljet5_close(gx_device * pdev)
 {
+    gx_device_printer *const ppdev = (gx_device_printer *)pdev;
     int code = gdev_prn_open_printer(pdev, true);
 
     if (code < 0)
 	return code;
-    {
-	gx_device_printer *const ppdev = (gx_device_printer *)pdev;
-	FILE *prn_stream = ppdev->file;
-	static const byte stream_trailer[] = {
-	    pxtCloseDataSource,
-	    pxtEndSession,
-	    033, '%', '-', '1', '2', '3', '4', '5', 'X'
-	};
-
-	fwrite_bytes(stream_trailer, prn_stream);
-    }
+    px_write_file_trailer(ppdev->file);
     return gdev_prn_close(pdev);
 }
 
@@ -163,96 +105,95 @@ ljet5_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *out = gs_alloc_bytes(mem, out_size, "ljet5(out)");
     int code = 0;
     int lnum;
+    stream fs;
+    stream *const s = &fs;
+    byte buf[200];		/* arbitrary */
 
     if (line == 0 || out == 0) {
 	code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
+    swrite_file(s, prn_stream, buf, sizeof(buf));
+
     /* Write the page header. */
     {
 	static const byte page_header[] = {
-	    dub(ePortraitOrientation), da(pxaOrientation),
-	    dub(eLetterPaper), da(pxaMediaSize),
-	    dub(eAutoSelect), da(pxaMediaSource),
 	    pxtBeginPage,
-	    dusp(0, 0), da(pxaPoint),
+	    DUSP(0, 0), DA(pxaPoint),
 	    pxtSetCursor
 	};
 	static const byte mono_header[] = {
-	    dub(eGray), da(pxaColorSpace),
-	    dub(e8Bit), da(pxaPaletteDepth),
-	    pxt_ubyte_array, pxt_ubyte, 2, 0xff, 0x00, da(pxaPaletteData),
+	    DUB(eGray), DA(pxaColorSpace),
+	    DUB(e8Bit), DA(pxaPaletteDepth),
+	    pxt_ubyte_array, pxt_ubyte, 2, 0xff, 0x00, DA(pxaPaletteData),
 	    pxtSetColorSpace
 	};
 	static const byte gray_header[] = {
-	    dub(eGray), da(pxaColorSpace),
+	    DUB(eGray), DA(pxaColorSpace),
 	    pxtSetColorSpace
 	};
 
-	fwrite_bytes(page_header, prn_stream);
+	px_write_page_header(s, (gx_device *)pdev);
+	px_write_select_media(s, (gx_device *)pdev, NULL);
+	PX_PUT_LIT(s, page_header);
 	if (pdev->color_info.depth == 1)
-	    fwrite_bytes(mono_header, prn_stream);
+	    PX_PUT_LIT(s, mono_header);
 	else
-	    fwrite_bytes(gray_header, prn_stream);
+	    PX_PUT_LIT(s, gray_header);
     }
 
     /* Write the image header. */
     {
 	static const byte mono_image_header[] = {
-	    da(pxaDestinationSize),
-	    dub(eIndexedPixel), da(pxaColorMapping),
-	    dub(e1Bit), da(pxaColorDepth),
+	    DA(pxaDestinationSize),
+	    DUB(eIndexedPixel), DA(pxaColorMapping),
+	    DUB(e1Bit), DA(pxaColorDepth),
 	    pxtBeginImage
 	};
 	static const byte gray_image_header[] = {
-	    da(pxaDestinationSize),
-	    dub(eDirectPixel), da(pxaColorMapping),
-	    dub(e8Bit), da(pxaColorDepth),
+	    DA(pxaDestinationSize),
+	    DUB(eDirectPixel), DA(pxaColorMapping),
+	    DUB(e8Bit), DA(pxaColorDepth),
 	    pxtBeginImage
 	};
 
-	put_us(pdev->width, prn_stream);
-	put_a(pxaSourceWidth, prn_stream);
-	put_us(pdev->height, prn_stream);
-	put_a(pxaSourceHeight, prn_stream);
-	put_usp(pdev->width, pdev->height, prn_stream);
+	px_put_us(s, pdev->width);
+	px_put_a(s, pxaSourceWidth);
+	px_put_us(s, pdev->height);
+	px_put_a(s, pxaSourceHeight);
+	px_put_usp(s, pdev->width, pdev->height);
 	if (pdev->color_info.depth == 1)
-	    fwrite_bytes(mono_image_header, prn_stream);
+	    PX_PUT_LIT(s, mono_image_header);
 	else
-	    fwrite_bytes(gray_image_header, prn_stream);
+	    PX_PUT_LIT(s, gray_image_header);
     }
 
     /* Write the image data, compressing each line. */
     for (lnum = 0; lnum < pdev->height; ++lnum) {
 	int ncompr;
 	static const byte line_header[] = {
-	    da(pxaStartLine),
-	    dus(1), da(pxaBlockHeight),
-	    dub(eRLECompression), da(pxaCompressMode),
+	    DA(pxaStartLine),
+	    DUS(1), DA(pxaBlockHeight),
+	    DUB(eRLECompression), DA(pxaCompressMode),
 	    pxtReadImage
 	};
 
 	code = gdev_prn_copy_scan_lines(pdev, lnum, (byte *) line, line_size);
 	if (code < 0)
 	    goto fin;
-	put_us(lnum, prn_stream);
-	fwrite_bytes(line_header, prn_stream);
+	px_put_us(s, lnum);
+	PX_PUT_LIT(s, line_header);
 	ncompr = gdev_pcl_mode2compress_padded(line, line + line_size_words,
 					       out, true);
-	if (ncompr <= 255) {
-	    fputc(pxt_dataLengthByte, prn_stream);
-	    fputc(ncompr, prn_stream);
-	} else {
-	    fputc(pxt_dataLength, prn_stream);
-	    put_l(ncompr, prn_stream);
-	}
-	fwrite(out, 1, ncompr, prn_stream);
+	px_put_data_length(s, ncompr);
+	px_put_bytes(s, out, ncompr);
     }
 
     /* Finish up. */
   fin:
-    fputc(pxtEndImage, prn_stream);
-    fputc(pxtEndPage, prn_stream);
+    spputc(s, pxtEndImage);
+    spputc(s, pxtEndPage);
+    sflush(s);
   done:
     gs_free_object(mem, out, "ljet5(out)");
     gs_free_object(mem, line, "ljet5(line)");

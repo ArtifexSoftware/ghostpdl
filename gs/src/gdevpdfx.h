@@ -1,6 +1,7 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -17,7 +18,6 @@
 #include "stream.h"
 #include "spprint.h"
 #include "gdevpsdf.h"
-#include "gdevpdfo.h"
 
 /* ---------------- Statically allocated sizes ---------------- */
 /* These should really be dynamic.... */
@@ -39,6 +39,20 @@ typedef enum {
     PDF_IN_STRING
 } pdf_context_t;
 
+/* ---------------- Cos objects ---------------- */
+
+/*
+ * These are abstract types for cos objects.  The concrete types are in
+ * gdevpdfo.h.
+ */
+typedef struct cos_object_s cos_object_t;
+typedef struct cos_stream_s cos_stream_t;
+typedef struct cos_dict_s cos_dict_t;
+typedef struct cos_array_s cos_array_t;
+typedef struct cos_object_procs_s cos_object_procs_t;
+typedef const cos_object_procs_t *cos_type_t;
+#define cos_types_DEFINED
+
 /* ---------------- Resources ---------------- */
 
 typedef enum {
@@ -56,15 +70,20 @@ typedef enum {
      * Internally used (pseudo-)resources.
      */
     resourceCharProc,
+    resourceFontDescriptor,
     NUM_RESOURCE_TYPES
 } pdf_resource_type_t;
 
 #define pdf_resource_type_names\
   "ColorSpace", "Pattern", "XObject", "Font",\
-  0
+  0, 0
 #define pdf_resource_type_structs\
-  &st_pdf_resource, &st_pdf_resource, &st_pdf_resource, &st_pdf_font,\
-  &st_pdf_char_proc
+  &st_pdf_resource,		/* see below */\
+  &st_pdf_resource,\
+  &st_pdf_x_object,		/* see below */\
+  &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_char_proc,		/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_font_descriptor	/* gdevpdff.h / gdevpdff.c */
 
 #define pdf_resource_common(typ)\
     typ *next;			/* next resource of this type */\
@@ -78,33 +97,30 @@ struct pdf_resource_s {
     pdf_resource_common(pdf_resource_t);
 };
 
-#define private_st_pdf_resource()\
-  gs_private_st_ptrs3(st_pdf_resource, pdf_resource_t, "pdf_resource_t",\
+/* The descriptor is public for subclassing. */
+extern_st(st_pdf_resource);
+#define public_st_pdf_resource()  /* in gdevpdfu.c */\
+  gs_public_st_ptrs3(st_pdf_resource, pdf_resource_t, "pdf_resource_t",\
     pdf_resource_enum_ptrs, pdf_resource_reloc_ptrs, next, prev, object)
+
+/*
+ * We define XObject resources here because they are used for Image,
+ * Form, and PS XObjects, which are implemented in different files.
+ */
+typedef struct pdf_x_object_s pdf_x_object_t;
+struct pdf_x_object_s {
+    pdf_resource_common(pdf_x_object_t);
+    int width, height;		/* specified width and height for images */
+    int data_height;		/* actual data height for images */
+};
+#define private_st_pdf_x_object()  /* in gdevpdfu.c */\
+  gs_private_st_suffix_add0(st_pdf_x_object, pdf_x_object_t,\
+    "pdf_x_object_t", pdf_x_object_enum_ptrs, pdf_x_object_reloc_ptrs,\
+    st_pdf_resource)
 
 /* ------ Fonts ------ */
 
-/*
- * The PDF writer creates several different kinds of font resources.
- * The key differences between them are the values of num_chars, index,
- * and descriptor.
- *
- *	- Synthesized Type 3 bitmap fonts are identified by num_chars != 0 (or
- *	equivalently PDF_FONT_IS_SYNTHESIZED = true).  They have index < 0,
- *	descriptor == 0.  All other fonts have num_chars == 0.
- *
- *	- The base 14 fonts have num_chars == 0, index >= 0, descriptor ==
- *	0.  All other fonts have index < 0.
- *
- *	- All other fonts (Type 1 or TrueType, embedded or not) have
- *	num_chars == 0, index < 0, descriptor != 0.  A font is embedded
- *	iff descriptor->FontFile_id != 0.
- *
- * For non-synthesized fonts, the structure representation is designed to
- * represent directly the information that will be written in the font
- * resource, Encoding, and FontDescriptor dictionaries.  See the comments
- * on the pdf_font_t structure below for more detail.
- */
+/* Define the standard fonts. */
 #define PDF_NUM_STD_FONTS 14
 #define pdf_do_std_fonts(m)\
   m("Courier", ENCODING_INDEX_STANDARD)\
@@ -122,111 +138,12 @@ struct pdf_resource_s {
   m("Times-BoldItalic", ENCODING_INDEX_STANDARD)\
   m("ZapfDingbats", ENCODING_INDEX_DINGBATS)
 
-/* Font descriptors (not handled as separate resources) */
-typedef struct pdf_font_descriptor_s {
-    long id;
-    /* Required elements */
-    int Ascent, CapHeight, Descent, ItalicAngle, StemV;
-    gs_int_rect FontBBox;
-    uint Flags;
-    /* Optional elements (default to 0) */
-    long FontFile_id;		/* non-0 iff the font is embedded */
-    int AvgWidth, Leading, MaxWidth, MissingWidth, StemH, XHeight;
-} pdf_font_descriptor_t;
-/* Flag bits */
-/*#define FONT_IS_FIXED_WIDTH (1<<0)*/  /* define in gxfont.h */
-#define FONT_IS_SERIF (1<<1)
-#define FONT_IS_SYMBOLIC (1<<2)
-#define FONT_IS_SCRIPT (1<<3)
-#define FONT_IS_ADOBE_ROMAN (1<<5)
-#define FONT_IS_ITALIC (1<<6)
-#define FONT_IS_ALL_CAPS (1<<16)
-#define FONT_IS_SMALL_CAPS (1<<17)
-#define FONT_IS_FORCE_BOLD (1<<18)
-#define private_st_pdf_font_descriptor()\
-  gs_private_st_simple(st_pdf_font_descriptor, pdf_font_descriptor_t,\
-    "pdf_font_descriptor_t")
-
-/* Font resources */
-typedef struct pdf_char_proc_s pdf_char_proc_t;	/* forward reference */
-typedef struct pdf_font_s pdf_font_t;
-/*
- * PDF font names must be large enough for the 14 built-in fonts,
- * and also large enough for any reasonable font name + 7 characters
- * for the subsetting prefix.
- */
-#define MAX_PDF_FONT_NAME (7 + gs_font_name_max + 1)
-typedef struct pdf_font_name_s {
-    byte chars[MAX_PDF_FONT_NAME];
-    uint size;
-} pdf_font_name_t;
-typedef struct pdf_encoding_element_s {
-    gs_glyph glyph;
-    gs_const_string str;
-} pdf_encoding_element_t;
-#define private_st_pdf_encoding_element()\
-  gs_private_st_composite(st_pdf_encoding_element, pdf_encoding_element_t,\
-    "pdf_encoding_element_t[]", pdf_encoding_elt_enum_ptrs,\
-    pdf_encoding_elt_reloc_ptrs)
-struct pdf_font_s {
-    pdf_resource_common(pdf_font_t);
-    pdf_font_name_t fname;
-    font_type FontType;
-    gs_font *font;		/* non-0 iff font will notify us; */
-				/* should be a weak pointer */
-    int index;			/* in pdf_standard_fonts, -1 if not base 14 */
-    gs_matrix orig_matrix;	/* FontMatrix of unscaled font for embedding */
-    /*
-     * For synthesized fonts, frname is A, B, ...; for other fonts,
-     * frname is R<id>.  The string is null-terminated.
-     */
-    char frname[1/*R*/ + (sizeof(long) * 8 / 3 + 1) + 1/*\0*/];
-    /* Encoding for base fonts. */
-    int BaseEncoding;		/* if not -1, will be written as the */
-				/* BaseEncoding of the Encoding dict */
-    byte chars_used[32];	/* 1 bit per character code */
-    pdf_encoding_element_t *differences; /* [256] if not 0, will be written */
-				/* as the Differences of the Encoding dict */
-    /* Bookkeeping for non-synthesized fonts. */
-    pdf_font_descriptor_t *descriptor;  /* if not 0, will be written as */
-				/* the FontDescriptor dict */
-    int Widths[256];		/* if index >= 0 or differences != 0, */
-				/* will be written as the Widths in the */
-				/* font resource dict */
-    byte widths_known[32];	/* 1 bit per character code */
-    bool skip;			/* font was already written, skip it */
-    /* Bookkeeping for synthesized fonts. */
-    int num_chars;
-#define PDF_FONT_IS_SYNTHESIZED(pdfont) ((pdfont)->num_chars != 0)
-    pdf_char_proc_t *char_procs;
-    int max_y_offset;
-    /* Pseudo-characters for spacing. */
-    /* The range should be determined by the device resolution.... */
+/* Define the range of synthesized space characters. */
 #define X_SPACE_MIN 24
 #define X_SPACE_MAX 150
-    byte spaces[X_SPACE_MAX - X_SPACE_MIN + 1];
-};
 
-#define private_st_pdf_font()\
-  gs_private_st_suffix_add4(st_pdf_font, pdf_font_t, "pdf_font_t",\
-    pdf_font_enum_ptrs, pdf_font_reloc_ptrs, st_pdf_resource,\
-    font, differences, descriptor, char_procs)
-
-/* CharProc pseudo-resources for synthesized fonts */
-struct pdf_char_proc_s {
-    pdf_resource_common(pdf_char_proc_t);
-    pdf_font_t *font;
-    pdf_char_proc_t *char_next;	/* next char_proc for same font */
-    int width, height;
-    int x_width;		/* X escapement */
-    int y_offset;		/* of character (0,0) */
-    byte char_code;
-};
-
-#define private_st_pdf_char_proc()\
-  gs_private_st_suffix_add2(st_pdf_char_proc, pdf_char_proc_t,\
-    "pdf_char_proc_t", pdf_char_proc_enum_ptrs,\
-    pdf_char_proc_reloc_ptrs, st_pdf_resource, font, char_next)
+/* Define abstract types.  The concrete types are in gdevpdff.h. */
+typedef struct pdf_font_s pdf_font_t;
 
 /* ------ Named objects ------ */
 
@@ -368,7 +285,7 @@ typedef struct pdf_temp_file_s {
 /* Define the device structure. */
 #ifndef gx_device_pdf_DEFINED
 #  define gx_device_pdf_DEFINED
-typedef struct gx_device_pdf_s gx_device_pdf_t;
+typedef struct gx_device_pdf_s gx_device_pdf;
 #endif
 struct gx_device_pdf_s {
     gx_device_psdf_common;
@@ -427,6 +344,7 @@ struct gx_device_pdf_s {
      */
     pdf_temp_file_t pictures;
     pdf_font_t *open_font;
+    char open_font_name[sizeof(long) * 8 / 5 + 2]; /* radix-26 */
     long embedded_encoding_id;
     /* ................ */
     long next_id;
@@ -607,6 +525,9 @@ pdf_resource_t *pdf_find_resource_by_gs_id(P3(gx_device_pdf * pdev,
 					      pdf_resource_type_t rtype,
 					      gs_id rid));
 
+/* Get the object id of a resource. */
+long pdf_resource_id(P1(const pdf_resource_t *pres));
+
 /* End a separate object. */
 int pdf_end_separate(P1(gx_device_pdf * pdev));
 
@@ -737,68 +658,5 @@ int pdf_scan_token_composite(P3(const byte **pscan, const byte * end,
 int pdf_replace_names(P3(gx_device_pdf *pdev, const gs_param_string *from,
 			 gs_param_string *to));
 
-/* ---------------- Exported by gdevpdft.c ---------------- */
-
-/* Begin a CharProc for an embedded (bitmap) font. */
-int pdf_begin_char_proc(P8(gx_device_pdf * pdev, int w, int h, int x_width,
-			   int y_offset, gs_id id, pdf_char_proc_t **ppcp,
-			   pdf_stream_position_t * ppos));
-
-/* End a CharProc. */
-int pdf_end_char_proc(P2(gx_device_pdf * pdev, pdf_stream_position_t * ppos));
-
-/* Put out a reference to an image as a character in an embedded font. */
-int pdf_do_char_image(P3(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
-			 const gs_matrix * pimat));
-
-/* ---------------- Exported by gdevpdff.c ---------------- */
-
-typedef enum {
-    FONT_EMBED_BASE14,
-    FONT_EMBED_UNKNOWN,		/* neither AlwaysEmbed nor NeverEmbed */
-    FONT_EMBED_NO,
-    FONT_EMBED_YES
-} pdf_font_embed_t;
-
-typedef struct pdf_standard_font_s {
-    const char *fname;
-    gs_encoding_index_t base_encoding;
-} pdf_standard_font_t;
-extern const pdf_standard_font_t pdf_standard_fonts[];
-
-/* Find an original font corresponding to an arbitrary font, if any. */
-bool pdf_find_orig_font(P4(gx_device_pdf *pdev, gs_font *font,
-			   gs_const_string *pfname, gs_matrix *pfmat));
-
-/*
- * Determine the embedding status of a font.  If the font is in the base
- * 14, store its index (0..13) in *pindex and its similarity to the base
- * font (as determined by the font's same_font procedure) in *psame.
- */
-pdf_font_embed_t pdf_font_embed_status(P4(gx_device_pdf *pdev, gs_font *font,
-					  int *pindex, int *psame));
-
-/* Allocate a font resource. */
-int pdf_alloc_font(P4(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
-		      bool with_descriptor));
-
-/* Add an encoding difference to a font. */
-int pdf_add_encoding_difference(P5(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
-				   const gs_font_base *bfont, gs_glyph glyph));
-
-/* Get the width of a given character in a (base) font. */
-int pdf_char_width(P4(pdf_font_t *ppf, int ch, gs_font *font,
-		      int *pwidth /* may be NULL */));
-
-/* Compute the FontDescriptor for a font or a font subset. */
-int pdf_compute_font_descriptor(P4(gx_device_pdf *pdev,
-				   pdf_font_descriptor_t *pfd, gs_font *font,
-				   const byte *used /*[32]*/));
-
-/* Register a font for eventual writing (embedded or not). */
-int pdf_register_font(P3(gx_device_pdf *pdev, gs_font *font, pdf_font_t *ppf));
-
-/* Write out the font resources when wrapping up the output. */
-int pdf_write_font_resources(P1(gx_device_pdf *pdev));
 
 #endif /* gdevpdfx_INCLUDED */

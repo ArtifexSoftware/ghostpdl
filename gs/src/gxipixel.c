@@ -1,6 +1,7 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -674,7 +675,7 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 	map_decode = real_decode = this_decode;
 	if (map_decode[0] == 0.0 && map_decode[1] == 1.0)
 	    no_decode = true;
-	else if (map_decode[0] == 1.0 && map_decode[1] == 0.0) {
+	else if (map_decode[0] == 1.0 && map_decode[1] == 0.0 && bps <= 8) {
 	    no_decode = true;
 	    real_decode = default_decode;
 	} else {

@@ -1,6 +1,7 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -12,11 +13,13 @@
 #include "gscdefs.h"
 #include "gxdevice.h"
 #include "gdevpdfx.h"
+#include "gdevpdff.h"
+#include "gdevpdfo.h"
 
 /* Define the default language level and PDF compatibility level. */
-/* Acrobat 3 (PDF 1.2) is the default. */
-#define PSDF_VERSION_INITIAL psdf_version_level2
-#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.2
+/* Acrobat 4 (PDF 1.3) is the default. */
+#define PSDF_VERSION_INITIAL psdf_version_ll3
+#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.3
 
 /* Define the names of the resource types. */
 private const char *const resource_type_names[] = {
@@ -154,13 +157,7 @@ const gx_device_pdf gs_pdfwrite_device =
   NULL,				/* map_color_rgb_alpha */
   NULL,				/* create_compositor */
   NULL,				/* get_hardware_params */
-  /****************************************************************
-   *
-   * Temporarily disable text handling in the PDF writer.  We will
-   * re-enable it in the next beta release.
-   *
-   ****************************************************************/
-  0 /****** gdev_pdf_text_begin ******/
+  gdev_pdf_text_begin
  },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
  PDF_COMPATIBILITY_LEVEL_INITIAL,  /* CompatibilityLevel */
@@ -184,6 +181,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {{0}},				/* streams */
  {{0}},				/* pictures */
  0,				/* open_font */
+ {0},				/* open_font_name */
  0,				/* embedded_encoding_id */
  0,				/* next_id */
  0,				/* Catalog */
@@ -221,34 +219,47 @@ const gx_device_pdf gs_pdfwrite_device =
 /* ---------------- Device open/close ---------------- */
 
 /* Close and remove temporary files. */
-private void
-pdf_close_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
+private int
+pdf_close_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf, int code)
 {
+    int err = 0;
+    FILE *file = ptf->file;
+
+    /*
+     * ptf->strm == 0 or ptf->file == 0 is only possible if this procedure
+     * is called to clean up during initialization failure, but ptf->strm
+     * might not be open if it was finalized before the device was closed.
+     */
     if (ptf->strm) {
+	if (s_is_valid(ptf->strm)) {
+	    sflush(ptf->strm);
+	    /* Prevent freeing the stream from closing the file. */
+	    ptf->strm->file = 0;
+	} else
+	    ptf->file = file = 0;	/* file was closed by finalization */
 	gs_free_object(pdev->pdf_memory, ptf->strm_buf,
 		       "pdf_close_temp_file(strm_buf)");
 	ptf->strm_buf = 0;
 	gs_free_object(pdev->pdf_memory, ptf->strm,
 		       "pdf_close_temp_file(strm)");
 	ptf->strm = 0;
-	/* Closing strm also closes file. */
-    } else {
-	if (ptf->file)
-	    fclose(ptf->file);
     }
-    if (ptf->file) {
+    if (file) {
+	err = ferror(file) | fclose(file);
 	unlink(ptf->file_name);
 	ptf->file = 0;
     }
     ptf->save_strm = 0;
+    return
+	(code < 0 ? code : err != 0 ? gs_note_error(gs_error_ioerror) : code);
 }
-private void
-pdf_close_files(gx_device_pdf * pdev)
+private int
+pdf_close_files(gx_device_pdf * pdev, int code)
 {
-    pdf_close_temp_file(pdev, &pdev->pictures);
-    pdf_close_temp_file(pdev, &pdev->streams);
-    pdf_close_temp_file(pdev, &pdev->asides);
-    pdf_close_temp_file(pdev, &pdev->xref);
+    code = pdf_close_temp_file(pdev, &pdev->pictures, code);
+    code = pdf_close_temp_file(pdev, &pdev->streams, code);
+    code = pdf_close_temp_file(pdev, &pdev->asides, code);
+    return pdf_close_temp_file(pdev, &pdev->xref, code);
 }
 
 /* Reset the state of the current page. */
@@ -323,7 +334,8 @@ pdf_initialize_ids(gx_device_pdf * pdev)
 
     param_string_from_string(nstr, "{DocInfo}");
     pdf_create_named_dict(pdev, &nstr, &pdev->Info, 0L);
-    sprintf(buf, "(%s %1.2f)", gs_product, gs_revision / 100.0);
+    sprintf(buf, ((gs_revision % 100) == 0 ? "(%s %1.1f)" : "(%s %1.2f)"),
+	    gs_product, gs_revision / 100.0);
     cos_dict_put_c_strings(pdev->Info, pdev, "/Producer", buf);
 
     /* Allocate the root of the pages tree. */
@@ -392,8 +404,22 @@ pdf_open(gx_device * dev)
 
     return 0;
   fail:
-    pdf_close_files(pdev);
-    return code;
+    return pdf_close_files(pdev, code);
+}
+
+/* Detect I/O errors. */
+private int
+pdf_ferror(gx_device_pdf *pdev)
+{
+    fflush(pdev->file);
+    fflush(pdev->xref.file);
+    sflush(pdev->strm);
+    sflush(pdev->asides.strm);
+    sflush(pdev->streams.strm);
+    sflush(pdev->pictures.strm);
+    return ferror(pdev->file) || ferror(pdev->xref.file) ||
+	ferror(pdev->asides.file) || ferror(pdev->streams.file) ||
+	ferror(pdev->pictures.file);
 }
 
 /* Close the current page. */
@@ -495,8 +521,19 @@ pdf_close_page(gx_device_pdf * pdev)
 	    pdf_end_obj(pdev);
 	}
     }
+    /*
+     * When Acrobat Reader 3 prints a file containing a Type 3 font with a
+     * non-standard Encoding, it apparently only emits the subset of the
+     * font actually used on the page.  Thus, if the "Download Fonts Once"
+     * option is selected, characters not used on the page where the font
+     * first appears will not be defined, and hence will print as blank if
+     * used on subsequent pages.  Thus, we can't allow a Type 3 font to
+     * add additional characters on subsequent pages.
+     */
+    if (pdev->CompatibilityLevel <= 1.2)
+	pdev->open_font = 0;
     pdf_reset_page(pdev);
-    return 0;
+    return (pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) : 0);
 }
 
 /* Write the page object. */
@@ -565,7 +602,9 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
     int code = pdf_close_page(pdev);
 
-    return (code < 0 ? code : gx_finish_output_page(dev, num_copies, flush));
+    return (code < 0 ? code :
+	    pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) :
+	    gx_finish_output_page(dev, num_copies, flush));
 }
 
 /* Close the device. */
@@ -795,7 +834,9 @@ pdf_close(gx_device * dev)
     pdev->pages = 0;
     pdev->num_pages = 0;
 
-    gdev_vector_close_file((gx_device_vector *) pdev);
-    pdf_close_files(pdev);
-    return 0;
+    {
+	int code = gdev_vector_close_file((gx_device_vector *) pdev);
+
+	return pdf_close_files(pdev, code);
+    }
 }

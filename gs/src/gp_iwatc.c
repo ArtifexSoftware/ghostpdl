@@ -1,6 +1,7 @@
 /* Copyright (C) 1991, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
- * This software is licensed to a single customer by Artifex Software Inc.
- * under the terms of a specific OEM agreement.
+
+   This software is licensed to a single customer by Artifex Software Inc.
+   under the terms of a specific OEM agreement.
  */
 
 /*$RCSfile$ $Revision$ */
@@ -16,6 +17,7 @@
 
 /* Library routines not declared in a standard header */
 extern char *getenv(P1(const char *));
+extern char *mktemp(P1(char *));	/* in gp_mktmp.c */
 
 /* Define a substitute for stdprn (see below). */
 private FILE *gs_stdprn;
@@ -111,45 +113,27 @@ gp_close_printer(FILE * pfile, const char *fname)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
-		     const char *mode)
-{
-    /* Unfortunately, Watcom C doesn't provide mktemp, */
-    /* so we have to simulate it ourselves. */
-    struct stat fst;
-    char *end;
-
-    /* The -7 is for AA.AAA plus a possible final \. */
+gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
+{	      /* The -7 is for XXXXXXX */
     int len = gp_file_name_sizeof - strlen(prefix) - 7;
 
     if (gp_getenv("TEMP", fname, &len) != 0)
 	*fname = 0;
-    else if (*fname) {
-	switch (fname[strlen(fname) - 1]) {
-	default:
+    else {
+	char *temp;
+
+	/* Prevent X's in path from being converted by mktemp. */
+	for (temp = fname; *temp; temp++)
+	    *temp = tolower(*temp);
+	if (strlen(fname) && (fname[strlen(fname) - 1] != '\\'))
 	    strcat(fname, "\\");
-	case ':':
-	case '\\':
-	    ;
-	}
     }
     strcat(fname, prefix);
-    strcat(fname, "AA.AAA");
-    end = fname + strlen(fname) - 1;
-    while (stat(fname, &fst) == 0) {
-	char *inc = end;
-
-	while (*inc == 'Z' || *inc == '.') {
-	    if (*inc == 'Z')
-		*inc = 'A';
-	    inc--;
-	    if (end - inc == 6)
-		return 0;
-	}
-	++*inc;
-    }
+    strcat(fname, "XXXXXX");
+    mktemp(fname);
     return fopen(fname, mode);
 }
+
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *

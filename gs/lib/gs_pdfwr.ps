@@ -1,4 +1,5 @@
 %    Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -101,12 +102,18 @@ userdict /.pdfcvstring () put
     pop aload pop /.PUTINTERVAL .pdfcvsall
   } bind
 .dicttomark readonly def
-/pdfmark		% -mark- <key> <value> ... <markname> pdfmark -
- { counttomark 1 add copy
-   //.pdfmarkparams 1 index .knownget { exec } { .pdfcvsall } ifelse
-   mark /pdfmark 3 -1 roll .pdfputparams
-   type /booleantype ne { cleartomark } if cleartomark
- } odef
+/.pdfparamerror {	% ? ? ? -mark- ... <errname> <opname> .pdfparamerror -
+    counttomark 4 add 2 roll cleartomark pop pop pop
+    .systemvar exch signalerror
+} bind def
+/pdfmark {		% -mark- <key> <value> ... <markname> pdfmark -
+  counttomark 1 add copy
+  //.pdfmarkparams 1 index .knownget { exec } { .pdfcvsall } ifelse
+  mark /pdfmark 3 -1 roll .pdfputparams
+  dup type /booleantype ne {
+    /pdfmark .pdfparamerror
+  } if cleartomark
+} odef
 userdict /pdfmark .undef
 currentdict /.pdfmarkparams .undef
 
@@ -215,12 +222,16 @@ currentdict /.pdfmarkparams .undef
     { /pdfwrite finddevice }
    ifelse
  } bind def
-/setdistillerparams		% <dict> setdistillerparams -
- { .distillerdevice null false mark 4 index
-    { //.distillerparamkeys 2 index .knownget { exec } { pop pop } ifelse }
-   forall .putdeviceparams
-   type /booleantype eq { pop } { cleartomark pop pop pop } ifelse pop
- } odef
+/setdistillerparams {		% <dict> setdistillerparams -
+  .distillerdevice null false mark 4 index {
+    //.distillerparamkeys 2 index .knownget { exec } { pop pop } ifelse
+  } forall .putdeviceparams
+  dup type /booleantype ne {
+    /setdistillerparams .pdfparamerror
+  } {
+    pop pop pop
+  } ifelse
+} odef
 /currentdistillerparams		% - currentdistillerparams <dict>
  { .distillerdevice //.distillerparamkeys .getdeviceparams .dicttomark
  } odef
