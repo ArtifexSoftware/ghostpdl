@@ -139,15 +139,110 @@ source files.
 <h2><a name="Plumbing"></a>Plumbing</h2>
 
 <p>
-Memory manager
+Memory manager -- see <a href="#Memory_management">below</a>.
 
 <p>
-Stream package
-	Framework, files, strings
-	Filters
+Stream package: framework, files, strings
 
 <p>
-Platform-specific code
+Files:
+<a href="../src/scommon.h">src/scommon.h</a>,
+<a href="../src/sfxboth.c">src/sfxboth.c</a>,
+<a href="../src/sfxfd.c">src/sfxfd.c</a>,
+<a href="../src/sfxstdio.c">src/sfxstdio.c</a>,
+<a href="../src/stream.h">src/stream.h</a>,
+<a href="../src/stream.c">src/stream.c</a>,
+<a href="../src/strimpl.h">src/strimpl.h</a>.
+
+<p>
+Stream package: filters
+
+<p>
+Standard filter files:
+<a href="../src/sa85d.c">src/sa85d.c</a>,
+<a href="../src/sa85d.h">src/sa85d.h</a>,
+<a href="../src/sa85x.h">src/sa85x.h</a>,
+<a href="../src/scf.h">src/scf.h</a>,
+<a href="../src/scfd.c">src/scfd.c</a>,
+<a href="../src/scfdgen.c">src/scfdgen.c</a>,
+<a href="../src/scfdtab.c">src/scfdtab.c</a>,
+<a href="../src/scfe.c">src/scfe.c</a>,
+<a href="../src/scfetab.c">src/scfetab.c</a>,
+<a href="../src/scfparam.c">src/scfparam.c</a>,
+<a href="../src/scfx.h">src/scfx.h</a>,
+<a href="../src/sdcparam.c">src/sdcparam.c</a>,
+<a href="../src/sdcparam.h">src/sdcparam.h</a>,
+<a href="../src/sdct.h">src/sdct.h</a>,
+<a href="../src/sdctc.c">src/sdctc.c</a>,
+<a href="../src/sdctd.c">src/sdctd.c</a>,
+<a href="../src/sdcte.c">src/sdcte.c</a>,
+<a href="../src/sddparam.c">src/sddparam.c</a>,
+<a href="../src/sdeparam.c">src/sdeparam.c</a>,
+<a href="../src/sfilter1.c">src/sfilter1.c</a>,
+<a href="../src/sfilter2.c">src/sfilter2.c</a>,
+<a href="../src/sjpeg.h">src/sjpeg.h</a>,
+<a href="../src/sjpegc.c">src/sjpegc.c</a>,
+<a href="../src/sjpegd.c">src/sjpegd.c</a>,
+<a href="../src/sjpege.c">src/sjpege.c</a>,
+<a href="../src/slzwc.c">src/slzwc.c</a>,
+<a href="../src/slzwce.c">src/slzwce.c</a>,
+<a href="../src/slzwd.c">src/slzwd.c</a>,
+<a href="../src/slzwx.h">src/slzwx.h</a>,
+<a href="../src/srld.c">src/srld.c</a>,
+<a href="../src/srle.c">src/srle.c</a>,
+<a href="../src/srlx.h">src/srlx.h</a>,
+<a href="../src/sstring.c">src/sstring.c</a>,
+<a href="../src/sstring.h">src/sstring.h</a>.
+
+<p>
+Files for non-standard filters that are used to implement standard filters:
+<a href="../src/seexec.c">src/seexec.c</a>,
+<a href="../src/sfilter.h">src/sfilter.h</a>,
+<a href="../src/shc.c">src/shc.c</a>,
+<a href="../src/shc.h">src/shc.h</a>,
+<a href="../src/shcgen.c">src/shcgen.c</a>,
+<a href="../src/shcgen.h">src/shcgen.h</a>,
+<a href="../src/spdiff.c">src/spdiff.c</a>,
+<a href="../src/spdiffx.h">src/spdiffx.h</a>,
+<a href="../src/spngp.c">src/spngp.c</a>,
+<a href="../src/spngpx.h">src/spngpx.h</a>,
+<a href="../src/szlibc.c">src/szlibc.c</a>,
+<a href="../src/szlibd.c">src/szlibd.c</a>,
+<a href="../src/szlibe.c">src/szlibe.c</a>,
+<a href="../src/szlibx.h">src/szlibx.h</a>,
+<a href="../src/szlibxx.h">src/szlibxx.h</a>.
+
+<p>
+Non-standard filter files:
+<a href="../src/sbcp.c">src/sbcp.c</a>,
+<a href="../src/sbcp.h">src/sbcp.h</a>,
+<a href="../src/sbhc.c">src/sbhc.c</a>,
+<a href="../src/sbhc.h">src/sbhc.h</a>,
+<a href="../src/sbtx.h">src/sbtx.h</a>,
+<a href="../src/sbwbs.c">src/sbwbs.c</a>,
+<a href="../src/sbwbs.h">src/sbwbs.h</a>,
+<a href="../src/smd5.c">src/smd5.c</a>,
+<a href="../src/smd5.h">src/smd5.h</a>,
+<a href="../src/smtf.c">src/smtf.c</a>,
+<a href="../src/smtf.h">src/smtf.h</a>.
+
+<p>
+Internal filter files:
+<a href="../src/siinterp.c">src/siinterp.c</a>,
+<a href="../src/siinterp.h">src/siinterp.h</a>,
+<a href="../src/siscale.c">src/siscale.c</a>,
+<a href="../src/siscale.h">src/siscale.h</a>,
+<a href="../src/sisparam.h">src/sisparam.h</a>.
+
+<p>
+Symbolic output support files: ****** MAYBE SHOULD BE MOVED ******
+<a href="../src/spprint.c">src/spprint.c</a>,
+<a href="../src/spprint.h">src/spprint.h</a>,
+<a href="../src/spsdf.c">src/spsdf.c</a>,
+<a href="../src/spsdf.h">src/spsdf.h</a>.
+
+<p>
+Platform-specific code -- see <a href="#Cross_platform_APIs">below</a>.
 
 <p>
 Miscellaneous
@@ -200,18 +295,88 @@ Built-in devices
 <h3><a name="PostScript_interpreter_support"></a>Support</h3>
 
 <p>
-Memory management (refs, GC, save/restore)
+Memory management (refs, GC, save/restore) -- see <a
+href="#PostScript_interpreter_extensions">below</a>.
 
 <p>
 Data structures (stacks, names, dicts, contexts)
 
 <p>
+General data structure files:
+<a href="../src/iddict.h">src/iddict.h</a>,
+<a href="../src/idict.h">src/idict.h</a>,
+<a href="../src/idictdef.h">src/idictdef.h</a>,
+<a href="../src/iname.c">src/iname.c</a>,
+<a href="../src/iname.h">src/iname.h</a>,
+<a href="../src/inamedef.h">src/inamedef.h</a>,
+<a href="../src/inameidx.h">src/inameidx.h</a>,
+<a href="../src/inames.h">src/inames.h</a>,
+<a href="../src/inamestr.h">src/inamestr.h</a>,
+<a href="../src/isdata.h">src/isdata.h</a>,
+<a href="../src/istack.c">src/istack.c</a>,
+<a href="../src/istack.h">src/istack.h</a>.
+
+<p>
+Specific-stack (dictionary, execution, operand) files:
+<a href="../src/dstack.h">src/dstack.h</a>,
+<a href="../src/estack.h">src/estack.h</a>,
+<a href="../src/iddstack.h">src/iddstack.h</a>,
+<a href="../src/idsdata.h">src/idsdata.h</a>,
+<a href="../src/idstack.c">src/idstack.c</a>,
+<a href="../src/idstack.h">src/idstack.h</a>,
+<a href="../src/iesdata.h">src/iesdata.h</a>,
+<a href="../src/iestack.h">src/iestack.h</a>,
+<a href="../src/iosdata.h">src/iosdata.h</a>,
+<a href="../src/iostack.h">src/iostack.h</a>,
+<a href="../src/ostack.h">src/ostack.h</a>.
+
+<p>
 Files/streams
+
+<p>
+File implementation files:
+<a href="../src/files.h">src/files.h</a>,
+<a href="../src/zfile.c">src/zfile.c</a>,
+<a href="../src/zfileio.c">src/zfileio.c</a>.
+
+<p>
+Stream and filter files:
+<a href="../src/ifilter.h">src/ifilter.h</a>,
+<a href="../src/ifilter2.h">src/ifilter2.h</a>,
+<a href="../src/ifrpred.h">src/ifrpred.h</a>,
+<a href="../src/ifwpred.h">src/ifwpred.h</a>,
+<a href="../src/istream.h">src/istream.h</a>,
+<a href="../src/zfbcp.c">src/zfbcp.c</a>,
+<a href="../src/zfdctd.c">src/zfdctd.c</a>,
+<a href="../src/zfdcte.c">src/zfdcte.c</a>,
+<a href="../src/zfdecode.c">src/zfdecode.c</a>,
+<a href="../src/zfilter.c">src/zfilter.c</a>,
+<a href="../src/zfilter2.c">src/zfilter2.c</a>,
+<a href="../src/zfilterx.c">src/zfilterx.c</a>,
+<a href="../src/zfmd5.c">src/zfmd5.c</a>,
+<a href="../src/zfproc.c">src/zfproc.c</a>,
+<a href="../src/zfrsd.c">src/zfrsd.c</a>,
+<a href="../src/zfzlib.c">src/zfzlib.c</a>.
 
 <p>
 Miscellaneous
 
 <h3><a name="Scanning_parsing"></a>Scanning/parsing</h3>
+
+<p>
+Files:
+<a href="../src/btoken.h">src/btoken.h</a>,
+<a href="../src/ibnum.c">src/ibnum.c</a>,
+<a href="../src/ibnum.h">src/ibnum.h</a>,
+<a href="../src/iscan.c">src/iscan.c</a>,
+<a href="../src/iscan.h">src/iscan.h</a>,
+<a href="../src/iscanbin.c">src/iscanbin.c</a>,
+<a href="../src/iscanbin.h">src/iscanbin.h</a>,
+<a href="../src/iscannum.c">src/iscannum.c</a>,
+<a href="../src/iscannum.h">src/iscannum.h</a>,
+<a href="../src/itoken.h">src/itoken.h</a>,
+<a href="../src/scanchar.h">src/scanchar.h</a>,
+<a href="../src/scantab.c">src/scantab.c</a>.
 
 <h3><a name="Standard operators"></a>Standard operators</h3>
 
@@ -757,7 +922,11 @@ href="#Interpreter_GC">q.v.</a>).
 Files:
 <a href="../src/ialloc.c">src/ialloc.c</a>,
 <a href="../src/ialloc.h">src/ialloc.h</a>,
-<a href="../src/imemory.h">src/imemory.h</a>.
+<a href="../src/iastate.h">src/iastate.h</a>,
+<a href="../src/iastruct.h">src/iastruct.h</a>,
+<a href="../src/ilocate.c">src/ilocate.c</a>,
+<a href="../src/imemory.h">src/imemory.h</a>,
+<a href="../src/istruct.h">src/istruct.h</a>.
 
 <h3><a name="save_forgetsave_restore"></a>save/.forgetsave/restore</h3>
 
@@ -845,7 +1014,8 @@ Files:
 <a href="../src/igc.h">src/igc.h</a>,
 <a href="../src/igcref.c">src/igcref.c</a>,
 <a href="../src/igcstr.c">src/igcstr.c</a>,
-<a href="../src/igcstr.h">src/igcstr.h</a>.
+<a href="../src/igcstr.h">src/igcstr.h</a>,
+<a href="../src/ireclaim.c">src/ireclaim.c</a>.
 
 <hr>
 
