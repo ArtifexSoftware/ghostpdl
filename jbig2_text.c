@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.13 2002/07/08 14:54:02 giles Exp $
+    $Id: jbig2_text.c,v 1.14 2002/07/09 09:38:37 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -66,6 +66,7 @@ typedef struct {
     bool SBRTEMPLATE;
     int8_t sbrat[4];
 } Jbig2TextRegionParams;
+
 
 /**
  * jbig2_decode_text_region: decode a text region segment
@@ -277,6 +278,58 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     return 0;
 }
 
+/* find a segment by number */
+static Jbig2Segment *
+find_segment(Jbig2Ctx *ctx, uint32_t number)
+{
+    int index, index_max = ctx->segment_index;
+    
+    // FIXME: binary search would be better?
+    for (index = index_max; index >= 0; index--)
+        if (ctx->segments[index]->number == number)
+            return (ctx->segments[index]);
+        
+    /* didn't find a match */
+    return NULL;
+}
+
+/* count the number of dictionary segments referred to by the given segment */
+static int
+count_referred_dicts(Jbig2Ctx *ctx, Jbig2Segment *segment)
+{
+    int index;
+    Jbig2Segment *rsegment;
+    int n_dicts = 0;
+
+    for (index = 0; index < segment->referred_to_segment_count; index++) {
+        rsegment = find_segment(ctx, segment->referred_to_segments[index]);
+        if (rsegment && ((rsegment->flags & 63) == 0))
+            n_dicts++;
+    }
+    
+    return (n_dicts);
+}
+
+/* return an array of pointers to symbol dictionaries referred to by the given segment */
+static Jbig2SymbolDict **
+list_referred_dicts(Jbig2Ctx *ctx, Jbig2Segment *segment)
+{
+    int index;
+    Jbig2Segment *rsegment;
+    Jbig2SymbolDict **dicts;
+    int n_dicts = count_referred_dicts(ctx, segment);
+    int dindex = 0;
+    
+    dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
+    for (index = 0; index < segment->referred_to_segment_count; index++) {
+        rsegment = find_segment(ctx, segment->referred_to_segments[index]);
+        if (rsegment && ((rsegment->flags & 63) == 0))
+            dicts[dindex++] = (Jbig2SymbolDict *)rsegment->result;
+    }
+    
+    return (dicts);
+}
+
 /**
  * jbig2_read_text_info: read a text region segment header
  **/
@@ -370,21 +423,13 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     }
     
     /* compose the list of symbol dictionaries */
-    n_dicts = 0;
-    for (index = 0; index < segment->referred_to_segment_count; index++) {
-        int sindex = segment->referred_to_segments[index];
-        if ((ctx->segments[sindex]->flags & 63) == 0)
-            n_dicts++;
+    n_dicts = count_referred_dicts(ctx, segment);
+    if (n_dicts != 0) {
+        dicts = list_referred_dicts(ctx, segment);
+    } else {
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                "text region refers to no symbol dictionaries!");
     }
-    dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
-    for (index = 0; index < segment->referred_to_segment_count; index++) {
-        int sindex = segment->referred_to_segments[index];
-        int dindex = 0;
-        if ((ctx->segments[sindex]->flags & 63) == 0)
-            dicts[dindex++] = (Jbig2SymbolDict *)ctx->segments[sindex]->result;
-    }
-    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-        "refers to %d symbol dictionaries", n_dicts);
     
     page_image = ctx->pages[ctx->current_page].image;
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
