@@ -40,6 +40,7 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 % each time we do a PDF gsave or grestore.
 % The keys in this dictionary are as follows:
 %	self			% identifies the dictionary as one of ours
+%	ClipRect		% (optional)
 %	Show
 %	TextSaveMatrix		% matrix at time of BT
 % (The following correspond directly to PDF state parameters.)
@@ -61,14 +62,19 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 nodict /self { //nodict } executeonly put
 nodict readonly pop
 
-/beginpage
- { //nodict 20 dict .copydict begin graphicsbeginpage textbeginpage
- } bdef
-/endpage
- { showpage end
- } bdef
+/dictbeginpage {	% <initialdict> dictbeginpage -
+  //nodict 20 dict .copydict begin { def } forall
+  graphicsbeginpage textbeginpage
+} bdef
+/endpage {	% - endpage -
+  showpage end
+} bdef
 
-/graphicsbeginpage { initgraphics  0 g  0 G } bdef
+/graphicsbeginpage {
+  initgraphics
+  currentdict /ClipRect .knownget { aload pop rectclip } if
+  0 g  0 G
+} bdef
 
 /gput		% <value> <key> gput -
  { exch currentdict //nodict eq { /self dup load end 5 dict begin def } if

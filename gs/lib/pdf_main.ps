@@ -501,8 +501,15 @@ end readonly def
  { /DSCPageCount DSCPageCount 1 add store
  } bind def
 
-/.pdfshowpage_Install {	% <tx> <ty> [<prevproc>] .pdfshowpage_Install -
-  3 1 roll translate 0 get exec
+/.pdfshowpage_Install {	% <pagedict> [<prevproc>] .pdfshowpage_Install -
+  exch
+	% We would like to clip to the CropBox here, but the subsequent
+	% initgraphics would override it.  Instead, we have to handle it
+	% in graphicsbeginpage.
+  dup /MediaBox pget {
+    dup 0 get neg exch 1 get neg translate
+  } if
+  pop 0 get exec
 } bind def
 
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
@@ -518,50 +525,36 @@ end readonly def
 	% Stack: pagedict currentpagedict
   1 index /MediaBox pget {
 			% Set the page size.
-    boxrect [ 2 index 2 index ]
-	% Stack: pagedict currentpagedict llx lly width height pagesize
-    /PageSize exch def
-			% Set the offset on the page.
-	% Stack: pagedict currentpagedict llx lly width height
-			% Make the page offset values reals to simplify the
-			% testing of the Install procedure below.
-    pop pop exch 0.0 exch sub exch 0.0 exch sub
-	% Stack: pagedict currentpagedict -llx -lly
-    [ 3 1 roll 3 index /Install .knownget {
+    boxrect 2 array astore /PageSize exch def pop pop
+  } if
+  dup /Install .knownget {
 			% Don't let the Install procedure get more deeply
 			% nested after every page.
       dup type /arraytype eq {
-	dup length 5 eq {
-	  dup 3 get /.pdfshowpage_Install load eq {
-	% Stack: mark tx ty [oldtx oldty [oldproc] .pdfshowpage_Install exec]
-	    aload pop pop pop
-	    5 2 roll 3 -1 roll add
-	% Stack: mark oldty [oldproc] ty newtx
-	    exch 4 -1 roll add
-	% Stack: mark [oldproc] newtx newty
-	    3 -1 roll 0 get
+	dup length 4 eq {
+	  dup 2 get /.pdfshowpage_Install load eq {
+	    1 get dup length 0 ne { 1 get } if
 	  } if
 	} if
       } if
-      1 array astore /.pdfshowpage_Install load /exec load
-    } {
-      /translate load
-    } ifelse ] cvx
+      1 array astore
+  } {
+    { }
+  } ifelse
+  2 index exch /.pdfshowpage_Install load /exec load
+  4 packedarray cvx
 	% Stack: pagedict currentpagedict installproc
-    /Install exch def
-  } if
+  /Install exch def
 	% Stack: pagedict currentpagedict
   pop currentdict end setpagedevice
 } bind def
 
 /pdfshowpage_finish	% <pagedict> pdfshowpage_finish -
  {
-	% Copy crop box.
-   dup /CropBox pget
-    { boxrect rectclip
-      dup /CropBox knownoget { mark /CropBox 3 -1 roll /PAGE pdfmark } if
-    }
-   if
+	% Copy the crop box.
+   dup /CropBox knownoget {
+      mark /CropBox 3 -1 roll /PAGE pdfmark
+   } if
 
 	% Copy annotations and links.
    dup /Annots knownoget
@@ -580,7 +573,11 @@ end readonly def
    /UCRDefault currentundercolorremoval def
 	%****** DOESN'T HANDLE COLOR TRANSFER YET ******
    /TRDefault currenttransfer def
-   matrix currentmatrix beginpage setmatrix
+  matrix currentmatrix 2 dict
+  2 index /CropBox knownoget {
+    boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
+  } if
+  dictbeginpage setmatrix
    dup /Contents knownoget not { 0 array } if
    dup type /arraytype ne { 1 array astore } if
    count 1 sub /pdfemptycount exch store
