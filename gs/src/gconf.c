@@ -16,6 +16,7 @@
    all copies.
  */
 
+#define IN_GCONF_C	1	/* set for gconf.h to prevent conflict def'n */
 
 /* Configuration tables */
 #include "memory_.h"

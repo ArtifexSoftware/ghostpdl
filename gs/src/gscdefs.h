@@ -58,7 +58,9 @@ extern const char *const gs_init_file;
 
 #define extern_gx_image_type_table()\
   extern const gx_image_type_t * const gx_image_type_table[]
+#ifndef IN_GCONF_C
 extern const unsigned gx_image_type_table_count;
+#endif
 
 /* We need the extra typedef so that the const will apply to the table. */
 #define extern_gx_init_table()\
@@ -67,7 +69,9 @@ extern const unsigned gx_image_type_table_count;
 
 #define extern_gx_io_device_table()\
   extern const gx_io_device * const gx_io_device_table[]
+#ifndef IN_GCONF_C
 extern const unsigned gx_io_device_table_count;
+#endif
 
 /* Return the list of device prototypes, the list of their structure */
 /* descriptors, and (as the value) the length of the lists. */
