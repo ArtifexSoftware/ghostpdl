@@ -56,7 +56,7 @@ ztoken(i_ctx_t *i_ctx_p)
 	}
 	case t_string: {
 	    ref token;
-	    os_ptr op_orig = osp;
+	    int orig_ostack_depth = ref_stack_count(&o_stack);
 	    int code = scan_string_token(i_ctx_p, op, &token);
 
 	    switch (code) {
@@ -65,7 +65,9 @@ ztoken(i_ctx_t *i_ctx_p)
 		return 0;
 	    default:
 		if (code < 0) {
-		    osp = op = op_orig;
+		    /* Clear anything that may have been left on the ostack */
+	    	    if (orig_ostack_depth < ref_stack_count(&o_stack))
+	    		pop(ref_stack_count(&o_stack)- orig_ostack_depth);
 		    return code;
 		}
 	    }
