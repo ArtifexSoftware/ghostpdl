@@ -54,7 +54,8 @@ public class GpickleThread extends Gpickle implements Runnable {
   /** Enable/disable lookahead fetches.
   * NB would be nice to look back when user is paging backwards.
   */
-  public volatile boolean lookAhead = true;
+  private volatile boolean lookAhead = true;
+  private final static boolean lookAheadFeatureEnabled = true;
 
   /** true if getting page count, false if getting a page */
   private volatile boolean getPageCount = false;
@@ -105,8 +106,8 @@ public class GpickleThread extends Gpickle implements Runnable {
 	      observer.imageIsReady( getPrinterOutputPage( currentPage ) );
 	  }
           if (debugPerformance) {
-             gotItTime = System.currentTimeMillis() - gotItTime;	
-             System.out.println("Page " + currentPage + " User time: " +  
+	     gotItTime = System.currentTimeMillis() - gotItTime;	
+	     System.out.println("Page " + currentPage + " User time: " +  
 				gotItTime + " milliseconds" );
           }
 
@@ -157,24 +158,21 @@ public class GpickleThread extends Gpickle implements Runnable {
      notify();
   }
 
-  /** startProduction with the ability to disable lookAhead
-   * useful when user is zoom/translating on a page
+  /** startProduction with defaulted lookAhead
    */
-  public void startProduction( int pageNumber, boolean _lookAhead )
+  public void startProduction( int pageNumber )
   {
-      boolean caching = _lookAhead;
-
-      lookAhead = _lookAhead;
-      startProduction( pageNumber );
-      lookAhead = caching;
+      startProduction( pageNumber, lookAheadFeatureEnabled );
   }
 
   /** if not generating then start generated requested page
    *  if already generating remember last request and return
+   *  Set lookAhead flag to prefetch next page into cache.
    */
-  public void startProduction( int pageNumber )
+  public void startProduction( int pageNumber, boolean _lookAhead  )
   {
-     if (debugSpew) System.out.println("Request =" + pageNumber);	
+     if (debugSpew) System.out.println("Request =" + pageNumber +
+				       " lookAhead " + _lookAhead );	
 
      if (goFlag) {   // one at a time please
         nextPage = pageNumber;
@@ -185,6 +183,9 @@ public class GpickleThread extends Gpickle implements Runnable {
      if (debugPerformance) {
         gotItTime = System.currentTimeMillis();	
      }
+
+     // look ahead flag
+     lookAhead = _lookAhead && lookAheadFeatureEnabled;
 
      resume(); // kickStartTread
   }
