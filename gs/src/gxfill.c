@@ -1721,7 +1721,12 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    }
 #	endif
 #	if CURVED_TRAPEZOID_FILL
-	if (y == y1) {
+	if (y >= y1) {
+	    /* The condition above should be y == y1, but we replaced it with
+	       a weaker one to provide a tolerance to a bug in monotonize_internal.
+	       That bug causes non-monotonic curves to come here
+	       and a zerodivide when intersecting with horizontal segments.
+	       A test case is RodinCIDEmbed.pdf page 3 at 72dpi with ppmraw. */
 	    code = process_h_segments(ll, y);
 	    if (code < 0)
 		return code;
