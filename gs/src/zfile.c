@@ -66,6 +66,7 @@ private int zopen_file(P5(i_ctx_t *, const gs_parsed_file_name_t *pfn,
 private iodev_proc_open_file(iodev_os_open_file);
 private void file_init_stream(P5(stream *s, FILE *file, const char *fmode,
 				 byte *buffer, uint buffer_size));
+private stream_proc_report(filter_report_error);
 
 /*
  * Since there can be many file objects referring to the same file/stream,
@@ -178,7 +179,7 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
         if (string_match( (const unsigned char*) fname, len,
 			  permitstring.value.bytes, r_size(&permitstring), 
 		filenamesep[0] == 0 ? &win_filename_params : NULL)
-	   )
+	   ) {
 	    /*
 	     * We can't know where we will get to if we reference the parent
 	     * directory, so don't allow access if LockFilePermissions is true
@@ -190,6 +191,7 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 		continue;	/* disregard this match and keep trying */
 	    else
 		return 0;		/* success */
+	}
     }
     /* not found */
     return e_invalidfileaccess;
@@ -337,7 +339,7 @@ zfilenameforall(i_ctx_t *i_ctx_p)
         pop(3);
         return 0;	/* no pattern, or device not found -- just return */
     }
-    pfen = iodev->procs.enumerate_files(iodev, (char *)pname.fname,
+    pfen = iodev->procs.enumerate_files(iodev, (const char *)pname.fname,
     		pname.len, imemory);
     if (pfen == 0)
 	return_error(e_VMerror);
@@ -416,15 +418,19 @@ zrenamefile(i_ctx_t *i_ctx_p)
 		pname2.iodev = pname1.iodev;
 	}
 	if (pname1.iodev != pname2.iodev ||
-	    pname1.iodev == iodev_default &&
+	    (pname1.iodev == iodev_default &&
+		/*
+		 * We require FileControl permissions on the source path
+		 * unless it is a temporary file. Also, we require FileControl
+		 * and FileWriting permissions to the destination file/path.
+		 */
 	      ((check_file_permissions(i_ctx_p, pname1.fname, pname1.len,
 	      				"PermitFileControl") < 0 &&
 	          !file_is_tempfile(i_ctx_p, op - 1) < 0) ||
-	      check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
+	      (check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
 	      				"PermitFileControl") < 0 ||
 	      check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
-	      				"PermitFileWriting") < 0 )) {
-	    /* add a check to permit pname1 to be a tempfile */
+	      				"PermitFileWriting") < 0 )))) {
 	    code = gs_note_error(e_invalidfileaccess);
 	} else {
 	    code = (*pname1.iodev->procs.rename_file)(pname1.iodev,
