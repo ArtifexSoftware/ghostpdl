@@ -1,19 +1,19 @@
 
 /* pngtrans.c - transforms the data in a row (used by both readers and writers)
-
-   libpng 1.0 beta 6 - version 0.96
-   For conditions of distribution and use, see copyright notice in png.h
-   Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.
-   Copyright (c) 1996, 1997 Andreas Dilger
-   May 12, 1997
-   */
+ *
+ * libpng 1.0.8 - July 24, 2000
+ * For conditions of distribution and use, see copyright notice in png.h
+ * Copyright (c) 1998, 1999, 2000 Glenn Randers-Pehrson
+ * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
+ * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
+ */
 
 #define PNG_INTERNAL
 #include "png.h"
 
 #if defined(PNG_READ_BGR_SUPPORTED) || defined(PNG_WRITE_BGR_SUPPORTED)
-/* turn on bgr to rgb mapping */
-void
+/* turn on BGR-to-RGB mapping */
+void PNGAPI
 png_set_bgr(png_structp png_ptr)
 {
    png_debug(1, "in png_set_bgr\n");
@@ -23,7 +23,7 @@ png_set_bgr(png_structp png_ptr)
 
 #if defined(PNG_READ_SWAP_SUPPORTED) || defined(PNG_WRITE_SWAP_SUPPORTED)
 /* turn on 16 bit byte swapping */
-void
+void PNGAPI
 png_set_swap(png_structp png_ptr)
 {
    png_debug(1, "in png_set_swap\n");
@@ -34,7 +34,7 @@ png_set_swap(png_structp png_ptr)
 
 #if defined(PNG_READ_PACK_SUPPORTED) || defined(PNG_WRITE_PACK_SUPPORTED)
 /* turn on pixel packing */
-void
+void PNGAPI
 png_set_packing(png_structp png_ptr)
 {
    png_debug(1, "in png_set_packing\n");
@@ -48,7 +48,7 @@ png_set_packing(png_structp png_ptr)
 
 #if defined(PNG_READ_PACKSWAP_SUPPORTED)||defined(PNG_WRITE_PACKSWAP_SUPPORTED)
 /* turn on packed pixel swapping */
-void
+void PNGAPI
 png_set_packswap(png_structp png_ptr)
 {
    png_debug(1, "in png_set_packswap\n");
@@ -58,7 +58,7 @@ png_set_packswap(png_structp png_ptr)
 #endif
 
 #if defined(PNG_READ_SHIFT_SUPPORTED) || defined(PNG_WRITE_SHIFT_SUPPORTED)
-void
+void PNGAPI
 png_set_shift(png_structp png_ptr, png_color_8p true_bits)
 {
    png_debug(1, "in png_set_shift\n");
@@ -67,28 +67,29 @@ png_set_shift(png_structp png_ptr, png_color_8p true_bits)
 }
 #endif
 
-#if defined(PNG_READ_INTERLACING_SUPPORTED) || defined(PNG_WRITE_INTERLACING_SUPPORTED)
-int
+#if defined(PNG_READ_INTERLACING_SUPPORTED) || \
+    defined(PNG_WRITE_INTERLACING_SUPPORTED)
+int PNGAPI
 png_set_interlace_handling(png_structp png_ptr)
 {
    png_debug(1, "in png_set_interlace handling\n");
    if (png_ptr->interlaced)
    {
       png_ptr->transformations |= PNG_INTERLACE;
-      return 7;
+      return (7);
    }
 
-   return 1;
+   return (1);
 }
 #endif
 
 #if defined(PNG_READ_FILLER_SUPPORTED) || defined(PNG_WRITE_FILLER_SUPPORTED)
 /* Add a filler byte on read, or remove a filler or alpha byte on write.
  * The filler type has changed in v0.95 to allow future 2-byte fillers
- * for 48-bit input data, as well as avoiding problems with some compilers
- * which don't like bytes as parameters.
+ * for 48-bit input data, as well as to avoid problems with some compilers
+ * that don't like bytes as parameters.
  */
-void
+void PNGAPI
 png_set_filler(png_structp png_ptr, png_uint_32 filler, int filler_loc)
 {
    png_debug(1, "in png_set_filler\n");
@@ -99,17 +100,29 @@ png_set_filler(png_structp png_ptr, png_uint_32 filler, int filler_loc)
    else
       png_ptr->flags &= ~PNG_FLAG_FILLER_AFTER;
 
-   /* This should probably go in the "do_filler" routine */
-   if (png_ptr->color_type == PNG_COLOR_TYPE_RGB && png_ptr->bit_depth == 8)
+   /* This should probably go in the "do_filler" routine.
+    * I attempted to do that in libpng-1.0.1a but that caused problems
+    * so I restored it in libpng-1.0.2a
+   */
+
+   if (png_ptr->color_type == PNG_COLOR_TYPE_RGB)
    {
       png_ptr->usr_channels = 4;
+   }
+
+   /* Also I added this in libpng-1.0.2a (what happens when we expand
+    * a less-than-8-bit grayscale to GA? */
+
+   if (png_ptr->color_type == PNG_COLOR_TYPE_GRAY && png_ptr->bit_depth >= 8)
+   {
+      png_ptr->usr_channels = 2;
    }
 }
 #endif
 
 #if defined(PNG_READ_SWAP_ALPHA_SUPPORTED) || \
     defined(PNG_WRITE_SWAP_ALPHA_SUPPORTED)
-void
+void PNGAPI
 png_set_swap_alpha(png_structp png_ptr)
 {
    png_debug(1, "in png_set_swap_alpha\n");
@@ -117,16 +130,26 @@ png_set_swap_alpha(png_structp png_ptr)
 }
 #endif
 
+#if defined(PNG_READ_INVERT_ALPHA_SUPPORTED) || \
+    defined(PNG_WRITE_INVERT_ALPHA_SUPPORTED)
+void PNGAPI
+png_set_invert_alpha(png_structp png_ptr)
+{
+   png_debug(1, "in png_set_invert_alpha\n");
+   png_ptr->transformations |= PNG_INVERT_ALPHA;
+}
+#endif
+
 #if defined(PNG_READ_INVERT_SUPPORTED) || defined(PNG_WRITE_INVERT_SUPPORTED)
-void
+void PNGAPI
 png_set_invert_mono(png_structp png_ptr)
 {
    png_debug(1, "in png_set_invert_mono\n");
    png_ptr->transformations |= PNG_INVERT_MONO;
 }
 
-/* invert monocrome grayscale data */
-void
+/* invert monochrome grayscale data */
+void /* PRIVATE */
 png_do_invert(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_invert\n");
@@ -136,12 +159,14 @@ png_do_invert(png_row_infop row_info, png_bytep row)
 #endif
        row_info->color_type == PNG_COLOR_TYPE_GRAY)
    {
-      png_bytep rp;
+      png_bytep rp = row;
       png_uint_32 i;
+      png_uint_32 istop = row_info->rowbytes;
 
-      for (i = 0, rp = row; i < row_info->rowbytes; i++, rp++)
+      for (i = 0; i < istop; i++)
       {
          *rp = (png_byte)(~(*rp));
+         rp++;
       }
    }
 }
@@ -149,7 +174,7 @@ png_do_invert(png_row_infop row_info, png_bytep row)
 
 #if defined(PNG_READ_SWAP_SUPPORTED) || defined(PNG_WRITE_SWAP_SUPPORTED)
 /* swaps byte order on 16 bit depth images */
-void
+void /* PRIVATE */
 png_do_swap(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_swap\n");
@@ -159,15 +184,13 @@ png_do_swap(png_row_infop row_info, png_bytep row)
 #endif
        row_info->bit_depth == 16)
    {
-      png_bytep rp;
-      png_byte t;
+      png_bytep rp = row;
       png_uint_32 i;
+      png_uint_32 istop= row_info->width * row_info->channels;
 
-      for (i = 0, rp = row;
-         i < row_info->width * row_info->channels;
-         i++, rp += 2)
+      for (i = 0; i < istop; i++, rp += 2)
       {
-         t = *rp;
+         png_byte t = *rp;
          *rp = *(rp + 1);
          *(rp + 1) = t;
       }
@@ -282,13 +305,13 @@ static png_byte fourbppswaptable[256] = {
 };
 
 /* swaps pixel packing order within bytes */
-void
+void /* PRIVATE */
 png_do_packswap(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_packswap\n");
    if (
 #if defined(PNG_USELESS_TESTS_SUPPORTED)
-       row != NULL && row_info != NULL
+       row != NULL && row_info != NULL &&
 #endif
        row_info->bit_depth < 8)
    {
@@ -314,7 +337,7 @@ png_do_packswap(png_row_infop row_info, png_bytep row)
 #if defined(PNG_WRITE_FILLER_SUPPORTED) || \
     defined(PNG_READ_STRIP_ALPHA_SUPPORTED)
 /* remove filler or alpha byte(s) */
-void
+void /* PRIVATE */
 png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
 {
    png_debug(1, "in png_do_strip_filler\n");
@@ -326,6 +349,11 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
       if (row_info->color_type == PNG_COLOR_TYPE_RGB ||
           row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
 */
+      png_bytep sp=row;
+      png_bytep dp=row;
+      png_uint_32 row_width=row_info->width;
+      png_uint_32 i;
+
       if (row_info->channels == 4)
       {
          if (row_info->bit_depth == 8)
@@ -333,10 +361,8 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
             /* This converts from RGBX or RGBA to RGB */
             if (flags & PNG_FLAG_FILLER_AFTER)
             {
-               png_bytep sp, dp;
-               png_uint_32 i;
-
-               for (i = 1, sp = row + 4, dp = row + 3; i < row_info->width; i++)
+               dp+=3; sp+=4;
+               for (i = 1; i < row_width; i++)
                {
                   *dp++ = *sp++;
                   *dp++ = *sp++;
@@ -347,10 +373,7 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
             /* This converts from XRGB or ARGB to RGB */
             else
             {
-               png_bytep sp, dp;
-               png_uint_32 i;
-
-               for (i = 0, sp = row, dp = row; i < row_info->width; i++)
+               for (i = 0; i < row_width; i++)
                {
                   sp++;
                   *dp++ = *sp++;
@@ -359,17 +382,15 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
                }
             }
             row_info->pixel_depth = 24;
-            row_info->rowbytes = row_info->width * 3;
+            row_info->rowbytes = row_width * 3;
          }
          else /* if (row_info->bit_depth == 16) */
          {
             if (flags & PNG_FLAG_FILLER_AFTER)
             {
-               png_bytep sp, dp;
-               png_uint_32 i;
-
                /* This converts from RRGGBBXX or RRGGBBAA to RRGGBB */
-               for (i = 1, sp = row + 8, dp = row + 6; i < row_info->width; i++)
+               sp += 8; dp += 6;
+               for (i = 1; i < row_width; i++)
                {
                   /* This could be (although memcpy is probably slower):
                   png_memcpy(dp, sp, 6);
@@ -387,17 +408,15 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
             }
             else
             {
-               png_bytep sp, dp;
-               png_uint_32 i;
-
                /* This converts from XXRRGGBB or AARRGGBB to RRGGBB */
-               for (i = 0, sp = row + 2, dp = row; i < row_info->width; i++)
+               for (i = 0; i < row_width; i++)
                {
                   /* This could be (although memcpy is probably slower):
                   png_memcpy(dp, sp, 6);
                   sp += 8;
                   dp += 6;
                   */
+                  sp+=2;
                   *dp++ = *sp++;
                   *dp++ = *sp++;
                   *dp++ = *sp++;
@@ -407,9 +426,10 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
                }
             }
             row_info->pixel_depth = 48;
-            row_info->rowbytes = row_info->width * 6;
+            row_info->rowbytes = row_width * 6;
          }
          row_info->channels = 3;
+         row_info->color_type &= ~PNG_COLOR_MASK_ALPHA;
       }
 /*
       else if (row_info->color_type == PNG_COLOR_TYPE_GRAY ||
@@ -422,10 +442,7 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
             /* This converts from GX or GA to G */
             if (flags & PNG_FLAG_FILLER_AFTER)
             {
-               png_bytep sp, dp;
-               png_uint_32 i;
-
-               for (i = 1, sp = row + 2, dp = row + 1; i < row_info->width; i++)
+               for (i = 0; i < row_width; i++)
                {
                   *dp++ = *sp++;
                   sp++;
@@ -434,27 +451,22 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
             /* This converts from XG or AG to G */
             else
             {
-               png_bytep sp, dp;
-               png_uint_32 i;
-
-               for (i = 0, sp = row, dp = row; i < row_info->width; i++)
+               for (i = 0; i < row_width; i++)
                {
                   sp++;
                   *dp++ = *sp++;
                }
             }
             row_info->pixel_depth = 8;
-            row_info->rowbytes = row_info->width;
+            row_info->rowbytes = row_width;
          }
          else /* if (row_info->bit_depth == 16) */
          {
             if (flags & PNG_FLAG_FILLER_AFTER)
             {
-               png_bytep sp, dp;
-               png_uint_32 i;
-
                /* This converts from GGXX or GGAA to GG */
-               for (i = 1, sp = row + 4, dp = row + 2; i < row_info->width; i++)
+               sp += 4; dp += 2;
+               for (i = 1; i < row_width; i++)
                {
                   *dp++ = *sp++;
                   *dp++ = *sp++;
@@ -463,11 +475,8 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
             }
             else
             {
-               png_bytep sp, dp;
-               png_uint_32 i;
-
                /* This converts from XXGG or AAGG to GG */
-               for (i = 0, sp = row, dp = row; i < row_info->width; i++)
+               for (i = 0; i < row_width; i++)
                {
                   sp += 2;
                   *dp++ = *sp++;
@@ -475,9 +484,10 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
                }
             }
             row_info->pixel_depth = 16;
-            row_info->rowbytes = row_info->width * 2;
+            row_info->rowbytes = row_width * 2;
          }
          row_info->channels = 1;
+         row_info->color_type &= ~PNG_COLOR_MASK_ALPHA;
       }
    }
 }
@@ -485,7 +495,7 @@ png_do_strip_filler(png_row_infop row_info, png_bytep row, png_uint_32 flags)
 
 #if defined(PNG_READ_BGR_SUPPORTED) || defined(PNG_WRITE_BGR_SUPPORTED)
 /* swaps red and blue bytes within a pixel */
-void
+void /* PRIVATE */
 png_do_bgr(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_bgr\n");
@@ -495,17 +505,17 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
 #endif
        (row_info->color_type & PNG_COLOR_MASK_COLOR))
    {
+      png_uint_32 row_width = row_info->width;
       if (row_info->bit_depth == 8)
       {
          if (row_info->color_type == PNG_COLOR_TYPE_RGB)
          {
             png_bytep rp;
-            png_byte save;
             png_uint_32 i;
 
-            for (i = 0, rp = row; i < row_info->width; i++, rp += 3)
+            for (i = 0, rp = row; i < row_width; i++, rp += 3)
             {
-               save = *rp;
+               png_byte save = *rp;
                *rp = *(rp + 2);
                *(rp + 2) = save;
             }
@@ -513,12 +523,11 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
          else if (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
          {
             png_bytep rp;
-            png_byte save;
             png_uint_32 i;
 
-            for (i = 0, rp = row; i < row_info->width; i++, rp += 4)
+            for (i = 0, rp = row; i < row_width; i++, rp += 4)
             {
-               save = *rp;
+               png_byte save = *rp;
                *rp = *(rp + 2);
                *(rp + 2) = save;
             }
@@ -529,33 +538,31 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
          if (row_info->color_type == PNG_COLOR_TYPE_RGB)
          {
             png_bytep rp;
-            png_byte save[2];
             png_uint_32 i;
 
-            for (i = 0, rp = row; i < row_info->width; i++, rp += 6)
+            for (i = 0, rp = row; i < row_width; i++, rp += 6)
             {
-               save[0] = *rp;
-               save[1] = *(rp + 1);
+               png_byte save = *rp;
                *rp = *(rp + 4);
+               *(rp + 4) = save;
+               save = *(rp + 1);
                *(rp + 1) = *(rp + 5);
-               *(rp + 4) = save[0];
-               *(rp + 5) = save[1];
+               *(rp + 5) = save;
             }
          }
          else if (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
          {
             png_bytep rp;
-            png_byte save[2];
             png_uint_32 i;
 
-            for (i = 0, rp = row; i < row_info->width; i++, rp += 8)
+            for (i = 0, rp = row; i < row_width; i++, rp += 8)
             {
-               save[0] = *rp;
-               save[1] = *(rp + 1);
+               png_byte save = *rp;
                *rp = *(rp + 4);
+               *(rp + 4) = save;
+               save = *(rp + 1);
                *(rp + 1) = *(rp + 5);
-               *(rp + 4) = save[0];
-               *(rp + 5) = save[1];
+               *(rp + 5) = save;
             }
          }
       }
@@ -563,3 +570,39 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
 }
 #endif /* PNG_READ_BGR_SUPPORTED or PNG_WRITE_BGR_SUPPORTED */
 
+#if defined(PNG_READ_USER_TRANSFORM_SUPPORTED) || \
+    defined(PNG_WRITE_USER_TRANSFORM_SUPPORTED) || \
+    defined(PNG_LEGACY_SUPPORTED)
+void PNGAPI
+png_set_user_transform_info(png_structp png_ptr, png_voidp
+   user_transform_ptr, int user_transform_depth, int user_transform_channels)
+{
+   png_debug(1, "in png_set_user_transform_info\n");
+#if defined(PNG_USER_TRANSFORM_PTR_SUPPORTED)
+   png_ptr->user_transform_ptr = user_transform_ptr;
+   png_ptr->user_transform_depth = (png_byte)user_transform_depth;
+   png_ptr->user_transform_channels = (png_byte)user_transform_channels;
+#else
+   if(user_transform_ptr || user_transform_depth || user_transform_channels)
+      png_warning(png_ptr,
+        "This version of libpng does not support user transform info");
+#endif
+}
+#endif
+
+/* This function returns a pointer to the user_transform_ptr associated with
+ * the user transform functions.  The application should free any memory
+ * associated with this pointer before png_write_destroy and png_read_destroy
+ * are called.
+ */
+png_voidp PNGAPI
+png_get_user_transform_ptr(png_structp png_ptr)
+{
+#if defined(PNG_USER_TRANSFORM_PTR_SUPPORTED)
+   return ((png_voidp)png_ptr->user_transform_ptr);
+#else
+   if(png_ptr)
+     return (NULL);
+   return (NULL);
+#endif
+}

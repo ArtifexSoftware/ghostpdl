@@ -1,59 +1,79 @@
+
+#if 0 /* in case someone actually tries to compile this */
+
 /* example.c - an example of using libpng */
 
 /* This is an example of how to use libpng to read and write PNG files.
-   The file libpng.txt is much more verbose then this.  If you have not
-   read it, do so first.  This was designed to be a starting point of an
-   implementation.  This is not officially part of libpng, and therefore
-   does not require a copyright notice.
+ * The file libpng.txt is much more verbose then this.  If you have not
+ * read it, do so first.  This was designed to be a starting point of an
+ * implementation.  This is not officially part of libpng, is hereby placed
+ * in the public domain, and therefore does not require a copyright notice.
+ *
+ * This file does not currently compile, because it is missing certain
+ * parts, like allocating memory to hold an image.  You will have to
+ * supply these parts to get it to compile.  For an example of a minimal
+ * working PNG reader/writer, see pngtest.c, included in this distribution;
+ * see also the programs in the contrib directory.
+ */
 
-   This file does not currently compile, because it is missing certain
-   parts, like allocating memory to hold an image.  You will have to
-   supply these parts to get it to compile.  For an example of a minimal
-   working PNG reader/writer, see pngtest.c, included in this distribution.
-*/
+#include "png.h"
 
-#include <png.h>
+ /* The png_jmpbuf() macro, used in error handling, became available in
+  * libpng version 1.0.6.  If you want to be able to run your code with older
+  * versions of libpng, you must define the macro yourself (but only if it
+  * is not already defined by libpng!).
+  */
 
-/* Check to see if a file is a PNG file using png_check_sig().  Returns
-   non-zero if the image is a PNG, and 0 if it isn't a PNG.
+#ifndef png_jmpbuf
+#  define png_jmpbuf(png_ptr) ((png_ptr)->jmpbuf)
+#endif
 
-   If this call is successful, and you are going to keep the file open,
-   you should call png_set_sig_bytes(png_ptr, PNG_BYTES_TO_CHECK); once
-   you have created the png_ptr, so that libpng knows your application
-   has read that many bytes from the start of the file.  Make sure you
-   don't call png_set_sig_bytes() with more than 8 bytes read or give it
-   an incorrect number of bytes read, or you will either have read too
-   many bytes (your fault), or you are telling libpng to read the wrong
-   number of magic bytes (also your fault).
-
-   Many applications already read the first 2 or 4 bytes from the start
-   of the image to determine the file type, so it would be easiest just
-   to pass the bytes to png_check_sig() or even skip that if you know
-   you have a PNG file, and call png_set_sig_bytes().
-*/
+/* Check to see if a file is a PNG file using png_sig_cmp().  png_sig_cmp()
+ * returns zero if the image is a PNG and nonzero if it isn't a PNG.
+ *
+ * The function check_if_png() shown here, but not used, returns nonzero (true)
+ * if the file can be opened and is a PNG, 0 (false) otherwise.
+ *
+ * If this call is successful, and you are going to keep the file open,
+ * you should call png_set_sig_bytes(png_ptr, PNG_BYTES_TO_CHECK); once
+ * you have created the png_ptr, so that libpng knows your application
+ * has read that many bytes from the start of the file.  Make sure you
+ * don't call png_set_sig_bytes() with more than 8 bytes read or give it
+ * an incorrect number of bytes read, or you will either have read too
+ * many bytes (your fault), or you are telling libpng to read the wrong
+ * number of magic bytes (also your fault).
+ *
+ * Many applications already read the first 2 or 4 bytes from the start
+ * of the image to determine the file type, so it would be easiest just
+ * to pass the bytes to png_sig_cmp() or even skip that if you know
+ * you have a PNG file, and call png_set_sig_bytes().
+ */
 #define PNG_BYTES_TO_CHECK 4
 int check_if_png(char *file_name, FILE **fp)
 {
    char buf[PNG_BYTES_TO_CHECK];
 
    /* Open the prospective PNG file. */
-   if ((*fp = fopen(file_name, "rb")) != NULL);
+   if ((*fp = fopen(file_name, "rb")) == NULL)
       return 0;
 
-   /* Read in the signature bytes */
+   /* Read in some of the signature bytes */
    if (fread(buf, 1, PNG_BYTES_TO_CHECK, *fp) != PNG_BYTES_TO_CHECK)
       return 0;
 
-   /* Compare the first PNG_BYTES_TO_CHECK bytes of the signature. */
-   return(png_check_sig(buf, PNG_BYTES_TO_CHECK));
+   /* Compare the first PNG_BYTES_TO_CHECK bytes of the signature.
+      Return nonzero (true) if they match */
+
+   return(!png_sig_cmp(buf, (png_size_t)0, PNG_BYTES_TO_CHECK));
 }
 
 /* Read a PNG file.  You may want to return an error code if the read
-   fails (depending upon the failure).  There are two "prototypes" given
-   here - one where we are given the filename, and we need to open the
-   file, and the other where we are given an open file (possibly with
-   some or all of the magic bytes read - see comments above). */
-**** prototype 1 ****
+ * fails (depending upon the failure).  There are two "prototypes" given
+ * here - one where we are given the filename, and we need to open the
+ * file, and the other where we are given an open file (possibly with
+ * some or all of the magic bytes read - see comments above).
+ */
+#ifdef open_file /* prototype 1 */
 void read_png(char *file_name)  /* We need to open the file */
 {
    png_structp png_ptr;
@@ -64,15 +84,15 @@ void read_png(char *file_name)  /* We need to open the file */
    FILE *fp;
 
    if ((fp = fopen(file_name, "rb")) == NULL)
-      return;
-**** prototype 2 ****
+      return (ERROR);
+#else no_open_file /* prototype 2 */
 void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
 {
    png_structp png_ptr;
    png_infop info_ptr;
    png_uint_32 width, height;
    int bit_depth, color_type, interlace_type;
-**** only use one prototype! ****
+#endif no_open_file /* only use one prototype! */
 
    /* Create and initialize the png_struct with the desired error handler
     * functions.  If you want to use the default stderr and longjump method,
@@ -81,50 +101,65 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
     * was compiled with a compatible version of the library.  REQUIRED
     */
    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-      (void *)user_error_ptr, user_error_fn, user_warning_fn);
+      png_voidp user_error_ptr, user_error_fn, user_warning_fn);
 
    if (png_ptr == NULL)
    {
       fclose(fp);
-      return;
+      return (ERROR);
    }
 
    /* Allocate/initialize the memory for image information.  REQUIRED. */
-   info_ptr = png_create_info_struct();
+   info_ptr = png_create_info_struct(png_ptr);
    if (info_ptr == NULL)
    {
       fclose(fp);
       png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
-      return;
+      return (ERROR);
    }
 
    /* Set error handling if you are using the setjmp/longjmp method (this is
     * the normal method of doing things with libpng).  REQUIRED unless you
     * set up your own error handlers in the png_create_read_struct() earlier.
     */
-   if (setjmp(png_ptr->jmpbuf))
+
+   if (setjmp(png_jmpbuf(png_ptr)))
    {
       /* Free all of the memory associated with the png_ptr and info_ptr */
       png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
       fclose(fp);
       /* If we get here, we had a problem reading the file */
-      return;
+      return (ERROR);
    }
 
    /* One of the following I/O initialization methods is REQUIRED */
-**** PNG file I/O method 1 ****
+#ifdef streams /* PNG file I/O method 1 */
    /* Set up the input control if you are using standard C streams */
    png_init_io(png_ptr, fp);
 
-**** PNG file I/O method 2 ****
+#else no_streams /* PNG file I/O method 2 */
    /* If you are using replacement read functions, instead of calling
-    * png_init_io() here you would call */
+    * png_init_io() here you would call:
+    */
    png_set_read_fn(png_ptr, (void *)user_io_ptr, user_read_fn);
    /* where user_io_ptr is a structure you want available to the callbacks */
-**** Use only one I/O method! ****
+#endif no_streams /* Use only one I/O method! */
 
    /* If we have already read some of the signature */
-   png_set_sig_bytes_read(png_ptr, sig_read);
+   png_set_sig_bytes(png_ptr, sig_read);
+
+#ifdef hilevel
+   /*
+    * If you have enough memory to read in the entire image at once,
+    * and you need to specify only transforms that can be controlled
+    * with one of the PNG_TRANSFORM_* bits (this presently excludes
+    * dithering, filling, setting background, and doing gamma
+    * adjustment), then you can read the entire image (including
+    * pixels) into the info structure with this call:
+    */
+   png_read_png(png_ptr, info_ptr, png_transforms, NULL);
+#else
+   /* OK, you're doing it the hard way, with the lower-level functions */
 
    /* The call to png_read_info() gives us all of the information from the
     * PNG file before the first IDAT (image data chunk).  REQUIRED
@@ -143,29 +178,31 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
    /* tell libpng to strip 16 bit/color files down to 8 bits/color */
    png_set_strip_16(png_ptr);
 
-   /* strip alpha bytes from the input data without combining with th
-    * background (not recommended) */
+   /* Strip alpha bytes from the input data without combining with the
+    * background (not recommended).
+    */
    png_set_strip_alpha(png_ptr);
 
-   /* extract multiple pixels with bit depths of 1, 2, and 4 from a single
+   /* Extract multiple pixels with bit depths of 1, 2, and 4 from a single
     * byte into separate bytes (useful for paletted and grayscale images).
     */
    png_set_packing(png_ptr);
 
-   /* change the order of packed pixels to least significant bit first
+   /* Change the order of packed pixels to least significant bit first
     * (not useful if you are using png_set_packing). */
    png_set_packswap(png_ptr);
 
-   /* expand paletted colors into true RGB triplets */
+   /* Expand paletted colors into true RGB triplets */
    if (color_type == PNG_COLOR_TYPE_PALETTE)
       png_set_expand(png_ptr);
 
-   /* expand grayscale images to the full 8 bits from 1, 2, or 4 bits/pixel */
+   /* Expand grayscale images to the full 8 bits from 1, 2, or 4 bits/pixel */
    if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
       png_set_expand(png_ptr);
 
-   /* expand paletted or RGB images with transparency to full alpha channels
-    * so the data will be available as RGBA quartets */
+   /* Expand paletted or RGB images with transparency to full alpha channels
+    * so the data will be available as RGBA quartets.
+    */
    if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
       png_set_expand(png_ptr);
 
@@ -176,51 +213,65 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
     * use it - you should use the (solid) application background if it has one.
     */
 
-   png_color_16 my_background, *image_background);
+   png_color_16 my_background, *image_background;
 
-   if (png_get_bKGD(png_ptr, info_ptr, &image_background);
-      png_set_background(png_ptr, image_background),
+   if (png_get_bKGD(png_ptr, info_ptr, &image_background))
+      png_set_background(png_ptr, image_background,
                          PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
    else
       png_set_background(png_ptr, &my_background,
                          PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
 
    /* Some suggestions as to how to get a screen gamma value */
+
+   /* Note that screen gamma is the display_exponent, which includes
+    * the CRT_exponent and any correction for viewing conditions */
    if (/* We have a user-defined screen gamma value */)
    {
       screen_gamma = user-defined screen_gamma;
    }
    /* This is one way that applications share the same screen gamma value */
-   else if ((gamma_str = getenv("DISPLAY_GAMMA")) != NULL)
+   else if ((gamma_str = getenv("SCREEN_GAMMA")) != NULL)
    {
       screen_gamma = atof(gamma_str);
    }
    /* If we don't have another value */
    else
    {
-      screen_gamma = 2.2;  /* A good guess for PC monitors */
+      screen_gamma = 2.2;  /* A good guess for a PC monitors in a dimly
+                              lit room */
       screen_gamma = 1.7 or 1.0;  /* A good guess for Mac systems */
    }
 
-   /* Tell libpng to handle the gamma conversion for you.  The second call
+   /* Tell libpng to handle the gamma conversion for you.  The final call
     * is a good guess for PC generated images, but it should be configurable
     * by the user at run time by the user.  It is strongly suggested that
     * your application support gamma correction.
     */
-   if (png_get_gAMA(png_ptr, info_ptr, &image_gamma);
-      png_set_gamma(png_ptr, screen_gamma, image_gamma);
+
+   int intent;
+
+   if (png_get_sRGB(png_ptr, info_ptr, &intent))
+      png_set_gamma(png_ptr, screen_gamma, 0.45455);
    else
-      png_set_gamma(png_ptr, screen_gamma, 0.45);
+   {
+      double image_gamma;
+      if (png_get_gAMA(png_ptr, info_ptr, &image_gamma))
+         png_set_gamma(png_ptr, screen_gamma, image_gamma);
+      else
+         png_set_gamma(png_ptr, screen_gamma, 0.45455);
+   }
 
    /* Dither RGB files down to 8 bit palette or reduce palettes
-      to the number of colors available on your screen */
+    * to the number of colors available on your screen.
+    */
    if (color_type & PNG_COLOR_MASK_COLOR)
    {
       png_uint_32 num_palette;
       png_colorp palette;
 
       /* This reduces the image to the application supplied palette */
-      if (we have our own palette)
+      if (/* we have our own palette */)
       {
          /* An array of colors to which the image should be dithered */
          png_color std_color_cube[MAX_SCREEN_COLORS];
@@ -229,9 +280,9 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
             MAX_SCREEN_COLORS, NULL, 0);
       }
       /* This reduces the image to the palette supplied in the file */
-      else if (png_get_PLTE(png_ptr, info_ptr, &palette, &num_palette)))
+      else if (png_get_PLTE(png_ptr, info_ptr, &palette, &num_palette))
       {
-         png_color16p histogram;
+         png_uint_16p histogram;
 
          png_get_hIST(png_ptr, info_ptr, &histogram);
 
@@ -240,8 +291,8 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
       }
    }
 
-   /* invert monocrome files to have 0 as white and 1 as black */
-   png_set_invert(png_ptr);
+   /* invert monochrome files to have 0 as white and 1 as black */
+   png_set_invert_mono(png_ptr);
 
    /* If you want to shift the pixel values from the range [0,255] or
     * [0,65535] to the original [0,7] or [0,31], or whatever range the
@@ -249,14 +300,15 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
     */
    if (png_get_valid(png_ptr, info_ptr, PNG_INFO_sBIT))
    {
-      png_color8p sig_bit;
+      png_color_8p sig_bit;
 
       png_get_sBIT(png_ptr, info_ptr, &sig_bit);
       png_set_shift(png_ptr, sig_bit);
    }
 
    /* flip the RGB pixels to BGR (or RGBA to BGRA) */
-   png_set_bgr(png_ptr);
+   if (color_type & PNG_COLOR_MASK_COLOR)
+      png_set_bgr(png_ptr);
 
    /* swap the RGBA or GA data to ARGB or AG (or BGRA to ABGR) */
    png_set_swap_alpha(png_ptr);
@@ -269,19 +321,19 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
 
    /* Turn on interlace handling.  REQUIRED if you are not using
     * png_read_image().  To see how to handle interlacing passes,
-    * see the png_read_row() method below.
+    * see the png_read_row() method below:
     */
    number_passes = png_set_interlace_handling(png_ptr);
 
-   /* optional call to gamma correct and add the background to the palette
+   /* Optional call to gamma correct and add the background to the palette
     * and update info structure.  REQUIRED if you are expecting libpng to
     * update the palette for you (ie you selected such a transform above).
     */
    png_read_update_info(png_ptr, info_ptr);
 
-   /* allocate the memory to hold the image using the fields of info_ptr. */
+   /* Allocate the memory to hold the image using the fields of info_ptr. */
 
-   /* the easiest way to read the image */
+   /* The easiest way to read the image: */
    png_bytep row_pointers[height];
 
    for (row = 0; row < height; row++)
@@ -290,40 +342,43 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
    }
 
    /* Now it's time to read the image.  One of these methods is REQUIRED */
-**** Read the entire image in one go ****
+#ifdef entire /* Read the entire image in one go */
    png_read_image(png_ptr, row_pointers);
 
-**** Read the image one or more scanlines at a time ****
-   /* the other way to read images - deal with interlacing */
+#else no_entire /* Read the image one or more scanlines at a time */
+   /* The other way to read images - deal with interlacing: */
 
    for (pass = 0; pass < number_passes; pass++)
    {
-[[[[[[[ Read the image a single row at a time ]]]]]]]
+#ifdef single /* Read the image a single row at a time */
       for (y = 0; y < height; y++)
       {
-         png_bytep row_pointers = row[y];
-         png_read_rows(png_ptr, &row_pointers, NULL, 1);
+         png_read_rows(png_ptr, &row_pointers[y], NULL, 1);
       }
 
-[[[[[[[ Read the image several rows at a time ]]]]]]]
+#else no_single /* Read the image several rows at a time */
       for (y = 0; y < height; y += number_of_rows)
       {
-<<<<<<<<<< Read the image using the "sparkle" effect. >>>>>>>>>>
-         png_read_rows(png_ptr, row_pointers, NULL, number_of_rows);
-        
-<<<<<<<<<< Read the image using the "rectangle" effect >>>>>>>>>>
-         png_read_rows(png_ptr, NULL, row_pointers, number_of_rows);
-<<<<<<<<<< use only one of these two methods >>>>>>>>>>
+#ifdef sparkle /* Read the image using the "sparkle" effect. */
+         png_read_rows(png_ptr, &row_pointers[y], NULL, number_of_rows);
+
+         png_read_rows(png_ptr, NULL, row_pointers[y], number_of_rows);
+#else no_sparkle /* Read the image using the "rectangle" effect */
+         png_read_rows(png_ptr, NULL, &row_pointers[y], number_of_rows);
+#endif no_sparkle /* use only one of these two methods */
       }
-     
+
       /* if you want to display the image after every pass, do
          so here */
-[[[[[[[ use only one of these two methods ]]]]]]]
+#endif no_single /* use only one of these two methods */
    }
-**** use only one of these two methods ****
+#endif no_entire /* use only one of these two methods */
 
    /* read rest of file, and get additional chunks in info_ptr - REQUIRED */
    png_read_end(png_ptr, info_ptr);
+#endif hilevel
+
+   /* At this point you have read the entire image */
 
    /* clean up after the read, and free any memory allocated - REQUIRED */
    png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
@@ -332,7 +387,7 @@ void read_png(FILE *fp, unsigned int sig_read)  /* file is already open */
    fclose(fp);
 
    /* that's it */
-   return;
+   return (OK);
 }
 
 /* progressively read a file */
@@ -347,12 +402,12 @@ initialize_png_reader(png_structp *png_ptr, png_infop *info_ptr)
     * linked libraries.
     */
    *png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-       (void *)user_error_ptr, user_error_fn, user_warning_fn);
+       png_voidp user_error_ptr, user_error_fn, user_warning_fn);
 
    if (*png_ptr == NULL)
    {
       *info_ptr = NULL;
-      return ERROR;
+      return (ERROR);
    }
 
    *info_ptr = png_create_info_struct(png_ptr);
@@ -360,17 +415,20 @@ initialize_png_reader(png_structp *png_ptr, png_infop *info_ptr)
    if (*info_ptr == NULL)
    {
       png_destroy_read_struct(png_ptr, info_ptr, (png_infopp)NULL);
-      return ERROR;
+      return (ERROR);
    }
 
-   if (setjmp((*png_ptr)->jmpbuf))
+   if (setjmp(png_jmpbuf((*png_ptr))))
    {
       png_destroy_read_struct(png_ptr, info_ptr, (png_infopp)NULL);
-      return ERROR;
+      return (ERROR);
    }
 
-   /* this one's new.  You will need to provide all three
+   /* This one's new.  You will need to provide all three
     * function callbacks, even if you aren't using them all.
+    * If you aren't using all functions, you can specify NULL
+    * parameters.  Even when all three functions are NULL,
+    * you need to call png_set_progressive_read_fn().
     * These functions shouldn't be dependent on global or
     * static variables if you are decoding several images
     * simultaneously.  You should store stream specific data
@@ -381,18 +439,18 @@ initialize_png_reader(png_structp *png_ptr, png_infop *info_ptr)
    png_set_progressive_read_fn(*png_ptr, (void *)stream_data,
       info_callback, row_callback, end_callback);
 
-   return OK;
+   return (OK);
 }
 
 int
 process_data(png_structp *png_ptr, png_infop *info_ptr,
    png_bytep buffer, png_uint_32 length)
 {
-   if (setjmp((*png_ptr)->jmpbuf))
+   if (setjmp(png_jmpbuf((*png_ptr))))
    {
       /* Free the png_ptr and info_ptr memory on error */
       png_destroy_read_struct(png_ptr, info_ptr, (png_infopp)NULL);
-      return ERROR;
+      return (ERROR);
    }
 
    /* This one's new also.  Simply give it chunks of data as
@@ -406,7 +464,7 @@ process_data(png_structp *png_ptr, png_infop *info_ptr,
     * callback, if you aren't already displaying them there.
     */
    png_process_data(*png_ptr, *info_ptr, buffer, length);
-   return OK;
+   return (OK);
 }
 
 info_callback(png_structp png_ptr, png_infop info)
@@ -465,16 +523,17 @@ end_callback(png_structp png_ptr, png_infop info)
 }
 
 /* write a png file */
-void write_png(char *file_name, ... other image information ...)
+void write_png(char *file_name /* , ... other image information ... */)
 {
    FILE *fp;
    png_structp png_ptr;
    png_infop info_ptr;
+   png_colorp palette;
 
    /* open the file */
    fp = fopen(file_name, "wb");
    if (fp == NULL)
-      return;
+      return (ERROR);
 
    /* Create and initialize the png_struct with the desired error handler
     * functions.  If you want to use the default stderr and longjump method,
@@ -483,12 +542,12 @@ void write_png(char *file_name, ... other image information ...)
     * in case we are using dynamically linked libraries.  REQUIRED.
     */
    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
-      (void *)user_error_ptr, user_error_fn, user_warning_fn);
+      png_voidp user_error_ptr, user_error_fn, user_warning_fn);
 
    if (png_ptr == NULL)
    {
       fclose(fp);
-      return;
+      return (ERROR);
    }
 
    /* Allocate/initialize the image information data.  REQUIRED */
@@ -497,31 +556,40 @@ void write_png(char *file_name, ... other image information ...)
    {
       fclose(fp);
       png_destroy_write_struct(&png_ptr,  (png_infopp)NULL);
-      return;
+      return (ERROR);
    }
 
    /* Set error handling.  REQUIRED if you aren't supplying your own
-    * error hadnling functions in the png_create_write_struct() call.
+    * error handling functions in the png_create_write_struct() call.
     */
-   if (setjmp(png_ptr->jmpbuf))
+   if (setjmp(png_jmpbuf(png_ptr)))
    {
       /* If we get here, we had a problem reading the file */
       fclose(fp);
-      png_destroy_write_struct(&png_ptr,  (png_infopp)NULL);
-      return;
+      png_destroy_write_struct(&png_ptr, &info_ptr);
+      return (ERROR);
    }
 
    /* One of the following I/O initialization functions is REQUIRED */
-**** I/O initialization method 1 ****
+#ifdef streams /* I/O initialization method 1 */
    /* set up the output control if you are using standard C streams */
    png_init_io(png_ptr, fp);
-**** I/O initialization method 2 ****
+#else no_streams /* I/O initialization method 2 */
    /* If you are using replacement read functions, instead of calling
     * png_init_io() here you would call */
    png_set_write_fn(png_ptr, (void *)user_io_ptr, user_write_fn,
       user_IO_flush_function);
    /* where user_io_ptr is a structure you want available to the callbacks */
-**** only use 1 initialization method ****
+#endif no_streams /* only use one initialization method */
+
+#ifdef hilevel
+   /* This is the easy way.  Use it if you already have all the
+    * image info living info in the structure.  You could "|" many
+    * PNG_TRANSFORM flags into the png_transforms integer here.
+    */
+   png_write_png(png_ptr, info_ptr, png_transforms, NULL);
+#else
+   /* This is the hard way */
 
    /* Set the image information here.  Width and height are up to 2^31,
     * bit_depth is one of 1, 2, 4, 8, or 16, but valid values also depend on
@@ -535,9 +603,12 @@ void write_png(char *file_name, ... other image information ...)
       PNG_INTERLACE_????, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
    /* set the palette if there is one.  REQUIRED for indexed-color images */
-   palette = png_malloc(png_ptr, 256 * sizeof (png_color));
-   ... set palette colors ...
+   palette = (png_colorp)png_malloc(png_ptr, 256 * sizeof (png_color));
+   /* ... set palette colors ... */
    png_set_PLTE(png_ptr, info_ptr, palette, 256);
+   /* You must not free palette here, because png_set_PLTE only makes a link to
+      the palette that you malloced.  Wait until you are about to destroy
+      the png structure. */
 
    /* optional significant bit chunk */
    /* if we are dealing with a grayscale image then */
@@ -550,9 +621,10 @@ void write_png(char *file_name, ... other image information ...)
    sig_bit.alpha = true_alpha_bit_depth;
    png_set_sBIT(png_ptr, info_ptr, sig_bit);
 
-  
+
    /* Optional gamma chunk is strongly suggested if you have any guess
-    * as to the correct gamma of the image. */
+    * as to the correct gamma of the image.
+    */
    png_set_gAMA(png_ptr, info_ptr, gamma);
 
    /* Optionally write comments into the image */
@@ -565,12 +637,30 @@ void write_png(char *file_name, ... other image information ...)
    text_ptr[2].key = "Description";
    text_ptr[2].text = "<long text>";
    text_ptr[2].compression = PNG_TEXT_COMPRESSION_zTXt;
-   png_set_text(png_ptr, info_ptr, text_ptr, 2);
+#ifdef PNG_iTXt_SUPPORTED
+   text_ptr[0].lang = NULL;
+   text_ptr[1].lang = NULL;
+   text_ptr[2].lang = NULL;
+#endif
+   png_set_text(png_ptr, info_ptr, text_ptr, 3);
 
    /* other optional chunks like cHRM, bKGD, tRNS, tIME, oFFs, pHYs, */
+   /* note that if sRGB is present the gAMA and cHRM chunks must be ignored
+    * on read and must be written in accordance with the sRGB profile */
 
    /* Write the file header information.  REQUIRED */
    png_write_info(png_ptr, info_ptr);
+
+   /* If you want, you can write the info in two steps, in case you need to
+    * write your private chunk ahead of PLTE:
+    *
+    *   png_write_info_before_PLTE(write_ptr, write_info_ptr);
+    *   write_my_chunk();
+    *   png_write_info(png_ptr, info_ptr);
+    *
+    * However, given the level of known- and unknown-chunk support in 1.1.0
+    * and up, this should no longer be necessary.
+    */
 
    /* Once we write out the header, the compression type on the text
     * chunks gets changed to PNG_TEXT_COMPRESSION_NONE_WR or
@@ -579,13 +669,15 @@ void write_png(char *file_name, ... other image information ...)
     */
 
    /* set up the transformations you want.  Note that these are
-    * all optional.  Only call them if you want them. */
+    * all optional.  Only call them if you want them.
+    */
 
-   /* invert monocrome pixels */
-   png_set_invert(png_ptr);
+   /* invert monochrome pixels */
+   png_set_invert_mono(png_ptr);
 
    /* Shift the pixels up to a legal bit depth and fill in
-    * as appropriate to correctly scale the image */
+    * as appropriate to correctly scale the image.
+    */
    png_set_shift(png_ptr, &sig_bit);
 
    /* pack pixels into bytes */
@@ -595,7 +687,8 @@ void write_png(char *file_name, ... other image information ...)
    png_set_swap_alpha(png_ptr);
 
    /* Get rid of filler (OR ALPHA) bytes, pack XRGB/RGBX/ARGB/RGBA into
-    * RGB (4 channels -> 3 channels). The second parameter is not used. */
+    * RGB (4 channels -> 3 channels). The second parameter is not used.
+    */
    png_set_filler(png_ptr, 0, PNG_FILLER_BEFORE);
 
    /* flip BGR pixels to RGB */
@@ -617,51 +710,67 @@ void write_png(char *file_name, ... other image information ...)
     * layout, however, so choose what fits your needs best).  You need to
     * use the first method if you aren't handling interlacing yourself.
     */
-   png_byte row_pointers[height][width];
+   png_uint_32 k, height, width;
+   png_byte image[height][width*bytes_per_pixel];
+   png_bytep row_pointers[height];
+   for (k = 0; k < height; k++)
+     row_pointers[k] = image + k*width*bytes_per_pixel;
 
    /* One of the following output methods is REQUIRED */
-**** write out the entire image data in one call ***
+#ifdef entire /* write out the entire image data in one call */
    png_write_image(png_ptr, row_pointers);
 
    /* the other way to write the image - deal with interlacing */
 
-**** write out the image data by one or more scanlines ****
+#else no_entire /* write out the image data by one or more scanlines */
    /* The number of passes is either 1 for non-interlaced images,
     * or 7 for interlaced images.
     */
    for (pass = 0; pass < number_passes; pass++)
    {
       /* Write a few rows at a time. */
-      png_write_rows(png_ptr, row_pointers, number_of_rows);
+      png_write_rows(png_ptr, &row_pointers[first_row], number_of_rows);
 
       /* If you are only writing one row at a time, this works */
       for (y = 0; y < height; y++)
       {
-         png_bytep row_pointers = row[y];
-         png_write_rows(png_ptr, &row_pointers, 1);
+         png_write_rows(png_ptr, &row_pointers[y], 1);
       }
    }
-**** use only one output method ****
+#endif no_entire /* use only one output method */
 
    /* You can write optional chunks like tEXt, zTXt, and tIME at the end
-    * as well.
+    * as well.  Shouldn't be necessary in 1.1.0 and up as all the public
+    * chunks are supported and you can use png_set_unknown_chunks() to
+    * register unknown chunks into the info structure to be written out.
     */
 
    /* It is REQUIRED to call this to finish writing the rest of the file */
    png_write_end(png_ptr, info_ptr);
+#endif hilevel
 
-   /* if you malloced the palette, free it here */
-   free(info_ptr->palette);
+   /* If you png_malloced a palette, free it here (don't free info_ptr->palette,
+      as recommended in versions 1.0.5m and earlier of this example; if
+      libpng mallocs info_ptr->palette, libpng will free it).  If you
+      allocated it with malloc() instead of png_malloc(), use free() instead
+      of png_free(). */
+   png_free(png_ptr, palette);
+   palette=NULL;
 
-   /* if you allocated any text comments, free them here */
+   /* Similarly, if you png_malloced any data that you passed in with
+      png_set_something(), such as a hist or trans array, free it here,
+      when you can be sure that libpng is through with it. */
+   png_free(png_ptr, trans);
+   trans=NULL;
 
    /* clean up after the write, and free any memory allocated */
-   png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+   png_destroy_write_struct(&png_ptr, &info_ptr);
 
    /* close the file */
    fclose(fp);
 
    /* that's it */
-   return;
+   return (OK);
 }
 
+#endif /* if 0 */
