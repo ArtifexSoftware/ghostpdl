@@ -9,6 +9,16 @@
   Adobe Systems Incorporated and covered by a separate license
   which permits only verbatim distribution.
 
+  This version of Ghostscript is based in part of the work of the Freetype
+  Team. Some source files contain code copyright The Freetype Project which
+  is used under the Freetype License. In addition to the rights and 
+  restrictions of the AFPL, source distributions including this code
+  must also include the text of the Freetype License (doc/FTL.txt)
+  and binary distributions built from that source must include a statement
+  somewhere in the accompanying documentation that the program is based
+  in part of the work of the Freetype Team. Such files are clearly marked
+  as such in the copyright headers. See doc/FTL.txt for details.
+
   AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
   distributor accepts any responsibility for the consequences of using it, or
   for whether it serves any particular purpose or works at all, unless he or
