@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -203,6 +203,13 @@ int
 gs_color_space_num_components(const gs_color_space * pcs)
 {
     return cs_num_components(pcs);
+}
+
+/* Restrict a color to its legal range. */
+void
+gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
+{
+    cs_restrict_color(pcc, pcs);
 }
 
 int

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -391,6 +391,14 @@ gs_color_space_index gs_color_space_get_index(P1(const gs_color_space *));
 
 /* Get the number of components in a color space. */
 int gs_color_space_num_components(P1(const gs_color_space *));
+
+/* Restrict a color to its legal range. */
+#ifndef gs_client_color_DEFINED
+#  define gs_client_color_DEFINED
+typedef struct gs_client_color_s gs_client_color;
+#endif
+void gs_color_space_restrict_color(P2(gs_client_color *,
+				      const gs_color_space *));
 
 /*
  * Get the base space of an Indexed or uncolored Pattern color space, or the

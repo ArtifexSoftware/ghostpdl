@@ -104,6 +104,8 @@ struct gs_color_space_type_s {
 
 #define cs_proc_restrict_color(proc)\
   void proc(P2(gs_client_color *, const gs_color_space *))
+#define cs_restrict_color(pcc, pcs)\
+  ((pcs)->type->restrict_color(pcc, pcs))
                          cs_proc_restrict_color((*restrict_color));
 
     /* Return the concrete color space underlying this one. */
