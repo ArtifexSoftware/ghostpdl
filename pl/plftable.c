@@ -53,59 +53,6 @@ const font_resident_t resident_table[] = {
     {"NimbusMono", {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ',' ',' '},
      {0, 0, {60, 11998}, 0, REGULAR, NOBOLD, 4099}, cc_alphabetic},
 
-    {"URWGothicL", {'I','T','C','A','v','a','n','t','G','a','r','d',' ',' ','B','k'},
-     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24607}, cc_alphabetic},
-    {"URWGothicL Oblique", {'I','T','C','A','v','a','n','t','G','a','r','d','B','k','O','b'},
-     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24607}, cc_alphabetic},
-    {"URWGothicLDem", {'I','T','C','A','v','a','n','t','G','a','r','d',' ',' ','D','b'},
-     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24607}, cc_alphabetic},
-    {"URWGothicLDem Oblique", {'I','T','C','A','v','a','n','t','G','a','r','d','D','b','O','b'},
-     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24607}, cc_alphabetic},
-
-    {"NimbusMonL", {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ',' ',' '},
-     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24579}, cc_alphabetic},
-    {"NimbusMonL Bold", {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ','B','d'},
-     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24579}, cc_alphabetic},
-    {"NimbusMonL Bold Oblique", {'C','o','u','r','i','e','r','P','S',' ',' ',' ','B','d','O','b'},
-     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24579}, cc_alphabetic},
-    {"NimbusMonL Oblique", {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ','O','b'},
-     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24579}, cc_alphabetic},
-
-    {"NimbusSanL", {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ',' ',' '},
-     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24580}, cc_alphabetic},
-    {"NimbusSanL Bold", {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','B','d'},
-     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24580}, cc_alphabetic},
-    {"NimbusSanL Bold Italic", {'H','e','l','v','e','t','i','c','a',' ',' ',' ','B','d','O','b'},
-     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24580}, cc_alphabetic},
-    {"NimbusSanLCon", {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','N','r'},
-     {0, 1, {0, 0}, 0, CONDENSED, NOBOLD, 24580}, cc_alphabetic},
-    {"NimbusSanLCon Bold", {'H','e','l','v','e','t','i','c','a',' ',' ',' ','N','r','B','d'},
-     {0, 1, {0, 0}, 0, CONDENSED, BOLD, 24580}, cc_alphabetic},
-    {"NimbusSanLCon Bold Italic", {'H','e','l','v','e','t','i','c','a',' ','N','r','B','d','O','b'},
-     {0, 1, {0, 0}, 0, CONDENSEDITALIC, BOLD, 24580}, cc_alphabetic},
-    {"NimbusSanLCon Italic", {'H','e','l','v','e','t','i','c','a',' ',' ',' ','N','r','O','b'},
-     {0, 1, {0, 0}, 0, CONDENSEDITALIC, NOBOLD, 24580}, cc_alphabetic},
-    {"NimbusSanL Italic", {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','O','b'},
-     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24580}, cc_alphabetic},
-
-    {"CenturySchL Bold", {'N','w','C','e','n','t','S','c','h','l','b','k',' ',' ','B','d'},
-     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24703}, cc_alphabetic},
-    {"CenturySchL Bold Italic", {'N','w','C','e','n','t','S','c','h','l','b','k','B','d','I','t'},
-     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24703}, cc_alphabetic},
-    {"CenturySchL Italic", {'N','w','C','e','n','t','S','c','h','l','b','k',' ',' ','I','t'},
-     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24703}, cc_alphabetic},
-    {"CenturySchL", {'N','w','C','e','n','t','S','c','h','l','b','k',' ','R','m','n'},
-     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24703}, cc_alphabetic},
-
-    {"URWPalladioL Bold", {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ',' ','B','d'},
-     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24591}, cc_alphabetic},
-    {"URWPalladioL Bold Italic", {'P','a','l','a','t','i','n','o',' ',' ',' ',' ','B','d','I','t'},
-     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24591}, cc_alphabetic},
-    {"URWPalladioL Italic", {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ',' ','I','t'},
-     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24591}, cc_alphabetic},
-    {"URWPalladioL", {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ','R','m','n'},
-     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24591}, cc_alphabetic},
-
     {"NimbusRomanNo4 Light", {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' '},
      {0, 1, {29, 24413}, 0, REGULAR, NOBOLD, 4101},
      cc_alphabetic},
@@ -116,19 +63,6 @@ const font_resident_t resident_table[] = {
      {0, 1, {29, 24413}, 0, ITALIC, NOBOLD, 4101},
      cc_alphabetic},
     {"NimbusRomanNo4 Bold Italic", {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ','B','d','I','t'},
-     {0, 1, {29, 24413}, 0, ITALIC, BOLD, 4101},
-     cc_alphabetic},
-
-    {"NimbusRomanNo9L", {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ','R','m','n'},
-     {0, 1, {29, 24413}, 0, REGULAR, NOBOLD, 4101},
-     cc_alphabetic},
-    {"NimbusRomanNo9L Bold", {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ',' ','B','d'},
-     {0, 1, {29, 24413}, 0, REGULAR, BOLD, 4101},
-     cc_alphabetic},
-    {"NimbusRomanNo9L Italic", {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ',' ','I','t'},
-     {0, 1, {29, 24413}, 0, ITALIC, NOBOLD, 4101},
-     cc_alphabetic},
-    {"NimbusRomanNo9L Bold Italic", {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ','B','d','I','t'},
      {0, 1, {29, 24413}, 0, ITALIC, BOLD, 4101},
      cc_alphabetic},
 
@@ -149,7 +83,7 @@ const font_resident_t resident_table[] = {
      {0, 1, {20, 35531}, 0, ITALIC, NOBOLD, 4116},
      cc_alphabetic},
 
-    {"ClarendonURWBolCon", {'C','l','a','r','e','n','d','o','n',' ',' ',' ','C','d','B','d'},
+   {"ClarendonURWBolCon", {'C','l','a','r','e','n','d','o','n',' ',' ',' ','C','d','B','d'},
      {0, 1, {22, 32550}, 0, CONDENSED, BOLD, 4140},
      cc_alphabetic},
 
@@ -223,13 +157,92 @@ const font_resident_t resident_table[] = {
     {"NimbusRomanNo9 Medium Italic", {'T','i','m','e','s','N','e','w','R','m','n',' ','B','d','I','t'},
      {0, 1, {25, 28800}, 0, ITALIC, BOLD, 16901}, cc_alphabetic},
 
-    {"StandardSymL", {'S','y','m','b','o','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
-     {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686}, cc_symbol},
+    {"NimbusSanL", {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ',' ',' '},
+     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24580}, cc_alphabetic},
+    {"NimbusSanL Bold", {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','B','d'},
+     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24580}, cc_alphabetic},
+    {"NimbusSanL Bold Italic", {'H','e','l','v','e','t','i','c','a',' ',' ',' ','B','d','O','b'},
+     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24580}, cc_alphabetic},
+    {"NimbusSanLCon", {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','N','r'},
+     {0, 1, {0, 0}, 0, CONDENSED, NOBOLD, 24580}, cc_alphabetic},
+    {"NimbusSanLCon Bold", {'H','e','l','v','e','t','i','c','a',' ',' ',' ','N','r','B','d'},
+     {0, 1, {0, 0}, 0, CONDENSED, BOLD, 24580}, cc_alphabetic},
+    {"NimbusSanLCon Bold Italic", {'H','e','l','v','e','t','i','c','a',' ','N','r','B','d','O','b'},
+     {0, 1, {0, 0}, 0, CONDENSEDITALIC, BOLD, 24580}, cc_alphabetic},
+    {"NimbusSanLCon Italic", {'H','e','l','v','e','t','i','c','a',' ',' ',' ','N','r','O','b'},
+     {0, 1, {0, 0}, 0, CONDENSEDITALIC, NOBOLD, 24580}, cc_alphabetic},
+    {"NimbusSanL Italic", {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','O','b'},
+     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24580}, cc_alphabetic},
+
+    {"URWPalladioL", {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ','R','m','n'},
+     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24591}, cc_alphabetic},
+    {"URWPalladioL Italic", {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ',' ','I','t'},
+     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24591}, cc_alphabetic},
+    {"URWPalladioL Bold", {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ',' ','B','d'},
+     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24591}, cc_alphabetic},
+    {"URWPalladioL Bold Italic", {'P','a','l','a','t','i','n','o',' ',' ',' ',' ','B','d','I','t'},
+     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24591}, cc_alphabetic},
+
+
+    {"URWGothicL", {'I','T','C','A','v','a','n','t','G','a','r','d',' ',' ','B','k'},
+     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24607}, cc_alphabetic},
+    {"URWGothicLDem", {'I','T','C','A','v','a','n','t','G','a','r','d',' ',' ','D','b'},
+     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24607}, cc_alphabetic},
+    {"URWGothicL Oblique", {'I','T','C','A','v','a','n','t','G','a','r','d','B','k','O','b'},
+     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24607}, cc_alphabetic},
+    {"URWGothicLDem Oblique", {'I','T','C','A','v','a','n','t','G','a','r','d','D','b','O','b'},
+     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24607}, cc_alphabetic},
+
+
+    {"URWBookmanL", {'I','T','C','B','o','o','k','m','a','n',' ',' ',' ',' ','L','t'},
+     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24623}, cc_alphabetic},
+    {"URWBookmanL Bold", {'I','T','C','B','o','o','k','m','a','n',' ',' ',' ',' ','D','b'},
+     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24623}, cc_alphabetic},
+    {"URWBookmanL Italic", {'I','T','C','B','o','o','k','m','a','n',' ',' ','L','t','I','t'},
+     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24623}, cc_alphabetic},
+    {"URWBookmanL Bold Italic", {'I','T','C','B','o','o','k','m','a','n',' ',' ','D','b','I','t'},
+     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24623}, cc_alphabetic},
+
+
+    {"CenturySchL Bold", {'N','w','C','e','n','t','S','c','h','l','b','k',' ',' ','B','d'},
+     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24703}, cc_alphabetic},
+    {"CenturySchL Bold Italic", {'N','w','C','e','n','t','S','c','h','l','b','k','B','d','I','t'},
+     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24703}, cc_alphabetic},
+    {"CenturySchL Italic", {'N','w','C','e','n','t','S','c','h','l','b','k',' ',' ','I','t'},
+     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24703}, cc_alphabetic},
+    {"CenturySchL", {'N','w','C','e','n','t','S','c','h','l','b','k',' ','R','m','n'},
+     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24703}, cc_alphabetic},
+
+    {"NimbusRomanNo9L", {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ','R','m','n'},
+     {0, 1, {29, 24413}, 0, REGULAR, NOBOLD, 4101},
+     cc_alphabetic},
+    {"NimbusRomanNo9L Bold", {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ',' ','B','d'},
+     {0, 1, {29, 24413}, 0, REGULAR, BOLD, 4101},
+     cc_alphabetic},
+    {"NimbusRomanNo9L Italic", {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ',' ','I','t'},
+     {0, 1, {29, 24413}, 0, ITALIC, NOBOLD, 4101},
+     cc_alphabetic},
+    {"NimbusRomanNo9L Bold Italic", {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ','B','d','I','t'},
+     {0, 1, {29, 24413}, 0, ITALIC, BOLD, 4101},
+     cc_alphabetic},
 
     {"URWChanceryLMed Italic", {'Z','a','p','f','C','h','a','n','c','e','r','y','M','d','I','t'},
      {18540, 1, {27, 45099},0, REGULAR, NOBOLD, face_val(2730, agfa)}, cc_dingbats},
+ 
+    {"StandardSymL", {'S','y','m','b','o','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+     {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686}, cc_symbol},
+
+    /* NB needs alias 
+    {"StandardSymL", {'S','y','m','b','o','l','P','S',' ',' ',' ',' ',' ',' ',' ',' '},
+     {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686}, cc_symbol},
+    */
+    /* NB no Wingdings 
     {"Dingbats", {'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '},
      {18540, 1, {27, 25914},0, REGULAR, NOBOLD, face_val(2730, agfa)}, cc_dingbats},
+    */
+    {"Dingbats", {'I','T','C','Z','a','p','f','D','i','n','g','b','a','t','s',' '},
+     {18540, 1, {27, 25914},0, REGULAR, NOBOLD, face_val(2730, agfa)}, cc_dingbats},
+
 
     {"NimbusMono Bold", {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ','B','d'},
      {0, 0, {60, 11998}, 0, REGULAR, BOLD, face_val(3, agfa)}, 
@@ -240,6 +253,7 @@ const font_resident_t resident_table[] = {
     {"NimbusMono Bold Italic", {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ','B','d','I','t'},
      {0, 0, {60, 11998}, 0, ITALIC, BOLD, face_val(3, agfa)},
      cc_alphabetic},
+
 
     {"LetterGothic", {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ',' ',' '},
      {0, 0, {54, 13332}, 0, REGULAR, NOBOLD, face_val(6, agfa)},
@@ -253,22 +267,34 @@ const font_resident_t resident_table[] = {
      {0, 0, {50, 14400}, 0, ITALIC, NOBOLD, face_val(6, agfa)},
      cc_alphabetic},
 
-    {"ArtifexPrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'},
+
+    {"NimbusMonL", {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ',' ',' '},
+     {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24579}, cc_alphabetic},
+    {"NimbusMonL Bold", {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ','B','d'},
+     {0, 1, {0, 0}, 0, REGULAR, BOLD, 24579}, cc_alphabetic},
+    {"NimbusMonL Bold Oblique", {'C','o','u','r','i','e','r','P','S',' ',' ',' ','B','d','O','b'},
+     {0, 1, {0, 0}, 0, ITALIC, BOLD, 24579}, cc_alphabetic},
+    {"NimbusMonL Oblique", {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ','O','b'},
+     {0, 1, {0, 0}, 0, ITALIC, NOBOLD, 24579}, cc_alphabetic},
+
+
+    {"ArtLinePrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'},
      {0, 0, {432, 1667}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {"ArtifexPrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','0','U'},
+    {"ArtLinePrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','0','U'},
      {0, 0, {432, 1667}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {"ArtifexPrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','1','U'},
+    {"ArtLinePrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','1','U'},
      {0, 0, {432, 1667}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {"ArtifexPrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','2','U'},
+    {"ArtLinePrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','2','U'},
      {0, 0, {432, 1667}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {"ArtifexPrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','1','U'},
+    {"ArtLinePrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','1','U'},
      {0, 0, {432, 1667}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {"ArtifexPrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','2','N'},
+    {"ArtLinePrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','2','N'},
      {0, 0, {432, 1667}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {"ArtifexPrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','5','N'},
+    {"ArtLinePrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','5','N'},
      {0, 0, {432, 1667}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
-    {"ArtifexPrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','8','U'},
+    {"ArtLinePrinter", {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','8','U'},
      {0, 0, {432, 1667}, 0, REGULAR, NOBOLD, 0}, cc_alphabetic},
+
     {"", {'0','0'},
      {0, 0, {0, 0}, 0, 0, 0, 0} }
 #undef C
@@ -463,6 +489,9 @@ table lists the Postscript internal font number (derived from the HP
 name, the screen filename, and the corresponding urw filename which is
 the the urw postscript file name + .ttf.
 
+Note that the table of fonts is ordered in PCL internal font number order 
+PCL font selection requires this ordering, (from the HP 4550clj). 
+
    HP Name                         screen file   urw fontfilename              pclxl name from test file
 1 Albertus-ExtraBold              albr85w.ttf    A028-Ext.ttf                    Albertus      Xb                       A028 Extrabold            
 2 Albertus-Medium                 albr55w.ttf    A028-Med.ttf                    Albertus      Md                       A028 Medium               
@@ -475,12 +504,12 @@ the the urw postscript file name + .ttf.
 9 Arial It.*                             N/A     A030-Ita.ttf                    Arial         It                       A030 Italic               
 10 AvantGarde-Book                 avgr45w.ttf    URWGothicL-Book.ttf +          ITCAvantGard  Bk                       URWGothicL                
 11 AvantGarde-BookOblique          avgr46w.ttf    URWGothicL-BookObli.ttf +      ITCAvantGardBkOb                       URWGothicL Oblique
-12 AvantGarde-Demi                 avgr65w.ttf    URWGothicL-Demi.ttf +              ITCAvantGard  Db                    URWGothicLDem
-13 AvantGarde-DemiOblique          avgr66w.ttf    URWGothicL-DemiObli.ttf +       ITCAvantGardDbOb                       URWGothicLDem Oblique     
-14 Bookman-Demi                    bokr75w.ttf    URWBookmanL-DemiBold.ttf +     missing from test                      URWBookmanL Bold          
-15 Bookman-DemiItalic              bokr76w.ttf    URWBookmanL-DemiBoldItal.ttf + missing from test                      URWBookmanL Bold Italic   
-16 Bookman-Light                   bokr35w.ttf    URWBookmanL-Ligh.ttf +         missing from test                      URWBookmanL               
-17 Bookman-LightItalic             bokr36w.ttf    URWBookmanL-LighItal.ttf +     missing from test                      URWBookmanL Italic        
+12 AvantGarde-Demi                 avgr65w.ttf    URWGothicL-Demi.ttf +          ITCAvantGard  Db                    URWGothicLDem
+13 AvantGarde-DemiOblique          avgr66w.ttf    URWGothicL-DemiObli.ttf +      ITCAvantGardDbOb                       URWGothicLDem Oblique     
+14 Bookman-Demi                    bokr75w.ttf    URWBookmanL-DemiBold.ttf +     ITCBookman    Db                      URWBookmanL Bold          
+15 Bookman-DemiItalic              bokr76w.ttf    URWBookmanL-DemiBoldItal.ttf + ITCBookman  DbIt                      URWBookmanL Bold Italic   
+16 Bookman-Light                   bokr35w.ttf    URWBookmanL-Ligh.ttf +         ITCBookman    Lt                      URWBookmanL               
+17 Bookman-LightItalic             bokr36w.ttf    URWBookmanL-LighItal.ttf +     ITCBookman  LtIt                      URWBookmanL Italic        
 18 CGOmega                         cgor45w.ttf    URWClassico-Reg.ttf            CG Omega                               URWClassico               
 19 CGOmega-Bold                    cgor65w.ttf    URWClassico-Bol.ttf            CG Omega      Bd                       URWClassico Bold          
 20 CGOmega-BoldItalic              cgor66w.ttf    URWClassico-BolIta.ttf         CG Omega    BdIt                       URWClassico Bold Italic   
@@ -555,5 +584,6 @@ Notes:
 
 LetterGothic-BolIta was shipped as a screen font that does not
 correspond with a printer font.
+
 
 #endif /* NEVERCOMPILED */
