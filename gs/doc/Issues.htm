@@ -266,6 +266,21 @@ be clipped or scaled.
 </I>
 <p>
 
+<h3> User request for pdfwrite to convert all colors.</h3>
+
+<p>
+Currently, pdfwrite only converts fill/stroke/text/imagemask colors to the
+color space defined by ProcessColorModel, not colors in images.  A user
+requested that it convert all colors, including images.  (SourceForge "bug"
+#485498.)
+
+<i>
+ProcessColorModel is a stopgap until pdfwrite handles device-dependent
+vector/text/mask colors properly -- i.e., no longer converts them to a
+single color space.  I.e., this request is for a significant enhancement,
+not a bug fix.
+</i>
+
 <hr>
 
 <h2><a name="Performance"></a>Performance.</h2>
