@@ -239,6 +239,8 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 
 	if (code < 0)
 	    return code;
+	if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE)) /* cshow */
+            return code;
 	return set_cache_device(penum, pgs, pw[2], pw[3], pw[4], pw[5]);
     }
     case TEXT_SET_CACHE_DEVICE2: {
@@ -255,6 +257,8 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		return 0;		/* don't cache */
 	    if ((code = set_char_width(penum, pgs, pw[6], pw[7])) < 0)
 		return code;
+	    if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE))
+		return code;
 	    /* Adjust the origin by (vx, vy). */
 	    gx_translate_to_fixed(pgs, pvxy.x, pvxy.y);
 	    code = set_cache_device(penum, pgs, pw[2], pw[3], pw[4], pw[5]);
@@ -267,6 +271,8 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	} else {
 	    code = set_char_width(penum, pgs, pw[0], pw[1]);
 	    if (code < 0)
+		return code;
+	    if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE))
 		return code;
 	    code = set_cache_device(penum, pgs, pw[2], pw[3], pw[4], pw[5]);
 	}
@@ -297,6 +303,8 @@ set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
     } else {
 	penum->width_status = sws_no_cache;
     }
+    if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE)) /* cshow */
+	gs_nulldevice(pgs);
     return !SHOW_IS_DRAWING(penum);
 }
 
