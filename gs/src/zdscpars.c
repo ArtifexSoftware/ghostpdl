@@ -21,40 +21,62 @@
 
 /*
  * The DSC parser consists of three pieces.  The first piece is a DSC parser
- * which was coded by Russell Lang (dscparse.c and dscparse.h).  The second piece
- * is this module.  The third piece is the postscript language module (gs_dscp.ps).
+ * which was coded by Russell Lang (dscparse.c and dscparse.h).  The second
+ * piece is this module.  These two are sufficient to parse DSC comments
+ * and make them available to a client written in PostScript.  The third
+ * piece is a PostScript language module (gs_dscp.ps) that uses certain
+ * comments to affect the interpretation of the file.
  *
- * When a possible DSC comment (first characters in a line are %%) then the
- * postscript routine parse_dsc_commnets is called with the comment string on the operand
- * stack.  That routine loads a dictionary (dsc_dict) and calls parse_dsc_comments
- * in this module.  These two routines form the postscript/C code language interface.
- * parse_dsc_comments pulls the comment string off of the stack and passes it to
- * Russell's parser.  That parser parses the comment and puts any parameter
- * values into a DSC structure.  That parser also returns a code which indicates
- * which type of comment was found.  .parse_dsc_comments looks at the return code and
- * transfers any interesting parameters from the DSC structure into key value
- * pairs in the dsc_dict dictionary.  It also translates the comment type code
- * into a key name (comment name).  The key name is placed on the operand stack.
- * Control is returned to parse_dsc_comments.  That routine pulls the key name from the
- * operand stack and uses it to search the DSCparserproc dictionary for any
- * final processing that needs to be done at the PS language level.
+ * The .initialize_dsc_parser operator defined in this file creates an
+ * instance of Russell's parser, and puts it in a client-supplied dictionary
+ * under a known name (/DSC_struct).
+ *
+ * When the PostScript scanner sees a possible DSC comment (first characters
+ * in a line are %%), it calls the procedure that is the value of the user
+ * parameter ProcessDSCComments.  This procedure should loads the dictionary
+ * that was passed to .initialize_dsc_parser, and then call the
+ * .parse_dsc_comments operator defined in this file.
+ *
+ * These two operators comprise the interface between PostScript and C code.
+ *
+ * There is a "feature" named usedsc that loads a PostScript file
+ * (gs_dscp.ps), which installs a simple framework for processing DSC
+ * comments and having them affect interpretation of the file (e.g., by
+ * setting page device parameters).  See gs_dscp.ps for more information.
+ *
+ * .parse_dsc_comments pulls the comment string off of the stack and passes
+ * it to Russell's parser.  That parser parses the comment and puts any
+ * parameter values into a DSC structure.  That parser also returns a code
+ * which indicates which type of comment was found.  .parse_dsc_comments
+ * looks at the return code and transfers any interesting parameters from
+ * the DSC structure into key value pairs in the dsc_dict dictionary.  It
+ * also translates the comment type code into a key name (comment name).
+ * The key name is placed on the operand stack.  Control then returns to
+ * PostScript code, which can pull the key name from the operand stack and
+ * use it to determine what further processing needs to be done at the PS
+ * language level.
  *
  * To add support for new DSC comments:
- * 1. Verify that Russell's parser supports the comment.  If not then add the
- *    require support.
- * 2. Add an entry into DSCcmdlist.  This table contains three values
- *    for each command that we support.  The first is Russell's return code for
- *    the command. The second is the key name that we pass back to parse_dsc_comments.
- *    (Thus this table translates Russell's codes into key names for
- *    parse_dsc_comments.)   The third entry is a pointer to a local function for
- *    transferring values from Russell's DSC structure into key/value pairs in
- *    dsc_dict.
- * 3. Create the local function described at the end of the last item.  There are
- *    some support routines like dsc_put_integer() and dsc_put_string() to help
- *    implement these functions.
- * 4. If any processing needs to be done at the postscript level then add a
- *    processing routine into the dictionary DSCparserprocs in dsc_pars.ps.
- *    The key names for these entries was described in item 2.
+ *
+ * 1. Verify that Russell's parser supports the comment.  If not, then add
+ *    the required support.
+ *
+ * 2. Add an entry into DSCcmdlist.  This table contains three values for
+ *    each command that we support.  The first is Russell's return code for
+ *    the command. The second is the key name that we pass back on the
+ *    operand stack.  (Thus this table translates Russell's codes into key
+ *    names for the PostScript client.)  The third entry is a pointer to a
+ *    local function for transferring values from Russell's DSC structure
+ *    into key/value pairs in dsc_dict.
+ *
+ * 3. Create the local function described at the end of the last item.
+ *    There are some support routines like dsc_put_integer() and
+ *    dsc_put_string() to help implement these functions.
+ *
+ * 4. If the usedsc feature should recognize and process the new comments,
+ *    add a processing routine into the dictionary DSCparserprocs in
+ *    gs_dscp.ps.  The keys in this dictionary are the key names described
+ *    in item 2 above.
  */
 
 #include "ghost.h"
@@ -86,20 +108,20 @@ gs_private_st_simple_final(st_dsc_data_t, dsc_data_t, "dsc_data_struct", dsc_fin
 private const char * const dsc_dict_name = "DSC_struct";
 
 /*
- * If we return CDSC_OK then Russell's parser will make it best guess when it encounters
- * unexpected comment situations.
+ * If we return CDSC_OK then Russell's parser will make it best guess when
+ * it encounters unexpected comment situations.
  */
 private int
 dsc_error_handler(void *caller_data, CDSC *dsc, unsigned int explanation,
-	const char *line, unsigned int line_len)
+		  const char *line, unsigned int line_len)
 {
     return CDSC_OK;
 }
 
 /*
- * This routine will initialize the DSC parser
+ * This operator creates a new, initialized instance of the DSC parser.
  */
-/* <dict> initialize_dsc_parser - */
+/* <dict> .initialize_dsc_parser - */
 private int
 zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
 {
@@ -108,12 +130,13 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
     os_ptr const op = osp;
     dict * const pdict = op->value.pdict;
     gs_memory_t * const mem = (gs_memory_t *)dict_memory(pdict);
-    dsc_data_t * const data = gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t,
-			  "DSC parser init");
+    dsc_data_t * const data =
+	gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t,
+			"DSC parser init");
 
     data->dsc_data_ptr = dsc_init((void *) "Ghostscript DSC parsing");
     if (!data->dsc_data_ptr)
-    	return (gs_note_error(e_VMerror));
+    	return_error(e_VMerror);
     dsc_set_error_function(data->dsc_data_ptr, dsc_error_handler);
     make_astruct(&local_ref, a_readonly | r_space(op), (byte *) data);
     code = idict_put_string(op, dsc_dict_name, &local_ref);
@@ -154,7 +177,8 @@ dsc_put_integer(i_ctx_t *i_ctx_p, ref *pdict, const char *keyname, int value)
  * using the given string for the key name.
  */
 private int
-dsc_put_string(i_ctx_t *i_ctx_p, ref *opdict, const char *keyname, const char *string)
+dsc_put_string(i_ctx_t *i_ctx_p, ref *opdict, const char *keyname,
+	       const char *string)
 {
     ref local_ref;
     dict * const pdict = opdict->value.pdict;
@@ -192,7 +216,7 @@ private int
 dsc_page(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
 {
     return dsc_put_integer(i_ctx_p, pDict, "PageNum",
-		    pData->page[pData->page_count - 1].ordinal );
+			   pData->page[pData->page_count - 1].ordinal );
 }
 
 private int
@@ -222,17 +246,17 @@ dsc_pageorientation(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
      */
     if (page_num && pData->page[page_num - 1].orientation != CDSC_ORIENT_UNKNOWN)
 	return dsc_put_integer(i_ctx_p, pDict, "PageOrientation",
-		convert_orient(pData->page[page_num - 1].orientation));
+			convert_orient(pData->page[page_num - 1].orientation));
     else
         return dsc_put_integer(i_ctx_p, pDict, "Orientation",
-		convert_orient(pData->page_orientation));
+			       convert_orient(pData->page_orientation));
 }
 
 private int
 dsc_orientation(i_ctx_t *i_ctx_p, ref *pDict, const CDSC * const pData)
 {
     return dsc_put_integer(i_ctx_p, pDict, "Orientation", 
-			convert_orient(pData->page_orientation));
+			   convert_orient(pData->page_orientation));
 }
 
 
@@ -256,7 +280,7 @@ typedef struct cmd_list_s {
     int code;			/* Russell's DSC parser code (see dsc.h) */
     const char *comment_name;	/* A name to be returned to postscript caller */
     int (*dsc_proc) (P3(i_ctx_t *, ref *, const CDSC * const));
-				/* A routine for transfering parameter values
+				/* A routine for transferring parameter values
 				   from C data structure to postscript dictionary
 				   key/value pairs. */
 } cmdlist_t;
@@ -282,7 +306,7 @@ private const cmdlist_t DSCcmdlist[] = {
  * appropriate for our situation.  So we use this list to check for this
  * type of comment and do not send it to Russell's parser if found.
  */
-private const char *BadCmdlist[] = {
+private const char * const BadCmdlist[] = {
     "%%BeginData:",
     "%%EndData",
     "%%BeginBinary:",
@@ -311,7 +335,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     check_type(*opString, t_string);
     check_dict_write(*opDict);
     ssize = r_size(opString);
-    if (ssize >= MAX_DSC_MSG_SIZE)
+    if (ssize > MAX_DSC_MSG_SIZE - 2) /* need room for EOL + \0 */
     	return (gs_note_error(e_rangecheck));
     /*
      * Pick up the comment string to be parsed.
@@ -338,11 +362,9 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
         if (code < 0)
             return code;
         comment_code = dsc_scan_data(dsc_data, dsc_buffer, ssize + 1);
-#if DEBUG
-        dprintf1("parse_dsc_comments: code = %d\n", comment_code);
-#endif
+        if_debug1('%', "[%%].parse_dsc_comments: code = %d\n", comment_code);
         if (comment_code < 0)
-	    return (gs_note_error(comment_code));
+	    return_error(comment_code);
     }
     /*
      * Transfer data from DSC structure to postscript variables.
