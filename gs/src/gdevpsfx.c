@@ -201,7 +201,8 @@ type1_next(gs_type1_state *pcis)
 	case c_undef17:
 	    return_error(gs_error_invalidfont);
 	case c_callsubr:
-	    code = type1_callsubr(pcis, fixed2int_var(*csp));
+	    code = type1_callsubr(pcis, fixed2int_var(*csp) +
+				  pcis->pfont->data.subroutineNumberBias);
 	    if (code < 0)
 		return_error(code);
 	    ipsp->ip = cip, ipsp->dstate = state;

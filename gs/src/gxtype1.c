@@ -532,7 +532,7 @@ gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
 	default:
 	    goto out;
 	case c_callsubr:
-	    c = fixed2int_var(*csp);
+	    c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 	    code = pdata->procs.subr_data
 		(pfont, c, false, &ipsp[1].cs_data);
 	    if (code < 0)
