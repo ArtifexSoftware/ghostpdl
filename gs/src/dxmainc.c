@@ -41,7 +41,6 @@
 #define __PROTOTYPES__
 #include "errors.h"
 #include "iapi.h"
-#include "gdevdsp.h"
 
 const char start_string[] = "systemdict /start get exec\n";
 
