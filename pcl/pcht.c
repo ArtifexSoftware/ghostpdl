@@ -30,7 +30,7 @@
 /*
  * GC routines
  */
-  private
+private
 ENUM_PTRS_BEGIN(ht_dither_enum_ptrs)
 
         return 0;
@@ -48,7 +48,7 @@ ENUM_PTRS_BEGIN(ht_dither_enum_ptrs)
         }
 ENUM_PTRS_END
 
-  private
+private
 RELOC_PTRS_BEGIN(ht_dither_reloc_ptrs)
     pcl_ht_builtin_dither_t *   pdither = (pcl_ht_builtin_dither_t *)vptr;
 
@@ -61,7 +61,7 @@ RELOC_PTRS_END
 private_st_ht_builtin_dither_t();
 
 
-  private
+private
 ENUM_PTRS_BEGIN(ht_enum_ptrs)
         return 0;
       ENUM_PTR(0, pcl_ht_t, client_data[0].plktbl);
@@ -75,7 +75,7 @@ ENUM_PTRS_BEGIN(ht_enum_ptrs)
       ENUM_PTR(8, pcl_ht_t, pim_ht);
 ENUM_PTRS_END
 
-  private
+private
 RELOC_PTRS_BEGIN(ht_reloc_ptrs)
     RELOC_PTR(pcl_ht_t, client_data[0].plktbl);
     RELOC_PTR(pcl_ht_t, client_data[1].plktbl);
@@ -1209,7 +1209,7 @@ static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = true;
  * Update built-in rendering information. Attempts to changed fixed rendering
  * infomration are ignored.
  */
-  private void
+private void
 pcl_ht_update_rendering_info(
     pcl_state_t *                     pcs,
     int                               method,
@@ -1227,7 +1227,7 @@ pcl_ht_update_rendering_info(
 /*
  * Read dither information from a parameter dictionary held by the device.
  */
-  private void
+private void
 read_dither(
     pcl_state_t *               pcs,
     int                         method,
@@ -1305,7 +1305,7 @@ read_dither(
  * Modify the rendering remap table. Note that the change will not take
  * effect until the next time the print mode is reset.
  */
-  private void
+private void
 pcl_ht_update_rendering_remap(
     pcl_state_t *   pcs,
     const byte *    map
@@ -1317,7 +1317,7 @@ pcl_ht_update_rendering_remap(
 /*
  * Read a re-mapping array for rendering methods.
  */
-  private void
+private void
 read_remap_array(
     pcl_state_t *pcs,
     gs_param_list * plist,
@@ -1340,7 +1340,7 @@ read_remap_array(
 /*
  * Initialize the default rendering information.
  */
-  void
+void
 pcl_ht_init_render_methods(
     pcl_state_t *   pcs,
     gs_memory_t *   pmem
@@ -1349,6 +1349,8 @@ pcl_ht_init_render_methods(
     int             i;
     gx_device *     pcur_dev = gs_currentdevice(pcs->pgs);
     gs_c_param_list list;
+
+    if (pcs->pdflt_ht) return; /* init_render_methods should happen once */
 
     pcs->ordered_dither.type = pcl_halftone_Threshold;
     pcs->ordered_dither.u.thresh = ordered_dither_thresh;
@@ -1490,9 +1492,6 @@ pcl_ht_init_render_methods(
         read_remap_array(pcs, (gs_param_list *)&list, pmem);
     }
     gs_c_param_list_release(&list);
-
-    /* initialize default halftone */
-    pcs->pdflt_ht = 0;
 }
 
 /*
@@ -1506,7 +1505,7 @@ pcl_ht_init_render_methods(
  * will take effect.
  */
 
-  void
+void
 pcl_ht_set_print_mode(
     pcl_state_t *       pcs,
     bool                monochrome
@@ -1525,7 +1524,7 @@ pcl_ht_set_print_mode(
  * Report if a rendering method is a monochrome method. The evaluation is made
  * with considering the remapping array.
  */
-  private bool
+private bool
 is_monochrome(
     pcl_state_t *   pcs,
     int             method
@@ -1542,7 +1541,7 @@ is_monochrome(
  * Note that freeing of the halftone strings is legitimate, as graphic library
  * halftones are never shared among PCL halftone objects.
  */
-  private void
+private void
 free_gs_hts(
     pcl_ht_t *  pht
 )
@@ -1579,7 +1578,7 @@ free_gs_hts(
  * exist only because they are required by the graphic library halftone
  * structures.
  */
-  private void
+private void
 free_pcl_ht(
     gs_memory_t *   pmem,
     void *          pvht,
@@ -1606,7 +1605,7 @@ free_pcl_ht(
  *
  * Returns 0 on success, < 0 in event of an error.
  */
-  private int
+private int
 alloc_pcl_ht(
     pcl_ht_t **   ppht,
     gs_memory_t * pmem
@@ -1662,7 +1661,7 @@ alloc_pcl_ht(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+private int
 unshare_pcl_ht(
     pcl_ht_t ** ppht
 )
@@ -1742,7 +1741,7 @@ pcl_ht_is_all_gray_palette(pcl_state_t *pcs)
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
+int
 pcl_ht_set_render_method(
     pcl_state_t * pcs,
     pcl_ht_t **   ppht,
@@ -1821,7 +1820,7 @@ pcl_ht_remap_render_method(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
+int
 pcl_ht_set_gamma(
     pcl_ht_t ** ppht,
     float       gamma
@@ -1863,7 +1862,7 @@ pcl_ht_set_gamma(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
+int
 pcl_ht_set_lookup_tbl(
     pcl_ht_t **         ppht,
     pcl_lookup_tbl_t *  plktbl
@@ -1896,7 +1895,7 @@ pcl_ht_set_lookup_tbl(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
+int
 pcl_ht_set_udither(
     pcl_ht_t **     ppht,
     pcl_udither_t * pdither
@@ -1921,7 +1920,7 @@ pcl_ht_set_udither(
  * in which a device-independent color space is used with a rendering method
  * that is not compatible with device-independent color spaces.
  */
-  int
+int
 pcl_ht_update_cspace(
     pcl_state_t *       pcs,
     pcl_ht_t **         ppht,
@@ -1948,7 +1947,7 @@ pcl_ht_update_cspace(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
+int
 pcl_ht_build_default_ht(
     pcl_state_t *       pcs,
     pcl_ht_t **         ppht,
@@ -1969,7 +1968,7 @@ pcl_ht_build_default_ht(
  * Unlike the color space code, in this code the procedure is the same for all
  * components, but the client data differs.
  */
-  private float
+private float
 transfer_proc(
     floatp                          val,
     const gx_transfer_map *         pmap,   /* ignored */
@@ -1990,7 +1989,7 @@ transfer_proc(
  * this component to have the default (identity) transfer function when
  * operating in normal (colored) mode.
  */
-  private float
+private float
 dflt_transfer_proc(
     floatp                          val,
     const gx_transfer_map *         pmap,   /* ignored */
@@ -2006,7 +2005,7 @@ dflt_transfer_proc(
  * not be used with device-independent color spaces. Also considers whether
  * or not the rendering is processing PCL rasters (the for_image operand).
  */
-  private const pcl_rend_info_t *
+private const pcl_rend_info_t *
 get_rendering_info(
     pcl_state_t *       pcs,
     uint                sel_method,
@@ -2046,7 +2045,7 @@ get_rendering_info(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+private int
 set_threshold_ht(
     pcl_state_t *               pcs,
     pcl_ht_t *                  pht,
@@ -2168,7 +2167,7 @@ private const gs_ht_separation_name sepnames_gray[1] = {
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+private int
 create_gs_halftones(
     pcl_state_t *        pcs,
     pcl_ht_t *           pht,
@@ -2215,8 +2214,8 @@ create_gs_halftones(
     if (code == 0) {
         if (pinfo != get_rendering_info(pcs, pht->render_method, cstype, true))
             code = e_Unimplemented;
-        else
-            gs_ht_init_ptr(pht->pim_ht, pht->pfg_ht);
+        else 
+	  gs_ht_init_ptr(pht->pim_ht, pht->pfg_ht);
     }
 
     if (code < 0)
@@ -2230,7 +2229,7 @@ create_gs_halftones(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
+int
 pcl_ht_set_halftone(
     pcl_state_t *        pcs,
     pcl_ht_t **          ppht,
@@ -2285,3 +2284,4 @@ pcl_ht_set_halftone(
     pcl_ht_copy_from(pcs->pids->pht, pht);
     return code;
 }
+
