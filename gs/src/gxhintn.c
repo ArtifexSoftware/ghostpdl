@@ -1568,8 +1568,10 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
         int prev2 = ranger_step_b(prev1        , beg_contour_pole, end_contour_pole);
         int next1 = ranger_step_f(segment_index, beg_contour_pole, end_contour_pole);
         int next2 = ranger_step_f(next1        , beg_contour_pole, end_contour_pole);
-        bool forwd_horiz = (any_abs(this->pole[next1].gy - pole->gy) <= this->blue_fuzz);
-        bool bckwd_horiz = (any_abs(this->pole[prev1].gy - pole->gy) <= this->blue_fuzz);
+        bool forwd_horiz = (any_abs(this->pole[next1].gy - pole->gy) <= 
+		max(this->blue_fuzz, any_abs(this->pole[next1].gx - pole->gx) / 10));
+        bool bckwd_horiz = (any_abs(this->pole[prev1].gy - pole->gy) <= 
+		max(this->blue_fuzz, any_abs(this->pole[prev1].gx - pole->gx) / 10));
 
         if (forwd_horiz || bckwd_horiz) {
             bool forwd_curve = (this->pole[next1].type == offcurve);
