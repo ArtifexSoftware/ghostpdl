@@ -1701,7 +1701,6 @@ end
       exch def
     } for
     pop
-    //PDFReader /MacRomanEncodingInverse currentdict put
    currentdict end
 } bind def
 
@@ -1710,6 +1709,7 @@ end
   dup null eq {
     pop
     MacRomanEncoding //InverseEncoding exec
+    dup //PDFReader exch /MacRomanEncodingInverse exch put
   } if
 } bind def
 
