@@ -1,0 +1,33 @@
+%!
+% "Smoke test" for new GS releases.
+
+/QUIT /quit load def
+/quit { currentfile closefile } def
+%/NOPAUSE true def
+[
+  (/gs/data/misc/*.ps)
+  (/gs/data/ps/*.ps)
+  (/gs/data/psl2/*.ps)
+  (/gs/data/psl3/*.ps)
+%  (/gs/data/pdf/s*.pdf)
+%  (/gs/k/pdf/*.pdf)
+%  (/gs/k/*.pdf)
+]
+{
+  {
+    dup (*_all.ps) .stringmatch {
+      (---------------- skipping ) print print ( ----------------) = flush
+    } {
+      (---------------- ) print dup print ( ----------------) = flush
+      /JOB save def
+%(BEFORE: ) print currentpagedevice === flush
+      { run } execute flush
+      count { clear } exch 2 .execn
+      countdictstack cleardictstack
+      (Stack depths: ) print 2 array astore == flush
+%(AFTER: ) print currentpagedevice === flush
+      JOB restore
+    } ifelse
+  } 100 string filenameforall
+} forall
+quit
