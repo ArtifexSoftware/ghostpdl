@@ -20,7 +20,6 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
-#include "gdevpdff.h"		/* for synthesized bitmap fonts */
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"		/* for data stream */
 #include "gxcspace.h"
@@ -144,19 +143,11 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    if (pres == 0) {	/* Define the character in an embedded font. */
 		pdf_char_proc_t *pcp;
 		int y_offset;
-		int max_y_offset =
-		(pdev->open_font == 0 ? 0 :
-		 pdev->open_font->max_y_offset);
 
 		gs_image_t_init_mask(&image, false);
 		invert = 0xff;
 		pdf_make_bitmap_image(&image, x, y, w, h);
-		y_offset =
-		    image.ImageMatrix.ty - (int)(pdev->text.current.y + 0.5);
-		if (x < pdev->text.current.x ||
-		    y_offset < -max_y_offset || y_offset > max_y_offset
-		    )
-		    y_offset = 0;
+		y_offset = pdf_char_image_y_offset(pdev, x, y, h);
 		/*
 		 * The Y axis of the text matrix is inverted,
 		 * so we need to negate the Y offset appropriately.
@@ -173,7 +164,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true);
 		if (code < 0)
 		    return code;
-		pcp->rid = id;
 		pres = (pdf_resource_t *) pcp;
 		goto wr;
 	    }

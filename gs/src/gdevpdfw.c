@@ -30,6 +30,7 @@
 #include "gxfont0.h"
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
+#include "gdevpdft.h"
 #include "gdevpsf.h"
 #include "scommon.h"
 
@@ -96,7 +97,8 @@ pdf_write_synthesized_type3(gx_device_pdf *pdev, const pdf_font_t *pef)
     pdf_open_separate(pdev, pdf_font_id(pef));
     s = pdev->strm;
     pprints1(s, "<</Type/Font/Name/%s/Subtype/Type3", pef->rname);
-    pprintld1(s, "/Encoding %ld 0 R/CharProcs", pdev->embedded_encoding_id);
+    pprintld1(s, "/Encoding %ld 0 R/CharProcs",
+	      pdev->text->f.embedded_encoding_id);
 
     /* Write the CharProcs. */
     {
@@ -119,7 +121,7 @@ pdf_write_synthesized_type3(gx_device_pdf *pdev, const pdf_font_t *pef)
 
 	    if (ch) {
 		pprintld2(s, "/a%ld\n%ld 0 R", (long)ch,
-			  pdev->space_char_ids[w]);
+			  pdev->text->f.space_char_ids[w]);
 		widths[ch] = w + X_SPACE_MIN;
 	    }
 	}
@@ -832,11 +834,11 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 
     /* If required, write the Encoding for Type 3 bitmap fonts. */
 
-    if (pdev->embedded_encoding_id) {
+    if (pdev->text->f.embedded_encoding_id) {
 	stream *s;
 	int i;
 
-	pdf_open_separate(pdev, pdev->embedded_encoding_id);
+	pdf_open_separate(pdev, pdev->text->f.embedded_encoding_id);
 	s = pdev->strm;
 	/*
 	 * Even though the PDF reference documentation says that a
@@ -846,7 +848,7 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 	 * BaseEncoding key is present.
 	 */
 	stream_puts(s, "<</Type/Encoding/Differences[0");
-	for (i = 0; i <= pdev->max_embedded_code; ++i) {
+	for (i = 0; i <= pdev->text->f.max_embedded_code; ++i) {
 	    if (!(i & 15))
 		stream_puts(s, "\n");
 	    pprintd1(s, "/a%d", i);

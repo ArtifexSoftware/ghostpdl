@@ -39,6 +39,7 @@
 #include "gdevpdff.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"		/* only to mark CMap as written */
+#include "gdevpdft.h"
 #include "scommon.h"
 
 /*
@@ -1408,16 +1409,15 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 	    if (HAS_DIFF(c) || IS_USED(c))
 		continue; /* slot already referenced */
 	    font_glyph = ENCODE_NO_DIFF(c);
- 	    if (font_glyph == gs_no_glyph)
- 		break;
- 	    else if (font_glyph >= gs_c_min_std_encoding_glyph) {
- 		uint len;
- 		const char *str = gs_c_glyph_name(font_glyph, &len);
- 
- 		if (len == 7 && !memcmp(str, ".notdef", 7))
- 		    break;
- 	    } else if (gs_font_glyph_is_notdef(bfont, font_glyph))
-  		break;
+	    if (font_glyph == gs_no_glyph)
+		break;
+	    else if (font_glyph >= gs_c_min_std_encoding_glyph) {
+		uint len;
+		const char *str = gs_c_glyph_name(font_glyph, &len);
+
+		if (len == 7 && !memcmp(str, ".notdef", 7))
+		    break;
+	    } else if (gs_font_glyph_is_notdef(bfont, font_glyph))
 		break;
 	}
 	if (c == 256)	/* no .notdef positions left */
@@ -1456,6 +1456,7 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
 			     const pdf_text_process_state_t *ppts,
 			     const gs_const_string *pstr)
 {
+    pdf_text_state_t *const pts = &pdev->text->t;
     int code;
 
     /*
@@ -1463,7 +1464,7 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
      * settings of the text parameters to be lost.  Therefore, we set the
      * stroke parameters first.
      */
-    if (pdev->text.render_mode != ppts->mode && ppts->mode != 0) {
+    if (pts->render_mode != ppts->mode && ppts->mode != 0) {
 	/* Write all the parameters for stroking. */
 	gs_imager_state *pis = pte->pis;
 	float save_width = pis->line_params.half_width;
@@ -1502,33 +1503,33 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
     if (code < 0)
 	return code;
 
-    if (pdev->text.character_spacing != ppts->chars &&
-	pstr->size + pdev->text.buffer_count > 1
+    if (pts->character_spacing != ppts->chars &&
+	pstr->size + pts->buffer_count > 1
 	) {
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
 	    return code;
 	pprintg1(pdev->strm, "%g Tc\n", ppts->chars);
-	pdev->text.character_spacing = ppts->chars;
+	pts->character_spacing = ppts->chars;
     }
 
-    if (pdev->text.word_spacing != ppts->words &&
+    if (pts->word_spacing != ppts->words &&
 	(memchr(pstr->data, 32, pstr->size) ||
-	 memchr(pdev->text.buffer, 32, pdev->text.buffer_count))
+	 memchr(pts->buffer, 32, pts->buffer_count))
 	) {
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
 	    return code;
 	pprintg1(pdev->strm, "%g Tw\n", ppts->words);
-	pdev->text.word_spacing = ppts->words;
+	pts->word_spacing = ppts->words;
     }
 
-    if (pdev->text.render_mode != ppts->mode) {
+    if (pts->render_mode != ppts->mode) {
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
 	    return code;
 	pprintd1(pdev->strm, "%d Tr\n", ppts->mode);
-	pdev->text.render_mode = ppts->mode;
+	pts->render_mode = ppts->mode;
     }
 
     return 0;

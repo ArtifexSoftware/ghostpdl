@@ -262,19 +262,14 @@ stream_to_text(gx_device_pdf * pdev)
     pprintg2(pdev->strm, "q %g 0 0 %g 0 0 cm BT\n",
 	     pdev->HWResolution[0] / 72.0, pdev->HWResolution[1] / 72.0);
     pdev->procsets |= Text;
-    gs_make_identity(&pdev->text.matrix);
-    pdev->text.line_start.x = pdev->text.line_start.y = 0;
-    pdev->text.buffer_count = 0;
+    pdf_from_stream_to_text(pdev);
     return PDF_IN_TEXT;
 }
 /* Exit string context to text context. */
 private int
 string_to_text(gx_device_pdf * pdev)
 {
-    pdf_put_string(pdev, pdev->text.buffer, pdev->text.buffer_count);
-    stream_puts(pdev->strm, (pdev->text.use_leading ? "'\n" : "Tj\n"));
-    pdev->text.use_leading = false;
-    pdev->text.buffer_count = 0;
+    pdf_from_string_to_text(pdev);
     return PDF_IN_TEXT;
 }
 /* Exit text context to stream context. */
@@ -337,7 +332,7 @@ pdf_close_contents(gx_device_pdf * pdev, bool last)
     if (last) {			/* Exit from the clipping path gsave. */
 	pdf_open_contents(pdev, PDF_IN_STREAM);
 	stream_puts(pdev->strm, "Q\n");
-	pdev->text.font = 0;
+	pdf_close_text_contents(pdev);
     }
     return pdf_open_contents(pdev, PDF_IN_NONE);
 }

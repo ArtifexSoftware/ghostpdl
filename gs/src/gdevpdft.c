@@ -25,7 +25,142 @@
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
 #include "gdevpdfg.h"
+#include "gdevpdft.h"
 #include "scommon.h"
+
+/* ---------------- Text state management ---------------- */
+
+/* GC descriptor */
+gs_private_st_composite(st_pdf_text_data, pdf_text_data_t,
+  "pdf_text_data_t", pdf_text_data_enum_ptrs, pdf_text_data_reloc_ptrs);
+private
+ENUM_PTRS_WITH(pdf_text_data_enum_ptrs, pdf_text_data_t *ptd)
+{
+    index -= 2;
+    if (index < PDF_NUM_STD_FONTS)
+	ENUM_RETURN(ptd->f.std_fonts[index].font);
+    index -= PDF_NUM_STD_FONTS;
+    if (index < PDF_NUM_STD_FONTS)
+	ENUM_RETURN(ptd->f.std_fonts[index].pfd);
+    return 0;
+}
+case 0: ENUM_RETURN(ptd->t.font);
+case 1: ENUM_RETURN(ptd->f.open_font);
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(pdf_text_data_reloc_ptrs, pdf_text_data_t *ptd)
+{
+    int i;
+
+    RELOC_VAR(ptd->t.font);
+    RELOC_VAR(ptd->f.open_font);
+    for (i = 0; i < PDF_NUM_STD_FONTS; ++i) {
+	RELOC_VAR(ptd->f.std_fonts[i].font);
+	RELOC_VAR(ptd->f.std_fonts[i].pfd);
+    }
+}
+RELOC_PTRS_END
+
+static const pdf_text_data_t td_default = {
+    pdf_text_data_default
+};
+
+/* For gdevpdf.c */
+
+pdf_text_data_t *
+pdf_text_data_alloc(gs_memory_t *mem)
+{
+    pdf_text_data_t *ptd =
+	gs_alloc_struct(mem, pdf_text_data_t, &st_pdf_text_data,
+			"pdf_text_alloc");
+
+    if (ptd == 0)
+	return 0;
+    *ptd = td_default;
+    return ptd;
+}
+
+void
+pdf_reset_text_page(pdf_text_data_t *ptd)
+{
+    ptd->t = td_default.t;
+}
+
+void
+pdf_reset_text_state(pdf_text_data_t *ptd)
+{
+    ptd->t.character_spacing = 0;
+    ptd->t.font = NULL;
+    ptd->t.size = 0;
+    ptd->t.word_spacing = 0;
+    ptd->t.leading = 0;
+    ptd->t.use_leading = false;
+    ptd->t.render_mode = 0;
+}
+
+void
+pdf_close_text_page(gx_device_pdf *pdev)
+{
+    /*
+     * When Acrobat Reader 3 prints a file containing a Type 3 font with a
+     * non-standard Encoding, it apparently only emits the subset of the
+     * font actually used on the page.  Thus, if the "Download Fonts Once"
+     * option is selected, characters not used on the page where the font
+     * first appears will not be defined, and hence will print as blank if
+     * used on subsequent pages.  Thus, we can't allow a Type 3 font to
+     * add additional characters on subsequent pages.
+     */
+    if (pdev->CompatibilityLevel <= 1.2)
+	pdev->text->f.use_open_font = false;
+}
+
+/* For gdevpdfb.c */
+
+int
+pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h)
+{
+    const pdf_text_data_t *const ptd = pdev->text;
+    int max_off, off;
+
+    if (x < ptd->t.current.x)
+	return 0;
+    max_off = (ptd->f.open_font == 0 ? 0 : ptd->f.open_font->max_y_offset);
+    off = (y + h) - (int)(ptd->t.current.y + 0.5);
+    if (off < -max_off || off > max_off)
+	off = 0;
+    return off;
+}
+
+/* For gdevpdfu.c */
+
+void
+pdf_from_stream_to_text(gx_device_pdf *pdev)
+{
+    pdf_text_data_t *ptd = pdev->text;
+
+    gs_make_identity(&ptd->t.matrix);
+    ptd->t.line_start.x = ptd->t.line_start.y = 0;
+    ptd->t.buffer_count = 0;
+}
+
+void
+pdf_from_string_to_text(gx_device_pdf *pdev)
+{
+    pdf_text_data_t *ptd = pdev->text;
+
+    pdf_put_string(pdev, ptd->t.buffer, ptd->t.buffer_count);
+    stream_puts(pdev->strm, (ptd->t.use_leading ? "'\n" : "Tj\n"));
+    ptd->t.use_leading = false;
+    ptd->t.buffer_count = 0;
+}
+
+void
+pdf_close_text_contents(gx_device_pdf *pdev)
+{
+    pdev->text->t.font = 0;
+}
+
+
+/* ---------------- Text processing ---------------- */
 
 /* GC descriptors */
 private_st_pdf_text_enum();
@@ -198,7 +333,9 @@ private int assign_char_code(P1(gx_device_pdf * pdev));
 int
 pdf_set_font_and_size(gx_device_pdf * pdev, pdf_font_t * font, floatp size)
 {
-    if (font != pdev->text.font || size != pdev->text.size) {
+    pdf_text_data_t *ptd = pdev->text;
+
+    if (font != ptd->t.font || size != ptd->t.size) {
 	int code = pdf_open_page(pdev, PDF_IN_TEXT);
 	stream *s = pdev->strm;
 
@@ -206,8 +343,8 @@ pdf_set_font_and_size(gx_device_pdf * pdev, pdf_font_t * font, floatp size)
 	    return code;
 	pprints1(s, "/%s ", font->rname);
 	pprintg1(s, "%g Tf\n", size);
-	pdev->text.font = font;
-	pdev->text.size = size;
+	ptd->t.font = font;
+	ptd->t.size = size;
     }
     font->where_used |= pdev->used_mask;
     return 0;
@@ -239,15 +376,16 @@ set_text_distance(gs_point *pdist, const gs_point *ppt, const gs_matrix *pmat)
 int
 pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 {
+    pdf_text_data_t *ptd = pdev->text;
     stream *s = pdev->strm;
     double sx = 72.0 / pdev->HWResolution[0],
 	sy = 72.0 / pdev->HWResolution[1];
     int code;
 
-    if (pmat->xx == pdev->text.matrix.xx &&
-	pmat->xy == pdev->text.matrix.xy &&
-	pmat->yx == pdev->text.matrix.yx &&
-	pmat->yy == pdev->text.matrix.yy &&
+    if (pmat->xx == ptd->t.matrix.xx &&
+	pmat->xy == ptd->t.matrix.xy &&
+	pmat->yx == ptd->t.matrix.yx &&
+	pmat->yy == ptd->t.matrix.yy &&
     /*
      * If we aren't already in text context, BT will reset
      * the text matrix.
@@ -257,30 +395,30 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 	/* Use leading, Td or a pseudo-character. */
 	gs_point dist;
 
-	set_text_distance(&dist, &pdev->text.current, pmat);
+	set_text_distance(&dist, &ptd->t.current, pmat);
 	if (dist.y == 0 && dist.x >= X_SPACE_MIN &&
 	    dist.x <= X_SPACE_MAX &&
-	    pdev->text.font != 0 &&
-	    PDF_FONT_IS_SYNTHESIZED(pdev->text.font)
+	    ptd->t.font != 0 &&
+	    PDF_FONT_IS_SYNTHESIZED(ptd->t.font)
 	    ) {			/* Use a pseudo-character. */
 	    int dx = (int)dist.x;
 	    int dx_i = dx - X_SPACE_MIN;
-	    byte space_char = pdev->text.font->spaces[dx_i];
+	    byte space_char = ptd->t.font->spaces[dx_i];
 
 	    if (space_char == 0) {
-		if (pdev->text.font != pdev->open_font)
+		if (ptd->t.font != ptd->f.open_font)
 		    goto not_spaces;
 		code = assign_char_code(pdev);
 		if (code <= 0)
 		    goto not_spaces;
-		space_char = pdev->open_font->spaces[dx_i] = (byte)code;
-		if (pdev->space_char_ids[dx_i] == 0) {
+		space_char = ptd->f.open_font->spaces[dx_i] = (byte)code;
+		if (ptd->f.space_char_ids[dx_i] == 0) {
 		    /* Create the space char_proc now. */
 		    char spstr[3 + 14 + 1];
 		    stream *s;
 
 		    sprintf(spstr, "%d 0 0 0 0 0 d1\n", dx);
-		    pdev->space_char_ids[dx_i] = pdf_begin_separate(pdev);
+		    ptd->f.space_char_ids[dx_i] = pdf_begin_separate(pdev);
 		    s = pdev->strm;
 		    pprintd1(s, "<</Length %d>>\nstream\n", strlen(spstr));
 		    pprints1(s, "%sendstream\n", spstr);
@@ -288,8 +426,8 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 		}
 	    }
 	    pdf_append_chars(pdev, &space_char, 1);
-	    pdev->text.current.x += dx * pmat->xx;
-	    pdev->text.current.y += dx * pmat->xy;
+	    ptd->t.current.x += dx * pmat->xx;
+	    ptd->t.current.y += dx * pmat->xy;
 	    /* Don't change use_leading -- it only affects Y placement. */
 	    return 0;
 	}
@@ -297,24 +435,24 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
 	    return code;
-	set_text_distance(&dist, &pdev->text.line_start, pmat);
-	if (pdev->text.use_leading) {
+	set_text_distance(&dist, &ptd->t.line_start, pmat);
+	if (ptd->t.use_leading) {
 	    /* Leading was deferred: take it into account now. */
-	    dist.y -= pdev->text.leading;
+	    dist.y -= ptd->t.leading;
 	}
 	if (dist.x == 0 && dist.y < 0) {
 	    /* Use TL, if needed, + '. */
 	    float dist_y = (float)-dist.y;
 
-	    if (fabs(pdev->text.leading - dist_y) > 0.0005) {
+	    if (fabs(ptd->t.leading - dist_y) > 0.0005) {
 		pprintg1(s, "%g TL\n", dist_y);
-		pdev->text.leading = dist_y;
+		ptd->t.leading = dist_y;
 	    }
-	    pdev->text.use_leading = true;
+	    ptd->t.use_leading = true;
 	} else {
 	    /* Use Td. */
 	    pprintg2(s, "%g %g Td\n", dist.x, dist.y);
-	    pdev->text.use_leading = false;
+	    ptd->t.use_leading = false;
 	}
     } else {			/* Use Tm. */
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
@@ -328,13 +466,13 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 		 pmat->xx * sx, pmat->xy * sy,
 		 pmat->yx * sx, pmat->yy * sy,
 		 pmat->tx * sx, pmat->ty * sy);
-	pdev->text.matrix = *pmat;
-	pdev->text.use_leading = false;
+	ptd->t.matrix = *pmat;
+	ptd->t.use_leading = false;
     }
-    pdev->text.line_start.x = pmat->tx;
-    pdev->text.line_start.y = pmat->ty;
-    pdev->text.current.x = pmat->tx;
-    pdev->text.current.y = pmat->ty;
+    ptd->t.line_start.x = pmat->tx;
+    ptd->t.line_start.y = pmat->ty;
+    ptd->t.current.x = pmat->tx;
+    ptd->t.current.y = pmat->ty;
     return 0;
 }
 
@@ -344,11 +482,12 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 int
 pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size)
 {
+    pdf_text_data_t *ptd = pdev->text;
     const byte *p = str;
     uint left = size;
 
     while (left)
-	if (pdev->text.buffer_count == max_text_buffer) {
+	if (ptd->t.buffer_count == max_text_buffer) {
 	    int code = pdf_open_page(pdev, PDF_IN_TEXT);
 
 	    if (code < 0)
@@ -359,9 +498,9 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size)
 
 	    if (code < 0)
 		return code;
-	    copy = min(max_text_buffer - pdev->text.buffer_count, left);
-	    memcpy(pdev->text.buffer + pdev->text.buffer_count, p, copy);
-	    pdev->text.buffer_count += copy;
+	    copy = min(max_text_buffer - ptd->t.buffer_count, left);
+	    memcpy(ptd->t.buffer + ptd->t.buffer_count, p, copy);
+	    ptd->t.buffer_count += copy;
 	    p += copy;
 	    left -= copy;
 	}
@@ -374,32 +513,33 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size)
 private int
 assign_char_code(gx_device_pdf * pdev)
 {
-    pdf_font_t *font = pdev->open_font;
+    pdf_text_data_t *ptd = pdev->text;
+    pdf_font_t *font = ptd->f.open_font;
     int c;
 
-    if (pdev->embedded_encoding_id == 0)
-	pdev->embedded_encoding_id = pdf_obj_ref(pdev);
-    if (font == 0 || font->num_chars == 256 || !pdev->use_open_font) {
+    if (ptd->f.embedded_encoding_id == 0)
+	ptd->f.embedded_encoding_id = pdf_obj_ref(pdev);
+    if (font == 0 || font->num_chars == 256 || !ptd->f.use_open_font) {
 	/* Start a new synthesized font. */
 	int code = pdf_alloc_font(pdev, gs_no_id, &font, NULL, NULL);
 	char *pc;
 
 	if (code < 0)
 	    return code;
-	if (pdev->open_font == 0)
+	if (ptd->f.open_font == 0)
 	    font->rname[0] = 0;
 	else
-	    strcpy(font->rname, pdev->open_font->rname);
+	    strcpy(font->rname, ptd->f.open_font->rname);
 	for (pc = font->rname; *pc == 'Z'; ++pc)
 	    *pc = '@';
 	if ((*pc)++ == 0)
 	    *pc = 'A', pc[1] = 0;
-	pdev->open_font = font;
-	pdev->use_open_font = true;
+	ptd->f.open_font = font;
+	ptd->f.use_open_font = true;
     }
     c = font->num_chars++;
-    if (c > pdev->max_embedded_code)
-	pdev->max_embedded_code = c;
+    if (c > ptd->f.max_embedded_code)
+	ptd->f.max_embedded_code = c;
     return c;
 }
 
@@ -411,7 +551,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
     pdf_resource_t *pres;
     pdf_char_proc_t *pcp;
     int char_code = assign_char_code(pdev);
-    pdf_font_t *font = pdev->open_font;
+    pdf_font_t *font = pdev->text->f.open_font;
     int code;
 
     if (char_code < 0)
@@ -470,6 +610,8 @@ int
 pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 		  const gs_matrix * pimat)
 {
+    pdf_text_data_t *ptd = pdev->text;
+
     pdf_set_font_and_size(pdev, pcp->font, 1.0);
     {
 	gs_matrix tmat;
@@ -479,6 +621,6 @@ pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 	pdf_set_text_matrix(pdev, &tmat);
     }
     pdf_append_chars(pdev, &pcp->char_code, 1);
-    pdev->text.current.x += pcp->x_width * pdev->text.matrix.xx;
+    ptd->t.current.x += pcp->x_width * ptd->t.matrix.xx;
     return 0;
 }

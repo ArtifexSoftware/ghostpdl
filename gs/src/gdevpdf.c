@@ -26,7 +26,6 @@
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gdevpdfx.h"
-#include "gdevpdff.h"
 #include "gdevpdfg.h"		/* only for pdf_reset_graphics */
 #include "gdevpdfo.h"
 
@@ -51,12 +50,6 @@ private
 ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
 {
     index -= gx_device_pdf_num_ptrs + gx_device_pdf_num_strings;
-    if (index < PDF_NUM_STD_FONTS)
-	ENUM_RETURN(pdev->std_fonts[index].font);
-    index -= PDF_NUM_STD_FONTS;
-    if (index < PDF_NUM_STD_FONTS)
-	ENUM_RETURN(pdev->std_fonts[index].pfd);
-    index -= PDF_NUM_STD_FONTS;
     if (index < NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS)
 	ENUM_RETURN(pdev->resources[index / NUM_RESOURCE_CHAINS].chains[index % NUM_RESOURCE_CHAINS]);
     index -= NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS;
@@ -87,10 +80,6 @@ private RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
     {
 	int i, j;
 
-	for (i = 0; i < PDF_NUM_STD_FONTS; ++i) {
-	    RELOC_PTR(gx_device_pdf, std_fonts[i].font);
-	    RELOC_PTR(gx_device_pdf, std_fonts[i].pfd);
-	}
 	for (i = 0; i < NUM_RESOURCE_TYPES; ++i)
 	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
 		RELOC_PTR(gx_device_pdf, resources[i].chains[j]);
@@ -208,10 +197,6 @@ const gx_device_pdf gs_pdfwrite_device =
  {{0}},				/* asides */
  {{0}},				/* streams */
  {{0}},				/* pictures */
- 0,				/* open_font */
- 0 /*false*/,			/* use_open_font */
- 0,				/* embedded_encoding_id */
- -1,				/* max_embedded_code */
  0,				/* random_offset */
  0,				/* next_id */
  0,				/* Catalog */
@@ -224,9 +209,7 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* contents_length_id */
  0,				/* contents_pos */
  NoMarks,			/* procsets */
- {pdf_text_state_default},	/* text */
- {{0}},				/* std_fonts */
- {0},				/* space_char_ids */
+ 0,				/* text */
  {{0}},				/* text_rotation */
  0,				/* pages */
  0,				/* num_pages */
@@ -304,13 +287,7 @@ pdf_reset_page(gx_device_pdf * pdev)
     pdf_reset_graphics(pdev);
     pdev->procsets = NoMarks;
     memset(pdev->cs_Patterns, 0, sizeof(pdev->cs_Patterns));	/* simplest to create for each page */
-    {
-	static const pdf_text_state_t text_default = {
-	    pdf_text_state_default
-	};
-
-	pdev->text = text_default;
-    }
+    pdf_reset_text_page(pdev->text);
 }
 
 /* Open a temporary file, with or without a stream. */
@@ -444,19 +421,12 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
 #endif
 
 /*
- * Reset the text state parameters to initial values.  This isn't a very
- * good place for this procedure, but the alternatives seem worse.
+ * Reset the text state parameters to initial values.
  */
 void
 pdf_reset_text(gx_device_pdf * pdev)
 {
-    pdev->text.character_spacing = 0;
-    pdev->text.font = NULL;
-    pdev->text.size = 0;
-    pdev->text.word_spacing = 0;
-    pdev->text.leading = 0;
-    pdev->text.use_leading = false;
-    pdev->text.render_mode = 0;
+    pdf_reset_text_state(pdev->text);
 }
 
 /*
@@ -523,11 +493,11 @@ pdf_open(gx_device * dev)
     pdf_initialize_ids(pdev);
     pdev->outlines_id = 0;
     pdev->next_page = 0;
-    memset(pdev->space_char_ids, 0, sizeof(pdev->space_char_ids));
+    pdev->text = pdf_text_data_alloc(mem);
     pdev->pages =
 	gs_alloc_struct_array(mem, initial_num_pages, pdf_page_t,
 			      &st_pdf_page_element, "pdf_open(pages)");
-    if (pdev->pages == 0) {
+    if (pdev->text == 0 || pdev->pages == 0) {
 	code = gs_error_VMerror;
 	goto fail;
     }
@@ -678,17 +648,9 @@ pdf_close_page(gx_device_pdf * pdev)
 
     pdf_write_resource_objects(pdev, resourceFunction);
 
-    /*
-     * When Acrobat Reader 3 prints a file containing a Type 3 font with a
-     * non-standard Encoding, it apparently only emits the subset of the
-     * font actually used on the page.  Thus, if the "Download Fonts Once"
-     * option is selected, characters not used on the page where the font
-     * first appears will not be defined, and hence will print as blank if
-     * used on subsequent pages.  Thus, we can't allow a Type 3 font to
-     * add additional characters on subsequent pages.
-     */
-    if (pdev->CompatibilityLevel <= 1.2)
-	pdev->use_open_font = false;
+    /* Close use of text on the page. */
+
+    pdf_close_text_page(pdev);
 
     /* Accumulate text rotation. */
 

@@ -164,30 +164,14 @@ typedef enum {
 
 /* ------ Fonts ------ */
 
-/* Define the standard fonts. */
-#define PDF_NUM_STD_FONTS 14
-#define pdf_do_std_fonts(m)\
-  m("Courier", ENCODING_INDEX_STANDARD)\
-  m("Courier-Bold", ENCODING_INDEX_STANDARD)\
-  m("Courier-Oblique", ENCODING_INDEX_STANDARD)\
-  m("Courier-BoldOblique", ENCODING_INDEX_STANDARD)\
-  m("Helvetica", ENCODING_INDEX_STANDARD)\
-  m("Helvetica-Bold", ENCODING_INDEX_STANDARD)\
-  m("Helvetica-Oblique", ENCODING_INDEX_STANDARD)\
-  m("Helvetica-BoldOblique", ENCODING_INDEX_STANDARD)\
-  m("Symbol", ENCODING_INDEX_SYMBOL)\
-  m("Times-Roman", ENCODING_INDEX_STANDARD)\
-  m("Times-Bold", ENCODING_INDEX_STANDARD)\
-  m("Times-Italic", ENCODING_INDEX_STANDARD)\
-  m("Times-BoldItalic", ENCODING_INDEX_STANDARD)\
-  m("ZapfDingbats", ENCODING_INDEX_DINGBATS)
-
 /* Define the range of synthesized space characters. */
 #define X_SPACE_MIN 24
 #define X_SPACE_MAX 150
 
-/* Define abstract types.  The concrete types are in gdevpdff.h. */
-typedef struct pdf_font_s pdf_font_t;
+/* Define abstract types. */
+typedef struct pdf_char_proc_s pdf_char_proc_t;	/* gdevpdff.h */
+typedef struct pdf_font_s pdf_font_t;  /* gdevpdff.h */
+typedef struct pdf_text_data_s pdf_text_data_t;  /* gdevpdft.h */
 
 /* ------ Named objects ------ */
 
@@ -244,39 +228,6 @@ struct pdf_article_s {
     next, contents)
 
 /* ---------------- The device structure ---------------- */
-
-/* Text state */
-#ifndef pdf_font_descriptor_DEFINED
-#  define pdf_font_descriptor_DEFINED
-typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;
-#endif
-typedef struct pdf_std_font_s {
-    gs_font *font;		/* weak pointer, may be 0 */
-    pdf_font_descriptor_t *pfd;  /* *not* a weak pointer */
-    gs_matrix orig_matrix;
-    gs_uid uid;			/* UniqueID, not XUID */
-} pdf_std_font_t;
-typedef struct pdf_text_state_s {
-    /* State parameters */
-    float character_spacing;	/* Tc */
-    pdf_font_t *font;		/* for Tf */
-    floatp size;		/* for Tf */
-    float word_spacing;		/* Tw */
-    float leading;		/* TL */
-    bool use_leading;		/* true => use ', false => use Tj */
-    int render_mode;		/* Tr */
-    /* Bookkeeping */
-    gs_matrix matrix;		/* relative to device space, not user space */
-    gs_point line_start;
-    gs_point current;
-#define max_text_buffer 200	/* arbitrary, but overflow costs 5 chars */
-    byte buffer[max_text_buffer];
-    int buffer_count;
-} pdf_text_state_t;
-
-#define pdf_text_state_default\
-  0, NULL, 0, 0, 0, 0 /*false*/, 0,\
-  { identity_matrix_body }, { 0, 0 }, { 0, 0 }, { 0 }, 0
 
 /* Resource lists */
 #define NUM_RESOURCE_CHAINS 16
@@ -421,10 +372,6 @@ struct gx_device_pdf_s {
      * EP nest, we delete the object from the pictures file at that time.
      */
     pdf_temp_file_t pictures;
-    pdf_font_t *open_font;	/* current Type 3 synthesized font */
-    bool use_open_font;		/* if false, start new open_font */
-    long embedded_encoding_id;
-    int max_embedded_code;	/* max Type 3 code used */
     long random_offset;		/* for generating subset prefixes */
     /* ................ */
     long next_id;
@@ -441,9 +388,7 @@ struct gx_device_pdf_s {
     long contents_length_id;
     long contents_pos;
     pdf_procset_t procsets;	/* used on this page */
-    pdf_text_state_t text;
-    pdf_std_font_t std_fonts[PDF_NUM_STD_FONTS];
-    long space_char_ids[X_SPACE_MAX - X_SPACE_MIN + 1];
+    pdf_text_data_t *text;
     pdf_text_rotation_t text_rotation;
 #define initial_num_pages 50
     pdf_page_t *pages;
@@ -474,14 +419,13 @@ struct gx_device_pdf_s {
  m(0,asides.strm) m(1,asides.strm_buf) m(2,asides.save_strm)\
  m(3,streams.strm) m(4,streams.strm_buf)\
  m(5,pictures.strm) m(6,pictures.strm_buf) m(7,pictures.save_strm)\
- m(8,open_font)\
- m(9,Catalog) m(10,Info) m(11,Pages)\
- m(12,text.font) m(13,pages)\
- m(14,cs_Patterns[0])\
- m(15,cs_Patterns[1]) m(16,cs_Patterns[3]) m(17,cs_Patterns[4])\
- m(18,last_resource)\
- m(19,articles) m(20,Dests) m(21,named_objects) m(22,open_graphics)
-#define gx_device_pdf_num_ptrs 23
+ m(8,Catalog) m(9,Info) m(10,Pages)\
+ m(11,text) m(12,pages)\
+ m(13,cs_Patterns[0])\
+ m(14,cs_Patterns[1]) m(15,cs_Patterns[3]) m(16,cs_Patterns[4])\
+ m(17,last_resource)\
+ m(18,articles) m(19,Dests) m(20,named_objects) m(21,open_graphics)
+#define gx_device_pdf_num_ptrs 22
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
@@ -841,5 +785,45 @@ int pdf_scan_token_composite(P3(const byte **pscan, const byte * end,
 /* Replace object names with object references in a (parameter) string. */
 int pdf_replace_names(P3(gx_device_pdf *pdev, const gs_param_string *from,
 			 gs_param_string *to));
+
+/* ================ Text module procedures ================ */
+
+/* ---------------- Exported by gdevpdfw.c ---------------- */
+
+/* For gdevpdf.c */
+
+/* Write out the font resources when wrapping up the output. */
+int pdf_write_font_resources(P1(gx_device_pdf *pdev));
+
+/* ---------------- Exported by gdevpdft.c ---------------- */
+
+/* For gdevpdf.c */
+
+pdf_text_data_t *pdf_text_data_alloc(gs_memory_t *mem);
+void pdf_reset_text_page(pdf_text_data_t *ptd);
+void pdf_reset_text_state(pdf_text_data_t *ptd);
+void pdf_close_text_page(gx_device_pdf *pdev);
+
+/* For gdevpdfb.c */
+
+int pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h);
+
+/* Begin a CharProc for an embedded (bitmap) font. */
+int pdf_begin_char_proc(P8(gx_device_pdf * pdev, int w, int h, int x_width,
+			   int y_offset, gs_id id, pdf_char_proc_t **ppcp,
+			   pdf_stream_position_t * ppos));
+
+/* End a CharProc. */
+int pdf_end_char_proc(P2(gx_device_pdf * pdev, pdf_stream_position_t * ppos));
+
+/* Put out a reference to an image as a character in an embedded font. */
+int pdf_do_char_image(P3(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
+			 const gs_matrix * pimat));
+
+/* For gdevpdfu.c */
+
+void pdf_from_stream_to_text(gx_device_pdf *pdev);
+void pdf_from_string_to_text(gx_device_pdf *pdev);
+void pdf_close_text_contents(gx_device_pdf *pdev);
 
 #endif /* gdevpdfx_INCLUDED */

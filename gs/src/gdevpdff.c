@@ -37,6 +37,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
 #include "gdevpdfo.h"
+#include "gdevpdft.h"
 #include "gdevpsf.h"
 #include "scommon.h"
 
@@ -102,7 +103,7 @@ find_std_appearance(const gx_device_pdf *pdev, const gs_font_base *bfont,
 		    int mask, int *psame)
 {
     bool has_uid = uid_is_UniqueID(&bfont->UID) && bfont->UID.id != 0;
-    const pdf_std_font_t *psf = pdev->std_fonts;
+    const pdf_std_font_t *psf = pdev->text->f.std_fonts;
     int i;
 
     mask |= FONT_SAME_OUTLINES;
@@ -133,7 +134,7 @@ find_std_appearance(const gx_device_pdf *pdev, const gs_font_base *bfont,
 }
 
 /*
- * We register the fonts in pdev->std_fonts so that the pointers can
+ * We register the fonts in pdev->text->f.std_fonts so that the pointers can
  * be weak (get set to 0 when the font is freed).
  */
 private GS_NOTIFY_PROC(pdf_std_font_notify_proc);
@@ -160,13 +161,13 @@ pdf_std_font_notify_proc(void *vpsfn /*proc_data*/, void *event_data)
 	      "[_]  notify 0x%lx: gs_font 0x%lx, id %ld, index=%d\n",
 	      (ulong)psfn, (ulong)font, font->id, psfn->index);
 #ifdef DEBUG
-    if (pdev->std_fonts[psfn->index].font != font)
+    if (pdev->text->f.std_fonts[psfn->index].font != font)
 	lprintf3("pdf_std_font_notify font = 0x%lx, std_fonts[%d] = 0x%lx\n",
 		 (ulong)font, psfn->index,
-		 (ulong)pdev->std_fonts[psfn->index].font);
+		 (ulong)pdev->text->f.std_fonts[psfn->index].font);
     else
 #endif
-	pdev->std_fonts[psfn->index].font = 0;
+	pdev->text->f.std_fonts[psfn->index].font = 0;
     gs_font_notify_unregister(font, pdf_std_font_notify_proc, vpsfn);
     gs_free_object(pdev->pdf_memory, vpsfn, "pdf_std_font_notify_proc");
     return 0;
@@ -184,8 +185,8 @@ pdf_unregister_fonts(gx_device_pdf *pdev)
     int j;
 
     for (j = 0; j < PDF_NUM_STD_FONTS; ++j)
-	if (pdev->std_fonts[j].font != 0)
-	    gs_notify_unregister_calling(&pdev->std_fonts[j].font->notify_list,
+	if (pdev->text->f.std_fonts[j].font != 0)
+	    gs_notify_unregister_calling(&pdev->text->f.std_fonts[j].font->notify_list,
 					 pdf_std_font_notify_proc, NULL,
 					 pdf_std_font_unreg_proc);
 }
@@ -212,7 +213,7 @@ scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
 					   orig->key_name.size);
 	    pdf_std_font_t *psf;
 
-	    if (i >= 0 && (psf = &pdev->std_fonts[i])->font == 0) {
+	    if (i >= 0 && (psf = &pdev->text->f.std_fonts[i])->font == 0) {
 		pdf_std_font_notify_t *psfn =
 		    gs_alloc_struct(pdev->pdf_memory, pdf_std_font_notify_t,
 				    &st_pdf_std_font_notify,
@@ -409,7 +410,7 @@ pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_matrix *pfmat)
 	if (font->base == font)
 	    return -1;
     }
-    *pfmat = pdev->std_fonts[i].orig_matrix;
+    *pfmat = pdev->text->f.std_fonts[i].orig_matrix;
     return i;
 }
 
@@ -632,7 +633,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
     else
 	embed = pdf_font_embed_status(pdev, base_font, &index, &base_same);
     if (embed == FONT_EMBED_STANDARD) {
-	psf = &pdev->std_fonts[index];
+	psf = &pdev->text->f.std_fonts[index];
 	if (psf->font != 0 || psf->pfd != 0) {
 	    /*
 	     * Use the standard font as the base font.  Either base_font

@@ -169,7 +169,7 @@ struct pdf_font_descriptor_s {
 
 /* ---------------- Font (resource) ---------------- */
 
-typedef struct pdf_char_proc_s pdf_char_proc_t;	/* forward reference */
+/*typedef struct pdf_char_proc_s pdf_char_proc_t;*/
 /*typedef struct pdf_font_s pdf_font_t;*/
 typedef struct pdf_encoding_element_s {
     gs_glyph glyph;
@@ -309,20 +309,6 @@ int pdf_set_text_matrix(P2(gx_device_pdf * pdev, const gs_matrix * pmat));
  * Append characters to a string being accumulated.
  */
 int pdf_append_chars(P3(gx_device_pdf * pdev, const byte * str, uint size));
-
-     /* For gdevpdfb.c */
-
-/* Begin a CharProc for an embedded (bitmap) font. */
-int pdf_begin_char_proc(P8(gx_device_pdf * pdev, int w, int h, int x_width,
-			   int y_offset, gs_id id, pdf_char_proc_t **ppcp,
-			   pdf_stream_position_t * ppos));
-
-/* End a CharProc. */
-int pdf_end_char_proc(P2(gx_device_pdf * pdev, pdf_stream_position_t * ppos));
-
-/* Put out a reference to an image as a character in an embedded font. */
-int pdf_do_char_image(P3(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
-			 const gs_matrix * pimat));
 
 /* ---------------- Exported by gdevpdfs.c for gdevpdft.c ---------------- */
 

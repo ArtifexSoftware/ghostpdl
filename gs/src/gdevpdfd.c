@@ -175,51 +175,58 @@ pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 int
 pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 {
+    int code;
     stream *s = pdev->strm;
+    gs_id new_id;
 
+    /* Check for no update needed. */
     if (pcpath == NULL) {
 	if (pdev->clip_path_id == pdev->no_clip_path_id)
 	    return 0;
-	stream_puts(s, "Q\nq\n");
-	pdev->clip_path_id = pdev->no_clip_path_id;
+	new_id = pdev->no_clip_path_id;
     } else {
 	if (pdev->clip_path_id == pcpath->id)
 	    return 0;
+	new_id = pcpath->id;
 	if (gx_cpath_includes_rectangle(pcpath, fixed_0, fixed_0,
 					int2fixed(pdev->width),
 					int2fixed(pdev->height))
 	    ) {
 	    if (pdev->clip_path_id == pdev->no_clip_path_id)
 		return 0;
-	    stream_puts(s, "Q\nq\n");
-	    pdev->clip_path_id = pdev->no_clip_path_id;
-	} else {
-	    gdev_vector_dopath_state_t state;
-	    gs_cpath_enum cenum;
-	    gs_fixed_point vs[3];
-	    int pe_op;
-
-	    stream_puts(s, "Q\nq\n");
-	    gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
-				    gx_path_type_fill, NULL);
-	    /*
-	     * We have to break 'const' here because the clip path
-	     * enumeration logic uses some internal mark bits.
-	     * This is very unfortunate, but until we can come up with
-	     * a better algorithm, it's necessary.
-	     */
-	    gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
-	    while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
-		gdev_vector_dopath_segment(&state, pe_op, vs);
-	    pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
-	    if (pe_op < 0)
-		return pe_op;
-	    pdev->clip_path_id = pcpath->id;
+	    new_id = pdev->no_clip_path_id;
 	}
     }
-    pdev->text.font = 0;
-    if (pdev->context == PDF_IN_TEXT)
-	pdev->context = PDF_IN_STREAM;
+    /*
+     * The contents must be open already, so the following will only exit
+     * text or string context.
+     */
+    code = pdf_open_contents(pdev, PDF_IN_STREAM);
+    if (code < 0)
+	return 0;
+    stream_puts(s, "Q\nq\n");
+    if (new_id != pdev->no_clip_path_id) {
+	gdev_vector_dopath_state_t state;
+	gs_cpath_enum cenum;
+	gs_fixed_point vs[3];
+	int pe_op;
+
+	gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
+				gx_path_type_fill, NULL);
+	/*
+	 * We have to break 'const' here because the clip path
+	 * enumeration logic uses some internal mark bits.
+	 * This is very unfortunate, but until we can come up with
+	 * a better algorithm, it's necessary.
+	 */
+	gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
+	while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
+	    gdev_vector_dopath_segment(&state, pe_op, vs);
+	pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
+	if (pe_op < 0)
+	    return pe_op;
+    }
+    pdev->clip_path_id = new_id;
     pdf_reset_graphics(pdev);
     return 0;
 }
