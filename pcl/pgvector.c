@@ -280,9 +280,14 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_PA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
+    
+    if ( pgls->g.relative_coords != hpgl_plot_absolute ) {
 	pgls->g.relative_coords = hpgl_plot_absolute;
-	return hpgl_plot(pargs, pgls,
-			 pgls->g.move_or_draw | hpgl_plot_absolute);
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	hpgl_call(hpgl_clear_current_path(pgls));
+    }
+    return hpgl_plot(pargs, pgls,
+		     pgls->g.move_or_draw | hpgl_plot_absolute);
 }
 
 /* PD (d)x,(d)y...; */
@@ -462,9 +467,13 @@ syntax_error:
 int
 hpgl_PR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
+    if ( pgls->g.relative_coords != hpgl_plot_relative ) {
 	pgls->g.relative_coords = hpgl_plot_relative;
-	return hpgl_plot(pargs, pgls,
-			 pgls->g.move_or_draw | hpgl_plot_relative);
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	hpgl_call(hpgl_clear_current_path(pgls));
+    }
+    return hpgl_plot(pargs, pgls,
+		     pgls->g.move_or_draw | hpgl_plot_relative);
 
 }
 

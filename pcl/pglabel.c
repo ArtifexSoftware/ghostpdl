@@ -627,11 +627,13 @@ hpgl_print_char(
 	 * Adjust the initial position of the character according to
 	 * the text path.
 	 */
-	gs_currentpoint(pgs, &start_pt);
+	hpgl_call(gs_currentpoint(pgs, &start_pt));
 	if (text_path == hpgl_text_left) {
             hpgl_get_char_width(pgls, ch, &width);
 	    start_pt.x -= width / scale.x;
-	    gs_moveto(pgs, start_pt.x, start_pt.y);
+	    hpgl_call(hpgl_add_point_to_path(pgls, start_pt.x, start_pt.y,
+					     hpgl_plot_move_absolute, false));
+
 	}
 
 	/*
@@ -723,8 +725,9 @@ hpgl_print_char(
 	if (ch == ' ' && space_code != 0) {
             /* Space is a control code.  Just advance the position. */
 	    gs_setmatrix(pgs, &advance_mat);
-	    gs_rmoveto(pgs, space_width, 0.0);
-	    gs_currentpoint(pgs, &end_pt);
+	    hpgl_call(hpgl_add_point_to_path(pgls, space_width, 0.0,
+					     hpgl_plot_move_relative, false));
+	    hpgl_call(gs_currentpoint(pgs, &end_pt));
 	} else {
             if (use_show) {
 		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
@@ -740,18 +743,16 @@ hpgl_print_char(
                 /* Compensate for bitmap font non-rotation. */
 		if (text_path == hpgl_text_right) {
                     hpgl_get_char_width(pgls, ch, &width);
-		    hpgl_call( gs_moveto( pgs,
-                                          start_pt.x + width / scale.x,
-					  start_pt.y)
-                                          );
+		    hpgl_call(hpgl_add_point_to_path(pgls, start_pt.x + width / scale.x,
+						      start_pt.y, hpgl_plot_move_absolute, false));
 		}
             }
-	    gs_currentpoint(pgs, &end_pt);
+	    hpgl_call(gs_currentpoint(pgs, &end_pt));
 	    if ( (text_path == hpgl_text_right)        &&
 		 (pgls->g.character.extra_space.x != 0)  ) {
 		hpgl_get_char_width(pgls, ch, &width);
 		end_pt.x = start_pt.x + width / scale.x;
-		hpgl_call(gs_moveto(pgs, end_pt.x, end_pt.y));
+		hpgl_call(hpgl_add_point_to_path(pgls, end_pt.x, end_pt.y, hpgl_plot_move_absolute, false));
 	    }
 	}
 	gs_free_object(pgls->memory, penum, "hpgl_print_char");
@@ -772,35 +773,33 @@ hpgl_print_char(
                                                          &height,
                                                          true
                                                          ) );
-		hpgl_call( gs_moveto( pgs,
-                                      start_pt.x,
-                                      end_pt.y - height / scale.y
-                                      ) );
+		hpgl_call( hpgl_add_point_to_path(pgls, start_pt.x, end_pt.y - height / scale.y,
+						  hpgl_plot_move_absolute, false) );
+
 	    }
 	    break;
 
 	  case hpgl_text_left:
-	    hpgl_call(gs_moveto(pgs, start_pt.x, start_pt.y));
-	    break;
-
+	      hpgl_call(hpgl_add_point_to_path(pgls, start_pt.x, start_pt.y, 
+					       hpgl_plot_move_absolute, false));
+	      break;
 	  case hpgl_text_up:
 	    {
                 hpgl_real_t height;
 
-	        hpgl_call( hpgl_get_current_cell_height( pgls,
-                                                         &height,
-                                                         true
-                                                         ) );
-		hpgl_call( gs_moveto( pgs,
-                                      start_pt.x,
-                                      end_pt.y + height / scale.y
-                                      ) );
+	        hpgl_call(hpgl_get_current_cell_height( pgls,
+							&height,
+							true
+							));
+
+		hpgl_call(hpgl_add_point_to_path(pgls, start_pt.x, 
+						 end_pt.y + height / scale.y, hpgl_plot_move_absolute, false));
 	    }
 	    break;
 	}
 
 	gs_setmatrix(pgs, &save_ctm); 
-	gs_currentpoint(pgs, &end_pt);
+	hpgl_call(gs_currentpoint(pgs, &end_pt));
 	if (!use_show)
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
         (void )pcl_palette_PW(pgls, hpgl_get_selected_pen(pgls), save_width);
@@ -1180,7 +1179,7 @@ hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
 	hpgl_call(hpgl_grestore(pgls));
 	/* restore the origin */
 	pgls->g.label.origin = saved_origin;
-	pgls->g.pos = save_pos;
+	hpgl_call(hpgl_set_current_position(pgls, &save_pos));
 	return 0;
 }
 

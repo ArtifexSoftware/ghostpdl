@@ -183,6 +183,10 @@ typedef struct pcl_hpgl_state_s {
 	struct lp_ {
 	  struct ltl_ {
 	    int type;
+	      /* the offset value is not required by the gl/2
+                 language, however we use it to implement offsetting
+                 line patterns for hpgl/2 vector fills */
+            float pattern_offset;
 	    float pattern_length;
 	    bool pattern_length_relative;
 	    bool is_solid;

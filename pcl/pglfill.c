@@ -290,6 +290,9 @@ hpgl_LT(
 	    hpgl_real_t length_or_percent = 4.0;  /* units are mm or percentage */
 	    int         mode = 0;
 
+	    /* set the offset this is not part of the command but is
+               used internally (see pgstate.h) */
+	    pgls->g.line.current.pattern_offset = 0.0;
 	    /* NB this is luny unreadable logic */
 	    if ( (type < -8)                                                  ||
                  (type > 8)                                                   ||

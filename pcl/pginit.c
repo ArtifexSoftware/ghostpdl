@@ -60,8 +60,12 @@ hpgl_default_coordinate_system(
     /* The default coordinate system is absolute with the origin at 0,0 */
     pcls->g.move_or_draw = hpgl_plot_move;
     pcls->g.relative_coords = hpgl_plot_absolute;
-    pcls->g.pos.x = 0.0;
-    pcls->g.pos.y = 0.0;
+    {
+	gs_point pos;
+	pos.x = 0.0;
+	pos.y = 0.0;
+	(void)hpgl_set_current_position(pcls, &pos);
+    }
     pcls->g.scaling_type = hpgl_scaling_none;
     return;
 }

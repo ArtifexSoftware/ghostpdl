@@ -630,11 +630,9 @@ Difference in specific tests of the PCL 5c FTS
 1422, 1423, 1424, 1445, 1446, 1462, 1463, 1801, 1803, 1811, 1817, 1894, 1895, 1941, 1946,
 1950, 1951, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 2210 (page 1), 2220 (page 2)
 
-    Artifex GL/2 does not support line pattern fill phasing and when
-    using GL/2 line fills, the Artifex PCL 5c interpreter clips the
-    rendered representation of the line, rather than the path along
-    which the line is to be drawn. This difference is evident in the
-    pie wedges used in this set of tests, and many others.
+    Artifex GL/2 contains minor discrepancies with anchoring line
+    fills.  The problem is more evident in cases where scaling is
+    specified.  Low priority.
 
 1463, 1463:
 
@@ -675,13 +673,6 @@ Difference in specific tests of the PCL 5c FTS
     The position of the GL/2 label origin in the Artifex PCL 5c interpreter is
     not accurate. This is particularly noticeable for arbitrary transformations
     of text, as in the first two tests cited.
-
-2003:
-
-    The Artifex PCL 5c interpreter apparently misplaces the label origin for
-    the latter half of the text in this file (the HPGL Demo part). This problem
-    has not yet been analyzed. A similar problem is evident on a number of the
-    subsequent tests.
 
 2040 - 2070:
 
@@ -736,19 +727,10 @@ Difference in specific tests of the PCL 5c FTS
     These file set the top margin inside the imageable region.  We
     clip to the imageable region.  Applications will not do this.
 
-2210 (fourth page):
+2210 and 2220 (fourth page):
 
-    The scaling of the output differs between the Artifex PCL 5c interpreter
-    and the CLJ 5/5M. This problem has not yet been analyzed.
+    SI, SR discrenpancy.
 
-2210 (fifth page):
-
-    The output for the upper half of the page differs between the CLJ 5/5M
-    and the Artifex PCL 5c interpreter. This problem has not yet been analyzed.
-
-2220:
-
-    See comments for test 2210.
 
 2322, 2323:
 
@@ -772,8 +754,9 @@ Difference in specific tests of the PCL 5c FTS
 
 2351, 2352:
 
-    The driver configuration command is not implemented in the Artifex PCL
-    5c interpreter.
+    The driver configuration command linearly maps saturation and
+    lightness arguments to pcl's gamma function.  It is expected that
+    vendors will provide product specific code for this function.
 
 2412:
 

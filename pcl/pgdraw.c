@@ -181,6 +181,18 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 }
 
  private int
+hpgl_get_line_pattern_length(hpgl_state_t *pgls)
+{
+    return ((pgls->g.line.current.pattern_length_relative) ?
+	    (pgls->g.line.current.pattern_length *
+	     hpgl_compute_distance(pgls->g.P1.x,
+				   pgls->g.P1.y,
+				   pgls->g.P2.x,
+				   pgls->g.P2.y)) :
+	    (mm_2_plu(pgls->g.line.current.pattern_length)));
+}
+
+ private int
 hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 {
 	bool adaptive = ( pgls->g.line.current.type < 0 );
@@ -221,14 +233,7 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	       (&pgls->g.adaptive_line_type[entry - 1]) :
 	       (&pgls->g.fixed_line_type[entry - 1]));
 	
-	length = ((pgls->g.line.current.pattern_length_relative) ?
-		  (pgls->g.line.current.pattern_length *
-		   hpgl_compute_distance(pgls->g.P1.x,
-					 pgls->g.P1.y,
-					 pgls->g.P2.x,
-					 pgls->g.P2.y)) :
-		  (mm_2_plu(pgls->g.line.current.pattern_length)));
-
+	length = hpgl_get_line_pattern_length(pgls);
 	gs_setdashadapt(pgls->pgs, adaptive);
 	/*
 	 * The graphics library interprets odd pattern counts differently
@@ -238,7 +243,7 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	count = pat->count;
 	for ( i = 0; i < count; i++ )
 	  pattern[i] = length * pat->gap[i];
-	offset = 0;
+	offset = pgls->g.line.current.pattern_offset * hpgl_get_line_pattern_length(pgls);
 	if ( count & 1 )
 	  {
 	    /*
@@ -497,6 +502,15 @@ hpgl_get_adjusted_corner(
     return 0;
 }
 
+ private void
+hpgl_alternate_line_pattern_offset(hpgl_state_t *pgls, uint lines_filled)
+{
+    if ( lines_filled & 1 )
+	pgls->g.line.current.pattern_offset = 0.5;
+    else
+	pgls->g.line.current.pattern_offset = 0.0;
+}
+	
 /*
  * HAS should replicate lines beginning at the anchor corner to +X and
  * +Y.  Not quite right - anchor corner not yet supported.
@@ -524,7 +538,8 @@ hpgl_polyfill(
                                                 : &pgls->g.fill.param.hatch);
     hpgl_real_t                 spacing = params->spacing;
     hpgl_real_t                 direction = params->angle;
-
+    float saved_line_pattern_offset = pgls->g.line.current.pattern_offset;
+    int lines_filled = 0;
     /* save the pen position */
     hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
     if (spacing == 0) {
@@ -598,11 +613,11 @@ start:
                                           endy,
                                           render_mode
                                           ) );
-
+    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
     /* Travel along +x using current spacing. */
     if (x_fill_increment != 0) {
 	while ( endx += x_fill_increment,
-		(start.x += x_fill_increment) <= bbox.q.x )
+		(start.x += x_fill_increment) <= bbox.q.x ) {
 	    hpgl_call( hpgl_draw_vector_absolute( pgls,
                                                   start.x,
                                                   start.y,
@@ -610,6 +625,8 @@ start:
                                                   endy,
                                                   render_mode
                                                   ) );
+	    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
+	}
     }
 
     /* Travel along +Y similarly. */
@@ -632,7 +649,7 @@ start:
 	    start.y -= y_fill_increment, endy -= y_fill_increment;
 
 	while ( endy += y_fill_increment,
-		(start.y += y_fill_increment) <= bbox.q.y )
+		(start.y += y_fill_increment) <= bbox.q.y ) {
 	    hpgl_call( hpgl_draw_vector_absolute( pgls,
                                                   start.x,
                                                   start.y,
@@ -640,6 +657,9 @@ start:
                                                   endy,
                                                   render_mode
                                                   ) );
+	    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
+	}
+	
     }
     if (cross) {
 	cross = false;
@@ -647,6 +667,7 @@ start:
 	goto start;
     }
     hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
+    pgls->g.line.current.pattern_offset = saved_line_pattern_offset;
     return 0;
 
 #undef sin_dir
@@ -905,6 +926,8 @@ hpgl_set_current_position(
 )
 {
     pgls->g.pos = *pt;
+    if ( gs_debug_c('P') )
+	dprintf2("setting hpgl/2 position: x=%f y=%f\n", pt->x, pt->y);
     return 0;
 }
 
@@ -948,7 +971,13 @@ hpgl_add_point_to_path(
 	        hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
 
 	    /* update hpgl's state position */
-	    hpgl_call(gs_currentpoint(pgls->pgs, &point));
+	    if (hpgl_plot_is_absolute(func)) {
+		point.x = x; 
+		point.y = y;
+	    } else {
+		hpgl_call(hpgl_get_current_position(pgls, &point));
+		point.x += x; point.y += y;
+	    }
 	    hpgl_call(hpgl_set_current_position(pgls, &point));
 	}
     }
@@ -1190,7 +1219,7 @@ hpgl_close_path(
      * if the first and last are the same close the path (i.e
      * force gs to apply join and miter)
      */
-    if ((first.x == last.x) && (first.y == last.y))
+    if (equal(first.x, last.x) && equal(first.y, last.y))
 	hpgl_call(gs_closepath(pgls->pgs));
     return 0;
 }
