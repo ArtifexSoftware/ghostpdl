@@ -77,12 +77,12 @@ GS=gs386
 # Define the source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-GLSRCDIR=.
-GLGENDIR=.
-GLOBJDIR=.
-PSSRCDIR=.
-PSGENDIR=.
-PSOBJDIR=.
+GLSRCDIR=..\gs
+GLGENDIR=..\gs\obj
+GLOBJDIR=..\gs\obj
+PSSRCDIR=..\gs
+PSGENDIR=..\gs\obj
+PSOBJDIR=..\gs\obj
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -120,7 +120,9 @@ CFLAGS=
 # Possible values are 8.5, 9.0, 9.5, 10.0, 10.5, or 11.0.
 # Unfortunately, wmake can only test identity, not compare magnitudes,
 # so the version must be exactly one of those strings.
-WCVERSION=10.0
+#
+# 10.695 equates to version 10.6 on 95 or NT
+WCVERSION=10.695
 
 # Define the locations of the libraries.
 LIBPATHS=LIBPATH $(%WATCOM)\lib386 LIBPATH $(%WATCOM)\lib386\dos
@@ -132,7 +134,7 @@ LIBPATHS=LIBPATH $(%WATCOM)\lib386 LIBPATH $(%WATCOM)\lib386\dos
 # Currently the only difference is that 486 and above assume
 # the presence of a FPU, and the other processor types do not.
 
-CPU_TYPE=386
+CPU_TYPE=586
 
 # Define the math coprocessor (FPU) type.
 # Options are -1 (optimize for no FPU), 0 (optimize for FPU present,
@@ -192,8 +194,8 @@ FILE_IMPLEMENTATION=stdio
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=vga.dev ega.dev svga16.dev
-DEVICE_DEVS1=atiw.dev tseng.dev tvga.dev
+###	DEVICE_DEVS=vga.dev ega.dev svga16.dev
+###	DEVICE_DEVS1=atiw.dev tseng.dev tvga.dev
 DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
 DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
 DEVICE_DEVS5=uniprint.dev
@@ -212,8 +214,19 @@ DEVICE_DEVS15=pdfwrite.dev
 
 # -------------------------------- Library -------------------------------- #
 
+$(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
+ $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
+ $(gp_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
+	$(GLCC) $(GLO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
+
+$(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
+ $(dos__h) $(stdio__h) $(string__h) $(windows__h)\
+ $(gp_h) $(gsmemory_h) $(gstypes_h)
+	$(GLCC) $(GLO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
+
 # The Watcom C platform
 
+!ifeq WAT32 0
 watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
 watc_2=$(GLOBJ)gp_dosfb.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ)
 watc__=$(watc_1) $(watc_2)
@@ -221,6 +234,14 @@ watc_.dev: $(watc__) nosync.dev
 	$(SETMOD) watc_ $(watc_1)
 	$(ADDMOD) watc_ -obj $(watc_2)
 	$(ADDMOD) watc_ -include nosync
+!else
+watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_win32.$(OBJ)
+watc_2=$(GLOBJ)gp_dosfb.$(OBJ) $(GLOBJ)gp_ntfs.$(OBJ) $(GLOBJ)gxsync.$(OBJ)
+watc__=$(watc_1) $(watc_2)
+watc_.dev: $(watc__)
+	$(SETMOD) watc_ $(watc_1)
+	$(ADDMOD) watc_ -obj $(watc_2)
+!endif
 
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
  $(gx_h) $(gp_h)
@@ -230,7 +251,7 @@ $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
 
 BEGINFILES=*.err
 
-LIBDOS=$(LIB_ALL) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ) $(GLOBJ)gp_dosfb.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) $(ld_tr)
+LIBDOS=$(LIB_ALL) $(watc__) $(ld_tr)
 
 # Interpreter main program
 
@@ -238,9 +259,11 @@ GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM) $(LIBDOS)
 
 ll_tr=ll$(CONFIG).tr
 $(ll_tr): $(MAKEFILE)
+!ifeq WAT32 0
 	echo SYSTEM DOS4G >$(ll_tr)
 	echo OPTION STUB=$(STUB) >>$(ll_tr)
-	echo OPTION STACK=16k >>$(ll_tr)
+!endif
+	echo OPTION STACK=32k >>$(ll_tr)
 
 $(GS_XE): $(GS_ALL) $(DEVS_ALL) $(ll_tr)
 	$(LINK) $(LCT) NAME $(GS) OPTION MAP=$(GS) FILE $(GLOBJ)gs @$(ld_tr) @$(ll_tr)
