@@ -12,6 +12,8 @@
 #include "pcfont.h"
 #include "pcstate.h"
 #include "pcfsel.h"
+#include "pcparse.h"
+#include "pjparse.h"
 #include "pldict.h"
 #include "plvalue.h"
 #include "gsbitops.h"
@@ -565,6 +567,63 @@ typedef struct alphanumeric_data_s {
   byte string_id[512];
 } alphanumeric_data_t;
 
+typedef enum resource_type_enum { 
+    macro_resource,
+    font_resource
+} resource_type_t;
+    
+/* look up a macro in the macro dictionary, if it is not found search
+   on disk and add the macro to the macro dictionary */
+private void *
+pcl_find_resource(pcl_state_t *pcs,
+		  byte string_id[],
+		  int string_id_size,
+		  resource_type_t resource_type
+		  )
+{
+    pl_dict_t *dict = (resource_type == macro_resource ? 
+		       &pcs->macros :
+		       &pcs->soft_fonts);
+    void *value = NULL;
+f:  if ( pl_dict_find(dict,
+		      string_id,
+		      string_id_size,
+		      &value) )
+	return value;
+    {
+	/* max alpha name + NULL */
+	char alphaname[512 + 1];
+	long int size;
+	int c, code;
+	for ( c = 0; c < string_id_size; c++ )
+	    alphaname[c] = string_id[c];
+	alphaname[c] = '\0';
+	size = pjl_proc_get_named_resource_size(pcs->pjls, alphaname);
+	if ( size == 0 )
+	    return NULL;
+	/* allocate enough space for the macro data and the header
+           which indicates the storage type */
+	value = gs_alloc_bytes(pcs->memory,
+			       size + sizeof(pcl_macro_t),
+			       "disk macro");
+	if ( value == NULL )
+	    return NULL;
+	((pcl_macro_t *)value)->storage = pcds_permanent;
+	if ( pjl_proc_get_named_resource(pcs->pjls, alphaname,
+		(byte *)value + sizeof(pcl_macro_t) ) < 0 )
+	    return NULL;
+	code = pl_dict_put(dict,
+			   string_id,
+			   string_id_size,
+			   value);
+	if ( code < 0 )
+	    return NULL;
+	/* now find the entry just placed in the dictionary. should not fail */
+	goto f;
+    }
+    return value;
+}
+
 private int /* ESC & n <count> W [operation][string ID] */
 pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
 {
@@ -672,13 +731,11 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
 	    /* associates current macro id to the supplied string id */
 	    {
 	      void *value;
-	      if ( !pl_dict_find(&pcs->macros,
-				 alpha_data->string_id,
-				 string_id_size,
-				 &value) )
-		return 0;
+	      value = pcl_find_resource(pcs, alpha_data->string_id, string_id_size, macro_resource);
+	      if ( !value )
+		  return 0;
 	      pl_dict_put_synonym(&pcs->macros, alpha_data->string_id, string_id_size,
-			       current_macro_id, current_macro_id_size );
+				  current_macro_id, current_macro_id_size);
 	    }
 	    break;
 	  case 20:
