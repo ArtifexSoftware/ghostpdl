@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,26 +28,34 @@ typedef struct gs_type42_data_s gs_type42_data;
 #  define gs_font_type42_DEFINED
 typedef struct gs_font_type42_s gs_font_type42;
 #endif
+typedef struct gs_type42_mtx_s {
+    uint numMetrics;		/* num*Metrics from [hv]hea */
+    ulong offset;		/* offset to [hv]mtx table */
+    uint length;		/* length of [hv]mtx table */
+} gs_type42_mtx_t;
 struct gs_type42_data_s {
     /* The following are set by the client. */
     int (*string_proc) (P4(gs_font_type42 *, ulong, uint, const byte **));
     void *proc_data;		/* data for procedures */
     /* The following are initialized by ...font_init, */
     /* but may be reset by the client. */
-    int (*get_outline) (P3(gs_font_type42 *, uint, gs_const_string *));
+    int (*get_outline)(P3(gs_font_type42 *pfont, uint glyph_index,
+			  gs_const_string *pgstr));
+    int (*get_metrics)(P4(gs_font_type42 *pfont, uint glyph_index, int wmode,
+			  float sbw[4]));
     /* The following are cached values. */
     ulong glyf;			/* offset to glyf table */
     uint unitsPerEm;		/* from head */
     uint indexToLocFormat;	/* from head */
-    uint numLongMetrics;	/* from hhea */
-    ulong hmtx;			/* offset to hmtx table */
-    uint hmtx_length;		/* length of hmtx table */
+    gs_type42_mtx_t metrics[2];	/* hhea/hmtx, vhea/vmtx (indexed by WMode) */
     ulong loca;			/* offset to loca table */
     uint numGlyphs;		/* from size of loca */
 };
+#define gs_font_type42_common\
+    gs_font_base_common;\
+    gs_type42_data data
 struct gs_font_type42_s {
-    gs_font_base_common;
-    gs_type42_data data;
+    gs_font_type42_common;
 };
 
 extern_st(st_gs_font_type42);
@@ -72,6 +80,8 @@ int gs_type42_append(P7(uint glyph_index, gs_imager_state * pis,
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(P3(gs_font_type42 * pfont, uint glyph_index,
 			     float psbw[4]));
+int gs_type42_wmode_metrics(P4(gs_font_type42 * pfont, uint glyph_index,
+			       int wmode, float psbw[4]));
 
 /* Export the font procedures so they can be called from the interpreter. */
 font_proc_enumerate_glyph(gs_type42_enumerate_glyph);

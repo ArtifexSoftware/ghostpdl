@@ -243,16 +243,22 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     else
 	info->members = 0;
     if (members & GLYPH_INFO_WIDTH) {
-	float sbw[4];
+	int i;
 
-	code = gs_type42_get_metrics(pfont, glyph_index, sbw);
-	if (code < 0)
-	    return code;
-	if (pmat)
-	    code = gs_point_transform(sbw[2], sbw[3], pmat, &info->width[0]);
-	else
-	    info->width[0].x = sbw[2], info->width[0].y = sbw[3];
-	info->members |= GLYPH_INFO_WIDTH;
+	for (i = 0; i < 2; ++i)
+	    if (members & (GLYPH_INFO_WIDTH0 << i)) {
+		float sbw[4];
+
+		code = gs_type42_wmode_metrics(pfont, glyph_index, i, sbw);
+		if (code < 0)
+		    return code;
+		if (pmat)
+		    code = gs_point_transform(sbw[2], sbw[3], pmat,
+					      &info->width[i]);
+		else
+		    info->width[i].x = sbw[2], info->width[i].y = sbw[3];
+	    }
+	info->members |= members & GLYPH_INFO_WIDTH;
     }
     if (members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES)) {
 	gs_glyph *pieces =
@@ -288,6 +294,93 @@ gs_type42_enumerate_glyph(gs_font *font, int *pindex,
     return 0;
 }
 
+/* Get the metrics of a simple glyph. */
+private int
+simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
+		     float sbw[4])
+{
+    int (*string_proc)(P4(gs_font_type42 *, ulong, uint, const byte **)) =
+	pfont->data.string_proc;
+    double factor = 1.0 / pfont->data.unitsPerEm;
+    uint width;
+    int lsb;
+    int code;
+
+    {
+	const gs_type42_mtx_t *pmtx = &pfont->data.metrics[wmode];
+	uint num_metrics = pmtx->numMetrics;
+	const byte *pmetrics;
+
+	if (glyph_index < num_metrics) {
+	    ACCESS(pmtx->offset + glyph_index * 4, 4, pmetrics);
+	    width = U16(pmetrics);
+	    lsb = S16(pmetrics + 2);
+	} else {
+	    uint offset = pmtx->offset + num_metrics * 4;
+	    uint glyph_offset = (glyph_index - num_metrics) * 2;
+	    const byte *plsb;
+
+	    ACCESS(offset - 4, 4, pmetrics);
+	    width = U16(pmetrics);
+	    if (glyph_offset >= pmtx->length)
+		glyph_offset = pmtx->length - 2;
+	    ACCESS(offset + glyph_offset, 2, plsb);
+	    lsb = S16(plsb);
+	}
+    }
+    if (wmode) {
+	factor = -factor;	/* lsb and width go down the page */
+	sbw[0] = 0, sbw[1] = lsb * factor;
+	sbw[2] = 0, sbw[3] = width * factor;
+    } else {
+	sbw[0] = lsb * factor, sbw[1] = 0;
+	sbw[2] = width * factor, sbw[3] = 0;
+    }
+    return 0;
+}
+
+/* Get the metrics of a glyph. */
+private int
+default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
+		    float sbw[4])
+{
+    gs_const_string glyph_string;
+    int code = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
+
+    if (code < 0)
+	return code;
+    if (glyph_string.size != 0 && S16(glyph_string.data) == -1) {
+	/* This is a composite glyph. */
+	uint flags;
+	const byte *glyph = glyph_string.data + 10;
+	gs_matrix_fixed mat;
+
+	memset(&mat, 0, sizeof(mat)); /* arbitrary */
+	do {
+	    uint comp_index = U16(glyph + 2);
+
+	    parse_component(&glyph, &flags, &mat, pfont, &mat);
+	    if (flags & cg_useMyMetrics) {
+		return gs_type42_wmode_metrics(pfont, comp_index, wmode, sbw);
+	    }
+	}
+	while (flags & cg_moreComponents);
+    }
+    return simple_glyph_metrics(pfont, glyph_index, wmode, sbw);
+}
+int
+gs_type42_wmode_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
+			float sbw[4])
+{
+    return pfont->data.get_metrics(pfont, glyph_index, wmode, sbw);
+}
+int
+gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
+		      float sbw[4])
+{
+    return gs_type42_wmode_metrics(pfont, glyph_index, pfont->WMode, sbw);
+}
+
 /* Initialize the cached values in a Type 42 font. */
 /* Note that this initializes get_outline and the font procedures as well. */
 int
@@ -315,12 +408,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
     numTables = U16(OffsetTable + 4);
     ACCESS(12, numTables * 16, TableDirectory);
     /* Clear optional entries. */
-    pfont->data.numLongMetrics = 0;
-    /*
-     * Clear the glyf and loca offsets so that clients who care can tell
-     * whether the font is being downloaded incrementally.
-     */
-    pfont->data.glyf = pfont->data.loca = 0;
+    memset(&pfont->data.metrics, sizeof(pfont->data.metrics), 0);
     for (i = 0; i < numTables; ++i) {
 	const byte *tab = TableDirectory + i * 16;
 	ulong offset = u32(tab + 8);
@@ -338,13 +426,21 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	    const byte *hhea;
 
 	    ACCESS(offset, 36, hhea);
-	    pfont->data.numLongMetrics = U16(hhea + 34);
+	    pfont->data.metrics[0].numMetrics = U16(hhea + 34);
 	} else if (!memcmp(tab, "hmtx", 4)) {
-	    pfont->data.hmtx = offset;
-	    pfont->data.hmtx_length = (uint)u32(tab + 12);
+	    pfont->data.metrics[0].offset = offset;
+	    pfont->data.metrics[0].length = (uint)u32(tab + 12);
 	} else if (!memcmp(tab, "loca", 4)) {
 	    pfont->data.loca = offset;
 	    loca_size = u32(tab + 12);
+	} else if (!memcmp(tab, "vhea", 4)) {
+	    const byte *vhea;
+
+	    ACCESS(offset, 36, vhea);
+	    pfont->data.metrics[1].numMetrics = U16(vhea + 34);
+	} else if (!memcmp(tab, "vmtx", 4)) {
+	    pfont->data.metrics[1].offset = offset;
+	    pfont->data.metrics[1].length = (uint)u32(tab + 12);
 	}
     }
     loca_size >>= pfont->data.indexToLocFormat + 1;
@@ -368,80 +464,11 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
     }
     pfont->data.get_outline = default_get_outline;
+    pfont->data.get_metrics = default_get_metrics;
     pfont->procs.glyph_outline = gs_type42_glyph_outline;
     pfont->procs.glyph_info = gs_type42_glyph_info;
     pfont->procs.enumerate_glyph = gs_type42_enumerate_glyph;
     return 0;
-}
-
-/* Get the metrics of a simple glyph. */
-private int
-simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index,
-		     float sbw[4])
-{
-    int (*string_proc)(P4(gs_font_type42 *, ulong, uint, const byte **)) =
-	pfont->data.string_proc;
-    double factor = 1.0 / pfont->data.unitsPerEm;
-    uint widthx;
-    int lsbx;
-    int code;
-
-    {
-	uint num_metrics = pfont->data.numLongMetrics;
-	const byte *hmetrics;
-
-	if (glyph_index < num_metrics) {
-	    ACCESS(pfont->data.hmtx + glyph_index * 4, 4, hmetrics);
-	    widthx = U16(hmetrics);
-	    lsbx = S16(hmetrics + 2);
-	} else {
-	    uint offset = pfont->data.hmtx + num_metrics * 4;
-	    uint glyph_offset = (glyph_index - num_metrics) * 2;
-	    const byte *lsb;
-
-	    ACCESS(offset - 4, 4, hmetrics);
-	    widthx = U16(hmetrics);
-	    if (glyph_offset >= pfont->data.hmtx_length)
-		glyph_offset = pfont->data.hmtx_length - 2;
-	    ACCESS(offset + glyph_offset, 2, lsb);
-	    lsbx = S16(lsb);
-	}
-    }
-    sbw[0] = lsbx * factor;
-    sbw[1] = 0;
-    sbw[2] = widthx * factor;
-    sbw[3] = 0;
-    return 0;
-}
-
-/* Get the metrics of a glyph. */
-int
-gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
-		      float sbw[4])
-{
-    gs_const_string glyph_string;
-    int code = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
-
-    if (code < 0)
-	return code;
-    if (glyph_string.size != 0 && S16(glyph_string.data) == -1) {
-	/* This is a composite glyph. */
-	uint flags;
-	const byte *glyph = glyph_string.data + 10;
-	gs_matrix_fixed mat;
-
-	memset(&mat, 0, sizeof(mat)); /* arbitrary */
-	do {
-	    uint comp_index = U16(glyph + 2);
-
-	    parse_component(&glyph, &flags, &mat, pfont, &mat);
-	    if (flags & cg_useMyMetrics) {
-		return simple_glyph_metrics(pfont, comp_index, sbw);
-	    }
-	}
-	while (flags & cg_moreComponents);
-    }
-    return simple_glyph_metrics(pfont, glyph_index, sbw);
 }
 
 /* Define the bits in the glyph flags. */
@@ -644,7 +671,7 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 	return 0;
     numContours = S16(glyph);
     if (numContours >= 0) {
-	simple_glyph_metrics(pfont, glyph_index, sbw);
+	simple_glyph_metrics(pfont, glyph_index, pfont->WMode, sbw);
 	return append_simple(glyph, sbw, pmat, ppath, pfont);
     }
     if (numContours != -1)
