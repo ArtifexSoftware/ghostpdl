@@ -360,11 +360,14 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	    pis != 0 &&
 	    gs_color_space_get_index(pim->ColorSpace) ==
 	    gs_color_space_index_DeviceCMYK;
-	gs_color_space rgb_cs;
-
 	if (cmyk_to_rgb) {
-	    gs_cspace_init_DeviceRGB(&rgb_cs);  /* idempotent initialization */
-	    pim->ColorSpace = &rgb_cs;
+	    extern_st(st_color_space);
+	    gs_memory_t *mem = pdev->v_memory;
+	    gs_color_space *rgb_cs = gs_alloc_struct(mem, 
+		    gs_color_space, &st_color_space, "psdf_setup_image_filters");
+
+	    gs_cspace_init_DeviceRGB(rgb_cs);  /* idempotent initialization */
+	    pim->ColorSpace = rgb_cs;
 	}
 	if (params.Depth == -1)
 	    params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
