@@ -788,7 +788,7 @@ s_compr_chooser_set_dimensions(stream_compr_chooser_state * ss, int width,
     ss->bits_per_sample = bits_per_sample;
     ss->sample = gs_alloc_bytes(ss->memory, width * depth, "s_compr_chooser_set_dimensions");
     if (ss->sample == 0)
-	return gs_error_VMerror;
+	return_error(gs_error_VMerror);
     return 0;
 }
 
@@ -908,7 +908,6 @@ private void
 s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss, 
 				      const byte *data, int length)
 {   
-    ulong mask = (1 << ss->bits_per_sample) - 1;
     /*
      * Input samples are packed ABCABCABC..., but the sample[] array of
      * unpacked values is stored AAA...BBB...CCC.  i counts samples within

@@ -293,6 +293,11 @@ typedef struct psdf_binary_writer_s {
     stream *target;		/* underlying stream */
     stream *strm;
     gx_device_psdf *dev;	/* may be unused */
+    /* Due to recently introduced field cos_object_t::input_strm
+     * the binary writer may be simplified significantly.
+     * Keeping the old structure until we have time
+     * for this optimization.
+     */
 } psdf_binary_writer;
 extern_st(st_psdf_binary_writer);
 #define public_st_psdf_binary_writer() /* in gdevpsdu.c */\

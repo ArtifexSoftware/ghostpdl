@@ -25,6 +25,8 @@
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"
 #include "scanchar.h"
+#include "szlibx.h"
+#include "slzwx.h"
 
 /* GC descriptors */
 private_st_pdf_article();
@@ -289,6 +291,50 @@ private int
 cos_stream_put_c_strings(cos_stream_t *pcs, const char *key, const char *value)
 {
     return cos_dict_put_c_strings(cos_stream_dict(pcs), key, value);
+}
+
+/* Setup pdfmak stream compression. */
+private int
+setup_pdfmark_stream_compression(gx_device_psdf *pdev0,
+			cos_stream_t *pco)
+{
+    /* This function is for pdfwrite only. */
+    gx_device_pdf *pdev = (gx_device_pdf *)pdev0;
+    gs_memory_t *mem = pdev->memory;
+    static const pdf_filter_names_t fnames = {
+	PDF_FILTER_NAMES
+    };
+    const stream_template *template =
+	(pdev->params.UseFlateCompression &&
+	 pdev->version >= psdf_version_ll3 ?
+	 &s_zlibE_template : &s_LZWE_template);
+    stream_state *st;
+
+    pco->input_strm = cos_write_stream_alloc(pco, pdev,
+				  "setup_pdfmark_stream_compression");
+    if (pco->input_strm == 0)
+	return_error(gs_error_VMerror);
+    if (!pdev->binary_ok) {
+	stream_state *ss = s_alloc_state(mem, s_A85E_template.stype,
+			  "setup_pdfmark_stream_compression");
+	if (ss == 0)
+	    return_error(gs_error_VMerror);
+	if (s_add_filter(&pco->input_strm, &s_A85E_template, ss, mem) == 0) {
+	    gs_free_object(mem, ss, "setup_image_compression");
+	    return_error(gs_error_VMerror);
+	}
+    }
+    st = s_alloc_state(mem, template->stype, 
+			    "setup_pdfmark_stream_compression");
+    if (st == 0)
+	return_error(gs_error_VMerror);
+    if (template->set_defaults)
+	(*template->set_defaults) (st);
+    if (s_add_filter(&pco->input_strm, template, st, mem) == 0) {
+        gs_free_object(mem, st, "setup_image_compression");
+        return_error(gs_error_VMerror);
+    }
+    return pdf_put_filters(cos_stream_dict(pco), pdev, pco->input_strm, &fnames);
 }
 
 /* ---------------- Miscellaneous pdfmarks ---------------- */
@@ -1405,6 +1451,7 @@ pdfmark_OBJ(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 {
     cos_type_t cotype;
     cos_object_t *pco;
+    bool stream = false;
     int code;
 
     if (objname == 0 || count != 2 || !pdf_key_eq(&pairs[0], "/type"))
@@ -1413,7 +1460,7 @@ pdfmark_OBJ(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	cotype = cos_type_array;
     else if (pdf_key_eq(&pairs[1], "/dict"))
 	cotype = cos_type_dict;
-    else if (pdf_key_eq(&pairs[1], "/stream"))
+    else if ((stream = pdf_key_eq(&pairs[1], "/stream")))
 	cotype = cos_type_stream;
     else
 	return_error(gs_error_rangecheck);
@@ -1430,6 +1477,9 @@ pdfmark_OBJ(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    return 0;		/* already exists, but OK */
 	return code;
     }
+    if (stream)
+	return setup_pdfmark_stream_compression((gx_device_psdf *)pdev, 
+						     (cos_stream_t *)pco);
     return 0;
 }
 
@@ -1484,6 +1534,7 @@ pdfmark_PUTSTREAM(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 {
     cos_object_t *pco;
     int code, i;
+    uint l;
 
     if (count < 2)
 	return_error(gs_error_rangecheck);
@@ -1491,9 +1542,9 @@ pdfmark_PUTSTREAM(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return code;
     if (!pco->is_open)
 	return_error(gs_error_rangecheck);
-    for (i = 1; code >= 0 && i < count; ++i)
-	code = cos_stream_add_bytes((cos_stream_t *)pco, pairs[i].data,
-				    pairs[i].size);
+    for (i = 1; i < count; ++i)
+	if (sputs(pco->input_strm, pairs[i].data, pairs[i].size, &l) != 0)
+	    return_error(gs_error_ioerror);
     return code;
 }
 

@@ -112,11 +112,15 @@ struct otype_s {\
     byte is_graphics;		/* see above */\
     byte written;		/* see above */\
     long length;                /* only for stream objects */\
+    stream *input_strm;		/* only for stream objects */\
+    /* input_strm is introduced recently for pdfmark. */\
+    /* Using this field, psdf_binary_writer_s may be simplified. */\
 }
 cos_object_struct(cos_object_s, cos_element_t);
 #define private_st_cos_object()	/* in gdevpdfo.c */\
-  gs_private_st_ptrs4(st_cos_object, cos_object_t, "cos_object_t",\
-    cos_object_enum_ptrs, cos_object_reloc_ptrs, elements, pieces, pdev, pres)
+  gs_private_st_ptrs5(st_cos_object, cos_object_t, "cos_object_t",\
+    cos_object_enum_ptrs, cos_object_reloc_ptrs, elements, pieces,\
+    pdev, pres, input_strm)
 extern const cos_object_procs_t cos_generic_procs;
 #define cos_type_generic (&cos_generic_procs)
 

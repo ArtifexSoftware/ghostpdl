@@ -178,6 +178,7 @@ cos_object_init(cos_object_t *pco, gx_device_pdf *pdev,
 	pco->is_graphics = false;
 	pco->written = false;
  	pco->length = 0;
+ 	pco->input_strm = 0;
     }
 }
 
@@ -1130,6 +1131,15 @@ cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev)
     const cos_stream_t *const pcs = (const cos_stream_t *)pco;
     int code;
 
+    if (pcs->input_strm != NULL) {
+	stream *s = pco->input_strm;
+	int status = s_close_filters(&s, NULL);
+
+	if (status < 0)
+	    return_error(gs_error_ioerror);
+	/* We have to break const here to clear the input_strm. */
+	((cos_object_t *)pco)->input_strm = 0;
+    }
     stream_puts(s, "<<");
     cos_elements_write(s, pcs->elements, pdev, false);
     pprintld1(s, "/Length %ld>>stream\n", cos_stream_length(pcs));

@@ -819,7 +819,8 @@ $(GLOBJ)gdevpdfk.$(OBJ) : $(GLSRC)gdevpdfk.c $(GXERR) $(math__h) $(memory__h)\
 
 $(GLOBJ)gdevpdfm.$(OBJ) : $(GLSRC)gdevpdfm.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h) $(scanchar_h)
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h) $(scanchar_h)\
+ $(szlibx_h) $(slzwx_h)
 	$(GLCC) $(GLO_)gdevpdfm.$(OBJ) $(C_) $(GLSRC)gdevpdfm.c
 
 $(GLOBJ)gdevpdfo.$(OBJ) : $(GLSRC)gdevpdfo.c $(memory__h) $(string__h)\
