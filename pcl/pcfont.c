@@ -38,7 +38,7 @@
  * Decache the HMI after resetting the font.  According to TRM 5-22,
  * this always happens, regardless of how the HMI was set; formerly,
  * we only invalidated the HMI if it was set from the font rather than
- * explicitly.
+ * explicitly.  TRM 7-14 any font characteristic change decaches HMI 
  */
 #define pcl_decache_hmi(pcs)\
   do {\
@@ -104,6 +104,8 @@ pcl_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 
 	if ( num > 1023 )
 	  return e_Range;
+
+	pcl_decache_hmi(pcs);  
 	/* The following algorithm is from Appendix C of the */
 	/* PCL5 Comparison Guide. */
 	symset = (num << 5) + pargs->command - 64;
@@ -129,6 +131,8 @@ pcl_spacing(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 
 	if ( spacing > 1 )
 	  return 0;
+
+	pcl_decache_hmi(pcs);  
 	if ( spacing != pcs->font_selection[set].params.proportional_spacing )
 	  {
 	    pcs->font_selection[set].params.proportional_spacing = spacing;
@@ -150,6 +154,7 @@ pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
 {	uint pitch_cp;
 	pcl_font_selection_t *pfs = &pcs->font_selection[set];
 
+	pcl_decache_hmi(pcs);  
 	if ( cpi < 0.1 )
 	  cpi = 0.1;
 	/* Convert characters per inch to 100ths of design units. */
@@ -180,6 +185,7 @@ pcl_height(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint height_4ths = (uint)(float_arg(pargs) * 4 + 0.5);
 	pcl_font_selection_t *pfs = &pcs->font_selection[set];
 
+	pcl_decache_hmi(pcs);  
 	if ( height_4ths != pfs->params.height_4ths )
 	  {
 	    pfs->params.height_4ths = height_4ths;
@@ -201,6 +207,7 @@ private int
 pcl_style(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint style = uint_arg(pargs);
 
+	pcl_decache_hmi(pcs);  
 	if ( style != pcs->font_selection[set].params.style )
 	  {
 	    pcs->font_selection[set].params.style = style;
@@ -221,6 +228,7 @@ private int
 pcl_stroke_weight(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	int weight = int_arg(pargs);
 
+	pcl_decache_hmi(pcs);  
 	if ( weight < -7 )
 	  weight = -7;
 	else if ( weight > 7 )
@@ -245,6 +253,7 @@ private int
 pcl_typeface(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint typeface = uint_arg(pargs);
 
+	pcl_decache_hmi(pcs);  
 	if ( typeface != pcs->font_selection[set].params.typeface_family )
 	  {
 	    pcs->font_selection[set].params.typeface_family = typeface;
