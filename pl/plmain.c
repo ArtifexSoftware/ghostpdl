@@ -270,6 +270,7 @@ pl_main(
 
     /* Init the top-level instance */
     gs_c_param_list_write(&params, mem);
+    gs_param_list_set_persistent_keys(&params, false);
     pl_main_init_instance(&inst, mem);
     arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL);
 
@@ -475,9 +476,13 @@ pl_main(
     gs_c_param_list_release(&params);
     arg_finit(&args);
 
+    /* free iodev */
+    gs_iodev_free(mem);
+   
     if ( gs_debug_c('A') )
 	dprintf( "Final time" );
     pl_platform_dnit(0);
+
     return 0;
 #undef mem
 }
@@ -568,9 +573,11 @@ pl_main_universe_dnit(
 
     /* dealloc device if sel'd */
     if (universe->curr_device) {
-      gs_closedevice(universe->curr_device);
+      gx_device_retain(universe->curr_device, false);
+      gx_device_finalize(universe->curr_device);
+      /* finalize closes, frees stype, now free the rest of the device */
       gs_free_object(universe->mem, universe->curr_device,
-       "pl_main_universe_dnit(gx_device)");
+		     "pl_main_universe_dnit(gx_device)");
     }
 
     return 0;
@@ -949,8 +956,8 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		    char buffer[128];
 		    strncpy(buffer, arg, eqp - arg);
 		    buffer[eqp - arg] = '\0';
-		    param_string_from_string(str, value);
-		    code = param_write_string((gs_param_list *)params, arg_heap_copy(buffer),
+		    param_string_from_transient_string(str, value);
+		    code = param_write_string((gs_param_list *)params, buffer,
 					      &str);
 		}
 	    }
