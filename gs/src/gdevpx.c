@@ -852,7 +852,6 @@ pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 	px_put_a(s, pxaLineDashStyle);
 	if (offset != 0)
 	    px_put_usa(s, (uint)offset, pxaDashOffset);
-	}
     }
     spputc(s, pxtSetLineDash);
     return 0;
