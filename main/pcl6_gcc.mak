@@ -73,6 +73,8 @@ FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev \
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev \
 	     $(DD)devcmap.dev $(DD)gsnogc.dev $(DD)sdctd.dev
 
+SYNC=posync
+STDLIBS=-lpthread -lm
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak
 
