@@ -28,6 +28,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"
 #include "gdevpdfg.h"
+#include "gdevpdtd.h"
 #include "scanchar.h"
 #include "strimpl.h"
 #include "sa85x.h"
@@ -859,6 +860,9 @@ pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev)
 	if (code >= 0)
 	    code = code1;
     }
+    code1 = pdf_finish_font_descriptors(pdev, pdf_release_FontDescriptor_components);
+    if (code >= 0)
+	code = code1;
     for (i = 0; i < NUM_RESOURCE_TYPES; ++i) {
 	code1 = pdf_free_resource_objects(pdev, i);
 	if (code >= 0)

@@ -583,8 +583,8 @@ write_font_resources(gx_device_pdf *pdev, pdf_resource_list_t *prlist)
 	}
     return 0;
 }
-private int
-finish_font_descriptors(gx_device_pdf *pdev,
+int
+pdf_finish_font_descriptors(gx_device_pdf *pdev,
 			int (*finish_proc)(gx_device_pdf *,
 					   pdf_font_descriptor_t *))
 {
@@ -616,10 +616,10 @@ pdf_close_text_document(gx_device_pdf *pdev)
     pdf_clean_standard_fonts(pdev);
     if ((code = pdf_free_font_cache(pdev)) < 0 ||
 	(code = pdf_write_resource_objects(pdev, resourceCharProc)) < 0 ||
- 	(code = finish_font_descriptors(pdev, pdf_finish_FontDescriptor)) < 0 ||
+ 	(code = pdf_finish_font_descriptors(pdev, pdf_finish_FontDescriptor)) < 0 ||
   	(code = write_font_resources(pdev, &pdev->resources[resourceCIDFont])) < 0 ||
 	(code = write_font_resources(pdev, &pdev->resources[resourceFont])) < 0 ||
-	(code = finish_font_descriptors(pdev, pdf_write_FontDescriptor)) < 0
+	(code = pdf_finish_font_descriptors(pdev, pdf_write_FontDescriptor)) < 0
 	)
 	return code;
 

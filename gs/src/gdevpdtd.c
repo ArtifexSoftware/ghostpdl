@@ -647,3 +647,15 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     }
     return 0;
 }
+
+/*
+ * Release a FontDescriptor components.
+ */
+int
+pdf_release_FontDescriptor_components(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+{
+    gs_free_object(pdev->pdf_memory, pfd->base_font, "pdf_release_FontDescriptor_components");
+    pfd->base_font = NULL;
+    /* fixme: underimplemented. */
+    return 0;
+}
