@@ -550,14 +550,13 @@ pcl_show_chars_slow(
         if (chr != 0xffff) {
 
             /* if source is opaque, show and opaque background */
-            if (!invisible_pattern) {
-                if (source_opaque)
-                    code = show_char_background(pcs, buff);
-                if (code >= 0)
+            if (source_opaque)
+                code = show_char_background(pcs, buff);
+            if (code >= 0)
+                if (!invisible_pattern)
                     code = show_char_foreground(pcs, buff);
-                if (code < 0)
-                    break;
-            }
+            if (code < 0)
+                break;
             /* NB WRONG - */
             pcl_mark_page_for_current_pos(pcs);
         }
