@@ -872,7 +872,7 @@ pdf_close(gx_device * dev)
     }
 
     /* Write the font resources and related resources. */
-    code = pdf_write_resource_objects(pdev, resourceXObject);
+    code1 = pdf_write_resource_objects(pdev, resourceXObject);
     if (code >= 0)
 	code = code1;
     code1 = pdf_free_resource_objects(pdev, resourceXObject);
