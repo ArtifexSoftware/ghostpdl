@@ -194,9 +194,11 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	    else
 	      {
 		gs_point cur_point;
-		hpgl_call(hpgl_get_current_position(pgls, &cur_point));
-		hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x,
-						 cur_point.y, func, true));
+		if ( !pgls->g.polygon_mode ) {
+		    hpgl_call(hpgl_get_current_position(pgls, &cur_point));
+		    hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x,
+						     cur_point.y, func, true));
+		}
 	      }
 	  }
 	if ( pgls->g.symbol_mode != 0 )
