@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,10 +30,12 @@
  * the XtResource structure is botched -- it declares the strings as char *
  * rather than const char * -- and so compiling the statically initialized
  * tables with gcc -Wcast-qual produces dozens of bogus warnings.
+ *
+ * Astoundingly, not only does the X API specify these structures as not
+ * being const, the Xt implementation actually writes into them.
  */
 
-XtResource gdev_x_resources[] =
-{
+XtResource gdev_x_resources[] = {
 
 /* (String) casts are here to suppress warnings about discarding `const' */
 #define RINIT(a,b,t,s,o,it,n)\
@@ -130,8 +132,7 @@ ZapfChancery-MediumItalic:-Adobe-ITC Zapf Chancery-Medium-I-Normal--"),
 
 const int gdev_x_resource_count = XtNumber(gdev_x_resources);
 
-String gdev_x_fallback_resources[] =
-{
+String gdev_x_fallback_resources[] = {
     (String) "Ghostscript*Background: white",
     (String) "Ghostscript*Foreground: black",
     NULL
