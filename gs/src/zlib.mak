@@ -49,7 +49,7 @@ ZO_=$(O_)$(ZOBJ)
 # command lines (!), we can't have a -D whose argument begins with -,
 # since this will cause the argument to be interpreted as a switch (!!).
 # ZI_ and ZF_ are defined in gs.mak.
-ZCC=$(CC_) $(I_)$(ZI_)$(_I) $(ZF_) -Dverbose=0-1
+ZCC=$(CC_) $(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)0-1$(_D)
 
 # Define the name of this makefile.
 ZLIB_MAK=$(GLSRC)zlib.mak
