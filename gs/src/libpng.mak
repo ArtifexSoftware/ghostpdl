@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 2000-1 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1995, 2001 artofcode LLC.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -29,7 +29,7 @@
 #	  For historical reasons, "101" and "102" are also acceptable,
 #	  even though they don't match libpng's numbering scheme
 #	  (see png.h for more details).
-#         building with versions earlier than 0.90 is not supported.
+#         versions prior 0.90 is not supported.
 #	SHARE_LIBPNG - 0 to compile libpng, 1 to share
 #	LIBPNG_NAME - if SHARE_LIBPNG=1, the name of the shared library
 # NOTE: currently users of this makefile define PSRCDIR and PVERSION,
