@@ -1246,6 +1246,19 @@ user parameters to empty arrays, a script or job server that needs to
 enable certain paths for file Reading, Writing and/or Control can use this
 operator to perform the locking needed to enter <b>SAFER</b> mode.
 <p>
+For example, to enable reading everywhere, but disallow writing and file
+control (deleting and renaming files), the following can be used:
+<pre>
+	{ << /PermitFileReading [ (*) ]
+	     /PermitFileWriting [ ]
+	     /PermitFileControl [ ]
+	  >> setuserparams
+	  .locksafe
+	} stopped pop
+</pre>
+In the above example, use of stopped will allow the use of this sequence on
+older versions of Ghostscript where <b><tt>.locksafe</tt></b> was not an operator.
+<p>
 See also <a href="#LockSafetyParams">.LockSafetyParams</a> and
 <a href="#User_parameters">User Parameters</a>.
 <p>
