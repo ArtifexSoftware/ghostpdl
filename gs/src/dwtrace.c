@@ -137,6 +137,7 @@ private void dw_gt_get_dc(vd_trace_interface *I, vd_trace_interface **I1)
 	SetBkMode(I->host->hdc,TRANSPARENT);
 	I->host->pen0 = (HPEN)SelectObject(I->host->hdc, GetStockObject(BLACK_PEN));
 	I->host->brush0 = (HBRUSH)SelectObject(I->host->hdc, GetStockObject(BLACK_BRUSH));
+	I->host->color = 0;
 	I->host->count_GetDC = 1;
         *I1 = I;
     } else
