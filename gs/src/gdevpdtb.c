@@ -595,9 +595,11 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	    }
 #	endif
     case ft_encrypted:
-	code = copied_drop_extension_glyphs((gs_font *)out_font);
-	if (code < 0)
-	    return code;
+	if (!PS2WRITE || !pdev->OrderResources) {
+	    code = copied_drop_extension_glyphs((gs_font *)out_font);
+	    if (code < 0)
+		return code;
+	}
 #	if PS2WRITE
 	    /* Hack : assuming OrderResources == true 
 	       iff we generate a ps2write output. */
@@ -665,9 +667,11 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	     WRITE_TRUETYPE_CMAP : 0);
 	stream poss;
 
-	code = copied_drop_extension_glyphs((gs_font *)out_font);
-	if (code < 0)
-	    return code;
+	if (!PS2WRITE || !pdev->OrderResources) {
+	    code = copied_drop_extension_glyphs((gs_font *)out_font);
+	    if (code < 0)
+		return code;
+	}
 	s_init(&poss, pdev->memory);
 	swrite_position_only(&poss);
 	code = psf_write_truetype_font(&poss, pfont, options, NULL, 0, &fnstr);

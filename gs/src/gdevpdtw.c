@@ -166,11 +166,13 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
 	    const byte *d = pdfont->u.simple.Encoding[ch].str.data;
 	    int i, l = pdfont->u.simple.Encoding[ch].str.size;
 
-	    for (i = 0; i + sl < l; i++)
-		if (!memcmp(d + i, gx_extendeg_glyph_name_separator, sl)) {
-		    l = i;
-		    break;
-		}
+    	    if (!PS2WRITE || !pdev->OrderResources) {
+		for (i = 0; i + sl < l; i++)
+		    if (!memcmp(d + i, gx_extendeg_glyph_name_separator, sl)) {
+			l = i;
+			break;
+		    }
+	    }
 	    if (ch != prev + 1)
 		pprintd1(s, "\n%d", ch);
 	    pdf_put_name(pdev, d, l);
