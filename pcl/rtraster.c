@@ -356,7 +356,15 @@ create_mask_enumerator(
     pcl_raster_t *              prast
 )
 {
-    gs_image4_t                 image;
+    int				transparent = prast->transparent;
+    /*
+     * Most elements of gs_image1_t and gs_image4_t are identical.  The only exception
+     * that we care about is MaskColor in gs_image_type4_t.
+     */
+    union {
+        gs_image1_t i1;
+	gs_image4_t i4;
+    }				image;
     gs_image_enum *             pen = gs_image_enum_alloc( prast->pmem,
 							   "Create image for PCL raster" );
     int                         code = 0;
@@ -384,19 +392,23 @@ create_mask_enumerator(
                                          );
 
     if (code >= 0) {
-        gs_image4_t_init(&image, prast->mask_pindexed->pcspace);
-        image.Width = prast->src_width;
-        image.Height = prast->src_height;
+        if (transparent)
+            gs_image4_t_init( (gs_image4_t *) &image, prast->mask_pindexed->pcspace);
+        else
+            gs_image_t_init_adjust( (gs_image_t *) &image, prast->mask_pindexed->pcspace, 0);
+        image.i1.Width = prast->src_width;
+        image.i1.Height = prast->src_height;
 
 	if ( pcs->personality == pcl5e )
-	    image.CombineWithColor = false;
+	    image.i1.CombineWithColor = false;
 	else
-	    image.CombineWithColor = true;
-	image.format = gs_image_format_chunky;
-	image.BitsPerComponent = 1;
-	image.Decode[0] = 0.0;
-	image.Decode[1] = 1.0;
-	image.MaskColor[0] = 0.0;
+	    image.i1.CombineWithColor = true;
+	image.i1.format = gs_image_format_chunky;
+	image.i1.BitsPerComponent = 1;
+	image.i1.Decode[0] = 0.0;
+	image.i1.Decode[1] = 1.0;
+        if (transparent)
+	    image.i4.MaskColor[0] = 0.0;
     
 	code = gs_image_begin_typed( (const gs_image_common_t *)&image,
 				     pcs->pgs,
@@ -425,6 +437,11 @@ create_mask_enumerator(
 /*
  * Create the graphic library image object needed to represent a raster.
  *
+ * If the image does not use transparency then we need to use image type 1 processing.
+ * Otherwise we need to use image type 4.  Most of the setup is the same for both
+ * cases.  Thus rather than split this into two routines with a lot redundant code
+ * I am keeping one routine with a union structure (image) and some conditionals.
+ *
  * Returns 0 on success, < 0 in the event of an error.
  */
   private int
@@ -436,7 +453,15 @@ create_image_enumerator(
     int                         b_per_p = prast->bits_per_plane;
     int                         num_comps = (prast->indexed ? 1 : 3);
     int                         nsrcs = prast->nsrcs;
-    gs_image4_t                 image;
+    /*
+     * Most elements of gs_image1_t and gs_image4_t are identical.  The only exception
+     * that we care about is MaskColor in gs_image_type4_t.
+     */
+    int				use_image4 = prast->transparent;
+    union {
+        gs_image1_t i1;
+	gs_image4_t i4;
+    }				image;
     gs_image_enum *             pen = gs_image_enum_alloc( prast->pmem,
                                                  "Create image for PCL raster" );
     gx_image_enum_common_t *    pie = 0;
@@ -448,40 +473,49 @@ create_image_enumerator(
     if (pen == 0)
         return e_Memory;
 
-    gs_image4_t_init(&image, pcspace);
-    image.Width = prast->src_width;
-    image.Height = prast->src_height;
-    image.CombineWithColor = true;
-    image.format = ( nsrcs > 1 ? gs_image_format_component_planar
+    /*
+     * There is one more case in which we will not use image type 4 processing.
+     * If our color specifications are indexed and the wht_index value is greater
+     * then the largest possible value given the number of index bits, then it is
+     * not possible to ever get a 'white' (transparent) value.  Thus skip
+     * transparency in this case.
+     */
+    if ((prast->indexed) && (prast->wht_indx >= 1 << (nplanes * b_per_p)))
+        use_image4 = 0;
+
+    if (use_image4)
+        gs_image4_t_init( (gs_image4_t *) &image, pcspace);
+    else
+        gs_image_t_init_adjust( (gs_image_t *) &image, pcspace, 0);
+    image.i1.Width = prast->src_width;
+    image.i1.Height = prast->src_height;
+    image.i1.CombineWithColor = true;
+    image.i1.format = ( nsrcs > 1 ? gs_image_format_component_planar
                                : gs_image_format_chunky           );
 
     if (nplanes > nsrcs)
-        image.BitsPerComponent = 8; /* always 8 bits per pixel if consolidated */
+        image.i1.BitsPerComponent = 8; /* always 8 bits per pixel if consolidated */
     else
-        image.BitsPerComponent = (nplanes * b_per_p) / num_comps;
+        image.i1.BitsPerComponent = (nplanes * b_per_p) / num_comps;
 
     if (prast->indexed) {
-
-        /* avoid unnecessary transparency mask in the by-plane case */
-        if (prast->wht_indx >= 1 << (nplanes * b_per_p))
-            image.MaskColor[0] = (1 << image.BitsPerComponent);
-	else
-            image.MaskColor[0] = prast->wht_indx;
-        image.Decode[0] = 0.0;
-        image.Decode[1] = (1 << image.BitsPerComponent) - 1;
+	if (use_image4)
+            image.i4.MaskColor[0] = prast->wht_indx;
+        image.i1.Decode[0] = 0.0;
+        image.i1.Decode[1] = (1 << image.i1.BitsPerComponent) - 1;
     } else {
         int     i;
 
         for (i = 0; i < num_comps; i++) {
-            image.Decode[2 * i] = prast->pindexed->Decode[2 * i];
-            image.Decode[2 * i + 1] = prast->pindexed->Decode[2 * i + 1];
+            image.i1.Decode[2 * i] = prast->pindexed->Decode[2 * i];
+            image.i1.Decode[2 * i + 1] = prast->pindexed->Decode[2 * i + 1];
 
-            image.MaskColor[i] = (1 << image.BitsPerComponent);
-            if (prast->transparent) {
-                if (image.Decode[2 * i] == 1.0)
-                    image.MaskColor[i] = 0;
-                else if (image.Decode[2 * i + 1] == 1.0)
-                    image.MaskColor[i] = (1 << image.BitsPerComponent) - 1;
+	    if (use_image4) {
+                image.i4.MaskColor[i] = (1 << image.i1.BitsPerComponent);
+                if (image.i1.Decode[2 * i] == 1.0)
+                    image.i4.MaskColor[i] = 0;
+                else if (image.i1.Decode[2 * i + 1] == 1.0)
+                    image.i4.MaskColor[i] = (1 << image.i1.BitsPerComponent) - 1;
             }
         }
     }

@@ -924,7 +924,7 @@ void
 pl_log_string(char *str, int wait_for_key)
 {	fputs(str, gs_stderr);
 	if (wait_for_key)
-	  getchar();
+	  fgetc(gs_stdin);
 }
 
 /* Pre-page portion of page finishing routine */
@@ -986,7 +986,7 @@ pl_main_cursor_open(
 {
 	/* try to open file */
         if (fname[0] == '-' && fname[1] == NULL)
-	    cursor->strm = stdin;
+	    cursor->strm = gs_stdin;
 	else
 	    cursor->strm = fopen(fname, "rb");
 	if (!cursor->strm)
