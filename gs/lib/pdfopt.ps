@@ -981,7 +981,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     NominalFileLength writePart3
   } tolength def
   /LPDictLength {		% part 2
-    NominalFileLength dup dup 2 mul 1 index dup createLPDict writePart2
+    NominalFileLength dup 2 mul 2 copy add 1 index dup createLPDict writePart2
   } tolength def
 
 	% Compute a few additional values from the above.
