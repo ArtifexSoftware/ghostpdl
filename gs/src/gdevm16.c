@@ -36,10 +36,10 @@ declare_mem_procs(mem_true16_copy_mono, mem_true16_copy_color, mem_true16_fill_r
 
 /* The device descriptor. */
 const gx_device_memory mem_true16_device =
-mem_device("image16", 16, 0,
-	   mem_true16_map_rgb_color, mem_true16_map_color_rgb,
-     mem_true16_copy_mono, mem_true16_copy_color, mem_true16_fill_rectangle,
-	   gx_default_strip_copy_rop);
+    mem_device("image16", 16, 0,
+	       mem_true16_map_rgb_color, mem_true16_map_color_rgb,
+	       mem_true16_copy_mono, mem_true16_copy_color,
+	       mem_true16_fill_rectangle, gx_default_strip_copy_rop);
 
 /* Map a r-g-b color to a color index. */
 private gx_color_index
@@ -58,11 +58,14 @@ mem_true16_map_color_rgb(gx_device * dev, gx_color_index color,
 {
     ushort value = color >> 11;
 
-    prgb[0] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4)) >> (16 - gx_color_value_bits);
-    value = (color >> 6) & 0x7f;
-    prgb[1] = ((value << 10) + (value << 4) + (value >> 2)) >> (16 - gx_color_value_bits);
-    value = color & 0x3f;
-    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4)) >> (16 - gx_color_value_bits);
+    prgb[0] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4))
+		      >> (16 - gx_color_value_bits);
+    value = (color >> 5) & 0x3f;
+    prgb[1] = ((value << 10) + (value << 4) + (value >> 2))
+		      >> (16 - gx_color_value_bits);
+    value = color & 0x1f;
+    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4))
+		      >> (16 - gx_color_value_bits);
     return 0;
 }
 
@@ -77,10 +80,9 @@ mem_true16_fill_rectangle(gx_device * dev,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
 #if arch_is_big_endian
-#  define color16 ((ushort)color)
+    const ushort color16 = (ushort)color;
 #else
-    ushort color16 = ((uint) (byte) color << 8) + ((ushort) color >> 8);
-
+    const ushort color16 = (ushort)((color << 8) | (color >> 8));
 #endif
     declare_scan_ptr(dest);
     fit_fill(dev, x, y, w, h);
@@ -95,19 +97,19 @@ mem_true16_fill_rectangle(gx_device * dev,
 	inc_ptr(dest, draster);
     }
     return 0;
-#undef color16
 }
 
 /* Copy a monochrome bitmap. */
 private int
 mem_true16_copy_mono(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+		     const byte * base, int sourcex, int sraster,
+		     gx_bitmap_id id, int x, int y, int w, int h,
+		     gx_color_index zero, gx_color_index one)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
 #if arch_is_big_endian
-#  define zero16 ((ushort)zero)
-#  define one16 ((ushort)one)
+    const ushort zero16 = (ushort)zero;
+    const ushort one16 = (ushort)one;
 #else
     ushort zero16 = ((uint) (byte) zero << 8) + ((ushort) zero >> 8);
     ushort one16 = ((uint) (byte) one << 8) + ((ushort) one >> 8);
@@ -144,8 +146,6 @@ mem_true16_copy_mono(gx_device * dev,
 	inc_ptr(dest, draster);
     }
     return 0;
-#undef zero16
-#undef one16
 }
 
 /* Copy a color bitmap. */

@@ -145,8 +145,6 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 	gx_color_index pixel;
 	byte chop = 0x1;
 
-	if ((shift -= depth) < 0)
-	    shift += 8, *dp++ = buf, buf = 0;
 	vr = *sp++;
 	if (src_depth > 8) {
 	    vg = *sp++;
@@ -170,9 +168,26 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 	    vb = (vb >= 0x80 ? vb | chop : vb & ~chop);
 	    chop <<= 1;
 	}
-	buf += (byte) (pixel << shift);
+	if ((shift -= depth) >= 0)
+	    buf += (byte)(pixel << shift);
+	else {
+	    switch (depth) {
+	    default:		/* 1, 2, 4, 8 */
+		*dp++ = buf;
+		shift += 8;
+		buf = (byte)(pixel << shift);
+		break;
+	    case 32:
+		*dp++ = (byte)(pixel >> 24);
+		*dp++ = (byte)(pixel >> 16);
+	    case 16:
+		*dp++ = (byte)(pixel >> 8);
+		*dp++ = (byte)pixel;
+		shift = 0;
+	    }
+	}
     }
-    if (width > 0)
+    if (width > 0 && depth <= 8)
 	*dp = (shift == 0 ? buf : buf + (*dp & ((1 << shift) - 1)));
 }
 
@@ -243,7 +258,7 @@ gx_default_strip_copy_rop(gx_device * dev,
     } else {
 	fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
     }
-    gs_make_mem_device(&mdev, mdproto, 0, -1, dev);
+    gs_make_mem_device(&mdev, mdproto, 0, -1, (expand ? NULL : dev));
     mdev.width = width;
     mdev.height = 1;
     mdev.bitmap_memory = mem;

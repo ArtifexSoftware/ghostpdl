@@ -35,6 +35,7 @@ public_st_device_cmap();
 /* Device procedures */
 private dev_proc_map_rgb_color(cmap_map_rgb_color);
 private dev_proc_map_rgb_alpha_color(cmap_map_rgb_alpha_color);
+private dev_proc_put_params(cmap_put_params);
 private dev_proc_begin_typed_image(cmap_begin_typed_image);
 
 private const gx_device_cmap gs_cmap_device =
@@ -50,7 +51,8 @@ private const gx_device_cmap gs_cmap_device =
 	gx_forward_tile_rectangle,
 	gx_forward_copy_mono,
 	gx_forward_copy_color,
-	0, 0, 0, 0,
+	0, 0, 0,
+	cmap_put_params,
 	gx_default_map_cmyk_color,
 	0, 0,
 	cmap_map_rgb_alpha_color,
@@ -100,20 +102,20 @@ gdev_cmap_set_method(gx_device_cmap * cmdev,
 	case device_cmap_identity:
 	    cmdev->color_info.max_gray = target->color_info.max_gray;
 	    cmdev->color_info.max_color = target->color_info.max_color;
-            cmdev->color_info.num_components =
+	    cmdev->color_info.num_components =
 		target->color_info.num_components;
 	    break;
 
 	case device_cmap_monochrome:
 	    cmdev->color_info.max_gray = target->color_info.max_gray;
 	    cmdev->color_info.max_color = target->color_info.max_color;
-            cmdev->color_info.num_components = 1;
+	    cmdev->color_info.num_components = 1;
 	    break;
 
 	case device_cmap_snap_to_primaries:
 	case device_cmap_color_to_black_over_white:
 	    cmdev->color_info.max_gray = cmdev->color_info.max_color = 4095;
-            cmdev->color_info.num_components =
+	    cmdev->color_info.num_components =
 		target->color_info.num_components;
 	    break;
 
@@ -157,6 +159,7 @@ cmap_convert_rgb_color(const gx_device_cmap * cmdev, cmap_rgb_t * rgb)
 
     }
 }
+
 private gx_color_index
 cmap_map_rgb_color(gx_device * dev, gx_color_value red,
 		   gx_color_value green, gx_color_value blue)
@@ -186,6 +189,21 @@ cmap_map_rgb_alpha_color(gx_device * dev, gx_color_value red,
     cmap_convert_rgb_color(cmdev, &rgb);
     return target->procs.map_rgb_alpha_color(target, rgb.red, rgb.green,
 					     rgb.blue, alpha);
+}
+
+/* Update parameters; copy the device information back afterwards. */
+private int
+cmap_put_params(gx_device * dev, gs_param_list * plist)
+{
+    int code = gx_forward_put_params(dev, plist);
+
+    if (code >= 0) {
+	gx_device_cmap * const cmdev = (gx_device_cmap *)dev;
+
+	gx_device_copy_params(dev, cmdev->target);
+	code = gdev_cmap_set_method(cmdev, cmdev->mapping_method);
+    }
+    return code;
 }
 
 /*
