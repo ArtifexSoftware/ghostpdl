@@ -46,13 +46,13 @@ PIF_STATE pIFS = &IFS;
  * via the CGIFfco_Plugin procedure.
  */
 #ifdef MSVC
-private const UB8           fcNmPl[] =    "\\mtfonts\\pcl45\\mt1\\plug___f.fco";
-private const UB8 *const    fcNmAry[] = { "\\mtfonts\\pcl45\\mt1\\pcl____f.fco",
+private const UB8           fcNmPl[] =    "\\mtfonts\\pcl45\\mt1\\plug___g.fco";
+private const UB8 *const    fcNmAry[] = { "\\mtfonts\\pcl45\\mt1\\pcl____g.fco",
                                           "\\mtfonts\\pcl45\\mt1\\wd_____g.fco" };
 #else
 
-private const UB8           fcNmPl[] =    "mtfonts/pcl45/mt1/plug___f.fco";
-private const UB8 *const    fcNmAry[] = { "mtfonts/pcl45/mt1/pcl____f.fco",
+private const UB8           fcNmPl[] =    "mtfonts/pcl45/mt1/plug___g.fco";
+private const UB8 *const    fcNmAry[] = { "mtfonts/pcl45/mt1/pcl____g.fco",
                                           "mtfonts/pcl45/mt1/wd_____g.fco" };
 #endif
 
@@ -421,7 +421,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                         plfont->params.style = pfDesc->pcltStyle;
                         plfont->params.stroke_weight = pfDesc->pcltStrokeWt;
                         plfont->params.typeface_family = pfDesc->pcltTypeFamily;
-
 			/* use the offset in the table as the pjl font number */
 			plfont->params.pjl_font_number = j;
                         /* store the font in the built-in-fonts dictionary */
