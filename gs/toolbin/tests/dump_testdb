@@ -23,7 +23,13 @@
 #
 # dumps (prints out) the contents of the testdatadb
 
-import sys, anydbm, gsconf
+import string, sys, anydbm, gsconf
+
+def compare_field_2(s1, s2):
+    if string.split(s1,' ')[1] < string.split(s2,' ')[1]:
+    	return -1
+    else:
+    	return 1
 
 if len(sys.argv) == 2:
     print "opening ", sys.argv[1]
@@ -31,6 +37,14 @@ if len(sys.argv) == 2:
 else:
     db = anydbm.open(gsconf.testdatadb)
 
+# collect the database as strings
+dump = []
 for k in db.keys():
-    print db[k], k
+    dump.append('%s %s' % (db[k], k))
 
+# Sort on field 2 (the file name)
+dump.sort(compare_field_2)
+
+# Print the sorted list
+for line in dump:
+    print line
