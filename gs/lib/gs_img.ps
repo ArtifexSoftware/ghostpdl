@@ -495,6 +495,7 @@ def
     % execute .image1 in a stopped context
       {
         gsave
+        0 .setoverprintmode             % disable overprint mode for images
         //img_csary 2 index /IMG_NComps get get setcolorspace
           { .alphaimage }
           { .image1 }
@@ -573,6 +574,7 @@ if
                 % color space is somewhat of a hack.
                 %
                 gsave
+                0 .setoverprintmode     % disable overprintmode for images
                 dup /PixelCopy .knownget dup
                   { pop }
                 if
@@ -602,7 +604,15 @@ if
               { /image load /undefined signalerror }
             ifelse
           }
-          { //.imagetypes exch get exec }
+          {
+            gsave
+            0 .setoverprintmode         % disable overprintmode for images
+            //.imagetypes exch get
+            stopped
+            grestore
+              { /image load $error /errorname get signalerror }
+            if
+          }
         ifelse
       }
       { 

@@ -79,6 +79,17 @@ struct gs_pattern_type_s {
 
 	pattern_proc_remap_color((*remap_color));
 
+	/*
+	 * Perform any special actions required when a pattern instance
+	 * is made the current color "color" (i.e.: at setcolor time).
+	 * This is primarily useful for PatternType2 patterns, where the
+	 * pattern instance specifies a color space.
+	 */
+#define pattern_proc_set_color(proc)\
+  int proc(const gs_client_color *, gs_state *)
+
+	pattern_proc_set_color((*set_color));
+
     } procs;
 };
 

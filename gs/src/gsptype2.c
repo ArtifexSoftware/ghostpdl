@@ -57,10 +57,12 @@ private pattern_proc_uses_base_space(gs_pattern2_uses_base_space);
 private pattern_proc_make_pattern(gs_pattern2_make_pattern);
 private pattern_proc_get_pattern(gs_pattern2_get_pattern);
 private pattern_proc_remap_color(gs_pattern2_remap_color);
+private pattern_proc_set_color(gs_pattern2_set_color);
 private const gs_pattern_type_t gs_pattern2_type = {
     2, {
         gs_pattern2_uses_base_space, gs_pattern2_make_pattern,
-        gs_pattern2_get_pattern, gs_pattern2_remap_color
+        gs_pattern2_get_pattern, gs_pattern2_remap_color,
+        gs_pattern2_set_color,
     }
 };
 
@@ -166,6 +168,20 @@ gs_pattern2_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->type = &gx_dc_pattern2;
     pdc->ccolor = *pc;
     return 0;
+}
+
+/*
+ * Perform actions required at set_color time. Since PatternType 2
+ * patterns specify a color space, we must update the overprint
+ * information as required by that color space.
+ */
+private int
+gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
+{
+    gs_pattern2_instance_t * pinst = (gs_pattern2_instance_t *)pcc->pattern;
+    gs_color_space * pcs = pinst->template.Shading->params.ColorSpace;
+
+    return pcs->type->set_overprint(pcs, pgs);
 }
 
 /* Fill path or rect, with adjustment, and with a PatternType 2 color. */

@@ -37,6 +37,8 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gsovrc.h"
+#include "gxcolor2.h"
+#include "gxpcolor.h"
 
 /* Forward references */
 private gs_state *gstate_alloc(gs_memory_t *, client_name_t,
@@ -374,8 +376,6 @@ gs_grestore_only(gs_state * pgs)
     void *sdata;
     gs_transparency_state_t *tstack = pgs->transparency_stack;
     bool prior_overprint = pgs->overprint;
-    int  prior_overprint_mode = pgs->overprint_mode;
-    bool same_device = pgs->device == saved->device;
 
     if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
@@ -397,10 +397,8 @@ gs_grestore_only(gs_state * pgs)
     gs_free_object(pgs->memory, saved, "gs_grestore");
 
     /* update the overprint compositor, if necessary */
-    if ( !same_device                                                   ||
-         prior_overprint != pgs->overprint                              ||
-         (pgs->overprint && prior_overprint_mode != pgs->overprint_mode)  )
-        return pgs->color_space->type->set_overprint(pgs->color_space, pgs);
+    if (prior_overprint || pgs->overprint)
+        return gs_do_set_overprint(pgs);
     else
         return 0;
 }
@@ -540,7 +538,7 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
     pgs->transparency_stack = tstack;
 
     /* update the overprint compositor */
-    return pgs->color_space->type->set_overprint(pgs->color_space, pgs);
+    return gs_do_set_overprint(pgs);
 }
 
 /* Get the allocator pointer of a graphics state. */
@@ -622,6 +620,36 @@ gs_state_update_overprint(gs_state * pgs, const gs_overprint_params_t * pparams)
     return code;
 }
 
+/*
+ * Reset the overprint mode for the current color space and color. This
+ * routine should be called  whenever the current device (i.e.: color
+ * model), overprint, overprint mode, color space, or color are modified.
+ *
+ * The need reason this routine must be called for changes in the current
+ * color and must consider the current color involves the Pattern color
+ * space. In that space, the "color" (pattern) can determine if the base
+ * color space is used (PatternType 1 with PaintType 2), or may provide
+ * is own color space (PatternType 1 with PaintType 1, PatternType 2).
+ *
+ * The most general situation (PatternType 1 with PaintType 1) cannot be
+ * handled properly due to limitations of the pattern cache mechanism,
+ * so in this case overprint is effectively disable by making all color
+ * components "drawn".
+ */
+int
+gs_do_set_overprint(gs_state * pgs)
+{
+    const gs_color_space *  pcs = pgs->color_space;
+    const gs_client_color * pcc = pgs->ccolor;
+    int                     code = 0;
+
+    if (cs_num_components(pcs) < 0 && pcc->pattern != 0)
+        code = pcc->pattern->type->procs.set_color(pcc, pgs);
+    else
+        pcs->type->set_overprint(pcs, pgs);
+    return code;
+}
+
 /* setoverprint */
 void
 gs_setoverprint(gs_state * pgs, bool ovp)
@@ -630,7 +658,7 @@ gs_setoverprint(gs_state * pgs, bool ovp)
 
     pgs->overprint = ovp;
     if (prior_ovp != ovp)
-        pgs->color_space->type->set_overprint(pgs->color_space, pgs);
+        (void)gs_do_set_overprint(pgs);
 }
 
 /* currentoverprint */
@@ -644,14 +672,16 @@ gs_currentoverprint(const gs_state * pgs)
 int
 gs_setoverprintmode(gs_state * pgs, int mode)
 {
-    int     prior_mode = pgs->overprint_mode;
+    int     prior_mode = pgs->effective_overprint_mode;
+    int     code = 0;
 
     if (mode < 0 || mode > 1)
 	return_error(gs_error_rangecheck);
     pgs->overprint_mode = mode;
+    pgs->effective_overprint_mode = mode;
     if (pgs->overprint && prior_mode != mode)
-        pgs->color_space->type->set_overprint(pgs->color_space, pgs);
-    return 0;
+        code = gs_do_set_overprint(pgs);
+    return code;
 }
 
 /* currentoverprintmode */
@@ -659,6 +689,27 @@ int
 gs_currentoverprintmode(const gs_state * pgs)
 {
     return pgs->overprint_mode;
+}
+
+/*
+ * Disable/reset effective overprint mode. These procedures are use by the
+ * zsetcolor procedure (setcolor operator) to disable overprint mode when
+ * a PatternType 2 (smooth-shading) pattern is the current color.
+ */
+void
+gs_disable_effective_overprint_mode(gs_state * pgs)
+{
+    pgs->effective_overprint_mode = 0;
+    if (pgs->overprint && pgs->effective_overprint_mode != pgs->overprint_mode)
+        (void)gs_do_set_overprint(pgs);
+}
+
+void
+gs_reset_effective_overprint_mode(gs_state * pgs)
+{
+    pgs->effective_overprint_mode = pgs->overprint_mode;
+    if (pgs->overprint && pgs->effective_overprint_mode != pgs->overprint_mode)
+        (void)gs_do_set_overprint(pgs);
 }
 
 

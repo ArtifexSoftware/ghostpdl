@@ -330,6 +330,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	gx_clip_path *pcpath;
 
 	code = gx_effective_clip_path(pgs, &pcpath);
+	gx_set_dev_color(pgs);
 	if (code >= 0) {
 	    code = (*dev_proc(orig_dev, fill_mask))
 		(orig_dev, bits, 0, cc_raster(cc), cc->id,

@@ -280,7 +280,10 @@ systemdict /.reuseparamdict undef
 /shfill {		% <shadingdict> shfill -
 	% Currently, .shfill requires that the color space
 	% in the pattern be the current color space.
-  dup gsave { .buildshading .shfill } stopped grestore { stop } if
+	% Disable overprintmode for shfill
+  dup gsave
+  0 .setoverprintmode { .buildshading .shfill } stopped
+  grestore { stop } if
   pop
 } odef
 

@@ -380,9 +380,9 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
     gs_imager_state *   pis = (gs_imager_state *)pgs;
 
     /* check if we require special handling */
-    if ( !pis->overprint             ||
-         pis->overprint_mode != 1    ||
-         !gx_is_cmyk_color_model(pgs)  )
+    if ( !pis->overprint                    ||
+         pis->effective_overprint_mode != 1 ||
+         !gx_is_cmyk_color_model(pgs)         )
         return gx_spot_colors_set_overprint(pcs, pgs);
     else {
         gs_overprint_params_t   params;

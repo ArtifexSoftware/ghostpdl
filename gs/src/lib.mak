@@ -841,7 +841,7 @@ $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(GXERR) $(memory__h)\
  $(gspath_h) $(gsstruct_h) $(gsutil_h)\
  $(gxclipsr_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gxpcache_h)\
  $(gzstate_h) $(gzht_h) $(gzline_h) $(gzpath_h) $(gzcpath_h)\
- $(gsovrc_h)
+ $(gsovrc_h) $(gxcolor2_h) $(gxpcolor_h)
 	$(GLCC) $(GLO_)gsstate.$(OBJ) $(C_) $(GLSRC)gsstate.c
 
 $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(memory__h) $(gdebug_h)\
@@ -1852,12 +1852,12 @@ $(GLOBJ)gspcolor.$(OBJ) : $(GLSRC)gspcolor.c $(GXERR) $(math__h)\
  $(gxpath_h) $(gxpcolor_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gspcolor.$(OBJ) $(C_) $(GLSRC)gspcolor.c
 
-$(GLOBJ)gsptype1.$(OBJ) : $(GLSRC)gsptype1.c $(GX) $(math__h)\
- $(gserrors_h) $(gsimage_h) $(gsiparm4_h) $(gspath_h) $(gsrop_h)\
- $(gsstruct_h) $(gsutil_h)\
- $(gxarith_h) $(gxclip2_h) $(gxcolor2_h) $(gxcoord_h) $(gxcspace_h)\
- $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxmatrix_h)\
- $(gxp1impl_h) $(gxpath_h) $(gxpcolor_h) $(gzstate_h)
+$(GLOBJ)gsptype1.$(OBJ) : $(GLSRC)gsptype1.c $(math__h) $(GX)\
+ $(gserrors_h) $(gsrop_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxarith_h)  $(gxfixed_h) $(gxmatrix_h) $(gxcoord_h) $(gxcspace_h)\
+ $(gxcolor2_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxclip2_h)\
+ $(gspath_h) $(gxpath_h) $(gxpcolor_h) $(gxp1impl_h) $(gzstate_h)\
+ $(gsimage_h) $(gsiparm4_h) $(gsovrc_h)
 	$(GLCC) $(GLO_)gsptype1.$(OBJ) $(C_) $(GLSRC)gsptype1.c
 
 $(GLOBJ)gxclip2.$(OBJ) : $(GLSRC)gxclip2.c $(GXERR) $(memory__h)\
@@ -2069,7 +2069,7 @@ $(GLD)psl2cs.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl2cs_)
 
 $(GLOBJ)gscolor2.$(OBJ) : $(GLSRC)gscolor2.c $(GXERR) $(memory__h)\
  $(gxarith_h) $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(gxmatrix_h)\
- $(gzstate_h)
+ $(gzstate_h) $(gxcspace_h) $(gxpcolor_h)
 	$(GLCC) $(GLO_)gscolor2.$(OBJ) $(C_) $(GLSRC)gscolor2.c
 
 psl2lib_=$(GLOBJ)gxi12bit.$(OBJ) $(GLOBJ)gxiscale.$(OBJ)

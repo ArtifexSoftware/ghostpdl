@@ -543,7 +543,7 @@ const overprint_device_t    gs_overprint_device = {
  * size. If this is not the case, the result will be in the low-order
  * bytes of the color index.
  *
- * Though this process can be handled if full generality, the code below
+ * Though this process can be handled in full generality, the code below
  * takes advantage of the fact that depths that are > 8 must be a multiple
  * of 8 and <= 64
  */
@@ -631,7 +631,7 @@ update_drawn_comps(overprint_device_t * opdev, const gx_drawing_color * pdcolor)
 
     if (code == 0) {
         opdev->drawn_comps = drawn_comps;
-        if (opdev->color_info.separable_and_linear)
+        if (opdev->color_info.separable_and_linear == GX_CINFO_SEP_LIN)
             set_retain_mask(opdev);
     }
 
@@ -737,7 +737,7 @@ update_overprint_params(
     }
 
     /* if appropriate, update the retain_mask field */
-    if (opdev->color_info.separable_and_linear)
+    if (opdev->color_info.separable_and_linear == GX_CINFO_SEP_LIN)
         set_retain_mask(opdev);
 
     return 0;
@@ -1095,7 +1095,7 @@ overprint_draw_thin_line(
          (code = update_drawn_comps(opdev, pdcolor)) < 0  )
         return code;
     else
-        return gx_default_draw_thin_line(dev, fx0, fx1, fy0, fy1, pdcolor, lop);
+        return gx_default_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop);
 }
 
 
@@ -1105,6 +1105,15 @@ fill_in_procs(gx_device_procs * pprocs)
 {
     gx_device_forward   tmpdev;
 
+    /*
+     * gx_device_forward_fill_in_procs calls gx_device_fill_in_procs, which
+     * requires the color_info field of the device be set to "reasonable"
+     * values. Which values is irrelevant in this case, but they must not
+     * contain dangling pointers, excessive numbers of components, etc.
+     */
+    memcpy( &tmpdev.color_info,
+            &gs_overprint_device.color_info,
+            sizeof(tmpdev.color_info) );
     tmpdev.static_procs = 0;
     memcpy(&tmpdev.procs, pprocs, sizeof(tmpdev.procs));
     gx_device_forward_fill_in_procs(&tmpdev);

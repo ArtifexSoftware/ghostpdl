@@ -51,7 +51,7 @@
   	    (opacity + shape) (alpha + cached mask)
   	    text knockout flag
   	    rendering stack
-	overprint control: overprint flag and mode
+	overprint control: overprint flag, mode, and effective mode
 	rendering tweaks: flatness, fill adjustment, stroke adjust flag,
 	  accurate curves flag, shading smoothness
 	color rendering information:
@@ -224,6 +224,7 @@ typedef struct gs_transparency_source_s {
 	gs_transparency_state_t *transparency_stack;\
 	bool overprint;\
 	int overprint_mode;\
+	int effective_overprint_mode;\
 	float flatness;\
 	gs_fixed_point fill_adjust;	/* fattening for fill */\
 	bool stroke_adjust;\
@@ -258,7 +259,7 @@ struct gs_imager_state_s {
   0, 0, { gx_line_params_initial },\
    { scale, 0.0, 0.0, -(scale), 0.0, 0.0 },\
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-   { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0/*false*/, 0, 1.0,\
+   { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0/*false*/, 0, 0, 1.0,\
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 1.0,\
   gx_default_get_cmap_procs
 

@@ -25,6 +25,8 @@
 #include "gxcspace.h"		/* for gscolor2.h */
 #include "gxcolor2.h"
 #include "gzstate.h"
+#include "gxcspace.h"
+#include "gxpcolor.h"
 
 /* ---------------- General colors and color spaces ---------------- */
 
@@ -43,9 +45,8 @@ gs_setcolorspace(gs_state * pgs, const gs_color_space * pcs)
         pcs->type->adjust_cspace_count(pcs, 1);
         *pgs->color_space = *pcs;
 	pgs->cspace_id = pcs->id;
-        if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0    ||
-              (pgs->overprint                                 &&
-               (code = pcs->type->set_overprint(pcs, pgs)) < 0  )  ) {
+        if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0          ||
+              (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0)  ) {
             *pgs->color_space = cs_old;
             pcs->type->adjust_cspace_count(pcs, -1);
         } else
@@ -72,16 +73,23 @@ gs_currentcolorspace(const gs_state * pgs)
 int
 gs_setcolor(gs_state * pgs, const gs_client_color * pcc)
 {
-    gs_color_space *pcs = pgs->color_space;
+    gs_color_space *    pcs = pgs->color_space;
+    gs_client_color     cc_old = *pgs->ccolor;
+    int                 code = 0;
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
     (*pcs->type->adjust_color_count)(pcc, pcs, 1);
-    (*pcs->type->adjust_color_count)(pgs->ccolor, pcs, -1);
     *pgs->ccolor = *pcc;
     (*pcs->type->restrict_color)(pgs->ccolor, pcs);
-    gx_unset_dev_color(pgs);
-    return 0;
+    if (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0) {
+        *pgs->ccolor = cc_old;
+        (*pcs->type->adjust_color_count)(pcc, pcs, -1);
+    } else {
+        (*pcs->type->adjust_color_count)(&cc_old, pcs, -1);
+        gx_unset_dev_color(pgs);
+    }
+    return code;
 }
 
 /* currentcolor */

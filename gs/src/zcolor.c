@@ -35,6 +35,7 @@
 #include "gxpcolor.h"
 #include "idict.h"
 #include "icolor.h"
+#include "idparam.h"
 
 
 /* imported from gsht.c */
@@ -178,6 +179,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
     const gs_color_space *  pcs = gs_currentcolorspace(igs);
     gs_client_color         cc;
     int                     n_comps, n_numeric_comps, num_offset = 0, code;
+    bool                    is_ptype2 = 0;
 
     /* initialize the client color pattern pointer for GC */
     cc.pattern = 0;
@@ -187,12 +189,15 @@ zsetcolor(i_ctx_t * i_ctx_p)
         n_comps = -n_comps;
         if (r_has_type(op, t_dictionary)) {
             ref *   pImpl;
+            int     ptype;
 
             dict_find_string(op, "Implementation", &pImpl);
             cc.pattern = r_ptr(pImpl, gs_pattern_instance_t);
             n_numeric_comps = ( pattern_instance_uses_base_space(cc.pattern)
                                   ? n_comps - 1
                                   : 0 );
+            (void)dict_int_param(op, "PatternType", 1, 2, 1, &ptype);
+            is_ptype2 = ptype == 2;
         } else
             n_numeric_comps = 0;
         num_offset = 1;
@@ -204,6 +209,15 @@ zsetcolor(i_ctx_t * i_ctx_p)
  
     /* pass the color to the graphic library */
     if ((code = gs_setcolor(igs, &cc)) >= 0) {
+
+        /*
+         * Disable overprint mode for PatternType 2 patterns; otherwise
+         * reset overprint mode.
+         */
+        if (is_ptype2)
+            gs_disable_effective_overprint_mode(igs);
+        else
+            gs_reset_effective_overprint_mode(igs);
         if (n_comps > n_numeric_comps) {
             istate->pattern = *op;      /* save pattern dict or null */
             n_comps = n_numeric_comps + 1;

@@ -1351,6 +1351,9 @@ idata:			data_size = 0;
 			fill:
 			    fill_params.adjust = imager_state.fill_adjust;
 			    fill_params.flatness = imager_state.flatness;
+			    fill_params.fill_zero_width =
+				fill_params.adjust.x != 0 ||
+				fill_params.adjust.y != 0;
 			    code = gx_fill_path_only(ppath, tdev,
 						     &imager_state,
 						     &fill_params,
@@ -1800,7 +1803,9 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 	cb = *cbp++;
 	pis->blend_mode = cb >> 3;
 	pis->text_knockout = (cb & 4) != 0;
+	/* the following usually have no effect; see gxclpath.c */
 	pis->overprint_mode = (cb >> 1) & 1;
+	pis->effective_overprint_mode = pis->overprint_mode;
 	pis->overprint = cb & 1;
 	if_debug4('L', " BM=%d TK=%d OPM=%d OP=%d\n",
 		  pis->blend_mode, pis->text_knockout, pis->overprint_mode,

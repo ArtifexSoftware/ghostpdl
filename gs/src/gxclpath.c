@@ -252,6 +252,12 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 	*punknown |= flatness_known;
 	cdev->imager_state.flatness = flatness;
     }
+    /*
+     * Note: overprint and overprint_mode are implemented via a compositor
+     * device, which is passed separately through the command list. Hence,
+     * though both parameters are passed in the state as well, this usually
+     * has no effect.
+     */
     if (state_neq(overprint) || state_neq(overprint_mode) ||
 	state_neq(blend_mode) || state_neq(text_knockout)
 	) {

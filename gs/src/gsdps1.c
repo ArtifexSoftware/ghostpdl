@@ -159,7 +159,7 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	gs_state_color_load(pgs) >= 0 &&
 	(*dev_proc(pgs->device, get_alpha_bits)) (pgs->device, go_graphics)
 	<= 1 &&
-        (!pgs->overprint || !pgs->overprint_mode)
+        (!pgs->overprint || !pgs->effective_overprint_mode)
 	) {
 	uint i;
 	gs_fixed_rect clip_rect;

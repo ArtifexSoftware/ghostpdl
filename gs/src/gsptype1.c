@@ -39,6 +39,7 @@
 #include "gzstate.h"
 #include "gsimage.h"
 #include "gsiparm4.h"
+#include "gsovrc.h"
 
 /* GC descriptors */
 private_st_pattern1_template();
@@ -66,10 +67,12 @@ private RELOC_PTRS_BEGIN(pattern1_instance_reloc_ptrs) {
 private pattern_proc_uses_base_space(gs_pattern1_uses_base_space);
 private pattern_proc_make_pattern(gs_pattern1_make_pattern);
 private pattern_proc_get_pattern(gs_pattern1_get_pattern);
+private pattern_proc_set_color(gs_pattern1_set_color);
 private const gs_pattern_type_t gs_pattern1_type = {
     1, {
 	gs_pattern1_uses_base_space, gs_pattern1_make_pattern,
-	gs_pattern1_get_pattern, gs_pattern1_remap_color
+	gs_pattern1_get_pattern, gs_pattern1_remap_color,
+	gs_pattern1_set_color
     }
 };
 
@@ -280,6 +283,66 @@ gs_pattern1_get_pattern(const gs_pattern_instance_t *pinst)
     return (const gs_pattern_template_t *)
 	&((const gs_pattern1_instance_t *)pinst)->template;
 }
+
+/*
+ * Perform actions required at setcolor time. This procedure resets the
+ * overprint information (almost) as required by the pattern. The logic
+ * behind this operation is a bit convoluted:
+ *
+ *  1. Both PatternType 1 and 2 "colors" occur within the pattern color
+ *     space.
+ *
+ *  2. Nominally, the set of drawn components is a property of the color
+ *     space, and is set at the time setcolorspace is called. This is
+ *     not the case for patterns, so overprint information must be set
+ *     at setcolor time for them.
+ *
+ *  3. PatternType 2 color spaces incorporate their own color space, so
+ *     the set of drawn components is determined by that color space.
+ *     For PatternType 1 color spaces, the PaintType determines the
+ *     appropriate color space to use. If PaintType is 2 (uncolored),
+ *     the pattern makes use of the base color space of the current
+ *     pattern color space, so overprint is set as appropriate for
+ *     that color space.
+ *
+ *  4. For PatternType 1 color spaces with PaintType 1 (colored), the
+ *     appropriate color space to use is determined by the pattern's
+ *     PaintProc. This cannot be handled by the current graphic
+ *     library mechanism, because color space information is lost when
+ *     the pattern tile is cached (and the pattern tile is essentially
+ *     always cached). We punt in this case and list all components
+ *     as drawn components. (This feature could be support by retaining
+ *     per-component pattern masks, but complete re-design of the
+ *     pattern mechanism is probably more appropriate.)
+ *
+ *  5. Once overprint information has been set for a particular color,
+ *     it must be reset to the proper value when that color is no
+ *     longer in use. "Normal" (non-pattern) colors do not have a
+ *     "set_color" action, both for performance and logical reasons.
+ *     This does not, however, cause significant difficulty, as the
+ *     change in color space required to set a normal color will
+ *     reset the overprint information as required.
+ */
+private int
+gs_pattern1_set_color(const gs_client_color * pcc, gs_state * pgs)
+{
+    gs_pattern1_instance_t * pinst = (gs_pattern1_instance_t *)pcc->pattern;
+    gs_pattern1_template_t * ptmplt = &pinst->template;
+
+    if (ptmplt->PaintType == 2) {
+        const gs_color_space *  pcs = pgs->color_space;
+
+        pcs = (const gs_color_space *)&(pcs->params.pattern.base_space);
+        return pcs->type->set_overprint(pcs, pgs);
+    } else {
+        gs_overprint_params_t   params;
+
+        params.retain_any_comps = false;
+        return gs_state_update_overprint(pgs, &params);
+    }
+}
+
+
 const gs_pattern1_template_t *
 gs_getpattern(const gs_client_color * pcc)
 {
