@@ -1174,6 +1174,7 @@ private const pcl_ht_builtin_threshold_t    clustered_dither_thresh = {
 };
 
 private const pcl_ht_builtin_threshold_t    noise_dither_thresh = {
+
     1,          /* all planes the same */
     128, 128,   /* 128 x 128 pixels */
     noise_dither_data
@@ -1195,6 +1196,15 @@ static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
 					      12, 14, 14, 17,
 					      16, 17, 19, 19  };
 
+/* if true an all gray palette will automatically map
+ *    itself to a monochrome rendering mode using the monochrome_remap 
+ * if false all render algorithms are are left alone
+ * 
+ * This is an optimization that if only gray is used on a page the page is printed with
+ * only the K plane.  This is a work around for PCL not having a gray colorspace.
+ * Should match the behavior of hp clj 4500, 4550 printers.
+ */
+static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = true;
 
 /*
  * Update built-in rendering information. Attempts to changed fixed rendering
@@ -1660,6 +1670,8 @@ alloc_pcl_ht(
 
     pht->pdither = 0;
     pht->render_method = 3;     /* HP specified default value */
+    pht->orig_render_method = 3;    
+    pht->is_gray_render_method = false; 
     pht->pfg_ht = 0;
     pht->pim_ht = 0;
 
@@ -1718,6 +1730,8 @@ unshare_pcl_ht(
     if (pht->pdither != 0)
         pcl_udither_init_from(pnew->pdither, pht->pdither);
     pnew->render_method = pht->render_method;
+    pnew->orig_render_method = pht->orig_render_method;
+    pnew->is_gray_render_method = pht->is_gray_render_method;
 
     for (i = 0; i < 3; i++) {
         pnew->client_data[i].comp_indx = pht->client_data[i].comp_indx;
@@ -1733,35 +1747,35 @@ unshare_pcl_ht(
     return 0;
 }
 
-/* If all palette entries are gray then the render algorithm is
- * changed from color to gray prior to rendering_remap.
- * Intent is to force K only for gray palettes instead of cmyk
+/* return true if all palette entries are gray
+ * return false if any entry is color 
+ * checks the entire palette
+ * all gray palette ONLY has meaning if ENABLE_AUTO_GRAY_RENDER_METHODS is true
+ * otherwise this is a NOP that always returns false.
  */
-private uint 
-pcl_ht_set_rendering_remap(
-    pcl_state_t * pcs,
-    uint          render_method
-)
+bool 
+pcl_ht_is_all_gray_palette(pcl_state_t *pcs)
 {
-    const byte *pb = 0;
     bool is_gray = true;    
+    const char *pb = 0;
     pcl_palette_t *     ppalet = pcs->ppalet;
     pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
     int i;
 
-    for ( i = 1; i <= pindexed->num_entries; i++ ) {
-	pb = pindexed->palette.data + 3 * i;
-	if ( !( pb[0] == pb[1] && pb[0] == pb[2] ) ) {
-	     is_gray = false;
-	     break;
+    if ( ENABLE_AUTO_GRAY_RENDER_METHODS ) {
+	for ( i = 0; i < pindexed->num_entries; i++ ) {
+	    pb = pindexed->palette.data + (3 * i);
+	    if (  pb[0] == pb[1] && pb[0] == pb[2] ) {
+		continue;
+	    }
+	    else {
+		is_gray = false;
+		break;
+	    }
 	}
+	return is_gray;
     }
-
-    if ( is_gray ) 
-	render_method = monochrome_remap[pcs->rendering_remap[render_method]];
-    else 
-	render_method = pcs->rendering_remap[render_method];
-    return render_method;
+    return false; /* feature disabled, concider it color */
 }
 
 /*
@@ -1777,16 +1791,58 @@ pcl_ht_set_render_method(
 )
 {
     int         code = 0;
+    uint        color_render_method;
 
     if (render_method >= countof(pcs->rendering_info))
         return 0;
 
-    render_method = pcl_ht_set_rendering_remap(pcs, render_method);
-    if (render_method == (*ppht)->render_method)
+    /* normal rendering remap */
+    color_render_method = pcs->rendering_remap[render_method];	
+  
+    if (color_render_method == (*ppht)->orig_render_method)
         return 0;
+    
     if ((code = unshare_pcl_ht(ppht)) < 0)
         return code;
-    (*ppht)->render_method = render_method;
+
+    /* use color render method by default */
+    (*ppht)->orig_render_method = (*ppht)->render_method = color_render_method;
+    (*ppht)->is_gray_render_method = false;
+
+    /* remap render algo based on is the palette gray palette check */
+    return pcl_ht_remap_render_method(pcs, 
+				      &(pcs->ppalet->pht), 
+				      pcl_ht_is_all_gray_palette(pcs));
+}
+
+/* if the palette is gray remap the render_algorithm to a gray algo
+ * if the palette is color use the original "color" render_algorithm
+ * degenerates to NOP if ENABLE_AUTO_GRAY_RENDER_METHODS is false
+ */ 
+int
+pcl_ht_remap_render_method(
+    pcl_state_t * pcs,
+    pcl_ht_t **   ppht,
+    bool          is_gray
+    )
+{
+    uint render_method = (*ppht)->orig_render_method;
+    int code = 0;
+
+    if ( ENABLE_AUTO_GRAY_RENDER_METHODS ) {
+	if (is_gray != (*ppht)->is_gray_render_method ) {
+	    (*ppht)->is_gray_render_method = is_gray;
+	    if( is_gray ) 
+		render_method = monochrome_remap[pcs->rendering_remap[render_method]];
+	    else 
+		render_method = (*ppht)->orig_render_method;
+	    
+	    if ((code = unshare_pcl_ht(ppht)) < 0)
+		return code;
+	    (*ppht)->render_method = render_method;
+	}
+    }
+    /* else feature disabled NOP */
     return 0;
 }
 

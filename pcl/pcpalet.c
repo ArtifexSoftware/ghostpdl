@@ -345,6 +345,11 @@ pcl_palette_NP(
                                                num_entries,
                                                true
                                                );
+    /* shrinking a palette may make it gray, growing may make it color */
+    if (code == 0)
+	code = pcl_ht_remap_render_method(pcs, 
+				      &(pcs->ppalet->pht), 
+				      pcl_ht_is_all_gray_palette(pcs));
     return code;
 }
 
@@ -462,6 +467,8 @@ pcl_palette_set_color(
 )
 {
     int             code = unshare_palette(pcs);
+    bool            was_gray;
+    bool            now_gray;
 
     /* if the default color space must be built, it is fixed, so don't bother */
     if (pcs->ppalet->pindexed == 0)
@@ -472,6 +479,30 @@ pcl_palette_set_color(
                                                  indx,
                                                  comps
                                                  );
+    
+    was_gray = pcs->ppalet->pht->is_gray_render_method;
+    
+    now_gray = ((pcs->ppalet->pindexed->palette.data[indx + 0] == 
+                 pcs->ppalet->pindexed->palette.data[indx + 1]) &&
+                (pcs->ppalet->pindexed->palette.data[indx + 1] == 
+                 pcs->ppalet->pindexed->palette.data[indx + 2]) );
+    
+    if ( !was_gray && now_gray ) {
+	/* change one entry from color to gray,
+	 * check entire palette for grey
+	 */
+	code = pcl_ht_remap_render_method(pcs, 
+					  &(pcs->ppalet->pht), 
+					  pcl_ht_is_all_gray_palette(pcs));
+    }
+    else if ( was_gray && !now_gray ) {
+	/* one color entry in gray palette makes it color 
+	 */ 
+	code = pcl_ht_remap_render_method(pcs, 
+					  &(pcs->ppalet->pht), 
+					  false);
+    }
+    
     return code;
 }
 
@@ -497,6 +528,10 @@ pcl_palette_set_default_color(
         code = pcl_cs_indexed_set_default_palette_entry( &(pcs->ppalet->pindexed),
                                                          indx
                                                          );
+   if (code == 0)
+	code = pcl_ht_remap_render_method(pcs, 
+				      &(pcs->ppalet->pht), 
+				      pcl_ht_is_all_gray_palette(pcs));
     return code;
 }
 
@@ -606,6 +641,10 @@ pcl_palette_set_cid(
                                         gl2,
                                         pcs->memory
                                         );
+   if (code == 0)
+	code = pcl_ht_remap_render_method(pcs, 
+				      &(pcs->ppalet->pht), 
+				      pcl_ht_is_all_gray_palette(pcs)); 
 
     /* if a halftone exist, inform it of the update and discard lookup tables */
     if ((code == 0) && (ppalet->pht != 0)) {

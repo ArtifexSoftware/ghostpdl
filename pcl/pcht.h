@@ -201,6 +201,8 @@ struct pcl_ht_s {
     pcl_udither_t *         pdither;
     gs_string               thresholds[3];
     uint                    render_method;
+    uint                    orig_render_method;
+    bool                    is_gray_render_method;
     gs_ht *                 pfg_ht;
     gs_ht *                 pim_ht;
 };
@@ -267,6 +269,30 @@ void pcl_ht_set_print_mode(P2(pcl_state_t *pcs, bool monochrome));
  * Returns 0 on success, < 0 in the event of an error.
  */
 int pcl_ht_set_render_method(P3(pcl_state_t *pcs, pcl_ht_t ** ppht, uint render_method));
+
+
+/** 
+ * Remap render method to a gray render method iff enabled && palette is all gray 
+ *
+ * if the palette is gray remap the render_algorithm to a gray algo
+ * if the palette is color use the original "color" render_algorithm
+ * degenerates to NOP if ENABLE_AUTO_GRAY_RENDER_METHODS is false
+ */ 
+int pcl_ht_remap_render_method(P3(pcl_state_t * pcs,
+				  pcl_ht_t **ppht,
+				  bool is_gray
+				  ));
+
+/**
+ * Checks if all palette entries are gray iff enabled.
+ *
+ * Returns true if all palette entries are gray
+ * Returns false if any entry is color 
+ * checks the entire palette
+ * all gray palette ONLY has meaning if ENABLE_AUTO_GRAY_RENDER_METHODS is true
+ * otherwise this is a NOP that always returns false.
+ */
+bool pcl_ht_is_all_gray_palette(P1(pcl_state_t *pcs));
 
 /*
  * Update the gamma parameter.
