@@ -361,6 +361,14 @@ pisdEnd:
 	return code;
 }
 
+private int   
+pxl_impl_get_device_memory(
+  pl_interp_instance_t   *instance,     /* interp instance to use */
+  gs_memory_t **pmem)
+{
+    return 0;
+}
+
 /* Prepare interp instance for the next "job" */
 private int	/* ret 0 ok, else -ve error code */
 pxl_impl_init_job(
@@ -647,6 +655,7 @@ const pl_interp_implementation_t pxl_implementation = {
   pxl_impl_remove_device,
   pxl_impl_deallocate_interp_instance,
   pxl_impl_deallocate_interp,
+  pxl_impl_get_device_memory,
 };
 
 /* ---------- Utility Procs ----------- */
