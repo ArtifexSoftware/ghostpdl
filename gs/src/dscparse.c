@@ -36,6 +36,9 @@
  * %%PaperForm:    (ignored)
  * %%PaperSize: 
  * %%PaperWeight:  (ignored)
+ *
+ * Other additions for defaults or page section
+ % %%ViewingOrientation: xx xy yx yy
 */
 
 #include <stdio.h>	/* for sprintf(), not file I/O */
@@ -102,6 +105,7 @@ private int dsc_parse_orientation(P3(CDSC *dsc, unsigned int *porientation,
 private int dsc_parse_order(P1(CDSC *dsc));
 private int dsc_parse_media(P2(CDSC *dsc, const CDSCMEDIA **page_media));
 private int dsc_parse_document_media(P1(CDSC *dsc));
+private int dsc_parse_viewer_orientation(P2(CDSC *dsc, CDSCCTM **pctm));
 private int dsc_parse_page(P1(CDSC *dsc));
 private void dsc_save_line(P1(CDSC *dsc));
 private int dsc_scan_type(P1(CDSC *dsc));
@@ -430,6 +434,11 @@ dsc_fixup(CDSC *dsc)
     if (dsc->begintrailer)
 	*last = dsc->begintrailer;
 	
+    if ((dsc->page_pages == 0) && (dsc->page_count == 1)) {
+	/* don't flag an error if %%Pages absent but one %%Page found */
+	/* adjust incorrect page count */
+	dsc->page_pages = dsc->page_count;
+    }
 
     /* Warnings and Errors that we can now identify */
     if ((dsc->page_count != dsc->page_pages)) {
@@ -677,13 +686,15 @@ dsc_init2(CDSC *dsc)
     dsc_reset(dsc);
 
     dsc->string_head = (CDSCSTRING *)dsc_memalloc(dsc, sizeof(CDSCSTRING));
-    if (dsc->string_head == NULL)
+    if (dsc->string_head == NULL) {
+	dsc_free(dsc);
 	return NULL;	/* no memory */
+    }
     dsc->string = dsc->string_head;
     dsc->string->next = NULL;
     dsc->string->data = (char *)dsc_memalloc(dsc, CDSC_STRING_CHUNK);
     if (dsc->string->data == NULL) {
-	dsc_reset(dsc);
+	dsc_free(dsc);
 	return NULL;	/* no memory */
     }
     dsc->string->index = 0;
@@ -691,7 +702,7 @@ dsc_init2(CDSC *dsc)
 	
     dsc->page = (CDSCPAGE *)dsc_memalloc(dsc, CDSC_PAGE_CHUNK * sizeof(CDSCPAGE));
     if (dsc->page == NULL) {
-	dsc_reset(dsc);
+	dsc_free(dsc);
 	return NULL;	/* no memory */
     }
     dsc->page_chunk_length = CDSC_PAGE_CHUNK;
@@ -740,6 +751,8 @@ dsc_reset(CDSC *dsc)
 
 	if (dsc->page[i].bbox)
 	    dsc_memfree(dsc, dsc->page[i].bbox);
+	if (dsc->page[i].viewer_orientation)
+	    dsc_memfree(dsc, dsc->page[i].viewer_orientation);
     }
     if (dsc->page)
 	dsc_memfree(dsc, dsc->page);
@@ -750,6 +763,9 @@ dsc_reset(CDSC *dsc)
     dsc->page_pages = 0;
     dsc->page_order = CDSC_ORDER_UNKNOWN;
     dsc->page_orientation = CDSC_ORIENT_UNKNOWN;
+    if (dsc->viewer_orientation)
+	dsc_memfree(dsc, dsc->viewer_orientation);
+    dsc->viewer_orientation = NULL;
 	
     /* page_media is pointer to an element of media or dsc_known_media */
     /* do not free it. */
@@ -1035,7 +1051,7 @@ dsc_unknown(CDSC *dsc)
 }
 
 
-private GSBOOL
+GSBOOL
 dsc_is_section(char *line)
 {
     if ( !((line[0]=='%') && (line[1]=='%')) )
@@ -1358,7 +1374,7 @@ dsc_parse_orientation(CDSC *dsc, unsigned int *porientation, int offset)
 	}
     }
     p = dsc->line + offset;
-    while (*p == ' ')
+    while (IS_WHITE(*p))
 	p++;
     if (COMPARE(p, "atend")) {
 	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, dsc->line_length);
@@ -1420,7 +1436,7 @@ dsc_parse_order(CDSC *dsc)
     }
 
     p = dsc->line + (IS_DSC(dsc->line, "%%+") ? 3 : 13);
-    while (*p == ' ')
+    while (IS_WHITE(*p))
 	p++;
     if (COMPARE(p, "atend")) {
 	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
@@ -1539,6 +1555,48 @@ dsc_parse_document_media(CDSC *dsc)
     }
     return CDSC_OK;
 }
+
+/* viewer orientation is believed to be the first four elements of
+ * a CTM matrix
+ */
+private int 
+dsc_parse_viewer_orientation(CDSC *dsc, CDSCCTM **pctm)
+{
+    CDSCCTM ctm;
+    unsigned int i, n;
+
+    if (*pctm != NULL) {
+	dsc_memfree(dsc, *pctm);
+	*pctm = NULL;
+    }
+
+    n = IS_DSC(dsc->line, "%%+") ? 3 : 20;  /* %%ViewerOrientation: */
+    while (IS_WHITE(dsc->line[n]))
+	n++;
+
+    /* ctm.xx = */ ctm.xy = ctm.yx = ctm.yy = 0.0;
+    ctm.xx = dsc_get_real(dsc->line+n, dsc->line_length-n, &i);
+    n += i;
+    if (i)
+        ctm.xy = dsc_get_real(dsc->line+n, dsc->line_length-n, &i);
+    n += i;
+    if (i)
+        ctm.yx = dsc_get_real(dsc->line+n, dsc->line_length-n, &i);
+    n += i;
+    if (i)
+        ctm.yy = dsc_get_real(dsc->line+n, dsc->line_length-n, &i);
+    if (i==0) {
+	dsc_unknown(dsc); /* we didn't get all fields */
+    }
+    else {
+	*pctm = (CDSCCTM *)dsc_memalloc(dsc, sizeof(CDSCCTM));
+	if (*pctm == NULL)
+	    return CDSC_ERROR;	/* no memory */
+	**pctm = ctm;
+    }
+    return CDSC_OK;
+}
+   
 
 /* This is called before dsc_read_line(), since we may
  * need to skip a binary header which contains a new line
@@ -1661,12 +1719,12 @@ dsc_scan_type(CDSC *dsc)
 	dsc->dsc = TRUE;
 	dsc->begincomments = DSC_START(dsc);
 	if (dsc->dsc_version == NULL)
-		return CDSC_ERROR;	/* no memory */
+	    return CDSC_ERROR;	/* no memory */
 	p = line + 14;
-	while (*p == ' ')
-		p++;
+	while (IS_WHITE(*p))
+	    p++;
 	if (COMPARE(p, "EPSF-"))
-		dsc->epsf = TRUE;
+	    dsc->epsf = TRUE;
 	dsc->scan_section = scan_comments;
 	return CDSC_PSADOBE;
     }
@@ -2096,6 +2154,11 @@ dsc_scan_defaults(CDSC *dsc)
     else if (IS_DSC(line, "%%PageBoundingBox:")) {
 	dsc->id = CDSC_PAGEBOUNDINGBOX;
 	if (dsc_parse_bounding_box(dsc, &(dsc->page_bbox), 18))
+	    return CDSC_ERROR;
+    }
+    else if (IS_DSC(line, "%%ViewerOrientation:")) {
+	dsc->id = CDSC_VIEWERORIENTATION;
+	if (dsc_parse_viewer_orientation(dsc, &dsc->viewer_orientation))
 	    return CDSC_ERROR;
     }
     else {
@@ -2607,6 +2670,12 @@ dsc_scan_page(CDSC *dsc)
 	dsc->id = CDSC_PAGEBOUNDINGBOX;
 	if (dsc_parse_bounding_box(dsc, &dsc->page[dsc->page_count-1].bbox, 18))
 	    return CDSC_NOTDSC;
+    }
+    else if (IS_DSC(line, "%%ViewerOrientation:")) {
+	dsc->id = CDSC_VIEWERORIENTATION;
+	if (dsc_parse_viewer_orientation(dsc, 
+	    &dsc->page[dsc->page_count-1].viewer_orientation))
+	    return CDSC_ERROR;
     }
     else if (IS_DSC(line, "%%BeginFont:")) {
 	dsc->id = CDSC_BEGINFONT;
