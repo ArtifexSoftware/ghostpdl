@@ -474,6 +474,7 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
            anchor corner.  Convert each to device space, set up the
            new transformation and convert stored device coordinates to
            user space at the end of the routine. */
+	hpgl_call(hpgl_set_ctm(pgls));
 	hpgl_call(hpgl_get_current_position(pgls, &point));
 	hpgl_call(gs_transform(pgls->pgs, point.x, point.y, &dev_pt));
 	hpgl_call(gs_transform(pgls->pgs, pgls->g.anchor_corner.x, 
