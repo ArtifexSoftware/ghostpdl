@@ -201,9 +201,9 @@ GCFLAGS=@GCFLAGS@
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
 
-CFLAGS_STANDARD=-O2
+CFLAGS_STANDARD=@OPT_CFLAGS@
 CFLAGS_DEBUG=-g -O
-CFLAGS_PROFILE=-pg -O2
+CFLAGS_PROFILE=-pg @OPT_CFLAGS@
 CFLAGS_SO=-fPIC
 
 # Define the other compilation flags.  Add at most one of the following:

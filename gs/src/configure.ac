@@ -27,16 +27,26 @@ dnl --------------------------------------------------
 #AC_CANONICAL_HOST
 
 if test $ac_cv_prog_gcc = yes; then
-cflags_to_try="-Wall -Wstrict-prototypes -Wmissing-declarations \
--Wmissing-prototypes -Wcast-qual -Wwrite-strings \
+    cflags_to_try="-Wall -Wstrict-prototypes \
+-Wmissing-declarations -Wmissing-prototypes \
+-Wcast-qual -Wwrite-strings \
 -fno-builtin -fno-common"
 else
-	cflags_to_try=
+    cflags_to_try=
 fi
+optflags_to_try="-O2"
 	
 AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
 echo
+for flag in $optflags_to_try; do
+    CFLAGS="$CFLAGS $flag"
+    AC_TRY_COMPILE(, [return 0;], [
+	echo "   $flag"
+	OPT_CFLAGS="$OPT_CFLAGS $flag"
+    ])
+    CFLAGS=$old_cflags
+done
 for flag in $cflags_to_try; do
 	CFLAGS="$CFLAGS $flag"
 	AC_TRY_COMPILE(, [return 0;], [
@@ -284,5 +294,6 @@ dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
 
+AC_SUBST(OPT_CFLAGS)
 AC_SUBST(GCFLAGS)
 AC_OUTPUT(Makefile)
