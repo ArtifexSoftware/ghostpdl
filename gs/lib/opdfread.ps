@@ -139,6 +139,12 @@ currentdict end readonly def
   /WordSpacing 0 def
 currentdict end readonly def
 
+/SimpleColorSpaceNames 15 dict begin
+  /DeviceGray true def
+  /DeviceRGB true def
+  /DeviceCMYK true def 
+currentdict end readonly def
+
 /1_24_bitshift_1_sub 1 24 bitshift 1 sub def
 
 % ===================== Reading PDF objects ===============================
@@ -724,7 +730,7 @@ currentdict end readonly def
 
 /ComputeFunction_10 % <scaled_arg> <sample_array> ComputeFunction_10 <result>
 { % Assuming a 1-argument 1-result function type 0.
-  (ComputeFunction_10 beg ) print 1 index =
+  (ComputeFunction_10 beg ) print 1 index //=only exec ( stack=) print count =
   exch														% [] x
   dup 1 eq {
     pop dup length 1 sub get								% y
@@ -734,12 +740,13 @@ currentdict end readonly def
 	dup 0 eq {
 	  pop cvi get											% y
 	} {
-	  3 1 roll												% f [] x*(l-1)
-	  2 getinterval aload pop								% f y0 y1
+	  3 1 roll floor cvi									% f [] i
+	  2 getinterval											% f []
+	  aload pop												% f y0 y1
 	  2 index mul 3 2 roll 1 exch sub 3 2 roll mul add		% y1*f+(1-f)*y0
 	} ifelse
   } ifelse
-  (ComputeFunction_10 end ) print dup =
+  (ComputeFunction_10 end ) print dup //=only exec ( stack=) print count =
 } bind def
 
 /ComputeFunction_n0 % <arg0> .... <argn> <sample_array> ComputeFunction_n0 <result>
@@ -751,7 +758,14 @@ currentdict end readonly def
 { % Assuming a n-argument 1-result function type 0.
   % The stream is already converted to the array /Data.
   /Data get 0 get 
-  [ exch //ComputeFunction_10 /exec load
+  [ exch 
+    //PDFR_DEBUG {
+      (Color space function beg, stack =) /print load /count load 1 /sub load //=only /exec load (\n) /print load
+	} if
+    //ComputeFunction_10 /exec load
+	//PDFR_DEBUG {
+	  (Color space function end, stack =) /print load /count load //=only /exec load (\n) /print load
+	} if
   ] cvx
   //PDFR_DEBUG {
     (Made a procedure for the 1-argument function :) =
@@ -759,27 +773,47 @@ currentdict end readonly def
   } if
 } bind def
 
-/FunctionToProc_x0n % <function_dict> <n> FunctionToProc_x0n <proc>
+/FunctionProcDebugBeg  %  - FunctionProcDebugBeg -
+{ (FunctionProcDebugBeg ) print count =
+} bind def
+
+/FunctionProcDebugEnd  %  - FunctionProcDebugEnd -
+{ (FunctionProcDebugEnd ) print count =
+} bind def
+
+/FunctionToProc_x0n % <function_dict> <m> FunctionToProc_x0n <proc>
 { % Assuming a n-argument m-result function type 0.
   % The stream is already converted to the array /Data.
   %
   % Making the procedure : { Domain //ScaleArg exec ... n copy {} exec n+1 1 roll ... }
   % except "n copy" for the last chunk.
   %
-  dup 7 mul 1 add array										% f n m []
-  dup 0 5 index /Domain get put
-  2 index 1 eq {
-    dup 1 //ScaleArg put
+  (ddd0 ) print count =
+  1 index /Size get length exch								% f n m
+  dup 7 mul 5 add array										% f n m []
+  PDFR_DEBUG {
+    dup 0 //FunctionProcDebugBeg put
   } {
-    dup 1 //ScaleArgN put
+    dup 0 //DoNothing put
   } ifelse
-  dup 2 /exec load put
-  dup exch 0 exch 1 exch 1 sub {							% f n m [] i
-    dup 7 mul 3 add											% f n m [] i i1
-    1 index 3 index 1 sub ne {
-	  dup 3 index 5 index put 1 add
-	  dup 3 index /copy load put 1 add
+  dup 1 /exec load put
+  dup 2 5 index /Domain get put
+  2 index 1 eq {
+    dup 3 //ScaleArg put
+  } {
+    dup 3 //ScaleArgN put
+  } ifelse
+  dup 4 /exec load put
+  (ddd1)=
+  1 index 1 sub 0 exch 1 exch {								% f n m [] i
+    (ddd2 i=) print dup =
+    dup 7 mul 5 add											% f n m [] i i1
+    1 index 4 index 1 sub ne {
+      (ddd3)=
+	  dup 3 index exch 6 index put 1 add
+	  dup 3 index exch /copy load put 1 add
 	} if
+    (ddd4)=
 	[														% f n m [] i i1 [
       6 index /Data get	3 index get							% f n m [] i i1 [ di
 	  6 index 1 eq {
@@ -788,18 +822,26 @@ currentdict end readonly def
 	    //ComputeFunction_n0 /exec load
 	  } ifelse
 	] cvx													% f n m [] i i1 {}
+    (ddd5)=
 	3 index exch 2 index exch put 1 add						% f n m [] i i1
 	2 index 1 index /exec load put 1 add
-	2 index 1 index 5 index 1 add put 1 add
+	2 index 1 index 6 index 1 add put 1 add
 	2 index 1 index 1 put 1 add
 	2 index 1 index /roll load put							% f n m [] i i1
-	pop pop
+	pop pop													% f n m []
   } for
-  cvx exch pop exch pop
+  PDFR_DEBUG {
+    dup dup length 2 sub //FunctionProcDebugEnd put
+  } {
+    dup dup length 2 sub //DoNothing put
+  } ifelse
+  dup dup length 1 sub /exec load put
+  cvx exch pop exch pop exch pop
   //PDFR_DEBUG {
     (Made a procedure for the n-argument function :) =
     dup ==
   } if
+  (ddd6 ) print count =
 } bind def
 
 /MakeTableRec % <func_obj> <n> MakeTableRec <array>
@@ -810,7 +852,7 @@ currentdict end readonly def
 
 /MakeTable % <func_obj> <n> MakeTable <array>
 { //PDFR_DEBUG {
-    (MakeTable beg)= count =
+    (MakeTable beg ) print count =
   } if
   1 index /Size get exch									% f S N
   1 sub	dup													% f S n n
@@ -827,7 +869,7 @@ currentdict end readonly def
 	exch pop exch pop
   } ifelse
   //PDFR_DEBUG {
-    (MakeTable end)= count =
+    (MakeTable end ) print count =
   } if
 } bind def
 
@@ -943,6 +985,9 @@ currentdict end readonly def
     } for
     /Table exch def											% f
 	N //ReadSamples exec									% f
+	PDFR_DEBUG {
+	  (Table = ) print Table ==
+	} if
 	/Data Table put											%
   end
   //PDFR_DEBUG {
@@ -952,16 +997,19 @@ currentdict end readonly def
 
 /FunctionToProc10 % <function_dict> FunctionToProc10 <proc>
 { % Assuming a 1-argument function type 0.
+  PDFR_DEBUG {
+    (FunctionToProc10, Range = ) print dup /Range get ==
+  } if
   dup /Order //knownget exec {
     1 ne {
       (Underimplemented function Type 0 Order 3.)=
     } if
   } if
   dup //StreamToArray exec									% f
-  dup /Range get length 2 dup eq {
+  dup /Range get length dup 2 eq {
     pop //FunctionToProc_x01 exec							% proc
   } {
-    2 div //FunctionToProc_x0n exec								% proc
+    2 idiv //FunctionToProc_x0n exec						% proc
   } ifelse
 } bind def
 
@@ -975,9 +1023,9 @@ currentdict end readonly def
   } loop
 } bind def
 
-/FunctionToProc % <function_dict> FunctionToProc1 <proc>
+/FunctionToProc % <function_dict> FunctionToProc <proc>
 { //PDFR_DEBUG {
-	(FunctionToProc beg) =
+	(FunctionToProc beg ) print count =
   } if
   dup /Domain get length 2 idiv
   {
@@ -987,7 +1035,7 @@ currentdict end readonly def
 	mark (Functions with many arguments aren't implemented yet.) //error exec
   } loop
   //PDFR_DEBUG {
-	(FunctionToProc end) =
+	(FunctionToProc end ) print count =
   } if
 } bind def
 
@@ -1079,25 +1127,42 @@ currentdict end readonly def
 
 /ResolveColorSpace  % <name> ResolveColorSpace <color_space>
 { 
-  dup //PDFColorSpaces exch //knownget exec {
-    exch pop
-  } {
-    dup															% n n
-    //PDFReader /CurrentObject get /Context get /Resources get 
-    /ColorSpace //DoNothing //ResolveD exec
-    exch //CheckColorSpace //ResolveD exec						% n cs
-	dup type /arraytype eq {
-	  //SubstitutePDFColorSpace exec
-	  //ResolveColorSpaceArray exec
-	  dup //PDFColorSpaces 4 2 roll put						    % []
-	} if
-  } ifelse
+  //PDFR_DEBUG {
+	(ResolveColorSpace beg ) print dup =
+  } if
+  dup //SimpleColorSpaceNames exch known not {
+    dup //PDFColorSpaces exch //knownget exec {
+      exch pop
+	  //PDFR_DEBUG {
+	    (ResolveColorSpace known ) =
+	  } if
+    } {
+      dup															% n n
+      //PDFReader /CurrentObject get /Context get /Resources get 
+      /ColorSpace //DoNothing //ResolveD exec
+      exch //CheckColorSpace //ResolveD exec						% n cs
+	  dup type /arraytype eq {
+	    //SubstitutePDFColorSpace exec
+	    //ResolveColorSpaceArray exec
+	    dup //PDFColorSpaces 4 2 roll put						    % []
+	  } if
+    } ifelse
+  } if
+  //PDFR_DEBUG {
+	(ResolveColorSpace end ) print dup ==
+  } if
 } bind def
 
 /CheckPattern %  <key> <val> CheckPattern  <key> <val>
 {
+  dup /PatternType //knownget exec {
+    dup 1 ne {
+      mark (Resource ) 4 index ( is a shading, which can't be handled at level 2. ) //error exec
+	} if
+	pop
+  } if
   dup /Type get /Pattern ne {
-    mark (Resource ) 3 index ( must have /Type/Pattern .) //error exec
+    mark (Resource ) 4 index ( must have /Type/Pattern .) //error exec
   } if
 } bind def
 
@@ -1134,15 +1199,21 @@ currentdict end readonly def
 } bind def
 
 /SetColor % Same arguments and result as for scn
-{ currentcolorspace dup type /nametype eq {
+{ //PDFR_DEBUG {
+    (SetColor beg) =
+  } if
+  currentcolorspace dup type /nametype eq {
     pop setcolor    
   } {
     0 get /Pattern eq {
-	  ResolvePattern setpattern
+	  //ResolvePattern exec setpattern
 	} {
 	  setcolor
 	} ifelse
   } ifelse
+  //PDFR_DEBUG {
+    (SetColor beg) =
+  } if
 } bind def
 
 % ===================== Images ===============================
@@ -1158,7 +1229,7 @@ currentdict end readonly def
   % /Intent is undefined - pdfwrite must take care of.
   /I /Interpolate def
   /W /Width def
-currentdict end def
+currentdict end readonly def
 
 /ImageValues 15 dict begin
   /G   /DeviceGray def
@@ -1172,7 +1243,7 @@ currentdict end def
   /RL  /RunLengthDecode def
   /CCF /CCITTFaxDecode def
   /DCT /DCTDecode def
-currentdict end def
+currentdict end readonly def
 
 /DecodeArrays 15 dict begin
   /DeviceGray { [0 1] } def
@@ -1182,7 +1253,7 @@ currentdict end def
   /Separation { [0 1] } def
   /CIEBasedA { [0 1] } def
   /CIEBasedABC { [0 1 0 1 0 1] } def
-currentdict end def
+currentdict end readonly def
 
 /Substitute % <key> <dict> Substitute <key>
 { 1 index //knownget exec {
@@ -1561,13 +1632,13 @@ currentdict end def
   /g /setgray load def
   /rg /setrgbcolor load def
   /k /setcmykcolor load def
-  /cs { ResolveColorSpace setcolorspace } bind def
+  /cs { //ResolveColorSpace exec setcolorspace } bind def
   /sc /setcolor load def
   /scn { //SetColor exec } bind def
   /G /setgray load def
   /RG /setrgbcolor load def
   /K /setcmykcolor load def
-  /CS { ResolveColorSpace setcolorspace } bind def
+  /CS { //ResolveColorSpace exec setcolorspace } bind def
   /ri { SetColorRenderingIntent } bind def
   /SC /setcolor load def
   /SCN { //SetColor exec } bind def
