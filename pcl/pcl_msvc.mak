@@ -102,7 +102,14 @@ MSVC_VERSION=5
 !endif
 
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=djet500.dev ljet4.dev pcxmono.dev pcxgray.dev
+DEVICE_DEVS=djet500.dev ljet4.dev cljet5c.dev\
+ pcx16.dev pcx256.dev\
+ pcxmono.dev pcxcmyk.dev pcxgray.dev\
+ pbmraw.dev pgmraw.dev ppmraw.dev pkmraw.dev\
+ pxlmono.dev pxlcolor.dev\
+ tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev\
+ tifflzw.dev tiffpack.dev\
+ tiff12nc.dev tiff24nc.dev
 !endif
 
 # GS options
