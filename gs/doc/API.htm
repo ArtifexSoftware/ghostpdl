@@ -280,7 +280,7 @@ the Ghostscript interpreter was compiled with <b><tt>CHECK_INTERRUPTS</tt></b>
 as described in <b><tt><a href="../src/gpcheck.h">gpcheck.h</a></tt></b>.
 </blockquote>
 
-<h3><a name="set_display_callback"></a></b><tt>gsapi_set_display_callback()</tt></b></h3>
+<h3><a name="set_display_callback"></a><b><tt>gsapi_set_display_callback()</tt></b></h3>
 <blockquote>
 Set the callback structure for the <a href="#display">display</a>
 device.  If the <a href="#display">display</a> device is used, 
@@ -348,8 +348,7 @@ The <b><tt>gsapi_init_with_args</tt></b>, <b><tt>gsapi_run_*</tt></b> and
 	<td>&nbsp;
 	<td>"<b><tt>gs -h</tt></b>" has been executed. 
 	This is not an error.
-        The interpreter was not initialised. It is safe to call
-	<b><tt>gsapi_exit()</tt></b>.
+	<b><tt>gsapi_exit()</tt></b> must be called next.
 <tr valign=top>	<td align=left>&lt; 0
 	<td>&nbsp;
 	<td>Error
@@ -560,8 +559,7 @@ Some examples are in
 
 
 <p>
-<small>Copyright &copy; 2001 Ghostgum Software Pty Ltd.  All rights
-reserved.</small>
+<small>Copyright &copy; 2001 artofcode LLC.  All rights reserved.</small>
 
 <p>
 <small>This file is part of AFPL Ghostscript.  See the
