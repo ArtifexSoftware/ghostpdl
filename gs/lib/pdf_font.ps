@@ -1260,9 +1260,18 @@ drawopdict begin
       % it to 0 since this is apparently what Acrobat Reader 4 and 5 do,
       % but if the specification is ever changed to allow non-zero wy, this
       % will not work.
-      5 -1 roll pop 0 5 1 roll	% set wy to 0
+      5 -1 roll pop 0 5 1 roll	  % set wy to 0
     } if
-    6 -2 roll .adjustcharwidth 6 2 roll setcachedevice
+
+    2 copy                           % ... llx lly urx ury | urx ury 
+    0 ne exch 0 ne                   % ... llx lly urx ury | ury!=0 urx!=0
+    3 index 6 index eq and           % ... llx lly urx ury | ury!=0 (urx!=0 && llx==urx)
+    exch 2 index 5 index eq and or { % ... llx lly urx ury | (urx!=0 && llx==urx) || (ury!=0 && lly==ury)
+      % The bounding box is empty and likely incorrect. Don't cache.
+      pop pop pop pop .adjustcharwidth setcharwidth
+    } {
+      6 -2 roll .adjustcharwidth 6 2 roll setcachedevice
+    } ifelse
   } bdef
   /Tf {
     1 index Page /Font rget not { 1 index /invalidfont signalerror } if
