@@ -847,6 +847,26 @@ pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
     return 0;
 }
 
+/* Write and free all resource objects. */
+
+int
+pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev)
+{
+    int i, code = 0, code1;
+
+    for (i = 0; i < NUM_RESOURCE_TYPES; ++i) {
+	code1 = pdf_write_resource_objects(pdev, i);
+	if (code >= 0)
+	    code = code1;
+    }
+    for (i = 0; i < NUM_RESOURCE_TYPES; ++i) {
+	code1 = pdf_free_resource_objects(pdev, i);
+	if (code >= 0)
+	    code = code1;
+    }
+    return code;
+}
+
 /*
  * Store the resource sets for a content stream (page or XObject).
  * Sets page->{procsets, resource_ids[]}.

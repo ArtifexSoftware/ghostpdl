@@ -311,6 +311,18 @@ pdf_standard_fonts(const gx_device_pdf *pdev)
     return pdev->text->outline_fonts->standard_fonts;
 }
 
+/*
+ * Clean the standard fonts array.
+ */
+void
+pdf_clean_standard_fonts(const gx_device_pdf *pdev)
+{
+    pdf_standard_font_t *ppsf = pdf_standard_fonts(pdev);
+
+    memset(ppsf, 0, PDF_NUM_STANDARD_FONTS * sizeof(*ppsf));
+}
+
+
 /* ---------------- Font resources ---------------- */
 
 /* ------ Private ------ */

@@ -206,6 +206,7 @@ const gx_device_pdf gs_pdfwrite_device =
  0 /*false*/,			/* HaveStrokeColor */
  0 /*false*/,			/* PatternImagemask */
  12000,				/* MaxClipPathSize */ /* HP LaserJet 1320 hangs with 14000. */
+ max_long,                      /* MaxViewerMemorySize */
  256000,			/* MaxShadingBitmapSize */
  4000,				/* MaxInlineImageSize */
  {0, 0},			/* OwnerPassword */
@@ -943,7 +944,30 @@ pdf_close_page(gx_device_pdf * pdev)
     /* Write the Functions. */
 
     pdf_write_resource_objects(pdev, resourceFunction);
-    /* pdf_free_resource_objects(pdev, resourceFunction); May be referred from resourceColorSpace. */
+
+    /* Save viewer's memory with cleaning resources. */
+
+    if (pdev->MaxViewerMemorySize < 10000000) {
+	/* fixme: the condition above and the cleaning algorithm
+	   may be improved with counting stored resource size
+	   and creating multiple streams per page. */
+
+	if (pdev->ResourcesBeforeUsage && pdev->ForOPDFRead) {
+	    pdf_resource_t *pres = pdf_find_resource_by_resource_id(pdev, resourcePage, pdev->contents_id);
+	    
+	    if (pres != NULL) {
+		code = cos_dict_put_c_strings((cos_dict_t *)pres->object, "/.CleanResources", "/All");
+		if (code < 0)
+		    return code;
+	    }
+	}
+	code = pdf_close_text_document(pdev);
+	if (code < 0)
+	    return code;
+	code = pdf_write_and_free_all_resource_objects(pdev);
+	if (code < 0)
+	    return code;
+    }
 
     /* Close use of text on the page. */
 

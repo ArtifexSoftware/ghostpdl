@@ -350,7 +350,7 @@ pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 int
 pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev)
 {
-    const pdf_bitmap_fonts_t *pbfs = pdev->text->bitmap_fonts;
+    pdf_bitmap_fonts_t *pbfs = pdev->text->bitmap_fonts;
 
     if (pbfs->bitmap_encoding_id) {
 	stream *s;
@@ -373,6 +373,7 @@ pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev)
 	}
 	stream_puts(s, "\n] >>\n");
 	pdf_end_separate(pdev);
+	pbfs->bitmap_encoding_id = 0;
     }
     return 0;
 }

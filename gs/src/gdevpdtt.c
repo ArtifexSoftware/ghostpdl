@@ -543,6 +543,15 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
     return 0;
 }
 
+int
+pdf_free_font_cache(gx_device_pdf *pdev)
+{
+    /* fixme : release elements. */
+    pdev->font_cache = NULL;
+    return 0;
+}
+
+
 /*
  * Retrive font resource attached to a font,
  * allocating glyph_usage and real_widths on request.

@@ -321,6 +321,14 @@ pdf_outline_fonts_t *pdf_outline_fonts_alloc(gs_memory_t *mem);
 pdf_standard_font_t *pdf_standard_fonts(const gx_device_pdf *pdev);
 
 /*
+ * Clean the standard fonts array.
+ */
+void pdf_clean_standard_fonts(const gx_device_pdf *pdev);
+
+/* Free font cache. */
+int pdf_free_font_cache(gx_device_pdf *pdev);
+
+/*
  * Allocate specific types of font resource.
  */
 int pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,

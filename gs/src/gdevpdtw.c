@@ -576,7 +576,10 @@ write_font_resources(gx_device_pdf *pdev, pdf_resource_list_t *prlist)
 
 	    if (code < 0)
 		return code;
-	    pdf_write_font_resource(pdev, pdfont);
+	    code = pdf_write_font_resource(pdev, pdfont);
+	    if (code < 0)
+		return code;
+	    pdfont->object->written = true;
 	}
     return 0;
 }
@@ -610,7 +613,9 @@ pdf_close_text_document(gx_device_pdf *pdev)
      * the descriptors.
      */
 
-    if ((code = pdf_write_resource_objects(pdev, resourceCharProc)) < 0 ||
+    pdf_clean_standard_fonts(pdev);
+    if ((code = pdf_free_font_cache(pdev)) < 0 ||
+	(code = pdf_write_resource_objects(pdev, resourceCharProc)) < 0 ||
  	(code = finish_font_descriptors(pdev, pdf_finish_FontDescriptor)) < 0 ||
   	(code = write_font_resources(pdev, &pdev->resources[resourceCIDFont])) < 0 ||
 	(code = write_font_resources(pdev, &pdev->resources[resourceFont])) < 0 ||

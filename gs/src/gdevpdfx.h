@@ -421,6 +421,7 @@ struct gx_device_pdf_s {
 			      with pattern color. */
     long MaxClipPathSize;  /* The maximal number of elements of a clipping path
 			      that the target viewer|printer can handle. */
+    long MaxViewerMemorySize;
     long MaxShadingBitmapSize; /* The maximal number of bytes in 
 			      a bitmap representation of a shading.
 			      (Bigger shadings to be downsampled). */
@@ -809,6 +810,10 @@ void pdf_reverse_resource_chain(gx_device_pdf *pdev, pdf_resource_type_t rtype);
  * Free unnamed Cos objects for resources local to a content stream.
  */
 int pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype);
+
+/* Write and free all resource objects. */
+
+int pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev);
 
 /*
  * Store the resource sets for a content stream (page or XObject).

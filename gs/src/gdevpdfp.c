@@ -84,10 +84,13 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("Permissions", gs_param_type_int, Permissions),
     pi("EncryptionR", gs_param_type_int, EncryptionR),
     pi("NoEncrypt", gs_param_type_string, NoEncrypt),
+
+	/* Target viewer capabilities (Ghostscript-specific)  */
     pi("ForOPDFRead", gs_param_type_bool, ForOPDFRead),
     pi("PatternImagemask", gs_param_type_bool, PatternImagemask),
     pi("MaxClipPathSize", gs_param_type_int, MaxClipPathSize),
     pi("MaxShadingBitmapSize", gs_param_type_int, MaxShadingBitmapSize),
+    pi("MaxViewerMemorySize", gs_param_type_int, MaxViewerMemorySize),
     pi("HaveTrueTypes", gs_param_type_bool, HaveTrueTypes),
     pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
 #undef pi
