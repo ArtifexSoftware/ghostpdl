@@ -498,37 +498,14 @@ private ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_
     return get_type1_data(ff, &subr, buf, buf_length);
 }
 
-private bool sfnt_get_glyph_offset(ref *pdr, int index, ulong *offset0, ulong *offset1)
+private bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0, ulong *offset1)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
-    struct {
-        byte tag[4];
-        ulong checkSum, offset, length;
-    } tables[30];
-    ushort num_tables, i, iloca = 0, iglyf = 0, k = 2;
-    int glyf_elem_size = 2; /* fixme : take from 'head' */
+    int glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
     sfnts_reader_init(&r, pdr);
-    r.rlong(&r); /* version */
-    num_tables = r.rword(&r);
-    r.rword(&r); /* searchRange */
-    r.rword(&r); /* entrySelector */
-    r.rword(&r); /* rangeShift */
-    for (i = 0; i < num_tables && k; i++) {
-        r.rstring(&r, tables[i].tag, 4);
-        tables[i].checkSum = r.rlong(&r);
-        tables[i].offset = r.rlong(&r);
-        tables[i].length = r.rlong(&r);
-        if (!memcmp(tables[i].tag, "loca", 4))
-            iloca = i, k--;
-        else if (!memcmp(tables[i].tag, "glyf", 4))
-            iglyf = i, k--;
-    }
-    r.seek(&r, tables[iloca].offset + index * glyf_elem_size);
-    *offset0 = tables[iglyf].offset + (glyf_elem_size == 2 ? r.rword(&r) : r.rlong(&r)) * 2;
-    if (index + 1 >= tables[iloca].length / glyf_elem_size)
-        *offset1 = tables[iglyf].offset + tables[iglyf].length;
-    else
-        *offset1 = tables[iglyf].offset + (glyf_elem_size == 2 ? r.rword(&r) : r.rlong(&r)) * 2;
+    r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
+    *offset0 = pfont42->data.glyf + (glyf_elem_size == 2 ? r.rword(&r) : r.rlong(&r)) * 2;
+    *offset1 = pfont42->data.glyf + (glyf_elem_size == 2 ? r.rword(&r) : r.rlong(&r)) * 2;
     return r.error;
 }
 
@@ -562,8 +539,9 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
             if (buf != 0 && glyph_length > 0)
                 memcpy(buf, glyph->value.const_bytes, min(glyph_length, buf_length)/* safety */);
         } else {
+            gs_font_type42 *pfont42 = (gs_font_type42 *)ff->client_font_data;
             ulong offset0, offset1;
-            bool error = sfnt_get_glyph_offset(pdr, char_code, &offset0, &offset1);
+            bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0, &offset1);
             glyph_length = (error ? -1 : offset1 - offset0);
             if (buf != 0 && !error) {
                 sfnts_reader r;
@@ -741,6 +719,8 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
         ff.is_type1 = true;
         for (i = 0; i < n; i++) {
             gs_font_type1 *pbfont1 = FDArray[i];
+            if (pbfont1->FontType != ft_encrypted && pbfont1->FontType != ft_TrueType)
+                return_error(e_invalidfont); /* fixme : this can be FontType 2 */
             pbfont1->FontBBox = pbfont->FontBBox; /* Inherit FontBBox from the type 9 font. */
             if(array_get(rFDArray, i, &f) < 0 || r_type(&f) != t_dictionary)
                 return_error(e_invalidfont);
@@ -1049,7 +1029,8 @@ retry_oversampling:
 	/* Translate from PS encoding to char name : */
 	ref *Encoding;
 	int_param(op, 0xFF, &client_char_code);
-        if (dict_find_string(osp - 1, "Encoding", &Encoding) > 0 && r_has_type(Encoding, t_array)) {
+        if (dict_find_string(osp - 1, "Encoding", &Encoding) > 0 && 
+            (r_has_type(Encoding, t_array) || r_has_type(Encoding, t_shortarray))) {
 	    if (array_get(Encoding, client_char_code, &char_name) < 0)
 	        CheckRET(name_ref((const byte *)".notdef", 7, &char_name, -1));
 	} else
