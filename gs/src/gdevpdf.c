@@ -351,6 +351,8 @@ pdf_reset_page(gx_device_pdf * pdev)
     pdev->procsets = NoMarks;
     memset(pdev->cs_Patterns, 0, sizeof(pdev->cs_Patterns));	/* simplest to create for each page */
     pdf_reset_text_page(pdev->text);
+    pdf_remember_clip_path(pdev, 0);
+    pdev->clip_path_id = pdev->no_clip_path_id;
 }
 
 /* Open a temporary file, with or without a stream. */
