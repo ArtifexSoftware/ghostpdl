@@ -794,8 +794,9 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     pbfont->FAPI_font_data = ff.server_font_data; /* Save it back to GS font. */
     if ((code = renderer_retcode(i_ctx_p, I, I->get_font_bbox(I, &ff, BBox))) < 0)
 	return code;
-    if ((code = renderer_retcode(i_ctx_p, I, I->get_decodingID(I, &ff, &decodingID))) < 0)
-	return code;
+    if (xlatmap != NULL)
+	if ((code = renderer_retcode(i_ctx_p, I, I->get_decodingID(I, &ff, &decodingID))) < 0)
+	    return code;
 
     /* Refine FontBBox : */
     pbfont->FontBBox.p.x = (double)BBox[0] * size1 / size;
