@@ -34,7 +34,8 @@ Ghostscript and the PostScript language
 <ul>
 <li><a href="#Graphics_and_text">Graphics and text operators</a>
 <ul>
-<li><a href="#Graphics_state">Graphics state operators</a>
+<li><a href="#Transparency">Transparency operators</a>
+<li><a href="#Graphics_state">Other graphics state operators</a>
 <li><a href="#Path">Path operators</a>
 <li><a href="#Painting">Painting operators</a>
 <li><a href="#Character">Character operators</a>
@@ -382,7 +383,135 @@ space for the string.
 
 <h2><a name="Graphics_and_text"></a>Graphics and text operators</h2>
 
-<h3><a name="Graphics_state"></a>Graphics state operators</h3>
+<h3><a name="Transparency"></a>Transparency operators</h3>
+
+<p>
+Ghostscript provides a set of operators for implementing the transparency
+and compositing facilities of PDF 1.4.  These are defined only if the
+<b><tt>transpar</tt></b> option was selected when Ghostscript was built.  We
+do not attempt to explain the underlying graphics model here: for details,
+see Adobe Technical Note #5407, "Transparency in PDF".  Note, however, that
+Ghostscript's model generalizes that of PDF 1.4 in that Ghostscript
+maintains separate alpha and mask values for opacity and shape, rather than
+a single value with a Boolean that says whether it represents opacity or
+shape.
+
+<dl>
+<dt><b><tt>&lt;modename&gt; .setblendmode -</tt></b>
+<dd>Sets the blending mode in the graphics state.  If the mode name is not
+recognized, causes a <b><tt>rangecheck</tt></b> error.  The initial value of
+the blending mode is <b><tt>/Compatible</tt></b>.
+</dl>
+
+<dl>
+<dt><b><tt>- .currentblendmode &lt;modename&gt;</tt></b>
+<dd>Returns the current blending mode.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;0..1&gt; .setopacityalpha -</tt></b>
+<dd>Sets the opacity alpha value in the graphics state.
+The initial opacity alpha value is 1.
+</dl>
+
+<dl>
+<dt><b><tt>- .currentopacityalpha &lt;0..1&gt;</tt></b>
+<dd>Returns the current opacity alpha value.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;maskdict|null&gt; .setopacitymask -</tt></b>
+<dd>Sets the opacity soft mask in the graphics state, and makes the
+dictionary read-only.  The initial opacity soft mask is
+<b><tt>null</tt></b>.  A (non-null) soft mask dictionary has the same form
+as an ImageType 1 image dictionary, with the following restrictions:
+
+<ul>
+
+<li>No color space is specified, and the current color space is ignored.
+The image is assumed to have one component value per pixel.  This affects
+MultipleDataSources (must be absent or false) and Decode (must have exactly
+2 elements).
+
+<li>The DataSource must be either a string or a reusable stream.
+
+</ul>
+
+<p>
+The graphics state machinery does not close the DataSource.  If an attempt
+is made to paint with a graphics state in which the DataSource of a soft
+mask has been closed, an <b><tt>invalidaccess</tt></b>,
+<b><tt>invalidfileaccess</tt></b>, or <b><tt>ioerror</tt></b> error will
+occur.
+
+</dl>
+
+<dl>
+<dt><b><tt>- .currentopacitymask &lt;maskdict|null&gt;</tt></b>
+<dd>Returns the current opacity soft mask.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;0..1&gt; .setshapealpha -</tt></b>
+<dd>Sets the shape alpha value in the graphics state.
+The initial shape alpha value is 1.
+</dl>
+
+<dl>
+<dt><b><tt>- .currentshapealpha &lt;0..1&gt;</tt></b>
+<dd>Returns the current shape alpha value.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;maskdict|null&gt; .setshapemask -</tt></b>
+<dd>Sets the shape soft mask in the graphics state, and makes the dictionary
+read-only.  The initial shape soft mask is <b><tt>null</tt></b>.
+</dl>
+
+<dl>
+<dt><b><tt>- .currentshapemask &lt;maskdict|null&gt;</tt></b>
+<dd>Returns the current shape soft mask.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;bool&gt; .settextknockout -</tt></b>
+<dd>Sets the text knockout flag in the graphics state.
+The initial value of the text knockout flag is <b><tt>true</tt></b>.
+</dl>
+
+<dl>
+<dt><b><tt>- .currenttextknockout &lt;bool&gt;</tt></b>
+<dd>Returns the current text knockout flag.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;isolated&gt; &lt;knockout&gt; &lt;llx&gt; &lt;lly&gt;
+&lt;urx&gt; &lt;ury&gt; .begintransparencygroup -</tt></b>
+<dd>Begins a new transparency group.  The <b><tt>ll/ur</tt></b> coordinates
+are the bounding box of the group in the current user coordinate system.
+</dl>
+
+<dl>
+<dt><b><tt>- .discardtransparencygroup -</tt></b>
+
+<dd>Ends and discards the current transparency group.
+<b><tt>restore</tt></b> will implicitly execute
+<b><tt>.discardtransparencygroup</tt></b> for every unmatched
+<b><tt>.begintransparencygroup</tt></b> since the corresponding
+<b><tt>save</tt></b>.  Executing
+<b><tt>.{end,discard}transparencygroup</tt></b> if the corresponding
+<b><tt>.begintransparencygroup</tt></b> was not executed within the
+innermost currently unmatched <b><tt>save</tt></b> will cause an
+<b><tt>invalidaccess</tt></b> error.
+</dl>
+
+<dl>
+<dt><b><tt>- .endtransparencygroup -</tt></b>
+<dd>End the current transparency group, compositing the group being ended
+onto the group that now becomes current.
+</dl>
+
+<h3><a name="Graphics_state"></a>Other graphics state operators</h3>
 
 <dl>
 <dt><b><tt>&lt;bool&gt; .setaccuratecurves -</tt></b>
@@ -476,6 +605,21 @@ order to create half-open pixels per Adobe's specification.)
 <dl>
 <dt><b><tt>- .currentfilladjust2 &lt;dx&gt; &lt;dy&gt;</tt></b>
 <dd>Returns the current fill adjustment values.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;int&gt; .setoverprintmode -</tt></b>
+<dd>Sets the overprint mode in the graphics state.  Legal values are 0 or 1.
+Per the PDF 1.3 specification, if the overprint mode is 1, then when the
+current color space is <b><tt>DeviceCMYK</tt></b>, color components whose
+value is 0 do not write into the target, rather than writing a 0 value.
+THIS BEHAVIOR IS NOT IMPLEMENTED YET.  The initial value of the overprint
+mode is 0.
+</dl>
+
+<dl>
+<dt><b><tt>- .currentoverprintmode &lt;int&gt;</tt></b>
+<dd>Returns the current overprint mode.
 </dl>
 
 <h3><a name="Path"></a>Path operators</h3>

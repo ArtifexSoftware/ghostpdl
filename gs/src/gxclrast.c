@@ -1937,78 +1937,93 @@ read_set_ht_data(command_buf_t *pcb, uint *pdata_index, gx_ht_order *porder,
 }
 
 private int
+read_set_transparency_source(command_buf_t *pcb, gs_transparency_source_t *pts,
+			     const char *member_name)
+{
+    const byte *cbp = pcb->ptr;
+    float alpha;
+
+    cmd_get_value(alpha, cbp);
+    pts->alpha = alpha;
+    if_debug2('L', " %s.alpha=%g\n", member_name, alpha);
+    /****** mask is NYI ******/
+    pcb->ptr = cbp;
+    return 0;
+}
+private int
 read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 {
     const byte *cbp = pcb->ptr;
-    uint cb = *cbp++;
+    uint mask, cb;
+    int code;
 
-    switch (cb >> 6) {
-
-    case cmd_set_misc2_cap_join >> 6:
+    cmd_getw(mask, cbp);
+    if (mask & cap_join_known) {
+	cb = *cbp++;
 	pis->line_params.cap = (gs_line_cap)((cb >> 3) & 7);
 	pis->line_params.join = (gs_line_join)(cb & 7);
 	if_debug2('L', " cap=%d join=%d\n",
 		  pis->line_params.cap, pis->line_params.join);
-	break;
-
-    case cmd_set_misc2_cj_ac_sa >> 6:
+    }
+    if (mask & cj_ac_sa_known) {
+	cb = *cbp++;
 	pis->line_params.curve_join = ((cb >> 2) & 7) - 1;
 	pis->accurate_curves = (cb & 2) != 0;
 	pis->stroke_adjust = cb & 1;
 	if_debug3('L', " CJ=%d AC=%d SA=%d\n",
 		  pis->line_params.curve_join, pis->accurate_curves,
 		  pis->stroke_adjust);
-	break;
+    }
+    if (mask & flatness_known) {
+	cmd_get_value(pis->flatness, cbp);
+	if_debug1('L', " flatness=%g\n", pis->flatness);
+    }
+    if (mask & line_width_known) {
+	float width;
 
-    case cmd_set_misc2_notes >> 6:
+	cmd_get_value(width, cbp);
+	if_debug1('L', " line_width=%g\n", width);
+	gx_set_line_width(&pis->line_params, width);
+    }
+    if (mask & miter_limit_known) {
+	float limit;
+
+	cmd_get_value(limit, cbp);
+	if_debug1('L', " miter_limit=%g\n", limit);
+	gx_set_miter_limit(&pis->line_params, limit);
+    }
+    if (mask & op_bm_tk_known) {
+	cb = *cbp++;
+	pis->blend_mode = cb >> 3;
+	pis->text_knockout = (cb & 4) != 0;
+	pis->overprint_mode = (cb >> 1) & 1;
+	pis->overprint = cb & 1;
+	if_debug4('L', " BM=%d TK=%d OPM=%d OP=%d\n",
+		  pis->blend_mode, pis->text_knockout, pis->overprint_mode,
+		  pis->overprint);
+    }
+    if (mask & segment_notes_known) {
+	cb = *cbp++;
 	*pnotes = (segment_notes)(cb & 0x3f);
 	if_debug1('L', " notes=%d\n", *pnotes);
-	break;
-
-    case cmd_set_misc2_value >> 6:
-	switch (cb) {
-
-	case cmd_set_misc2_flatness:
-	    cmd_get_value(pis->flatness, cbp);
-	    if_debug1('L', " %g\n", pis->flatness);
-	    break;
-
-	case cmd_set_misc2_line_width: {
-	    float width;
-
-	    cmd_get_value(width, cbp);
-	    if_debug1('L', " %g\n", width);
-	    gx_set_line_width(&pis->line_params, width);
-	}
-	break;
-
-	case cmd_set_misc2_miter_limit: {
-	    float limit;
-
-	    cmd_get_value(limit, cbp);
-	    if_debug1('L', " %g\n", limit);
-	    gx_set_miter_limit(&pis->line_params, limit);
-	}
-	break;
-
-	case cmd_set_misc2_alpha:
-	    cmd_get_value(pis->alpha, cbp);
-	    if_debug1('L', " %u\n", pis->alpha);
-	    break;
-
-	case cmd_set_misc2_overprint:
-	    cb = *cbp++;
-	    pis->overprint_mode = cb >> 1;
-	    pis->overprint = cb & 1;
-	    break;
-
-	default:
-	    return_error(gs_error_rangecheck);
-	}
-	break;
-
-    default:
-	return_error(gs_error_rangecheck);
+    }
+    if (mask & opacity_known) {
+	pcb->ptr = cbp;
+	code = read_set_transparency_source(pcb, &pis->opacity, "opacity");
+	if (code < 0)
+	    return code;
+	cbp = pcb->ptr;
+    }
+    if (mask & shape_known) {
+	pcb->ptr = cbp;
+	code = read_set_transparency_source(pcb, &pis->shape, "shape");
+	if (code < 0)
+	    return code;
+	cbp = pcb->ptr;
+    }
+    if (mask & alpha_known) {
+	cmd_get_value(pis->alpha, cbp);
+	if_debug1('L', " alpha=%u\n", pis->alpha);
     }
     pcb->ptr = cbp;
     return 0;

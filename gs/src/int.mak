@@ -1617,6 +1617,18 @@ $(PSOBJ)ztrap.$(OBJ) : $(PSSRC)ztrap.c $(OP)\
 $(PSD)trapping.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)traplib.dev $(PSD)trapread.dev
 	$(SETMOD) $(PSD)trapping -include $(GLD)traplib $(PSD)trapread
 
+# ---------------- Transparency ---------------- #
+
+transread_=$(PSOBJ)ztrans.$(OBJ)
+$(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)translib.dev $(transread_)
+	$(SETMOD) $(PSD)transpar $(transread_)
+	$(ADDMOD) $(PSD)transpar -oper ztrans
+	$(ADDMOD) $(PSD)transpar -include $(GLD)translib
+
+$(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
+ $(gstrans_h) $(igstate_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c
+
 # ================================ PDF ================================ #
 
 # We need nearly all of the PostScript LanguageLevel 3 interpreter for PDF,
@@ -1646,8 +1658,9 @@ $(PSD)pdffonts.dev : $(INT_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(PSD)pdffonts -ps gs_mex_e gs_mro_e gs_pdf_e gs_wan_e
 
 $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE)\
- $(PSD)frsd.dev $(PSD)func4.dev $(PSD)fzlib.dev
+ $(PSD)frsd.dev $(PSD)func4.dev $(PSD)fzlib.dev $(PSD)transpar.dev
 	$(SETMOD) $(PSD)pdfread -include $(PSD)frsd $(PSD)func4 $(PSD)fzlib
+	$(SETMOD) $(PSD)pdfread -include $(PSD)transpar
 	$(ADDMOD) $(PSD)pdfread -ps pdf_ops gs_l2img
 	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
 

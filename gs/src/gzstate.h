@@ -55,6 +55,10 @@ typedef struct gs_client_color_s gs_client_color;
 #  define gs_font_DEFINED
 typedef struct gs_font_s gs_font;
 #endif
+#ifndef gs_transparency_group_DEFINED
+#  define gs_transparency_group_DEFINED
+typedef struct gs_transparency_group_s gs_transparency_group_t;
+#endif
 
 /* Graphics state structure. */
 
@@ -116,6 +120,7 @@ struct gs_state_s {
     gx_device *device;
 #undef gs_currentdevice_inline
 #define gs_currentdevice_inline(pgs) ((pgs)->device)
+    gs_transparency_group_t *transparency_group_stack; /* (PDF 1.4 only) */
 
     /* Client data: */
 

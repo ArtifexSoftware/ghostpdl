@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -64,7 +64,9 @@ ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     ENUM_SUPER(gs_imager_state, st_line_params, line_params, st_imager_state_num_ptrs - st_line_params_num_ptrs);
     ENUM_PTR(0, gs_imager_state, shared);
     ENUM_PTR(1, gs_imager_state, client_data);
-#define E1(i,elt) ENUM_PTR(i+2,gs_imager_state,elt);
+    ENUM_PTR(2, gs_imager_state, opacity.mask);
+    ENUM_PTR(3, gs_imager_state, shape.mask);
+#define E1(i,elt) ENUM_PTR(i+4,gs_imager_state,elt);
     gs_cr_state_do_ptrs(E1)
 #undef E1
 ENUM_PTRS_END
@@ -73,6 +75,8 @@ private RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
     RELOC_SUPER(gs_imager_state, st_line_params, line_params);
     RELOC_PTR(gs_imager_state, shared);
     RELOC_PTR(gs_imager_state, client_data);
+    RELOC_PTR(gs_imager_state, opacity.mask);
+    RELOC_PTR(gs_imager_state, shape.mask);
 #define R1(i,elt) RELOC_PTR(gs_imager_state,elt);
     gs_cr_state_do_ptrs(R1)
 #undef R1
@@ -192,6 +196,8 @@ void
 gs_imager_state_copied(gs_imager_state * pis)
 {
     rc_increment(pis->shared);
+    rc_increment(pis->opacity.mask);
+    rc_increment(pis->shape.mask);
     rc_increment(pis->halftone);
     rc_increment(pis->dev_ht);
     rc_increment(pis->cie_render);
@@ -223,6 +229,8 @@ gs_imager_state_pre_assign(gs_imager_state *pto, const gs_imager_state *pfrom)
     RCCOPY(cie_render);
     RCCOPY(dev_ht);
     RCCOPY(halftone);
+    RCCOPY(shape.mask);
+    RCCOPY(opacity.mask);
     RCCOPY(shared);
 #undef RCCOPY
 }
@@ -261,6 +269,8 @@ gs_imager_state_release(gs_imager_state * pis)
     }
     RCDECR(dev_ht);
     RCDECR(halftone);
+    RCDECR(shape.mask);
+    RCDECR(opacity.mask);
     RCDECR(shared);
 #undef RCDECR
 }

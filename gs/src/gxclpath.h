@@ -23,22 +23,32 @@
 #ifndef gxclpath_INCLUDED
 #  define gxclpath_INCLUDED
 
-/* Define the flags indicating whether a band knows the current values of */
-/* various miscellaneous parameters (pcls->known). */
-#define flatness_known		(1<<0)
-#define fill_adjust_known	(1<<1)
-#define ctm_known		(1<<2)
+/*
+ * Define the flags indicating whether a band knows the current values of
+ * various miscellaneous parameters (pcls->known).  The first N flags match
+ * the mask parameter for cmd_set_misc2 below.
+ */
+#define cap_join_known		(1<<0)
+#define cj_ac_sa_known		(1<<1)
+#define flatness_known		(1<<2)
 #define line_width_known	(1<<3)
 #define miter_limit_known	(1<<4)
-#define misc2_0_known		(1<<5) /* _cap_join */
-#define misc2_1_known		(1<<6) /* _cj_ac_sa */
-#define overprint_known		(1<<7)
-#define dash_known		(1<<8)
+#define op_bm_tk_known		(1<<5)
+/* segment_notes must fit in the first byte (i.e. be less than 1<<7). */
+#define segment_notes_known	(1<<6) /* not used in pcls->known */
+/* (flags beyond this point require an extra byte) */
+#define opacity_known		(1<<7)
+#define shape_known		(1<<8)
 #define alpha_known		(1<<9)
-#define clip_path_known		(1<<10)
-#define stroke_all_known	((1<<11)-1)
-#define color_space_known	(1<<11)
-/*#define all_known             ((1<<12)-1) */
+#define misc2_all_known		((1<<10)-1)
+/* End of misc2 flags. */
+#define fill_adjust_known	(1<<10)
+#define ctm_known		(1<<11)
+#define dash_known		(1<<12)
+#define clip_path_known		(1<<13)
+#define stroke_all_known	((1<<14)-1)
+#define color_space_known	(1<<14)
+/*#define all_known             ((1<<15)-1) */
 
 /* Define the drawing color types for distinguishing different */
 /* fill/stroke command variations. */
@@ -60,17 +70,21 @@ typedef enum {
     cmd_opv_set_ctm = 0xd3,	/* [per sput/sget_matrix] */
     cmd_opv_set_color_space = 0xd4,	/* base(4)Indexed?(2)0(2) */
 				/* [, hival#, table|map] */
-    cmd_opv_set_misc2 = 0xd5,
-#define cmd_set_misc2_cap_join (0x00) /* 00: cap(3)join(3) */
-#define cmd_set_misc2_cj_ac_sa (0x40) /* 01: 0(1)curve_join+1(3) */
-				/* acc.curves(1)stroke_adj(1) */
-#define cmd_set_misc2_notes (0x80) /* 10: seg.notes(6) */
-#define cmd_set_misc2_value (0xc0)	/* 11: (see below) */
-#define cmd_set_misc2_flatness (0xc0+0)    /* 11000000, flatness(float) */
-#define cmd_set_misc2_line_width (0xc0+1)  /* 11000001, line width(float) */
-#define cmd_set_misc2_miter_limit (0xc0+2) /* 11000010, miter limit(float) */
-#define cmd_set_misc2_alpha (0xc0+3)	   /* 11000011, alpha */
-#define cmd_set_misc2_overprint (0xc0+4)   /* 11000100, o.p.mode(7)o.p.(1) */
+    /*
+     * cmd_opv_set_misc2_value is followed by a mask (a variable-length
+     * integer), and then by parameter values for the parameters selected
+     * by the mask.  See above for the "known" mask values.
+     */
+    /* cap_join: 0(2)cap(3)join(3) */
+    /* cj_ac_sa: 0(3)curve_join+1(3)acc.curves(1)stroke_adj(1) */
+    /* flatness: (float) */
+    /* line width: (float) */
+    /* miter limit: (float) */
+    /* op_bm_tk: blend mode(5)text knockout(1)o.p.mode(1)o.p.(1) */
+    /* segment notes: (byte) */
+    /* opacity/shape: alpha(float)mask(TBD) */
+    /* alpha: <<verbatim copy from imager state>> */
+    cmd_opv_set_misc2 = 0xd5,	/* mask#, selected parameters */
     cmd_opv_set_dash = 0xd6,	/* adapt(1)abs.dot(1)n(6), dot */
 				/* length(float), offset(float), */
 				/* n x (float) */

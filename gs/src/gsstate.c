@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -74,7 +74,7 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *      We use reference counting to manage these.  Currently these are:
  *              halftone, dev_ht, cie_render, black_generation,
  *              undercolor_removal, set_transfer.*, cie_joint_caches,
- *		clip_stack
+ *		clip_stack, {opacity,shape}.mask
  *      effective_transfer.* may point to some of the same objects as
  *      set_transfer.*, but don't contribute to the reference count.
  *      Similarly, dev_color may point to the dev_ht object.  For
@@ -92,6 +92,7 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *              view_clip, which is associated with the current
  *                save level (effectively, with the gstate sub-stack
  *                back to the save) and is managed specially.
+ *		The transparency group stack, TBD.
  *
  * (4) Objects that are referenced directly by exactly one gstate and that
  *      are not referenced (except transiently) from any other object.
@@ -142,8 +143,9 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
   m(0,saved) m(1,path) m(2,clip_path) m(3,clip_stack)\
   m(4,view_clip) m(5,effective_clip_path)\
   m(6,color_space) m(7,ccolor) m(8,dev_color)\
-  m(9,font) m(10,root_font) m(11,show_gstate) /*m(---,device)*/
-#define gs_state_num_ptrs 12
+  m(9,font) m(10,root_font) m(11,show_gstate) /*m(---,device)*/\
+  m(12,transparency_group_stack)
+#define gs_state_num_ptrs 13
 
 /*
  * Define these elements of the graphics state that are allocated
@@ -258,8 +260,6 @@ gs_state_alloc(gs_memory_t * mem)
 	    pgs->device_color_spaces.indexed[i] = 0;
     }
     gx_set_device_color_1(pgs);
-    pgs->overprint = false;
-    pgs->overprint_mode = 0;
     pgs->device = 0;		/* setting device adjusts refcts */
     gs_nulldevice(pgs);
     gs_setalpha(pgs, 1.0);
@@ -275,6 +275,7 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->in_charpath = (gs_char_path_mode) 0;
     pgs->show_gstate = 0;
     pgs->level = 0;
+    pgs->transparency_group_stack = 0;
     if (gs_initgraphics(pgs) >= 0)
 	return pgs;
     /* Something went very wrong. */

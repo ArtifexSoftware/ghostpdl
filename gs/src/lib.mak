@@ -308,6 +308,7 @@ gsimage_h=$(GLSRC)gsimage.h $(gsiparam_h)
 gsline_h=$(GLSRC)gsline.h $(gslparam_h)
 gspath_h=$(GLSRC)gspath.h $(gspenum_h)
 gsrop_h=$(GLSRC)gsrop.h $(gsropt_h)
+gstparam_h=$(GLSRC)gstparam.h $(gsiparam_h) $(gsrefct_h) $(stream_h)
 
 gxalpha_h=$(GLSRC)gxalpha.h
 gxbcache_h=$(GLSRC)gxbcache.h $(gxbitmap_h)
@@ -385,7 +386,8 @@ gscssub_h=$(GLSRC)gscssub.h $(gscspace_h)
 gxdcconv_h=$(GLSRC)gxdcconv.h $(gxfrac_h)
 gxfmap_h=$(GLSRC)gxfmap.h $(gsrefct_h) $(gsstype_h) $(gxfrac_h) $(gxtmap_h)
 gxcmap_h=$(GLSRC)gxcmap.h $(gscsel_h) $(gxcindex_h) $(gxcvalue_h) $(gxfmap_h)
-gxistate_h=$(GLSRC)gxistate.h $(gscsel_h) $(gsrefct_h) $(gsropt_h)\
+gxistate_h=$(GLSRC)gxistate.h\
+ $(gscsel_h) $(gsrefct_h) $(gsropt_h) $(gstparam_h)\
  $(gxcmap_h) $(gxcvalue_h) $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h)
 gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
  $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxdevbuf_h) $(gxistate_h)\
@@ -2130,6 +2132,18 @@ $(GLOBJ)gstrap.$(OBJ) : $(GLSRC)gstrap.c $(string__h) $(GXERR)\
 traplib_=$(GLOBJ)gsparamx.$(OBJ) $(GLOBJ)gstrap.$(OBJ)
 $(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_)
 	$(SETMOD) $(GLD)traplib $(traplib_)
+
+# ---------------- Transparency ---------------- #
+
+gstrans_h=$(GLSRC)gstrans.h $(gstparam_h)
+
+$(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
+ $(gstrans_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gstrans.$(OBJ) $(C_) $(GLSRC)gstrans.c
+
+translib_=$(GLOBJ)gstrans.$(OBJ)
+$(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_)
+	$(SETMOD) $(GLD)translib $(translib_)
 
 # ---------------- Smooth shading ---------------- #
 
