@@ -22,6 +22,8 @@
  * H-P Color LaserJet 5/5M device; based on the PaintJet.
  */
 #include "math_.h"
+#include "gx.h"
+#include "gsparam.h"
 #include "gdevprn.h"
 #include "gdevpcl.h"
 
@@ -238,18 +240,32 @@ clj_put_params(
           (get_paper_size(farray.data, NULL) == 0)                      )     )
         return_error(gs_error_rangecheck);
           
+    /* Note that this first call to 'gdev_prn_put_params' is used to set up	*/
+    /* 'width' and 'height', but we may change them afterwards -- see below	*/
     if ((code = gdev_prn_put_params(pdev, plist)) >= 0) {
         bool                    rotate;
         const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, &rotate);
-        floatp                  fs_res = pdev->HWResolution[0] / 72.0;
-        floatp                  ss_res = pdev->HWResolution[1] / 72.0;
 
         if (rotate) {
-            pdev->width = (pdev->MediaSize[1] - 2 * psize->offsets.x) * fs_res;
-            pdev->height = (pdev->MediaSize[0] - 2 * psize->offsets.y) * ss_res;
-        } else {
-            pdev->width = (pdev->MediaSize[0] - 2 * psize->offsets.x) * fs_res;
-            pdev->height = (pdev->MediaSize[1] - 2 * psize->offsets.y) * ss_res;
+	    int			pi[2];
+	    gs_c_param_list	alist;
+	    gs_param_int_array	pi_array;
+
+	    /* To swap width and height, we must synthesize a new parameter	*/
+	    /* list for 'gdev_prn_put_params' with the rotated 'width' and	*/
+	    /* 'height' so that the buffer geometry will be correct		*/
+	    pi_array.data = pi;
+	    pi_array.size = 2;
+	    pi_array.persistent = false;
+
+	    pi[0] = pdev->height;
+	    pi[1] = pdev->width;
+	    gs_c_param_list_write(&alist, (pdev->memory) ? pdev->memory : 
+	    				   &gs_memory_default);
+	    code = param_write_int_array((gs_param_list *)&alist, "HWSize", &pi_array);
+	    gs_c_param_list_read(&alist);
+	    code = gdev_prn_put_params(pdev, &alist);
+	    gs_c_param_list_release(&alist);
         }
     }
 
@@ -366,13 +382,17 @@ clj_print_page(
     FILE *                  prn_stream
 )
 {
-    const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, NULL);
+    bool                    rotate;
+    const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, &rotate);
     int                     lsize = pdev->width;
     int                     clsize = (lsize + (lsize + 255) / 128) / 8;
     byte *                  data = 0;
     byte *                  cdata[3];
     int                     blank_lines = 0;
     int                     i;
+    floatp                  fs_res = pdev->HWResolution[0] / 72.0;
+    floatp                  ss_res = pdev->HWResolution[1] / 72.0;
+    int			    imageable_width, imageable_height;
 
     /* no paper size at this point is a serious error */
     if (psize == 0)
@@ -388,6 +408,20 @@ clj_print_page(
     cdata[1] = cdata[0] + clsize;
     cdata[2] = cdata[1] + clsize;
 
+
+    /* Imageable area is without the margins. Note that the actual rotation of	*/
+    /* page size into pdev->width & height has been done. We just use rotate to	*/
+    /* access the correct offsets. Color laserjet is always long edge feed, we	*/
+    /* just include the non-rotated case for completeness.			*/
+    if (rotate) {
+    	imageable_width = pdev->width - (2 * psize->offsets.x) * fs_res;
+    	imageable_height = pdev->height - (2 * psize->offsets.y) * ss_res;
+    }
+    else {
+    	imageable_width = pdev->width - (2 * psize->offsets.y) * ss_res;
+    	imageable_height = pdev->height - (2 * psize->offsets.x) * fs_res;
+    }
+
     /* start the page */
     fprintf( prn_stream,
              "\033E\033&u300D\033&l%da1x%dO\033*p0x0y-150Y\033*t%dR"
@@ -400,16 +434,19 @@ clj_print_page(
              psize->tag,
              psize->orient,
              (int)(pdev->HWResolution[0]),
-             pdev->width,
-             pdev->height
+             imageable_width,
+             imageable_height
              );
 
-    /* process each sanline */
-    for (i = 0; i < pdev->height; i++) {
+    /* process each scanline */
+    for (i = 0; i < imageable_height; i++) {
         int     clen[3];
 
         gdev_prn_copy_scan_lines(pdev, i, data, lsize);
-        pack_and_compress_scanline(data, lsize, cdata, clen);
+
+	/* The 'lsize' bytes of data have the blank margin area at the end due	*/
+	/* to the 'initial_matrix' offsets that are applied.			*/
+        pack_and_compress_scanline(data, imageable_width, cdata, clen);
         if ((clen[0] == 0) && (clen[1] == 0) && (clen[2] == 0))
             ++blank_lines;
         else {
