@@ -556,13 +556,10 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		}
 		/*
 		 * The entire subpath is degenerate, but it includes
-		 * more than one point.  If we are using round caps or
-		 * the dot length is non-zero, draw the caps, otherwise
-		 * do nothing.
+		 * more than one point.  If the dot length is non-zero,
+		 * draw the caps, otherwise do nothing.
 		 */
-		if (!(pgs_lp->cap == gs_cap_round ||
-		      pgs_lp->dot_length != 0)
-		    )
+		if (pgs_lp->dot_length != 0)
 		    break;
 		/*
 		 * Orient the dot according to the previous segment if
