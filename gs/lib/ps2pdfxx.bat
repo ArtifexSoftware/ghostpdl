@@ -47,7 +47,7 @@ goto end
 :nooutfile
 rem We don't know why the circumlocution with _1 is needed....
 set _1=%1
-call ps2pdfxx %1 %_1:.PS=.PDF%
+call ps2pdfxx %1 %_1:.PS=.pdf%
 set _1=
 
 :end
