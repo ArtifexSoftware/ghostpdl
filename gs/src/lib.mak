@@ -1168,7 +1168,8 @@ smd5_=$(GLOBJ)smd5.$(OBJ)
 $(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_)
 	$(SETMOD) $(GLD)smd5 $(smd5_)
 
-$(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h) $(md5_h) $(GLSRC)md5.c
+$(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h)\
+ $(smd5_h) $(strimpl_h) $(GLSRC)md5.c
 	$(GLCC) $(GLO_)smd5.$(OBJ) $(C_) $(GLSRC)smd5.c
 
 # ---------------- Pixel-difference filters ---------------- #

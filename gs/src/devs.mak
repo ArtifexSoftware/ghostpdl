@@ -705,7 +705,7 @@ $(GLOBJ)gdevpdfc.$(OBJ) : $(GLSRC)gdevpdfc.c $(GXERR) $(math__h) $(string__h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gscie_h) $(gscindex_h) $(gscspace_h) $(gscdevn_h) $(gscsepr_h)\
  $(gsiparm3_h) $(gsmatrix_h)\
- $(gxcolor2_h) $(gxpcolor_h)\
+ $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h)\
  $(sstring_h) $(stream_h) $(strimpl_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfc.$(OBJ) $(C_) $(GLSRC)gdevpdfc.c
 

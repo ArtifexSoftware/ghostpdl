@@ -92,7 +92,7 @@
 */
 
 #include "math_.h"
-#include "string.h"
+#include "string_.h"
 #include <stdlib.h>		/* for rand() */
 #include <assert.h>
 #include "gdevprn.h"

@@ -562,7 +562,7 @@ hl1250_=$(GLOBJ)gdevhl12.$(OBJ) $(HPDLJM)
 $(DD)hl1250.dev : $(hl1250_) $(DD)page.dev
 	$(SETPDEV) $(DD)hl1250 $(hl1250_)
 
-$(GLOBJ)gdevhl12.$(OBJ): $(GLSRC)gdevhl12.c $(PDEVH) $(gdevpcl_h)
+$(GLOBJ)gdevhl12.$(OBJ): $(GLSRC)gdevhl12.c $(PDEVH) $(gdevdljm_h)
 	$(GLCC) $(GLO_)gdevhl12.$(OBJ) $(C_) $(GLSRC)gdevhl12.c
 
 ###--------------------- The Brother HL 7x0 printer --------------------- ### 
