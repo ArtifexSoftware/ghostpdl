@@ -136,14 +136,18 @@ href="Maintain.htm">maintaining Ghostscript</a>.
 
 <p>
 This document provides a wealth of information about Ghostscript's
-internals, primarily for developers actively working on Ghostscript.
+internals, primarily for developers actively working on Ghostscript.  It is
+primarily <strong>descriptive</strong>, documenting the way things are; the
+companion <a href="C-style.htm">C style guide</a> is primarily
+<strong>prescriptive</strong>, documenting what developers should do when
+writing new code.
 
 <p>
 THIS FILE IS A WORK IN PROGRESS.  MANY SECTIONS ARE PLACE-HOLDERS.
 
 <h2><a name="Architecture"></a>Architecture</h2>
 
-<h2><a name="Design_goals"></a>Design goals</h2>
+<h3><a name="Design_goals"></a>Design goals</h3>
 
 <p>
 Ghostscript has the following high-level design goals (not listed in order
@@ -243,6 +247,17 @@ through successive releases.
 
 <h3><a name="Object_oriented_constructs"></a>Object-oriented constructs</h3>
 
+<p>
+Ghostscript makes heavy use of object-oriented constructs, including
+analogues of classes, instances, subclassing, and class-associated
+procedures.  See the <a href="C-style.htm#Objects">"Objects"</a> section of
+the C style guide for coding details.
+
+<p>
+The memory manager API provides run-time type information about each class,
+but this information does not include anything about subclassing.  See under
+<a href="Structure_descriptors">Structure descriptors</a> below.
+
 <hr>
 
 <h2><a name="File_roadmap"></a>File roadmap</h2>
@@ -253,12 +268,12 @@ source files.
 
 <h3><a name="Substrate"></a>Substrate</h3>
 
-<h3>Memory manager</h3>
+<h4>Memory manager</h4>
 
 <p>
 See <a href="#Memory_management">below</a>.
 
-<h3>Streams</h3>
+<h4>Streams</h4>
 
 <dl>
 
@@ -369,11 +384,11 @@ Higher-level stream support:
 
 </dl>
 
-<h3>Platform-specific code</h3>
+<h4>Platform-specific code</h4>
 
 See <a href="#Cross_platform_APIs">below</a>.
 
-<h3>Miscellaneous</h3>
+<h4>Miscellaneous</h4>
 
 <dl>
 
@@ -1917,6 +1932,11 @@ storage managed by Ghostscript, you <em>must</em> create an accurate
 descriptor for it, and use that descriptor to allocate it.  The process of
 creating accurate descriptors for all structures was long and painful, and
 accounted for many hard-to-diagnose bugs.
+
+<p>
+By convention, the structure descriptor for structure type
+<b><tt>xxx_t</tt></b> is named <b><tt>st_xxx</tt></b> (this is preferred),
+or occasionally <b><tt>st_xxx_t</tt></b>.
 
 <dl>
 <dt>

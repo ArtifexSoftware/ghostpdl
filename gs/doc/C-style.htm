@@ -21,6 +21,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Introduction">Introduction</a>
 <li><a href="#Summary">Summary of the coding guidelines</a>
 <ul>
 <li><a href="#Summary_preprocessor">Preprocessor</a>
@@ -28,7 +29,7 @@
 <li><a href="#Summary_formatting">Formatting</a>
 <li><a href="#Summary_miscellany">Miscellany</a>
 </ul>
-<li><a href="#Introduction">Introduction</a>
+<li><a href="#Overview">Overview</a>
 <li><a href="#C_features">Use of C language features</a>
 <ul>
 <li><a href="#Conditionals">Preprocessor Conditionals</a>
@@ -56,18 +57,22 @@
 <li><a href="#Naming">Naming</a>
 <ul>
 <li><a href="#General_naming">General rules</a>
-<li><a href="#Conventional_names">Names used by convention</a>
-<ul>
-<li><a href="#code"><b><tt>code</tt></b></a>
-<li><a href="#status"><b><tt>status</tt></b></a>
-</ul>
 </ul>
 <li><a href="#Miscellany">Miscellany</a>
 <ul>
 <li><a href="#Single_use_procedures">Single-use procedures</a>
 <li><a href="#Local_variables">Local variables</a>
-<li><a href="#Error_handling">Error handling</a>
 <li><a href="#Compiler_warnings">Compiler warnings</a>
+</ul>
+<li><a href="#Conventions">Conventions</a>
+<ul>
+<li><a href="#Specific_names">Specific names</a>
+<ul>
+<li><a href="#code"><b><tt>code</tt></b></a>
+<li><a href="#status"><b><tt>status</tt></b></a>
+</ul>
+<li><a href="#Objects">"Objects"</a>
+<li><a href="#Error_handling">Error handling</a>
 </ul>
 </ul></blockquote>
 
@@ -86,6 +91,15 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
+
+<h2><a name="Introduction"></a>Introduction</h2>
+
+<p>
+This document describes Ghostscript's C coding conventions.  It is primarily
+<strong>prescriptive</strong>, documenting what developers should do when
+writing new code; the companion <a href="Develop.htm">Developer
+documentation</a> is primarily <strong>descriptive</strong>, documenting the
+way things are.
 
 <h2><a name="Summary"></a>Summary of the coding guidelines</h2>
 
@@ -188,7 +202,7 @@ together.
 
 <hr>
 
-<h2><a name="Introduction"></a>Introduction</h2>
+<h2><a name="Overview"></a>Overview</h2>
 
 <p>
 The many rules that Ghostscript's code follows almost everywhere are meant
@@ -324,6 +338,19 @@ like this:
 <b><tt>typedef struct xxx_yyy_s {</tt></b><br>
 &nbsp;&nbsp;&nbsp;... members ...<br>
 <b><tt>} xxx_yyy_t;</tt></b>
+</blockquote>
+
+<p>
+Declare structure types that contain pointers to other instances of
+themselves like this:
+
+<blockquote>
+<b><tt>typedef struct xxx_yyy_s xxx_yyy_t;</tt></b><br>
+<b><tt>struct xxx_yyy_s {</tt></b><br>
+&nbsp;&nbsp;&nbsp;... members ...<br>
+&nbsp;&nbsp;&nbsp;<b><tt>xxx_yyy_t *</tt></b>ptr_member_name;<br>
+&nbsp;&nbsp;&nbsp;... members ...<br>
+<b><tt>};</tt></b>
 </blockquote>
 
 <p>
@@ -796,49 +823,6 @@ Procedures, variables, and structures visible outside a single
 subsystem they belong to (in the case of Ghostscript, <b><tt>gs_</tt></b>
 or <b><tt>gx_</tt></b>).  This rule isn't followed very consistently.
 
-<h3><a name="Conventional_names"></a>Names used by convention</h3>
-
-<p>
-The Ghostscript code uses certain names consistently for certain kinds of
-values.  Some of the commonest and least obvious are these two:
-
-<h4><a name="code"></a><b><tt>code</tt></b></h4>
-
-<blockquote>
-A value to be returned from a procedure:
-
-<table cellpadding=0 cellspacing=0>
-<tr valign=top>	<td align=right>&lt; 0
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<td>An error code defined in <b><tt>gserrors.h</tt></b> (or <b><tt>errors.h</tt></b>)
-<tr valign=top>	<td align=right>0
-	<td>&nbsp;
-	<td>Normal return
-<tr valign=top>	<td align=right>&gt; 0
-	<td>&nbsp;
-	<td>A non-standard but successful return (which must be documented, preferably with the procedure's prototype)
-</table>
-
-</blockquote>
-
-<h4><a name="status"></a><b><tt>status</tt></b></h4>
-
-<blockquote>
-A value returned from a stream procedure:
-
-<table cellpadding=0 cellspacing=0>
-<tr valign=top>	<td align=right>&lt; 0
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<td>An exceptional condition as defined in <b><tt>scommon.h</tt></b>
-<tr valign=top>	<td align=right>0
-	<td>&nbsp;
-	<td>Normal return (or, from the "<b><tt>process</tt></b>" procedure, means that more input is needed)
-<tr valign=top>	<td align=right>1
-	<td>&nbsp;
-	<td>More output space is needed (from the "<b><tt>process</tt></b>" procedure)
-</table>
-</blockquote>
-
 <hr>
 
 <h2><a name="Miscellany"></a>Miscellany</h2>
@@ -890,30 +874,6 @@ someproc(... <b><tt>gx_device *dev</tt></b> ...)<br>
 <b><tt>}</tt></b>
 </blockquote>
 
-<h3><a name="Error_handling"></a>Error handling</h3>
-
-<p>
-Every caller should check for error returns and, in general, propagate them
-to <b>its</b> callers.  By convention, nearly every procedure returns an
-<b><tt>int</tt></b> to indicate the outcome of the call:
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr valign=top>	<td align=right>&lt; 0
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<td>Error return
-<tr valign=top>	<td align=right>0
-	<td>&nbsp;
-	<td>Normal return
-<tr valign=top>	<td align=right>&gt; 0
-	<td>&nbsp;
-	<td>Non-error return other than the normal case
-</table></blockquote>
-
-<p>
-See the file <b><tt>gserrors.h</tt></b> for
-the error return codes used by the graphics library,
-most of which correspond directly to PostScript error conditions.
-
 <h3><a name="Compiler_warnings"></a>Compiler warnings</h3>
 
 <p>
@@ -942,6 +902,250 @@ since they often indicate the possible presence of coding errors.
 In particular, get rid of warnings about parameter passing or
 initialization that discards <b><tt>const</tt></b>,
 by using explicit casts.
+
+<hr>
+
+<h2><a name="Conventions"></a>Conventions</h2>
+
+<h3><a name="Specific_names"></a>Specific names</h3>
+
+<p>
+The Ghostscript code uses certain names consistently for certain kinds of
+values.  Some of the commonest and least obvious are these two:
+
+<h4><a name="code"></a><b><tt>code</tt></b></h4>
+
+<blockquote>
+A value to be returned from a procedure:
+
+<table cellpadding=0 cellspacing=0>
+<tr valign=top>	<td align=right>&lt; 0
+	<td>&nbsp;&nbsp;&nbsp;&nbsp;
+	<td>An error code defined in
+<a href="../src/gserrors.h">gserrors.h</a>
+(or <a href="../src/errors.h">errors.h</a>)
+<tr valign=top>	<td align=right>0
+	<td>&nbsp;
+	<td>Normal return
+<tr valign=top>	<td align=right>&gt; 0
+	<td>&nbsp;
+	<td>A non-standard but successful return (which must be documented, preferably with the procedure's prototype)
+</table>
+
+</blockquote>
+
+<h4><a name="status"></a><b><tt>status</tt></b></h4>
+
+<blockquote>
+A value returned from a stream procedure:
+
+<table cellpadding=0 cellspacing=0>
+<tr valign=top>	<td align=right>&lt; 0
+	<td>&nbsp;&nbsp;&nbsp;&nbsp;
+	<td>An exceptional condition as defined in
+<a href="../src/scommon.h">scommon.h</a>
+<tr valign=top>	<td align=right>0
+	<td>&nbsp;
+	<td>Normal return (or, from the "<b><tt>process</tt></b>" procedure, means that more input is needed)
+<tr valign=top>	<td align=right>1
+	<td>&nbsp;
+	<td>More output space is needed (from the "<b><tt>process</tt></b>" procedure)
+</table>
+</blockquote>
+
+<h3><a name="Objects"></a>"Objects"</h3>
+
+<p>
+Ghostscript makes heavy use of object-oriented constructs, including
+analogues of classes, instances, subclassing, and class-associated
+procedures.  However, these constructs are implemented in C rather than C++,
+for two reasons:
+
+<ul>
+
+<li>The first Ghostscript code was written in 1986, long before C++ was
+codified or was well supported by tools.  Even today, C++ tools rarely
+support C++ as well as C tools support C.
+
+<li>C++ imposes its own implementations for virtual procedures, inheritance,
+run-time type information, and (to some extent) memory management.
+Ghostscript requires use of its own memory manager, and also sometimes
+requires the ability to change the virtual procedures of an object
+dynamically.
+
+</ul>
+
+<h4>Classes</h4>
+
+<p>
+The source code representation of a class is simply a
+<b><tt>typedef</tt></b> for a C <b><tt>struct</tt></b>.  See <a
+href="C-style.htm#Pointers_structures">Pointers and structures</a>, above,
+for details.
+
+<h4>Procedures</h4>
+
+<p>
+Ghostscript has no special construct for non-virtual procedures associated
+with a class.  In some cases, the <b><tt>typedef</tt></b> for the class is
+in a header file but the <b><tt>struct</tt></b> declaration is in the
+implementation code file: this provides an extra level of opaqueness, since
+clients then can't see the representation and must make all accesses through
+procedures.  You should use this approach in new code, if it doesn't
+increase the size of the code too much or require procedure calls for very
+heavily used accesses.
+
+<p>
+Ghostscript uses three different approaches for storing and accessing
+virtual procedures, plus a fourth one that is recommended but not currently
+used.  For exposition, we assume the class (type) is named
+<b><tt>xxx_t</tt></b>, it has a virtual procedure
+<b><tt>void&nbsp;(*virtu)(P1(xxx_t&nbsp;*))</tt></b>, and we have a variable
+declared as <b><tt>xxx_t&nbsp;*pxx</tt></b>.
+
+<ol>
+
+<li>The procedures are stored in a separate, constant structure of type
+<b><tt>xxx_procs</tt></b>, of which <b><tt>virtu</tt></b> is a member.  The
+structure definition of <b><tt>xxx_t</tt></b> includes a member defined as
+<b><tt>const&nbsp;xxx_procs&nbsp;*procs</tt></b> (always named
+<b><tt>procs</tt></b>).  The construct for calling the virtual procedure is
+<b><tt>pxx->procs->virtu(pxx)</tt></b>.
+
+<li>The procedures are defined in a structure of type
+<b><tt>xxx_procs</tt></b> as above.  The structure definition of
+<b><tt>xxx_t</tt></b> includes a member defined as
+<b><tt>xxx_procs&nbsp;procs</tt></b> (always named <b><tt>procs</tt></b>).
+The construct for calling the virtual procedure is
+<b><tt>pxx->procs.virtu(pxx)</tt></b>.
+
+<li>The procedures are not defined in a separate structure: each procedure
+is a separate member of <b><tt>xxx_t</tt></b>.  The construct for calling
+the virtual procedure is <b><tt>pxx->virtu(pxx)</tt></b>.
+
+<li>The procedures are defined in a structure of type
+<b><tt>xxx_procs</tt></b> as above.  The structure definition of
+<b><tt>xxx_t</tt></b> includes a member defined as
+<b><tt>xxx_procs&nbsp;procs[1]</tt></b> (always named
+<b><tt>procs</tt></b>).  The construct for calling the virtual procedure is
+again <b><tt>pxx->procs->virtu(pxx)</tt></b>.
+
+</ol>
+
+<p>
+Note that in approach 1, the procedures are in a shared constant structure;
+in approaches 2 - 4, they are in a per-instance structure that can be
+changed dynamically, which is sometimes important.
+
+<p>
+In the present Ghostscript code, approach 1 is most common, followed by 2
+and 3; 4 is not used at all.  For new code, you should use 1 or 4: that way,
+all virtual procedure calls have the same form, regardless of whether the
+procedures are shared and constant or per-instance and mutable.
+
+<h4>Subclassing</h4>
+
+<p>
+Ghostscript's class mechanism allows for subclasses that can add data
+members, or can add procedure members if approach 1 or 3 (above) is used.
+Since C doesn't support subclassing, we use a convention to accomplish it.
+In the example below, <b><tt>gx_device</tt></b> is the root class; it has a
+subclass <b><tt>gx_device_forward</tt></b>, which in turn has a subclass
+<b><tt>gx_device_null</tt></b>.  First we define a macro for all the members
+of the root class, and the root class type.
+
+<blockquote><b><tt>
+#define gx_device_common\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;type1 member1;\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;</tt></b>...<b><tt><br>
+&nbsp;&nbsp;&nbsp;&nbsp;typeN memberN<br>
+<br>
+typedef struct gx_device_s {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gx_device_common;<br>
+} gx_device;
+</tt></b></blockquote>
+
+<p>
+We then define a similar macro and type for the subclass.
+
+<blockquote><b><tt>
+#define gx_device_forward_common\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gx_device_common;\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gx_device *target<br>
+<br>
+typedef struct gx_device_forward_s {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gx_device_forward_common;<br>
+} gx_device_forward;<br>
+</tt></b></blockquote>
+
+<p>
+Finally, we define a leaf class, which doesn't need a macro because we don't
+currently subclass it.  (We can create the macro later if needed, with no
+changes anywhere else.)  In this particular case, the leaf class has no
+additional data members, but it could have some.
+
+<blockquote><b><tt>
+typedef struct gx_device_null_s {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gx_device_forward_common;<br>
+};
+</tt></b></blockquote>
+
+<h4>Run-time type information</h4>
+
+<p>
+Run-time type information is associated with the memory manager, and we
+don't document it here: see the <a
+href="Develop.htm#Structure_descriptors">Structure descriptors</a> section
+of the developer documentation for details.
+
+<h3><a name="Error_handling"></a>Error handling</h3>
+
+<p>
+Every caller should check for error returns and, in general, propagate them
+to <b>its</b> callers.  By convention, nearly every procedure returns an
+<b><tt>int</tt></b> to indicate the outcome of the call:
+
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr valign=top>	<td align=right>&lt; 0
+	<td>&nbsp;&nbsp;&nbsp;&nbsp;
+	<td>Error return
+<tr valign=top>	<td align=right>0
+	<td>&nbsp;
+	<td>Normal return
+<tr valign=top>	<td align=right>&gt; 0
+	<td>&nbsp;
+	<td>Non-error return other than the normal case
+</table></blockquote>
+
+<p>
+To make a procedure generate an error and return it, as opposed to
+propagating an error generated by a lower procedure, you should use
+
+<blockquote>
+<b><tt>return_error(</tt></b><em>error_number</em><b><tt>);</tt></b>
+</blockquote>
+
+<p>
+Sometimes it is more convenient to generate the error in one place and
+return it in another.  In this case, you should use
+
+<blockquote>
+<b><tt>code = gs_note_error(</tt></b><em>error_number</em><b><tt>);</tt></b><br>
+...<br>
+<b><tt>return code;</tt></b>
+</blockquote>
+
+<p>
+In executables built for debugging, the <b><tt>-E</tt></b> (or
+<b><tt>-Z#</tt></b>) command line switch causes <b><tt>return_error</tt></b>
+and <b><tt>gs_note_error</tt></b> to print the error number and the source
+file and line: this is often helpful for identifying the original cause of
+an error.
+
+<p>
+See the file <a href="../src/gserrors.h">src/gserrors.h</a> for the error
+return codes used by the graphics library, most of which correspond directly
+to PostScript error conditions.
 
 <!-- [2.0 end contents] ==================================================== -->
 
