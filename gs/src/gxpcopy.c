@@ -260,12 +260,16 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
     } else {
 	/* General case. */
 	const double C = fC, D = fD;
-	const double T = (C * (next->pt.x - x0) + D * (next->pt.y - y0)) /
+	double T = (C * (next->pt.x - x0) + D * (next->pt.y - y0)) /
 	(C * C + D * D);
 
 	if_debug3('2', "[2]adjusting: C = %g, D = %g, T = %g\n",
 		  C, D, T);
 	if (T > 0) {
+	    if (T > 1) {
+		/* Don't go outside the path bounding box. */
+		T = 1;
+	    }
 	    pseg->pt.x = arith_rshift((fixed) (C * T), 2) + x0;
 	    pseg->pt.y = arith_rshift((fixed) (D * T), 2) + y0;
 	}
