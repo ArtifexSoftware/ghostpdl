@@ -224,10 +224,10 @@ PSD=$(PSGENDIR)\$(NUL)
 # ------ Platform-specific options ------ #
 
 # Define which major version of MSVC is being used
-# (currently, 4 & 5 are supported).
+# (currently, 4, 5, and 6 are supported).
 
 !ifndef MSVC_VERSION 
-MSVC_VERSION=5
+MSVC_VERSION=6
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
