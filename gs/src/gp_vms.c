@@ -49,6 +49,7 @@ struct dsc$descriptor_s {
 typedef struct dsc$descriptor_s descrip;
 
 /* VMS RMS constants */
+#define RMS_IS_ERROR_OR_NMF(rmsv) (((rmsv) & 1) == 0)
 #define RMS$_NMF    99018
 #define RMS$_NORMAL 65537
 #define NAM$C_MAXRSS  255
@@ -62,9 +63,11 @@ gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
 	  file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern.dsc$a_pointer);
 
 extern uint
-       LIB$FIND_FILE(descrip *, descrip *, uint *, descrip *, descrip *,
-		     uint *, uint *), LIB$FIND_FILE_END(uint *), SYS$FILESCAN(descrip *, uint *, uint *),
-       SYS$PUTMSG(uint *, int (*)(), descrip *, uint);
+    LIB$FIND_FILE(descrip *, descrip *, uint *, descrip *, descrip *,
+		  uint *, uint *),
+    LIB$FIND_FILE_END(uint *),
+    SYS$FILESCAN(descrip *, uint *, uint *),
+    SYS$PUTMSG(uint *, int (*)(), descrip *, uint);
 
 private uint
 strlength(char *str, uint maxlen, char term)
@@ -412,11 +415,9 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 		      (descrip *) 0, (descrip *) 0, (uint *) 0, (uint *) 0);
 
     /* Check the return status */
-    if (i == RMS$_NMF) {
+    if (RMS_IS_ERROR_OR_NMF(i))
 	gp_free_enumeration(pfen);
-	return (uint) - 1;
-    } else if (i != RMS$_NORMAL)
-	return 0;
+	return (uint)(-1);
     else if ((len = strlength(filnam, NAM$C_MAXRSS, ' ')) > maxlen)
 	return maxlen + 1;
 
