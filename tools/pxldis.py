@@ -672,8 +672,6 @@ class pxl_dis:
             self.index = self.index + 4
             print "length:",
             print length
-            print "index:",
-            print self.index
         if ( name == 'embedded_data_byte' ):
             length = int(self.unpack('B', self.data[self.index:self.index+1])[0])
             self.index = self.index + 1
@@ -685,9 +683,7 @@ class pxl_dis:
         print " ]"
         # for some screwed up reason trailing nulls can comme after
         # embedded data
-        self.index = self.index + length
-        print "new index",
-        print self.index
+#        self.index = self.index + length
 #        while ( 1 ):
 #            if ( ord(self.data[self.index]) == 0 or ord(self.data[self.index]) == 1 ):
 #                self.index = self.index + 1
