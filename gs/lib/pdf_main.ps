@@ -622,8 +622,6 @@ end readonly def
    pdfshowpage_setpage 
    save /PDFSave exch store
    /PDFdictstackcount countdictstack store
-   % set up color space substitution (this must be inside the page save)
-   pdfshowpage_setcspacesub
    (before exec) VMDEBUG
    pdfshowpage_finish
    % Some PDF files don't have matching q/Q (gsave/grestore) so we need
@@ -704,6 +702,9 @@ end readonly def
 } bind def
 
 /pdfshowpage_finish {	% <pagedict> pdfshowpage_finish -
+
+   % set up color space substitution (this must be inside the page save)
+   pdfshowpage_setcspacesub
 
   .writepdfmarks {
 
