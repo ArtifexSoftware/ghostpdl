@@ -44,6 +44,7 @@ languagelevel 2 .setlanguagelevel currentglobal true setglobal
 /path_buffer 255 string def
 /name_buffer 255 string def
 /minus (-) 0 get def             % character code constant for '-'
+/period (.) 0 get def            % character code constant for '.'
 /CMap 10 dict def                % CSI cache for CMaps
 /CIDFont 10 dict def             % CSI cache for CIDFonts
 /enable_cache true def           % set false to disable cache
@@ -235,17 +236,20 @@ currentdict end def
 /IsComposedFont {   % <FontName> IsComposedFont <CIDFontName> <CMapName> true
                     % <FontName> IsComposedFont false
   
-  % Check if the given font name may be decomposed into CIDFont-CMap
+  % Check if the given font name may be decomposed into CIDFont.CMap, CIDFont-CMap
   % or into CIDFont--CMap, such that CIDFont and CMap have compatible CSIs.
                                         % FontName
   dup type /stringtype ne {
     //name_buffer cvs
   } if                                  % (FontName)
-  { dup length 2 sub -1 1 {                    
-      2 copy get //minus eq {                
+  { dup length 2 sub -1 1 {
+                                        % (FontName) i
+      2 copy get dup //minus eq exch //period eq or {                
         2 copy 2 copy                   % (FontName) i (FontName) i (FontName) i
-        2 copy 1 sub get //minus eq {      
-          1 sub
+        2 copy get //minus eq {
+          2 copy 1 sub get //minus eq {
+            1 sub
+          } if
         } if                            % (FontName) i (FontName) i (FontName) i0
         0 exch getinterval cvn          % (FontName) i (FontName) i /CIDFontName
         3 1 roll                        % (FontName) i /CIDFontName (FontName) i
