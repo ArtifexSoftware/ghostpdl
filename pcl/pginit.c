@@ -51,18 +51,18 @@ hpgl_default_coordinate_system(
 {
     pcls->g.plot_width = pcls->g.picture_frame_width
                        = pcls->xfm_state.lp_size.x;
-    pcls->g.plot_height = pcls->g.picture_frame_height = pcls->margins.length;
+    pcls->g.plot_height = pcls->g.picture_frame_height 
+	                = pcls->xfm_state.lp_size.y - inch2coord(1.0);
     pcls->g.picture_frame.anchor_point.x = pcls->margins.left;
     pcls->g.picture_frame.anchor_point.y = pcls->margins.top;
-
+    pcls->g.plot_size_vertical_specified = false;
+    pcls->g.plot_size_horizontal_specified = false;
     /* The default coordinate system is absolute with the origin at 0,0 */
     pcls->g.move_or_draw = hpgl_plot_move;
     pcls->g.relative_coords = hpgl_plot_absolute;
     pcls->g.pos.x = 0.0;
     pcls->g.pos.y = 0.0;
     pcls->g.scaling_type = hpgl_scaling_none;
-    pcls->g.plot_size_vertical_specified = false;
-    pcls->g.plot_size_horizontal_specified = false;
     return;
 }
 
@@ -120,7 +120,9 @@ hpgl_do_reset(
 	hpgl_IN_implicit(pcls);
     }
 
+    /* NB check all of these */
     if ((type & pcl_reset_page_params) != 0) {
+	/* provide default anchor point, plot size and picture frame size */
 	hpgl_default_coordinate_system(pcls);
 	hpgl_args_setup(&hpgl_args);
 	hpgl_IW(&hpgl_args, pcls);
@@ -131,21 +133,18 @@ hpgl_do_reset(
     }
 
     if ((type & pcl_reset_picture_frame) != 0) {
-	hpgl_args_setup(&hpgl_args);
-	hpgl_IP(&hpgl_args, pcls);
-	hpgl_args_setup(&hpgl_args);
-	hpgl_IW(&hpgl_args, pcls);
-	hpgl_args_set_int(&hpgl_args,0);
-	hpgl_PM(&hpgl_args, pcls);
-	hpgl_args_set_int(&hpgl_args,2);
-	hpgl_PM(&hpgl_args, pcls);
+	/* this shouldn't happen.  Picture frame side effects are
+           handled directly by the command picture frame command. */
+	dprintf("PCL reset picture frame received\n");
     }
 
     if ((type & pcl_reset_overlay) != 0) 
         hpgl_reset_overlay(pcls);
 
     if ((type & (pcl_reset_plot_size)) != 0) {
-	/* HAS reset picture frame scaling factors */
+	/* this shouldn't happen.  Plot size side effects are handled
+           directly by the command picture frame command. */
+	dprintf("PCL reset plot received\n");
     }
 
     return;
