@@ -55,6 +55,9 @@ bool pjl_skip_to_uel(P1(stream_cursor_read *pr));
 */
 char *pjl_get_envvar(P2(pjl_parser_state *pst, const char *pjl_var));
 
+/* compare pjl string values.  This is just a case-insensitive string compare */
+int pjl_compare(P2(const char *s1, const char *s2));
+
 /* map a pjl symbol set name to a pcl integer */
 int pjl_map_pjl_sym_to_pcl_sym(P1(const char *symname));
 

@@ -56,7 +56,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
 };
 
 /* case insensitive comparison of two null terminated strings. */
- private int
+ int
 pjl_compare(const char *s1, const char *s2)
 {
     for (; toupper(*s1) == toupper(*s2); ++s1, ++s2)
