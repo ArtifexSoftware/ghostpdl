@@ -30,6 +30,13 @@
 #include "gdevbmp.h"
 #include "gpsync.h"
 
+#define bmpa_cmyk_procs(p_map_color_rgb, p_map_cmyk_color)\
+    bmpa_writer_open, NULL, NULL, gdev_prn_output_page, gdev_prn_close,\
+    NULL, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
+    gdev_prn_get_params, bmpa_put_params,\
+    p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
+
+
 /* ------ The device descriptors ------ */
 
 /* Define data type for this device based on prn_device */
@@ -106,6 +113,18 @@ gx_device_async far_data gs_bmpa16m_device =
 	X_DPI, Y_DPI,
 	0,0,0,0,			/* margins */
 	24, default_print_page);
+
+/* 32-bit CMYK color (outside the BMP specification). */
+
+private const gx_device_procs bmpa32b_procs = {
+    bmpa_cmyk_procs(gx_default_map_color_rgb, gx_default_cmyk_map_cmyk_color)
+};
+gx_device_async far_data gs_bmpa32b_device =
+async_device(bmpa32b_procs, "bmpa32b",
+	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	   X_DPI, Y_DPI,
+	   0, 0, 0, 0,		/* margins */
+	   32, default_print_page);
 
 /* --------- Forward declarations ---------- */
 

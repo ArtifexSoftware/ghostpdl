@@ -22,6 +22,12 @@
 #include "gdevpccm.h"
 #include "gdevbmp.h"
 
+#define bmp_cmyk_procs(p_map_color_rgb, p_map_cmyk_color)\
+    gdev_prn_open, NULL, NULL, gdev_prn_output_page, gdev_prn_close,\
+    NULL, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
+    gdev_prn_get_params, gdev_prn_put_params,\
+    p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
+
 /* ------ The device descriptors ------ */
 
 private dev_proc_print_page(bmp_print_page);
@@ -71,6 +77,18 @@ prn_device(bmp16m_procs, "bmp16m",
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
 	   24, bmp_print_page);
+
+/* 32-bit CMYK color (outside the BMP specification). */
+
+private const gx_device_procs bmp32b_procs = {
+    bmp_cmyk_procs(gx_default_map_color_rgb, gx_default_cmyk_map_cmyk_color)
+};
+gx_device_printer far_data gs_bmp32b_device =
+prn_device(bmp32b_procs, "bmp32b",
+	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	   X_DPI, Y_DPI,
+	   0, 0, 0, 0,		/* margins */
+	   32, bmp_print_page);
 
 /* ------ Private definitions ------ */
 
