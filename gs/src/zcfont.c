@@ -92,10 +92,30 @@ cshow_continue(i_ctx_t *i_ctx_p)
 	gs_font *scaled_font;
 	uint font_space = r_space(pfont_dict(font));
 	uint root_font_space = r_space(pfont_dict(root_font));
+	int fdepth = penum->fstack.depth;
 
 	gs_text_current_width(penum, &wpt);
 	if (font == root_font)
 	    scaled_font = font;
+	else if (fdepth > 0) {
+	  /* Construct a scaled version of the leaf font. 
+	     If font stack is deep enough, get the matrix for scaling
+	     from the immediate parent of current font. 
+	     (The font matrix of root font is not good for the purpose
+	     in some case.) 
+	     assert (penum->fstack.items[fdepth].font == font
+	             && penum->fstack.items[0].font == root_font); */
+	  uint save_space = idmemory->current_space;
+	  gs_font * immediate_parent = penum->fstack.items[fdepth - 1].font;
+
+	  ialloc_set_space(idmemory, font_space);
+	  code = gs_makefont(font->dir, font, 
+			     &immediate_parent->FontMatrix,
+			     &scaled_font);
+	  ialloc_set_space(idmemory, save_space);
+	  if (code < 0)
+	    return code;
+	}
 	else {
 	    /* Construct a scaled version of the leaf font. */
 	    uint save_space = idmemory->current_space;
