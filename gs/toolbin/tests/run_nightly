@@ -159,14 +159,27 @@ if err != 0:
     else:
         die("Unknown error updating Ghostscript")
 
-# start new log files
+# rotate and start new log files
 try:
+    for i in range(int(gsconf.rotate) - 1, 0, -1):
+        if os.path.isfile(gsconf.log_stdout + ".%d" % (i,)):
+            os.rename(gsconf.log_stdout + ".%d" % (i,),
+                      gsconf.log_stdout + ".%d" % (i + 1,))
+            if os.path.isfile(gsconf.log_stderr + ".%d" % (i,)):
+                os.rename(gsconf.log_stderr + ".%d" % (i,),
+                          gsconf.log_stderr + ".%d" % (i + 1,))
+
+    if os.path.isfile(gsconf.log_stdout):
+        os.rename(gsconf.log_stdout, gsconf.log_stdout + ".1")
+    if os.path.isfile(gsconf.log_stderr):
+        os.rename(gsconf.log_stderr, gsconf.log_stderr + ".1")
+
     log = open(gsconf.log_stdout, "w")
     log.close()
     log = open(gsconf.log_stderr, "w")
     log.close()
 except:
-    die("The log files were not able to be restarted")
+    die("The log files were not able to be rotated and opened")
 
 p = os.popen(gsconf.regression_script + " --track 2>&1")
 if p == None:

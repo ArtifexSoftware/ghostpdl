@@ -40,3 +40,5 @@ make_log_stdout		/home/regression/regression/logs/make-stdout.log
 make_log_stderr		/home/regression/regression/logs/make-stderr.log
 install_log_stdout	/home/regression/regression/logs/install-stdout.log
 install_log_stderr	/home/regression/regression/logs/install-stderr.log
+
+rotate			7
