@@ -39,7 +39,7 @@
 #define VD_RECT(x, y, w, h, c) vd_rect(int2fixed(x), int2fixed(y), int2fixed(x + w), int2fixed(y + h), 1, c)
 
 /*
- * Configuration flags for dropout prevention code.
+ * Configuration flags for the dropout prevention code.
  */
 #define ADJUST_SERIF 1 /* See comments near occurances. */
 #define CHECK_SPOT_CONTIGUITY 1 /* See comments near occurances. */
@@ -86,8 +86,6 @@ struct active_line_s {
     gs_fixed_point start;	/* x,y where line starts */
     gs_fixed_point end; 	/* x,y where line ends */
     gs_fixed_point diff;	/* end - start */
-#define AL_DX(alp) ((alp)->diff.x)
-#define AL_DY(alp) ((alp)->diff.y)
     fixed y_fast_max;		/* can do x_at_y in fixed point */
 				/* if y <= y_fast_max */
     fixed num_adjust;		/* 0 if diff.x >= 0, -diff.y + epsilon if */
@@ -123,9 +121,9 @@ struct active_line_s {
 #define AL_X_AT_Y(alp, yv)\
   ((yv) == (alp)->end.y ? (alp)->end.x :\
    ((yv) <= (alp)->y_fast_max ?\
-    ADD_NUM_ADJUST(((yv) - (alp)->start.y) * AL_DX(alp), alp) / AL_DY(alp) :\
+    ADD_NUM_ADJUST(((yv) - (alp)->start.y) * (alp)->diff.x, alp) / (alp)->diff.y :\
     (INCR_EXPR(slow_x),\
-     fixed_mult_quo(AL_DX(alp), (yv) - (alp)->start.y, AL_DY(alp)))) +\
+     fixed_mult_quo((alp)->diff.x, (yv) - (alp)->start.y, (alp)->diff.y))) +\
    (alp)->start.x)
     fixed x_current;		/* current x position */
     fixed x_next;		/* x position at end of band */
@@ -2183,6 +2181,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    if (code < 0)
 		return code;
 	}
+#define INSIDE_PATH_P() ((inside & rule) != 0)
 	/* Fill a multi-trapezoid band for the active lines. */
 	/* Don't bother if no pixel centers lie within the band. */
 	if (draw > 0 || (draw == 0 && HAVE_PIXELS())) {
@@ -2200,6 +2199,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		fixed xtop = alp->x_current = alp->x_next;
 		fixed wtop;
 		int xi, xli;
+		bool is_rect;
 		int code;
 
 		print_al("step", alp);
@@ -2208,7 +2208,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		/* we are inside if the winding number is non-zero; */
 		/* rule = 1 for even-odd rule, i.e. */
 		/* we are inside if the winding number is odd. */
-#define INSIDE_PATH_P() ((inside & rule) != 0)
 		if (!INSIDE_PATH_P()) { 	/* i.e., outside */
 		    inside += alp->direction;
 		    if (INSIDE_PATH_P())	/* about to go in */
@@ -2219,7 +2218,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		inside += alp->direction;
 		if (INSIDE_PATH_P())	/* not about to go out */
 		    continue;
-#undef INSIDE_PATH_P
 		/* We just went from inside to outside, so fill the region. */
 		wtop = xtop - xltop;
 		INCR(band_fill);
@@ -2244,56 +2242,45 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		}
 		xli = fixed2int_var_pixround(xltop);
 		xi = fixed2int_var_pixround(xtop);
-		if (xltop == xlbot && xtop == xbot)
-		{   int yi = fixed2int_pixround(y - adjust_below);
-		    int wi = fixed2int_pixround(y1 + adjust_above) - yi;
-
-		    if (pseudo_rasterization && xli == xi) {
-			/*
-			 * The scan is empty but we should paint something 
-			 * against a dropout. Choose one of two pixels which 
-			 * is closer to the "axis".
-			 */
-			fixed xx = int2fixed(xli);
-
-			if (xx - xltop < xtop - xx)
-			    ++xi;
-			else
-			    --xli;
-		    }
-		    code = LOOP_FILL_RECTANGLE_DIRECT(xli, yi,
-						      xi - xli, wi);
-		    vd_rect(xltop, y, xtop, y1, 1, VD_TRAP_COLOR);
-		    if (pseudo_rasterization) {
-			if (code < 0)
-			    return code;
-			code = complete_margin(ll, &flp, alp, y, y1);
-			if (code < 0)
-			    return code;
-			code = margin_interior(ll, &flp, alp, y, y1);
-			if (code < 0)
-			    return code;
-			code = add_margin(ll, &flp, alp, y, y1);
-			if (code < 0)
-			    return code;
-			code = process_h_lists(ll, plp, &flp, alp);
-			plp = alp;
-		    }
-		} else if ((adjust_below | adjust_above) != 0) {
+		is_rect = (xltop == xlbot && xtop == xbot);
+		if (!is_rect && (adjust_below | adjust_above) != 0) {
+		    /* Assuming pseudo_rasterization = false. */
 		    code = fill_trap_slanted(dev, pbox, pdevc, lop, fill_direct, 
 				xlbot, xbot, xltop, xtop, y, y1, adjust_below, adjust_above);
-		} else {	/* No Y adjustment. */
-		    int flags = 0;
+		} else {
+		    if (is_rect) {
+			int yi = fixed2int_pixround(y - adjust_below);
+			int wi = fixed2int_pixround(y1 + adjust_above) - yi;
 
-		    if (pseudo_rasterization) {
-			flags |= ftf_pseudo_rasterization;
-			if (flp.start.x == alp->start.x && flp.start.y == y)
-			    flags |= ftf_peak0;
-			if (flp.end.x == alp->end.x && flp.end.y == y1)
-			    flags |= ftf_peak0;
+			if (pseudo_rasterization && xli == xi) {
+			    /*
+			     * The scan is empty but we should paint something 
+			     * against a dropout. Choose one of two pixels which 
+			     * is closer to the "axis".
+			     */
+			    fixed xx = int2fixed(xli);
+
+			    if (xx - xltop < xtop - xx)
+				++xi;
+			    else
+				--xli;
+			}
+			code = LOOP_FILL_RECTANGLE_DIRECT(xli, yi,
+							  xi - xli, wi);
+			vd_rect(xltop, y, xtop, y1, 1, VD_TRAP_COLOR);
+		    } else {
+			int flags = 0;
+
+			if (pseudo_rasterization) {
+			    flags |= ftf_pseudo_rasterization;
+			    if (flp.start.x == alp->start.x && flp.start.y == y)
+				flags |= ftf_peak0;
+			    if (flp.end.x == alp->end.x && flp.end.y == y1)
+				flags |= ftf_peak0;
+			}
+			code = loop_fill_trap(dev, xlbot, xbot - xlbot, y, xltop, wtop, height, 
+							pbox, pdevc, lop, flags);
 		    }
-		    code = loop_fill_trap(dev, xlbot, xbot - xlbot, y, xltop, wtop, height, 
-						    pbox, pdevc, lop, flags);
 		    if (pseudo_rasterization) {
 			if (code < 0)
 			    return code;
@@ -2324,7 +2311,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		    alp->x_current = alp->x_next;
 
-#define INSIDE_PATH_P() ((inside & rule) != 0)
 		    if (!INSIDE_PATH_P()) {		/* i.e., outside */
 			inside += alp->direction;
 			if (INSIDE_PATH_P())	/* about to go in */
@@ -2335,8 +2321,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		    inside += alp->direction;
 		    if (INSIDE_PATH_P())	/* not about to go out */
 			continue;
-#undef INSIDE_PATH_P
-
 		    code = continue_margin(ll, &flp, alp, y, y1);
 		    if (code < 0)
 			return code;
@@ -2347,6 +2331,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		}
 	    }
 	}
+#undef INSIDE_PATH_P
 	if (plp != 0) {
 	    code = process_h_lists(ll, plp, 0, 0);
 	    if (code < 0)
