@@ -1,0 +1,33 @@
+General
+=======
+
+o pdfwrite should require artifex font scaler.  Freetype and UFST will
+not work with high level drivers.
+o PCLXL 2.1.
+o 80 resident pcl fonts using freetype scaler and Type 1 + TrueType
+font data.
+o URW font character analysis.
+o Microsoft Publishing symbol set 6J has incorrect entries.
+o Vertical glyph substitutions - see fts 242* panels.
+
+Language switching
+==================
+
+o Postscript job encapsulation for the language switching environment.
+o Memory leak testing.
+o Device switching testing.
+o Investigate Postscript font downloading persistence.
+
+Freetype 2 integration
+======================
+
+o Needs a cache device.
+o GL/2 labels with Freetype 2 are not always correct.  Problem should
+go away once a cache device is installed.  HPGL/2 tries to figure out
+its next position based on the "currentpoint" after rendering the
+character.
+o left side bearing metric is always 0.
+o galley characters unsupported.
+o downloaded truetypes don't work.
+o pclxl algorithmic bold characters are not supported.
+
