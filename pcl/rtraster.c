@@ -1213,7 +1213,7 @@ transfer_raster_row(
         for (i = pcur_raster->plane_index; (i < nplanes) && (code >= 0); i++)
             code = add_raster_plane(pdata, 0, false, pcs);
     }
-    if (code >= 0)
+    if (code >= 0 && pcs->raster_state.compression_mode != ADAPTIVE_COMPRESS)
         code = process_row(pcur_raster);
 
     return code;
