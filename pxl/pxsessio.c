@@ -207,8 +207,10 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	    pxs->duplex = pjl_duplex;
 	    pxs->duplex_page_mode = (pjl_bindshort ? eDuplexHorizontalBinding :
 				     eDuplexVerticalBinding);
+	    pxs->duplex_back_side = eFrontMediaSide;
 	    pxs->copies = pjl_copies;
 	    pxs->media_destination = eDefaultDestination;
+	    pxs->media_type = eDefaultType;
 	    px_dict_init(&pxs->font_dict, pxs->memory, px_free_font);
 	}
 	return 0;
