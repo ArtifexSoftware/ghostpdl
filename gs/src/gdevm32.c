@@ -44,7 +44,7 @@ mem_full_device("image32", 24, 8, mem_open,
 
 /* Swap the bytes of a color if needed. */
 #define color_swap_bytes(color)\
-  (((color) >> 24) + (((color) >> 8) & 0xff00) +\
+  ((((color) >> 24) & 0xff) + (((color) >> 8) & 0xff00) +\
    (((color) & 0xff00) << 8) + ((color) << 24))
 #if arch_is_big_endian
 #  define arrange_bytes(color) (color)
