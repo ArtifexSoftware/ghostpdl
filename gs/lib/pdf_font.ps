@@ -87,7 +87,7 @@ pdfdict begin
 % Adjust a font according to the Encoding and Widths in the font resource.
 /adjustfont {		% <font-resource> <font> adjustfont <font'>
   getfontencoding
-  getfontmetrics 4 -1 roll pop .updatefont { dup /FontName get exch definefont } if
+  getfontmetrics 5 -1 roll pop .updatefont { dup /FontName get exch definefont } if
 } bind def
 
 % Get the (possibly modified) encoding of a font.
@@ -127,15 +127,33 @@ pdfdict begin
   pop pop pop
 } bdef
 
+/unique_name {  % <dict> </root> unique_name </unique> 
+  .namestring       % <<>> (root)
+  0 1 65535 {
+    5 string cvs    % <<>> (root) (0)
+    1 index exch    % <<>> (root) (root) (0)
+    concatstrings   % <<>> (root) (root0)
+    dup             % <<>> (root) (root0) (root0)
+    3 index exch    % <<>> (root) (root0) <<>> (root0)
+    known not {
+      exch pop exit % <<>> (root0)
+    } if
+    pop
+  } for
+  exch pop cvn      % /root0
+} bdef
+                               
 % Get the metrics of a font, if specified.
 /getfontmetrics {	% <font-resource> <font> <Encoding|null> getfontmetrics
 			%   <font-resource> <font> <Encoding|null>
-			%   <Metrics|null>
+			%   <Metrics|null> <GlyphMap|null>
   2 index /Widths known {
     dup null eq { pop dup /Encoding get } if
     4 dict begin
+      dup length dict
+      /Metrics exch def
       /Encoding exch def
-      /Metrics Encoding length dict def
+      /GlyphMap //null def
       exch
       dup /Widths oget /Widths exch def
 		% Stack: font font-res
@@ -170,7 +188,7 @@ pdfdict begin
 	 {	
 		% Work around a bug in pdfTeX, which can generate Encoding
 		% vectors containing nulls :
-	   1 index null eq { exit } if
+	   1 index //null eq { exit } if
 		% There is a hack here to deal with encodings where the
 		% same character appears more than once, because the Metrics
 		% dictionary works by character name, not by character code.
@@ -185,7 +203,25 @@ pdfdict begin
 	     /Differences knownoget not { exit } if
 	     3 index 3 index //match_in_diff exec not { exit } if
 	   } if
-	   2 copy Metrics 3 1 roll put
+                % Create a new glyph for a character that maps to an existing glyph
+                % with a different width and passes all the tests above.
+           Metrics 2 index .knownget {
+             1 index ne
+           } {
+             //false
+           } ifelse {
+             GlyphMap //null eq {
+               /Encoding Encoding dup length array copy def
+               /GlyphMap 4 dict def
+             } if
+             Metrics 2 index //unique_name exec
+                % Stack: font font-res mscale first-char index charname width new_name
+             Encoding 4 index 2 index put
+             GlyphMap 1 index 5 -1 roll put
+             exch
+                % Stack: font font-res mscale first-char index new_name width
+           } if
+           2 copy Metrics 3 1 roll put
 	   exit
 	 } loop
 	 pop pop pop
@@ -202,7 +238,7 @@ pdfdict begin
 	Encoding {
 		% Stack: font font-res mscale missing-width metrics charname
 		% Work around the abovementioned pdfTeX bug.
-	  dup null ne {
+	  dup //null ne {
 	    2 copy known not { 2 copy 4 index put } if pop
 	  } {
 	    pop
@@ -211,12 +247,13 @@ pdfdict begin
       } {
 	pop
       } ifelse
-    exch Encoding Metrics end
+    exch Encoding Metrics GlyphMap end
   } {
-    null
+    //null //null
   } ifelse
 } bdef
 
+currentdict /unique_name undef
 currentdict /match_in_diff undef
 
 % ---------------- Descriptors ---------------- %

@@ -448,7 +448,7 @@ end readonly def
 
 % Read a CFF font.
 /FRD		% <resname> <file> FRD -
- { /FontSetInit /ProcSet findresource begin true ReadData
+ { /FontSetInit /ProcSet findresource begin //true ReadData
  } bdef
 
 % Copy a font, removing its FID.  If changed is true, also remove
@@ -475,25 +475,51 @@ end readonly def
 % the font was actually copied.
 /.updatefontmetrics {	% <font> <Metrics|null> .updatefontmetrics
 			%   <font'> <copied>
-  dup null ne {
-    exch true .copyfontdict dup /Metrics 4 -1 roll put true
+  dup //null ne {
+    exch //true .copyfontdict dup /Metrics 4 -1 roll put //true
   } {
-    pop false
+    pop //false
   } ifelse
 } bdef
+
 /.updatefontencoding {	% <font> <Encoding|null> .updatefontencoding
 			%   <font'> <copied>
-  dup null ne { dup 2 index /Encoding get ne } { false } ifelse {
-    exch false .copyfontdict dup /Encoding 4 -1 roll put true
+  dup //null ne { dup 2 index /Encoding get ne } { //false } ifelse {
+    exch //false .copyfontdict dup /Encoding 4 -1 roll put //true
   } {
-    pop false
+    pop //false
   } ifelse
 } bdef
-/.updatefont {		% <font> <Encoding|null> <Metrics|null> .updatefont
-			%   <font'> <copied>
-  3 -1 roll exch .updatefontmetrics
-			% Stack: enc|null font' copied
-  3 1 roll exch .updatefontencoding 3 -1 roll or
+
+% Duplicate keys in CharString dictionary according to GlyphMap: <</new_glyph /old_glyph>>
+% We have to do this because PDF fonts can associate multiple widths with the same glyph
+% but Metrics dictionary works by the glyph name.
+/.update_charstring {	% <font> <GlyphMap> .update_charstring  <font'> <copied>
+  dup //null ne {
+    exch //true .copyfontdict       % map font
+    dup dup /CharStrings get        % map font font cstr
+    dup length                      % map font font cstr len
+    4 index length add              % map font font cstr len+map_len
+    dict copy dup begin             % map font font cstr'
+    /CharStrings exch put           % map font
+    exch {                          % font /new /old
+      load def
+    } forall
+    end //true
+  } {
+    pop //false
+  } ifelse
+} bdef
+
+/.updatefont {	      % <font> <Encoding|null> <Metrics|null> <GlyphMap|null>
+                      %        .updatefont <font'> <copied>
+  4 2 roll            % <Metrics|null> <GlyphMap> <font> <Encoding|null>
+  .updatefontencoding % <Metrics|null> <GlyphMap> <font> bool
+  4 1 roll exch       % bool <Metrics|null> <font> <GlyphMap>
+  .update_charstring  % bool <Metrics|null> <font> bool
+  3 1 roll exch       % bool bool <font> <Metrics|null>
+  .updatefontmetrics  % bool bool <font> bool
+  4 2 roll or or      % <font> is_copied
 } bdef
 
 % ---------------- Text positioning ---------------- %
