@@ -372,13 +372,12 @@ def
 	% CIDFont operators
   62 {		% ROS, must be first in a CIDFont
     currentdict /FontType undef
-    currentdict /Private undef
     currentdict /Encoding undef
     currentdict /FontMatrix undef
     /CIDFontVersion 0 def
     /CIDFontRevision 0 def
     /CIDFontType 0 def
-    /CIDCount 8720 def
+    /CIDCount 8720 def % Default value defined in CFF spec.
     3 dict begin
     /Supplement xdef
     idstring /Ordering xdef
@@ -599,7 +598,8 @@ dup
   cleanupFont
 } bind def
 
-% Replace CharStrings with GlyphDirectory for a CIDFont.
+% Replace CharStrings with GlyphDirectory for a CIDFont;
+% Move GlobalSubrs to descendent fonts.
 /finishCIDFont {	% (currentdict) finishCIDFont -
 		% Construct the GlyphDirectory, similar to CharStrings.
   /FDBytes FDArray length 1 gt { 1 } { 0 } ifelse def
@@ -619,6 +619,15 @@ dup
     } if
     exch charset exch get GlyphDirectory xxput
   } for
+
+  Private /GlobalSubrs .knownget {
+    FDArray {
+    /Private get /GlobalSubrs 2 index put
+    } forall
+    pop
+    Private /GlobalSubrs undef
+  } if
+
 		% Clean up.
   currentdict /FDSelect undef
   cleanupFont
