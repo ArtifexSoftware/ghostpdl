@@ -604,7 +604,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	if (code < 0)
 	    goto use_default;
 	s = pdev->strm;
-	pprintd1(s, "/PatternType 1/PaintType %d/TilingType 1/Resources<<\n",
+	pprintd1(s, "/Type/Pattern/PatternType 1/PaintType %d/TilingType 1/Resources<<\n",
 		 (mask ? 2 : 1));
 	if (image_id)
 	    pprintld2(s, "/XObject<</R%ld %ld 0 R>>", image_id, image_id);

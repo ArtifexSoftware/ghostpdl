@@ -587,7 +587,8 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     cos_become(pres->object, cos_type_stream);
     pcos = (cos_stream_t *)pres->object;
     pcd = cos_stream_dict(pcos);
-    if ((code = cos_dict_put_c_key_int(pcd, "/PatternType", 1)) < 0 ||
+    if ((code = cos_dict_put_c_strings(pcd, "/Type", "/Pattern")) < 0 ||
+	(code = cos_dict_put_c_key_int(pcd, "/PatternType", 1)) < 0 ||
 	(code = cos_dict_put_c_key_int(pcd, "/PaintType",
 				       (mask ? 2 : 1))) < 0 ||
 	(code = cos_dict_put_c_key_int(pcd, "/TilingType",
@@ -597,8 +598,8 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	(code = cos_dict_put_c_strings(pcd, "/BBox", "[0 0 1 1]")) < 0 ||
 	(code = cos_dict_put_c_key_string(pcd, "/Matrix", (byte *)str_matrix,
 					  strlen(str_matrix))) < 0 ||
-	(code = cos_dict_put_c_key_real(pcd, "/XStep", step.x / scale.x)) < 0 ||
-	(code = cos_dict_put_c_key_real(pcd, "/YStep", step.y / scale.y)) < 0
+	(code = cos_dict_put_c_key_real(pcd, "/XStep", step.x / btile->rep_width)) < 0 ||
+	(code = cos_dict_put_c_key_real(pcd, "/YStep", step.y / btile->rep_height)) < 0
 	) {
 	return code;
     }
