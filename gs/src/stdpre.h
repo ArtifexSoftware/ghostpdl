@@ -257,14 +257,6 @@ typedef const char *ptr_ord_t;
 #define PTR_BETWEEN(ptr, lo, hi)\
   (PTR_GE(ptr, lo) && PTR_LT(ptr, hi))
 
-#if defined (_MSC_VER)
-#define INTEGER64 __int64
-#elif defined (__GNUC__)
-#define INTEGER64 long long
-#else
-#error "Don't know how to define 64 bit integer."
-#endif
-
 /* Define  min and max, but make sure to use the identical definition */
 /* to the one that all the compilers seem to have.... */
 #ifndef min

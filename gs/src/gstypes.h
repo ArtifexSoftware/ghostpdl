@@ -16,7 +16,7 @@
  * These IDs bear no relation to any other ID space; we generate them all
  * ourselves.
  */
-typedef INTEGER64 gs_id;
+typedef long gs_id;
 
 #define gs_no_id 0L
 

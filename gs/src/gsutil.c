@@ -18,34 +18,16 @@
 
 /* ------ Unique IDs ------ */
 
-#define NOT_REENTRANT
 gs_id
 gs_next_id()
 {
-    INTEGER64 id;
-    long secs_ns_array[2]; /* the oblgatory confusion */
-    long secs_ns;
-    long rnd;
-    INTEGER64 sec64;
-    INTEGER64 rnd64;
-
-#ifdef NOT_REENTRANT
-    static long global_id = 1;
-    return global_id++;
-#endif
-    /* combine random and time in a 64 bit value */
-    gp_get_realtime(secs_ns_array);
-    secs_ns = secs_ns_array[0] * 1000 + secs_ns_array[1] / 1000000;
-    rnd = rand();
-    sec64 = secs_ns;
-    rnd64 = rnd;
-    id = ((rnd64 << 32) + (sec64));
-    /* shouldn't get a negative here but... */
-    if (id < 0) {
-	dprintf("Warning unexpected negative unique id\n");
-	id = -id;
-    }
-    return id;
+    static long global_id = 0;
+    /* id's need to be in the range 0 - 2^24 - 1 to be consistent with
+         postscript uids */
+    gs_id next_id = global_id % (1 << 24);
+    /* increment global */
+    global_id++;
+    return next_id;
 }
 
 /* ------ Memory utilities ------ */
