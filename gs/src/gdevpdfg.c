@@ -306,7 +306,7 @@ pprintb1(stream *s, const char *format, bool b)
 private data_source_proc_access(transfer_map_access); /* check prototype */
 private int
 transfer_map_access(const gs_data_source_t *psrc, ulong start, uint length,
-		    byte *buf, const byte **ptr)
+		    byte *buf, const byte **ptr, const gs_memory_t *mem)
 {
     const gx_transfer_map *map = (const gx_transfer_map *)psrc->data.str.data;
     uint i;

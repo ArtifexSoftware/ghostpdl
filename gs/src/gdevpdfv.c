@@ -596,12 +596,12 @@ pdf_put_scalar_shading(cos_dict_t *pscd, const gs_shading_t *psh,
 
 /* Add a floating point range to an array. */
 private int
-pdf_array_add_real2(cos_array_t *pca, floatp lower, floatp upper)
+pdf_array_add_real2(const gs_memory_t *mem, cos_array_t *pca, floatp lower, floatp upper)
 {
-    int code = cos_array_add_real(pca, lower);
+    int code = cos_array_add_real(mem, pca, lower);
 
     if (code >= 0)
-	code = cos_array_add_real(pca, upper);
+	code = cos_array_add_real(mem, pca, upper);
     return code;
 }
 
@@ -732,13 +732,15 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 	if (pca == 0)
 	    return_error(pscd->pdev->memory, gs_error_VMerror);
 	for (i = 0; i < 2; ++i)
-	    if ((code = pdf_array_add_real2(pca, MIN_MESH_COORDINATE,
+	    if ((code = pdf_array_add_real2(pscd->pdev->memory, 
+					    pca, MIN_MESH_COORDINATE,
 					    MAX_MESH_COORDINATE)) < 0)
 		return code;
 	data_params.is_indexed = false;
 	if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed) {
 	    data_params.is_indexed = true;
-	    if ((code = pdf_array_add_real2(pca, MIN_MESH_COLOR_INDEX,
+	    if ((code = pdf_array_add_real2(pscd->pdev->memory, 
+					    pca, MIN_MESH_COLOR_INDEX,
 					    MAX_MESH_COLOR_INDEX)) < 0)
 		return code;
 	} else {
@@ -751,7 +753,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 		    rmin = data_params.Domain[2 * i],
 			rmax = data_params.Domain[2 * i + 1];
 		if ((code =
-		     pdf_array_add_real2(pca, rmin, rmax)) < 0)
+		     pdf_array_add_real2(pscd->pdev->memory, pca, rmin, rmax)) < 0)
 		    return code;
 	    }
 	}

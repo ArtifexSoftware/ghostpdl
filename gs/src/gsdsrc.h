@@ -45,7 +45,7 @@ typedef struct stream_s stream;
  */
 #define data_source_proc_access(proc)\
   int proc(const gs_data_source_t *psrc, ulong start, uint length,\
-	   byte *buf, const byte **ptr)
+	   byte *buf, const byte **ptr, const gs_memory_t *mem)
 
 typedef enum {
     data_source_type_string,
@@ -66,17 +66,17 @@ struct gs_data_source_s {
     } data;
 };
 
-#define data_source_access_only(psrc, start, length, buf, ptr)\
-  (*(psrc)->access)(psrc, (ulong)(start), length, buf, ptr)
-#define data_source_access(psrc, start, length, buf, ptr)\
+#define data_source_access_only(psrc, start, length, buf, ptr, mem)\
+  (*(psrc)->access)(psrc, (ulong)(start), length, buf, ptr, mem)
+#define data_source_access(psrc, start, length, buf, ptr, mem)\
   BEGIN\
-    int code_ = data_source_access_only(psrc, start, length, buf, ptr);\
+    int code_ = data_source_access_only(psrc, start, length, buf, ptr, mem);\
     if ( code_ < 0 ) return code_;\
   END
-#define data_source_copy_only(psrc, start, length, buf)\
-  data_source_access_only(psrc, start, length, buf, (const byte **)0)
-#define data_source_copy(psrc, start, length, buf)\
-  data_source_access(psrc, start, length, buf, (const byte **)0)
+#define data_source_copy_only(psrc, start, length, buf, mem)\
+  data_source_access_only(psrc, start, length, buf, (const byte **)0, mem)
+#define data_source_copy(psrc, start, length, buf, mem)\
+  data_source_access(psrc, start, length, buf, (const byte **)0, mem)
 
 /*
  * Data sources are always embedded in other structures, but they do have

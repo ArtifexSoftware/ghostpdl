@@ -246,14 +246,14 @@ cie_ranges_are_0_1(const gs_range *prange, int n)
 
 /* Add a 3-element vector to a Cos array or dictionary. */
 private int
-cos_array_add_vector3(cos_array_t *pca, const gs_vector3 *pvec)
+cos_array_add_vector3(const gs_memory_t *mem, cos_array_t *pca, const gs_vector3 *pvec)
 {
-    int code = cos_array_add_real(pca, pvec->u);
+    int code = cos_array_add_real(mem, pca, pvec->u);
 
     if (code >= 0)
-	code = cos_array_add_real(pca, pvec->v);
+	code = cos_array_add_real(mem, pca, pvec->v);
     if (code >= 0)
-	code = cos_array_add_real(pca, pvec->w);
+	code = cos_array_add_real(mem, pca, pvec->w);
     return code;
 }
 private int
@@ -265,7 +265,7 @@ cos_dict_put_c_key_vector3(cos_dict_t *pcd, const char *key,
 
     if (pca == 0)
 	return_error(pcd->pdev->memory, gs_error_VMerror);
-    code = cos_array_add_vector3(pca, pvec);
+    code = cos_array_add_vector3(pcd->pdev->memory, pca, pvec);
     if (code < 0) {
 	COS_FREE(pca, "cos_array_from_vector3");
 	return code;
@@ -389,7 +389,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     }
     swrite_string(&s, table, string_size);
     s_init(&es, NULL, mem);
-    s_init_state((stream_state *)&st, &s_AXE_template, NULL);
+    s_init_state((stream_state *)&st, &s_AXE_template, NULL, mem);
     s_init_filter(&es, (stream_state *)&st, buf, sizeof(buf), &s);
     sputc(&s, '<');
     if (pcs->params.indexed.use_proc) {
@@ -663,9 +663,9 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 
 	    if (pcma == 0)
 		return_error(pdev->memory, gs_error_VMerror);
-	    if ((code = cos_array_add_vector3(pcma, &pmat->cu)) < 0 ||
-		(code = cos_array_add_vector3(pcma, &pmat->cv)) < 0 ||
-		(code = cos_array_add_vector3(pcma, &pmat->cw)) < 0 ||
+	    if ((code = cos_array_add_vector3(pdev->memory, pcma, &pmat->cu)) < 0 ||
+		(code = cos_array_add_vector3(pdev->memory, pcma, &pmat->cv)) < 0 ||
+		(code = cos_array_add_vector3(pdev->memory, pcma, &pmat->cw)) < 0 ||
 		(code = cos_dict_put(pcd, (const byte *)"/Matrix", 7,
 				     COS_OBJECT_VALUE(&v, pcma))) < 0
 		)

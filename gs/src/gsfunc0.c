@@ -54,19 +54,19 @@ RELOC_PTRS_END
 #define max_Sd_n 16
 
 /* Get one set of sample values. */
-#define SETUP_SAMPLES(bps, nbytes)\
+#define SETUP_SAMPLES(mem, bps, nbytes)\
 	int n = pfn->params.n;\
 	byte buf[max_Sd_n * ((bps + 7) >> 3)];\
 	const byte *p;\
 	int i;\
 \
 	data_source_access(&pfn->params.DataSource, offset >> 3,\
-			   nbytes, buf, &p)
+			   nbytes, buf, &p, mem)
 
 private int
-fn_gets_1(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+fn_gets_1(const gs_memory_t *mem, const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
-    SETUP_SAMPLES(1, ((offset & 7) + n + 7) >> 3);
+    SETUP_SAMPLES(mem, 1, ((offset & 7) + n + 7) >> 3);
     for (i = 0; i < n; ++i) {
 	samples[i] = (*p >> (~offset & 7)) & 1;
 	if (!(++offset & 7))
@@ -75,9 +75,9 @@ fn_gets_1(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     return 0;
 }
 private int
-fn_gets_2(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+fn_gets_2(const gs_memory_t *mem, const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
-    SETUP_SAMPLES(2, (((offset & 7) >> 1) + n + 3) >> 2);
+    SETUP_SAMPLES(mem, 2, (((offset & 7) >> 1) + n + 3) >> 2);
     for (i = 0; i < n; ++i) {
 	samples[i] = (*p >> (6 - (offset & 7))) & 3;
 	if (!((offset += 2) & 7))
@@ -86,27 +86,27 @@ fn_gets_2(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     return 0;
 }
 private int
-fn_gets_4(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+fn_gets_4(const gs_memory_t *mem, const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
-    SETUP_SAMPLES(4, (((offset & 7) >> 2) + n + 1) >> 1);
+    SETUP_SAMPLES(mem, 4, (((offset & 7) >> 2) + n + 1) >> 1);
     for (i = 0; i < n; ++i) {
 	samples[i] = ((offset ^= 4) & 4 ? *p >> 4 : *p++ & 0xf);
     }
     return 0;
 }
 private int
-fn_gets_8(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+fn_gets_8(const gs_memory_t *mem, const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
-    SETUP_SAMPLES(8, n);
+    SETUP_SAMPLES(mem, 8, n);
     for (i = 0; i < n; ++i) {
 	samples[i] = *p++;
     }
     return 0;
 }
 private int
-fn_gets_12(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+fn_gets_12(const gs_memory_t *mem, const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
-    SETUP_SAMPLES(12, (((offset & 7) >> 2) + 3 * n + 1) >> 1);
+    SETUP_SAMPLES(mem, 12, (((offset & 7) >> 2) + 3 * n + 1) >> 1);
     for (i = 0; i < n; ++i) {
 	if (offset & 4)
 	    samples[i] = ((*p & 0xf) << 8) + p[1], p += 2;
@@ -117,9 +117,9 @@ fn_gets_12(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     return 0;
 }
 private int
-fn_gets_16(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+fn_gets_16(const gs_memory_t *mem, const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
-    SETUP_SAMPLES(16, n * 2);
+    SETUP_SAMPLES(mem, 16, n * 2);
     for (i = 0; i < n; ++i) {
 	samples[i] = (*p << 8) + p[1];
 	p += 2;
@@ -127,9 +127,9 @@ fn_gets_16(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     return 0;
 }
 private int
-fn_gets_24(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+fn_gets_24(const gs_memory_t *mem, const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
-    SETUP_SAMPLES(24, n * 3);
+    SETUP_SAMPLES(mem, 24, n * 3);
     for (i = 0; i < n; ++i) {
 	samples[i] = (*p << 16) + (p[1] << 8) + p[2];
 	p += 3;
@@ -137,9 +137,9 @@ fn_gets_24(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     return 0;
 }
 private int
-fn_gets_32(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+fn_gets_32(const gs_memory_t *mem, const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
-    SETUP_SAMPLES(32, n * 4);
+    SETUP_SAMPLES(mem, 32, n * 4);
     for (i = 0; i < n; ++i) {
 	samples[i] = (*p << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
 	p += 4;
@@ -147,7 +147,8 @@ fn_gets_32(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     return 0;
 }
 
-private int (*const fn_get_samples[]) (const gs_function_Sd_t * pfn,
+private int (*const fn_get_samples[]) (const gs_memory_t *mem, 
+				       const gs_function_Sd_t * pfn,
 				       ulong offset, uint * samples) =
 {
     0, fn_gets_1, fn_gets_2, 0, fn_gets_4, 0, 0, 0,
@@ -216,7 +217,7 @@ top:
     if (m == 0) {
 	uint sdata[max_Sd_n];
 
-	(*fn_get_samples[pfn->params.BitsPerSample])(pfn, offset, sdata);
+	(*fn_get_samples[pfn->params.BitsPerSample])(mem, pfn, offset, sdata);
 	for (j = pfn->params.n - 1; j >= 0; --j)
 	    samples[j] = (float)sdata[j];
     } else {
@@ -277,8 +278,9 @@ top:
 
 /* Calculate a result by multilinear interpolation. */
 private void
-fn_interpolate_linear(const gs_function_Sd_t *pfn, const float *fparts,
-		 const ulong *factors, float *samples, ulong offset, int m)
+fn_interpolate_linear(const gs_memory_t *mem,
+		      const gs_function_Sd_t *pfn, const float *fparts,
+		      const ulong *factors, float *samples, ulong offset, int m)
 {
     int j;
 
@@ -286,7 +288,7 @@ top:
     if (m == 0) {
 	uint sdata[max_Sd_n];
 
-	(*fn_get_samples[pfn->params.BitsPerSample])(pfn, offset, sdata);
+	(*fn_get_samples[pfn->params.BitsPerSample])(mem, pfn, offset, sdata);
 	for (j = pfn->params.n - 1; j >= 0; --j)
 	    samples[j] = (float)sdata[j];
     } else {
@@ -298,9 +300,9 @@ top:
 	    --m;
 	    goto top;
 	}
-	fn_interpolate_linear(pfn, fparts, factors + 1, samples,
+	fn_interpolate_linear(mem, pfn, fparts, factors + 1, samples,
 			      offset, m - 1);
-	fn_interpolate_linear(pfn, fparts, factors + 1, samples1,
+	fn_interpolate_linear(mem, pfn, fparts, factors + 1, samples1,
 			      offset + *factors, m - 1);
 	for (j = pfn->params.n - 1; j >= 0; --j)
 	    samples[j] += (samples1[j] - samples[j]) * fpart;
@@ -365,7 +367,7 @@ fn_Sd_evaluate(const gs_memory_t *mem, const gs_function_t * pfn_common, const f
 	fn_interpolate_cubic(mem, pfn, encoded, iparts, factors, samples,
 			     offset, pfn->params.m);
     else
-	fn_interpolate_linear(pfn, encoded, factors, samples, offset,
+	fn_interpolate_linear(mem, pfn, encoded, factors, samples, offset,
 			      pfn->params.m);
 
     /* Encode the output values. */

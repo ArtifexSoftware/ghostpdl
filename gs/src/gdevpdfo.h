@@ -225,7 +225,7 @@ int cos_array_add(cos_array_t *, const cos_value_t *);
 int cos_array_add_no_copy(cos_array_t *, const cos_value_t *);
 int cos_array_add_c_string(cos_array_t *, const char *);
 int cos_array_add_int(cos_array_t *, int);
-int cos_array_add_real(cos_array_t *, floatp);
+int cos_array_add_real(const gs_memory_t *mem, cos_array_t *, floatp);
 int cos_array_add_object(cos_array_t *, cos_object_t *);
 /* add adds at the end, unadd removes the last element */
 int cos_array_unadd(cos_array_t *, cos_value_t *);

@@ -1106,7 +1106,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	    for (pos = 0; pos < info.data_size; pos += count) {
 		count = min(sizeof(buf), info.data_size - pos);
 		data_source_access_only(info.DataSource, pos, count, buf,
-					&ptr);
+					&ptr, pdev->memory);
 		stream_write(writer.strm, ptr, count);
 	    }
 	    code = psdf_end_binary(&writer);

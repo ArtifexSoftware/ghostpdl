@@ -313,7 +313,7 @@ pdf_scan_token(const gs_memory_t *mem, const byte **pscan, const byte * end, con
 	    /* One picky compiler complains if we initialize to buf - 1. */
 	    w.ptr = buf;  w.ptr--;
 	    status = (*s_PSSD_template.process)
-		((stream_state *) & ss, &r, &w, true);
+		(mem, (stream_state *) & ss, &r, &w, true);
 	}
 	while (status == 1);
 	*pscan = r.ptr + 1;

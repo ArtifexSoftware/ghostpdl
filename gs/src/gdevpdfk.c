@@ -40,8 +40,8 @@ pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
 	    if (rmin < 0) rmin = 0;
 	    if (rmax > 1) rmax = 1;
 	}
-	if ((code = cos_array_add_real(pca, rmin)) < 0 ||
-	    (code = cos_array_add_real(pca, rmax)) < 0
+	if ((code = cos_array_add_real(pcd->pdev->memory, pca, rmin)) < 0 ||
+	    (code = cos_array_add_real(pcd->pdev->memory, pca, rmax)) < 0
 	    )
 	    break;
     }

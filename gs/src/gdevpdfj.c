@@ -117,10 +117,10 @@ pdf_put_pixel_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 	    if (pcs == NULL) {
 		/* 269-01.ps sets /Decode[0 100] with a mask image. */
 		for (i = 0; i < num_components * 2; ++i)
-		    CHECK(cos_array_add_real(pca, min(pim->Decode[i], 1)));
+		    CHECK(cos_array_add_real(pdev->memory, pca, min(pim->Decode[i], 1)));
 	    } else {
 		for (i = 0; i < num_components * 2; ++i)
-		    CHECK(cos_array_add_real(pca, pim->Decode[i]));
+		    CHECK(cos_array_add_real(pdev->memory, pca, pim->Decode[i]));
 	    }
 	    CHECK(cos_dict_put_c_key_object(pcd, pin->Decode,
 					    COS_OBJECT(pca)));

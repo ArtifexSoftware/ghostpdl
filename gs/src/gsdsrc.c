@@ -47,7 +47,7 @@ RELOC_PTRS_END
 /* Does *not* check bounds. */
 int
 data_source_access_string(const gs_data_source_t * psrc, ulong start,
-			  uint length, byte * buf, const byte ** ptr)
+			  uint length, byte * buf, const byte ** ptr, const gs_memory_t *mem) 
 {
     const byte *p = psrc->data.str.data + start;
 
@@ -61,7 +61,7 @@ data_source_access_string(const gs_data_source_t * psrc, ulong start,
 /* GC procedure. */
 int
 data_source_access_bytes(const gs_data_source_t * psrc, ulong start,
-			 uint length, byte * buf, const byte ** ptr)
+			 uint length, byte * buf, const byte ** ptr, const gs_memory_t *mem)
 {
     const byte *p = psrc->data.str.data + start;
 
@@ -76,7 +76,7 @@ data_source_access_bytes(const gs_data_source_t * psrc, ulong start,
 /* Returns gs_error_rangecheck if out of bounds. */
 int
 data_source_access_stream(const gs_data_source_t * psrc, ulong start,
-			  uint length, byte * buf, const byte ** ptr)
+			  uint length, byte * buf, const byte ** ptr, const gs_memory_t *mem)
 {
     stream *s = psrc->data.strm;
     const byte *p;

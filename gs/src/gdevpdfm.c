@@ -219,7 +219,7 @@ pdfmark_scan_rect(const gs_memory_t *mem,
 
 /* Make a Rect value. */
 private void
-pdfmark_make_rect(char str[MAX_RECT_STRING], const gs_rect * prect)
+pdfmark_make_rect(const gs_memory_t *mem, char str[MAX_RECT_STRING], const gs_rect * prect)
 {
     /*
      * We have to use a stream and pprintf, rather than sprintf,
@@ -228,6 +228,7 @@ pdfmark_make_rect(char str[MAX_RECT_STRING], const gs_rect * prect)
      */
     stream s;
 
+    s_stack_init(&s, mem);
     swrite_string(&s, (byte *)str, MAX_RECT_STRING - 1);
     pprintg4(&s, "[%g %g %g %g]",
 	     prect->p.x, prect->p.y, prect->q.x, prect->q.y);
@@ -471,7 +472,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 
 	    if (code < 0)
 		return code;
-	    pdfmark_make_rect(rstr, &rect);
+	    pdfmark_make_rect(pdev->memory, rstr, &rect);
 	    cos_dict_put_c_key_string(pcd, "/Rect", (byte *)rstr,
 				      strlen(rstr));
 	} else if (pdf_key_eq(pair, "/Border")) {
@@ -479,6 +480,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    char bstr[MAX_BORDER_STRING + 1];
 	    int code;
 
+	    s_stack_init(&s, pdev->memory);
 	    swrite_string(&s, (byte *)bstr, MAX_BORDER_STRING + 1);
 	    code = pdfmark_write_border(&s, pair + 1, pctm);
 	    if (code < 0)
@@ -823,7 +825,7 @@ pdfmark_write_bead(gx_device_pdf * pdev, const pdf_bead_t * pbead)
 	      pbead->article_id, pbead->prev_id, pbead->next_id);
     if (pbead->page_id != 0)
 	pprintld1(s, "/P %ld 0 R", pbead->page_id);
-    pdfmark_make_rect(rstr, &pbead->rect);
+    pdfmark_make_rect(pdev->memory, rstr, &pbead->rect);
     pprints1(s, "/R%s>>\n", rstr);
     return pdf_end_separate(pdev);
 }

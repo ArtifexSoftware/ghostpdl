@@ -435,7 +435,7 @@ cos_array_from_floats(gx_device_pdf *pdev, const float *pf, uint size,
     if (pca == 0)
 	return 0;
     for (i = 0; i < size; ++i) {
-	int code = cos_array_add_real(pca, pf[i]);
+	int code = cos_array_add_real(pdev->memory, pca, pf[i]);
 
 	if (code < 0) {
 	    COS_FREE(pca, cname);
@@ -560,12 +560,13 @@ cos_array_add_int(cos_array_t *pca, int i)
     return cos_array_add(pca, cos_string_value(&v, (byte *)str, strlen(str)));
 }
 int
-cos_array_add_real(cos_array_t *pca, floatp r)
+cos_array_add_real(const gs_memory_t *mem, cos_array_t *pca, floatp r)
 {
     byte str[50];		/****** ADHOC ******/
     stream s;
     cos_value_t v;
 
+    s_stack_init(&s, mem);
     swrite_string(&s, str, sizeof(str));
     pprintg1(&s, "%g", r);
     return cos_array_add(pca, cos_string_value(&v, str, stell(&s)));
@@ -853,6 +854,7 @@ cos_dict_put_c_key_real(cos_dict_t *pcd, const char *key, floatp value)
     byte str[50];		/****** ADHOC ******/
     stream s;
 
+    s_stack_init(&s, pcd->pdev->memory);
     swrite_string(&s, str, sizeof(str));
     pprintg1(&s, "%g", value);
     return cos_dict_put_c_key_string(pcd, key, str, stell(&s));
@@ -974,6 +976,7 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 	int len, skip;
 	byte *str;
 
+	s_stack_init(&s, mem);
 	ppp = param_printer_params_default;
 	ppp.prefix = ppp.suffix = ppp.item_prefix = ppp.item_suffix = 0;
 	ppp.print_ok = pclist->print_ok;
@@ -1016,7 +1019,7 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 	if (pca == 0)
 	    return_error(mem, gs_error_VMerror);
 	for (i = 0; i < pvalue->value.ia.size; ++i)
-	    CHECK(cos_array_add_real(pca, pvalue->value.fa.data[i]));
+	    CHECK(cos_array_add_real(mem, pca, pvalue->value.fa.data[i]));
     }
 	goto av;
     case gs_param_type_string_array:
@@ -1226,7 +1229,8 @@ gs_private_st_suffix_add4(st_cos_write_stream_state, cos_write_stream_state_t,
 			  st_stream_state, pcs, pdev, s, target);
 
 private int
-cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
+cos_write_stream_process(const gs_memory_t *mem,
+			 stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
 {
     uint count = pr->limit - pr->ptr;

@@ -56,18 +56,6 @@ bool gs_debug_c(int /*char */ );
  */
 #define gs_log_errors gs_debug['#']
 
-// hack it out
-#if 0
-/* If debugging, direct all error output to gs_debug_out. */
-extern FILE *gs_debug_out;
-
-#ifdef DEBUG
-#undef dstderr
-#define dstderr gs_debug_out
-#undef estderr
-#define estderr gs_debug_out
-#endif
-#endif
 
 /* Debugging printout macros. */
 #ifdef DEBUG
