@@ -108,6 +108,18 @@ struct _Jbig2Page {
 int jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
 int jbig2_complete_page (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
 
+/* region segment info */
+
+typedef struct {
+  int32_t width;
+  int32_t height;
+  int32_t x;
+  int32_t y;
+  byte flags;
+} Jbig2RegionSegmentInfo;
+
+void jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info, const byte *segment_data);
+int jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
 
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word

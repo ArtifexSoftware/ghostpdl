@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.4 2002/06/15 14:12:50 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.5 2002/06/20 15:42:48 giles Exp $
 */
 
 #include <stddef.h>
@@ -114,7 +114,7 @@ typedef struct {
   /* SDHUFFBMSIZE */
   /* SDHUFFAGGINST */
   int SDTEMPLATE;
-  int8_t sdat[8];
+  int8_t sdat[8]; 	// FIXME: do these need to be explicitly signed?
   bool SDRTEMPLATE;
   int8_t sdrat[4];
 } Jbig2SymbolDictParams;
@@ -259,8 +259,11 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   params.SDTEMPLATE = (flags >> 10) & 3;
   params.SDRTEMPLATE = (flags >> 12) & 1;
 
-  if (params.SDHUFF)
+  if (params.SDHUFF) {
+    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+        "symbol dictionary uses the Huffman encoding variant (NYI)");
     return 0;
+  }
 
   /* FIXME: there are quite a few of these conditions to check */
   /* maybe #ifdef CONFORMANCE and a separate routine */
@@ -273,6 +276,12 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
     {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDW is not.");
+    }
+
+  if (flags & 0x0080)
+    {
+      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+        "bitmap coding context is used (NYI) symbol data likely to be garbage!");
     }
 
   /* 7.4.2.1.2 */
@@ -309,6 +318,12 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 	params.SDTEMPLATE == 1 ? 8192 : 1024;
       GB_stats = jbig2_alloc(ctx->allocator, stats_size);
       memset(GB_stats, 0, stats_size);
+    }
+
+  if (flags & 0x0100)
+    {
+      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
+        "segment marks bitmap coding context as retained (NYI)");
     }
 
   return jbig2_decode_symbol_dict(ctx, sh->segment_number,

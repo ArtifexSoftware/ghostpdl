@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.4 2002/06/18 13:40:29 giles Exp $
+    $Id: jbig2_segment.c,v 1.5 2002/06/20 15:42:47 giles Exp $
 */
 
 #include <stdio.h>
@@ -96,6 +96,18 @@ jbig2_free_segment_header (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh)
   jbig2_free (ctx->allocator, sh);
 }
 
+void
+jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
+			      const byte *segment_data)
+{
+  /* 7.4.1 */
+  info->width = jbig2_get_int32(segment_data);
+  info->height = jbig2_get_int32(segment_data + 4);
+  info->x = jbig2_get_int32(segment_data + 8);
+  info->y = jbig2_get_int32(segment_data + 12);
+  info->flags = segment_data[16];
+}
+
 int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 			 const uint8_t *segment_data)
 {
@@ -114,8 +126,7 @@ int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
         "unhandled segment type 'immediate text region'");
     case 7:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
-        "unhandled segment type 'immediate lossless text region'");
+      return jbig2_read_text_info(ctx, sh, segment_data);
     case 16:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
         "unhandled segment type 'pattern dictionary'");

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.c,v 1.4 2002/04/25 23:24:08 raph Exp $
+    $Id: jbig2_generic.c,v 1.5 2002/06/20 15:42:47 giles Exp $
 */
 
 /**
@@ -27,14 +27,6 @@
 #include "jbig2_arith.h"
 #include "jbig2_generic.h"
 #include "jbig2_mmr.h"
-
-typedef struct {
-  int32_t width;
-  int32_t height;
-  int32_t x;
-  int32_t y;
-  byte flags;
-} Jbig2RegionSegmentInfo;
 
 static int
 jbig2_decode_generic_template0(Jbig2Ctx *ctx,
@@ -358,18 +350,6 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 	      "decode_generic_region: MMR=%d, GBTEMPLATE=%d NYI",
 	      params->MMR, params->GBTEMPLATE);
   return -1;
-}
-
-void
-jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
-			      const byte *segment_data)
-{
-  /* 7.4.1 */
-  info->width = jbig2_get_int32(segment_data);
-  info->height = jbig2_get_int32(segment_data + 4);
-  info->x = jbig2_get_int32(segment_data + 8);
-  info->y = jbig2_get_int32(segment_data + 12);
-  info->flags = segment_data[16];
 }
 
 int
