@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.17 2002/08/05 22:55:02 giles Exp $
+    $Id: jbig2.c,v 1.18 2003/02/03 20:04:11 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -70,6 +70,21 @@ jbig2_realloc (Jbig2Allocator *allocator, void *p, size_t size)
   return allocator->realloc (allocator, p, size);
 }
 
+static int
+jbig2_default_error(void *data, const char *msg, 
+                    Jbig2Severity severity, int32_t seg_idx)
+{
+    /* report only fatal errors by default */
+    if (severity == JBIG2_SEVERITY_FATAL) {
+        fprintf(stderr, "jbig2 decoder FATAL ERROR: %s", msg);
+        if (seg_idx != -1) fprintf(stderr, " (segment 0x%02x)");
+        fprintf(stderr, "\n");
+        fflush(stderr);
+    }
+    
+    return 0;
+}
+
 int
 jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int segment_number,
 	     const char *fmt, ...)
@@ -101,8 +116,16 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
 
   if (allocator == NULL)
       allocator = &jbig2_default_allocator;
+  if (error_callback == NULL)
+      error_callback = &jbig2_default_error;
 
   result = (Jbig2Ctx *)jbig2_alloc(allocator, sizeof(Jbig2Ctx));
+  if (result == NULL) {
+    error_callback(error_callback_data, "initial context allocation failed!",
+                    JBIG2_SEVERITY_FATAL, -1);
+    return result;
+  }
+  
   result->allocator = allocator;
   result->options = options;
   result->global_ctx = (const Jbig2Ctx *)global_ctx;

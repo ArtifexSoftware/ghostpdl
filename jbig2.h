@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.14 2002/07/09 09:45:32 giles Exp $
+    $Id: jbig2.h,v 1.15 2003/02/03 20:04:11 giles Exp $
 */
 
 #ifdef __cplusplus
@@ -54,11 +54,20 @@ Jbig2Image*     jbig2_image_new(Jbig2Ctx *ctx, int width, int height);
 void            jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image);
 
 
+/* errors are returned from the library via a callback. If no callback
+   is provided (a NULL argument is passed ot jbig2_ctx_new) a default
+   handler is used which prints fatal errors to the stderr stream. */
+   
 /* error callback */
 typedef int (*Jbig2ErrorCallback) (void *data,
 				  const char *msg, Jbig2Severity severity,
 				  int32_t seg_idx);
 
+/* memory allocation is likewise done via a set of callbacks so that
+   clients can better control memory usage. If a NULL is passed for
+   this argumennt of jbig2_ctx_new, a default allocator based on malloc()
+   is used. */
+   
 /* dynamic memory callbacks */
 struct _Jbig2Allocator {
   void *(*alloc) (Jbig2Allocator *allocator, size_t size);
@@ -81,11 +90,11 @@ void jbig2_global_ctx_free (Jbig2GlobalCtx *global_ctx);
 /* submit data to the decoder */
 int jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size);
 
-/* get the next available decoded page image */
+/* get the next available decoded page image. NULL means there isn't one. */
 Jbig2Image *jbig2_page_out (Jbig2Ctx *ctx);
-/* mark a returned page image as read */
+/* mark a returned page image as no longer needed. */
 int jbig2_release_page (Jbig2Ctx *ctx, Jbig2Image *image);
-/* mark the current page as complete, regardless of decoder state (for broken streams) */
+/* mark the current page as complete, simulating an end-of-page segment (for broken streams) */
 int jbig2_complete_page (Jbig2Ctx *ctx);
 
 
