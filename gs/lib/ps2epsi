@@ -1,5 +1,5 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 
 tmpfile=/tmp/ps2epsi$$
 

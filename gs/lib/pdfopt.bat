@@ -1,5 +1,5 @@
 @echo off 
-@rem $RCSfile$ $Revision$
+@rem $Id$
 @rem Convert PDF to "optimized" form.
 
 if %1/==/ goto usage

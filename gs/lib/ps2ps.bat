@@ -1,5 +1,5 @@
 @echo off 
-@rem $RCSfile$ $Revision$
+@rem $Id$
 @rem "Distill" PostScript.
 
 if %1/==/ goto usage

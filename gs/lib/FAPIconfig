@@ -1,5 +1,5 @@
 %!
-% $RCSfile$ $Revision$
+% $Id$
 % This is configuration file for FAPI client.
 
 /FontPath             (/Fonts)     % A default directory for FAPI-handled fonts.

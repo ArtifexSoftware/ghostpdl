@@ -13,7 +13,7 @@
 % contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 % San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-% $RCSfile$ $Revision$
+% $Id$
 % Fontmap.Ult is derived from the standard Fontmap file distributed with
 % ghostscript; for credits and sources see that file.  The modifications here
 % are valid for ULTRIX 4.3, and consist of defining some fonts and font
