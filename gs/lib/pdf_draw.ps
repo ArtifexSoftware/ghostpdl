@@ -1262,6 +1262,11 @@ end
 	/BBox knownoget {
 	  exch pop	% discard y height
 	  aload pop pop exch pop sub	% BBox width
+	  dup 0 eq {
+            (   **** Warning: /BBox has zero width which is not allowed.\n)
+            pdfformaterror
+            pop pop 1 1		% 0 width -- revert to unity scaling
+          } if
 	  div		% scale x widths
 	  dup 0 lt { neg } if		% get magnitude
 	} {
