@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -20,6 +20,7 @@
 # Windows NT or Windows 95 platform.
 # Created 1997-05-22 by L. Peter Deutsch from msvc4/5 makefiles.
 # edited 1997-06-xx by JD to factor out interpreter-specific sections
+# edited 2000-03-30 by lpd to make /FPi87 conditional on MSVC version
 
 # Set up linker differently for MSVC 4 vs. later versions
 
@@ -97,7 +98,7 @@ CPFLAGS=/GB $(QI0f)
 CPFLAGS=/GB $(QI0f)
 !endif
 
-!if $(FPU_TYPE)>0
+!if $(FPU_TYPE)>0 && $(MSVC_VERSION)<6
 FPFLAGS=/FPi87
 !else
 FPFLAGS=
