@@ -109,14 +109,15 @@ struct otype_s {\
     etype *elements;\
     cos_stream_piece_t *pieces;\
     gx_device_pdf *pdev;\
+    pdf_resource_t *pres;	/* only for BP/EP XObjects */\
     byte is_open;		/* see above */\
     byte is_graphics;		/* see above */\
     byte written;		/* see above */\
 }
 cos_object_struct(cos_object_s, cos_element_t);
 #define private_st_cos_object()	/* in gdevpdfo.c */\
-  gs_private_st_ptrs3(st_cos_object, cos_object_t, "cos_object_t",\
-    cos_object_enum_ptrs, cos_object_reloc_ptrs, elements, pieces, pdev)
+  gs_private_st_ptrs4(st_cos_object, cos_object_t, "cos_object_t",\
+    cos_object_enum_ptrs, cos_object_reloc_ptrs, elements, pieces, pdev, pres)
 extern const cos_object_procs_t cos_generic_procs;
 #define cos_type_generic (&cos_generic_procs)
 

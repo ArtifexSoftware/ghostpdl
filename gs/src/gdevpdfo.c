@@ -175,6 +175,7 @@ cos_object_init(cos_object_t *pco, gx_device_pdf *pdev,
 	pco->elements = 0;
 	pco->pieces = 0;
 	pco->pdev = pdev;
+	pco->pres = 0;
 	pco->is_open = true;
 	pco->is_graphics = false;
 	pco->written = false;

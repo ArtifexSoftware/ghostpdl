@@ -90,7 +90,7 @@ pdf_write_synthesized_type3(gx_device_pdf *pdev, const pdf_font_t *pef)
     memset(widths, 0, sizeof(widths));
     pdf_open_separate(pdev, pdf_font_id(pef));
     s = pdev->strm;
-    pprints1(s, "<</Type/Font/Name/%s/Subtype/Type3", pef->frname);
+    pprints1(s, "<</Type/Font/Name/%s/Subtype/Type3", pef->rname);
     pprintld1(s, "/Encoding %ld 0 R/CharProcs", pdev->embedded_encoding_id);
 
     /* Write the CharProcs. */
@@ -772,7 +772,7 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 	     ) {
 	    if (PDF_FONT_IS_SYNTHESIZED(ppf))
 		pdf_write_synthesized_type3(pdev, ppf);
-	    else if (!ppf->skip) {
+	    else {
 		gs_const_string font_name;
 
 		pfd = ppf->FontDescriptor;
@@ -794,18 +794,16 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 	for (ppf = (pdf_font_t *)pdev->resources[resourceCIDFont].chains[j];
 	     ppf != 0; ppf = ppf->next
 	     ) {
-	    if (!ppf->skip) {
-		gs_const_string font_name;
+	    gs_const_string font_name;
 
-		pfd = ppf->FontDescriptor;
-		font_name.data = pfd->FontName.chars;
-		font_name.size = pfd->FontName.size;
-		pdf_write_font_resource(pdev, ppf, &font_name);
-		if (ppf->font)
-		    gs_notify_unregister_calling(&ppf->font->notify_list,
-						 pdf_font_notify_proc, NULL,
-						 pdf_font_unreg_proc);
-	    }
+	    pfd = ppf->FontDescriptor;
+	    font_name.data = pfd->FontName.chars;
+	    font_name.size = pfd->FontName.size;
+	    pdf_write_font_resource(pdev, ppf, &font_name);
+	    if (ppf->font)
+		gs_notify_unregister_calling(&ppf->font->notify_list,
+					     pdf_font_notify_proc, NULL,
+					     pdf_font_unreg_proc);
 	}
 
 	for (pfd = (pdf_font_descriptor_t *)pdev->resources[resourceFontDescriptor].chains[j];

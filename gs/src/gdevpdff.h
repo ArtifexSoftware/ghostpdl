@@ -201,15 +201,9 @@ struct pdf_font_s {
     gs_matrix orig_matrix;	/* FontMatrix of unscaled font for embedding */
     bool is_MM_instance;	/* for Type 1/2 fonts, true iff the font */
 				/* is a Multiple Master instance */
-    /*
-     * For synthesized fonts, frname is A, B, ...; for other fonts,
-     * frname is R<id>.  The string is null-terminated.
-     */
-    char frname[1/*R*/ + (sizeof(long) * 8 / 3 + 1) + 1/*\0*/];
 
     /* Members for all non-synthesized fonts. */
 
-    bool skip;			/* font was already written, skip it */
     pdf_font_descriptor_t *FontDescriptor; /* 0 for composite */
     bool write_Widths;
     int *Widths;		/* [256] for non-composite, non-CID */

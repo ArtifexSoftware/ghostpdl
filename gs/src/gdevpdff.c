@@ -485,13 +485,11 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     pfres = *ppfres;
     memset((byte *)pfres + sizeof(pdf_resource_t), 0,
 	   sizeof(*pfres) - sizeof(pdf_resource_t));
-    sprintf(pfres->frname, "R%ld", pfres->object->id);
     pfres->font = font;
     if (font)
 	pfres->FontType = font->FontType;
     pfres->index = -1;
     pfres->is_MM_instance = false;
-    pfres->skip = false;
     pfres->FontDescriptor = pfd;
     pfres->write_Widths = false;
     pfres->Widths = Widths;

@@ -90,10 +90,10 @@ typedef enum {
     NUM_RESOURCE_TYPES
 } pdf_resource_type_t;
 
-#define pdf_resource_type_names\
-  "ColorSpace", "ExtGState", "Pattern", "Shading", "XObject", "Font",\
-  0, "Font", "CMap", "FontDescriptor", 0
-#define pdf_resource_type_structs\
+#define PDF_RESOURCE_TYPE_NAMES\
+  "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", "/Font",\
+  0, "/Font", "/CMap", "/FontDescriptor", 0
+#define PDF_RESOURCE_TYPE_STRUCTS\
   &st_pdf_resource,		/* see below */\
   &st_pdf_resource,\
   &st_pdf_resource,\
@@ -106,12 +106,18 @@ typedef enum {
   &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource
 
+/*
+ * rname is currently R<id> for all resources other than synthesized fonts;
+ * for synthesized fonts, rname is A, B, ....  The string is null-terminated.
+ */
+
 #define pdf_resource_common(typ)\
     typ *next;			/* next resource of this type */\
     pdf_resource_t *prev;	/* previously allocated resource */\
     gs_id rid;			/* optional ID key */\
     bool named;\
-    bool used_on_page;\
+    char rname[1/*R*/ + (sizeof(long) * 8 / 3 + 1) + 1/*\0*/];\
+    ulong where_used;		/* 1 bit per level of content stream */\
     cos_object_t *object
 typedef struct pdf_resource_s pdf_resource_t;
 struct pdf_resource_s {
@@ -138,6 +144,15 @@ struct pdf_x_object_s {
   gs_private_st_suffix_add0(st_pdf_x_object, pdf_x_object_t,\
     "pdf_x_object_t", pdf_x_object_enum_ptrs, pdf_x_object_reloc_ptrs,\
     st_pdf_resource)
+
+/* Define the mask for which procsets have been used on a page. */
+typedef enum {
+    NoMarks = 0,
+    ImageB = 1,
+    ImageC = 2,
+    ImageI = 4,
+    Text = 8
+} pdf_procset_t;
 
 /* ------ Fonts ------ */
 
@@ -175,6 +190,7 @@ struct pdf_graphics_save_s {
     cos_stream_t *object;
     long position;
     pdf_context_t save_context;
+    pdf_procset_t save_procsets;
     long save_contents_id;
 };
 
@@ -272,15 +288,6 @@ typedef struct pdf_stream_position_s {
     long start_pos;
 } pdf_stream_position_t;
 
-/* Define the mask for which procsets have been used on a page. */
-typedef enum {
-    NoMarks = 0,
-    ImageB = 1,
-    ImageC = 2,
-    ImageI = 4,
-    Text = 8
-} pdf_procset;
-
 /*
  * Define the structure for keeping track of text rotation.
  * There is one for the current page (for AutoRotate /PageByPage)
@@ -308,10 +315,9 @@ typedef struct pdf_page_dsc_info_s {
 typedef struct pdf_page_s {
     cos_dict_t *Page;
     gs_int_point MediaBox;
-    pdf_procset procsets;
+    pdf_procset_t procsets;
     long contents_id;
-    long resource_ids[resourceFont]; /* resources up to Font, see above */
-    long fonts_id;
+    long resource_ids[resourceFont + 1]; /* resources thru Font, see above */
     cos_array_t *Annots;
     pdf_text_rotation_t text_rotation;
     pdf_page_dsc_info_t dsc_info;
@@ -421,7 +427,7 @@ struct gx_device_pdf_s {
     pdf_context_t context;
     long contents_length_id;
     long contents_pos;
-    pdf_procset procsets;	/* used on this page */
+    pdf_procset_t procsets;	/* used on this page */
     pdf_text_state_t text;
     pdf_std_font_t std_fonts[PDF_NUM_STD_FONTS];
     long space_char_ids[X_SPACE_MAX - X_SPACE_MIN + 1];
@@ -429,6 +435,7 @@ struct gx_device_pdf_s {
 #define initial_num_pages 50
     pdf_page_t *pages;
     int num_pages;
+    ulong used_mask;		/* for where_used: page level = 1 */
     pdf_resource_list_t resources[NUM_RESOURCE_TYPES];
     /* cs_Patterns[0] is colored; 1,3,4 are uncolored + Gray,RGB,CMYK */
     pdf_resource_t *cs_Patterns[5];
@@ -541,6 +548,9 @@ int pdf_close_contents(P2(gx_device_pdf * pdev, bool last));
 
 /* ------ Resources et al ------ */
 
+extern const char *const pdf_resource_type_names[];
+extern const gs_memory_struct_type_t *const pdf_resource_type_structs[];
+
 /*
  * Define the offset that indicates that a file position is in the
  * asides file rather than the main (contents) file.
@@ -586,6 +596,20 @@ int pdf_end_aside(P1(gx_device_pdf * pdev));
 
 /* End a resource. */
 int pdf_end_resource(P1(gx_device_pdf * pdev));
+
+/*
+ * Write and release the Cos objects for resources local to a content stream.
+ * We must write all the objects before freeing any of them, because
+ * they might refer to each other.
+ */
+int pdf_write_resource_objects(P2(gx_device_pdf *pdev,
+				  pdf_resource_type_t rtype));
+
+/*
+ * Store the resource sets for a content stream (page or XObject).
+ * Sets page->{procsets, resource_ids[], fonts_id}.
+ */
+int pdf_store_page_resources(P2(gx_device_pdf *pdev, pdf_page_t *page));
 
 /* Copy data from a temporary file to a stream. */
 void pdf_copy_data(P3(stream *s, FILE *file, long count));

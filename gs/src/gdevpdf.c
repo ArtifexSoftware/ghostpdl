@@ -34,11 +34,6 @@
 #define PSDF_VERSION_INITIAL psdf_version_ll3
 #define PDF_COMPATIBILITY_LEVEL_INITIAL 1.3
 
-/* Define the names of the resource types. */
-private const char *const resource_type_names[] = {
-    pdf_resource_type_names
-};
-
 /* Define the size of internal stream buffers. */
 /* (This is not a limitation, it only affects performance.) */
 #define sbuf_size 512
@@ -230,6 +225,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {{0}},				/* text_rotation */
  0,				/* pages */
  0,				/* num_pages */
+ 1,				/* used_mask */
  {
      {
 	 {0}}},			/* resources */
@@ -544,50 +540,13 @@ pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
     return angles[imax];
 }
 
-/*
- * Write and release the Cos objects for page-specific resources.
- * We must write all the objects before freeing any of them, because
- * they might refer to each other.
- */
-private int
-pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
-{
-    int j;
-
-    /* Write objects. */
-    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
-
-	for (; pres != 0; pres = pres->next)
-	    if (!pres->named && !pres->object->written)
-		cos_write_object(pres->object, pdev);
-    }
-
-    /* Free unnamed objects, which can't be used again. */
-    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-	pdf_resource_t **prev = &pdev->resources[rtype].chains[j];
-	pdf_resource_t *pres;
-
-	while ((pres = *prev) != 0) {
-	    if (pres->named) {	/* named, don't free */
-		prev = &pres->next;
-	    } else {
-		cos_free(pres->object, "pdf_write_resource_objects");
-		pres->object = 0;
-		*prev = pres->next;
-	    }
-	}
-    }
-
-    return 0;
-}
-
 /* Close the current page. */
 private int
 pdf_close_page(gx_device_pdf * pdev)
 {
     int page_num = ++(pdev->next_page);
     pdf_page_t *page;
+    int code;
 
     /*
      * If the very first page is blank, we need to open the document
@@ -609,84 +568,16 @@ pdf_close_page(gx_device_pdf * pdev)
     page = &pdev->pages[page_num - 1];
     page->MediaBox.x = (int)(pdev->MediaSize[0]);
     page->MediaBox.y = (int)(pdev->MediaSize[1]);
-    page->procsets = pdev->procsets;
     page->contents_id = pdev->contents_id;
-
-    /* Write out any resource dictionaries. */
-
-    {
-	int i;
-
-	for (i = 0; i < resourceFont; ++i) {
-	    bool any = false;
-	    stream *s;
-	    int j;
-
-	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-		pdf_resource_t *pres = pdev->resources[i].chains[j];
-
-		for (; pres != 0; pres = pres->next) {
-		    if (pres->used_on_page) {
-			long id = pres->object->id;
-
-			if (!any) {
-			    page->resource_ids[i] = pdf_begin_obj(pdev);
-			    s = pdev->strm;
-			    pputs(s, "<<");
-			    any = true;
-			}
-			pprintld2(s, "/R%ld\n%ld 0 R", id, id);
-		    }
-		}
-	    }
-	    if (any) {
-		pputs(s, ">>\n");
-		pdf_end_obj(pdev);
-		pdf_write_resource_objects(pdev, i);
-	    }
-	}
-    }
+    /* pdf_store_page_resources sets procsets, resource_ids[]. */
+    code = pdf_store_page_resources(pdev, page);
+    if (code < 0)
+	return code;
 
     /* Write out Functions. */
 
     pdf_write_resource_objects(pdev, resourceFunction);
 
-    /* Record references to just those fonts used on this page. */
-
-    {
-	bool any = false;
-	stream *s;
-	int j;
-
-	for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-	    pdf_font_t **prev =
-		(pdf_font_t **)&pdev->resources[resourceFont].chains[j];
-	    pdf_font_t *font;
-
-	    while ((font = *prev) != 0) {
-		if (font->used_on_page) {
-		    if (!any) {
-			page->fonts_id = pdf_begin_obj(pdev);
-			s = pdev->strm;
-			pputs(s, "<<");
-			any = true;
-		    }
-		    pprints1(s, "/%s", font->frname);
-		    pprintld1(s, "\n%ld 0 R", font->object->id);
-		    font->used_on_page = false;
-		}
-		if (font->skip) {
-		    /* The font was already written and freed. */
-		    *prev = font->next;
-		} else
-		    prev = &font->next;
-	    }
-	}
-	if (any) {
-	    pputs(s, ">>\n");
-	    pdf_end_obj(pdev);
-	}
-    }
     /*
      * When Acrobat Reader 3 prints a file containing a Type 3 font with a
      * non-standard Encoding, it apparently only emits the subset of the
@@ -757,14 +648,12 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     {
 	int i;
 
-	for (i = 0; i < resourceFont; ++i)
+	for (i = 0; i < countof(page->resource_ids); ++i)
 	    if (page->resource_ids[i]) {
-		pprints1(s, "/%s ", resource_type_names[i]);
-		pprintld1(s, "%ld 0 R\n", page->resource_ids[i]);
+		pputs(s, pdf_resource_type_names[i]);
+		pprintld1(s, " %ld 0 R\n", page->resource_ids[i]);
 	    }
     }
-    if (page->fonts_id)
-	pprintld1(s, "/Font %ld 0 R\n", page->fonts_id);
     pputs(s, ">>\n");
 
     /* Write out the annotations array if any. */

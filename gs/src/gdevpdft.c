@@ -206,12 +206,12 @@ pdf_set_font_and_size(gx_device_pdf * pdev, pdf_font_t * font, floatp size)
 
 	if (code < 0)
 	    return code;
-	pprints1(s, "/%s ", font->frname);
+	pprints1(s, "/%s ", font->rname);
 	pprintg1(s, "%g Tf\n", size);
 	pdev->text.font = font;
 	pdev->text.size = size;
     }
-    font->used_on_page = true;
+    font->where_used |= pdev->used_mask;
     return 0;
 }
 
@@ -403,10 +403,10 @@ assign_char_code(gx_device_pdf * pdev)
 	if (code < 0)
 	    return code;
 	if (pdev->open_font == 0)
-	    memset(font->frname, 0, sizeof(font->frname));
+	    font->rname[0] = 0;
 	else
-	    strcpy(font->frname, pdev->open_font->frname);
-	for (pc = font->frname; *pc == 'Z'; ++pc)
+	    strcpy(font->rname, pdev->open_font->rname);
+	for (pc = font->rname; *pc == 'Z'; ++pc)
 	    *pc = '@';
 	if ((*pc)++ == 0)
 	    *pc = 'A', pc[1] = 0;

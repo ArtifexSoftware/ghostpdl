@@ -343,11 +343,11 @@ pdf_close_contents(gx_device_pdf * pdev, bool last)
 /* ------ Resources et al ------ */
 
 /* Define the allocator descriptors for the resource types. */
-private const char *const resource_names[] = {
-    pdf_resource_type_names
+const char *const pdf_resource_type_names[] = {
+    PDF_RESOURCE_TYPE_NAMES
 };
-private const gs_memory_struct_type_t *const resource_structs[] = {
-    pdf_resource_type_structs
+const gs_memory_struct_type_t *const pdf_resource_type_structs[] = {
+    PDF_RESOURCE_TYPE_STRUCTS
 };
 
 /* Find a resource of a given type by gs_id. */
@@ -403,13 +403,19 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
     if (pres == 0 || object == 0) {
 	return_error(gs_error_VMerror);
     }
-    object->id = (id < 0 ? -1L : id == 0 ? pdf_obj_ref(pdev) : id);
+    if (id < 0) {
+	object->id = -1L;
+	pres->rname[0] = 0;
+    } else {
+	object->id = (id == 0 ? pdf_obj_ref(pdev) : id);
+	sprintf(pres->rname, "R%ld", object->id);
+    }
     pres->next = *plist;
     *plist = pres;
     pres->prev = pdev->last_resource;
     pdev->last_resource = pres;
     pres->named = false;
-    pres->used_on_page = true;
+    pres->where_used = pdev->used_mask;
     pres->object = object;
     *ppres = pres;
     return 0;
@@ -431,7 +437,7 @@ pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 			gs_id rid, pdf_resource_t ** ppres)
 {
     int code = pdf_begin_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
-			       resource_structs[rtype], ppres);
+			       pdf_resource_type_structs[rtype], ppres);
 
     if (code >= 0)
 	(*ppres)->rid = rid;
@@ -443,10 +449,10 @@ pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 {
     int code = pdf_begin_resource_body(pdev, rtype, rid, ppres);
 
-    if (code >= 0 && resource_names[rtype] != 0) {
+    if (code >= 0 && pdf_resource_type_names[rtype] != 0) {
 	stream *s = pdev->strm;
 
-	pprints1(s, "<</Type/%s", resource_names[rtype]);
+	pprints1(s, "<</Type%s", pdf_resource_type_names[rtype]);
 	pprintld1(s, "/Name/R%ld", (*ppres)->object->id);
     }
     return code;
@@ -458,7 +464,7 @@ pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 		   pdf_resource_t ** ppres, long id)
 {
     int code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
-			       resource_structs[rtype], ppres, id);
+			       pdf_resource_type_structs[rtype], ppres, id);
 
     if (code >= 0)
 	(*ppres)->rid = rid;
@@ -493,6 +499,93 @@ int
 pdf_end_resource(gx_device_pdf * pdev)
 {
     return pdf_end_aside(pdev);
+}
+
+/*
+ * Write and release the Cos objects for resources local to a content stream.
+ * We must write all the objects before freeing any of them, because
+ * they might refer to each other.
+ */
+int
+pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
+{
+    int j;
+
+    /* Write objects. */
+    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
+
+	for (; pres != 0; pres = pres->next)
+	    if (!pres->named && !pres->object->written)
+		cos_write_object(pres->object, pdev);
+    }
+
+    /* Free unnamed objects, which can't be used again. */
+    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+	pdf_resource_t **prev = &pdev->resources[rtype].chains[j];
+	pdf_resource_t *pres;
+
+	while ((pres = *prev) != 0) {
+	    if (pres->named) {	/* named, don't free */
+		prev = &pres->next;
+	    } else {
+		cos_free(pres->object, "pdf_write_resource_objects");
+		pres->object = 0;
+		*prev = pres->next;
+	    }
+	}
+    }
+
+    return 0;
+}
+
+/*
+ * Store the resource sets for a content stream (page or XObject).
+ * Sets page->{procsets, resource_ids[]}.
+ */
+int
+pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
+{
+
+    /* Write out any resource dictionaries. */
+
+    {
+	int i;
+
+	for (i = 0; i <= resourceFont; ++i) {
+	    stream *s = 0;
+	    int j;
+
+	    page->resource_ids[i] = 0;
+	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+		pdf_resource_t *pres = pdev->resources[i].chains[j];
+
+		for (; pres != 0; pres = pres->next) {
+		    if (pres->where_used & pdev->used_mask) {
+			long id = pres->object->id;
+
+			if (s == 0) {
+			    page->resource_ids[i] = pdf_begin_separate(pdev);
+			    s = pdev->strm;
+			    pputs(s, "<<");
+			}
+			pprints1(s, "/%s\n", pres->rname);
+			pprintld1(s, "%ld 0 R", id);
+			pres->where_used -= pdev->used_mask;
+		    }
+		}
+	    }
+	    if (s) {
+		pputs(s, ">>\n");
+		pdf_end_separate(pdev);
+		if (i != resourceFont)
+		    pdf_write_resource_objects(pdev, i);
+	    }
+	}
+    }
+
+    page->procsets = pdev->procsets;
+    return 0;
 }
 
 /* Copy data from a temporary file to a stream. */

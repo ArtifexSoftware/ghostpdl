@@ -1220,6 +1220,8 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	       &bbox.p.x, &bbox.p.y, &bbox.q.x, &bbox.q.y) != 4
 	)
 	return_error(gs_error_rangecheck);
+    if ((pdev->used_mask << 1) == 0)
+	return_error(gs_error_limitcheck);
     code = pdf_make_named(pdev, objname, cos_type_stream,
 			  (cos_object_t **)&pcs, true);
     if (code < 0)
@@ -1257,10 +1259,13 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     pdgs->object = pcs;
     pdgs->position = stell(pdev->pictures.strm);
     pdgs->save_context = pdev->context;
+    pdgs->save_procsets = pdev->procsets;
     pdgs->save_contents_id = pdev->contents_id;
     pdev->open_graphics = pdgs;
     pdev->context = PDF_IN_STREAM;
+    pdev->procsets = 0;
     pdev->contents_id = pcs->id;
+    pdev->used_mask <<= 1;
     return 0;
 }
 
@@ -1286,11 +1291,59 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (code < 0)
 	return code;
     pres->object = COS_OBJECT(pcs);
+    pcs->pres = pres;
+    pres->named = true;
+    pres->where_used = 0;	/* initially not used */
+    /* Add the resources to the stream object. */
+    {
+	cos_dict_t *pcrd = cos_dict_alloc(pdev, "EP");
+	pdf_page_t page;
+	int i;
+	cos_value_t v;
+
+	if (pcrd == 0)
+	    return_error(gs_error_VMerror);
+	code = pdf_store_page_resources(pdev, &page);
+	if (code < 0)
+	    goto fail;
+	for (i = 0; i < countof(page.resource_ids); ++i)
+	    if (page.resource_ids[i]) {
+		char idstr[sizeof(long) / 3 + 1 + 5]; /* %ld 0 R\0 */
+
+		sprintf(idstr, "%ld 0 R", page.resource_ids[i]);
+		cos_string_value(&v, (byte *)idstr, strlen(idstr));
+		code = cos_dict_put_c_key(pcrd, pdf_resource_type_names[i], &v);
+		if (code < 0)
+		    goto fail;
+	    }
+	{
+	    char str[5 + 7 + 7 + 7 + 5 + 2];
+
+	    strcpy(str, "[/PDF");
+	    if (page.procsets & ImageB)
+		strcat(str, "/ImageB");
+	    if (page.procsets & ImageC)
+		strcat(str, "/ImageC");
+	    if (page.procsets & ImageI)
+		strcat(str, "/ImageI");
+	    if (page.procsets & Text)
+		strcat(str, "/Text");
+	    strcat(str, "]");
+	    cos_string_value(&v, (byte *)str, strlen(str));
+	    code = cos_dict_put_c_key(pcrd, "/ProcSet", &v);
+	    if (code < 0)
+		goto fail;
+	}
+	code = cos_dict_put_c_key_object(cos_stream_dict(pcs), "/Resources",
+					 COS_OBJECT(pcrd));
+    }
+ fail:
     start = pdgs->position;
     pcs->is_open = false;
     size = stell(pdev->strm) - start;
     pdev->open_graphics = pdgs->prev;
     pdev->context = pdgs->save_context;
+    pdev->procsets = pdgs->save_procsets;
     pdev->contents_id = pdgs->save_contents_id;
     gs_free_object(pdev->pdf_memory, pdgs, "pdfmark_EP");
     /* Copy the data to the streams file. */
@@ -1298,13 +1351,15 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     sseek(pdev->strm, start);
     fseek(pdev->pictures.file, start, SEEK_SET);
     pdf_copy_data(pdev->streams.strm, pdev->pictures.file, size);
-    code = cos_stream_add(pcs, size);
+    if (code >= 0)
+	code = cos_stream_add(pcs, size);
     /* Keep the file in sync with the stream. */
     fseek(pdev->pictures.file, start, SEEK_SET);
     if (!pdev->open_graphics) {
 	pdev->strm = pdev->pictures.save_strm;
 	pdev->pictures.save_strm = 0;
     }
+    pdev->used_mask >>= 1;
     return code;
 }
 
@@ -1329,8 +1384,9 @@ pdfmark_SP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     ctm = *pctm;
     ctm.tx *= pdev->HWResolution[0] / 72.0;
     ctm.ty *= pdev->HWResolution[1] / 72.0;
-    pdf_put_matrix(pdev, "q ", &ctm, "cm\n");
+    pdf_put_matrix(pdev, "q ", &ctm, "cm");
     pprintld1(pdev->strm, "/R%ld Do Q\n", pco->id);
+    pco->pres->where_used |= pdev->used_mask;
     return 0;
 }
 
