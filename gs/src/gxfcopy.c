@@ -138,6 +138,9 @@ private ENUM_PTRS_WITH(copied_glyph_name_enum_ptrs, gs_copied_glyph_name_t *pcgn
 		 ENUM_CONST_STRING(&p->str));
      }
      return 0;
+     /* We should mark glyph name here, but we have no access to 
+        the gs_font_dir instance. Will mark in gs_copied_font_data_enum_ptrs.
+      */
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(copied_glyph_name_reloc_ptrs, gs_copied_glyph_name_t *pcgn)
 {
@@ -193,13 +196,43 @@ struct gs_copied_font_data_s {
     gs_subr_info_t subrs;	/* (Type 1/2 and CIDFontType 0) */
     gs_subr_info_t global_subrs; /* (Type 2 and CIDFontType 0) */
     gs_font_cid0 *parent;	/* (Type 1 subfont) => parent CIDFontType 0 */
+    gs_font_dir *dir;
 };
 extern_st(st_gs_font_info);
-gs_private_st_suffix_add11(st_gs_copied_font_data, gs_copied_font_data_t,
-  "gs_copied_font_data_t", gs_copied_font_data_enum_ptrs,
-  gs_copied_font_data_reloc_ptrs, st_gs_font_info, glyphs, names, extra_names,
-  data, Encoding, CIDMap, subrs.data, subrs.starts, global_subrs.data,
-  global_subrs.starts, parent);
+private 
+ENUM_PTRS_WITH(gs_copied_font_data_enum_ptrs, gs_copied_font_data_t *cfdata)
+    if (index == 12) {
+	gs_copied_glyph_name_t *names = cfdata->names;
+	gs_copied_glyph_extra_name_t *en = cfdata->extra_names;
+	int i;
+	
+	if (names != NULL)
+	    for (i = 0; i < cfdata->glyphs_size; ++i)
+		if (names[i].glyph < gs_c_min_std_encoding_glyph)
+		    cfdata->dir->ccache.mark_glyph(names[i].glyph, NULL);
+	for (; en != NULL; en = en->next)
+	    if (en->name.glyph < gs_c_min_std_encoding_glyph)
+		cfdata->dir->ccache.mark_glyph(en->name.glyph, NULL);
+    }
+    return ENUM_USING(st_gs_font_info, &cfdata->info, sizeof(gs_font_info_t), index - 12);
+    ENUM_PTR3(0, gs_copied_font_data_t, glyphs, names, extra_names);
+    ENUM_PTR3(3, gs_copied_font_data_t, data, Encoding, CIDMap);
+    ENUM_PTR3(6, gs_copied_font_data_t, subrs.data, subrs.starts, global_subrs.data);
+    ENUM_PTR3(9, gs_copied_font_data_t, global_subrs.starts, parent, dir);
+ENUM_PTRS_END
+
+private RELOC_PTRS_WITH(gs_copied_font_data_reloc_ptrs, gs_copied_font_data_t *cfdata)
+{
+    RELOC_PTR3(gs_copied_font_data_t, glyphs, names, extra_names);
+    RELOC_PTR3(gs_copied_font_data_t, data, Encoding, CIDMap);
+    RELOC_PTR3(gs_copied_font_data_t, subrs.data, subrs.starts, global_subrs.data);
+    RELOC_PTR3(gs_copied_font_data_t, global_subrs.starts, parent, dir);
+    RELOC_USING(st_gs_font_info, &cfdata->info, sizeof(gs_font_info_t));
+}
+RELOC_PTRS_END
+
+gs_private_st_composite(st_gs_copied_font_data, gs_copied_font_data_t, "gs_copied_font_data_t",\
+    gs_copied_font_data_enum_ptrs, gs_copied_font_data_reloc_ptrs);
 
 inline private gs_copied_font_data_t *
 cf_data(const gs_font *font)
@@ -1820,6 +1853,7 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
 	goto fail;
     }
     cfdata->info = info;
+    cfdata->dir = font->dir;
     if ((code = (copy_string(mem, &cfdata->info.Copyright,
 			     "gs_copy_font(Copyright)") |
 		 copy_string(mem, &cfdata->info.Notice,
