@@ -201,7 +201,7 @@ high_level_device(gx_device *device)
 {
     /* this is a hack, there is not a nice way to determine if the
        device is a high level device at this time */
-    if ( strncmp(gs_devicename(device), "pdfwrite", 8) == 0 )
+    if ( device && strncmp(gs_devicename(device), "pdfwrite", 8) == 0 )
 	return true;
     else
 	return false;
@@ -212,11 +212,13 @@ high_level_device(gx_device *device)
    level device requires the memory */
 private int
 close_job(pl_main_universe_t *universe)
-{
+{	
     if ( high_level_device(universe->curr_device) ) {
 	 if (gs_closedevice(universe->curr_device) < 0)
 	     return -1;
-    }
+	 /* forces reopen of the device. */
+	 universe->curr_device = 0;
+   }
     return pl_dnit_job(universe->curr_instance);
 }
 
