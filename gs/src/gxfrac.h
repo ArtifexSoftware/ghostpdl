@@ -26,7 +26,7 @@ typedef short signed_frac;
 
 #define arch_log2_sizeof_frac arch_log2_sizeof_short
 #define arch_sizeof_frac arch_sizeof_short
-#define frac_bits 15
+#define FRAC_BITS 15
 #define frac_0 ((frac)0)
 
 /*
@@ -51,29 +51,29 @@ typedef short signed_frac;
  * on the definition of frac_1 above.
  */
 #define _frac2s(fr)\
-  (((fr) >> (frac_bits - frac_1_0bits)) + (fr))
+  (((fr) >> (FRAC_BITS - frac_1_0bits)) + (fr))
 #define frac2bits(fr, nb)\
-  ((uint)(_frac2s(fr) >> (frac_bits - (nb))))
+  ((uint)(_frac2s(fr) >> (FRAC_BITS - (nb))))
 #define frac2byte(fr) ((byte)frac2bits(fr, 8))
 /* bits2frac requires frac_bits / 2 <= nb <= frac_bits. */
 #define bits2frac(v, nb) ((frac)(\
-  ((frac)(v) << (frac_bits - (nb))) +\
-   ((v) >> ((nb) * 2 - frac_bits)) -\
+  ((frac)(v) << (FRAC_BITS - (nb))) +\
+   ((v) >> ((nb) * 2 - FRAC_BITS)) -\
    ((v) >> ((nb) - frac_1_0bits)) ))
 #define byte2frac(b) bits2frac(b, 8)
 /* Produce a result that is guaranteed to convert back to a frac */
 /* not exceeding the original value fr. */
 #define frac2bits_floor(fr, nb)\
-  ((uint)((_frac2s(fr) - (_frac2s(fr) >> (nb))) >> (frac_bits - (nb))))
+  ((uint)((_frac2s(fr) - (_frac2s(fr) >> (nb))) >> (FRAC_BITS - (nb))))
 /*
  * Conversion between fracs and unsigned shorts.
  */
 #define ushort_bits (arch_sizeof_short * 8)
 #define frac2ushort(fr) ((ushort)(\
-  ((fr) << (ushort_bits - frac_bits)) +\
-  ((fr) >> (frac_bits * 2 - ushort_bits - frac_1_0bits)) ))
+  ((fr) << (ushort_bits - FRAC_BITS)) +\
+  ((fr) >> (FRAC_BITS * 2 - ushort_bits - frac_1_0bits)) ))
 #define ushort2frac(us) ((frac)(\
-  ((us) >> (ushort_bits - frac_bits)) -\
+  ((us) >> (ushort_bits - FRAC_BITS)) -\
   ((us) >> (ushort_bits - frac_1_0bits)) ))
 /*
  * Compute the quotient Q = floor(P / frac_1),
@@ -81,12 +81,12 @@ typedef short signed_frac;
  * See gxarith.h for the underlying algorithm.
  */
 #define frac_1_quo(p)\
-  ( (((p) >> frac_1_0bits) + ((p) >> frac_bits) + 1) >> (frac_bits - frac_1_0bits) )
+  ( (((p) >> frac_1_0bits) + ((p) >> FRAC_BITS) + 1) >> (FRAC_BITS - frac_1_0bits) )
 /*
  * Compute the remainder similarly, having already computed the quotient.
  * This is, of course, P - Q * frac_1.
  */
 #define frac_1_rem(p, q)\
-  ((frac)( (uint)(p) - ((q) << frac_bits) + ((q) << frac_1_0bits) ))
+  ((frac)( (uint)(p) - ((q) << FRAC_BITS) + ((q) << frac_1_0bits) ))
 
 #endif /* gxfrac_INCLUDED */

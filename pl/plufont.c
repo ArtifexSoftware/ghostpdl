@@ -32,7 +32,7 @@
 
 /* agfa stuff */
 #include "cgconfig.h"     /* this must be first  */
-#include "port.h"         /* this must be second */
+#include "ufstport.h"         /* this must be second */
 
 /* Structure descriptors */
 private_st_pl_font();

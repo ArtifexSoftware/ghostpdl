@@ -1138,7 +1138,7 @@ gx_set_identity_transfer(gx_transfer_map *pmap)
 frac
 gx_color_frac_map(frac cv, const frac * values)
 {
-#define cp_frac_bits (frac_bits - log2_transfer_map_size)
+#define cp_frac_bits (FRAC_BITS - log2_transfer_map_size)
     int cmi = frac2bits_floor(cv, log2_transfer_map_size);
     frac mv = values[cmi];
     int rem, mdv;

@@ -26,7 +26,7 @@
 #include "plvalue.h"
 /* agfa includes */
 #include "cgconfig.h"
-#include "port.h"
+#include "ufstport.h"
 #include "shareinc.h"
 /* set to 1 to display UFST debugging statements */
 SW16 trace_sw = 0;
@@ -45,11 +45,11 @@ private SW16  fcHndlAry[16];
 /* defaults for locations of font collection objects (fco's) and
    plugins the root data directory.  These are internally separated with
    ':' but environment variable use the gp separator */
-const char *UFSTFONTDIR="/usr/local/fontdata/";
+const char *UFSTFONTDIR="/usr/local/fontdata2/";
 
 /* default list of fcos and plugins - relative to UFSTFONTDIR */
-const char *UFSTFCOS="mtfonts/pclps2/mt1/pclp2__g.fco:mtfonts/pcl45/mt1/wd_____g.fco";
-const char *UFSTPLUGINS="mtfonts/pcl45/mt1/plug___g.fco";
+const char *UFSTFCOS="mtfonts/pclps2/mt1/pclp2__i.fco:mtfonts/pcl45/mt1/wd_____g.fco";
+const char *UFSTPLUGINS="mtfonts/pcl45/mt1/plug___i.fco";
 
 /* return a null terminated array of strings on the heap from
    str0:str1:str:.  Use gs separator */

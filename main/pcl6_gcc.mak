@@ -76,11 +76,13 @@ PXL_FONT_SCALER=$(PL_SCALER)
 
 # flags for UFST scaler.
 ifeq ($(PL_SCALER), ufst)
-XLDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
+AGFA_LIB=../pl/agfa/rts/lib/
+# hack!!! we append this onto TOP_OBJ to avoid creating another
+# makefile variable.
+EXTRALIBS=$(AGFA_LIB)if_lib.a $(AGFA_LIB)fco_lib.a $(AGFA_LIB)tt_lib.a
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
-EXTRALIBS=-lif -lfco -ltt
-AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -DAGFA_FONT_TABLE
+AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -I../pl/agfa/rts/tt/ -DAGFA_FONT_TABLE -DGCCx86
 endif
 
 # flags for artifex scaler
@@ -88,7 +90,7 @@ ifeq ($(PL_SCALER), afs)
 
 XLDFLAGS=
 EXTRALIBS=
-
+AGFA_OBJ=
 ifeq ($(ROMFONTS), true)
 PL_SCALER=afsr
 XLDFLAGS=-L../pl/

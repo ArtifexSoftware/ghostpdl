@@ -129,7 +129,7 @@ $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio_
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxpath_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
  $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h)\
- $(cgconfig_h) $(port_h) $(shareinc_h) 
+ $(cgconfig_h) $(ufstport_h) $(shareinc_h) 
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
 
 $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
@@ -178,7 +178,7 @@ $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
  $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
- $(plfont_h) $(plvalue_h) $(cgconfig_h) $(port_h)
+ $(plfont_h) $(plvalue_h) $(cgconfig_h) $(ufstport_h)
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
 
 $(PLOBJ)plplatfps.$(OBJ): $(PLSRC)plplatfps.c $(AK) $(string__h)\
@@ -233,7 +233,7 @@ $(PLOBJ)plflfont.$(OBJ): $(PLSRC)plflfont.c $(PLSRC)pllfont.h  $(AK)\
 $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(PLSRC)pllfont.h $(AK)\
         $(stdio_h) $(string__h) $(gsmemory_h) $(gstypes_h)\
         $(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
-	$(cgconfig_h) $(port_h) $(shareinc_h)  $(plftable_h)
+	$(cgconfig_h) $(ufstport_h) $(shareinc_h)  $(plftable_h)
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
 
 # artifex font loading module.

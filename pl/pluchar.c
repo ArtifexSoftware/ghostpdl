@@ -47,7 +47,7 @@
 
 /* agfa includes */
 #include "cgconfig.h"
-#include "port.h"
+#include "ufstport.h"
 #include "shareinc.h"
 
 /*
@@ -527,15 +527,18 @@ pl_ufst_char_width(
     gs_point *          pwidth,
     FONTCONTEXT *       pfc )
 {
+    
     UW16                chIdloc = char_code;
     UW16                fontWidth[2];
     int                 status;
     gs_memory_t         *mem = ((gs_state *)pgs)->memory;
+    WIDTH_LIST_INPUT_ENTRY fcode;
     if (pwidth != NULL)
         pwidth->x = pwidth->y = 0;
 
     CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
-    if ((status = CGIFwidth(FSA char_code, 1, 4, fontWidth)) != 0) {
+    fcode.CharType.TT_unicode = char_code;
+    if ((status = CGIFwidth(FSA &fcode, 1, 4, fontWidth)) != 0) {
         dprintf1 (mem, "CGIFwidth error %d\n", status);
         return status;
     }
