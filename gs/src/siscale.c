@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -48,6 +48,7 @@ typedef int AccumTmp;
 #define fixedScaleFactor  ((int) (1 << numScaleBits))
 #define scale_PixelWeight(factor) ((int)((factor) * (1 << num_weight_bits)))
 #define unscale_AccumTmp(atemp, fraction_bits) arith_rshift(atemp, fraction_bits)
+#define NEED_FRACTION_BITS
 
 #else /* USE_FPU > 0 */
 
@@ -57,9 +58,10 @@ typedef float PixelWeight;
 typedef double AccumTmp;
 
 #define num_weight_bits 0		/* Not used for floating point */
-#define	fixedScaleFactor 1		/* Straight scaling for floating point */
+#define fixedScaleFactor 1		/* Straight scaling for floating point */
 #define scale_PixelWeight(factor) (factor)
 #define unscale_AccumTmp(atemp, fraction_bits) ((int)(atemp))
+/*#undef NEED_FRACTION_BITS*/
 
 #endif /* USE_FPU */
 
@@ -288,7 +290,10 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
        const CONTRIB * items)
 {
     int c, i;
-    const int fraction_bits = (maxSizeofPixel - sizeof(PixelTmp)) * 8 + num_weight_bits;
+#ifdef NEED_FRACTION_BITS
+    const int fraction_bits =
+	(sizeofPixelIn - sizeof(PixelTmp)) * 8 + num_weight_bits;
+#endif
 
     for (c = 0; c < Colors; ++c) {
 	PixelTmp *tp = tmp + c;
@@ -336,7 +341,15 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
 	}
 	if_debug0('W', "\n");
     }
-} /* Apply filter to zoom vertically from tmp to dst. *//* This is simpler because we can treat all columns identically *//* without regard to the number of samples per pixel. */ private void
+}
+
+
+/*
+ * Apply filter to zoom vertically from tmp to dst.
+ * This is simpler because we can treat all columns identically
+ * without regard to the number of samples per pixel.
+ */
+private void
 zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
        const PixelTmp * tmp, int WidthOut, int tmp_width,
        int Colors, const CLIST * contrib, const CONTRIB * items)
@@ -347,7 +360,10 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
     const CONTRIB *cbp = items + contrib->index;
     int kc;
     PixelTmp2 max_weight = MaxValueOut;
-    const int fraction_bits = (sizeof(PixelTmp) - sizeofPixelOut) * 8 + num_weight_bits;
+#ifdef NEED_FRACTION_BITS
+    const int fraction_bits =
+	(sizeof(PixelTmp) - sizeofPixelOut) * 8 + num_weight_bits;
+#endif
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -391,7 +407,7 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
     int last_index =
     calculate_contrib(&ss->dst_next_list, ss->dst_items, ss->yscale,
 		      y, 1, ss->params.HeightIn, MAX_ISCALE_SUPPORT, row_size,
-		      (double)ss->params.MaxValueOut / (double) (fixedScaleFactor * unitPixelTmp) );
+		      (double)ss->params.MaxValueOut / (fixedScaleFactor * unitPixelTmp) );
     int first_index_mod = ss->dst_next_list.first_pixel / row_size;
 
     ss->dst_last_index = last_index;
@@ -476,7 +492,7 @@ s_IScale_init(stream_state * st)
     /* Pre-calculate filter contributions for a row. */
     calculate_contrib(ss->contrib, ss->items, ss->xscale,
 		      0, ss->params.WidthOut, ss->params.WidthIn, ss->params.WidthIn,
-		      ss->params.Colors, (double)unitPixelTmp * (double)fixedScaleFactor / ss->params.MaxValueIn);
+		      ss->params.Colors, (double)unitPixelTmp * fixedScaleFactor / ss->params.MaxValueIn);
 
     /* Prepare the weights for the first output row. */
     calculate_dst_contrib(ss, 0);
