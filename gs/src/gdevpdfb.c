@@ -589,8 +589,9 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	cos_value_write(&cs_value, pdev);
 	stream_puts(s, " cs");
 	if (mask)
-	    pprintd3(s, " %d %d %d", (int)(color1 >> 16),
-		     (int)((color1 >> 8) & 0xff), (int)(color1 & 0xff));
+	    pprintg3(s, " %g %g %g", (int)(color1 >> 16) / 255.0,
+		     (int)((color1 >> 8) & 0xff) / 255.0,
+		     (int)(color1 & 0xff) / 255.0);
 	pprintld1(s, "/R%ld scn", pdf_resource_id(pres));
 	pprintg4(s, " %g %g %g %g re f Q\n",
 		 x / xscale, y / yscale, w / xscale, h / xscale);
