@@ -69,7 +69,7 @@ TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 # afs - artifex font scaler.
 # 3 mutually exclusive choices follow, pick one.
 
-PL_SCALER=fts
+PL_SCALER=afs
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
