@@ -291,6 +291,9 @@ int pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * piw);
  */
 int pdf_choose_compression(pdf_image_writer * piw, bool end_binary);
 
+/* If the current substream is a charproc, register a font used in it. */
+int pdf_register_charproc_resource(gx_device_pdf *pdev, gs_id id, pdf_resource_type_t type);
+
 /* ---------------- Exported by gdevpdfv.c ---------------- */
 
 /* Store pattern 1 parameters to cos dictionary. */

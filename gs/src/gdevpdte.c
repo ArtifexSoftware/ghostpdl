@@ -747,6 +747,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
     return widths_differ;
 }
 
+#define RIGHT_SBW 1 /* Old code = 0, new code = 1. */
 #if !RIGHT_SBW
 /*
  * Retrieve glyph origing shift for WMode = 1 in design units.
@@ -823,7 +824,6 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	int code, index = pte->index;
 	gs_text_enum_t pte1 = *(gs_text_enum_t *)pte;
 	int FontType;
-#define RIGHT_SBW 1 /* Old code = 0, new code = 1. */
 #if RIGHT_SBW
 	bool use_cached_v = true;
 #endif
