@@ -672,30 +672,55 @@ FILE *mswin_popen(const char *cmd, const char *mode)
 /* Write the actual file name at fname. */
 FILE *
 gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
-{	/* The -7 is for XXXXXX plus a possible final \. */
-    int prefix_length = strlen(prefix);
-    int len = gp_file_name_sizeof - prefix_length - 7;
-    FILE *f;
+{
+    UINT n;
+    DWORD l;
+    HANDLE hfile = INVALID_HANDLE_VALUE;
+    int fd = -1;
+    FILE *f = NULL;
+    char sTempDir[_MAX_PATH];
+    char sTempFileName[_MAX_PATH];
 
-    if (gp_pathstring_not_bare(prefix, prefix_length) ||
-	gp_gettmpdir(fname, &len) != 0
-	)
-	*fname = 0;
-    else {
-	char *temp;
-
-	/* Prevent X's in path from being converted by mktemp. */
-	for (temp = fname; *temp; temp++)
-	    *temp = tolower(*temp);
-	if (strlen(fname) && (fname[strlen(fname) - 1] != '\\'))
-	    strcat(fname, "\\");
+    memset(fname, 0, gp_file_name_sizeof);
+    l = GetTempPath(sizeof(sTempDir), sTempDir);
+    if (l <= sizeof(sTempDir)) {
+	n = GetTempFileName(sTempDir, prefix, 0, sTempFileName);
+	if (n != 0) {
+	    hfile = CreateFile(sTempFileName, 
+		GENERIC_READ | GENERIC_WRITE | DELETE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL /* | FILE_FLAG_DELETE_ON_CLOSE */, 
+		NULL);
+	    /*
+	     * Can't apply FILE_FLAG_DELETE_ON_CLOSE due to 
+	     * the logics of clist_fclose. Also note that
+	     * gdev_prn_render_pages requires multiple temporary files
+	     * to exist simultaneousely, so that keeping all them opened
+	     * may exceed available CRTL file handles.
+	     */
+	}
     }
-    if (strlen(fname) + prefix_length + 7 >= gp_file_name_sizeof)
-	return 0;		/* file name too long */
-    strcat(fname, prefix);
-    strcat(fname, "XXXXXX");
-    mktemp(fname);
-    f = gp_fopentemp(fname, mode);
+    if (hfile != INVALID_HANDLE_VALUE) {
+	/* Associate a C file handle with an OS file handle. */
+	fd = _open_osfhandle((long)hfile, 0);
+	if (fd == -1)
+	    CloseHandle(hfile);
+	else {
+	    /* Associate a C file stream with C file handle. */
+	    f = fdopen(fd, mode);
+	    if (f == NULL)
+		_close(fd);
+	}
+    }
+    if (f != NULL) {
+	if ((strlen(sTempFileName) < gp_file_name_sizeof))
+	    strncpy(fname, sTempFileName, gp_file_name_sizeof - 1);
+	else {
+	    /* The file name is too long. */
+	    fclose(f);
+	    f = NULL;
+	}
+    }
     if (f == NULL)
 	eprintf1("**** Could not open temporary file %s\n", fname);
     return f;
