@@ -439,11 +439,9 @@ $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h)
 	$(PSCC) $(PSO_)zdevice.$(OBJ) $(C_) $(PSSRC)zdevice.c
 
-$(PSOBJ)zdfilter.$(OBJ) : $(PSSRC)zdfilter.c $(OP) $(string__h)\
- $(gsdfilt_h) $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h)\
- $(gdevp14_h)\
+$(PSOBJ)zdfilter.$(OBJ) : $(PSSRC)zdfilter.c $(OP) $(string__h) $(ghost_h) $(oper_h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
- $(store_h)
+ $(gsdfilt_h) $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(store_h)
 	$(PSCC) $(PSO_)zdfilter.$(OBJ) $(C_) $(PSSRC)zdfilter.c
 
 $(PSOBJ)zfont.$(OBJ) : $(PSSRC)zfont.c $(OP)\
@@ -1717,7 +1715,8 @@ $(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)transpar -include $(PSD)psl2read $(GLD)translib
 
 $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(memory__h) $(string__h)\
- $(gscolor2_h) $(gscspace_h) $(gsipar3x_h) $(gstrans_h) $(gxiparam_h)\
+ $(ghost_h) $(oper_h) $(gscspace_h) $(gscolor2_h) $(gsipar3x_h) $(gstrans_h)\
+ $(gsdfilt_h) $(gdevp14_h) $(gxiparam_h)\
  $(idict_h) $(idparam_h) $(ifunc_h) $(igstate_h) $(iimage_h) $(iimage2_h) $(iname_h)\
  $(store_h)
 	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c

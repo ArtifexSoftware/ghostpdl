@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2000-2002 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -33,6 +33,8 @@
 #include "iimage2.h"
 #include "iname.h"
 #include "store.h"
+#include "gsdfilt.h"
+#include "gdevp14.h"
 
 /* ------ Utilities ------ */
 
@@ -402,6 +404,28 @@ mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
     return 0;
 }
 
+/* depth .pushpdf14devicefilter - */
+/* this is a filter operator, but we include it here to maintain
+   modularity of the pdf14 transparency support */
+private int
+zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
+{
+    gs_device_filter_t *df;
+    int code;
+    gs_memory_t *mem = gs_memory_stable(imemory);
+    os_ptr op = osp;
+
+    check_type(*op, t_integer);
+    code = gs_pdf14_device_filter(&df, op->value.intval, mem);
+    if (code < 0)
+        return code;
+    code = gs_push_device_filter(mem, igs, df); 
+    if (code < 0)
+        return code;
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def ztrans_op_defs[] = {
@@ -421,5 +445,6 @@ const op_def ztrans_op_defs[] = {
     {"1.endtransparencymask", zendtransparencymask},
     {"1.inittransparencymask", zinittransparencymask},
     {"1.image3x", zimage3x},
+    {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
     op_def_end(0)
 };
