@@ -219,6 +219,13 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(PLSRC)pllfont.h $(AK)\
 	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
+# artifex rom font loading module
+$(PLOBJ)pllrfont.$(OBJ): $(PLSRC)pllrfont.c $(PLSRC)pllfont.h $(PLSRC)romfnttab.h $(AK)\
+        $(ctype__h) $(stdio__h) $(string__h)\
+	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
+	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h)
+	$(PLCCC) $(PLSRC)pllrfont.c $(PLO_)pllrfont.$(OBJ)
+
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ) $(PLOBJ)plsrgb.$(OBJ)
 pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ)
 pl_obj3=$(PLOBJ)plplatf.$(OBJ) $(PLOBJ)plalloc.$(OBJ)
@@ -229,6 +236,9 @@ pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
 # artifex font objects
 afs_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
 
+# artifex font objects (romfonts)
+afsr_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllrfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
+
 # ufst font objects
 ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
 
@@ -236,10 +246,16 @@ ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ) $
 $(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj)
 	$(SETMOD) $(PLOBJ)afs $(afs_obj)
 
+# romfont artifex font device
+$(PLOBJ)afsr.dev: $(PL_MAK) $(ECHOGS_XE) $(afsr_obj)
+	$(SETMOD) $(PLOBJ)afsr $(afsr_obj)
+
 # AGFA ufst font device - the libraries are expected to be linked in
 # the main platform makefile
 $(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE) $(ufst_obj)
 	$(SETMOD) $(PLOBJ)ufst $(ufst_obj)
+
+
 
 ### BROKEN #####
 # Bitstream font device
