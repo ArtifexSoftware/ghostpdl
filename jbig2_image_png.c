@@ -8,8 +8,16 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_png.c,v 1.3 2002/07/03 00:30:20 giles Exp $
+    $Id: jbig2_image_png.c,v 1.4 2002/07/08 13:40:15 giles Exp $
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

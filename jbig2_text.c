@@ -8,17 +8,19 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.11 2002/07/07 20:38:26 giles Exp $
+    $Id: jbig2_text.c,v 1.12 2002/07/08 13:40:15 giles Exp $
 */
-
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h> /* memset() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#include "config_types.h"
 #endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
+#include <stddef.h>
+#include <string.h> /* memset() */
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
@@ -144,9 +146,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     } else {
         code = jbig2_arith_int_decode(IADT, as, &STRIPT);
     }
-#ifdef DEBUG
-    fprintf(stderr, "decoded stript value %d (scale to %d)\n", STRIPT, -STRIPT*params->SBSTRIPS);
-#endif
+
     /* 6.4.5 (2) */
     STRIPT *= -(params->SBSTRIPS);
     FIRSTS = 0;
@@ -162,9 +162,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         }
         DT *= params->SBSTRIPS;
         STRIPT += DT;
-#ifdef DEBUG
-        fprintf(stderr, "decoded DT = %d, STRIPT = %d\n", DT, STRIPT);
-#endif        
+       
 	first_symbol = TRUE;
 	/* 6.4.5 (3c) - decode symbols in strip */
 	for (;;) {
@@ -179,9 +177,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		FIRSTS += DFS;
 		CURS = FIRSTS;
 		first_symbol = FALSE;
-#ifdef DEBUG
-            fprintf(stderr, "decoded DFS = %d (first symbol) CURS = %d\n", DFS, CURS);
-#endif
+
 	    } else {
 		/* (3c.ii / 6.4.8) */
 		if (params->SBHUFF) {
@@ -190,15 +186,9 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		    code = jbig2_arith_int_decode(IADS, as, &IDS);
 		}
 		if (code) {
-#ifdef DEBUG
-		    fprintf(stderr, "Symbol instance S coordinate OOB: End of Strip\n");
-#endif
 		    break;
 		}
 		CURS += IDS + params->SBDSOFFSET;
-#ifdef DEBUG
-		fprintf(stderr, "decoded IDS = %d, CURS = %d\n", IDS, CURS);
-#endif
 	    }
 
 	    /* (3c.iii / 6.4.9) */
@@ -210,9 +200,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		code = jbig2_arith_int_decode(IAIT, as, &CURT);
 	    }
 	    T = STRIPT + CURT;
-#ifdef DEBUG
-	    fprintf(stderr, "decoded CURT = %d, STRIPT = %d, T = %d\n", CURT, STRIPT, T);
-#endif
+
 	    /* (3b.iv / 6.4.10) decode the symbol id */
 	    if (params->SBHUFF) {
 		/* todo */
@@ -223,9 +211,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                     "symbol id out of range! (%d/%d)", ID, max_id);
 	    }
-#ifdef DEBUG
-	    fprintf(stderr, "decoded symbol id = %d (code = %d)\n", ID, code);
-#endif
+
 	    /* (3c.v) look up the symbol bitmap IB */
 	    {
 		int id = ID;

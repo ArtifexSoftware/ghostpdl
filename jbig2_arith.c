@@ -8,12 +8,19 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_arith.c,v 1.8 2002/06/05 00:15:57 raph Exp $
+    $Id: jbig2_arith.c,v 1.9 2002/07/08 13:40:15 giles Exp $
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include "jbig2.h"
 #include "jbig2_priv.h"

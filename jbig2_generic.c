@@ -8,20 +8,28 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.c,v 1.10 2002/07/04 13:34:29 giles Exp $
+    $Id: jbig2_generic.c,v 1.11 2002/07/08 13:40:15 giles Exp $
 */
 
 /**
  * Generic region handlers.
  **/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+
 #include <stddef.h>
 #include <string.h> /* memcpy(), memset() */
 
 #ifdef OUTPUT_PBM
 #include <stdio.h>
 #endif
+
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"

@@ -2,7 +2,14 @@
    in Ghostscript.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 

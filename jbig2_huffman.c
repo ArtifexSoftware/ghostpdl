@@ -8,11 +8,19 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
     
-    $Id: jbig2_huffman.c,v 1.8 2002/06/15 16:02:53 giles Exp $
+    $Id: jbig2_huffman.c,v 1.9 2002/07/08 13:40:15 giles Exp $
 */
 
 /* Huffman table decoding procedures 
     -- See Annex B of the JBIG2 draft spec */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #include <stdlib.h>
 

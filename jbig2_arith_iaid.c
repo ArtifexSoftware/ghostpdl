@@ -1,12 +1,19 @@
 /* Annex A.3 */
 
-#ifdef VERBOSE
-#include <stdio.h> /* for debug printing only */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
 #endif
 
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h> /* memset() */
+
+#ifdef VERBOSE
+#include <stdio.h> /* for debug printing only */
+#endif
 
 #include "jbig2.h"
 #include "jbig2_priv.h"

@@ -8,13 +8,20 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.12 2002/07/04 16:33:44 giles Exp $
+    $Id: jbig2.c,v 1.13 2002/07/08 13:40:15 giles Exp $
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <stdio.h>
 
 #include "jbig2.h"
 #include "jbig2_priv.h"

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run this to set up the build system: configure, makefiles, etc.
 
-# $Id: autogen.sh,v 1.1 2002/05/08 00:59:20 giles Exp $
+# $Id: autogen.sh,v 1.2 2002/07/08 13:40:15 giles Exp $
 
 package="jbig2dec"
 AUTOMAKE_FLAGS="--foreign $AUTOMAKE_FLAGS"
@@ -23,11 +23,37 @@ echo "Generating configuration files for $package, please wait...."
 
 echo "  aclocal $ACLOCAL_FLAGS"
 aclocal $ACLOCAL_FLAGS
+
 echo "  autoheader"
 autoheader
+
+echo "  creating config_types.h.in"
+cat >config_types.h.in <<EOF
+/*
+   generated header with missing types for the
+   jbig2dec program and library. include this
+   after config.h, within the HAVE_CONFIG_H
+   ifdef
+*/
+
+#ifndef HAVE_STDINT_H
+#  ifdef JBIG2_REPLACE_STDINT_H
+#   include <@JBIG2_STDINT_H@>
+#  else
+    typedef unsigned @JBIG2_INT32_T@ uint32_t;
+    typedef unsigned @JBIG2_INT16_T@ uint16_t;
+    typedef unsigned @JBIG2_INT8_T@ uint8_t;
+    typedef signed @JBIG2_INT32_T@ int32_t;
+    typedef signed @JBIG2_INT16_T@ int16_t;
+    typedef signed @JBIG2_INT8_T@ int8_t;
+#  endif /* JBIG2_REPLACE_STDINT */
+#endif /* HAVE_STDINT_H */
+EOF
+    
 echo "  automake --add-missing $AUTOMAKE_FLAGS"
 automake --add-missing $AUTOMAKE_FLAGS 
 echo "  running autoconf"
+
 autoconf
 
 if test -z "$*"; then
