@@ -50,7 +50,7 @@ struct active_line_s {
 #define al_dx(alp) ((alp)->diff.x)
 #define al_dy(alp) ((alp)->diff.y)
     fixed y_fast_max;		/* can do x_at_y in fixed point */
-				/* if y <= y_fast_max */
+				/* if y < y_fast_max */
     fixed num_adjust;		/* 0 if diff.x >= 0, -diff.y + epsilon if */
 				/* diff.x < 0 and division truncates */
 #if ARCH_DIV_NEG_POS_TRUNCATES
@@ -76,7 +76,7 @@ struct active_line_s {
   END
 #define al_x_at_y(alp, yv)\
   ((yv) == (alp)->end.y ? (alp)->end.x :\
-   ((yv) <= (alp)->y_fast_max ?\
+   ((yv) < (alp)->y_fast_max ?\
     ADD_NUM_ADJUST(((yv) - (alp)->start.y) * al_dx(alp), alp) / al_dy(alp) :\
     (INCR_EXPR(slow_x),\
      fixed_mult_quo(al_dx(alp), (yv) - (alp)->start.y, al_dy(alp)))) +\
