@@ -48,7 +48,7 @@ echo "Update pl.mak file? (y/n)"
 read PLMAK_UPDATE
 if test $PLMAK_UPDATE = "y" || test $PLMAK_UPDATE = "Y"
 then
-    perl -pi -e 's/^PJLVERSION=.*/PJLVERSION=1.35/' $RELEASE_DIR/pl/pl.mak
+    perl -pi -e "s/^PJLVERSION=.*/PJLVERSION=$VERSION/" $RELEASE_DIR/pl/pl.mak
 fi
 
 echo ""
