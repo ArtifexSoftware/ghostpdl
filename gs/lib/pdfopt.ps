@@ -378,7 +378,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     dup /OpenAction .knownget { omvisitnopage } if
     Trailer /Encrypt .knownget { omvisit } if
     dup /Threads .knownget {
-      omforce { omforce } forall
+      omforce { omvisit } forall
     } if
     dup /AcroForm .knownget { omvisit } if
     pop

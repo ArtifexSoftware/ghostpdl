@@ -14,6 +14,7 @@ goto cp
 
 :doit
 %GSC% -q @_.at -- pdfopt.ps %1 %2
+if exist _.at erase _.at
 goto end
 
 :usage
