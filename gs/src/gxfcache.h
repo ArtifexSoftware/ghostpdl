@@ -299,7 +299,11 @@ struct gs_font_dir_s {
     gs_memory_t *memory;
     ttfInterpreter *tti;
     /* User parameter GridFitTT. */
-    bool grid_fit_tt;
+#   if TT_GRID_FITTING
+	uint grid_fit_tt;
+#   else
+	bool grid_fit_tt;
+#   endif
 #if TT_GRID_FITTING
     gx_device_spot_analyzer *san;
 #endif

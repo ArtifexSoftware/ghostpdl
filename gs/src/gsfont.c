@@ -263,7 +263,11 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->align_to_pixels = true;
     pdir->glyph_to_unicode_table = NULL;
 #if NEW_TT_INTERPRETER
-    pdir->grid_fit_tt = false;
+#   if TT_GRID_FITTING
+	pdir->grid_fit_tt = 3;
+#   else
+	pdir->grid_fit_tt = false;
+#   endif
     pdir->memory = struct_mem;
     pdir->tti = 0;
 #if TT_GRID_FITTING

@@ -464,7 +464,12 @@ private const long_param_def_t user_long_params[] =
     {"AlignToPixels", 0, 1,
      current_AlignToPixels, set_AlignToPixels}
 #if NEW_TT_INTERPRETER
-    , {"GridFitTT", 0, 1,
+    , {"GridFitTT", 0, 
+#   if TT_GRID_FITTING
+    3,
+#   else
+    1,
+#   endif
      current_GridFitTT, set_GridFitTT}
 #endif
 };

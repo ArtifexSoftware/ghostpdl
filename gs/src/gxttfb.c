@@ -308,7 +308,7 @@ private void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * cha
 	design_grid1 = true;
     } else {
 #if NEW_TT_INTERPRETER
-	design_grid1 = design_grid || !gs_currentgridfittt(pfont->dir);
+	design_grid1 = design_grid || !(gs_currentgridfittt(pfont->dir) & 1);
 #else
 	design_grid1 = design_grid; /* gs_currentgridfittt is undefined. */;
 #endif
@@ -516,11 +516,35 @@ path_to_hinter(t1_hinter *h, gx_path *path)
     return 0;
 }
 
-int stem_hint_handler(void *client_data, gx_san_sect *ss)
-{
-    t1_hinter *h = (t1_hinter *)client_data;
+#define exch(a,b) a^=b; b^=a; a^=b;
 
-    return t1_hinter__vstem(h, ss->xl, ss->xl);
+private void
+transpose_path(gx_path *path)
+{   segment *s = (segment *)path->first_subpath;
+
+    for (; s; s = s->next) {
+	if (s->type == s_curve) {
+	    curve_segment *c = (curve_segment *)s;
+
+	    exch(c->p1.x, c->p1.y);
+	    exch(c->p2.x, c->p2.y);
+	}
+	exch(s->pt.x, s->pt.y);
+    }
+}
+
+typedef struct {
+    t1_hinter super;
+    int transpose;
+} t1_hinter_aux;
+
+private int 
+stem_hint_handler(void *client_data, gx_san_sect *ss)
+{
+    t1_hinter_aux *h = (t1_hinter_aux *)client_data;
+
+    return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
+		(&h->super, ss->xl, ss->xl);
 }
 
 private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
@@ -531,12 +555,12 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
     gx_fill_params params;
     gx_device_color devc_stub;
     int code;
-    t1_hinter h;
+    t1_hinter_aux h;
     gs_matrix m, fm, fmb;
     gs_matrix_fixed ctm_temp;
     bool atp = gs_currentaligntopixels(pfont->dir);
     int FontType = 1; /* Will apply Type 1 hinter. */
-    fixed sbx = 0, sby = 0; /* fixme */
+    fixed sbx = 0, sby = 0; /* stub */
     double scale = 1.0 / o->pFont->nUnitsPerEm;
     gs_fixed_rect bbox;
 
@@ -555,22 +579,22 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
     code = gs_matrix_scale(&pfont->base->FontMatrix, scale, scale, &fmb);
     if (code < 0)
 	return code;
-    t1_hinter__init(&h, path); /* Will export to */
-    code = t1_hinter__set_mapping(&h, &ctm_temp,
+    t1_hinter__init(&h.super, path); /* Will export to */
+    code = t1_hinter__set_mapping(&h.super, &ctm_temp,
 			&fm, &fmb,
 			pscale->x, pscale->x,
 			atp ? 0 : pscale->x, atp ? 0 : pscale->y, /* Not sure */
 			ctm_temp.tx_fixed, ctm_temp.ty_fixed, atp);
     if (code < 0)
 	return code;
-    if (!h.disable_hinting) {
+    if (!h.super.disable_hinting) {
 	o->post_transform.a = o->post_transform.d = 1;
 	o->post_transform.b = o->post_transform.c = 0;
 	o->post_transform.tx = o->post_transform.ty = 0;
 	ttfOutliner__DrawGlyphOutline(o);
 	if (e->error)
 	    return e->error;
-	code = t1_hinter__set_font42_data(&h, FontType, &pfont->data, false);
+	code = t1_hinter__set_font42_data(&h.super, FontType, &pfont->data, false);
 	if (code < 0)
 	    return code;
 	gx_path_bbox(path, &bbox);
@@ -582,25 +606,35 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	params.adjust.x = params.adjust.y = 0;
 	params.flatness = fixed2float(max(bbox.q.x - bbox.p.x, bbox.q.y - bbox.p.y)) / 100.0;
 	params.fill_zero_width = false;
-	gx_san_begin(padev);
-	code = dev_proc(padev, fill_path)((gx_device *)padev, 
-			&is_stub, path, &params, &devc_stub, NULL);
-	gx_san_end(padev);
+
+	for (h.transpose = 0; h.transpose < 2; h.transpose++) {
+	    if (h.transpose)
+		transpose_path(path);
+	    gx_san_begin(padev);
+	    code = dev_proc(padev, fill_path)((gx_device *)padev, 
+			    &is_stub, path, &params, &devc_stub, NULL);
+	    gx_san_end(padev);
+	    if (code >= 0)
+		code = gx_san_generate_stems(padev, &h, stem_hint_handler);
+	    if (h.transpose)
+		transpose_path(path);
+	    if (code < 0)
+		return code;
+	}
+
+	/*  fixme : Storing hints permanently would be useful.
+	    Note that if (gftt & 1), the outline and hints are already scaled.
+	*/
+	code = t1_hinter__sbw(&h.super, sbx, sby, e->w.x, e->w.y);
 	if (code < 0)
 	    return code;
-	code = gx_san_generate_stems(padev, &h, stem_hint_handler);
-	if (code < 0)
-	    return code;
-	code = t1_hinter__sbw(&h, sbx, sby, e->w.x, e->w.y);
-	if (code < 0)
-	    return code;
-	code = path_to_hinter(&h, path);
+	code = path_to_hinter(&h.super, path);
 	if (code < 0)
 	    return code;
 	code = gx_path_new(path);
 	if (code < 0)
 	    return code;
-	code = t1_hinter__endglyph(&h);
+	code = t1_hinter__endglyph(&h.super);
     } else {
 	ttfOutliner__DrawGlyphOutline(o);
 	if (e->error)
@@ -622,6 +656,19 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     /* so that TTC never comes here. */
     FloatMatrix m1;
     bool dg;
+#   if TT_GRID_FITTING
+    uint gftt = gs_currentgridfittt(pfont->dir);
+    bool ttin = (gftt & 1);
+#   else
+    uint gftt = 0;
+#   endif
+    /*	gs_currentgridfittt values (binary) :
+	00 - no grid fitting;
+	01 - Grid fit with TT interpreter; On failure warn and render unhinted.
+	10 - Interpret in the design grid and then autohint.
+	11 - Grid fit with TT interpreter; On failure render autohinted. 
+    */
+    bool auth = (gftt & 2);
 
     decompose_matrix(pfont, m, pscale, design_grid, &char_size, &subpix_origin, &post_transform, &dg);
     m1.a = post_transform.xx;
@@ -648,22 +695,21 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     switch(ttfOutliner__Outline(&o, glyph_index, subpix_origin.x, subpix_origin.y, &m1)) {
 	case fPatented:
 	    /* The returned outline did not apply a bytecode (it is not grid-fitted). */
-	    WarnPatented(pfont, ttf, "Some glyphs of the font");
-	    /* Fall through. */
+	    if (!auth)
+		WarnPatented(pfont, ttf, "Some glyphs of the font");
+#	    if TT_GRID_FITTING
+		if (!design_grid && auth)
+		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
+#	    endif
+	    /* Falls through. */
 	case fNoError:
 #	    if TT_GRID_FITTING
-		if (!gs_currentgridfittt(pfont->dir))
+		if (!design_grid && !ttin && auth)
 		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
-		else {
-		    ttfOutliner__DrawGlyphOutline(&o);
-		    if (e.error)
-			return e.error;
-		}
-#	    else
-		ttfOutliner__DrawGlyphOutline(&o);
-		if (e.error)
-		    return e.error;
 #	    endif
+	    ttfOutliner__DrawGlyphOutline(&o);
+	    if (e.error)
+		return e.error;
 	    return 0;
 	case fMemoryError:
 	    return_error(gs_error_VMerror);
