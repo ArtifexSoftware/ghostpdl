@@ -328,7 +328,7 @@ cos_stream_put_c_strings(cos_stream_t *pcs, const char *key, const char *value)
 typedef struct ao_params_s {
     gx_device_pdf *pdev;	/* for pdfmark_make_dest */
     const char *subtype;	/* default Subtype in top-level dictionary */
-    pdf_resource_t *pres;		/* resource for saving source page */
+    long src_pg;		/* set to SrcPg - 1 if any */
 } ao_params_t;
 private int
 pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
@@ -364,10 +364,10 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	const gs_param_string *pair = &pairs[i];
 	long src_pg;
 
-	if (params->pres != 0 && pdf_key_eq(pair, "/SrcPg") &&
+	if (pdf_key_eq(pair, "/SrcPg") &&
 	    sscanf((const char *)pair[1].data, "%ld", &src_pg) == 1
 	    )
-	    params->pres->rid = src_pg - 1;
+	    params->src_pg = src_pg - 1;
 	else if (!for_outline && pdf_key_eq(pair, "/Color"))
 	    pdfmark_put_c_pair(pcd, "/C", pair + 1);
 	else if (!for_outline && pdf_key_eq(pair, "/Title"))
@@ -574,18 +574,9 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     cos_value_t value;
     int code;
 
-    if (pdf_page_id(pdev, page_index + 1) <= 0)
-	return_error(gs_error_rangecheck);
-    annots = pdev->pages[page_index].Annots;
-    if (annots == 0) {
-	annots = cos_array_alloc(pdev, "pdfmark_annot");
-	if (annots == 0)
-	    return_error(gs_error_VMerror);
-	pdev->pages[page_index].Annots = annots;
-    }
     params.pdev = pdev;
     params.subtype = subtype;
-    params.pres = 0;
+    params.src_pg = -1;
     code = pdf_make_named_dict(pdev, objname, &pcd, true);
     if (code < 0)
 	return code;
@@ -595,6 +586,17 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     code = pdfmark_put_ao_pairs(pdev, pcd, pairs, count, pctm, &params, false);
     if (code < 0)
 	return code;
+    if (params.src_pg >= 0)
+	page_index = params.src_pg;
+    if (pdf_page_id(pdev, page_index + 1) <= 0)
+	return_error(gs_error_rangecheck);
+    annots = pdev->pages[page_index].Annots;
+    if (annots == 0) {
+	annots = cos_array_alloc(pdev, "pdfmark_annot");
+	if (annots == 0)
+	    return_error(gs_error_VMerror);
+	pdev->pages[page_index].Annots = annots;
+    }
     if (!objname) {
 	/* Write the annotation now. */
 	COS_WRITE_OBJECT(pcd, pdev);
@@ -717,7 +719,7 @@ pdfmark_OUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return_error(gs_error_VMerror);
     ao.pdev = pdev;
     ao.subtype = 0;
-    ao.pres = 0;
+    ao.src_pg = -1;
     code = pdfmark_put_ao_pairs(pdev, node.action, pairs, count, pctm, &ao,
 				true);
     if (code < 0)
