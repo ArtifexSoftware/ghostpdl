@@ -180,17 +180,15 @@ svga16_put_params(gx_device * dev, gs_param_list * plist)
 /* Map a r-g-b color to an EGA color code. */
 #define Nb gx_color_value_bits
 private gx_color_index
-ega0_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		   gx_color_value b)
+ega0_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-    return pc_4bit_map_rgb_color(dev, r, r, r);
+    return pc_4bit_map_rgb_color(dev, cv);
 }
 private gx_color_index
-ega1_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		   gx_color_value b)
+ega1_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
 #define cvtop (gx_color_value)(1 << (Nb - 1))
-    return pc_4bit_map_rgb_color(dev, r & cvtop, g & cvtop, b & cvtop);
+    return pc_4bit_map_rgb_color(dev, cv[0] & cvtop, cv[1] & cvtop, cv[2] & cvtop);
 }
 #undef Nb
 

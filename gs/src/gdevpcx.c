@@ -73,7 +73,7 @@ const gx_device_printer gs_pcx16_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 3, 4, 3, 2, 4, 3, pcx16_print_page)
+		 3, 4, 1, 1, 2, 2, pcx16_print_page)
 };
 
 /* Chunky 8-bit (SuperVGA-style) color. */

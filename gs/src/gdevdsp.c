@@ -1490,7 +1490,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 		    break;
 		case DISPLAY_DEPTH_4:
 		    /* 4bit/pixel VGA color */
-	    	    set_color_info(&dci, 3, 4, 3, 2);
+	    	    set_color_info(&dci, 3, 4, 1, 1);
                     dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
 		    set_rgb_color_procs(pdev, display_map_rgb_color_device4,
 		    				display_map_color_rgb_device4);

@@ -219,9 +219,6 @@ win_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 		return (gx_no_color_index);	/* not found - dither instead */
 	    }
 	case 4:
-	    if ((r == g) && (g == b) && (r >= gx_max_color_value / 3 * 2 - 1)
-		&& (r < gx_max_color_value / 4 * 3))
-		return ((gx_color_index) 8);	/* light gray */
 	    return pc_4bit_map_rgb_color(dev, cv);
     }
     return (gx_default_map_rgb_color(dev, cv));
@@ -267,10 +264,7 @@ win_map_color_rgb(gx_device * dev, gx_color_index color,
 	    prgb[2] = wdev->limgpalette->palPalEntry[(int)color].peBlue * one;
 	    break;
 	case 4:
-	    if (color == 8)	/* VGA light gray */
-		prgb[0] = prgb[1] = prgb[2] = (gx_max_color_value / 4 * 3);
-	    else
-		pc_4bit_map_color_rgb(dev, color, prgb);
+	    pc_4bit_map_color_rgb(dev, color, prgb);
 	    break;
 	default:
 	    prgb[0] = prgb[1] = prgb[2] =

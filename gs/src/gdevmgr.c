@@ -85,7 +85,7 @@ gx_device_mgr far_data gs_mgrgray4_device =
 gx_device_mgr far_data gs_mgrgray8_device =
   mgr_prn_device(mgrN_procs,  "mgrgray8",1,  8, 8, 255,   0, 0, 0, mgrN_print_page);
 gx_device_mgr far_data gs_mgr4_device =
-  mgr_prn_device(cmgr4_procs, "mgr4",    3,  8, 4,   1,   1, 4, 3, cmgrN_print_page);
+  mgr_prn_device(cmgr4_procs, "mgr4",    3,  8, 4,   1,   1, 2, 2, cmgrN_print_page);
 gx_device_mgr far_data gs_mgr8_device =
   mgr_prn_device(cmgr8_procs, "mgr8",    3,  8, 8, 255, 255, 6, 5, cmgrN_print_page);
 
