@@ -26,9 +26,9 @@
 
 /* Configuration swtches - development needs only. */
 /* Users should not modify them. */
-#   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
+#define CURVED_TRAPEZOID_FILL0_COMPATIBLE 0 /* Temporarily used for a backward compatibility. 
                                                The implementation of 0 is not completed yet. */
-#   define FLATTENED_ITERATOR_SELFTEST 0 /* Temporarily used for a debug purpose. */
+#define FLATTENED_ITERATOR_SELFTEST 0 /* Debug purpose only. */
 
 /* ---------------- Curve flattening ---------------- */
 
@@ -571,7 +571,7 @@ gx_flattened_iterator__prev_filtered(gx_flattened_iterator *this)
 	this->filtered1_i = 0;
 	return false;
     } else if (this->i < this->last_filtered1_i) {
-	/* next_filtered1 has an anomaly with the last but one
+	/* next_filtered has an anomaly with the last but one
 	   due to possibly insufficient points to reach 
 	   !coord_near. To get a consistent state we scan 
 	   until the last_filtered1_i with 'prev'. */
