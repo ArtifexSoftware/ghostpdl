@@ -1617,21 +1617,52 @@ private inline int continue_margin(line_list * ll, active_line * flp, active_lin
 
 private int complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   
-    int i, code;
-    section *sect = ll->margin_set1.sect;
-    int i0 = fixed2int_var_pixround(flp->x_current);
-    int i1 = fixed2int_var_pixround(alp->x_current);
-    int ii0 = max(0, i0 - ll->bbox_left), ii1 = min(i1 - ll->bbox_left, ll->bbox_width);
+    return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
+}
 
+private inline int mark_margin_interior(line_list * ll, margin_set * set, active_line * flp, active_line * alp, fixed y)
+{
+    int i, code;
+    section *sect = set->sect;
+    fixed x0 = AL_X_AT_Y(flp, y), x1 = AL_X_AT_Y(alp, y);
+    int i0 = fixed2int(x0), ii0, ii1;
+
+    if (int2fixed(i0) + fixed_half < x0)
+	i0++;
+    ii0 = i0 - ll->bbox_left;
+    ii1 = fixed2int_var_pixround(x1) - ll->bbox_left;
     if (ii0 < ii1) {
-	for (i = ii0; i < ii1; i++)
+	assert(ii0 >= 0 && ii1 <= ll->bbox_width);
+	for (i = ii0; i < ii1; i++) {
 	    sect[i].y0 = sect[i].y1 = -2;
-	code = store_margin(ll, &ll->margin_set1, ii0, ii1);
+	    vd_circle(int2fixed(i + ll->bbox_left) + fixed_half, y, 3, RGB(255, 0, 0));
+	}
+	code = store_margin(ll, set, ii0, ii1);
 	if (code < 0)
 	    return code;
     }
-    return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
+    return 0;
 }
+
+private inline int margin_interior(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
+{   int code;
+    fixed yy0, yy1;
+
+    yy0 = ll->margin_set0.y;
+    if (y0 <= yy0 && yy0 <= y1) {
+	code = mark_margin_interior(ll, &ll->margin_set0, flp, alp, yy0);
+	if (code < 0)
+	    return code;
+    }
+    yy1 = ll->margin_set1.y + fixed_1;
+    if (y0 <= yy1 && yy1 <= y1) {
+	code = mark_margin_interior(ll, &ll->margin_set1, flp, alp, yy1);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+
 
 static inline int compute_padding(section *s)
 {
@@ -2171,6 +2202,9 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			code = complete_margin(ll, &flp, &als, y, y1);
 			if (code < 0)
 			    return code;
+			code = margin_interior(ll, &flp, &als, y, y1);
+			if (code < 0)
+			    return code;
 			code = add_margin(ll, &flp, &als, y, y1);
 		    }
 #		    endif
@@ -2239,6 +2273,9 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 						     y, xltop, wtop, height);
 #		    if PSEUDO_RASTERIZATION
 		    if (pseudo_rasterization) {
+			if (code < 0)
+			    return code;
+			code = margin_interior(ll, &flp, &als, y, y1);
 			if (code < 0)
 			    return code;
 			code = add_margin(ll, &flp, &als, y, y1);
