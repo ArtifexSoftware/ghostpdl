@@ -805,6 +805,10 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	int code, index = pte->index;
 	gs_text_enum_t pte1 = *(gs_text_enum_t *)pte;
 	int FontType;
+#define RIGHT_SBW 1 /* Old code = 0, new code = 1. */
+#if RIGHT_SBW
+	bool use_cached_v = true;
+#endif
 
 	code = pte1.orig_font->procs.next_char_glyph(&pte1, &chr, &glyph);
 	if (code == 2) { /* end of string */
@@ -825,6 +829,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    if (chr == GS_NO_CHAR && glyph != GS_NO_GLYPH) {
 		/* glyphshow, we have no char code. Bug 686988.*/
 		code = pdf_glyph_widths(ppts->values.pdfont, font->WMode, glyph, font, &cw, NULL);
+		use_cached_v = false; /* Since we have no chr and don't call pdf_char_widths. */
 	    } else 
 		code = pdf_char_widths((gx_device_pdf *)pte->dev,
 				       ppts->values.pdfont, chr, (gs_font_base *)font,
@@ -836,6 +841,25 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    return code;
 	}
 	gs_text_enum_copy_dynamic((gs_text_enum_t *)pte, &pte1, true);
+#if RIGHT_SBW
+	if (composite || !use_cached_v) {
+	    if (cw.replaced_v) {
+		v.x = cw.real_width.v.x - cw.Width.v.x;
+		v.y = cw.real_width.v.y - cw.Width.v.y;
+	    }
+	} else
+	    v = ppts->values.pdfont->u.simple.v[chr];
+	if (font->WMode) {
+	    /* With WMode 1 v-vector is (WMode 1 origin) - (WMode 0 origin).
+	       The glyph shifts in the opposite direction.  */
+	    v.x = - v.x;
+	    v.y = - v.y;
+	} else {
+	    /* With WMode 0 v-vector is (Metrics sb) - (native sb).
+	       The glyph shifts in same direction.  */
+	}
+	/* pdf_glyph_origin is not longer used. */
+#else
 	if ((pte->text.operation & TEXT_FROM_SINGLE_GLYPH) ||
 	    (pte->text.operation & TEXT_FROM_GLYPHS)) {
 	    v.x = v.y = 0;
@@ -846,6 +870,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    }
 	} else
 	    pdf_glyph_origin(ppts->values.pdfont, chr, font->WMode, &v);
+#endif
 	if (v.x != 0 || v.y != 0) {
 	    gs_point glyph_origin_shift;
 	    double scale0;
@@ -854,8 +879,13 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 		scale0 = (float)0.001;
 	    else
 		scale0 = 1;
+#if RIGHT_SBW
+	    glyph_origin_shift.x = v.x * scale0;
+	    glyph_origin_shift.y = v.y * scale0;
+#else
 	    glyph_origin_shift.x = - v.x * scale0;
 	    glyph_origin_shift.y = - v.y * scale0;
+#endif
 	    if (composite) {
 		gs_font *subfont = pte->fstack.items[pte->fstack.depth].font;
 
