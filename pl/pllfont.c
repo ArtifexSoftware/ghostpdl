@@ -184,16 +184,30 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 	    int code;
 	    file_enum *fe;
 	    FILE *in = NULL;
-	    /* concatenate path and pattern */
-	    if ( (strlen( pattern ) + strlen( tmp_pathp) + 1 ) > sizeof( tmp_path_copy ) ) {
-		dprintf1( "path name %s too long\n", tmp_pathp );
-		continue;
-	    }
+            /* handle trailing separator */
+            bool append_separator = false;
+            int separator_length = strlen(gp_file_name_directory_separator());
+            int offset = strlen(tmp_pathp) - separator_length;
+            /* make sure the filename string ends in directory separator */
+            if (strcmp(tmp_pathp + offset, gp_file_name_directory_separator()) != 0)
+                append_separator = true;
 
-	    strcpy( tmp_path_copy, tmp_pathp );
-	    /* NOTE the gp code code takes care of converting * to *.*
-               on stupid platforms */
-	    strcat( tmp_path_copy, pattern );
+            /* concatenate path and pattern */
+            if ( (strlen( pattern ) + 
+                  strlen( tmp_pathp) + 1 ) +
+                 (append_separator ? separator_length : 0) > sizeof( tmp_path_copy ) ) {
+                dprintf1( "path name %s too long\n", tmp_pathp );
+                continue;
+            }
+
+            strcpy( tmp_path_copy, tmp_pathp );
+
+            if (append_separator == true)
+                strcat(tmp_path_copy, gp_file_name_directory_separator());
+                
+	    /* NOTE the gp code code takes care of converting * to *.* */
+            strcat( tmp_path_copy, pattern );
+
 	    /* enumerate all files on the current path */
 	    fe = gp_enumerate_files_init( tmp_path_copy,
 					  strlen( tmp_path_copy ), mem );
