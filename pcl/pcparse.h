@@ -77,7 +77,7 @@ struct pcl_parser_state_s {
     pcl_command_definitions_t *definitions;
 };
 #define pcl_parser_init_inline(pst)\
-  ((pst)->scan_type = scanning_none, (pst)->args.data = 0)
+  ((pst)->scan_type = scanning_none, (pst)->args.data = 0, (pst)->args.data_on_heap = false)
 
 /* Define the prefix of a macro definition. */
 typedef struct pcl_macro_s {
