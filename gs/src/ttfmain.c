@@ -329,6 +329,7 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     if (design_grid)
 	ww = hh = shortToF26Dot6(this->nUnitsPerEm);
     else {
+	/* Round towards zero for a better view of mirrored characters : */
 	ww = floatToF26Dot6(w);
 	hh = floatToF26Dot6(h);
     }
@@ -848,6 +849,7 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 {
     FixMatrix m_orig = {1 << 16, 0, 0, 1 << 16, 0, 0};
 
+    /* Round towards zero like old character coordinate conversions do. */
     m_orig.tx = floatToF16Dot16(orig_x);
     m_orig.ty = floatToF16Dot16(orig_y);
     return ttfOutliner__BuildGlyphOutlineAux(this, glyphIndex, &m_orig, gOutline);

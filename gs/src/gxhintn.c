@@ -231,6 +231,7 @@ private void fraction_matrix__set(fraction_matrix * this, const double_matrix * 
 
     this->bitshift = matrix_bits - matrix_exp;
     this->denominator = 1 << this->bitshift;
+    /* Round towards zero for a better view of mirrored characters : */
     this->xx = (int32)(pmat->xx * this->denominator + 0.5);
     this->xy = (int32)(pmat->xy * this->denominator + 0.5);
     this->yx = (int32)(pmat->yx * this->denominator + 0.5);
@@ -625,6 +626,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
         if (vp != 0 && div_x != 0 && div_y != 0) {
             this->heigt_transform_coef = vp / div_x;
             this->width_transform_coef = vp / div_y;
+	    /* Round towards zero for a better view of mirrored characters : */
             this->heigt_transform_coef_rat = (int19)(this->heigt_transform_coef * this->ctmf.denominator + 0.5);
             this->width_transform_coef_rat = (int19)(this->width_transform_coef * this->ctmf.denominator + 0.5);
             this->heigt_transform_coef_inv = (int19)(this->ctmi.denominator / this->heigt_transform_coef + 0.5);
