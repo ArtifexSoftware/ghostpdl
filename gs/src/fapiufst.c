@@ -690,7 +690,8 @@ private void prepare_typeface(fapi_ufst_server *r, ufst_common_font_data *d)
         r->fc.format |= FC_EXTERN_TYPE;
 }
 
-private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap, bool bVertical, FAPI_descendant_code dc)
+private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int subfont, 
+         const FAPI_font_scale *font_scale, const char *xlatmap, bool bVertical, FAPI_descendant_code dc)
 {   fapi_ufst_server *r = If_to_I(server);
     FONTCONTEXT *fc = &r->fc;
     /*  Note : UFST doesn't provide handles for opened fonts,
@@ -722,24 +723,27 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
             choose_decoding(r, d, xlatmap);
     } else
         prepare_typeface(r, d);
-    r->tran_xx = matrix[0] / scale, r->tran_xy = matrix[1] / scale;
-    r->tran_yx = matrix[2] / scale, r->tran_yy = matrix[3] / scale;
+    r->tran_xx = font_scale->matrix[0] / scale, r->tran_xy = font_scale->matrix[1] / scale;
+    r->tran_yx = font_scale->matrix[2] / scale, r->tran_yy = font_scale->matrix[3] / scale;
     hx = hypot(r->tran_xx, r->tran_xy), hy = hypot(r->tran_yx, r->tran_yy);
     sx = r->tran_xx * r->tran_yx + r->tran_xy * r->tran_yy; 
     sy = r->tran_xx * r->tran_yy - r->tran_xy * r->tran_yx;
     fc->xspot     = F_ONE;
     fc->yspot     = F_ONE;
     fc->fc_type   = FC_MAT2_TYPE;
-    fc->s.m2.m[0] = (int)((double)matrix[0] / hx + 0.5);
-    fc->s.m2.m[1] = (int)((double)matrix[1] / hx + 0.5);
-    fc->s.m2.m[2] = (int)((double)matrix[2] / hy + 0.5);
-    fc->s.m2.m[3] = (int)((double)matrix[3] / hy + 0.5);
+    fc->s.m2.m[0] = (int)((double)font_scale->matrix[0] / hx + 0.5);
+    fc->s.m2.m[1] = (int)((double)font_scale->matrix[1] / hx + 0.5);
+    fc->s.m2.m[2] = (int)((double)font_scale->matrix[2] / hy + 0.5);
+    fc->s.m2.m[3] = (int)((double)font_scale->matrix[3] / hy + 0.5);
     fc->s.m2.matrix_scale = 16;
-    fc->s.m2.xworld_res = HWResolution[0] >> 16;
-    fc->s.m2.yworld_res = HWResolution[1] >> 16;
+    fc->s.m2.xworld_res = font_scale->HWResolution[0] >> 16;
+    fc->s.m2.yworld_res = font_scale->HWResolution[1] >> 16;
     fc->s.m2.world_scale = 0;
     fc->s.m2.point_size   = (int)(hy * 8 + 0.5); /* 1/8ths of pixels */
     fc->s.m2.set_size     = (int)(hx * 8 + 0.5);
+    fc->numXsubpixels = font_scale->subpixels[0];
+    fc->numYsubpixels = font_scale->subpixels[1];
+    fc->alignment = (font_scale->align_to_pixels ? GAGG : GAPP);
     fc->ssnum = 0x8000; /* no symset mapping */
     if (ff->font_file_path == NULL && !ff->is_type1)
         fc->ssnum = RAW_GLYPH;

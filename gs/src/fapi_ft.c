@@ -414,10 +414,12 @@ static void transform_decompose(FT_Matrix* a_transform,
 Open a font and set its transformation matrix to a_matrix, which is a 6-element array representing an affine
 transform, and its resolution in dpi to a_resolution, which contains horizontal and vertical components.
 */
-static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,const FracInt a_matrix[6],
-									const FracInt a_resolution[2],const char* a_map,bool a_vertical,
+static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,const FAPI_font_scale *font_scale,
+									const char* a_map,bool a_vertical,
 									FAPI_descendant_code a_descendant_code)
 	{
+	const FracInt *a_resolution = font_scale->HWResolution;
+	const FracInt *a_matrix = font_scale->matrix;
 	FF_server* s = (FF_server*)a_server;
 	FF_face* face = (FF_face*)a_font->server_font_data;
 	FT_Error ft_error = 0;

@@ -417,6 +417,8 @@ compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *al
     if (gs_currentaligntopixels(penum->current_font->dir) == 0) {
 	subpix_origin->x = fixed2int_pixround(penum->origin.x) & ((fixed_1 << log2_scale->x) - 1); /* see gx_lookup_cached_char */
 	subpix_origin->y = fixed2int_pixround(penum->origin.y) & ((fixed_1 << log2_scale->y) - 1);
+	subpix_origin->x &= ((1 << log2_scale->x) - 1);
+	subpix_origin->y &= ((1 << log2_scale->y) - 1);
     } else
 	subpix_origin->x = subpix_origin->y = 0;
     return 0;

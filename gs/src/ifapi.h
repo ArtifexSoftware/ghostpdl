@@ -115,6 +115,13 @@ struct FAPI_path_s {
     int (*closepath)(FAPI_path *);
 };
 
+typedef struct FAPI_font_scale_s {
+    FracInt matrix[6]; 
+    FracInt HWResolution[2]; 
+    int subpixels[2];
+    bool align_to_pixels; 
+} FAPI_font_scale;
+
 typedef struct FAPI_metrics_s {
     int bbox_x0, bbox_y0, bbox_x1, bbox_y1; /* design units */
     int escapement; /* design units */
@@ -142,7 +149,7 @@ struct FAPI_server_s {
     i_plugin_instance ig;
     int frac_shift; /* The number of fractional bits in coordinates. */
     FAPI_retcode (*ensure_open)(FAPI_server *server);
-    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap, bool bVertical, FAPI_descendant_code dc);
+    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FAPI_font_scale *scale, const char *xlatmap, bool bVertical, FAPI_descendant_code dc);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);
     FAPI_retcode (*get_font_proportional_feature)(FAPI_server *server, FAPI_font *ff, int subfont, bool *bProportional);
