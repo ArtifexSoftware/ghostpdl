@@ -169,6 +169,7 @@ int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 
 int wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs);
 void wedge_vertex_list_elem_buffer_free(patch_fill_state_t *pfs);
+void patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs);
 #endif
 
 #endif /* gxshade4_INCLUDED */

@@ -176,7 +176,7 @@ term_patch_fill_state(patch_fill_state_t *pfs)
 
 /* Resolve a patch color using the Function if necessary. */
 inline private void
-patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs)
+patch_resolve_color_inline(patch_color_t * ppcr, const patch_fill_state_t *pfs)
 {
     if (pfs->Function) {
 	gs_function_evaluate(pfs->Function, ppcr->t, ppcr->cc.paint.values);
@@ -188,6 +188,13 @@ patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs)
 #	endif
     }
 }
+
+void
+patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs)
+{
+    patch_resolve_color_inline(ppcr, pfs);
+}
+
 
 /*
  * Calculate the interpolated color at a given point.
@@ -204,7 +211,7 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
     if (pfs->Function) {
 	ppcr->t[0] = ppc0->t[0] * (1 - t) + t * ppc1->t[0];
 	ppcr->t[1] = ppc0->t[1] * (1 - t) + t * ppc1->t[1];
-	patch_resolve_color(ppcr, pfs);
+	patch_resolve_color_inline(ppcr, pfs);
     } else {
 	int ci;
 
@@ -487,13 +494,13 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 #undef CHECK_SPLIT
 
 	    patch_interpolate_color(&cu0v0, &c0v0, &c1v0, pfs, u0);
-	    patch_resolve_color(&cu0v0, pfs);
+	    patch_resolve_color_inline(&cu0v0, pfs);
 	    patch_interpolate_color(&cu1v0, &c0v0, &c1v0, pfs, u1);
-	    patch_resolve_color(&cu1v0, pfs);
+	    patch_resolve_color_inline(&cu1v0, pfs);
 	    patch_interpolate_color(&cu0v1, &c0v1, &c1v1, pfs, u0);
-	    patch_resolve_color(&cu0v1, pfs);
+	    patch_resolve_color_inline(&cu0v1, pfs);
 	    patch_interpolate_color(&cu1v1, &c0v1, &c1v1, pfs, u1);
-	    patch_resolve_color(&cu1v1, pfs);
+	    patch_resolve_color_inline(&cu1v1, pfs);
 	    if_debug6('2', "[2]u[%d]=[%g .. %g], v[%d]=[%g .. %g]\n",
 		      iu, u0, u1, iv, v0, v1);
 
@@ -1336,7 +1343,7 @@ function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const
 	for (j = 0; j < count_of(q); j++) {
 	    c.t[0] = c0->t[0] * (1 - q[j]) + c1->t[0] * q[j];
 	    c.t[1] = c0->t[1] * (1 - q[j]) + c1->t[1] * q[j];
-	    patch_resolve_color(&c, pfs);
+	    patch_resolve_color_inline(&c, pfs);
 	    for (i = 0; i < pfs->num_components; i++) {
 		float v = c0->cc.paint.values[i] * (1 - q[j]) + c1->cc.paint.values[i] * q[j];
 		float d = v - c.cc.paint.values[i];
@@ -1855,7 +1862,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
     if (!wedge) {
 	gs_direct_color_space *cs = 
 		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
-	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades), s = 0;
+	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
 	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
 	   can't provide a better precision due to the color
 	   representation with integers.
@@ -3398,10 +3405,10 @@ make_tensor_patch(const patch_fill_state_t *pfs, tensor_patch *p, const patch_cu
     patch_set_color(pfs, &p->c[1][0], curve[1].vertex.cc);
     patch_set_color(pfs, &p->c[1][1], curve[2].vertex.cc);
     patch_set_color(pfs, &p->c[0][1], curve[3].vertex.cc);
-    patch_resolve_color(&p->c[0][0], pfs);
-    patch_resolve_color(&p->c[0][1], pfs);
-    patch_resolve_color(&p->c[1][0], pfs);
-    patch_resolve_color(&p->c[1][1], pfs);
+    patch_resolve_color_inline(&p->c[0][0], pfs);
+    patch_resolve_color_inline(&p->c[0][1], pfs);
+    patch_resolve_color_inline(&p->c[1][0], pfs);
+    patch_resolve_color_inline(&p->c[1][1], pfs);
     if (!pfs->Function) {
 	pcs->type->restrict_color(&p->c[0][0].cc, pcs);
 	pcs->type->restrict_color(&p->c[0][1].cc, pcs);

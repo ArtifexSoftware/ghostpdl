@@ -33,6 +33,7 @@
 #include "gxshade4.h"
 #include "gxdevcli.h"
 #include "vdtrace.h"
+#include <assert.h>
 
 #define VD_TRACE_AXIAL_PATCH 1
 #define VD_TRACE_RADIAL_PATCH 1
@@ -782,9 +783,6 @@ typedef struct R_fill_state_s {
     gs_point delta;
     double dr, width, dd;
     int depth;
-#   if NEW_RADIAL_SHADINGS
-    float t0, t1;
-#   endif
     R_frame_t frames[R_max_depth];
 } R_fill_state_t;
 /****** NEED GC DESCRIPTOR ******/
@@ -911,56 +909,42 @@ R_fill_region(R_fill_state_t * pfs)
 }
 
 private int 
-R_tensor_patches_aux(R_fill_state_t *pfs, const gs_rect *rect)
-{
-    const gs_shading_R_t * const psh = pfs->psh;
-    float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
-    floatp r0 = psh->params.Coords[2];
-    float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
-    floatp r1 = psh->params.Coords[5];
+R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
+    double x0, double y0, double r0, double t0,
+    double x1, double y1, double r1, double t1)
+{   
     double dx = x1 - x0, dy = y1 - y0;
-    double d = sqrt(dx * dx + dy * dy);
+    double d = hypot(dx, dy);
     gs_point p0, p1, pc0, pc1;
-    int k, kk = 0, j, code;
-    patch_fill_state_t pfs1;
-
-    memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
-    pfs1.Function = pfs->psh->params.Function;
-    code = init_patch_fill_state(&pfs1);
-    if (code < 0)
-	return code;
-    shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
-    pfs1.maybe_self_intersecting = false;
+    int k, j, code;
     pc0.x = x0, pc0.y = y0; 
     pc1.x = x1, pc1.y = y1;
     if (r0 + d <= r1 || r1 + d <= r0) {
 	/* One circle is inside another one. 
-	   All 4 patches are visible.
 	   Use any subdivision, 
 	   but don't depend on dx, dy, which may be too small. */
 	p0.x = 0, p0.y = -1;
     } else {
-        /* Use the dx, dy direction for the proper subdivision. */
-	double dd = sqrt(dx * dx + dy * dy);
-
-	p0.x = - dy / dd, p0.y = dx / dd;
-	if (psh->params.Extend[1] && r0 == r1) {
-	    /* 2 patches are invisible. */
-	    kk = 2;
+        /* Must generate canonic quadrangle arcs,
+	   because we approximate them with curves. */
+	if(any_abs(dx) >= any_abs(dy)) {
+	    if (dx > 0)
+		p0.x = 0, p0.y = -1;
+	    else
+		p0.x = 0, p0.y = 1;
 	} else {
-	    /* All 4 patches are visible. */
-	    kk = 0; 
-	    /* We could shorten 2 partially hidden patches,
-	       but we haven't done yet. */
+	    if (dy > 0)
+		p0.x = 1, p0.y = 0;
+	    else
+		p0.x = -1, p0.y = 0;
 	}
     }
+    /* fixme: wish: cut invisible parts off. */
     for (k = 0; k < 4; k++, p0 = p1) {
 	gs_point p[12];
 	patch_curve_t curve[4];
 
-	p1.x = p0.y; p1.y = - p0.x;
-	if (k < kk)
-	    continue;
+	p1.x = -p0.y; p1.y = p0.x;
 	if ((k & 1) == k >> 1) {
 	    make_quadrant_arc(p + 0, &pc0, &p1, &p0, r0);
 	    make_quadrant_arc(p + 6, &pc1, &p0, &p1, r1);
@@ -992,15 +976,15 @@ R_tensor_patches_aux(R_fill_state_t *pfs, const gs_rect *rect)
 		return code;
 	}
 #	if NEW_RADIAL_SHADINGS
-	    curve[0].vertex.cc[0] = curve[1].vertex.cc[0] = pfs->t0;
-	    curve[2].vertex.cc[0] = curve[3].vertex.cc[0] = pfs->t1;
+	    curve[0].vertex.cc[0] = curve[1].vertex.cc[0] = t0;
+	    curve[2].vertex.cc[0] = curve[3].vertex.cc[0] = t1;
 #	else
 	    curve[0].vertex.cc[0] = curve[1].vertex.cc[0] = 0; /* stub. */
 	    curve[2].vertex.cc[0] = curve[3].vertex.cc[0] = 0; /* stub. */
 #	endif
 	curve[0].vertex.cc[1] = curve[1].vertex.cc[1] = 0; /* Initialize against FPE. */
 	curve[2].vertex.cc[1] = curve[3].vertex.cc[1] = 0; /* Initialize against FPE. */
-	code = patch_fill(&pfs1, curve, NULL, NULL);
+	code = patch_fill(pfs, curve, NULL, NULL);
 	if (code < 0)
 	    return code;
     }
@@ -1008,21 +992,261 @@ R_tensor_patches_aux(R_fill_state_t *pfs, const gs_rect *rect)
 }
 
 
-private int 
-R_tensor_patches(R_fill_state_t *pfs, const gs_rect *rect)
+private void
+R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect, 
+	double x0, double y0, double r0, 
+	double x1, double y1, double r1, 
+	double *x2, double *y2, double *r2)
 {
+    double ax, ay, a0, a1;
+    double dx = x1 - x0, dy = y1 - y0;
+    double sp, sq, s;
+
+    /* Compute a cone circle, which contacts the rect externally. */
+    /* Don't bother with all 4 sides of the rect, 
+       just do with the X or Y span only,
+       so it's not an exact contact, sorry. */
+    if (any_abs(dx) > any_abs(dy)) {
+	/* Solving :
+	    x0 + (x1 - x0) * s - r0 - (r1 - r0) * s == bbox_x
+	    (x1 - x0) * s - (r1 - r0) * s == bbox_x - x0 + r0
+	    s = (bbox_x - x0 + r0) / (x1 - x0 - r1 + r0)
+	 */
+	assert(x1 - x0 + r1 - r0); /* We checked for obtuse cone. */
+	sp = (rect->p.x - x0 + r0) / (x1 - x0 - r1 + r0);
+	sq = (rect->q.x - x0 + r0) / (x1 - x0 - r1 + r0);
+    } else {
+	/* Same by Y. */
+	sp = (rect->p.y - y0 + r0) / (y1 - y0 - r1 + r0);
+	sq = (rect->q.y - y0 + r0) / (y1 - y0 - r1 + r0);
+    }
+    if (sp >= 1 && sq >= 1)
+	s = min(sp, sq);
+    else if(sp >= 1)
+	s = sp;
+    else if (sq >= 1)
+	s = sq;
+    else {
+	/* The circle 1 is outside the rect, use it. */
+        s = 1;
+    }
+    if (r0 + (r1 - r0) * s < 0) {
+	/* Passed the cone apex, use the apex. */
+	s = r0 / (r0 - r1);
+	*r2 = 0;
+    } else
+	*r2 = r0 + (r1 - r0) * s;
+    *x2 = x0 + (x1 - x0) * s;
+    *y2 = y0 + (y1 - y0) * s;
+}
+
+private double 
+R_rect_radius(const gs_rect *rect, double x0, double y0)
+{
+    double d, dd;
+
+    dd = hypot(rect->p.x - x0, rect->p.y - y0);
+    d = hypot(rect->p.x - x0, rect->q.y - y0);
+    dd = max(dd, d);
+    d = hypot(rect->q.x - x0, rect->q.y - y0);
+    dd = max(dd, d);
+    d = hypot(rect->q.x - x0, rect->p.y - y0);
+    dd = max(dd, d);
+    return dd;
+}
+
+private int
+R_fill_triangle_new(patch_fill_state_t *pfs, const gs_rect *rect, 
+    double x0, double y0, double x1, double y1, double x2, double y2, double t)
+{
+    shading_vertex_t p0, p1, p2;
     int code;
 
-    if (VD_TRACE_RADIAL_PATCH && vd_allowed('s')) {
-	vd_get_dc('s');
-	vd_set_shift(0, 0);
-	vd_set_scale(0.01);
-	vd_set_origin(0, 0);
+    code = gs_point_transform2fixed(&pfs->pis->ctm, x0, y0, &p0.p);
+    if (code < 0)
+	return code;
+    code = gs_point_transform2fixed(&pfs->pis->ctm, x1, y1, &p1.p);
+    if (code < 0)
+	return code;
+    code = gs_point_transform2fixed(&pfs->pis->ctm, x2, y2, &p2.p);
+    if (code < 0)
+	return code;
+    p0.c.t[0] = p0.c.t[1] = t;
+    p1.c.t[0] = p1.c.t[1] = t;
+    p2.c.t[0] = p2.c.t[1] = t;
+    patch_resolve_color(&p0.c, pfs);
+    patch_resolve_color(&p1.c, pfs);
+    patch_resolve_color(&p2.c, pfs);
+    return mesh_triangle(pfs, &p0, &p1, &p2);
+}
+
+private bool 
+R_is_covered(double ax, double ay, 
+	const gs_point *p0, const gs_point *p1, const gs_point *p)
+{
+    double dx0 = p0->x - ax, dy0 = p0->y - ay;
+    double dx1 = p1->x - ax, dy1 = p1->y - ay;
+    double dx = p->x - ax, dy = p->y - ay;
+    double vp0 = dx * dy0 - dy * dx0;
+    double vp1 = dx * dy1 - dy * dx1;
+
+    return vp0 >= 0 && vp1 >= 0;
+}
+
+private int
+R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
+	double x0, double y0, double r0, 
+	double x1, double y1, double r1, double t1, double r)
+{
+    double dx = x1 - x0, dy = y1 - y0, dr = any_abs(r1 - r0);
+    double d = hypot(dx, dy);
+    double ax, ay, as; /* Cone apex. */
+    gs_point p0, p1; /* Tangent limits. */
+    gs_point cp[4]; /* Corners.. */
+    gs_point rp[4]; /* Covered corners.. */
+    gs_point pb;
+    int rp_count = 0, cp_start, i, code;
+    bool covered[4];
+
+    as = r0 / (r0 - r1);
+    ax = x0 + (x1 - x0) * as;
+    ay = y0 + (y1 - y0) * as;
+
+    if (any_abs(d - dr) < 1e-7) {
+	/* Nearly degenerate, replace with half-plane. */
+	p0.x = ax - dy * r / d;
+	p0.y = ax + dx * r / d;
+	p1.x = ax + dy * r / d;
+	p1.y = ax - dx * r / d;
+    } else {
+	/* Tangent limits by proportional triangles. */
+	double da = hypot(ax - x0, ay - y0);
+	double h = r * r0 / da, g;
+
+	assert(h <= r);
+	g = sqrt(r * r - h * h);
+	p0.x = ax - dy * h / d;
+	p0.y = ax + dx * g / d;
+	p0.x = ax + dy * h / d;
+	p0.y = ax - dx * g / d;
     }
-    code = R_tensor_patches_aux(pfs, rect);
-    if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
-	vd_release_dc;
-    return code;
+    /* Now we have 2 limited tangents, and 4 corners of the rect. 
+       Need to know what corners are covered. */
+    cp[0].x = rect->p.x, cp[0].y = rect->p.y;
+    cp[1].x = rect->q.x, cp[1].y = rect->p.y;
+    cp[2].x = rect->q.x, cp[2].y = rect->q.y;
+    cp[3].x = rect->p.x, cp[3].y = rect->q.y;
+    covered[0] = R_is_covered(ax, ay, &p0, &p1, &cp[0]);
+    covered[1] = R_is_covered(ax, ay, &p0, &p1, &cp[1]);
+    covered[2] = R_is_covered(ax, ay, &p0, &p1, &cp[2]);
+    covered[3] = R_is_covered(ax, ay, &p0, &p1, &cp[3]);
+    if (!covered[0] && !covered[1] && !covered[2] && !covered[3]) {
+	return R_fill_triangle_new(pfs, rect, ax, ay, p0.x, p0.y, p1.x, p1.y, t1);
+    } 
+    if (!covered[0] && covered[1])
+	cp_start = 1;
+    else if (!covered[1] && covered[2])
+	cp_start = 2;
+    else if (!covered[2] && covered[3])
+	cp_start = 3;
+    else if (!covered[3] && covered[0])
+	cp_start = 0;
+    else {
+	/* Must not happen, handle somehow for safety. */
+	cp_start = 0;
+    }
+    for (i = cp_start; i < cp_start + 4 && covered[i % 4]; i++) {
+	rp[rp_count] = cp[i % 4];
+	rp_count++;
+    }
+    /* Do paint. */
+    pb = p0;
+    for (i = 0; i < rp_count; i++) {
+	code = R_fill_triangle_new(pfs, rect, ax, ay, pb.x, pb.y, rp[i].x, rp[i].y, t1);
+	if (code < 0)
+	    return code;
+	pb = rp[i];
+    }
+    return R_fill_triangle_new(pfs, rect, ax, ay, pb.x, pb.y, p1.x, p1.y, t1);
+}
+
+private int
+R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *rect, 
+	double t0, double t1)
+{
+    float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
+    floatp r0 = psh->params.Coords[2];
+    float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
+    floatp r1 = psh->params.Coords[5];
+    double dx = x1 - x0, dy = y1 - y0, dr = any_abs(r1 - r0);
+    double d = hypot(dx, dy), r;
+    int code;
+
+    if (dr >= d) {
+	/* Nested circles, or degenerate. */
+	if (r0 > r1) {
+	    if (psh->params.Extend[0]) {
+		r = R_rect_radius(rect, x0, y0);
+		code = R_tensor_annulus(pfs, rect, x0, y0, r, t0, x0, y0, r0, t0);
+		if (code < 0)
+		    return code;
+	    }
+	    if (psh->params.Extend[1])
+		return R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x1, y1, 0, t1);
+	} else {
+	    if (psh->params.Extend[1]) {
+		r = R_rect_radius(rect, x1, y1);
+		code = R_tensor_annulus(pfs, rect, x1, y1, r, t1, x1, y1, r1, t1);
+		if (code < 0)
+		    return code;
+	    }
+	    if (psh->params.Extend[0])
+		return R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x0, y0, 0, t0);
+	}
+    } else if (dr > d / 3) {
+	/* Obtuse cone. */
+	if (r0 > r1) {
+	    if (psh->params.Extend[0]) {
+		r = R_rect_radius(rect, x0, y0);
+		code = R_obtuse_cone(pfs, rect, x0, y0, r0, x1, y1, r1, t0, r);
+		if (code < 0)
+		    return code;
+	    }
+	    if (psh->params.Extend[1] && r1 != 0)
+		return R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x1, y1, 0, t1);
+	    return 0;
+	} else {
+	    if (psh->params.Extend[1]) {
+		r = R_rect_radius(rect, x1, y1);
+		code = R_obtuse_cone(pfs, rect, x1, y1, r1, x0, y0, r0, t1, r);
+		if (code < 0)
+		    return code;
+	    }
+	    if (psh->params.Extend[0] && r0 != 0)
+		return R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x0, y0, 0, t0);
+	}
+    } else {
+	/* Acute cone or cylinder. */
+	double x2, y2, r2, x3, y3, r3;
+
+	if (psh->params.Extend[0]) {
+	    R_outer_circle(pfs, rect, x0, y0, r0, x1, y1, r1, &x2, &y2, &r2);
+	    if (x2 != x0 || y2 != y0) {
+		code = R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x2, y2, r2, t1);
+		if (code < 0)
+		    return code;
+	    }
+	}
+	if (psh->params.Extend[1]) {
+	    R_outer_circle(pfs, rect, x1, y1, r1, x0, y0, r0, &x3, &y3, &r3);
+	    if (x3 != x1 || y3 != y1) {
+		code = R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x3, y3, r3, t0);
+		if (code < 0)
+		    return code;
+	    }
+	}
+    }
+    return 0;
 }
 
 
@@ -1159,10 +1383,6 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     for (i = 0; i < 2; ++i)
 	gs_function_evaluate(psh->params.Function, &t[i],
 			     rcc[i].paint.values);
-#   if NEW_RADIAL_SHADINGS
-	state.t0 = d0;
-	state.t1 = d1;
-#   endif    
     memcpy(state.frames[0].cc, rcc, sizeof(rcc[0]) * 2);
     state.delta.x = x1 - x0;
     state.delta.y = y1 - y0;
@@ -1183,142 +1403,163 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 
     state.dd = dd;
 
-    /*
-	For a faster painting, we apply fill adjustment to outer annula only.
-	Inner annula are painted with no fill adjustment.
-	It can't cause a dropout, because the outer side of an annulus
-	gets same flattening as the inner side of the neighbour outer annulus.
-     */
-    if (psh->params.Extend[0]) {
-	floatp max_extension;
-	gs_point p, q;
-	p = rect->p; q = rect->q;
-	max_extension = hypot(p.x-q.x, p.y-q.y)*2;
+    if (NEW_RADIAL_SHADINGS) {
+	patch_fill_state_t pfs1;
 
-	if (r0 < r1) {
-	    if ( (r1-r0) < dist_between_circles) {
-		floatp coord[7][2];
-		R_compute_extension_cone(x1, y1, r1, x0, y0, r0, 
-					 max_extension, coord);
-		code = R_fill_triangle(&state, &rcc[0], x1, y1, 
-					coord[0][0], coord[0][1], 
-					coord[1][0], coord[1][1]);
-		if (code < 0)
-		    return code;
-		code = R_fill_triangle(&state, &rcc[0], x1, y1, 
-					coord[0][0], coord[0][1], 
-					coord[2][0], coord[2][1]);
-	    } else {
-		code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, 0.0, r0, &pis->fill_adjust);
-	    }
+	memcpy(&pfs1, (shading_fill_state_t *)&state , sizeof(shading_fill_state_t));
+	pfs1.Function = psh->params.Function;
+	code = init_patch_fill_state(&pfs1);
+	if (code < 0)
+	    return code;
+	shade_bbox_transform2fixed(rect, pis, &pfs1.rect);
+	pfs1.maybe_self_intersecting = false;
+
+	code = R_extensions(&pfs1, psh, rect, t[0], t[1]);
+	if (code < 0)
+	    return code;
+	{
+	    float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
+	    floatp r0 = psh->params.Coords[2];
+	    float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
+	    floatp r1 = psh->params.Coords[5];
+	    
+	    code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, t[0], x1, y1, r1, t[1]);
 	}
-	else if (r0 > r1) {
-	    if ( (r0-r1) < dist_between_circles) {
-		floatp coord[7][2];
-		R_compute_extension_cone(x0, y0, r0, x1, y1, r1, 
-					 max_extension, coord);
+    } else {
+	/*
+	    For a faster painting, we apply fill adjustment to outer annula only.
+	    Inner annula are painted with no fill adjustment.
+	    It can't cause a dropout, because the outer side of an annulus
+	    gets same flattening as the inner side of the neighbour outer annulus.
+	 */
+	if (psh->params.Extend[0]) {
+	    floatp max_extension;
+	    gs_point p, q;
+	    p = rect->p; q = rect->q;
+	    max_extension = hypot(p.x-q.x, p.y-q.y)*2;
+
+	    if (r0 < r1) {
+		if ( (r1-r0) < dist_between_circles) {
+		    floatp coord[7][2];
+		    R_compute_extension_cone(x1, y1, r1, x0, y0, r0, 
+					     max_extension, coord);
+		    code = R_fill_triangle(&state, &rcc[0], x1, y1, 
+					    coord[0][0], coord[0][1], 
+					    coord[1][0], coord[1][1]);
+		    if (code < 0)
+			return code;
+		    code = R_fill_triangle(&state, &rcc[0], x1, y1, 
+					    coord[0][0], coord[0][1], 
+					    coord[2][0], coord[2][1]);
+		} else {
+		    code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, 0.0, r0, &pis->fill_adjust);
+		}
+	    }
+	    else if (r0 > r1) {
+		if ( (r0-r1) < dist_between_circles) {
+		    floatp coord[7][2];
+		    R_compute_extension_cone(x0, y0, r0, x1, y1, r1, 
+					     max_extension, coord);
+		    code = R_fill_triangle(&state, &rcc[0], 
+					    coord[3][0], coord[3][1], 
+					    coord[4][0], coord[4][1], 
+					    coord[6][0], coord[6][1]);
+		    if (code < 0)
+			return code;
+		    code = R_fill_triangle(&state, &rcc[0], 
+					    coord[3][0], coord[3][1], 
+					    coord[5][0], coord[5][1], 
+					    coord[6][0], coord[6][1]);
+		} else {
+		    code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, r0,
+					  R_compute_radius(x0, y0, rect), &pis->fill_adjust);
+		}
+	    } else { /* equal radii */
+		floatp coord[4][2];
+		R_compute_extension_bar(x0, y0, x1, y1, r0, max_extension, coord);
 		code = R_fill_triangle(&state, &rcc[0], 
-					coord[3][0], coord[3][1], 
-					coord[4][0], coord[4][1], 
-					coord[6][0], coord[6][1]);
+					coord[0][0], coord[0][1], 
+					coord[1][0], coord[1][1], 
+					coord[2][0], coord[2][1]);
 		if (code < 0)
 		    return code;
 		code = R_fill_triangle(&state, &rcc[0], 
+					coord[2][0], coord[2][1], 
 					coord[3][0], coord[3][1], 
-					coord[5][0], coord[5][1], 
-					coord[6][0], coord[6][1]);
-	    } else {
-		code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, r0,
-				      R_compute_radius(x0, y0, rect), &pis->fill_adjust);
+					coord[1][0], coord[1][1]);
 	    }
-	} else { /* equal radii */
-	    floatp coord[4][2];
-	    R_compute_extension_bar(x0, y0, x1, y1, r0, max_extension, coord);
-	    code = R_fill_triangle(&state, &rcc[0], 
-				    coord[0][0], coord[0][1], 
-				    coord[1][0], coord[1][1], 
-				    coord[2][0], coord[2][1]);
 	    if (code < 0)
 		return code;
-	    code = R_fill_triangle(&state, &rcc[0], 
-				    coord[2][0], coord[2][1], 
-				    coord[3][0], coord[3][1], 
-				    coord[1][0], coord[1][1]);
 	}
-	if (code < 0)
-	    return code;
-    }
 
-    state.depth = 1;
-    state.frames[0].t0 = (t[0] - d0) / dd;
-    state.frames[0].t1 = (t[1] - d0) / dd;
-    if (NEW_RADIAL_SHADINGS)
-	code = R_tensor_patches(&state, rect);
-    else
-	code = R_fill_region(&state);
-    if (psh->params.Extend[1]) {
-	floatp max_extension;
-	gs_point p, q;
-	p = rect->p; q = rect->q;
-	max_extension = hypot(p.x-q.x, p.y-q.y)*2;
+	state.depth = 1;
+	state.frames[0].t0 = (t[0] - d0) / dd;
+	state.frames[0].t1 = (t[1] - d0) / dd;
+        code = R_fill_region(&state);
+	if (psh->params.Extend[1]) {
+	    floatp max_extension;
+	    gs_point p, q;
+	    p = rect->p; q = rect->q;
+	    max_extension = hypot(p.x-q.x, p.y-q.y)*2;
 
-	if (code < 0)
-	    return code;
-	if (r0 < r1) {
-	    if ( (r1-r0) < dist_between_circles) {
-		floatp coord[7][2];
-		R_compute_extension_cone(x1, y1, r1, x0, y0, r0, 
-					 max_extension, coord);
+	    if (code < 0)
+		return code;
+	    if (r0 < r1) {
+		if ( (r1-r0) < dist_between_circles) {
+		    floatp coord[7][2];
+		    R_compute_extension_cone(x1, y1, r1, x0, y0, r0, 
+					     max_extension, coord);
+		    code = R_fill_triangle(&state, &rcc[1], 
+					    coord[3][0], coord[3][1], 
+					    coord[4][0], coord[4][1], 
+					    coord[6][0], coord[6][1]);
+		    if (code < 0)
+			return code;
+		    code = R_fill_triangle(&state, &rcc[1], 
+					    coord[3][0], coord[3][1], 
+					    coord[5][0], coord[5][1], 
+					    coord[6][0], coord[6][1]);
+		    if (code < 0)
+			return code;
+		    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
+		} else {
+		    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, r1,
+					  R_compute_radius(x1, y1, rect), &pis->fill_adjust);
+		}
+	    }
+	    else if (r0 > r1)
+	    {
+		if ( (r0-r1) < dist_between_circles) {
+		    floatp coord[7][2];
+		    R_compute_extension_cone(x0, y0, r0, x1, y1, r1, 
+					     max_extension, coord);
+		    code = R_fill_triangle(&state, &rcc[1], x1, y1, 
+					    coord[0][0], coord[0][1], 
+					    coord[1][0], coord[1][1]);
+		    if (code < 0)
+			return code;
+		    code = R_fill_triangle(&state, &rcc[1], x1, y1, 
+					    coord[0][0], coord[0][1], 
+					    coord[2][0], coord[2][1]);
+		}
+		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
+	    } else { /* equal radii */
+		floatp coord[4][2];
+		R_compute_extension_bar(x1, y1, x0, y0, r0, max_extension, coord);
 		code = R_fill_triangle(&state, &rcc[1], 
-					coord[3][0], coord[3][1], 
-					coord[4][0], coord[4][1], 
-					coord[6][0], coord[6][1]);
+					coord[0][0], coord[0][1], 
+					coord[1][0], coord[1][1], 
+					coord[2][0], coord[2][1]);
 		if (code < 0)
 		    return code;
 		code = R_fill_triangle(&state, &rcc[1], 
+					coord[2][0], coord[2][1], 
 					coord[3][0], coord[3][1], 
-					coord[5][0], coord[5][1], 
-					coord[6][0], coord[6][1]);
+					coord[1][0], coord[1][1]);
 		if (code < 0)
 		    return code;
 		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
-	    } else {
-		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, r1,
-				      R_compute_radius(x1, y1, rect), &pis->fill_adjust);
 	    }
-	}
-	else if (r0 > r1)
-	{
-	    if ( (r0-r1) < dist_between_circles) {
-		floatp coord[7][2];
-		R_compute_extension_cone(x0, y0, r0, x1, y1, r1, 
-					 max_extension, coord);
-		code = R_fill_triangle(&state, &rcc[1], x1, y1, 
-					coord[0][0], coord[0][1], 
-					coord[1][0], coord[1][1]);
-		if (code < 0)
-		    return code;
-		code = R_fill_triangle(&state, &rcc[1], x1, y1, 
-					coord[0][0], coord[0][1], 
-					coord[2][0], coord[2][1]);
-	    }
-	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
-	} else { /* equal radii */
-	    floatp coord[4][2];
-	    R_compute_extension_bar(x1, y1, x0, y0, r0, max_extension, coord);
-	    code = R_fill_triangle(&state, &rcc[1], 
-				    coord[0][0], coord[0][1], 
-				    coord[1][0], coord[1][1], 
-				    coord[2][0], coord[2][1]);
-	    if (code < 0)
-		return code;
-	    code = R_fill_triangle(&state, &rcc[1], 
-				    coord[2][0], coord[2][1], 
-				    coord[3][0], coord[3][1], 
-				    coord[1][0], coord[1][1]);
-	    if (code < 0)
-		return code;
-	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
 	}
     }
     return code;
@@ -1330,15 +1571,14 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 {   
     int code;
 
-#   if NEW_RADIAL_SHADINGS
-	gs_fixed_point fill_adjust = {INTERPATCH_PADDING, INTERPATCH_PADDING};
-	gs_fixed_point fill_adjust0 = pis->fill_adjust;
-
-	pis->fill_adjust = fill_adjust;
-#   endif
+    if (VD_TRACE_RADIAL_PATCH && vd_allowed('s')) {
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+    }
     code = gs_shading_R_fill_rectangle_aux(psh0, rect, dev, pis);
-#   if NEW_RADIAL_SHADINGS
-        pis->fill_adjust = fill_adjust0;
-#   endif
+    if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
+	vd_release_dc;
     return code;
 }
