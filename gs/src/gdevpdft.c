@@ -232,7 +232,13 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 				     pcpath, mem, ppte);
 
-    /* Set the clipping path and color. */
+    /*
+     * Set the clipping path and drawing color.  We set both the fill
+     * and stroke color, because we don't know whether the fonts will
+     * be filled or stroked, and we can't set a color while we are in
+     * text mode.  (This is a consequence of the implementation, not a
+     * limitation of PDF.)
+     */
 
     if (pdf_must_put_clip_path(pdev, pcpath)) {
 	int code = pdf_open_page(pdev, PDF_IN_STREAM);
@@ -241,10 +247,13 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	    return code;
 	pdf_put_clip_path(pdev, pcpath);
     }
-    if (pdf_set_drawing_color(pdev, pdcolor, &pdev->fill_color,
-			      &psdf_set_fill_color_commands) < 0)
-	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
-				     pcpath, mem, ppte);
+
+    if ((code = pdf_set_drawing_color(pdev, pdcolor, &pdev->stroke_color,
+				      &psdf_set_stroke_color_commands)) < 0 ||
+	(code = pdf_set_drawing_color(pdev, pdcolor, &pdev->fill_color,
+				      &psdf_set_fill_color_commands)) < 0
+	)
+	return code;
 
     /* Allocate and initialize the enumerator. */
 
@@ -899,7 +908,7 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
  */
 private int
 pdf_write_text_process_state(gx_device_pdf *pdev,
-			     const gs_text_enum_t *pte,	/* for pis */
+			     const gs_text_enum_t *pte,	/* for pdcolor, pis */
 			     const pdf_text_process_state_t *ppts,
 			     const gs_const_string *pstr)
 {
@@ -930,6 +939,7 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
 	pprintg1(pdev->strm, "%g Tw\n", ppts->words);
 	pdev->text.word_spacing = ppts->words;
     }
+
     if (pdev->text.render_mode != ppts->mode) {
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
