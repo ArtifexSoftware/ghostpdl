@@ -90,6 +90,7 @@ typedef enum {
     gx_path_type_winding_number = 0,
     gx_path_type_even_odd = 8,
     gx_path_type_optimize = 16,	/* OK to optimize paths by merging seg.s */
+    gx_path_type_always_close = 32, /* include final closepath even if not stroke */
     gx_path_type_rule = gx_path_type_winding_number | gx_path_type_even_odd
 } gx_path_type_t;
 typedef enum {

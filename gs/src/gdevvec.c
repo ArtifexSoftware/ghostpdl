@@ -46,10 +46,7 @@ gdev_vector_setflat(gx_device_vector * vdev, floatp flatness)
     return 0;
 }
 
-/*
- * Put a path on the output file.  If type is stroke and the last
- * path component is a closepath, omit it and return 1.
- */
+/* Put a path on the output file. */
 private bool
 coord_between(fixed start, fixed mid, fixed end)
 {
@@ -60,7 +57,8 @@ int
 gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 		   gx_path_type_t type, const gs_matrix *pmat)
 {
-    bool do_close = (type & gx_path_type_stroke) != 0;
+    bool do_close =
+	(type & (gx_path_type_stroke | gx_path_type_always_close)) != 0;
     gs_fixed_rect rbox;
     gx_path_rectangular_type rtype = gx_path_is_rectangular(ppath, &rbox);
     gs_path_enum cenum;
@@ -140,6 +138,7 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 	}
 	switch (pe_op) {
 	case 0:		/* done */
+	done:
 	    code = vdev_proc(vdev, endpath)(vdev, type);
 	    return (code < 0 ? code : 0);
 	case gs_pe_curveto:
@@ -152,16 +151,14 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 	case gs_pe_closepath:
 	    if (!do_close) {
 		pe_op = gx_path_enum_next(&cenum, vs);
-		if (pe_op != 0) {
-		    code = gdev_vector_dopath_segment(&state,
-						      gs_pe_closepath, vs);
-		    if (code < 0)
-			return code;
-		    goto sw;
-		}
-		code = vdev_proc(vdev, endpath)(vdev, type);
-		return (code < 0 ? code : 1);
+		if (pe_op == 0)
+		    goto done;
+		code = gdev_vector_dopath_segment(&state, gs_pe_closepath, vs);
+		if (code < 0)
+		    return code;
+		goto sw;
 	    }
+	    /* falls through */
 	draw:
 	    code = gdev_vector_dopath_segment(&state, pe_op, vs);
 	    if (code < 0)
