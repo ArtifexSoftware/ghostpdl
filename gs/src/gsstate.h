@@ -68,4 +68,10 @@ bool gs_currentlimitclamp(P1(const gs_state *));
 #include "gscpm.h"
 gs_in_cache_device_t gs_incachedevice(P1(const gs_state *));
 
+/* 
+ * explicit free of objects whose lifetime is process, 
+ * not managed by gsstate see comments in gsstate.c
+ */
+void gs_free_ht_cache(gs_memory_t *mem, gs_state *pgs); 
+
 #endif /* gsstate_INCLUDED */

@@ -88,7 +88,10 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *                back to the save) and is managed specially;
  *		transparency_stack, which is associated with the entire
  *		  stack but only stored in the topmost graphics state.
- *
+ * 
+ *         gs_free_ht_cache() can be called to free ht_cache and view_clip.
+ *         in a non garbage collection environment.
+ * 
  * (4) Objects that are referenced directly by exactly one gstate and that
  *      are not referenced (except transiently) from any other object.
  *      These fall into two groups:
@@ -915,4 +918,15 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;
+}
+
+void gs_free_ht_cache(gs_memory_t *mem, gs_state *pgs) 
+{
+    gx_ht_free_cache(mem, pgs->ht_cache);
+    gx_cpath_free(pgs->view_clip, "gs_free_ht_cache free view_clip");    
+    if (pgs->pattern_cache) {
+	(*pgs->pattern_cache->free_all) (pgs->pattern_cache);
+	gs_free_object(mem, pgs->pattern_cache->tiles, "gs_free_ht_cache free tiles");
+	gs_free_object(mem, pgs->pattern_cache, "gs_free_ht_cache free struct");
+    }
 }
