@@ -69,7 +69,7 @@ TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 # afs - artifex font scaler.
 # 3 mutually exclusive choices follow, pick one.
 
-PL_SCALER=afs
+PL_SCALER=fts
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
@@ -78,7 +78,7 @@ XLDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
 EXTRALIBS=-lif -lfco -ltt
-AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/
+AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -DAGFA_FONT_TABLE
 endif
 
 ifeq ($(PL_SCALER), fts)
