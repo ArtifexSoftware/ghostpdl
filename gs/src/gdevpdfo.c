@@ -1135,7 +1135,6 @@ cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_p
 	long position_save = ftell(sfile);
 
 	for (; pcsp0 && pcsp1; pcsp0 = pcsp0->next, pcsp1 = pcsp1->next) {
-	    long position10 = pcsp1->position;
 	    long position0 = pcsp0->position;
 	    long position1 = pcsp1->position;
 	    uint size0 = pcsp0->size;

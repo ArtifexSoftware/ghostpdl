@@ -260,7 +260,7 @@ pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 }
 
 /* Put a single element of a clipping path list. */
-int
+private int
 pdf_put_clip_path_list_elem(gx_device_pdf * pdev, gx_cpath_path_list *e, 
 	gs_path_enum *cenum, gdev_vector_dopath_state_t *state,
 	gs_fixed_point vs[3])
