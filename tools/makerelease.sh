@@ -4,6 +4,9 @@ echo ""
 echo "Enter directory of the release"
 read RELEASE_DIR
 
+#convert to absolute. no error checking
+RELEASE_DIR=$(cd $RELEASE_DIR && pwd)
+
 if test ! -d $RELEASE_DIR
 then
     echo "can't find Release Directory $RELEASE_DIR"
@@ -32,42 +35,41 @@ do
     fi
 done
 
-# update news files
+# create news files
 echo ""
-echo "Update news files? (y/n)"
+echo "create news file? (y/n)"
 read NEWS_UPDATE
 
 if test $NEWS_UPDATE = "y" || test $NEWS_UPDATE = "Y"
 then
     
-    (cd $RELEASE_DIR; tools/cvs2log.py -h artifex.com > ChangeLog)
-fi
+     NEWS_FILE="NEWS"
+     # get the new logs
+     echo "" > $RELEASE_DIR/$NEWS_FILE
+     echo "GhostPCL log entries in reverse chronological order" >> $RELEASE_DIR/$NEWS_FILE
+     echo "" >> $RELEASE_DIR/$NEWS_FILE
+     echo "Current version is $VERSION ($(date '+%m/%d/%Y'))" >> $RELEASE_DIR/$NEWS_FILE
+     echo "" >> $RELEASE_DIR/$NEWS_FILE
+     (cd $RELEASE_DIR; $RELEASE_DIR/tools/cvs2log.py -h artifex.com) >> $RELEASE_DIR/$NEWS_FILE
+fi # update NEWS file condition
 
 echo ""
 echo "Update pl.mak file? (y/n)"
 read PLMAK_UPDATE
 if test $PLMAK_UPDATE = "y" || test $PLMAK_UPDATE = "Y"
 then
-    perl -pi -e "s/^PJLVERSION=.*/PJLVERSION=$VERSION/" $RELEASE_DIR/pl/pl.mak
+    perl -pi -e s/^PJLVERSION=.\*/PJLVERSION=$VERSION/ $RELEASE_DIR/pl/pl.mak
 fi
 
+
 echo ""
-echo "Commit changes (y/n)"
+echo "Committing pl.mak (y/n)"
 read COMMIT
 if test $COMMIT = "y" || test $COMMIT = "Y"
 then
-	(cd $RELEASE_DIR; cvs commit)
+	cvs commit $RELEASE_DIR/pl/pl.mak
 fi
 
-echo ""
-echo "Tar ready (y/n)"
-read TAR
-if test $TAR = "y" || test $TAR = "Y"
-then
-    BASEDIR_NAME=$(basename "$RELEASE_DIR")
-    RELEASE_NAME=$BASEDIR_NAME-$VERSION
-    (cd $RELEASE_DIR; cd ..;
-    mv $BASEDIR_NAME $RELEASE_NAME
-    tar --exclude CVS -czvf $RELEASE_NAME.tar.gz $RELEASE_NAME
-    mv $RELEASE_NAME $BASEDIR_NAME)
-fi
+echo "making tar ball"
+tar -C $RELEASE_DIR/.. --exclude CVS -czvf ghostpcl_$VERSION.tar.gz $(basename $RELEASE_DIR)
+
