@@ -1,6 +1,11 @@
 Makefile
 Makefile.in
 configure
+config.log
+config.status
+aclocal.m4
+compile
+depcomp
 config.h
 config.h.in
 stamp-h
