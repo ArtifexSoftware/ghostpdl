@@ -1,0 +1,241 @@
+   Copyright (C) 1990, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, psfiles.txt, describes the .ps files distributed with
+Ghostscript, other than fonts.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+Generally used system files
+---------------------------
+
+gs_init.ps - Ghostscript reads this automatically when it starts up.  It
+contains definitions of many standard procedures and initialization for a
+wide variety of things.
+
+gs_btokn.ps - gs_init.ps reads this in if the btoken feature is included in
+the configuration.  It provides support for binary tokens.
+
+gs_ccfnt.ps - gs_init.ps reads this in if the ccfonts feature is included
+in the configuration.  It provides support for compiled fonts.
+
+gs_fonts.ps - gs_init.ps reads this in.  It initializes Ghostscript's font
+machinery and provides some utility procedures that work with fonts.
+
+gs_statd.ps - gs_init.ps reads this in.  It creates a dummy statusdict and
+some other environmental odds and ends for the benefit of PostScript files
+that really want to be printed on a LaserWriter.
+
+gs_dps1.ps - gs_init.ps reads this in if the dps feature is included in
+the configuration.  It provides support for various Display PostScript and
+Level 2 features.
+
+gs_lev2.ps - gs_init.ps reads this in if the Ghostscript interpreter
+includes Level 2 PostScript functions.  It contains definitions of
+procedures and miscellaneous initialization for the Level 2 functions.
+
+gs_res.ps - gs_init.ps reads this in if the Level 2 resource machinery is
+included.  Currently, this is the case for all Level 2 configurations.
+
+gs_type1.ps - gs_init.ps reads this in if the Ghostscript interpreter
+includes Type 1 font capability (which it normally does).
+
+gs_*_e.ps - These files define the Encodings known to Ghostscript.  All of
+them except gs_std_e.ps and gs_iso_e.ps are loaded only if referenced.
+
+More obscure system files
+-------------------------
+
+gs_cmdl.ps - This file is not used yet.  Eventually it will replace C code
+that parses the Ghostscript command line.
+
+gs_diskf.ps - This file implements the -dDISKFONTS feature (diskfont.dev).
+See use.txt for a description of this feature.
+
+gs_kanji.ps - This file provides support for the Wadalab free Kanji font.
+It is not included automatically in any configuration.
+
+gs_pdfwr.ps - This file contains some patches for providing information to
+the pdfwrite driver.  It is included only if the pdfwrite driver is
+included.
+
+gs_pfile.ps - This file provides runtime support for packed fonts.  It is
+not included automatically in any configuration.
+
+PDF-specific system files
+-------------------------
+
+gs_pdf.ps - The ProcSet that provides runtime support for PDF files.
+pdf2ps copies this into its output.
+
+gs_l2img.ps - The ProcSet that emulates the PostScript Level 2 'image'
+operator on Level 1 systems.  pdf2ps copies this into its output if the
+PSLevel1 option was selected.
+
+pdf_2ps.ps - The additions to the PDF interpreter that allow it to convert
+PDF to PostScript.
+
+pdf_base.ps - Utilities for interpreting PDF objects and streams.
+
+pdf_draw.ps - The interpreter for drawing-related PDF operations.
+
+pdf_font.ps - Code for handling fonts in PDF files.
+
+pdf_main.ps - Document- and page-level control for interpreting PDF files.
+
+Art
+---
+
+chess.ps - A black-and-white chessboard.
+
+golfer.ps - A gray-scale picture of a stylishly dressed woman swinging a
+golf club.
+
+escher.ps - A colored version of a hexagonally symmetric Escher drawing of
+interlocking butterflies.  Can be printed on monochrome devices, with
+somewhat less dramatic results.
+
+cheq.ps - A chessboard "font" used by chess.ps (obtained from the Adobe
+file server).
+
+snowflak.ps - A rectangular grid of intricate colored snowflakes.
+(Renders very slowly.)
+
+colorcir.ps - A set of nested ellipses made up of colored bars.
+
+tiger.ps - A dramatic colored picture of a tiger's head.
+
+ridt.eps - The RIDT '91 logo.  Note that since this is an EPS file, you will
+have to add
+	-c showpage
+at the end of the command line to print it or convert it to a raster file.
+
+Utilities
+---------
+
+For more information on these utility programs, see the comments at the
+beginning of the files.  The ones marked with * have batch files or shell
+scripts of the same name (e.g., bdftops, bdftops.bat) to invoke them
+conveniently.
+
+align.ps - a test page for determining the proper margin and offset
+parameters for your printer.
+
+bench.ps - a file useful for running benchmarks.
+
+* bdftops.ps - a utility for converting BDF fonts to outline form: see
+fonts.txt for more information.
+
+caption.ps - a file for putting a caption in a box at the bottom of each
+page, useful for trade show demos.
+
+docie.ps - an emulation of the CIE color mapping algorithms.
+
+* gslp.ps - a utility for doing "line printing" of plain text files.
+
+impath.ps - a utility for reconstructing outlines from bitmap images,
+used by bdftops.
+
+landscap.ps - a file that you can put in front of your own files to get
+them rendered in landscape mode.
+
+level1.ps - a file that turns off any Level 2 features.
+
+packfile.ps - a utility for compressing fonts into a single file.
+
+prfont.ps - a utility to print a font catalog.
+
+* ps2ascii.ps - a utility for extracting the ASCII text from PostScript
+source files.  It redefines many operators.  For more information, see the
+comments in the file.
+
+ps2ai.ps - a utility for converting an arbitrary PostScript file into a form
+compatible with Adobe Illustrator.  NOTE: ps2ai doesn't work properly with
+Adobe's Helvetica-Oblique font, and other fonts whose original FontMatrix
+involves skewing or rotation.
+
+* ps2epsi.ps - a utility for converting an arbitrary PostScript file into
+EPSI form.
+
+quit.ps - a file containing just the word "quit".  (The -c switch now makes
+this unnecessary; this file exists for backward compatibility.)
+
+rollconv.ps - a utility for converting files produced by Macromedia's Rollup
+program to a Type 0 form directly usable by Ghostscript.
+
+showpage.ps - a file containing just the word "showpage".  (The -c switch
+now makes this unnecessary; this file exists for backward compatibility.)
+
+viewcmyk.ps - a utility for displaying CMYK files.
+
+viewgif.ps - a utility for displaying GIF files.
+
+viewjpeg.ps - a utility for displaying JPEG files.
+
+viewpcx.ps - a utility for displaying PCX files.
+
+viewpbm.ps - a utility for displaying PBM/PGM/PPM files.
+
+waterfal.ps - a utility to print a "waterfall" of fonts at different
+sizes.
+
+Development tools
+-----------------
+
+acctest.ps - a utility that checks whether the interpreter enforces access
+restrictions.
+
+decrypt.ps - a utility for decrypting the eexec section of a font.
+
+markpath.ps - a utility for showing the points on a path.
+
+pcharstr.ps - a utility for printing out the CharStrings and Subrs in a
+Type 1 font.
+
+ppath.ps - a couple of utilities for printing out the current path, for
+debugging.
+
+traceop.ps - a utility for tracing uses of any procedure or operator
+for debugging.
+
+type1enc.ps - the Type 1 font format encryption and decryption algorithms,
+written in PostScript.
+
+uninfo.ps - some utilities for printing out PostScript data structures.
+
+unprot.ps - a prologue to disable access checking.
+
+viewps2a.ps - a utility for displaying the output of ps2ascii.ps.
+
+winmaps.ps - a utility for creating mappings between the Adobe encodings
+and the Microsoft Windows character sets.
+
+wrfont.ps - a utility for writing out an unprotected Type 1 font, such as
+the standard Ghostscript fonts.
+
+zeroline.ps - a utility for testing how interpreters handle zero-width
+lines.
+
+Odds and ends
+-------------
+
+lines.ps - a test program for line joins and caps.
+
+type1ops.ps - the Type 1 font format opcodes.

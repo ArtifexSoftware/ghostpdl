@@ -1,0 +1,1247 @@
+   Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, use.txt, describes how to use the Ghostscript language
+interpreter.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.  
+
+********
+******** Installing Ghostscript
+********
+
+Please read the documentation file install.txt for information on installing
+Ghostscript.
+
+********
+******** Unix shell scripts for Ghostscript
+********
+
+The Ghostscript distribution includes several Unix shell scripts for
+driving Ghostscript in different environments.  These are all
+user-contributed code: please contact the user identified in the file, not
+Aladdin Enterprises, if you have questions.
+
+> pv.sh - preview a specified page of a dvi file in an X window.
+
+> sysvlp.sh - System V 3.2 lp interface for parallel printer.
+
+> pj-gs.sh - printing on an H-P PaintJet under HP-UX.
+
+> unix-lpr.sh - queue filter for lpr under Unix.
+> lprsetup.sh - setup for unix-lpr.sh.
+
+If one of these serves your needs, you may be able to skip most of
+the rest of this document.
+
+********
+******** How to use Ghostscript ********
+********
+
+The command (that is, a shell command in environments other than MS Windows,
+or a 'Run' line in MS Windows) to invoke Ghostscript is:
+	gs <filename1> ... <filenameN>
+Normally the files are PostScript or EPS files, but depending on how
+Ghostscript was built, they may also be PDF files or MS-DOS EPSF files.  The
+interpreter will read in the files in sequence (using the method described
+under "File searching" below to find the files) and execute them.  After
+doing this, it reads further input from the primary input stream (normally
+the keyboard), consisting of PostScript language commands.  Each line
+(i.e. characters up to a <return>) is interpreted separately.  To exit from
+the interpreter, type quit<return>.  The interpreter also exits gracefully
+if it encounters end-of-file.  Typing the interrupt character, e.g.,
+control-C, is also safe.
+
+The interpreter recognizes many switches described below, which may appear
+anywhere in the command line and apply to all files thereafter.
+
+Many of the switches include an '=' followed by a parameter.  Because of a
+strange design decision in the Watcom C/C++ run-time library, you must use
+'#' rather than '=' with Ghostscript if Ghostscript was compiled with Watcom
+C/C++.  In particular, the MS-DOS executable included in the standard
+Ghostscript distribution (gs386.exe) was compiled this way.
+
+You can get a brief help message by invoking Ghostscript with
+	gs -h
+or
+	gs -?
+This message also lists the available devices.  For a little more
+information about available devices, a one-line description of each device
+appears near the beginning of the file devs.mak.
+
+Choosing the output device
+--------------------------
+
+Ghostscript may be built with multiple output devices.  Ghostscript
+normally opens the first one and directs output to it.  To use device xyz
+as the initial output device, include the switch
+	-sDEVICE=xyz
+in the command line.  Note that this switch must precede the first .ps
+file, and only its first invocation has any effect.  For example, for
+printer output in a normal configuration that includes an Epson printer
+driver, you might use the shell command
+	gs -sDEVICE=epson myfile.ps
+instead of just
+	gs myfile.ps
+Alternatively, once you are inside Ghostscript, you can type
+	(epson) selectdevice
+	(myfile.ps) run
+All output then goes to the printer instead of the display until further
+notice.  You can switch devices at any time by using the selectdevice
+procedure, e.g.,
+	(vga) selectdevice
+or
+	(epson) selectdevice
+As yet a third alternative, you can define an environment variable
+GS_DEVICE as the desired default device name.  The order of precedence for
+these alternatives, highest to lowest, is:
+	selectdevice
+	(command line)
+	GS_DEVICE
+	(first device in build list)
+
+To select the resolution on a printer, use the shell command
+	gs -sDEVICE=<device> -r<xres>x<yres>
+For example, on a 9-pin Epson-compatible printer, you can get the
+lowest-resolution (fastest) mode with
+	gs -sDEVICE=epson -r60x72
+and the highest-resolution mode with
+	gs -sDEVICE=epson -r240x72.
+On a 24-pin printer, the lowest resolution is
+	gs -sDEVICE=epson -r60x60
+and the highest-resolution 24-pin mode is
+	gs -sDEVICE=epson -r360x180
+
+If you select a printer as the output device, Ghostscript also allows you
+to control where the device sends its output.  Normally, output goes
+directly to the printer (PRN) on MS-DOS systems, and to a scratch file on
+Unix or VMS systems.  To send the output to a series of files foo1.xyz,
+foo2.xyz, ..., use the switch
+	-sOutputFile=foo%d.xyz
+(For compatibility with older versions of Ghostscript, -sOUTPUTFILE=
+also works.)  The %d is a printf format specification; you can use
+other formats like %02d.  Each file will receive one page of output.
+Alternatively, to send the output to a single file foo.xyz, with all
+the pages concatenated, use the switch
+	-sOutputFile=foo.xyz
+
+On Unix systems, you can send the output directly to a pipe.  For
+example, to pipe the output to the command `lpr' (which, on many Unix
+systems, is the command that spools output for a printer), use the
+switch
+	-sOutputFile=\|lpr
+You can also send output to stdout for piping with the switch
+	-sOutputFile=-
+In this case you must also use the -q switch, to prevent Ghostscript from
+writing messages to stdout.
+
+File formats like PCX and PBM are also 'devices'.  When you select a file
+format as the 'device', you must also specify an output file, e.g.,
+	gs -sDEVICE=pcxmono -sOutputFile=xyz.pcx
+
+To find out what devices are available, type
+	devicenames ==
+after starting up Ghostscript.  Alternatively you can use the -h or
+-? switch in the command line, as described above.
+
+Choosing paper size
+-------------------
+
+Ghostscript is normally configured to use U.S. letter paper as the default.
+To select a different default paper size, find the line in gs_init.ps that
+says
+
+	% Optionally choose a default paper size other than U.S. letter.
+
+The next line begins
+
+	% (a4)
+
+To select A4 as the default paper size, remove the % but do not change
+anything else.  To select a different default paper size, remove the % and
+replace the word a4 with the name of the desired paper size.  You can use
+any paper size listed in the table at the beginning of gs_statd.ps.
+
+Alternatively, to select a different default paper size for a single
+invocation of Ghostscript, you can use the command line switch
+	-sPAPERSIZE=a_known_paper_size
+e.g.,
+	-sPAPERSIZE=a4
+or
+	-sPAPERSIZE=legal
+
+Individual documents also can (and often do) specify a paper size, which
+will take precedence over the default one.  If you want to force a specific
+paper size, ignoring the paper size specified in the document, make that
+paper size the default (as just described), and also include
+	-dFIXEDMEDIA
+on the command line.
+
+Finally, most (but not all) of Ghostscript's printer drivers can be
+configured at compile time to use A4 paper as the default by including
+-DA4 in the CFLAGS switches in the makefile.  See make.txt for more
+details.
+
+File searching
+--------------
+
+When looking for initialization files (gs_*.ps, pdf_*.ps), font files, the
+Fontmap file, and files named on the command line, Ghostscript first tests
+whether the file name specifies an explicit directory.  The test is as
+follows:
+
+	- On Unix systems, Ghostscript tests whether the name begins with
+	'/', or with one or more '.'s followed by a '/'.
+
+	- On MS-DOS or MS Windows systems, Ghostscript tests whether the
+	name has a ':' as its second character, or begins with '/' or
+	'\', or with one or more '.'s followed by a '/' or '\'.
+
+	- On VMS systems, Ghostscript tests whether the name contains a
+	node, device, root, or directory specification.
+
+If the file name does specify an explicit directory (the test succeeds),
+Ghostscript simply tries to open the file using the given name.  Otherwise,
+Ghostscript will try directories in the following order:
+
+	- The current directory (unless disabled by the -P- switch);
+
+	- The directory/ies specified by the -I switch(es) in the command
+	  line (see below), if any;
+
+	- The directory/ies specified by the GS_LIB environment variable,
+	  if any;
+
+	- The directory/ies specified by the GS_LIB_DEFAULT macro in the
+	  Ghostscript makefile, if any.
+
+Each of these (GS_LIB_DEFAULT, GS_LIB, and -I parameter) may be either a
+single directory, or a list of directories separated by a character
+appropriate for the operating system (':' on Unix systems, ';' on VMS
+systems, ';' on MS-DOS systems).  We think that trying the current directory
+first is a very bad idea -- it opens serious security loopholes and can lead
+to very confusing errors if one has more than one version of Ghostscript in
+one's environment -- but when we attempted to change it, users insisted that
+we change it back.  You can disable looking in the current directory first
+using the -P- switch described below.
+
+Note that Ghostscript does not use this file searching algorithm for the
+'run' or 'file' operators: for these operators, it simply opens the file
+with the given name.  To run a file using the searching algorithm, use
+'runlibfile' instead of 'run'.
+
+Resources
+---------
+
+Ghostscript uses a completely different rule for looking for files
+containing PostScript Level 2 "resources": per the Adobe documentation, it
+concatenates together:
+
+	- The value of the system parameter GenericResourceDir
+	(initially "/Resource/");
+
+	- The name of the resource category (e.g., ProcSet);
+
+	- The value of the system parameter GenericResourcePathSep
+	(initially "/");
+
+	- The name of the resource instance (e.g., CIDInit).
+
+For looking up fonts, after exhausting the search method described in the
+next section, it concatenates together:
+
+	- The value of the system parameter FontResourceDir
+	(initially "/Resource/Font/");
+
+	- The name of the resource font (e.g., Times-Roman).
+
+Note that even though the system parameters are named somethingDir, they are
+not just plain directory names: they have a "/" on the end, so that they can
+be concatenated with the category name or font name.
+
+Font lookup
+-----------
+
+Ghostscript has a slightly different rule for determining how to find the
+file containing a font with a given name.  This rule uses not only the
+search path defined by -I, GS_LIB, and GS_LIB_DEFAULT as described above,
+but an additional list of directories which is the value of the GS_FONTPATH
+environment variable (or the value provided with the -sFONTPATH= switch, if
+present).
+
+When Ghostscript needs to find a font that isn't already loaded into memory,
+it starts by looking for Fontmap files in every directory on the search
+path: these files provide mappings between font names and file names.  (See
+the Fontmap file in the Ghostscript distribution for details.)  If it can't
+find a font in any Fontmap file in the search path (or in the list provided
+with the -sFONTMAP= switch, if present), it looks at the GS_FONTPATH
+environment variable (or the value provided with the -sFONTPATH= switch, if
+present), which is also a list of directories.  It goes to those
+directories, one by one, and looks for all files that appear to contain
+PostScript fonts; it then effectively adds all those files and fonts to its
+internal copy of the Fontmap (the catalog of fonts and the files that
+contain them).
+
+To summarize, the differences between the search path (-I, GS_LIB,
+GS_LIB_DEFAULT) and the font path (-sFONTPATH=, GS_FONTPATH) are:
+
+    Search path:
+
+	- Consulted first.
+
+	- Font name -> file name mapping given in Fontmap files;
+	aliases are possible, and there need not be any relation
+	between the font name in the Fontmap and the FontName in
+	the file.
+
+	- Only fonts and files named in Fontmap are used.
+
+    Font path:
+
+	- Consulted only if search path doesn't provide the file.
+
+	- Font name -> file name mapping is implicit -- the
+	FontName in the file is used.  Aliases are not possible.
+
+	- Every Type 1 font file in each directory is available.
+
+If you are using one of the following types of computer, you
+may wish to set GS_FONTPATH to the indicated value so that Ghostscript will
+automatically acquire all the installed Type 1 fonts:
+
+	System type		GS_FONTPATH
+	-----------		-----------
+	DEC OSF/1		/usr/lib/X11/fonts/Type1Adobe
+	DEC Ultrix		/usr/lib/DPS/outline/decwin
+	HP-UX 9			/usr/lib/X11/fonts/type1.st/typefaces
+	IBM AIX			/usr/lpp/DPS/fonts/outlines
+	  "			/usr/lpp/X11/lib/X11/fonts/Type1
+	  "			/usr/lpp/X11/lib/X11/fonts/Type1/DPS
+	NeXT			/NextLibrary/Fonts/outline
+	SGI IRIX		/usr/lib/DPS/outline/base
+	  "			/usr/lib/X11/fonts/Type1
+	Sun SunOS 4.x		/usr/openwin/lib/X11/fonts/Type1/outline
+	  " (NeWSprint only)
+   newsprint_2.5/SUNWsteNP/reloc/$BASEDIR/NeWSprint/small_openwin/lib/fonts
+	Sun Solaris 2		/usr/openwin/lib/X11/fonts/Type1/outline
+	VMS			SYS$COMMON:[SYSFONT.XDPS.OUTLINE]
+
+These paths may not be exactly right for your installation; if the
+indicated directory doesn't contain files whose names are familiar font
+names like Courier and Helvetica, you may wish to ask your system
+administrator where to find these fonts.
+
+Adobe Acrobat comes with a set of 14 Type 1 fonts, typically in a directory
+called some_path_name_or_other/Acrobat3/Fonts.  There is no particular
+reason to use these instead of the corresponding fonts in the Ghostscript
+distribution, aside from saving about 1 Mb of disk space, but if you want to
+do this, see install.txt.
+
+NOTE: On Solaris systems simply setting GS_FONTPATH may not work, because
+for some reason some versions of Ghostscript can't seem to find any of the
+Type1 fonts in /usr/openwin/lib/X11/fonts/Type1/outline.  It says: "15
+files, 15 scanned, 0 new fonts".  See Fontmap.Sol instead.
+
+Temporary files
+---------------
+
+By default, Ghostscript creates temporary files named _temp_XX.XXX in the
+current directory on MS-DOS and VMS systems, gsXXXXXX in the current
+directory on OS/2 systems, and gs_XXXXX in the /tmp directory on Unix
+systems.  You can change the directory in which Ghostscript will create
+these files by setting the TEMP environment variable to the name of the
+directory.
+
+Ghostscript currently doesn't do a very good job of deleting temporary
+files when it exits; you may have to delete them manually from time to
+time.
+
+Environment variable summary
+----------------------------
+
+GS_DEVICE
+	Defines the default output device.  Described above.
+
+GS_FONTPATH
+	Specifies a list of directories that should be scanned for fonts if
+a requested font can't be found anywhere on the search path.  Described
+above.
+
+GS_LIB
+	Provides a search path for initialization files and fonts.
+Described above.
+
+GS_OPTIONS
+	Defines a list of command line arguments to be processed before
+the ones actually specified on the command line.  For example, setting
+GS_DEVICE to xxx is equivalent to setting GS_OPTIONS to -sDEVICE=xxx.  The
+contents of GS_OPTIONS are not limited to switches; they may include
+actual file names or even @file arguments.
+
+TEMP
+	Defines a directory name for temporary files.  Described above.
+
+********
+******** Using Ghostscript and Ghostview with PDF files
+********
+
+Ghostscript is normally configured (except on 16-bit MS-DOS platforms) so
+that it can interpret both PostScript and PDF files (the latter are
+sometimes incorrectly called "Acrobat files").  It examines each file to
+determine automatically whether it is a PDF file or a PostScript file.  All
+the normal switches and procedures for interpreting PostScript files also
+apply to PDF files, with a few exceptions noted below.  In addition, there
+is a shell script / batch file
+
+		pdf2ps input.pdf output.ps
+
+that converts PDF to (Level 2) PostScript.
+
+Switches not applicable to PDF files
+------------------------------------
+
+You cannot use the `-' switch to provide PDF input from stdin or a pipe.
+The PDF language, unlike the PostScript language, inherently requires random
+access to the file.
+
+Added switches for PDF files
+----------------------------
+
+	-dFirstPage=pagenumber
+		Starts interpreting on the given page of the document.
+
+	-dLastPage=pagenumber
+		Stops interpreting after the given page of the document.
+
+	-sPSFile=filename
+		Writes the PostScript equivalent of the PDF input on the
+		given file.
+
+Ghostview and PDF files
+-----------------------
+
+Since Ghostview pipes PostScript files to Ghostscript, you cannot view PDF
+files with Ghostview just by saying
+		ghostview file.pdf
+Instead there are two options:
+
+   1. Tanmoy Bhattacharya has written some patches for Ghostview 1.5
+   that allow it to read and display PDF files.  These are available
+   from:
+       ftp://gita.lanl.gov/people/tanmoy/hypertex/gv1.5gs3.33hack.tar.gz
+
+   2. Start Ghostview as follows:
+          ghostview -arguments file.pdf quit.ps
+   This will allow you to display a PDF file, but you won't be able
+   to jump to particular pages.  Use Tanmoy's code if you want that
+   facility.
+
+********
+******** Notes on specific platforms ********
+********
+
+VMS
+---
+
+On VMS systems, the last character of each "directory" name indicates what
+sort of entity the "directory" references.  If the "directory" name ends
+with a colon, it is taken as referring to a logical device, e.g.:
+	$ DEFINE GHOSTSCRIPT_DEVICE DUA1:[GHOSTSCRIPT_14]
+	$ DEFINE GS_LIB GHOSTSCRIPT_DEVICE:
+If the "directory" name ends with a closing square bracket, it is taken as
+referring to a real directory, e.g.:
+	$ DEFINE GS_LIB DUA1:[GHOSTSCRIPT]
+
+In order to specify switches and file names when invoking the interpreter,
+define GS as a foreign command:
+	$ GS == "$disk:[directory]GS.EXE"
+where "disk" and "directory" specify the disk and directory where Ghostscript
+is located.  For instance,
+	$ GS == "$DUA1:[GHOSTSCRIPT]GS.EXE"
+To allow the interpreter to be run from any directory, define the logical
+GS_LIB which points to the Ghostscript directory
+	$ DEFINE GS_LIB disk:[directory]
+This allows Ghostscript to locate its initialization files stored in the
+Ghostscript directory -- see use.txt for further details.  Finally, to
+invoke the interpreter, merely type GS.  Although DCL normally converts
+unquoted parameters to upper case, C programs receive their parameters in
+lower case.  That is, the command
+	$ GS -Isys$login:
+passes the switch "-isys$login" to the interpreter.  To preserve the
+case of switches, enclose them in double quotes; e.g.,
+	$ GS "-Isys$login:"
+
+If you are on an X Windows display (for which gs is built), you can do
+
+	$ set display/create/node="domain-name"/transport=tcpip
+
+For example,
+
+	$ set display/create/node="doof.city.com"/transport=tcpip
+
+and then run Ghostscript
+
+	$ gs
+
+If you write printer output to a file and then want to print the file
+later, use the "/PASSALL" qualifier to the PRINT command.
+
+In order to get PDF files (or PostScript files that use the setfileposition
+operator) to work properly on VMS systems, you must ensure that they are
+"stream LF" type files.  (**NOTE**: This only applies if you are using DEC C
+to compile Ghostscript; there is no known way to get these files to work
+properly with the old VAX C compiler.)  If you transfer files by FTP, you
+probably need to do one of the following two things after the transfer:
+
+1. If FTP'd in text/ASCII mode then do:
+
+     $ CONVERT/FDL=STREAMLF.FDL input-file output-file
+
+   where the contents of the file STREAMLF.FDL are given below.
+
+2. Otherwise, if FTP'd in binary mode do
+
+     $ SET FILE/ATTRIBUTE=(RFM:STMLF)
+
+The contents of the STREAMLF.FDL file are shown between, and exclusive of, the
+dashed lines:
+
+-------------------------------------------------
+FILE
+        ORGANIZATION            sequential
+
+RECORD
+        BLOCK_SPAN              yes
+        CARRIAGE_CONTROL        carriage_return
+        FORMAT                  stream_lf
+-------------------------------------------------
+
+MS-DOS
+------
+
+Ghostscript supports many SuperVGA displays directly, most of them with
+more than 16 colors.  The complete list is in the file devs.mak, which is
+part of the Ghostscript source code.  (If you got Ghostscript under the
+Aladdin Ghostscript Free Public License, the person or place from which you
+got it is also required to make the source code available to you; if you
+got it under the GNU License, see the GNU License for more information.)
+
+Some applications, such as Microsoft Word, require a prologue in front of
+the PostScript files they output.  In the case of Word, this is one of the
+*.ini files included with the Word distribution.  Other applications may
+require other prologues.  These may be specified on the Ghostscript
+command line, e.g.,
+	gs prologue.ini myfile.ps
+
+If you have a SuperVGA display that supports a 16-color mode with 800x600
+pixels, and you know the display mode number for this mode, you can select
+it by using the command line switches
+	-sDEVICE=svga16 -dDisplayMode=NNN
+where NNN is the display mode number in decimal.  The modes for some
+popular display chipsets are as follows:
+
+    Acumos AVGA2, AVGA3                         88	(0x58)
+    Advance Logic AL2101                        43	(0x2B)
+    Ahead V5000                                 113	(0x71)
+    ATI VGAWONDER, Graphics Ultra etc.          84	(0x54)
+    Chips and Technologies                      106	(0x6A)
+    Cirrus Logic CL-GD 500/600                  100	(0x64)
+    Cirrus Logic GD 5422                        88	(0x58)
+    Compaq VGA                                  89	(0x59)
+    CTI                                         106	(0x6A)
+  * Genoa 5xxx, Sigma VGA                       41	(0x29)
+    Genoa 6xxx                                  106	(0x6A)
+    MXIC MX 68010                               85	(0x55)
+    NCR 77C22                                   88	(0x58)
+    OAK Technologies OTI-067, OTI-077, OTI037C  82	(0x52)
+    OAK Technologies OTI037C w/ NEL BIOS        91	(0x5B)
+  * Orchid Prodesigner                          41	(0x29)
+    Paradise                                    88	(0x58)
+    Poach                                       106	(0x6A)
+    Primus                                      42	(0x2A)
+    Realtek RT 3106                             31	(0x1F)
+    Tecmar                                      22	(0x16)
+    Trident 8900                                91	(0x5B)
+  * Tseng ET-3000, ET-4000                      41	(0x29)
+  * VEGA                                        41	(0x29)
+    Video 7 SVGA                                98	(0x62)
+    WD90C11                                     92	(0x5C)
+    Western Digital                             88	(0x58)
+
+The ones marked * are the default (they all use the same value.)  If your
+card's chipset doesn't appear on this list, or if you try the value here
+and it doesn't work, please e-mail the chipset and correct display mode to
+ghost@aladdin.com for inclusion in future releases.
+
+NOTE: The remainder of the MS-DOS section is currently not relevant, because
+the Borland compilers do not support 32-bit MS-DOS executables, and
+Ghostscript no longer supports the 16-bit MS-DOS environment.  We have
+retained this section on the off-chance that Borland will support 32-bit
+MS-DOS compilation at some future time.
+
+If you are running Ghostscript on a MS-DOS machine with a display that is
+not EGA/VGA compatible, you must use the Borland compiler.  You must build
+Ghostscript with the BGI driver as the default, and you will need the
+appropriate .BGI file from the Borland Turbo C library.  (Ghostscript
+includes the EGA/VGA driver in the executable.)
+
+If you are using the BGI driver, two additional environment variables
+become relevant:
+
+	BGIPATH - defines the directory where Ghostscript will look for
+the appropriate BGI driver.  If BGIPATH is not defined, Ghostscript will
+look in the directory defined as BGIDIR in the makefile.  In either case,
+if no driver is found in the designated directory, Ghostscript will look
+in the current directory.
+
+	BGIUSER - a string of the form nn.dname, where nn is a hexadecimal
+number giving a display mode and dname is the name of a file containing a
+user-supplied BGI driver.  If BGIUSER is defined and the BGI device is
+selected, Ghostscript will supply nn as the display mode and will obtain
+the driver from the file named dname.
+
+X Windows
+---------
+
+Ghostscript looks for the following resources under the program name
+"ghostscript" and class name "Ghostscript":
+
+	Name			Class			Default
+	----			-----			-------
+	background		Background		white
+	foreground		Foreground		black
+	borderColor		BorderColor		black
+	borderWidth		BorderWidth		1
+	geometry		Geometry		NULL
+	xResolution		Resolution		**
+	yResolution		Resolution		**
+	useExternalFonts	UseExternalFonts	true
+	useScalableFonts	UseScalableFonts	true
+	logExternalFonts	LogExternalFonts	false
+	externalFontTolerance	ExternalFontTolerance	10.0
+	palette			Palette			Color
+	maxGrayRamp		MaxGrayRamp		128
+	maxRGBRamp		MaxRGBRamp		5
+        maxDynamicColors	MaxDynamicColors	256
+	useBackingPixmap	UseBackingPixmap	true
+	useXPutImage		UseXPutImage		true
+	useXSetTile		UseXSetTile		true
+	regularFonts		RegularFonts		see below
+	symbolFonts		SymbolFonts		see below
+	dingbatFonts		DingbatFonts		see below
+
+** Calculated from display metrics.
+
+    Notes on Resources:
+
+	Ghostscript doesn't look at the default system background and
+	foreground colors; if you want to change the background or
+	foreground color, you must set them explicitly for Ghostscript.
+	(This is a deliberate choice, so that PostScript documents will
+	display correctly -- with white = white and black = black --
+	by default, even if text windows use other colors.)
+
+	The geometry resource only affects window placement.
+
+	Resolution is given in pixels per inch.
+
+	The font tolerance gives largest acceptable difference in
+	height of the screen font.  The tolerance is expressed as
+	a percentage of the height of the desired font.
+
+	The palette resource can be used to restrict ghostscript to
+	using a grayscale or monochrome palette.
+
+	The maxRGBRamp and maxGrayRamp control the maximum number of
+	colors that ghostscript allocates ahead of time for the dither
+	cube/ramp.  Ghostscript will never preallocate more than half
+	of the cells in a colormap.  maxDynamicColors controls the
+	maximum number of colors that Ghostscript will allocate
+	dynamically in the colormap.
+
+The use... resources exist primarily to work around bugs in X servers.  In
+particular, many versions of DEC's X server (DECwindows) have bugs that
+require setting useXPutImage or useXSetTile to false.
+
+	Some servers do not implement backing pixmaps properly, or do not
+	have enough memory for them.  If you get strange behavior or "out
+	of memory" messages, try setting useBackingPixmap to false.
+
+	Some servers do not implement tiling properly.  This will show up
+	as broad bands of color where dither patterns should appear.  If
+	this happens, try setting useXSetTile to false.
+
+	Some servers do not implement bitmap/pixmap displaying properly.
+	This may show up as white or black rectangles where characters
+	should appear, or characters may appear in "inverse video" (e.g.,
+	white on a black rectangle).  If this happens, try setting
+	useXPutImage to false.
+
+To use native X11 fonts, Ghostscript must map PostScript font names to
+the XLFD font names.  The regularFonts, symbolFonts, and dingbatFonts
+resources give the name mapping for different encodings.  The XLFD font 
+name in the mapping must contain seven dashes.  The X driver adds the
+additional size and encoding fields to bring the total number of dashes
+in the font name to 14.  Here are the default font mappings:
+
+  Regular Fonts: (Fonts available in standard or ISO-Latin-1 encoding)
+
+    AvantGarde-Book:-Adobe-ITC Avant Garde Gothic-Book-R-Normal--\n\
+    AvantGarde-BookOblique:-Adobe-ITC Avant Garde Gothic-Book-O-Normal--\n\
+    AvantGarde-Demi:-Adobe-ITC Avant Garde Gothic-Demi-R-Normal--\n\
+    AvantGarde-DemiOblique:-Adobe-ITC Avant Garde Gothic-Demi-O-Normal--\n\
+    Bookman-Demi:-Adobe-ITC Bookman-Demi-R-Normal--\n\
+    Bookman-DemiItalic:-Adobe-ITC Bookman-Demi-I-Normal--\n\
+    Bookman-Light:-Adobe-ITC Bookman-Light-R-Normal--\n\
+    Bookman-LightItalic:-Adobe-ITC Bookman-Light-I-Normal--\n\
+    Courier:-Adobe-Courier-Medium-R-Normal--\n\
+    Courier-Bold:-Adobe-Courier-Bold-R-Normal--\n\
+    Courier-BoldOblique:-Adobe-Courier-Bold-O-Normal--\n\
+    Courier-Oblique:-Adobe-Courier-Medium-O-Normal--\n\
+    Helvetica:-Adobe-Helvetica-Medium-R-Normal--\n\
+    Helvetica-Bold:-Adobe-Helvetica-Bold-R-Normal--\n\
+    Helvetica-BoldOblique:-Adobe-Helvetica-Bold-O-Normal--\n\
+    Helvetica-Narrow:-Adobe-Helvetica-Medium-R-Narrow--\n\
+    Helvetica-Narrow-Bold:-Adobe-Helvetica-Bold-R-Narrow--\n\
+    Helvetica-Narrow-BoldOblique:-Adobe-Helvetica-Bold-O-Narrow--\n\
+    Helvetica-Narrow-Oblique:-Adobe-Helvetica-Medium-O-Narrow--\n\
+    Helvetica-Oblique:-Adobe-Helvetica-Medium-O-Normal--\n\
+    NewCenturySchlbk-Bold:-Adobe-New Century Schoolbook-Bold-R-Normal--\n\
+    NewCenturySchlbk-BoldItalic:-Adobe-New Century Schoolbook-Bold-I-Normal--\n\
+    NewCenturySchlbk-Italic:-Adobe-New Century Schoolbook-Medium-I-Normal--\n\
+    NewCenturySchlbk-Roman:-Adobe-New Century Schoolbook-Medium-R-Normal--\n\
+    Palatino-Bold:-Adobe-Palatino-Bold-R-Normal--\n\
+    Palatino-BoldItalic:-Adobe-Palatino-Bold-I-Normal--\n\
+    Palatino-Italic:-Adobe-Palatino-Medium-I-Normal--\n\
+    Palatino-Roman:-Adobe-Palatino-Medium-R-Normal--\n\
+    Times-Bold:-Adobe-Times-Bold-R-Normal--\n\
+    Times-BoldItalic:-Adobe-Times-Bold-I-Normal--\n\
+    Times-Italic:-Adobe-Times-Medium-I-Normal--\n\
+    Times-Roman:-Adobe-Times-Medium-R-Normal--\n\
+    ZapfChancery-MediumItalic:-Adobe-ITC Zapf Chancery-Medium-I-Normal--
+
+  Symbol Fonts:  (using Symbol encoding)
+
+    Symbol: -Adobe-Symbol-Medium-R-Normal--
+
+  Dingbat Fonts: (using Dingbat encoding)
+
+    ZapfDingbats: -Adobe-ITC Zapf Dingbats-Medium-R-Normal--
+
+For X11/NeWS, one can use the OpenWindows scalable fonts instead, which
+will give good quality output for any point size.  In this environment,
+the relevant section of the resource file should look like this:
+
+Ghostscript.regularFonts: \
+	AvantGarde-Book:		-itc-avantgarde-book-r-normal-- \n\
+	AvantGarde-BookOblique:		-itc-avantgarde-book-o-normal-- \n\
+	AvantGarde-Demi:		-itc-avantgarde-demi-r-normal-- \n\
+	AvantGarde-DemiOblique:		-itc-avantgarde-demi-o-normal-- \n\
+	Bembo:				-monotype-bembo-medium-r-normal-- \n\
+	Bembo-Bold:			-monotype-bembo-bold-r-normal-- \n\
+	Bembo-BoldItalic:		-monotype-bembo-bold-i-normal-- \n\
+	Bembo-Italic:			-monotype-bembo-medium-i-normal-- \n\
+	Bookman-Demi:			-itc-bookman-demi-r-normal-- \n\
+	Bookman-DemiItalic:		-itc-bookman-demi-i-normal-- \n\
+	Bookman-Light:			-itc-bookman-light-r-normal-- \n\
+	Bookman-LightItalic:		-itc-bookman-light-i-normal-- \n\
+	Courier:			-itc-courier-medium-r-normal-- \n\
+	Courier-Bold:			-itc-courier-bold-r-normal-- \n\
+	Courier-BoldOblique:		-itc-courier-bold-o-normal-- \n\
+	Courier-Oblique:		-itc-courier-medium-o-normal-- \n\
+	GillSans:			-monotype-gill-medium-r-normal-sans- \n\
+	GillSans-Bold:			-monotype-gill-bold-r-normal-sans- \n\
+	GillSans-BoldItalic:		-monotype-gill-bold-i-normal-sans- \n\
+	GillSans-Italic:		-monotype-gill-normal-i-normal-sans- \n\
+	Helvetica:			-linotype-helvetica-medium-r-normal-- \n\
+	Helvetica-Bold:			-linotype-helvetica-bold-r-normal-- \n\
+	Helvetica-BoldOblique:		-linotype-helvetica-bold-o-normal-- \n\
+	Helvetica-Narrow:		-linotype-helvetica-medium-r-narrow-- \n\
+	Helvetica-Narrow-Bold:		-linotype-helvetica-bold-r-narrow-- \n\
+	Helvetica-Narrow-BoldOblique:	-linotype-helvetica-bold-o-narrow-- \n\
+	Helvetica-Narrow-Oblique:	-linotype-helvetica-medium-o-narrow-- \n\
+	Helvetica-Oblique:		-linotype-helvetica-medium-o-normal-- \n\
+	LucidaBright:			-b&h-lucidabright-medium-r-normal-- \n\
+	LucidaBright-Demi:		-b&h-lucidabright-demibold-r-normal-- \n\
+	LucidaBright-DemiItalic:	-b&h-lucidabright-demibold-i-normal-- \n\
+	LucidaBright-Italic:		-b&h-lucidabright-medium-i-normal-- \n\
+	LucidaSans:			-b&h-lucida-medium-r-normal-sans- \n\
+	LucidaSans-Bold:		-b&h-lucida-bold-r-normal-sans- \n\
+	LucidaSans-BoldItalic:		-b&h-lucida-bold-i-normal-sans- \n\
+	LucidaSans-Italic:		-b&h-lucida-medium-i-normal-sans- \n\
+	LucidaSans-Typewriter:		-b&h-lucidatypewriter-medium-r-normal-sans- \n\
+	LucidaSans-TypewriterBold:	-b&h-lucidatypewriter-bold-r-normal-sans- \n\
+	NewCenturySchlbk-BoldItalic:	-linotype-new century schoolbook-bold-i-normal-- \n\
+	NewCenturySchlbk-Bold:		-linotype-new century schoolbook-bold-r-normal-- \n\
+	NewCenturySchlbk-Italic:	-linotype-new century schoolbook-medium-i-normal-- \n\
+	NewCenturySchlbk-Roman:		-linotype-new century schoolbook-medium-r-normal-- \n\
+	Palatino-Bold:			-linotype-palatino-bold-r-normal-- \n\
+	Palatino-BoldItalic:		-linotype-palatino-bold-i-normal-- \n\
+	Palatino-Italic:		-linotype-palatino-medium-i-normal-- \n\
+	Palatino-Roman:			-linotype-palatino-medium-r-normal-- \n\
+	Rockwell:			-monotype-rockwell-medium-r-normal-- \n\
+	Rockwell-Bold:			-monotype-rockwell-bold-r-normal-- \n\
+	Rockwell-BoldItalic:		-monotype-rockwell-bold-i-normal-- \n\
+	Rockwell-Italic:		-monotype-rockwell-medium-i-normal-- \n\
+	Times-Bold:			-linotype-times-bold-r-normal-- \n\
+	Times-BoldItalic:		-linotype-times-bold-i-normal-- \n\
+	Times-Italic:			-linotype-times-medium-i-normal-- \n\
+	Times-Roman:			-linotype-times-medium-r-normal-- \n\
+	Utopia-Bold:			-adobe-utopia-bold-r-normal-- \n\
+	Utopia-BoldItalic:		-adobe-utopia-bold-i-normal-- \n\
+	Utopia-Italic:			-adobe-utopia-regular-i-normal-- \n\
+	Utopia-Regular:			-adobe-utopia-regular-r-normal-- \n\
+	ZapfChancery-MediumItalic:	-itc-zapfchancery-medium-i-normal-- \n
+Ghostscript.dingbatFonts: \
+	ZapfDingbats:			-itc-zapfdingbats-medium-r-normal--
+Ghostscript.symbolFonts: \
+	Symbol:				--symbol-medium-r-normal--
+
+Users who switch regularly between different X servers may wish to use the
+'*' wild card in place of the foundry name (itc, monotype, linotype, b&h,
+or adobe); users who do not switch X servers should leave the explicit
+foundry in the name, since it speeds up font accessing.
+
+To set these resources, put them in a file (such as ~/.Xdefaults) in the
+following form:
+
+Ghostscript*geometry:	-0+0
+Ghostscript*xResolution: 72
+Ghostscript*yResolution: 72
+
+Then load the defaults into the X server:
+
+% xrdb -merge ~/.Xdefaults
+
+Ghostscript will take advantage of the "HP XLFD Enhancements," if
+available, to use native X11 fonts for fonts that are anamorphically
+scaled, rotated, or mirrored.  If the user has installed these changes to
+their X or font server, they will automatically be used when appropriate.
+
+SCO Unix
+--------
+
+Because of bugs in the SCO Unix kernel, Ghostscript will not work if you
+select direct screen output (gdevsco.c) and also allow it to write messages
+on the console.  If you are using direct screen output, redirect
+Ghostscript's terminal output to a file.
+
+********
+******** Switches
+********
+
+Unless otherwise noted, these apply to all platforms.
+
+Normal switches
+---------------
+
+    Input control
+    -------------
+
+	@filename
+		Causes Ghostscript to read filename and treat its
+		contents the same as the command line.  (This is
+		intended primarily for getting around MS-DOS's
+		128-character limit on the length of a command line.)
+		Switches or file names in the file may be separated by
+		any amount of white space (space, tab, line break);
+		there is no limit on the size of the file.
+
+	-- filename arg1 ...
+	-+ filename arg1 ...
+		Takes the next argument as a file name as usual, but takes
+		all remaining arguments (even if they have the syntactic
+		form of switches) and defines the name ARGUMENTS in
+		userdict (not systemdict) as an array of those strings,
+		*before* running the file.  When Ghostscript finishes
+		executing the file, it exits back to the shell.
+
+	-@ filename arg1 ...
+		Does the same thing as -- and -+, but expands @filename
+		arguments.
+
+	-
+		This is not really a switch.  It indicates to Ghostscript
+		that the standard input is coming from a file or a pipe.
+		Ghostscript reads from stdin until reaching end-of-file,
+		executing it like any other file, and then continues
+		processing the command line.  At the end of the command
+		line, Ghostscript exits rather than going into its
+		interactive mode.  NOTE: this switch works only for
+		PostScript, not for PDF.
+
+	-c tokens ...
+		Interprets arguments, up to the next argument that begins
+		with - followed by a non-digit or with @, as PostScript
+		code.  For example, if the file quit.ps contains just
+		the word `quit', the following are equivalent:
+			quit.ps
+		and
+			-c quit
+		Each argument must be exactly one token, as defined by
+		the `token' operator.
+
+	-ffilename
+		Execute the given file, even if its name begins with a -
+		or an @.  -f alone does nothing, but it provides a
+		convenient way to terminate the list of tokens for the -c
+		switch.
+
+    File searching
+    --------------
+
+	Note that by "library files" we mean all the files identified as
+	using the search rule under "File searching" above: Ghostscript's
+	own initialization files, fonts, and files named on the command
+	line.
+
+	-Idirectories
+		Adds the designated list of directories at the head of the
+		search path for library files.
+
+	-P
+		Makes Ghostscript look first in the current directory for
+		library files.  This is currently the default.
+	-P-
+		Makes Ghostscript *not* look first in the current directory
+		for library files (unless, of course, the first explicitly
+		supplied directory is `.').
+
+    Parameter setting
+    -----------------
+
+	-Dname=token
+	-dname=token
+		Define a name in systemdict with the given definition.
+		The token must be exactly one token (as defined by the
+		'token' operator) and must not contain any whitespace.
+		If the token is a non-literal name, it must be true,
+		false, or null.
+
+	-Dname
+	-dname
+		Define a name in systemdict with value=true.
+
+	-Sname=string
+	-sname=string
+		Define a name in systemdict with a given string as value.
+		This is different from -d.  For example,
+			-dname=35
+		is equivalent to the program fragment
+			/name 35 def
+		whereas
+			-sname=35
+		is equivalent to
+			/name (35) def
+
+	-uname
+		Un-define a name, cancelling -d or -s.
+
+	-gnumber1xnumber2
+		Equivalent to -dDEVICEWIDTH=number1 and
+		-dDEVICEHEIGHT=number2, specifying the device width and
+		height in pixels.  This is for the benefit of devices (such
+		as X11 windows and VESA displays) that require (or allow)
+		width and height to be specified.  Note that this causes
+		documents of other sizes to be clipped, not scaled:
+		see -dFIXEDMEDIA below.
+
+	-rnumber
+	-rnumber1xnumber2
+		Equivalent to -dDEVICEXRESOLUTION=number1 and
+		-dDEVICEYRESOLUTION=number2, specifying the device
+		horizontal and vertical resolution in pixels per inch.  This
+		is for the benefit of devices (such as printers) that
+		support multiple X and Y resolutions.
+
+    Miscellaneous
+    -------------
+
+	-q
+		Quiet startup -- suppress normal startup messages,
+		and also do the equivalent of -dQUIET.
+
+Note that gs_init.ps makes systemdict read-only, so the values of names
+defined with -D/d/S/s cannot be changed (although, of course, they can be
+superseded by definitions in userdict or other dictionaries.)
+
+Special names
+-------------
+
+-dBATCH
+	causes Ghostscript to exit after processing all files named on the
+command line, rather than going into an interactive loop reading PostScript
+commands.  Equivalent to putting -c quit at the end of the command line.
+
+-dCOLORSCREEN
+-dCOLORSCREEN=0
+-dCOLORSCREEN=false
+	On high-resolution devices (at least 150 dpi resolution, or
+-dDITHERPPI specified), -dCOLORSCREEN forces the use of separate halftone
+screens with different angles for C/M/Y/K or R/G/B if halftones are needed
+(this produces the best-quality output); -dCOLORSCREEN=0 uses separate
+screens with the same frequency and angle; -dCOLORSCREEN=false forces the
+use of a single binary screen.  If COLORSCREEN is not specified, the default
+is to use separate screens with different angles if the device has fewer
+than 5 bits per color, and a single binary screen (which will never actually
+be used under normal circumstances) on all other devices.
+
+-dDELAYBIND
+	causes 'bind' to remember all its invocations, but not actually
+execute them until the .bindnow procedure is called.  Useful only for
+certain specialized packages like pstotext that redefine operators.
+
+-dDISKFONTS
+	causes individual character outlines to be loaded from the disk the
+first time they are encountered.  (Normally Ghostscript loads all the
+character outlines when it loads a font.)  This may allow loading more
+fonts into RAM, at the expense of slower rendering.  DISKFONTS is only
+effective if the diskfont feature was selected in the executable; otherwise
+it is ignored.
+
+-dDITHERPPI=lpi
+	forces all devices to be considered high-resolution, and forces use
+of a halftone screen or screens with lpi lines per inch, disregarding the
+actual device resolution.  Reasonable values for lpi are N/5 to N/20, where
+N is the resolution in dots per inch.
+
+-dFIXEDMEDIA
+	causes the media size to be fixed after initialization, and causes
+pages of other sizes or orientations to be clipped.  This may be useful when
+printing documents on a printer that can handle their requested paper size
+but whose default is some other size.  Note that -g automatically sets
+-dFIXEDMEDIA, but -sPAPERSIZE= does not.
+
+-dFIXEDRESOLUTION
+	causes the media resolution to be fixed similarly.  -r automatically
+sets -dFIXEDRESOLUTION.
+
+-dLOCALFONTS
+	causes Type 1 fonts to be loaded into the current VM, which is
+normally local VM, instead of always being loaded into global VM.  Only
+useful for compatibility with Adobe printers for loading some obsolete
+fonts.
+
+-dNOBIND
+	disables the 'bind' operator.  Only useful for debugging.
+
+-dNOCACHE
+	disables character caching.  Only useful for debugging.
+
+-dNOCIE
+	substitutes DeviceGray and DeviceRGB for CIEBasedA and CIEBasedABC
+color spaces respectively.  Only useful on very slow systems where color
+accuracy is less important.
+
+-dNODISPLAY
+	initializes Ghostscript with a null device (a device that discards
+the output image) rather than the default device or the device selected with
+-sDEVICE=.  This is usually only useful when running PostScript code whose
+purpose is to compute something rather than produce an output image.
+
+-dNOFONTMAP
+	suppresses the normal loading of the Fontmap file.  This may be
+useful in environments without a file system.
+
+-dNOFONTPATH
+	suppresses consultation of GS_FONTPATH.  This may be useful for
+debugging.
+
+-dNOGC
+	suppresses the initial automatic enabling of the garbage collector
+in Level 2 systems.  (The vmreclaim operator is not disabled.)  Only useful
+for debugging.
+
+-dNOPAUSE
+	disables the prompt and pause at the end of each page.  Normally one
+should use this (along with -dBATCH) when producing output on a printer or
+to a file; it also may be desirable for applications where another program
+is 'driving' Ghostscript.
+
+-dNOPLATFONTS
+	disables the use of fonts supplied by the underlying platform
+(X Windows or Microsoft Windows).  This may be needed if the platform
+fonts look undesirably different from the scalable fonts.
+
+-dNOPROMPT
+	disables only the prompt, but not the pause, at the end of each
+page.  This may be useful on PC displays that get confused if a program
+attempts to write text to the console while the display is in a graphics
+mode.
+
+-dORIENT1=true
+-dORIENT1=false
+	defines the meaning of the 0 and 1 orientation values for the
+setpage[params] compatibility operators.  The default value of ORIENT1 is
+true (set in gs_init.ps), which is the correct value for most files that use
+setpage[params] at all, namely, files produced by badly designed
+applications that 'know' that the output will be printed on certain
+roll-media printers: these applications use 0 to mean landscape and 1 to
+mean portrait.  -dORIENT1=false declares that 0 means portrait and 1 means
+landscape, which is the convention used by a smaller number of files
+produced by properly written applications.
+
+-dQUIET
+	suppresses routine information comments on stdout.  This is
+currently necessary when redirecting device output to stdout.
+
+-dSAFER
+	disables the deletefile and renamefile operators, and the
+ability to open files in any mode other than read-only.  This may be
+desirable for spoolers or other sensitive environments.
+
+-dSHORTERRORS
+	makes certain error and information messages more Adobe-compatible.
+
+-dWRITESYSTEMDICT
+	leaves systemdict writable.  This is necessary when running
+special utility programs such as font2c and pcharstr, which must bypass
+normal PostScript access protection.
+
+-sDEVICE=device
+	selects an alternate initial output device, as described above.
+
+-sFONTMAP=filename1;filename2;...
+	specifies (an) alternate name(s) for the Fontmap file.  Note that
+the names are separated by : on Unix systems, by ; on MS-DOS or MS Windows
+systems, and by , on VMS systems, just as for search paths.
+
+-sFONTPATH=dir1;dir2;...
+	specifies a list of directories that will be scanned when looking
+for fonts not found on the search path, overriding the GS_FONTPATH
+environment variable.
+
+-sOutputFile=filename
+	selects an alternate output file (or pipe) for the initial output
+device, as described above.
+
+-sSUBSTFONT=fontname
+	causes the given font to be substituted for all unknown fonts,
+instead of using the normal intelligent substitution algorithm.  Also, in
+this case, the font returned by findfont will be the actual font named
+fontname, not a copy of the font with the FontName changed to the requested
+one.
+
+Debugging switches
+------------------
+
+The -Z switch only applies if the interpreter was built for a
+debugging configuration (DEBUG=1 or -DDEBUG selected at compile
+time).
+
+	-A	Fill empty storage with a distinctive bit pattern
+		for debugging.  Equivalent to -Z@.
+	-A-	Turn off -A, equivalent to -Z-@.
+
+	-E	Turn on tracing of error returns from operators.
+		Equivalent to -Z#.
+	-E-	Turn off -E, equivalent to -Z-#.
+
+	-Mn	Force the interpreter's allocator to acquire additional
+		memory in units of nK, rather than the default (currently
+		20K on MS-DOS systems, 50K on Unix).  n is a positive
+		decimal integer (not exceeding 63 on MS-DOS systems).
+
+	-Nn	Allocate space for nK names, rather than the default
+		(normally 64K).  n > 64 is only allowed if the interpreter
+		was compiled with EXTEND_NAMES defined.
+
+	-Zxxx	Turn on debugging printout.
+	-Z-xxx	Turn off debugging printout.
+		Each of the xxx characters selects an option.
+		Case is significant.
+			0 = garbage collector, minimal detail
+			1 = type 1 & type 42 font interpreter
+			2 = curve subdivider/rasterizer
+			  3 = curve subdivider/rasterizer, detail
+			4 = garbage collector (strings)
+			  5 = garbage collector (strings, detail)
+			6 = garbage collector (chunks, roots)
+			  7 = garbage collector (objects)
+			  8 = garbage collector (refs)
+			  9 = garbage collector (pointers)
+			a = allocator (large blocks only)
+			  A = allocator (all calls)
+			b = bitmap image processor
+			  B = bitmap images, detail
+			c = color/halftone mapper
+			d = dictionary put/undef
+			  D = dictionary lookups
+			e = external (OS-related) calls
+			f = fill algorithm (summary)
+			  F = fill algorithm (detail)
+			g = gsave/grestore[all]
+			h = halftone renderer
+			  H = halftones, every pixel
+			i = interpreter, just names
+			  I = interpreter, everything
+			j = (Japanese) composite fonts
+			k = character cache & xfonts
+			  K = character cache, every access
+			l = command lists, bands
+			  L = command lists, everything
+			m = makefont and font cache
+			n = name lookup (new names only)
+			o = outliner (stroke)
+			  O = stroke detail
+			p = band list paths
+			  P = all paths
+			q = clipping
+			r = arc renderer
+			s = streams
+			  S = scanner
+			t = tiling algorithm
+			u = undo saver (for save/restore), finalization
+			  U = undo saver, more detail
+			v = rectangle fill
+			  V = device-level output
+			w = compression encoder/decoder
+			x = transformations
+			y = Type 1 hints
+			  Y = Type 1 hints, every access
+			z = trapezoid fill
+			# = operator error returns
+			% = externally processed comments
+			* = image parameters
+			: = command list & allocator/time summary
+			~ = math functions
+		The following switches select debugging options other than
+		printout.
+			$ = set unused parts of object references to
+				identifiable garbage values
+			+ = use minimum-size stack blocks
+			, = don't use path-based banding
+			. = use small-memory table sizes even on
+				large-memory machines
+			? = validate pointers before, during and after GC,
+				also before and after save and restore;
+				also make other allocator validity checks
+			@ = fill newly allocated, garbage-collected, and
+				freed storage with a marker (a1, c1, and
+				f1 respectively)
+
+********
+******** Frequently Asked Questions
+********
+
+Please consult our FAQ on the World-Wide Web at
+	http://www.cs.wisc.edu/~ghost/gsfaq.html
+or the text version at
+	http://www.cs.wisc.edu/~ghost/gsfaq.txt

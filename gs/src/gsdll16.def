@@ -1,0 +1,20 @@
+LIBRARY		GSDLL16
+DESCRIPTION	'Ghostscript Interpreter DLL'
+CODE		PRELOAD DISCARDABLE 
+DATA		SINGLE SHARED PRELOAD
+SEGMENTS	GSDLL_TEXT PRELOAD NONDISCARDABLE
+		GDEVMSWN_TEXT PRELOAD NONDISCARDABLE
+		GDEVWDIB_TEXT PRELOAD NONDISCARDABLE
+		GP_MSWIN_TEXT PRELOAD NONDISCARDABLE
+EXPORTS	
+		gsdll_revision		@1
+		gsdll_init		@2
+		gsdll_execute_begin	@3
+		gsdll_execute_cont	@4
+		gsdll_execute_end	@5
+		gsdll_exit		@6
+		gsdll_lock_device	@7
+		gsdll_copy_dib  	@8
+		gsdll_copy_palette 	@9
+		gsdll_draw		@10
+		gsdll_get_bitmap_row	@11

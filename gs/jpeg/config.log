@@ -1,0 +1,20 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+gcc -E
+gcc -o conftest -O conftest.c
+gcc -c -O conftest.c
+gcc -E
+gcc -E
+gcc -E
+gcc -c -O conftest.c
+gcc -c -O conftest.c
+gcc -c -O conftest.c
+gcc -c -O conftest.c
+gcc -c -O conftest.c
+gcc -c -O conftest.c
+gcc -c -O conftest.c
+gcc -o conftest -O conftest.c
+gcc -o conftest -O conftest.c
+gcc -o conftest -O conftest.c
+gcc -o conftest -O conftest.c

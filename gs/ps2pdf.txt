@@ -1,0 +1,110 @@
+   Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, ps2pdf.txt, contains some information about Ghostscript's
+PostScript to PDF converter.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.  
+
+About ps2pdf
+============
+
+ps2pdf is a work-alike for a large subset of Adobe's Acrobat Distiller (TM)
+product: it converts PostScript files to PDF files.
+
+ps2pdf is implemented as a very small shell script (batch file) that invokes
+Ghostscript selecting a special "output device" called pdfwrite.  In order
+to use ps2pdf, you must have included the pdfwrite device in the DEVICE_DEVS
+list at the time Ghostscript was built.  Currently, this device is included
+in the makefiles for all 32- and 64-bit platforms.
+
+The usage for ps2pdf is:
+	ps2pdf input.ps output.pdf
+or, on Unix systems and some versions of Windows NT and OS/2 only,
+	ps2pdf input.ps
+which is equivalent to
+	ps2pdf input.ps input.pdf
+
+The ps2pdf script assumes that the Ghostscript executable is named gs.  On
+MS-DOS and MS Windows, you will need to edit the script (ps2pdf.bat) if the
+MS-DOS executable is named gs386: look for the line that says
+	set PS2PDFGS=gs
+and change it to
+	set PS2PDFGS=gs386
+Note that to run ps2pdf on MS Windows, you need the MS-DOS executable: the
+Windows Program Manager's 'run' command doesn't allow you to run .bat files.
+Alternatively, you can run the "console mode" Windows executable by changing
+the above line to
+	set PS2PDFGS=gswin32c
+
+Limitations
+===========
+
+The most serious limitation of ps2pdf is that text in any font other than
+the 14 Adobe base fonts (Courier, Times, and Helvetica families, Symbol, and
+Zapf Dingbats) is converted to bitmaps.  ps2pdf also usually converts
+strings to bitmaps if the string is in one of the 14 base fonts but it
+contains a character that uses a non-standard encoding.
+
+ps2pdf currently does not implement any of the image resampling or
+compression options of Distiller.  It does implement setdistillerparams, and
+recognizes all of the parameters documented in Adobe Technical Note #5151
+except for the ImageDict parameters, but the only ones that actually have
+any effect are ASCII85EncodePages, CompressPages, CompatibilityLevel, and
+UseFlateCompression.  It could implement LZWEncode, but doesn't do so
+because of Unisys' threats regarding the Welch patent: instead, it treats
+LZWEncode as calling for Flate compression.
+
+Known problems
+==============
+
+In some cases, PDF files created using ps2pdf work with Adobe Acrobat on
+Unix but fail using the Windows version of Acrobat.  One error that has been
+observed using versions of Acrobat reader for Windows is: "There was an
+error processing a page. A rasterizer error occurred."  This error has been
+observed using both Acrobat version 2.1 and the Alpha 2 release of Adobe
+Amber.  (Adobe may have fixed this problem by now.)
+
+Benefits of using ps2pdf
+========================
+
+Despite the limitations of ps2pdf, the class of "suitable" documents is a
+large one.  Many users report that the combination of of ps2pdf with Acrobat
+is be superior to using a generic PostScript viewer (psview or ghostview),
+particularly for documents with many pages where the navigational support in
+PDF files reduces the overhead involved in navigating conventional
+PostScript documents.
+
+For certain documents, ps2pdf is much faster than Adobe Distiller, and may
+be suitable for run-time conversions.  [Note from George White: I haven't
+seen a head to head comparison, but distiller seems slower when running on
+what should be a faster system (e.g., distiller on a PPC Mac vs a 25 mhz
+'040 NeXT running ps2pdf), so I think this is fair -- also, one of Mark
+Doyle's postings indicated that distiller was not fast enough for use as a
+run-time server.  In contrast, I find that I can use ps2pdf as a
+post-processor during routine document creation.]
+
+Acknowledgements
+================
+
+Thanks to George N. White III of the Ocean Sciences Division of the Bedford
+Institute of Oceanography in Dartmouth, Nova Scotia <aa056@chebucto.ns.ca>,
+for extensive testing of early versions of ps2pdf, and for contributing most
+of this writeup.

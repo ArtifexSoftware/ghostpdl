@@ -1,0 +1,37 @@
+.\"- -*- nroff -*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.\"
+.\"This file describes version 4.0 of Aladdin ps2ascii.
+.\"
+.\"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.de TQ
+.br
+.ns
+.TP \\$1
+..
+.TH ps2ascii 1 "20 June 1996"
+.SH NAME 
+ps2ascii \- Aladdin Ghostscript PostScript or PDF to ASCII translator
+.SH SYNOPSIS
+.B ps2ascii [input.ps [output.txt]]
+.br
+.B ps2ascii input.pdf [output.txt]
+.br
+.SH DESCRIPTION
+
+ps2ascii extracts ASCII text from PostScript or PDF, using gs(1). If the
+pathname "input.ps" is not specified, PostScript is read from standard input;
+PDF input must come from an explicitly-named file, not standard input.  If the
+pathname "output.txt" is not specified, the ASCII text is written to standard
+output.
+
+ps2ascii doesn't look at font encoding, and isn't very good at dealing with
+kerning, so for dealing with PostScript (but not currently PDF), you might
+consider pstotext(1).
+
+.SH SEE ALSO
+
+.B pstotext(1)
+
+.SH AUTHOR OF DOCUMENTATION
+
+.B Paul McJones <mcjones@pa.dec.com>

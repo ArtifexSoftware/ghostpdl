@@ -1,0 +1,52 @@
+.\" pdf2dsc.1: short documentation for pdf2dsc
+.\" Yves Arrouye <arrouye@debian.org>
+.TH PDF2DSC 1 "25 July 1996" "Ghostscript 4" "Ghostscript Tools"
+.SH NAME 
+.B pdf2dsc
+\- generate a PS page list of a PDF document
+.SH SYNOPSIS
+.B pdf2dsc
+.I pdffile
+[
+.I dscfile
+]
+.SH DESCRIPTION
+.B pdf2dsc
+reads a Portable Document Format (PDF) document 
+.I pdffile
+and creates a PostScript document
+.I dscfile
+that conforms to Adobe's Document Structuring Conventions (DSC)
+requirements.
+This new document simply tells Ghostscript to read the PDF file and to
+display pages one at a time.
+.PP
+The generated document can then be viewed with any PostScript viewer
+based on Ghostscript, like
+.BR ghostview (1)
+or
+.BR GSView ,
+which will let the user browse through the pages of the PDF document
+in any order.
+.PP
+If the output document name
+.I dscfile
+is not given on the command line, the name used is
+.I pdffile
+with any extension removed, followed by a
+.B .dsc
+extension.
+.SH CAVEATS
+The DSC document uses Ghostscript-specific procedures.
+In addition, the original PDF document must be accessible when the
+DSC document is read.
+.PP
+You need the
+.B pdf2dsc.ps
+file (originally by Russell Lang) that comes with Ghostscript releases
+3.53 and higher and a corresponding Ghostscript interpreter.
+.SH DOCUMENTATION
+Yves Arrouye <arrouye@debian.org>
+.SH SEE ALSO
+.BR gs (1),
+.BR ghostview (1)

@@ -1,0 +1,19 @@
+#!/bin/sh
+# Convert PDF to PostScript.
+
+OPTIONS=""
+while true
+do
+	case "$1" in
+	-*) OPTIONS="$OPTIONS $1" ;;
+	*)  break ;;
+	esac
+	shift
+done
+
+if [ $# -ne 2 ]; then
+	echo "Usage: `basename $0` [-dPSBinaryOK] [-dPSLevel1] [-dPSNoProcSet] input.pdf output.ps" 1>&2
+	exit 1
+fi
+
+exec gs -q -dNODISPLAY -sPSFile=$2 -dNOPAUSE $OPTIONS $1 -c quit

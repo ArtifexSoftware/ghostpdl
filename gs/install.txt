@@ -1,0 +1,256 @@
+   Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, install.txt, describes how to install the Ghostscript language
+interpreter.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.  
+
+********
+******** How to install Ghostscript ********
+********
+
+There are 3 separate items that you must have available in order to be able
+to run Ghostscript:
+
+	(1) The Ghostscript executable file(s) -- on some operating
+	systems, more than one file is required.  These are entirely
+	platform-specific.  See below for details.
+
+	(2) Initialization files that Ghostscript reads in when it
+	starts up.  These are the same on all platforms.
+
+	(3) Fonts, for rendering text.  These are platform-independent,
+	but if you already have fonts of the right kind on your platform,
+	you may be able to use them.  See below for details.  See the
+	companion document fonts.txt for more information about fonts.
+
+The initialization files (2) are the same on all platforms:
+
+	- gs_*.ps (see psfiles.txt for the full list), unless Ghostscript was
+	  compiled using the "compiled initialization files" option.
+
+	- pdf_*.ps, if Ghostscript was compiled with the ability to
+	  interpret PDF files (pdf.dev included in FEATURE_DEVS).
+
+	- Fontmap, unless you plan to always invoke Ghostscript with the
+	  -dNOFONTMAP switch.
+
+See the search algorithm section of use.txt for a description of the search
+algorithm used to find these files.
+
+The per-platform descriptions that follow tell you where to install these
+files.
+
+MS-DOS
+------
+
+You need the following files to run Ghostscript:
+	GS386.EXE
+	DOS4GW.EXE
+
+You should install all the files except the fonts in C:\GS, and the
+fonts in C:\GS\FONTS.
+
+If you have Adobe Type Manager fonts installed on your system, and you wish
+to use them with Ghostscript, you may wish to replace the FONTMAP file with
+FONTMAP.ATM, and to add to the environment variable GS_LIB the name of the
+directory where the fonts are located (see below for more information about
+GS_LIB).  Before you do this, please read carefully the license that
+accompanies the ATM fonts; Aladdin Enterprises takes no responsibility for
+any possible violations of such licenses.  Similarly, if you have Adobe Type
+Basics, you may wish to replace FONTMAP with FONTMAP.ATB.  Finally, if you
+have neither ATM nor ATB but you have Adobe Acrobat installed, you can use
+the 14 Acrobat fonts in place of the ones provided with Ghostscript by
+removing the following entries from FONTMAP:
+	Courier, Courier-Bold, Courier-BoldOblique, Courier-Oblique
+	Helvetica, Helvetica-Bold, Helvetica-BoldOblique, Helvetica-Oblique
+	Symbol
+	Times-Bold, Times-BoldItalic, Times-Italic, Times-Roman
+	ZapfDingbats
+and adding the Acrobat fonts directory to GS_FONTPATH.
+
+MS Windows
+----------
+
+Win32s or Windows 95 or Windows NT is required.  You need the following
+files to run Ghostscript:
+    GSWIN32.EXE
+    GSWIN32C.EXE
+    GSDLL32.DLL
+    GS16SPL.EXE  (Win32s only)
+
+You should install all the files except the fonts in C:\GS, and the fonts in
+C:\GS\FONTS.
+  
+The GSview previewer contains an installation program to install and
+configure GSview and Ghostscript for Win32.  Information on GSview is
+available from:
+    http://www.cs.wisc.edu/~ghost/gsview/
+
+See under "MS-DOS" above for information about using Adobe Type Manager,
+Adobe Type Basics, or Adobe Acrobat fonts.
+
+If your system uses TrueType fonts, you can get them converted to a
+Ghostscript-compatible format at the time you select your "printer" by
+doing the following:
+
+1)	Open control panel and double click on the printers icon.
+2)	Select your Postscript Printer.
+3)	Choose Setup.
+4)	Choose Options.
+5)	Choose Advanced.
+6)	At the top of the Dialog Box you will see TrueType Fonts
+	Send to Printer As: <drop down menu>
+	Choose Adobe Type 1.
+7)	Uncheck Use Printer Fonts for All TrueType Fonts
+	and Use Substitution Table.
+8)	OK.
+9)	OK etc.
+
+That's it!  Your TrueType fonts will automatically be downloaded in your
+PostScript file for Ghostscript to use.
+
+For printer devices, the default output is:
+  the default printer (Win95 or WinNT)
+OR
+  prompt for a printer port (Win32s).
+This can be modified as follows.
+  -sOutputFile="LPT1:"
+       Output to named port.
+  -sOutputFile="\\spool\printer name"   (Win95 or WinNT only)
+       Output to named printer.
+  -sOutputFile="\\spool"                (Win95 or WinNT only)
+       Prompt for printer name.  Local printers only are supported.
+For Win32s, make sure that gs16spl.exe is in the same directory
+as gswin32.exe.
+  
+
+OS/2 2.x
+--------
+
+The Ghostscript OS/2 implementation is designed for OS/2 2.1 or later.
+A few people have used it successfully under OS/2 2.0, but it has had 
+very little testing.
+
+You need the following files to run Ghostscript:
+	GSOS2.EXE - this is a text application that will run windowed or
+		full screen.
+	GSDLL2.DLL - this is a Dynamic Link Library that must be in the same
+		directory as GSOS2.EXE or on the LIBPATH.
+	GSPMDRV.EXE - this is an "external driver" used by the "os2pm"
+		device, which is normally the default device and which
+		displays output in a Presentation Manager window.
+		GSPMDRV.EXE must be located in the same directory as
+		GSOS2.EXE or on the PATH.
+
+GSOS2.EXE, GSDLL2.DLL and GSPMDRV.EXE are compiled using EMX/GCC 0.9b.  
+You must have the EMX DLL's on your LIBPATH.  These are available from
+	ftp://hobbes.nmsu.edu/os2/unix/emx09b/emxrt.zip
+
+The system menu of the Ghostscript Image window includes a "Copy" command
+to copy the currently displayed bitmap to the Clipboard.
+
+OS/2 comes with some Adobe Type Manager fonts. If you wish to use these
+with Ghostscript, you should replace the FONTMAP file with FONTMAP.OS2,
+and add to the environment variable GS_LIB the name of the directory where
+the fonts are located, usually c:\psfonts.  (see below for more
+information about GS_LIB).  Before you do this, please read carefully the
+license that accompanies the ATM fonts; Aladdin Enterprises takes no
+responsibility for any possible violations of such licenses.
+
+Since GSOS2.EXE is not a PM application, it cannot determine the depth of
+the PM display.  You must provide this information using the
+-dBitsPerPixel option.  The default is 8 bits/pixel.  Valid values are 1,
+4, 8 & 24.
+  For monochrome VGA use      -dBitsPerPixel=1
+  For standard VGA screen use -dBitsPerPixel=4
+  For 256 colour SVGA use     -dBitsPerPixel=8
+A command file gspm.cmd containing the following line may be useful:
+  @c:\gs\gsos2.exe -Ic:/gs;c:/gs/fonts;c:/psfonts -sDEVICE=os2pm 
+      -dBitsPerPixel=8 -sPAPERSIZE=a4 %1 %2 %3 %4 %5 %6 %7 %8
+
+While drawing, the os2pm driver updates the display every 5 seconds.  On
+slow computers this is undesirable and a different interval can be
+specified in milliseconds with the -dUpdateInterval option.  The default
+is -dUpdateInterval=5000; to disable update use -dUpdateInterval=0.
+
+Standard VGA is very slow due to double buffering to avoid bugs and due to
+1 plane to 4 plane conversion.  Use a 256 color display driver by
+preference.  Many display drivers have bugs which cause 1 bit/pixel
+bitmaps to be displayed incorrectly.
+
+GSOS2.EXE and GSPMDRV.EXE will stay in memory for the number of minutes
+specified in the environment variable GS_LOAD.
+
+If you run GS386 in the OS/2 2.0 or 2.1 DOS Box, you must select the
+"ENABLED" setting for the DPMI_DOS_API option of the DOS Box.  GS386
+will not run with the "AUTO" setting.
+
+For printer devices, output goes to the default queue.
+To print to a specified queue, use -sOutputFile=\\spool\NullLPT1
+where NullLPT1 is the queue physical name.
+
+Unix
+----
+
+You need the following file to run Ghostscript:
+	gs
+
+Installing Ghostscript on a Unix system requires compiling it first: please
+read the Unix section(s) in make.txt for more information, especially
+regarding how to decide which makefile to use and how you may need to edit
+it.  After building, execute
+	make install
+
+The makefile installs all the files, except the fonts, in /usr/local or
+various subdirectories thereof.  The fonts should be installed in
+/usr/local/share/ghostscript/fonts.  Consult the makefile for more details.
+If you have Adobe Acrobat installed, you can use the 14 Acrobat fonts in
+place of the ones provided with Ghostscript by removing the following
+entries from Fontmap:
+	Courier, Courier-Bold, Courier-BoldOblique, Courier-Oblique
+	Helvetica, Helvetica-Bold, Helvetica-BoldOblique, Helvetica-Oblique
+	Symbol
+	Times-Bold, Times-BoldItalic, Times-Italic, Times-Roman
+	ZapfDingbats
+and adding the Acrobat fonts directory to GS_FONTPATH.
+
+NOTE: The syntax of the 'install' command varies unpredictably between Unix
+systems.  If your system has an 'installbsd' program, edit the definition of
+INSTALL in the makefile to change 'install' to 'installbsd' before you run
+'make install'.
+
+VMS
+---
+
+You need the following executable file to run Ghostscript:
+	GS.EXE
+
+Installing Ghostscript on a VMS system requires compiling it first.
+
+You should install all the files, including the fonts, in the same directory
+as the executable and initialization files.  By default, this is the
+directory in which you did the compilation.  Consult the makefile
+(OPENVMS.MAK) for more details.
+
+If you have DECWindows/Motif installed, you may wish to replace the FONTMAP
+file with the file FONTMAP.VMS.  Read the comment at the beginning of the
+latter file for more information.

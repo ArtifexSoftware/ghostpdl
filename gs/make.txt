@@ -1,0 +1,1540 @@
+   Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, make.txt, describes how to build Ghostscript executables from
+source.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+********
+******** Overview ********
+********
+
+This document describes how to build a Ghostscript executable from source
+code.  There are 4 major steps to building Ghostscript:
+
+	1) Acquire the source code.
+
+	2) Unpack the source code.
+
+	3) Prepare the makefiles, including making edits for your
+	operating environment and configuration choices.
+
+	4) Invoke 'make'.
+
+The remaining sections of this document describes each of these steps in
+detail.  Note that parts of these steps are platform-dependent.
+
+After you have built Ghostscript, please refer to install.txt for
+instructions on installing it.
+
+********
+******** Acquiring the source code ********
+********
+
+To build Ghostscript, you need the Ghostscript source code itself, and the
+source code for some third-party libraries that Ghostscript uses.
+
+Ghostscript itself
+------------------
+
+The authoritative distribution directory for Aladdin Ghostscript is
+	ftp://ftp.cs.wisc.edu/ghost/aladdin/gs###
+where ### is the Ghostscript version number.  GNU Ghostscript should be
+available on all GNU sites.
+
+There are 3 different cases for retrieving the source files.
+
+(1) If neither (2) nor (3) below applies to you, you need:
+	ghostscript-#.##.tar.gz
+	ghostscript-fonts-std-#.##.tar.gz
+	ghostscript-fonts-other-#.##.tar.gz
+where #.## is the version number.  (The second part of the version number
+may have either 1 or 2 digits.)
+
+(2) If you are building Aladdin Ghostscript (not GNU Ghostscript) on MS-DOS
+or MS Windows, and you don't have (and don't want to acquire) the tar and
+gzip programs, you can get:
+	gs###fn*.zip
+	gs###sr*.zip
+instead of the .tar.gz files, if the .zip files are available for the
+version you want.
+
+(3) If you are building Ghostscript on MS-DOS or MS Windows and using
+.tar.gz files, rename the files as
+	gs###sr.taz
+	gs###fn1.taz
+	gs###fn2.taz
+respectively when you retrieve them.  You will need compatible PC executable
+versions of the tar and gzip programs in this case.
+
+Third-party libraries
+---------------------
+
+You need the source code for the Independent JPEG Group (IJG) library, the
+PNG library, and the zlib library in order to build Ghostscript.  The
+authoritative distribution points for these libraries are, respectively:
+
+    IJG library:
+	ftp.uu.net:/graphics/jpeg/jpegsrc.v##.tar.gz
+	ftp.simtel.net:/pub/simtelnet/msdos/graphics/jpegsr##.zip
+    PNG library:
+	ftp://swrinde.nde.swri.edu/pub/png/src/
+	    libpng-#.##.tar.gz
+	    lpng###.zip (or possibly lbpng###.zip or lp###.zip)
+    zlib library:
+	ftp://ftp.uu.net/pub/archiving/zip/zlib/
+	    zlib-#.#.#.tar.gz
+	    zlib###.zip
+
+Get the .zip files if you are building on MS-DOS or MS Windows, the .tar.gz
+files for all other environments.  Note that each of these libraries has its
+own version numbers that have nothing to do with Ghostscript version
+numbers; you should get the highest numbered version.  (You may have to go
+back and get a lower-numbered version if you encounter difficulties in the
+build process, but don't worry about this yet.)  If you're running Linux,
+you might check whether these libraries are already available in source form
+on your system, since many Linux distributors include them; but we advise
+you to get the highest version from the Net if you can.
+
+Even though the .zip archive of some old versions of the PNG library may be
+named something other than lpng###.zip, we'll refer to this archive as
+lpng###.zip below, so you might want to rename it after getting it to avoid
+confusion.
+
+********
+******** Unpacking the source code ********
+********
+
+Unfortunately, there are no generally accepted standards for how to package
+source code into archives, so the instructions for unpacking Ghostscript are
+longer than they should be.
+
+The Ghostscript sources normally go into a directory named gs#.##, where
+again #.## is the Ghostscript version number.  For the remainder of this
+document, we will refer to the gs#.## directory as the "gs directory".
+
+To unpack a .tar.gz archive, you need the gzip and tar programs.  Executable
+versions of these programs are normally available on all Unix systems, and
+are available from GNU sites (including source code) for other environments.
+The way to unpack a .tar.gz archive is
+	gzip -d -c somefile.tar.gz | tar -xf -
+If your version of tar supports the -z switch for automatic decompression,
+you can use
+	tar -zxf somefile.tar.gz
+
+To unpack a .zip archive in a Microsoft environment, you need the PKUNZIP
+program, which is normally delivered with the OS.  To unpack a .zip archive,
+	PKUNZIP somefile.zip
+
+We won't say anything more here about unpacking the fonts, since that is not
+part of the build process per se, but of installation.
+
+Ghostscript itself
+------------------
+
+The ghostscript-#.##.tar.gz archive unpacks all of the Ghostscript files
+into the directory ./gs#.##.
+
+The gs###sr*.zip archives also include the subdirectory name gs#.##, but
+some versions of PKUNZIP discard the directory name and always unpack into
+the current directory.  If your version of PKUNZIP does this, you must
+	MKDIR gs#.##
+	CD gs#.##
+before unpacking the archive.
+
+Third-party libraries
+---------------------
+
+The file names in the IJG archives (jpegsrc.v##.tar.gz or jpegsr##.zip)
+include a subdirectory name jpeg-##/, so you should unpack them in the same
+way as just described for the Ghostscript sources, except that you should
+make the gs directory current first, and the subdirectory name will be
+jpeg-##.  (This will be a subdirectory of the gs directory, of course.)
+
+Unfortunately, the situation for the PNG and zlib libraries varies from
+release to release.  If you are using the .tar.gz archives, then:
+
+	- Before unpacking libpng-#.##.tar.gz, make the gs directory
+	current.  Unpacking will create a subdirectory named
+	libpng-#.##.  Rename this subdirectory as libpng.
+
+	- Before unpacking zlib-#.#.#.tar.gz, make the gs directory
+	current.  Unpacking will create a subdirectory named zlib or
+	zlib-#.#.#; if the latter, rename it as zlib.
+
+If you are using the .zip archives, and your version of PKUNZIP preserves
+directory information, follow the same steps as for the .tar.gz archives.
+If your version of PKUNZIP discards directory names:
+
+	- Before unpacking lpng###.zip, make the gs directory current, and
+	then
+		MKDIR libpng
+		CD libpng
+
+	- Before unpacking zlib###.zip or zlib-###.zip, make the gs
+	directory current, and then
+		MKDIR zlib
+		CD zlib
+
+********
+******** Makefile overview ********
+********
+
+The Ghostscript makefiles are very large and complex.  Fortunately, the only
+makefiles you are likely to need to deal with are relatively small ones
+containing platform-specific information, as follows:
+
+	ansihead.mak - Unix with ANSI C compilers other than gcc
+	cc-head.mak - Unix with "traditional C" compilers
+	gcc-head.mak - Unix with gcc
+	watc.mak - MS-DOS with Watcom compilers
+	bcwin32.mak - MS Windows with Borland compilers
+	msvc32.mak - MS Windows with Microsoft Visual C++ version 4.n or 5.n
+	watcw32.mak - MS Windows with Watcom compilers
+	openvms.mak - OpenVMS
+	dgc-head.mak - DesqView/X with gcc
+	os2.mak - OS/2 with the gcc/emx compiler
+
+Since the contents of these files change from one Ghostscript version to
+another, sometimes substantially, and since they all include documentation
+for the various options, we won't duplicate most of that documentation here:
+after reading the information below, we strongly recommend that you read the
+entire makefile for your OS and compiler before building Ghostscript.
+
+In Ghostscript versions 5.0*, watcw32.mak doesn't work, so we won't describe
+it further.
+
+For completeness, the platform-independent makefiles are:
+
+	version.mak - identifies the version and release date
+	gs.mak - documentation and miscellany
+	lib.mak - the main makefile for the graphics engine
+	int.mak - the main makefile for the PostScript/PDF interpreter
+	jpeg.mak - the makefile for the IJG library
+	libpng.mak - the makefile for the PNG library
+	zlib.mak - the makefile for the zlib library
+	devs.mak - the makefile for the device drivers
+
+********
+******** Preparing the makefiles for your environment ********
+********
+
+You may need to edit the platform-specific makefile if you wish to change
+any of the following:
+
+	- The name of the makefile itself (MAKEFILE macro);
+
+	- The default search path(s) for the initialization and font files
+	  (GS LIB_DEFAULT macro);
+
+	- The debugging options (DEBUG and TDEBUG macros);
+
+	- The set of device drivers to be included (DEVICE_DEVS
+	  and DEVICE_DEVS1..15 macros);
+
+	- The set of optional features to be included (FEATURE_DEVS).
+
+The platform-specific makefile will include comments describing all of these
+items except the DEVICE_DEVS options; the available DEVICE_DEVS options
+(device drivers) are described in devs.mak, even though the file that must
+be edited is the platform-specific makefile.  You should also check the
+JVERSION and PVERSION macros in the platform-specific makefile, and adjust
+them if they do not match the JPEG and PNG library versions you are using:
+see jpeg.mak and libpng.mak for more info.
+
+There are also platform-specific options described below under the
+individual platforms.  See the "Options" section near the beginning of the
+relevant makefile for more information.
+
+If you are including a dot-matrix printer driver, you may wish to
+customize the default resolution parameters in devs.mak.
+
+Features and devices
+--------------------
+
+When compiling Ghostscript, you may configure it with any of a variety of
+features, and with any subset of the available device drivers.  You will
+find the complete list of features in a comment at the beginning of the file
+gs.mak, and the complete list of drivers in a comment at the beginning of
+devs.mak.
+
+To find out what devices a particular makefile selects for inclusion in
+the executable, find the line in the makefile of the form
+	FEATURE_DEVS=<list of features>
+and
+	DEVICE_DEVS=<list of devices>
+	(similarly DEVICE_DEVS1... up to DEVICE_DEVS15)
+For example, if the makefile for Unix platforms defined
+	FEATURE_DEVS=level2.dev
+indicating that only the PostScript Level 2 facilities should be included,
+you might wish to add
+	FEATURE_DEVS=level2.dev pdf.dev
+to add the ability to interpret PDF files.  (In fact, the current definition
+of FEATURE_DEVS in the Unix makefiles does include pdf.dev.)  The Unix
+makefile also defines
+	DEVICE_DEVS=x11.dev
+	DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev ppm.dev ppmraw.dev
+indicating that the X11 driver and all of the Portable Bit/Gray/PixMap
+file drivers should be included.  (In fact, it includes many more drivers
+than this: see the Unix makefiles for the full list.)
+
+You may edit the FEATURE* lines to select any desired set of features (as
+listed near the beginning of gs.mak), and the DEVICE_DEVS* line(s) to select
+any desired set of device drivers (as listed near the beginning of
+devs.mak).  The first device listed in the definition of DEVICE_DEVS will be
+used as the default device (unless overridden from the command line with
+-sDEVICE=xxx, of course.)  If you can't fit all the devices on a single
+line, you may add lines defining
+	DEVICE_DEVS2=<dev21>.dev ... <dev2n>.dev
+	DEVICE_DEVS3=<dev31>.dev ... <dev3n>.dev
+etc. up to DEVICE_DEVS15.  Don't use continuation lines -- this doesn't
+work on some platforms.
+
+LZW compression
+---------------
+
+It is possible to substitute an LZW compressor for the LZW-compatible
+encoder provided with the standard fileset, by finding the two lines in
+lib.mak that read
+
+	lzwe_=slzwce.$(OBJ) slzwc.$(OBJ)
+	#lzwe_=slzwe.$(OBJ) slzwc.$(OBJ)
+
+and changing them to
+
+	#lzwe_=slzwce.$(OBJ) slzwc.$(OBJ)
+	lzwe_=slzwe.$(OBJ) slzwc.$(OBJ)
+
+If you do this, you are responsible for constructing or obtaining a file
+slzwe.c that implements LZW compression; such a file is not included in any
+current standard Ghostscript distribution, although you may be able to find
+one in distributions that predate Unisys' amnesty cutoff of January 1, 1995.
+You are also responsible for drawing your own conclusions about the
+applicability to LZW compression code of patents held by Unisys and/or IBM,
+and for obtaining any licenses you believe to be relevant.
+
+Creating 'makefile'
+-------------------
+
+As the final step in preparing the makefile, you need to associate the name
+'makefile' with the correct makefile for your environment as follows.
+
+On Unix systems, execute:
+	ln -s unix-gcc.mak makefile
+if you are using gcc, or
+	ln -s unixansi.mak makefile
+if you are using another ANSI C compiler, or
+	ln -s unix-cc.mak makefile
+if you are using a "traditional C" compiler.  If your Unix system doesn't
+support symbolic links, omit the -s switch.  Then, if you have edited any
+of the makefile components listed above, execute
+	tar_cat
+
+On MS Windows with the Borland compiler, execute:
+	echo !include "bcwin32.mak" >makefile
+
+On MS Windows with the Microsoft compiler, execute:
+	echo !include msvc32.mak >makefile
+
+On MS-DOS or MS Windows with the Watcom compiler, add the line
+	set DOS4G=quiet
+to your autoexec.bat file, and also execute:
+	set DOS4G=quiet
+Then execute:
+	echo !include watc.mak >makefile
+(for MS-DOS) or
+	echo !include watcw32.mak >makefile
+(for MS Windows).
+
+********
+******** Invoking 'make' ********
+********
+
+The command
+	make clean
+removes all the files created by the build process (relocatables,
+executables, and miscellaneous scratch files).  If you want to save the
+executable, you should move it to another directory first.
+
+The command
+	make
+builds Ghostscript without debugging options.
+
+The command
+	make debug
+builds Ghostscript with debugging options and additional internal error
+checks.  Ghostscript will be somewhat larger and slower, but it won't behave
+any differently unless you actually turn debugging options at execution time
+with the -DDEBUG or -Z command line switches (described in use.txt).
+
+On most platforms, these simple instructions don't quite work in one way or
+another: read the section on your platform below.
+
+Cross-compiling
+---------------
+
+If you are compiling Ghostscript on machine X with a cross-compiler that
+generates code for machine Y, you need to do one extra step.  Rather than
+simply giving the command
+	make
+you must proceed in three steps.  First,
+	make arch.h
+Then edit arch.h to reflect the architecture of machine Y.  Then,
+	make
+
+********
+******** How to build Ghostscript from source (PC version) ********
+********
+
+The relevant makefiles are:
+	Borland C++ 4.x, 32-bit MS Windows (3.1 + Win32s, 95, NT): bcwin32.mak
+	Microsoft Visual C++ 4.x or 5.x, 32-bit MS Windows: msvc32.mak
+	Watcom C/386 or C++, 32-bit (extended) MS-DOS: watc.mak
+	Watcom C/386 or C++, 32-bit MS Windows (DOESN'T WORK YET): watcw32.mak
+	DJGPP, DESQview/X: dvx-gcc.mak
+	cygwin32 gcc: unix-gcc.mak (see below)
+The options were chosen to strike a balance between RAM consumption and
+likely usefulness.
+
+To build Ghostscript, you need MS-DOS version 3.3 or later, and Borland
+C/C++ (4.0 or later), Microsoft Visual C++ (version 4.0 or later), Watcom
+C/386 (version 8.5 or later) or C++ (any version), or the free djgpp + go32
+development system.  Details are given below.
+
+As noted above, the default configuration generates an executable that
+assumes the directory where 'make' was run should be the final default
+directory for looking up the Ghostscript initialization and font files.
+
+To build the Ghostscript executable, all you need to do is give the
+command
+	make
+You must have COMMAND.COM in your path to build Ghostscript.
+
+There is a special 'make' target that simply attempts to compile all the
+.c files in the current directory.  Some of these compilations will fail,
+but the ones that succeed will go considerably faster, because they don't
+individually pay the overhead of loading the compiler into memory.  So a
+good strategy for building the executable for the first time, or after a
+change to a very widely used .h file, is:
+	make begin
+and then
+	make
+to do the compilations that failed the first time.
+
+Note: if you get the Ghostscript sources from a Unix 'tar' file and unpack
+the file on a MS-DOS machine, the files will all have linefeed instead of
+carriage return + linefeed as the line terminator, which may make the C
+compiler unhappy.  I don't know the simplest way to fix this: just reading
+each file into an editor and writing it back out again may be sufficient.
+You will probably have to do this to the .c, .h, and .bat files.
+
+Borland environment
+-------------------
+
+To compile Ghostscript with the Borland environment, you need Borland C++
+(version 4.0 or later); specifically, the compiler, 'make' utility, and
+linker.  You also need either the Borland assembler (version 1.0 or later)
+or the Microsoft assembler (version 4.0 or later).
+
+Besides the source files and the makefiles, you need:
+	turboc.cfg (the flags and switches for Turbo C)
+	gs.tr (the linker commands for the interpreter)
+	*.bat (a variety of batch files used in the build process)
+
+There are extensive comments in the aforementioned .mak files
+regarding various configuration parameters.  If your configuration is
+different from the following, you should definitely read those
+comments and see if you want or need to change any of the parameters:
+	- The compiler files are in c:\bc and its subdirectories.
+	- You are using the Borland assembler (tasm).
+	- You want an executable that will run on any 32-bit PC-compatible,
+regardless of processor type (80386, 80486, Pentium, or compatible) and
+regardless of whether a math coprocessor (80x87) is present (only an issue
+with 80386 processors).
+
+NOTE: A user has reported the Borland C++ 4.00 + patch 1-6 doesn't produce a
+working executable of the current Ghostscript (5.03).  We can't test this,
+since we no longer have this compiler.
+
+NOTE: Borland C++ 4.52 has a bug that causes the 32-bit Windows executable
+to fail during startup.  Borland has provided a patch for this bug on the
+file bc45xp1.zip, accessible as a link from
+http://loki.borland.com/cpp/Patchs.htm.
+
+NOTE: Borland C++ 5.0 and 5.01 have a code generator bug that generates
+incorrect code for the construct !file_is_valid().  Do not attempt to
+compile Ghostscript with these compilers.  If you want to report this bug to
+Borland, send them the result of compiling ziodev.c and tell them to look at
+the code generated for file_is_valid() and !file_is_valid().  We don't know
+whether Borland C++ 5.02 still has this problem.
+
+If building for the MS Windows Win32s environment, you need bcc32.cfg
+instead of turboc.cfg.  The make process will stop after it has created
+genarch.exe.  You should then run 'win genarch arch.h', wait until genarch
+has finished and then exit MS Windows.  Then type 'make' again to restart
+the make process.
+
+If building for MS Windows NT, you also need bcc32.cfg instead of
+turboc.cfg, but the make process will run to completion automatically.
+
+Microsoft environment
+---------------------
+
+To compile Ghostscript with the Microsoft environment, you need Microsoft
+Visual C++ 4.0 or later with its associated `nmake' utility and linker.  If
+you are using version 4.x, change the line in msvc32.mak that reads
+	MSVC_VERSION = 5
+to
+	MSVC_VERSION = 4
+before building.
+
+You may get error messages during compilation about /QI0f being an undefined
+switch, or the message
+	dwmain32.def: EXETYPE not supported for platform; ignored
+during linking.  Ignore them.
+
+Watcom environment
+------------------
+
+Before compiling, change the definition of the WCVERSION macro in the
+makefile (watc.mak or watcw32.mak) to the version of the Watcom compiler you
+are using.  This is necessary to handle some minor incompatibilities between
+versions.
+
+To build Ghostscript, execute
+
+	wmakebat
+
+This constructs a build script and then executes it.  (This roundabout
+procedure is necessary because Watcom chose to implement wmake in a way that
+requires reading both the entire makefile and the entire current directory
+into the limited 640K MS-DOS address space.)
+
+Note that Watcom C/386 version 8.5 does not include wmakel (the 32-bit
+version of wmake).  If this is the version that you have, use wmake instead,
+i.e., edit wmakebat.bat to change wmakel to wmake.
+
+If you get an "Error(F01): Out of memory" with Watcom 8.5, you may wish to
+try reducing the total size of the makefiles by editing devs.mak to remove
+drivers that you don't ever intend to use.  If you still get this error,
+contact Watcom technical support; they will be able to send you the wmakel
+program, probably at no charge.
+
+DesqView/X and djgcc/djgpp environment
+--------------------------------------
+
+The name of the makefile for this environment is dvx-gcc.mak.
+
+The DesqView/X port of Ghostscript was contributed by Tom Brosnan
+(tjb@chalone.stanford.edu), with further contributions by Stephen Turnbull
+(turnbull@shako.sk.tsukuba.ac.jp).  It uses djgcc (DJ Delorie's MSDOS port
+of gcc) for compiling.  djgcc assumes that go32.exe is in your search path.
+You need to set an environment variable to tell go32 where to put any
+paging files, e.g.
+
+    set GO32TMP=e:/tmp
+
+If you don't have go32.exe, you can get it from Internet host
+oak.oakland.edu.  The extender and minimum run-time environment are in the
+file djeoeXXX.zip, where XXX is the version number (currently 112).
+Patched versions of the extender (as well as other components) are found in
+the files djXXXmY.zip, XXX is again the compiler version, Y is the
+patchlevel.  Y is currently 2.  People who are just running the executable
+need only get the file with the highest level of Y that contains GO32.EXE
+and do "unzip -j djXXXmY go32.exe" (InfoZIP) or "pkunzip djXXXmY go32.exe"
+(PKWare), then move the extender to their PATH.  If you do not have a
+hardware FPU, you will also need the floating point emulator EMU387 found
+in djeoeXXX.zip (and possibly in the patch releases as well).  You MUST use
+an emulator designed to work with GO32; the emulators often found as TSRs
+will not work.  See the file README found in djeoeXXX.zip, or the file
+README.1ST in pub/msdos/djgpp on Simtel for further information.
+
+The DJGPP v1.12 compiler suite is known to have problems with linking
+large file sets.  If you run into this problem, you can work around it
+by using the v1.11 GO32 as follows:
+(1) get dj111m5.zip from turnbull.sk.tsukuba.ac.jp:/pub/djgpp/1.11
+(2) unzip GO32.EXE.  Be careful not to overwrite other versions!
+(3) rename it, eg, to GO111M5.EXE
+(4) move the renamed GO32.EXE to your path
+(5) stubedit ld.exe:  (the stubedit utility is part of djeoe112.zip)
+    (a) change the extender name to the one you chose in (3).  The
+        .EXE extension may be omitted
+    (b) change the version required to 1.11
+    (c) accept the defaults for the remaining options.
+
+Stephen Turnbull observed the following two problems with DJGPP v2.0-beta2.
+
+(1) The v1.12 stdio.h defined a number of flags for manipulating the
+    various characteristics of the streams being processed, such as
+    _IORD, _IOWRT, etc.  These are missing from v2.0-beta2.  I don't
+    know enough about the new libc.a to guess whether this is an
+    oversight or these functions have a new (Posix?) interface.
+    [Caveat: In Ghostscript the compiler error can be silenced by
+    adding "#define _IOWRT 00002" to the file gp_dvx.c.  I don't know
+    that this is correct in the new libraries.  I suspect there is no
+    real loss in Ghostscript to removing the offending flag
+    manipulation from gp_open_printer() in gp_dvx.c, as it is a
+    performance optimization.]
+
+(2) The big problem is linking with third-party libraries not compiled
+    with v2.0.  In particular, QuarterDeck's contributed Xlib
+    (compiled with DJGPP v1.12 (original release).  Unfortunately,
+    v1.12 uses the usual macros for character classification and
+    implementation of the stdio streams.  This leads to long lists of
+    complaints from the linker about undefined references to '_ctype_'
+    (the table of character type flags) and '_iob' (the table indexed
+    by file descriptors) when processing Xlib functions.
+
+cygwin32 gcc
+------------
+
+A user has reported that it is possible to compile Ghostscript for MS
+Windows NT using the cygwin32 gcc compiler, GNU make, and the unix-gcc.mak
+makefile, with only two small source code changes:
+
+	- Add a "b" to the call to fopen in "gp_open_scratch";
+	- Mirror the gp_ntfs logic for "gp_file_name_is_absolute".
+
+You can find more information about this compiler and environment on the Web
+at http://www.cygnus.com/misc/gnu-win32.  Please note that Cygnus' licensing
+terms aren't quite as liberal about redistribution as either the GNU License
+or the Aladdin license, so you should read their license carefully if you
+want to redistribute the results of using their compiler.
+
+********
+******** How to build Ghostscript from source (Mac version) ********
+********
+
+There are additional Mac-specific source files in a separate distribution
+from the rest of Ghostscript.  In addition to the standard Ghostscript
+sources, you will need the following files:
+
+    macgs-v1.0-src.sit    - the source files, StuffIt archive.
+    manual.txt            - the manual as unformatted text
+    readme.txt            - this file
+
+These should be in the mac directory located in the same place you retrieved
+the rest of the Ghostscript distribution.
+
+The first file is a StuffIt archive.  If you do not have a program to expand
+it, you should get the free StuffIt Expander program from your favorite
+Macintosh archive.
+
+In the standard method of building Ghostscript, all of these files (except
+the jpeg) get unpacked into one big directory.  The jpeg stuff gets unpacked
+into a directory called jpeg-6 in the main directory.  The Macintosh stuff
+also gets unpacked into its own directory, called 'Mac Specific'.  However,
+if you like (and I do) you can divide up all these files into the following
+hierarchy:
+
+    Ghost Dev
+        files -- all *.ps, *.txt, and other non-build files
+        fonts -- all the fonts
+        src -- *.c, *.h, *.mak
+        jpeg-6 -- the jpeg files
+        Mac Specific -- the mac files
+        MPW Build -- empty directory used for building under MPW
+
+Once you get everything laid out, take a look at the file Worksheet in the
+mac specific folder for complete steps to build the system with either MPW
+or CodeWarrior.
+
+********
+******** How to build Ghostscript from source (Unix version) ********
+********
+
+The makefile distributed with Ghostscript selects the following devices
+for inclusion in the build:
+	Display: X Windows.
+	Printers: H-P DeskJets, LaserJets, and color DeskJets and PaintJets;
+	  Canon BubbleJets.
+	File formats: Group 3 & Group 4 fax, JPEG, PCX, P*M (PBM/PGM/PPM),
+	  TIFF, PostScript images, PNG, distilled PDF, PostScript, and EPS,
+	  PCL XL ("PCL 6").
+
+The unix-*.mak files are actually generated mechanically from *head.mak,
+*tail.mak, unix-end.mak, and the platform-independent makefiles by a script
+called tar_cat.  If for some reason your copy of Ghostscript doesn't include
+the unix-*.mak files, run tar_cat to construct them.  If you wish to edit
+any part of the makefile,
+
+	DO NOT EDIT THE FILE NAMED makefile OR unix{ansi,-cc,-gcc}.mak.
+	EDIT THE ORIGINAL COMPONENT MAKEFILE (*head.mak, *tail.mak,
+	OR A PLATFORM-INDEPENDENT FILE) AND RUN tar_cat AGAIN.
+
+Consult tar_cat to find the names of the component files.
+
+The *head.mak files explicitly compile and link the libpng and zlib
+libraries into the executable.  If your Unix system already includes these
+libraries (probably in /usr/lib/libpng.{a,so} and libz.{a,so}) and you would
+rather use the system copies, change the definition of SHARE_LIBPNG and/or
+SHARE_ZLIB from 0 to 1 in the relevant *head.mak file, run tar_cat, and
+recompile.  Note that if you do this, you will get non-DEBUG versions of
+these libraries, even if you selected DEBUG in the Ghostscript makefile.
+
+The *head.mak files also compile and link the jpeg library into the
+executable.  Ghostscript doesn't offer a SHARE option for this library,
+because in order to be compatible with Adobe interpreters, Ghostscript has
+to compile the code with the non-standard definition
+	#define D_MAX_BLOCKS_IN_MCU 64
+This is in contradiction to the JPEG standard, but at least some real
+PostScript files require this.  A shared system library would not be
+compiled this way.
+
+If the X11 client header files are located in some directory which your
+compiler does not automatically search, you must change the XINCLUDE macro
+the makefile to include a specific -I switch.  See the comment preceding
+XINCLUDE in the makefile.
+
+Currently Ghostscript is set up to compile and link in a generic Unix
+environment.  Some Unix environments may require changing the LDFLAGS
+macro in the makefile.
+
+All you need to do to make an executable is invoke the shell command
+	make
+
+Ghostscript uses ANSI syntax for function definitions. Because of this,
+when compiling with cc, it must preprocess each .c file to convert it to
+the older syntax defined in Kernighan and Ritchie, which is what most
+current Unix compilers (other than gcc) support.  This step is
+automatically performed by a utility called ansi2knr, which is included in
+the Ghostscript distribution.  The makefile automatically builds ansi2knr.
+
+The ansi2knr preprocessing step is included in the makefile rule for
+compiling .c files.  ansi2knr creates a file called _temp_$$.c to hold the
+converted code, where $$ is the process ID.  If you want to change this name
+for some reason, it is defined in a small script file called ccgs.
+
+gcc and GNU make problems
+=========================
+
+There is an optimizer bug in gcc 2.7.0, 2.7.1, and 2.7.2 that causes these
+versions of gcc to generate incorrect code.  You can work around this by
+adding the switch
+		-Dconst=
+to the compilation switches (CFLAGS).  Alternatively, you can rebuild gcc
+with the following patch:
+
+*** clean-ss-951203/expr.c	Sun Nov 26 08:18:07 1995
+--- ss-951203/expr.c	Mon Dec  4 11:41:18 1995
+*************** expand_expr (exp, target, tmode, modifie
+*** 4582,4587 ****
+  	   through a pointer to const does not mean that the value there can
+  	   never change.  Languages where it can never change should
+  	   also set TREE_STATIC.  */
+! 	RTX_UNCHANGING_P (temp) = TREE_READONLY (exp) | TREE_STATIC (exp);
+  	return temp;
+        }
+--- 4582,4588 ----
+  	   through a pointer to const does not mean that the value there can
+  	   never change.  Languages where it can never change should
+  	   also set TREE_STATIC.  */
+! 	RTX_UNCHANGING_P (temp) = TREE_READONLY (exp) & TREE_STATIC (exp);
+  	return temp;
+        }
+
+If possible, compile with gcc 2.5.8, gcc 2.6.3, or gcc 2.7.2.1 or later,
+which don't have this bug.  Note, however, that gcc has other problems on
+some platforms: please read the section below for your specific platform as
+well.
+
+Current versions of GNU `make' have no problems, but GNU make 3.59 can't
+handle the final linking step in some cases; use the platform's standard
+make (e.g., /bin/make) if this happens.
+
+Platform-specific notes
+=======================
+
+386 Unix
+--------
+	gcc versions older than 1.38 on Intel 80386 systems do not
+compile Ghostscript correctly using the -O option.  Do not use -O in
+these environments.
+	gcc 1.39 under 386BSD has a bug that causes float-to-integer
+conversions to compile incorrectly.  Do not use this version of gcc.
+	X11R5 may need #include <stddef.h> in x_.h.
+	Also see below regarding System V platforms.
+
+Alpha (AXP) with gcc
+--------------------
+	You don't have to use gcc on AXP systems: the following notes are
+relevant only if you do use it.
+	The code generator in gcc 2.7.2.1 is broken, so you cannot use this
+version on the Alpha.  gcc 2.5.8 and 2.6.3 are probably OK.  Versions of gcc
+before 2.5.0 are believed not to work.
+	If you really want to use gcc 2.7.x, here is a patch from a gcc
+maintainer:
+
+Tue Sep 24 19:37:00 1996  Jim Wilson  <wilson@cygnus.com>
+
+	* reload.c (push_secondary_reload): Change reload_mode to mode in
+	SECONDARY_MEMORY_NEEDED and get_secondary_mem calls.
+
+*** reload.c.orig	Sun Mar  9 14:05:23 1997
+--- reload.c	Sun Mar  9 14:06:54 1997
+*************** push_secondary_reload (in_p, x, opnum, o
+*** 589,600 ****
+  	 set it up now.  */
+  
+        if (in_p && icode == CODE_FOR_nothing
+! 	  && SECONDARY_MEMORY_NEEDED (class, reload_class, reload_mode))
+! 	get_secondary_mem (x, reload_mode, opnum, type);
+  
+        if (! in_p && icode == CODE_FOR_nothing
+! 	  && SECONDARY_MEMORY_NEEDED (reload_class, class, reload_mode))
+! 	get_secondary_mem (x, reload_mode, opnum, type);
+  #endif
+      }
+  
+--- 589,600 ----
+  	 set it up now.  */
+  
+        if (in_p && icode == CODE_FOR_nothing
+! 	  && SECONDARY_MEMORY_NEEDED (class, reload_class, mode))
+! 	get_secondary_mem (x, mode, opnum, type);
+  
+        if (! in_p && icode == CODE_FOR_nothing
+! 	  && SECONDARY_MEMORY_NEEDED (reload_class, class, mode))
+! 	get_secondary_mem (x, mode, opnum, type);
+  #endif
+      }
+  
+
+Apollo
+------
+	You must run the compiler in ANSI-compatible mode (i.e., set AK=
+<null string> in the makefile); otherwise, it gives incorrect error
+messages for any function declared as returning a float value.
+	The Apollo compiler may not compile Ghostscript correctly.  If you
+get unexpected crashes at run time, use gcc.
+
+AT&T 7040 R3
+------------
+	If Ghostscript crashes on startup, recompile with -O0 in order to
+avoid triggering compiler bugs.
+
+Convex
+------
+	Use unixansi.mak.  Do not invoke optimization (-O1): there
+are compiler bugs that lead to incorrect code.  Set CFLAGS to
+	-no -fn -tm c1
+
+DECStations
+-----------
+	You may get the following message (or a similar one) when compiling,
+due to a compiler bug:
+	cfe: Fatal: _temp_19086.c: Segmentation violation
+If this happens, try compiling with the -oldc switch.
+
+DECStations with Ultrix
+-----------------------
+	You may wish to set
+  GS_LIB_DEFAULT=$(gsdatadir):/usr/lib/DPS/outline/decwin:$(gsdatadir)/fonts
+in the makefile to add the Display PostScript font directory to the font
+search path.
+	You may need to use
+		make CFLAGS="-Olimit 2500"
+to tell the optimizer to allocate extra table space.
+	The Ultrix 4.4 C compiler has a bug that makes it compile gdevm1.c
+incorrectly.  Insert the following line in the makefile rule for
+gdevm1.$(OBJ) (the body of the rule is empty in the standard distribution):
+	$(CCC) -oldc gdevm1.c
+
+Digital Unix
+------------
+	Use the unixansi.mak file for all Digital Unix compilers.
+For versions of Digital Unix before 4.0, set
+		CFLAGS=-std -Olimit 1000 -g3 -O2 $(XCFLAGS)
+		LDFLAGS=-lots $(XLDFLAGS)
+You may be able to omit the -g3.
+	
+H-P RISC workstations
+---------------------
+	You can build Ghostscript on H-P machines with either GNU gcc or
+H-P's ANSI-capable cc.  The minimal, non-ANSI-capable cc that ships with a
+"bare" HPUX system is *not* good enough.  If your cc doesn't accept the -Aa
+switch then you need to get the full cc or gcc.
+	If you use H-P's compiler, be sure you have upgraded to a recent
+compiler release.  Many bizarre symptoms have been reported from trying to
+build Ghostscript with older, buggier compilers, for example:
+	* Link step fails with a message about "max" not being defined.
+	* Build succeeds, but resulting executable fails to start up,
+with an error message like
+	Initializing... Unrecoverable error: typecheck in .registerencoding
+	Operand stack:
+	    .notdef  0
+	* Build succeeds, but resulting executable produces a black
+background on the first page of output.
+	On HPUX 9.*, it is reported that you need at least compiler patch
+PHSS_5723 and dld.sl patch PHSS_5734 to build gs successfully.  (As of late
+1997, those patches are long obsolete; the current patches are compiler
+PHSS_10357 and dld.sl PHSS_11246.  It is unknown whether current gs releases
+will work with compiler/dld.sl versions older than these.)
+	On HPUX 10.*, we don't know what combinations of compiler version
+and switches work.  On HPUX 10.20, it is reported that setting CC=c89 and
+"CFLAGS=+O3 $(XCFLAGS)" will work, contradicting the information in the next
+paragraph, but this may be dependent on the specific compiler version.
+	In either HPUX version, you need to set "CC=cc -Aa" (or use -Ae if
+you prefer), and set "CFLAGS=-D_HPUX_SOURCE -O $(XCFLAGS)".  Higher levels
+of optimization than -O may work depending on your compiler revision; some
+users have reported success with +O3, some have not.  Some users have
+reported needing -DNOSYSTIME and/or -D_POSIX_SOURCE in CFLAGS, but recent
+tests do not show these to be necessary.
+	If you use gcc, it is also a good idea to have a recent release.
+gcc 2.7.2.1 or later is recommended, but gcc 2.6.3 has been known to work
+with past gs releases.  gcc versions earlier than 2.6.3 are known *not* to
+work, and you will also have trouble with gcc 2.7.* releases earlier than
+2.7.2.1.  (You may be able to get a working executable with an older gcc by
+removing -O from CFLAGS.  If you do have an up-to-spec gcc, you should be
+able to use -O2 without problems.)
+
+Intergraph Clipper
+------------------
+	Recommended settings are:
+		XCFLAGS=-w -Q -DSYSV -D__SVR3
+		EXTRALIBS=-lbsd -lc_s
+		CC=acc -knr
+		PLATFORM=sysv_
+Also, you will probably need to change the value of XLIBS from
+	XLIBS=Xt X11 Xext
+to
+	XLIBS=Xt_s X11_s Xext
+
+ISC Unix
+--------
+	For ISC Unix with gcc, an appropriate make invocation is:
+	make XCFLAGS="-D__SVR3 -posix" LDFLAGS="-shlib -posix" \
+	     EXTRALIBS="-linet -lnsl_s"
+If this doesn't work for you, try removing the -shlib.  ISC Unix may
+also need one or more of the following in EXTRALIBS: -lpt, -lc_s.
+See also under "386 Unix" above.
+
+Linux
+-----
+	If you are building on Linux with X11 R6 or later, you may get a
+list of error messages at link time about undefined references to various
+functions beginning with Smc and Ice.  If this happens, make sure that XLIBS
+is set in the makefile to the list Xt SM ICE Xext X11 rather than just Xt
+Xext X11.
+	If you are running gcc version 2.6.3 or later, you may run into
+problems because of an incompatibility in object formats ("a.out" vs. ELF)
+with the XFree86 library.  The typical symptom is that ld will complain that
+some X library is not found or a whole slew of Xlib or Xt functions are not
+found in the library (similar to the messages for omitting SM and ICE from
+XLIBS), or you will get a message when you start Ghostscript that the
+program or the shared library is in unrecognized format.  If this happens,
+you might try adding the switches
+	-b i486-linuxaout
+to both CFLAGS and LDFLAGS in gcc-head.mak, and rebuilding from scratch
+("make clean" and then "make").  If this doesn't help, or if other strange
+things happen, contact your Linux supplier or support resource.
+
+MIPS
+----
+	There is apparently a bug in older versions of the MIPS C compiler
+which causes gxdither.c to compile incorrectly if optimization is enabled
+(-O).  However, this bug is definitely fixed in MipsPRO C version 6.00; with
+this version, compiling with -O2 -mips2 produces good output.
+
+NCR 3550
+--------
+	If you are using the NCR C Development Toolkit, you must use -O0 to
+avoid triggering compiler bugs.
+
+NeXTSTEP
+--------
+	Current NeXTSTEP versions require changing the definition of INCLUDE
+in unixtail.mak (and ugcclib.mak, if you are using only the library) to
+		INCLUDE=/usr/include/bsd
+Don't forget to run tar_cat after you do this.
+
+For all NeXTSTEP systems, use unix-gcc.mak -- i.e., execute
+		ln -s unix-gcc.mak Makefile
+
+For NeXTSTEP versions before 3.2:
+	edit gcc-head.mak ->
+		change CC=gcc to CC=cc
+		add -D_NEXT_SOURCE to CFLAGS
+	change the two occurrences of sys/time.h to ansi/time.h, and
+	change <dirent.h> in gp_unifs.c to <sys/dirent.h>
+
+For NeXTSTEP 3.2 and later
+	edit gcc-head.mak ->
+		change CC=gcc to CC=cc
+		add -D_POSIX_SOURCE and remove -g in CFLAGS
+		remove -Wstrict-prototypes in GCFLAGS
+
+Add the following line to the end of Fontmap
+		/Ohlfs	/Courier	;
+
+If you are running the Pencom co-Xist X server (Development version), the X
+headers and libraries are in the default places, so you should change the
+definitions of XINCLUDE and XLIBDIRS in the makefile to empty strings.
+
+Pyramid MIServer-S
+------------------
+	See AT&T 7040 R3.
+
+RS/6000
+-------
+	Many versions of the AIX C compiler have bugs that have prevented
+Ghostscript from compiling and linking properly.  We believe that the
+current Ghostscript release works around these bugs, and that using the
+unix-cc.mak makefile with
+	CC=cc
+should work.  You must also edit the makefile (unixansi.mak or
+unix-cc.mak) to change INSTALL to /usr/ucb/install.  (If -DSYSV produces a
+complaint about the functions index and rindex not being defined, try
+removing it.)  If the xlc 1.2.1 optimizer runs out of memory, you may need
+to add -qmaxmem=4000 to CFLAGS.
+	A user has reported that the AIX C compiler shipped with AIX 3.2.5
+only compiles Ghostscript if invoked with c89 -D_POSIX_SOURCE and *without*
+-O.  On the other hand, another user reported successful compilation using
+the unix-ansi.mak makefile and the following command line:
+	make CC=c89 XCFLAGS="-DOSY_AIX -D_ALL_SOURCE -qnoro -qmaxmem=3000 -bfl" $*
+Apparently some (but not all) releases of the C library declare the hypot
+function: if the declaration in math_.h produces an error message, try
+removing it.  Also, the IBM X11R3 server is known to be buggy: use the MIT
+X server if possible.
+	The xlc 1.3.0.x compiler provided in AIX 3.2.5+ definitely will not
+compile Ghostscript correctly if -O is used on all files.  A user has
+reported that compiling the following files without -O is sufficient to
+produce a working executable: z*.c, gsmatrix.c, gxstroke.c.
+	Some installations of AIX 3.2.5 have what appears to be an incorrect
+or inconsistent version of libXt.a in /usr/lpp/X11/lib.  If you get
+XtShellStrings and XtStrings as unresolved externals when linking, set
+XLIBDIRS=-L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib rather than just
+XLIBDIRS=-L/usr/lpp/X11/lib.
+
+SCO Unix/Xenix
+--------------
+	The SCO Unix C compiler apparently can't handle the Pn macros
+in std.h.  If you get strange compilation errors on SCO Unix, see if
+you can get a compiler fix from SCO.  Meanwhile, to use gcc with SCO
+ODT, see gcc-head.mak for the appropriate switch settings.  See also
+under "386 Unix" above.
+	gcc 2.3.3 produces code that causes a core dump on machines
+that don't have hardware floating point, because of a bug in SCO's
+floating point emulator.  Use a different compiler on these machines.
+	If you aren't using the X11 driver, you need to add -lsocket
+to the linker command (near the end of the unix-*.mak file) in order
+to get the date/time functions linked in.
+	If you want to use direct frame buffer addressing instead of X
+Windows, include the relevant frame buffer device(s) (ega.dev, vga.dev,
+etc.) and change gdevevga.c to gdevsco.c as indicated in devs.mak.  Note:
+this does not work with SuperVGA displays, except for 800x600x16 mode.
+Note also: If the display looks "smeared", try recompiling gdevpcfb.c with
+-O0.  Note also: if Ghostscript crashes, use the -q switch and/or redirect
+console output to a file.
+	If your compiler accepts the -Xt and -Xa switches, use -Xt.
+Even though this causes the compiler to use incorrect rules for
+computing the result types of << and >>, -Xa enables "optimizations"
+that produce incorrect code.
+	For SCO ODT 2.0, in addition to -D__SVR3 and -DSYSV, you need to
+specify -Dsco, -DUSG, and -DMALLOC_0_RETURNS_NULL.  For SCO ODT, you need
+EXTRALIBS=-lX11 -lsocket -lmalloc, or maybe only -lsocket (depending on
+the version), and for SCO ODT 2.0, you also need to specify -lc_s.  For
+SCO Xenix, you need EXTRALIBS=-lmalloc.
+	For all SCO systems, set XINCLUDE= and XLIBDIRS=.
+	Please also read the section on "System V Unix platforms" below.
+
+Silicon Graphics
+----------------
+	Compiler option -Olimit 2500 is required to be able to compile all
+the code with optimization.
+	Use compiler option -ansi with the SGI C compiler shipped with Irix
+5.2.
+	The SGI C compiler may produce warnings about "Undefined the ANSI
+standard library defined macro stdin/stdout/stderr".  To suppress these
+warnings, add
+	-woff 608
+to the definition of CFLAGS.
+	The SGI C compiler shipped with Irix 6.1 and 6.2 will not compile
+deflate.c (part of zlib) properly with optimization.  If you want to use the
+zlib decompression filter (which is required for interpreting PDF 1.2
+files), compile this file separately without -O.
+	The MIPSpro 7.1 compiler produces incorrect output if you use -O3 or
+-Ofast=ip32 -show.  Use only -O2.
+	To install gcc 2.7.x on IRIX 6.x, please consult the Web page at
+http://reality.sgi.com/knobi/gcc-2.7.2.x-on-irix-6.2-6.3.
+
+Sun
+---
+	The Sun unbundled C compiler (SC1.0) doesn't compile Ghostscript
+properly if the -fast option is selected: Ghostscript core-dumps in
+build_gs_font.  Use -g, or use gcc.
+	The Sun version of dbx often gives up with an error message when
+trying to load Ghostscript.  If this happens, use gdb instead.  (gdb is
+more reliable than dbx in other ways as well.)
+	There is a bug in some versions of zlib that results in an undefined
+symbol zmemcmp when compiling with Sun cc.  Use gcc instead.
+
+    SunOS
+    -----
+        In SunOS 4.1.[23], you may get these undefined symbols when linking:
+                _get_wmShellWidgetClass
+                _get_applicationShellWidgetClass
+Compiling "-Bstatic -lXmu -Bdynamic" appears to work for SC1.0.  For gcc,
+try adding "-static" to CFLAGS.  To solve the problem if you are using
+OpenWindows 3.0 (X11R4-based Xt), please contact your local Sun office and
+request the following patches:
+	Patch i.d.      Description
+	100512-02       4.1.x OpenWindows 3.0 libXt Jumbo patch
+	100573-03       4.1.x OpenWindows 3.0 undefined symbols when using
+				shared libXmu
+    Solaris
+    -------
+	Solaris 2.2 may require setting EXTRALIBS=-lsocket.
+	Solaris 2.3 and 2.4 seem to require EXTRALIBS=-lnsl -lsocket.
+	Solaris 2.n uses /usr/openwin/share/include for the X11 libraries
+rather than /usr/local/X/include.
+	Solaris 2.n typically makes Type 1 fonts available in
+/usr/openwin/lib/X11/fonts/Type1/outline.
+	For Solaris 2.n, you will need to change the definition of INSTALL
+in the makefile from install -c to /usr/ucb/install -c, since the Solaris
+version of 'install' requires
+		install -c <directory> [-m <mode>] <file>
+rather than
+		install [-c] [-m <mode>] <file> <directory>
+	You may need to set XLIBDIR to the directory that holds the X11
+libraries, as for other SVR4 systems.  You should also set -DSVR4 in CFLAGS.
+	If you are using the SunPRO C compiler, do not use optimization
+level -xO3.  On SPARC platforms, the compiler hangs; on Intel platforms, the
+generated code is incorrect.  Also, do not use the -native flag on Intel
+platforms: this makes floating point computations unacceptably inaccurate.
+You may use -xcg92 (SPARC V8) and/or -dalign to get better performance.
+
+SVR4 Unix platforms
+-------------------
+	You may need to set EXTRALIBS=-lnsl.
+	Do *not* change PLATFORM=unix_ to PLATFORM=sysv_.
+	On SVR4 Unix platforms that use dynamic linking, you may need to
+define XLIBDIR as the name of the directory that holds the X Windows
+libraries.  Do *not* prefix this with -L.
+	For SVR4.0 systems, set -DSVR4 -DSVR4_0 in the makefile; do *not*
+set -DSYSV.  For SVR4.2 (or later) and Solaris 2.x systems, set -DSVR4 only
+(not -DSVR4_0 and not -DSYSV).
+
+System V Unix platforms
+-----------------------
+	If you are using a stock System V platform that lacks rename
+and gettimeofday, change PLATFORM=unix_ in the makefile to
+PLATFORM=sysv_.
+	You will probably need to change the definition of INSTALL (near
+the beginning of the makefile) from install to /usr/ucb/install.
+
+VAX with Ultrix
+---------------
+	The above information about DECStations with Ultrix may be
+applicable.
+
+********
+******** How to build Ghostscript from source (OS/2 version) ********
+********
+
+The relevant makefile is:
+	os2.mak
+The gcc/emx 0.9b (or later) compiler and the IBM NMAKE.EXE are required.
+
+For gcc/emx versions 0.9c and later, the LINK386 command must include
+$(COMPBASE)\lib\end.lib; version 0.9b requires omitting this.  The current
+os2.mak file does include this file in the LINK386 command, so if you are
+using 0.9b, delete this file reference before building.
+
+Be sure you are using the standard OS/2 shell, CMD.EXE.  Some other shells
+have bugs or differences that cause the makefile not to work.
+
+Before compiling or linking, you should execute
+	copy os2.mak makefile
+Then to start the make process type
+	nmake
+One DLL and two EXE's will be produced: gsdll2.dll (Ghostscript DLL),
+gsos2.exe (Ghostscript) and gspmdrv.exe (the Presentation Manager 
+display driver).
+
+********
+******** How to build Ghostscript from source (VMS aka OpenVMS version) ****
+********
+
+Many versions of DEC's X server have bugs that produce broad bands of color
+where dither patterns should appear, or characters displayed white on top
+of black rectangles or not displayed at all.  If this happens, please
+consult the X Windows section of the use.txt file to find out how to work
+around these bugs using X resources; also report the problem to DEC, or
+whoever supplied your X server.
+
+You may also wish to turn off the use of a backing pixmap with Ghostscript,
+either to work around X server memory limitations or bugs, or to obtain
+faster displaying at the expense of no redrawing when a Ghostscript window
+is restored from an icon or exposed after being occluded by another window.
+Again, use.txt contains information on how to do this.
+
+If you add compiled fonts to your system as described in the fonts.txt file,
+then add "ccfonts.dev" to the FEATURE_DEVS symbol in VMS-CC.MAK,
+VMS-GCC.MAK, VMS-DECC.MAK, or OPENVMS.MAK,
+	$ FEATURE_DEVS = "level2.dev ccfonts.dev"
+and then specify the font names with the ccfonts1 symbol
+	$ ccfonts1 = "Courier Courier_Oblique Courier_Bold Courier_BoldOblique"
+If the line gets too long, add another line of the same form, e.g.,
+	$ ccfonts1 = "Courier Courier_Oblique Courier_Bold Courier_BoldOblique"
+	$ ccfonts2 = "Times_Roman Times_Italic Times_Bold Times_BoldItalic"
+
+Using DCL command files
+-----------------------
+
+Up through Ghostscript version 5.0x, we have provided DCL command files for
+building Ghostscript.  We will no longer support this method in future
+versions, since we have found it almost impossible to keep the DCL scripts
+consistent with the makefiles that are used on all other platforms, and
+since using a 'make' program has other benefits such as recompiling only
+files that have changed.
+
+The files VMS-CC.MAK, VMS-GCC.MAK, and VMS-DECC.MAK are OpenVMS DCL command
+files which build Ghostscript from scratch using, respectively, the VAX C
+compiler, CC, the Free Software Foundation's GNU C compiler, GCC, or the DEC
+C compiler, CC.  Accordingly, you must have one of these compilers installed
+in order to build Ghostscript.  (Other C compilers may work: CC and GCC are
+the only two compilers tested to date.  DEC C V4.0 or later is required: the
+DEC C V1.3 run-time library has bugs that prevent Ghostscript from working.)
+These command files build and store the Ghostscript library in the object
+library GS.OLB.  If you have DECwindows (X11) installed on your system, the
+executable image GS.EXE will also be built.
+
+Some environments use the DWTLIBSHR library for providing the X Windows
+intrinsics, and some use the XTSHR library.  XTSHR is newer, and is part of
+the DECwindows/Motif product.  However, DEC is still distributing versions
+of VMS with DWTLIBSHR.  If your environment uses XTSHR, replace DWTLIBSHR in
+the list of link libraries with XTSHR.
+
+For OpenVMS VAX platforms with VAX C, issue the DCL command
+	$ @VMS-CC.MAK
+to build Ghostscript.  For OpenVMS platforms with GNU C (either AXP or
+VAX), issue the DCL command
+	$ @VMS-GCC.MAK
+to build Ghostscript.  For OpenVMS platforms with DEC C (either AXP or
+VAX), issue the DCL command
+	$ @VMS-DECC.MAK
+to build Ghostscript.
+
+The option "DEBUG" may be specified with either command file in order to
+build a debuggable Ghostscript configuration; e.g.,
+	$ @VMS-CC.MAK DEBUG
+
+Using GNU make
+--------------
+
+As of Ghostscript version 5.0, the file OPENVMS.MAK, together with some
+auxiliary .COM files, allows using GNU make for building Ghostscript on
+OpenVMS.  To do this, use the command:
+
+	make -fopenvms.mak "OPENVMS={VAX,ALPHA}" "DECWINDOWS={1.2,<blank>}"
+
+i.e. specify either VAX or ALPHA as the value of the OPENVMS parameter, and
+either 1.2 or nothing (blank) as the value of DECWINDOWS.  (Note that here
+the value VAX just means that you want to use the VAX C compiler: it doesn't
+imply that you are running on VAX hardware.)  In Europe and other parts of
+the world where A4 paper size is used, you should also append "A4_PAPER=1"
+to the make line, to make A4 paper the default.
+
+Unfortunately, because of bugs in the DEC C compilers, GNU make doesn't
+compile properly on all versions of VMS.  GNU make requires:
+	- On VAXen, VMS 7.1 or later (VMS 7.0 may work).
+	- On Alphas, VMS 6.2 or later.
+
+Also, GNU make, at least through version 3.75, requires some patches to run
+properly on VMS at all.  We hope to be able to make available a precompiled
+executable with the patches in the near future.  Meanwhile, however, here is
+a description of the necessary changes.
+
+The VAX and ALPHA edits have basically the same changes; the VAX C version
+has two edits in the [.GLOB] directory, to address a 'C' preprocessor
+limitation with VAX C.  The remaining changes attempt to address the lack of
+consistency with "C" compilers and POSIX functionality, or the lack of it.
+
+Of course depending on what version of OpenVMS you have, and what versions
+of compilers (VAX C, DEC C on VAX or DEC on Alpha), these changes may be
+slightly different.
+
+=========================================================
+
+Steps to do GNU MAKE edits for VAX C version:
+
+1). Unpack the GNU make sources, version 3.75, from your favorite FTP
+site.
+2). Create an OpenVMS DCL command procedure containing the following
+lines
+     between the two markers "==========================" below.
+3). If you've never used EDIT/SUM before, you may want to read the
+following:
+	$ HELP DIFFERENCES / SLP, and
+	$ HELP EDIT / SUM
+4). Edits are done. Invoke the GNU make supplied command file
+MAKEFILE.COM,
+or if your have a prior version of GNU make, there is a makefile
+included with make.
+
+============================
+$ SUMSLP="EDIT/SUM"
+$ SUMSLP [.GLOB]FNMATCH.H/OUTPUT=[.GLOB]FNMATCH.H/UPDATE=SYS$INPUT:
+-   26,   27
+#if (defined (__cplusplus) || (defined (__STDC__) && __STDC__) || defined (WIN32))
+/
+$ SUMSLP [.GLOB]GLOB.H/OUTPUT=[.GLOB]GLOB.H/UPDATE=SYS$INPUT:
+-   28,   29
+#if (defined (__cplusplus) || (defined (__STDC__) && __STDC__) || defined (WIN32))
+/
+$ SUMSLP JOB.C/UPDATE=SYS$INPUT:
+-  641,  641
+#if (__VMS_VER >= 70000000) && defined POSIX
+-  648,  648
+#if (__VMS_VER >= 70000000) && defined POSIX
+-  657,  657
+#if (__VMS_VER >= 70000000) && defined POSIX
+- 1316, 1316
+#ifdef  HAVE_SIGSETMASK
+    (void) sigblock (fatal_signal_mask);
+#endif
+- 1392, 1392
+#ifdef  HAVE_SIGSETMASK
+    (void) sigsetmask (sigblock (0) & ~(fatal_signal_mask));
+#endif
+/
+$ SUMSLP JOB.H/UPDATE=SYS$INPUT:
+-   70,   70
+#if (__VMS_VER >= 70000000) && defined POSIX
+/
+$ SUMSLP MAIN.C/UPDATE=SYS$INPUT:
+-  398,  398
+#if (__VMS_VER >= 70000000) && defined POSIX
+-  482,  482
+#if (__VMS_VER >= 70000000) && defined POSIX
+/
+$ SUMSLP VMSDIR.H/UPDATE=SYS$INPUT:
+-    7,    8
+#ifndef __SOCKET_TYPEDEFS
+        typedef unsigned long u_long;
+        typedef unsigned short u_short;
+#endif
+/
+============================
+
+Steps to do GNU MAKE edits for DEC C version:
+
+1). Unpack the GNU make sources, version 3.75. (in an empty directory)
+2). Create an OpenVMS DCL command procedure containing the following
+lines
+     between the two markers "==========================".
+3). If you've never used EDIT/SUM before, you may want to read the
+following:
+	$ HELP DIFFERENCES / SLP, and
+	$ HELP EDIT / SUM
+4). Edits are done. Invoke the GNU make supplied command file
+MAKEFILE.COM,
+or if your have a prior version of GNU make, there is a makefile
+included with make.
+
+============================
+$ SUMSLP="EDIT/SUM"
+$ SUMSLP CONFIG.H-VMS/UPDATE=SYS$INPUT:
+-  114,  114
+</* #define pid_t int */
+-  153,  153
+</* #define uid_t int */
+-  217,  217
+</* #define HAVE_SIGSETMASK 1 */
+/
+$ SUMSLP JOB.C/UPDATE=SYS$INPUT:
+-  641,  641
+#if (__VMS_VER >= 70000000) && defined POSIX
+-  648,  648
+#if (__VMS_VER >= 70000000) && defined POSIX
+-  657,  657
+#if (__VMS_VER >= 70000000) && defined POSIX
+- 1316, 1316
+#ifdef  HAVE_SIGSETMASK
+    (void) sigblock (fatal_signal_mask);
+#endif
+- 1392, 1392
+#ifdef  HAVE_SIGSETMASK
+    (void) sigsetmask (sigblock (0) & ~(fatal_signal_mask));
+#endif
+/
+$ SUMSLP JOB.H/UPDATE=SYS$INPUT:
+-   70,   70
+#if (__VMS_VER >= 70000000) && defined POSIX
+/
+$ SUMSLP MAIN.C/UPDATE=SYS$INPUT:
+-  398,  398
+#if (__VMS_VER >= 70000000) && defined POSIX
+-  482,  482
+#if (__VMS_VER >= 70000000) && defined POSIX
+/
+$ SUMSLP VMSDIR.H/UPDATE=SYS$INPUT:
+-    7,    8
+#ifndef __SOCKET_TYPEDEFS
+        typedef unsigned long u_long;
+        typedef unsigned short u_short;
+#endif
+============================
+
+********
+******** Other environments ********
+********
+
+QNX
+---
+
+The following notes are from John "Stosh" Muczynski, <STOSH@bauer.usa.com>.
+He is willing to answer questions as his time permits.  He used the Watcom
+C16 compiler, version 9.5, with QNX version 4.20B.  He had to modify the
+following files:
+
+SYS/PARAM.H
+Watcom doesn't supply a sys/param.h file.  I defined it as
+--------------------------------clip here 
+------------------------------
+/* CLK_TCK is used with the times() function and is defined in times.h 
+*/
+#define HZ (CLK_TCK)
+--------------------------------clip here 
+------------------------------
+It seems that HZ should be 1000 for QNX and not 100.  The times() 
+function appears to be POSIX 1003.1
+
+
+
+UNIXHEAD.MAK
+I modified unixhead.mak to support a qnx_ platform.
+--------------------------------clip here 
+------------------------------
+PLATFORM=qnx_
+--------------------------------clip here 
+------------------------------
+
+
+UNIXTAIL.MAK
+I modified unixtail.mak to support a qnx_ platform.
+--------------------------------clip here 
+------------------------------
+# QNX 4.X
+qnx__=gp_nofb.$(OBJ) gp_unix.$(OBJ) gp_qnx.$(OBJ) gp_qnxfs.$(OBJ) 
+gp_unifn.$(OBJ)
+qnx_.dev: $(qnx__)
+	$(SETMOD) qnx_ $(qnx__)
+
+gp_qnx.$(OBJ): gp_qnx.c $(time__h) $(AK)
+
+gp_qnxfs.$(OBJ): gp_qnxfs.c $(AK) $(memory__h) $(string__h) $(gx_h) 
+$(gp_h) \
+  $(gsstruct_h) $(gsutil_h) $(stat__h) $(dirent__h)
+--------------------------------clip here 
+------------------------------
+The change here is to copy the "sysv_" make lines into "qnx_" 
+make lines and change (1) gp_sysv.* to gp_qnx.* and (2) gp_unifs.* 
+to gpqnxfs.*
+
+I copied the gp_sysv.c source to gp_qnx.c and (a) deleted rename() 
+because it is supported by the watcom compiler, (b) kept 
+gettimeofday(), (c) added the gp_open_scratch_file() which doesn't 
+use mktemp().
+
+I copied gp_unifs.c to gp_qnxfs.c and deleted the 
+gp_open_scratch_file() because it uses mktemp() which watcom 
+does not provide.  Watcom does provide a tmpnam(char *buffer) 
+function and more interestingly a FILE *tmpfile(void) function.  
+If you ask I can fax you the manual pages.
+
+
+ANSIHEAD.MAK
+
+Compiler options:
+-----------------
+I used the Bauer "standard" options for compiling and linking under 
+QNX:
+--------------------------------clip here 
+------------------------------
+CFLAGS=-O -w4 -3 -mf $(XCFLAGS)
+LDFLAGS=-3 -N 64k -O -g -w3 -mf -fF $(XLDFLAGS)
+--------------------------------clip here 
+------------------------------
+-N 64k gives a big stack size; I don't know if its necessary.
+The -mf on CFLAGS and LDFLAGS is very necessary (32-bit flat memory 
+model).
+The -3 and -O and -g and -w3 and -w4 are just fluff.
+The -fF option doesn't make sense to me.
+
+********
+******** A guide to the source code ********
+********
+
+General
+-------
+
+There are very few machine dependencies in Ghostscript.  A few of the .c
+files are machine-specific.  These have names of the form
+	gp_<platform>.c
+specifically
+	gp_dosfb.c (MS-DOS)
+	gp_dosfs.c (MS-DOS and MS Windows)
+	gp_itbc.c (MS-DOS, Borland compilers)
+	gp_iwatc.c (MS-DOS, Watcom or Microsoft compiler)
+	gp_msdos.c (MS-DOS and MS Windows)
+	gp_ntfs.c (MS-Windows Win32s and Windows NT)
+	gp_os2.c (OS/2)
+	gp_os9.c (OS-9)
+	gp_unifs.c (Unix or OS-9)
+	gp_unix.c (Unix)
+	gp_sysv.c (System V Unix)
+	gp_vms.c (VMS)
+	gp_win32.c (MS-Windows Win32s and Windows NT)
+There are also some machine-specific conditionals in files with names
+<something>_.h.  If you are going to extend Ghostscript to new
+machines or operating systems, you should check the *_.h files for
+ifdef's on things other than DEBUG, and you should probably count on
+making a new makefile and a new gp_ file.
+
+Library
+-------
+
+Files beginning with gs, gx, or gz (both .c and .h), other than gs.c and
+gserver.c, are the Ghostscript library.  Files beginning with gdev are
+device drivers or related code, also part of the library.  Other files
+beginning with g are library files that don't fall neatly into either the
+kernel or the driver category.
+
+Interpreter
+-----------
+
+gs.c is the main program for the interactive language interpreter; gserver.c
+is an alternative main program that is a rudimentary server.  If you
+configure Ghostscript as a server rather than an interactive program, you
+will use gserver.c instead of gs.c.
+
+Files named z*.c are Ghostscript operator files.  The names of the files
+generally follow the section headings of the operator summary in section
+6.2 of the PostScript manual.
+
+Files named i*.c, and *.h other than g*.h, are the rest of the
+interpreter.  See the makefile for a little more information on how the
+files are divided functionally.
+
+Files named s*.c are a flexible stream package, including the Level 2
+PostScript 'filters' supported by Ghostscript.

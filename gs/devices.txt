@@ -1,0 +1,2352 @@
+   Copyright (C) 1992, 1995 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, devices.txt, gives more detailed documentation about
+certain specific devices for which Ghostscript can produce output.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+Devices for which this file currently contains documentation:
+	SPARCprinter
+	HP DeskJet 520, 540, and 560C
+	HP DeskJet 500C & 550C
+	HP PaintJet, XL, and XL300
+	DEC LJ250
+	Apple Dot Matrix Printer (and Imagewriter)
+	Epson Stylus Color Printer
+	ESC/P, ESC/P2 Color-Printers
+	Canon BJC-600/BJC-4000/BJC-70 and BJC-800 BubbleJet Color Printers
+	  (and Apple StyleWriter 2x00)
+        uniprint - a configurable ESC/P, ESC/P2 & HP-RTL/PCL-Driver
+	JPEG files
+
+### ------------------------- The SPARCprinter ------------------------- ###
+
+This section was written by Martin Schulte.
+
+Introduction
+------------
+
+The SPARCprinter is is connected to SPARCStation via a special SBUS card's
+video interface, the picture is composed on the host and only a bitmap is
+send to the printer unit.
+
+Together with a SPARCprinter, you always buy (as far as I know) software
+that enables you to do postscript-printing on your SPARCPrinter.
+
+So, the need for a Ghostscript-Interface to the SPARCPrinter seems low,
+but on the other hand some Postscript drawings are not correctly printed
+with SUN's software: on some pages occurred a thin vertical line of rubbish
+(reproduceable), on some Mathematica drawings the text at the axes wasn't
+rotated.
+
+I tried all of these with Ghostscript and always got the expected results.
+
+However, replacing proprietary software should never be a bad idea.
+
+The problem is that there has yet been no effort to make the SPARCPrinter-
+driver behave like a BSD output-filter, I made my tests using the script
+mentioned under Installation.
+
+Installation
+------------
+
+Add sparc.dev to DEVICE_DEVS and compile ghostscript as described in
+make.txt.
+
+Afterwards, you can use the following script (the way of handling standard
+input versus filename-arguments doesn't look very clever, has anyone a
+better idea ?) to print if you substitute <GSPATH> by the place where you
+installed the ghostscript binary:
+
+outcmd1='/vol/local/lib/troff2/psxlate -r'
+outcmd2='<GSPATH> -I/home/schulte/gs252 -sDEVICE=sparc -sOUTPUTFILE=/dev/lpvi0 -'
+
+if [ $# -eq 0 ]
+then
+  $outcmd1 | $outcmd2
+else
+  cat $* | $outcmd1 | $outcmd2
+fi
+
+Problems
+--------
+
+Since /dev/lpvi can only be opened for exclusive use, another job having
+opened it (engine_ctl_sparc or another ghostscript as the most probable
+candidates) will cause to stop ghostscript with "Error: /invalidfileaccess
+in --.outputpage--"
+
+In case of common printer problems like out of paper, a warning describing
+the reason will be printed to stdout, the driver will try to access again
+and again each five seconds.
+
+Due to a problem with the device-driver (in the kernel) the reason of
+printer failure is not always correctly reported to program.  This is the
+case at least if you open the top cover (Error in the display: E5).  Look
+to the display at the printer if a "Printer problem with unknown reason"
+is reported.
+
+Fatal errors will cause the print-job to be terminated.
+
+### ------------------------------ End --------------------------------- ###
+
+### ------------------- H-P color inkjet printers ---------------------- ###
+###  (DeskJet 500C, DeskJet 550C, PaintJet, PaintJet XL, PaintJet XL300  ###
+###  and the DEC LJ250 which can operate in a Paintjet-compatible mode)  ###
+
+This section was written by George Cameron.
+
+Information and tips on usage for the drivers contained in gdevcdj.c
+====================================================================
+
+OVERVIEW:
+
+There are 6 generic drivers contained in the source module:
+
+     1 - cdj500:      HP DeskJet 500C and 540C
+     2 - cdj550:      HP DeskJet 550C, 560C, 660C, 660Cse
+     3 - pjxl300:     HP PaintJet XL300 and DeskJet 1200C
+     4 - pjtest:      HP PaintJet
+     5 - pjxltest:    HP PaintJet XL
+     6 - declj250:    DEC LJ250
+
+ All of these drivers have 8-bit (monochrome), 16-bit and 24-bit
+     (colour) and for the DJ 550C 32-bit, (colour, cmyk mode)
+     options in addition to standard colour and mono drivers.
+ It is also possible to set various printer-specific parameters
+     from the gs command line, eg.
+
+  gs -sDEVICE=cdeskjet -dBitsPerPixel=16 -dDepletion=1 -dShingling=2 tiger.ps
+
+NB/ The old names cdeskjet, cdjcolor and cdjmono drivers have been retained;
+    however, their functionality duplicates that available using the above
+    drivers (and cdeskjet is identical to cdj500), ie. we can use:
+
+	gs -sDEVICE=cdj500 -dBitsPerPixel=24 ...	for cdjcolor, and
+	gs -sDEVICE=cdj500 -dBitsPerPixel=1  ...	for cdjmono
+
+
+DEFAULT PAPER SIZE:
+
+ If the preprocessor symbol A4 is defined, the default paper size is the
+ European A4 size; otherwise it is the U.S. letter size (8.5"x11"). Other
+ paper sizes (including A3 for the PaintJet XL and PaintJet XL300) may be
+ specified on the command line as explained in the Ghostscript documentation.
+
+
+DEFAULT BITS-PER-PIXEL:
+
+ If the preprocessor symbol BITSPERPIXEL is defined as an integer (see below
+ for the range of allowable values), this number will be used to define the
+ default bits-per-pixel (ie. bit depth) for the generic drivers. If the
+ symbol is not defined, the default is set to 24 bits per pixel. It is
+ of course still possible to specify the value from the command line, as
+ described below. Note also that the cdeskjet, cdjcolor and cdjmono
+ drivers are unaffected by setting this symbol, as their default settings
+ are predefined to be 1, 3 and 24 respectively.
+
+
+DESKJET PHYSICAL LIMITS:
+
+ Maximum printing width = 2400 dots = 8". The printer manuals say that the
+ maximum recommended printing height on the page is 10.3", but since this
+ is obviously not true for A4 paper, and I have been unable to detect any
+ problems in printing longer page lengths, this would seem to be a rather
+ artificial restriction.
+
+ All Deskjets have 1/2" unprintable bottom margin, due to the mechanical
+ arrangement used to grab the paper. Side margins are approximately 0.25"
+ for US Letter paper, and 0.15" for A4.
+
+
+COMMAND LINE PARAMETERS:
+
+ Several printer 'properties' have been implemented for these printers.
+ Those available so far are all integer quantities, and thus may be
+ specified as eg.
+
+	gs -dBitsPerPixel=32 -dShingling=1 ... 
+
+ which sets the BitsPerPixel parameter to 32 and the Shingling parameter
+ to 1.
+
+
+BITS-PER-PIXEL:
+
+ All of the drivers in gdevcdj.c accept a command line option to set the
+ BitsPerPixel property. This gives considerable flexibility in choosing
+ various trade-offs between speed/quality/colour etc. The valid numbers
+ are:
+
+	1:	This is a standard Ghostscript monochrome driver, and uses
+		black ink (by installing the separate mono cartridge in
+		the case of the DeskJet 500C, or automatically for the
+		other printers)
+
+	3:	A standard Ghostscript colour driver, using internal
+		dithering. This is fast to compute and to print, but
+		the clustered dithering can lose some detail and
+		colour fidelity.
+
+	8:	An 'error-diffusion' monochrome driver which uses
+		Floyd-Steinberg dithering to print greyscale images.
+		The patterns are much more randomised than with the
+		normal clustered dithering, but the data files can
+		be much larger and somewhat slower to print.
+
+	16:	This is a 'cheaper' version of the following (24-bit)
+		driver, which generates a Floyd-Steinberg colour dithered
+		output using the minimum amount of memory (this may be
+		helpful when using IBM PC's when Ghostscript has not
+		been compiled using a 32-bit 386-style compiler). The
+		quality can be almost as good as the 24-bit version.
+
+	24:	A high-quality colour driver using Floyd-Steinberg dithering
+		for maximum detail and colour range. However it is very
+		memory intensive and thus can be slow to compute (and it
+		tends to produce rather larger raw data files, so they
+		can also be slower to print).
+
+	32:	This is for the DeskJet 550C only, which uses the black
+		cartridge and the colour cartridge simultaneously (ie.
+		CMYK printing). This printer can be both faster and give
+		higher quality than the DeskJet 500C, because of the
+		true black ink. (Note that the 24-bit mode also permits
+		CMYK printing on this printer, and uses less memory. Any
+		differences between 24-bit and 32-bit should be very small.)
+
+
+DESKJET PROPERTIES:
+
+ The additional properties available for the DeskJets are:
+
+	BlackCorrect	(int)	  /* Colour correction to give
+				   * better blacks when using the DJ500C
+				   * in colour mode, eg. the default of 4
+				   * reduces the cyan component to 4/5 
+				   * Range accepted: 0 - 9 (0 = none) */
+	Shingling	(int)	  /* Interlaced, multi-pass printing 
+	                           * 0 = none, 1 = 50%, 2 = 25%, 2 is
+				   * best & slowest */
+	Depletion	(int)	  /* 'Intelligent' dot-removal 
+		                   * 0 = none, 1 = 25%, 2 = 50%, 1 best
+				   * for graphics? 
+				   * Use 0 for transparencies */
+
+PAINTJET XL300/PAINTJET XL PROPERTIES:
+
+	PrintQuality	(int)	  /* Mechanical print quality
+				   * -1 = fast, 0 = normal, 1 = presentation
+				   * Fast mode reduces ink usage and uses
+				   * single-pass operation for some media
+				   * types. Presentation uses more ink and
+				   * max number of passes, ie. slowest
+				   * printing for highest quality */
+	RenderType	(int)	  /* 0 = driver does dithering
+				   * 1 = snap to primaries
+				   * 2 = snap black -> white, others to black
+				   * 3 = ordered dither
+				   * 4 = error diffusion
+				   * 5 = monochrome ordered dither
+				   * 6 = monochrome error diffusion
+				   * 7 = cluster ordered dither
+				   * 8 = monochrome cluster ordered dither
+				   * 9 = user-defined dither (not supported)
+				   * 10 = monochrome user-defined dither ns. */
+
+PAINTJET PROPERTIES:
+
+	No additional properties
+
+
+GAMMA CORRECTION:
+
+ One consequence of using Floyd-Steinberg dithering rather than Ghostscript's
+ default clustered ordered dither is that it is much more obvious that the
+ ink dots are rather larger on the page than their nominal 1/180" or 1/300"
+ size (clustering the dots tends to minimise this effect). Thus it is often
+ the case that the printed result is rather too dark. A simple empirical
+ correction for this may be achieved by preceding the actual postscript
+ file to be printed by a short file which effectively sets the gamma for
+ the device, eg.
+
+ gs ... gamma.ps colorpic.ps -c quit
+
+ where gamma.ps is
+
+%!
+{0.333 exp} dup dup currenttransfer setcolortransfer
+
+ This example sets the gamma for r, g, and b to 3, which seems to work
+ reasonably well in practice.
+
+
+GENERAL TIPS:
+
+ For all the above printers, the paper is critically important to the 
+ final results. Smoother, less fibrous paper is generally better (and
+ suggested types are given in the printer manuals). In particular, the
+ special ink-jet paper can make a big difference; the colours are 
+ brighter, but most importantly, there is almost no colour bleed, even 
+ with adjacent areas of very heavy inking. Similarly, the special coated
+ transparencies also work well (and ordinary transparencies do not work
+ at all!)
+
+ The unix-lpr.sh provides one example of setting up a multi-option
+ colour postscript lpr queue on Unix systems, and includes the ability
+ to choose a range of different colour options and printer accounting
+ and error logging.
+
+
+CAVEAT EMPTOR!:
+
+ It is not always easy for me to test all of these drivers, as the only
+ colour printer I have here is the DeskJet 500C. I rely on others testing
+ drivers for the additional machines and reporting their findings back to
+ me. 
+
+HP's 600x300 dpi resolution-enhanced mode for inkjet printers
+=============================================================
+
+This feature is available on HP's more recent inkjet printers,
+including the Deskjet 520 (mono) 540 (mono or colour) and 560C (mono
+and colour).
+
+The colour and monochrome drivers for the HP deskjet 550c are
+(probably) the best you will get for use with ghostscript, for the
+following reasons:
+
+These printers do not offer true 600x300 dpi resolution. Those that
+print in colour are strictly 300x300 dpi in colour mode, while in mono
+mode there is a pseudo 600x300 dot mode, with the restriction that you
+can't print two adjacent dots. Thus, in effect what you have is 600 dpi
+dot positioning, but on average you don't get more dots per line.
+
+What this does give is the possibility to have eg. sharper character
+outlines, as you can place dots on the edges nearer to their ideal
+positions - this is why it is worth doing.
+
+However, HP will not support user-level programming of this
+resolution-enhanced mode, one reason being that (I understand) all the
+dot spacing has to be done by the driver, and if you get it wrong, you
+can actually damage the print head.
+
+To summarise, you may lose a smidgin of (potential) text clarity using
+the 550c drivers (cdj550, cdjcolor, cdjmono etc.), but other than that,
+they are the ones for the job.
+
+### ------------------------------ End --------------------------------- ###
+
+### ------------------- Apple Dot Matrix Printer  ---------------------- ###
+
+This section was written by Mark Wedel.
+
+ The Dot Matrix Driver (DMP) driver is a simple driver I wrote.  It
+could more more efficient, but it seems to print the images fine.
+
+ The Dot Matrix Printer was a parallel predecessor to the Imagewriter
+printer.  As far as I know, the Imagewriter commands are a superset
+to those of the Dot Matrix printer, so the driver should work fine at
+generating output that can be printed on Imagewriters.
+
+ A few notes (from the gdevadmp.c file):
+
+ * To print out images, it sets the printer for unidirectional printing
+ * and 15 cpi (120 dpi). It sets the line feed to 1/9 of an inch (72 dpi).
+ * When finished, it sets things back to bidirectional printing, 1/8" line
+ * feeds, and 12 cpi.  There does not appear to be a way to reset
+ * things to initial values.
+ *
+ * This code does not set for 8 bit characters (which is required). It
+ * also assumes that carriage return/newline is needed, and not just
+ * carriage return.  These are all switch settings on the DMP, and
+ * I have configured them for 8 bit data and cr only.
+ *
+ * You can search for the strings Init and Reset (in devdemp.c) to find the
+ * strings that set up the printer and clear things when finished, and change
+ * them to meet your needs.
+ *
+ * Also, you need to make sure that the printer daemon (assuming unix)
+ * doesn't change the data as it is being printed.  I have set my
+ * printcap file (sunos 4.1.1) with the string:
+ * ms=pass8,-opost
+ * and it works fine.
+
+ Mark Wedel
+master@cats.ucsc.edu
+
+### ------------------------------ End --------------------------------- ###
+
+### ------------------ The Epson Stylus Color printer ------------------ ###
+/*
+ Epson Stylus-Color Driver, contributed by Gunther Hess (address: see below)
+
+I N T R O D U C T I O N
+=======================
+This documentation accompanies version 1.90 of the stcolor-driver.
+Compared to version 1.21 (gs3.53) there are just a few, but somehow
+important chages:
+
+ - Default: noWeave escpBand=1 (-> default works with all known models)
+ - added Parameter "Softweave" (useful only with Original STC and PRO-Series)
+ - added Compile-Option (-DSTC_SIGNAL) to catch interrupts during printing
+   (thanks to Frederic Loyer)
+ - compatibility with ansi2knr
+ - compatibility with 64Bit Processors
+ - clarification of usage with Pro-XL and Stylus Color II
+
+A Note on the Version-Numbering: Version 1.xx comes to it's end. 
+Any 1.xx > 1.90 will have only Bug-Fixes. Maybe that Version 2.xx
+comes to life, if this is the case it will include full support of
+the newer models.
+
+U S A G E
+=========
+This driver is selected with "-sDEVICE=stcolor" and produces output for an
+Epson Stylus-Color at 360DpI resolution by default, but it can do much
+more with this printer and with significantly better quality, than with
+the default-mode and it can also produce code for the monochrome-versions
+of this printer.
+
+This can be achieved either via command-line options or via ghostscript-input.
+For convenience a Postscript-File is supplied, that can be used as initial
+inputfile. Thus, assumed that ghostscript is invoked via "gs" on your computer,
+try the following command:
+
+    gs -sDEVICE=stcolor -rXDPIxYDPI stcolor.ps ... (e.g.: your input-files)
+
+were XDPI is one of 180/360/720 and YDPI is one of (90/)180/360/720. The result
+should be significantly better, you may use "stcolor.ps" with other devices
+too, but I do not recommend this, since it does nothing then. "stcolor.ps"
+should be available with binary distributions and should reside in the
+ghostscript input-directory. Thus if ghostscript is part of your
+printer-spooler, you can insert
+
+    (stcolor.ps) findlibfile { pop run } if pop
+
+to the files you want to run through the improved algorithms and you may want
+to adapt this file to your specific needs. The methods and options for this
+are described here, but this description is restricted to the gs-options, while
+their manipulation at the Postscript-level is documented in "language.txt" and
+in the mentioned "stcolor.ps".
+
+Next thing is to explain the options (as written on my unix-system).
+The order is somehow related to their use during the printing-Process:
+
+  -dUnidirectional      - Force unidirectional printing,
+                          recommended for transparencies
+
+  -dMicroweave          - enable the printers "microweave"-feature.
+  -dnoWeave             - disable any Weaving, overrides -dMicroweave
+  -dSoftweave           - enable internal weaving of the driver.
+
+*   Weave-Note: Softweave works *ONLY* with the original Stylus-Color
+*               and the PRO-Series. 
+
+  -sDithering="name"    - select another dithering-algorithm, available are:
+              "gscmyk"    : fast color-output, with CMYK-ProcessColorModel [D]
+              "gsmono"    : fast black & white output
+              "gsrgb"     : fast color-output, with RGB-ProcessColorModel
+              "fsmono"    : Floyd-Steinberg, Monochrome
+              "fsrgb"     : Floyd-Steinberg, with RGB-ProcessColorModel
+                            (Almost identical to cdj550/mjcxxx-Algorithm)
+              "fsx4"      : Floyd-Steinberg, with CMYK-ProcessColorModel
+                            (shares code with fsmono & fsrgb, but is
+                             algorithmically really bad)
+              "fscmyk"    : Floyd-Steinberg, with CMYK-ProcessColorModel
+                            and proper modifications for CMYK
+              "hscmyk"    : modified Floyd-Steinberg with CMYK-Model
+                            ("hs" stands for "hess" nor for "high speed",
+                             but the major difference to "fscmyk" is speed)
+              "fs2"       : algorithm by Steven Singer (RGB)
+                            should be identical to escp2cfs2.
+
+ -dBitsPerPixel=1...32    - number of bits used for pixel-storage, the larger
+                            the value, the better the quality - at least in
+                            theory. In fsrgb one can gain some speed, when
+                            restricting to 24 Bits, rather than the default
+                            of 30.
+
+ -dFlag0                  - causes some algorithms to select a uniform
+                            initialisation rather than a set of random-values.
+                            May yield "sharper" image-impression at the
+                            cost of "dithering-artifacts".
+                            (applies to hscmyk and all fs-modi, except for fs2,
+                             which always uses a constant initialization.)
+
+ -dFlag1 ... -dFlag4      - available to future algorithms.
+
+ -dColorAdjustMatrix={3/9/16 x float}'
+                          - This is a Matrix to adjust the colors. Values should
+                            be between -1.0 and 1.0, and the number of
+                            values depend on the colormodel used by the
+                            selected algorithm. In RGB- and CMYK-modi a matrix
+                            with 1.0 on the diagonal produces no transformation.
+                            (I could not identify a similar feature at the
+                            language-level, so this option was implemented, it
+                            is really required, but I don't know reasonable
+                            values yet.)
+
+ -dCtransfer='{float float ...}', -dMtransfer=..., -dY..., -dK... or
+ -dRtransfer='{float float ...}', -dG..., -dB... or
+ -dKtransfer='{float float ...}'
+                          - which is used, depends on the algorithm, which
+                            maybe either either CMYK, RGB or monochrome.
+                            The values are arrays of floats in the range from
+                            0 to 1.0, which represent the visible
+                            color-intensity for the device. One may achieve
+                            similar effects with "setcolortransfer" at the
+                            language-level, but this takes more time and the
+                            underlying-code for the driver-specific parameters
+                            is still required. The size of the arrays is
+                            arbitrary and the defaults are {0.0 1.0}, which
+                            is a linear characteristic, most of the code in
+                            "stcolor.ps" are better transfer-arrays.
+
+ -dKcoding='{float...}', -dC..., -dM... etc.
+                          - this are again arrays between 0.0 and 1.0, and
+                            they control the internal coding of the
+                            color-values. Clever usage of this arrays may
+                            yield further enhancements, but no experience yet.
+                            [To be discontinued with version >= 2.x]
+
+ -sModel=st800            - causes output to be suitable for the monochrome
+                            Stylus 800 (no Weaving, no Color).
+
+ -sOutputCode=            - can be either "plain", "runlength" or "deltarow"
+                            and changes the ESC/P2 (TM) coding-technique used
+                            by the driver. The default is to use the
+                            runlength-encoding. "plain" selects uncompressed
+                            encoding and yields enormous amounts of data to
+                            generated.
+
+ -descp_Band=1/8/15/24    - Number of Nozzles of scanlines used in printing.
+                            Useful only with -dnoWeave. Larger Values yield
+                            smaller code, but this doesn't increase the
+                            Printing-Speed.
+
+ -descp_Width=            - Number of Pixels Printed in each scan-Line.
+                            (Useful when tuning Margins only, se below)
+
+ -descp_Height=           - Length of the entire Page in Pixels
+                            (Parameter of "ESC(C" in default initialization)
+
+ -descp_Top=              - Top-Margin in scanlines.
+                            (1st Parameter of "ESC(c" in default initialization)
+
+ -descp_Bottom=           - Bottom-Margin in scanlines.
+                            (2nd Parameter of "ESC(c" in default initialization)
+
+ -sescp_Init="..."        - Override for the initialization-sequence.
+                            (Must set Graphics-Mode-1 & Units)
+
+ -sescp_Release="..."     - Overrides the release-sequence. 
+                            (ESC @ FF by default)
+
+ Valid Resolutions:
+   any, ESC/P2 allows in theory, but only the following are
+   known to work with most printers:
+
+   -r360x360 (Default)
+   -r720x720 (not on STC-IIs ? and st800)
+
+ Valid Option Combinations: (Stylus I & PRO-Series only)
+
+            escp_Band   ?Weave    escp_Band/#Passes
+   180x 90  15         no-Weave
+   180x180  1 , 8, 24  no/u-Weave      15/2 sWeave
+   180x360                             15/4 sWeave
+   180x720                             15/8 sWeave
+   360x 90  15         no-Weave
+   360x180  1,  8, 24  no/u-Weave      15/2 sWeave
+   360x360  1,  8, 24  no/u-Weave      15/4 sWeave
+   360x720                             15/8 sWeave
+   720x 90  15         no-Weave
+   720x180                             15/2 sWeave
+   720x360                             15/4 sWeave
+   720x720  1          no/u-Weave      15/8 sWeave
+
+*************************************************************************
+*************************************************************************
+**                                                                     **
+**  BEWARE: There are only few validity-checks for parameters. A good **
+**          example is "escp_Band": if you set this, the driver tries  **
+**          to use your value, even if this value is not supported by  **
+**          the printer:                                               **
+**                                                                     **
+**                     YOU ASKED FOR IT, AND YOU GOT IT!               **
+**                                                                     **
+*************************************************************************
+*************************************************************************
+
+
+A P P L I C A T I O N  - N O T E
+================================
+
+Quite a bunch of Parameters. Hopefully you never need any of them, besides
+feeding "stcolor.ps" to ghostscript in front of your input.
+
+After answering some questions over 50 Times, I prepared a STC-FAQ-Collection.
+I am currently unable offer this FAQ on the net.
+But thanks to Bill Davidson it is available as:
+
+    http://www.isisnet.com/bdavidson/gs_stc.FAQ.html
+
+And here it comes (as plain text):
+
+VERSION:
+This FAQ refers to ghostscript > 3.50 with stcolor > 1.20. The former 
+release (ghostscript-3.33/stcolor-1.12) used different parameters and 
+had some severe bugs. This FAQ is itself version 1.3.
+
+TOPIC: Pro XL?
+Yes, this driver supports the A3-Size Printer. Simply set the required
+pagesize and margins. A simple way to do this, is to specify the
+parameter "-sPAPERSIZE=a3" on the command line or to include the
+procedure-call "a3" in the postscript-Prolog section. If you want
+to optimize the printable area and/or set the proper Margins, see
+topic Margins, PageSize.
+
+TOPIC: Margins, PageSize
+Different than other drivers, i refuse to add code to the stcolor-driver,
+that tries to guess the proper margins or pagesize. This is due to the
+fact, that i found that such guessing is usually wrong and needs correction
+either in the source or the parameters. The following code can be
+inserted to "stcolor.ps" after the line:
+
+     mark % prepare stack for "putdeviceprops"
+
+And this is the new code:
+
+/.HWMargins [9.0 39.96 12.6 9.0]     % Left, Bottom, Right, Top (1/72")
+/PageSize   [597.6 842.4]            % Paper, including Marings (1/72")
+/Margins [ % neg. Offset to Left/Top in Pixels
+   4 index 0 get STCold /HWResolution get 0 get mul 72 div neg
+   5 index 3 get STCold /HWResolution get 1 get mul 72 div neg
+]
+
+Feel free to change the Values for ".HWMargins" and "PageSize" to match
+your needs. The given Values are the defaults from the driver, when 
+compiled with "-DA4" set.
+
+This Option -or it's omission- may cause trouble: The Stylus Color can 
+print exactly 8" or 2880Pixel@360DpI. The remaining paper is the
+margin, where the left margin varies only slightly with the papersize,
+while the right margin ist significantly increased for wider paper,
+such as letter.
+
+-> If you are using stcolor > 1.20, compiled without "-DA4", on european
+   paper, then the Default-Margin is too large. You need to add the 
+   proper ".HWMargins" to the command line or stolor.ps
+
+
+TOPIC: Stylus Color II / IIs and 1500.
+First the good news: The driver can print on the Stylus Color II.
+And the bad ones:
+- According to Epson-Support the driver "abuses" the color-capabilities.
+  (See topic "Future Plans" for details.)
+- You need some parameters on the command-line (or in stcolor.ps).
+- I doubted that it would be usable with the Stylus Color IIs.
+  *BUT* it is usable and suffers from the mixing-Problems!!.
+
+To make thinks work, you *MUST* disable the drivers internal 
+weaving ("Softweave"). This can be done in two ways:
+
+       gs .... -dMicroweave ....
+
+or
+       gs ... -dnoWeave -descp_Band=1 ....
+
+[1.90 fixes this "bug" due to a changed default-behaviour]
+
+I experienced significantly increased printing speed with the second
+variant on the old Stylus Color, when printing mostly monochrome data.
+
+TOPIC: Future Plans
+Actually i thought, that the driver is finished by now, but an answer
+from Epson triggered future development. This was the answer from
+Epson-Support:
+
+To: Klaus-Gunther Hess
+Subject: Help: Need Programming Info for Stylus-(Color)-Printers
+
+The differentiation is necessary, as the printers produce the graphics
+differently.  To wit:
+
+  CMY Class - ( Stylus Color IIs ) The Stylus Color IIs prints color
+  graphics with the three different color inks (cyan, magenta, and yellow).
+  Also, black is printed using composit black (mixture of CMY).  For high
+  quality laser like black,  a separate black ink cartridge should be used.
+
+  CMY + K Class - ( Stylus Color II )  This printer has both a CMY and a
+  black ink (K)  cartridge installed at the same time.  However, due to the
+  nature of the black ink it can not be mixed or overlaid with the color
+  inks.  Therefore, when black is needed, composite black is used.
+  If the image calls for pure black (e.g., text), the black cartridge is used.
+
+  CMYK Class - ( Stylus Color, Stylus Pro and Pro XL )  These printers
+  have a mixable black (K) ink.  This ink is compatible with the CMY inks
+  and will not bleed when combined or printed next to the CMY inks.
+
+Bruce U.
+The Epson Connection 
+
+Thus I am working on a version, that supports CMY and CMY + K dithering.
+Actually there are also some new (*undocumented*) instructions used by
+the windows-driver in conjunction withe the Stylus Color II/IIs, that
+raises the need for some more "escp_*" Parameters.
+
+
+A C K N O W L E D G E M E N T S
+===============================
+
+This driver was "copied" from gdevcdj.c (ghostscript-3.12), which was
+contributed by:
+    George Cameron      - g.cameron@biomed.abdn.ac.uk
+    Koert Zeilstra      - koert@zen.cais.com
+    Eckhard Rueggeberg  - eckhard@ts.go.dlr.de
+
+Some of the ESC/P2-code was drawn from gdevescp.c, contributed by
+    Richard Brown       - rab@eos.ncsu.edu
+
+The POSIX-Interrupt-Code is from (Compile-Time-Option -DSTC_SIGNAL)
+    Frederic Loyer      - loyer@ensta.fr
+
+And several improvements are based on discussions with
+    Brian Converse      - BCONVERSE@ids.net
+    Bill Davidson       - bdavidson@ra.isisnet.com
+    Gero Guenther       - gero@cs.tu-berlin.de
+    Jason Patterson     - jason@reflections.com.au
+    ? Rueschstroer      - rue@ibe.med.uni-muenchen.de
+    Steven Singer       - S.Singer@ph.surrey.ac.uk
+
+While I wish to thank all this people mentioned above, they are by no means
+responsible for bugs in the stcolor-driver - just for the features.
+
+Duisburg 8-May-1996, Gunther Hess
+
+up to sometime E-Mail:  gunther@elmos.de
+After that time, one should use snail-mail or phone:
+
+Gunther Hess                  phone: ++49 203 376273
+Richard Wagner Strasse 112
+D-47057 Duisburg
+Germany
+
+R E C O M M E N D A T I O N S
+=============================
+
+The next section is a contribution from Jason Patterson <jason@reflections.com.au>
+who evaluated a previous version (1.17). GhostScript was invoked as follows:
+
+   gs -sDEVICE=stcolor [-r720x720] -sDithering=... -sOutputFile=escp.out \
+      stcolor.ps whatsoever.ps
+
+where "..." is the name of the desired algorithm. "stcolor.ps" was omitted
+for the gs-algorithms (gsmono, gsrgb and gscmyk), for which it is useless
+*and* it would not allow the selection of "gscmyk".
+
+So here comes a very truncated version of Jasons text:
+
+             COLOR DITHERING EXPERIMENTS with gdevstc-1.21
+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Here's a bit of feedback about the EPSON Stylus Color driver's different
+dithering methods, based on a little experiment using 4 good quality
+scanned images of quite varied nature.
+
+Here is a summary of the results of the four experiments...
+
+
+ gsmono: Pretty much what you'd expect from a mono ordered pattern. Looks
+         like what a lot of mono laser printers produce.
+
+ fsmono: Excellent for monochrome.
+
+ gscmyk: Not very good, but then you'd expect that from an ordered pattern.
+
+ gsrgb:  A little better than gscmyk. More consistent looking.
+
+ fs2:    Good, but not quite as good as fsrgb. Gets the brightness wrong,
+         too light at 720dpi, too dark at 360dpi.
+
+ fsrgb:  Very good, but a little too dark and has a slight blue tint.
+
+ hscmyk: Excellent. Slightly better than fsrgb and fs2. Better than fscmyk on
+         some images, almost the same on most.
+
+ fscmyk: Best. Very, *very* slightly better than hscmyk. On some images,
+         nearly as good as the EPSON demos (which were done with the
+         MS-Windows driver). 
+
+ Overall Visual Quality (out of ten):
+
+  gsmono |*********
+  fsmono |*****************
+         |
+  gscmyk |********
+  gsrgb  |*********
+  fs2    |****************
+  fsrgb  |*****************
+  hscmyk |******************
+  fscmyk |******************
+         +---------------------
+         0 1 2 3 4 5 6 7 8 9 10
+
+ best-to-worst order:  color: fscmyk hscmyk fsrgb fs2 gsrgb gscmyk
+                        mono: fsmono gsmono
+
+
+SANITY NOTE: The above results are only from *four* images, a total of 24
+             printouts (8 on 720dpi paper, 16 on plain paper). Your results
+             will almost certainly vary, and your standards might not be
+             the same as mine, so use these results as a *guide* only, not
+             as a formal evaluation.
+
+C O L O R - T R A N S F O R M A T I O N
+=======================================
+
+*NOTE*: Things are changing with version gdevstc > 2.00!
+
+In the initial version of the driver, distributed with Ghostscript-3.33,
+the parameter "SpotSize" was the only way to manipulate the colors at the
+driver-level. According to the parameters enumerated above, this has changed
+significantly with version 1.16 and above. This is the result of
+an ongoing discussion about dithering-algorithms and "false color" on the
+Epson-Stylus-Color. This initiated the transformation of the stcolor-driver
+into a framework for different dithering-algorithms, that provides a generalized
+interface to the internal Ghostscript-Color-Models and the other data-structures
+related to Ghostscript-Drivers.
+
+The main thing such a framework should be able to do is to deliver the
+values the dithering-algorithm needs and since this influences directly
+the optical image impression, this transformation should be adjustable without
+the need for recompilation and relinking.
+
+In general the process can be described as follows:
+
+   ColorAdjustMatrix   Coding                    Transfer
+ +---------------------+    +---------------------+    +------------------+
+ |  Ghostscript  Color |    | Ghostscript  Raster |    | Dithering  Data  |
+ |                     | => | 1/2/4/8/16/24/32Bit | => |   1/3/4x Values  |
+ |  1/3/4x16Bit Values |    | for all components  |    | (arbitrary type) |
+ +---------------------+    +---------------------+    +------------------+
+
+Due to the limitations on raster-storage, information is lost in the first
+transformation step, except for the 16Bit Monochrome-Mode. So any color
+adjustment should take place before this step and this is where the optional
+ColorAdjustMatrix works.
+
+The first transformation-step is called "coding" and is controlled by the
+?coding-Arrays. The Decoding-process expands the range of values
+pontentially to a larger range than that provided by the initial ghostscript
+color-model. It is therefore a reasonable place to make device- and/or
+algorithm-specific adjustments. This is the place where the ?transfer-Arrays
+are used. Array-Access might be not the fastest method, but its generality
+is superior, so this step is always based upon internally algorithm-specific
+array-access. If 8Bits are stored per color-component and if the algorithm
+uses bytes too, the second transformation is included within the first, what
+saves significant computation-time when printing the data.
+
+
+ColorAdjustMatrix
+-----------------
+
+The driver supports different "ProcessColorModel"-Values, which raises the
+need for different color-adjustments. In the following "CAM" stands for
+ColorAdjustMatrix:
+
+   DeviceGray: (3 Floats):
+      if((r == g) && (g == b))
+         K' = 1.0 - R;
+      else
+         K' = 1.0 - CAM[0] * R + CAM[1] * G + CAM[2] * B;
+
+      According to the documentation in drivers.txt, the latter should
+      never happen.
+
+   DeviceRGB: (9 Floats)
+      if((r == g) && (g == b))
+         R' = B' = G' = R;
+      else
+         R' = CAM[0]*R + CAM[1]*G + CAM[2]*B;
+         G' = CAM[3]*R + CAM[4]*G + CAM[5]*B;
+         B' = CAM[6]*R + CAM[7]*G + CAM[8]*B;
+
+      The Printer uses always four inks, thus a special treatment of black
+      is provided. Algorithms may take special action, if r==g==b. Maybe
+      that in future versions Kcoding & Ktransfer become active in RGB-Mode.
+
+   DeviceCMYK: (16 Floats)
+
+      if((c == m) && (m == y))
+         K' = max(C,K);
+         C' = M' = Y' = 0;
+      else
+         K  = min(C,M,Y);
+         if((K > 0) && ColorAdjustMatrix_present) { => UCR
+            C -= K;
+            M -= K;
+            Y -= K;
+         }
+
+         C' = CAM[ 0]*C + CAM[ 1]*M + CAM[ 2]*Y + CAM[ 3]*K;
+         M' = CAM[ 4]*C + CAM[ 5]*M + CAM[ 6]*Y + CAM[ 7]*K;
+         Y' = CAM[ 8]*C + CAM[ 9]*M + CAM[10]*Y + CAM[11]*K;
+         K' = CAM[12]*C + CAM[13]*M + CAM[14]*Y + CAM[15]*K;
+
+      Again we have a special black-treatment. "max(C,K)" was introduced
+      because of a slight misbehaviour of ghostscript, that delivers
+      black under certain circumstances as (1,1,1,0). Normally, when
+      no special "Black Separation" and "Undercolor Removal" procedures
+      are defined at the postscript-level, either (c,m,y,0) or (0,0,0,k)
+      values are mapped. This would make the extended ColorAdjustMatrix
+      quite tedious, thus during mapping black-separation is done for
+      (c,m,y,0)-Requests and if there is a ColorAdjustMatrix, undercolor-
+      removal is used too. In other words the Default-Matrix is:
+
+                   1 0 0 1
+                   0 1 0 1
+                   0 0 1 1
+                   0 0 0 1
+
+       and it is applied to CMYK-Values with separated and removed Black.
+       Raising the CMY-Coefficients while lowering the K-coefficients
+       reduces black and intensifies color. But be careful, even low
+       deviations from the default cause drastic changes.
+
+If no ColorAdjustMatrix is set, the matrix-computations are skipped. Thus
+the transformation reduces to:
+
+    - Range-Inversion in Monochrome-Mode
+    - Black-Separation in CMYK-Mode
+
+
+RGB/CMYK-coding & -transfer and BitsPerPixel
+--------------------------------------------
+
+This two (groups) of parameters are arrays of floating point numbers in the
+range 0.0 to 1.0. They control the truncation to the desired number of
+bits stored in the raster-memory (BitsPerPixel) and the ink-density.
+
+The "truncation" may become a nonlinear-function, if any of the ?coding-arrays
+are set. Assume the following Ghostscript invocation:
+
+    gs -sDEVICE=stcolor -sDithering=fscmyk -dBitsPerPixel=16 \
+       -dMcoding='{ 0.0 0.09 0.9 1.0 }' \
+                                        -dYtransfer='{ 0.0 0.09 0.9 1.0 }' \
+       -dKcoding='{ 0.0 0.09 0.9 1.0 }' -dKtransfer='{ 0.0 0.09 0.9 1.0 }' \
+
+We may have ?coding and/or ?transfer, thus four combinations are possible
+and this four combinations appear in the given example. The resulting mapping
+is given in the following tables, where except for the internal Indices
+(4 Components * 4 Bits = 16 BitsPerPixel), all values are normalized to the
+Range 0-1. The actual range is 0 to 65535 for the ghostscript-color and
+0 to 16777215 (2^24-1) for the ink-values delivered to the fscmyk-algorithm.
+Sorry for the bunch of numbers following, but you may try this example in
+conjunction with "stcinfo.ps", what should give you a graphical
+printout of the following numbers, when you issue a "showpage"-command:
+
+                            CYAN                      MAGENTA
+      CI/15 gs_color_values  CI    ink  gs_color_values  CI    ink
+      0.000   0.000 - 0.062   0  0.000   -0.123 - 0.123   0  0.000
+      0.067   0.063 - 0.125   1  0.067    0.123 - 0.299   1  0.247
+      0.133   0.125 - 0.187   2  0.133    0.299 - 0.365   2  0.351
+      0.200   0.188 - 0.250   3  0.200    0.365 - 0.392   3  0.379
+      0.267   0.250 - 0.312   4  0.267    0.392 - 0.420   4  0.406
+      0.333   0.313 - 0.375   5  0.333    0.420 - 0.447   5  0.433
+      0.400   0.375 - 0.437   6  0.400    0.447 - 0.475   6  0.461
+      0.467   0.438 - 0.500   7  0.467    0.475 - 0.502   7  0.488
+      0.533   0.500 - 0.562   8  0.533    0.502 - 0.529   8  0.516
+      0.600   0.563 - 0.625   9  0.600    0.529 - 0.557   9  0.543
+      0.667   0.625 - 0.687  10  0.667    0.557 - 0.584  10  0.571
+      0.733   0.688 - 0.750  11  0.733    0.584 - 0.612  11  0.598
+      0.800   0.750 - 0.812  12  0.800    0.612 - 0.639  12  0.626
+      0.867   0.813 - 0.875  13  0.867    0.639 - 0.715  13  0.653
+      0.933   0.875 - 0.937  14  0.933    0.715 - 0.889  14  0.778
+      1.000   0.938 - 1.000  15  1.000    0.889 - 1.111  15  1.000
+
+The difference between Cyan and Magenta is the presence of a Coding-Array.
+The coding-process must map a range of color-values to each of the 16
+component-indices. If no coding-array is given, this is accomplished
+by a division with 4096 -equivalent to a right-shift by 12 Bits-. The
+final ink-density resides in the given interval and moves form the left to
+the right side from 0 to 15. In the Magenta-case, there is a coding array
+and the ink-value matches the center of the intervals. But the distribution
+of the mapped intervals follows the given Coding-Array and is nonlinear in
+the linear color-space of ghostscript.
+
+Now let us take a look at the case with Transfer-Arrays:
+
+                           YELLOW                      BLACK
+      CI/15 gs_color_values  CI    ink  gs_color_values  CI    ink
+      0.000   0.000 - 0.062   0  0.000     -0.123-0.123   0  0.000
+      0.067   0.063 - 0.125   1  0.018      0.123-0.299   1  0.067
+      0.133   0.125 - 0.187   2  0.036      0.299-0.365   2  0.133
+      0.200   0.188 - 0.250   3  0.054      0.365-0.392   3  0.200
+      0.267   0.250 - 0.312   4  0.072      0.392-0.420   4  0.267
+      0.333   0.313 - 0.375   5  0.090      0.420-0.447   5  0.333
+      0.400   0.375 - 0.437   6  0.252      0.447-0.475   6  0.400
+      0.467   0.438 - 0.500   7  0.414      0.475-0.502   7  0.467
+      0.533   0.500 - 0.562   8  0.576      0.502-0.529   8  0.533
+      0.600   0.563 - 0.625   9  0.738      0.529-0.557   9  0.600
+      0.667   0.625 - 0.687  10  0.900      0.557-0.584  10  0.667
+      0.733   0.688 - 0.750  11  0.920      0.584-0.612  11  0.733
+      0.800   0.750 - 0.812  12  0.940      0.612-0.639  12  0.800
+      0.867   0.813 - 0.875  13  0.960      0.639-0.715  13  0.867
+      0.933   0.875 - 0.937  14  0.980      0.715-0.889  14  0.933
+      1.000   0.938 - 1.000  15  1.000      0.889-1.111  15  1.000
+
+Yellow uses a transfer-array. There is no linear correspondence between
+the color- and the ink-values. This correspondence is defined through the
+given array. In other words: the Transfer-arrays define a nonlinear
+ink-characteristic, what is exactly the same functionality, that
+Postscript's "(color)transfer"-function provides.
+
+While in the case of Yellow, the intervals match the intervals used with Cyan,
+the intervals used for Black match the Magenta-Intervals, but watch
+the correspondence between the CI/15-values and the Ink-Density for Black:
+This is a linear distribution in the Ink-domain.
+
+Not a bad idea, I think. Consider the fs2-algorithm: It uses values in
+the range 0-255 (Bytes). If any transfer-array would be supplied alone,
+some of the 256 possible values would never be used and others will be
+used for adjacent intervals several times. Establishing an identical
+coding-array solves this problem, so that the full potential of the
+algorithm is utilized.
+
+Another useful feature of the coding-arrays is, that they are internally
+normalized to the 0-1 Range. In the 720x720Dpi-Mode the transfer-arrays
+in stcolor.ps limit the Dot-Density to about 50%, thus this arrays end
+at 0.5 (respectively start at 0.5 in the RGB-case). Due to the automatic
+normalization this arrays can be used as coding-arrays too. But of course
+in the fs2-case mentioned above, values from 0-127 will never be delivered
+to the algorithm, while values 128-255 are delivered for adjacent intervals.
+
+To clearify the intended use of the three parameters/parameter-groups the
+following statements should be kept in mind:
+
+- ColorAdjustMatrix is never used, when transferring gray-values. This
+  restricts it to what the name says: Adjustment of Colors e.g. the
+  correction for miscolored ink. Do not use it for saturation or
+  brightness-control.
+
+- ?transfer-arrays control the values delivered to the driver, which in
+  turn controls the ink-quantity. This arrays should be used for control
+  of saturation and brightness. Maybe that a Postscript-Header for the
+  manipulation of brightness and so on will be provided with future
+  versions. In general this arrays are identical for all inks.
+  If they differ they provide a simpler scheme for color-correction,
+  which is not necessarily faster than the ColorAdjustMatrix.
+
+- ?coding-arrays control the color-value-intervals mapped to
+  the internal color-indices.
+
+P R I N T - M O D I
+===================
+
+The parameters "Unidirectional", "Microweave", "noWeave",
+"OutputCode", "Model" and the given resolution provide control over the
+data generated for the printer.
+
+Unidirectional
+--------------
+Simply toggles the unidirectional-mode of the printer. Setting "Unidirectional"
+definitely decreases printing-speed, but may increase the quality. I use
+this for printing tranparencies, where fast head-movement could smear the ink.
+
+Microweave, noWeave and OutputCode=deltarow
+-------------------------------------------
+The first are two Booleans, what immediately tells, that 4 combinations are
+possible. Actually only three exist (if you don't count for deltarow):
+
+     1. Softweave
+     2. Microweave
+     3. noWeave
+
+First and second are functionally identical, their difference is that either
+the driver or the printer does the job. So the question
+
+            What is weaving ?
+
+arises. The Epson Stylus Color has a Head-Assembly that contains two physically
+identifiable Heads. One for Black and one for Cyan/Magenta/Yellow. This
+makes 4 logical Heads, one for each color-component. Each of this four heads
+has several jets at some Y-distance, so several horizontal lines can be printed
+during one pass of the heads. From the experience I think there are 15 Jets
+per color spaced at 1/90".
+
+So the question arises, how to print at a Y-Resolution of 360Dpi with this
+90DpI-Jets. Simply by division, one gets 360/90 = 4, what tells us, that
+4 Passes of the head-assembly are required to achieve a Y-resolution of
+360DpI. Weaving is just the scheme how the 15 jets are utilized to print
+adjacent horizontal rows:
+
+                    Weaving                   noWeave
+    Pass:     1     2     3     4       1     2     3     4
+    0/360"   jet0   -     -     -      jet0   -     -     -
+    1/360"    -    jet1   -     -       -    jet0   -     -
+    2/360"    -     -    jet2   -       -     -    jet0   -
+    3/360"    -     -     -    jet3     -     -     -    jet0
+    4/360"   jet1   -     -     -      jet1   -     -     -
+    5/360"    -    jet2   -     -       -    jet1   -     -
+    6/360"    -     -    jet3   -       -     -    jet1   -
+    ....
+
+Now let us assume, that the dot-diameter is different for each individual
+jet, but the average among the jets matches the desired resolution. With
+weaving adjacent rows are printed by different jets, thus the some averaging
+takes place. Without weaving adjacent rows are printed by the same jet and
+this makes the dot-diameter-deviations visible as 1/90"-stripes in the printout.
+
+In Softweave-Mode (the default) the driver sends the data properly arranged to
+the printer, while in Microweave-Mode the printer does the same job. But in
+general the host-processor is much faster than the printers processor and
+thus it is advantageous to let the host do this job. In addition to that, for
+720DpI 8 Passes are required and the amount of buffer-space required to buffer
+the data for the passes is far beyond the printers memory. Softweave requires
+an odd value of "escp_Band", the Stylus Color provides 15 for that.
+
+"OutputCode" controls the encoding used. In the basic modi, the choice consists
+of "plain" and "runlength". The computation of runlength-encoded data does not
+take much time, at least less than the data tranfer to the printer, thus this
+is the recommended mode and of course the default. With the Stylus Color
+Epson introduced some new encoding principles, namely "tiff" and "deltarow".
+While the first was omitted from this driver, since there were not potential
+advantages found, "deltarow" is available as an option. "Softweave" cannot
+be used with this encoding, so if "OutputCode=deltarow" is set, Microweave
+becomes the default. Maybe that the size of the ESC/P2-code becomes smaller,
+but I have never observed increased printing-speed - things tend to become
+slower with deltarow compared to Softweave.
+
+Model
+-----
+Some ESC/P2-Printers, such as the Stylus 800, do not offer Microweave or
+the commands required to do Softweave. Setting Model just changes the defaults
+and omits some parts of the initialization-sequence, which are not compatible
+with the given printer model. Currently only "st800" is supported besides the
+default (stcolor).
+
+
+BEWARE: BUGS & PITFALLS
+=======================
+
+* The given ?coding and ?transfer arrays should be strictly monotonic.
+
+* It is impossible to change WHITE: that's your paper.
+  Thus R/G/B-transfer should end at 1.0 and C/M/Y/K-transfer should
+  start at 0.0.
+
+* Usually 8Bits per component yields fastest operation.
+
+* The ColorAdjustMatrix is not used in the reverse-transformation, which
+  is used, when Ghostscript does the dithering (gs*-Modi). Expect funny
+  results.
+
+* If BitsPerPixel is less than 6, the entire coding/transfer-process
+  does not work. This is always true for the gs*-modi and becomes true
+  for the other modi, if BitsPerPixel is forced to low values.
+
+* 720x720Dpi-Printing should never select the gs-modi and should always
+  use stcolor.ps. (I prefer 360x720)
+
+T E S T S (version 1.13 and above)
+==================================
+
+This section should give an overview over the performance in terms of
+processing- & printing-time. Printing is done offline (via cp-instruction)
+to measure real printing-speed, since at high-resolutions processing-time
+is in the same order of magnitude and thus may become the limiting factor.
+
+The various OutputCodes
+-----------------------
+
+I ran several files though ghostscript and recorded the size of the code,
+the processing time and the printing-time, at least for some of the files.
+Always the following options were used:
+
+      "-sDEVICE=stcolor -sPAPERSIZE=a4 stcolor.ps - < file.ps"
+
+(Actually "-sPAPERSIZE=a4" is in my gs_init.ps since I'm a germ.)
+
+"Softweave" means actually, that nothing else was used, it is the default and
+implies that odd v=40/h=10/m=15 mode (ESC . 1 40 10 15).
+
+"Microweave" is just "-dMicroweave", which is equivalent to "ESC . 1 10 10 1",
+with full skip-optimization and microweave-activated.
+
+"deltarow" is the new encoding principle ("ESC . 3 10 10 1") with Microweave on.
+It is activated with "-sOutputCode=deltarow".
+
+Finally I wanted to see the plain Kathy Ireland and used "-sOutputCode=plain",
+which is just replacing RLE by no encoding, thus "ESC . 0 40 10 15" is
+used then.
+[So sorry ;-)  Kathy was still blue dressed in front of the blue sea on a blue
+air-cushion - nice to see but hard to dither]
+
+So here are the results:
+
+              golfer.ps    colorcir.ps      drawing.ps        brief.ps
+
+deltarow   572751/48.180u 643374/41.690u  90142/46.180u/1:50 178563/49.350u/2:22
+Softweave  559593/46.810u 669966/44.960u 296168/48.160u/1:30 269808/43.320u/1:55
+Microweave 590999/56.060u 754276/42.890u 338885/47.060u/1:50 282314/44.690u/2:22
+
+               kathy.ps
+deltarow   3975334/111.940u/5:35
+Softweave  3897112/101.940u/3:10
+Microweave 4062829/100.990u/3:15
+plain/soft 5072255/104.390u/3:05
+
+Evaluation:
+
+A.) Might be, that I've not chosen the optimal deltarow-code, but even if
+    it saves at lot of bytes, printing-speed is not increased.
+
+B.) At least the printer prefers plain-kathy. In other words: Sending a
+    1 Megabyte or 20% more data, has no impact on printing speed.
+    [drawing.ps is an exception to this rule: plain prints slower than rle]
+
+C.) But "unclever" coding -especially with deltarow- can significantly
+    slows down printing. But even if very significant advantages in the
+    size of the code ar achieved, "deltarow" is not competitive.
+    [colorcir.ps shows savings in deltarow, but printing is a mess.]
+
+
+Printing-Time related to other options
+--------------------------------------
+
+Full page halftone images printed, unless otherwise noted.
+
+  DpI      print-mode    Size   Time comments
+180x180 mono      -/uni  358KB  1:15
+                  -/bi   358KB  0:45
+              micro/bi   205KB  0:45 (not weaving)
+               soft/bi   179KB  1:25
+        color     -/bi   641KB  2:45
+               soft/bi   556KB  1:32
+
+360x360 mono      -/uni  269KB  0:50 (b/w Text)
+                  -/bi   269KB  0:35 (b/w Text)
+              micro/bi   269KB  2:25 (b/w Text)
+               soft/uni  250KB  3:15 (b/w Text)
+               soft/bi   250KB  1:55 (b/w Text)
+        color     -/bi   346KB  1:00 (sparse color-page, visible displacements)
+              micro/bi   346KB  1:50 (sparse color-page, looks buggy - printer?)
+               soft/bi   294KB  1:30 (sparse color-page, O.K.)
+                  -/bi  2218KB  2:45 (visible stripes)
+              micro/bi  5171KB  3:17
+               soft/bi  3675KB  3:05
+
+360x720 mono   soft/bi  2761KB  5:40
+        color  soft/bi  7789KB  6:15 (just a small difference!)
+
+720x360 color  soft/bi  7182KB  5:40
+
+720x720 color micro/bi 14748KB 30:26 (actually beyond printers capabilities)
+               soft/bi 14407KB 11:08
+### ------------------------------ End --------------------------------- ###
+
+### ------------ uniprint - an unified (?)  printer driver ------------- ###
+
+uniprint -- ESC/P, ESC/P2 and PCL/RTL-Driver by Gunther Hess gunther@elmos.de
+=============================================================================
+
+This driver is intended to _become_ a unified printer driver. If you
+consider it ugly, please send me your suggestions for improvements. The
+driver will be updated with them. Thus the full explanation of the drivers
+name is:
+
+            Ugly- -> Updated- -> Unified-Printer-Driver
+
+But probably you want to know, something about the functionality:
+At the time of this writing uniprint drives:
+
+  NEC Pinwriter P2X (24Pin B/W Impact printer, ESC/P-Style)
+  Several Epson Stylus Color Models (ESC/P2-Style)
+  HP-Deskjet 550c (Basic HP-RTL)
+  Canon BJC 610
+
+It can be configured for various other printers _without_ recompilation
+and offers uncompressed (== ugly) SUN-Rasterfiles as another format, but
+this format is intended for testing purposes rather than real use.
+
+The usage of this driver is quite simple, the typical command line looks
+like this:
+
+   gs @MODEL.upp -sOutputFile=PRINT_FILE POSTSCRIPT_FILE -c quit
+
+with MODEL, PRINT_FILE and POSTSCRIPT_FILE replaced by actual filenames
+as in the following example from my Linux-Box:
+
+      gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
+
+There are several Unified-Printer-Parameterfiles (.upp) distributed
+with Ghostscript:
+
+  bjc610a0 - Canon BJC 610, 360x360DpI, plain paper high speed, color, rendered
+  bjc610a1 - Canon BJC 610, 360x360DpI, plain paper, color, rendered
+  bjc610a2 - Canon BJC 610, 360x360DpI, coated paper, color, rendered
+  bjc610a3 - Canon BJC 610, 360x360DpI, transparency film, color, rendered
+  bjc610a4 - Canon BJC 610, 360x360DpI, back print film, color, rendered
+  bjc610a5 - Canon BJC 610, 360x360DpI, fabric sheet, color, rendered
+  bjc610a6 - Canon BJC 610, 360x360DpI, glossy paper, color, rendered
+  bjc610a7 - Canon BJC 610, 360x360DpI, high gloss film, color, rendered
+  bjc610a8 - Canon BJC 610, 360x360DpI, high resolution paper, color, rendered
+
+  bjc610b1 - Canon BJC 610, 720x720DpI, plain paper, color, rendered
+  bjc610b2 - Canon BJC 610, 720x720DpI, coated paper, color, rendered
+  bjc610b3 - Canon BJC 610, 720x720DpI, transparency film, color, rendered
+  bjc610b4 - Canon BJC 610, 720x720DpI, back print film, color, rendered
+  bjc610b6 - Canon BJC 610, 720x720DpI, glossy paper, color, rendered
+  bjc610b8 - Canon BJC 610, 720x720DpI, high resolution paper, color, rendered
+
+  cdj550   - HP Deskjet 550C, 300DpI, 32Bit-CMYK
+
+  necp2x   - NEC P2X at 360x360DpI, 8Bit (Floyd-Steinberg)
+
+  stcany   - Any Epson Stylus Color, 360x360DpI, 4Bit, POSTSCRIPT-Halftoning
+
+           The next group is suitable for Original Stylus & Stylus Pro.
+  stc      - Epson Stylus Color, 360x360DpI, 32Bit-CMYK, 15 Pin
+  stc_l    - ditto, but 360x360DpI, 4Bit, POSTSCRIPT-Halftoning, Weaved noWeave
+  stc_h    - ditto, but 720x720DpI, 32Bit-CMYK, 15 Pin Weave
+
+  stc2     - Epson Stylus Color II(s), 360x360DpI, 32Bit-CMYK, 20Pin
+  stc2_h   - Epson Stylus Color II,    720x720DpI, 32Bit-CMYK, 20Pin
+  stc2s_h  - Epson Stylus Color IIs,   720x720DpI, 32Bit-CMYK, 20Pin
+
+           Thanks to Mark Goldberg, the following two are known to have
+           good transfer-curves for plain-paper.
+  stc500p  - Espon Stylus Color 500, 360DpI, 32Bit-CMYK, noWeave, plain paper
+  stc500ph - ditto, 720x720DpI, 32Bit-CMYK, noWeave, plain paper
+
+           The Stylus Color 600 does 32/90"-Weaving
+  stc600pl - Epson Stylus Color 800, 360DpI, 32Bit-CMYK, 32 Pin, plain paper
+  stc600p  - Epson Stylus Color 800, 720DpI, 32Bit-CMYK, 32 Pin, plain paper 
+  stc600ih - Epson Stylus Color 800, 1440DpI 32Bit-CMYK, 30 Pin, inkjet paper 
+
+           The Stylus Color 800 does 64/180"-Weaving
+  stc800pl - Epson Stylus Color 800, 360DpI, 32Bit-CMYK, 64 Pin, plain paper
+  stc800p  - Epson Stylus Color 800, 720DpI, 32Bit-CMYK, 64 Pin, plain paper 
+  stc800ih - Epson Stylus Color 800, 1440DpI 32Bit-CMYK, 62 Pin, inkjet paper 
+
+  ras1     - SUN rasterfile,        1Bit, monochrome (Ghostscript)
+  ras8m    - SUN rasterfile,        8Bit, grayscale  (Floyd-Steinberg)
+
+  ras3     - SUN rasterfile,        3Bit, RGB        (Ghostscript)
+  ras24    - SUN rasterfile,       24Bit, RGB        (Floyd-Steinberg)
+
+  ras4     - SUN rasterfile,        4Bit, CMYK       (Ghostscript)
+  ras32    - SUN rasterfile,       32Bit, CMYK       (CMYK-Floyd-Steinberg)
+
+There may be more parameter files available. I am trying to keep them together
+with the latest version of the driver-sources and some additional stuff at:
+
+   http://www-md.e-technik.uni-rostock.de/ma/gunther/gs/index.html
+
+At the time of this writing (21-Sep-1997) the contents of the website is 
+outdated, but i still live in the hope to update it. I am becoming 42 in
+November, Thus all answers might be available on the web then.
+
+Please note the following:
+
+   - Changing the resolution via the -r-Parameter of Ghostscript is
+     usually _not_ possible.
+
+   - For Epson Stylus Color Models not listed above, the two stc500-Variants
+     are likely to work besides stcany, but the Gamma-Correction might be wrong.
+
+A few notes on the state of this driver
+=======================================
+
+The coding of uniprint was triggered by the requirements of the various
+Stylus Color models and some personal needs for HP- and NEC-Drivers. Thus
+the Epson-Models are well represented among the distributed Parameter-Files.
+When this driver entered the beta testphase, three other drivers appreared on
+the scene, that could/should at least partially integrated into uniprint:
+
+    cdj850 by Uli Wortmann       (available via ftp://bonk.ethz.ch)
+    hpdj      by Martin Lottermoser
+    bjc610    by Helmut Riegler
+
+Uli addresses features of the more recent Deskjet-Models, that will not be 
+available in uniprint soon. Martin taught me a lesson on HP-PCL3-Headers,
+that will be available in uniprint soon. Helmut in turn followed an almost
+similar idea, but targetted primarily for printing on Canon-Printers from
+the pbmplus-Library. Starting with Version 1.68 of uniprint, the bjc-support
+is available. The work on the hpdj-Integration will start after the update of
+my website.
+
+A few notes on the uniprint-background
+======================================
+
+Uniprint is actually an update of stcolor, but much more versatile than
+its predecessor. Stcolor in turn started as a clone of the Color-Deskjet
+family of drivers (cdj*). Finally cdj* can be considered as an addition
+of features to the simpler Monochrome-Drivers of Ghostscript. This
+addition of features is useful to get an idea of the functionality of
+uniprint:
+
+1.   Monochrome -> advanced Color (cdj*):
+     This adds color-mapping and rendering-functions to the driver.
+     Especially the Error-Diffusion is important for the printout quality.
+
+2.1. HP-Color -> Epson-Color (stcolor)
+     The Epson Stylus Color offered two features simultaneously: It could
+     produce 720x720Dpi-Output and it could soak the paper. In other words
+     it required more color-management-features inside the driver. This is
+     still the major conceptual difference in the data-generation
+     for HP- and Epson-Printers.
+
+2.2. Weaving-Techniques      (stcolor)
+     Besides the internal color-management the Stylus Color did not provide
+     enough buffer-space to operate the printer fast at the 720x720DpI.
+     The use of Weaving could yield the triple print-speed. Weaving, also
+     called interleaving, is present in some monochrome-drivers too. The new
+     thing in stcolor was the combination with Error-Diffusion. Unfortunately
+     the weaving was somehow hardcoded, as the problems with the newer 
+     members of the Stylus Color family of printers demonstrated.
+
+3.   Generalized Output-Format and Weaving (uniprint)
+     The features mentioned above yielded about 90% of stolors source-code,
+     only 10% were related to the formatting of the output. The idea to
+     make the Output-Format switchable came up soon after completing
+     stcolor. But the final design of uniprint became triggered by the
+     (personal) necessity to drive a NEC-P2X and a Designjet 750c. (If
+     you are missing the dnj750-parameter-file: a temporary version will
+     be available soon, but a reasonable one requires some additions to
+     uniprint, which will take some time.)
+
+Thus uniprint accumulates almost any features, that can be found among
+the printer drivers. Clearly this has some disadvantages in terms of
+processing speed. This is still true for the current version (1.75),
+since it is targetted for the functionality and several speed-gaining
+features were (willingly) omitted.
+
+To summarize and to introduce the terms used in the description of the
+Parameters, the features of uniprint, that can be parameterized are:
+
+ 1. The Color-Mapping
+ 2. The Color-Renderining (alias Error-Diffusion or Floyd-Steinberg)
+ 3. The Output-Format, including
+ 4. The Weaving
+
+And the Parameters used for that are:
+
+upAbortCommand                upAdjustBottomMarginCommand
+upAdjustMediaSizeCommand      upAdjustPageLengthCommand
+upAdjustPageWidthCommand      upAdjustTopMarginCommand
+upAdjustResolutionCommand     upBeginJobCommand
+upBeginPageCommand            upBlackTransfer
+upBlueTransfer                upColorInfo
+upColorModel                  upColorModelInitialized
+upComponentBits               upComponentShift
+upCyanTransfer                upEndJobCommand
+upEndPageCommand              upErrorDetected
+upFSFixedDirection            upFSProcessWhiteSpace
+upFSReverseDirection          upFSZeroInit
+upFormatXabsolute             upFormatYabsolute
+upGreenTransfer               upMagentaTransfer
+upMargins                     upModel
+upOutputAborted               upOutputBuffers
+upOutputComponentOrder        upOutputComponents
+upOutputFormat                upOutputFormatInitialized
+upOutputHeight                upOutputPins
+upOutputWidth                 upOutputXOffset
+upOutputXStep                 upOutputYOffset
+upOutputYStep                 upRasterBufferInitialized
+upRedTransfer                 upRendering
+upRenderingInitialized        upSelectComponentCommands
+upSetLineFeedCommand          upVersion
+upWeaveFinalPins              upWeaveFinalScan
+upWeaveFinalXStarts           upWeaveFinalYFeeds
+upWeaveInitialPins            upWeaveInitialScan
+upWeaveInitialXStarts         upWeaveInitialYFeeds
+upWeavePasses                 upWeaveXPasses
+upWeaveXStarts                upWeaveYFeeds
+upWeaveYOffset                upWeaveYPasses
+upWhiteTransfer               upWriteComponentCommands
+upWroteData                   upXMoveCommand
+upXStepCommand                upYFlip 
+upYMoveCommand                upYStepCommand
+upYellowTransfer
+
+All this Parameters are specific to uniprint. But since the names are
+choosen to be self-explanatory, you can now go ahead and write your 
+own parameterfile ;-).
+
+Godzillas Guide to the Creation of Unified-Printer-Parameterfiles
+=================================================================
+
+Learning by example might be a good idea, thus here is one of the
+distributed parameter files (stc_l.upp) with some added "--"-Comments:
+
+ -supModel="Epson Stylus Color I (and PRO Series), 360x360DpI, noWeave"
+ -sDEVICE=uniprint                    -- Select the Driver
+ -dNOPAUSE                            -- Useful with Printers
+ -dSAFER                              -- Provides some Security
+ -dupColorModel=/DeviceCMYK           -- Selects the Color-Mapping
+ -dupRendering=/ErrorDiffusion        -- Selects the Color-Rendering
+ -dupOutputFormat=/EscP2              -- Selects the Output-Format
+ -r360x360                            -- Adjusts the Resolution
+ -dupMargins="{ 9.0 39.96 9.0 9.0}"   -- Establishes (L/B/R/T-Margins 1/72")
+ -dupComponentBits="{1 1 1 1}"        -- Map: Bit's Per Component (Default: 8)
+ -dupWeaveYPasses=4                   -- Weave: Y-Passes (Default: 1)
+ -dupOutputPins=15                    -- Format/Weave: Scans per Command
+ -dupBeginPageCommand="<              -- Goes to the Printer (second-data)
+   1b40   1b40                        -- ESC '@' ESC '@'    -> dual reset
+   1b2847 0100 01                     -- ESC '(' 'G' 1 0 1  -> Graphics
+   1b2869 0100 00                     -- ESC '(' 'i' 1 0 1  -> no HW-Weave
+   1b2855 0100 0A                     -- ESC '(' 'U' 1 0 10 -> 360DpI
+   1b5500                             -- ESC 'U'  0         -> Bidir-Print
+   1b2843 0200 0000                   -- ESC '(' 'C' 2 0 xx -> Page-Length
+   1b2863 0400 0000 0000              -- ESC '(' 'c' 4 0 xxxx -> Margins
+ >"                                   -- as it is, unless:
+ -dupAdjustPageLengthCommand          -- Adjust Pagelength in BOP requested
+ -dupAdjustTopMarginCommand           -- Adjust Top-Margin in BOP
+ -dupAdjustBottomMarginCommand        -- Adjust Bottom-Margin in BOP
+ -dupEndPageCommand="(\033@\014)"     -- Last (but one) data to the Printer
+ -dupAbortCommand="(\033@\15\12\12\12\12    Printout-Aborted\15\014)"
+
+That's short, and if one removes the "upWeaveYPasses" and "upOutputPins"
+this becomes shorter and almost "stcany.upp". This miniature-size
+is the result of the fact, that I am most familiar with ESC/P2 and was able
+to add defaults for the omitted parameters.
+
+Just a few notes about the parameters used in this example:
+
+- upModel, is a string serving as a comment (and nothing else)
+
+- DEVICE, NOPAUSE, SAFER are well known Ghostscript-Parameters
+
+- upColorModel, is one of major uniprint-Parameters and selects the
+  color-mapping and in turn the Postscript-ColorModel. The following
+  values are currently supported:
+
+  /DeviceGray,  /DeviceRGBW, /DeviceRGB, /DeviceCMYK, /DeviceCMYKgenerate
+
+- upRendering, is the next major uniprint-Parameter and selects the
+  (Color-) Rendering.  The following values are currently supported:
+
+  /ErrorDiffusion, /FSCMYK32
+
+  The first is similar to fsmono, fsrgb and fsx4 of stcolor, while the 
+  second is (almost) identical to fscmyk/hscmyk, but is restricted to
+  32Bit-Data and should be used in conjunction with /DeviceCMYKgenerate.
+
+- upOutputFormat, is the final major uniprint-Parameter and selects the
+  Output-Method. The following values are currently supported:
+
+  /SunRaster, /Epson, /EscP2, /EscP2XY, /Pcl
+
+  /SunRaster creates the Raster-Files and requires no other Parameters.
+  /Epson     is used for the elderly ESC/P-Format (used by many printers)
+  /EscP2     is used by more recent Epson-printers (no X-Weaving supported)
+  /EscP2XY   supports X-Weaving, used with 1440DpI-Printers and in stc2s_h
+  /Pcl       is the HP-PCL/RTL-Style output-formatter without weaving.
+
+- -r360x360  is the Standard Resolution-Parameter of Ghostscript 
+
+- upMargins="{ 9.0 39.96 9.0 9.0}
+  Has a similar function as the normal Ghostscript-Parameter ".HWMargins",
+  it sets the Left/Bottom/Right/Top-Margins in 1/72" units. Uniprint 
+  provides this parameter to enable automatic L<>R exchange, if upYFlip
+  is active.
+
+- upComponentBits, is an array of integers, that selects the Bits stored
+  in Raster-Memory. The Default is to store 8 Bits per component. In this
+  example 1 Bit is selected for each component, thus turning down the
+  Floyd-Steinberg-Algorithm (But the time consuming computation is
+  still carried out, but this will change in future Versions). There is
+  a related Parameter "upComponentShift", which offers control over the
+  positioning of the components within the raster-memory. Each of the 
+  given numbers corresponds to a component, and which depends on the
+  selected "upColorModel":
+
+     /DeviceGray  /DeviceRGBW /DeviceRGB /DeviceCMYK, /DeviceCMYKgenerate
+  0    White         White       Red       Black         Black
+  1      -            Red       Green       Cyan          Cyan
+  2      -           Green       Blue      Magenta       Magenta
+  3      -            Blue         -       Yellow        Yellow
+
+   This order may not be suitable for some printers, thus there is
+   another Parameter to select the Output-Order. This is an array
+   of integers too, is named "upOutputComponentOrder" and uses the
+   numbers on the left.
+
+One group of very important Parameters, not used in the example above
+deserves to be mentioned here: The Transfer-Arrays, named 
+
+                    "up<color>Transfer"
+
+where <color> is one of the names in the table above. These are arrays
+of floats in the range from 0.0 to 1.0 and represent the colortransfer
+functions. They are used during mapping _and_ rendering. In the simplest
+case, this arrays ensure an equidistant distribution of the stored 
+values within the device-space (Which means a non-linear mapping
+from Ghostscript's point of view). If the given array does not cover 
+the entire range from 0 to 1, which applies for the Stylus Color Family
+at high resolution for some media, only the relevant part gets mapped to
+the raster-memory (thus it is fully utilized) and the rendering takes
+care of the "overhang" (In this case the Post-Diffusion of 1 Bit components
+makes sense).
+
+Finally an important note on the Transfer-Arrays: In the case of monochrome
+devices, the stored Component is White, which is the way Postscript defines
+this devices, but most printers require "Black", thus one has to provide
+a falling "upWhiteTransfer" for such printers.
+
+- upWeaveYPasses, is an integer, that gives the number of printhead passes
+  required to achieve the requested Y-DpI. This makes sense only if
+
+- upOutputPins ist set to something greater than 1, thus multiple Pins/Nozzles
+  are transferred with a single command and of course such a command must
+  be supported by the device.
+
+If no other Weave-Parameters are given, uniprint computes several defaults,
+which altogether do no weaving. The /Epson and /EscP2XY-Formats take care
+of "upWeaveXPasses" too.
+
+- upBeginPageCommand, represents the data transferred to the printer,
+  whenever a new Page begins. Prior to that, the "upBeginJobCommand"
+  is written to the device only once per OutputFile. (Intended for the
+  HP-PJL-Sequences).
+
+- upAdjustBottomMarginCommand, upAdjustMediaSize, upAdjustPageLengthCommand,
+  upAdjustPageWidthCommand, upAdjustResolutionCommand, 
+  upAdjustTopMarginCommand
+  Normally uniprint does not change the "upBeginPageCommand" nor does it
+  provide a default. But if the above boolean values are set, the corresponding
+  values are changed. (Provided that the code of the formatters supports
+  this change and the commands to be adjusted are included in the
+  BOP-String)
+
+- upEndPageCommand is the fixed termination sequence for each page and
+  of course there is a "upEndJobCommand" too.
+
+- "upAbortCommand" is written, if the interrupt-detection in uniprint
+  is enabled and a signal is caught. It _replaces_ the "upEndPageCommand"
+  _and_ the "upEndJobCommand", thus allowing the indication of an
+  aborted job. (Ghostscript gets an error-return from uniprint in this
+  case and abandons further processing.)
+
+For the ESC/P(2) formats all commands represent binary data, while for
+the PCL/RTL-Formatter some of them are formats for fprintf. This strings
+_must_ have explicitly a trailing '\0'.
+
+I should write more, but time is short and the only recommendation is to 
+take a look at the various parameter-files. But at least three more hints
+should be given:
+
+  1. If the Driver rejects a Configuration, nothing happens until a
+     showpage occurs. Then an error is raised and a message with
+     "CALL-REJECTED upd_print_page..." is printed on stderr.
+
+  2. uniprint has lots of messages that can be activated by setting bits
+     in the preprocessor macro UPD_MESSAGES. I usually use the compile-
+     time option -DUPD_MESSAGES=0x17 for Configuration-Development. 
+     (For the semantics, check the UPD_M_... macros in the source.)
+
+  3. There is a file "uninfo.ps" distributed. This file prints (on 
+     the terminal, not on the printer) the contents of the 
+     current-pagedevice-dictionary in alphabetical order. This includes
+     the parameters generated/changed by uniprint.
+
+Quick comments on all Parameters in alphabetical order
+======================================================
+String    upAbortCommand              - End of Page & File upon Interrupt
+Bool      upAdjustBottomMarginCommand - Manipulate B-Marg in upBeginPageCommand
+Bool      upAdjustMediaSize           - Manipulate Mediasize [intended]         
+Bool      upAdjustPageLengthCommand   - Manipulate P-Lngth in upBeginPageCommand
+Bool      upAdjustPageWidthCommand    - Manipulate P-Wdth in upBeginPageCommand
+Bool      upAdjustResolutionCommand   - Manipulate Resolution
+Bool      upAdjustTopMarginCommand    - Manipulate T-Marg in upBeginPageCommand
+String    upBeginJobCommand           - Begin of each OutputFile
+String    upBeginPageCommand          - Begin of each Page
+Float[]   upBlackTransfer             - Black-Transfer (CMKY* only!)
+Float[]   upBlueTransfer              - Blue-Transfer
+Int[]     upColorInfo                 - struct gx_device_color_info
+Name      upColorModel                - Selects Color-Mapping
+Bool/RO   upColorModelInitialized     - Color-Mapping O.K. (readonly)
+Int[]     upComponentBits             - Bits stored per Component
+Int[]     upComponentShift            - Positioning within gx_color_index
+Float[]   upCyanTransfer              - Cyan-Transfer
+String    upEndJobCommand             - End of each File unless upAbortCommand
+String    upEndPageCommand            - End of each Page unless upAbortCommand
+Bool/RO   upErrorDetected             - Severe (VM) Error, not fully operational
+Bool      upFSFixedDirection          - Inhbits Direction-Toggling in Rendering
+Bool      upFSProcessWhiteSpace       - Causes White-Space Rendering
+Bool      upFSReverseDirection        - Run Rendering in Reverse (if fixed)
+Bool      upFSZeroInit                - Non-Random Rendering-Initialization
+Bool      upFormatXabsolute           - Write absolute X-Coordinates
+Bool      upFormatYabsolute           - Write absolute Y-Coordinates
+Float[]   upGreenTransfer             - Green-Transfer
+Float[]   upMagentaTransfer           - Magenta-Transfer
+Float[]   upMargins                   - L/B/R/T-Margins in 1/72"
+String    upModel                     - Comment-String, holds some info
+Bool/RO   upOutputAborted             - Caught an Interrupt
+Int       upOutputBuffers             - # of Rendering buffers (2^n) 
+Int[]     upOutputComponentOrder      - Order of Comps when Printing
+Int       upOutputComponents          - # written Comps, not fully operational
+Name      upOutputFormat              - Selects Output-Format
+Bool/RO   upOutputFormatInitialized   - Format-Data o.k. (readonly)
+Int       upOutputHeight              - Output-Height in Pixels
+Int       upOutputPins                - # Pins/Nozzles per command
+Int       upOutputWidth               - Output Width in Pixels
+Int       upOutputXOffset             - Offset in Pixels, if upFormatXabsolute
+Int       upOutputXStep               - Divisor / Multiplier for X-Coords
+Int       upOutputYOffset             - Offset in Pixels, if upFormatYabsolute
+Int       upOutputYStep               - Divisor / Multiplier for Y-Coords 
+Bool/RO   upRasterBufferInitialized   - GS-Buffer o.k. (readonly)
+Float[]   upRedTransfer               - Red-Transfer
+Name      upRendering                 - Selects Rendering Algorithm
+Bool/RO   upRenderingInitialized      - Rendering-Parameters o.k. (readonly)
+String[]  upSelectComponentCommands   - Establishes Color (Output-Order!)
+String    upSetLineFeedCommand        - Adjust Linefeed (/Epson only)
+String/RO upVersion                   - Source code Version (readonly)
+Int[]     upWeaveFinalPins            - # of Bottom pins on EOP-Passes
+Int       upWeaveFinalScan            - Begin of EOP-Passes (Y-coord)
+Int[]     upWeaveFinalXStarts         - X-Pass indices for EOP-Passes
+Int[]     upWeaveFinalYFeeds          - Y-Increments for EOP-Passes
+Int[]     upWeaveInitialPins          - # of Top pins on BOP-Passes
+Int       upWeaveInitialScan          - End of BOP-Passes (Y-Coord)
+Int[]     upWeaveInitialXStarts       - X-Pass indices for BOP-Passes
+int[]     upWeaveInitialYFeeds        - Y-Increments for BOP-Passes
+Int       upWeavePasses               - XPasses * YPasses
+Int       upWeaveXPasses              - Number of X-Passes 
+Int[]     upWeaveXStarts              - X-Pass indices for normal Passes
+Int[]     upWeaveYFeeds               - Y-Increments for normal Passes
+Int       upWeaveYOffset              - # of blank/incomplete scans at BOP
+Int       upWeaveYPasses              - Number of X-Passes
+Float[]   upWhiteTransfer             - White Transfer (Monochrome Devices!)
+String[]  upWriteComponentCommands    - Commands to write each component
+Bool/RO   upWroteData                 - Something (BeginJob) written to Output
+String    upXMoveCommand              - X-Positioning-command
+String    upXStepCommand              - Single Step to the right
+Bool      upYFlip                     - Flips Output along the Y-Axis
+String    upYMoveCommand              - Y-Positioning-Command
+String    upYStepCommand              - Single Step down
+Float[]   upYellowTransfer            - Yellow Transfer
+
+Uniprint's Roll of Honor
+========================
+
+I should mention all of the people, who were involved in stcolors
+evolution, but I've decided to start from scratch here:
+
+John P. Beale      - for testing the stc600-modi
+Bill Davidson      - who triggered some weaving-research (and tested stc2s_h)
+L. Peter Deutsch   - who triggered an ease of configuration
+Mark Goldberg      - who prepared the stc500-Transfers
+Scott F. Johnston   and
+Scott J. Kramer    - for testing the stc800-modi
+Martin Lottermoser - for his great commented hpdj-driver 
+Helmut Riegler     - for the BJC-Extension
+Hans-Gerd Straeter - for some measured transfer-curves and more
+Uli Wortmann       - for discussions and his cdj850-driver
+
+my family          - for tolerating my printer-driver-hacking,
+
+Duisburg 21-Sep-1997, Gunther Hess
+
+Gunther Hess                  phone: ++49 203 376273 (MET-evening hours)
+Richard Wagner Strasse 112    E-Mail:  gunther@elmos.de
+D-47057 Duisburg
+Germany
+
+### ------------------------------ End --------------------------------- ###
+
+### -- The BJC-600/BJC-4000/BJC-70/Stylewriter 2x00, BJC-800 printers -- ###
+
+This section was written by Yves Arrouye <Yves.Arrouye@marin.fdn.fr>.
+
+
+HISTORY
+-------
+
+The BJC-600 driver was written in the first place by Yoshio Kuniyoshi
+<yoshio@nak.math.keio.ac.jp> and later modified by me, Yves Arrouye
+<Yves.Arrouye@marin.fdn.fr>. We both tried to make it evolve synchronously,
+though Yoshio cannot be reached since a long time.
+
+The drivers are based on code for the HP printers by George Cameron
+<g.cameron@biomed.abdn.ac.uk> (in fact, they are in the same file!),
+so he's the first person to thank!
+
+The 2.00 version of the drivers was a complete rewrite of the driver
+(arguments, optimization, colour handling, in short: everything!) by
+Yves Arrouye. The 2.x release is also the first one to be able to
+use the full width of an A3 paper size...
+
+With the 2.15 release, PostScript Printer Description (PPD) files for
+the drivers are released. They are not complete at the moment but they
+can be used to drive the printers' main features.
+
+VERSION INFORMATION
+-------------------
+
+The BJC-600 driver is version 2.17.00 dated 5/23/96.
+The BJC-800 driver is version 2.17.00 dated 5/23/96.
+
+
+COMPILATION NOTES
+-----------------
+
+Configuration
+-------------
+
+* Default values for options and other stuff
+
+Configuration for the drivers can be made by modifying default values
+in the file gdevbjc.h or on the compilation line. If you don't do
+that, the drivers use reasonable defaults that make them work "as
+expected".
+  All default values given below are defined in this file if you need
+to change them to customize your installation (a bad idea, better use
+options...).
+
+* CMYK to RGB color conversion
+
+By default, the drivers use the same algorithm as Ghostscript to
+convert CMYK colors to RGB. If you prefer to use Adobe formulaes,
+define USE_ADOBE_CMYK_RGB when compiling. (See the top of the
+gdevcdj.c file to see the difference between the two.)
+
+* Vertical centering of the printable area
+
+The drivers center the imageable area horizontally, but not vertically
+so that what can be printed does use the most of the output media. If
+you define BJC_DEFAULT_CENTEREDAREA when compiling, then the top and
+bottom margins will be the same, resulting in a (smaller) vertically
+centered imageable area too.
+
+* Margins
+
+If you define USE_RECOMMENDED_MARGINS then the top and bottom margins
+will be the same (i.e. BJC_DEFAULT_CENTEREDAREA will be defined for
+you) and these margins will be those recommended by Canon, 12.4 mm.
+  Because margins are a complicated thing (due to the fact that one
+does rely on the mechanical precision of the printer), the drivers do
+something about the bottom margin: by default the bottom margin is
+9.54 mm for the bjc600 driver and 7 mm for the bjc800 one. If you
+define USE_TIGHT_MARGINS then the bottom margin is 7 mm for both
+drivers (but I never managed to get my own bjc600 print a line on this
+low bound, hence the greater default). Regardless of the presence of
+this define, USE_FIXED_MARGINS will not allow the bjc800 to use the
+lower 7 mm bottom margin, so if you have a problem with the bottom
+margin on a bjc800, just define that (without defining USE_TIGHT_MARGINS,
+of course).
+
+Compilation
+-----------
+
+Make sure the bjc600 and/or bjc800 devices are in your DEVICE_DEVS
+variable. That is look in the makefile for your platform and add them
+if necessary. This means for example adding them to the DEVICE_DEVS6
+variable. The line should read something like that:
+
+    DEVICE_DEVS6=bj10e.dev bj200.dev bjc600.dev bjc800.dev
+
+Now if you get an error from make saying that it does not know how to
+make bjc800.dev it's because you have an old makefile with only the
+bjc600 device in it. You then have to copy the lines explaining how to
+make bjc800.dev in your makefile. These lines are in devs.mak (under
+the lines for making bjc600.dev) and should go just after the lines
+for making bjc600.dev.
+
+Testing the margins
+-------------------
+
+A quick way to be sure that the margins you selected (see above) are
+okay is to print a file whose contents are:
+
+      %!
+      clippath stroke showpage
+
+If the margins are okay, you will obtain a rectangle surrounding the
+printable area.
+
+USE OF THE DRIVERS
+------------------
+
+There are two drivers here: the "bjc600" one supports the BJC-600 and
+BJC-4000 (maybe the BJC-70 as well) and the "bjc800" one supports the
+BJC-800 series. When remarks here apply to both drivers, the name
+"bjc" will be used.
+
+Supported Options and Defaults
+------------------------------
+
+(Note: the names "options", "properties" and "parameters" will be used
+to designate the same thing: device parameters that you can change.)
+
+Preamble: if an option is given an incorrect value, an error will
+occur. Unless stated otherwise, this error will be a rangecheckerror.
+  Options may be set from the gs command-line (using the -d and -s
+switches or other predetermined switches if they have an effect on the
+driver) or using the setpagedevice Level 2 operator if Ghostscript has
+been compiled with the level2 device (it should ;-)). There are *no*
+special-purpose operators as one was able to find in Level 1 printers.
+
+The default number of bits per pixel for the bjc is 24 (unless you
+change the value of BJC_BITSPERPIXEL) and corresponds to a CMYK
+printing. Supported modes are 1 bpp and 4 bpp (gray levels), 8 bpp, 16
+bpp, 24 bpp and 32 bpp (colours). Colours are preferrably stored in
+the CMYK model (which means that with 16 bpp there are only 16
+different shades of each color, for example) but it is possible to
+store them as RGB color for some depths.
+  Some modes do Floyd-Steinberg dithering while some others don't and
+use the default Ghostscript halftoning (in fact, when halftoning is used
+dithering takes also place but due to the low point density it is
+usually not efficient and thus invisible).
+
+Here is a short description of each printing mode (expressed in
+bpp/colors):
+
+  32/4  CMYK Colour printing, Floyd-Steinberg dithering.
+  24/4	Id. (But each primary colour is stored on 6 bits instead of 8.)
+
+  24/3  RGB colour printing, Floyd-Steinberg dithering. This mode will
+        *not* use the black cartridge (that's why it exists, for when you
+        don't want to use it ;-)). Each primary colour is stored on 8
+        bits as in the 32/4 mode, but black generation and under-color
+        removal are done on the driver side and not by Ghostscript so you
+        do not have any control on it. (This mode is not supported anymore
+        on this driver.)
+
+  16/4  CMYK colour printing, halftoned by Ghostscript. FS dithering
+        is still visible here (but the halftone patterns are visible
+        too!).
+
+  8/4	Id. (But each primary colour is stored on 2 bits instead of 4.)
+
+  8/3   RGB colour printing. This mode is not intended to be
+        used. What I mean is that it should be used only if you 
+	want to use custom halftone screens *and* the halftoning is
+	broken using the 8/4 mode (some versions of gs have this
+	problem).
+
+  8/1	Gray-levels printing, Floyd-Steinberg dithering.
+
+  1/1	Gray-levels printing, halftoned by GhostScript.
+
+These modes are selected using the BitsPerPixel *and* Colors integers
+options (either from the command line or in a PostScript program using
+setpagedevice). See below.
+
+A note about darkness of what is printed: Canon printers do print dark,
+really. And the Floyd-Steinberg dithering may eventually darken your image
+too. So you may need to apply gamma correction by calling gs as in
+
+  % gs -sDEVICE=bjc600 gamma.ps myfile.ps
+
+where gamma.ps changes the gamma correction (here to 3 for all colors):
+
+  { 0.45 exp } dup dup currenttransfer setcolortransfer
+
+(0.45 being value giving good results for me, your mileage may vary;
+the bigger the value the lighter the output).
+
+The drivers support printing at 90 dpi, 180 dpi and 360 dpi. Horizontal and
+vertical resolutions must be the same or a limitcheck error will happen. A
+rangecheck will happen too if the resolution is not 90 * 2**n. (If the
+driver is compiled with -DBJC_STRICT a rangecheck will also happen if
+the resolution is not one of those supported. This is not the case as we
+expect that there may be a 720 dpi bjc someday).
+
+Here are the various options supported by the bjc drivers, along with
+their type, supported values, effect(s) and usage:
+
+  BitsPerPixel (int)	Choose the depth of the page. Valid values are
+			1, 8, 16, 24 and 32. Default is 24.
+			  Note that when this is set for the first
+			time, the Colors property is automatically
+			adjusted unless it is also specified. Defaults
+			adjustments are show in the table below,
+			default choices are indicated by a star (*).
+			  This table gives also the corresponding
+			color models and the rendering method that is
+			visible (GS means Ghostscript halftoning, FS
+			Floyd-Steinberg dithering, and if both are
+			present it means that the dithering of
+			halftones is visible).
+
+			+-----+--------+---+----------+-------+
+			| Bpp | Colors | * | C. Model | Dith. |
+			+-----+--------+---+----------+-------+
+			|  32 |      4 |   | CMYK     |    FS |
+			+-----+--------+---+----------+-------+
+			|  24 |      4 | * | CMYK     |    FS |
+			|     |      3 |   | RGB      |    FS |
+			+-----+--------+---+----------+-------+
+			|  16 |      4 |   | CMYK     | GS FS |
+			+-----+--------+---+----------+-------+
+			|   8 |      4 | * | CMYK     | GS    |
+			|     |      3 |   | RGB      | GS    |
+			|     |      1 |   | K (CMYK) |    FS |
+			+-----+--------+---+----------+-------+
+			|   1 |      1 | * | K (CMYK) | GS    |
+			+-----+--------+---+----------+-------+
+
+			    Valid Colors values for allowed
+			         BitsPerPixel values.
+
+			  Also note that automagical change of one
+			parameter depending on the other one does not
+			work in a setpagedevice call. This means that
+			if you want to change BitsPerPixel to a value
+			whose valid Colors values do not include the
+			actual Colors value, you must change Colors
+			too.
+
+  Colors (int)		Choose the number of color components. Valid
+			values are 1, 3 and 4. Default is 4.
+			  This setting cannot be used in a PostScript
+			program, only on Ghostscript's command-line.
+			See ProcessColorModel below for what to use to
+			change the number of colors with PostScript
+			code.
+			  Note that setting this property does limit
+			the choices of BitsPerPixel. As for the
+			previous property, its first setting may
+			induce a setting of the "other value" (namely
+			BitsPerPixel, here). Valid combinations are
+			shown in the table below (XX indicates that
+			the combination is valid, ** that this is the
+			default).
+
+			+--------+------+------------------------+
+			|        |      | BitsPerPixel ok values |
+			| Colors | Type +----+----+----+----+----+
+			|        |      | 32 | 24 | 16 |  8 |  1 | 
+			+--------+------+----+----+----+----+----+
+			|      4 | CMYK | XX | ** | XX | XX |    |
+			|      3 | RGB  |    | ** |    | XX |    |
+			|      1 | K    |    |    |    | XX | ** |
+			+--------+------+----+----+----+----+----+
+
+				  Valid BitsPerPixel values
+				  for allowed Colors values.
+
+			  Also note that automagical change of one
+			parameter depending on the other one does not
+			work in a setpagedevice call. This means that
+			if you want to change Colors to a value whose
+			valid BitsPerPixel values do not include the
+			actual BitsPerPixel value, you must change
+			BitsPerPixel too.
+
+  ProcessColorModel (symbol)
+			A symbol taken from /DeviceGray, /DeviceRGB
+			or /DeviceCMYK which can be used to select 1,
+			3 or 4 colors respectively.
+			  Note that this parameter takes precedence
+			over the Colors one, and that both affect the
+			same variable of the driver. (See Colors above
+			for values combined with BitsPerPixel.)
+
+  HWResolution (floats array)  
+			An array of 2 floats giving the horizontal and
+			vertical resolution in dots per inch. Supported
+			values are 90, 180 and 360 and both values
+			must be the same. Default is 360.
+			  (On the gs command line, the resolution is
+			changed by saying "-rXDPIxYDPI".)
+
+  ManualFeed (bool)	Indicate that the sheets won't be fed automatically
+			by the printer. Default is false.
+			  (Not meaningful on the BJC-600, I fear.)
+
+  MediaType (string)	Choose the media to print on. Values are chosen
+			amongst "PlainPaper", "CoatedPaper",
+			"TransparencyFilm", "Envelope", "Card" and "Other".
+			Default is "PlainPaper".
+			  If the chosen media is "Envelope", "Card" or
+			"Other", the driver will make the printer go
+			in thick mode automatically regardless of the
+			media weight.
+
+  MediaWeight (int or null)
+			Choose the weight of the media (in g/m2). Using
+			null indicates that the weight is of no
+                        importance. Default is null.
+			  If the specified media weight is greater
+			than 105 (i.e. the value of the compilation 
+                        default BJC???_MEDIAWEIGHT_THICKLIMIT) then
+			the printer will be setup to use thick paper.
+
+  PrintQuality (string) Choose the quality of printing. For the bjc600
+			driver it can be one of "Normal", "High" and
+			"Draft". For the bjc800 driver it can be one
+			of "Low", "Normal", "High" and "Draft".
+			Default is "Normal" for both drivers.
+			  For both drivers, "High" means 200% black and
+			100% cyan, magenta and yellow (on a bjc600 you
+			will get the "Bk+" light).
+			  For the bjc600 driver, "Normal" lits the
+			"HQ" light while "Draft" unlits it.
+			  For the bjc800 driver, "Low" has the effect
+			of making only two printing passes instead of
+			four (should be twice as fast ;-)). This is
+			what is known as "CN" (Color Normal) mode.
+
+  DitheringType (string)
+			Choose a dithering algorithm. Actually the
+			only valid values are "Floyd-Steinberg" and
+			"None". "None" is the default for 1/1 print
+			mode, "Floyd-Steinberg" for other modes.
+			  At the moment this parameter is read-only,
+			though no error will be generated if one tries
+                        to change it.
+			  This parameter is not of much value at the
+			moment and is mainly here to reserve the name
+			for future addition of dithering algorithms.
+
+  PrintColors (int)	Mask for printing color. If 0, use black for
+			any color.
+			  Otherwise, the value must be the sum of any
+		        of 1 (cyan), 2 (magenta), 4 (yellow) and 8
+			(black), indicating which colors will be used
+			for printing.
+			  When printing colour, only those colour
+			specified will be printed (this means that
+			some planes will be missing).
+			  When printing grays, black is used if it is
+			present in the PrintColors; otherwise, the
+			data is printed by superimposing each
+			requested color.
+			
+  MonochromePrint (bool)
+			*For bjc600 only*. Substitute black for Cyan,
+			Magenta and Yellow when printing (useful for
+			getting some monochrome output of a dithered
+			printing for example). Default is false.
+			  This is a hardware mechanism as opposed to
+			the previous software one. I think that using
+			this or setting PrintColors to 0 will give the
+			same results.
+
+Note that the MediaType and ThickMedia options will be replaced by the use
+of the device InputAttributes and OutputAttributes as soon as possible.
+
+Please note too that the print mode may be reset at the start of a print,
+not at the end. This is the expected behaviour. If you need to reset
+the printer to its default state, simply print a file that does just a
+showpage.
+
+Device Informations
+-------------------
+
+Here are other informations published by the driver that you will find
+in the deviceinfo dictionary:
+
+  OutputFaceUp (bool)   This has the boolean value true, indicating that
+			the sheets are stacked face up.
+
+  Version (float)	In the form M.mmpp where M is the major version,
+			mm the bjc drivers minor version and pp the specific
+			driver minor version (that is, M.mm will always be
+			the same for the bjc600 and bjc800 drivers).
+
+  VersionString (string)
+			A string that gives the version info plus
+			other indications. At the moment, things like
+			'a' or 'b' may follow the version to indicate
+			alpha or beta versions and the date of the
+			last change to this version is given in the
+			form MM/DD/YY (no,  it won't adapt to your
+			locale!).
+
+Hardware Margins
+----------------
+
+The BJC printers have top and bottom hardware margins of 3 mm and 7.1
+mm respectively (Canon says 7 mm but this is not usable because of
+the rounding of paper sizes to PostScript points).. The left margin is
+3.4 mm for A4 and smaller paper sizes, 6.4 mm for US paper sizes,
+envelopes and cards. It is 4.0 mm for A3 paper on the BJC-800.
+
+The maximum printing width of a BJC-600 printer is 203 mm, in any event.
+The maximum printing width of a BJC-800 printer is 289 mm on A3 paper,
+and 203 mm on letter and A4 paper.
+
+
+POSTSCRIPT PRINTER DESCRIPTION FILES
+------------------------------------
+
+The BJC600.PPD and BJC800.PPD files (whose long names are, respectively,
+Canon_BubbleJetColor_600.ppd and Canon_BubbleJetColor_800.ppd) are PPD
+files driving the features of the bjc600 and bjc800 drivers.
+
+They can be used for example on NEXTSTEP systems (presumably on
+OpenStep systems too) and on Unix systems with Adobe's TranScript and
+pslpr (not tested).
+
+The files are not complete at the moment. Please note too that
+NEXTSTEP's printing interface does not correctly enforce constraints
+specified in these files (in UIConstraints descriptions): you must
+force yourself to use valid combinations of options.
+
+Customization of the PPD files
+------------------------------
+
+By default the files say that the paper used is US Letter, and they
+use a normalized transfer function.
+  If you choose to use A4 printing by default, you must replace Letter by
+A4 in lines that match the '\*Default.*: Letter' pattern.
+  Some versions of Ghostscript have problems with normalized colors,
+which makes them add magenta in gray levels. If you have this problem,
+replace the '*DefaultTransfer: Normalized' line by the alternate (correct)
+'*DefaultTransfer: Null' line.
+
+Also note that the 'Thick Media' option is implemented by choosing a
+value of 120 or 80 (for thick and thin media respectively) for the
+MediaWeight feature of the drivers. If you ever change the threshold
+for thick media in the driver code, you may need to change the values
+in the PPD files too.
+
+All customization should be done using the '*Include: ' feature of PPD
+files so that your local changes will be kept if you get an update of
+these PPD files.
+
+
+OTHER INFORMATIONS
+------------------
+
+Reporting Problems
+------------------
+
+When you report a problem please be as descriptive as possible, and
+please send information that can be used to reproduce the problem.
+  Please don't forget to tell me which driver you use and its
+version. Version information can be found in this file or preferrably
+by issuing the following command in a shell:
+
+    % echo "currentpagedevice /VersionString get ==" | \
+        gs -q -sDEVICE=bjc600 -
+
+(the % doesn't count as part of the command and the device name should
+be the device you really use).
+
+Contact Address
+---------------
+
+If you have problems with this driver (or if you are extremely
+satisfied with it) you may email me at Yves.Arrouye@marin.fdn.fr.
+
+Acknowledgements
+----------------
+
+I am particularly grateful to Yoshio Kuniyoshi <yoshio@nak.math.keio.ac.jp>
+without whom I'd never make these drivers and also to L. Peter Deutsch
+<ghost@aladdin.com> who answered *all* my (often silly) questions about
+the drivers interface used by Ghostscript.
+  Thanks also to the people who volunteered to beta-test the v2.x BJC
+drivers; David Gaudine <david@donald.concordia.ca>, Robert M. Kenney
+<rmk@unh.edu>, James McPherson <someone@erols.com> and Ian Thurlbeck
+<ian@stams.strath.ac.uk> (in an alphabetic listing) were particularly
+helpful by discovering bugs and helping find out exact paper margins on
+printers I don't have access to.
+  And *many* thanks to Klaus-Gunther Hess <gunther@elmos.de> for
+looking at the dithering code and devising a good CMYK dithering
+algorithm for the Stylus Color, which I then adapted to the code of
+these drivers.
+
+### ------------------------------ End --------------------------------- ###
+
+### ---------------- MS-Windows DIB printer driver ----------------- ###
+
+This section was written by Russell Lang, 4 September 1996
+
+The mswinpr2 device uses MS-Windows printer drivers and should work
+with any printer with DIB raster capabilities.
+The printer resolution cannot be selected using PostScript commands 
+from Ghostscript; use the printer setup in the Control Panel instead.
+
+If no Windows printer name is specified in -sOutputFile, Ghostscript
+will prompt for a Windows printer using the standard Print Setup
+dialog box.  You must set the orientation to Portrait, and you must
+set the page size to that expected by Ghostscript.  Failure to do so 
+will result in the image being clipped. Ghostscript sets the physical 
+device size to that of the Windows printer driver, but it does not 
+update the PostScript clipping path.
+
+If a Windows printer name is specified in -sOutputFile, using 
+the format "\\spool\printer_name", e.g.
+  -sOutputFile="\\spool\Apple LaserWriter II NT"
+then Ghostscript will attempt to open the Windows printer without
+any prompts (except of course if the printer is connected to FILE:).
+Ghostscript attempts to set the Windows printer page size and orientation
+to match that expected by Ghostscript, but doesn't always succeed.
+The following algorithm is used:
+- If the requested page size matches one of the Windows standard
+  page sizes +/- 2mm, ask for that standard size.
+- Otherwise if the requested page size matches one of the Windows 
+  standard page sizes in landscape mode, ask for that standard size
+  in landscape.
+- Otherwise ask for the page size by specifying its dimensions only.
+- If using Windows NT, select a form that matches the page size.
+  (This isn't working at the moment)
+- Merge the above requests with the defaults.
+  If the printer driver ignores the requested paper size, no
+  error will be generated.  It will print on the wrong paper size.
+- Open the Windows printer with the merged orientation and size.
+The Ghostscript physical device size will be updated to match
+the Windows printer physical device.
+
+### ------------------------- JPEG file format ------------------------- ###
+
+Ghostscript includes output drivers that can produce JPEG (JFIF) files from
+Postscript images.  *Please note* that JPEG is designed for continuous-tone
+images (such as photographs) and is therefore quite unsuitable for the vast
+majority of page images produced with Postscript.  If you get crummy-looking
+JPEG files, don't blame Ghostscript; instead consult a reference about uses
+and abuses of JPEG, such as the JPEG FAQ available at
+http://www.faqs.org/faqs/jpeg-faq/.
+
+There are two JPEG output drivers, "jpeg" to produce color JPEG files and
+"jpeggray" to produce grayscale JPEGs.  Basic usage is the same as for other
+file-format drivers: specify the device name and an output file name, for
+example
+	gs -sDEVICE=jpeg -sOutputFile=foo.jpg  foo.ps
+You can also use the -r switch to determine the imaging resolution and thus
+the output file's size in pixels.  (The default resolution is normally
+72x72dpi.)
+
+The JPEG devices support two special parameters to control the JPEG "quality
+setting" (DCT quantization level).  You can write
+	-dJPEGQ=number
+to set the quality level according to the widely used IJG quality scale; or
+if you prefer Adobe's QFactor quality scale, use
+	-dQFactor=number
+The QFactor scale is used by Postscript's DCTEncode filter but is nearly
+unheard-of elsewhere.
+
+-dJPEGQ accepts an integer from 0 to 100, while -dQFactor expects a decimal
+fraction near 1.0.  The default quality level is equivalent to -dJPEGQ=75.
+(At this writing, that is the same as -dQFactor=0.5; but the IJG default
+quality level might change in future releases.)
+
+The JPEG drivers could be extended to support additional JPEG compression
+options, such as the other DCTEncode filter parameters, but so far they
+haven't been.
+
+### ------------------------------ End --------------------------------- ###

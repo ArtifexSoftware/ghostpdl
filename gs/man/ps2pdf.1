@@ -1,0 +1,35 @@
+.\"- -*- nroff -*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.\"
+.\"This file describes version 4.0 of Aladdin ps2pdf.
+.\"
+.\"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.de TQ
+.br
+.ns
+.TP \\$1
+..
+.TH ps2pdf 1 "19 June 1996"
+.SH NAME 
+ps2pdf \- Aladdin Ghostscript PostScript to PDF translator
+.SH SYNOPSIS
+.B ps2pdf input.ps output.pdf
+.br
+.SH DESCRIPTION
+
+ps2pdf converts the PostScript file input.ps to the Adobe Portable
+Document Format (PDF) in output.pdf.  ps2pdf uses gs(1).  See
+/usr/local/lib/ghostscript/M.N/doc/use.doc for more details,
+where M.N is the Ghostscript version number.
+
+Currently ps2pdf does a reasonable job on filled/stroked graphics, on bitmap
+images, and on text in the 14 built-in PDF fonts in the intersection of
+Windows and ISO Latin-1 encodings.  It converts all other text in the
+PostScript file to bitmaps in the PDF file (although it does only write the
+bitmap for each character once per page, and only on pages where the
+character is actually used).  It does not compress the output at all, except
+for character bitmaps: it can't use LZW because of Unisys' patent claims,
+and it doesn't yet use other compression methods for images.
+
+.SH AUTHOR OF DOCUMENTATION
+
+.B L. Peter Deutsch <ghost@aladdin.com>

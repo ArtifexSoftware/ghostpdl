@@ -1,0 +1,485 @@
+%    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+% 
+% This file is part of Aladdin Ghostscript.
+% 
+% Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+% or distributor accepts any responsibility for the consequences of using it,
+% or for whether it serves any particular purpose or works at all, unless he
+% or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+% License (the "License") for full details.
+% 
+% Every copy of Aladdin Ghostscript must include a copy of the License,
+% normally in a plain ASCII text file named PUBLIC.  The License grants you
+% the right to copy, modify and redistribute Aladdin Ghostscript, but only
+% under certain conditions described in the License.  Among other things, the
+% License requires that the copyright notice and this notice be preserved on
+% all copies.
+
+% t1tot2.ps
+% Convert a Type 1 font with Type 1 CharStrings to Type 2.
+% **************** THIS FILE DOES NOT WORK. ****************
+% **************** DON'T TRY TO USE IT. ****************
+
+(type1ops.ps) runlibfile
+
+% ---------------- CharString conversion ---------------- %
+
+% In the following lists, implemented conversions are marked with a +.
+% The following conversions are required for each CharString:
+% +	Remove lenIV initial bytes and decrypt.
+% +	Move width to first stem/moveto.
+% +	Move all hstem/vstem commands to the beginning,
+%	  including any from subroutines.
+%	Fold side bearing into first moveto.
+% +	Adjust Subr indices for bias.
+% +	Remove all closepath.
+%	Convert Flex othersubrs to new flex commands.
+%	Convert hint replacement to -hm and hintmask.
+%	Convert MM blend othersubrs to new blend command.
+%	For seac, convert char bodies to subrs, add hint replacement.
+% +	Make width relative to nominalWidthX, or omit if equal to
+%	  defaultWidthX.
+% The following patterns allow shortening CharStrings:
+% +	rlineto+ => rlineto
+% +	rlineto+ (hlineto | vlineto) rlineto+ => rlineto
+% +	vlineto (hlineto vlineto)* [hlineto] => vlineto
+% +	hlineto (vlineto hlineto)* [vlineto] => hlineto
+% +	rrcurveto+ => rrcurveto
+% +	rrcurveto+ rlineto => rcurveline
+% +	rlineto+ rrcurveto => rlinecurve
+% +	(vhcurveto hvcurveto)* [vhcurveto ["hrcurveto"] | "vrcurveto"] =>
+%	  vhcurveto
+% +	(hvcurveto vhcurveto)* [hvcurveto ["vrcurveto"] | "hrcurveto"] =>
+%	  hvcurveto
+%	"rvcurveto" (0 y1 x2 y2 0 y3 rrcurveto)* => vvcurveto
+%	"hrcurveto" (x1 0 x2 y2 x3 0 rrcurveto)* => hhcurveto
+
+% Convert a CharString from Type 1 to Type 2.
+% Free variables: font, subrmap.
+
+/t1tot2cs {		% <charstring1> <forsubr> t1tot2cs <charstring2>
+  10 dict begin
+  /forsubr exch def
+	% Collect the hints, side bearing, and width.
+  /vhints 10 dict def
+  /hhints 10 dict def
+  /hmcount null def
+  /lsb null def
+  /width null def
+  forsubr not {
+    dup t1hintops t1scan pop
+  } if
+  t1t2ops t1scan
+  [
+  forsubr not {
+	% Insert the hints and width at the beginning.
+    width dup font /nominalWidthX .knownget { sub } if
+    exch font /defaultWidthX .knownget not { 0 } if
+    eq { pop } if
+    /hstem hhints hintlist
+    /vstem vhints hintlist
+  } if
+  counttomark 2 add -1 roll aload pop ]
+	% Convert the string back to encoded form.
+  DEBUG {
+    (++++ ) print [ 1 index { dup null eq { pop } if } forall ] == flush
+  } if
+  /lenIV 0 def		% for charproc_string
+  charproc_string end
+} bind def
+/hintlist {		% <hintop> <dict> hintlist -
+  dup length 0 eq {
+    pop pop
+  } {
+    dup length array dup 3 -1 roll {
+      exch put dup
+    } forall pop
+	% ****** SORT THE HINTS BY INCREASING v ******
+    { dup length 24 le { exit } if
+      dup 0 24 getinterval { aload pop 4 2 roll } forall
+      dup length 24 sub 24 exch getinterval
+    } loop
+    { aload pop 3 2 roll } forall
+  } ifelse
+} bind def
+/uneexec {		% <string> <lenIV> uneexec <string>
+  dup 0 ge {
+    2 copy mark /seed 4330 /lenIV 5 -1 roll .dicttomark /eexecDecode filter
+			% Stack: string lenIV filter
+    dup 4 -1 roll length 4 -1 roll sub string readstring pop
+    exch closefile
+  } {
+    pop
+  } ifelse
+} bind def
+/t1scan {		% <charstring> <opsdict> t1scan <tokens>
+  5 dict begin
+  /opsdict exch def
+	% Remove encryption and convert to symbolic form for processing.
+  font /lenIV .knownget not { 4 } if uneexec
+  0 () /SubFileDecode filter /f exch def
+  /cstr [ 20 { null } repeat f charstack_read /END 20 { null } repeat ] def
+  DEBUG {
+    (**** ) print [ cstr { dup null eq { pop } if } forall ] == flush
+  } if
+	% Scan the unpacked string.
+  /i 20 def {
+	% The /END token will exit from this loop.
+    opsdict cstr i get .knownget { exec } if
+    /i i 1 add def
+  } loop
+  f closefile cstr end
+} bind def
+/ciget {		% <di> ciget <token>
+  i add cstr exch get
+} bind def
+/ciput {		% <di> <token> ciput -
+  exch i add exch cstr 3 1 roll put
+} bind def
+/ciswap {		% <di> <dj> ciswap -
+  2 copy exch ciget exch ciget 3 1 roll ciput ciput
+} bind def
+/ciskip {		% <di> ciskip -
+  i add /i exch def
+} bind def
+
+% Hint scanning procedures.
+/addhint {		% [<v> <dv>] <hintdict> addhint -
+  dup 2 index known { pop pop } { dup length 3 -1 roll exch put } ifelse
+} bind def
+
+/t1hintops mark /END { 0 null ciput exit } bind
+
+/vstem {
+  cstr i 2 sub 2 getinterval vhints addhint
+} bind
+/hstem {
+  cstr i 2 sub 2 getinterval hhints addhint
+} bind
+/callsubr {
+	%**** DOESN'T HANDLE FLEX YET ****
+  -1 ciget /pop eq {
+	% This must be a <#> 1 3 /callothersubr /pop /callsubr sequence.
+    hmcount null eq { /hmcount [ vhints length hhints length ] store } if
+    -5 ciget
+  } {
+    -1 ciget
+  } ifelse
+  subrmap 1 index .knownget { exch pop } if
+  dup null eq { pop } {
+    font /Private get /Subrs get exch get
+    t1hintops t1scan pop
+  } ifelse
+} bind
+/hsbw {
+  /lsb -2 ciget store
+  /width -1 ciget store
+} bind
+/vstem3 {
+  [ -6 ciget -5 ciget ] vhints addhint
+  [ -4 ciget -3 ciget ] vhints addhint
+  [ -2 ciget -1 ciget ] vhints addhint
+} bind
+/hstem3 {
+  [ -6 ciget -5 ciget ] hhints addhint
+  [ -4 ciget -3 ciget ] hhints addhint
+  [ -2 ciget -1 ciget ] hhints addhint
+} bind
+/sbw {
+	%**** WHAT ABOUT Y? ****
+  /lsb -4 ciget store
+  /width -2 ciget store
+} bind
+
+.dicttomark readonly def	% t1hintops
+
+% Conversion procedures.
+/t1t2ops mark /END { 0 null ciput exit } bind
+
+/hstem {
+	% We handled the hints separately, drop them here.
+  -2 1 0 { null ciput } for
+} bind
+/vstem 1 index
+/rlineto {
+  3 ciget /rlineto eq {
+    0 null ciput
+  } {
+    7 ciget /rrcurveto eq {
+      0 null ciput
+      7 /rlinecurve ciput
+    } {
+      5 ciget /rlineto eq {
+	2 ciget /hlineto eq {
+	  0 null ciput
+	  2 0 ciput
+	} {
+	  2 ciget /vlineto eq {
+	    0 0 ciput
+	    2 null ciput
+	  } if
+	} ifelse
+      } if
+    } ifelse
+  } ifelse
+} bind
+/vlineto {
+  2 ciget /hlineto eq {
+    0 null ciput
+    2 4 ciget /vlineto eq { null } { /vlineto } ifelse ciput
+  } if
+} bind
+/hlineto {
+  2 ciget /vlineto eq {
+    0 null ciput
+    2 4 ciget /hlineto eq { null } { /hlineto } ifelse ciput
+  } if
+} bind
+/rrcurveto {
+  7 ciget /rrcurveto eq {
+    0 null ciput
+  } {
+    3 ciget /rlineto eq {
+      0 null ciput
+      3 /rcurveline ciput
+    } {
+	%**** WRONG IF MULTIPLE RRCURVETO ****
+      -6 ciget 0 eq {
+	-6 null ciput
+	0 /vhcurveto ciput
+      } {
+	-5 ciget 0 eq {
+	  -5 null ciput
+	  -1 -2 ciswap
+	  0 /hvcurveto ciput
+	} if
+      } ifelse
+    } ifelse
+  } ifelse
+} bind
+/callsubr {
+  -1 ciget subrmap 1 index .knownget { exch pop } if
+	% If the Subr was deleted because it was empty, delete the call.
+  dup null eq {
+    0 null ciput
+  } {
+	% Subtract the subroutineNumberBias.
+    107 sub
+  } ifelse -1 exch ciput
+} bind
+/vhcurveto {
+  5 ciget /hvcurveto eq {
+    0 null ciput
+    10 ciget /vhcurveto eq {
+      5 null ciput
+    } {
+      12 ciget /rrcurveto eq 6 ciget 0 eq and {
+	5 null ciput
+	6 null ciput
+	12 /vhcurveto ciput
+	12 ciskip
+      } {
+	5 /vhcurveto ciput
+	5 ciskip
+      } ifelse
+    } ifelse
+  } {
+    7 ciget /rrcurveto eq {
+      1 ciget 0 eq {
+	0 null ciput
+	1 null ciput
+	5 6 ciswap
+	7 /vhcurveto ciput
+	7 ciskip
+      } if
+    } if
+  } ifelse
+} bind
+/hvcurveto {
+  5 ciget /vhcurveto eq {
+    0 null ciput
+    10 ciget /hvcurveto eq {
+      5 null ciput
+    } {
+      12 ciget /rrcurveto eq 7 ciget 0 eq and {
+	5 null ciput
+	7 null ciput
+	10 11 ciswap
+	12 /hvcurveto ciput
+	12 ciskip
+      } {
+	5 /hvcurveto ciput
+	5 ciskip
+      } ifelse
+    } ifelse
+  } {
+    7 ciget /rrcurveto eq {
+      2 ciget 0 eq {
+	0 null ciput
+	2 null ciput
+	7 /hvcurveto ciput
+	7 ciskip
+      } if
+    } if
+  } ifelse
+} bind
+/closepath {
+  0 null ciput
+} bind
+/hsbw {
+	% We handled this separately, drop it.
+  -2 1 0 { null ciput } for
+} bind
+/dotsection {
+	%**************** NYI ****************
+} bind
+/vstem3 {
+	% We handled the hints separately, drop them here.
+  -6 1 0 { null ciput } for
+} bind
+/hstem3 1 index
+/seac {
+	%**************** NYI ****************
+} bind
+/sbw {
+	% We handled this separately, drop it.
+  -4 1 0 { null ciput } for
+} bind
+/callothersubr {
+  -1 ciget 3 eq {
+	%**** HANDLE HINT REPLACEMENT ****
+    -2 ciget 1 eq 1 ciget /pop eq and 2 ciget /callsubr eq and {
+      1 -3 ciget ciput
+      -3 1 0 { null ciput } for
+    } {
+      (**************** 3 callothersubr -- invalid call\n) print
+      /t1tot2cs cvx /rangecheck signalerror
+    } ifelse
+  } if
+} bind
+/pop {
+	%**************** NYI ****************
+} bind
+/setcurrentpoint {
+	%**************** NYI ****************
+} bind
+
+.dicttomark readonly def	% t1t2ops
+
+% ---------------- Font conversion ---------------- %
+
+% Copy a font, and remove eexec encryption from it.
+/decryptfont {			% <font> decryptfont <font'>
+	% Copy the font, CharStrings, Private, and Private.Subrs
+  dup length dict copy
+  dup /CharStrings 2 copy get dup length dict copy put
+  dup /Private 2 copy get dup length dict copy
+    dup /Subrs 2 copy get dup length array copy put
+  put
+  dup /lenIV .knownget not { 4 } if
+  1 index /CharStrings get
+			% Stack: font' lenIV chars'
+  dup { 3 index uneexec 2 index 3 1 roll put } forall pop
+  1 index /Private get /Subrs get
+			% Stack: font' lenIV Subrs'
+  0 1 2 index length 1 sub {
+    2 copy get dup type /stringtype eq {
+			% Stack: font' lenIV Subrs' index subr
+      3 index uneexec
+    } if 2 index 3 1 roll put
+  } for pop pop dup /lenIV -1 put
+} def
+
+% Convert an entire font from Type 1 to Type 2.
+/t1tot2font {			% <font> t1tot2font <font'>
+  10 dict begin
+  /font exch def
+  /niv font /lenIV .knownget not { 4 } if def
+
+	% Print initial statistics.
+
+  (lenIV = ) print niv =
+  font /CharStrings get
+  dup length =only ( CharStrings, ) print
+  0 exch { exch pop length add } forall =only ( bytes) =
+  font /Private get /Subrs get
+  dup length =only ( Subrs, ) print
+  0 exch { length add } forall =only ( bytes) =
+  flush
+
+	% Remove CharString encryption from the font.
+
+  /font font decryptfont def
+  /chars font /CharStrings get dup length dict copy def
+  /subrs font /Private get /Subrs get def
+
+	% Remove empty Subrs, including Subrs 0-3.
+
+  /subrmap subrs length dict def
+  0 1 3 { subrs exch <0b> put } for
+  0 1 subrs length 1 sub {
+    subrs 1 index get true t1tot2cs
+    length 1 eq {
+      subrs 1 index null put
+      subrmap exch null put
+    } {
+      pop
+    } ifelse
+  } for
+
+	% Remove duplicate Subrs (!).
+
+	% Make an entry in subrdict for each distinct Subr:
+	%   key = Subr charstring, value = (lowest) Subr index.
+	% At the same time, make entries in subrmap for any duplicates:
+	%   key = higher index, value = lowest index.
+  /subrdict subrs length dict def
+  0 0 1 subrs length 1 sub {
+		% Stack: toindex fromindex
+    subrs 1 index get subrdict 1 index .knownget {
+		% Stack: toindex fromindex subr firstindex
+      subrmap 4 -1 roll 3 -1 roll put pop
+    } {
+      dup null ne {
+		% Stack: toindex fromindex subr
+	subrmap 3 -1 roll 3 index put		% fromindex => toindex
+	subrdict 1 index 3 index put		% subr => toindex
+	subrs 2 index 3 -1 roll put		% toindex => subr
+	1 add
+      } {
+	pop pop
+      } ifelse
+    } ifelse
+  } for
+  /subrs1 subrs 0 4 -1 roll getinterval def
+  font /Private get /Subrs subrs1 put
+
+	% Convert the font.
+
+  /chars2 chars length dict def
+  chars { false t1tot2cs chars2 3 1 roll put } forall
+  /subrs2 subrs1 length array def
+  0 1 subrs1 length 1 sub {
+    subrs1 1 index get true t1tot2cs
+    subrs2 3 1 roll put
+  } for
+  font /Private get /Subrs subrs2 put
+
+	% Print final statistics.
+
+  (CharStrings => ) print 0 chars2 { exch pop length add } forall =only
+    ( bytes) =
+  subrs2 length =only ( Subrs, ) print
+  0 subrs2 { length add } forall =only ( bytes) =
+  flush
+  
+	% Clean up the font.
+
+  font /lenIV undef
+  font /UniqueID undef
+  font /FID undef
+  font /CharStrings chars2 put
+  font /CharstringType 2 put
+
+  font end
+} bind def

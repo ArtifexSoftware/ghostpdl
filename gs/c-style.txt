@@ -1,0 +1,329 @@
+   Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, c-style.txt, describes Aladdin's C coding guidelines.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+Generalities
+============
+
+All the rules below are meant to produce code that is easy to read.  If you
+find a rule getting in your way or producing ugly-looking results once in a
+while, it's OK to break it.
+
+Indentation
+-----------
+
+Tab stops are set every 8 columns.  However, tabs are not equivalent to
+logical nesting levels for C code: see below for details.
+
+File layout
+-----------
+
+Every code file should start with comments containing a copyright notice,
+the name of the file, and a half-to-one-line summary of what the file
+contains.  If you create a file by copying the boilerplate from another
+file, make sure to edit the copyright year and the file name.
+
+C code
+======
+
+makefiles
+---------
+
+For each #include "xxx.h", make sure there is a dependency on $(xxx_h) in
+the makefile.  If xxx ends with a _, this rule still holds: e.g., #include
+"math_.h" should create a dependency on $(math__h) (two underscores).
+
+List the dependencies bottom-to-top, like the #includes themselves; within
+each level, list them alphabetically.  Also do this with the #includes
+themselves whenever possible (but sometimes there are inter-header
+dependencies that require bending this).
+
+Headers
+-------
+
+In header files, always use the following to prevent double inclusion:
+
+	<< copyright notice, file name, 1-line file description >>
+
+	#ifndef <filename>_INCLUDED
+	#  define <filename>_INCLUDED
+
+	<< contents of file >>
+
+	#endif 				/* <filename>_INCLUDED */
+
+The header file is the first place that a reader will go to find out
+information about procedures, structures, constants, etc.  Make sure that
+every procedure and structure has a comment that says what it does.  Divide
+procedures into meaningful groups set off by some distinguished form of
+comment.
+
+#include lists
+--------------
+
+List #includes from "bottom" to "top", i.e., in the following order:
+	System includes ("xxx_.h")
+	g*.h
+	s*.h
+	pl*.h
+	p[cg]*.h
+
+Indentation
+-----------
+
+Put the first indentation point at the first tab stop; thereafter, each
+level of logical nesting indents by an additional 4 columns.  Proceed as
+follows:
+
+	{ ... in-line compound statement ...
+	  ... (indented +2 columns)
+	}
+	... construct requiring subordinate code ...
+	  ... subordinate simple statement ... (indented +2 columns)
+	... construct requiring subordinate code ...
+	  { ... subordinate code ...
+	    ... (indented +4 columns)
+	  }
+
+Or you can do this if you prefer:
+
+	{
+	  ... in-line compound statement ...
+	}
+	... construct requiring subordinate code ...
+	  ... subordinate simple statement ...
+	... construct requiring subordinate code ...
+	  {
+	    ... subordinate code ...
+	  }
+
+But not this:
+
+	if ... {
+	  ... subordinate code ...
+	} else {
+	  ... subordinate code ...
+	}
+
+Spaces
+------
+
+Do put a space:
+	- after every comma and semicolon, unless it ends a line;
+	- around every binary operator, although you can omit the spaces
+	around the innermost operator in a nested expression if you like;
+	- on both sides of the the parentheses of an if, for, or while.
+
+Don't put a space:
+	- at the end of a line;
+	- before a comma or semicolon;
+	- after unary prefix operators;
+	- before the parenthesis of a macro or procedure call.
+
+Parentheses
+-----------
+
+There are just a few places where parentheses are important:
+
+	- In expressions that mix && and ||, around the inner
+	subexpressions, even if not required by precedence, e.g.,
+		(xx && yy) || zz
+
+	- In expressions that mix &, |, and/or shifts, especially if
+	mixing these with other operators, around the inner subexpressions
+	similarly, e.g.,
+		(x << 3) | (y >> 5)
+
+	- In macro definitions, around every use of an argument that
+	logically could be an expression, e.g.,
+		((x) * (x) + (y) * (y))
+
+Anywhere else, given the choice, use fewer parentheses.
+
+For stylistic consistency with the existing Ghostscript code, put
+parentheses around conditional expressions, even if they aren't
+syntactically required, unless you really dislike doing this.  Note that the
+parentheses should go around the entire expression, not the condition: e.g.,
+instead of
+
+	hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
+			       (pgls->g.pen_down) ? gs_lineto : gs_moveto);
+
+use
+
+	hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
+			       (pgls->g.pen_down ? gs_lineto : gs_moveto));
+
+Types
+-----
+
+Use 'private' instead of 'static' for constructs (procedures and variables)
+declared at the outermost scope.  This allows making such constructs either
+visible or invisible to profilers with a single changed #define.
+
+Use const wherever possible and appropriate.
+
+If you find yourself wanting to use void *, try to find an alternative using
+unions or (in the case of super- and subclasses) casts, unless you're
+writing something like a memory manager that really treats memory as opaque.
+
+Use anonymous structures as little as possible.  Declare structure types
+like this (the _t on the type name is preferable but not required):
+
+	typedef struct xxx_yyy_s {
+	  ... members ...
+	} xxx_yyy_t;
+
+Don't declare parameters as being of type float, short, or char.  If you do
+this and forget to include the prototype at a call site, ANSI compilers will
+generate incompatible calling sequences.  Use floatp (a synonym for double)
+instead of float, and use [u]int instead of short or char.
+
+If you have a parameter that is itself a procedure, do list its parameter
+types rather than just using ().
+
+Names
+-----
+
+Use fully spelled-out English words in names rather than contractions.  This
+is most important for procedure and macro names, global variables and
+constants, #defined and enum values, structure and other typedef names, and
+structure member names, and for argument and variable names which have
+uninformative types like int.  It's not very important for arguments or
+local variables of distinctive types, or for local index or count variables.
+
+Avoid names that run English words together.  hpgl_compute_arc_center is
+preferable to hpgl_compute_arccenter.
+
+Procedures, variables, and structures visible outside a single .c file
+should generally have a prefix that indicates what subsystem they belong to
+(in the case of Ghostscript, gs_ or gx_).  This rule isn't followed very
+consistently.
+
+Commenting
+----------
+
+The most important descriptive comments are ones in header files that
+describe structures, including invariants.  But every procedure or structure
+declaration, or group of other declarations, should have a comment.
+
+Other formatting
+----------------
+
+Format procedures as follows:
+
+scope return_type
+proc_name(type1 arg1, type2 arg2, type3 arg3, type4 verylongargument4,
+  type5 argument5)
+{	... body ...
+}
+
+Leave a blank line after the declarations of local variables in a procedure
+or compound statement, unless there's only 1 variable and the scope is less
+than 10 lines or so.
+
+Other
+-----
+
+When calling a variable or parameter procedure, do use explicit indirection,
+e.g., (*func)(...) rather than func(...).  It makes it clearer to the reader
+what is going on.  Also, not all compilers accept the elision.  (gcc accepts
+a dismaying number of constructs that other compilers dislike.)
+
+ANSI compilers in their default mode do all floating point computations in
+double precision, so never cast a float to a double explicitly.
+
+Unless there's a good reason for doing otherwise, return floatp (double)
+rather than float values.  Many FPUs do everything in double internally and
+have to do extra work to convert between double and float.
+
+In general, don't create procedures that are private and only called from
+one place.  However, if a compound statement (especially an arm of a
+conditional) is long enough that the eye can't easily match up its } with
+its { (i.e., it's longer than 10 or 15 lines), and it doesn't use or set a
+lot of state held in outer local variables, putting it in a procedure may
+help readability.
+
+Global variables
+----------------
+
+Avoid global variables (non-const data) like the plague.  Avoid global const
+data, but don't knock yourself out over it.
+
+Local variables
+---------------
+
+Avoid assigning new values to procedure parameters.  It makes debugging very
+confusing when the parameter values printed for a procedure are not the ones
+actually supplied by the caller.  Instead, use a separate local variable
+that is initialized to the value of the parameter.
+
+If a local variable only gets assigned a value once, assign it that value at
+its declaration, if convenient.  E.g.,
+
+		int x = <some expression>;
+
+rather than
+
+		int x;
+		...
+		x = <some expression>;
+
+Error handling
+--------------
+
+By convention, nearly all procedures return an int that indicates the
+outcome of the call: 0 indicates a normal return, >0 indicates a non-error
+return other than the normal case, and <0 indicates an error.  All callers
+should check for error returns and, in general, propagate them to *their*
+caller.
+
+Preprocessor conditionals
+-------------------------
+
+Conditionals can easily lead to unreadable code, since the eye really wants
+to read linearly rather than having to parse the conditionals just to figure
+out what code is relevant.  It's OK to use conditionals that have small
+scope and that don't change the structure or logic of the program
+(typically, they select between different sets of values depending on some
+configuration parameter), but where possible, break up source modules rather
+than use conditionals that affect the structure or logic.
+
+Preprocessor macros
+-------------------
+
+If you define a macro that looks like a procedure, make sure it will work
+wherever a procedure will work.  In particular, put parentheses around every
+use of a macro argument, so that the macro will parse correctly if some of
+the arguments are expressions.
+
+PostScript code
+===============
+
+Put indentation points every 3 spaces.
+
+Format procedure definitions like this:
+
+/procname		% <arg1> <arg2> procname <result1> <result2>
+ { ...code...
+ } bind def
