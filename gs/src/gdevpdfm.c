@@ -314,6 +314,8 @@ cos_stream_put_c_strings(cos_stream_t *pcs, const char *key, const char *value)
  *       /A << /S /Thread /D yyy' >>
  *     /Action /GoTo => drop the Action key
  * Also, \n in Contents strings must be replaced with \r.
+ * Also, an outline dictionary with no action, Dest, Page, or View has an
+ * implied GoTo action with Dest = [{ThisPage} /XYZ null null null].
  * Note that for Thread actions, the Dest is not a real destination,
  * and must not be processed as one.
  *
@@ -553,6 +555,13 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	if (coerce_dest)
 	    pdfmark_coerce_dest(&Dest, dest);
 	pdfmark_put_c_pair(pcd, "/Dest", &Dest);
+    } else if (for_outline && !Action) {
+	/* Make an implicit destination. */
+	char dstr[1 + (sizeof(long) * 8 / 3 + 1) + 25 + 1];
+	long page_id = pdf_page_id(pdev, pdev->next_page + 1);
+
+	sprintf(dstr, "[%ld 0 R /XYZ null null null]", page_id);
+	cos_dict_put_c_key_string(pcd, "/Dest", dstr, strlen(dstr));
     }
     if (File)
 	pdfmark_put_pair(pcd, File);
