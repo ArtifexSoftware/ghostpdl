@@ -552,7 +552,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh)
 
 	code = cos_dict_put_c_key_floats(pscd, "/Decode", pmp->Decode,
 				4 + gs_color_space_num_components(pcs) * 2);
-	while (sgets(&cs.ds, buf, sizeof(buf), &num_read), num_read > 0)
+	while (sgets(cs.s, buf, sizeof(buf), &num_read), num_read > 0)
 	    if ((code = cos_stream_add_bytes(pscs, buf, num_read)) < 0)
 		return code;
 	bits_per_coordinate = pmp->BitsPerCoordinate;
