@@ -226,8 +226,7 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 /* Get a character width in the current font, plus extra space if any. */
 /* If the character isn't defined, return 1, otherwise return 0. */
 private int
-hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width,
-  bool with_extra_space)
+hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 {
 	uint glyph = hpgl_map_symbol(ch, pgls);
 	const pcl_font_selection_t *pfs =
@@ -235,7 +234,6 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width,
 	int code = 0;
 	gs_point gs_width;
 	gs_matrix mat;
-
 	if ( pfs->params.proportional_spacing ) {
 	  gs_make_identity(&mat);
 	  code = pl_font_char_width(pfs->font, pfs->map, &mat, glyph,
@@ -247,7 +245,7 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width,
 	  code = 1;
 	}
 	*width = points_2_plu(pl_fp_pitch_cp(&pfs->params) / 100.0);
-add:	if ( with_extra_space && pgls->g.character.extra_space.x != 0 ) {
+add:	if ( pgls->g.character.extra_space.x != 0 ) {
 	  /* Add extra space. */
 	  if ( pfs->params.proportional_spacing && ch != ' ' ) {
 	    /* Get the width of the space character. */
@@ -273,7 +271,7 @@ add:	if ( with_extra_space && pgls->g.character.extra_space.x != 0 ) {
 /* plus extra space if any. */
 private int
 hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
-  bool cell_height, bool with_extra_space)
+  bool cell_height)
 {
 	const pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
@@ -285,8 +283,7 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
 	     /****** WRONG ******/);
 	if ( !cell_height )
 	  *height *= 0.75;	/****** HACK ******/
-	if ( with_extra_space )
-	  *height *= 1.0 + pgls->g.character.extra_space.y;
+	*height *= 1.0 + pgls->g.character.extra_space.y;
 	return 0;
 }
 
@@ -321,12 +318,12 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 	    if ( pwidth != 0 )
 	      width = *pwidth;
 	    else
-	      hpgl_call(hpgl_get_char_width(pgls, ' ', &width, true));
+	      hpgl_get_char_width(pgls, ' ', &width);
 	    dx = width * nx;
 	  }
 	  if ( ny ) {
 	    hpgl_real_t height;
-	    hpgl_call(hpgl_get_current_cell_height(pgls, &height, true, true));
+	    hpgl_call(hpgl_get_current_cell_height(pgls, &height, true));
 	    dy = height * ny;
 	  }
 
@@ -484,7 +481,7 @@ hpgl_print_char(
 				       hpgl_plot_move_absolute,
                                        true
                                        ) );
-    gs_currentmatrix(pgs, &save_ctm);
+    hpgl_call(gs_currentmatrix(pgs, &save_ctm));
 
     /*
      * Reset the CTM if GL/2 scaling is on but we aren't using
@@ -630,7 +627,7 @@ hpgl_print_char(
 	 */
 	gs_currentpoint(pgs, &start_pt);
 	if (text_path == hpgl_text_left) {
-            hpgl_get_char_width(pgls, ch, &width, true);
+            hpgl_get_char_width(pgls, ch, &width);
 	    start_pt.x -= width / scale.x;
 	    gs_moveto(pgs, start_pt.x, start_pt.y);
 	}
@@ -673,7 +670,7 @@ hpgl_print_char(
 
 	/* If SP is a control code, get the width of the space character. */
 	if (ch == ' ') {
-            space_code = hpgl_get_char_width(pgls, ' ', &space_width, true);
+            space_code = hpgl_get_char_width(pgls, ' ', &space_width);
 	    if (space_code == 1) {
                 /* Space is a control code. */
 		space_width = pl_fp_pitch_cp(&pfs->params) / 100.0
@@ -740,7 +737,7 @@ hpgl_print_char(
 	    if (angle >= 0) {
                 /* Compensate for bitmap font non-rotation. */
 		if (text_path == hpgl_text_right) {
-                    hpgl_get_char_width(pgls, ch, &width, true);
+                    hpgl_get_char_width(pgls, ch, &width);
 		    hpgl_call( gs_moveto( pgs,
                                           start_pt.x + width / scale.x,
 					  start_pt.y)
@@ -750,7 +747,7 @@ hpgl_print_char(
 	    gs_currentpoint(pgs, &end_pt);
 	    if ( (text_path == hpgl_text_right)        &&
 		 (pgls->g.character.extra_space.x != 0)  ) {
-		hpgl_get_char_width(pgls, ch, &width, true);
+		hpgl_get_char_width(pgls, ch, &width);
 		end_pt.x = start_pt.x + width / scale.x;
 		hpgl_call(gs_moveto(pgs, end_pt.x, end_pt.y));
 	    }
@@ -771,7 +768,6 @@ hpgl_print_char(
 
 	        hpgl_call( hpgl_get_current_cell_height( pgls,
                                                          &height,
-                                                         true,
                                                          true
                                                          ) );
 		hpgl_call( gs_moveto( pgs,
@@ -791,7 +787,6 @@ hpgl_print_char(
 
 	        hpgl_call( hpgl_get_current_cell_height( pgls,
                                                          &height,
-                                                         true,
                                                          true
                                                          ) );
 		hpgl_call( gs_moveto( pgs,
@@ -802,11 +797,12 @@ hpgl_print_char(
 	    break;
 	}
 
-	gs_setmatrix(pgs, &save_ctm);
+	gs_setmatrix(pgs, &save_ctm); 
 	gs_currentpoint(pgs, &end_pt);
 	if (!use_show)
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
         (void )pcl_palette_PW(pgls, pgls->g.pen.selected, save_width);
+
 	pgls->g.pen.width_relative = save_relative;
 	hpgl_call( hpgl_add_point_to_path( pgls,
                                            end_pt.x,
@@ -953,8 +949,8 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		case BS :
 		  if ( width == 0.0 ) /* BS as first char of string */
 		    { hpgl_ensure_font(pgls);
-		      hpgl_call(hpgl_get_char_width(pgls, ' ', &width, !vertical));
-		      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical, vertical));
+		      hpgl_get_char_width(pgls, ' ', &width);
+		      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		    }
 		  if ( vertical )
 		    { /* Vertical text path, back up in Y. */
@@ -977,7 +973,7 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		  continue;
 		case HT :
 		  hpgl_ensure_font(pgls);
-		  hpgl_call(hpgl_get_char_width(pgls, ' ', &width, !vertical));
+		  hpgl_get_char_width(pgls, ' ', &width);
 		  width *= 5;
 		  goto acc_ht;
 		case SI :
@@ -990,8 +986,8 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		  break;
 		}
 	      hpgl_ensure_font(pgls);
-	      hpgl_call(hpgl_get_char_width(pgls, ch, &width, !vertical));
-acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical, vertical));
+	      hpgl_get_char_width(pgls, ch, &width);
+acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 	      if ( vertical )
 		{ /* Vertical text path: sum heights, take max of widths. */
 		  if ( width > label_length )
