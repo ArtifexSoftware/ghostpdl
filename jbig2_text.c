@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.9 2002/07/04 12:08:03 giles Exp $
+    $Id: jbig2_text.c,v 1.10 2002/07/07 20:30:57 giles Exp $
 */
 
 #include <stddef.h>
@@ -407,13 +407,19 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
 
     /* todo: check errors */
 
-    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
-        "composing %dx%d decoded text region onto page at (%d, %d)",
-        region_info.width, region_info.height, region_info.x, region_info.y);
-    jbig2_image_compose(ctx, page_image, image, region_info.x, region_info.y, JBIG2_COMPOSE_OR);
-    if (image != page_image)
-        jbig2_image_free(ctx, image);
-
+    if ((segment->flags & 63) == 4) {
+        /* we have an intermediate region here. save it for later */
+        segment->result = image;
+    } else {
+        /* otherwise composite onto the page */
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
+            "composing %dx%d decoded text region onto page at (%d, %d)",
+            region_info.width, region_info.height, region_info.x, region_info.y);
+        jbig2_image_compose(ctx, page_image, image, region_info.x, region_info.y, JBIG2_COMPOSE_OR);
+        if (image != page_image)
+            jbig2_image_free(ctx, image);
+    }
+    
     /* success */            
     return 0;
     

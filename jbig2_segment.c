@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.11 2002/07/04 16:33:44 giles Exp $
+    $Id: jbig2_segment.c,v 1.12 2002/07/07 20:30:56 giles Exp $
 */
 
 #include <stdlib.h> /* size_t */
@@ -138,13 +138,9 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     {
     case 0:
       return jbig2_symbol_dictionary(ctx, segment, segment_data);
-    case 4:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'intermediate text region'");
-    case 6:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'immediate text region'");
-    case 7:
+    case 4: /* intermediate text region */
+    case 6: /* immediate text region */
+    case 7: /* immediate lossless text region */
       return jbig2_read_text_info(ctx, segment, segment_data);
     case 16:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
