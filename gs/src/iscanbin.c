@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -178,6 +178,8 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 			pstate->s_scan_type = scanning_none;
 			return scan_Refill;
 		    }
+		    if (p[1] != 0) /* reserved, must be 0 */
+			return_error(e_syntaxerror);
 		    top_size = sdecodeushort(p + 2, num_format);
 		    lsize = sdecodelong(p + 4, num_format);
 		    if ((size = lsize) != lsize)
@@ -214,7 +216,6 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 
 		    refset_null(pbs->bin_array.value.refs + index,
 				r_size(&pbs->bin_array) - index);
-		    pbs->cont = scan_bos_continue;
 		}
 		return code;
 	    }
@@ -428,6 +429,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
     ref *abase = pbs->bin_array.value.refs;
     int code;
 
+    pbs->cont = scan_bos_continue;  /* in case of premature return */
     s_begin_inline(s, p, rlimit);
     for (; index < max_array_index; p += SIZEOF_BIN_SEQ_OBJ, index++) {
 	ref *op = abase + index;
@@ -443,6 +445,8 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 	    pstate->s_scan_type = scanning_binary;
 	    return scan_Refill;
 	}
+	if (p[2] != 0) /* reserved, must be 0 */
+	    return_error(e_syntaxerror);
 	attrs = (p[1] & 128 ? a_executable : 0);
 	switch (p[1] & 0x7f) {
 	    case BS_TYPE_NULL:
@@ -562,6 +566,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
     s_end_inline(s, p, rlimit);
     /* Shorten the objects to remove the space that turned out */
     /* to be used for strings. */
+    pbs->index = max_array_index;
     iresize_ref_array(&pbs->bin_array, max_array_index,
 		      "binary object sequence(objects)");
     code = scan_bos_string_continue(i_ctx_p, s, pref, pstate);
