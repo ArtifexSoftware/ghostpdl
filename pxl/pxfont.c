@@ -458,6 +458,12 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 					 origin.x + dist.x, origin.y + dist.y);
 		if ( code < 0 )
 		    break;
+	    } 
+	    else {
+		/* undo char width movement */
+		code = gx_path_add_point(pgs->path, origin.x, origin.y);
+		if ( code < 0 )
+		    break;
 	    }
 	}
 	pxgs->writing_mode = rotate;
