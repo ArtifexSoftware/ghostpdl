@@ -513,7 +513,7 @@ gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x
 	It appears some confusing.
 	Actually it merges segments, which are nearly collinear to
 	coordinate axes.
-     *
+     */
     /* fixme: optimise: don't check the coordinate order for monotonic curves. */
 #   define coords_in_order(v0, v1, v2) ( (((v1) - (v0)) ^ ((v2) - (v1))) >= 0 )
     if ((coord_near(x2, x0) || coord_near(y2, y0))
@@ -923,13 +923,13 @@ gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
 	return false;
     } else {
 	fixed x0 = this->gx0, y0 = this->gy0;
-	fixed x2 = this->fx1, y2 = this->fy1;
 	fixed xn = this->xn, yn = this->yn;
 	bool more;
 
 	assert(this->gx1 == this->fx0 && this->gy1 == this->fy0);
 	/*  Invariant :
-	    The last yielded filtered2 segment is (p1, p2) where p1 = (x1, y1), p2 = (x2, y2);
+	    The last yielded filtered2 segment is (p1, p2) where 
+		p1 = (x1, y1), p2 = (this->fx1, this->fy1);
 	    The next filtered1 point after p1 is n = (nx, ny).
 	    The base (the filtered1) iterator stands on (p0, p1) 
 		where p0 = (x0, y0), p1 = (x1, y1).
