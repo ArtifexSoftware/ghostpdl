@@ -779,9 +779,21 @@ get_hardware_params
 When <b><tt>setdevice</tt></b> installs a device instance in the graphics
 state, it checks whether the instance is closed or open.  If the instance
 is closed, <b><tt>setdevice</tt></b> calls the open routine, and then sets
-the state to open.  There is currently no user-accessible operation to
-close a device instance.  Device instances are only closed when they are
-about to be freed, which occurs in three situations:
+the state to open.
+
+<p>
+There is no user-accessible operation to close a device instance.  This is
+not an oversight -- it is required in order to enforce the following
+invariant:
+
+<blockquote>
+If a device instance is the current device in <em>any</em> graphics state,
+it must be open (have <b><tt>is_open</tt></b> set to true).
+</blockquote>
+
+<p>
+Device instances are only closed when they are about to
+be freed, which occurs in three situations:
 
 <ul>
 <li>When a <b><tt>restore</tt></b> occurs, if the instance was created since

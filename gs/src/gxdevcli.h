@@ -254,6 +254,13 @@ dev_page_proc_end_page(gx_default_end_page);
  * (using the procs record, not the static_procs pointer, to call the
  * driver procedures).
  *
+ * Device procedures other than put_params MUST NOT change the state of
+ * is_open.  put_params may change the state of is_open from true to false.
+ * Changing the state of is_open in any other device procedure may lead to
+ * unpredictable misfunctioning.
+ * Most device procedures may assume that is_open is true: for details,
+ * see the documentation in doc/Drivers.htm.
+ *
  * The choice of the name Margins (rather than, say, HWOffset), and the
  * specification in terms of a default device resolution rather than
  * 1/72" units, are due to Adobe.
