@@ -592,7 +592,7 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
 	image_simple_expand(scan_line + (line_ix >> 3), line_x,
 			    line_size, buffer, data_x, w, xcur,
 			    penum->x_extent.x,
-			    ((pdc0->colors.pure == 0) !=
+			    (byte)((pdc0->colors.pure == 0) !=
 			     (penum->map[0].table.lookup4x1to32[0] == 0) ?
 			     0xff : 0));
 	if (ix & 7)

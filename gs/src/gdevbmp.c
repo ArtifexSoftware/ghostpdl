@@ -140,7 +140,7 @@ bmp_print_page(gx_device_printer * pdev, FILE * file)
 {
     uint raster = gdev_prn_raster(pdev);
     /* BMP scan lines are padded to 32 bits. */
-    uint bmp_raster = raster + (-raster & 3);
+    uint bmp_raster = raster + (-(int)raster & 3);
     byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     int y;
     int code;		/* return code */
@@ -176,7 +176,7 @@ bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
     int plane_depth = pdev->color_info.depth / 4;
     uint raster = bitmap_raster(pdev->width * plane_depth);
     /* BMP scan lines are padded to 32 bits. */
-    uint bmp_raster = raster + (-raster & 3);
+    uint bmp_raster = raster + (-(int)raster & 3);
     byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     int y;
     int code = 0;		/* return code */

@@ -190,8 +190,9 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
         */
 
         if( auto_feed ) {
-           top = dev_t_margin(pdev) * pdev->y_pixels_per_inch;
-           bottom = pdev->height - dev_b_margin(pdev) * pdev->y_pixels_per_inch;
+           top = (int)(dev_t_margin(pdev) * pdev->y_pixels_per_inch);
+           bottom = (int)(pdev->height - 
+			dev_b_margin(pdev) * pdev->y_pixels_per_inch);
         } else {
            top = 0;
            bottom = pdev->height;

@@ -712,13 +712,13 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 		return code;
 	    if (notdef == gs_no_glyph && gs_font_glyph_is_notdef(bfont, glyph)) {
 		notdef = glyph;
-		info->MissingWidth = glyph_info.width[wmode].x;
+		info->MissingWidth = (int)glyph_info.width[wmode].x;
 		info->members |= FONT_INFO_MISSING_WIDTH;
 	    }
 	    if (glyph_info.width[wmode].y != 0)
 		fixed_width = min_int;
 	    else if (fixed_width == 0)
-		fixed_width = glyph_info.width[wmode].x;
+		fixed_width = (int)glyph_info.width[wmode].x;
 	    else if (glyph_info.width[wmode].x != fixed_width)
 		fixed_width = min_int;
 	}
@@ -753,7 +753,7 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 
 		if (code < 0)
 		    return code;
-		info->MissingWidth = glyph_info.width[wmode].x;
+		info->MissingWidth = (int)glyph_info.width[wmode].x;
 		info->members |= FONT_INFO_MISSING_WIDTH;
 		break;
 	    }

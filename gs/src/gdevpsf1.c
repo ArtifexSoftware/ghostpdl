@@ -200,9 +200,9 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	gs_type1_data defaults;
 
 	defaults.BlueFuzz = 1;
-	defaults.BlueScale = 0.039625;
+	defaults.BlueScale = (float)0.039625;
 	defaults.BlueShift = 7.0;
-	defaults.ExpansionFactor = 0.06;
+	defaults.ExpansionFactor = (float)0.06;
 	defaults.ForceBold = false;
 	defaults.LanguageGroup = 0;
 	defaults.RndStemUp = true;

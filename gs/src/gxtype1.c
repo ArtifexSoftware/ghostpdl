@@ -322,8 +322,8 @@ gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results)
 	 j++, base++, deltas += k1
 	 )
 	for (i = 1; i <= k1; i++)
-	    *base += deltas[i] *
-		pdata->WeightVector.values[i];
+	    *base += (fixed)(deltas[i] *
+		pdata->WeightVector.values[i]);
     pcis->ignore_pops = num_results;
     return num_values - num_results + 2;
 }

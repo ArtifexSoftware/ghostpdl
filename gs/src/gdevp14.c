@@ -124,8 +124,8 @@ private dev_proc_create_compositor(pdf14_create_compositor);
 private dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
 private dev_proc_end_transparency_group(pdf14_end_transparency_group);
 
-#define XSIZE (8.5 * X_DPI)	/* 8.5 x 11 inch page, by default */
-#define YSIZE (11 * Y_DPI)
+#define XSIZE (int)(8.5 * X_DPI)	/* 8.5 x 11 inch page, by default */
+#define YSIZE (int)(11 * Y_DPI)
 
 /* 24-bit color. */
 
@@ -651,15 +651,15 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     gs_cspace_init_DeviceRGB(&cs);
     gx_set_dev_color(pgs);
     gs_image_t_init_adjust(&image, &cs, false);
-    image.ImageMatrix.xx = width;
-    image.ImageMatrix.yy = height;
+    image.ImageMatrix.xx = (float)width;
+    image.ImageMatrix.yy = (float)height;
     image.Width = width;
     image.Height = height;
     image.BitsPerComponent = 8;
-    pmat.xx = width;
+    pmat.xx = (float)width;
     pmat.xy = 0;
     pmat.yx = 0;
-    pmat.yy = height;
+    pmat.yy = (float)height;
     pmat.tx = 0;
     pmat.ty = 0;
     code = dev_proc(target, begin_typed_image) (target,
@@ -973,8 +973,8 @@ pdf14_begin_transparency_group(gx_device *dev,
 
     code = pdf14_push_transparency_group(pdev->ctx, &pdev->ctx->rect,
 					 ptgp->Isolated, ptgp->Knockout,
-					 floor (255 * alpha + 0.5),
-					 floor (255 * pis->shape.alpha + 0.5),
+					 (byte)floor (255 * alpha + 0.5),
+					 (byte)floor (255 * pis->shape.alpha + 0.5),
 					 pis->blend_mode);
     return code;
 }
@@ -1015,9 +1015,9 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     src[0] = color >> 16;
     src[1] = (color >> 8) & 0xff;
     src[2] = color & 0xff;
-    src[3] = floor (255 * mdev->alpha + 0.5);
+    src[3] = (byte)floor (255 * mdev->alpha + 0.5);
     if (has_shape)
-	shape = floor (255 * mdev->shape + 0.5);
+	shape = (byte)floor (255 * mdev->shape + 0.5);
 
     if (x < buf->rect.p.x) x = buf->rect.p.x;
     if (y < buf->rect.p.x) y = buf->rect.p.y;
@@ -1069,8 +1069,8 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device * dev,
     src[0] = color >> 16;
     src[1] = (color >> 8) & 0xff;
     src[2] = color & 0xff;
-    src[3] = floor (255 * mdev->shape + 0.5);
-    opacity = floor (255 * mdev->opacity + 0.5);
+    src[3] = (byte)floor (255 * mdev->shape + 0.5);
+    opacity = (byte)floor (255 * mdev->opacity + 0.5);
 
     if (x < buf->rect.p.x) x = buf->rect.p.x;
     if (y < buf->rect.p.x) y = buf->rect.p.y;
@@ -1315,7 +1315,7 @@ pdf14_get_cmap_procs(const gs_imager_state *pis, const gx_device * dev)
 
 private int
 gs_pdf14_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
-			    gx_device **pdev, gs_state *pgs, gx_device *target)
+			    gs_state *pgs, gx_device **pdev, gx_device *target)
 {
     pdf14_device *p14dev;
     int code;

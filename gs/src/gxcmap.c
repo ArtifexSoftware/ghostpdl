@@ -590,10 +590,10 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
 /****** IGNORE alpha ******/
     float ft0, ft1, ft2, ft3;
 
-    gx_remap_concrete_cmyk(unit_frac(pc->paint.values[0], ft0),
-			   unit_frac(pc->paint.values[1], ft1),
-			   unit_frac(pc->paint.values[2], ft2),
-			   unit_frac(pc->paint.values[3], ft3),
+    gx_remap_concrete_cmyk((frac)unit_frac(pc->paint.values[0], ft0),
+			   (frac)unit_frac(pc->paint.values[1], ft1),
+			   (frac)unit_frac(pc->paint.values[2], ft2),
+			   (frac)unit_frac(pc->paint.values[3], ft3),
 			   pdc, pis, dev, select);
     return 0;
 }

@@ -20,7 +20,6 @@
 #include "malloc_.h"
 #include "stdio_.h"
 #include "string_.h"		/* for strerror */
-#include "dos_.h"
 #include "gstypes.h"
 #include "gsmemory.h"		/* for gp.h */
 #include "gserror.h"

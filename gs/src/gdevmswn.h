@@ -22,7 +22,6 @@
 
 #include "string_.h"
 #include <stdlib.h>
-#include "dos_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxdevice.h"
@@ -87,8 +86,8 @@ struct gx_device_win_s {
 
 /* Initial values for width and height */
 #define INITIAL_RESOLUTION 96.0
-#define INITIAL_WIDTH (INITIAL_RESOLUTION * 85 / 10 + 1)
-#define INITIAL_HEIGHT (INITIAL_RESOLUTION * 11 + 1)
+#define INITIAL_WIDTH (int)(INITIAL_RESOLUTION * 85 / 10 + 0.5)
+#define INITIAL_HEIGHT (int)(INITIAL_RESOLUTION * 11 + 0.5)
 
 /* A macro for casting the device argument */
 #define wdev ((gx_device_win *)dev)

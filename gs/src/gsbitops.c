@@ -269,7 +269,7 @@ bits_replicate_horizontally(byte * data, uint width, uint height,
 	/*
 	 * This algorithm is inefficient, but probably not worth improving.
 	 */
-	uint bit_count = width & -width;  /* lowest bit: 1, 2, or 4 */
+	uint bit_count = width & (uint)(-(int)width);  /* lowest bit: 1, 2, or 4 */
 	uint left_mask = (0xff00 >> bit_count) & 0xff;
 
 	for (y = height; y-- > 0;

@@ -166,7 +166,7 @@ eps_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
 	byte *in = buf1;
 	byte *out = buf2;
 	int out_y_mult = (y_24pin ? 3 : 1);
-	int x_dpi = pdev->x_pixels_per_inch;
+	int x_dpi = (int)pdev->x_pixels_per_inch;
 	char start_graphics =
 		(y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60];
 	int first_pass = (start_graphics & DD ? 1 : 0);

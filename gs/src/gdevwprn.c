@@ -303,11 +303,10 @@ win_prn_output_page(gx_device * dev, int num_copies, int flush)
 
 /* Map a r-g-b color to the colors available under Windows */
 private gx_color_index
-win_prn_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		      gx_color_value b)
+win_prn_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     int i = wdev->nColors;
-    gx_color_index color = win_map_rgb_color(dev, r, g, b);
+    gx_color_index color = win_map_rgb_color(dev, cv);
 
     if (color != i)
 	return color;

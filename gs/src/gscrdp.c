@@ -248,7 +248,7 @@ param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
 		    for (j = 0; j < size; ++j)
 			values[i * size + j] =
 			    frac2float((*pcrd->RenderTable.T.procs[i])
-				       (j * scale, pcrd));
+				       ((byte)(j * scale), pcrd));
 		}
 		fa.data = values;
 		fa.size = size * m;

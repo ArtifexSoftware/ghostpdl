@@ -118,9 +118,11 @@ win_close(gx_device * dev)
 
 /* Map a r-g-b color to the colors available under Windows */
 gx_color_index
-win_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		  gx_color_value b)
+win_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
     switch (wdev->BitsPerPixel) {
 	case 24:
 	    return (((unsigned long)b >> (gx_color_value_bits - 8)) << 16) +
@@ -219,9 +221,9 @@ win_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 	    if ((r == g) && (g == b) && (r >= gx_max_color_value / 3 * 2 - 1)
 		&& (r < gx_max_color_value / 4 * 3))
 		return ((gx_color_index) 8);	/* light gray */
-	    return pc_4bit_map_rgb_color(dev, r, g, b);
+	    return pc_4bit_map_rgb_color(dev, cv);
     }
-    return (gx_default_map_rgb_color(dev, r, g, b));
+    return (gx_default_map_rgb_color(dev, cv));
 }
 
 /* Map a color code to r-g-b. */

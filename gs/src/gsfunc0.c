@@ -221,7 +221,7 @@ top:
 
 	(*fn_get_samples[pfn->params.BitsPerSample])(pfn, offset, sdata);
 	for (j = pfn->params.n - 1; j >= 0; --j)
-	    samples[j] = sdata[j];
+	    samples[j] = (float)sdata[j];
     } else {
 	float fpart = *fparts++;
 	int ipart = *iparts++;
@@ -291,7 +291,7 @@ top:
 
 	(*fn_get_samples[pfn->params.BitsPerSample])(pfn, offset, sdata);
 	for (j = pfn->params.n - 1; j >= 0; --j)
-	    samples[j] = sdata[j];
+	    samples[j] = (float)sdata[j];
     } else {
 	float fpart = *fparts++;
 	float samples1[max_Sd_n];
@@ -342,7 +342,7 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 	    if (enc < 0)
 		encoded[i] = 0;
 	    else if (enc >= pfn->params.Size[i] - 1)
-		encoded[i] = pfn->params.Size[i] - 1;
+		encoded[i] = (float)pfn->params.Size[i] - 1;
 	    else
 		encoded[i] = enc;
 	} else {
@@ -379,7 +379,7 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 	if (pfn->params.Range)
 	    r0 = pfn->params.Range[2 * i], r1 = pfn->params.Range[2 * i + 1];
 	else
-	    r0 = 0, r1 = (1 << bps) - 1;
+	    r0 = 0, r1 = (float)((1 << bps) - 1);
 	if (pfn->params.Decode)
 	    d0 = pfn->params.Decode[2 * i], d1 = pfn->params.Decode[2 * i + 1];
 	else
@@ -428,17 +428,17 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
     if (pfn->params.Encode)
 	e0 = pfn->params.Encode[0], e1 = pfn->params.Encode[1];
     else
-	e0 = 0, e1 = pfn->params.Size[0];
+	e0 = 0, e1 = (float)pfn->params.Size[0];
     w0 = (v0 - d0) * (e1 - e0) / (d1 - d0) + e0;
     if (w0 < 0)
 	w0 = 0;
     else if (w0 >= pfn->params.Size[0] - 1)
-	w0 = pfn->params.Size[0] - 1;
+	w0 = (float)pfn->params.Size[0] - 1;
     w1 = (v1 - d0) * (e1 - e0) / (d1 - d0) + e0;
     if (w1 < 0)
 	w1 = 0;
     else if (w1 >= pfn->params.Size[0] - 1)
-	w1 = pfn->params.Size[0] - 1;
+	w1 = (float)pfn->params.Size[0] - 1;
     if ((int)w0 != (int)w1)
 	return gs_error_undefined; /* not in the same sample */
     code = gs_function_evaluate(pfn_common, lower, r0);

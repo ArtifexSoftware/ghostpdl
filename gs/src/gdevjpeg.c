@@ -221,8 +221,8 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
     jcdp->cinfo.restart_interval = 0;
     jcdp->cinfo.density_unit = 1;	/* dots/inch (no #define or enum) */
-    jcdp->cinfo.X_density = pdev->HWResolution[0];
-    jcdp->cinfo.Y_density = pdev->HWResolution[1];
+    jcdp->cinfo.X_density = (UINT16)pdev->HWResolution[0];
+    jcdp->cinfo.Y_density = (UINT16)pdev->HWResolution[1];
     /* Create the filter. */
     /* Make sure we get at least a full scan line of input. */
     state.scan_line_size = jcdp->cinfo.input_components *

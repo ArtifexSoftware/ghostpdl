@@ -412,7 +412,7 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	    if (gname.data[0] == 'I')
 		bbox_I = info.bbox, have_I = true;
 	} else if (gname.data[0] >= 'a' && gname.data[0] <= 'z') {
-	    int y0 = info.bbox.p.y, y1 = info.bbox.q.y;
+	    int y0 = (int)(info.bbox.p.y), y1 = (int)(info.bbox.q.y);
 
 	    small_present = true;
 	    switch (gname.data[0]) {

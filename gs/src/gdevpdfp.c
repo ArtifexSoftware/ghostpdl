@@ -301,11 +301,11 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		 * the nearest achievable value.
 		 */
 		if (cl < (float)1.25)
-		    cl = 1.2;
+		    cl = (float)1.2;
 		else if (cl >= (float)1.35)
-		    cl = 1.4;
+		    cl = (float)1.4;
 		else
-		    cl = 1.3;
+		    cl = (float)1.3;
 	    case 1:
 		break;
 	}

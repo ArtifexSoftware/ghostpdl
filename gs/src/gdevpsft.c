@@ -77,7 +77,7 @@ put_pad(stream *s, uint length)
 {
     static const byte pad_to_4[3] = {0, 0, 0};
 
-    stream_write(s, pad_to_4, (uint)(-length & 3));
+    stream_write(s, pad_to_4, (uint)(-(int)length & 3));
 }
 
 /* Put short and long values on a stream. */
@@ -615,7 +615,7 @@ write_post(stream *s, gs_font *font, post_t *post)
 	int mac_index = mac_glyph_index(font, ch, &str);
 
 	if (mac_index < 0) {
-	    spputc(s, str.size);
+	    spputc(s, (byte)str.size);
 	    stream_write(s, str.data, str.size);
 	}
     }

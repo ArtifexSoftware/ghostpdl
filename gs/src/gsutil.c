@@ -77,17 +77,17 @@ memflip8x8(const byte * inp, int line_size, byte * outp, int dist)
     if (aceg == bdfh && (aceg >> 8) == (aceg & 0xffffff)) {
 	if (aceg == 0)
 	    goto store;
-	*outp = -((aceg >> 7) & 1);
-	outp[dist] = -((aceg >> 6) & 1);
+	*outp = (byte)-(int)((aceg >> 7) & 1);
+	outp[dist] = (byte)-(int)((aceg >> 6) & 1);
 	outp += dist << 1;
-	*outp = -((aceg >> 5) & 1);
-	outp[dist] = -((aceg >> 4) & 1);
+	*outp = (byte)-(int)((aceg >> 5) & 1);
+	outp[dist] = (byte)-(int)((aceg >> 4) & 1);
 	outp += dist << 1;
-	*outp = -((aceg >> 3) & 1);
-	outp[dist] = -((aceg >> 2) & 1);
+	*outp = (byte)-(int)((aceg >> 3) & 1);
+	outp[dist] = (byte)-(int)((aceg >> 2) & 1);
 	outp += dist << 1;
-	*outp = -((aceg >> 1) & 1);
-	outp[dist] = -(aceg & 1);
+	*outp = (byte)-(int)((aceg >> 1) & 1);
+	outp[dist] = (byte)-(int)(aceg & 1);
 	return;
     } {
 	register uint temp;

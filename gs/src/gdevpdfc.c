@@ -403,8 +403,8 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 
 	/* Find the legal range for the color components. */
 	for (j = 0; j < num_components; ++j)
-	    cmin.paint.values[j] = min_long,
-		cmax.paint.values[j] = max_long;
+	    cmin.paint.values[j] = (float)min_long,
+		cmax.paint.values[j] = (float)max_long;
 	gs_color_space_restrict_color(&cmin, base_space);
 	gs_color_space_restrict_color(&cmax, base_space);
 	/*

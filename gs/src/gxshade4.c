@@ -72,10 +72,10 @@ mesh_subdivide_triangle(mesh_fill_state_t *pfs, mesh_frame_t *fp)
     float r2min, r2max;
     float tri_area_2;
 
-    dabx = fp->vb.p.x - fp->va.p.x;
-    daby = fp->vb.p.y - fp->va.p.y;
-    dbcx = fp->vc.p.x - fp->vb.p.x;
-    dbcy = fp->vc.p.y - fp->vb.p.y;
+    dabx = (float)(fp->vb.p.x - fp->va.p.x);
+    daby = (float)(fp->vb.p.y - fp->va.p.y);
+    dbcx = (float)(fp->vc.p.x - fp->vb.p.x);
+    dbcy = (float)(fp->vc.p.y - fp->vb.p.y);
     dacx = (dabx + dbcx);
     dacy = (daby + dbcy);
     r2ab = dabx * dabx + daby * daby;
@@ -83,9 +83,9 @@ mesh_subdivide_triangle(mesh_fill_state_t *pfs, mesh_frame_t *fp)
     r2ac = dacx * dacx + dacy * dacy;
 
     SET_MIN_MAX_3(r2min, r2max, r2ab, r2bc, r2ac);
-    tri_area_2 = fp->va.p.y * (fp->vc.p.x - fp->vb.p.x) +
+    tri_area_2 = (float)(fp->va.p.y * (fp->vc.p.x - fp->vb.p.x) +
 	fp->vb.p.y * (fp->va.p.x - fp->vc.p.x) +
-	fp->vc.p.y * (fp->vb.p.x - fp->va.p.x);
+	fp->vc.p.y * (fp->vb.p.x - fp->va.p.x));
 
     if (fabs(tri_area_2) < 0.5 * r2max) {
 	/* skinny triangle, subdivide longest edge */

@@ -150,7 +150,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->FontBBox.p.x < -0.5 || pfont->FontBBox.p.x > 0.5 ||
 	pfont->FontBBox.p.y < -0.5 || pfont->FontBBox.p.y > 0.5
 	) {
-	float upem = pfont->data.unitsPerEm;
+	float upem = (float)pfont->data.unitsPerEm;
 
 	pfont->FontBBox.p.x = S16(head_box) / upem;
 	pfont->FontBBox.p.y = S16(head_box + 2) / upem;

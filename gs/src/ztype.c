@@ -296,7 +296,7 @@ zcvr(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	case t_integer:
-	    make_real(op, op->value.intval);
+	    make_real(op, (float)op->value.intval);
 	case t_real:
 	    return 0;
 	default:
@@ -314,7 +314,7 @@ zcvr(i_ctx_t *i_ctx_p)
 		    return code;
 		switch (r_type(&token)) {
 		    case t_integer:
-			make_real(op, token.value.intval);
+			make_real(op, (float)token.value.intval);
 			return 0;
 		    case t_real:
 			*op = token;

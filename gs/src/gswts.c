@@ -382,7 +382,7 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
     int i;
     bool jumpok;
 
-    wts_vec_set(&a, floor(uf * m + 0.5), floor(vf * m + 0.5), 1, 0);
+    wts_vec_set(&a, (int)floor(uf * m + 0.5), (int)floor(vf * m + 0.5), 1, 0);
     if (a.u == 0 && a.v == 0)
 	return qb + 1;
 	
@@ -452,8 +452,8 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
 	int ck;
 	double qy, qm;
 
-	ca = floor(i * pya + 0.5);
-	cb = floor(i * pyb + 0.5);
+	ca = (int)floor(i * pya + 0.5);
+	cb = (int)floor(i * pyb + 0.5);
 	wts_vec_set(&c, ca * a.u + cb * b.u, ca * a.v + cb * b.v, 0, 1);
 	usj = c.u / (double)s;
 	vsj = c.v / (double)s;
@@ -861,7 +861,7 @@ wts_sort_cell_j(gs_wts_screen_enum_j_t *wsej)
 	pcell[i] = &cell[i];
     qsort(pcell, size, sizeof(bits32 *), wts_sample_cmp);
     for (i = 0; i < size; i++)
-	*pcell[i] = floor(WTS_SORTED_MAX * (i + 0.5) / size);
+	*pcell[i] = (bits32)floor(WTS_SORTED_MAX * (i + 0.5) / size);
     free(pcell);
     return 0;
 }
@@ -904,7 +904,7 @@ wts_blue_bump(gs_wts_screen_enum_t *wse)
 
     am = uf * uf + vf * vf;
     eg = (1 << 24) * 2.0 * sqrt (am);
-    z = 5 / sqrt (am);
+    z = (int)(5 / sqrt (am));
 
     x0 = -(z / width) * shift - z;
     y0 = -(z % width);
@@ -916,7 +916,7 @@ wts_blue_bump(gs_wts_screen_enum_t *wse)
     for (y = -z; y <= z; y++) {
 	int x1 = x0;
 	for (x = -z; x <= z; x++) {
-	    bump[y0 * width + x1] += eg * exp (-am * (x * x + y * y));
+	    bump[y0 * width + x1] += (bits32)(eg * exp (-am * (x * x + y * y)));
 	    x1++;
 	    if (x1 == width)
 		x1 = 0;
@@ -962,7 +962,7 @@ wts_sort_blue_j(gs_wts_screen_enum_j_t *wsej)
     /* set ref to sorted cell; pcell will now point to ref */
     for (i = 0; i < size; i++) {
 	pcell[i] = (pcell[i] - cell) + ref;
-	*pcell[i] = floor((1 << 24) * (i + 0.5) / size);
+	*pcell[i] = (bits32)floor((1 << 24) * (i + 0.5) / size);
 	cell[i] = 0;
     }
 
@@ -986,7 +986,7 @@ wts_sort_blue_j(gs_wts_screen_enum_j_t *wsej)
 	}
 	ix = pcell[jmin] - ref;
 	pcell[jmin] = pcell[i];
-	cell[ix] = floor(WTS_SORTED_MAX * (i + 0.5) / size);
+	cell[ix] = (bits32)floor(WTS_SORTED_MAX * (i + 0.5) / size);
 
 	x0 = ix % width;
 	y0 = ix / width;

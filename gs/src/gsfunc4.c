@@ -529,7 +529,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
     for (i = 0; i < pfn->params.n; ++i) {
 	switch (vstack[i + 1].type) {
 	case CVT_INT:
-	    out[i] = vstack[i + 1].value.i;
+	    out[i] = (float)vstack[i + 1].value.i;
 	    break;
 	case CVT_FLOAT:
 	    out[i] = vstack[i + 1].value.f;

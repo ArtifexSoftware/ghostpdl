@@ -213,12 +213,12 @@ bj200_open(gx_device *pdev)
 	   printer centres the 8" print line on the page. */
 
 	static const float a4_margins[4] =
-	 {	BJ200_A4_SIDE_MARGIN, BJ200_BOTTOM_MARGIN,
-		BJ200_A4_SIDE_MARGIN, BJ200_TOP_MARGIN
+	 {	(float)BJ200_A4_SIDE_MARGIN, (float)BJ200_BOTTOM_MARGIN,
+		(float)BJ200_A4_SIDE_MARGIN, (float)BJ200_TOP_MARGIN
 	 };
 	static const float letter_margins[4] =
-	 {	BJ200_LETTER_SIDE_MARGIN, BJ200_BOTTOM_MARGIN,
-		BJ200_LETTER_SIDE_MARGIN, BJ200_TOP_MARGIN
+	 {	(float)BJ200_LETTER_SIDE_MARGIN, (float)BJ200_BOTTOM_MARGIN,
+		(float)BJ200_LETTER_SIDE_MARGIN, (float)BJ200_TOP_MARGIN
 	 };
 
 	gx_device_set_margins(pdev,
@@ -233,12 +233,12 @@ bj10e_open(gx_device *pdev)
 {
         /* See bj200_open() */
 	static const float a4_margins[4] =
-	 {	BJ200_A4_SIDE_MARGIN, BJ10E_BOTTOM_MARGIN,
-		BJ200_A4_SIDE_MARGIN, BJ10E_TOP_MARGIN
+	 {	(float)BJ200_A4_SIDE_MARGIN, (float)BJ10E_BOTTOM_MARGIN,
+		(float)BJ200_A4_SIDE_MARGIN, (float)BJ10E_TOP_MARGIN
 	 };
 	static const float letter_margins[4] =
-	 {	BJ200_LETTER_SIDE_MARGIN, BJ10E_BOTTOM_MARGIN,
-		BJ200_LETTER_SIDE_MARGIN, BJ10E_TOP_MARGIN
+	 {	(float)BJ200_LETTER_SIDE_MARGIN, (float)BJ10E_BOTTOM_MARGIN,
+		(float)BJ200_LETTER_SIDE_MARGIN, (float)BJ10E_TOP_MARGIN
 	 };
 
 	gx_device_set_margins(pdev,
@@ -252,8 +252,8 @@ bj10e_open(gx_device *pdev)
 private int
 bj10e_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size = gx_device_raster((gx_device *)pdev, 0);
-	int xres = pdev->x_pixels_per_inch;
-	int yres = pdev->y_pixels_per_inch;
+	int xres = (int)pdev->x_pixels_per_inch;
+	int yres = (int)pdev->y_pixels_per_inch;
 	int mode = (yres == 180 ?
 			(xres == 180 ? 11 : 12) :
 			(xres == 180 ? 14 : 16));

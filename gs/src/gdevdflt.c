@@ -512,7 +512,7 @@ gx_default_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
     /****** tx/y is WRONG for devices with ******/
     /****** arbitrary initial matrix ******/
     pmat->tx = 0;
-    pmat->ty = dev->height;
+    pmat->ty = (float)dev->height;
 }
 /* Get the initial matrix for a device with upright Y. */
 /* This includes just a few printers and window systems. */

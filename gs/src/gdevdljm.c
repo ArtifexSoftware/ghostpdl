@@ -91,8 +91,8 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 #define out_row_alt ((byte *)out_row_alt_words)
 #define prev_row ((byte *)prev_row_words)
     byte *out_data;
-    int x_dpi = pdev->x_pixels_per_inch;
-    int y_dpi = pdev->y_pixels_per_inch;
+    int x_dpi = (int)pdev->x_pixels_per_inch;
+    int y_dpi = (int)pdev->y_pixels_per_inch;
     int y_dots_per_pixel = dots_per_inch / y_dpi;
     int num_rows = dev_print_scan_lines(pdev);
 

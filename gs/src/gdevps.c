@@ -455,9 +455,9 @@ psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
 	    int cshift = 8 - shift;
 
 	    for (; wleft + shift > 8; ++src, wleft -= 8)
-		stream_putc(s, (*src << shift) + (src[1] >> cshift));
+		stream_putc(s, (byte)((*src << shift) + (src[1] >> cshift)));
 	    if (wleft > 0)
-		stream_putc(s, (*src << shift) & (byte)(0xff00 >> wleft));
+		stream_putc(s, (byte)((*src << shift) & (byte)(0xff00 >> wleft)));
 	}
 }
 private int

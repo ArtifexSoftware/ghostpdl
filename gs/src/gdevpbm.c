@@ -721,7 +721,7 @@ pgm_print_page(gx_device_printer * pdev, FILE * pstream)
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
 
     return (bdev->uses_color == 0 && bdev->optimize ?
-	    pbm_print_page_loop(pdev, bdev->magic - 1, pstream,
+	    pbm_print_page_loop(pdev, (char)((int)bdev->magic - 1), pstream,
 				pxm_pbm_print_row) :
 	    pbm_print_page_loop(pdev, bdev->magic, pstream,
 				pgm_print_row));
@@ -815,9 +815,9 @@ ppm_print_page(gx_device_printer * pdev, FILE * pstream)
 	    pbm_print_page_loop(pdev, bdev->magic, pstream,
 				ppm_print_row) :
 	    bdev->uses_color == 1 ?
-	    pbm_print_page_loop(pdev, bdev->magic - 1, pstream,
+	    pbm_print_page_loop(pdev, (char)((int)bdev->magic - 1), pstream,
 				ppm_pgm_print_row) :
-	    pbm_print_page_loop(pdev, bdev->magic - 2, pstream,
+	    pbm_print_page_loop(pdev, (char)((int)bdev->magic - 2), pstream,
 				pxm_pbm_print_row));
 }
 

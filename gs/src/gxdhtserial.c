@@ -176,7 +176,8 @@ gx_ht_write_component(
 {
     const gx_ht_order *             porder = &pcomp->corder;
     byte *                          data0 = data;
-    int                             code, levels_size, bits_size, tmp_size = 0;
+    int                             code, levels_size, bits_size;
+    uint			    tmp_size = 0;
     int                             req_size;
 
     /*

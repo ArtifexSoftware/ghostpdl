@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "ctype_.h"
-#include "dos_.h"
 #include <io.h>
 #include "malloc_.h"
 #include <fcntl.h>

@@ -732,7 +732,7 @@ float_params(const ref * op, int count, float *pval)
 		*--pval = op->value.realval;
 		break;
 	    case t_integer:
-		*--pval = op->value.intval;
+		*--pval = (float)op->value.intval;
 		break;
 	    case t__invalid:
 		return_error(e_stackunderflow);

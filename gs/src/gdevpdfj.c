@@ -95,7 +95,7 @@ pdf_put_pixel_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 	num_components = gs_color_space_num_components(pcs);
 	if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed) {
 	    indexed_decode[0] = 0;
-	    indexed_decode[1] = (1 << pim->BitsPerComponent) - 1;
+	    indexed_decode[1] = (float)((1 << pim->BitsPerComponent) - 1);
 	    default_decode = indexed_decode;
 	}
     } else
@@ -213,12 +213,12 @@ void
 pdf_make_bitmap_matrix(gs_matrix * pmat, int x, int y, int w, int h,
 		       int h_actual)
 {
-    pmat->xx = w;
+    pmat->xx = (float)w;
     pmat->xy = 0;
     pmat->yx = 0;
-    pmat->yy = -h_actual;
-    pmat->tx = x;
-    pmat->ty = y + h;
+    pmat->yy = (float)(-h_actual);
+    pmat->tx = (float)x;
+    pmat->ty = (float)(y + h);
 }
 
 /*
@@ -481,16 +481,16 @@ pdf_copy_mask_bits(stream *s, const byte *base, int sourcex, int raster,
 	    int i;
 
 	    for (i = 0; i < nbytes; ++data, ++i)
-		sputc(s, *data ^ invert);
+		sputc(s, (byte)(*data ^ invert));
 	} else {
 	    int wleft = w;
 	    int rbit = 8 - sbit;
 
 	    for (; wleft + sbit > 8; ++data, wleft -= 8)
-		sputc(s, ((*data << sbit) + (data[1] >> rbit)) ^ invert);
+		sputc(s, (byte)(((*data << sbit) + (data[1] >> rbit)) ^ invert));
 	    if (wleft > 0)
-		sputc(s, ((*data << sbit) ^ invert) &
-		      (byte) (0xff00 >> wleft));
+		sputc(s, (byte)(((*data << sbit) ^ invert) &
+		      (byte) (0xff00 >> wleft)));
 	}
     }
     return 0;

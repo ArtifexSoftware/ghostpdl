@@ -179,13 +179,13 @@ stc_fs(stcolor_device *sdev,int npixel,byte *bin,byte *bbuf,byte *out)
 
 /* -- "spotsize" */
      scale  = sdev->stc.dither->minmax[1];
-     buf[1] = scale + (scale > 0.0 ? 0.5 : -0.5);
+     buf[1] = (long)(scale + (scale > 0.0 ? 0.5 : -0.5));
 
 /* -- "threshold" */
      offset = sdev->stc.dither->minmax[0];
      scale -= offset;
-     if((offset+0.5*scale) > 0.0) buf[2] = offset + 0.5*scale + 0.5;
-     else                         buf[2] = offset + 0.5*scale - 0.5;
+     if((offset+0.5*scale) > 0.0) buf[2] = (long)(offset + 0.5*scale + 0.5);
+     else                         buf[2] = (long)(offset + 0.5*scale - 0.5);
 
 /*
  *   random values, that do not exceed half of normal value
@@ -207,10 +207,10 @@ stc_fs(stcolor_device *sdev,int npixel,byte *bin,byte *bbuf,byte *out)
         scale = (double) buf[1] / (double) rand_max;
 
         for(i = 0; i < sdev->color_info.num_components; ++ i)
-           buf[i+3] = 0.25000*scale*(buf[i+3]-rand_max/2);
+           buf[i+3] = (long)(0.25000*scale*(buf[i+3]-rand_max/2));
 
         for(     ; i < i2do; ++i) /* includes 2 additional pixels ! */
-           buf[i+3] = 0.28125*scale*(buf[i+3]-rand_max/2);
+           buf[i+3] = (long)(0.28125*scale*(buf[i+3]-rand_max/2));
 
      }
 
@@ -377,17 +377,17 @@ stc_fscmyk(stcolor_device *sdev,int npixel,byte *bin,byte *bbuf,byte *out)
 
 /* -- "spotsize" */
      scale  = sdev->stc.dither->minmax[1];
-     buf[1] = scale + (scale > 0.0 ? 0.5 : -0.5);
+     buf[1] = (long)(scale + (scale > 0.0 ? 0.5 : -0.5));
 
 /* -- "threshold" */
      offset = sdev->stc.dither->minmax[0];
      scale -= offset;
      if(sdev->stc.flags & STCDFLAG1) {
-        buf[2] = (sdev->stc.extv[0][sdev->stc.sizv[0]-1] - sdev->stc.extv[0][0])
-               * scale / 2.0 + offset;
+        buf[2] = (long)((sdev->stc.extv[0][sdev->stc.sizv[0]-1] - 
+		sdev->stc.extv[0][0]) * scale / 2.0 + offset);
      } else {
-        if((offset+0.5*scale) > 0.0) buf[2] = offset + 0.5*scale + 0.5;
-        else                         buf[2] = offset + 0.5*scale - 0.5;
+        if((offset+0.5*scale) > 0.0) buf[2] = (long)(offset + 0.5*scale + 0.5);
+        else                         buf[2] = (long)(offset + 0.5*scale - 0.5);
      }
 
 /*
@@ -410,10 +410,10 @@ stc_fscmyk(stcolor_device *sdev,int npixel,byte *bin,byte *bbuf,byte *out)
         scale = (double) buf[1] / (double) rand_max;
 
         for(i = 0; i < sdev->color_info.num_components; ++ i)
-           buf[i+3] = 0.25000*scale*(buf[i+3]-rand_max/2);
+           buf[i+3] = (long)(0.25000*scale*(buf[i+3]-rand_max/2));
 
         for(     ; i < i2do; ++i) /* includes 2 additional pixels ! */
-           buf[i+3] = 0.28125*scale*(buf[i+3]-rand_max/2);
+           buf[i+3] = (long)(0.28125*scale*(buf[i+3]-rand_max/2));
 
      }
 

@@ -1279,10 +1279,10 @@ It determines the size of the printed image and allocates the
 buffer for the raw raster-data
 */
       upd->gswidth  = udev->width -
-         (dev_l_margin(udev)+dev_r_margin(udev))*udev->x_pixels_per_inch;
+         (int)((dev_l_margin(udev)+dev_r_margin(udev))*udev->x_pixels_per_inch);
 
       upd->gsheight = udev->height -
-         (dev_t_margin(udev)+dev_b_margin(udev))*udev->y_pixels_per_inch;
+         (int)((dev_t_margin(udev)+dev_b_margin(udev))*udev->y_pixels_per_inch);
 
       upd->ngsbuf = 0;    /* Ensure sane values */
       upd->gsbuf  = NULL; /* Ensure sane values */
@@ -2163,7 +2163,7 @@ in the W- or K-Component.
 
    if((c == m) && (m == y)) {
 
-      rv = upd_truncate(upd,0,c > k ? c : k);
+      rv = upd_truncate(upd,0,(gx_color_value)(c > k ? c : k));
 
    } else {
 
@@ -2610,22 +2610,22 @@ upd_rgb_ovcolor(gx_device *pdev, const gx_color_value cv[])
       if(black != gx_max_color_value) {
         float tmp,d;
         
-        d   = gx_max_color_value - black;
+        d   = (float)(gx_max_color_value - black);
 
         tmp = (float) (c-black) / d;
         if(      0.0 > tmp) tmp = 0.0;
         else if( 1.0 < tmp) tmp = 1.0;
-        c   = tmp * gx_max_color_value + 0.499;
+        c   = (gx_color_value)(tmp * gx_max_color_value + 0.499);
 
         tmp = (float) (m-black) / d;
         if(      0.0 > tmp) tmp = 0.0;
         else if( 1.0 < tmp) tmp = 1.0;
-        m   = tmp * gx_max_color_value + 0.499;
+        m   = (gx_color_value)(tmp * gx_max_color_value + 0.499);
 
         tmp = (float) (y-black) / d;
         if(      0.0 > tmp) tmp = 0.0;
         else if( 1.0 < tmp) tmp = 1.0;
-        y   = tmp * gx_max_color_value + 0.499;
+        y   = (gx_color_value)(tmp * gx_max_color_value + 0.499);
 
       } else {
 
@@ -3039,7 +3039,7 @@ upd_open_map(upd_device *udev)
             fx  = fx < 0.0 ? 0.0 :
                  (fx > gx_max_color_value ? gx_max_color_value : fx);
 
-            cmap->code[ly] = fx;
+            cmap->code[ly] = (gx_color_value)fx;
             if((fx - cmap->code[ly]) >= 0.5) cmap->code[ly] += 1;
          }
 
@@ -3422,18 +3422,18 @@ If anything was ok. up to now, memory get's allocated.
 
          for(i = 0; i < 32; ++i) { /* Attempt Ideal */
 
-            highval = (ymax-ymin) * (double) comp->spotsize + 0.5;
+            highval = (int32)((ymax-ymin) * (double) comp->spotsize + 0.5);
 
             if(!(highmod = highval % nsteps)) break; /* Gotcha */
 
             highval += nsteps - highmod;
-            comp->spotsize = (double) highval / (ymax-ymin) + 0.5;
+            comp->spotsize = (int32)((double) highval / (ymax-ymin) + 0.5);
 
             if(!(comp->spotsize % 2)) comp->spotsize++;
 
          }                         /* Attempt Ideal */
 
-         comp->offset    = ymin * (double) comp->spotsize + (double) 0.5;
+         comp->offset    = (int32)(ymin * (double) comp->spotsize + (double) 0.5);
          comp->scale     = highval / nsteps;
          comp->threshold = comp->spotsize / 2;
 
@@ -3473,9 +3473,9 @@ Optional Random Initialization of the value-Buffer
             upd->valbuf[i] = v;
          }
          scale = (float) comp->threshold / (float) (hv - lv);
-         lv   += comp->threshold / (2*scale);
+         lv   += (int32)(comp->threshold / (2*scale));
          for(i = icomp; i < upd->nvalbuf; i += upd->ncomp)
-            upd->valbuf[i] = scale * (upd->valbuf[i] - lv);
+            upd->valbuf[i] = (int32)(scale * (upd->valbuf[i] - lv));
       }
    }
 
@@ -4833,8 +4833,8 @@ upd_open_wrtescp(upd_device *udev)
            break;
            case  2:
               if(bp[i]) {
-                 value = 0.5 + udev->height * (float) bp[i]
-                               / udev->y_pixels_per_inch;
+                 value = (int)(0.5 + udev->height * (float) bp[i]
+                               / udev->y_pixels_per_inch);
                  if(       0 >= value) bp[i] = 1;
                  else if(128 >  value) bp[i] = value;
                  else                  bp[i] = 127;
@@ -4844,7 +4844,7 @@ upd_open_wrtescp(upd_device *udev)
               }
            break;
            case  3:
-              value = 0.5 + udev->height / udev->y_pixels_per_inch;
+              value = (int)(0.5 + udev->height / udev->y_pixels_per_inch);
               if(       0 >= value) bp[i] = 1;
               else if( 22 >  value) bp[i] = value;
               else                  bp[i] = 22;
@@ -5265,8 +5265,8 @@ upd_open_wrtescp2(upd_device *udev)
            break;
            case  8:
               if(B_PAGELENGTH & upd->flags) {
-                 value = 0.5 + udev->height
-                               * pixels_per_inch / udev->y_pixels_per_inch;
+                 value = (int)(0.5 + udev->height
+                               * pixels_per_inch / udev->y_pixels_per_inch);
                  bp[i] =  value     & 0xff;
               }
               state = 9;
@@ -5287,7 +5287,7 @@ upd_open_wrtescp2(upd_device *udev)
            break;
            case  12:
               if(B_TOPMARGIN & upd->flags) {
-                 value =  dev_t_margin(udev) * pixels_per_inch;
+                 value =  (int)(dev_t_margin(udev) * pixels_per_inch);
                  bp[i] =  value     & 0xff;
               }
               state = 13;
@@ -5300,9 +5300,9 @@ upd_open_wrtescp2(upd_device *udev)
            break;
            case  14:
               if(B_BOTTOMMARGIN & upd->flags) {
-                 value = 0.5 + udev->height
+                 value = (int)(0.5 + udev->height
                                * pixels_per_inch / udev->y_pixels_per_inch
-                       - dev_b_margin(udev) * pixels_per_inch;
+                       - dev_b_margin(udev) * pixels_per_inch);
                  bp[i] =  value     & 0xff;
               }
               state = 15;
@@ -5347,7 +5347,7 @@ upd_open_wrtescp2(upd_device *udev)
       byte *bp;
       int ratio;
 
-      ratio = (udev->y_pixels_per_inch + .5) / udev->x_pixels_per_inch;
+      ratio = (int)((udev->y_pixels_per_inch + 0.5) / udev->x_pixels_per_inch);
 
       if(0 == upd->ints[I_XSTEP]) { /* Adjust scale-factor too! */
          if(ratio > 1) upd->ints[I_XSTEP] = -ratio;
@@ -5462,10 +5462,10 @@ upd_open_wrtescp2(upd_device *udev)
          switch(upd->choice[C_FORMAT]){
             case FMT_ESCP2Y:
             case FMT_ESCP2XY:
-               *bp++ = 3600.0 * upd->ints[I_NYPASS] / 
-                                 udev->y_pixels_per_inch + 0.5;
-               *bp++ = 3600.0 * upd->ints[I_NXPASS] /
-                                 udev->x_pixels_per_inch + 0.5;
+               *bp++ = (byte)(3600.0 * upd->ints[I_NYPASS] / 
+                                 udev->y_pixels_per_inch + 0.5);
+               *bp++ = (byte)(3600.0 * upd->ints[I_NXPASS] /
+                                 udev->x_pixels_per_inch + 0.5);
                *bp++ = upd->ints[I_PINS2WRITE];
             break;
             case FMT_ESCNMY:

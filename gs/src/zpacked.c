@@ -150,7 +150,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 	}
 	ishort = idest += packed_per_ref;
     }
-    pad = -idest & (packed_per_ref - 1);	/* padding at end */
+    pad = -(int)idest & (packed_per_ref - 1);	/* padding at end */
 
     /* Now we can allocate the array. */
 

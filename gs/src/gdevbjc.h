@@ -93,11 +93,14 @@
  */
 
 #define BJC_MARGINS_LETTER \
-    (6.5 / 25.4), BJC_LOWER_LIMIT, (6.5 / 25.4), BJC_PRINT_LIMIT
+    (float)(6.5 / 25.4), (float)BJC_LOWER_LIMIT, \
+    (float)(6.5 / 25.4), (float)BJC_PRINT_LIMIT
 #define BJC_MARGINS_A4 \
-    (3.4 / 25.4), BJC_LOWER_LIMIT, (3.4 / 25.4), BJC_PRINT_LIMIT
+    (float)(3.4 / 25.4), (float)BJC_LOWER_LIMIT, \
+    (float)(3.4 / 25.4), (float)BJC_PRINT_LIMIT
 #define BJC_MARGINS_A3 \
-    (4.0 / 25.4), BJC_LOWER_LIMIT, (4.0 / 25.4), BJC_A3_PRINT_LIMIT
+    (float)(4.0 / 25.4), (float)BJC_LOWER_LIMIT, \
+    (float)(4.0 / 25.4), (float)BJC_A3_PRINT_LIMIT
 
 /*
  * Drivers options names.

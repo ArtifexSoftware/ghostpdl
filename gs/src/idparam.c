@@ -147,7 +147,7 @@ dict_float_param(const ref * pdict, const char *kstr,
     }
     switch (r_type(pdval)) {
 	case t_integer:
-	    *pvalue = pdval->value.intval;
+	    *pvalue = (float)pdval->value.intval;
 	    return 0;
 	case t_real:
 	    *pvalue = pdval->value.realval;

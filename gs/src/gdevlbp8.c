@@ -66,10 +66,10 @@ const gx_device_printer far_data gs_lips3_device =
 
 /* ------ Internal routines ------ */
 
-#define ESC 0x1b
-#define CSI 0233
-#define DCS 0220
-#define ST 0234
+#define ESC (char)0x1b
+#define CSI '\233'
+#define DCS '\220'
+#define ST '\234'
 
 static const char lbp8_init[] = {
   ESC, ';', ESC, 'c', ESC, ';', /* reset, ISO */

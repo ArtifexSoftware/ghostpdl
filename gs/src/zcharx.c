@@ -112,7 +112,7 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
 
 	switch (code = num_array_get(op, format, i, &value)) {
 	case t_integer:
-	    values[i] = value.value.intval; break;
+	    values[i] = (float)value.value.intval; break;
 	case t_real:
 	    values[i] = value.value.realval; break;
 	case t_null:

@@ -775,8 +775,8 @@ image_init_map(byte * map, int map_size, const float *decode)
 
     if (diff_v == 1 || diff_v == -1) {	/* We can do the stepping with integers, without overflow. */
 	byte *limit = map + map_size;
-	uint value = min_v * 0xffffL;
-	int diff = diff_v * (0xffffL / (map_size - 1));
+	uint value = (uint)(min_v * 0xffffL);
+	int diff = (int)(diff_v * (0xffffL / (map_size - 1)));
 
 	for (; map != limit; map++, value += diff)
 	    *map = value >> 8;

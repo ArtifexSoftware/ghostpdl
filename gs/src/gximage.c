@@ -281,7 +281,7 @@ sput_variable_uint(stream *s, uint w)
 {
     for (; w > 0x7f; w >>= 7)
 	sputc(s, (byte)(w | 0x80));
-    sputc(s, w);
+    sputc(s, (byte)w);
 }
 
 /*
@@ -348,7 +348,7 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
     control |= pim->format << PI_FORMAT_SHIFT;
     num_decode = num_components * 2;
     if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
-	decode_default_1 = pcs->params.indexed.hival;
+	decode_default_1 = (float)pcs->params.indexed.hival;
     for (i = 0; i < num_decode; ++i)
 	if (pim->Decode[i] != DECODE_DEFAULT(i, decode_default_1)) {
 	    control |= PI_Decode;
@@ -382,7 +382,7 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
 	    float dv = DECODE_DEFAULT(i + 1, decode_default_1);
 
 	    if (dflags >= 0x100) {
-		sputc(s, dflags & 0xff);
+		sputc(s, (byte)(dflags & 0xff));
 		sputs(s, (const byte *)decode, di * sizeof(float), &ignore);
 		dflags = 1;
 		di = 0;
@@ -401,7 +401,7 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
 		decode[di++] = v;
 	    }
 	}
-	sputc(s, (dflags << (8 - num_decode)) & 0xff);
+	sputc(s, (byte)((dflags << (8 - num_decode)) & 0xff));
 	sputs(s, (const byte *)decode, di * sizeof(float), &ignore);
     }
     *ppcs = pcs;
@@ -412,12 +412,12 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
 void
 gx_image_matrix_set_default(gs_data_image_t *pid)
 {
-    pid->ImageMatrix.xx = pid->Width;
+    pid->ImageMatrix.xx = (float)pid->Width;
     pid->ImageMatrix.xy = 0;
     pid->ImageMatrix.yx = 0;
-    pid->ImageMatrix.yy = -pid->Height;
+    pid->ImageMatrix.yy = (float)-pid->Height;
     pid->ImageMatrix.tx = 0;
-    pid->ImageMatrix.ty = pid->Height;
+    pid->ImageMatrix.ty = (float)pid->Height;
 }
 
 /* Get a variable-length uint from a stream. */
@@ -469,7 +469,7 @@ gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
     num_components = gs_color_space_num_components(pcs);
     num_decode = num_components * 2;
     if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
-	decode_default_1 = pcs->params.indexed.hival;
+	decode_default_1 = (float)pcs->params.indexed.hival;
     if (control & PI_Decode) {
 	uint dflags = 0x10000;
 	float *dp = pim->Decode;

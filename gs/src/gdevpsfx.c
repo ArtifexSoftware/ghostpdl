@@ -295,9 +295,9 @@ type2_put_op(stream *s, int op)
 {
     if (op >= CE_OFFSET) {
 	spputc(s, cx_escape);
-	spputc(s, op - CE_OFFSET);
+	spputc(s, (byte)(op - CE_OFFSET));
     } else
-	sputc(s, op);
+	sputc(s, (byte)op);
 }
 
 /* Put a Type 2 number on a stream. */

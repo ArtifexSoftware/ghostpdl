@@ -68,4 +68,8 @@ int unlink(const char *);
 #  define SEEK_END 2
 #endif
 
+#if defined(_MSC_VER)
+#define fdopen(handle,mode) _fdopen(handle,mode)
+#endif
+
 #endif /* stdio__INCLUDED */

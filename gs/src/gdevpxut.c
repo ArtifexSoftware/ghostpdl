@@ -72,7 +72,7 @@ int
 px_write_select_media(stream *s, const gx_device *dev, pxeMediaSize_t *pms)
 {
 #define MSD(ms, res, w, h)\
-  { ms, (w) * 1.0 / (res), (h) * 1.0 / res },
+  { ms, (float)((w) * 1.0 / (res)), (float)((h) * 1.0 / res) },
     static const struct {
 	pxeMediaSize_t ms;
 	float width, height;
@@ -97,7 +97,7 @@ px_write_select_media(stream *s, const gx_device *dev, pxeMediaSize_t *pms)
      * According to the PCL XL documentation, MediaSize must always
      * be specified, but MediaSource is optional.
      */
-    px_put_uba(s, size, pxaMediaSize);
+    px_put_uba(s, (byte)size, pxaMediaSize);
     if (!pms || size != *pms) {
 	static const byte page_header_2[] = {
 	    DUB(eAutoSelect), DA(pxaMediaSource)
@@ -144,13 +144,13 @@ void
 px_put_a(stream * s, px_attribute_t a)
 {
     sputc(s, pxt_attr_ubyte);
-    sputc(s, a);
+    sputc(s, (byte)a);
 }
 void
 px_put_ac(stream *s, px_attribute_t a, px_tag_t op)
 {
     px_put_a(s, a);
-    sputc(s, op);
+    sputc(s, (byte)op);
 }
 
 void
@@ -188,7 +188,7 @@ void
 px_put_u(stream * s, uint i)
 {
     if (i <= 255)
-	px_put_ub(s, i);
+	px_put_ub(s, (byte)i);
     else
 	px_put_us(s, i);
 }
@@ -245,7 +245,7 @@ px_put_r(stream * s, floatp r)
     spputc(s, (byte) mantissa);
     spputc(s, (byte) (mantissa >> 8));
     spputc(s, (byte) (((exp + 127) << 7) + ((mantissa >> 16) & 0x7f)));
-    spputc(s, (exp + 127) >> 1);
+    spputc(s, (byte) ((exp + 127) >> 1));
 }
 void
 px_put_rl(stream * s, floatp r)

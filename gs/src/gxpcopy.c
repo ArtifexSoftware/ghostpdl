@@ -548,7 +548,7 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
 	    if (xd < HALF_FIXED_BITS)
 		return (ufixed)xd * (ufixed)yrel / (ufixed)yd + xl;
 	} else {
-	    if (xd > -HALF_FIXED_BITS) {
+	    if (xd > -(fixed)HALF_FIXED_BITS) {
 		/* Be careful to take the floor of the result. */
 		ufixed num = (ufixed)(-xd) * (ufixed)yrel;
 		ufixed quo = num / (ufixed)yd;

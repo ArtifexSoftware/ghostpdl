@@ -525,7 +525,7 @@ cie_lookup_mult3(cie_cached_vector3 * pvec,
   (i >= (gx_cie_cache_size - 1) << _cie_interpolate_bits ? p : p + 1)
 
     if (I_IN_RANGE(0, u)) {
-	cie_cached_value i = I_INDEX(0, u);
+	cie_cached_value i = (float)I_INDEX(0, u);
 	const cie_cached_vector3 *p = I_ENTRY(i, 0);
 	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
 
@@ -541,7 +541,7 @@ cie_lookup_mult3(cie_cached_vector3 * pvec,
     }
 
     if (I_IN_RANGE(1, v)) {
-	cie_cached_value i = I_INDEX(1, v);
+	cie_cached_value i = (float)I_INDEX(1, v);
 	const cie_cached_vector3 *p = I_ENTRY(i, 1);
 	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
 
@@ -557,7 +557,7 @@ cie_lookup_mult3(cie_cached_vector3 * pvec,
     }
 
     if (I_IN_RANGE(2, w)) {
-	cie_cached_value i = I_INDEX(2, w);
+	cie_cached_value i = (float)I_INDEX(2, w);
 	const cie_cached_vector3 *p = I_ENTRY(i, 2);
 	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
 

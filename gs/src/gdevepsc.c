@@ -143,10 +143,10 @@ private void epsc_output_run(byte *, int, int, char, FILE *, int);
 #define DD 0x80				/* double density flag */
 private int
 epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
-{	static char graphics_modes_9[5] =
+{	static int graphics_modes_9[5] =
 	   {	-1, 0 /*60*/, 1	/*120*/, -1, DD+3 /*240*/
 	   };
-	static char graphics_modes_24[7] =
+	static int graphics_modes_24[7] =
 	   {	-1, 32 /*60*/, 33 /*120*/, 39 /*180*/,
 		-1, -1, DD+40 /*360*/
 	   };
@@ -157,9 +157,9 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	byte *in = (byte *)gs_malloc(in_size+1, 1, "epsc_print_page(in)");
 	int out_size = ((pdev->width + 7) & -8) * y_mult;
 	byte *out = (byte *)gs_malloc(out_size+1, 1, "epsc_print_page(out)");
-	int x_dpi = pdev->x_pixels_per_inch;
-	char start_graphics =
-		(y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60];
+	int x_dpi = (int)pdev->x_pixels_per_inch;
+	char start_graphics = (char)
+		((y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60]);
 	int first_pass = (start_graphics & DD ? 1 : 0);
 	int last_pass = first_pass * 2;
 	int dots_per_space = x_dpi / 10;	/* pica space = 1/10" */

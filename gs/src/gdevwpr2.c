@@ -229,6 +229,7 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
     NULL,			/* win32_hdevnames */
     NULL,			/* lpfnAbortProc */
     NULL,			/* lpfnCancelProc */
+    NULL,			/* hDlgModeless */
     false,			/* use_old_spool_name */
     NULL			/* original_device */
 };
@@ -608,19 +609,21 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 
 /* Map a r-g-b color to a color index. */
 private gx_color_index
-win_pr2_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		      gx_color_value b)
+win_pr2_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
     switch (dev->color_info.depth) {
 	case 1:
-	    return gdev_prn_map_rgb_color(dev, r, g, b);
+	    return gdev_prn_map_rgb_color(dev, cv);
 	case 4:
 	    /* use only 8 colors */
 	    return (r > (gx_max_color_value / 2 + 1) ? 4 : 0) +
 		(g > (gx_max_color_value / 2 + 1) ? 2 : 0) +
 		(b > (gx_max_color_value / 2 + 1) ? 1 : 0);
 	case 8:
-	    return pc_8bit_map_rgb_color(dev, r, g, b);
+	    return pc_8bit_map_rgb_color(dev, cv);
 	case 24:
 	    return gx_color_value_to_byte(r) +
 		((uint) gx_color_value_to_byte(g) << 8) +

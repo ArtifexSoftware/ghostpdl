@@ -22,7 +22,6 @@
 #include <fcntl.h>
 #include <io.h>
 #include <stdio.h>
-#include "dos_.h"
 #include "memory_.h"
 #include "string_.h"
 #include "gstypes.h"

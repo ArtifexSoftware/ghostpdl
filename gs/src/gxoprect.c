@@ -383,7 +383,7 @@ replicate_color(int depth, mono_fill_chunk color)
     switch (depth) {
 
       case 1:
-        color = -color;
+        color = (mono_fill_chunk)(-(int)color);
 
       case 2:
         color = fill_pat_2[color];

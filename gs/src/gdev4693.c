@@ -85,26 +85,26 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 	if (data == 0) return_error(gs_error_VMerror);
 	/* build header. */
 	p = header;
-	*p++ = 0x14;	/* Print request */
-	*p++ = 0xc0|20;	/* Length of header */
-	*p++ = 0xc0 | ((prn_dev->width >> 6)&0x3f);
-	*p++ = 0x80 | (prn_dev->width&0x3f);
-	*p++ = 0xc0 | ((prn_dev->height >> 6)&0x3f);
-	*p++ = 0x80 | (prn_dev->height&0x3f);
-	*p++ = 0xc1;	/* Handshake */
-	*p++ = 0xc0;	/* Get number of prints from printer. */
-	*p++ = 0xc0;	/* Get pixel shape from printer. */
-	*p++ = (depth == 8) ? 0xcb : (depth == 16) ? 0xcc : 0xcd;
-	*p++ = 0xc1;	/* Pixel-data order 1. */
-	*p++ = 0xc3;	/* Interpolate to maximum size. */
-	*p++ = 0xc3;	/* Full color range 1. */
-	*p++ = 0xc0;	/* Color conversion from printer. */
-	*p++ = 0xc0;	/* Color manipulation from printer. */
-	*p++ = 0xc0;	/* B/W inversion from printer. */
-	*p++ = 0xc3;	/* Portrait mode centered. */
-	*p++ = 0xc9;	/* Use printer default for media and printing. */
-	*p++ = 0x95;
-	*p++ = 0x81;
+	*p++ = (char)0x14;	/* Print request */
+	*p++ = (char)0xc0|20;	/* Length of header */
+	*p++ = (char)0xc0 | ((prn_dev->width >> 6)&0x3f);
+	*p++ = (char)0x80 | (prn_dev->width&0x3f);
+	*p++ = (char)0xc0 | ((prn_dev->height >> 6)&0x3f);
+	*p++ = (char)0x80 | (prn_dev->height&0x3f);
+	*p++ = (char)0xc1;	/* Handshake */
+	*p++ = (char)0xc0;	/* Get number of prints from printer. */
+	*p++ = (char)0xc0;	/* Get pixel shape from printer. */
+	*p++ = (char)(depth == 8) ? 0xcb : (depth == 16) ? 0xcc : 0xcd;
+	*p++ = (char)0xc1;	/* Pixel-data order 1. */
+	*p++ = (char)0xc3;	/* Interpolate to maximum size. */
+	*p++ = (char)0xc3;	/* Full color range 1. */
+	*p++ = (char)0xc0;	/* Color conversion from printer. */
+	*p++ = (char)0xc0;	/* Color manipulation from printer. */
+	*p++ = (char)0xc0;	/* B/W inversion from printer. */
+	*p++ = (char)0xc3;	/* Portrait mode centered. */
+	*p++ = (char)0xc9;	/* Use printer default for media and printing. */
+	*p++ = (char)0x95;
+	*p++ = (char)0x81;
 
 	for (checksum = 0, i = 0; &header[i] != p; i++)
 		checksum += header[i];

@@ -693,7 +693,8 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
 	    if ((code = cos_stream_add_bytes(pcstrm, tables[i].data, len)) < 0 ||
 		(tables[i].write != 0 &&
 		 (code = tables[i].write(pcstrm, &tables[i], pdev->pdf_memory)) < 0) ||
-		(code = cos_stream_add_bytes(pcstrm, pad, -tables[i].length & 3)) < 0
+		(code = cos_stream_add_bytes(pcstrm, pad, 
+			-(int)(tables[i].length) & 3)) < 0
 		)
 		return code;
 	}

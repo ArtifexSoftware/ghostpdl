@@ -175,13 +175,13 @@ private int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
 #define ESC_P_PRINT_LIMIT    0.335
 
 /* Margins are left, bottom, right, top. */
-#define DESKJET_MARGINS_LETTER   0.25, 0.50, 0.25, 0.167
-#define DESKJET_MARGINS_A4       0.125, 0.50, 0.143, 0.167
-#define LJET4_MARGINS  		 0.26, 0.0, 0.0, 0.0
+#define DESKJET_MARGINS_LETTER   (float)0.25, (float)0.50, (float)0.25, (float)0.167
+#define DESKJET_MARGINS_A4       (float)0.125, (float)0.50, (float)0.143, (float)0.167
+#define LJET4_MARGINS  		 (float)0.26, (float)0.0, (float)0.0, (float)0.0
 /* The PaintJet and DesignJet seem to have the same margins */
 /* regardless of paper size. */
-#define PAINTJET_MARGINS         0.167, 0.167, 0.167, 0.167
-#define DESIGNJET_MARGINS        0.167, 0.167, 0.167, 0.167
+#define PAINTJET_MARGINS         (float)0.167, (float)0.167, (float)0.167, (float)0.167
+#define DESIGNJET_MARGINS        (float)0.167, (float)0.167, (float)0.167, (float)0.167
 
 /*
  * With ESC/P commands, BJC-600 can print no more than 8 inches width.
@@ -193,8 +193,10 @@ private int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
  * the gdevbjc.h file.
  *
  */
-#define ESC_P_MARGINS_LETTER    0.134, 0.276+0.2, 0.366+0.01, 0.335
-#define ESC_P_MARGINS_A4        0.134, 0.276+0.2, 0.166+0.01, 0.335
+#define ESC_P_MARGINS_LETTER    (float)0.134, (float)(0.276+0.2), \
+ 				(float)(0.366+0.01), (float)0.335
+#define ESC_P_MARGINS_A4        (float)0.134, (float)(0.276+0.2), \
+				(float)(0.166+0.01), (float)0.335
 
 /* Define bits-per-pixel for generic drivers - default is 24-bit mode */
 #ifndef BITSPERPIXEL
@@ -743,7 +745,7 @@ hp_colour_open(gx_device *pdev, int ptype)
 
 #ifndef USE_FIXED_MARGINS
     if (ptype == BJC800) {
-	((float *) m)[1] = BJC_HARD_LOWER_LIMIT;
+	((float *) m)[1] = (float)BJC_HARD_LOWER_LIMIT;
     }
 #endif
 
@@ -1133,7 +1135,7 @@ mwe:   	    param_signal_error(plist, oname, code = ncode);
 		int n;
 
 		for (n = 0; n < 8 * sizeof(n) / BJC_RESOLUTION_BASE; ++n) {
-		    float res = BJC_RESOLUTION_BASE * (1 << n);
+		    float res = (float)(BJC_RESOLUTION_BASE * (1 << n));
 	    
 		    if (res == hwra.data[0]) break;
 	    
@@ -1492,45 +1494,45 @@ bjc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
 private int
 bjc_cmd(byte cmd, int argsize, byte* arg, gx_device_printer* pdev,
-    FILE* stream)
+    FILE* f)
 {
-  fputs("\033(", stream);
-  putc(cmd, stream);
-  fputshort(argsize, stream);
-  fwrite(arg, sizeof(byte), argsize, stream);
+  fputs("\033(", f);
+  putc(cmd, f);
+  fputshort(argsize, f);
+  fwrite(arg, sizeof(byte), argsize, f);
 
   return 0;
 }
 
 
 private int
-bjc_raster_cmd_sub(char c, int rastsize, byte* data, FILE* stream)
+bjc_raster_cmd_sub(char c, int rastsize, byte* data, FILE* f)
 {
-  fputs("\033(A", stream);
-  fputshort(rastsize + 1, stream);
-  putc(c, stream);
-  fwrite(data, sizeof(byte), rastsize, stream);
-  putc('\015', stream);
+  fputs("\033(A", f);
+  fputshort(rastsize + 1, f);
+  putc(c, f);
+  fwrite(data, sizeof(byte), rastsize, f);
+  putc('\015', f);
 
   return 0;
 }
 
 private int
 bjc_raster_cmd(int c_id, int rastsize, byte* data, gx_device_printer* pdev,
-    FILE* stream)
+    FILE* f)
 {
     if (bjcparams.printColors == BJC_COLOR_ALLBLACK) {
-	bjc_raster_cmd_sub('K', rastsize, data, stream);
+	bjc_raster_cmd_sub('K', rastsize, data, f);
     } else if (pdev->color_info.num_components == 1) {
 	if (bjcparams.printColors & BJC_COLOR_BLACK) {
-	    bjc_raster_cmd_sub('K', rastsize, data, stream);
+	    bjc_raster_cmd_sub('K', rastsize, data, f);
 	} else {
 	    if (bjcparams.printColors & BJC_COLOR_YELLOW)
-		bjc_raster_cmd_sub('Y', rastsize, data, stream);
+		bjc_raster_cmd_sub('Y', rastsize, data, f);
 	    if (bjcparams.printColors & BJC_COLOR_MAGENTA)
-		bjc_raster_cmd_sub('M', rastsize, data, stream);
+		bjc_raster_cmd_sub('M', rastsize, data, f);
 	    if (bjcparams.printColors & BJC_COLOR_CYAN)
-		bjc_raster_cmd_sub('C', rastsize, data, stream);
+		bjc_raster_cmd_sub('C', rastsize, data, f);
 	}
     }else {			/* Color decomposition */
 	private byte ymckCodes[] = {
@@ -1541,7 +1543,7 @@ bjc_raster_cmd(int c_id, int rastsize, byte* data, gx_device_printer* pdev,
 	};
 
 	if (bjcparams.printColors & (int) ymckCodes[c_id]) {
-	    bjc_raster_cmd_sub("YMCK"[c_id], rastsize, data, stream);
+	    bjc_raster_cmd_sub("YMCK"[c_id], rastsize, data, f);
 	}
     }
 
@@ -1549,7 +1551,7 @@ bjc_raster_cmd(int c_id, int rastsize, byte* data, gx_device_printer* pdev,
 }
 
 private int
-bjc_init_page(gx_device_printer* pdev, FILE* stream)
+bjc_init_page(gx_device_printer* pdev, FILE* f)
 {
     byte pagemargins[3], resolution[4], paperloading[2];
 
@@ -1588,26 +1590,26 @@ bjc_init_page(gx_device_printer* pdev, FILE* stream)
 
     /* Reinitialize printer in raster mode. */
 
-    fputs("\033[K", stream);
-    fputshort(2, stream);
-    fputc(0x00, stream);
-    fputc(0x0f, stream);
+    fputs("\033[K", f);
+    fputshort(2, f);
+    fputc(0x00, f);
+    fputc(0x0f, f);
 
     /* Set page mode on (ignore data at end of page) */
 
-    bjc_cmd('a', 1, (byte*) "\001", pdev, stream);
+    bjc_cmd('a', 1, (byte*) "\001", pdev, f);
 
     /* Set page margins */
 
-    bjc_cmd('g', 3, pagemargins, pdev, stream);
+    bjc_cmd('g', 3, pagemargins, pdev, f);
 
     /* Set compression on (this is PackBits compression a la TIFF/Mac) */
 
-    bjc_cmd('b', 1, (byte*) "\001", pdev, stream);
+    bjc_cmd('b', 1, (byte*) "\001", pdev, f);
 
     /* Set paper loading. */
 
-    bjc_cmd('l', 2, paperloading, pdev, stream);
+    bjc_cmd('l', 2, paperloading, pdev, f);
 
     /* Set printing method. */
 
@@ -1631,7 +1633,7 @@ bjc_init_page(gx_device_printer* pdev, FILE* stream)
 	printmode[1] = (bjcparams.mediaType >= BJC_MEDIA_ENVELOPE ? 1 :
 	    bjc800thickpaper());
 
-	bjc_cmd('c', 2, printmode, pdev, stream);
+	bjc_cmd('c', 2, printmode, pdev, f);
     } else /* BJC600 */ {
 	byte printmeth[3];
 
@@ -1641,37 +1643,37 @@ bjc_init_page(gx_device_printer* pdev, FILE* stream)
 	    0x10 : 0) + (bjcparams.mediaType >= BJC_MEDIA_ENVELOPE ? 1 :
 	         bjc600thickpaper());
 
-    	bjc_cmd('c', 3, printmeth, pdev, stream);
+    	bjc_cmd('c', 3, printmeth, pdev, f);
     }
 
     /* Set raster resolution */
 
-    bjc_cmd('d', 4, resolution, pdev, stream);
+    bjc_cmd('d', 4, resolution, pdev, f);
 
     return 0;
 }
 
 private int
-bjc_v_skip(int n, gx_device_printer* pdev, FILE* stream)
+bjc_v_skip(int n, gx_device_printer* pdev, FILE* f)
 {
     if (n) {
-	fputs("\033(e", stream);
-	putc(2, stream);
-	putc(0, stream);
-	putc(n / 256, stream);
-	putc(n % 256, stream);
+	fputs("\033(e", f);
+	putc(2, f);
+	putc(0, f);
+	putc(n / 256, f);
+	putc(n % 256, f);
     }
 
     return 0;
 }
 
 private int
-bjc_finish_page(gx_device_printer* pdev, FILE* stream)
+bjc_finish_page(gx_device_printer* pdev, FILE* f)
 {
-    bjc_cmd('a', 1, (byte*) "\000", pdev, stream);
-    bjc_cmd('b', 1, (byte*) "\000", pdev, stream);
-    fputc('\014', stream);
-    fputs("\033@", stream);
+    bjc_cmd('a', 1, (byte*) "\000", pdev, f);
+    bjc_cmd('b', 1, (byte*) "\000", pdev, f);
+    fputc('\014', f);
+    fputs("\033@", f);
 
     return 0;
 }
@@ -2263,7 +2265,8 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 
     word rmask = ~(word) 0 << ((-pdev->width * storage_bpp) & (W * 8 - 1));
 
-    lend = pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi;
+    lend = pdev->height - 
+	(int)((dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi);
 
     switch (ptype) {
 	case BJC600:
@@ -2581,7 +2584,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 				out_count, out_data, pdev, prn_stream);
 	      if (i == 0) bjc_v_skip(1, pdev, prn_stream);
 	    } else if (ptype == ESC_P)
-		ep_print_image(prn_stream, i, plane_data[scan][i], plane_size);
+		ep_print_image(prn_stream, (char)i, plane_data[scan][i], plane_size);
 	    else
 	      fprintf(prn_stream, "\033*b%d%c", out_count, "WVVV"[i]);
 	    if (ptype < ESC_P)
@@ -3324,8 +3327,8 @@ cdj_put_param_bpp(gx_device *pdev, gs_param_list *plist, int new_bpp,
 private uint
 gdev_prn_rasterwidth(const gx_device_printer *pdev, int pixelcount)
 {
-  ulong raster_width =
-    pdev->width - pdev->x_pixels_per_inch * (dev_l_margin(pdev) + dev_r_margin(pdev));
+  ulong raster_width = (ulong)(pdev->width - 
+    pdev->x_pixels_per_inch * (dev_l_margin(pdev) + dev_r_margin(pdev)));
   return (pixelcount ?
           (uint)raster_width :
           (uint)((raster_width * pdev->color_info.depth + 7) >> 3));
@@ -3592,7 +3595,7 @@ bjc_fscmyk(byte** inplanes, byte* outplanes[4][4], int** errplanes,
 	         maxv = sd->stc.xfer[i].data[j];
          }
 	 */
-         CMYK_THRESHOLD(i) = 127.0 / maxv + 0.5;
+         CMYK_THRESHOLD(i) = (int)(127.0 / maxv + 0.5);
          SPOTSIZE(i)  = ((int) CMYK_THRESHOLD(i)<<1)+1;
          j = CMYK_THRESHOLD(i); /* Maximum Error-Value */
          errc[3] = 0;

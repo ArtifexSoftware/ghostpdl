@@ -73,7 +73,7 @@ const gx_device_color_type_t *const gx_dc_type_wts =
 private int
 mul_shr_16 (int a, int b)
 {
-  return floor(((double) a) * ((double) b) * (1.0 / (1 << 16)));
+  return (int)floor(((double) a) * ((double) b) * (1.0 / (1 << 16)));
 }
 #else
 #error todo: supply mul_shr_16 based on 64 bit integer type
@@ -107,8 +107,8 @@ wts_get_samples_j(const wts_screen_t *ws, int x, int y,
     double pbd = (wsj->pb) * (1.0 / (1 << 16));
     double afrac = x * pad;
     double bfrac = x * pbd;
-    int acount = floor(afrac);
-    int bcount = floor(bfrac);
+    int acount = (int)floor(afrac);
+    int bcount = (int)floor(bfrac);
     int ccount = mul_shr_16(y, wsj->pc);
     int dcount = mul_shr_16(y, wsj->pd);
     int nsamples;
@@ -124,10 +124,10 @@ wts_get_samples_j(const wts_screen_t *ws, int x, int y,
 
     nsamples = ws->cell_width - x_ix;
     if (floor (afrac + (nsamples - 1) * pad) > acount)
-	nsamples = ceil((acount + 1 - afrac) / pad);
+	nsamples = (int)ceil((acount + 1 - afrac) / pad);
 
     if (floor (bfrac + (nsamples - 1) * pbd) > bcount)
-	nsamples = ceil((bcount + 1 - bfrac) / pbd);
+	nsamples = (int)ceil((bcount + 1 - bfrac) / pbd);
 #if 0
     printf("get_samples: (%d, %d) -> (%d, %d) %d (cc=%d)\n",
 	   x, y, x_ix, y_ix, nsamples, ccount);
@@ -338,7 +338,7 @@ wts_repack_tile_4(unsigned char *ctile_data, int ctile_raster,
 {
     int y;
     int tile_idx_start = 0;
-    char *ctile_start = ctile_data;
+    unsigned char *ctile_start = ctile_data;
     byte inv_byte = invert ? 0xff : 0;
 
     for (y = 0; y < h; y++) {

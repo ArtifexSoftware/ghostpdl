@@ -34,9 +34,9 @@
  */
 #define DENT(v, f)\
   (v <= 0.5 ? v * f : (v - 0.5) * (1 - (0.5 * f)) / 0.5 + 0.5 * f)
-private const gs_vector3 bit_WhitePoint = {0.9505, 1, 1.0890};
+private const gs_vector3 bit_WhitePoint = {(float)0.9505, 1, (float)1.0890};
 private const gs_range3 bit_RangePQR = {
-    {{0, 0.9505}, {0, 1}, {0, 1.0890}}
+    {{0, (float)0.9505}, {0, 1}, {0, (float)1.0890}}
 };
 private const float dent_PQR = 1.0;
 private int
@@ -59,12 +59,12 @@ private const gs_cie_render_proc3 bit_EncodeLMN = { /* dummy */
     {bit_EncodeLMN_proc, bit_EncodeLMN_proc, bit_EncodeLMN_proc}
 };
 private const gs_range3 bit_RangeLMN = {
-    {{0, 0.9505}, {0, 1}, {0, 1.0890}}
+    {{0, (float)0.9505}, {0, 1}, {0, (float)1.0890}}
 };
 private const gs_matrix3 bit_MatrixABC = {
-    { 3.24063, -0.96893,  0.05571},
-    {-1.53721,  1.87576, -0.20402},
-    {-0.49863,  0.04152,  1.05700}
+    {(float) 3.24063, (float)-0.96893, (float) 0.05571},
+    {(float)-1.53721, (float) 1.87576, (float)-0.20402},
+    {(float)-0.49863, (float) 0.04152, (float) 1.05700}
 };
 private float
 bit_EncodeABC_proc(floatp in, const gs_cie_render * pcrd)

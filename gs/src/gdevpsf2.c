@@ -215,9 +215,9 @@ cff_put_op(cff_writer_t *pcw, int op)
 {
     if (op >= CE_OFFSET) {
 	sputc(pcw->strm, cx_escape);
-	sputc(pcw->strm, op - CE_OFFSET);
+	sputc(pcw->strm, (byte)(op - CE_OFFSET));
     } else
-	sputc(pcw->strm, op);
+	sputc(pcw->strm, (byte)op);
 }
 private void
 cff_put_int(cff_writer_t *pcw, int i)
@@ -302,7 +302,7 @@ cff_put_real(cff_writer_t *pcw, floatp f)
 	    if (b == 0xff)
 		b = (digit << 4) + 0xf;
 	    else {
-		sputc(pcw->strm, (b & 0xf0) + digit);
+		sputc(pcw->strm, (byte)((b & 0xf0) + digit));
 		b = 0xff;
 	    }
 	}
@@ -416,7 +416,7 @@ cff_put_Index_header(cff_writer_t *pcw, uint count, uint total)
     put_card16(pcw, count);
     if (count > 0) {
 	pcw->offset_size = offset_size(total + 1);
-	sputc(pcw->strm, pcw->offset_size);
+	sputc(pcw->strm, (byte)pcw->offset_size);
 	put_offset(pcw, 1);
     }
 }
@@ -448,7 +448,7 @@ cff_write_header(cff_writer_t *pcw, uint end_offset)
 {
     pcw->offset_size = (end_offset > 0x7fff ? 3 : 2);
     put_bytes(pcw->strm, (const byte *)"\001\000\004", 3);
-    sputc(pcw->strm, pcw->offset_size);
+    sputc(pcw->strm, (byte)pcw->offset_size);
     return 0;
 }
 
@@ -944,7 +944,7 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
     int nsupp = 0;
     int j;
 
-    sputc(s, (num_enc_chars > num_enc ? 0x80 : 0));
+    sputc(s, (byte)(num_enc_chars > num_enc ? 0x80 : 0));
     memset(used, 0, num_enc);
     if (num_enc == 256) {
 	/*
@@ -953,7 +953,7 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
 	 */
 	/****** NYI ******/
     }
-    sputc(s, num_enc);
+    sputc(s, (byte)num_enc);
     for (j = 0; j < 256; ++j) {
 	gs_glyph glyph = pfont->procs.encode_char((gs_font *)pfont,
 						  (gs_char)j,
@@ -983,7 +983,7 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
     put_bytes(s, index, num_enc);
     if (nsupp) {
 	/* Write supplementary entries for multiply-encoded glyphs. */
-	sputc(s, nsupp);
+	sputc(s, (byte)nsupp);
 	for (j = 0; j < nsupp; ++j) {
 	    byte chr = supplement[j];
 
@@ -1071,7 +1071,7 @@ cff_write_FDSelect(cff_writer_t *pcw, psf_glyph_enum_t *penum, uint size,
     uint cid_count = 0;
     int code;
 
-    spputc(s, format);
+    spputc(s, (byte)format);
     psf_enumerate_glyphs_reset(penum);
     switch (format) {
     case 3:			/* ranges */

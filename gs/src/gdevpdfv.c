@@ -193,8 +193,8 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 private void
 pdf_set_pattern_image(gs_data_image_t *pic, const gx_strip_bitmap *tile)
 {
-    pic->ImageMatrix.xx = pic->Width = tile->rep_width;
-    pic->ImageMatrix.yy = pic->Height = tile->rep_height;
+    pic->ImageMatrix.xx = (float)(pic->Width = tile->rep_width);
+    pic->ImageMatrix.yy = (float)(pic->Height = tile->rep_height);
 }
 
 /* Write the mask for a Pattern (colored or uncolored). */

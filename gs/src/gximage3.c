@@ -328,8 +328,8 @@ gx_begin_image3_generic(gx_device * dev,
 	(code = gs_bbox_transform(&mrect, &mat, &mrect)) < 0
 	)
 	return code;
-    origin.x = floor(mrect.p.x);
-    origin.y = floor(mrect.p.y);
+    origin.x = (int)floor(mrect.p.x);
+    origin.y = (int)floor(mrect.p.y);
     code = make_mid(&mdev, dev, (int)ceil(mrect.q.x) - origin.x,
 		    (int)ceil(mrect.q.y) - origin.y, mem);
     if (code < 0)

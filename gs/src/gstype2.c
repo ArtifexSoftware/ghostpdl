@@ -435,7 +435,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    deltas = base + n - 1;
 		    for (j = 0; j < n; j++, base++, deltas += k - 1)
 			for (i = 1; i < k; i++)
-			    *base += deltas[i] * pfont->data.WeightVector.values[i];
+			    *base += (fixed)(deltas[i] * 
+				pfont->data.WeightVector.values[i]);
 		}
 		cnext;
 	    case c2_hstemhm:
@@ -666,7 +667,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			{
 			    double prod = fixed2float(csp[-1]) * *csp;
 
-			    csp[-1] =
+			    csp[-1] = 
 				(prod > max_fixed ? max_fixed :
 				 prod < min_fixed ? min_fixed : prod);
 			}

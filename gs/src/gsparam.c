@@ -224,7 +224,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 			if (fv == 0)
 			    return_error(gs_error_VMerror);
 			for (i = 0; i < size; ++i)
-			    fv[i] = pvalue->value.ia.data[i];
+			    fv[i] = (float)pvalue->value.ia.data[i];
 			pvalue->value.fa.data = fv;
 			pvalue->value.fa.persistent = false;
 			goto ok;

@@ -68,7 +68,7 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
 	return_error(gs_error_VMerror);
     rc_increment(pgs->device);
     dfs->next_device = pgs->device;
-    code = df->push(df, mem, &new_dev, pgs, pgs->device);
+    code = df->push(df, mem, pgs, &new_dev, pgs->device);
     if (code < 0) {
 	return code;
 	gs_free_object(mem, dfs, "gs_push_device_filter");

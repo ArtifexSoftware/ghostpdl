@@ -198,8 +198,8 @@ gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs,
     if (tifs->StripOffsets == 0)
 	return_error(gs_error_VMerror);
     std_entries.PageNumber.value = (TIFF_ulong) pdev->PageCount;
-    std_values.xresValue[0] = pdev->x_pixels_per_inch;
-    std_values.yresValue[0] = pdev->y_pixels_per_inch;
+    std_values.xresValue[0] = (TIFF_ulong)pdev->x_pixels_per_inch;
+    std_values.yresValue[0] = (TIFF_ulong)pdev->y_pixels_per_inch;
     {
 	char revs[10];
 

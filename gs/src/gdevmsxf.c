@@ -151,7 +151,7 @@ win_lookup_font(gx_device * dev, const byte * fname, uint len,
 	fabs(fabs(pmat->yy) - pmat->xx) > 0.00002
 	)
 	return NULL;
-    f.lf.lfHeight = pmat->xx * 1000;
+    f.lf.lfHeight = (long)(pmat->xx * 1000);
     /* Don't trust Windows with very small sizes. */
     if (f.lf.lfHeight < 6 || f.lf.lfHeight >= 36)
 	return NULL;
@@ -318,7 +318,7 @@ win_char_metrics(gx_xfont * xf, gx_xglyph xg, int wmode,
     win_release_dc(wxf->dev, hdc);
     pwidth->y = 0;
     pbbox->p.x = 0;
-    pbbox->q.x = pwidth->x;
+    pbbox->q.x = (int)pwidth->x;
     if (wxf->invert_y) {
 	pbbox->p.y = -wxf->tm.tmDescent;
 	pbbox->q.y = wxf->tm.tmAscent;

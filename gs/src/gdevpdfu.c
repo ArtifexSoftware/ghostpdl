@@ -732,7 +732,7 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 	switch (c) {
 	    default:
 		if (c >= 0x21 && c <= 0x7e) {
-		    stream_putc(s, c);
+		    stream_putc(s, (byte)c);
 		    break;
 		}
 		/* falls through */

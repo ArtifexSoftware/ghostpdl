@@ -170,7 +170,7 @@ gx_get_bits_return_pointer(gx_device * dev, int x, int h,
 		    bytes = bit_offset / step * step;
 		} else {
 		    /* Use a faster algorithm if depth is a power of 2. */
-		    bytes = bit_offset & (-depth & -align_mod);
+		    bytes = bit_offset & (-depth & -(int)align_mod);
 		}
 		base = stored_base + arith_rshift(bytes, 3);
 		params->x_offset = (bit_offset - bytes) / depth;

@@ -226,8 +226,8 @@ stc_print_setup(stcolor_device *sd)
 /*
  * Compute the resolution-parameters
  */
-   sd->stc.escp_u = 3600.0 / sd->y_pixels_per_inch; /* y-units */
-   sd->stc.escp_h = 3600.0 / sd->x_pixels_per_inch; /* x-units */
+   sd->stc.escp_u = (int)(3600.0 / sd->y_pixels_per_inch); /* y-units */
+   sd->stc.escp_h = (int)(3600.0 / sd->x_pixels_per_inch); /* x-units */
    sd->stc.escp_v = sd->stc.flags & (STCUWEAVE | STCNWEAVE) ?
                     sd->stc.escp_u : 40;
 /*
@@ -251,17 +251,18 @@ stc_print_setup(stcolor_device *sd)
  * Page-Dimensions
  */
    if((sd->stc.flags & STCWIDTH ) == 0)
-       sd->stc.escp_width = sd->width -
-           (dev_l_margin(sd)+dev_r_margin(sd))*sd->x_pixels_per_inch;
+       sd->stc.escp_width = (int)(sd->width -
+           (dev_l_margin(sd)+dev_r_margin(sd))*sd->x_pixels_per_inch);
 
    if((sd->stc.flags & STCHEIGHT) == 0)
        sd->stc.escp_height = sd->height;
 
    if((sd->stc.flags & STCTOP) == 0)
-       sd->stc.escp_top = dev_t_margin(sd)*sd->y_pixels_per_inch;
+       sd->stc.escp_top = (int)(dev_t_margin(sd)*sd->y_pixels_per_inch);
 
    if((sd->stc.flags & STCBOTTOM) == 0)
-      sd->stc.escp_bottom = sd->height - dev_b_margin(sd)*sd->y_pixels_per_inch;
+      sd->stc.escp_bottom = (int)(sd->height - 
+	    dev_b_margin(sd)*sd->y_pixels_per_inch);
 
    if((sd->stc.flags & STCINIT) == 0) { /* No Initialization-String defined */
       int need  = 8  /* Reset, Graphics-Mode 1 */
@@ -382,8 +383,8 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
    sd->stc.prt_size  = (prt_pixels+7)/8;
    prt_pixels        =  sd->stc.prt_size * 8;
 
-   sd->stc.prt_scans  = sd->height -
-      (dev_t_margin(sd)+dev_b_margin(sd))*sd->y_pixels_per_inch;
+   sd->stc.prt_scans  = (int)(sd->height -
+      (dev_t_margin(sd)+dev_b_margin(sd))*sd->y_pixels_per_inch);
 
    col_line   = gs_malloc(prt_pixels,1,"stc_print_page/col_line");
    if(col_line == NULL) SORRY;
@@ -1652,7 +1653,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
                  fx = fx < 0.0 ? 0.0 :
                       (fx > gx_max_color_value ? gx_max_color_value : fx);
 
-                 sd->stc.code[i][ly] = fx;
+                 sd->stc.code[i][ly] = (gx_color_value)fx;
                  if((fx-sd->stc.code[i][ly]) >= 0.5) sd->stc.code[i][ly] += 1;
               }
            }                             /* error || success */
@@ -1715,12 +1716,12 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 
                     switch(sd->stc.dither->flags & STC_TYPE) {
                        case STC_BYTE:
-                          Ovb = Y;
+                          Ovb = (byte)Y;
                           if(((Y-Ovb) >= 0.5) && ((Ovb+1) <= Omax)) Ovb += 1;
                           Out[io] = Ovb;
                           break;
                        case STC_LONG:
-                          Ovl = Y;
+                          Ovl = (long)Y;
                           if(((Y-Ovl) >= 0.5) && ((Ovl+1) <= Omax)) Ovl += 1;
                           if(((Ovl-Y) >= 0.5) && ((Ovl-1) >= Omax)) Ovl -= 1;
                           ((long *)Out)[io] = Ovl;
@@ -1745,7 +1746,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 
                     x = sd->stc.code[i][o]; x /= gx_max_color_value;
 
-                    j = x / xstep;
+                    j = (unsigned long)(x / xstep);
 
                     if((j+1) < sd->stc.sizv[i]) {
                        y  = sd->stc.extv[i][j];
@@ -1759,7 +1760,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
                       +(sd->stc.dither->minmax[1]-sd->stc.dither->minmax[0])*y;
 
 #                   define stc_adjvals(T)                                             \
-                     ((T *)(sd->stc.vals[i]))[o] = y;                                 \
+                     ((T *)(sd->stc.vals[i]))[o] = (T)y;                                 \
                                                                                       \
                     if(((y-((T *)(sd->stc.vals[i]))[o]) >= 0.5) &&                    \
                        ((1+((T *)(sd->stc.vals[i]))[o]) <= sd->stc.dither->minmax[1]))\
@@ -1863,8 +1864,8 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 /*
  *    compute the trailer
  */
-      j  = sd->width -
-          (dev_l_margin(sd)+dev_r_margin(sd))*sd->x_pixels_per_inch;
+      j  = (unsigned long)(sd->width -
+          (dev_l_margin(sd)+dev_r_margin(sd))*sd->x_pixels_per_inch);
       j  = j * sd->color_info.depth;            /* the Bit-count */
       j  = j % (32*countof(sd->stc.white_run)); /* remaining Bits */
 
@@ -2021,7 +2022,7 @@ stc_map_gray_color(gx_device *pdev, const gx_color_value cv[])
 
       if(     fv < 0.0)                      rv = 0;
       else if((fv+0.5) > gx_max_color_value) rv = gx_max_color_value;
-      else                                   rv = fv+0.5;
+      else                                   rv = (gx_color_index)(fv+0.5);
 
    } else {
 
@@ -2078,19 +2079,19 @@ stc_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 
       if(     fv < 0.0)                      r = 0;
       else if((fv+0.5) > gx_max_color_value) r = gx_max_color_value;
-      else                                   r = fv+0.5;
+      else                                   r = (gx_color_value)(fv+0.5);
 
       fv = *m++ * fr; fv += *m++ * fg; fv += *m++ * fb;
 
       if(     fv < 0.0)                      g = 0;
       else if((fv+0.5) > gx_max_color_value) g = gx_max_color_value;
-      else                                   g = fv+0.5;
+      else                                   g = (gx_color_value)(fv+0.5);
 
       fv = *m++ * fr; fv += *m++ * fg; fv += *m++ * fb;
 
       if(     fv < 0.0)                      b = 0;
       else if((fv+0.5) > gx_max_color_value) b = gx_max_color_value;
-      else                                   b = fv+0.5;
+      else                                   b = (gx_color_value)(fv+0.5);
 
    }
 
@@ -2172,22 +2173,22 @@ stc_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
          fv = *a++ * fc; fv += *a++ * fm; fv += *a++ * fy; fv += *a++ * fk;
          if(     fv < 0.0)                      c = 0;
          else if((fv+0.5) > gx_max_color_value) c = gx_max_color_value;
-         else                                   c = fv+0.5;
+         else                                   c = (gx_color_value)(fv+0.5);
 
          fv = *a++ * fc; fv += *a++ * fm; fv += *a++ * fy; fv += *a++ * fk;
          if(     fv < 0.0)                      m = 0;
          else if((fv+0.5) > gx_max_color_value) m = gx_max_color_value;
-         else                                   m = fv+0.5;
+         else                                   m = (gx_color_value)(fv+0.5);
 
          fv = *a++ * fc; fv += *a++ * fm; fv += *a++ * fy; fv += *a++ * fk;
          if(     fv < 0.0)                      y = 0;
          else if((fv+0.5) > gx_max_color_value) y = gx_max_color_value;
-         else                                   y = fv+0.5;
+         else                                   y = (gx_color_value)(fv+0.5);
 
          fv = *a++ * fc; fv += *a++ * fm; fv += *a++ * fy; fv += *a++ * fk;
          if(     fv < 0.0)                      k = 0;
          else if((fv+0.5) > gx_max_color_value) k = gx_max_color_value;
-         else                                   k = fv+0.5;
+         else                                   k = (gx_color_value)(fv+0.5);
 
       } else if(k == 0) {
 
@@ -2287,17 +2288,17 @@ stc_map_cmyk10_color(gx_device *pdev, const gx_color_value cv[])
          fv = *a++ * fc; fv += *a++ * fm; fv += *a++ * fy; fv += *a++ * fk;
          if(     fv < 0.0)                      c = 0;
          else if((fv+0.5) > gx_max_color_value) c = gx_max_color_value;
-         else                                   c = fv+0.5;
+         else                                   c = (gx_color_value)(fv+0.5);
 
          fv = *a++ * fc; fv += *a++ * fm; fv += *a++ * fy; fv += *a++ * fk;
          if(     fv < 0.0)                      m = 0;
          else if((fv+0.5) > gx_max_color_value) m = gx_max_color_value;
-         else                                   m = fv+0.5;
+         else                                   m = (gx_color_value)(fv+0.5);
 
          fv = *a++ * fc; fv += *a++ * fm; fv += *a++ * fy; fv += *a++ * fk;
          if(     fv < 0.0)                      y = 0;
          else if((fv+0.5) > gx_max_color_value) y = gx_max_color_value;
-         else                                   y = fv+0.5;
+         else                                   y = (gx_color_value)(fv+0.5);
 
       }
 
@@ -3042,8 +3043,8 @@ stc_put_params(gx_device *pdev, gs_param_list *plist)
       if(((sd->stc.dither->flags & STC_TYPE) != STC_FLOAT) &&
          ((sd->stc.dither->minmax[1]-sd->stc.dither->minmax[0]) <
            sd->color_info.max_gray))
-         sd->color_info.max_gray =
-                sd->stc.dither->minmax[1]-sd->stc.dither->minmax[0]+0.5;
+         sd->color_info.max_gray = (gx_color_value)
+                (sd->stc.dither->minmax[1]-sd->stc.dither->minmax[0]+0.5);
 
       sd->color_info.max_color = sd->color_info.num_components < 3 ? 0 :
                                  sd->color_info.max_gray;

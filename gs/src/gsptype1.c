@@ -488,8 +488,8 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
         image.i4.MaskColor_is_range = false;
         image.i4.MaskColor[0] = ppmap->white_index;
     }
-    image.i1.Decode[0] = 0;
-    image.i1.Decode[1] = (1 << pbitmap->pix_depth) - 1;
+    image.i1.Decode[0] = 0.0;
+    image.i1.Decode[1] = (float)((1 << pbitmap->pix_depth) - 1);
     image.i1.BitsPerComponent = pbitmap->pix_depth;
     /* backwards compatibility */
     if (ppmap->pcspace == 0) {
@@ -593,8 +593,8 @@ gs_makepixmappattern(
     pat.BBox.p.y = 0;
     pat.BBox.q.x = pbitmap->size.x;
     pat.BBox.q.y = pbitmap->size.y;
-    pat.XStep = pbitmap->size.x;
-    pat.YStep = pbitmap->size.y;
+    pat.XStep = (float)pbitmap->size.x;
+    pat.YStep = (float)pbitmap->size.y;
     pat.PaintProc = (mask ? mask_PaintProc : image_PaintProc);
     pat.client_data = ppmap;
 

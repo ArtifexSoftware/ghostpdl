@@ -438,7 +438,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		code = cmd_put_path(cldev, pcls, &pcpath->path,
 				    int2fixed(ymin - 1),
 				    int2fixed(ymax + 1),
-				    (pcpath->rule == gx_rule_even_odd ?
+				    (byte)(pcpath->rule == gx_rule_even_odd ?
 				     cmd_opv_eofill : cmd_opv_fill),
 				    true, sn_not_first);
 	    } else {
