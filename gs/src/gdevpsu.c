@@ -323,10 +323,10 @@ psw_write_page_header(stream *s, const gx_device *dev,
 int
 psw_write_page_trailer(FILE *f, int num_copies, int flush)
 {
+    fprintf(f, "cleartomark end end pagesave restore\n");
     if (num_copies != 1)
 	fprintf(f, "userdict /#copies %d put\n", num_copies);
-    fprintf(f, "cleartomark end end pagesave restore %s\n%%%%PageTrailer\n",
-	    (flush ? "showpage" : "copypage"));
+    fprintf(f, " %s\n%%%%PageTrailer\n", (flush ? "showpage" : "copypage"));
     fflush(f);
     if (ferror(f))
         return_error(gs_error_ioerror);
