@@ -1254,12 +1254,10 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		     * restore the initial position, per TRM 23-78.
 		     */
 		    if ( !hpgl_can_concat_labels(pgls) )
-		      { /* HAS not sure if this is correct.  But
-                           restoring Y causes problems printing
-                           captions in the FTS. */
-			hpgl_call(hpgl_add_point_to_path(pgls,
+		      { 
+			  hpgl_call(hpgl_add_point_to_path(pgls,
 					pgls->g.label.initial_pos.x,
-					pgls->g.pos.y,
+					pgls->g.label.initial_pos.y,
 					hpgl_plot_move_absolute, true));
 		      }
  		    /* always clear the current path since terminating
