@@ -73,10 +73,15 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
     /*
      * if the path type is stroke, we only recognize closed
      * rectangles; otherwise, we recognize all rectangles.
+     * Note that for stroking with a transformation, we can't use dorect,
+     * which requires (untransformed) device coordinates.
      */
     if (rtype != prt_none &&
 	!((type & gx_path_type_stroke) && rtype == prt_open) &&
-	(pmat == 0 || is_xxyy(pmat) || is_xyyx(pmat))
+	(pmat == 0 || is_xxyy(pmat) || is_xyyx(pmat)) &&
+	(state.scale_mat.xx == 1.0 && state.scale_mat.yy == 1.0 &&
+	 is_xxyy(&state.scale_mat) &&
+	 is_fzero2(state.scale_mat.tx, state.scale_mat.ty))
 	) {
 	gs_point p, q;
 
