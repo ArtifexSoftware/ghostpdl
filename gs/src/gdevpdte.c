@@ -424,7 +424,8 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	if (code < 0)
 	    return code;
     }
-    
+    if (text->size == 0)
+	return 0;
     if (penum->pis->text_rendering_mode != 3 && !(text->operation & TEXT_DO_NONE)) {
 	/*
 	 * Acrobat Reader can't handle text with huge coordinates,
