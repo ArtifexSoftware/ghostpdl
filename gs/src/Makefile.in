@@ -274,13 +274,13 @@ XINCLUDE=@X_CFLAGS@
 #XLIBS=Xt SM ICE Xext X11
 
 # We use the autoconf macro AC_PATH_XTRA which defines X_LIBS with
-# the -L (or whatever). It also defines X_EXTRA_LIBS which
-# should be slotted into XLIBS below and X_PRE_LIBS which should go
-# before -lX11. We do not handle these and should, but they are empty
-# on most modern platforms.
+# the -L (or whatever). It also defines X_PRE_LIBS and X_EXTRA_LIBS 
+# all three of which are stripped and slotted into XLIBS below.
+# Usually however, all but X_LIBS are empty on modern platforms.
 XLIBDIRS=@X_LIBS@
 XLIBDIR=
-XLIBS=Xt Xext X11
+#XLIBS=Xt Xext X11
+XLIBS=@XLIBS@
 
 # Define whether this platform has floating point hardware:
 #	FPU_TYPE=2 means floating point is faster than fixed point.

@@ -251,13 +251,23 @@ AC_SUBST(JBIG2DEVS)
 
 dnl optional X11 for display devices
 AC_PATH_XTRA
+XLIBS=''
 if test x"$no_x" = x"yes"; then
 	AC_MSG_NOTICE([disabling X11 output devices])
 	X11DEVS=''
 else
+	# enable X11 output devices
 	X11DEVS='$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev'
+	# the makefile wants a list of just the library names in XLIBS
+	for item in $X_PRE_LIBS -lXt -lXext -lX11 $X_EXTRA_LIBS; do
+		stripped=`echo "$item" | sed -e 's/-l//'`
+		if test "x$stripped" != "x$item"; then
+			XLIBS="$XLIBS $stripped"
+		fi
+	done
 fi
 AC_SUBST(X11DEVS)
+AC_SUBST(XLIBS)
 
 dnl executible name
 AC_ARG_WITH(gs, AC_HELP_STRING([--with-gs=NAME],
