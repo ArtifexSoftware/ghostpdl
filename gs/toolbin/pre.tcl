@@ -185,13 +185,6 @@ foreach d "[glob doc/*.htm] doc/gs-vms.hlp" {
 }
 
 if {$argv == {update}} {
-	# Create text files from HTML.
-    proc htm2txt {htm txt} {
-	exec lynx -dump -nolist $htm > $txt
-    }
-    htm2txt doc/Public.htm doc/PUBLIC
-    htm2txt doc/Readme.htm doc/README
-
 	# Update dates in .htm and .1 files.
     proc updoc {doc before after} {
 	set tmpfile /tmp/[pid]
