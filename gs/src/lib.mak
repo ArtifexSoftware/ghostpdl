@@ -284,6 +284,7 @@ gscoord_h=$(GLSRC)gscoord.h
 gscpm_h=$(GLSRC)gscpm.h
 gscsepnm_h=$(GLSRC)gscsepnm.h
 gsdevice_h=$(GLSRC)gsdevice.h
+gsdfilt_h=$(GLSRC)gsdfilt.h
 gsfcmap_h=$(GLSRC)gsfcmap.h $(gsccode_h)
 gsfname_h=$(GLSRC)gsfname.h
 gsfont_h=$(GLSRC)gsfont.h
@@ -679,6 +680,13 @@ $(GLOBJ)gsdevice.$(OBJ) : $(GLSRC)gsdevice.c $(GXERR)\
  $(gxcmap_h) $(gxdevice_h) $(gxdevmem_h) $(gxiodev_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gsdevice.$(OBJ) $(C_) $(GLSRC)gsdevice.c
 
+$(GLOBJ)gsdfilt.$(OBJ) : $(GLSRC)gsdfilt.c $(GXERR)\
+ $(ctype__h) $(memory__h) $(string__h) $(gp_h)\
+ $(gscdefs_h) $(gscoord_h) $(gsfname_h) $(gsmatrix_h)\
+ $(gspaint_h) $(gspath_h) $(gsstruct_h)\
+ $(gxcmap_h) $(gxdevice_h) $(gxdevmem_h) $(gxiodev_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsdfilt.$(OBJ) $(C_) $(GLSRC)gsdfilt.c
+
 $(GLOBJ)gsdevmem.$(OBJ) : $(GLSRC)gsdevmem.c $(GXERR) $(math__h) $(memory__h)\
  $(gsdevice_h) $(gxarith_h) $(gxdevice_h) $(gxdevmem_h)
 	$(GLCC) $(GLO_)gsdevmem.$(OBJ) $(C_) $(GLSRC)gsdevmem.c
@@ -939,7 +947,7 @@ LIB2s=$(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
 # we include it only for backward compatibility for library clients.
 LIB3s=$(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ) $(GLOBJ)gscoord.$(OBJ)
 LIB4s=$(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ) $(GLOBJ)gscssub.$(OBJ)
-LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ)
+LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ) $(GLOBJ)gsdfilt.$(OBJ)
 LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ)
 LIB7s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB8s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsistate.$(OBJ) $(GLOBJ)gsline.$(OBJ)

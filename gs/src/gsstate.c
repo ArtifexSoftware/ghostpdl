@@ -277,6 +277,7 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->in_charpath = (gs_char_path_mode) 0;
     pgs->show_gstate = 0;
     pgs->level = 0;
+    pgs->dfilter_stack = 0;
     pgs->transparency_group_stack = 0;
     if (gs_initgraphics(pgs) >= 0)
 	return pgs;
