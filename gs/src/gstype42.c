@@ -48,6 +48,7 @@ private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
   BEGIN\
     code = (*string_proc)(pfont, (ulong)(base), length, &vptr);\
     if ( code < 0 ) return code;\
+    if ( code > 0 ) return_error(gs_error_invalidfont);\
   END
 
 /* Get 2- or 4-byte quantities from a table. */
@@ -335,9 +336,40 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 	gs_glyph_data_from_null(pgd);
     else {
 	const byte *data;
+	byte *buf;
 
-	ACCESS(pfont->data.glyf + glyph_start, glyph_length, data);
-	gs_glyph_data_from_string(pgd, data, glyph_length, NULL);
+	code = (*string_proc)(pfont, (ulong)(pfont->data.glyf + glyph_start),
+			      glyph_length, &data);
+	if (code < 0) 
+	    return code;
+	if (code == 0)
+	    gs_glyph_data_from_string(pgd, data, glyph_length, NULL);
+	else {
+	    /*
+	     * The glyph is segmented in sfnts. 
+	     * It is not allowed with Type 42 specification.
+	     * Perhaps we can handle it (with a low performance),
+	     * making a contiguous copy.
+	     */
+	    uint left = glyph_length;
+
+	    /* 'code' is the returned length */
+	    buf = (byte *)gs_alloc_string(pfont->memory, glyph_length, "default_get_outline");
+	    if (buf < 0)
+		return_error(gs_error_VMerror);
+	    gs_glyph_data_from_string(pgd, buf, glyph_length, (gs_font *)pfont);
+	    for (;;) {
+		memcpy(buf + glyph_length - left, data, code);
+		if (!(left -= code))
+		    return 0;
+		code = (*string_proc)(pfont, (ulong)(pfont->data.glyf + glyph_start + 
+		              glyph_length - left), left, &data);
+		if (code < 0) 
+		    return code;
+		if (code == 0) 
+		    code = left;
+	    }
+	}
     }
     return 0;
 }
@@ -497,6 +529,8 @@ simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	uint num_metrics = pmtx->numMetrics;
 	const byte *pmetrics;
 
+	if (pmtx->length == 0)
+	    return_error(gs_error_rangecheck);
 	if (glyph_index < num_metrics) {
 	    ACCESS(pmtx->offset + glyph_index * 4, 4, pmetrics);
 	    width = U16(pmetrics);

@@ -162,6 +162,8 @@ font_GlyphDirectory_param(os_ptr op, ref *pGlyphDirectory)
  * Access a given byte offset and length in an array of strings.
  * This is used for sfnts and for CIDMap.  The int argument is 2 for sfnts
  * (because of the strange behavior of odd-length strings), 1 for CIDMap.
+ * Return code : 0 - success, <0 - error, 
+ *               >0 - number of accessible bytes (client must cycle).
  */
 int
 string_array_access_proc(const ref *psa, int modulus, ulong offset,
@@ -186,9 +188,9 @@ string_array_access_proc(const ref *psa, int modulus, ulong offset,
 	 */
 	size = r_size(&rstr) & -modulus;
 	if (left < size) {
-	    if (left + length > size)
-		return_error(e_rangecheck);
 	    *pdata = rstr.value.const_bytes + left;
+	    if (left + length > size)
+		return size - left;
 	    return 0;
 	}
 	left -= size;
@@ -338,7 +340,10 @@ z42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 				pmat, members, info);
 }
 
-/* Procedure for accessing the sfnts array. */
+/* Procedure for accessing the sfnts array.
+ * Return code : 0 - success, <0 - error, 
+ *               >0 - number of accessible bytes (client must cycle).
+ */
 private int
 z42_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 		const byte ** pdata)

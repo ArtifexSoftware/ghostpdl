@@ -47,6 +47,8 @@ int font_gdir_get_outline(const ref *, long, gs_glyph_data_t *);
  * Access a given byte offset and length in an array of strings.
  * This is used for sfnts and for CIDMap.  The int argument is 2 for sfnts
  * (because of the strange behavior of odd-length strings), 1 for CIDMap.
+ * Return code : 0 - success, <0 - error, 
+ *               >0 - number of accessible bytes (client must cycle).
  */
 int string_array_access_proc(const ref *, int, ulong, uint, const byte **);
 
