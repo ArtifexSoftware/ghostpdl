@@ -72,13 +72,23 @@ Information for Ghostscript developers
 <li><a href="#PostScript_interpreter_extensions">PostScript interpreter extensions</a>
 <ul>
 <li><a href="#Refs_and_ref_objects">Refs and ref objects</a>,
-    <a href="#save_forgetsave_restore">save/.forgetsave/restore</a>,
+    <a href="#save_forgetsave_restore">save/.forgetsave/restore</a>
 </ul>
 </ul>
 <li><a href="#Portability">Portability</a>
 <ul>
 <li><a href="#Structural">Structural</a>
+<ul>
+<li><a href="#CPU_and_compiler">CPU and compiler</a>,
+    <a href="#Library_headers">Library headers</a>,
+    <a href="#Cross_platform_APIs">Cross-platform APIs</a>,
+    <a href="#Makefiles">Makefiles</a>
+</ul>
 <li><a href="#Coding">Coding</a>
+<ul>
+<li><a href="#Explicit_dependencies">Explicit dependencies</a>,
+    <a href="#Implicit_dependencies">Implicit dependencies</a>
+</ul>
 </ul>
 <li><a href="#Adding_features_and_options">Adding features and options</a>
 </ul></blockquote>
@@ -308,7 +318,7 @@ order, scalar size, and platform-specific compiler or library features.
 
 <h2><a name="Structural"></a>Structural</h2>
 
-<h3>CPU and compiler characteristics</h3>
+<h3><a name="CPU_and_compiler"></a>CPU and compiler</h3>
 
 <p>
 Ghostscript attempts to discover characteristics of the CPU and compiler
@@ -325,7 +335,7 @@ Files:
 <a href="../src/genarch.c">src/genarch.c</a>,
 <a href="../obj/arch.h">obj/arch.h</a>.
 
-<h3>Library headers</h3>
+<h3><a name="Library_headers"></a>Library headers</h3>
 
 <p>
 Despite the supposed standardization of ANSI C, platforms vary considerably
@@ -366,9 +376,11 @@ Files:
 (It has been suggested that the GNU 'configure' scripts do the above better
 than Ghostscript's current system.  While this is probably true, we've
 consciously chosen not to include the incomprehensible multi-thousand-line
-'configure' scripts in our source code.)
+'configure' scripts in our source code, especially since the scripts require
+a specific shell for interpretation may not be portable even to all
+Unix-family systems.)
 
-<h3>Cross-platform APIs</h3>
+<h3><a name="Cross_platform_APIs"></a>Cross-platform APIs</h3>
 
 <p>
 For a few library facilities that are available on all platforms but are not
@@ -418,7 +430,7 @@ Platform-specific implementation files:
 <a href="../src/gp_win32.c">src/gp_win32.c</a>,
 <a href="../src/gp_wsync.c">src/gp_wsync.c</a>.
 
-<h3>Makefiles</h3>
+<h3><a name="Makefiles"></a>Makefiles</h3>
 
 <p>
 Ghostscript's makefiles are structured very similarly to the cross-platform
@@ -446,6 +458,85 @@ The top-level makefile for each platform (where "platform" includes the OS,
 the compiler, and the flavor of <b><tt>make</tt></b>) contains all the build
 options, plus <b><tt>include</tt></b>s for the generic makefiles and any
 platform-dependent makefiles that are shared among multiple platforms.
+
+<p>
+While most of the top-level makefiles build a PostScript and/or PDF
+interpreter configuration, there are also a few makefiles that build a test
+program that only uses the graphics library without any language
+interpreter.  Among other things, this can be helpful in verifying that no
+accidental dependencies on the interpreter have crept into the library or
+drivers.
+
+<p>
+For families of similar platforms, the question arises whether to use
+multiple top-level makefiles, or whether to use a single top-level makefile
+that may require minor editing for some (or all) platforms.  Ghostscript
+currently uses the following top-level makefiles for building interpreter
+configurations:
+
+<ul>
+
+<li>Unix (including Linux):
+<ul>
+<li><a href="../src/unix-gcc.mak">src/unix-gcc.mak</a>,
+for Unix with gcc.
+<li><a href="../src/unixansi.mak">src/unixansi.mak</a>,
+for Unix with an ANSI C compiler other than gcc.
+<li><a href="../src/unixtrad.mak">src/unixtrad.mak</a>,
+for Unix with a "traditional" or "K&amp;R" compiler.
+</ul>
+
+<li>PC:
+<ul>
+<li><a href="../src/bcwin32.mak">src/bcwin32.mak</a>,
+for MS Windows with Borland C++ Builder.
+<li><a href="../src/msvc32.mak">src/msvc32.mak</a>,
+for MS Windows with Microsoft Visual C (MSVC).
+<li><a href="../src/os2.mak">src/os2.mak</a>,
+for MS-DOS or OS/2 GCC/EMX environment.
+<li><a href="../src/watc.mak">src/watc.mak</a>,
+for extended MS-DOS with Watcom C.
+<li><a href="../src/watcw32.mak">src/watcw32.mak</a>,
+for MS Windows with Watcom C.
+</ul>
+
+<li>Other:
+<ul>
+<li><a href="../src/all-arch.mak">src/all-arch.mak</a>,
+for building on many Unix systems in a networked test environment.
+<li><a href="../src/dvx-gcc.mak">src/dvx-gcc.mak</a>,
+for DesqView/X with gcc.
+<li><a href="../src/openvms.mak">src/openvms.mak</a>,
+for OpenVMS with Digital's CC compiler and the MMS build program.
+<li><a href="../src/openvms.mmk">src/openvms.mmk</a>,
+for OpenVMS with Digital's CC compiler and the MMK build program.
+</ul>
+
+</ul>
+
+<p>
+The following top-level makefiles build the library test program:
+
+<ul>
+<li><a href="../src/ugcclib.mak">src/ugcclib.mak</a>,
+on Unix with gcc.
+<li><a href="../src/msvclib.mak">src/msvclib.mak</a>,
+on MS Windows with MSVC.
+<li><a href="../src/watclib.mak">src/watclib.mak</a>,
+on extended MS-DOS with Watcom C.
+</ul>
+
+<p>
+The MSVC makefiles may require editing to select between different versions
+of MSVC, since different versions may have slightly incompatible command
+line switches or customary installation path names.  The Unix makefiles
+often require editing to deal with differing library path names and/or
+library names.  For details, see <a href="Make.htm#Unix_build">the Unix
+section</a> of the documentation for building Ghostscript.
+
+<p>
+Library test program files:
+<a href="../src/gslib.c">src/gslib.c</a>.
 
 <p>
 Platform-independent makefiles:
@@ -479,34 +570,70 @@ Shared platform-dependent makefiles:
 <a href="../src/winlib.mak">src/winlib.mak</a>,
 <a href="../src/winplat.mak">src/winplat.mak</a>.
 
-<p>
-Platform top-level makefiles:
-<a href="../src/all-arch.mak">src/all-arch.mak</a>,
-<a href="../src/bcwin32.mak">src/bcwin32.mak</a>,
-<a href="../src/dvx-gcc.mak">src/dvx-gcc.mak</a>,
-<a href="../src/msvc32.mak">src/msvc32.mak</a>,
-<a href="../src/msvclib.mak">src/msvclib.mak</a>,
-<a href="../src/openvms.mak">src/openvms.mak</a>,
-<a href="../src/openvms.mmk">src/openvms.mmk</a>,
-<a href="../src/os2.mak">src/os2.mak</a>,
-<a href="../src/ugcclib.mak">src/ugcclib.mak</a>,
-<a href="../src/unix-gcc.mak">src/unix-gcc.mak</a>,
-<a href="../src/unixansi.mak">src/unixansi.mak</a>,
-<a href="../src/unixtrad.mak">src/unixtrad.mak</a>,
-<a href="../src/watc.mak">src/watc.mak</a>,
-<a href="../src/watclib.mak">src/watclib.mak</a>,
-<a href="../src/watcw32.mak">src/watcw32.mak</a>,
-
 <h2><a name="Coding"></a>Coding</h2>
 
 <p>
-#ifdefs - logical, not concrete
+Coding for portability requires avoiding both <em>explicit</em>
+dependencies, such as platform-dependent <b><tt>#ifdef</tt></b>s, and
+<em>implicit</em> dependencies, such as dependencies on byte order or the
+size of the integral types.
+
+<h3><a name="Explicit_dependencies"></a>Explicit dependencies</h3>
 
 <p>
-Byte order
+The platform-independent .c files never, ever, use <b><tt>#ifdef</tt></b> or
+<b><tt>#if</tt></b> to select code for specific platforms.  Instead, we
+always try to characterize some abstract property that is being tested.  For
+example, rather than checking for macros that are defined on those specific
+platforms that have 64-bit <b><tt>long</tt></b> values, we define a macro
+<b><tt>ARCH_SIZEOF_LONG</tt></b> that can then be tested.  Such macros are
+always defined in a .h file, either automatically in <b><tt>arch.h</tt></b>,
+or explicitly in a <em>xxx</em><b><tt>_.h</tt></b> file, as described in
+earlier sections.
 
 <p>
-Word size
+Files:
+<a href="../src/std.h">src/std.h</a>,
+<a href="../src/stdpre.h">src/stdpre.h</a>.
+
+<h3><a name="Implicit_dependencies"></a>Implicit dependencies</h3>
+
+<p>
+The most common source of byte ordering dependencies is casting between
+types (T1 *) and (T2 *) where T1 and T2 are numeric types that aren't merely
+signed/unsigned variants of each other.  To avoid this, the only casts
+allowed in the code are between numeric types, from a pointer type to a long
+integral type, and between pointer types.
+
+<p>
+Ghostscript's code assumes the following about the sizes of various types:
+
+<dl>
+<dt>char<dd>8 bits
+<dt>short<dd>16 bits
+<dt>int<dd>32 or 64 bits
+<dt>long<dd>32 or 64 bits
+<dt>float<dd>32 bits (may work with 64 bits)
+<dt>double<dd>64 bits (may work with 128 bits)
+</dl>
+
+<p>
+The code does not assume that the <b><tt>char</tt></b> type is signed (or
+unsigned); except for places where the value is always a literal string, or
+for interfacing to library procedures, the code uses <b><tt>byte</tt></b> (a
+Ghostscript synonym for <b><tt>unsigned char</tt></b>) almost everywhere.
+
+<p>
+Pointers are signed on some platforms and unsigned on others.  In the few
+places in the memory manager where it's necessary to reliably order-compare
+(as opposed to equality-compare) pointers that aren't known to point to the
+same allocated block of memory, the code uses the
+<b><tt>PTR_</tt></b><em>relation</em> macros rather than direct comparisons.
+
+<p>
+See the files listed above for other situations where a macro provides
+platform-independence or a workaround for bugs in specific compilers or
+libraries (of which there are a distressing number).
 
 <hr>
 
