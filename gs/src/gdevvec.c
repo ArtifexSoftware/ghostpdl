@@ -65,6 +65,7 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
     gdev_vector_dopath_state_t state;
     gs_fixed_point line_start, line_end;
     bool incomplete_line = false;
+    bool need_moveto = false;
     int code;
 
     gdev_vector_dopath_init(&state, vdev, type, pmat);
@@ -110,18 +111,22 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 		    incomplete_line = true;
 		    continue;
 		}
+		/*
+		 * Merge collinear horizontal or vertical line segments
+		 * going in the same direction.
+		 */
 		if (vs[0].x == line_end.x) {
 		    if (vs[0].x == line_start.x &&
 			coord_between(line_start.y, line_end.y, vs[0].y)
 			) {
-			line_end = vs[0];
+			line_end.y = vs[0].y;
 			continue;
 		    }
 		} else if (vs[0].y == line_end.y) {
 		    if (vs[0].y == line_start.y &&
 			coord_between(line_start.x, line_end.x, vs[0].x)
 			) {
-			line_end = vs[0];
+			line_end.x = vs[0].x;
 			continue;
 		    }
 		}
@@ -142,13 +147,43 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 	    code = vdev_proc(vdev, endpath)(vdev, type);
 	    return (code < 0 ? code : 0);
 	case gs_pe_curveto:
+	    if (need_moveto) {	/* see gs_pe_moveto case */
+		code = gdev_vector_dopath_segment(&state, gs_pe_moveto,
+						  &line_start);
+		if (code < 0)
+		    return code;
+		need_moveto = false;
+	    }
 	    line_start = vs[2];
 	    goto draw;
 	case gs_pe_moveto:
+	    /*
+	     * A bug in Acrobat Reader 4 causes it to draw a single pixel
+	     * for a fill with an isolated moveto.  If we're doing a fill
+	     * without a stroke, defer emitting a moveto until we know that
+	     * the subpath has more elements.
+	     */
+	    line_start = vs[0];
+	    if (!(type & gx_path_type_stroke) && (type & gx_path_type_fill)) {
+		need_moveto = true;
+		continue;
+	    }
+	    goto draw;
 	case gs_pe_lineto:
+	    if (need_moveto) {	/* see gs_pe_moveto case */
+		code = gdev_vector_dopath_segment(&state, gs_pe_moveto,
+						  &line_start);
+		if (code < 0)
+		    return code;
+		need_moveto = false;
+	    }
 	    line_start = vs[0];
 	    goto draw;
 	case gs_pe_closepath:
+	    if (need_moveto) {	/* see gs_pe_moveto case */
+		need_moveto = false;
+		continue;
+	    }
 	    if (!do_close) {
 		pe_op = gx_path_enum_next(&cenum, vs);
 		if (pe_op == 0)
