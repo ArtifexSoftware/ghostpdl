@@ -284,13 +284,13 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     int code;
     int max_fill_band = dev->max_fill_band;
 #define NO_BAND_MASK ((fixed)(-1) << (sizeof(fixed) * 8 - 1))
+    const bool is_character = params->adjust.x == -1; /* See gxistate.h */
     bool fill_by_trapezoids;
     bool pseudo_rasterization;
     fill_options fo;
     line_list lst;
 
     *(const fill_options **)&lst.fo = &fo; /* break 'const'. */
-    adjust = params->adjust;
     /*
      * Compute the bounding box before we flatten the path.
      * This can save a lot of time if the path has curves.
@@ -301,15 +301,18 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      */
     gx_path_bbox(ppath, &ibox);
 #   define SMALL_CHARACTER 500
-    lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
-    lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
-    /* We assume (adjust.x | adjust.y) == 0 iff it's a character. */
-    pseudo_rasterization = ((adjust.x | adjust.y) == 0 && 
+    pseudo_rasterization = (is_character && 
 			    !is_spotan_device(dev) &&
 			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
 			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
+    if (is_character)
+	adjust.x = adjust.y = 0;
+    else
+	adjust = params->adjust;
     if (params->fill_zero_width && !pseudo_rasterization)
 	gx_adjust_if_empty(&ibox, &adjust);
+    lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
+    lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     if (vd_enabled) {
 	fixed x0 = int2fixed(fixed2int(ibox.p.x - adjust.x - fixed_epsilon));
 	fixed x1 = int2fixed(fixed2int(ibox.q.x + adjust.x + fixed_scale - fixed_epsilon));

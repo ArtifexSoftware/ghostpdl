@@ -156,7 +156,7 @@ type42_fill(i_ctx_t *i_ctx_p)
     int code;
     gs_fixed_point fa = i_ctx_p->pgs->fill_adjust;
 
-    i_ctx_p->pgs->fill_adjust.x = i_ctx_p->pgs->fill_adjust.y = 0;
+    i_ctx_p->pgs->fill_adjust.x = i_ctx_p->pgs->fill_adjust.y = -1;
     code = type42_finish(i_ctx_p, gs_fill);
     i_ctx_p->pgs->fill_adjust = fa; /* Not sure whether we need to restore it,
                                        but this isn't harmful. */

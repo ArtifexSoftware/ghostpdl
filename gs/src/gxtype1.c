@@ -311,7 +311,8 @@ gs_type1_endchar(gs_type1_state * pcis)
 	pcis->ipstack[0].cs_data = agdata;
 	return 1;
     }
-    pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
+    if (pcis->pfont->PaintType == 0)
+	pis->fill_adjust.x = pis->fill_adjust.y = -1;
     /* Set the flatness for curve rendering. */
     if (!pcis->no_grid_fitting)
 	gs_imager_setflat(pis, pcis->flatness);

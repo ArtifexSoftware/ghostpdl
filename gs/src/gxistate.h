@@ -222,7 +222,7 @@ typedef struct gs_transparency_source_s {
 	int overprint_mode;\
 	int effective_overprint_mode;\
 	float flatness;\
-	gs_fixed_point fill_adjust;	/* fattening for fill */\
+	gs_fixed_point fill_adjust; /* A path expansion for fill; -1 = dropout prevention*/\
 	bool stroke_adjust;\
 	bool accurate_curves;\
 	bool have_pattern_streams;\
