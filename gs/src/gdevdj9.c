@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2000 <Rene Harsch, Switzerland> 
    written by <Rene Harsch rene@harsch.net>
-   Portions Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+   Portions Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -286,8 +286,14 @@ private int cdj970_write_trailer(P2(gx_device *, FILE *));
 #define DOFFSET (dev_t_margin(pdev) - DESKJET_PRINT_LIMIT)	/* Print position */
 
 
-#define W sizeof(word)
-#define I sizeof(int)
+/*
+ * The following use of size_of rather than sizeof is required to work
+ * around a bug in Microsoft Visual C++ 5.0, which considers the THRESHOLD
+ * value (128 << SHIFT) to be unsigned because SHIFT is unsigned (because
+ * sizeof() is unsigned).
+ */
+#define W size_of(word)
+#define I size_of(int)
 
 /* paper types */
 typedef enum {

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -197,8 +197,14 @@ private int cdj_param_check_float(P4(gs_param_list *, gs_param_name, floatp, boo
 #  define BITSPERPIXEL 24
 #endif
 
-#define W sizeof(word)
-#define I sizeof(int)
+/*
+ * The following use of size_of rather than sizeof is required to work
+ * around a bug in Microsoft Visual C++ 5.0, which considers the THRESHOLD
+ * value (128 << SHIFT) to be unsigned because SHIFT is unsigned (because
+ * sizeof() is unsigned).
+ */
+#define W size_of(word)
+#define I size_of(int)
 
 
 #define invert_word(v)\
