@@ -253,10 +253,13 @@ true setglobal
 
 /ExecuteStream  % <id> <obj> ExecuteStream <id> <obj>
 { % Executes a (encoded) data stream.
+  dup //PDFReader exch /CurrentObject exch put						% id obj
   dup /Length //CheckLength //UnRefD exec							% id obj l
   PDFR_DEBUG {
 	(ExecuteStream id = ) print 2 index =only ( Length = ) print dup =
   } if
+  //PDFReader /InitialGraphicState get 
+  //PDFReader /GraphicState get copy pop
   //PDFReader /Operators get begin
   currentfile exch () /SubFileDecode filter 						% id obj file
   cvx mark exch														% id obj mark file
@@ -269,6 +272,8 @@ true setglobal
   PDFR_DEBUG {
 	(ExecuteStream end.) =
   } if
+  //PDFReader /CurrentObject null put
+  showpage
 } bind def
 
 /stream  % <id> <obj> stream <id> <obj>
@@ -343,6 +348,119 @@ true setglobal
 % ===================== Interpret Data Streams ===============
 
 /TempMatrix matrix def
+/InitialGraphicState 20 dict begin
+  /FontSize 0 def
+  /CharacterSpacing 0 def
+  /TextLeading 0 def
+  /TextRenderingMode 0 def
+  /WordSpacing 0 def
+currentdict end def
+/GraphicState 20 dict begin
+  /InitialTextMatrix matrix def
+currentdict end def
+
+/CheckFont % key val CheckFont key val
+{
+  dup /Type get /Font ne {
+    mark (Resource ) 3 index ( must have /Type/Font.) //error exec
+  } if
+} bind def
+
+/SetFont  % <resource_name> <size> SetFont -
+{ dup //GraphicState exch /FontSize exch put
+  exch																% s n 
+  //PDFReader /CurrentObject get /Context get /Resources get 
+  /Font //DoNothing //UnRefD exec
+  exch //CheckFont //UnRefD exec									% s fr
+  dup /Subtype get /Type3 eq {
+    (Underimplemented SetFont)=
+	pop /Courier exch 10 mul selectfont
+  } {
+    /BaseFont get
+    (Underimplemented SetFont)=
+    =string cvs (+) search {
+      pop pop
+    } if
+	cvn
+	PDFR_DEBUG {
+	  (Font ) print dup =
+	} if
+    exch selectfont
+  } ifelse
+} bind def
+
+/ShowText  % <string> ShowText -
+{ //GraphicState /TextRenderingMode get 0 eq {
+    //GraphicState /CharacterSpacing get 0
+    32
+    //GraphicState /WordSpacing get 0
+    6 5 roll awidthshow
+  } {
+    //GraphicState /CharacterSpacing get 0 eq
+    //GraphicState /WordSpacing get 0 eq and {
+	  true charpath
+	} {
+      % Emulate with "{ charpath } cshow".
+	  % Not sure how it works with CID fonts.
+	  {														% c wx wy
+	    currentpoint 5 4 roll								% wx wy x y c
+	    dup ( ) exch 0 put true charpath					% wx wy x y c
+	    5 1 roll											% c wx wy x y
+	    moveto rmoveto										% c
+	    //GraphicState /CharacterSpacing get 0 rmoveto		% c
+	    32 eq {												%
+		  //GraphicState /WordSpacing get 0 rmoveto
+	    } if
+	  }
+      exch cshow
+	} ifelse
+  } ifelse
+} bind def
+
+/ShowTextBeg  % - ShowTextBeg -
+{ //GraphicState /TextRenderingMode get 0 ne {
+	currentpoint newpath moveto
+  } if
+} bind def
+
+/ShowTextEnd  % - ShowTextEnd -
+{ //GraphicState /TextRenderingMode get
+  { dup 1 eq {
+      stroke exit
+    } if
+    dup 2 eq {
+      gsave fill grestore stroke exit
+    } if
+    dup 3 eq {
+      currentpoint newpath moveto
+    } if
+    dup 4 eq {
+      gsave fill grestore clip exit
+    } if
+    dup 5 eq {
+      gsave stroke grestore clip exit
+    } if
+    dup 6 eq {
+      gsave fill grestore gsave stroke grestore fill exit
+    } if
+    dup 7 eq {
+      clip exit
+    } if
+    exit
+  } loop
+  pop
+} bind def
+
+/ShowTextWithGlyphPositioning % <array> ShowTextWithGlyphPositioning -
+{ //ShowTextBeg exec
+  { dup type /stringtype eq {
+      //ShowText exec
+    } {
+	  neg 1000 div //GraphicState /FontSize get mul 0 rmoveto
+	} ifelse
+  } forall
+  //ShowTextEnd exec
+} bind def
 
 /Operators 50 dict begin
   /q /gsave load def
@@ -373,11 +491,11 @@ true setglobal
   /m /moveto load def
   /l /lineto load def
   /c /curveto load def
-  /v { currentpoint 6 2 roll curveto } def
-  /y { 2 copy curveto } def
+  /v { currentpoint 6 2 roll curveto } bind def
+  /y { 2 copy curveto } bind def
   /re {
-   4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
-   closepath
+    4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
+    closepath
   } def
   /h /closepath load def
   /n /newpath load def
@@ -395,27 +513,33 @@ true setglobal
 
   /DO { DoXObject } bind def
 
-  /BI { BeginIfnlineImage } bind def
+  /BI { BeginInlineImage } bind def
   /EI { EndInlineImage } bind def
   /ID { BeginInlineData } bind def
 
-  /BT { (Unimplemented BeginText)= } bind def
-  /ET { (Unimplemented EndText)= } bind def
-  /Tc { SetCharacterSpacing } bind def
-  /TL { SetTextLeading } bind def
-  /Tr { SetTextRenderingMode } bind def
-  /Ts { SetTextRise } bind def
-  /Tw { SetWordSpacing } bind def
-  /Tz { SetHorizontalTextScaling } bind def
-  /Td { (Unimplemented MoveTextPosition)= pop pop } bind def
-  /TD { MoveTextPositionAndSetLeading } bind def
-  /Tm { (Unimplemented SetTextMatrixAndTextLineMatrix)= pop pop pop pop pop pop } bind def
-  /T* { MoveToNextTextLine } bind def
-  /Tj { (Unimplemented ShowText)= pop } bind def
-  /' { MoveToNextTextLine ShowText } bind def
-  /" { SetWordSpacing SetCharacterSpacing MoveToNextTextLine ShowText } bind def
-  /TJ { (Unimplemented ShowTextWithGlyphPositioning)= pop } bind def
-  /Tf { (Unimplemented SetFont)= pop pop } bind def
+  /BT { gsave //GraphicState /InitialTextMatrix get currentmatrix pop } bind def
+  /ET { grestore } bind def
+  /Tc { //GraphicState exch /CharacterSpacing exch put } bind def
+  /TL { //GraphicState exch /TextLeading exch put } bind def
+  /Tr { //GraphicState exch /TextRenderingMode exch put } bind def
+  /Ts {  % Ghostscript never generates it.
+	    mark (Unimplemented SetTextRise) //error exec
+	  } bind def
+  /Tw { //GraphicState exch /WordSpacing exch put } bind def
+  /Tz { % Ghostscript never generates it.
+	    mark (Unimplemented SetHorizontalTextScaling) //error exec
+      } bind def
+  /Td { translate 0 0 moveto } bind def
+  /TD { dup neg //TL exec //Td exec } bind def
+  /Tm { //GraphicState /InitialTextMatrix get setmatrix
+        //TempMatrix astore concat
+        0 0 moveto } bind def
+  /T* { 0 //GraphicState /TextLeading get //Td exec } bind def
+  /Tj { //ShowTextBeg exec  //ShowText exec  //ShowTextEnd exec } bind def
+  /' { //T* exec //ShowText exec } bind def
+  /" { 3 2 roll //Tw exec exch //Tc exec //' exec} bind def
+  /TJ //ShowTextWithGlyphPositioning def
+  /Tf //SetFont def
 
   /d0 /setcharwidth load def
   /d1 /setcachedevice load def
@@ -424,6 +548,7 @@ true setglobal
   /BMC { BeginMarkedContentSequence } bind def
   /EMC { EndMarkedContentSequence } bind def
   /BX { BeginCompatibilitySection } bind def
+  /EX { EndCompatibilitySection } bind def
   /DP { DefineMarkedContentPointWithPropertyList } bind def
   /MP { DefineMarkedContentPoint } bind def
 currentdict end def
