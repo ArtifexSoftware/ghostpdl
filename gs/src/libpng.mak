@@ -24,11 +24,12 @@
 #	PNGSRCDIR - the source directory
 #	PNGGENDIR - the generated intermediate file directory
 #	PNGOBJDIR - the object directory
-#	PNGVERSION - the library version number ("89", "90", "95", "96",
-#	  and "10001" through "10002").
+#	PNGVERSION - the library version number ("90", "95", "96",
+#	  and "10001" through "10012").
 #	  For historical reasons, "101" and "102" are also acceptable,
 #	  even though they don't match libpng's numbering scheme
 #	  (see png.h for more details).
+#         building with versions earlier than 0.90 is not supported.
 #	SHARE_LIBPNG - 0 to compile libpng, 1 to share
 #	LIBPNG_NAME - if SHARE_LIBPNG=1, the name of the shared library
 # NOTE: currently users of this makefile define PSRCDIR and PVERSION,
@@ -48,9 +49,7 @@
 #	ftp://ftp.cs.wisc.edu/ghost/3rdparty/
 # for more convenient access.
 #
-# The makefile is known to work with the following library versions:
-# 0.89, 0.90, 0.95, 0.96, 1.0.1, 1.0.2, 1.0.3, 1.0.5, 1.0.8, 1.0.9,
-# 1.0.10, 1.0.11, 1.0.12.
+# this makefile should work with libpng versions 0.90 and above
 #
 # NOTE: the archive for libpng 0.95 may be inconsistent: if you have
 # compilation problems, use a newer version.
@@ -134,47 +133,5 @@ $(PNGGEN)libpng_0.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(png_1) $(png_2)\
 	$(ADDMOD) $(PNGGEN)libpng_0 $(png_2)
 	$(ADDMOD) $(PNGGEN)libpng_0 -include $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
 
-$(PNGGEN)lpg89.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ)
-	$(SETMOD) $(PNGGEN)lpg89 $(PNGOBJ)pngwio.$(OBJ)
-
-$(PNGGEN)lpg90.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg90 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg95.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg95 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg96.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg96 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg101.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg101 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg102.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg102 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10001.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10001 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10002.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10002 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10003.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10003 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10005.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10005 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10008.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10008 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10009.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10009 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10010.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10010 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10011.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10011 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-
-$(PNGGEN)lpg10012.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg10012 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
+$(PNGGEN)lpg$(PNGVERSION).dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
+	$(SETMOD) $(PNGGEN)lpg$(PNGVERSION) $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
