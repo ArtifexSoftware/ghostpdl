@@ -82,6 +82,58 @@ gs_currenttextknockout(const gs_state *pgs)
 
 /* ------ Transparency rendering stack ------ */
 
+/*
+
+This area of the transparency facilities is in flux.  Here is a proposal for
+extending the driver interface.
+
+int (*begin_transparency_group)(gx_device *dev,
+    const gs_transparency_group_params_t *ptgp,
+    const gs_rect *pbbox,
+    gs_imager_state *pis,
+    gs_transparency_state_t **ppts,
+    gs_memory_t *mem)
+
+Pushes the current transparency state (*ppts) onto the associated stack, and
+sets *ppts to a new transparency state of the given dimension.  The
+transparency state may copy some or all of the imager state, such as the
+current alpha and/or transparency mask values, and definitely copies the
+parameters.
+
+int (*end_transparency_group)(gx_device *dev,
+    gs_imager_state *pis,
+    gs_transparency_state_t **ppts)
+
+Blends the top element of the transparency stack, which must be a group,
+into the next-to-top element, popping the stack.  If the stack only had a
+single element, blends into the device output.  Sets *ppts to 0 iff the
+stack is now empty.  If end_group fails, the stack is *not* popped.
+
+int (*begin_transparency_mask)(gx_device *dev,
+    const gs_transparency_mask_params_t *ptmp,
+    const gs_rect *pbbox,
+    gs_imager_state *pis,
+    gs_transparency_state_t **ppts,
+    gs_memory_t *mem)
+
+See begin_transparency_group.
+
+int (*end_transparency_mask)(gx_device *dev,
+    gs_transparency_mask_t **pptm)
+
+Stores a pointer to the rendered transparency mask into *pptm, popping the
+stack like end_group.  Normally, the client will follow this by using
+rc_assign to store the rendered mask into pis->{opacity,shape}.mask.  If
+end_mask fails, the stack is *not* popped.
+
+int (*discard_transparency_level)(gx_device *dev,
+    gs_transparency_state_t **ppts)
+
+Pops the transparency stack, discarding the top element, which may be either
+a group or a mask.  Sets *ppts to 0 iff the stack is now empty.
+
+ */
+
 gs_transparency_state_type_t
 gs_current_transparency_type(const gs_state *pgs)
 {
