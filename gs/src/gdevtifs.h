@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -183,15 +183,23 @@ typedef enum {
 /* ================ Implementation ================ */
 
 /*
- * Define the added driver state for TIFF writing.
+ * Define the added driver state for TIFF writing.  Note that we provide
+ * no GC descriptor, so this structure must exist only on the stack,
+ * never in allocated storage.
  */
 typedef struct gdev_tiff_state_s {
+    gs_memory_t *mem;
     long prev_dir;		/* file offset of previous directory offset */
     long dir_off;		/* file offset of next write */
     int ntags;			/* # of tags in directory */
-    int vsize;			/* size of values following tags */
-    /* Record offsets of values */
+    long strip_index;		/* current strip being output, 0 = first */
+    long strip_count;		
+    long rows;		
+    /* Record offsets of values - these may be indirect if more than one strip */
+    int offset_StripOffsets; 
     int offset_StripByteCounts;
+    TIFF_ulong *StripOffsets;
+    TIFF_ulong *StripByteCounts;
 } gdev_tiff_state;
 
 /*
@@ -199,14 +207,21 @@ typedef struct gdev_tiff_state_s {
  * tags; the client can provide additional tags (pre-sorted) and
  * indirect values.
  */
-int gdev_tiff_begin_page(P7(gx_device_printer * pdev, gdev_tiff_state * tifs,
+int gdev_tiff_begin_page(P8(gx_device_printer * pdev, gdev_tiff_state * tifs,
 			    FILE * fp,
 			    const TIFF_dir_entry * entries, int entry_count,
-			    const byte * values, int value_size));
+			    const byte * values, int value_size,
+			    long max_strip_size));
 
 /*
- * Finish writing a TIFF page.  All data written between begin and end
- * is considered to be a single strip.
+ * Finish writing a TIFF strip.  All data written since begin or last
+ * end_strip is considered to be a single strip.
+ */
+int gdev_tiff_end_strip(P2(gdev_tiff_state * tifs, FILE * fp));
+
+/*
+ * Finish writing a TIFF page.  StripOffsets and StripByteCounts are
+ * patched into the file.
  */
 int gdev_tiff_end_page(P2(gdev_tiff_state * tifs, FILE * fp));
 

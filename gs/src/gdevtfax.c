@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -45,6 +45,7 @@ struct gx_device_tfax_s {
     gx_device_common;
     gx_prn_device_common;
     int adjust_width;		/* 0 = no adjust, 1 = adjust to fax values */
+    long MaxStripSize;		/* 0 = no limit, other is UNCOMPRESSED limit */
     gdev_tiff_state tiff;	/* for TIFF output only */
 };
 typedef struct gx_device_tfax_s gx_device_tfax;
@@ -54,68 +55,37 @@ private const gx_device_procs gdev_fax_std_procs =
     prn_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		     tfax_get_params, tfax_put_params);
 
-const gx_device_tfax gs_faxg3_device = {
-    prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "faxg3",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-			X_DPI, Y_DPI,
-			0, 0, 0, 0,	/* margins */
-			1, faxg3_print_page),
-    1				/* adjust_width */
-};
+#define TFAX_DEVICE(dname, print_page)\
+{\
+    prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, dname,\
+			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
+			X_DPI, Y_DPI,\
+			0, 0, 0, 0,	/* margins */\
+			1, print_page),\
+    1,				/* adjust_width */\
+    0				/* unlimited strip size byte count */\
+}
 
-const gx_device_tfax gs_faxg32d_device = {
-    prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "faxg32d",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-			X_DPI, Y_DPI,
-			0, 0, 0, 0,	/* margins */
-			1, faxg32d_print_page),
-    1				/* adjust_width */
-};
+const gx_device_tfax gs_faxg3_device =
+    TFAX_DEVICE("faxg3", faxg3_print_page);
 
-const gx_device_tfax gs_faxg4_device = {
-    prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "faxg4",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-			X_DPI, Y_DPI,
-			0, 0, 0, 0,	/* margins */
-			1, faxg4_print_page),
-    1				/* adjust_width */
-};
+const gx_device_tfax gs_faxg32d_device =
+    TFAX_DEVICE("faxg32d", faxg32d_print_page);
 
-const gx_device_tfax gs_tiffcrle_device = {
-    prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "tiffcrle",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-			X_DPI, Y_DPI,
-			0, 0, 0, 0,	/* margins */
-			1, tiffcrle_print_page),
-    1				/* adjust_width */
-};
+const gx_device_tfax gs_faxg4_device =
+    TFAX_DEVICE("faxg4", faxg4_print_page);
 
-const gx_device_tfax gs_tiffg3_device = {
-    prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "tiffg3",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-			X_DPI, Y_DPI,
-			0, 0, 0, 0,	/* margins */
-			1, tiffg3_print_page),
-    1				/* adjust_width */
-};
+const gx_device_tfax gs_tiffcrle_device =
+    TFAX_DEVICE("tiffcrle", tiffcrle_print_page);
 
-const gx_device_tfax gs_tiffg32d_device = {
-    prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "tiffg32d",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-			X_DPI, Y_DPI,
-			0, 0, 0, 0,	/* margins */
-			1, tiffg32d_print_page),
-    1				/* adjust_width */
-};
+const gx_device_tfax gs_tiffg3_device =
+    TFAX_DEVICE("tiffg3", tiffg3_print_page);
 
-const gx_device_tfax gs_tiffg4_device = {
-    prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "tiffg4",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-			X_DPI, Y_DPI,
-			0, 0, 0, 0,	/* margins */
-			1, tiffg4_print_page),
-    1				/* adjust_width */
-};
+const gx_device_tfax gs_tiffg32d_device =
+    TFAX_DEVICE("tiffg32d", tiffg32d_print_page);
+
+const gx_device_tfax gs_tiffg4_device =
+    TFAX_DEVICE("tiffg4", tiffg4_print_page);
 
 /* Open the device. */
 /* This is no longer needed: we retain it for client backward compatibility. */
@@ -125,16 +95,20 @@ gdev_fax_open(gx_device * dev)
     return gdev_prn_open(dev);
 }
 
-/* Get/put the AdjustWidth parameter. */
+/* Get/put the AdjustWidth  and the MaxStripSize (for TIFF) parameters. */
 private int
 tfax_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_tfax *const tfdev = (gx_device_tfax *)dev;
     int code = gdev_prn_get_params(dev, plist);
+    int ecode = code;
 
-    if (code < 0)
-	return code;
-    return param_write_int(plist, "AdjustWidth", &tfdev->adjust_width);
+    if ((code = param_write_int(plist, "AdjustWidth", &tfdev->adjust_width)) < 0)
+        ecode = code;
+    if ((code = param_write_long(plist, "MaxStripSize", &tfdev->MaxStripSize)) < 0)
+        ecode = code;
+
+    return ecode;
 }
 private int
 tfax_put_params(gx_device * dev, gs_param_list * plist)
@@ -143,12 +117,29 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
     int ecode = 0;
     int code;
     int aw = tfdev->adjust_width;
+    long mss = tfdev->MaxStripSize;
     const char *param_name;
 
     switch (code = param_read_int(plist, (param_name = "AdjustWidth"), &aw)) {
         case 0:
 	    if (aw >= 0 && aw <= 1)
 		break;
+	    code = gs_error_rangecheck;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 1:
+	    break;
+    }
+    switch (code = param_read_long(plist, (param_name = "MaxStripSize"), &mss)) {
+        case 0:
+	    /*
+	     * Strip must be large enough to accommodate a raster line.
+	     * If the max strip size is too small, we still write a single
+	     * line per strip rather than giving an error.
+	     */
+	    if (mss >= 0)
+	        break;
 	    code = gs_error_rangecheck;
 	default:
 	    ecode = code;
@@ -164,6 +155,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
 	return code;
 
     tfdev->adjust_width = aw;
+    tfdev->MaxStripSize = mss;
     return code;
 }
 
@@ -203,14 +195,17 @@ gdev_fax_init_fax_state(stream_CFE_state * ss, const gx_device_printer * pdev)
 }
 
 /* Send the page to the printer. */
-/* Print a page with a specified width, which may differ from the */
-/* width stored in the device. */
+/* Print a page with a specified width, which may differ from	*/
+/* the width stored in the device. The TIFF file may have	*/
+/* multiple strips of height 'rows'.				*/
 private int
-gdev_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
-			     const stream_template * temp, stream_state * ss,
-			     int width)
+gdev_stream_print_page_strips(gx_device_printer * pdev, FILE * prn_stream,
+			      const stream_template * temp, stream_state * ss,
+			      int width, long rows_per_strip)
 {
+    gx_device_tfax *const tfdev = (gx_device_tfax *)pdev;
     gs_memory_t *mem = pdev->memory;
+    long end_strip = rows_per_strip;
     int code;
     stream_cursor_read r;
     stream_cursor_write w;
@@ -256,10 +251,12 @@ gdev_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
     for (;;) {
 	int status;
 
+	if (end_strip > pdev->height)
+	    end_strip = pdev->height;
 	if_debug7('w', "[w]lnum=%d r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", lnum,
 		  (ulong) in, (ulong) r.ptr, (ulong) r.limit,
 		  (ulong) out, (ulong) w.ptr, (ulong) w.limit);
-	status = (*temp->process) (ss, &r, &w, lnum == pdev->height);
+	status = (*temp->process) (ss, &r, &w, lnum == end_strip);
 	if_debug7('w', "...%d, r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", status,
 		  (ulong) in, (ulong) r.ptr, (ulong) r.limit,
 		  (ulong) out, (ulong) w.ptr, (ulong) w.limit);
@@ -270,6 +267,17 @@ gdev_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
 
 		    if (lnum == pdev->height)
 			goto ok;
+		    if (lnum == end_strip) {
+			if (!nul)
+			    fwrite(out, 1, w.ptr + 1 - out, prn_stream);
+			w.ptr = out - 1;
+			gdev_tiff_end_strip(&tfdev->tiff, prn_stream);
+		        end_strip += rows_per_strip;
+			/* release and re-initialize the encoder for the next strip */
+			if (temp->release != 0)
+			    (*temp->release) (ss);
+			(*temp->init) (ss);
+		    }
 		    left = r.limit - r.ptr;
 		    memcpy(in, r.ptr + 1, left);
 		    gdev_prn_copy_scan_lines(pdev, lnum++, in + left, in_size);
@@ -293,6 +301,7 @@ gdev_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
     /* Write out any remaining output. */
     if (!nul)
 	fwrite(out, 1, w.ptr + 1 - out, prn_stream);
+    gdev_tiff_end_strip(&tfdev->tiff, prn_stream);
 
   done:
     gs_free_object(mem, out, "gdev_stream_print_page(out)");
@@ -301,6 +310,18 @@ gdev_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
 	(*temp->release) (ss);
     return code;
 }
+
+/* Print a page with a specified width, which may differ from the */
+/* width stored in the device. */
+private int
+gdev_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
+			     const stream_template * temp, stream_state * ss,
+			     int width)
+{
+    return gdev_stream_print_page_strips(pdev, prn_stream, temp, ss,
+					 width, pdev->height);
+}
+
 private int
 gdev_stream_print_page(gx_device_printer * pdev, FILE * prn_stream,
 		       const stream_template * temp, stream_state * ss)
@@ -315,6 +336,16 @@ gdev_fax_print_page(gx_device_printer * pdev, FILE * prn_stream,
 {
     return gdev_stream_print_page_width(pdev, prn_stream, &s_CFE_template,
 					(stream_state *)ss, ss->Columns);
+}
+
+/* Print a fax page.  Other fax drivers use this. */
+int
+gdev_fax_print_page_stripped(gx_device_printer * pdev, FILE * prn_stream,
+		    stream_CFE_state * ss, long rows)
+{
+    return gdev_stream_print_page_strips(pdev, prn_stream, &s_CFE_template,
+					 (stream_state *)ss, ss->Columns,
+					 rows);
 }
 
 /* Print a 1-D Group 3 page. */
@@ -416,7 +447,7 @@ tifff_print_page(gx_device_printer * dev, FILE * prn_stream,
 
     tfax_begin_page(tfdev, prn_stream, pdir, pstate->Columns);
     pstate->FirstBitLowOrder = true;	/* decoders prefer this */
-    code = gdev_fax_print_page(dev, prn_stream, pstate);
+    code = gdev_fax_print_page_stripped(dev, prn_stream, pstate, tfdev->tiff.rows);
     gdev_tiff_end_page(&tfdev->tiff, prn_stream);
     return code;
 }
@@ -539,7 +570,7 @@ tfax_begin_page(gx_device_tfax * tfdev, FILE * fp,
 				&tfdev->tiff, fp,
 				(const TIFF_dir_entry *)pdir,
 				sizeof(*pdir) / sizeof(TIFF_dir_entry),
-				NULL, 0);
+				NULL, 0, tfdev->MaxStripSize);
     tfdev->width = save_width;
     return code;
 }

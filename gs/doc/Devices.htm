@@ -25,7 +25,11 @@ Details of Ghostscript output devices
 <blockquote><ul>
 <li><a href="#Measurements">Notes on measurements</a>
 <li><a href="#Win">MS Windows printers</a>
+<li><a href="#File_formats">File formats</a>
+<ul>
 <li><a href="#JFIF">JPEG file format (JFIF)</a>
+<li><a href="#TIFF">TIFF file formats</a>
+</ul>
 <li><a href="#HP8_color_inkjet">H-P 8xx, 1100, and 1600 color inkjet printers</a>
 <ul>
 <li><a href="#HP8_gdevcd8">Drivers contained in <b><tt>gdevcd8.c</tt></b></a>
@@ -175,8 +179,6 @@ known to Ghostscript</a> are defined in the initialization file
 </dl>
 
 <hr>
-
-<h1><a name="Win"></a>MS Windows printers</h1>
 
 <h1><a name="Win"></a>MS Windows printers</h1>
 
@@ -428,7 +430,9 @@ the long side of the paper as the reference):
 
 <hr>
 
-<h1><a name="JFIF"></a>JPEG file format (JFIF)</h1>
+<h1><a name="File_formats">File formats</h1>
+
+<h2><a name="JFIF"></a>JPEG file format (JFIF)</h2>
 
 <p>
 Ghostscript includes output drivers that can produce <a
@@ -488,6 +492,53 @@ At this writing the default JPEG quality level of 75 is equivalent to
 future.  The JPEG drivers could be extended to support additional JPEG
 compression options, such as the other DCTEncode filter parameters, but so
 far they haven't been.
+
+<h2><a name="TIFF"></a>TIFF file formats</h2>
+
+<p>
+There are two unrelated sets of TIFF drivers: <b><tt>tiff12nc</tt></b> and
+<b><tt>tiff24nc</tt></b>, which produce uncompressed color output, and all
+the other <b><tt>tiff*</tt></b> drivers, which produce black-and-white
+output with different compression modes.
+
+<p>
+The black-and-white TIFF drivers support creation of files that are
+comprised of more than a single strip.  Multi-strip files reduce the memory
+requirement on the reader, since readers need only store and process one
+strip at a time.  These drivers provide two parameters beyond the standard
+set:
+
+<blockquote>
+<dl>
+<dt><b><tt>-dMaxStripSize=</tt><em>N</em></b> (non-negative integer; default = 0)
+<dd>Set the maximum (uncompressed) size of a strip.
+
+<dt><b><tt>-dAdjustWidth=</tt><em>true|false</em></b> (Boolean; default =
+true)
+<dd>If true, then if the requested page width is close to either A4 (1728
+columns) or B4 (2048 columns), set the page width to A4 or B4 respectively.
+</dl></blockquote>
+
+<p>
+The TIFF 6.0 specification, Section 7, page 27, recommends that the size of
+each strip be about 8 Kbytes.  As an example, to generate the 'tiger' in
+tiffg4 format that has the recommended strip size, use:
+
+<blockquote><pre>
+gs -sDEVICE=tiffg4 -sOutputFile=tiger.tif -dMaxStripSize=8192 examples/tiger.ps
+</pre></blockquote>
+
+<p>
+If the value of the <b><tt>MaxStripSize</tt></b> parameter is smaller than a
+single image row, then no error will be generated, and the TIFF file will be
+generated correctly using one row per strip.  Note that smaller strip sizes
+increase the size of the file by increasing the size of the StripOffsets and
+StripByteCounts tables, and by reducing the effectiveness of the compression
+which must start over for each strip.
+
+<p>
+If the value of MaxStripSize is 0 (the default), then the entire image will
+be a single strip.
 
 <hr>
 
