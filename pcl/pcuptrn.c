@@ -16,23 +16,6 @@
 #include "pcbiptrn.h"
 #include "pcuptrn.h"
 
-/* dictionaries to hold patterns */
-private pl_dict_t   pcl_patterns;
-private pl_dict_t   gl_patterns;
-
-/*
- * Optimization - record the last used pattern_id and pattern. This
- * information must be global to this file because redefinition/remvoal
- * of a pattern must cause this to be reset.
- *
- * Separate versions of this parameters are maintained for PCL and GL/2
- * user defined patterns.
- */
-private int              last_pcl_uptrn_id;
-private pcl_pattern_t *  plast_pcl_uptrn;
-private int              last_gl2_RF_indx;
-private pcl_pattern_t *  plast_gl2_uptrn;
-
 /*
  * GC routines.
  */
@@ -189,26 +172,24 @@ pcl_pattern_build_pattern(
  * not defined.
  */
   pcl_pattern_t *
-pcl_pattern_get_pcl_uptrn(
-    int             id
-)
+pcl_pattern_get_pcl_uptrn( pcl_state_t *pcs, int id )
 {
-    if (last_pcl_uptrn_id != id) {
+    if (pcs->last_pcl_uptrn_id != id) {
         pcl_id_t        key;
 
-        last_pcl_uptrn_id = id;
+        pcs->last_pcl_uptrn_id = id;
         id_set_value(key, id);
-        if ( !pl_dict_lookup( &pcl_patterns,
+        if ( !pl_dict_lookup( &pcs->pcl_patterns,
                               id_key(key),
                               2,
-                              (void **)&plast_pcl_uptrn,
+                              (void **)&pcs->plast_pcl_uptrn,
                               false,
                               NULL
                               ) )
-            plast_pcl_uptrn = 0;
+            pcs->plast_pcl_uptrn = 0;
     }
 
-    return plast_pcl_uptrn;
+    return pcs->plast_pcl_uptrn;
 }
 
 /*
@@ -220,6 +201,7 @@ pcl_pattern_get_pcl_uptrn(
  */
   private int
 define_pcl_ptrn(
+    pcl_state_t *   pcs,
     int             id,
     pcl_pattern_t * pptrn
 )
@@ -228,12 +210,12 @@ define_pcl_ptrn(
 
     id_set_value(key, id);
     if (pptrn == 0)
-        pl_dict_undef(&pcl_patterns, id_key(key), 2);
-    else if (pl_dict_put(&pcl_patterns, id_key(key), 2, pptrn) < 0)
+        pl_dict_undef(&pcs->pcl_patterns, id_key(key), 2);
+    else if (pl_dict_put(&pcs->pcl_patterns, id_key(key), 2, pptrn) < 0)
         return e_Memory;
 
-    if (last_pcl_uptrn_id == id)
-        plast_pcl_uptrn = pptrn;
+    if (pcs->last_pcl_uptrn_id == id)
+        pcs->plast_pcl_uptrn = pptrn;
 
     return 0;
 }
@@ -253,13 +235,13 @@ delete_all_pcl_ptrns(
     pl_dict_enum_t  denum;
     gs_const_string plkey;
 
-    pl_dict_enum_begin(&pcl_patterns, &denum);
+    pl_dict_enum_begin(&pcs->pcl_patterns, &denum);
     while (pl_dict_enum_next(&denum, &plkey, (void **)&pptrn)) {
         if (!tmp_only || (pptrn->ppat_data->storage == pcds_temporary)) {
             pcl_id_t    key;
 
             id_set_key(key, plkey.data);
-            define_pcl_ptrn(id_value(key), NULL);
+            define_pcl_ptrn(pcs, id_value(key), NULL);
         } else if (renderings)
             free_pattern_rendering(pptrn);
     }
@@ -270,26 +252,24 @@ delete_all_pcl_ptrns(
  * defined for the index.
  */
   pcl_pattern_t *
-pcl_pattern_get_gl_uptrn(
-    int             indx
-)
+pcl_pattern_get_gl_uptrn(pcl_state_t *pcs, int indx)
 {
-    if (last_gl2_RF_indx != indx) {
+    if (pcs->last_gl2_RF_indx != indx) {
         pcl_id_t        key;
 
-        last_gl2_RF_indx = indx;
+        pcs->last_gl2_RF_indx = indx;
         id_set_value(key, indx);
-        if ( !pl_dict_lookup( &gl_patterns,
+        if ( !pl_dict_lookup( &pcs->gl_patterns,
                               id_key(key),
                               2,
-                              (void **)(&plast_gl2_uptrn),
+                              (void **)(&pcs->plast_gl2_uptrn),
                               false,
                               NULL
                               ) )
-            plast_gl2_uptrn = 0;
+            pcs->plast_gl2_uptrn = 0;
     }
 
-    return plast_gl2_uptrn;
+    return pcs->plast_gl2_uptrn;
 }
 
 /*
@@ -331,7 +311,7 @@ pcl_pattern_RF(
         if (code < 0)
             return code;
 
-        if (pl_dict_put(&gl_patterns, id_key(key), 2, pptrn) < 0) {
+        if (pl_dict_put(&pcs->gl_patterns, id_key(key), 2, pptrn) < 0) {
             pcl_pattern_free_pattern( pcs->memory,
                                       pptrn,
                                       "create GL/2 RF pattern"
@@ -340,10 +320,10 @@ pcl_pattern_RF(
         }
 
     } else
-        pl_dict_undef(&gl_patterns, id_key(key), 2);
+        pl_dict_undef(&pcs->gl_patterns, id_key(key), 2);
 
-    if (last_gl2_RF_indx == indx)
-        plast_gl2_uptrn = pptrn;
+    if (pcs->last_gl2_RF_indx == indx)
+        pcs->plast_gl2_uptrn = pptrn;
 
     return 0;
 }
@@ -455,7 +435,7 @@ download_pcl_pattern(
 
     /* place the pattern into the pattern dictionary */
     if ( (code < 0)                                            ||
-         ((code = define_pcl_ptrn(pcs->pattern_id, pptrn)) < 0)  ) {
+         ((code = define_pcl_ptrn(pcs, pcs->pattern_id, pptrn)) < 0)  ) {
         if (pptrn != 0)
             pcl_pattern_free_pattern(pcs->memory, pptrn, "download PCL pattern");
         else
@@ -495,18 +475,18 @@ pattern_control(
 
         /* delete last specified pattern */
       case 2:
-        define_pcl_ptrn(pcs->pattern_id, NULL);
+        define_pcl_ptrn(pcs, pcs->pattern_id, NULL);
 
         /* make last specified pattern temporary */
       case 4:
-        pptrn = pcl_pattern_get_pcl_uptrn(pcs->pattern_id);
+        pptrn = pcl_pattern_get_pcl_uptrn(pcs, pcs->pattern_id);
         if (pptrn != 0)
             pptrn->ppat_data->storage = pcds_temporary;
         break;
 
         /* make last specified pattern permanent */
       case 5:
-        pptrn = pcl_pattern_get_pcl_uptrn(pcs->pattern_id);
+        pptrn = pcl_pattern_get_pcl_uptrn(pcs, pcs->pattern_id);
         if (pptrn != 0)
             pptrn->ppat_data->storage = pcds_permanent;
         break;
@@ -561,12 +541,12 @@ upattern_do_reset(
 )
 {
     if ((type & pcl_reset_initial) != 0) {
-        pl_dict_init(&pcl_patterns, pcs->memory, pcl_pattern_free_pattern);
-        pl_dict_init(&gl_patterns, pcs->memory, pcl_pattern_free_pattern);
-        last_pcl_uptrn_id = -1;
-        plast_pcl_uptrn = 0;
-        last_gl2_RF_indx = -1;
-        plast_gl2_uptrn = 0;
+        pl_dict_init(&pcs->pcl_patterns, pcs->memory, pcl_pattern_free_pattern);
+        pl_dict_init(&pcs->gl_patterns, pcs->memory, pcl_pattern_free_pattern);
+        pcs->last_pcl_uptrn_id = -1;
+        pcs->plast_pcl_uptrn = 0;
+        pcs->last_gl2_RF_indx = -1;
+        pcs->plast_gl2_uptrn = 0;
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
 

@@ -38,13 +38,13 @@ extern  int     pcl_pattern_build_pattern(
  * Get a PCL user-defined pattern. A null return indicates the pattern is
  * not defined.
  */
-extern  pcl_pattern_t * pcl_pattern_get_pcl_uptrn( int id );
+extern  pcl_pattern_t * pcl_pattern_get_pcl_uptrn( pcl_state_t *pcs, int id );
 
 /*
  * Get a GL/2 user defined pattern. A null return indicates there is no pattern
  * defined for the index.
  */
-extern pcl_pattern_t * pcl_pattern_get_gl_uptrn( int indx );
+extern pcl_pattern_t * pcl_pattern_get_gl_uptrn( pcl_state_t *pcs, int indx );
 
 /* pcl_pattern_RF is in pcpatrn.h */
 

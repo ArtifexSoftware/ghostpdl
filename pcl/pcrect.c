@@ -193,7 +193,7 @@ pcl_fill_rect_area(
         if (pcl_pattern_get_cross(id) == 0)
             return 0;
     } else if (type == pcl_pattern_user_defined) {
-        if (pcl_pattern_get_pcl_uptrn(id) == 0)
+        if (pcl_pattern_get_pcl_uptrn(pcs, id) == 0)
             return 0;
     } else if (type == pcl_pattern_current_pattern) {
         type = pcs->pattern_type;

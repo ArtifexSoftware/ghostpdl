@@ -1021,7 +1021,7 @@ pattern_set_user_pcl(
     int             for_image
 )
 {
-    pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(id);
+    pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcs, id);
 
     if (pptrn == 0)
         return pattern_set_frgrnd(pcs, 0, for_image);
@@ -1045,7 +1045,7 @@ pattern_set_user_gl(
     int             pen     /* pen to use for foreground */
 )
 {
-    pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(id);
+    pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcs, id);
 
     if (pptrn == 0)
         return pattern_set_pen(pcs, 0, false);
@@ -1071,7 +1071,7 @@ pattern_set_gl_RF(
     int             pen     /* used only for uncolored patterns */
 )
 {
-    pcl_pattern_t * pptrn = pcl_pattern_get_gl_uptrn(indx);
+    pcl_pattern_t * pptrn = pcl_pattern_get_gl_uptrn(pcs, indx);
 
     /*
      * HACK - if pen 1 is to be use for actual uncolored RF patterns, the pen

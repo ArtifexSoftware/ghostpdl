@@ -66,6 +66,11 @@ extern  void    pcl_init_state( pcl_state_t * pcs, gs_memory_t * pmem );
 
 #include "pgstate.h"	    /* HP-GL/2 state */
 
+#ifndef pcl_pattern_data_DEFINED
+#define pcl_pattern_data_DEFINED
+typedef struct pcl_pattern_t pcl_pattern_s;
+#endif
+
 /*
  * Define the entire PCL/HPGL state.  The documentation for this is spread
  * out over the PCL reference manuals, and is incomplete, inconsistent, and
@@ -194,6 +199,14 @@ struct pcl_state_s {
     int                 current_pattern_id;
     pcl_pattern_source_t pattern_type;  /* current source for PCL patterns */
     gs_point            pcl_pat_ref_pt; /* PCL's pattern reference point */
+    pl_dict_t           pcl_patterns;   /* dictionaries to hold pcl and gl/2 patterns */
+    pl_dict_t           gl_patterns;
+    int                 last_pcl_uptrn_id; /* optimizations for recording last patter */
+    pcl_pattern_s *     plast_pcl_uptrn;   /* and pattern id */
+    int                 last_gl2_RF_indx;
+    pcl_pattern_s *     plast_gl2_uptrn;
+
+
     bool                rotate_patterns;/* rotate patterns with print
                                          * direction in PCL */
 

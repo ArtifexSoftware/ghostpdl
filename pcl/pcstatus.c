@@ -378,7 +378,7 @@ status_patterns(
 {
     if (storage == 0) {
         int             id = pcls->current_pattern_id;
-        pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(id);
+        pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcls, id);
 
         if ((pptrn != 0) && (pcls->pattern_type == pcl_pattern_user_defined)) {
             char    id_string[6];
@@ -390,7 +390,7 @@ status_patterns(
         int     id;
 
         for (id = 0; id < (1L << 15) - 1; id++) {
-            pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(id);
+            pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcls, id);
  
             if (pptrn != 0) {
                 char    id_string[6];
