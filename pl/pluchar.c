@@ -738,11 +738,14 @@ pl_bitmap_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4]
 
 /* Render a character for a bitmap font. */
 /* This handles both format 0 (PCL XL) and format 4 (PCL5 bitmap). */
+/* Render a character for a bitmap font. */
+/* This handles both format 0 (PCL XL) and format 4 (PCL5 bitmap). */
 private int
 pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char chr, gs_glyph glyph)
 {	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
 	const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
+	bool landscape = plfont->landscape;
 
 	if ( cdata == 0 )
 	  return 0;
@@ -761,18 +764,19 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	      params = cdata + 2;
 	      bitmap_data = cdata + 10;
 	      delta_x = 0;	/* irrelevant */
+	      lsb = s16(params);
+	      ascent = s16(params + 2);
 	    }
 	  else
 	    { /* PCL5 format */
 	      params = cdata + 6;
 	      bitmap_data = cdata + 16;
-	      delta_x =
-		(plfont->header[13] ? /* variable pitch */
-		 s16(params + 8) * 0.25 :
-		 s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+	      delta_x = (plfont->header[13] ? /* variable pitch */
+			 s16(params + 8) * 0.25 :
+			 (short)(s16(params) /*lsb*/ + u16(params + 4)) /*width*/);
+	      lsb = s16(params);
+	      ascent = s16(params + 2);
 	    }
-	  lsb = s16(params);
-	  ascent = s16(params + 2);
 	  ienum = gs_image_enum_alloc(pgs->memory, "pl_bitmap_build_char");
 	  if ( ienum == 0 )
 	    return_error(gs_error_VMerror);
@@ -780,9 +784,8 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  image.Width = u16(params + 4);
 	  image.Height = u16(params + 6);
 	  /* Determine the amount of pseudo-bolding. */
-	  if ( pfont->WMode >> 1 )
-	    { float bold_fraction = (pfont->WMode >> 1) / 10e5;
-	      bold = (uint)(image.Height * bold_fraction + 0.5);
+	  if ( plfont->bold_fraction != 0 ) { 
+	      bold = (uint)(image.Height * plfont->bold_fraction + 0.5);
 	      bold_lines = alloc_bold_lines(pgs->memory, image.Width, bold,
 					    "pl_bitmap_build_char(bold_line)");
 	      if ( bold_lines == 0 )
@@ -796,24 +799,42 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  else
 	    bold = 0;
 	  gs_make_identity(&image.ImageMatrix);
-	  image.ImageMatrix.tx -= lsb;
-	  image.ImageMatrix.ty += ascent;
-	  image.adjust = true;
-#ifdef CACHE_BITMAP_CHARS
-	  { float wbox[6];
-	    wbox[0] = delta_x;	/* wx */
-	    wbox[1] = 0;	/* wy */
-	    wbox[2] = lsb;	/* llx */
-	    wbox[3] = -ascent;	/* lly */
-	    wbox[4] = image.Width + lsb;	/* urx */
-	    wbox[5] = image.Height - ascent;	/* ury */
-	    code = gs_setcachedevice(penum, pgs, wbox);
+	  if ( landscape ) {
+	      /* note that we don't even use the font metrics for lsb.
+                 It appears in landscape mode the bitmaps account for
+                 this, very peculiar */
+	      gs_matrix_rotate(&image.ImageMatrix, -90, &image.ImageMatrix);
+	      gs_matrix_translate(&image.ImageMatrix, -image.Height, image.Width, &image.ImageMatrix);
+	      /* for the landscape case apparently we adjust by the
+                 width + left offset and height - top offset.  Note
+                 the landscape left offset is always negative in pcl's
+                 coordinate system. */
+	      image.ImageMatrix.tx -= (image.Width + s16(params)) /* left offset */;
+	      image.ImageMatrix.ty += (s16(params+2) - image.Height);
 	  }
-#else
+	  else {
+	      image.ImageMatrix.tx -= lsb;
+	      image.ImageMatrix.ty += ascent;
+	  }
+
+	  image.adjust = true;
 	  code = gs_setcharwidth(penum, pgs, delta_x, 0);
-#endif
 	  if ( code < 0 )
 	    return code;
+#ifdef DEBUG	      
+	  if ( gs_debug_c('B') ) {
+	      int i;
+	      int pixels = round_up(image.Width,8) * image.Height;
+	      dprintf7("bitmap font data chr=%ld, width=%d, height=%d, lsb=%d, ascent=%d, top offset=%d left offset=%d\n",
+		       chr, image.Width, image.Height, lsb, ascent, s16(params + 2), s16(params));
+	      for ( i = 0; i < pixels; i++ ) {
+		  if ( i % round_up(image.Width, 8) == 0 )
+		      dprintf("\n");
+		  dprintf1( "%d", bitmap_data[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
+	      }
+	      dprintf("\n");
+	  }
+#endif
 	  code = image_bitmap_char(ienum, &image, bitmap_data,
 				   (image.Width - bold + 7) >> 3, bold,
 				   bold_lines, pgs);
@@ -823,7 +844,6 @@ out:	  gs_free_object(pgs->memory, bold_lines,
 	  return (code < 0 ? code : 0);
 	}
 }
-
 
 /* ---------------- TrueType font support ---------------- */
 
