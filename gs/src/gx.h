@@ -28,7 +28,7 @@
 #include "gdebug.h"
 
 /* A configuration flag for development needs only. Don't change. */
-#define DONT_FILTER_SMALL_SEGMENTS 0 /* Old code = 0, new code = 1. */
+#define DONT_FILTER_SMALL_SEGMENTS 1 /* Old code = 0, new code = 1. */
 #define SCANLINE_USES_ITERATOR 1 /* Old code = 0, new code = 1. */
 
 /* Define opaque types for the graphics state. */
