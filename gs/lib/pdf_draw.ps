@@ -122,21 +122,24 @@ currentdict /tfopdict undef
   }
 .dicttomark readonly def
 
-/resolveshading {	% <shname> resolveshading <shading>
-  Page /Shading rget {
-    PDFfile fileposition exch
-    mark exch {
-      oforce //shrdict 2 index .knownget { exec } if
-    } forall .dicttomark
-    dup /ShadingType get 4 ge {
-      dup dup true resolvestream
+/resolveshading {	% <shadingstream> resolveshading <shading>
+  PDFfile fileposition exch
+  mark exch {
+    oforce //shrdict 2 index .knownget { exec } if
+  } forall .dicttomark
+  dup /ShadingType get 4 ge {
+    dup dup true resolvestream
 		% Make a reusable stream so that the shading doesn't
 		% reposition PDFfile at unexpected times.
-      /ReusableStreamDecode filter /DataSource exch put
-    } if exch PDFfile exch setfileposition
+    /ReusableStreamDecode filter /DataSource exch put
+  } if exch PDFfile exch setfileposition
+} bdef
+/resolvesh {		% <shname> resolveshading <shading>
+  Page /Shading rget {
+    resolveshading
   } {
     null
-  } ifelse
+  }ifelse
 } bdef
 
 % ---------------- Halftones ---------------- %
@@ -476,8 +479,9 @@ end
     { Page /Pattern rget { resolvepattern } { null } ifelse }
   if
   dup type /dicttype eq {
-		% Check the PaintType
-    dup /PaintType get 2 eq
+		% Check the PaintType, if any (shading patterns don't
+		% have one).
+    dup /PaintType .knownget { 2 eq } { false } ifelse
   } {
     .pdfcount 1 gt
   } ifelse
@@ -511,6 +515,9 @@ end
     3 1 roll exch setfileposition
     1 index /File 3 -1 roll put
     dup /FilePosition undef
+  } if
+  dup /Shading knownoget {
+    resolveshading 1 index /Shading 3 -1 roll put
   } if
   dup /PaintProc [
 		% Bind the resource dictionary into the PaintProc.
@@ -564,7 +571,7 @@ drawopdict begin
   /b* { b* } def
   /W { W } def
   /W* { W* } def
-  /sh { resolveshading shfill } def
+  /sh { resolvesh shfill } def
 end
 
 % ---------------- XObjects ---------------- %
