@@ -133,7 +133,7 @@ DEBUG=0
 TDEBUG=0
 !endif
 
-# Setting DEBUGSYM=1 is only useful with TDEBUG=0 
+# Setting DEBUGSYM=1 is only useful with TDEBUG=0.
 # This option is for advanced developers. It includes symbol table
 # information for the debugger with in an optimized (release) build.
 # NOTE: The debugging information generated for the optimized code may be
