@@ -441,7 +441,7 @@ CC_NO_WARN=$(CC_)
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Since we have a large address space, we include some optional features.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)os2print.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -527,7 +527,7 @@ os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)os2_ $(os2__) -include $(GLD)nosync
 
-$(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c\
+$(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c $(GLSRC)gp_os2.h\
  $(dos__h) $(pipe__h) $(string__h) $(time__h)\
  $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_os2.$(OBJ) $(C_) $(GLSRC)gp_os2.c
@@ -535,6 +535,19 @@ $(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c\
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
   $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
+
+# Define OS/2 printer (file system) as a separable feature.
+
+os2print_=$(GLOBJ)gp_os2pr.$(OBJ)
+$(GLD)os2print.dev: $(ECHOGS_XE) $(os2print_)
+	$(SETMOD) $(GLD)os2print $(os2print_)
+	$(ADDMOD) $(GLD)os2print -iodev printer
+
+$(GLOBJ)gp_os2pr.$(OBJ): $(GLSRC)gp_os2pr.c $(GLSRC)gp_os2.h $(AK)\
+ $(ctype__h) $(errno__h) $(stdio__h) $(string__h)\
+ $(gserror_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)
+	$(GLCC) $(GLO_)gp_os2pr.$(OBJ) $(C_) $(GLSRC)gp_os2pr.c
+
 
 # -------------------------- Auxiliary programs --------------------------- #
 
