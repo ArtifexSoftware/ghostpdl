@@ -124,12 +124,16 @@ currentdict /tfopdict undef
 
 /resolveshading {	% <shname> resolveshading <shading>
   Page /Shading rget {
+    PDFfile fileposition exch
     mark exch {
       oforce //shrdict 2 index .knownget { exec } if
     } forall .dicttomark
     dup /ShadingType get 4 ge {
-      dup dup true resolvestream /DataSource exch put
-    } if
+      dup dup true resolvestream
+		% Make a reusable stream so that the shading doesn't
+		% reposition PDFfile at unexpected times.
+      /ReusableStreamDecode filter /DataSource exch put
+    } if exch PDFfile exch setfileposition
   } {
     null
   } ifelse
@@ -485,11 +489,13 @@ end
 	% color and color space before running the PaintProc.
 	% There's no harm in doing this for colored patterns,
 	% so for simplicity, we always do it.
+  PDFfile fileposition 3 1 roll
   q
   null sc1 null SC1
   exch false resolvestream pdfopdict .pdfruncontext
   Q
   DEBUG { (%End PaintProc) = flush } if
+  PDFfile exch setfileposition
 } bdef
 
 /resolvepattern {	% <patternstreamdict> resolvepattern <patterndict>
