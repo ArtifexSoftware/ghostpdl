@@ -437,6 +437,8 @@ psf_convert_type1_to_type2(stream *s, const gs_const_string *pstr,
 
 	switch (c) {
 	default:
+	    if (c < 0)
+		return c;
 	    type1_clear(&cis);
 	    continue;
 	case cx_hstem:
