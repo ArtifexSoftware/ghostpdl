@@ -1083,11 +1083,11 @@ gsijs_set_color_format(gx_device_ijs *ijsdev)
     dci.dither_colors = components > 1 ? maxvalue+1 : 0;
 
     dci.separable_and_linear = GX_CINFO_SEP_LIN;
-    dci.cm_name = ijsdev->ColorSpace;
+    dci.cm_name = ColorSpace;
     
-    set_linear_color_bits_mask_shift((gx_device *)ijsdev);
-
     ijsdev->color_info = dci;
+
+    set_linear_color_bits_mask_shift((gx_device *)ijsdev);
 
     return 0;
 }
