@@ -71,7 +71,7 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 $(GSSOX_XE): $(GS_SO) $(GLSRC)dxmain.c
 	$(GLCC) -g `gtk-config --cflags` -o $(GSSOX_XE) $(GLSRC)dxmain.c -L$(BINDIR) -lgs `gtk-config --libs`
 
-$(GSSOC_XE): $(GS_SO) $(GLSRC)dxmain.c
+$(GSSOC_XE): $(GS_SO) $(GLSRC)dxmainc.c
 	$(GLCC) -g -o $(GSSOC_XE) $(GLSRC)dxmainc.c -L$(BINDIR) -lgs
 
 # ------------------------- Recursive make targets ------------------------- #
