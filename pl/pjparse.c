@@ -20,6 +20,7 @@
 #include "gp.h"
 #include "pjparse.h"
 #include "plfont.h"
+#include "plver.h"		/* PJL_VOLUME_0 PJL_VOLUME_1*/
 #include <ctype.h> 		/* for toupper() */
 #include <stdlib.h>             /* for atoi() */
 
@@ -327,7 +328,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
 	strcpy(tmp_path_and_pattern, dirname);
 	strcat(tmp_path_and_pattern, pattern);
 	fe = gp_enumerate_files_init(tmp_path_and_pattern, strlen(tmp_path_and_pattern), mem);
-	if ( (gp_enumerate_files_next(fe, fontfilename, 0 /*??*/) ) == -1 ) {
+	if ( (gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH) ) == -1 ) {
 	    tmp_pathp = NULL;
 	} else {
 	    /* wind through the rest of the files.  This should close
@@ -335,7 +336,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
                gp_enumerate_files_close() does not close the current
                directory */
 	    while ( 1 ) {
-		int fstatus = (int)gp_enumerate_files_next(fe, fontfilename, 0);
+		int fstatus = (int)gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 		/* we don't care if the file does not fit (return +1) */
 		if ( fstatus == -1 )
 		    break;
@@ -370,20 +371,47 @@ pjl_reset_fontsource_fontnumbers(pjl_parser_state_t* pst)
 }
 
 
-/* NB we should name this strip quotes.  The pjl parser preserves the
-   quotes of strings - this strips them off, shouldn't fail */
+/* Strips off extra quotes '"'
+ * and changes pjl volume from 0: to makefile specifed PJL_VOLUME_0 directory 
+ * and translates '\\' to '/' 
+ * result in fnamep, 
+ * ie: ""0:\\dir\subdir\file"" --> "PJL_VOLUME_0/dir/subdir/file"
+ */
 private void
-pjl_parsed_filename_to_string(char *fnamep, char *pathname)
+pjl_parsed_filename_to_string(char *fnamep, const char *pathname)
 {
     int i;
-    /* the pathname parsed has whatever quoting mechanism was used */
-    int size = strlen(pathname);
-    for( i = 0; i < size; i++ ) {
-	if ( pathname[i] == '\\' )
+    char * str_ptr = 0;
+    int size;
+    
+    *fnamep = 0; /* in case of bad input */
+    if (pathname == 0 || pathname[0] != '"' || strlen(pathname) < 3) 
+	return; /* bad input pjl file */
+    
+    if ( pathname[1] == '0' && pathname[2] == ':') {
+	/* copy pjl_volume string in */	
+	strncpy(fnamep, PJL_VOLUME_0, strlen(PJL_VOLUME_0)); 
+	fnamep += strlen(PJL_VOLUME_0);
+    }
+    else if ( pathname[1] == '1' && pathname[2] == ':')	{
+	/* copy pjl_volume string in */	
+	strncpy(fnamep, PJL_VOLUME_1, strlen(PJL_VOLUME_1)); 
+	fnamep += strlen(PJL_VOLUME_1);
+    }
+    else 
+	return; /* bad input pjl file */
+    
+    /* the pathname parsed has whatever quoting mechanism was used 
+     * remove quotes, use forward slash, copy rest.
+     */
+    size = strlen(pathname);
+    
+    for( i = 3; i < size; i++ ) {
+	if ( pathname[i] == '\\')
 	    *fnamep++ = '/';
-	else if ( pathname[i] != '"' )
+	else if ( pathname[i] != '"')
 	    *fnamep++ = pathname[i];
-	/* else it is a quote skip it */
+        /* else it is a quote skip it */
     }
     /* NULL terminate */
     *fnamep = '\0';
@@ -396,7 +424,8 @@ private int
 pjl_verify_file_operation(pjl_parser_state_t *pst, char *fname)
 {
     /* make sure we are playing in the pjl sandbox */
-    if ( ((fname[0] != '0') || (fname[0] != '1')) && (fname[1] != ':') ) {
+    if ( 0 != strncmp(PJL_VOLUME_0, fname, strlen(PJL_VOLUME_0))
+	 && 0 != strncmp(PJL_VOLUME_1, fname, strlen(PJL_VOLUME_1)) ) {
 	dprintf1( "illegal path name %s\n", fname);
 	return -1;
     }
@@ -483,8 +512,6 @@ pjl_fsinit(pjl_parser_state_t *pst, char *pathname)
     pjl_parsed_filename_to_string(fname, pathname);
     if ( pjl_verify_file_operation(pst, fname) < 0 )
 	return -1;
-    if ( strlen(fname) != 2 )
-	return -1;
     return mkdir(fname, 0777);
 }
 
@@ -534,17 +561,19 @@ pjl_search_for_file(pjl_parser_state_t *pst, char *pathname, char *filename, cha
     fe = gp_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
     if ( fe ) {
 	do {
-	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, 0);
+	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 	    /* done */
 	    if ( fstatus == ~(uint)0 )
 		return 0;
 	    fontfilename[fstatus] = '\0';
-	    /* a directory */
-	    if ( ( stat(fontfilename, &stbuf) >= 0 ) && stat_is_dir(stbuf) )
-		pjl_search_for_file(pst, fontfilename, filename, result);
-	    else  /* a file */
-		if ( !strcmp(strrchr( fontfilename, '/' ) + 1, filename) )
-		    strcpy(result, fontfilename);
+	    if (fontfilename[fstatus-1] != '.') { /* skip over . and .. */
+		/* a directory */
+		if ( ( stat(fontfilename, &stbuf) >= 0 ) && stat_is_dir(stbuf) )
+		    pjl_search_for_file(pst, fontfilename, filename, result);
+		else  /* a file */
+		    if ( !strcmp(strrchr( fontfilename, '/' ) + 1, filename) )
+			strcpy(result, fontfilename);
+	    }
 
 	} while (1);
     }
@@ -563,7 +592,7 @@ pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
     fe = gp_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
     if ( fe ) {
 	do {
-	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, 0);
+	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 	    /* done */
 	    if ( fstatus == ~(uint)0 )
 		return 0;
@@ -765,10 +794,10 @@ get_fp(pjl_parser_state_t *pst, char *name)
 	
     /* 0: */
     result[0] = '\0';
-    pjl_search_for_file(pst, "0:", name, result);
+    pjl_search_for_file(pst, PJL_VOLUME_0, name, result);
     if ( result[0] == '\0' ) {
 	/* try 1: */
-	pjl_search_for_file(pst, "1:", name, result);
+	pjl_search_for_file(pst, PJL_VOLUME_1, name, result);
 	if ( result[0] == '\0' )
 	    return 0;
     }

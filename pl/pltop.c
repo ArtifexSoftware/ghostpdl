@@ -176,7 +176,10 @@ pl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
-    return instance->interp->implementation->proc_dnit_job(instance);
+    if ( instance ) 
+	return instance->interp->implementation->proc_dnit_job(instance);
+    else
+	return 0;
 }
 
 /* Remove a device from an interperter instance */
