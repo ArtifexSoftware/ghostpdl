@@ -453,7 +453,7 @@ all : macro [.lib]Fontmap. $(GS_XE)
 # zlib.mak must precede libpng.mak
 .include $(GLSRCDIR)zlib.mak
 .include $(GLSRCDIR)libpng.mak
-JBIG2_EXTRA_OBJS=$(JBIG2OBJDIR)$(D)vsnprintf.$(OBJ)
+JBIG2_EXTRA_OBJS=$(JBIG2OBJDIR)$(D)snprintf.$(OBJ)
 .include $(GLSRCDIR)jbig2.mak
 .include $(GLSRCDIR)icclib.mak
 .include $(GLSRCDIR)devs.mak

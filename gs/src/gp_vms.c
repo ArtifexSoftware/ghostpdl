@@ -220,23 +220,29 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 {
     FILE *f;
     char tmpdir[gp_file_name_sizeof];
+   int tdlen;
+   int flen[1];
 
-    if (!gp_file_name_is_absolute(prefix, strlen(prefix)) &&
+   if (!gp_file_name_is_absolute(prefix, strlen(prefix)) &&
 	gp_gettmpdir(tmpdir, &tdlen) == 0) {
+      flen[0] = gp_file_name_sizeof;
 	if (gp_file_name_combine(tmpdir, tdlen, prefix, strlen(prefix),
-			     false, fname, gp_file_name_sizeof)) {
+			     false, fname, flen ) != gp_combine_success ) {
 	    return NULL;
 	}
+       fname[ *flen ] = 0;
     } else {
 	strcpy(fname, prefix);
     }
     if (strlen(fname) + 6 >= gp_file_name_sizeof)
 	return 0;		/* file name too long */
     strcat(fname, "XXXXXX");
-    mktemp(fname);
+   mktemp(fname);
     f = fopen(fname, mode);
+   
     if (f == NULL)
 	eprintf1("**** Could not open temporary file %s\n", fname);
+   return f;
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
@@ -511,7 +517,10 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
      */
     uint rlen, flen1 = flen, plen1 = plen;
     const char *fname1 = fname;
-
+  
+   if ( plen > 0 && prefix[plen-1] == '\0' )
+     plen--;
+   
     if (plen == 0 && flen == 0) {
 	/* Not sure that we need this case. */
 	if (*blen == 0)
@@ -560,21 +569,34 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
    if ( memchr( prefix , '[' , plen ) == 0 &&
 	memchr( prefix , '.' , plen ) == 0 )
      {
-	if (plen + flen + 2 > *blen)
-	    return gp_combine_small_buffer;
-	memcpy(buffer, prefix, plen);
-	memcpy(buffer + plen , ":" , 1 );
-	memcpy(buffer + plen + 1, fname, flen);
-	if ( memchr( fname , '.' , flen ) != 0 )
+	char* tmp_prefix;
+	int tmp_plen;
+	
+	if ( prefix[0] == '/' )
 	  {
-	     buffer[plen + flen + 1] = 0;
-	     *blen = plen + flen + 1;
+	     tmp_prefix = prefix + 1;
+	     tmp_plen = plen - 1;
 	  }
 	else
 	  {
-	     memcpy(buffer + plen + flen + 1 , "." , 1 );
-	     buffer[plen + flen + 2] = 0;
-	     *blen = plen + flen + 2;
+	     tmp_prefix = prefix;
+	     tmp_plen = plen;
+	  }
+	if ( tmp_plen + flen + 2 > *blen)
+	    return gp_combine_small_buffer;
+	memcpy(buffer, tmp_prefix, tmp_plen);
+	memcpy(buffer + tmp_plen , ":" , 1 );
+	memcpy(buffer + tmp_plen + 1, fname, flen);
+	if ( memchr( fname , '.' , flen ) != 0 )
+	  {
+	     buffer[ tmp_plen + flen + 1] = 0;
+	     *blen = tmp_plen + flen + 1;
+	  }
+	else
+	  {
+	     memcpy(buffer + tmp_plen + flen + 1 , "." , 1 );
+	     buffer[ tmp_plen + flen + 2] = 0;
+	     *blen = tmp_plen + flen + 2;
 	  }
 	return gp_combine_success;
      }
