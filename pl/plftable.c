@@ -485,8 +485,8 @@ const font_resident_t resident_table[] = {
     {
         fontnames("ZapfChancery-MediumItalic", "URWChanceryLMed Italic"),
         {'Z','a','p','f','C','h','a','n','c','e','r','y','M','d','I','t'},
-        {18540, 1, {27, 45099},0, REGULAR, NOBOLD, face_val(2730, agfa)}, 
-        cc_dingbats
+        {0, 1, {29, 24413},0, ITALIC, NOBOLD, face_val(43, agfa)}, 
+        cc_alphabetic
     },
  
     /* NB needs alias 
@@ -506,7 +506,7 @@ const font_resident_t resident_table[] = {
     {
         fontnames("ZapfDingbats", "Dingbats"), 
         {'I','T','C','Z','a','p','f','D','i','n','g','b','a','t','s',' '},
-        {18540, 1, {27, 25914},0, REGULAR, NOBOLD, face_val(2730, agfa)},
+        {18540, 1, {27, 25914},0, REGULAR, NOBOLD, face_val(45, agfa)},
         cc_dingbats
     },
 
