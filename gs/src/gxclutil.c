@@ -277,7 +277,7 @@ cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size)
 {
     if_debug3('L', "[L]band %d: size=%u, left=%u",
 	      (int)(pcls - cldev->states),
-	      size, (uint) (cldev->cend - cldev->cnext));
+	      size, 0);
     return cmd_put_list_op(cldev, &pcls->list, size);
 }
 #endif
@@ -288,8 +288,7 @@ cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
 		 uint size)
 {
     if_debug4('L', "[L]band range(%d,%d): size=%u, left=%u",
-	      band_min, band_max, size,
-	      (uint)(cldev->cend - cldev->cnext));
+	      band_min, band_max, size, 0);
     if (cldev->ccl != 0 && 
 	(cldev->ccl != &cldev->band_range_list ||
 	 band_min != cldev->band_range_min ||

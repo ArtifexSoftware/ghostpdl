@@ -28,6 +28,7 @@
 #include "gxistate.h"
 #include "gzht.h"
 #include "gzline.h"
+#include "gxfmap.h"
 
 /******************************************************************************
  * See gsstate.c for a discussion of graphics/imager state memory management. *
@@ -124,7 +125,7 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 		      gx_transfer_map, &st_transfer_map,
 		      mem, return_error(gs_error_VMerror),
 		      "gs_imager_state_init(transfer)", 1);
-    pis->set_transfer.gray->proc = imager_null_transfer;
+    pis->set_transfer.gray->proc = gs_identity_transfer;
     pis->set_transfer.gray->id = gs_next_ids(pis->memory, 1);
     pis->set_transfer.gray->values[0] = frac_0;
     pis->set_transfer.red =

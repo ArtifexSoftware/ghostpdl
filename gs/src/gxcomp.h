@@ -45,8 +45,9 @@
  * The following list is intended to enumerate all compositors. We
  * use definitions rather than an encoding to ensure a one-byte size.
  */
-#define GX_COMPOSITOR_ALPHA      0x01   /* DPS/Next alpha compositor */
-#define GX_COMPOSITOR_OVERPRINT  0x02   /* overprint/overprintmode compositor */
+#define GX_COMPOSITOR_ALPHA        0x01   /* DPS/Next alpha compositor */
+#define GX_COMPOSITOR_OVERPRINT    0x02   /* overprint/overprintmode compositor */
+#define GX_COMPOSITOR_PDF14_TRANS  0x03   /* PDF 1.4 transparency compositor */
 
 
 /*
@@ -73,7 +74,7 @@ typedef struct gs_composite_type_procs_s {
      */
 #define composite_create_default_compositor_proc(proc)\
   int proc(const gs_composite_t *pcte, gx_device **pcdev,\
-    gx_device *dev, const gs_imager_state *pis, gs_memory_t *mem)
+    gx_device *dev, gs_imager_state *pis, gs_memory_t *mem)
     composite_create_default_compositor_proc((*create_default_compositor));
 
     /*
@@ -106,11 +107,40 @@ typedef struct gs_composite_type_procs_s {
     gs_memory_t *mem)
     composite_read_proc((*read));
 
+    /*
+     * Update the clist write device when a compositor device is created.
+     */
+#define composite_clist_write_update(proc)\
+  int proc(const gs_composite_t * pcte, gx_device * dev, gx_device ** pcdev,\
+			gs_imager_state * pis, gs_memory_t * mem)
+    composite_clist_write_update((*clist_compositor_write_update));
+
+    /*
+     * Update the clist read device when a compositor device is created.
+     */
+#define composite_clist_read_update(proc)\
+  int proc(gs_composite_t * pcte, gx_device * cdev, gx_device * tdev,\
+			gs_imager_state * pis, gs_memory_t * mem)
+    composite_clist_read_update((*clist_compositor_read_update));
+
 } gs_composite_type_procs_t;
+
 typedef struct gs_composite_type_s {
     byte comp_id;   /* to identify compositor passed through command list */
     gs_composite_type_procs_t procs;
 } gs_composite_type_t;
+
+/*
+ * Default implementation for creating a compositor for clist writing.
+ * The default does nothing.
+ */
+composite_clist_write_update(gx_default_composite_clist_write_update);
+
+/*
+ * Default implementation for adjusting the clist reader when a compositor
+ * device is added.  The default does nothing.
+ */
+composite_clist_read_update(gx_default_composite_clist_read_update);
 
 /*
  * Compositing objects are reference-counted, because graphics states will

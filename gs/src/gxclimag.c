@@ -47,8 +47,6 @@ static const bool USE_HL_IMAGES = true;
 /* Forward references */
 private int cmd_put_set_data_x(gx_device_clist_writer * cldev,
 			       gx_clist_state * pcls, int data_x);
-private int cmd_put_color_mapping(gx_device_clist_writer * cldev,
-				  const gs_imager_state * pis);
 private bool check_rect_for_trivial_clip(
     const gx_clip_path *pcpath,  /* May be NULL, clip to evaluate */
     int px, int py, int qx, int qy  /* corners of box to test */
@@ -640,8 +638,10 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 		pie->color_map_is_known = true;
 		if (code >= 0) {
 		    uint want_known = ctm_known | clip_path_known |
-			(pie->color_space.id == gs_no_id ? 0 :
-			 color_space_known);
+				op_bm_tk_known | opacity_alpha_known |
+				shape_alpha_known | alpha_known |
+				(pie->color_space.id == gs_no_id ? 0 :
+							 color_space_known);
 
 		    code = cmd_do_write_unknown(cdev, pcls, want_known);
 		}
@@ -792,19 +792,22 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 int
 clist_create_compositor(gx_device * dev,
 			gx_device ** pcdev, const gs_composite_t * pcte,
-			const gs_imager_state * pis, gs_memory_t * mem)
+			gs_imager_state * pis, gs_memory_t * mem)
 {
-    byte *                  dp;
-    uint                    size = 0;
-    int                     code = pcte->type->procs.write(pcte, 0, &size);
-
-    /* always return the same device */
-    *pcdev = dev;
+    byte * dp;
+    uint size = 0;
+    int code = pcte->type->procs.write(pcte, 0, &size);
 
     /* determine the amount of space required */
     if (code < 0 && code != gs_error_rangecheck)
         return code;
     size += 2 + 1;      /* 2 bytes for the command code, one for the id */
+
+    /* Create a compositor device for clist writing (if needed) */
+    code = pcte->type->procs.clist_compositor_write_update(pcte, dev,
+		    					pcdev, pis, mem);
+    if (code < 0)
+        return code;
 
     /* overprint applies to all bands */
     code = set_cmd_put_all_op( dp,
@@ -968,7 +971,7 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
 }
 
 /* Write out any necessary color mapping data. */
-private int
+int
 cmd_put_color_mapping(gx_device_clist_writer * cldev,
 		      const gs_imager_state * pis)
 {
@@ -1287,7 +1290,34 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
     }
     if (cmd_check_clip_path(cdev, pie->pcpath))
 	unknown |= clip_path_known;
-
+    /*
+     * Note: overprint and overprint_mode are implemented via a compositor
+     * device, which is passed separately through the command list. Hence,
+     * though both parameters are passed in the state as well, this usually
+     * has no effect.
+     */
+    if (cdev->imager_state.overprint != pis->overprint ||
+        cdev->imager_state.overprint_mode != pis->overprint_mode ||
+        cdev->imager_state.blend_mode != pis->blend_mode ||
+        cdev->imager_state.text_knockout != pis->text_knockout) {
+	unknown |= op_bm_tk_known;
+        cdev->imager_state.overprint = pis->overprint;
+        cdev->imager_state.overprint_mode = pis->overprint_mode;
+        cdev->imager_state.blend_mode = pis->blend_mode;
+        cdev->imager_state.text_knockout = pis->text_knockout;
+    }
+    if (cdev->imager_state.opacity.alpha != pis->opacity.alpha) {
+	unknown |= opacity_alpha_known;
+        cdev->imager_state.opacity.alpha = pis->opacity.alpha;
+    }
+    if (cdev->imager_state.shape.alpha != pis->shape.alpha) {
+	unknown |= shape_alpha_known;
+        cdev->imager_state.shape.alpha = pis->shape.alpha;
+    }
+    if (cdev->imager_state.alpha != pis->alpha) {
+	unknown |= alpha_known;
+        cdev->imager_state.alpha = pis->alpha;
+    }
     return unknown;
 }
 

@@ -31,6 +31,7 @@
 #include "gxmatrix.h"
 #include "gxtmap.h"
 #include "gscspace.h"
+#include "gstrans.h"
 
 /*
   Define the subset of the PostScript graphics state that the imager library
@@ -196,10 +197,6 @@ typedef struct gs_devicen_color_map_s {
 
 
 /* Define the imager state structure itself. */
-typedef struct gs_transparency_source_s {
-    float alpha;		/* constant alpha */
-    gs_transparency_mask_t *mask;
-} gs_transparency_source_t;
 /*
  * Note that the ctm member is a gs_matrix_fixed.  As such, it cannot be
  * used directly as the argument for procedures like gs_point_transform.

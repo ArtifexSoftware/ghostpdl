@@ -102,7 +102,9 @@ const gs_composite_type_t gs_composite_alpha_type =
 	c_alpha_create_default_compositor,
 	c_alpha_equal,
 	c_alpha_write,
-	c_alpha_read
+	c_alpha_read,
+	gx_default_composite_clist_write_update,
+	gx_default_composite_clist_read_update
     }
 };
 typedef struct gs_composite_alpha_s {
@@ -262,8 +264,8 @@ private const gx_device_composite_alpha gs_composite_alpha_device =
 /* Create an alpha compositor. */
 private int
 c_alpha_create_default_compositor(const gs_composite_t * pcte,
-	   gx_device ** pcdev, gx_device * dev, const gs_imager_state * pis,
-				  gs_memory_t * mem)
+	   gx_device ** pcdev, gx_device * dev, gs_imager_state * pis,
+	   gs_memory_t * mem)
 {
     gx_device_composite_alpha *cdev;
 

@@ -75,6 +75,7 @@ typedef struct gs_transparency_mask_s {
 #  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
 #endif
+
 /* (Update gs_trans_group_params_init if these change.) */
 typedef struct gs_transparency_group_params_s {
     const gs_color_space *ColorSpace;
@@ -87,8 +88,11 @@ typedef enum {
     TRANSPARENCY_MASK_Alpha,
     TRANSPARENCY_MASK_Luminosity
 } gs_transparency_mask_subtype_t;
+
 #define GS_TRANSPARENCY_MASK_SUBTYPE_NAMES\
   "Alpha", "Luminosity"
+
+/* See the gx_transparency_mask_params_t type below */
 /* (Update gs_trans_mask_params_init if these change.) */
 typedef struct gs_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
@@ -97,6 +101,17 @@ typedef struct gs_transparency_mask_params_s {
     int (*TransferFunction)(floatp in, float *out, void *proc_data);
     void *TransferFunction_data;
 } gs_transparency_mask_params_t;
+
+#define MASK_TRANSFER_FUNCTION_SIZE 256
+
+/* The post clist version of transparency mask parameters */
+typedef struct gx_transparency_mask_params_s {
+    gs_transparency_mask_subtype_t subtype;
+    bool has_Background;
+    bool function_is_identity;
+    float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
+} gx_transparency_mask_params_t;
 
 /* Select the opacity or shape parameters. */
 typedef enum {

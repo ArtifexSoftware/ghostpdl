@@ -766,7 +766,13 @@ gs_cname_to_colorant_number(gs_state * pgs, byte * pname, uint name_size,
  *  num_comp    For the operand halftone, this is the number of halftone
  *              components included in the specification. For the device
  *              halftone in the imager state, this is always the same as
- *              the number of color model components.
+ *              the number of color model components (see num_dev_comp).
+ *
+ *  num_dev_comp The number of components in the device process color model
+ *		when the operand halftone was created.  With some compositor
+ *		devices (for example PDF 1.4) we can have differences in the
+ *		process color model of the compositor versus the output device.
+ *		These compositor devices do not halftone.
  *
  *  components  For the operand halftone, this field is non-null only if
  *              multiple halftones are provided. In that case, the size
@@ -951,7 +957,7 @@ gx_imager_dev_ht_install(
     const gx_device *       dev )
 {
     gx_device_halftone      dht;
-    int                     num_comps = dev->color_info.num_components;
+    int                     num_comps = pdht->num_dev_comp;
     int                     i, code = 0;
     bool                    used_default = false;
     int                     lcm_width = 1, lcm_height = 1;
@@ -972,7 +978,7 @@ gx_imager_dev_ht_install(
                           "gx_imager_dev_ht_install(components)" );
     if (dht.components == NULL)
 	return_error(gs_error_VMerror);
-    dht.num_comp = num_comps;
+    dht.num_comp = dht.num_dev_comp = num_comps;
     /* lcm_width, lcm_height are filled in later */
 
     /* initialize the components array */
@@ -1223,6 +1229,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
     gs_halftone *new_ht;
     int code;
 
+    pdht->num_dev_comp = pgs->device->color_info.num_components;
     if (old_ht != 0 && old_ht->rc.memory == mem &&
 	old_ht->rc.ref_count == 1
 	)

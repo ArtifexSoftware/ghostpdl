@@ -1007,6 +1007,9 @@ end readonly def
   } ifelse
   % Don't change the page size if we are going to fit the PDF to the page
   systemdict /PDFFitPage known { currentdict /PageSize undef } if
+  % Let the device know if we will be using PDF 1.4 transparency.
+  % The clist logic may need to adjust the size of bands.
+  1 index pageusestransparency /PageUsesTransparency exch def
   dup /Install .knownget {
 			% Don't let the Install procedure get more deeply
 			% nested after every page.
@@ -1108,18 +1111,18 @@ end readonly def
 	  1 index /MediaBox pget pop
 	} if oforce_array .beginformgroup {
 	  showpagecontents
-	} .internalstopped {
+	} stopped {
 	  .discardtransparencygroup stop
 	} if .endtransparencygroup
       } {
 	showpagecontents
       } ifelse
-    } .internalstopped {
+    } stopped {
       % todo: discard
-      .popdevicefilter
+      .poppdf14devicefilter 
       /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
       stop
-    } if .popdevicefilter
+    } if .poppdf14devicefilter
     /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
   } {
     showpagecontents

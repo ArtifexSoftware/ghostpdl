@@ -449,7 +449,7 @@ psdf_create_compositor(
     gx_device *             dev,
     gx_device **            pcdev,
     const gs_composite_t *  pct,
-    const gs_imager_state * pis,
+    gs_imager_state * pis,
     gs_memory_t *           mem )
 {
     if (gs_is_overprint_compositor(pct)) {

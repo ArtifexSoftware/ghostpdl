@@ -85,6 +85,7 @@ cmd_print_bits(const byte * data, int width, int height, int raster)
     if ( *p < 0x80 ) var = *p++;\
     else { const byte *_cbp; var = cmd_get_w(p, &_cbp); p = _cbp; }\
   END
+
 private long
 cmd_get_w(const byte * p, const byte ** rp)
 {
@@ -243,11 +244,10 @@ clist_playback_band(clist_playback_action playback_action,
 #define data_bits_size cbuf_size
     byte *data_bits = 0;
     register const byte *cbp;
-    int dev_depth = cdev->color_info.depth;
-    int dev_depth_bytes = (dev_depth + 7) >> 3;
-    int odd_delta_shift = (dev_depth_bytes - 3) * 8;
+    int dev_depth;		/* May vary due to compositing devices */
+    int dev_depth_bytes;
+    int odd_delta_shift;
     int num_zero_bytes;
-    gx_color_index delta_offset = cmd_delta_offsets[dev_depth_bytes];
     gx_device *tdev;
     gx_clist_state state;
     gx_color_index *set_colors;
@@ -553,6 +553,8 @@ in:				/* Initialize for a new page. */
 			    gx_color_index delta = 0;
 			    uint data;
 
+			    dev_depth = cdev->color_info.depth;
+			    dev_depth_bytes = (dev_depth + 7) >> 3;
 		            switch (dev_depth_bytes) {
 				/* For cases with an even number of bytes */
 			        case 8:
@@ -583,13 +585,14 @@ in:				/* Initialize for a new page. */
 				        ((data & 0xf0) << 4) + (data & 0x0f));
 			        case 3:
 			            data = *cbp++;
+				    odd_delta_shift = (dev_depth_bytes - 3) * 8;
 			            delta |= ((gx_color_index)
 				        ((data & 0xe0) << 3) + (data & 0x1f)) << odd_delta_shift;
 				    data = *cbp++;
 			            delta |= ((gx_color_index) ((data & 0xf8) << 2) + (data & 0x07))
 				    			<< (odd_delta_shift + 11);
 		            }
-		            *pcolor += delta - delta_offset;;
+		            *pcolor += delta - cmd_delta_offsets[dev_depth_bytes];
 			}
 			if_debug1('L', " 0x%lx\n", *pcolor);
 			continue;
@@ -625,6 +628,8 @@ in:				/* Initialize for a new page. */
 		else {
 		    gx_color_index color = 0;
 
+		    dev_depth = cdev->color_info.depth;
+		    dev_depth_bytes = (dev_depth + 7) >> 3;
 		    switch (dev_depth_bytes - num_zero_bytes) {
 			case 8:
 			    color = (gx_color_index) * cbp++;
@@ -686,8 +691,8 @@ in:				/* Initialize for a new page. */
 		if (state.color_is_alpha) {
 		    if (!(op & 8))
 			depth = *cbp++;
-		} else
-		    depth = dev_depth;
+		} else 
+		    depth = cdev->color_info.depth;
 	      copy:cmd_getw(state.rect.x, cbp);
 		cmd_getw(state.rect.y, cbp);
 		if (op & 8) {	/* Use the current "tile". */
@@ -1199,6 +1204,12 @@ idata:			data_size = 0;
 				break;
 			    case cmd_opv_ext_create_compositor:
 				cbuf.ptr = cbp;
+				/*
+				 * The screen phase may have been changed during
+				 * the processing of masked images.
+				 */
+				gx_imager_setscreenphase(&imager_state,
+					    -x0, -y0, gs_color_select_all);
 				code = read_create_compositor(&cbuf, &imager_state,
 							      cdev, mem, &target);
 				cbp = cbuf.ptr;
@@ -2088,6 +2099,13 @@ read_create_compositor(
         rc_increment(tdev);
         *ptarget = tdev;
     }
+
+    /* Perform any updates for the clist device required */
+    code = pcomp->type->procs.clist_compositor_read_update(pcomp,
+		    			(gx_device *)cdev, tdev, pis, mem);
+    if (code < 0)
+        return code;
+
     /* free the compositor object */
     if (pcomp != 0)
         gs_free_object(mem, pcomp, "read_create_compositor");

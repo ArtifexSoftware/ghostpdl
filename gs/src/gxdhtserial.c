@@ -467,10 +467,10 @@ gx_ht_write(
     byte *                      data,
     uint *                      psize )
 {
-    int                         num_comps = dev->color_info.num_components;
+    int                         num_dev_comps = pdht->num_dev_comp;
     int                         i, code;
-    uint                        req_size = 1, used_size = 1;
-                                /* 1 for halftone type */
+    uint                        req_size = 2, used_size = 2;
+                                /* 1 for halftone type, 1 for num_dev_comps */
 
     /*
      * With the introduction of color models, there should never be a
@@ -489,29 +489,25 @@ gx_ht_write(
      *
      *  rc, id      Recreated by the allocation code on the renderer.
      *
-     *  num_comp    Must be the same as dev->color_info.num_components,
-     *              which must be the same on both the writer and the
-     *              rendered. Indeed, the entire color model must be the
-     *              same for writer and renderer.
-     *
      *  lcm_width,  Can be recreated by the de-serialization code on the
      *  lcm_height  the renderer. Since halftones are transmitted
      *              infrequently (for normal jobs), the time required
      *              for re-calculation is not significant.
      *
-     * Hence, the only fields that must be serialized are the type and
-     * the components.
+     * Hence, the only fields that must be serialized are the type,and
+     * the number of components.  (The number of components for the halftone
+     * may not match the device's if we are compositing with a process color
+     * model which does not match the output device.
      *
      * Several halftone components may be identical, but there is
      * currently no simple way to determine this. Halftones are normally
      * transmitted only once per page, so it is not clear that use of
      * such information would significantly reduce command list size.
      */
-    assert(pdht->num_comp == num_comps);
 
     /* calculate the required data space */
     for ( i = 0, code = gs_error_rangecheck;
-          i < num_comps && code == gs_error_rangecheck;
+          i < num_dev_comps && code == gs_error_rangecheck;
           i++) {
         uint     tmp_size = 0;
 
@@ -533,9 +529,11 @@ gx_ht_write(
 
     /* the halftone type is known to fit in a byte */
     *data++ = (byte)pdht->type;
+    /* the number of components is known to fit in a byte */
+    *data++ = (byte)num_dev_comps;
 
     /* serialize the halftone components */
-    for (i = 0, code = 0; i < num_comps && code == 0; i++) {
+    for (i = 0, code = 0; i < num_dev_comps && code == 0; i++) {
         uint    tmp_size = req_size - used_size;
 
         code = gx_ht_write_component( &pdht->components[i],
@@ -579,7 +577,7 @@ gx_ht_read_and_install(
     gx_ht_order_component   components[GX_DEVICE_COLOR_MAX_COMPONENTS];
     const byte *            data0 = data;
     gx_device_halftone      dht;
-    int                     num_comps = dev->color_info.num_components;
+    int                     num_dev_comps;
     int                     i, code;
 
     /* fill in some fixed fields */
@@ -587,7 +585,6 @@ gx_ht_read_and_install(
     memset(&dht.rc, 0, sizeof(dht.rc));
     dht.id = gs_no_id;      /* updated during installation */
     dht.components = components;
-    dht.num_comp = num_comps;
     dht.lcm_width = 1;      /* recalculated during installation */
     dht.lcm_height = 1;
 
@@ -598,9 +595,10 @@ gx_ht_read_and_install(
     if (size-- < 1)
         return_error(gs_error_rangecheck);
     dht.type = (gs_halftone_type)(*data++);
+    num_dev_comps = dht.num_dev_comp = dht.num_comp = *data++;
 
     /* process the component orders */
-    for (i = 0, code = 0; i < num_comps && code >= 0; i++) {
+    for (i = 0, code = 0; i < num_dev_comps && code >= 0; i++) {
         components[i].comp_number = i;
         code = gx_ht_read_component(&components[i], data, size, mem);
         if (code >= 0) {
@@ -619,7 +617,7 @@ gx_ht_read_and_install(
      * array is on the stack rather than in the heap.
      */
     if (code < 0) {
-        for (i = 0; i < num_comps; i++)
+        for (i = 0; i < num_dev_comps; i++)
             gx_ht_order_release(&components[i].corder, mem, false);
     }
 

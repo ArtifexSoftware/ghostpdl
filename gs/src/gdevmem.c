@@ -26,6 +26,7 @@
 #include "gxgetbit.h"
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
+#include "gstrans.h"
 
 /* Structure descriptor */
 public_st_device_memory();
@@ -246,19 +247,37 @@ gdev_mem_data_size(const gx_device_memory * dev, int width, int height)
  * compute the maximum height.
  */
 int
-gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size)
+gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
+		bool page_uses_transparency)
 {
-    ulong max_height = size /
-	(bitmap_raster(width * dev->color_info.depth) +
-	 sizeof(byte *) * max(dev->num_planes, 1));
-    int height = (int)min(max_height, max_int);
+    int height;
+    ulong max_height;
 
-    /*
-     * Because of alignment rounding, the just-computed height might
-     * be too large by a small amount.  Adjust it the easy way.
-     */
-    while (gdev_mem_data_size(dev, width, height) > size)
-	--height;
+    if (page_uses_transparency) {
+        /*
+         * If the device is using PDF 1.4 transparency then we will need to
+         * also allocate image buffers for doing the blending operations.
+         * We can only estimate the space requirements.  However since it
+	 * is only an estimate, we may exceed our desired buffer space while
+	 * processing the file.
+	 */
+        max_height = size / (bitmap_raster(width
+		* dev->color_info.depth + ESTIMATED_PDF14_ROW_SPACE(width))
+		+ sizeof(byte *) * max(dev->num_planes, 1));
+        height = (int)min(max_height, max_int);
+    } else {
+	/* For non PDF 1.4 transparency, we can do an exact calculation */
+        max_height = size /
+	    (bitmap_raster(width * dev->color_info.depth) +
+	     sizeof(byte *) * max(dev->num_planes, 1));
+        height = (int)min(max_height, max_int);
+        /*
+         * Because of alignment rounding, the just-computed height might
+         * be too large by a small amount.  Adjust it the easy way.
+         */
+        while (gdev_mem_data_size(dev, width, height) > size)
+	    --height;
+    }
     return height;
 }
 

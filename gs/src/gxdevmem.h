@@ -196,7 +196,8 @@ ulong gdev_mem_data_size(const gx_device_memory *mdev, int width,
  * Do the inverse computation: given the device width and a buffer size,
  * compute the maximum height.
  */
-int gdev_mem_max_height(const gx_device_memory *, int, ulong);
+int gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
+		bool page_uses_transparency);
 
 /*
  * Compute the standard raster (data bytes per line) similarly.

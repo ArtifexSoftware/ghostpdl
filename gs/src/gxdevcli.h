@@ -1080,7 +1080,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_t_proc_create_compositor(proc, dev_t)\
   int proc(dev_t *dev,\
     gx_device **pcdev, const gs_composite_t *pcte,\
-    const gs_imager_state *pis, gs_memory_t *memory)
+    gs_imager_state *pis, gs_memory_t *memory)
 #define dev_proc_create_compositor(proc)\
   dev_t_proc_create_compositor(proc, gx_device)\
 
@@ -1148,7 +1148,7 @@ typedef struct gs_param_list_s gs_param_list;
 */
 #define dev_t_proc_begin_transparency_mask(proc, dev_t)\
   int proc(gx_device *dev,\
-    const gs_transparency_mask_params_t *ptmp,\
+    const gx_transparency_mask_params_t *ptmp,\
     const gs_rect *pbbox,\
     gs_imager_state *pis,\
     gs_transparency_state_t **ppts,\

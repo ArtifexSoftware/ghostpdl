@@ -288,6 +288,7 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     pop(5);
     return code;
 }
+
 /* Implement the TransferFunction using a Function. */
 private int
 tf_using_function(floatp in_val, float *out, void *proc_data)
@@ -414,20 +415,23 @@ image_params *pip_data, const char *dict_name,
 private int
 zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
 {
-    gs_device_filter_t *df;
     int code;
-    gs_memory_t *mem = gs_memory_stable(imemory);
     os_ptr op = osp;
 
     check_type(*op, t_integer);
-    code = gs_pdf14_device_filter(&df, op->value.intval, mem);
-    if (code < 0)
-        return code;
-    code = gs_push_device_filter(mem, igs, df); 
+    code = gs_push_pdf14trans_device(igs); 
     if (code < 0)
         return code;
     pop(1);
     return 0;
+}
+
+/* this is a filter operator, but we include it here to maintain
+   modularity of the pdf14 transparency support */
+private int
+zpoppdf14devicefilter(i_ctx_t *i_ctx_p)
+{
+    return gs_pop_pdf14trans_device(igs); 
 }
 
 /* ------ Initialization procedure ------ */
@@ -454,5 +458,6 @@ const op_def ztrans2_op_defs[] = {
     {"1.inittransparencymask", zinittransparencymask},
     {"1.image3x", zimage3x},
     {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
+    {"0.poppdf14devicefilter", zpoppdf14devicefilter},
     op_def_end(0)
 };

@@ -217,6 +217,7 @@ struct gdev_prn_space_params_s {
     long BufferSpace;		/* space to use for buffer */
     gx_band_params_t band;	/* see gxclist.h */
     bool params_are_read_only;	/* true if put_params may not modify this struct */
+    bool page_uses_transparency; /* PDF 1.4 transparency is used on the page */
     gdev_prn_banding_type banding_type;	/* used to force banding or bitmap */
 };
 
@@ -231,6 +232,7 @@ struct gdev_prn_space_params_s {
 		/* ------ Other device parameters ------ */\
 	bool OpenOutputFile;\
 	bool ReopenPerPage;\
+	bool page_uses_transparency;\
 	bool Duplex;\
 	  int Duplex_set;		/* -1 = not supported */\
 		/* ------ End of parameters ------ */\
@@ -381,6 +383,7 @@ extern const gx_device_procs prn_std_procs;
 	 { 0 },		/* fname */\
 	0/*false*/,	/* OpenOutputFile */\
 	0/*false*/,	/* ReopenPerPage */\
+	0/*false*/,	/* page_uses_transparency */\
 	0/*false*/, -1,	/* Duplex[_set] */\
 	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
 	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\

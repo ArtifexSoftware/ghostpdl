@@ -209,7 +209,9 @@ const gs_composite_type_t   gs_composite_overprint_type = {
         c_overprint_create_default_compositor,  /* procs.create_default_compositor */
         c_overprint_equal,                      /* procs.equal */
         c_overprint_write,                      /* procs.write */
-        c_overprint_read                        /* procs.read */
+        c_overprint_read,                       /* procs.read */
+	gx_default_composite_clist_write_update,/* procs.composite_clist_write_update */
+	gx_default_composite_clist_read_update	/* procs.composite_clist_reade_update */
     }                                           /* procs */
 };
 
@@ -790,7 +792,7 @@ overprint_create_compositor(
     gx_device *             dev,
     gx_device **            pcdev,
     const gs_composite_t *  pct,
-    const gs_imager_state * pis,
+    gs_imager_state *	    pis,
     gs_memory_t *           memory )
 {
     if (pct->type != &gs_composite_overprint_type)
@@ -942,7 +944,7 @@ c_overprint_create_default_compositor(
     const gs_composite_t *  pct,
     gx_device **            popdev,
     gx_device *             tdev,
-    const gs_imager_state * pis,
+    gs_imager_state *	    pis,
     gs_memory_t *           mem )
 {
     const gs_overprint_t *  ovrpct = (const gs_overprint_t *)pct;

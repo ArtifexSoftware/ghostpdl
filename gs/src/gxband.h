@@ -26,6 +26,7 @@
  * Define the parameters controlling banding.
  */
 typedef struct gx_band_params_s {
+    bool page_uses_transparency; /* PDF 1.4 transparency is used on the page */
     int BandWidth;		/* (optional) band width in pixels */
     int BandHeight;		/* (optional) */
     long BandBufferSpace;	/* (optional) */

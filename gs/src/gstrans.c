@@ -16,12 +16,15 @@
 
 /* $Id$ */
 /* Implementation of transparency, other than rendering */
+#include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gstrans.h"
 #include "gsutil.h"
 #include "gzstate.h"
 #include "gxdevcli.h"
+#include "gdevp14.h"
 
 #define PUSH_TS 0
 
@@ -98,82 +101,6 @@ gs_currenttextknockout(const gs_state *pgs)
 
 /* ------ Transparency rendering stack ------ */
 
-/*
-  This area of the transparency facilities is in flux.  Here is a proposal
-  for extending the driver interface.  The material below will eventually
-  go in gxdevcli.h.
-*/
-
-/*
-  Push the current transparency state (*ppts) onto the associated stack,
-  and set *ppts to a new transparency state of the given dimension.  The
-  transparency state may copy some or all of the imager state, such as the
-  current alpha and/or transparency mask values, and definitely copies the
-  parameters.
-*/
-#define dev_t_proc_begin_transparency_group(proc, dev_t)\
-  int proc(gx_device *dev,\
-    const gs_transparency_group_params_t *ptgp,\
-    const gs_rect *pbbox,\
-    gs_imager_state *pis,\
-    gs_transparency_state_t **ppts,\
-    gs_memory_t *mem)
-#define dev_proc_begin_transparency_group(proc)\
-  dev_t_proc_begin_transparency_group(proc, gx_device)
-
-/*
-  End a transparency group: blend the top element of the transparency
-  stack, which must be a group, into the next-to-top element, popping the
-  stack.  If the stack only had a single element, blend into the device
-  output.  Set *ppts to 0 iff the stack is now empty.  If end_group fails,
-  the stack is *not* popped.
-*/
-#define dev_t_proc_end_transparency_group(proc, dev_t)\
-  int proc(gx_device *dev,\
-    gs_imager_state *pis,\
-    gs_transparency_state_t **ppts)
-#define dev_proc_end_transparency_group(proc)\
-  dev_t_proc_end_transparency_group(proc, gx_device)
-
-/*
-  Push the transparency state and prepare to render a transparency mask.
-  This is similar to begin_transparency_group except that it only
-  accumulates coverage values, not full pixel values.
-*/
-#define dev_t_proc_begin_transparency_mask(proc, dev_t)\
-  int proc(gx_device *dev,\
-    const gs_transparency_mask_params_t *ptmp,\
-    const gs_rect *pbbox,\
-    gs_imager_state *pis,\
-    gs_transparency_state_t **ppts,\
-    gs_memory_t *mem)
-#define dev_proc_begin_transparency_mask(proc)\
-  dev_t_proc_begin_transparency_mask(proc, gx_device)
-
-/*
-  Store a pointer to the rendered transparency mask into *pptm, popping the
-  stack like end_group.  Normally, the client will follow this by using
-  rc_assign to store the rendered mask into pis->{opacity,shape}.mask.  If
-  end_mask fails, the stack is *not* popped.
-*/
-#define dev_t_proc_end_transparency_mask(proc, dev_t)\
-  int proc(gx_device *dev,\
-    gs_transparency_mask_t **pptm)
-#define dev_proc_end_transparency_mask(proc)\
-  dev_t_proc_end_transparency_mask(proc, gx_device)
-
-/*
-  Pop the transparency stack, discarding the top element, which may be
-  either a group or a mask.  Set *ppts to 0 iff the stack is now empty.
-*/
-#define dev_t_proc_discard_transparency_layer(proc, dev_t)\
-  int proc(gx_device *dev,\
-    gs_transparency_state_t **ppts)
-#define dev_proc_discard_transparency_layer(proc)\
-  dev_t_proc_discard_transparency_layer(proc, gx_device)
-
-     /* (end of proposed driver interface extensions) */
-
 gs_transparency_state_type_t
 gs_current_transparency_type(const gs_state *pgs)
 {
@@ -213,6 +140,34 @@ pop_transparency_stack(gs_state *pgs, client_name_t cname)
 
 }
 
+/*
+ * Push a PDF 1.4 transparency compositor onto the current device. Note that
+ * if the current device already is a PDF 1.4 transparency compositor, the
+ * create_compositor will update its parameters but not create a new
+ * compositor device.
+ */
+private int
+gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
+{
+    gs_imager_state * pis = (gs_imager_state *)pgs;
+    gx_device * dev = pgs->device;
+    gx_device * pdf14dev;
+    int code;
+
+    /*
+     * Send the PDF 1.4 create compositor action specified by the parameters.
+     */
+    code = send_pdf14trans(pis, dev, &pdf14dev, pparams, pgs->memory);
+    /*
+     * If we created a new PDF 1.4 compositor device then we need to install it
+     * into the graphics state.
+     */
+    if (code >= 0 && pdf14dev != dev)
+        gx_set_device_only(pgs, pdf14dev);
+
+    return code;
+}
+
 void
 gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
 {
@@ -226,6 +181,8 @@ gs_begin_transparency_group(gs_state *pgs,
 			    const gs_transparency_group_params_t *ptgp,
 			    const gs_rect *pbbox)
 {
+    gs_pdf14trans_params_t params = { 0 };
+
 #ifdef DEBUG
     if (gs_debug_c('v')) {
 	static const char *const cs_names[] = {
@@ -243,43 +200,91 @@ gs_begin_transparency_group(gs_state *pgs,
 		 ptgp->Isolated, ptgp->Knockout);
     }
 #endif
-    if (dev_proc(pgs->device, begin_transparency_group) != 0)
-	return (*dev_proc(pgs->device, begin_transparency_group)) (pgs->device, ptgp,
-								   pbbox, (gs_imager_state *)pgs,
-								   NULL, NULL);
+    /*
+     * Put parameters into a compositor parameter and then call the
+     * create_compositor.  This will pass the data to the PDF 1.4
+     * transparency device.
+     */
+    params.pdf14_op = PDF14_BEGIN_TRANS_GROUP;
+    params.Isolated = ptgp->Isolated;
+    params.Knockout = ptgp->Knockout;
+    params.opacity = pgs->opacity;
+    params.shape = pgs->shape;
+    params.blend_mode = pgs->blend_mode;
+    /*
+     * We are currently doing nothing with the colorspace.  Currently
+     * the blending colorspace is based upon the processs color model
+     * of the output device.
+     */
+    params.bbox = *pbbox;
+    return gs_state_update_pdf14trans(pgs, &params);
+}
+
+int
+gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
+				const gs_pdf14trans_params_t * pparams)
+{
+    gs_transparency_group_params_t tgp = {0};
+    gs_rect bbox;
+
+    tgp.Isolated = pparams->Isolated;
+    tgp.Knockout = pparams->Knockout;
+    pis->opacity.alpha = pparams->opacity.alpha;
+    pis->shape.alpha = pparams->shape.alpha;
+    pis->blend_mode = pparams->blend_mode;
+    bbox = pparams->bbox;
+#ifdef DEBUG
+    if (gs_debug_c('v')) {
+	static const char *const cs_names[] = {
+	    GS_COLOR_SPACE_TYPE_NAMES
+	};
+
+	dlprintf5("[v](0x%lx)begin_transparency_group [%g %g %g %g]\n",
+		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+	if (tgp.ColorSpace)
+	    dprintf1("     CS = %s",
+		cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
+	else
+	    dputs("     (no CS)");
+	dprintf2("  Isolated = %d  Knockout = %d\n",
+		 tgp.Isolated, tgp.Knockout);
+    }
+#endif
+    if (dev_proc(pdev, begin_transparency_group) != 0)
+	return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp,
+							&bbox, pis, NULL, NULL);
     else
 	return 0;
-#if PUSH_TS
-    return push_transparency_stack(pgs, TRANSPARENCY_STATE_Group,
-				   "gs_begin_transparency_group");
-#endif
 }
 
 int
 gs_end_transparency_group(gs_state *pgs)
 {
-    if (dev_proc(pgs->device, end_transparency_group) != 0)
-	return (*dev_proc(pgs->device, end_transparency_group)) (pgs->device, (gs_imager_state *)pgs,
-								 NULL);
-    else
-	return 0;
-#if 0
-    gs_transparency_state_t *pts = pgs->transparency_stack;
+    gs_pdf14trans_params_t params = { 0 };
 
-    if_debug1('v', "[v](0x%lx)end_transparency_group\n", (ulong)pgs);
-    if (!pts || pts->type != TRANSPARENCY_STATE_Group)
-	return_error(gs_error_rangecheck);
-    pop_transparency_stack(pgs, "gs_end_transparency_group");
-    return 0;
-#endif
+    params.pdf14_op = PDF14_END_TRANS_GROUP;  /* Other parameters not used */
+    return gs_state_update_pdf14trans(pgs, &params);
 }
 
+int
+gx_end_transparency_group(gs_imager_state * pis, gx_device * pdev)
+{
+    if (dev_proc(pdev, end_transparency_group) != 0)
+	return (*dev_proc(pdev, end_transparency_group)) (pdev, pis, NULL);
+    else
+	return 0;
+}
+
+/*
+ * Handler for identity mask transfer functions.
+ */
 private int
 mask_transfer_identity(floatp in, float *out, void *proc_data)
 {
-    *out = in;
+    *out = (float) in;
     return 0;
 }
+
 void
 gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
 			  gs_transparency_mask_subtype_t subtype)
@@ -291,10 +296,12 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
 }
 
 int
-gs_begin_transparency_mask(gs_state *pgs,
-			   const gs_transparency_mask_params_t *ptmp,
-			   const gs_rect *pbbox)
+gs_begin_transparency_mask(gs_state * pgs,
+			   const gs_transparency_mask_params_t * ptmp,
+			   const gs_rect * pbbox)
 {
+    gs_pdf14trans_params_t params = { 0 };
+    int i;
 
     if_debug8('v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  has_Background = %d  %s\n",
@@ -302,42 +309,73 @@ gs_begin_transparency_mask(gs_state *pgs,
 	      (int)ptmp->subtype, ptmp->has_Background,
 	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
-    if (dev_proc(pgs->device, begin_transparency_mask) != 0)
-	return (*dev_proc(pgs->device, begin_transparency_mask))
-	    (pgs->device, ptmp, pbbox, (gs_imager_state *)pgs, NULL, NULL);
+    params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
+    params.bbox = *pbbox;
+    params.subtype = ptmp->subtype;
+    params.has_Background = ptmp->has_Background;
+    if (ptmp->has_Background)
+	memcpy(params.Background, ptmp->Background, size_of(ptmp->Background));
+    params.function_is_identity =
+	    (ptmp->TransferFunction == mask_transfer_identity);
+    /* Sample the transfer function */
+    for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
+	float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
+	float out;
+
+	ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
+	params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
+    }
+    return gs_state_update_pdf14trans(pgs, &params);
+}
+
+int
+gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
+				const gs_pdf14trans_params_t * pparams)
+{
+    gx_transparency_mask_params_t tmp;
+
+    tmp.subtype = pparams->subtype;
+    tmp.has_Background = pparams->has_Background;
+    memcpy(tmp.Background, pparams->Background, size_of(tmp.Background));
+    tmp.function_is_identity = pparams->function_is_identity;
+    memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
+    if_debug8('v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
+      subtype = %d  has_Background = %d  %s\n",
+	      (ulong)pis, pparams->bbox.p.x, pparams->bbox.p.y,
+	      pparams->bbox.q.x, pparams->bbox.q.y,
+	      (int)tmp.subtype, tmp.has_Background,
+	      (tmp.function_is_identity ? "no TR" :
+	       "has TR"));
+    if (dev_proc(pdev, begin_transparency_mask) != 0)
+	return (*dev_proc(pdev, begin_transparency_mask))
+	    		(pdev, &tmp, &(pparams->bbox), pis, NULL, NULL);
     else
 	return 0;
-	     
-#if PUSH_TS
-    return push_transparency_stack(pgs, TRANSPARENCY_STATE_Mask,
-				   "gs_begin_transparency_group");
-#endif
 }
 
 int
 gs_end_transparency_mask(gs_state *pgs,
 			 gs_transparency_channel_selector_t csel)
 {
-#if 0
-    gs_transparency_state_t *pts = pgs->transparency_stack;
-#endif
+    gs_pdf14trans_params_t params = { 0 };
 
     if_debug2('v', "[v](0x%lx)end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
 
     /* todo: route csel */
 
-    if (dev_proc(pgs->device, end_transparency_mask) != 0)
-	return (*dev_proc(pgs->device, end_transparency_mask))
-	    (pgs->device, NULL);
+    params.pdf14_op = PDF14_END_TRANS_MASK;  /* Other parameters not used */
+    return gs_state_update_pdf14trans(pgs, &params);
+}
+
+int
+gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
+				const gs_pdf14trans_params_t * pparams)
+{
+    if (dev_proc(pdev, end_transparency_mask) != 0)
+	return (*dev_proc(pdev, end_transparency_mask)) (pdev, NULL);
     else
 	return 0;
-#if 0
-    if (!pts || pts->type != TRANSPARENCY_STATE_Mask)
-	return_error(gs_error_rangecheck);
-    pop_transparency_stack(pgs, "gs_end_transparency_mask");
-    return 0;
-#endif
 }
 
 int
@@ -357,17 +395,48 @@ int
 gs_init_transparency_mask(gs_state *pgs,
 			  gs_transparency_channel_selector_t csel)
 {
-    /****** NYI, DUMMY ******/
-    gs_transparency_source_t *ptm;
+    gs_pdf14trans_params_t params = { 0 };
 
     if_debug2('v', "[v](0x%lx)init_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
-    switch (csel) {
-    case TRANSPARENCY_CHANNEL_Opacity: ptm = &pgs->opacity; break;
-    case TRANSPARENCY_CHANNEL_Shape: ptm = &pgs->shape; break;
+
+    params.pdf14_op = PDF14_INIT_TRANS_MASK;
+    params.csel = csel;
+    return gs_state_update_pdf14trans(pgs, &params);
+}
+
+int
+gx_init_transparency_mask(gs_imager_state * pis,
+				const gs_pdf14trans_params_t * pparams)
+{
+    gs_transparency_source_t *ptm;
+
+    if_debug2('v', "[v](0x%lx)init_transparency_mask(%d)\n", (ulong)pis,
+	      (int)pparams->csel);
+    switch (pparams->csel) {
+    case TRANSPARENCY_CHANNEL_Opacity: ptm = &pis->opacity; break;
+    case TRANSPARENCY_CHANNEL_Shape: ptm = &pis->shape; break;
     default: return_error(gs_error_rangecheck);
     }
     rc_decrement_only(ptm->mask, "gs_init_transparency_mask");
     ptm->mask = 0;
     return 0;
+}
+
+int
+gs_push_pdf14trans_device(gs_state * pgs)
+{
+    gs_pdf14trans_params_t params = { 0 };
+
+    params.pdf14_op = PDF14_PUSH_DEVICE;  /* Other parameters not used */
+    return gs_state_update_pdf14trans(pgs, &params);
+}
+
+int
+gs_pop_pdf14trans_device(gs_state * pgs)
+{
+    gs_pdf14trans_params_t params = { 0 };
+
+    params.pdf14_op = PDF14_POP_DEVICE;  /* Other parameters not used */
+    return gs_state_update_pdf14trans(pgs, &params);
 }

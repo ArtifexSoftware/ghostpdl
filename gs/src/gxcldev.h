@@ -709,6 +709,11 @@ int clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 /* ------ Exported by gxclimag.c ------ */
 
 /*
+ * Write out any necessary color mapping data.
+ */
+int cmd_put_color_mapping(gx_device_clist_writer * cldev,
+				  const gs_imager_state * pis);
+/*
  * Add commands to represent a full (device) halftone.
  * (This routine should probably be in some other module.)
  */

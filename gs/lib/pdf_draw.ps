@@ -396,7 +396,7 @@ end
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
     .execgroup .endtransparencymask
-  } .internalstopped {
+  } stopped {
     .discardtransparencymask stop
   } if
   PDFfile exch setfileposition grestore
@@ -431,7 +431,7 @@ end
 		% Stack: resdict stream groupdict bbox
   .beginformgroup {
     .execgroup
-  } .internalstopped {
+  } stopped {
     .discardtransparencygroup stop
   } if .endtransparencygroup
 } bdef
