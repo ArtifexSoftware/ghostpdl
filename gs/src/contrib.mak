@@ -51,6 +51,8 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 #		also good for DeskJet 510, 520, and 540C (black only)
 # *	cdj500	H-P DeskJet 500C (same as cdjcolor)
 # *	cdj550	H-P DeskJet 550C/560C/660C/660Cse
+# *	cljet5	H-P Color LaserJet 5/5M (see below for some notes)
+# *	cljet5c  H-P Color LaserJet 5/5M (see below for some notes)
 # *	coslw2p  CoStar LabelWriter II II/Plus
 # *	coslwxl  CoStar LabelWriter XL
 # *	cp50	Mitsubishi CP50 color printer
@@ -314,6 +316,38 @@ $(DD)djet500c.dev : $(djet500c_) $(DD)page.dev
 
 $(GLOBJ)gdevdjtc.$(OBJ) : $(GLSRC)gdevdjtc.c $(PDEVH) $(malloc__h) $(gdevpcl_h)
 	$(GLCC) $(GLO_)gdevdjtc.$(OBJ) $(C_) $(GLSRC)gdevdjtc.c
+
+### -------------------- The H-P Color LaserJet 5/5M -------------------- ###
+
+### There are two different drivers for this device.
+### For questions about the cljet5/cljet5pr (more general) driver, contact
+###	Jan Stoeckenius <jan@orimp.com>
+### For questions about the cljet5c (simple) driver, contact
+###	Henry Stiles <henrys@meerkat.dimensional.com>
+### Note that this is a long-edge-feed device, so the default page size is
+### wider than it is high.  To print portrait pages, specify the page size
+### explicitly, e.g. -c letter or -c a4 on the command line.
+
+cljet5_=$(GLOBJ)gdevclj.$(OBJ) $(HPPCL)
+
+$(DD)cljet5.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
+	$(SETPDEV) $(DD)cljet5 $(cljet5_)
+
+# The cljet5pr driver has hacks for trying to handle page rotation.
+# The hacks only work with one special PCL interpreter.  Don't use it!
+$(DD)cljet5pr.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
+	$(SETPDEV) $(DD)cljet5pr $(cljet5_)
+
+$(GLOBJ)gdevclj.$(OBJ) : $(GLSRC)gdevclj.c $(math__h) $(PDEVH)\
+ $(gx_h) $(gsparam_h) $(gdevpcl_h)
+	$(GLCC) $(GLO_)gdevclj.$(OBJ) $(C_) $(GLSRC)gdevclj.c
+
+cljet5c_=$(GLOBJ)gdevcljc.$(OBJ) $(HPPCL)
+$(DD)cljet5c.dev : $(DEVS_MAK) $(cljet5c_) $(GLD)page.dev
+	$(SETPDEV) $(DD)cljet5c $(cljet5c_)
+
+$(GLOBJ)gdevcljc.$(OBJ) : $(GLSRC)gdevcljc.c $(math__h) $(PDEVH) $(gdevpcl_h)
+	$(GLCC) $(GLO_)gdevcljc.$(OBJ) $(C_) $(GLSRC)gdevcljc.c
 
 ### --------------- The H-P LaserJet 3100 software device --------------- ###
 
