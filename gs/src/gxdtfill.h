@@ -182,6 +182,7 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 		rxl = fixed2int_var(l.x);
 		rxr = fixed2int_var(r.x);
 		SET_MINIMAL_WIDTH(rxl, rxr, l, r);
+		VD_RECT_SWAPPED(rxl, ry, rxr, iy1);
 		code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy1 - ry);
 		goto xit;
 	    }
