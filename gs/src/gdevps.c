@@ -38,12 +38,6 @@
 #include "sa85x.h"
 #include "gdevpsdf.h"
 
-/****************************************************************
- * Notes:
- *	Images are never compressed; in fact, none of the other
- *	  Distiller parameters do anything.
- ****************************************************************/
-
 /* ---------------- Device definition ---------------- */
 
 /* Device procedures */
@@ -337,15 +331,83 @@ private const char *const psw_end_prolog[] =
 };
 
 private void
-psw_put_lines(stream * s, const char *const lines[])
+psw_put_lines(FILE *f, const char *const lines[])
 {
     int i;
 
     for (i = 0; lines[i] != 0; ++i)
-	pprints1(s, "%s\n", lines[i]);
+	fprintf(f, "%s\n", lines[i]);
 }
 
 /* ---------------- Utilities ---------------- */
+
+/* Print the bounding box. */
+private void
+psw_print_bbox(FILE *f, const gs_rect *pbbox)
+{
+    fprintf(f, "%%%%BoundingBox: %d %d %d %d\n",
+	    (int)floor(pbbox->p.x), (int)floor(pbbox->p.y),
+	    (int)ceil(pbbox->q.x), (int)ceil(pbbox->q.y));
+    fprintf(f, "%%%%HiResBoundingBox: %f %f %f %f\n",
+	    pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
+
+}
+
+/*
+ * Output the file header.  This must write to a file, not a stream,
+ * because it may be called during finalization.
+ */
+private int
+psw_begin_file(gx_device_pswrite *pdev, const gs_rect *pbbox)
+{
+    FILE *f = pdev->file;
+
+    psw_put_lines(f, (pdev->ProduceEPS ? psw_eps_header : psw_ps_header));
+    if (pbbox)
+	psw_print_bbox(pdev->file, pbbox);
+    else if (ftell(pdev->file) < 0) {	/* File is not seekable. */
+	pdev->bbox_position = -1;
+	fputs("%%BoundingBox: (atend)\n", f);
+	fputs("%%HiResBoundingBox: (atend)\n", f);
+    } else {		/* File is seekable, leave room to rewrite bbox. */
+	pdev->bbox_position = ftell(f);
+	fputs("%...............................................................\n", f);
+	fputs("%...............................................................\n", f);
+    }
+    fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
+	    pdev->dname);
+    {
+	time_t t;
+	struct tm tms;
+
+	time(&t);
+	tms = *localtime(&t);
+	fprintf(f, "%%%%CreationDate: %d/%02d/%02d %02d:%02d:%02d\n",
+		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
+		tms.tm_hour, tms.tm_min, tms.tm_sec);
+    }
+    if (pdev->params.ASCII85EncodePages)
+	fputs("%%DocumentData: Clean7Bit\n", f);
+    if (pdev->LanguageLevel == 2.0)
+	fputs("%%LanguageLevel: 2\n", f);
+    else if (pdev->LanguageLevel == 1.5)
+	fputs("%%Extensions: CMYK\n", f);
+    psw_put_lines(f, psw_header);
+    fprintf(f, "%% %s\n", gs_copyright);
+    psw_put_lines(f, psw_prolog);
+    if (pdev->LanguageLevel < 1.5) {
+	psw_put_lines(f, psw_1_x_prolog);
+	psw_put_lines(f, psw_1_prolog);
+    } else if (pdev->LanguageLevel > 1.5) {
+	psw_put_lines(f, psw_1_5_prolog);
+	psw_put_lines(f, psw_2_prolog);
+    } else {
+	psw_put_lines(f, psw_1_x_prolog);
+	psw_put_lines(f, psw_1_5_prolog);
+    }
+    psw_put_lines(f, psw_end_prolog);
+    return 0;
+}
 
 /* Reset the image cache. */
 private void
@@ -536,54 +598,8 @@ psw_beginpage(gx_device_vector * vdev)
     long page = vdev->PageCount + 1;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
-    if (pdev->first_page) {
-	psw_put_lines(s,
-		      (pdev->ProduceEPS ? psw_eps_header : psw_ps_header));
-	if (ftell(vdev->file) < 0) {	/* File is not seekable. */
-	    pdev->bbox_position = -1;
-	    pputs(s, "%%BoundingBox: (atend)\n");
-	    pputs(s, "%%HiResBoundingBox: (atend)\n");
-	} else {		/* File is seekable, leave room to rewrite bbox. */
-	    pdev->bbox_position = stell(s);
-	    pputs(s, "%...............................................................\n");
-	    pputs(s, "%...............................................................\n");
-	}
-	pprints1(s, "%%%%Creator: %s ", gs_product);
-	pprintld1(s, "%ld ", (long)gs_revision);
-	pprints1(s, "(%s)\n", vdev->dname);
-	{
-	    struct tm tms;
-	    time_t t;
-	    char date_str[25];
-
-	    time(&t);
-	    tms = *localtime(&t);
-	    sprintf(date_str, "%d/%02d/%02d %02d:%02d:%02d",
-		    tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
-		    tms.tm_hour, tms.tm_min, tms.tm_sec);
-	    pprints1(s, "%%%%CreationDate: %s\n", date_str);
-	}
-	if (pdev->params.ASCII85EncodePages)
-	    pputs(s, "%%DocumentData: Clean7Bit\n");
-	if (pdev->LanguageLevel == 2.0)
-	    pputs(s, "%%LanguageLevel: 2\n");
-	else if (pdev->LanguageLevel == 1.5)
-	    pputs(s, "%%Extensions: CMYK\n");
-	psw_put_lines(s, psw_header);
-	pprints1(s, "%% %s\n", gs_copyright);
-	psw_put_lines(s, psw_prolog);
-	if (pdev->LanguageLevel < 1.5) {
-	    psw_put_lines(s, psw_1_x_prolog);
-	    psw_put_lines(s, psw_1_prolog);
-	} else if (pdev->LanguageLevel > 1.5) {
-	    psw_put_lines(s, psw_1_5_prolog);
-	    psw_put_lines(s, psw_2_prolog);
-	} else {
-	    psw_put_lines(s, psw_1_x_prolog);
-	    psw_put_lines(s, psw_1_5_prolog);
-	}
-	psw_put_lines(s, psw_end_prolog);
-    }
+    if (pdev->first_page)
+	psw_begin_file(pdev, NULL);
     pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page);
     /*
      * Adobe's documentation says that page setup must be placed outside the
@@ -897,32 +913,34 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
 /* Close the device. */
 /* Note that if this is being called as a result of finalization, */
 /* the stream may have been finalized; but the file will still be open. */
-private void psw_print_bbox(P2(FILE *, const gs_rect *));
 private int
 psw_close(gx_device * dev)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     FILE *f = vdev->file;
+    gs_rect bbox;
 
-    /* If there is an incomplete page, complete it now. */
-    if (vdev->in_page) {
-	/*
-	 * Flush the stream if it hasn't been flushed (and finalized)
-	 * already.
-	 */
-	stream *s = vdev->strm;
+    gx_device_bbox_bbox(vdev->bbox_device, &bbox);
+    if (pdev->first_page & !vdev->in_page) {
+	/* Nothing has been written.  Write the file header now. */
+	psw_begin_file(pdev, &bbox);
+	fputs("%%Trailer\n%%Pages: 0\n", f);
+    } else {
+	/* If there is an incomplete page, complete it now. */
+	if (vdev->in_page) {
+	    /*
+	     * Flush the stream if it hasn't been flushed (and finalized)
+	     * already.
+	     */
+	    stream *s = vdev->strm;
 
-	if (s->swptr != s->cbuf - 1)
-	    sflush(s);
-	psw_write_page_trailer(dev, 1, 1);
-	dev->PageCount++;
-    }
-    fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", dev->PageCount);
-    {
-	gs_rect bbox;
-
-	gx_device_bbox_bbox(vdev->bbox_device, &bbox);
+	    if (s->swptr != s->cbuf - 1)
+		sflush(s);
+	    psw_write_page_trailer(dev, 1, 1);
+	    dev->PageCount++;
+	}
+	fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", dev->PageCount);
 	if (pdev->bbox_position >= 0) {
 	    long save_pos = ftell(f);
 
@@ -939,16 +957,6 @@ psw_close(gx_device * dev)
 		   "psw_close(image_writer)");
     pdev->image_writer = 0;
     return gdev_vector_close_file(vdev);
-}
-private void
-psw_print_bbox(FILE *f, const gs_rect *pbbox)
-{
-    fprintf(f, "%%%%BoundingBox: %d %d %d %d\n",
-	    (int)floor(pbbox->p.x), (int)floor(pbbox->p.y),
-	    (int)ceil(pbbox->q.x), (int)ceil(pbbox->q.y));
-    fprintf(f, "%%%%HiResBoundingBox: %f %f %f %f\n",
-	    pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
-
 }
 
 /* ---------------- Get/put parameters ---------------- */
