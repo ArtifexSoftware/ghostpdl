@@ -670,6 +670,7 @@ gmode_do_reset(
     if ((type & mask) != 0) {
         pcl_raster_state_t *    prstate = &(pcs->raster_state);
 
+	prstate->gmargin_cp = 0L;
         prstate->resolution = 75;
         prstate->pres_mode_3 = true;
         prstate->scale_raster = false;
