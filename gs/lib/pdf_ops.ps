@@ -411,7 +411,7 @@ end readonly def
 /settextposition {
 		% Update the TextMatrix translation.
   gsave TextSaveMatrix setmatrix
-  currentpoint TextMatrix 4 2 getinterval astore pop
+  currentpoint TextRise sub TextMatrix 4 2 getinterval astore pop
 		% We would like to do "grestore currentpoint translate"
 		% here, but some PDF files set a singular text matrix
 		% (0 0 0 0 <x> <y> Tm), so we can't do this.
