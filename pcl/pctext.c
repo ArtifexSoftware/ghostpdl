@@ -86,7 +86,59 @@ map_symbol(
     gs_char                 chr
 )
 {
-    return pl_map_symbol(psm, chr, pfont->storage == pcds_internal);
+    uint                    first_code, last_code;
+
+    /*
+     * If there is no symbol map we assume the the character
+     * implicitly indexes the font.
+     */
+    if (psm == 0) {
+	if ( (pfont->scaling_technology == plfst_TrueType) &&
+	     (pfont->storage == pcds_internal)               )
+	    return chr + 0xf000;
+	return chr;
+    }
+
+    first_code = pl_get_uint16(psm->first_code);
+    last_code = pl_get_uint16(psm->last_code);
+
+    /*
+     * If chr is double-byte but the symbol map is only single-byte,
+     * just return chr (it is not clear this make any sense - jan, I
+     * agree - henry).  
+     */
+    if ((chr < first_code) || (chr > last_code))
+	return ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
+    else {
+	pl_glyph_vocabulary_t fgv =  /* font glyph vocabulary */
+	    (pl_glyph_vocabulary_t)(~pfont->character_complement[7] & 07);
+	gs_char code = psm->codes[chr - first_code];
+
+	/* simple common case - the glyph vocabs match */
+	if ( pl_symbol_map_vocabulary(psm) == fgv )
+	    return code;
+	/* font wants unicode and we have mapped an msl symbol set */
+	if ( ( pl_symbol_map_vocabulary(psm) == plgv_MSL ) &&
+	     ( fgv == plgv_Unicode ) ) {
+	    if ( psm->mapping_type != PLGV_M2U_MAPPING )
+		/* font selection should not have given us this */
+		return_error(pfont->pfont->memory, gs_error_invalidfont);
+	    else
+		return pl_map_MSL_to_Unicode(code,
+		         (psm->id[0] << 8) + psm->id[1]);
+	}
+	/* font wants msl coding we have mapped unicode */
+	if ( ( pl_symbol_map_vocabulary(psm) == plgv_Unicode ) &&
+	     ( fgv == plgv_MSL ) ) {
+	    if ( psm->mapping_type != PLGV_U2M_MAPPING )
+		/* symbol set doesn't support the mapping - should not happen */
+		return_error(pfont->pfont->memory, gs_error_invalidfont);
+	    else
+		return pl_map_Unicode_to_MSL(code,
+        		 (psm->id[0] << 8) + psm->id[1]);
+	} else
+            return 0xffff;
+    }
 }
 
 /*
