@@ -819,6 +819,10 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
     do {
 	q->more_flattened = gx_flattened_iterator__next_filtered2(q->fi);
 	dir = compute_dir(ll, q->fi->fy0, q->fi->fy1);
+	if (q->fi->fy0 > ll->ymax && ll->y_break > q->fi->fy0)
+	    ll->y_break = q->fi->fy0;
+	if (q->fi->fy1 > ll->ymax && ll->y_break > q->fi->fy1)
+	    ll->y_break = q->fi->fy1;
 	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->fy0 >= ll->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
 			    true, !q->more_flattened, true);
@@ -935,6 +939,10 @@ scan_contour(line_list *ll, contour_cursor *q)
 	    init_contour_cursor(ll, &p);
 	    p.more_flattened = gx_flattened_iterator__next_filtered2(p.fi);
 	    p.dir = compute_dir(ll, p.fi->fy0, p.fi->fy1);
+	    if (p.fi->fy0 > ll->ymax && ll->y_break > p.fi->fy0)
+		ll->y_break = p.fi->fy0;
+	    if (p.fi->fy1 > ll->ymax && ll->y_break > p.fi->fy1)
+		ll->y_break = p.fi->fy1;
 	    if (p.monotonic && p.dir == DIR_HORIZONTAL && 
 		    !ll->pseudo_rasterization && 
 		    fixed2int_pixround(p.pseg->pt.y - ll->adjust_below) <
@@ -1032,6 +1040,8 @@ add_y_list(gx_path * ppath, line_list *ll)
     int code;
     contour_cursor q;
     gx_flattened_iterator fi;
+
+    ll->y_break = max_fixed;
 
     for (;psub; psub = (subpath *)psub->last->next) {
 	/* We know that pseg points to a subpath head (s_start). */
@@ -2220,7 +2230,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	/* Start by finding the smallest y value */
 	/* at which any currently active line ends */
 	/* (or the next to-be-active line begins). */
-	y1 = (yll != 0 ? yll->start.y : max_fixed);
+	y1 = (yll != 0 ? yll->start.y : ll->y_break);
 	/* Make sure we don't exceed the maximum band height. */
 	{
 	    fixed y_band = y | ~band_mask;
@@ -2672,7 +2682,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 	 */
 
 	if (ll->x_list == 0)
-	    y = (yll == 0 ? y_limit : yll->start.y);
+	    y = (yll == 0 ? ll->y_break : yll->start.y);
 	else {
 	    y = y_bot + fixed_1;
 	    if (yll != 0)

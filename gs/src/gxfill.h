@@ -139,6 +139,7 @@ struct line_list_s {
 #if CURVED_TRAPEZOID_FILL
     int main_dir;
 #endif
+    fixed y_break;
 };
 
 #define LOOP_FILL_RECTANGLE(x, y, w, h)\
