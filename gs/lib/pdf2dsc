@@ -1,5 +1,5 @@
 #! /bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 
 # psf2dsc: generates an index of a PDF file.
 #

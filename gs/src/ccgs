@@ -1,5 +1,5 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 # Pre-process ANSI C files with ansi2knr before compiling.
 # Usage: ccgs ansi2knr "cc switches..." ...switches... -c inputfile ... -o outputfile
 

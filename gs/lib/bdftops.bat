@@ -1,2 +1,2 @@
 @gs -q -dNODISPLAY -- bdftops.ps %1 %2 %3 %4 %5 %6 %7 %8 %9
-@rem $RCSfile$ $Revision$
+@rem $Id$

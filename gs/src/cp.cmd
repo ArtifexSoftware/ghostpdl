@@ -1,3 +1,3 @@
 @copy /B %1 %2
-@rem $RCSfile$ $Revision$
+@rem $Id$
 @if not "%2"=="." touch %2

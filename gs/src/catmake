@@ -1,5 +1,5 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 # Expand 'includes' in makefiles.  Usage:
 #	catmake orig.mak > makefile
 

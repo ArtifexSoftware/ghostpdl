@@ -1,5 +1,5 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 #
 # Implement a uniform 'install' syntax independent of which of the two
 # "standard" install programs is installed.  Based on ideas in, but not

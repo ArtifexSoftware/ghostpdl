@@ -1,5 +1,5 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 # Make an AFM file from PFB / PFA and (optionally) PFM files.  Usage:
 #	pf2afm fontfilename
 # Output goes to fontfilename.afm, which must not already exist.

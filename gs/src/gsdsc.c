@@ -1,6 +1,6 @@
 /* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved. */
 
-/*$RCSfile$ $Revision$ */
+/*$Id$ */
 /* Parse DSC comments from a PostScript file. */
 #include "stdpre.h"
 #include <stdio.h>

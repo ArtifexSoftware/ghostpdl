@@ -1,5 +1,5 @@
 #!/bin/sh
-# $RCSfile$ $Revision$
+# $Id$
 # Convert DVI to PDF.
 #
 # Please contact Andrew Ford <A.Ford@ford-mason.co.uk> with any questions

@@ -1,17 +1,28 @@
 #    Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 # 
-# This software is licensed to a single customer by Artifex Software Inc.
-# under the terms of a specific OEM agreement.
+# This file is part of Aladdin Ghostscript.
+# 
+# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+# or distributor accepts any responsibility for the consequences of using it,
+# or for whether it serves any particular purpose or works at all, unless he
+# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+# License (the "License") for full details.
+# 
+# Every copy of Aladdin Ghostscript must include a copy of the License,
+# normally in a plain ASCII text file named PUBLIC.  The License grants you
+# the right to copy, modify and redistribute Aladdin Ghostscript, but only
+# under certain conditions described in the License.  Among other things, the
+# License requires that the copyright notice and this notice be preserved on
+# all copies.
 
-# $RCSfile$ $Revision$
+# $Id$
 # Makefile fragment containing the current revision identification.
 
 # Major and minor version numbers.
 # MINOR0 is different from MINOR only if MINOR is a single digit.
-# Artifex 6.11 is derived from Aladdin 6.0
 GS_VERSION_MAJOR=6
-GS_VERSION_MINOR=11
-GS_VERSION_MINOR0=11
+GS_VERSION_MINOR=0
+GS_VERSION_MINOR0=00
 # Revision date: year x 10000 + month x 100 + day.
 GS_REVISIONDATE=20000203
 # Derived values

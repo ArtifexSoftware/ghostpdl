@@ -1,5 +1,5 @@
 #!/usr/bin/tclsh
-# $RCSfile$ $Revision$
+# $Id$
 if {$argc < 2} {
     puts stderr "Usage: $argv0 (-t type | -u word | fromword toword) file ..."
     puts stderr "  -t word = word word_t"

@@ -1,5 +1,5 @@
 @echo off
-@rem $RCSfile$ $Revision$
+@rem $Id$
 rem Convert PostScript to PDF without specifying CompatibilityLevel.
 
 rem	NOTE: for questions about using this file on Windows NT, please

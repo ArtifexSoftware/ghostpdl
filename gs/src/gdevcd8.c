@@ -27,7 +27,7 @@
    copyright notice and this notice be preserved on all copies.
  */
 
-/*$RCSfile$ $Revision$*/
+/*$Id$*/
 
 /*
    A printer driver for the HP670, HP690, HP850, HP855

@@ -1,1 +1,0 @@
-@..\gs386 -I.. -q -dNODISPLAY -sOutputFile=%2 pxasm.ps %1 -c quit
