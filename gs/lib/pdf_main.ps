@@ -665,11 +665,11 @@ pdfdict begin
 } bind def
 
 /knownoget_safe
-{ knownoget
+{ 2 copy knownoget { 3 1 roll pop pop //true } { pop pop //false } ifelse
 } odef
 
 /printProducer {
-  Trailer /Info { knownoget_safe } stopped { false } if {
+  Trailer /Info { knownoget_safe } stopped { pop pop false } if {
     /Producer knownoget not { null } if
   } {
     null
