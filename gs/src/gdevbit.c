@@ -50,9 +50,10 @@
 /* The device descriptor */
 private dev_proc_map_rgb_color(bit_mono_map_rgb_color);
 private dev_proc_map_rgb_color(bit_map_rgb_color);
+private dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
 private dev_proc_map_color_rgb(bit_map_color_rgb);
 private dev_proc_map_cmyk_color(bit_map_cmyk_color);
-private dev_proc_put_params(bit_get_params);
+private dev_proc_get_params(bit_get_params);
 private dev_proc_put_params(bit_put_params);
 private dev_proc_print_page(bit_print_page);
 
@@ -79,13 +80,22 @@ private dev_proc_print_page(bit_print_page);
 	gx_page_device_get_page_device	/* get_page_device */\
 }
 
+/* The following macro is used in get_params and put_params to determine  */
+/* the num_components for the current device. It works using the device   */
+/* name character after "bit" which is either '\0', 'r', or 'c'. Any new  */
+/* devices that are added to this module must modify this macro to return */
+/* the correct num_components. This is needed to support the ForceMono    */
+/* parameter which alters dev->num_components.				  */
+#define REAL_NUM_COMPONENTS(dev) ((dev->dname[3]== 'c') ? 4 : \
+				  (dev->dname[3]=='r') ? 3 : 1)
+
 private const gx_device_procs bitmono_procs =
 bit_procs(bit_mono_map_rgb_color, NULL);
 const gx_device_printer gs_bit_device =
 {prn_device_body(gx_device_printer, bitmono_procs, "bit",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
-		 0, 0, 0, 0,	/* margins */
+		 0, 0, 0, 0,    /* margins */
 		 1, 1, 1, 0, 2, 1, bit_print_page)
 };
 
@@ -100,7 +110,7 @@ const gx_device_printer gs_bitrgb_device =
 };
 
 private const gx_device_procs bitcmyk_procs =
-bit_procs(NULL, bit_map_cmyk_color);
+bit_procs(bit_forcemono_map_rgb_color, bit_map_cmyk_color);
 const gx_device_printer gs_bitcmyk_device =
 {prn_device_body(gx_device_printer, bitcmyk_procs, "bitcmyk",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -137,6 +147,28 @@ bit_map_rgb_color(gx_device * dev, gx_color_value red,
 
     return ((((red >> drop) << bpc) + (green >> drop)) << bpc) +
 	(blue >> drop);
+}
+
+/* Map RGB to gray shade. */
+/* Only used in CMYK mode when put_params has set ForceMono=1 */
+private gx_color_index
+bit_forcemono_map_rgb_color(gx_device * dev, gx_color_value red,
+		  gx_color_value green, gx_color_value blue)
+{
+    gx_color_value color;
+    int bpc = dev->color_info.depth / 4;	/* This function is used in CMYK mode */
+    int drop = sizeof(gx_color_value) * 8 - bpc;
+    gx_color_value gray = red;
+
+    if ((red != green) || (green != blue))
+	gray = (red * (unsigned long)lum_red_weight +
+	     green * (unsigned long)lum_green_weight +
+	     blue * (unsigned long)lum_blue_weight +
+	     (lum_all_weights / 2))
+		/ lum_all_weights;
+
+    color = (gx_max_color_value - gray) >> drop;	/* color is in K channel */
+    return color;
 }
 
 /* Map color to RGB.  This has 3 separate cases, but since it is rarely */
@@ -214,11 +246,15 @@ my_tpqr(int index, floatp in, const gs_cie_wbsd * pwbsd,
     *out = (in < 0.5 ? in / 2 : in * 3 / 2 - 0.5);
     return 0;
 }
+
 private int
 bit_get_params(gx_device * pdev, gs_param_list * plist)
 {
     int ecode = gdev_prn_get_params(pdev, plist);
     int code;
+    /* The following is a hack to get the original num_components. See comment above */
+    int ncomps = REAL_NUM_COMPONENTS(pdev);
+    int forcemono = (ncomps == pdev->color_info.num_components) ? 0 : 1;
 
     if (param_requested(plist, "CRDDefault") > 0) {
 	gs_cie_render *pcrd;
@@ -248,6 +284,7 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
 	if (code < 0)
 	    ecode = code;
     }
+
     if (param_requested(plist, "bitTPQRDefault") > 0) {
 	gs_cie_transform_proc my_proc = my_tpqr;
 	static byte my_addr[sizeof(gs_cie_transform_proc)];
@@ -261,21 +298,27 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
 	if (code < 0)
 	    ecode = code;
     }
+
+    if ((code = param_write_int(plist, "ForceMono", &forcemono)) < 0) {
+	ecode = code;
+    }
+
     return ecode;
 }
 
 /* Set parameters.  We allow setting the number of bits per component. */
+/* Also, ForceMono=1 forces monochrome output from RGB/CMYK devices. */
 private int
 bit_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_color_info save_info;
-    int ncomps = pdev->color_info.num_components;
+    int ncomps = REAL_NUM_COMPONENTS(pdev);
+    int new_ncomps = ncomps;
     int bpc = pdev->color_info.depth / ncomps;
     int v;
     int ecode = 0;
-    int code;
-    static const byte depths[4][8] =
-    {
+    int code, ccode;
+    static const byte depths[4][8] = {
 	{1, 2, 0, 4, 8, 0, 0, 8},
 	{0},
 	{4, 8, 0, 16, 16, 0, 0, 24},
@@ -312,12 +355,28 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 				       ecode = gs_error_rangecheck);
 	    }
     }
+
+    switch (ccode = param_read_int(plist, (vname = "ForceMono"), &v)) {
+    case 0:
+	if (v == 1) {
+	    new_ncomps = 1;
+	    break;
+	}
+	else if (v == 0)
+	    break;
+	code = gs_error_rangecheck;
+    default:
+	ecode = code;
+	param_signal_error(plist, vname, ecode);
+    case 1:
+	break;
+    }
     if (ecode < 0)
 	return ecode;
-    /* Temporarily reset the color_info so that gdev_prn_put_params */
-    /* won't complain. */
+
+    /* Tuck away the color_info in case gdev_prn_put_params fails */
     save_info = pdev->color_info;
-    if (code != 1) {
+    if (code != 1 || ccode != 1) {
 	pdev->color_info.depth = depths[ncomps - 1][bpc - 1];
 	pdev->color_info.max_gray = pdev->color_info.max_color =
 	    (pdev->color_info.dither_grays =
@@ -329,9 +388,21 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 	pdev->color_info = save_info;
 	return ecode;
     }
+    /* Now change num_components -- couldn't above because	*/
+    /*  '1' is special in gx_default_put_params			*/
+    pdev->color_info.num_components = new_ncomps;
     if (code != 1) {
 	if (pdev->is_open)
 	    gs_closedevice(pdev);
+    }
+    /* Reset the map_cmyk_color procedure if appropriate. */
+    if (dev_proc(pdev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ||
+	dev_proc(pdev, map_cmyk_color) == cmyk_8bit_map_cmyk_color ||
+	dev_proc(pdev, map_cmyk_color) == bit_map_cmyk_color) {
+	set_dev_proc(pdev, map_cmyk_color,
+		     pdev->color_info.depth == 4 ? cmyk_1bit_map_cmyk_color :
+		     pdev->color_info.depth == 32 ? cmyk_8bit_map_cmyk_color :
+		     bit_map_cmyk_color);
     }
     return 0;
 }
