@@ -44,15 +44,48 @@ PCL_TOP_OBJ=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
+# note agfa gives it libraries incompatible names so they cannot be
+# properly found by the linker.  Change the library names to reflect the
+# following (i.e. the if library should be named libif.a
+# NB - this should all be done automatically by choosing the device
+# but it ain't.
+
+# !!!! The user is responsible for building the agfa or freetype libs.
+# We don't overload the makefile with nonsense to build these
+# libraries on the fly. If the artifex font scaler is chosen the
+# makefiles will build the scaler automatically!!!!
+
+# Pick a font system technology.  PCL and XL do not need to use the
+# same scaler.
+# ufst - Agfa universal font scaler.
+# fts - freetype font system.
+# afs - artifex font scaler.
+PCL_FONT_SCALER=afs
+PXL_FONT_SCALER=afs
+
+# 3 mutually exclusive choices follow, pick one.
+# CHOICE 1, if you chose ufst (agfa) uncomment the next two variable
+# assignments
+#LDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
+# agfa does not use normalized library names (ie we expect libif.a not
+# agfa's if_lib.a)
+#EXTRALIBS=-lif -lfco -lpsi -ltt
+AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/
+# CHOICE 2, if you chose ufst uncomment the next two variable
+# assignments.
+#LDFLAGS=-Xlinker -rpath -Xlinker -L../pl/freetype-1.3.1/lib/.libs
+#EXTRALIBS=-lttf
+# CHOICE 3, if you chose the artifex font scaler.
+LDFLAGS=
+EXTRALIBS=
+
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 # Note that the omission of -Dconst= rules out the use of gcc versions
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
-#GCFLAGS=-Dconst= -Wall -Wpointer-arith -Wstrict-prototypes
-GCFLAGS=-Wall -Wcast-qual -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
+GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
 CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
-LDFLAGS=$(XLDFLAGS)
-EXTRALIBS=
+
 XINCLUDE=-I/usr/local/X/include
 XLIBDIRS=-L/usr/X11/lib
 XLIBDIR=
