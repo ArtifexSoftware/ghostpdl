@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -163,12 +163,12 @@ bbox_close_device(gx_device * dev)
 	 * This device was created as a wrapper for a compositor.
 	 * Just free the devices.
 	 */
-	int code = (*dev_proc(tdev, close_device)) (tdev);
+	int code = gs_closedevice(tdev);
 
 	gs_free_object(dev->memory, dev, "bbox_close_device(composite)");
 	return code;
     } else {
-	return (tdev == 0 ? 0 : (*dev_proc(tdev, close_device)) (tdev));
+	return (tdev == 0 ? 0 : gs_closedevice(tdev));
     }
 }
 
@@ -261,7 +261,7 @@ bbox_open_device(gx_device * dev)
     /* gx_forward_open_device doesn't exist */
     {
 	gx_device *tdev = bdev->target;
-	int code = (tdev == 0 ? 0 : (*dev_proc(tdev, open_device)) (tdev));
+	int code = (tdev == 0 ? 0 : gs_opendevice(tdev));
 
 	bbox_copy_params(bdev, true);
 	return code;
