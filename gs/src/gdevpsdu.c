@@ -229,7 +229,7 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 
 	switch (vdev->color_info.num_components) {
 	case 4:
-	    if (v0 == 0 && v1 == 0 && v2 == 0) {
+	    if (v0 == 0 && v1 == 0 && v2 == 0 && ppscc->setgray != 0) {
 		v3 = 1.0 - v3;
 		goto g;
 	    }
@@ -237,7 +237,7 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	    setcolor = ppscc->setcmykcolor;
 	    break;
 	case 3:
-	    if (v1 == v2 && v2 == v3)
+	    if (v1 == v2 && v2 == v3 && ppscc->setgray != 0)
 		goto g;
 	    pprintg3(s, "%g %g %g", v1, v2, v3);
 	    setcolor = ppscc->setrgbcolor;
