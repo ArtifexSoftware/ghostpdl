@@ -44,6 +44,8 @@ struct gs_type42_data_s {
     int (*get_metrics)(P4(gs_font_type42 *pfont, uint glyph_index, int wmode,
 			  float sbw[4]));
     /* The following are cached values. */
+    ulong cmap;			/* offset to cmap table (not used by */
+				/* renderer, only here for clients) */
     ulong glyf;			/* offset to glyf table */
     uint unitsPerEm;		/* from head */
     uint indexToLocFormat;	/* from head */

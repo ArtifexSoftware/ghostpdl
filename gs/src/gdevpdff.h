@@ -230,6 +230,8 @@ struct pdf_font_s {
 		      sizeof(long) * 8 / 3 + 1 + 4 /* <id> 0 R */
 		      ) + 1];
     font_type sub_font_type;	/* FontType of DescendantFont */
+    int from_Unicode;		/* if >=0, CMap says chars are Unicode, */
+				/* this is WMode */
 
     /* Members for CIDFonts. */
 

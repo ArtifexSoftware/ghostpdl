@@ -452,6 +452,7 @@ struct gx_device_pdf_s {
     pdf_resource_list_t resources[NUM_RESOURCE_TYPES];
     /* cs_Patterns[0] is colored; 1,3,4 are uncolored + Gray,RGB,CMYK */
     pdf_resource_t *cs_Patterns[5];
+    pdf_resource_t *Identity_ToUnicode_CMaps[2]; /* WMode = 0,1 */
     pdf_resource_t *last_resource;
     pdf_outline_level_t outline_levels[MAX_OUTLINE_DEPTH];
     int outline_depth;

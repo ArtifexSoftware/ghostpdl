@@ -86,13 +86,21 @@ gs_type42_font_init(gs_font_type42 * pfont)
     }
     numTables = U16(OffsetTable + 4);
     ACCESS(12, numTables * 16, TableDirectory);
-    /* Clear optional entries. */
-    memset(pfont->data.metrics, 0, sizeof(pfont->data.metrics));
+    /* Clear all non-client-supplied data. */
+    {
+	void *proc_data = pfont->data.proc_data;
+
+	memset(&pfont->data, 0, sizeof(pfont->data));
+	pfont->data.string_proc = string_proc;
+	pfont->data.proc_data = proc_data;
+    }
     for (i = 0; i < numTables; ++i) {
 	const byte *tab = TableDirectory + i * 16;
 	ulong offset = u32(tab + 8);
 
-	if (!memcmp(tab, "glyf", 4))
+	if (!memcmp(tab, "cmap", 4))
+	    pfont->data.cmap = offset;
+	else if (!memcmp(tab, "glyf", 4))
 	    pfont->data.glyf = offset;
 	else if (!memcmp(tab, "head", 4)) {
 	    const byte *head;

@@ -235,6 +235,7 @@ const gx_device_pdf gs_pdfwrite_device =
      {
 	 {0}}},			/* resources */
  {0},				/* cs_Patterns */
+ {0},				/* Identity_ToUnicode_CMaps */
  0,				/* last_resource */
  {
      {

@@ -22,7 +22,7 @@
 #include "gsmatrix.h"		/* for gxfont.h */
 #include "gsstruct.h"
 #include "gsutil.h"		/* for bytes_compare */
-#include "gxfcmap.h"
+#include "gxfcmap1.h"
 #include "gxfont.h"
 #include "ialloc.h"
 #include "icid.h"
@@ -49,7 +49,7 @@ free_code_map(gx_code_map_t * pcmap, gs_memory_t * mem)
 	int i;
 
 	for (i = 0; i < pcmap->num_lookup; ++i) {
-	    gx_code_lookup_range_t *pclr = &pcmap->lookup[i];
+	    gx_cmap_lookup_range_t *pclr = &pcmap->lookup[i];
 
 	    if (pclr->value_type == CODE_VALUE_GLYPH)
 		gs_free_string(mem, pclr->values.data, pclr->values.size,
@@ -61,7 +61,7 @@ free_code_map(gx_code_map_t * pcmap, gs_memory_t * mem)
 
 /* Convert code ranges to internal form. */
 private int
-acquire_code_ranges(gs_cmap_t *cmap, const ref * pref, gs_memory_t * mem)
+acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
 {
     uint num_ranges;
     gx_code_space_range_t *ranges;
@@ -99,18 +99,18 @@ acquire_code_ranges(gs_cmap_t *cmap, const ref * pref, gs_memory_t * mem)
 
 /* Convert a code map to internal form. */
 private int
-acquire_code_map(gx_code_map_t * pcmap, const ref * pref, gs_cmap_t * root,
-		 gs_memory_t * mem)
+acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
+		 gs_memory_t *mem)
 {
     uint num_lookup;
-    gx_code_lookup_range_t *pclr;
+    gx_cmap_lookup_range_t *pclr;
     long i;
 
     if (!r_is_array(pref) || (num_lookup = r_size(pref)) % 5 != 0)
 	return_error(e_rangecheck);
     num_lookup /= 5;
-    pclr = gs_alloc_struct_array(mem, num_lookup, gx_code_lookup_range_t,
-				 &st_code_lookup_range_element,
+    pclr = gs_alloc_struct_array(mem, num_lookup, gx_cmap_lookup_range_t,
+				 &st_cmap_lookup_range_element,
 				 "acquire_code_map(lookup ranges)");
     if (pclr == 0)
 	return_error(e_VMerror);
@@ -148,13 +148,13 @@ acquire_code_map(gx_code_map_t * pcmap, const ref * pref, gs_cmap_t * root,
 	    /* This is a single entry consisting only of the prefix. */
 	    if (r_size(&rkeys) != 0)
 		return_error(e_rangecheck);
-	    pclr->num_keys = 1;
+	    pclr->num_entries = 1;
 	} else {
 	    int step = pclr->key_size * (pclr->key_is_range ? 2 : 1);
 
 	    if (r_size(&rkeys) % step != 0)
 		return_error(e_rangecheck);
-	    pclr->num_keys = r_size(&rkeys) / step;
+	    pclr->num_entries = r_size(&rkeys) / step;
 	}
 	pclr->keys.data = rkeys.value.bytes,
 	    pclr->keys.size = r_size(&rkeys);
@@ -163,18 +163,18 @@ acquire_code_map(gx_code_map_t * pcmap, const ref * pref, gs_cmap_t * root,
 	if (r_has_type(&rvalues, t_string)) {
 	    if (pclr->value_type == CODE_VALUE_GLYPH)
 		return_error(e_rangecheck);
-	    if (r_size(&rvalues) % pclr->num_keys != 0 ||
-		r_size(&rvalues) / pclr->num_keys != pclr->value_size)
+	    if (r_size(&rvalues) % pclr->num_entries != 0 ||
+		r_size(&rvalues) / pclr->num_entries != pclr->value_size)
 		return_error(e_rangecheck);
 	    pclr->values.data = rvalues.value.bytes,
 		pclr->values.size = r_size(&rvalues);
 	} else {
-	    uint values_size = pclr->num_keys * pclr->value_size;
+	    uint values_size = pclr->num_entries * pclr->value_size;
 	    long k;
 	    byte *pvalue;
 
 	    if (pclr->value_type != CODE_VALUE_GLYPH ||
-		r_size(&rvalues) != pclr->num_keys ||
+		r_size(&rvalues) != pclr->num_entries ||
 		pclr->value_size > sizeof(gs_glyph))
 		return_error(e_rangecheck);
 	    pclr->values.data = gs_alloc_string(mem, values_size,
@@ -183,7 +183,7 @@ acquire_code_map(gx_code_map_t * pcmap, const ref * pref, gs_cmap_t * root,
 		return_error(e_VMerror);
 	    pclr->values.size = values_size;
 	    pvalue = pclr->values.data;
-	    for (k = 0; k < pclr->num_keys; ++k) {
+	    for (k = 0; k < pclr->num_entries; ++k) {
 		ref rvalue;
 		gs_glyph value;
 		int i;
@@ -284,10 +284,16 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
     uint num_fonts;
     uint i;
 
+    /*
+     * We have no way of checking whether the CodeMap is a concrete
+     * subclass of gs_cmap_t, so we just check that it is in fact a
+     * t_struct and is large enough.
+     */
     if (dict_find_string(op, "CMap", &prcmap) <= 0 ||
 	!r_has_type(prcmap, t_dictionary) ||
 	dict_find_string(prcmap, "CodeMap", &pcodemap) <= 0 ||
-	!r_has_stype(pcodemap, imem, st_cmap)
+	!r_is_struct(pcodemap) ||
+	gs_object_size(imem, r_ptr(pcodemap, gs_cmap_t)) < sizeof(gs_cmap_t)
 	)
 	return_error(e_invalidfont);
     pcmap = r_ptr(pcodemap, gs_cmap_t);
@@ -355,25 +361,12 @@ zbuildcmap(i_ctx_t *i_ctx_p)
     ref *pcodemapdata;
     ref *pcodemap;
     ref rname, rcidsi, rcoderanges, rdefs, rnotdefs;
-    gs_cmap_t *pcmap = 0;
-    gs_cid_system_info_t *pcidsi = 0;
+    gs_cmap_adobe1_t *pcmap = 0;
     ref rcmap;
     uint i;
 
     check_type(*op, t_dictionary);
     check_dict_write(*op);
-    pcmap = ialloc_struct(gs_cmap_t, &st_cmap, "zbuildcmap(cmap)");
-    if (pcmap == 0) {
-	code = gs_note_error(e_VMerror);
-	goto fail;
-    }
-    gs_cmap_init(pcmap);
-    if ((code = dict_int_param(op, "CMapType", 0, 1, -1, &pcmap->CMapType)) < 0 ||
-	(code = dict_float_param(op, "CMapVersion", 0.0, &pcmap->CMapVersion)) < 0 ||
-	(code = dict_uid_param(op, &pcmap->uid, 0, imemory, i_ctx_p)) < 0 ||
-	(code = dict_int_param(op, "WMode", 0, 1, 0, &pcmap->WMode)) < 0
-	)
-	goto fail;
     if ((code = dict_find_string(op, "CMapName", &pcmapname)) <= 0) {
 	code = gs_note_error(e_rangecheck);
 	goto fail;
@@ -383,15 +376,6 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 	goto fail;
     }
     name_string_ref(pcmapname, &rname);
-    pcmap->CMapName.data = rname.value.const_bytes;
-    pcmap->CMapName.size = r_size(&rname);
-    if (dict_find_string(op, "UIDOffset", &puidoffset) > 0) {
-	if (!r_has_type(puidoffset, t_integer)) {
-	    code = gs_note_error(e_typecheck);
-	    goto fail;
-	}
-	pcmap->UIDOffset = puidoffset->value.intval; /* long, not int */
-    }
     if (dict_find_string(op, ".CodeMapData", &pcodemapdata) <= 0 ||
 	!r_has_type(pcodemapdata, t_array) ||
 	r_size(pcodemapdata) != 3 ||
@@ -403,17 +387,25 @@ zbuildcmap(i_ctx_t *i_ctx_p)
     }
     if ((code = acquire_cid_system_info(&rcidsi, op)) < 0)
 	goto fail;
-    pcidsi = ialloc_struct_array(r_size(&rcidsi), gs_cid_system_info_t,
-				 &st_cid_system_info_element,
-				 "zbuildcmap(CIDSystemInfo)");
-    if (pcidsi == 0) {
-	code = gs_note_error(e_VMerror);
+    if ((code = gs_cmap_adobe1_alloc(&pcmap, 0, rname.value.const_bytes,
+				     r_size(&rname), r_size(&rcidsi),
+				     0, 0, 0, 0, 0, imemory)) < 0)
 	goto fail;
+    if ((code = dict_int_param(op, "CMapType", 0, 1, -1, &pcmap->CMapType)) < 0 ||
+	(code = dict_float_param(op, "CMapVersion", 0.0, &pcmap->CMapVersion)) < 0 ||
+	(code = dict_uid_param(op, &pcmap->uid, 0, imemory, i_ctx_p)) < 0 ||
+	(code = dict_int_param(op, "WMode", 0, 1, 0, &pcmap->WMode)) < 0
+	)
+	goto fail;
+    if (dict_find_string(op, "UIDOffset", &puidoffset) > 0) {
+	if (!r_has_type(puidoffset, t_integer)) {
+	    code = gs_note_error(e_typecheck);
+	    goto fail;
+	}
+	pcmap->UIDOffset = puidoffset->value.intval; /* long, not int */
     }
-    pcmap->CIDSystemInfo = pcidsi;
-    pcmap->num_fonts = r_size(&rcidsi);
     for (i = 0; i < r_size(&rcidsi); ++i) {
-	code = get_cid_system_info(pcidsi + i, &rcidsi, i);
+	code = get_cid_system_info(pcmap->CIDSystemInfo + i, &rcidsi, i);
 	if (code < 0)
 	    goto fail;
     }
@@ -438,57 +430,17 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 fail:
     free_code_map(&pcmap->notdef, imemory);
     free_code_map(&pcmap->def, imemory);
-    ifree_object(pcmap, "zbuildcmap(cmap)");
-    ifree_object(pcidsi, "zbuildcmap(CIDSystemInfo)");
+    if (pcmap) {
+	ifree_object(pcmap->CIDSystemInfo, "zbuildcmap(CIDSystemInfo)");
+	ifree_object(pcmap, "zbuildcmap(cmap)");
+    }
     return code;
 }
-
-#if defined(DEBUG) || defined(PROFILE) || defined(TEST)
-
-#include "stream.h"
-#include "spprint.h"
-#include "files.h"
-#include "gdevpsf.h"
-
-/* <file> <cmap> .writecmap - */
-private int
-zfcmap_put_name_default(stream *s, const byte *str, uint size)
-{
-    stream_putc(s, '/');
-    stream_write(s, str, size);
-    return 0;
-}
-private int
-zwritecmap(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    ref *pcodemap;
-    gs_cmap_t *pcmap;
-    int code;
-    stream *s;
-
-    check_type(*op, t_dictionary);
-    if (dict_find_string(op, "CodeMap", &pcodemap) <= 0 ||
-	!r_is_struct(pcodemap)
-	)
-	return_error(e_typecheck);
-    check_write_file(s, op - 1);
-    pcmap = r_ptr(pcodemap, gs_cmap_t);
-    code = psf_write_cmap(s, pcmap, zfcmap_put_name_default, NULL);
-    if (code >= 0)
-	pop(2);
-    return code;
-}
-
-#endif
 
 /* ------ Initialization procedure ------ */
 
 const op_def zfcmap_op_defs[] =
 {
     {"1.buildcmap", zbuildcmap},
-#if defined(DEBUG) || defined(PROFILE) || defined(TEST)
-    {"2.writecmap", zwritecmap},
-#endif
     op_def_end(0)
 };

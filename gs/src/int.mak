@@ -1403,11 +1403,9 @@ $(PSD)cmapread.dev : $(INT_MAK) $(ECHOGS_XE) $(cmapread_)\
 
 $(PSOBJ)zfcmap.$(OBJ) : $(PSSRC)zfcmap.c $(OP) $(memory__h)\
  $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
- $(gdevpsf_h)\
- $(gxfcmap_h) $(gxfont_h)\
- $(files_h) $(ialloc_h) $(icid_h) $(iddict_h) $(idparam_h) $(ifont_h) $(iname_h)\
- $(store_h)\
- $(spprint_h) $(stream_h)
+ $(gxfcmap1_h) $(gxfont_h)\
+ $(ialloc_h) $(icid_h) $(iddict_h) $(idparam_h) $(ifont_h) $(iname_h)\
+ $(store_h)
 	$(PSCC) $(PSO_)zfcmap.$(OBJ) $(C_) $(PSSRC)zfcmap.c
 
 cidread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcid.$(OBJ) $(PSOBJ)zfcid0.$(OBJ) $(PSOBJ)zfcid1.$(OBJ)
@@ -1442,6 +1440,21 @@ $(PSOBJ)zfcid1.$(OBJ) : $(PSSRC)zfcid1.c $(OP) $(memory__h)\
  $(bfont_h) $(icid_h) $(idict_h) $(idparam_h)\
  $(ifcid_h) $(ifont42_h) $(store_h)
 	$(PSCC) $(PSO_)zfcid1.$(OBJ) $(C_) $(PSSRC)zfcid1.c
+
+# Testing only (CIDFont and CMap)
+
+cidtest_=$(PSOBJ)zcidtest.$(OBJ)
+$(PSD)cidtest.dev : $(INT_MAK) $(ECHOGS_XE) $(cidtest_)\
+ $(PSD)cidfont.dev $(PSD)cmapread.dev
+	$(SETMOD) $(PSD)cidtest $(cidtest_)
+	$(ADDMOD) $(PSD)cidtest -oper zcidtest
+	$(ADDMOD) $(PSD)cidtest -include $(PSD)cidfont $(PSD)cmapread
+
+$(PSOBJ)zcidtest.$(OBJ) : $(PSSRC)zcidtest.c $(string__h) $(OP)\
+ $(gdevpsf_h) $(gxfont_h) $(gxfont0c_h)\
+ $(spprint_h) $(stream_h)\
+ $(files_h) $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zcidtest.$(OBJ) $(C_) $(PSSRC)zcidtest.c
 
 # ---------------- CIE color ---------------- #
 

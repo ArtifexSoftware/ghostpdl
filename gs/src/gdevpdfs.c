@@ -26,6 +26,7 @@
 #include "gxfixed.h"		/* for gxfcache.h */
 #include "gxfont.h"
 #include "gxfont0.h"
+#include "gxfont0c.h"
 #include "gxfont1.h"
 #include "gxfont42.h"
 #include "gxfcache.h"		/* for orig_fonts list */
@@ -511,6 +512,39 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font *font, pdf_font_t *psubf,
     return 0;
 }
 private int
+write_cmap_resource(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
+		    pdf_resource_t **ppres)
+{
+    pdf_data_writer_t writer;
+    stream *s;
+    int code = pdf_begin_resource(pdev, resourceCMap, pcmap->id, ppres);
+
+    if (code < 0)
+	return code;
+    s = pdev->strm;
+    pprintd1(s, "/WMode %d/CMapName", pcmap->WMode);
+    pdf_put_name(pdev, pcmap->CMapName.data, pcmap->CMapName.size);
+    stream_puts(s, "/CIDSystemInfo");
+    code = pdf_write_CMap_system_info(pdev, pcmap);
+    if (code < 0)
+	return code;
+    code = pdf_begin_data_stream(pdev, &writer,
+				 DATA_STREAM_NOT_BINARY |
+				 (pdev->CompressFonts ?
+				  DATA_STREAM_COMPRESS : 0));
+    if (code < 0)
+	return code;
+    code = psf_write_cmap(writer.binary.strm, pcmap,
+			  pdf_put_name_chars_proc(pdev), NULL);
+    if (code < 0)
+	return code;
+    code = pdf_end_data(&writer);
+    if (code < 0)
+	return code;
+    (*ppres)->object->written = true; /* don't try to write at end */
+    return 0;
+}
+private int
 process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 		  uint size)
 {
@@ -557,35 +591,10 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     if (*pcmn == 0) {		/* not standard */
 	pcmres = pdf_find_resource_by_gs_id(pdev, resourceCMap, pcmap->id);
 	if (pcmres == 0) {
-	    /*
-	     * Create the CMap object, and write the stream.
-	     */
-	    pdf_data_writer_t writer;
-	    stream *s;
-
-	    code = pdf_begin_resource(pdev, resourceCMap, pcmap->id, &pcmres);
+	    /* Create and write the CMap object. */
+	    code = write_cmap_resource(pdev, pcmap, &pcmres);
 	    if (code < 0)
 		return code;
-	    s = pdev->strm;
-	    pprintd1(s, "/WMode %d/CMapName", pcmap->WMode);
-	    pdf_put_name(pdev, pcmap->CMapName.data, pcmap->CMapName.size);
-	    stream_puts(s, "/CIDSystemInfo");
-	    code = pdf_write_CMap_system_info(pdev, pcmap);
-	    if (code < 0)
-		return code;
-	    code = pdf_begin_data_stream(pdev, &writer,
-					 DATA_STREAM_NOT_BINARY |
-					 DATA_STREAM_COMPRESS);
-	    if (code < 0)
-		return code;
-	    code = psf_write_cmap(writer.binary.strm, pcmap,
-				  pdf_put_name_chars_proc(pdev), NULL);
-	    if (code < 0)
-		return code;
-	    code = pdf_end_data(&writer);
-	    if (code < 0)
-		return code;
-	    pcmres->object->written = true; /* don't try to write at end */
 	}
     }
 
@@ -617,6 +626,34 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     /* Copy the subfont name and type to the composite font. */
     ppf->fname = psubf->FontDescriptor->FontName;
     ppf->sub_font_type = subfont->FontType;
+    if (pcmap->from_Unicode) {
+	gs_cmap_ranges_enum_t renum;
+
+	gs_cmap_ranges_enum_init(pcmap, &renum);
+	if (gs_cmap_enum_next_range(&renum) == 0 && renum.range.size == 2 &&
+	    gs_cmap_enum_next_range(&renum) == 1) {
+	    /* Exactly one code space range, of size 2. */
+	    ppf->from_Unicode = pcmap->WMode;
+	} else
+	    ppf->from_Unicode = -1;
+    } else
+	ppf->from_Unicode = -1;
+    if (ppf->from_Unicode >= 0 &&
+	!pdev->Identity_ToUnicode_CMaps[pcmap->WMode]
+	) {
+	/* Create and write out an identity ToUnicode CMap now. */
+	gs_cmap_t *pidcmap;
+
+	code = gs_cmap_create_char_identity(&pidcmap, 2, pcmap->WMode,
+					    pdev->memory);
+	if (code < 0)
+	    return code;
+	pidcmap->CMapType = 2;	/* per PDF Reference */
+	code = write_cmap_resource(pdev, pidcmap,
+				   &pdev->Identity_ToUnicode_CMaps[pcmap->WMode]);
+	if (code < 0)
+	    return code;
+    }
     if (pcmres) {
 	sprintf(ppf->cmapname, "%ld 0 R", pdf_resource_id(pcmres));
     } else {
@@ -735,42 +772,13 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     /* Create the CMap and Type 0 font if they don't exist already. */
 
     if (!ppf->glyphshow_font) {
-	gs_memory_t *mem = font->memory;
-	gs_font_type0 *font0 = (gs_font_type0 *)
-	    gs_font_alloc(mem, &st_gs_font_type0,
-			  &gs_font_procs_default, NULL, "process_cid_text");
-	/* We allocate Encoding dynamically only for the sake of the GC. */
-	uint *encoding = (uint *)
-	    gs_alloc_bytes(mem, sizeof(uint), "process_cid_text");
-	gs_font **fdep = gs_alloc_struct_array(mem, 1, gs_font *,
-					       &st_gs_font_ptr_element,
-					       "process_cid_text");
-	gs_cmap_t *pcmap;
+	gs_font_type0 *font0;
 	pdf_font_t *pgsf;
 
-	if (font0 == 0 || encoding == 0 || fdep == 0)
-	    return_error(gs_error_VMerror);
-	code = gs_cmap_create_identity(&pcmap, 2, font->WMode, mem);
+	code = gs_font_type0_from_cidfont(&font0, font, font->WMode,
+					  &scale_matrix, font->memory);
 	if (code < 0)
 	    return code;
-
-	font0->FontMatrix = scale_matrix;
-	font0->FontType = ft_composite;
-	font0->procs.init_fstack = gs_type0_init_fstack;
-	font0->procs.define_font = 0; /* not called */
-	font0->procs.make_font = 0; /* not called */
-	font0->procs.next_char_glyph = gs_type0_next_char_glyph;
-	font0->key_name = font->key_name;
-	font0->font_name = font->font_name;
-	font0->data.FMapType = fmap_CMap;
-	encoding[0] = 0;
-	font0->data.Encoding = encoding;
-	font0->data.encoding_size = 1;
-	fdep[0] = font;
-	font0->data.FDepVector = fdep;
-	font0->data.fdep_size = 1;
-	font0->data.CMap = pcmap;
-
 	code = pdf_create_pdf_font(pdev, (gs_font *)font0, &font0->FontMatrix,
 				   &pgsf);
 	if (code < 0)

@@ -504,6 +504,9 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	pprints1(s, "/Encoding %s", pef->cmapname);
 	pprintld1(s, "/DescendantFonts[%ld 0 R]",
 		pdf_resource_id((const pdf_resource_t *)pef->DescendantFont));
+	if (pef->from_Unicode >= 0)
+	    pprintld1(s, "/ToUnicode %ld 0 R",
+		      pdf_resource_id(pdev->Identity_ToUnicode_CMaps[pef->from_Unicode]));
 	write_Widths = 0;
 	goto out;
     }

@@ -15,8 +15,7 @@
 */
 
 /* $Id$ */
-/* CMap data definition */
-/* Requires gsstruct.h */
+/* Public interface to CMaps */
 
 #ifndef gsfcmap_INCLUDED
 #  define gsfcmap_INCLUDED
@@ -32,9 +31,23 @@ typedef struct gs_cmap_s gs_cmap_t;
 /* ---------------- Procedural interface ---------------- */
 
 /*
+ * Create an Identity CMap.
+ */
+int gs_cmap_create_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
+			    gs_memory_t *mem);
+
+/*
+ * Create an Identity CMap where each entry varies only in the lowest byte,
+ * and that maps to characters rather than to CIDs.
+ * (This is suitable for use as a ToUnicode CMap, for example.)
+ */
+int gs_cmap_create_char_identity(gs_cmap_t **ppcmap, int num_bytes,
+				 int wmode, gs_memory_t *mem);
+
+/*
  * Decode a character from a string using a CMap, updating the index.
  * Return 0 for a CID or name, N > 0 for a character code where N is the
- * number of bytes in the code, or an error.  Shift the decoded bytes into
+ * number of bytes in the code, or an error.  Store the decoded bytes in
  * *pchr.  For undefined characters, set *pglyph = gs_no_glyph and return 0.
  */
 int gs_cmap_decode_next(P6(const gs_cmap_t *pcmap, const gs_const_string *str,

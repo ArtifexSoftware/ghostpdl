@@ -239,11 +239,24 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if (pfont->FontType != ft_CID_TrueType)
-	return_error(e_invalidfont);
     check_type(*op, t_integer);
-    code = z11_CIDMap_proc((gs_font_cid2 *)pfont,
-			   (gs_glyph)(gs_min_cid_glyph + op->value.intval));
+#if defined(TEST)
+    /* Allow a Type 42 font here, for testing .wrapfont. */
+    if (pfont->FontType == ft_TrueType) {
+	/* Use the CID as the glyph index. */
+	if (op->value.intval < 0 ||
+	    op->value.intval >= ((gs_font_type42 *)pfont)->data.numGlyphs
+	    )
+	    return_error(e_rangecheck);
+	code = (int)op->value.intval;
+    } else
+#endif
+    {
+	if (pfont->FontType != ft_CID_TrueType)
+	    return_error(e_invalidfont);
+	code = z11_CIDMap_proc((gs_font_cid2 *)pfont,
+			(gs_glyph)(gs_min_cid_glyph + op->value.intval));
+    }
     if (code < 0)
 	return code;
     make_int(op - 1, code);

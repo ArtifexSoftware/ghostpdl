@@ -1699,16 +1699,23 @@ $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
 gxcid_h=$(GLSRC)gxcid.h $(gsstype_h)
 gxfcid_h=$(GLSRC)gxfcid.h $(gxcid_h) $(gxfont_h) $(gxfont42_h)
 gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h) $(gxcid_h)
+gxfont0c_h=$(GLSRC)gxfont0c.h $(gxfcid_h) $(gxfont0_h)
 
-cidlib_=$(GLOBJ)gsfcid.$(OBJ)
-$(GLD)cidlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cidlib_)
+cidlib_=$(GLOBJ)gsfcid.$(OBJ) $(GLOBJ)gsfcid2.$(OBJ)
+# cidlib requires ttflib for CIDFontType 2 fonts.
+$(GLD)cidlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cidlib_) $(GLD)ttflib.dev
 	$(SETMOD) $(GLD)cidlib $(cidlib_)
+	$(ADDMOD) $(GLD)cidlib -include $(GLD)ttflib
 
 $(GLOBJ)gsfcid.$(OBJ) : $(GLSRC)gsfcid.c $(GX) $(memory__h)\
  $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h)
 	$(GLCC) $(GLO_)gsfcid.$(OBJ) $(C_) $(GLSRC)gsfcid.c
 
-cmaplib_=$(GLOBJ)gsfcmap.$(OBJ)
+$(GLOBJ)gsfcid2.$(OBJ) : $(GLSRC)gsfcid2.c $(GXERR) $(memory__h)\
+  $(gsutil_h) $(gxfcid_h) $(gxfcmap_h) $(gxfont_h) $(gxfont0c_h)
+	$(GLCC) $(GLO_)gsfcid2.$(OBJ) $(C_) $(GLSRC)gsfcid2.c
+
+cmaplib_=$(GLOBJ)gsfcmap.$(OBJ) $(GLOBJ)gsfcmap1.$(OBJ)
 $(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev
 	$(SETMOD) $(GLD)cmaplib $(cmaplib_)
 	$(ADDMOD) $(GLD)cmaplib -include $(GLD)cidlib
@@ -1716,6 +1723,11 @@ $(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev
 $(GLOBJ)gsfcmap.$(OBJ) : $(GLSRC)gsfcmap.c $(GXERR) $(memory__h)\
  $(gsstruct_h) $(gsutil_h) $(gxfcmap_h)
 	$(GLCC) $(GLO_)gsfcmap.$(OBJ) $(C_) $(GLSRC)gsfcmap.c
+
+$(GLOBJ)gsfcmap1.$(OBJ) : $(GLSRC)gsfcmap1.c $(GXERR)\
+ $(memory__h) $(string__h)\
+ $(gsstruct_h) $(gsutil_h) $(gxfcmap1_h)
+	$(GLCC) $(GLO_)gsfcmap1.$(OBJ) $(C_) $(GLSRC)gsfcmap1.c
 
 psf0lib_=$(GLOBJ)gschar0.$(OBJ) $(GLOBJ)gsfont0.$(OBJ)
 $(GLD)psf0lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)cmaplib.dev $(psf0lib_)
@@ -1731,6 +1743,12 @@ $(GLOBJ)gsfont0.$(OBJ) : $(GLSRC)gsfont0.c $(GXERR) $(memory__h)\
  $(gsmatrix_h) $(gsstruct_h) $(gxfixed_h) $(gxdevmem_h) $(gxfcache_h)\
  $(gxfont_h) $(gxfont0_h) $(gxdevice_h)
 	$(GLCC) $(GLO_)gsfont0.$(OBJ) $(C_) $(GLSRC)gsfont0.c
+
+# gsfont0c is not needed for the PS interpreter, but it is used by pdfwrite
+# and by the PCL interpreter.
+$(GLOBJ)gsfont0c.$(OBJ) : $(GLSRC)gsfont0c.c $(GXERR) $(memory__h)\
+ $(gxfont_h) $(gxfont0_h) $(gxfont0c_h) $(gxfcid_h) $(gxfcmap_h)
+	$(GLCC) $(GLO_)gsfont0c.$(OBJ) $(C_) $(GLSRC)gsfont0c.c
 
 # ---------------- Pattern color ---------------- #
 
