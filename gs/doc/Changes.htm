@@ -8,6 +8,37 @@
 </head>
 <body>
 
+<p><strong><a name="2003-12-09_0637"></a>
+2003-12-09 06:37 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Correct a long standing problem that caused non-optimized builds with
+MSVC on Windows. The default TDEBUG was 1, which circumvented a change
+made to msvccmd.mak to enable /O2 for MSVC_VERSION != 5. Note that
+with MSVC 6 Service Pack 3 is required to avoid an INTERNAL COMPILER
+ERROR when compiling src/idict.c.
+</pre>
+<p>[src/msvc32.mak 1.51]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_0404"></a>
+2003-12-09 04:04 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct some inconsistent line endings.
+</pre>
+<p>[src/stdio_.h 1.10, src/ttfsfnt.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_0305"></a>
+2003-12-09 03:05 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Updated release notes and change history for the 8.12 release.
+</pre>
+<p>[doc/Changes.htm 1.49, doc/Details.htm 1.8, doc/Details8.htm 1.4, doc/History8.htm 1.8, doc/News.htm 1.138]</p>
+</blockquote>
+
 <p><strong><a name="2003-12-08_2317"></a>
 2003-12-08 23:17 Ralph Giles</strong></p>
 <blockquote>
