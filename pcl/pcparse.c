@@ -1,5 +1,21 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
 /* pcparse.c */
@@ -10,6 +26,8 @@
 #include "scommon.h"
 #include "pcparse.h"
 #include "pcstate.h"		/* for display_functions */
+#include "pcursor.h"
+#include "rtgmode.h"
 
 /* We don't know whether an Enable Display Functions takes effect while */
 /* defining a macro.  To play it safe, we're providing both options. */
@@ -31,7 +49,7 @@ gs_private_st_simple(st_pcl_parser_state, pcl_parser_state_t,
  * (pcl_xxx_command_xxx_indices).
  */
 private const pcl_command_definition_t *pcl_command_list[256];
-private int pcl_command_next_index = 0;
+private int pcl_command_next_index;
 /*
  * First-level dispatch for control characters.
  */
@@ -48,7 +66,7 @@ private byte
  */
 #define min_escape_class '!'
 #define max_escape_class '/'
-private byte
+private const byte
   pcl_escape_class_indices[max_escape_class - min_escape_class + 1] = {
     0, 0, 0, 0, 1/*%*/, 2/*&*/, 0, 3/*(*/, 4/*)*/, 5/***/, 0, 0, 0, 0, 0
   };
@@ -337,9 +355,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 			}
 		      if ( do_display_functions() )
 			{ if ( chr == CR )
-			    { code = pcl_do_CR(pcls);
-			      if ( code < 0 )
-				goto x;
+			    { pcl_do_CR(pcls);
 			      code = pcl_do_LF(pcls);
 			    }
 			  else
@@ -441,7 +457,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				    pst->scan_type = scanning_data;
 				    continue;
 				  }
-			        pst->args.data = p + 1;
+			        pst->args.data = (byte *)(p + 1);
 				pst->args.data_on_heap = false;
 				p += count;
 			      }
@@ -477,7 +493,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				      cdefn->proc == pcl_plain_char) &&
 				     !in_macro &&
 				     !pcls->parse_other &&
-				     !pcls->raster.graphics_mode
+				     !pcls->raster_state.graphics_mode
 				   )
 				  { /*
 				     * Look ahead for a run of plain text.
@@ -494,7 +510,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				      }
 				    if_debug0('i', "\n");
 				    code = pcl_text(str, (uint)(p + 1 - str),
-						    pcls);
+						    pcls, false);
 				    if ( code < 0 )
 				      goto x;
 				    cdefn = NULL;
@@ -557,9 +573,9 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 			  goto x;
 		      }
 		    pst->args.command = chr;
-		    if ( !pcls->raster.graphics_mode ||
+		    if ( !pcls->raster_state.graphics_mode ||
 			 (cdefn->actions & pca_raster_graphics) ||
-			 (code = (*pcls->raster.end_graphics)(pcls)) >= 0
+			 (code = pcl_end_graphics_mode(pcls)) >= 0
 		       )
 		      code = (*cdefn->proc)(&pst->args, pcls);
 		    /*
@@ -619,6 +635,8 @@ private void
 pcparse_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { /* Return to PCL mode. */
+            if ( type & pcl_reset_initial )
+                pcl_command_next_index = 0;
 	    if ( !(type & pcl_reset_initial) && pcls->parse_data )
 	      gs_free_object(pcls->memory, pcls->parse_data,
 			     "secondary parser data(reset)");

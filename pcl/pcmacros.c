@@ -124,7 +124,7 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 		 )
 		return 0;
 	      return pcl_execute_macro((const pcl_macro_t *)value, pcls,
-				       0, 0, 0);
+			       pcl_copy_none, pcl_reset_none, pcl_copy_none);
 	    }
 	  case macro_call:	/* 3 */
 	    { /* Call <macro_id>, saving and restoring environment. */
@@ -134,7 +134,7 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 		 )
 		return 0;
 	      return pcl_execute_macro((const pcl_macro_t *)value, pcls,
-				       pcl_copy_before_call, 0,
+				       pcl_copy_before_call, pcl_reset_none,
 				       pcl_copy_after_call);
 	    }
 	  case 4:

@@ -8,6 +8,9 @@
 #ifndef pcfsel_INCLUDED
 #  define pcfsel_INCLUDED
 
+#include "pcstate.h"
+
+
 /* Recompute the font from the parameters if necessary. */
 /* This is used by both PCL and HP-GL/2. */
 int pcl_reselect_font(P2(pcl_font_selection_t *pfs, const pcl_state_t *pcls));
@@ -25,5 +28,11 @@ int pcl_reselect_substitute_font(P3(pcl_font_selection_t *pfs,
  */
 int pcl_select_font_by_id(P3(pcl_font_selection_t *pfs, uint id,
 			     pcl_state_t *pcls));
+
+/* set font parameters after an id selection */
+void
+pcl_set_id_parameters(P3(const pcl_state_t *pcls, 
+		      pcl_font_selection_t *pfs, pl_font_t *fp));
+
 
 #endif				/* pcfsel_INCLUDED */

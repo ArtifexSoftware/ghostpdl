@@ -12,6 +12,7 @@
 #include "pggeom.h"
 #include "pgmisc.h"
 #include "pcfsel.h"
+#include "pcpalet.h"
 
 /* ------ Internal procedures ------ */
 
@@ -184,26 +185,33 @@ hpgl_AD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return hpgl_font_definition(pargs, pgls, 1);
 }
 
-/* CF [mode[,pen]]; */
+/*
+ * CF [mode[,pen]];
+ */
  int
-hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	int mode = 0;
-	int32 pen = 0;
+hpgl_CF(
+    hpgl_args_t *   pargs,
+    hpgl_state_t *  pgls
+)
+{
+    int             mode = 0;
+    int             npen = pcl_palette_get_num_entries(pgls->ppalet);
+    int32           pen = 0;
 
-	if ( hpgl_arg_c_int(pargs, &mode) )
-	  { if ( mode & ~3 )
-	      return e_Range;
-	    /* With only 1 argument, leave the current pen unchanged. */
-	    if ( hpgl_arg_int(pargs, &pen) )
-	      { if ( pen < 0 || pen >= pgls->g.number_of_pens )
-		  return e_Range;
-	      }
-	    else
+    if (hpgl_arg_c_int(pargs, &mode)) {
+        if ((mode & ~3) != 0)
+	    return e_Range;
+
+	/* With only 1 argument, leave the current pen unchanged. */
+	if (hpgl_arg_int(pargs, &pen)) {
+            if ((pen < 0) || (pen >= npen)) 
+		return e_Range;
+	} else
 	      pen = pgls->g.character.edge_pen;
-	  }
-	pgls->g.character.fill_mode = mode;
-	pgls->g.character.edge_pen = pen;
-	return 0;
+    }
+    pgls->g.character.fill_mode = mode;
+    pgls->g.character.edge_pen = pen;
+    return 0;
 }
 
 /* DI [run,rise]; */

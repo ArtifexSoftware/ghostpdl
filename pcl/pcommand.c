@@ -30,39 +30,6 @@ float_value(const pcl_value_t *pv)
 	   (float)(value_is_neg(pv) ? -(int)pv->i - pv->fraction : pv->i + pv->fraction) :
 	   (float)int_value(pv));
 }
-pcl_fixed
-pcl_fixed_value(const pcl_value_t *pv)
-{	return (pcl_fixed)(float_value(pv) * (1L << _vshift));
-}
-pcl_ufixed
-pcl_ufixed_value(const pcl_value_t *pv)
-{	return (value_is_float(pv) ?
-		(pcl_ufixed)((pv->i + pv->fraction) * (1L << _vshift)) :
-		(pcl_ufixed)pv->i << _vshift);
-}
-
-/* Convert a 32-bit IEEE float to the local representation. */
-float
-word2float(uint32 word)
-{
-#if !arch_floats_are_IEEE
-	/* Convert IEEE float to native float. */
-	int sign_expt = word >> 23;
-	int expt = sign_expt & 0xff;
-	long mant = word & 0x7fffff;
-	float fnum;
-
-	if ( expt == 0 && mant == 0 )
-	  return 0;
-	mant += 0x800000;
-	fnum = (float)ldexp((float)mant, expt - 127 - 24);
-	if ( sign_expt & 0x100 )
-	  fnum = -fnum;
-	return fnum;
-#else
-	return *(float *)&word;
-#endif
-}
 
 /* Set a parameter in the device.  Return the value from gs_putdeviceparams. */
 #define begin_param1(list)\

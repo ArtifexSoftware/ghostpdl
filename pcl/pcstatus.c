@@ -1,17 +1,38 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* pcstatus.c */
-/* PCL5 status readback commands */
+/* pcstatus.c - PCL5 status readback commands */
+
 #include "memory_.h"
 #include "stdio_.h"
 #include <stdarg.h>		/* how to make this portable? */
 #include "string_.h"
+#include "gsmemory.h"
+#include "gsmalloc.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcfont.h"
 #include "pcsymbol.h"
+#include "pcpatrn.h"
+#include "pcuptrn.h"
+#include "pcpage.h"
 #include "stream.h"
 
 #define STATUS_BUFFER_SIZE 10000
@@ -218,7 +239,7 @@ status_put_font(stream *s, pcl_state_t *pcls,
 	      { pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
 		pl_glyph_vocabulary_t gx;
 
-		for ( gx = 0; gx < plgv_next; gx++ )
+		for ( gx = plgv_MSL; gx < plgv_next; gx++ )
 		  if ( ssp->maps[gx] != NULL &&
 		      pcl_check_symbol_support(
 			  ssp->maps[gx]->character_requirements,
@@ -311,7 +332,7 @@ status_end(stream *s, pcl_state_t *pcls)
 /* storage = 0 means currently selected, otherwise it is a mask. */
 
 private int
-status_do_fonts(stream *s, const pcl_state_t *pcls,
+status_do_fonts(stream *s, pcl_state_t *pcls,
   pcl_data_storage_t storage, bool extended)
 {	gs_const_string key;
 	void *value;
@@ -322,7 +343,7 @@ status_do_fonts(stream *s, const pcl_state_t *pcls,
 	while ( pl_dict_enum_next(&denum, &key, &value) )
 	  { uint id = (key.data[0] << 8) + key.data[1];
 	    if ( (((pl_font_t *)value)->storage & storage) != 0 ||
-		 (storage == 0 && pcls->font == value)
+		 (storage == 0 && pcls->font == (pl_font_t *)value)
 	       )
 	      res = status_put_font(s, pcls, id, id, (pl_font_t *)value,
 		  (storage != 0 ? -1 : pcls->font_selected),  extended);
@@ -333,13 +354,13 @@ status_do_fonts(stream *s, const pcl_state_t *pcls,
 }
 
 private int
-status_fonts(stream *s, const pcl_state_t *pcls,
+status_fonts(stream *s, pcl_state_t *pcls,
   pcl_data_storage_t storage)
 {	return status_do_fonts(s, pcls, storage, false);
 }
 
 private int
-status_macros(stream *s, const pcl_state_t *pcls,
+status_macros(stream *s, pcl_state_t *pcls,
   pcl_data_storage_t storage)
 {	gs_const_string key;
 	void *value;
@@ -358,33 +379,49 @@ status_macros(stream *s, const pcl_state_t *pcls,
 	return 0;
 }
 
-private int
-status_patterns(stream *s, const pcl_state_t *pcls,
-  pcl_data_storage_t storage)
-{	gs_const_string key;
-	void *value;
-	pl_dict_enum_t denum;
+/*
+ * Get a list of current provided patterns in the given storage class(es).
+ * The pattern storage dictionary is now private, and provides no externally
+ * visible enumeratioin; hence this operation is rather crudely implemented.
+ */
+  private int
+status_patterns(
+    stream *             s,
+    pcl_state_t *        pcls,
+    pcl_data_storage_t   storage
+)
+{
+    if (storage == 0) {
+        int             id = pcls->current_pattern_id;
+        pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(id);
 
-	pl_dict_enum_begin(&pcls->patterns, &denum);
-	while ( pl_dict_enum_next(&denum, &key, &value) )
-	  { uint id = (key.data[0] << 8) + key.data[1];
-	    if ( (((pcl_entity_t *)value)->storage & storage) != 0 ||
-		 (storage == 0 &&
-		  pcls->pattern_type == pcpt_user_defined &&
-		  id_value(pcls->current_pattern_id) == id)
-	       )
-	      { char id_string[6];
-	        sprintf(id_string, "%u", id);
-		status_put_id(s, "IDLIST", id_string);
-	      }
-	  }
-	status_end_id_list(s);
-	return 0;
+        if ((pptrn != 0) && (pcls->pattern_type == pcl_pattern_user_defined)) {
+            char    id_string[6];
+
+	    sprintf(id_string, "%u", id);
+	    status_put_id(s, "IDLIST", id_string);
+	}
+    } else {
+        int     id;
+
+        for (id = 0; id < (1L << 15) - 1; id++) {
+            pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(id);
+ 
+            if (pptrn != 0) {
+                char    id_string[6];
+
+                sprintf(id_string, "%u", id);
+                status_put_id(s, "IDLIST", id_string);
+            }
+        }
+    }
+    status_end_id_list(s);
+    return 0;
 }
 
 
 private bool	/* Is this symbol map supported by any relevant font? */
-status_check_symbol_set(const pcl_state_t *pcls, pl_symbol_map_t *mapp,
+status_check_symbol_set(pcl_state_t *pcls, pl_symbol_map_t *mapp,
   pcl_data_storage_t storage)
 {	gs_const_string key;
 	void *value;
@@ -463,7 +500,7 @@ status_symbol_sets(stream *s, pcl_state_t *pcls, pcl_data_storage_t storage)
 	  { pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
 	    pl_glyph_vocabulary_t gx;
 
-	    for ( gx = 0; gx < plgv_next; gx++ )
+	    for ( gx = plgv_MSL; gx < plgv_next; gx++ )
 	      if ( ssp->maps[gx] != NULL &&
 		  status_check_symbol_set(pcls, ssp->maps[gx], storage) )
 		{
@@ -482,12 +519,12 @@ status_symbol_sets(stream *s, pcl_state_t *pcls, pcl_data_storage_t storage)
 }
 
 private int
-status_fonts_extended(stream *s, const pcl_state_t *pcls,
+status_fonts_extended(stream *s, pcl_state_t *pcls,
   pcl_data_storage_t storage)
 {	return status_do_fonts(s, pcls, storage, true);
 }
 
-private int (*status_write[])(P3(stream *s, const pcl_state_t *pcls,
+private int (*const status_write[])(P3(stream *s, pcl_state_t *pcls,
 				 pcl_data_storage_t storage)) = {
   status_fonts, status_macros, status_patterns, status_symbol_sets,
   status_fonts_extended
@@ -529,10 +566,10 @@ pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
 	    code = -1;
 	    break;
 	  case 1:		/* currently selected */
-	    storage = 0;	/* indicates currently selected */
+	    storage = (pcl_data_storage_t)0;  /* indicates currently selected */
 	    break;
 	  case 2:		/* all locations */
-	    storage = ~0;
+	    storage = (pcl_data_storage_t)~0;
 	    break;
 	  case 3:		/* internal */
 	    if ( unit != 0 )
@@ -553,17 +590,18 @@ pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
 	    break;
 	  case 5:		/* cartridges */
 	    if ( unit == 0 )
-	      storage = pcds_all_cartridges;
+	      storage = (pcl_data_storage_t)pcds_all_cartridges;
 	    else if ( unit <= pcds_cartridge_max )
-	      storage = 1 << (pcds_cartridge_shift + unit - 1);
+	      storage = (pcl_data_storage_t)
+                        (1 << (pcds_cartridge_shift + unit - 1));
 	    else
 	      code = -1;
 	    break;
 	  case 6:		/* SIMMs */
 	    if ( unit == 0 )
-	      storage = pcds_all_simms;
+	      storage = (pcl_data_storage_t)pcds_all_simms;
 	    else if ( unit <= pcds_simm_max )
-	      storage = 1 << (pcds_simm_shift + unit - 1);
+	      storage = (pcl_data_storage_t)(1 << (pcds_simm_shift + unit - 1));
 	    else
 	      code = -1;
 	    break;

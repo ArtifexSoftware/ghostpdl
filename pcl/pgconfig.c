@@ -4,8 +4,7 @@
 
 /* pgconfig.c */
 /* HP-GL/2 configuration and status commands */
-#include "std.h"
-#include "gstypes.h"		/* for gsstate.h */
+#include "gx.h"
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"            /* for gscoord.h */
@@ -15,6 +14,7 @@
 #include "pginit.h"
 #include "pggeom.h"
 #include "pgmisc.h"
+#include "pcpalet.h"
 #include "pcdraw.h"
 
 /* CO"text" */
@@ -118,46 +118,80 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
-/* IN = DF (see below) */
-int
-hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
+/*
+ * The "implicit" portion of the IN command.
+ *
+ * With the advent of PCL 5c, both PCL and GL want to reset the current
+ * palette. The difficulty is that they want to reset it to different things.
+ *
+ * The proper way to handle this would be to implement IN as a reset type,
+ * create a single palette reset routine, and have it do different things
+ * depending on the nature of the reset.
+ *
+ * At the time this comment was written, such a change was larger than could
+ * be easily accommodated. Hence, a less drastic alternative was employed:
+ * split the IN command into implicit and explicit portions, and only use the
+ * latter when the IN command is explicitly invoked.
+ */
+  int
+hpgl_IN_implicit(
+    hpgl_state_t *  pgls\
+)
+{
+    hpgl_args_t     args;
+
+    /* restore defaults */
+    hpgl_DF(&args, pgls);
+
+    /* cancel rotation */
+    /* hpgl_args_setup(&args); hpgl_RO(&args, pgls); */
+    pgls->g.rotation = 0;
+
+    /* defaults P1 and P2 */
+    hpgl_args_setup(&args);
+    hpgl_IP(&args, pgls);
+    hpgl_args_set_int(&args,1);
+    hpgl_SP(&args, pgls);
+
+    /* pen width units - metric */
+    hpgl_args_setup(&args);
+    hpgl_WU(&args, pgls);
+
+
+    /*
+     * pen up-absolute position and set gl/2 current positon to
+     * 0,0 or the lower left of the picture frame.  Simply sets
+     * the gl/2 state, we subsequently clear the path because we
+     * do not want to create a live gs path.
+     */
+    hpgl_args_set_real2(&args, 0.0, 0.0);
+    hpgl_PU(&args, pgls);
+    hpgl_args_set_real2(&args, 0.0, 0.0);
+    hpgl_PA(&args, pgls);
+    hpgl_call(hpgl_clear_current_path(pgls));
+
+    return 0;
+}
+
+/*
+ * IN = DF (see below)
+ */
+  int
+hpgl_IN(
+    hpgl_args_t *   pargs,
+    hpgl_state_t *  pgls
+)
 {	
-	hpgl_args_t args;
-	/* restore defaults */
-	hpgl_DF(&args, pgls);
-	/* cancel rotation */
-        /* hpgl_args_setup(&args);
-	hpgl_RO(&args, pgls); */
-	pgls->g.rotation = 0;
-	/* defaults P1 and P2 */
-	hpgl_args_setup(&args);
-	hpgl_IP(&args, pgls);
-	/* HAS temporarily hardwired. Should use NP but that is broken
-           at the moment.  */
-	pgls->g.number_of_pens = 2;
-	hpgl_args_set_int(&args,1);
-	hpgl_SP(&args, pgls);
-	/* pen width units - metric */
-	hpgl_args_setup(&args);
-	hpgl_WU(&args, pgls);
-	/* pw .35 */
-	hpgl_args_set_real(&args,0.35);
-	hpgl_PW(&args, pgls);
-	/* HAS Unclear what to do here.  state hardwired to 2 above */
-#ifdef LATER
-	hpgl_args_set_int(&args,2);
-	hpgl_NP(&args, pgls);
-#endif
-	/* pen up-absolute position and set gl/2 current positon to
-	   0,0 or the lower left of the picture frame.  Simply sets
-	   the gl/2 state, we subsequently clear the path because we
-	   do not want to create a live gs path. */
-	hpgl_args_set_real2(&args, 0.0, 0.0);
-	hpgl_PU(&args, pgls);
-	hpgl_args_set_real2(&args, 0.0, 0.0);
-	hpgl_PA(&args, pgls);
-	hpgl_call(hpgl_clear_current_path(pgls));
-	return 0;
+    hpgl_args_t     args;
+    int             code = 0;
+
+    /* handle the work or an implicit reset */
+    code = hpgl_IN_implicit(pgls);
+
+    /* set up the default palette (8 entries, not-fixed) */
+    if (code == 0)
+        code = pcl_palette_IN(pgls);
+    return code;
 }
 
 /* derive the current picture frame coordinates */

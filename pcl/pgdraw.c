@@ -1,9 +1,24 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* pgdraw.c */
-/* HP-GL/2 line drawing/path building routines. */
+/* pgdraw.c - HP-GL/2 line drawing/path building routines. */
 
 #include "stdio_.h"		
 #include "math_.h"
@@ -22,7 +37,15 @@
 #include "pgdraw.h"
 #include "pggeom.h"
 #include "pgmisc.h"
-#include "pcdraw.h"             /* included for setting pcl's ctm */
+#include "pcdraw.h"
+#include "pcpalet.h"
+#include "pcpatrn.h"
+
+
+/* hack to quiet compiler warnings */
+#ifndef abs
+extern  int     abs( int );
+#endif
 
 
  int
@@ -248,96 +271,105 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	return 0;
 }
 
-/* set up joins, caps, miter limit, and line width */
+/*
+ * set up joins, caps, miter limit, and line width
+ */
  private int
-hpgl_set_graphics_line_attribute_state(hpgl_state_t *pgls,
-				       hpgl_rendering_mode_t render_mode)
+hpgl_set_graphics_line_attribute_state(
+    hpgl_state_t *          pgls,
+    hpgl_rendering_mode_t   render_mode
+)
 {
+    const gs_line_cap       cap_map[] = { gs_cap_butt,      /* 0 not supported */
+					  gs_cap_butt,      /* 1 butt end */
+					  gs_cap_square,    /* 2 square end */
+					  gs_cap_triangle,  /* 3 triag. end */
+					  gs_cap_round      /* 4 round cap */
+                                          };
 
-	  const gs_line_cap cap_map[] = {gs_cap_butt,      /* 0 not supported */
-					 gs_cap_butt,      /* 1 butt end */
-					 gs_cap_square,    /* 2 square end */
-					 gs_cap_triangle,  /* 3 triangular end */
-					 gs_cap_round};    /* 4 round cap */
+    const gs_line_join      join_map[] = { gs_join_none,    /* 0 not supported */
+					   gs_join_miter,   /* 1 mitered */
+					   gs_join_miter,   /* 2 mitrd/bevld */
+					   gs_join_triangle, /* 3 triag. join */
+					   gs_join_round,   /* 4 round join */
+					   gs_join_bevel,   /* 5 bevel join */
+					   gs_join_none     /* 6 no join */
+                                           };
+    const float *           widths = pcl_palette_get_pen_widths(pgls->ppalet);
+    floatp                  pen_wid = widths[pgls->g.pen.selected];
 
-	  const gs_line_join join_map[] = {gs_join_none,    /* 0 not supported */
-					   gs_join_miter,    /* 1 mitered */
-					   gs_join_miter,    /* 2 mitered/beveled */
-					   gs_join_triangle, /* 3 triangular join */
-					   gs_join_round,    /* 4 round join */
-					   gs_join_bevel,    /* 5 bevel join */
-					   gs_join_none};    /* 6 no join */
+    /*
+     * HP appears to use default line attributes if the the pen
+     * width is less than or equal to .35mm or 14.0 plu.  This
+     * is not documented PCLTRM.  Pen widths are maintained in
+     * plotter units
+     */
+    if (pen_wid <= 14.0) {
+	hpgl_call(gs_setlinejoin(pgls->pgs, gs_join_miter));
+	hpgl_call(gs_setlinecap(pgls->pgs, gs_cap_butt));
+	hpgl_call(gs_setlinewidth(pgls->pgs, pen_wid));
+	hpgl_call(gs_setmiterlimit(pgls->pgs, 5.0));
+	return 0;
+    }
 
-	  /* HP appears to use default line attributes if the the pen
-             width is less than or equal to .35mm or 14.0 plu.  This
-             is not documented PCLTRM.  Pen widths are maintained in
-             plotter units */
-	  if ( pgls->g.pen.width[pgls->g.pen.selected] <= 14.0 )
-	    {
-	      hpgl_call(gs_setlinejoin(pgls->pgs,
-				       gs_join_miter));
-	      hpgl_call(gs_setlinecap(pgls->pgs,
-				      gs_cap_butt));
-	      hpgl_call(gs_setlinewidth(pgls->pgs,
-					pgls->g.pen.width[pgls->g.pen.selected]));
-	      hpgl_call(gs_setmiterlimit(pgls->pgs, 5.0));
-	      return 0;
-	    }
+    switch (render_mode) {
 
-	  switch( render_mode )
-	    {
-	    case hpgl_rm_character:
-	    case hpgl_rm_polygon:
-	    case hpgl_rm_vector_fill:
-	    case hpgl_rm_clip_and_fill_polygon:
-	      hpgl_call(gs_setlinejoin(pgls->pgs,
-				       gs_join_round));
-	      hpgl_call(gs_setlinecap(pgls->pgs,
-				      gs_cap_round));
-	      break;
-	    case hpgl_rm_vector:
-vector:	      hpgl_call(gs_setlinejoin(pgls->pgs,
-				       join_map[pgls->g.line.join]));
-	      hpgl_call(gs_setlinecap(pgls->pgs,
-				      cap_map[pgls->g.line.cap]));
-	      break;
-	    default:
-	      /* shouldn't happen as we must have a mode to properly
-                 parse an hpgl file. */
-	      dprintf("warning no hpgl rendering mode set using vector mode\n");
-	      goto vector;
-	    }
+      case hpgl_rm_character:
+      case hpgl_rm_polygon:
+      case hpgl_rm_vector_fill:
+      case hpgl_rm_clip_and_fill_polygon:
+	hpgl_call(gs_setlinejoin(pgls->pgs, gs_join_round));
+	hpgl_call(gs_setlinecap(pgls->pgs, gs_cap_round));
+	break;
+
+      case hpgl_rm_vector:
+vector:
+	hpgl_call(gs_setlinejoin(pgls->pgs, join_map[pgls->g.line.join]));
+	hpgl_call(gs_setlinecap(pgls->pgs, cap_map[pgls->g.line.cap]));
+	break;
+
+      default:
+	/* shouldn't happen; we must have a mode to properly parse hpgl file. */
+	dprintf("warning no hpgl rendering mode set using vector mode\n");
+	goto vector;
+    }
 
 #ifdef COMMENT
-	  /* I do not remember the rational for the large miter */
-	  hpgl_call(gs_setmiterlimit(pgls->pgs,
-				     ( pgls->g.line.join == 1 ) ?
-				     5000.0 :
-				     pgls->g.miter_limit));
+    /* I do not remember the rational for the large miter */
+    hpgl_call(gs_setmiterlimit( pgls->pgs,
+				(pgls->g.line.join == 1)
+                                   ? 5000.0
+                                   : pgls->g.miter_limit
+                                ) );
 #endif
-	  hpgl_call(gs_setmiterlimit(pgls->pgs, pgls->g.miter_limit));
-
-	  hpgl_call(gs_setlinewidth(pgls->pgs,
-				    pgls->g.pen.width[pgls->g.pen.selected]));
-	  return 0;
+    hpgl_call(gs_setmiterlimit(pgls->pgs, pgls->g.miter_limit));
+    hpgl_call(gs_setlinewidth(pgls->pgs, pen_wid));
+    return 0;
 }
 
-/* A bounding box for the current polygon -- used for HPGL/2 vector
-   fills.  We expand the bounding box by 1/2 the current line width to
-   avoid overhanging lines. */
-
+/*
+ * A bounding box for the current polygon -- used for HPGL/2 vector
+ * fills.  We expand the bounding box by 1/2 the current line width to
+ *  avoid overhanging lines.
+ */
  private int
-hpgl_polyfill_bbox(hpgl_state_t *pgls, gs_rect *bbox)
+hpgl_polyfill_bbox(
+    hpgl_state_t *  pgls,
+    gs_rect *       bbox
+)
 {
-	hpgl_real_t half_width = pgls->g.pen.width[pgls->g.pen.selected] / 2.0;
-  	/* get the bounding box for the current path / polygon */
-	hpgl_call(gs_pathbbox(pgls->pgs, bbox));
-	/* expand the box. */
-	bbox->p.x -= half_width;
-	bbox->p.y -= half_width;
-	bbox->q.x += half_width;
-	bbox->q.y += half_width;
-	return 0;
+    const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
+    hpgl_real_t     half_width = widths[pgls->g.pen.selected] / 2.0;
+
+    /* get the bounding box for the current path / polygon */
+    hpgl_call(gs_pathbbox(pgls->pgs, bbox));
+
+    /* expand the box. */
+    bbox->p.x -= half_width;
+    bbox->p.y -= half_width;
+    bbox->q.x += half_width;
+    bbox->q.y += half_width;
+    return 0;
 }
 
 /* set up an hpgl clipping region -- intersection of IW command and
@@ -402,405 +434,498 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 }
 
 /* Plot one vector for vector fill all these use absolute coordinates. */
-private int
-hpgl_draw_vector_absolute(hpgl_state_t *pgls, hpgl_real_t x0, hpgl_real_t y0,
-			  hpgl_real_t x1, hpgl_real_t y1,
-			  hpgl_rendering_mode_t render_mode)
+  private int
+hpgl_draw_vector_absolute(
+    hpgl_state_t *          pgls,
+    hpgl_real_t             x0,
+    hpgl_real_t             y0,
+    hpgl_real_t             x1,
+    hpgl_real_t             y1,
+    hpgl_rendering_mode_t   render_mode
+)
 {
-	bool set_ctm = (render_mode != hpgl_rm_character);
-	hpgl_call(hpgl_add_point_to_path(pgls, x0, y0,
-					 hpgl_plot_move_absolute, set_ctm));
-	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
-					 hpgl_plot_draw_absolute, set_ctm));
-	return 0;
+    bool                    set_ctm = (render_mode != hpgl_rm_character);
+
+    hpgl_call( hpgl_add_point_to_path( pgls,
+                                       x0,
+                                       y0,
+				       hpgl_plot_move_absolute,
+                                       set_ctm
+                                       ) );
+    hpgl_call( hpgl_add_point_to_path( pgls,
+                                       x1,
+                                       y1,
+				       hpgl_plot_draw_absolute,
+                                       set_ctm
+                                       ) );
+    return 0;
 }
 
  private int
-hpgl_get_adjusted_corner(hpgl_real_t x_fill_increment,
-  hpgl_real_t y_fill_increment, gs_rect *bbox, gs_point *current_anchor_corner,
-  gs_point *adjusted_anchor_corner)
+hpgl_get_adjusted_corner(
+    hpgl_real_t x_fill_increment,
+    hpgl_real_t y_fill_increment,
+    gs_rect *   bbox,
+    gs_point *  current_anchor_corner,
+    gs_point *  adjusted_anchor_corner
+)
 {
-	adjusted_anchor_corner->x = current_anchor_corner->x;
-	adjusted_anchor_corner->y = current_anchor_corner->y;
+    adjusted_anchor_corner->x = current_anchor_corner->x;
+    adjusted_anchor_corner->y = current_anchor_corner->y;
 
-	/* account for anchor corner greater than origin */
-	if ( x_fill_increment != 0 )
-	  while ( adjusted_anchor_corner->x > bbox->p.x )
+    /* account for anchor corner greater than origin */
+    if (x_fill_increment != 0) {
+	while (adjusted_anchor_corner->x > bbox->p.x)
 	    adjusted_anchor_corner->x -= x_fill_increment;
-	else if ( adjusted_anchor_corner->x > bbox->p.x )
-	  adjusted_anchor_corner->x = bbox->p.x;
-	if ( y_fill_increment != 0 )
-	  while ( adjusted_anchor_corner->y > bbox->p.y )
+    } else if (adjusted_anchor_corner->x > bbox->p.x)
+	adjusted_anchor_corner->x = bbox->p.x;
+    if (y_fill_increment != 0) {
+	while (adjusted_anchor_corner->y > bbox->p.y)
 	    adjusted_anchor_corner->y -= y_fill_increment;
-	else if ( adjusted_anchor_corner->y > bbox->p.y )
-	  adjusted_anchor_corner->y = bbox->p.y;
-	return 0;
+    } else if (adjusted_anchor_corner->y > bbox->p.y)
+	adjusted_anchor_corner->y = bbox->p.y;
+    return 0;
 }
 
-/* HAS should replicate lines beginning at the anchor corner to +X and
-   +Y.  Not quite right - anchor corner not yet supported.
-   pgls->g.anchor_corner needs to be used to set dash offsets */
+/*
+ * HAS should replicate lines beginning at the anchor corner to +X and
+ * +Y.  Not quite right - anchor corner not yet supported.
+ * pgls->g.anchor_corner needs to be used to set dash offsets
+ */
  private int
-hpgl_polyfill(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+hpgl_polyfill(
+    hpgl_state_t *              pgls,
+     hpgl_rendering_mode_t      render_mode
+)
 {
-	hpgl_real_t diag_mag, endx, endy;
-	gs_sincos_t sincos;
-	gs_point start;
+    hpgl_real_t                 diag_mag, endx, endy;
+    gs_sincos_t                 sincos;
+    gs_point                    start;
+
 #define sin_dir sincos.sin
 #define cos_dir sincos.cos
-	gs_rect bbox;
-	hpgl_pen_state_t saved_pen_state;
-	hpgl_real_t x_fill_increment, y_fill_increment;
-	bool cross = (pgls->g.fill.type == hpgl_fill_crosshatch);
-	const hpgl_hatch_params_t *params =
-	  (cross ? &pgls->g.fill.param.crosshatch : &pgls->g.fill.param.hatch);
-	hpgl_real_t spacing = params->spacing;
-	hpgl_real_t direction = params->angle;
-	/* save the pen position */
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
-	if ( spacing == 0 )
-	  { /* Per TRM 22-12, use 1% of the P1/P2 distance. */
-	    gs_matrix mat;
 
-	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-	    spacing =
-	      0.01 * hpgl_compute_distance(pgls->g.P1.x, pgls->g.P1.y,
-					   pgls->g.P2.x, pgls->g.P2.y);
-	    /****** WHAT IF ANISOTROPIC SCALING? ******/
-	    spacing /= min(fabs(mat.xx), fabs(mat.yy));
-	  }
-	/* get the bounding box */
-        hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
-	/* HAS calculate the offset for dashing - we do not need this
-           for solid lines */
-	/* if the line width exceeds the spacing we use the line width
-           to avoid overlapping of the fill lines.  HAS this can be
-           integrated with the logic above for spacing as not to
-           duplicate alot of code. */
-	{
-	  gs_matrix mat;
-	  hpgl_real_t line_width = pgls->g.pen.width[pgls->g.pen.selected];
-	  hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-	  line_width /= min(fabs(mat.xx), fabs(mat.yy));
-	  if ( line_width >= spacing )
-	    {
-	      hpgl_call(gs_setgray(pgls->pgs, 0.0));
-	      hpgl_call(gs_fill(pgls->pgs));
-	      return 0;
-	    }
+    gs_rect                     bbox;
+    hpgl_pen_state_t            saved_pen_state;
+    hpgl_real_t                 x_fill_increment, y_fill_increment;
+    hpgl_FT_pattern_source_t    type = pgls->g.fill.type;
+    bool                        cross = (type == hpgl_FT_pattern_two_lines);
+    const hpgl_hatch_params_t * params = (cross ? &pgls->g.fill.param.crosshatch
+                                                : &pgls->g.fill.param.hatch);
+    hpgl_real_t                 spacing = params->spacing;
+    hpgl_real_t                 direction = params->angle;
+
+    /* save the pen position */
+    hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
+    if (spacing == 0) {
+        /* Per TRM 22-12, use 1% of the P1/P2 distance. */
+	gs_matrix   mat;
+
+	hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
+	spacing = 0.01 * hpgl_compute_distance( pgls->g.P1.x,
+                                                pgls->g.P1.y,
+					        pgls->g.P2.x,
+                                                pgls->g.P2.y
+                                                );
+	/****** WHAT IF ANISOTROPIC SCALING? ******/
+	spacing /= min(fabs(mat.xx), fabs(mat.yy));
+    }
+
+    /* get the bounding box */
+    hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
+
+    /*
+     * HAS calculate the offset for dashing - we do not need this for
+     * solid lines
+     */
+    /*
+     * if the line width exceeds the spacing we use the line width
+     * to avoid overlapping of the fill lines.  HAS this can be
+     * integrated with the logic above for spacing as not to
+     * duplicate alot of code.
+     */
+    {
+	gs_matrix       mat;
+        const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
+        hpgl_real_t     line_width = widths[pgls->g.pen.selected];
+
+        hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
+        line_width /= min(fabs(mat.xx), fabs(mat.yy));
+	if (line_width >= spacing) {
+	    hpgl_call(gs_setgray(pgls->pgs, 0.0));
+	    hpgl_call(gs_fill(pgls->pgs));
+	    return 0;
 	}
-	/* get rid of the current path */
-	hpgl_call(hpgl_clear_current_path(pgls));
-start:	gs_sincos_degrees(direction, &sincos);
-	if ( sin_dir < 0 )
-	  sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
-	x_fill_increment = (sin_dir != 0) ? fabs(spacing / sin_dir) : 0;
-	y_fill_increment = (cos_dir != 0) ? fabs(spacing / cos_dir) : 0;
-	hpgl_call(hpgl_get_adjusted_corner(x_fill_increment,
-          y_fill_increment, &bbox, &pgls->g.anchor_corner, &start));
+    }
 
-	/* calculate the diagonals magnitude.  Note we clip this
-           latter in the library.  If desired we could clip to the
-           actual bbox here to save processing time.  For now we simply
-           draw all fill lines using the diagonals magnitude */
-	diag_mag =
-	  hpgl_compute_distance(start.x, start.y, bbox.q.x, bbox.q.y);
-	endx = (diag_mag * cos_dir) + start.x;
-	endy = (diag_mag * sin_dir) + start.y;
-	hpgl_call(hpgl_draw_vector_absolute(pgls, start.x, start.y,
-					    endx, endy, render_mode));
-	/* Travel along +x using current spacing. */
-	if ( x_fill_increment != 0 )
-	  while ( endx += x_fill_increment,
-		  (start.x += x_fill_increment) <= bbox.q.x
-		  )
-	      hpgl_call(hpgl_draw_vector_absolute(pgls, start.x, start.y,
-						  endx, endy, render_mode));
-	/* Travel along +Y similarly. */
-	if ( y_fill_increment != 0 )
-	  {
-	    /*
-	     * If the slope is negative, we have to travel along the right
-	     * edge of the box rather than the left edge.  Fortuitously,
-	     * the X loop left everything set up exactly right for this case.
-	     */
-	    if ( cos_dir >= 0 )
-	      {
-		hpgl_call(hpgl_get_adjusted_corner(x_fill_increment,
-		  y_fill_increment, &bbox, &pgls->g.anchor_corner, &start));
-	        endx = (diag_mag * cos_dir) + start.x;
-		endy = (diag_mag * sin_dir) + start.y;
-	      }
-	    else
-		start.y -= y_fill_increment, endy -= y_fill_increment;
+    /* get rid of the current path */
+    hpgl_call(hpgl_clear_current_path(pgls));
+start:
+    gs_sincos_degrees(direction, &sincos);
+    if (sin_dir < 0)
+	sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
+    x_fill_increment = (sin_dir != 0) ? fabs(spacing / sin_dir) : 0;
+    y_fill_increment = (cos_dir != 0) ? fabs(spacing / cos_dir) : 0;
+    hpgl_call( hpgl_get_adjusted_corner( x_fill_increment,
+                                         y_fill_increment,
+                                         &bbox,
+                                         &pgls->g.anchor_corner,
+                                         &start
+                                         ) );
 
-	    while ( endy += y_fill_increment,
-		    (start.y += y_fill_increment) <= bbox.q.y
-		  )
-	      hpgl_call(hpgl_draw_vector_absolute(pgls, start.x, start.y,
-						  endx, endy, render_mode));
-	  }
-	if ( cross )
-	  {
-	    cross = false;
-	    direction += 90;
-	    goto start;
-	  }
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
-	return 0;
+    /*
+     * calculate the diagonals magnitude.  Note we clip this
+     * latter in the library.  If desired we could clip to the
+     * actual bbox here to save processing time.  For now we simply
+     * draw all fill lines using the diagonals magnitude
+     */
+    diag_mag = hpgl_compute_distance(start.x, start.y, bbox.q.x, bbox.q.y);
+    endx = (diag_mag * cos_dir) + start.x;
+    endy = (diag_mag * sin_dir) + start.y;
+    hpgl_call( hpgl_draw_vector_absolute( pgls,
+                                          start.x,
+                                          start.y,
+					  endx,
+                                          endy,
+                                          render_mode
+                                          ) );
+
+    /* Travel along +x using current spacing. */
+    if (x_fill_increment != 0) {
+	while ( endx += x_fill_increment,
+		(start.x += x_fill_increment) <= bbox.q.x )
+	    hpgl_call( hpgl_draw_vector_absolute( pgls,
+                                                  start.x,
+                                                  start.y,
+						  endx,
+                                                  endy,
+                                                  render_mode
+                                                  ) );
+    }
+
+    /* Travel along +Y similarly. */
+    if (y_fill_increment != 0) {
+	/*
+	 * If the slope is negative, we have to travel along the right
+	 * edge of the box rather than the left edge.  Fortuitously,
+	 * the X loop left everything set up exactly right for this case.
+	 */
+	if (cos_dir >= 0) {
+	    hpgl_call( hpgl_get_adjusted_corner( x_fill_increment,
+		                                 y_fill_increment,
+                                                 &bbox,
+                                                 &pgls->g.anchor_corner,
+                                                 &start
+                                                 ) );
+	    endx = (diag_mag * cos_dir) + start.x;
+	    endy = (diag_mag * sin_dir) + start.y;
+	} else
+	    start.y -= y_fill_increment, endy -= y_fill_increment;
+
+	while ( endy += y_fill_increment,
+		(start.y += y_fill_increment) <= bbox.q.y )
+	    hpgl_call( hpgl_draw_vector_absolute( pgls,
+                                                  start.x,
+                                                  start.y,
+						  endx,
+                                                  endy,
+                                                  render_mode
+                                                  ) );
+    }
+    if (cross) {
+	cross = false;
+	direction += 90;
+	goto start;
+    }
+    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
+    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
+    return 0;
+
 #undef sin_dir
 #undef cos_dir
+
 }
 
  private int
-hpgl_polyfill_using_current_line_type(hpgl_state_t *pgls,
-				      hpgl_rendering_mode_t render_mode)
+hpgl_polyfill_using_current_line_type(
+    hpgl_state_t *        pgls,
+    hpgl_rendering_mode_t render_mode
+)
 {
-	/* gsave and grestore used to preserve the clipping region */
-  	hpgl_call(hpgl_gsave(pgls));
-	/* use the current path to set up a clipping path */
-	/* beginning at the anchor corner replicate lines */
-	hpgl_call(gs_clip(pgls->pgs));
-	hpgl_call(hpgl_polyfill(pgls, render_mode));
-	hpgl_call(hpgl_grestore(pgls));
-	hpgl_call(hpgl_clear_current_path(pgls));
+    /* gsave and grestore used to preserve the clipping region */
+    hpgl_call(hpgl_gsave(pgls));
 
-	return 0;
-}
+    /*
+     * Use the current path to set up a clipping path
+     * beginning at the anchor corner replicate lines
+     */
+    hpgl_call(gs_clip(pgls->pgs));
+    hpgl_call(hpgl_polyfill(pgls, render_mode));
+    hpgl_call(hpgl_grestore(pgls));
+    hpgl_call(hpgl_clear_current_path(pgls));
 
- private int
-hpgl_set_pcl_pattern_origin(hpgl_state_t *pgls, gs_point *point)
-{
-	gs_point pattern_origin;
-	hpgl_call(gs_transform(pgls->pgs, point->x, point->y, &pattern_origin));
-	hpgl_call(gs_sethalftonephase(pgls->pgs, pattern_origin.x, pattern_origin.y));
-	return 0;
+    return 0;
 }
 
  int
-hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+hpgl_set_drawing_color(
+    hpgl_state_t *          pgls,
+    hpgl_rendering_mode_t   render_mode
+)
 {
-	pcl_id_t pcl_id;
-	gs_point pattern_origin;
-	/* default to pcl pattern dictionary.  Only user defined types
-           use a private hpgl/2 dictionary. */
-	pl_dict_t *pattern_dictp = &pgls->patterns;
-	pcl_pattern_type_t pat;
-	/* A bizarre HPISM */
-        if ( pgls->g.pen.selected == 0 ) {
-	  pat = pcpt_solid_white;
-	  goto set;
-	}
-	switch ( render_mode )
-	  {
-	  case hpgl_rm_clip_and_fill_polygon:
-	    hpgl_call(hpgl_polyfill_using_current_line_type(pgls, render_mode));
-	    return 0;
-	  case hpgl_rm_character:
-	    switch ( pgls->g.character.fill_mode )
-	      {
-	      case hpgl_char_solid_edge: /* fall through */
-	      case hpgl_char_edge:
-		pat = pcpt_solid_black;
-		break;
-	      case hpgl_char_fill:
-	      case hpgl_char_fill_edge:
-		if ( pgls->g.fill.type == hpgl_fill_hatch ||
-		     pgls->g.fill.type == hpgl_fill_crosshatch )
-		  {
-		    hpgl_call(hpgl_polyfill_using_current_line_type(pgls, render_mode));
-		    return 0;
-		  }
-		else
-		  goto fill;
-	      default:
-		dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+    int                     code = 0;
+    pcl_pattern_set_proc_t  set_proc;
+
+#if 0
+    /* A bizarre HPISM - needs to be re-checked for 5c */
+    if ( pgls->g.pen.selected == 0 ) {
+	pat = pcpt_solid_white;
+	goto set;
+    }
+#endif
+
+    switch (render_mode) {
+
+      case hpgl_rm_clip_and_fill_polygon:
+	hpgl_call(hpgl_polyfill_using_current_line_type(pgls, render_mode));
+	return 0;
+
+      case hpgl_rm_character:
+	switch (pgls->g.character.fill_mode) {
+
+	  case hpgl_char_solid_edge:    /* fall through */
+	  case hpgl_char_edge:
+            set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
+            code = set_proc(pgls, pgls->g.pen.selected, 0);
+	    break;
+
+	  case hpgl_char_fill:
+	  case hpgl_char_fill_edge:
+	    if ( (pgls->g.fill.type == hpgl_FT_pattern_one_line) ||
+		 (pgls->g.fill.type == hpgl_FT_pattern_two_lines)  ) {
+		hpgl_call( hpgl_polyfill_using_current_line_type( pgls,
+                                                                  render_mode
+                                                                  ) );
 		return 0;
-	      }
-	    break;
-	    /* fill like a polygon */
-	  case hpgl_rm_polygon:
-fill:	    switch ( pgls->g.fill.type )
-	      {
-	      case hpgl_fill_solid:
-	      case hpgl_fill_solid2: /* fall through */
-		/* this is documented incorrectly PCLTRM 22-12 says
-                   these should be solid black but they are actually
-                   set to the value of the current pen - (i.e pen 0 is
-                   solid white */
-		/* HAS should use set foreground color */
-		pat = (pgls->g.pen.selected == 0 ? pcpt_solid_white : pcpt_solid_black);
-		break;
-	      case hpgl_fill_hatch:
-	      case hpgl_fill_crosshatch:
-		pat = pcpt_solid_black;
-		break;
-	      case hpgl_fill_pcl_crosshatch:
-		id_set_value(pcl_id, pgls->g.fill.param.pattern_type);
-		pat = pcpt_cross_hatch;
-		hpgl_call(hpgl_set_pcl_pattern_origin(pgls,
-						      &pgls->g.anchor_corner));
-		break;
-	      case hpgl_fill_shaded:
-		id_set_value(pcl_id, pgls->g.fill.param.shading);
-		pat = pcpt_shading;
-		break;
-	      case hpgl_fill_pcl_user_defined:
-		hpgl_call(hpgl_set_pcl_pattern_origin(pgls,
-						      &pgls->g.anchor_corner));
-		id_set_value(pcl_id, pgls->g.fill.param.pattern_id);
-		pat = pcpt_user_defined;
-		break;
-	      case hpgl_fill_hpgl_user_defined:
-		{
-		  void *value;
-		  id_set_value(pcl_id, pgls->g.fill.param.pattern_id);
-		  if ( pl_dict_find(&pgls->g.raster_patterns, id_key(pcl_id), 2, &value ) )
-		    {
-		      pat = pcpt_user_defined;
-		      pattern_dictp = &pgls->g.raster_patterns;
-		    } else
-		      pat = pcpt_solid_black;
-		}
-	      break;
-	      default:
-		dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
-		break;
-	      }
-	    break;
-	  case hpgl_rm_vector:
-	  case hpgl_rm_vector_fill:
-	    switch( pgls->g.screen.type )
-	      {
-	      case hpgl_screen_none:
-		/* HAS should use set foreground color */
-		pat = (pgls->g.pen.selected == 0 ? pcpt_solid_white : pcpt_solid_black);
-		break;
-	      case hpgl_screen_shaded_fill:
-		pat = pcpt_shading;
-		id_set_value(pcl_id, pgls->g.screen.param.shading);
-		break;
-	      case hpgl_screen_crosshatch:
-		pat = pcpt_cross_hatch;
-		id_set_value(pcl_id, pgls->g.screen.param.pattern_type);
-		break;
-	      case hpgl_screen_hpgl_user_defined:
-		{
-		  void *value;
-		  id_set_value(pcl_id, pgls->g.screen.param.user_defined.pattern_index);
-		  if ( pl_dict_find(&pgls->g.raster_patterns, id_key(pcl_id), 2, &value ) )
-		    {
-		      pat = pcpt_user_defined;
-		      pattern_dictp = &pgls->g.raster_patterns;
-		    } else
-		      pat = pcpt_solid_black;
-		}
-		break;
-	      case hpgl_screen_pcl_user_defined:
-		hpgl_call(hpgl_set_pcl_pattern_origin(pgls,
-						      &pgls->g.anchor_corner));
-		pat = pcpt_user_defined;
-		id_set_value(pcl_id, pgls->g.screen.param.pattern_id);
-		break;
-	      default:
-		dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
-		break;
-	      }
-	    break;
+	    } else
+		goto fill;
+
 	  default:
-	    dprintf("hpgl_set_drawing_color: internal error illegal mode\n");
+	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+	    return 0;
+	}
+	break;
+
+	/* fill like a polygon */
+      case hpgl_rm_polygon:
+fill:
+        set_proc = pcl_pattern_get_proc_FT(pgls->g.fill.type);
+	switch (pgls->g.fill.type) {
+
+	  case hpgl_FT_pattern_solid_pen1:
+	  case hpgl_FT_pattern_solid_pen2:
+	    /*
+             * this is documented incorrectly PCLTRM 22-12 says
+             * these should be solid black but they are actually
+             * set to the value of the current pen - (i.e pen 0 is
+             * solid white
+             */
+	    code = set_proc(pgls, pgls->g.pen.selected, 0);
 	    break;
-	  }
-set:	gs_setrasterop(pgls->pgs, pgls->logical_op);
-	gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
-	gs_settexturetransparent(pgls->pgs, pgls->g.source_transparent);
-	/* set up the halftone phase origin in device space */
-	hpgl_call(gs_transform(pgls->pgs, pgls->g.anchor_corner.x,
-	  pgls->g.anchor_corner.y, &pattern_origin));
-	gs_setfilladjust(pgls->pgs, pgls->grid_adjust, pgls->grid_adjust);
-	hpgl_call(pcl_set_drawing_color_rotation(pgls,
-	  pat, &pcl_id, pattern_dictp, ((pgls->g.rotation / 90) & 3),
-	  &pattern_origin));
-	return 0;
+
+          case hpgl_FT_pattern_one_line:
+	  case hpgl_FT_pattern_two_lines:
+	    set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
+            code = set_proc(pgls, pgls->g.pen.selected, 0);
+	    break;
+
+	  case hpgl_FT_pattern_cross_hatch:
+            code = set_proc( pgls,
+                             pgls->g.fill.param.pattern_type,
+                             pgls->g.pen.selected
+                             );
+	    break;
+
+	  case hpgl_FT_pattern_shading:
+            code = set_proc( pgls,
+                             pgls->g.fill.param.shading,
+                             pgls->g.pen.selected
+                             );
+	    break;
+
+	  case hpgl_FT_pattern_user_defined:
+            code = set_proc( pgls,
+                             pgls->g.fill.param.pattern_id,
+                             pgls->g.pen.selected
+                             );
+            break;
+
+	  case hpgl_FT_pattern_RF:
+            code = set_proc( pgls,
+                             pgls->g.fill.param.pattern_index,
+                             0
+                             );
+            break;
+
+	  default:
+	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+	    break;
+	}
+	break;
+
+      case hpgl_rm_vector:
+      case hpgl_rm_vector_fill:
+        set_proc = pcl_pattern_get_proc_SV(pgls->g.screen.type);
+	switch(pgls->g.screen.type) {
+
+	  case hpgl_SV_pattern_solid_pen:
+	    code = set_proc(pgls, pgls->g.pen.selected, 0);
+	    break;
+
+	  case hpgl_SV_pattern_shade:
+            code = set_proc( pgls,
+                             pgls->g.screen.param.shading,
+                             pgls->g.pen.selected
+                             );
+	    break;
+
+          case hpgl_SV_pattern_cross_hatch:
+            code = set_proc( pgls,
+                             pgls->g.fill.param.pattern_type,
+                             pgls->g.pen.selected
+                             );
+	    break;
+
+            /*
+             * NB: contrary to the documentation (PCL 5 TRM, 10/92 ed.,
+             *     page 22-50, the option2 parameter seems to be ignored
+             *     for screens defined via RF, for both color and monochrome
+             *     systems.
+             */
+          case hpgl_SV_pattern_RF:
+            code = set_proc( pgls,
+                             pgls->g.screen.param.user_defined.pattern_index,
+                             pgls->g.pen.selected
+                             );
+            break;
+
+	  case hpgl_SV_pattern_user_defined:
+            code = set_proc( pgls,
+                             pgls->g.fill.param.pattern_id,
+                             pgls->g.pen.selected
+                             );
+            break;
+
+	  default:
+	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+	    break;
+	}
+	break;
+
+      default:
+	dprintf("hpgl_set_drawing_color: internal error illegal mode\n");
+	break;
+    }
+
+set:
+    if (code >= 0) {
+        gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);
+        gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
+        gs_settexturetransparent(pgls->pgs, pgls->g.source_transparent);
+        gs_setfilladjust(pgls->pgs, pgls->grid_adjust, pgls->grid_adjust);
+    }
+
+    return code;
 }
 
  private int
-hpgl_set_drawing_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+hpgl_set_drawing_state(
+    hpgl_state_t *           pgls,
+    hpgl_rendering_mode_t    render_mode
+)
 {
-	/* do dash stuff. */
-	hpgl_call(hpgl_set_graphics_dash_state(pgls));
+    /* do dash stuff. */
+    hpgl_call(hpgl_set_graphics_dash_state(pgls));
 
-	/* joins, caps, and line width. */
-	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls, render_mode));
-	
-	/* set up a clipping region */
-	hpgl_call(hpgl_set_clipping_region(pgls, render_mode));
+    /* joins, caps, and line width. */
+    hpgl_call(hpgl_set_graphics_line_attribute_state(pgls, render_mode));
 
-	/* set up the hpgl fills. */
-	hpgl_call(hpgl_set_drawing_color(pgls, render_mode));
+    /* set up a clipping region */
+    hpgl_call(hpgl_set_clipping_region(pgls, render_mode));
 
-	return 0;
+    /* set up the hpgl fills. */
+    hpgl_call(hpgl_set_drawing_color(pgls, render_mode));
+
+    return 0;
 }
 
  int
-hpgl_get_current_position(hpgl_state_t *pgls, gs_point *pt)
+hpgl_get_current_position(
+    hpgl_state_t *  pgls,
+    gs_point *      pt
+)
 {
-	*pt = pgls->g.pos;
-	return 0;
+    *pt = pgls->g.pos;
+    return 0;
 }
 
  int
-hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt)
+hpgl_set_current_position(
+    hpgl_state_t *  pgls,
+    gs_point *      pt
+)
 {
-	pgls->g.pos = *pt;
-	return 0;
+    pgls->g.pos = *pt;
+    return 0;
 }
 
  int
-hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
-		       hpgl_plot_function_t func, bool set_ctm)
+hpgl_add_point_to_path(
+    hpgl_state_t *          pgls,
+    floatp                  x,
+    floatp                  y,
+    hpgl_plot_function_t    func,
+    bool                    set_ctm
+)
 {	
-	static int (*gs_procs[])(P3(gs_state *, floatp, floatp)) = {
-	  hpgl_plot_function_procedures
-	};
+    static int              (*const gs_procs[])(P3(gs_state *, floatp, floatp))
+                                = { hpgl_plot_function_procedures };
 
-	if ( gx_path_is_null(gx_current_path(pgls->pgs)) )
-	  {
-	    /* Start a new GL/2 path. */
-	    gs_point current_pt;
-	    gs_point new_pt;
-	    new_pt.x = x; new_pt.y = y;
-	    if ( set_ctm )
-	      hpgl_call(hpgl_set_ctm(pgls));
-	    hpgl_call(gs_newpath(pgls->pgs));
+    if (gx_path_is_null(gx_current_path(pgls->pgs))) {
+	/* Start a new GL/2 path. */
+	gs_point    current_pt;
 
-	    /* moveto the current position */
-	    hpgl_call(hpgl_get_current_position(pgls, &current_pt));
-	    hpgl_call_check_lost(gs_moveto(pgls->pgs,
-					   current_pt.x,
-					   current_pt.y));
-	  }
-	{ int code = (*gs_procs[func])(pgls->pgs, x, y);
+	if (set_ctm)
+	    hpgl_call(hpgl_set_ctm(pgls));
+	hpgl_call(gs_newpath(pgls->pgs));
 
-	  if ( code < 0 )
-	    { hpgl_call_note_error(code);
-	      if ( code == gs_error_limitcheck )
+	/* moveto the current position */
+	hpgl_call(hpgl_get_current_position(pgls, &current_pt));
+	hpgl_call_check_lost( gs_moveto( pgls->pgs,
+					 current_pt.x,
+					 current_pt.y
+                                         ) );
+    }
+    {
+        int     code = (*gs_procs[func])(pgls->pgs, x, y);
+
+	if (code < 0) {
+            hpgl_call_note_error(code);
+	    if (code == gs_error_limitcheck)
 		hpgl_set_lost_mode(pgls, hpgl_lost_mode_entered);
-	    }
-	  else
-	    { gs_point point;
+	} else {
+            gs_point    point;
 
-	      if ( hpgl_plot_is_absolute(func) )
-		hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
+	    if (hpgl_plot_is_absolute(func))
+	        hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
 
-	      /* update hpgl's state position */
-	      hpgl_call(gs_currentpoint(pgls->pgs, &point));
-	      hpgl_call(hpgl_set_current_position(pgls, &point));
-	    }
+	    /* update hpgl's state position */
+	    hpgl_call(gs_currentpoint(pgls->pgs, &point));
+	    hpgl_call(hpgl_set_current_position(pgls, &point));
 	}
+    }
 
-	return 0;
+    return 0;
 }
 
 /* destroy the current path. */
@@ -1000,161 +1125,205 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 	return 0;
 }
 
-/* an implicit gl/2 style closepath.  If the first and last point are
-   the same the path gets closed. HAS - eliminate CSE gx_current_path */
+/*
+ * an implicit gl/2 style closepath.  If the first and last point are
+ * the same the path gets closed. HAS - eliminate CSE gx_current_path
+ */
  int
-hpgl_close_path(hpgl_state_t *pgls)
+hpgl_close_path(
+    hpgl_state_t *  pgls
+)
 {
-	gs_point first, first_device, last;
-	/* if we do not have a subpath there is nothing to do.  HAS
-           perhaps hpgl_draw_current_path() should make this
-           observation instead of checking for a null path??? */
-	if ( !gx_current_path(pgls->pgs)->current_subpath ) return 0;
-	
-	/* get the first points of the path in device space */
-	first_device.x = (gx_current_path(pgls->pgs))->current_subpath->pt.x;
-	first_device.y = (gx_current_path(pgls->pgs))->current_subpath->pt.y;
-	/* convert to user/plu space */
-	hpgl_call(gs_itransform(pgls->pgs,
-				fixed2float(first_device.x),
-				fixed2float(first_device.y),
-				&first));
+    gs_point        first, first_device, last;
 
-	/* get gl/2 current position -- always current units */
-	hpgl_call(hpgl_get_current_position(pgls, &last));
-	/* if the first and last are the same close the path (i.e
-           force gs to apply join and miter) */
-	if ( (first.x == last.x) && (first.y == last.y) )
-	    hpgl_call(gs_closepath(pgls->pgs));
-	return 0;
+    /*
+     * if we do not have a subpath there is nothing to do.  HAS
+     * perhaps hpgl_draw_current_path() should make this
+     * observation instead of checking for a null path??? 
+     */
+    if (!gx_current_path(pgls->pgs)->current_subpath)
+        return 0;
+	
+    /* get the first points of the path in device space */
+    first_device.x = (gx_current_path(pgls->pgs))->current_subpath->pt.x;
+    first_device.y = (gx_current_path(pgls->pgs))->current_subpath->pt.y;
+
+    /* convert to user/plu space */
+    hpgl_call( gs_itransform( pgls->pgs,
+			      fixed2float(first_device.x),
+			      fixed2float(first_device.y),
+			      &first
+                              ) );
+
+    /* get gl/2 current position -- always current units */
+    hpgl_call(hpgl_get_current_position(pgls, &last));
+
+    /*
+     * if the first and last are the same close the path (i.e
+     * force gs to apply join and miter)
+     */
+    if ((first.x == last.x) && (first.y == last.y))
+	hpgl_call(gs_closepath(pgls->pgs));
+    return 0;
 }
 
-/* HAS -- There will need to be compression phase here note that
-   extraneous PU's do not result in separate subpaths.  */
+/*
+ * HAS -- There will need to be compression phase here note that
+ * extraneous PU's do not result in separate subpaths.
+ */
 
-/* Draw (stroke or fill) the current path. */
+/*
+ * Draw (stroke or fill) the current path.
+ */
  int
-hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+hpgl_draw_current_path(
+    hpgl_state_t *          pgls,
+    hpgl_rendering_mode_t   render_mode
+)
 {
-	gs_state *pgs = pgls->pgs;
+    gs_state *              pgs = pgls->pgs;
+    pcl_pattern_set_proc_t  set_proc;
+    int                     code = 0;
 
-	if ( gx_path_is_null(gx_current_path(pgs)) )
-	  return 0;
+    if (gx_path_is_null(gx_current_path(pgs)))
+	return 0;
 
-	hpgl_call(hpgl_close_path(pgls));
-	hpgl_call(hpgl_set_drawing_state(pgls, render_mode));
-	
-	switch ( render_mode )
-	  {
-	  case hpgl_rm_character:
-	    {
-	      /* HAS need to set attributes in set_drawing color (next 2) */
+    hpgl_call(hpgl_close_path(pgls));
+    hpgl_call(hpgl_set_drawing_state(pgls, render_mode));
 
-	      /* Intellifonts require eofill, but TrueType require fill. */
-	      /****** HACK: look at the scaling technology of ******/
-	      /****** the current font to decide. ******/
-	      int (*fill)(P1(gs_state *));
+    switch (render_mode) {
 
-	      if ( pgls->g.font->scaling_technology == plfst_Intellifont )
+      case hpgl_rm_character:
+	{
+	    /* HAS need to set attributes in set_drawing color (next 2) */
+
+	    /* Intellifonts require eofill, but TrueType require fill. */
+	    /****** HACK: look at the scaling technology of ******/
+	    /****** the current font to decide. ******/
+	    int     (*fill)(P1(gs_state *));
+
+	    if (pgls->g.font->scaling_technology == plfst_Intellifont)
 		fill = gs_eofill;
-	      else
+	    else
 		fill = gs_fill;
-	      switch ( pgls->g.character.fill_mode )
-		{
-		case hpgl_char_solid_edge:
-		  gs_setgray(pgs, 0.0);	/* solid fill */
-		  hpgl_call((*fill)(pgs));
-		  /* falls through */
-		case hpgl_char_edge:
-		  if ( pgls->g.bitmap_fonts_allowed )
+
+	    switch (pgls->g.character.fill_mode) {
+
+	      case hpgl_char_solid_edge:
+                set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
+                if ((code = set_proc(pgls, pgls->g.pen.selected, 0)) < 0)
+                    return code;
+		hpgl_call((*fill)(pgs));
+		/* falls through */
+
+	      case hpgl_char_edge:
+		if (pgls->g.bitmap_fonts_allowed)
 		    break;	/* no edging */
-		  if ( pgls->g.character.edge_pen != 0 )
-		    { gs_setgray(pgs, 0.0);	/* solid edge */
-		      hpgl_call(hpgl_set_plu_ctm(pgls));
-		      gs_setlinewidth(pgs, 0.1);
-		      hpgl_call(gs_stroke(pgs));
-		    }
-		  break;
-		case hpgl_char_fill:
-		  /****** SHOULD USE VECTOR FILL ******/
-		  hpgl_call((*fill)(pgs));
-		  break;
-		case hpgl_char_fill_edge:
-		  /****** SHOULD USE VECTOR FILL ******/
-		  if ( pgls->g.bitmap_fonts_allowed )
+                set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
+                if ((code = set_proc(pgls, pgls->g.character.edge_pen, 0)) < 0)
+                    return code;
+		hpgl_call(hpgl_set_plu_ctm(pgls));
+		gs_setlinewidth(pgs, 0.1);
+		hpgl_call(gs_stroke(pgs));
+		break;
+
+	      case hpgl_char_fill:
+		/****** SHOULD USE VECTOR FILL ******/
+		hpgl_call((*fill)(pgs));
+		break;
+
+	      case hpgl_char_fill_edge:
+		/****** SHOULD USE VECTOR FILL ******/
+		if (pgls->g.bitmap_fonts_allowed)
 		    break;	/* no edging */
-		  if ( pgls->g.character.edge_pen != 0 )
-		    {
-		      hpgl_call(hpgl_gsave(pgls));
-		      gs_setgray(pgs, 0.0);	/* solid edge */
-		      gs_setlinewidth(pgs, 0.1);
-		      hpgl_call(hpgl_set_plu_ctm(pgls));
-		      hpgl_call(gs_stroke(pgs));
-		      hpgl_call(hpgl_grestore(pgls));
-		    }
-		  hpgl_call((*fill)(pgs));
-		}
+                set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
+		hpgl_call(hpgl_gsave(pgls));
+                if ((code = set_proc(pgls, pgls->g.character.edge_pen, 0)) < 0)
+                    return code;
+		gs_setlinewidth(pgs, 0.1);
+		hpgl_call(hpgl_set_plu_ctm(pgls));
+		hpgl_call(gs_stroke(pgs));
+		hpgl_call(hpgl_grestore(pgls));
+		hpgl_call((*fill)(pgs));
 	    }
-	    break;
-	  case hpgl_rm_polygon:
-	    if ( pgls->g.fill_type == hpgl_even_odd_rule )
-	      hpgl_call(gs_eofill(pgs));
-	    else /* hpgl_winding_number_rule */
-	      hpgl_call(gs_fill(pgs));
-	    break;
-	  case hpgl_rm_clip_and_fill_polygon:
-	    /* A bizarre HPISM - If the pen is white we do a solid
-               white fill this is true for *all* fill types (arg!) as
-               tested on the 6mp.  If pen 1 (black)
-               hpgl_set_drawing_color() handles this case by drawing
-               the lines that comprise the vector fill */
-	    if ( pgls->g.pen.selected == 0 )
-	      hpgl_call(gs_fill(pgls->pgs));
-	    break;
-	  case hpgl_rm_vector:
-	  case hpgl_rm_vector_fill:
-	    /* we reset the ctm before stroking to preserve the line width
-	       information */
-	    hpgl_call(hpgl_set_plu_ctm(pgls));
-	    hpgl_call(gs_stroke(pgls->pgs));
-	    break;
-	  default :
-	    dprintf("unknown render mode\n");
-	  }
+	}
+	break;
 
-	/* the page has been marked */
-	pgls->have_page = true;
-	return 0;
+      case hpgl_rm_polygon:
+	if (pgls->g.fill_type == hpgl_even_odd_rule)
+	    hpgl_call(gs_eofill(pgs));
+	else    /* hpgl_winding_number_rule */
+	    hpgl_call(gs_fill(pgs));
+	break;
+
+      case hpgl_rm_clip_and_fill_polygon:
+	/*
+	 * A bizarre HPISM - If the pen is white we do a solid
+         * white fill this is true for *all* fill types (arg!) as
+         * tested on the 6mp.  If pen 1 (black)
+         * hpgl_set_drawing_color() handles this case by drawing
+         * the lines that comprise the vector fill
+         */
+	if (pgls->g.pen.selected == 0)
+	    hpgl_call(gs_fill(pgls->pgs));
+	break;
+
+      case hpgl_rm_vector:
+      case hpgl_rm_vector_fill:
+	/*
+         * we reset the ctm before stroking to preserve the line width 
+         * information
+         */
+        hpgl_call(hpgl_set_plu_ctm(pgls));
+        hpgl_call(gs_stroke(pgls->pgs));
+        break;
+
+      default :
+        dprintf("unknown render mode\n");
+    }
+
+    /* the page has been marked */
+    pgls->have_page = true;
+    return 0;
 }
 
  int
-hpgl_copy_current_path_to_polygon_buffer(hpgl_state_t *pgls)
+hpgl_copy_current_path_to_polygon_buffer(
+    hpgl_state_t *  pgls
+)
 {
-	gx_path *ppath = gx_current_path(pgls->pgs);
+    gx_path *       ppath = gx_current_path(pgls->pgs);
 
-	gx_path_copy(ppath, &pgls->g.polygon.buffer.path, true );
-	return 0;
+    gx_path_new(&pgls->g.polygon.buffer.path);
+    gx_path_copy(ppath, &pgls->g.polygon.buffer.path);
+    return 0;
 }
 
  int
-hpgl_gsave(hpgl_state_t *pgls)
+hpgl_gsave(
+    hpgl_state_t *  pgls
+)
 {
-	hpgl_call(gs_gsave(pgls->pgs));
-	return 0;
+    hpgl_call(gs_gsave(pgls->pgs));
+    return 0;
 }
 
  int
-hpgl_grestore(hpgl_state_t *pgls)
+hpgl_grestore(
+    hpgl_state_t *  pgls
+)
 {
-	hpgl_call(gs_grestore(pgls->pgs));
-	return 0;
+    hpgl_call(gs_grestore(pgls->pgs));
+    return 0;
 }
 
-
  int
-hpgl_copy_polygon_buffer_to_current_path(hpgl_state_t *pgls)
+hpgl_copy_polygon_buffer_to_current_path(
+    hpgl_state_t *  pgls
+)
 {
-	gx_path *ppath = gx_current_path(pgls->pgs);
-	gx_path_copy(&pgls->g.polygon.buffer.path, ppath, true );
-	return 0;
+    gx_path *       ppath = gx_current_path(pgls->pgs);
+
+    gx_path_copy(&pgls->g.polygon.buffer.path, ppath);
+    return 0;
 }

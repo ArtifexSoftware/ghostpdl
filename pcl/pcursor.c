@@ -1,284 +1,806 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* pcursor.c */
-/* PCL5 cursor positioning commands */
+/* pcursor.c - PCL5 cursor positioning commands */
+
 #include "std.h"
+#include "math_.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcdraw.h"
+#include "pcpatxfm.h"
 #include "pcfont.h"
+#include "pcursor.h"
+#include "pcpage.h"
 #include "gscoord.h"
 
-/* Control character implementations. */
-/* do_CR and do_LF are exported for display_functions. */
 
-int
-pcl_do_CR(pcl_state_t *pcls)
-{	
-	pcl_break_underline(pcls);
-	pcls->cap.x = pcl_left_margin(pcls);
-	pcl_continue_underline(pcls);
-	return 0;
+/*
+ * The PCL current addressable position. This is NOT part of the PCL state,
+ * even though it was previously implemented that way.
+ *
+ * This point is in "pseudo print direction" space.
+ */
+coord_point pcl_cap;
+
+/*
+ * Hoizontal and vertical movement.
+ *
+ * This is one of the most confusing areas of PCL because the individual
+ * movement commands and margins evolved at different times in the history
+ * of PCL, and thus have different behavior. In the dicussion below, we
+ * divide the various horizontal and vertical motion commands into groups,
+ * and identify the interaction of each group with the corresponding horizontal
+ * or vertical boundaries. (Note that, if the current print direciton is not
+ * zero, what is called the "left" logical page boundary would, from the 
+ * point of view of the logical page, be given a different label.)
+ *
+ * Horizontal motion commmands (note: a movement "transitions" a boundary if
+ * the current point before and after the movement is on opposite sides of
+ * the boundary):
+ *
+ *     a. Horizontal position by column, decipoint, or PCL unit, in absolute
+ *        or relative mode, and horizontal motion due to rasters:
+ *
+ *         "left" logical page boundary is used as origin for absolute positions
+ *         movement to the left of the left logical page boundary is clamped
+ *             to that boundary
+ *         left text boundary is ignored
+ *         right text boundary is ignored
+ *         movement beyond the "right" logical page boundary is clamped to
+ *             that boundary
+ *
+ *     b. Tab (always relative)
+ *
+ *         "left" logical boundary is irrelevant
+ *         left text boundary is used as the origin for tab stops
+ *         movement that transitions the right text boundary is clamped to
+ *             that boundary
+ *         movement beyond the "right" logical page boundary is clamped
+ *             to that boundary
+ *
+ *     c. Character or space (code legal in symbol set up not occupied by a
+ *        printable character; motion always relative)
+ *
+ *         "left" logical page boundary is irrelevant
+ *         left text boundary is ignored
+ *         if the character WOULD transition the right text boundary, ignore
+ *             the character or issue a CR/LF sequence BEFORE printing the
+ *             character, base on whether or not end-of-line wrapping is
+ *             enabled (with one exception; see below)
+ *         if the character WOULD transition the "right" logical page  boundary,
+ *             ignore the character or issue a CR/LF sequence BEFORE printing
+ *             the character, base on whether or not end-of-line wrapping is
+ *             enabled
+ *
+ *        Note that only one of the latter two operations will be preformed if
+ *        the logical and text margins are the same.
+ *
+ *        An exception is made in third case above in the event that a back-
+ *        space was received immediately before the character to be rendered.
+ *        In that case, the character is rendered regardless of the transition
+ *        of the right text boundary.
+ *
+ *     d. Carriage return (always absolute)
+ *
+ *         "left" logical page boundary is irrelevant
+ *         left text boundary is used as the new horizontal location
+ *         right text boundary is irrelevant
+ *         "right" logical page boundary is irrelevant
+ *
+ *     e. Back space
+ *
+ *         movement beyond the "left" logical page boundary is clamped to
+ *             that boundary
+ *         movement that would transition the left text boundary is clamped
+ *             to that boundary
+ *         right text boundary is ignored (this is contrary to HP's
+ *             documentation, but empirically verified on several machines)
+ *         "right" logical page boundary is irrelevant
+ *
+ * In addtion, any horizontal movement to the left will "break" the current
+ * underline (this is significant for floating underlines).
+ * 
+ * Vertical motion commands:
+ *
+ *     f. Vertical cursor position by decipoints or PCL units (but NOT by
+ *        rows), both absolute and relative
+ *
+ *         movement beyond the "top" logical page boundary is clamped to
+ *             that boundary
+ *         top text boundary is used as the origin for absolute moves
+ *         bottom text margin is ignored
+ *         movement beyond the "bottom" logical page boundary is clamped to
+ *             that boundary
+ *
+ *     g. Absolute (NOT relative) vertical cursor position by rows
+ *
+ *         "top" logical page boundary is irrelevant (can only be reached by
+ *             relative moves)
+ *         top text boundary, offset by 75% of the VMI distance, is used as
+ *             the origin
+ *         bottom text margin is ignored
+ *         movement beyond the "bottom" logical page boundary is clamped to
+ *             that boundary
+ *
+ *     h. Relative (NOT absolute) vertical cursor position by rows, and both
+ *        line-feed and half line-feed when perforation skip is disabled
+ *
+ *         movement beyond the "top" logical page boundary is clamped to
+ *             that boundary
+ *         if and advance of n rows (n == 1 for LF) is requested, and only
+ *             m additional rows can be accommodated on the current page,
+ *             an implicit page ejection occurs and the cursor is positioned
+ *             n - m rows below the "top" logical page boundary on the
+ *             subsequent page; if the subsequent page will not accommodate
+ *             n - m rows, the process is repeated
+ *         after an implicit page eject (see below), the cursor is positioned
+ *             one VMI distance below the "top" logical page boundary plus
+ *             
+ *         top text boundary is ignored
+ *         bottom text boundary is ignored
+ *         movement beyond the "bottom" page boundary causes an implicit
+ *             page eject
+ *
+ *     i. Line-feed and halft line feed, when perforation skip is enabled
+ *
+ *         "top" logical page boundary is irrelevant
+ *         after an implicit page eject (see below), the cursor is set 75% of
+ *             the VMI distance below the top text boundary
+ *         any movement that ends below the bottom text boundary causes a
+ *             page eject (NB: this does not require a transition of the
+ *             boundary, as is the case for the right text boundary)
+ *         the "bottom" logical page boundary is irrelevant
+ *
+ *     j. Form feed
+ *
+ *         "top" logical page boundary is irrelevant
+ *         the cursor is positioned 75% of the VMI distance below the top
+ *             text boundary
+ *         bottom text boundary is irrelevant
+ *         "bottom" logical page boundary is irrelevant
+ *
+ * Wow - an even 10 different forms to accommodate.
+ *
+ * The special handling required by character and space induced horizontal
+ * movement is handled in pctext.c (pcl_show_chars); all other movement is
+ * handled in this file.
+ */
+
+#define HOME_X(pcs) (pcs->margins.left)
+#define HOME_Y(pcs) (pcs->margins.top + (3L * pcs->vmi_cp) / 4L)
+
+  void
+pcl_set_cap_x(
+    pcl_state_t *   pcs,
+    coord           x,
+    bool            relative,
+    bool            use_margins
+)
+{
+    coord               old_x = pcl_cap.x;
+
+    if (relative)
+        x += pcl_cap.x;
+
+    /* the horizontal text margins are only interesting in transition */
+    if (use_margins) {
+        coord   min_x =  pcs->margins.left;
+        coord   max_x = pcs->margins.right;
+        
+        if ((old_x >= min_x) && (x < min_x))
+            x = min_x;
+        else if ((old_x <= max_x) && (x > max_x))
+            x = max_x;
+    }
+
+    /* the logical page bounds always apply */
+    x = ( x > pcs->xfm_state.pd_size.x ? pcs->xfm_state.pd_size.x 
+                                       : (x < 0L ? 0L : x) );
+
+    /* leftward motion "breaks" an underline */
+    if (x < old_x) {
+        pcl_break_underline(pcs);
+        pcl_cap.x = x;
+        pcl_continue_underline(pcs);
+    } else
+        pcl_cap.x = x;
 }
 
-private int
-pcl_do_FF(pcl_state_t *pcls)
-{	int code;
-	code = pcl_end_page_always(pcls);
-	if ( code < 0 )
-	  return code;
-	pcls->cap.y = pcl_top_margin(pcls) + (0.75 * pcls->vmi);
-	pcl_continue_underline(pcls);	/* (after adjusting y!) */
-	return 0;
+  int
+pcl_set_cap_y(
+    pcl_state_t *   pcs,
+    coord           y,
+    bool            relative,
+    bool            use_margins,
+    bool            by_row
+)
+{
+    coord           lim_y = pcs->xfm_state.pd_size.y;
+    coord           max_y = pcs->margins.top + pcs->margins.length;
+    bool            page_eject = (by_row && relative);
+
+    /* adjust the vertical position provided */
+    if (relative)
+        y += pcl_cap.y;
+    else
+        y += (by_row ? HOME_Y(pcs) : pcs->margins.top);
+
+    /* vertical moves always "break" underlines */
+    pcl_break_underline(pcs);
+
+    max_y = (use_margins ? max_y : lim_y);
+    if (y < 0L)
+        pcl_cap.y = 0L;
+    if (y <= max_y)
+        pcl_cap.y = y;
+    else if (!page_eject)
+        pcl_cap.y = (y <= lim_y ? y : lim_y);
+    else {
+        coord   vmi_cp = pcs->vmi_cp;
+        coord   y0 = pcl_cap.y;
+
+        while (y > max_y) {
+            int    code = pcl_end_page_always(pcs);
+
+            if (code < 0)
+                return code;
+            y -= (y0 <= max_y ? max_y : y0);
+            y0 = (use_margins ? HOME_Y(pcs) : vmi_cp);
+
+            /* if one VMI distance or less remains, always exit */
+            if ((vmi_cp == 0) || (y <= vmi_cp)) {
+                y = y0;
+                break;
+            }
+
+            /* otherwise, round to a multiple of VMI distance */
+            y += y0 - 1 - ((y - 1) % vmi_cp);
+        }
+
+        pcl_cap.y = y;
+    }
+
+    pcl_continue_underline(pcs);
+    return 0;
 }
 
-/* Move the cursor down, taking perforation skip into account if necessary. */
-private int
-move_down(pcl_state_t *pcls, coord dy)
-{	coord y = pcls->cap.y + dy;
-	if ( pcls->perforation_skip &&
-	     y > pcl_top_margin(pcls) + pcl_text_length(pcls)
-	   )
-	  return pcl_do_FF(pcls);
-	pcl_set_cursor_y(pcls, y, false);
-	return 0;
+/* some convenient short-hand for the cursor movement commands */
+#define do_horiz_motion(pargs, pcs, mul)                                      \
+    pcl_set_cap_x((pcs), float_arg(pargs) * (mul), arg_is_signed(pargs), false)
+
+#define do_vertical_move(pcs, pargs, mul, use_margins, by_row)  \
+    return pcl_set_cap_y( (pcs),                                \
+                          float_arg(pargs) * (mul),             \
+                          arg_is_signed(pargs),                 \
+                          (use_margins),                        \
+                          (by_row)                              \
+                          )
+
+
+/*
+ * Control character action implementation.
+ *
+ * These routines perform just the individual actions. The control character
+ * routines may invoke several of these, based on the selected line termination
+ * setting.
+ *
+ * do_CR and do_LF are exported for use by the text manipulation routines and
+ * the display functions.
+ *
+ * Note: CR always "breaks" an underline, even if it is a movement to the right.
+ */
+  void
+pcl_do_CR(
+    pcl_state_t *   pcs
+)
+{
+    pcl_break_underline(pcs);
+    pcl_set_cap_x(pcs, pcs->margins.left, false, false);
+    pcl_continue_underline(pcs);
 }
 
-int
-pcl_do_LF(pcl_state_t *pcls)
-{	return move_down(pcls, pcls->vmi);
+  int
+pcl_do_LF(
+    pcl_state_t *   pcs
+)
+{
+    return pcl_set_cap_y( pcs, 
+                          pcs->vmi_cp,
+                          true,
+                          (pcs->perforation_skip == 1),
+                          true
+                          );
 }
+
+/*
+ * Unconditionally feed a page, and move the the "home" verical position on
+ * the followin page.
+ */
+  private int
+pcl_do_FF(
+    pcl_state_t *   pcs
+)
+{
+    int             code = pcl_end_page_always(pcs);
+
+    if (code >= 0) {
+        code = pcl_set_cap_y(pcs, 0L, false, false, true);
+        pcl_continue_underline(pcs);	/* (after adjusting y!) */
+    }
+    return code;
+}
+
+/*
+ * Return the cursor to its "home" position
+ */
+  void
+pcl_home_cursor(
+    pcl_state_t *   pcs
+)
+{
+    pcl_set_cap_x(pcs, pcs->margins.left, false, false);
+    pcl_set_cap_y(pcs, 0L, false, false, true);
+}
+
+/*
+ * Update the HMI by recomputing it from the font.
+ */
+  coord
+pcl_updated_hmi(
+    pcl_state_t *                   pcs
+)
+{
+    coord                           hmi;
+    const pcl_font_selection_t *    pfs = 
+                                     &(pcs->font_selection[pcs->font_selected]);
+    int                             code = pcl_recompute_font(pcs);
+    const pl_font_t *               plfont = pcs->font;
+
+    if (code < 0)
+        return pcs->hmi_cp;     /* bad news; don't mark the HMI as valid. */
+
+    if (pl_font_is_scalable(plfont)) {
+        if (plfont->params.proportional_spacing)
+            /* Scale the font's pitch by the requested height. */
+            hmi = pl_fp_pitch_cp(&plfont->params) * pfs->params.height_4ths / 4;
+        else
+            hmi = pl_fp_pitch_cp(&(pfs->params));
+    } else
+        hmi = pl_fp_pitch_cp(&(plfont->params));
+
+    /*
+     * Round to a multiple of the unit of measure (see the "PCL 5 Printer
+     * LanguageTechnical Reference Manual", October 1992 ed., page 5-22.
+     */
+    hmi = hmi + pcs->uom_cp / 2;
+    return pcs->hmi_cp = hmi - (hmi % pcs->uom_cp);
+}
+
 
 /* Commands */
 
-int /* ESC & a <cols> C */
-pcl_horiz_cursor_pos_columns(pcl_args_t *pargs, pcl_state_t *pcls)
-{	float x = float_arg(pargs) * pcl_hmi(pcls);
-	pcl_set_cursor_x(pcls,
-			 (coord)(arg_is_signed(pargs) ? pcls->cap.x + x : x),
-			 false);
-	return 0;
-}
-
-int /* ESC & a <dp> H */
-pcl_horiz_cursor_pos_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
-{	float x = float_arg(pargs) * 10;		/* centipoints */
-	pcl_set_cursor_x(pcls,
-			 (coord)(arg_is_signed(pargs) ? pcls->cap.x + x : x),
-			 false);
-	return 0;
-}
-
-int /* ESC * p <units> X */
-pcl_horiz_cursor_pos_units(pcl_args_t *pargs, pcl_state_t *pcls)
-{	float x = float_arg(pargs) * pcls->uom_cp;	/* centipoints */
-	pcl_set_cursor_x(pcls,
-			 (coord)(arg_is_signed(pargs) ? pcls->cap.x + x : x),
-			 false);
-	return 0;
-}
-
-int /* CR */
-pcl_CR(pcl_args_t *pargs, pcl_state_t *pcls)
-{	int code = pcl_do_CR(pcls);
-	if ( code < 0 )
-	  return code;
-	if ( pcls->line_termination & 1 )
-	  code = pcl_do_LF(pcls);
-	return code;
-}
-
-/* SP is handled in pcl_text */
-
-int /* BS */
-pcl_BS(pcl_args_t *pargs, pcl_state_t *pcls)
+/*
+ * ESC & k <x> H
+ *
+ * Set horizontal motion index.
+ */
+  private int
+set_horiz_motion_index(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
 {
-	pcl_set_cursor_x(pcls, pcls->cap.x - pcls->last_width.x, true);
-	pcl_set_cursor_y(pcls, pcls->cap.y - pcls->last_width.y, true);
-	pcls->last_was_BS = true;
-	return 0;
+    pcs->hmi_cp = inch2coord(fabs(float_arg(pargs)) / 120.0);
+    return 0;
 }
 
-int /* HT */
-pcl_HT(pcl_args_t *pargs, pcl_state_t *pcls)
-{	coord hmi = pcl_hmi(pcls);
-
-	if ( hmi == 0 )
-	  return 0;
-	{ coord tab = hmi * 8;
-	  coord x_pos = pcls->cap.x - pcl_left_margin(pcls);
-
-	  if ( x_pos < 0 )
-	    x_pos = 0;
-	  pcl_set_cursor_x(pcls,
-			   ((int)(x_pos / tab) + 1) * tab + pcl_left_margin(pcls),
-			   true);
-	}
-	return 0;
+/*
+ * ESC & l <y> C
+ *
+ * Set vertical motion index.
+ *
+ * Contrary to HP's documentation ("PCL 5 Printer Language Technical Reference
+ * Manual", October 1992 ed., p. 5-24), this command is NOT ignored if the
+ * requested VMI is greater than the page length.
+ */
+  private int
+set_vert_motion_index(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    pcs->vmi_cp = inch2coord(fabs(float_arg(pargs)) / 48.0);
+    return 0;
 }
 
-int /* ESC & a <rows> R */
-pcl_vert_cursor_pos_rows(pcl_args_t *pargs, pcl_state_t *pcls)
-{	float y = float_arg(pargs) * pcls->vmi;		/* centipoints */
-	/* TRM 5-18 justifies the following computation */
-	/* (which is not, however, mentioned on TRM 6-10 under the */
-	/* cursor positioning command). */
-	pcl_set_cursor_y(pcls,
-			 (coord)((arg_is_signed(pargs) ? pcls->cap.y :
-				  pcl_top_margin(pcls) + 0.75 * pcls->vmi) + y),
-			 false);
-	return 0;
+/*
+ * ESC & l <lpi> D
+ *
+ * Set line spacing. Though it is not documented anywhere, various HP devices
+ * agree that a zero operand specifies 12 lines per inch (NOT the default).
+ */
+  private int
+set_line_spacing(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    uint            lpi = uint_arg(pargs);
+
+    if (lpi == 0)                   /* 0 ==> 12 lines per inch */
+        lpi = 12;
+    if ((48 % lpi) == 0)            /* lpi must divide 48 */
+        pcs->vmi_cp = inch2coord(1.0 / lpi);
+    return 0;
 }
 
-int /* ESC & a <dp> V */
-pcl_vert_cursor_pos_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
-{	float y = float_arg(pargs) * 10;		/* centipoints */
-	pcl_set_cursor_y(pcls,
-			 (coord)((arg_is_signed(pargs) ? pcls->cap.y :
-				  pcl_top_margin(pcls)) + y),
-			 false);
-	return 0;
+/*
+ * ESC & k G
+ */
+  private int
+set_line_termination(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    uint            ui = uint_arg(pargs);
+
+    if (ui <= 3)
+        pcs->line_termination = ui;
+    return 0;
 }
 
-int /* ESC * p <units> Y */
-pcl_vert_cursor_pos_units(pcl_args_t *pargs, pcl_state_t *pcls)
-{	float y = float_arg(pargs) * pcls->uom_cp;	/* centipoints */
-	pcl_set_cursor_y(pcls,
-			 (coord)((arg_is_signed(pargs) ? pcls->cap.y :
-				  pcl_top_margin(pcls)) + y),
-			 false);
-	return 0;
+
+/*
+ * ESC & a <cols> C
+ */
+  private int
+horiz_cursor_pos_columns(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    do_horiz_motion(pargs, pcs, pcl_hmi(pcs));
+    return 0;
 }
 
-int /* ESC = */
-pcl_half_line_feed(pcl_args_t *pargs, pcl_state_t *pcls)
-{	return move_down(pcls, pcls->vmi / 2);
+/*
+ * ESC & a <dp> H
+ */
+  private int
+horiz_cursor_pos_decipoints(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    do_horiz_motion(pargs, pcs, 10.0);
+    return 0;
 }
 
-int /* LF */
-pcl_LF(pcl_args_t *pargs, pcl_state_t *pcls)
-{	if ( pcls->line_termination & 2 )
-	{	int code = pcl_do_CR(pcls);
-		if ( code < 0 ) return code;
-	}
-	return pcl_do_LF(pcls);
+/*
+ * ESC * p <units> X
+ */
+  private int
+horiz_cursor_pos_units(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    do_horiz_motion(pargs, pcs, pcs->uom_cp);
+    return 0;
 }
 
-int /* FF */
-pcl_FF(pcl_args_t *pargs, pcl_state_t *pcls)
-{	if ( pcls->line_termination & 2 )
-	{	int code = pcl_do_CR(pcls);
-		if ( code < 0 ) return code;
-	}
-	return pcl_do_FF(pcls);
+/*
+ * CR
+ */
+  private int
+cmd_CR(
+    pcl_args_t *    pargs,  /* ignored */
+    pcl_state_t *   pcs
+)
+{
+    pcl_do_CR(pcs);
+    return ((pcs->line_termination & 1) != 0 ? pcl_do_LF(pcs) : 0);
 }
 
-int /* ESC & k G */
-pcl_line_termination(pcl_args_t *pargs, pcl_state_t *pcls)
-{	uint ui = uint_arg(pargs);
-	if ( ui > 3 )
-	  return e_Range;
-	pcls->line_termination = ui;
-	return 0;
+/*
+ * BS
+ */
+  private int
+cmd_BS(
+    pcl_args_t *    pargs,  /* ignored */
+    pcl_state_t *   pcs
+)
+{
+    pcl_set_cap_x(pcs, -pcs->last_width, true, true);
+    pcs->last_was_BS = true;
+    return 0;
 }
 
-int /* ESC & f <pp_enum> S */
-pcl_push_pop_cursor(pcl_args_t *pargs, pcl_state_t *pcls)
-{	/*
-	 * We must convert the cursor to device coordinates, so that
-	 * changing print direction doesn't cause confusion.
-	 */
-	switch ( uint_arg(pargs) )
-	{
-	case 0:		/* push cursor */
-		if ( pcls->cursor_stack.depth < 20 )
-		  { pcl_set_ctm(pcls, true);
-		    gs_transform(pcls->pgs, (floatp)pcls->cap.x,
-				 (floatp)pcls->cap.y,
-				 &pcls->cursor_stack.values[pcls->cursor_stack.depth++]);
-		  }
-		break;
-	case 1:		/* pop cursor */
-		if ( pcls->cursor_stack.depth > 0 )
-		  { const gs_point *old_cap =
-		      &pcls->cursor_stack.values[--(pcls->cursor_stack.depth)];
-		    gs_point new_cap;
+/*
+ * HT
+ *
+ * Tabs occur at ever 8 columns, measure from the left text margin.
+ */
+  private int
+cmd_HT(
+    pcl_args_t *    pargs,  /* ignored */
+    pcl_state_t *   pcs
+)
+{
+    coord           x = pcl_cap.x - pcs->margins.left;
+    coord           tab;
 
-		    pcl_set_ctm(pcls, true);
-		    gs_itransform(pcls->pgs, old_cap->x, old_cap->y, &new_cap);
-		    pcls->cap.x = (coord)new_cap.x;
-		    pcls->cap.y = (coord)new_cap.y;
-		    pcl_clamp_cursor_x(pcls, false);
-		    pcl_clamp_cursor_y(pcls, false);
-		  }
-		break;
-	}
-	return 0;
+    if (x < 0)
+        x = -x;
+    else if ((tab = 8 * pcl_hmi(pcs)) > 0)
+        x = tab - (x % tab);
+    else
+        x = 0L;
+    pcl_set_cap_x(pcs, x, true, true);
+    return 0;
 }
 
-/* Initialization */
-private int
-pcursor_do_init(gs_memory_t *mem)
-{		/* Register commands */
-	DEFINE_CLASS('&')
-	  {'a', 'C',
-	     PCL_COMMAND("Horizontal Cursor Position Columns",
-			 pcl_horiz_cursor_pos_columns,
-			 pca_neg_ok|pca_big_ok)},
-	  {'a', 'H',
-	     PCL_COMMAND("Horizontal Cursor Position Decipoints",
-			 pcl_horiz_cursor_pos_decipoints,
-			 pca_neg_ok|pca_big_ok)},
-	END_CLASS
-	DEFINE_CLASS('*')
-	  {'p', 'X',
-	     PCL_COMMAND("Horizontal Cursor Position Units",
-			 pcl_horiz_cursor_pos_units,
-			 pca_neg_ok|pca_big_ok)},
-	END_CLASS
-	DEFINE_CONTROL(CR, "CR", pcl_CR)
-	/*DEFINE_CONTROL(SP, "SP", pcl_SP)*/	/* handled in pcl_text */
-	DEFINE_CONTROL(BS, "BS", pcl_BS)
-	DEFINE_CONTROL(HT, "HT", pcl_HT)
-	DEFINE_CLASS('&')
-	  {'a', 'R',
-	     PCL_COMMAND("Vertical Cursor Position Rows",
-			 pcl_vert_cursor_pos_rows,
-			 pca_neg_ok|pca_big_ok)},
-	  {'a', 'V',
-	     PCL_COMMAND("Vertical Cursor Position Decipoints",
-			 pcl_vert_cursor_pos_decipoints,
-			 pca_neg_ok|pca_big_ok)},
-	END_CLASS
-	DEFINE_CLASS('*')
-	  {'p', 'Y',
-	     PCL_COMMAND("Vertical Cursor Position Units",
-			 pcl_vert_cursor_pos_units,
-			 pca_neg_ok|pca_big_ok)},
-	END_CLASS
-	DEFINE_ESCAPE('=', "Half Line Feed", pcl_half_line_feed)
-	DEFINE_CONTROL(LF, "LF", pcl_LF)
-	DEFINE_CONTROL(FF, "FF", pcl_FF)
-	DEFINE_CLASS('&')
-	  {'k', 'G',
-	     PCL_COMMAND("Line Termination", pcl_line_termination,
-			 pca_neg_error|pca_big_error)},
-	  {'f', 'S',
-	     PCL_COMMAND("Push/Pop Cursor", pcl_push_pop_cursor,
-			 pca_neg_ignore|pca_big_ignore)},
-	END_CLASS
-	return 0;
+
+/*
+ * ESC & a <rows> R
+ */
+  private int
+vert_cursor_pos_rows(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    do_vertical_move(pcs, pargs, pcs->vmi_cp, false, true);
 }
-private void
-pcursor_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	  { pcls->line_termination = 0;
-	    pcl_home_cursor(pcls);
-	    pcls->cursor_stack.depth = 0;
-	  }
+
+/*
+ * ESC & a <dp> V
+ */
+  private int
+vert_cursor_pos_decipoints(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    do_vertical_move(pcs, pargs, 10.0, false, false);
 }
-const pcl_init_t pcursor_init = {
-  pcursor_do_init, pcursor_do_reset
-};
+
+/*
+ * ESC * p <units> Y
+ */
+  private int
+vert_cursor_pos_units(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    do_vertical_move(pcs, pargs, pcs->uom_cp, false, false);
+}
+
+/*
+ * ESC =
+ */
+  private int
+half_line_feed(
+    pcl_args_t *    pargs,  /* ignored */
+    pcl_state_t *   pcs
+)
+{
+    return pcl_set_cap_y( pcs,
+                          pcs->vmi_cp / 2,
+                          true,
+                          (pcs->perforation_skip == 1),
+                          true
+                          );
+}
+
+/*
+ * LF
+ */
+  private int
+cmd_LF(
+    pcl_args_t *    pargs,  /* ignored */
+    pcl_state_t *   pcs
+)
+{
+    if ((pcs->line_termination & 2) != 0)
+        pcl_do_CR(pcs);
+    return pcl_do_LF(pcs);
+}
+
+/*
+ * FF
+ */
+  private int
+cmd_FF(
+    pcl_args_t *    pargs,  /* ignored */
+    pcl_state_t *   pcs
+)
+{
+    if ((pcs->line_termination & 2) != 0) 
+        pcl_do_CR(pcs);
+    return pcl_do_FF(pcs);
+}
+
+
+/* the cursor stack */
+private gs_point    cursor_stk[20];
+private int         cursor_stk_size;
+
+/*
+ * ESC & f <pp_enum> S
+ *
+ * Contrary to what is indicated in the "PCL 5 Printer Language Technical
+ * Reference Manual", October 1992 ed., p. 6-16, pushd cursors are stored
+ * in logical page space, not device space.
+ */
+  private int
+push_pop_cursor(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    int             type = uint_arg(pargs);
+
+    if ((type == 0) && (cursor_stk_size < countof(cursor_stk))) {
+        gs_point *  ppt = &(cursor_stk[cursor_stk_size++]);
+
+        ppt->x = (double)pcl_cap.x;
+        ppt->y = (double)pcl_cap.y;
+        gs_point_transform( ppt->x, ppt->y, &(pcs->xfm_state.pd2lp_mtx), ppt);
+
+    } else if ((type == 1) && (cursor_stk_size > 0)) {
+        gs_point *  ppt = &(cursor_stk[--cursor_stk_size]);
+        gs_matrix   lp2pd;
+
+        pcl_invert_mtx(&(pcs->xfm_state.pd2lp_mtx), &lp2pd);
+        gs_point_transform(ppt->x, ppt->y, &lp2pd, ppt);
+        pcl_set_cap_x(pcs, (coord)ppt->x, false, false);
+        pcl_set_cap_y( pcs,
+                       (coord)ppt->y - pcs->margins.top,
+                       false,
+                       false,
+                       false
+                       );
+    }
+
+    return 0;
+}
+
+/*
+ * Initialization
+ */
+  private int
+pcursor_do_init(
+    gs_memory_t *   pmem
+)
+{
+
+    DEFINE_CLASS('&')
+    {
+        'k', 'H',
+        PCL_COMMAND( "Horizontal Motion Index",
+                     set_horiz_motion_index,
+		     pca_neg_ok | pca_big_clamp
+                     )
+    },
+    {
+        'l', 'C',
+	PCL_COMMAND( "Vertical Motion Index",
+                     set_vert_motion_index,
+	             pca_neg_ok | pca_big_ignore
+                     )
+    },
+    {
+        'l', 'D',
+        PCL_COMMAND( "Line Spacing",
+                     set_line_spacing,
+		     pca_neg_ok | pca_big_ignore
+                     )
+    },
+    {
+        'k', 'G',
+         PCL_COMMAND( "Line Termination",
+                      set_line_termination,
+    		      pca_neg_ok | pca_big_ignore
+                      )
+    },
+    {
+        'a', 'C',
+         PCL_COMMAND( "Horizontal Cursor Position Columns",
+    		      horiz_cursor_pos_columns,
+    		      pca_neg_ok | pca_big_ok
+                      )
+    },
+    {
+        'a', 'H',
+        PCL_COMMAND( "Horizontal Cursor Position Decipoints",
+    		     horiz_cursor_pos_decipoints,
+		     pca_neg_ok | pca_big_ok
+                     )
+    },
+    {
+        'a', 'R',
+        PCL_COMMAND( "Vertical Cursor Position Rows",
+    		     vert_cursor_pos_rows,
+    		     pca_neg_ok | pca_big_clamp
+                     )
+    },
+    {
+        'a', 'V',
+        PCL_COMMAND( "Vertical Cursor Position Decipoints",
+    		     vert_cursor_pos_decipoints,
+                     pca_neg_ok | pca_big_ok
+                     )
+    },
+    {
+        'f', 'S',
+        PCL_COMMAND( "Push/Pop Cursor",
+                     push_pop_cursor,
+    		     pca_neg_ok | pca_big_ignore
+                     )
+    },
+    END_CLASS
+
+    DEFINE_CLASS('*')
+    {
+        'p', 'X',
+        PCL_COMMAND( "Horizontal Cursor Position Units",
+    		     horiz_cursor_pos_units,
+    		     pca_neg_ok | pca_big_ok
+                     )
+    },
+    {
+        'p', 'Y',
+        PCL_COMMAND( "Vertical Cursor Position Units",
+    	             vert_cursor_pos_units,
+    		     pca_neg_ok | pca_big_ok
+                     )
+    },
+    END_CLASS
+
+    DEFINE_CONTROL(CR, "CR", cmd_CR)
+    DEFINE_CONTROL(BS, "BS", cmd_BS)
+    DEFINE_CONTROL(HT, "HT", cmd_HT)
+    DEFINE_ESCAPE('=', "Half Line Feed", half_line_feed)
+    DEFINE_CONTROL(LF, "LF", cmd_LF)
+    DEFINE_CONTROL(FF, "FF", cmd_FF)
+
+    return 0;
+}
+
+  private void
+pcursor_do_reset(
+    pcl_state_t *       pcs,
+    pcl_reset_type_t    type
+)
+{
+    if ( (type & (pcl_reset_initial | pcl_reset_printer)) != 0 ) {
+        pcs->line_termination = 0;
+    	pcs->hmi_cp = HMI_DEFAULT;
+	pcs->vmi_cp = VMI_DEFAULT;
+        pcl_home_cursor(pcs);
+        cursor_stk_size = 0;
+    }
+}
+
+const pcl_init_t    pcursor_init = { pcursor_do_init, pcursor_do_reset, 0 };

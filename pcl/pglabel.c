@@ -1,9 +1,25 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* pglabel.c */
-/* HP-GL/2 label commands */
+/* pglabel.c - HP-GL/2 label commands */
+
 #include "math_.h"
 #include "memory_.h"
 #include "ctype_.h"
@@ -18,6 +34,8 @@
 #include "pgmisc.h"
 #include "pcfsel.h"
 #include "pcsymbol.h"
+#include "pcpalet.h"
+#include "pcdraw.h"
 #include "gscoord.h"
 #include "gsline.h"
 #include "gspath.h"
@@ -91,7 +109,8 @@ private int
 hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
 {	const pcl_state_t *pcls = gs_state_client_data(penum->pgs);
 #define pgls pcls		/****** NOTA BENE ******/
-	int code = hpgl_next_char(&penum->str, &penum->index, pgls, pchr);
+	int code = hpgl_next_char(&penum->text.data.bytes, &penum->index,
+                                  pgls, pchr);
 
 	if ( code )
 	  return code;
@@ -184,7 +203,8 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 /* Check whether the stick font supports a given symbol set. */
 private bool
 hpgl_stick_font_supports(const pcl_state_t *pcls, uint symbol_set)
-{	pl_glyph_vocabulary_t gv = ~stick_character_complement[7] & 07;
+{	pl_glyph_vocabulary_t gv = (pl_glyph_vocabulary_t)
+                                   (~stick_character_complement[7] & 07);
 	byte id[2];
 	pl_symbol_map_t *map;
 
@@ -445,306 +465,374 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 
 /* ------ LB command ------ */
 
-/* build the path and render it */
- static int
-hpgl_print_char(hpgl_state_t *pgls, uint ch)
+/*
+ * build the path and render it
+ */
+ private int
+hpgl_print_char(
+    hpgl_state_t *                  pgls,
+    uint                            ch
+)
 {
-	int text_path = pgls->g.character.text_path;
-	const pcl_font_selection_t *pfs =
-	  &pgls->g.font_selection[pgls->g.font_selected];
-	const pl_font_t *font = pfs->font;
-	gs_state *pgs = pgls->pgs;
-	gs_point pos;
-	gs_matrix save_ctm;
+    int                             text_path = pgls->g.character.text_path;
+    const pcl_font_selection_t *    pfs =
+	                      &pgls->g.font_selection[pgls->g.font_selected];
+    const pl_font_t *               font = pfs->font;
+    gs_state *                      pgs = pgls->pgs;
+    gs_point                        pos;
+    gs_matrix                       save_ctm;
 
-	/* Set up the graphics state. */
-	pos = pgls->g.pos;
-	/* Reset the 'have path' flag so that the CTM gets reset.
-	   This is a hack; doing things properly requires a more subtle
-	   approach to handling pen up/down and path construction. */
-	hpgl_call(hpgl_clear_current_path(pgls));
-	/*
-	 * All character data is relative, but we have to start at
-	 * the right place.
-	 */
-	hpgl_call(hpgl_add_point_to_path(pgls, pos.x, pos.y,
-					 hpgl_plot_move_absolute, true));
-	gs_currentmatrix(pgs, &save_ctm);
-	/*
-	 * Reset the CTM if GL/2 scaling is on but we aren't using
-	 * relative-size characters (SR).
-	 */
-	hpgl_call(hpgl_set_plu_ctm(pgls));
-	/*
-	 * We know that the drawing machinery only sets the CTM
-	 * once, at the beginning of the path.  We now impose the scale
-	 * (and other transformations) on the CTM so that we can add
-	 * the symbol outline based on a 1x1-unit cell.
-	 */
-	{ gs_font *pfont = pgls->g.font->pfont;
-	  float save_width = pgls->g.pen.width[pgls->g.pen.selected];
-	  bool save_relative = pgls->g.pen.width_relative;
-	  gs_point scale;
-	  bool bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
-	  bool use_show = true;
-	  gs_matrix pre_rmat, rmat, advance_mat;
-	  int angle = -1;	/* a multiple of 90 if used */
-	  int weight = pfs->params.stroke_weight;
-	  gs_show_enum *penum =
-	    gs_show_enum_alloc(pgls->memory, pgs, "hpgl_print_char");
-	  byte str[1];
-	  int code;
-	  gs_point start_pt, end_pt;
-	  hpgl_real_t space_width;
-	  int space_code;
-	  hpgl_real_t width;
+    /* Set up the graphics state. */
+    pos = pgls->g.pos;
 
-	  if ( penum == 0 )
+    /*
+     * Reset the 'have path' flag so that the CTM gets reset.
+     * This is a hack; doing things properly requires a more subtle
+     * approach to handling pen up/down and path construction.
+     */
+    hpgl_call(hpgl_clear_current_path(pgls));
+
+    /*
+     * All character data is relative, but we have to start at
+     * the right place.
+     */
+    hpgl_call( hpgl_add_point_to_path( pgls,
+                                       pos.x,
+                                       pos.y,
+				       hpgl_plot_move_absolute,
+                                       true
+                                       ) );
+    gs_currentmatrix(pgs, &save_ctm);
+
+    /*
+     * Reset the CTM if GL/2 scaling is on but we aren't using
+     * relative-size characters (SR).
+     */
+    hpgl_call(hpgl_set_plu_ctm(pgls));
+
+    /*
+     * We know that the drawing machinery only sets the CTM
+     * once, at the beginning of the path.  We now impose the scale
+     * (and other transformations) on the CTM so that we can add
+     * the symbol outline based on a 1x1-unit cell.
+     */
+    {
+        gs_font *       pfont = pgls->g.font->pfont;
+        const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
+        float           save_width = widths[pgls->g.pen.selected];
+        bool            save_relative = pgls->g.pen.width_relative;
+        gs_point        scale;
+        bool            bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
+        bool            use_show = true;
+        gs_matrix       pre_rmat, rmat, advance_mat;
+        int             angle = -1;	/* a multiple of 90 if used */
+        int             weight = pfs->params.stroke_weight;
+	gs_show_enum *  penum = gs_show_enum_alloc( pgls->memory,
+                                                    pgs,
+                                                    "hpgl_print_char"
+                                                    );
+        byte            str[1];
+        int             code;
+        gs_point        start_pt, end_pt;
+	hpgl_real_t     space_width;
+	int             space_code;
+	hpgl_real_t     width;
+
+	if (penum == 0)
 	    return_error(e_Memory);
-	  /* Handle size. */
-	  if ( pgls->g.character.size_mode == hpgl_size_not_set )
-	    { /* Scale fixed-width fonts by pitch, variable-width by height. */
-	      if ( pfs->params.proportional_spacing )
-		{ if ( pl_font_is_scalable(font) )
-		    scale.x = scale.y =
-		      points_2_plu(pfs->params.height_4ths / 4.0);
-		  else
-		    { double ratio =
-			(double)pfs->params.height_4ths /
-			  font->params.height_4ths;
 
-		      scale.x = ratio *
-			inches_2_plu(1.0 / font->resolution.x);
-		      /* Bitmap fonts use the PCL coordinate system, */
-		      /* so we must invert the Y coordinate. */
-		      scale.y = -(ratio *
-			inches_2_plu(1.0 / font->resolution.y));
-		    }
+	/* Handle size. */
+	if (pgls->g.character.size_mode == hpgl_size_not_set) {
+
+            /* Scale fixed-width fonts by pitch, variable-width by height. */
+	    if (pfs->params.proportional_spacing) {
+	        if (pl_font_is_scalable(font)) {
+		    scale.x = points_2_plu(pfs->params.height_4ths / 4.0);
+                    scale.y = scale.x;
+		} else {
+                    double  ratio = (double)pfs->params.height_4ths
+                                      / font->params.height_4ths;
+
+		    scale.x = ratio * inches_2_plu(1.0 / font->resolution.x);
+
+		    /*
+                     * Bitmap fonts use the PCL coordinate system,
+		     * so we must invert the Y coordinate.
+                     */
+		    scale.y = -(ratio * inches_2_plu(1.0 / font->resolution.y));
 		}
-	      else
-		scale.x = scale.y =
-		  points_2_plu(pl_fp_pitch_cp(&pfs->params) /
-			       pl_fp_pitch_cp(&font->params));
+            } else {
+		scale.x = points_2_plu( pl_fp_pitch_cp(&pfs->params)
+                                        / pl_fp_pitch_cp(&font->params) );
+                scale.y = scale.x;
 	    }
-	  else
-	    { /*
-	       * Note that the CTM takes P1/P2 into account unless
-	       * an absolute character size is in effect.
-	       */
-	      /* * HACKS - I am not sure what this should be the
-                 actual values ??? * */
-	      scale.x = pgls->g.character.size.x * 2.0;
-	      scale.y = pgls->g.character.size.y * (4.0/3.0);
-	      if ( pgls->g.character.size_mode == hpgl_size_relative )
-		scale.x *= pgls->g.P2.x - pgls->g.P1.x,
-		  scale.y *= pgls->g.P2.y - pgls->g.P1.y;
-	      if ( bitmaps_allowed ) /* no mirroring */
-		scale.x = fabs(scale.x), scale.y = fabs(scale.y);
-	    }
-	  gs_scale(pgs, scale.x, scale.y);
-	  /* Handle rotation. */
-	  { double run = pgls->g.character.direction.x,
-	      rise = pgls->g.character.direction.y;
 
-	    if ( pgls->g.character.direction_relative )
-	      run *= pgls->g.P2.x - pgls->g.P1.x,
+        } else {
+            /*
+	     * Note that the CTM takes P1/P2 into account unless
+	     * an absolute character size is in effect.
+	     */
+	    /*
+             * HACKS - I am not sure what this should be the
+             * actual values ??? 
+             */
+	    scale.x = pgls->g.character.size.x * 2.0;
+	    scale.y = pgls->g.character.size.y * (4.0 / 3.0);
+	    if (pgls->g.character.size_mode == hpgl_size_relative)
+		scale.x *= pgls->g.P2.x - pgls->g.P1.x,
+		scale.y *= pgls->g.P2.y - pgls->g.P1.y;
+	    if (bitmaps_allowed)    /* no mirroring */
+		scale.x = fabs(scale.x), scale.y = fabs(scale.y);
+	}
+	gs_scale(pgs, scale.x, scale.y);
+
+	/* Handle rotation. */
+	{
+            double  run = pgls->g.character.direction.x,
+	            rise = pgls->g.character.direction.y;
+
+	    if (pgls->g.character.direction_relative)
+	        run *= pgls->g.P2.x - pgls->g.P1.x,
 		rise *= pgls->g.P2.y - pgls->g.P1.y;
 	    gs_make_identity(&rmat);
-	    if ( run < 0 || rise != 0 )
-	      { double denom = hypot(run, rise);
+	    if ((run < 0) || (rise != 0)) {
+                double  denom = hypot(run, rise);
 
 		rmat.xx = run / denom;
 		rmat.xy = rise / denom;
 		rmat.yx = -rmat.xy;
 		rmat.yy = rmat.xx;
 		if ( bitmaps_allowed &&
-		     run != 0 && rise != 0 /* not a multple of 90 degrees */
-		   )
-		  { /*
+		     (run != 0)      &&
+                     (rise != 0)       ) {  /* not a multple of 90 degrees */
+		    /*
 		     * If bitmap fonts are allowed, rotate to the nearest
 		     * multiple of 90 degrees.  We have to do something
 		     * special at the end to create the correct escapement.
 		     */
 		    gs_currentmatrix(pgs, &pre_rmat);
-		    if ( run >= 0 ) {
-		      if ( rise >= 0 )
-			angle = (run >= rise ? 0 : 90);
-		      else
-			angle = (-rise >= run ? 270 : 0);
+		    if (run >= 0) {
+		        if (rise >= 0)
+			    angle = (run >= rise ? 0 : 90);
+		        else
+			    angle = (-rise >= run ? 270 : 0);
 		    } else {
-		      if ( rise >= 0 )
-			angle = (rise >= -run ? 90 : 180);
-		      else
-			angle = (-run >= -rise ? 180 : 270);
+		        if (rise >= 0)
+			    angle = (rise >= -run ? 90 : 180);
+		        else
+			    angle = (-run >= -rise ? 180 : 270);
 		    }
-		  }
+		}
 		gs_concat(pgs, &rmat);
-	      }
-	  }
-	  /* Handle slant. */
-	  if ( pgls->g.character.slant && !bitmaps_allowed )
-	    { gs_matrix smat;
+	    }
+        }
 
-	      gs_make_identity(&smat);
-	      smat.yx = pgls->g.character.slant;
-	      gs_concat(pgs, &smat);
-	    }
-	  /*
-	   * Patch the next-character procedure.
-	   */
-	  pfont->procs.next_char = hpgl_next_char_proc;
-	  gs_setfont(pgs, pfont);
-	  /*
-	   * Adjust the initial position of the character according to
-	   * the text path.
-	   */
-	  gs_currentpoint(pgs, &start_pt);
-	  if ( text_path == hpgl_text_left )
-	    { hpgl_get_char_width(pgls, ch, &width, true);
-	      start_pt.x -= width / scale.x;
-	      gs_moveto(pgs, start_pt.x, start_pt.y);
-	    }
-	  /*
-	   * Reset the rotation if we're using a bitmap font.
-	   */
-	  gs_currentmatrix(pgs, &advance_mat);
-	  if ( angle >= 0 )
-	    { gs_setmatrix(pgs, &pre_rmat);
-	      gs_rotate(pgs, (floatp)angle);
-	    }
-	  /*
-	   * If we're using a stroked font, patch the pen width to reflect
-	   * the stroke weight.  Note that when the font's build_char
-	   * procedure calls stroke, the CTM is still scaled.
-	   ****** WHAT IF scale.x != scale.y? ******
-	   */
-	  if ( pfont->PaintType != 0 )
-	    { if ( weight == 9999 )
-	        pgls->g.pen.width[pgls->g.pen.selected] /= scale.y;
-	      else
-		{ pgls->g.pen.width[pgls->g.pen.selected] =
-		    0.05 + weight * (weight < 0 ? 0.005 : 0.010); /* adhoc */
-		  pgls->g.pen.width_relative = true;
-		}
-	      gs_setlinewidth(pgs, pgls->g.pen.width[pgls->g.pen.selected]);
-	    }
-	  str[0] = ch;
-	  /* If SP is a control code, get the width of the space character. */
-	  if ( ch == ' ' )
-	    { space_code = hpgl_get_char_width(pgls, ' ', &space_width, true);
-	      if ( space_code == 1 )
-		{ /* Space is a control code. */
-		  space_width = pl_fp_pitch_cp(&pfs->params) / 100.0 *
-		    points_2_plu(1.0) / scale.x *
-		    (1.0 + pgls->g.character.extra_space.x);
-		}
-	    }
-	  /*
-	   * Test whether we can use show instead of charpath followed by
-	   * a GL/2 fill.  If so, the library will be able to use its
-	   * character cache.  Note that we must avoid this for the stick
-	   * font because of its dependence on pen width.
-	   */
-	  if ( (pfs->params.typeface_family & 0xfff) != STICK_FONT_TYPEFACE )
-	   switch ( pgls->g.character.fill_mode )
-	    {
-	    case hpgl_char_solid_edge:
-	      use_show = bitmaps_allowed || pgls->g.character.edge_pen == 0;
-	      break;
-	    case hpgl_char_fill_edge:
-	      use_show = bitmaps_allowed || pgls->g.character.edge_pen == 0;
-	      if ( !use_show )
-		break;
-	      /* falls through */
-	    case hpgl_char_fill:
-	      switch ( pgls->g.fill.type )
-		{
-		case hpgl_fill_solid:
-		case hpgl_fill_solid2:
-		  break;
-		  /* Eventually we will be able to do better than this.... */
-		default:
-		  use_show = false;
-		}
-	      break;
-	    default:
-	      use_show = false;
-	      break;
-	    }
-	  /* Check for SP control code. */
-	  if ( ch == ' ' && space_code != 0 )
-	    { /* Space is a control code.  Just advance the position. */
-	      gs_setmatrix(pgs, &advance_mat);
-	      gs_rmoveto(pgs, space_width, 0.0);
-	      gs_currentpoint(pgs, &end_pt);
-	    }
-	  else
-	    { if ( use_show )
-	      {
-		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
-	        code = gs_show_n_init(penum, pgs, str, 1);
-	      }
-	      else
-		code = gs_charpath_n_init(penum, pgs, str, 1, true);
-	      if ( code < 0 || (code = gs_show_next(penum)) != 0 )
-	        { gs_show_enum_release(penum, pgls->memory);
-		  return (code < 0 ? code : gs_error_Fatal);
-		}
-	      gs_setmatrix(pgs, &advance_mat);
-	      if ( angle >= 0 )
-		{ /* Compensate for bitmap font non-rotation. */
-		  if ( text_path == hpgl_text_right )
-		    { hpgl_get_char_width(pgls, ch, &width, true);
-		      hpgl_call(gs_moveto(pgs, start_pt.x + width / scale.x,
-					  start_pt.y));
-		    }
-		}
-	      gs_currentpoint(pgs, &end_pt);
-	      if ( text_path == hpgl_text_right &&
-		   pgls->g.character.extra_space.x != 0
-		 )
-		{ hpgl_get_char_width(pgls, ch, &width, true);
-		  end_pt.x = start_pt.x + width / scale.x;
-		  hpgl_call(gs_moveto(pgs, end_pt.x, end_pt.y));
-		}
-	    }
-	  gs_free_object(pgls->memory, penum, "hpgl_print_char");
-	  /*
-	   * Adjust the final position according to the text path.
-	   */
-	  switch ( text_path )
-	    {
-	    case hpgl_text_right:
-	      break;
-	    case hpgl_text_down:
-	      { hpgl_real_t height;
+	/* Handle slant. */
+	if (pgls->g.character.slant && !bitmaps_allowed) {
+            gs_matrix   smat;
 
-	        hpgl_call(hpgl_get_current_cell_height(pgls, &height, true, true));
-		hpgl_call(gs_moveto(pgs, start_pt.x, end_pt.y - height / scale.y));
-	      }
-	      break;
-	    case hpgl_text_left:
-	      hpgl_call(gs_moveto(pgs, start_pt.x, start_pt.y));
-	      break;
-	    case hpgl_text_up:
-	      { hpgl_real_t height;
-
-	        hpgl_call(hpgl_get_current_cell_height(pgls, &height, true, true));
-		hpgl_call(gs_moveto(pgs, start_pt.x, end_pt.y + height / scale.y));
-	      }
-	      break;
-	    }
-	  gs_setmatrix(pgs, &save_ctm);
-	  gs_currentpoint(pgs, &end_pt);
-	  if ( !use_show )
-	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
-	  pgls->g.pen.width[pgls->g.pen.selected] = save_width;
-	  pgls->g.pen.width_relative = save_relative;
-	  hpgl_call(hpgl_add_point_to_path(pgls, end_pt.x, end_pt.y,
-					   hpgl_plot_move_absolute, true));
+	    gs_make_identity(&smat);
+	    smat.yx = pgls->g.character.slant;
+	    gs_concat(pgs, &smat);
 	}
 
-	return 0;
+	/*
+	 * Patch the next-character procedure.
+	 */
+	pfont->procs.next_char = hpgl_next_char_proc;
+	gs_setfont(pgs, pfont);
+
+	/*
+	 * Adjust the initial position of the character according to
+	 * the text path.
+	 */
+	gs_currentpoint(pgs, &start_pt);
+	if (text_path == hpgl_text_left) {
+            hpgl_get_char_width(pgls, ch, &width, true);
+	    start_pt.x -= width / scale.x;
+	    gs_moveto(pgs, start_pt.x, start_pt.y);
+	}
+
+	/*
+	 * Reset the rotation if we're using a bitmap font.
+	 */
+	gs_currentmatrix(pgs, &advance_mat);
+	if (angle >= 0) {
+            gs_setmatrix(pgs, &pre_rmat);
+	    gs_rotate(pgs, (floatp)angle);
+	}
+
+	/*
+	 * If we're using a stroked font, patch the pen width to reflect
+	 * the stroke weight.  Note that when the font's build_char
+	 * procedure calls stroke, the CTM is still scaled.
+	 ****** WHAT IF scale.x != scale.y? ******
+	 */
+	if (pfont->PaintType != 0) {
+            int     code = 0;
+            int     pen = pgls->g.pen.selected;
+            floatp  nwidth;
+
+            if (weight == 9999)
+                nwidth = save_width / scale.y;
+            else {
+                nwidth = 0.05 + weight * (weight < 0 ? 0.005 : 0.010);
+	        pgls->g.pen.width_relative = true;
+            }
+            if ((code = pcl_palette_PW(pgls, pen, nwidth)) < 0) {
+	        pgls->g.pen.width_relative = save_relative;
+                return code;
+            }
+	}
+
+	str[0] = ch;
+
+	/* If SP is a control code, get the width of the space character. */
+	if (ch == ' ') {
+            space_code = hpgl_get_char_width(pgls, ' ', &space_width, true);
+	    if (space_code == 1) {
+                /* Space is a control code. */
+		space_width = pl_fp_pitch_cp(&pfs->params) / 100.0
+                                * points_2_plu(1.0) / scale.x
+                                * (1.0 + pgls->g.character.extra_space.x);
+            }
+	}
+
+	/*
+	 * Test whether we can use show instead of charpath followed by
+	 * a GL/2 fill.  If so, the library will be able to use its
+	 * character cache.  Note that we must avoid this for the stick
+	 * font because of its dependence on pen width.
+	 */
+	if ((pfs->params.typeface_family & 0xfff) != STICK_FONT_TYPEFACE) {
+	    switch (pgls->g.character.fill_mode) {
+
+	      case hpgl_char_solid_edge:
+	        use_show = bitmaps_allowed;
+	        break;
+
+	      case hpgl_char_fill_edge:
+	        use_show = bitmaps_allowed;
+	        if (!use_show)
+		    break;
+	        /* falls through */
+
+	      case hpgl_char_fill:
+	        switch (pgls->g.fill.type) {
+
+		  case hpgl_FT_pattern_solid_pen1:
+		  case hpgl_FT_pattern_solid_pen2:
+		    break;
+
+		    /* Eventually we will be able to do better than this.... */
+		  default:
+		    use_show = false;
+		}
+	        break;
+
+	      default:
+	        use_show = false;
+	        break;
+	    }
+        }
+
+	/* Check for SP control code. */
+	if (ch == ' ' && space_code != 0) {
+            /* Space is a control code.  Just advance the position. */
+	    gs_setmatrix(pgs, &advance_mat);
+	    gs_rmoveto(pgs, space_width, 0.0);
+	    gs_currentpoint(pgs, &end_pt);
+	} else {
+            if (use_show) {
+		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
+	        code = gs_show_n_init(penum, pgs, (char *)str, 1);
+	    } else
+		code = gs_charpath_n_init(penum, pgs, (char *)str, 1, true);
+	    if ((code < 0) || ((code = gs_show_next(penum)) != 0) ) {
+                gs_show_enum_release(penum, pgls->memory);
+		return (code < 0 ? code : gs_error_Fatal);
+	    }
+	    gs_setmatrix(pgs, &advance_mat);
+	    if (angle >= 0) {
+                /* Compensate for bitmap font non-rotation. */
+		if (text_path == hpgl_text_right) {
+                    hpgl_get_char_width(pgls, ch, &width, true);
+		    hpgl_call( gs_moveto( pgs,
+                                          start_pt.x + width / scale.x,
+					  start_pt.y)
+                                          );
+		}
+            }
+	    gs_currentpoint(pgs, &end_pt);
+	    if ( (text_path == hpgl_text_right)        &&
+		 (pgls->g.character.extra_space.x != 0)  ) {
+		hpgl_get_char_width(pgls, ch, &width, true);
+		end_pt.x = start_pt.x + width / scale.x;
+		hpgl_call(gs_moveto(pgs, end_pt.x, end_pt.y));
+	    }
+	}
+	gs_free_object(pgls->memory, penum, "hpgl_print_char");
+
+	/*
+	 * Adjust the final position according to the text path.
+	 */
+	switch (text_path) {
+
+	  case hpgl_text_right:
+	    break;
+
+	  case hpgl_text_down:
+	    {
+                hpgl_real_t     height;
+
+	        hpgl_call( hpgl_get_current_cell_height( pgls,
+                                                         &height,
+                                                         true,
+                                                         true
+                                                         ) );
+		hpgl_call( gs_moveto( pgs,
+                                      start_pt.x,
+                                      end_pt.y - height / scale.y
+                                      ) );
+	    }
+	    break;
+
+	  case hpgl_text_left:
+	    hpgl_call(gs_moveto(pgs, start_pt.x, start_pt.y));
+	    break;
+
+	  case hpgl_text_up:
+	    {
+                hpgl_real_t height;
+
+	        hpgl_call( hpgl_get_current_cell_height( pgls,
+                                                         &height,
+                                                         true,
+                                                         true
+                                                         ) );
+		hpgl_call( gs_moveto( pgs,
+                                      start_pt.x,
+                                      end_pt.y + height / scale.y
+                                      ) );
+	    }
+	    break;
+	}
+
+	gs_setmatrix(pgs, &save_ctm);
+	gs_currentpoint(pgs, &end_pt);
+	if (!use_show)
+	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
+        (void )pcl_palette_PW(pgls, pgls->g.pen.selected, save_width);
+	pgls->g.pen.width_relative = save_relative;
+	hpgl_call( hpgl_add_point_to_path( pgls,
+                                           end_pt.x,
+                                           end_pt.y,
+					   hpgl_plot_move_absolute,
+                                           true
+                                           ) );
+    }
+
+    return 0;
 }
 
 /* Determine whether labels can concatenate. */
@@ -835,8 +923,8 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 
 	      gs_currentmatrix(pgls->pgs, &save_ctm);
 	      pcl_set_ctm(pgls, false);
-	      hpgl_call(gs_transform(pgls->pgs, (floatp)pgls->cap.x,
-				     (floatp)pgls->cap.y, &pcl_pos_dev));
+	      hpgl_call(gs_transform(pgls->pgs, (floatp)pcl_cap.x,
+				     (floatp)pcl_cap.y, &pcl_pos_dev));
 	      gs_setmatrix(pgls->pgs, &save_ctm);
 	      hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
 				      (floatp)pcl_pos_dev.y, &label_origin));

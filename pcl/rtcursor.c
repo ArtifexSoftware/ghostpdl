@@ -16,14 +16,14 @@
 int /* ESC & a <dp> H */
 rtl_horiz_cursor_pos_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {	float x = float_arg(pargs) * 10;		/* centipoints */
-	pcls->cap.x = (coord)(arg_is_signed(pargs) ? pcls->cap.x + x : x);
+	pcl_cap.x = (coord)(arg_is_signed(pargs) ? pcl_cap.x + x : x);
 	return 0;
 }
 
 int /* ESC * p <units> X */
 rtl_horiz_cursor_pos_units(pcl_args_t *pargs, pcl_state_t *pcls)
 {	float x = float_arg(pargs) * pcls->uom_cp;	/* centipoints */
-	pcls->cap.x = (coord)(arg_is_signed(pargs) ? pcls->cap.x + x : x);
+	pcl_cap.x = (coord)(arg_is_signed(pargs) ? pcl_cap.x + x : x);
 	return 0;
 }
 
@@ -31,8 +31,8 @@ int /* ESC * p <units> Y */
 rtl_vert_cursor_pos_units(pcl_args_t *pargs, pcl_state_t *pcls)
 {	coord y = (coord)(float_arg(pargs) * pcls->uom_cp);  /* centipoints */
 
-	pcls->cap.y =
-	  ((arg_is_signed(pargs) ? pcls->cap.y : pcl_top_margin(pcls)) + y);
+	pcl_cap.y =
+	  ((arg_is_signed(pargs) ? pcl_cap.y : pcls->margins.top) + y);
 	return 0;
 }
 
@@ -61,20 +61,11 @@ rtcursor_do_init(gs_memory_t *mem)
 private void
 rtcursor_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & pcl_reset_initial )
-	  { pcls->cap.x = 0;
-	    pcls->cap.y = 0;
+	  { pcl_cap.x = 0;
+	    pcl_cap.y = 0;
 	  }
 }
-private int
-rtcursor_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
-  pcl_copy_operation_t operation)
-{	if ( operation & pcl_copy_after )
-	  { /* Don't restore the cursor position or stack. */
-	    psaved->cap = pcls->cap;
-	    psaved->cursor_stack = pcls->cursor_stack;
-	  }
-	return 0;
-}
+
 const pcl_init_t rtcursor_init = {
-  rtcursor_do_init, rtcursor_do_reset, rtcursor_do_copy
+  rtcursor_do_init, rtcursor_do_reset, 0
 };

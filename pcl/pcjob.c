@@ -1,18 +1,33 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* pcjob.c */
-/* PCL5 job control commands */
-#include "std.h"
+/* pcjob.c -  PCL5 job control commands */
+#include "gx.h"
 #include "gsmemory.h"
-#include "gstypes.h"		/* for gsdevice.h */
 #include "gsmatrix.h"		/* for gsdevice.h */
 #include "gsdevice.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcparam.h"
 #include "pcdraw.h"
+#include "pcpage.h"
 
 /* Commands */
 
@@ -24,11 +39,6 @@ pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcls)
 	{ int code = pcl_end_page_if_marked(pcls);
 	  if ( code < 0 )
 	    return code;
-	}
-	/* exit hpgl/2 mode if necessary */
-	{ pcl_args_t args;
-	  arg_set_uint(&args, 0);
-	  rtl_enter_pcl_mode(pargs, pcls);
 	}
 	/* Reset to user default state. */
 	return pcl_do_resets(pcls, pcl_reset_printer);
@@ -103,20 +113,6 @@ pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcls)
 		0);
 }
 
-private int /* ESC & l <xoff_dp> U */
-pcl_left_offset_registration(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->left_offset_cp = float_arg(pargs) * 10; /* decipoints => cp */
-	pcl_compute_logical_page_size(pcls);
-	return 0;
-}
-
-private int /* ESC & l <yoff_dp> Z */
-pcl_top_offset_registration(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->top_offset_cp = float_arg(pargs) * 10; /* decipoints => cp */
-	pcl_compute_logical_page_size(pcls);
-	return 0;
-}
-
 private int /* ESC & a <side_enum> G */
 pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint i = uint_arg(pargs);
@@ -176,7 +172,6 @@ pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcls)
 		num = *p;
 	}
 	pcls->uom_cp = pcl_coord_scale / num;
-	pcls->uom_dots = pcls->resolution.y / num;
 	return 0;
 }
 
@@ -195,14 +190,6 @@ pcjob_do_init(gs_memory_t *mem)
 	  {'l', 'S',
 	     PCL_COMMAND("Simplex/Duplex Print", pcl_simplex_duplex_print,
 			 pca_neg_ignore|pca_big_ignore)},
-	  {'l', 'U',
-	     PCL_COMMAND("Left Offset Registration",
-			 pcl_left_offset_registration,
-			 pca_neg_ok|pca_big_error)},
-	  {'l', 'Z',
-	     PCL_COMMAND("Top Offset Registration",
-			 pcl_top_offset_registration,
-			 pca_neg_ok|pca_big_error)},
 	  {'a', 'G',
 	     PCL_COMMAND("Duplex Page Side Select",
 			 pcl_duplex_page_side_select,
@@ -216,7 +203,7 @@ pcjob_do_init(gs_memory_t *mem)
 	  {'u', 'D',
 	     PCL_COMMAND("Set Unit of Measure", pcl_set_unit_of_measure,
 			 pca_neg_error|pca_big_error)},
-	END_CLASS
+	END_CLASS	  
 	return 0;
 }
 private void
@@ -224,8 +211,6 @@ pcjob_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { pcls->num_copies = 1;
 	    pcls->duplex = false;
-	    pcls->left_offset_cp = 0;
-	    pcls->top_offset_cp = 0;
 	    pcls->back_side = false;
 	    pcls->output_bin = 1;
 	    { pcl_args_t args;

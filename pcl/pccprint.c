@@ -7,6 +7,7 @@
 #include "std.h"
 #include "pcommand.h"
 #include "pcstate.h"
+#include "pcfont.h"
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsstate.h"
 #include "gsrop.h"
@@ -17,6 +18,9 @@ pcl_logical_operation(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	if ( rop > 255 )
 	  return e_Range;
+        pcl_break_underline(pcls);  /* use the 5c convention; in 5e, the
+                                     * underline is not broken by a change in
+                                     * the logical operation */
 	pcls->logical_op = rop;
 	return 0;
 }
@@ -60,7 +64,7 @@ private int
 pccprint_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
   pcl_copy_operation_t operation)
 {	if ( operation & pcl_copy_after )
-	  { gs_setrasterop(pcls->pgs, psaved->logical_op);
+	  { gs_setrasterop(pcls->pgs, (gs_rop3_t)psaved->logical_op);
 	    gs_setfilladjust(pcls->pgs,
 			     psaved->grid_adjust, psaved->grid_adjust);
 	  }

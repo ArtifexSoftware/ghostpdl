@@ -1,750 +1,926 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* rtraster.c */
-/* HP RTL raster parameter and data transfer commands */
-#include "memory_.h"
-#include "gstypes.h"		/* for gsmatrix.h */
-#include "gsmemory.h"		/* for gxdevice.h */
-#include "gxdevice.h"
+/* rtraster.c - raster transfer commands */
+
+#include "gx.h"
+#include "gsmatrix.h"
 #include "gscoord.h"
+#include "gspath.h"
+#include "gspath2.h"
+#include "gsimage.h"
+#include "gsiparam.h"
+#include "gsiparm4.h"
 #include "gsdevice.h"
-#include "gzstate.h"		/* for clip_path, dev_color */
-#include "pcommand.h"
+#include "gsrop.h"
 #include "pcstate.h"
-#include "pcdraw.h"
+#include "pcpalet.h"
+#include "pcindexed.h"
+#include "pcwhtindx.h"
+#include "rtgmode.h"
+#include "rtrstcmp.h"
 #include "rtraster.h"
 
-/****** Left to do ('c' means color only):
-  Color space (c)
-  Transparency handling (c)
-  Scaling (c)
-  Row padding
- ******/
-
-/* Initialize a seed row. */
-private void
-initialize_row(pcl_raster_row_t *row)
-{	row->data = 0;
-	row->size = 0;
-	row->count = 0;
-	row->is_zero = true;
-	row->repeat_count = 0;
-}
-
-/* Clear a seed row. */
-#define clear_row(row)\
-  if ( !(row)->is_zero ) (row)->count = 0, (row)->is_zero = true
-/* Clear multiple seed rows. */
-private void
-clear_rows(pcl_state_t *pcls, int depth)
-{	int i;
-	for ( i = 0; i < depth; ++i )
-	  clear_row(&pcls->raster.row[i]);
-}
-
-/* ------ Decompression procedures ------ */
+/*
+ * The maximum number of planes for which seed rows need to be kept. This is the
+ * larger of the maximum number of bits per index (for pixel encoding mode 0 -
+ * indexed by plane) or maximum of the sum over the primaries of the number of
+ * bits per primary for pixel encoding mode 2 (direct by plane). For all
+ * current PCL printers, the effective bound is the the former, and is 8.
+ */
+#define MAX_PLANES  8
 
 /*
- * Decompress a row of raster data.  We only know the size of the compressed
- * data, not the uncompressed result, and we have to deal with the
- * possibilities of (1) too much decompressed data, (2) less than a full row
- * of decompressed data, or (3) syntax error (running out of input data in
- * the middle of a compressed data construct).  Thus in_size is the maximum
- * amount of uncompressed data we expect, *pr brackets the available
- * compressed data, and we set row->count to the actual amount of data
- * decompressed.
+ * Structure to describe a PCL raster
+ *
  */
+typedef struct pcl_raster_s {
 
-/* No compression */
-private int
-uncompress_row_0(pcl_raster_row_t *row, uint in_size, stream_cursor_read *pr)
-{	const byte *p = pr->ptr;
-	uint rcount = pr->limit - p;
-	uint in_count = min(in_size, rcount);
-	uint count = min(row->size, in_count);
+    /* memory used to allocate this structure */
+    gs_memory_t *       pmem;
 
-	memcpy(row->data, p + 1, count);
-	pr->ptr += in_count;
-	row->count = count;
-	row->is_zero = count == 0;
-	return 0;
+    byte                nplanes;            /* # of planes (seed rows) */
+    byte                bits_per_plane;     /* bits per plane */
+    byte                nsrcs;              /* # of data sources, 1 or 3 */
+
+    uint                transparent:1;      /* 1 ==> source transparency */
+    uint                src_height_set:1;   /* source height was set */
+    uint                indexed:1;          /* != 0 ==> indexed color space */
+    uint                zero_is_white:1;    /* all planes 0 ==> white */
+    uint                zero_is_black:1;    /* all planes 0 ==> solid color */
+
+    int                 wht_indx;           /* white index, for indexed color
+                                               space only */
+    const void *        remap_ary;          /* remap array, if needed */
+
+    gs_state *          pgs;                /* image graphic state */
+    pcl_cs_indexed_t *  pindexed;           /* color space */
+
+    gs_image_enum *     pen;                /* image enumerator */
+    uint16              plane_index;        /* next plane to be received */
+    uint16              rows_rendered;      /* # of source rows rendered */
+    uint16              src_width;          /* usable raster width */
+    uint16              src_height;         /* remaining usable raster height */
+
+    /* buffers */
+    pcl_seed_row_t *    pseed_rows;         /* seed rows, one per plane */
+    byte *              cons_buff;          /* consolidation buffer */
+
+} pcl_raster_t;
+
+/* GC routines */
+private_st_seed_row_t();
+private_st_seed_row_t_element();
+
+gs_private_st_ptrs2( st_raster_t,
+                     pcl_raster_t,
+                     "PCL raster object",
+                     raster_enum_ptrs,
+                     raster_reloc_ptrs,
+                     pseed_rows,
+                     cons_buff
+                     );
+
+/*
+ * There is at most one image actively under construction in PCL at one time.
+ * This pointer points to that image, if it exists. The pointer will be non-
+ * null while in graphic mode.
+ */
+private pcl_raster_t *  pcur_raster;
+
+
+/* forward declaration */
+private int     process_zero_rows( pcl_raster_t * prast, int nrows );
+
+
+/*
+ * Clear the consolidation buffer, allocating it if it does not already
+ * exist.
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+  private int
+clear_cons_buff(
+    pcl_raster_t *  prast
+)
+{
+    byte *          pcons = prast->cons_buff;
+    int             npixels = prast->src_width;
+
+    if (pcons == 0) {
+        pcons = gs_alloc_bytes( prast->pmem,
+                                npixels,
+                                "PCL raster consolidation buff"
+                                );
+        if (pcons == 0)
+            return e_Memory;
+        prast->cons_buff = pcons;
+    }
+    memset(pcons, 0, npixels);
+
+    return 0;
 }
 
-/* Run length encoding */
-private int
-uncompress_row_1(pcl_raster_row_t *row, uint in_size, stream_cursor_read *pr)
-{	const byte *p = pr->ptr;
-	const byte *rlimit = pr->limit;
-	uint left = min(in_size, row->size);
-	byte *q = row->data;
-	byte *end = q + left;
+/*
+ * Consolidate a set of seed rows into the consolidated row buffer.
+ *
+ * This routine will only be called if:
+ *
+ *      prast->nplanes > 1
+ *      prast->bits_per_plane = 1
+ *      prast->nsrcs = 1
+ *
+ * The output is always packed 8 bits per pixel, even if ferwer are required.
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+  private int
+consolidate_row(
+    pcl_raster_t *  prast
+)
+{
+    byte *          pcons;
+    uint            nplanes = prast->nplanes;
+    uint            npixels = prast->src_width;
+    int             code, i;
 
-	if ( (rlimit - p) & 1 )
-	  return -1;
-	for ( ; p < rlimit && left; p += 2 )
-	  { uint reps = p[1] + 1;
-	    byte fill = p[2];
+    /* clear the consolidation buffer */
+    if ((code = clear_cons_buff(prast)) < 0)
+        return code;
+    pcons = prast->cons_buff;
 
-	    if ( reps > left )
-	      reps = left;
-	    left -= reps;
-	    if ( reps > end - q )
-	      reps = end - q;
-	    memset(q, fill, reps);
-	    q += reps;
-	  }
-	pr->ptr = p;
-	row->count = q - row->data;
-	row->is_zero = row->count == 0;
-	return 0;
+    /* for each plane, "or" in the appropriate bit */
+    for (i = 0; i < nplanes; i++) {
+        if (!prast->pseed_rows[i].is_blank) {
+            uint            ishift = 0;
+            const byte *    ip = prast->pseed_rows[i].pdata;
+            byte *          op = pcons;
+            uint            val = 0;
+            int             cnt = npixels;
+
+            while (cnt-- > 0) {
+                if (ishift-- <= 0) {
+                    val = *ip++;
+                    ishift = 7;
+                }
+                *op++ |= ((val >> ishift) & 0x1) << i;
+            }
+        }
+    }
+
+    return 0;
 }
 
-/* PackBits encoding */
-private int
-uncompress_row_2(pcl_raster_row_t *row, uint in_size, stream_cursor_read *pr)
-{	const byte *p = pr->ptr;
-	const byte *rlimit = pr->limit;
-	uint left = min(in_size, row->size);
-	byte *q = row->data;
-	byte *end = q + left;
+/*
+ * Create the graphic library image object needed to represent a raster.
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+  private int
+create_image_enumerator(
+    pcl_raster_t *              prast
+)
+{
+    int                         nplanes = prast->nplanes;
+    int                         b_per_p = prast->bits_per_plane;
+    int                         num_comps = (prast->indexed ? 1 : 3);
+    int                         nsrcs = prast->nsrcs;
+    gs_image4_t                 image;
+    gs_image_enum *             pen = gs_image_enum_alloc( prast->pmem,
+                                                 "Create image for PCL raster" );
+    gx_image_enum_common_t *    pie = 0;
+    gs_color_space *            pcspace = ( prast->indexed
+                                             ? prast->pindexed->pcspace
+                                             : prast->pindexed->pbase->pcspace );
+    int                         code = 0;
 
-	for ( ; p < rlimit && left; )
-	  { byte control = *++p;
-	    uint n, copy;
+    if (pen == 0)
+        return e_Memory;
 
-	    if ( control < 128 )
-	      { /* N+1 literal bytes follow */
-		n = min(control + 1, left);
-		if ( n > rlimit - p )
-		  n = rlimit - p;
-		left -= n;
-		copy = min(n, end - q);
-		memcpy(q, p + 1, copy);
-		p += n;
-	      }
-	    else if ( control > 128 )
-	      { /* Copy the next data byte 257-N times */
-		if ( p >= rlimit )
-		  break;
-		n = min(257 - control, left);
-		left -= n;
-		copy = min(n, end - q);
-		++p;
-		memset(q, *p, copy);
-	      }
-	    else
-	      continue;
-	    q += copy;
-	  }
-	pr->ptr = p;
-	row->count = q - row->data;
-	row->is_zero = row->count == 0;
-	return 0;
+    gs_image4_t_init(&image, pcspace);
+    image.Width = prast->src_width;
+    image.Height = prast->src_height;
+    image.CombineWithColor = true;
+    image.format = ( nsrcs > 1 ? gs_image_format_component_planar
+                               : gs_image_format_chunky           );
+
+    if (nplanes > nsrcs)
+        image.BitsPerComponent = 8; /* always 8 bits per pixel if consolidated */
+    else
+        image.BitsPerComponent = (nplanes * b_per_p) / num_comps;
+
+    if (prast->indexed) {
+
+        /* avoid unnecessary transparency mask in the by-plane case */
+        if (prast->wht_indx >= 1 << (nplanes * b_per_p))
+            image.MaskColor[0] = (1 << image.BitsPerComponent);
+        else
+            image.MaskColor[0] = prast->wht_indx;
+        image.Decode[0] = 0.0;
+        image.Decode[1] = (1 << image.BitsPerComponent) - 1;
+    } else {
+        int     i;
+
+        for (i = 0; i < num_comps; i++) {
+            image.Decode[2 * i] = prast->pindexed->Decode[2 * i];
+            image.Decode[2 * i + 1] = prast->pindexed->Decode[2 * i + 1];
+
+	    /* TEMPORARY HACK - put mask color out of range */
+#if 0
+            if (image.Decode[2 * i] == 1.0)
+                image.MaskColor[i] = 0;
+            else if (image.Decode[2 * i + 1] == 1.0)
+                image.MaskColor[i] = (1 << image.BitsPerComponent) - 1;
+            else
+#endif
+                image.MaskColor[i] = (1 << image.BitsPerComponent);
+        }
+    }
+
+    code = gs_image_begin_typed( (const gs_image_common_t *)&image,
+                                 prast->pgs,
+                                 true,
+                                 &pie
+                                 );
+    if (code >= 0) 
+        code = gs_image_common_init( pen,
+                                     pie,
+                                     (gs_data_image_t *)&image,
+                                     prast->pmem,
+                                     gs_currentdevice_inline(prast->pgs)
+                                     );
+    if (code < 0) {
+        gs_free_object(prast->pmem, pen, "Create image for PCL raster");
+        return code;
+    }
+    prast->pen = pen;
+    return 0;
 }
 
-/* Delta row encoding */
-private int
-uncompress_row_3(pcl_raster_row_t *row, uint in_size, stream_cursor_read *pr)
-{	const byte *p = pr->ptr;
-	const byte *rlimit = pr->limit;
-	uint left = min(in_size, row->size);
-	byte *q = row->data;
-	byte *end = q + left;
-
-	for ( ; p < rlimit && left; )
-	  { byte command = *++p;
-	    uint skip = command & 31;
-	    uint copy = (command >> 5) + 1;
-	    if ( skip == 31 )
-	      { while ( p < rlimit )
-		  { skip += *++p;
-		    if ( *p == 255 )
-		      break;
-		  }
-	      }
-	    if ( skip > left )
-	      skip = left;
-	    left -= skip;
-	    if ( skip > end - q )
-	      q = end;
-	    else
-	      q += skip;
-	    if ( copy > left )
-	      copy = left;
-	    left -= copy;
-	    if ( copy > rlimit - p )
-	      copy = rlimit - p;
-	    if ( copy > end - q )
-	      copy = end - q;
-	    memcpy(q, p + 1, copy);
-	    p += copy;
-	    q += copy;
-	  }
-	pr->ptr = p;
-	{ uint count = q - row->data;
-	  if ( count > row->count )
-	    row->count = count;
-	  row->is_zero &= count == 0;
-	}
-	return 0;
+/*
+ * Close the image being used to represent a raster. If the second argument is
+ * true, complete the raster as well.
+ *
+ * This routine does NOT clear the seed rows, as their content may be needed
+ * for the next row of the raster.
+ *
+ * NB: This routine may re-invoke itself recursively when completing the raster,
+ *     as this routine will call process_zero_rows, which may once again invoke
+ *     this routine. The recursion can only extend to one additional level,
+ *     however, as process_zero_rows will call this routine with complete set
+ *     set to false.
+ */
+  private void
+close_raster(
+    pcl_raster_t *  prast,
+    bool            complete
+)
+{
+    /* see if we need to fill in any missing rows */
+    if ( complete                                   && 
+         (prast->src_height > prast->rows_rendered) &&
+         prast->src_height_set                        )
+        (void)process_zero_rows(prast, prast->src_height - prast->rows_rendered);
+    if (prast->pen != 0) {
+        gs_image_cleanup(prast->pen);
+        gs_free_object(prast->pmem, prast->pen, "Close PCL raster");
+        prast->pen = 0;
+    }
+    gs_translate(prast->pgs, 0.0, (floatp)(prast->rows_rendered));
+    prast->src_height -= prast->rows_rendered;
+    prast->rows_rendered = 0;
 }
 
-/* Adaptive (mixed) encoding */
-private int
-uncompress_row_5(pcl_raster_row_t *row, uint in_size, stream_cursor_read *pr)
-{	const byte *p = pr->ptr;
-	const byte *rlimit = pr->limit;
-	uint count;
-	int method;
+/*
+ * Process some number of zero-ed out rows, either as rasters or as a rectangle.
+ *
+ * Ideally, any sufficiently large regions of zero value would be rendered as
+ * a rectangle, but doing so runs afoul of PCL's graphic model. Rectangles are
+ * mask objects, whose value is provided by the current color/pattern/texture.
+ * Images are colored objects, whose interaction with the the current color/
+ * texture/raster is established by the current raster operation.
+ *
+ * In many cases, it is possible to emulate the effect of a colored object by
+ * use of a mask object and modifications to the current pattern/color/texture
+ * and the current raster operation. For the most part, however, situations in
+ * which such modifications are useful do not occur often enough to be worth
+ * special handling.
+ *
+ * There is one case that does arise with some frequency and is simple to
+ * handle: 0 is white, and source transparency is on. In this case, no work
+ * is necessary: just leave the output as is.
+ *
+ * The other case that is likely to arise often enough to be worth special
+ * handling is when 0 is white but source transparency is off. In this case,
+ * the current raster operation must be inverted relative to the source
+ * component and a solid rectangle output. A similar situation with a black
+ * rectangle does not occur very frequently, but can be handled by the same
+ * technique (without inverting the raster operation), so it is handled here
+ * as well.
+ *
+ * Zero regions of less than a kilo byte are not given special handling, so
+ * as to avoid the overhead of closing and then restarting an image.
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+  private int
+process_zero_rows(
+    pcl_raster_t *      prast,
+    int                 nrows
+)
+{
+    int                 npixels = prast->src_width;
+    int                 nbytes = (npixels * prast->bits_per_plane + 7) / 8;
+    int                 nplanes = prast->nplanes;
+    int                 rem_rows = prast->src_height - prast->rows_rendered;
+    pcl_seed_row_t *    pseed_rows = prast->pseed_rows;
+    int                 code = 0;
+    int                 i;
 
-top:	if ( row->repeat_count )
-	  { row->repeat_count--;
-	    return 0;
-	  }
-	if ( rlimit - p < 3 )
-	  return (p == rlimit ? 1 : gs_note_error(e_Syntax));
-	count = (p[2] << 8) + p[3];
-	method = p[1];
-	switch ( method )
-	  {
-	  case 4:		/* empty row */
-	    clear_row(row);
-	  case 5:		/* duplicate row */
-	    row->repeat_count = count;
-	    pr->ptr = p += 3;
-	    goto top;
-	  default:		/* error */
-	    clear_row(row);
-	    pr->ptr = p;
-	    return_error(e_Syntax);
-	  case 0: case 1: case 2: case 3: /* valid methods */
-	    { stream_cursor_read r;
-	      int code;
+    /* clear the seed rows */
+    for (i = 0; i < nplanes; i++) {
+        if (!pseed_rows[i].is_blank) {
+            memset(prast->pseed_rows[i].pdata, 0, nbytes);
+            pseed_rows[i].is_blank = true;
+        }
+    }
 
-	      r.ptr = p += 3;
-	      r.limit = p + min(rlimit - p, count);
-	      code = (*pcl_compression_methods[method].proc)(row, in_size, &r);
-	      pr->ptr = r.limit;	/* skip extra data */
-	      return code;
-	    }
-	  }
+    /* don't bother going beyond the end of the image */
+    if (nrows > rem_rows)
+        nrows = rem_rows;
+
+    /* render as raster or rectangle */
+    if ( ((nrows * nbytes > 1024) || (prast->pen == 0)) && 
+         (prast->zero_is_white || prast->zero_is_black)   ) {
+        gs_state *  pgs = prast->pgs;
+
+        close_raster(prast, false);
+        if ((prast->zero_is_black) || !prast->transparent) {
+            gs_rect tmp_rect;
+            bool    invert = prast->zero_is_white;
+
+            tmp_rect.p.x = 0.0;
+            tmp_rect.p.y = 0.0;
+            tmp_rect.q.x = (double)npixels;
+            tmp_rect.q.y = (double)nrows;
+            if (invert)
+                gs_setrasterop( pgs,
+                                (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
+                                );
+            gs_rectfill(prast->pgs, &tmp_rect, 1);
+            if (invert)
+                gs_setrasterop( pgs,
+                                (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
+                                );
+            
+        }
+
+        prast->src_height -= nrows;
+        gs_translate(pgs, 0.0, (floatp)nrows);
+
+    } else {
+        int             nsrcs = prast->nsrcs;
+        gs_image_enum * pen = prast->pen;
+        int             cnt = 0;
+        uint            size = 0;
+        const byte *    pb;
+
+        if (pen == 0) {
+            if ((code = create_image_enumerator(prast)) < 0)
+                return code;
+            pen = prast->pen;
+        }
+
+        if (nplanes > nsrcs) {
+            if ((code = clear_cons_buff(prast)) < 0)
+                return code;
+            cnt = nrows;
+            size = npixels;
+            pb = prast->cons_buff;
+        } else {
+            cnt = nrows * nsrcs;
+            size = nbytes;
+            pb = prast->pseed_rows[0].pdata;
+        }
+
+        for (i = 0; i < cnt; i++) {
+            uint    dummy;
+
+            if ((code = gs_image_next(pen, pb, size, &dummy)) < 0)
+                return code;
+        }
+        prast->rows_rendered += nrows;
+    }
+
+    return 0;
+}
+  
+/*
+ * Process the next raster row.
+ */
+  private int
+process_row(
+    pcl_raster_t *  prast
+)
+{
+    int             nplanes = prast->nplanes;
+    gs_image_enum * pen = prast->pen;
+    int             i;
+    int             code = 0;
+
+    /* create the image enumerator if it does not already exist */
+    if (pen == 0) {
+        if ((code = create_image_enumerator(prast)) < 0)
+            return code;
+        pen = prast->pen;
+    }
+
+    /* clear any rows that have not been provided */
+    for (i = prast->plane_index; i < nplanes; i++) {
+        if (!prast->pseed_rows[i].is_blank) {
+            memset(prast->pseed_rows[i].pdata, 0, prast->pseed_rows[i].size);
+            prast->pseed_rows[i].is_blank = true;
+        }
+    }
+
+    /* update the raster parameters */
+    prast->rows_rendered++;
+    prast->plane_index = 0;
+
+    if (prast->nsrcs == 1) {
+        byte *  pb;
+        int     nbytes, b_per_p;
+        uint    dummy;
+
+        /* consolidate the planes if necessary */
+        if (nplanes > prast->nsrcs) {
+            if ((code = consolidate_row(prast)) < 0)
+                return code;
+            pb = prast->cons_buff;
+            b_per_p = 8;
+            nbytes = prast->src_width;
+        } else {
+            pb = prast->pseed_rows[0].pdata;
+            nbytes = prast->pseed_rows[0].size;
+            b_per_p = prast->bits_per_plane;
+        }
+
+        /*
+         * Remap the planes, if this is required.
+         *
+         * Remapping is only required for indexed color spaces. The indexed
+         * by plane case will have been collapsed to an indexed by pixel case
+         * by this point.
+         *
+         * (The macro pcl_cmap_apply_remap_ary checks for
+         * prast->remap_ary == 0.)
+         */
+        pcl_cmap_apply_remap_ary( prast->remap_ary,
+                                  pb,
+                                  b_per_p,
+                                  prast->src_width
+                                  );
+
+        return gs_image_next(pen, pb, nbytes, &dummy);
+
+    } else {
+        uint    dummy;
+        int     nsrcs = prast->nsrcs;
+
+        for (i = 0; (i < nsrcs) && (code >= 0); i++)
+            code = gs_image_next( pen,
+                                  prast->pseed_rows[i].pdata,
+                                  prast->pseed_rows[i].size,
+                                  &dummy
+                                  );
+        return code;
+    }
 }
 
-/* Decompression method table */
-pcl_compression_method_t pcl_compression_methods[10] = {
-  {uncompress_row_0, 0/*false*/},
-  {uncompress_row_1, 0/*false*/},
-  {uncompress_row_2, 0/*false*/},
-  {uncompress_row_3, 0/*false*/},
-  {0, 0},
-  {uncompress_row_5, 1/*true*/}
-};
+/*
+ * Process an input data buffer using adpative compression.
+ */
+  private int
+process_adaptive_compress(
+    pcl_raster_t *      prast,
+    const byte *        pin,
+    uint                insize
+)
+{
+    pcl_seed_row_t *    pseed_row = prast->pseed_rows;
+    byte *              pdata = pseed_row->pdata;
+    uint                row_size = pseed_row->size;
+    int                 code = 0;
 
-/* Register a compression method. */
-void
-pcl_register_compression_method(int method, pcl_uncompress_proc_t proc,
-  bool block)
-{	pcl_compression_methods[method].proc = proc;
-	pcl_compression_methods[method].block = block;
+    prast->plane_index = 0;
+    while ((insize > 3) && (code >= 0)) {
+        int     cmd = *pin++;
+        uint    param = *pin++;
+
+        param = (param << 8) + *pin++;
+        insize -= 3;
+        if (cmd <= 3) {
+            uint    cnt = min(insize, param);
+
+            pcl_decomp_proc[cmd](pseed_row, pin, cnt);
+            insize -= cnt;
+            pin += cnt;
+            prast->plane_index = 1;
+            code = process_row(prast);
+        } else if (cmd == 4)
+            code = process_zero_rows(prast, param);
+        else if (cmd == 5) {
+            uint            rem_rows = prast->src_height - prast->rows_rendered;
+            gs_image_enum * pen = prast->pen;
+
+            /* create the image enumerator if it does not already exist */
+            if (pen == 0) {
+                if ((code = create_image_enumerator(prast)) < 0)
+                    return code;
+                pen = prast->pen;
+            }
+
+            if (param > rem_rows)
+                param = rem_rows;
+            prast->rows_rendered += param;
+            while ((param-- > 0) && (code >= 0)) {
+                uint    dummy;
+
+                code = gs_image_next(pen, pdata, row_size, &dummy);
+            }
+
+        } else
+            break;
+    }
+
+    return code;
 }
 
-/* ------ Internal procedures ------ */
+/*
+ * Add a raster plane. The second operand indicates whether or not this is the
+ * final plane of a row.
+ */
+  private int
+add_raster_plane(
+    const byte *    pdata,
+    uint            nbytes,
+    bool            end_row,
+    pcl_state_t *   pcs
+)
+{
+    pcl_raster_t *  prast = pcur_raster;
+    int             comp_mode = pcs->raster_state.compression_mode;
+    int             nplanes = 0;
+    int             plane_index = 0;
+    int             code = 0;
 
-/* Begin raster graphics.  Only call this if !pcls->raster.graphics_mode. */
-int
-pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
-{	bool across =
-	  pcls->raster.across_physical_page &&
-	  (pcls->orientation & 1);
-	coord left_margin;
-	int code = pcl_set_drawing_color(pcls, pcls->pattern_type,
-					 &pcls->current_pattern_id);
+    /* enter raster mode implicitly if not already there */
+    if (prast == 0) {
+        if ((code = pcl_enter_graphics_mode(pcs, IMPLICIT)) < 0)
+            return code;
+        prast = pcur_raster;
+    }
 
-	if ( code < 0 )
-	  return code;
-	pcls->raster.graphics_mode = true;
-	pcls->raster.y = 0;
-	pcls->raster.last_width = 0;
-	pcls->raster.image_info = 0;
-	{ int i;
-	  for ( i = 0; i < countof(pcls->raster.row); ++i )
-	    { pcl_raster_row_t *row = &pcls->raster.row[i];
-	      clear_row(row);
-	      row->repeat_count = 0;
-	    }
-	}
-	pcls->raster.scaling = (setting & 2) != 0;
-	pcls->raster.plane = 0;
-	/*
-	 * The discussion of raster direction in TRM 15-9 et seq doesn't
-	 * say how print direction affects raster images in presentation
-	 * mode 3.  We assume here that print direction affects raster
-	 * images regardless of presentation mode.
-	 */
-	pcl_set_graphics_state(pcls, true);  /* with print direction */
-	if ( across )	/* across_physical_page & landscape */
-	{ gs_point cap_dev, cap_image;
+    /*
+     * Adaptive compression (mode 5) is only available for single-plane
+     * encodings, and then only if used with a transfer row (ESC * b # W)
+     * command. The latter behavior matches that of the HP Color LaserJet 5/5M,
+     * but not that of the DeskJet 1600C/CM, which has somewhat erratic
+     * behavior in this case.
+     */
+    nplanes = prast->nplanes;
+    if ( (comp_mode == ADAPTIVE_COMPRESS) && ((nplanes > 1) || !end_row) )
+        return e_Range;
 
-	  /* Convert CAP to device coordinates, since it mustn't move. */
-	  gs_transform(pcls->pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y,
-		       &cap_dev);
-	  gs_rotate(pcls->pgs, 90.0);
-	  gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
-	  pcls->cap.x = (coord)cap_image.x;
-	  pcls->cap.y = (coord)cap_image.y;
-	}
-	/* See TRM 15-10 for the following algorithm. */
-	if ( !(setting & 1 ) )
-	  { if ( across )
-	      pcls->cap.x = (coord)(50.0 / pcls->raster.resolution *
-				    pcl_coord_scale);
-	    else
-	      pcls->cap.x = 0;
-	  }
-	if ( pcls->raster.depth == 1 && pcls->source_transparent )
-	  { gs_image_t_init_mask(&pcls->raster.image, true);
-	  }
-	else
-	  { /**** MONOCHROME ONLY FOR NOW ****/
-	    gs_image_t_init_gray(&pcls->raster.image);
-	    pcls->raster.image.Decode[0] = 1;
-	    pcls->raster.image.Decode[1] = 0;
-	    pcls->raster.image.CombineWithColor = true;
-	  }
-	left_margin = pcls->cap.x;
-	pcls->raster.margin_setting = setting;
-	if ( !pcls->raster.width_set )
-	  { /* Compute the default raster width per TRM 15-14. */
-	    int direction =
-	      (pcls->raster.across_physical_page ? 0 : pcls->orientation) +
-	      pcls->print_direction;
-	    coord width =
-	      (direction & 1 ? pcls->logical_page_size.y :
-	       pcls->logical_page_size.x) - left_margin;
+    /*
+     * If all the rows that can be output have already been rendered, just
+     * return.
+     */
+    if (prast->rows_rendered >= prast->src_height)
+        return 0;
 
-	    /* The width shouldn't be negative, but if it is.... */
-	    pcls->raster.width =
-	      (width <= 0 ? 0 : coord2inch(width) * pcls->raster.resolution);
-	  }
-	return 0;
+    /*
+     * If all planes for this row have been entered, just ignore the current
+     * data (but don't return yet, as we may still need to output the current
+     * raster row).
+     */
+    plane_index = prast->plane_index;
+    if (plane_index < nplanes) {
+        pcl_seed_row_t *    pseed = prast->pseed_rows + plane_index;
+
+        prast->plane_index++;
+        if (comp_mode == ADAPTIVE_COMPRESS)
+            return process_adaptive_compress(prast, pdata, nbytes);
+        else
+            (void)pcl_decomp_proc[comp_mode](pseed, pdata, nbytes);
+    }
+
+    /* render this row if necessary */
+    if (end_row)
+        return process_row(prast);
+    else
+        return 0;
 }
 
-/* Resize (expand) a row buffer if needed. */
-int
-pcl_resize_row(pcl_raster_row_t *row, uint new_size, gs_memory_t *mem,
-  client_name_t cname)
-{	if ( new_size > row->size )
-	  { byte *new_data =
-	      (row->data == 0 ?
-	       gs_alloc_bytes(mem, new_size, cname) :
-	       gs_resize_object(mem, row->data, new_size, cname));
-	    if ( new_data == 0 )
-	      return_error(e_Memory);
-	    row->data = new_data;
-	    row->size = new_size;
-	  }
-	return 0;
+/*
+ * Create a PCL raster object. This procedure is called when entering graphics
+ * mode.
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+  int
+pcl_start_raster(
+    uint                src_width,
+    uint                src_height,
+    pcl_state_t *       pcs
+)
+{
+    pcl_raster_t *      prast = pcur_raster;
+    pcl_palette_t *     ppalet = pcs->ppalet;
+    pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
+    pcl_encoding_type_t penc = pcl_cs_indexed_get_encoding(pindexed);
+    int                 seed_row_bytes = 0;
+    pcl_seed_row_t *    pseed_rows = 0;
+    int                 i;
+
+    /* there can only be one raster object present at a time */
+    if (prast != 0)
+        pcl_complete_raster();
+
+    prast = gs_alloc_struct( pcs->memory,
+                             pcl_raster_t,
+                             &st_raster_t,
+                             "start PCL raster"
+                             );
+    if (prast == 0)
+        return e_Memory;
+
+    prast->pmem = pcs->memory;
+
+    prast->transparent = pcs->source_transparent;
+    prast->src_height_set = pcs->raster_state.src_height_set;
+    prast->pgs = pcs->pgs;
+    pcl_cs_indexed_init_from(prast->pindexed, pindexed);
+
+    prast->pen = 0;
+    prast->plane_index = 0;
+    prast->rows_rendered = 0;
+    prast->src_width = src_width;
+    prast->src_height = src_height;
+
+    /* the conslidation buffer is created when first needed */
+    prast->cons_buff = 0;
+
+    if (penc <= pcl_penc_indexed_by_pixel) {
+        int     b_per_i = pcl_cs_indexed_get_bits_per_index(pindexed);
+
+        if (penc == pcl_penc_indexed_by_plane) {
+            prast->nplanes = b_per_i;
+            prast->bits_per_plane = 1;
+        } else { /* penc == pcl_penc_indexed_by_pixel */
+            prast->nplanes = 1;
+            prast->bits_per_plane = b_per_i;
+        }
+        prast->nsrcs = 1;
+        prast->indexed = true;
+        prast->zero_is_white = pcl_cs_indexed_0_is_white(pindexed);
+        prast->zero_is_black = pcl_cs_indexed_0_is_black(pindexed);
+        prast->remap_ary = pcl_cmap_create_remap_ary(pcs, &(prast->wht_indx));
+
+    } else {    /* penc >= pcl_penc_direct_by_plane */
+        int     b_per_primary = pcl_cs_indexed_get_bits_per_primary(pindexed, 0);
+
+        if (penc == pcl_penc_direct_by_plane) {
+            prast->nplanes = 3;
+            prast->bits_per_plane = b_per_primary;
+            prast->nsrcs = 3;
+        } else {    /* penc == pcl_penc_direct_by_pixel */
+            prast->nplanes = 1;
+            prast->bits_per_plane = 3 * b_per_primary;
+            prast->nsrcs = 1;
+        }
+        prast->indexed = false;
+        prast->zero_is_white = false;
+        prast->zero_is_black = true;
+        prast->wht_indx = 1;    /* not significant */
+        prast->remap_ary = 0;
+    }
+
+    /* allocate the seed row buffers */
+    pseed_rows = gs_alloc_struct_array( prast->pmem,
+                                        prast->nplanes,
+                                        pcl_seed_row_t,
+                                        &st_seed_row_t_element,
+                                        "start PCL raster"
+                                        );
+    if (pseed_rows != 0) {
+        int     seed_row_bytes = (prast->src_width * prast->bits_per_plane + 7)
+                                 / 8;
+        int     nplanes = prast->nplanes;
+        int     i, j;
+
+        for (i = 0; i < nplanes; i++) {
+            byte *  pdata = gs_alloc_bytes( prast->pmem,
+                                            seed_row_bytes,
+                                            "start PCL raster"
+                                            );
+
+            if (pdata == 0)
+                break;
+            pseed_rows[i].size = seed_row_bytes;
+            pseed_rows[i].pdata = pdata;
+            memset(pseed_rows[i].pdata, 0, seed_row_bytes);
+            pseed_rows[i].is_blank = true;
+        }
+
+        /* check if everything was successful */
+        if (i == prast->nplanes) {
+            prast->pseed_rows = pseed_rows;
+            pcur_raster = prast;
+            return 0;
+        }
+
+        /* memory exhaustion; release the already allocated seed rows */
+        for (j = 0; j < i; j++)
+            gs_free_object(prast->pmem, pseed_rows[i].pdata, "start PCL raster");
+
+        gs_free_object(prast->pmem, pseed_rows, "start PCL raster");
+    }
+
+    /* must have failed due to memory exhaustion; release the raster object */
+    gs_free_object(prast->pmem, prast, "start PCL raster");
+
+    return e_Memory;
 }
 
-/* Read one plane of data.  We export this for rtcrastr.c. */
-int
-pcl_read_raster_data(pcl_args_t *pargs, pcl_state_t *pcls, int bits_per_pixel,
-  bool last_plane)
-{	uint count = uint_arg(pargs);
-	const byte *data = arg_data(pargs);
-	int method = pcls->raster.compression;
-	int plane = pcls->raster.plane;
-	pcl_raster_row_t *row = &pcls->raster.row[plane];
-	uint row_size;
-	int code;
+/*
+ * Complete a raster. This is called when exiting graphics mode.
+ */
+  void
+pcl_complete_raster(void)
+{
+    pcl_raster_t *  prast = pcur_raster;
+    int             i;
 
-	/* Make sure we have a large enough row buffer. */
-	row_size = (pcls->raster.width * bits_per_pixel + 7) >> 3;
-	code = pcl_resize_row(row, row_size, pcls->memory, "pcl image row");
-	/* Decompress the data into the row. */
-	{ stream_cursor_read r;
+    /* if already in raster mode, ignore */
+    if (prast == 0)
+        return;
 
-	  r.ptr = data - 1;
-	  r.limit = r.ptr + count;
-	  code = (*pcl_compression_methods[method].proc)(row, row_size, &r);
-	  if ( code < 0 )
-	    clear_row(row);
-	  if ( last_plane )
-	    { /*
-	       * Pass the data to the image.  We have to do this here so we
-	       * can handle block-oriented compression modes, which can
-	       * generate multiple rows.
-	       */
-	      while ( !code )
-		{ pcls->have_page = true;
-		  code = pcl_image_row(pcls, row);
-		  if ( code < 0 || !pcl_compression_methods[method].block ||
-		       r.ptr >= r.limit
-		     )
-		    break;
-		  code = (*pcl_compression_methods[method].proc)(row, row_size, &r);
-		}
-	      if ( code > 0 )
-		code = 0;
-	    }
-	}
-	return code;
+    /* close the current raster */
+    close_raster(prast, true);
+
+    /* free associated objects */
+    if (prast->remap_ary != 0) {
+        gs_free_object( prast->pmem,
+                        (void *)prast->remap_ary,
+                        "Complete PCL raster"
+                        );
+        prast->remap_ary = 0;
+    }
+
+    if (prast->pindexed != 0) {
+        pcl_cs_indexed_release(prast->pindexed);
+        prast->pindexed = 0;
+    }
+
+    if (prast->pseed_rows != 0) {
+        for (i = 0; i < prast->nplanes; i++) {
+            if (prast->pseed_rows[i].pdata != 0)
+                gs_free_object( prast->pmem,
+                                prast->pseed_rows[i].pdata,
+                                "Complete PCL raster"
+                                );
+        }
+        gs_free_object(prast->pmem, prast->pseed_rows, "Complete PCL raster");
+        prast->pseed_rows = 0;
+    }
+
+    if (prast->cons_buff != 0)
+        gs_free_object(prast->pmem, prast->cons_buff, "Complete PCL raster");
+    
+
+    /* free the PCL raster robject itself */
+    gs_free_object(prast->pmem, prast, "Complete PCL raster");
+    pcur_raster = 0;
 }
 
-/* End the current raster image if we're in one. */
-private int
-end_raster_image(pcl_state_t *pcls)
-{	int code = 0;
-
-	if ( pcls->raster.image_info )
-	  { gx_device *dev = gs_currentdevice(pcls->pgs);
-
-	    code = (*dev_proc(dev, end_image))
-	      (dev, pcls->raster.image_info, true);
-	    pcls->raster.image_info = 0;
-	  }
-	return code;
+/*
+ * ESC * b # V
+ *
+ * Add a plane buffer to the current set.
+ */
+  private int
+transfer_raster_plane(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    return add_raster_plane(arg_data(pargs), arg_data_size(pargs), false, pcs);
 }
 
-/* Pass one row of raster data to an image. */
-/* Note that this may pad the row with zeros. */
-/* We export this for rtcrastr.c. */
-int
-pcl_image_row(pcl_state_t *pcls, pcl_raster_row_t *row)
-{	gx_device *dev = gs_currentdevice(pcls->pgs);
-	byte *data = row->data;
-	uint width = row->count << 3;
-
-	/* If the source isn't transparent, pad the row. */
-	if ( !pcls->raster.image.ImageMask )
-	  { if ( pcls->raster.width > width )
-	      memset(data + row->count, 0,
-		     ((pcls->raster.width + 7) >> 3) - row->count);
-	    width = pcls->raster.width;
-	  }
-	/* If the width has changed, end the current image and */
-	/* start a new one. */
-	if ( pcls->raster.last_width != width )
-	  { /* End the current image. */
-	    int code = end_raster_image(pcls);
-	    if ( code < 0 )
-	      return code;
-	  }
-	if ( pcls->raster.image_info == 0 )
-	  { /* Start a new image. */
-	    gs_state *pgs = pcls->pgs;
-	    int code;
-
-	    pcls->raster.image.Width = width;
-	    pcls->raster.image.Height =
-	      (pcls->raster.height_set ? pcls->raster.height :
-	       dev->height * pcls->raster.resolution / dev->HWResolution[1]);
-	    /**** DOESN'T DO GENERAL SCALING YET ****/
-	    pcls->raster.image.ImageMatrix.xx =
-	      pcls->raster.resolution / (float)pcl_coord_scale;
-	    pcls->raster.image.ImageMatrix.yy =
-	      pcls->raster.image.ImageMatrix.xx * pcls->raster.y_direction;
-	    pcls->raster.image.ImageMatrix.tx =
-	      -pcls->cap.x * pcls->raster.image.ImageMatrix.xx;
-	    pcls->raster.image.ImageMatrix.ty =
-	      -pcls->cap.y * pcls->raster.image.ImageMatrix.yy;
-	    if ( pcls->raster.image.ImageMask ||
-		 rop3_uses_T(lop_rop(pgs->log_op))
-	       )
-	      gx_set_dev_color(pgs);
-	    code = (*dev_proc(dev, begin_image))
-	      (dev, (gs_imager_state *)pgs, &pcls->raster.image,
-	       gs_image_format_chunky, NULL,
-	       pgs->dev_color, pgs->clip_path,
-	       pcls->memory, &pcls->raster.image_info);
-	    if ( code < 0 )
-	      return code;
-	    pcls->raster.last_width = width;
-	    pcls->raster.first_y = pcls->raster.y;
-	  }
-	if ( !pcls->raster.height_set || pcls->raster.y < pcls->raster.height )
-	  { int code = (*dev_proc(dev, image_data))
-	      (dev, pcls->raster.image_info, &data, 0,
-	       (width * pcls->raster.depth + 7) >> 3, 1);
-	    if ( code < 0 )
-	      return code;
-	    pcls->raster.y++;
-	    pcls->cap.y += (pcl_coord_scale / pcls->raster.resolution) *
-	      pcls->raster.y_direction;
-	  }
-	return 0;
+/*
+ * <esc> * b # W
+ *
+ * Add a plane buffer to the current buffered set, and complete the current
+ * raster row.
+ */
+  private int
+transfer_raster_row(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    pcs->have_page = true;  /* conservative */
+    return add_raster_plane(arg_data(pargs), arg_data_size(pargs), true, pcs);
 }
 
-/* ------ Commands ------ */
+/*
+ * <esc> * b # Y
+ *
+ * Skip (zero-fill) a number of raster rows. This command is ignored outside
+ * of raster mode.
+ *
+ * Note that any incomplete plane data for the current row is discarded by this
+ * command.
+ */
+  private int
+raster_y_offset(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    pcl_raster_t *  prast = pcur_raster;
 
-private int /* ESC * t <dpi> R */
-pcl_raster_graphics_resolution(pcl_args_t *pargs, pcl_state_t *pcls)
-{	int resolution = int_arg(pargs);
-	if ( pcls->raster.graphics_mode )
-	  return 0;		/* locked out */
-	switch ( resolution )
-	  {
-	  case 75: case 100: case 150: case 200: case 300: case 600:
-	    pcls->raster.resolution = resolution;
-	    break;
-	  default:
-	    return e_Range;
-	  }
-	return 0;
+    /* ignored outside of graphics mode */
+    if ((prast != 0) && (uint_arg(pargs) > 0)) {
+        pcs->have_page = true;  /* conservative */
+        return process_zero_rows(prast, uint_arg(pargs));
+    } else
+        return 0;
 }
 
-private int /* ESC * r <0|3> F */
-pcl_raster_graphics_presentation(pcl_args_t *pargs, pcl_state_t *pcls)
-{	int orient = int_arg(pargs);
-	if ( pcls->raster.graphics_mode )
-	  return 0;		/* locked out */
-	switch ( orient )
-	  {
-	  case 0: case 3:
-	    break;
-	  default:
-	    return e_Range;
-	  }
-	pcls->raster.across_physical_page = orient != 0;
-	return 0;
+/*
+ * There is no specific copy code for this module, as both entry to and exit
+ * from a macro must end graphics mode (and thus are handled by the parser).
+ * There is also no explicit reset routine, as the required work is handled
+ * at a higher level.
+ */
+  private int
+raster_do_init(
+    gs_memory_t *   pmem    /* ignored */
+)
+{
+    DEFINE_CLASS('*')
+    {
+        'b', 'V',
+        PCL_COMMAND( "Transfer Raster Plane",
+                     transfer_raster_plane,
+                     pca_raster_graphics | pca_bytes
+                     )
+    },
+    {
+        'b', 'W',
+        PCL_COMMAND( "Transfer Raster Row",
+                     transfer_raster_row,
+                     pca_raster_graphics | pca_bytes
+                     )
+    },
+    {
+        'b', 'Y',
+        PCL_COMMAND( "Raster Y Offset",
+                     raster_y_offset,
+                     pca_raster_graphics | pca_neg_ok | pca_big_clamp
+                     )
+    },
+    END_CLASS
+    return 0;
 }
 
-private int /* ESC * r <height_pixels> T */
-pcl_raster_height(pcl_args_t *pargs, pcl_state_t *pcls)
-{	if ( pcls->raster.graphics_mode )
-	  return 0;		/* locked out */
-	pcls->raster.height = uint_arg(pargs);
-	pcls->raster.height_set = true;
-	return 0;
+  private void
+raster_do_reset(
+    pcl_state_t *       pcs,
+    pcl_reset_type_t    type
+)
+{
+    if ((type & pcl_reset_initial) != 0)
+        pcur_raster = 0;
 }
 
-private int /* ESC * r <width_pixels> S */
-pcl_raster_width(pcl_args_t *pargs, pcl_state_t *pcls)
-{	if ( pcls->raster.graphics_mode )
-	  return 0;		/* locked out */
-	pcls->raster.width = uint_arg(pargs);
-	pcls->raster.width_set = true;
-	return 0;
-}
-
-private int /* ESC * r <cap_enum> A */
-pcl_start_raster_graphics(pcl_args_t *pargs, pcl_state_t *pcls)
-{	int setting = int_arg(pargs);
-
-	if ( pcls->raster.graphics_mode )
-	  return 0;		/* locked out */
-	if ( setting > 1 )
-	  setting = 0;
-	return pcl_begin_raster_graphics(pcls, setting);
-}
-
-private int /* ESC * b <method> M */
-pcl_set_compression_method(pcl_args_t *pargs, pcl_state_t *pcls)
-{	int method = int_arg(pargs);
-
-	if ( method < countof(pcl_compression_methods) &&
-	     pcl_compression_methods[method].proc != 0
-	   )
-	  pcls->raster.compression = method;
-	return 0;
-}
-
-/* This command is referenced in a couple of places in the PCL5 manual, */
-/* but it isn't documented anywhere, and it doesn't appear in the master */
-/* table of PCL5 commands in the Comparison Guide. */
-private int /* ESC * b <> S */
-pcl_seed_row_source(pcl_args_t *pargs, pcl_state_t *pcls)
-{	return e_Unimplemented;
-}
-
-/* This is exported for pccrastr.c. */
-int /* ESC * b <count> W */
-pcl_transfer_raster_data(pcl_args_t *pargs, pcl_state_t *pcls)
-{	enter_graphics_mode_if_needed(pcls);
-	return
-	  pcl_read_raster_data(pargs, pcls,
-			       (pcls->raster.planar ? 1 : pcls->raster.depth),
-			       true);
-}
-
-private int /* ESC * b <dy> Y */
-pcl_raster_y_offset(pcl_args_t *pargs, pcl_state_t *pcls)
-{	int offset = int_arg(pargs);
-	int dy = offset * pcls->raster.y_direction;
-	int code = 0;
-
-	if ( !pcls->raster.graphics_mode )
-	  return 0;		/* per PCL5 Color manual, p. 6-19 */
-	clear_rows(pcls, pcls->raster.depth);
-	if ( dy >= 0 )
-	  { dy = min(dy, pcls->raster.height - pcls->raster.y);
-	    offset = dy;
-	  }
-	else
-	  { dy = min(-dy, pcls->raster.y);
-	    offset = -dy;
-	  }
-	if ( pcls->raster.image.ImageMask )
-	  { /* Just skip the rows. */
-	    pcls->raster.y += dy;
-	    pcls->cap.y += (coord)(pcl_coord_scale / pcls->raster.resolution) *
-	      dy;
-	    return end_raster_image(pcls);	/* force a new image */
-	  }
-	/* Actually image blank rows. */
-	while ( --offset >= 0 &&
-		(code = pcl_image_row(pcls, &pcls->raster.row[0])) >= 0
-	      )
-	  ;
-	return code;
-}
-
-/* We break out this procedure so the parser can call it to */
-/* exit raster graphics mode implicitly. */
-private int
-end_raster_graphics(pcl_state_t *pcls)
-{	bool across =
-	  pcls->raster.across_physical_page &&
-	  (pcls->orientation & 1);
-	int code = 0;
-
-	if ( !pcls->raster.graphics_mode )
-	  return 0;
-	/* If the height is set, */
-	/* fill out the extra lines. */
-	if ( pcls->raster.height_set && pcls->raster.height > pcls->raster.y )
-	  { pcl_args_t args;
-
-	    arg_set_uint(&args, pcls->raster.height - pcls->raster.y);
-	    code = pcl_raster_y_offset(&args, pcls);
-	  }
-	pcls->raster.graphics_mode = false;
-	if ( pcls->raster.image_info )
-	  { gx_device *dev = gs_currentdevice(pcls->pgs);
-	    int code2 = (*dev_proc(dev, end_image))
-	      (dev, pcls->raster.image_info, true);
-
-	    pcls->raster.image_info = 0;
-	    if ( code >= 0 )
-	      code = code2;
-	  }
-	{ int i;
-	  for ( i = pcls->raster.depth; --i >= 0; )
-	    { gs_free_object(pcls->memory, pcls->raster.row[i].data,
-			     "end raster graphics(row)");
-	      initialize_row(&pcls->raster.row[i]);
-	    }
-	}
-	clear_rows(pcls, pcls->raster.depth);
-	/* Restore the CTM if we modified it. */
-	if ( across )
-	  { gs_point cap_dev, cap_image;
-
-	    /* Convert CAP to device coordinates, since it mustn't move. */
-	    gs_transform(pcls->pgs, (floatp)pcls->cap.x, (floatp)pcls->cap.y,
-			 &cap_dev);
-	    pcl_set_graphics_state(pcls, true);
-	    gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
-	    pcls->cap.x = (coord)cap_image.x;
-	    pcls->cap.y = (coord)cap_image.y;
-	  }
-	return code;
-}
-private int /* ESC * r B */
-pcl_end_raster_graphics(pcl_args_t *pargs, pcl_state_t *pcls)
-{	return end_raster_graphics(pcls);
-}
-
-private int /* ESC * r C */
-pcl_end_clear_raster_graphics(pcl_args_t *pargs, pcl_state_t *pcls)
-{	int code = end_raster_graphics(pcls);
-
-	if ( code < 0 )
-	  return code;
-	pcls->raster.compression = 0;
-	pcls->raster.margin_setting &= ~1;
-	return 0;
-}
-
-/* Initialization */
-private int
-rtraster_do_init(gs_memory_t *mem)
-{		/* Register commands */
-	DEFINE_CLASS('*')
-	  {'t', 'R',
-	     PCL_COMMAND("Raster Graphics Resolution",
-			 pcl_raster_graphics_resolution,
-			 pca_neg_error|pca_big_error|pca_raster_graphics)},
-	  {'r', 'T',
-	     PCL_COMMAND("Raster Height", pcl_raster_height,
-			 pca_neg_error|pca_big_error|pca_raster_graphics)},
-	  {'r', 'S',
-	     PCL_COMMAND("Raster Width", pcl_raster_width,
-			 pca_neg_error|pca_big_error|pca_raster_graphics)},
-	  {'r', 'A',
-	     PCL_COMMAND("Start Raster Graphics", pcl_start_raster_graphics,
-			 pca_neg_error|pca_big_error)},
-	  {'b', 'M',
-	     PCL_COMMAND("Set Compression Method", pcl_set_compression_method,
-			 pca_neg_ignore|pca_big_ignore|pca_raster_graphics)},
-	  {'b', 'W',
-	     PCL_COMMAND("Transfer Raster Data", pcl_transfer_raster_data,
-			 pca_bytes|pca_raster_graphics)},
-	  {'b', 'Y',
-	     PCL_COMMAND("Raster Y Offset", pcl_raster_y_offset,
-			 pca_neg_ok|pca_big_clamp|pca_raster_graphics)},
-	  {'r', 'C',
-	     PCL_COMMAND("End Clear Raster Graphics",
-			 pcl_end_clear_raster_graphics,
-			 pca_raster_graphics)},
-	END_CLASS
-	return 0;
-}
-private void
-rtraster_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	  { pcls->raster.graphics_mode = false;
-	    if ( type & pcl_reset_initial )
-	      pcls->raster.end_graphics = end_raster_graphics;
-	    pcls->raster.margin_setting = 0;
-	    pcls->raster.resolution = 75;
-	    pcls->raster.across_physical_page = true;
-	    pcls->raster.height_set = false;
-	    pcls->raster.width_set = false;
-	    pcls->raster.compression = 0;
-	    { int i;
-	      for ( i = 0; i < countof(pcls->raster.row); ++i )
-		initialize_row(&pcls->raster.row[i]);
-	    }
-	    pcls->raster.y_direction = 1;
-	    pcls->raster.color_row.data = 0;
-	    /* Initialize for monochrome operation. */
-	    pcls->raster.depth = 1;
-	  }
-}
-const pcl_init_t rtraster_init = {
-  rtraster_do_init, rtraster_do_reset
-};
-/* The following commands are only registered in PCL mode. */
-private int
-rtraster_pcl_do_init(gs_memory_t *mem)
-{		/* Register commands */
-	DEFINE_CLASS('*')
-	  {'r', 'F',
-	     PCL_COMMAND("Raster Graphics Presentation",
-			 pcl_raster_graphics_presentation,
-			 pca_neg_error|pca_big_error|pca_raster_graphics)},
-	  {'b', 'S',
-	     PCL_COMMAND("Seed Row Source", pcl_seed_row_source,
-			 pca_raster_graphics)},
-	  {'r', 'B',
-	     PCL_COMMAND("End Raster Graphics", pcl_end_raster_graphics,
-			 pca_raster_graphics)},
-	END_CLASS
-	return 0;
-}
-const pcl_init_t rtraster_pcl_init = {
-  rtraster_pcl_do_init, 0
-};
+const pcl_init_t    rtraster_init = { raster_do_init, raster_do_reset, 0 };

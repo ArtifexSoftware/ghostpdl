@@ -1,48 +1,45 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* rtraster.h */
-/* Internal interface to HP RTL / PCL5 raster procedures */
+/* rtraster.h - interface to raster rendering code */
 
-/* These procedures are exported by rtraster.c for rtcrastr.c. */
+#ifndef rtraster_INCLUDED
+#define rtraster_INCLUDED
 
-/* Enter raster graphics mode. */
-int pcl_begin_raster_graphics(P2(pcl_state_t *pcls, int setting));
+#include "pcstate.h"
+#include "pcommand.h"
 
-/* If a transfer raster data command occurs outside graphics mode, */
-/* enter graphics mode automatically. */
-#define enter_graphics_mode_if_needed(pcls)\
-do {\
-  if ( !pcls->raster.graphics_mode )\
-    { /* Enter raster graphics mode implicitly. */\
-      int code = pcl_begin_raster_graphics(pcls, pcls->raster.margin_setting);\
-      if ( code < 0 )\
-        return code;\
-    }\
-} while ( 0 )
+/*
+ * Create a PCL raster object (on entering raster graphics mode).
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+extern  int     pcl_start_raster(
+    uint                src_width,
+    uint                src_height,
+    pcl_state_t *       pcs
+);
 
-/* Resize (expand) a row buffer if needed. */
-int pcl_resize_row(P4(pcl_raster_row_t *row, uint new_size,
-		      gs_memory_t *mem, client_name_t cname));
+/* complete a raster (when exiting raster graphics mode) */
+extern  void    pcl_complete_raster( void );
 
-/* Read one plane of data. */
-int pcl_read_raster_data(P4(pcl_args_t *pargs, pcl_state_t *pcls,
-			    int bits_per_pixel, bool last_plane));
+extern  const pcl_init_t    rtraster_init;
 
-/* Pass one row of raster data to an image. */
-/* Note that this may pad the row with zeros. */
-int pcl_image_row(P2(pcl_state_t *pcls, pcl_raster_row_t *row));
-
-/* The following is exported by rtraster.c for rtlrastr.c. */
-
-/* Register a data compression method. */
-typedef int (*pcl_uncompress_proc_t)(P3(pcl_raster_row_t *row, uint in_size,
-					stream_cursor_read *pr));
-typedef struct pcl_compression_method_s {
-  pcl_uncompress_proc_t proc;
-  bool block;
-} pcl_compression_method_t;
-void pcl_register_compression_method(P3(int method, pcl_uncompress_proc_t proc,
-					bool block));
-extern /*const, for us*/ pcl_compression_method_t pcl_compression_methods[10];
+#endif			/* rtraster_INCLUDED */

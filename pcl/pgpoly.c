@@ -1,14 +1,32 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* pgpoly.c */
-/* HP-GL/2 polygon commands */
+/* pgpoly.c -  HP-GL/2 polygon commands */
+
 #include "std.h"
 #include "pgmand.h"
 #include "pgdraw.h"
 #include "pggeom.h"
 #include "pgmisc.h"
+#include "pcpatrn.h"
+
 /* ------ Internal procedures ------ */
 
 /* Define fill/edge and absolute/relative flags. */
@@ -148,12 +166,16 @@ hpgl_EW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 
  private hpgl_rendering_mode_t
-hpgl_get_poly_render_mode(hpgl_state_t *pgls)
+hpgl_get_poly_render_mode(
+    hpgl_state_t *              pgls
+)
 {
-	return (((pgls->g.fill.type == hpgl_fill_hatch) ||
-		(pgls->g.fill.type == hpgl_fill_crosshatch)) ?
-		hpgl_rm_clip_and_fill_polygon :
-		hpgl_rm_polygon);
+    hpgl_FT_pattern_source_t    type = pgls->g.fill.type;
+
+    return ( ((type == hpgl_FT_pattern_one_line) ||
+	      (type == hpgl_FT_pattern_two_lines)  )
+                ? hpgl_rm_clip_and_fill_polygon
+                : hpgl_rm_polygon );
 }
 
 /* FP method; */
@@ -191,7 +213,8 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    /* clear the current path if there is one */
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    /* clear the polygon buffer as well */
-	    gx_path_release(&pgls->g.polygon.buffer.path);
+	    /* gx_path_release(&pgls->g.polygon.buffer.path); */
+            gx_path_new(&pgls->g.polygon.buffer.path);
 	    /* global flag to indicate that we are in polygon mode */
 	    pgls->g.polygon_mode = true;
 	    /* save the pen state, to be restored by PM2 */

@@ -1,5 +1,21 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
- * Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
 /* pcfont.c */
@@ -13,6 +29,7 @@
 #include "gxfont42.h"
 #include "pcommand.h"
 #include "pcstate.h"
+#include "pcursor.h"
 #include "pcfont.h"
 #include "pcfsel.h"
 
@@ -33,9 +50,8 @@
  */
 #define pcl_decache_hmi(pcls)\
   do {\
-    /*if ( pcls->hmi_set == hmi_set_from_font )*/\
-      pcls->hmi_set = hmi_not_set;\
-  } while (0)\
+      pcls->hmi_cp = HMI_DEFAULT;\
+  } while (0)
 
 
 /* Clear the font pointer cache after changing a font parameter.  set
@@ -307,7 +323,7 @@ pcl_select_default_font_secondary(pcl_args_t *pargs, pcl_state_t *pcls)
 private int /* SO */
 pcl_SO(pcl_args_t *pargs, pcl_state_t *pcls)
 {	if ( pcls->font_selected != 1 )
-	  { pcls->font_selected = 1;
+	  { pcls->font_selected = secondary;
 	    pcls->font = pcls->font_selection[1].font;
 	    pcl_decache_hmi(pcls);
 	  }
@@ -317,7 +333,7 @@ pcl_SO(pcl_args_t *pargs, pcl_state_t *pcls)
 private int /* SI */
 pcl_SI(pcl_args_t *pargs, pcl_state_t *pcls)
 {	if ( pcls->font_selected != 0 )
-	  { pcls->font_selected = 0;
+	  { pcls->font_selected = primary;
 	    pcls->font = pcls->font_selection[0].font;
 	    pcl_decache_hmi(pcls);
 	  }
@@ -448,7 +464,7 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pcls->font_selection[0].params.typeface_family = 3;	/* Courier */
 	    pcls->font_selection[0].font = 0;		/* not looked up yet */
 	    pcls->font_selection[1] = pcls->font_selection[0];
-	    pcls->font_selected = 0;
+	    pcls->font_selected = primary;
 	    pcls->font = 0;
 	  }
 }

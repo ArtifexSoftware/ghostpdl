@@ -1,26 +1,47 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* pgstate.h */
-/* Definition of HP-GL/2 portion of PCL5 state */
+/* pgstate.h - definition of HP-GL/2 portion of PCL5 state */
+
+/*
+ * This file should not be included by files other than pcstate.h; if you
+ * need the information in this file, include pcstate.h.
+ */
 
 #ifndef pgstate_INCLUDED
-#  define pgstate_INCLUDED
+#define pgstate_INCLUDED
 
-/* HPGL/2 coordinates are internally represented in plotter units
-   1/1024" when scaling is off and user units when scaling is in
-   effect.  The data structure g.pos maintains the coordinates in the
-   hpgl/2 state.  By default the coordinate system sets up the origin
-   in the lower left of the page with X increasing along the short
-   edge and Y increasing up the long edge.  Note the Y direction is
-   opposite PCL's. */
+/* 
+ * HPGL/2 coordinates are internally represented in plotter units
+ * 1/1024" when scaling is off and user units when scaling is in
+ * effect.  The data structure g.pos maintains the coordinates in the
+ * hpgl/2 state.  By default the coordinate system sets up the origin
+ * in the lower left of the page with X increasing along the short
+ * edge and Y increasing up the long edge.  Note the Y direction is
+ * opposite PCL's.
+ */
 
-#include "gslparam.h"
-#include "gsuid.h"		/* for gxbitmap.h */
-#include "gstypes.h"		/* for gxbitmap.h */
-#include "gxbitmap.h"
+#include "gx.h"
 #include "gxfixed.h"
+#include "gslparam.h"
+
 #ifndef gs_imager_state_DEFINED
 #  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
@@ -49,8 +70,8 @@ typedef struct hpgl_line_type_s {
 } hpgl_line_type_t;
 
 typedef struct hpgl_path_state_s {
-  bool have_first_moveto;
-  gx_path path;
+  bool have_first_moveto;  
+  gx_path path; 
 } hpgl_path_state_t;
 
 /* Define rendering modes - character, polygon, or vector.
@@ -116,12 +137,12 @@ typedef enum {
 
 typedef struct pcl_hpgl_state_s {
 		/* Chapter 17 lost mode (pgmisc.c) */
-
+  
 	/* According to PCLTRM IN, PG, RP and PA with args in range clears
 	   lost mode.  Note that all these commands have PA with valid args
 	   as a side effect so only PA needs to clear lost mode.  */
 
-	hpgl_lost_mode_t lost_mode;
+	hpgl_lost_mode_t lost_mode; 
 
 		/* Chapter 18 (pgframe.c) */
 
@@ -160,6 +181,7 @@ typedef struct pcl_hpgl_state_s {
 	gs_point P1, P2;	/* in plotter units */
 
 		/* Chapter 20 (pgvector.c) */
+  
 	int move_or_draw;	/* hpgl_plot_move/draw */
 	int relative_coords;	/* hpgl_plot_absolute/relative */
         gs_point pos;
@@ -187,22 +209,12 @@ typedef struct pcl_hpgl_state_s {
 	} line;
 	float miter_limit;
 	struct pen_ {
-	  float width[2];	/* millimeters or % */
 	  bool width_relative;
 	  int selected;		/* currently selected pen # */
 	} pen;
 	byte symbol_mode;	/* 0 if not in symbol mode */
 	struct ft_ {
-	  enum {
-	    hpgl_fill_solid = 1,
-	    hpgl_fill_solid2 = 2,
-	    hpgl_fill_hatch = 3,
-	    hpgl_fill_crosshatch = 4,
-	    hpgl_fill_shaded = 10,
-	    hpgl_fill_hpgl_user_defined = 11,
-	    hpgl_fill_pcl_crosshatch = 21,
-	    hpgl_fill_pcl_user_defined = 22
-	  } type;
+          hpgl_FT_pattern_source_t type;
 	  /*
 	   * Because each fill type remembers its previous parameter values,
 	   * we must use a structure rather than a union here.
@@ -222,13 +234,7 @@ typedef struct pcl_hpgl_state_s {
 	gs_point anchor_corner;
 	bool source_transparent;
 	struct scr_ {
-	  enum {
-	    hpgl_screen_none = 0,
-	    hpgl_screen_shaded_fill = 1,
-	    hpgl_screen_hpgl_user_defined = 2,
-	    hpgl_screen_crosshatch = 21,
-	    hpgl_screen_pcl_user_defined = 22
-	  } type;
+          hpgl_SV_pattern_source_t type;
 	  union su_ {
 	    int shading;	/* 0..100 */
 	    struct { int pattern_index; bool use_current_pen; } user_defined;
@@ -243,14 +249,7 @@ typedef struct pcl_hpgl_state_s {
 	  uint raster;
 	  byte *data;
 	} raster_fill;
-	/* dictionary of raster patterns, actually raster fill
-	   patterns are passed on to the pcl pattern drawing machinary
-	   masquerading as pcl user defined patterns */
-	pl_dict_t raster_patterns;
-	    /****** FOLLOWING MAY BE DELETED AGAIN ******/
-	/* derived from the current raster fill index */
-	pcl_id_t raster_pattern_id;
-	uint raster_fill_index;
+
 		/* Chapter 23 (pgchar.c, pglabel.c) */
 
 	pcl_font_selection_t font_selection[2];
@@ -309,13 +308,6 @@ typedef struct pcl_hpgl_state_s {
 	uint font_id[2];
 	bool bitmap_fonts_allowed;
 	gs_point carriage_return_pos;
-
-		/* Chapter C7 (pgcolor.c) */
-
-	/**** FOLLOWING SHOULD BE [number_of_pens] ****/
-	struct { hpgl_real_t rgb[3]; } pen_color[2];
-	uint number_of_pens;
-	struct { hpgl_real_t cmin, cmax; } color_range[3];
 
 } pcl_hpgl_state_t;
 

@@ -1,242 +1,68 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
-/* pcstate.h */
-/* Definition of PCL5 state */
+/* pcstate.h - Definition of PCL5 state */
 
+#ifndef pcstate_INCLUDED
+#  define pcstate_INCLUDED
+
+#include "gx.h"
+#include "scommon.h"
 #include "gsdcolor.h"		/* for gx_ht_tile */
-#include "gsmatrix.h"		/* for gsiparam.h */
-#include "gsiparam.h"
+#include "gschar.h"
 #include "pldict.h"
 #include "plfont.h"
+
+/* various components of the state structure */
+#include "pccoord.h"            /* centi-point coordinate system */
+#include "pcxfmst.h"            /* geometric transformation information */
+#include "pcfontst.h"           /* font selection information */
+#include "pctpm.h"              /* text parsing method information */
+#include "pcpattyp.h"           /* pattern related structures */
+#include "pcdict.h"             /* PL dictionary key structure */
+#include "rtrstst.h"            /* raster state information */
 /*#include "pgstate.h"*/	/* HP-GL/2 state, included below */
 
-/*
- * Following the PCL documentation, we represent coordinates internally in
- * centipoints (1/7200").  When we are in PCL mode, we maintain a CTM that
- * puts (0,0) at the origin of the logical page, uses the PCL coordinate
- * orientation (+Y goes down the page, opposite from PostScript), uses
- * centipoints as the user units, and takes both orientation and print
- * direction into account.
- */
-#if arch_sizeof_int == 2
-typedef long coord;
-#else
-typedef int coord;
-#endif
-#define pcl_coord_scale 7200
-#define inch2coord(v) ((coord)((v) * (coord)pcl_coord_scale))
-#define coord2inch(c) ((c) / (float)pcl_coord_scale)
-typedef struct coord_point_s {
-  coord x, y;
-} coord_point;
-
-/* Define the structure for paper size parameters. */
-/* Note that these values are all coords (centipoints). */
-typedef struct pcl_paper_size_s {
-  coord width, height;		/* physical page size */
-  coord_point offset_portrait;	/* offsets of logical page from physical */
-				/* page in portrait orientations */
-  coord_point offset_landscape; /* ditto for landscape orientations */
-} pcl_paper_size_t;
-
-/* Define the structure for margins. */
-typedef struct pcl_margins_s {
-  coord left;			/* measured from left edge */
-  coord right;			/* measured from *left* edge */
-  coord top;			/* measured from top */
-  coord length;			/* text_length, distance from top to bottom */
-} pcl_margins_t;
-
-/* Define the default margin values. */
-#define left_margin_default 0
-#define top_margin_default inch2coord(0.5)
-
-/* Define the parameters for one font set (primary or secondary). */
-#ifndef pl_font_t_DEFINED
-#  define pl_font_t_DEFINED
-typedef struct pl_font_s pl_font_t;
-#endif
-typedef struct pcl_font_selection_s {
-    /* Parameters used for selection, or loaded from font selected by ID. */
-  pl_font_params_t params;
-    /* Font found by matching or by ID */
-  pl_font_t *font;
-  bool selected_by_id;
-    /* The symbol map that goes with it. */
-  pl_symbol_map_t *map;
-} pcl_font_selection_t;
-
-/* Define a text parsing method for single/double byte characters. */
-typedef struct pcl_text_parsing_method_s {
-  byte min1, max1;
-  byte min2, max2;
-} pcl_text_parsing_method_t;
-#define pcl_char_is_2_byte(ch, tpm)\
-  ( (ch) >= (tpm)->min1 && (ch) <= (tpm)->max2 &&\
-    ((ch) <= (tpm)->max1 || (ch) >= (tpm)->min2) )
-#define pcl_tpm_is_single_byte(tpm)\
-  ((tpm)->max1 == 0)
-/* Single-byte only */
-#define pcl_tpm_0_data {0xff, 0, 0xff, 0}
-/* 0x21-0xff are double-byte */
-#define pcl_tpm_21_data {0x21, 0xff, 0x21, 0xff}
-/* 0x81-0x9f, 0xe0-0xfc are double-byte */
-#define pcl_tpm_31_data {0x81, 0x9f, 0xe0, 0xfc}
-/* 0x80-0xff are double-byte */
-#define pcl_tpm_38_data {0x80, 0xff, 0x80, 0xff}
-
-/* Define the indices for PCL color spaces (e.g. for the CID command). */
-typedef enum {
-  pcl_csi_DeviceRGB = 0,
-  pcl_csi_DeviceCMY = 1,
-  pcl_csi_ColorimetricRGB = 2,
-  pcl_csi_CIELab = 3,
-  pcl_csi_LuminanceChrominance = 4
-} pcl_color_space_index;
-
-/* Define the type for an ID key used in a dictionary. */
-typedef struct pcl_id_s {
-  uint value;
-  byte key[2];			/* key for dictionaries */
-} pcl_id_t;
-#define id_key(id) ((id).key)
-#define id_value(id) ((id).value)
-#define id_set_key(id, bytes)\
-  ((id).key[0] = (bytes)[0], (id).key[1] = (bytes)[1],\
-   (id).value = ((id).key[0] << 8) + (id).key[1])
-#define id_set_value(id, val)\
-  ((id).value = (val), (id).key[0] = (val) >> 8, (id).key[1] = (byte)(val))
 
 /* type for string id's */
 typedef struct pcl_string_id_s {
-  byte *id;
-  int size;
+    byte *  id;
+    int     size;
 } alphanumeric_string_id_t;
 
 /* type for current state of id's, string or regular id's macros */
 typedef enum id_type_enum {
-  string_id,
-  numeric_id
+    string_id,
+    numeric_id
 } id_type_t;
 
-	/* last set id is the id type used */ 
-
-/* Define the various types of pattern for filling. */
-typedef enum {
-  pcpt_solid_black = 0,
-  pcpt_solid_white,
-  pcpt_shading,
-  pcpt_cross_hatch,
-  pcpt_user_defined,
-  pcpt_current_pattern	/* for rectangle fill only */
-} pcl_pattern_type_t;
-
-/*
- * Define the PCL/HPGL color mapping state.  This is what is saved on the
- * palette stack.
- */
-#ifndef gs_halftone_DEFINED
-#  define gs_halftone_DEFINED
-typedef struct gs_halftone_s gs_halftone;
+#ifndef pcl_state_DEFINED
+#  define pcl_state_DEFINED
+typedef struct pcl_state_s  pcl_state_t;
 #endif
-typedef struct pcl_palette_state_s pcl_palette_state_t;
-typedef struct cid_range_s {
-  float vmin, vmax;
-} cid_range_t;
-typedef struct cid_scaling_s {
-  float gamma, gain;
-} cid_scaling_t;
-typedef struct cid_xy_s {
-  float x, y;
-} cid_xy_t;
-struct pcl_palette_state_s {
-  pcl_palette_state_t *next;	/* for palette stack */
+#ifndef gs_state_DEFINED
+#  define gs_state_DEFINED
+typedef struct gs_state_s   gs_state;
+#endif
 
-	/* Chapter C2 */
-
-  bool readonly;		/* palette can't be changed */
-  pcl_color_space_index color_space_index;
-  int bits_per_index;
-  bool planar;		/* is this needed? */
-  int bits_per_primary[3];
-  bool indexed;
-  union {
-    int vi[6];			/* for RGB/CMY reference values */
-    float vf[29];		/* for device-independent parameters */
-    struct {
-      int white_reference[3];
-      int black_reference[3];
-    } rgb_cmy;
-    struct {
-      cid_range_t l, a, b;
-    } lab;
-    struct {
-      cid_xy_t chromaticity[3];		/* r, g, b */
-      cid_scaling_t scaling[3];		/* ditto */
-      cid_range_t range[3];		/* ditto */
-    } colorimetric;
-    struct {
-      struct {
-	float rgb[3];
-      } primary_encoding[3];
-      cid_range_t primary_ranges[3];
-      cid_xy_t chromaticity[3];		/* r, g, b */
-      cid_xy_t white_point;
-      cid_scaling_t scaling[3];		/* ditto */
-    } luminance_chrominance;
-  } params;
-
-	/* Chapter C3 */
-
-  pcl_fixed *data;		/* actual color mapping palette */
-  uint size;			/* # of data elements */
-
-	/* Chapter C4 */
-
-  int render_algorithm;		/* (also in graphics state) */
-  gs_halftone *halftone;	/* downloaded dither matrix/ces */
-  float gamma;
-  union cu_ {
-    byte *i[5];			/* indexed by color space */
-    struct {
-      const byte *rgb;
-      const byte *cmy;		/* identical to rgb */
-      const byte *colorimetric;
-      const byte *lab;
-      const byte *luminance_chrominance;
-    } v;
-  } clut;
-  enum {
-    rgb_use_none,
-    rgb_use_clut,
-    rgb_use_gamma
-  } rgb_correction;
-  union wu_ {
-    float i[2];
-    struct { float x, y; } v;
-  } white_point;
-
-	/* Other */
-
-  /**** HPGL pen widths ****/
-
-};
-
-/*
- * Define the state of a single raster data row.  This is complicated
- * because it has to keep track of the repetition count for compression mode
- * 5.  (Actually, it's probably only one plane that has to track this, but
- * we aren't sure about this yet.)
- */
-typedef struct pcl_raster_row_s {
-  byte *data;
-  uint size;			/* allocated size of data */
-  uint count;			/* amount of data currently valid */
-  bool is_zero;			/* if true, data[0..count-1] are zero */
-  uint repeat_count;		/* # of repetitions for compression mode 5 */
-} pcl_raster_row_t;
+#include "pgstate.h"	    /* HP-GL/2 state */
 
 /*
  * Define the entire PCL/HPGL state.  The documentation for this is spread
@@ -245,264 +71,170 @@ typedef struct pcl_raster_row_s {
  * able to think about it as a whole, we've organized it here by
  * documentation chapter, just as we did the .c files.
  */
-#ifndef pcl_state_DEFINED
-#  define pcl_state_DEFINED
-typedef struct pcl_state_s pcl_state_t;
-#endif
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
-#endif
-#include "pgstate.h"		/* HP-GL/2 state */
 struct pcl_state_s {
 
-	gs_memory_t *memory;
-		/* Hook back to client data, for callback procedures */
-	void *client_data;
-		/* Reference to graphics state */
-	gs_state *pgs;
-	gs_point resolution;		/* device resolution, a copy of */
-					/* pgs->device->HWResolution */
+    gs_memory_t *   memory;
 
-		/* Parsing */
-	  /* Define an optional procedure for parsing non-ESC data. */
-	int (*parse_other)(P3(void *parse_data, pcl_state_t *pcls,
-			      stream_cursor_read *pr));
-	void *parse_data;	/* closure data for parse_other */
+    /* hook back to client data, for callback procedures */
+    void *          client_data;
 
-		/* Chapter 4 (pcjob.c) */
+    /* graphics state */
+    gs_state *      pgs;
 
-	int num_copies;			/* (also a device parameter) */
-	bool duplex;			/* (also a device parameter) */
-	bool bind_short_edge;		/* (also a device parameter) */
-	float left_offset_cp, top_offset_cp;
-	bool back_side;			/* (also a device parameter) */
-	int output_bin;			/* (also a device parameter) */
-	int uom_cp;		/* Unit of Measure, centipoints per PCL Unit */
-	float uom_dots;		/* dots per PCL Unit */
+    /* Define an optional procedure for parsing non-ESC data. */
+    int             (*parse_other)(P3( void *                  parse_data,
+                                       pcl_state_t *           pcls,
+			               stream_cursor_read *    pr
+                                       ));
+    void *          parse_data;	        /* closure data for parse_other */
 
-		/* Chapter 5 (pcpage.c) */
+    /* Chapter 4 (pcjob.c) */
+    int             num_copies;		/* (also a device parameter) */
+    bool            duplex;		/* (also a device parameter) */
+    bool            bind_short_edge;	/* (also a device parameter) */
+    bool            back_side;		/* (also a device parameter) */
+    int             output_bin;		/* (also a device parameter) */
+    coord           uom_cp;	        /* centipoints per PCL unit */
 
-	const pcl_paper_size_t *paper_size;
-	bool manual_feed;	/* ? */
-	int paper_source;
-	int print_direction;	/* 0..3 */
-	int orientation;	/* 0..3 */
-	pcl_margins_t margins;	/* relative to current print_direction */
-#define pcl_left_margin(pcls) ((pcls)->margins.left)
-#define pcl_right_margin(pcls) ((pcls)->margins.right)
-#define pcl_top_margin(pcls) ((pcls)->margins.top)
-#define pcl_text_length(pcls) ((pcls)->margins.length)
-	bool perforation_skip;
-	coord hmi, hmi_unrounded, vmi;
-	enum {
-	  hmi_not_set,		/* must be recomputed from font */
-	  hmi_set_from_font,
-	  hmi_set_explicitly
-	} hmi_set;
-	int (*end_page)(P3(pcl_state_t *pcls, int num_copies, int flush));
-		/* Internal variables */
-	bool have_page;		/* true if anything has been written on page */
-	coord_point logical_page_size;	/* size of logical page */
-#define logical_page_width logical_page_size.x
-#define logical_page_height logical_page_size.y
-	coord_point rotated_page_size; /* logical page size rotated per */
-				/* print direction */
-#define rotated_page_width rotated_page_size.x
-#define rotated_page_height rotated_page_size.y
+    /* Chapter 5 (pcpage.c) */
+    int             paper_source;
+    int             perforation_skip;
+    pcl_margins_t   margins;            /* relative to print_direction */
+    pcl_xfm_state_t xfm_state;
 
-		/* Chapter 6 (pcursor.c) */
+    /* Internal variables */
+    bool            have_page;	        /* true ==> have written on page */
 
-	coord_point cap;  /* in user coordinates relative to standard CTM */
-			/* *including* rotation for PCL print direction */
-	struct {
-	  gs_point values[20];	/* device coordinates */
-	  int depth;
-	} cursor_stack;
-	int line_termination;
+    /* Chapter 6 (pcursor.c) */
+    coord           hmi_cp;
+    coord           vmi_cp;
+    int             line_termination;
 
-		/* Chapter 8 (pcfont.c) */
-	pcl_font_selection_t font_selection[3];
-        enum {
-	  primary = 0,
-	  secondary = 1,
-	} font_selected;	
-	pl_font_t *font;		/* 0 means recompute from params */
-	pl_dict_t built_in_fonts;	/* "built-in", known at start-up */
-		/* Internal variables */
-	gs_font_dir *font_dir;		/* gs-level dictionary of fonts */
-	pl_symbol_map_t *map;		/* map for current font (above) */
+    /* Chapter 8 (pcfont.c) */
+    pcl_font_selection_t    font_selection[2];
+    enum {
+        primary = 0,
+	secondary = 1
+    }               font_selected;
+    pl_font_t *     font;		/* 0 means recompute from params */
+    pl_dict_t       built_in_fonts;	/* "built-in", known at start-up */
 
-		/* more Chapter 8 (pctext.c) */
+    /* Internal variables */
+    gs_font_dir *       font_dir;	/* gs-level dictionary of fonts */
+    pl_symbol_map_t *   map;		/* map for current font (above) */
 
-	bool underline_enabled;
-	bool underline_floating;
-	float underline_position;	/* distance from baseline */
-	const pcl_text_parsing_method_t *text_parsing_method;
-	int text_path;			/* 0 or -1 */
-		/* Internal variables */
-	coord_point last_width;		/* escapement of last char (for BS) */
-	coord_point underline_start;	/* start point of underline */
-	bool last_was_BS;		/* no printable chars since last BS */
-	bool within_text;		/* no cursor movement since */
-					/* last text character */
-	bool check_right_margin;	/* true iff we need to check for */
-					/* clipping or wrapping, only */
-					/* relevant if within_text is true */
+    /* more Chapter 8 (pctext.c) */
+    bool            underline_enabled;
+    bool            underline_floating;
+    float           underline_position;	/* distance from baseline */
 
-		/* Chapter 10 (pcsymbol.c) */
+    const pcl_text_parsing_method_t *   text_parsing_method;
 
-	pcl_id_t symbol_set_id;
-	pl_dict_t soft_symbol_sets;
-	pl_dict_t built_in_symbol_sets;
+    int             text_path;		/* 0 or -1 */
 
-		/* Chapter 9 & 11 (pcsfont.c) */
+    /* Internal variables */
+    float           last_width;		/* escapement of last char (for BS) */
+    coord_point     underline_start;	/* start point of underline */
+    bool            last_was_BS;	/* no printable chars since last BS */
+    gs_show_enum *  penum;              /* enumeration structure for
+                                         * printing text */
 
-	pcl_id_t font_id;
-	uint character_code;
-	pl_dict_t soft_fonts;
-                /* PCL comparison guide - alphanumeric string id */
-	alphanumeric_string_id_t alpha_font_id;
-	id_type_t font_id_type;
-#define current_font_id (((pcls->font_id_type == string_id) ?\
-  (pcls->alpha_font_id.id) : (id_key(pcls->font_id))))
-#define current_font_id_size (((pcls->font_id_type == string_id) ?\
-  (pcls->alpha_font_id.size) : (2)))
+    /* Chapter 10 (pcsymbol.c) */
+    pcl_id_t        symbol_set_id;
+    pl_dict_t       soft_symbol_sets;
+    pl_dict_t       built_in_symbol_sets;
 
-		/* Chapter 12 (pcmacros.c) */
-	pcl_id_t macro_id;
-	pcl_id_t overlay_macro_id;
-	bool overlay_enabled;
-	int macro_level;
-	pl_dict_t macros;
-	bool defining_macro;
-	pcl_state_t *saved;	/* saved state during execute/call/overlay */
-		/* Internal variables */
-	byte *macro_definition;	/* for macro being defined, if any */
-	alphanumeric_string_id_t alpha_macro_id;
-	id_type_t macro_id_type;
-#define current_macro_id (((pcls->macro_id_type == string_id) ?\
-  (pcls->alpha_macro_id.id) : (id_key(pcls->macro_id))))
-#define current_macro_id_size (((pcls->macro_id_type == string_id) ?\
-  (pcls->alpha_macro_id.size) : (2)))
+    /* Chapter 9 & 11 (pcsfont.c) */
+    pcl_id_t        font_id;
+    uint            character_code;
+    pl_dict_t       soft_fonts;
 
-		/* Chapter 13 (pcprint.c) */
+    /* PCL comparison guide - alphanumeric string id */
+    alphanumeric_string_id_t    alpha_font_id;
+    id_type_t                   font_id_type;
 
-	pcl_id_t pattern_id;
-	pcl_pattern_type_t pattern_type;
-	bool source_transparent;	/* (also in graphics state) */
-	bool pattern_transparent;	/* (also in graphics state) */
-	bool shift_patterns;
-	gs_point pattern_reference_point;	/* (also in graphics state) */
-	bool rotate_patterns;
-	pl_dict_t patterns;
-		/* Internal variables */
-	pcl_id_t current_pattern_id;	/* at last select_pattern */
-	bool pattern_set;	/* true if pattern set in graphics state */
-	gx_ht_tile pattern_tile;	/* set by pcl_set_drawing_color */
-	gs_pattern_instance *cached_shading[7*4];  /* create as needed, */
-						/* 1 per rotation */
-	gs_pattern_instance *cached_cross_hatch[6*4];  /* create as needed, */
-						/* 1 per rotation */
-	pcl_id_t cached_pattern_id;	/* of cached_pattern[] */
-	gs_pattern_instance *cached_pattern[4];
+#define current_font_id                                                 \
+    ( ((pcls->font_id_type == string_id) ? (pcls->alpha_font_id.id)     \
+                                         : (id_key(pcls->font_id))) )
 
-		/* Chapter 14 (pcrect.c) */
+#define current_font_id_size                                                  \
+    ( ((pcls->font_id_type == string_id) ? (pcls->alpha_font_id.size) : (2)) )
 
-	coord_point rectangle;
-	/* uint pattern_id; */	/* in Chapter 13 */
+    /* Chapter 12 (pcmacros.c) */
+    pcl_id_t        macro_id;
+    pcl_id_t        overlay_macro_id;
+    bool            overlay_enabled;
+    int             macro_level;
+    pl_dict_t       macros;
 
-		/* Chapter 15 (pcraster.c) & */
-		/* Chapter C6 (pccrastr.c) */
+    bool            defining_macro;
+    pcl_state_t *   saved;	/* saved state during execute/call/overlay */
 
-	struct r_ {
-		/* 15 */
-	  bool graphics_mode;
-	  int (*end_graphics)(P1(pcl_state_t *)); /* for implicit end raster graphics */
-	  int margin_setting;	/* last argument of Start Raster Graphics */
-	  int resolution;
-	  bool across_physical_page;
-	  uint height;
-	  bool height_set;
-	  uint width;
-	  bool width_set;
-	  int compression;
-	  int depth;		/* # of bits per pixel */
-	  bool planar;
-	  gs_image_t image;	/* preset for depth, color space */
-		/* (Seed) row buffers */
-	  pcl_raster_row_t row[8];	/* only [0] used for non-color */
-		/* HP RTL */
-	  int y_direction;	/* +1 or -1, "line path" */
-		/* Working storage while in raster graphics mode */
-	  int y;
-	  uint last_width;	/* width for begin_image */
-	  int first_y;		/* y at begin_image */
-	  void *image_info;	/* from begin_image */
-		/* C6 */
-	  bool scaling;
-	  float dest_width_dp;
-	  float dest_height_dp;
-	  bool enhance_dark;
-		/* Working storage while in raster graphics mode */
-	  int plane;
-	  pcl_raster_row_t color_row;	/* for assembling chunky pixels from planes */
-	} raster;
+    /* Internal variables */
+    byte *          macro_definition;   /* for macro being defined, if any */
+    alphanumeric_string_id_t    alpha_macro_id;
+    id_type_t       macro_id_type;
 
-		/* Chapter 16 (pcstatus.c) */
+#define current_macro_id                                                \
+    ( ((pcls->macro_id_type == string_id) ? (pcls->alpha_macro_id.id)   \
+                                          : (id_key(pcls->macro_id))) )
 
-	int location_type;
-	int location_unit;
-	struct _sb {
-	  byte internal_buffer[80];	/* enough for an error message */
-	  byte *buffer;
-	  uint write_pos;
-	  uint read_pos;
-	} status;
+#define current_macro_id_size                                                   \
+    ( ((pcls->macro_id_type == string_id) ? (pcls->alpha_macro_id.size) : (2)) )
 
-		/* Chapter 24 (pcmisc.c) */
+    /* Chapter 13 (pcprint.c) */
+    gs_point            pat_ref_pt;     /* active pattern reference point,
+                                         * in device space */
 
-	bool end_of_line_wrap;
-	bool display_functions;
-	int (*configure_appletalk)(P4(const byte *key, uint key_length,
-				      const byte *value, uint value_length));
+    int                 pat_orient;     /* current pattern orientation */
+    int                 pattern_id;
+    int                 current_pattern_id;
+    pcl_pattern_source_t pattern_type;  /* current source for PCL patterns */
+    gs_point            pcl_pat_ref_pt; /* PCL's pattern reference point */
+    bool                rotate_patterns;/* rotate patterns with print
+                                         * direction in PCL */
 
-		/* Chapter C2 (pccmodes.c) */
+    bool                source_transparent; /* (also in graphics state) */
+    bool                pattern_transparent;/* (also in graphics state) */
 
-	/* (see pcl_palette_state_t above) */
-	/**** more stuff from pp. C2-21 thru -24 ****/
+    /* Chapter 14 (pcrect.c) */
+    coord_point     rectangle;
 
-		/* Chapter C3 (pccpalet.c) */
+    /* Chapter 15 &  Chapter C6 (pcgmode.c) */
+    pcl_raster_state_t  raster_state;
 
-	pcl_palette_state_t palette;	/* see above */
-	/**** palette stack ****/
-	pcl_id_t palette_id;
-	pcl_id_t palette_control_id;
-	pl_dict_t palettes;
-	uint foreground_color;
-	pcl_fixed color_components[3];
+    /* Chapter 16 (pcstatus.c) */
+    int             location_type;
+    int             location_unit;
+    struct _sb {
+	byte            internal_buffer[80];    /* enough for an error message */
+	byte *          buffer;
+	uint            write_pos;
+	uint            read_pos;
+    }               status;
 
-		/* Chapter C4 (pccrendr.c) */
+    /* Chapter 24 (pcmisc.c) */
+    bool            end_of_line_wrap;
+    bool            display_functions;
+    int             (*configure_appletalk)(P4( const byte * key,
+                                               uint         key_length,
+				               const byte * value,
+                                               uint         value_length
+                                               ));
 
-	/* (see pcl_palette_state_t above) */
-	bool monochrome_print;
-	int lightness;
-	int saturation;
-	int scaling_algorithm;
-	int color_treatment;
-	/**** downloaded color map? ****/
+    /* Chapter C2/C3/C4 (pcpalet.c/pcindexed.c/pccsbase.c/etc.) */
+    int                 sel_palette_id;
+    int                 ctrl_palette_id;
+    pcl_palette_t *     ppalet;
+    pcl_frgrnd_t *      pfrgrnd;
+    pcl_gstate_ids_t    ids;
 
-		/* Chapter C5 (pccprint.c) */
+    /* Chapter C5 (pccprint.c) */
+    byte            logical_op;	    /* (also in graphics state) */
+    float           grid_adjust;    /* (also fill adjust in graphics state) */
 
-	byte logical_op;	/* (also in graphics state) */
-	float grid_adjust;	/* (also fill adjust in graphics state) */
-
-		/* Chapter C6 (pccrastr.c) */
-
-	/* (see Chapter 15 above) */
-
-		/* ---------------- HP-GL/2 state ---------------- */
-
-	pcl_hpgl_state_t g;	/* see pgstate.h */
-
+    /* ---------------- HP-GL/2 state ---------------- */
+    pcl_hpgl_state_t    g;	/* see pgstate.h */
 };
+
+#endif 						/* pcstate_INCLUDED */

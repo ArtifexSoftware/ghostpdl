@@ -1,5 +1,21 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
- * Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
 /* pcfsel.c */
@@ -11,6 +27,11 @@
 #include "pcfont.h"
 #include "pcfsel.h"
 #include "pcsymbol.h"
+
+/* hack to avoid compiler message */
+#ifndef abs
+extern  int     abs( int );
+#endif
 
 /* Vector for scoring how well a font matches selection criteria.  It
  * would be nice to do this with a single scalar, but pitch/height in
@@ -27,7 +48,7 @@ typedef enum {
   score_typeface,
   score_location,
   score_orientation,
-  score_limit,
+  score_limit
 } score_index_t;
 typedef	int match_score_t[score_limit];
 
@@ -67,7 +88,8 @@ private int
 check_support(const pcl_state_t *pcls, uint symbol_set, const pl_font_t *fp,
     pl_symbol_map_t **mapp)
 {
-	pl_glyph_vocabulary_t gv = ~fp->character_complement[7] & 07;
+	pl_glyph_vocabulary_t gv = (pl_glyph_vocabulary_t)
+                                   (~fp->character_complement[7] & 07);
 	byte id[2];
 	id[0] = symbol_set >> 8;
 	id[1] = symbol_set;
@@ -215,7 +237,7 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	  { pcl_font_header_t *fhp = (pcl_font_header_t *)(fp->header);
 
 	    score[score_orientation] = fhp?
-		fhp->Orientation == pcls->orientation:
+	        fhp->Orientation == pcls->xfm_state.lp_orient :
 		0;
 	  }
 
@@ -261,7 +283,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
 		match_score_t match;
 		score_index_t i;
 		score_match(pcls, pfs, fp, &mapp, match);
-		for (i=0; i<score_limit; i++)
+		for (i=(score_index_t)0; i<score_limit; i++)
 		  if ( match[i] != best_match[i] )
 		    {
 		      if ( match[i] > best_match[i] )
@@ -320,7 +342,7 @@ pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
 		if ( !pl_font_includes_char(fp, NULL, &ignore_mat, chr) )
 		  continue;
 		score_match(pcls, pfs, fp, &mapp, match);
-		for (i=0; i<score_limit; i++)
+		for (i=(score_index_t)0; i<score_limit; i++)
 		  if ( match[i] != best_match[i] )
 		    {
 		      if ( match[i] > best_match[i] )

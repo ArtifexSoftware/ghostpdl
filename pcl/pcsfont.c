@@ -10,6 +10,7 @@
 #include "pcommand.h"
 #include "pcfont.h"
 #include "pcstate.h"
+#include "pcfsel.h"
 #include "pldict.h"
 #include "plvalue.h"
 #include "gsbitops.h"
@@ -37,9 +38,9 @@ pcl_delete_soft_font(pcl_state_t *pcls, const byte *key, uint ksize,
 	  { if ( !pl_dict_find(&pcls->soft_fonts, key, ksize, &value) )
 	      return;		/* not a defined font */
 	  }
-	if ( pcls->font_selection[0].font == value )
+	if ( pcls->font_selection[0].font == (pl_font_t *)value )
 	  pcls->font_selection[0].font = 0;
-	if ( pcls->font_selection[1].font == value )
+	if ( pcls->font_selection[1].font == (pl_font_t *)value )
 	  pcls->font_selection[1].font = 0;
 	pcls->font = pcls->font_selection[pcls->font_selected].font;
 	pl_dict_undef_purge_synonyms(&pcls->soft_fonts, key, ksize);
@@ -182,7 +183,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	plfont->header = header;
 	plfont->header_size = count;
 	plfont->scaling_technology = fst;
-	plfont->font_type = pfh->FontType;
+	plfont->font_type = (pl_font_type_t)pfh->FontType;
 	code = pl_font_alloc_glyph_table(plfont, 256, mem,
 					 "pcl_font_header(char table)");
 	if ( code < 0 )
@@ -333,7 +334,8 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	    dprintf("continuation not implemented\n");
 	    return e_Unimplemented;
 	  }
-	format = ((const pcl_font_header_t *)plfont->header)->HeaderFormat;
+	format = (pcl_font_header_format_t)
+                 ((const pcl_font_header_t *)plfont->header)->HeaderFormat;
 	switch ( data[0] )
 	  {
 	  case pccd_bitmap:
@@ -379,7 +381,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 			      return e_Range;  /* row overrun */
 			    if ( color )
 			      { /* Set the run to black. */
-				char *data = row;
+				char *data = (char *)row;
 				while ( rlen-- )
 				  {
 				    data[x >> 3] |= (128 >> (x & 7));
@@ -497,7 +499,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	  case 0:
 	    /* Set the current font id to the given string id. */
 	    {
-	      char *new_id = gs_alloc_bytes(pcls->memory, string_id_size,
+	      char *new_id = (char *)gs_alloc_bytes(pcls->memory, string_id_size,
 					    "pcl_alphanumeric_id_data");
 	      if ( new_id == 0 ) 
 		return_error(e_Memory);
@@ -509,7 +511,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	      /* copy in the new id from the data */
 	      memcpy(new_id, alpha_data->string_id, string_id_size);
 	      /* set new id and size */
-	      pcls->alpha_font_id.id = new_id;
+	      pcls->alpha_font_id.id = (byte *)new_id;
 	      pcls->alpha_font_id.size = string_id_size;
 	      /* now set up the state to use string id's */
 	      pcls->font_id_type = string_id;
@@ -563,7 +565,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	  case 4:
 	    {
 	      /* sets the current macro id to the string id */
-	      char *new_id = gs_alloc_bytes(pcls->memory, string_id_size,
+	      char *new_id = (char *)gs_alloc_bytes(pcls->memory, string_id_size,
 					    "pcl_alphanumeric_id_data");
 	      if ( new_id == 0 ) 
 		return_error(e_Memory);
@@ -575,7 +577,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	      /* copy in the new id from the data */
 	      memcpy(new_id, alpha_data->string_id, string_id_size);
 	      /* set new id and size */
-	      pcls->alpha_macro_id.id = new_id;
+	      pcls->alpha_macro_id.id = (byte *)new_id;
 	      pcls->alpha_macro_id.size = string_id_size;
 	      /* now set up the state to use string id's */
 	      pcls->macro_id_type = string_id;

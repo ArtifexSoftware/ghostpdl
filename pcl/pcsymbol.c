@@ -1,5 +1,21 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
 
 /* pcsymbol.c */
@@ -88,7 +104,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 		sizeof(pcl_symbol_set_t), "symset dict value");
 	    if ( !symsetp )
 	      return_error(e_Memory);
-	    for ( gx = 0; gx < plgv_next; gx++ )
+	    for ( gx = plgv_MSL; gx < plgv_next; gx++ )
 	      symsetp->maps[gx] = NULL;
 	    symsetp->storage = pcds_temporary;
 	    pl_dict_put(&pcls->soft_symbol_sets, id_key(pcls->symbol_set_id),
@@ -174,7 +190,7 @@ pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 
 	if ( ssp->storage != pcds_internal )
 	  {
-	    for ( gx = 0; gx < plgv_next; gx++ )
+	    for ( gx = plgv_MSL; gx < plgv_next; gx++ )
 	      {
 		if ( ssp->maps[gx] != NULL )
 		  gs_free_object(mem, (void*)ssp->maps[gx], cname);
@@ -220,13 +236,13 @@ pcsymbol_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
 int
 pcl_load_built_in_symbol_sets(pcl_state_t *pcls)
 {
-	pl_symbol_map_t **maplp;
+	const pl_symbol_map_t **maplp;
 	pcl_symbol_set_t *symsetp;
 	pl_glyph_vocabulary_t gv;
 
 	for ( maplp = &pl_built_in_symbol_maps[0]; *maplp; maplp++ )
 	  {
-	    pl_symbol_map_t *mapp = *maplp;
+	    const pl_symbol_map_t *mapp = *maplp;
 	    /* Create entry for symbol set if this is the first map for
 	     * that set. */
 	    if ( !pl_dict_find(&pcls->built_in_symbol_sets, mapp->id, 2,
@@ -236,14 +252,14 @@ pcl_load_built_in_symbol_sets(pcl_state_t *pcls)
 		    sizeof(pcl_symbol_set_t), "symset init dict value");
 		if ( !symsetp )
 		  return_error(e_Memory);
-		for ( gx = 0; gx < plgv_next; gx++ )
+		for ( gx = plgv_MSL; gx < plgv_next; gx++ )
 		  symsetp->maps[gx] = NULL;
 		symsetp->storage = pcds_internal;
 	      }
 	    gv = (mapp->character_requirements[7] & 07)==1?
 		plgv_Unicode: plgv_MSL;
 	    pl_dict_put(&pcls->built_in_symbol_sets, mapp->id, 2, symsetp);
-	    symsetp->maps[gv] = mapp;
+	    symsetp->maps[gv] = (pl_symbol_map_t *)mapp;
 	  }
 	return 0;
 }
@@ -276,10 +292,12 @@ pcl_find_symbol_map(const pcl_state_t *pcls, const byte *id,
   pl_glyph_vocabulary_t gv)
 {	pcl_symbol_set_t *setp;
 	
-	if ( pl_dict_find(&pcls->soft_symbol_sets, id, 2, (void **)&setp) &&
+	if ( pl_dict_find((pl_dict_t *)&pcls->soft_symbol_sets,
+                          id, 2, (void **)&setp) &&
 	    setp->maps[gv] != NULL )
 	  return setp->maps[gv];
-	if ( pl_dict_find(&pcls->built_in_symbol_sets, id, 2, (void**)&setp) &&
+	if ( pl_dict_find((pl_dict_t *)&pcls->built_in_symbol_sets,
+                          id, 2, (void**)&setp) &&
 	    setp->maps[gv] != NULL )
 	  return setp->maps[gv];
 	return NULL;

@@ -8,9 +8,8 @@
 #ifndef pcommand_INCLUDED
 #  define pcommand_INCLUDED
 
-#include "gserror.h"
+#include "gx.h"
 #include "gserrors.h"
-#include "scommon.h"
 
 /* Define a PCL value (PCL command parameter). */
 /* The 16+16 representation is required to match the PCL5 documentation. */
@@ -23,6 +22,7 @@ typedef long int32;
 typedef ulong uint32;
 # endif
 #endif
+
 typedef enum {
   pcv_none = 0,
 	/* The following masks merge together: */
@@ -55,8 +55,6 @@ typedef uint32 pcl_ufixed;	/* 16 int + 16 fraction */
 int int_value(P1(const pcl_value_t *));
 uint uint_value(P1(const pcl_value_t *));
 float float_value(P1(const pcl_value_t *));
-pcl_fixed pcl_fixed_value(P1(const pcl_value_t *));
-pcl_ufixed pcl_ufixed_value(P1(const pcl_value_t *));
 
 /* Convert a 32-bit IEEE float to the local representation. */
 float word2float(P1(uint32 word));
@@ -71,7 +69,6 @@ typedef struct pcl_args_s {
 #define int_arg(pargs) int_value(&(pargs)->value)
 #define uint_arg(pargs) uint_value(&(pargs)->value)
 #define float_arg(pargs) float_value(&(pargs)->value)
-#define pcl_fixed_arg(pargs) pcl_fixed_value(&(pargs)->value)
 #define arg_data(pargs) ((pargs)->data)
 #define arg_data_size(pargs) uint_arg(pargs)	/* data size */
 #define arg_is_present(pargs) value_is_present(&(pargs)->value)
@@ -90,22 +87,10 @@ typedef struct pcl_state_s pcl_state_t;
 typedef pcl_command_proc((*pcl_command_proc_t));
 
 /* Define a few exported processing procedures. */
-int pcl_do_CR(P1(pcl_state_t *));
-int pcl_do_LF(P1(pcl_state_t *));
 pcl_command_proc(pcl_disable_display_functions);
-typedef enum {
-  pcl_print_always,
-  pcl_print_if_marked
-} pcl_print_condition_t;
-int pcl_end_page(P2(pcl_state_t *pcls, pcl_print_condition_t condition));
-#define pcl_end_page_always(pcls)\
-  pcl_end_page(pcls, pcl_print_always)
-#define pcl_end_page_if_marked(pcls)\
-  pcl_end_page(pcls, pcl_print_if_marked)
-int pcl_default_end_page(P3(pcl_state_t *pcls, int num_copies, int flush));
 uint pcl_status_read(P3(byte *data, uint max_data, pcl_state_t *pcls));
 /* Process a string of plain (printable) text. */
-int pcl_text(P3(const byte *str, uint size, pcl_state_t *pcls));
+int pcl_text(P4(const byte *str, uint size, pcl_state_t *pcls, bool literal));
 /* Process a single text character.  This is almost never called. */
 pcl_command_proc(pcl_plain_char);
 
@@ -200,6 +185,7 @@ void pcl_define_class_commands(P2(int/*char*/,
  * defer HPGL resets until we enter HPGL mode.
  */
 typedef enum {
+  pcl_reset_none = 0,
   pcl_reset_initial = 1,
   pcl_reset_cold = 2,
   pcl_reset_printer = 4,
@@ -214,6 +200,7 @@ typedef enum {
  * for macro call and overlay.
  */
 typedef enum {
+  pcl_copy_none = 0,
   pcl_copy_before_call = 1,
   pcl_copy_after_call = 2,
   pcl_copy_before_overlay = 4,

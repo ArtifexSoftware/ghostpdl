@@ -1,6 +1,23 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
+/*
+ * Copyright (C) 1998 Aladdin Enterprises.
+ * All rights reserved.
+ *
+ * This file is part of Aladdin Ghostscript.
+ *
+ * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+ * or distributor accepts any responsibility for the consequences of using it,
+ * or for whether it serves any particular purpose or works at all, unless he
+ * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+ * License (the "License") for full details.
+ *
+ * Every copy of Aladdin Ghostscript must include a copy of the License,
+ * normally in a plain ASCII text file named PUBLIC.  The License grants you
+ * the right to copy, modify and redistribute Aladdin Ghostscript, but only
+ * under certain conditions described in the License.  Among other things, the
+ * License requires that the copyright notice and this notice be preserved on
+ * all copies.
  */
+
 
 /* pgframe.c */
 /* PCL5/HP-GL/2 picture frame commands */
@@ -11,9 +28,10 @@
 #include "gstypes.h"		/* for gsstate.h */
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
-#include "gsstate.h"
+#include "gsstate.h"            
 #include "pcdraw.h"
 #include "pcfont.h"		/* for pcl_continue_underline */
+#include "pcstate.h"
 
 /* Import the RTL implementation of ESC % # A. */
 extern pcl_command_proc(rtl_enter_pcl_mode);
@@ -21,13 +39,13 @@ extern pcl_command_proc(rtl_enter_pcl_mode);
 /* Even though these are PCL commands, */
 /* they are only relevant to HPGL. */
 
-int /* ESC * c <w_dp> X */
+int /* ESC * c <w_dp> X */ 
 pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {
 	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
 	if ( size == 0 )
-	  pcls->g.picture_frame_width = pcls->logical_page_width;
+	  pcls->g.picture_frame_width = pcls->xfm_state.lp_size.x;
 	else
 	  pcls->g.picture_frame_width = size;
 
@@ -48,21 +66,15 @@ pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-int /* ESC * c <h_dp> Y */
+int /* ESC * c <h_dp> Y */ 
 pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
 	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
 	/* default to pcl logical page */
 	if ( size == 0 )
-	  { pcl_margins_t default_margins;
-
-	    pcl_default_margins(&default_margins, 0, pcls);
-	    /* Use the default PCL text length. */
-	    pcls->g.picture_frame_height = default_margins.length;
-	  }
-	else
-	  pcls->g.picture_frame_height = size;
+          size = pcls->xfm_state.lp_size.y - inch2coord(1.0);
+	pcls->g.picture_frame_height = size;
 
 	{
 	  hpgl_args_t args;
@@ -81,38 +93,48 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-int /* ESC * c 0 T */
-pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls)
-{	uint i = uint_arg(pargs);
-	if ( i != 0 )
-	  return 0;
+/*
+ * ESC * c 0 T
+ */ 
+  int
+pcl_set_pic_frame_anchor_point(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcls
+)
+{
+    uint            i = uint_arg(pargs);
+    gs_point        tmp_pt;
 
-	/* The anchor point does not take print direction into account. */
-	{ int dir = pcls->print_direction;
-	  pcl_set_print_direction(pcls, 0);
-	  pcls->g.picture_frame.anchor_point.x = pcls->cap.x;
-	  pcls->g.picture_frame.anchor_point.y = pcls->cap.y;
-	  pcl_set_print_direction(pcls, dir);
-	}
+    if (i != 0)
+        return 0;
 
-	{
-	  hpgl_args_t args;
-	  hpgl_args_setup(&args);
-	  hpgl_IP(&args, pcls);
+    /* The anchor point is in logical page space */
+    tmp_pt.x = pcl_cap.x;
+    tmp_pt.y = pcl_cap.y;
+    pcl_xfm_to_logical_page_space(pcls, &tmp_pt);
+    pcls->g.picture_frame.anchor_point.x = tmp_pt.x;
+    pcls->g.picture_frame.anchor_point.y = tmp_pt.y;
+
+    {
+	hpgl_args_t    args;
+
+	hpgl_args_setup(&args);
+	hpgl_IP(&args, pcls);
 	
-	  hpgl_args_setup(&args);
-	  hpgl_IW(&args, pcls);
+	hpgl_args_setup(&args);
+	hpgl_IW(&args, pcls);
 	
-	  hpgl_args_set_int(&args,0);
-	  hpgl_PM(&args, pcls);
+        hpgl_args_set_int(&args,0);
+        hpgl_PM(&args, pcls);
 
-	  hpgl_args_set_int(&args,2);
-	  hpgl_PM(&args, pcls);
-	}
-	return 0;
+        hpgl_args_set_int(&args,2);
+        hpgl_PM(&args, pcls);
+    }
+
+    return 0;
 }
 
-int /* ESC * c <w_in> K */
+int /* ESC * c <w_in> K */ 
 pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
 	/* convert to centipoints as to match the picture frame */
@@ -132,7 +154,7 @@ pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-int /* ESC * c <h_in> L */
+int /* ESC * c <h_in> L */ 
 pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
 	/* convert to centipoints as to match the picture frame */
@@ -152,7 +174,7 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 
 /* We redefine this command so we can draw the current GL path */
 /* and, if appropriate, reset the underline bookkeeping. */
-private int /* ESC % <enum> A */
+private int /* ESC % <enum> A */ 
 pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int code;
 
