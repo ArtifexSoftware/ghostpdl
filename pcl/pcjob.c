@@ -41,6 +41,9 @@ pcl_do_printer_reset(pcl_state_t *pcs)
 	int code = pcl_end_page_if_marked(pcs);
 	if ( code < 0 )
 	    return code;
+	/* if duplex start on the front side of the paper */
+	if ( pcs->duplex )
+	    put_param1_bool(pcs, "FirstSide", true);
     }
     /* unload fonts */
     
@@ -240,9 +243,6 @@ pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
             pjl_proc_get_envvar(pcs->pjls, "binding"), "longedge") ? false : true;
         pcs->back_side = false;
         pcs->output_bin = 1;
-        pcs->tray_orientation =  pjl_proc_vartoi(pcs->pjls,
-            pjl_proc_get_envvar(pcs->pjls, "trayorientation"));
-
     }
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
         /* rtl always uses native units for user units.  The hp
