@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Driver interface for text */
 
 #ifndef gstext_INCLUDED
@@ -196,6 +196,13 @@ typedef struct gs_state_s gs_state;
 #endif
 int gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 		  gs_memory_t * mem, gs_text_enum_t ** ppenum);
+
+/*
+ * Update the device color to be used with text (because a kshow or
+ * cshow procedure may have changed the current color).
+ */
+int gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte);
+
 
 /* Begin the PostScript-equivalent text operators. */
 int

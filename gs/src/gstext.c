@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Driver text interface support */
 #include "memory_.h"
 #include "gstypes.h"
@@ -216,6 +216,26 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
     return gx_device_text_begin(pgs->device, (gs_imager_state *) pgs,
 				text, pgs->font, pgs->path, pgs->dev_color,
 				pcpath, mem, ppte);
+}
+
+/*
+ * Update the device color to be used with text (because a kshow or
+ * cshow procedure may have changed the current color).
+ */
+int
+gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte)
+{
+    /*
+     * The text enumerator holds a device color pointer, which may be a
+     * null pointer or a pointer to the same device color as the graphic
+     * state points to. In the former case the text is not to be
+     * rendered, and hence of no interest here. In the latter case the
+     * update of the graphic state color will update the text color as
+     * well.
+     */
+    if (pte->pdcolor != 0)
+        gx_set_dev_color(pgs);
+    return 0;
 }
 
 /* Begin PostScript-equivalent text operations. */

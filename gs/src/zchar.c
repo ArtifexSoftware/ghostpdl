@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Character operators */
 #include "ghost.h"
 #include "oper.h"
@@ -444,7 +444,11 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 int
 op_show_continue(i_ctx_t *i_ctx_p)
 {
-    return op_show_continue_dispatch(i_ctx_p, 0, gs_text_process(senum));
+    int code = gs_text_update_dev_color(igs, senum);
+
+    if (code >= 0)
+	code = op_show_continue_dispatch(i_ctx_p, 0, gs_text_process(senum));
+    return code;
 }
 int
 op_show_continue_pop(i_ctx_t *i_ctx_p, int npop)
