@@ -1036,6 +1036,15 @@ s_string_read_seek(register stream * s, long pos)
     s->srptr = s->cbuf + pos - 1;
     /* We might be seeking after a reusable string reached EOF. */
     s->srlimit = s->cbuf + s->bsize - 1;
+    /* 
+     * When the file reaches EOF,
+     * stream_compact sets s->position to its end. 
+     * Reset it now to allow stell to work properly
+     * after calls to this function.
+     * Note that if the riched EOF and this fuction
+     * was not called, stell still returns a wrong value.
+     */
+    s->position = 0;
     return 0;
 }
 
