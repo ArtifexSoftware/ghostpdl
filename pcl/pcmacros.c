@@ -101,7 +101,7 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	    { /* Start defining <macro_id>. */
 	      pcl_macro_t *pmac;
 
-	      pl_dict_undef_purge_links(&pcls->macros, current_macro_id, current_macro_id_size);
+	      pl_dict_undef_purge_synonyms(&pcls->macros, current_macro_id, current_macro_id_size);
 	      pmac = (pcl_macro_t *)
 		gs_alloc_bytes(pcls->memory, sizeof(pcl_macro_t),
 			       "begin macro definition");
@@ -158,12 +158,12 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	      pl_dict_enum_stack_begin(&pcls->macros, &denum, false);
 	      while ( pl_dict_enum_next(&denum, &key, &value) )
 		if ( ((pcl_macro_t *)value)->storage == pcds_temporary )
-		  pl_dict_undef_purge_links(&pcls->macros, key.data, key.size);
+		  pl_dict_undef_purge_synonyms(&pcls->macros, key.data, key.size);
 	      return 0;
 	    }
 	  case 8:
 	    { /* Delete <macro_id>. */
-	      pl_dict_undef_purge_links(&pcls->macros, current_macro_id, current_macro_id_size);
+	      pl_dict_undef_purge_synonyms(&pcls->macros, current_macro_id, current_macro_id_size);
 	      return 0;
 	    }
 	  case 9:
@@ -219,13 +219,17 @@ pcmacros_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    if ( type & pcl_reset_initial )
 	      {
 		pl_dict_init(&pcls->macros, pcls->memory, NULL);
-		pcls->macro_id_type = numeric_id;
-		/* ***** Free the macro string if necessary **** */
+		pcls->alpha_macro_id.id = 0;
 	      }
 	    else
 	      { pcl_args_t args;
 	        arg_set_uint(&args, macro_delete_temporary);
 		pcl_macro_control(&args, pcls);
+		if ( pcls->alpha_macro_id.id != 0 )
+		  gs_free_object(pcls->memory,
+				 pcls->alpha_macro_id.id,
+				 "pcmacros_do_reset");
+		pcls->alpha_macro_id.id = 0;
 	      }
 	  }
 }
