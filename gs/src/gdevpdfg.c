@@ -407,13 +407,19 @@ transfer_map_access_signed(const gs_data_source_t *psrc,
 			   ulong start, uint length,
 			   byte *buf, const byte **ptr)
 {
+    /* To prevent numeric errors, we need to map 0 to an integer. 
+     * We can't apply a general expression, because Decode isn't accessible here.
+     * Assuming this works for UCR only.
+     * Assuming the range of UCR is always [-1, 1].
+     * Assuming BitsPerSample = 8.
+     */
     const gx_transfer_map *map = (const gx_transfer_map *)psrc->data.str.data;
     uint i;
 
     *ptr = buf;
     for (i = 0; i < length; ++i)
 	buf[i] = (byte)
-	    ((frac2float(map->values[(uint)start + i]) + 1) * 127.5 + 0.5);
+	    ((frac2float(map->values[(uint)start + i]) + 1) * 127);
     return 0;
 }
 private int
@@ -425,7 +431,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     gs_function_Sd_params_t params;
     static const float domain01[2] = { 0, 1 };
     static const int size = transfer_map_size;
-    float range01[2];
+    float range01[2], decode[2];
     gs_function_t *pfn;
     long id;
     int code;
@@ -464,7 +470,22 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     /* DataSource */
     params.BitsPerSample = 8;	/* could be 16 */
     params.Encode = 0;
-    params.Decode = 0;
+    if (range01[0] < 0 && range01[1] > 0) {
+	/* This works for UCR only.
+	 * Map 0 to an integer. 
+	 * Rather the range of UCR is always [-1, 1], 
+	 * we prefer a general expression. 
+	 */
+	int r0 = (int)( -range01[0] * ((1 << params.BitsPerSample) - 1) 
+			/ (range01[1] - range01[0]) ); /* Round down. */
+	float r1 = r0 * range01[1] / -range01[0]; /* r0 + r1 <= (1 << params.BitsPerSample) - 1 */
+
+	decode[0] = range01[0];
+	decode[1] = range01[0] + (range01[1] - range01[0]) * ((1 << params.BitsPerSample) - 1) 
+				    / (r0 + r1);
+	params.Decode = decode;
+    } else
+    	params.Decode = 0;
     params.Size = &size;
     code = gs_function_Sd_init(&pfn, &params, mem);
     if (code < 0)
