@@ -1,4 +1,5 @@
-#    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.
+#    All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL5*, HP RTL, and HP-GL/2 interpreters
@@ -449,10 +450,13 @@ $(PCLOBJ)pccrd.$(OBJ): $(PCLSRC)pccrd.c \
                        $(gsmemory_h)    \
                        $(gsstruct_h)    \
                        $(gsrefct_h)     \
+                       $(gsparam_h)     \
+                       $(gsdevice_h)    \
                        $(gscspace_h)    \
                        $(gscolor2_h)    \
                        $(gscie_h)       \
                        $(gscrd_h)       \
+                       $(gscrdp_h)      \
                        $(pcommand_h)    \
                        $(pccrd_h)
 	$(PCLCCC) $(PCLSRC)pccrd.c $(PCLO_)pccrd.$(OBJ)
@@ -491,6 +495,7 @@ $(PCLOBJ)pcht.$(OBJ): $(PCLSRC)pcht.c   \
                       $(gsstruct_h)     \
                       $(gsrefct_h)      \
                       $(gsdevice_h)     \
+                      $(gsparam_h)      \
                       $(gxdevice_h)     \
                       $(gdevcmap.h)     \
                       $(pcommand_h)     \
@@ -1190,3 +1195,4 @@ $(PCLOBJ)hpgl2c.dev: $(PCL_MAK) $(ECHOGS_XE) $(HPGL2C_OPS) $(PCLOBJ)hpgl2.dev
 	$(SETMOD) $(PCLOBJ)hpgl2c $(HPGL2C_OPS)
 	$(ADDMOD) $(PCLOBJ)hpgl2c -include $(PCLOBJ)hpgl2
 	$(ADDMOD) $(PCLOBJ)hpgl2c -init pgcolor
+
