@@ -171,19 +171,16 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    } else {
 		/*
 		 * We have no character bbox, but we need one to install the clipping
-		 * to the graphic state of the PS interpreter. FontBBox looks likely
-		 * to provide it, but it is not neccesserily correct in the case 
-		 * of setcharwidth, because the latter doesn't assume a character caching 
-		 * (instead it assumes a direct rendering).
-		 * We hewristically estimate a bbox, which should be big enough 
-		 * for most cases.
+		 * to the graphic state of the PS interpreter. Since some fonts don't
+		 * provide a proper FontBBox (Bug 687239 supplies a zero one),
+		 * we set an "infinite" clipping here.
+		 * We also detected that min_int, max_int don't work here with
+		 * comparefiles/Bug687044.ps, therefore we divide them by 2.
 		 */
 		gs_font_base *bfont = (gs_font_base *)font;
 
-		clip_box.p.x = float2fixed(min(bfont->FontBBox.p.x, -bfont->FontBBox.q.x) * 2);
-		clip_box.p.y = float2fixed(min(bfont->FontBBox.p.y, -bfont->FontBBox.q.y) * 2);
-		clip_box.q.x = float2fixed(max(bfont->FontBBox.q.x, -bfont->FontBBox.p.x) * 2);
-		clip_box.q.y = float2fixed(max(bfont->FontBBox.q.y, -bfont->FontBBox.p.y) * 2);
+		clip_box.p.x = clip_box.p.y = min_int / 2;
+		clip_box.q.x = clip_box.q.y = max_int / 2;
 	    }
 	    code = gx_clip_to_rectangle(penum_s->pgs, &clip_box);
 	    if (code < 0)

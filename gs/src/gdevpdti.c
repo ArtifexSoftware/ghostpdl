@@ -427,7 +427,11 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
     if (control == TEXT_SET_CHAR_WIDTH) {
-	pdev->skip_colors = false;
+	/* PLRM 5.7.1 "BuildGlyph" reads : "Normally, it is unnecessary and 
+	undesirable to initialize the current color parameter, because show 
+	is defined to paint glyphs with the current color."
+	However comparefiles/Bug687044.ps doesn't follow that. */
+	pdev->skip_colors = false; 
 	pprintg2(pdev->strm, "%g %g d0\n", (float)pw[0], (float)pw[1]);
     } else {
 	pdev->skip_colors = true;
