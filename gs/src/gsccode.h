@@ -80,7 +80,7 @@ typedef ulong gs_glyph;
 #define gs_max_glyph GS_MAX_GLYPH
 
 /* Define a procedure for marking a gs_glyph during garbage collection. */
-typedef bool (*gs_glyph_mark_proc_t)(gs_glyph glyph, void *proc_data);
+typedef bool (*gs_glyph_mark_proc_t)(const gs_memory_t *mem, gs_glyph glyph, void *proc_data);
 
 /* Define the indices for known encodings. */
 typedef enum {

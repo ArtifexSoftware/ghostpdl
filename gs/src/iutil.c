@@ -519,7 +519,7 @@ int
 obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prlen,
 	const byte ** pchars)
 {
-    int code = obj_cvp(op, str, len, prlen, 0, 0, mem);
+    int code = obj_cvp(op, str, len, prlen, 0, 0, (gs_memory_t *)mem);
 
     if (code != 1 && pchars) {
 	*pchars = str;

@@ -35,7 +35,7 @@ gp_semaphore_sizeof(void)
 }
 
 int	/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
-gp_semaphore_open(
+gp_semaphore_open(const gs_memory_t *mem,
 		  gp_semaphore * sema	/* create semaphore here */
 )
 {
@@ -45,13 +45,13 @@ gp_semaphore_open(
 	winSema->handle = CreateSemaphore(NULL, 0, max_int, NULL);
 	return
 	    (winSema->handle != NULL ? 0 :
-	     gs_note_error(gs_error_unknownerror));
+	     gs_note_error(mem, gs_error_unknownerror));
     } else
 	return 0;		/* Win32 semaphores handles may be moved */
 }
 
 int
-gp_semaphore_close(
+gp_semaphore_close(const gs_memory_t *mem,
 		   gp_semaphore * sema	/* semaphore to affect */
 )
 {
@@ -64,7 +64,7 @@ gp_semaphore_close(
 }
 
 int				/* rets 0 ok, -ve error */
-gp_semaphore_wait(
+gp_semaphore_wait(const gs_memory_t *mem,
 		  gp_semaphore * sema	/* semaphore to affect */
 )
 {
@@ -76,7 +76,7 @@ gp_semaphore_wait(
 }
 
 int				/* rets 0 ok, -ve error */
-gp_semaphore_signal(
+gp_semaphore_signal(const gs_memory_t *mem,
 		    gp_semaphore * sema	/* semaphore to affect */
 )
 {
@@ -101,7 +101,7 @@ gp_monitor_sizeof(void)
 }
 
 int	/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
-gp_monitor_open(
+gp_monitor_open(const gs_memory_t *mem,
 		gp_monitor * mon	/* create monitor here */
 )
 {
@@ -115,7 +115,7 @@ gp_monitor_open(
 }
 
 int
-gp_monitor_close(
+gp_monitor_close(const gs_memory_t *mem,
 		 gp_monitor * mon	/* monitor to affect */
 )
 {
@@ -126,7 +126,7 @@ gp_monitor_close(
 }
 
 int				/* rets 0 ok, -ve error */
-gp_monitor_enter(
+gp_monitor_enter(const gs_memory_t *mem,
 		 gp_monitor * mon	/* monitor to affect */
 )
 {
@@ -170,7 +170,7 @@ gp_thread_begin_wrapper(
 
 /* Call a function on a brand new thread */
 int				/* 0 ok, -ve error */
-gp_create_thread(
+gp_create_thread(const gs_memory_t *mem,
 		 gp_thread_creation_callback_t function,	/* function to start */
 		 void *data	/* magic data to pass to thread fn */
 )
@@ -197,6 +197,6 @@ gp_create_thread(
      */
     if (~BEGIN_THREAD(gp_thread_begin_wrapper, 0, closure) != 0)
 	return 0;
-    return_error(gs_error_unknownerror);
+    return_error(mem, gs_error_unknownerror);
 }
 

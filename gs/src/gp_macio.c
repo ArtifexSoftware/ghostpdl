@@ -366,12 +366,12 @@ fputs(const char *string, FILE *file)
 /* Return NULL if the connection could not be opened. */
 
 FILE *
-gp_open_printer (char *fname, int binary_mode)
+gp_open_printer (const gs_memory_t *mem, char *fname, int binary_mode)
 {
 	if (strlen(fname) == 1  &&  fname[0] == '-')
 		return stdout;
 	else if (strlen(fname) == 0)
-		return gp_open_scratch_file(gp_scratch_file_name_prefix, fname, binary_mode ? "wb" : "w");
+		return gp_open_scratch_file(mem, gp_scratch_file_name_prefix, fname, binary_mode ? "wb" : "w");
 	else
 		return gp_fopen(fname, binary_mode ? "wb" : "b");
 }
@@ -411,7 +411,7 @@ gp_setmode_binary(FILE *pfile, bool binary)
 /* Write the actual file name at fname. */
 
 FILE *
-gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file (const gs_memory_t *mem, const char *prefix, char *fname, const char *mode)
 {
     char thefname[256];
     Str255 thepfname;
@@ -449,7 +449,7 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 
     f = gp_fopen (thefname, mode);
     if (f == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return f;
 }
 

@@ -86,7 +86,7 @@ gp_get_usertime(long *pdt)
 /* Return NULL if the connection could not be opened. */
 extern void gp_set_file_binary(int, int);
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
 {
     if (strlen(fname) == 0 || !strcmp(fname, "PRN")) {
 	if (binary_mode)

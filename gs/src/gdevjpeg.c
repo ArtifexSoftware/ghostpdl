@@ -375,7 +375,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     /* Create the DCT decoder state. */
     jcdp->template = s_DCTE_template;
     state.template = &jcdp->template;
-    state.memory = 0;
+    state.memory = mem;
     if (state.template->set_defaults)
 	(*state.template->set_defaults) ((stream_state *) & state);
     state.QFactor = 1.0;	/* disable quality adjustment in zfdcte.c */

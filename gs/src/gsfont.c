@@ -105,7 +105,7 @@ ENUM_PTRS_WITH(font_dir_enum_ptrs, gs_font_dir *dir)
 
 	if (cc != 0 && !--count) {
 	    (*dir->ccache.mark_glyph)
-		(cc->code, dir->ccache.mark_glyph_data);
+		(mem, cc->code, dir->ccache.mark_glyph_data);
 	    /****** HACK: break const.  We'll fix this someday. ******/
 	    ((gs_font_dir *)dir)->enum_index = cci;
 	    ((gs_font_dir *)dir)->enum_offset = offset;

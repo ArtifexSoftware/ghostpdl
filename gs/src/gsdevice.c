@@ -829,7 +829,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
      	    eprintf1(dev->memory, "**** Could not open the file %s .\n", parsed.fname);
  	return code;
     }
-    *pfile = gp_open_printer((fmt ? pfname : fname), binary);
+    *pfile = gp_open_printer(dev->memory, (fmt ? pfname : fname), binary);
     if (*pfile)
   	return 0;
     eprintf1(dev->memory, "**** Could not open the file %s .\n", (fmt ? pfname : fname));

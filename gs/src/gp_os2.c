@@ -482,7 +482,7 @@ gp_set_file_binary(int prnfno, int binary)
  *   "port"            open port using fopen()
  */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
 {
     FILE *pfile;
 
@@ -491,7 +491,7 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 	    /* default or spool */
 	    if (pm_spool(NULL, fname))	/* check if spool queue valid */
 		return NULL;
-	    pfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
+	    pfile = gp_open_scratch_file(mem, gp_scratch_file_name_prefix,
 				     pm_prntmp, (binary_mode ? "wb" : "w"));
 	} else
 	    pfile = fopen("PRN", (binary_mode ? "wb" : "w"));
@@ -742,7 +742,9 @@ pm_spool(char *filename, const char *queue)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+gp_open_scratch_file(const gs_memory_t *mem, 
+		     const char *prefix, 
+		     char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
     FILE *f;
@@ -808,7 +810,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 #endif
     f = gp_fopentemp(fname, mode);
     if (f == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return f;
 }
 

@@ -115,7 +115,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 	byte *row;
 
 	if (line == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 
 	for (y = 0; y < pdev->height; ++y) {
 	    const byte *src;
@@ -167,7 +167,7 @@ tiff24_print_page(gx_device_printer * pdev, FILE * file)
 	byte *row;
 
 	if (line == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	for (y = 0; y < pdev->height; ++y) {
 	    code = gdev_prn_get_bits(pdev, y, line, &row);
 	    if (code < 0)

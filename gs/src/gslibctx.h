@@ -15,16 +15,8 @@
 
 #include "std.h"
 #include "stdio.h"
+#include "gswindose.h"
 
-#ifndef GSDLLEXPORT
-# define GSDLLEXPORT
-#endif
-#ifndef GSDLLAPI
-# define GSDLLAPI
-#endif
-#ifndef GSDLLCALL
-# define GSDLLCALL
-#endif
 
 typedef struct name_table_s *name_table_ptr;
 

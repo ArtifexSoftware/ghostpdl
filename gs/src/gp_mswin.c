@@ -98,14 +98,14 @@ private int gp_printfile(const char *, const char *);
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
 {
     if (is_printer(fname)) {
 	FILE *pfile;
 
 	/* Open a scratch file, which we will send to the */
 	/* actual printer in gp_close_printer. */
-	pfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
+	pfile = gp_open_scratch_file(mem, gp_scratch_file_name_prefix,
 				     win_prntmp, "wb");
 	return pfile;
     } else if (fname[0] == '|') 	/* pipe */
@@ -667,7 +667,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, const char *mode)
 {
     UINT n;
     DWORD l;
@@ -718,7 +718,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 	}
     }
     if (f == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return f;
 }
 

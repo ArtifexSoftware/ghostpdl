@@ -263,7 +263,7 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 #undef VD_RECT_SWAPPED
 xit:	if (code < 0 && fill_direct)
 	    return_error(dev->memory, code);
-	return_if_interrupt();
+	return_if_interrupt(dev->memory);
 	return code;
     }
 }

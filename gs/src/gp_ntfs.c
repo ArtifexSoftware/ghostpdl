@@ -204,7 +204,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 
 /* Enumerate the next file. */
 uint
-gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxlen)
 {
     int code = 0;
     uint len;

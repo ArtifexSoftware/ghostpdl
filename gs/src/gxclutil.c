@@ -201,7 +201,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     if (gs_debug_c('l'))
 	cmd_print_stats(cldev->memory);
 #endif
-    return_check_interrupt(code != 0 ? code : warning);
+    return_check_interrupt(cldev->memory, code != 0 ? code : warning);
 }
 
 /*

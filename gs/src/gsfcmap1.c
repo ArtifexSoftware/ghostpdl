@@ -45,7 +45,7 @@ case 0:
         for (k = 0; k < pclr->num_entries; ++k, pv += size) {
             gs_glyph glyph = bytes2int(pv, size);
 
-            pclr->cmap->mark_glyph(glyph, pclr->cmap->mark_glyph_data);
+            pclr->cmap->mark_glyph(mem, glyph, pclr->cmap->mark_glyph_data);
         }
     }
     return ENUM_OBJ(pclr->cmap);

@@ -147,7 +147,7 @@ gp_getenv_display(void)
 
 /* Open a connection to a printer.  See gp.h for details. */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
 {
     const char *fmode = (binary_mode ? "wb" : "w");
 

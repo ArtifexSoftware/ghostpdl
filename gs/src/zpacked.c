@@ -217,7 +217,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 	    while (--i >= 0) {
 		--psrc;
 		--pmove;
-		packed_get(imem, psrc, pmove);
+		packed_get((const gs_memory_t *)imem, psrc, pmove);
 	    }
 	}
 	pshort = pdest += packed_per_ref;

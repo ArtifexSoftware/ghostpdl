@@ -39,7 +39,7 @@ gp_strerror(int errnum)
 /* Read the current time (in seconds since Jan. 1, 1980) */
 /* and fraction (in nanoseconds). */
 void
-gp_get_realtime(long *pdt)
+gp_get_realtime(const gs_memory_t *mem, long *pdt)
 {
     SYSTEMTIME st;
     long idate;
@@ -66,9 +66,9 @@ gp_get_realtime(long *pdt)
 /* Read the current user CPU time (in seconds) */
 /* and fraction (in nanoseconds).  */
 void
-gp_get_usertime(long *pdt)
+gp_get_usertime(const gs_memory_t *mem, long *pdt)
 {
-    gp_get_realtime(pdt);	/* Use an approximation for now.  */
+    gp_get_realtime(mem, pdt);	/* Use an approximation for now.  */
 }
 
 /* ------ Console management ------ */

@@ -160,7 +160,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
     /* Now initialize the encoder. */
     code = temp->init(ss);
     if (code < 0)
-	return_error(gs_error_limitcheck);	/* bogus, but as good as any */
+	return_error(mem, gs_error_limitcheck);	/* bogus, but as good as any */
 
     /* Allocate the buffers. */
     in = gs_alloc_bytes(mem, temp->min_in_size + max_size + 1,
@@ -168,7 +168,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
 #define OUT_SIZE 1000
     out = gs_alloc_bytes(mem, OUT_SIZE, "gdev_stream_print_page(out)");
     if (in == 0 || out == 0) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
 	goto done;
     }
     /* Set up the processing loop. */
@@ -185,7 +185,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
 	if_debug7(mem, 'w', "[w]lnum=%d r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", lnum,
 		  (ulong)in, (ulong)r.ptr, (ulong)r.limit,
 		  (ulong)out, (ulong)w.ptr, (ulong)w.limit);
-	status = temp->process(ss, &r, &w, lnum == row_end);
+	status = temp->process(mem, ss, &r, &w, lnum == row_end);
 	if_debug7(mem, 'w', "...%d, r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", status,
 		  (ulong)in, (ulong)r.ptr, (ulong)r.limit,
 		  (ulong)out, (ulong)w.ptr, (ulong)w.limit);

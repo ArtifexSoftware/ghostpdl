@@ -349,7 +349,7 @@ gx_default_draw_thin_line(gx_device * dev,
     int itox = fixed2int_var(fx1);
     int itoy = fixed2int_var(fy1);
 
-    return_if_interrupt();
+    return_if_interrupt(dev->memory);
     if (itoy == iy) {		/* horizontal line */
 	return (ix <= itox ?
 		gx_fill_rectangle_device_rop(ix, iy, itox - ix + 1, 1,

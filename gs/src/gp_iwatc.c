@@ -69,7 +69,7 @@ gp_do_exit(int exit_status)
 /* Return NULL if the connection could not be opened. */
 extern void gp_set_file_binary(int, int);
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
 {
     FILE *pfile;
 
@@ -118,7 +118,7 @@ gp_close_printer(FILE * pfile, const char *fname)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, const char *mode)
 {	      /* The -7 is for XXXXXXX */
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 7;
@@ -149,7 +149,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     mktemp(fname);
     f = gp_fopentemp(fname, mode);
     if (f == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return f;
 }
 

@@ -309,7 +309,7 @@ cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 };
 
 static void
-rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,
+static_rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,
 				  frac r, frac g, frac b, frac out[])
 {
     out[0] = r;
@@ -325,7 +325,7 @@ gray_cs_to_rgb_cm(gx_device * dev, frac gray, frac out[])
 
 
 static const gx_cm_color_map_procs bittag_DeviceRGB_procs = {
-    gray_cs_to_rgb_cm, rgb_cs_to_rgb_cm, cmyk_cs_to_rgb_cm
+    gray_cs_to_rgb_cm, static_rgb_cs_to_rgb_cm, cmyk_cs_to_rgb_cm
 };
 
 private const gx_cm_color_map_procs *

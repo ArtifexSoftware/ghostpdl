@@ -314,7 +314,7 @@ int gp_read_macresource(byte *buf, const char *fname,
  * for spooling.  If the file name is null and no default printer is
  * available, this procedure returns 0.
  */
-FILE *gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode);
+FILE *gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode);
 
 /*
  * Close the connection to the printer.  Note that this is only called

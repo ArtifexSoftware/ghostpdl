@@ -161,7 +161,7 @@ gp_getenv_display(void)
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
 {
     if (strlen(fname) == 0)
 	return 0;
@@ -211,7 +211,9 @@ const char gp_fmode_wb[] = "w";
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+gp_open_scratch_file(const gs_memory_t *mem, 
+		     const char *prefix, 
+		     char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
     FILE *f;
@@ -223,7 +225,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     mktemp(fname);
     f = fopen(fname, mode);
     if (f == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */

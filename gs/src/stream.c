@@ -98,7 +98,7 @@ private const stream_template s_no_template = {
 void
 s_init(stream *s, gs_memory_t * mem, const gs_memory_t *cmem)
 {
-    s->memory = cmem;
+    s->memory = (gs_memory_t *)cmem;
     s->isheap = (mem != NULL);
     s->report_error = s_no_report_error;
     s->min_left = 0;
@@ -124,7 +124,7 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
 
 void s_stack_init(stream *s, const gs_memory_t *mem)
 {
-    s->memory = mem;
+    s->memory = (gs_memory_t *)mem;
     s->isheap = false;
 }
 
@@ -134,7 +134,7 @@ s_init_state(stream_state *st, const stream_template *template,
 	     gs_memory_t *mem, const gs_memory_t *cmem)
 {
     st->template = template;
-    st->memory = cmem;
+    st->memory = (gs_memory_t *)cmem;
     st->isheap = (mem != NULL);
     st->report_error = s_no_report_error;
     st->min_left = 0;
@@ -1102,8 +1102,9 @@ s_string_write_process(const gs_memory_t *mem,
 /* ------ Position-tracking stream ------ */
 
 private int
-    s_write_position_process(stream_state *, stream_cursor_read *,
-			     stream_cursor_write *, bool);
+s_write_position_process(const gs_memory_t *,
+			 stream_state *, stream_cursor_read *,
+			 stream_cursor_write *, bool);
 
 /* Set up a write stream that just keeps track of the position. */
 void
@@ -1116,7 +1117,7 @@ swrite_position_only(stream *s)
 }
 
 private int
-s_write_position_process(stream_state * st, stream_cursor_read * pr,
+s_write_position_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
 {
     pr->ptr = pr->limit;	/* discard data */

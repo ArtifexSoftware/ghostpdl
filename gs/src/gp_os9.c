@@ -106,7 +106,7 @@ gp_get_usertime(long *pdt)
 /* "|command" opens an output pipe. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem, char fname[gp_file_name_sizeof], int binary_mode)
 {
     return
 	(strlen(fname) == 0 ? 0 :

@@ -293,7 +293,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		      imaging_dev->dname, cx, cy,
 		      (ulong) pdevc->colors.pure, code);
 	    if (code == 0)
-		return_check_interrupt(0);
+		return_check_interrupt(penum->memory, 0);
 	}
 	/* Can't render directly.  If we don't have a bitmap yet, */
 	/* get it from the xfont now. */
@@ -310,7 +310,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		      (ulong) xf, (ulong) xg, (ulong) & mdev,
 		      mdev.dname, cx - x, cy - y, code);
 	    if (code != 0)
-		return_check_interrupt(1);
+		return_check_interrupt(penum->memory, 1);
 	    gx_add_char_bits(cc_pair(cc)->font->dir,
 			     cc, &scale_log2_1);
 	    /* gx_add_char_bits may change width, height, */
@@ -358,7 +358,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		(imaging_dev, bits, 0, cc_raster(cc), cc->id,
 		 x, y, w, h, color, depth);
 	    if (code >= 0)
-		return_check_interrupt(0);
+		return_check_interrupt(penum->memory, 0);
 	    /* copy_alpha failed, construct a monobit mask. */
 	    bits = compress_alpha_bits(cc, penum->memory->non_gc_memory);
 	    if (bits == 0)
@@ -421,7 +421,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	gs_free_object(penum->memory->non_gc_memory, bits, "compress_alpha_bits");
     if (code > 0)
 	code = 0;
-    return_check_interrupt(code);
+    return_check_interrupt(penum->memory, code);
 }
 
 /* ------ Image manipulation ------ */
