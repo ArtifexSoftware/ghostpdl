@@ -1732,26 +1732,28 @@ readonly def
             dup dup length 1 sub (*) 0 get put
           }
           [ /LIBPATH /FONTPATH] {
-            .systemvar {                           % proc path
-              dup 2 index exec 3 1 roll            % templ proc path
+            .systemvar {                             % proc path
+              dup 2 index exec 3 1 roll              % templ proc path
               [/GenericResourceDir /FontResourceDir] {
-                currentsystemparams exch get       % templ proc path relpath
-                1 index exch                       % templ proc path path relpath
+                currentsystemparams exch get         % templ proc path relpath
+                1 index exch                         % templ proc path path relpath
+                1 index .file_name_parents 3 1 roll  % templ proc path nparent path relpath
                 { .file_name_combine } stopped {   
                   % The platform can't handle it.  
-                  pop pop                          % templ proc path
-                } {
-                  dup .file_name_parents 0 eq {    % templ proc path path'
-                    2 index exec                   % templ proc path templ'
+                  pop pop pop                        % templ proc path
+                } {                                  % templ proc path nparent path'
+                  dup .file_name_parents             % templ proc path nparent path' nparent1
+                  3 2 roll le {                      % templ proc path path'
+                    2 index exec                     % templ proc path templ'
                     % Skip redundant tremplates :
-                    true                           % templ proc path templ' true
+                    true                             % templ proc path templ' true
                     counttomark 1 sub -1 4 {
                       index 2 index eq {
                         pop false exit 
                       } if
                     } for
                     {
-                      3 1 roll                    % templ templ' proc path
+                      3 1 roll                      % templ templ' proc path
                     } {
                       pop
                     } ifelse
@@ -1760,10 +1762,10 @@ readonly def
                   } ifelse
                 } ifelse
               } forall
-              pop                                  % templ templ' proc
+              pop                                    % templ templ' proc
             } forall
-          } forall                                 % templ1 .... templN proc
-          pop                                      % templ1 .... templN
+          } forall                                   % templ1 .... templN proc
+          pop                                        % templ1 .... templN
 	} ifelse
       ] /LockFilePermissions true
     >> setuserparams

@@ -1076,7 +1076,8 @@ lib_fopen_with_libpath(i_ctx_t *i_ctx_p, gx_io_device *iodev,
 	    if (r != gp_combine_success)
 		continue;
 #if NEW_COMBINE_PATH
-	    if (gp_file_name_parents(buffer, blen1) > 0)
+	    if (gp_file_name_parents(buffer, blen1) > 
+	        gp_file_name_parents(pstr, plen))
 		continue;
 #endif
 	    if (check_file_permissions_aux(i_ctx_p, buffer, blen) < 0)
