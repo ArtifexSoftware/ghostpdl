@@ -29,6 +29,7 @@
 #include "gdevpdfg.h"		/* only for pdf_reset_graphics */
 #include "gdevpdfo.h"
 #include "gdevpdt.h"
+#include "smd5.h"
 
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 4 (PDF 1.3) is the default. */
@@ -244,6 +245,7 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* outlines_open */
  0,				/* articles */
  0,				/* Dests */
+ {0},				/* fileID */
  0,				/* global_named_objects */
  0,				/* local_named_objects */
  0,				/* NI_stack */
@@ -418,6 +420,34 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     pdf_create_named_dict(pdev, NULL, &pdev->Pages, 0L);
 }
 
+private int
+pdf_compute_fileID(gx_device_pdf * pdev)
+{
+    /* We compute a file identifier when beginning a document
+       to allow its usage with PDF encryption. Due to that,
+       in contradiction to the Adobe recommendation, our
+       ID doesn't depend on the document size.
+       Note that the creation date is in pdev->Info. */
+
+    gs_memory_t *mem = pdev->pdf_memory;
+    stream *strm = pdev->strm;
+    uint ignore;
+    int code;
+    stream *s = s_MD5E_make_stream(mem, pdev->fileID, sizeof(pdev->fileID));
+
+    if (s == NULL)
+	return_error(gs_error_VMerror);
+    sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
+    pdev->strm = s;
+    code = cos_dict_elements_write(pdev->Info, pdev);
+    pdev->strm = strm;
+    if (code < 0)
+	return code;
+    sclose(s);
+    gs_free_object(mem, s, "pdf_compute_fileID");
+    return 0;
+}
+
 #ifdef __DECC
 /* The ansi alias rules are violated in this next routine.  Tell the compiler
    to ignore this.
@@ -547,6 +577,9 @@ pdf_open(gx_device * dev)
     pdev->NI_stack = cos_array_alloc(pdev, "pdf_open(NI stack)");
     pdev->Namespace_stack = cos_array_alloc(pdev, "pdf_open(Namespace stack)");
     pdf_initialize_ids(pdev);
+    code = pdf_compute_fileID(pdev);
+    if (code < 0)
+	goto fail;
     /* Now create a new dictionary for the local named objects. */
     pdev->local_named_objects =
 	cos_dict_alloc(pdev, "pdf_open(local_named_objects)");
@@ -1057,6 +1090,10 @@ pdf_close(gx_device * dev)
     stream_puts(s, "trailer\n");
     pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
 	      pdev->next_id, Catalog_id, Info_id);
+    stream_puts(s, "/ID [");
+    pdf_put_string(pdev, pdev->fileID, sizeof(pdev->fileID));
+    pdf_put_string(pdev, pdev->fileID, sizeof(pdev->fileID));
+    stream_puts(s, "]\n");
     stream_puts(s, ">>\n");
     pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
 

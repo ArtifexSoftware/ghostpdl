@@ -37,4 +37,6 @@ typedef struct stream_MD5E_state_s {
     "MD5Encode state")
 extern const stream_template s_MD5E_template;
 
+stream *s_MD5E_make_stream(gs_memory_t *mem, byte *digest, int digest_size);
+
 #endif /* smd5_INCLUDED */

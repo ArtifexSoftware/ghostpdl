@@ -463,6 +463,7 @@ struct gx_device_pdf_s {
     int outlines_open;
     pdf_article_t *articles;
     cos_dict_t *Dests;
+    byte fileID[16];
     /*
      * global_named_objects holds named objects that are independent of
      * the current namespace: {Catalog}, {DocInfo}, {Page#}, {ThisPage},

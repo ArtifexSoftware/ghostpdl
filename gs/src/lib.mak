@@ -1338,7 +1338,7 @@ $(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_) $(md5_)
 	$(SETMOD) $(GLD)smd5 $(smd5_) $(md5_)
 
 $(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h)\
- $(smd5_h) $(strimpl_h)
+ $(smd5_h) $(strimpl_h) $(stream_h)
 	$(GLCC) $(GLO_)smd5.$(OBJ) $(C_) $(GLSRC)smd5.c
 
 # -------------- Arcfour cipher filter --------------- #
