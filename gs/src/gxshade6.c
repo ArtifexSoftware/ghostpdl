@@ -2694,8 +2694,8 @@ fill_triangle(patch_fill_state_t *pfs,
     }
 }
 
-int 
-mesh_triangle(patch_fill_state_t *pfs, 
+private int 
+small_mesh_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
     int code;
@@ -2712,6 +2712,53 @@ mesh_triangle(patch_fill_state_t *pfs,
     if (code < 0)
 	return code;
     return terminate_wedge_vertex_list(pfs, &l[2], &p2->c, &p0->c);
+}
+
+int
+mesh_triangle(patch_fill_state_t *pfs, 
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
+{
+    if (manhattan_dist(&p0->p, &p1->p) < pfs->max_small_coord &&
+	manhattan_dist(&p1->p, &p2->p) < pfs->max_small_coord &&
+	manhattan_dist(&p2->p, &p0->p) < pfs->max_small_coord)
+	return small_mesh_triangle(pfs, p0, p1, p2);
+    else {
+	/* Subdivide into 4 triangles with 3 triangle non-lazy wedges.
+	   Doing so against the wedge_vertex_list_elem_buffer overflow.
+	   We could apply a smarter method, dividing long sides 
+	   with no wedges and short sides with lazy wedges.
+	   This needs to start wedges dynamically when 
+	   a side becomes short. We don't do so because the 
+	   number of checks per call significantly increases
+	   and the logics is complicated, but the performance 
+	   advantage appears small due to big meshes are rare.
+	 */
+	shading_vertex_t p01, p12, p20;
+	int code;
+
+	divide_bar(pfs, p0, p1, 2, &p01);
+	divide_bar(pfs, p1, p2, 2, &p12);
+	divide_bar(pfs, p2, p0, 2, &p20);
+	code = fill_triangle_wedge(pfs, p0, p1, &p01);
+	if (code < 0)
+	    return code;
+	code = fill_triangle_wedge(pfs, p1, p2, &p12);
+	if (code < 0)
+	    return code;
+	code = fill_triangle_wedge(pfs, p2, p0, &p20);
+	if (code < 0)
+	    return code;
+	code = mesh_triangle(pfs, p0, &p01, &p20);
+	if (code < 0)
+	    return code;
+	code = mesh_triangle(pfs, p1, &p12, &p01);
+	if (code < 0)
+	    return code;
+	code = mesh_triangle(pfs, p2, &p20, &p12);
+	if (code < 0)
+	    return code;
+	return mesh_triangle(pfs, &p01, &p12, &p20);
+    }
 }
 
 #if DIVIDE_BY_PARALLELS
