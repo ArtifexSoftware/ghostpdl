@@ -1,4 +1,4 @@
-/* Copyright (C) 2000, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 2000, 2001, Ghostgum Software Pty Ltd.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -2868,28 +2868,24 @@ dsc_scan_trailer(CDSC *dsc)
 	    return CDSC_ERROR;
     }
     else if (IS_DSC(dsc->line, "%%Page:")) {
-	dsc->id = CDSC_PAGE;
 	/* This should not occur in the trailer, but we might see 
 	 * this if a document has been incorrectly embedded.
 	 */
-	dsc_unknown(dsc);
-	if (dsc->page_count) {
-	    int rc = dsc_error(dsc, CDSC_MESSAGE_PAGE_IN_TRAILER, 
-		    dsc->line, dsc->line_length);
-	    switch (rc) {
-		case CDSC_RESPONSE_OK:
-		    /* Assume that we are really in the previous */
-		    /* page, not the trailer */
-		    dsc->scan_section = scan_pre_pages;
-		    if (dsc->page_count)
-			dsc->page[dsc->page_count-1].end = DSC_START(dsc);
-		    break;
-		case CDSC_RESPONSE_CANCEL:
-		    /* ignore pages in trailer */
-		    break;
-		case CDSC_RESPONSE_IGNORE_ALL:
-		    return CDSC_NOTDSC;
-	    }
+	int rc = dsc_error(dsc, CDSC_MESSAGE_PAGE_IN_TRAILER, 
+		dsc->line, dsc->line_length);
+	switch (rc) {
+	    case CDSC_RESPONSE_OK:
+		/* Assume that we are really in the previous */
+		/* page, not the trailer */
+		dsc->scan_section = scan_pre_pages;
+		if (dsc->page_count)
+		    dsc->page[dsc->page_count-1].end = DSC_START(dsc);
+		return CDSC_PROPAGATE;	/* try again */
+	    case CDSC_RESPONSE_CANCEL:
+		/* ignore pages in trailer */
+		break;
+	    case CDSC_RESPONSE_IGNORE_ALL:
+		return CDSC_NOTDSC;
 	}
     }
     else if (IS_DSC(line, "%%DocumentNeededFonts:")) {
