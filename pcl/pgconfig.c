@@ -48,9 +48,9 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return e_NeedData;
 }
 
-/* DF; sets programmable features except P1 and P2 */
-int
-hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
+/* The part of the DF command applicable for overlay macros */
+void
+hpgl_reset_overlay(hpgl_state_t *pgls)
 {	hpgl_args_t args;
 	hpgl_args_setup(&args);
 	hpgl_AC(&args, pgls);
@@ -72,29 +72,17 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_setup(&args);
 	hpgl_ES(&args, pgls);
 	hpgl_args_setup(&args);
-	hpgl_FT(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_IW(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_LA(&args, pgls);
-	hpgl_args_setup(&args);
 	hpgl_LM(&args, pgls);
 	hpgl_args_set_int(&args, 1);
 	hpgl_LO(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_LT(&args, pgls);
 	/* we do this instead of calling SC directly */
 	pgls->g.scaling_type = hpgl_scaling_none;
 	hpgl_args_set_int(&args,0);
 	hpgl_PM(&args, pgls);
 	hpgl_args_set_int(&args,2);
 	hpgl_PM(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_RF(&args, pgls);
 	hpgl_args_set_int(&args,0);
 	hpgl_SB(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_SV(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_SI(&args, pgls);
 	hpgl_args_setup(&args);
@@ -110,11 +98,31 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_setup(&args);
 	hpgl_TD(&args, pgls);
 	hpgl_args_setup(&args);
-	hpgl_UL(&args, pgls);
-	hpgl_args_setup(&args);
 	hpgl_MC(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_PP(&args, pgls);
+}
+
+/* DF; sets programmable features except P1 and P2 */
+int
+hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{	hpgl_args_t args;
+	hpgl_reset_overlay(pgls);
+
+	hpgl_args_setup(&args);
+	hpgl_FT(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_IW(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_LA(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_LT(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_RF(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_SV(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_UL(&args, pgls);
 	return 0;
 }
 
