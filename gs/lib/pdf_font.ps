@@ -256,7 +256,18 @@ currentdict /find_in_diff undef
       exch 16#2 and 2 bitshift add	% 8, serif
 		% We should look at the fixed flag, too.
 		% Stack: font-res fontname fontdesc properties
-      1 index /FontName oget exch
+
+                % Even though /FontName is a required key in FontDescriptor dict
+                % (As of the PDF 1.4 Reference Manual), In the case of missing 
+                % /FontName key, we substitue /BaseFont for the value of /FontName.
+                % Yet another case of broken PDF's that Adobe Reader accepts.
+      1 index dup /FontName known {
+        /FontName oget exch
+      } {
+        (   **** FontDescriptor missing required /FontName key. BaseFont name used.\n)
+        pdfformaterror
+        pop 2 index exch	% grab the BaseFont from the stack.
+      } ifelse
 		% Analyzes font name and extract "Narrow" property
 		% which is not described by the FontDescriptor Flags.
       0 2 index .fontnameproperties 4 and or
