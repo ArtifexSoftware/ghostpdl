@@ -46,7 +46,6 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
     gs.infile = gsconf.comparefiledir + ifile
     gs.dpi = dpi
     gs.band = band
-    gs.gsoptions = gsconf.compareoptions
 
     # make file->PDF
 

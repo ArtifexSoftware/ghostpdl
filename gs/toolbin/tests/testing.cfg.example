@@ -1,0 +1,39 @@
+# paths
+
+gsroot		/home/regression/HEAD/
+comparefiledir	/home/regression/comparefiles/
+crashfiledir	/home/regression/crashfiles/
+codedir		/home/regression/regression/
+datadir		/home/regression/regression/
+logdir		/home/regression/regression/logs/
+dailydir	/home/regression/regression/daily/
+
+
+# programs
+
+baselinegs	/home/regression/gs800/bin/gs
+comparegs	/home/regression/gshead/bin/gs
+fuzzy		/home/regression/regression/fuzzy
+
+# filenames
+
+testdatadb	/home/regression/regression/testdata.db
+log_stdout	/home/regression/regression/logs/gs-stdout.log
+log_stderr	/home/regression/regression/logs/gs-stderr.log
+log_baseline	/home/regression/regression/logs/baseline.log
+
+# nightly report options
+
+mail_server	 localhost
+report_to	 gs-regression@ghostscript.com
+report_from	 gs-regression@ghostscript.com
+
+regression_script	/home/regression/regression/run_regression
+diff_script		/home/regression/regression/testdiff
+
+cvs_log_stdout		/home/regression/regression/logs/cvs-stdout.log
+cvs_log_stderr		/home/regression/regression/logs/cvs-stderr.log
+make_log_stdout		/home/regression/regression/logs/make-stdout.log
+make_log_stderr		/home/regression/regression/logs/make-stderr.log
+install_log_stdout	/home/regression/regression/logs/install-stdout.log
+install_log_stderr	/home/regression/regression/logs/install-stderr.log

@@ -33,7 +33,7 @@ if len(sys.argv) > 1:
     if sys.argv[1] == "--track":
         track = 1
 
-        db = anydbm.open(gsconf.dailydb, "n")
+        db = anydbm.open(gsconf.get_dailydb_name(), "n")
         db.close()
         
 suite = gstestutils.GSTestSuite()

@@ -47,7 +47,6 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 	gs.dpi = self.dpi
 	gs.band = self.band
 	gs.infile = self.file
-	gs.gsoptions = self.gsoptions
 	if self.log_stdout:
 	    gs.log_stdout = self.log_stdout
 	if self.log_stderr:
@@ -79,7 +78,7 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 	
 	# add test result to daily database
 	if self.track_daily:
-	    gssum.add_file(file2, dbname=gsconf.dailydb, sum=sum)
+	    gssum.add_file(file2, dbname=gsconf.get_dailydb_name(), sum=sum)
 
 	self.assertEqual(sum, gssum.get_sum(file2), "md5sum did not match baseline (" + file2 + ") for file: " + self.file)
 

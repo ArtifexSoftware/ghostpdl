@@ -21,7 +21,8 @@
 # the sum database
 import anydbm
 import gsconf
-
+import os, string, md5
+from stat import *
 
 def exists(file, dbname=gsconf.testdatadb):
     db = anydbm.open(dbname)
@@ -46,9 +47,6 @@ def get_sum(file, dbname=gsconf.testdatadb):
     return sum
 
 def make_sum(file):
-    import os, string, md5
-    from stat import *
-
     mode = os.stat(file)[ST_MODE]
     if S_ISREG(mode):
 	sum = md5.new()

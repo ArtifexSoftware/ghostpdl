@@ -55,7 +55,6 @@ class GSFuzzyCompareTestCase(gstestgs.GhostscriptTestCase):
 	gs.band = self.band
 	gs.infile = self.file
 	gs.device = self.device
-	gs.gsoptions = self.gsoptions
 	if self.log_stdout:
 	    gs.log_stdout = self.log_stdout
 	if self.log_stderr:

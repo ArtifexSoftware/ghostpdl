@@ -17,58 +17,41 @@
 
 # gsconf.py
 #
-# configuration variables for regression testing
+# configuration file parser for regression tests
 
 import os
+import re
+import sys
 import time
 
-if os.name == 'nt':
+configdir = os.path.dirname(sys.argv[0])
+if len(configdir) > 0:
+    configdir = configdir + "/"
 
-	testroot = 'D:/path/to/testbase/'
-	baselinedir = 'D:/path/to/baseline/gs/'
-	comparedir  = 'D:/path/to/compare/gs/'
-	gsroot = 'D:/path/to/current/gs/'
-	gsfontdir   = 'D:/path/to/fonts'
+def parse_config(file=configdir+"testing.cfg"):
+    try:
+        cf = open(file, "r")
+    except:
+        print "ERROR: Could not open config file '%s'." % (file,)
+        return
 
-	dailydir = testroot + 'daily/'
-	comparefiledir = testroot + 'comparefiles/'
-	crashfiledir   = testroot + 'crashfiles/'
+    config_re = re.compile("^([^\s]+)\s+(.*)$")
 
-	testdatadb = testroot + 'testdata.db'
-	dailydb = dailydir + time.strftime("%Y%m%d", time.localtime(time.time())) + '.db'
-	
-	baselinegs = baselinedir + 'bin/gswin32c.exe'
-	comparegs  = comparedir  + 'bin/gswin32c.exe '
-	baselineoptions = ' -I' + baselinedir + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
-	compareoptions  = ' -I' + comparedir  + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
+    for l in cf.readlines():
+        # strip off EOL chars
+        while l and (l[-1] == '\r' or l[-1] == '\n'):
+            l = l[:-1]
 
-	log_stdout = testroot + 'gs-stdout.log'
-	log_stderr = testroot + 'gs-stderr.log'
-	log_baseline = testroot + 'baseline.log'
+        # ignore comments and blank lines
+        if not l or l[0] == '#':
+            continue
 
-	fuzzy = 'D:/path/to/fuzzy.exe'
+        m = config_re.match(l)
+        if m:
+            sys.modules["gsconf"].__dict__[m.group(1)] = m.group(2)
 
-else:
 
-	testroot = '/path/to/testbase/'
-	baselinedir = '/path/to/baseline/gs/'
-	comparedir = '/path/to/compare/gs/'
-	gsroot = '/path/to/current/gs/'
+def get_dailydb_name():
+    return dailydir + time.strftime("%Y%m%d", time.localtime()) + ".db"
 
-	dailydir = testroot + 'daily/'
-	comparefiledir = testroot + 'comparefiles/'
-	crashfiledir = testroot + 'crashfiles/'
-
-	testdatadb = testroot + 'testdata.db'
-	dailydb = dailydir + time.strftime("%Y%m%d", time.localtime(time.time())) + '.db'
-	
-	baselinegs = baselinedir + 'bin/gs'
-	comparegs = comparedir + 'bin/gs'
-	baselineoptions = ''
-	compareoptions  = ''
-
-	log_stdout = testroot + 'gs-stdout.log'
-	log_stderr = testroot + 'gs-stderr.log'
-	log_baseline = testroot + 'baseline.log'
-
-	fuzzy = '/path/to/fuzzy'
+parse_config()

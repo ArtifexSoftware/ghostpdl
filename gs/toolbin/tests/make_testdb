@@ -46,7 +46,6 @@ def make_compare_entry(ifile, device, dpi, band):
     gs.device = device
     gs.dpi = dpi
     gs.band = band
-    gs.gsoptions = gsconf.baselineoptions
 
     if not gssum.exists(ofile):
         if gs.process():
@@ -77,7 +76,6 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
     gs.infile = gsconf.comparefiledir + ifile
     gs.dpi = dpi
     gs.band = band
-    gs.gsoptions = gsconf.baselineoptions
 
     # make file->PDF
 
@@ -106,14 +104,16 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
     else:
         print "error."
 
-# create the testdatadb
-db = anydbm.open(gsconf.testdatadb, 'c')
-db.close()
 
-files = os.listdir(gsconf.comparefiledir)
-for f in files:
-    if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
-	for params in gsparamsets.testparamsets:
-            make_compare_entry(f, params.device, params.resolution, params.banding)
-	for params in gsparamsets.pdftestparamsets:
-            make_pdfcompare_entry(f, params.device, params.resolution, params.banding)
+if __name__ == "__main__":
+    # create the testdatadb
+    db = anydbm.open(gsconf.testdatadb, 'c')
+    db.close()
+
+    files = os.listdir(gsconf.comparefiledir)
+    for f in files:
+        if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
+            for params in gsparamsets.testparamsets:
+                make_compare_entry(f, params.device, params.resolution, params.banding)
+            for params in gsparamsets.pdftestparamsets:
+                make_pdfcompare_entry(f, params.device, params.resolution, params.banding)

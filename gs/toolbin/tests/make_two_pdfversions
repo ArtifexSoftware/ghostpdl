@@ -35,10 +35,8 @@ def make_version(ifile, ofile, device, dpi, baseline=0):
     gs.log_stderr = gsconf.log_stderr
 
     if baseline:
-        gs.gsoptions = gsconf.baselineoptions
 	gs.command = gsconf.baselinegs
     else:
-        gs.gsoptions = gsconf.compareoptions
 	gs.command = gsconf.comparegs
 
     gs.infile = gsconf.comparefiledir + ifile

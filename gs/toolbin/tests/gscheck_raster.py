@@ -48,7 +48,6 @@ class GSCompareTestCase(gstestgs.GhostscriptTestCase):
 	gs.band = self.band
 	gs.infile = self.file
 	gs.outfile = file
-	gs.gsoptions = self.gsoptions
 	if self.log_stdout:
 	    gs.log_stdout = self.log_stdout
 	if self.log_stderr:
@@ -62,7 +61,7 @@ class GSCompareTestCase(gstestgs.GhostscriptTestCase):
 
 	# add test result to daily database
 	if self.track_daily:
-	    gssum.add_file(file, dbname=gsconf.dailydb, sum=sum)
+	    gssum.add_file(file, dbname=gsconf.get_dailydb_name(), sum=sum)
 
 	if not sum:
 	    self.fail("output file could not be created"\
@@ -79,7 +78,6 @@ def add_compare_test(suite, f, device, dpi, band, track):
                                     file=gsconf.comparefiledir + f,
                                     device=device, dpi=dpi,
                                     band=band,
-                                    gsoptions=gsconf.compareoptions,
                                     log_stdout=gsconf.log_stdout,
                                     log_stderr=gsconf.log_stderr,
                                     track_daily=track))

@@ -28,20 +28,6 @@ import anydbm
 # configuration variables
 
 YESTERDAY = time.strftime("%Y%m%d", time.localtime(time.time() - (24*60*60)))
-MAIL_SERVER = 'localhost'
-REPORT_EMAIL = 'gs-regression@ghostscript.com'
-MAIL_FROM = 'regression@casper.ghostscript.com'
-HEAD_DIR = gsconf.gsroot
-REGRESSION_SCRIPT = '/home/regression/regression/run_regression --track 2>&1'
-DIFF_SCRIPT = '/home/regression/regression/testdiff %s 2>&1' % (YESTERDAY,)
-LOG_STDOUT = gsconf.log_stdout
-LOG_STDERR = gsconf.log_stderr
-CVS_LOG_STDOUT = "/home/regression/cvs-stdout.log"
-CVS_LOG_STDERR = "/home/regression/cvs-stderr.log"
-MAKE_LOG_STDOUT = "/home/regression/make-stdout.log"
-MAKE_LOG_STDERR = "/home/regression/make-stderr.log"
-INSTALL_LOG_STDOUT = "/home/regression/install-stdout.log"
-INSTALL_LOG_STDERR = "/home/regression/install-stderr.log"
 
 def change_gsproduct(file):
     tmpfile = "%s.tmp" % (file,)
@@ -87,37 +73,42 @@ def sendmail(frm, to, subject, text):
 
     msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s' % (frm, to, subject, text)
 
-    server = smtplib.SMTP(MAIL_SERVER)
+    server = smtplib.SMTP(gsconf.mail_server)
     server.sendmail(frm, to, msg)
     server.quit()
 
 def die(msg):
-    sendmail(MAIL_FROM, REPORT_EMAIL, "error running regression", msg)
+    sendmail(gsconf.report_from, gsconf.report_to, "error running regression", msg)
     sys.exit(0)
 
 def update_ghostscript():
     cwd = os.getcwd()
-    os.chdir(HEAD_DIR)
+    os.chdir(gsconf.gsroot)
 	
-    os.unlink("%s/src/gscdef.c" % (HEAD_DIR,))
+    os.unlink("%s/src/gscdef.c" % (gsconf.gsroot,))
     
-    if os.system("date >> " + CVS_LOG_STDOUT) != 0: return 1
-    if os.system("date >> " + CVS_LOG_STDERR) != 0: return 1
-    if os.system("cvs update -Pd >> " + CVS_LOG_STDOUT + " 2>> " +
-                 CVS_LOG_STDERR) != 0: return 1
+    if os.system("date >> " + gsconf.cvs_log_stdout) != 0: return (1, None, None)
+    if os.system("date >> " + gsconf.cvs_log_stderr) != 0: return (1, None, None)
+
+    starttime = time.time()
+
+    if os.system("cvs update -Pd >> " + gsconf.cvs_log_stdout + " 2>> " +
+                 gsconf.cvs_log_stderr) != 0: return (1, None, None)
+
+    endtime = time.time()
     
-    change_gsproduct("%s/src/gscdef.c" % (HEAD_DIR,))
+    change_gsproduct("%s/src/gscdef.c" % (gsconf.gsroot,))
 	
     if os.system("make clean > /dev/null 2> /dev/null") != 0:
-        return -1
+        return (-1, None, None)
     
-    if os.system("make > " + MAKE_LOG_STDOUT + " 2> " +
-                 MAKE_LOG_STDERR) != 0: return 2
+    if os.system("make > " + gsconf.make_log_stdout + " 2> " +
+                 gsconf.make_log_stderr) != 0: return (2, None, None)
 
-    if os.system("make install > " + INSTALL_LOG_STDOUT + " 2> " + \
-                 INSTALL_LOG_STDERR) != 0: return 3
+    if os.system("make install > " + gsconf.install_log_stdout + " 2> " + \
+                 gsconf.install_log_stderr) != 0: return (3, None, None)
 
-    return 0
+    return (0, starttime, endtime)
 
 def get_file(f):
     file = open(f, 'r')
@@ -125,42 +116,42 @@ def get_file(f):
     file.close()
     return string.join(lines, '')
 
-err = update_ghostscript()
+err, starttime, endtime = update_ghostscript()
 if err != 0:
     if err == 1:
         msg = "Ghostscript update failed updating from CVS.\n\n"
         msg = msg + "stdout log:\n\n"
-        msg = msg + get_file(CVS_LOG_STDOUT)
+        msg = msg + get_file(gsconf.cvs_log_stdout)
         msg = msg + "\nstderr log:\n\n"
-        msg = msg + get_file(CVS_LOG_STDERR)
+        msg = msg + get_file(gsconf.cvs_log_stderr)
         die(msg)
     elif err == 2:
         msg = "Ghostscript update failed during make.\n\n"
         msg = msg + "stdout log:\n\n"
-        msg = msg + get_file(MAKE_LOG_STDOUT)
+        msg = msg + get_file(gsconf.make_log_stdout)
         msg = msg + "\nstderr log:\n\n"
-        msg = msg + get_file(MAKE_LOG_STDERR)
+        msg = msg + get_file(gsconf.make_log_stderr)
         die(msg)
     elif err == 3:
         msg = "Ghostscript update failed during install.\n\n"
         msg = msg + "stdout log:\n\n"
-        msg = msg + get_file(INSTALL_LOG_STDOUT)
+        msg = msg + get_file(gsconf.install_log_stdout)
         msg = msg + "\nstderr log:\n\n"
-        msg = msg + get_file(INSTALL_LOG_STDERR)
+        msg = msg + get_file(gsconf.install_log_stderr)
         die(msg)
     else:
         die("Unknown error updating Ghostscript")
 
 # start new log files
 try:
-    log = open(LOG_STDOUT, "w")
+    log = open(gsconf.log_stdout, "w")
     log.close()
-    log = open(LOG_STDERR, "w")
+    log = open(gsconf.log_stderr, "w")
     log.close()
 except:
     die("The log files were not able to be restarted")
 
-p = os.popen(REGRESSION_SCRIPT)
+p = os.popen(gsconf.regression_script + " --track 2>&1")
 if p == None:
     die("Could not open and run the regression script.")
 
@@ -176,7 +167,7 @@ p.close()
 # now do the daily diff
 diff = 'The following regression changes happened since yesterday\'s report:\n'
 
-p = os.popen(DIFF_SCRIPT)
+p = os.popen(gsconf.diff_script + " " + YESTERDAY + " 2>&1")
 if p:
     for line in p.readlines():
         diff = diff + line
@@ -185,4 +176,10 @@ if p:
 diff = diff + "\n\nThe complete list of regressions for today:\n"
 msg = diff + msg
 
-sendmail(MAIL_FROM, REPORT_EMAIL, 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)
+# Prepend checkout times
+times = "CVS checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %z", time.localtime(starttime)) + "\n"
+times = times + "CVS checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %z", time.localtime(endtime)) + "\n\n"
+
+msg = times + msg
+
+sendmail(gsconf.report_from, gsconf.report_to, 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)

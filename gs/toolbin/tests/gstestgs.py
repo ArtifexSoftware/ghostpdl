@@ -36,7 +36,6 @@ class Ghostscript:
 		else:
 			self.nullfile = '/dev/null'
 		self.outfile = self.nullfile
-		self.gsoptions = ''
 
 		# log file options
 		# NOTE: we always append to the log.  if it is desired to start a new
@@ -50,7 +49,6 @@ class Ghostscript:
 		if (self.band): bandsize = 10000
 		
 		cmd = self.command
-		cmd = cmd + ' ' + self.gsoptions
 		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K600000 '
 		if self.dpi:
 			cmd = cmd + '-r%d ' % (self.dpi,)
@@ -96,13 +94,12 @@ class Ghostscript:
 
 		
 class GhostscriptTestCase(GSTestCase):
-	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite', gsoptions='', log_stdout='', log_stderr='', track_daily=0):
+	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite', log_stdout='', log_stderr='', track_daily=0):
 		self.gs = gs
 		self.file = file
 		self.dpi = dpi
 		self.band = band
 		self.device = device
-		self.gsoptions = gsoptions
 		self.log_stdout = log_stdout
 		self.log_stderr = log_stderr
 		self.track_daily = track_daily
@@ -117,7 +114,6 @@ class GSCrashTestCase(GhostscriptTestCase):
 		gs.band = self.band
 		gs.device = self.device
 		gs.infile = self.file
-		gs.gsoptions = self.gsoptions
 
 		self.assert_(gs.process(), 'ghostscript failed to render file: ' + self.file)
 
