@@ -551,6 +551,7 @@ out:
     return code;
 }
 
+int
 gs_shading_fill_path_adjusted(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 		     const gs_fixed_rect *prect, gx_device *orig_dev,
 		     gs_imager_state *pis, bool fill_background)
