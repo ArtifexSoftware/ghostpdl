@@ -377,9 +377,14 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 	frac conc;
 	gs_client_color hack_color = *pc;
 
-	/* Invert the photometric interpretation, as DeviceGray is
-	   black->white, and Separation is white->colorant. */
-	hack_color.paint.values[0] = 1 - pc->paint.values[0];
+	/* Invert the photometric interpretation for additive
+         * color spaces because separations are always subtractive.
+         * fixme: this code sets all colorants in the alternative
+         * color space, not the destination color space. This is
+         * wrong.
+         */
+	if(n==1 || n==3)
+          hack_color.paint.values[0] = 1 - pc->paint.values[0];
 	/* hack: using DeviceGray's function to concretize single component color : */
 	code = gx_concretize_DeviceGray(&hack_color, pacs, &conc, pis);
 
