@@ -472,17 +472,17 @@ psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 		    int width, int height, int depth, int bits_per_sample, uint *MaskColor)
 {
     int code;
-    stream_state *ss = s_alloc_state(pdev->memory, s__image_to_mask_template.stype, 
-	"psdf_setup_image_to_mask_filter");
+    stream_state *ss = s_alloc_state(pdev->memory, s__image_colors_template.stype, 
+	"psdf_setup_image_colors_filter");
 
     if (ss == 0)
 	return_error(gs_error_VMerror);
     pbw->memory = pdev->memory;
     pbw->dev = pdev;
-    code = psdf_encode_binary(pbw, &s__image_to_mask_template, ss);
+    code = psdf_encode_binary(pbw, &s__image_colors_template, ss);
     if (code < 0)
 	return code;
-    s_image_to_mask_set_dimensions((stream_image_to_mask_state *)ss, 
+    s_image_colors_set_dimensions((stream_image_colors_state *)ss, 
 		    width, height, depth, bits_per_sample, MaskColor);
     return 0;
 }
@@ -496,8 +496,8 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
     int code;
     extern_st(st_color_space);
     gs_memory_t *mem = pdev->v_memory;
-    stream_state *ss = s_alloc_state(pdev->memory, s__image_to_mask_template.stype, 
-	"psdf_setup_image_to_mask_filter");
+    stream_state *ss = s_alloc_state(pdev->memory, s__image_colors_template.stype, 
+	"psdf_setup_image_colors_filter");
     gs_color_space *cs;
     uint MaskColor[] = {0,0,0,0,0,0,0,0,0};/* a stub. fixme: maybe insufficient components. */
 
@@ -505,10 +505,10 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
 	return_error(gs_error_VMerror);
     pbw->memory = pdev->memory;
     pbw->dev = pdev;
-    code = psdf_encode_binary(pbw, &s__image_to_mask_template, ss);
+    code = psdf_encode_binary(pbw, &s__image_colors_template, ss);
     if (code < 0)
 	return code;
-    s_image_to_mask_set_dimensions((stream_image_to_mask_state *)ss, 
+    s_image_colors_set_dimensions((stream_image_colors_state *)ss, 
 		    pim->Width, pim->Height, 
 		    gs_color_space_num_components(pim->ColorSpace), 
 		    pim->BitsPerComponent, MaskColor);

@@ -996,19 +996,23 @@ s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
     return 0;
 }
 
-/* ---------------- Am "image to mask" filter ---------------- */
+/* ---------------- Am image color conversion filter ---------------- */
 
-private_st_image_to_mask_state();
+private_st_image_colors_state();
 
 /* Initialize the state. */
 private int
-s_image_to_mask_init(stream_state * st)
+s_image_colors_init(stream_state * st)
 {
-    stream_image_to_mask_state *const ss = (stream_image_to_mask_state *) st;
+    stream_image_colors_state *const ss = (stream_image_colors_state *) st;
 
     ss->width = ss->height = ss->depth = ss->bits_per_sample = 0;
     ss->output_bits_buffer = 0;
     ss->output_bits_buffered = 0;
+    ss->output_depth = 1;
+    ss->output_component_index = ss->output_depth;
+    ss->output_bits_per_sample = 1;
+    ss->output_component_bits_written = 0;
     ss->raster = 0;
     ss->row_bits = 0;
     ss->row_bits_passed = 0;
@@ -1020,9 +1024,22 @@ s_image_to_mask_init(stream_state * st)
     return 0;
 }
 
+private int 
+s_image_colors_convert_color(stream_image_colors_state *ss)
+{
+    int i, ii;
+
+    for (i = ii = 0; i < ss->depth; i++, ii += 2)
+	if (ss->input_color[i] < ss->MaskColor[ii] ||
+	    ss->input_color[i] > ss->MaskColor[ii + 1])
+	    break;
+    ss->output_color[0] = (i < ss->depth ? 1 : 0);
+    return 0;
+}
+
 /* Set image dimensions. */
 void
-s_image_to_mask_set_dimensions(stream_image_to_mask_state * ss, 
+s_image_colors_set_dimensions(stream_image_colors_state * ss, 
 			       int width, int height, int depth, int bits_per_sample, 
 			       uint *MaskColor)
 {
@@ -1032,20 +1049,21 @@ s_image_to_mask_set_dimensions(stream_image_to_mask_state * ss,
     ss->bits_per_sample = bits_per_sample;
     ss->row_bits = bits_per_sample * depth * width;
     ss->raster = bitmap_raster(ss->row_bits);
-    ss->row_alignment_bytes = 0; /* (ss->raster * 8 - ss->row_bits) / 8); */
+    ss->row_alignment_bytes = 0; /* (ss->raster * 8 - ss->row_bits) / 8) doesn't work. */
+    ss->convert_color = s_image_colors_convert_color;
     memcpy(ss->MaskColor, MaskColor, ss->depth * sizeof(MaskColor[0]) * 2);
 }
 
 /* Process a buffer. */
 private int
-s_image_to_mask_process(stream_state * st, stream_cursor_read * pr,
+s_image_colors_process(stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
-    stream_image_to_mask_state *const ss = (stream_image_to_mask_state *) st;
+    stream_image_colors_state *const ss = (stream_image_colors_state *) st;
 
     for (;;) {
 	if (pw->ptr >= pw->limit)
-	    break;
+	    return 1;
 	if (ss->row_bits_passed >= ss->row_bits) {
 	    ss->row_alignment_bytes_left = ss->row_alignment_bytes;
 	    ss->input_bits_buffered = 0;
@@ -1066,11 +1084,41 @@ s_image_to_mask_process(stream_state * st, stream_cursor_read * pr,
 	    pr->ptr += k;
 	    ss->row_alignment_bytes_left -= k;
 	    if (pr->ptr >= pr->limit)
-		break;
+		return 0;
+	}
+	if (ss->output_component_index < ss->output_depth) {
+	    for (;ss->output_component_index < ss->output_depth;) {
+		uint fitting = (uint)(8 - ss->output_bits_buffered);
+		uint v, w, u, n, m;
+
+		if (pw->ptr >= pw->limit)
+		    return 1;
+		v = ss->output_color[ss->output_component_index];
+		n = ss->output_bits_per_sample - ss->output_component_bits_written; /* no. of bits left */
+		w = v - ((v >> n) << n); /* the current component without written bits. */
+		if (fitting > n)
+		    fitting = n; /* no. of bits to write. */
+		m = n - fitting; /* no. of bits will left. */
+		u = w >> m;  /* bits to write (near lsb). */
+		ss->output_bits_buffer |= u << (8 - ss->output_bits_buffered - fitting);
+		ss->output_bits_buffered += fitting;
+		if (ss->output_bits_buffered >= 8) {
+		    *(++pw->ptr) = ss->output_bits_buffer;
+		    ss->output_bits_buffered = 0;
+		    ss->output_bits_buffer = 0;
+		}
+		ss->output_component_bits_written += fitting;
+		if (ss->output_component_bits_written >= ss->output_bits_per_sample) {
+		    ss->output_component_index++;
+		    ss->output_component_bits_written = 0;
+		}
+	    }
+	    ss->row_bits_passed += ss->bits_per_sample * ss->depth;
+	    continue;
 	}
 	if (ss->input_bits_buffered < ss->bits_per_sample) {
 	    if (pr->ptr >= pr->limit)
-		break;
+		return 0;
 	    ss->input_bits_buffer = (ss->input_bits_buffer << 8) | *++pr->ptr;
 	    ss->input_bits_buffered += 8;
 	    /* fixme: delay shifting the input ptr until input_bits_buffer is cleaned. */
@@ -1079,33 +1127,23 @@ s_image_to_mask_process(stream_state * st, stream_cursor_read * pr,
 	    uint w;
 
 	    ss->input_bits_buffered -= ss->bits_per_sample;
-	    ss->color[ss->input_component_index] = w = ss->input_bits_buffer >> ss->input_bits_buffered;
+	    ss->input_color[ss->input_component_index] = w = ss->input_bits_buffer >> ss->input_bits_buffered;
 	    ss->input_bits_buffer &= ~(w << ss->input_bits_buffered);
 	    ss->input_component_index++;
 	    if (ss->input_component_index >= ss->depth) {
-		uint i, ii;
+		int code = ss->convert_color(ss);
 
-		for (i = ii = 0; i < ss->depth; i++, ii += 2)
-		    if (ss->color[i] < ss->MaskColor[ii] ||
-			ss->color[i] > ss->MaskColor[ii + 1])
-			break;
-		if (i < ss->depth)
-		    ss->output_bits_buffer |= 1 << (7 - ss->output_bits_buffered);
-		ss->output_bits_buffered++;
-		if (ss->output_bits_buffered == 8) {
-		    *(++pw->ptr) = ss->output_bits_buffer;
-		    ss->output_bits_buffered = 0;
-		    ss->output_bits_buffer = 0;
-		}
+		if (code < 0)
+		    return ERRC;
+		ss->output_component_index = 0;
 		ss->input_component_index = 0;
 	    }
-	    ss->row_bits_passed += ss->bits_per_sample;
 	}
     }
-    return 0;
 }
 
-const stream_template s__image_to_mask_template = {
-    &st_stream_image_to_mask_state, s_image_to_mask_init, s_image_to_mask_process, 1, 1,
+const stream_template s__image_colors_template = {
+    &st_stream_image_colors_state, s_image_colors_init, s_image_colors_process, 1, 1,
     NULL, NULL
 };
+
