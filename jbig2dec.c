@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.10 2002/02/09 22:31:53 raph Exp $
+    $Id: jbig2dec.c,v 1.11 2002/02/10 01:17:26 giles Exp $
 */
 
 #include <stdio.h>
@@ -348,7 +348,7 @@ dump_segment (Jbig2Ctx *ctx)
   Jbig2SymbolDictionary *sd;
   Jbig2PageInfo	*page_info;
 
-  sh = jbig2_read_segment_header (ctx);
+  sh = jbig2_read_segment_header(ctx);
   if (sh == NULL)
     return TRUE;
   
@@ -356,9 +356,9 @@ dump_segment (Jbig2Ctx *ctx)
   switch (sh->flags & 63)
     {
     case 0:
-      sd = jbig2_read_symbol_dictionary (ctx);
+      sd = jbig2_read_symbol_dictionary(ctx);
 	  printf("\n");
-      dump_symbol_dictionary (sd);
+      dump_symbol_dictionary(sd);
       break;
 	case 4:
 		printf("intermediate text region:");
@@ -411,7 +411,7 @@ dump_segment (Jbig2Ctx *ctx)
 		printf("end of stripe");
 		break;
     case 51:
-      printf ("end of file\n");
+      printf("end of file\n");
       return TRUE;
 	  break;
 	case 52:
@@ -426,7 +426,7 @@ dump_segment (Jbig2Ctx *ctx)
 	default:
 		printf("UNKNOWN SEGMENT TYPE!!!");
     }
-	printf ("\tflags = %02x, page %d\n",
+	printf("\tflags = %02x, page %d\n",
 	  sh->flags, sh->page_association);
 
   ctx->offset += sh->data_length;
@@ -440,10 +440,10 @@ dump_jbig2 (Jbig2Ctx *ctx)
 
   if (!ctx) return;
   
-  printf ("Number of pages = %d\n", ctx->n_pages);
+  printf("Number of pages = %d\n", ctx->n_pages);
   for (;;)
     {
-      last = dump_segment (ctx);
+      last = dump_segment(ctx);
       if (last)
 	break;
     }
@@ -452,7 +452,18 @@ dump_jbig2 (Jbig2Ctx *ctx)
 static int
 usage (void)
 {
-  fprintf (stderr, "Usage: jbig2dec file.jbig2\n");
+  fprintf(stderr,
+    "Usage: jbig2dec file.jbig2\n"
+    "   or  jbig2dec global_stream page_stream\n"
+    "\n"
+    "  When invoked with a single file, it attempts to parse it as\n"
+    "  a normal jbig2 file. Invoked with two files, it treats the\n"
+    "  first as the global segments, and the second as the segment\n"
+    "  stream for a particular page. This is useful for examining\n"
+    "  embedded streams.\n"
+    "\n"
+  );
+  
   return 1;
 }
 
@@ -462,22 +473,19 @@ main (int argc, char **argv)
   FILE *f = NULL, *f_page = NULL;
   Jbig2Ctx *ctx;
 
-  if (argc < 2)
-    return usage ();
-
   if (argc == 2)
     {
       char *fn = argv[1];
 
-      f = fopen (fn, "rb");
+      f = fopen(fn, "rb");
       if (f == NULL)
 	{
-	  fprintf (stderr, "error opening %s\n", fn);
+	  fprintf(stderr, "error opening %s\n", fn);
 	  return 1;
 	}
       ctx = jbig2_open (f);
       if (ctx != NULL)
-	dump_jbig2 (ctx);
+	dump_jbig2(ctx);
       fclose (f);
     }
   else if (argc == 3)
@@ -487,26 +495,29 @@ main (int argc, char **argv)
       f = fopen (fn, "rb");
       if (f == NULL)
 	{
-	  fprintf (stderr, "error opening %s\n", fn);
+	  fprintf(stderr, "error opening %s\n", fn);
 	  return 1;
 	}
 
-      f_page = fopen (fn_page, "rb");
+      f_page = fopen(fn_page, "rb");
       if (f_page == NULL)
 	{
 	  fprintf (stderr, "error opening %s\n", fn_page);
 	  return 1;
 	}
-      ctx = jbig2_open_embedded (f, f_page);
+      ctx = jbig2_open_embedded(f, f_page);
       if (ctx != NULL)
-	dump_jbig2 (ctx);
+	dump_jbig2(ctx);
       ctx->f = f_page;
       ctx->offset = 0;
       ctx->eof = FALSE;
-      dump_jbig2 (ctx);
-      fclose (f);
-      fclose (f_page);
+      dump_jbig2(ctx);
+      fclose(f);
+      fclose(f_page);
     }
-
+  else    
+    return usage();
+    
+  // control should never reach this point
   return 0;
 }
