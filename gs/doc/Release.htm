@@ -211,13 +211,27 @@ files for your environment.
 <h2><a name="Preparing_source"></a>Preparing the source code</h2>
 
 <p>
-Make sure the release date and version number are up to date in
-<b><tt>version.mak</tt></b>, <b><tt>lib/gs_init.ps</tt></b>, and
-<b><tt>doc/News.htm</tt></b>.
+Update files that reference the version number and date.  Starting with
+version 6.23, we use odd version numbers in the CVS repository between
+filesets, and even numbers for the filesets themselves.  (We got this
+slightly unusual convention from CVS.)
+
+<ul>
+
+<li>In <b><tt>lib/gs_init.ps</tt></b>, update the version number by
+incrementing it from odd to even.
+
+<li>In <b><tt>version.mak</tt></b>, update the version numbers (3
+definitions) and numeric date.
+
+<li>In <b><tt>doc/News.htm</tt></b>, update the version number (in 4 places)
+and the date (in 3 places, skipping the Id: line).
+
+</ul>
 
 <p>
-Update the number of the highest closed bug, and the list of open bugs, in
-<b><tt>doc/News.htm</tt></b>.
+Also in <b><tt>doc/News.htm</tt></b>, update the number of the highest
+closed bug and the list of open bugs.
 
 <p>
 Check in <b><tt>gscdef.c</tt></b> that the definition of
@@ -538,6 +552,10 @@ To: gs-announce
 Edit the Web pages on the Wisconsin server to reflect the new release.
 
 <h1><a name="After_releasing"></a>After releasing</h1>
+
+<p>
+Increment the version number from even to odd, as discussed <a
+href="#Preparing_source">above</a>.
 
 <p>
 Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
