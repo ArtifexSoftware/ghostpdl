@@ -84,7 +84,7 @@ def read_fnord(file):
 def sendmail(frm, to, subject, text):
     import smtplib
 
-    keyword = read_fnord(gsconf.codeddir + 'fnord')
+    keyword = read_fnord(gsconf.codedir + 'fnord')
     if keyword:
         msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\nX-Fnord: %s\r\n\r\n%s' % (frm, to, subject, keyword, text)
     else:
