@@ -645,7 +645,7 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
     if (gOutline->contourCount == 0)
 	gOutline->pointCount = 0;
     else if (gOutline->contourCount == -1) {
-	short flags, index, bHaveInstructions = 0;
+	unsigned short flags, index, bHaveInstructions = 0;
 	unsigned int nUsage = 0;
 	unsigned int nPoints = this->nPointsTotal, nContours = this->nContoursTotal;
 	unsigned int nPos;
@@ -712,11 +712,16 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	    ttfGlyphOutline out;
 	    ttfSubGlyphUsage *e = &usage[i];
 	    int j;
+	    TT_Error code;
 
 	    ttfGlyphOutline__init(&out);
-	    error = ttfOutliner__BuildGlyphOutline(this, e->index, &out);
-	    if(error!=fNoError)
+	    code = ttfOutliner__BuildGlyphOutline(this, e->index, &out);
+	    if (code == fPatented)
+		error = code;
+	    else if (code != fNoError) {
+		error = code;
 		goto ex;
+	    }
 	    gOutline->onCurve   = pFont->onCurve   + nPoints;
 	    gOutline->x         = pFont->x         + nPoints;
 	    gOutline->y         = pFont->y         + nPoints;
@@ -1105,7 +1110,7 @@ FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex, FloatMatrix *m
     m.d /= pFont->nUnitsPerEm;
     TransformF26Dot6PointFloat(&p1, out.advance.x, out.advance.y, &m);
     exp->SetWidth(exp, &p1);
-    if (error != fNoError)
+    if (error != fNoError && error != fPatented)
 	return error;
     if (this->bOutline)
 	ttfOutliner__DrawGlyphOutline(this, &out, &m);
@@ -1128,6 +1133,6 @@ FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex, FloatMatrix *m
 	o.bOutline = bOutline;
     }
     */
-    return fNoError;
+    return error;
 }
 

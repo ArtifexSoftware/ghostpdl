@@ -205,7 +205,7 @@ private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
     }
 }
 
-private void WarnPatented(gs_font_type42 *pfont)
+private void WarnPatented(gs_font_type42 *pfont, const char *txt)
 {
 #if NEW_TT_INTERPRETER
     char buf[100];
@@ -218,7 +218,7 @@ private void WarnPatented(gs_font_type42 *pfont)
 	l = min(sizeof(buf) - 1, base_font->font_name.size);
 	memcpy(buf, base_font->font_name.chars, l);
 	buf[l] = 0;
-	eprintf1("The font %s requires a patented True Type interpreter.\n", buf);
+	eprintf2("%s %s requires a patented True Type interpreter.\n", txt, buf);
 	base_font->data.warning_patented = true;
     }
 #endif
@@ -297,7 +297,7 @@ int ttfFont__Open_aux(ttfFont *this, gx_ttfReader *r, gs_font_type42 *pfont)
 	case fUnimplemented:
 	    return_error(gs_error_unregistered);
 	case fPatented:
-	    WarnPatented(pfont);
+	    WarnPatented(pfont, "The font");
 	    this->patented = true;
 	    return 0;
 	default:
@@ -410,7 +410,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
 	    return_error(gs_error_unregistered);
 	case fPatented:
 	    /* The returned outline did not apply a bytecode (it is "unhinted"). */
-	    WarnPatented(pfont);
+	    WarnPatented(pfont, "Some glyphs of the font");
 	    return 0;
 	default:
 	    {	int code = r->super.Error(&r->super);
