@@ -1237,6 +1237,10 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 					pgls->g.pos.y,
 					hpgl_plot_move_absolute, true));
 		      }
+ 		    /* always clear the current path since terminating
+		       carriage returns and linefeeds will leave
+		       "moveto's" in the path */
+ 		    hpgl_call(hpgl_clear_current_path(pgls));
 		    return 0;
 		  }
 		/*
