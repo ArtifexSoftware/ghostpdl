@@ -30,9 +30,9 @@ pdfdict begin
   (>>) cvn /.dicttomark load
   ([) cvn { mark } bind		% ditto
   (]) cvn dup load
-  /true true
-  /false false
-  /null null
+%  /true true		% see .pdfexectoken below
+%  /false false		% ibid.
+%  /null null		% ibid.
   /F dup cvx		% see Objects section below
   /R dup cvx		% see Objects section below
   /stream dup cvx	% see Streams section below
@@ -88,17 +88,32 @@ pdfdict begin
 % Execute a file, interpreting its executable names in a given
 % dictionary.  The name procedures may do whatever they want
 % to the operand stack.
+/.pdftokenerror {		% <count> <opdict> <errtoken> .pdftokenerror -
+  BXlevel 0 le {
+    (%stderr) (w) file
+    dup (****************Unknown operator: ) writestring
+    dup 2 index .writecvs dup (\n) writestring flushfile
+  } if pop pop
+  count exch sub { pop } repeat	% pop all the operands
+} bind def
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
   DEBUG { dup == flush } if
   2 copy .knownget {
     exch pop exch pop exch pop exec
   } {
-    BXlevel 0 le {
-      (%stderr) (w) file
-      dup (****************Unknown operator: ) writestring
-      dup 2 index .writecvs dup (\n) writestring flushfile
-    } if pop pop
-    count exch sub { pop } repeat	% pop all the operands
+		% Normally, true, false, and null would appear in opdict
+		% and be treated as "operators".  However, there is a
+		% special fast case in the PostScript interpreter for names
+		% that are defined in, and only in, systemdict and/or
+		% userdict: putting these three names in the PDF dictionaries
+		% destroys this property for them, slowing down their
+		% interpretation in all PostScript code.  Therefore, we
+		% check for them explicitly here instead.
+    dup dup dup /true eq exch /false eq or exch /null eq or {
+      exch pop exch pop //systemdict exch get
+    } {
+      .pdftokenerror
+    } ifelse
   } ifelse
 } bind def
 /.pdfrun {			% <file> <opdict> .pdfrun -
@@ -394,6 +409,9 @@ pdfdict begin
 /resolveopdict mark
   valueopdict { } forall
   /endobj { endobj exit } bind
+                % OmniForm generates PDF file with endobj missing in some
+                % objects. AR ignores this. So we have to do it too.
+  /obj { pop pop endobj exit } bind
 .dicttomark readonly def
 /resolveR {		% <object#> <generation#> resolveR <object>
   DEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
@@ -524,9 +542,9 @@ pdfdict begin
 /resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
   1 index /F .knownget {
 		% This stream is stored on an external file.
-    (r) file exch
+    (r) file 3 -1 roll
     /FDecodeParms /FFilter filterparms
-		% Stack: readdata? dict parms filternames
+		% Stack: readdata? file dict parms filternames
     4 -1 roll exch
     pdf_decrypt_stream
     applyfilters

@@ -13,8 +13,8 @@ if "%OS%"=="Windows_NT" goto nt
 
 rem	Run ps2pdf on any Microsoft OS.
 
-if "%1"=="" goto usage
-if "%2"=="" goto usage
+if %1/==/ goto usage
+if %2/==/ goto usage
 
 rem Watcom C deletes = signs, so use # instead.
 rem We have to include the options twice because -I only takes effect if it
@@ -35,8 +35,8 @@ rem	Run ps2pdf on Windows NT.
 
 :nt
 if not CMDEXTVERSION 1 goto run
-if "%1"=="" goto ntusage
-if "%2"=="" goto nooutfile
+if %1/==/ goto ntusage
+if %2/==/ goto nooutfile
 goto run
 
 :ntusage
@@ -47,7 +47,7 @@ goto end
 :nooutfile
 rem We don't know why the circumlocution with _1 is needed....
 set _1=%1
-call ps2pdfxx %1 %_1:.PS=.PDF%
+call ps2pdfxx %1 %_1:.PS=.pdf%
 set _1=
 
 :end

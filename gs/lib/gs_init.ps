@@ -26,7 +26,7 @@
 
 % Check the interpreter revision.  NOTE: the interpreter code requires
 % that the first non-comment token in this file be an integer.
-650
+701
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
@@ -126,6 +126,7 @@ currentdict /OUTPUTFILE known	% obsolete
  } if
 currentdict /QUIET known   /QUIET exch def
 currentdict /SAFER known   /SAFER exch def
+currentdict /DELAYSAFER known   /DELAYSAFER exch def
 currentdict /SHORTERRORS known   /SHORTERRORS exch def
 currentdict /STRICT known   /STRICT exch def
 currentdict /TTYPAUSE known   /TTYPAUSE exch def
@@ -193,7 +194,7 @@ userdict /=string 256 string put
    revisiondate 100 idiv 10 mod revisiondate 1000 idiv 10 mod (-)
    revisiondate 10000 idiv ( \()
    revision 10 mod
-   revision 100 mod dup 0 ne { 10 idiv } { pop } ifelse (.)
+   revision 100 mod 10 idiv (.)
    revision 100 idiv ( )
    product
    counttomark
@@ -521,6 +522,23 @@ currentdict /superexec .knownget {
 	   } if
 	  put
 	} bind def
+% .localvmarray may be an operator: see zsysvm.c.
+/.localvmarray where {
+  pop
+} {
+  /.localvmarray {
+    .currentglobal false .setglobal
+    exch array exch .setglobal
+  } bind def
+} ifelse
+/.localvmdict where {
+  pop
+} {
+  /.localvmdict {
+    .currentglobal false .setglobal
+    exch dict exch .setglobal
+  } bind def
+} ifelse
 /.packtomark
 	{ counttomark packedarray exch pop } bind def
 /ppstack
@@ -1526,30 +1544,83 @@ gsave
 
 % If we want a "safer" system, disable some obvious ways to cause havoc.
 SAFER not { (%END SAFER) .skipeof } if
+
+.currentglobal true .setglobal
+/SAFETY 2 dict
+  dup /safe DELAYSAFER not put
+  dup /tempfiles 10 dict put
+readonly def
+.setglobal
+
+/.setsafe
+  { //SAFETY /safe //true .forceput % overrides readonly
+  } .bind executeonly odef
+
 /file
- { dup (r) eq 2 index (%pipe*) .stringmatch not and
-   2 index (%std*) .stringmatch or
-    { file }
-    { /invalidfileaccess signalerror }
-   ifelse
- } .bind odef
-/renamefile { /invalidfileaccess signalerror } odef
-/deletefile { /invalidfileaccess signalerror } odef
+ { //SAFETY /safe get {
+     dup (r) eq 2 index (%pipe*) .stringmatch not and
+     2 index (%std*) .stringmatch or
+       { file }
+       { /invalidfileaccess //signalerror exec }
+     ifelse
+   } {
+     file
+   } ifelse
+ } .bind executeonly odef
+
+/renamefile
+  { //SAFETY /safe get
+      { /invalidfileaccess //signalerror exec }
+      { renamefile }
+    ifelse
+  } .bind executeonly odef
+
+
+/deletefile {
+  //SAFETY /safe get {
+	% Allow deleting temporary files (created/opened with .tempfile).
+      //SAFETY /tempfiles get 1 index known {
+	deletefile
+      } {
+	/invalidfileaccess //signalerror exec
+      } ifelse
+    } {
+      deletefile
+  } ifelse
+} .bind executeonly odef
+
 /putdeviceprops
- { counttomark
-   dup 2 mod 0 eq { pop /rangecheck signalerror } if
-   3 2 3 2 roll
-    { dup index /OutputFile eq  
-       { -2 roll 
-         dup () ne { /putdeviceprops load /invalidfileaccess signalerror } if
+ { //SAFETY /safe get { 
+     counttomark
+     dup 2 mod 0 eq { pop /rangecheck //signalerror exec } if
+     3 2 3 2 roll
+      { dup index /OutputFile eq  
+         { -2 roll 
+           dup () ne
+             { /putdeviceprops load /invalidfileaccess //signalerror exec
+             } if
          3 -1 roll
-       }
-       { pop
-       }
-      ifelse
-    } for
-   putdeviceprops
- } .bind odef
+         }
+         { pop
+         }
+        ifelse
+      } for
+     putdeviceprops
+   } {
+     putdeviceprops
+   } ifelse
+ } .bind executeonly odef
+
+% If a file is opened with .tempfile with SAFER not (yet) set,
+% the file can be deleted later, even if SAFER is set.
+/.tempfile {
+  .tempfile	% filename file
+  //SAFETY /safe get not {	% DELAYSAFER, no .setsafe yet
+    //SAFETY /tempfiles get 2 index true put
+  } if
+} .bind executeonly odef
+
+currentdict /SAFETY undef
 
 %END SAFER
 
@@ -1607,8 +1678,9 @@ false setpacking
 
 % Conditionally turn image interpolation on or off.
 currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
+
 /.interpolate {
-  dup /Interpolate .knownget not { false } if
+  dup /Interpolate .knownget not { //false } if
   /INTERPOLATE .systemvar ne {
     dup gcheck .currentglobal exch .setglobal
     exch dup length dict copy
@@ -1616,34 +1688,82 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
     exch .setglobal
   } if
 } bind odef
-/image {
-  dup type /dicttype eq {
-    .interpolate image
-  } {
-    /INTERPOLATE .systemvar {
-      8 dict begin
-      /ImageType 1 def
-      /DataSource 1 index def
-      /ImageMatrix 2 index def
-      /BitsPerComponent 3 index def
-      /Decode {0 1} def
-      /Height 4 index def
-      /Width 5 index def
-      /Interpolate true def
-      currentdict end
-      gsave /DeviceGray setcolorspace image grestore
-      5 { pop } repeat
-    } {
-      image
-    } ifelse
-  } ifelse
-} bind odef
+
+/colorimage
+  { /INTERPOLATE .systemvar
+      { .currentglobal                    % w h bit [] {}...{} multi ncomp glob
+        //false .setglobal
+        9 dict begin                      % w h bit [] {}...{} multi ncomp glob
+        2 index { 1 index 7 add } { 8 } ifelse
+        copy gsave pop                    % preserve the arguments
+        { 0 /DeviceGray 0 /DeviceRGB /DeviceCMYK }
+        1 index get setcolorspace         % ... glob w h bit [] {}...{} multi ncomp
+        {0 1 0 1 0 1 0 1}
+        1 index 2 mul 0 exch              % ... glob w h bit [] {}...{} multi ncomp {0 1 ...} 0 2*ncomp
+        getinterval /Decode exch def      % ... glob w h bit [] {}...{} multi ncomp
+        exch dup                          % ... glob w h bit [] {}...{} ncomp multi multi
+        /MultipleDataSources exch def     % ... glob w h bit [] {}...{} ncomp multi
+        { array astore} { pop } ifelse    % ... glob w h bit [] [{}...{}]
+        /DataSource exch def              % ... glob w h bit []
+        /ImageMatrix exch def             % ... glob w h bit
+        /BitsPerComponent exch def        % ... glob w h
+        /Height exch def                  % ... glob w
+        /Width exch def                   % ... glob 
+        /ImageType 1 def
+        /Interpolate //true def
+        .setglobal currentdict end        % ... <<>>
+        image grestore
+        exch { 4 add } { 6 } ifelse
+        { pop } repeat                    % -
+      }
+      { colorimage
+      }
+    ifelse
+  } bind odef
+
+/image
+  { dup type /dicttype eq
+      { dup /ImageType get 3 eq
+          { .currentglobal //false .setglobal exch
+            dup length dict copy begin .setglobal 
+            /DataDict DataDict .interpolate def
+            /MaskDict MaskDict .interpolate def
+            currentdict end
+          }
+          { .interpolate 
+          }
+        ifelse
+        image
+      }
+      { /INTERPOLATE .systemvar
+          { .currentglobal //false .setglobal
+            8 dict begin .setglobal
+            /ImageType 1 def
+            /DataSource 1 index def
+            /ImageMatrix 2 index def
+            /BitsPerComponent 3 index def
+            /Decode {0 1} def
+            /Height 4 index def
+            /Width 5 index def
+            /Interpolate //true def
+            currentdict end
+            gsave /DeviceGray setcolorspace image grestore
+            5 { pop } repeat
+          }
+          { image
+          }
+        ifelse
+      }
+    ifelse
+  } bind odef
+
 /imagemask {
   dup type /dicttype eq {
     .interpolate imagemask
   } {
     /INTERPOLATE .systemvar {
-      8 dict begin
+      .currentglobal //false .setglobal
+      8 dict begin .setglobal
       /ImageType 1 def
       /DataSource 1 index def
       /ImageMatrix 2 index def
@@ -1651,13 +1771,16 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
       2 index { {1 0} } { {0 1} } ifelse /Decode exch def
       /Height 4 index def
       /Width 5 index def
-      /Interpolate true def
+      /Interpolate //true def
       currentdict end imagemask 5 { pop } repeat
     } {
       imagemask
     } ifelse
   } ifelse
 } bind odef
+
+currentdict /.interpolate undef
+
 %END INTERPOLATE
 
 % Establish local VM as the default.

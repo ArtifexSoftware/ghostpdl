@@ -167,14 +167,6 @@ end
 
 % ------ User objects ------ %
 
-/.localarray where {
-  pop
-} {
-  /.localarray {
-    currentglobal false setglobal
-    exch array exch setglobal
-  } bind def
-} ifelse
 /.UserObjects {
   .userdict /UserObjects
 } odef
@@ -187,14 +179,14 @@ end
     length dup 3 index le {
 		% Stack: index value len
       2 index eq { 1 index 2 mul } { 1 index 1 add } ifelse
-      .localarray .UserObjects get
+      .localvmarray .UserObjects get
       1 index copy pop
       .UserObjects 3 -1 roll put
     } {
       pop
     } ifelse
   } {
-    .UserObjects 3 index 1 add 10 .max .localarray put
+    .UserObjects 3 index 1 add 10 .max .localvmarray put
   } ifelse
   .UserObjects get 2 index 2 index put pop pop
 } odef

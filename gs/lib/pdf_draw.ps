@@ -65,12 +65,11 @@ pdfdict begin
 } bdef
 
 /.resolvefn4 {
-  PDFfile fileposition exch
-  dup true resolvestream 
-		% Stack: filepos fndict stream
-  1 index /Length oget string readstring pop
-  exch dup length dict copy dup /Function undef
-  exch token not {
+  PDFfile fileposition exch             % filepos fndict
+  dup true resolvestream                % filepos fndict stream
+  exch dup length dict copy             % filepos stream fndict2
+  dup /Function undef                   % filepos stream fndict2
+  exch dup token not {
     () /rangecheck cvx signalerror
   } if
   exch token {
@@ -367,17 +366,23 @@ end
   grestore
 } bdef
 
+/.beginformgroup {	% groupdict bbox .beginformgroup -
+  exch mark exch			% bbox mark groupdict
+  dup /CS knownoget { csresolve setcolorspace } if
+  dup /I knownoget { /Isolated exch 3 2 roll } if
+  dup /K knownoget { /Knockout exch 3 2 roll } if
+  pop .dicttomark
+		% Stack: bbox paramdict
+  exch aload pop
+  .begintransparencygroup
+} bdef
+
 % .paintgroupform implements the Form PaintProc in the case where the
 % Form XObject dictionary includes a Group key.  See .paintform below.
-/.paintgroupform {	% <resdict> <stream> <formdict> .paintform -
-  mark exch dup /Group oget
-  dup /CS knownoget { csresolve setcolorspace } if
-  dup /I knownoget { /Isolated exch 4 2 roll } if
-  dup /K knownoget { /Knockout exch 4 2 roll } if
-  pop counttomark 1 add 1 roll .dicttomark
-		% Stack: resdict stream formdict paramdict
-  exch /BBox oget aload pop
-  .begintransparencygroup {
+/.paintgroupform {	% <resdict> <stream> <formdict> .paintgroupform -
+  dup /Group oget exch /BBox oget
+		% Stack: resdict stream groupdict bbox
+  .beginformgroup {
     .execgroup
   } .internalstopped {
     .discardtransparencygroup stop
@@ -430,6 +435,7 @@ end
   /DeviceCMYK { pop 4 }
   /CIEBasedA { pop 1 }
   /CIEBasedABC { pop 3 }
+  /ICCBased { 1 oget /N oget }
   /Separation { pop 1 }
   /DeviceN { 2 oget length }
 .dicttomark readonly def
@@ -491,19 +497,20 @@ end
     pop [ /CIEBasedABC currentdict end ]
   }
   /ICCBased {
-		% Since the PostScript interpreter doesn't support these yet,
-		% always substitute an alternate space.
-    1 oget dup /Alternate knownoget {
-      exch pop
-    } {
-      /N get { null /DeviceGray null /DeviceRGB /DeviceCMYK } exch get
-    } ifelse resolvecolorspace
-  }
+    PDFfile fileposition exch
+    dup dup 1 oget
+    mark exch { oforce } forall .dicttomark
+    dup dup true resolvestream
+    /ReusableStreamDecode filter /DataSource exch put
+    1 exch put
+    exch PDFfile exch setfileposition
+  } bind
   /Separation {
     aload pop exch oforce resolvecolorspace exch oforce resolvefnproc
     4 array astore
   }
   /DeviceN {
+    0 4 getinterval                    % ignore attributes
     aload pop 3 -1 roll oforce
     3 -1 roll oforce resolvecolorspace
     3 -1 roll oforce resolvefnproc
@@ -699,6 +706,13 @@ end
   /DeviceCMYK { pop //01_4 } bind
   /CIEBasedA { 1 get /RangeA .knownget not { //01_1 } if } bind
   /CIEBasedABC { 1 get /RangeABC .knownget not { //01_3 } if } bind
+  /ICCBased {
+     1 oget dup /Range .knownget {
+       exch pop
+     }{
+       /N get [ exch {0 1} repeat ] readonly
+     } ifelse
+  } bind
   /Separation { pop //01_1 } bind
   /DeviceN {
     1 oget length [ exch {0 1} repeat ] readonly
@@ -746,7 +760,8 @@ end
   dup /ImageMask knownoget dup { and } if {
 		% Image mask
 		% Decode is required for the PostScript image operators.
-    /Decode 2 copy knownoget not { //01_1 } if def
+                % AI8 writes bogus decode array [0 1 0 0 0 0 0 0]
+    /Decode 2 copy knownoget { 0 2 getinterval } { //01_1 } ifelse def
 		% BitsPerComponent may be missing for masks.
 		% The spec requires it, but some producers omit it, and
 		% Acrobat Reader doesn't care.
@@ -816,9 +831,13 @@ end
     } if
   } ifelse
 		% Stack: datasource imagemask
-   { currentdict end setfillstate imagemask }
-   { ColorSpace setcolorspace currentdict end setfillblend image }
+   % image and imagemask can be redefined in gs_init.ps to tweak interpolation
+   % after device-specific files are run. Don't bind them here.
+   { currentdict end setfillstate /imagemask }
+   { ColorSpace setcolorspace currentdict end setfillblend /image }
   ifelse
+  .systemvar exec
+   
 		% Close the input stream, unless it is PDFfile or
 		% PDFsource.
   dup dup PDFfile eq exch PDFsource eq or { pop } { closefile } ifelse
@@ -831,8 +850,23 @@ end
     pop pdfopdict .pdfruncontext
   } ifelse
 } bdef
+
 /DoForm {
-  dup length dict copy
+    % Adobe 2nd edition of the PDF 1.3 spec makes /FormType
+    % and /Matrix keys optional. Cope with the missing keys.
+  dup length
+  1 index /Matrix known
+    { dict
+    }
+    { 1 add dict
+      dup /Matrix { 1 0 0 1 0 0 } cvlit put
+    }
+  ifelse
+  copy
+  dup /FormType known not {
+    dup length 1 add dict copy dup /FormType 1 put
+  } if
+
   dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
   3 index false /resolvestream cvx
   /.paintform cvx
@@ -846,6 +880,7 @@ end
 
 drawopdict begin
   /Do {
+    setfillblend
     PDFfile fileposition exch
     dup Page /XObject rget { 
       exch pop dup /Subtype get xobjectprocs exch get
@@ -906,16 +941,23 @@ drawopdict begin
 	% The Adobe documentation says that the data following ID
 	% consists of "lines", and some PDF files (specifically, some files
 	% produced by PCL2PDF from Visual Software) contain garbage bytes
-	% between the last byte of valid data and an EOL.  Therefore, we
-	% skip such garbage bytes here.
-    {
-      PDFsource read {
-	dup 10 eq exch 13 eq or { exit } if
-      } {
-        exit
-      } ifelse
-    } loop
-    PDFsource token pop /EI ne { /ID cvx /syntaxerror signalerror } if
+	% between the last byte of valid data and an EOL.
+        % Some files (PDFOUT v3.8d by GenText) have EI immediately following
+        % the stream. Some have no EOL and garbage bytes.
+        % Therefore, we skip all bytes before EI or EOL 
+    0
+      { PDFsource read not { //true exit } if
+        dup 10 eq 1 index 13 eq or
+          { pop PDFsource token pop /EI ne exit
+          }
+        if
+        exch 69 eq 1 index 73 eq and { //false exit } if  % 'EI'
+      }
+    loop
+    exch pop
+      { /ID cvx /syntaxerror signalerror
+      }
+    if
   } bdef
 end
 
@@ -1017,38 +1059,39 @@ end
   or					% Combine print and view
   and 					% Combine with 'hidden' flag test
 } bdef
- 
+
 /drawwidget {			% <scalefactor> <annot> drawwidget -
-    dup /AP knownoget {
+  dup /AP knownoget {
 	% Always use the Normal appearance.
-      /N oget
+    /N oget
 		% Acrobat Distiller produces files in which this Form
 		% XObject lacks Type and Subtype keys.  This is illegal,
 		% but Acrobat Reader accepts it.  The only way we can
 		% tell whether this is a Form or a set of sub-appearances
 		% is by testing for the stream Length key.
-      dup /Length known not {
-	1 index /AS knownoget not { () } if
+    dup /Length known {
+      		% If this is a form then simply use it
+      true
+    } {
+      1 index /AS knownoget not {
+      		% If we do not have AS then use any appearance
+	{ exch pop oforce exit } forall true
+      } { 
 		% Stack: annot Ndict AS
-	2 copy knownoget {
-	  exch pop exch pop
-	} {
-		% Pick any one.
-	  pop { exch pop oforce exit } forall
-	} ifelse
-      } if
-		% Acrobat Distiller produces files in which this Form
-		% XObject lack FormType and Matrix keys.  This is illegal,
-		% but Acrobat Reader accepts it.  Patch this up now.
-      dup /FormType known not  {
-	dup length 1 add dict copy dup /FormType 1 put
-      } if
-      dup /Matrix known not  {
-	dup length 1 add dict copy dup /Matrix matrix put
-      } if
-    1 index annotrect pop pop translate
-    2 index dup scale		% Apply scale factor
+		% Get the specified appearance.  If no appearance, then
+		% display nothing - set stack = false.
+	knownoget
+      } ifelse
+    } ifelse
+
+		% Stack: scale annot appearance true
+		% Stack: scale annot false
+    {
+      		% Draw appearance
+      1 index annotrect pop pop translate
+      2 index dup scale		% Apply scale factor
       DoForm
+    } if
   } if pop pop
 } bdef
 

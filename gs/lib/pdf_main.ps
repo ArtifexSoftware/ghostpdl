@@ -27,6 +27,7 @@ pdfdict begin
 /.writepdfmarks {	% - .writepdfmarks <bool>
   currentdevice //.writepdfmarkdict .getdeviceparams
   mark eq { false } { pop pop true } ifelse
+  systemdict /DOPDFMARKS known or 
 } bind def
 
 % For simplicity, we use a single interpretation dictionary for all
@@ -145,9 +146,9 @@ pdfdict begin
   (>>) cvn /.dicttomark load
   ([) cvn { mark } bind		% ditto
   (]) cvn dup load
-  /true true
-  /false false
-  /null null
+%  /true true		% see .pdfexectoken in pdf_base.ps
+%  /false false		% ibid.
+%  /null null		% ibid.
   /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
   /startxref /exit load
 .dicttomark readonly def
@@ -170,8 +171,13 @@ pdfdict begin
    { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
    } loop
    PDFfile exch setfileposition
-   PDFfile pdfstring readline pop
-   (xref) linene { /readxref cvx /syntaxerror signalerror } if
+		% The PDF specification says that the 'xref' must be on a line
+		% by itself. The code here formerly used readline and linene to
+		% check this. However, Acrobat Reader only requires the line to
+		% begin with 'xref', and there are enough applications producing
+		% non-compliant PDF files that we have to do this too.
+   PDFfile pdfstring 0 4 getinterval readstring pop
+   (xref) ne { /readxref cvx /syntaxerror signalerror } if
 		% Store the xref table entry position for each object.
 		% We only need to read the run headers, not every entry.
     { PDFfile token pop		% first object # or trailer
@@ -211,8 +217,8 @@ pdfdict begin
 /pdfopencache {		% - pdfopencache -
 	% Create and initialize some caches.
   /PageCount pdfpagecount def
-  /PageNumbers PageCount dict def
-  /PageIndex PageCount array def
+  /PageNumbers PageCount 65534 min dict def
+  /PageIndex PageCount 65534 min array def
 } bind def
 /pdfopenfile {		% <file> pdfopenfile <dict>
    pdfdict readonly pop		% can't do it any earlier than this
@@ -253,11 +259,14 @@ pdfdict begin
 % on the Macintosh) may add up to 2K of garbage after the %%EOF, and some
 % other applications also truncate the %%EOF to %%EO, and/or put the
 % startxref and the following value on the same line.
+% A file reported from Distiller 3.02b for AIX 4.1.1 has 2076 bytes
+% of garbage. The tolerance is increased to 4K to cover future
+% applications and bigger allocation units.
 /findxref {		% - findxref <xrefpos>
   PDFfile dup dup 0 setfileposition bytesavailable
   dup /PDFfilelen exch def
-	% Find the last %%EOF string (within 2048 bytes)
-  2048 sub PDFoffset .max
+	% Find the last %%EOF string (within 4096 bytes)
+  4096 sub PDFoffset .max
   2 copy setfileposition
   PDFfilelen exch sub string 1 index exch readstring pop {
     (\015%%EO) search {		% Adobe can handle truncated key string
@@ -297,8 +306,9 @@ pdfdict begin
     exch PDFfile exch setfileposition
   } ifelse
 } bind def
-/stderrprint {		% <string> stderrprint -
-  (%stderr) (w) file dup dup 4 -1 roll writestring flushfile closefile
+/stderrfile (%stderr) (w) file def
+/stderrprint {                % <string> stderrprint -
+  //stderrfile dup 3 -1 roll writestring flushfile
 } bind def
 /pdfformaterror {	% <string> pdfformaterror -
   stderrprint
@@ -423,8 +433,11 @@ pdfdict begin
 		% Stack: index countleft noderef
    1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
    exch pop
-   PageIndex 2 index 1 sub 2 index oforce put
-   PageNumbers 1 index oforce 3 index put
+   PageIndex 2 index 1 sub 65533 min 2 index oforce put
+   PageNumbers 1 index oforce 3 index dup 65534 le
+    { put }
+    { pop pop pop }	% don't store more than 65534 pagenumbers
+   ifelse
    exch pop
 } bind def
 /pdffindpage {		% <int> pdffindpage <pagedict>
@@ -434,7 +447,11 @@ pdfdict begin
 % Find the N'th page of the document.
 % The first page is numbered 1.
 /pdfgetpage		% <int> pdfgetpage <pagedict>
- { PageIndex 1 index 1 sub get dup null ne
+ { PageIndex 1 index 1 sub dup 65533 lt
+    { get }
+    { pop pop null }
+   ifelse
+   dup null ne
     { exch pop oforce }
     { pop pdffindpage }
    ifelse
@@ -527,12 +544,19 @@ end readonly def
      { /Rect /Border }
      { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
     forall dup /A knownoget {
-      dup /D knownoget {
-	exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+      dup /URI known {
+        /A mark 3 2 roll    % <<>> /A [ <<action>>
+        { oforce } forall
+        .dicttomark
+        3 2 roll
       } {
-	/N knownoget {		% Assume /S /Named
-	  namedactions exch .knownget { exec } if
-	} if
+        dup /D knownoget {
+	  exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+        } {
+	  /N knownoget {		% Assume /S /Named
+	     namedactions exch .knownget { exec } if
+	  } if
+        } ifelse
       } ifelse
     } if
     linkdest pop /LNK pdfmark
@@ -606,7 +630,14 @@ end readonly def
 
 	% Copy the crop box.
     dup /CropBox knownoget {
-      mark /CropBox 3 -1 roll /PAGE pdfmark
+	% If the page has been rotated, rotate the CropBox.
+      mark /CropBox 3 -1 roll
+      3 index /Rotate pget {
+	90 idiv 1 and 0 ne {
+	  aload pop 4 -2 roll exch 4 2 roll exch 4 array astore
+	} if
+      } if
+      /PAGE pdfmark
     } if
 
 	% Copy annotations and links.
@@ -640,28 +671,33 @@ end readonly def
   PDFversion 1.4 lt {
     showpagecontents
   } {
-    dup /Group known {
-	% In PDF 1.4, Group overrides Contents.
-      DoForm
-    } {
-      dup pageusestransparency {
-	% Show the page within a fake top-level group.
-	processcolorspace setcolorspace
-	0 dict
-	currentdict /ClipRect .knownget not {
-	  gsave initclip clippath [pathbbox] grestore
-	} if aload pop
-	.begintransparencygroup {
+    dup pageusestransparency {
+      % Show the page within a PDF 1.4 device filter.
+      0 .pushpdf14devicefilter {
+	% If the page has a Group, enclose contents in transparency group.
+        % (Adobe Tech Note 5407, sec 9.2)
+        dup /Group knownoget {
+	  1 index /CropBox knownoget not {
+	    1 index /MediaBox oget
+	  } if .beginformgroup {
+	    showpagecontents
+	  } .internalstopped {
+	    .discardtransparencygroup stop
+	  } if .endtransparencygroup
+        } {
 	  showpagecontents
-	} .internalstopped {
-	  .discardtransparencygroup stop
-	} if .endtransparencygroup
-      } {
-	showpagecontents
-      } ifelse
+        } ifelse
+      } .internalstopped {
+	% todo: discard
+	.popdevicefilter stop
+      } if .popdevicefilter
+    } {
+      showpagecontents
     } ifelse
   } ifelse
   grestore
+   % todo: mixing drawing ops outside the device filter could cause
+   % problems, for example with the pnga device.
    /Annots knownoget { { oforce drawannot } forall } if
    endpage
    end			% scratch dict

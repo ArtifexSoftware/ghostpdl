@@ -34,6 +34,7 @@
 /omapinit {		% - omapinit -
   /RMap 100 dict def
   /XRef 100 dict def
+  PDEBUG { (omapinit) = } if
 } def
 
 % Map an object number.
@@ -41,7 +42,9 @@
   RMap 1 index .knownget {
     exch pop false
   } {
+    PDEBUG { (omap\() print dup =only } if
     RMap dup length 1 add 2 index exch dup 5 1 roll put pop true
+    PDEBUG { (\) = ) print 1 index = } if
   } ifelse
 } def
 /omap {			% <oldobj#> omap <newobj#>
@@ -59,6 +62,10 @@
 } bind def
 /setomap {		% <omap> setomap -
   aload pop /XRef exch def /RMap exch def
+  PDEBUG {
+    (setomap: #Xref = ) print XRef length =only
+    (, #RMap = ) print RMap length =
+  } if
 } bind def
 
 % ================ Writing ================ %
@@ -72,14 +79,22 @@
 
 % ---------------- Scalars ---------------- %
 
-/pdfnamechars (!"$&'*+,-.0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz|~) readonly def
+% Note that the '#' character isn't legal in a name unless it is a prefix
+% for a hex encoded character (for PDF 1.2 and later). The following assumes
+% that the names are already valid PDF 1.2+ names so that  we can treat the
+% '#' as a legal character. The next two hex characters are already in the
+% set of valid name characters. PDF 1.1 and earlier allowed spaces in names
+% which probably wouldn't make it past the tokenizer anyway.
+/pdfnamechars
+  (!"#$&'*+,-.0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz|~)
+readonly def
 /pdfwritename {		% <name> pdfwritename -
   (/) ows .namestring {
     ( ) dup 0 4 -1 roll put
     //pdfnamechars 1 index search {
       pop pop pop
     } {
-      pop 256 add 16 =string cvrs
+      pop 0 get 256 add 16 =string cvrs
       dup 0 (#) 0 get put
     } ifelse ows
   } forall
@@ -95,7 +110,9 @@
   dup xcheck {
     aload pop //pdfwriteprocs exch get exec
   } {
-    ([) ows { pdfwritevalue (\n) ows } forall (]) ows
+	% Because of a bug in Acrobat's parser for linearization parameters,
+	% we have to include some whitespace after the opening [ (!).
+    ([ ) ows { pdfwritevalue (\n) ows } forall (]) ows
   } ifelse
 } def
 
@@ -159,8 +176,8 @@
 
 /pdfwritetypes mark
 	% Scalars
-  /nulltype { =string cvs ows }
-  /integertype 1 index
+  /nulltype { pop (null) ows }
+  /integertype { =string cvs ows }
   /booleantype 1 index
   /realtype { OFile exch write===only }
   /stringtype 1 index
@@ -179,6 +196,7 @@
 % We make pdfwriteobjdef a separate procedure for external use.
 /pdfwriteobjheader {	% <newobj#> pdfwriteobjheader -
   XRef 1 index OFile .fileposition put
+  PDEBUG { (XRef\() print dup =only (\) = ) print XRef 1 index get = } if
   OFile exch write=only ( 0 obj\n) ows
 } def
 /pdfwriteobjdef {	% <newobj#> <value> pdfwriteobjdef -

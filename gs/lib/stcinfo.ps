@@ -22,7 +22,7 @@
 
 statusdict begin product end 
 dup (Ghostscript) eq 1 index (Aladdin Ghostscript) eq or
-exch (Artifex Ghostscript) eq or{
+exch (AFPL Ghostscript) eq or{
 
   currentdevice getdeviceprops .dicttomark
   dup /Name get (stcolor) eq /STCi_onstc exch def
