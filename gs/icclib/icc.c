@@ -10594,7 +10594,7 @@ icc *new_icc(
 
 	p->get_luobj  = icc_get_luobj;
 
-#if defined(__IBMC__)
+#if defined(__IBMC__) && defined(_M_IX86)
 	_control87(EM_UNDERFLOW, EM_UNDERFLOW);
 #endif
 
