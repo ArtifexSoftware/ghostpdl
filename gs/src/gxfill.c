@@ -1597,7 +1597,7 @@ move_al_by_y(line_list *ll, fixed y1, fixed y)
     active_line *alp, *nlp;
 
 #   if CURVED_TRAPEZOID_FILL
-    for (alp = ll->x_list; alp != 0; alp = nlp) {
+    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
 	bool noend = false;
 	alp->x_current = alp->x_next;
 
