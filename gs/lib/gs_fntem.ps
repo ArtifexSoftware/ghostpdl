@@ -166,6 +166,8 @@ currentpacking false setpacking
     p 63 94 325 w
   } cvlit
 
+  /none []
+
 >> def
 setpacking
 
@@ -304,10 +306,13 @@ currentdict end def
     } ifelse
     exit
   } loop
-  dup /SubstNWP .knownget {
-    //SubstNWP exch get                                  % <<font>> [SubstNWP]
-    1 index exch /SubstNWP exch put
+  dup /SubstNWP .knownget not {
+    dup /CIDSystemInfo get /Ordering get cvn
   } if
+  dup type /nametype eq {
+    //SubstNWP exch get                                % <<font>> [SubstNWP]
+  } if
+  1 index exch /SubstNWP exch put
 } bind def
 
 /PrintFontRef      % <string|name> <font> PrintFontRef <string|name> <font>

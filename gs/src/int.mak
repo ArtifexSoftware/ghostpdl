@@ -1413,7 +1413,7 @@ $(PSD)cidfont.dev : $(INT_MAK) $(ECHOGS_XE) $(cidread_)\
 	$(ADDMOD) $(PSD)cidfont -include $(PSD)psf1read $(PSD)psl2int
 	$(ADDMOD) $(PSD)cidfont -include $(PSD)type2 $(PSD)type42 $(PSD)zfrsd
 	$(ADDMOD) $(PSD)cidfont -oper zfcid0 zfcid1
-	$(ADDMOD) $(PSD)cidfont -ps gs_cidfn gs_cidcm gs_cidfm gs_fntem gs_cidtt
+	$(ADDMOD) $(PSD)cidfont -ps gs_cidfn gs_cidcm gs_fntem gs_cidtt gs_cidfm
 
 $(PSOBJ)zcid.$(OBJ) : $(PSSRC)zcid.c $(OP)\
  $(gxcid_h) $(errors_h) $(icid_h) $(idict_h) $(idparam_h) $(store_h)

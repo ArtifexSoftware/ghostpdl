@@ -723,6 +723,9 @@ private int renderer_retcode(i_ctx_t *i_ctx_p, FAPI_server *I, FAPI_retcode rc)
 	sputs(s, (const byte *)s1, strlen(s1), &wlen);
 	sputs(s, (const byte *)buf, strlen(buf), &wlen);
 	sputs(s, (const byte *)"\n", 1, &wlen);
+	/* 
+	 * Fixme : sputs may return CALLC, need to perform an interpreter callout.
+	 */
     }
     return rc < 0 ? rc : e_invalidfont;
 }

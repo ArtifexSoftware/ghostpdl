@@ -390,8 +390,17 @@ setpacking
   %     Also it is allowed to contain additional entries for client's needs.
   % The OptionsDict is also used for storing some local variables.
 
-  begin % OptionsDict
+  % If a category is being redefined several times with this function,
+  % each redefinition must either use an unique map file,
+  % or the map file should be scanned by the last redefinition
+  % (and must be defined in the last one with /MapFileName).
+  % This happens so because we must accumulate all variants of
+  % methods before scanning the map. We would like to delay
+  % the scanning until all redefinitions are done, but it requires
+  % to implement a queue of "refinish" methods and execute it
+  % at very end of the prelude.
 
+  begin % OptionsDict
   CategoryName /Category findresource /OldCategory exch def
   OldCategory /.IsRedefinedWithMap known {
     % Already redefined with map - don't redefine, but enhance the map.
@@ -407,55 +416,59 @@ setpacking
   % to allow different record types to be mixed in a single map file.
   % We do this with building a dictionary of PreprocessRecord procedures,
   % which come from different calls to Redefine :
-  NewCategory /.PreprocessRecord get dup length   % <<pr>> l  
+  NewCategory /.PreprocessRecord get dup length % <<pr>> l  
   currentdict /PreprocessRecord get .growput
 
-  MapFileName .libfile {
-    1 dict begin
-    /; {} def
-    mark exch cvx exec .dicttomark           % <<map>>
-    end
-    dup VerifyMap                            % <<map>>
-  } {
-    QUIET not {
-      currentdict /IsMapFileOptional .knownget not { false } if not {
-        (Warning: the map file ) print dup =string cvs print ( was not found.) =
-      } if
-    } if
-    pop 0 dict                               % <<map>>
-  } ifelse
-
-  % Preprocess entries :
-  dup NewCategory /.PreprocessRecord get     % <<map>> <<map>> <<pr>>
-  3 1 roll {                                 % <<pr>> <<map>> /Name raw_record
-    false 3 1 roll                           % <<pr>> <<map>> false /Name raw_record 
-    4 index {                                % <<pr>> <<map>> false /Name raw_record i {pr}
-      exch pop                               % <<pr>> <<map>> false /Name raw_record {pr}
-      exec {                                 % <<pr>> <<map>> false /Name record
-        3 -1 roll pop true 3 1 roll          % <<pr>> <<map>> true /Name record
-        exit
-      } if                                   % <<pr>> <<map>> false /Name raw_record
-    } forall
-    3 2 roll {                               % <<pr>> <<map>> /Name record
-      2 index 3 1 roll put                   % <<pr>> <<map>>
+  currentdict /MapFileName known {
+    MapFileName .libfile {
+      1 dict begin
+      /; {} def
+      mark exch cvx exec .dicttomark           % <<map>>
+      end
+      dup VerifyMap                            % <<map>>
     } {
-      exch                                   % <<pr>> <<map>> raw_record /Name
-      (Incorrect record ) print =string cvs print ( of the map file ) print MapFileName =string cvs print (.) =
-      end % Pops OptionsDict from dstack.
-      pop pop pop                            %
-      /Redefine cvx /undefinedresource signalerror
+      QUIET not {
+        currentdict /IsMapFileOptional .knownget not { false } if not {
+          (Warning: the map file ) print dup =string cvs print ( was not found.) =
+        } if
+      } if
+      pop 0 dict                               % <<map>>
     } ifelse
-  } forall                                   % <<pr>> <<map>>
-  exch pop                                   % <<map>>
-
-  OldCategory /.IsRedefinedWithMap known {   % <<map>>
+    % Preprocess entries :
+    dup NewCategory /.PreprocessRecord get     % <<map>> <<map>> <<pr>>
+    3 1 roll {                                 % <<pr>> <<map>> /Name raw_record
+      false 3 1 roll                           % <<pr>> <<map>> false /Name raw_record 
+      4 index {                                % <<pr>> <<map>> false /Name raw_record i {pr}
+        exch pop                               % <<pr>> <<map>> false /Name raw_record {pr}
+        exec {                                 % <<pr>> <<map>> false /Name record
+          3 -1 roll pop true 3 1 roll          % <<pr>> <<map>> true /Name record
+          exit
+        } if                                   % <<pr>> <<map>> false /Name raw_record
+      } forall
+      3 2 roll {                               % <<pr>> <<map>> /Name record
+        2 index 3 1 roll put                   % <<pr>> <<map>>
+      } {
+        exch                                   % <<pr>> <<map>> raw_record /Name
+        (Incorrect record ) print =string cvs print ( of the map file ) print MapFileName =string cvs print (.) =
+        end % Pops OptionsDict from dstack.
+        pop pop pop                            %
+        /Redefine cvx /undefinedresource signalerror
+      } ifelse
+    } forall                                   % <<pr>> <<map>>
+    exch pop                                   % <<map>>
+  } { 
+    0 dict                                     % <<map>>
+  } ifelse
+  % Add the map :
+  OldCategory /.IsRedefinedWithMap known {     % <<map>>
     % Just add to the old map :
-    OldCategory /.map get copy pop           %
-  } {                                        % <<map>>
+    OldCategory /.map get copy pop             %
+  } {                                          % <<map>>
     % Store the map to both the category and OptionsDict :
     dup NewCategory exch /.map exch put
-    /.map exch def                           %
-
+    /.map exch def                             %
+  } ifelse
+  OldCategory /.IsRedefinedWithMap known not {
     % Copy old methods to OptionsDict :
     [ /DefineResource /ResourceStatus /ResourceFileName 
       /FindResource /ResourceForAll
@@ -471,7 +484,7 @@ setpacking
     % Redefine the category :
     NewCategory /.IsRedefinedWithMap true put
     CategoryName NewCategory /Category defineresource pop
-  } ifelse
+  } if
   end % OptionsDict
 } bind executeonly def
 
