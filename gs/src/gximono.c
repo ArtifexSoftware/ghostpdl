@@ -478,8 +478,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 		{		/* Now fill the region between xrun and xl. */
 		    int xi = fixed2int_var(xrun);
 		    int wi = fixed2int_var(xl) - xi;
-		    int xei, tsx;
-		    const gx_strip_bitmap *tile;
+		    int xei;
 
 		    if (wi <= 0) {
 			if (wi == 0)
