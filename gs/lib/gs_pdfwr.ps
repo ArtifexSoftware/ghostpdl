@@ -565,21 +565,22 @@ currentdict /.pdfmarkparams .undef
   .currentdistillerparams
 } bind odef
 
-% Patch 'where' so that the distillerparams operators are only visible
+% Patch 'where' so that the distiller operators are only visible
 % if the pdfwrite device is the current one.
-.wheredict /currentdistillerparams {
-  currentdevice .devicename /pdfwrite eq {
+{ currentdevice .devicename /pdfwrite eq {
     .where
   } {
     .where pop dup //systemdict eq { pop false } { true } ifelse
   } ifelse
-} bind put
-.wheredict /setdistillerparams .wheredict /currentdistillerparams get put
+} bind
+{ /currentdistillerparams /setdistillerparams /pdfmark }
+{ .wheredict exch 2 index put } forall pop
 
-% Patch 'known' to hide the systemdict version of the set/currentdistillerparams
+% Patch 'known' to hide the systemdict version of distiller operators
 % unless the currentdevice is pdfwrite.
 /known {
-  /currentdistillerparams 1 index eq /setdistillerparams 2 index eq or {
+  /currentdistillerparams 1 index eq /setdistillerparams 2 index eq or 
+  /pdfmark 2 index eq or {
     systemdict 2 index eq {	% only mask the operator in systemdict
       known currentdevice .devicename /pdfwrite ne { pop false } if
   } {
