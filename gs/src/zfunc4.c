@@ -259,15 +259,17 @@ gs_build_function_4(const ref *op, const gs_function_params_t * mnDR,
 {
     gs_function_PtCr_params_t params;
     ref *proc;
-    int code = 0;
-    byte *ops = 0;
-    int size = 0;
+    int code;
+    byte *ops;
+    int size;
 
     *(gs_function_params_t *)&params = *mnDR;
-    params.ops.data = 0;	/* in case of error */
-    params.ops.size = 0;	/* ibid. */
-    if (dict_find_string(op, "Function", &proc) <= 0)
+    params.ops.data = 0;	/* in case of failure */
+    params.ops.size = 0;	/* ditto */
+    if (dict_find_string(op, "Function", &proc) <= 0) {
+	code = gs_note_error(e_rangecheck);
 	goto fail;
+    }
     if (!r_is_proc(proc)) {
 	code = gs_note_error(e_typecheck);
 	goto fail;
@@ -288,8 +290,8 @@ gs_build_function_4(const ref *op, const gs_function_params_t * mnDR,
     code = gs_function_PtCr_init(ppfn, &params, mem);
     if (code >= 0)
 	return 0;
+    /* free_params will free the ops string */
 fail:
-    gs_free_object(mem, ops, "gs_build_function_4(ops)");
     gs_function_PtCr_free_params(&params, mem);
     return (code < 0 ? code : gs_note_error(e_rangecheck));
 }
