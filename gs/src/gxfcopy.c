@@ -740,9 +740,9 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 	    info0.pieces = pieces;
 	    info1.pieces = pieces + info0.num_pieces;
 	    code0 = ofont->procs.glyph_info((gs_font *)ofont, glyph, &mat, 
-				    GLYPH_INFO_NUM_PIECES, &info0);
+				    GLYPH_INFO_PIECES, &info0);
 	    code1 = cfont->procs.glyph_info((gs_font *)cfont, glyph, &mat, 
-				    GLYPH_INFO_NUM_PIECES, &info1);
+				    GLYPH_INFO_PIECES, &info1);
 	    if (code0 >= 0 && code1 >= 0) {
 		code2 = memcmp(info0.pieces, info1.pieces, info0.num_pieces * sizeof(*pieces));
 		if (!code2)
