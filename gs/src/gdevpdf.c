@@ -611,7 +611,7 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
     else if (ppdi->orientation >= 0)
 	dsc_orientation = ppdi->orientation;
     if ((page == NULL && pdev->params.AutoRotatePages == arp_All) || /* document */
-        (&page != NULL && page->text_rotation.Rotate >= 0) || /* page */
+        (page != NULL && page->text_rotation.Rotate >= 0) || /* page */
 	dsc_orientation >= 0 /* have DSC */) {
         const pdf_text_rotation_t *ptr = 
 	    (page != NULL ? &page->text_rotation : &pdev->text_rotation);
