@@ -71,7 +71,7 @@ def change_gsproduct(file):
     os.unlink(file)
     os.rename(tmpfile, file)
 
-def read_fnord(file)
+def read_fnord(file):
     if os.path.exists(file):
         f = open(file)
         keyword = f.readline()
