@@ -11,3 +11,11 @@ make install
 
 `make test' will run the pcl6 interpreter with the X11 device in
 interactive mode.  You must press return after each page is displayed.
+
+Note for cygwin users
+
+make CYGWIN=TRUE
+make install
+
+The CYGWIN variable will not include devices that depend on threads or
+X11, neither are supported by the default cygwin system.
