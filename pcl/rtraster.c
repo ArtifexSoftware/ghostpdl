@@ -311,19 +311,43 @@ consolidate_row(
     /* for each plane, "or" in the appropriate bit */
     for (i = 0; i < nplanes; i++) {
         if (!prast->pseed_rows[i].is_blank) {
-            uint            ishift = 0;
             const byte *    ip = prast->pseed_rows[i].pdata;
             byte *          op = pcons;
-            uint            val = 0;
             int             cnt = npixels;
 
-            while (cnt-- > 0) {
-                if (ishift-- <= 0) {
-                    val = *ip++;
-                    ishift = 7;
-                }
-                *op++ |= ((val >> ishift) & 0x1) << i;
-            }
+	    for (; cnt >= 8; ip++, op += 8, cnt -= 8) {
+		uint val = *ip;
+
+		/*
+		 * cons_buff was allocated with gs_alloc_bytes, so we know
+		 * it is aligned for (at least) bits32 access.
+		 */
+#if arch_is_big_endian
+		static const bits32 spread[16] = {
+		    0x00000000, 0x00000001, 0x00000100, 0x00000101,
+		    0x00010000, 0x00010001, 0x00010100, 0x00010101,
+		    0x01000000, 0x01000001, 0x01000100, 0x01000101,
+		    0x01010000, 0x01010001, 0x01010100, 0x01010101
+		};
+#else
+		static const bits32 spread[16] = {
+		    0x00000000, 0x01000000, 0x00010000, 0x01010000,
+		    0x00000100, 0x01000100, 0x00010100, 0x01010100,
+		    0x00000001, 0x01000001, 0x00010001, 0x01010001,
+		    0x00000101, 0x01000101, 0x00010101, 0x01010101
+		};
+#endif
+		((bits32 *)op)[0] |= spread[val >> 4] << i;
+		((bits32 *)op)[1] |= spread[val & 0xf] << i;
+	    }
+	    if (cnt) {
+		uint ishift = 7;
+		uint val = *ip;
+
+		do {
+		    *op++ |= ((val >> ishift--) & 0x1) << i;
+		} while (--cnt > 0);
+	    }
         }
     }
 
