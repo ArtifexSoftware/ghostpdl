@@ -23,6 +23,22 @@
 
 % ---------------- Public operators ---------------- %
 
+/.rewriteTempMapsNotDef {
+  DEBUG { (rewriting TempMapsNotDef\n) print flush } if
+  .TempMaps 2 get
+  dup length 0 gt {
+    0 get
+    DEBUG { (...original...\n) print flush } if
+    1 5 2 index length 1 sub {
+      { 1 index exch get 2 3 put } stopped
+      { DEBUG { (cannot rewrite\n) print flush } if }
+      { DEBUG { (rewrite\n) print flush } if } ifelse
+    } for
+  } if
+  pop
+  DEBUG { (...FINISHED...\n) print } if
+} bind def
+
 % composefont doesn't appear in CMap files -- it's documented in
 % the "PostScript Language Reference Manual Supplement".
 /composefont {		% <name> <cmap|cmapname> <fonts> composefont <font>
@@ -89,11 +105,19 @@
   /CodeMap null def		% for .buildcmap
 } bind def
 /endcmap {		% - endcmap -
+  .rewriteTempMapsNotDef
+  DEBUG {
+    (*** defined charmap ***\n) print
+    .TempMaps 1 get {exch == (\t) print ==} forall
+    (*** undefined charmap ***\n) print
+    .TempMaps 2 get {exch == (\t) print ==} forall
+  } if
   10 dict begin 0 1 2 {
     /i exch def
 		% Append data from .TempMaps to .CodeMapData.
     /t .TempMaps i get def
     .CodeMapData i get length t { exch pop length add } forall
+    DEBUG { (requested array size ) print dup == } if
     array /a exch def
     a 0 .CodeMapData i get .putmore
     0 1 t length 1 sub {
@@ -273,44 +297,101 @@
   counttomark 3 idiv {
     counttomark -3 roll		% process in correct order
 		% Construct prefix, params, key_lo, key_hi, value, font_index
-    3 1 roll dup length 1 eq {
-      () 3 1 roll	% prefix
-      <01 01 00 02>	% params
-      3 1 roll		% keys
-      concatstrings 4 -1 roll .endmapvalue
-    } {
-		% Stack: cid_base code_lo code_hi
-		% Hack: handle 16-bit single-range mappings specially.
-      counttomark 3 eq 1 index length 2 eq and {
-	() 3 1 roll	% prefix
-	<02 01 00 02>	% params
-	3 1 roll	% keys
-	concatstrings 4 -1 roll .endmapvalue
-      } {
-	exch dup dup length 1 sub 0 exch getinterval	% prefix
-			% Stack: cid_base code_hi code_lo prefix
-	<01 01 00 02>	% params
-	3 -1 roll dup length 1 sub 1 getinterval	% key_lo
-	4 -1 roll dup length 1 sub 1 getinterval	% key_hi
-	concatstrings
-	4 -1 roll .endmapvalue
+    3 1 roll	% <cid_base> <code_lo> <code_hi>
+		%		prefix	key
+		% 1-byte code:	()	.
+		% 1-byte range:	()	.
+		% N-byte code:	.	(*)
+		% N-byte range:	(*)	(*)
+    dup 2 index eq {	% <code_lo> == <code_hi>
+           		% 0: prefix_len for 1-byte code
+           		% 1: prefix_len for N-byte code
+       dup length 1 eq { 0 } { 1 } ifelse
+    } {			% <code_lo> != <code_hi>
+     			% calculate prefix_len for *-byte range
+       dup length 1 sub % <cid_base> <code_lo> <code_hi> <code_len-1>
+       0		% initial value for N
+       {		% <cid_base> <code_lo> <code_hi> (code_len-1)  N
+           dup 2 index ge { exit } if % if (N >= len - 1) exit
+           3 index 1 index get	% N-th byte of code_lo
+           3 index 2 index get	% N-th byte of code_hi
+           eq { 1 add } { exit } ifelse
+       } loop
+       exch pop 	% discard <code_len-1>
+    } ifelse
+				% cid_base code_lo code_hi prefix_len
+
+    % Althogh Adobe CPSI with native CID/CMap support accept
+    % multi-dimensional range specification in notdef & cidrange
+    % (and CID is calculated as relative position in multi-dimensional
+    % range), but older CPSI & ATM cannot handle it.
+    % 
+    % GS accepts such specification, but it's recommended to keep
+    % from using this feature for notdef & cidrange.
+    % Following is a disabler of this feature.
+    % -------------------------------------------------------------
+    % counttomark 1 add index 	% get map#
+    % 0 ne {			% if not codespacerange
+    %   1 index length 		% get code length
+    %   1 index 			% get prefix length
+    %   sub			% calculate key length
+    %   1 gt {			% if (key_len > 1),
+    %      (.endmapranges error) = flush
+    %      (multi-dimensional range specification is used out of codespacerange)
+    %      = flush
+    %      (/) =only
+    %      CMapName CMapName length string cvs =only
+    %      (: <) =only
+    %      2 index (%stdout) (w) file exch writehexstring
+    %      (> <) =only
+    %      1 index (%stdout) (w) file exch writehexstring
+    %      (>\n) =only flush
+    %      quit
+    %   } if
+    % } if
+    % -------------------------------------------------------------
+
+    1 index exch 0 exch getinterval
+				% cid_base code_lo code_hi prefix
+    dup length 3 index length exch sub
+				% cid_base code_lo code_hi prefix range_len
+    dup 255 gt {
+       (too long coderange specification for current GS\n) print stop
+    } if
+    <00 01 00 02> 4 string copy	% create initialized param
+    dup 0 4 -1 roll put		% put range_len into param
+
+    % get key_hi
+    3 -1 roll dup length 3 index length dup 3 1 roll sub getinterval
+
+    % get key_lo
+    4 -1 roll dup length 4 index length dup 3 1 roll sub getinterval
+
+    % make "keys" (concatenated key_lo + key_hi)
+    exch concatstrings
+
+    % 
+    4 -1 roll
+    .endmapvalue
+
 		% See if we can merge with the previous value.
 		% The prefix, params, and font index must match.
-		% Stack: prefix params keys value fontindex
-	4 index 10 index eq		% prefix
-	4 index 10 index eq and	% params
-	1 index 7 index eq and	% fontindex
+    % prefix params keys value fontindex
+    counttomark 5 gt { % 2 (or more) ranges (1 range = 5 item)
+       4 index 10 index eq	% compare prefix
+       4 index 10 index eq and	% compare params
+       1 index 7 index eq and	% compare fontindex
 	{
+          DEBUG { (merge!\n) print } if
 	  pop 4 2 roll pop pop
-		% Stack: prefix params keys value fontindex keys2 value2
+           % prefix params keys value fontindex keys2 value2
 	  5 -1 roll 3 -1 roll concatstrings
-		% Stack: prefix params value fontindex value2 keys'
+           % prefix params value fontindex value2 keys'
 	  4 -1 roll 3 -1 roll concatstrings
-		% Stack: prefix params fontindex keys' values'
+           % prefix params fontindex keys' values'
 	  3 -1 roll
 	} if
-      } ifelse
-    } ifelse
+     } if % end of 2 (or more) ranges
   } repeat
   counttomark 2 add -1 roll .appendmap
 } bind def

@@ -440,6 +440,17 @@ debug_print_string(const byte * chrs, uint len)
     dflush();
 }
 
+/* Print a string in hexdump format. */
+void
+debug_print_string_hex(const byte * chrs, uint len)
+{
+    uint i;
+
+    for (i = 0; i < len; i++)
+        dprintf1("%02x", chrs[i]);
+    dflush();
+}
+
 /*
  * The following code prints a hex stack backtrace on Linux/Intel systems.
  * It is here to be patched into places where we need to print such a trace

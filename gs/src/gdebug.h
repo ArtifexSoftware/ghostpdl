@@ -122,5 +122,6 @@ void debug_dump_bytes(P3(const byte * from, const byte * to,
 void debug_dump_bitmap(P4(const byte * from, uint raster, uint height,
 			  const char *msg));
 void debug_print_string(P2(const byte * str, uint len));
+void debug_print_string_hex(P2(const byte * str, uint len));
 
 #endif /* gdebug_INCLUDED */

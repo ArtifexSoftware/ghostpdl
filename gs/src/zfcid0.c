@@ -484,8 +484,21 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
     code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
 			(gs_glyph)(gs_min_cid_glyph + op->value.intval),
 				    &gstr, &fidx);
-    if (code < 0)
-	return code;
+
+    /* return code; original error-sensitive & fragile code */
+    if (code < 0) { /* failed to load glyph data, put CID 0 */
+       int default_fallback_CID = 0 ;
+
+       if_debug2('J', "[J]ztype9cidmap() use CID %d instead of glyph-missing CID %d\n", default_fallback_CID, op->value.intval);
+
+       op->value.intval = default_fallback_CID;
+
+       /* reload glyph for default_fallback_CID */
+
+       code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
+                    (gs_glyph)(gs_min_cid_glyph + default_fallback_CID),
+                                   &gstr, &fidx);
+    }
 
     make_const_string(op - 1, 
 		      a_readonly | imemory_space((gs_ref_memory_t *)pfont->memory), 
