@@ -2,7 +2,7 @@
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL5*, HP RTL, and HP-GL/2 interpreters
-# Users of this makefile must define the following:
+
 #	GSSRCDIR - the GS library source directory
 #	PLSRCDIR - the PCL* support library source directory
 #	PLOBJDIR - the object directory for the PCL support library
@@ -54,8 +54,12 @@ pcl.clean: pcl.config-clean pcl.clean-not-config-clean
 pcl.clean-not-config-clean:
 	$(RM_) $(PCLOBJ)*.$(OBJ)
 
+# due to a deficiency of the current make system devices are built in
+# the current working directory (HAS).  Also (TODO) all of the gs
+# generated files are not "cleaned".
 pcl.config-clean:
 	$(RM_) $(PCLOBJ)*.dev
+	$(RM_) *.dev
 
 ################ Remaining task list:
 # PCL5C drawing commands
