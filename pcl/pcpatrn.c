@@ -46,9 +46,7 @@
  * a non-standard halftone might end up mapping white to black (definitely
  * undesirable).
  */
-private pcl_cs_base_t *         pwhite_cs;
 private const gs_paint_color    white_paint = {{ 1.0, 0.0, 0.0, 0.0 }};
-private pcl_ht_t *              pdflt_ht;
 
 /* GC routines */
 private_st_ccolor_t();
@@ -207,15 +205,13 @@ unshare_ccolor(
         pnew->ccolor = pold->ccolor;
         gs_pattern_reference(&(pnew->ccolor), 1);
     } else {
-
-        /* build the pure white color space if necessary */
-        if (pwhite_cs == 0)
-            (void)pcl_cs_base_build_white_cspace(&pwhite_cs, pmem);
-
         pnew->type = pcl_ccolor_unpatterned;
         pnew->ppat_data = 0;
         pnew->pindexed = 0;
-        pcl_cs_base_init_from(pnew->pbase, pwhite_cs);
+
+        /* set the color space to pure white */
+        pnew->pbase = 0;
+        (void)pcl_cs_base_build_white_cspace(&(pnew->pbase), pmem);
         pnew->ccolor.paint = white_paint;
         pnew->ccolor.pattern = 0;
     }
@@ -345,6 +341,7 @@ check_pattern_rendering(
     pcl_pattern_t *         pptrn,
     pcl_gsid_t              cache_id,
     uint                    pen_num,
+    bool                    colored,
     const gs_paint_color *  ppaint
 )
 {
@@ -364,6 +361,10 @@ check_pattern_rendering(
          (pptrn->ref_pt.y != pcs->pat_ref_pt.y)        )
         return false;
 
+    /* for uncolored patterns, check if rendered in the desired form */
+    if ((colored && !pptrn->colored) || (!colored && pptrn->colored))
+        return false;
+
     /* handle changes in foreground color */
     if ( (pccolor->type == pcl_ccolor_mask_pattern)                 &&
          ((pccolor->ccolor.paint.values[0] != ppaint->values[0]) ||
@@ -377,7 +378,7 @@ check_pattern_rendering(
         pccolor->ccolor.paint = *ppaint;
     }
 
-    return set_patterned_color(pcs, pptrn->pccolor);
+    return (set_patterned_color(pcs, pptrn->pccolor) == 0);
 }
 
 /*
@@ -418,11 +419,14 @@ render_pattern(
         return code;
     pccolor = pptrn->pccolor;
     pccolor->type = type;
+    gs_pattern_reference(&(pccolor->ccolor), -1);
+    pccolor->ccolor.pattern = 0;
     pcl_pattern_data_copy_from(pccolor->ppat_data, pptrn->ppat_data);
 
     /* set up the transformation and transparency information */
     pcl_xfm_get_pat_xfm(pcs, pptrn, &mat);
     pptrn->transp = pcs->pattern_transparent;
+    pptrn->colored = (type == pcl_ccolor_colored_pattern);
 
     /* set up the white index and remap as necessary */
     if (remap) {
@@ -467,12 +471,20 @@ render_pattern(
 /*
  * Set a pattern using the foreground parameters.
  *
+ * The for-image boolean indicates if the foreground is being set to render
+ * a PCL raster. If so, and if the halftone/CRD combination for the foreground
+ * is not the same as for the palette, a colored pattern must be generated.
+ * This is because the CRD/halftone combination for the palette will be
+ * current at the time the pattern is loaded into the cache, and thus the
+ * color would be evaluated in the wrong context.
+ *
  * Returns 0 on success, < 0 in the event of an error.
  */
   private int
 set_frgrnd_pattern(
     pcl_state_t *       pcs,
-    pcl_pattern_t *     pptrn
+    pcl_pattern_t *     pptrn,
+    bool                for_image
 )
 {
     pcl_frgrnd_t *      pfrgrnd = pcs->pfrgrnd;
@@ -481,18 +493,24 @@ set_frgrnd_pattern(
     pcl_cs_indexed_t *  pindexed = 0;
     pcl_ccolor_type_t   type = pcl_ccolor_mask_pattern;
     gs_paint_color      paint;
+    bool                colored = false;
     int                 code = set_ht_crd_from_foreground(pcs);
-    int                 wht_indx = 0;
+    int                 wht_indx = (pcs->pattern_transparent ? 0 : 2);
 
     if (code < 0)
         return code;
 
+    if ( (pfrgrnd->pht == pcs->ppalet->pht)  &&
+         (pfrgrnd->pcrd == pcs->ppalet->pcrd)  )
+        for_image = false;
+    colored = (for_image || !pcs->pattern_transparent);
+
     convert_color_to_paint(pfrgrnd->color, &paint);
-    if (check_pattern_rendering(pcs, pptrn, cache_id, 0, &paint))
+    if (check_pattern_rendering(pcs, pptrn, cache_id, 0, colored, &paint))
         return 0;
 
     /* build the two-entry palette if necessary */
-    if (!pcs->pattern_transparent) {
+    if (colored) {
         code = pcl_cs_indexed_build_special( &pindexed,
                                              pbase,
                                              pfrgrnd->color,
@@ -502,7 +520,6 @@ set_frgrnd_pattern(
             return code;
         pbase = 0;
         type = pcl_ccolor_colored_pattern;
-        wht_indx = 2;
     }
 
     code = render_pattern( pcs,
@@ -544,17 +561,18 @@ set_uncolored_palette_pattern(
     pcl_gsid_t          cache_id = pcs->ppalet->id;
     pcl_ccolor_type_t   type = pcl_ccolor_mask_pattern;
     gs_paint_color      paint;
+    bool                colored = !pcs->pattern_transparent;
     int                 code = set_ht_crd_from_palette(pcs);
 
     if (code < 0)
         return code;
 
     convert_index_to_paint(pen, &paint);
-    if (check_pattern_rendering(pcs, pptrn, cache_id, pen, &paint))
+    if (check_pattern_rendering(pcs, pptrn, cache_id, pen, colored, &paint))
         return 0;
 
     /* build the two-entry palette if necessary */
-    if (!pcs->pattern_transparent) {
+    if (colored) {
         code = pcl_cs_indexed_build_special( &pindexed,
                                              pindexed->pbase,
                                              &(pindexed->palette.data[3 * pen]),
@@ -565,7 +583,7 @@ set_uncolored_palette_pattern(
         type = pcl_ccolor_colored_pattern;
     }
 
-    code = render_pattern(pcs, pptrn, type, pindexed, NULL, &paint, 0, false);
+    code = render_pattern(pcs, pptrn, type, pindexed, NULL, &paint, 2, false);
 
     /* release the extra reference to the indexed color space */
     if (type == pcl_ccolor_colored_pattern)
@@ -598,7 +616,7 @@ set_colored_pattern(
     if (code < 0)
         return code;
 
-    if (check_pattern_rendering(pcs, pptrn, cache_id, 0, &white_paint))
+    if (check_pattern_rendering(pcs, pptrn, cache_id, 0, true, &white_paint))
         return 0;
 
     code = render_pattern( pcs,
@@ -772,21 +790,23 @@ pattern_set_white(
 )
 {
     int             code = set_ht_crd_from_foreground(pcs);
+    pcl_cs_base_t * pwhite_cs = 0;
+    pcl_ht_t *      pdflt_ht = 0;
 
     if (code < 0)
         return code;
 
     /* build the pure white color space and default halftone if necessary */
-    if (pwhite_cs == 0)
-        code = pcl_cs_base_build_white_cspace(&pwhite_cs, pcs->memory);
-    if ((pdflt_ht == 0) && (code >= 0))
+    if ((code = pcl_cs_base_build_white_cspace(&pwhite_cs, pcs->memory)) >= 0)
         code = pcl_ht_build_default_ht(&pdflt_ht, pcs->memory);
 
-    /* set the default halftone; build it first if required */
+    /* set the halftone and color space */
     if (code >= 0)
         code = pcl_ht_set_halftone(&pdflt_ht, pcl_cspace_RGB, false, pcs);
+    pcl_ht_release(pdflt_ht);
     if (code >= 0)
         code = set_unpatterned_color(pcs, NULL, pwhite_cs, &white_paint);
+    pcl_cs_base_release(pwhite_cs);
     return code;
 }
 
@@ -835,7 +855,7 @@ pattern_set_frgrnd(
     if ( for_image                          &&
          ((pfrgrnd->pht != ppalet->pht)  ||
           (pfrgrnd->pcrd != ppalet->pcrd)  )  ) {
-        code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern()); 
+        code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(), true);
         if (code >= 0)
             code = set_ht_crd_from_palette(pcs);
     } else {
@@ -864,7 +884,7 @@ pattern_set_shade_pcl(
         int     code = 0;
 
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
-        code = set_frgrnd_pattern(pcs, pptrn);
+        code = set_frgrnd_pattern(pcs, pptrn, for_image);
     
         if (for_image && (code >= 0))
             code = set_ht_crd_from_palette(pcs);
@@ -905,7 +925,7 @@ pattern_set_hatch_pcl(
         int     code = 0;
 
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
-        code = set_frgrnd_pattern(pcs, pptrn);
+        code = set_frgrnd_pattern(pcs, pptrn, for_image);
         if (for_image && (code >= 0))
             code = set_ht_crd_from_palette(pcs);
         return code;
@@ -943,7 +963,7 @@ pattern_set_user_pcl(
     else {
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
         if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
-            int     code = set_frgrnd_pattern(pcs, pptrn);
+            int     code = set_frgrnd_pattern(pcs, pptrn, for_image);
 
             if (for_image && (code >= 0))
                 code = set_ht_crd_from_palette(pcs);
@@ -1133,6 +1153,20 @@ select_current_pattern(
     return 0;
 }
 
+/*
+ * ESC * o # W
+ *
+ * Driver configuration command. Currently just a stub that absorbs the data.
+ */
+  private int
+set_driver_configuration(
+    pcl_args_t *    pargs,  /* ignored */
+    pcl_state_t *   pcs     /* ignored */
+)
+{
+    return 0;
+}
+
 
 /*
  * Initialization and reset routines.
@@ -1171,6 +1205,13 @@ pattern_do_init(
                      pca_neg_ignore | pca_big_ignore
                      )
     },
+    {
+        'o', 'W',
+        PCL_COMMAND( "Driver Configuration Command",
+                     set_driver_configuration,
+                     pca_bytes
+                     )
+    },
     END_CLASS
     return 0;
  
@@ -1187,13 +1228,8 @@ pattern_do_reset(
                                  | pcl_reset_printer );
 
     if ((type & mask) != 0) {
-        if ((type  & pcl_reset_initial) != 0) {
+        if ((type  & pcl_reset_initial) != 0)
             pcl_pattern_init_bi_patterns(pcs->memory);
-
-            /* handle potential non-initialization of BSS */
-            pdflt_ht = 0;
-            pwhite_cs = 0;
-        }
         pcs->pattern_transparent = true;
         pcs->source_transparent = true;
         pcs->pattern_id = 0;
