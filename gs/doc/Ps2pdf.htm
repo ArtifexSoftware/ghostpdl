@@ -112,24 +112,15 @@ line.
 
 <p>
 All of these scripts actually call a script named <b><tt>ps2pdfwr</tt></b>
-or <b><tt>ps2pdfxx</tt></b>.  Normally, you will not need to do anything
-with this script.  The Unix <b><tt>ps2pdfwr</tt></b> script assumes that the
-Ghostscript executable is named <b><tt>gs</tt></b>; the DOS and MS Windows
-<b><tt>ps2pdfxx.bat</tt></b> script assumes the executable is named
-<b><tt>gswin32c</tt></b>.  On DOS or MS Windows, if the executable has a
-different name, you must edit the <b><tt>ps2pdfxx.bat</tt></b> script file:
-look for the line that says
-
-<blockquote><b><tt>
-set PS2PDFGS=gswin32c
-</tt></b></blockquote>
-
-<p>
-and change it to
-
-<blockquote><b><tt>
-set PS2PDFGS=</tt></b><em>executable_name</em>
-</blockquote>
+or <b><tt>ps2pdfxx</tt></b>.  The Unix <b><tt>ps2pdfwr</tt></b> script
+assumes that the Ghostscript executable is named <b><tt>gs</tt></b>; it is
+unlikely that you will need to change this.  The DOS and MS Windows
+<b><tt>ps2pdfxx.bat</tt></b> script uses the value of the
+<b><tt>GSC</tt></b> environment variable, if defined, as the name of the
+executable; otherwise the script assumes the executable is named
+<b><tt>gswin32c</tt></b>.  So in these environments, if the executable has a
+different name, you must set <b><tt>GSC</tt></b> to the name of the
+executable.
 
 <hr>
 
@@ -152,7 +143,7 @@ converted to bitmaps.
 <dd>Sets the color space used for fill, stroke, text, and imagemask.
 <em>device_color_space</em> may be <b><tt>/DeviceGray</tt></b>,
 <b><tt>/DeviceRGB</tt></b>, or <b><tt>/DeviceCMYK</tt></b>; the default
-value is <b><tt>/DeviceRGB</tt></b>.  (Eventually this will be unnecessary,
+value is <b><tt>/DeviceRGB</tt></b>. (Eventually this will be unnecessary,
 since colors specified in any color space will always be written out in that
 color space rather than being converted.)
 
