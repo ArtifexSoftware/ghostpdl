@@ -223,13 +223,17 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 			    previous = 0;
 			    switch (bpp >> 3) {
 				case 8:
-				    previous += (gx_color_index) * src++ << 56;
+				    previous += (gx_color_index) * src++ 
+					<< sample_bound_shift(previous, 56);
 				case 7:
-				    previous += (gx_color_index) * src++ << 48;
+				    previous += (gx_color_index) * src++
+					<< sample_bound_shift(previous, 48);
 				case 6:
-				    previous += (gx_color_index) * src++ << 40;
+				    previous += (gx_color_index) * src++
+					<< sample_bound_shift(previous, 40);
 				case 5:
-				    previous += (gx_color_index) * src++ << 32;
+				    previous += (gx_color_index) * src++
+					<< sample_bound_shift(previous, 32);
 				case 4:
 				    previous += (gx_color_index) * src++ << 24;
 				case 3:
@@ -395,7 +399,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	int code;
 
 	if (color0 == gx_no_color_index && color1 == gx_no_color_index)
-	    proc_color = dev_proc(dev, copy_color);
+	    proc_color = dev_proc(dev, copy_color), proc_mono = 0;
 	else
 	    proc_color = 0, proc_mono = dev_proc(dev, copy_mono);
 

@@ -491,7 +491,7 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 
                 pixel = dev_proc(dev, encode_color)(dev, v);
             }
-            sample_store_next32(pixel, dest, dbit, depth, dbyte);
+            sample_store_next_any(pixel, dest, dbit, depth, dbyte);
         }
 	sample_store_flush(dest, dbit, depth, dbyte);
     }
@@ -570,7 +570,7 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
 	    gx_color_index pixel = 0;
 	    gx_color_value rgba[4];
 
-	    sample_load_next32(pixel, src, bit, depth);
+	    sample_load_next_any(pixel, src, bit, depth);
 	    if (pixel < 16) {
 		if (mapped[pixel]) {
 		    /* Use the value from the cache. */

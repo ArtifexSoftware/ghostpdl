@@ -100,7 +100,7 @@ typedef gx_color_index_data gx_color_index;
  *          LINE_ACCUM(color, bpp);
  *      }
  * This code must be enclosed in { }, since DECLARE_LINE_ACCUM declares
- * variables.  Supported values of bpp are 1, 2, 4, 8, 12, 16, 24, 32.
+ * variables.  Supported values of bpp are 1, 2, 4, or n * 8, where n <= 8.
  *
  * Note that DECLARE_LINE_ACCUM declares the variables l_dptr, l_dbyte, and
  * l_dbit.  Other code in the loop may use these variables.
@@ -108,7 +108,7 @@ typedef gx_color_index_data gx_color_index;
 #define DECLARE_LINE_ACCUM(line, bpp, xo)\
 	sample_store_declare_setup(l_dptr, l_dbit, l_dbyte, line, 0, bpp)
 #define LINE_ACCUM(color, bpp)\
-	sample_store_next32(color, l_dptr, l_dbit, bpp, l_dbyte)
+	sample_store_next_any(color, l_dptr, l_dbit, bpp, l_dbyte)
 #define LINE_ACCUM_SKIP(bpp)\
 	sample_store_skip_next(l_dptr, l_dbit, bpp, l_dbyte)
 #define LINE_ACCUM_STORE(bpp)\

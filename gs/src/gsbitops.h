@@ -27,9 +27,9 @@
  * more accurate, packed arrays of values -- they may be complete pixels
  * or individual components of pixels).
  *
- * Supported #s of bits per value (bpv) are 1, 2, 4, 8, 12, 16, 24, 32.
- * The suffix 8, 12, 16, or 32 on a macro name indicates the maximum value
- * of bpv that the macro is prepared to handle.
+ * Supported #s of bits per value (bpv) are 1, 2, 4, or n * 8, where n <= 8.
+ * The suffix 8, 12, 16, 32, or 64 on a macro name indicates the maximum
+ * value of bpv that the macro is prepared to handle.
  *
  * The setup macros number bits within a byte in big-endian order, i.e.,
  * 0x80 is bit 0, 0x01 is bit 7.  However, sbit/dbit may use a different
@@ -51,6 +51,10 @@
 /* Set up to load starting at a given bit number. */
 #define sample_load_setup(sbit, bitno, sbpv)\
   sbit = (bitno)
+
+/* macro to eliminate compiler warning message */
+#define sample_bound_shift(value, shift)\
+    ((shift) >= 8 * sizeof(value) ? (shift) & (8 * sizeof(value) - 1) : (shift))
 
 /* Load a value from memory, without incrementing. */
 #define sample_load8_(value, sptr, sbit, sbpv)\
@@ -86,17 +90,69 @@
 #define sample_load_next16(value, sptr, sbit, sbpv)\
   sample_load16(value, sptr, sbit, sbpv);\
   sample_next(sptr, sbit, sbpv)
-#define sample_load32(value, sptr, sbit, sbpv)\
+#define sample_load32_(value, sptr, sbit, sbpv)\
   sample_load16_(value, sptr, sbit, sbpv)\
   case 6: value = (*(sptr) << 16) | ((sptr)[1] << 8) | (sptr)[2]; break;\
   case 8:\
     value = (*(sptr) << 24) | ((sptr)[1] << 16) | ((sptr)[2] << 8) | sptr[3];\
-    break;\
+    break;
+#define sample_load32(value, sptr, sbit, sbpv)\
+  sample_load32_(value, sptr, sbit, sbpv);\
   sample_end_
 #define sample_load_next32(value, sptr, sbit, sbpv)\
   sample_load32(value, sptr, sbit, sbpv);\
   sample_next(sptr, sbit, sbpv)
-
+#define sample_load64_(value, sptr, sbit, sbpv)\
+  sample_load32_(value, sptr, sbit, sbpv);\
+  case 10:\
+    value = ((gx_color_index)((sptr)[0]) << sample_bound_shift((value), 32)) |\
+            ((gx_color_index)((sptr)[1]) << 24) |\
+            ((gx_color_index)((sptr)[2]) << 16) |\
+            ((gx_color_index)((sptr)[3]) << 8) |\
+            (gx_color_index)((sptr)[4]);\
+    break;\
+  case 12:\
+    value = ((gx_color_index)((sptr)[0]) << sample_bound_shift((value), 40)) |\
+            ((gx_color_index)((sptr)[1]) << sample_bound_shift((value), 32)) |\
+            ((gx_color_index)((sptr)[2]) << 24) |\
+            ((gx_color_index)((sptr)[3]) << 16) |\
+            ((gx_color_index)((sptr)[4]) << 8) |\
+            (gx_color_index)((sptr)[5]);\
+    break;\
+  case 14:\
+    value = ((gx_color_index)((sptr)[0]) << sample_bound_shift((value), 48)) |\
+            ((gx_color_index)((sptr)[1]) << sample_bound_shift((value), 40)) |\
+            ((gx_color_index)((sptr)[2]) << sample_bound_shift((value), 32)) |\
+            ((gx_color_index)((sptr)[3]) << 24) |\
+            ((gx_color_index)((sptr)[4]) << 16) |\
+            ((gx_color_index)((sptr)[5]) << 8) |\
+            (gx_color_index)((sptr)[6]);\
+    break;\
+  case 16:\
+    value = ((gx_color_index)((sptr)[0]) << sample_bound_shift((value), 56)) |\
+            ((gx_color_index)((sptr)[1]) << sample_bound_shift((value), 48)) |\
+            ((gx_color_index)((sptr)[2]) << sample_bound_shift((value), 40)) |\
+            ((gx_color_index)((sptr)[3]) << sample_bound_shift((value), 32)) |\
+            ((gx_color_index)((sptr)[4]) << 24) |\
+            ((gx_color_index)((sptr)[5]) << 16) |\
+            ((gx_color_index)((sptr)[6]) << 8) |\
+            (gx_color_index)((sptr)[7]);\
+    break;
+#define sample_load64(value, sptr, sbit, sbpv)\
+  sample_load64_(value, sptr, sbit, sbpv);\
+  sample_end_
+#define sample_load_next64(value, sptr, sbit, sbpv)\
+  sample_load64(value, sptr, sbit, sbpv);\
+  sample_next(sptr, sbit, sbpv)
+#define sample_load_any(value, sptr, sbit, sbpv)\
+  if (sizeof(value) > 4)\
+    sample_load64(value, sptr, sbit, sbpv);\
+  else\
+    sample_load32(value, sptr, sbit, sbpv)
+#define sample_load_next_any(value, sptr, sbit, sbpv)\
+  sample_load_any(value, sptr, sbit, sbpv);\
+  sample_next(sptr, sbit, sbpv)
+  
 /* Declare variables for storing. */
 #define sample_store_declare(dptr, dbit, dbbyte)\
   byte *dptr;\
@@ -162,15 +218,20 @@
   sample_end_
 #define sample_store_next64(value, dptr, dbit, dbpv, dbbyte)\
   sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
-  case 16: *(dptr)++ = (byte)((value) >> 56);\
-  case 14: *(dptr)++ = (byte)((value) >> 48);\
-  case 12: *(dptr)++ = (byte)((value) >> 40);\
-  case 10: *(dptr)++ = (byte)((value) >> 32);\
+  case 16: *(dptr)++ = (byte)((value) >> sample_bound_shift((value), 56));\
+  case 14: *(dptr)++ = (byte)((value) >> sample_bound_shift((value), 48));\
+  case 12: *(dptr)++ = (byte)((value) >> sample_bound_shift((value), 40));\
+  case 10: *(dptr)++ = (byte)((value) >> sample_bound_shift((value), 32));\
   case 8: *(dptr)++ = (byte)((value) >> 24);\
   case 6: *(dptr)++ = (byte)((value) >> 16);\
   case 4: *(dptr)++ = (byte)((value) >> 8);\
   case 2: *(dptr)++ = (byte)(value); break;\
   sample_end_
+#define sample_store_next_any(value, dptr, dbit, dbpv, dbbyte)\
+  if (sizeof(value) > 4)\
+    sample_store_next64(value, dptr, dbit, dbpv, dbbyte);\
+  else\
+    sample_store_next32(value, dptr, dbit, dbpv, dbbyte)
 
 /* Skip over storing one sample.  This may or may not store into the */
 /* skipped region. */

@@ -163,10 +163,15 @@ dsa_close(gx_device * dev)
 /* ------ Color mapping ------ */
 
 private gx_color_index
-dsa_map_rgb_color(gx_device * dev,
-	      gx_color_value red, gx_color_value green, gx_color_value blue)
+dsa_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-    return dsa_map_rgb_alpha_color(dev, red, green, blue,
+#ifdef DEBUG
+    /* approximate consistency check */
+    if (dev->color_info.num_components != 3 ||
+        dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE)
+	return_error(gs_error_unknownerror);
+#endif
+    return dsa_map_rgb_alpha_color(dev, cv[0], cv[1], cv[2],
 				   gx_max_color_value);
 }
 
@@ -187,10 +192,20 @@ dsa_map_rgb_alpha_color(gx_device * dev,
 {
     gx_device *tdev = sadev->target;
     int adepth = sadev->alpha_depth;
+    gx_color_value cv[3];
 
+#ifdef DEBUG
+    /* approximate consistency check */
+    if (dev->color_info.num_components != 3 ||
+        dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE)
+	return_error(gs_error_unknownerror);
+#endif
+    cv[0] = red;
+    cv[1] = green;
+    cv[2] = blue;
     return
-	((*dev_proc(tdev, map_rgb_color)) (tdev, red, green, blue)
-	 << adepth) + (alpha * ((1 << adepth) - 1) / gx_max_color_value);
+	((*dev_proc(tdev, map_rgb_color)) (tdev, cv) << adepth)
+	    + (alpha * ((1 << adepth) - 1) / gx_max_color_value);
 }
 
 private int
@@ -310,11 +325,11 @@ dsa_copy_color(gx_device * dev,
 	for (xi = 0; xi < width; ++xi) {
 	    gx_color_index source;
 
-	    sample_load_next32(source, sptr, sbit, sdepth);
+	    sample_load_next_any(source, sptr, sbit, sdepth);
 	    {
 		gx_color_index dest_color = source >> adepth;
 
-		sample_store_next32(dest_color, dcptr, dcbit, tdepth, dcbyte);
+		sample_store_next_any(dest_color, dcptr, dcbit, tdepth, dcbyte);
 	    }
 	    {
 		uint dest_alpha = source & amask;
@@ -485,19 +500,19 @@ dsa_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     int x = prect->p.x, w = prect->q.x - x, y = prect->p.y, h = prect->q.y - y;
     int yi;
     uint raster =
-    (options & gb_raster_standard ? bitmap_raster(w * ddepth) :
+    (options & GB_RASTER_STANDARD ? bitmap_raster(w * ddepth) :
      params->raster);
 
     if ((~options &
-	 (gb_colors_native | gb_alpha_last | gb_packing_chunky |
-	  gb_return_copy | gb_offset_0)) ||
-	!(options & (gb_raster_standard | gb_raster_specified))
+	 (GB_COLORS_NATIVE | GB_ALPHA_LAST | GB_PACKING_CHUNKY |
+	  GB_RETURN_COPY | GB_OFFSET_0)) ||
+	!(options & (GB_RASTER_STANDARD | GB_RASTER_SPECIFIED))
 	) {
 	if (options == 0) {
 	    params->options =
-		gb_colors_native | gb_alpha_last | gb_packing_chunky |
-		gb_return_copy | gb_offset_0 |
-		(gb_raster_standard | gb_raster_specified);
+		GB_COLORS_NATIVE | GB_ALPHA_LAST | GB_PACKING_CHUNKY |
+		GB_RETURN_COPY | GB_OFFSET_0 |
+		(GB_RASTER_STANDARD | GB_RASTER_SPECIFIED);
 	    return_error(gs_error_rangecheck);
 	}
     }
@@ -522,9 +537,9 @@ dsa_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	rect.p.x = x, rect.p.y = yi;
 	rect.q.x = x + w, rect.q.y = yi + 1;
 	color_params.options =
-	    gb_colors_native | gb_alpha_none | gb_packing_chunky |
-	    (gb_return_copy | gb_return_pointer) | gb_offset_specified |
-	    gb_raster_all /*irrelevant */  | gb_align_all /*irrelevant */ ;
+	    GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_PACKING_CHUNKY |
+	    (GB_RETURN_COPY | GB_RETURN_POINTER) | GB_OFFSET_SPECIFIED |
+	    GB_RASTER_ALL /*irrelevant */  | GB_ALIGN_ALL /*irrelevant */ ;
 	color_params.x_offset = w;
 	code = (*dev_proc(tdev, get_bits_rectangle))
 	    (tdev, &rect, &color_params, NULL);
@@ -544,15 +559,19 @@ dsa_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 
 	    saptr = data + (axbit >> 3);
 	    sample_load_setup(sabit, axbit & 7, adepth);
+	} else {    /* eliminate compiler warning */
+	    saptr = 0;
+	    sabit = 0;
 	}
+
 	for (xi = 0; xi < w; ++xi) {
 	    gx_color_index colors;
 
-	    sample_load_next32(colors, scptr, scbit, tdepth);
+	    sample_load_next_any(colors, scptr, scbit, tdepth);
 	    if (adev)
 		sample_load_next12(alpha, saptr, sabit, adepth);
 	    colors = (colors << adepth) + alpha;
-	    sample_store_next32(colors, dptr, dbit, ddepth, dbbyte);
+	    sample_store_next_any(colors, dptr, dbit, ddepth, dbbyte);
 	}
 	sample_store_flush(dptr, dbit, ddepth, dbbyte);
     }

@@ -24,6 +24,7 @@
 #include "gstypes.h"
 #include "gsbittab.h"
 #include "gxbitops.h"
+#include "gxcindex.h"
 
 /* ---------------- Bit-oriented operations ---------------- */
 
@@ -537,10 +538,10 @@ bits_extract_plane(const bits_plane_t *dest /*write*/,
 
 	    sample_store_preload(dbbyte, dptr, dbit, dest_depth);
 	    for (x = width; x > 0; --x) {
-		bits32 color;
+		gx_color_index color;
 		uint pixel;
 
-		sample_load_next32(color, sptr, sbit, source_depth);
+		sample_load_next_any(color, sptr, sbit, source_depth);
 		pixel = (color >> shift) & plane_mask;
 		sample_store_next8(pixel, dptr, dbit, dest_depth, dbbyte);
 	    }
@@ -623,11 +624,11 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
 	    sample_store_preload(dbbyte, dptr, dbit, dest_depth);
 	    for (x = width; x > 0; --x) {
 		uint color;
-		bits32 pixel;
+		gx_color_index pixel;
 
 		sample_load_next8(color, sptr, sbit, source_depth);
 		pixel = color << shift;
-		sample_store_next32(pixel, dptr, dbit, dest_depth, dbbyte);
+		sample_store_next_any(pixel, dptr, dbit, dest_depth, dbbyte);
 	    }
 	    sample_store_flush(dptr, dbit, dest_depth, dbbyte);
 	}

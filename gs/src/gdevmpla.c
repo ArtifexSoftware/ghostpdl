@@ -258,7 +258,7 @@ mem_planar_copy_color(gx_device * dev, const byte * base, int sourcex,
 		    for (ix = 0; ix < cw; ++ix) {
 			gx_color_index value;
 
-			sample_load_next32(value, sptr, sbit, source_depth);
+			sample_load_next_any(value, sptr, sbit, source_depth);
 			value = (value >> shift) & mask;
 			sample_store_next16(value, dptr, dbit, plane_depth,
 					    dbbyte);
@@ -420,7 +420,7 @@ planar_to_chunky(gx_device_memory *mdev, int x, int y, int w, int h,
 		sample_load_next16(value, sptr[pi], sbit[pi], plane_depth);
 		color |= (gx_color_index)value << mdev->planes[pi].shift;
 	    }
-	    sample_store_next32(color, dptr, dbit, ddepth, dbbyte);
+	    sample_store_next_any(color, dptr, dbit, ddepth, dbbyte);
 	}
 	sample_store_flush(dptr, dbit, ddepth, dbbyte);
     }
