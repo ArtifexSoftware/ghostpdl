@@ -56,6 +56,9 @@ typedef struct {
   int8_t sdrat[4];
 } Jbig2SymbolDictParams;
 
+
+/* Utility routines */
+
 #ifdef DUMP_SYMDICT
 void
 jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
@@ -74,6 +77,134 @@ jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
     }
 }
 #endif /* DUMP_SYMDICT */
+
+/* return a new empty symbol dict */
+Jbig2SymbolDict *
+jbig2_sd_new(Jbig2Ctx *ctx, int n_symbols)
+{
+   Jbig2SymbolDict *new = NULL;
+   
+   new = (Jbig2SymbolDict *)jbig2_alloc(ctx->allocator,
+   				sizeof(Jbig2SymbolDict));
+   if (new != NULL) {
+     new->glyphs = (Jbig2Image **)jbig2_alloc(ctx->allocator,
+     				n_symbols*sizeof(Jbig2Image*));
+     new->n_symbols = n_symbols;
+   }
+   if (new->glyphs != NULL) {
+     memset(new->glyphs, 0, n_symbols*sizeof(Jbig2Image*));
+   } else {
+     jbig2_free(ctx->allocator, new);
+     new = NULL;
+   }
+   
+   return new;
+}
+
+/* release the memory associated with a symbol dict */
+void
+jbig2_sd_release(Jbig2Ctx *ctx, Jbig2SymbolDict *dict)
+{
+   int i;
+   
+   if (dict == NULL) return;
+   for (i = 0; i < dict->n_symbols; i++)
+     if (dict->glyphs[i]) jbig2_image_release(ctx, dict->glyphs[i]);
+   jbig2_free(ctx->allocator, dict);
+}
+
+/* get a particular glyph by index */
+Jbig2Image *
+jbig2_sd_glyph(Jbig2SymbolDict *dict, unsigned int id)
+{
+   if (dict == NULL) return NULL;
+   return dict->glyphs[id];
+}
+
+/* count the number of dictionary segments referred to by the given segment */
+int
+jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
+{
+    int index;
+    Jbig2Segment *rsegment;
+    int n_dicts = 0;
+ 
+    for (index = 0; index < segment->referred_to_segment_count; index++) {
+        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
+        if (rsegment && ((rsegment->flags & 63) == 0)) {
+            n_dicts++;
+            n_dicts+= jbig2_sd_count_referred(ctx, rsegment);
+        }
+    }
+                                                                                
+    return (n_dicts);
+}
+
+/* return an array of pointers to symbol dictionaries referred to by the given segment */
+Jbig2SymbolDict **
+jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
+{
+    int index;
+    Jbig2Segment *rsegment;
+    Jbig2SymbolDict **dicts, **rdicts;
+    int n_dicts = jbig2_sd_count_referred(ctx, segment);
+    int dindex = 0;
+                                                     
+    dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
+    for (index = 0; index < segment->referred_to_segment_count; index++) {
+        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
+        if (rsegment && ((rsegment->flags & 63) == 0)) {
+            /* recurse for imported symbols */
+            int j, n_rdicts = jbig2_sd_count_referred(ctx, rsegment);
+            if (n_rdicts > 0) {
+                rdicts = jbig2_sd_list_referred(ctx, rsegment);
+                for (j = 0; j < n_rdicts; j++)
+                    dicts[dindex++] = rdicts[j];
+                jbig2_free(ctx->allocator, rdicts);
+            }
+            /* add this referred to symbol dictionary */
+            dicts[dindex++] = (Jbig2SymbolDict *)rsegment->result;
+        }
+    }
+                                                                                
+    if (dindex != n_dicts) {
+        /* should never happen */
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+            "counted %d symbol dictionaries but build a list with %d.\n",
+            n_dicts, dindex);
+    }
+                                                                                
+    return (dicts);
+}
+
+/* generate a new symbol dictionary by concatenating a list of 
+   existing dictionaries */
+Jbig2SymbolDict *
+jbig2_sd_cat(Jbig2Ctx *ctx, int n_dicts, Jbig2SymbolDict **dicts)
+{
+  int i,j,k, symbols;
+  Jbig2SymbolDict *new = NULL;
+  
+
+  /* count the imported symbols and allocate a new array */
+  symbols = 0;
+  for(i = 0; i < n_dicts; i++)
+    symbols += dicts[i]->n_symbols;
+
+  /* fill a new array with cloned glyph pointers */
+  new = jbig2_sd_new(ctx, symbols);
+  if (new != NULL) {
+    k = 0;
+    for (i = 0; i < n_dicts; i++)
+      for (j = 0; j < dicts[i]->n_symbols; j++)
+        new->glyphs[k++] = jbig2_image_clone(ctx, dicts[i]->glyphs[j]);
+  }
+  
+  return new;
+}
+
+
+/* Decoding routines */
 
 /* 6.5 */
 static Jbig2SymbolDict *
@@ -209,88 +340,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   jbig2_free(ctx->allocator, GB_stats);
 
   return SDNEWSYMS;
-}
-
-/* count the number of dictionary segments referred to by the given segment */
-int
-jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
-{
-    int index;
-    Jbig2Segment *rsegment;
-    int n_dicts = 0;
- 
-    for (index = 0; index < segment->referred_to_segment_count; index++) {
-        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
-        if (rsegment && ((rsegment->flags & 63) == 0)) {
-            n_dicts++;
-            n_dicts+= jbig2_sd_count_referred(ctx, rsegment);
-        }
-    }
-                                                                                
-    return (n_dicts);
-}
-
-/* return an array of pointers to symbol dictionaries referred to by the given segment */
-Jbig2SymbolDict **
-jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
-{
-    int index;
-    Jbig2Segment *rsegment;
-    Jbig2SymbolDict **dicts, **rdicts;
-    int n_dicts = jbig2_sd_count_referred(ctx, segment);
-    int dindex = 0;
-                                                     
-    dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
-    for (index = 0; index < segment->referred_to_segment_count; index++) {
-        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
-        if (rsegment && ((rsegment->flags & 63) == 0)) {
-            /* recurse for imported symbols */
-            int j, n_rdicts = jbig2_sd_count_referred(ctx, rsegment);
-            if (n_rdicts > 0) {
-                rdicts = jbig2_sd_list_referred(ctx, rsegment);
-                for (j = 0; j < n_rdicts; j++)
-                    dicts[dindex++] = rdicts[j];
-                jbig2_free(ctx->allocator, rdicts);
-            }
-            /* add this referred to symbol dictionary */
-            dicts[dindex++] = (Jbig2SymbolDict *)rsegment->result;
-        }
-    }
-                                                                                
-    if (dindex != n_dicts) {
-        /* should never happen */
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-            "counted %d symbol dictionaries but build a list with %d.\n",
-            n_dicts, dindex);
-    }
-                                                                                
-    return (dicts);
-}
-
-/* generate a new symbol dictionary by concatenating a list of 
-   existing dictionaries */
-Jbig2SymbolDict *
-jbig2_sd_cat(Jbig2Ctx *ctx, int n_dicts, Jbig2SymbolDict **dicts)
-{
-  int i,j,k, symbols;
-  Jbig2SymbolDict *new = NULL;
-  
-  new = (Jbig2SymbolDict *)jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict));
-
-  if (new != NULL) {
-    /* count the imported symbols and allocate a new array */
-    symbols = 0;
-    for(i = 0; i < n_dicts; i++)
-      symbols += dicts[i]->n_symbols;
-    new->glyphs = (Jbig2Image **)jbig2_alloc(ctx->allocator, symbols);
-    /* fill the new array with cloned glyph pointers */
-    k = 0;
-    for (i = 0; i < n_dicts; i++)
-      for (j = 0; j < dicts[i]->n_symbols; j++)
-        new->glyphs[k++] = jbig2_image_clone(ctx, dicts[i]->glyphs[j]);
-  }
-  
-  return new;
 }
 
 /* 7.4.2 */

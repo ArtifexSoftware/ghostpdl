@@ -29,6 +29,18 @@ int
 jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			const byte *segment_data);
 
+/* get a particular glyph by index */
+Jbig2Image *
+jbig2_sd_glyph(Jbig2SymbolDict *dict, unsigned int id);
+
+/* return a new empty symbol dict */
+Jbig2SymbolDict *
+jbig2_sd_new(Jbig2Ctx *ctx, int n_symbols);
+
+/* release the memory associated with a symbol dict */
+void
+jbig2_sd_release(Jbig2Ctx *ctx, Jbig2SymbolDict *dict);
+
 /* generate a new symbol dictionary by concatenating a list of
    existing dictionaries */
 Jbig2SymbolDict *
