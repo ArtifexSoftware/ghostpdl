@@ -39,6 +39,7 @@ typedef struct GSDLL_S {
 	PFN_gsapi_init_with_args init_with_args;
 	PFN_gsapi_run_string run_string;
 	PFN_gsapi_exit exit;
+        PFN_gsapi_set_visual_tracer set_visual_tracer;
 } GSDLL;
 
 /* Load the Ghostscript DLL.

@@ -24,9 +24,11 @@
 #include <fcntl.h>
 #include "errors.h"
 #include "iapi.h"
+#include "vdtrace.h"
 #include "gdevdsp.h"
 #include "dwdll.h"
 #include "dwimg.h"
+#include "dwtrace.h"
 
 GSDLL gsdll;
 void *instance;
@@ -321,6 +323,11 @@ int main(int argc, char *argv[])
 	return 1;
     }
 
+#ifdef DEBUG
+    visual_tracer_init();
+    gsdll.set_visual_tracer(&visual_tracer);
+#endif
+
     if (_beginthread(winthread, 65535, NULL) == -1) {
 	fprintf(stderr, "GUI thread creation failed\n");
     }
@@ -378,6 +385,10 @@ int main(int argc, char *argv[])
     gsdll.exit(instance);
 
     gsdll.delete_instance(instance);
+
+#ifdef DEBUG
+    visual_tracer_close();
+#endif
 
     unload_dll(&gsdll);
 

@@ -30,9 +30,15 @@
 <li><a href="#set_stdio"><b><tt>gsapi_set_stdio</tt></b></a>
 <li><a href="#set_poll"><b><tt>gsapi_set_poll</tt></b></a>
 <li><a href="#set_display_callback"><b><tt>gsapi_set_display_callback</tt></b></a>
+<li><a href="#run"><b><tt>gsapi_run_string_begin</tt></b></a>
+<li><a href="#run"><b><tt>gsapi_run_string_continue</tt></b></a>
+<li><a href="#run"><b><tt>gsapi_run_string_end</tt></b></a>
+<li><a href="#run"><b><tt>gsapi_run_string_with_length</tt></b></a>
+<li><a href="#run"><b><tt>gsapi_run_string</tt></b></a>
 <li><a href="#init"><b><tt>gsapi_init_with_args</tt></b></a>
 <li><a href="#run"><b><tt>gsapi_run_*</tt></b></a>
 <li><a href="#exit"><b><tt>gsapi_exit</tt></b></a>
+<li><a href="#set_visual_tracer"><b><tt>set_visual_tracer</tt></b></a>
 <li><a href="#return_codes">Return codes</a>
 </ul>
 <li><a href="#Typical_usage">Typical usage</a>
@@ -226,6 +232,12 @@ int
 (gs_main_instance *instance);
 </tt></b>
 
+<li><b><tt>
+int
+<a href="#set_visual_tracer">gsapi_set_visual_tracer</a>
+(gstruct vd_trace_interface_s *I);
+</tt></b>
+
 </ul>
 
 <h3><a name="revision"></a><b><tt>gsapi_revision()</tt></b></h3>
@@ -330,6 +342,15 @@ Exit the interpreter.
 This must be called on shutdown if <b><tt>gsapi_init_with_args()</tt></b>
 has been called, and just before <b><tt>gsapi_delete_instance()</tt></b>.
 </blockquote>
+
+<h3><a name="set_visual_tracer"></a><b><tt>gsapi_set_visual_tracer()</tt></b></h3>
+<blockquote>
+Pass visual tracer interface block to Ghostscript.
+See <a href="Lib.htm#Visual_trace"><b><tt>Lib.htm</tt></b></a> for reference about 
+the interface block structure.
+This function is useful for debug clients only. Release clients must not call it.
+</blockquote>
+
 
 <h3><a name="return_codes"></a>Return codes</h3>
 

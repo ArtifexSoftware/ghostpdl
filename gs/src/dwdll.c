@@ -166,6 +166,14 @@ gsapi_revision_t rv;
 	return 1;
     }
 
+    gsdll->set_visual_tracer = (PFN_gsapi_set_visual_tracer) 
+        GetProcAddress(gsdll->hmodule, "gsapi_set_visual_tracer");
+    if (gsdll->set_visual_tracer == NULL) {
+	strncpy(last_error, "Can't find gsapi_set_visual_tracer\n", len-1);
+	unload_dll(gsdll);
+	return 1;
+    }
+
     return 0;
 }
 

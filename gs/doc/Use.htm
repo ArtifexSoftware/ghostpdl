@@ -94,6 +94,10 @@
 </ul>
 <li><a href="#Improving_performance">Improving performance</a>
 <li><a href="#Debugging">Debugging</a>
+<ul>
+<li><a href="#Debug_switches">Debug Switches</a>
+<li><a href="#Visual_trace">Visual Trace</a>
+</ul>
 <li><a href="#Known_paper_sizes">Appendix: Paper sizes known to Ghostscript</a>
 <li><a href="#X_font_mappings">Appendix: X default font mappings</a>
 <ul>
@@ -2450,8 +2454,12 @@ memory: <b><tt>-c&nbsp;3000000&nbsp;setvmthreshold&nbsp;-f</tt></b>.
 <h2><a name="Debugging"></a>Debugging</h2>
 
 <p>
-The information here describing the debugging switches is probably
-interesting only to developers.  The <b><tt>-Z</tt></b> switch applies only
+The information here describing is probably interesting only to developers.
+
+<h4><a name="Debug_switches"></a>Debug switches</h4>
+
+The <b><tt>-Z</tt></b> and <b><tt>-T</tt></b>
+! switches apply only
 if the interpreter was <a href="Make.htm#Debugging">built for a debugging
 configuration</a>.  In the table below, the first column is a debugging
 switch, the second is an equivalent switch (if any) and the third is its
@@ -2624,8 +2632,46 @@ allocator validity checks
 <dt><b><tt>@</tt></b><dd>fill newly allocated, garbage-collected, and freed
 storage with a marker (a1, c1, and f1 respectively)
 </dl>
-</table>
 
+<p>
+<tr>	<td valign=top><b><tt>-T</tt></b><em>xxx</em><br><b><tt>-T-</tt></b><em>xxx</em>
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>Turn <a href="#Visual_trace">Visual Trace</a> on (off). Each of the <em>xxx</em>
+	    characters selects an option.  Case is significant: "f" and
+	    "F" have different meanings.
+
+<dl compact>
+<dt><b><tt>f</tt></b><dd>filling algorithm
+</dl>
+</table>
+  
+<h4><a name="Visual_trace"></a>Visual Trace</h4>
+
+<p>
+Visual Trace allows to view internal Ghostscript data in a graphical form
+while execution of C code.  Special
+<a href="Lib.htm#Visual_trace">instructions</a> to be inserted into
+C code for generating the output. Client application 
+rasterizes it into a window.
+
+<p>
+Currently the rasterization is implemented for Windows only, in clients
+gswin32.exe and gswin32c.exe. They open Visual Trace window when graphical
+debug output appears, <b><tt>-T</tt></b> <a href="#Debug_switches">switch</a> is set,
+and Ghostscript was <a href="Make.htm#Debugging">built</a> with DEBUG option.
+There are two important incompletnesses of the implementation :
+
+<p>
+1. The graphical output uses a hardcoded scale. An advanced client
+would provide a scale option via user interface.
+
+<p>
+2. Breaks are not implemented in the client. If you need a step-by-step
+view, you should use an interactive C debugger to delay execution at breakpoints.
+
+<p>
 <hr>
 
 <h2><a name="Known_paper_sizes"></a>Appendix: Paper sizes known to Ghostscript</h2>

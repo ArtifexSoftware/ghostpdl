@@ -78,6 +78,7 @@ GS_ALL=$(INT_ALL) $(INTASM)\
 
 dwdll_h=$(GLSRC)dwdll.h
 dwimg_h=$(GLSRC)dwimg.h
+dwtrace_h=$(GLSRC)dwtrace.h
 dwmain_h=$(GLSRC)dwmain.h
 dwtext_h=$(GLSRC)dwtext.h
 dwreg_h=$(GLSRC)dwreg.h
@@ -109,7 +110,15 @@ $(GSDLL_OBJ).res: $(GLSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
 
 # Modules for big EXE
 
-DWOBJNO = $(GLOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)dwreg.obj
+!if $(DEBUG)
+DWTRACE=$(GLOBJ)dwtrace.obj
+!else
+DWTRACE=
+!endif
+
+
+DWOBJNO = $(GLOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwmain.obj \
+$(GLOBJ)dwtext.obj $(GLOBJ)dwreg.obj
 
 $(GLOBJ)dwnodll.obj: $(GLSRC)dwnodll.c $(AK)\
  $(dwdll_h) $(iapi_h)
@@ -125,10 +134,13 @@ $(GLOBJ)gp_msdll.obj: $(GLSRC)gp_msdll.c $(AK) $(iapi_h)
 
 # Modules for console mode EXEs
 
-OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwreg.obj
-OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwreg.obj
+OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj \
+$(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
 
-$(GLOBJ)dwmainc.obj: $(GLSRC)dwmainc.c $(AK) $(dwmain_h) $(dwdll_h) $(gscdefs_h) $(iapi_h)
+OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
+
+$(GLOBJ)dwmainc.obj: $(GLSRC)dwmainc.c $(AK) \
+  $(iapi_h) $(vdtrace_h) $(gdevdsp_h) $(dwdll_h) $(dwimg_h) $(dwtrace_h)
 	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj $(C_) $(GLSRC)dwmainc.c
 
 $(GLOBJ)dwdllc.obj: $(GLSRC)dwdll.c $(AK) $(dwdll_h) $(iapi_h)
@@ -140,7 +152,8 @@ $(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.c $(AK) $(dwdll_h) $(iapi_h)
 
 # Modules for small EXE loader.
 
-DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwreg.obj
+DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwmain.obj \
+$(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwreg.obj
 
 $(GLOBJ)dwdll.obj: $(GLSRC)dwdll.c $(AK)\
  $(dwdll_h) $(iapi_h)
@@ -151,8 +164,14 @@ $(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
  $(gscdefs_h) $(iapi_h) $(dwreg_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.c
 
+$(GLOBJ)dwtrace.obj: $(GLSRC)dwtrace.c $(AK)\
+ $(dwimg_h) $(dwtrace_h)\
+ $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
+        $(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtrace.obj $(GLSRC)dwtrace.c
+
 $(GLOBJ)dwmain.obj: $(GLSRC)dwmain.c $(AK)\
- $(dwdll_h) $(gscdefs_h) $(iapi_h) $(dwreg_h)
+ $(iapi_h) $(vdtrace_h) $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(dwtrace_h) \
+ $(dwreg_h) $(gdevdsp_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwmain.obj $(C_) $(GLSRC)dwmain.c
 
 $(GLOBJ)dwtext.obj: $(GLSRC)dwtext.c $(AK) $(dwtext_h)

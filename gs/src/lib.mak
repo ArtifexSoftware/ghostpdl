@@ -126,8 +126,9 @@ gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
 gsnotify_h=$(GLSRC)gsnotify.h $(gsstype_h)
 gsstruct_h=$(GLSRC)gsstruct.h $(gsstype_h)
+vdtrace_h=$(GLSRC)vdtrace.h
 
-GX=$(AK) $(gx_h)
+GX=$(AK) $(gx_h) $(vdtrace_h)
 GXERR=$(GX) $(gserrors_h)
 
 ###### Support
@@ -267,6 +268,10 @@ $(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(memory__h) $(md5_h)
 	$(CP_) $(GLSRC)md5.c $(GLGEN)md5.c
 	$(GLCC) $(GLO_)md5.$(OBJ) $(C_) $(GLGEN)md5.c
 	$(RM_) $(GLGEN)md5.c $(GLGEN)md5.h
+
+# Visual Debugging
+$(GLOBJ)vdtrace.$(OBJ) : $(GLSRC)vdtrace.c $(std_h) $(stdpre_h) $(jmorecfg_h) $(vdtrace_h)
+	$(GLCC) $(GLO_)vdtrace.$(OBJ) $(C_) $(GLSRC)vdtrace.c
 
 ###### Low-level facilities and utilities
 
@@ -973,7 +978,7 @@ LIB6x=$(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximage.$(OBJ)
 LIB7x=$(GLOBJ)gximage1.$(OBJ) $(GLOBJ)gximono.$(OBJ) $(GLOBJ)gxipixel.$(OBJ)
 LIB8x=$(GLOBJ)gxpaint.$(OBJ) $(GLOBJ)gxpath.$(OBJ) $(GLOBJ)gxpath2.$(OBJ)
 LIB9x=$(GLOBJ)gxpcopy.$(OBJ) $(GLOBJ)gxpdash.$(OBJ) $(GLOBJ)gxpflat.$(OBJ)
-LIB10x=$(GLOBJ)gxsample.$(OBJ) $(GLOBJ)gxstroke.$(OBJ) $(GLOBJ)gxsync.$(OBJ)
+LIB10x=$(GLOBJ)gxsample.$(OBJ) $(GLOBJ)gxstroke.$(OBJ) $(GLOBJ)gxsync.$(OBJ) $(GLOBJ)vdtrace.$(OBJ)
 LIB1d=$(GLOBJ)gdevabuf.$(OBJ) $(GLOBJ)gdevdbit.$(OBJ) $(GLOBJ)gdevddrw.$(OBJ) $(GLOBJ)gdevdflt.$(OBJ)
 LIB2d=$(GLOBJ)gdevdgbr.$(OBJ) $(GLOBJ)gdevnfwd.$(OBJ) $(GLOBJ)gdevmem.$(OBJ) $(GLOBJ)gdevplnx.$(OBJ)
 LIB3d=$(GLOBJ)gdevm1.$(OBJ) $(GLOBJ)gdevm2.$(OBJ) $(GLOBJ)gdevm4.$(OBJ) $(GLOBJ)gdevm8.$(OBJ)

@@ -46,6 +46,7 @@
 
 
 static const char szImgName2[] = "Ghostscript Image";
+static const char szTrcName2[] = "Ghostscript Graphical Trace";
 
 /* Forward references */
 LRESULT CALLBACK WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -398,7 +399,7 @@ create_window(IMAGE *img)
     img->nVscrollPos = img->nVscrollMax = 0;
     img->nHscrollPos = img->nHscrollMax = 0;
     img->x = img->y = img->cx = img->cy = CW_USEDEFAULT;
-    if (win_get_reg_value("Image", winposbuf, &len) == 0) {
+    if (win_get_reg_value((img->device != NULL ? "Image" : "Tracer"), winposbuf, &len) == 0) {
 	if (sscanf(winposbuf, "%d %d %d %d", &x, &y, &cx, &cy) == 4) {
 	    img->x = x;
 	    img->y = y;
@@ -408,11 +409,13 @@ create_window(IMAGE *img)
     }
 
     /* create window */
-    img->hwnd = CreateWindow(szImgName2, (LPSTR)szImgName2,
+    img->hwnd = CreateWindow(szImgName2, (img->device != NULL ? (LPSTR)szImgName2 : (LPSTR)szTrcName2),
 	      WS_OVERLAPPEDWINDOW,
 	      img->x, img->y, img->cx, img->cy, 
 	      NULL, NULL, GetModuleHandle(NULL), (void *)img);
-    ShowWindow(img->hwnd, SW_SHOWMINNOACTIVE);
+    if (img->device == NULL)
+        MoveWindow(img->hwnd, img->x, img->y, img->cx, img->cy, FALSE);
+    ShowWindow(img->hwnd, (img->device != NULL ? SW_SHOWMINNOACTIVE : SW_SHOW));
 
     /* modify the menu to have the new items we want */
     sysmenu = GetSystemMenu(img->hwnd, 0);	/* get the sysmenu */
@@ -1203,7 +1206,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		char winposbuf[64];
 		sprintf(winposbuf, "%d %d %d %d", img->x, img->y, 
 		    img->cx, img->cy);
-		win_set_reg_value("Image", winposbuf);
+		win_set_reg_value((img->device != NULL ? "Image" : "Tracer"), winposbuf);
 	    }
 	    DragAcceptFiles(hwnd, FALSE);
 	    break;
@@ -1231,6 +1234,9 @@ draw(IMAGE *img, HDC hdc, int dx, int dy, int wx, int wy,
     long ny;
     unsigned char *bits;
     BOOL directcopy = FALSE;
+
+    if (img->device == NULL)
+        return;
 
     memset(&bmi.h, 0, sizeof(bmi.h));
     

@@ -228,4 +228,12 @@ gsapi_exit(gs_main_instance *minst)
     return 0;
 }
 
+/* Visual tracer : */
+struct vd_trace_interface_s;
+extern struct vd_trace_interface_s * vd_trace0;
+GSDLLEXPORT void GSDLLAPI
+gsapi_set_visual_tracer(P1(struct vd_trace_interface_s *I))
+{   vd_trace0 = I;
+}
+
 /* end of iapi.c */

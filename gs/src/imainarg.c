@@ -47,6 +47,7 @@
 #include "interp.h"
 #include "iutil.h"
 #include "ivmspace.h"
+#include "vdtrace.h"
 
 /* Import operator procedures */
 extern int zflush(P1(i_ctx_t *));
@@ -111,6 +112,14 @@ gs_main_arg_fopen(const char *fname, void *vminst)
 {
     gs_main_set_lib_paths((gs_main_instance *) vminst);
     return lib_fopen(fname);
+}
+private void
+set_debug_flags(const char *arg, char *flags)
+{
+    byte value = (*arg == '-' ? (++arg, 0) : 0xff);
+
+    while (*arg)
+	flags[*arg++ & 127] = value;
 }
 #define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
@@ -592,6 +601,9 @@ run_stdin:
 		initial_enter_name(adef, &value);
 		break;
 	    }
+	case 'T':
+            set_debug_flags(arg, vd_flags);
+	    break;
 	case 'u':		/* undefine name */
 	    if (!*arg) {
 		puts("-u requires a name to undefine.");
@@ -631,12 +643,7 @@ run_stdin:
 	    return e_Quit;
 /*#endif */
 	case 'Z':
-	    {
-		byte value = (*arg == '-' ? (++arg, 0) : 0xff);
-
-		while (*arg)
-		    gs_debug[*arg++ & 127] = value;
-	    }
+            set_debug_flags(arg, gs_debug);
 	    break;
     }
     return 0;

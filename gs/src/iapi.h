@@ -104,6 +104,11 @@
 #  define P3(t1,t2,t3) t1,t2,t3
 #  define P4(t1,t2,t3,t4) t1,t2,t3,t4
 #  define P5(t1,t2,t3,t4,t5) t1,t2,t3,t4,t5
+#  define P6(t1,t2,t3,t4,t5,t6) t1,t2,t3,t4,t5,t6
+#  define P7(t1,t2,t3,t4,t5,t6,t7) t1,t2,t3,t4,t5,t6,t7
+#  define P8(t1,t2,t3,t4,t5,t6,t7,t8) t1,t2,t3,t4,t5,t6,t7,t8
+#  define P9(t1,t2,t3,t4,t5,t6,t7,t8,t9) t1,t2,t3,t4,t5,t6,t7,t8,t9
+#  define P10(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10) t1,t2,t3,t4,t5,t6,t7,t8,t9,t10
 # else
 #  define P0()			/* */
 #  define P1(t1)			/* */
@@ -111,6 +116,11 @@
 #  define P3(t1,t2,t3)		/* */
 #  define P4(t1,t2,t3,t4)	/* */
 #  define P5(t1,t2,t3,t4,t5)	/* */
+#  define P6(t1,t2,t3,t4,t5,t6) /* */
+#  define P7(t1,t2,t3,t4,t5,t6,t7)  /* */
+#  define P8(t1,t2,t3,t4,t5,t6,t7,t8) /* */
+#  define P9(t1,t2,t3,t4,t5,t6,t7,t8,t9) /* */
+#  define P10(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10) /* */
 # endif
 #endif
 
@@ -263,6 +273,12 @@ gsapi_run_file(P4(gs_main_instance *instance,
 GSDLLEXPORT int GSDLLAPI 
 gsapi_exit(P1(gs_main_instance *instance));
 
+/* Visual Tracer */
+/* This function is only for debug purpose clients */
+struct vd_trace_interface_s;
+GSDLLEXPORT void GSDLLAPI 
+gsapi_set_visual_tracer(P1(struct vd_trace_interface_s *I));
+
 
 /* function prototypes */
 typedef int (GSDLLAPIPTR PFN_gsapi_revision)(
@@ -297,6 +313,8 @@ typedef int (GSDLLAPIPTR PFN_gsapi_run_string)(
 typedef int (GSDLLAPIPTR PFN_gsapi_run_file)(P4(gs_main_instance *instance, 
     const char *file_name, int user_errors, int *pexit_code));
 typedef int (GSDLLAPIPTR PFN_gsapi_exit)(P1(gs_main_instance *instance));
+typedef void (GSDLLAPIPTR PFN_gsapi_set_visual_tracer) 
+    (struct vd_trace_interface_s *I);
 
 
 #ifdef __MACINTOSH__
