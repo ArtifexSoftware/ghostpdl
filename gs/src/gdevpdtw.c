@@ -441,6 +441,10 @@ write_contents_cid_common(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 	code = pdf_write_CIDFont_widths(pdev, pdfont, 0);
 	if (code < 0)
 	    return code;
+    } else {
+	/* With a vertical font, the viewer uses /DW 
+	   to determine glyph width to compute its v-vector. */
+	stream_puts(s, "/DW 0\n");
     }
     if (pdfont->u.cidfont.Widths2 != 0) {
 	code = pdf_write_CIDFont_widths(pdev, pdfont, 1);

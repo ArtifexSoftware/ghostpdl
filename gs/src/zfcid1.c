@@ -266,7 +266,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     if (MetricsCount & 1)	/* only allowable values are 0, 2, 4 */
 	return_error(e_rangecheck);
     code = dict_find_string(op, "File", &file);
-    if (code < 0)
+    if (code < 0 && code != e_dictfull)
 	return code;
     if (code > 0) {
 	ref *file_table_pos, *a, v;

@@ -858,35 +858,46 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
 int
 pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, 
-                                 int wmode, double **w, double **v)
+                                 int wmode, double **w, double **w0, double **v)
 {
     gs_memory_t *mem = pdev->pdf_memory;
-    double *ww, *vv = 0;
+    double *ww, *vv = 0, *ww0 = 0;
     int chars_count = pdfont->count;
 
+    *w0 = NULL;
     *v = (wmode ? pdfont->u.cidfont.v : NULL);
     *w = (wmode ? pdfont->u.cidfont.Widths2 : pdfont->Widths);
-    if (*w != NULL)
-	return 0;
-    ww = (double *)gs_alloc_byte_array(mem, chars_count, sizeof(*ww),
-						"pdf_obtain_cidfont_widths_arrays");
-    if (wmode)
-	vv = (double *)gs_alloc_byte_array(mem, chars_count, sizeof(*vv) * 2,
-						"pdf_obtain_cidfont_widths_arrays");
-    if (ww == 0 || (wmode && vv == 0)) {
-	gs_free_object(mem, ww, "pdf_obtain_cidfont_widths_arrays");
-	gs_free_object(mem, vv, "pdf_obtain_cidfont_widths_arrays");
-	return_error(gs_error_VMerror);
-    }
-    if (wmode)
-	memset(vv, 0, chars_count * 2 * sizeof(*vv));
-    memset(ww, 0, chars_count * sizeof(*ww));
-    if (wmode) {
-	pdfont->u.cidfont.Widths2 = *w = ww;	
-	pdfont->u.cidfont.v = *v = vv;	
-    } else {
-	pdfont->Widths = *w = ww;
-	*v = NULL;
+    if (*w == NULL) {
+	ww = (double *)gs_alloc_byte_array(mem, chars_count, sizeof(*ww),
+						    "pdf_obtain_cidfont_widths_arrays");
+	if (wmode) {
+	    vv = (double *)gs_alloc_byte_array(mem, chars_count, sizeof(*vv) * 2,
+						    "pdf_obtain_cidfont_widths_arrays");
+	    if (pdfont->Widths == 0) {
+		ww0 = (double *)gs_alloc_byte_array(mem, chars_count, sizeof(*ww0),
+						    "pdf_obtain_cidfont_widths_arrays");
+		pdfont->Widths = *w0 = ww0;
+		if (ww0 != 0)
+		    memset(ww0, 0, chars_count * sizeof(*ww));
+	    } else
+		*w0 = ww0 = pdfont->Widths;
+	}
+	if (ww == 0 || (wmode && vv == 0) || (wmode && ww0 == 0)) {
+	    gs_free_object(mem, ww, "pdf_obtain_cidfont_widths_arrays");
+	    gs_free_object(mem, vv, "pdf_obtain_cidfont_widths_arrays");
+	    gs_free_object(mem, ww0, "pdf_obtain_cidfont_widths_arrays");
+	    return_error(gs_error_VMerror);
+	}
+	if (wmode)
+	    memset(vv, 0, chars_count * 2 * sizeof(*vv));
+	memset(ww, 0, chars_count * sizeof(*ww));
+	if (wmode) {
+	    pdfont->u.cidfont.Widths2 = *w = ww;	
+	    pdfont->u.cidfont.v = *v = vv;	
+	} else {
+	    pdfont->Widths = *w = ww;
+	    *v = NULL;
+	}
     }
     return 0;
 }

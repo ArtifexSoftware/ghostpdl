@@ -335,7 +335,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    gs_glyph glyph;
 	    pdf_font_descriptor_t *pfd;
 	    byte *glyph_usage;
-	    double *real_widths, *w, *v;
+	    double *real_widths, *w, *v, *w0;
 	    int char_cache_size, width_cache_size;
 	    uint cid;
 	    gs_char unicode_char;
@@ -382,7 +382,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    code = pdf_resize_resource_arrays(pdev, pdsubf, cid + 1);
 	    if (code < 0)
 		return code;
-	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &v);
+	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &w0, &v);
 	    if (code < 0)
 		return code;
 	    unicode_char = subfont->procs.decode_glyph(subfont, glyph);
@@ -439,6 +439,16 @@ scan_cmap_text(pdf_text_enum_t *pte)
 			v[cid * 2 + 1] = widths.Width.v.y;
 		    }
 		    real_widths[cid] = widths.real_width.w;
+		}
+		if (wmode) {
+		    /* Since AR5 use W or DW to compute the x-coordinate of
+		       v-vector, comupte and store the glyph width for WMode 0. */
+		    /* fixme : skip computing real_width here. */
+		    code = pdf_glyph_widths(pdsubf, 0, glyph, (gs_font *)subfont, &widths,
+				    pte->cdevproc_callout ? pte->cdevproc_result : NULL);
+		    if (code < 0)
+			return code;
+		    w[cid] = widths.Width.w;
 		}
 		if (pdsubf->u.cidfont.CIDToGIDMap != 0) {
 		    gs_font_cid2 *subfont2 = (gs_font_cid2 *)subfont;

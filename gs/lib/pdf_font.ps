@@ -899,7 +899,7 @@ readonly def
     /putMTXEntry <<
       /arraytype   {
          [
-           [Mi Mi Mi1 length add 1 sub]
+           [Mi Mi Mi1 length itemSize idiv add 1 sub]
            true
            [
              0 itemSize Mi1 length 1 sub {
@@ -936,7 +936,7 @@ readonly def
 
   exch
   {
-    {
+    { 
       dup 0 get {} forall      % Stack: <cid> <entry> <cid_0> <cid_1>
       3 index lt { pop pop false exit } if
       2 index exch sub dup 0 lt { pop pop false exit } if
@@ -1023,7 +1023,7 @@ readonly def
     % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> { [<vy'> <w1y'>] | [<w1y'> <vx'> <vy'>] }
     dup length 2 eq {                   % this is DW2
       FontType 11 eq {{1000 div}} {{}} ifelse forall exch
-      4 index 7 index add 2 div         % <vx'> = (<urx> + <llx>) / 2
+      8 index 2 div                     % <vx'> = <w0x'> / 2
       exch
     }{                                  % assume W2
       FontType 11 eq {{1000 div}} {{}} ifelse forall

@@ -841,8 +841,8 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    v.x = v.y = 0;
 	} else if (composite) {
 	    if (cw.replaced_v) {
-		v.x = cw.Width.v.x - cw.real_width.v.x;
-		v.y = cw.Width.v.y - cw.real_width.v.y;
+		v.x = cw.real_width.v.x - cw.Width.v.x;
+		v.y = cw.real_width.v.y - cw.Width.v.y;
 	    }
 	} else
 	    pdf_glyph_origin(ppts->values.pdfont, chr, font->WMode, &v);
@@ -854,16 +854,24 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 		scale0 = (float)0.001;
 	    else
 		scale0 = 1;
-	    glyph_origin_shift.x = -v.x * scale0;
-	    glyph_origin_shift.y = -v.y * scale0;
-	    gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
-				  &font->FontMatrix, &glyph_origin_shift);
+	    glyph_origin_shift.x = - v.x * scale0;
+	    glyph_origin_shift.y = - v.y * scale0;
 	    if (composite) {
 		gs_font *subfont = pte->fstack.items[pte->fstack.depth].font;
 
+		if (font->WMode && pdf_is_CID_font(subfont)) {
+		    /* PDF viewers assume that X-component of a
+		       displacement vector is always half glyph width.
+		       See the PDF spec, the section "Glyph metrics in CIDFonts".
+		       Compensate it here. Bug 687753.
+		     */
+		    glyph_origin_shift.x += cw.real_width.w * scale0 / 2;
+		}
 		gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
 				      &subfont->FontMatrix, &glyph_origin_shift);
 	    }
+	    gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
+				  &font->FontMatrix, &glyph_origin_shift);
 	    gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
 				  &ctm_only(pte->pis), &glyph_origin_shift);
 	    if (glyph_origin_shift.x != 0 || glyph_origin_shift.y != 0) {
