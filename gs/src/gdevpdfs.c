@@ -1218,7 +1218,7 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
      */
     
     font_glyph = ENCODE(chr);
-    glyph2 =
+    glyph =
 	 bfont->procs.encode_char((gs_font *)bfont, chr, GLYPH_SPACE_NAME);
 
 	/*
