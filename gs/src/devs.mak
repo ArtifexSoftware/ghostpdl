@@ -1032,6 +1032,9 @@ $(DD)bmpmono.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 $(DD)bmpgray.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)bmpgray $(bmp_)
 
+$(DD)tr_rgb.dev : $(DEVS_MAK) $(GLOBJ)gdevtrac.$(OBJ)
+	$(SETPDEV2) $(DD)tr_rgb $(GLOBJ)gdevtrac.$(OBJ)
+
 $(DD)bmpsep1.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)bmpsep1 $(bmp_)
 
