@@ -40,13 +40,6 @@ clean_gs:
 	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
 	GLOBJDIR='$(GLOBJDIR)' clean
 	
-# We also specify the location of zlib here since we hardwire the
-# banding compresssion method to zlib in the next target.
-ZSRCDIR=$(GLSRCDIR)/zlib
-ZGENDIR=$(GENDIR)
-ZOBJDIR=$(GENDIR)
-SHARE_ZLIB=0
-
 # Build the required GS library files.
 # It's simplest always to build the floating point emulator,
 # even though we don't always link it in.
@@ -57,7 +50,7 @@ $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE)
 	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
 	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
-          DEVICE_DEVS='$(DEVICE_DEVS) bbox.dev' \
+          DEVICE_DEVS='$(DEVICE_DEVS) $(DD)bbox.dev' \
 	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
 	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR) ZLIB_NAME=$(ZLIB_NAME) SHARE_ZLIB=$(SHARE_ZLIB) \
 	  GLSRCDIR='$(GLSRCDIR)' \

@@ -32,6 +32,12 @@ TARGET_DEVS=$(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
 TARGET_XE=$(PCLOBJDIR)/pcl5
 MAIN_OBJ=$(PCLOBJDIR)/pcmain.$(OBJ)
 
+# specify the location of zlib.  We use zlib for bandlist compression.
+ZSRCDIR=$(GLSRCDIR)/zlib
+ZGENDIR=$(GENDIR)
+ZOBJDIR=$(GENDIR)
+SHARE_ZLIB=0
+
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 #GCFLAGS=-Wall -Wcast-qual -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
@@ -46,17 +52,17 @@ XLIBS=Xt SM ICE Xext X11
 
 CCLD=gcc
 
-DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
- djet500.dev ljet4.dev cljet5.dev cljet5c.dev\
- pcx16.dev pcx256.dev\
- pcxmono.dev pcxcmyk.dev pcxgray.dev\
- pbmraw.dev pgmraw.dev ppmraw.dev pkmraw.dev\
- pxlmono.dev pxlcolor.dev\
- tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev\
- tifflzw.dev tiffpack.dev\
- tiff12nc.dev tiff24nc.dev\
- bit.dev bitrgb.dev bitcmyk.dev\
- bmpmono.dev bmpamono.dev bmpa16m.dev posync.dev
+DEVICE_DEVS=$(DD)x11mono.dev $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
+ $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5.dev $(DD)cljet5c.dev\
+ $(DD)pcx16.dev $(DD)pcx256.dev\
+ $(DD)pcxmono.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev\
+ $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev\
+ $(DD)pxlmono.dev $(DD)pxlcolor.dev\
+ $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
+ $(DD)tifflzw.dev $(DD)tiffpack.dev\
+ $(DD)tiff12nc.dev $(DD)tiff24nc.dev\
+ $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev\
+ $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)bmpa16m.dev $(DD)posync.dev
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak

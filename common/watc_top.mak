@@ -61,7 +61,7 @@ ld$(CONFIG).tr: $(MAKEFILE) $(ECHOGS_XE)
 	echo JVERSION=$(JVERSION) >>$(GENDIR)\_wm_temp.mak
 	echo ZSRCDIR=$(ZSRCDIR) >>$(GENDIR)\_wm_temp.mak
 	echo FEATURE_DEVS=$(FEATURE_DEVS) >>$(GLGENDIR)\_wm_temp.mak
-	echo DEVICE_DEVS=$(DEVICE_DEVS) bbox.dev >>$(GLGENDIR)\_wm_temp.mak
+	echo DEVICE_DEVS=$(DEVICE_DEVS) $(DD)bbox.dev >>$(GLGENDIR)\_wm_temp.mak
 	echo FPU_TYPE=$(FPU_TYPE) >>$(GENDIR)\_wm_temp.mak
 	echo CPU_TYPE=$(CPU_TYPE) >>$(GENDIR)\_wm_temp.mak
 	echo BAND_LIST_STORAGE=memory >>$(GLGENDIR)\_wm_temp.mak

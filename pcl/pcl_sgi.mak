@@ -53,23 +53,14 @@ XLIBS       = Xt SM ICE X11
 
 CCLD        = cc
 
-DEVICE_DEVS = x11mono.dev   \
-              x11.dev       \
-              x11alpha.dev  \
-              x11cmyk.dev   \
-              ljet4.dev     \
-              paintjet.dev  \
-              cljet.dev     \
-              pbmraw.dev
-
-
-#              djet500.dev   \
-#              pcxmono.dev   \
-#              pcxgray.dev   \
-#              pgmraw.dev    \
-#              ppmraw.dev    \
-#              pxlmono.dev   \
-#              pxlcolor.dev
+DEVICE_DEVS = $(DD)x11mono.dev   \
+              $(DD)x11.dev       \
+              $(DD)x11alpha.dev  \
+              $(DD)x11cmyk.dev   \
+              $(DD)ljet4.dev     \
+              $(DD)paintjet.dev  \
+              $(DD)cljet.dev     \
+              $(DD)pbmraw.dev
 
 # Generic makefile
 include $(COMMONDIR)/sgi_top.mak

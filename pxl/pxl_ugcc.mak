@@ -16,6 +16,13 @@ PLSRCDIR=../pl
 PXLSRCDIR=../pxl
 COMMONDIR=../common
 
+# specify the location of zlib.  We use zlib for bandlist compression.
+ZSRCDIR=$(GLSRCDIR)/zlib
+ZGENDIR=$(GENDIR)
+ZOBJDIR=$(GENDIR)
+SHARE_ZLIB=0
+
+
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
 GLGENDIR=$(GENDIR)
@@ -48,11 +55,11 @@ XLIBS=Xt SM ICE Xext X11
 
 CCLD=gcc
 
-DEVICE_DEVS=x11.dev x11mono.dev x11alpha.dev x11cmyk.dev\
- djet500.dev ljet4.dev cljet5.dev cljet5c.dev\
- pcxmono.dev pcxgray.dev\
- bmpmono.dev bmpamono.dev posync.dev\
- pbmraw.dev pgmraw.dev ppmraw.dev
+DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
+ $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5.dev $(DD)cljet5c.dev\
+ $(DD)pcxmono.dev $(DD)pcxgray.dev\
+ $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)posync.dev\
+ $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev
 
 # Generic makefile
 

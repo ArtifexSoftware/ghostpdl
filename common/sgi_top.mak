@@ -48,7 +48,7 @@ $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE)
 	     SGICFLAGS='$(SGICFLAGS)' FPU_TYPE='$(FPU_TYPE)'                \
 	     CONFIG='$(CONFIG)'                                             \
              FEATURE_DEVS='$(FEATURE_DEVS)'                                 \
-	     DEVICE_DEVS='$(DEVICE_DEVS) bbox.dev'                          \
+	     DEVICE_DEVS='$(DEVICE_DEVS) $(DD)bbox.dev'                     \
 	     BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib             \
 	     GLSRCDIR='$(GLSRCDIR)'                                         \
 	     GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)'                  \

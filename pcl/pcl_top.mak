@@ -7,16 +7,16 @@
 # This file must be preceded by pcl.mak.
 
 #DEVICE_DEVS is defined in the platform-specific file.
-FEATURE_DEVS    = dps2lib.dev   \
-                  path1lib.dev  \
-                  patlib.dev    \
-                  rld.dev       \
-                  roplib.dev    \
-                  ttflib.dev    \
-                  colimlib.dev  \
-                  cielib.dev    \
-                  htxlib.dev    \
-                  devcmap.dev
+FEATURE_DEVS    = $(DD)dps2lib.dev   \
+                  $(DD)path1lib.dev  \
+                  $(DD)patlib.dev    \
+                  $(DD)rld.dev       \
+                  $(DD)roplib.dev    \
+                  $(DD)ttflib.dev    \
+                  $(DD)colimlib.dev  \
+                  $(DD)cielib.dev    \
+                  $(DD)htxlib.dev    \
+                  $(DD)devcmap.dev
 
 default: $(TARGET_XE)$(XE)
 	echo Done.

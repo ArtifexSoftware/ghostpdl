@@ -74,7 +74,7 @@ $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE) mkdirs $(AK)
 	echo ZSRCDIR=$(ZSRCDIR) >>$(GENDIR)\_vc_temp.mak
 	echo DEVSTUDIO=$(DEVSTUDIO) >>$(GENDIR)\_vc_temp.mak
 	echo FEATURE_DEVS=$(FEATURE_DEVS) >>$(GENDIR)\_vc_temp.mak
-	echo DEVICE_DEVS=$(DEVICE_DEVS) bbox.dev >>$(GENDIR)\_vc_temp.mak
+	echo DEVICE_DEVS=$(DEVICE_DEVS) $(DD)bbox.dev >>$(GENDIR)\_vc_temp.mak
 	echo BAND_LIST_STORAGE=memory >>$(GENDIR)\_vc_temp.mak
 	echo BAND_LIST_COMPRESSOR=zlib >>$(GENDIR)\_vc_temp.mak
 	echo FPU_TYPE=$(FPU_TYPE) >>$(GENDIR)\_vc_temp.mak

@@ -33,22 +33,22 @@ FPU_TYPE=0
 GS=gs386
 WCVERSION=10.0
 
-DEVICE_DEVS=vga.dev djet500.dev ljet4.dev pcxmono.dev pcxgray.dev
+DEVICE_DEVS=$(DD)vga.dev $(DD)djet500.dev $(DD)ljet4.dev $(DD)pcxmono.dev $(DD)pcxgray.dev
 
 # Generic makefile
 
 # GS options
 #DEVICE_DEVS is defined in the platform-specific file.
-FEATURE_DEVS    = dps2lib.dev   \
-                  path1lib.dev  \
-                  patlib.dev    \
-                  rld.dev       \
-                  roplib.dev    \
-                  ttflib.dev    \
-                  colimlib.dev  \
-                  cielib.dev    \
-                  htxlib.dev    \
-                  devcmap.dev
+FEATURE_DEVS    = $(DD)dps2lib.dev   \
+                  $(DD)path1lib.dev  \
+                  $(DD)patlib.dev    \
+                  $(DD)rld.dev       \
+                  $(DD)roplib.dev    \
+                  $(DD)ttflib.dev    \
+                  $(DD)colimlib.dev  \
+                  $(DD)cielib.dev    \
+                  $(DD)htxlib.dev    \
+                  $(DD)devcmap.dev
 
 !include $(COMMONDIR)\watc_top.mak
 

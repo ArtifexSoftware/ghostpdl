@@ -102,28 +102,28 @@ MSVC_VERSION=5
 !endif
 
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=djet500.dev ljet4.dev cljet5c.dev\
- pcx16.dev pcx256.dev\
- pcxmono.dev pcxcmyk.dev pcxgray.dev\
- pbmraw.dev pgmraw.dev ppmraw.dev pkmraw.dev\
- pxlmono.dev pxlcolor.dev\
- tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev\
- tifflzw.dev tiffpack.dev\
- tiff12nc.dev tiff24nc.dev
+DEVICE_DEVS=$(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5c.dev\
+ $(DD)pcx16.dev $(DD)pcx256.dev\
+ $(DD)pcxmono.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev\
+ $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev\
+ $(DD)pxlmono.dev $(DD)pxlcolor.dev\
+ $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
+ $(DD)tifflzw.dev $(DD)tiffpack.dev\
+ $(DD)tiff12nc.dev $(DD)tiff24nc.dev
 !endif
 
 # GS options
 #DEVICE_DEVS is defined in the platform-specific file.
-FEATURE_DEVS    = dps2lib.dev   \
-                  path1lib.dev  \
-                  patlib.dev    \
-                  rld.dev       \
-                  roplib.dev    \
-                  ttflib.dev    \
-                  colimlib.dev  \
-                  cielib.dev    \
-                  htxlib.dev    \
-                  devcmap.dev
+FEATURE_DEVS    = $(DD)dps2lib.dev   \
+                  $(DD)path1lib.dev  \
+                  $(DD)patlib.dev    \
+                  $(DD)rld.dev       \
+                  $(DD)roplib.dev    \
+                  $(DD)ttflib.dev    \
+                  $(DD)colimlib.dev  \
+                  $(DD)cielib.dev    \
+                  $(DD)htxlib.dev    \
+                  $(DD)devcmap.dev
 
 !include $(COMMONDIR)\msvc_top.mak
 
