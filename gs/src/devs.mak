@@ -1569,7 +1569,9 @@ $(DD)tiff32nc.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev
 #
 # Create separation files (tiffgray) plus CMYK composite (tiff32nc)
 
+tiffsep_=$(tiffgray_) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ)
+
 $(DD)tiffsep.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev
-	$(SETPDEV2) $(DD)tiffsep $(tiffgray_)
+	$(SETPDEV2) $(DD)tiffsep $(tiffsep_)
 	$(ADDMOD) $(DD)tiffsep -include $(DD)tiffs
 
