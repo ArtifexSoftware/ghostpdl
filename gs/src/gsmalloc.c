@@ -174,16 +174,14 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	    set_msg("exceeded limit");
 	else if ((ptr = (byte *) malloc(added)) == 0)
 	    set_msg("failed");
-#ifdef DEBUG
-	else if (ALIGNMENT_MOD(ptr, arch_align_memory_mod) != 0) {
-	    set_msg("malloc alignment failed!");
-	    free(ptr);
-	    ptr = 0;
-	} 
-#endif
 	else {
 	    gs_malloc_block_t *bp = (gs_malloc_block_t *) ptr;
 
+#ifdef DEBUG
+	    /* malloc must align at least as strictly as the compiler! */
+	    if (ALIGNMENT_MOD(ptr, arch_align_memory_mod) != 0)
+		set_msg("malloc alignment failed!");
+#endif
 	    if (mmem->allocated)
 		mmem->allocated->prev = bp;
 	    bp->next = mmem->allocated;
