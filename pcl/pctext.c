@@ -226,10 +226,8 @@ get_next_char(
     /*
      * The character is not in the font.
      */
-    if (pcs->map == 0) {
-        *pis_space = true;
-        *pchr = 0xffff;
-    }
+    *pis_space = true;
+    *pchr = 0xffff;
     return 0;
 }
 
