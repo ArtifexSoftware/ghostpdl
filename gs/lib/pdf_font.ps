@@ -925,7 +925,11 @@ readonly def
 	ifelse
 	2 index /FontDescriptor oget
 	2 index /FontObject exch
-	put			% Save pointer to the font
+
+	% Disable saving a pointer to the font, because the current
+	% implementation causes a regression (SF #533467)
+	pop pop pop
+	% put			% Save pointer to the font
       }
       ifelse
     }
