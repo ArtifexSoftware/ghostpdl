@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version7.20">Version 7.20 (2002-03-31)</a>
+<li><a href="#Version7.20">Version 7.20 (2002-04-03)</a>
 <ul>
 <li><a href="#7.20_Incompatible_changes">Incompatible changes</a>,
     <a href="#7.20-Documentation">Documentation</a>,
@@ -121,7 +121,7 @@ release.
 
 <hr>
 
-<h1><a name="Version7.20"></a>Version 7.20 (2002-03-31)</h1>
+<h1><a name="Version7.20"></a>Version 7.20 (2002-04-03)</h1>
 
 <p>
 This is the first development release after the 7.0x series. While
@@ -178,114 +178,123 @@ release.
 
 <p>
 The following SourceForge bug numbers were open at the time of release:
-219798,
-405342,
-406979,
-407342,
-414947,
-414985,
-415142,
-416131,
-416830,
-418241,
-421057,
-423838,
-427193,
-427314,
-427347,
-428891,
-428973,
-432040,
-434277,
-436099,
-437285,
-438957,
-443745,
-446344,
-446672,
-448199,
-450663,
-451456,
-452155,
-453969,
-458261,
-458500,
-458775,
-458780,
-459647,
-462221,
-465720,
-465936,
-468762,
-472681,
-474745,
-475147,
-477644,
-479071,
-482033,
-482038,
-483629,
-484752,
-484753,
-485498,
-485510,
-485510,
-487953,
-493348,
-495319,
-498595,
-503794,
-505047,
-505151,
-505429,
-506375,
-508081,
-508675,
-509646,
-510808,
-511232,
-513731,
-513905,
-514616,
-514898,
-515475,
-515966,
-516653,
-517349,
-518082,
-518742,
-520686,
-520972,
-521354,
-521597,
-521664,
-521916,
-522507,
-524292,
-525508,
-525712,
-526099,
-526491,
-527152,
-527525,
-528647,
-529103,
-529411,
-529578,
-530011,
-530213,
-530588,
-531300,
-532468,
-533467,
-534637,
-534637,
-535366,
-535395,
-535401,
-535752,
-535836,
-535997.
+ 219798,
+ 405342,
+ 406979,
+ 407342,
+ 414947
+ 414985,
+ 415142,
+ 416131,
+ 416830,
+ 418241,
+ 421057,
+ 423838,
+ 427193,
+ 427314,
+ 427347,
+ 428891,
+ 428973,
+ 432040,
+ 434277,
+ 436099,
+ 437285,
+ 438957,
+ 443745,
+ 446344,
+ 446672,
+ 448199,
+ 450663,
+ 451456,
+ 452155,
+ 453969,
+ 458261,
+ 458500,
+ 458775,
+ 458780,
+ 459647,
+ 462221,
+ 465720,
+ 465936,
+ 468762,
+ 472681,
+ 474745,
+ 475147,
+ 477644,
+ 479071,
+ 482033,
+ 482038,
+ 483629,
+ 484752,
+ 484753,
+ 485498,
+ 485510,
+ 485510,
+ 487953,
+ 493348,
+ 495319,
+ 498595,
+ 503794,
+ 505047,
+ 505151,
+ 505429,
+ 506375,
+ 508081,
+ 508675,
+ 509646,
+ 510808,
+ 511232,
+ 513905,
+ 514616,
+ 514898,
+ 515475,
+ 515966,
+ 516653,
+ 517349,
+ 518742,
+ 520686,
+ 520972,
+ 521354,
+ 521597,
+ 521664,
+ 521916,
+ 522486,
+ 522507,
+ 524292,
+ 525508,
+ 525712,
+ 526099,
+ 526491,
+ 527152,
+ 527525,
+ 528647,
+ 529103,
+ 529411,
+ 529578,
+ 530011,
+ 530213,
+ 530588,
+ 531300,
+ 532468,
+ 533467,
+ 534637,
+ 535366,
+ 535395,
+ 535395,
+ 535401,
+ 535752,
+ 535836,
+ 535997,
+ 536863,
+ 536877,
+ 537066,
+ 538033,
+ 538042,
+ 538055,
+ 538267,
+ 538311,
+ 538398,
+ 538428.
 
 
 <h3><a name="7.20_Incompatible_changes"></a>Incompatible changes</h3>
@@ -312,41 +321,351 @@ which was obscure and error-prone.  See src/gsgdata.[hc].
 <h2><a name="7.20-Documentation"></a>Documentation</h2><pre>
 
 Fixes problems:
+	- Fixes minor problems with the English introduced by the most
+recent change. (doc/Use.htm [1.37]: 2001/12/08 15:41:28 lpd)
 	- A "\" should have been a "\e" for troff. (fix from Nelson Beebe)
 (man/ansi2knr.1 [1.3]: 2001/12/31 22:43:35 lpd)
+	- some files were missing the RCS 'Id' line with the last
+modification date. partial fix for Sourceforge bug #500922.
+(doc/index.html [1.3]: 2002/01/09 21:04:20 giles)
+	- gdevpdfc.h and gdevpdfk.c weren't listed in Develop.htm.
+(doc/Develop.htm [1.52]: 2002/01/09 23:26:05 lpd)
+	- Fixes a couple of minor formatting errors.
+(doc/C-style.htm [1.23]: 2002/01/16 16:05:54 lpd)
+	- Improve security in a (mostly) backward compatible fashion adding
+more flexible file access paths (PermitFile...) as user paramters and adding
+the facility to return to NOSAFER mode after running jobs (files/procedures)
+in SAFER mode. This should address SF bug #474582 and eliminate the need for
+the RedHat PARANOIDSAFER patch. (doc/Language.htm [1.38],
+doc/Use.htm [1.40]: 2002/01/24 06:33:33 rayjj)
+	- pdfwrite often gave an error if a name with embedded special
+characters was a key or value in a pdfmark dictionary. Fixes SourceForge
+#505877. (doc/Language.htm [1.39]: 2002/01/29 02:54:43 lpd)
+	- new releases should be uploaded to
+ftp://upload.sourceforge.net/incoming. (doc/Release.htm [1.44]: 2002/02/18
+02:47:59 giles)
 	- Check in corrected module after "admin -ko" change to prevent the
 $Id: lines from having the keyword replacement. This was broken for a LONG
 time. (doc/gsdoc.el [1.4]: 2002/02/22 19:08:29 ray)
-       - use UTC universally in the prerelease check script to avoid
-spurious errors due to timezone differences (doc/Bug-form.htm [1.25],
-doc/Bug-info.htm [1.24], doc/C-style.htm [1.30], doc/Commprod.htm [1.17],
-doc/Copying.htm [1.17], doc/Current.htm [1.17], doc/DLL.htm [1.19],
-doc/Develop.htm [1.68], doc/Drivers.htm [1.25], doc/Fonts.htm [1.26],
-doc/Helpers.htm [1.21], doc/History1.htm [1.17], doc/History2.htm [1.17],
-doc/History3.htm [1.17], doc/History4.htm [1.17], doc/History5.htm [1.19],
-doc/History6.htm [1.34], doc/Htmstyle.htm [1.22], doc/Install.htm [1.30],
-doc/Issues.htm [1.20], doc/Language.htm [1.45], doc/Lib.htm [1.19],
-doc/Maintain.htm [1.27], doc/Make.htm [1.47], doc/New-user.htm [1.34],
-doc/Projects.htm [1.40], doc/Ps-style.htm [1.15], doc/Ps2epsi.htm [1.19],
-doc/Ps2pdf.htm [1.38], doc/Psfiles.htm [1.29], doc/Readme.htm [1.36],
+	- POSIX 2001 has obsoleted tail +128c. Document the new convention
+'tail -c +129' as an alternate. (doc/Use.htm [1.46]: 2002/03/28 21:28:06
+giles)
+	- use UTC universally in the prerelease check script to avoid
+spurious errors due to timezone differences (doc/API.htm [1.19],
+doc/Bug-form.htm [1.25], doc/Bug-info.htm [1.24], doc/C-style.htm [1.30],
+doc/Commprod.htm [1.17], doc/Copying.htm [1.17], doc/Current.htm [1.17],
+doc/DLL.htm [1.19], doc/Develop.htm [1.68], doc/Devices.htm [1.42],
+doc/Drivers.htm [1.25], doc/Fonts.htm [1.26], doc/Helpers.htm [1.21],
+doc/History1.htm [1.17], doc/History2.htm [1.17], doc/History3.htm [1.17],
+doc/History4.htm [1.17], doc/History5.htm [1.19], doc/History6.htm [1.34],
+doc/Htmstyle.htm [1.22], doc/Install.htm [1.30], doc/Issues.htm [1.20],
+doc/Language.htm [1.45], doc/Lib.htm [1.19], doc/Maintain.htm [1.27],
+doc/Make.htm [1.47], doc/New-user.htm [1.34], doc/Projects.htm [1.40],
+doc/Ps-style.htm [1.15], doc/Ps2epsi.htm [1.19], doc/Ps2pdf.htm [1.38],
+doc/Psfiles.htm [1.29], doc/Readme.htm [1.36], doc/Release.htm [1.51],
 doc/Source.htm [1.17], doc/Tester.htm [1.16], doc/Testing.htm [1.4],
-doc/Unix-lpr.htm [1.17], doc/Xfonts.htm [1.17], doc/gs-vms.hlp [1.16],
-man/dvipdf.1 [1.12], man/font2c.1 [1.12], man/gs.1 [1.12],
-man/gslp.1 [1.12], man/gsnd.1 [1.12], man/pdf2dsc.1 [1.12],
+doc/Unix-lpr.htm [1.17], doc/Use.htm [1.48], doc/Xfonts.htm [1.17],
+doc/gs-vms.hlp [1.16], man/dvipdf.1 [1.12], man/font2c.1 [1.12],
+man/gs.1 [1.12], man/gslp.1 [1.12], man/gsnd.1 [1.12], man/pdf2dsc.1 [1.12],
 man/pdf2ps.1 [1.14], man/pdfopt.1 [1.12], man/pf2afm.1 [1.12],
 man/pfbtopfa.1 [1.13], man/printafm.1 [1.12], man/ps2ascii.1 [1.12],
 man/ps2epsi.1 [1.12], man/ps2pdf.1 [1.16], man/ps2pdfwr.1 [1.15],
 man/ps2ps.1 [1.19], man/wftopfa.1 [1.12]: 2002/03/29 00:44:34 giles)
-       - update the instructions for cvs2hist.py to reflect the new
-branch-sensitivity options. (doc/Release.htm [1.53]: 2002/03/29
-07:42:04 giles)
+	- bring Release.htm more up-to-date with current practice
+(doc/Release.htm [1.52]: 2002/03/29 03:17:14 giles)
+	- update the instructions for cvs2hist.py to reflect the new
+branch-sensitivity options. (doc/Release.htm [1.53]: 2002/03/29 07:42:04
+giles)
+	- the cvs2hist invocation must use -b in the rlog tags, rather than
+-r to correctly identify the head branch. Some files are tagged as 'MAIN'
+rather than 'HEAD'. (doc/Release.htm [1.57]: 2002/04/03 06:44:57 giles)
+	- further clarify the call to cvs2hist for the main branch.
+(doc/Release.htm [1.59]: 2002/04/03 07:22:45 giles)
+
+Advises coders not to "shadow" a local variable or procedure parameter with
+an inner local variable of the same name. (doc/C-style.htm [1.22]:
+2001/10/21 02:08:20 lpd)
+
+Changes all procedures for getting glyph outline data to return a structure
+that includes memory management information. This is a
+NON-BACKWARD-COMPATIBLE change to both implementors and clients. It corrects
+a serious design error: formerly these procedures encoded memory management
+information in their return code, which was obscure and error-prone.
+(doc/Develop.htm [1.48]: 2001/10/21 06:20:08 lpd)
+
+Removes the admonishment to update PVERSION and JVERSION from the Makefile
+documentation. The build dependencies were removed earlier to reduce user
+confusion; they're currently vestigial in expectation of future build
+incompatibilities. This is the second half of the fix for sf bug #457838.
+(doc/Make.htm [1.37]: 2001/10/24 22:22:35 giles)
 
 Adds a reference to the v7.xx History file. (doc/gs.css [1.2]: 2001/10/24
 22:33:38 giles)
 
+Build and use documentation for the FAPI project. (doc/Make.htm [1.38],
+doc/Use.htm [1.34]: 2001/10/30 20:55:11 igorm)
+
+Adds a requested enhancement: pdfwrite should emit warnings when
+appropriate. (doc/Projects.htm [1.34]: 2001/11/12 22:31:27 lpd)
+
+FAPI project: fixing misspelled keyword in Use.htm . (doc/Use.htm [1.35]:
+2001/11/20 13:41:41 igorm)
+
+adds documentation for the MacOS X framework build. (doc/Make.htm [1.39]:
+2001/11/25 07:17:23 giles)
+
+Adds more documentation about when the garbage collector can be invoked.
+(doc/Develop.htm [1.49]: 2001/12/06 01:45:58 lpd)
+
+Adds additional documentation about continuations on the PostScript e-stack.
+(doc/Develop.htm [1.50]: 2001/12/06 04:16:27 lpd)
+
+Adds extensionless aliases for all the scripts used in the normal build
+process; renames pre as pre.tcl; adds an Id line to smoke.ps; updates
+documentation to match. (doc/Release.htm [1.41]: 2001/12/07 07:16:42 lpd)
+
+Implementing a mapped resource category redefiner; Provide a map for CIDFont
+category; Reorganize the mapping algorithm for FAPI. (doc/Use.htm [1.36]:
+2001/12/08 11:31:20 igorm)
+
+Updates pdfwrite to match Acrobat Distiller 5 more closely: adds
+OffOptimizations and PreserveEPSInfo parameters; adds /ebook value for
+PDFSETTINGS; changes some of the DCTEncode parameter values for
+auto-filtered images; adds CreationDate and ModDate in Info dictionary;
+always subsets non Type 1 fonts. (doc/Ps2pdf.htm [1.33]: 2001/12/09 00:07:56
+lpd)
+
+FAPI project : implementing CID fonts with FAPI. (doc/Use.htm [1.38]:
+2001/12/12 23:02:08 igorm)
+
+Finishes removing support for pre-ANSI (a.k.a. "traditional" or "K&amp;R") C
+compilers. (doc/Develop.htm [1.51], doc/Make.htm [1.40]: 2001/12/13 18:11:09
+lpd)
+
+Improve security for device related access to the file system and to pipes
+by allowing the dangerous parameters to be locked (for example, OutputFile).
+The locking is performed after command line parameters are established.
+Locking is not turned on by default as a result of this change, but
+-d.LockSafetyParams=true can be added to the command line to accomplish
+this. Related to SF bug #474582 (sort of). (doc/Language.htm [1.35]:
+2001/12/22 00:44:01 rayjj)
+
+Adds some brief documentation about using the framework build of ghostscript
+with MacOS X. (doc/API.htm [1.12]: 2002/01/04 03:52:25 giles)
+
+Adds a very modest checksource script for checking the conformance of source
+files with coding and architectural standards. This script should eventually
+be run as part of nightly regression testing. (doc/Release.htm [1.42]:
+2002/01/08 08:21:51 lpd)
+
+FAPI project : Define new device parameter .EmbedFontObjects to disable FAPI
+for devices which embed fonts. (doc/Use.htm [1.39]: 2002/01/08 11:10:24
+igorm)
+
+FAPI project : Define new device parameter .EmbedFontObjects to disable FAPI
+for devices which embed fonts. (doc/Language.htm [1.36]: 2002/01/08 11:46:14
+igorm)
+
+Improves the description of .EmbedFontObjects. (doc/Language.htm [1.37]:
+2002/01/10 17:10:49 lpd)
+
+Changes the extension of the tiger and golfer example files to '.eps' to
+accurately reflect their internal filetype. (doc/Devices.htm [1.35],
+doc/Make.htm [1.41], doc/Psfiles.htm [1.23]: 2002/01/10 22:21:33 giles)
+
+Adds basic documentation on using the ./configure script.
+(doc/Make.htm [1.42], doc/Release.htm [1.43]: 2002/01/11 04:58:59 giles)
+
+Adds a CompressFonts parameter to pdfwrite to control whether embedded fonts
+are compressed, to help debugging. The default value is true.
+(doc/Ps2pdf.htm [1.34]: 2002/01/29 01:03:26 lpd)
+
+An addition to Issues.htm about hybrid fonts and the job server loop. Source
+Forge bug [500941] /rangecheck in --.type1execchar--. Thanks to L. Peter
+Deutsch for participation. (doc/Issues.htm [1.16]: 2002/01/30 01:12:23
+igorm)
+
+Adds a new documentation section on display devices along with a basic
+description of the x11 devices. (doc/Devices.htm [1.36]: 2002/01/30 07:34:45
+giles)
+
+Adds IJS driver to Ghostscript. Includes complete IJS version 0.33
+distribution. Also includes autoconf patch by Ralph Giles.
+(doc/Develop.htm [1.53]: 2002/01/31 20:47:12 raph)
+
+Adds IJS driver to Ghostscript. Includes complete IJS version 0.33
+distribution. Also includes autoconf patch by Ralph Giles.
+(doc/Devices.htm [1.37]: 2002/01/31 20:47:16 raph)
+
+Minor change from 'search' to 'filenameforall' in discussion about the
+wildcard characters in PermitFile... strings. (doc/Language.htm [1.40]:
+2002/01/31 21:18:08 rayjj)
+
+Documentation and makefile updates for IJS driver. (doc/Devices.htm [1.38]:
+2002/02/01 03:17:12 raph)
+
+Documents the work-around of using '#' instead of '=' to separate command
+line options from their arguments. The was previously listed only as a quirk
+of the Wacom build on MS-DOS, but is also needed on win32 because the
+command shell treats '=' as whitespace in passing arguments to batch files
+(like ps2pdf.bat). Closes SourceForge bug #483066. Also documents that
+MS-DOS is no longer a supported operating system. (doc/Use.htm [1.41]:
+2002/02/01 19:46:55 giles)
+
+Replaces the toolbin/regression directory with a new toolbin/tests directory
+that includes all testing scripts. Adds and documents a framework for
+writing and running testing scripts. (doc/Readme.htm [1.32],
+doc/Testing.htm [1.1]: 2002/02/19 15:46:01 lpd)
+
+Cleans up a few loose ends from the transition to the new testing framework.
+(doc/Testing.htm [1.2]: 2002/02/19 16:16:07 lpd)
+
+FAPI project : Providing basic documentation. (doc/Develop.htm [1.54],
+doc/Psfiles.htm [1.24]: 2002/02/20 18:27:49 igor)
+
+Removes mention of SourceForge Bug #223005, which was closed before the 7.00
+release. (doc/Issues.htm [1.17]: 2002/02/21 20:32:06 giles)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(doc/API.htm [1.13], doc/Bug-info.htm [1.21], doc/Copying.htm [1.14],
+doc/Current.htm [1.14], doc/DLL.htm [1.16], doc/Develop.htm [1.55],
+doc/Devices.htm [1.39], doc/Drivers.htm [1.22], doc/Fonts.htm [1.23],
+doc/Helpers.htm [1.18], doc/Hershey.htm [1.4], doc/History1.htm [1.14],
+doc/History2.htm [1.14], doc/History3.htm [1.14], doc/History4.htm [1.14],
+doc/History5.htm [1.16], doc/History6.htm [1.31], doc/Htmstyle.htm [1.19],
+doc/Humor.htm [1.4], doc/Install.htm [1.27], doc/Issues.htm [1.18],
+doc/Language.htm [1.41], doc/Lib.htm [1.15], doc/Maintain.htm [1.24],
+doc/Make.htm [1.43], doc/New-user.htm [1.31], doc/Projects.htm [1.35],
+doc/Ps2epsi.htm [1.16], doc/Ps2pdf.htm [1.35], doc/Psfiles.htm [1.25],
+doc/Public.htm [1.5], doc/Readme.htm [1.33], doc/Release.htm [1.45],
+doc/Source.htm [1.14], doc/Unix-lpr.htm [1.14], doc/Use.htm [1.42],
+doc/Xfonts.htm [1.14], doc/gs-vms.hlp [1.13], doc/gsdoc.el [1.2],
+doc/index.html [1.4]: 2002/02/21 20:57:44 ray)
+
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
-and Revision pair. (doc/Hershey.htm [1.5], doc/Humor.htm [1.5],
-doc/Public.htm [1.6], doc/index.html [1.5]: 2002/02/21 21:36:33 giles)
+and Revision pair. (doc/API.htm [1.14], doc/Bug-info.htm [1.22],
+doc/Copying.htm [1.15], doc/Current.htm [1.15], doc/DLL.htm [1.17],
+doc/Develop.htm [1.56], doc/Devices.htm [1.40], doc/Drivers.htm [1.23],
+doc/Fonts.htm [1.24], doc/Helpers.htm [1.19], doc/Hershey.htm [1.5],
+doc/History1.htm [1.15], doc/History2.htm [1.15], doc/History3.htm [1.15],
+doc/History4.htm [1.15], doc/History5.htm [1.17], doc/History6.htm [1.32],
+doc/Htmstyle.htm [1.20], doc/Humor.htm [1.5], doc/Install.htm [1.28],
+doc/Language.htm [1.42], doc/Lib.htm [1.16], doc/Maintain.htm [1.25],
+doc/Make.htm [1.44], doc/New-user.htm [1.32], doc/Projects.htm [1.36],
+doc/Ps2epsi.htm [1.17], doc/Ps2pdf.htm [1.36], doc/Psfiles.htm [1.26],
+doc/Public.htm [1.6], doc/Readme.htm [1.34], doc/Release.htm [1.46],
+doc/Source.htm [1.15], doc/Unix-lpr.htm [1.15], doc/Use.htm [1.43],
+doc/Xfonts.htm [1.15], doc/gs-vms.hlp [1.14], doc/gsdoc.el [1.3],
+doc/index.html [1.5]: 2002/02/21 21:36:32 giles)
+
+Adds a description of the zfsample.c module. (doc/Develop.htm [1.57]:
+2002/02/22 21:38:41 dan)
+
+Adds a description of the .Widths array project, which would solve some
+obscure problems when the PDF interpreter is given certain non-conforming
+files. (doc/Projects.htm [1.37]: 2002/02/25 00:04:09 lpd)
+
+Adds wording to make it clearer that procedures must be documented in
+explicit detail. (doc/Release.htm [1.47]: 2002/02/25 03:48:03 lpd)
+
+Removes auto-generated plain text versions of html documentation from cvs
+and makes their creation an explicit part of the release process.
+(doc/Release.htm [1.48]: 2002/02/25 20:54:30 giles)
+
+Implementing Visual Trace service to graphics library, and Visual Trace
+server for Windows. (doc/API.htm [1.15], doc/Develop.htm [1.58],
+doc/Lib.htm [1.17], doc/Projects.htm [1.38], doc/Use.htm [1.44]: 2002/02/26
+16:09:15 igor)
+
+Remove the return_if_error macro from ALL occurrences and clean up some of
+the C-style problems with the FAPI code. Add some of the new rules about
+macros to C-style.htm. (doc/C-style.htm [1.24]: 2002/02/28 21:21:41 ray)
+
+FAPI project : Completing basic documentation. (doc/Develop.htm [1.59]:
+2002/03/01 15:07:03 igor)
+
+Specifies no initial indentation of preprocessor commands, but indentation
+of 2 spaces per nesting level between the # and the command name.
+(doc/C-style.htm [1.25]: 2002/03/05 18:12:51 lpd)
+
+Removes an unsightly paragraph break. (doc/C-style.htm [1.26]: 2002/03/05
+18:15:12 lpd)
+
+Adds link to ijs.mak to basic developer documentation.
+(doc/Develop.htm [1.60]: 2002/03/06 17:32:30 raph)
+
+Adds indications that pre-ANSI compilers are no longer supported.
+(doc/Develop.htm [1.61]: 2002/03/07 19:29:50 giles)
+
+Adds the MacOS X platform-dependent makefiles to the developer
+documentation. (doc/Develop.htm [1.62]: 2002/03/07 19:59:48 giles)
+
+Adds the Info-macos.plist framework description to the developer
+documentation. (doc/Develop.htm [1.63]: 2002/03/07 20:06:49 giles)
+
+Adds the source files associated with the Autoconf build to the developer
+documentation. (doc/Develop.htm [1.64]: 2002/03/07 20:13:56 giles)
+
+Documents the recommendation to use a suffixed underscore for local
+variables introduced by macros. (doc/C-style.htm [1.27]: 2002/03/11 19:27:45
+lpd)
+
+Add example code to doc/API.htm showing how to call the Ghostscript DLL as a
+PostScript to PDF convertor. (doc/API.htm [1.16]: 2002/03/12 07:14:35
+ghostgum)
+
+Correct typo in documentation. (doc/API.htm [1.17]: 2002/03/12 07:17:15
+ghostgum)
+
+Update msvc32.mak and documentation to support compilation with Microsoft
+Visual Studio .NET. This requires MSVC_VERSION=7. (doc/Make.htm [1.45]:
+2002/03/12 07:20:08 ghostgum)
+
+Documents how to build a Windows self-extracting archive for a ghostscript
+distribution (doc/Release.htm [1.49]: 2002/03/12 07:25:58 ghostgum)
+
+Add a new optional FEATURE, diskn.dev that provides emulation of %disk
+devices present on some Adobe printers. This version is NOT multiple
+instance safe, but is useful for embedded printers or for server systems
+with a single Ghostscript instance. Documentation is in Language.htm.
+Addresses SourceForge bug #493344 for Artifex customer #411.
+(doc/Language.htm [1.43]: 2002/03/13 20:27:38 ray)
+
+Adds -dNOTRANSPARENCY flag, which disables all PDF 1.4 transparency
+processing. (doc/Use.htm [1.45]: 2002/03/14 15:53:08 raph)
+
+Add documentation for modules related to diskn.dev FEATURE (lib/gs_diskn.ps
+and src/gsiodisk.c). (doc/Develop.htm [1.65], doc/Psfiles.htm [1.27]:
+2002/03/15 18:36:27 ray)
+
+Requests that authors of new macros put extra effort into documentation.
+(doc/C-style.htm [1.28]: 2002/03/19 17:34:13 lpd)
+
+Add gs_diskn.ps to the list of Miscellaneous PostScript files.
+(doc/Develop.htm [1.66]: 2002/03/22 00:59:25 ray)
+
+Update release dates in preparation of the upcoming development release
+(doc/API.htm [1.18], doc/Bug-form.htm [1.24], doc/Bug-info.htm [1.23],
+doc/C-style.htm [1.29], doc/Commprod.htm [1.16], doc/Copying.htm [1.16],
+doc/Current.htm [1.16], doc/DLL.htm [1.18], doc/Develop.htm [1.67],
+doc/Devices.htm [1.41], doc/Drivers.htm [1.24], doc/Fonts.htm [1.25],
+doc/Helpers.htm [1.20], doc/History1.htm [1.16], doc/History2.htm [1.16],
+doc/History3.htm [1.16], doc/History4.htm [1.16], doc/History5.htm [1.18],
+doc/History6.htm [1.33], doc/Htmstyle.htm [1.21], doc/Install.htm [1.29],
+doc/Issues.htm [1.19], doc/Language.htm [1.44], doc/Lib.htm [1.18],
+doc/Maintain.htm [1.26], doc/Make.htm [1.46], doc/New-user.htm [1.33],
+doc/Projects.htm [1.39], doc/Ps-style.htm [1.14], doc/Ps2epsi.htm [1.18],
+doc/Ps2pdf.htm [1.37], doc/Psfiles.htm [1.28], doc/Readme.htm [1.35],
+doc/Release.htm [1.50], doc/Source.htm [1.16], doc/Tester.htm [1.15],
+doc/Testing.htm [1.3], doc/Unix-lpr.htm [1.16], doc/Use.htm [1.47],
+doc/Xfonts.htm [1.16], doc/gs-vms.hlp [1.15], man/dvipdf.1 [1.11],
+man/font2c.1 [1.11], man/gs.1 [1.11], man/gslp.1 [1.11], man/gsnd.1 [1.11],
+man/pdf2dsc.1 [1.11], man/pdf2ps.1 [1.13], man/pdfopt.1 [1.11],
+man/pf2afm.1 [1.11], man/pfbtopfa.1 [1.12], man/printafm.1 [1.11],
+man/ps2ascii.1 [1.11], man/ps2epsi.1 [1.11], man/ps2pdf.1 [1.15],
+man/ps2pdfwr.1 [1.14], man/ps2ps.1 [1.18], man/wftopfa.1 [1.11]: 2002/03/29
+00:01:01 giles)
 
 Documents uncertainty regarding resolution setting parameter for
 SPARCprinter devices. Closes SF bug #215256. (doc/Devices.htm [1.43]:
@@ -355,6 +674,19 @@ SPARCprinter devices. Closes SF bug #215256. (doc/Devices.htm [1.43]:
 Updates documentation on PDF problem files, removing non-POSIX compliant
 suggested workaround. Thanks to Paul Eggers for pointing out the problem.
 Fixes SF bug #521597. (doc/Use.htm [1.49]: 2002/03/29 04:25:13 raph)
+
+Document that other API programming examples are available on the
+ghostscript web site. (doc/API.htm [1.20]: 2002/03/29 08:15:59 ghostgum)
+
+Further improves the description of the release process, particularly the
+section on making GNU Ghostscript releases. (doc/Release.htm [1.54]:
+2002/03/29 23:40:41 giles)
+
+Updates the documentation with the new windows icons.
+(doc/Develop.htm [1.69]: 2002/03/30 18:31:56 giles)
+
+minor cleanup of the release instructions (doc/Release.htm [1.55]:
+2002/03/31 00:28:07 giles)
 
 Updates release date for 7.20rc2 (doc/API.htm [1.21],
 doc/Bug-form.htm [1.26], doc/Bug-info.htm [1.25], doc/C-style.htm [1.31],
@@ -377,20 +709,118 @@ man/pfbtopfa.1 [1.14], man/printafm.1 [1.13], man/ps2ascii.1 [1.13],
 man/ps2epsi.1 [1.13], man/ps2pdf.1 [1.17], man/ps2pdfwr.1 [1.16],
 man/ps2ps.1 [1.20], man/wftopfa.1 [1.13]: 2002/03/31 00:32:38 giles)
 
-Document that other API programming examples are available on the
-ghostscript web site. (doc/API.htm [1.20]: 2002/03/29 08:15:59 ghostgum)
-
 further cleanups for release (doc/Release.htm [1.56]: 2002/03/31 00:45:57
 giles)
+
+Update documentation for 7.20rc3 (doc/API.htm [1.22],
+doc/Bug-form.htm [1.27], doc/Bug-info.htm [1.26], doc/C-style.htm [1.32],
+doc/Commprod.htm [1.19], doc/Copying.htm [1.19], doc/Current.htm [1.19],
+doc/DLL.htm [1.21], doc/Develop.htm [1.71], doc/Devices.htm [1.45],
+doc/Drivers.htm [1.27], doc/Fonts.htm [1.28], doc/Helpers.htm [1.23],
+doc/History1.htm [1.19], doc/History2.htm [1.19], doc/History3.htm [1.19],
+doc/History4.htm [1.19], doc/History5.htm [1.21], doc/History6.htm [1.36],
+doc/Htmstyle.htm [1.24], doc/Install.htm [1.32], doc/Issues.htm [1.22],
+doc/Language.htm [1.47], doc/Lib.htm [1.21], doc/Maintain.htm [1.29],
+doc/Make.htm [1.49], doc/New-user.htm [1.36], doc/Projects.htm [1.42],
+doc/Ps-style.htm [1.17], doc/Ps2epsi.htm [1.21], doc/Ps2pdf.htm [1.40],
+doc/Psfiles.htm [1.31], doc/Readme.htm [1.38], doc/Release.htm [1.58],
+doc/Source.htm [1.19], doc/Tester.htm [1.18], doc/Testing.htm [1.6],
+doc/Unix-lpr.htm [1.19], doc/Use.htm [1.51], doc/Xfonts.htm [1.19],
+doc/gs-vms.hlp [1.18], man/dvipdf.1 [1.14], man/font2c.1 [1.14],
+man/gs.1 [1.14], man/gslp.1 [1.14], man/gsnd.1 [1.14], man/pdf2dsc.1 [1.14],
+man/pdf2ps.1 [1.16], man/pdfopt.1 [1.14], man/pf2afm.1 [1.14],
+man/pfbtopfa.1 [1.15], man/printafm.1 [1.14], man/ps2ascii.1 [1.14],
+man/ps2epsi.1 [1.14], man/ps2pdf.1 [1.18], man/ps2pdfwr.1 [1.17],
+man/ps2ps.1 [1.21], man/wftopfa.1 [1.14]: 2002/04/03 06:56:07 giles)
 
 </pre><h2><a name="7.20-Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
+	- tmake recognized the end of a rule body by a blank line, rather
+than by a line that didn't begin with a tab. Fixes SourceForge #415170.
+(toolbin/tmake.tcl [1.4]: 2001/10/24 05:45:55 lpd)
+	- the icclib makefile comments were out of date; the build rule
+referred to gs_stdio_h, which no longer exists; the build rule for gsicc.o
+referred to icc_h, which was not defined at that point. (gs.mak [1.7],
+icclib.mak [1.4], lib.mak [1.57]: 2001/10/25 21:17:16 lpd)
+	- the recent (previous) update to tmake.tcl omitted a line, which
+caused the detection of out-of-date files to stop working.
+(toolbin/tmake.tcl [1.6]: 2001/10/25 22:02:11 lpd)
+	- lib.mak failed to include the dependency of gxdevcli.h on
+gstparam.h. (lib.mak [1.58]: 2001/10/31 07:10:59 lpd)
+	- makes png the default device on macos which is better supported
+than the pbm. (macosx.mak [1.2]: 2001/11/25 06:42:59 giles)
+	- Repairs code problems with the fix for bug #224056: non-re-entrant
+code, bad formatting, unused variables and computations, and a missing
+#include. (int.mak [1.53]: 2001/12/07 05:41:59 lpd)
+	- For images specified in general CIEBased color spaces, pdfwrite
+would divide the image into tiny rectangles. If the output level is PDF 1.3
+or higher, pdfwrite now converts the CIEBased color space to an ICCBased
+space if possible. (devs.mak [1.48]: 2001/12/13 18:24:05 lpd)
+	- Fix for #474544. Corrects inability to convert valid DeviceN tint
+transform functions into type 4 functions. Valid operator names were not
+being recognized unless the tint transform function had been bound. One of
+two fixes required for this problem. Customer #710. (int.mak [1.57]:
+2002/01/11 05:09:22 dancoby)
+	- Fix for #474544. This is the second of two fixes required for this
+problem. This fix creates a type 0 function which implements a "color cube"
+for those tint transform functions which cannot be converted into a type 4
+function. Customer #710. Note: There is one more revision planned for this
+effort. This revision will make the buildcolorcube operator into a more
+general buildsampledfunction. This will allow its use in other situations.
+(int.mak [1.58]: 2002/01/17 05:53:40 dancoby)
+	- Disables optimization on OpenVMS, because some OpenVMS C compilers
+produce incorrect code for gdevpsfx.c. Fixes SourceForge #508722.
+(openvms.mak [1.19], openvms.mmk [1.14]: 2002/02/05 19:54:14 lpd)
+	- Fix 3 of 3 for #474544 "Core dump - shfill error with DeviceN". 1.
+Recognizes already encapsulated tint transform functions. 2. Generalizes the
+color cube logic for use in other situations. 3. Uses the domain of the
+alternate color space for the range of the tint transform function.
+(int.mak [1.60]: 2002/02/06 02:35:11 dancoby)
+	- ps2pdf14 was not being installed by unixinst.mak. Fixes
+SourceForge bug #508607. (unixinst.mak [1.22]: 2002/02/06 07:16:17 jackiem)
+	- Fixes cvs2hist.py to be branch-aware, changing log selection
+policy from "all logs more recent than the date of the last tag" to "all
+logs along the current branch more recent than the reference tag given in
+the -j option". (toolbin/cvs2hist.py [1.10]: 2002/02/06 21:11:54 raph)
+	- pkmraw device was not built by Windows makefile, but it is
+required for regression testing. (msvc32.mak [1.23]: 2002/02/18 11:22:17
+igor)
+	- ijs.mak had the wrong license header (ijs.mak [1.3]: 2002/02/19
+23:59:34 giles)
+	- reverts the license of ijs.mak to AFPL; the previous change was
+intended for the GPL branch. (ijs.mak [1.4]: 2002/02/20 00:16:00 giles)
+	- check_docrefs didn't pass the gsroot parameter down far enough.
+(toolbin/tests/check_docrefs.py [1.3]: 2002/02/20 07:10:14 lpd)
+	- The Ghostscript test class didn't initialize the new member
+gsoptions. (bug introduced by Windows portability patch)
+(toolbin/tests/gstestgs.py [1.3]: 2002/02/20 07:14:35 lpd)
+	- The check_dirs test script still tried to check
+toolbin/regression, which no longer exists.
+(toolbin/tests/check_dirs.py [1.3]: 2002/02/21 22:19:03 lpd)
+	- The check_source test script didn't properly skip src/gconf.h, and
+it was too strict about the form of double-inclusion protection for header
+files. (toolbin/tests/check_source.py [1.3]: 2002/02/21 22:22:49 lpd)
+	- Add LICENSE file and the few files generated by autogen.sh to the
+allowed files in check_dir.py. (toolbin/tests/check_dirs.py [1.5]:
+2002/02/22 00:34:54 jack)
+	- The check_docrefs test script skipped over directories named by
+links. (toolbin/tests/check_docrefs.py [1.6]: 2002/02/22 02:42:35 lpd)
 	- Include gs_resmp.ps into the prelude with ADDMOD rather than
 .runlibfile (suggested by Raymond J. Johnston), and increase MSVC compiler
 heap for building gs_init.c with COMPILE_INITS=1. Source Forge bug "[ 526192
-] Broken COMPILE_INITS". (msvccmd.mak [1.9]: 2002/03/06 08:55:16 igor)
-       - base release date on UTC rather than local time
+] Broken COMPILE_INITS". (int.mak [1.64], msvccmd.mak [1.9]: 2002/03/06
+08:55:16 igor)
+	- Second attempt to fix COMPILE_INITS=1. This statically embeds all
+gs_*.ps files, xlatmap and FAPIconfig. Source Forge bug "[ 526192 ] Broken
+COMPILE_INITS". (int.mak [1.65]: 2002/03/07 10:52:06 igor)
+	- Definition for gsiodisk.$(OBJ) was multiply defined. Remove the
+one that is not dependent on the diskn.dev FEATURE. (lib.mak [1.66]:
+2002/03/15 06:25:13 ray)
+	- remove -fno-common from the standard gcc LDFLAGS. It is only
+required at compile time and doesn't need to be passed to the linker.
+(macosx.mak [1.7], unix-gcc.mak [1.29]: 2002/03/28 23:12:09 giles)
+	- base release date on UTC rather than local time
 (version.mak [1.43]: 2002/03/29 00:36:20 giles)
 	- use UTC universally in the prerelease check script to avoid
 spurious errors due to timezone differences (toolbin/pre.tcl [1.6]:
@@ -401,28 +831,205 @@ clients of gsfont.h to include gsmatrix.h unnecessarily. (lib.mak [1.68]:
 	- Makes pathname manipulation in check_dirs.py and check_docrefs.py
 more portable and robust. (toolbin/tests/check_dirs.py [1.6],
 toolbin/tests/check_docrefs.py [1.7]: 2002/03/29 02:32:54 raph)
+	- Change spaces at start of rule to a single tab required by some
+makes. (winint.mak [1.14]: 2002/04/02 16:27:56 ray)
+	- Correct vdtrace.h dependencies. This eliminates &gt;300 lines of
+output from the gsmake.tcl makefile check tool. (int.mak [1.68],
+lib.mak [1.69]: 2002/04/02 19:34:37 ray)
+
+Updates version number to 7.10 to indicate that this is now the development
+branch. (version.mak [1.37]: 2001/10/20 09:25:22 raph)
+
+Changes all procedures for getting glyph outline data to return a structure
+that includes memory management information. This is a
+NON-BACKWARD-COMPATIBLE change to both implementors and clients. It corrects
+a serious design error: formerly these procedures encoded memory management
+information in their return code, which was obscure and error-prone.
+(lib.mak [1.54]: 2001/10/21 06:20:08 lpd)
+
+FAPI project, UFST only, Type 1 and Type42 fonts. This version supports disk
+fonts including FCOs, and embedded fonts, including incremental ones.
+(bcwin32.mak [1.13], dvx-gcc.mak [1.13], gs.mak [1.6], int.mak [1.51],
+lib.mak [1.55], msvc32.mak [1.21], openvms.mak [1.17], openvms.mmk [1.13],
+unix-gcc.mak [1.24], unixansi.mak [1.17], winlib.mak [1.13]: 2001/10/21
+18:57:41 igorm)
+
+Upgrades tmake to provide line numbers for undefined variables; improves the
+warning message for redefined variables; makes --warn-undefined-variables
+warn at every use of a variable, not just the first use, and adds
+--warn-undefined-variables-once to warn at only the first use.
+(toolbin/tmake.tcl [1.5]: 2001/10/24 06:36:53 lpd)
+
+FAPI project: improving error handling. (lib.mak [1.56]: 2001/10/24 08:10:26
+igorm)
+
+Improves organization and commenting; adds a --warn-all switch.
+(toolbin/tmake.tcl [1.7]: 2001/10/30 19:43:51 lpd)
+
+FAPI project : (1) upgrading with UFST 4.3, (2) implementing GS cache.
+(int.mak [1.52]: 2001/11/11 23:09:16 igorm)
+
+Adds makefile support for building ghostscript as a MacOS X 'Framework'
+format encapsulated shared library. The new build is invoked by copying
+macosx.mak to the top level directory and invoking 'make framework'.
+(macos-fw.mak [1.1], macosx.mak [1.1]: 2001/11/22 07:29:48 giles)
+
+Adds extensionless aliases for all the scripts used in the normal build
+process; renames pre as pre.tcl; adds an Id line to smoke.ps; updates
+documentation to match. (toolbin/cvs2hist [1.1], toolbin/gsmake [1.1],
+toolbin/makefonts [1.1], toolbin/makefonts.tcl [1.1], toolbin/makegnu [1.1],
+toolbin/makehist [1.1], toolbin/makehist.tcl [1.1],
+toolbin/makemaster [1.1], toolbin/makemaster.tcl [1.1],
+toolbin/makeset [1.1], toolbin/makeset.tcl [1.11], toolbin/maketars [1.1],
+toolbin/maketars.tcl [1.1], toolbin/makewin [1.1],
+toolbin/makewin.tcl [1.1], toolbin/pre [1.12], toolbin/pre.tcl [1.1],
+toolbin/smoke.ps [1.2], toolbin/tmake.tcl [1.8]: 2001/12/07 07:16:42 lpd)
+
+Implementing a mapped resource category redefiner; Provide a map for CIDFont
+category; Reorganize the mapping algorithm for FAPI. (int.mak [1.54]:
+2001/12/08 11:31:20 igorm)
+
+FAPI project : Preparing environment for CID font processing; Fixing UFST
+file names. (int.mak [1.55], lib.mak [1.59]: 2001/12/12 02:48:20 igorm)
+
+Updates the comment describing the AK makefile variable to reflect the fact
+that ansi2knr no longer exists. (gs.mak [1.8]: 2001/12/13 18:12:17 lpd)
+
+FAPI project : implementing CDevProc and CIDDecoding. (int.mak [1.56]:
+2002/01/02 07:24:07 igorm)
+
+Makes tmake a shell script rather than a link, as is done with all the other
+tcl scripts. (toolbin/tmake [1.1]: 2002/01/08 07:21:54 lpd)
+
+Adds a very modest checksource script for checking the conformance of source
+files with coding and architectural standards. This script should eventually
+be run as part of nightly regression testing. (toolbin/pre.tcl [1.2]:
+2002/01/08 08:21:51 lpd)
+
+Updates the extension of the golfer and tiger example files to '.eps' in the
+install target. Also updates some documentation in source file comments.
+(unixinst.mak [1.21]: 2002/01/11 04:13:12 giles)
+
+Documents ICCSRCDIR along with the other platform-specific defines.
+(gs.mak [1.9]: 2002/01/12 02:55:14 giles)
+
+FAPI project : Provide a transfer of GlobalSubrs through FAPI for embedded
+Type 2 fonts. (int.mak [1.59]: 2002/01/18 11:03:06 igorm)
+
+Adds IJS driver to Ghostscript. Includes complete IJS version 0.33
+distribution. Also includes autoconf patch by Ralph Giles. (gs.mak [1.10],
+ijs.mak [1.1]: 2002/01/31 20:46:57 raph)
+
+Adds IJS driver to Ghostscript. Includes complete IJS version 0.33
+distribution. Also includes autoconf patch by Ralph Giles. (devs.mak [1.49]:
+2002/01/31 20:47:08 raph)
+
+Documentation and makefile updates for IJS driver. (bcwin32.mak [1.14],
+dvx-gcc.mak [1.14], ijs.mak [1.2], macos-mcp.mak [1.4], macosx.mak [1.3],
+msvc32.mak [1.22], openvms.mak [1.18], os2.mak [1.20], ugcclib.mak [1.14],
+unix-gcc.mak [1.25], unixansi.mak [1.18], watclib.mak [1.14],
+watcw32.mak [1.14], wctail.mak [1.4], winlib.mak [1.14]: 2002/02/01 03:17:12
+raph)
+
+Moves TrueType glyph flags to gxttf.h, where they should have been from the
+beginning. (lib.mak [1.60]: 2002/02/11 16:27:58 lpd)
+
+Removes some unnecessary #includes from gdevpsdu.c. (devs.mak [1.50]:
+2002/02/16 15:19:24 lpd)
 
 Replaces the toolbin/regression directory with a new toolbin/tests directory
 that includes all testing scripts. Adds and documents a framework for
-writing and running testing scripts. (toolbin/tests/fuzzy.c [1.1]:
+writing and running testing scripts. (toolbin/tests/check_all.py [1.1],
+toolbin/tests/check_dirs.py [1.1], toolbin/tests/check_docrefs.py [1.1],
+toolbin/tests/check_source.py [1.1], toolbin/tests/dump_testdb [1.1],
+toolbin/tests/fuzzy.c [1.1], toolbin/tests/gsconf.py [1.1],
+toolbin/tests/gsparamsets.py [1.1], toolbin/tests/gssum.py [1.1],
+toolbin/tests/gstestgs.py [1.1], toolbin/tests/gstestutils.py [1.1],
+toolbin/tests/make_testdb [1.1], toolbin/tests/make_two_versions [1.1],
+toolbin/tests/revert_baseline [1.1], toolbin/tests/run_nightly [1.1],
+toolbin/tests/run_regression [1.1], toolbin/tests/update_baseline [1.1]:
 2002/02/19 15:46:01 lpd)
 
+Updates the new test scripts with Igor's changes for running on MS Windows.
+(toolbin/tests/gsconf.py [1.2], toolbin/tests/gstestgs.py [1.2],
+toolbin/tests/make_testdb [1.2], toolbin/tests/make_two_versions [1.2],
+toolbin/tests/revert_baseline [1.2], toolbin/tests/update_baseline [1.2]:
+2002/02/19 15:59:14 lpd)
+
 Cleans up a few loose ends from the transition to the new testing framework.
-(toolbin/tests/.cvsignore [1.1]: 2002/02/19 16:16:07 lpd)
+(toolbin/tests/.cvsignore [1.1], toolbin/tests/check_docrefs.py [1.2]:
+2002/02/19 16:16:07 lpd)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(all-arch.mak [1.10], bcwin32.mak [1.15], cfonts.mak [1.3],
+contrib.mak [1.25], cp.bat [1.2], cp.cmd [1.2], devs.mak [1.51],
+dvx-gcc.mak [1.15], dvx-head.mak [1.3], dvx-tail.mak [1.6], dwmain.rc [1.3],
+dwsetup.rc [1.6], dwuninst.rc [1.4], gs.mak [1.11], gs16spl.rc [1.3],
+gsdll2.rc [1.3], gsdll32.rc [1.3], gsos2.rc [1.3], gspmdrv.rc [1.3],
+gswin.rc [1.3]: 2002/02/21 20:57:46 ray)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(icclib.mak [1.5], ijs.mak [1.5], int.mak [1.61], jpeg.mak [1.5],
+lib.mak [1.61], libpng.mak [1.11], macos-fw.mak [1.2], macos-mcp.mak [1.5],
+macosx.mak [1.4], msvc32.mak [1.24], msvccmd.mak [1.7], msvclib.mak [1.17],
+msvctail.mak [1.7], mv.bat [1.2], mv.cmd [1.2], openvms.mak [1.20],
+openvms.mmk [1.15], os2.mak [1.21], pcwin.mak [1.3], rm.bat [1.2],
+rm.cmd [1.2], ugcclib.mak [1.15], unix-aux.mak [1.6], unix-dll.mak [1.7],
+unix-end.mak [1.3], unix-gcc.mak [1.26], unixansi.mak [1.19],
+unixhead.mak [1.3], unixinst.mak [1.23], unixlink.mak [1.4],
+version.mak [1.38], watc.mak [1.17], watclib.mak [1.15], watcw32.mak [1.15],
+wccommon.mak [1.4], wctail.mak [1.5], winint.mak [1.9], winlib.mak [1.15],
+winplat.mak [1.3], wmin.mak [1.3], zlib.mak [1.4]: 2002/02/21 20:57:49 ray)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(toolbin/3way.tcl [1.4], toolbin/bughunt.sh [1.2], toolbin/cvs2hist [1.2],
+toolbin/cvs2hist.py [1.11], toolbin/errlist.tcl [1.4],
+toolbin/gsindent [1.4], toolbin/gsmake [1.2], toolbin/gsmake.tcl [1.6],
+toolbin/gssubst [1.2], toolbin/headers.tcl [1.4], toolbin/leaks.tcl [1.4],
+toolbin/makefonts [1.2], toolbin/makefonts.tcl [1.2], toolbin/makegnu [1.2],
+toolbin/makegnu.tcl [1.4], toolbin/makehist [1.2],
+toolbin/makehist.tcl [1.2], toolbin/makemaster [1.2],
+toolbin/makemaster.tcl [1.2], toolbin/makeset [1.2],
+toolbin/makeset.tcl [1.12], toolbin/maketars [1.2],
+toolbin/maketars.tcl [1.2], toolbin/makewin [1.2],
+toolbin/makewin.tcl [1.2], toolbin/many2pdf.tcl [1.2],
+toolbin/pdfinflt.ps [1.2], toolbin/pre [1.13], toolbin/pre.tcl [1.3],
+toolbin/precheck.tcl [1.4], toolbin/smoke.ps [1.3], toolbin/suite.tcl [1.4],
+toolbin/tests/check_all.py [1.2], toolbin/tests/check_dirs.py [1.2],
+toolbin/tests/check_docrefs.py [1.4], toolbin/tests/check_source.py [1.2],
+toolbin/tests/dump_testdb [1.2], toolbin/tests/gsconf.py [1.3],
+toolbin/tests/gsparamsets.py [1.2], toolbin/tests/gssum.py [1.2],
+toolbin/tests/gstestgs.py [1.4], toolbin/tests/gstestutils.py [1.2],
+toolbin/tests/make_testdb [1.3], toolbin/tests/make_two_versions [1.3],
+toolbin/tests/revert_baseline [1.3], toolbin/tests/run_nightly [1.2],
+toolbin/tests/run_regression [1.2], toolbin/tests/update_baseline [1.3],
+toolbin/tmake [1.2], toolbin/tmake.tcl [1.9]: 2002/02/21 20:57:53 ray)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
-and Revision pair. (cfonts.mak [1.4], contrib.mak [1.26], cp.bat [1.3],
-cp.cmd [1.3], dvx-head.mak [1.4], dvx-tail.mak [1.7], gsdll2.rc [1.4],
-gsos2.rc [1.4], gspmdrv.rc [1.4], icclib.mak [1.6], ijs.mak [1.6],
-jpeg.mak [1.6], msvctail.mak [1.8], mv.bat [1.3], mv.cmd [1.3],
-openvms.mmk [1.16], pcwin.mak [1.4], rm.bat [1.3], rm.cmd [1.3]: 2002/02/21
-22:24:51 giles)
+and Revision pair. (all-arch.mak [1.11], bcwin32.mak [1.16],
+cfonts.mak [1.4], contrib.mak [1.26], cp.bat [1.3], cp.cmd [1.3],
+devs.mak [1.52], dvx-gcc.mak [1.16], dvx-head.mak [1.4], dvx-tail.mak [1.7],
+dwmain.rc [1.4], dwsetup.rc [1.7], dwuninst.rc [1.5], gs.mak [1.12],
+gs16spl.rc [1.4], gsdll2.rc [1.4], gsdll32.rc [1.4], gsos2.rc [1.4],
+gspmdrv.rc [1.4], gswin.rc [1.4], icclib.mak [1.6], ijs.mak [1.6],
+int.mak [1.62], jpeg.mak [1.6], lib.mak [1.62], libpng.mak [1.12],
+macos-fw.mak [1.3], macos-mcp.mak [1.6], macosx.mak [1.5],
+msvc32.mak [1.25], msvccmd.mak [1.8], msvclib.mak [1.18],
+msvctail.mak [1.8], mv.bat [1.3], mv.cmd [1.3], openvms.mak [1.21],
+openvms.mmk [1.16], os2.mak [1.22], pcwin.mak [1.4], rm.bat [1.3],
+rm.cmd [1.3]: 2002/02/21 22:24:51 giles)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
-and Revision pair. (unix-dll.mak [1.8], unix-end.mak [1.4],
-unixhead.mak [1.4], unixinst.mak [1.24], unixlink.mak [1.5],
-wccommon.mak [1.5], wctail.mak [1.6], winlib.mak [1.16], winplat.mak [1.4],
-wmin.mak [1.4]: 2002/02/21 22:24:54 giles)
+and Revision pair. (ugcclib.mak [1.16], unix-aux.mak [1.7],
+unix-dll.mak [1.8], unix-end.mak [1.4], unix-gcc.mak [1.27],
+unixansi.mak [1.20], unixhead.mak [1.4], unixinst.mak [1.24],
+unixlink.mak [1.5], version.mak [1.39], watc.mak [1.18], watclib.mak [1.16],
+watcw32.mak [1.16], wccommon.mak [1.5], wctail.mak [1.6], winint.mak [1.10],
+winlib.mak [1.16], winplat.mak [1.4], wmin.mak [1.4], zlib.mak [1.5]:
+2002/02/21 22:24:54 giles)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (toolbin/3way.tcl [1.5], toolbin/bughunt.sh [1.3],
@@ -437,47 +1044,87 @@ toolbin/makemaster.tcl [1.3], toolbin/makeset [1.3],
 toolbin/makeset.tcl [1.13], toolbin/maketars [1.3],
 toolbin/maketars.tcl [1.3], toolbin/makewin [1.3],
 toolbin/makewin.tcl [1.3], toolbin/many2pdf.tcl [1.3],
-toolbin/pdfinflt.ps [1.3], toolbin/pre [1.14], toolbin/precheck.tcl [1.5],
-toolbin/suite.tcl [1.5], toolbin/tests/check_all.py [1.3],
-toolbin/tests/check_source.py [1.4], toolbin/tests/dump_testdb [1.3],
-toolbin/tests/gsconf.py [1.4], toolbin/tests/gsparamsets.py [1.3],
-toolbin/tests/gssum.py [1.3], toolbin/tests/gstestgs.py [1.5],
-toolbin/tests/gstestutils.py [1.3], toolbin/tests/make_testdb [1.4],
-toolbin/tests/make_two_versions [1.4], toolbin/tests/revert_baseline [1.4],
-toolbin/tests/run_nightly [1.3], toolbin/tests/run_regression [1.3],
-toolbin/tests/update_baseline [1.4], toolbin/tmake [1.3],
-toolbin/tmake.tcl [1.10]: 2002/02/21 22:44:45 giles)
+toolbin/pdfinflt.ps [1.3], toolbin/pre [1.14], toolbin/pre.tcl [1.4],
+toolbin/precheck.tcl [1.5], toolbin/smoke.ps [1.4], toolbin/suite.tcl [1.5],
+toolbin/tests/check_all.py [1.3], toolbin/tests/check_dirs.py [1.4],
+toolbin/tests/check_docrefs.py [1.5], toolbin/tests/check_source.py [1.4],
+toolbin/tests/dump_testdb [1.3], toolbin/tests/gsconf.py [1.4],
+toolbin/tests/gsparamsets.py [1.3], toolbin/tests/gssum.py [1.3],
+toolbin/tests/gstestgs.py [1.5], toolbin/tests/gstestutils.py [1.3],
+toolbin/tests/make_testdb [1.4], toolbin/tests/make_two_versions [1.4],
+toolbin/tests/revert_baseline [1.4], toolbin/tests/run_nightly [1.3],
+toolbin/tests/run_regression [1.3], toolbin/tests/update_baseline [1.4],
+toolbin/tmake [1.3], toolbin/tmake.tcl [1.10]: 2002/02/21 22:44:45 giles)
+
+FAPI project : (1) Fixing a bug in stringwidth; (2) replacing CheckRET macro
+with return_if_error. (int.mak [1.63]: 2002/02/25 10:02:12 igor)
+
+Removes auto-generated plain text versions of html documentation from cvs
+and makes their creation an explicit part of the release process.
+(toolbin/pre.tcl [1.5]: 2002/02/25 20:54:30 giles)
 
 Implementing Visual Trace service to graphics library, and Visual Trace
-server for Windows. (gsdll32.def [1.3]: 2002/02/26 16:09:15 igor)
+server for Windows. (gsdll32.def [1.3], lib.mak [1.63], winint.mak [1.11]:
+2002/02/26 16:09:15 igor)
+
+Add gdevpccm.obj to the display device dependencies. (devs.mak [1.53]:
+2002/02/28 22:23:39 ghostgum)
 
 When building the distribution archive, don't flag an error if gsv16spl.exe
 doesn't exist. This file is only needed for Win32s which is no longer
 supported. (winint.mak [1.12]: 2002/02/28 22:24:09 ghostgum)
 
+Removes -Wtraditional from the gcc switches, since we no longer support
+pre-ANSI compilers and newer gcc versions produce many more warnings if this
+switch is present. Also removes a stray space character. (macosx.mak [1.6],
+unix-gcc.mak [1.28]: 2002/03/05 17:50:11 lpd)
+
+Committing in . Long promised type cast changes neede to supress warnings on
+OpenVMS devs.mak : In a condition in a Makefile for OpenVMS the ":" should
+be surrounded by spaces. Modified Files: gs/src/devs.mak gs/src/imainarg.c
+gs/src/zfile.c
+----------------------------------------------------------------------
+(devs.mak [1.54]: 2002/03/07 08:35:16 joukj)
+
+Update msvc32.mak and documentation to support compilation with Microsoft
+Visual Studio .NET. This requires MSVC_VERSION=7. (msvc32.mak [1.26]:
+2002/03/12 07:20:08 ghostgum)
+
 Create the bboxutil.dev pseudo device to allow inclusion of the bbox device
 without putting the bbox device on the list of devices. Also clean up some
-minor dependency problems. (devs.mak [1.55]: 2002/03/13 19:50:13 ray)
+minor dependency problems. (devs.mak [1.55], lib.mak [1.64]: 2002/03/13
+19:50:13 ray)
 
 Add a new optional FEATURE, diskn.dev that provides emulation of %disk
 devices present on some Adobe printers. This version is NOT multiple
 instance safe, but is useful for embedded printers or for server systems
 with a single Ghostscript instance. Documentation is in Language.htm.
-Addresses SourceForge bug #493344 for Artifex customer #411. (gs.mak [1.13]:
-2002/03/13 20:27:39 ray)
+Addresses SourceForge bug #493344 for Artifex customer #411. (gs.mak [1.13],
+int.mak [1.66], lib.mak [1.65]: 2002/03/13 20:27:39 ray)
 
 Move definition of gsiodisk.$(OBJ) from int.mak to lib.mak as requested by
-LPD. (int.mak [1.67]: 2002/03/15 18:21:17 ray)
+LPD. (int.mak [1.67], lib.mak [1.67]: 2002/03/15 18:21:17 ray)
+
+Bumps the next-release version number to 7.20 to leave additional room for
+stable releases. (version.mak [1.40]: 2002/03/22 00:05:52 giles)
+
+backs out a non-portable buildtime revision date accidentally included in
+the last commit. (version.mak [1.41]: 2002/03/22 00:19:49 giles)
 
 Adds a framework_install target to the MacOS X build for testing
 convenience. (macos-fw.mak [1.4]: 2002/03/22 01:06:57 giles)
+
+Update release dates in preparation of the upcoming development release
+(version.mak [1.42]: 2002/03/29 00:01:02 giles)
 
 Updates the default version of the PNG library to the most-recent 1.2.1.
 Likewise updates references to the zlib version to the more recent 1.1.4,
 which includes an important security fix. Updates the default paths to the
 library source trees in all-arch.mak to reflect current usage.
-(all-arch.mak [1.12], macos-mcp.mak [1.7], msvc32.mak [1.27],
-msvclib.mak [1.19], openvms.mak [1.22], os2.mak [1.23], watc.mak [1.19],
+(all-arch.mak [1.12], bcwin32.mak [1.17], dvx-gcc.mak [1.17],
+macos-mcp.mak [1.7], macosx.mak [1.8], msvc32.mak [1.27],
+msvclib.mak [1.19], openvms.mak [1.22], os2.mak [1.23], ugcclib.mak [1.17],
+unix-gcc.mak [1.30], unixansi.mak [1.21], watc.mak [1.19],
 watclib.mak [1.17], watcw32.mak [1.17], zlib.mak [1.6]: 2002/03/29 00:19:09
 giles)
 
@@ -516,7 +1163,76 @@ unix-aux.mak [1.8], unix-gcc.mak [1.31], unixansi.mak [1.22]: 2002/03/30
 Updates release date for 7.20rc2 (version.mak [1.44]: 2002/03/31 00:32:38
 giles)
 
+Update documentation for 7.20rc3 (version.mak [1.45]: 2002/04/03 06:56:08
+giles)
+
 </pre><h2><a name="7.20-Utilities"></a>Utilities</h2><pre>
+
+Fixes problems:
+	- There were 3 unused declarations of the variable 'buf'.
+(ziodevsc.c [1.4]: 2001/11/22 04:57:21 lpd)
+	- remove unnecessary include in dxmainc.c. (dxmainc.c [1.5]:
+2001/11/25 07:52:55 giles)
+	- ps2ascii was broken (probably for a long time) because it still
+used NOBIND rather than DELAYBIND. Fixes SourceForge #485029.
+(lib/ps2ascii [1.4], lib/ps2ascii.bat [1.4], lib/ps2ascii.cmd [1.2],
+lib/ps2ascii.ps [1.4]: 2001/12/08 15:43:07 lpd)
+	- some files were missing the RCS 'Id' line with the last
+modification date. partial fix for Sourceforge bug #500922.
+(lib/acctest.ps [1.2], lib/decrypt.ps [1.2], lib/landscap.ps [1.2],
+lib/level1.ps [1.2], lib/pf2afm.ps [1.4], lib/printafm.ps [1.2],
+lib/viewjpeg.ps [1.2]: 2002/01/09 20:35:32 giles)
+	- some files were missing the RCS 'Id' line with the last
+modification date. partial fix for Sourceforge bug #500922. (gp_mac.c [1.3],
+gp_macio.c [1.3]: 2002/01/09 21:04:20 giles)
+	- On IA64 CPUs, objects were only aligned on 8-byte boundaries, not
+16-byte. (It may be that only jmpbuf structures actually need 16-byte
+alignment, but gcc and glibc malloc align all objects that way.) Fixes
+SourceForge bug #502866. Also cleans up some minor coding issues in
+genarch.c. (genarch.c [1.3]: 2002/01/16 16:09:20 lpd)
+	- Most of the calls of gs_[main_]init1 didn't check the return value
+for errors. (gserver.c [1.4]: 2002/01/18 00:43:10 lpd)
+	- Incorporate patch from Tim Waugh of RedHat to allow ps2pdfwr to
+correctly process files with spaces in their names. Peter's earlier fix
+missed a few enclosing "'s for output files. Fixes Sourceforge bug #505338.
+(lib/ps2pdfwr [1.7]: 2002/01/22 20:25:44 jackiem)
+	- Improve security in a (mostly) backward compatible fashion adding
+more flexible file access paths (PermitFile...) as user paramters and adding
+the facility to return to NOSAFER mode after running jobs (files/procedures)
+in SAFER mode. This should address SF bug #474582 and eliminate the need for
+the RedHat PARANOIDSAFER patch. (gp_macio.c [1.4], gp_ntfs.c [1.6],
+gp_os2.c [1.11], gp_vms.c [1.8]: 2002/01/24 06:33:33 rayjj)
+	- Extra (old) parameters to gp_file_name_concat_string removed.
+(gp_ntfs.c [1.7]: 2002/02/01 08:03:46 rayjj)
+	- File enumeration on VMS doesn't enumerate "*" as all files,
+needing "*.*" similar to gp_dosfe.c. PostScript FONTPATH scanning and PCL
+font loading failed prior to this fix. Filenames that already have a "."
+prior to the trailing "*" are not modified. (gp_vms.c [1.9]: 2002/02/06
+01:07:54 rayjj)
+	- Typos (" used when ' was needed) fixed. So much for desk checking
+:-( (gp_vms.c [1.10]: 2002/02/08 04:37:56 rayjj)
+	- Fixes pdf2dsc to open input file before .setsafe, so that it works
+even when SAFER locks down read file access. (lib/pdf2dsc.ps [1.4]:
+2002/02/13 17:28:08 raph)
+	- pdfopt didn't handle pages with no Contents, and didn't handle
+files in which any objects (such as resources) were referenced from both the
+first page and later pages. Also adds more tracing output to pdfopt (with
+-dPDEBUG). Fixes SourceForge #516628. (lib/pdfopt.ps [1.11]: 2002/02/19
+19:52:28 lpd)
+
+FAPI project, UFST only, Type 1 and Type42 fonts. This version supports disk
+fonts including FCOs, and embedded fonts, including incremental ones.
+(genconf.c [1.5]: 2001/10/21 18:57:41 igorm)
+
+FAPI project, UFST only, Type 1 and Type42 fonts. This version supports disk
+fonts including FCOs, and embedded fonts, including incremental ones.
+(lib/xlatmap [1.1]: 2001/10/21 19:10:29 igorm)
+
+FAPI project: improving error handling. (lib/xlatmap [1.2]: 2001/10/22
+16:22:29 igorm)
+
+Adds a reference to the v7.xx History file. (gp_mac.c [1.2]: 2001/10/24
+22:33:39 giles)
 
 Replaces references of 'FontManagerLib' with 'FontManager' to match the
 Universal Headers stub shipped with Metrowerks CW 6.3. Also disables the
@@ -528,29 +1244,124 @@ macos shlib now builds and works 'out of the box'. (macgenmcpxml.sh [1.2]:
 Adds xml property/version file for MacOS X Framework build.
 (lib/Info-macos.plist [1.1]: 2001/12/04 00:02:09 giles)
 
+Implementing a mapped resource category redefiner; Provide a map for CIDFont
+category; Reorganize the mapping algorithm for FAPI. (lib/FAPIcidfmap [1.1],
+lib/FAPIfontmap [1.1], lib/cidfmap [1.1]: 2001/12/08 11:31:20 igorm)
+
+FAPI project : implementing CID fonts with FAPI. (lib/FAPIcidfmap [1.2],
+lib/FAPIconfig [1.1], lib/FAPIfontmap [1.2], lib/cidfmap [1.2],
+lib/xlatmap [1.3]: 2001/12/12 23:02:08 igorm)
+
+FAPI project : Removing a trash code from lib/FAPIfontmap .
+(lib/FAPIfontmap [1.3]: 2001/12/13 19:27:18 igorm)
+
+decrypt.ps had an incomplete RCS 'Id' line. Completes the fix for
+SourceForge bug # 500922. (lib/decrypt.ps [1.3]: 2002/01/09 22:01:45 lpd)
+
+decrpyt.ps *still* didn't have a correct RCS 'Id' line.
+(lib/decrypt.ps [1.4]: 2002/01/09 22:03:01 lpd)
+
+Updates the extension of the golfer and tiger example files to '.eps' in the
+install target. Also updates some documentation in source file comments.
+(gserver.c [1.3], lib/stocht.ps [1.4]: 2002/01/11 04:13:12 giles)
+
+FAPI project : Implementing Type 2 fonts. (lib/FAPIconfig [1.2]: 2002/01/17
+00:02:42 igorm)
+
+Adds the standard GNU copyright banner to the viewjpeg script, with
+permission from Thomas Merz. Also updates the author's email address and
+removes the obsolete physical address. (lib/viewjpeg.ps [1.3]: 2002/02/08
+09:46:17 giles)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(ansi2knr.c [1.4], bench.c [1.5], catmake [1.2], dxmain.c [1.8],
+dxmainc.c [1.6], echogs.c [1.4], genarch.c [1.4], genconf.c [1.6],
+gendev.c [1.3], genht.c [1.3], geninit.c [1.4], gp_dvx.c [1.5],
+gp_iwatc.c [1.7], gp_mac.c [1.4], gp_macio.c [1.5], gp_mktmp.c [1.3],
+gp_msdll.c [1.2], gp_mshdl.c [1.3], gp_msio.c [1.4], gp_mslib.c [1.4],
+gp_mspol.c [1.2], gp_msprn.c [1.2], gp_mswin.c [1.8], gp_ntfs.c [1.8],
+gp_os2.c [1.12], gp_os9.c [1.5], gp_stdia.c [1.4], gp_stdin.c [1.3],
+gp_sysv.c [1.3], gp_unix.c [1.6], gp_vms.c [1.11], gp_wgetv.c [1.5],
+gp_win32.c [1.3], gp_wsync.c [1.3], gs16spl.c [1.3], lib/FAPIcidfmap [1.3],
+lib/FAPIconfig [1.3], lib/FAPIfontmap [1.4], lib/Fontmap.ATB [1.3],
+lib/Fontmap.ATM [1.3], lib/Fontmap.GS [1.3], lib/Fontmap.OS2 [1.3],
+lib/Fontmap.SGI [1.3], lib/Fontmap.Sol [1.3], lib/Fontmap.Ult [1.3],
+lib/acctest.ps [1.3], lib/addxchar.ps [1.3], lib/align.ps [1.3],
+lib/bdftops [1.3], lib/bdftops.bat [1.4], lib/bdftops.cmd [1.3],
+lib/bdftops.ps [1.4], lib/caption.ps [1.3], lib/cid2code.ps [1.4],
+lib/cidfmap [1.3], lib/decrypt.ps [1.5], lib/docie.ps [1.3],
+lib/dvipdf [1.3], lib/eps2eps [1.4], lib/eps2eps.bat [1.6],
+lib/eps2eps.cmd [1.3], lib/errpage.ps [1.3], lib/fixmswrd.pl [1.2],
+lib/font2c [1.2], lib/font2c.bat [1.3], lib/font2c.cmd [1.2],
+lib/font2c.ps [1.4], lib/font2pcl.ps [1.3], lib/gsbj [1.2],
+lib/gsbj.bat [1.3], lib/gsdj [1.2], lib/gsdj.bat [1.3], lib/gsdj500 [1.2],
+lib/gsdj500.bat [1.3], lib/gslj [1.2], lib/gslj.bat [1.3], lib/gslp [1.2],
+lib/gslp.bat [1.3], lib/gslp.ps [1.3], lib/gsnd [1.2], lib/gsnd.bat [1.3],
+lib/gsndt.bat [1.3], lib/gsnup.ps [1.3], lib/gssetgs.bat [1.4],
+lib/gst.bat [1.3], lib/gstt.bat [1.3], lib/image-qa.ps [1.4],
+lib/impath.ps [1.4], lib/jispaper.ps [1.3], lib/landscap.ps [1.3],
+lib/level1.ps [1.3], lib/lines.ps [1.3], lib/lp386.bat [1.2],
+lib/lp386r2.bat [1.2], lib/lpgs.bat [1.3], lib/lpr2.bat [1.3],
+lib/lprsetup.sh [1.2], lib/markhint.ps [1.3], lib/markpath.ps [1.3],
+lib/packfile.ps [1.3], lib/pcharstr.ps [1.3], lib/pdf2dsc [1.4],
+lib/pdf2dsc.bat [1.3], lib/pdf2dsc.ps [1.5], lib/pdf2ps [1.5],
+lib/pdf2ps.bat [1.6], lib/pdf2ps.cmd [1.3], lib/pdfopt [1.5],
+lib/pdfopt.bat [1.5], lib/pdfopt.ps [1.12], lib/pdfwrite.ps [1.8],
+lib/pf2afm [1.3], lib/pf2afm.bat [1.4], lib/pf2afm.cmd [1.3],
+lib/pf2afm.ps [1.5], lib/pfbtopfa [1.4], lib/pfbtopfa.ps [1.3],
+lib/pftogsf.bat [1.3], lib/pj-gs.sh [1.2], lib/ppath.ps [1.3],
+lib/pphs [1.2], lib/pphs.ps [1.4], lib/prfont.ps [1.3], lib/printafm [1.2],
+lib/printafm.ps [1.3], lib/ps2ai.ps [1.3], lib/ps2ascii [1.5],
+lib/ps2ascii.bat [1.5], lib/ps2ascii.cmd [1.3], lib/ps2ascii.ps [1.5],
+lib/ps2epsi [1.8], lib/ps2epsi.bat [1.7], lib/ps2epsi.cmd [1.4],
+lib/ps2epsi.ps [1.6], lib/ps2pdf [1.2], lib/ps2pdf.bat [1.7],
+lib/ps2pdf.cmd [1.2], lib/ps2pdf12 [1.2], lib/ps2pdf12.bat [1.6],
+lib/ps2pdf12.cmd [1.2], lib/ps2pdf13 [1.2], lib/ps2pdf13.bat [1.6],
+lib/ps2pdf13.cmd [1.3], lib/ps2pdf14 [1.2], lib/ps2pdf14.bat [1.3],
+lib/ps2pdf14.cmd [1.2], lib/ps2pdfwr [1.8], lib/ps2pdfxx.bat [1.11],
+lib/ps2ps [1.4], lib/ps2ps.bat [1.5], lib/ps2ps.cmd [1.2], lib/pv.sh [1.2],
+lib/rollconv.ps [1.2], lib/showchar.ps [1.3], lib/stcinfo.ps [1.3],
+lib/stcolor.ps [1.3], lib/stocht.ps [1.5], lib/sysvlp.sh [1.2],
+lib/traceimg.ps [1.3], lib/traceop.ps [1.3], lib/type1enc.ps [1.3],
+lib/type1ops.ps [1.3], lib/uninfo.ps [1.3], lib/unix-lpr.sh [1.2],
+lib/unprot.ps [1.3], lib/viewcmyk.ps [1.3], lib/viewgif.ps [1.3],
+lib/viewjpeg.ps [1.4], lib/viewmiff.ps [1.3], lib/viewpbm.ps [1.3],
+lib/viewpcx.ps [1.3], lib/viewps2a.ps [1.3], lib/wftopfa [1.2],
+lib/wftopfa.ps [1.3], lib/winmaps.ps [1.3], lib/wmakebat.bat [1.2],
+lib/wrfont.ps [1.3], lib/xlatmap [1.4], lib/zeroline.ps [1.3]: 2002/02/21
+20:57:45 ray)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(gsdll.c [1.7], gserver.c [1.5], gspmdrv.c [1.3], instcopy [1.2],
+scfdgen.c [1.3], zdosio.c [1.3], ziodevs.c [1.6], ziodevsc.c [1.5]:
+2002/02/21 20:57:48 ray)
+
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
-and Revision pair. (lib/FAPIcidfmap [1.4], lib/FAPIfontmap [1.5],
-lib/Fontmap.ATB [1.4], lib/Fontmap.ATM [1.4], lib/Fontmap.GS [1.4],
-lib/Fontmap.OS2 [1.4], lib/Fontmap.SGI [1.4], lib/Fontmap.Sol [1.4],
-lib/Fontmap.Ult [1.4], lib/acctest.ps [1.4], lib/addxchar.ps [1.4],
-lib/align.ps [1.4], lib/bdftops [1.4], lib/bdftops.bat [1.5],
-lib/bdftops.cmd [1.4], lib/bdftops.ps [1.5], lib/caption.ps [1.4],
-lib/cid2code.ps [1.5], lib/cidfmap [1.4], lib/decrypt.ps [1.6],
-lib/docie.ps [1.4], lib/dvipdf [1.4], lib/eps2eps [1.5],
-lib/eps2eps.bat [1.7], lib/eps2eps.cmd [1.4], lib/errpage.ps [1.4],
-lib/font2c [1.3], lib/font2c.bat [1.4], lib/font2c.cmd [1.3],
-lib/font2c.ps [1.5], lib/font2pcl.ps [1.4], lib/gsbj [1.3],
-lib/gsbj.bat [1.4], lib/gsdj [1.3], lib/gsdj.bat [1.4], lib/gsdj500 [1.3],
-lib/gsdj500.bat [1.4], lib/gslj [1.3], lib/gslj.bat [1.4], lib/gslp [1.3],
-lib/gslp.bat [1.4], lib/gslp.ps [1.4], lib/gsnd [1.3], lib/gsnd.bat [1.4],
-lib/gsndt.bat [1.4], lib/gsnup.ps [1.4], lib/gssetgs.bat [1.5],
-lib/gst.bat [1.4], lib/gstt.bat [1.4], lib/image-qa.ps [1.5],
-lib/impath.ps [1.5], lib/jispaper.ps [1.4], lib/landscap.ps [1.4],
-lib/level1.ps [1.4], lib/lines.ps [1.4], lib/lp386.bat [1.3],
-lib/lp386r2.bat [1.3], lib/lpgs.bat [1.4], lib/lpr2.bat [1.4],
-lib/lprsetup.sh [1.3], lib/markhint.ps [1.4], lib/markpath.ps [1.4],
-lib/packfile.ps [1.4], lib/pcharstr.ps [1.4], lib/pdf2dsc [1.5],
-lib/pdf2dsc.bat [1.4], lib/pdf2ps [1.6], lib/pdf2ps.bat [1.7],
+and Revision pair. (lib/FAPIcidfmap [1.4], lib/FAPIconfig [1.4],
+lib/FAPIfontmap [1.5], lib/Fontmap.ATB [1.4], lib/Fontmap.ATM [1.4],
+lib/Fontmap.GS [1.4], lib/Fontmap.OS2 [1.4], lib/Fontmap.SGI [1.4],
+lib/Fontmap.Sol [1.4], lib/Fontmap.Ult [1.4], lib/acctest.ps [1.4],
+lib/addxchar.ps [1.4], lib/align.ps [1.4], lib/bdftops [1.4],
+lib/bdftops.bat [1.5], lib/bdftops.cmd [1.4], lib/bdftops.ps [1.5],
+lib/caption.ps [1.4], lib/cid2code.ps [1.5], lib/cidfmap [1.4],
+lib/decrypt.ps [1.6], lib/docie.ps [1.4], lib/dvipdf [1.4],
+lib/eps2eps [1.5], lib/eps2eps.bat [1.7], lib/eps2eps.cmd [1.4],
+lib/errpage.ps [1.4], lib/fixmswrd.pl [1.3], lib/font2c [1.3],
+lib/font2c.bat [1.4], lib/font2c.cmd [1.3], lib/font2c.ps [1.5],
+lib/font2pcl.ps [1.4], lib/gsbj [1.3], lib/gsbj.bat [1.4], lib/gsdj [1.3],
+lib/gsdj.bat [1.4], lib/gsdj500 [1.3], lib/gsdj500.bat [1.4],
+lib/gslj [1.3], lib/gslj.bat [1.4], lib/gslp [1.3], lib/gslp.bat [1.4],
+lib/gslp.ps [1.4], lib/gsnd [1.3], lib/gsnd.bat [1.4], lib/gsndt.bat [1.4],
+lib/gsnup.ps [1.4], lib/gssetgs.bat [1.5], lib/gst.bat [1.4],
+lib/gstt.bat [1.4], lib/image-qa.ps [1.5], lib/impath.ps [1.5],
+lib/jispaper.ps [1.4], lib/landscap.ps [1.4], lib/level1.ps [1.4],
+lib/lines.ps [1.4], lib/lp386.bat [1.3], lib/lp386r2.bat [1.3],
+lib/lpgs.bat [1.4], lib/lpr2.bat [1.4], lib/lprsetup.sh [1.3],
+lib/markhint.ps [1.4], lib/markpath.ps [1.4], lib/packfile.ps [1.4],
+lib/pcharstr.ps [1.4], lib/pdf2dsc [1.5], lib/pdf2dsc.bat [1.4],
+lib/pdf2dsc.ps [1.6], lib/pdf2ps [1.6], lib/pdf2ps.bat [1.7],
 lib/pdf2ps.cmd [1.4], lib/pdfopt [1.6], lib/pdfopt.bat [1.6],
 lib/pdfopt.ps [1.13], lib/pdfwrite.ps [1.9], lib/pf2afm [1.4],
 lib/pf2afm.bat [1.5], lib/pf2afm.cmd [1.4], lib/pf2afm.ps [1.6],
@@ -608,10 +1419,48 @@ update to gv. (lib/pdf2dsc.ps [1.7]: 2002/03/30 23:39:15 raph)
 </pre><h2><a name="7.20-Drivers"></a>Drivers</h2><pre>
 
 Fixes problems:
+	- Fixes a %ld format with an int argument. (gdevpsu.c [1.8]:
+2001/11/22 05:10:01 lpd)
+	- Setting any of the pdfwrite xxxProfile "distiller" parameters
+caused a garbage collection error. (gdevpsdp.c [1.9]: 2001/11/25 01:02:51
+lpd)
+	- some files were missing the RCS 'Id' line with the last
+modification date. partial fix for Sourceforge bug #500922.
+(gdevdsp.c [1.7], gdevhpij.c [1.5], gdevhpij.h [1.3], gdevmac.c [1.3],
+gdevmac.h [1.2], gdevmacpictop.h [1.2], gdevmacttf.h [1.2],
+gdevmacxf.c [1.3], gdevphex.c [1.4]: 2002/01/09 21:04:20 giles)
+	- Don't signal invalidacces if the OutputFile parameter is set to
+the current value as would be done by 'currentpagedevice setpagedevice'.
+(gdevcgm.c [1.4], gdevmac.c [1.4]: 2002/01/15 04:44:09 rayjj)
+	- epswrite generates "grestore gsave" while changing a clipping
+path, so the internal graphic state and the output document's graphic state
+become unsynchonized. Particularly this looses the current color. Source
+Forge bug [ #502830 ] pdf2ps - bad color of objects (gdevps.c [1.20]:
+2002/01/29 05:57:49 igorm)
+	- Removes broken x11alpha driver, and installs an alias for x11
+under that name, with default parameters changed to support antialiasing.
+Fixes SourceForge bug #505692. (gdevx.c [1.9], gdevxalt.c [1.3]: 2002/01/30
+20:08:41 raph)
+	- The previous version of src/gdevps.c was checked in with
+DOS/Windows (^M^J) EOLs rather than Unix (^J) EOLs, causing some C compilers
+to reject it. (gdevps.c [1.21]: 2002/02/05 05:09:08 lpd)
+	- psdf_end_binary didn't convert the stream status to an error code,
+possibly causing incorrect error reporting. (gdevpsdu.c [1.11]: 2002/02/12
+22:00:39 lpd)
+	- Many files lacked double-inclusion protection, or implemented it
+incorrectly. (gdevbjcl.h [1.3], gdevmacpictop.h [1.3], gdevmacttf.h [1.3],
+png_.h [1.3]: 2002/02/20 01:32:47 lpd)
+	- Changes XPutImage to use xdev-&gt;vinfo-&gt;depth rather than
+xdev-&gt;color_info.depth. These are the same in all cases except a visual
+depth of 15, in which the latter is 16. (gdevx.c [1.10]: 2002/02/20 19:39:02
+raph)
 	- improve pswrite with compatibility to interpreters which don't
 consume ASCII85Decode EOD when reader stops immediately before it. Source
 Forge bug #525044 "pswrite incompatible with some RIPs". Thanks to Paul
 Vojta for spotting this. (gdevps.c [1.24]: 2002/03/13 16:03:50 igor)
+	- Outputs PCLXL dash offset as unsigned integer rather than float,
+bringing it into compliance with the spec. Thanks to Tobias Kunze for bug
+report, analysis, and patch. (gdevpx.c [1.9]: 2002/03/20 20:10:06 raph)
 	- epswrite was incompatible with HP LaserJet 4000 TN. Source Forge
 bug #529202 "Wrong PostScript in pswrite prolog". (gdevpsu.c [1.11]:
 2002/03/20 20:20:11 igor)
@@ -619,6 +1468,97 @@ bug #529202 "Wrong PostScript in pswrite prolog". (gdevpsu.c [1.11]:
 (gdevpx.c [1.10]: 2002/03/22 01:54:01 raph)
 	- Fixes incorrect margins on IJS devices. Thanks to Dave Suffield
 for the patch. (gdevijs.c [1.4]: 2002/03/28 20:44:35 raph)
+
+Adds a reference to the v7.xx History file. (gdevmacxf.c [1.2]: 2001/10/24
+22:33:38 giles)
+
+Changes uses of 'defined' as an identifier to 'is_defined', since 'defined'
+is a (non-standard) reserved word in gcc 2.96. (Patch from Red Hat.)
+(gdevcdj.c [1.6]: 2001/11/07 07:48:57 lpd)
+
+Updates pdfwrite to match Acrobat Distiller 5 more closely: adds
+OffOptimizations and PreserveEPSInfo parameters; adds /ebook value for
+PDFSETTINGS; changes some of the DCTEncode parameter values for
+auto-filtered images; adds CreationDate and ModDate in Info dictionary;
+always subsets non Type 1 fonts. (gdevpsdi.c [1.16]: 2001/12/09 00:07:57
+lpd)
+
+Don't allocate memory or call callbacks when display device does not have a
+callback function. (gdevdsp.c [1.6]: 2001/12/18 07:02:53 ghostgum)
+
+Remove C++ style (//) comments from two files to increase portability.
+(gdevhpij.c [1.4], gdevphex.c [1.3], gdevxcmp.c [1.3]: 2001/12/19 20:53:46
+jackiem)
+
+Revert the accidental commit of this file. (gdevxcmp.c [1.4]: 2001/12/19
+21:22:52 jackiem)
+
+Remove C++ // comment from C file. (gdevwdib.c [1.4]: 2001/12/19 22:13:08
+ghostgum)
+
+Improve security for device related access to the file system and to pipes
+by allowing the dangerous parameters to be locked (for example, OutputFile).
+The locking is performed after command line parameters are established.
+Locking is not turned on by default as a result of this change, but
+-d.LockSafetyParams=true can be added to the command line to accomplish
+this. Related to SF bug #474582 (sort of). (gdevcgm.c [1.3],
+gdevmac.c [1.2]: 2001/12/22 00:44:01 rayjj)
+
+Updates the extension of the golfer and tiger example files to '.eps' in the
+install target. Also updates some documentation in source file comments.
+(gdevcdj.c [1.7], gdevhl7x.c [1.6]: 2002/01/11 04:13:12 giles)
+
+Adds IJS driver to Ghostscript. Includes complete IJS version 0.33
+distribution. Also includes autoconf patch by Ralph Giles. (gdevijs.c [1.1]:
+2002/01/31 20:46:52 raph)
+
+Removes some unnecessary #includes from gdevpsdu.c. (gdevpsdu.c [1.12]:
+2002/02/16 15:19:24 lpd)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(gdev3852.c [1.4], gdev3b1.c [1.3], gdev4081.c [1.4], gdev4693.c [1.4],
+gdev8510.c [1.4], gdev8bcm.c [1.3], gdev8bcm.h [1.3], gdevadmp.c [1.4],
+gdevatx.c [1.7], gdevbit.c [1.3], gdevbj10.c [1.5], gdevbjc.h [1.3],
+gdevbjcl.c [1.3], gdevbjcl.h [1.4], gdevbmp.c [1.5], gdevbmp.h [1.3],
+gdevbmpa.c [1.4], gdevbmpc.c [1.3], gdevccr.c [1.3], gdevcdj.c [1.8],
+gdevcfax.c [1.4], gdevcgm.c [1.5], gdevcgml.c [1.3], gdevcgml.h [1.3],
+gdevcgmx.h [1.3], gdevcif.c [1.4], gdevclj.c [1.3], gdevcljc.c [1.5],
+gdevcp50.c [1.4], gdevcslw.c [1.3], gdevdcrd.c [1.3], gdevdcrd.h [1.3],
+gdevdfax.c [1.5], gdevdjet.c [1.7], gdevdjtc.c [1.4], gdevdljm.c [1.5],
+gdevdljm.h [1.5], gdevdm24.c [1.4], gdevdsp.c [1.8], gdevegaa.asm [1.3],
+gdevepsc.c [1.4], gdevepsn.c [1.4], gdevescp.c [1.4], gdevevga.c [1.3],
+gdevfax.c [1.3], gdevfax.h [1.3], gdevherc.c [1.3], gdevhl7x.c [1.7],
+gdevhpij.c [1.6], gdevhpij.h [1.4], gdevifno.c [1.3], gdevijs.c [1.2],
+gdevimgn.c [1.5], gdevjpeg.c [1.4], gdevl256.c [1.4], gdevl31s.c [1.3],
+gdevlbp8.c [1.4], gdevlj56.c [1.4], gdevlp8k.c [1.3], gdevlxm.c [1.3],
+gdevmac.c [1.5], gdevmac.h [1.3], gdevmacpictop.h [1.4], gdevmacttf.h [1.4],
+gdevmacxf.c [1.4], gdevmeds.c [1.3], gdevmeds.h [1.3], gdevmgr.c [1.3],
+gdevmgr.h [1.3], gdevmiff.c [1.4], gdevmswn.c [1.5], gdevmswn.h [1.3],
+gdevmsxf.c [1.3], gdevn533.c [1.4], gdevo182.c [1.4], gdevokii.c [1.4],
+gdevos2p.c [1.5], gdevp14.h [1.2], gdevp2up.c [1.3], gdevpbm.c [1.4],
+gdevpccm.c [1.3], gdevpccm.h [1.4], gdevpcfb.c [1.3], gdevpcfb.h [1.3],
+gdevpcl.c [1.6], gdevpcl.h [1.6], gdevpcx.c [1.3], gdevpe.c [1.3],
+gdevphex.c [1.5], gdevpjet.c [1.4], gdevpm.c [1.5], gdevpm.h [1.3],
+gdevpng.c [1.5], gdevpnga.c [1.5], gdevps.c [1.22], gdevpsdf.h [1.10],
+gdevpsdi.c [1.17], gdevpsdp.c [1.10], gdevpsds.c [1.5], gdevpsds.h [1.5],
+gdevpsdu.c [1.13], gdevpsim.c [1.7], gdevpsu.c [1.9], gdevpsu.h [1.5],
+gdevpx.c [1.7], gdevpxat.h [1.4], gdevpxen.h [1.4], gdevpxop.h [1.3],
+gdevpxut.c [1.3], gdevpxut.h [1.3], gdevs3ga.c [1.3], gdevsco.c [1.4],
+gdevsgi.c [1.3], gdevsgi.h [1.2], gdevsj48.c [1.3], gdevsnfb.c [1.4],
+gdevsppr.c [1.6], gdevstc.c [1.3], gdevstc.h [1.3], gdevstc1.c [1.3],
+gdevstc2.c [1.3], gdevstc3.c [1.3], gdevstc4.c [1.3], gdevsun.c [1.3],
+gdevsunr.c [1.5], gdevsvga.c [1.3], gdevsvga.h [1.3], gdevtfax.c [1.5],
+gdevtfax.h [1.5], gdevtfnx.c [1.6], gdevtifs.c [1.5], gdevtifs.h [1.4],
+gdevtknk.c [1.4], gdevupd.c [1.6], gdevvglb.c [1.4], gdevwddb.c [1.4],
+gdevwdib.c [1.5], gdevwpr2.c [1.10], gdevwprn.c [1.4], gdevx.c [1.11],
+gdevx.h [1.5], gdevxalt.c [1.4], gdevxcmp.c [1.5], gdevxcmp.h [1.3],
+gdevxini.c [1.11], gdevxres.c [1.4], gdevxxf.c [1.6]: 2002/02/21 20:57:46
+ray)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(png_.h [1.4], x_.h [1.4]: 2002/02/21 20:57:49 ray)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (gdev3852.c [1.5], gdev3b1.c [1.4], gdev4081.c [1.5],
@@ -634,19 +1574,20 @@ gdevdljm.c [1.6], gdevdljm.h [1.6], gdevdm24.c [1.5], gdevdsp.c [1.9],
 gdevegaa.asm [1.4], gdevepsc.c [1.5], gdevepsn.c [1.5], gdevescp.c [1.5],
 gdevevga.c [1.4], gdevfax.c [1.4], gdevfax.h [1.4], gdevherc.c [1.4],
 gdevhl7x.c [1.8], gdevhpij.c [1.7], gdevhpij.h [1.5], gdevifno.c [1.4],
-gdevimgn.c [1.6], gdevjpeg.c [1.5], gdevl256.c [1.5], gdevl31s.c [1.4],
-gdevlbp8.c [1.5], gdevlj56.c [1.5], gdevlp8k.c [1.4], gdevlxm.c [1.4],
-gdevmac.c [1.6], gdevmac.h [1.4], gdevmacpictop.h [1.5], gdevmacttf.h [1.5],
-gdevmacxf.c [1.5], gdevmeds.c [1.4], gdevmeds.h [1.4], gdevmgr.c [1.4],
-gdevmgr.h [1.4], gdevmiff.c [1.5], gdevmswn.c [1.6], gdevmswn.h [1.4],
-gdevmsxf.c [1.4], gdevn533.c [1.5], gdevo182.c [1.5], gdevokii.c [1.5],
-gdevos2p.c [1.6], gdevp14.h [1.3], gdevp2up.c [1.4], gdevpbm.c [1.5],
-gdevpccm.c [1.4], gdevpccm.h [1.5], gdevpcfb.c [1.4], gdevpcfb.h [1.4],
-gdevpcl.c [1.7], gdevpcl.h [1.7], gdevpcx.c [1.4], gdevpe.c [1.4],
-gdevphex.c [1.6], gdevpjet.c [1.5], gdevpm.c [1.6], gdevpm.h [1.4],
-gdevpng.c [1.6], gdevpnga.c [1.6], gdevpsdf.h [1.11], gdevpsdi.c [1.18],
-gdevpsdp.c [1.11], gdevpsds.c [1.6], gdevpsds.h [1.6], gdevpsdu.c [1.14],
-gdevpsim.c [1.8], gdevpsu.h [1.6], gdevpxat.h [1.5], gdevpxen.h [1.5],
+gdevijs.c [1.3], gdevimgn.c [1.6], gdevjpeg.c [1.5], gdevl256.c [1.5],
+gdevl31s.c [1.4], gdevlbp8.c [1.5], gdevlj56.c [1.5], gdevlp8k.c [1.4],
+gdevlxm.c [1.4], gdevmac.c [1.6], gdevmac.h [1.4], gdevmacpictop.h [1.5],
+gdevmacttf.h [1.5], gdevmacxf.c [1.5], gdevmeds.c [1.4], gdevmeds.h [1.4],
+gdevmgr.c [1.4], gdevmgr.h [1.4], gdevmiff.c [1.5], gdevmswn.c [1.6],
+gdevmswn.h [1.4], gdevmsxf.c [1.4], gdevn533.c [1.5], gdevo182.c [1.5],
+gdevokii.c [1.5], gdevos2p.c [1.6], gdevp14.h [1.3], gdevp2up.c [1.4],
+gdevpbm.c [1.5], gdevpccm.c [1.4], gdevpccm.h [1.5], gdevpcfb.c [1.4],
+gdevpcfb.h [1.4], gdevpcl.c [1.7], gdevpcl.h [1.7], gdevpcx.c [1.4],
+gdevpe.c [1.4], gdevphex.c [1.6], gdevpjet.c [1.5], gdevpm.c [1.6],
+gdevpm.h [1.4], gdevpng.c [1.6], gdevpnga.c [1.6], gdevps.c [1.23],
+gdevpsdf.h [1.11], gdevpsdi.c [1.18], gdevpsdp.c [1.11], gdevpsds.c [1.6],
+gdevpsds.h [1.6], gdevpsdu.c [1.14], gdevpsim.c [1.8], gdevpsu.c [1.10],
+gdevpsu.h [1.6], gdevpx.c [1.8], gdevpxat.h [1.5], gdevpxen.h [1.5],
 gdevpxop.h [1.4], gdevpxut.c [1.4], gdevpxut.h [1.4], gdevs3ga.c [1.4],
 gdevsco.c [1.5], gdevsgi.c [1.4], gdevsgi.h [1.3], gdevsj48.c [1.4],
 gdevsnfb.c [1.5], gdevsppr.c [1.7], gdevstc.c [1.4], gdevstc.h [1.4],
@@ -655,9 +1596,9 @@ gdevsun.c [1.4], gdevsunr.c [1.6], gdevsvga.c [1.4], gdevsvga.h [1.4],
 gdevtfax.c [1.6], gdevtfax.h [1.6], gdevtfnx.c [1.7], gdevtifs.c [1.6],
 gdevtifs.h [1.5], gdevtknk.c [1.5], gdevupd.c [1.7], gdevvglb.c [1.5],
 gdevwddb.c [1.5], gdevwdib.c [1.6], gdevwpr2.c [1.11], gdevwprn.c [1.5],
-gdevx.c [1.12], gdevx.h [1.6], gdevxcmp.c [1.6], gdevxcmp.h [1.4],
-gdevxini.c [1.12], gdevxres.c [1.5], gdevxxf.c [1.7], png_.h [1.5]:
-2002/02/21 22:24:51 giles)
+gdevx.c [1.12], gdevx.h [1.6], gdevxalt.c [1.5], gdevxcmp.c [1.6],
+gdevxcmp.h [1.4], gdevxini.c [1.12], gdevxres.c [1.5], gdevxxf.c [1.7],
+png_.h [1.5]: 2002/02/21 22:24:51 giles)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (x_.h [1.5]: 2002/02/21 22:24:54 giles)
@@ -669,19 +1610,102 @@ macros to C-style.htm. (gdevxalt.c [1.6]: 2002/02/28 21:21:42 ray)
 </pre><h2><a name="7.20-PDF_writer"></a>PDF writer</h2><pre>
 
 Fixes problems:
+	- Repeated use of the same color space wrote multiple ColorSpace
+resources rather than a single one. Fixes the pdfwrite part of SourceForge
+bug #475219: separate changes to pdf_draw.ps and pdf_ops.ps fix the
+interpreter part of the bug. (gdevpdfc.c [1.18]: 2001/11/06 17:34:30 lpd)
+	- Reading from /dev/random can cause long blocking on Solaris 8, so
+we only attempt it (on all systems) if non-blocking I/O is available, and we
+try /dev/urandom first. Fixes SourceForge #482048. (gdevpdf.c [1.39]:
+2001/11/21 22:14:22 lpd)
+	- CIE color conversion could be very inaccurate if it didn't use
+interpolation when cached sampled values were near zero. This fix detects
+numerically sensitive areas and uses interpolation (which is computationally
+expensive) only in those areas. Fixes SourceForge #465921.
+(gdevpdfc.c [1.19]: 2001/12/09 00:03:37 lpd)
+	- For images specified in general CIEBased color spaces, pdfwrite
+would divide the image into tiny rectangles. If the output level is PDF 1.3
+or higher, pdfwrite now converts the CIEBased color space to an ICCBased
+space if possible. (gdevpdfc.c [1.20], gdevpdfc.h [1.1], gdevpdfk.c [1.1]:
+2001/12/13 18:24:05 lpd)
+	- the prototype for pdf_text_process was in a .c file rather than a
+.h file. (gdevpdff.h [1.12], gdevpdft.c [1.37]: 2002/01/15 23:07:02 lpd)
+	- pdfwrite incorrectly handled Metrics[2] and CDevProc by writing
+Widths that differed from the widths in the underlying font. pdfwrite now
+positions characters individually in this case, like Acrobat Distiller.
+Fixes SourceForge #495414. (gdevpdff.c [1.23], gdevpdff.h [1.13],
+gdevpdfs.c [1.8]: 2002/01/17 05:13:24 lpd)
+	- Work around an apparent Acrobat Reader 5 bug -- it gives an error
+for images with a color-key mask, at least for 1-bit-deep images using an
+Indexed color space -- by converting the image to an ordinary masked image.
+Fixes a PCL-&gt;PDF problem reported by a customer. (gdevpdfi.c [1.25]:
+2002/01/17 17:01:38 lpd)
+	- Setting the parameters for a stroked font could reset other text
+state parameters, causing 'Font not set' and other errors from Acrobat.
+Fixes SourceForge bug #505011. (gdevpdfs.c [1.9]: 2002/01/24 16:37:53 lpd)
+	- pdfwrite often gave an error if a name with embedded special
+characters was a key or value in a pdfmark dictionary. Fixes SourceForge
+#505877. (gdevpdfr.c [1.5]: 2002/01/29 02:54:43 lpd)
+	- pdfwrite could output Indexed color spaces with more than 256
+entries, or images with more than 8 bits per component, neither of which PDF
+supports. This patch causes the latter to revert to the
+millions-of-tiny-rectangles representation, which is not adequate in the
+long run, but is at least valid output. Fixes SourceForge #513910, for the
+moment. (gdevpdfc.c [1.21], gdevpdfi.c [1.26]: 2002/02/11 16:26:20 lpd)
+	- pdf_end_image_binary didn't propagate all error indications to its
+caller. (gdevpdfj.c [1.8]: 2002/02/12 21:55:31 lpd)
 	- (1) real_widths were missed in public_st_pdf_font; (2)
 pdf_finalize_font_descriptor was called twice (form pdf_font_notify_proc and
 from pdf_write_font_resources), if a font is garbage-collected after
 pdf_close. Source Forge bug "[ 531983 ] ps2pdf coredumps on this ps file".
 (gdevpdff.h [1.16], gdevpdfw.c [1.15]: 2002/03/27 16:46:06 igor)
 
+Takes a small step towards fully ANSIfied code by removing all ANSI-testing
+uses of __PROTOTYPES__ from code with an Aladdin/artofcode copyright.
+(gdevpdfg.c [1.15]: 2001/10/25 04:38:34 lpd)
+
+Updates pdfwrite to match Acrobat Distiller 5 more closely: adds
+OffOptimizations and PreserveEPSInfo parameters; adds /ebook value for
+PDFSETTINGS; changes some of the DCTEncode parameter values for
+auto-filtered images; adds CreationDate and ModDate in Info dictionary;
+always subsets non Type 1 fonts. (gdevpdf.c [1.40], gdevpdfe.c [1.11],
+gdevpdfp.c [1.20], gdevpdfu.c [1.17], gdevpdfx.h [1.35]: 2001/12/09 00:07:57
+lpd)
+
+FAPI project : Define new device parameter .EmbedFontObjects to disable FAPI
+for devices which embed fonts. (gdevpdfp.c [1.21]: 2002/01/08 11:11:24
+igorm)
+
+Prevent any attempt to set .EmbedFontObjects (like CoreDistVersion).
+(gdevpdfp.c [1.22]: 2002/01/10 19:12:27 lpd)
+
+Makes the cos_array_reorder procedure private (which it should have been
+from the beginning). (gdevpdfo.c [1.10], gdevpdfo.h [1.7]: 2002/01/12
+20:09:55 lpd)
+
+Adds a CompressFonts parameter to pdfwrite to control whether embedded fonts
+are compressed, to help debugging. The default value is true.
+(gdevpdf.c [1.41], gdevpdfe.c [1.12], gdevpdfp.c [1.23], gdevpdfs.c [1.10],
+gdevpdfu.c [1.18], gdevpdfx.h [1.36]: 2002/01/29 01:03:26 lpd)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(gdevpdf.c [1.42], gdevpdfb.c [1.7], gdevpdfc.c [1.22], gdevpdfc.h [1.2],
+gdevpdfd.c [1.17], gdevpdfe.c [1.13], gdevpdff.c [1.24], gdevpdff.h [1.14],
+gdevpdfg.c [1.16], gdevpdfg.h [1.10], gdevpdfi.c [1.27], gdevpdfj.c [1.9],
+gdevpdfk.c [1.2], gdevpdfm.c [1.15], gdevpdfo.c [1.11], gdevpdfo.h [1.8],
+gdevpdfp.c [1.24], gdevpdfr.c [1.6], gdevpdfs.c [1.11], gdevpdft.c [1.38],
+gdevpdfu.c [1.19], gdevpdfv.c [1.11], gdevpdfw.c [1.13], gdevpdfx.h [1.37]:
+2002/02/21 20:57:47 ray)
+
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (gdevpdf.c [1.43], gdevpdfb.c [1.8], gdevpdfc.c [1.23],
 gdevpdfc.h [1.3], gdevpdfd.c [1.18], gdevpdfe.c [1.14], gdevpdff.c [1.25],
-gdevpdfg.c [1.17], gdevpdfg.h [1.11], gdevpdfi.c [1.28], gdevpdfj.c [1.10],
-gdevpdfk.c [1.3], gdevpdfm.c [1.16], gdevpdfo.c [1.12], gdevpdfo.h [1.9],
-gdevpdfp.c [1.25], gdevpdfr.c [1.7], gdevpdfs.c [1.12], gdevpdft.c [1.39],
-gdevpdfv.c [1.12], gdevpdfx.h [1.38]: 2002/02/21 22:24:51 giles)
+gdevpdff.h [1.15], gdevpdfg.c [1.17], gdevpdfg.h [1.11], gdevpdfi.c [1.28],
+gdevpdfj.c [1.10], gdevpdfk.c [1.3], gdevpdfm.c [1.16], gdevpdfo.c [1.12],
+gdevpdfo.h [1.9], gdevpdfp.c [1.25], gdevpdfr.c [1.7], gdevpdfs.c [1.12],
+gdevpdft.c [1.39], gdevpdfu.c [1.20], gdevpdfv.c [1.12], gdevpdfw.c [1.14],
+gdevpdfx.h [1.38]: 2002/02/21 22:24:51 giles)
 
 Removes a last vestige of PDF 1.1 support (which was otherwise removed some
 time ago) from pdfwrite. (gdevpdfu.c [1.21]: 2002/03/19 17:35:11 lpd)
@@ -689,13 +1713,94 @@ time ago) from pdfwrite. (gdevpdfu.c [1.21]: 2002/03/19 17:35:11 lpd)
 </pre><h2><a name="7.20-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
 
 Fixes problems:
+	- Setting the same PDF color space repeatedly generated new
+PostScript color spaces, stressing the garbage collector. Fixes the PDF
+interpreter part of SourceForge bug #475219: a separate change to gdevpdfc.c
+fixes the pdfwrite part of this bug. (lib/pdf_draw.ps [1.37],
+lib/pdf_ops.ps [1.18]: 2001/11/06 17:33:08 lpd)
+	- showpagecontents needs to be wrapped in a gsave/grestore as rev
+1.23 indicates, but we can't wrap around the .pushpdf14devicefilter or the
+grestore will change the device back to the original and clear the page.
+Fixes SourceForge bug #476821 for Artifex customer 870. Also clean up some
+non-standard indentation in the area. (lib/pdf_main.ps [1.36]: 2001/11/15
+04:30:25 rayjj)
+	- T* applied the leading horizontally when using a font in vertical
+writing mode, but the PDF Reference says the leading is always applied
+vertically. (lib/pdf_ops.ps [1.19]: 2001/12/22 07:24:50 masata-y)
+	- Fix for "[ #505041 ] /typecheck in --setcolor--". Customer 150. An
+error in counting the number of values by the PDF interpreter was causing an
+incorrect number of values to be sent to setcolor. This in turn caused a
+typecheck. (lib/pdf_main.ps [1.37]: 2002/01/30 00:43:29 dancoby)
+	- Some PDF files don't have balanced q/Q operators (gsave/grestore)
+that left extra dicts on the dictstack. Save the dictstack depth before the
+page and pop any left over elements. Fix for SF #495088 for customer #870.
+(lib/pdf_main.ps [1.38]: 2002/02/05 20:50:25 rayjj)
+	- Extra dict was left on the ostack by rev 1.38 (introduced when
+fixing SF bug #495088). Also allow bad images to be skipped (with a warning
+message) as Adobe Reader does. Make PDF format error messages more
+consistent. Fixes SF bug #513902 for Artifex customer #10.
+(lib/pdf_draw.ps [1.38], lib/pdf_main.ps [1.40]: 2002/02/08 04:34:14 rayjj)
+	- Another improvement for the hack in 'getfontmetrics', which deals
+with encodings where the same character appears more than once. TeX-1.0a
+creates Differences with multiple appearances of 'hyphen' character, some of
+which specify zero width. Source Forge bug #517474 "Problem with hyphen in
+PDF using Minion". See also #444366 and #467492. (lib/pdf_font.ps [1.27]:
+2002/02/25 05:40:29 igor)
+	- Characters &gt; 127 (0x7f) in font names of embedded fonts in PDF
+files were being misinterpreted by the 'token' operator. Disable binary
+encodings when processing PDF. Fixes SourceForge bug #525701 for Artifex
+customer #901. (lib/pdf_main.ps [1.46]: 2002/03/05 17:48:06 ray)
+	- Another place where Adobe Acrobat Reader tolerates badly formed
+PDF files -- in this case streams with incorrect Length. Issue
+pdfformaterror and continue. Buggy file from Artifex customer #671.
+(lib/pdf_base.ps [1.18]: 2002/03/06 07:54:23 ray)
+	- PDF files that specify the same embedded font file many times
+would reload the FontFile each time, potentially severely impacting
+performance. Skip loading the FontFile if the FontDescriptor already has the
+font cached in /FontObject. Fixes SF bug #514956 for Artifex customer #870.
+(lib/pdf_font.ps [1.29]: 2002/03/07 08:14:44 ray)
+	- The /Filter parameter didn't properly handle an indirect
+reference. Fixes SourceForge bug 533470 for Artifex customer #150.
+(lib/pdf_base.ps [1.19]: 2002/03/22 20:26:19 ray)
 	- Add handling of indirect objects some places that were missing.
 Fixes SourceForge bug #533775. (lib/pdf_base.ps [1.20],
-lib/pdf_draw.ps [1.43], lib/pdf_main.ps [1.48], lib/pdf_ops.ps [1.23]:
-2002/03/23 00:14:25 ray)
+lib/pdf_draw.ps [1.43], lib/pdf_font.ps [1.30], lib/pdf_main.ps [1.48],
+lib/pdf_ops.ps [1.23]: 2002/03/23 00:14:25 ray)
+
+Add error message complaints when q (gsave) and Q (grestore) operators do
+not balance. (lib/pdf_main.ps [1.39], lib/pdf_ops.ps [1.20]: 2002/02/05
+22:35:10 rayjj)
+
+Minor cleanup of warning and error messages within the PDF interpreter to
+make the format consistent and to use pdfformaterror for all messages.
+(lib/pdf_base.ps [1.15], lib/pdf_draw.ps [1.39], lib/pdf_font.ps [1.24],
+lib/pdf_main.ps [1.41], lib/pdf_sec.ps [1.6]: 2002/02/14 17:25:53 rayjj)
+
+Further warning message cleanup to use pdfformaterror and to use a
+consistent format (starting with ' **** '. (lib/pdf_main.ps [1.42],
+lib/pdf_sec.ps [1.7]: 2002/02/14 23:04:46 rayjj)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(lib/pdf_base.ps [1.16], lib/pdf_draw.ps [1.40], lib/pdf_font.ps [1.25],
+lib/pdf_main.ps [1.43], lib/pdf_ops.ps [1.21], lib/pdf_sec.ps [1.8]:
+2002/02/21 20:57:45 ray)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
-and Revision pair. (lib/pdf_sec.ps [1.9]: 2002/02/21 21:49:28 giles)
+and Revision pair. (lib/pdf_base.ps [1.17], lib/pdf_draw.ps [1.41],
+lib/pdf_font.ps [1.26], lib/pdf_main.ps [1.44], lib/pdf_ops.ps [1.22],
+lib/pdf_sec.ps [1.9]: 2002/02/21 21:49:28 giles)
+
+Makes the PDF interpreter run files under a level of 'save'. This improves
+memory utilization significantly, although we don't understand why.
+(lib/pdf_main.ps [1.45]: 2002/02/22 06:59:31 lpd)
+
+Remove debug output inadvertently left in. (lib/pdf_font.ps [1.28]:
+2002/02/26 18:37:07 ray)
+
+Adds -dNOTRANSPARENCY flag, which disables all PDF 1.4 transparency
+processing. (lib/pdf_draw.ps [1.42], lib/pdf_main.ps [1.47]: 2002/03/14
+15:53:09 raph)
 
 Temporary patch to disable FontObject caching. Fixes regression SF #533467,
 but effectively removes the fix for #514956. (lib/pdf_font.ps [1.31]:
@@ -704,45 +1809,410 @@ but effectively removes the fix for #514956. (lib/pdf_font.ps [1.31]:
 </pre><h2><a name="7.20-Interpreter"></a>Interpreter</h2><pre>
 
 Fixes problems:
+	- Fixes a comment: invoking definefont on a dictionary that already
+has a FID entry is, in fact, legal in LanguageLevel 2 and above.
+(zbfont.c [1.9]: 2001/10/29 23:49:57 lpd)
+	- The change v.1.14 had broken the branch of the font loader, which
+works for the case of unequal font names in the font file and in the font
+map. SourceForge bug 474581. Also cleans up potential stack imbalance
+present since 1.1. (lib/gs_fonts.ps [1.15]: 2001/11/15 08:27:37 igorm)
+	- "Native float" binary tokens and homogenous number arrays failed
+to ignore the big/little-endian bit in the format field, causing them to
+(usually) read incorrectly on little-endian systems. (bug reported by Pierre
+Arnaud) (ibnum.c [1.3], ibnum.h [1.3]: 2001/11/16 22:30:40 lpd)
+	- If the initial device couldn't be opened, the error message
+indicating this wasn't being printed, because of a missing 'flush'. Fixes
+SourceForge #481600. (lib/gs_init.ps [1.42]: 2001/11/16 22:45:25 lpd)
+	- "gs --help" accessed an uninitialized pointer
+gs_main_instance::i_ctx_p. Source Forge bug #482271. (iapi.c [1.2],
+imain.c [1.21]: 2001/11/21 18:40:07 igorm)
+	- lineedit_open and statementedit_open were declared "static" but
+not defined. (These procedures are no longer used.) (ziodev.c [1.7]:
+2001/11/22 04:55:31 lpd)
+	- Fixes a compiler warning and several minor formatting
+inconsistencies. (zmedia2.c [1.4]: 2001/11/22 05:04:24 lpd)
+	- The private procedure gs_get_colorname_string was not declared
+private. (zcsdevn.c [1.6]: 2001/11/22 05:38:27 lpd)
+	- The private procedure dsc_is_section was not declared dsc_private.
+(dscparse.c [1.8]: 2001/11/22 05:41:05 lpd)
+	- The min, max, and unread procedures were not clearly marked as
+being deprecated. (lib/gs_init.ps [1.43]: 2001/11/22 18:48:51 lpd)
+	- Ghostscript didn't match a bug in Adobe's interpreters, which
+byte-swap native reals in binary object sequences iff the native real format
+is IEEE. (The PLRM says native reals should never be byte-swapped.) Fixes
+SourceForge bug #489478. (ibnum.h [1.4], iscanbin.c [1.6]: 2001/12/07
+04:28:34 lpd)
+	- Repairs code problems with the fix for bug #224056: non-re-entrant
+code, bad formatting, unused variables and computations, and a missing
+#include. (zcolor2.c [1.5]: 2001/12/07 05:41:59 lpd)
+	- CIE color conversion could be very inaccurate if it didn't use
+interpolation when cached sampled values were near zero. This fix detects
+numerically sensitive areas and uses interpolation (which is computationally
+expensive) only in those areas. Fixes SourceForge #465921. (zcie.c [1.6],
+zcrd.c [1.3]: 2001/12/09 00:03:37 lpd)
+	- WMode 1 did not work for CIDFontType 2. SourceForge bug #91713.
+Patch from Mr. Toshiya Suzuki. (zchar42.c [1.4]: 2001/12/12 16:45:09 igorm)
+	- The constraint for FontBBox to be non-zero was not conforming and
+now it is removed. Suggested by L. Peter Deutsch. (bfont.h [1.4],
+zbfont.c [1.10], zfcid0.c [1.10], zfcid1.c [1.6]: 2001/12/19 11:49:44 igorm)
+	- The previous fixes for writing binary objects were incorrect,
+probably because an incorrect comment misled the author. Fixes SourceForge
+#490914. (lib/gs_btokn.ps [1.6]: 2002/01/01 23:08:28 lpd)
+	- Dictionaries in binary object sequences (a non-standard feature)
+could cause an invalidaccess error if any of the keys or values were names.
+(iscanbin.c [1.7]: 2002/01/01 23:08:56 lpd)
+	- Some gsapi functions were not passing the user_errors argument to
+the corresponding gs_main_run_string_* functions, and instead, these
+functions were passing 0. (iapi.c [1.3]: 2002/01/03 20:09:46 jackiem)
+	- some files were missing the RCS 'Id' line with the last
+modification date. partial fix for Sourceforge bug #500922.
+(dwnodll.c [1.2], gdevdsp.h [1.2], gdevdsp2.h [1.3], idisp.c [1.3],
+zicc.c [1.3]: 2002/01/09 21:04:20 giles)
+	- ifont.h requires gsmatix.h and gxfont.h for clean compilation. Not
+having them was a warning on gcc, but an error on Borland CBuilder 5.5.
+Thanks to Rod Webster for the fix. Closes Sourceforge bug #474246.
+(iccfont.c [1.3]: 2002/01/09 21:48:00 giles)
+	- Fix for #474544. Corrects inability to convert valid DeviceN tint
+transform functions into type 4 functions. Valid operator names were not
+being recognized unless the tint transform function had been bound. One of
+two fixes required for this problem. Customer #710. (ifunc.h [1.4],
+zfunc.c [1.7], zfunc0.c [1.4], zfunc3.c [1.3], zfunc4.c [1.8],
+zshade.c [1.5]: 2002/01/11 05:09:22 dancoby)
+	- ReleaseDC was missed in Windows client applications. SourceForge
+bug #499903. (dwmain.c [1.7], dwmainc.c [1.9]: 2002/01/12 19:49:00 igorm)
+	- pdfwrite incorrectly handled Metrics[2] and CDevProc by writing
+Widths that differed from the widths in the underlying font. pdfwrite now
+positions characters individually in this case, like Acrobat Distiller.
+Fixes SourceForge #495414. (zchar1.c [1.9]: 2002/01/17 05:13:24 lpd)
+	- Fix for #474544. This is the second of two fixes required for this
+problem. This fix creates a type 0 function which implements a "color cube"
+for those tint transform functions which cannot be converted into a type 4
+function. Customer #710. Note: There is one more revision planned for this
+effort. This revision will make the buildcolorcube operator into a more
+general buildsampledfunction. This will allow its use in other situations.
+(ifunc.h [1.5], lib/gs_lev2.ps [1.8], zcsdevn.c [1.7], zfunc.c [1.8]:
+2002/01/17 05:53:40 dancoby)
+	- Most of the calls of gs_[main_]init1 didn't check the return value
+for errors. (imainarg.c [1.14]: 2002/01/18 00:43:10 lpd)
+	- Improve security in a (mostly) backward compatible fashion adding
+more flexible file access paths (PermitFile...) as user paramters and adding
+the facility to return to NOSAFER mode after running jobs (files/procedures)
+in SAFER mode. This should address SF bug #474582 and eliminate the need for
+the RedHat PARANOIDSAFER patch. (icontext.c [1.8], icstate.h [1.6],
+imainarg.c [1.15], iutil2.c [1.3], iutil2.h [1.3], lib/gs_fonts.ps [1.17],
+lib/gs_init.ps [1.45], lib/gs_lev2.ps [1.9], zcontrol.c [1.4],
+zfile.c [1.13], zusparam.c [1.4], zvmem.c [1.4]: 2002/01/24 06:33:33 rayjj)
+	- Added check for return code from gs_main_init1 that was missed in
+previous (security) update. (imainarg.c [1.16]: 2002/01/24 19:07:57 rayjj)
+	- pdfwrite often gave an error if a name with embedded special
+characters was a key or value in a pdfmark dictionary. Fixes SourceForge
+#505877. (lib/gs_pdfwr.ps [1.13], zstring.c [1.3]: 2002/01/29 02:54:43 lpd)
+	- .locksafe is not supposed to change the PermitFileWriting and
+PermitFileControl paths (was setting them to empty arrays).
+(lib/gs_init.ps [1.46]: 2002/01/31 21:17:25 rayjj)
+	- Fix 3 of 3 for #474544 "Core dump - shfill error with DeviceN". 1.
+Recognizes already encapsulated tint transform functions. 2. Generalizes the
+color cube logic for use in other situations. 3. Uses the domain of the
+alternate color space for the range of the tint transform function.
+(lib/gs_lev2.ps [1.10], zfsample.c [1.1], zfunc.c [1.9]: 2002/02/06 02:35:11
+dancoby)
+	- Fix 4 of 4 for #474544 "Core dump - shfill error with DeviceN".
+Corrects a problem with an unbalanced stack when determining the range of a
+colorspace specified by a name. (lib/gs_lev2.ps [1.11]: 2002/02/06 07:18:34
+dancoby)
+	- Fixes handling of MetricsCount in z11_get_metrics. Thanks to Brian
+Stell for the analysis and original version of the patch. (zfcid1.c [1.7]:
+2002/02/12 21:58:47 raph)
+	- Prevent .locksafe (and .setsafe) from resetting the current
+pagedevice. Fixes SourceForge bug #516379. (lib/gs_init.ps [1.47]:
+2002/02/14 01:23:31 rayjj)
+	- Use a more rigorous condition to check the FontBBox validity when
+computing default values for UnderlinePosition and UnderlineThickness.
+Source Forge bug #510776 for Artifex customer #1110. (lib/gs_type1.ps [1.8]:
+2002/02/14 03:23:47 igorm)
+	- Previous revision caused a regression. This version is the actual
+fix for SourceForge #510776 for Artifex customer #1110.
+(lib/gs_type1.ps [1.9]: 2002/02/14 03:25:50 igorm)
+	- Many files lacked double-inclusion protection, or implemented it
+incorrectly. (dscparse.h [1.7], dwimg.h [1.5], dwinst.h [1.3],
+dwmain.h [1.4], dwreg.h [1.2], dwsetup.h [1.3], dwtext.h [1.5],
+dwuninst.h [1.3], gdevdsp.h [1.3], gdevdsp2.h [1.4], idisp.h [1.2],
+ifapi.h [1.7]: 2002/02/20 01:32:47 lpd)
+	- Ignore an invalid 'post' format 2.0 table in TrueType fonts. Fixes
+SourceForge bug #523973 for Artifex customer #990. (lib/gs_ttf.ps [1.12]:
+2002/03/04 06:32:35 ray)
 	- Triggers an /undefined error rather than segfaulting in the case
 where a directional shading dictionary is missing a Function element.
 build_shading_function() returns a success code in these cases because
 functions are optional in some shading types. Thanks to Alex Cherepanov for
 the analysis and patch. (zshade.c [1.8]: 2002/03/04 22:20:34 raph)
+	- Include gs_resmp.ps into the prelude with ADDMOD rather than
+.runlibfile (suggested by Raymond J. Johnston), and increase MSVC compiler
+heap for building gs_init.c with COMPILE_INITS=1. Source Forge bug "[ 526192
+] Broken COMPILE_INITS". (lib/gs_res.ps [1.20]: 2002/03/06 08:55:16 igor)
 	- Second attempt to fix COMPILE_INITS=1. This statically embeds all
 gs_*.ps files, xlatmap and FAPIconfig. Source Forge bug "[ 526192 ] Broken
-COMPILE_INITS". (lib/gs_cidfn.ps [1.23]: 2002/03/07 10:52:06 igor)
+COMPILE_INITS". (lib/gs_cidfn.ps [1.23], lib/gs_fapi.ps [1.15],
+lib/gs_res.ps [1.21]: 2002/03/07 10:52:06 igor)
 	- "currentfile closefile" in lib/gs_* files doesn't work with
 COMPILE_INITS=1, replacing it with .skipeof . Source Forge bug "[ 526192 ]
 Broken COMPILE_INITS". (lib/gs_fapi.ps [1.16]: 2002/03/13 15:55:47 igor)
+	- The file_cleanup routine used the wrong offset in the estack for
+the enumerator causing a SEGV if the procedure of filenameforall stopped due
+to error. Bug was introduced with diskn changes. (zfile.c [1.18]: 2002/03/15
+07:43:34 ray)
 	- Fixes a number of problems with Type11 incremental glyph loading
 with MetricsCount=2. Thanks to Brian Stell for the patch. (zchar42.c [1.7],
 zfcid1.c [1.10]: 2002/03/26 08:37:14 raph)
-       - Cleanup some casting and other compiler warnings (minor).
+	- -dSAFER mode to allow opening a file that references the parent
+directory as long as the PermitFileReading strings include a (*) string
+(allow all reading) (zfile.c [1.19]: 2002/03/28 20:48:14 ray)
+	- Cleanup some casting and other compiler warnings (minor).
 (zfile.c [1.20]: 2002/03/29 04:37:50 ray)
 	- Botched macro spelling in prototype corrected, also removing the
 incorrect 'private' keyword. Clean up two *++esp; statements that gave gcc
 warnings. (zfile.c [1.21]: 2002/03/29 18:04:04 ray)
+	- remove a C++-style comment from portable code. (ifapi.h [1.11]:
+2002/04/01 21:02:49 giles)
+
+file dwtrace.h was initially added on branch HINTER. (dwtrace.h [1.1]:
+2001/01/12 06:18:35 igorm)
+
+Updates version number to 7.10 to indicate that this is now the development
+branch. (lib/gs_init.ps [1.41]: 2001/10/20 09:25:22 raph)
+
+Changes all procedures for getting glyph outline data to return a structure
+that includes memory management information. This is a
+NON-BACKWARD-COMPATIBLE change to both implementors and clients. It corrects
+a serious design error: formerly these procedures encoded memory management
+information in their return code, which was obscure and error-prone.
+(ichar1.h [1.4], icharout.h [1.4], ifont42.h [1.4], zchar1.c [1.8],
+zcharout.c [1.5], zfcid0.c [1.8], zfcid1.c [1.5], zfont42.c [1.6]:
+2001/10/21 06:20:08 lpd)
+
+FAPI project, UFST only, Type 1 and Type42 fonts. This version supports disk
+fonts including FCOs, and embedded fonts, including incremental ones.
+(iconf.c [1.4], icontext.c [1.7], icstate.h [1.5], imain.c [1.20],
+lib/gs_fonts.ps [1.14], lib/gs_typ42.ps [1.3], lib/gs_type1.ps [1.6],
+zbfont.c [1.8]: 2001/10/21 18:57:41 igorm)
+
+FAPI project, UFST only, Type 1 and Type42 fonts. This version supports disk
+fonts including FCOs, and embedded fonts, including incremental ones.
+(fapiufst.c [1.1], ifapi.h [1.1], iplugin.c [1.1], iplugin.h [1.1],
+lib/gs_fapi.ps [1.1], zfapi.c [1.1]: 2001/10/21 19:10:29 igorm)
+
+FAPI project: improving error handling. (fapiufst.c [1.2], ifapi.h [1.2],
+lib/gs_fapi.ps [1.2], zfapi.c [1.2]: 2001/10/22 16:22:29 igorm)
+
+FAPI project : (1) upgrading with UFST 4.3, (2) implementing GS cache.
+(fapiufst.c [1.3], ifapi.h [1.3], lib/gs_fapi.ps [1.3], zfapi.c [1.3]:
+2001/11/11 23:09:16 igorm)
+
+FAPI project: fixing memory management problems and missing closepath
+importing outlines from UFST. (fapiufst.c [1.4], zfapi.c [1.4]: 2001/11/13
+23:12:53 igorm)
+
+Adds additional documentation about continuations on the PostScript e-stack.
+(estack.h [1.3]: 2001/12/06 04:16:27 lpd)
+
+Implementing a mapped resource category redefiner; Provide a map for CIDFont
+category; Reorganize the mapping algorithm for FAPI. (lib/gs_cidcm.ps [1.6],
+lib/gs_cidfm.ps [1.1], lib/gs_cidfn.ps [1.19], lib/gs_fapi.ps [1.4],
+lib/gs_res.ps [1.17], lib/gs_resmp.ps [1.1], lib/gs_typ42.ps [1.4],
+lib/gs_type1.ps [1.7], zfile.c [1.12]: 2001/12/08 11:31:20 igorm)
+
+Updates pdfwrite to match Acrobat Distiller 5 more closely: adds
+OffOptimizations and PreserveEPSInfo parameters; adds /ebook value for
+PDFSETTINGS; changes some of the DCTEncode parameter values for
+auto-filtered images; adds CreationDate and ModDate in Info dictionary;
+always subsets non Type 1 fonts. (lib/gs_pdfwr.ps [1.12]: 2001/12/09
+00:07:57 lpd)
+
+FAPI project : Preparing environment for CID font processing; Fixing UFST
+file names. (lib/gs_cidcm.ps [1.7], lib/gs_ciddc.ps [1.1],
+lib/gs_cidfn.ps [1.20], zfcid0.c [1.9]: 2001/12/12 02:48:20 igorm)
+
+FAPI project : implementing CID fonts with FAPI. (lib/gs_ciddc.ps [1.2],
+lib/gs_cidfm.ps [1.2], lib/gs_fapi.ps [1.5], lib/gs_resmp.ps [1.2]:
+2001/12/12 23:02:08 igorm)
+
+Committing in . Modified Files: gs/src/ibnum.c Corrected syntax error
+(ibnum.c [1.4]: 2001/12/13 07:07:45 joukj)
+
+FAPI project : implementing WMode 1; Cleaning-up comments and formatting.
+(fapiufst.c [1.5], ifapi.h [1.4], zfapi.c [1.5]: 2001/12/14 20:42:51 igorm)
+
+Improve security for device related access to the file system and to pipes
+by allowing the dangerous parameters to be locked (for example, OutputFile).
+The locking is performed after command line parameters are established.
+Locking is not turned on by default as a result of this change, but
+-d.LockSafetyParams=true can be added to the command line to accomplish
+this. Related to SF bug #474582 (sort of). (lib/gs_setpd.ps [1.9],
+zdevice.c [1.4], zdevice2.c [1.5]: 2001/12/22 00:44:01 rayjj)
+
+FAPI project : Making set_char_width to be public to access from FAPI
+client. (lib/gs_cmap.ps [1.12]: 2001/12/28 18:53:02 igorm)
+
+FAPI project : Provide a disk/embedded font recognition for CID fonts.
+(lib/gs_fapi.ps [1.6], lib/gs_fonts.ps [1.16]: 2002/01/02 06:44:01 igorm)
+
+FAPI project : implementing CDevProc and CIDDecoding. (fapiufst.c [1.6],
+ifapi.h [1.5], lib/gs_ciddc.ps [1.3], lib/gs_fapi.ps [1.7], zfapi.c [1.6]:
+2002/01/02 07:24:07 igorm)
+
+FAPI project : Fixing CIDDecodings and QUIET. (fapiufst.c [1.7],
+lib/gs_ciddc.ps [1.4], lib/gs_fapi.ps [1.8], zfapi.c [1.7]: 2002/01/03
+14:16:18 igorm)
+
+FAPI project : Implementing the horizontal/vertical glyph substitution.
+(fapiufst.c [1.8], ifapi.h [1.6], zfapi.c [1.8]: 2002/01/03 17:51:04 igorm)
+
+FAPI project : Define new device parameter .EmbedFontObjects to disable FAPI
+for devices which embed fonts. (lib/gs_cidfm.ps [1.3], lib/gs_fapi.ps [1.9],
+lib/gs_resmp.ps [1.3], zfapi.c [1.9]: 2002/01/08 11:11:24 igorm)
+
+Change the unstopped error handler to print the operand stack in the same
+order as the normal error handler, with the top of the stack at the right.
+Fixes Sourceforge bug #496440. (lib/gs_init.ps [1.44]: 2002/01/10 02:37:40
+ghostgum)
 
 Changes the extension of the tiger and golfer example files to '.eps' to
 accurately reflect their internal filetype. (examples/golfer.eps [1.1],
 examples/tiger.eps [1.1]: 2002/01/10 22:21:34 giles)
 
+FAPI project : Improve Type 42 processing. (lib/gs_fapi.ps [1.10],
+zfapi.c [1.10]: 2002/01/16 19:43:47 igorm)
+
+FAPI project : Implementing Type 2 fonts. (lib/gs_fapi.ps [1.11],
+zfapi.c [1.11]: 2002/01/17 00:02:41 igorm)
+
+FAPI project : Provide a transfer of GlobalSubrs through FAPI for embedded
+Type 2 fonts. (fapiufst.c [1.9], zfapi.c [1.12]: 2002/01/18 11:03:06 igorm)
+
+Remove some unintentional changes that crept into a previous update.
+(lib/gs_init.ps [1.48]: 2002/02/14 01:47:10 rayjj)
+
+This is an improvement from L. Peter Deutsch in the logic which tests the
+size of the amount of data required for a function to be sampled. This
+eliminates a possible math overflow and also tests for a negative size
+value. This is part of bug 474544. (zfsample.c [1.2]: 2002/02/21 07:42:23
+dan)
+
+Removes a compiler warning on the 4th parameter to valid_cube_size(). Added
+const conditional to the parameter. (zfsample.c [1.3]: 2002/02/21 08:12:35
+dan)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(bfont.h [1.5], btoken.h [1.5], ccfont.h [1.3], dpmain.c [1.6],
+dscparse.c [1.9], dscparse.h [1.8], dstack.h [1.4], dwdll.c [1.3],
+dwdll.h [1.4], dwimg.c [1.4], dwimg.h [1.6], dwinst.cpp [1.3],
+dwinst.h [1.4], dwmain.c [1.8], dwmain.h [1.5], dwmainc.c [1.10],
+dwnodll.c [1.3], dwreg.c [1.2], dwreg.h [1.3], dwsetup.cpp [1.6],
+dwsetup.h [1.4], dwtext.c [1.6], dwtext.h [1.6], dwuninst.cpp [1.3],
+dwuninst.h [1.4], errors.h [1.5], estack.h [1.4],
+examples/waterfal.ps [1.4], fapiufst.c [1.10], files.h [1.5],
+gdevdsp.h [1.4], gdevdsp2.h [1.5], ghost.h [1.3], gs.c [1.7],
+lib/gs_agl.ps [1.3], lib/gs_btokn.ps [1.7], lib/gs_ccfnt.ps [1.6],
+lib/gs_ce_e.ps [1.3], lib/gs_cff.ps [1.11], lib/gs_cidcm.ps [1.8],
+lib/gs_ciddc.ps [1.5], lib/gs_cidfm.ps [1.4], lib/gs_cidfn.ps [1.21],
+lib/gs_cmap.ps [1.13], lib/gs_cmdl.ps [1.3], lib/gs_css_e.ps [1.3],
+lib/gs_dbt_e.ps [1.3], lib/gs_diskf.ps [1.3], lib/gs_dpnxt.ps [1.3],
+lib/gs_dps.ps [1.5], lib/gs_dps1.ps [1.3], lib/gs_dps2.ps [1.4],
+lib/gs_dscp.ps [1.5], lib/gs_epsf.ps [1.3], lib/gs_fapi.ps [1.12],
+lib/gs_fform.ps [1.3], lib/gs_fonts.ps [1.18], lib/gs_frsd.ps [1.5],
+lib/gs_icc.ps [1.3], lib/gs_il1_e.ps [1.3], lib/gs_il2_e.ps [1.3],
+lib/gs_init.ps [1.49], lib/gs_kanji.ps [1.3], lib/gs_ksb_e.ps [1.3],
+lib/gs_l2img.ps [1.3], lib/gs_lev2.ps [1.12], lib/gs_lgo_e.ps [1.4],
+lib/gs_lgx_e.ps [1.3], lib/gs_ll3.ps [1.11], lib/gs_mex_e.ps [1.3],
+lib/gs_mgl_e.ps [1.4], lib/gs_mro_e.ps [1.3], lib/gs_pdf_e.ps [1.3],
+lib/gs_pdfwr.ps [1.14], lib/gs_pfile.ps [1.3], lib/gs_rdlin.ps [1.3],
+lib/gs_res.ps [1.18], lib/gs_resmp.ps [1.4], lib/gs_setpd.ps [1.10],
+lib/gs_statd.ps [1.6], lib/gs_std_e.ps [1.3], lib/gs_sym_e.ps [1.3],
+lib/gs_trap.ps [1.4], lib/gs_ttf.ps [1.10], lib/gs_typ32.ps [1.4],
+lib/gs_typ42.ps [1.5], lib/gs_type1.ps [1.10], lib/gs_wan_e.ps [1.3],
+lib/gs_wl1_e.ps [1.3], lib/gs_wl2_e.ps [1.3], lib/gs_wl5_e.ps [1.3],
+lib/ht_ccsto.ps [1.2]: 2002/02/21 20:57:45 ray)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(ialloc.c [1.3], ialloc.h [1.3], iapi.c [1.4], iapi.h [1.3],
+iastate.h [1.3], iastruct.h [1.3], ibnum.c [1.5], ibnum.h [1.5],
+iccfont.c [1.4], iccinit0.c [1.3], icfontab.c [1.3], ichar.h [1.4],
+ichar1.h [1.5], icharout.h [1.5], icid.h [1.3], icie.h [1.4],
+icolor.h [1.3], iconf.c [1.5], iconf.h [1.2], icontext.c [1.9],
+icontext.h [1.3], icremap.h [1.3], icsmap.h [1.3], icstate.h [1.7],
+iddict.h [1.3], iddstack.h [1.3], idebug.c [1.5], idebug.h [1.3],
+idict.c [1.5], idict.h [1.3], idictdef.h [1.3], idisp.c [1.4],
+idisp.h [1.3], idosave.h [1.3], idparam.c [1.4], idparam.h [1.4],
+idsdata.h [1.3], idstack.c [1.3], idstack.h [1.3], iesdata.h [1.3],
+iestack.h [1.3], ifapi.h [1.8], ifcid.h [1.3], ifilter.h [1.4],
+ifilter2.h [1.3], ifont.h [1.7], ifont1.h [1.4], ifont2.h [1.3],
+ifont42.h [1.5], ifrpred.h [1.3], ifunc.h [1.6], ifwpred.h [1.3],
+igc.c [1.6], igc.h [1.3], igcref.c [1.4], igcstr.c [1.4], igcstr.h [1.3],
+igstate.h [1.4], iht.h [1.3], iimage.h [1.3], iimage2.h [1.3],
+iinit.c [1.4], iinit.h [1.3], ilevel.h [1.3], ilocate.c [1.5],
+imain.c [1.22], imain.h [1.4], imainarg.c [1.17], imainarg.h [1.4],
+imemory.h [1.3], iminst.h [1.6], iname.c [1.4], iname.h [1.3],
+inamedef.h [1.3], inameidx.h [1.3], inames.h [1.3], inamestr.h [1.3],
+inobtokn.c [1.3], inouparm.c [1.3], interp.c [1.9], interp.h [1.3],
+iosdata.h [1.3], iostack.h [1.3], ipacked.h [1.3], iparam.c [1.6],
+iparam.h [1.3], iparray.h [1.3], ipcolor.h [1.3], iplugin.c [1.2],
+iplugin.h [1.2], ireclaim.c [1.4], iref.h [1.6], isave.c [1.4],
+isave.h [1.3], iscan.c [1.6], iscan.h [1.5], iscanbin.c [1.8],
+iscanbin.h [1.3], iscannum.c [1.4], iscannum.h [1.3], isdata.h [1.3],
+isstate.h [1.3], istack.c [1.3], istack.h [1.3], istkparm.h [1.3],
+istream.h [1.3], istruct.h [1.3], itoken.h [1.3], iutil.c [1.4],
+iutil.h [1.3], iutil2.c [1.4], iutil2.h [1.4], ivmem2.h [1.3],
+ivmspace.h [1.3], main.h [1.4], oparc.h [1.3], opcheck.h [1.3],
+opdef.h [1.4], oper.h [1.3], opextern.h [1.3], ostack.h [1.3], sbhc.c [1.4],
+sbhc.h [1.3], sbwbs.c [1.3], sbwbs.h [1.3], sfilter1.c [1.7],
+shcgen.c [1.3], shcgen.h [1.3], smtf.c [1.3], smtf.h [1.3], store.h [1.3],
+zarith.c [1.5], zarray.c [1.3], zbfont.c [1.11], zbseq.c [1.5],
+zcfont.c [1.3], zchar.c [1.5], zchar1.c [1.10], zchar2.c [1.3],
+zchar32.c [1.3], zchar42.c [1.5], zcharout.c [1.6], zcharx.c [1.4],
+zcid.c [1.4], zcie.c [1.7], zcolor.c [1.5], zcolor1.c [1.4],
+zcolor2.c [1.6], zcontext.c [1.8], zcontrol.c [1.5], zcrd.c [1.4],
+zcsdevn.c [1.8], zcsindex.c [1.4], zcspixel.c [1.3], zcssepr.c [1.9],
+zdevcal.c [1.4], zdevice.c [1.5], zdevice2.c [1.6], zdfilter.c [1.3],
+zdict.c [1.4], zdouble.c [1.3], zdpnext.c [1.4], zdps.c [1.5],
+zdps1.c [1.4], zdscpars.c [1.13], zfapi.c [1.13], zfarc4.c [1.3],
+zfbcp.c [1.4], zfcid.c [1.12], zfcid0.c [1.11], zfcid1.c [1.8],
+zfcmap.c [1.10], zfdctd.c [1.7], zfdcte.c [1.6], zfdecode.c [1.4],
+zfile.c [1.14], zfileio.c [1.13], zfilter.c [1.6], zfilter2.c [1.4],
+zfilterx.c [1.3], zfmd5.c [1.3], zfont.c [1.4], zfont0.c [1.4],
+zfont1.c [1.10], zfont2.c [1.5], zfont32.c [1.3], zfont42.c [1.7],
+zfproc.c [1.10], zfrsd.c [1.5], zfsample.c [1.4], zfunc.c [1.10],
+zfunc0.c [1.5], zfunc3.c [1.4], zfunc4.c [1.9], zfzlib.c [1.4],
+zgeneric.c [1.4], zgstate.c [1.3], zhsb.c [1.3], zht.c [1.3], zht1.c [1.3],
+zht2.c [1.3], zicc.c [1.4], zimage.c [1.6], zimage2.c [1.5],
+zimage3.c [1.4], ziodev.c [1.8], ziodev2.c [1.4], zmath.c [1.4],
+zmatrix.c [1.5], zmedia2.c [1.5], zmisc.c [1.3], zmisc1.c [1.4],
+zmisc2.c [1.4], zmisc3.c [1.3], zpacked.c [1.3], zpaint.c [1.3],
+zpath.c [1.3], zpath1.c [1.3], zpcolor.c [1.4], zrelbit.c [1.3],
+zrop.c [1.3], zshade.c [1.6], zstack.c [1.3], zstring.c [1.4],
+zsysvm.c [1.3], ztoken.c [1.7], ztrans.c [1.14], ztrap.c [1.3],
+ztype.c [1.4], zupath.c [1.3], zusparam.c [1.5], zvmem.c [1.5],
+zvmem2.c [1.4]: 2002/02/21 20:57:49 ray)
+
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (lib/gs_agl.ps [1.4], lib/gs_btokn.ps [1.8],
 lib/gs_ccfnt.ps [1.7], lib/gs_ce_e.ps [1.4], lib/gs_cff.ps [1.12],
-lib/gs_cidcm.ps [1.9], lib/gs_cidfm.ps [1.5], lib/gs_cmap.ps [1.14],
-lib/gs_cmdl.ps [1.4], lib/gs_css_e.ps [1.4], lib/gs_dbt_e.ps [1.4],
-lib/gs_diskf.ps [1.4], lib/gs_dpnxt.ps [1.4], lib/gs_dps.ps [1.6],
-lib/gs_dps1.ps [1.4], lib/gs_dps2.ps [1.5], lib/gs_dscp.ps [1.6],
-lib/gs_epsf.ps [1.4], lib/gs_fform.ps [1.4], lib/gs_frsd.ps [1.6],
-lib/gs_icc.ps [1.4], lib/gs_il1_e.ps [1.4], lib/gs_il2_e.ps [1.4],
-lib/gs_kanji.ps [1.4], lib/gs_ksb_e.ps [1.4], lib/gs_l2img.ps [1.4],
+lib/gs_cidcm.ps [1.9], lib/gs_ciddc.ps [1.6], lib/gs_cidfm.ps [1.5],
+lib/gs_cidfn.ps [1.22], lib/gs_cmap.ps [1.14], lib/gs_cmdl.ps [1.4],
+lib/gs_css_e.ps [1.4], lib/gs_dbt_e.ps [1.4], lib/gs_diskf.ps [1.4],
+lib/gs_dpnxt.ps [1.4], lib/gs_dps.ps [1.6], lib/gs_dps1.ps [1.4],
+lib/gs_dps2.ps [1.5], lib/gs_dscp.ps [1.6], lib/gs_epsf.ps [1.4],
+lib/gs_fapi.ps [1.13], lib/gs_fform.ps [1.4], lib/gs_fonts.ps [1.19],
+lib/gs_frsd.ps [1.6], lib/gs_icc.ps [1.4], lib/gs_il1_e.ps [1.4],
+lib/gs_il2_e.ps [1.4], lib/gs_init.ps [1.50], lib/gs_kanji.ps [1.4],
+lib/gs_ksb_e.ps [1.4], lib/gs_l2img.ps [1.4], lib/gs_lev2.ps [1.13],
 lib/gs_lgo_e.ps [1.5], lib/gs_lgx_e.ps [1.4], lib/gs_ll3.ps [1.12],
 lib/gs_mex_e.ps [1.4], lib/gs_mgl_e.ps [1.5], lib/gs_mro_e.ps [1.4],
 lib/gs_pdf_e.ps [1.4], lib/gs_pdfwr.ps [1.15], lib/gs_pfile.ps [1.4],
-lib/gs_rdlin.ps [1.4], lib/gs_resmp.ps [1.5], lib/gs_setpd.ps [1.11],
-lib/gs_std_e.ps [1.4], lib/gs_sym_e.ps [1.4], lib/gs_trap.ps [1.5],
+lib/gs_rdlin.ps [1.4], lib/gs_res.ps [1.19], lib/gs_resmp.ps [1.5],
+lib/gs_setpd.ps [1.11], lib/gs_statd.ps [1.7], lib/gs_std_e.ps [1.4],
+lib/gs_sym_e.ps [1.4], lib/gs_trap.ps [1.5], lib/gs_ttf.ps [1.11],
 lib/gs_typ32.ps [1.5], lib/gs_typ42.ps [1.6], lib/gs_type1.ps [1.11],
 lib/gs_wan_e.ps [1.4], lib/gs_wl1_e.ps [1.4], lib/gs_wl2_e.ps [1.4],
 lib/gs_wl5_e.ps [1.4], lib/ht_ccsto.ps [1.3]: 2002/02/21 21:49:28 giles)
@@ -750,31 +2220,35 @@ lib/gs_wl5_e.ps [1.4], lib/ht_ccsto.ps [1.3]: 2002/02/21 21:49:28 giles)
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (bfont.h [1.6], btoken.h [1.6], ccfont.h [1.4],
 dpmain.c [1.7], dscparse.c [1.10], dscparse.h [1.9], dstack.h [1.5],
-dwimg.h [1.7], dwmain.h [1.6], dwnodll.c [1.4], dwreg.c [1.3],
-dwreg.h [1.4], dwsetup.cpp [1.7], dwsetup.h [1.5], dwtext.c [1.7],
-dwtext.h [1.7], dwuninst.cpp [1.4], dwuninst.h [1.5], errors.h [1.6],
-estack.h [1.5], gdevdsp.h [1.5], gdevdsp2.h [1.6], ghost.h [1.4],
-gs.c [1.8], ialloc.c [1.4], ialloc.h [1.4], iastate.h [1.4],
-iastruct.h [1.4], ibnum.c [1.6], ibnum.h [1.6], iccfont.c [1.5],
-iccinit0.c [1.4], icfontab.c [1.4], ichar.h [1.5], ichar1.h [1.6],
-icharout.h [1.6], icid.h [1.4], icie.h [1.5], icolor.h [1.4], iconf.c [1.6],
-iconf.h [1.3], icontext.c [1.10], icontext.h [1.4], icremap.h [1.4],
-icsmap.h [1.4], icstate.h [1.8], iddict.h [1.4], iddstack.h [1.4],
-idebug.h [1.4], idict.c [1.6], idict.h [1.4], idictdef.h [1.4],
-idisp.c [1.5], idisp.h [1.4], idosave.h [1.4], idparam.c [1.5],
-idparam.h [1.5], idsdata.h [1.4], idstack.c [1.4], idstack.h [1.4],
-iesdata.h [1.4], iestack.h [1.4], ifcid.h [1.4], ifilter.h [1.5],
+dwdll.c [1.4], dwdll.h [1.5], dwimg.c [1.5], dwimg.h [1.7],
+dwinst.cpp [1.4], dwinst.h [1.5], dwmain.c [1.9], dwmain.h [1.6],
+dwmainc.c [1.11], dwnodll.c [1.4], dwreg.c [1.3], dwreg.h [1.4],
+dwsetup.cpp [1.7], dwsetup.h [1.5], dwtext.c [1.7], dwtext.h [1.7],
+dwuninst.cpp [1.4], dwuninst.h [1.5], errors.h [1.6], estack.h [1.5],
+fapiufst.c [1.11], files.h [1.6], gdevdsp.h [1.5], gdevdsp2.h [1.6],
+ghost.h [1.4], gs.c [1.8], ialloc.c [1.4], ialloc.h [1.4], iapi.c [1.5],
+iapi.h [1.4], iastate.h [1.4], iastruct.h [1.4], ibnum.c [1.6],
+ibnum.h [1.6], iccfont.c [1.5], iccinit0.c [1.4], icfontab.c [1.4],
+ichar.h [1.5], ichar1.h [1.6], icharout.h [1.6], icid.h [1.4], icie.h [1.5],
+icolor.h [1.4], iconf.c [1.6], iconf.h [1.3], icontext.c [1.10],
+icontext.h [1.4], icremap.h [1.4], icsmap.h [1.4], icstate.h [1.8],
+iddict.h [1.4], iddstack.h [1.4], idebug.c [1.6], idebug.h [1.4],
+idict.c [1.6], idict.h [1.4], idictdef.h [1.4], idisp.c [1.5],
+idisp.h [1.4], idosave.h [1.4], idparam.c [1.5], idparam.h [1.5],
+idsdata.h [1.4], idstack.c [1.4], idstack.h [1.4], iesdata.h [1.4],
+iestack.h [1.4], ifapi.h [1.9], ifcid.h [1.4], ifilter.h [1.5],
 ifilter2.h [1.4], ifont.h [1.8], ifont1.h [1.5], ifont2.h [1.4],
 ifont42.h [1.6], ifrpred.h [1.4], ifunc.h [1.7], ifwpred.h [1.4],
 igc.c [1.7], igc.h [1.4], igcref.c [1.5], igcstr.c [1.5], igcstr.h [1.4],
 igstate.h [1.5], iht.h [1.4], iimage.h [1.4], iimage2.h [1.4],
-iinit.h [1.4], ilevel.h [1.4], ilocate.c [1.6], imain.c [1.23],
-imain.h [1.5], imainarg.h [1.5], imemory.h [1.4], iminst.h [1.7],
-iname.c [1.5], iname.h [1.4], inamedef.h [1.4], inameidx.h [1.4],
-inames.h [1.4], inamestr.h [1.4], inobtokn.c [1.4], inouparm.c [1.4],
-interp.c [1.10], interp.h [1.4], iosdata.h [1.4], iostack.h [1.4],
-ipacked.h [1.4], iparam.c [1.7], iparam.h [1.4], iparray.h [1.4],
-ipcolor.h [1.4], iplugin.c [1.3], iplugin.h [1.3], ireclaim.c [1.5],
+iinit.c [1.5], iinit.h [1.4], ilevel.h [1.4], ilocate.c [1.6],
+imain.c [1.23], imain.h [1.5], imainarg.c [1.18], imainarg.h [1.5],
+imemory.h [1.4], iminst.h [1.7], iname.c [1.5], iname.h [1.4],
+inamedef.h [1.4], inameidx.h [1.4], inames.h [1.4], inamestr.h [1.4],
+inobtokn.c [1.4], inouparm.c [1.4], interp.c [1.10], interp.h [1.4],
+iosdata.h [1.4], iostack.h [1.4], ipacked.h [1.4], iparam.c [1.7],
+iparam.h [1.4], iparray.h [1.4], ipcolor.h [1.4], iplugin.c [1.3],
+iplugin.h [1.3], ireclaim.c [1.5], iref.h [1.7], isave.c [1.5],
 isave.h [1.4], iscan.c [1.7], iscan.h [1.6], iscanbin.c [1.9],
 iscanbin.h [1.4], iscannum.c [1.5], iscannum.h [1.4], isdata.h [1.4],
 isstate.h [1.4], istack.c [1.4], istack.h [1.4], istkparm.h [1.4],
@@ -788,25 +2262,27 @@ Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (sfilter1.c [1.8], shcgen.c [1.4], shcgen.h [1.4],
 smtf.c [1.4], smtf.h [1.4], store.h [1.4], zarith.c [1.6], zarray.c [1.4],
 zbfont.c [1.12], zbseq.c [1.6], zcfont.c [1.4], zchar.c [1.6],
-zchar1.c [1.11], zchar2.c [1.4], zchar32.c [1.4], zcharout.c [1.7],
-zcharx.c [1.5], zcid.c [1.5], zcie.c [1.8], zcolor.c [1.6], zcolor1.c [1.5],
-zcolor2.c [1.7], zcontext.c [1.9], zcontrol.c [1.6], zcrd.c [1.5],
-zcsdevn.c [1.9], zcsindex.c [1.5], zcspixel.c [1.4], zcssepr.c [1.10],
-zdevcal.c [1.5], zdevice.c [1.6], zdevice2.c [1.7], zdfilter.c [1.4],
-zdict.c [1.5], zdouble.c [1.4], zdpnext.c [1.5], zdps.c [1.6],
-zdps1.c [1.5], zdscpars.c [1.14], zfarc4.c [1.4], zfbcp.c [1.5],
-zfcid.c [1.13], zfcid0.c [1.12], zfcmap.c [1.11], zfdctd.c [1.8],
-zfdcte.c [1.7], zfdecode.c [1.5], zfileio.c [1.14], zfilter.c [1.7],
-zfilter2.c [1.5], zfilterx.c [1.4], zfmd5.c [1.4], zfont.c [1.5],
-zfont0.c [1.5], zfont1.c [1.11], zfont2.c [1.6], zfont32.c [1.4],
-zfont42.c [1.8], zfproc.c [1.11], zfsample.c [1.5], zfunc.c [1.11],
-zfunc0.c [1.6], zfunc3.c [1.5], zfunc4.c [1.10], zfzlib.c [1.5],
-zgeneric.c [1.5], zgstate.c [1.4], zhsb.c [1.4], zht.c [1.4], zht1.c [1.4],
-zht2.c [1.4], zicc.c [1.5], zimage.c [1.7], zimage2.c [1.6],
-zimage3.c [1.5], ziodev.c [1.9], zmath.c [1.5], zmatrix.c [1.6],
-zmedia2.c [1.6], zmisc.c [1.4], zmisc1.c [1.5], zmisc2.c [1.5],
-zmisc3.c [1.4], zpacked.c [1.4], zpaint.c [1.4], zpath.c [1.4],
-zpath1.c [1.4], zpcolor.c [1.5], zrelbit.c [1.4], zrop.c [1.4],
+zchar1.c [1.11], zchar2.c [1.4], zchar32.c [1.4], zchar42.c [1.6],
+zcharout.c [1.7], zcharx.c [1.5], zcid.c [1.5], zcie.c [1.8],
+zcolor.c [1.6], zcolor1.c [1.5], zcolor2.c [1.7], zcontext.c [1.9],
+zcontrol.c [1.6], zcrd.c [1.5], zcsdevn.c [1.9], zcsindex.c [1.5],
+zcspixel.c [1.4], zcssepr.c [1.10], zdevcal.c [1.5], zdevice.c [1.6],
+zdevice2.c [1.7], zdfilter.c [1.4], zdict.c [1.5], zdouble.c [1.4],
+zdpnext.c [1.5], zdps.c [1.6], zdps1.c [1.5], zdscpars.c [1.14],
+zfapi.c [1.14], zfarc4.c [1.4], zfbcp.c [1.5], zfcid.c [1.13],
+zfcid0.c [1.12], zfcid1.c [1.9], zfcmap.c [1.11], zfdctd.c [1.8],
+zfdcte.c [1.7], zfdecode.c [1.5], zfile.c [1.15], zfileio.c [1.14],
+zfilter.c [1.7], zfilter2.c [1.5], zfilterx.c [1.4], zfmd5.c [1.4],
+zfont.c [1.5], zfont0.c [1.5], zfont1.c [1.11], zfont2.c [1.6],
+zfont32.c [1.4], zfont42.c [1.8], zfproc.c [1.11], zfrsd.c [1.6],
+zfsample.c [1.5], zfunc.c [1.11], zfunc0.c [1.6], zfunc3.c [1.5],
+zfunc4.c [1.10], zfzlib.c [1.5], zgeneric.c [1.5], zgstate.c [1.4],
+zhsb.c [1.4], zht.c [1.4], zht1.c [1.4], zht2.c [1.4], zicc.c [1.5],
+zimage.c [1.7], zimage2.c [1.6], zimage3.c [1.5], ziodev.c [1.9],
+ziodev2.c [1.5], zmath.c [1.5], zmatrix.c [1.6], zmedia2.c [1.6],
+zmisc.c [1.4], zmisc1.c [1.5], zmisc2.c [1.5], zmisc3.c [1.4],
+zpacked.c [1.4], zpaint.c [1.4], zpath.c [1.4], zpath1.c [1.4],
+zpcolor.c [1.5], zrelbit.c [1.4], zrop.c [1.4], zshade.c [1.7],
 zstack.c [1.4], zstring.c [1.5], zsysvm.c [1.4], ztoken.c [1.8],
 ztrans.c [1.15], ztrap.c [1.4], ztype.c [1.5], zupath.c [1.4],
 zusparam.c [1.6], zvmem.c [1.6], zvmem2.c [1.5]: 2002/02/21 22:24:54 giles)
@@ -814,8 +2290,14 @@ zusparam.c [1.6], zvmem.c [1.6], zvmem2.c [1.5]: 2002/02/21 22:24:54 giles)
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (examples/waterfal.ps [1.5]: 2002/02/21 22:49:46 giles)
 
+FAPI project : Fixing absent entries in Subrs array. (zfapi.c [1.15]:
+2002/02/21 23:09:42 igor)
+
 FAPI project : Removing an obsolete fixme comment. (lib/gs_ciddc.ps [1.7]:
 2002/02/21 23:14:05 igor)
+
+FAPI project : Fixing absent entries in Subrs array. (zfapi.c [1.16]:
+2002/02/21 23:22:22 igor)
 
 Makes 'save' create inner chunks for all chunks with at least a minimum
 amount of free space (currently defined statically as 500 bytes), rather
@@ -825,17 +2307,27 @@ which can substantially improve memory utilization. (isave.c [1.6]:
 2002/02/25 07:37:22 lpd)
 
 FAPI project : (1) Fixing a bug in stringwidth; (2) replacing CheckRET macro
-with return_if_error. (ifapi.h [1.10]: 2002/02/25 10:02:12 igor)
+with return_if_error. (fapiufst.c [1.12], ifapi.h [1.10], zfapi.c [1.17]:
+2002/02/25 10:02:12 igor)
+
+FAPI project : Fixing bugs (1) in TrueType 'loca' format 1 and (2) in
+'.notdef' charstring access. (fapiufst.c [1.13], zfapi.c [1.18]: 2002/02/25
+17:21:09 igor)
 
 Implementing Visual Trace service to graphics library, and Visual Trace
 server for Windows. (dwdll.c [1.5], dwdll.h [1.6], dwimg.c [1.6],
-dwmain.c [1.10], dwmainc.c [1.12], iapi.c [1.6], iapi.h [1.5]: 2002/02/26
-16:09:15 igor)
+dwmain.c [1.10], dwmainc.c [1.12], dwtrace.c [1.1], dwtrace.h [1.2],
+iapi.c [1.6], iapi.h [1.5], imainarg.c [1.19]: 2002/02/26 16:09:15 igor)
 
 FAPI project : Changing the logics of loading GS fonts with FAPI : now all
 fonts listed in fontmap are being loaded with GS font loader and then are
-passed to FAPI in same way as embedded fonts. (lib/gs_fonts.ps [1.20]:
-2002/02/26 17:49:12 igor)
+passed to FAPI in same way as embedded fonts. (lib/gs_fapi.ps [1.14],
+lib/gs_fonts.ps [1.20]: 2002/02/26 17:49:12 igor)
+
+FAPI project : An unaligned bitmap was passed from UFST to
+mem_mono_copy_mono. Creating a temporary aligned copy on necessity. Source
+Forge bug #523073 "Segment fault in mem_mono_copy_mono". (fapiufst.c [1.14],
+zfapi.c [1.19]: 2002/02/27 10:34:57 igor)
 
 Remove the return_if_error macro from ALL occurrences and clean up some of
 the C-style problems with the FAPI code. Add some of the new rules about
@@ -847,7 +2339,7 @@ OpenVMS devs.mak : In a condition in a Makefile for OpenVMS the ":" should
 be surrounded by spaces. Modified Files: gs/src/devs.mak gs/src/imainarg.c
 gs/src/zfile.c
 ----------------------------------------------------------------------
-(imainarg.c [1.20]: 2002/03/07 08:35:16 joukj)
+(imainarg.c [1.20], zfile.c [1.16]: 2002/03/07 08:35:16 joukj)
 
 MS-Windows installer now clears the read-only attribute when copying files.
 The installer was failing when the source files were stored unpacked on a
@@ -858,12 +2350,16 @@ devices present on some Adobe printers. This version is NOT multiple
 instance safe, but is useful for embedded printers or for server systems
 with a single Ghostscript instance. Documentation is in Language.htm.
 Addresses SourceForge bug #493344 for Artifex customer #411. (files.h [1.7],
-iinit.c [1.6], lib/gs_diskn.ps [1.1], lib/gs_lev2.ps [1.14],
-lib/gs_res.ps [1.22], lib/gs_statd.ps [1.8], lib/gs_ttf.ps [1.13],
-zfrsd.c [1.7], ziodev2.c [1.6]: 2002/03/13 20:27:39 ray)
+iinit.c [1.6], lib/gs_diskn.ps [1.1], lib/gs_init.ps [1.51],
+lib/gs_lev2.ps [1.14], lib/gs_res.ps [1.22], lib/gs_statd.ps [1.8],
+lib/gs_ttf.ps [1.13], zfile.c [1.17], zfrsd.c [1.7], ziodev2.c [1.6]:
+2002/03/13 20:27:39 ray)
 
 Adds multiple inclusion protection to the vdtrace header files.
 (dwtrace.h [1.3]: 2002/03/14 04:26:44 giles)
+
+Adds -dNOTRANSPARENCY flag, which disables all PDF 1.4 transparency
+processing. (lib/gs_init.ps [1.52]: 2002/03/14 15:53:09 raph)
 
 Removing return_if_error macro. (fapiufst.c [1.16]: 2002/03/14 19:19:13
 igor)
@@ -877,6 +2373,48 @@ stable releases. (lib/gs_init.ps [1.53]: 2002/03/22 00:05:52 giles)
 
 </pre><h2><a name="7.20-Streams"></a>Streams</h2><pre>
 
+Fixes problems:
+	- The double-inclusion protection for two header files didn't use
+the standard method. (scfx.h [1.3], scommon.h [1.4]: 2002/01/11 02:27:59
+lpd)
+	- On IA64 CPUs, objects were only aligned on 8-byte boundaries, not
+16-byte. (It may be that only jmpbuf structures actually need 16-byte
+alignment, but gcc and glibc malloc align all objects that way.) Fixes
+SourceForge bug #502866. Also cleans up some minor coding issues in
+genarch.c. (std.h [1.5]: 2002/01/16 16:09:20 lpd)
+	- sclose and spskip incorrectly indicated that they returned a
+'code' (per gserrors.h) rather than a 'status' (per scommon.h).
+(stream.c [1.16]: 2002/02/12 21:52:16 lpd)
+	- the 1-line comment at the head of sstring.h was garbled.
+(sstring.h [1.4]: 2002/02/16 15:08:59 lpd)
+
+Finishes removing support for pre-ANSI (a.k.a. "traditional" or "K&amp;R") C
+compilers. (stdpre.h [1.5]: 2001/12/13 18:11:09 lpd)
+
+Adds more tracing to the DCTEncode filter (under the -Zw switch).
+(sdcte.c [1.5]: 2002/02/16 07:32:23 lpd)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(sa85d.c [1.4], sa85d.h [1.4], sa85x.h [1.4], sarc4.c [1.6], sarc4.h [1.3],
+sbcp.c [1.4], sbcp.h [1.3], sbtx.h [1.3], scanchar.h [1.3], scantab.c [1.3],
+scf.h [1.3], scfd.c [1.4], scfdtab.c [1.2], scfe.c [1.3], scfetab.c [1.3],
+scfparam.c [1.3], scfx.h [1.4], scommon.h [1.5], sdcparam.c [1.4],
+sdcparam.h [1.3], sdct.h [1.5], sdctc.c [1.3], sdctd.c [1.3], sdcte.c [1.6],
+sddparam.c [1.3], sdeparam.c [1.5], seexec.c [1.5], sfilter.h [1.7],
+sfilter2.c [1.4], sfxboth.c [1.3], sfxfd.c [1.7], sfxstdio.c [1.5],
+shc.c [1.3], shc.h [1.3], siinterp.c [1.3], siinterp.h [1.3],
+siscale.c [1.5], siscale.h [1.3], sisparam.h [1.3], sjpeg.h [1.3],
+sjpegc.c [1.5], sjpegd.c [1.4], sjpege.c [1.4], slzwc.c [1.3],
+slzwce.c [1.3], slzwd.c [1.4], slzwx.h [1.3], smd5.c [1.4], smd5.h [1.3],
+spdiff.c [1.4], spdiffx.h [1.3], spngp.c [1.3], spngpx.h [1.3],
+spprint.c [1.5], spprint.h [1.4], spsdf.c [1.6], spsdf.h [1.3],
+srdline.h [1.3], srld.c [1.3], srle.c [1.3], srlx.h [1.4], sstring.c [1.3],
+sstring.h [1.5], stat_.h [1.7], std.h [1.6], stdio_.h [1.5], stdpre.h [1.6],
+stream.c [1.17], stream.h [1.9], strimpl.h [1.4], string_.h [1.3],
+szlibc.c [1.4], szlibd.c [1.4], szlibe.c [1.3], szlibx.h [1.3],
+szlibxx.h [1.3]: 2002/02/21 20:57:49 ray)
+
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (sa85d.c [1.5], sa85d.h [1.5], sa85x.h [1.5],
 sarc4.c [1.7], sarc4.h [1.4], sbcp.c [1.5], sbcp.h [1.4], sbtx.h [1.4],
@@ -887,9 +2425,9 @@ sdct.h [1.6], sdctc.c [1.4], sdctd.c [1.4], sdcte.c [1.7], sddparam.c [1.4],
 sdeparam.c [1.6], seexec.c [1.6], sfilter.h [1.8], sfilter2.c [1.5],
 sfxboth.c [1.4], sfxfd.c [1.8], sfxstdio.c [1.6], shc.c [1.4], shc.h [1.4],
 siinterp.c [1.4], siinterp.h [1.4], siscale.c [1.6], siscale.h [1.4],
-sisparam.h [1.4], sjpeg.h [1.4], sjpegd.c [1.5], sjpege.c [1.5],
-slzwc.c [1.4], slzwce.c [1.4], slzwd.c [1.5], slzwx.h [1.4], smd5.c [1.5],
-smd5.h [1.4], spdiff.c [1.5], spdiffx.h [1.4], spngp.c [1.4],
+sisparam.h [1.4], sjpeg.h [1.4], sjpegc.c [1.6], sjpegd.c [1.5],
+sjpege.c [1.5], slzwc.c [1.4], slzwce.c [1.4], slzwd.c [1.5], slzwx.h [1.4],
+smd5.c [1.5], smd5.h [1.4], spdiff.c [1.5], spdiffx.h [1.4], spngp.c [1.4],
 spngpx.h [1.4], spprint.c [1.6], spprint.h [1.5], spsdf.c [1.7],
 spsdf.h [1.4], srdline.h [1.4], srld.c [1.4], srle.c [1.4], srlx.h [1.5],
 sstring.c [1.4], sstring.h [1.6], stat_.h [1.8], std.h [1.7],
@@ -915,13 +2453,116 @@ zlib and libpng source, and cleans up some variable names. (sjpegc.c [1.7]:
 </pre><h2><a name="7.20-Library"></a>Library</h2><pre>
 
 Fixes problems:
+	- Change show_enum pointer enumeration to properly enumerate
+underlying gs_text_enum structure. (gxchar.c [1.6]: 2001/10/26 16:28:02
+raph)
+	- Image DataSource procedures that did save/restore would clear the
+tile cache which was not detected in image_render_mono resulting in images
+being painted with (mostly) all black when the device was a halftoned device
+e.g. pcxmono or tiffg3. Check for vailidity of the ht_cache and re-init the
+image color clues if not valid. Also improve performance by preventing
+restore from always clearing the ht_cache. Fixes SourceForge bug #436897 for
+Artifex customer #710. (gsstate.c [1.12], gxht.c [1.3], gximage.h [1.3],
+gximono.c [1.3], gxipixel.c [1.3], gzht.h [1.5]: 2001/11/06 22:40:05 rayjj)
+	- Trailing comma in structure (compile error on AIX).
+(gxfcmap.h [1.9]: 2001/11/07 18:00:09 rayjj)
+	- Fix for 473305 and a revised fix for 422534. The fix for 422534
+caused a problem detected by the regression testing. This was found with
+test file 035-01.ps. Both problems were caused by an error in the logic for
+comparing two halftones for equality. This logic is used to determine which
+the halftone cache needs to be reloaded. In both cases, non equal halftones
+were being considered equal. (gsdcolor.h [1.4], gxcht.c [1.4],
+gxclrast.c [1.10], gxdcolor.c [1.4]: 2001/11/12 22:15:19 dancoby)
+	- There was an unused variable 'code'; 'divide' was misspelled
+'devide'; there was a &amp;&amp; without enclosing parentheses within a ||.
+(gxshade1.c [1.10]: 2001/11/22 05:01:40 lpd)
+	- Removes 2 undefined variables. (gsdevice.c [1.12]: 2001/11/22
+05:05:41 lpd)
+	- Removes an unused variable. (gsfcmap.c [1.15]: 2001/11/22 05:14:55
+lpd)
+	- gs_purge_font_from_char_caches wasn't declared in any header file.
+(gsfont.c [1.5], gxfcache.h [1.3]: 2001/11/22 05:56:51 lpd)
+	- CIE color conversion could be very inaccurate if it didn't use
+interpolation when cached sampled values were near zero. This fix detects
+numerically sensitive areas and uses interpolation (which is computationally
+expensive) only in those areas. Fixes SourceForge #465921. (gscie.c [1.6],
+gscie.h [1.5], gsciemap.c [1.8], gscrd.c [1.3]: 2001/12/09 00:03:37 lpd)
+	- Image Type 4 images processed with the Interpolate turned on (as
+from -dDOINTERPOLATE) left an uninitialized variable that could cause
+extensive slowdown. Fix for SourceForge bug #491308 for Artifex customer
+671. (gxiscale.c [1.3]: 2001/12/14 19:02:27 rayjj)
+	- Don't signal invalidacces if the OutputFile parameter is set to
+the current value as would be done by 'currentpagedevice setpagedevice'.
+(gdevprn.c [1.7]: 2002/01/15 04:44:09 rayjj)
+	- On IA64 CPUs, objects were only aligned on 8-byte boundaries, not
+16-byte. (It may be that only jmpbuf structures actually need 16-byte
+alignment, but gcc and glibc malloc align all objects that way.) Fixes
+SourceForge bug #502866. Also cleans up some minor coding issues in
+genarch.c. (gsmalloc.c [1.4], gxobj.h [1.3]: 2002/01/16 16:09:20 lpd)
+	- pdfwrite incorrectly handled Metrics[2] and CDevProc by writing
+Widths that differed from the widths in the underlying font. pdfwrite now
+positions characters individually in this case, like Acrobat Distiller.
+Fixes SourceForge #495414. (gxfont.h [1.6]: 2002/01/17 05:13:24 lpd)
+	- The recent fix for #502866 required malloc to align blocks at
+least as stringently as the compiler requires. Even though the ANSI C
+specification appears to require this, and Ghostscript relies on it, Dan
+reports that some C implementation doesn't do it. Additional patching to
+deal with this problem will undoubtedly be required.... (gsmalloc.c [1.5]:
+2002/01/18 00:31:25 lpd)
+	- The check for unaligned return values from malloc still had a bug.
+(gsmalloc.c [1.6]: 2002/01/18 18:27:08 lpd)
+	- MSVC's malloc on x86 only aligns blocks mod 4, even though the
+compiler aligns 'double' members of structures mod 8. Documents this fact in
+the relevant places in the Ghostscript code, and removes the check that was
+causing gsmalloc.c to produce warning messages. (gsmalloc.c [1.7],
+gsmemory.h [1.4], gsmemraw.h [1.4], gxbitmap.h [1.3], gxobj.h [1.4]:
+2002/01/22 08:04:28 lpd)
+	- Improve security in a (mostly) backward compatible fashion adding
+more flexible file access paths (PermitFile...) as user paramters and adding
+the facility to return to NOSAFER mode after running jobs (files/procedures)
+in SAFER mode. This should address SF bug #474582 and eliminate the need for
+the RedHat PARANOIDSAFER patch. (gp.h [1.9], gp_dosfe.c [1.3],
+gp_dosfs.c [1.3], gp_unifn.c [1.3], gsutil.c [1.5], gsutil.h [1.4]:
+2002/01/24 06:33:33 rayjj)
+	- When pdfwrite embedded a TrueType font with a generated format 6
+cmap, it incorrectly added the character bias (0xf000) to the "first
+character code" entry in the cmap sub-table. Fixes SourceForge #434707 and
+probably some others. This fix also adds a set of compile-time options for
+forcing embedded TTFs into particular formats for debugging.
+(gdevpsft.c [1.10]: 2002/01/29 00:44:06 lpd)
+	- Prevent Type2 fonts from needing more than 48 ostack elements.
+Patch provided by Toshiya Suzuki-san (mpsuzuki). Also add checking to
+prevent fonts that push more than 48 elements on the ostack from overflowing
+the array (could caused SEGV). Fix for SourcForge bug #497537.
+(gdevpsfx.c [1.11], gstype1.c [1.8], gstype2.c [1.12], gxtype1.c [1.10],
+gxtype1.h [1.7]: 2002/01/29 19:13:25 rayjj)
+	- The cached effective_clip_id was being set to the clip_id of the
+clip_path, ignoring the viewclip path in some cases. Set the 'id' to
+correctly reflect the path in effective_clip_path. Fixes SF bug #458769 for
+Artifex customer #1130. (gspath.c [1.3]: 2002/02/05 00:29:59 rayjj)
+	- Prevent large transparency buffer allocations from overflowing
+unsigned int. Could lead to SEGV or buffer overflow. Also fix up some return
+code handling when allocations fail in PDF 1.4 transparency logic. Fixes SF
+bug #511914 for Artifex customer #680. (gdevp14.c [1.5]: 2002/02/05 08:13:50
+rayjj)
+	- gx_begin_image3x_generic passed uninitialized data to
+gs_cspace_init_DevicePixel when Shape.MaskDict was absent, causing a garbage
+collector crash. Fixes SourceForge bug #516530 (heap crash with
+OTGuide.pdf). (based on proposed fix by igorm.) (gsipar3x.h [1.4],
+gximag3x.c [1.8], gximono.c [1.4]: 2002/02/18 17:12:53 lpd)
+	- Many files lacked double-inclusion protection, or implemented it
+incorrectly. (gsdfilt.h [1.3], gxfapi.h [1.3], jerror_.h [1.3]: 2002/02/20
+01:32:47 lpd)
 	- Converting Type 1 to Type 2 fonts didn't adjust the coordinates of
 stem hints, which are relative to the l.s.b. in Type 1 but not in Type 2.
 (First part of two-part fix for SourceForge #520718.) (gdevpsfx.c [1.14]:
 2002/02/22 07:07:47 lpd)
 	- The Type 2 CharString interpreter ignored many hints. (Second part
 of two-part fix for SourceForge #520718.) (gstype1.c [1.11],
-gxhint2.c [1.5], gxtype1.h [1.10]: 2002/02/22 15:28:21 lpd)
+gstype2.c [1.15], gxhint2.c [1.5], gxtype1.h [1.10]: 2002/02/22 15:28:21
+lpd)
+	- Fixes an out-of-date reference to the Type 2 CharString
+documentation. (gstype2.c [1.16]: 2002/02/22 23:32:41 lpd)
 	- Makes the standard memory manager scan all chunks, not just the
 currently open one, for available free space. This is a long-planned,
 long-overdue improvement that can improve memory utilization dramatically.
@@ -948,46 +2589,246 @@ had to include gsmatrix.h. (gxfont.h [1.9]: 2002/03/29 00:41:39 lpd)
 clients of gsfont.h to include gsmatrix.h unnecessarily. (gsfont.h [1.5]:
 2002/03/29 00:48:21 lpd)
 
+file vdtrace.c was initially added on branch HINTER. (vdtrace.c [1.1]:
+2001/01/12 06:19:36 igorm)
+
+file vdtrace.h was initially added on branch HINTER. (vdtrace.h [1.1]:
+2001/02/02 20:27:09 igorm)
+
+Updates version number to 7.10 to indicate that this is now the development
+branch. (gscdef.c [1.16]: 2001/10/20 09:25:22 raph)
+
+Changes all procedures for getting glyph outline data to return a structure
+that includes memory management information. This is a
+NON-BACKWARD-COMPATIBLE change to both implementors and clients. It corrects
+a serious design error: formerly these procedures encoded memory management
+information in their return code, which was obscure and error-prone.
+(gdevpsf.h [1.11], gdevpsf1.c [1.10], gdevpsf2.c [1.16], gdevpsft.c [1.9],
+gdevpsfu.c [1.8], gdevpsfx.c [1.10], gsfcid.c [1.6], gsgdata.c [1.1],
+gsgdata.h [1.1], gstype1.c [1.7], gstype1.h [1.3], gstype2.c [1.11],
+gstype42.c [1.13], gxfcid.h [1.7], gxfont.h [1.4], gxfont1.h [1.6],
+gxfont42.h [1.5], gxtype1.c [1.9], gxtype1.h [1.6]: 2001/10/21 06:20:08 lpd)
+
+FAPI project, UFST only, Type 1 and Type42 fonts. This version supports disk
+fonts including FCOs, and embedded fonts, including incremental ones.
+(gconf.c [1.3], gsmemraw.h [1.3], gxfont.h [1.5]: 2001/10/21 18:57:41 igorm)
+
+FAPI project, UFST only, Type 1 and Type42 fonts. This version supports disk
+fonts including FCOs, and embedded fonts, including incremental ones.
+(gxfapi.c [1.1], gxfapi.h [1.1]: 2001/10/21 19:10:29 igorm)
+
+Takes a small step towards fully ANSIfied code by removing all ANSI-testing
+uses of __PROTOTYPES__ from code with an Aladdin/artofcode copyright.
+(gdevprn.h [1.7], gsroptab.c [1.3], gsstruct.h [1.9]: 2001/10/25 04:38:34
+lpd)
+
+Refactors the CIEBased color mapping code slightly to make the CIE =&gt; XYZ
+step separately accessible. (The XYZ =&gt; device step is already exported
+for rendering ICCBased color.) pdfwrite needs this for converting arbitrary
+CIEBased spaces to ICCBased. (gscie.c [1.5], gscie.h [1.4],
+gsciemap.c [1.7], gxcie.h [1.4]: 2001/11/06 04:47:37 lpd)
+
+Improvement for FAPI project : Splitting set_cache_device in 2 parts to
+allow computing the oversampling scale prior to zchar_set_cache.
+(gxchar.c [1.7], gxchar.h [1.3]: 2001/11/06 22:02:33 igorm)
+
+Changes uses of 'defined' as an identifier to 'is_defined', since 'defined'
+is a (non-standard) reserved word in gcc 2.96. (Patch from Red Hat.)
+(gsdparam.c [1.5]: 2001/11/07 07:48:57 lpd)
+
+FAPI project : (1) upgrading with UFST 4.3, (2) implementing GS cache.
+(gxfapi.c [1.2], gxfapi.h [1.2]: 2001/11/11 23:09:16 igorm)
+
+FAPI project : Preparing environment for CID font processing; Fixing UFST
+file names. (gxfapi.c [1.3]: 2001/12/12 02:48:20 igorm)
+
+FAPI project : Making set_char_width to be public to access from FAPI
+client. (gxchar.c [1.8], gxchar.h [1.4]: 2001/12/20 22:17:59 igorm)
+
+Improve security for device related access to the file system and to pipes
+by allowing the dangerous parameters to be locked (for example, OutputFile).
+The locking is performed after command line parameters are established.
+Locking is not turned on by default as a result of this change, but
+-d.LockSafetyParams=true can be added to the command line to accomplish
+this. Related to SF bug #474582 (sort of). (gdevprn.c [1.6],
+gdevvec.c [1.13], gsdparam.c [1.6], gxdevcli.h [1.6], gxdevice.h [1.5]:
+2001/12/22 00:44:01 rayjj)
+
+FAPI project : Making set_char_width to be public to access from FAPI
+client. (gdevpsfm.c [1.6], gxfcmap.h [1.10]: 2001/12/28 18:53:02 igorm)
+
+Moves TrueType glyph flags to gxttf.h, where they should have been from the
+beginning. (gstype42.c [1.14], gxttf.h [1.3]: 2002/02/11 16:27:58 lpd)
+
+Minor tweaks to Ray's buffer allocation failure patch, as discussed on
+gs-code-review. (gdevp14.c [1.6]: 2002/02/13 18:11:09 raph)
+
+Remove pdf14_text_enum_t and related functions because they are unuseful.
+This change helps for FAPI project. (gdevp14.c [1.7]: 2002/02/18 11:13:19
+igor)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(ctype_.h [1.3], dirent_.h [1.3], dos_.h [1.3], errno_.h [1.3],
+fcntl_.h [1.4], gconf.c [1.4], gconf.h [1.3], gdebug.h [1.4],
+gdevabuf.c [1.4], gdevalph.c [1.3], gdevbbox.c [1.5], gdevbbox.h [1.3],
+gdevcmap.c [1.3], gdevcmap.h [1.3], gdevdbit.c [1.3], gdevddrw.c [1.3],
+gdevdflt.c [1.4], gdevdgbr.c [1.3], gdevdrop.c [1.4], gdevemap.c [1.3],
+gdevhit.c [1.3], gdevht.c [1.4], gdevht.h [1.3], gdevm1.c [1.3],
+gdevm16.c [1.3], gdevm2.c [1.3], gdevm24.c [1.3], gdevm32.c [1.3],
+gdevm4.c [1.3], gdevm8.c [1.3], gdevmem.c [1.3], gdevmem.h [1.4],
+gdevmpla.c [1.3], gdevmpla.h [1.3], gdevmr1.c [1.3], gdevmr2n.c [1.3],
+gdevmr8n.c [1.3], gdevmrop.h [1.4], gdevmrun.c [1.3], gdevmrun.h [1.3],
+gdevnfwd.c [1.4], gdevp14.c [1.8], gdevpipe.c [1.5], gdevplnx.c [1.3],
+gdevplnx.h [1.3], gdevppla.c [1.3], gdevppla.h [1.3], gdevprn.c [1.8],
+gdevprn.h [1.8], gdevprna.c [1.3], gdevprna.h [1.3], gdevpsf.h [1.12],
+gdevpsf1.c [1.11], gdevpsf2.c [1.17], gdevpsfm.c [1.7], gdevpsft.c [1.11],
+gdevpsfu.c [1.9], gdevpsfx.c [1.12], gdevrops.c [1.4], gdevtrac.c [1.3],
+gdevvec.c [1.14], gdevvec.h [1.8], gp.h [1.10], gp_dosfe.c [1.4],
+gp_dosfs.c [1.4], gp_getnv.c [1.3], gp_msdos.c [1.3], gp_nsync.c [1.3],
+gp_psync.c [1.3], gp_strdl.c [1.3], gp_unifn.c [1.4], gp_unifs.c [1.7],
+gpcheck.h [1.3], gpgetenv.h [1.3], gpmisc.c [1.10], gpmisc.h [1.3],
+gpsync.h [1.3], gsalloc.c [1.12], gsalloc.h [1.3], gsalpha.c [1.3],
+gsalpha.h [1.3], gsalphac.c [1.3], gsalphac.h [1.3], gsargs.c [1.5],
+gsargs.h [1.5], gsbitcom.c [1.2], gsbitmap.h [1.3], gsbitops.c [1.4],
+gsbitops.h [1.3], gsbittab.c [1.3], gsbittab.h [1.3], gsccode.h [1.5],
+gsccolor.h [1.3], gscdef.c [1.17], gscdefs.h [1.3], gscdevn.c [1.7],
+gscdevn.h [1.4], gschar.c [1.4], gschar.h [1.4], gschar0.c [1.4],
+gscie.c [1.7], gscie.h [1.6], gsciemap.c [1.9], gscindex.h [1.3],
+gsclipsr.c [1.3], gsclipsr.h [1.3], gscolor.c [1.6], gscolor.h [1.4],
+gscolor1.c [1.5], gscolor1.h [1.3], gscolor2.c [1.7], gscolor2.h [1.4],
+gscolor3.c [1.5], gscolor3.h [1.3], gscompt.h [1.3], gscoord.c [1.6],
+gscoord.h [1.3], gscparam.c [1.8], gscpixel.c [1.4], gscpixel.h [1.3],
+gscpm.h [1.3], gscrd.c [1.4], gscrd.h [1.3], gscrdp.c [1.3], gscrdp.h [1.3],
+gscrypt1.c [1.3], gscrypt1.h [1.3], gscscie.c [1.5], gscsel.h [1.3],
+gscsepnm.h [1.3], gscsepr.h [1.5], gscspace.c [1.5], gscspace.h [1.9],
+gscssub.c [1.4], gscssub.h [1.3], gsdcolor.h [1.5], gsdevice.c [1.13],
+gsdevice.h [1.4], gsdevmem.c [1.3], gsdfilt.c [1.4], gsdfilt.h [1.4],
+gsdparam.c [1.7], gsdpnext.h [1.3], gsdps.c [1.3], gsdps.h [1.3],
+gsdps1.c [1.3], gsdsrc.c [1.3], gsdsrc.h [1.4], gserror.h [1.3],
+gserrors.h [1.3], gsexit.h [1.5], gsfcid.c [1.7], gsfcmap.c [1.16],
+gsfcmap.h [1.5], gsfemu.c [1.3], gsflip.c [1.3], gsflip.h [1.3],
+gsfname.c [1.3], gsfname.h [1.3], gsfont.c [1.6], gsfont.h [1.3],
+gsfont0.c [1.3], gsfunc.c [1.5], gsfunc.h [1.5], gsfunc0.c [1.6],
+gsfunc0.h [1.3], gsfunc3.c [1.5], gsfunc3.h [1.3], gsfunc4.c [1.8],
+gsfunc4.h [1.3], gsfuncv.c [1.3], gsfuncv.h [1.3], gsgc.h [1.4],
+gsgdata.c [1.2], gsgdata.h [1.2], gshsb.c [1.3], gshsb.h [1.3],
+gsht.c [1.3], gsht.h [1.3], gsht1.c [1.4], gsht1.h [1.3], gshtscr.c [1.7],
+gshtx.c [1.3], gshtx.h [1.3], gsicc.c [1.6], gsicc.h [1.4], gsimage.c [1.5],
+gsimage.h [1.3], gsimpath.c [1.3], gsinit.c [1.4], gsio.h [1.6],
+gsiodev.c [1.6], gsiodevs.c [1.3], gsipar3x.h [1.5], gsiparam.h [1.5],
+gsiparm2.h [1.3], gsiparm3.h [1.5], gsiparm4.h [1.3], gsistate.c [1.5],
+gsjconf.h [1.3], gslib.c [1.6], gslib.h [1.3], gsline.c [1.3],
+gsline.h [1.3], gslparam.h [1.3], gsmalloc.c [1.8], gsmalloc.h [1.3],
+gsmatrix.c [1.3], gsmatrix.h [1.3], gsmdebug.h [1.4], gsmemlok.c [1.4],
+gsmemlok.h [1.3], gsmemory.c [1.5], gsmemory.h [1.5], gsmemraw.h [1.5],
+gsmemret.c [1.3], gsmemret.h [1.3], gsmisc.c [1.13], gsnogc.c [1.8],
+gsnogc.h [1.3], gsnorop.c [1.3], gsnotify.c [1.3], gsnotify.h [1.3],
+gspaint.c [1.3], gspaint.h [1.3], gsparam.c [1.5], gsparam.h [1.9],
+gsparam2.c [1.3], gsparams.c [1.3], gsparams.h [1.3], gsparamx.c [1.5],
+gsparamx.h [1.4], gspath.c [1.4], gspath.h [1.3], gspath1.c [1.4],
+gspath2.h [1.3], gspcolor.c [1.5], gspcolor.h [1.3], gspenum.h [1.3],
+gsptype1.c [1.4], gsptype1.h [1.3], gsptype2.c [1.6], gsptype2.h [1.5],
+gsrect.h [1.3], gsrefct.h [1.3], gsrop.c [1.3], gsrop.h [1.3],
+gsropc.c [1.3], gsropc.h [1.3], gsropt.h [1.5], gsroptab.c [1.4],
+gsshade.c [1.5], gsshade.h [1.4], gsstate.c [1.13], gsstate.h [1.3],
+gsstruct.h [1.10], gsstype.h [1.3], gstext.c [1.7], gstext.h [1.4],
+gstparam.h [1.8], gstrans.c [1.14], gstrans.h [1.7], gstrap.c [1.4],
+gstrap.h [1.4], gstype1.c [1.9], gstype1.h [1.4], gstype2.c [1.13],
+gstype42.c [1.15], gstypes.h [1.4], gsuid.h [1.3], gsutil.c [1.6],
+gsutil.h [1.5], gsxfont.h [1.3], gx.h [1.3], gxacpath.c [1.4],
+gxalloc.h [1.7], gxalpha.h [1.3], gxarith.h [1.3], gxband.h [1.3],
+gxbcache.c [1.3], gxbcache.h [1.3], gxbitfmt.h [1.3], gxbitmap.h [1.4],
+gxbitops.h [1.3], gxblend.c [1.3], gxblend.h [1.2], gxccache.c [1.6],
+gxccman.c [1.3], gxcdevn.h [1.3], gxchar.c [1.9], gxchar.h [1.5],
+gxchrout.c [1.3], gxchrout.h [1.3], gxcht.c [1.5], gxcid.h [1.4],
+gxcie.h [1.5], gxcindex.h [1.3], gxclbits.c [1.5], gxcldev.h [1.5],
+gxclfile.c [1.4], gxclimag.c [1.4], gxclio.h [1.3], gxclip.c [1.5],
+gxclip.h [1.3], gxclip2.c [1.4], gxclip2.h [1.3], gxclipm.c [1.4],
+gxclipm.h [1.3], gxclipsr.h [1.3], gxclist.c [1.4], gxclist.h [1.3],
+gxcllzw.c [1.3], gxclmem.c [1.3], gxclmem.h [1.3], gxclpage.c [1.3],
+gxclpage.h [1.3], gxclpath.c [1.10], gxclpath.h [1.7], gxclrast.c [1.11],
+gxclread.c [1.4], gxclrect.c [1.3], gxclutil.c [1.6], gxclzlib.c [1.3],
+gxcmap.c [1.4], gxcmap.h [1.3], gxcolor2.h [1.5], gxcomp.h [1.3],
+gxcoord.h [1.3], gxcpath.c [1.4], gxcpath.h [1.3], gxcspace.h [1.5],
+gxctable.c [1.4], gxctable.h [1.3], gxcvalue.h [1.3], gxdcconv.c [1.4],
+gxdcconv.h [1.3], gxdcolor.c [1.5], gxdcolor.h [1.4], gxdda.h [1.3],
+gxdevbuf.h [1.3], gxdevcli.h [1.7], gxdevice.h [1.6], gxdevmem.h [1.3],
+gxdevrop.h [1.3], gxdht.h [1.5], gxdhtres.h [1.3], gxdither.c [1.3],
+gxdither.h [1.3], gxfapi.c [1.4], gxfapi.h [1.4], gxfarith.h [1.4],
+gxfcache.h [1.4], gxfcid.h [1.8], gxfcmap.h [1.11], gxfill.c [1.9],
+gxfixed.h [1.4], gxfmap.h [1.4], gxfont.h [1.7], gxfont0.h [1.4],
+gxfont1.h [1.7], gxfont42.h [1.6], gxfrac.h [1.4], gxftype.h [1.3],
+gxfunc.h [1.4], gxgetbit.h [1.3], gxhint1.c [1.3], gxhint2.c [1.3],
+gxhint3.c [1.4], gxht.c [1.4], gxht.h [1.3], gxhtbit.c [1.4],
+gxhttile.h [1.3], gxhttype.h [1.3], gxi12bit.c [1.3], gxiclass.h [1.3],
+gxicolor.c [1.4], gxidata.c [1.5], gxifast.c [1.5], gximag3x.c [1.9],
+gximag3x.h [1.4], gximage.c [1.3], gximage.h [1.4], gximage1.c [1.6],
+gximage2.c [1.3], gximage3.c [1.7], gximage3.h [1.5], gximage4.c [1.4],
+gximono.c [1.5], gxino12b.c [1.3], gxiodev.h [1.3], gxiparam.h [1.3],
+gxipixel.c [1.4], gxiscale.c [1.4], gxistate.h [1.7], gxline.h [1.3],
+gxlum.h [1.3], gxmatrix.h [1.5], gxmclip.c [1.3], gxmclip.h [1.3],
+gxobj.h [1.5]: 2002/02/21 20:57:46 ray)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(gxop1.h [1.3], gxp1fill.c [1.3], gxp1impl.h [1.3], gxpageq.c [1.3],
+gxpageq.h [1.3], gxpaint.c [1.3], gxpaint.h [1.3], gxpath.c [1.3],
+gxpath.h [1.3], gxpath2.c [1.3], gxpcache.h [1.3], gxpcmap.c [1.4],
+gxpcolor.h [1.3], gxpcopy.c [1.4], gxpdash.c [1.3], gxpflat.c [1.3],
+gxropc.h [1.3], gxrplane.h [1.3], gxsample.c [1.3], gxsample.h [1.3],
+gxshade.c [1.7], gxshade.h [1.5], gxshade1.c [1.11], gxshade4.c [1.7],
+gxshade4.h [1.3], gxshade6.c [1.4], gxstate.h [1.3], gxstdio.h [1.3],
+gxstroke.c [1.3], gxsync.c [1.3], gxsync.h [1.3], gxtext.h [1.8],
+gxtmap.h [1.3], gxttf.h [1.4], gxtype1.c [1.11], gxtype1.h [1.8],
+gxxfont.h [1.3], gzacpath.h [1.3], gzcpath.h [1.3], gzht.h [1.6],
+gzline.h [1.3], gzpath.h [1.4], gzstate.h [1.6], jerror_.h [1.4],
+malloc_.h [1.3], math_.h [1.3], md5.c [1.3], md5.h [1.2], memory_.h [1.3],
+pipe_.h [1.3], time_.h [1.4], unistd_.h [1.5], vmsmath.h [1.3],
+windows_.h [1.3]: 2002/02/21 20:57:49 ray)
+
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (ctype_.h [1.4], dirent_.h [1.4], dos_.h [1.4],
 errno_.h [1.4], fcntl_.h [1.5], gconf.c [1.5], gconf.h [1.4],
-gdebug.h [1.5], gdevabuf.c [1.5], gdevalph.c [1.4], gdevbbox.h [1.4],
-gdevcmap.c [1.4], gdevcmap.h [1.4], gdevdbit.c [1.4], gdevddrw.c [1.4],
-gdevdflt.c [1.5], gdevdgbr.c [1.4], gdevdrop.c [1.5], gdevemap.c [1.4],
-gdevhit.c [1.4], gdevht.c [1.5], gdevht.h [1.4], gdevm1.c [1.4],
-gdevm16.c [1.4], gdevm2.c [1.4], gdevm24.c [1.4], gdevm32.c [1.4],
-gdevm4.c [1.4], gdevm8.c [1.4], gdevmem.c [1.4], gdevmem.h [1.5],
-gdevmpla.c [1.4], gdevmpla.h [1.4], gdevmr1.c [1.4], gdevmr2n.c [1.4],
-gdevmr8n.c [1.4], gdevmrop.h [1.5], gdevmrun.c [1.4], gdevmrun.h [1.4],
-gdevnfwd.c [1.5], gdevp14.c [1.9], gdevpipe.c [1.6], gdevplnx.c [1.4],
-gdevplnx.h [1.4], gdevppla.c [1.4], gdevppla.h [1.4], gdevprn.c [1.9],
-gdevprn.h [1.9], gdevprna.c [1.4], gdevprna.h [1.4], gdevpsf.h [1.13],
-gdevpsf1.c [1.12], gdevpsf2.c [1.18], gdevpsft.c [1.12], gdevpsfu.c [1.10],
-gdevrops.c [1.5], gdevtrac.c [1.4], gdevvec.c [1.15], gdevvec.h [1.9],
-gp.h [1.11], gp_dosfe.c [1.5], gp_dosfs.c [1.5], gp_getnv.c [1.4],
-gp_msdos.c [1.4], gp_nsync.c [1.4], gp_psync.c [1.4], gp_strdl.c [1.4],
-gp_unifn.c [1.5], gp_unifs.c [1.8], gpcheck.h [1.4], gpgetenv.h [1.4],
-gpmisc.c [1.11], gpmisc.h [1.4], gpsync.h [1.4], gsalloc.h [1.4],
+gdebug.h [1.5], gdevabuf.c [1.5], gdevalph.c [1.4], gdevbbox.c [1.6],
+gdevbbox.h [1.4], gdevcmap.c [1.4], gdevcmap.h [1.4], gdevdbit.c [1.4],
+gdevddrw.c [1.4], gdevdflt.c [1.5], gdevdgbr.c [1.4], gdevdrop.c [1.5],
+gdevemap.c [1.4], gdevhit.c [1.4], gdevht.c [1.5], gdevht.h [1.4],
+gdevm1.c [1.4], gdevm16.c [1.4], gdevm2.c [1.4], gdevm24.c [1.4],
+gdevm32.c [1.4], gdevm4.c [1.4], gdevm8.c [1.4], gdevmem.c [1.4],
+gdevmem.h [1.5], gdevmpla.c [1.4], gdevmpla.h [1.4], gdevmr1.c [1.4],
+gdevmr2n.c [1.4], gdevmr8n.c [1.4], gdevmrop.h [1.5], gdevmrun.c [1.4],
+gdevmrun.h [1.4], gdevnfwd.c [1.5], gdevp14.c [1.9], gdevpipe.c [1.6],
+gdevplnx.c [1.4], gdevplnx.h [1.4], gdevppla.c [1.4], gdevppla.h [1.4],
+gdevprn.c [1.9], gdevprn.h [1.9], gdevprna.c [1.4], gdevprna.h [1.4],
+gdevpsf.h [1.13], gdevpsf1.c [1.12], gdevpsf2.c [1.18], gdevpsfm.c [1.8],
+gdevpsft.c [1.12], gdevpsfu.c [1.10], gdevpsfx.c [1.13], gdevrops.c [1.5],
+gdevtrac.c [1.4], gdevvec.c [1.15], gdevvec.h [1.9], gp.h [1.11],
+gp_dosfe.c [1.5], gp_dosfs.c [1.5], gp_getnv.c [1.4], gp_msdos.c [1.4],
+gp_nsync.c [1.4], gp_psync.c [1.4], gp_strdl.c [1.4], gp_unifn.c [1.5],
+gp_unifs.c [1.8], gpcheck.h [1.4], gpgetenv.h [1.4], gpmisc.c [1.11],
+gpmisc.h [1.4], gpsync.h [1.4], gsalloc.c [1.13], gsalloc.h [1.4],
 gsalpha.c [1.4], gsalpha.h [1.4], gsalphac.c [1.4], gsalphac.h [1.4],
 gsargs.c [1.6], gsargs.h [1.6], gsbitcom.c [1.3], gsbitmap.h [1.4],
 gsbitops.c [1.5], gsbitops.h [1.4], gsbittab.c [1.4], gsbittab.h [1.4],
-gsccode.h [1.6], gsccolor.h [1.4], gscdefs.h [1.4], gscdevn.c [1.8],
-gscdevn.h [1.5], gschar.c [1.5], gschar.h [1.5], gschar0.c [1.5],
-gscie.c [1.8], gscie.h [1.7], gsciemap.c [1.10], gscindex.h [1.4],
-gsclipsr.c [1.4], gsclipsr.h [1.4], gscolor.c [1.7], gscolor.h [1.5],
-gscolor1.c [1.6], gscolor1.h [1.4], gscolor2.c [1.8], gscolor2.h [1.5],
-gscolor3.c [1.6], gscolor3.h [1.4], gscompt.h [1.4], gscoord.c [1.7],
-gscoord.h [1.4], gscparam.c [1.9], gscpixel.c [1.5], gscpixel.h [1.4],
-gscpm.h [1.4], gscrd.c [1.5], gscrd.h [1.4], gscrdp.c [1.4], gscrdp.h [1.4],
-gscrypt1.c [1.4], gscrypt1.h [1.4], gscscie.c [1.6], gscsel.h [1.4],
-gscsepnm.h [1.4], gscsepr.h [1.6], gscspace.c [1.6], gscspace.h [1.10],
-gscssub.c [1.5], gscssub.h [1.4], gsdcolor.h [1.6], gsdevice.c [1.14],
-gsdevice.h [1.5], gsdevmem.c [1.4], gsdfilt.c [1.5], gsdfilt.h [1.5],
-gsdparam.c [1.8], gsdpnext.h [1.4], gsdps.c [1.4], gsdps.h [1.4],
-gsdps1.c [1.4], gsdsrc.c [1.4], gsdsrc.h [1.5], gserrors.h [1.4],
-gsexit.h [1.6], gsfcid.c [1.8], gsfcmap.c [1.17], gsfcmap.h [1.6],
-gsfemu.c [1.4], gsflip.c [1.4], gsflip.h [1.4], gsfname.c [1.4],
-gsfname.h [1.4], gsfont.c [1.7], gsfont0.c [1.4], gsfunc.c [1.6],
+gsccode.h [1.6], gsccolor.h [1.4], gscdef.c [1.18], gscdefs.h [1.4],
+gscdevn.c [1.8], gscdevn.h [1.5], gschar.c [1.5], gschar.h [1.5],
+gschar0.c [1.5], gscie.c [1.8], gscie.h [1.7], gsciemap.c [1.10],
+gscindex.h [1.4], gsclipsr.c [1.4], gsclipsr.h [1.4], gscolor.c [1.7],
+gscolor.h [1.5], gscolor1.c [1.6], gscolor1.h [1.4], gscolor2.c [1.8],
+gscolor2.h [1.5], gscolor3.c [1.6], gscolor3.h [1.4], gscompt.h [1.4],
+gscoord.c [1.7], gscoord.h [1.4], gscparam.c [1.9], gscpixel.c [1.5],
+gscpixel.h [1.4], gscpm.h [1.4], gscrd.c [1.5], gscrd.h [1.4],
+gscrdp.c [1.4], gscrdp.h [1.4], gscrypt1.c [1.4], gscrypt1.h [1.4],
+gscscie.c [1.6], gscsel.h [1.4], gscsepnm.h [1.4], gscsepr.h [1.6],
+gscspace.c [1.6], gscspace.h [1.10], gscssub.c [1.5], gscssub.h [1.4],
+gsdcolor.h [1.6], gsdevice.c [1.14], gsdevice.h [1.5], gsdevmem.c [1.4],
+gsdfilt.c [1.5], gsdfilt.h [1.5], gsdparam.c [1.8], gsdpnext.h [1.4],
+gsdps.c [1.4], gsdps.h [1.4], gsdps1.c [1.4], gsdsrc.c [1.4],
+gsdsrc.h [1.5], gserror.h [1.4], gserrors.h [1.4], gsexit.h [1.6],
+gsfcid.c [1.8], gsfcmap.c [1.17], gsfcmap.h [1.6], gsfemu.c [1.4],
+gsflip.c [1.4], gsflip.h [1.4], gsfname.c [1.4], gsfname.h [1.4],
+gsfont.c [1.7], gsfont.h [1.4], gsfont0.c [1.4], gsfunc.c [1.6],
 gsfunc.h [1.6], gsfunc0.c [1.7], gsfunc0.h [1.4], gsfunc3.c [1.6],
 gsfunc3.h [1.4], gsfunc4.c [1.9], gsfunc4.h [1.4], gsfuncv.c [1.4],
 gsfuncv.h [1.4], gsgc.h [1.5], gsgdata.c [1.3], gsgdata.h [1.3],
@@ -1010,53 +2851,56 @@ gspcolor.h [1.4], gspenum.h [1.4], gsptype1.c [1.5], gsptype1.h [1.4],
 gsptype2.c [1.7], gsptype2.h [1.6], gsrect.h [1.4], gsrefct.h [1.4],
 gsrop.c [1.4], gsrop.h [1.4], gsropc.c [1.4], gsropc.h [1.4],
 gsropt.h [1.6], gsroptab.c [1.5], gsshade.c [1.6], gsshade.h [1.5],
-gsstate.c [1.14], gsstate.h [1.4], gsstype.h [1.4], gstext.c [1.8],
-gstext.h [1.5], gstparam.h [1.9], gstrans.c [1.15], gstrans.h [1.8],
-gstrap.c [1.5], gstrap.h [1.5], gstype1.h [1.5], gstypes.h [1.5],
+gsstate.c [1.14], gsstate.h [1.4], gsstruct.h [1.11], gsstype.h [1.4],
+gstext.c [1.8], gstext.h [1.5], gstparam.h [1.9], gstrans.c [1.15],
+gstrans.h [1.8], gstrap.c [1.5], gstrap.h [1.5], gstype1.c [1.10],
+gstype1.h [1.5], gstype2.c [1.14], gstype42.c [1.16], gstypes.h [1.5],
 gsuid.h [1.4], gsutil.c [1.7], gsutil.h [1.6], gsxfont.h [1.4], gx.h [1.4],
 gxacpath.c [1.5], gxalloc.h [1.8], gxalpha.h [1.4], gxarith.h [1.4],
 gxband.h [1.4], gxbcache.c [1.4], gxbcache.h [1.4], gxbitfmt.h [1.4],
-gxbitops.h [1.4], gxblend.c [1.4], gxblend.h [1.3], gxccache.c [1.7],
-gxccman.c [1.4], gxcdevn.h [1.4], gxchar.c [1.10], gxchar.h [1.6],
-gxchrout.c [1.4], gxchrout.h [1.4], gxcht.c [1.6], gxcid.h [1.5],
-gxcie.h [1.6], gxcindex.h [1.4], gxclbits.c [1.6], gxcldev.h [1.6],
-gxclfile.c [1.5], gxclimag.c [1.5], gxclio.h [1.4], gxclip.c [1.6],
-gxclip.h [1.4], gxclip2.c [1.5], gxclip2.h [1.4], gxclipm.c [1.5],
-gxclipm.h [1.4], gxclipsr.h [1.4], gxclist.c [1.5], gxclist.h [1.4],
-gxcllzw.c [1.4], gxclmem.c [1.4], gxclmem.h [1.4], gxclpage.c [1.4],
-gxclpage.h [1.4], gxclpath.c [1.11], gxclpath.h [1.8], gxclrast.c [1.12],
-gxclread.c [1.5], gxclrect.c [1.4], gxclutil.c [1.7], gxclzlib.c [1.4],
-gxcmap.c [1.5], gxcmap.h [1.4], gxcolor2.h [1.6], gxcomp.h [1.4],
-gxcoord.h [1.4], gxcpath.c [1.5], gxcpath.h [1.4], gxcspace.h [1.6],
-gxctable.c [1.5], gxctable.h [1.4], gxcvalue.h [1.4], gxdcconv.c [1.5],
-gxdcconv.h [1.4], gxdcolor.c [1.6], gxdcolor.h [1.5], gxdda.h [1.4],
-gxdevbuf.h [1.4], gxdevcli.h [1.8], gxdevice.h [1.7], gxdevmem.h [1.4],
-gxdevrop.h [1.4], gxdht.h [1.6], gxdhtres.h [1.4], gxdither.c [1.4],
-gxdither.h [1.4], gxfapi.c [1.5], gxfapi.h [1.5], gxfarith.h [1.5],
-gxfcache.h [1.5], gxfcid.h [1.9], gxfcmap.h [1.12], gxfill.c [1.10],
-gxfixed.h [1.5], gxfmap.h [1.5], gxfont0.h [1.5], gxfont1.h [1.8],
-gxfont42.h [1.7], gxfrac.h [1.5], gxftype.h [1.4], gxfunc.h [1.5],
-gxgetbit.h [1.4], gxhint1.c [1.4], gxhint3.c [1.5], gxht.c [1.5],
-gxht.h [1.4], gxhtbit.c [1.5], gxhttile.h [1.4], gxhttype.h [1.4],
-gxi12bit.c [1.4], gxiclass.h [1.4], gxicolor.c [1.5], gxidata.c [1.6],
-gxifast.c [1.6], gximag3x.c [1.10], gximag3x.h [1.5], gximage.c [1.4],
-gximage.h [1.5], gximage1.c [1.7], gximage2.c [1.4], gximage3.c [1.8],
-gximage3.h [1.6], gximage4.c [1.5], gximono.c [1.6], gxino12b.c [1.4],
-gxiodev.h [1.4], gxiparam.h [1.4], gxipixel.c [1.5], gxline.h [1.4],
-gxlum.h [1.4], gxmatrix.h [1.6], gxmclip.c [1.4], gxmclip.h [1.4],
-gxobj.h [1.6], gxop1.h [1.4], gxp1fill.c [1.4], gxp1impl.h [1.4],
-gxpageq.c [1.4], gxpageq.h [1.4], gxpaint.c [1.4], gxpaint.h [1.4],
-gxpath.c [1.4], gxpath.h [1.4], gxpath2.c [1.4], gxpcache.h [1.4],
-gxpcmap.c [1.5], gxpcolor.h [1.4], gxpcopy.c [1.5], gxpdash.c [1.4],
-gxpflat.c [1.4], gxropc.h [1.4], gxrplane.h [1.4], gxsample.c [1.4],
-gxsample.h [1.4], gxshade.c [1.8], gxshade.h [1.6], gxshade1.c [1.12],
-gxshade4.c [1.8], gxshade4.h [1.4], gxshade6.c [1.5], gxstate.h [1.4],
-gxstdio.h [1.4], gxstroke.c [1.4], gxsync.c [1.4], gxsync.h [1.4],
-gxtext.h [1.9], gxtmap.h [1.4], gxttf.h [1.5], gxtype1.c [1.12],
-gxxfont.h [1.4], gzacpath.h [1.4], gzcpath.h [1.4], gzht.h [1.7],
-gzline.h [1.4], gzpath.h [1.5], gzstate.h [1.7], jerror_.h [1.5],
-malloc_.h [1.4], math_.h [1.4], md5.h [1.3], memory_.h [1.4], pipe_.h [1.4]:
-2002/02/21 22:24:51 giles)
+gxbitmap.h [1.5], gxbitops.h [1.4], gxblend.c [1.4], gxblend.h [1.3],
+gxccache.c [1.7], gxccman.c [1.4], gxcdevn.h [1.4], gxchar.c [1.10],
+gxchar.h [1.6], gxchrout.c [1.4], gxchrout.h [1.4], gxcht.c [1.6],
+gxcid.h [1.5], gxcie.h [1.6], gxcindex.h [1.4], gxclbits.c [1.6],
+gxcldev.h [1.6], gxclfile.c [1.5], gxclimag.c [1.5], gxclio.h [1.4],
+gxclip.c [1.6], gxclip.h [1.4], gxclip2.c [1.5], gxclip2.h [1.4],
+gxclipm.c [1.5], gxclipm.h [1.4], gxclipsr.h [1.4], gxclist.c [1.5],
+gxclist.h [1.4], gxcllzw.c [1.4], gxclmem.c [1.4], gxclmem.h [1.4],
+gxclpage.c [1.4], gxclpage.h [1.4], gxclpath.c [1.11], gxclpath.h [1.8],
+gxclrast.c [1.12], gxclread.c [1.5], gxclrect.c [1.4], gxclutil.c [1.7],
+gxclzlib.c [1.4], gxcmap.c [1.5], gxcmap.h [1.4], gxcolor2.h [1.6],
+gxcomp.h [1.4], gxcoord.h [1.4], gxcpath.c [1.5], gxcpath.h [1.4],
+gxcspace.h [1.6], gxctable.c [1.5], gxctable.h [1.4], gxcvalue.h [1.4],
+gxdcconv.c [1.5], gxdcconv.h [1.4], gxdcolor.c [1.6], gxdcolor.h [1.5],
+gxdda.h [1.4], gxdevbuf.h [1.4], gxdevcli.h [1.8], gxdevice.h [1.7],
+gxdevmem.h [1.4], gxdevrop.h [1.4], gxdht.h [1.6], gxdhtres.h [1.4],
+gxdither.c [1.4], gxdither.h [1.4], gxfapi.c [1.5], gxfapi.h [1.5],
+gxfarith.h [1.5], gxfcache.h [1.5], gxfcid.h [1.9], gxfcmap.h [1.12],
+gxfill.c [1.10], gxfixed.h [1.5], gxfmap.h [1.5], gxfont.h [1.8],
+gxfont0.h [1.5], gxfont1.h [1.8], gxfont42.h [1.7], gxfrac.h [1.5],
+gxftype.h [1.4], gxfunc.h [1.5], gxgetbit.h [1.4], gxhint1.c [1.4],
+gxhint2.c [1.4], gxhint3.c [1.5], gxht.c [1.5], gxht.h [1.4],
+gxhtbit.c [1.5], gxhttile.h [1.4], gxhttype.h [1.4], gxi12bit.c [1.4],
+gxiclass.h [1.4], gxicolor.c [1.5], gxidata.c [1.6], gxifast.c [1.6],
+gximag3x.c [1.10], gximag3x.h [1.5], gximage.c [1.4], gximage.h [1.5],
+gximage1.c [1.7], gximage2.c [1.4], gximage3.c [1.8], gximage3.h [1.6],
+gximage4.c [1.5], gximono.c [1.6], gxino12b.c [1.4], gxiodev.h [1.4],
+gxiparam.h [1.4], gxipixel.c [1.5], gxiscale.c [1.5], gxistate.h [1.8],
+gxline.h [1.4], gxlum.h [1.4], gxmatrix.h [1.6], gxmclip.c [1.4],
+gxmclip.h [1.4], gxobj.h [1.6], gxop1.h [1.4], gxp1fill.c [1.4],
+gxp1impl.h [1.4], gxpageq.c [1.4], gxpageq.h [1.4], gxpaint.c [1.4],
+gxpaint.h [1.4], gxpath.c [1.4], gxpath.h [1.4], gxpath2.c [1.4],
+gxpcache.h [1.4], gxpcmap.c [1.5], gxpcolor.h [1.4], gxpcopy.c [1.5],
+gxpdash.c [1.4], gxpflat.c [1.4], gxropc.h [1.4], gxrplane.h [1.4],
+gxsample.c [1.4], gxsample.h [1.4], gxshade.c [1.8], gxshade.h [1.6],
+gxshade1.c [1.12], gxshade4.c [1.8], gxshade4.h [1.4], gxshade6.c [1.5],
+gxstate.h [1.4], gxstdio.h [1.4], gxstroke.c [1.4], gxsync.c [1.4],
+gxsync.h [1.4], gxtext.h [1.9], gxtmap.h [1.4], gxttf.h [1.5],
+gxtype1.c [1.12], gxtype1.h [1.9], gxxfont.h [1.4], gzacpath.h [1.4],
+gzcpath.h [1.4], gzht.h [1.7], gzline.h [1.4], gzpath.h [1.5],
+gzstate.h [1.7], jerror_.h [1.5], malloc_.h [1.4], math_.h [1.4],
+md5.c [1.4], md5.h [1.3], memory_.h [1.4], pipe_.h [1.4]: 2002/02/21
+22:24:51 giles)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (time_.h [1.5], unistd_.h [1.6], vmsmath.h [1.4],
@@ -1067,11 +2911,13 @@ This change helps for FAPI project. (gdevbbox.c [1.7]: 2002/02/22 08:37:19
 igor)
 
 Implementing Visual Trace service to graphics library, and Visual Trace
-server for Windows. (vdtrace.c [1.2]: 2002/02/26 16:09:15 igor)
+server for Windows. (vdtrace.c [1.2], vdtrace.h [1.2]: 2002/02/26 16:09:15
+igor)
 
 Remove the return_if_error macro from ALL occurrences and clean up some of
 the C-style problems with the FAPI code. Add some of the new rules about
-macros to C-style.htm. (gserror.h [1.5]: 2002/02/28 21:21:42 ray)
+macros to C-style.htm. (gserror.h [1.5], vdtrace.h [1.3]: 2002/02/28
+21:21:42 ray)
 
 Improves comments to describe the alignment and padding requirement for
 bitmaps. (gxbitmap.h [1.6]: 2002/03/05 16:56:33 lpd)
@@ -1102,17 +2948,68 @@ Update release dates in preparation of the upcoming development release
 </pre><h2><a name="7.20-Other"></a>Other</h2><pre>
 
 Fixes problems:
-       - verify that our default collection of compiler switches
+	- the configure script was setting ZSRCDIR to the empty string in
+the case where SHARE_ZLIB=1, causing a syntax error on the libpng command
+line. It is now set to a harmless default (configure.ac [1.2]: 2002/01/06
+00:12:03 giles)
+	- prefer 'src' over '.' for the spurious local include line for
+zlib. Thanks to Peter Deutsch for the suggestion. (configure.ac [1.3]:
+2002/01/09 20:20:27 giles)
+	- some files were missing the RCS 'Id' line with the last
+modification date. partial fix for Sourceforge bug #500922. (gp_mac.h [1.2],
+macsysstat.h [1.2], macsystypes.h [1.2], vms_x_fix.h [1.2]: 2002/01/09
+21:04:21 giles)
+	- corrects the name of the autoconf generated makefile for the
+purpose of dependencies (Makefile.in [1.3]: 2002/02/01 04:11:46 giles)
+	- Many files lacked double-inclusion protection, or implemented it
+incorrectly. (gsdll.h [1.4], vms_x_fix.h [1.3]: 2002/02/20 01:32:47 lpd)
+	- Fixes the gdevx.o command line in the case when AC_PATH_X sets
+x_includes to the empty string. Fixes SF #530429. (Makefile.in [1.6],
+configure.ac [1.7]: 2002/03/28 19:35:03 raph)
+	- Uses a default 'src' setting for PSRCDIR in the autoconf build
+with shared libpng, as we do with zlib, preventing compiler confusion from
+empty -I lines. Partial fix for SF bug #514898. (configure.ac [1.8]:
+2002/03/28 19:52:28 giles)
+	- improves X11 path settings in the autoconf build. We use
+AC_PATH_XTRA instead of the previous "is it null" hack with AC_PATH_X. The
+new macro also defines some additional libraries that may need to be
+included. We currently don't use this information. (Makefile.in [1.7],
+configure.ac [1.9]: 2002/03/28 20:40:25 giles)
+	- remove -fno-common from the standard gcc LDFLAGS. It is only
+required at compile time and doesn't need to be passed to the linker.
+(Makefile.in [1.8]: 2002/03/28 23:12:09 giles)
+	- verify that our default collection of compiler switches
 (gcc-specific) work before using them. This allows the autoconf build to
 work with non-gcc compilers. Completes the fix for SF Bug #514898.
 (Makefile.in [1.9], configure.ac [1.10]: 2002/03/28 23:15:53 giles)
+	- remove -fno-common from the default LDFLAGS (again) This was
+inadvertently reverted in the previous revision. (Makefile.in [1.10]:
+2002/03/29 22:04:58 giles)
+	- removes -Wtraditional for the default gcc compiler flags for the
+autoconf build as well. (configure.ac [1.11]: 2002/03/29 22:05:54 giles)
+	- removes gcc-specific compiler flags from the autoconf makefile,
+including the -fomit-frame-pointer optimization. Replaces the workaround for
+const not working in gcc 2.7 with the more general autoconf macro
+AC_C_CONST. Lists the defines generated by the configure script for
+reference in the Makefile, but doesn't make use of them.
+(Makefile.in [1.11], configure.ac [1.12]: 2002/03/30 03:24:10 giles)
+	- the warning flag is -Wcast-qual not -Wqual-cast
+(configure.ac [1.13]: 2002/03/30 03:44:36 giles)
 	- 'echo -n' isn't portable. (configure.ac [1.15]: 2002/03/31
 00:26:43 giles)
+
+Adds basic support for GNU autoconf to the build system. (.cvsignore [1.3],
+Makefile.in [1.1], autogen.sh [1.1], configure.ac [1.1]: 2002/01/04 05:47:50
+giles)
+
+Adds and rcs line to the autogen script. (autogen.sh [1.2]: 2002/01/06
+06:56:02 giles)
 
 Removes the check for an install program, since it unfortunately errors out
 if the local fallback install-sh script from automake isn't present. We
 continue to use src/instcopy in any case. Also some minor cleanup.
-(.cvsignore [1.4], autogen.sh [1.3]: 2002/01/10 23:11:20 giles)
+(.cvsignore [1.4], autogen.sh [1.3], configure.ac [1.4]: 2002/01/10 23:11:20
+giles)
 
 Checkin of IJS 0.33 to repository. (ijs/Makefile [1.1],
 ijs/Makefile.in [1.1], ijs/README [1.1], ijs/common.mak [1.1],
@@ -1130,14 +3027,35 @@ Adds IJS driver to Ghostscript. Includes complete IJS version 0.33
 distribution. Also includes autoconf patch by Ralph Giles.
 (ijs/.cvsignore [1.1]: 2002/01/31 20:46:45 raph)
 
+Adds IJS driver to Ghostscript. Includes complete IJS version 0.33
+distribution. Also includes autoconf patch by Ralph Giles.
+(Makefile.in [1.2], configure.ac [1.5]: 2002/01/31 20:47:02 raph)
+
+Uses --with-ijs (instead of --without) in the configure option help.
+(configure.ac [1.6]: 2002/02/01 04:16:15 giles)
+
 Add AFPL specific LICENSE file required for common release banner change.
 (LICENSE [1.1]: 2002/02/21 20:36:32 ray)
 
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(Makefile.in [1.4], gp_mac.h [1.3], gp_mswin.h [1.5], gsdll.h [1.5],
+gsdllos2.h [1.3], gsdllwin.h [1.4], gsjmorec.h [1.4], gspmdrv.h [1.3]:
+2002/02/21 20:57:46 ray)
+
+Update banner to the new format common to all releases (AFPL, GPL and
+Artifex Software's commercial release). References file LICENSE.
+(iutilasm.asm [1.3], macsysstat.h [1.3], macsystypes.h [1.3],
+vms_x_fix.h [1.4]: 2002/02/21 20:57:49 ray)
+
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
-and Revision pair. (gp_mac.h [1.4], gp_mswin.h [1.6], gsdll.h [1.6],
-gsdllos2.h [1.4], gsdllwin.h [1.5], gsjmorec.h [1.5], gspmdrv.h [1.4],
-iutilasm.asm [1.4], macsysstat.h [1.4], macsystypes.h [1.4],
-vms_x_fix.h [1.5]: 2002/02/21 22:24:52 giles)
+and Revision pair. (Makefile.in [1.5], gp_mac.h [1.4], gp_mswin.h [1.6],
+gsdll.h [1.6], gsdllos2.h [1.4], gsdllwin.h [1.5], gsjmorec.h [1.5],
+gspmdrv.h [1.4], iutilasm.asm [1.4], macsysstat.h [1.4],
+macsystypes.h [1.4]: 2002/02/21 22:24:51 giles)
+
+Reverts to marking files with the single Id cvs tag instead of the RCSfile
+and Revision pair. (vms_x_fix.h [1.5]: 2002/02/21 22:24:54 giles)
 
 Replace Windows icons with new versions that include 48x48 pixel and 32-bit
 versions for Windows XP. Change the 16x16 pixel icons to use the full 'g'
@@ -1158,7 +3076,11 @@ shared library is overridden by the ghostscript one at link-time. While this
 may be implementation-dependent, it appears to function as desired on at
 least GNU/Linux and Solaris. Also changes the autoconf build to prefer local
 zlib and libpng source, and cleans up some variable names.
-(Makefile.in [1.12]: 2002/03/30 23:55:15 giles)
+(Makefile.in [1.12], configure.ac [1.14]: 2002/03/30 23:55:15 giles)
+
+Try the standard gcc compile flags only if we think we're using gcc to avoid
+generating spurious warnings with some other compilers.
+(configure.ac [1.16]: 2002/04/02 01:15:16 giles)
 
 <hr>
 
