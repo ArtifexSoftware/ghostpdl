@@ -159,10 +159,9 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 	    irun = fixed2int_var_rounded(xrun);
 	    break;
 	case image_landscape:
+	default:    /* we don't handle skew -- treat as landscape */
 	    vci = penum->xci, vdi = penum->wci;
 	    irun = fixed2int_var_rounded(yrun);
-	    break;
-	default:
 	    break;
     }
 
