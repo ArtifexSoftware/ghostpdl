@@ -29,8 +29,12 @@ typedef unsigned int GSWORD;	/* must be at least 16 bits */
 # define TRUE ((GSBOOL)(!FALSE))
 #endif
 
-#ifndef private
-# define private static
+#ifndef dsc_private
+# ifdef private
+#  define dsc_private private
+# else
+#  define dsc_private static
+# endif
 #endif
 
 #ifndef min
