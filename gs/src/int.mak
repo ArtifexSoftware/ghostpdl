@@ -598,18 +598,14 @@ $(PSOBJ)zpath1.$(OBJ) : $(PSSRC)zpath1.c $(OP) $(memory__h)\
 
 # ---------------- BCP filters ---------------- #
 
-bcp_=$(PSOBJ)sbcp.$(OBJ) $(PSOBJ)zfbcp.$(OBJ)
+bcp_=$(GLOBJ)sbcp.$(OBJ) $(PSOBJ)zfbcp.$(OBJ)
 $(PSD)bcp.dev : $(INT_MAK) $(ECHOGS_XE) $(bcp_)
 	$(SETMOD) $(PSD)bcp $(bcp_)
 	$(ADDMOD) $(PSD)bcp -oper zfbcp
 
-$(PSOBJ)sbcp.$(OBJ) : $(PSSRC)sbcp.c $(AK) $(stdio__h)\
- $(sfilter_h) $(strimpl_h)
-	$(PSCC) $(PSO_)sbcp.$(OBJ) $(C_) $(PSSRC)sbcp.c
-
 $(PSOBJ)zfbcp.$(OBJ) : $(PSSRC)zfbcp.c $(OP) $(memory__h)\
  $(gsstruct_h) $(ialloc_h) $(ifilter_h)\
- $(sfilter_h) $(stream_h) $(strimpl_h)
+ $(sbcp_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfbcp.$(OBJ) $(C_) $(PSSRC)zfbcp.c
 
 # ---------------- Incremental font loading ---------------- #

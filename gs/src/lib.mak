@@ -287,7 +287,6 @@ gstext_h=$(GLSRC)gstext.h $(gsccode_h) $(gscpm_h)
 gsxfont_h=$(GLSRC)gsxfont.h
 # Out of order
 gschar_h=$(GLSRC)gschar.h $(gsccode_h) $(gscpm_h)
-gscolor2_h=$(GLSRC)gscolor2.h $(gsptype1_h)
 gsiparam_h=$(GLSRC)gsiparam.h $(gsccolor_h) $(gsmatrix_h) $(gsstype_h)
 gsimage_h=$(GLSRC)gsimage.h $(gsiparam_h)
 gsline_h=$(GLSRC)gsline.h $(gslparam_h)
@@ -302,7 +301,6 @@ gxcvalue_h=$(GLSRC)gxcvalue.h
 gxclio_h=$(GLSRC)gxclio.h $(gp_h)
 gxclip_h=$(GLSRC)gxclip.h
 gxclipsr_h=$(GLSRC)gxclipsr.h $(gsrefct_h)
-gxcolor2_h=$(GLSRC)gxcolor2.h $(gscolor2_h) $(gsrefct_h) $(gxbitmap_h)
 gxcomp_h=$(GLSRC)gxcomp.h $(gscompt_h) $(gsrefct_h) $(gxbitfmt_h)
 gxcoord_h=$(GLSRC)gxcoord.h $(gscoord_h)
 gxcpath_h=$(GLSRC)gxcpath.h
@@ -362,6 +360,8 @@ gscie_h=$(GLSRC)gscie.h $(gconfigv_h) $(gsrefct_h) $(gsstype_h) $(gxctable_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
 gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
 gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
+gscindex_h=$(GLSRC)gscindex.h $(gscspace_h)
+gscolor2_h=$(GLSRC)gscolor2.h $(gscindex_h) $(gsptype1_h)
 gscsepr_h=$(GLSRC)gscsepr.h $(gscspace_h)
 gscssub_h=$(GLSRC)gscssub.h $(gscspace_h)
 gxdcconv_h=$(GLSRC)gxdcconv.h $(gxfrac_h)
@@ -372,6 +372,7 @@ gxistate_h=$(GLSRC)gxistate.h $(gscsel_h) $(gsrefct_h) $(gsropt_h)\
 gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
  $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxdevbuf_h) $(gxistate_h)\
  $(gxrplane_h)
+gxcolor2_h=$(GLSRC)gxcolor2.h $(gscolor2_h) $(gsrefct_h) $(gxbitmap_h)
 gxcspace_h=$(GLSRC)gxcspace.h\
  $(gscspace_h) $(gsccolor_h) $(gscsel_h) $(gxfrac_h)
 gxht_h=$(GLSRC)gxht.h $(gsht1_h) $(gscsepnm_h) $(gsrefct_h) $(gxhttype_h) $(gxtmap_h)
@@ -400,6 +401,7 @@ gdevplnx_h=$(GLSRC)gdevplnx.h $(gxrplane_h)
 
 sa85d_h=$(GLSRC)sa85d.h
 sa85x_h=$(GLSRC)sa85x.h $(sa85d_h)
+sbcp_h=$(GLSRC)sbcp.h
 sbtx_h=$(GLSRC)sbtx.h
 scanchar_h=$(GLSRC)scanchar.h
 sfilter_h=$(GLSRC)sfilter.h $(gstypes_h)
@@ -995,6 +997,12 @@ $(GLOBJ)sfxfd.$(OBJ) : $(GLSRC)sfxfd.c $(AK)\
 $(GLOBJ)sfxboth.$(OBJ) : $(GLSRC)sfxboth.c $(GLSRC)sfxstdio.c $(GLSRC)sfxfd.c
 	$(GLCC) $(GLO_)sfxboth.$(OBJ) $(C_) $(GLSRC)sfxboth.c
 
+# ---------------- BCP filters ---------------- #
+
+$(GLOBJ)sbcp.$(OBJ) : $(GLSRC)sbcp.c $(AK) $(stdio__h)\
+ $(sbcp_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sbcp.$(OBJ) $(C_) $(GLSRC)sbcp.c
+
 # ---------------- CCITTFax filters ---------------- #
 # These are used by clists, some drivers, and Level 2 in general.
 
@@ -1294,7 +1302,7 @@ $(GLOBJ)gximage3.$(OBJ) : $(GLSRC)gximage3.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gximage3.$(OBJ) $(C_) $(GLSRC)gximage3.c
 
 $(GLOBJ)gximage4.$(OBJ) : $(GLSRC)gximage4.c $(memory__h) $(GXERR)\
- $(gscspace_h) $(gsiparm3_h) $(gsiparm4_h) $(gxiparam_h) $(gximage_h)\
+ $(gscspace_h) $(gsiparm4_h) $(gxiparam_h) $(gximage_h)\
  $(stream_h)
 	$(GLCC) $(GLO_)gximage4.$(OBJ) $(C_) $(GLSRC)gximage4.c
 
@@ -1916,6 +1924,21 @@ $(GLOBJ)gsfunc.$(OBJ) : $(GLSRC)gsfunc.c $(GX)\
 $(GLOBJ)gsfunc0.$(OBJ) : $(GLSRC)gsfunc0.c $(GX) $(math__h)\
  $(gserrors_h) $(gsfunc0_h) $(gxfarith_h) $(gxfunc_h)
 	$(GLCC) $(GLO_)gsfunc0.$(OBJ) $(C_) $(GLSRC)gsfunc0.c
+
+# FunctionType 4 is not used by LL3.
+
+gsfunc4_h=$(GLSRC)gsfunc4.h $(gsfunc_h)
+
+func4lib_=$(GLOBJ)gsfunc4.$(OBJ)
+$(GLD)func4lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(func4lib_) $(GLD)funclib.dev
+	$(SETMOD) $(GLD)func4lib $(func4lib_)
+	$(ADDMOD) $(GLD)func4lib -include $(GLD)funclib
+
+$(GLOBJ)gsfunc4.$(OBJ) : $(GLSRC)gsfunc4.c $(GX) $(math__h) $(memory__h)\
+ $(gsdsrc_h) $(gserrors_h) $(gsfunc4_h)\
+ $(gxfarith_h) $(gxfunc_h)\
+ $(sfilter_h) $(spprint_h) $(stream_h) $(strimpl_h)
+	$(GLCC) $(GLO_)gsfunc4.$(OBJ) $(C_) $(GLSRC)gsfunc4.c
 
 # ================ Display Postscript extensions ================ #
 
