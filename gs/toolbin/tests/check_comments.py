@@ -85,6 +85,7 @@ class GSCheckForComments(GSTestCase):
 
 checkDirs = [
     ('src', ['c', 'h'],
+     # list of exempt files
      ['dwdll.h',
       'dwimg.h',
       'dwinst.h',
@@ -92,6 +93,7 @@ checkDirs = [
       'dwtext.h',
       'dwuninst.h',
       'gdevhpij.c',
+      'dmmain.c',
       'gdevmac.c',
       'gdevmacxf.c',
       'gdevphex.c',
