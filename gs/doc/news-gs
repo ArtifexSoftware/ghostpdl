@@ -1,0 +1,42 @@
+This file documents modifications to Aladdin's release of ghostscript.
+See News.htm for documentation of the Aladdin releases.
+
+Version 5.50a (10/05/98) (branch of ghostscript 5.50)
+=====================================================
+
+Mon Oct  5 21:48:12 1998  Red Hat Linux User  <henrys@warthog>
+
+	* gdevcljc.c:
+	set left and top offset registration to reasonably close
+	values
+
+	* gdevprn.c:
+	gdevprn.c change reverted back to checking if the device "is
+	open", we will need to look at this again.
+
+	* gxclpath.c: (peter)
+	fixes improper initializion of the tile size in the banding code
+
+	* msvc32.mak, winlib.mak, ilocate.c, gxclmem.c, gxclimag.c,
+	gxalloc.h, gsalloc.h, gsalloc.c, gdevprna.c: 
+	yet another checkin of the async code.  I did not properly
+	translate CR/LF to LF in the previous checkin.
+
+Sun Oct  4 20:49:19 1998  Red Hat Linux User  <henrys@warthog>
+
+	* devs.mak, gdevcljc.c:
+
+	adds HP laserjet 5m contone device.  NB this should be
+	integrated with the other color laserjet device.
+
+	* msvc32.mak, winlib.mak, gxclmem.c, ilocate.c, gxclimag.c,
+	gxalloc.h, gsalloc.c, gdevprna.c:
+	Asyncronous driver changes from John D.
+
+Fri Oct  2 08:45:22 1998  Red Hat Linux User  <henrys@warthog>
+
+	* lib.mak, gximage.h, gximage1.c, gximage2.c, gximage3.c,
+	gximage4.c, gximono.c, gxipixel.c, gxiscale.c, gsmatrix.c, gsmatrix.h,
+	gxclipm.c, gxcpath.h, gxi12bit.c, gxicolor.c, gxifast.c, gdevbbox.c:
+
+	performance enhancement from gs5.60 (peter)
