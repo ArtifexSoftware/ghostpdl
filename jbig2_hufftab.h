@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
     
-    $Id: jbig2_hufftab.h,v 1.1 2001/06/26 00:30:00 giles Exp $
+    $Id: jbig2_hufftab.h,v 1.2 2001/08/13 19:50:52 giles Exp $
 */
 
 /* predefined Huffman table definitions 
@@ -111,6 +111,22 @@ jbig_huffman_lines_D[] = {
 
 const Jbig2HuffmanParams
 jbig_huffman_params_D = { FALSE, 7, jbig_huffman_lines_D };
+
+/* Table B.5 */
+const Jbig2HuffmanLine
+jbig_huffman_lines_E[] = {
+	{7, 8, -255},
+	{1, 0, 1},
+	{2, 0, 2},
+	{3, 0, 3},
+	{4, 3, 4},
+	{5, 6, 12},
+	{7, 32, -256},
+	{6, 32, 76}
+};
+
+const Jbig2HuffmanParams
+jbig_huffman_params_E = { FALSE, 8, jbig_huffman_lines_E };
 
 /* Table B.14 */
 const Jbig2HuffmanLine
