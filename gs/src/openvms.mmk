@@ -19,7 +19,7 @@
 # makefile for OpenVMS VAX and Alpha using MMK
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.
-# Addapted for MMK by Jouk Jansen (joukj@crys.chem.uva.nl)
+# Addapted for MMK by Jouk Jansen (joukj@hrem.stm.tudelft.nl)
 # Support for VAX C on OpenVMS was removed in release 6.01 by Aladdin:
 # DEC C is now used on both VAX and Alpha platforms.
 #
@@ -265,6 +265,11 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
+# Choose the implementation of stdio: '' for file I/O and 'c' for callouts
+# See gs.mak and ziodevs.c/ziodevsc.c for more details.
+
+STDIO_IMPLEMENTATION=c
+
 # Define the name table capacity size of 2^(16+n).
 
 EXTEND_NAMES=0
@@ -455,7 +460,7 @@ $(GS_XE) : openvms $(GLGEN)arch.h $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
 
 # OpenVMS.dev
 
-openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ)
+openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
 	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
 
@@ -476,6 +481,9 @@ $(GLOBJDIR)geninit.$(OBJ) : $(GLSRCDIR)geninit.c $(GENINIT_DEPS)
 
 $(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c
 	$(CC_)/include=($(GLGENDIR),$(GLSRCDIR))/obj=$(GLOBJ)gp_vms.$(OBJ) $(GLSRC)gp_vms.c
+
+$(GLOBJ)gp_stdia.$(OBJ) : $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(unistd__h) $(fcntl__h) $(gx_h) $(gp_h) $(errors_h)
+	$(CC_)/incl=$(GLOBJ)/obj=$(GLOBJ)gp_stdia.$(OBJ) $(GLSRC)gp_stdia.c
 
 # Preliminary definitions
 

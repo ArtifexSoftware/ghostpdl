@@ -100,8 +100,8 @@ s_stdin_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 
     if (wcount <= 0)
 	return 0;
-    count = gp_stdin_read(pw->ptr + 1, wcount, gs_stdin_is_interactive, 
-		fileno(file));
+    count = gp_stdin_read( (char*) pw->ptr + 1, wcount,
+			   gs_stdin_is_interactive, fileno(file));
     pw->ptr += (count < 0) ? 0 : count;
     return ((count < 0) ? ERRC : (count == 0) ? EOFC : count);
 }

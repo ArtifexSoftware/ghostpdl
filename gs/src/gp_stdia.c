@@ -18,8 +18,11 @@
 
 /*$Id$ */
 /* Read stdin on platforms that support select and non-blocking read */
+#ifdef __VMS
+# include <time.h>
+#endif
 
-#include "stdio_.h"
+# include "stdio_.h"
 #include "unistd_.h"
 #include "fcntl_.h"
 #include "errno_.h"
