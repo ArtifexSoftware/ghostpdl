@@ -427,9 +427,9 @@ distclean: clean config-clean
 	-$(RM) -r $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
 	-$(RM) -r autom4te.cache
 	-$(RM) config.log config.status
-	-$(RM) configure.ac
 	-$(RM) Makefile
 
 maintainer-clean: distclean
+	-$(RM) configure.ac
 	-$(RM) configure
 	-$(RM) Makefile.in
