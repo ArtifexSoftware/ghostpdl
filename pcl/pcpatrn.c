@@ -230,9 +230,13 @@ set_unpatterned_color(
 )
 {
     pcl_ccolor_t *          pcur = pcs->pids->pccolor;
-    pcl_ccolor_type_t       type = (pcur != 0 ? pcur->type
-                                              : pcl_ccolor_unpatterned);
     int                     code = 0;
+    pcl_ccolor_type_t       type;
+
+    if ( pcur != 0 )
+	type = pcur->type;
+    else
+	type = pcl_ccolor_unpatterned;
 
     if ( (pcur != 0)                                         &&
          (type == pcl_ccolor_unpatterned)                    &&
