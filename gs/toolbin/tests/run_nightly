@@ -168,14 +168,19 @@ try:
         if os.path.isfile(gsconf.log_stdout + ".%d" % (i,)):
             os.rename(gsconf.log_stdout + ".%d" % (i,),
                       gsconf.log_stdout + ".%d" % (i + 1,))
-            if os.path.isfile(gsconf.log_stderr + ".%d" % (i,)):
-                os.rename(gsconf.log_stderr + ".%d" % (i,),
-                          gsconf.log_stderr + ".%d" % (i + 1,))
+	if os.path.isfile(gsconf.log_stderr + ".%d" % (i,)):
+	    os.rename(gsconf.log_stderr + ".%d" % (i,),
+		      gsconf.log_stderr + ".%d" % (i + 1,))
+	if os.path.isfile(gsconf.log_regression + ".%d" % (i,)):
+	    os.rename(gsconf.log_regression + ".%d" % (i,),
+		      gsconf.log_regression + ".%d" % (i + 1,))
 
     if os.path.isfile(gsconf.log_stdout):
         os.rename(gsconf.log_stdout, gsconf.log_stdout + ".1")
     if os.path.isfile(gsconf.log_stderr):
         os.rename(gsconf.log_stderr, gsconf.log_stderr + ".1")
+    if os.path.isfile(gsconf.log_regression):
+        os.rename(gsconf.log_regression, gsconf.log_regression + ".1")
 
     log = open(gsconf.log_stdout, "w")
     log.close()
@@ -221,10 +226,14 @@ baselines += "\n\n"
 times = "CVS checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(starttime)) + "\n"
 times = times + "CVS checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n\n"
 
-# Build the report
+# Build the report and capture it in a rotating log file
+log = open(gsconf.log_regression, "w")
 msg = times + baselines + diff
+log.write(msg)
+log.write(regout)
+log.close()
 
-# include the main body only on Mondays
+# Only include the main body in the email on Mondays
 if time.gmtime()[6] == 0:
     msg += regout
 
