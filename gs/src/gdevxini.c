@@ -862,8 +862,6 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	    gs_closedevice(dev);
 	xdev->pwin = (Window) pwin;
     }
-    /****** DO MORE FOR RESETTING MaxBitmap ******/
-    xdev->MaxBitmap = values.MaxBitmap;
     /* If the device is open, resize the window. */
     /* Don't do this if Ghostview is active. */
     if (xdev->is_open && !xdev->ghostview &&
@@ -891,8 +889,11 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	xdev->MaxBufferedTotal = values.MaxBufferedTotal;
 	xdev->MaxBufferedArea = values.MaxBufferedArea;
 	xdev->MaxBufferedCount = values.MaxBufferedCount;
-	if (dw || dh || xdev->MaxBitmap != values.MaxBitmap)
+	if (dw || dh || xdev->MaxBitmap != values.MaxBitmap) {
+	    /****** DO MORE FOR RESETTING MaxBitmap ******/
+	    xdev->MaxBitmap = values.MaxBitmap;
 	    gdev_x_clear_window(xdev);
+	}
 	/* Attempt to update the initial matrix in a sensible way. */
 	/* The whole handling of the initial matrix is a hack! */
 	if (xdev->initial_matrix.xy == 0) {
