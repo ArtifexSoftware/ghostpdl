@@ -461,8 +461,10 @@ op_init(i_ctx_t *i_ctx_p)
 		uint opidx = (tptr - op_defs_all) * OP_DEFS_MAX_SIZE +
 		    index_in_table;
 
-		if (index_in_table >= OP_DEFS_MAX_SIZE)
-		    dprintf1("opdef overrun: %s\n", def->oname);
+		if (index_in_table >= OP_DEFS_MAX_SIZE) {
+		    lprintf1("opdef overrun! %s\n", def->oname);
+		    return_error(e_Fatal);
+		}
 		gs_interp_make_oper(&oper, def->proc, opidx);
 		/* The first character of the name is a digit */
 		/* giving the minimum acceptable number of operands. */
