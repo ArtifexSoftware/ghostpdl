@@ -167,7 +167,18 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     rect.q.y = int2fixed(y + h);
     /* We don't want any adjustment of the box. */
     gs_currentfilladjust(pgs, &save_adjust);
-    gs_setfilladjust(pgs, 0.0, 0.0);
+
+    /*
+     * We should set the fill adjustment to zero here, so that we don't
+     * get multiply-written pixels as a result of filling abutting
+     * triangles.  However, numerical inaccuracies in the shading
+     * algorithms can cause pixel dropouts, and a non-zero adjustment
+     * is by far the easiest way to work around them as a stopgap.
+     * NOTE: This makes shadings not interact properly with
+     * non-idempotent RasterOps (not a problem in practice, since
+     * PostScript doesn't have RasterOps and PCL doesn't have shadings).
+     */
+    gs_setfilladjust(pgs, 0.5, 0.5);
     /****** DOESN'T HANDLE RASTER OP ******/
     code = gs_shading_fill_path(pinst->template.Shading, NULL, &rect, dev,
 				(gs_imager_state *)pgs, true);

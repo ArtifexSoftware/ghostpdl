@@ -133,8 +133,11 @@ mesh_fill_triangle(mesh_fill_state_t * pfs)
 	    (*pcs->type->remap_color)(&fcc, pcs, &dev_color, pis,
 				      pfs->dev, gs_color_select_texture);
 	    /****** SHOULD ADD adjust ON ANY OUTSIDE EDGES ******/
-#if 0
-	    {
+	    /*
+	     * See the comment in gx_dc_pattern2_fill_rectangle in gsptype2.c
+	     * re the choice of path filling vs. direct triangle fill.
+	     */
+	    if (pis->fill_adjust.x != 0 || pis->fill_adjust.y != 0) {
 		gx_path *ppath = gx_path_alloc(pis->memory, "Gt_fill");
 
 		gx_path_add_point(ppath, fp->va.p.x, fp->va.p.y);
@@ -143,16 +146,15 @@ mesh_fill_triangle(mesh_fill_state_t * pfs)
 		code = shade_fill_path((const shading_fill_state_t *)pfs,
 				       ppath, &dev_color);
 		gx_path_free(ppath, "Gt_fill");
+	    } else {
+		code = (*dev_proc(pfs->dev, fill_triangle))
+		    (pfs->dev, fp->va.p.x, fp->va.p.y,
+		     fp->vb.p.x - fp->va.p.x, fp->vb.p.y - fp->va.p.y,
+		     fp->vc.p.x - fp->va.p.x, fp->vc.p.y - fp->va.p.y,
+		     &dev_color, pis->log_op);
+		if (code < 0)
+		    return code;
 	    }
-#else
-	    code = (*dev_proc(pfs->dev, fill_triangle))
-		(pfs->dev, fp->va.p.x, fp->va.p.y,
-		 fp->vb.p.x - fp->va.p.x, fp->vb.p.y - fp->va.p.y,
-		 fp->vc.p.x - fp->va.p.x, fp->vc.p.y - fp->va.p.y,
-		 &dev_color, pis->log_op);
-#endif
-	    if (code < 0)
-		return code;
 	}
     next:
 	if (fp == &pfs->frames[0])
