@@ -69,7 +69,7 @@ $(GLGENDIR)\ld$(CONFIG).tr: $(MAKEFILE) $(ECHOGS_XE)
 	echo DEVICE_DEVS=$(DEVICE_DEVS) $(DD)bbox.dev >>$(GLGENDIR)\_wm_temp.mak
 	echo FPU_TYPE=$(FPU_TYPE) >>$(GENDIR)\_wm_temp.mak
 	echo CPU_TYPE=$(CPU_TYPE) >>$(GENDIR)\_wm_temp.mak
-	echo BAND_LIST_STORAGE=memory >>$(GLGENDIR)\_wm_temp.mak
+	echo BAND_LIST_STORAGE=file >>$(GLGENDIR)\_wm_temp.mak
 	echo BAND_LIST_COMPRESSOR=zlib >>$(GLGENDIR)\_wm_temp.mak
 	echo !include $(GLSRCDIR)\watclib.mak >>$(GLGENDIR)\_wm_temp.mak
 	$(MAKE) -u -n -h -f $(GLGENDIR)\_wm_temp.mak CONFIG=$(CONFIG) $(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\gsnogc.$(OBJ) $(GLGENDIR)\arch.h >$(GLGENDIR)\_wm_temp.bat
@@ -83,14 +83,13 @@ $(GLGENDIR)\pconf$(CONFIG).h $(GLGENDIR)\ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GL
 
 # Link a Watcom executable.
 $(GLGENDIR)\ldt$(CONFIG).tr: $(MAKEFILE) $(GLGENDIR)\ld$(CONFIG).tr $(GLGENDIR)\ldconf$(CONFIG).tr
-	echo OPTION STACK=32k >$(GLGENDIR)\ldt$(CONFIG).tr
+	echo OPTION STACK=64k >$(GLGENDIR)\ldt$(CONFIG).tr
 !ifeq WAT32 0
 	echo SYSTEM DOS4G >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo OPTION STUB=$(STUB) >>$(GLGENDIR)\ldt$(CONFIG).tr
 !endif
 	type $(GLGENDIR)\ld$(CONFIG).tr >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo FILE $(GLOBJDIR)\gsargs.$(OBJ) >>$(GLGENDIR)\ldt$(CONFIG).tr
-	echo FILE $(GLOBJDIR)\gsnogc.$(OBJ) >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo FILE $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo FILE $(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ) >>$(GLGENDIR)\ldt$(CONFIG).tr
 	type $(GLGENDIR)\ldconf$(CONFIG).tr >>$(GLGENDIR)\ldt$(CONFIG).tr
