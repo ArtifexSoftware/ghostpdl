@@ -491,7 +491,7 @@ DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.d
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
-DEVICE_DEVS5=$(DD)uniprint $(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
+DEVICE_DEVS5=$(DD)uniprint.dev $(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
 DEVICE_DEVS6=$(DD)st800.dev $(DD)stcolor.dev $(DD)bj10e.dev $(DD)bj200.dev
 DEVICE_DEVS7=$(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
@@ -563,20 +563,20 @@ $(GLGEN)lib32.rsp: $(TOP_MAKEFILES)
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(SETUP_XE) $(UNINSTALL_XE)
 	echo /SUBSYSTEM:WINDOWS > $(GLGEN)gswin32.rsp
 	echo /DEF:$(GLSRCDIR)\dwmain32.def /OUT:$(GS_XE) >> $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS_OBJ).res
+	$(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS_OBJ).res
 	del $(GLGEN)gswin32.rsp
 
 # The console mode small EXE loader
 $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
 	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
 	echo  /DEF:$(GLSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GS_OBJ).res
+	$(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GS_OBJ).res
 	del $(GLGEN)gswin32.rsp
 
 # The big DLL
 $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(GLGEN)lib32.rsp
 	echo /DLL /DEF:$(GLSRCDIR)\gsdll32.def /OUT:$(GSDLL_DLL) > $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GSDLL_OBJS) @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GSDLL_OBJ).res
+	$(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GSDLL_OBJS) @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(GLGEN)gswin32.rsp
 
 !else
@@ -589,7 +589,7 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 	echo $(GLOBJ)dwtext.obj >> $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwreg.obj >> $(GLGEN)gswin32.tr
 	echo /DEF:$(GLSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GSDLL_OBJ).res
+	$(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GSDLL_OBJ).res
 	del $(GLGEN)gswin32.tr
 	del $(GLGEN)gswin32.rsp
 
@@ -602,7 +602,7 @@ $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(G
 	echo $(GLOBJ)dwreg.obj >> $(GLGEN)gswin32c.tr
 	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
 	echo /DEF:$(GLSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GS_OBJ).res
+	$(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GS_OBJ).res
 	del $(GLGEN)gswin32.rsp
 	del $(GLGEN)gswin32c.tr
 !endif
@@ -615,9 +615,9 @@ $(SETUP_XE): $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj $(GLOBJ)dwsetup.res $(GLSRC)
 	echo /DEF:$(GLSRC)dwsetup.def /OUT:$(SETUP_XE) > $(GLGEN)dwsetup.rsp
 	echo $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj >> $(GLGEN)dwsetup.rsp
 	copy $(LIBCTR) $(GLGEN)dwsetup.tr
-        echo ole32.lib >> $(GLGEN)dwsetup.tr
-        echo uuid.lib >> $(GLGEN)dwsetup.tr
-        $(LINK) $(LCT) @$(GLGEN)dwsetup.rsp @$(GLGEN)dwsetup.tr $(GLOBJ)dwsetup.res
+	echo ole32.lib >> $(GLGEN)dwsetup.tr
+	echo uuid.lib >> $(GLGEN)dwsetup.tr
+	$(LINK) $(LCT) @$(GLGEN)dwsetup.rsp @$(GLGEN)dwsetup.tr $(GLOBJ)dwsetup.res
 	del $(GLGEN)dwsetup.rsp
 	del $(GLGEN)dwsetup.tr
 
@@ -625,9 +625,9 @@ $(UNINSTALL_XE): $(GLOBJ)dwuninst.obj $(GLOBJ)dwuninst.res $(GLSRC)dwuninst.def
 	echo /DEF:$(GLSRC)dwuninst.def /OUT:$(UNINSTALL_XE) > $(GLGEN)dwuninst.rsp
 	echo $(GLOBJ)dwuninst.obj >> $(GLGEN)dwuninst.rsp
 	copy $(LIBCTR) $(GLGEN)dwuninst.tr
-        echo ole32.lib >> $(GLGEN)dwuninst.tr
-        echo uuid.lib >> $(GLGEN)dwuninst.tr
-        $(LINK) $(LCT) @$(GLGEN)dwuninst.rsp @$(GLGEN)dwuninst.tr $(GLOBJ)dwuninst.res
+	echo ole32.lib >> $(GLGEN)dwuninst.tr
+	echo uuid.lib >> $(GLGEN)dwuninst.tr
+	$(LINK) $(LCT) @$(GLGEN)dwuninst.rsp @$(GLGEN)dwuninst.tr $(GLOBJ)dwuninst.res
 	del $(GLGEN)dwuninst.rsp
 	del $(GLGEN)dwuninst.tr
 
