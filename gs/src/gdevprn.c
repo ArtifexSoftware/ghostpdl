@@ -244,7 +244,6 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	gdev_prn_space_params space_params;
 	gx_device_buf_space_t buf_space;
 
-	space_params = ppdev->space_params;
 	if (reallocate)
 	    switch (pass)
 	        {
@@ -273,6 +272,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 
 	/* Compute desired space params: never use the space_params as-is. */
 	/* Rather, give the dev-specific driver a chance to adjust them. */
+	space_params = ppdev->space_params;
 	space_params.BufferSpace = 0;
 	(*ppdev->printer_procs.get_space_params)(ppdev, &space_params);
 	if (ppdev->is_async_renderer && space_params.band.BandBufferSpace != 0)
