@@ -19,6 +19,7 @@
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"		/* for data stream */
 #include "gxcspace.h"
+#include "gxhldevc.h"
 
 /* We need this color space type for constructing temporary color spaces. */
 extern const gs_color_space_type gs_color_space_type_Indexed;
@@ -131,8 +132,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    return 0;
 	/* If a mask has an id, assume it's a character. */
 	if (id != gx_no_bitmap_id && sourcex == 0) {
-	    pdf_set_pure_color(pdev, one, &pdev->saved_fill_color,
-			       &psdf_set_fill_color_commands);
 	    pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
 	    if (pres == 0) {	/* Define the character in an embedded font. */
 		pdf_char_proc_t *pcp;
@@ -160,7 +159,11 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		    return code;
 		pres = (pdf_resource_t *) pcp;
 		goto wr;
-	    }
+	    } else if (pdev->pte) {
+		/* We're under pdf_text_process. It set a high level color. */
+	    } else
+		pdf_set_pure_color(pdev, one, &pdev->saved_fill_color,
+				   &psdf_set_fill_color_commands);
 	    pdf_make_bitmap_matrix(&image.ImageMatrix, x, y, w, h, h);
 	    goto rx;
 	}

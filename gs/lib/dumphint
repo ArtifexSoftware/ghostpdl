@@ -1,0 +1,20 @@
+#!/bin/sh
+# $Id$
+# Linearized PDF hint formatting utility.
+
+OPTIONS="-dSAFER -dDELAYSAFER"
+while true
+do
+	case "$1" in
+	-*) OPTIONS="$OPTIONS $1" ;;
+	*)  break ;;
+	esac
+	shift
+done
+
+if [ $# -ne 1 ]; then
+	echo "Usage: `basename $0` input.pdf" 1>&2
+	exit 1
+fi
+
+exec gs -q -dNODISPLAY $OPTIONS -- dumphint.ps "$1"

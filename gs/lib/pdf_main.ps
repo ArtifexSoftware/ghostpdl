@@ -75,7 +75,7 @@ systemdict begin
 	      % Copy PDF from stdin to temporary file then run it.
 	      null (w+) //systemdict /.tempfile get exec exch 3 1 roll
 	      % stack: tempname stdin tempfile
-	      1024 string
+	      64000 string
 	      {
 		% stack: tempname stdin tempfile string
 		2 index 1 index readstring
@@ -123,7 +123,7 @@ currentdict /runpdfstring .undef
    pdfdict begin
    pdfopen begin
    Trailer /Root oget /Pages oget /CropBox knownoget
-    { mark /CropBox 3 -1 roll /PAGES pdfmark
+    { oforce_array mark /CropBox 3 -1 roll /PAGES pdfmark
     }
    if
    /FirstPage where 
@@ -208,54 +208,194 @@ pdfdict begin
  } bind def
 /linene { lineeq not } bind def
 
-% Read (mostly scan) the cross-reference table.
-/readxref		% <pos> readxref <trailerdict>
- { PDFoffset add PDFfile exch setfileposition
-		% In some PDF files, this position actually points to
-		% white space before the xref line.  Skip over this here.
-   { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
-   } loop
-   PDFfile exch setfileposition
+ %  Read original version (pre PDF 1.5) of the xref table.
+ %  Note:  The position is the location of 'xref'.  The current PDFfile
+ %  position is just after the 'XREF'.
+/readorigxref		% <pos> readorigxref <trailerdict>
+ {
+   pop				% We do not need the position.
    0		% Initialize xref table error counter
-
-	% The PDF specification says that the 'xref' must be on a line
-	% by itself. The code here formerly used readline and linene to
-	% check this. However, Acrobat Reader only requires the line to
-	% begin with 'xref', and there are enough applications producing
-	% non-compliant PDF files that we have to do this too.
-   PDFfile pdfstring 0 4 getinterval readstring pop
-   (xref) ne { /readxref cvx /syntaxerror signalerror } if
-		% Store the xref table entry position for each object.
-		% We only need to read the run headers, not every entry.
     { PDFfile token pop		% first object # or trailer
       dup /trailer eq { pop exit } if
       PDFfile pdfstring readline pop
       token pop			% entry count
-      exch pop exch
+     exch pop			% remove last
 		% This section might be adding new objects:
 		% ensure that Objects and Generations are big enough.
-		% Stack: count obj#
+		% stack: <err count> <first obj> <entry count>
       2 copy add growPDFobjects
-      PDFfile fileposition 3 -1 roll
-	{ Objects 2 index lget null eq {	% later update might have set it
-	    Objects 2 index 2 index cvx lput
-	  } if exch 1 add exch
-	  PDFfile dup
-	  pdfstring readline pop pop
-	  fileposition
-	  dup 3 2 roll sub
-	  20 ne {
-	    3 2 roll 1 add 3 1 roll
-	  } if
-	}
-      repeat pop pop
+     PDFfile fileposition
+     3 1 roll			% stack: <err count> <filepos> <first obj> <entry count>
+     {				% stack: <err count> <file pos> <obj num>
+		% Read xref line
+       PDFfile pdfstring readline pop  
+       token pop		% object position
+       exch token pop		% generation #
+       exch token pop		% n or f
+       exch pop			% Stack: <err count> <file pos> <obj#> <loc> <gen#> <tag>
+       dup /n eq {		% xref line tag is /n
+	 pop			% pop dup of line tag
+         Objects 3 index lget null eq {	% later update might have set it
+	   0 3 1 roll		% Set ObjectStream object number = 0
+	   setxrefentry		% Save xref entry
+	   3 -1 roll pop	% Remove ObjectStream object onumber
+         } if
+       }
+       {			% xref line tag was not /n
+	 /f ne			% verify that the tag was /f
+         { /setxrefentry cvx /syntaxerror signalerror
+	 } if
+       } ifelse
+       pop pop			% pop <obj location> and <gen num>
+		% Check if line length is 20 chars (Adobe spec.)
+       exch			% stack: <err count> <obj num> <file pos>
+       PDFfile fileposition	% <err count> <obj#> <old pos> <new pos>
+       dup 4 1 roll		% <err count> <new Pos> <obj#> <old pos> <new pos>
+       exch sub 20 ne		% <err count> <new Pos> <obj#> <bool>
+       { 3 -1 roll 1 add 3 1 roll % Increment error count
+       } if
+       1 add			% increment object number
+     } repeat
+     pop pop			% pop <file pos> <obj #>
     } loop
    0 ne {
      (   **** Warning: length of some xref entries is not equal to 20 bytes.\n)
      pdfformaterror
    } if
-   count /pdfemptycount exch def
    PDFfile traileropdict .pdfrun
+ } bind def
+
+ % This dicitonary is used to read the xref dictionary.  It should work for
+ % reading any dictionary.  dictlevelcount must contain 0.
+/xrefopdict mark
+  (<<) cvn { /dictlevelcount dictlevelcount 1 add def mark } bind
+  (>>) cvn { .dicttomark /dictlevelcount dictlevelcount 1 sub def
+  	     dictlevelcount 0 eq { exit} if } bind
+  ([) cvn { mark } bind		% ditto
+  (]) cvn dup load
+%  /true true		% see .pdfexectoken in pdf_base.ps
+%  /false false		% ibid.
+%  /null null		% ibid.
+  /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
+.dicttomark readonly def
+
+% Get a variable length positive integer value from a stream.  A value
+% of zero is returned if the count is zero.
+/getintn {	% <stream> <count> getintn int
+  0 exch { 256 mul 1 index read pop add } repeat
+  exch pop			% Discard stream
+} bind def
+
+% This array contains handlers for processing the different types of
+% entries in the XRef stream.
+% Stack: <Xrefdict> <xref stream> <Index array> <pair loc> <obj num>
+% 	 <field 2> <field 3>
+% The handlers leave the stack unchanged.
+/xref15entryhandlers [
+  {	% XRef entry type 0 - free or f type xref entry
+%    (free ) print
+%    (obj num: ) print 2 index pdfstring cvs print ( ) print
+%    (loc: ) print 1 index pdfstring cvs print ( ) print
+%    (gen: ) print dup === flush
+  } bind		% Do nothing for free xref entries
+	% XRef entry type 1 - normal or n type xref entry
+  {	% field 2 = obj loc, field 3 = gen num
+%    (normal ) print
+%    (obj num: ) print 2 index pdfstring cvs print ( ) print
+%    (loc: ) print 1 index pdfstring cvs print ( ) print
+%    (gen: ) print dup === flush
+    0 3 1 roll			% set stream number = 0
+    setxrefentry
+    3 -1 roll pop		% remove stream number
+  } bind
+	% XRef entry type 2 - compressed object type xref entry
+  {	% field 2 = object stream num, field 3 = index into object stream
+%    (Compressed objects: ) print
+%    (obj num: ) print 2 index pdfstring cvs print ( ) print
+%    (field 2: ) print 1 index pdfstring cvs print ( ) print
+%    (field 3: ) print dup === flush
+    0 setxrefentry pop		% set generation number = 0
+  } bind
+] def
+
+ %  Read the PDF 1.5 version of the xref table.
+ %  Note:  The position is the location of the start of the dictionary object
+ %  In PDF 1.5, the XRef dictionary also serves as the trailer dictionary
+/readpdf15xref		% <pos> readpdf15xref <trailerdict>
+ {
+   PDFfile exch setfileposition		% move to start of object
+   	% Get object number, revision, and 'obj' and discard
+   PDFfile token pop pop
+   PDFfile token pop pop
+   PDFfile token pop pop
+	% Get the XRef dicitionary
+   /dictlevelcount 0 def PDFfile xrefopdict .pdfrun
+	% Verify that we have an XRef dictionary
+   dup /Type get /XRef ne {
+     /readpdf15xref cvx /syntaxerror signalerror
+   } if
+   	% Ensure that we we have room in the objects array, etc.
+   dup /Size get growPDFobjects
+	% Create a stream for the XRef data
+   PDFfile token pop pop		% Skip over 'stream'
+   dup stream false resolvestream
+   	% Stack: <XRefdict> <xref stream>
+	% The Index array defines the ranges of object numbers in the
+	% XRef stream.  Each value pair is consists of starting object
+	% number and the count of consecutive objects.
+	% Get the Index array, if present
+   1 index /Index .knownget not {	% If no Index array ...
+     [ 0 3 index /Size get ]		% Default = [ 0 Size ]
+   } if
+	% Loop through the Index array
+   0 2 2 index length 1 sub {
+	% Get start and end of object range
+     2 copy get				% Start of the range
+     dup 3 index 3 index 1 add get 	% Number of entries in range
+     	% Loop through the range of object numbers
+     add 1 sub 1 exch {			% Form end of range, set increment = 1
+	% Stack: <Xrefdict> <xref stream> <Index array> <pair loc> <obj num>
+	% Get xref parameters.  Note:  The number of bytes for each parameter
+	% is defined by the entries in the W array.
+       4 index /W get aload pop		% Get W array values
+       	% The first field indicates type of entry.  Get first field value.
+	% If the num. of bytes for field 1 is 0 then default field value is 1
+       3 -1 roll dup 0 eq { pop 1 } { 6 index exch getintn } ifelse
+	% Get the handler for the xref entry type.  We will execute the
+	% handler after we get the other two field values.
+       xref15entryhandlers exch get
+       3 -1 roll 6 index exch getintn	% Get second field
+       3 -1 roll 6 index exch getintn	% Get third field
+       3 -1 roll exec			% Execute Xref entry handler
+       pop pop pop			% Remove field values and obj num
+     } for				% Loop through Xref entries
+     pop				% Remove Index array pair loc
+   } for				% Loop through Index array entries
+   pop pop				% Remove Index array and xref stream
+ } bind def
+
+% Read the cross-reference table.
+% <pos> is the position either from the startxref statement or the /Prev
+% entry in the prior trailer dictionary.
+/readxref		% <pos> readxref <trailerdict>
+ {
+   PDFoffset add PDFfile exch setfileposition
+		% In some PDF files, this position actually points to
+		% white space before the xref line.  Skip over this here.
+   { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
+   } loop
+   dup		% Make copy of the file position (before last char was read).
+   PDFfile exch setfileposition
+		% The PDF specification says that the 'xref' must be on a line
+		% by itself. The code here formerly used readline and linene to
+		% check this. However, Acrobat Reader only requires the line to
+		% begin with 'xref', and there are enough applications producing
+		% non-compliant PDF files that we have to do this too.
+   PDFfile pdfstring 0 4 getinterval readstring pop
+   (xref) eq
+   { readorigxref } 	% 'xref' -> original xref table
+   { readpdf15xref }	% otherwise assume PDF 1.5 xref stream
+   ifelse
  } bind def
 
 % Open a PDF file and read the header, trailer, and cross-reference.
@@ -295,12 +435,14 @@ pdfdict begin
   } if		% end .writepdfmarks
   currentdict end
 } bind def
+
 /pdfopencache {		% - pdfopencache -
 	% Create and initialize some caches.
   /PageCount pdfpagecount def
   /PageNumbers PageCount 65534 .min dict def
   /PageIndex PageCount 65534 .min array def
 } bind def
+
 /pdfopenfile {		% <file> pdfopenfile <dict>
    pdfdict readonly pop		% can't do it any earlier than this
    15 dict begin
@@ -320,16 +462,27 @@ pdfdict begin
    not {/pdfopen cvx /syntaxerror signalerror} if
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
    length /PDFoffset exch def pop cvr /PDFversion exch def
-   findxref
-   initPDFobjects
 	% Read the last cross-reference table.
-   readxref /Trailer exch def
-   Trailer /Encrypt known
-    { pdf_process_Encrypt	% signal error
-    }
-   if
+   count /pdfemptycount exch def
+   /Trailer << >> def		% Initialize to an emptry dict.
+   { initPDFobjects findxref readxref } .internalstopped {
+     recover_xref_data		% Read failed.  Attempt to recover xref data.
+     search_trailer		% Search for the primary trailer
+   } {
+     /Trailer exch def		% Save trailer dict after first xref table
 	% Read any previous cross-reference tables.
-   Trailer { /Prev knownoget not { exit } if readxref } loop
+     Trailer
+     { /Prev knownoget not { exit } if
+       { readxref } .internalstopped {
+         recover_xref_data	% Read failed.  Attempt to recover xref data.
+	 exit			% Exit loop since recover gets all obj data.
+       } if  			% If readxref stopped
+     } loop			% Loop to previous trailer
+   } ifelse			% Ifelse readxref stopped
+   Trailer /Encrypt knownoget {
+     pop
+     pdf_process_Encrypt	% signal error
+   } if
    currentdict end
  } bind def
 
@@ -376,8 +529,21 @@ pdfdict begin
   prevline token not { null } if dup type /integertype eq {
     exch pop cvi		% xref start position
     exch PDFfile exch setfileposition
-    prevline (startxref) linene { /findxref cvx /syntaxerror signalerror } if
-    pop
+    prevline dup (startxref) linene {
+      % startxref not on a line by itself.  We have found PDF from
+      % www.verypdf.com in which the startxref was on the same line as
+      % the end of trailer dictionary.  Check for this.  Note:  This
+      % violates the spec.
+      dup (startxref) search {
+	% found startxref - print warning
+	pop pop pop 			% clear strings from search
+        (   **** Warning: format of the startxref line in this file is invalid.\n)
+        pdfformaterror
+      } {				% no startxref - we have a problem.
+        /findxref cvx /syntaxerror signalerror
+      } ifelse
+    } if
+    pop pop
   } {	% else, this file has 'startxref #####' format
     (startxref) ne { /findxref cvx /syntaxerror signalerror } if
     cvi		% xref start position
@@ -559,8 +725,8 @@ pdfdict begin
  } bind def
 
 % Display a given page.
-/boxrect		% [<llx> <lly> <urx> <ury>] boxrect <x> <y> <w> <h>
- { aload pop exch 3 index sub exch 2 index sub
+/boxrect		% <llx> <lly> <urx> <ury> boxrect <x> <y> <w> <h>
+ { exch 3 index sub exch 2 index sub
  } bind def
 /resolvedest {		% <name|string|other> resolvedest <other|null>
   dup type /nametype eq {
@@ -591,11 +757,16 @@ pdfdict begin
       dup null eq
        { pop }
        { dup 0 oget
-	 dup null eq
+         dup type /dicttype eq {
+           dup /Type knownoget {
+             /Page eq {
+               pdfpagenumber
+             } if
+           } if
+         } if
+         dup type /integertype ne 
 	  { pop }
-	  { dup type /integertype ne { pdfpagenumber } if
-	    /Page exch 4 -2 roll
-	  }
+           { /Page exch 4 -2 roll }
 	 ifelse
 	 dup length 1 sub 1 exch getinterval /View exch 3 -1 roll
        }
@@ -681,7 +852,7 @@ end readonly def
     dup /MediaBox pget pop	% There has to be a MediaBox
   } ifelse
   % stack: [<prevproc>] <pagedict> <Crop|Media Box>
-  exch pop			% done with the pagedict
+  exch pop oforce_array			% done with the pagedict
   systemdict /PDFFitPage known {
     PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
     currentpagedevice /.HWMargins get aload pop
@@ -715,12 +886,12 @@ end readonly def
 	% Stack: pagedict currentpagedict
   1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
 			% Set the page size.
-    1 index /CropBox pget pop
+    1 index /CropBox pget pop oforce_elems
     boxrect 2 array astore /PageSize exch def pop pop
   } {
     1 index /MediaBox pget {
 			% Set the page size.
-      boxrect 2 array astore /PageSize exch def pop pop
+      oforce_elems boxrect 2 array astore /PageSize exch def pop pop
     } if
   } ifelse
   % Don't change the page size if we are going to fit the PDF to the page
@@ -758,6 +929,7 @@ end readonly def
 
 	% Copy the crop box.
     dup /CropBox knownoget {
+      oforce_array
 	% If the page has been rotated, rotate the CropBox.
       mark /CropBox 3 -1 roll
       3 index /Rotate pget {
@@ -788,7 +960,7 @@ end readonly def
    /TRDefault currenttransfer def
   matrix currentmatrix 2 dict
   2 index /CropBox knownoget {
-    boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
+    oforce_elems boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
   } if
   dictbeginpage setmatrix
   /DefaultQstate qstate store
@@ -797,10 +969,7 @@ end readonly def
   count 1 sub /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
 	% a transparency group.
-  PDFversion PDFtransparencyversion lt NOTRANSPARENCY or {
-    showpagecontents
-  } {
-    dup pageusestransparency {
+  dup pageusestransparency dup /PDFusingtransparency exch def {
       % Show the page within a PDF 1.4 device filter.
       0 .pushpdf14devicefilter {
 	% If the page has a Group, enclose contents in transparency group.
@@ -808,7 +977,7 @@ end readonly def
         dup /Group knownoget {
 	  1 index /CropBox knownoget not {
 	    1 index /MediaBox oget
-	  } if .beginformgroup {
+	} if oforce_array .beginformgroup {
 	    showpagecontents
 	  } .internalstopped {
 	    .discardtransparencygroup stop
@@ -823,7 +992,6 @@ end readonly def
     } {
       showpagecontents
     } ifelse
-  } ifelse
   % check for extra garbage on the ostack and clean it up
   count pdfemptycount sub dup 0 ne {
     (   **** File did not complete the page properly and may be damaged.\n)

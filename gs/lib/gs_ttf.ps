@@ -39,7 +39,8 @@
 % Closes the file in either case.
 /.findnonttfontvalue /.findfontvalue load def
 /.findfontvalue {
-  1 index read pop 2 index 1 index unread
+  1 index read {
+    2 index 1 index unread
   dup 0 eq exch (t) 0 get eq or {
 		% If this is a font at all, it's a TrueType font.
     dup /FontType eq {
@@ -51,6 +52,7 @@
 		% Not a TrueType font.
     .findnonttfontvalue
   } ifelse
+  } { pop closefile false } ifelse
 } bind def
 
 % <file> .findttfontname <fname> true
@@ -103,15 +105,10 @@
 /maxstring 32000 def    % half the maximum length of a PostScript string,
 			% must be a multiple of 4 (for hmtx / loca / vmtx)
 
-% Define the Macintosh standard mapping from characters to glyph indices.
-/MacRomanEncoding dup .findencoding def
-/MacGlyphEncoding dup .findencoding def
-
-% Invert the MacRomanEncoding.
-/.romanmacdict 300 dict
-0 1 MacRomanEncoding length 1 sub {
-  MacRomanEncoding 1 index get
-		% Stack: dict index charname
+/.invert_encoding   % <array> invert_encoding <dict>
+{ dup 256 dict exch
+  0 exch 1 exch length 1 sub {     % [] <> i
+    dup 3 index exch get           % [] <> i v
   dup /.notdef ne {
     exch 2 index 2 index .knownget {
       dup type /arraytype eq {
@@ -123,7 +120,16 @@
   } {
     pop pop
   } ifelse
-} for def
+  } for
+  exch pop
+} bind def
+
+% Define the Macintosh standard mapping from characters to glyph indices.
+/MacRomanEncoding dup .findencoding def
+/MacGlyphEncoding dup .findencoding def
+
+% Invert the MacRomanEncoding.
+/.romanmacdict MacRomanEncoding .invert_encoding def
 
 % Define remapping for misnamed glyphs in TrueType 'post' tables.
 % There are probably a lot more than this!
@@ -141,6 +147,9 @@
   /ldot /ldotaccent
   /zdot /zdotaccent 
 .dicttomark readonly def
+
+% Array used for fast pre-filling of cmap array
+/.array1024z [ 1024 { 0 } repeat ] def
 
 % ---- Utilities ---- %
 
@@ -204,10 +213,19 @@
       exch pop
 		% Stack: false table record
       dup 10 getu16 2 index 4 getu16 add
-      1 index 8 getu16 4 -1 roll 3 1 roll getinterval exch
+      1 index 8 getu16 4 -1 roll 3 1 roll
+	  3 copy add 1 index length
+	  le {
+	    pop
+	    getinterval exch
 		% Stack: false string record
 		% Check for 8- vs. 16-bit characters.
       is2byte { string2to1 } if true null 4 -1 roll exit
+	  } {
+	    pop pop pop pop
+	    false
+		exit
+	  } ifelse
     } if pop
   } for pop pop
   TTFDEBUG {
@@ -352,6 +370,14 @@
       exch 1 index add exch
       numcodes add /numcodes exch def
     } for array def
+    % prefill the array with 0's faster than a { 0 putglyph } repeat
+    glyphs length 1024 ge {
+      .array1024z 0 1024 glyphs length 1023 sub { glyphs exch 2 index putinterval } for
+      glyphs dup length 1024 sub 3 -1 roll
+      putinterval
+    } {
+      0 1 glyphs length 1 sub { glyphs exch 0 put } for
+    } ifelse
 		% Now fill in the array.
     /numcodes 0 def /code 0 def
     0 2 nseg2 3 sub {
@@ -362,7 +388,7 @@
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
       %dup 16#e000 ge { 255 and } if
       % the previous line is obstructive to CJK fonts, so it was removed
-      exch sub 0 .max dup { 0 putglyph } repeat
+      exch sub 0 .max dup /code exch code exch add def
       ecode scode sub 1 add add numcodes add /numcodes exch def
       /delta iddelta i2 gets16 def
       TTFDEBUG {
@@ -427,6 +453,17 @@
     /postglyphs exch def
       postglyphs 32 getu16 /numglyphs exch def
       /glyphnames numglyphs 2 mul 34 add def
+      % Build names array in the order they occur in the 'post' table
+      /postpos glyphnames def
+      [ numglyphs 1 sub {
+	postpos postglyphs length ge { exit } if
+	% No name available, /postnames will be defined as an empty
+	% array and the glyph won't get a name attached.
+	postglyphs postpos get 
+        postglyphs postpos 1 add 2 index getinterval cvn
+	exch postpos add 1 add /postpos exch def
+      } repeat
+      ] /postnames exch def
       [ 0 1 numglyphs 1 sub {
 	2 mul 34 add postglyphs exch getu16
 	dup 258 lt {
@@ -439,24 +476,12 @@
 		% value of 16#ffff.
 	    pop /.notdef
 	  } {
-	    258 sub glyphnames exch {
-	      postglyphs 1 index
-	      % Some badly formed TT fonts have glyph index values past the end
-	      % of the 'post' table.
-              1 index length 1 index le {
+	    % Get the name for this glyph
+	    258 sub dup postnames length ge {
 	        TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
                 exit
               } if
-              get 1 add add
-	    } repeat
-	    1 add postglyphs exch
-            1 index length 1 index
-            lt {
-	      TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
-              % extend the postglyphs string by 1 byte of 0x00
-	      exch (\000) concatstrings /postglyphs exch def postglyphs exch
-	    } if
-            2 copy 1 sub get getinterval cvn
+	    postnames exch get
 		% At least some of Microsoft's TrueType fonts use incorrect
 		% (Adobe-incompatible) names for some glyphs.
 		% Correct for this here.
@@ -508,7 +533,7 @@ def
 
 % Read a table as a single string.
 % <file> <length> .skiptable <string>
-/.readtable {
+/.skiptable {
   pop pop ()
 } bind def
 
@@ -629,11 +654,11 @@ mark
     dup 0 4 getinterval /tname exch def
     dup 8 getu32 /tpos exch def
     dup 12 getu32 /tlen exch def
-    load_stripped { 
-      //.file_table_pos_names tname known {
+    load_stripped //.file_table_pos_names tname known and {
+        pop
         file_table_pos tname [tpos tlen] put
-      } if
-    } if
+        tabdict tname () put
+    } {
     8 sfpos putu32
 	% Skip data between the end of the previous table and
 	% the beginning of this one, if any.
@@ -646,11 +671,12 @@ mark
         /fpos tpos def
       } ifelse
     } if
-    f tlen readtables tname get exec
+      f tlen readtables_ tname get exec
     tabdict tname 3 -1 roll put
-    /fpos fpos tlen add def
 	% Round up the table length to an even value.
     /sfpos sfpos tlen dup 1 and add add def
+    } ifelse
+    /fpos fpos tlen add def
   } forall
 } bind def
 
@@ -1223,8 +1249,13 @@ mark
       % important for symbolic fonts in PDF.
       %
       <00010000> .findcmap {
+        prebuilt_encoding null ne {
+          prebuilt_encoding .invert_encoding .pdfmapchars
+          /Encoding prebuilt_encoding
+        } {
         .symbol_list .pdfmapchars
         /Encoding /.GS_extended_SymbolEncoding .findencoding
+        } ifelse
       } {
         % This is illegal with PDF spec.
         (   **** Warning: Embedded symbolic TT fonts must contain a cmap for Platform=1 Encoding=0.\n)
@@ -1236,6 +1267,29 @@ mark
         } {
           % Apply the default algorithm. Hopely it has 'post'.
           .charkeys
+          % check if the CharStrings dict contains glyphs needed by the
+	  % prebuilt_encoding otherwise try the 3,0 cmap.
+	  prebuilt_encoding null ne {
+	    false prebuilt_encoding {	% false means no missing glyphs
+	      4 index exch known not { pop true exit } if
+            } forall
+            {
+	      (   **** Warning: Encoding derived from 'post' is incomplete.\n)
+	      pdfformaterror
+	      % Try another cmap format 3,0 -- Adobe doesn't mention it, but does
+	      % use it apparently (empirically determined).
+	      <00030000> .findcmap {
+   		5 1 roll pop pop pop pop             
+		prebuilt_encoding null ne {
+		  prebuilt_encoding .invert_encoding .pdfmapchars
+		  /Encoding prebuilt_encoding
+		} {
+		  AdobeGlyphList .pdfmapchars
+		  /Encoding /SymbolEncoding .findencoding
+		} ifelse
+	      } if
+            }if
+          } if
         } ifelse
       } ifelse
     } ifelse
@@ -1258,8 +1312,9 @@ mark
   } ifelse
 } bind def
 
-% <file> <is_symbolic> .loadpdfttfont <type42font>
+% <file> <is_symbolic> <Encoding|null> .loadpdfttfont <type42font>
 /.loadpdfttfont {
+  /prebuilt_encoding exch def     % for .pdfcharkeys
   /is_symbolic exch def
   //false 0 .loadttfonttables
   .makesfnts

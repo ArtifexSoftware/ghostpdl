@@ -31,17 +31,10 @@ private iodev_proc_open_device(null_open);
 const gx_io_device gs_iodev_null = {
     "%null%", "Special",
     {
-	iodev_no_init, 
-	null_open, 
-	iodev_no_open_file,
-	iodev_os_fopen, 
-	iodev_os_fclose,
-	iodev_no_delete_file, 
-	iodev_no_rename_file, 
-	iodev_no_file_status,
-	iodev_no_enumerate_files, 
-	NULL, 
-	NULL,
+	iodev_no_init, null_open, iodev_no_open_file,
+	iodev_os_fopen, iodev_os_fclose,
+	iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
+	iodev_no_enumerate_files, NULL, NULL,
 	iodev_no_get_params, iodev_no_put_params
     }
 };

@@ -125,7 +125,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=[.libpng-1_2_5]
-PVERSION=10204
+PVERSION=10205
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -433,7 +433,6 @@ include $(GLSRCDIR)contrib.mak
 
 CC_=$(COMP)
 CC_INT=$(CC_)
-CC_LEAF=$(CC_)
 CC_NO_WARN=$(CC_)
 
 # ----------------------------- Main program ------------------------------ #
@@ -447,7 +446,7 @@ openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
 	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
 
-$(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c $(string__h) $(memory__h) $(gx_h) $(gp_h) $(gsstruct_h)
+$(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c $(string__h) $(memory__h) $(gx_h) $(gp_h) $(gpmisc_h) $(gsstruct_h)
 	$(CC_)/include=($(GLGENDIR),$(GLSRCDIR))/obj=$(GLOBJ)gp_vms.$(OBJ) $(GLSRC)gp_vms.c
 
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)

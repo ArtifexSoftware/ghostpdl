@@ -319,11 +319,11 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 	    font->procs.encode_char(font, (gs_char)i, GLYPH_SPACE_INDEX);
 	uint glyph_index;
 
-	if (glyph == gs_no_glyph || glyph < gs_min_cid_glyph ||
+	if (glyph == gs_no_glyph || glyph < GS_MIN_GLYPH_INDEX ||
 	    glyph > max_glyph
 	    )
-	    glyph = gs_min_cid_glyph;
-	glyph_index = (uint)(glyph - gs_min_cid_glyph);
+	    glyph = GS_MIN_GLYPH_INDEX;
+	glyph_index = (uint)(glyph - GS_MIN_GLYPH_INDEX);
 	merge |= glyph_index;
 	put_u16(entries + 2 * i, glyph_index);
     }
@@ -427,7 +427,7 @@ size_mtx(gs_font_type42 *pfont, gs_type42_mtx_t *pmtx, uint max_glyph,
 
 	if (code < 0)
 	    continue;
-	width = (int)(sbw[wmode + 2] * factor);
+	width = (int)(sbw[wmode + 2] * factor + 0.5);
 	if (width != prev_width)
 	    prev_width = width, last_width = i;
     }
@@ -548,7 +548,7 @@ compute_post(gs_font *font, post_t *post)
 	    post->glyphs[post->count].char_index = i;
 	    post->glyphs[post->count].size =
 		(mac_index < 0 ? str.size + 1 : 0);
-	    post->glyphs[post->count].glyph_index = glyph - gs_min_cid_glyph;
+	    post->glyphs[post->count].glyph_index = glyph - GS_MIN_GLYPH_INDEX;
 	    post->count++;
 	}
     }
@@ -650,6 +650,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     uint glyf_length, loca_length;
     ulong glyf_checksum = 0L; /****** NO CHECKSUM ******/
     ulong loca_checksum[2] = {0L,0L};
+    ulong glyf_alignment = 0;
     uint numGlyphs = 0;		/* original value from maxp */
     byte head[56];		/* 0 mod 4 */
     gs_type42_mtx_t mtx[2];
@@ -780,12 +781,19 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	gs_glyph_data_t glyph_data;
 
 	if (glyph < gs_min_cid_glyph)
-	    return_error(font->memory, gs_error_invalidfont);
-	glyph_index = glyph - gs_min_cid_glyph;
+	    return_error(s->memory, gs_error_invalidfont);
+	glyph_index = glyph  & ~GS_GLYPH_TAG;
 	if_debug1(s->memory, 'L', "[L]glyph_index %u\n", glyph_index);
 	if ((code = pfont->data.get_outline(pfont, glyph_index, &glyph_data)) >= 0) {
+	    /* Since indexToLocFormat==0 assumes even glyph lengths,
+	       round it up here. If later we choose indexToLocFormat==1,
+	       subtract the glyf_alignment to compensate it. */
+	    uint l = (glyph_data.bits.size + 1) & ~1;
+
 	    max_glyph = max(max_glyph, glyph_index);
-	    glyf_length += glyph_data.bits.size;
+	    glyf_length += l;
+	    if (l != glyph_data.bits.size)
+		glyf_alignment++;
 	    if_debug1(s->memory, 'L', "[L]  size %u\n", glyph_data.bits.size);
 	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	}
@@ -801,14 +809,16 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	glyf_length = 0;
 	loca_length = 0;
     } else {
-	/* Acrobat Reader won't accept fonts with empty glyfs. */
-	if (glyf_length == 0)
-	    glyf_length = 1;
 	/*loca_length = (max_glyph + 2) << 2;*/
 	loca_length = (numGlyphs + 1) << 2;
 	indexToLocFormat = (glyf_length > 0x1fffc);
 	if (!indexToLocFormat)
 	    loca_length >>= 1;
+	else
+	    glyf_length -= glyf_alignment;
+	/* Acrobat Reader won't accept fonts with empty glyfs. */
+	if (glyf_length == 0)
+	    glyf_length = 1;
     }
     if_debug2(s->memory, 'l', "[l]max_glyph = %lu, glyf_length = %lu\n",
 	      (ulong)max_glyph, (ulong)glyf_length);
@@ -871,7 +881,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	if (!have_cmap) {
 	    cmap_length = size_cmap(font, TT_BIAS, 256,
-				    gs_min_cid_glyph + max_glyph, options);
+				    GS_MIN_GLYPH_INDEX + max_glyph, options);
 	    offset = put_table(tab, "cmap", 0L /****** NO CHECKSUM ******/,
 			       offset, cmap_length);
 	    tab += 16;
@@ -999,20 +1009,22 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	/* Write glyf. */
 
-	if (is_subset)
 	    psf_enumerate_glyphs_reset(penum);
-	else
-	    psf_enumerate_glyphs_begin(penum, font, NULL, max_glyph + 1,
-				       GLYPH_SPACE_INDEX);
 	for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	    gs_glyph_data_t glyph_data;
 
 	    if ((code = pfont->data.get_outline(pfont,
-						glyph - gs_min_cid_glyph,
+						glyph & ~GS_GLYPH_TAG,
 						&glyph_data)) >= 0
 		) {
+		uint l = glyph_data.bits.size, zero = 0;
+
+		if (!indexToLocFormat)
+		    l = (l + 1) & ~1;
 		stream_write(s, glyph_data.bits.data, glyph_data.bits.size);
-		offset += glyph_data.bits.size;
+		if (glyph_data.bits.size < l)
+		    stream_write(s, &zero, 1);
+		offset += l;
 		if_debug2(s->memory, 'L', "[L]glyf index = %u, size = %u\n",
 			  i, glyph_data.bits.size);
 		gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
@@ -1027,29 +1039,34 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	/* Write loca. */
 
 	psf_enumerate_glyphs_reset(penum);
-	glyph_prev = gs_min_cid_glyph;
+	glyph_prev = 0;
 	for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	    gs_glyph_data_t glyph_data;
+	    uint glyph_index = glyph & ~GS_GLYPH_TAG;
 
-	    for (; glyph_prev <= glyph; ++glyph_prev)
+	    for (; glyph_prev <= glyph_index; ++glyph_prev)
 		put_loca(s, offset, indexToLocFormat);
-	    if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
+	    if ((code = pfont->data.get_outline(pfont, glyph_index,
 						&glyph_data)) >= 0
 		) {
-		offset += glyph_data.bits.size;
+		uint l = glyph_data.bits.size;
+
+		if (!indexToLocFormat)
+		    l = (l + 1) & ~1;
+		offset += l;
 		gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	    }
 
 	}
 	/* Pad to numGlyphs + 1 entries (including the trailing entry). */
-	for (; glyph_prev <= gs_min_cid_glyph + numGlyphs; ++glyph_prev)
+	for (; glyph_prev <= numGlyphs; ++glyph_prev)
 	    put_loca(s, offset, indexToLocFormat);
 	put_pad(s, loca_length);
 
 	/* If necessary, write cmap, name, and OS/2. */
 
 	if (!have_cmap)
-	    write_cmap(s, font, TT_BIAS, 256, gs_min_cid_glyph + max_glyph,
+	    write_cmap(s, font, TT_BIAS, 256, GS_MIN_GLYPH_INDEX + max_glyph,
 		       options, cmap_length);
 	if (!have_name)
 	    write_name(s, &font_name);

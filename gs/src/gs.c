@@ -17,7 +17,7 @@
 #include "imainarg.h"
 #include "iapi.h"
 #include "iminst.h"
-#include "errors.h"
+#include "ierrors.h"
 
 /* Define an optional array of strings for testing. */
 /*#define RUN_STRINGS */
@@ -37,8 +37,7 @@ int
 main(int argc, char *argv[])
 {
     int exit_status = 0;
-    gs_main_instance *minst = gs_main_alloc_instance(gs_malloc_init(NULL));
-
+    gs_main_instance *minst = gs_main_instance_default();
     int code = gs_main_init_with_args(minst, argc, argv);
 
 #ifdef RUN_STRINGS

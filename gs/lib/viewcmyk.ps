@@ -27,7 +27,7 @@
   /f fname (r) file def
   mark fname status pop pop pop /flen exch def cleartomark
   /h flen w bpc 4 mul mul 7 add 8 idiv idiv def
-  (Dimensions: ) print [w h] == flush
+  (Dimensions: ) print [w h bpc] == flush
 		% Set up scaling.
   /SCALE where {
     pop

@@ -170,27 +170,6 @@ typedef struct pdf_char_proc_s pdf_char_proc_t;	/* gdevpdff.h */
 typedef struct pdf_font_s pdf_font_t;  /* gdevpdff.h */
 typedef struct pdf_text_data_s pdf_text_data_t;  /* gdevpdft.h */
 
-/* ------ Named objects ------ */
-
-/* Define an element of the graphics object accumulation (BP/EP) stack. */
-typedef struct pdf_graphics_save_s pdf_graphics_save_t;
-#   if !PATTERN_STREAM_ACCUMULATION
-struct pdf_graphics_save_s {
-    pdf_graphics_save_t *prev;
-    cos_stream_t *object;
-    long position;
-    pdf_context_t save_context;
-    pdf_procset_t save_procsets;
-    long save_contents_id;
-};
-/* We don't disable pdf_graphics_save_t due to st_device_pdfwrite references it. */
-#   endif
-
-#define private_st_pdf_graphics_save()	/* in gdevpdfm.c */\
-  gs_private_st_ptrs2(st_pdf_graphics_save, pdf_graphics_save_t,\
-    "pdf_graphics_save_t", pdf_graphics_save_enum_ptrs,\
-    pdf_graphics_save_reloc_ptrs, prev, object)
-
 /* ---------------- Other auxiliary structures ---------------- */
 
 /* Outline nodes and levels */
@@ -344,8 +323,8 @@ typedef struct pdf_viewer_state_s {
     bool fill_overprint;
     bool stroke_overprint;
     bool stroke_adjust; /* state.stroke_adjust */
-    gx_device_color_saved saved_fill_color;
-    gx_device_color_saved saved_stroke_color;
+    gx_hl_saved_color saved_fill_color;
+    gx_hl_saved_color saved_stroke_color;
     gx_line_params line_params;
     float dash_pattern[max_dash];
 } pdf_viewer_state;
@@ -364,12 +343,14 @@ typedef struct pdf_substream_save_s {
     cos_dict_t		*substream_Resources;
     pdf_procset_t	procsets;
     bool		skip_colors;
+    pdf_resource_t      *font3;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
-    gs_private_st_ptrs4(st_pdf_substream_save, pdf_substream_save,\
+    gs_private_st_ptrs5(st_pdf_substream_save, pdf_substream_save,\
 	"pdf_substream_save", pdf_substream_save_enum,\
-	pdf_substream_save_reloc, text_state, clip_path, strm, substream_Resources);
+	pdf_substream_save_reloc, text_state, clip_path, strm, \
+	substream_Resources, font3);
 #define private_st_pdf_substream_save_element()\
   gs_private_st_element(st_pdf_substream_save_element, pdf_substream_save,\
     "pdf_substream_save[]", pdf_substream_save_elt_enum_ptrs,\
@@ -500,7 +481,6 @@ struct gx_device_pdf_s {
      * but it was confirmed by them.)
      */
     cos_array_t *Namespace_stack;
-    pdf_graphics_save_t *open_graphics;
     pdf_font_cache_elem_t *font_cache;
     /* 
      * char_width is used by pdf_text_set_cache to communicate 
@@ -537,14 +517,18 @@ struct gx_device_pdf_s {
     int vgstack_bottom;		 /* Stack bottom for the current substream. */
     pdf_viewer_state vg_initial; /* Initial values for viewer's graphic state */
     bool vg_initial_set;
+
     /* The substream context stack. */
     int sbstack_size;
     int sbstack_depth;
     pdf_substream_save *sbstack;
+
+    /* Accessories */
     cos_dict_t *substream_Resources;     /* Substream resources */
     int pcm_color_info_index;    /* Index to pcm_color_info. */
-    bool skip_colors; /* Skip colors while a pattern accumulation with PaintType 2. */
+    bool skip_colors; /* Skip colors while a pattern/charproc accumulation. */
     bool AR4_save_bug; /* See pdf_put_uncolored_pattern */
+    pdf_resource_t *font3; /* The owner of the accumulated charstring. */
 };
 
 #define is_in_page(pdev)\
@@ -564,9 +548,9 @@ struct gx_device_pdf_s {
  m(17,last_resource)\
  m(18,articles) m(19,Dests) m(20,global_named_objects)\
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
- m(24,open_graphics) m(25,font_cache) m(26,clip_path)\
- m(27,PageLabels) m(28,PageLabels_current_label)\
- m(29,sbstack) m(30,substream_Resources)
+ m(24,font_cache) m(25,clip_path)\
+ m(26,PageLabels) m(27,PageLabels_current_label)\
+ m(28,sbstack) m(29,substream_Resources) m(30,font3)
 #define gx_device_pdf_num_ptrs 31
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
@@ -601,6 +585,9 @@ dev_proc_put_params(gdev_pdf_put_params);
     /* In gdevpdft.c */
 dev_proc_text_begin(gdev_pdf_text_begin);
 dev_proc_pattern_manage(gdev_pdf_pattern_manage);
+dev_proc_fill_rectangle_hl_color(gdev_pdf_fill_rectangle_hl_color);
+    /* In gdevpdfv.c */
+dev_proc_include_color_space(gdev_pdf_include_color_space);
 
 /* ================ Utility procedures ================ */
 
@@ -719,6 +706,7 @@ int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page);
 
 /* Copy data from a temporary file to a stream. */
 void pdf_copy_data(stream *s, FILE *file, long count);
+void pdf_copy_data_safe(stream *s, FILE *file, long position, long count);
 
 /* ------ Pages ------ */
 

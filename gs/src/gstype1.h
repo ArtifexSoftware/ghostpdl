@@ -34,8 +34,8 @@ struct gs_type1_data_s;
 #endif
 int gs_type1_interp_init(gs_type1_state * pcis, gs_imager_state * pis,
 			 gx_path * ppath, const gs_log2_scale_point * pscale,
-			 bool charpath_flag, int paint_type,
-			 gs_font_type1 * pfont);
+			 const gs_log2_scale_point * psubpixels, bool no_grid_fitting, 
+			 int paint_type, gs_font_type1 * pfont);
 void gs_type1_set_callback_data(gs_type1_state *pcis, void *callback_data);
 void gs_type1_set_lsb(gs_type1_state * pcis, const gs_point * psbpt);
 void gs_type1_set_width(gs_type1_state * pcis, const gs_point * pwpt);
@@ -62,6 +62,8 @@ typedef charstring_interpret_proc((*charstring_interpret_proc_t));
 
 /* Define the Type 1 interpreter. */
 charstring_interpret_proc(gs_type1_interpret);
+/* Define the Type 2 interpreter. */
+charstring_interpret_proc(gs_type2_interpret);
 
 /* ------ CharString number representation ------ */
 

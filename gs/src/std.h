@@ -62,9 +62,11 @@
 #define arch_align_memory_mod ARCH_ALIGN_MEMORY_MOD
 
 /* Define integer data type sizes in terms of log2s. */
+#define ARCH_SIZEOF_CHAR (1 << ARCH_LOG2_SIZEOF_CHAR)
 #define ARCH_SIZEOF_SHORT (1 << ARCH_LOG2_SIZEOF_SHORT)
 #define ARCH_SIZEOF_INT (1 << ARCH_LOG2_SIZEOF_INT)
 #define ARCH_SIZEOF_LONG (1 << ARCH_LOG2_SIZEOF_LONG)
+#define ARCH_SIZEOF_LONG_LONG (1 << ARCH_LOG2_SIZEOF_LONG_LONG)
 #define ARCH_INTS_ARE_SHORT (ARCH_SIZEOF_INT == ARCH_SIZEOF_SHORT)
 /* Backward compatibility */
 #define arch_sizeof_short ARCH_SIZEOF_SHORT

@@ -754,8 +754,23 @@ and this is what "upd_truncate" does, in the most general manner i can
 think of and with O(log(n)) in time. "upd_expand" is required for the
 reverse mapping-functions and is a constant-time `algorithm'.
 */
-private uint32          upd_truncate(upd_pc,int,gx_color_value);
-private gx_color_value  upd_expand(  upd_pc,int,uint32);
+private inline uint32   upd_truncate(upd_pc,int,gx_color_value);
+
+/* ------------------------------------------------------------------- */
+/* Return the gx_color_value for a given component                     */
+/* ------------------------------------------------------------------- */
+private inline gx_color_value
+upd_expand(upd_pc upd,int i,gx_color_index ci0)
+{
+   const updcmap_pc cmap = upd->cmap + i;    /* Writing-Shortcut */
+   uint32 ci = (uint32)((ci0 >> cmap->bitshf) & cmap->bitmsk); /* Extract the component */
+
+   if(!cmap->rise) ci = cmap->bitmsk - ci;   /* Invert, if necessary */
+/* no Truncation/Expansion on full range */
+   if(gx_color_value_bits > cmap->bits) return cmap->code[ci];
+   else                                 return (gx_color_value) ci;
+}
+/* That's simple, isn't it? */
 
 /**
 The next group of internal functions adresses the rendering. Besides
@@ -923,8 +938,6 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
 
 /** UPD_MM_CPY_VALUE Copies a simple Value */
 #define UPD_MM_CPY_VALUE(To,From)  To = From
-
-#define UPD_MM_CPY_VALUE_3(mem,To,From)  To = From
 
 /** UPD_MM_CPY_PARAM Creates a copy of a gs-parameter */
 #define UPD_MM_CPY_PARAM(mem, To, From)                                       \
@@ -1776,11 +1789,11 @@ out on this copies.
    color_info = udev->color_info;
    if(upd) {
      flags = upd->flags;
-     UPD_MM_CPY_ARRAY(udev->memory, choice,  upd->choice,  countof(upd_choice),
-        UPD_MM_CPY_VALUE_3);
-     UPD_MM_CPY_ARRAY(udev->memory, ints,    upd->ints,    countof(upd_ints),
-        UPD_MM_CPY_VALUE_3);
-     UPD_MM_CPY_ARRAY(udev->memory, int_a,   upd->int_a,   countof(upd_int_a),
+     UPD_MM_CPY_ARRAY(choice,  upd->choice,  countof(upd_choice),
+        UPD_MM_CPY_VALUE);
+     UPD_MM_CPY_ARRAY(ints,    upd->ints,    countof(upd_ints),
+        UPD_MM_CPY_VALUE);
+     UPD_MM_CPY_ARRAY(int_a,   upd->int_a,   countof(upd_int_a),
         UPD_MM_CPY_PARAM);
      UPD_MM_CPY_ARRAY(udev->memory, strings, upd->strings, countof(upd_strings),
         UPD_MM_CPY_PARAM);
@@ -2720,23 +2733,6 @@ upd_rgb_novcolor(gx_device *pdev, const gx_color_value cv[])
 /* ------------------------------------------------------------------- */
 /* NOTE: Beyond this point only "uniprint"-special-items.              */
 /* ------------------------------------------------------------------- */
-
-/* ------------------------------------------------------------------- */
-/* Return the gx_color_value for a given component                     */
-/* ------------------------------------------------------------------- */
-
-private gx_color_value
-upd_expand(upd_pc upd,int i,uint32 ci)
-{
-   const updcmap_pc cmap = upd->cmap + i;    /* Writing-Shortcut */
-
-   ci = (ci >> cmap->bitshf) & cmap->bitmsk; /* Extract the component */
-   if(!cmap->rise) ci = cmap->bitmsk - ci;   /* Invert, if necessary */
-/* no Truncation/Expansion on full range */
-   if(gx_color_value_bits > cmap->bits) return cmap->code[ci];
-   else                                 return (gx_color_value) ci;
-}
-/* That's simple, isn't it? */
 
 /* ------------------------------------------------------------------- */
 /* Truncate a gx_color_value to the desired number of bits.            */

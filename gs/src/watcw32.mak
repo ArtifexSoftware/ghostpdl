@@ -121,7 +121,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10204
+PVERSION=10205
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -376,7 +376,6 @@ CC_WX=$(CC) $(WX)
 CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED)
 CC_D=$(CC_WX) $(COMPILE_WITH_FRAMES)
 CC_INT=$(CC)
-CC_LEAF=$(CC_) $(COMPILE_WITHOUT_FRAMES)
 CC_NO_WARN=$(CC_)
 
 # No additional flags are needed for Windows compilation.
@@ -504,7 +503,7 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(OBJCNO) $(PSOBJ)$(GS).res $(PSSRCDIR)\dw32c.def
-	$(LINK) option map $(LCT) Name $(GSCONSOLE_XE) File $(GLOBJ)gsdll, $(GLOBJ)gp_mktmp.obj, $(OBJCNOLINK), @$(ld_tr) 
+	$(LINK) option map $(LCT) Name $(GSCONSOLE_XE) File $(GLOBJ)gsdll, $(GLOBJ)gp_mktmp.obj, $(OBJCNOLINK) @$(ld_tr) 
 !endif
 
 # end of makefile

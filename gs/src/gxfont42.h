@@ -21,8 +21,16 @@
 typedef struct gs_glyph_cache_s gs_glyph_cache;
 #endif
 
+#ifndef cached_fm_pair_DEFINED
+#  define cached_fm_pair_DEFINED
+typedef struct cached_fm_pair_s cached_fm_pair;
+#endif
+
 /* This is the type-specific information for a Type 42 (TrueType) font. */
+#ifndef gs_type42_data_DEFINED
+#define gs_type42_data_DEFINED
 typedef struct gs_type42_data_s gs_type42_data;
+#endif
 #ifndef gs_font_type42_DEFINED
 #  define gs_font_type42_DEFINED
 typedef struct gs_font_type42_s gs_font_type42;
@@ -68,6 +76,9 @@ struct gs_type42_data_s {
     uint numGlyphs;		/* from size of loca */
     uint trueNumGlyphs;		/* from maxp */
     gs_glyph_cache *gdcache;
+#if NEW_TT_INTERPRETER
+    bool warning_patented;
+#endif
 };
 #define gs_font_type42_common\
     gs_font_base_common;\
@@ -91,10 +102,16 @@ extern_st(st_gs_font_type42);
 int gs_type42_font_init(gs_font_type42 *);
 
 /* Append the outline of a TrueType character to a path. */
+#if NEW_TT_INTERPRETER
+int gs_type42_append(uint glyph_index, gs_imager_state * pis,
+		 gx_path * ppath, const gs_log2_scale_point * pscale,
+		 bool charpath_flag, int paint_type, cached_fm_pair *pair);
+#else
 int gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		     gx_path * ppath, const gs_log2_scale_point * pscale,
 		     bool charpath_flag, int paint_type,
 		     gs_font_type42 * pfont);
+#endif
 
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
@@ -112,5 +129,9 @@ int gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint g
 font_proc_enumerate_glyph(gs_type42_enumerate_glyph);
 font_proc_glyph_info(gs_type42_glyph_info);
 font_proc_glyph_outline(gs_type42_glyph_outline);
+
+/* Get glyph info by glyph index. */
+int gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info, uint glyph_index);
 
 #endif /* gxfont42_INCLUDED */

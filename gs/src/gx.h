@@ -23,12 +23,19 @@
 #include "gsmemory.h"
 #include "gdebug.h"
 
-/* Temporary switch for a new filling algorithm : */
-#define DROPOUT_PREVENTION 0 /* 0 = old, 1 = new */
-/* Temporary switch for a new type 1 hinter : */
-#define NEW_TYPE1_HINTER 1 /* 0 = old, 1 = new */
-/* A temporary switch to pattern stream accumulation in a device. */
-#define PATTERN_STREAM_ACCUMULATION 0 /* old code = 0, new code = 1 */
+/* Configuration swtches - development needs only. */
+/* Users should not modify them. */
+#define NEW_TT_INTERPRETER 0
+#define TT_GRID_FITTING (NEW_TT_INTERPRETER && 0) /* old code = 0, new code = 1. */
+#define CURVED_TRAPEZOID_FILL 1 /* old code = 0, new code = 1. */
+/* The following switches are only important with CURVED_TRAPEZOID_FILL 1. */
+#   define CURVED_TRAPEZOID_FILL_HEAVY_TEST 0  /* Temporarily used for a debug purpose. */
+#   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
+                                               The implementation of 0 is not completed yet. */
+#   define FLATTENED_ITERATOR_BACKSCAN 1 /* 0 - simpler code, 1 - faster and smaller RAM. */
+#   define FLATTENED_ITERATOR_SELFTEST 0 /* Temporarily used for a debug purpose. */
+#   define FLATTENED_ITERATOR_HEAVY_SELFTEST 0 /* Temporarily used for a debug purpose. */
+
 
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */

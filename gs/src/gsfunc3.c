@@ -19,6 +19,7 @@
 #include "gsfunc3.h"
 #include "gsparam.h"
 #include "gxfunc.h"
+#include "stream.h"
 
 /* ---------------- Utilities ---------------- */
 
@@ -222,6 +223,25 @@ gs_function_ElIn_free_params(gs_function_ElIn_params_t * params,
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
+/* Serialize. */
+private int
+gs_function_ElIn_serialize(const gs_function_t * pfn, stream *s)
+{
+    uint n;
+    const gs_function_ElIn_params_t * p = (const gs_function_ElIn_params_t *)&pfn->params;
+    int code = fn_common_serialize(pfn, s);
+
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->C0[0], sizeof(p->C0[0]) * p->n, &n);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->C1[0], sizeof(p->C1[0]) * p->n, &n);
+    if (code < 0)
+	return code;
+    return sputs(s, (const byte *)&p->N, sizeof(p->N), &n);
+}
+
 /* Allocate and initialize an Exponential Interpolation function. */
 int
 gs_function_ElIn_init(gs_function_t ** ppfn,
@@ -237,7 +257,8 @@ gs_function_ElIn_init(gs_function_t ** ppfn,
 	    (fn_get_params_proc_t) fn_ElIn_get_params,
 	    (fn_make_scaled_proc_t) fn_ElIn_make_scaled,
 	    (fn_free_params_proc_t) gs_function_ElIn_free_params,
-	    fn_common_free
+	    fn_common_free,
+	    (fn_serialize_proc_t) gs_function_ElIn_serialize,
 	}
     };
     int code;
@@ -307,6 +328,9 @@ fn_1ItSg_evaluate(const gs_memory_t *mem, const gs_function_t * pfn_common, cons
     b0 = (i == 0 ? pfn->params.Domain[0] : pfn->params.Bounds[i - 1]);
     b1 = (i == k - 1 ? pfn->params.Domain[1] : pfn->params.Bounds[i]);
     e0 = pfn->params.Encode[2 * i];
+    if (b1 == b0)
+	encoded = e0;
+    else
     encoded =
 	(arg - b0) * (pfn->params.Encode[2 * i + 1] - e0) / (b1 - b0) + e0;
     if_debug3(mem, '~', "[~]1ItSg %g in %d => %g\n", arg, i, encoded);
@@ -452,6 +476,31 @@ gs_function_1ItSg_free_params(gs_function_1ItSg_params_t * params,
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
+/* Serialize. */
+private int
+gs_function_1ItSg_serialize(const gs_function_t * pfn, stream *s)
+{
+    uint n;
+    const gs_function_1ItSg_params_t * p = (const gs_function_1ItSg_params_t *)&pfn->params;
+    int code = fn_common_serialize(pfn, s);
+    int k;
+
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->k, sizeof(p->k), &n);
+    if (code < 0)
+	return code;
+
+    for (k = 0; k < p->k && code >= 0; k++) 
+	code = gs_function_serialize(p->Functions[k], s);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->Bounds[0], sizeof(p->Bounds[0]) * (p->k - 1), &n);
+    if (code < 0)
+	return code;
+    return sputs(s, (const byte *)&p->Encode[0], sizeof(p->Encode[0]) * (p->k * 2), &n);
+}
+
 /* Allocate and initialize a 1-Input Stitching function. */
 int
 gs_function_1ItSg_init(gs_function_t ** ppfn,
@@ -466,7 +515,8 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
 	    (fn_get_params_proc_t) fn_1ItSg_get_params,
 	    (fn_make_scaled_proc_t) fn_1ItSg_make_scaled,
 	    (fn_free_params_proc_t) gs_function_1ItSg_free_params,
-	    fn_common_free
+	    fn_common_free,
+	    (fn_serialize_proc_t) gs_function_1ItSg_serialize,
 	}
     };
     int n = (params->Range == 0 ? 0 : params->n);
@@ -623,6 +673,21 @@ gs_function_AdOt_free_params(gs_function_AdOt_params_t * params,
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
+/* Serialize. */
+private int
+gs_function_AdOt_serialize(const gs_function_t * pfn, stream *s)
+{
+    const gs_function_AdOt_params_t * p = (const gs_function_AdOt_params_t *)&pfn->params;
+    int code = fn_common_serialize(pfn, s);
+    int k;
+
+    if (code < 0)
+	return code;
+    for (k = 0; k < p->n && code >= 0; k++) 
+	code = gs_function_serialize(p->Functions[k], s);
+    return code;
+}
+
 /* Allocate and initialize an Arrayed Output function. */
 int
 gs_function_AdOt_init(gs_function_t ** ppfn,
@@ -637,7 +702,8 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
 	    fn_common_get_params,	/****** WHAT TO DO ABOUT THIS? ******/
 	    (fn_make_scaled_proc_t) fn_AdOt_make_scaled,
 	    (fn_free_params_proc_t) gs_function_AdOt_free_params,
-	    fn_common_free
+	    fn_common_free,
+	    (fn_serialize_proc_t) gs_function_AdOt_serialize,
 	}
     };
     int m = params->m, n = params->n;

@@ -238,8 +238,6 @@
 /.setpdfwrite {		% - .setpdfwrite -
 		% Set a large VM threshold to reduce garbage collection.
   currentuserparams /VMThreshold get 3000000 .max setvmthreshold
-		% Install a level of 'save' to reduce font loading.
-  save pop
 } bind def
 
 % ---------------- pdfmark and DSC processing ---------------- %
@@ -285,7 +283,7 @@
 /pdf===only {	% <file> <obj> pdf===only -
   .pdf===dict 1 index type .knownget { exec } { write===only } ifelse
 } bind def
-/.pdfcvbuf 10 string def	% enough for most arguments
+/.pdfcvbuf 30 string def	% enough for most arguments
 userdict /.pdfcvstring () put
 /.pdfcvs {		% <obj> .pdfcvs <string>
   currentglobal exch false .setglobal
@@ -344,7 +342,7 @@ userdict /.pdfcvstring () put
 		% Read the file into a sequence of strings.
 		% This isn't great, but it's simple.
 	  {
-	    dup 1000 string readstring not { exch exit } if
+	    dup 64000 string readstring not { exch exit } if
 	    exch
 	  } loop closefile
 	} if
@@ -433,11 +431,17 @@ bind def
 } bind def
 currentdict /.pdf_hook_DSC_Creator undef
 /.initialize_dsc_parser where {
-  pop 2 dict dup .initialize_dsc_parser readonly
+  pop
+  3000 % priority 
+  {
+    currentglobal true setglobal
+    2 dict dup .initialize_dsc_parser readonly
   currentuserparams /ProcessDSCComment get
   1 array astore	% in case the value is executable
   //.pdfdsc /exec load 4 array astore cvx readonly
   << /ProcessDSCComment 3 -1 roll >> setuserparams
+    setglobal
+  } bind .schedule_init
 } if
 
 % ---------------- {set,current}distillerparams ---------------- %
@@ -618,7 +622,8 @@ currentdict /.pdf_hook_DSC_Creator undef
 } .bind odef
 
 1000 % priority
-{ currentdevice .devicename /pdfwrite eq {
+{ currentdevice .devicename /pdfwrite eq
+  systemdict /ProvideUnicode .knownget not { false } if or {
     currentglobal true setglobal
     systemdict /.setupUnicodeDecoder known {
       /Unicode /Decoding resourcestatus {

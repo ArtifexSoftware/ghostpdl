@@ -502,7 +502,6 @@ clist_playback_file_bands(clist_playback_action action,
     }
     if (rs.page_cfile != 0 && rs.page_bfile != 0) {
 	stream s;
-
 	byte sbuf[cbuf_size];
 	static const stream_procs no_procs = {
 	    s_std_noavailable, s_std_noseek, s_std_read_reset,

@@ -87,13 +87,6 @@ void psf_enumerate_glyphs_reset(psf_glyph_enum_t *ppge);
 int psf_enumerate_glyphs_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph);
 
 /*
- * Get the set of referenced glyphs (indices) for writing a subset font.
- * Does not sort or remove duplicates.
- */
-int psf_subset_glyphs(gs_glyph glyphs[256], gs_font *font,
-		      const byte used[32]);
-
-/*
  * Add composite glyph pieces to a list of glyphs.  Does not sort or
  * remove duplicates.  max_pieces is the maximum number of pieces that a
  * single glyph can have: if this value is not known, the caller should
@@ -126,9 +119,11 @@ bool psf_sorted_glyphs_include(const gs_glyph *glyphs, int count,
  * Type 1, Type 2, and CIDFontType 0 fonts, but someday it might also
  * be usable with TrueType (Type 42) and CIDFontType 2 fonts.
  */
+#define MAX_CFF_SUBGLYPHS 2048 /* 1280 used, Bug 686875. */
 typedef struct psf_outline_glyphs_s {
     gs_glyph notdef;
-    gs_glyph subset_data[256 * 3 + 1]; /* *3 for seac, +1 for .notdef */
+    /* gs_glyph subset_data[256 * 3 + 1]; *3 for seac, +1 for .notdef */
+    gs_glyph subset_data[MAX_CFF_SUBGLYPHS];
     gs_glyph *subset_glyphs;	/* 0 or subset_data */
     uint subset_size;
 } psf_outline_glyphs_t;
@@ -226,7 +221,7 @@ typedef struct gs_cmap_s gs_cmap_t;
 typedef int (*psf_put_name_chars_proc_t)(stream *, const byte *, uint);
 int psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 		   psf_put_name_chars_proc_t put_name_chars,
-		   const gs_const_string *alt_cmap_name);
+		   const gs_const_string *alt_cmap_name, int font_index_only);
 /* ------ Exported by gdevpsft.c ------ */
 
 /*

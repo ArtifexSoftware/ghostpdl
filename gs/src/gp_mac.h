@@ -20,10 +20,7 @@
 #ifndef gp_mac_INCLUDED
 #  define gp_mac_INCLUDED
 
-
-FILE *  gp_fopen (const char * fname, const char * mode );
-FILE *  gp_open_scratch_file (const char *prefix, char *fname, const char *mode);
-
+/* no special definitions for macos */
 
 #endif 				/* gp_mac_INCLUDED */
 

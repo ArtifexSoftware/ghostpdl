@@ -26,8 +26,6 @@
 #include "gxiparam.h"
 #include "gxpath.h"
 #include "gscolor2.h"
-#include "gzstate.h"
-
 
 /* Forward references */
 private dev_proc_begin_typed_image(gx_begin_image2);

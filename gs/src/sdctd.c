@@ -17,6 +17,8 @@
 #include "jpeglib_.h"
 #include "jerror_.h"
 #include "gdebug.h"
+#include "gsmemory.h"		/* for gsmalloc.h */
+#include "gsmalloc.h"		/* for gs_memory_default */
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"

@@ -17,7 +17,7 @@
 #include "ghost.h"
 #include "gsstruct.h"
 #include "gxobj.h"		/* for o_set_unmarked */
-#include "errors.h"
+#include "ierrors.h"
 #include "inamedef.h"
 #include "imemory.h"		/* for isave.h */
 #include "isave.h"
@@ -145,7 +145,6 @@ names_ref(name_table *nt, const byte *ptr, uint size, ref *pref, int enterflag)
     name_string_t *pnstr;
     uint nidx;
     uint *phash;
-
 
     /* Compute a hash for the string. */
     /* Make a special check for 1-character names. */

@@ -25,6 +25,9 @@
 #include "gxfmap.h"
 #include "gxht.h"
 #include "gxistate.h"
+#include "gxdcolor.h"
+#include "gxpcolor.h"
+#include "gsptype2.h"
 #include "gzht.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
@@ -112,23 +115,16 @@ pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
 
 /* Set initial color. */
 void
-pdf_set_initial_color(gx_device_pdf * pdev, gx_device_color_saved *saved_fill_color,
-		    gx_device_color_saved *saved_stroke_color)
+pdf_set_initial_color(gx_device_pdf * pdev, gx_hl_saved_color *saved_fill_color,
+		    gx_hl_saved_color *saved_stroke_color)
 {
-    gx_color_index color = 0; /* black on DeviceGray and DeviceRGB */
-    gx_device_color temp_color;
+    gx_device_color black;
 
-    if(pdev->color_info.num_components == 4) {
-        gx_color_value cv[4];
-        cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
-        cv[3] = frac2cv(frac_1);
-        color = dev_proc(pdev, map_cmyk_color)((gx_device *)pdev, cv);
-    }
-    color_set_pure(&temp_color, color);
-    memset(&pdev->vg_initial.saved_fill_color, 0, sizeof(pdev->saved_fill_color));
-    memset(&pdev->vg_initial.saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
-    gx_saved_color_update(&pdev->vg_initial.saved_fill_color, &temp_color);
-    gx_saved_color_update(&pdev->vg_initial.saved_stroke_color, &temp_color);
+    pdev->black = gx_device_black((gx_device *)pdev);
+    pdev->white = gx_device_white((gx_device *)pdev);
+    set_nonclient_dev_color(&black, pdev->black);
+    gx_hld_save_color(NULL, &black, &pdev->vg_initial.saved_fill_color);
+    gx_hld_save_color(NULL, &black, &pdev->vg_initial.saved_stroke_color);
 }
 
 /* Prepare intitial values for viewer's graphics state parameters. */
@@ -215,20 +211,43 @@ pdf_reset_graphics(gx_device_pdf * pdev)
     pdf_reset_text(pdev);
 }
 
+/* Write client color. */
+private int
+pdf_write_ccolor(gx_device_pdf * pdev, const gs_imager_state * pis, 
+	        const gs_client_color *pcc)
+{   
+    int i, n = gx_hld_get_number_color_components(pis);
+
+    pprintg1(pdev->strm, "%g", psdf_round(pcc->paint.values[0], 255, 8));
+    for (i = 1; i < n; i++) {
+	pprintg1(pdev->strm, " %g", psdf_round(pcc->paint.values[i], 255, 8));
+    }
+    return 0;
+}
+
+
 /* Set the fill or stroke color. */
 private int
-pdf_reset_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
-		gx_device_color_saved * psc,
+pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis, 
+	        const gx_drawing_color *pdc, gx_hl_saved_color * psc,
 		const psdf_set_color_commands_t *ppscc)
 {
     int code;
-    gx_device_color_saved temp = *psc;
+    gx_hl_saved_color temp;
+    bool process_color;
+    const gs_color_space *pcs;
+    const gs_client_color *pcc; /* fixme: not needed due to gx_hld_get_color_component. */
+    cos_value_t cs_value;
+    const char *command;
 
+    if (pdev->skip_colors)
+	return 0;
+    process_color = !gx_hld_save_color(pis, pdc, &temp);
     /* Since pdfwrite never applies halftones and patterns, but monitors
      * halftone/pattern IDs separately, we don't need to compare
      * halftone/pattern bodies here.
      */
-    if (!gx_saved_color_update(&temp, pdc) || pdev->skip_colors)
+    if (gx_hld_saved_color_equal(&temp, psc))
 	return 0;
     /*
      * In principle, we can set colors in either stream or text
@@ -240,28 +259,93 @@ pdf_reset_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
-    code = pdf_put_drawing_color(pdev, pdc, ppscc);
-    if (code < 0)
-	return code;
+    switch (gx_hld_get_color_space_and_ccolor(pis, pdc, &pcs, &pcc)) {
+	case non_pattern_color_space:
+	    switch (gs_color_space_get_index(pcs)) {
+		case gs_color_space_index_DeviceGray:
+		    command = ppscc->setgray; 
+		    break;
+		case gs_color_space_index_DeviceRGB:
+		    command = ppscc->setrgbcolor; 
+		    break;
+		case gs_color_space_index_DeviceCMYK:
+		    command = ppscc->setcmykcolor; 
+		    break;
+		default :
+		    command = ppscc->setcolorn;
+		    if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
+			code = pdf_color_space(pdev, &cs_value, NULL, pcs,
+					&pdf_color_space_names, true);
+			/* fixme : creates redundant PDF objects. */
+			if (code == gs_error_rangecheck) {
+			    /* The color space can't write to PDF. */
+			    goto write_process_color;
+			}
+			if (code < 0)
+			    return code;
+			code = cos_value_write(&cs_value, pdev);
+			if (code < 0)
+			    return code;
+			pprints1(pdev->strm, " %s\n", ppscc->setcolorspace);
+		    }
+		    break;
+	    }
+	    code = pdf_write_ccolor(pdev, pis, pcc);
+	    if (code < 0)
+		return code;
+	    pprints1(pdev->strm, " %s\n", command);
+	    break;
+	case pattern_color_sapce:
+	    {	pdf_resource_t *pres;
+
+		if (pdc->type == gx_dc_type_pattern)
+		    code = pdf_put_colored_pattern(pdev, pdc, ppscc, &pres);
+		else if (pdc->type == &gx_dc_pure_masked) {
+		    code = pdf_put_uncolored_pattern(pdev, pdc, 
+				pcs, ppscc, &pres);
+		    if (code < 0)
+			return code;
+		    code = pdf_write_ccolor(pdev, pis, pcc);
+		} else if (pdc->type == &gx_dc_pattern2)
+		    code = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
+		else
+		    return_error(pdev->memory, gs_error_rangecheck);
+		if (code < 0)
+		    return code;
+		cos_value_write(cos_resource_value(&cs_value, pres->object), pdev);
+		pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
+		code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
+		if (code < 0)
+		    return code;
+	    }
+	    break;
+	default: /* must not happen. */
+	case use_process_color:
+	write_process_color:
+	    code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc);
+	    if (code < 0)
+		return code;
+    }
     *psc = temp;
     return 0;
 }
 int
-pdf_set_drawing_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
-		      gx_device_color_saved * psc,
+pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
+		      const gx_drawing_color *pdc,
+		      gx_hl_saved_color * psc,
 		      const psdf_set_color_commands_t *ppscc)
 {
-    return pdf_reset_color(pdev, pdc, psc, ppscc);
+    return pdf_reset_color(pdev, pis, pdc, psc, ppscc);
 }
 int
 pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
-		   gx_device_color_saved * psc,
+		   gx_hl_saved_color * psc,
 		   const psdf_set_color_commands_t *ppscc)
 {
     gx_drawing_color dcolor;
 
-    color_set_pure(&dcolor, color);
-    return pdf_reset_color(pdev, &dcolor, psc, ppscc);
+    set_nonclient_dev_color(&dcolor, color);
+    return pdf_reset_color(pdev, NULL, &dcolor, psc, ppscc);
 }
 
 /*
@@ -320,15 +404,22 @@ transfer_map_access(const gs_data_source_t *psrc, ulong start, uint length,
 private int
 transfer_map_access_signed(const gs_data_source_t *psrc,
 			   ulong start, uint length,
-			   byte *buf, const byte **ptr)
+			   byte *buf, const byte **ptr,
+                           const gs_memory_t *mem)
 {
+    /* To prevent numeric errors, we need to map 0 to an integer. 
+     * We can't apply a general expression, because Decode isn't accessible here.
+     * Assuming this works for UCR only.
+     * Assuming the range of UCR is always [-1, 1].
+     * Assuming BitsPerSample = 8.
+     */
     const gx_transfer_map *map = (const gx_transfer_map *)psrc->data.str.data;
     uint i;
 
     *ptr = buf;
     for (i = 0; i < length; ++i)
 	buf[i] = (byte)
-	    ((frac2float(map->values[(uint)start + i]) + 1) * 127.5 + 0.5);
+	    ((frac2float(map->values[(uint)start + i]) + 1) * 127);
     return 0;
 }
 private int
@@ -340,7 +431,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     gs_function_Sd_params_t params;
     static const float domain01[2] = { 0, 1 };
     static const int size = transfer_map_size;
-    float range01[2];
+    float range01[2], decode[2];
     gs_function_t *pfn;
     long id;
     int code;
@@ -379,7 +470,22 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     /* DataSource */
     params.BitsPerSample = 8;	/* could be 16 */
     params.Encode = 0;
-    params.Decode = 0;
+    if (range01[0] < 0 && range01[1] > 0) {
+	/* This works for UCR only.
+	 * Map 0 to an integer. 
+	 * Rather the range of UCR is always [-1, 1], 
+	 * we prefer a general expression. 
+	 */
+	int r0 = (int)( -range01[0] * ((1 << params.BitsPerSample) - 1) 
+			/ (range01[1] - range01[0]) ); /* Round down. */
+	float r1 = r0 * range01[1] / -range01[0]; /* r0 + r1 <= (1 << params.BitsPerSample) - 1 */
+
+	decode[0] = range01[0];
+	decode[1] = range01[0] + (range01[1] - range01[0]) * ((1 << params.BitsPerSample) - 1) 
+				    / (r0 + r1);
+	params.Decode = decode;
+    } else
+    	params.Decode = 0;
     params.Size = &size;
     code = gs_function_Sd_init(&pfn, &params, mem);
     if (code < 0)
@@ -486,9 +592,9 @@ HT_FUNC(ht_InvertedEllipseA, x * x + 0.9 * y * y - 1)
 HT_FUNC(ht_EllipseB, 1 - sqrt(x * x + 0.625 * y * y))
 HT_FUNC(ht_EllipseC, 1 - (0.9 * x * x + y * y))
 HT_FUNC(ht_InvertedEllipseC, 0.9 * x * x + y * y - 1)
-HT_FUNC(ht_Line, -fabs(y))
-HT_FUNC(ht_LineX, x)
-HT_FUNC(ht_LineY, y)
+HT_FUNC(ht_Line, -fabs((x - x) + y)) /* quiet compiler (unused variable x) */
+HT_FUNC(ht_LineX, (y - y) + x) /* quiet compiler (unused variable y) */
+HT_FUNC(ht_LineY, (x - x) + y) /* quiet compiler (unused variable x) */
 HT_FUNC(ht_Square, -max(fabs(x), fabs(y)))
 HT_FUNC(ht_Cross, -min(fabs(x), fabs(y)))
 HT_FUNC(ht_Rhomboid, (0.9 * fabs(x) + fabs(y)) / 2)
@@ -1019,7 +1125,7 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 		if (tm[i] != NULL) {
 		    code = pdf_write_transfer_map(pdev,
 						  tm[i],
-						  0, false, "", trs + strlen(trs));
+						  0, true, "", trs + strlen(trs));
 		    if (code < 0)
 			return code;
 		    mask |= (code == 0) << i;
@@ -1150,8 +1256,8 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    stream_puts(pdev->strm, bgs);
 	    stream_puts(pdev->strm, ucrs);
 	}
-	gs_currenthalftonephase((const gs_state *)pis, &phase);
-	gs_currenthalftonephase((const gs_state *)&pdev->state, &dev_phase);
+	gs_currentscreenphase_pis(pis, &phase, 0);
+	gs_currentscreenphase_pis(&pdev->state, &dev_phase, 0);
 	if (dev_phase.x != phase.x || dev_phase.y != phase.y) {
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
@@ -1200,7 +1306,8 @@ pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 	return code;
     /* Update overprint. */
     if (pdev->params.PreserveOverprintSettings &&
-	pdev->fill_overprint != pis->overprint
+	pdev->fill_overprint != pis->overprint &&
+	!pdev->skip_colors
 	) {
 	code = pdf_open_gstate(pdev, &pres);
 	if (code < 0)
@@ -1243,7 +1350,8 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 	return code;
     /* Update overprint, stroke adjustment. */
     if (pdev->params.PreserveOverprintSettings &&
-	pdev->stroke_overprint != pis->overprint
+	pdev->stroke_overprint != pis->overprint &&
+	!pdev->skip_colors
 	) {
 	code = pdf_open_gstate(pdev, &pres);
 	if (code < 0)
@@ -1305,7 +1413,7 @@ pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
 
     if (code < 0)
 	return code;
-    return pdf_set_drawing_color(pdev, pdcolor, &pdev->saved_fill_color,
+    return pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_fill_color,
 				 &psdf_set_fill_color_commands);
 }
 

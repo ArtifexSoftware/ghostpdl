@@ -17,9 +17,6 @@
 #ifndef gp_INCLUDED
 #  define gp_INCLUDED
 
-/* A temporary switch for the new logics of file path concatenation : */
-#define NEW_COMBINE_PATH 1 /* 0 = old, 1 = new. */
-
 #include "gstypes.h"
 /*
  * This file defines the interface to ***ALL*** platform-specific routines,
@@ -37,11 +34,6 @@
  * stream.h.
  */
 #include "srdline.h"
-/*
- * The definition for gp_file_name_combine_result is in gpmisc.h, 
- * since it is shared with gpmisc.c .
- */
-#include "gpmisc.h"
 
 /* ------ Initialization/termination ------ */
 
@@ -170,10 +162,24 @@ extern const char gp_fmode_binary_suffix[];
 extern const char gp_fmode_rb[];
 extern const char gp_fmode_wb[];
 
-/* Create and open a scratch file with a given name prefix. */
-/* Write the actual file name at fname. */
+/**
+ * gp_open_scratch_file: Create a scratch file.
+ * @prefix: Name prefix.
+ * @fname: Where to store filename of newly created file.
+ * @mode: File access mode (in fopen syntax).
+ *
+ * Creates a scratch (temporary) file in the filesystem. The exact
+ * location and name of the file is platform dependent, but in general
+ * uses @prefix as a prefix. If @prefix is not absolute, then choose
+ * an appropriate system directory, usually as determined from
+ * gp_gettmpdir(), followed by a path as returned from a system call.
+ *
+ * Implementations should make sure that 
+ *
+ * Return value: Opened file object, or NULL on error.
+ **/
 FILE *gp_open_scratch_file(const gs_memory_t *mem,
-			   const char *prefix,
+                           const char *prefix,
 			   char fname[gp_file_name_sizeof],
 			   const char *mode);
 
@@ -184,34 +190,11 @@ FILE *gp_fopen(const char *fname, const char *mode);
 /* if 2nd param true, text mode if 2nd param false */
 int gp_setmode_binary(FILE * pfile, bool mode);
 
-#if !NEW_COMBINE_PATH
-/* Answer whether a path string is not "bare" (returns true) i.e.,	*/
-/* contains an absolute reference, an initial 'current directory' ref	*/
-/* or some form of relative reference to the parent directory. The	*/
-/* "non_bare" pathstrings are those for	which it is not valid to prefix	*/
-/* a path (and expect the result to still be meaningful/valid).		*/
-/*									*/
-/* Some examples of non-bare pathstrings platform variants are:		*/
-/*	unix:	starts with '/' or './', or contains '../'		*/
-/*	mac:	starts with ':', or contains '::'			*/
-/*	VMS:	contains (starts with) directory '[  ]' spec.		*/
-/*	Win:	contains initial drive letter, initial '.', '/' or '\'	*/
-/*		or contains '../' or '..\'				*/
-bool gp_pathstring_not_bare(const char *fname, uint len);
-
-/* Answer whether a file name contains a parent directory reference,	*/
-/* e.g., "../somefile". Currently used for security purposes.		*/
-/* Some example platform variants of this are:				*/
-/*	unix:	contains '../'	Windows: contains '..\' or '../'	*/
-/*	mac:	contains '::'	VMS:	'[ ]' contains '-.'		*/
-bool gp_file_name_references_parent(const char *fname, uint len);
-
-/* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name. The prefix directory/device is examined to	*/
-/* determine if a separator is needed and may return an empty string	*/
-/* in some cases (platform dependent).					*/
-const char *gp_file_name_concat_string(const char *prefix, uint plen);
-#endif
+typedef enum {
+    gp_combine_small_buffer = -1,
+    gp_combine_cant_handle = 0,
+    gp_combine_success = 1
+} gp_file_name_combine_result;
 
 /*
  * Combine a file name with a prefix.
@@ -362,5 +345,29 @@ uint gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr
  * structure and any subsidiary structures, strings, buffers, etc.
  */
 void gp_enumerate_files_close(file_enum * pfen);
+
+
+/* ------ Font enumeration ------ */
+
+/* This is used to query the native os for a list of font names and 
+ * corresponding paths. The general idea is to save the hassle of 
+ * building a custom fontmap file
+ */
+
+/* allocate and initialize the iterator
+   returns a pointer to its local state or NULL on failure */
+void *gp_enumerate_fonts_init(gs_memory_t *mem);
+
+/* get the next element in the font enumeration
+   Takes a pointer to its local state and pointers in which to
+   return C strings. The string 'name' is the font name, 'path'
+   is the access path for the font resource. The returned strings
+   are only safe to reference until until the next call.
+   Returns 0 when no more fonts are available, a positive value 
+   on success, or negative value on error. */
+int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path);
+
+/* clean up and deallocate the iterator */
+void gp_enumerate_fonts_free(void *enum_state);
 
 #endif /* gp_INCLUDED */

@@ -115,7 +115,7 @@ cff_string_index(const gs_memory_t *mem,
 {
     /****** FAILS IF TABLE FULL AND KEY MISSING ******/
     int j = (size == 0 ? 0 : data[0] * 23 + data[size - 1] * 59 + size);
-    int index;
+    int index, c = 0;
 
     while ((index = pcst->items[j %= pcst->size].index1) != 0) {
 	--index;
@@ -125,6 +125,8 @@ cff_string_index(const gs_memory_t *mem,
 	    return 0;
 	}
 	j += pcst->reprobe;
+	if (++c >= pcst->size)
+	    break;
     }
     if (!enter)
 	return_error(mem, gs_error_undefined);
@@ -1119,7 +1121,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     cff_glyph_subset_t subset;
     cff_string_item_t std_string_items[500]; /* 391 entries used */
     /****** HOW TO DETERMINE THE SIZE OF STRINGS? ******/
-    cff_string_item_t string_items[500 /* character names */ +
+    cff_string_item_t string_items[MAX_CFF_SUBGLYPHS /* character names */ +
 				   40 /* misc. values */];
     gs_const_string font_name;
     stream poss;
@@ -1311,8 +1313,10 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     charset_size = 1 + (subset.glyphs.subset_size - 1) * 2;
 
     /* Compute the size of the CharStrings Index. */
-    charstrings_size =
-	cff_write_CharStrings_offsets(&writer, &genum, &charstrings_count);
+    code = cff_write_CharStrings_offsets(&writer, &genum, &charstrings_count);
+    if (code < 0)
+	return code;
+    charstrings_size = (uint)code;
 
     /* Compute the size of the (local) Subrs Index. */
 #ifdef SKIP_EMPTY_SUBRS
@@ -1492,7 +1496,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     cff_writer_t writer;
     cff_string_item_t std_string_items[500]; /* 391 entries used */
     /****** HOW TO DETERMINE THE SIZE OF STRINGS? ******/
-    cff_string_item_t string_items[500 /* character names */ +
+    cff_string_item_t string_items[MAX_CFF_SUBGLYPHS /* character names */ +
 				   40 /* misc. values */];
     gs_const_string font_name;
     stream poss;

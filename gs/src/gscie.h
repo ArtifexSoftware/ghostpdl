@@ -799,4 +799,7 @@ extern int
     gs_cie_defx_set_lookup_table(const gs_memory_t *mem, gs_color_space * pcspace, int *pdims,
 				 const gs_const_string * ptable);
 
+/* Serialize common CIE elements. */
+int gx_serialize_cie_common_elements(const gs_color_space * pcs, stream * s);
+
 #endif /* gscie_INCLUDED */

@@ -160,6 +160,7 @@
 #define XHeightOfScreen XHEIGHTOFSCREEN
 #define XIconifyWindow XICONIFYWINDOW
 #define XIfEvent XIFEVENT
+#define XInitImage XINITIMAGE
 #define XInstallColormap XINSTALLCOLORMAP
 #define XInternAtom XINTERNATOM
 #define XIntersectRegion XINTERSECTREGION

@@ -13,6 +13,7 @@
 /*$RCSfile$ $Revision$ */
 /* Adobe Type 1 font interpreter support */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsccode.h"
@@ -61,12 +62,6 @@ ENUM_PTRS_WITH(gs_type1_state_enum_ptrs, gs_type1_state *pcis)
 }
 ENUM_PTR3(0, gs_type1_state, pfont, pis, path);
 ENUM_PTR(3, gs_type1_state, callback_data);
-
-#ifndef gs_memory_DEFINED
-#  define gs_memory_DEFINED
-typedef struct gs_memory_s gs_memory_t;
-#endif
-
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
 {
@@ -89,39 +84,26 @@ private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
 
 #define s (*ps)
 
-/* We export this for the Type 2 charstring interpreter. */
-void
-accum_xy_proc(register is_ptr ps, fixed dx, fixed dy)
-{
-    ptx += c_fixed(dx, xx),
-	pty += c_fixed(dy, yy);
-    if (sfc.skewed)
-	ptx += c_fixed(dy, yx),
-	    pty += c_fixed(dx, xy);
-}
-
 /* Initialize a Type 1 interpreter. */
 /* The caller must supply a string to the first call of gs_type1_interpret. */
 int
 gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
-    gx_path * ppath, const gs_log2_scale_point * pscale, bool charpath_flag,
+    gx_path * ppath, const gs_log2_scale_point * pscale, 
+    const gs_log2_scale_point * psubpixels, bool no_grid_fitting,
 		     int paint_type, gs_font_type1 * pfont)
 {
     static const gs_log2_scale_point no_scale = {0, 0};
     const gs_log2_scale_point *plog2_scale =
-	(FORCE_HINTS_TO_BIG_PIXELS ? pscale : &no_scale);
+	(FORCE_HINTS_TO_BIG_PIXELS && pscale != NULL ? pscale : &no_scale);
+    const gs_log2_scale_point *plog2_subpixels =
+	(FORCE_HINTS_TO_BIG_PIXELS ? (psubpixels != NULL ? psubpixels : plog2_scale) : &no_scale);
 
     if_debug0(pis->memory, '1', "[1]gs_type1_interp_init\n");
     pcis->pfont = pfont;
     pcis->pis = pis;
     pcis->path = ppath;
     pcis->callback_data = pfont; /* default callback data */
-    /*
-     * charpath_flag controls coordinate rounding, hinting, and
-     * flatness enhancement.  If we allow it to be set to true,
-     * charpath may produce results quite different from show.
-     */
-    pcis->charpath_flag = false /*charpath_flag */ ;
+    pcis->no_grid_fitting = no_grid_fitting;
     pcis->paint_type = paint_type;
     pcis->os_count = 0;
     pcis->ips_count = 1;
@@ -131,9 +113,9 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->init_done = -1;
     pcis->sb_set = false;
     pcis->width_set = false;
-    pcis->have_hintmask = false;
     pcis->num_hints = 0;
     pcis->seac_accent = -1;
+    pcis->log2_subpixels = *plog2_subpixels;
 
     /* Set the sampling scale. */
     set_pixel_scale(&pcis->scale.x, plog2_scale->x);
@@ -169,120 +151,30 @@ gs_type1_set_width(gs_type1_state * pcis, const gs_point * pwpt)
 /* Finish initializing the interpreter if we are actually rasterizing */
 /* the character, as opposed to just computing the side bearing and width. */
 void
-gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state * ps)
+gs_type1_finish_init(gs_type1_state * pcis)
 {
     gs_imager_state *pis = pcis->pis;
+    const int max_coeff_bits = 11;	/* max coefficient in char space */
 
     /* Set up the fixed version of the transformation. */
     gx_matrix_to_fixed_coeff(pis->memory, &ctm_only(pis), &pcis->fc, max_coeff_bits);
-    sfc = pcis->fc;
 
     /* Set the current point of the path to the origin, */
-    /* in anticipation of the initial [h]sbw. */
-    {
-	gx_path *ppath = pcis->path;
-
-	ptx = pcis->origin.x = ppath->position.x;
-	pty = pcis->origin.y = ppath->position.y;
-    }
+    pcis->origin.x = pcis->path->position.x;
+    pcis->origin.y = pcis->path->position.y;
 
     /* Initialize hint-related scalars. */
     pcis->asb_diff = pcis->adxy.x = pcis->adxy.y = 0;
     pcis->flex_count = flex_max;	/* not in Flex */
-    pcis->dotsection_flag = dotsection_out;
-    pcis->vstem3_set = false;
     pcis->vs_offset.x = pcis->vs_offset.y = 0;
-    pcis->hints_initial = 0;	/* probably not needed */
-    pcis->hint_next = 0;
-    pcis->hints_pending = 0;
 
-    /* Assimilate the hints proper. */
-    {
-	gs_log2_scale_point log2_scale;
-
-	log2_scale.x = pcis->scale.x.log2_unit;
-	log2_scale.y = pcis->scale.y.log2_unit;
-	if (pcis->charpath_flag)
-	    reset_font_hints(&pcis->fh, &log2_scale);
-	else
-	    compute_font_hints(pis->memory, &pcis->fh, &pis->ctm, &log2_scale,
-			       &pcis->pfont->data);
-    }
-    reset_stem_hints(pcis);
 
     /* Compute the flatness needed for accurate rendering. */
     pcis->flatness = gs_char_flatness(pis, 0.001);
 
-    /* Move to the side bearing point. */
-    accum_xy(pcis->lsb.x, pcis->lsb.y);
-    pcis->position.x = ptx;
-    pcis->position.y = pty;
-
     pcis->init_done = 1;
 }
 
-/* ------ Operator procedures ------ */
-
-int
-gs_op1_closepath(register is_ptr ps)
-{				/* Note that this does NOT reset the current point! */
-    gx_path *ppath = sppath;
-    subpath *psub;
-    segment *pseg;
-    fixed dx, dy;
-    int code;
-
-    /* Check for and suppress a microscopic closing line. */
-    if (ppath->segments != 0) {
-	if ((psub = ppath->current_subpath) != 0 &&
-	    (pseg = psub->last) != 0 &&
-	    (dx = pseg->pt.x - psub->pt.x,
-	     any_abs(dx) < float2fixed(0.1)) &&
-	    (dy = pseg->pt.y - psub->pt.y,
-	     any_abs(dy) < float2fixed(0.1))
-	    )
-	    switch (pseg->type) {
-		case s_line:
-		    code = gx_path_pop_close_subpath(sppath);
-		    break;
-		case s_curve:
-		    /*
-		     * Unfortunately, there is no "s_curve_close".  (Maybe there
-		     * should be?)  Just adjust the final point of the curve so it
-		     * is identical to the closing point.
-		     */
-		    pseg->pt = psub->pt;
-#define pcseg ((curve_segment *)pseg)
-		    pcseg->p2.x -= dx;
-		    pcseg->p2.y -= dy;
-#undef pcseg
-		    /* falls through */
-		default:
-		    /* What else could it be?? */
-		    code = gx_path_close_subpath(sppath);
-	} else
-	    code = gx_path_close_subpath(sppath);
-	if (code < 0)
-	    return code;
-    }
-    return gx_path_add_point(ppath, ptx, pty);	/* put the point where it was */
-}
-
-int
-gs_op1_rrcurveto(register is_ptr ps, fixed dx1, fixed dy1,
-		 fixed dx2, fixed dy2, fixed dx3, fixed dy3)
-{
-    gs_fixed_point pt1, pt2;
-    fixed ax0 = sppath->position.x - ptx;
-    fixed ay0 = sppath->position.y - pty;
-
-    accum_xy(dx1, dy1);
-    pt1.x = ptx + ax0, pt1.y = pty + ay0;
-    accum_xy(dx2, dy2);
-    pt2.x = ptx, pt2.y = pty;
-    accum_xy(dx3, dy3);
-    return gx_path_add_curve(sppath, pt1.x, pt1.y, pt2.x, pt2.y, ptx, pty);
-}
 
 #undef s
 
@@ -341,6 +233,7 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
 {
     gs_font_type1 *pfont = pcis->pfont;
     gs_glyph_data_t bgdata;
+    gs_const_string gstr;
     int code;
 
     /* Save away all the operands. */
@@ -352,7 +245,7 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
     pcis->os_count = 0;		/* clear */
     /* Ask the caller to provide the base character's CharString. */
     code = pfont->data.procs.seac_data
-	(pfont, fixed2int_var(cstack[2]), NULL, &bgdata);
+	(pfont, fixed2int_var(cstack[2]), NULL, &gstr, &bgdata);
     if (code < 0)
 	return code;
     /* Continue with the supplied string. */
@@ -371,38 +264,42 @@ int
 gs_type1_endchar(gs_type1_state * pcis)
 {
     gs_imager_state *pis = pcis->pis;
-    gx_path *ppath = pcis->path;
 
     if (pcis->seac_accent >= 0) {	/* We just finished the base character of a seac. */
 	/* Do the accent. */
 	gs_font_type1 *pfont = pcis->pfont;
-	gs_op1_state s;
 	gs_glyph_data_t agdata;
 	int achar = pcis->seac_accent;
+	gs_const_string gstr;
 	int code;
 
 	pcis->seac_accent = -1;
 	/* Reset the coordinate system origin */
-	sfc = pcis->fc;
-	ptx = pcis->origin.x, pty = pcis->origin.y;
 	pcis->asb_diff = pcis->save_asb - pcis->save_lsb.x;
 	pcis->adxy = pcis->save_adxy;
-	/*
-	 * We're going to add in the lsb of the accented character
-	 * (*not* the lsb of the accent) when we encounter the
-	 * [h]sbw of the accent, so ignore the lsb for now.
-	 */
-	accum_xy(pcis->adxy.x, pcis->adxy.y);
-	ppath->position.x = pcis->position.x = ptx;
-	ppath->position.y = pcis->position.y = pty;
 	pcis->os_count = 0;	/* clear */
 	/* Clear the ipstack, in case the base character */
 	/* ended inside a subroutine. */
 	pcis->ips_count = 1;
-	/* Remove any base character hints. */
-	reset_stem_hints(pcis);
 	/* Ask the caller to provide the accent's CharString. */
-	code = pfont->data.procs.seac_data(pfont, achar, NULL, &agdata);
+	code = pfont->data.procs.seac_data(pfont, achar, NULL, &gstr, &agdata);
+	if (code == gs_error_undefined) {
+	    /* 
+	     * The font is missing the accent's CharString (due to
+	     * bad subsetting).  Just end drawing here without error. 
+	     * This is like Acrobat Reader behaves.
+	     */
+	    char buf0[gs_font_name_max + 1], buf1[30];
+	    int l0 = min(pcis->pfont->font_name.size, sizeof(buf0) - 1);
+	    int l1 = min(gstr.size, sizeof(buf1) - 1);
+
+	    memcpy(buf0, pcis->pfont->font_name.chars, l0);
+	    buf0[l0] = 0;
+	    memcpy(buf1, gstr.data, l1);
+	    buf1[l1] = 0;
+	    eprintf2(pis->memory, "The font '%s' misses the glyph '%s' . Continue skipping the glyph.", buf0, buf1);
+	    return 0;
+	}
 	if (code < 0)
 	    return code;
 	/* Continue with the supplied string. */
@@ -410,61 +307,9 @@ gs_type1_endchar(gs_type1_state * pcis)
 	pcis->ipstack[0].cs_data = agdata;
 	return 1;
     }
-#   if !NEW_TYPE1_HINTER
-    if (pcis->hint_next != 0 || path_is_drawing(ppath))
-	apply_path_hints(pcis, true);
-    /* Set the current point to the character origin */
-    /* plus the width. */
-    {
-	gs_fixed_point pt;
-
-	gs_point_transform2fixed(&pis->ctm,
-				 fixed2float(pcis->width.x),
-				 fixed2float(pcis->width.y),
-				 &pt);
-	gx_path_add_point(ppath, pt.x, pt.y);
-    }
-#   if !DROPOUT_PREVENTION
-    if (pcis->scale.x.log2_unit + pcis->scale.y.log2_unit == 0) {	/*
-									 * Tweak up the fill adjustment.  This is a hack for when
-									 * we can't oversample.  The values here are based entirely
-									 * on experience, not theory, and are designed primarily
-									 * for displays and low-resolution fax.
-									 */
-	gs_fixed_rect bbox;
-	int dx, dy, dmax;
-
-	gx_path_bbox(ppath, &bbox);
-	dx = fixed2int_ceiling(bbox.q.x - bbox.p.x);
-	dy = fixed2int_ceiling(bbox.q.y - bbox.p.y);
-	dmax = max(dx, dy);
-	if (pcis->fh.snap_h.count || pcis->fh.snap_v.count ||
-	    pcis->fh.a_zone_count
-	    ) {			/* We have hints.  Only tweak up a little at */
-	    /* very small sizes, to help nearly-vertical */
-	    /* or nearly-horizontal diagonals. */
-	    pis->fill_adjust.x = pis->fill_adjust.y =
-		(dmax < 15 ? float2fixed(0.15) :
-		 dmax < 25 ? float2fixed(0.1) :
-		 fixed_0);
-	} else {		/* No hints.  Tweak a little more to compensate */
-	    /* for lack of snapping to pixel grid. */
-	    pis->fill_adjust.x = pis->fill_adjust.y =
-		(dmax < 10 ? float2fixed(0.2) :
-		 dmax < 25 ? float2fixed(0.1) :
-		 float2fixed(0.05));
-	}
-    } else {			/* Don't do any adjusting. */
-	pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
-    }
-#   else
     pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
-#   endif
-#   else
-    pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
-#   endif
     /* Set the flatness for curve rendering. */
-    if (!pcis->charpath_flag)
+    if (!pcis->no_grid_fitting)
 	gs_imager_setflat(pis, pcis->flatness);
     return 0;
 }
@@ -626,13 +471,14 @@ gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
     gs_type1_data *const pdata = &pfont->data;
     gs_glyph *pieces =
 	(members & GLYPH_INFO_PIECES ? info->pieces : glyphs);
+    gs_const_string gstr;
     int acode, bcode;
 
     info->num_pieces = 0;	/* default */
     if (code <= 0)		/* no seac, possibly error */
 	return code;
-    bcode = pdata->procs.seac_data(pfont, chars[0], &pieces[0], NULL);
-    acode = pdata->procs.seac_data(pfont, chars[1], &pieces[1], NULL);
+    bcode = pdata->procs.seac_data(pfont, chars[0], &pieces[0], &gstr, NULL);
+    acode = pdata->procs.seac_data(pfont, chars[1], &pieces[1], &gstr, NULL);
     code = (bcode < 0 ? bcode : acode);
     info->num_pieces = 2;
     return code;
@@ -646,8 +492,9 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     gs_type1_data *const pdata = &pfont->data;
     int wmode = ((members & GLYPH_INFO_WIDTH1) != 0);
     int piece_members = members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES);
-    int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
-    int default_members = members & ~(piece_members | width_members |
+    int width_members = (members & ((GLYPH_INFO_WIDTH0 << wmode) | (GLYPH_INFO_VVECTOR0 << wmode)));
+    int default_members = members & ~(piece_members | GLYPH_INFO_WIDTHS |
+				     GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1 |
 				     GLYPH_INFO_OUTLINE_WIDTHS);
     int code = 0;
     gs_glyph_data_t gdata;
@@ -679,7 +526,6 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	 */
 	gs_imager_state gis;
 	gs_type1_state cis;
-	static const gs_log2_scale_point no_scale = {0, 0};
 	int value;
 
 	/* Initialize just enough of the imager state. */
@@ -693,10 +539,10 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	}
 	gis.flatness = 0;
 	code = gs_type1_interp_init(&cis, &gis, NULL /* no path needed */,
-				    &no_scale, true, 0, pfont);
+				    NULL, NULL, true, 0, pfont);
 	if (code < 0)
 	    return code;
-	cis.charpath_flag = true;	/* suppress hinting */
+	cis.no_grid_fitting = true;
 	code = pdata->interpret(&cis, &gdata, &value);
 	switch (code) {
 	case 0:		/* done with no [h]sbw, error */
@@ -712,7 +558,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    info->v.y = fixed2float(cis.lsb.y);
 	    break;
 	}
-	info->members |= width_members | GLYPH_INFO_VVECTOR0;
+	info->members |= width_members | (GLYPH_INFO_VVECTOR0 << wmode);
     }
 
     gs_glyph_data_free(&gdata, "gs_type1_glyph_info");

@@ -361,6 +361,8 @@ pick_cell_size(const gs_memory_t *mem,
   try_size:
     better = false;
     {
+        double fm0 = u0 * rt;
+        double fn0 = v0 * rt;
         int m0 = (int)floor(u0 * rt + 0.0001);
         int n0 = (int)floor(v0 * rt + 0.0001);
         gx_ht_cell_params_t p;
@@ -413,17 +415,23 @@ pick_cell_size(const gs_memory_t *mem,
                 if_debug5(mem, 'h', " ==> d=%d, wt=%ld, wt_size=%ld, f=%g, a=%g\n",
                           p.D, wt, bitmap_raster(wt) * wt, ft, at);
 
+                {
                 /*
-                 * Minimize angle and frequency error within the
-                 * permitted maximum super-cell size.
+		     * Compute the error in position between ideal location.
+		     * and the current integer location.
                  */
 
-                {
-                    double err = f_err * a_err;
-
-                    if (err > e_best)
+		    double error =
+			(fn0 - p.N) * (fn0 - p.N) + (fm0 - p.M) * (fm0 - p.M);
+		    /*
+		     * Adjust the error by the length of the vector.  This gives
+		     * a slight bias toward larger cell sizzes.
+		     */
+		    error /= p.N * p.N + p.M * p.M;
+		    error = sqrt(error); /* The previous calcs. gave value squared */
+                    if (error > e_best)
                         continue;
-                    e_best = err;
+                    e_best = error;
                 }
                 *phcp = p;
                 f = ft, a = at;

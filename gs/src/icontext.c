@@ -15,7 +15,7 @@
 #include "ghost.h"
 #include "gsstruct.h"		/* for gxalloc.h */
 #include "gxalloc.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "stream.h"		/* for files.h */
 #include "files.h"
 #include "idict.h"
@@ -135,7 +135,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
 	if (dict_find_string(system_dict, "userparams", &puserparams) >= 0)
 	    size = dict_length(puserparams);
 	else
-	    size = 25;
+	    size = 30;
 	code = dict_alloc(pcst->memory.space_local, size, &pcst->userparams);
 	if (code < 0)
 	    goto x2;
@@ -143,10 +143,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     }
     pcst->scanner_options = 0;
     pcst->LockFilePermissions = false;
-#if NEW_COMBINE_PATH
     pcst->starting_arg_file = false;
-#endif
-    pcst->filearg = NULL;
     /* The initial stdio values are bogus.... */
     make_file(&pcst->stdio[0], a_readonly | avm_invalid_file_entry, 1,
 	      invalid_file_entry);

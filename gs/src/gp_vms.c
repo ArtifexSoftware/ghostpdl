@@ -12,10 +12,12 @@
 
 /*$RCSfile$ $Revision$ */
 /* VAX/VMS specific routines for Ghostscript */
+
 #include "string_.h"
 #include "memory_.h"
 #include "gx.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsstruct.h"
 #include <stat.h>
 #include <stdlib.h>		/* for exit() with some compiler versions */
@@ -217,13 +219,27 @@ gp_open_scratch_file(const gs_memory_t *mem,
 		     const char *mode)
 {
     FILE *f;
+    char tmpdir[gp_file_name_sizeof];
+    int tdlen = gp_file_name_sizeof;
+    int flen[1];
 
-    if (strlen(prefix) + 6 >= gp_file_name_sizeof)
+    if (!gp_file_name_is_absolute(prefix, strlen(prefix)) &&
+	gp_gettmpdir(tmpdir, &tdlen) == 0) {
+      flen[0] = gp_file_name_sizeof;
+	if (gp_file_name_combine(tmpdir, tdlen, prefix, strlen(prefix),
+			     false, fname, flen ) != gp_combine_success ) {
+	    return NULL;
+	}
+       fname[ *flen ] = 0;
+    } else {
+	strcpy(fname, prefix);
+    }
+    if (strlen(fname) + 6 >= gp_file_name_sizeof)
 	return 0;		/* file name too long */
-    strcpy(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
     f = fopen(fname, mode);
+   
     if (f == NULL)
 	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
 }
@@ -251,108 +267,6 @@ gp_setmode_binary(FILE * pfile, bool binary)
 {
     return 0;			/* Noop under VMS */
 }
-
-#if !NEW_COMBINE_PATH
-/*  Answer whether a file name contains a directory/device specification, i.e.,
- *  is absolute (not directory- or device-relative).  Since for VMS, the concept
- *  of an "absolute" file reference has no meaning.  As Ghostscript is here
- *  merely checking to see if it will make sense to paste a path to the front
- *  of the file name, we use the VMS system service SYS$FILESCAN to check that
- *  the file name has no node, device, root, or directory specification: if all
- *  four of these items are missing from the file name then it is considered to
- *  a relative file name to which a path may be prefixed. (Roots are associated
- *  with rooted logical names.)
- */
-
-bool
-gp_pathstring_not_bare(const char *fname, unsigned len)
-{
-    descrip str_desc;
-
-    /* SYS$FILESCAN takes a uint *, but we want to extract bits. */
-    union {
-	uint i;
-	struct {
-	    unsigned fscn$v_node:1;
-	    unsigned fscn$v_device:1;
-	    unsigned fscn$v_root:1;
-	    unsigned fscn$v_directory:1;
-	    unsigned fscn$v_name:1;
-	    unsigned fscn$v_type:1;
-	    unsigned fscn$v_version:1;
-	    unsigned fscn$v_fill_23:1;
-	} s;
-    } flags;
-    uint zero = 0;
-
-    str_desc.dsc$w_length = len;
-    str_desc.dsc$a_pointer = (char *)fname;
-    SYS$FILESCAN(&str_desc, &zero, &flags.i);
-    if (flags.s.fscn$v_directory || flags.s.fscn$v_root ||
-	flags.s.fscn$v_device || flags.s.fscn$v_node)
-	return true;
-    else
-	return false;
-}
-
-/* Answer whether the file_name references the directory	*/
-/* containing the specified path (parent). 			*/
-bool
-gp_file_name_references_parent(const char *fname, unsigned len)
-{
-    int i = 0, last_sep_pos = -gp_file_name_sizeof;
-
-    /* A file name references its parent directory if it contains -. */
-    /* inside the [ ] part of the file specification */
-    while (i < len && fname[i] != ']') {
-	if (fname[i] == '.' || fname[i] == '[') {
-	    last_sep_pos = i++;
-	    continue;
-	}
-	if (fname[i++] != '-')
-	    continue;
-        if (i > last_sep_pos + 2 || (i < len &&
-		(fname[i] != '.') && fname[i] != ']')
-	   ) 
-	    continue;
-	/* have separator followed by -. or -] */
-	return true;
-    }
-    return false;
-}
-
-/* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name. The prefix directory/device is examined to	*/
-/* determine if a separator is needed and may return an empty string	*/
-const char *
-gp_file_name_concat_string(const char *prefix, uint plen)
-{
-    /*  Full VAX/VMS paths are of the form:
-
-     *    device:[root.][directory.subdirectory]filename.extension;version
-     *    logical:filename.extension;version
-     *
-     *  Roots are fairly rare and associated typically with rooted logical
-     *  names.
-     *
-     *  Examples:
-     *
-     *    DUA1:[GHOSTSCRIPT]GHOST.PS;1
-     *    THOR_DEC:[DOOF.A.B.C.D]FILE.DAT;-3
-     *    LOG:GHOST.PS  (LOG is a logical defined as DUA1:[GHOSTSCRIPT])
-     *    LOG:DOOF.DAT  (LOG is defined as DUA1, current directory is
-     *                   is used as the directory spec.)
-     *
-     */
-    if (plen > 0)
-	switch (prefix[plen - 1]) {
-	    case ':':
-	    case ']':
-		return "";
-	};
-    return ":";
-}
-#endif
 
 /* ------ Wild card file search procedures ------ */
 
@@ -603,6 +517,9 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
     uint rlen, flen1 = flen, plen1 = plen;
     const char *fname1 = fname;
 
+   if ( plen > 0 && prefix[plen-1] == '\0' )
+     plen--;
+   
     if (plen == 0 && flen == 0) {
 	/* Not sure that we need this case. */
 	if (*blen == 0)
@@ -651,21 +568,34 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
    if ( memchr( prefix , '[' , plen ) == 0 &&
 	memchr( prefix , '.' , plen ) == 0 )
      {
-	if (plen + flen + 2 > *blen)
-	    return gp_combine_small_buffer;
-	memcpy(buffer, prefix, plen);
-	memcpy(buffer + plen , ":" , 1 );
-	memcpy(buffer + plen + 1, fname, flen);
-	if ( memchr( fname , '.' , flen ) != 0 )
+	char* tmp_prefix;
+	int tmp_plen;
+	
+	if ( prefix[0] == '/' )
 	  {
-	     buffer[plen + flen + 1] = 0;
-	     *blen = plen + flen + 1;
+	     tmp_prefix = prefix + 1;
+	     tmp_plen = plen - 1;
 	  }
 	else
 	  {
-	     memcpy(buffer + plen + flen + 1 , "." , 1 );
-	     buffer[plen + flen + 2] = 0;
-	     *blen = plen + flen + 2;
+	     tmp_prefix = prefix;
+	     tmp_plen = plen;
+	  }
+	if ( tmp_plen + flen + 2 > *blen)
+	    return gp_combine_small_buffer;
+	memcpy(buffer, tmp_prefix, tmp_plen);
+	memcpy(buffer + tmp_plen , ":" , 1 );
+	memcpy(buffer + tmp_plen + 1, fname, flen);
+	if ( memchr( fname , '.' , flen ) != 0 )
+	  {
+	     buffer[ tmp_plen + flen + 1] = 0;
+	     *blen = tmp_plen + flen + 1;
+	  }
+	else
+	  {
+	     memcpy(buffer + tmp_plen + flen + 1 , "." , 1 );
+	     buffer[ tmp_plen + flen + 2] = 0;
+	     *blen = tmp_plen + flen + 2;
 	  }
 	return gp_combine_success;
      }
@@ -680,5 +610,26 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
         plen1 = plen - 1;
     return gp_file_name_combine_generic(prefix, plen1, 
 	    fname1, flen1, no_sibling, buffer, blen);
+}
+
+/* ------ Font enumeration ------ */
+ 
+ /* This is used to query the native os for a list of font names and
+  * corresponding paths. The general idea is to save the hassle of
+  * building a custom fontmap file.
+  */
+ 
+void *gp_enumerate_fonts_init(gs_memory_t *mem)
+{
+    return NULL;
+}
+         
+int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
+{
+    return 0;
+}
+                         
+void gp_enumerate_fonts_free(void *enum_state)
+{
 }
 

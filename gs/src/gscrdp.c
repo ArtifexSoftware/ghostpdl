@@ -24,9 +24,7 @@
 #include "gscolor2.h"		/* for gs_set/currentcolorrendering */
 #include "gscrdp.h"
 #include "gxarith.h"
-
 #include "gxdevcli.h"   /* make the device pointer real for memory access */
-
 /* ---------------- Writing ---------------- */
 
 /* Internal procedures for writing parameter values. */

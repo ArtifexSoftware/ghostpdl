@@ -14,8 +14,10 @@ dnl --------------------------------------------------
 
 dnl AC_PROG_CC likes to add '-g -O2' to CFLAGS. however,
 dnl we ignore those flags and construct our own.
+save_cflags=$CFLAGS
 AC_PROG_CC
 AC_PROG_CPP
+CFLAGS=$save_cflags
 
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
@@ -31,10 +33,11 @@ if test $ac_cv_prog_gcc = yes; then
 -Wmissing-declarations -Wmissing-prototypes \
 -Wcast-qual -Wwrite-strings \
 -fno-builtin -fno-common"
+    optflags_to_try="-O2"
 else
     cflags_to_try=
+    optflags_to_try="-O"
 fi
-optflags_to_try="-O2"
 	
 AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
@@ -86,7 +89,7 @@ dnl the flags we care about
 if test "$ac_cv_c_const" != yes; then
 	GCFLAGS="$GCFLAGS -Dconst="
 fi
-if test "$ac_cv_header_stdint_h" == yes; then
+if test "$ac_cv_header_stdint_h" = yes; then
 	GCFLAGS="$GCFLAGS -DHAVE_STDINT_H"
 fi
 
@@ -149,6 +152,15 @@ else
 fi
 AC_SUBST(SHARE_LIBJPEG)
 AC_SUBST(LIBJPEGDIR)
+dnl check for the internal jpeg memory header
+AC_MSG_CHECKING([for jmemsys.h])
+if test -r $LIBJPEGDIR/jmemsys.h; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+  AC_DEFINE([DONT_HAVE_JMEMSYS_H], 1, 
+    [define if the libjpeg memory system prototypes aren't available])
+fi
 
 dnl these are technically optional
 
@@ -223,7 +235,7 @@ SHARE_JBIG2=0
 JBIG2DEVS=''
 if test x$with_jbig2dec != xno; then
   AC_MSG_CHECKING([for local jbig2dec library source])
-  for d in jbig2dec jbig2dec-0.2; do
+  for d in jbig2dec jbig2dec-0.2 jbig2dec-0.3; do
     test -d "$d" && JBIG2DIR=$d && break
   done
   if test "x$JBIG2DIR" != xsrc; then
@@ -239,9 +251,10 @@ if test x$with_jbig2dec != xno; then
   fi
 fi
 if test x$with_jbig2dec != xno; then
-  JBIG2DEVS='$(PSD)jbig2.dev'
   if test x$ac_cv_header_stdint_h != xyes; then
     AC_MSG_WARN([JBIG2 support requires stdint types which do not seem to be available.])
+  else
+    JBIG2DEVS='$(PSD)jbig2.dev'
   fi
 fi
 
@@ -251,13 +264,23 @@ AC_SUBST(JBIG2DEVS)
 
 dnl optional X11 for display devices
 AC_PATH_XTRA
+XLIBS=''
 if test x"$no_x" = x"yes"; then
 	AC_MSG_NOTICE([disabling X11 output devices])
 	X11DEVS=''
 else
+	# enable X11 output devices
 	X11DEVS='$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev'
+	# the makefile wants a list of just the library names in XLIBS
+	for item in -lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS; do
+		stripped=`echo "$item" | sed -e 's/-l//'`
+		if test "x$stripped" != "x$item"; then
+			XLIBS="$XLIBS $stripped"
+		fi
+	done
 fi
 AC_SUBST(X11DEVS)
+AC_SUBST(XLIBS)
 
 dnl executible name
 AC_ARG_WITH(gs, AC_HELP_STRING([--with-gs=NAME],

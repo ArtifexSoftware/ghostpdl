@@ -18,7 +18,7 @@
  * Should work for Windows, OS/2, Linux, Mac.
  *
  * DLL exported functions should be as similar as possible to imain.c
- * You will need to include "errors.h".
+ * You will need to include "ierrors.h".
  *
  * Current problems:
  * 1. Ghostscript does not support multiple instances.
@@ -42,7 +42,58 @@
 #ifndef iapi_INCLUDED
 #  define iapi_INCLUDED
 
-#include "gs_dll_call.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(_WINDOWS_) || defined(__WINDOWS__)
+# ifndef _Windows
+#  define _Windows
+# endif
+#endif
+
+#ifdef _Windows
+# ifndef GSDLLEXPORT
+#  define GSDLLEXPORT __declspec(dllexport)
+# endif
+# ifndef GSDLLAPI
+#  define GSDLLAPI __stdcall
+# endif
+# ifndef GSDLLCALL
+#  define GSDLLCALL __stdcall
+# endif
+#endif  /* _Windows */
+
+#if defined(OS2) && defined(__IBMC__)
+# ifndef GSDLLAPI
+#  define GSDLLAPI _System
+# endif
+# ifndef GSDLLCALL
+#  define GSDLLCALL _System
+# endif
+#endif	/* OS2 && __IBMC */
+
+#ifdef __MACOS__
+# pragma export on
+#endif
+
+#ifndef GSDLLEXPORT
+# define GSDLLEXPORT
+#endif
+#ifndef GSDLLAPI
+# define GSDLLAPI
+#endif
+#ifndef GSDLLCALL
+# define GSDLLCALL
+#endif
+
+#if defined(__IBMC__)
+# define GSDLLAPIPTR * GSDLLAPI
+# define GSDLLCALLPTR * GSDLLCALL
+#else
+# define GSDLLAPIPTR GSDLLAPI *
+# define GSDLLCALLPTR GSDLLCALL * 
+#endif
 
 #ifndef gs_main_instance_DEFINED
 # define gs_main_instance_DEFINED
@@ -242,6 +293,10 @@ typedef void (GSDLLAPIPTR PFN_gsapi_set_visual_tracer)
 
 #ifdef __MACOS__
 #pragma export off
+#endif
+
+#ifdef __cplusplus
+} /* extern 'C' protection */
 #endif
 
 #endif /* iapi_INCLUDED */

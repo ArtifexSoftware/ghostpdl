@@ -525,6 +525,8 @@ gx_device_fill_in_procs(register gx_device * dev)
 	dev->color_info.opmode = GX_CINFO_OPMODE_NOT;
 
     fill_dev_proc(dev, pattern_manage, gx_default_pattern_manage);
+    fill_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
+    fill_dev_proc(dev, include_color_space, gx_default_include_color_space);
 }
 
 int
@@ -671,6 +673,22 @@ gx_default_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 int
 gx_default_pattern_manage(gx_device *pdev, gx_bitmap_id id,
 		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{
+    return 0;
+}
+
+int
+gx_default_fill_rectangle_hl_color(gx_device *pdev, 
+    const gs_fixed_rect *rect, 
+    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
+{
+    return_error(pdev->memory, gs_error_rangecheck);
+}
+
+int
+gx_default_include_color_space(gx_device *pdev, gs_color_space *cspace, 
+	const byte *res_name, int name_length)
 {
     return 0;
 }

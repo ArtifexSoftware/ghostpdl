@@ -24,6 +24,7 @@
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsutil.h"
 #include "windows_.h"
 
@@ -77,69 +78,6 @@ const char gp_fmode_binary_suffix[] = "b";
 const char gp_fmode_rb[] = "rb";
 const char gp_fmode_wb[] = "wb";
 
-#if !NEW_COMBINE_PATH
-/* Answer whether a path_string can meaningfully have a prefix applied */
-bool
-gp_pathstring_not_bare(const char *fname, unsigned len)
-{   /* A file name is not bare if it contains a drive specifications	*/
-    /* (second character is a :) or if it starts with a '.', '/' or '\\'*/
-    /* or it contains '/../' (parent reference)				*/
-    if ((len > 0) && ((*fname == '/') || (*fname == '\\') ||
-	  (*fname == '.') || ((len > 2) && (fname[1] == ':'))))
-	return true;
-    while (len-- > 3) {
-        int c = *fname++;
-
-	if (((c == '/') || (c == '\\')) &&
-	    ((len >= 3) && (bytes_compare(fname, 2, "..", 2) == 0) &&
-			((fname[2] == '/') || (fname[2] == '\\'))))
-	    return true;
-    }
-    return false;
-}
-
-/* Answer whether the file_name references the directory	*/
-/* containing the specified path (parent). 			*/
-bool
-gp_file_name_references_parent(const char *fname, unsigned len)
-{
-    int i = 0, last_sep_pos = -1;
-
-    /* A file name references its parent directory if it starts */
-    /* with ../ or ..\  or if one of these strings follows / or \ */
-    while (i < len) {
-	if (fname[i] == '/' || fname[i] == '\\') {
-	    last_sep_pos = i++;
-	    continue;
-	}
-	if (fname[i++] != '.')
-	    continue;
-        if (i > last_sep_pos + 2 || (i < len && fname[i] != '.'))
-	    continue;
-	i++;
-	/* have separator followed by .. */
-	if (i < len && (fname[i] == '/' || fname[i++] == '\\'))
-	    return true;
-    }
-    return false;
-}
-
-/* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name.  The file name is known to not be absolute. */
-const char *
-gp_file_name_concat_string(const char *prefix, uint plen)
-{
-    if (plen > 0)
-	switch (prefix[plen - 1]) {
-	    case ':':
-	    case '/':
-	    case '\\':
-		return "";
-	};
-    return "/";
-}
-#endif
-
 /* ------ File enumeration ------ */
 
 struct file_enum_s {
@@ -157,7 +95,8 @@ gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
 		    file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern);
 
 /* Initialize an enumeration.  Note that * and ? in a directory */
-/* don't work, and \ is taken literally unless a second \ follows. */
+/* don't work with the OS call currently used. The '\' escape	*/
+/* character is removed for the 'Find...File' function.		*/
 file_enum *
 gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 {
@@ -165,34 +104,35 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     int pat_size = 2 * patlen + 1;
     char *pattern;
     int hsize = 0;
-    int i;
+    int i, j;
 
     if (pfen == 0)
 	return 0;
-
     /* pattern could be allocated as a string, */
     /* but it's simpler for GC and freeing to allocate it as bytes. */
-
     pattern = (char *)gs_alloc_bytes(mem, pat_size,
 				     "gp_enumerate_files(pattern)");
     if (pattern == 0)
 	return 0;
-    memcpy(pattern, pat, patlen);
-    /* find directory name = header */
-    for (i = 0; i < patlen; i++) {
-	switch (pat[i]) {
-	    case '\\':
-		if (i + 1 < patlen && pat[i + 1] == '\\')
+    /* translate the template into a pattern discarding the escape  */
+    /* char '\' (not needed by the OS Find...File logic). Note that */
+    /* a final '\' in the string is also discarded.		    */
+    for (i = 0, j=0; i < patlen; i++) {
+	if (pat[i] == '\\') {
 		    i++;
-		/* falls through */
-	    case ':':
-	    case '/':
+	    if (i == patlen)
+		break;		/* '\' at end ignored */
+	}
+	pattern[j++]=pat[i];
+    }
+    /* Scan for last path separator to determine 'head_size' (directory part) */
+    for (i = 0; i < j; i++) {
+	if(pattern[i] == '/' || pattern[i] == '\\' || pattern[i] == ':')
 		hsize = i + 1;
 	}
-    }
-    pattern[patlen] = 0;
+    pattern[j] = 0;
     pfen->pattern = pattern;
-    pfen->patlen = patlen;
+    pfen->patlen = j;
     pfen->pat_size = pat_size;
     pfen->head_size = hsize;
     pfen->memory = mem;
@@ -224,7 +164,8 @@ gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uin
               }
           }
         if ( strcmp(".",  pfen->find_data.cFileName)
-          && strcmp("..", pfen->find_data.cFileName))
+          && strcmp("..", pfen->find_data.cFileName)
+	  && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
             break;
       } 
    

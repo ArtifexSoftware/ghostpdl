@@ -14,7 +14,7 @@
 /* Object locating and validating for Ghostscript memory manager */
 #include "ghost.h"
 #include "memory_.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gsexit.h"
 #include "gsstruct.h"
 #include "iastate.h"

@@ -28,6 +28,7 @@
 #include "gxcmap.h"
 #include "gxdevcli.h"
 #include "gsovrc.h"
+#include "stream.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -45,6 +46,7 @@ private cs_proc_remap_color(gx_remap_Separation);
 private cs_proc_install_cspace(gx_install_Separation);
 private cs_proc_set_overprint(gx_set_overprint_Separation);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_Separation);
+private cs_proc_serialize(gx_serialize_Separation);
 const gs_color_space_type gs_color_space_type_Separation = {
     gs_color_space_index_Separation, true, false,
     &st_color_space_Separation, gx_num_components_1,
@@ -54,7 +56,8 @@ const gs_color_space_type gs_color_space_type_Separation = {
     gx_concretize_Separation, gx_remap_concrete_Separation,
     gx_remap_Separation, gx_install_Separation,
     gx_set_overprint_Separation,
-    gx_adjust_cspace_Separation, gx_no_adjust_color_count
+    gx_adjust_cspace_Separation, gx_no_adjust_color_count,
+    gx_serialize_Separation
 };
 
 /* GC procedures */
@@ -238,6 +241,7 @@ gs_cspace_build_Separation(
     return 0;
 }
 
+#if 0 /* Unused; Unsupported by gx_serialize_device_n_map. */
 /*
  * Set the tint transformation procedure used by a Separation color space.
  */
@@ -262,6 +266,7 @@ gs_cspace_set_sepr_proc(gs_color_space * pcspace,
 
     return 0;
 }
+#endif
 
 /*
  * Set the Separation tint transformation procedure to a Function.
@@ -314,10 +319,17 @@ gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
 {
+    int code = 0;
+
     if (pcs->params.separation.sep_type != SEP_NONE)
-	return gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
+	code = gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
+    else {
     color_set_null(pdc);
-    return 0;
+    }
+    /* Save original color space and color info into dev color */
+    pdc->ccolor.paint.values[0] = pcc->paint.values[0];
+    pdc->ccolor_valid = true;
+    return code;
 }
 
 private int
@@ -474,3 +486,27 @@ typedef ulong gs_separation;	/* BOGUS */
  * cmap_proc procedure directly).  Some care will be required for the
  * implicit temporary resetting of the color space in [color]image.
  */
+
+/* ---------------- Serialization. -------------------------------- */
+
+private int 
+gx_serialize_Separation(const gs_color_space * pcs, stream * s)
+{
+    const gs_separation_params * p = &pcs->params.separation;
+    uint n;
+    int code = gx_serialize_cspace_type(pcs, s);
+
+    if (code < 0)
+	return code;
+    code = sputs(s, (byte *)&p->sep_name, sizeof(p->sep_name), &n);
+    if (code < 0)
+	return code;
+    code = cs_serialize((const gs_color_space *)&p->alt_space, s);
+    if (code < 0)
+	return code;
+    code = gx_serialize_device_n_map(pcs, p->map, s);
+    if (code < 0)
+	return code;
+    return sputs(s, (byte *)&p->sep_type, sizeof(p->sep_type), &n);
+    /* p->use_alt_cspace isn't a property of the space. */
+}

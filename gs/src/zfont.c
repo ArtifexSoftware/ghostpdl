@@ -41,7 +41,20 @@ bool
 zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
     return (glyph >= gs_min_cid_glyph || glyph == gs_no_glyph ? false :
-	    name_mark_index(mem, (uint) glyph));
+	    name_mark_index((uint) glyph));
+}
+
+/* Get a global glyph code.  */
+private int 
+zfont_global_glyph_code(gs_const_string *gstr, gs_glyph *pglyph)
+{
+    ref v;
+    int code = name_ref(gstr->data, gstr->size, &v, 0);
+
+    if (code < 0)
+	return code;
+    *pglyph = (gs_glyph)name_index(&v);
+    return 0;
 }
 
 /* Initialize the font operators */
@@ -50,6 +63,7 @@ zfont_init(i_ctx_t *i_ctx_p)
 {
     ifont_dir = gs_font_dir_alloc2(imemory, imemory->non_gc_memory);
     ifont_dir->ccache.mark_glyph = zfont_mark_glyph_name;
+    ifont_dir->global_glyph_code = zfont_global_glyph_code;
     return gs_register_struct_root(imemory, NULL, (void **)&ifont_dir,
 				   "ifont_dir");
 }
@@ -430,6 +444,8 @@ purge_if_name_removed(const gs_memory_t *mem, cached_char * cc, void *vsave)
 {
     return alloc_name_index_is_since_save(mem, cc->code, vsave);
 }
+
+/* Remove entries from font and character caches. */
 void
 font_restore(const alloc_save_t * save)
 {

@@ -36,6 +36,8 @@
 /* Current ProcSet version */
 #define PSWRITE_PROCSET_VERSION 1
 
+/* Guaranteed size of operand stack accoeding to PLRM */
+#define MAXOPSTACK 500
 
 private int psw_open_printer(gx_device * dev);
 private int psw_close_printer(gx_device * dev);
@@ -172,7 +174,10 @@ const gx_device_pswrite gs_epswrite_device = {
 /* Vector device implementation */
 private int
     psw_beginpage(gx_device_vector * vdev),
-    psw_setcolors(gx_device_vector * vdev, const gx_drawing_color * pdc),
+    psw_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
+                  const gx_drawing_color * pdc),
+    psw_setcolors(gx_device_vector * vdev, const gs_imager_state * pis, 
+                  const gx_drawing_color * pdc),
     psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 	       fixed y1, gx_path_type_t type),
     psw_beginpath(gx_device_vector * vdev, gx_path_type_t type),
@@ -198,6 +203,7 @@ private const gx_device_vector_procs psw_vector_procs = {
     psdf_setflat,
     psdf_setlogop,
 	/* Other state */
+    psw_can_handle_hl_color,
     psw_setcolors,		/* fill & stroke colors are the same */
     psw_setcolors,
 	/* Paths */
@@ -678,14 +684,24 @@ psw_beginpage(gx_device_vector * vdev)
     return 0;
 }
 
+
 private int
-psw_setcolors(gx_device_vector * vdev, const gx_drawing_color * pdc)
+psw_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1, 
+              const gx_drawing_color * pdc)
 {
+    return false; /* High level color is not implemented yet. */
+}
+
+private int
+psw_setcolors(gx_device_vector * vdev, const gs_imager_state * pis1, 
+              const gx_drawing_color * pdc)
+{
+    const gs_imager_state * pis = NULL; /* High level color is not implemented yet. */
     if (!gx_dc_is_pure(pdc))
 	return_error(vdev->memory, gs_error_rangecheck);
     /* PostScript only keeps track of a single color. */
-    gx_saved_color_update(&vdev->saved_fill_color, pdc);
-    gx_saved_color_update(&vdev->saved_stroke_color, pdc);
+    gx_hld_save_color(pis, pdc, &vdev->saved_fill_color);
+    gx_hld_save_color(pis, pdc, &vdev->saved_stroke_color);
     {
 	stream *s = gdev_vector_stream(vdev);
 	gx_color_index color = gx_dc_pure_color(pdc);
@@ -813,7 +829,12 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	stream *s = gdev_vector_stream(vdev);
 	gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
-	if (pdev->path_state.num_points > 0 &&
+	if (pdev->path_state.num_points > MAXOPSTACK / 2 - 10) {
+ 	    stream_puts(s, (pdev->path_state.move ? "P\n" : "p\n"));
+            pdev->path_state.num_points = 0;
+            pdev->path_state.move = 0;
+        }
+        else if (pdev->path_state.num_points > 0 &&
 	    !(pdev->path_state.num_points & 7)
 	    )
 	    stream_putc(s, '\n');	/* limit line length for DSC compliance */
@@ -1188,9 +1209,9 @@ psw_copy_mono(gx_device * dev, const byte * data,
 	((gx_device *) vdev->bbox_device, data, data_x, raster, id,
 	 x, y, w, h, zero, one);
     if (one == gx_no_color_index) {
-	color_set_pure(&color, zero);
+	set_nonclient_dev_color(&color, zero);
 	code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
-					     &color);
+					     NULL, &color);
 	op = "If";
     } else if (zero == vdev->black && one == vdev->white)
 	op = "1 I";
@@ -1200,9 +1221,9 @@ psw_copy_mono(gx_device * dev, const byte * data,
 	    if (code < 0)
 		return code;
 	}
-	color_set_pure(&color, one);
+	set_nonclient_dev_color(&color, one);
 	code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
-					     &color);
+					     NULL, &color);
 	op = ",";
     }
     if (code < 0)
@@ -1341,7 +1362,7 @@ psw_fill_mask(gx_device * dev,
      */
     if (depth > 1 ||
 	gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
-	gdev_vector_update_fill_color(vdev, pdcolor) < 0 ||
+	gdev_vector_update_fill_color(vdev, NULL, pdcolor) < 0 ||
 	gdev_vector_update_log_op(vdev, lop) < 0
 	)
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
@@ -1376,7 +1397,7 @@ psw_begin_image(gx_device * dev,
     gdev_vector_image_enum_t *pie;
     const gs_color_space *pcs = pim->ColorSpace;
     const gs_color_space *pbcs = pcs;
-    const char *base_name;
+    const char *base_name = NULL;
     gs_color_space_index index;
     int num_components;
     bool binary = pdev->binary_ok;

@@ -85,7 +85,9 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_get_color_comp_index,
   gx_forward_encode_color,
   gx_forward_decode_color,
-  gx_forward_pattern_manage
+  gx_forward_pattern_manage,
+  gx_forward_fill_rectangle_hl_color,
+  gx_forward_include_color_space
  }
 };
 
@@ -211,6 +213,8 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
     FIT_MASK_COPY(pccd->data, pccd->sourcex, pccd->raster,
 		  pccd->x, pccd->y, pccd->w, pccd->h);
     tile_row = cdev->tiles.data + my0 * cdev->tiles.raster + (mx0 >> 3);
+    prev.p.x = 0;	/* arbitrary */
+    prev.q.x = prev.p.x - 1;	/* an impossible rectangle */
     prev.p.y = prev.q.y = -1;	/* arbitrary */
     for (cy = my0; cy < my1; cy++) {
 	int cx = mx0;

@@ -187,7 +187,7 @@ typedef struct gs_cmap_procs_s {
      * Check if the cmap is identity.
      */
 
-    bool (*is_identity)(const gs_memory_t *mem, const gs_cmap_t *pcmap);
+    bool (*is_identity)(const gs_memory_t *mem, const gs_cmap_t *pcmap, int font_index_only);
 
 } gs_cmap_procs_t;
 
@@ -293,7 +293,7 @@ int gs_cmap_enum_next_entry(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penu
  * Initialize a just-allocated CMap, to ensure that all pointers are clean
  * for the GC.  Note that this only initializes the common part.
  */
-void gs_cmap_init(const gs_memory_t *mem, gs_cmap_t *pcmap);
+void gs_cmap_init(const gs_memory_t *mem, gs_cmap_t *pcmap, int num_fonts);
 
 /*
  * Allocate and initialize (the common part of) a CMap.
@@ -316,13 +316,13 @@ void gs_cmap_lookups_enum_setup(gs_cmap_lookups_enum_t *penum,
 /* 
  * Check for identity CMap. Uses a fast check for special cases.
  */
-bool gs_cmap_is_identity(const gs_memory_t *mem, const gs_cmap_t *pcmap);
+bool gs_cmap_is_identity(const gs_memory_t *mem, const gs_cmap_t *pcmap, int font_index_only);
 
 /* 
  * For a random CMap, compute whether it is identity.
  * It is not applicable to gs_cmap_ToUnicode_t due to
  * different sizes of domain keys and range values.
  */
-bool gs_cmap_compute_identity(const gs_memory_t *mem, const gs_cmap_t *pcmap);
+bool gs_cmap_compute_identity(const gs_memory_t *mem, const gs_cmap_t *pcmap, int font_index_only);
 
 #endif /* gxfcmap_INCLUDED */

@@ -30,6 +30,16 @@ currentglobal true setglobal
 %END_RESOURCE
 .EndResource
 
+/StandardEncoding .BeginResource
+%% Replace 0 (../Resource/Decoding/StandardEncoding)
+%END_RESOURCE
+.EndResource
+
+/Latin1 .BeginResource
+%% Replace 0 (../Resource/Decoding/Latin1)
+%END_RESOURCE
+.EndResource
+
 .StaticResourcesEnd
 %END_DECODING_CATEGORY
 
@@ -39,7 +49,7 @@ currentglobal true setglobal
 
 (%END_CMAP_CATEGORY) 20 /CMap .StaticResourcesBeg
 
-%------The following CMaps are used for for geberating CIDDecoding resources --------
+%------The following CMaps are used for for generating CIDDecoding resources --------
 
 /90ms-RKSJ-H .BeginResource
 %% Replace%0 (../Resource/CMap/90ms-RKSJ-H)
@@ -138,10 +148,33 @@ currentglobal true setglobal
 %END_RESOURCE
 .EndResource
 
-%------End of CMaps used for for geberating CIDDecoding resources --------
+%------End of CMaps used for for generating CIDDecoding resources --------
 
 .StaticResourcesEnd
-%%END_CMAP_CATEGORY
+%END_CMAP_CATEGORY
+
+%========== ColorSpace category =======================================================
+
+(%END_CSPACE_CATEGORY) 1 /ColorSpace .StaticResourcesBeg
+
+/DefaultGray .BeginResource
+%% Replace 0 (../Resource/ColorSpace/DefaultGray)
+%END_RESOURCE
+.EndResource
+
+/DefaultRGB .BeginResource
+%% Replace 0 (../Resource/ColorSpace/DefaultRGB)
+%END_RESOURCE
+.EndResource
+
+/DefaultCMYK .BeginResource
+%% Replace 0 (../Resource/ColorSpace/DefaultCMYK)
+%END_RESOURCE
+.EndResource
+
+.StaticResourcesEnd
+%END_CSPACE_CATEGORY
+
 
 end % StaticCategoryRedefiner
 setglobal

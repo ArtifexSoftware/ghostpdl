@@ -71,9 +71,15 @@ case 9: switch (pdfont->FontType) {
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
  case ft_CID_encrypted:
-     ENUM_RETURN(0);
  case ft_CID_TrueType:
      ENUM_RETURN(pdfont->u.cidfont.CIDToGIDMap);
+ default:
+     ENUM_RETURN(0);
+}
+case 10: switch (pdfont->FontType) {
+ case ft_CID_encrypted:
+ case ft_CID_TrueType:
+     ENUM_RETURN(pdfont->u.cidfont.parent);
  default:
      ENUM_RETURN(0);
 }
@@ -101,11 +107,11 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 	RELOC_VAR(pdfont->u.simple.s.type3.char_procs);
 	break;
     case ft_CID_encrypted:
+    case ft_CID_TrueType:
 	RELOC_VAR(pdfont->u.cidfont.Widths2);
 	RELOC_VAR(pdfont->u.cidfont.v);
-	/* falls through */
-    case ft_CID_TrueType:
 	RELOC_VAR(pdfont->u.cidfont.CIDToGIDMap);
+	RELOC_VAR(pdfont->u.cidfont.parent);
 	break;
     default:
 	RELOC_VAR(pdfont->u.simple.Encoding);
@@ -236,7 +242,7 @@ scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
 
 	    if (i >= 0 && pdf_standard_fonts(pdev)[i].pdfont == 0) {
 		pdf_font_resource_t *pdfont;
-		int code = pdf_font_std_alloc(pdev, &pdfont, orig->id, obfont,
+		int code = pdf_font_std_alloc(pdev, &pdfont, true, orig->id, obfont,
 					      i);
 
 		if (code < 0)
@@ -285,6 +291,20 @@ pdf_standard_fonts(const gx_device_pdf *pdev)
 /* ---------------- Font resources ---------------- */
 
 /* ------ Private ------ */
+
+
+private int pdf_resize_array(gs_memory_t *mem, void **p, int elem_size, int old_size, int new_size)
+{
+    void *q = gs_alloc_byte_array(mem, new_size, elem_size, "pdf_resize_array");
+
+    if (q == NULL)
+	return_error(mem, gs_error_VMerror);
+    memset((char *)q + elem_size * old_size, 0, elem_size * (new_size - old_size));
+    memcpy(q, *p, elem_size * old_size);
+    gs_free_object(mem, *p, "pdf_resize_array");
+    *p = q;
+    return 0;
+}
 
 /*
  * Allocate and (minimally) initialize a font resource.
@@ -350,7 +370,7 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
     if (code < 0)
 	return code;
-    pfres->u.simple.FirstChar = 0;
+    pfres->u.simple.FirstChar = 256;
     pfres->u.simple.LastChar = -1;
     pfres->u.simple.BaseEncoding = -1;
     *ppfres = pfres;
@@ -417,6 +437,48 @@ set_is_MM_instance(pdf_font_resource_t *pdfont, const gs_font_base *pfont)
 }
 
 /* ------ Generic public ------ */
+
+/* Resize font resource arrays. */
+int 
+pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, int chars_count)
+{
+    /* This function fixes CID fonts that provide a lesser CIDCount than
+       CIDs used in a document. Rather PS requires to print CID=0,
+       we need to provide a bigger CIDCount since we don't 
+       re-encode the text. The text should look fine if the 
+       viewer application substitutes the font. */
+    gs_memory_t *mem = pdev->pdf_memory;
+    int code;
+    
+    if (chars_count < pfres->count)
+	return 0;
+    if (pfres->Widths != NULL) {
+	code = pdf_resize_array(mem, (void **)&pfres->Widths, sizeof(*pfres->Widths), 
+		    pfres->count, chars_count);    
+	if (code < 0)
+	    return code;
+    }
+    code = pdf_resize_array(mem, (void **)&pfres->used, sizeof(*pfres->used), 
+		    (pfres->count + 7) / 8, (chars_count + 7) / 8);    
+    if (code < 0)
+	return code;
+    if (pfres->FontType == ft_CID_encrypted || pfres->FontType == ft_CID_TrueType) {
+	if (pfres->u.cidfont.v != NULL) {
+	    code = pdf_resize_array(mem, (void **)&pfres->u.cidfont.v, 
+		    sizeof(*pfres->u.cidfont.v), pfres->count * 2, chars_count * 2);    
+	    if (code < 0)
+		return code;
+	}
+	if (pfres->u.cidfont.Widths2 != NULL) {
+	    code = pdf_resize_array(mem, (void **)&pfres->u.cidfont.Widths2, 
+		    sizeof(*pfres->u.cidfont.Widths2), pfres->count, chars_count);    
+	    if (code < 0)
+		return code;
+	}
+    }
+    pfres->count = chars_count;
+    return 0;
+}
 
 /* Get the object ID of a font resource. */
 long
@@ -501,7 +563,8 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     const byte *chars = fn->chars;
     uint size = fn->size;
     int index = pdf_find_standard_font_name(chars, size);
-    bool embed_as_standard_called = false, do_embed_as_standard;
+    bool embed_as_standard_called = false;
+    bool do_embed_as_standard = false; /* Quiet compiler. */
 
     /*
      * The behavior of Acrobat Distiller changed between 3.0 (PDF 1.2),
@@ -557,7 +620,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 	if (code < 0)
 	    return code;
 	fname = pdsubf->BaseFont;
-	if (pdsubf->FontType == ft_CID_encrypted)
+	if (pdsubf->FontType == ft_CID_encrypted || pdsubf->FontType == ft_CID_TrueType)
 	    extra = 1 + pdfont->u.type0.CMapName.size;
     }
     else if (pdfont->FontDescriptor == 0) {
@@ -576,6 +639,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 	if (extra) {
 	    data[size] = '-';
 	    memcpy(data + size + 1, pdfont->u.type0.CMapName.data, extra - 1);
+	    size += extra;
 	}
 	break;
     case ft_encrypted:
@@ -612,7 +676,8 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
     /* Compute names for subset fonts. */
     if (finish && pdfont->FontDescriptor != NULL &&
 	pdf_font_descriptor_is_subset(pdfont->FontDescriptor) &&
-	!pdf_has_subset_prefix(fname.data, fname.size)
+	!pdf_has_subset_prefix(fname.data, fname.size) &&
+	pdf_font_descriptor_embedding(pdfont->FontDescriptor)
 	) {
 	int code = pdf_add_subset_prefix(pdev, &fname, pdfont->used, pdfont->count);
 
@@ -622,7 +687,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 	/* Don't write a UID for subset fonts. */
 	uid_set_invalid(&pdf_font_resource_font(pdfont, false)->UID);
     }
-    if (pdsubf->FontDescriptor)
+    if (pdfont->FontType != ft_composite && pdsubf->FontDescriptor)
 	*pdf_font_descriptor_name(pdsubf->FontDescriptor) = fname;
     return 0;
 }
@@ -632,13 +697,15 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 /* Allocate a Type 0 font resource. */
 int
 pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		     gs_id rid, pdf_font_resource_t *DescendantFont)
+		     gs_id rid, pdf_font_resource_t *DescendantFont, 
+		     const gs_const_string *CMapName)
 {
     int code = font_resource_alloc(pdev, ppfres, resourceFont, rid,
 				   ft_composite, 0, pdf_write_contents_type0);
 
     if (code >= 0) {
 	(*ppfres)->u.type0.DescendantFont = DescendantFont;
+	(*ppfres)->u.type0.CMapName = *CMapName;
 	code = pdf_compute_BaseFont(pdev, *ppfres, false);
     }
     return code;    
@@ -660,23 +727,26 @@ pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 /* Allocate a standard (base 14) font resource. */
 int
 pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		   gs_id rid, gs_font_base *pfont, int index)
+		   bool is_original, gs_id rid, gs_font_base *pfont, int index)
 {
     pdf_font_resource_t *pdfont;
     int code = font_resource_encoded_alloc(pdev, &pdfont, rid, pfont->FontType,
 					   pdf_write_contents_std);
     const pdf_standard_font_info_t *psfi = &standard_font_info[index];
     pdf_standard_font_t *psf = &pdf_standard_fonts(pdev)[index];
+    gs_matrix *orig_matrix = (is_original ? &pfont->FontMatrix : &psf->orig_matrix);
 
     if (code < 0 ||
-	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, true, true)) < 0
+	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, orig_matrix, true, true)) < 0
 	)
 	return code;
     pdfont->BaseFont.data = (byte *)psfi->fname; /* break const */
     pdfont->BaseFont.size = strlen(psfi->fname);
     set_is_MM_instance(pdfont, pfont);
-    psf->pdfont = pdfont;
-    psf->orig_matrix = pfont->FontMatrix;
+    if (is_original) {
+	psf->pdfont = pdfont;
+	psf->orig_matrix = pfont->FontMatrix;
+    }
     *ppfres = pdfont;
     return 0;
 }
@@ -744,6 +814,7 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pdfont->u.cidfont.CIDToGIDMap = map;
     pdfont->u.cidfont.Widths2 = NULL;
     pdfont->u.cidfont.v = NULL;
+    pdfont->u.cidfont.parent = NULL;
     /*
      * Write the CIDSystemInfo now, so we don't try to access it after
      * the font may no longer be available.
@@ -801,7 +872,7 @@ pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfon
  */
 int
 pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-	       pdf_resource_t **ppres)
+	       pdf_resource_t **ppres, int font_index_only)
 {
     /*
      * We don't store any of the contents of the CMap: instead, we write
@@ -809,9 +880,10 @@ pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
      * large, we should wait, and only write the entries actually used.
      * This is a project for some future date....
      */
-    int code = pdf_alloc_resource(pdev, resourceCMap, pcmap->id, ppres, 0L);
+    int code = pdf_alloc_resource(pdev, resourceCMap, 
+		    pcmap->id + max(font_index_only, 0), ppres, 0L);
 
     if (code < 0)
 	return code;
-    return pdf_write_cmap(pdev, pcmap, *ppres);
+    return pdf_write_cmap(pdev, pcmap, *ppres, font_index_only);
 }

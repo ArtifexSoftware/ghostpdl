@@ -30,7 +30,7 @@
 #include "stdpre.h"
 #include "iapi.h"	/* Ghostscript interpreter public interface */
 #include "string_.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gscdefs.h"
 #include "gstypes.h"
 #include "iref.h"
@@ -134,6 +134,7 @@ int GSDLLEXPORT GSDLLAPI
 gsdll_exit(void)
 {
     int code = gsapi_exit(gs_main_instance_default());
+
     gsapi_delete_instance(gs_main_instance_default());
     return code;
 }

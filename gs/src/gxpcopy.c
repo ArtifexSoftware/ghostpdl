@@ -20,18 +20,14 @@
 #include "gxfarith.h"
 #include "gxistate.h"		/* for access to line params */
 #include "gzpath.h"
-
-#if !DROPOUT_PREVENTION
-#define VD_TRACE 0
-#endif
 #include "vdtrace.h"
+
+#define OLD_MONOTONIZATION 0 /* Old code - keep it for a while. */
 
 /* Forward declarations */
 private void adjust_point_to_tangent(const gs_memory_t *mem,
 				     segment *, const segment *,
 				     const gs_fixed_point *);
-private int monotonize_internal(gx_path *, const curve_segment *);
-
 /* Copy a path, optionally flattening or monotonizing it. */
 /* If the copy fails, free the new path. */
 int
@@ -78,7 +74,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 
 		    if (fixed_flatness == max_fixed) {	/* don't flatten */
 			if (options & pco_monotonize)
-			    code = monotonize_internal(ppath, pc);
+			    code = gx_curve_monotonize(ppath, pc);
 			else
 			    code = gx_path_add_curve_notes(ppath,
 				     pc->p1.x, pc->p1.y, pc->p2.x, pc->p2.y,
@@ -131,7 +127,12 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 				flat = min(flat_x, flat_y);
 			    }
 			}
-			k = gx_curve_log2_samples(ppath->memory, x0, y0, pc, flat);
+#			if CURVED_TRAPEZOID_FILL
+			    k = (options & pco_small_curves ? -1 
+				    : gx_curve_log2_samples(ppath->memory, x0, y0, pc, flat));
+#			else
+			    k = gx_curve_log2_samples(ppath->memory, x0, y0, pc, flat);
+#			endif
 			if (options & pco_accurate) {
 			    segment *start;
 			    segment *end;
@@ -148,7 +149,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 			    start = ppath->current_subpath->last;
 			    notes |= sn_not_first;
 			    cseg = *pc;
-			    code = gx_flatten_sample(ppath, k, &cseg, notes);
+			    code = gx_subdivide_curve(ppath, k, &cseg, notes);
 			    if (code < 0)
 				break;
 			    /*
@@ -168,7 +169,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 						    &pc->p2);
 			} else {
 			    cseg = *pc;
-			    code = gx_flatten_sample(ppath, k, &cseg, notes);
+			    code = gx_subdivide_curve(ppath, k, &cseg, notes);
 			}
 		    }
 		    break;
@@ -586,7 +587,11 @@ gx_curve_x_at_y(const gs_memory_t *mem, curve_cursor * prc, fixed y)
 
 /* Test whether a path is free of non-monotonic curves. */
 bool
+#if CURVED_TRAPEZOID_FILL
+gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed fixed_flat)
+#else
 gx_path_is_monotonic(const gx_path * ppath)
+#endif
 {
     const segment *pseg = (const segment *)(ppath->first_subpath);
     gs_fixed_point pt0;
@@ -605,6 +610,8 @@ gx_path_is_monotonic(const gx_path * ppath)
 	    case s_curve:
 		{
 		    const curve_segment *pc = (const curve_segment *)pseg;
+
+		    if (!CURVED_TRAPEZOID_FILL || (options & pco_monotonize)) {
 		    double t[2];
 		    int nz = gx_curve_monotonic_points(ppath->memory, pt0.y,
 					   pc->p1.y, pc->p2.y, pc->pt.y, t);
@@ -615,6 +622,18 @@ gx_path_is_monotonic(const gx_path * ppath)
 					   pc->p1.x, pc->p2.x, pc->pt.x, t);
 		    if (nz != 0)
 			return false;
+		}
+#		    if CURVED_TRAPEZOID_FILL
+			if (options & pco_small_curves) {
+			    fixed ax, bx, cx, ay, by, cy; 
+			    int k = gx_curve_log2_samples(ppath->memory, pt0.x, pt0.y, pc, fixed_flat);
+
+			    if(!curve_coeffs_ranged(pt0.x, pc->p1.x, pc->p2.x, pc->pt.x,
+				    pt0.y, pc->p1.y, pc->p2.y, pc->pt.y,
+				    &ax, &bx, &cx, &ay, &by, &cy, k))
+				return false;
+			}
+#		    endif
 		}
 		break;
 	    default:
@@ -628,11 +647,12 @@ gx_path_is_monotonic(const gx_path * ppath)
 
 /* Monotonize a curve, by splitting it if necessary. */
 /* In the worst case, this could split the curve into 9 pieces. */
-private int
-monotonize_internal(gx_path * ppath, const curve_segment * pc)
+int
+gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
 {
     fixed x0 = ppath->position.x, y0 = ppath->position.y;
     segment_notes notes = pc->notes;
+#if OLD_MONOTONIZATION
     double t[2];
 
 #define max_segs 9
@@ -709,6 +729,108 @@ monotonize_internal(gx_path * ppath, const curve_segment * pc)
     }
 
     return 0;
+#else /* OLD_MONOTONIZATION */
+    double t[4], tt = 1, tp;
+    int c[4];
+    int n0, n1, n, i, j, k = 0;
+    fixed ax, bx, cx, ay, by, cy, v01, v12;
+    fixed px, py, qx, qy, rx, ry, sx, sy;
+    const double delta = 0.0000001;
+
+    /* Roots of the derivative : */
+    n0 = gx_curve_monotonic_points(ppath->memory, x0, pc->p1.x, pc->p2.x, pc->pt.x, t);
+    n1 = gx_curve_monotonic_points(ppath->memory, y0, pc->p1.y, pc->p2.y, pc->pt.y, t + n0);
+    n = n0 + n1;
+    if (n == 0)
+	return gx_path_add_curve_notes(ppath, pc->p1.x, pc->p1.y,
+		pc->p2.x, pc->p2.y, pc->pt.x, pc->pt.y, notes);
+    if (n0 > 0)
+	c[0] = 1;
+    if (n0 > 1)
+	c[1] = 1;
+    if (n1 > 0)
+	c[n0] = 2;
+    if (n1 > 1)
+	c[n0 + 1] = 2;
+    /* Order roots : */
+    for (i = 0; i < n; i++)
+	for (j = i + 1; j < n; j++)
+	    if (t[i] > t[j]) {
+		int w;
+		double v = t[i]; t[i] = t[j]; t[j] = v;
+		w = c[i]; c[i] = c[j]; c[j] = w;
+	    }
+    /* Drop roots near zero : */
+    for (k = 0; k < n; k++)
+	if (t[k] >= delta)
+	    break;
+    /* Merge close roots, and drop roots at 1 : */
+    if (t[n - 1] > 1 - delta)
+	n--;
+    for (i = k + 1, j = k; i < n && t[k] < 1 - delta; i++)
+	if (any_abs(t[i] - t[j]) < delta) {
+	    t[j] = (t[j] + t[i]) / 2; /* Unlikely 3 roots are close. */
+	    c[j] |= c[i];
+	} else {
+	    j++;
+	    t[j] = t[i];
+	    c[j] = c[i];
+	}
+    n = j + 1;
+    /* Do split : */
+    curve_points_to_coefficients(x0, pc->p1.x, pc->p2.x, pc->pt.x, ax, bx, cx, v01, v12);
+    curve_points_to_coefficients(y0, pc->p1.y, pc->p2.y, pc->pt.y, ay, by, cy, v01, v12);
+    ax *= 3, bx *= 2; /* Coefficients of the derivative. */
+    ay *= 3, by *= 2;
+    px = x0;
+    py = y0;
+    qx = (fixed)((pc->p1.x - px) * t[0] + 0.5);
+    qy = (fixed)((pc->p1.y - py) * t[0] + 0.5);
+    tp = 0;
+    for (i = k; i < n; i++) {
+	double ti = t[i];
+	double t2 = ti * ti, t3 = t2 * ti;
+	double omt = 1 - ti, omt2 = omt * omt, omt3 = omt2 * omt;
+	double x = x0 * omt3 + 3 * pc->p1.x * omt2 * ti + 3 * pc->p2.x * omt * t2 + pc->pt.x * t3;
+	double y = y0 * omt3 + 3 * pc->p1.y * omt2 * ti + 3 * pc->p2.y * omt * t2 + pc->pt.y * t3;
+	double ddx = (c[i] & 1 ? 0 : ax * t2 + bx * ti + cx); /* Suppress noize. */
+	double ddy = (c[i] & 2 ? 0 : ay * t2 + by * ti + cy);
+	fixed dx = (fixed)(ddx + 0.5);
+	fixed dy = (fixed)(ddy + 0.5);
+	int code;
+
+	tt = (i + 1 < n ? t[i + 1] : 1) - ti;
+	rx = (fixed)(dx * (t[i] - tp) / 3 + 0.5);
+	ry = (fixed)(dy * (t[i] - tp) / 3 + 0.5);
+	sx = (fixed)(x + 0.5);
+	sy = (fixed)(y + 0.5);
+	/* Suppress the derivative sign noize near a beak : */
+	if ((double)(sx - px) * qx + (double)(sy - py) * qy < 0)
+	    qx = -qx, qy = -qy;
+	if ((double)(sx - px) * rx + (double)(sy - py) * ry < 0)
+	    rx = -rx, ry = -qy;
+	/* Do add : */
+	code = gx_path_add_curve_notes(ppath, px + qx, py + qy, sx - rx, sy - ry, sx, sy, notes);
+	if (code < 0)
+	    return code;
+	notes |= sn_not_first;
+	px = sx;
+	py = sy;
+	qx = (fixed)(dx * tt / 3 + 0.5);
+	qy = (fixed)(dy * tt / 3 + 0.5);
+	tp = t[i];
+    }
+    sx = pc->pt.x;
+    sy = pc->pt.y;
+    rx = (fixed)((pc->pt.x - pc->p2.x) * tt + 0.5);
+    ry = (fixed)((pc->pt.y - pc->p2.y) * tt + 0.5);
+    /* Suppress the derivative sign noize near peaks : */
+    if ((double)(sx - px) * qx + (double)(sy - py) * qy < 0)
+	qx = -qx, qy = -qy;
+    if ((double)(sx - px) * rx + (double)(sy - py) * ry < 0)
+	rx = -rx, ry = -qy;
+    return gx_path_add_curve_notes(ppath, px + qx, py + qy, sx - rx, sy - ry, sx, sy, notes);
+#endif /* OLD_MONOTONIZATION */
 }
 
 /*
@@ -855,6 +977,8 @@ gx_curve_monotonic_points(const gs_memory_t *mem, fixed v0, fixed v1, fixed v2, 
     }
 }
 
+#if OLD_MONOTONIZATION
+
 /*
  * Split a curve at an arbitrary point t.  The above midpoint split is a
  * special case of this with t = 0.5.
@@ -905,3 +1029,5 @@ gx_curve_split(const gs_memory_t *mem,
     compute_seg(y0, y);
 #undef compute_seg
 }
+
+#endif

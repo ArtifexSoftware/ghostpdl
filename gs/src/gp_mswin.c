@@ -678,9 +678,40 @@ gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, co
     char sTempFileName[_MAX_PATH];
 
     memset(fname, 0, gp_file_name_sizeof);
+    if (!gp_file_name_is_absolute(prefix, strlen(prefix))) {
+	int plen = sizeof(sTempDir);
+
+	if (gp_gettmpdir(sTempDir, &plen) != 0)
     l = GetTempPath(sizeof(sTempDir), sTempDir);
+	else
+	    l = strlen(sTempDir);
+    } else {
+	strncpy(sTempDir, prefix, sizeof(sTempDir));
+	prefix = "";
+	l = strlen(sTempDir);
+    }
+    /* Fix the trailing terminator so GetTempFileName doesn't get confused */
+    if (sTempDir[l-1] == '/')
+	sTempDir[l-1] = '\\';		/* What Windoze prefers */
+
     if (l <= sizeof(sTempDir)) {
 	n = GetTempFileName(sTempDir, prefix, 0, sTempFileName);
+	if (n == 0) {
+	    /* If 'prefix' is not a directory, it is a path prefix. */
+	    int l = strlen(sTempDir), i;
+
+	    for (i = l - 1; i > 0; i--) {
+		uint slen = gs_file_name_check_separator(sTempDir + i, l, sTempDir + l);
+
+		if (slen > 0) {
+		    sTempDir[i] = 0;   
+		    i += slen;
+		    break;
+		}
+	    }
+	    if (i > 0)
+		n = GetTempFileName(sTempDir, sTempDir + i, 0, sTempFileName);
+	}
 	if (n != 0) {
 	    hfile = CreateFile(sTempFileName, 
 		GENERIC_READ | GENERIC_WRITE | DELETE,
@@ -718,7 +749,7 @@ gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, co
 	}
     }
     if (f == NULL)
-	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
+	eprintf1("**** Could not open temporary file '%s'\n", fname);
     return f;
 }
 
@@ -729,3 +760,23 @@ gp_fopen(const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
+/* ------ Font enumeration ------ */
+ 
+ /* This is used to query the native os for a list of font names and
+  * corresponding paths. The general idea is to save the hassle of
+  * building a custom fontmap file.
+  */
+ 
+void *gp_enumerate_fonts_init(gs_memory_t *mem)
+{
+    return NULL;
+}
+         
+int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
+{
+    return 0;
+}
+                         
+void gp_enumerate_fonts_free(void *enum_state)
+{
+}           

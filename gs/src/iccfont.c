@@ -20,7 +20,7 @@
 #include "gsmatrix.h"
 #include "gxfont.h"		/* for ifont.h */
 #include "ccfont.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "ialloc.h"
 #include "idict.h"
 #include "ifont.h"
@@ -111,7 +111,6 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
     cfont_dict_keys * const kp = &kep->keys;
     ref kname;
     int code;
-    gs_memory_t *mem = imemory;
 
     if (pdict->value.pdict == 0) {
 	/* First time, create the dictionary. */

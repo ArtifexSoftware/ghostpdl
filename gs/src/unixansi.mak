@@ -139,7 +139,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10204
+PVERSION=10205
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -368,11 +368,16 @@ AK=
 
 # Define the compilation rules and flags.
 
+# If you system has a 64 bit type you should pass it through
+# CCFLAGS to improve support for multiple colorants. e.g.:
+#     -DGX_COLOR_INDEX_TYPE='unsigned long long'
+# or use the autoconf build, which sets this automatically.
+# If you do not define a 64 bit type, there may be some warnings
+# about oversize shifts. It's a bug if these are not harmless.
+
 CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
-CC_LEAF=$(CC_)
-CC_LEAF_PG=$(CC_)
 CC_NO_WARN=$(CC_)
 
 # ---------------- End of platform-specific section ---------------- #
@@ -388,7 +393,7 @@ include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
-# include $(GLSRCDIR)/ijs.mak # NB this needs to be an optional include
+include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak
@@ -402,6 +407,6 @@ include $(GLSRCDIR)/unixinst.mak
 distclean : clean config-clean
         -$(RM) Makefile
 
-maintainer-clean : disclean
+maintainer-clean : distclean
         # nothing special to do
 

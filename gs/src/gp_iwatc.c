@@ -124,12 +124,7 @@ gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, co
     int len = gp_file_name_sizeof - prefix_length - 7;
     FILE *f;
 
-    if (
-#if !NEW_COMBINE_PATH
-        gp_pathstring_not_bare(prefix, prefix_length) ||
-#else
-	gp_file_name_is_absolute(prefix, prefix_length) ||
-#endif
+    if (gp_file_name_is_absolute(prefix, prefix_length) ||
 	gp_gettmpdir(fname, &len) != 0
 	)
 	*fname = 0;
@@ -160,3 +155,24 @@ gp_fopen(const char *fname, const char *mode)
 {
     return fopen(fname, mode);
 }
+
+/* ------ Font enumeration ------ */
+ 
+ /* This is used to query the native os for a list of font names and
+  * corresponding paths. The general idea is to save the hassle of
+  * building a custom fontmap file.
+  */
+ 
+void *gp_enumerate_fonts_init(gs_memory_t *mem)
+{
+    return NULL;
+}
+         
+int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
+{
+    return 0;
+}
+                         
+void gp_enumerate_fonts_free(void *enum_state)
+{
+}           

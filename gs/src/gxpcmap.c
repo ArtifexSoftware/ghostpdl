@@ -177,7 +177,6 @@ pattern_accum_open(gx_device * dev)
 	 padev->target);
     int width = pinst->size.x;
     int height = pinst->size.y;
-
     int code = 0;
     bool mask_open = false;
 
@@ -440,7 +439,7 @@ gstate_set_pattern_cache(gs_state * pgs, gx_pattern_cache * pcache)
 private void
 gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
-    if (ctile->id != gx_no_bitmap_id) {
+    if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
 	gs_memory_t *mem = pcache->memory;
 	gx_device_memory mdev;
 
@@ -536,9 +535,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
-#   if PATTERN_STREAM_ACCUMULATION
     ctile->is_dummy = false;
-#   endif
     if (mbits != 0) {
 	make_bitmap(&ctile->tbits, mbits, gs_next_ids(pis->memory, 1));
 	mbits->bitmap_memory = 0;	/* don't free the bits */
@@ -578,9 +575,7 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
-#   if PATTERN_STREAM_ACCUMULATION
     ctile->is_dummy = true;
-#   endif
     memset(&ctile->tbits, 0 , sizeof(ctile->tbits));
     ctile->tbits.size = pinst->size;
     ctile->tbits.id = gs_no_bitmap_id;
@@ -705,7 +700,9 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pc->pattern;
     int code;
 
+    /* Save original color space and color info into dev color */
     pdc->ccolor = *pc;
+    pdc->ccolor_valid = true;
     if (pinst == 0) {
 	/* Null pattern */
 	color_set_null_pattern(pdc);

@@ -159,6 +159,7 @@ main(int argc, char *argv[])
 
     section(f, "Scalar sizes");
 
+    define_int(f, "ARCH_LOG2_SIZEOF_CHAR", ilog2(size_of(char)));
     define_int(f, "ARCH_LOG2_SIZEOF_SHORT", ilog2(size_of(short)));
     define_int(f, "ARCH_LOG2_SIZEOF_INT", ilog2(size_of(int)));
     define_int(f, "ARCH_LOG2_SIZEOF_LONG", ilog2(size_of(long)));

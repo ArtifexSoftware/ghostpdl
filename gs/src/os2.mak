@@ -129,7 +129,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10204
+PVERSION=10205
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -431,7 +431,6 @@ CC=$(COMPDIR)\$(COMP) $(CCFLAGS0)
 CC_=$(CC)
 CC_D=$(CC) $(CO)
 CC_INT=$(CC)
-CC_LEAF=$(CC_)
 CC_NO_WARN=$(CC_)
 
 # ------ Devices and features ------ #
@@ -621,7 +620,7 @@ gsdllos2_h=$(GLSRC)gsdllos2.h
 ICONS=$(PSOBJ)gsos2.ico $(GLOBJ)gspmdrv.ico
 
 $(PSOBJ)dpmain.$(OBJ): $(PSSRC)dpmain.c $(AK)\
- $(gdevdsp_h) $(iapi_h) $(gscdefs_h) $(errors_h)
+ $(gdevdsp_h) $(iapi_h) $(gscdefs_h) $(ierrors_h)
 	$(CC) $(CEXE) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(PSO_)dpmain.$(OBJ) $(C_) $(PSSRC)dpmain.c
 
 !if $(MAKEDLL)

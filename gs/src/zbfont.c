@@ -59,16 +59,46 @@ zbuildfont3(i_ctx_t *i_ctx_p)
 
 /* Encode a character. */
 gs_glyph
-zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored)
+zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t gspace)
 {
-    const ref *pencoding = &pfont_data(pfont)->Encoding;
+    font_data *pdata = pfont_data(pfont);
+    const ref *pencoding = &pdata->Encoding;
     ulong index = chr;	/* work around VAX widening bug */
     ref cname;
     int code = array_get(pfont->memory, pencoding, (long)index, &cname);
 
     if (code < 0 || !r_has_type(&cname, t_name))
 	return gs_no_glyph;
-    return (gs_glyph)name_index(pfont->memory, &cname);
+    if (pfont->FontType == ft_user_defined && r_type(&pdata->BuildGlyph) == t_null) {
+	ref nsref, tname;
+
+	name_string_ref(&cname, &nsref);
+	if (r_size(&nsref) == 7 && 
+	    !memcmp(nsref.value.const_bytes, ".notdef", r_size(&nsref))) {
+	    /* A special support for high level devices.
+	       They need a glyph name but the font doesn't provide one
+	       due to an instandard BuildChar.
+	       Such fonts don't conform to PLRM section 5.3.7,
+	       but we've got real examples that we want to handle (Bug 686982).
+	       Construct a name here.
+	       Low level devices don't pass here, because regular PS interpretation 
+	       doesn't need such names.
+	    */
+	    char buf[20];
+	    int code;
+
+	    if (gspace == GLYPH_SPACE_NOGEN)
+		return gs_no_glyph;    
+	    sprintf(buf, "j%ld", chr); /* 'j' is arbutrary. */
+	    code = name_ref((const byte *)buf, strlen(buf), &tname, 1);
+	    if (code < 0) {
+		/* Can't propagate the error due to interface limitation,
+		   return with .notdef */
+	    } else
+		cname = tname;
+	}
+    }
+    return (gs_glyph)name_index(&cname);
 }
 
 /* Get the name of a glyph. */
@@ -82,8 +112,7 @@ zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
 	int code;
 
 	sprintf(cid_name, "%lu", (ulong) index);
-	code = name_ref(font->memory, 
-			(const byte *)cid_name, strlen(cid_name),
+	code = name_ref((const byte *)cid_name, strlen(cid_name),
 			&nref, 1);
 	if (code < 0)
 	    return code;
@@ -99,9 +128,24 @@ private gs_char
 gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph)
 {
     ref *v, n;
-    if (glyph >= gs_min_cid_glyph)
-	return GS_NO_CHAR; /* Unimplemented. */
-    name_index_ref(mem, glyph, &n);
+    if (glyph >= gs_min_cid_glyph) {
+	uint cid = glyph - gs_min_cid_glyph;
+
+	if (dict_find_string(map, "CIDCount", &v) > 0) {
+	    /* This is a CIDDEcoding resource. */
+	    make_int(&n, cid / 256);
+	    if (dict_find(map, &n, &v) > 0) {
+		ref vv;
+
+		if (array_get(v, cid % 256, &vv) == 0 && r_type(&vv) == t_integer)
+		    return vv.value.intval;
+	    }
+	    return GS_NO_CHAR; /* Absent in the map. */
+	}
+	/* This is GlyphNames2Unicode dictionary. */
+	make_int(&n, cid);
+    } else
+	name_index_ref(glyph, &n);
     if (dict_find(map, &n, &v) > 0) {
 	if (r_has_type(v, t_string)) {
 	    int i, l = r_size(v);
@@ -402,12 +446,12 @@ void
 lookup_gs_simple_font_encoding(gs_font_base * pfont)
 {
     const ref *pfe = &pfont_data(pfont)->Encoding;
-    uint esize = r_size(pfe);
     int index = -1;
 
     pfont->encoding_index = index;
-    if (esize <= 256) {
+    if (r_type(pfe) == t_array && r_size(pfe) <= 256) {
 	/* Look for an encoding that's "close". */
+	uint esize = r_size(pfe);
 	int near_index = -1;
 	uint best = esize / 3;	/* must match at least this many */
 	gs_const_string fstrs[256];
@@ -461,18 +505,31 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 
 /* Get FontMatrix and FontName parameters. */
 private int
-sub_font_params(const gs_memory_t *mem, const ref *op, gs_matrix *pmat, ref *pfname)
+sub_font_params(const ref *op, gs_matrix *pmat, gs_matrix *pomat, ref *pfname)
 {
     ref *pmatrix;
     ref *pfontname;
+    ref *porigfont;
 
     if (dict_find_string(op, "FontMatrix", &pmatrix) <= 0 ||
-	read_matrix(mem, pmatrix, pmat) < 0
+	read_matrix(pmatrix, pmat) < 0
 	)
-	return_error(mem, e_invalidfont);
-    if (dict_find_string(op, "FontName", &pfontname) > 0)
-	get_font_name(mem, pfname, pfontname);
-    else
+	return_error(e_invalidfont);
+    if (dict_find_string(op, ".OrigFont", &porigfont) <= 0)
+	porigfont = NULL;
+    if (pomat!= NULL) {
+	if (porigfont == NULL ||
+	    dict_find_string(porigfont, "FontMatrix", &pmatrix) <= 0 ||
+	    read_matrix(pmatrix, pomat) < 0
+	)
+	    memset(pomat, 0, sizeof(*pomat));
+    }
+    if (dict_find_string((porigfont != NULL ? porigfont : op), ".Alias", &pfontname) > 0) {
+        /* If we emulate the font, we want the requested name rather than a substitute. */
+	get_font_name(pfname, pfontname);
+    } else if (dict_find_string((porigfont != NULL ? porigfont : op), "FontName", &pfontname) > 0) {
+	get_font_name(pfname, pfontname);
+    } else
 	make_empty_string(pfname, a_readonly);
     return 0;
 }
@@ -507,7 +564,8 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	return_error(imemory, e_invalidfont);
     if (dict_find_string(op, "Encoding", &pencoding) <= 0) {
 	if (!(options & bf_Encoding_optional))
-	    return_error(imemory, e_invalidfont);
+	    return_error(e_invalidfont);
+	pencoding = 0;
     } else {
 	if (!r_is_array(pencoding))
 	    return_error(imemory, e_invalidfont);
@@ -598,7 +656,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
 		  const build_proc_refs * pbuild, const ref *pencoding,
 		  ref *fid_op)
 {
-    gs_matrix mat;
+    gs_matrix mat, omat;
     ref fname;			/* t_string */
     gs_font *pfont;
     font_data *pdata;
@@ -607,7 +665,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
      * in the same VM as the font dictionary.
      */
     uint space = ialloc_space(idmemory);
-    int code = sub_font_params(imemory, op, &mat, &fname);
+    int code = sub_font_params(op, &mat, &omat, &fname);
 
     if (code < 0)
 	return code;
@@ -635,6 +693,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
     pfont->client_data = pdata;
     pfont->FontType = ftype;
     pfont->FontMatrix = mat;
+    pfont->orig_FontMatrix = omat;
     pfont->BitmapWidths = false;
     pfont->ExactSize = fbit_use_bitmaps;
     pfont->InBetweenSize = fbit_use_outlines;

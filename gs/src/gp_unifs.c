@@ -27,8 +27,14 @@
 
 /* Provide a definition of the maximum path length in case the system
  * headers don't define it. This should be gp_file_name_sizeof from
- * gp.h once that value is properly sent in a system-dependent way 
+ * gp.h once that value is properly sent in a system-dependent way.
+ * HP-UX 11i 11.11 incorrectly defines FILENAME_MAX as 14 .
  */
+#ifdef FILENAME_MAX
+#  if FILENAME_MAX < 80  /* arbitrary */
+#    undef FILENAME_MAX
+#  endif
+#endif
 #ifndef FILENAME_MAX
 #  define FILENAME_MAX 1024
 #endif
@@ -58,13 +64,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
     int len = gp_file_name_sizeof - prefix_length - 8;
     FILE *fp;
 
-    if (
-#if !NEW_COMBINE_PATH
-        gp_pathstring_not_bare(prefix, prefix_length)
-#else
-	gp_file_name_is_absolute(prefix, prefix_length)
-#endif
-	)
+    if (gp_file_name_is_absolute(prefix, prefix_length))
 	*fname = 0;
     else if (gp_gettmpdir(fname, &len) != 0)
 	strcpy(fname, "/tmp/");
@@ -147,30 +147,6 @@ gs_private_st_ptrs3(st_file_enum, struct file_enum_s, "file_enum",
 	  file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern, work, dstack);
 
 /* Private procedures */
-
-/* Do a wild-card match. */
-#ifdef DEBUG
-private bool
-wmatch(const gs_memory_t *mem, const byte * str, uint len, const byte * pstr, uint plen,
-       const string_match_params * psmp)
-{
-    bool match = string_match(str, len, pstr, plen, psmp);
-
-    if (gs_debug_c('e')) {
-	int i;
-	dlputs(mem, "[e]string_match(\"");
-	for (i=0; i<len; i++)
-	    errprintf(mem, "%c", str[i]);
-	dputs(mem, "\", \"");
-	for (i=0; i<plen; i++)
-	    errprintf(mem, "%c", pstr[i]);
-	dprintf1(mem, "\") = %s\n", (match ? "TRUE" : "false"));
-    }
-    return match;
-}
-#define string_match wmatch
-#endif
-
 /* Search a string backward for a character. */
 /* (This substitutes for strrchr, which some systems don't provide.) */
 private char *
@@ -351,11 +327,7 @@ gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uin
     }
 
     /* Test for a match at this directory level */
-#if DEBUG
-    if (!string_match(mem, (byte *) work, len, (byte *) pattern, pathead, NULL))
-#else
     if (!string_match((byte *) work, len, (byte *) pattern, pathead, NULL))
-#endif 
 	goto top;
 
     /* Perhaps descend into subdirectories */

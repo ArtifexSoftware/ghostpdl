@@ -102,7 +102,6 @@ gx_path_init_contents(gx_path * ppath)
     path_update_newpath(ppath);
     ppath->bbox_set = 0;
     ppath->bbox_accurate = 0;
-    ppath->procs = &default_path_procs;
 }
 
 /*
@@ -140,9 +139,9 @@ gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
     }
     ppath->memory = mem;
     ppath->allocation = path_allocated_contained;
+    ppath->procs = &default_path_procs;
     return 0;
 }
-
 
 /*
  * Allocate a path on the heap, and initialize it.  If shared is NULL,
@@ -157,6 +156,7 @@ gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
 
     if (ppath == 0)
 	return 0;
+    ppath->procs = &default_path_procs;
     if (shared) {
 	if (shared->segments == &shared->local_segments) {
 	    lprintf1(mem, "Attempt to share (local) segments of path 0x%lx!\n",
@@ -204,6 +204,7 @@ gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
     }
     ppath->memory = mem;
     ppath->allocation = path_allocated_on_stack;
+    ppath->procs = &default_path_procs;
     return 0;
 }
 

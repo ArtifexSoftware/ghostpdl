@@ -17,7 +17,7 @@
 #include "ghost.h"
 #include "gsstruct.h"		/* for iastruct.h */
 #include "stream.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "estack.h"
 #include "ialloc.h"
 #include "iastruct.h"
@@ -43,7 +43,6 @@
 #include "oper.h"
 #include "store.h"
 #include "gpcheck.h"
-#include "idebug.h"
 
 /*
  * We may or may not optimize the handling of the special fast operators
@@ -404,7 +403,7 @@ gs_interp_make_oper(ref * opref, op_proc_t proc, int idx)
 /*
  * Call the garbage collector, updating the context pointer properly.
  */
-private int
+int
 interp_reclaim(i_ctx_t **pi_ctx_p, int space)
 {
     i_ctx_t *i_ctx_p = *pi_ctx_p;

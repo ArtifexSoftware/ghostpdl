@@ -26,7 +26,7 @@
 
 % Check the interpreter revision.  NOTE: the interpreter code requires
 % that the first non-comment token in this file be an integer.
-801
+813
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
@@ -136,12 +136,14 @@ currentdict /NOFONTMAP known   /NOFONTMAP exch def
 currentdict /NOFONTPATH known   /NOFONTPATH exch def
 currentdict /NOGC known   /NOGC exch def
 currentdict /NOINTERPOLATE .knownget { /INTERPOLATE exch not def } if
+currentdict /NOOUTERSAVE known   /NOOUTERSAVE exch def
 currentdict /NOPAGEPROMPT known   /NOPAGEPROMPT exch def
 currentdict /NOPAUSE known   /NOPAUSE exch def
 currentdict /NOPLATFONTS known   /NOPLATFONTS exch def
 currentdict /NOPROMPT known   /NOPROMPT exch def
 currentdict /NOTRANSPARENCY known   /NOTRANSPARENCY exch def
 currentdict /DOPS known   /DOPS exch def
+currentdict /NOSUBSTDEVICECOLORS known   /NOSUBSTDEVICECOLORS exch def
 % The default value of ORIENT1 is true, not false.
 currentdict /ORIENT1 known not { /ORIENT1 true def } if
 currentdict /OSTACKPRINT known   /OSTACKPRINT exch def
@@ -275,7 +277,7 @@ DELAYBIND NOBIND not and
        { .delaycount 2 index put
          .userdict /.delaycount .delaycount 1 add put
        }
-       { pop .bind
+       { pop /.bind cvx exec
        }
       ifelse
     } .bind def
@@ -326,6 +328,18 @@ currentdict /hwsizedict .undef
   } for pop
 } bind def
 
+% Utility for removing all entries from a dictionary
+/.PurgeDict   % <dict> .PurgeDict -
+{ { true
+    1 index { pop exch pop false exit
+    } forall
+    { exit
+    } if
+    1 index exch undef
+  } loop
+  pop
+} bind def
+
 % Define predefined procedures substituting for operators,
 % in alphabetical order.
 
@@ -344,7 +358,9 @@ userdict /#copies 1 put
 	  .currentnumcopies 1 index .outputpage
 	  (>>copypage, press <return> to continue<<\n) .confirm
 	  dup { erasepage } if
-	} if pop .beginpage
+	} if pop
+    systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
+    .beginpage
 } odef
 /currentmatrix {
 	.currentmatrix 6 index astore pop
@@ -517,7 +533,9 @@ odef
           .fillpage
           setoverprint 0 setcolor
 	}
-	{ initgraphics } ifelse .beginpage
+	{ initgraphics } ifelse
+    systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
+    .beginpage
 } odef
 % Code output by Adobe Illustrator relies on the fact that
 % `stack' is a procedure, not an operator!!!
@@ -1397,7 +1415,7 @@ devicedict /Default devicedict .defaultdevicename get put
 %			      false			
 /.getdefaulthalftone {
   % try the device to see if it has a default halftone
-  { currentdevice /HalftoneDefault gsgetdeviceprop } stopped
+  { currentdevice /HalftoneDefault gsgetdeviceprop } .internalstopped
   { pop pop false }		% no device property
   { dup type /dicttype eq { true } { pop false } ifelse }
   ifelse
@@ -1405,7 +1423,7 @@ devicedict /Default devicedict .defaultdevicename get put
   %         false		  not found
   dup not
   { % device did not provide a default, try Resource
-    pop { /Default /Halftone /findresource .systemvar exec } stopped 
+    pop { /Default /Halftone /findresource .systemvar exec } .internalstopped 
     { pop pop false } { true } ifelse
   }
   if
@@ -1804,7 +1822,21 @@ gsave
  { currentfile /TBCPDecode filter cvx exec
  } bind def
 /@PJL				% H-P job control
- { currentfile //=string readline { pop } if
+ {
+   % Windows 2000 driver includes PJL into %%BeginFeature block.
+   % Identify this from the pattern on the stack: countdictstack lucas mark
+   % and fail the feature request.
+
+   count 3 ge {
+     dup mark eq {
+       2 index countdictstack eq {
+          1 index /lucas where { /lucas get eq } { pop false } ifelse {
+            stop
+         } if
+       } if
+     } if
+   } if
+   currentfile //=string readline pop pop
  } bind def
 
 % Install the EPS handler if needed
@@ -1823,20 +1855,6 @@ readonly def
     <<
       /PermitFileReading [
         currentuserparams /PermitFileReading get aload pop
-
-	% The check below for the presence of /.filenamedirseparator
-	% is a temporary switch to NEW_COMBINE_PATH logics.
-	% It should be removed after alpha testing the new logic.
-	systemdict /.filenamedirseparator known {
-	  { .makepathtemplate
-            dup .filenamedirseparator concatstrings (*) concatstrings
-	    exch		% put string below this procedure
-	  }
-          /LIBPATH .systemvar { 1 index exec } forall
-          /FONTPATH .systemvar  { 1 index exec } forall
-	  currentsystemparams /GenericResourceDir get 1 index exec 
-	  currentsystemparams /FontResourceDir get exch exec
-	} {
           /FONTPATH .systemvar (*) .generate_dir_list_templates
             % Library files : 
           /LIBPATH  .systemvar (*) .generate_dir_list_templates       
@@ -1844,8 +1862,6 @@ readonly def
             % because the (gs:[dir]*) doesn't cover them.
           /LIBPATH  .systemvar (*) .file_name_separator (*)
              concatstrings concatstrings .generate_dir_list_templates
-             
-	} ifelse
       ] /LockFilePermissions true
     >> setuserparams
   }
@@ -1959,6 +1975,13 @@ false setpacking
 /AlignToPixels where {
   mark /AlignToPixels 2 index /AlignToPixels get .dicttomark setuserparams
   /AlignToPixels undef
+} if
+
+% Set up GridFitTT :
+
+/GridFitTT where {
+  mark /GridFitTT 2 index /GridFitTT get .dicttomark setuserparams
+  /GridFitTT undef
 } if
 
 % Conditionally turn image interpolation on or off.
@@ -2115,6 +2138,10 @@ DELAYBIND not {
   systemdict /.forceundef .undef	% ditto
 } if
 WRITESYSTEMDICT not { systemdict readonly pop } if
+
+% Do outermost save unless it has been disabled. Note: we discard
+% this save object so that it can't be used to circumvent .setsafe
+NOOUTERSAVE not { save pop } if
 
 (END GC) VMDEBUG
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+\/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
   
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
@@ -13,6 +13,7 @@
 #ifndef sjbig2_INCLUDED
 #  define sjbig2_INCLUDED
 
+#include "stdint_.h"
 #include "scommon.h"
 #include <jbig2.h>
 

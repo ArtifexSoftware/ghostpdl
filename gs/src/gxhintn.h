@@ -17,6 +17,11 @@
 typedef struct gs_type1_data_s gs_type1_data;
 #endif
 
+#ifndef gs_type42_data_DEFINED
+#define gs_type42_data_DEFINED
+typedef struct gs_type42_data_s gs_type42_data;
+#endif
+
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
@@ -94,7 +99,7 @@ typedef struct t1_hinter_s
 {   fraction_matrix ctmf;
     fraction_matrix ctmi;
     unsigned int g2o_fraction_bits;
-    unsigned int import_shift;
+    unsigned int max_import_coord;
     int32 g2o_fraction;
     t1_glyph_space_coord orig_gx, orig_gy; /* glyph origin in glyph space */
     t1_glyph_space_coord subglyph_orig_gx, subglyph_orig_gy; /* glyph origin in glyph space */
@@ -103,7 +108,8 @@ typedef struct t1_hinter_s
     t1_glyph_space_coord width_gx, width_gy; /* glyph space coords of the glyph origin */
     t1_glyph_space_coord cx, cy; /* current point */
     t1_glyph_space_coord bx, by; /* starting point of a contour */
-    uint subpixels_x, subpixels_y; /* Number of subpixels in a pixel (by an axis) */
+    uint log2_pixels_x, log2_pixels_y; /* log2 of the number of pixels in unit (by an axis) */
+    int log2_subpixels_x, log2_subpixels_y; /* log2 of the number of subpixels in unit (may be negative) */
     bool transposed;
     bool align_to_pixels; /* false == "align to (integral) pixels" */
     bool disable_hinting;
@@ -137,7 +143,6 @@ typedef struct t1_hinter_s
     double heigt_transform_coef;
     double width_transform_coef;
     double base_font_scale;
-    int19 blue_rounding;
     int19 width_transform_coef_rat;
     int19 heigt_transform_coef_rat;
     int19 width_transform_coef_inv;
@@ -148,12 +153,15 @@ typedef struct t1_hinter_s
 } t1_hinter;
 
 void t1_hinter__init(t1_hinter * this, gx_path *output_path);
-int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
+int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
 			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix,
-			fixed unit_x, fixed unit_y,
+			int log2_pixels_x, int log2_pixels_y,
+			int log2_subpixels_x, int log2_subpixels_y,
 			fixed origin_x, fixed origin_y, bool align_to_pixels);
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
-			bool charpath_flag);
+			bool no_grid_fitting);
+int  t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *pdata, 
+			bool no_grid_fitting);
 
 int  t1_hinter__sbw(t1_hinter * this, fixed sbx, fixed sby, fixed wx,  fixed wy);
 int  t1_hinter__sbw_seac(t1_hinter * this, fixed sbx, fixed sby);
@@ -177,5 +185,6 @@ int  t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3,
 
 int  t1_hinter__endchar(t1_hinter * this, bool seac_flag);
 int  t1_hinter__endglyph(t1_hinter * this);
+int  t1_hinter__is_x_fitting(t1_hinter * this);
 
 #endif /* gxhintn_INCLUDED */

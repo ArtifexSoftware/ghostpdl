@@ -19,7 +19,6 @@
 #include "gsmatrix.h"		/* for gscolor2.h */
 #include "gscolor2.h"
 #include "gscpixel.h"
-#include "ialloc.h"
 
 /* <array> .setdevicepixelspace - */
 private int

@@ -13,7 +13,7 @@
 /*$RCSfile$ $Revision$ */
 /* CMap and CID-keyed font services */
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gxcid.h"
 #include "icid.h"		/* for checking prototype */
 #include "idict.h"

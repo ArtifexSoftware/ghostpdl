@@ -837,10 +837,6 @@ bind def
 %    mn = (1 - s) * br, md = 6 * s * br;
 %
 %    switch ((int)floor(6 * h)) {
-%      case 6:  /* roundoff anomally */
-%        h = 0;
-%        /* falls through */
-%
 %      case 0:  /* r >= g >= b */
 %        r = br;
 %        g = mn + h * md;
@@ -875,6 +871,14 @@ bind def
 %        r = br;
 %        g = mn;
 %        b = mn + (1 - h) * md;
+%        break;
+%
+%      case 6:  /* We have wrapped around the hexcone.  Thus this case is
+%      		   the same as case 0 with h = 0 */
+%        h = 0;
+%        r = br;
+%        g = mn + h * md = mn;
+%        b = mn;
 %        break;
 %    }
 %
@@ -942,8 +946,10 @@ bind def
         % 5 ==> r >= b >= g
         { 1 exch sub mul 1 index add }
 
-        % 6 ==> r = br, g = b = 0 (roundoff anomally)
-        { pop pop pop 0 0 }
+        % 6 ==> r = br, g = b = mn
+	% Case 6 is the same as case 0 with h = 0.  This also simplifies
+	% the calculations.
+        { pop pop dup }
       }
     1 index 6 mul cvi              % (int)(6 * h)
     get exec    

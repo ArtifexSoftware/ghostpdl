@@ -14,7 +14,7 @@
 /* Garbage collector for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gsexit.h"
 #include "gsmdebug.h"
 #include "gsstruct.h"
@@ -1191,6 +1191,9 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
     if_debug_chunk((const gs_memory_t *)mem, '6', "[6]relocating in chunk", cp);
     SCAN_CHUNK_OBJECTS(cp)
 	DO_ALL
+#ifdef DEBUG
+	pstate->container = cp;
+#endif
     /* We need to relocate the pointers in an object iff */
     /* it is o_untraced, or it is a useful object. */
     /* An object is free iff its back pointer points to */
@@ -1208,6 +1211,9 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 	    if (proc != 0)
 		(*proc) (pre + 1, size, pre->o_type, pstate);
 	}
+#ifdef DEBUG
+	pstate->container = 0;
+#endif
     END_OBJECTS_SCAN
 }
 

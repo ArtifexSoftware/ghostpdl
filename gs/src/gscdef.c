@@ -12,6 +12,7 @@
 
 /*$RCSfile$ $Revision$ */
 /* Configuration scalars */
+
 #include "std.h"
 #include "gscdefs.h"		/* interface */
 #include "gconf.h"		/* for #defines */
@@ -41,7 +42,7 @@ const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	"AFPL Ghostscript CVS PRE-RELEASE"
+	GS_PRODUCTFAMILY " CVS PRE-RELEASE"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 

@@ -98,6 +98,8 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, encode_color, gx_forward_encode_color);
     fill_dev_proc(dev, decode_color, gx_forward_decode_color);
     fill_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
+    fill_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
+    fill_dev_proc(dev, include_color_space, gx_forward_include_color_space);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -725,9 +727,42 @@ gx_forward_pattern_manage(gx_device * dev, gx_bitmap_id id,
     return 0;
 }
 
+int
+gx_forward_fill_rectangle_hl_color(gx_device *dev, 
+    const gs_fixed_rect *rect, 
+    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    /* Note that clist sets fdev->target == fdev, 
+       so this function is unapplicable to clist. */
+    if (tdev == 0)
+	return_error(dev->memory, gs_error_rangecheck);
+    else
+	return dev_proc(tdev, fill_rectangle_hl_color)(tdev, rect, 
+						pis, pdcolor, NULL);
+}
+
+int
+gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace, 
+	    const byte *res_name, int name_length)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    /* Note that clist sets fdev->target == fdev, 
+       so this function is unapplicable to clist. */
+    if (tdev == 0)
+	return 0;
+    else
+	return dev_proc(tdev, include_color_space)(tdev, cspace, res_name, name_length);
+}
 
 /* ---------------- The null device(s) ---------------- */
 
+private dev_proc_get_initial_matrix(gx_forward_upright_get_initial_matrix);
 private dev_proc_fill_rectangle(null_fill_rectangle);
 private dev_proc_copy_mono(null_copy_mono);
 private dev_proc_copy_color(null_copy_color);
@@ -746,9 +781,9 @@ private dev_proc_decode_color(null_decode_color);
 /* Y position so it can return 1 when done. */
 private dev_proc_strip_copy_rop(null_strip_copy_rop);
 
-#define null_procs(get_page_device) {\
+#define null_procs(get_initial_matrix, get_page_device) {\
 	gx_default_open_device,\
-	gx_forward_get_initial_matrix,\
+	get_initial_matrix, /* differs */\
 	gx_default_sync_output,\
 	gx_default_output_page,\
 	gx_default_close_device,\
@@ -800,22 +835,38 @@ private dev_proc_strip_copy_rop(null_strip_copy_rop);
 	gx_default_DevGray_get_color_comp_index,/* get_color_comp_index */\
 	gx_default_gray_fast_encode,		/* encode_color */\
 	null_decode_color,		/* decode_color */\
-	gx_default_pattern_manage\
+	gx_default_pattern_manage,\
+	gx_default_fill_rectangle_hl_color,\
+	gx_default_include_color_space\
 }
 
 const gx_device_null gs_null_device = {
     std_device_std_body_type_open(gx_device_null, 0, "null", &st_device_null,
 				  0, 0, 72, 72),
-    null_procs(gx_default_get_page_device /* not a page device */ ),
+    null_procs(gx_forward_upright_get_initial_matrix, /* upright matrix */
+               gx_default_get_page_device     /* not a page device */ ),
     0				/* target */
 };
 
 const gx_device_null gs_nullpage_device = {
 std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
 			      72 /*nominal */ , 72 /*nominal */ , 72, 72),
-    null_procs(gx_page_device_get_page_device /* a page device */ ),
+    null_procs( gx_forward_get_initial_matrix, /* default matrix */
+                gx_page_device_get_page_device /* a page device */ ),
     0				/* target */
 };
+
+private void
+gx_forward_upright_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    if (tdev == 0)
+	gx_upright_get_initial_matrix(dev, pmat);
+    else
+	dev_proc(tdev, get_initial_matrix)(tdev, pmat);
+}
 
 private int
 null_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value colors[])

@@ -118,10 +118,10 @@ DEBUG=0
 # and also enables stack checking.  Code is substantially slower and larger.
 
 # NOTE: The MSVC++ 5.0 compiler produces incorrect output code with TDEBUG=0.
-# Leave TDEBUG set to 1.
-
+# Also MSVC 6 must be service pack >= 3 to prevent INTERNAL COMPILER ERROR
+# Default to 0 anyway since the execution times are so much better.
 !ifndef TDEBUG
-TDEBUG=1
+TDEBUG=0
 !endif
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables public,
@@ -180,7 +180,7 @@ JVERSION=6
 
 !ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=10204
+PVERSION=10205
 !endif
 
 # Define the directory where the zlib sources are stored.
@@ -607,7 +607,7 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 	echo $(GLOBJ)dwtext.obj >> $(PSGEN)gswin32.tr
 	echo $(GLOBJ)dwreg.obj >> $(PSGEN)gswin32.tr
 	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(PSGEN)gswin32.rsp
-	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GSDLL_OBJ).res
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GSDLL_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin32.tr
 	del $(PSGEN)gswin32.rsp
 
@@ -620,7 +620,7 @@ $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(P
 	echo $(PSOBJ)dwreg.obj >> $(PSGEN)gswin32c.tr
 	echo /SUBSYSTEM:CONSOLE > $(PSGEN)gswin32.rsp
 	echo /DEF:$(PSSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin32.rsp
-	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GS_OBJ).res
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GS_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin32.rsp
 	del $(PSGEN)gswin32c.tr
 !endif
@@ -653,9 +653,9 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def
 
 DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1
 debug:
-	nmake $(DEBUGDEFS)
+	nmake -f $(MAKEFILE) $(DEBUGDEFS)
 
 debugclean:
-	nmake $(DEBUGDEFS) clean
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) clean
 
 # end of makefile

@@ -28,7 +28,6 @@ PSO_=$(O_)$(PSOBJ)
 PSI_=$(PSSRCDIR) $(II)$(PSGENDIR) $(II)$(GLI_)
 PSF_=
 PSCC=$(CC_) $(I_)$(PSI_)$(_I) $(PSF_)
-PSCCLEAF=$(CC_LEAF) $(I_)$(PSI_)$(_I) $(PSF_)
 PSJBIG2CC=$(CC_) $(I_)$(PSI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(PSF_)
 # All top-level makefiles define PSD.
 #PSD=$(PSGEN)
@@ -42,7 +41,7 @@ INT_MAK=$(PSSRC)int.mak
 # It knows about the PostScript data types, but isn't supposed to
 # depend on anything outside itself.
 
-errors_h=$(PSSRC)errors.h
+ierrors_h=$(PSSRC)ierrors.h
 iconf_h=$(PSSRC)iconf.h
 idebug_h=$(PSSRC)idebug.h
 # Having iddstack.h at this level is unfortunate, but unavoidable.
@@ -76,6 +75,7 @@ store_h=$(PSSRC)store.h $(ialloc_h) $(idosave_h)
 iplugin_h=$(PSSRC)iplugin.h
 ifapi_h=$(PSSRC)ifapi.h $(iplugin_h)
 zht2_h=$(PSSRC)zht2.h $(gscspace_h)
+zchar42_h=$(PSSRC)zchar42.h
 
 GH=$(AK) $(ghost_h)
 
@@ -87,7 +87,7 @@ $(PSD)isupport.dev : $(INT_MAK) $(ECHOGS_XE) $(isupport_)
 	$(ADDMOD) $(PSD)isupport -obj $(isupport2_)
 
 $(PSOBJ)ialloc.$(OBJ) : $(PSSRC)ialloc.c $(AK) $(memory__h) $(gx_h)\
- $(errors_h) $(gsstruct_h)\
+ $(ierrors_h) $(gsstruct_h)\
  $(iastate_h) $(igc_h) $(ipacked_h) $(iref_h) $(iutil_h) $(ivmspace_h)\
  $(store_h)
 	$(PSCC) $(PSO_)ialloc.$(OBJ) $(C_) $(PSSRC)ialloc.c
@@ -96,7 +96,7 @@ $(PSOBJ)ialloc.$(OBJ) : $(PSSRC)ialloc.c $(AK) $(memory__h) $(gx_h)\
 # but since all the GC enumeration and relocation routines refer to them,
 # it's too hard to separate them out from the Level 1 base.
 $(PSOBJ)igc.$(OBJ) : $(PSSRC)igc.c $(GH) $(memory__h)\
- $(errors_h) $(gsexit_h) $(gsmdebug_h) $(gsstruct_h) $(gsutil_h)\
+ $(ierrors_h) $(gsexit_h) $(gsmdebug_h) $(gsstruct_h) $(gsutil_h)\
  $(iastate_h) $(idict_h) $(igc_h) $(igcstr_h) $(inamedef_h)\
  $(ipacked_h) $(isave_h) $(isstate_h) $(istruct_h) $(opdef_h)
 	$(PSCC) $(PSO_)igc.$(OBJ) $(C_) $(PSSRC)igc.c
@@ -111,7 +111,7 @@ $(PSOBJ)igcstr.$(OBJ) : $(PSSRC)igcstr.c $(GH) $(memory__h)\
 	$(PSCC) $(PSO_)igcstr.$(OBJ) $(C_) $(PSSRC)igcstr.c
 
 $(PSOBJ)ilocate.$(OBJ) : $(PSSRC)ilocate.c $(GH) $(memory__h)\
- $(errors_h) $(gsexit_h) $(gsstruct_h)\
+ $(ierrors_h) $(gsexit_h) $(gsstruct_h)\
  $(iastate_h) $(idict_h) $(igc_h) $(igcstr_h) $(iname_h)\
  $(ipacked_h) $(isstate_h) $(iutil_h) $(ivmspace_h)\
  $(store_h)
@@ -119,11 +119,11 @@ $(PSOBJ)ilocate.$(OBJ) : $(PSSRC)ilocate.c $(GH) $(memory__h)\
 
 $(PSOBJ)iname.$(OBJ) : $(PSSRC)iname.c $(GH) $(memory__h) $(string__h)\
  $(gsstruct_h) $(gxobj_h)\
- $(errors_h) $(imemory_h) $(inamedef_h) $(isave_h) $(store_h)
+ $(ierrors_h) $(imemory_h) $(inamedef_h) $(isave_h) $(store_h)
 	$(PSCC) $(PSO_)iname.$(OBJ) $(C_) $(PSSRC)iname.c
 
 $(PSOBJ)isave.$(OBJ) : $(PSSRC)isave.c $(GH) $(memory__h)\
- $(errors_h) $(gsexit_h) $(gsstruct_h) $(gsutil_h)\
+ $(ierrors_h) $(gsexit_h) $(gsstruct_h) $(gsutil_h)\
  $(iastate_h) $(iname_h) $(inamedef_h) $(isave_h) $(isstate_h) $(ivmspace_h)\
  $(ipacked_h) $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)isave.$(OBJ) $(C_) $(PSSRC)isave.c
@@ -153,7 +153,7 @@ iddict_h=$(PSSRC)iddict.h $(icstate_h) $(idict_h)
 dstack_h=$(PSSRC)dstack.h $(icstate_h) $(idstack_h)
 estack_h=$(PSSRC)estack.h $(icstate_h) $(iestack_h)
 ostack_h=$(PSSRC)ostack.h $(icstate_h) $(iostack_h)
-oper_h=$(PSSRC)oper.h $(errors_h) $(iutil_h) $(opcheck_h) $(opdef_h) $(opextern_h) $(ostack_h)
+oper_h=$(PSSRC)oper.h $(ierrors_h) $(iutil_h) $(opcheck_h) $(opdef_h) $(opextern_h) $(ostack_h)
 
 $(PSOBJ)idebug.$(OBJ) : $(PSSRC)idebug.c $(GH) $(string__h)\
  $(gxalloc_h)\
@@ -162,14 +162,14 @@ $(PSOBJ)idebug.$(OBJ) : $(PSSRC)idebug.c $(GH) $(string__h)\
 	$(PSCC) $(PSO_)idebug.$(OBJ) $(C_) $(PSSRC)idebug.c
 
 $(PSOBJ)idict.$(OBJ) : $(PSSRC)idict.c $(GH) $(math__h) $(string__h)\
- $(errors_h)\
+ $(ierrors_h)\
  $(gxalloc_h)\
  $(iddstack_h) $(idebug_h) $(idict_h) $(idictdef_h)\
  $(imemory_h) $(iname_h) $(inamedef_h) $(ipacked_h) $(isave_h)\
  $(iutil_h) $(ivmspace_h) $(store_h)
 	$(PSCC) $(PSO_)idict.$(OBJ) $(C_) $(PSSRC)idict.c
 
-$(PSOBJ)idparam.$(OBJ) : $(PSSRC)idparam.c $(GH) $(memory__h) $(string__h) $(errors_h)\
+$(PSOBJ)idparam.$(OBJ) : $(PSSRC)idparam.c $(GH) $(memory__h) $(string__h) $(ierrors_h)\
  $(gsmatrix_h) $(gsuid_h)\
  $(idict_h) $(idparam_h) $(ilevel_h) $(imemory_h) $(iname_h) $(iutil_h)\
  $(oper_h) $(store_h)
@@ -181,13 +181,13 @@ $(PSOBJ)idstack.$(OBJ) : $(PSSRC)idstack.c $(GH)\
 	$(PSCC) $(PSO_)idstack.$(OBJ) $(C_) $(PSSRC)idstack.c
 
 $(PSOBJ)iparam.$(OBJ) : $(PSSRC)iparam.c $(GH)\
- $(memory__h) $(string__h) $(errors_h)\
+ $(memory__h) $(string__h) $(ierrors_h)\
  $(ialloc_h) $(idict_h) $(iname_h) $(imemory_h) $(iparam_h) $(istack_h) $(iutil_h) $(ivmspace_h)\
  $(opcheck_h) $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)iparam.$(OBJ) $(C_) $(PSSRC)iparam.c
 
 $(PSOBJ)istack.$(OBJ) : $(PSSRC)istack.c $(GH) $(memory__h)\
- $(errors_h) $(gsstruct_h) $(gsutil_h)\
+ $(ierrors_h) $(gsstruct_h) $(gsutil_h)\
  $(ialloc_h) $(istack_h) $(istkparm_h) $(istruct_h) $(iutil_h) $(ivmspace_h)\
  $(store_h)
 	$(PSCC) $(PSO_)istack.$(OBJ) $(C_) $(PSSRC)istack.c
@@ -195,13 +195,13 @@ $(PSOBJ)istack.$(OBJ) : $(PSSRC)istack.c $(GH) $(memory__h)\
 $(PSOBJ)iutil.$(OBJ) : $(PSSRC)iutil.c $(GH) $(math__h) $(memory__h) $(string__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h)\
  $(sstring_h) $(strimpl_h)\
- $(errors_h) $(idict_h) $(imemory_h) $(iutil_h) $(ivmspace_h)\
+ $(ierrors_h) $(idict_h) $(imemory_h) $(iutil_h) $(ivmspace_h)\
  $(iname_h) $(ipacked_h) $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)iutil.$(OBJ) $(C_) $(PSSRC)iutil.c
 
 $(PSOBJ)iplugin.$(OBJ) : $(PSSRC)iplugin.c $(GH) $(malloc__h) $(string__h)\
  $(gxalloc_h)\
- $(errors_h) $(ialloc_h) $(icstate_h) $(iplugin_h)
+ $(ierrors_h) $(ialloc_h) $(icstate_h) $(iplugin_h)
 	$(PSCC) $(PSO_)iplugin.$(OBJ) $(C_) $(PSSRC)iplugin.c
 
 # ======================== PostScript Level 1 ======================== #
@@ -265,13 +265,13 @@ $(PSOBJ)iconfig.$(OBJ) : $(PSSRC)iconf.c $(stdio__h)\
 
 $(PSOBJ)iinit.$(OBJ) : $(PSSRC)iinit.c $(GH) $(string__h)\
  $(gscdefs_h) $(gsexit_h) $(gsstruct_h)\
- $(dstack_h) $(errors_h) $(ialloc_h) $(iddict_h)\
+ $(dstack_h) $(ierrors_h) $(ialloc_h) $(iddict_h)\
  $(iinit_h) $(ilevel_h) $(iname_h) $(interp_h) $(opdef_h)\
  $(ipacked_h) $(iparray_h) $(iutil_h) $(ivmspace_h) $(store_h)
 	$(PSCC) $(PSO_)iinit.$(OBJ) $(C_) $(PSSRC)iinit.c
 
 $(PSOBJ)iscan.$(OBJ) : $(PSSRC)iscan.c $(GH) $(memory__h)\
- $(btoken_h) $(dstack_h) $(errors_h) $(files_h)\
+ $(btoken_h) $(dstack_h) $(ierrors_h) $(files_h)\
  $(ialloc_h) $(idict_h) $(ilevel_h) $(iname_h) $(ipacked_h) $(iparray_h)\
  $(iscan_h) $(iscanbin_h) $(iscannum_h)\
  $(istruct_h) $(istream_h) $(iutil_h) $(ivmspace_h)\
@@ -280,7 +280,7 @@ $(PSOBJ)iscan.$(OBJ) : $(PSSRC)iscan.c $(GH) $(memory__h)\
 	$(PSCC) $(PSO_)iscan.$(OBJ) $(C_) $(PSSRC)iscan.c
 
 $(PSOBJ)iscannum.$(OBJ) : $(PSSRC)iscannum.c $(GH) $(math__h)\
- $(errors_h) $(iscannum_h) $(scanchar_h) $(scommon_h) $(store_h)
+ $(ierrors_h) $(iscannum_h) $(scanchar_h) $(scommon_h) $(store_h)
 	$(PSCC) $(PSO_)iscannum.$(OBJ) $(C_) $(PSSRC)iscannum.c
 
 ### Streams
@@ -311,7 +311,8 @@ $(PSOBJ)zdict.$(OBJ) : $(PSSRC)zdict.c $(OP)\
  $(store_h)
 	$(PSCC) $(PSO_)zdict.$(OBJ) $(C_) $(PSSRC)zdict.c
 
-$(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP) $(memory__h) $(string__h) $(gp_h)\
+$(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP)\
+ $(memory__h) $(string__h) $(unistd__h) $(gp_h) $(gpmisc_h)\
  $(gscdefs_h) $(gsfname_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxiodev_h)\
  $(dstack_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(idict_h) $(ilevel_h) $(iname_h) $(interp_h) $(iutil_h)\
@@ -319,7 +320,7 @@ $(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP) $(memory__h) $(string__h) $(gp_h)\
 	$(PSCC) $(PSO_)zfile.$(OBJ) $(C_) $(PSSRC)zfile.c
 
 $(PSOBJ)zfile1.$(OBJ) : $(PSSRC)zfile1.c $(OP) $(memory__h) $(gp_h)\
- $(errors_h) $(oper_h) $(opcheck_h) $(ialloc_h) $(opdef_h) $(store_h)
+ $(ierrors_h) $(oper_h) $(opcheck_h) $(ialloc_h) $(opdef_h) $(store_h)
 	$(PSCC) $(PSO_)zfile1.$(OBJ) $(C_) $(PSSRC)zfile1.c
 
 $(PSOBJ)zfileio.$(OBJ) : $(PSSRC)zfileio.c $(OP) $(memory__h) $(gp_h)\
@@ -351,7 +352,7 @@ $(PSOBJ)ziodev.$(OBJ) : $(PSSRC)ziodev.c $(OP)\
  $(gp_h) $(gpcheck_h)\
  $(gxiodev_h)\
  $(files_h) $(ialloc_h) $(iscan_h) $(ivmspace_h)\
- $(scanchar_h) $(store_h) $(stream_h) $(istream_h) $(errors_h)
+ $(scanchar_h) $(store_h) $(stream_h) $(istream_h) $(ierrors_h)
 	$(PSCC) $(PSO_)ziodev.$(OBJ) $(C_) $(PSSRC)ziodev.c
 
 $(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) : $(PSSRC)ziodevs$(STDIO_IMPLEMENTATION).c $(OP) $(stdio__h)\
@@ -420,9 +421,9 @@ $(PSOBJ)zbfont.$(OBJ) : $(PSSRC)zbfont.c $(OP) $(memory__h) $(string__h)\
 
 $(PSOBJ)zchar.$(OBJ) : $(PSSRC)zchar.c $(OP)\
  $(gsstruct_h) $(gstext_h) $(gxarith_h) $(gxfixed_h) $(gxmatrix_h)\
- $(gxdevice_h) $(gxfont_h) $(gzstate_h)\
+ $(gxdevice_h) $(gxfont_h) $(gxfont42_h) $(gzstate_h)\
  $(dstack_h) $(estack_h) $(ialloc_h) $(ichar_h) $(idict_h) $(ifont_h)\
- $(ilevel_h) $(iname_h) $(igstate_h) $(ipacked_h) $(store_h)
+ $(ilevel_h) $(iname_h) $(igstate_h) $(ipacked_h) $(store_h) $(zchar42_h)
 	$(PSCC) $(PSO_)zchar.$(OBJ) $(C_) $(PSSRC)zchar.c
 
 # zcharout is used for Type 1 and Type 42 fonts only.
@@ -432,7 +433,8 @@ $(PSOBJ)zcharout.$(OBJ) : $(PSSRC)zcharout.c $(OP) $(memory__h)\
  $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)zcharout.$(OBJ) $(C_) $(PSSRC)zcharout.c
 
-$(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP) $(estack_h) $(ialloc_h)\
+$(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
+ $(memory__h) $(estack_h) $(ialloc_h)\
  $(igstate_h) $(iutil_h) $(store_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gzstate_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxcmap_h)\
  $(gxcspace_h) $(gxcolor2_h) $(gxpcolor_h)\
@@ -455,6 +457,10 @@ $(PSOBJ)zfont.$(OBJ) : $(PSSRC)zfont.c $(OP)\
  $(ialloc_h) $(iddict_h) $(igstate_h) $(iname_h) $(isave_h) $(ivmspace_h)\
  $(bfont_h) $(store_h)
 	$(PSCC) $(PSO_)zfont.$(OBJ) $(C_) $(PSSRC)zfont.c
+
+$(PSOBJ)zfontenum.$(OBJ) : $(PSSRC)zfontenum.c $(OP)\
+ $(memory__h) $(gsstruct_h) $(ialloc_h) $(idict_h)
+	$(PSCC) $(PSO_)zfontenum.$(OBJ) $(C_) $(PSSRC)zfontenum.c
 
 $(PSOBJ)zgstate.$(OBJ) : $(PSSRC)zgstate.c $(OP) $(math__h)\
  $(gsmatrix_h)\
@@ -503,16 +509,16 @@ Z5=$(PSOBJ)zmisc.$(OBJ) $(PSOBJ)zpacked.$(OBJ) $(PSOBJ)zrelbit.$(OBJ)
 Z6=$(PSOBJ)zstack.$(OBJ) $(PSOBJ)zstring.$(OBJ) $(PSOBJ)zsysvm.$(OBJ)
 Z7=$(PSOBJ)ztoken.$(OBJ) $(PSOBJ)ztype.$(OBJ) $(PSOBJ)zvmem.$(OBJ)
 Z8=$(PSOBJ)zbfont.$(OBJ) $(PSOBJ)zchar.$(OBJ) $(PSOBJ)zcolor.$(OBJ)
-Z9=$(PSOBJ)zdevice.$(OBJ) $(PSOBJ)zfont.$(OBJ) $(PSOBJ)zgstate.$(OBJ) $(PSOBJ)zdfilter.$(OBJ)
-Z10=$(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
+Z9=$(PSOBJ)zdevice.$(OBJ) $(PSOBJ)zfont.$(OBJ) $(PSOBJ)zfontenum.$(OBJ) $(PSOBJ)zgstate.$(OBJ)
+Z10=$(PSOBJ)zdfilter.$(OBJ) $(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
 Z11=$(PSOBJ)zpaint.$(OBJ) $(PSOBJ)zpath.$(OBJ)
 Z1OPS=zarith zarray zcontrol1 zcontrol2 zcontrol3
 Z2OPS=zdict1 zdict2 zfile zfile1 zfileio1 zfileio2
 Z3_4OPS=zfilter zfproc zgeneric ziodev zmath
 Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar zcolor
-Z9OPS=zdevice zfont zgstate1 zgstate2 zdfilter
-Z10OPS=zht zimage zmatrix
+Z9OPS=zdevice zfont zfontenum zgstate1 zgstate2 zgstate3
+Z10OPS=zdfilter zht zimage zmatrix
 Z11OPS=zpaint zpath
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
@@ -801,7 +807,7 @@ $(PSOBJ)zchar42.$(OBJ) : $(PSSRC)zchar42.c $(OP)\
  $(gxfixed_h) $(gxfont_h) $(gxfont42_h)\
  $(gxistate_h) $(gxpath_h) $(gxtext_h) $(gzstate_h)\
  $(dstack_h) $(estack_h) $(ichar_h) $(icharout_h)\
- $(ifont_h) $(igstate_h) $(store_h)
+ $(ifont_h) $(igstate_h) $(store_h) $(zchar42_h)
 	$(PSCC) $(PSO_)zchar42.$(OBJ) $(C_) $(PSSRC)zchar42.c
 
 $(PSOBJ)zfont42.$(OBJ) : $(PSSRC)zfont42.c $(OP) $(memory__h)\
@@ -944,7 +950,7 @@ $(PSD)ccfonts.dev : $(TOP_MAKEFILES) $(INT_MAK)\
 
 $(PSOBJ)iccfont.$(OBJ) : $(PSSRC)iccfont.c $(GH) $(string__h)\
  $(gscencs_h) $(gsmatrix_h) $(gsstruct_h) $(gxfont_h)\
- $(ccfont_h) $(errors_h)\
+ $(ccfont_h) $(ierrors_h)\
  $(ialloc_h) $(idict_h) $(ifont_h) $(iname_h) $(isave_h) $(iutil_h)\
  $(oper_h) $(ostack_h) $(store_h) $(stream_h) $(strimpl_h) $(sfilter_h) $(iscan_h)
 	$(PSCC) $(PSO_)iccfont.$(OBJ) $(C_) $(PSSRC)iccfont.c
@@ -1083,7 +1089,7 @@ ivmem2_h=$(PSSRC)ivmem2.h
 
 $(PSOBJ)iutil2.$(OBJ) : $(PSSRC)iutil2.c $(GH) $(memory__h) $(string__h)\
  $(gsparam_h) $(gsutil_h)\
- $(errors_h) $(idict_h) $(imemory_h) $(iutil_h) $(iutil2_h) $(opcheck_h)
+ $(ierrors_h) $(idict_h) $(imemory_h) $(iutil_h) $(iutil2_h) $(opcheck_h)
 	$(PSCC) $(PSO_)iutil2.$(OBJ) $(C_) $(PSSRC)iutil2.c
 
 $(PSOBJ)zmisc2.$(OBJ) : $(PSSRC)zmisc2.c $(OP) $(memory__h) $(string__h)\
@@ -1304,7 +1310,7 @@ $(PSD)nobtoken.dev : $(INT_MAK) $(ECHOGS_XE) $(nobtoken_)
 	$(SETMOD) $(PSD)nobtoken $(nobtoken_)
 
 $(PSOBJ)inobtokn.$(OBJ) : $(PSSRC)inobtokn.c $(GH)\
- $(stream_h) $(errors_h) $(iscan_h) $(iscanbin_h)
+ $(stream_h) $(ierrors_h) $(iscan_h) $(iscanbin_h)
 	$(PSCC) $(PSO_)inobtokn.$(OBJ) $(C_) $(PSSRC)inobtokn.c
 
 btoken_=$(PSOBJ)iscanbin.$(OBJ) $(PSOBJ)zbseq.$(OBJ)
@@ -1314,7 +1320,7 @@ $(PSD)btoken.dev : $(INT_MAK) $(ECHOGS_XE) $(btoken_)
 	$(ADDMOD) $(PSD)btoken -ps gs_btokn
 
 $(PSOBJ)iscanbin.$(OBJ) : $(PSSRC)iscanbin.c $(GH)\
- $(math__h) $(memory__h) $(errors_h)\
+ $(math__h) $(memory__h) $(ierrors_h)\
  $(gsutil_h) $(gxalloc_h) $(ialloc_h) $(ibnum_h) $(iddict_h) $(iname_h)\
  $(iscan_h) $(iscanbin_h) $(iutil_h) $(ivmspace_h)\
  $(btoken_h) $(dstack_h) $(ostack_h)\
@@ -1361,7 +1367,7 @@ $(PSD)dps2read.dev : $(INT_MAK) $(ECHOGS_XE) $(dps2read_) $(PSD)dps2int.dev
 	$(ADDMOD) $(PSD)dps2read -ps gs_dps2
 
 $(PSOBJ)ibnum.$(OBJ) : $(PSSRC)ibnum.c $(GH) $(math__h) $(memory__h)\
- $(errors_h) $(stream_h) $(ibnum_h) $(imemory_h) $(iutil_h)
+ $(ierrors_h) $(stream_h) $(ibnum_h) $(imemory_h) $(iutil_h)
 	$(PSCC) $(PSO_)ibnum.$(OBJ) $(C_) $(PSSRC)ibnum.c
 
 $(PSOBJ)zcharx.$(OBJ) : $(PSSRC)zcharx.c $(OP)\
@@ -1439,7 +1445,7 @@ $(PSD)cidfont.dev : $(INT_MAK) $(ECHOGS_XE) $(cidread_)\
 	$(ADDMOD) $(PSD)cidfont -ps gs_cidfn gs_cidcm gs_fntem gs_cidtt gs_cidfm
 
 $(PSOBJ)zcid.$(OBJ) : $(PSSRC)zcid.c $(OP)\
- $(gxcid_h) $(errors_h) $(icid_h) $(idict_h) $(idparam_h) $(store_h)
+ $(gxcid_h) $(ierrors_h) $(icid_h) $(idict_h) $(idparam_h) $(store_h)
 	$(PSCC) $(PSO_)zcid.$(OBJ) $(C_) $(PSSRC)zcid.c
 
 $(PSOBJ)zfcid.$(OBJ) : $(PSSRC)zfcid.c $(OP)\
@@ -1457,7 +1463,7 @@ $(PSOBJ)zfcid0.$(OBJ) : $(PSSRC)zfcid0.c $(OP) $(memory__h)\
 
 $(PSOBJ)zfcid1.$(OBJ) : $(PSSRC)zfcid1.c $(OP) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsgcache_h) $(gxfcid_h)\
- $(bfont_h) $(icid_h) $(idict_h) $(idparam_h)\
+ $(bfont_h) $(icid_h) $(ichar1_h) $(idict_h) $(idparam_h)\
  $(ifcid_h) $(ifont42_h) $(store_h) $(stream_h) $(files_h)
 	$(PSCC) $(PSO_)zfcid1.$(OBJ) $(C_) $(PSSRC)zfcid1.c
 
@@ -1802,6 +1808,7 @@ $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(SETMOD) $(PSD)pdfread -include $(PSD)frsd $(PSD)func4 $(PSD)fzlib
 	$(SETMOD) $(PSD)pdfread -include $(PSD)transpar
 	$(ADDMOD) $(PSD)pdfread -ps pdf_ops gs_l2img
+	$(ADDMOD) $(PSD)pdfread -ps pdf_rbld
 	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
 
 # ---------------- Font API ---------------- #
@@ -1844,7 +1851,7 @@ $(PSD)fapiu1.dev : $(INT_MAK) $(ECHOGS_XE) \
 
 $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
  $(memory__h) $(stdio__h) $(math__h)\
- $(errors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) \
+ $(ierrors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)port.h\
@@ -1861,7 +1868,7 @@ $(PSD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
 
 # FreeType bridge :
 
-FT_LIB=$(FT_ROOT)$(D)bin$(D)freetype
+FT_LIB=$(FT_ROOT)$(D)objs$(D)freetype214MT_D
 FT_INC=$(I_)$(FT_ROOT)$(D)include$(_I)
 
 wrfont_h=$(stdpre_h) $(PSSRC)wrfont.h
@@ -1911,17 +1918,17 @@ GENINIT_DEPS=$(stdpre_h)
 # ============================= Main program ============================== #
 
 $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\
- $(errors_h) $(iapi_h) $(imain_h) $(imainarg_h) $(iminst_h)
+ $(ierrors_h) $(iapi_h) $(imain_h) $(imainarg_h) $(iminst_h)
 	$(PSCC) $(PSO_)gs.$(OBJ) $(C_) $(PSSRC)gs.c
 
 $(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK)\
- $(string__h) $(errors_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
+ $(string__h) $(ierrors_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
  $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h)
 	$(PSCC) $(PSO_)iapi.$(OBJ) $(C_) $(PSSRC)iapi.c
 
 $(PSOBJ)icontext.$(OBJ) : $(PSSRC)icontext.c $(GH)\
  $(gsstruct_h) $(gxalloc_h)\
- $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
+ $(dstack_h) $(ierrors_h) $(estack_h) $(files_h)\
  $(icontext_h) $(idict_h) $(igstate_h) $(interp_h) $(isave_h) $(store_h)\
  $(stream_h)
 	$(PSCC) $(PSO_)icontext.$(OBJ) $(C_) $(PSSRC)icontext.c
@@ -1941,7 +1948,7 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(gp_h)\
  $(gsargs_h) $(gscdefs_h) $(gsdevice_h) $(gsmalloc_h) $(gsmdebug_h)\
  $(gxdevice_h) $(gxdevmem_h)\
- $(errors_h) $(estack_h) $(files_h)\
+ $(ierrors_h) $(estack_h) $(files_h)\
  $(iapi_h) $(ialloc_h) $(iconf_h) $(imain_h) $(imainarg_h) $(iminst_h)\
  $(iname_h) $(interp_h) $(iscan_h) $(iutil_h) $(ivmspace_h)\
  $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h) \
@@ -1951,7 +1958,7 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
  $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h)\
  $(gxalloc_h) $(gxdevice_h) $(gzstate_h)\
- $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
+ $(dstack_h) $(ierrors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(idisp_h) $(iinit_h)\
  $(iname_h) $(interp_h) $(iplugin_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
  $(main_h) $(oper_h) $(ostack_h)\
@@ -1961,7 +1968,7 @@ $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
 #****** $(CCINT) interp.c
 $(PSOBJ)interp.$(OBJ) : $(PSSRC)interp.c $(GH) $(memory__h) $(string__h)\
  $(gsstruct_h)\
- $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
+ $(dstack_h) $(ierrors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iastruct_h) $(icontext_h) $(icremap_h) $(iddict_h) $(igstate_h)\
  $(iname_h) $(inamedef_h) $(interp_h) $(ipacked_h)\
  $(isave_h) $(iscan_h) $(istack_h) $(itoken_h) $(iutil_h) $(ivmspace_h)\
@@ -1972,5 +1979,5 @@ $(PSOBJ)interp.$(OBJ) : $(PSSRC)interp.c $(GH) $(memory__h) $(string__h)\
 $(PSOBJ)ireclaim.$(OBJ) : $(PSSRC)ireclaim.c $(GH)\
  $(gsstruct_h)\
  $(iastate_h) $(icontext_h) $(interp_h) $(isave_h) $(isstate_h)\
- $(dstack_h) $(errors_h) $(estack_h) $(opdef_h) $(ostack_h) $(store_h)
+ $(dstack_h) $(ierrors_h) $(estack_h) $(opdef_h) $(ostack_h) $(store_h)
 	$(PSCC) $(PSO_)ireclaim.$(OBJ) $(C_) $(PSSRC)ireclaim.c

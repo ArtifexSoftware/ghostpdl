@@ -267,7 +267,7 @@ render_ht_short(const gs_memory_t *mem, gx_ht_tile *pbt, int level, const gx_ht_
 /* Define the procedure vectors for the order data implementations. */
 const gx_ht_order_procs_t ht_order_procs_table[2] = {
     { sizeof(gx_ht_bit), construct_ht_order_default, ht_bit_index_default,
-      render_ht_default, NULL },
+      render_ht_default },
     { sizeof(ushort), construct_ht_order_short, ht_bit_index_short,
-      render_ht_short, NULL }
+      render_ht_short }
 };

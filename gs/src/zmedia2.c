@@ -175,15 +175,24 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		} else if (!obj_eq(imemory, prvalue, pmvalue))
 		    goto no;
 	    }
-	    /* We have a match.  If it is a better match */
-	    /* than the current best one, it supersedes it */
-	    /* regardless of priority. */
-	    if (best_mismatch < mbest) {
+	    /* We have a match. Save the match in case no better match is found */
+	    if (r_has_type(&match.match_key, t_null)) 
+		match.match_key = aelt.key;
+	    /*
+	     * If it is a better match than the current best it supersedes it 
+	     * regardless of priority. If the match is the same, then update 
+	     * to the current only if the key value is lower.
+	     */
+	    if (best_mismatch <= mbest) {
+		if (best_mismatch < mbest  ||
+		    (r_has_type(&match.match_key, t_integer) &&
+		     match.match_key.value.intval > aelt.key.value.intval)) {
+		    reset_match(&match);
+		    match.match_key = aelt.key;
 		mbest = best_mismatch;
-		reset_match(&match);
 	    }
-	    /* In case of a tie, see if the new match has */
-	    /* priority. */
+	    }
+	    /* In case of a tie, see if the new match has priority. */
 	    for (pi = match.priority; pi > 0;) {
 		ref pri;
 
@@ -195,8 +204,6 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		    break;
 		}
 	    }
-	    /* Save the match in case no match has priority. */
-	    match.match_key = aelt.key;
 no:;
 	}
     }
@@ -349,19 +356,35 @@ match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect 
 	int fit_rotated = rx - medium->p.y >= -5 && rx - medium->q.y <= 5 
                        && ry - medium->p.x >= -5 && ry - medium->q.x <= 5;
         
+	/* Fudge matches from a non-standard page size match (4 element array) */
+	/* as worse than an exact match from a standard (2 element array), but */
+	/* better than for a rotated match to a standard pagesize. This should */
+	/* prevent rotation unless we have to (particularly for raster file    */
+	/* formats like TIFF, JPEG, PNG, PCX, BMP, etc. and also should allow  */
+	/* exact page size specification when there is a range PageSize entry. */
+	/* As the comment in gs_setpd.ps says "Devices that care will provide  */
+	/* a real InputAttributes dictionary (most without a range pagesize)   */
         if ( fit_direct && fit_rotated) {
-	    *best_mismatch = 0;
-	    make_adjustment_matrix(mem, request, medium, pmat, false, orient < 0 ? 0 : orient);
+	    make_adjustment_matrix(request, medium, pmat, false, orient < 0 ? 0 : orient);
+	    if (medium->p.x < medium->q.x || medium->p.y < medium->q.y)
+		*best_mismatch = (float)0.001;		/* fudge a match to a range as a small number */
+	    else	/* should be 0 for an exact match */
+	        *best_mismatch = fabs((rx - medium->p.x) * (medium->q.x - rx)) +
+	    			fabs((ry - medium->p.y) * (medium->q.y - ry));
         } else if ( fit_direct ) {
             int rotate = orient < 0 ? 0 : orient;
 
-            *best_mismatch = (rotate & 1 ? 0.1 : 0);
-	    make_adjustment_matrix(mem, request, medium, pmat, false, (rotate + 1) & 2);
+	    make_adjustment_matrix(request, medium, pmat, false, (rotate + 1) & 2);
+	    *best_mismatch = fabs((medium->p.x - rx) * (medium->q.x - rx)) +
+	    			fabs((medium->p.y - ry) * (medium->q.y - ry)) + 
+            			    (pmat->xx == 0.0 || (rotate & 1) == 1 ? 0.01 : 0);	/* rotated */
         } else if ( fit_rotated ) {
             int rotate = (orient < 0 ? 1 : orient);
 
-            *best_mismatch = (rotate & 1 ? 0 : 0.1);
-	    make_adjustment_matrix(mem, request, medium, pmat, false, rotate | 1);
+	    make_adjustment_matrix(request, medium, pmat, false, rotate | 1);
+	    *best_mismatch = fabs((medium->p.y - rx) * (medium->q.y - rx)) +
+	    			fabs((medium->p.x - ry) * (medium->q.x - ry)) + 
+            			    (pmat->xx == 0.0 || (rotate & 1) == 1 ? 0.01 : 0);	/* rotated */
         } else {
 	    int rotate =
 		(orient >= 0 ? orient :
@@ -402,7 +425,7 @@ match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect 
 	        req_rect.q = req_rect.p;
 	        make_adjustment_matrix(mem, request, &req_rect, pmat, false, rotate);
 	    }
-	    *best_mismatch = mismatch;
+	    *best_mismatch = fabs(mismatch);
         }
         if (pmat->xx == 0) {	/* Swap request X and Y. */
 	    double temp = rx;

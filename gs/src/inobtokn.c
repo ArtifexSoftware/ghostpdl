@@ -13,11 +13,10 @@
 /*$RCSfile$ $Revision$ */
 /* Dummy scan_binary_token for Level 1 systems */
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "stream.h"
 #include "iscan.h"
 #include "iscanbin.h"
-
 
 int
 scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,

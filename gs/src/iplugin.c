@@ -13,7 +13,7 @@
 #include "string_.h"
 #include "ghost.h"
 #include "gxalloc.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "ialloc.h"
 #include "iplugin.h"
 #include "icstate.h"

@@ -22,6 +22,11 @@
 /* Define the abstract type for the object procedures. */
 typedef struct gs_text_enum_procs_s gs_text_enum_procs_t;
 
+#ifndef cached_fm_pair_DEFINED
+#  define cached_fm_pair_DEFINED
+typedef struct cached_fm_pair_s cached_fm_pair;
+#endif
+
 /*
  * Define values returned by text_process to the client.
  */
@@ -87,18 +92,26 @@ rc_free_proc(rc_free_text_enum);
     rc_header rc;\
     gs_font *current_font; /* changes for composite fonts */\
     gs_log2_scale_point log2_scale;	/* for oversampling */\
+    cached_fm_pair *pair; /* corresponds to the current_font and CTM*(1<<log2_scale) */\
     uint index;			/* index within string */\
     uint xy_index;		/* index within X/Y widths */\
     gx_font_stack_t fstack;\
     int cmap_code;		/* hack for FMapType 9 composite fonts, */\
 				/* the value returned by decode_next */\
     gs_point FontBBox_as_Metrics2;  /* used with FontType 9,11 && WMode 1 */\
+    /* The following is controlled by a device. */\
+    bool device_disabled_grid_fitting;\
     /* The following are used to return information to the client. */\
     gs_text_returned_t returned
 /* The typedef is in gstext.h. */
 /*typedef*/ struct gs_text_enum_s {
     gs_text_enum_common;
 } /*gs_text_enum_t*/;
+
+#if NEW_TT_INTERPRETER
+    /* The 'pair' field is added to the macro above. */
+    /* A definition of cached_fm_pair is added above */
+#endif
 
 /*
  * Notes on the imaging_dev field of device enumeration structures:

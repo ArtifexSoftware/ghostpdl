@@ -177,7 +177,7 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->file_name.data = 0;	/* in case stream is on stack */
     s->file_name.size = 0;
 
-    if ( s->isheap != true || s->isheap != false )
+    if ( s->isheap != true && s->isheap != false )
 	if_debug0(s->memory, 's', "This should crash nicely\n");
     if_debug4(s->memory, 's', "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
 	      (ulong) s, (ulong) ptr, len, modes);
@@ -522,6 +522,8 @@ sgets(stream * s, byte * buf, uint nmax, uint * pn)
 		cw.limit -= min_left;
 		status = sreadbuf(s, &cw);
 		cw.limit += min_left;
+		/* Compact the stream so stell will return the right result. */
+		stream_compact(s, true);
 		/*
 		 * We know the stream buffer is empty, so it's safe to
 		 * update position.  However, we need to reset the read
@@ -799,9 +801,9 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    oldpos = pw->ptr;
 	    status = (*curr->procs.process) (s->memory, curr->state, pr, pw, eof);
 	    pr->limit += left;
-	    if_debug4(s->memory, 's', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d\n",
+	    if_debug5(s->memory, 's', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
-		      (uint) (pw->limit - pw->ptr), status);
+		      (uint) (pw->limit - pw->ptr), status, s->position);
 	    if (strm == 0 || status != 0)
 		break;
 	    if (strm->end_status < 0) {
@@ -1064,6 +1066,8 @@ swrite_string(register stream * s, byte * ptr, uint len)
 	s_std_null, s_std_null, s_string_write_process
     };
 
+    /* Hack to set up isheap boolean */
+    s->isheap = false;
     s_std_init(s, ptr, len, &p, s_mode_write + s_mode_seek);
     s->cbuf_string.data = ptr;
     s->cbuf_string.size = len;

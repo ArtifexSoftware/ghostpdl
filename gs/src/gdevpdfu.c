@@ -596,8 +596,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 
     /* Free unnamed resource objects, which can't be referenced again. */
 
-    for (i = 0; i < resourceFont; ++i)
-	pdf_free_resource_objects(pdev, i);
+    pdf_free_resource_objects(pdev, resourceXObject);
 
     page->procsets = pdev->procsets;
     return 0;
@@ -615,6 +614,28 @@ pdf_copy_data(stream *s, FILE *file, long count)
 
 	fread(buf, 1, sbuf_size, file);
 	stream_write(s, buf, copy);
+	left -= copy;
+    }
+}
+
+
+/* Copy data from a temporary file to a stream, 
+   which may be targetted to the same file. */
+void
+pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
+{   
+    long left = count;
+
+    while (left > 0) {
+	byte buf[sbuf_size];
+	long copy = min(left, (long)sbuf_size);
+	long end_pos = ftell(file);
+
+	fseek(file, position + count - left, SEEK_SET);
+	fread(buf, 1, copy, file);
+	fseek(file, end_pos, SEEK_SET);
+	stream_write(s, buf, copy);
+	sflush(s);
 	left -= copy;
     }
 }
@@ -774,7 +795,7 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 		stream_puts(s, hex);
 		break;
 	    case 0:
-		stream_putc(s, '?');
+		stream_puts(s, "BnZr"); /* arbitrary */
 	}
     }
     return 0;

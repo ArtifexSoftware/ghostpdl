@@ -246,34 +246,6 @@ typedef unsigned short ushort;
 typedef unsigned int uint;
 typedef unsigned long ulong;
 
-/* Some systems are guaranteed to have stdint.h
- * but don't use the autoconf detection
- */
-#ifndef HAVE_STDINT_H
-# ifdef __MACOS__
-#   define HAVE_STDINT_H
-# endif
-#endif
-
-/* Define some stdint.h types. The jbig2dec headers require these and 
- * they're generally useful to have around now that there's a standard.
- */
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#else
-# ifdef __WIN32__ /* MSVC currently doesn't proved C99 headers */
-   typedef signed char             int8_t;
-   typedef short int               int16_t;
-   typedef int                     int32_t;
-   typedef __int64                 int64_t;
-   typedef unsigned char           uint8_t;
-   typedef unsigned short int      uint16_t;
-   typedef unsigned int            uint32_t;
-   /* no uint64_t */
-# endif
-   /* other archs may want to add defines here */
-#endif /* STDINT_H */
-
 /* Since sys/types.h may define one or more of these (depending on
  * the platform), we have to take steps to prevent name clashes.
  * Unfortunately this can clobber valid definitions for the size-

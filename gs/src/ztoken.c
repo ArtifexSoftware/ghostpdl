@@ -52,6 +52,7 @@ ztoken(i_ctx_t *i_ctx_p)
 	}
 	case t_string: {
 	    ref token;
+	    int orig_ostack_depth = ref_stack_count(&o_stack);
 	    int code = scan_string_token(i_ctx_p, op, &token);
 
 	    switch (code) {
@@ -59,10 +60,14 @@ ztoken(i_ctx_t *i_ctx_p)
 		make_false(op);
 		return 0;
 	    default:
-		if (code < 0)
+		if (code < 0) {
+		    /* Clear anything that may have been left on the ostack */
+	    	    if (orig_ostack_depth < ref_stack_count(&o_stack))
+	    		pop(ref_stack_count(&o_stack)- orig_ostack_depth);
 		    return code;
 	    }
-	    push(imemory, 2);
+	    }
+	    push(2);
 	    op[-1] = token;
 	    make_true(op);
 	    return 0;

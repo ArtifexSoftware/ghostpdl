@@ -108,7 +108,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10204
+PVERSION=10205
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -169,7 +169,7 @@ SYNC=nosync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)jbig2.dev $(PSD)macpoll.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)macres.dev $(PSD)macpoll.dev $(PSD)jbig2.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
@@ -274,9 +274,6 @@ CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 # define CCAUX as the real cc compiler, we use this to build the code generation tools
 CCAUX=cc
-CC_LEAF=$(CC_) -fomit-frame-pointer
-# gcc can't use -fomit-frame-pointer with -pg.
-CC_LEAF_PG=$(CC_)
 # These are the specific warnings we have to turn off to compile those
 # specific few files that need this.  We may turn off others in the future.
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
@@ -337,7 +334,7 @@ macsystypes_h=$(GLSRC)macsystypes.h
 systypes_h=$(GLOBJ)sys/types.h
 
 $(GLOBJ)gp_mac.$(OBJ): $(GLSRC)gp_mac.c
-$(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c
+$(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c $(gx_h) $(gp_h) $(gpmisc_h)
 $(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
 
 # ------------------------------------------------------------------- #
@@ -348,7 +345,8 @@ MAC2=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nsync.$(OBJ) $(GLOBJ)gdevemap.$(OBJ) $(G
 $(GLD)macos_.dev: $(MAC1)
 	$(SETMOD) $(DD)macos_ $(MAC1) $(MAC)
 	$(ADDMOD) $(DD)macos_ -obj $(MAC2)
-	$(ADDMOD) $(DD)macos_ -iodev macstdio  # stdout does not work with MSL!!!
+	# uncomment the line below if you need the legacy macstdio device
+	#$(ADDMOD) $(DD)macos_ -iodev macstdio  # macstdio does not work with MSL!!!
 
 # Define polling as a separable feature because it is not needed by the gslib.
 macpoll_=$(GLOBJ)gp_macpoll.$(OBJ)

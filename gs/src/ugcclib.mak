@@ -47,7 +47,7 @@ SHARE_JPEG=0
 JPEG_NAME=jpeg
 
 PSRCDIR=libpng
-PVERSION=10204
+PVERSION=10205
 SHARE_LIBPNG=1
 LIBPNG_NAME=png
 
@@ -138,7 +138,6 @@ AK=
 CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
-CC_LEAF=$(CC_)
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
 
 include $(GLSRCDIR)/unixhead.mak
@@ -150,7 +149,7 @@ include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
-# include $(GLSRCDIR)/ijs.mak # optional 
+include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak

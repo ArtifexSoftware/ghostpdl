@@ -88,9 +88,23 @@ type1_exec_init(gs_type1_state *pcis, gs_text_enum_t *penum,
      * have to address someday!
      */
     
+    int alpha_bits = 1; 
+    gs_log2_scale_point log2_subpixels;
+    
+    if (color_is_pure(pgs->dev_color)) /* Keep consistency with alpha_buffer_bits() */
+	alpha_bits = (*dev_proc(pgs->device, get_alpha_bits)) (pgs->device, go_text);
+    if (alpha_bits <= 1) {
+	/* We render to cache device or the target device has no alpha bits. */
+	log2_subpixels = penum->log2_scale;
+    } else {
+	/* We'll render to target device through alpha buffer. */
+	/* Keep consistency with alpha_buffer_init() */
+	log2_subpixels.x = log2_subpixels.y = ilog2(alpha_bits); 
+    }
     return gs_type1_interp_init(pcis, (gs_imager_state *)pgs, pgs->path,
-				&penum->log2_scale,
-				(penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
+				&penum->log2_scale, &log2_subpixels,
+				(penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0 ||
+				penum->device_disabled_grid_fitting,
 				pfont1->PaintType, pfont1);
 }
 
@@ -926,18 +940,17 @@ z1_subr_data(gs_font_type1 * pfont, int index, bool global,
 
 private int
 z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
-	     gs_glyph_data_t *pgd)
+	     gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
     gs_glyph glyph = gs_c_known_encode((gs_char)ccode,
 				       ENCODING_INDEX_STANDARD);
     int code;
-    gs_const_string gstr;
     ref rglyph;
 
     if (glyph == GS_NO_GLYPH)
-	return_error(pfont->memory, e_rangecheck);
-    if ((code = gs_c_glyph_name(pfont->memory, glyph, &gstr)) < 0 ||
-	(code = name_ref(pfont->memory, gstr.data, gstr.size, &rglyph, 0)) < 0
+	return_error(e_rangecheck);
+    if ((code = gs_c_glyph_name(glyph, gstr)) < 0 ||
+	(code = name_ref(gstr->data, gstr->size, &rglyph, 0)) < 0
 	)
 	return code;
     if (pglyph)
@@ -1017,7 +1030,6 @@ zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
     int code;
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
-    static const gs_log2_scale_point no_scale = {0, 0};
     const gs_type1_data *pdata;
     const ref *pfdict;
     ref *pcdevproc;
@@ -1058,11 +1070,11 @@ zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
 	gs_matrix_fixed_from_matrix(&gis.ctm, &imat);
     }
     gis.flatness = 0;
-    code = gs_type1_interp_init(&cxs.cis, &gis, ppath, &no_scale, true, 0,
+    code = gs_type1_interp_init(&cxs.cis, &gis, ppath, NULL, NULL, true, 0,
 				pfont1);
     if (code < 0)
 	return code;
-    cxs.cis.charpath_flag = true;	/* suppress hinting */
+    cxs.cis.no_grid_fitting = true;
     gs_type1_set_callback_data(pcis, &cxs);
     switch (cxs.present) {
     case metricsSideBearingAndWidth:
@@ -1098,26 +1110,34 @@ icont:
  * e_rangecheck, since we can't call the interpreter from here.
  */
 int
-z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
-	      int members, gs_glyph_info_t *info)
+z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+	      int members, gs_glyph_info_t *info, font_proc_glyph_info((*proc)), int wmode)
 {
     ref gref;
     ref *pcdevproc;
-    gs_font_type1 *const pfont = (gs_font_type1 *)font;
     gs_font_base *const pbfont = (gs_font_base *)font;
-    int wmode = pfont->WMode;
     const ref *pfdict = &pfont_data(pbfont)->dict;
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
     int outline_widths = members & GLYPH_INFO_OUTLINE_WIDTHS;
     bool modified_widths = false;
     int default_members = members & ~(width_members + outline_widths + 
-                                      GLYPH_INFO_VVECTOR0 + GLYPH_INFO_VVECTOR1);
+                                      GLYPH_INFO_VVECTOR0 + GLYPH_INFO_VVECTOR1 + 
+				      GLYPH_INFO_CDEVPROC);
     int done_members = 0;
     int code;
 
     if (!width_members)
-	return gs_type1_glyph_info(font, glyph, pmat, members, info);
-    glyph_ref(font->memory, glyph, &gref);
+	return (*proc)(font, glyph, pmat, members, info);
+    if (!outline_widths && dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0) {
+	done_members |= GLYPH_INFO_CDEVPROC;
+	if (members & GLYPH_INFO_CDEVPROC) {
+	    info->members = done_members;
+	    return_error(e_rangecheck);
+	} else {
+	    /* Ignore CDevProc. Used to compure MissingWidth.*/
+	}
+    }
+    glyph_ref(glyph, &gref);
     if (width_members == GLYPH_INFO_WIDTH1) {
 	double wv[4];
 	code = zchar_get_metrics2(pbfont, &gref, wv);
@@ -1157,13 +1177,10 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    width_members |= done_members;
 	    done_members = outline_widths;
 	}
-    } else {
-	if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
-	    return_error(font->memory, e_rangecheck); /* can't handle it */
     }
     default_members |= width_members;
     if (default_members) {
-	code = gs_type1_glyph_info(font, glyph, pmat, default_members, info);
+	code = (*proc)(font, glyph, pmat, default_members, info);
 
 	if (code < 0)
 	    return code;
@@ -1172,3 +1189,14 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     info->members |= done_members;
     return 0;
 }
+
+int
+z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+	      int members, gs_glyph_info_t *info)
+{
+    int wmode = font->WMode;
+
+    return z1_glyph_info_generic(font, glyph, pmat, members, info, 
+				    &gs_type1_glyph_info, wmode);
+}
+

@@ -81,6 +81,8 @@ typedef struct pdf_text_enum_s {
     gs_text_enum_t *pte_default;
     gs_fixed_point origin;
     bool charproc_accum;
+    bool cdevproc_callout;
+    double cdevproc_result[10];
 } pdf_text_enum_t;
 #define private_st_pdf_text_enum()\
   extern_st(st_gs_text_enum);\
@@ -125,7 +127,7 @@ typedef struct pdf_glyph_widths_s {
  * (a caller-supplied buffer large enough to hold the string).
  */
 #define PROCESS_TEXT_PROC(proc)\
-  int proc(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
+  int proc(gs_text_enum_t *pte, void *vbuf, uint bsize)
 
 /* ------ gdevpdtt.c ------ */
 
@@ -141,6 +143,25 @@ int font_orig_scale(const gs_font *font, double *sx);
 int
 pdf_obtain_font_resource(const gs_text_enum_t *penum, 
 		const gs_string *pstr, pdf_font_resource_t **ppdfont);
+
+/*
+ * Create or find a font resource object for a glyphshow text.
+ */
+int pdf_obtain_font_resource_unencoded(const gs_text_enum_t *penum, 
+	    const gs_string *pstr, pdf_font_resource_t **ppdfont, const gs_glyph *gdata);
+
+/*
+ * Create or find a CID font resource object for a glyph set.
+ */
+int pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont, 
+			    pdf_font_resource_t **ppdsubf, 
+			    gs_glyph *glyphs, int num_glyphs);
+
+/*
+ * Create or find a parent Type 0 font resource object for a CID font resource.
+ */
+int pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdsubf, 
+		const gs_const_string *CMapName, pdf_font_resource_t **pdfont);
 
 /*
  * Retrive font resource attached to a font.
@@ -184,9 +205,12 @@ int pdf_set_text_process_state(gx_device_pdf *pdev,
  * font.  If the width is cachable (implying that the w values area valid),
  * return 0; if only the xy values are valid, or the width is not cachable
  * for some other reason, return 1.
+ * Return TEXT_PROCESS_CDEVPROC if a CDevProc callout is needed.
+ * cdevproc_result != NULL if we restart after a CDevProc callout.
  */
 int pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
-		     gs_font *font, pdf_glyph_widths_t *pwidths);
+		     gs_font *font, pdf_glyph_widths_t *pwidths,
+		     const double cdevproc_result[10]);
 
 /*
  * Fall back to the default text processing code when needed.
@@ -218,7 +242,7 @@ PROCESS_TEXT_PROC(process_plain_text);
  * Encode and process a string with a simple gs_font.
  */
 int pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
-			      const gs_matrix *pfmat,
+			      const gs_glyph *gdata, const gs_matrix *pfmat,
 			      pdf_text_process_state_t *ppts);
 
 /*

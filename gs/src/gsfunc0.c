@@ -19,6 +19,7 @@
 #include "gsparam.h"
 #include "gxfarith.h"
 #include "gxfunc.h"
+#include "stream.h"
 
 typedef struct gs_function_Sd_s {
     gs_function_head_t head;
@@ -554,6 +555,64 @@ gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
+/* aA helper for gs_function_Sd_serialize. */
+private int serialize_array(const float *a, int half_size, stream *s)
+{
+    uint n;
+    const float dummy[2] = {0, 0};
+    int i, code;
+
+    if (a != NULL)
+	return sputs(s, (const byte *)a, sizeof(a[0]) * half_size * 2, &n);
+    for (i = 0; i < half_size; i++) {
+	code = sputs(s, (const byte *)dummy, sizeof(dummy), &n);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+
+/* Serialize. */
+private int
+gs_function_Sd_serialize(const gs_function_t * pfn, stream *s)
+{
+    uint n;
+    const gs_function_Sd_params_t * p = (const gs_function_Sd_params_t *)&pfn->params;
+    gs_function_info_t info;
+    int code = fn_common_serialize(pfn, s);
+    ulong pos;
+    uint count;
+    byte buf[100];
+    const byte *ptr;
+
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->Order, sizeof(p->Order), &n);
+    if (code < 0)
+	return code;
+    code = sputs(s, (const byte *)&p->BitsPerSample, sizeof(p->BitsPerSample), &n);
+    if (code < 0)
+	return code;
+    code = serialize_array(p->Encode, p->m, s);
+    if (code < 0)
+	return code;
+    code = serialize_array(p->Decode, p->n, s);
+    if (code < 0)
+	return code;
+    gs_function_get_info(pfn, &info);
+    code = sputs(s, (const byte *)&info.data_size, sizeof(info.data_size), &n);
+    if (code < 0)
+	return code;
+    for (pos = 0; pos < info.data_size; pos += count) {
+	count = min(sizeof(buf), info.data_size - pos);
+	data_source_access_only(info.DataSource, pos, count, buf, &ptr, s->memory);
+	code = sputs(s, ptr, count, &n);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+
 /* Allocate and initialize a Sampled function. */
 int
 gs_function_Sd_init(gs_function_t ** ppfn,
@@ -568,7 +627,8 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	    (fn_get_params_proc_t) fn_Sd_get_params,
 	    (fn_make_scaled_proc_t) fn_Sd_make_scaled,
 	    (fn_free_params_proc_t) gs_function_Sd_free_params,
-	    fn_common_free
+	    fn_common_free,
+	    (fn_serialize_proc_t) gs_function_Sd_serialize,
 	}
     };
     int code;

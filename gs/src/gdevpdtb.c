@@ -97,7 +97,7 @@ pdf_has_subset_prefix(const byte *str, uint size)
 private ulong
 hash(ulong v, int index, ulong w)
 {
-    return v * 3141592653+ w;
+    return v * 3141592653u + w;
 }
 
 /*
@@ -169,7 +169,8 @@ pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
  */
 int
 pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
-		    gs_font_base *font, bool is_standard, bool orig_name)
+		    gs_font_base *font, const gs_matrix *orig_matrix, 
+		    bool is_standard, bool orig_name)
 {
     gs_memory_t *mem = pdev->pdf_memory;
     gs_font *copied;
@@ -183,8 +184,8 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     int code;
 
     if (pbfont == 0)
-	return_error(mem, gs_error_VMerror);
-    code = gs_copy_font((gs_font *)font, mem, &copied);
+	return_error(pdev->memory, gs_error_VMerror);
+    code = gs_copy_font((gs_font *)font, orig_matrix, mem, &copied);
     if (code < 0)
 	goto fail;
     memset(pbfont, 0, sizeof(*pbfont));
@@ -241,7 +242,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	if (is_standard)
 	    complete = copied, code = 0;
 	else
-	    code = gs_copy_font((gs_font *)font, mem, &complete);
+	    code = gs_copy_font((gs_font *)font, &font->FontMatrix, mem, &complete);
 	if (code >= 0)
 	    code = gs_copy_font_complete((gs_font *)font, complete);
 	if (pbfont->num_glyphs < 0) { /* Type 1 */
@@ -579,6 +580,8 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 				   (gs_font_cid2 *)out_font,
 				   CID2_OPTIONS, NULL, 0, &fnstr);
     finish:
+	if (code < 0)
+	    return code;
 	code = pdf_end_fontfile(pdev, &writer);
 	break;
 

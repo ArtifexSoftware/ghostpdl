@@ -160,6 +160,7 @@ art_pdf_recomposite_group_8(const gs_memory_t *mem,
 			    byte *dst, byte *dst_alpha_g,
 			    const byte *src, byte src_alpha_g,
 			    int n_chan,
+
 			    byte alpha, gs_blend_mode_t blend_mode);
 
 /**
@@ -178,6 +179,7 @@ void
 art_pdf_composite_group_8(const gs_memory_t *mem,
 			  byte *dst, byte *alpha_g,
 			  const byte *src,
+
 			  int n_chan, byte alpha, gs_blend_mode_t blend_mode);
 
 /**
@@ -196,6 +198,7 @@ void
 art_pdf_composite_knockout_simple_8(const gs_memory_t *mem,
 				    byte *dst,
 				    byte *dst_shape,
+
 				    const byte *src,
 				    int n_chan, byte opacity);
 
@@ -246,6 +249,7 @@ art_pdf_composite_knockout_8(const gs_memory_t *mem,
 			     const byte *src,
 			     int n_chan,
 			     byte shape,
+
 			     byte alpha_mask,
 			     byte shape_mask, gs_blend_mode_t blend_mode);
 

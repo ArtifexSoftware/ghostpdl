@@ -15,7 +15,7 @@
 #include "ghost.h"
 #include "memory_.h"
 #include "stream.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "btoken.h"		/* for ref_binary_object_format */
 #include "files.h"		/* for fptr */
 #include "ialloc.h"
@@ -42,15 +42,6 @@
 
 #define recognize_btokens()\
   (ref_binary_object_format.value.intval != 0 && level2_enabled)
-
-#ifdef DEBUG
-/* Dummy comment processing procedure for testing. */
-private int
-no_comment_proc(const byte * str, uint len)
-{
-    return 0;
-}
-#endif
 
 /* Procedure for handling DSC comments if desired. */
 /* Set at initialization if a DSC handling module is included. */
@@ -451,6 +442,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 #define name_type sstate.s_ss.s_name.s_name_type
 #define try_number sstate.s_ss.s_name.s_try_number
 
+    sptr = endptr = NULL; /* Quiet compiler */
     if (pstate->s_pstack != 0) {
 	if_not_spush1()
 	    return retcode;

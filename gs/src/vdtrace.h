@@ -66,7 +66,7 @@ extern char vd_flags[];
 
 void vd_impl_moveto(double x, double y);
 void vd_impl_lineto(double x, double y);
-void vd_impl_lineto_multi(struct gs_fixed_point_s *p, int n);
+void vd_impl_lineto_multi(const struct gs_fixed_point_s *p, int n);
 void vd_impl_curveto(double x0, double y0, double x1, double y1, double x2, double y2);
 void vd_impl_bar(double x0, double y0, double x1, double y1, int w, unsigned long c); /* unscaled width */
 void vd_impl_square(double x0, double y0, int w, unsigned int c); /* unscaled width */
@@ -111,7 +111,7 @@ void vd_setflag(char f, char v);
 #    define vd_square(x0,y0,w,c)      while (vd_trace1) { vd_impl_square(x0,y0,w,c); break; }
 #    define vd_rect(x0,y0,x1,y1,w,c)  while (vd_trace1) { vd_impl_rect(x0,y0,x1,y1,w,c); break; }
 #    define vd_quad(x0,y0,x1,y1,x2,y2,x3,y3,w,c)  while (vd_trace1) { vd_impl_quad(x0,y0,x1,y1,x2,y2,x3,y3,w,c); break; }
-#    define vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,c,w) while (vd_trace1) { vd_impl_curve(x0,y0,x1,y1,x2,y2,x3,y3,w,c); break; }
+#    define vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,w,c) while (vd_trace1) { vd_impl_curve(x0,y0,x1,y1,x2,y2,x3,y3,w,c); break; }
 #    define vd_circle(x,y,r,c)  while (vd_trace1) { vd_impl_circle(x,y,r,c); break; }
 #    define vd_round(x,y,r,c)   while (vd_trace1) { vd_impl_round(x,y,r,c); break; }
 #    define vd_fill             while (vd_trace1) { vd_trace1->fill(vd_trace1); break; }

@@ -148,6 +148,7 @@ typedef struct gs_glyph_info_s {
 #define GLYPH_INFO_OUTLINE_WIDTHS 32 /* return unmodified widths, see above */
 #define GLYPH_INFO_VVECTOR0 64	
 #define GLYPH_INFO_VVECTOR1 128	/* must be VVECTOR0 << 1 */
+#define GLYPH_INFO_CDEVPROC 256	/* Allow CDevProc callout. */
 } gs_glyph_info_t;
 
 /* Define the "object" procedures of fonts. */
@@ -376,6 +377,7 @@ typedef struct gs_font_name_s {
 	gs_font *base;			/* original (unscaled) base font */\
 	void *client_data;		/* additional client data */\
 	gs_matrix FontMatrix;\
+	gs_matrix orig_FontMatrix;      /* The original font matrix or zeros. */\
 	font_type FontType;\
 	bool BitmapWidths;\
 	fbit_type ExactSize, InBetweenSize, TransformedChar;\

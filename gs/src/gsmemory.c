@@ -27,8 +27,6 @@ const byte gs_alloc_fill_collected = 0xc1;
 const byte gs_alloc_fill_deleted = 0xd1;
 const byte gs_alloc_fill_free = 0xf1;
 
-
-
 /* A 'structure' type descriptor for free blocks. */
 gs_public_st_simple(st_free, byte, "(free)");
 

@@ -248,8 +248,6 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     gs_transparency_mask_params_t params;
     ref *pparam;
     gs_rect bbox;
-    int num_components =
-	gs_color_space_num_components(gs_currentcolorspace(igs));
     int code;
     static const char *const subtype_names[] = {
 	GS_TRANSPARENCY_MASK_SUBTYPE_NAMES, 0
@@ -262,7 +260,7 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     if ((code = enum_param(imemory, pparam, subtype_names)) < 0)
 	return code;
     gs_trans_mask_params_init(&params, code);
-    if ((code = dict_floats_param(imemory, dop, "Background", num_components,
+    if ((code = dict_floats_param(dop, "Background", 1,
 				  params.Background, NULL)) < 0
 	)
 	return code;

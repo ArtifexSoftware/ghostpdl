@@ -26,15 +26,11 @@
 #include "gxiparam.h"
 #include "gxistate.h"
 #include "gdevddrw.h"
+#include "vdtrace.h"
 /*
 #include "gxdtfill.h" - Do not remove this comment.
                         "gxdtfill.h" is included below.
 */
-
-#if !DROPOUT_PREVENTION
-#define VD_TRACE 0
-#endif
-#include "vdtrace.h"
 
 #define VD_RECT_COLOR RGB(0, 0, 255)
 
@@ -152,7 +148,6 @@ compute_ldx(trap_line *tl, fixed ys)
 #define FLAGS_TYPE bool
 #include "gxdtfill.h"
 
-#if DROPOUT_PREVENTION
 #undef GX_FILL_TRAPEZOID
 #undef CONTIGUOUS_FILL 
 #undef SWAP_AXES
@@ -161,7 +156,6 @@ compute_ldx(trap_line *tl, fixed ys)
 #define CONTIGUOUS_FILL 1
 #define SWAP_AXES 0
 #include "gxdtfill.h"
-#endif
 
 /* Fill a parallelogram whose points are p, p+a, p+b, and p+a+b. */
 /* We should swap axes to get best accuracy, but we don't. */

@@ -17,7 +17,16 @@
 /defaultfontname /Courier def
 
 % Define the name of the font map file.
+% Note that the "%%Replace " comment below provides the font map file name
+% for compiling initialization files into executable. Most likely it should be
+% consistent with the one specified here.
 /defaultfontmap (Fontmap) def
+
+/defaultfontmap_content 50 dict
+1 dict begin
+/; { 2 index 3 1 roll .growput } bind def
+%% Replace 0 (Fontmap)
+end def
 
 % ------ End of editable parameters ------ %
 
@@ -44,7 +53,7 @@
 
 % Define a temporary string for local use, since using =string
 % interferes with some PostScript programs.
-/.fonttempstring 128 string def
+/.fonttempstring 8192 string def
 
 % Split up a search path into individual directories or files.
 /.pathlist              % <path> .pathlist <dir1|file1> ...
@@ -106,6 +115,27 @@ userdict /Fontmap .FontDirectory maxlength dict put
 % resource machinery is loaded.
 /.definefontmap                 % <fontname> <file|alias> .definefontmap -
  {              % Since Fontmap is global, make sure the values are storable.
+   % If the fontname contains Unicode (first byte == \000) and
+   % this is not an alias definition, define an alias using ASCII
+   % (stripping out the high \000 bytes). Observed with some TT fonts.
+   1 index 100 string cvs 0 get 0 eq 1 index type /nametype ne and {
+     1 index 100 string cvs dup length 2 div cvi string true exch
+     0 1 2 index length 1 sub {
+       % stack: fontname filename fontnamestring addflag newstring index
+       dup 4 index exch 2 mul get 0 ne {
+	 % High byte of pair is not \000
+	 pop pop false exch
+         exit
+       } if
+       dup 4 index exch 2 mul 1 add get 2 index 3 1 roll put
+     } for
+     exch {
+       DEBUG { (\nAdding alias for: ) print 1 index ==only ( as: ) print dup == flush } if
+         cvn exch cvn .definefontmap	% recurse with an alias
+     } {
+       pop pop	% discard the name
+     } ifelse
+   } if
    .currentglobal 3 1 roll true .setglobal
    dup type /stringtype eq
     { dup .gcheck not { dup length string copy } if
@@ -127,7 +157,7 @@ userdict /Fontmap .FontDirectory maxlength dict put
 /.findfontvalue {       % <file> <key> .findfontvalue <value> true
                         % <file> <key> .findfontvalue false
                         % Closes the file in either case.
-  exch dup read not { -1 } if
+  exch dup read {
   2 copy unread 16#80 eq {
     dup (xxxxxx) readstring pop pop             % skip .PFB header
   } if
@@ -146,6 +176,7 @@ userdict /Fontmap .FontDirectory maxlength dict put
                 % Stack: key file value true   (or)
                 % Stack: key file false
   dup { 4 } { 3 } ifelse -2 roll closefile pop
+  } { closefile pop false } ifelse
 } bind def
 /.findfontname
  { /FontName .findfontvalue
@@ -234,7 +265,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
   /pss true             % Adobe Multiple Master font instances
   /txt true
 .dicttomark def
-/.scan1fontstring 128 string def
+/.scan1fontstring 8192 string def
 % %%BeginFont: is not per Adobe documentation, but a few fonts have it.
 /.scanfontheaders [(%!PS-Adobe*) (%!FontType*) (%%BeginFont:*)] def
 0 .scanfontheaders { length .max } forall 6 add % extra for PFB header
@@ -242,18 +273,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /.scanfontdir           % <dirname> .scanfontdir -
  { currentglobal exch true setglobal
    QUIET not { (Scanning ) print dup print ( for fonts...) print flush } if
-   (*) 1 index
-
-   % The check below for the presence of /.filenamedirseparator
-   % is a temporary switch to NEW_COMBINE_PATH logics.
-   % It should be removed after alpha testing the new logic.
-   systemdict /.filenamedirseparator known {
-     .filenamedirseparator
-   } {
-     .file_name_separator
-   } ifelse
-   dup (\\) eq { pop (\\\\) } if        % double \ for pattern match
-   concatstrings exch concatstrings
+   [ 1 index ] (*) .generate_dir_list_templates
    0 0 0 4 -1 roll      % found scanned files
     {           % stack: <fontcount> <scancount> <filecount> <filename>
       exch 1 add exch                   % increment filecount
@@ -331,8 +351,47 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 
 %END FONTPATH
 
-% Create the dictionary that registers the .buildfont procedure (called by
-% definefont) for each FontType.
+% Try to enumerate native fonts registered with the os
+% and add them to the fontmap. This relies on a custom
+% operator which calls platform-specific C code. It
+% returns an array of arrays, each containing a pair
+% of strings: what the system thinks is the ps name,
+% and the access path.
+/.setnativefontmapbuilt { % set whether we've been run
+  systemdict exch /.nativefontmapbuilt exch .forceput 
+} .bind executeonly def
+false .setnativefontmapbuilt
+/.buildnativefontmap {   % - .buildnativefontmap <bool>
+  QUIET not {
+    (Querying operating system for font files...\n)
+    print flush
+  } if
+  .getnativefonts dup
+  {
+    {
+      % stack: [ (name) (path) ]
+      % verify the font name ourselves
+      dup 1 get (r) { file } stopped
+      {
+        % skip the entry if we can't open the returned path 
+        pop pop pop
+      }{
+        % we could open the font file
+        .findfontname
+        not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
+        % DEBUG { (  found ) print dup print (\n) print flush } if 
+        % add entry to the fontmap
+        1 index exch 0 exch cvn put
+        aload pop .definefontmap
+      } ifelse
+    } forall
+  } if
+  % record that we've been run
+  true .setnativefontmapbuilt
+} bind def
+
+% Create the dictionary that registers the .buildfont procedure
+% (called by definefont) for each FontType.
 /buildfontdict 20 dict def
 
 % Register Type 3 fonts, which are always supported, for definefont.
@@ -394,13 +453,18 @@ buildfontdict 3 /.buildfont3 cvx put
         .buildcidfont
       } ifelse
 
-      DISKFONTS
-       { FontFileDirectory 2 index known
-          { dup /FontFile FontFileDirectory 4 index get .growput
-          }
-         if
-       }
-      if
+      DISKFONTS {
+        FontFileDirectory 2 index known {
+          dup /FontFile FontFileDirectory 4 index get .growput
+          } if
+      } if
+      systemdict /ProvideUnicode .knownget not { false } if {
+        /FontEmulationProcs /ProcSet findresource
+        /ProvideUnicodeDecoding get exec
+      } if
+      dup /.OrigFont known not {
+        dup dup /.OrigFont exch .growput
+      } if
       readonly          % stack: name fontdict
   } stopped { /invalidfont signalerror } if
 } bind odef
@@ -424,8 +488,11 @@ buildfontdict 3 /.buildfont3 cvx put
 % we think this matches the observed behavior of Adobe interpreters.
 /.aliasfont             % <name> <font> .aliasfont <newFont>
  { .currentglobal 3 1 roll dup .gcheck .setglobal
-   dup length 2 add dict
-   dup 3 -1 roll { 1 index /FID eq { pop pop } { put dup } ifelse } forall
+                             % <bool> <name> <font>
+   dup length 2 add dict     % <bool> <name> <font> <dict>
+   dup 3 -1 roll             % <bool> <name> <dict> <dict> <font>
+   { 1 index /FID eq { pop pop } { put dup } ifelse } forall
+                             % <bool> <name> <dict> <dict>
                 % Stack: global fontname newfont newfont.
                 % We might be defining a global font whose FontName
                 % is a local string.  This is weird, but legal,
@@ -436,13 +503,34 @@ buildfontdict 3 /.buildfont3 cvx put
                 % garbage value to findfont.  In this case, just don't
                 % call definefont at all.
    2 index dup type /stringtype eq exch .gcheck or 1 index .gcheck not or
-    { /FontName 3 index dup type /stringtype eq { cvn } if put
+    { pop                              % <bool> <name> <dict>
+      1 index dup type /stringtype eq { cvn } if
+                                       % <bool> <name> <dict> <name1>
+           % HACK:
+           % We want to know whether we alias a font,
+           % because in this case its FontName to be replaced with the alias.
+           % There is no simple way to know that at this point.
+           % But if the original font has defaultfontname,
+           % we probably substitute it rather than alias.
+           % Using such condition as an approximation to the strong condition.
+           %
+           % Note it works wrongly if Fontmap maps something to defaultfontname like this :
+           %        /Courier  /NimbusMonL-Regu	;
+           %        /Something /Courier ;
+           % The FontName of Something will not be /Something. It will be /Courier .
+           %
+      1 index /FontName get defaultfontname ne {
+        2 copy /FontName exch put
+      } if
+      1 index exch /.Alias exch put    % <bool> <name> <dict>
+      dup dup /.OrigFont exch .growput
                 % Don't bind in definefont, since Level 2 redefines it.
       /definefont .systemvar exec
     }
     { .completefont pop exch pop
     }
-   ifelse exch .setglobal
+   ifelse
+   exch .setglobal
  } odef         % so findfont will bind it
 
 % Define .loadfontfile for loading a font.  If we recognize Type 1 and/or
@@ -669,11 +757,13 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 % The Red Book requires that findfont be a procedure, not an operator,
 % but it still needs to restore the stacks reliably if it fails,
 % so we do all the work in an operator.
-/.findfont {
-  mark 1 index
+/.findfont {             % <fontname> .findfont <font>
+  mark 1 index        % <fontname> mark <fontname>
   //systemdict begin .dofindfont
+                      % <fontname> mark <alias> ... <font>
         % Define any needed aliases.
   counttomark 1 sub { .aliasfont } repeat end
+                      % <fontname> mark <font>
   exch pop exch pop
 } odef
 /findfont {
@@ -709,13 +799,14 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 % This is the standard procedure for handling font substitution.
 % Its location is per an Adobe newsgroup posting.
 % It is called with the font name on the stack, standing in for findfont.
-/.stdsubstfont {        % mark <alias1> ... <fontname> .stdsubstfont <font>
+/.stdsubstfont {        % mark <alias1> ... <fontname> .stdsubstfont mark <alias1> ... <aliasN> <font>
       /SUBSTFONT where {
         pop QUIET not {
           (Substituting for font ) print dup =only
           (.) = flush
         } if
                         % No aliasing.
+                        % This mode is incompatible with high level devices.
         cleartomark mark defaultfontname
       } {
         dup .substitutefont
@@ -730,8 +821,6 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
             ( for ) print 1 index =only (.)
           } ifelse = flush
         } if
-                        % Remove all the accumulated aliases.
-        counttomark 1 add 1 roll cleartomark mark exch
       } ifelse
   .dofindfont
 } bind def
@@ -757,18 +846,28 @@ $error /SubstituteFont { } put
 } bind def
 % Do the work of findfont, including substitution, defaulting, and
 % scanning of FONTPATH.
-/.dofindfont {          % <fontname> .dofindfont <font>
+/.dofindfont {   %  mark <fontname> .dofindfont % mark <alias> ... <font>
   .tryfindfont not {
                         % We didn't find the font.  If we haven't scanned
                         % all the directories in FONTPATH, scan the next one
                         % now and look for the font again.
     .scannextfontdir {
                         % Start over with an empty alias list.
-      counttomark 1 sub { pop } repeat
+      counttomark 1 sub { pop } repeat    % mark <fontname> 
       .dofindfont
     } {
+                        % No more directories to scan. Try building the native
+                        % font map entries if we haven't already done so.
+      systemdict /.nativefontmapbuilt get not { .buildnativefontmap } { false } ifelse {
+                        % Same stack as at the beginning of .dofindfont.
+        .dofindfont     % start over
+      } {
                         % No luck.  Make sure we're not already
                         % looking for the default font.
+        QUIET not {
+          (Didn't find this font on the system!\n)
+          print
+        } if
       dup defaultfontname eq {
         QUIET not {
           (Unable to load default font ) print
@@ -777,7 +876,17 @@ $error /SubstituteFont { } put
         /findfont cvx /invalidfont signalerror
       } if
                         % Substitute for the font.  Don't alias.
-      $error /SubstituteFont get exec .stdsubstfont
+                        % Same stack as at the beginning of .dofindfont.
+        $error /SubstituteFont get exec
+                         %
+                         % igorm: I guess the surrounding code assumes that .stdsubstfont
+                         % must ADD an alias to allow .checkalias and .findfont to work properly.
+                         % Also I guess that a trailing recursion is 
+                         % used in .dofindfont and through .stdsubstfont
+                         % just to represent a simple iteration,
+                         % which accumulates the aliases after the mark.
+        .stdsubstfont
+      } ifelse
     } ifelse
   } if
 } bind def
@@ -852,9 +961,9 @@ $error /SubstituteFont { } put
                 % Hack: check for the presence of the resource machinery.
   /.genericrfn where {
     pop
-    2 copy .fonttempstring /FontResourceDir getsystemparam .genericrfn
+    pop dup .fonttempstring /FontResourceDir getsystemparam .genericrfn
     .loadfontloop {
-      exch pop exch pop true
+      //true
     } {
       dup .nametostring .loadfontloop
     } ifelse
@@ -1021,19 +1130,15 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
           }
           { LIBPATH
              { defaultfontmap
-               % The check below for the presence of /.filenamedirseparator
-               % is a temporary switch to NEW_COMBINE_PATH logics.
-               % It should be removed after alpha testing the new logic.
-               systemdict /.filenamedirseparator known {
-                   1 index .filenamedirseparator
-                   exch concatstrings concatstrings true
-                 } {
                    false .file_name_combine
-                 } ifelse
                {
                  dup VMDEBUG
-                 (r) { file } .internalstopped
-                 { pop pop } { .loadFontmap } ifelse
+                 (r) { file } .internalstopped {
+                   pop pop
+                   defaultfontmap_content { .definefontmap } forall
+                 } {
+                   .loadFontmap
+                 } ifelse
                } {
                  pop pop
                } ifelse
@@ -1042,6 +1147,7 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
          ifelse forall
     }
    if
+   userdict /defaultfontmap_content .undef
    .definefakefonts     % current VM is global
  } def                  % don't bind, .current/setglobal get redefined
 

@@ -35,4 +35,7 @@ int cid_fill_CIDMap(const gs_memory_t *mem,
 		    const ref *Decoding, const ref *TT_cmap, const ref *SubstNWP, 
                     int GDBytes, ref *CIDMap);
 
+/* <cid9font> <cid> .type9mapcid <charstring> <font_index> */
+int ztype9mapcid(i_ctx_t *i_ctx_p);
+
 #endif /* icid_INCLUDED */

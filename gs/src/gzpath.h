@@ -159,13 +159,17 @@ int gx_curve_log2_samples(const gs_memory_t *mem,
 int gx_curve_monotonic_points(const gs_memory_t *mem, 
 			      fixed, fixed, fixed, fixed, double[2]);
 
-/* Split a curve at an arbitrary value of t. */
-void gx_curve_split(const gs_memory_t *mem,
-		    fixed, fixed, const curve_segment *, double,
-		    curve_segment *, curve_segment *);
+/* Monotonize a curve, by splitting it if necessary. */
+int gx_curve_monotonize(gx_path * ppath, const curve_segment * pc);
 
 /* Flatten a partial curve by sampling (internal procedure). */
-int gx_flatten_sample(gx_path *, int, curve_segment *, segment_notes);
+int gx_subdivide_curve(gx_path *, int, curve_segment *, segment_notes);
+/*
+ * Define the maximum number of points for sampling if we want accurate
+ * rasterizing.  2^(k_sample_max*3)-1 must fit into a uint with a bit
+ * to spare; also, we must be able to compute 1/2^(3*k) by table lookup.
+ */
+#define k_sample_max min((size_of(int) * 8 - 1) / 3, 10)
 
 /* Initialize a cursor for rasterizing a monotonic curve. */
 typedef struct curve_cursor_s {
@@ -393,5 +397,55 @@ extern_st(st_path_enum);
    gx_path_add_relative_point(ppath, dx, dy) :\
    (ppath->position.x += dx, ppath->position.y += dy,\
     path_update_moveto(ppath), 0) )
+
+/* An iterator of flattened segments for a minotonic curve. */
+typedef struct gx_flattened_iterator_s gx_flattened_iterator;
+struct gx_flattened_iterator_s {
+    /* private : */
+    fixed x0, y0, x3, y3;
+    fixed cx, bx, ax, cy, by, ay;
+    fixed x, y;
+    uint i, k;
+    uint rmask;			/* M-1 */
+    fixed idx, idy, id2x, id2y, id3x, id3y;	/* I */
+    uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
+    /* public : */
+#if CURVED_TRAPEZOID_FILL
+    bool curve;
+#endif
+    fixed lx0, ly0, lx1, ly1;
+    /* private data for filtered1 : */
+    int prev_filtered1_i;
+    int last_filtered1_i;
+    /* public data for filtered1 : */
+    fixed gx0, gy0, gx1, gy1;
+    int filtered1_i;
+    /* private data for filtered2 : */
+    bool ahead;
+    fixed xn, yn;
+    int last_filtered2_i;
+    int prev_filtered2_i;
+    /* public data for filtered2 : */
+    fixed fx0, fy0, fx1, fy1;
+    int filtered2_i;
+#if !FLATTENED_ITERATOR_BACKSCAN
+    byte skip_points[(1 << k_sample_max) / 8]; /* Only for curves. */
+#endif
+};
+
+bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
+	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse);
+bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
+	    fixed x0, fixed y0, fixed x1, fixed y1);
+void gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, bool last_segment);
+bool gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this);
+bool gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this);
+bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);
+
+bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
+		    fixed y0, fixed y1, fixed y2, fixed y3, 
+		    fixed *ax, fixed *bx, fixed *cx, 
+		    fixed *ay, fixed *by, fixed *cy, 
+		    int k);
 
 #endif /* gzpath_INCLUDED */

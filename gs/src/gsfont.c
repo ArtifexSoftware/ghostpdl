@@ -258,6 +258,19 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->smax = smax;
     pdir->align_to_pixels = true;
     pdir->glyph_to_unicode_table = NULL;
+#if NEW_TT_INTERPRETER
+#   if TT_GRID_FITTING
+	pdir->grid_fit_tt = 3;
+#   else
+	pdir->grid_fit_tt = false;
+#   endif
+    pdir->memory = struct_mem;
+    pdir->tti = 0;
+#if TT_GRID_FITTING
+    pdir->san = 0;
+#endif
+#endif
+    pdir->global_glyph_code = NULL;
     return pdir;
 }
 
@@ -287,6 +300,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->PaintType = 0;
     pfont->StrokeWidth = 0;
     pfont->procs = *procs;
+    memset(&pfont->orig_FontMatrix, 0, sizeof(pfont->orig_FontMatrix));
     /* not key_name, font_name */
     return pfont;
 }
@@ -567,11 +581,19 @@ gs_setcacheupper(gs_font_dir * pdir, uint size)
     return 0;
 }
 int
-gs_setaligntopixels(gs_font_dir * pdir, uint size)
+gs_setaligntopixels(gs_font_dir * pdir, uint v)
 {
-    pdir->align_to_pixels = size;
+    pdir->align_to_pixels = v;
     return 0;
 }
+#if NEW_TT_INTERPRETER
+int
+gs_setgridfittt(gs_font_dir * pdir, uint v)
+{
+    pdir->grid_fit_tt = v;
+    return 0;
+}
+#endif
 
 /* currentcacheparams */
 uint
@@ -594,6 +616,13 @@ gs_currentaligntopixels(const gs_font_dir * pdir)
 {
     return pdir->align_to_pixels;
 }
+#if NEW_TT_INTERPRETER
+uint
+gs_currentgridfittt(const gs_font_dir * pdir)
+{
+    return pdir->grid_fit_tt;
+}
+#endif
 
 /* Purge a font from all font- and character-related tables. */
 /* This is only used by restore (and, someday, the GC). */
@@ -713,7 +742,8 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	gs_glyph notdef = gs_no_glyph;
 	gs_glyph glyph;
 	int fixed_width = 0;
-	int index, code;
+	int index;
+	int code = 0; /* Quiet compiler. */
 
 	for (index = 0;
 	     fixed_width >= 0 &&

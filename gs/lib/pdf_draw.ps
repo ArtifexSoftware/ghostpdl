@@ -355,7 +355,7 @@ end
 % ------ Transparency support ------ %
 
 /gssmask {
-  dup /None eq {
+  dup /None eq PDFusingtransparency not or {
     pop null
   } {
 	% Preprocess the SMask value into a parameter dictionary for
@@ -363,7 +363,15 @@ end
     mark exch		% Stack: mark smaskdict
     dup /S oget /Subtype exch 3 2 roll
 			% Stack: mark ... smaskdict
-    dup /BC knownoget { /Background exch 3 2 roll } if
+    dup /BC knownoget {
+      gsave
+        1 index /G oget /Group oget /CS knownoget {
+	  csresolve setgcolorspace
+	} if
+        aload pop setcolor [ currentgray ]
+      grestore
+      /Background exch 3 2 roll
+    } if
     dup /TR knownoget {
       resolveidfnproc /TransferFunction exch 3 2 roll
     } if    
@@ -392,13 +400,14 @@ end
 } bdef
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
-  gsave
+  gsave //nodict begin
+  null SMask
   1 .setopacityalpha 1 .setshapealpha
   0 .inittransparencymask 1 .inittransparencymask
   /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
   pdfopdict .pdfruncontext
-  grestore
+  end grestore
 } bdef
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
@@ -485,7 +494,11 @@ end
       /exp load 2 packedarray cvx /DecodeA exch def
     } if
     dup /BlackPoint knownoget { /BlackPoint exch def } if
-    dup /WhitePoint knownoget { /WhitePoint exch def } if
+    dup /WhitePoint knownoget {
+      dup /WhitePoint exch def
+      dup /MatrixA exch def
+      /RangeLMN [ 3 2 roll { 0 exch } forall ] def
+    } if
     /PDFColorSpace exch def [ /CIEBasedA currentdict end ]
   }
   /CalRGB {
@@ -541,7 +554,10 @@ end
     ifelse
   } bind
   /Separation {
-    aload pop exch oforce resolvecolorspace exch oforce resolvefnproc
+    aload pop exch oforce resolvecolorspace
+                % Contrary to PDF manuals up to v.1.5, Acrobat Distiller 3.01
+                % can use /Identity name here instead of a function.
+    exch oforce resolveidfnproc
     4 array astore
   }
   /DeviceN {
@@ -805,7 +821,8 @@ end
   begin
   /Width 2 copy oget def
   /Height 2 copy oget def
-  /BitsPerComponent 2 copy oget def
+		% Handle missing BitsPerComponent later.
+  /BitsPerComponent 2 copy knownoget { def } { pop } ifelse
   /Interpolate 2 copy knownoget { def } { pop } ifelse
   makeimagekeys
 } bdef
@@ -822,9 +839,7 @@ end
 		% Decode is required for the PostScript image operators.
                 % AI8 writes bogus decode array [0 1 0 0 0 0 0 0]
     /Decode 2 copy knownoget { 0 2 getinterval } { //01_1 } ifelse def
-		% BitsPerComponent may be missing for masks.
-		% The spec requires it, but some producers omit it, and
-		% Acrobat Reader doesn't care.
+		% BitsPerComponent is optional for masks.
     /BitsPerComponent 2 copy known { pop } { 1 def } ifelse
     true
   } {
@@ -847,7 +862,7 @@ end
   checkaltimage dup length 6 add dict
   1 index /SMask knownoget { 1 index exch /SMask exch put } if
   1 index /Mask knownoget { 1 index exch /Mask exch put } if
-  makeimagedict doimage
+  makeimagedict doimagesmask
 } bdef
 /makemaskimage {	% <datasource> <imagemask> <Mask> makemaskimage
 			%   <datasource> <imagemask>, updates currentdict =
@@ -880,10 +895,30 @@ end
     /ColorSpace DataDict /ColorSpace get def
   } ifelse
 } bdef
+/doimagesmask { % <imagemask> doimagesmask -
+  PDFusingtransparency { currentdict /SMask knownoget } { false } ifelse {
+    << /Subtype /Luminosity >> 0 0 0 0 .begintransparencymask
+    PDFfile fileposition exch
+    gsave //nodict begin
+    null /SoftMask gput
+    1 .setopacityalpha 1 .setshapealpha
+    0 .inittransparencymask 1 .inittransparencymask
+    /Compatible .setblendmode
+    DoImage
+    end grestore
+    PDFfile exch setfileposition
+    0 .endtransparencymask
+    << /Subtype /Group /Isolated true >> 0 0 0 0 .begintransparencygroup
+    doimage
+    .endtransparencygroup
+  } {
+    doimage
+  } ifelse
+} bdef
 /doimage {	% <imagemask> doimage -
 		% imagedict is currentdict, gets popped from dstack
   DataSource exch
-  PDFversion PDFtransparencyversion ge NOTRANSPARENCY not and {
+  PDFusingtransparency {
     currentdict /SMask knownoget
   } {
     false
@@ -901,6 +936,7 @@ end
    { ColorSpace setgcolorspace currentdict end setfillblend /image }
   ifelse
   .systemvar stopped {
+    pop
     $error /errorname get dup /ioerror eq {
       pop (\n   **** Warning: File has insufficient data for an image.\n)
       pdfformaterror
@@ -917,7 +953,7 @@ end
 } bdef
 
 /.paintform {	% <formdict> <resdict> <stream> .paintform -
-  3 -1 roll dup /Group known NOTRANSPARENCY not and {
+  3 -1 roll dup /Group known PDFusingtransparency and {
     .paintgroupform
   } {
     pop pdfopdict .pdfruncontext
@@ -927,19 +963,11 @@ end
 /DoForm {
     % Adobe 2nd edition of the PDF 1.3 spec makes /FormType
     % and /Matrix keys optional. Cope with the missing keys.
-  dup length
-  1 index /Matrix known
-    { dict
-    }
-    { 1 add dict
-      dup /Matrix { 1 0 0 1 0 0 } cvlit put
-    }
-  ifelse
-  copy
-  dup /FormType known not {
-    dup length 1 add dict copy dup /FormType 1 put
-  } if
-
+  begin <<
+  currentdict /FormType known not { /FormType 1 } if
+  currentdict /Matrix   known not { /Matrix { 1 0 0 1 0 0 } cvlit } if
+  currentdict end { oforce } forall
+  >>
   dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
   3 index false /resolvestream cvx
   /.paintform cvx
@@ -1139,7 +1167,7 @@ end
   /F knownoget not { 0 } if 		% Get flag value
   dup 2 and 0 eq  			% Check hidden flag
   exch dup 4 and 0 ne Printed and	% Check print flag
-  exch 64 and 0 eq Printed not and	% Check noview flag
+  exch 32 and 0 eq Printed not and	% Check noview flag
   or					% Combine print and view
   and 					% Combine with 'hidden' flag test
 } bdef

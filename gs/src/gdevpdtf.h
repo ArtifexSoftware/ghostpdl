@@ -183,6 +183,7 @@ struct pdf_font_resource_s {
  	    gs_id glyphshow_font_id;
 	    double *Widths2;	/* [count * 2] (x, y) */
 	    double *v;		/* [count] */
+	    pdf_font_resource_t *parent;
 
 	} cidfont;
 
@@ -217,6 +218,10 @@ struct pdf_font_resource_s {
 		    pdf_char_proc_t *char_procs;
 		    int max_y_offset;
 		    bool bitmap_font;
+		    gs_id used_fonts[10]; /* IDs of fonts uzed in charproc streams.
+					     For a while restrict with 10 fonts.
+					     Should be enough for known cases (251-01.ps) */
+		    int used_fonts_count;
 		} type3;
 
 	    } s;
@@ -295,11 +300,12 @@ pdf_standard_font_t *pdf_standard_fonts(const gx_device_pdf *pdev);
  * Allocate specific types of font resource.
  */
 int pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-			 gs_id rid, pdf_font_resource_t *DescendantFont);
+			 gs_id rid, pdf_font_resource_t *DescendantFont,
+			 const gs_const_string *CMapName);
 int pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			 pdf_font_write_contents_proc_t write_contents);
 int pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		       gs_id rid, gs_font_base *pfont, int index);
+		   bool is_original, gs_id rid, gs_font_base *pfont, int index);
 int pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			  gs_id rid, pdf_font_descriptor_t *pfd);
 int pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
@@ -309,6 +315,10 @@ int pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *p
 int font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			    gs_id rid, font_type ftype,
 			    pdf_font_write_contents_proc_t write_contents);
+
+/* Resize font resource arrays. */
+int pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, 
+	int chars_count);
 
 /*
  * Return the (copied, subset or complete) font associated with a font resource.
@@ -350,7 +360,7 @@ const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name);
  * Allocate a CMap resource.
  */
 int pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-		   pdf_resource_t **ppres /* CMap */);
+		   pdf_resource_t **ppres /* CMap */, int font_index_only);
 
 /*
  * Add a CID-to-GID mapping to a CIDFontType 2 font resource.

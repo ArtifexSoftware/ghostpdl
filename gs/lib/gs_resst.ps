@@ -22,7 +22,7 @@ languagelevel 2 .setlanguagelevel
 
 /sep (/) def %  The %static%  device uses platform independent paths.
 
-/tempstring 255 string def
+/tempstring 8192 string def
 
 /IsMyRecord      % <raw_record> IsMyRecord <raw_record> bool
 { dup type /dicttype eq { dup /StaticFilePos known } { false } ifelse
@@ -51,7 +51,7 @@ languagelevel 2 .setlanguagelevel
   {
     begin
       STRESDEBUG { (Loading a static resource ) print dup = } if
-      255 string 2 index 2 index //GetFilePath exec
+      8192 string 2 index 2 index //GetFilePath exec
       (r) file run
       STRESDEBUG { (Completed loading the static resource ) print dup = } if
       StaticFileEnd StaticFilePos sub

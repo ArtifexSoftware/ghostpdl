@@ -208,7 +208,7 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
 {
     pdf_font_descriptor_t *pfd;
     pdf_base_font_t *pbfont;
-    int code = pdf_base_font_alloc(pdev, &pbfont, font, false, !embed);
+    int code = pdf_base_font_alloc(pdev, &pbfont, font, &font->FontMatrix, false, !embed);
 
     if (code < 0)
 	return code;
@@ -329,12 +329,26 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
     int x_height = min_int;
     int cap_height = 0;
     gs_rect bbox_colon, bbox_period, bbox_I;
+    bool is_cid = (bfont->FontType == ft_CID_encrypted ||
+		   bfont->FontType == ft_CID_TrueType);
     bool have_colon = false, have_period = false, have_I = false;
     int code;
 
     memset(&desc, 0, sizeof(desc));
-    desc.FontBBox.p.x = desc.FontBBox.p.y = max_int;
-    desc.FontBBox.q.x = desc.FontBBox.q.y = min_int;
+    if (is_cid && bfont->FontBBox.p.x != bfont->FontBBox.q.x &&
+		  bfont->FontBBox.p.y != bfont->FontBBox.q.y) {
+	int scale = (bfont->FontType == ft_TrueType || bfont->FontType == ft_CID_TrueType ? 1000 : 1);
+
+	desc.FontBBox.p.x = (int)(bfont->FontBBox.p.x * scale);
+	desc.FontBBox.p.y = (int)(bfont->FontBBox.p.y * scale);
+	desc.FontBBox.p.x = (int)(bfont->FontBBox.p.x * scale);
+	desc.FontBBox.q.y = (int)(bfont->FontBBox.q.y * scale);
+	desc.Ascent = desc.FontBBox.q.y;
+	members &= ~GLYPH_INFO_BBOX;
+    } else {
+	desc.FontBBox.p.x = desc.FontBBox.p.y = max_int;
+	desc.FontBBox.q.x = desc.FontBBox.q.y = min_int;
+    }
     /*
      * Embedded TrueType fonts use a 1000-unit character space, but the
      * font itself uses a 1-unit space.  Compensate for this here.
@@ -369,13 +383,16 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
      */
     notdef = GS_NO_GLYPH;
     for (index = 0;
-	 (code = bfont->procs.enumerate_glyph((gs_font *)bfont, &index, GLYPH_SPACE_NAME, &glyph)) >= 0 &&
+	 (code = bfont->procs.enumerate_glyph((gs_font *)bfont, &index, 
+		(is_cid ? GLYPH_SPACE_INDEX : GLYPH_SPACE_NAME), &glyph)) >= 0 &&
 	     index != 0;
 	 ) {
 	gs_glyph_info_t info;
 	gs_const_string gname;
 
 	code = bfont->procs.glyph_info((gs_font *)bfont, glyph, pmat, members, &info);
+	if (code == gs_error_VMerror)
+	    return code;
 	if (code < 0) {
 	    /*
 	     * Since this function may be indirtectly called from gx_device_finalize,
@@ -385,13 +402,15 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	     */
 	    continue;
 	}
-	/* rect_merge(desc.FontBBox, info.bbox); Expanding due to type cast :*/
-	if (info.bbox.p.x < desc.FontBBox.p.x) desc.FontBBox.p.x = (int)info.bbox.p.x;
-	if (info.bbox.q.x > desc.FontBBox.q.x) desc.FontBBox.q.x = (int)info.bbox.q.x;
-	if (info.bbox.p.y < desc.FontBBox.p.y) desc.FontBBox.p.y = (int)info.bbox.p.y;
-	if (info.bbox.q.y > desc.FontBBox.q.y) desc.FontBBox.q.y = (int)info.bbox.q.y;
-	if (!info.num_pieces)
-	    desc.Ascent = max(desc.Ascent, (int)info.bbox.q.y);
+	if (members & GLYPH_INFO_BBOX) {
+	    /* rect_merge(desc.FontBBox, info.bbox); Expanding due to type cast :*/
+	    if (info.bbox.p.x < desc.FontBBox.p.x) desc.FontBBox.p.x = (int)info.bbox.p.x;
+	    if (info.bbox.q.x > desc.FontBBox.q.x) desc.FontBBox.q.x = (int)info.bbox.q.x;
+	    if (info.bbox.p.y < desc.FontBBox.p.y) desc.FontBBox.p.y = (int)info.bbox.p.y;
+	    if (info.bbox.q.y > desc.FontBBox.q.y) desc.FontBBox.q.y = (int)info.bbox.q.y;
+	    if (!info.num_pieces)
+		desc.Ascent = max(desc.Ascent, (int)info.bbox.q.y);
+	}
 	if (notdef == GS_NO_GLYPH && gs_font_glyph_is_notdef(bfont, glyph)) {
 	    notdef = glyph;
 	    desc.MissingWidth = (int)info.width[wmode].x;
@@ -404,6 +423,8 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	    fixed_width = min_int;
 	if (desc.Flags & FONT_IS_SYMBOLIC)
 	    continue;		/* skip Roman-only computation */
+	if (is_cid)
+	    continue;
 	code = bfont->procs.glyph_name((gs_font *)bfont, glyph, &gname);
 	if (code < 0)
 	    continue;

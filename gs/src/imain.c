@@ -23,7 +23,7 @@
 #include "gxdevice.h"
 #include "gxalloc.h"
 #include "gzstate.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "oper.h"
 #include "iconf.h"		/* for gs_init_* imports */
 #include "idebug.h"
@@ -44,13 +44,15 @@
 #include "isave.h"		/* for prototypes */
 #include "interp.h"
 #include "ivmspace.h"
+#include "idisp.h"		/* for setting display device callback */
 #include "iplugin.h"
 
 /* ------ Exported data ------ */
 
-/** using backpointers retrieve minst from any memory pointer 
- * 
- */
+/* Define the default instance of the interpreter. */
+/* Currently, this is the *only possible* instance, because most of */
+/* the places that need to take an explicit instance argument don't. */
+private gs_main_instance the_gs_main_instance;
 gs_main_instance* 
 get_minst_from_memory(const gs_memory_t *mem)
 {
@@ -120,7 +122,9 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 	gs_lib_finit(1, e_VMerror, minst->heap);
 	return_error(minst->heap, e_VMerror);
     }
-    make_array(&minst->lib_path.container, avm_foreign, max_lib_paths, paths);
+    make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
+	       (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
+					   "lib_path array"));
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
 	       minst->lib_path.container.value.refs);
     minst->lib_path.env = 0;
@@ -160,7 +164,6 @@ gs_main_init1(gs_main_instance * minst)
 					   "the_gs_name_table");
 	    if (code < 0)
 		return code;
-	    gp_get_usertime(mem, minst->base_time);
 	}
 	code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
 	if (code < 0)
@@ -168,7 +171,6 @@ gs_main_init1(gs_main_instance * minst)
         code = i_plugin_init(minst->i_ctx_p);
 	if (code < 0)
 	    return code;
-
 	minst->init_done = 1;
     }
     return 0;
@@ -509,7 +511,6 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     scanner_state state;
 
     gs_main_set_lib_paths(minst);
-
     if (gs_init_string_sizeof == 0) {	/* Read from gs_init_file. */
 	code = gs_main_run_file_open(minst, gs_init_file, &ifile);
     } else {			/* Read from gs_init_string. */
@@ -823,8 +824,8 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     if (minst->init_done >= 1) {
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
-	    int code = gs_closedevice(pdev);
 	    
+	    code = gs_closedevice(pdev);
 	    if (code < 0)
 		eprintf2(minst->heap, 
 			 "ERROR %d closing the device.\n", code, i_ctx_p->pgs->device->dname);

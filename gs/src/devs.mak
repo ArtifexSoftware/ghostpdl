@@ -237,6 +237,7 @@ PDEVH=$(AK) $(gdevprn_h)
 gdev8bcm_h=$(GLSRC)gdev8bcm.h
 gdevcbjc_h=$(GLSRC)gdevcbjc.h $(stream_h)
 gdevdcrd_h=$(GLSRC)gdevdcrd.h
+gdevdevn_h=$(GLSRC)gdevdevn.h
 gdevpccm_h=$(GLSRC)gdevpccm.h
 gdevpcfb_h=$(GLSRC)gdevpcfb.h $(dos__h)
 gdevpcl_h=$(GLSRC)gdevpcl.h
@@ -777,24 +778,24 @@ $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
 $(GLOBJ)gdevpdfb.$(OBJ) : $(GLSRC)gdevpdfb.c\
  $(string__h) $(gx_h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
- $(gserrors_h) $(gxcspace_h)
+ $(gserrors_h) $(gxcspace_h) $(gxhldevc_h)
 	$(GLCC) $(GLO_)gdevpdfb.$(OBJ) $(C_) $(GLSRC)gdevpdfb.c
 
 $(GLOBJ)gdevpdfc.$(OBJ) : $(GLSRC)gdevpdfc.c $(GXERR) $(math__h) $(memory__h)\
  $(gdevpdfc_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gscie_h) $(gscindex_h) $(gscspace_h) $(gscdevn_h) $(gscsepr_h) $(gsicc_h)\
- $(sstring_h) $(stream_h) $(strimpl_h)
+ $(sstring_h) $(stream_h) $(strimpl_h) $(gxcspace_h)
 	$(GLCC) $(GLO_)gdevpdfc.$(OBJ) $(C_) $(GLSRC)gdevpdfc.c
 
 $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
  $(gdevpdfg_h) $(gdevpdfx_h)\
  $(gx_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
- $(gserrors_h) $(gzcpath_h) $(gzpath_h)
+ $(gserrors_h) $(gzcpath_h) $(gzpath_h) $(gxhldevc_h)
 	$(GLCC) $(GLO_)gdevpdfd.$(OBJ) $(C_) $(GLSRC)gdevpdfd.c
 
 $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
  $(memory__h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
- $(gsfunc0_h) $(gsstate_h)\
+ $(gsfunc0_h) $(gsstate_h) $(gxdcolor_h) $(gxpcolor_h) $(gsptype2_h)\
  $(gxbitmap_h) $(gxdht_h) $(gxfarith_h) $(gxfmap_h) $(gxht_h) $(gxistate_h)\
  $(gzht_h)\
  $(szlibx_h)
@@ -804,7 +805,8 @@ $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c $(memory__h)\
  $(gx_h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gsdevice_h) $(gserrors_h) $(gsflip_h) $(gsiparm4_h)\
- $(gxcspace_h) $(gximage3_h) $(gximag3x_h) $(gxdcolor_h) $(gxpcolor_h)
+ $(gxcspace_h) $(gximage3_h) $(gximag3x_h) $(gxdcolor_h) $(gxpcolor_h)\
+ $(gxhldevc_h)
 	$(GLCC) $(GLO_)gdevpdfi.$(OBJ) $(C_) $(GLSRC)gdevpdfi.c
 
 $(GLOBJ)gdevpdfj.$(OBJ) : $(GLSRC)gdevpdfj.c\
@@ -875,6 +877,7 @@ gdevpdtf_h=$(GLSRC)gdevpdtf.h $(gdevpdtx_h)
 gdevpdti_h=$(GLSRC)gdevpdti.h $(gdevpdt_h)
 gdevpdts_h=$(GLSRC)gdevpdts.h $(gsmatrix_h)
 gdevpdtt_h=$(GLSRC)gdevpdtt.h
+gdevpdtv_h=$(GLSRC)gdevpdtv.h
 gdevpdtw_h=$(GLSRC)gdevpdtw.h
 
 # We reserve space for all of a..z, just in case.
@@ -885,7 +888,7 @@ pdxtext_ijk=$(GLOBJ)gdevpdti.$(OBJ)
 pdxtext_lmn=
 pdxtext_opq=
 pdxtext_rst=$(GLOBJ)gdevpdts.$(OBJ) $(GLOBJ)gdevpdtt.$(OBJ)
-pdxtext_uvw=$(GLOBJ)gdevpdtw.$(OBJ)
+pdxtext_uvw=$(GLOBJ)gdevpdtv.$(OBJ) $(GLOBJ)gdevpdtw.$(OBJ)
 pdxtext_xyz=
 pdxtext_=$(pdxtext_ab) $(pdxtext_cde) $(pdxtext_fgh) $(pdxtext_ijk)\
  $(pdxtext_lmn) $(pdxtext_opq) $(pdxtext_rst) $(pdxtext_uvw) $(pdxtext_xyz)\
@@ -949,15 +952,20 @@ $(GLOBJ)gdevpdts.$(OBJ) : $(GLSRC)gdevpdts.c $(gx_h) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gdevpdts.$(OBJ) $(C_) $(GLSRC)gdevpdts.c
 
 $(GLOBJ)gdevpdtt.$(OBJ) : $(GLSRC)gdevpdtt.c $(gx_h) $(math__h) $(string__h)\
- $(gserrors_h) $(gxfcache_h) $(gxfont_h) $(gxfont0_h) $(gxfcid_h) $(gxfcopy_h)\
- $(gxfcmap_h) $(gxpath_h) $(gxchar_h) $(gdevpdfx_h) $(gdevpdfg_h)\
- $(gdevpdtx_h) $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdts_h) $(gdevpdtt_h) $(gdevpdti_h)
+ $(gserrors_h) $(gsencs_h) $(gscedata_h)\
+ $(gxfcache_h) $(gxfont_h) $(gxfont0_h) $(gxfcid_h) $(gxfcopy_h)\
+ $(gxfcmap_h) $(gxpath_h) $(gxchar_h) $(gxstate_h) $(gdevpdfx_h) $(gdevpdfg_h)\
+ $(gdevpdtx_h) $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdts_h) $(gdevpdtt_h)\
+ $(gdevpdti_h) $(gxhldevc_h)
 	$(GLCC) $(GLO_)gdevpdtt.$(OBJ) $(C_) $(GLSRC)gdevpdtt.c
+
+$(GLOBJ)gdevpdtv.$(OBJ) : $(GLSRC)gdevpdtv.c $(gx_h) $(gdevpdtv_h)
+	$(GLCC) $(GLO_)gdevpdtv.$(OBJ) $(C_) $(GLSRC)gdevpdtv.c
 
 $(GLOBJ)gdevpdtw.$(OBJ) : $(GLSRC)gdevpdtw.c $(gx_h) $(memory__h)\
  $(gxfcmap_h) $(gxfont_h) $(gscencs_h)\
  $(gdevpsf_h) $(gdevpdfx_h) $(gdevpdfo_h)\
- $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdtw_h)
+ $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdtw_h) $(gdevpdtv_h)
 	$(GLCC) $(GLO_)gdevpdtw.$(OBJ) $(C_) $(GLSRC)gdevpdtw.c
 
 ################ END PDF WRITER ################
@@ -1094,7 +1102,7 @@ gdevcgml_h=$(GLSRC)gdevcgml.h
 gdevcgmx_h=$(GLSRC)gdevcgmx.h $(gdevcgml_h)
 
 $(GLOBJ)gdevcgm.$(OBJ) : $(GLSRC)gdevcgm.c $(GDEV) $(memory__h)\
- $(gsparam_h) $(gdevpccm_h) $(gdevcgml_h)
+ $(gp_h) $(gsparam_h) $(gdevpccm_h) $(gdevcgml_h)
 	$(GLCC) $(GLO_)gdevcgm.$(OBJ) $(C_) $(GLSRC)gdevcgm.c
 
 $(GLOBJ)gdevcgml.$(OBJ) : $(GLSRC)gdevcgml.c $(memory__h) $(stdio__h)\
@@ -1122,7 +1130,7 @@ $(DD)devicen.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
 
 $(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(PDEVH) $(math__h)\
  $(gdevprn_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gdevdcrd_h)\
- $(gstypes_h) $(gxdcconv_h)
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h)
 	$(GLCC) $(GLO_)gdevdevn.$(OBJ) $(C_) $(GLSRC)gdevdevn.c
 
 ### --------------------------- The XCF device ------------------------- ###

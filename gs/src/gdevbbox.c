@@ -267,6 +267,8 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 	set_dev_proc(dev, encode_color, gx_forward_encode_color);
 	set_dev_proc(dev, decode_color, gx_forward_decode_color);
 	set_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
+	set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
+	set_dev_proc(dev, include_color_space, gx_forward_include_color_space);
 	gx_device_set_target((gx_device_forward *)dev, target);
     } else {
 	gx_device_fill_in_procs((gx_device *)dev);
@@ -768,7 +770,7 @@ bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	     */
 	    gx_drawing_color devc;
 
-	    color_set_pure(&devc, bdev->black);  /* any non-white color will do */
+	    set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
 	    bdev->target = NULL;
 	    code = gx_default_fill_path(dev, pis, ppath, params, &devc, pcpath);
 	    bdev->target = tdev;
@@ -830,7 +832,7 @@ bbox_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    /* fill path into pieces for computing the bounding box. */
 	    gx_drawing_color devc;
 
-	    color_set_pure(&devc, bdev->black);  /* any non-white color will do */
+	    set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
 	    bdev->target = NULL;
 	    gx_default_stroke_path(dev, pis, ppath, params, &devc, pcpath);
 	    bdev->target = tdev;
@@ -1056,7 +1058,7 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
 	gx_make_clip_path_device(&cdev, pcpath);
 	cdev.target = dev;
 	(*dev_proc(&cdev, open_device)) ((gx_device *) & cdev);
-	color_set_pure(&devc, bdev->black);  /* any non-white color will do */
+	set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
 	bdev->target = NULL;
 	gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
 				 float2fixed(corners[1].x) - x0,

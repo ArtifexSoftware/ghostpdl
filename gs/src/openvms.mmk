@@ -270,7 +270,7 @@ DEVICE_DEVS21=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev $(PSD)jbig2.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -432,7 +432,6 @@ CONFLDTR=-o
 
 CC_=$(COMP)
 CC_INT=$(CC_)
-CC_LEAF=$(CC_)
 CC_NO_WARN=$(CC_)
 
 # ------------------- Include the generic makefiles ---------------------- #
@@ -450,7 +449,8 @@ all : macro [.lib]Fontmap. $(GS_XE)
 # zlib.mak must precede libpng.mak
 .include $(GLSRCDIR)zlib.mak
 .include $(GLSRCDIR)libpng.mak
-include $(GLSRCDIR)/jbig2.mak
+JBIG2_EXTRA_OBJS=$(JBIG2OBJDIR)$(D)snprintf.$(OBJ)
+.include $(GLSRCDIR)jbig2.mak
 .include $(GLSRCDIR)icclib.mak
 .include $(GLSRCDIR)devs.mak
 .include $(GLSRCDIR)contrib.mak
@@ -510,7 +510,7 @@ $(GLOBJDIR)gendev.$(OBJ) : $(GLSRCDIR)gendev.c $(GENDEV_DEPS)
 $(GLOBJDIR)genht.$(OBJ) : $(GLSRCDIR)genht.c $(GENHT_DEPS)
 $(GLOBJDIR)geninit.$(OBJ) : $(GLSRCDIR)geninit.c $(GENINIT_DEPS)
 
-$(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c $(string__h) $(memory__h) $(gx_h) $(gp_h) $(gsstruct_h)
+$(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c $(string__h) $(memory__h) $(gx_h) $(gp_h) $(gpmisc_h) $(gsstruct_h)
 	$(CC_)/include=($(GLGENDIR),$(GLSRCDIR))/obj=$(GLOBJ)gp_vms.$(OBJ) $(GLSRC)gp_vms.c
 
 $(GLOBJ)gp_stdia.$(OBJ) : $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)

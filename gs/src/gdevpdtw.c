@@ -20,6 +20,7 @@
 #include "gdevpdtf.h"
 #include "gdevpdti.h"		/* for writing bitmap fonts Encoding */
 #include "gdevpdtw.h"
+#include "gdevpdtv.h"
 
 private const char *const encoding_names[] = {
     KNOWN_REAL_ENCODING_NAMES
@@ -40,7 +41,7 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const double *widths)
 	first = last = 0;
     pprintd2(s, "/FirstChar %d/LastChar %d/Widths[", first, last);
     for (i = first; i <= last; ++i)
-	pprintd1(s, (i & 15 ? " %d" : "\n%d"), (int)(widths[i] + 0.5));
+    	pprintg1(s, (i & 15 ? " %g" : "\n%g"), psdf_round(widths[i], 100, 10));
     stream_puts(s, "]\n");
     return 0;
 }
@@ -90,6 +91,37 @@ pdf_different_encoding_index(const gs_memory_t *mem, const pdf_font_resource_t *
 	    break;
     }
     return ch;
+}
+
+/* Check for unknown encode (simple fonts only). */
+private bool
+pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
+{
+    int ch;
+    unsigned char mask = (pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 
+		? GS_C_PDF_GOOD_GLYPH_MASK : GS_C_PDF_GOOD_NON_SYMBOL_MASK);
+
+    if (pdfont->u.simple.Encoding == NULL)
+	return true; /* Bitmap Type 3 fonts have no pdfont->u.simple.Encoding . */
+    for (ch = 0; ch < 256; ++ch) {
+	pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
+	gs_glyph glyph = pet->glyph;
+
+	if (glyph == GS_NO_GLYPH)
+	    continue;
+	if (glyph < gs_c_min_std_encoding_glyph || glyph >= GS_MIN_CID_GLYPH) {
+	    if (pet->str.size == 0)
+		return true;
+	    glyph = gs_c_name_glyph(pet->str.data, pet->str.size);
+	    if (glyph == GS_NO_GLYPH)
+		return true;
+	}
+        glyph -= gs_c_min_std_encoding_glyph;
+        if( glyph > GS_C_PDF_MAX_GOOD_GLYPH ||
+           !(gs_c_pdf_glyph_type[glyph >> 2] & (mask << (( glyph & 3 )<<1) ))) 
+          return true;
+    }
+    return false;
 }
 
 /* Write Encoding differencrs. */
@@ -449,28 +481,20 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s;
 
-    if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL &&
-	    !gs_cmap_is_identity(pdev->memory, pdfont->cmap_ToUnicode)) {
-	/*
-	 * The condition above slightly differs from PDF spec
-	 * (see the chapter "ToUnicode CMaps").
-	 * For Type 1 the spec requires to check whether all glyphs are
-	 * from Latin or Symbol character set. For True Type
-	 * it wants to check for 3 standard encodings, 
-	 * which only allowed with non-symbolic fonts.
-	 * We use a different condition because (1) currently
-	 * we don't have those sets in a simple form,
-	 * (2) we write True Types as symbolic fonts,
-	 * (3) we did not check whether Acrobat Reader actually
-	 * follows the spec.
-	 */
-	pdf_resource_t *prcmap;
-	int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap);
+    if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL)
+	if (((pdfont->FontType == ft_composite) && 
+		!gs_cmap_is_identity(pdev->memory, pdfont->cmap_ToUnicode, -1)) ||
+	    ((pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 || 
+		pdfont->FontType == ft_TrueType || pdfont->FontType == ft_user_defined) && 
+		pdf_simple_font_needs_ToUnicode(pdfont))
+	   ) {
+	    pdf_resource_t *prcmap;
+	    int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap, -1);
 
-	if (code < 0)
-	    return code;
-        pdfont->res_ToUnicode = prcmap;
-    }
+	    if (code < 0)
+		return code;
+	    pdfont->res_ToUnicode = prcmap;
+	}
     pdf_open_separate(pdev, pdf_font_id(pdfont));
     s = pdev->strm;
     stream_puts(s, "<<");
@@ -582,7 +606,7 @@ pdf_write_cid_system_info(gx_device_pdf *pdev,
  */
 int
 pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-	       pdf_resource_t *pres /*CMap*/)
+	       pdf_resource_t *pres /*CMap*/, int font_index_only)
 {
     pdf_data_writer_t writer;
     stream *s;
@@ -608,7 +632,7 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
     if (code < 0)
 	return code;
     code = psf_write_cmap(writer.binary.strm, pcmap,
-			  pdf_put_name_chars_proc(pdev), NULL);
+			  pdf_put_name_chars_proc(pdev), NULL, font_index_only);
     if (code < 0)
 	return code;
     code = pdf_end_data(&writer);

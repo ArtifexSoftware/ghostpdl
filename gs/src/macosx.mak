@@ -154,7 +154,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10204
+PVERSION=10205
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -415,9 +415,6 @@ AK=
 CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
-CC_LEAF=$(CC_) -fomit-frame-pointer
-# gcc can't use -fomit-frame-pointer with -pg.
-CC_LEAF_PG=$(CC_)
 # These are the specific warnings we have to turn off to compile those
 # specific few files that need this.  We may turn off others in the future.
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional

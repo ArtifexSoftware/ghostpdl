@@ -16,7 +16,7 @@
 #include "ghost.h"
 #include "gsstruct.h"
 #include "gsutil.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "ialloc.h"
 #include "istack.h"
 #include "istkparm.h"

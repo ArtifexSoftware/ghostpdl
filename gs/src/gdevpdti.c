@@ -98,6 +98,7 @@ assign_char_code(gx_device_pdf * pdev, int width)
 	    *pc = 'A', pc[1] = 0;
 	pbfs->open_font = pdfont;
 	pbfs->use_open_font = true;
+	pdfont->u.simple.FirstChar = 0;
     }
     c = ++(pdfont->u.simple.LastChar);
     pdfont->Widths[c] = pdev->char_width.x;
@@ -394,7 +395,9 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 	    pdfont->u.simple.v[ch].y = pw[9];
 	}
 	for (i = 0; i < 256; i++) {
-	    gs_glyph glyph = font->procs.encode_char(font, i, GLYPH_SPACE_NAME);
+	    gs_glyph glyph = font->procs.encode_char(font, i, 
+			font->FontType == ft_user_defined ? GLYPH_SPACE_NOGEN
+							  : GLYPH_SPACE_NAME);
 
 	    if (glyph == glyph0) {
 		real_widths[i * 2    ] = real_widths[ch * 2    ];
@@ -415,12 +418,16 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
     pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
-    if (control == TEXT_SET_CHAR_WIDTH)
+    if (control == TEXT_SET_CHAR_WIDTH) {
+	pdev->skip_colors = false;
 	pprintg2(pdev->strm, "%g %g d0\n", (float)pw[0], (float)pw[1]);
-    else
+    } else {
+	pdev->skip_colors = true;
 	pprintg6(pdev->strm, "%g %g %g %g %g %g d1\n", 
 	    (float)pw[0], (float)pw[1], (float)pw[2], 
 	    (float)pw[3], (float)pw[4], (float)pw[5]);
+    }
+    pdev->font3 = (pdf_resource_t *)pdfont;
     return 0;
 }
 
@@ -482,13 +489,13 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].procsets = pdev->procsets;
     pdev->sbstack[sbstack_ptr].substream_Resources = pdev->substream_Resources;
     pdev->sbstack[sbstack_ptr].skip_colors = pdev->skip_colors;
+    pdev->sbstack[sbstack_ptr].font3 = pdev->font3;
     pdev->skip_colors = false;
     pdev->sbstack_depth++;
     pdev->procsets = 0;
+    pdev->font3 = 0;
     pdev->context = PDF_IN_STREAM;
-#   if PATTERN_STREAM_ACCUMULATION
     pdf_reset_graphics(pdev);
-#   endif
     *ppres = pres;
     return 0;
 }
@@ -539,6 +546,8 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->substream_Resources = pdev->sbstack[sbstack_ptr].substream_Resources;
     pdev->sbstack[sbstack_ptr].substream_Resources = 0;
     pdev->skip_colors = pdev->sbstack[sbstack_ptr].skip_colors;
+    pdev->font3 = pdev->sbstack[sbstack_ptr].font3;
+    pdev->sbstack[sbstack_ptr].font3 = 0;
     pdev->sbstack_depth = sbstack_ptr;
     return code;
 }

@@ -26,6 +26,8 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gxttf.h"
+#include "gxttfb.h"
+#include "gxfcache.h"
 #include "gxistate.h"
 #include "stream.h"
 
@@ -33,8 +35,14 @@
 public_st_gs_font_type42();
 
 /* Forward references */
+#if NEW_TT_INTERPRETER
+private int append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
+	       gx_path * ppath, cached_fm_pair * pair, 
+	       const gs_log2_scale_point * pscale, bool design_grid);
+#else
 private int append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 			   gx_path * ppath, gs_font_type42 * pfont);
+#endif
 private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
 private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
 				gs_glyph_data_t *pgd);
@@ -161,6 +169,9 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->FontBBox.q.x = S16(head_box + 4) / upem;
 	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
     }
+#if NEW_TT_INTERPRETER
+    pfont->data.warning_patented = false;
+#endif
     pfont->data.get_glyph_index = default_get_glyph_index;
     pfont->data.get_outline = default_get_outline;
     pfont->data.get_metrics = gs_type42_default_get_metrics;
@@ -426,7 +437,9 @@ private int
 parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	     int *pnum_pieces)
 {
-    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
+    uint glyph_index = (glyph >= GS_MIN_GLYPH_INDEX 
+			? glyph - GS_MIN_GLYPH_INDEX 
+			: pfont->data.get_glyph_index(pfont, glyph));
     gs_glyph_data_t glyph_data;
     int code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
 
@@ -442,7 +455,7 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	memset(&mat, 0, sizeof(mat)); /* arbitrary */
 	for (i = 0; flags & TT_CG_MORE_COMPONENTS; ++i) {
 	    if (pieces)
-		pieces[i] = U16(gdata + 2) + gs_min_cid_glyph;
+		pieces[i] = U16(gdata + 2) + GS_MIN_GLYPH_INDEX;
 	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
 	}
 	*pnum_pieces = i;
@@ -458,18 +471,43 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
 			gx_path *ppath)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
+    uint glyph_index = (glyph >= GS_MIN_GLYPH_INDEX 
+		? glyph - GS_MIN_GLYPH_INDEX 
+		: pfont->data.get_glyph_index(pfont, glyph));
     gs_fixed_point origin;
     int code;
     gs_glyph_info_t info;
+#if !NEW_TT_INTERPRETER
     gs_matrix_fixed fmat;
+#endif
     static const gs_matrix imat = { identity_matrix_body };
+#if NEW_TT_INTERPRETER
+    bool design_grid = true;
+    const gs_log2_scale_point log2_scale = {0, 0}; 
+    /* fixme : The subpixel numbers doesn't pass through the font_proc_glyph_outline interface.
+       High level devices can't get a proper grid fitting with AlignToPixels = 1.
+       Currently font_proc_glyph_outline is only used by pdfwrite for computing a
+       character bbox, which doesn't need a grid fitting.
+       We apply design grid here.
+     */
+    cached_fm_pair *pair;
+    code = gx_lookup_fm_pair(font, pmat, &log2_scale, design_grid, &pair);
+
+    if (code < 0)
+	return code;
+#endif
 
     if (pmat == 0)
 	pmat = &imat;
-    if ((code = gs_matrix_fixed_from_matrix(&fmat, pmat)) < 0 ||
-	(code = gx_path_current_point(ppath, &origin)) < 0 ||
+    if ((code = gx_path_current_point(ppath, &origin)) < 0 ||
+#if NEW_TT_INTERPRETER
+	(code = append_outline_fitted(glyph_index, pmat, ppath, pair, 
+					&log2_scale, design_grid)) < 0 ||
+#else
+	(code = gs_matrix_fixed_from_matrix(&fmat, pmat)) < 0 ||
 	(code = append_outline(glyph_index, &fmat, ppath, pfont)) < 0 ||
+	/* fixme : don't call glyph_info. */
+#endif
 	(code = font->procs.glyph_info(font, glyph, pmat,
 				       GLYPH_INFO_WIDTH0 << WMode, &info)) < 0
 	)
@@ -477,15 +515,17 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
     return gx_path_add_point(ppath, origin.x + float2fixed(info.width[WMode].x),
 			     origin.y + float2fixed(info.width[WMode].y));
 }
+
+/* Get glyph info by glyph index. */
 int
-gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
-		     int members, gs_glyph_info_t *info)
+gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info, uint glyph_index)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
     int default_members =
 	members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_NUM_PIECES |
-		    GLYPH_INFO_PIECES | GLYPH_INFO_OUTLINE_WIDTHS);
+		    GLYPH_INFO_PIECES | GLYPH_INFO_OUTLINE_WIDTHS |
+		    GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1);
     gs_glyph_data_t outline;
     int code = 0;
 
@@ -500,7 +540,7 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	gs_glyph_data_free(&outline, "gs_type42_glyph_info");
 	info->members = 0;
     }
-    if (members & GLYPH_INFO_WIDTH) {
+    if (members & GLYPH_INFO_WIDTHS) {
 	int i;
 
 	for (i = 0; i < 2; ++i)
@@ -508,8 +548,10 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		float sbw[4];
 
 		code = gs_type42_wmode_metrics(pfont, glyph_index, i, sbw);
-		if (code < 0)
-		    return code;
+		if (code < 0) {
+		    code = 0;
+		    continue;
+		}
 		if (pmat) {
 		    code = gs_point_transform(pfont->memory, sbw[2], sbw[3], pmat,
 					      &info->width[i]);
@@ -522,8 +564,9 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		    info->v.x = sbw[0], info->v.y = sbw[1];
 		}
 		info->members |= (GLYPH_INFO_VVECTOR0 << i);
+		info->members |= (GLYPH_INFO_WIDTH << i);
 	    }
-	info->members |= members & GLYPH_INFO_WIDTH;
+	
     }
     if (members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES)) {
 	gs_glyph *pieces =
@@ -535,6 +578,25 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	info->members |= members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES);
     }
     return code;
+}
+int
+gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info)
+{
+    gs_font_type42 *const pfont = (gs_font_type42 *)font;
+    uint glyph_index;
+    
+    if (glyph >= GS_MIN_GLYPH_INDEX)
+	glyph_index = glyph - GS_MIN_GLYPH_INDEX;
+    else {
+	int code = pfont->data.get_glyph_index(pfont, glyph);
+
+	if (code < 0)
+	    return code;
+	glyph_index = (uint)code;
+    }
+    return gs_type42_glyph_info_by_gid(font, glyph, pmat, members, info, glyph_index);
+
 }
 int
 gs_type42_enumerate_glyph(gs_font *font, int *pindex,
@@ -551,7 +613,7 @@ gs_type42_enumerate_glyph(gs_font *font, int *pindex,
 	    return code;
 	if (outline.bits.data == 0)
 	    continue;		/* empty (undefined) glyph */
-	*pglyph = glyph_index + gs_min_cid_glyph;
+	*pglyph = glyph_index + GS_MIN_GLYPH_INDEX;
 	gs_glyph_data_free(&outline, "gs_type42_enumerate_glyph");
 	return 0;
     }
@@ -577,13 +639,8 @@ simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	uint num_metrics = pmtx->numMetrics;
 	const byte *pmetrics;
 
-	if (pmtx->length == 0) {
-	    if (wmode)  /* try without wmode */ 
-		pmtx = &pfont->data.metrics[0];
-
 	    if (pmtx->length == 0) 
 		return_error(pfont->memory, gs_error_rangecheck);
-	}
 	if (glyph_index < num_metrics) {
 	    ACCESS(pfont->memory, pmtx->offset + glyph_index * 4, 4, pmetrics);
 	    width = U16(pmetrics);
@@ -673,6 +730,22 @@ gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 
 /* Append a TrueType outline to a path. */
 /* Note that this does not append the final moveto for the width. */
+#if NEW_TT_INTERPRETER
+int
+gs_type42_append(uint glyph_index, gs_imager_state * pis,
+		 gx_path * ppath, const gs_log2_scale_point * pscale,
+		 bool charpath_flag, int paint_type, cached_fm_pair *pair)
+{
+    int code = append_outline_fitted(glyph_index, &ctm_only(pis), ppath, 
+			pair, pscale, charpath_flag);
+
+    if (code < 0)
+	return code;
+    /* Set the flatness for curve rendering. */
+    return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
+}
+
+#else
 int
 gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		 gx_path * ppath, const gs_log2_scale_point * pscale,
@@ -685,6 +758,8 @@ gs_type42_append(uint glyph_index, gs_imager_state * pis,
     /* Set the flatness for curve rendering. */
     return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
 }
+#endif
+
 
 /* Add 2nd degree Bezier to the path */
 private int
@@ -981,6 +1056,8 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
     gs_glyph_data_free(&glyph_data, "append_component");
     return code;
 }
+
+#if !NEW_TT_INTERPRETER
 private int
 append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 	       gx_path * ppath, gs_font_type42 * pfont)
@@ -1024,3 +1101,16 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
     gs_glyph_data_free(&glyph_data, "append_outline");
     return code;
 }
+#else
+private int
+append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
+	       gx_path * ppath, cached_fm_pair * pair, 
+	       const gs_log2_scale_point * pscale, bool design_grid)
+{
+    gs_font_type42 *pfont = (gs_font_type42 *)pair->font;
+
+    return gx_ttf_outline(pair->ttf, pair->ttr, pfont, (uint)glyph_index, 
+	pmat, pscale, ppath, design_grid);
+}
+#endif
+
