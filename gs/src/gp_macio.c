@@ -1,19 +1,17 @@
-/* Copyright (C) 1989 - 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989-2002 artofcode, LLC.  All rights reserved.
   
-  This file is part of Aladdin Ghostscript.
+  This software is provided AS-IS with no warranty, either express or
+  implied.
   
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
+  This software is distributed under license and may not be copied,
+  modified or distributed except as expressly authorized under the terms
+  of the license contained in the file LICENSE in this distribution.
   
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
+  For more information about licensing, please refer to
+  http://www.ghostscript.com/licensing/. For information on
+  commercial licensing, go to http://www.artifex.com/licensing/ or
+  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+  San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
 /* $Id$ */
@@ -71,21 +69,21 @@ extern void
 convertSpecToPath(FSSpec * s, char * p, int pLen)
 {
 	OSStatus	err = noErr;
-	DirInfo		block;
+	CInfoPBRec	params;
 	Str255		dirName;
-	int			totLen = 0, dirLen = 0;
+	int		totLen = 0, dirLen = 0;
 
 	memcpy(p, s->name + 1, s->name[0]);
 	totLen += s->name[0];
 	
-	block.ioNamePtr = dirName;
-	block.ioVRefNum = s->vRefNum;
-	block.ioDrParID = s->parID;
-	block.ioFDirIndex = -1;
+	params.dirInfo.ioNamePtr = dirName;
+	params.dirInfo.ioVRefNum = s->vRefNum;
+	params.dirInfo.ioDrParID = s->parID;
+	params.dirInfo.ioFDirIndex = -1;
 	
 	do {
-		block.ioDrDirID = block.ioDrParID;
-		err = PBGetCatInfoSync((CInfoPBPtr)&block);
+		params.dirInfo.ioDrDirID = params.dirInfo.ioDrParID;
+		err = PBGetCatInfoSync(&params);
 		
 		if ((err != noErr) || (totLen + dirName[0] + 2 > pLen)) {
 			p[0] = 0;
@@ -96,7 +94,7 @@ convertSpecToPath(FSSpec * s, char * p, int pLen)
 		memmove(p + dirName[0], p, totLen);
 		memcpy(p, dirName + 1, dirName[0]);
 		totLen += dirName[0];
-	} while (block.ioDrParID != fsRtParID);
+	} while (params.dirInfo.ioDrParID != fsRtParID);
 	
 	p[totLen] = 0;
 	
