@@ -23,6 +23,7 @@
 #include "pcdraw.h"
 #include "pcfont.h"
 #include "pcursor.h"
+#include "pcpage.h"
 #include "gdebug.h"
 #include "gscoord.h"
 #include "gsline.h"
@@ -44,23 +45,6 @@ private const pcl_text_parsing_method_t pcl_tpm_0 = pcl_tpm_0_data,
 /* pseudo-"dots" (actually 1/300" units) used in underline only */
 #define	dots(n)	    ((float)(7200 / 300 * n))
 
-
-  private int
-get_gs_next_char(
-    gs_text_enum_t *    penum,
-    gs_char *           pchr,
-    gs_glyph *          pglyph
-)
-{
-    /* one character at a time */
-    //    assert(penum->text.size == 1);
-    if ( penum->index == 1 )
-        return 2;
-    *pglyph = gs_no_glyph;
-    *pchr = penum->text.data.chars[0];
-    penum->index++;
-    return 0;
-}
 
 /*
  * Install a font in the graphic state.
