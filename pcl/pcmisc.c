@@ -46,7 +46,7 @@ pcmisc_do_init(gs_memory_t *mem)
 }
 private void
 pcmisc_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
+{	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
 	  { pcls->end_of_line_wrap = false;
 	    pcls->display_functions = false;
 	  }
