@@ -1825,22 +1825,15 @@ of poorly hinted fonts, but may impair the appearance of well-hinted fonts.
 <dl>
 <dt><b><tt>-dGridFitTT=</tt></b><em>n</em>
 <dd> This specifies the initial value for the implementation specific
-user parameter <b><tt>GridFitTT</tt></b>.
+user parameter <a href="Language.htm#User_parameters">GridFitTT</a>
 It controls a grid fitting of True Type fonts
 (Some people call it "hinting", but stronly speaking
 the latter is a Type 1 feature).
-Setting this to 1 enables grid fitting for True Type glyphs
-that don't involve patented instructions. The value 0 disables grid 
-fitting for all True Type fonts. The default value is 0.
+Setting this to 2 enables grid fitting for True Type glyphs.
+The value 0 disables grid fitting. The default value is 2.
+For more information see the description of the user parameter
+<a href="Language.htm#User_parameters">GridFitTT</a>.
 
-<p>
-Setting <b><tt>-dGridFitTT=1</tt></b> may improve rendering
-of True Type fonts. In particular, some fonts rely on the grid fitting 
-instructions for proper rasterization.
-Ghostscript only supports the freely-implementable subset of grid 
-fitting instructions. If a patented instruction is encountered, a 
-warning is printed to <tt>stderr</tt> and the glyph is rendered with no 
-grid fitting.
 </dl>
 
 <dl>

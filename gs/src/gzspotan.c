@@ -593,7 +593,7 @@ choose_by_vector(fixed x0, fixed y0, fixed x1, fixed y1, const segment *s,
 	double t = (double)any_abs(x1 - x0) / any_abs(y1 - y0);
 	double l = any_abs(y1 - y0); /* Don't want 'hypot'. */
 
-	if (*slope > t || *slope == t && l > *len) {
+	if (*slope > t || (*slope == t && l > *len)) {
 	    *slope = t;
 	    *len = l;
 	    *store_segm = s;
@@ -609,7 +609,7 @@ choose_by_tangent(const segment *p, const segment *s,
 	fixed ybot, fixed ytop)
 {
     if (s->type == s_curve) {
-	curve_segment *c = (curve_segment *)s;
+	const curve_segment *c = (const curve_segment *)s;
 	vd_curve(p->pt.x, p->pt.y, c->p1.x, c->p1.y, c->p2.x, c->p2.y, 
 		 s->pt.x, s->pt.y, 0, VD_HINT_COLOR);
 	if (ybot <= p->pt.y && p->pt.y <= ytop)

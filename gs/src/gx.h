@@ -30,7 +30,7 @@
 /* Configuration swtches - development needs only. */
 /* Users should not modify them. */
 #define NEW_TT_INTERPRETER 1
-#define TT_GRID_FITTING (NEW_TT_INTERPRETER && 0) /* old code = 0, new code = 1. */
+#define TT_GRID_FITTING (NEW_TT_INTERPRETER && 1) /* old code = 0, new code = 1. */
 #define CURVED_TRAPEZOID_FILL 1 /* old code = 0, new code = 1. */
 /* The following switches are only important with CURVED_TRAPEZOID_FILL 1. */
 #   define CURVED_TRAPEZOID_FILL_HEAVY_TEST 0  /* Temporarily used for a debug purpose. */
