@@ -18,6 +18,7 @@
 /* Font copying for high-level output */
 #include "memory_.h"
 #include "gx.h"
+#include "gscencs.h"
 #include "gserrors.h"
 #include "gsline.h"		/* for BuildChar */
 #include "gspaint.h"		/* for BuildChar */
@@ -109,15 +110,16 @@ RELOC_PTRS_END
  * For Type 1 fonts, this is a hash table; glyph numbers are assigned
  * arbitrarily, according to the hashed placement of the names.
  * For TrueType fonts, this is indexed by GID.
- * The strings in this table are those returned by the font's glyph_name
- * procedure: we assume they are garbage-collected.
+ * The strings in this table are either those returned by the font's
+ * glyph_name procedure, which we assume are garbage-collected, or those
+ * associated with the known encodings, which we assume are immutable.
  */
 typedef struct gs_copied_glyph_name_s {
     gs_glyph glyph;		/* key (for comparison and glyph_name only) */
     gs_const_string str;	/* glyph name */
 } gs_copied_glyph_name_t;
 /*
- * We use the same special GC descriptor as above.
+ * We use the same special GC descriptor as above for 'names'.
  */
 gs_private_st_composite(st_gs_copied_glyph_name_element,
 			gs_copied_glyph_name_t,
@@ -125,8 +127,14 @@ gs_private_st_composite(st_gs_copied_glyph_name_element,
 			copied_glyph_name_enum_ptrs,
 			copied_glyph_name_reloc_ptrs);
 private ENUM_PTRS_WITH(copied_glyph_name_enum_ptrs, gs_copied_glyph_name_t *pcgn)
-     if (index < size / (uint)sizeof(gs_copied_glyph_name_t))
-	 return ENUM_CONST_STRING(&pcgn[index].str);
+     if (index < size / (uint)sizeof(gs_copied_glyph_name_t)) {
+	 const gs_copied_glyph_name_t *const p = &pcgn[index];
+
+	 return (p->str.size == 0 ||
+		 gs_is_c_glyph_name(p->str.data, p->str.size) ?
+		 ENUM_CONST_STRING2(0, 0) :
+		 ENUM_CONST_STRING(&p->str));
+     }
      return 0;
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(copied_glyph_name_reloc_ptrs, gs_copied_glyph_name_t *pcgn)
@@ -135,10 +143,30 @@ private RELOC_PTRS_WITH(copied_glyph_name_reloc_ptrs, gs_copied_glyph_name_t *pc
     gs_copied_glyph_name_t *p = pcgn;
 
     for (; count > 0; --count, ++p)
-	if (p->str.size > 0)
+	if (p->str.size > 0 && !gs_is_c_glyph_name(p->str.data, p->str.size))
 	    RELOC_CONST_STRING_VAR(p->str);
 }
 RELOC_PTRS_END
+
+/*
+ * To accommodate glyphs with multiple names, there is an additional
+ * 'extra_names' table.  Since this is rare, this table uses linear search.
+ */
+typedef struct gs_copied_glyph_extra_name_s gs_copied_glyph_extra_name_t;
+struct gs_copied_glyph_extra_name_s {
+    gs_copied_glyph_name_t name;
+    uint gid;			/* index in glyphs table */
+    gs_copied_glyph_extra_name_t *next;
+};
+BASIC_PTRS(gs_copied_glyph_extra_name_ptrs) {
+    GC_STRING_ELT(gs_copied_glyph_extra_name_t, name.str),
+    GC_OBJ_ELT(gs_copied_glyph_extra_name_t, next)
+};
+gs_private_st_basic(st_gs_copied_glyph_extra_name,
+		    gs_copied_glyph_extra_name_t,
+		    "gs_copied_glyph_extra_name_t",
+		    gs_copied_glyph_extra_name_ptrs,
+		    gs_copied_glyph_extra_name_data);
 
 /*
  * The client_data of copied fonts points to an instance of
@@ -154,7 +182,8 @@ struct gs_copied_font_data_s {
      * We don't use a union for the rest of the data, because some of the
      * cases overlap and it's just not worth the trouble.
      */
-    gs_copied_glyph_name_t *names; /* (Type 1/2) [glyphs_size] */
+    gs_copied_glyph_name_t *names; /* (Type 1/2, TrueType) [glyphs_size] */
+    gs_copied_glyph_extra_name_t *extra_names; /* (TrueType) */
     byte *data;			/* (TrueType and CID fonts) copied data */
     uint data_size;		/* (TrueType and CID fonts) */
     gs_glyph *Encoding;		/* (Type 1/2 and Type 42) [256] */
@@ -221,7 +250,7 @@ copied_Encoding_alloc(gs_font *copied)
     if (Encoding == 0)
 	return_error(gs_error_VMerror);
     for (i = 0; i < 256; ++i)
-	Encoding[i] = cfdata->notdef;
+	Encoding[i] = GS_NO_GLYPH;
     cfdata->Encoding = Encoding;
     return 0;
 }
@@ -364,14 +393,26 @@ private int
 named_glyph_slot_linear(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			gs_copied_glyph_t **pslot)
 {
-    gs_copied_glyph_name_t *names = cfdata->names;
-    int i;
+    {
+	gs_copied_glyph_name_t *names = cfdata->names;
+	int i;
 
-    for (i = 0; i < cfdata->glyphs_size; ++i)
-	if (names[i].glyph == glyph) {
-	    *pslot = &cfdata->glyphs[i];
-	    return 0;
-	}
+	for (i = 0; i < cfdata->glyphs_size; ++i)
+	    if (names[i].glyph == glyph) {
+		*pslot = &cfdata->glyphs[i];
+		return 0;
+	    }
+    }
+    /* This might be a glyph with multiple names.  Search extra_names. */
+    {
+	gs_copied_glyph_extra_name_t *extra_name = cfdata->extra_names;
+
+	for (; extra_name != 0; extra_name = extra_name->next)
+	    if (extra_name->name.glyph == glyph) {
+		*pslot = &cfdata->glyphs[extra_name->gid];
+		return 0;
+	    }
+    }
     return_error(gs_error_rangecheck);
 }
 
@@ -437,6 +478,7 @@ private int
 copy_glyph_name(gs_font *font, gs_glyph glyph, gs_font *copied,
 		gs_glyph copied_glyph)
 {
+    gs_glyph known_glyph;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     gs_copied_glyph_t *pcg;
     int code = copied_glyph_slot(cfdata, copied_glyph, &pcg);
@@ -444,11 +486,32 @@ copy_glyph_name(gs_font *font, gs_glyph glyph, gs_font *copied,
     gs_const_string str;
 
     if (code < 0 ||
-	(code = font->procs.glyph_name(font, glyph, &str)) < 0 ||
-	(code = copy_string(copied->memory, &str, "copy_glyph_name")) < 0
+	(code = font->procs.glyph_name(font, glyph, &str)) < 0
 	)
 	return code;
+    /* Try to share a permanently allocated known glyph name. */
+    if ((known_glyph = gs_c_name_glyph(str.data, str.size)) != GS_NO_GLYPH)
+	gs_c_glyph_name(known_glyph, &str);
+    else if ((code = copy_string(copied->memory, &str, "copy_glyph_name")) < 0)
+	return code;
     pcgn = cfdata->names + (pcg - cfdata->glyphs);
+    if (pcgn->glyph != GS_NO_GLYPH &&
+	(pcgn->str.size != str.size ||
+	 memcmp(pcgn->str.data, str.data, str.size))
+	) {
+	/* This is a glyph with multiple names.  Add an extra_name entry. */
+	gs_copied_glyph_extra_name_t *extra_name =
+	    gs_alloc_struct(copied->memory, gs_copied_glyph_extra_name_t,
+			    &st_gs_copied_glyph_extra_name,
+			    "copy_glyph_name(extra_name)");
+
+	if (extra_name == 0)
+	    return_error(gs_error_VMerror);
+	extra_name->next = cfdata->extra_names;
+	extra_name->gid = pcg - cfdata->glyphs;
+	cfdata->extra_names = extra_name;
+	pcgn = &extra_name->name;
+    }
     pcgn->glyph = glyph;
     pcgn->str = str;
     return 0;
@@ -489,7 +552,7 @@ copied_char_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
     code = copied_glyph_slot(cfdata, glyph, &pslot);
     if (code < 0)
 	return code;
-    if (Encoding[chr] != glyph && Encoding[chr] != cfdata->notdef)
+    if (Encoding[chr] != glyph && Encoding[chr] != GS_NO_GLYPH)
 	return_error(gs_error_invalidaccess);
     Encoding[chr] = glyph;
     return 0;
@@ -873,7 +936,11 @@ copy_font_type42(gs_font *font, gs_font *copied)
     code = gs_type42_font_init(copied42);
     if (code < 0)
 	goto fail2;
+    /* gs_type42_font_init overwrites enumerate_glyph. */
+    copied42->procs.enumerate_glyph = copied_enumerate_glyph;
+    copied42->data.get_glyph_index = copied_type42_get_glyph_index;
     copied42->data.get_outline = copied_type42_get_outline;
+    copied42->data.get_metrics = copied_type42_get_metrics;
     copied42->data.metrics[0].numMetrics =
 	copied42->data.metrics[1].numMetrics =
 	extra / 8;
@@ -883,8 +950,6 @@ copy_font_type42(gs_font *font, gs_font *copied)
 	copied42->data.metrics[1].length =
 	extra / 2;
     memset(cfdata->data + cfdata->data_size - extra, 0, extra);
-    copied42->data.get_metrics = copied_type42_get_metrics;
-    copied42->data.get_glyph_index = copied_type42_get_glyph_index;
     copied42->data.numGlyphs = font42->data.numGlyphs;
     copied42->data.trueNumGlyphs = font42->data.trueNumGlyphs;
     return 0;
@@ -920,7 +985,7 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 	return code;
     rcode = code;
     if (glyph < GS_MIN_CID_GLYPH)
-	code = copy_glyph_name((gs_font *)font, glyph, copied,
+	code = copy_glyph_name(font, glyph, copied,
 			       gid + GS_MIN_CID_GLYPH);
     DISCARD(copied_glyph_slot(cfdata, glyph, &pcg)); /* can't fail */
     for (i = 0; i < 2; ++i) {
@@ -1370,6 +1435,7 @@ gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new)
 
 	bfont->FAPI = 0;
 	bfont->FAPI_font_data = 0;
+	bfont->encoding_index = ENCODING_INDEX_UNKNOWN;
 	code = uid_copy(&bfont->UID, mem, "gs_copy_font(UID)");
 	if (code < 0)
 	    goto fail;
@@ -1382,6 +1448,12 @@ gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new)
     if (names)
 	memset(names, 0, glyphs_size * sizeof(*names));
     cfdata->names = names;
+    if (names != 0) {
+	uint i;
+
+	for (i = 0; i < glyphs_size; ++i)
+	    names[i].glyph = GS_NO_GLYPH;
+    }
 
     /* Do FontType-specific initialization. */
 
@@ -1445,6 +1517,35 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 	code = gs_copy_glyph_options(font, glyphs[i], copied,
 				     options & ~COPY_GLYPH_NO_OLD);
 	if (code < 0)
+	    return code;
+    }
+    /*
+     * Because 'seac' accesses the Encoding of the font as well as the
+     * glyphs, we have to copy the Encoding entries as well.
+     */
+    if (count == 1)
+	return 0;
+    switch (font->FontType) {
+    case ft_encrypted:
+    case ft_encrypted2:
+	break;
+    default:
+	return 0;
+    }
+    {
+	gs_copied_glyph_t *pcg;
+	gs_glyph_data_t gdata;
+	gs_char chars[2];
+
+	/* Since we just copied the glyph, copied_glyph_slot can't fail. */
+	DISCARD(copied_glyph_slot(cf_data(copied), glyph, &pcg));
+	gs_glyph_data_from_string(&gdata, pcg->gdata.data, pcg->gdata.size,
+				  NULL);
+	code = gs_type1_piece_codes((gs_font_type1 *)font, &gdata, chars);
+	if (code <= 0 ||	/* 0 is not possible here */
+	    (code = gs_copied_font_add_encoding(copied, chars[0], glyphs[1])) < 0 ||
+	    (code = gs_copied_font_add_encoding(copied, chars[1], glyphs[2])) < 0
+	    )
 	    return code;
     }
     return 0;

@@ -78,7 +78,8 @@ int gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new);
  *
  *	Type 1, Type 2 - the destination and source must have the same
  *	Subrs.  glyph must be a name (not an integer).  Copies the
- *	CharString entry.
+ *	CharString entry.  Note that the Type 1/2 'seac' operator requires
+ *	copying not only the sub-glyphs but their Encoding entries as well.
  *
  *	Type 42 - the destination and source must have compatible tables
  *	other than glyf and loca.  In practice this means that the source
