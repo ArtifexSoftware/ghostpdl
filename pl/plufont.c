@@ -33,6 +33,7 @@
 /* agfa stuff */
 #include "cgconfig.h"     /* this must be first  */
 #include "ufstport.h"         /* this must be second */
+#include "shareinc.h"
 
 /* Structure descriptors */
 private_st_pl_font();
@@ -42,6 +43,14 @@ private_st_pl_font();
 #define s16(bptr) pl_get_int16(bptr)
 /**** ASSUME uint >= 32 BITS ****/
 #define u32(bptr) (uint)pl_get_uint32(bptr)
+
+
+extern void pl_init_fc(
+    const pl_font_t *   plfont,
+    gs_state *          pgs,
+    int                 need_outline,
+    FONTCONTEXT *       pfc,
+    bool                width_request);
 
 /* ---------------- Utilities ---------------- */
 
@@ -54,7 +63,7 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 	  { if ( plfont->glyphs.table )
 	     { uint i;
 	       for ( i = plfont->glyphs.size; i > 0; )
-	         { void *data = plfont->glyphs.table[--i].data;
+                 { void *data = (void *)plfont->glyphs.table[--i].data;
 	           if ( data )
 		     gs_free_object(mem, data, cname);
 	         }  
@@ -62,8 +71,6 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 	     gs_free_object(mem, (void *)plfont->header, cname);
 	     plfont->header = 0; /* see hack note above */
 	  }
-	if (plfont->scaling_technology != plfst_bitmap)
-	    pl_purge_ufst_font(plfont);
 	/* Free the font data itself. */
 	gs_free_object(mem, (void *)plfont->char_glyphs.table, cname);
 	gs_free_object(mem, (void *)plfont->glyphs.table, cname);
@@ -71,6 +78,9 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 	  { gs_purge_font(plfont->pfont);
 	    gs_free_object(mem, plfont->pfont, cname);
 	  }
+	if ( plfont->font_file ) {
+	    gs_free_object(mem, plfont->font_file, cname);
+	}
 	gs_free_object(mem, plf, cname);
 }
 
@@ -82,7 +92,7 @@ pl_glyph_name(gs_glyph glyph, uint *plen)
 {	return 0;
 }
 
-gs_char last_char = '!';
+extern gs_char last_char;
 /* Get the unicode valude for a glyph */
 private gs_char
 pl_decode_glyph(gs_font *font,  gs_glyph glyph)
@@ -93,14 +103,6 @@ pl_decode_glyph(gs_font *font,  gs_glyph glyph)
     // no association other than sequential numbering 
     return last_char;
 }
-
-/* Get a glyph from a known encoding.  We don't support this either. */
-private gs_glyph
-pl_known_encode(gs_char chr, int encoding_index)
-{	return gs_no_glyph;
-}
-
-/* ---------------- Public procedures ---------------- */
 
 /* ---------------- Public procedures ---------------- */
 
@@ -155,40 +157,19 @@ pl_font_t *
 pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 {
     pl_font_t *plfont;
-    if (src->header == 0)
-        return 0;
-    plfont = gs_alloc_struct(mem, pl_font_t, &st_pl_font, cname);
+    ulong header_size;
+    plfont = (pl_font_t *)gs_alloc_bytes(mem, gs_object_size(mem, src), cname);
     if ( plfont == 0 )
         return 0;
-    /* copy technology common parts */
-    plfont->storage = src->storage;
-    plfont->header_size = src->header_size;
-    plfont->scaling_technology = src->scaling_technology;
-    plfont->is_xl_format = src->is_xl_format;
-    plfont->font_type = src->font_type;
-    plfont->char_width = src->char_width;
-    plfont->large_sizes = src->large_sizes;
-    plfont->resolution = src->resolution;
-    plfont->params = src->params;
-    plfont->pts_per_inch = src->pts_per_inch;
-    plfont->font_file_loaded = src->font_file_loaded;
-    plfont->landscape = src->landscape;
-    plfont->bold_fraction = src->bold_fraction;
-
-    {
-        int i;
-        for (i = 0; i < sizeof(src->character_complement); i++ )
-	    plfont->character_complement[i] = src->character_complement[i];
-    }
-    plfont->offsets = src->offsets;
-    if (src->header_size > 0) {
-        plfont->header = gs_alloc_bytes(mem, src->header_size, cname);
+    *plfont = *src;
+    /* NB gs_object_size returns uint */
+    header_size = (ulong)gs_object_size(mem, src->header);
+    if (header_size != 0) {
+        plfont->header = gs_alloc_bytes(mem, header_size, cname);
         if ( plfont->header == 0 )
             return 0;
-        memcpy(plfont->header, src->header, src->header_size);
-    } else
-        plfont->header = 0;
-
+        memcpy(plfont->header, src->header, header_size);
+    }
     /* technology specific setup */
     switch ( plfont->scaling_technology ) {
     case plfst_bitmap:
@@ -238,8 +219,6 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
         }
     }
     if ( src->char_glyphs.table != 0 ) {
-        /* HAS may gs_alloc_struct_array() here but this is
-           consistant with pl_tt_alloc_char_glyphs() */
         pl_tt_char_glyph_t *char_glyphs =
             (pl_tt_char_glyph_t *) gs_alloc_byte_array(mem,
                                                        src->char_glyphs.size,
@@ -254,8 +233,6 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
         plfont->char_glyphs = src->char_glyphs;
         plfont->char_glyphs.table = char_glyphs;
     }
-    else /* no character glyph table data */
-        plfont->char_glyphs = src->char_glyphs;
 
     if ( src->glyphs.table != 0 ) {
         int i;
@@ -282,8 +259,6 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
             }
         }
     }
-    else /* no glyph table */
-        plfont->glyphs = src->glyphs;
     return plfont;
 }
 	
@@ -298,6 +273,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->next = pfont->prev = 0;
 	pfont->memory = mem;
 	pfont->dir = pdir;
+	pfont->is_resource = false;  
 	gs_notify_init(&pfont->notify_list, gs_memory_stable(mem));
 	pfont->base = pfont;
 	pfont->client_data = plfont;
@@ -313,6 +289,8 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->procs.define_font = gs_no_define_font;
 	pfont->procs.make_font = gs_no_make_font;
 	pfont->procs.font_info = gs_default_font_info;
+        pfont->procs.glyph_info = gs_default_glyph_info;
+        pfont->procs.glyph_outline = gs_no_glyph_outline;
 	pfont->id = gs_next_ids(mem, 1);
 	strncpy(pfont->font_name.chars, font_name, sizeof(pfont->font_name.chars));
 	pfont->font_name.size = strlen(font_name);
@@ -401,7 +379,8 @@ pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
  * large_sizes = false indicates 2-byte segment sizes, true indicates 4-byte.
  */
 int
-pl_font_scan_segments(const gs_memory_t *mem, pl_font_t *plfont, int fst_offset, int start_offset,
+pl_font_scan_segments(const gs_memory_t *mem,
+		      pl_font_t *plfont, int fst_offset, int start_offset,
   long end_offset, bool large_sizes, const pl_font_offset_errors_t *pfoe)
 {	const byte *header = plfont->header;
 	pl_font_scaling_technology_t fst = header[fst_offset];
@@ -482,7 +461,7 @@ pl_font_scan_segments(const gs_memory_t *mem, pl_font_t *plfont, int fst_offset,
 		    /*
 		     * We don't do much checking here, but we do check that
 		     * the segment starts with a table directory that
-		     * includes at least 5 elements (gdir, head, hhea, hmtx,
+		     * includes at least 3 elements (gdir, head,
 		     * maxp -- but we don't check the actual names).
 		     */
 		    if ( seg_size < 12 + 5 * 16 ||
