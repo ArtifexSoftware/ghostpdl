@@ -282,16 +282,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		plfont->data_are_permanent = false;
 		if ( residentp->params.symbol_set != 0 )
 		    plfont->font_type = plft_8bit;
-		/*
-		 * Don't smash the pitch, which was obtained
-		 * from the actual font.
-		 */
-		{ 
-		    pl_font_pitch_t save_pitch;
-		    save_pitch = plfont->params.pitch;
-		    plfont->params = residentp->params;
-		    plfont->params.pitch = save_pitch;
-		}
+                plfont->params = residentp->params;
 		memcpy(plfont->character_complement,
 		       residentp->character_complement, 8);
 		/* use the offset in the table as the pjl font number */

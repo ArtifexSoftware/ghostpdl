@@ -4,6 +4,8 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 
+unsigned long stdout_offset = 0;
+
 #define get_uint16(bptr)\
   (((bptr)[0] << 8) | (bptr)[1])
 #define get_int16(bptr)\
@@ -128,7 +130,7 @@ write_pcl_header()
     hdr.FirstCode = htons(0);
     hdr.LastCode = htons(255);
     hdr.FontName[0] = 'f';
-    fwrite(&hdr, 1, sizeof(pcl_font_header_t), stdout);
+    stdout_offset += fwrite(&hdr, 1, sizeof(pcl_font_header_t), stdout);
 }
 
 static int
@@ -151,12 +153,14 @@ write_table_directory()
         fprintf( stderr, "number of tables must be a power of 2");
         exit(EXIT_FAILURE);
     }
+    fprintf(stderr, "Table Directory started at %d\n", stdout_offset);
     td.sfnt_version = htonl(0x00010000);
     td.num_tables = htons(NUM_TABLES);
     td.searchRange = htons(NUM_TABLES * 16);
     td.entrySelector = htons(log2(NUM_TABLES));
     td.rangeShift = htons(0); /* since power of 2 */
-    fwrite(&td, 1, sizeof(table_directory_t), stdout);
+    
+    stdout_offset += fwrite(&td, 1, sizeof(table_directory_t), stdout);
 }
 
 static int 
@@ -194,20 +198,17 @@ find_table(const unsigned char *ptt_data, const char *table_name, unsigned long 
     int i;
     num_tables = pl_get_uint16(ptt_data + 4);
     ptt_table_directory = ptt_data + 12;
-    fprintf(stderr, "number of tables %d ", num_tables);
+    //    fprintf(stderr, "number of tables %d ", num_tables);
     for ( i = 0; i < num_tables; i++ ) {
         const unsigned char *tab = ptt_table_directory + i * 16;
-        fprintf(stderr, "found table %c%c%c%c table size=%d\n", tab[0], tab[1], tab[2], tab[3], pl_get_uint32(tab + 12));
+        //        fprintf(stderr, "found table %c%c%c%c table size=%d\n", tab[0], tab[1], tab[2], tab[3], pl_get_uint32(tab + 12));
         if ( !memcmp(table_name, tab, 4) ) {
             *table_size = pl_get_uint32(tab + 12);
             return pl_get_uint32(tab + 8);
         }
     }
-    if ( !memcmp(table_name, "gdir", 4) ) {
-        *table_size = 0;
-        return 0;
-    }
-    return -1;
+    *table_size = 0;
+    return 0;
 }
 
 
@@ -223,7 +224,6 @@ write_table_entrys(unsigned char *ptt_data)
         unsigned long offset;
         unsigned long *ptable = (unsigned long *)tables[i];
         t.tag = *ptable;
-        t.checkSum = 0;
         t.offset = htonl(current_offset);
         offset = find_table(ptt_data, tables[i], &length);
         if (offset < 0) {
@@ -231,8 +231,18 @@ write_table_entrys(unsigned char *ptt_data)
             exit(EXIT_FAILURE);
         }
         t.length = htonl(length);
+        {
+            unsigned long sum = 0;
+            int k;
+            for ( k = 0; k < length; k++ )
+                sum += ptt_data[k + offset];
+            t.checkSum = sum;
+        }
+        fprintf(stderr, "writing table entry %c%c%c%c at %d\n",
+                tables[i][0], tables[i][1], tables[i][2], tables[i][3], stdout_offset);
+        fprintf(stderr, "the table should end up at offset %d with length %d \n", current_offset, length);
         current_offset += length;
-        fwrite(&t, 1, sizeof(t), stdout);
+        stdout_offset += fwrite(&t, 1, sizeof(t), stdout);
     }
 }
 
@@ -249,7 +259,9 @@ write_tables(unsigned char *ptt_data)
             fprintf(stderr, "table %s not found\n", tables[i]);
             exit(EXIT_FAILURE);
         }
-        fwrite(ptt_data+offset, 1, length, stdout);
+        fprintf(stderr, "writing table %c%c%c%c at %d\n", 
+                tables[i][0], tables[i][1], tables[i][2], tables[i][3], stdout_offset);
+        stdout_offset += fwrite(ptt_data+offset, 1, length, stdout);
     }
 }
 
@@ -280,7 +292,9 @@ write_GT_segment(unsigned char *ptt_data)
     GT_seg.size = htons(sizeof(table_directory_t) +
                         sizeof(table_t) * NUM_TABLES +
                         total_segments_size(ptt_data));
-    fwrite(&GT_seg, 1, sizeof(pcl_segment_t), stdout);
+    fprintf(stderr, "GT seg started at %d size = %d\n", stdout_offset, sizeof(table_directory_t) +
+            sizeof(table_t) * NUM_TABLES + total_segments_size(ptt_data));
+    stdout_offset += fwrite(&GT_seg, 1, sizeof(pcl_segment_t), stdout);
     write_table_directory();
     write_table_entrys(ptt_data);
     write_tables(ptt_data);
@@ -293,14 +307,15 @@ write_NULL_segment()
     pcl_segment_t NULL_seg;
     NULL_seg.id = htons(0xffff);
     NULL_seg.size = htons(0);
-    fwrite(&NULL_seg, 1, sizeof(pcl_segment_t), stdout);
+    fprintf( stderr, "NULL segment started at %d\n", stdout_offset);
+    stdout_offset += fwrite(&NULL_seg, 1, sizeof(pcl_segment_t), stdout);
 }
 
 
 static void
 set_id(char *fontname)
 {
-    fprintf(stdout, "\033*c1D");
+    stdout_offset += fprintf(stdout, "\033*c1D");
     /* nb alphanumeric is broken in pcl */
     //    fprintf(stdout, "\033&n%dW%c%s", strlen(fontname) + 1, 0 /* operation */, fontname);
 }
@@ -329,9 +344,9 @@ write_mac_glyph_pcl_symbol_set(unsigned char *glyph_table)
     sym_hdr.LastCode = htons(255);
     memset(sym_hdr.CharacterRequirements, 0, sizeof(sym_hdr.CharacterRequirements));
     sym_hdr.CharacterRequirements[7] = 1;
-    fprintf(stdout, "\033*c%dR", symbol_set);
-    fprintf(stdout, "\033(f%dW", sizeof(sym_hdr) + 256 * 2);
-    fwrite(&sym_hdr, 1, sizeof(sym_hdr), stdout);
+    stdout_offset += fprintf(stdout, "\033*c%dR", symbol_set);
+    stdout_offset += fprintf(stdout, "\033(f%dW", sizeof(sym_hdr) + 256 * 2);
+    stdout_offset += fwrite(&sym_hdr, 1, sizeof(sym_hdr), stdout);
     for (i = 0; i < 256; i++ ) {
         unsigned short glyph = glyph_table[i];
 
@@ -339,7 +354,7 @@ write_mac_glyph_pcl_symbol_set(unsigned char *glyph_table)
         unsigned short pcl_glyph = glyph == 0 ? htons(0xffff) : htons(i);
         //        unsigned short pcl_glyph = glyph == 0 ? htons(0xffff) : htons(glyph);
 
-        fwrite(&pcl_glyph, 1, sizeof(pcl_glyph), stdout);
+        stdout_offset += fwrite(&pcl_glyph, 1, sizeof(pcl_glyph), stdout);
     }
 }
 
@@ -450,8 +465,8 @@ write_CC_segment()
     CharacterComplement[7] = 0xfe;
     CC_seg.id = htons(17219);
     CC_seg.size = htons(8);
-    fwrite(&CC_seg, 1, sizeof(pcl_segment_t), stdout);
-    fwrite(&CharacterComplement, 1, 8, stdout);
+    stdout_offset += fwrite(&CC_seg, 1, sizeof(pcl_segment_t), stdout);
+    stdout_offset += fwrite(&CharacterComplement, 1, 8, stdout);
 }
 
 
@@ -476,8 +491,8 @@ write_character_descriptor(unsigned char *ptt_data)
             glyph_data = find_glyph_data(glyph, ptt_data, &glyph_length);
             if (glyph_length == 0)
                 continue;
-            fprintf(stdout, "\033*c%dE", i);
-            fprintf(stdout, "\033(s%dW", sizeof(tt_char_des) + glyph_length);
+            stdout_offset += fprintf(stdout, "\033*c%dE", i);
+            stdout_offset += fprintf(stdout, "\033(s%dW", sizeof(tt_char_des) + glyph_length);
             tt_char_des.format = 15;
             tt_char_des.continuation = 0;
             tt_char_des.descriptor_size = 4;
@@ -494,8 +509,8 @@ write_character_descriptor(unsigned char *ptt_data)
 
                 fprintf(stderr, "checksum=%d\n", sum);
             }
-            fwrite(&tt_char_des, 1, sizeof(character_descriptor_t), stdout);
-            fwrite(glyph_data, 1, glyph_length, stdout);
+            stdout_offset += fwrite(&tt_char_des, 1, sizeof(character_descriptor_t), stdout);
+            stdout_offset += fwrite(glyph_data, 1, glyph_length, stdout);
         }
     }
 }
@@ -503,15 +518,15 @@ write_character_descriptor(unsigned char *ptt_data)
 void
 write_test(char *fontname)
 {
-    fprintf(stdout, "\033(%d%c", SYMSET_NUM, SYMSET_LETTER);
-    fprintf(stdout, "\033(s1P\033(s14V\033(1X");
+    stdout_offset += fprintf(stdout, "\033(%d%c", SYMSET_NUM, SYMSET_LETTER);
+    stdout_offset += fprintf(stdout, "\033(s1P\033(s14V\033(1X");
     // fprintf(stdout, "\033&n%dW%c%s", strlen(fontname) + 1, 2 /* operation */ , fontname);
     {
         int i;
         for ( i = 0; i < 256; i++ ) {
             if ( i  % 39 == 0 )
-                fprintf(stdout, "\r\n");
-            fprintf(stdout, "\033&p1X%c ", i);
+                stdout_offset += fprintf(stdout, "\r\n");
+            stdout_offset += fprintf(stdout, "\033&p1X%c ", i);
         }
     }
 }
@@ -535,7 +550,7 @@ main(int argc, char **argv)
             3 * sizeof(pcl_segment_t) + /* GT segment + NULL segment + CC segiment */
             8 + /* character complement */
             2 /* reserved + checksum */;
-        fprintf(stdout, "\033)s%dW", total_bytes);
+        stdout_offset += fprintf(stdout, "\033)s%dW", total_bytes);
     }
     write_pcl_header();
     write_CC_segment();
@@ -545,7 +560,7 @@ main(int argc, char **argv)
         unsigned char reserved_and_checksum[2];
         reserved_and_checksum[0] = 0;
         reserved_and_checksum[1] = 0;
-        fwrite(&reserved_and_checksum, 1, 2, stdout);
+        stdout_offset += fwrite(&reserved_and_checksum, 1, 2, stdout);
     }
 
     write_symbol_set(ptt_data);

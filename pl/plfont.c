@@ -973,24 +973,6 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 	    plfont->offsets.GT = 0;
 	    pl_fill_in_tt_font(pfont, tt_font_datap, unique_id);
 	    code = gs_definefont(pdir, (gs_font *)pfont);
-	    if ( code >= 0 ) { 
-		/*
-		 * Set the nominal design width to the
-		 * width of a small 'x' character.  If
-		 * there isn't one, set the design
-		 * width arbitrarily at 0.6 em.  */
-		gs_char space = ' ';
-		float sbw[4];
-		uint glyph_index =
-		    (*pfont->procs.encode_char)
-		    ((gs_font *)pfont, space, gs_no_glyph);
-
-		if (glyph_index == gs_no_glyph || glyph_index == 0xffff)
-		    glyph_index = 0;
-		if ( gs_type42_get_metrics(pfont, glyph_index, sbw) < 0 )
-		    sbw[2] = 0.6;
-		pl_fp_set_pitch_cp(&plfont->params, sbw[2] * 100);
-	    }
 	}
     }
     if ( code < 0 ) { 
