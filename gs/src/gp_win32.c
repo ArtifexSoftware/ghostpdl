@@ -255,7 +255,11 @@ typedef struct gp_thread_creation_closure_s {
 } gp_thread_creation_closure;
 
 /* Origin of new threads started by gp_create_thread */
+#ifndef __WATCOMC__
 private DWORD WINAPI
+#else
+private void
+#endif
 gp_thread_begin_wrapper(
 			void *thread_data	/* gp_thread_creation_closure passed as magic data */
 )
@@ -266,7 +270,9 @@ gp_thread_begin_wrapper(
     free(thread_data);
     (*closure.function)(closure.data);
     _endthread();
+#ifndef __WATCOMC__
     return 0;
+#endif
 }
 
 /* Call a function on a brand new thread */
@@ -286,13 +292,21 @@ gp_create_thread(
     closure->data = data;
 
     /*
-     * Start thread_wrapper.  The Microsoft _beginthread returns -1
-     * (according to the doc, even though the return type is "unsigned long"
-     * !!!) if the call fails; we aren't sure what the Borland _beginthread
-     * returns.  The hack with ~ avoids a source code commitment as to
-     * whether the return type is [u]int or [u]long.
+     * Start thread_wrapper.
+     * The Watcom _beginthread returns (int)(-1) if the call fails.
+     * The Microsoft _beginthread returns -1 (according to the doc, even
+     * though the return type is "unsigned long" !!!) if the call fails;
+     * we aren't sure what the Borland _beginthread returns.
+     * The hack with ~ avoids a source code commitment as to whether the
+     * return type is [u]int or [u]long.
      */
+#ifndef __WATCOMC__
     if (~_beginthread(gp_thread_begin_wrapper, 0, closure) != 0)
 	return 0;
+#else	/* for Watcom there is an extra (optional) stack base parameter == NULL */
+    if (_beginthread(gp_thread_begin_wrapper, NULL, 0, closure) != -1)
+	return 0;
+#endif
+
     return_error(gs_error_unknownerror);
 }
