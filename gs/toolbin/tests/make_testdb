@@ -84,6 +84,7 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
     tfile = ofile + ".pdf"
     gs.outfile = tfile
     gs.device = 'pdfwrite'
+    gs.dpi = None
 
     if not gs.process():
         print "error."
@@ -92,6 +93,7 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
     gs.infile = tfile
     gs.outfile = ofile
     gs.device = device
+    gs.dpi = dpi
 
     if gs.process():
         try:

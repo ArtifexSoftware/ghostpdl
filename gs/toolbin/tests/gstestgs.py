@@ -52,7 +52,8 @@ class Ghostscript:
 		cmd = self.command
 		cmd = cmd + ' ' + self.gsoptions
 		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K100000 '
-		cmd = cmd + '-r%d ' % (self.dpi,)
+		if self.dpi:
+			cmd = cmd + '-r%d ' % (self.dpi,)
 		cmd = cmd + '-dMaxBitmap=%d ' % (bandsize,)
 		cmd = cmd + '-sDEVICE=%s ' % (self.device,)
 		cmd = cmd + '-sOutputFile=%s ' % (self.outfile,)

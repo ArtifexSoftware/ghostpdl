@@ -56,7 +56,7 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 	# do file->PDF conversion
 
 	gs.device = 'pdfwrite'
-        gs.dpi = 720
+        gs.dpi = None
 	gs.outfile = file1
 	if not gs.process():
 	    self.fail("non-zero exit code trying to create pdf file from " + self.file)

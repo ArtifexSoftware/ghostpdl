@@ -70,7 +70,7 @@ class GSFuzzyCompareTestCase(gstestgs.GhostscriptTestCase):
 	# do PostScript->pdfwrite
 		
 	gs.device = 'pdfwrite'
-        gs.dpi = 720
+        gs.dpi = None
 	gs.outfile = file2
 	if not gs.process():
 	    self.fail("non-zero exit code trying to distill " + self.file)
