@@ -391,7 +391,7 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 				     r_size(&rname), r_size(&rcidsi),
 				     0, 0, 0, 0, 0, imemory)) < 0)
 	goto fail;
-    if ((code = dict_int_param(op, "CMapType", 0, 1, -1, &pcmap->CMapType)) < 0 ||
+    if ((code = dict_int_param(op, "CMapType", 0, 1, 0, &pcmap->CMapType)) < 0 ||
 	(code = dict_float_param(op, "CMapVersion", 0.0, &pcmap->CMapVersion)) < 0 ||
 	(code = dict_uid_param(op, &pcmap->uid, 0, imemory, i_ctx_p)) < 0 ||
 	(code = dict_int_param(op, "WMode", 0, 1, 0, &pcmap->WMode)) < 0
