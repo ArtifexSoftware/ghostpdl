@@ -1,0 +1,31 @@
+   Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, NEWS-TLS (tools), describes the changes in the most recent releases of
+Aladdin's utility tools directory in reverse chronological order.
+
+Version 1.00 (10/05/98)
+=======================
+
+Mon Oct  5 05:55:26 1998  Red Hat Linux User  <henrys@warthog>
+
+	* regress.sh: interactive shell script to test for regressions
+
+Fri Aug 14 06:19:43 1998  Red Hat Linux User  <henrys@warthog>
+
+	* suite.tcl, leaks.tcl, TAGS:
+
+	Add tcl test scripts for debugging memory leaks and printing
+	genoa fts suite.  Emacs tags now included in the tools directory.
+
+Mon Aug 10 03:48:01 1998  Red Hat Linux User  <henrys@warthog>
+
+	* rect.pxl, null.pxl, pattern.pxl, frs96.pxl, fonts.pxl,
+	bitfonts.pxl: these test files were moved from the pxl directory.
+
+Sun Jul 26 07:25:33 1998  Red Hat Linux User  <henrys@warthog>
+
+	* d, label.tst, n, owl2.pcl, p: Initial revision
+
