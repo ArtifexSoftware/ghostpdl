@@ -750,79 +750,86 @@ void
 gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
 		  const gs_range * domain, client_name_t cname)
 {
-	/* We need to map the values in the range
-	 * [domain->rmin..domain->rmax].  However, if rmin < 0 < rmax and
-	 * the function is non-linear, this can lead to anomalies at zero,
-	 * which is the default value for CIE colors.  The "correct" way to
-	 * approach this is to run the mapping functions on demand, but we
-	 * don't want to deal with the complexities of the callbacks this
-	 * would involve (especially in the middle of rendering images);
-	 * instead, we adjust the range so that zero maps precisely to a
-	 * cache slot.  Define:
-	 *      a = domain->rmin;
-	 *      b = domain->rmax;
-	 *      R = b - a;
-	 *      N = gx_cie_cache_size - 1;
-	 *      f(v) = N*(v-a)/R;	// the index of v in the cache
-	 *      x = f(0).
-	 * If x is not an integer, we can either increase b or
-	 * decrease a to make it one.  In the former case, compute:
-	 *      Kb = floor(x); R'b = N*(0-a)/Kb; b' = a + R'b.
-	 * In the latter case, compute:
-	 *      Ka = ceiling(x-N); R'a = N*(0-b)/Ka; a' = b - R'a.
-	 * We choose whichever method stretches the range the least,
-	 * i.e., the one whose R' value (R'a or R'b) is smaller.
-	 *
-	 * Note that we have to do the computation with floats, rather than
-	 * doubles, in order to match the eventual PostScript loop that
-	 * samples the values.
-	 */
-    float a = domain->rmin, b = domain->rmax;
-    double R = b - a;
-    double delta;
+    /*
+      We need to map the values in the range [domain->rmin..domain->rmax].
+      However, if rmin < 0 < rmax and the function is non-linear, this can
+      lead to anomalies at zero, which is the default value for CIE colors.
+      The "correct" way to approach this is to run the mapping functions on
+      demand, but we don't want to deal with the complexities of the
+      callbacks this would involve (especially in the middle of rendering
+      images); instead, we adjust the range so that zero maps precisely to a
+      cache slot.  Define:
+
+      A = domain->rmin;
+      B = domain->rmax;
+      N = gx_cie_cache_size - 1;
+
+      R = B - A;
+      h(v) = N * (v - A) / R;		// the index of v in the cache
+      X = h(0).
+
+      If X is not an integer, we can decrease A and/increase B to make it
+      one.  Let A' and B' be the adjusted values of A and B respectively,
+      and let K be the integer derived from X (either floor(X) or ceil(X)).
+      Define
+
+      f(K) = (K * B' + (N - K) * A') / N).
+
+      We want f(K) = 0.  This occurs precisely when, for any real number
+      C != 0,
+
+      A' = -K * C;
+      B' = (N - K) * C.
+
+      In order to ensure A' <= A and B' >= B, we require
+
+      C >= -A / K;
+      C >= B / (N - K).
+
+      Since A' and B' must be exactly representable as floats, we round C
+      upward to ensure that it has no more than M mantissa bits, where
+
+      M = ARCH_FLOAT_MANTISSA_BITS - ceil(log2(N)).
+    */
+    float A = domain->rmin, B = domain->rmax;
+    double R = B - A, delta;
 #define NN (gx_cie_cache_size - 1) /* 'N' is a member name, see end of proc */
 #define N NN
+#define CEIL_LOG2_N CIE_LOG2_CACHE_SIZE
 
     /* Adjust the range if necessary. */
-    if (a < 0 && b >= 0) {
-	double x = -N * a / R;	/* must be > 0 */
-	double Kb = floor(x);	/* must be >= 0 */
-	double Ka = ceil(x) - N;	/* must be <= 0 */
-	int K;
-	float miss;
+    if (A < 0 && B >= 0) {
+	const double X = -N * A / R;	/* know X > 0 */
+	/* Choose K to minimize range expansion. */
+	const int K = (int)(A + B < 0 ? floor(X) : ceil(X)); /* know 0 < K < N */
+	const double Ca = -A / K, Cb = B / (N - K); /* know Ca, Cb > 0 */
+	double C = max(Ca, Cb);	/* know C > 0 */
+	const int M = ARCH_FLOAT_MANTISSA_BITS - CEIL_LOG2_N;
+	int cexp;
+	const double cfrac = frexp(C, &cexp);
 
-	if (Kb == 0 || (Ka != 0 && -b / Ka < -a / Kb))	/* use R'a */
-	    K = (int)Ka + N, R = -N * b / Ka, a = b - R;
-	else			/* use R'b */
-	    K = (int)Kb, R = -N * a / Kb, b = a + R;
-	/* Adjust so we hit zero exactly. */
-	if_debug3('c', "[c]adjusting cache_init(%8g, %8g), x = %8g:\n",
-		  domain->rmin, domain->rmax, x);
-	while ((miss = a + (b - a) * K / N) != 0) {
-	    if_debug3('c', "[c]    a = %8g, b = %8g) missed by %8g\n",
-		      a, b, miss);
-	    if (miss < 0) {
-		/* Adjust b upward slightly. */
-		b += b / (1L << (ARCH_FLOAT_MANTISSA_BITS - 1));
-	    } else {
-		/* Adjust a downward slightly. */
-		a += a / (1L << (ARCH_FLOAT_MANTISSA_BITS - 1));
-	    }
-	}
-	R = b - a;
+	if_debug4('c', "[c]adjusting cache_init(%8g, %8g), X = %8g, K = %d:\n",
+		  A, B, X, K);
+	/* Round C to no more than M significant bits.  See above. */
+	C = ldexp(ceil(ldexp(cfrac, M)), cexp - M);
+	/* Finally, compute A' and B'. */
+	A = -K * C;
+	B = (N - K) * C;
+	if_debug2('c', "[c]  => %8g, %8g\n", A, B);
+	R = B - A;
     }
     delta = R / N;
 #ifdef CIE_CACHE_INTERPOLATE
-    pcache->base = a;		/* no rounding */
+    pcache->base = A;		/* no rounding */
 #else
-    pcache->base = a - delta / 2;	/* so lookup will round */
+    pcache->base = A - delta / 2;	/* so lookup will round */
 #endif
     pcache->factor = (delta == 0 ? 0 : N / R);
     if_debug4('c', "[c]cache %s 0x%lx base=%g, factor=%g\n",
 	      (const char *)cname, (ulong) pcache,
 	      pcache->base, pcache->factor);
-    pslp->A = a;
-    pslp->B = b;
+    pslp->A = A;
+    pslp->B = B;
 #undef N
     pslp->N = NN;
 #undef NN

@@ -645,7 +645,7 @@ typedef struct gx_cie_joint_caches_s {
 /*
  * Rather than using the usual PostScript for-loop paradigm, we enumerate
  * cache key values using the exact computation
- *	v(i) = A + (B - A) * i / N
+ *	v(i) = ((N - i) * A + i * B) / N
  * where A and B are the range of the cache and N is the number of entries
  * (currently always gx_cie_cache_size - 1).
  * The boilerplate is:
@@ -656,14 +656,15 @@ typedef struct gx_cie_joint_caches_s {
  *	    float v = SAMPLE_LOOP_VALUE(i, lp);
  *	    ...
  *	}
- * NOTE: This computation must match zfor_samples in zcontrol.c.
+ * NOTE: This computation must match zfor_samples and for_samples_continue
+ * in zcontrol.c.
  */
 typedef struct gs_sample_loop_params_s {
     float A, B;
     int N;
 } gs_sample_loop_params_t;
 #define SAMPLE_LOOP_VALUE(i, lp)\
-  ((lp).A + ((lp).B - (lp).A) * (i) / (lp).N)
+  ( (((lp).N - (i)) * (lp).A + (i) * (lp).B) / (lp).N )
 void gs_cie_cache_init(P4(cie_cache_params *, gs_sample_loop_params_t *,
 			  const gs_range *, client_name_t));
 

@@ -411,12 +411,11 @@ for_real_continue(i_ctx_t *i_ctx_p)
 
 /*
  * Here we provide an internal variant of 'for' that enumerates the values
- * A, A+1*(B-A)/N, A+2*(B-A)/N, ..., B precisely.  The arguments are A
- * (real), N (integer), and B (real).  We need this for loading caches such
+ * A, ((N-1)*A+1*B)/N, ((N-2)*A+2*B)/N, ..., B precisely.  The arguments are
+ * A (real), N (integer), and B (real).  We need this for loading caches such
  * as the transfer function cache.
  *
- * NOTE: This computation must match the comment before the definition of
- * gs_sample_loop_params_t in gscie.h.
+ * NOTE: This computation must match the SAMPLE_LOOP_VALUE macro in gscie.h.
  */
 private int for_samples_continue(P1(i_ctx_t *));
 /* <first> <count> <last> <proc> %for_samples - */
@@ -450,13 +449,14 @@ for_samples_continue(i_ctx_t *i_ctx_p)
     long var = ep[-4].value.intval;
     float a = ep[-3].value.realval;
     long n = ep[-2].value.intval;
+    float b = ep[-1].value.realval;
 
     if (var > n) {
 	esp -= 6;		/* pop everything */
 	return o_pop_estack;
     }
     push(1);
-    make_real(op, a + (ep[-1].value.realval - a) * var / n);
+    make_real(op, ((n - var) * a + var * b) / n);
     ep[-4].value.intval = var + 1;
     ref_assign_inline(ep + 2, ep);	/* saved proc */
     esp = ep + 2;
