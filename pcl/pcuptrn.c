@@ -404,7 +404,7 @@ download_pcl_pattern(
     rsize = pixinfo.raster * pixinfo.size.y;
 
     /* check for legitimate format */
-    if (format == 0) {
+    if ((format == 0) || (format == 20)) {
         if (depth != 1)
             return e_Range;
     } else if ( (format != 1)                  ||

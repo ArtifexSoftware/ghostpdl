@@ -38,7 +38,7 @@ rtl_enter_hpgl_mode(
 	i = -1;
     else if (i > 3)
 	return 0;
-
+    hpgl_call(hpgl_clear_current_path(pcs));
     pcs->parse_other = ( int (*)( void *,
                                    pcl_state_t *,
                                    stream_cursor_read *
