@@ -350,7 +350,13 @@ copied_glyph_slot(gs_copied_font_data_t *cfdata, gs_glyph glyph,
     uint gsize = cfdata->glyphs_size;
 
     *pslot = 0;
-    if (glyph >= GS_MIN_CID_GLYPH) {
+    if (glyph >= GS_MIN_GLYPH_INDEX) {
+	/* CIDFontType 2 uses glyph indices for slots.  */
+	if (glyph - GS_MIN_GLYPH_INDEX >= gsize)
+	    return_error(gs_error_rangecheck);
+	*pslot = &cfdata->glyphs[glyph - GS_MIN_GLYPH_INDEX];
+    } else if (glyph >= GS_MIN_CID_GLYPH) {
+	/* CIDFontType 0 uses CIDS for slots.  */
 	if (glyph - GS_MIN_CID_GLYPH >= gsize)
 	    return_error(gs_error_rangecheck);
 	*pslot = &cfdata->glyphs[glyph - GS_MIN_CID_GLYPH];
@@ -600,7 +606,9 @@ copied_enumerate_glyph(gs_font *font, int *pindex,
 	    *pglyph =
 		(glyph_space == GLYPH_SPACE_NAME && cfdata->names != 0 ?
 		 cfdata->names[*pindex].glyph :
-		 *pindex + GS_MIN_CID_GLYPH);
+		 /* CIDFontType 0 uses CIDS as slot indices; CIDFontType 2 uses GIDs. */
+		 *pindex + (glyph_space == GLYPH_SPACE_NAME 
+			    ? GS_MIN_CID_GLYPH : GS_MIN_GLYPH_INDEX));
 	    ++(*pindex);
 	    return 0;
 	}
@@ -1207,8 +1215,12 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
     gs_font_type42 *font42 = (gs_font_type42 *)font;
+    gs_font_cid2 *fontCID2 = (gs_font_cid2 *)font;
     gs_font_type42 *const copied42 = (gs_font_type42 *)copied;
-    uint gid = font42->data.get_glyph_index(font42, glyph);
+    uint gid = (options & COPY_GLYPH_BY_INDEX ? glyph - GS_MIN_GLYPH_INDEX :
+		font->FontType == ft_CID_TrueType 
+		    ? fontCID2->cidata.CIDMap_proc(fontCID2, glyph)
+		    : font42->data.get_glyph_index(font42, glyph));
     int code = font42->data.get_outline(font42, gid, &gdata);
     int rcode;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
@@ -1219,15 +1231,15 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 
     if (code < 0)
 	return code;
-    code = copy_glyph_data(font, gid + GS_MIN_CID_GLYPH, copied, options,
+    code = copy_glyph_data(font, gid + GS_MIN_GLYPH_INDEX, copied, options,
 			   &gdata, NULL, 0);
     if (code < 0)
 	return code;
     rcode = code;
     if (glyph < GS_MIN_CID_GLYPH)
 	code = copy_glyph_name(font, glyph, copied,
-			       gid + GS_MIN_CID_GLYPH);
-    DISCARD(copied_glyph_slot(cfdata, glyph, &pcg)); /* can't fail */
+			       gid + GS_MIN_GLYPH_INDEX);
+    DISCARD(copied_glyph_slot(cfdata, gid + GS_MIN_GLYPH_INDEX, &pcg)); /* can't fail */
     for (i = 0; i < 2; ++i) {
 	if (font42->data.get_metrics(font42, gid, i, sbw) >= 0) {
 	    int sb = (int)(sbw[i] * factor);
@@ -1264,7 +1276,7 @@ copied_type42_encode_char(gs_font *copied, gs_char chr,
 
 	if (code < 0 || !pcg->used)
 	    return GS_NO_GLYPH;
-	return GS_MIN_CID_GLYPH + (pcg - cfdata->glyphs);
+	return GS_MIN_GLYPH_INDEX + (pcg - cfdata->glyphs);
     }
     return glyph;
 }
@@ -1594,7 +1606,11 @@ copied_cid2_CIDMap_proc(gs_font_cid2 *fcid2, gs_glyph glyph)
 private uint
 copied_cid2_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
 {
-    return copied_cid2_CIDMap_proc((gs_font_cid2 *)font, glyph);
+    int glyph_index = copied_cid2_CIDMap_proc((gs_font_cid2 *)font, glyph);
+
+    if (glyph_index < 0)
+	return GS_MIN_CID_GLYPH;
+    return glyph_index;
 }
 
 private int
@@ -1635,22 +1651,29 @@ copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_font_cid2 *fcid2 = (gs_font_cid2 *)font;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
-    uint cid = glyph - GS_MIN_CID_GLYPH;
     int gid;
     int code;
 
-    if (!(options & COPY_GLYPH_BY_INDEX))
+    if (!(options & COPY_GLYPH_BY_INDEX)) {
+	uint cid = glyph - GS_MIN_CID_GLYPH;
+
         gid = fcid2->cidata.CIDMap_proc(fcid2, glyph);
-    else
-        gid = cid;
-    if (gid < 0 || gid >= cfdata->glyphs_size)
-	return_error(gs_error_rangecheck);
-    if (cfdata->CIDMap[cid] != 0 && cfdata->CIDMap[cid] != gid)
-	return_error(gs_error_invalidaccess);
-    code = copy_glyph_type42(font, GS_MIN_CID_GLYPH + gid, copied, options);
-    if (code < 0)
-	return code;
-    cfdata->CIDMap[cid] = gid;
+	if (gid < 0 || gid >= cfdata->glyphs_size)
+	    return_error(gs_error_rangecheck);
+	if (cfdata->CIDMap[cid] != 0 && cfdata->CIDMap[cid] != gid)
+	    return_error(gs_error_invalidaccess);
+	code = copy_glyph_type42(font, glyph, copied, options);
+	if (code < 0)
+	    return code;
+        cfdata->CIDMap[cid] = gid;
+    } else {
+	gid = glyph - GS_MIN_GLYPH_INDEX;
+	if (gid < 0 || gid >= cfdata->glyphs_size)
+	    return_error(gs_error_rangecheck);
+	code = copy_glyph_type42(font, glyph, copied, options);
+	if (code < 0)
+	    return code;
+    }
     return code;
 }
 

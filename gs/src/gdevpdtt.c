@@ -885,8 +885,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 					    GLYPH_SPACE_INDEX);
 
 		if (glyph == GS_NO_GLYPH ||
-		    (glyph >= GS_MIN_CID_GLYPH &&
-		     glyph <= GS_MIN_CID_GLYPH + 0xff)
+		    (glyph >= GS_MIN_GLYPH_INDEX &&
+		     glyph <= GS_MIN_GLYPH_INDEX + 0xff)
 		    )
 		    continue;
 		/* Can't embed, punt. */

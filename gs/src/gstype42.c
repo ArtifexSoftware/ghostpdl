@@ -424,7 +424,9 @@ private int
 parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	     int *pnum_pieces)
 {
-    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
+    uint glyph_index = (glyph >= GS_MIN_GLYPH_INDEX 
+			? glyph - GS_MIN_GLYPH_INDEX 
+			: pfont->data.get_glyph_index(pfont, glyph));
     gs_glyph_data_t glyph_data;
     int code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
 
@@ -440,7 +442,7 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	memset(&mat, 0, sizeof(mat)); /* arbitrary */
 	for (i = 0; flags & TT_CG_MORE_COMPONENTS; ++i) {
 	    if (pieces)
-		pieces[i] = U16(gdata + 2) + gs_min_cid_glyph;
+		pieces[i] = U16(gdata + 2) + GS_MIN_GLYPH_INDEX;
 	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
 	}
 	*pnum_pieces = i;
@@ -456,7 +458,9 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
 			gx_path *ppath)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
+    uint glyph_index = (glyph > GS_MIN_GLYPH_INDEX 
+		? glyph - GS_MIN_GLYPH_INDEX 
+		: pfont->data.get_glyph_index(pfont, glyph));
     gs_fixed_point origin;
     int code;
     gs_glyph_info_t info;
@@ -475,12 +479,13 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
     return gx_path_add_point(ppath, origin.x + float2fixed(info.width[WMode].x),
 			     origin.y + float2fixed(info.width[WMode].y));
 }
+
+/* Get glyph info by glyph index. */
 int
-gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
-		     int members, gs_glyph_info_t *info)
+gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info, uint glyph_index)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
     int default_members =
 	members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_NUM_PIECES |
 		    GLYPH_INFO_PIECES | GLYPH_INFO_OUTLINE_WIDTHS);
@@ -535,6 +540,18 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     return code;
 }
 int
+gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info)
+{
+    gs_font_type42 *const pfont = (gs_font_type42 *)font;
+    uint glyph_index = (glyph >= GS_MIN_GLYPH_INDEX 
+			    ? glyph - GS_MIN_GLYPH_INDEX 
+			    : pfont->data.get_glyph_index(pfont, glyph));
+
+    return gs_type42_glyph_info_by_gid(font, glyph, pmat, members, info, glyph_index);
+
+}
+int
 gs_type42_enumerate_glyph(gs_font *font, int *pindex,
 			  gs_glyph_space_t glyph_space, gs_glyph *pglyph)
 {
@@ -549,7 +566,7 @@ gs_type42_enumerate_glyph(gs_font *font, int *pindex,
 	    return code;
 	if (outline.bits.data == 0)
 	    continue;		/* empty (undefined) glyph */
-	*pglyph = glyph_index + gs_min_cid_glyph;
+	*pglyph = glyph_index + GS_MIN_GLYPH_INDEX;
 	gs_glyph_data_free(&outline, "gs_type42_enumerate_glyph");
 	return 0;
     }

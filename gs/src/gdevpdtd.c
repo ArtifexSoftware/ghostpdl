@@ -337,6 +337,8 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
     int x_height = min_int;
     int cap_height = 0;
     gs_rect bbox_colon, bbox_period, bbox_I;
+    bool is_cid = (bfont->FontType == ft_CID_encrypted ||
+		   bfont->FontType == ft_CID_TrueType);
     bool have_colon = false, have_period = false, have_I = false;
     int code;
 
@@ -377,7 +379,8 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
      */
     notdef = GS_NO_GLYPH;
     for (index = 0;
-	 (code = bfont->procs.enumerate_glyph((gs_font *)bfont, &index, GLYPH_SPACE_NAME, &glyph)) >= 0 &&
+	 (code = bfont->procs.enumerate_glyph((gs_font *)bfont, &index, 
+		(is_cid ? GLYPH_SPACE_INDEX : GLYPH_SPACE_NAME), &glyph)) >= 0 &&
 	     index != 0;
 	 ) {
 	gs_glyph_info_t info;
@@ -412,6 +415,8 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	    fixed_width = min_int;
 	if (desc.Flags & FONT_IS_SYMBOLIC)
 	    continue;		/* skip Roman-only computation */
+	if (is_cid)
+	    continue;
 	code = bfont->procs.glyph_name((gs_font *)bfont, glyph, &gname);
 	if (code < 0)
 	    continue;

@@ -538,7 +538,7 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
 	    int wmode = font->WMode;
 	    gs_glyph glyph =
 		((gs_font_base *)font)->procs.encode_char(font, ch,
-							  GLYPH_SPACE_INDEX);
+							  GLYPH_SPACE_NAME);
 	    gs_glyph_info_t info;
 
 	    if (glyph != gs_no_glyph &&

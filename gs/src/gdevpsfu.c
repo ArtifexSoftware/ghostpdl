@@ -109,26 +109,6 @@ psf_enumerate_glyphs_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 }
 
 /*
- * Get the set of referenced glyphs (indices) for writing a subset font.
- * Does not sort or remove duplicates.
- */
-int
-psf_subset_glyphs(gs_glyph glyphs[256], gs_font *font, const byte used[32])
-{
-    int i, n;
-
-    for (i = n = 0; i < 256; ++i)
-	if (used[i >> 3] & (0x80 >> (i & 7))) {
-	    gs_glyph glyph = font->procs.encode_char(font, (gs_char)i,
-						     GLYPH_SPACE_INDEX);
-
-	    if (glyph != gs_no_glyph)
-		glyphs[n++] = glyph;
-	}
-    return n;
-}
-
-/*
  * Add composite glyph pieces to a list of glyphs.  Does not sort or
  * remove duplicates.  max_pieces is the maximum number of pieces that a
  * single glyph can have: if this value is not known, the caller should

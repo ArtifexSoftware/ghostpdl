@@ -306,30 +306,34 @@ scan_cmap_text(pdf_text_enum_t *pte)
     gs_font_type0 *const font = (gs_font_type0 *)pte->current_font; /* Type 0, fmap_CMap */
     gs_text_enum_t scan = *(gs_text_enum_t *)pte;
     int wmode = font->WMode, code;
-    gs_font *subfont = NULL;
+    pdf_font_resource_t *pdsubf0 = NULL;
+    uint index = scan.index, xy_index = scan.xy_index, font_index0;
     bool done = false;
 
     pte->returned.total_width.x = pte->returned.total_width.y = 0;;
-    do {
-	uint index = scan.index;
+    for (;;) {
+	uint break_index, break_xy_index, font_index;
 	gs_const_string str;
 	pdf_text_process_state_t text_state;
-	pdf_font_resource_t *pdfont;
+	pdf_font_resource_t *pdsubf;
 	gs_point wxy;
+	bool font_change;
 
 	code = gx_path_current_point(pte->path, &pte->origin);
 	if (code < 0)
 	    return code;
-        for ( ; ; ) {
+        do {
 	    gs_char chr;
 	    gs_glyph glyph;
-	    pdf_font_resource_t *pdsubf;
 	    pdf_font_descriptor_t *pfd;
 	    byte *glyph_usage;
 	    double *real_widths, *w, *v;
 	    int char_cache_size, width_cache_size;
+	    gs_font *subfont;
 	    uint cid;
 
+	    break_index = scan.index;
+	    break_xy_index = scan.xy_index;
 	    code = font->procs.next_char_glyph(&scan, &chr, &glyph);
 	    if (code == 2) {		/* end of string */
 		done = true;
@@ -337,9 +341,9 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    }
 	    if (code < 0)
 		return code;
-	    if (subfont != NULL && subfont != scan.fstack.items[scan.fstack.depth].font)
-		break;
 	    subfont = scan.fstack.items[scan.fstack.depth].font;
+	    font_index = scan.fstack.items[scan.fstack.depth].index;
+	    scan.xy_index++;
 #if	    TEST_UNICODE_SUPPORT
 	    {
 		gs_char unicode_char = subfont->procs.decode_glyph(subfont, glyph);
@@ -365,35 +369,28 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    code = pdf_obtain_cidfont_resource(pdev, subfont, &pdsubf, &glyph, 1);
 	    if (code < 0)
 		return code;
+	    font_change = (pdsubf != pdsubf0 && pdsubf0 != NULL);
+	    if (!font_change) {
+		pdsubf0 = pdsubf;
+		font_index0 = font_index;
+	    }
 	    code = pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf, 
 				       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
 	    if (code < 0)
 		return code;
-	    code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, 
-			    &font->data.CMap->CMapName, &pdfont);
-	    if (code < 0)
-		return code;
-	    if (!pdfont->u.type0.Encoding_name[0]) {
-		/*
-		 * If pdfont->u.type0.Encoding_name is set, 
-		 * a CMap resource is already attached.
-		 * See attach_cmap_resource.
-		 */
-		code = attach_cmap_resource(pdev, pdfont, font->data.CMap, 
-			scan.fstack.items[scan.fstack.depth].index);
-		if (code < 0)
-		    return code;
-	    }
 	    pfd = pdsubf->FontDescriptor;
 	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &v);
 	    if (code < 0)
 		return code;
-	    if (!(pdsubf->used[0] & 0x80)) {
-		/* A glyph for CID=0 must present as a .notdef character. */
-		code = pdf_font_used_glyph(pfd, GS_MIN_CID_GLYPH, (gs_font_base *)subfont);
-		if (code < 0)
-		    return code;
-	    }
+	    #if 0 /* don't need to copy noitdef, because gs_copy_font does that. */
+		if (!(pdsubf->used[0] & 0x80)) {
+		    /* A glyph for CID=0 must present as a .notdef character. */
+		    code = pdf_font_used_glyph(pfd, GS_MIN_CID_GLYPH, (gs_font_base *)subfont);
+		    if (code < 0)
+			return code;
+		    pdsubf->used[0] |= 0x80;
+		}
+	    #endif
 	    /* We can't check pdsubf->used[cid >> 3] here,
 	       because it mixed data for different values of WMode. 
 	       Perhaps pdf_font_used_glyph returns fast with reused glyphs.
@@ -438,29 +435,65 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		}
 	    }
 	    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
-	}
-	pdf_set_text_wmode(pdev, font->WMode);
-	code = pdf_update_text_state(&text_state, (pdf_text_enum_t *)pte, pdfont,
-				     &font->FontMatrix);
-	if (code < 0)
-	    return code;
-	str.data = scan.text.data.bytes + index;
-	str.size = scan.index - index;
-	code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
-			      &text_state, &str, &wxy);
-	if (code < 0)
-	    return code;
-	pte->index = scan.index;
-	pte->xy_index = scan.xy_index;
+	} while (!font_change);
+	if (break_index > index) {
+	    pdf_font_resource_t *pdfont;
 
-	code = gx_path_add_point(pte->path,
-			     pte->origin.x + float2fixed(wxy.x),
-			     pte->origin.y + float2fixed(wxy.y));
-	if (code < 0)
-	    return code;
-    } while (!done);
-    pte->index = scan.index;
-    pte->xy_index = scan.xy_index;
+	    code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, 
+			    &font->data.CMap->CMapName, &pdfont);
+	    if (code < 0)
+		return code;
+	    if (!pdfont->u.type0.Encoding_name[0]) {
+		/*
+		 * If pdfont->u.type0.Encoding_name is set, 
+		 * a CMap resource is already attached.
+		 * See attach_cmap_resource.
+		 */
+		code = attach_cmap_resource(pdev, pdfont, font->data.CMap, font_index0);
+		if (code < 0)
+		    return code;
+	    }
+	    pdf_set_text_wmode(pdev, font->WMode);
+	    code = pdf_update_text_state(&text_state, (pdf_text_enum_t *)pte, pdfont,
+					 &font->FontMatrix);
+	    if (code < 0)
+		return code;
+	    str.data = scan.text.data.bytes + index;
+	    str.size = break_index - index;
+	    if (pte->text.x_widths != NULL)
+		pte->text.x_widths += xy_index;
+	    if (pte->text.y_widths != NULL)
+		pte->text.y_widths += xy_index;
+	    pte->xy_index = 0;
+	    code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
+				  &text_state, &str, &wxy);
+	    if (pte->text.x_widths != NULL)
+		pte->text.x_widths -= xy_index;
+	    if (pte->text.y_widths != NULL)
+		pte->text.y_widths -= xy_index;
+	    if (code < 0) {
+		pte->index = index;
+		pte->xy_index = xy_index;
+		return code;
+	    }
+	    pte->index = break_index;
+	    pte->xy_index = break_xy_index;
+
+	    code = gx_path_add_point(pte->path,
+				 pte->origin.x + float2fixed(wxy.x),
+				 pte->origin.y + float2fixed(wxy.y));
+	    if (code < 0)
+		return code;
+	} 
+	index = break_index;
+	xy_index = break_xy_index;
+	if (done)
+	    break;
+	pdsubf0 = pdsubf;
+	font_index0 = font_index;
+    }
+    pte->index = index;
+    pte->xy_index = xy_index;
     return 0;
 }
 

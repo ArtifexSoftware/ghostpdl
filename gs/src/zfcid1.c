@@ -169,6 +169,69 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
     return 0;
 }
 
+private int
+z11_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info)
+{
+    gs_font_cid2 *fontCID2 = (gs_font_cid2 *)font;
+    uint glyph_index;
+    int code = (glyph > GS_MIN_GLYPH_INDEX 
+	    ? glyph - GS_MIN_GLYPH_INDEX 
+	    : fontCID2->cidata.CIDMap_proc(fontCID2, glyph));
+
+    if(code < 0)
+	return code;
+    glyph_index = (uint)code;
+    return gs_type42_glyph_info_by_gid(font, glyph, pmat, members, info, glyph_index);
+
+}
+
+/* Enumerate glyphs (keys) from GlyphDirectory instead of loca / glyf. */
+private int
+z11_enumerate_glyph(gs_font *font, int *pindex,
+			 gs_glyph_space_t glyph_space, gs_glyph *pglyph)
+{
+    gs_font_cid2 *pfont = (gs_font_cid2 *)font;
+    int code0 = z11_CIDMap_proc(pfont, GS_MIN_CID_GLYPH);
+    int code;
+
+    for (;;) {
+	code = z11_CIDMap_proc(pfont, GS_MIN_CID_GLYPH + *pindex);
+
+	if (code < 0) {
+	    *pindex = 0;
+	    return 0;
+	}
+	(*pindex)++;
+	if (*pindex == 1 || code != code0)
+	    break;
+	/* else skip an underfined glyph */
+    }
+    if (glyph_space == GLYPH_SPACE_INDEX)
+	*pglyph = GS_MIN_GLYPH_INDEX + (uint)code;
+    else
+	*pglyph = GS_MIN_CID_GLYPH + (uint)(*pindex - 1);
+    return 0;
+}
+
+private uint
+z11_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
+{
+    int code = z11_CIDMap_proc((gs_font_cid2 *)pfont, glyph);
+
+    return (code < 0 ? 0 /* notdef */: (uint)code);
+}
+
+
+private int
+z11_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
+		  gx_path *ppath)
+{
+    return gs_type42_glyph_outline(font, WMode, 
+	    z11_get_glyph_index((gs_font_type42 *)font, glyph) + GS_MIN_GLYPH_INDEX,
+				   pmat, ppath);
+}
+
 /* ------ Defining ------ */
 
 /* <string|name> <font_dict> .buildfont11 <string|name> <font> */
@@ -252,6 +315,10 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     pfcid->cidata.MetricsCount = MetricsCount;
     ref_assign(&pfont_data(pfont)->u.type42.CIDMap, &rcidmap);
     pfcid->cidata.CIDMap_proc = z11_CIDMap_proc;
+    pfont->procs.enumerate_glyph = z11_enumerate_glyph;
+    pfont->procs.glyph_info = z11_glyph_info;
+    pfont->procs.glyph_outline = z11_glyph_outline;
+    pfont->data.get_glyph_index = z11_get_glyph_index;
     get_font_name(&cfnstr, CIDFontName);
     copy_font_name(&pfcid->font_name, &cfnstr);
     if (MetricsCount) {

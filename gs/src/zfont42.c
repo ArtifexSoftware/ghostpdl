@@ -212,23 +212,25 @@ glyph_to_index(const gs_font *font, gs_glyph glyph)
     ref gref;
     ref *pcstr;
 
-    if (glyph >= gs_min_cid_glyph)
+    if (glyph >= GS_MIN_GLYPH_INDEX)
 	return glyph;
     name_index_ref(glyph, &gref);
     if (dict_find(&pfont_data(font)->CharStrings, &gref, &pcstr) > 0 &&
 	r_has_type(pcstr, t_integer)
 	) {
-	gs_glyph index_glyph = pcstr->value.intval + gs_min_cid_glyph;
+	gs_glyph index_glyph = pcstr->value.intval + GS_MIN_GLYPH_INDEX;
 
 	if (index_glyph >= gs_min_cid_glyph && index_glyph <= gs_max_glyph)
 	    return index_glyph;
     }
-    return gs_min_cid_glyph;	/* glyph 0 is notdef */
+    return GS_MIN_GLYPH_INDEX;	/* glyph 0 is notdef */
 }
 private uint
 z42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 {
-    return glyph_to_index((gs_font *)pfont, glyph) - GS_MIN_CID_GLYPH;
+    gs_glyph gid = glyph_to_index((gs_font *)pfont, glyph);
+
+    return gid - GS_MIN_GLYPH_INDEX;
 }
 
 /*
@@ -303,7 +305,7 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
 		    return 0;
 		}
 		if (!r_has_type(&gdef, t_null)) {
-		    *pglyph = gs_min_cid_glyph + (*pindex)++;
+		    *pglyph = GS_MIN_GLYPH_INDEX + (*pindex)++;
 		    return 0;
 		}
 	    }

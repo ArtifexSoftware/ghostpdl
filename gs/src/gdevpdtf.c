@@ -638,7 +638,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 	/* Don't write a UID for subset fonts. */
 	uid_set_invalid(&pdf_font_resource_font(pdfont, false)->UID);
     }
-    if (pdsubf->FontDescriptor)
+    if (pdfont->FontType != ft_composite && pdsubf->FontDescriptor)
 	*pdf_font_descriptor_name(pdsubf->FontDescriptor) = fname;
     return 0;
 }

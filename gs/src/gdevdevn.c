@@ -38,7 +38,6 @@
 private dev_proc_get_params(devicen_get_params);
 private dev_proc_put_params(devicen_put_params);
 private dev_proc_print_page(devicen_print_page);
-private dev_proc_get_color_mapping_procs(get_spotrgb_color_mapping_procs);
 private dev_proc_get_color_mapping_procs(get_spotcmyk_color_mapping_procs);
 private dev_proc_get_color_mapping_procs(get_devicen_color_mapping_procs);
 private dev_proc_get_color_comp_index(devicen_get_color_comp_index);

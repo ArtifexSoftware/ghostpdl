@@ -117,4 +117,8 @@ font_proc_enumerate_glyph(gs_type42_enumerate_glyph);
 font_proc_glyph_info(gs_type42_glyph_info);
 font_proc_glyph_outline(gs_type42_glyph_outline);
 
+/* Get glyph info by glyph index. */
+int gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info, uint glyph_index);
+
 #endif /* gxfont42_INCLUDED */
