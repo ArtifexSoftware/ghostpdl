@@ -90,7 +90,7 @@ ps2pdf</tt></b> <em>input.[e]ps input.pdf</em>
 </blockquote>
 
 <p>
-There are actually three different <b><tt>ps2pdf</tt></b><em>*</em> scripts:
+There are actually several different <b><tt>ps2pdf</tt></b><em>*</em> scripts:
 the name <b><tt>ps2pdf</tt></b> above refers to any of them.
 
 <ul>
@@ -101,10 +101,14 @@ the name <b><tt>ps2pdf</tt></b> above refers to any of them.
 <li><b><tt>ps2pdf13</tt></b> will always produce PDF 1.3 output (Acrobat
 4-and-later compatible).
 
+<li><b><tt>ps2pdf14</tt></b> will always produce PDF 1.4 output (Acrobat
+5-and-later compatible).
+
 <li><b><tt>ps2pdf</tt></b> per se currently produces PDF 1.2 output (Acrobat
 3-and-later compatible).  However, this may change in the future.  If you
 care about the compatibility level of the output, use
-<b><tt>ps2pdf12</tt></b> or <b><tt>ps2pdf13</tt></b>, or use the
+<b><tt>ps2pdf12</tt></b>, <b><tt>ps2pdf13</tt></b>, or
+<b><tt>ps2pdf14</tt></b>, or use the
 <b><tt>-dCompatibilityLevel=</tt></b><em>1.x</em> switch in the command
 line.
 
@@ -340,12 +344,11 @@ The following "job control" parameters are recognized, but have no effect:
 <h1><a name="Limitations"></a>Limitations</h1>
 
 <p>
-In some situations, <b><tt>ps2pdf</tt></b> will convert text to
-high-resolution bitmapped fonts rather than to embedded outline fonts.
-Currently, this will always occur when the PostScript file uses CID-keyed or
-double-byte fonts, when the input file uses <b><tt>kshow</tt></b>, or in
-some cases if it uses fonts with non-standard encodings; it may occur in
-other cases as well.
+<b><tt>ps2pdf</tt></b> will sometimes convert text to high-resolution
+bitmapped fonts rather than to embedded outline fonts.  Currently, this will
+always occur when the PostScript file uses CID-keyed or double-byte fonts,
+when the input file uses <b><tt>kshow</tt></b>, or in some cases if it uses
+fonts with non-standard encodings; it may occur in other cases as well.
 
 <p>
 The PDF output always represents the colors of text and graphics in
@@ -377,6 +380,14 @@ document content structure: <b><tt>StRoleMap</tt></b>,
 <b><tt>NI</tt></b>.  While this causes some structural information to be
 omitted from the output file, the displayed and printed output are normally
 not affected.
+
+<p>
+<b><tt>ps2pdf</tt></b> currently has only very limited support for PDF 1.4.
+It writes out the blend mode, constant alpha, and text knockout graphics
+state parameters, and it handles images with soft masks, but it does not
+handle transparency groups, or soft masks in the graphics state.  (Note that
+there is no standard way to specify any of these things in PostScript, so
+these statements only apply when the input file is already a PDF 1.4 file.)
 
 <hr>
 
