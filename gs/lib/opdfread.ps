@@ -77,6 +77,7 @@ true setglobal
   counttomark 1 sub -1 0 {
 	index =only
   } for
+  () =
   cleartomark
   % Assuming ....Undefined is never defined. 
   % Use it to emit an error.
@@ -159,7 +160,7 @@ true setglobal
 
 /PrintReference % <array> PrintReference <array>
 {
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	({ ) print
 	dup {
 	  =only ( ) print
@@ -197,7 +198,7 @@ true setglobal
 
 /obj % <id> <generation> obj <id>
 {
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	(Defining ) print 1 index =only ( ) print dup =only ( obj) =
   } if
   0 ne {
@@ -207,7 +208,7 @@ true setglobal
 
 /endobj  % <id> <obj> endobj -
 {
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	(Storing ) print 1 index =
   } if
   //RunTypeDaemon exec
@@ -216,7 +217,7 @@ true setglobal
 
 /StoreBlock % <buf> StoreBlock -
 { % Stores a (encoded) stream data block to the current object.
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	(StoreBlock ) print //PDFReader /BlockCount get =only (, Length = ) print dup length =
   } if
   dup length string copy
@@ -233,12 +234,12 @@ true setglobal
   } if
 } bind def
 
-/UnRefD % <dict> <key> <check> UnRefD <value>
+/ResolveD % <dict> <key> <check> ResolveD <value>
 {
   3 copy pop get													% <> key {} e
   dup xcheck {
 	% We've got a reference daemon, execute it :
-	PDFR_DEBUG {
+	//PDFR_DEBUG {
 	  (Resolving ) print //PrintReference exec
 	} if
 	exec															% <> key {} val
@@ -254,8 +255,8 @@ true setglobal
 { % Stores a (encoded) data stream copy to the current object.
   dup //PDFReader exch /CurrentObject exch put						% id obj
   //PDFReader /BlockCount 0 put
-  dup /Length //CheckLength //UnRefD exec							% id obj l
-  PDFR_DEBUG {
+  dup /Length //CheckLength //ResolveD exec							% id obj l
+  //PDFR_DEBUG {
 	(StoreStream Length = ) print dup =
   } if
   currentfile exch () /SubFileDecode filter 						% id obj file
@@ -268,7 +269,7 @@ true setglobal
   } loop
   pop																% id obj
   //PDFReader /CurrentObject null put
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	(StoreStream end.) =
   } if
 } bind def
@@ -276,8 +277,8 @@ true setglobal
 /ExecuteStream  % <id> <obj> ExecuteStream <id> <obj>
 { % Executes a (encoded) data stream.
   dup //PDFReader exch /CurrentObject exch put						% id obj
-  dup /Length //CheckLength //UnRefD exec							% id obj l
-  PDFR_DEBUG {
+  dup /Length //CheckLength //ResolveD exec							% id obj l
+  //PDFR_DEBUG {
 	(ExecuteStream id = ) print 2 index =only ( Length = ) print dup =
   } if
   //PDFReader /InitialGraphicState get 
@@ -287,11 +288,11 @@ true setglobal
   cvx mark exch														% id obj mark file
   exec
   counttomark 0 ne {
-    mark (Data left on ostack after a stream execution) //error exec
+    mark (Data left on ostack after an immediate stream execution.) //error exec
   } if
   cleartomark														% id obj
   end % Operators
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	(ExecuteStream end.) =
   } if
   //PDFReader /CurrentObject null put
@@ -300,7 +301,7 @@ true setglobal
 
 /stream  % <id> <obj> stream <id> <obj>
 { 
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	1 index =only ( stream) =
   } if																% id obj
   % Run the object definition daemon, if exists :
@@ -330,9 +331,9 @@ true setglobal
 
 /xref % - xref -
 { 
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	(xref) =
-	PDFR_DUMP {
+	//PDFR_DUMP {
 	  //PDFReader /ObjectRegistry get ==
 	} if
   } if
@@ -345,9 +346,18 @@ true setglobal
 
 % ===================== Restoring the PDF Document Structure ===============
 
+/ResolveDict  % <dict> /ResolveDict -
+{ dup {															% d key val
+    pop 1 index exch											% d cp key
+	//DoNothing //ResolveD exec									% d obj
+	pop															% d
+  } forall
+  pop															%
+} bind def
+
 /PageContentsDaemon % <id> <obj> <node> PageContentsDaemon <id> <obj>
 { % Note: an excessive operand from a prebond procedure.
-  PDFR_DEBUG {
+  //PDFR_DEBUG {
 	(Executing PageContentsDaemon for ) print 2 index =
   } if																% id obj node
   1 index exch /Context exch put									% id obj
@@ -356,7 +366,7 @@ true setglobal
 
 /TypeDaemons <<  % <id> <obj> proc <id> <obj>
   /Page 
-  { PDFR_DEBUG {
+  { //PDFR_DEBUG {
 	  (Recognized a page.)=
 	} if
 	dup /Contents get 0 get	//DoNothing exch 						% id obj dn id1
@@ -366,6 +376,63 @@ true setglobal
 	//Register exec													% id obj
   } bind
 >> def
+
+/MakeStreamReader % <obj> MakeStreamReader <file>
+{ [ 
+    exch
+	//PDFR_DEBUG {
+      (Stream proc )
+      /print load
+	  //PDFR_STREAM {
+        (<)
+        /print load
+	  } if
+	} if
+    1 dict dup /i -1 put
+    /dup load
+	/i 
+	/get load
+	1
+	/add load
+	/dup load
+	3 
+	1 
+	/roll load
+	/i
+	/exch load
+	/put load
+	//knownget
+	/exec load 
+	/not load
+	{ () }
+	/if load
+	//PDFR_DEBUG {
+	  //PDFR_STREAM {
+        /dup load
+        /print load
+	    (>\n)
+	    /print load
+	  } if
+	  ( end of stream proc.\n)
+	  /print load
+	} if
+  ] cvx
+  //PDFR_DEBUG {
+	(Stream reader ) print dup ==
+  } if
+  0 () /SubFileDecode filter
+} bind def
+
+/RunDelayedStream % <stream_obj> RunStream -
+{
+  //MakeStreamReader exec 								% file
+  mark exch
+  cvx exec													%
+  counttomark 0 ne {
+    mark (Data left on ostack after a delayed stream execution.) //error exec
+  } if
+  cleartomark
+} bind def
 
 % ===================== Font Management ======================
 
@@ -411,7 +478,7 @@ true setglobal
 } bind def
 
 /ObtainEncoding % <font_resource> ObtainEncoding <font_resource>
-{ dup dup /Encoding //CheckEncoding //UnRefD exec				% fr fr er|e|n
+{ dup dup /Encoding //CheckEncoding //ResolveD exec				% fr fr er|e|n
   dup type dup /arraytype eq exch /packedarraytype eq or {
     % Already resolved.
 	pop pop
@@ -490,6 +557,41 @@ true setglobal
   } ifelse
 } bind def
 
+/NotDef	% - NotDef -
+{ % A Type 3 font is on dstack.
+  FontMatrix aload pop pop pop exch pop exch pop                % sx sy
+  1 exch div exch
+  1 exch div exch												% wx wy
+  1 index 0 setcharwidth
+  o setlinewidth
+  0 0 moveto
+  2 copy rlineto
+  1 index 0 rlineto
+  neg exch neg exch rlineto										%
+  closepath stroke
+} bind def
+
+/BuildChar  % <font> <char_code> BuildChar -
+{ //PDFR_DEBUG {
+    (BuildChar ) print dup //=only exec ( ) print
+  } if
+  exch begin
+    Encoding exch get				                            % n
+	//PDFR_DEBUG {
+	  dup =
+	} if
+	dup null eq {
+	  pop //NotDef exec											%
+	} {															% n
+	  CharProcs exch //knownget exec {							% cp_stream
+	    //RunDelayedStream exec
+	  } {
+	    //NotDef exec
+	  } ifelse
+	} ifelse													%
+  end % font
+} bind def
+
 % ===================== Interpret Data Streams ===============
 
 /TempMatrix matrix def
@@ -512,22 +614,37 @@ currentdict end def
 
 /SetFont  % <resource_name> <size> SetFont -
 { dup //GraphicState exch /FontSize exch put
-  exch																% s n 
+  exch dup															% s rn rn
   //PDFReader /CurrentObject get /Context get /Resources get 
-  /Font //DoNothing //UnRefD exec
-  exch //CheckFont //UnRefD exec									% s fr
-  dup /Font //knownget exec {										% s fr f
-    exch pop
+  /Font //DoNothing //ResolveD exec
+  exch //CheckFont //ResolveD exec									% s rn fr
+  dup /Font //knownget exec {										% s rn fr f
+    exch pop exch pop
   } {
     (Underimplemented SetFont)=
     //ObtainEncoding exec
     //ObtainMetrics exec
-    dup /Subtype get /Type3 eq {
-	  pop /Courier findfont exch 10 mul exch
-    } {
+    dup /Subtype get /Type3 eq {									% s rn fr
+	  2 copy exch /FontName exch put
+	  dup /CharProcs get //ResolveDict exec
+	  dup /FontType 3 put
+	  dup /BuildChar //BuildChar put
+	  dup dup /Font exch put
+	  % Ignore Metrics because pdfwrite duplicates it 
+	  % from setcharwidth/setcachedevice.
+	  dup 3 1 roll													% s fr rn fr
+	  definefont													% s fr f
+	  2 copy ne { 
+	    % The interpreter copied the font dictionary while 'definefont'
+		% Need to update the font pointer in the resource.
+		2 copy /Font exch put										% s fr f
+	  } if
+	  exch pop														% s f
+    } {																% s rn fr
+	  exch pop														% s fr
       dup /BaseFont get												% s fr n
 	  //RemoveFontNamePrefix exec									% s fr n
-	  PDFR_DEBUG {
+	  //PDFR_DEBUG {
 	    (Font ) print dup =
 	  } if															% s fr n
 	  //GetInstalledFont exec										% s fr f
@@ -660,8 +777,8 @@ currentdict end def
 /SetExtGState % <name> SetExtGState -
 {
   //PDFReader /CurrentObject get /Context get /Resources get 
-  /ExtGState //DoNothing //UnRefD exec
-  exch //CheckExtGState //UnRefD exec							% s gs
+  /ExtGState //DoNothing //ResolveD exec
+  exch //CheckExtGState //ResolveD exec							% s gs
   dup /LW //knownget exec {
     setlinewidth
   } if
@@ -730,7 +847,7 @@ currentdict end def
 	  pop //InitialExtGState /HT get
 	  sethalftone
 	} {
-	  pop dup /HT //CheckHalftone //UnRefD exec
+	  pop dup /HT //CheckHalftone //ResolveD exec
 	  sethalftone
 	} ifelase
   } if
@@ -861,7 +978,7 @@ currentdict end def
   /MP { DefineMarkedContentPoint } bind def
 currentdict end def
 
-PDFR_STREAM {
+//PDFR_STREAM {
   % Rebind operators with a debug tracing.
   //Operators length dict begin
   //Operators {												% n p
