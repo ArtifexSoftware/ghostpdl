@@ -73,25 +73,3 @@
 } bind def
 
 currentdict /registerfont .undef
-
-
-% If we're in a Level 2 system but running in Level 1 mode,
-% register the fonts explicitly as resources.
-% This is a bit of a hack, but doing better is too much work.
-
-/level2dict where
- { pop /findresource where
-    {		% Level 2 system, Level 2 mode
-      pop
-    }
-    {		% Level 2 system, Level 1 mode
-      /Font /Category level2dict /findresource get exec begin
-      .FontDirectory
-       { dup .gcheck { .Instances } { .LocalInstances } ifelse
-	 3 1 roll [exch 0 -1] .growput
-       }
-      forall end
-    }
-   ifelse
- }
-if
