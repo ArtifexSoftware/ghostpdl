@@ -583,9 +583,6 @@ relatively small ones containing platform-specific information.
 <tr>	<td><b><tt>unixansi.mak</tt></b>
 	<td>&nbsp;
 	<td>Unix with ANSI C compilers other than gcc
-<tr>	<td><b><tt>watc.mak</tt></b>
-	<td>&nbsp;
-	<td>DOS with Watcom compilers
 <tr>	<td><b><tt>watcw32.mak</tt></b>
 	<td>&nbsp;
 	<td>MS Windows with Watcom compilers
@@ -1005,11 +1002,6 @@ All Ghostscript builds in PC (DOS and MS Windows) environments are 32- or
 	<td valign=top><a href="#Microsoft_build">Microsoft Visual C++ 4 to 7</a>
 	<td>&nbsp;
 	<td valign=top>MS Windows 32-bit
-<tr>	<td valign=top><b><tt>watc.mak</tt></b>
-	<td>&nbsp;
-	<td valign=top><a href="#Watcom_build">Watcom C/386 or C++</a>
-	<td>&nbsp;
-	<td valign=top>MS-DOS 32-bit (extended)
 <tr>	<td valign=top><b><tt>watcw32.mak</tt></b>
 	<td>&nbsp;
 	<td valign=top><a href="#Watcom_build">Watcom C/386 or C++</a>
@@ -1335,13 +1327,6 @@ the detailed procedure.
 <h3><a name="Watcom_build"></a>Watcom environment</h3>
 
 <p>
-Because of limitations in the way that Watcom implemented their
-<b><tt>wmake</tt></b> program, you must run the Watcom tools under MS
-Windows, even if you are generating a DOS executable.  This is very
-unfortunate, and there is no good technical reason for it, but we were
-unable to persuade Watcom (now Powersoft) to do anything about it.
-
-<p>
 To use the Watcom compiler, add to <b><tt>AUTOEXEC.BAT</tt></b> the line
 "<b><tt>set&nbsp;DOS4G=quiet</tt></b>".  Check that
 <b><tt>AUTOEXEC.BAT</tt></b> also contains a line of the form
@@ -1357,9 +1342,6 @@ the directory where you installed the Watcom tools, and that the setting of
 	<td>&nbsp;&nbsp;&nbsp;
 	<th align=left>Give the command
 <tr>	<td colspan=3><hr>
-<tr>	<td>DOS
-	<td>&nbsp;
-	<td nowrap><b><tt>echo&nbsp;!include&nbsp;src\watc.mak&nbsp;&gt;makefile</tt></b>
 <tr>	<td>MS Windows
 	<td>&nbsp;
 	<td nowrap><b><tt>echo&nbsp;!include&nbsp;src\watcw32.mak&nbsp;&gt;makefile</tt></b>
@@ -1367,8 +1349,7 @@ the directory where you installed the Watcom tools, and that the setting of
 
 <p>
 Before compiling, change the definition of the <b><tt>WCVERSION</tt></b>
-macro in the makefile (<b><tt>watc.mak</tt></b> or
-<b><tt>watcw32.mak</tt></b>) to the version of the Watcom compiler you are
+macro in the makefile (<b><tt>watcw32.mak</tt></b>) to the version of the Watcom compiler you are
 using.  This is necessary to handle some minor incompatibilities between
 versions.
 
@@ -1378,11 +1359,6 @@ To run the <b><tt>make</tt></b> program, give the commmand
 <blockquote>
 <b><tt>wmake -u</tt></b>
 </blockquote>
-
-<p>
-For information on using the GNU <b><tt>make</tt></b> program with the
-Watcom compiler to build MS-DOS executables, which avoids the limitations in
-<b><tt>wmake</tt></b>, see <a href="New-user.htm#MS-DOS">here</a>.
 
 <h3><a name="Cygwin32_build"></a>Cygwin32 gcc</h3>
 
