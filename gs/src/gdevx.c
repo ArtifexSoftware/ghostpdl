@@ -1066,7 +1066,6 @@ x_update_add(gx_device_X * xdev, int xo, int yo, int w, int h)
     nw = u.q.x - u.p.x;
     nh = u.q.y - u.p.y;
     new_up_area = (long)nw * nh;
-    xdev->update.box = u;
     xdev->update.count++;
     xdev->update.area = new_up_area;
     xdev->update.total += added;
@@ -1085,10 +1084,16 @@ x_update_add(gx_device_X * xdev, int xo, int yo, int w, int h)
 	    old_area + added < new_up_area - (new_up_area >> 2)
 	    )
 	    DO_NOTHING;
-	else
+	else {
+	    xdev->update.box = u;
 	    return;
+	}
     }
     update_do_flush(xdev);
+    xdev->update.box.p.x = xo, xdev->update.box.p.y = yo;
+    xdev->update.box.q.x = xe, xdev->update.box.q.y = ye;
+    xdev->update.count = 1;
+    xdev->update.area = xdev->update.total = added;
 }
 
 /* Flush buffered text to the screen. */
