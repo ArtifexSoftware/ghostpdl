@@ -898,16 +898,16 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
-const byte apxSetHalftoneMethod[] = {0, pxaAllObjectTypes, pxaTextObjects,
-                                  pxaVectorObjects, pxaRasterObjects, 0};
+const byte apxSetHalftoneMethod[] = {
+   0, pxaDitherOrigin, pxaDeviceMatrix, pxaDitherMatrixDataType,
+   pxaDitherMatrixSize, pxaDitherMatrixDepth, 0
+};
 
 int
 pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 {	gs_state *pgs = pxs->pgs;
 	px_gstate_t *pxgs = pxs->pxgs;
 	pxeDitherMatrix_t method;
-
-        return 0;
 
 	if ( par->pv[1] )
 	  { /* Internal halftone */

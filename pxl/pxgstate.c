@@ -815,6 +815,7 @@ pxBeginUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
     return 0;
 }
 
+
 const byte apxEndUserDefinedLineCap[] = { 0, 0 };
 int
 pxEndUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
@@ -894,23 +895,57 @@ pxSetPageRotation(px_args_t *par, px_state_t *pxs)
 }
 
 const byte apxSetPageScale[] = {
-  pxaPageScale, 0, 0
+  0, pxaPageScale, pxaMeasure, pxaUnitsPerMeasure, 0
 };
+
 int
 pxSetPageScale(px_args_t *par, px_state_t *pxs)
-{	real sx = real_value(par->pv[0], 0), sy = real_value(par->pv[0], 1);
-	int code = gs_scale(pxs->pgs, sx, sy);
+{	
+    int code;
+    real sx = 1;
+    real sy = 1;
+    private const real units_conversion_table[3][3] = {
+        { 1, 25.4, 254 },     /* in -> in, mill, 1/10 mill */
+        { 0.0394, 1, 10 },    /* mill -> in, mill, 1/10 mill */
+        { 0.00394, .1, 1 }    /* 1/10 mill -> in, mill, 1/10 mill */ 
+    };
 
-	if ( code < 0 )
-	  return code;
-	/* Post-multiply the text CTM by the scale matrix. */
-	{ gs_matrix smat;
-	  px_gstate_t *pxgs = pxs->pxgs;
-
-	  gs_make_scaling(sx, sy, &smat);
-	  gs_matrix_multiply(&pxgs->text_ctm, &smat, &pxgs->text_ctm);
-	}
-	return 0;
+    /* measuure and units of measure.  Actually session user units
+       divided by new user unit, bizarre. */
+    if ( par->pv[1] && par->pv[2] ) {
+        /* new user measure */
+        real nux = real_value(par->pv[2], 0);
+        real nuy = real_value(par->pv[2], 1);
+        if ( nux != 0 && nuy != 0 ) {
+            /* new measure */
+            pxeMeasure_t mt = par->pv[1]->value.i;
+            /* convert to session units */
+            real factor = units_conversion_table[mt][pxs->measure];
+            real sux = nux * factor;
+            real suy = nuy * factor;
+            sx = pxs->units_per_measure.x / sux;
+            sy = pxs->units_per_measure.y / suy;
+            /* check for overflow.  NB we should do a better job here */
+            if ( fabs(sx) > 1000.0 ) {
+                dprintf2( "warning probable overflow avoided for scaling factors %f %f\n", sx, sy );
+                sx = sy = 1;
+            }
+        }
+    } else if ( par->pv[0] ) { /* page scale */
+        sx = real_value(par->pv[0], 0);
+        sy = real_value(par->pv[0], 1);
+    }
+    code = gs_scale(pxs->pgs, sx, sy);
+    if ( code < 0 )
+        return code;
+    /* Post-multiply the text CTM by the scale matrix. */
+    { 
+        gs_matrix smat;
+        px_gstate_t *pxgs = pxs->pxgs;
+        gs_make_scaling(sx, sy, &smat);
+        gs_matrix_multiply(&pxgs->text_ctm, &smat, &pxgs->text_ctm);
+    }
+    return 0;
 }
 
 const byte apxSetPaintTxMode[] = {
