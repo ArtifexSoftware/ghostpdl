@@ -47,10 +47,10 @@
  */
 
 /* Define the printer commands. */
-#define ATX_SET_PAGE_LENGTH "\033f"
-#define ATX_VERTICAL_TAB "\033L"
-#define ATX_UNCOMPRESSED_DATA "\033d"
-#define ATX_COMPRESSED_DATA "\033x"
+#define ATX_SET_PAGE_LENGTH "\033f"  /* + 2-byte length */
+#define ATX_VERTICAL_TAB "\033L"  /* + 2-byte count */
+#define ATX_UNCOMPRESSED_DATA "\033d"  /* + 2-byte count */
+#define ATX_COMPRESSED_DATA "\033x"  /* + 1-byte word count */
 #define ATX_END_PAGE "\033e"
 
 /* The device descriptors */
@@ -72,15 +72,13 @@ const gx_device_printer gs_atx38_device = /* real width = 2400 pixels */
 ATX_DEVICE("atx38", 80 /* 8.0" */, 35 /* (minimum) */,
 	   300, 0.25, 0.125);
 
-#define MAX_RASTER 300		/* 2400 pixels, see above */
-
 /* Output a printer command with a 2-byte, little-endian numeric argument. */
 private void
 fput_atx_command(FILE *f, const char *str, int value)
 {
     fputs(str, f);
-    putc((byte)value, f);
-    putc((byte)(value >> 8), f);
+    fputc((byte)value, f);
+    fputc((byte)(value >> 8), f);
 }
 
 /*
@@ -176,13 +174,15 @@ atx_print_page(gx_device_printer *pdev, FILE *f)
     gs_memory_t *mem = pdev->memory;
     int raster = gx_device_raster((gx_device *)pdev, true);
     byte *buf;
-    int compressed_raster = raster / 2; /* require 50% compression */
+    /*
+     * ATX_COMPRESSED_DATA only takes a 1-byte (word) count.
+     * Thus no compressed scan line can take more than 510 bytes.
+     */
+    int compressed_raster = min(raster / 2, 510); /* require 50% compression */
     byte *compressed;
     int blank_lines, lnum;
     int code = 0;
 
-    if (raster > MAX_RASTER)
-	return_error(gs_error_rangecheck);
     buf = gs_alloc_bytes(mem, raster, "atx_print_page(buf)");
     compressed = gs_alloc_bytes(mem, compressed_raster,
 				"atx_print_page(compressed)");
@@ -210,7 +210,12 @@ atx_print_page(gx_device_printer *pdev, FILE *f)
 	}
 	count = atx_compress(row, end - row, compressed, compressed_raster);
 	if (count >= 0) {		/* compressed line */
-	    fput_atx_command(f, ATX_COMPRESSED_DATA, count / 2);
+	    /*
+	     * Note that since compressed_raster can't exceed 510, count
+	     * can't exceed 510 either.
+	     */
+	    fputs(ATX_COMPRESSED_DATA, f);
+	    fputc(count / 2, f);
 	    fwrite(compressed, 1, count, f);
 	} else {			/* uncompressed line */
 	    int num_bytes = end - row;
