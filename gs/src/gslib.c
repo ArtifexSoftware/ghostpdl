@@ -309,6 +309,13 @@ gs_exit(int exit_status)
     exit(exit_status);
 }
 
+void
+gs_abort(void)
+{
+    gs_exit(1);
+    exit(1);	
+}
+
 
 /* Return the number with the magnitude of x and the sign of y. */
 /* This is a BSD addition to libm; not all compilers have it. */

@@ -273,7 +273,7 @@ $(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(memory__h) $(md5_h)
 
 # Visual Debugging
 $(GLOBJ)vdtrace.$(OBJ) : $(GLSRC)vdtrace.c $(math__h)\
- $(gxfixed_h) $(jmorecfg_h) $(vdtrace_h)
+ $(gxfixed_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)vdtrace.$(OBJ) $(C_) $(GLSRC)vdtrace.c
 
 ###### Low-level facilities and utilities

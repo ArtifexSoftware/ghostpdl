@@ -18,7 +18,6 @@
 /* Visual tracer service */
 
 #include "math_.h"
-#include "jmorecfg.h"
 #include "gxfixed.h"
 #include "vdtrace.h"
 
