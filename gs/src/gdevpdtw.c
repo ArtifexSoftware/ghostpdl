@@ -504,10 +504,6 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	pdf_data_writer_t writer;
 	int i;
 
-#if !PDFW_DELAYED_STREAMS
-	pdf_open_separate(pdev, map_id);
-	stream_puts(pdev->strm, "<<");
-#endif
 	pdf_begin_data_stream(pdev, &writer,
 	    DATA_STREAM_BINARY | DATA_STREAM_COMPRESS | DATA_STREAM_ENCRYPT, map_id);
 	for (i = 0; i < count; ++i) {
@@ -677,7 +673,6 @@ pdf_write_cid_system_info(gx_device_pdf *pdev,
  * Write a CMap resource.  We pass the CMap object as well as the resource,
  * because we write CMaps when they are created.
  */
-#if PDFW_DELAYED_STREAMS
 int
 pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	       pdf_resource_t **ppres /*CMap*/, int font_index_only)
@@ -730,42 +725,3 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	return code;
     return code;
 }
-#else
-int
-pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-	       pdf_resource_t *pres /*CMap*/, int font_index_only)
-{
-    pdf_data_writer_t writer;
-    stream *s;
-    int code;
-
-    if (pres->object->written)
-	return 0;
-    pdf_open_separate(pdev, pres->object->id);
-    s = pdev->strm;
-    stream_puts(s, "<<");
-    if (!pcmap->ToUnicode) {
-	pprintd1(s, "/WMode %d/CMapName", pcmap->WMode);
-	pdf_put_name(pdev, pcmap->CMapName.data, pcmap->CMapName.size);
-	stream_puts(s, "/CIDSystemInfo");
-	code = pdf_write_cid_system_info(pdev, pcmap->CIDSystemInfo, pres->object->id);
-	if (code < 0)
-	    return code;
-    }
-    code = pdf_begin_data_stream(pdev, &writer,
-				 DATA_STREAM_NOT_BINARY | DATA_STREAM_ENCRYPT |
-				 (pdev->CompressFonts ? 
-				  DATA_STREAM_COMPRESS : 0), pres->object->id);
-    if (code < 0)
-	return code;
-    code = psf_write_cmap(writer.binary.strm, pcmap,
-			  pdf_put_name_chars_proc(pdev), NULL, font_index_only);
-    if (code < 0)
-	return code;
-    code = pdf_end_data(&writer);
-    if (code < 0)
-	return code;
-    pres->object->written = true;
-    return 0;
-}
-#endif

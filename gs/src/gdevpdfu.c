@@ -482,10 +482,7 @@ pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_typ
     /* fixme : remove *pres from resource chain. */
     pres->where_used = 0;
     pres->object->written = true;
-    if (rtype == resourceXObject || rtype == resourceCharProc
-#if PDFW_DELAYED_STREAMS
-	 || rtype == resourceOther
-#endif
+    if (rtype == resourceXObject || rtype == resourceCharProc || rtype == resourceOther
 	) {
 	int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
 
@@ -1388,15 +1385,9 @@ pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
 				 DATA_STREAM_BINARY | DATA_STREAM_COMPRESS, 0);
 }
 
-#if PDFW_DELAYED_STREAMS
 int
 pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 		      int orig_options, gs_id object_id)
-#else
-int
-pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
-		      int orig_options, gs_id object_id)
-#endif
 {
     stream *s = pdev->strm;
     int options = orig_options;
@@ -1440,7 +1431,7 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 	pdw->encrypted = true;
     } else
     	pdw->encrypted = false;
-    if ((options & DATA_STREAM_BINARY) || !PDFW_DELAYED_STREAMS) {
+    if (options & DATA_STREAM_BINARY) {
 	code = psdf_begin_binary((gx_device_psdf *)pdev, &pdw->binary);
 	if (code < 0)
 	    return code;
@@ -1458,7 +1449,6 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 #undef USE_FLATE
 }
 
-#if PDFW_DELAYED_STREAMS
 int
 pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 		      int options, gs_id object_id)
@@ -1491,38 +1481,6 @@ pdf_end_data(pdf_data_writer_t *pdw)
 	return code;
     return 0;
 }
-
-#else
-/* End a data stream. */
-int
-pdf_end_data(pdf_data_writer_t *pdw)
-{
-    gx_device_pdf *pdev = (gx_device_pdf *)pdw->binary.dev;
-    int code = psdf_end_binary(&pdw->binary);
-    long length = stell(pdev->strm) - pdw->start;
-
-    if (code < 0)
-	return code;
-    if (pdw->encrypted)
-	pdf_end_encrypt(pdev);
-    stream_puts(pdev->strm, "\nendstream\n");
-#   if PS2WRITE
-	if (pdev->OrderResources) {
-	    int pos = stell(pdev->strm);
-	    
-	    sseek(pdev->strm, pdw->length_pos);
-	    pprintld1(pdev->strm, "%ld", length);
-	    sseek(pdev->strm, pos);
-	    pdf_end_separate(pdev);
-	    return 0;
-	}
-#   endif
-    pdf_end_separate(pdev);
-    pdf_open_separate(pdev, pdw->length_id);
-    pprintld1(pdev->strm, "%ld\n", length);
-    return pdf_end_separate(pdev);
-}
-#endif
 
 /* Create a Function object. */
 private int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
