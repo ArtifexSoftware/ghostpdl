@@ -250,6 +250,8 @@ pcl_enter_graphics_mode(
     gs_matrix_scale(&rst2lp, scale_x, scale_y, &rst2lp);
     gs_matrix_multiply(&rst2lp, &(pxfmst->lp2dev_mtx), &rst2dev);
 
+    rst2dev.tx = (double)((int)(rst2dev.tx + 0.5));
+    rst2dev.ty = (double)((int)(rst2dev.ty + 0.5));
     /*
      * Set up the graphic stat for rasters. This turns out to be more difficult
      * than might first be imagined.
