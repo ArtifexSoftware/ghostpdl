@@ -41,7 +41,7 @@ TARGET_DEVS=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
 TARGET_XE=$(GENDIR)/pcl6
 MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 PCL_TOP_OBJ=$(PCLOBJDIR)/pctop.$(OBJ)
-PXL_TOP_OBJ=$(PCLOBJDIR)/pxtop.$(OBJ)
+PXL_TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
 # Assorted definitions.  Some of these should probably be factored out....
@@ -70,7 +70,7 @@ DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
 FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev \
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev \
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev \
-	     $(DD)devcmap.dev $(DD)gsnogc.dev
+	     $(DD)devcmap.dev $(DD)gsnogc.dev $(DD)sdctd.dev
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak
