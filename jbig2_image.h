@@ -37,5 +37,4 @@ int jbig2_image_get_pixel(Jbig2Image *image, int x, int y);
 int jbig2_image_set_pixel(Jbig2Image *image, int x, int y, int value);
 
 
-
 #endif /* _JBIG2_IMAGE_H */

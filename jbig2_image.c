@@ -108,7 +108,8 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     w = (x + w < dst->width) ? w : dst->width - x;
     h = (y + h < dst->height) ? h : dst->height - y;
 #ifdef JBIG2_DEBUG    
-    fprintf(stderr, "composting %dx%d at (%d, %d) afer clipping\n",
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
+      "composting %dx%d at (%d, %d) afer clipping\n",
         w, h, x, y);
 #endif
     
@@ -196,15 +197,9 @@ int jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
   if ((x < 0) || (x > w)) return 0;
   if ((y < 0) || (y > h)) return 0;
 
-  fprintf(stderr, "set pixel called for image 0x%x (%d x %d) stride %d\n",
-    image, w, h, image->stride);
-
   byte = (x >> 3) + y*image->stride;
   bit = 7 - (x & 7);
   mask = (1 << bit) ^ 0xff;
-
-  fprintf(stderr, "set pixel mask for bit %d of byte %d (%d,%d) is 0x%02x\n", 
-    bit, byte, x, y, mask);
 
   scratch = image->data[byte] & mask;
   image->data[byte] = scratch | (value << bit);
