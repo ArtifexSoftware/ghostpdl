@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.39 2002/08/05 22:56:51 giles Exp $
+    $Id: jbig2dec.c,v 1.40 2002/08/15 13:52:28 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -100,6 +100,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 		{"dump", 0, NULL, 'd'},
                 {"hash", 0, NULL, 'm'},
 		{"output", 1, NULL, 'o'},
+                {"format", 1, NULL, 't'},
 		{NULL, 0, NULL, 0}
 	};
 	int option_idx = 1;
@@ -107,7 +108,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 
 	while (1) {
 		option = getopt_long(argc, argv,
-			"Vh?qvdo:", long_options, &option_idx);
+			"Vh?qvdo:t:", long_options, &option_idx);
 		if (option == -1) break;
 
 		//fprintf(stderr, "option '%c' value '%s'\n", option, optarg);
@@ -143,6 +144,8 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 			case 'o':
 				params->output_file = strdup(optarg);
 				break;
+                        case 't':
+                                break;
 			default:
 				if (!params->verbose) fprintf(stdout,
 					"unrecognized option: -%c\n", option);
