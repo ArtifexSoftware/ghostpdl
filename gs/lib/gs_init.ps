@@ -1807,7 +1807,21 @@ gsave
  { currentfile /TBCPDecode filter cvx exec
  } bind def
 /@PJL				% H-P job control
- { currentfile //=string readline { pop } if
+ {
+   % Windows 2000 driver includes PJL into %%BeginFeature block.
+   % Identify this from the pattern on the stack: countdictstack lucas mark
+   % and fail the feature request.
+
+   count 3 ge {
+     dup mark eq {
+       2 index countdictstack eq {
+          1 index /lucas where { /lucas get eq } { pop false } ifelse {
+            stop
+         } if
+       } if
+     } if
+   } if
+   currentfile //=string readline pop pop
  } bind def
 
 % Install the EPS handler if needed
