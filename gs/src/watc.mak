@@ -266,11 +266,11 @@ GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM) $(LIBDOS)
 
 ll_tr=$(GLGENDIR)ll$(CONFIG).tr
 $(ll_tr): $(MAKEFILE)
+	echo OPTION STACK=64k >$(ll_tr)
 !ifeq WAT32 0
-	echo SYSTEM DOS4G >$(ll_tr)
+	echo SYSTEM DOS4G >>$(ll_tr)
 	echo OPTION STUB=$(STUB) >>$(ll_tr)
 !endif
-	echo OPTION STACK=32k >>$(ll_tr)
 
 $(GS_XE): $(GS_ALL) $(DEVS_ALL) $(ll_tr)
 	$(LINK) $(LCT) NAME $(GS) OPTION MAP=$(GS) FILE $(GLOBJ)gs @$(ld_tr) @$(ll_tr)
