@@ -113,7 +113,7 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
 	pdf_open_separate(pdev, diff_id);
 	s = pdev->strm;
 	stream_puts(s, "<</Type/Encoding");
-	if (base_encoding >= 0)
+	if (base_encoding > 0)
 	    pprints1(s, "/BaseEncoding/%s", encoding_names[base_encoding]);
 	stream_puts(s, "/Differences[");
 	for (; ch < 256; ++ch) {
