@@ -172,6 +172,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
     stream_cursor_write w;
     uint used;
 
+    /* consumed all of the data */
     if ( par->source.position >= end_pos ) {
         /* shutdown jpeg filter if necessary */
         if (benum->initialized)
@@ -219,16 +220,21 @@ read_uncompressed_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *
 {
     int code;
     uint avail = par->source.available;
+    uint data_per_row = benum->data_per_row;
     uint pad = 4; /* default padding */
     const byte *data = par->source.data;
-    uint pos_in_row, data_per_row, data_per_row_padded, used;
+    uint pos_in_row, data_per_row_padded, used;
 
     /* overrided default padding */
     if ( par->pv[3] )
         pad = par->pv[3]->value.i;
 
-    data_per_row_padded = round_up(benum->data_per_row, pad);
+    data_per_row_padded = round_up(data_per_row, pad);
     pos_in_row = par->source.position % data_per_row_padded;
+
+    /* consumed all of the data */
+    if ( par->source.position >= data_per_row_padded * par->pv[1]->value.i )
+        return 0;
 
     if ( avail >= data_per_row_padded && pos_in_row == 0 ) { 
         /* Use the data directly from the input buffer. */
@@ -266,6 +272,10 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
     data_per_row = benum->data_per_row;
     data_per_row_padded = round_up(benum->data_per_row, pad);
     pos_in_row = par->source.position % data_per_row_padded;
+
+    /* consumed all of the data */
+    if ( par->source.position >= data_per_row_padded * par->pv[1]->value.i )
+        return 0;
 
     if ( !benum->initialized ) {
         ss->EndOfData = false;
@@ -306,6 +316,7 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 private int
 read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 {
+    dprintf( "deltarow compression not supported\n" );
     return -1;
 }
 
@@ -443,11 +454,12 @@ pxReadImage(px_args_t *par, px_state_t *pxs)
     if ( par->source.available == 0 )
         return pxNeedData;
     for ( ; ; ) {
-        int code = read_bitmap(&pxenum->benum, &pxenum->row, par);
+        byte *data = pxenum->row;
+        int code = read_bitmap(&pxenum->benum, &data, par);
         if ( code != 1 )
             return code;
         code = (*dev_proc(dev, image_data))
-            (dev, pxenum->info, (const byte **)&pxenum->row,
+            (dev, pxenum->info, (const byte **)&data,
              0, pxenum->benum.data_per_row, 1);
         if ( code < 0 )
             return code;
