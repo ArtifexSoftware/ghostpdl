@@ -517,7 +517,7 @@ tiffsep_update_spot_equivalent_colors(gx_device * dev, const gs_state * pgs)
 {
     tiffsep_device * pdev = (tiffsep_device *)dev;
 
-    update_spot_equivalent_cmyk_colors(pdev, pgs,
+    update_spot_equivalent_cmyk_colors(dev, pgs,
 		    &pdev->devn_params, &pdev->equiv_cmyk_colors);
     return 0;
 }
