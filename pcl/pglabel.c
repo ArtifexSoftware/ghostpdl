@@ -38,23 +38,22 @@
  * a double-byte character.
  */
 private int
-hpgl_next_char(const gs_const_string *pstr, uint *pindex,
-  const hpgl_state_t *pgls, gs_char *pchr)
-{	uint i = *pindex;
-	uint size = pstr->size;
+hpgl_next_char(gs_show_enum *penum, const hpgl_state_t *pgls, gs_char *pchr)
+{	uint i = penum->index;
+	uint size = penum->text.size;
 	const byte *p;
 
 	if ( i >= size )
 	  return 2;
-	p = pstr->data + i;
+	p = penum->text.data.bytes;
 	if ( pgls->g.label.double_byte ) {
 	  if ( i + 1 >= size )
 	    return -1;
 	  *pchr = (*p << 8) + p[1];
-	  *pindex = i + 2;
+	  penum->index = i + 2;
 	} else {
 	  *pchr = *p + pgls->g.label.row_offset;
-	  *pindex = i + 1;
+	  penum->index = i + 1;
 	}
 	return 0;
 }
@@ -88,14 +87,13 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
 	}
 }
 
-/* Next-character procedure for fonts in GL/2 mode. */
+/* Next-character procedure for fonts in GL/2 mode. NB.  this need to
+   be reworked. */
 private int
 hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
 {	const pcl_state_t *pcls = gs_state_client_data(penum->pgs);
 #define pgls pcls		/****** NOTA BENE ******/
-	int code = hpgl_next_char(&penum->text.data.bytes, &penum->index,
-                                  pgls, pchr);
-
+	int code = hpgl_next_char(penum, pgls, pchr);
 	if ( code )
 	  return code;
 	*pchr = hpgl_map_symbol(*pchr, pgls);
@@ -576,7 +574,7 @@ hpgl_print_char(
 	            rise = pgls->g.character.direction.y;
 
 	    if (pgls->g.character.direction_relative)
-	        run *= pgls->g.P2.x - pgls->g.P1.x,
+	        run *= pgls->g.P2.x - pgls->g.P1.x, /* NB is this correct? */
 		rise *= pgls->g.P2.y - pgls->g.P1.y;
 	    gs_make_identity(&rmat);
 	    if ((run < 0) || (rise != 0)) {
