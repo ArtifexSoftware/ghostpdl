@@ -38,6 +38,10 @@ typedef struct gs_font_s gs_font;
 #  define cached_fm_pair_DEFINED
 typedef struct cached_fm_pair_s cached_fm_pair;
 #endif
+#ifndef gs_matrix_DEFINED
+#  define gs_matrix_DEFINED
+typedef struct gs_matrix_s gs_matrix;
+#endif
 
 /*
  * Define the entry for a cached (font,matrix) pair.  If the UID
@@ -272,10 +276,10 @@ int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
 void gx_char_cache_init(gs_font_dir *);
 void gx_purge_selected_cached_chars(gs_font_dir *, bool(*)(cached_char *, void *), void *);
 cached_fm_pair *
-               gx_lookup_fm_pair(gs_font *, const gs_state *, gs_log2_scale_point *log2_scale);
+               gx_lookup_fm_pair(gs_font *, const gs_matrix *, gs_log2_scale_point *);
 cached_fm_pair *
-               gx_add_fm_pair(gs_font_dir *, gs_font *, const gs_uid *, const gs_state *, 
-	       gs_log2_scale_point *log2_scale);
+               gx_add_fm_pair(gs_font_dir *, gs_font *, const gs_uid *, const gs_matrix *, 
+	       gs_log2_scale_point *);
 void gx_lookup_xfont(const gs_state *, cached_fm_pair *, int);
 void gs_purge_fm_pair(gs_font_dir *, cached_fm_pair *, int);
 void gs_purge_font_from_char_caches(gs_font_dir *, const gs_font *);
