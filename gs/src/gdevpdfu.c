@@ -1468,7 +1468,7 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     pdw->binary.dev = (gx_device_psdf *)pdev;
     pdw->binary.strm = 0;		/* for GC in case of failure */
     code = pdf_open_aside(pdev, resourceOther, gs_no_id, &pdw->pres, !object_id, 
-		(options & DATA_STREAM_COMPRESS ? true : false));
+		options);
     if (object_id != 0)
 	pdf_reserve_object_id(pdev, pdw->pres, object_id);
     pdw->binary.strm = pdev->strm;

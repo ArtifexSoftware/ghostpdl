@@ -448,7 +448,7 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
 
 int
 pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
-	gs_id id, pdf_resource_t **ppres, bool reserve_object_id, bool compress) 
+	gs_id id, pdf_resource_t **ppres, bool reserve_object_id, int options) 
 {
     int code;
     pdf_resource_t *pres;
@@ -470,12 +470,10 @@ pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->strm = s;
 #if PDFW_DELAYED_STREAMS
     code = pdf_append_data_stream_filters(pdev, &writer,
-			     DATA_STREAM_NOT_BINARY | DATA_STREAM_NOLENGTH |
-			     (compress ? DATA_STREAM_COMPRESS : 0), 0);
+			     options | DATA_STREAM_NOLENGTH, 0);
 #else
     code = pdf_begin_data_stream(pdev, &writer,
-			     DATA_STREAM_NOT_BINARY | DATA_STREAM_NOLENGTH |
-			     (compress ? DATA_STREAM_COMPRESS : 0), 0);
+			     options | DATA_STREAM_NOLENGTH, 0);
 #endif
     if (code < 0) {
 	pdev->strm = save_strm;
@@ -532,7 +530,8 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
 	if (pdev->sbstack[sbstack_ptr].text_state == 0)
 	    return_error(gs_error_VMerror);
     }
-    code = pdf_open_aside(pdev, rtype, id, &pres, reserve_object_id, compress);
+    code = pdf_open_aside(pdev, rtype, id, &pres, reserve_object_id, 
+		    (compress ? DATA_STREAM_COMPRESS : 0));
     if (code < 0)
 	return code;
     code = pdf_save_viewer_state(pdev, NULL);

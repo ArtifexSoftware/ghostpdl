@@ -1165,7 +1165,7 @@ int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font,
 
 /* Open a stream object in the temporary file. */
 int pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
-	gs_id id, pdf_resource_t **ppres, bool reserve_object_id, bool compress);
+	gs_id id, pdf_resource_t **ppres, bool reserve_object_id, int options);
 
 /* Close a stream object in the temporary file. */
 int pdf_close_aside(gx_device_pdf *pdev);
