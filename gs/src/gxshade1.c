@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -306,7 +306,7 @@ typedef struct A_fill_state_s {
     shading_fill_state_common;
     const gs_shading_A_t *psh;
     bool orthogonal;		/* true iff ctm is xxyy or xyyx */
-    gs_rect rect;
+    gs_rect rect;		/* bounding rectangle in user space */
     gs_point delta;
     double length, dd;
     int depth;
@@ -337,21 +337,28 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
     (*pcs->type->remap_color)(pcc, pcs, &dev_color, pis,
 			      pfs->dev, gs_color_select_texture);
     if (x0 == x1 && pfs->orthogonal) {
-	/* Stripe is horizontal in both user and device space. */
+	/*
+	 * Stripe is horizontal in user space and horizontal or vertical
+	 * in device space.
+	 */
 	x0 = pfs->rect.p.x;
 	x1 = pfs->rect.q.x;
     } else if (y0 == y1 && pfs->orthogonal) {
-	/* Stripe is vertical in both user and device space space. */
+	/*
+	 * Stripe is vertical in user space and horizontal or vertical
+	 * in device space.
+	 */
 	y0 = pfs->rect.p.y;
 	y1 = pfs->rect.q.y;
     } else {
 	/*
-	 * Stripe is neither horizontal nor vertical.
-	 * Extend it to the edges of the rectangle.
+	 * Stripe is neither horizontal nor vertical in user space.
+	 * Extend it to the edges of the (user-space) rectangle.
 	 */
 	gx_path *ppath = gx_path_alloc(pis->memory, "A_fill");
 	double dist = max(pfs->rect.q.x - pfs->rect.p.x,
 			  pfs->rect.q.y - pfs->rect.p.y);
+	/* denom = length of axis in domain space */
 	double denom = hypot(pfs->delta.x, pfs->delta.y);
 	double dx = dist * pfs->delta.y / denom,
 	    dy = -dist * pfs->delta.x / denom;
