@@ -28,10 +28,9 @@
 % that these entries are present in the built-in fonts.)
 /.buildfont1
  {
-   false 1 index /FontBBox .knownget {
-     { 0 ne { not exit } if } forall
-   } if
-   { dup /FontInfo known not
+   dup .fontbbox {
+     pop pop pop pop
+     dup /FontInfo known not
       { .growfontdict dup /FontInfo 2 dict put }
      if
      dup dup /FontInfo get dup dup
@@ -40,15 +39,13 @@
       }
       { dup length 2 add dict .copydict
         dup /UnderlinePosition known not
-         { dup /UnderlinePosition 3 index /FontBBox .knownget
-            { 1 get 2 div }			% 1/2 the font descent
-	    { -100 } ifelse put
+         { dup /UnderlinePosition 3 index /FontBBox get
+           1 get 2 div 			% 1/2 the font descent
          }
         if
         dup /UnderlineThickness known not
-         { dup /UnderlineThickness 3 index /FontBBox .knownget
-            { dup 3 get exch 1 get sub 20 div }	% 1/20 the font height
-    	    { 50 } ifelse put
+         { dup /UnderlineThickness 3 index /FontBBox get
+           dup 3 get exch 1 get sub 20 div 	% 1/20 the font height
          }
         if
         1 index /FontInfo get wcheck not { readonly } if
