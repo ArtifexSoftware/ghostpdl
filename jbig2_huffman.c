@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "jbig2.h"
+#include "jbig2dec.h"
 #include "jbig2_huffman.h"
 
 #define JBIG2_HUFFMAN_FLAGS_ISOOB 1

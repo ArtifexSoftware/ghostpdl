@@ -1,8 +1,8 @@
 CFLAGS=-Wall -g
 
-all:	jbig2 test_arith test_huffman
+all:	jbig2dec test_arith test_huffman
 
-jbig2:	jbig2.o jbig2_huffman.o jbig2_arith.o
+jbig2dec:	jbig2dec.o jbig2_huffman.o jbig2_arith.o
 
 test_huffman:	jbig2_huffman.c
 	gcc $(CFLAGS) -DTEST jbig2_huffman.c -o test_huffman

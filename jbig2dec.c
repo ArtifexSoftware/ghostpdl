@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "jbig2.h"
+#include "jbig2dec.h"
 
 typedef struct _Jbig2SegmentHeader Jbig2SegmentHeader;
 typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;

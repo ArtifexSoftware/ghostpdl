@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "jbig2.h"
+#include "jbig2dec.h"
 #include "jbig2_arith.h"
 
 #ifdef DEBUG
