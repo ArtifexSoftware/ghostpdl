@@ -365,26 +365,26 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 	/* As the comment in gs_setpd.ps says "Devices that care will provide  */
 	/* a real InputAttributes dictionary (most without a range pagesize)   */
         if ( fit_direct && fit_rotated) {
+	    make_adjustment_matrix(request, medium, pmat, false, orient < 0 ? 0 : orient);
 	    if (medium->p.x < medium->q.x || medium->p.y < medium->q.y)
 		*best_mismatch = (float)0.001;		/* fudge a match to a range as a small number */
 	    else	/* should be 0 for an exact match */
-	        *best_mismatch = (rx - medium->p.x) * (medium->q.x - rx) +
-	    			(ry - medium->p.y) * (medium->q.y - ry);
-	    make_adjustment_matrix(request, medium, pmat, false, orient < 0 ? 0 : orient);
+	        *best_mismatch = fabs((rx - medium->p.x) * (medium->q.x - rx)) +
+	    			fabs((ry - medium->p.y) * (medium->q.y - ry));
         } else if ( fit_direct ) {
             int rotate = orient < 0 ? 0 : orient;
 
+	    make_adjustment_matrix(request, medium, pmat, false, (rotate + 1) & 2);
 	    *best_mismatch = fabs((medium->p.x - rx) * (medium->q.x - rx)) +
 	    			fabs((medium->p.y - ry) * (medium->q.y - ry)) + 
-            			    (rotate & 1 ? 0.01 : 0);
-	    make_adjustment_matrix(request, medium, pmat, false, (rotate + 1) & 2);
+            			    (pmat->xx == 0.0 ? 0.01 : 0);	/* rotated */
         } else if ( fit_rotated ) {
             int rotate = (orient < 0 ? 1 : orient);
 
+	    make_adjustment_matrix(request, medium, pmat, false, rotate | 1);
 	    *best_mismatch = fabs((medium->p.y - rx) * (medium->q.y - rx)) +
 	    			fabs((medium->p.x - ry) * (medium->q.x - ry)) + 
-            			    (rotate & 1 ? 0.01 : 0);
-	    make_adjustment_matrix(request, medium, pmat, false, rotate | 1);
+            			    (pmat->xx == 0.0 ? 0.01 : 0);	/* rotated */
         } else {
 	    int rotate =
 		(orient >= 0 ? orient :
