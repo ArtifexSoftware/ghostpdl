@@ -128,7 +128,11 @@ charstring_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
 			    &pdata1->FamilyOtherBlues.values[0], NULL)) < 0 ||
 	(code = dict_bool_param(pprivate, "ForceBold", false,
 				&pdata1->ForceBold)) < 0 ||
-	(code = dict_int_param(pprivate, "LanguageGroup", 0, 1, 0,
+    /*
+     * We've seen a few fonts with out-of-range LanguageGroup values;
+     * if it weren't for this, the maximum value should be 1.
+     */
+	(code = dict_int_param(pprivate, "LanguageGroup", 0, max_int, 0,
 			       &pdata1->LanguageGroup)) < 0 ||
 	(code = pdata1->OtherBlues.count =
 	 dict_float_array_param(pprivate, "OtherBlues", max_OtherBlues * 2,
@@ -176,6 +180,15 @@ charstring_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
 	if (pdata1->BlueScale * max_zone_height > 1.0)
 	    pdata1->BlueScale = 1.0 / max_zone_height;
     }
+    /*
+     * According to the same Adobe book, section 5.11, only values
+     * 0 and 1 are allowed for LanguageGroup and we have encountered
+     * fonts with other values. If the value is > 1, map it to 0
+     * so that the remainder of the graphics library won't see an
+     * unexpected value.
+     */
+    if (pdata1->LanguageGroup > 1)
+	pdata1->LanguageGroup = 0;
     return 0;
 }
 
