@@ -236,7 +236,10 @@ EXTRALIBS=
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
 # two others fold libm into libc and don't require any additional library.
 
-STDLIBS=-lpthread -lm
+#STDLIBS=-lpthread -lm
+
+# Since the default build is for nosync, don't include pthread lib
+STDLIBS=-lm
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
@@ -279,7 +282,12 @@ FPU_TYPE=1
 # primitives for this platform.  Don't change this unless you really know
 # what you're doing.
 
-SYNC=posync
+# If POSIX sync primitives are used, also change the STDLIBS to include
+# the pthread library.
+#SYNC=posync
+
+# Default is No sync primitives since some platforms don't have it (HP-UX)
+SYNC=nosync
 
 # ------ Devices and features ------ #
 
