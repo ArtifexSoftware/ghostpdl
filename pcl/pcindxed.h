@@ -135,8 +135,8 @@ typedef struct pcl_cs_indexed_s {
     gs_private_st_composite( st_cs_indexed_t,           \
                              pcl_cs_indexed_t,          \
                              "pcl indexed color space", \
-                             cs_indexed_enum_ptrs,      \
-                             cs_indexed_reloc_ptrs      \
+                             pcl_cs_indexed_enum_ptrs,      \
+                             pcl_cs_indexed_reloc_ptrs      \
                              )
 
 /*

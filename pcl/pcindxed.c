@@ -30,7 +30,7 @@ pcl_cs_indexed_t *  pdflt_cs_indexed;
  * GC routines
  */
   private
-ENUM_PTRS_BEGIN(cs_indexed_enum_ptrs)
+ENUM_PTRS_BEGIN(pcl_cs_indexed_enum_ptrs)
         return 0;
     ENUM_PTR(0, pcl_cs_indexed_t, pbase);
     ENUM_PTR(1, pcl_cs_indexed_t, pcspace);
@@ -38,7 +38,7 @@ ENUM_PTRS_BEGIN(cs_indexed_enum_ptrs)
 ENUM_PTRS_END
 
   private
-RELOC_PTRS_BEGIN(cs_indexed_reloc_ptrs)
+RELOC_PTRS_BEGIN(pcl_cs_indexed_reloc_ptrs)
     RELOC_PTR(pcl_cs_indexed_t, pbase);
     RELOC_PTR(pcl_cs_indexed_t, pcspace);
     RELOC_STRING_PTR(pcl_cs_indexed_t, palette);
