@@ -398,7 +398,7 @@ $(GENINIT_XE): $(GLSRC)geninit.c $(AK) $(GENINIT_DEPS)
 ldt_tr=$(PSOBJ)ldt.tr
 CWPROJ_XML=./ghostscript.mcp.xml
 
-$(CWPROJ_XML):
+$(CWPROJ_XML): $(gconfigd_h)
 	-mkdir -p obj/sys
 	$(CP_) $(macsystypes_h) $(systypes_h)
 	$(SH) $(GLSRC)macgenmcpxml.sh `$(CAT) $(ld_tr)` >  $(CWPROJ_XML)

@@ -155,6 +155,7 @@ WriteSETTINGLIST()
         echo "</SETTING>"
         echo "<SETTING><NAME>SystemSearchPaths</NAME>"
             WritePathSetting SearchPath ":jbig2dec:" MacOS Project
+            WritePathSetting SearchPath ":jasper/src/libjasper/include:" MacOS Project
             WritePathSetting SearchPath ":obj:" MacOS Project
             WritePathSetting SearchPath ":MacOS Support:" MacOS CodeWarrior
             WritePathSetting SearchPath ":MSL:MSL_C" MacOS CodeWarrior
@@ -364,7 +365,7 @@ done
 #LIBS="console.stubs.c MSL\ ShLibRuntime.Lib MSL\ RuntimePPC.Lib"
 #CLASSICLIBS="MSL\ C.PPC.Lib InterfaceLib FontManager MathLib"
 
-# libs for codewarrior 7
+# libs for codewarrior 7 & 8
 LIBS=""
 CARBONLIBS="MSL_All_Carbon.Lib CarbonLib"
 CLASSICLIBS="MSL_All_PPC.Lib InterfaceLib FontManager MathLib"
