@@ -535,14 +535,10 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
 	last = (this->i == (1 << this->k) - 1);
 	if (last)
 	    break;
-#	if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
-	break;
-#	else
-	    if (!coord_near(x, this->lx1) || !coord_near(y, this->ly1)) {
-		/* X coordinates are not within a half-pixel. */
-		break;
-	    }
-#	endif
+	if (!coord_near(x, this->lx1) || !coord_near(y, this->ly1)) {
+	    /* X coordinates are not within a half-pixel. */
+	    break;
+	}
     }
     this->lx0 = this->x = x;
     this->ly0 = this->y = y;
@@ -565,7 +561,7 @@ gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1)
 
 private int
 generate_segments(gx_path * ppath, const gs_fixed_point *points, 
-		    int count, segment_notes notes, bool not_last)
+		    int count, segment_notes notes)
 {
     /* vd_moveto(ppath->position.x, ppath->position.y); */
     if (notes & sn_not_first) {
@@ -581,21 +577,8 @@ generate_segments(gx_path * ppath, const gs_fixed_point *points,
 	if (code < 0)
 	    return code;
 	/* vd_lineto_multi(points + 1, count - 1); */
-#	if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
-	if (not_last) {
-	    /* Emulating the bug in the old code ! 
-	       The first point is duplicated, and the last one is skipped !
-	     */
-	    print_points(points, count - 1);
-	    return gx_path_add_lines_notes(ppath, points, count - 1, notes | sn_not_first);
-	} else {
-	    print_points(points + 1, count - 1);
-	    return gx_path_add_lines_notes(ppath, points + 1, count - 1, notes | sn_not_first);
-	}
-#	else
 	print_points(points + 1, count - 1);
 	return gx_path_add_lines_notes(ppath, points + 1, count - 1, notes | sn_not_first);
-#endif
     }
 }
 
@@ -655,43 +638,29 @@ top :
 			pc->pt.x, pc->pt.y, notes);
     } else {
 	gs_fixed_point *ppt = points;
-	bool not_last;
+	bool more;
 
 	for(;;) {
-	    not_last = gx_flattened_iterator__next(this);
-	    if (ppt > points + 1 && (!FLATTENED_CURVE_ITERATOR0_COMPATIBLE || not_last))
+	    more = gx_flattened_iterator__next(this);
+	    if (ppt > points + 1 && more)
 		if (gx_check_nearly_collinear_inline(ppt[-2].x, ppt[-2].y, 
 				ppt[-1].x, ppt[-1].y, this->lx1, this->ly1))
 		    --ppt;		/* remove middle point */
-	    if (!FLATTENED_CURVE_ITERATOR0_COMPATIBLE || !not_last) {
-		/* With FLATTENED_CURVE_ITERATOR0_COMPATIBLE it may store points[max_points] 
-		   This is only reason for reserving max_points + 1 elements.
-		*/
-		ppt->x = this->lx1;
-		ppt->y = this->ly1;
-		ppt++;
-	    }
-	    if (ppt == &points[max_points] || !not_last) {
-#		if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
-		gs_fixed_point *pe = ppt;
-#		else
-		gs_fixed_point *pe = (not_last ?  ppt - 2 : ppt);
-#		endif
+	    ppt->x = this->lx1;
+	    ppt->y = this->ly1;
+	    ppt++;
+	    if (ppt == &points[max_points] || !more) {
+		gs_fixed_point *pe = (more ?  ppt - 2 : ppt);
 
-		code = generate_segments(ppath, points, pe - points, notes, not_last);
+		code = generate_segments(ppath, points, pe - points, notes);
 		if (code < 0)
 		    return code;
-		if (!not_last)
+		if (!more)
 		    return 0;
 		notes |= sn_not_first;
 		memcpy(points, pe, (char *)ppt - (char *)pe);
 		ppt = points + (ppt - pe);
 	    }
-#	    if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
-		ppt->x = this->lx1;
-		ppt->y = this->ly1;
-		ppt++;
-#	    endif
 	}
     }
 }
