@@ -270,7 +270,7 @@ show_char_background(
     const char *        pbuff
 )
 {
-    gs_show_enum *      penum = pcs->penum;
+    gs_text_enum_t *    penum;
     gs_state *          pgs = pcs->pgs;
     gs_rop3_t           rop = (gs_rop3_t)(pcs->logical_op);
     const pl_font_t *   plfont = pcs->font;
