@@ -50,7 +50,7 @@ def make_entry(ifile, device, dpi, band):
 
     if gs.process():
         try:
- 	    if gsconf.log_basline:
+ 	    if gsconf.log_baseline:
 	        log = open(gsconf.log_baseline, "a")
 	        log.write(time.ctime() + " " + ifile + " updated\n")
 	        log.close()
