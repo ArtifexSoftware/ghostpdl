@@ -85,6 +85,8 @@ case 9: switch (pdfont->FontType) {
      ENUM_RETURN(0);
 }
 case 10: switch (pdfont->FontType) {
+ case ft_user_defined:
+     ENUM_RETURN(pdfont->u.simple.s.type3.cached);
  case ft_CID_encrypted:
  case ft_CID_TrueType:
      ENUM_RETURN(pdfont->u.cidfont.parent);
@@ -113,6 +115,7 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 	RELOC_VAR(pdfont->u.simple.Encoding);
 	RELOC_VAR(pdfont->u.simple.v);
 	RELOC_VAR(pdfont->u.simple.s.type3.char_procs);
+	RELOC_VAR(pdfont->u.simple.s.type3.cached);
 	break;
     case ft_CID_encrypted:
     case ft_CID_TrueType:

@@ -354,6 +354,7 @@ typedef struct pdf_substream_save_s {
     bool		skip_colors;
     pdf_resource_t      *font3;
     pdf_resource_t	*accumulating_substream_resource;
+    bool		charproc_just_accumulated;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
@@ -556,6 +557,9 @@ struct gx_device_pdf_s {
     pdf_resource_t *font3; /* The owner of the accumulated charstring. */
     pdf_resource_t *accumulating_substream_resource;
     gs_matrix_fixed charproc_ctm;
+    bool charproc_just_accumulated; /* A flag for controlling 
+			the glyph variation recognition. 
+			Used only with uncached charprocs. */
 };
 
 #define is_in_page(pdev)\
@@ -703,8 +707,9 @@ int pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 		       gs_id rid, pdf_resource_t **ppres, long id);
 
 /* Find same resource. */
-int pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, 
-	pdf_resource_t **ppres);
+int pdf_find_same_resource(gx_device_pdf * pdev, 
+	pdf_resource_type_t rtype, pdf_resource_t **ppres,
+	int (*eq)(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1));
 
 /* Find a resource of a given type by gs_id. */
 pdf_resource_t *pdf_find_resource_by_gs_id(gx_device_pdf * pdev,

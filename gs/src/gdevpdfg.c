@@ -72,7 +72,8 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     memcpy(pdev->vgstack[i].dash_pattern, pdev->dash_pattern, 
 		sizeof(pdev->vgstack[i].dash_pattern));
     pdev->vgstack_depth++;
-    stream_puts(s, "q\n");
+    if (s)
+	stream_puts(s, "q\n");
     return 0;
 }
 
@@ -112,7 +113,8 @@ pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
 
     if (i < pdev->vgstack_bottom)
 	return_error(gs_error_unregistered); /* Must not happen. */
-    stream_puts(s, "Q\n");
+    if (s)
+	stream_puts(s, "Q\n");
     pdf_load_viewer_state(pdev, pdev->vgstack + i);
     return 0;
 }
@@ -1303,7 +1305,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 }
 
 /* Update the graphics state for filling. */
-private int
+int
 pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;

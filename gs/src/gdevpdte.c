@@ -613,9 +613,16 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	    real_widths[ch] = pwidths->real_width.w;
 	}
     } else {
-	if (font->FontType == ft_user_defined && 
-		!(pdfont->used[ch >> 3] & 0x80 >> (ch & 7)))
-	    return gs_error_undefined;
+	if (font->FontType == ft_user_defined) {
+	    if (!(pdfont->used[ch >> 3] & 0x80 >> (ch & 7)))
+		return gs_error_undefined; /* The charproc was not accumulated. */
+	    if (!pdev->charproc_just_accumulated &&
+		!(pdfont->u.simple.s.type3.cached[ch >> 3] & 0x80 >> (ch & 7))) {
+		 /* The charproc uses setcharwidth. 
+		    Need to accumulate again to check for a glyph variation. */
+		return gs_error_undefined;
+	    }
+	}
 	pwidths->Width.w = pdfont->Widths[ch];
 	pwidths->Width.v = pdfont->u.simple.v[ch];
 	if (font->FontType == ft_user_defined) {
@@ -661,19 +668,28 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 	(pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH ?
 	 pte->text.space.s_char : -1);
     int widths_differ = 0, code;
+    gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
+    pdf_font_resource_t *pdfont;
 
+    code = pdf_attached_font_resource(pdev, (gs_font *)font, &pdfont, NULL, NULL, NULL, NULL);
+    if (code < 0)
+	return code;
     if (font->FontType == ft_user_defined) {
-	gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
-
 	pdf_font3_scale(pdev, (gs_font *)font, &scale);
 	scale *= ppts->values.size;
     } else
 	scale = 0.001 * ppts->values.size;
     for (i = 0, w.x = w.y = 0; i < pstr->size; ++i) {
 	pdf_glyph_widths_t cw;
+	gs_char ch = pstr->data[i];
 
-	code = pdf_char_widths((gx_device_pdf *)pte->dev,
-	                           ppts->values.pdfont, pstr->data[i], font,
+	if (font->FontType == ft_user_defined &&
+	    (i > 0 || !pdev->charproc_just_accumulated) &&
+	    !(pdfont->u.simple.s.type3.cached[ch >> 3] & (0x80 >> (ch & 7))))
+	    code = gs_error_undefined;
+	else 
+	    code = pdf_char_widths((gx_device_pdf *)pte->dev,
+	                           ppts->values.pdfont, ch, font,
 				   &cw);
 	if (code < 0) {
 	    if (i)

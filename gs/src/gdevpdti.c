@@ -400,7 +400,7 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
     pcp->font = pdfont;
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
-    pcp->real_width.x = pdfont->Widths[ch] = pw[font->WMode ? 6 : 0];
+    pcp->real_width.x = pw[font->WMode ? 6 : 0];
     pcp->real_width.y = pw[font->WMode ? 7 : 1];
     pcp->v.x = pw[8];
     pcp->v.y = pw[9];
@@ -416,7 +416,9 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 	pprintg6(pdev->strm, "%g %g %g %g %g %g d1\n", 
 	    (float)pw[0], (float)pw[1], (float)pw[2], 
 	    (float)pw[3], (float)pw[4], (float)pw[5]);
+	pdfont->u.simple.s.type3.cached[ch >> 3] |= 0x80 >> (ch & 7);
     }
+    pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
     pdev->font3 = (pdf_resource_t *)pdfont;
     return 0;
 }
@@ -465,6 +467,9 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
 	pdev->strm = save_strm;
 	return code;
     }
+    code = pdf_save_viewer_state(pdev, NULL);
+    if (code < 0)
+	return code;
     pdev->strm = writer.binary.strm;
     pdev->sbstack[sbstack_ptr].context = pdev->context;
     pdf_text_state_copy(pdev->sbstack[sbstack_ptr].text_state, pdev->text->text_state);
@@ -481,7 +486,9 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].skip_colors = pdev->skip_colors;
     pdev->sbstack[sbstack_ptr].font3 = pdev->font3;
     pdev->sbstack[sbstack_ptr].accumulating_substream_resource = pdev->accumulating_substream_resource;
+    pdev->sbstack[sbstack_ptr].charproc_just_accumulated = pdev->charproc_just_accumulated;
     pdev->skip_colors = false;
+    pdev->charproc_just_accumulated = false;
     pdev->sbstack_depth++;
     pdev->procsets = 0;
     pdev->font3 = 0;
@@ -542,8 +549,71 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->sbstack[sbstack_ptr].font3 = 0;
     pdev->accumulating_substream_resource = pdev->sbstack[sbstack_ptr].accumulating_substream_resource;
     pdev->sbstack[sbstack_ptr].accumulating_substream_resource = 0;
+    pdev->charproc_just_accumulated = pdev->sbstack[sbstack_ptr].charproc_just_accumulated;
     pdev->sbstack_depth = sbstack_ptr;
+    code = pdf_restore_viewer_state(pdev, NULL);
+    if (code < 0)
+	return code;
     return code;
+}
+
+private int 
+pdf_is_same_charproc1(gx_device_pdf * pdev, pdf_char_proc_t *pcp0, pdf_char_proc_t *pcp1)
+{
+    if (pcp0->char_code != pcp1->char_code)
+	return false; /* We need same encoding. */
+    if (bytes_compare(pcp0->char_name.data, pcp0->char_name.size, 
+		      pcp1->char_name.data, pcp1->char_name.size))
+	return false; /* We need same encoding. */
+    if (pcp0->real_width.x != pcp1->real_width.x)
+	return false;
+    if (pcp0->real_width.y != pcp1->real_width.y)
+	return false;
+    if (pcp0->v.x != pcp1->v.x)
+	return false;
+    if (pcp0->v.y != pcp1->v.y)
+	return false;
+    return true;
+}
+
+private int 
+pdf_is_same_charproc(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
+{
+    return pdf_is_same_charproc1(pdev, (pdf_char_proc_t *)pres0, (pdf_char_proc_t *)pres1);
+}
+
+private int 
+pdf_find_same_charproc(gx_device_pdf *pdev, 
+	    pdf_font_resource_t *pdfont, pdf_char_proc_t **ppcp)
+{
+    pdf_char_proc_t *pcp;
+    int code;
+
+    for (pcp = pdfont->u.simple.s.type3.char_procs; pcp != NULL; pcp = pcp->char_next) {
+	if (*ppcp != pcp && pdf_is_same_charproc1(pdev, pcp, *ppcp)) {
+	    *ppcp = pcp;
+	    return 1;
+	}
+    }
+    pcp = *ppcp;
+    code = pdf_find_same_resource(pdev, resourceCharProc, (pdf_resource_t **)ppcp, pdf_is_same_charproc);
+    if (code <= 0)
+	return code;
+    /* fixme : do we need more checks here ? */
+    return 1;
+}
+
+private bool
+pdf_is_charproc_defined(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, gs_char ch)
+{
+    pdf_char_proc_t *pcp;
+
+    for (pcp = pdfont->u.simple.s.type3.char_procs; pcp != NULL; pcp = pcp->char_next) {
+	if (pcp->char_code == ch) {
+	    return true;
+	}
+    }
+    return false;
 }
 
 /*
@@ -558,31 +628,67 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font)
        unless the font is defined recursively.
        But we don't want such assumption. */
     pdf_char_proc_t *pcp = (pdf_char_proc_t *)pres;
-    pdf_font_resource_t *font3 = (pdf_font_resource_t *)pdev->font3;
     pdf_font_resource_t *pdfont;
-    int ch = pcp->char_code;
+    gs_char ch = pcp->char_code;
     double *real_widths;
     byte *glyph_usage;
     int char_cache_size, width_cache_size;
     gs_glyph glyph0;
+    bool checking_glyph_variation = false;
     int i;
 
-    code = pdf_attached_font_resource(pdev, font, &pdfont,
-		&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
     if (code < 0)
 	return code;
-    if (pdfont != font3)
+    if (pdfont != (pdf_font_resource_t *)pdev->font3)
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (ch == GS_NO_CHAR)
 	return_error(gs_error_unregistered); /* Must not happen. */
-    if (ch >= char_cache_size || ch >= width_cache_size)
+    if (ch >= 256)
 	return_error(gs_error_unregistered); /* Must not happen. */
     code = pdf_exit_substream(pdev);
     if (code < 0)
 	return code;
+    if (pdfont->used[ch >> 3] & (0x80 >> (ch & 7))) {
+	if (!(pdfont->u.simple.s.type3.cached[ch >> 3] & (0x80 >> (ch & 7)))) {
+	    checking_glyph_variation = true;
+	    code = pdf_find_same_charproc(pdev, pdfont, &pcp);
+	    if (code < 0)
+		return code;
+	    if (code != 0) {
+		code = pdf_cancel_resource(pdev, (pdf_resource_t *)pres, resourceCharProc);
+		if (code < 0)
+		    return code;
+		if (pcp->font != pdfont) {
+		    code = pdf_attach_font_resource(pdev, font, pcp->font);
+		    if (code < 0)
+			return code;
+		}
+		pdev->charproc_just_accumulated = true;
+		return 0;
+	    }
+	    if (pdf_is_charproc_defined(pdev, pdfont, ch)) {
+		code = pdf_make_font3_resource(pdev, font, &pdfont);
+		if (code < 0)
+		    return code;
+		code = pdf_attach_font_resource(pdev, font, pdfont);
+		if (code < 0)
+		    return code;
+	    }
+	}
+    }
+    code = pdf_attached_font_resource(pdev, font, &pdfont,
+		&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
+    if (ch >= char_cache_size || ch >= width_cache_size)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (checking_glyph_variation)
+	pdev->charproc_just_accumulated = true;
     glyph0 = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
     pcp->char_next = pdfont->u.simple.s.type3.char_procs;
     pdfont->u.simple.s.type3.char_procs = pcp;
+    pdfont->Widths[ch] = pcp->real_width.x;
     real_widths[ch * 2    ] = pcp->real_width.x;
     real_widths[ch * 2 + 1] = pcp->real_width.y;
     glyph_usage[ch / 8] |= 0x80 >> (ch & 7);

@@ -175,17 +175,21 @@ int pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource
  * Retrive font resource attached to a font.
  * allocating glyph_usage and real_widths on request.
  */
-int
-pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,  
+int pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,  
 			   pdf_font_resource_t **pdfont, byte **glyph_usage,
 			   double **real_widths, int *num_chars, int *num_widths);
 
 /*
  * Attach font resource to a font.
  */
-int
-pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font, 
+int pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font, 
 			 pdf_font_resource_t *pdfont); 
+
+/*
+ * Create a font resource object for a gs_font of Type 3.
+ */
+int pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
+		       pdf_font_resource_t **ppdfont);
 
 /*
  * Compute the cached values in the text processing state from the text

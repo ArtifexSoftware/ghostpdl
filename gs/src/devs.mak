@@ -945,7 +945,7 @@ $(GLOBJ)gdevpdtf.$(OBJ) : $(GLSRC)gdevpdtf.c $(gx_h) $(memory__h)\
 
 $(GLOBJ)gdevpdti.$(OBJ) : $(GLSRC)gdevpdti.c $(memory__h) $(string__h) $(gx_h)\
  $(gserrors_h) $(gsutil_h)\
- $(gdevpdfx_h)\
+ $(gdevpdfx_h) $(gdevpdfg_h)\
  $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdts_h) $(gdevpdtw_h) $(gdevpdtt_h) $(gdevpdfo_h)
 	$(GLCC) $(GLO_)gdevpdti.$(OBJ) $(C_) $(GLSRC)gdevpdti.c
 

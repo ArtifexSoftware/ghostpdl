@@ -416,6 +416,12 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
     return code < 0 ? code : code1;
 }
 
+private int 
+nocheck(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
+{
+    return 1;
+}
+
 /*
  * Finish writing an image.  If in-line, write the BI/dict/ID/data/EI and
  * return 1; if a resource, write the resource definition and return 0.
@@ -451,7 +457,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	    *(cos_object_t *)named = *pco;
 	    pres->object = COS_OBJECT(named);
 	} else if (!pres->named) { /* named objects are written at the end */
-	    code = pdf_find_same_resource(pdev, resourceXObject, &piw->pres);
+	    code = pdf_find_same_resource(pdev, resourceXObject, &piw->pres, nocheck);
 	    if (code < 0)
 		return code;
 	    if (code > 0) {

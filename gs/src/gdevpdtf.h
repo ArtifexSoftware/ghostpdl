@@ -230,6 +230,7 @@ struct pdf_font_resource_s {
 					     For a while restrict with 10 fonts.
 					     Should be enough for known cases (251-01.ps) */
 		    int used_fonts_count;
+		    byte *cached;
 		} type3;
 
 	    } s;

@@ -449,7 +449,7 @@ pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_typ
     /* fixme : remove *pres from resource chain. */
     pres->where_used = 0;
     pres->object->written = true;
-    if (rtype == resourceXObject) {
+    if (rtype == resourceXObject || rtype == resourceCharProc) {
 	int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
 
 	if (code < 0)
@@ -482,7 +482,8 @@ pdf_find_resource_by_gs_id(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 
 /* Find same resource. */
 int
-pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_resource_t **ppres)
+pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_resource_t **ppres,
+	int (*eq)(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1))
 {
     pdf_resource_t **pchain = pdev->resources[rtype].chains;
     pdf_resource_t *pres;
@@ -498,8 +499,13 @@ pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_reso
 		if (code < 0)
 		    return code;
 		if (code > 0) {
-		    *ppres = pres;
-		    return 1;
+		    code = eq(pdev, *ppres, pres);
+		    if (code < 0)
+			return code;
+		    if (code > 0) {
+			*ppres = pres;
+			return 1;
+		    }
 		}
 	    }
 	}

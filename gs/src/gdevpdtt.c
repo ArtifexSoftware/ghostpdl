@@ -907,21 +907,30 @@ pdf_refine_encoding_index(int index, bool is_standard)
 /*
  * Create a font resource object for a gs_font of Type 3.
  */
-private int
+int
 pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
 		       pdf_font_resource_t **ppdfont)
 {
     const gs_font_base *bfont = (const gs_font_base *)font;
     pdf_font_resource_t *pdfont;
+    byte *cached;
     int code;
 
+    cached = gs_alloc_bytes(pdev->pdf_memory, 256/8, "pdf_make_font3_resource");
+    if (cached == NULL)
+	return_error(gs_error_VMerror);
     code = font_resource_encoded_alloc(pdev, &pdfont, bfont->id, 
 		    ft_user_defined, pdf_write_contents_bitmap);
-    if (code < 0)
+    if (code < 0) {
+	gs_free_object(pdev->pdf_memory, cached, "pdf_make_font3_resource");
 	return code;
+    }
+    memset(cached, 0, 256 / 8);
     pdfont->u.simple.s.type3.bitmap_font = false;
     pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(
 			bfont->nearest_encoding_index, true);
+    pdfont->u.simple.s.type3.char_procs = NULL;
+    pdfont->u.simple.s.type3.cached = cached;
     pdfont->u.simple.s.type3.FontBBox.p.x = (int)floor(bfont->FontBBox.p.x);
     pdfont->u.simple.s.type3.FontBBox.p.y = (int)floor(bfont->FontBBox.p.y);
     pdfont->u.simple.s.type3.FontBBox.q.x = (int)ceil(bfont->FontBBox.q.x);
@@ -1982,6 +1991,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	}
 	if (code == TEXT_PROCESS_RENDER) {
 	    pdev->charproc_ctm = penum->pis->ctm;
+    	    pdev->charproc_just_accumulated = false;
 	    if (penum->current_font->FontType == ft_user_defined && 
 		    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
 		/* Must set an identity CTM for the charproc accumulation.

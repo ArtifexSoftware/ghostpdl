@@ -132,6 +132,7 @@ int pdf_set_drawing_color(gx_device_pdf *pdev, const gs_imager_state * pis,
  * Bring the graphics state up to date for a drawing operation.
  * (Text uses either fill or stroke.)
  */
+int pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_image(gx_device_pdf *pdev, const gs_imager_state *pis);

@@ -285,7 +285,8 @@ const gx_device_pdf gs_pdfwrite_device =
  false,				/* AR4_save_bug */
  0,				/* font3 */
  0,				/* accumulating_substream_resource */
- {0,0,0,0,0,0,0,0,0}		/* charproc_ctm */
+ {0,0,0,0,0,0,0,0,0},		/* charproc_ctm */
+ 0				/* charproc_just_accumulated */
 };
 
 /* ---------------- Device open/close ---------------- */
