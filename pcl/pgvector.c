@@ -266,6 +266,12 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( !hpgl_arg_units(pargs, &radius) )
 	  return e_Range;
 	hpgl_arg_c_real(pargs, &chord);
+	/* draw the path here for line type 0, otherwise the first dot
+           drawn in the circumference of the circle will be oriented
+           in the same direction as the center dot */
+	if ( !pgls->g.line.current.is_solid && (pgls->g.line.current.type == 0) )
+	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+
 	/* draw the arc/circle */
 	hpgl_call(hpgl_add_arc_to_path(pgls, pos.x, pos.y,
 				       radius, 0.0, 360.0, chord, true,

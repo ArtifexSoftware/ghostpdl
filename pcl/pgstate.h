@@ -63,6 +63,7 @@ typedef struct hpgl_path_state_s {
    stroke or fill on the path.  */
 typedef enum {
 	hpgl_rm_vector,
+	hpgl_rm_vector_no_close,
 	hpgl_rm_character,
 	hpgl_rm_polygon,
 	hpgl_rm_vector_fill,

@@ -467,12 +467,17 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	int i;
 	int type;
 	hpgl_scaling_params_t scale_params;
-	gs_point point, dev_pt;
+	gs_point point, dev_pt, dev_anchor;
 
 	scale_params = pgls->g.scaling_params;
+	/* we have to save the real position of the current point and
+           anchor corner.  Convert each to device space, set up the
+           new transformation and convert stored device coordinates to
+           user space at the end of the routine. */
 	hpgl_call(hpgl_get_current_position(pgls, &point));
 	hpgl_call(gs_transform(pgls->pgs, point.x, point.y, &dev_pt));
-
+	hpgl_call(gs_transform(pgls->pgs, pgls->g.anchor_corner.x, 
+			       pgls->g.anchor_corner.y, &dev_anchor));
 	for ( i = 0; i < 4 && hpgl_arg_real(pargs, &xy[i]); ++i )
 	  ;
 	switch ( i )
@@ -527,6 +532,9 @@ pxy:		scale_params.pmin.x = xy[0];
 	hpgl_call(hpgl_set_ctm(pgls));
 	hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
 	hpgl_call(hpgl_set_current_position(pgls, &point));
+	hpgl_call(gs_itransform(pgls->pgs, dev_anchor.x, dev_anchor.y, 
+				&pgls->g.anchor_corner));
+
 	/* PCLTRM 23-7 (commands the update cr position) does not list
            SC but PCL updates the position */
 	hpgl_call(hpgl_update_carriage_return_pos(pgls));

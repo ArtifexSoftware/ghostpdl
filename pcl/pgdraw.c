@@ -169,10 +169,10 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 		      scale_y = scale_x;
 		    }
 		}
-	      /* looks like HP keeps 6 digits of accuracy here.  This
-                 was derived empirically */
-	      scale_x -= fmod(scale_x, 1.0E-6);
-	      scale_y -= fmod(scale_y, 1.0E-6);
+	      /* looks like HP keeps 5 decimal digits of accuracy
+                 here.  This was derived empirically */
+	      scale_x -= fmod(scale_x, 1.0E-5);
+	      scale_y -= fmod(scale_y, 1.0E-5);
 	      hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
 	      hpgl_call(gs_matrix_scale(pmat, scale_x, scale_y, pmat));
 	      hpgl_call(gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
@@ -249,7 +249,7 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	    /* Use an adaptive pattern with an infinitely long segment length
 	       to get the dots drawn just at the ends of lines. */
 	    pattern[0] = 0;
-	    pattern[1] = 1.0e6;	/* "infinity" */
+	    pattern[1] = 1.0e6;  /* "infinity" */
 	    hpgl_call(gs_setdash(pgls->pgs, pattern, 2, 0));
 	    gs_setdashadapt(pgls->pgs, true);
 	    return 0;
@@ -392,9 +392,6 @@ hpgl_polyfill_bbox(
     gs_rect *       bbox
 )
 {
-    const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
-    hpgl_real_t     half_width = widths[hpgl_get_selected_pen(pgls)] / 2.0;
-
     /* get the bounding box for the current path / polygon */
     hpgl_call(gs_pathbbox(pgls->pgs, bbox));
     return 0;
@@ -615,6 +612,11 @@ hpgl_polyfill(
 	spacing.x /= fabs(mat.xx);
 	spacing.y /= fabs(mat.yy);
     }
+
+    /* For fill type 3 (hatch) we take the max spacing value for fill
+       type 4 (crosshatch) we fill asymetrically. */
+    if ( !cross )
+	spacing.x = spacing.y = max(spacing.x, spacing.y);
 
     /* get the bounding box */
     hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
@@ -1025,10 +1027,14 @@ hpgl_add_point_to_path(
 
 	/* moveto the current position */
 	hpgl_call(hpgl_get_current_position(pgls, &current_pt));
-	hpgl_call_check_lost( gs_moveto( pgls->pgs,
-					 current_pt.x,
-					 current_pt.y
-                                         ) );
+	if ( !pgls->g.line.current.is_solid && (pgls->g.line.current.type == 0) )
+	    
+	    hpgl_call_check_lost( gs_moveto( pgls->pgs, x, y ) );
+	else
+	    hpgl_call_check_lost( gs_moveto( pgls->pgs,
+					     current_pt.x,
+					     current_pt.y
+					     ) );
     }
     {
         int     code = (*gs_procs[func])(pgls->pgs, x, y);
@@ -1304,11 +1310,6 @@ hpgl_close_path(
 }
 
 /*
- * HAS -- There will need to be compression phase here note that
- * extraneous PU's do not result in separate subpaths.
- */
-
-/*
  * Draw (stroke or fill) the current path.
  */
  int
@@ -1329,7 +1330,12 @@ hpgl_draw_current_path(
 	hpgl_call(hpgl_clear_current_path(pgls));
  	return 0;
     }
-    hpgl_call(hpgl_close_path(pgls));
+
+    if ( render_mode == hpgl_rm_vector_no_close )
+	render_mode = hpgl_rm_vector;
+    else
+	hpgl_call(hpgl_close_path(pgls));
+
     hpgl_call(hpgl_set_drawing_state(pgls, render_mode));
 
     switch (render_mode) {
@@ -1433,6 +1439,8 @@ hpgl_draw_current_path(
 	    gs_matrix save_ctm;
 	    hpgl_call(gs_currentmatrix(pgs, &save_ctm));
 	    hpgl_call(hpgl_set_plu_ctm(pgls));
+	    if ( !pgls->g.line.current.is_solid && (pgls->g.line.current.type == 0) )
+		hpgl_call(gs_reversepath(pgls->pgs));
 	    hpgl_call(gs_stroke(pgls->pgs));
 	    gs_setmatrix(pgs, &save_ctm);
 	    break;

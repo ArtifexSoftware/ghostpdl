@@ -44,7 +44,7 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 	  hpgl_call(hpgl_add_point_to_path(pgls, x2, y1, hpgl_plot_draw_absolute, true));
 	  hpgl_call(hpgl_add_point_to_path(pgls, x2, y2, hpgl_plot_draw_absolute, true));
 	  hpgl_call(hpgl_add_point_to_path(pgls, x1, y2, hpgl_plot_draw_absolute, true));
-	  /* polygons are implicitly closed */
+	  hpgl_call(hpgl_close_current_path(pgls));
 	}
 	/* exit polygon mode PM2 */
 	hpgl_args_set_int(pargs,2);
@@ -96,8 +96,7 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 						  hpgl_plot_draw_absolute));
 	  }
 
-	/* exit polygon mode, this should close the path and the wedge
-           is complete */
+	hpgl_call(hpgl_close_current_path(pgls));
 	hpgl_args_set_int(pargs,2);
 	hpgl_call(hpgl_PM(pargs, pgls));
 
@@ -125,7 +124,7 @@ hpgl_EP(hpgl_args_t *pargs, hpgl_state_t *pgls)
            the current path */
 	hpgl_call(hpgl_gsave(pgls));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_no_close));
 	hpgl_call(hpgl_grestore(pgls));
 	return 0;
 }
@@ -171,16 +170,11 @@ hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( hpgl_arg_c_int(pargs, &method) && (method & ~1) )
 	  return e_Range;
-
 	pgls->g.fill_type = (method == 0) ?
 	  hpgl_even_odd_rule : hpgl_winding_number_rule;
-	/* preserve the current path and copy the polygon buffer to
-           the current path */
-	hpgl_call(hpgl_gsave(pgls));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls,
 					 hpgl_get_poly_render_mode(pgls)));
-	hpgl_call(hpgl_grestore(pgls));
 	return 0;
 }
 
