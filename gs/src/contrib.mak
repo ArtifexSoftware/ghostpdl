@@ -252,8 +252,9 @@ $(GLOBJ)gdevccr.$(OBJ) : $(GLSRC)gdevccr.c $(PDEVH)
 ###       please contact koert@zen.cais.com.                              ###
 ###   If you have questions about the lj4dith driver,                     ###
 ###       please contact Eckhard.Rueggeberg@ts.go.dlr.de.                 ###
-###   If you have questions about the BJC600/BJC4000, BJC800, or ESCP     ###
-###       drivers, please contact yves.arrouye@usa.net.                   ###
+###   The BJC600/BJC4000, BJC800, and ESCP were originally contributed    ###
+###       by yves.arrouye@usa.net, but he no longer answers questions     ###
+###       about them.                                                     ###
 
 cdeskjet_=$(GLOBJ)gdevcdj.$(OBJ) $(HPPCL)
 
