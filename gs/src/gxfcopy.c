@@ -776,9 +776,11 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		case ft_CID_TrueType: {
 		    gs_font_type42 *font0 = (gs_font_type42 *)cfont;
 		    gs_font_type42 *font1 = (gs_font_type42 *)ofont;
+		    uint glyph_index0 = font0->data.get_glyph_index(font0, glyph);
+		    uint glyph_index1 = font1->data.get_glyph_index(font1, glyph);
 
-		    code0 = font0->data.get_outline(font0, glyph, &gdata0);
-		    code1 = font1->data.get_outline(font1, glyph, &gdata1);
+		    code0 = font0->data.get_outline(font0, glyph_index0, &gdata0);
+		    code1 = font1->data.get_outline(font1, glyph_index1, &gdata1);
 		    break;
 		}
 		case ft_CID_encrypted: {
