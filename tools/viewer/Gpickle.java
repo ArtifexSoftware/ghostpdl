@@ -10,11 +10,13 @@ import com.sun.image.codec.jpeg.*;
 */
 
 public class Gpickle {
+    /** debug printf control */
+    private final static boolean debug = true; 
     /** here are some defaults that might be overriden will probably be
     * overriden.
     */
-    private int xRes = 100;
-    private int yRes = 100;
+    private double xRes = 75f;
+    private double yRes = 75f;
     private String jobList = "startpage.pcl";
     private int pageToDisplay = 1;
 
@@ -29,19 +31,48 @@ public class Gpickle {
      */
     private int width;
 
+    private String rtl = "";
+    private final static String cRTLstr = " -PRTL";
+    public void setRTL( boolean on ) {
+	if (on)
+	   rtl = cRTLstr;
+	else
+	   rtl = "";
+    }	      
+    public boolean getRTL() {
+       return( rtl.equals(cRTLstr) );
+    }
+    
+    private String textAlpha = ""; //" -dTextAlphaBits=2"
+    private String deviceOptions =  " ";
+
     /**
      * "command line" used to run interpreter.
      * NB Client should be able to modify settings.
      */
     private String runString()
     {
-	return "pcl6 " +  "-dTextAlphaBits=2 -dFirstPage=" + pageToDisplay + " -dLastPage=" +
-            pageToDisplay + " -r" +
-	    xRes + "x" + yRes + " -sDEVICE=" +
-            deviceName + " -dNOPAUSE " + " -sOutputFile=- " + jobList + "\n";
+
+ 
+
+	return "pcl6"
+	    + deviceOptions
+	    + rtl
+	    + textAlpha
+	    + " -dFirstPage=" + pageToDisplay + " -dLastPage="
+            + pageToDisplay
+            + " -r" + xRes + "x" + yRes
+	    + " -sDEVICE=" + deviceName
+            + " -dNOPAUSE "
+            + " -sOutputFile=- " + jobList + " \n";
     }
 
+
     // public methods.
+
+    public void setDeviceOptions( String options ) {
+       deviceOptions = options;
+    }
 
     /**
     * run the pcl interpreter with the current settings and return a
@@ -52,8 +83,11 @@ public class Gpickle {
     public BufferedImage getPrinterOutputPage()
     {
         int ch;
+	int i = 0;
         Process p = null;
+
 	try {
+	    if (false && debug) System.out.println("runstring=" + runString());
 	    p = Runtime.getRuntime().exec(runString());
 	    // read process output and return a buffered image.
 	    JPEGImageDecoder decoder = JPEGCodec.createJPEGDecoder(p.getInputStream());
@@ -89,10 +123,17 @@ public class Gpickle {
     /** NB needs error handling.
      * set x and y resolution.
      */
-    public void setRes(int xRes, int yRes)
+    public void setRes(double xRes, double yRes)
     {
 	this.xRes = xRes;
 	this.yRes = yRes;
+    }
+
+    public double getResX() {
+        return xRes;
+    }
+    public double getResY() {
+        return yRes;
     }
 
     /**
@@ -106,13 +147,13 @@ public class Gpickle {
 
     /** Accessor for image height.
      */
-    public int getHeight()
+    public int getImgHeight()
     {
 	return height;
     }
     /** Accessor for image width.
-     */ 	 
-    public int getWidth()
+     */ 	
+    public int getImgWidth()
     {
 	return width;
     }
@@ -124,13 +165,13 @@ public class Gpickle {
 	pcl.setPageNumber(5);
 	pcl.setJob("120pg.bin");
 	System.out.println(pcl.getPrinterOutputPage());
-	System.out.println("Width = " + pcl.getWidth());
-	System.out.println("Height = " + pcl.getWidth());
+	System.out.println("Width = " + pcl.getImgWidth());
+	System.out.println("Height = " + pcl.getImgWidth());
 	Gpickle pxl = new Gpickle();
 	pxl.setJob("frs96.pxl");
 	System.out.println(pxl.getPrinterOutputPage());
-	System.out.println("Width = " + pxl.getWidth());
-	System.out.println("Height = " + pxl.getWidth());
+	System.out.println("Width = " + pxl.getImgWidth());
+	System.out.println("Height = " + pxl.getImgWidth());
 
     }
 }
