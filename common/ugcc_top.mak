@@ -48,7 +48,7 @@ clean_gs:
 # the floating point emulator, even though we don't always link it in.
 # HACK * HACK * HACK - we force this make to occur since we have no
 # way to determine if gs files are out of date.
-$(GENDIR)/ldl$(CONFIG).tr: FORCE
+$(GENDIR)/ldgs.tr: FORCE
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
 	make \
@@ -64,19 +64,19 @@ $(GENDIR)/ldl$(CONFIG).tr: FORCE
 	  $(GLOBJDIR)/ld.tr \
 	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
 	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o
-	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldl$(CONFIG).tr
+	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldgs.tr
 
 FORCE:
 
 # Build the configuration file.
-$(GENDIR)/pconf$(CONFIG).h $(GENDIR)/ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
-	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf$(CONFIG).h -p "%s&s&&" -o $(GENDIR)/ldconf$(CONFIG).tr
+$(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
+	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf.h -p "%s&s&&" -o $(GENDIR)/ldconf.tr
 
 # Link a Unix executable.
-$(TARGET_XE): $(GENDIR)/ldl$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr $(MAIN_OBJ)
-	$(ECHOGS_XE) -w $(GENDIR)/ldt.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
-	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -n -s $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
-	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -n -s $(XOBJS) -s
-	cat $(GENDIR)/ldl$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr >>$(GENDIR)/ldt.tr
-	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -s - $(MAIN_OBJ) $(EXTRALIBS) -lm
-	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldt.tr
+$(TARGET_XE): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ)
+	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
+	cat $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) -lm
+	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldall.tr
