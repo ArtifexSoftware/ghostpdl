@@ -267,6 +267,14 @@ gx_concretize_CIEICC(
     for (i = 0; i < ncomps; i++)
         inv[i] = lcc.paint.values[i];
 
+    /* For input Lab color space massage the values into Lab range */
+
+    if (picc_info->plu->e_inSpace == icSigLabData) {
+        inv[0] *= 100;
+        inv[1] = inv[1]*255 - 128;
+        inv[2] = inv[2]*255 - 128; 
+    }
+
     /*
      * Perform the lookup operation. A return value of 1 indicates that
      * clipping occurred somewhere in the operation, but the result is
