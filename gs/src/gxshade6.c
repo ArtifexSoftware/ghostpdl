@@ -32,7 +32,7 @@
 #include "math_.h"
 #include "vdtrace.h"
 
-#define VD_TRACE_TENSOR_PATCH 0
+#define VD_TRACE_TENSOR_PATCH 1
 
 #if TENSOR_SHADING_DEBUG
 int patch_cnt = 0; /* Temporary for a debug purpose.*/
@@ -1462,6 +1462,7 @@ fill_triangle_wedge(patch_fill_state_t *pfs,
     if ((int64_t)(q1->p.x - q0->p.x) * (q2->p.y - q0->p.y) == 
 	(int64_t)(q1->p.y - q0->p.y) * (q2->p.x - q0->p.x))
 	return 0; /* Zero area. */
+    draw_triangle(&q0->p, &q1->p, &q2->p, RGB(255, 255, 0));
     return fill_triangle_wedge_aux(pfs, q0, q1, q2);
 }
 
@@ -1559,6 +1560,7 @@ fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka,
 	return fill_wedges_aux(pfs, k / 2, ka, q[1], &c, c1, wedge_type);
     } else {
 	if (INTERPATCH_PADDING && (wedge_type & interpatch_padding)) {
+	    vd_bar(pole[0].x, pole[0].y, pole[3].x, pole[3].y, 0, RGB(255, 0, 0));
 	    code = padding(pfs, &pole[0], &pole[3], c0, c1);
 	    if (code < 0)
 		return code;
@@ -2706,7 +2708,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 #   endif
 
 #   if TENSOR_SHADING_DEBUG
-	if (patch_cnt != 2 && patch_cnt != 3) 
+	if (patch_cnt != 27 && patch_cnt != 3) 
 	    return 0;
 #   endif
     /* We decompose the patch into tiny quadrangles,
@@ -2719,7 +2721,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     kv[3] = curve_samples(&p.pole[0][3], 4, pfs->fixed_flat);
     kvm = max(max(kv[0], kv[1]), max(kv[2], kv[3]));
     ku[0] = curve_samples(p.pole[0], 1, pfs->fixed_flat);
-    ku[3] = curve_samples(p.pole[0], 1, pfs->fixed_flat);
+    ku[3] = curve_samples(p.pole[3], 1, pfs->fixed_flat);
     kum = max(ku[0], ku[3]);
     km = max(kvm, kum);
 #   if POLYGONAL_WEDGES
@@ -2740,12 +2742,12 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     if (code >= 0)
 	code = fill_wedges(pfs, kv[3], kvm, &p.pole[0][3], 4, &p.c[0][1], &p.c[1][1], 
 		interpatch_padding | inpatch_wedge);
-    if (INTERPATCH_PADDING && code >= 0)
+    if (code >= 0)
 	code = fill_wedges(pfs, ku[0], kum, p.pole[0], 1, &p.c[0][0], &p.c[0][1], 
-		interpatch_padding);
-    if (INTERPATCH_PADDING && code >= 0)
+		interpatch_padding | inpatch_wedge);
+    if (code >= 0)
 	code = fill_wedges(pfs, ku[3], kum, p.pole[3], 1, &p.c[1][0], &p.c[1][1], 
-		interpatch_padding);
+		interpatch_padding | inpatch_wedge);
     if (code >= 0) {
 	/* We would like to apply iterations for enumerating the kvm curve parts,
 	   but the roundinmg errors would be too complicated due to
