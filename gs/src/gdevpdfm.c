@@ -1040,6 +1040,37 @@ pdfmark_write_ps(stream *s, const gs_param_string * psource)
     return size + 1;
 }
 
+/* Start a XObject. */
+private int
+start_XObject(gx_device_pdf * pdev, bool compress, cos_stream_t **ppcs,
+		const gs_param_string * objname)
+{   pdf_resource_t *pres;
+    cos_stream_t *pcs;
+    cos_value_t value;
+    int code;
+
+    code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (code < 0)
+	return code;
+    code = pdf_enter_substream(pdev, resourceXObject, gs_no_id, &pres, true, 
+		pdev->CompressFonts /* Have no better switch*/);
+    if (code < 0)
+	return code;
+    pcs = (cos_stream_t *)pres->object;
+    pdev->substream_Resources = cos_dict_alloc(pdev, "start_XObject");
+    if (!pdev->substream_Resources)
+	return_error(gs_error_VMerror);
+    code = cos_dict_put(pdev->local_named_objects, objname->data,
+			    objname->size, cos_object_value(&value, pres->object));
+    if (code < 0)
+	return code;
+    pres->named = true;
+    pres->where_used = 0;	/* initially not used */
+    pcs->pres = pres;
+    *ppcs = pcs;
+    return 0;
+}
+
 /* PS pdfmark */
 #define MAX_PS_INLINE 100
 private int
@@ -1067,70 +1098,56 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	stream_puts(s, " PS\n");
     } else {
 	/* Put the PostScript code in a resource. */
-	pdf_resource_t *pres;
 	cos_stream_t *pcs;
-	uint size;
 	int code;
+	gs_id level1_id = gs_no_id;
 
-	code = pdf_make_named(pdev, objname, cos_type_stream,
-			      (cos_object_t **)&pcs, true);
+	if (level1.data != 0) {
+	    pdf_resource_t *pres;
+
+	    code = pdf_enter_substream(pdev, 
+			resourceXObject /* A stub. Actually it's not a resource. */, 
+			gs_no_id, &pres, true, 
+			pdev->CompressFonts /* Have no better switch*/);
+	    if (code < 0)
+		return code;
+	    pcs = (cos_stream_t *)pres->object;
+	    pres->named = (objname != 0);
+	    pres->where_used = 0;
+	    pcs->pres = pres;
+	    DISCARD(pdfmark_write_ps(pdev->strm, &level1));
+	    code = pdf_exit_substream(pdev);
+	    if (code < 0)
+		return code;
+	    code = cos_write_object(pres->object, pdev);
+	    if (code < 0)
+		return code;
+	    level1_id = pres->object->id;
+	}
+	code = start_XObject(pdev, pdev->params.CompressPages /* Have no better switch*/, 
+			    &pcs, objname);
 	if (code < 0)
 	    return code;
-	code = pdf_alloc_resource(pdev, resourceXObject, gs_no_id, &pres,
-				  pcs->id);
-	if (code < 0)
-	    return code;
-	pres->object = COS_OBJECT(pcs);
 	code = cos_stream_put_c_strings(pcs, "/Type", "/XObject");
 	if (code < 0)
 	    return code;
 	code = cos_stream_put_c_strings(pcs, "/Subtype", "/PS");
 	if (code < 0)
 	    return code;
-	if (level1.data != 0) {
-	    long level1_id = pdf_obj_ref(pdev);
-	    char r[10 + 5];	/* %ld 0 R\0 */
-	    stream *s;
-	    long length_id = pdf_obj_ref(pdev);
+	if (level1_id != gs_no_id) {
+	    char r[MAX_DEST_STRING];
 
 	    sprintf(r, "%ld 0 R", level1_id);
 	    code = cos_dict_put_c_key_string(cos_stream_dict(pcs), "/Level1",
 					     (byte *)r, strlen(r));
 	    if (code < 0)
 		return code;
-	    pdf_open_separate(pdev, level1_id);
-	    s = pdev->strm;
-#	    if PS2WRITE
-		if (pdev->OrderResources) {
-		    int pos = stell(s) + 10, pos1;
-
-		    stream_puts(s, "<</Length           >>stream\n");
-		    size = pdfmark_write_ps(s, &level1);
-		    stream_puts(s, "endstream\n");
-		    pos1 = stell(s);
-		    sseek(s, pos);
-		    pprintld1(pdev->strm, "%ld", (long)size);
-		    sseek(s, pos1);
-		    pdf_end_separate(pdev);
-		} else
-#	    endif
-	    {
-		pprintld1(s, "<</Length %ld 0 R>>stream\n", length_id);
-		size = pdfmark_write_ps(s, &level1);
-		stream_puts(s, "endstream\n");
-		pdf_end_separate(pdev);
-		pdf_open_separate(pdev, length_id);
-		pprintld1(s, "%ld\n", (long)size);
-		pdf_end_separate(pdev);
-	    }
 	}
-	size = pdfmark_write_ps(pdev->streams.strm, &source);
-	code = cos_stream_add(pcs, size);
+	DISCARD(pdfmark_write_ps(pdev->strm, &source));
+	code = pdf_exit_substream(pdev);
 	if (code < 0)
 	    return code;
-	if (objname)
-	    pres->named = true;
-	else {
+	if (!objname) {
 	    /* Write the resource now, since it won't be written later. */
 	    COS_WRITE_OBJECT(pcs, pdev);
 	    COS_RELEASE(pcs, "pdfmark_PS");
@@ -1138,6 +1155,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	code = pdf_open_contents(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
+        pcs->pres->where_used |= pdev->used_mask;
 	pprintld1(pdev->strm, "/R%ld Do\n", pcs->id);
     }
     return 0;
@@ -1406,28 +1424,10 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return_error(gs_error_rangecheck);
     if ((pdev->used_mask << 1) == 0)
 	return_error(gs_error_limitcheck);
-    {	pdf_resource_t *pres;
-	cos_value_t value;
-
-	code = pdf_open_page(pdev, PDF_IN_STREAM);
-	if (code < 0)
-	    return code;
-	code = pdf_enter_substream(pdev, resourceXObject, gs_no_id, &pres, true, 
-		    pdev->CompressFonts /* Have no better switch*/);
-	if (code < 0)
-	    return code;
-	pcs = (cos_stream_t *)pres->object;
- 	pdev->substream_Resources = cos_dict_alloc(pdev, "pdfmark_BP");
- 	if (!pdev->substream_Resources)
-	    return_error(gs_error_VMerror);
-	code = cos_dict_put(pdev->local_named_objects, objname->data,
-				objname->size, cos_object_value(&value, pres->object));
-	if (code < 0)
-	    return code;
-	pres->named = true;
-	pres->where_used = 0;	/* initially not used */
-	pcs->pres = pres;
-    }
+    code = start_XObject(pdev, pdev->params.CompressPages /* Have no better switch*/, 
+			    &pcs, objname);
+    if (code < 0)
+	return code;
     pcs->is_graphics = true;
     gs_bbox_transform(&bbox, pctm, &bbox);
     swrite_string(&s, bbox_str, sizeof(bbox_str));
