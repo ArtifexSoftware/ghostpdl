@@ -681,16 +681,20 @@ private int
 argproc(gs_main_instance * minst, const char *arg)
 {
     int code = gs_main_init1(minst);		/* need i_ctx_p to proceed */
+    char *filearg;
 
     if (code < 0)
         return code;
-    minst->i_ctx_p->filearg = (unsigned char*) arg;	/* allow reading this file if SAFER set */
+    filearg = arg_heap_copy(arg);
+    if (filearg == NULL)
+        return e_Fatal;
+    minst->i_ctx_p->filearg = filearg;	/* allow reading this file if SAFER set */
     if (minst->run_buffer_size) {
 	/* Run file with run_string. */
-	return run_buffered(minst, arg);
+	return run_buffered(minst, filearg);
     } else {
 	/* Run file directly in the normal way. */
-	return runarg(minst, "", arg, ".runfile", runInit | runFlush);
+	return runarg(minst, "", filearg, ".runfile", runInit | runFlush);
     }
 }
 private int

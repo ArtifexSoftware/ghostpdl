@@ -50,7 +50,8 @@ struct gs_context_state_s {
     ref userparams;		/* t_dictionary */
     int scanner_options;	/* derived from userparams */
     bool LockFilePermissions;	/* accessed from userparams */
-    byte *filearg;		/* null terminated string of file being run */
+    char *filearg;		/* C string of the file being run */
+				/* (allocated on the C heap, no gc needed) */
     ref stdio[3];		/* t_file */
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;
