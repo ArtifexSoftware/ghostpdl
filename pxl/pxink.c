@@ -1033,7 +1033,6 @@ const byte apxSetNeutralAxis[] = {0, pxaAllObjectTypes, pxaTextObjects,
 int
 pxSetNeutralAxis(px_args_t *par, px_state_t *pxs)
 {
-    dprintf( "SetNeutralAxis, TBD per HP Documentation\n" );
     return 0;
 }
 
@@ -1042,7 +1041,6 @@ const byte apxSetColorTrapping[] = {pxaAllObjectTypes, 0, 0};
 int
 pxSetColorTrapping(px_args_t *par, px_state_t *pxs)
 {
-    dprintf( "SetColorTrapping, TBD per HP Documentation\n" );
     return 0;
 }
 
@@ -1052,7 +1050,6 @@ const byte apxSetAdaptiveHalftoning[] =
 int
 pxSetAdaptiveHalftoning(px_args_t *par, px_state_t *pxs)
 {
-    dprintf( "SetAdaptiveHalftoning, TBD per HP Documentation\n" );
     return 0;
 }
 
