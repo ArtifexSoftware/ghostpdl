@@ -215,6 +215,8 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
     FIT_MASK_COPY(pccd->data, pccd->sourcex, pccd->raster,
 		  pccd->x, pccd->y, pccd->w, pccd->h);
     tile_row = cdev->tiles.data + my0 * cdev->tiles.raster + (mx0 >> 3);
+    prev.p.x = 0;	/* arbitrary */
+    prev.q.x = prev.p.x - 1;	/* an impossible rectangle */
     prev.p.y = prev.q.y = -1;	/* arbitrary */
     for (cy = my0; cy < my1; cy++) {
 	int cx = mx0;
