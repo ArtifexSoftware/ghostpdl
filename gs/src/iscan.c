@@ -785,7 +785,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		    case char_EOL:
 		    case '\f':
 		      end_comment:
-			retcode = scan_comment(i_ctx_p, pref, &sstate,
+			retcode = scan_comment(i_ctx_p, myref, &sstate,
 					       comment_line, daptr, true);
 			if (retcode != 0)
 			    goto comment;
