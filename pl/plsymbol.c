@@ -2159,3 +2159,30 @@ const pl_symbol_map_t *pl_built_in_symbol_maps[] = {
 
 const int pl_built_in_symbol_map_count =
   countof(pl_built_in_symbol_maps) - 1;
+
+
+ulong
+pl_map_symbol(const pl_symbol_map_t *psm, uint chr, bool resident_font)
+{
+    uint first_code, last_code;
+    /*
+     * If there is no symbol map we assume the the character
+     * implicitly indexes the font.
+     */
+    if (psm == 0) {
+	if ( resident_font )
+	    return chr + 0xf000;
+        else
+            return chr;
+    }
+
+    first_code = pl_get_uint16(psm->first_code);
+    last_code = pl_get_uint16(psm->last_code);
+    if ((chr < first_code) || (chr > last_code))
+	return ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
+    else
+        return psm->codes[chr - first_code];
+}
+
+        
+
