@@ -491,7 +491,9 @@ pdfdict begin
     1 index exch /File exch put
   } ifelse
   PDFsource token pop
-    /endstream ne { /stream cvx /syntaxerror signalerror } if
+    /endstream ne { 
+      (   **** PDF format error: stream Length incorrect.\n) pdfformaterror
+    } if
   cvx
 } bind def
 /endstream {
