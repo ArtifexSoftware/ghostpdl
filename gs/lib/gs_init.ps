@@ -432,7 +432,7 @@ userdict /.echo.mode true put
 	     { (%statementedit) (r) file } stopped
 	     { pop pop $error /errorname get /undefinedfilename eq
 		{ .clearerror exit } if		% EOF
-	       handleerror //null		% ioerror??
+	       /handleerror .systemvar exec //null		% ioerror??
 	     }
 	    if
 	    cvx { .runexec } execute
@@ -444,11 +444,18 @@ userdict /.echo.mode true put
 	   { /filter load /undefined signalerror }
 	  ifelse
 	} odef
+% handleerror procedure as mentioned in the "Operators" section of the PLRM Section 8.2
+% This invokes the handleerror procedure from errordict (unless we are running under a
+% JOBSERVER where we want to always use a defined error handler (many error handlers in
+% 'wild' PostScript files are broken and don't indicate the error in any useful fashion).
+%
+% We run the handleerror procedure using .internalstopped so that broken error handlers
+% won't cause nested errors (Unexpected Error conditions).
 /handleerror
 	JOBSERVER {
-	  { /errordict .systemvar /.GShandleerror get exec } bind %%% MODIFIED to always use .GShandleerror.
+	  { /errordict .systemvar /.GShandleerror get .internalstopped pop } bind % always use .GShandleerror.
 	} {
-	  { /errordict .systemvar /handleerror get exec } bind %%% original errorhandling
+	  { /errordict .systemvar /handleerror get .internalstopped pop } bind % PLRM standard errorhandling
 	} ifelse def
 /identmatrix [1.0 0.0 0.0 1.0 0.0 0.0] readonly def
 /identmatrix
@@ -769,7 +776,7 @@ userdict /.currentresourcefile //null put
 % This is called with a procedure or executable file on the operand stack.
 /.execute {		% <obj> .execute <stopped>
   stopped $error /newerror get and
-   { handleerror flush true } { false } ifelse
+   { /handleerror .systemvar exec flush true } { false } ifelse
 } bind def
 /execute {		% <obj> execute -
   .execute pop
@@ -815,7 +822,7 @@ userdict /.currentresourcefile //null put
 	   } if
 	  exch pop cvx stopped
 	   { (While reading ) print .currentfilename print (:\n) print flush
-	     handleerror /runlibfile0 1 .quit
+	     /handleerror .systemvar exec /runlibfile0 1 .quit
 	   } if
 	} bind def
 % Temporarily substitute it for the real runlibfile.
@@ -928,10 +935,10 @@ userdict /.currentresourcefile //null put
        % Genoa issue of setting /handleerror, and then calling it, without an error
        % being set.  We were erroring in this case, due to /command load failing.
 
-       errordict dup /handleerror get  exch
+       /errordict .systemvar dup /handleerror get exch
          //JOBSERVER { /.GShandleerror } { /handleerror } ifelse
          get ne
-         { errordict begin handleerror end
+         { /errordict .systemvar begin /handleerror load .internalstopped pop end
          }
          if
      }
@@ -947,7 +954,7 @@ userdict /.currentresourcefile //null put
 	 currentdict exch .knownget	% stackname defined in $error?
 	 {
 	   4 1 roll			% stack: <stack> <head> <==flag> <over>
-	   errordict exch .knownget	% overridename defined?
+	   /errordict .systemvar exch .knownget	% overridename defined?
 	   { 
 	     exch pop exch pop exec	% call override with <stack>
 	   }
