@@ -154,6 +154,9 @@ typedef int (*pl_interp_proc_deallocate_interp_instance_t)(P1(pl_interp_instance
 int pl_deallocate_interp(P1(pl_interp_t *));
 typedef int (*pl_interp_proc_deallocate_interp_t)(P1(pl_interp_t *));
 
+int pl_get_device_memory(P2(pl_interp_instance_t *, gs_memory_t **));
+typedef int (*pl_interp_proc_get_device_memory_t)(P2(pl_interp_instance_t *, gs_memory_t **));
+
 /*
  * Define a generic interpreter implementation
  */
@@ -175,6 +178,7 @@ struct pl_interp_implementation_s {
   pl_interp_proc_remove_device_t              proc_remove_device;
   pl_interp_proc_deallocate_interp_instance_t proc_deallocate_interp_instance;
   pl_interp_proc_deallocate_interp_t          proc_deallocate_interp;
+  pl_interp_proc_get_device_memory_t          proc_get_device_memory;
 };
 
 #endif				/* pltop_INCLUDED */

@@ -148,6 +148,15 @@ pjl_impl_set_post_page_action(
 	return gs_error_undefined;   /* this operation is undefined for PJL */
 }
 
+private int   
+pjl_impl_get_device_memory(
+  pl_interp_instance_t   *instance,     /* interp instance to use */
+  gs_memory_t **pmem)
+{
+    return 0;
+}
+
+
 /* Prepare interp instance for the next "job" */
 int	/* ret 0 ok, else -ve error code */
 pjl_impl_init_job(
@@ -388,6 +397,7 @@ pjl_implementation_t pjl_implementation = {
     pjl_impl_remove_device,
     pjl_impl_deallocate_interp_instance,
     pjl_impl_deallocate_interp,
+    pjl_impl_get_device_memory,
   },
   /* PJL-specific portion */
   pjl_impl_get_envvar,

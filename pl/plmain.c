@@ -235,7 +235,7 @@ close_job(pl_main_universe_t *universe, pl_main_instance_t *pti)
 GSDLLEXPORT int GSDLLAPI 
 pl_main(
     int                 argc,
-    char *              argv[]
+    char *        argv[]
 )
 {
     gs_memory_t *           mem;
@@ -255,11 +255,13 @@ pl_main(
 
     pl_platform_init(gs_stdout);
     mem = pl_alloc_init();
+#ifndef PSI_INCLUDED
     /* process level allocations above a job */
     pjl_mem = pl_pjl_alloc_init();
-
+#else
+    pjl_mem = mem;
+#endif
     gs_lib_init1(pjl_mem);
-
 
     /* Create a memory allocator to allocate various states from */
     {
@@ -275,9 +277,9 @@ pl_main(
 
     /* Init the top-level instance */
     gs_c_param_list_write(&params, pjl_mem);
-    gs_param_list_set_persistent_keys(&params, false);
+    gs_param_list_set_persistent_keys((gs_param_list*)&params, false);
     pl_main_init_instance(&inst, mem);
-    arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL);
+    arg_init(&args, argv, argc, pl_main_arg_fopen, NULL);
 
     
     /* Create PJL instance */
@@ -524,6 +526,7 @@ pl_main_universe_init(
 	memset(universe, 0, sizeof(*universe));
 	universe->pdl_implementation = pdl_implementation;
 	universe->mem = mem;
+	inst->device_memory = mem;
 
 	/* Create & init PDL all instances. Could do this lazily to save memory, */
 	/* but for now it's simpler to just create all instances up front. */
@@ -544,7 +547,9 @@ pl_main_universe_init(
 	  if ( pl_set_client_instance(instance, pjl_instance, PJL_CLIENT) < 0 ||
                pl_set_client_instance(instance, universe->pdl_instance_array[0], PCL_CLIENT) ||
                pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0 ||
-               pl_set_post_page_action(instance, pl_post_finish_page, inst) < 0 ) {
+               pl_set_post_page_action(instance, pl_post_finish_page, inst) < 0 ||
+               pl_get_device_memory(instance, &inst->device_memory) < 0 
+	       ) {
               if (err_str)
                   sprintf(err_str, "Unable to init %s interpreter",
                           pl_characteristics(pdl_implementation[index])->language);
@@ -766,7 +771,7 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
 	const gx_device **list;
 	gs_lib_device_list((const gx_device * const **)&list, NULL);
         code = gs_copydevice(&pti->device, list[index],
-                             pti->memory->stable_memory);
+                             pti->device_memory->stable_memory);
     }
     return code;
 }
