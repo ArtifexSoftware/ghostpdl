@@ -477,6 +477,24 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 }
 
 /*
+ * Convert a string into cos name.
+ */
+private int
+pdf_string_to_cos_name(gx_device_pdf *pdev, const byte *str, uint len, 
+		       cos_value_t *pvalue)
+{
+    byte *chars = gs_alloc_string(pdev->pdf_memory, len + 1, 
+                                  "pdf_string_to_cos_name");
+
+    if (chars == 0)
+	return_error(gs_error_VMerror);
+    chars[0] = '/';
+    memcpy(chars + 1, str, len);
+    cos_string_value(pvalue, chars, len + 1);
+    return 0;
+}
+
+/*
  * Create a PDF color space corresponding to a PostScript color space.
  * For parameterless color spaces, set *pvalue to a (literal) string with
  * the color space name; for other color spaces, create a cos_array_t if
@@ -705,13 +723,17 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    cos_array_t *psna = 
 		cos_array_alloc(pdev, "pdf_color_space(DeviceN)");
 	    int i;
+	    byte *name_string;
+	    uint name_string_length;
 
 	    if (psna == 0)
 		return_error(gs_error_VMerror);
 	    for (i = 0; i < pcs->params.device_n.num_components; ++i) {
-		code = pdf_separation_name(pdev, &v,
-					   pcs->params.device_n.names[i]);
-		if (code < 0 ||
+	 	if ((code = pcs->params.device_n.get_colorname_string(
+		                  pcs->params.device_n.names[i], &name_string, 
+				  &name_string_length)) < 0 ||
+		    (code = pdf_string_to_cos_name(pdev, name_string, 
+				  name_string_length, &v)) < 0 ||
 		    (code = cos_array_add_no_copy(psna, &v)) < 0)
 		    return code;
 	    }
@@ -729,13 +751,20 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	/****** CURRENTLY WE ONLY HANDLE Functions ******/
 	if (pfn == 0)
 	    return_error(gs_error_rangecheck);
-	if ((code = pdf_separation_name(pdev, &v,
-					pcs->params.separation.sep_name)) < 0 ||
-	    (code = pdf_separation_color_space(pdev, pca, "/Separation", &v,
-					       (const gs_color_space *)
-					&pcs->params.separation.alt_space,
-					pfn, &pdf_color_space_names)) < 0)
-	    return code;
+	{
+	    byte *name_string;
+	    uint name_string_length;
+	    if ((code = pcs->params.separation.get_colorname_string(
+				  pcs->params.separation.sep_name, &name_string, 
+				  &name_string_length)) < 0 ||
+		(code = pdf_string_to_cos_name(pdev, name_string, 
+				      name_string_length, &v)) < 0 ||
+		(code = pdf_separation_color_space(pdev, pca, "/Separation", &v,
+						   (const gs_color_space *)
+					    &pcs->params.separation.alt_space,
+					    pfn, &pdf_color_space_names)) < 0)
+		return code;
+	}
 	break;
 
     case gs_color_space_index_Pattern:

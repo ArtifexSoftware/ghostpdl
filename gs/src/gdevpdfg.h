@@ -122,12 +122,6 @@ int pdf_prepare_image(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
 			  const gx_drawing_color *pdcolor);
 
-/* Get the (string) name of a separation, */
-/* returning a newly allocated string with a / prefixed. */
-/****** BOGUS for all but standard separations ******/
-int pdf_separation_name(gx_device_pdf *pdev, cos_value_t *pvalue,
-			gs_separation_name sname);
-
 /* ---------------- Exported by gdevpdfj.c ---------------- */
 
 /* ------ Image stream dictionaries ------ */
