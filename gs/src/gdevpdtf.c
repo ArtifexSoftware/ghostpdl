@@ -899,6 +899,9 @@ int
 pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	       pdf_resource_t **ppres, int font_index_only)
 {
+#if PDFW_DELAYED_STREAMS
+    return pdf_write_cmap(pdev, pcmap, ppres, font_index_only);
+#else
     /*
      * We don't store any of the contents of the CMap: instead, we write
      * it out immediately and just save the id.  Since some CMaps are very
@@ -911,4 +914,5 @@ pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
     if (code < 0)
 	return code;
     return pdf_write_cmap(pdev, pcmap, *ppres, font_index_only);
+#endif
 }

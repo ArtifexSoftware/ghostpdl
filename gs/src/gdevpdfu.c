@@ -301,6 +301,7 @@ none_to_stream(gx_device_pdf * pdev)
 	code = pdf_begin_encrypt(pdev, &s, pdev->contents_id);
 	if (code < 0)
 	    return code;
+	pdev->strm = s;
 	if (pdev->compression == pdf_compress_Flate) {	/* Set up the Flate filter. */
 	    const stream_template *template = &compression_filter_template;
 	    stream *es = s_alloc(pdev->pdf_memory, "PDF compression stream");
@@ -476,7 +477,11 @@ pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_typ
     /* fixme : remove *pres from resource chain. */
     pres->where_used = 0;
     pres->object->written = true;
-    if (rtype == resourceXObject || rtype == resourceCharProc) {
+    if (rtype == resourceXObject || rtype == resourceCharProc
+#if PDFW_DELAYED_STREAMS
+	 || rtype == resourceOther
+#endif
+	) {
 	int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
 
 	if (code < 0)
@@ -1238,9 +1243,16 @@ pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
     return pdf_begin_data_stream(pdev, pdw,
 				 DATA_STREAM_BINARY | DATA_STREAM_COMPRESS, 0);
 }
+
+#if PDFW_DELAYED_STREAMS
+int
+pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+		      int orig_options, gs_id object_id)
+#else
 int
 pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 		      int orig_options, gs_id object_id)
+#endif
 {
     stream *s = pdev->strm;
     int options = orig_options;
@@ -1295,6 +1307,41 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 #undef USE_FLATE
 }
 
+#if PDFW_DELAYED_STREAMS
+int
+pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+		      int options, gs_id object_id)
+{   int code;
+    /* object_id is an unused rudiment from the old code,
+       when the encription was applied when creating the stream.
+       The new code encrypts than copying stream from the temporary file. */
+    pdw->pdev = pdev;  /* temporary for backward compatibility of pdf_end_data prototype. */
+    pdw->binary.target = pdev->strm;
+    pdw->binary.dev = (gx_device_psdf *)pdev;
+    pdw->binary.strm = 0;		/* for GC in case of failure */
+    code = pdf_open_aside(pdev, resourceOther, gs_no_id, &pdw->pres, !object_id, 
+		(options & DATA_STREAM_COMPRESS ? true : false));
+    if (object_id != 0)
+	pdf_reserve_object_id(pdev, pdw->pres, object_id);
+    pdw->binary.strm = pdev->strm;
+    return code;
+}
+
+/* End a data stream. */
+int
+pdf_end_data(pdf_data_writer_t *pdw)
+{   int code;
+
+    code = pdf_close_aside(pdw->pdev);
+    if (code < 0)
+	return code;
+    code = COS_WRITE_OBJECT(pdw->pres->object, pdw->pdev);
+    if (code < 0)
+	return code;
+    return 0;
+}
+
+#else
 /* End a data stream. */
 int
 pdf_end_data(pdf_data_writer_t *pdw)
@@ -1324,6 +1371,7 @@ pdf_end_data(pdf_data_writer_t *pdw)
     pprintld1(pdev->strm, "%ld\n", length);
     return pdf_end_separate(pdev);
 }
+#endif
 
 /* Create a Function object. */
 private int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,

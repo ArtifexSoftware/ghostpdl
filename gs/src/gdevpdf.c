@@ -990,7 +990,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 	int i;
 
 	for (i = 0; i < countof(page->resource_ids); ++i)
-	    if (page->resource_ids[i]) {
+	    if (page->resource_ids[i] && pdf_resource_type_names[i]) {
 		stream_puts(s, pdf_resource_type_names[i]);
 		pprintld1(s, " %ld 0 R\n", page->resource_ids[i]);
 	    }
@@ -1100,6 +1100,12 @@ pdf_close(gx_device * dev)
     if (code >= 0)
 	code = code1;
 #endif
+#if PDFW_DELAYED_STREAMS
+    code1 = pdf_free_resource_objects(pdev, resourceOther);
+    if (code >= 0)
+	code = code1;
+#endif
+
 
     /* Create the Pages tree. */
 

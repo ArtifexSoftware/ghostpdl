@@ -28,6 +28,7 @@
 #include "gxfont42.h"
 #include "gdevpsf.h"
 #include "gdevpdfx.h"
+#include "gdevpdfo.h"
 #include "gdevpdtb.h"
 #include "gdevpdtf.h"
 
@@ -147,6 +148,8 @@ private int
 pdf_begin_fontfile(gx_device_pdf *pdev, long FontFile_id,
 		   const char *entries, long len1, pdf_data_writer_t *pdw)
 {
+    int code;
+#if !PDFW_DELAYED_STREAMS
     stream *s;
 
     pdf_open_separate(pdev, FontFile_id);
@@ -156,9 +159,25 @@ pdf_begin_fontfile(gx_device_pdf *pdev, long FontFile_id,
 	stream_puts(pdev->strm, entries);
     if (len1 >= 0)
 	pprintld1(pdev->strm, "/Length1 %ld", len1);
-    return pdf_begin_data_stream(pdev, pdw, DATA_STREAM_BINARY | DATA_STREAM_ENCRYPT |
+#endif
+    code = pdf_begin_data_stream(pdev, pdw, DATA_STREAM_BINARY | DATA_STREAM_ENCRYPT |
 				 (pdev->CompressFonts ?
 				  DATA_STREAM_COMPRESS : 0), FontFile_id);
+#if PDFW_DELAYED_STREAMS
+    code = cos_dict_put_c_key_int((cos_dict_t *)pdw->pres->object, "/Length1", len1);
+    if (code < 0)
+	return code;
+    if (entries != NULL) {
+	const char *p = strchr(entries + 1, '/');
+
+	code = cos_dict_put_string((cos_dict_t *)pdw->pres->object, 
+		    (const byte *)entries, p - entries,
+		    (const byte *)p, strlen(p));
+	if (code < 0)
+	    return code;
+    }
+#endif
+    return code;
 }
 
 /* Finish writing FontFile* data. */
@@ -421,8 +440,10 @@ pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
     default:			/* Type 1/2, CIDFontType 0 */
 	FontFile_key = "/FontFile3";
     }
+#if !PDFW_DELAYED_STREAMS
     if (pbfont->FontFile_id == 0)
 	pbfont->FontFile_id = pdf_obj_ref(pdev);
+#endif
     stream_puts(s, FontFile_key);
     pprintld1(s, " %ld 0 R", pbfont->FontFile_id);
     return 0;
@@ -495,8 +516,10 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 
     if (pbfont->written)
 	return 0;		/* already written */
+#if !PDFW_DELAYED_STREAMS
     if (pbfont->FontFile_id == 0)
 	pbfont->FontFile_id = pdf_obj_ref(pdev);
+#endif
     FontFile_id = pbfont->FontFile_id;
     if (pdev->CompatibilityLevel == 1.2 &&
 	!do_subset && !pbfont->is_standard ) {
@@ -589,6 +612,9 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 				   (gs_font_cid2 *)out_font,
 				   CID2_OPTIONS, NULL, 0, &fnstr);
     finish:
+#	if PDFW_DELAYED_STREAMS
+	    pbfont->FontFile_id = pdf_resource_id(writer.pres);
+#	endif
 	if (code < 0) {
 	    pdf_end_fontfile(pdev, &writer);
 	    return code;
@@ -637,6 +663,29 @@ pdf_write_CharSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 /*
  * Write the CIDSet object for a subsetted CIDFont.
  */
+#if PDFW_DELAYED_STREAMS
+int
+pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
+		 long *pcidset_id)
+{
+    pdf_data_writer_t writer;
+    int code;
+
+    code = pdf_begin_data_stream(pdev, &writer,
+		      DATA_STREAM_BINARY | 
+		      (pdev->CompressFonts ? DATA_STREAM_COMPRESS : 0), 
+		      gs_no_id);
+    if (code < 0)
+	return code;
+    stream_write(writer.binary.strm, pbfont->CIDSet,
+		 (pbfont->num_glyphs + 7) / 8);
+    code = pdf_end_data(&writer);
+    if (code < 0)
+	return code;
+    *pcidset_id = pdf_resource_id(writer.pres);
+    return 0;
+}
+#else
 int
 pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 		 long *pcidset_id)
@@ -661,6 +710,7 @@ pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
     pdf_end_separate(pdev);
     return code;
 }
+#endif
 
 /*
  * Check whether a base font is standard.

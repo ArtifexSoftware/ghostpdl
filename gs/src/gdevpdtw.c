@@ -468,8 +468,10 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	pdf_data_writer_t writer;
 	int i;
 
+#if !PDFW_DELAYED_STREAMS
 	pdf_open_separate(pdev, map_id);
 	stream_puts(pdev->strm, "<<");
+#endif
 	pdf_begin_data_stream(pdev, &writer,
 	    DATA_STREAM_BINARY | DATA_STREAM_COMPRESS | DATA_STREAM_ENCRYPT, map_id);
 	for (i = 0; i < count; ++i) {
@@ -594,11 +596,10 @@ pdf_close_text_document(gx_device_pdf *pdev)
 /*
  * Write the CIDSystemInfo for a CIDFont or a CMap.
  */
-int
-pdf_write_cid_system_info(gx_device_pdf *pdev,
+private int
+pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
 			  const gs_cid_system_info_t *pcidsi, gs_id object_id)
 {
-    stream *s = pdev->strm;
     byte Registry[32], Ordering[32];
 
     if (pcidsi->Registry.size > sizeof(Registry))
@@ -628,10 +629,67 @@ pdf_write_cid_system_info(gx_device_pdf *pdev,
     return 0;
 }
 
+int
+pdf_write_cid_system_info(gx_device_pdf *pdev,
+			  const gs_cid_system_info_t *pcidsi, gs_id object_id)
+{
+    return pdf_write_cid_system_info_to_stream(pdev, pdev->strm, pcidsi, object_id);
+}
+
+
 /*
  * Write a CMap resource.  We pass the CMap object as well as the resource,
  * because we write CMaps when they are created.
  */
+#if PDFW_DELAYED_STREAMS
+int
+pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
+	       pdf_resource_t **ppres /*CMap*/, int font_index_only)
+{
+    int code;
+    pdf_data_writer_t writer;
+
+    code = pdf_begin_data_stream(pdev, &writer,
+				 DATA_STREAM_NOT_BINARY | DATA_STREAM_ENCRYPT |
+				 (pdev->CompressFonts ? 
+				  DATA_STREAM_COMPRESS : 0), gs_no_id);
+    if (code < 0)
+	return code;
+    *ppres = writer.pres;
+    if (!pcmap->ToUnicode) {
+	byte buf[200];
+	cos_dict_t *pcd = (cos_dict_t *)writer.pres->object;
+	stream s;
+
+	code = cos_dict_put_c_key_int(pcd, "/WMode", pcmap->WMode);
+	if (code < 0)
+	    return code;
+	buf[0] = '/';
+	memcpy(buf + 1, pcmap->CMapName.data, pcmap->CMapName.size);
+	code = cos_dict_put_c_key_string(pcd, "/CMapName", 
+			buf, pcmap->CMapName.size + 1);
+	if (code < 0)
+	    return code;
+	swrite_string(&s, buf, sizeof(buf));
+	code = pdf_write_cid_system_info_to_stream(pdev, &s, pcmap->CIDSystemInfo, 
+		writer.pres->object->id);
+	if (code < 0)
+	    return code;
+	code = cos_dict_put_c_key_string(pcd, "/CIDSystemInfo", 
+			buf, stell(&s));
+	if (code < 0)
+	    return code;
+    }
+    code = psf_write_cmap(writer.binary.strm, pcmap,
+			  pdf_put_name_chars_proc(pdev), NULL, font_index_only);
+    if (code < 0)
+	return code;
+    code = pdf_end_data(&writer);
+    if (code < 0)
+	return code;
+    return code;
+}
+#else
 int
 pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	       pdf_resource_t *pres /*CMap*/, int font_index_only)
@@ -669,3 +727,4 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
     pres->object->written = true;
     return 0;
 }
+#endif

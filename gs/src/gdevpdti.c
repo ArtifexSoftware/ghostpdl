@@ -443,23 +443,22 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
 }
 
 /*
- * Enter the substream accumulation mode.
+ * Open a stream object in the temporary file.
  */
+
 int
-pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
+pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
 	gs_id id, pdf_resource_t **ppres, bool reserve_object_id, bool compress) 
 {
-    int sbstack_ptr = pdev->sbstack_depth;
-    stream *s, *save_strm = pdev->strm;
-    pdf_resource_t *pres;
-    pdf_data_writer_t writer;
     int code;
+    pdf_resource_t *pres;
+    stream *s, *save_strm = pdev->strm;
+    pdf_data_writer_t writer;
     static const pdf_filter_names_t fnames = {
 	PDF_FILTER_NAMES
     };
 
-    if (pdev->sbstack_depth >= pdev->sbstack_size)
-	return_error(gs_error_unregistered); /* Must not happen. */
+    pdev->streams.save_strm = pdev->strm;
     code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, id),
 		pdf_resource_type_structs[rtype], &pres, reserve_object_id ? 0 : -1);
     if (code < 0)
@@ -468,15 +467,16 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     s = cos_write_stream_alloc((cos_stream_t *)pres->object, pdev, "pdf_enter_substream");
     if (s == 0)
 	return_error(gs_error_VMerror);
-    if (pdev->sbstack[sbstack_ptr].text_state == 0) {
-	pdev->sbstack[sbstack_ptr].text_state = pdf_text_state_alloc(pdev->pdf_memory);
-	if (pdev->sbstack[sbstack_ptr].text_state == 0)
-	    return_error(gs_error_VMerror);
-    }
     pdev->strm = s;
+#if PDFW_DELAYED_STREAMS
+    code = pdf_append_data_stream_filters(pdev, &writer,
+			     DATA_STREAM_NOT_BINARY | DATA_STREAM_NOLENGTH |
+			     (compress ? DATA_STREAM_COMPRESS : 0), 0);
+#else
     code = pdf_begin_data_stream(pdev, &writer,
 			     DATA_STREAM_NOT_BINARY | DATA_STREAM_NOLENGTH |
 			     (compress ? DATA_STREAM_COMPRESS : 0), 0);
+#endif
     if (code < 0) {
 	pdev->strm = save_strm;
 	return code;
@@ -486,10 +486,60 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
 	pdev->strm = save_strm;
 	return code;
     }
-    code = pdf_save_viewer_state(pdev, NULL);
+    pdev->strm = writer.binary.strm;
+    *ppres = pres;
+    return 0;
+}
+
+/*
+ * Close a stream object in the temporary file.
+ */
+int
+pdf_close_aside(gx_device_pdf *pdev) 
+{
+    /* We should call pdf_end_data here, but we don't want to put pdf_data_writer_t
+       into pdf_substream_save stack to simplify garbager descriptors. 
+       Use a lower level functions instead that. */
+    stream *s = pdev->strm;
+    int status = s_close_filters(&s, cos_write_stream_from_pipeline(s));
+    cos_stream_t *pcs = cos_stream_from_pipeline(s);
+    int code = 0;
+
+    if (status < 0)
+	 code = gs_note_error(gs_error_ioerror);
+    pcs->is_open = false;
+    sclose(s);
+    pdev->strm = pdev->streams.save_strm;
+    return code;
+}
+
+/*
+ * Enter the substream accumulation mode.
+ */
+int
+pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
+	gs_id id, pdf_resource_t **ppres, bool reserve_object_id, bool compress) 
+{
+    int sbstack_ptr = pdev->sbstack_depth;
+    pdf_resource_t *pres;
+    stream *save_strm = pdev->strm;
+    int code;
+
+    if (pdev->sbstack_depth >= pdev->sbstack_size)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (pdev->sbstack[sbstack_ptr].text_state == 0) {
+	pdev->sbstack[sbstack_ptr].text_state = pdf_text_state_alloc(pdev->pdf_memory);
+	if (pdev->sbstack[sbstack_ptr].text_state == 0)
+	    return_error(gs_error_VMerror);
+    }
+    code = pdf_open_aside(pdev, rtype, id, &pres, reserve_object_id, compress);
     if (code < 0)
 	return code;
-    pdev->strm = writer.binary.strm;
+    code = pdf_save_viewer_state(pdev, NULL);
+    if (code < 0) {
+	pdev->strm = save_strm;
+	return code;
+    }
     pdev->sbstack[sbstack_ptr].context = pdev->context;
     pdf_text_state_copy(pdev->sbstack[sbstack_ptr].text_state, pdev->text->text_state);
     pdf_set_text_state_default(pdev->text->text_state);
@@ -524,33 +574,23 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
 int
 pdf_exit_substream(gx_device_pdf *pdev) 
 {
-    int code = pdf_open_contents(pdev, PDF_IN_STREAM), code1;
+    int code, code1;
     int sbstack_ptr;
-    stream *s = pdev->strm;
-    pdf_procset_t procsets;
 
     if (pdev->sbstack_depth <= 0)
 	return_error(gs_error_unregistered); /* Must not happen. */
+    code = pdf_open_contents(pdev, PDF_IN_STREAM);
     sbstack_ptr = pdev->sbstack_depth - 1;
     while (pdev->vgstack_depth > pdev->vgstack_bottom) {
-	code1 = pdf_restore_viewer_state(pdev, s);
+	code1 = pdf_restore_viewer_state(pdev, pdev->strm);
 	if (code >= 0)
 	    code = code1;
     }
     if (pdev->clip_path != 0)
 	gx_path_free(pdev->clip_path, "pdf_end_charproc_accum");
-    {	/* We should call pdf_end_data here, but we don't want to put pdf_data_writer_t
-	   into pdf_substream_save stack to simplify garbager descriptors. 
-	   Use a lower level functions instead that. */
-	int status = s_close_filters(&s, cos_write_stream_from_pipeline(s));
-	cos_stream_t *pcs = cos_stream_from_pipeline(s);
-
-
-	if (status < 0 && code >=0)
-	     code = gs_note_error(gs_error_ioerror);
-	pcs->is_open = false;
-    }
-    sclose(s);
+    code1 = pdf_close_aside(pdev);
+    if (code1 < 0 && code >= 0)
+	code = code1;
     pdev->context = pdev->sbstack[sbstack_ptr].context;
     pdf_text_state_copy(pdev->text->text_state, pdev->sbstack[sbstack_ptr].text_state);
     pdev->clip_path = pdev->sbstack[sbstack_ptr].clip_path;
@@ -559,7 +599,6 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->vgstack_bottom = pdev->sbstack[sbstack_ptr].vgstack_bottom;
     pdev->strm = pdev->sbstack[sbstack_ptr].strm;
     pdev->sbstack[sbstack_ptr].strm = 0;
-    procsets = pdev->procsets;
     pdev->procsets = pdev->sbstack[sbstack_ptr].procsets;
     pdev->substream_Resources = pdev->sbstack[sbstack_ptr].substream_Resources;
     pdev->sbstack[sbstack_ptr].substream_Resources = 0;
@@ -570,9 +609,9 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->sbstack[sbstack_ptr].accumulating_substream_resource = 0;
     pdev->charproc_just_accumulated = pdev->sbstack[sbstack_ptr].charproc_just_accumulated;
     pdev->sbstack_depth = sbstack_ptr;
-    code = pdf_restore_viewer_state(pdev, NULL);
-    if (code < 0)
-	return code;
+    code1 = pdf_restore_viewer_state(pdev, NULL);
+    if (code1 < 0 && code >= 0)
+	code = code1;
     return code;
 }
 
