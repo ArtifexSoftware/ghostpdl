@@ -265,8 +265,8 @@ private LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
     pcleo_glyph_list_elem *g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem, sizeof(pcleo_glyph_list_elem) + sizeof(PS_CHAR_HDR) + 2 + 2 + glyph_length + 1, "PSEO char");
     PS_CHAR_HDR *h;
     ufst_common_font_data *d = (ufst_common_font_data *)r->fc.font_hdr - 1;
-    if (g == 0) {
-        r->callback_error = e_VMerror;
+    if (g == 0 || glyph_length == (ushort)-1) {
+        r->callback_error = e_invalidfont;
         return 0;
     }
     g->chId = chId;
@@ -857,19 +857,22 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     code = CGIFchar_with_design_bbox(&r->IFS, cc, &result, (SW16)0, design_bbox, &design_escapement);
     if (code == ERR_find_cgnum) {
         /* There is no such char in the font, try the glyph 0 (notdef) : */
+        void *client_char_data = ff->client_char_data;
         UW16 c1 = 0, ssnum = r->IFS.fcCur.ssnum;
         /* hack : Changing UFST internal data - see above. */
         r->IFS.fcCur.ssnum = RAW_GLYPH;
-        return_if_error(r->callback_error);
+        r->callback_error = 0;
+        ff->client_char_data = NULL;
         CGIFchIdptr(&r->IFS, &c1, (char *)".notdef");
         code = CGIFchar_with_design_bbox(&r->IFS, c1, &result, (SW16)0, design_bbox, &design_escapement);
         r->IFS.fcCur.ssnum = ssnum;
+        ff->client_char_data = client_char_data;
     }
     r->ff = 0;
     release_glyphs(r, (ufst_common_font_data *)ff->server_font_data);
-    return_if_error(r->callback_error);
     if (code != ERR_fixed_space && code != 0)
 	return code;
+    return_if_error(r->callback_error);
     if (format == FC_BITMAP_TYPE) {
         IFBITMAP *pbm = (IFBITMAP *)result;
         set_metrics(r, metrics, design_bbox, design_escapement, pbm->escapement, pbm->du_emx, pbm->du_emy);

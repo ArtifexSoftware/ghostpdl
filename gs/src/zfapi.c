@@ -525,8 +525,8 @@ private bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
     int glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
     sfnts_reader_init(&r, pdr);
     r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
-    *offset0 = pfont42->data.glyf + (glyf_elem_size == 2 ? r.rword(&r) : r.rlong(&r)) * 2;
-    *offset1 = pfont42->data.glyf + (glyf_elem_size == 2 ? r.rword(&r) : r.rlong(&r)) * 2;
+    *offset0 = pfont42->data.glyf + (glyf_elem_size == 2 ? r.rword(&r) * 2 : r.rlong(&r));
+    *offset1 = pfont42->data.glyf + (glyf_elem_size == 2 ? r.rword(&r) * 2 : r.rlong(&r));
     return r.error;
 }
 
@@ -540,7 +540,10 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         } else {
             ref *CharStrings, char_name, *glyph;
-            char_name = *(ref *)ff->client_char_data;
+            if (ff->client_char_data != NULL)
+                char_name = *(ref *)ff->client_char_data;
+            else if (name_ref((const byte *)".notdef", 7, &char_name, -1) < 0)
+                return -1;
             if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
                 return -1;
             if (dict_find(CharStrings, &char_name, &glyph) <= 0)
