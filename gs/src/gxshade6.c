@@ -33,6 +33,7 @@
 #include "vdtrace.h"
 
 #define NEW_TENSOR_SHADING 0 /* Old code = 0, new code = 1. */
+#define NEW_TENSOR_SHADING_DEBUG (NEW_TENSOR_SHADING & 1)
 
 /* ================ Utilities ================ */
 
@@ -585,8 +586,8 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	   (code = patch_fill(&state, curve, NULL, Cp_transform)) >= 0
 	) {
 	DO_NOTHING;
-	#if NEW_TENSOR_SHADING
-	    //break; /* Temporary disabled for a debug purpose. */
+	#if 0 /*NEW_TENSOR_SHADING*/
+	    break; /* Temporary disabled for a debug purpose. */
 	#endif
     }
     return min(code, 0);
@@ -695,12 +696,19 @@ typedef struct {
     patch_color_t c[2][2];     /* [v][u] */
 } tensor_patch;
 
+#if NEW_TENSOR_SHADING_DEBUG
+static int patch_cnt = 0; /* Temporary for a debug purpose.*/
+#endif
+
 private void
 draw_patch(tensor_patch *p, bool interior, ulong rgbcolor)
 {
+
+#ifdef DEBUG
+#if 0 /* Disabled for a better view with a specific purpose. 
+	 Feel free to enable fo needed. */
     int i, step = (interior ? 1 : 3);
 
-    return;
     for (i = 0; i < 4; i += step) {
 	vd_curve(p->pole[i][0].x, p->pole[i][0].y, 
 		 p->pole[i][1].x, p->pole[i][1].y, 
@@ -713,17 +721,23 @@ draw_patch(tensor_patch *p, bool interior, ulong rgbcolor)
 		 p->pole[3][i].x, p->pole[3][i].y, 
 		 0, rgbcolor);
     }
+#endif
+#endif
 }
 
 private inline void
 draw_quadrangle(tensor_patch *p, ulong rgbcolor)
 {
-    return;
+#ifdef DEBUG
+#if 0 /* Disabled for a better view with a specific purpose. 
+	 Feel free to enable fo needed. */
     vd_quad(p->pole[0][0].x, p->pole[0][0].y, 
 	    p->pole[0][3].x, p->pole[0][3].y,
 	    p->pole[3][3].x, p->pole[3][3].y,
 	    p->pole[3][0].x, p->pole[3][0].y,
 	    0, rgbcolor);
+#endif
+#endif
 }
 
 private inline int
@@ -943,16 +957,20 @@ wedge_trap_decompose(patch_fill_state_t *pfs, gs_fixed_point p[4],
 {
     patch_color_t c;
     int code;
+    const fixed max_small_coord = (fixed)sqrt(max_fixed);
+
     if (!pfs->vectorization && !covers_pixel_centers(ybot, ytop))
 	return 0;
+    /* fixme : apply the Y subdivision after the trapezoid orientation analyzis 
+       in constant_color_wedge_trap. */
     /* Use the recursive decomposition due to is_color_monotonic
-       based on fn_is_monotonic_proc_t is_monotonic,
+       based on fn_is_monotonic_proc_t is_monotonic, 
        which applies to intervals. */
     patch_interpolate_color(&c, c0, c1, pfs, 0.5);
     if (ytop - ybot < pfs->fixed_flat) /* Prevent an infinite color decomposition. */
 	return constant_color_wedge_trap(pfs, p, ybot, ytop, &c, swap_axes);
     else if (!is_color_monotonic(pfs, c0, c1) || is_color_span_big(pfs, c0, c1) || 
-		ytop - ybot > sqrt(max_fixed)) {
+		ytop - ybot > max_small_coord) {
 	fixed y = (ybot + ytop) / 2;
     
 	code = wedge_trap_decompose(pfs, p, ybot, y, c0, &c, swap_axes);
@@ -1057,7 +1075,7 @@ y_extreme_vertice(gs_fixed_point *q, const gs_fixed_point *p, int k, int minmax)
     gs_fixed_point r = *p;
 
     for (i = 1; i < k; i++)
-	if ((p[i].y - r.y) * minmax < 0)
+	if ((p[i].y - r.y) * minmax > 0)
 	    r = p[i];
     *q = r;	
 }
@@ -1631,10 +1649,10 @@ decompose_stripe(patch_fill_state_t * pfs, const tensor_patch *p, int ku)
 }
 
 private int 
-fill_stripe(patch_fill_state_t * pfs, const tensor_patch *p, int kum)
+fill_stripe(patch_fill_state_t * pfs, const tensor_patch *p)
 {
     /* The stripe is flattened enough by V, so ignore inner poles. */
-    int ku[4], kum1, code;
+    int ku[4], kum, code;
 
     /* We would like to apply iterations for enumerating the kum curve parts,
        but the roundinmg errors would be too complicated due to
@@ -1643,15 +1661,15 @@ fill_stripe(patch_fill_state_t * pfs, const tensor_patch *p, int kum)
        We apply the recursive dichotomy, in which 
        the rounding errors do not depend on the direction. */
     ku[0] = curve_samples(p->pole[0], 1, pfs->fixed_flat);
-    ku[3] = curve_samples(p->pole[0], 1, pfs->fixed_flat);
-    kum1 = max(ku[0], ku[3]);
-    code = fill_wedges(pfs, ku[0], kum, &p->pole[0][0], 4, &p->c[0][0], &p->c[0][1]);
+    ku[3] = curve_samples(p->pole[3], 1, pfs->fixed_flat);
+    kum = max(ku[0], ku[3]);
+    code = fill_wedges(pfs, ku[0], kum, p->pole[0], 1, &p->c[0][0], &p->c[0][1]);
     if (code < 0)
 	return code;
-    code = fill_wedges(pfs, ku[3], kum, &p->pole[0][3], 4, &p->c[1][0], &p->c[1][1]);
+    code = fill_wedges(pfs, ku[3], kum, p->pole[3], 1, &p->c[1][0], &p->c[1][1]);
     if (code < 0)
 	return code;
-    return decompose_stripe(pfs, p, kum1);
+    return decompose_stripe(pfs, p, kum);
 }
 
 private inline bool
@@ -1739,15 +1757,15 @@ is_patch_narrow(const patch_fill_state_t * pfs, const tensor_patch *p)
 }
 
 private int 
-fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv, int kum)
+fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv)
 {
     if (kv <= 1 && (is_patch_narrow(pfs, p) || is_xy_monotonic_by_v(p)))
-	return fill_stripe(pfs, p, kum);
+	return fill_stripe(pfs, p);
     else {
 	tensor_patch s0, s1;
 	int code;
 
-	if (kv < 1) {
+	if (kv <= 1) {
 	    fill_wedges(pfs, 2, 1, &p->pole[0][0], 4, &p->c[0][0], &p->c[0][1]);
 	    fill_wedges(pfs, 2, 1, &p->pole[0][3], 4, &p->c[1][0], &p->c[1][1]);
 	} else {
@@ -1761,10 +1779,10 @@ fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv, int kum)
 	split_patch(pfs, &s0, &s1, p);
 	draw_patch(&s0, true, RGB(0, 128, 0));
 	draw_patch(&s1, true, RGB(0, 128, 0));
-	code = fill_patch(pfs, &s0, kv / 2, kum);
+	code = fill_patch(pfs, &s0, kv / 2);
 	if (code < 0)
 	    return code;
-	return fill_patch(pfs, &s1, kv / 2, kum);
+	return fill_patch(pfs, &s1, kv / 2);
     }
 }
 
@@ -1865,22 +1883,28 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     gs_fixed_point buf[33];
     gs_memory_t *memory = pfs->pis->memory;
 
-    vd_get_dc('s');
-    vd_set_shift(0, 0);
-    vd_set_scale(0.01);
-    vd_set_origin(0, 0);
-    vd_erase(RGB(192, 192, 192));
+#if NEW_TENSOR_SHADING_DEBUG
+    patch_cnt++;
+    /*if (patch_cnt == 3) */
+#endif
+    {
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+	vd_erase(RGB(192, 192, 192));
+    }
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
     make_tensor_patch(pfs, &p, curve, interior);
     draw_patch(&p, true, RGB(0, 0, 0));
-    kv[0] = curve_samples(p.pole[0], 1, pfs->fixed_flat);
-    kv[1] = curve_samples(p.pole[1], 1, pfs->fixed_flat);
-    kv[2] = curve_samples(p.pole[2], 1, pfs->fixed_flat);
-    kv[3] = curve_samples(p.pole[3], 1, pfs->fixed_flat);
+    kv[0] = curve_samples(&p.pole[0][0], 4, pfs->fixed_flat);
+    kv[1] = curve_samples(&p.pole[0][1], 4, pfs->fixed_flat);
+    kv[2] = curve_samples(&p.pole[0][2], 4, pfs->fixed_flat);
+    kv[3] = curve_samples(&p.pole[0][3], 4, pfs->fixed_flat);
     kvm = max(max(kv[0], kv[1]), max(kv[2], kv[3]));
-    ku[0] = curve_samples(&p.pole[0][0], 4, pfs->fixed_flat);
-    ku[3] = curve_samples(&p.pole[0][3], 4, pfs->fixed_flat);
+    ku[0] = curve_samples(p.pole[0], 1, pfs->fixed_flat);
+    ku[3] = curve_samples(p.pole[0], 1, pfs->fixed_flat);
     kum = max(ku[0], ku[3]);
     km = max(kvm, kum);
     if (km + 1 > count_of(buf)) {
@@ -1891,9 +1915,9 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	    return_error(gs_error_VMerror);
     } else
 	pfs->wedge_buf = buf;
-    code = fill_wedges(pfs, kv[0], kvm, p.pole[0], 1, &p.c[0][0], &p.c[0][1]);
+    code = fill_wedges(pfs, kv[0], kvm, &p.pole[0][0], 4, &p.c[0][0], &p.c[1][0]);
     if (code >= 0)
-	code = fill_wedges(pfs, kv[3], kvm, p.pole[3], 1, &p.c[1][0], &p.c[1][1]);
+	code = fill_wedges(pfs, kv[3], kvm, &p.pole[0][3], 4, &p.c[0][1], &p.c[1][1]);
     if (code >= 0) {
 	/* We would like to apply iterations for enumerating the kvm curve parts,
 	   but the roundinmg errors would be too complicated due to
@@ -1901,7 +1925,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   patches may use the opposite direction for same bounding curve.
 	   We apply the recursive dichotomy, in which 
 	   the rounding errors do not depend on the direction. */
-	code = fill_patch(pfs, &p, kvm, kum);
+	code = fill_patch(pfs, &p, kvm);
     }
     if (km + 1 > count_of(buf))
 	gs_free_object(memory, pfs->wedge_buf, "patch_fill");
