@@ -8,6 +8,7 @@
 #include "gx.h"
 #include "gsuid.h"
 #include "gscsel.h"
+#include "gsdevice.h"
 #include "gxdevice.h"
 #include "gscspace.h"
 #include "gxdcolor.h"
@@ -307,13 +308,16 @@ pcl_pattern_RF(
         pcl_pattern_type_t  type = ( ppixmap->pix_depth == 1
                                            ? pcl_pattern_uncolored
 				           : pcl_pattern_colored );
-        int                 code = pcl_pattern_build_pattern( &pptrn,
-                                                              ppixmap,
-                                                              type,
-                                                              300,
-                                                              300,
-                                                              pcs->memory
-                                                              );
+	/* RF appears to use the resolution of the device contrary to
+           what the pcl documentation implies */
+	gx_device *pdev = gs_currentdevice(pcs->pgs);
+        int code = pcl_pattern_build_pattern( &pptrn,
+					      ppixmap,
+					      type,
+					      pdev->HWResolution[0],
+					      pdev->HWResolution[1],
+					      pcs->memory
+					      );
 
         if (code < 0)
             return code;
