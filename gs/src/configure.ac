@@ -185,6 +185,14 @@ else
 fi
 AC_SUBST(X11DEVS)
 
+dnl do we compile the postscript initialization files into Ghostscript?
+COMPILE_INITS="0"
+AC_ARG_ENABLE(compile-inits, AC_HELP_STRING([--enable-compile-inits],
+       [compile initialization files into Ghostscript]),[
+               if test x$enable_compile_inits = xyes; then
+                       COMPILE_INITS="1"
+               fi])
+AC_SUBST(COMPILE_INITS)
 
 dnl --------------------------------------------------
 dnl Check for library functions
