@@ -993,7 +993,7 @@ explained below.
 a record is a simple pair of names :
 
 <blockquote><b><tt>
-/Substituted /Original
+/Substituted /Original ;
 </tt></b></blockquote>
 where <b><tt>Substituted</tt></b> is a name of CID font resource being used
 by a document, and <b><tt>Original</tt></b> is a name of an available
@@ -1001,13 +1001,18 @@ CID font resource. Please pay attention that both them must be
 designed for same character collection. In other words, you
 cannot substitute Japanese CID font resource to Korean CID font resource,
 etc. Also please pay attention that CMap resource names must not appear in
-<b><tt>gs/lib/cidfmap</tt></b>.
+<b><tt>gs/lib/cidfmap</tt></b>. At last please note the ending semicolon and 
+a space before it.
 
 <p>
 
-For substituting a True Type font to a CID font one should use format explained
-in the table below.
+For substituting a True Type font to a CID font one should use format like this :
 
+<blockquote><b><tt>
+/Substituted << keys&values >> ;
+</tt></b></blockquote>
+
+Where <b><tt>keys&values</tt></b> are explained in the table below.
 
 <table cellpadding=0 cellspacing=10>
 
@@ -1038,8 +1043,16 @@ The True Type font must contain enough charasters to cover an
 Adobe character collection, which is specified in <b><tt>Ordering</tt></b>.
 
 <p>
-See a comment in <b><tt>gs/lib/cidfmap</tt></b> for examples of records.
+Examples :
 
+
+<blockquote><b><tt>
+/Ryumin-Medium  /ShinGo-Bold ;
+</b></tt></blockquote>
+<blockquote><b><tt>
+/Ryumin-Light   << /FileType /TrueType /Path (F:/WIN2000/Fonts/ARIALUNI.TTF) /SubfontID 3 /CSI [(Japan1) 2] >> ;
+</b></tt></blockquote>
+<p>
 
 <hr>
 
