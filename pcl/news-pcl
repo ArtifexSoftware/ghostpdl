@@ -6,6 +6,33 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
+Version 0.28 (6/20/97)
+======================
+
+This is just a checkpoint for copying onto LPD's laptop.
+
+(LPD) Fixes bugs:
+	- The stick font didn't reset its parameters to the requested ones.
+(pgstate.h, pglabel.c)
+	- Proportional spacing with the stick font didn't work.  (pgstate.h,
+pglabel.c)
+	- The character cell width wasn't computed correctly.  (pglabel.c)
+	- The LB command set the carriage return point at the beginning,
+even though it shouldn't.  (pglabel.c)
+	- The GL/2 commands that should set the carriage return point
+didn't.  (pgchar.c, pgvector.c)
+
+(LPD) Other changes:
+	- Simplifies PE by using the new add_point_to_path interface.
+(pgvector.c)
+	- Replaces the stick font tables and algorithms with ones provided
+by a third-party supplier that are much more compact.  (pgfont.h, pgfont.c,
+pglabel.c)
+	- Adds an explicit move/draw parameter to hpgl_add_arc_to_path, to
+allow it to be used for character drawing.  (pgdraw.h, pgdraw.c)
+	- Removes some unnecessary coordinate transformations in
+hpgl_set_ctm.  (pgdraw.c)
+
 Version 0.27 (6/9/97)
 =====================
 

@@ -355,7 +355,7 @@ $(PCLOBJ)pcl5c.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5C_OPS) $(PCLOBJ)pcl5.dev $(PCL
 ################ HP-GL/2 ################
 
 pgdraw_h=$(PCLSRC)pgdraw.h
-pgfont_h=$(PCLSRC)pgfont.h $(stdpre_h) $(gstypes_h)
+pgfont_h=$(PCLSRC)pgfont.h
 pggeom_h=$(PCLSRC)pggeom.h $(math__h) $(gstypes_h)
 pginit_h=$(PCLSRC)pginit.h
 pgmisc_h=$(PCLSRC)pgmisc.h
@@ -371,9 +371,6 @@ $(PCLOBJ)pgdraw.$(OBJ): $(PCLSRC)pgdraw.c $(math__h) $(stdio__h)\
  $(pcdraw_h)\
  $(pgdraw_h) $(pggeom_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)pgdraw.c $(PCLO_)pgdraw.$(OBJ)
-
-$(PCLOBJ)pgfont.$(OBJ): $(PCLSRC)pgfont.c $(pgfont_h)
-	$(PCLCCC) $(PCLSRC)pgfont.c $(PCLO_)pgfont.$(OBJ)
 
 $(PCLOBJ)pggeom.$(OBJ): $(PCLSRC)pggeom.c $(math__h) $(stdio__h)\
  $(pggeom_h)
@@ -442,14 +439,20 @@ $(PCLOBJ)pgchar.$(OBJ): $(PCLSRC)pgchar.c $(math__h) $(stdio__h)\
 	$(PCLCCC) $(PCLSRC)pgchar.c $(PCLO_)pgchar.$(OBJ)
 
 $(PCLOBJ)pglabel.$(OBJ): $(PCLSRC)pglabel.c $(ctype__h) $(math__h) $(stdio__h)\
- $(gdebug_h)\
+ $(gdebug_h) $(gscoord_h) $(gsline_h)\
  $(pcfsel_h)\
  $(pgdraw_h) $(pgfont_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)pglabel.c $(PCLO_)pglabel.$(OBJ)
 
+$(PCLOBJ)pgfont.$(OBJ): $(PCLSRC)pgfont.c $(math__h)\
+ $(gspath_h)\
+ $(pgdraw_h) $(pgfont_h) $(pgmand_h) $(pgmisc_h)
+	$(PCLCCC) $(PCLSRC)pgfont.c $(PCLO_)pgfont.$(OBJ)
+
 HPGL2_OPS1=$(PCLOBJ)pgframe.$(OBJ) $(PCLOBJ)pgconfig.$(OBJ) $(PCLOBJ)pgvector.$(OBJ)
-HPGL2_OPS2=$(PCLOBJ)pgpoly.$(OBJ) $(PCLOBJ)pglfill.$(OBJ) $(PCLOBJ)pgchar.$(OBJ) $(PCLOBJ)pglabel.$(OBJ)
-HPGL2_OPS=$(HPGL2_OPS1) $(HPGL2_OPS2)
+HPGL2_OPS2=$(PCLOBJ)pgpoly.$(OBJ) $(PCLOBJ)pglfill.$(OBJ) $(PCLOBJ)pgchar.$(OBJ)
+HPGL2_OPS3=$(PCLOBJ)pglabel.$(OBJ) $(PCLOBJ)pgfont.$(OBJ)
+HPGL2_OPS=$(HPGL2_OPS1) $(HPGL2_OPS2) $(HPGL2_OPS3)
 
 $(PCLOBJ)hpgl2.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL_COMMON) $(HPGL2_OTHER) $(HPGL2_OPS)
 	$(SETMOD) $(PCLOBJ)hpgl2 $(PCL_COMMON)
@@ -457,6 +460,7 @@ $(PCLOBJ)hpgl2.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL_COMMON) $(HPGL2_OTHER) $(HPGL2
 	$(ADDMOD) $(PCLOBJ)hpgl2 $(HPGL2_OTHER2)
 	$(ADDMOD) $(PCLOBJ)hpgl2 $(HPGL2_OPS1)
 	$(ADDMOD) $(PCLOBJ)hpgl2 $(HPGL2_OPS2)
+	$(ADDMOD) $(PCLOBJ)hpgl2 $(HPGL2_OPS3)
 	$(ADDMOD) $(PCLOBJ)hpgl2 -init pginit pgframe pgconfig pgvector
 	$(ADDMOD) $(PCLOBJ)hpgl2 -init pgpoly pglfill pgchar pglabel
 

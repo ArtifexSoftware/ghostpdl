@@ -50,8 +50,10 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	hpgl_call(hpgl_add_arc_to_path(pgls, x_center, y_center, 
 				       radius, start_angle, sweep, 
 				       (sweep < 0.0 ) ?
-				       -chord_angle : chord_angle, false));
+				       -chord_angle : chord_angle, false,
+				       pgls->g.move_or_draw != 0));
 	
+	pgls->g.carriage_return_pos = pgls->g.pos;
 	return 0;
 }
 
@@ -96,7 +98,8 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 					 (y_start + y_inter) / 2.0,
 					 (hypot((x_inter - x_start),
 						(y_inter - y_start)) / 2.0),
-					 0.0, 360.0, chord_angle, false));
+					 0.0, 360.0, chord_angle, false,
+					 pgls->g.move_or_draw != 0));
 
 	else if ( hpgl_3_colinear_points(x_start, y_start, x_inter, 
 					 y_inter, x_end, y_end) ) 
@@ -165,6 +168,8 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	    hpgl_args_add_real(&args, chord_angle);
 	    hpgl_arc(&args, pgls, false);
 	  }
+
+	pgls->g.carriage_return_pos = pgls->g.pos;
 	return 0;
 }
 
@@ -187,7 +192,8 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	    switch ( i )
 	      {
 	      case 0:		/* done */
-		return e_Unimplemented;
+		pgls->g.carriage_return_pos = pgls->g.pos;
+		return 0;
 	      case 6:
 		break;
 	      default:
@@ -255,6 +261,7 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	      }
 	  }
 
+	pgls->g.carriage_return_pos = pgls->g.pos;
 	return 0;
 }
 
@@ -321,8 +328,8 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	pgls->g.move_or_draw = hpgl_plot_draw;
 
 	/* draw the arc/circle */
-	hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-			       radius, 0.0, 360.0, chord, true);
+	hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
+				       radius, 0.0, 360.0, chord, true, true));
 	/* restore pen state */
 
 	/* It appears from experiment that a CI in polygon mode leaves
@@ -389,6 +396,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  switch ( ch & 127 /* per spec */ )
 	    {
 	    case ';':
+	      pgls->g.carriage_return_pos = pgls->g.pos;
 	      return 0;
 	    case ':':
 	      if_debug0('I', "\n  :");
@@ -444,6 +452,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		 */
 		if ( ch == ESC ) /* (might be ESC+128) */
 		  { pargs->source.ptr = p - 1; /* rescan ESC */
+		    pgls->g.carriage_return_pos = pgls->g.pos;
 		    return 0;
 		  }
 		/* falls through */
@@ -453,26 +462,17 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      pargs->source.ptr = p - 1;
 	      { 
 		int32 xy[2];
+		hpgl_plot_function_t func;
+
 		if ( !pe_args(pargs, xy, 2) )
 		  break;
-		{ 
-		  hpgl_args_t args;
-		
-		  /* set up the up and down state */
-		  hpgl_args_setup(&args);
-		  if ( pargs->phase & pe_pen_up ) 
-		    hpgl_call(hpgl_PU(&args, pgls));
-		  else
-		    hpgl_call(hpgl_PD(&args, pgls));
-		
-		  hpgl_args_set_real2(&args, (floatp)xy[0], (floatp)xy[1]);
-
-		  /* arbitrarily use PA or PR */
-		  if ( pargs->phase & pe_absolute )
-		    hpgl_call(hpgl_PA(&args, pgls));
-		  else
-		    hpgl_call(hpgl_PR(&args, pgls));
-		}
+		func =
+		  (pargs->phase & pe_pen_up ? hpgl_plot_move :
+		   hpgl_plot_draw) |
+		  (pargs->phase & pe_absolute ? hpgl_plot_absolute :
+		   hpgl_plot_relative);
+		hpgl_call(hpgl_add_point_to_path(pgls, (floatp)xy[0],
+						 (floatp)xy[1], func));
 	      }
 	      pargs->phase &= ~(pe_pen_up | pe_absolute);
 	      p = pargs->source.ptr;

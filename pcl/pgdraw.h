@@ -20,10 +20,11 @@ int hpgl_add_point_to_path(P4(hpgl_state_t *pgls, floatp x, floatp y,
 
 /* puts an arc into the current path.  start moveto indicates that we
    use moveto to go from the arc center to arc circumference. */
-int hpgl_add_arc_to_path(P8(hpgl_state_t *pgls, floatp center_x, 
-			  floatp center_y, floatp radius, 
-			  floatp start_angle, floatp sweep_angle, 
-			  floatp chord_angle, bool start_moveto));
+int hpgl_add_arc_to_path(P9(hpgl_state_t *pgls, floatp center_x, 
+			    floatp center_y, floatp radius, 
+			    floatp start_angle, floatp sweep_angle, 
+			    floatp chord_angle, bool start_moveto,
+			    bool draw));
 
 /* put bezier into the current path */
 int hpgl_add_bezier_to_path(P9(hpgl_state_t *pgls, floatp x1, 

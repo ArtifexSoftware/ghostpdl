@@ -15,12 +15,10 @@
 #include "pggeom.h"
 #include "pgmisc.h"
 #include "pcfsel.h"
+#include "gscoord.h"
 #include "gsline.h"
 
-/* Define a bogus pl_font_t for the stick font. */
-/* Eventually this will be a real one.... */
 #define STICK_FONT_TYPEFACE 48
-private pl_font_t stick_font;
 
 /* ------ Font selection ------- */
 
@@ -30,15 +28,32 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 {	pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
 
+	{ int code = pcl_reselect_font(pfs, pgls /****** NOTA BENE ******/);
+	  if ( code < 0 )
+	    return code;
+	}
+	/*
+	 ****** HACK: ignore the results of pcl_reselect font;
+	 ****** always use the stick font.
+	 */
+#if 0
 	if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
+#endif
 	  { /* Select the stick font. */
-	    pfs->font = &stick_font;
+	    pl_font_t *font = &pgls->g.stick_font[pgls->g.font_selected];
+
+	    /*
+	     * The stick font is protean: set its proportional spacing,
+	     * style, and stroke weight parameters to the requested ones.
+	     * We could fill in some of the other characteristics earlier,
+	     * but it's simpler to do it here.
+	     */
+	    font->scaling_technology = plfst_TrueType;	/****** WRONG ******/
+	    font->font_type = plft_7bit_printable;	/****** WRONG ******/
+	    font->params = pfs->params;
+	    font->params.typeface_family = STICK_FONT_TYPEFACE;
+	    pfs->font = font;
 	    pfs->map = 0;	/****** WRONG ******/
-	  }
-	else
-	  { int code = pcl_reselect_font(pfs, pgls /****** NOTA BENE ******/);
-	    if ( code < 0 )
-	      return code;
 	  }
 	pgls->g.font = pfs->font;
 	pgls->g.map = pfs->map;
@@ -48,19 +63,19 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 /* ------ Position management ------ */
 
 private int
-hpgl_get_current_cell_width(const hpgl_state_t *pgls, hpgl_real_t *width)
+hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 {
 	const pcl_font_selection_t *pfs = 
 	  &pgls->g.font_selection[pgls->g.font_selected];
+	floatp wtemp;
 
-	/*
-	 * The value 0.6 in the next statement seems adhoc, but it
-	 * produces exactly the right output.
-	 */
 	*width =
 	  (pfs->params.proportional_spacing ?
-	   0.6 * points_2_plu(pfs->params.height_4ths / 4.0 /****** WRONG ******/) :
-	   1.5 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0));
+	   /****** HACK: only works for stick font ******/
+	   (ch < 0x20 || ch > 0x7e || ch == ' ' ? 0.667 :
+	    (hpgl_stick_char_width(ch, &wtemp), wtemp))
+	     * points_2_plu(pfs->params.height_4ths / 4.0) :
+	   inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0));
 	return 0;
 }
 private int
@@ -71,8 +86,8 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height)
 
 	*height =
 	  (pfs->params.proportional_spacing ?
-	   1.33 * points_2_plu(pfs->params.height_4ths /4.0) :
-	   2.0 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0)
+	   points_2_plu(pfs->params.height_4ths /4.0) :
+	   1.667 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0)
 	     /****** WRONG ******/);
 	return 0;
 }
@@ -83,8 +98,6 @@ private int
 hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
   hpgl_real_t lines, bool do_CR)
 {
-	hpgl_pen_state_t saved_pen_state;	
-
 	/* HAS ***HACK **** HACK **** HACK */
 	/* save the current render mode and temporarily set it to
            vector mode. This allows the HPGL/2 graphics not to apply
@@ -95,19 +108,12 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 
 	pgls->g.current_render_mode = hpgl_rm_vector;
 
-	/* CP does its work with the pen up -- we restore the current
-           state at the end of the routine.  We will take advantage of
-           PR so save the current relative state as well */
-	hpgl_save_pen_state(pgls,  
-			    &saved_pen_state, 
-			    hpgl_pen_down | hpgl_pen_relative);
-
 	{
 	  hpgl_real_t width, height;
 	  gs_point pt, relpos;
 
 	  /* get the character cell height and width */
-	  hpgl_call(hpgl_get_current_cell_width(pgls, &width));
+	  hpgl_call(hpgl_get_char_width(pgls, ' ', &width));
 	  hpgl_call(hpgl_get_current_cell_height(pgls, &height));
 	  
 	  /* get the current position */
@@ -116,38 +122,32 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 	  /* calculate the next label position in relative coordinates.  If
              CR then the X position is simply the x coordinate of the
              current carriage return point.  We use relative coordinates for
-             the movement in either case. HAS the extra space calculations
-             are incorrect */
+             the movement in either case. */
 	  if (do_CR)
 	    relpos.x = -(pt.x - pgls->g.carriage_return_pos.x);
 	  else
-	    relpos.x = ((spaces + pgls->g.character.extra_space.x) * width);
+	    relpos.x = ((width + pgls->g.character.extra_space.x) * spaces);
 
 	  /* the y coordinate is independant of CR/LF status */
-	  relpos.y = -((lines + pgls->g.character.extra_space.y) * height);
+	  relpos.y = -((height + pgls->g.character.extra_space.y) * lines);
 
 	  /* a relative move to the new position */
 	  hpgl_call(hpgl_add_point_to_path(pgls, relpos.x, relpos.y,
 					   hpgl_plot_move_relative));
 
-	  /* update the carriage return point - the Y is the Y of
-             the current position and the X is the X of the current
-             carriage return point position */
-	  hpgl_call(hpgl_get_current_position(pgls, &pt));
-	  pgls->g.carriage_return_pos.y = pt.y;
-
+	  if ( lines != 0 )
+	    { /* update the Y position of the carriage return point */
+	      hpgl_call(hpgl_get_current_position(pgls, &pt));
+	      pgls->g.carriage_return_pos.y = pt.y;
+	    }
 	}
 
-	/* put the pen back the way it was, of course we do not want
-           to restore the pen's position.  And restore the render mode. */
-	hpgl_restore_pen_state(pgls, 
-			       &saved_pen_state, 
-			       hpgl_pen_down | hpgl_pen_relative);
 	pgls->g.current_render_mode = rm;
 	return 0;
 }
 
-/* CP [spaces,lines]; HAS -- an arcane implementation, but it is late */
+/* CP [spaces,lines]; */
+/* CP [;] */
  int
 hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
@@ -231,7 +231,7 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 
 /* build the path and render it */
  private int
-hpgl_print_char(hpgl_state_t *pgls, const hpgl_character_point *character)
+hpgl_print_char(hpgl_state_t *pgls, uint ch)
 {
 	hpgl_rendering_mode_t rm = pgls->g.current_render_mode;
 	/*
@@ -247,7 +247,6 @@ hpgl_print_char(hpgl_state_t *pgls, const hpgl_character_point *character)
 	  &pgls->g.font_selection[pgls->g.font_selected];
 	double scale = points_2_plu(pfs->params.height_4ths / 4.0) * 2/3;
 	gs_point pos;
-	hpgl_plot_function_t func;
 
 	/* Set up the graphics state. */
 	pgls->g.current_render_mode = hpgl_rm_character;
@@ -261,38 +260,21 @@ hpgl_print_char(hpgl_state_t *pgls, const hpgl_character_point *character)
 	 * All character data is relative, but we have to start at
 	 * the right place.
 	 */
-	/* Is this actually necessary? */
 	hpgl_call(hpgl_add_point_to_path(pgls, pos.x, pos.y,
 					 hpgl_plot_move_absolute));
-	while (character->operation != hpgl_char_end)
-	  {
-	    floatp px, py;
+	/*
+	 * HACK: we know that the drawing machinery only sets the CTM
+	 * once, at the beginning of the path.  We now impose the scale
+	 * on the CTM so that we can add the symbol outline based on
+	 * a 1x1-unit cell.
+	 */
+	{ gs_matrix save_ctm;
 
-	    /* all character operations supply numeric arguments except: */
-	    if ( character->operation != hpgl_char_pen_down_no_args )
-	      px = character->vertex.x * scale,
-		py = character->vertex.y * scale;
-	    switch (character->operation)
-	      {
-	      case hpgl_char_pen_up : 
-		func = hpgl_plot_move_relative;
-		hpgl_call(hpgl_add_point_to_path(pgls, px, py, func));
-		break;
-	      case hpgl_char_pen_down_no_args :
-		func = hpgl_plot_draw_relative;
-		break;
-	      case hpgl_char_pen_down : 
-		func = hpgl_plot_draw_relative;
-		/* falls through */
-	      case hpgl_char_pen_relative :
-		hpgl_call(hpgl_add_point_to_path(pgls, px, py, func));
-		break;
-	      case hpgl_char_arc_relative : /* HAS not yet supported */;
-	      default :
-		dprintf("unsupported character operation\n");
-	      }
-	    character++;
-	  }
+	  gs_currentmatrix(pgls->pgs, &save_ctm);
+	  gs_scale(pgls->pgs, scale, scale);
+	  hpgl_stick_append_char(pgls, ch);
+	  gs_setmatrix(pgls->pgs, &save_ctm);
+	}
 	/*
 	 * Since we're using the stroked font, patch the pen width
 	 * to reflect the stroke weight.
@@ -311,6 +293,15 @@ hpgl_print_char(hpgl_state_t *pgls, const hpgl_character_point *character)
 	  pgls->g.pen.width_relative = save_relative;
 	}
 	pgls->g.current_render_mode = rm;
+
+	/* Advance by the character escapement. */
+	{ hpgl_real_t dx;
+
+	  hpgl_call(hpgl_get_char_width(pgls, ch, &dx));
+	  hpgl_call(hpgl_add_point_to_path(pgls, pos.x + dx, pos.y,
+					   hpgl_plot_move_absolute));
+	}
+
 	return 0;
 }
 
@@ -320,7 +311,7 @@ hpgl_print_char(hpgl_state_t *pgls, const hpgl_character_point *character)
 hpgl_get_character_origin_offset(const hpgl_state_t *pgls,
   hpgl_real_t label_length, gs_point *offset)
 {
-	hpgl_real_t width, height, offset_magnitude;
+	hpgl_real_t height;
 
 	/* HAS need to account for vertical labels correctly.  The
            label length is always parallel to the x-axis wrt LO.  */
@@ -330,7 +321,6 @@ hpgl_get_character_origin_offset(const hpgl_state_t *pgls,
 	
 	/* HAS just height is used as we do not yet support vertical
            labels correctly */
-  	hpgl_call(hpgl_get_current_cell_width(pgls, &width));
 	hpgl_call(hpgl_get_current_cell_height(pgls, &height));
 
 	/* HAS no support for label 21 yet */
@@ -383,7 +373,8 @@ hpgl_get_character_origin_offset(const hpgl_state_t *pgls,
 	
 	if ( pgls->g.label.origin > 10 )
 	  {
-	    offset_magnitude = 0.33 * width;
+	    hpgl_real_t offset_magnitude = 0.33 * height;
+
 	    switch (pgls->g.label.origin)
 	      {
 	      case 11:
@@ -433,29 +424,31 @@ hpgl_get_character_origin_offset(const hpgl_state_t *pgls,
 hpgl_process_buffer(hpgl_state_t *pgls)
 {
 	gs_point offset;
+	hpgl_real_t label_length = 0.0;
 
-	/* Compute the label length.  (Future performance improvement: */
-	/* only do this if we need it to compute the offset.) */
+	/* Compute the label length if the label origin needs it. */
+	if ( pgls->g.label.origin % 10 >= 4 )
 	{
-	  hpgl_real_t label_length = 0.0;
-	  hpgl_real_t height, width;
+	  hpgl_real_t width = 0.0;
 	  int save_index = pgls->g.font_selected;
 	  int i = 0;
 
-	  /* get the character cell height and width */
-cell:	  hpgl_call(hpgl_get_current_cell_width(pgls, &width));
-	  hpgl_call(hpgl_get_current_cell_height(pgls, &height));
 	  while ( i < pgls->g.label.char_count )
 	    {
 	      /* HAS missing logic here. */
 	      byte ch = pgls->g.label.buffer[i++];
 
-	      if ( pgls->g.transparent_data )
-		label_length += width;
+	      if ( ch >= 0x20 || pgls->g.transparent_data )
+		{
+		  hpgl_call(hpgl_get_char_width(pgls, ch, &width));
+		  label_length += width;
+		}
 	      else
 		switch (ch) 
 		{
 		case BS :
+		  if ( width == 0.0 ) /* BS as first char of string */
+		    hpgl_call(hpgl_get_char_width(pgls, ' ', &width));
 		  label_length -= width;
 		  if ( label_length < 0.0 ) 
 		    label_length = 0.0;
@@ -469,14 +462,17 @@ cell:	  hpgl_call(hpgl_get_current_cell_width(pgls, &width));
 		case HT :
 		  break;
 		case SI :
+		  if ( pgls->g.font_selected == 0 )
+		    break;
 		  pgls->g.font_selected = 0;
 shift:		  hpgl_call(hpgl_recompute_font(pgls));
-		  goto cell;
+		  break;
 		case SO :
+		  if ( pgls->g.font_selected == 1 )
+		    break;
 		  pgls->g.font_selected = 1;
 		  goto shift;
 		default :
-		  label_length += width;
 		  break;
 		}
 	    }
@@ -485,9 +481,8 @@ shift:		  hpgl_call(hpgl_recompute_font(pgls));
 	      pgls->g.font_selected = save_index;
 	      hpgl_call(hpgl_recompute_font(pgls));
 	    }
-	  hpgl_call(hpgl_get_character_origin_offset(pgls, label_length, &offset));
 	}
-
+	hpgl_call(hpgl_get_character_origin_offset(pgls, label_length, &offset));
 	hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
 					 hpgl_plot_move_relative));
 
@@ -495,7 +490,6 @@ shift:		  hpgl_call(hpgl_recompute_font(pgls));
 	  int i;
 	  for ( i = 0; i < pgls->g.label.char_count; ++i )
 	    { byte ch = pgls->g.label.buffer[i];
-	      hpgl_pen_state_t saved_pen_state;
 
 	      /* we need to keep this pen position, as updating the label
 		 origin is relative to the current origin vs. the pen's
@@ -525,12 +519,18 @@ shift:		  hpgl_call(hpgl_recompute_font(pgls));
 		      spaces = 5, lines = 0;
 		      break;
 		    case SI :
-		      pgls->g.font_selected = 0;
-		      hpgl_call(hpgl_recompute_font(pgls));
+		      if ( pgls->g.font_selected != 0 )
+			{
+			  pgls->g.font_selected = 0;
+			  hpgl_call(hpgl_recompute_font(pgls));
+			}
 		      continue;
 		    case SO :
-		      pgls->g.font_selected = 1;
-		      hpgl_call(hpgl_recompute_font(pgls));
+		      if ( pgls->g.font_selected != 1 )
+			{
+			  pgls->g.font_selected = 1;
+			  hpgl_call(hpgl_recompute_font(pgls));
+			}
 		      continue;
 		    default :
 		      goto print;
@@ -538,12 +538,7 @@ shift:		  hpgl_call(hpgl_recompute_font(pgls));
 		  hpgl_move_cursor_by_characters(pgls, spaces, lines, do_CR);
 		  continue;
 		}
-print:	      hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all); 
-	      if ( !isprint(ch) )
-		ch = ' ';	/* ascii is all we have right now */
-	      hpgl_call(hpgl_print_char(pgls, hpgl_ascii_char_set[ch - 0x20]));
-	      hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all); 
-	      hpgl_call(hpgl_move_cursor_by_characters(pgls, 1, 0, false));
+print:	      hpgl_call(hpgl_print_char(pgls, ch));
 	    }
 	}
 
@@ -560,17 +555,12 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( pargs->phase == 0 )
 	  {
-	    gs_point pt;
-
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	    /* set the carriage return point and initialize the character
-	       buffer first time only */
-	    hpgl_call(hpgl_get_current_position(pgls, &pt));
-	    pgls->g.carriage_return_pos = pt;
+	    /* Make sure the font is current. */
+	    if ( pgls->g.font == 0 )
+	      hpgl_call(hpgl_recompute_font(pgls));
+	    /* initialize the character buffer first time only */
 	    hpgl_call(hpgl_init_label_buffer(pgls));
-	    /* Remember the pen state so we can restore it at the end. */
-	    hpgl_save_pen_state(pgls, &pgls->g.label.pen_state,
-				hpgl_pen_relative | hpgl_pen_down);
 	    pargs->phase = 1;
 	  }
 
@@ -587,8 +577,6 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    hpgl_call(hpgl_process_buffer(pgls));
 		    hpgl_call(hpgl_destroy_label_buffer(pgls));
 		    pargs->source.ptr = p;
-		    hpgl_restore_pen_state(pgls, &pgls->g.label.pen_state,
-					   hpgl_pen_relative | hpgl_pen_down);
 		    return 0;
 		  }
 		/*
@@ -625,16 +613,6 @@ pglabel_do_init(gs_memory_t *mem)
 	  /* LB also has special argument parsing. */
 	  HPGL_COMMAND('L', 'B', hpgl_LB, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
 	END_HPGL_COMMANDS
-	  /*
-	   * Fill in some of the the stick font characteristics.
-	   * Many more will be required later....
-	   */
-	stick_font.scaling_technology = plfst_TrueType;	/****** WRONG ******/
-	stick_font.font_type = plft_7bit_printable;	/****** WRONG ******/
-	stick_font.params.proportional_spacing = false;
-	/* The basic cell size for the stick font is 32 plu. */
-	pl_fp_set_pitch_cp(&stick_font.params, plu_2_inches(32) * 7200);
-	stick_font.params.typeface_family = STICK_FONT_TYPEFACE;
 	return 0;
 }
 const pcl_init_t pglabel_init = {

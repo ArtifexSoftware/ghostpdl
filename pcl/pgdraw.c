@@ -227,55 +227,56 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
 {
 	pcl_set_ctm(pgls, false);
-	/* translate the coordinate system to the anchor point */
+	/* translate the coordinate system to the anchor point,
+	   and move the origin to the bottom to match the GL/2
+	   coordinate system. */
 	hpgl_call(gs_translate(pgls->pgs, 
 			       pgls->g.picture_frame.anchor_point.x,
-			       pgls->g.picture_frame.anchor_point.y));
-	/* move the origin */
-	hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
+			       pgls->g.picture_frame.anchor_point.y +
+			       pgls->g.picture_frame_height));
 
-	hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
 	  /* account for rotated coordinate system */
 	switch (pgls->g.rotation)
 	  {
 	  case 0 :
-	    hpgl_call(gs_translate(pgls->pgs, 
-				   0, 
-				   0));
 	    break;
 	  case 90 : 
+	    hpgl_call(gs_rotate(pgls->pgs, 90.0));
 	    hpgl_call(gs_translate(pgls->pgs, 
 				   0,
 				   pgls->g.picture_frame_height));
 
 	    break;
 	  case 180 :
+	    hpgl_call(gs_rotate(pgls->pgs, 180.0));
 	    hpgl_call(gs_translate(pgls->pgs, 
 				   (pgls->g.picture_frame_width), 
 				   (pgls->g.picture_frame_height)));
 	    break;
 	  case 270 :
+	    hpgl_call(gs_rotate(pgls->pgs, 270.0));
 	    hpgl_call(gs_translate(pgls->pgs, 
 				   (pgls->g.picture_frame_width), 
 				   0));
 	    break;
 	  }
-	/* scale to plotter units and a flip for y */
-	hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
-	/* set up scaling wrt plot size and picture frame size.  HAS
+	/* scale to plotter units and a flip for y, and set up
+	   set up scaling wrt plot size and picture frame size.  HAS
 	   we still have the line width issue when scaling is
-	   assymetric !!  */
+	   asymmetric !!  */
 	/* if any of these are zero something is wrong */
-        if ( (pgls->g.picture_frame_height == 0) ||
+	if ( (pgls->g.picture_frame_height == 0) ||
 	     (pgls->g.picture_frame_width == 0) ||
 	     (pgls->g.plot_width == 0) ||
 	     (pgls->g.plot_height == 0) )
 	  return 1;
-	hpgl_call(gs_scale(pgls->pgs, 
-			   ((hpgl_real_t)pgls->g.picture_frame_height /
-			    (hpgl_real_t)pgls->g.plot_height),
-			   ((hpgl_real_t)pgls->g.picture_frame_width /
-			    (hpgl_real_t)pgls->g.plot_width)));
+	hpgl_call(gs_scale(pgls->pgs,
+			   (7200.0/1016.0) *
+			     pgls->g.picture_frame_height /
+			     pgls->g.plot_height,
+			   (-7200.0/1016.0) *
+			     pgls->g.picture_frame_width /
+			     pgls->g.plot_width));
 	return 0;
 }
 
@@ -443,13 +444,17 @@ start:	gs_sincos_degrees(direction, &sincos);
 	    /*
 	     * If the slope is negative, we have to travel along the right
 	     * edge of the box rather than the left edge.  Fortuitously,
-	     * the X loop left everything set up exactly right for this case.
+	     * the X loop left everything set up almost exactly right for
+	     * this case.
 	     */
 	    if ( cos_dir >= 0 )
 	      { startx = bbox.p.x; starty = bbox.p.y;
 	        endx = (diag_mag * cos_dir) + startx;
 		endy = (diag_mag * sin_dir) + starty;
 	      }
+	    else
+	      starty -= y_fill_increment,
+		endy -= y_fill_increment;
 	    while ( endy += y_fill_increment,
 		    (starty += y_fill_increment) <= bbox.q.y
 		  )
@@ -635,8 +640,7 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 	{ int code = (*gs_procs[func])(pgls->pgs, x, y);
 
 	  if ( code < 0 )
-	    { hpgl_call_note_error(code);
-	      if ( code == gs_error_limitcheck )
+	    { if ( hpgl_call_note_error(code) == gs_error_limitcheck )
 		hpgl_set_lost_mode(pgls, hpgl_lost_mode_entered);
 	    }
 	  else
@@ -690,7 +694,7 @@ hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, const gs_point *pcl_pt)
  int
 hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y, 
 		     floatp radius, floatp start_angle, floatp sweep_angle,
-		     floatp chord_angle, bool start_moveto)
+		     floatp chord_angle, bool start_moveto, bool draw)
 {
 	floatp start_angle_radians = start_angle * degrees_to_radians;
 	/*
@@ -707,10 +711,9 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 				start_angle_radians, 
 				&arccoord_x, &arccoord_y);
 	hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
-					 ((pgls->g.move_or_draw) &&
-					 (!start_moveto)) ? 
-					 hpgl_plot_draw_absolute :
-					 hpgl_plot_move_absolute));
+					 (draw && !start_moveto ? 
+					  hpgl_plot_draw_absolute :
+					  hpgl_plot_move_absolute)));
 
 	/* HAS - pen up/down is invariant in the loop */
 	for ( i = 0; i < num_chords; i++ ) 
@@ -720,8 +723,8 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 				    start_angle_radians, 
 				    &arccoord_x, &arccoord_y);
 	    hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
-					     pgls->g.move_or_draw |
-					     hpgl_plot_absolute));
+					     (draw ? hpgl_plot_draw_absolute :
+					      hpgl_plot_move_absolute)));
 	  }
 	return 0;
 }

@@ -240,12 +240,13 @@ typedef struct pcl_hpgl_state_s {
 	  byte *data;
 	} raster_fill;
 
-		/* Chapter 23 (pgchar.c) */
+		/* Chapter 23 (pgchar.c, pglabel.c) */
 
 	pcl_font_selection_t font_selection[2];
 	int font_selected;	/* 0 or 1 */
 	pl_font_t *font;	/* 0 means recompute from params */
 	pl_symbol_map_t *map;	/* map for current font */
+	pl_font_t stick_font[2];	/* stick font, if currently selected */
 	struct ch_ {
 	  gs_point direction;
 	  bool direction_relative;
@@ -275,7 +276,6 @@ typedef struct pcl_hpgl_state_s {
 	  byte *buffer;         /* start of line buffer pointer */
           unsigned int buffer_size; /* size of the current buffer */
 	  unsigned int char_count;  /* count of chars in the buffer */
-	  hpgl_pen_state_t pen_state; /* save pen state during LB */
 	} label;
 	bool transparent_data;
 	uint font_id[2];
