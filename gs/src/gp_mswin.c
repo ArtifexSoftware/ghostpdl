@@ -692,8 +692,12 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     } else {
 	strncpy(sTempDir, prefix, sizeof(sTempDir));
 	prefix = "";
-        l = strlen(sTempDir);
+	l = strlen(sTempDir);
     }
+    /* Fix the trailing terminator so GetTempFileName doesn't get confused */
+    if (sTempDir[l-1] == '/')
+	sTempDir[l-1] = '\\';		/* What Windoze prefers */
+
     if (l <= sizeof(sTempDir)) {
 	n = GetTempFileName(sTempDir, prefix, 0, sTempFileName);
 	if (n == 0) {
@@ -749,7 +753,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 	}
     }
     if (f == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	eprintf1("**** Could not open temporary file '%s'\n", fname);
     return f;
 }
 
