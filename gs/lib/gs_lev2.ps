@@ -720,33 +720,38 @@ end
   dup .builddevicecolorrendering1 .setdevicecolorrendering1
 } .bind put
 
-% Initialize the default CIE rendering dictionary.
-% The most common CIE files seem to assume the "calibrated RGB color space"
-% described on p. 189 of the PostScript Language Reference Manual,
-% 2nd Edition; we simply invert this transformation back to RGB.
+% sRGB output CRD, D65 white point
 mark
-   /ColorRenderingType 1
-% We must make RangePQR and RangeLMN large enough so that values computed by
-% the assumed encoding MatrixLMN don't get clamped.
-   /RangePQR [0 0.9505 0 1 0 1.0890] readonly
-% This TransformPQR implements a relative colorimetric intent by scaling
-% the XYZ values relative to the white and black points.
+/ColorRenderingType 1
+/RangePQR [ -0.5 2 -0.5 2 -0.5 2 ] readonly
+
+% Bradford Cone Space
+/MatrixPQR [ 0.8951 -0.7502  0.0389
+	     0.2664  1.7135 -0.0685
+	    -0.1614  0.0367  1.0296] readonly
+
+/MatrixLMN [ 3.240449 -0.969265  0.055643
+	    -1.537136  1.876011 -0.204026
+	    -0.498531  0.041556  1.057229 ] readonly
+
+% Inverse sRGB gamma transform
+/EncodeABC [ { dup 0.00304 le
+                { 12.92321 mul }
+                { 1 2.4 div exp 1.055 mul 0.055 sub }
+               ifelse
+             } bind dup dup
+           ] readonly
+
+/WhitePoint [ 0.9505 1 1.0890 ] readonly % D65
+/BlackPoint [ 0 0 0 ] readonly
+
+% VonKries-like transform in Bradford Cone Space
    /TransformPQR
      % The implementations have been moved to C for performance.
      [ { .TransformPQR_scale_WB0 } bind
        { .TransformPQR_scale_WB1 } bind 
        { .TransformPQR_scale_WB2 } bind
      ] readonly
-   /RangeLMN [0 0.9505 0 1 0 1.0890] readonly
-   /MatrixABC
-    [ 3.24063 -0.96893  0.05571
-     -1.53721  1.87576 -0.20402
-     -0.49863  0.04152  1.05700
-    ] readonly
-   /EncodeABC [ {0 .max 0.45 exp} bind dup dup] readonly
-   /WhitePoint [0.9505 1 1.0890] readonly
-	% Some Genoa tests seem to require the presence of BlackPoint.
-   /BlackPoint [0 0 0] readonly
 .dicttomark setcolorrendering
 
 %END CRD
