@@ -484,7 +484,7 @@ hpgl_RF(
 	pgls->g.raster_fill.height = height;
         pgls->g.raster_fill.data = data;
         pgls->g.raster_fill.is_mask = is_mask;
-
+	pgls->g.raster_fill.index = index;
         /* set bitmap to 0, as not all pens need be provided */
 	memset(data, 0, width * height);
 	pargs->phase = 1;
@@ -494,6 +494,7 @@ hpgl_RF(
         height = pgls->g.raster_fill.height;
         data = pgls->g.raster_fill.data;
         is_mask = pgls->g.raster_fill.is_mask;
+	index = pgls->g.raster_fill.index;
     }
 
     while ((pargs->phase - 1) < width * height) {
