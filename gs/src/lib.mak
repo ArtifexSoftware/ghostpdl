@@ -1306,14 +1306,15 @@ $(GLOBJ)gdevppla.$(OBJ) : $(GLSRC)gdevppla.c\
 
 gsiparm3_h=$(GLSRC)gsiparm3.h $(gsiparam_h)
 gsiparm4_h=$(GLSRC)gsiparm4.h $(gsiparam_h)
+gximage3_h=$(GLSRC)gximage3.h $(gsiparm3_h) $(gxiparam_h)
 
 $(GLOBJ)gxclipm.$(OBJ) : $(GLSRC)gxclipm.c $(GX) $(memory__h)\
  $(gsbittab_h) $(gxclipm_h) $(gxdevice_h) $(gxdevmem_h)
 	$(GLCC) $(GLO_)gxclipm.$(OBJ) $(C_) $(GLSRC)gxclipm.c
 
 $(GLOBJ)gximage3.$(OBJ) : $(GLSRC)gximage3.c $(GXERR) $(math__h) $(memory__h)\
- $(gsbitops_h) $(gscspace_h) $(gsiparm3_h) $(gsstruct_h)\
- $(gxclipm_h) $(gxdevice_h) $(gxdevmem_h) $(gxiparam_h) $(gxistate_h)
+ $(gsbitops_h) $(gscspace_h) $(gsstruct_h)\
+ $(gxclipm_h) $(gxdevice_h) $(gxdevmem_h) $(gximage3_h) $(gxistate_h)
 	$(GLCC) $(GLO_)gximage3.$(OBJ) $(C_) $(GLSRC)gximage3.c
 
 $(GLOBJ)gximage4.$(OBJ) : $(GLSRC)gximage4.c $(memory__h) $(GXERR)\
