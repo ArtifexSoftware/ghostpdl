@@ -657,6 +657,17 @@ push_pop_cursor(
     return 0;
 }
 
+private int
+pcursor_do_copy(pcl_state_t *psaved, 
+		const pcl_state_t *pcs, pcl_copy_operation_t operation)
+{
+    /* don't restore the current cap.  The cap is not part of the
+       state */
+    if ( operation & pcl_copy_after )
+	psaved->cap = pcs->cap;
+    return 0;
+}
+    
 /*
  * Initialization
  */
@@ -791,4 +802,4 @@ pcursor_do_reset(
     }
 }
 
-const pcl_init_t    pcursor_init = { pcursor_do_registration, pcursor_do_reset, 0 };
+const pcl_init_t    pcursor_init = { pcursor_do_registration, pcursor_do_reset, pcursor_do_copy };
