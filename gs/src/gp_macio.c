@@ -1007,7 +1007,7 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
     	state->path = malloc(len);
     	snprintf(state->path, len, "%%macresource%%%s#POST", fontpath);
     }
-#if DEBUG
+#ifdef DEBUG
     dlprintf2("fontenum: returning '%s' in '%s'\n", state->name, state->path);
 #endif
     *fontname = state->name;
