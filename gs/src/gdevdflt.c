@@ -389,7 +389,7 @@ set_linear_color_bits_mask_shift(gx_device * dev)
  * is separable when it is not.  However we do not know of any real cases that
  * will fool it.
  */
-void
+private void
 check_device_separable(gx_device * dev)
 {
     int i, j;
