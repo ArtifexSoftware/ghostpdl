@@ -359,8 +359,13 @@ pdfdict begin
   stderrprint
   /Repaired true store
 } bind def
+
+/knownoget_safe
+{ knownoget
+} odef
+
 /printProducer {
-  Trailer /Info knownoget {
+  Trailer /Info { knownoget_safe } stopped { false } if {
     /Producer knownoget not { null } if
   } {
     null
