@@ -2485,8 +2485,9 @@ $(GLOBJ)gp_dosfe.$(OBJ) : $(GLSRC)gp_dosfe.c $(AK)\
 
 # Unix(-like) file system, also used by Desqview/X.
 $(GLOBJ)gp_unifs.$(OBJ) : $(GLSRC)gp_unifs.c $(AK)\
- $(memory__h) $(string__h) $(unistd__h) $(gx_h) $(gp_h) $(gpmisc_h)\
- $(gsstruct_h) $(gsutil_h) $(stat__h) $(dirent__h)
+ $(memory__h) $(string__h) $(stdio__h) $(unistd__h) \
+ $(gx_h) $(gp_h) $(gpmisc_h) $(gsstruct_h) $(gsutil_h) \
+ $(stat__h) $(dirent__h)
 	$(GLCC) $(GLO_)gp_unifs.$(OBJ) $(C_) $(GLSRC)gp_unifs.c
 
 # Unix(-like) file name syntax, *not* used by Desqview/X.
