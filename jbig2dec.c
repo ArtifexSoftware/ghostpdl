@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.32 2002/07/15 20:01:01 giles Exp $
+    $Id: jbig2dec.c,v 1.33 2002/07/15 23:50:47 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -51,6 +51,9 @@ typedef struct {
 #endif
 	char *output_file;
 } jbig2dec_params_t;
+
+static int print_version(void);
+static int print_usage(void);
 
 /* page hashing functions */
 static void
@@ -111,6 +114,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 {
 	static struct option long_options[] = {
 		{"quiet", 0, NULL, 'q'},
+                {"version", 0, NULL, 'V'},
 		{"help", 0, NULL, 'h'},
 		{"dump", 0, NULL, 'd'},
                 {"hash", 0, NULL, 'm'},
@@ -122,10 +126,10 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 
 	while (1) {
 		option = getopt_long(argc, argv,
-			"qhdo:", long_options, &option_idx);
+			"qVh?do:", long_options, &option_idx);
 		if (option == -1) break;
 
-		fprintf(stderr, "option '%c' value '%s'\n", option, optarg);
+		//fprintf(stderr, "option '%c' value '%s'\n", option, optarg);
 		switch (option) {
 			case 0:	// unknown long option
 				if (!params->verbose) fprintf(stdout,
@@ -138,6 +142,12 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 			case 'h':
 			case '?':
 				params->mode = usage;
+                                break;
+                        case 'V':
+                                /* the GNU Coding Standards suggest --version should
+                                   override all other options */
+                                print_version();
+                                exit(0);
                                 break;
 			case 'd':
 				params->mode=dump;
@@ -158,6 +168,13 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 }
 
 static int
+print_version (void)
+{
+    fprintf(stdout, "%s %s\n", PACKAGE, VERSION);
+    return 0;
+}
+
+static int
 print_usage (void)
 {
   fprintf(stderr,
@@ -175,6 +192,7 @@ print_usage (void)
     "    -q --quiet     suppress diagnostic output\n"
     "    -d --dump      print the structure of the jbig2 file\n"
     "                   rather than explicitly decoding\n"
+    "       --version   program name and version information\n"
     "       --hash	print a hash of the decode document\n"
     "    -o <file>	send decoded output to <file>\n"
     "                   Defaults to the the input with a different\n"
