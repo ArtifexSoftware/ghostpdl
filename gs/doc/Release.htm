@@ -32,6 +32,7 @@
 <ul>
 <li><a href="#Preparing_source">Preparing the source code</a>
 <li><a href="#Testing">Testing</a>
+<li><a href="#Changelog">Updating the Changelog</a>
 <li><a href="#Making_Tarballs">Making the source distribution</a>
 <li><a href="#Testing_on_Windows">Testing on Windows</a>
 <li><a href="#Windows_distribution">Building the Windows distribution</a>
@@ -258,6 +259,11 @@ Python, freely available from <a class="offsite"
 href="http://www.python.org"><tt>http://www.python.org</tt></a>.
 
 <p>
+To update the changelogs, you'll also need a recent version of the cvs2cl perl script. If
+not already installed on your system a copy can be found at
+<a class="offsite" href="http://www.red-bean.com/cvs2cl/cvs2cl.pl">http://www.red-bean.com/cvs2cl/cvs2cl.pl</a>.
+
+<p>
 The instructions below also refer to some files that are deliberately
 omitted from the public distribution, because they are not freely
 redistributable. You will need to provide similar files for your
@@ -428,31 +434,41 @@ cvs commit
 <p>
 to ensure the repository is up to date.
 
+<h3><a name="Changelog"></a>Updating the changelog</h3>
+
 <p>
-Execute either (for the main HEAD branch)
+Create a new changelog by running either (for the main HEAD branch)
 
 <blockquote><pre>
-toolbin/cvs2hist.py -j &lt;previous_tag&gt; -r '-b' -v &lt;new_version&gt; &gt; doc/Changes.htm
+cvs2cl.pl --utc -T --follow trunk --delta &lt;prev release tag&gt;:HEAD --xml -f doc/changelog.xml
 </pre></blockquote>
+
 or (for a non-HEAD branch)
+
 <blockquote><pre>
-toolbin/cvs2hist.py -j &lt;previous_tag&gt; -r '-r&lt;branch_tag&gt;' -v &lt;new_version&gt; &gt; doc/Changes.htm
+cvs2cl.pl --utc -T --follow &lt;branch&gt; --delta &lt;prev release tag&gt;:&lt;branch tag&gt; --xml -f doc/changelog.xml
 </pre></blockquote>
 e.g.
-<blockquote><pre>toolbin/cvs2hist.py -j gs7_20 -r '-b' -v 7.21</pre>
+<blockquote>
+<pre>cvs2cl.pl --utc -T --follow trunk --delta gs8_00:HEAD --xml -f doc/changelog.xml</pre>
 </blockquote>
 
 <p>
 This consolidates all the CVS logs since the previous release in a readable
-format. Note: the cvs2hist.py tool currently in the distribution is not
-very branch-aware (nor is the 'cvs log' command it depends on) so the extra
-complication of the -j and -r options are required when generating the Changes
-for a non-HEAD branch of Ghostscript. Note that the -r option should be
-an empty '-b' when generating logs for the cvs main branch due to
-variations in naming.
+format. You may also wish to pass a file mapping cvs user names to real names
+with the <tt>-U</tt> option.
 
 <p>
-Run
+Create the html-format changes and details documents as follows:
+
+<blockquote><pre>
+cd doc
+../toolbin/split_changelog.py changelog.xml Changes.htm Details.htm
+cd ..
+</pre></blockquote>
+
+<p>
+The xml changelog file can now be deleted. Run
 
 <blockquote><pre>
 toolbin/makehist.tcl
