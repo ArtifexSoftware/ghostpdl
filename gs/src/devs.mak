@@ -143,6 +143,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	jpeg	JPEG format, RGB output
 #	jpeggray  JPEG format, gray output
 #	miff24	ImageMagick MIFF format, 24-bit direct color, RLE compressed
+#	pam	Portable Arbitrary Map file format
 #	pcxmono	PCX file format, monochrome (1-bit black and white)
 #	pcxgray	PCX file format, 8-bit gray scale
 #	pcx16	PCX file format, 4-bit planar (EGA/VGA) color
@@ -1127,7 +1128,8 @@ $(GLOBJ)gdevp2up.$(OBJ) : $(GLSRC)gdevp2up.c $(AK)\
 	$(GLCC) $(GLO_)gdevp2up.$(OBJ) $(C_) $(GLSRC)gdevp2up.c
 
 ### ------------------- Portable Bitmap file formats ------------------- ###
-### For more information, see the pbm(5), pgm(5), and ppm(5) man pages.  ###
+### For more information, see the pam(5), pbm(5), pgm(5), and ppm(5)     ###
+### man pages.                                                           ###
 
 pxm_=$(GLOBJ)gdevpbm.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
 
@@ -1196,6 +1198,11 @@ $(DD)pksmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 
 $(DD)plan9bm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)plan9bm $(pxm_)
+
+### Portable Arbitrary Map (PAM, magic number "P7", CMYK)
+
+$(DD)pam.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)pam $(pxm_)
 
 ### --------------- Portable Network Graphics file format --------------- ###
 ### Requires libpng 0.81 and zlib 0.95 (or more recent versions).         ###
