@@ -870,11 +870,11 @@ PDTEXT=pdftext
 # However, the 'project' model of Microsoft Visual C++ cannot handle this.
 # Therefore, we define which code to compile and which code to link
 # separately.
-PDTEXT_COMPILE_MSVC=$(DD)$(PDTEXT).dev
-PDTEXT_COMPILE_OTHER=$(DD)pdftext.dev $(DD)pdxtext.dev
+PDTEXT_COMPILE_SINGLE=$(DD)$(PDTEXT).dev
+PDTEXT_COMPILE_BOTH=$(DD)pdftext.dev $(DD)pdxtext.dev
 
-# Define which code to compile, PDTEXT_COMPILE_OTHER or PDTEXT_COMPILE_MSVC.
-PDTEXT_COMPILE=$(PDTEXT_COMPILE_OTHER)
+# Define which code to compile, PDTEXT_COMPILE_BOTH or PDTEXT_COMPILE_SINGLE.
+PDTEXT_COMPILE=$(PDTEXT_COMPILE_BOTH)
 
 $(DD)pdtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(PDTEXT_COMPILE)
 	$(SETMOD) $(DD)pdtext -include $(DD)$(PDTEXT)
