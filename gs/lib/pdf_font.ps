@@ -605,7 +605,10 @@ readonly def
 	  { exch pop exec } { /undefined signalerror } ifelse
     } ifelse
   } {
-    resolvestream
+    PDFfile fileposition exch
+    dup /CMapName get exch true resolvestream cvx exec
+    /CMap findresource
+    exch PDFfile exch setfileposition
   } ifelse		% CMap
   [
     3 index /DescendantFonts oget { exec resourcefont } forall
