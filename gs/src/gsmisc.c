@@ -77,7 +77,9 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
 
 /*
  * Define the trace printout procedures.  We always include these, in case
- * other modules were compiled with DEBUG set.
+ * other modules were compiled with DEBUG set.  Note that they must use
+ * fprintf, not fput[cs], because of the way that stdout is implemented on
+ * Windows platforms.
  */
 void
 dflush(void)
@@ -115,16 +117,14 @@ void
 printf_program_ident(FILE * f, const char *program_name,
 		     long revision_number)
 {
-    if (program_name) 
-      { fprintf(f,"%s",program_name);
-        if (revision_number)
-	      fprintf(f," ");
-      }
-    if (revision_number) 
-      { int fpart = revision_number % 100;
-	    fprintf(f, (fpart == 0 ? "%d.%d" : "%d.%02d")
-          ,(int)(revision_number / 100), fpart);
-      }
+    if (program_name)
+	fprintf(f, (revision_number ? "%s " : "%s"), program_name);
+    if (revision_number) {
+	int fpart = revision_number % 100;
+
+	fprintf(f, (fpart == 0 ? "%d.%d" : "%d.%02d"),
+		(int)(revision_number / 100), fpart);
+    }
 }
 void
 eprintf_program_ident(FILE * f, const char *program_name,
@@ -132,7 +132,7 @@ eprintf_program_ident(FILE * f, const char *program_name,
 {
     if (program_name) {
 	printf_program_ident(f, program_name, revision_number);
-	fprintf(f,": ");
+	fprintf(f, ": ");
     }
 }
 #if __LINE__			/* compiler provides it */
