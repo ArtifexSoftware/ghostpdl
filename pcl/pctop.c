@@ -22,7 +22,6 @@
 #include "gxdevice.h"
 #include "gxstate.h"
 #include "gdevbbox.h"
-#include "pclver.h"
 #include "pjparse.h"
 #include "pltop.h"
 #include "pctop.h"
@@ -197,6 +196,8 @@ pcl_impl_characteristics(
   const pl_interp_implementation_t *impl     /* implementation of interpereter to alloc */
 )
 {
+#define PCLVERSION NULL
+#define PCLBUILDDATE NULL
   static pl_interp_characteristics_t pcl_characteristics = {
     "PCL",
     "\033E",

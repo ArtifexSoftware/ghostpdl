@@ -49,7 +49,6 @@ pxbfont_h=$(PXLSRC)pxbfont.h
 pxenum_h=$(PXLSRC)pxenum.h $(gdevpxen_h)
 pxerrors_h=$(PXLSRC)pxerrors.h
 pxfont_h=$(PXLSRC)pxfont.h $(plfont_h)
-pxlver_h=$(PXLSRC)pxlver.h
 pxptable_h=$(PXLSRC)pxptable.h
 pxtag_h=$(PXLSRC)pxtag.h $(gdevpxop_h)
 pxsymbol_h=$(PXLGEN)pxsymbol.h
@@ -208,7 +207,7 @@ $(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
  $(pltop_h) $(pxtop_h) $(plparse_h)\
  $(pxattr_h) $(pxerrors_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)\
- $(pxlver_h) $(pxvalue_h) $(PXLGEN)pconf.h
+ $(pxvalue_h) $(PXLGEN)pconf.h
 	$(CP_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
 	$(PXLCCC) $(PXLSRC)pxtop.c $(PXLO_)pxtop.$(OBJ)
 

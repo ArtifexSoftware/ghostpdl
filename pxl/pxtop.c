@@ -32,7 +32,6 @@ maybe by Artifex.
 #include "gxstate.h"
 #include "plparse.h"
 #include "pxattr.h"		/* for pxparse.h */
-#include "pxlver.h"
 #include "pxerrors.h"
 #include "pxvalue.h"		/* for pxparse.h */
 #include "pxparse.h"
@@ -177,6 +176,9 @@ pxl_impl_characteristics(
   const pl_interp_implementation_t *impl     /* implementation of interpereter to alloc */
 )
 {
+    /* version and build date are not currently used */
+#define PXLVERSION NULL
+#define PXLBUILDDATE NULL
   static pl_interp_characteristics_t pxl_characteristics = {
     "PCLXL",
     ") HP-PCL XL;1;1",

@@ -114,7 +114,6 @@ clean: config-clean
 
 config-clean:
         $(RMN_) $(PXLGEN)\pconf.h $(PXLGEN)\pconfig.h
-        $(RM_) $(PXLSRC)\pxlver.h
 
 #### Implementation stub
 $(PLOBJDIR)\plimpl.$(OBJ): $(PLSRCDIR)\plimpl.c \

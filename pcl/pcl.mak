@@ -32,7 +32,6 @@ pcl.config-clean: clean_gs
 	$(RM_) $(PCLOBJ)devs.tr5
 
 # pgstate.h is out of order because pcstate.h includes it.
-pclver_h    = $(PCLSRC)pclver.h
 pgstate_h   = $(PCLSRC)pgstate.h  \
               $(gx_h)             \
               $(gxfixed_h)        \
@@ -642,7 +641,6 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(pjparse_h)                \
                         $(plmain_h)                 \
                         $(pltop_h)                  \
-                        $(pclver_h)                 \
                         $(pctop_h)                  \
                         $(PCLGEN)pconf.h
 	$(CP_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h

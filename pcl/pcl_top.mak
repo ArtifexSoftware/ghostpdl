@@ -17,7 +17,6 @@ clean-not-config-clean: pl.clean-not-config-clean pcl.clean-not-config-clean
 config-clean: pl.config-clean pcl.config-clean
 	$(RMN_) *.tr $(GD)devs.tr $(GD)ld.tr
 	$(RMN_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
-	$(RM_) $(PCLSRC)pclver.h
 
 #### Implementation stub
 
