@@ -451,9 +451,7 @@ colmet_DecodeABC_proc(colmet_DecodeABC_1, 1)
 colmet_DecodeABC_proc(colmet_DecodeABC_2, 2)
 
 private const gs_cie_abc_proc3  colmet_DecodeABC = {
-    colmet_DecodeABC_0,
-    colmet_DecodeABC_1,
-    colmet_DecodeABC_2
+    { colmet_DecodeABC_0, colmet_DecodeABC_1, colmet_DecodeABC_2 }
 };
 
 /*
@@ -672,9 +670,7 @@ lab_DecodeABC_proc(lab_DecodeABC_1, 1, (val /= 500))
 lab_DecodeABC_proc(lab_DecodeABC_2, 2, (val /= 200))
 
 private const gs_cie_abc_proc3  lab_DecodeABC = {
-    lab_DecodeABC_0,
-    lab_DecodeABC_1,
-    lab_DecodeABC_2
+    { lab_DecodeABC_0, lab_DecodeABC_1, lab_DecodeABC_2 }
 };
 
 private const gs_matrix3    lab_MatrixABC = {
@@ -708,9 +704,7 @@ lab_DecodeLMN_proc(lab_DecodeLMN_1, 1)
 lab_DecodeLMN_proc(lab_DecodeLMN_2, 2)
 
 private const gs_cie_common_proc3   lab_DecodeLMN = {
-    lab_DecodeLMN_0,
-    lab_DecodeLMN_1,
-    lab_DecodeLMN_2
+    { lab_DecodeLMN_0, lab_DecodeLMN_1, lab_DecodeLMN_2 }
 };
 
 private const gs_vector3    lab_WhitePoint = { .9504, 1.0, 1.0889 };
@@ -791,9 +785,7 @@ lumchrom_DecodeABC_proc(lumchrom_DecodeABC_1, 1)
 lumchrom_DecodeABC_proc(lumchrom_DecodeABC_2, 2)
 
 private const gs_cie_abc_proc3  lumchrom_DecodeABC = {
-    lumchrom_DecodeABC_0,
-    lumchrom_DecodeABC_1,
-    lumchrom_DecodeABC_2
+    { lumchrom_DecodeABC_0, lumchrom_DecodeABC_1, lumchrom_DecodeABC_2 }
 };
 
 /*
@@ -834,9 +826,7 @@ lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_1, 1)
 lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_2, 2)
 
 private const gs_cie_common_proc3   lumchrom_DecodeLMN = {
-    lumchrom_DecodeLMN_0,
-    lumchrom_DecodeLMN_1,
-    lumchrom_DecodeLMN_2
+    { lumchrom_DecodeLMN_0, lumchrom_DecodeLMN_1, lumchrom_DecodeLMN_2 }
 };
 
 
@@ -853,7 +843,7 @@ build_lum_chrom_mtxABC(
     pcl_mtx3_t *    pmtxABC
 )
 {
-    int             i, code;
+    int             i;
     pcl_mtx3_t      tmp_mtx;    
 
     /* transpose the input to create a row-order matrix */

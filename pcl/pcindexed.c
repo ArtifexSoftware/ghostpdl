@@ -3,8 +3,9 @@
    prohibited.  */
 
 /* pcindexed.c - PCL indexed color space implementation */
-#include "gx.h"
 #include "math_.h"
+#include "string_.h"
+#include "gx.h"
 #include "pcmtx3.h"
 #include "pccid.h"
 #include "pccsbase.h"
@@ -19,7 +20,7 @@ private const pcl_cid_hdr_t  dflt_cid_hdr = {
     pcl_cspace_RGB,                /* color space type */
     pcl_penc_indexed_by_plane,     /* pixel encoding type */
     1,                             /* bits per index */
-    1, 1, 1                        /* bits per primary (3 components) */
+    { 1, 1, 1 }                        /* bits per primary (3 components) */
 };
 
 /* the default indexed color space - fixed, 1-bit per index */
@@ -391,7 +392,7 @@ set_lumchrom_default_palette(
     pcl_mtx3_t                  tmp_mtx;
     int                         i;
     static  const pcl_vec3_t    lumchrom_default[8] = {
-                                  { 1.0, 1.0, 1.0 },    /* white */
+	                          { 1.0, 1.0, 1.0 },    /* white */
                                   { 0.0, 1.0, 1.0 },    /* cyan */
                                   { 1.0, 0.0, 1.0 },    /* magenta */
                                   { 0.0, 0.0, 1.0 },    /* blue */
