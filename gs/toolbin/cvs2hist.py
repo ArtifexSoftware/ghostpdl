@@ -275,10 +275,6 @@ def BuildLog(log_date_command):
         elif line[:len("symbolic names:")] == "symbolic names:":
             reading_tags = 1
 
-    for entry in log:
-        print entry
-    print '----------------------------------------------------------------'
-
     return log
 
 # ---------------- Main program ---------------- #
