@@ -363,6 +363,7 @@ int cmd_put_params(gx_device_clist_writer *, gs_param_list *);
 #ifdef DEBUG
 int cmd_count_op(int op, uint size);
 void cmd_uncount_op(int op, uint size);
+void cmd_print_stats(void);
 #  define cmd_count_add1(v) (v++)
 #else
 #  define cmd_count_op(op, size) (op)

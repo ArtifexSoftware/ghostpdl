@@ -93,7 +93,7 @@ zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t gspace)
 
 	    if (gspace == GLYPH_SPACE_NOGEN)
 		return gs_no_glyph;    
-	    sprintf(buf, "j%d", chr); /* 'j' is arbutrary. */
+	    sprintf(buf, "j%ld", chr); /* 'j' is arbutrary. */
 	    code = name_ref((const byte *)buf, strlen(buf), &tname, 1);
 	    if (code < 0) {
 		/* Can't propagate the error due to interface limitation,

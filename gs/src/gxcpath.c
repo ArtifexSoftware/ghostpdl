@@ -27,6 +27,7 @@
 #include "gxistate.h"
 #include "gzpath.h"
 #include "gzcpath.h"
+#include "gzacpath.h"
 
 /* Forward references */
 private void gx_clip_list_from_rectangle(gx_clip_list *, gs_fixed_rect *);

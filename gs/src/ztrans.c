@@ -252,8 +252,6 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     gs_transparency_mask_params_t params;
     ref *pparam;
     gs_rect bbox;
-    int num_components =
-	gs_color_space_num_components(gs_currentcolorspace(igs));
     int code;
     static const char *const subtype_names[] = {
 	GS_TRANSPARENCY_MASK_SUBTYPE_NAMES, 0

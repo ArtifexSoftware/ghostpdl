@@ -867,9 +867,7 @@ pdf_cs_Pattern_uncolored_hl(gx_device_pdf *pdev,
     /* Only for high level colors. */
     const unsigned char ps[] = "[/Pattern ", pse[] = "]";
     unsigned char buf[30];
-    int psl = sizeof(ps) - 1;
     cos_value_t cs_value;
-    gs_string const *csv = &cs_value.contents.chars;
     pdf_resource_t *pres = NULL;
     int code = pdf_color_space(pdev, &cs_value, NULL,
 		(gs_color_space *)base_space, &pdf_color_space_names, false);
