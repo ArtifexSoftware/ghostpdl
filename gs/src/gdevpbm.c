@@ -578,7 +578,7 @@ private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
         pmat->ty = 0;
         break;
     default:
-        /* not reached */
+        break;/* not reached */
     }
 }
     

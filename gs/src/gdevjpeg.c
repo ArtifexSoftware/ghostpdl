@@ -352,7 +352,7 @@ jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
         pmat->ty = -pdev->ViewTrans.y;
         break;
     default:
-        /* not reached */
+        break; /* not reached */
     }
 
 }
