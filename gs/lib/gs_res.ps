@@ -457,9 +457,17 @@ pop pop
         2 index 0 get                                    % args [ (c/) (t)
         dup length 3 1 roll                              % args [ l (c/) (t)
         concatstrings                                    % args [ l (c/t)
-	[ exch
-	  /LIBPATH .systemvar exch
-	  .generate_dir_list_templates ]                 % args [ l [(pt)]
+	[ 
+	  /LIBPATH .systemvar 2 index
+	  .generate_dir_list_templates                   % args (t) [ l [(pt)]
+	    % also add on the Resources as specified by the GenericResourceDir
+          [ currentsystemparams /GenericResourceDir get]
+	  counttomark 1 add index .generate_dir_list_templates
+            % Resource files on OpenVMS requires a separate template (gs:[dir.*]*)
+          [ currentsystemparams /GenericResourceDir get]
+	  counttomark 1 add index .file_name_separator (*)
+          concatstrings concatstrings .generate_dir_list_templates
+	  ] exch pop
 	{                                                % args [ l (pt)
 	  dup length 2 index sub exch                    % args [ l Lp (pt)
 
