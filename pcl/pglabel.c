@@ -207,7 +207,7 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
 	    code = pl_fill_in_font((gs_font *)pfont, font, pgls->font_dir,
-				   pgls->memory, "nameless_font");
+				   pgls->memory, "stick/arc font");
 	    if ( code < 0 )
 	      return code;
 	    if ( pfs->params.proportional_spacing )
@@ -514,7 +514,7 @@ hpgl_do_CR(hpgl_state_t *pgls)
 
 /* CP [spaces,lines]; */
 /* CP [;] */
- int
+int
 hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_real_t spaces, lines;
@@ -540,7 +540,7 @@ hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* initialize the character buffer, setting state pointers for the
    beginning of the character buffer and the current character within
    the buffer to position 0. */
- private int
+private int
 hpgl_init_label_buffer(hpgl_state_t *pgls)
 {
 	pgls->g.label.char_count = 0;
@@ -553,7 +553,7 @@ hpgl_init_label_buffer(hpgl_state_t *pgls)
 }
 
 /* release the character buffer */
- private int
+private int
 hpgl_destroy_label_buffer(hpgl_state_t *pgls)
 {
 	gs_free_object(pgls->memory, pgls->g.label.buffer,
@@ -565,7 +565,7 @@ hpgl_destroy_label_buffer(hpgl_state_t *pgls)
 }
 
 /* add a single character to the line buffer */
- private int
+private int
 hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 {
 	/* check if there is room for the new character and resize if
@@ -609,7 +609,7 @@ hpgl_use_show(hpgl_state_t *pgls)
 /*
  * build the path and render it
  */
- private int
+private int
 hpgl_print_char(
     hpgl_state_t *                  pgls,
     uint                            ch
@@ -1006,7 +1006,7 @@ hpgl_can_concat_labels(const hpgl_state_t *pgls)
  
 
 /* return relative coordinates to compensate for origin placement -- LO */
- private int
+private int
 hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 				 hpgl_real_t width, hpgl_real_t height,
 				 gs_point *offset)
@@ -1102,7 +1102,7 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 			  
 /* Prints a buffered line of characters. */
 /* If there is a CR, it is the last character in the buffer. */
- private int
+private int
 hpgl_process_buffer(hpgl_state_t *pgls)
 {
 	gs_point offset;
@@ -1340,7 +1340,7 @@ bool is_terminator( hpgl_state_t *pgls, byte prev, byte curr, bool have_16bits )
 }  
 
 /* LB ..text..terminator */
- int
+int
 hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
@@ -1422,7 +1422,7 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return e_NeedData;
 }
 
- void
+void
 hpgl_free_stick_fonts(hpgl_state_t *pgls)
 {
     pcl_font_selection_t *pfs =
@@ -1439,7 +1439,7 @@ hpgl_free_stick_fonts(hpgl_state_t *pgls)
     return;
 }
 
- int
+int
 hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
 {	
         /* save the original origin since symbol mode character are
