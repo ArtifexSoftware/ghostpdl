@@ -132,4 +132,6 @@ int pcl_crd_set_view_illuminant(
  */
 int pcl_crd_set_crd(pcl_crd_t **ppcrd, pcl_state_t *pcs);
 
+void free_crd(gs_memory_t *pmem, void *pvcrd, client_name_t cname);
+
 #endif  	/* pccrd_INCLUDED */
