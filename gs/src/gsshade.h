@@ -159,9 +159,8 @@ typedef struct gs_shading_mesh_s {
 } gs_shading_mesh_t;
 
 #define private_st_shading_mesh()	/* in gsshade.c */\
-  gs_private_st_suffix_add2(st_shading_mesh, gs_shading_mesh_t,\
-    "gs_shading_mesh_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs,\
-    st_shading, params.Decode, params.Function)
+  gs_private_st_composite(st_shading_mesh, gs_shading_mesh_t,\
+    "gs_shading_mesh_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs)
 
 /* Define Free-form Gouraud triangle mesh shading. */
 typedef struct gs_shading_FfGt_params_s {
@@ -170,9 +169,8 @@ typedef struct gs_shading_FfGt_params_s {
 } gs_shading_FfGt_params_t;
 
 #define private_st_shading_FfGt()	/* in gsshade.c */\
-  gs_private_st_suffix_add0_local(st_shading_FfGt, gs_shading_FfGt_t,\
-    "gs_shading_FfGt_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs,\
-    st_shading_mesh)
+  gs_private_st_composite_only(st_shading_FfGt, gs_shading_FfGt_t,\
+    "gs_shading_FfGt_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs)
 
 /* Define Lattice-form Gouraud triangle mesh shading. */
 typedef struct gs_shading_LfGt_params_s {
@@ -181,9 +179,8 @@ typedef struct gs_shading_LfGt_params_s {
 } gs_shading_LfGt_params_t;
 
 #define private_st_shading_LfGt()	/* in gsshade.c */\
-  gs_private_st_suffix_add0_local(st_shading_LfGt, gs_shading_LfGt_t,\
-    "gs_shading_LfGt_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs,\
-    st_shading_mesh)
+  gs_private_st_composite_only(st_shading_LfGt, gs_shading_LfGt_t,\
+    "gs_shading_LfGt_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs)
 
 /* Define Coons patch mesh shading. */
 typedef struct gs_shading_Cp_params_s {
@@ -192,9 +189,8 @@ typedef struct gs_shading_Cp_params_s {
 } gs_shading_Cp_params_t;
 
 #define private_st_shading_Cp()	/* in gsshade.c */\
-  gs_private_st_suffix_add0_local(st_shading_Cp, gs_shading_Cp_t,\
-    "gs_shading_Cp_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs,\
-    st_shading_mesh)
+  gs_private_st_composite_only(st_shading_Cp, gs_shading_Cp_t,\
+    "gs_shading_Cp_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs)
 
 /* Define Tensor product patch mesh shading. */
 typedef struct gs_shading_Tpp_params_s {
@@ -203,9 +199,8 @@ typedef struct gs_shading_Tpp_params_s {
 } gs_shading_Tpp_params_t;
 
 #define private_st_shading_Tpp()	/* in gsshade.c */\
-  gs_private_st_suffix_add0_local(st_shading_Tpp, gs_shading_Tpp_t,\
-    "gs_shading_Tpp_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs,\
-    st_shading_mesh)
+  gs_private_st_composite_only(st_shading_Tpp, gs_shading_Tpp_t,\
+    "gs_shading_Tpp_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs)
 
 /* ---------------- Procedures ---------------- */
 

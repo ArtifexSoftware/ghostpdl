@@ -374,6 +374,8 @@ extern gs_ptr_type_t
 
 #define ENUM_PTR(i, typ, elt)\
   case i: return ENUM_OBJ_ELT(typ, elt)
+#define ENUM_PTR2(i, typ, e1, e2) /* just an abbreviation */\
+  ENUM_PTR(i, typ, e1); ENUM_PTR((i)+1, typ, e2)
 #define ENUM_PTR3(i, typ, e1, e2, e3) /* just an abbreviation */\
   ENUM_PTR(i, typ, e1); ENUM_PTR((i)+1, typ, e2); ENUM_PTR((i)+2, typ, e3)
 #define ENUM_STRING_PTR(i, typ, elt)\
@@ -434,6 +436,8 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 
 #define RELOC_PTR(typ, elt)\
   RELOC_OBJ_ELT(typ, elt)
+#define RELOC_PTR2(typ, e1, e2) /* just an abbreviation */\
+  RELOC_PTR(typ,e1); RELOC_PTR(typ,e2)
 #define RELOC_PTR3(typ, e1, e2, e3) /* just an abbreviation */\
   RELOC_PTR(typ,e1); RELOC_PTR(typ,e2); RELOC_PTR(typ,e3)
 #define RELOC_OFFSET_PTR(typ, elt, offset)\
