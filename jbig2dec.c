@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.33 2002/07/15 23:50:47 giles Exp $
+    $Id: jbig2dec.c,v 1.34 2002/07/16 21:19:09 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -113,9 +113,10 @@ static int
 parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 {
 	static struct option long_options[] = {
-		{"quiet", 0, NULL, 'q'},
                 {"version", 0, NULL, 'V'},
 		{"help", 0, NULL, 'h'},
+                {"quiet", 0, NULL, 'q'},
+		{"verbose", 2, NULL, 'v'},
 		{"dump", 0, NULL, 'd'},
                 {"hash", 0, NULL, 'm'},
 		{"output", 1, NULL, 'o'},
@@ -126,7 +127,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 
 	while (1) {
 		option = getopt_long(argc, argv,
-			"qVh?do:", long_options, &option_idx);
+			"Vh?qvdo:", long_options, &option_idx);
 		if (option == -1) break;
 
 		//fprintf(stderr, "option '%c' value '%s'\n", option, optarg);
@@ -139,6 +140,10 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 			case 'q':
 				params->verbose = 0;
 				break;
+                        case 'v':
+                                if (optarg) params->verbose = atoi(optarg);
+                                else params->verbose = 9;
+                                break;
 			case 'h':
 			case '?':
 				params->mode = usage;
@@ -190,6 +195,7 @@ print_usage (void)
     "  available options:\n"
     "    -h --help	this usage summary\n"
     "    -q --quiet     suppress diagnostic output\n"
+    "    -v --verbose   set the verbosity level\n"
     "    -d --dump      print the structure of the jbig2 file\n"
     "                   rather than explicitly decoding\n"
     "       --version   program name and version information\n"
@@ -207,13 +213,20 @@ static int
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity,
 	       int32_t seg_idx)
 {
+    jbig2dec_params_t *params = error_callback_data;
     char *type;
     char segment[22];
     
     switch (severity) {
-        case JBIG2_SEVERITY_DEBUG: type = "DEBUG"; break;;
-        case JBIG2_SEVERITY_INFO: type = "info"; break;;
-        case JBIG2_SEVERITY_WARNING: type = "WARNING"; break;;
+        case JBIG2_SEVERITY_DEBUG:
+            if (params->verbose < 3) return 0;
+            type = "DEBUG"; break;;
+        case JBIG2_SEVERITY_INFO:
+            if (params->verbose < 2) return 0;
+            type = "info"; break;;
+        case JBIG2_SEVERITY_WARNING:
+            if (params->verbose < 1) return 0;
+            type = "WARNING"; break;;
         case JBIG2_SEVERITY_FATAL: type = "FATAL ERROR"; break;;
         default: type = "unknown message"; break;;
     }
@@ -289,7 +302,8 @@ write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
         }
       else
         {
-          fprintf(stderr, "saving decoded page as '%s'\n", params->output_file);
+          if (params->verbose > 1)
+            fprintf(stderr, "saving decoded page as '%s'\n", params->output_file);
 #ifdef HAVE_LIBPNG
           jbig2_image_write_png_file(image, params->output_file);
 #else
@@ -385,7 +399,7 @@ main (int argc, char **argv)
     
   ctx = jbig2_ctx_new(NULL, f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0,
 		      NULL,
-		      error_callback, NULL);
+		      error_callback, &params);
 
   // pull the whole file/global stream into memory
   for (;;)
