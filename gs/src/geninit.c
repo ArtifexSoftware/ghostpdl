@@ -240,9 +240,9 @@ doit(char *line, bool intact)
     /*
      * Copy the string over itself removing:
      *  - All comments not within string literals;
-     *  - Whitespace adjacent to []{};
-     *  - Whitespace before /(<;
-     *  - Whitespace after )>.
+     *  - Whitespace adjacent to '[' ']' '{' '}';
+     *  - Whitespace before '/' '(' '<';
+     *  - Whitespace after ')' '>'.
      */
     for (to = from = str; (*to = *from) != 0; ++from, ++to) {
 	switch (*from) {
@@ -256,7 +256,6 @@ doit(char *line, bool intact)
 		    --to;
 		continue;
 	    case '(':
-		++in_string;
 	    case '<':
 	    case '/':
 	    case '[':
@@ -265,7 +264,9 @@ doit(char *line, bool intact)
 	    case '}':
 		if (to > str && !in_string && strchr(" \t", to[-1]))
 		    *--to = *from;
-		continue;
+                if (*from == '(')
+                    ++in_string;
+              	continue;
 	    case ')':
 		--in_string;
 		continue;
