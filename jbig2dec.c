@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.9 2001/06/26 00:30:00 giles Exp $
+    $Id: jbig2dec.c,v 1.10 2002/02/09 22:31:53 raph Exp $
 */
 
 #include <stdio.h>
@@ -25,6 +25,7 @@ typedef struct _Jbig2PageInfo Jbig2PageInfo;
 struct _Jbig2Ctx {
   FILE *f;
   int offset;
+  int eof;
   
   int32 n_pages;
   byte flags;
@@ -63,8 +64,13 @@ struct _Jbig2PageInfo {
 int32
 get_bytes (Jbig2Ctx *ctx, byte *buf, int size, int off)
 {
+  int n_bytes;
+
   fseek (ctx->f, off, SEEK_SET);
-  return fread (buf, 1, size, ctx->f);
+  n_bytes = fread (buf, 1, size, ctx->f);
+  if (n_bytes < size)
+    ctx->eof = TRUE;
+  return n_bytes;
 }
 
 int16
@@ -104,6 +110,7 @@ jbig2_open (FILE *f)
   /* Annex D.4 */
   ctx = (Jbig2Ctx *)malloc (sizeof(Jbig2Ctx));
   ctx->f = f;
+  ctx->eof = FALSE;
   get_bytes (ctx, buf, 9, 0);
   if (memcmp (buf, header, 8))
     {
@@ -120,15 +127,27 @@ jbig2_open (FILE *f)
     {
       ctx->offset = 13;
       ctx->n_pages = get_int32 (ctx, 9);
-	}
-  
-  if(!ctx->flags & JBIG2_FILE_FLAGS_SEQUENTIAL_ACCESS) {
+    }
+
+  if(!(ctx->flags & JBIG2_FILE_FLAGS_SEQUENTIAL_ACCESS)) {
 	printf("warning: random access header organization.\n");
 	printf("we don't handle that yet.\n");
 	free(ctx);
 	return NULL;
   }
 	
+  return ctx;
+}
+
+static Jbig2Ctx *
+jbig2_open_embedded (FILE *f_globals, FILE *f_page)
+{
+  Jbig2Ctx *ctx;
+
+  ctx = (Jbig2Ctx *)malloc (sizeof(Jbig2Ctx));
+  ctx->f = f_globals;
+  ctx->eof = 0;
+  ctx->offset = 0;
   return ctx;
 }
 
@@ -143,6 +162,12 @@ jbig2_read_segment_header (Jbig2Ctx *ctx)
 
   /* 7.2.2 */
   result->segment_number = get_int32 (ctx, offset);
+
+  if (ctx->eof)
+    {
+      free (result);
+      return NULL;
+    }
 
   /* 7.2.3 */
   get_bytes (ctx, &result->flags, 1, offset + 4);
@@ -208,10 +233,10 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
 
   /* FIXME: there are quite a few of these conditions to check */
   /* maybe #ifdef CONFORMANCE and a separate routine */
-  if(!SDHUFF && !(result->flags & 0x0006)) {
+  if(!SDHUFF && (result->flags & 0x0006)) {
 	printf("warning: SDHUFF is zero, but contrary to spec SDHUFFDH is not.\n");
   }
-  if(!SDHUFF && !(result->flags & 0x0018)) {
+  if(!SDHUFF && (result->flags & 0x0018)) {
 	printf("warning: SDHUFF is zero, but contrary to spec SDHUFFDW is not.\n");
   }
 
@@ -324,6 +349,8 @@ dump_segment (Jbig2Ctx *ctx)
   Jbig2PageInfo	*page_info;
 
   sh = jbig2_read_segment_header (ctx);
+  if (sh == NULL)
+    return TRUE;
   
   printf("segment %d (%d bytes)\t", sh->segment_number, sh->data_length);
   switch (sh->flags & 63)
@@ -407,12 +434,10 @@ dump_segment (Jbig2Ctx *ctx)
 }
 
 static void
-dump_jbig2 (FILE *f)
+dump_jbig2 (Jbig2Ctx *ctx)
 {
-  Jbig2Ctx *ctx;
   bool last;
 
-  ctx = jbig2_open (f);
   if (!ctx) return;
   
   printf ("Number of pages = %d\n", ctx->n_pages);
@@ -424,18 +449,64 @@ dump_jbig2 (FILE *f)
     }
 }
 
+static int
+usage (void)
+{
+  fprintf (stderr, "Usage: jbig2dec file.jbig2\n");
+  return 1;
+}
+
 int
 main (int argc, char **argv)
 {
-  FILE *f;
+  FILE *f = NULL, *f_page = NULL;
+  Jbig2Ctx *ctx;
 
   if (argc < 2)
-    return -1;
-  f = fopen (argv[1], "rb");
-  if (f == NULL)
-    return -1;
+    return usage ();
 
-  dump_jbig2 (f);
-  fclose (f);
+  if (argc == 2)
+    {
+      char *fn = argv[1];
+
+      f = fopen (fn, "rb");
+      if (f == NULL)
+	{
+	  fprintf (stderr, "error opening %s\n", fn);
+	  return 1;
+	}
+      ctx = jbig2_open (f);
+      if (ctx != NULL)
+	dump_jbig2 (ctx);
+      fclose (f);
+    }
+  else if (argc == 3)
+    {
+      char *fn = argv[1], *fn_page = argv[2];
+
+      f = fopen (fn, "rb");
+      if (f == NULL)
+	{
+	  fprintf (stderr, "error opening %s\n", fn);
+	  return 1;
+	}
+
+      f_page = fopen (fn_page, "rb");
+      if (f_page == NULL)
+	{
+	  fprintf (stderr, "error opening %s\n", fn_page);
+	  return 1;
+	}
+      ctx = jbig2_open_embedded (f, f_page);
+      if (ctx != NULL)
+	dump_jbig2 (ctx);
+      ctx->f = f_page;
+      ctx->offset = 0;
+      ctx->eof = FALSE;
+      dump_jbig2 (ctx);
+      fclose (f);
+      fclose (f_page);
+    }
+
   return 0;
 }
