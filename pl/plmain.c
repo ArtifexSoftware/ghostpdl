@@ -441,8 +441,9 @@ pl_main(
 
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
+	gs_malloc_memory_t *rawheap = gs_malloc_wrapped_contents(mem);
         pl_print_usage(mem, &inst, "Final");
-        dprintf1(mem, "%% Max allocated = %ld\n", gs_malloc_max);
+	dprintf1(mem, "%% Max allocated = %ld\n", rawheap->max_used);
     }
 #endif
 
@@ -485,6 +486,7 @@ pl_main_universe_init(
 	memset(universe, 0, sizeof(*universe));
 	universe->pdl_implementation = pdl_implementation;
 	universe->mem = mem;
+	mem->gs_lib_ctx->top_of_system = universe;
 	inst->device_memory = mem;
 
 	/* Create & init PDL all instances. Could do this lazily to save memory, */
@@ -521,6 +523,13 @@ pmui_err:
 	pl_main_universe_dnit(universe, 0);
 	return -1;
 }
+
+pl_interp_instance_t *get_interpreter_from_memory( const gs_memory_t *mem )
+{
+    pl_main_universe_t *universe = (pl_main_universe_t *) mem->gs_lib_ctx->top_of_system;
+    return universe->curr_instance;
+}
+
 
 /* Undo pl_main_universe_init */
 int   /* 0 ok, else -1 error */
@@ -742,7 +751,7 @@ pl_main_arg_fopen(const char *fname, void *ignore_data)
 {	return fopen(fname, "r");
 }
 
-#define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
+#define arg_heap_copy(str) arg_copy(str, pmi->memory)
 int
 pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                         gs_c_param_list *params,
@@ -884,11 +893,13 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	case 'K':		/* max memory in K */
 	    {
 		int maxk;
+		gs_malloc_memory_t *rawheap = gs_malloc_wrapped_contents(pmi->memory);
+
 		if ( sscanf(arg, "%d", &maxk) != 1 ) { 
 		    dprintf(pmi->memory, "-K must be followed by a number\n");
 		    return -1;
 		}
-		gs_malloc_limit = (long)maxk << 10;
+		rawheap->limit = (long)maxk << 10;
 	    }
 	    break;
         case 'n':
