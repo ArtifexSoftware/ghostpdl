@@ -333,64 +333,71 @@ extern PIF_STATE pIFS;
 private void
 pl_init_fc(
     const pl_font_t *   plfont,
-    const gs_matrix *   pctm,
+    gs_state *          pgs,
     int                 need_outline,
-    FONTCONTEXT *       pfc )
+    FONTCONTEXT *       pfc,
+    bool                width_request)
 {
-    static const FONTCONTEXT    fcmaster = {
-        0,                  /* font_id */
-        F_ONE,              /* xspot */
-        F_ONE,              /* yspot */
-        0,                  /* pcl6bold */
-        0x8000,             /* ssnum - no mapping */
-        FC_PCL6_EMU | FC_INCHES_TYPE,   /* format - always PCL6,
-                                         * always inch metrics */
-        NULL,               /* font_hdr - fill in if necessary */
-        0,                  /* dl_ssnum */
-        0,                  /* ExtndFlags */
-        0,                  /* ttc truetype collection ignored if not ttc file */
-        FC_MAT1_TYPE,       /* world space to device mapping */
-        {{
-          { FXD_ONE, 0, 0, FXD_ONE },
-          FXD_ONE, FXD_ONE,
-          UFST_SCALE, UFST_SCALE
-        }}
-                            
-    };
     gs_font *               pfont = plfont->pfont;
-    int                     nbits;
-    floatp                  mscale;
 
-    /* set transformation matrix, etc. */
-    *pfc = fcmaster;
-
+    /* set the current tranformation matrix - EM's... if this is a
+       width request we don't necessarily have a current graphics
+       state... use identity for resolution and ctm */
+    gs_matrix mat;
+    floatp xres, yres;
+    if ( width_request ) {
+        gs_make_identity(&mat);
+	xres = yres = 1;
+    } else {
+        gs_currentmatrix(pgs, &mat);
+	xres = gs_currentdevice(pgs)->HWResolution[0];
+	yres = gs_currentdevice(pgs)->HWResolution[1];
+    }
+    pfc->font_id = 0;
+    pfc->xspot = F_ONE;
+    pfc->yspot = F_ONE;
+    /* symbol set id used for no symbol set mapping */
+    pfc->ssnum = 0x8000;
+    /* filled in if downloaded font and/or symbol set. */
+    pfc->font_hdr = NULL;
+    pfc->dl_ssnum = 0;
+    /* union selector for transformation type m0..m3 - pcl uses pt.
+       size */
+    pfc->fc_type = FC_MAT2_TYPE;
+    /* calculate point size, set size etc based on current CTM in EM's */
+    {
+        floatp hx = hypot(mat.xx, mat.xy);
+        floatp hy = hypot(mat.yx, mat.yy);
+        /* fixed point scaling */
+        floatp mscale = 1L << 16;
+        pfc->s.m2.matrix_scale = 16;
+	/* NB shouldn't be 72.0 points per inch - font technologies
+           differ, for example 72.307 points per inch for AGFA
+           intellifonts */
+	pfc->s.m2.point_size = hy * 72.0 / xres * 8; /* 1/8ths */
+	pfc->s.m2.set_size = hx * 72.0 / yres * 8;
+        pfc->s.m2.m[0] = mscale * mat.xx / hx;
+        pfc->s.m2.m[1] = mscale * -mat.xy / hx;
+        pfc->s.m2.m[2] = mscale * mat.yx / hy;
+        pfc->s.m2.m[3] = mscale * -mat.yy / hy;
+        pfc->s.m2.world_scale = 16;
+	pfc->s.m2.xworld_res = mscale * xres;
+	pfc->s.m2.yworld_res = mscale * yres;
+    }
     /* support Format 16 headers (TrueType fonts only) */
     if (plfont->scaling_technology == plfst_TrueType && plfont->large_sizes) {
         pfc->ExtndFlags = EF_FORMAT16_TYPE | EF_GALLEYSEG_TYPE;;
         if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
             pfc->ExtndFlags = EF_VERTSUBS_TYPE;
     }
-
     /* handle artificial emboldening */
     if (plfont->bold_fraction)
         pfc->pcl6bold = 32768 * plfont->bold_fraction + 0.5;
-
-    if ( fabs(pctm->xx) >= 256.0 ||
-         fabs(pctm->xy) >= 256.0 ||
-         fabs(pctm->yx) >= 256.0 ||
-         fabs(pctm->yy) >= 256.0   ) {
-        nbits = 8;
-        need_outline = true;
-    } else
-        nbits = 16;
-    mscale = 1L << nbits;
-    pfc->s.m1.m[0] = mscale * pctm->xx;
-    pfc->s.m1.m[1] = mscale * (need_outline ? pctm->xy : -pctm->xy);
-    pfc->s.m1.m[2] = mscale * pctm->yx;
-    pfc->s.m1.m[3] = mscale * (need_outline ? pctm->yy : -pctm->yy);
-    pfc->s.m1.matrix_scale = nbits;
-
-    pfc->format |= (need_outline ? FC_LINEAR_TYPE : FC_BITMAP_TYPE);
+    else
+        pfc->pcl6bold = 0;
+    /* set the format */
+    pfc->format = FC_PCL6_EMU | FC_INCHES_TYPE;
+    pfc->format |= FC_BITMAP_TYPE;
 }
 
 /*
@@ -425,7 +432,8 @@ pl_purge_ufst_font(const pl_font_t * plfont)
     if (plfont->scaling_technology == plfst_MicroType)
         return;
 
-    pl_init_fc(plfont, &pl_identmtx, false, &fc);
+    pl_init_fc(plfont, NULL /* graphics state */, false /* needs outline */,
+               &fc, true /* requesting width */);
     fc.format |= FC_EXTERN_TYPE;
     if (plfont->scaling_technology == plfst_TrueType)
         fc.format |= FC_TT_TYPE;
@@ -1177,12 +1185,12 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
  */
 private int
 pl_set_tt_font(
-    const gs_matrix *   pctm,
+    gs_state            *pgs,
     const pl_font_t *   plfont,
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    pl_init_fc(plfont, pctm, need_outline, pfc);
+    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
     pfc->font_hdr = (LPUB8)plfont->header;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_TT_TYPE;
     return pl_set_ufst_font(plfont, pfc);
@@ -1194,7 +1202,7 @@ pl_tt_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
 {
     FONTCONTEXT fc;
 
-    if (pl_set_tt_font(&pl_identmtx, plfont, false, &fc) != 0)
+    if (pl_set_tt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
         return 0;
     else
         return pl_ufst_char_width(char_code, pwidth, &fc);
@@ -1224,7 +1232,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	dprintf( "UFST configuration does not properly support TT large sizes yet\n");
 	return 0;
     }
-    if ( pl_set_tt_font( &ctm_only((gs_imager_state *)pgs),
+    if ( pl_set_tt_font( pgs,
                          plfont,
                          gs_show_in_charpath(penum),
                          &fc) != 0 )
@@ -1381,12 +1389,12 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
  */
 private int
 pl_set_if_font(
-    const gs_matrix *   ptcm,
+    gs_state            *pgs,
     const pl_font_t *   plfont,
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    pl_init_fc(plfont, ptcm, need_outline, pfc);
+    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
     pfc->font_hdr = (LPUB8)plfont->header;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_IF_TYPE;
     return pl_set_ufst_font(plfont, pfc);
@@ -1402,10 +1410,10 @@ pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 
     dprintf( "UFST plugins required for downloaded fonts\n" );
     return 0;
-    if ( pl_set_if_font( &ctm_only((gs_imager_state *)pgs),
+    if ( pl_set_if_font( pgs,
                          plfont,
                          gs_show_in_charpath(penum),
-                         &fc) != 0 )
+                         &fc ) != 0 )
         return 0;
     return pl_ufst_make_char(penum, pgs, pfont, chr, &fc);
 }
@@ -1417,7 +1425,7 @@ pl_intelli_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
 {
     FONTCONTEXT fc;
 
-    if (pl_set_if_font(&pl_identmtx, plfont, false, &fc) != 0)
+    if (pl_set_if_font(NULL /* graphics state */, plfont, false, &fc) != 0)
         return 0;
     return pl_ufst_char_width(char_code, pwidth, &fc);
 }
@@ -1477,12 +1485,12 @@ pl_mt_encode_char(gs_font * pfont, gs_char pchr, gs_glyph not_used)
  */
 private int
 pl_set_mt_font(
-    const gs_matrix *   pctm,
+    gs_state            *pgs,
     const pl_font_t *   plfont,
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    pl_init_fc(plfont, pctm, need_outline, pfc);
+    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
     pfc->font_id = ((gs_font_base *)(plfont->pfont))->UID.id;
 #ifdef UFST_FROM_ROM
     pfc->format |= FC_ROM_TYPE;
@@ -1503,7 +1511,7 @@ pl_mt_build_char(
     const pl_font_t *   plfont = (const pl_font_t *)pfont->client_data;
     FONTCONTEXT         fc;
 
-    if ( pl_set_mt_font( &ctm_only((gs_imager_state *)pgs),
+    if ( pl_set_mt_font( pgs,
                          plfont,
                          gs_show_in_charpath(penum),
                          &fc ) != 0 )
@@ -1520,7 +1528,7 @@ pl_mt_char_width(
 {
     FONTCONTEXT             fc;
 
-    if (pl_set_mt_font(&pl_identmtx, plfont, false, &fc) != 0)
+    if (pl_set_mt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
         return 0;
     else
         return pl_ufst_char_width(char_code, pwidth, &fc);
