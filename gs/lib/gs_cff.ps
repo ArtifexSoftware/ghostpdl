@@ -495,13 +495,14 @@ def
   } forall ] /FDArray xdef end end
 } bind def
 
-% Note: this implementation can overflow the operand stack.
-% We'll fix this if it ever becomes necessary.
 /fdselectformats [
-{ [ exch charstringcount pop { card8 } repeat ] } bind
-{ /FDSelect cvx /invalidfont signalerror } bind
-dup
-{ pop 65535 array card16 card16 exch
+% Note: this procedure can overflow the operand stack.
+% We'll fix this if it ever becomes necessary.
+{ [ exch charstringcount pop { card8 } repeat ] } bind	% Format 0
+{ /FDSelect cvx /invalidfont signalerror } bind		% Format 1
+dup							% Format 2
+% The following procedure does not use excessive op-stack space.
+{ pop 65535 array card16 card16 exch			% Format 3
   { % Stack: array previndex
     card8 card16 
     exch 1 index 4 -1 roll
