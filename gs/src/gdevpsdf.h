@@ -354,6 +354,10 @@ int psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
 		    int Columns, int Rows, int Colors,
 		    psdf_binary_writer *pbw /* may be NULL */);
 
+/* Decive whether to convert an image to RGB. */
+bool psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev, 
+		const gs_imager_state * pis, const gs_pixel_image_t * pim);
+
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 /* If pctm is NULL, downsampling is not used. */

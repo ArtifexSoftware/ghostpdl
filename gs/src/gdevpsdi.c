@@ -275,6 +275,17 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
     return 0;
 }
 
+/* Decive whether to convert an image to RGB. */
+bool
+psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev, 
+		const gs_imager_state * pis, const gs_pixel_image_t * pim)
+{
+    return pdev->params.ConvertCMYKImagesToRGB &&
+	    pis != 0 &&
+	    gs_color_space_get_index(pim->ColorSpace) ==
+	    gs_color_space_index_DeviceCMYK;
+}
+
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 int
@@ -363,11 +374,8 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
     } else {
 	/* Color */
-	bool cmyk_to_rgb =
-	    pdev->params.ConvertCMYKImagesToRGB &&
-	    pis != 0 &&
-	    gs_color_space_get_index(pim->ColorSpace) ==
-	    gs_color_space_index_DeviceCMYK;
+	bool cmyk_to_rgb = psdf_is_converting_image_to_RGB(pdev, pis, pim);
+
 	if (cmyk_to_rgb) {
 	    extern_st(st_color_space);
 	    gs_memory_t *mem = pdev->v_memory;

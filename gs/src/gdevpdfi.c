@@ -274,6 +274,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     } image[4];
     int width, height;
     const gs_range_t *pranges = 0;
+    const pdf_color_space_names_t *names;
 
     /*
      * Pop the image name from the NI stack.  We must do this, to keep the
@@ -497,6 +498,20 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 				    (pim->Width <= 64 && pim->Height <= 64) ||
 				    pdev->transfer_not_identity ? 1 : 2);
     image[1] = image[0];
+    names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
+    if (psdf_is_converting_image_to_RGB((gx_device_psdf *)pdev, pis, pim)) {
+	/* psdf_setup_image_filters may change the color space
+	 * (in case of pdev->params.ConvertCMYKImagesToRGB == true).
+	 * Account it here.
+	 */
+	cos_c_string_value(&cs_value, names->DeviceRGB);
+    } else if (!is_mask) {
+	code = pdf_color_space(pdev, &cs_value, &pranges,
+				 image[0].pixel.ColorSpace,
+				 names, in_line);
+	if (code < 0)
+	    goto fail;
+    }
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 		    height, pnamed, in_line)) < 0 ||
 	/*
@@ -514,17 +529,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 					     &image[0].pixel) :
 		 psdf_setup_image_filters((gx_device_psdf *) pdev,
 					  &pie->writer.binary[0], &image[0].pixel,
-					  pmat, pis, true))) < 0 ||
-	/* SRZB 2001-04-25/Bl
-	 * Since psdf_setup_image_filters may change the color space
-	 * (in case of pdev->params.ConvertCMYKImagesToRGB == true),
-	 * we postpone the selection of the PDF color space to here:
-	 */
-	(!is_mask &&
-	 (code = pdf_color_space(pdev, &cs_value, &pranges,
-				 image[0].pixel.ColorSpace,
-				 (in_line ? &pdf_color_space_names_short :
-				  &pdf_color_space_names), in_line)) < 0)
+					  pmat, pis, true))) < 0
 	)
 	goto fail;
     if (pie->writer.alt_writer_count > 1) {
