@@ -260,27 +260,27 @@ STDLIBS=-lm
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
-# in /usr/include, or the directory is supplied by an environment variable);
-# in particular, SCO Xenix, Unix, and ODT just want
-#XINCLUDE=
-# Note that x_.h expects to find the header files in $(XINCLUDE)/X11,
-# not in $(XINCLUDE).
+# in /usr/include, or the directory is supplied by an environment variable)
 
-XINCLUDE=@XINCLUDE@
+XINCLUDE=@X_CFLAGS@
 
 # Define the directory/ies and library names for the X11 library files.
 # XLIBDIRS is for ld and should include -L; XLIBDIR is for LD_RUN_PATH
 # (dynamic libraries on SVR4) and should not include -L.
 # Newer SVR4 systems can use -R in XLIBDIRS rather than setting XLIBDIR.
-# Both can be null if these files are in the default linker search path;
-# in particular, SCO Xenix, Unix, and ODT just want
-#XLIBDIRS=
+# Both can be null if these files are in the default linker search path.
+
 # Solaris and other SVR4 systems with dynamic linking probably want
 #XLIBDIRS=-L/usr/openwin/lib -R/usr/openwin/lib
 # X11R6 (on any platform) may need
 #XLIBS=Xt SM ICE Xext X11
 
-XLIBDIRS=-L@x_libraries@
+# We use the autoconf macro AC_PATH_XTRA which defines X_LIBS with
+# the -L (or whatever). It also defines X_EXTRA_LIBS which
+# should be slotted into XLIBS below and X_PRE_LIBS which should go
+# before -lX11. We do not handle these and should, but they are empty
+# on most modern platforms.
+XLIBDIRS=@X_LIBS@
 XLIBDIR=
 XLIBS=Xt Xext X11
 

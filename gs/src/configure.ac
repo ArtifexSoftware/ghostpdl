@@ -140,7 +140,7 @@ AC_SUBST(IJSDIR)
 AC_SUBST(IJSDEVS)
 
 dnl optional X11 for display devices
-AC_PATH_X
+AC_PATH_XTRA
 if test x"$no_x" = x"yes"; then
 	AC_MSG_NOTICE([disabling X11 output devices])
 	X11DEVS=''
@@ -148,14 +148,6 @@ else
 	X11DEVS='$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev'
 fi
 AC_SUBST(X11DEVS)
-
-if test "x$x_includes" = "x"; then
-	XINCLUDE=''
-else
-	XINCLUDE=-I$x_includes
-fi
-AC_SUBST(XINCLUDE)
-AC_SUBST(x_libraries)
 
 
 dnl --------------------------------------------------
