@@ -62,7 +62,7 @@
     Another optimization could be applied to the regular(old) trapezoid algorithm.
     Currently it breaks stems at any step of the Y cycle,
     generating big number of trapezoids.
-    Perhaps we could store trapeziod vertices to active_line,
+    Perhaps we could store trapezoid vertices to active_line,
     and delay rendering a trapezoid until stem changes boundary segments.
     This also would make calls to the margin staff less frequent.
 

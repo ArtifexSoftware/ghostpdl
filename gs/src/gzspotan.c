@@ -324,7 +324,7 @@ try_unite_last_trap(gx_device_spot_analyzer *padev, fixed xlbot)
     if (padev->bot_band != NULL && padev->top_band != NULL) {
 	gx_san_trap *last = band_list_last(padev->top_band);
 	gx_san_trap *t = padev->bot_current;
-	/* If the last trapeziod is a prolongation of its bottom contact, 
+	/* If the last trapezoid is a prolongation of its bottom contact, 
 	   unite it and release the last trapezoid and the last contact. */
 	if (t != NULL && t->upper != NULL && last->xrbot < xlbot && 
 		(last->prev == last || last->prev->xrbot < last->xlbot)) {
@@ -464,7 +464,7 @@ gx_san_trap_store(gx_device_spot_analyzer *padev,
 	try_unite_last_trap(padev, xlbot);
     check_band_list(padev->bot_band);
     check_band_list(padev->top_band);
-    /* Make new trapeziod. */
+    /* Make new trapezoid. */
     last = trap_reserve(padev);
     if (last == NULL)
 	return_error(gs_error_VMerror);

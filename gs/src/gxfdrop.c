@@ -436,9 +436,9 @@ private inline int process_h_list(line_list * ll, active_line * hlp, active_line
 int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active_line * alp,
 		    fixed y0, fixed y1)
 {   
-#   if CURVED_TRAPEZIOD_FILL
+#   if CURVED_TRAPEZOID_FILL
 	if (y0 == y1) {
-	    /*  This may happen with CURVED_TRAPEZIOD_FILL, when a curve piece is horizontal.
+	    /*  This may happen with CURVED_TRAPEZOID_FILL, when a curve piece is horizontal.
 		Currently we skip such pieces from the H list processing.
 		We could determine whether a piece is upper or below the h-line
 		analyzing the Y-coordinates of the curve ends,
@@ -450,8 +450,8 @@ int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active
 	}
 #   endif
     if (ll->h_list0 != 0
-#	if CURVED_TRAPEZIOD_FILL
-	    /* Likely a bug in the !CURVED_TRAPEZIOD_FILL code. */
+#	if CURVED_TRAPEZOID_FILL
+	    /* Likely a bug in the !CURVED_TRAPEZOID_FILL code. */
 	    && y0 <= ll->h_list0->start.y && ll->h_list0->start.y <= y1
 #	endif
        ) {
@@ -461,8 +461,8 @@ int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active
 	    return code;
     }
     if (ll->h_list1 != 0
-#	if CURVED_TRAPEZIOD_FILL
-	    /* Likely a bug in the !CURVED_TRAPEZIOD_FILL code. */
+#	if CURVED_TRAPEZOID_FILL
+	    /* Likely a bug in the !CURVED_TRAPEZOID_FILL code. */
 	    && y0 <= ll->h_list1->start.y && ll->h_list1->start.y <= y1
 #	endif
        ) {

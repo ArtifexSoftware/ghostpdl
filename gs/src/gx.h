@@ -30,7 +30,7 @@
 #define NEW_TT_INTERPRETER 1
 #define TT_GRID_FITTING (NEW_TT_INTERPRETER && 0) /* old code = 0, new code = 1. */
 #define FLATTENED_CURVE_ITERATOR 1 /* Old code = 0, new code = 1. */
-#define CURVED_TRAPEZIOD_FILL (FLATTENED_CURVE_ITERATOR & 0) /* old code = 0, new code = 1. */
+#define CURVED_TRAPEZOID_FILL (FLATTENED_CURVE_ITERATOR & 0) /* old code = 0, new code = 1. */
 
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */

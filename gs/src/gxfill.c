@@ -428,7 +428,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	/* Filling curves is possible. */
 #  ifdef FILL_TRAPEZOIDS
 	/* Not filling curves is also possible. */
-    if (fill_by_trapezoids && !CURVED_TRAPEZIOD_FILL)
+    if (fill_by_trapezoids && !CURVED_TRAPEZOID_FILL)
 #  endif
 #endif
 #if !defined(FILL_CURVES) || defined(FILL_TRAPEZOIDS)
@@ -450,7 +450,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     else
 #  endif
     if (
-#   if CURVED_TRAPEZIOD_FILL
+#   if CURVED_TRAPEZOID_FILL
 	gx_path__check_curves(ppath, fill_by_trapezoids, lst.fixed_flat)
 #   else
 	gx_path_is_monotonic(ppath)
@@ -460,14 +460,14 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     else {
 	gx_path_init_local(&ffpath, ppath->memory);
 	code = gx_path_copy_reducing(ppath, &ffpath, 
-#		    if CURVED_TRAPEZIOD_FILL
+#		    if CURVED_TRAPEZOID_FILL
 		    max_fixed,
 #		    else
 		    (fill_by_trapezoids ? lst.fixed_flat : max_fixed),
 #		    endif
 		    NULL, 
 		    
-#		    if CURVED_TRAPEZIOD_FILL
+#		    if CURVED_TRAPEZOID_FILL
 			pco_monotonize 
 			    | (fill_by_trapezoids ? pco_small_curves : pco_none)
 			    | (pis->accurate_curves ? pco_accurate : pco_none)
@@ -480,7 +480,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	pfpath = &ffpath;
     }
 #endif
-#   if CURVED_TRAPEZIOD_FILL
+#   if CURVED_TRAPEZOID_FILL
 	lst.fill_by_trapezoids = fill_by_trapezoids;
 #   endif
     if ((code = add_y_list(pfpath, &lst, adjust_below, adjust_above, &ibox)) < 0)
@@ -774,7 +774,7 @@ add_y_list(gx_path * ppath, line_list *ll, fixed adjust_below, fixed adjust_abov
     return close_count;
 }
 
-#if CURVED_TRAPEZIOD_FILL
+#if CURVED_TRAPEZOID_FILL
 private void 
 step_al(active_line *alp)
 {
@@ -844,13 +844,13 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
     this.y = lp->pt.y;
     prev.x = prev_lp->pt.x;
     prev.y = prev_lp->pt.y;
-#   if CURVED_TRAPEZIOD_FILL
+#   if CURVED_TRAPEZOID_FILL
 	alp->more_flattened = false;
 #   endif
     switch ((alp->direction = dir)) {
 	case DIR_UP:
 	    y_start = prev.y;
-#	    if CURVED_TRAPEZIOD_FILL
+#	    if CURVED_TRAPEZOID_FILL
 		if (ll->fill_by_trapezoids)
 		    init_al(alp, prev_lp, lp, ll->fixed_flat);
 		else
@@ -861,7 +861,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
 	    break;
 	case DIR_DOWN:
 	    y_start = this.y;
-#	    if CURVED_TRAPEZIOD_FILL
+#	    if CURVED_TRAPEZOID_FILL
 		if (ll->fill_by_trapezoids)
 		    init_al(alp, lp, prev_lp, ll->fixed_flat);
 		else
@@ -992,7 +992,7 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
 	);
     gs_fixed_point npt;
 
-#   if CURVED_TRAPEZIOD_FILL
+#   if CURVED_TRAPEZOID_FILL
     if (alp->more_flattened)
 	return false;
 #   endif
@@ -1011,7 +1011,7 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
 	if_debug1('F', "[F]drop 0x%lx\n", (ulong) alp);
 	return true;
     }
-#   if CURVED_TRAPEZIOD_FILL
+#   if CURVED_TRAPEZOID_FILL
 	if (ll->fill_by_trapezoids)
 	    init_al(alp, pseg, next, ll->fixed_flat);
 	else
@@ -1190,7 +1190,7 @@ move_al_by_y(line_list *ll, fixed y1)
     fixed x;
     active_line *alp, *nlp;
 
-#   if CURVED_TRAPEZIOD_FILL
+#   if CURVED_TRAPEZOID_FILL
     for (alp = ll->x_list; alp != 0; alp = alp->next) {
 	if (alp->end.y == y1)
 	    if (alp->more_flattened)
@@ -1476,7 +1476,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
     active_line *alp, *stopx = NULL, *endp;
 
     /* don't bother if no pixels with no pseudo_rasterization */
-#if CURVED_TRAPEZIOD_FILL
+#if CURVED_TRAPEZOID_FILL
     if (y == y1) {
 	/* Rather the intersection algorithm can handle this case with
 	   retrieving x_next equal to x_current, 

@@ -130,7 +130,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 				flat = min(flat_x, flat_y);
 			    }
 			}
-#			if CURVED_TRAPEZIOD_FILL
+#			if CURVED_TRAPEZOID_FILL
 			    k = (options & pco_small_curves ? -1 
 				    : gx_curve_log2_samples(x0, y0, pc, flat));
 #			else
@@ -586,7 +586,7 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
 
 /* Test whether a path is free of non-monotonic curves. */
 bool
-#if CURVED_TRAPEZIOD_FILL
+#if CURVED_TRAPEZOID_FILL
 gx_path__check_curves(const gx_path * ppath, bool small_curves, fixed fixed_flat)
 #else
 gx_path_is_monotonic(const gx_path * ppath)
@@ -619,7 +619,7 @@ gx_path_is_monotonic(const gx_path * ppath)
 					   pc->p1.x, pc->p2.x, pc->pt.x, t);
 		    if (nz != 0)
 			return false;
-#		    if CURVED_TRAPEZIOD_FILL
+#		    if CURVED_TRAPEZOID_FILL
 			if (small_curves) {
 			    fixed ax, bx, cx, ay, by, cy; 
 			    int k = gx_curve_log2_samples(pt0.x, pt0.y, pc, fixed_flat);
