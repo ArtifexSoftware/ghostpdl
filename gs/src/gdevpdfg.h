@@ -75,10 +75,6 @@ int pdf_color_space(P5(gx_device_pdf *pdev, cos_value_t *pvalue,
 int pdf_cs_Pattern_colored(P2(gx_device_pdf *pdev, cos_value_t *pvalue));
 int pdf_cs_Pattern_uncolored(P2(gx_device_pdf *pdev, cos_value_t *pvalue));
 
-/* Write a color value. */
-int pdf_put_drawing_color(P3(gx_device_pdf *pdev, const gx_drawing_color *pdc,
-			     const psdf_set_color_commands_t *ppscc));
-
 /* Set the ProcSets bits corresponding to an image color space. */
 void pdf_color_space_procsets(P2(gx_device_pdf *pdev,
 				 const gs_color_space *pcs));
@@ -213,5 +209,11 @@ int pdf_end_image_binary(P3(gx_device_pdf *pdev, pdf_image_writer *piw,
  * return 1; if a resource, write the resource definition and return 0.
  */
 int pdf_end_write_image(P2(gx_device_pdf * pdev, pdf_image_writer * piw));
+
+/* ---------------- Exported by gdevpdfv.c ---------------- */
+
+/* Write a color value. */
+int pdf_put_drawing_color(P3(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			     const psdf_set_color_commands_t *ppscc));
 
 #endif /* gdevpdfg_INCLUDED */

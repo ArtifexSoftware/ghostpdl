@@ -76,7 +76,7 @@ typedef enum {
     resourceColorSpace,
     resourceExtGState,
     resourcePattern,
-    /*resourceShading,*/	/* not needed */
+    resourceShading,
     resourceXObject,
     resourceFont,
     /*
@@ -89,10 +89,11 @@ typedef enum {
 } pdf_resource_type_t;
 
 #define pdf_resource_type_names\
-  "ColorSpace", "ExtGState", "Pattern", "XObject", "Font",\
+  "ColorSpace", "ExtGState", "Pattern", "Shading", "XObject", "Font",\
   0, 0, 0
 #define pdf_resource_type_structs\
   &st_pdf_resource,		/* see below */\
+  &st_pdf_resource,\
   &st_pdf_resource,\
   &st_pdf_resource,\
   &st_pdf_x_object,		/* see below */\

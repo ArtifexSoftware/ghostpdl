@@ -405,6 +405,26 @@ cos_array_alloc(gx_device_pdf *pdev, client_name_t cname)
     return pca;
 }
 
+cos_array_t *
+cos_array_from_floats(gx_device_pdf *pdev, const float *pf, uint size,
+		      client_name_t cname)
+{
+    cos_array_t *pca = cos_array_alloc(pdev, cname);
+    uint i;
+
+    if (pca == 0)
+	return 0;
+    for (i = 0; i < size; ++i) {
+	int code = cos_array_add_real(pca, pf[i]);
+
+	if (code < 0) {
+	    COS_FREE(pca, cname);
+	    return 0;
+	}
+    }
+    return pca;
+}
+
 private void
 cos_array_release(cos_object_t *pco, client_name_t cname)
 {

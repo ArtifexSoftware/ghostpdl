@@ -662,15 +662,21 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
 # Note that gs_pdfwr.ps will only actually be loaded if the configuration
 # includes a PostScript interpreter.
 
-pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ)
-pdfwrite2_=$(GLOBJ)gdevpdfb.$(OBJ) $(GLOBJ)gdevpdfc.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ)
-pdfwrite3_=$(GLOBJ)gdevpdfe.$(OBJ) $(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfg.$(OBJ)
-pdfwrite4_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfj.$(OBJ) $(GLOBJ)gdevpdfm.$(OBJ)
-pdfwrite5_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ) $(GLOBJ)gdevpdfr.$(OBJ)
-pdfwrite6_=$(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
-pdfwrite7_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
-pdfwrite8_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
-pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_) $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_)
+# We reserve slots here for gdevpdfa...z, just in case we need them.
+pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfb.$(OBJ)
+pdfwrite2_=$(GLOBJ)gdevpdfc.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ) $(GLOBJ)gdevpdfe.$(OBJ)
+pdfwrite3_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfg.$(OBJ)
+pdfwrite4_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfj.$(OBJ)
+pdfwrite5_=$(GLOBJ)gdevpdfm.$(OBJ)
+pdfwrite6_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ)
+pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ)
+pdfwrite8_=$(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfv.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
+pdfwrite9_=
+pdfwrite10_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
+pdfwrite11_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
+pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
+ $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
+ $(pdfwrite10_) $(pdfwrite11_)
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
@@ -683,6 +689,9 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite6_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite7_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite8_)
+	$(ADDMOD) $(DD)pdfwrite $(pdfwrite9_)
+	$(ADDMOD) $(DD)pdfwrite $(pdfwrite10_)
+	$(ADDMOD) $(DD)pdfwrite $(pdfwrite11_)
 	$(ADDMOD) $(DD)pdfwrite -ps gs_pdfwr
 	$(ADDMOD) $(DD)pdfwrite -ps gs_css_e gs_lgo_e gs_lgx_e gs_mex_e
 	$(ADDMOD) $(DD)pdfwrite -ps gs_mgl_e gs_mro_e gs_wan_e
@@ -709,12 +718,10 @@ $(GLOBJ)gdevpdfb.$(OBJ) : $(GLSRC)gdevpdfb.c\
  $(gserrors_h) $(gxcspace_h)
 	$(GLCC) $(GLO_)gdevpdfb.$(OBJ) $(C_) $(GLSRC)gdevpdfb.c
 
-$(GLOBJ)gdevpdfc.$(OBJ) : $(GLSRC)gdevpdfc.c $(GXERR) $(math__h) $(string__h)\
+$(GLOBJ)gdevpdfc.$(OBJ) : $(GLSRC)gdevpdfc.c $(GXERR) $(math__h) $(memory__h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gscie_h) $(gscindex_h) $(gscspace_h) $(gscdevn_h) $(gscsepr_h)\
- $(gsiparm3_h) $(gsmatrix_h)\
- $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h)\
- $(sstring_h) $(stream_h) $(strimpl_h) $(szlibx_h)
+ $(sstring_h) $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfc.$(OBJ) $(C_) $(GLSRC)gdevpdfc.c
 
 $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
@@ -749,8 +756,8 @@ $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
 $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c\
  $(gx_h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
- $(gserrors_h) $(gsflip_h) $(gsiparm3_h) $(gsiparm4_h)\
- $(gxcspace_h)
+ $(gsdevice_h) $(gserrors_h) $(gsflip_h) $(gsiparm4_h)\
+ $(gxcspace_h) $(gximage3_h)
 	$(GLCC) $(GLO_)gdevpdfi.$(OBJ) $(C_) $(GLSRC)gdevpdfi.c
 
 $(GLOBJ)gdevpdfj.$(OBJ) : $(GLSRC)gdevpdfj.c\
@@ -796,6 +803,13 @@ $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
  $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
+
+$(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
+ $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gscindex_h) $(gscoord_h) $(gsiparm3_h) $(gsmatrix_h) $(gsptype2_h)\
+ $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h) $(gxshade_h)\
+ $(szlibx_h)
+	$(GLCC) $(GLO_)gdevpdfv.$(OBJ) $(C_) $(GLSRC)gdevpdfv.c
 
 $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
  $(memory__h) $(string__h) $(gx_h)\

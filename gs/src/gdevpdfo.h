@@ -182,6 +182,8 @@ extern const cos_object_procs_t cos_stream_procs;
 /* Create a Cos object. */
 cos_object_t *cos_object_alloc(P2(gx_device_pdf *, client_name_t));
 cos_array_t *cos_array_alloc(P2(gx_device_pdf *, client_name_t));
+cos_array_t *cos_array_from_floats(P4(gx_device_pdf *, const float *, uint,
+				      client_name_t));
 cos_dict_t *cos_dict_alloc(P2(gx_device_pdf *, client_name_t));
 cos_stream_t *cos_stream_alloc(P2(gx_device_pdf *, client_name_t));
 
