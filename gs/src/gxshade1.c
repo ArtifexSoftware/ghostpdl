@@ -764,12 +764,12 @@ R_compute_extension_cone(floatp x0, floatp y0, floatp r0,
     coord[0][0] = isecx = (x1-x0)*r0 / (r0-r1) + x0;
     coord[0][1] = isecy = (y1-y0)*r0 / (r0-r1) + y0;
 
-    dis = sqrt((x1-isecx)*(x1-isecx)+(y1-isecy)*(y1-isecy));
+    dis = hypot(x1-isecx, y1-isecy);
     k = sqrt(dis*dis-r1*r1);
     cost = k / dis;
     sint = r1 / dis;
 
-    cir_dis = sqrt((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0));
+    cir_dis = hypot(x1-x0, y1-y0);
     l = sqrt(cir_dis*cir_dis - (r0-r1)*(r0-r1));
 
     dx0 = ((x1-isecx)*cost - (y1-isecy)*sint) / dis;
@@ -801,7 +801,7 @@ R_compute_extension_bar(floatp x0, floatp y0, floatp x1,
 {
     floatp dis;
 
-    dis = sqrt((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0));
+    dis = hypot(x1-x0, y1-y0);
     coord[0][0] = x0 + (y0-y1) / dis * radius;
     coord[0][1] = y0 - (x0-x1) / dis * radius;
     coord[1][0] = coord[0][0] + (x0-x1) / dis * max_ext;
@@ -829,6 +829,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     int i;
     int code;
     float dist_between_circles;
+    gs_point dev_dpt;
 
     shade_init_fill_state((shading_fill_state_t *)&state, psh0, dev, pis);
     state.psh = psh;
@@ -844,13 +845,16 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     state.delta.y = y1 - y0;
     state.dr = r1 - r0;
 
-    dist_between_circles = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
-    /* Now the annulus width is distance between two circles.
+    /* Now the annulus width is the distance 
+     * between two circles in output device unit.
      * This is just used for a conservative check and
      * also pretty crude but now it works for circles
      * with same or not so different radii.
      */
-    state.width = dist_between_circles;
+    gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pis), &dev_dpt);
+    state.width = hypot(dev_dpt.x, dev_dpt.y);
+
+    dist_between_circles = hypot(x1-x0, y1-y0);
 
     state.dd = dd;
 
@@ -858,7 +862,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	floatp max_extension;
 	gs_point p, q;
 	p = psh->params.BBox.p; q = psh->params.BBox.q;
-	max_extension = sqrt((p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y))*2;
+	max_extension = hypot(p.x-q.x, p.y-q.y)*2;
 
 	if (r0 < r1) {
 	    if ( (r1-r0) < dist_between_circles) {
@@ -916,7 +920,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	floatp max_extension;
 	gs_point p, q;
 	p = psh->params.BBox.p; q = psh->params.BBox.q;
-	max_extension = sqrt((p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y))*2;
+	max_extension = hypot(p.x-q.x, p.y-q.y)*2;
 
 	if (code < 0)
 	    return code;
