@@ -219,7 +219,7 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	m.xy = mxy;
 	m.yx = myx;
 	m.yy = myy;
-	m.tx = m.yx =0;
+	m.tx = m.yx = 0;
 	pair->ttr = gx_ttfReader__create(dir->memory, (gs_font_type42 *)font);
 	if (!pair->ttr)
 	    return_error(gs_error_VMerror);

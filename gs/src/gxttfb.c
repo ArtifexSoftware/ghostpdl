@@ -441,7 +441,6 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     gs_matrix post_transform;
     /* Ghostscript proceses a TTC index in gs/lib/gs_ttf.ps, */
     /* so that TTC never comes here. */
-    unsigned int nTTC = 0; 
     FloatMatrix m1;
     bool atp = gs_currentaligntopixels(pfont->dir);
 

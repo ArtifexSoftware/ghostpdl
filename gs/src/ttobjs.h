@@ -707,8 +707,6 @@ typedef struct _TExecution_Context TExecution_Context;
   TT_Error  Goto_CodeRange( PExecution_Context  exec, Int  range, Int  IP );
   /* Unset the coderange */
   void  Unset_CodeRange( PExecution_Context  exec );
-  /* Reset the coderange */
-  void Reset_CodeRange( PExecution_Context  exec, Int  range );
  
   /* Return a pointer to a given coderange record. */
   /* Used only by the debugger.                    */

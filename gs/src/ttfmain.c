@@ -595,22 +595,23 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
     nPosBeg = r->Tell(r);
 
     gOutline->contourCount = ttfReader__Short(r);
-    gOutline->xMinB = shortToF26Dot6(ttfReader__Short(r));
-    gOutline->yMinB = shortToF26Dot6(ttfReader__Short(r));
-    gOutline->xMaxB = shortToF26Dot6(ttfReader__Short(r));
-    gOutline->yMaxB = shortToF26Dot6(ttfReader__Short(r));
+    subglyph.bbox.xMin = ttfReader__Short(r);
+    subglyph.bbox.yMin = ttfReader__Short(r);
+    subglyph.bbox.xMax = ttfReader__Short(r);
+    subglyph.bbox.yMax = ttfReader__Short(r);
+
+    gOutline->xMinB = subglyph.bbox.xMin;
+    gOutline->yMinB = subglyph.bbox.yMin;
+    gOutline->xMaxB = subglyph.bbox.xMax;
+    gOutline->yMaxB = subglyph.bbox.yMax;
 
     /* FreeType stuff beg */
     Init_Glyph_Component(&subglyph, NULL, pFont->exec);
-    subglyph.leftBearing = shortToF26Dot6(sideBearing);
-    subglyph.advanceWidth = shortToF26Dot6(nAdvance);
-    subglyph.bbox.xMin = gOutline->xMinB;
-    subglyph.bbox.xMax = gOutline->xMaxB;
-    subglyph.bbox.yMin = gOutline->yMinB;
-    subglyph.bbox.yMax = gOutline->yMaxB;
-    subglyph.pp1.x = gOutline->xMinB - gOutline->sideBearing;
+    subglyph.leftBearing = sideBearing;
+    subglyph.advanceWidth = nAdvance;
+    subglyph.pp1.x = subglyph.bbox.xMin - sideBearing;
     subglyph.pp1.y = 0;
-    subglyph.pp2.x = subglyph.pp1.x + gOutline->advance.x;
+    subglyph.pp2.x = subglyph.pp1.x + nAdvance;
     subglyph.pp2.y = 0;
     /* FreeType stuff end */
 
@@ -745,17 +746,13 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 		pts->n_points = nPoints;
 		pts->n_contours = gOutline->contourCount;
 		/* add phantom points : */
-		subglyph.pp1.x = gOutline->xMinB - gOutline->sideBearing;
-		subglyph.pp1.y = 0;
-		subglyph.pp2.x = subglyph.pp1.x + gOutline->advance.x;
-		subglyph.pp1.y = 0;
-		pts->org_x[nPoints - 2] = subglyph.pp1.x;
-		pts->org_y[nPoints - 2] = subglyph.pp1.y;
-		pts->org_x[nPoints - 1] = subglyph.pp2.x;
-		pts->org_y[nPoints - 1] = subglyph.pp2.y;
+		pts->org_x[nPoints - 2] = Scale_X(&exec->metrics, subglyph.pp1.x);
+		pts->org_y[nPoints - 2] = Scale_Y(&exec->metrics, subglyph.pp1.y);
+		pts->org_x[nPoints - 1] = Scale_X(&exec->metrics, subglyph.pp2.x);
+		pts->org_y[nPoints - 1] = Scale_Y(&exec->metrics, subglyph.pp2.y);
 		pts->touch[nPoints - 1] = 0;
 		pts->touch[nPoints - 2] = 0;
-		/* if hinting, round the phantom points : */
+		/* if hinting, round the phantom points (not sure) : */
 		x = pts->org_x[nPoints - 2];
 		x = ((x + 32) & -64) - x;
 		if (x)
@@ -776,11 +773,9 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 		    error = fPatented;
 		else
 		    error = fBadFontData;
-		gOutline->sideBearing = gOutline->xMinB - subglyph.pp1.x;
-		gOutline->advance.x = subglyph.pp2.x - subglyph.pp1.x;
             }
 	    Unset_CodeRange(exec);
-	    Reset_CodeRange(exec, TT_CodeRange_Glyph);
+	    Clear_CodeRange(exec, TT_CodeRange_Glyph);
         }
     } else if (gOutline->contourCount > 0) {
 	uint16 i;
@@ -823,7 +818,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
             }
         }
 	/*  Lets do X */
-	{   short coord = (this->bVertical ? 0 : sideBearing - (gOutline->xMinB >> 6));
+	{   short coord = (this->bVertical ? 0 : sideBearing - subglyph.bbox.xMin);
 	    F26Dot6* x = pts->org_x;
 	    onCurve = pts->touch;
 	    while (onCurve < stop) {
@@ -865,15 +860,16 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	    TT_Error code;
 
 	    exec->is_composite = FALSE;
-	    pts->touch[nPoints    ] = 0; /* phantom point */
-	    pts->touch[nPoints + 1] = 0; /* phantom point */
-	    pts->org_x[nPoints    ] = subglyph.pp1.x; /* phantom point */
-	    pts->org_x[nPoints + 1] = subglyph.pp2.x; /* phantom point */
-	    pts->org_y[nPoints    ] = 0;
-	    pts->org_y[nPoints + 1] = 0;
+	    /* add phantom points : */
+	    pts->org_x[nPoints    ] = Scale_X(&exec->metrics, subglyph.pp1.x);
+	    pts->org_y[nPoints    ] = Scale_Y(&exec->metrics, subglyph.pp1.y);
+	    pts->org_x[nPoints + 1] = Scale_X(&exec->metrics, subglyph.pp2.x);
+	    pts->org_y[nPoints + 1] = Scale_Y(&exec->metrics, subglyph.pp2.y);
+	    pts->touch[nPoints    ] = 0;
+	    pts->touch[nPoints + 1] = 0;
 	    pts->n_points   = nPoints + 2;
 	    pts->n_contours = gOutline->contourCount;
-	    /* if hinting, round the phantom points : */
+	    /* if hinting, round the phantom points (not sure) : */
 	    x = pts->org_x[nPoints];
 	    x = ((x + 32) & -64) - x;
 	    if (x)
@@ -894,11 +890,11 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 		error = fPatented;
 	    else
 		error = fBadFontData;
-	    gOutline->sideBearing = gOutline->xMinB - subglyph.pp1.x;
+	    gOutline->sideBearing = subglyph.bbox.xMin - subglyph.pp1.x;
 	    gOutline->advance.x = subglyph.pp2.x - subglyph.pp1.x;
         }
         Unset_CodeRange(exec);
-        Reset_CodeRange(exec, TT_CodeRange_Glyph);
+        Clear_CodeRange(exec, TT_CodeRange_Glyph);
     } else
 	error = fBadFontData;
     goto ex;

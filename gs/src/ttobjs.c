@@ -121,28 +121,6 @@
   
 /*******************************************************************
  *
- *  Function    :  Reset_CodeRange
- *
- *  Description :  Resets a code range.
- *
- *  Input  :  exec    target execution context
- *            range   execution code range       
- *
- *  Output :  
- *
- *  Note   : The pointer must be reset after used to avoid pending pointers
- *           while a garbager invokation.
- *
- *****************************************************************/
-
-  void Reset_CodeRange( PExecution_Context  exec, Int  range )
-  {
-    exec->codeRangeTable[range - 1].Base = 0;
-    exec->codeRangeTable[range - 1].Size = 0;
-  }
-
-/*******************************************************************
- *
  *  Function    :  Get_CodeRange
  *
  *  Description :  Returns a pointer to a given code range.  Should
@@ -433,9 +411,6 @@ static int free_aux(ttfMemory *mem, void *ptr)
                          PInstance           ins )
  {
    Int  i;
-
-    if(exec->codeRangeTable[2].Base)
-	__asm int 3;
 
    for ( i = 0; i < MAX_CODE_RANGES; i++ ) {
      ins->codeRangeTable[i] = exec->codeRangeTable[i];
