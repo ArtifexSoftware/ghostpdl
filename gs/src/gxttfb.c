@@ -605,6 +605,9 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	code = t1_hinter__set_font42_data(&h.super, FontType, &pfont->data, false);
 	if (code < 0)
 	    return code;
+	code = t1_hinter__sbw(&h.super, sbx, sby, e->w.x, e->w.y);
+	if (code < 0)
+	    return code;
 	gx_path_bbox(path, &bbox);
 	if (code < 0)
 	    return code;
@@ -635,9 +638,6 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	/*  fixme : Storing hints permanently would be useful.
 	    Note that if (gftt & 1), the outline and hints are already scaled.
 	*/
-	code = t1_hinter__sbw(&h.super, sbx, sby, e->w.x, e->w.y);
-	if (code < 0)
-	    return code;
 	code = path_to_hinter(&h.super, path);
 	if (code < 0)
 	    return code;
