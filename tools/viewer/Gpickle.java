@@ -11,7 +11,7 @@ import com.sun.image.codec.jpeg.*;
 
 public class Gpickle {
     /** debug printf control */
-    private final static boolean debug = true; 
+    private final static boolean debug = false; 
     /** here are some defaults that might be overriden will probably be
     * overriden.
     */
@@ -43,7 +43,19 @@ public class Gpickle {
        return( rtl.equals(cRTLstr) );
     }
 
-    private String textAlpha = " ";//" -dTextAlphaBits=2";
+    private boolean bTextAlpha = false;
+    private String textAlphaOptStr = " ";
+    public boolean getTextAlpha() {
+	return bTextAlpha;
+    }
+    public void setTextAlpha( boolean textAlpha ) {
+	bTextAlpha = textAlpha;
+	if ( bTextAlpha ) 
+	    textAlphaOptStr = " ";
+	else
+	    textAlphaOptStr =  " -dTextAlphaBits=2";
+    }
+
     private String deviceOptions =  " ";
 
     /**
@@ -58,7 +70,7 @@ public class Gpickle {
 	return "pcl6"
 	    + deviceOptions
 	    + rtl
-	    + textAlpha
+	    + textAlphaOptStr
 	    + " -dFirstPage=" + pageToDisplay + " -dLastPage="
             + pageToDisplay
             + " -r" + xRes + "x" + yRes
