@@ -47,12 +47,22 @@ public class Nav extends Gview  {
     /** main program */
     public static void main( String[] args )
     {
-	if (args.length < 1) {
-	    args = new String[1];
-	    args[0] = new String("GhostPrinter.pcl");
+	Nav view = new Nav();
+
+	if (args.length < 1) {  
+	    File file = new File("GhostPrinter.pcl");
+	    if (file.exists()) {
+		// open demo file
+		args = new String[1];
+		args[0] = new String("GhostPrinter.pcl");
+	    }
 	}
 	System.out.print(usage());
-	Nav view = new Nav();
+
+	if (args.length < 1) {
+	    // no demo file start with file open
+	    view.fileOpen();
+	}
         view.runMain(args);
     }
 
@@ -100,6 +110,7 @@ public class Nav extends Gview  {
         double psfy = origY / origH * pageView.origH / pageView.origRes * pageView.desiredRes;
 
 	pageView.translateTo( psfx, psfy );
+	repaint();
     }
 
     /** Paint low res image with red zoom box
