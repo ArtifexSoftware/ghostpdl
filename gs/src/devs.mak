@@ -1098,7 +1098,7 @@ gdevcgml_h=$(GLSRC)gdevcgml.h
 gdevcgmx_h=$(GLSRC)gdevcgmx.h $(gdevcgml_h)
 
 $(GLOBJ)gdevcgm.$(OBJ) : $(GLSRC)gdevcgm.c $(GDEV) $(memory__h)\
- $(gsparam_h) $(gdevpccm_h) $(gdevcgml_h)
+ $(gp_h) $(gsparam_h) $(gdevpccm_h) $(gdevcgml_h)
 	$(GLCC) $(GLO_)gdevcgm.$(OBJ) $(C_) $(GLSRC)gdevcgm.c
 
 $(GLOBJ)gdevcgml.$(OBJ) : $(GLSRC)gdevcgml.c $(memory__h) $(stdio__h)\

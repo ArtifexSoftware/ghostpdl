@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995-2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -20,6 +20,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gxdevice.h"
+#include "gp.h"
 #include "gsparam.h"
 #include "gdevcgml.h"
 #include "gdevpccm.h"
@@ -30,11 +31,9 @@
 	  do masked copy_mono with cell array if possible
  ****************/
 
-#define fname_size 80
-
 typedef struct gx_device_cgm_s {
     gx_device_common;
-    char fname[fname_size + 1];
+    char fname[gp_file_name_sizeof];
     FILE *file;
     cgm_state *st;
     bool in_picture;
@@ -255,7 +254,7 @@ cgm_put_params(gx_device * dev, gs_param_list * plist)
 	        ecode = gs_note_error(gs_error_invalidaccess);
 		goto ofe;
 	    }
-	    if (ofs.size > fname_size)
+	    if (ofs.size >= fname_size)
 		ecode = gs_error_limitcheck;
 	    else
 		break;
