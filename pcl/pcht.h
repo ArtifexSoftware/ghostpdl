@@ -105,7 +105,7 @@ struct pcl_ht_s {
     pcl_ht_client_data_t    client_data[3];
     pcl_udither_t *         pdither;
     gs_string               thresholds[3];
-    int                     render_method;
+    uint                    render_method;
     gs_ht *                 pfg_ht;
     gs_ht *                 pim_ht;
 };
@@ -171,11 +171,23 @@ extern  void    pcl_ht_update_rendering_info(
 extern  void     pcl_ht_update_rendering_remap( const byte * map );
 
 /*
+ * Set up normal or monochrome print mode. The latter is accomplished by
+ * remapping each of the rendering algorithms to its monochrome equivalent.
+ * The handling of the snap-to-primaries rendering method (1) is almost
+ * certianly wrong, but it is the best that can be done with the current
+ * scheme.
+ *
+ * Note that the current rendering method must be set before this change
+ * will take effect.
+ */
+extern  void    pcl_ht_set_print_mode( bool monochrome );
+
+/*
  * Set the render method.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_ht_set_render_method( pcl_ht_t ** ppht, int render_method );
+extern  int     pcl_ht_set_render_method( pcl_ht_t ** ppht, uint render_method );
 
 /*
  * Update the gamma parameter.
