@@ -369,6 +369,7 @@ end readonly def
       dup 0 8 getinterval 0 exch { or } forall
       128 ge {
 	/hexify { } store
+	/buffer2 buffer def	% We don't need an intermediate buffer.
       } if hexify exch
     } ifelse
   } {
