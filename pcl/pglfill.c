@@ -181,6 +181,13 @@ hatch:
     return 0;
 }
 
+void
+hpgl_set_line_attribute_defaults(hpgl_state_t *pgls)
+{
+    pgls->g.line.cap = 1; /* butt */
+    pgls->g.line.join = 1; /* mitered */
+    pgls->g.miter_limit = 5;
+}
 /*
  * LA [kind1,value1[,kind2,value2[,kind3,value3]]];
  */

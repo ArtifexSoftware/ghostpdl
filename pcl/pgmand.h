@@ -324,5 +324,8 @@ int hpgl_print_symbol_mode_char(P1(hpgl_state_t *pgls));
 /* reset LT parameters */
 void hpgl_set_line_pattern_defaults(P1(hpgl_state_t *pgls));
 
+/* reset LA parameters */
+void hpgl_set_line_attribute_defaults(P1(hpgl_state_t *pgls));
+
 void hpgl_free_stick_fonts(P1(hpgl_state_t *pgls));
 #endif                                         /* pgmand_INCLUDED */
