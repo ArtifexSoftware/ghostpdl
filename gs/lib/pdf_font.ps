@@ -498,10 +498,23 @@ readonly def
   /TimesNewRoman,BoldItalic /Times-BoldItalic
 .dicttomark readonly def
 
-/buildTrueType		% <TrueType-font-resource> buildTrueType <font>
- { dup /BaseFont get
-   dup TTfonts exch .knownget { exch pop } if pdffindfont
- } bdef
+/buildTrueType {	% <TrueType-font-resource> buildTrueType <font>
+  dup /BaseFont get
+  dup TTfonts exch .knownget {
+    exch pop
+		% Hack required by the PDF specification: if the
+		% font resource has Subtype = /TrueType but the actual
+		% (installed) font is not a TrueType font, ignore the
+		% Encoding in the font resource.  However, all current
+		% versions of Acrobat Reader have the 14 base TrueType
+		% fonts built in, so this produces incorrect output for
+		% badly designed PDF files that specify these file names
+		% with /Subtype = /TrueType but no embedded definition.
+		% Compensate for this by removing the /Subtype key when
+		% looking up the font.
+    exch dup length dict copy dup /Subtype null put exch
+  } if pdffindfont
+} bdef
 
 % Read an embedded TrueType font.
 /readtruetype {		% <font-resource> <stream-dict> readtruetype <font>
