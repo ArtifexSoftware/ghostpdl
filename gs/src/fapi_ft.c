@@ -328,7 +328,7 @@ static FAPI_retcode load_glyph(FAPI_font* a_fapi_font,const FAPI_char_ref *a_cha
 	    a_metrics->em_y = ft_face->units_per_EM;
 	    }
 
-    // We have to load the glyph again, scale it correctly, and render it if we need a bitmap.
+    /* We have to load the glyph again, scale it correctly, and render it if we need a bitmap. */
     if (!ft_error)
 		{
 		a_fapi_font->char_data = saved_char_data;
