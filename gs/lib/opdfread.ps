@@ -67,7 +67,7 @@ errordict /handleerror
 { systemdict begin
   $error begin
   newerror
-  { (%%[ Error handled by opdfrerh.ps : ) print errorname //ebuf cvs print (; OffendingCommand: )
+  { (%%[ Error handled by opdfread.ps : ) print errorname //ebuf cvs print (; OffendingCommand: )
     print /command load //ebuf cvs print ( ]%%) = flush
     /newerror false store vmstatus pop pop 0 ne
     { grestoreall
@@ -2310,9 +2310,11 @@ end
     dup dup /Context exch put
     dup /Resources //DoNothing //ResolveD exec pop
     dup /PaintProc //PaintProc put
-    dup /Matrix get
     gsave userdict /PDFR_InitialGS get setgstate
+    currentglobal exch false setglobal % gs3_70 compatibility
+    dup /Matrix get
     makepattern 					% n p
+    exch setglobal % gs3_70 compatibility
     grestore
     dup userdict /PDFR_Patterns get			% n p p d
     4 2 roll						% p d n p
