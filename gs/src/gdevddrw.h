@@ -21,7 +21,17 @@
 #  define gdevddrw_INCLUDED
 
 #if DROPOUT_PREVENTION
-dev_proc_fill_trapezoid(gx_fill_trapezoid_narrow);
+
+enum fill_trap_flags {
+    ftf_peak0 = 1,
+    ftf_peak1 = 2,
+    ftf_pseudo_rasterization = 4
+};
+
+int
+gx_fill_trapezoid_narrow(gx_device * dev, const gs_fixed_edge * left,
+    const gs_fixed_edge * right, fixed ybot, fixed ytop, int flags,
+    const gx_device_color * pdevc, gs_logical_operation_t lop);
 #endif
 
 #endif /* gdevddrw_INCLUDED */

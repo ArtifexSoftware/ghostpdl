@@ -153,12 +153,14 @@ compute_ldx(trap_line *tl, fixed ys)
 #define GX_FILL_TRAPEZOID gx_default_fill_trapezoid
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 1
+#define FLAGS_TYPE bool
 #include "gxdtfill.h"
 
 #if DROPOUT_PREVENTION
 #undef GX_FILL_TRAPEZOID
 #undef CONTIGUOUS_FILL 
 #undef SWAP_AXES
+#define FLAGS_TYPE int
 #define GX_FILL_TRAPEZOID gx_fill_trapezoid_narrow
 #define CONTIGUOUS_FILL 1
 #define SWAP_AXES 0

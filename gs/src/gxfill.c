@@ -1723,13 +1723,10 @@ private int fill_slant_adjust(fixed, fixed, fixed, fixed, fixed,
 private void resort_x_line(active_line *);
 
 /****** PATCH ******/
-#define LOOP_FILL_TRAPEZOID_FIXED(fx0, fw0, fy0, fx1, fw1, fh)\
-  loop_fill_trap(dev, fx0, fw0, fy0, fx1, fw1, fh, pbox, pdevc, lop, pseudo_rasterization)
-private int
 loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
 	       fixed fx1, fixed fw1, fixed fh, const gs_fixed_rect * pbox,
 	       const gx_device_color * pdevc, gs_logical_operation_t lop,
-	       bool pseudo_rasterization)
+	       int flags)
 {
     fixed fy1 = fy0 + fh;
     fixed ybot = max(fy0, pbox->p.y);
@@ -1745,12 +1742,12 @@ loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
     right.start.x = (left.start.x = fx0) + fw0;
     right.end.x = (left.end.x = fx1) + fw1;
 #if PSEUDO_RASTERIZATION
-    return (pseudo_rasterization ? gx_fill_trapezoid_narrow : *fill_trap)
-	(dev, &left, &right, ybot, ytop, false, pdevc, lop);
-#else
+    if (flags & ftf_pseudo_rasterization)
+	return gx_fill_trapezoid_narrow
+	    (dev, &left, &right, ybot, ytop, flags, pdevc, lop);
+#endif
     return (*fill_trap)
 	(dev, &left, &right, ybot, ytop, false, pdevc, lop);
-#endif
 }
 /****** END PATCH ******/
 
@@ -2128,9 +2125,8 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 
 		    if (xltop <= xlbot) {
 			if (xtop >= xbot) {	/* Top wider than bottom. */
-			    code = LOOP_FILL_TRAPEZOID_FIXED(
-					      xlbot, wbot, y - adjust_below,
-						       xltop, wtop, height);
+			    code = loop_fill_trap(dev, xlbot, wbot, y - adjust_below,
+					xltop, wtop, height, pbox, pdevc, lop, 0);
 			    if (ADJUSTED_Y_SPANS_PIXEL(y1)) {
 				if (code < 0)
 				    return code;
@@ -2158,9 +2154,8 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 				if (code < 0)
 				    return code;
 			    }
-			    code = LOOP_FILL_TRAPEZOID_FIXED(
-					      xlbot, wbot, y + adjust_above,
-						       xltop, wtop, height);
+			    code = loop_fill_trap(dev, xlbot, wbot, y + adjust_above,
+					xltop, wtop, height, pbox, pdevc, lop, 0);
 			} else {	/* Slanted trapezoid. */
 			    code = fill_slant_adjust(xlbot, xbot, y,
 					  xltop, xtop, height, adjust_below,
@@ -2169,8 +2164,19 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			}
 		    }
 		} else {	/* No Y adjustment. */
-		    code = LOOP_FILL_TRAPEZOID_FIXED(xlbot, xbot - xlbot,
-						     y, xltop, wtop, height);
+		    int flags = 0;
+
+#		    if PSEUDO_RASTERIZATION
+		    if (pseudo_rasterization) {
+			flags |= ftf_pseudo_rasterization;
+			if (flp.start.x == als.start.x && flp.start.y == y)
+			    flags |= ftf_peak0;
+			if (flp.end.x == als.end.x && flp.end.y == y1)
+			    flags |= ftf_peak0;
+		    }
+#		    endif
+		    code = loop_fill_trap(dev, xlbot, xbot - xlbot, y, xltop, wtop, height, 
+						    pbox, pdevc, lop, flags);
 #		    if PSEUDO_RASTERIZATION
 		    if (pseudo_rasterization) {
 			if (code < 0)

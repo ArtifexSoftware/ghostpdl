@@ -37,15 +37,17 @@
 
 int
 GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
-    const gs_fixed_edge * right, fixed ybot, fixed ytop, bool swap_axes,
+    const gs_fixed_edge * right, fixed ybot, fixed ytop, FLAGS_TYPE flags,
     const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
     const fixed ymin = fixed_pixround(ybot) + fixed_half;
     const fixed ymax = fixed_pixround(ytop);
 
-    #if !SWAP_AXES
-	assert(!swap_axes);
-    #endif
+#   if SWAP_AXES
+	const bool swap_axes = flags;
+#   else
+	const bool swap_axes = false;
+#   endif
 
     if (ymin >= ymax)
 	return 0;		/* no scan lines to sample */
@@ -65,8 +67,8 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	int max_rect_height = 1;  /* max height to do fill as rectangle */
 	int code;
 #if CONTIGUOUS_FILL
-	const bool peak0 = (left->start.x == right->start.x);
-	const bool peak1 = (left->end.x == right->end.x);
+	const bool peak0 = (flags & 1 != 0);
+	const bool peak1 = (flags & 2 != 0);
 	int peak_y0 = ybot + fixed_half;
 	int peak_y1 = ytop - fixed_half;
 #endif
@@ -277,3 +279,4 @@ xit:	if (code < 0 && fill_direct)
 #undef GX_FILL_TRAPEZOID
 #undef CONTIGUOUS_FILL
 #undef SWAP_AXES
+#undef FLAGS_TYPE
