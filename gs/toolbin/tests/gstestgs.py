@@ -54,7 +54,7 @@ class Ghostscript:
 			cmd = cmd + '-r%d ' % (self.dpi,)
 		cmd = cmd + '-dMaxBitmap=%d ' % (bandsize,)
 		cmd = cmd + '-sDEVICE=%s ' % (self.device,)
-		cmd = cmd + '-sOutputFile=%s ' % (self.outfile,)
+		cmd = cmd + '-sOutputFile=\'%s\' ' % (self.outfile,)
 
 		# as of gs_init 1.93, job server emulation needs -dNOOUTERSAVE so
 		# that the 'exitserver' will restore global VM as expected.
@@ -62,12 +62,13 @@ class Ghostscript:
 		# backward compatible fashion) so we add -dJOBSERVER.
 		cmd = cmd + '-dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop '
 
-		if string.lower(self.infile[-4:]) == ".pdf":
+		if string.lower(self.infile[-4:]) == ".pdf" or \
+		   string.lower(self.infile[-3:]) == ".ai":
 			cmd = cmd + ' -dFirstPage=1 -dLastPage=1 '
 		else:
 			cmd = cmd + '- < '
 
-		cmd = cmd + ' %s >> %s 2>> %s' % (self.infile, self.log_stdout, self.log_stderr)
+		cmd = cmd + ' \'%s\' >> %s 2>> %s' % (self.infile, self.log_stdout, self.log_stderr)
 
 
 		# before we execute the command which might append to the log
