@@ -2,25 +2,25 @@
 
 #    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 # 
-# This file is part of Aladdin Ghostscript.
+# This file is part of AFPL Ghostscript.
 # 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
+# AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
+# distributor accepts any responsibility for the consequences of using it, or
+# for whether it serves any particular purpose or works at all, unless he or
+# she says so in writing.  Refer to the Aladdin Free Public License (the
+# "License") for full details.
 # 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# Every copy of AFPL Ghostscript must include a copy of the License, normally
+# in a plain ASCII text file named PUBLIC.  The License grants you the right
+# to copy, modify and redistribute AFPL Ghostscript, but only under certain
+# conditions described in the License.  Among other things, the License
+# requires that the copyright notice and this notice be preserved on all
+# copies.
 
 # $Id$
 
-# This file makes a GNU-licensed GS distribution from an Aladdin
-# Ghostscript distribution.  Usage:
+# This file makes a GNU-licensed GS distribution from an AFPL Ghostscript
+# distribution.  Usage:
 #	makegnu N.N[N]
 # creates /tmp/gnu-gs-N.NN.tar.gz.
 #	
@@ -174,11 +174,11 @@ proc subst_date {lvar} {
 proc replace_doc_notice {f} {
     set trailer 0
     for_lines l $f out {
-	if {[regsub {This file is part of Aladdin Ghostscript} $l {This file is part of GNU Ghostscript} l]} {
+	if {[regsub {This file is part of (AFPL|Aladdin) Ghostscript} $l {This file is part of GNU Ghostscript} l]} {
 	    set trailer 1
 	} elseif {[regsub {<a href="Public.htm">Aladdin Free Public License</a>} $l {<a href="COPYING">GNU General Public License</a>} l]} {
 	} elseif {$trailer} {
-	    regsub {Aladdin Ghostscript} $l {GNU Ghostscript} l
+	    regsub {(AFPL|Aladdin) Ghostscript} $l {GNU Ghostscript} l
 	}
 	puts $out $l
     }
@@ -291,7 +291,7 @@ proc make_changes {} {
     puts -nonewline $notice $NOTICE_TEXT
     close $notice
 
-    # Substitute the GNU license for the Aladdin license.
+    # Substitute the GNU license for the AFPL.
 
     set copying /gs/COPYLEFT
     set dest [/ doc COPYING]
@@ -316,12 +316,12 @@ proc make_changes {} {
 	change_notices $gscdef 1
 	set found 0
 	for_lines l $gscdef out {
-	    if {[regsub {Aladdin Ghostscript} $l {GNU Ghostscript} l]} {set found 1}
+	    if {[regsub {(AFPL|Aladdin) Ghostscript} $l {GNU Ghostscript} l]} {set found 1}
  	    subst_date l
 	    puts $out $l
 	}
 	if {!$found} {
-	    puts stderr "****** \"Aladdin Ghostscript\" not found in $gscdef"
+	    puts stderr "****** \"(AFPL|Aladdin) Ghostscript\" not found in $gscdef"
 	}
     }
 
@@ -347,7 +347,7 @@ proc make_changes {} {
 	}
     }
 
-    # Change the references to Aladdin Ghostscript in the documentation
+    # Change the references to AFPL|Aladdin Ghostscript in the documentation
     # trailers.
 
     foreach f [array names FILES *.htm] {
