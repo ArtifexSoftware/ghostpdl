@@ -85,6 +85,18 @@ pl_glyph_name(gs_glyph glyph, uint *plen)
 {	return 0;
 }
 
+gs_char last_char = '!';
+/* Get the unicode valude for a glyph */
+private gs_char
+pl_decode_glyph(gs_font *font,  gs_glyph glyph)
+{	
+    dprintf(font->memory, "Pdfwrite is not supported with AGFA UFST!\n");
+    // NB glyph is unicode for builtin fonts 
+    // this fails for downloaded fonts where there is often 
+    // no association other than sequential numbering 
+    return last_char;
+}
+
 /* Get a glyph from a known encoding.  We don't support this either. */
 private gs_glyph
 pl_known_encode(gs_char chr, int encoding_index)
@@ -149,7 +161,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
     pl_font_t *plfont;
     /* it is not clear how to clone resident ufst fco fonts unless
        they are downloaded */
-    dprintf( "clone fonts\n" );
+    dprintf(mem, "clone fonts\n" );
 
     if (src->header == 0)
         return 0;
@@ -196,7 +208,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
                 if ( pfont == 0 )
                     return 0;
                 pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
-                pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
+                pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
                 break;
 	    }
         case plfst_Intellifont:
@@ -206,7 +218,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
                 if ( pfont == 0 )
                     return 0;
                 pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
-                pl_fill_in_intelli_font(pfont, gs_next_ids(1));
+                pl_fill_in_intelli_font(pfont, gs_next_ids(mem, 1));
                 break;
 	    }
         case plfst_TrueType:
@@ -221,7 +233,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
                     if ( pfont == 0 )
                         return 0;
                     pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
-                    pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_ids(1));
+                    pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_ids(mem, 1));
                 }
                 break;
 	    }
@@ -328,14 +340,13 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->procs.init_fstack = gs_default_init_fstack;
 	pfont->procs.next_char_glyph = gs_default_next_char_glyph;
 
-	// NB 
-	pfont->procs.callbacks.glyph_name = pl_glyph_name;
-	pfont->procs.callbacks.known_encode = pl_known_encode;
+	pfont->procs.glyph_name = pl_glyph_name;
+	pfont->procs.decode_glyph = pl_decode_glyph;
 
 	pfont->procs.define_font = gs_no_define_font;
 	pfont->procs.make_font = gs_no_make_font;
 	pfont->procs.font_info = gs_default_font_info;
-	pfont->id = gs_next_ids(1);
+	pfont->id = gs_next_ids(mem, 1);
 	strncpy(pfont->font_name.chars, font_name, sizeof(pfont->font_name.chars));
 	pfont->font_name.size = strlen(font_name);
 	/* replace spaces with '-', seems acrobat doesn't like spaces. */
@@ -459,19 +470,19 @@ pl_font_scan_segments(const gs_memory_t *mem, pl_font_t *plfont, int fst_offset,
 
 	      seg_size = (large_sizes ? u32(segment + 2) : u16(segment + 2));
 	      if ( seg_size + 2 + wsize > end - segment )
-		return_error(illegal_font_data);
+		  return_error(mem, illegal_font_data);
 	      /* Handle segments common to all fonts. */
 	      switch ( seg_id )
 		{
 		case 0xffff:		/* NULL segment ID */
 		  if ( segment != null_segment )
-		    return_error(illegal_font_data);
+		      return_error(mem, illegal_font_data);
 		  continue;
 		case id2('V','I'):
 		  continue;
 		case id2('C', 'C'):
 		  if ( seg_size != 8 )
-		    return_error(illegal_font_data);
+		      return_error(mem, illegal_font_data);
 		  memcpy(plfont->character_complement, sdata, 8);
 		  continue;
 		default:
@@ -495,7 +506,7 @@ pl_font_scan_segments(const gs_memory_t *mem, pl_font_t *plfont, int fst_offset,
 		    break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
-		      return_error(pfoe->illegal_font_segment);
+			return_error(mem, pfoe->illegal_font_segment);
 		  }
 	      else		/* fst == plfst_TrueType */
 		switch ( seg_id )
@@ -527,7 +538,7 @@ pl_font_scan_segments(const gs_memory_t *mem, pl_font_t *plfont, int fst_offset,
 		    if ( (seg_size & 3) != 0 || seg_size < 4 ||
 			 u16(sdata + seg_size - 4) != 0xffff
 		       )
-		      return_scan_error(pfoe->illegal_VT_segment);
+		       return_scan_error(pfoe->illegal_VT_segment);
 		    /* Check for table sorted by horizontal glyph ID */
 		    { uint i;
 		      for ( i = 0; i < seg_size - 4; i += 4 )
@@ -538,14 +549,14 @@ pl_font_scan_segments(const gs_memory_t *mem, pl_font_t *plfont, int fst_offset,
 		    break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
-		      return_error(pfoe->illegal_font_segment);
+			return_error(mem, pfoe->illegal_font_segment);
 		  }
 #undef id2
 	    }
 	  if ( !found )
 	    return_scan_error(pfoe->missing_required_segment);
 	  if ( segment != end )
-	    return_error(illegal_font_data);
+	      return_error(mem, illegal_font_data);
 	  plfont->large_sizes = large_sizes;
 	  plfont->scaling_technology = fst;
 	  return 0;
@@ -571,13 +582,13 @@ pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, u
 	 * appropriate one.
 	 */
 	fclose(in);
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     rewind(in);
     *pptt_font_data = gs_alloc_bytes(mem, *size, "pl_tt_load_font data");
     if ( *pptt_font_data == 0 ) {
 	fclose(in);
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     fread(*pptt_font_data + 6, 1, len, in);
     fclose(in);
@@ -599,13 +610,13 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 	     * appropriate one.
 	     */
 	    fclose(in);
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	  }
 	rewind(in);
 	data = gs_alloc_bytes(mem, size, "pl_tt_load_font data");
 	if ( data == 0 )
 	  { fclose(in);
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	  }
 	fread(data + 6, 1, len, in);
 	fclose(in);
@@ -617,7 +628,7 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 	  int code;
 
 	  if ( pfont == 0 || plfont == 0 )
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	  else
 	    { /* Initialize general font boilerplate. */
 	      code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, "illegal font");
@@ -691,7 +702,7 @@ pl_load_mt_font(SW16 handle, gs_font_dir *pdir, gs_memory_t *mem,
           int code;
 
 	  if ( pfont == 0 || plfont == 0 )
-            code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
           else
           {   /* Initialize general font boilerplate. */
               code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, "illegal font");
