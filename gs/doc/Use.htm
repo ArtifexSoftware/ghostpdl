@@ -441,20 +441,18 @@ You can change the installed default paper size on an installed version of Ghost
 This file is usually in the <tt>lib</tt> directory somewhere in the search path. See the section on <a href="#Finding_files">finding files</a> for details.
 
 <p>
-Find the consecutive lines
+Find the line
 
 <blockquote><pre>
-% Optionally choose a default paper size other than U.S. letter.
-% (a4)
+% /DEFAULTPAPERSIZE (a4) def
 </pre></blockquote>
 
 <p>
-Then to make A4 the default paper size, uncomment the second line to change
+Then to make A4 the default paper size, uncomment the line to change
 this to
 
 <blockquote><pre>
-% Optionally choose a default paper size other than U.S. letter.
-(a4)
+/DEFAULTPAPERSIZE (a4) def
 </pre></blockquote>
 
 <p>
@@ -462,7 +460,11 @@ For <tt>a4</tt> you can substitute any
 <a href="#Known_paper_sizes">paper size Ghostscript knows</a>.
 
 <p>
-Sometimes the initialization files are compiled into Ghostscript can cannot be changed.
+This supecedes the previous method of uncommenting the line
+<b><tt>% (a4) ...</tt></b>.
+
+<p>
+Sometimes the initialization files are compiled into Ghostscript and cannot be changed.
 
 <h2><a name="Pipes"></a>Interacting with pipes</h2>
 
@@ -2177,6 +2179,17 @@ produced by properly written applications.
 <br><b><tt>-dDEVICEHEIGHTPOINTS=</tt></b><em>h</em>
 <dd>Sets the initial page width to <em>w</em> or initial page height to
 <em>h</em> respectively, specified in 1/72" units.
+</dl>
+
+<dl>
+<dt><b><tt>-sDEFAULTPAPERSIZE=</tt></b><em>a4</em>
+<dd>
+This value will be used to replace the device default papersize ONLY
+if the default papersize for the device is 'letter' or 'a4' serving
+to insulate users of A4 or 8.5x11 from particular device defaults
+(the collection of contributed drivers in Ghostscript vary as to
+the default size).
+</dd>
 </dl>
 
 <h4><a name="Font_related_parameters"></a>Font-related parameters</h4>

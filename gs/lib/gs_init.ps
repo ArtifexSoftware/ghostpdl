@@ -64,7 +64,15 @@ ifelse
 systemdict /.languagelevel known not { /.languagelevel 1 def } if
 
 % Optionally choose a default paper size other than U.S. letter.
-% (a4) /PAPERSIZE where { pop pop } { /PAPERSIZE exch def } ifelse
+% The default page size for many devices is set at compile time to 
+% letter, but this can be changed to A4 although this is rarely done.  
+% Some devices such as bbox have a different default page size,
+% and should not be set to A4 or letter.
+% When ghostscript is used in countries that use the international
+% standard page size A4 rather than US letter, the page size of 
+% devices that default to letter or A4 can be changed by setting
+% DEFAULTPAPERSIZE.
+% /DEFAULTPAPERSIZE (a4) def
 
 % Turn on array packing for the rest of initialization.
 true setpacking
@@ -1685,6 +1693,28 @@ defaultdevice
 % and it is a bad idea because it prevents setting the resolution in this
 % situation, which pstoedit (among other programs) relies on.
 %DISPLAYING not { setdevice (%END DISPLAYING) .skipeof } if
+
+% If the paper size is not specifed and the device defaults to 
+% letter or A4 paper, select the DEFAULTPAPERSIZE.
+systemdict /DEFAULTPAPERSIZE known
+systemdict /PAPERSIZE known not and
+systemdict /DEVICEWIDTH known not and
+systemdict /DEVICEHEIGHT known not and
+systemdict /DEVICEWIDTHPOINTS known not and
+systemdict /DEVICEHEIGHTPOINTS known not and
+ {
+   defaultdevice mark /PageSize //null .dicttomark .getdeviceparams 
+   .dicttomark /PageSize get
+   dup 0 get 0.5 add cvi 612 eq 1 index 1 get 0.5 add cvi 792 eq and
+   1 index 0 get 0.5 add cvi 595 eq 2 index 1 get 0.5 add cvi 842 eq and
+   or exch pop
+   {
+     % the default paper size was letter, so replace it with DEFAULTPAPERSIZE
+     /PAPERSIZE DEFAULTPAPERSIZE def
+   } if
+ }
+if
+
 systemdict /DEVICEWIDTH known
 systemdict /DEVICEHEIGHT known or
 systemdict /DEVICEWIDTHPOINTS known or
