@@ -73,7 +73,12 @@ gp_fopentemp(const char *fname, const char *mode)
 	default:		/* e.g., 'b' */
 	    break;
 	}
-    fildes = open(fname, flags, S_IRWXU);
+    /*
+     * We should S_IRUSR and S_IWUSR here, but Microsoft VC++ (and *only*
+     * MSVC++) doesn't define these, so we have to use S_IREAD and S_IWRITE
+     * instead.
+     */
+    fildes = open(fname, flags, S_IREAD | S_IWRITE);
     if (fildes < 0)
 	return 0;
     file = fdopen(fildes, mode);
