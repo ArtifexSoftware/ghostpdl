@@ -18,6 +18,9 @@
 /* Configuration of the True Type interpreter. */
 /* This file is copied from the FreeType project and modified to satisfy Ghostscript needs. */
 
+#ifndef TTCONF_H
+#define TTCONF_H
+
 /* Define to empty if the keyword does not work.  */
 #undef const
 
@@ -67,3 +70,5 @@
 
 
 /* End of ft_conf.h */
+
+#endif /* TTCONF_H */

@@ -17,6 +17,9 @@
 /* $Id$ */
 /* A compilation context for Free Type modules. */
 
+#ifndef TTMISC_H
+#define TTMISC_H
+
 #include "gx.h"
 #include "string_.h"
 #include "math_.h"
@@ -24,3 +27,5 @@
 #include "tttypes.h"
 
 #define MulDiv ttMulDiv
+
+#endif /* TTMISC_H */
