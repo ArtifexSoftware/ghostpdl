@@ -636,7 +636,7 @@ set_logical_page_orientation(
     if ( i > 3 )
 	return 0;
 
-    /* Oddly the orientation is set, disabling the command, if the
+    /* Oddly, the orientation is set, disabling the command, if the
        requested value is current in the state. */
     if ( i == pcs->xfm_state.lp_orient )
 	pcs->orientation_set = true;
