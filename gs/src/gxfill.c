@@ -913,18 +913,21 @@ private inline const segment * NextSeg(const segment *pseg)
 {   return pseg->type == s_line_close ? ((const line_close_segment *)pseg)->sub->next : pseg->next;
 }
 
-private inline int add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
+private inline int 
+add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
     vd_bar(flp->start.x, flp->start.y, flp->end.x, flp->end.y, 1, RGB(255, 255, 255));
     return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
 }
 
-private inline int continue_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
+private inline int 
+continue_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   
     return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
 }
 
-private int complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
+private inline int 
+complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   
     return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
 }
@@ -1210,6 +1213,120 @@ fill_trap_slanted(gx_device * dev, const gs_fixed_rect * pbox,
     return code;
 }
 
+#define COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above)\
+    (fixed_pixround(y - adjust_below) < fixed_pixround(y1 + adjust_above))
+
+/* Find intersections of active lines within the band. 
+   Intersect and reorder them, and correct the bund top. */
+private void
+intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
+{
+    fixed x = min_fixed, y1 = *y_top;
+    active_line *alp, *stopx, *endp;
+
+    /*
+     * Loop invariants:
+     *	alp = endp->next;
+     *	for all lines lp from stopx up to alp,
+     *	  lp->x_next = AL_X_AT_Y(lp, y1).
+     */
+    for (alp = stopx = ll->x_list;
+	 INCR_EXPR(find_y), alp != 0;
+	 endp = alp, alp = alp->next
+	) {
+	fixed nx = AL_X_AT_Y(alp, y1);
+	fixed dx_old, dx_den;
+
+	/* Check for intersecting lines. */
+	if (nx >= x)
+	    x = nx;
+	else if ((ll->pseudo_rasterization || draw >= 0) &&	/* don't bother if no pixels with no pseudo_rasterization */
+		 (dx_old = alp->x_current - endp->x_current) >= 0 &&
+		 (dx_den = dx_old + endp->x_next - nx) > dx_old
+	    ) {		/* Make a good guess at the intersection */
+	    /* Y value using only local information. */
+	    fixed dy = y1 - y, y_new;
+
+	    if_debug3('F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
+		      fixed2float(dy), fixed2float(dx_old),
+		      fixed2float(dx_den - dx_old));
+	    /* Do the computation in single precision */
+	    /* if the values are small enough. */
+	    y_new =
+		((dy | dx_old) < 1L << (size_of(fixed) * 4 - 1) ?
+		 dy * dx_old / dx_den :
+		 (INCR_EXPR(mq_cross), fixed_mult_quo(dy, dx_old, dx_den)))
+		+ y;
+	    /* The crossing value doesn't have to be */
+	    /* very accurate, but it does have to be */
+	    /* greater than y and less than y1. */
+	    if_debug3('F', "[F]cross y=%g, y_new=%g, y1=%g\n",
+		      fixed2float(y), fixed2float(y_new),
+		      fixed2float(y1));
+	    stopx = alp;
+	    if (y_new <= y) {
+		/*
+		 * This isn't possible.  Recompute the intersection
+		 * accurately.
+		 */
+		fixed ys, xs0, xs1, ye, xe0, xe1, dy, dx0, dx1;
+
+		INCR(cross_slow);
+		if (endp->start.y < alp->start.y)
+		    ys = alp->start.y,
+			xs0 = AL_X_AT_Y(endp, ys), xs1 = alp->start.x;
+		else
+		    ys = endp->start.y,
+			xs0 = endp->start.x, xs1 = AL_X_AT_Y(alp, ys);
+		if (endp->end.y > alp->end.y)
+		    ye = alp->end.y,
+			xe0 = AL_X_AT_Y(endp, ye), xe1 = alp->end.x;
+		else
+		    ye = endp->end.y,
+			xe0 = endp->end.x, xe1 = AL_X_AT_Y(alp, ye);
+		dy = ye - ys;
+		dx0 = xe0 - xs0;
+		dx1 = xe1 - xs1;
+		/* We need xs0 + cross * dx0 == xs1 + cross * dx1. */
+		if (dx0 == dx1) {
+		    /* The two lines are coincident.  Do nothing. */
+		    y_new = y1;
+		} else {
+		    double cross = (double)(xs0 - xs1) / (dx1 - dx0);
+
+		    y_new = (fixed)(ys + cross * dy);
+		    if (y_new <= y) {
+			/*
+			 * This can only happen through some kind of
+			 * numeric disaster, but we have to check.
+			 */
+			INCR(cross_low);
+			y_new = y + fixed_epsilon;
+		    }
+		}
+	    }
+	    if (y_new < y1) {
+		y1 = y_new;
+		nx = AL_X_AT_Y(alp, y1);
+		draw = 0;
+	    }
+	    if (nx > x)
+		x = nx;
+	}
+	alp->x_next = nx;
+    }
+    /* Recompute next_x for lines before the intersection. */
+    for (alp = ll->x_list; alp != stopx; alp = alp->next)
+	alp->x_next = AL_X_AT_Y(alp, y1);
+#ifdef DEBUG
+    if (gs_debug_c('F')) {
+	dlprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
+	print_line_list(ll->x_list);
+    }
+#endif
+    *y_top = y1;
+}
+
 /* ---------------- Trapezoid filling loop ---------------- */
 
 /* Main filling loop.  Takes lines off of y_list and adds them to */
@@ -1246,9 +1363,8 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
     ll->margin_set1.y = fixed_pixround(y) - fixed_1 - fixed_half;
     while (1) {
 	fixed y1;
-	active_line *endp, *alp, *stopx, *plp = NULL;
-	fixed x;
-	int draw;
+	active_line *alp, *plp = NULL;
+	bool covering_pixel_centers;
 
 	INCR(iter);
 	/* Move newly active lines from y to x list. */
@@ -1264,16 +1380,13 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		    int yi = fixed2int_pixround(y - adjust_below);
 		    int xi, wi;
 
-		    if (yll->start.x <= yll->end.x)
-			xi = fixed2int_pixround(yll->start.x -
-						adjust_left),
-			    wi = fixed2int_pixround(yll->end.x +
-						    adjust_right) - xi;
-		    else
-			xi = fixed2int_pixround(yll->end.x -
-						adjust_left),
-			    wi = fixed2int_pixround(yll->start.x +
-						    adjust_right) - xi;
+		    if (yll->start.x <= yll->end.x) {
+			xi = fixed2int_pixround(yll->start.x - adjust_left);
+			wi = fixed2int_pixround(yll->end.x + adjust_right) - xi;
+		    } else {
+			xi = fixed2int_pixround(yll->end.x - adjust_left);
+			wi = fixed2int_pixround(yll->start.x + adjust_right) - xi;
+		    }
 		    VD_RECT(xi, yi, wi, 1, VD_TRAP_COLOR);
 		    code = LOOP_FILL_RECTANGLE_DIRECT(xi, yi, wi, 1);
 		    if (code < 0)
@@ -1299,7 +1412,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	}
 	if (vd_enabled) {
 	    vd_circle(0, y, 3, RGB(255, 0, 0));
-	    y += 0; /* Just a place for debugger breakpoint */
+	    y += 0; /* Just a good place for a debugger breakpoint */
 	}
 	/* Find the next evaluation point. */
 	/* Start by finding the smallest y value */
@@ -1324,119 +1437,18 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	}
 #endif
 	/* Now look for line intersections before y1. */
-	x = min_fixed;
-#define HAVE_PIXELS()\
-  (fixed_pixround(y - adjust_below) < fixed_pixround(y1 + adjust_above))
-	draw = (HAVE_PIXELS()? 1 : -1);
-	/*
-	 * Loop invariants:
-	 *	alp = endp->next;
-	 *	for all lines lp from stopx up to alp,
-	 *	  lp->x_next = AL_X_AT_Y(lp, y1).
-	 */
-	for (alp = stopx = ll->x_list;
-	     INCR_EXPR(find_y), alp != 0;
-	     endp = alp, alp = alp->next
-	    ) {
-	    fixed nx = AL_X_AT_Y(alp, y1);
-	    fixed dx_old, dx_den;
+	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
+	intersect_al(ll, y, &y1, (covering_pixel_centers ? 1 : -1)); /* May change y1. */
 
-	    /* Check for intersecting lines. */
-	    if (nx >= x)
-		x = nx;
-	    else if (
-		     (pseudo_rasterization || draw >= 0) &&	/* don't bother if no pixels with no pseudo_rasterization */
-		     (dx_old = alp->x_current - endp->x_current) >= 0 &&
-		     (dx_den = dx_old + endp->x_next - nx) > dx_old
-		) {		/* Make a good guess at the intersection */
-		/* Y value using only local information. */
-		fixed dy = y1 - y, y_new;
-
-		if_debug3('F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
-			  fixed2float(dy), fixed2float(dx_old),
-			  fixed2float(dx_den - dx_old));
-		/* Do the computation in single precision */
-		/* if the values are small enough. */
-		y_new =
-		    ((dy | dx_old) < 1L << (size_of(fixed) * 4 - 1) ?
-		     dy * dx_old / dx_den :
-		     (INCR_EXPR(mq_cross), fixed_mult_quo(dy, dx_old, dx_den)))
-		    + y;
-		/* The crossing value doesn't have to be */
-		/* very accurate, but it does have to be */
-		/* greater than y and less than y1. */
-		if_debug3('F', "[F]cross y=%g, y_new=%g, y1=%g\n",
-			  fixed2float(y), fixed2float(y_new),
-			  fixed2float(y1));
-		stopx = alp;
-		if (y_new <= y) {
-		    /*
-		     * This isn't possible.  Recompute the intersection
-		     * accurately.
-		     */
-		    fixed ys, xs0, xs1, ye, xe0, xe1, dy, dx0, dx1;
-
-		    INCR(cross_slow);
-		    if (endp->start.y < alp->start.y)
-			ys = alp->start.y,
-			    xs0 = AL_X_AT_Y(endp, ys), xs1 = alp->start.x;
-		    else
-			ys = endp->start.y,
-			    xs0 = endp->start.x, xs1 = AL_X_AT_Y(alp, ys);
-		    if (endp->end.y > alp->end.y)
-			ye = alp->end.y,
-			    xe0 = AL_X_AT_Y(endp, ye), xe1 = alp->end.x;
-		    else
-			ye = endp->end.y,
-			    xe0 = endp->end.x, xe1 = AL_X_AT_Y(alp, ye);
-		    dy = ye - ys;
-		    dx0 = xe0 - xs0;
-		    dx1 = xe1 - xs1;
-		    /* We need xs0 + cross * dx0 == xs1 + cross * dx1. */
-		    if (dx0 == dx1) {
-			/* The two lines are coincident.  Do nothing. */
-			y_new = y1;
-		    } else {
-			double cross = (double)(xs0 - xs1) / (dx1 - dx0);
-
-			y_new = (fixed)(ys + cross * dy);
-			if (y_new <= y) {
-			    /*
-			     * This can only happen through some kind of
-			     * numeric disaster, but we have to check.
-			     */
-			    INCR(cross_low);
-			    y_new = y + fixed_epsilon;
-			}
-		    }
-		}
-		if (y_new < y1) {
-		    y1 = y_new;
-		    nx = AL_X_AT_Y(alp, y1);
-		    draw = 0;
-		}
-		if (nx > x)
-		    x = nx;
-	    }
-	    alp->x_next = nx;
-	}
-	/* Recompute next_x for lines before the intersection. */
-	for (alp = ll->x_list; alp != stopx; alp = alp->next)
-	    alp->x_next = AL_X_AT_Y(alp, y1);
-#ifdef DEBUG
-	if (gs_debug_c('F')) {
-	    dlprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
-	    print_line_list(ll->x_list);
-	}
-#endif
+	/* Prepare dropout prevention. */
 	if (pseudo_rasterization) {
 	    code = start_margin_set(dev, ll, y1);
 	    if (code < 0)
 		return code;
 	}
 	/* Fill a multi-trapezoid band for the active lines. */
-	/* Don't bother if no pixel centers lie within the band. */
-	if (draw > 0 || (draw == 0 && HAVE_PIXELS())) {
+	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
+	if (covering_pixel_centers) {
 	    fixed height = y1 - y;
 	    fixed xlbot, xltop; /* as of last "outside" line */
 	    int inside = 0;
@@ -1469,18 +1481,6 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		/* We just went from inside to outside, so fill the region. */
 		wtop = xtop - xltop;
 		INCR(band_fill);
-		/*
-		 * If lines are temporarily out of order, we might have
-		 * xtop < xltop.  Patch this up now if necessary.  Note that
-		 * we can't test wtop < 0, because the subtraction might
-		 * overflow.
-		 */
-		if (xtop < xltop) {
-		    if_debug2('f', "[f]patch %g,%g\n",
-			      fixed2float(xltop), fixed2float(xtop));
-		    xtop = xltop += arith_rshift(wtop, 1);
-		    wtop = 0;
-		}
 		if ((adjust_left | adjust_right) != 0) {
 		    xlbot -= adjust_left;
 		    xbot += adjust_right;
@@ -1549,13 +1549,12 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		    return code;
 	    }
 	} else {
-	    /* Just scan for ended or out-of-order lines. */
-	    active_line flp;
-	    int inside = 0;
-
-	    /* Process dropouts near trapezoids. */
-
+	    /* No trapezoids generation needed. */
 	    if (pseudo_rasterization) {
+		/* Process dropouts near trapezoids. */
+		active_line flp;
+		int inside = 0;
+
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		    alp->x_current = alp->x_next;
 
