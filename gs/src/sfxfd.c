@@ -25,17 +25,8 @@
 #include "stdio_.h"		/* includes std.h */
 #include "errno_.h"
 #include "memory_.h"
-/*
- * It's likely that you will have to edit the next line on some Unix
- * and most non-Unix platforms, since there is no standard (ANSI or
- * otherwise) for where to find these definitions.
- */
-/*
- * unistd.h may declare unlink in a way that conflicts with stdio_.h if
- * const has been disabled.
- */
-#define unlink unlink_
-#include <unistd.h>		/* for read, write, fsync, lseek */
+#include "unistd_.h"            /* for read, write, fsync, lseek */
+
 #include "gdebug.h"
 #include "gpcheck.h"
 #include "stream.h"
@@ -180,7 +171,7 @@ s_fileno_available(register stream * s, long *pl)
 	pos = ltell(fd);
 	if (pos < 0)
 	    return ERRC;
-	end = ltell(fd);
+	end = lseek(fd, 0L, SEEK_END);
 	if (lseek(fd, pos, SEEK_SET) < 0 || end < 0)
 	    return ERRC;
 	buf_avail += end - pos;

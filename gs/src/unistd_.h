@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2000 Artifex Software, Inc. All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -17,28 +17,31 @@
 */
 
 /*$Id$ */
-/* Declaration of close */
+/* Generic substitute for Unix unistd.h */
 
-#ifndef close__INCLUDED
-#  define close__INCLUDED
+#ifndef unistd__INCLUDED
+#  define unistd__INCLUDED
 
-/*
- * This absurd little file is needed because even though open and creat
- * are guaranteed to be declared in <fcntl.h>, close is not: in MS
- * environments, it's declared in <io.h>, but everywhere else it's in
- * <unistd.h>.
- */
-
-/*
- * We must include std.h before any file that includes (or might include)
- * sys/types.h.
- */
+/* We must include std.h before any file that includes sys/types.h. */
 #include "std.h"
 
-#ifdef __WIN32__
-#  include <io.h>
-#else  /* !__WIN32__ */
-#  include <unistd.h>
-#endif /* !__WIN32__ */
+/*
+ * It's likely that you will have to edit the next lines on some Unix
+ * and most non-Unix platforms, since there is no standard (ANSI or
+ * otherwise) for where to find these definitions.
+ */
 
-#endif /* close__INCLUDED */
+#if defined(_MSC_VER) && defined(__WIN32__)
+#  include <io.h>
+#  define fsync(handle) _commit(handle)
+#else
+#  include <unistd.h>
+#endif
+
+/*
+ * unistd.h may declare unlink in a way that conflicts with stdio_.h if
+ * const has been disabled.
+ */
+#define unlink unlink_
+
+#endif   /* unistd__INCLUDED */

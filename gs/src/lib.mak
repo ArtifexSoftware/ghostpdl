@@ -79,7 +79,6 @@ gscdefs_h=$(GLSRC)gscdefs.h $(gconfigv_h)
 
 vmsmath_h=$(GLSRC)vmsmath.h
 
-close__h=$(GLSRC)close_.h $(std_h)
 dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
 dirent__h=$(GLSRC)dirent_.h $(std_h) $(gconfig__h)
@@ -92,6 +91,7 @@ stat__h=$(GLSRC)stat_.h $(std_h)
 stdio__h=$(GLSRC)stdio_.h $(std_h)
 string__h=$(GLSRC)string_.h $(std_h)
 time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
+unistd_h=$(GLSRC)unistd_.h $(std_h)
 windows__h=$(GLSRC)windows_.h
 # Out of order
 pipe__h=$(GLSRC)pipe_.h $(stdio__h)
@@ -226,7 +226,7 @@ $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
 
 # Support for platform code
 $(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c\
- $(close__h) $(fcntl__h) $(stat__h) $(stdio__h)\
+ $(unistd__h) $(fcntl__h) $(stat__h) $(stdio__h)\
  $(gp_h) $(gpgetenv_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 
@@ -1045,7 +1045,7 @@ $(GLOBJ)sfxstdio.$(OBJ) : $(GLSRC)sfxstdio.c $(AK) $(stdio__h) $(memory__h)\
 	$(GLCC) $(GLO_)sfxstdio.$(OBJ) $(C_) $(GLSRC)sfxstdio.c
 
 $(GLOBJ)sfxfd.$(OBJ) : $(GLSRC)sfxfd.c $(AK)\
- $(stdio__h) $(errno__h) $(memory__h)\
+ $(stdio__h) $(errno__h) $(memory__h) $(unistd__h)\
  $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)sfxfd.$(OBJ) $(C_) $(GLSRC)sfxfd.c
 
