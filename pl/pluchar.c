@@ -562,15 +562,6 @@ pl_ufst_char_width(
 
 /*
  * Generate a UFST character.
- *
- * Note that, unlike the other font scalers, UFST works in device space (the
- * only reasonable space in which hints may be applied). Unfortunately, the
- * graphic library is somewhat resistant to allowing users to work in this
- * space. To get around this limitation, the current transformation is set
- * to a pure translation while a character is being rendered, and subsequently
- * restored (just in case someone still needs the graphic state).
- *
- * The handling of ERR_fixed_space is probably not correct.
  */
 private int
 pl_ufst_make_char(
@@ -1865,6 +1856,75 @@ pl_mt_build_char(
     return pl_ufst_make_char(penum, pgs, pfont, chr, &fc);
 }
 
+
+#define MAX_LIST_SIZE 100
+int list_size = 0;
+
+typedef struct pl_glyph_width_node_s pl_glyph_width_node_t;
+
+struct pl_glyph_width_node_s {
+    uint char_code;
+    uint font_id;
+    gs_point width;
+    pl_glyph_width_node_t *next;
+};
+
+pl_glyph_width_node_t *head = NULL;
+/* add at the front of the list */
+
+int 
+pl_glyph_width_cache_node_add(gs_memory_t *mem, gs_id font_id, uint char_code, gs_point *pwidth)
+{
+    pl_glyph_width_node_t *node = 
+        (pl_glyph_width_node_t *)gs_alloc_bytes(mem,
+                                               sizeof(pl_glyph_width_node_t),
+                                               "pl_glyph_width_cache_node_add");
+    if ( node == NULL )
+        return -1;
+    if ( head == NULL ) {
+        head = node;
+        head->next = NULL;
+    } else {
+        node->next = head;
+        head = node;
+    }
+    
+    head->char_code = char_code;
+    head->font_id = font_id;
+    head->width = *pwidth;
+    list_size++;
+    return 0;
+}
+
+int
+pl_glyph_width_cache_node_search(gs_id font_id, uint char_code, gs_point *pwidth)
+{
+    pl_glyph_width_node_t *current = head;
+    while ( current ) {
+        if ( char_code == current->char_code && font_id == current->font_id ) {
+            *pwidth = current->width;
+            return 0;
+        }
+        current = current->next;
+    }
+    return -1;
+}
+
+void
+pl_glyph_width_list_remove(gs_memory_t *mem)
+{
+    pl_glyph_width_node_t *current = head;
+    while (current) {
+        pl_glyph_width_node_t *next = current->next;
+        gs_free_object(mem, current, "pl_glyph_width_list_remove");
+        current = next;
+    }
+    head = NULL;
+    list_size = 0;
+    return;
+}
+
+
 /* Get character existence and escapement for an MicroType font. */
 private int
 pl_mt_char_width(
@@ -1875,10 +1935,22 @@ pl_mt_char_width(
 {
     FONTCONTEXT             fc;
 
+    /* FIXME inconsitant error code return values follow */
     if (pl_set_mt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
         return 0;
-    else
-        return pl_ufst_char_width(char_code, pgs, pwidth, &fc);
+    else {
+        int code;
+        if ( list_size > MAX_LIST_SIZE )
+            pl_glyph_width_list_remove(plfont->pfont->memory);
+        code = pl_glyph_width_cache_node_search(plfont->pfont->id, char_code, pwidth);
+        if ( code < 0 ) /* not found */ {
+            code = pl_ufst_char_width(char_code, pgs, pwidth, &fc);
+            if ( code < 0 ) return 1;
+            code = pl_glyph_width_cache_node_add(plfont->pfont->memory, plfont->pfont->id, char_code, pwidth);
+            if ( code < 0 ) return 1;
+        }
+        return 0;
+    }
 }
 
 private int
