@@ -197,7 +197,11 @@ odef
 } bind odef
 % We must prevent resourceforall from automatically restoring the stacks,
 % because we don't want the stacks restored if proc causes an error.
-/resourceforall {	% <template> <proc> <scratch> <category> resourceforall -
+% On the other hand, resourceforall is defined in the PLRM as an operator,
+% so it must have type /operatortype.  We hack this by taking advantage of
+% the fact that the interpreter optimizes tail calls, so stack protection
+% doesn't apply to the very last token of an operator procedure.
+/resourceforall1 {	% <template> <proc> <scratch> <category> resourceforall1 -
 	dup /Category findresource begin
 	/ResourceForAll load
 		% Make sure we can recover the original operands.
@@ -224,6 +228,9 @@ odef
 	  pop pop end
 	} ifelse
 } bind def
+/resourceforall {	% <template> <proc> <scratch> <category> resourceforall1 -
+	//resourceforall1 exec		% see above
+} bind odef
 /resourcestatus {	% <key> <category> resourcestatus <status> <size> true
 			% <key> <category> resourcestatus false
 	2 copy .findcategory /ResourceStatus .resourceexec

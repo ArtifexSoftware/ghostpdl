@@ -733,8 +733,8 @@ DEBUG { (Installing.) = pstack flush } if
 	% Because the interpreter optimizes tail calls, we can't just let
 	% the body of this procedure be 'exec', because that would lose
 	% the stack protection that is the whole reason for having the
-	% procedure in the first place.  Therefore, we add a couple of
-	% extra tokens to ensure that the operator procedure is still
+	% procedure in the first place.  We hack this by adding a couple
+	% of extra tokens to ensure that the operator procedure is still
 	% on the stack during the exec.
   exec
   0 pop	% See above.
