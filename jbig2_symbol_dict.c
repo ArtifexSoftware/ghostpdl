@@ -132,10 +132,7 @@ jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
  
     for (index = 0; index < segment->referred_to_segment_count; index++) {
         rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
-        if (rsegment && ((rsegment->flags & 63) == 0)) {
-            n_dicts++;
-            n_dicts+= jbig2_sd_count_referred(ctx, rsegment);
-        }
+        if (rsegment && ((rsegment->flags & 63) == 0)) n_dicts++;
     }
                                                                                 
     return (n_dicts);
@@ -147,7 +144,7 @@ jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
 {
     int index;
     Jbig2Segment *rsegment;
-    Jbig2SymbolDict **dicts, **rdicts;
+    Jbig2SymbolDict **dicts;
     int n_dicts = jbig2_sd_count_referred(ctx, segment);
     int dindex = 0;
                                                      
@@ -155,14 +152,6 @@ jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
     for (index = 0; index < segment->referred_to_segment_count; index++) {
         rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
         if (rsegment && ((rsegment->flags & 63) == 0)) {
-            /* recurse for imported symbols */
-            int j, n_rdicts = jbig2_sd_count_referred(ctx, rsegment);
-            if (n_rdicts > 0) {
-                rdicts = jbig2_sd_list_referred(ctx, rsegment);
-                for (j = 0; j < n_rdicts; j++)
-                    dicts[dindex++] = rdicts[j];
-                jbig2_free(ctx->allocator, rdicts);
-            }
             /* add this referred to symbol dictionary */
             dicts[dindex++] = (Jbig2SymbolDict *)rsegment->result;
         }
@@ -186,7 +175,6 @@ jbig2_sd_cat(Jbig2Ctx *ctx, int n_dicts, Jbig2SymbolDict **dicts)
   int i,j,k, symbols;
   Jbig2SymbolDict *new = NULL;
   
-
   /* count the imported symbols and allocate a new array */
   symbols = 0;
   for(i = 0; i < n_dicts; i++)
