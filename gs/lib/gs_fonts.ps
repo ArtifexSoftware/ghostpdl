@@ -1,4 +1,4 @@
-%    Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1990-2003 artofcode LLC.  All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
 % implied.
@@ -139,25 +139,26 @@ userdict /Fontmap .FontDirectory maxlength dict put
 /.findfontvalue {       % <file> <key> .findfontvalue <value> true
                         % <file> <key> .findfontvalue false
                         % Closes the file in either case.
-  exch dup read not { -1 } if
-  2 copy unread 16#80 eq {
-    dup (xxxxxx) readstring pop pop             % skip .PFB header
-  } if
-  {             % Stack: key file
+  exch dup read {
+    2 copy unread 16#80 eq {
+      dup (xxxxxx) readstring pop pop             % skip .PFB header
+    } if
+    {           % Stack: key file
                 % Protect ourselves against syntax errors here.
-    dup { token } stopped { pop false exit } if
-    not { false exit } if               % end of file
-    dup /eexec eq { pop false exit } if         % reached eexec section
-    dup /Subrs eq { pop false exit } if         % Subrs without eexec
-    dup /CharStrings eq { pop false exit } if   % CharStrings without eexec
-    dup 3 index eq
-     { xcheck not { dup token exit } if }       % found key
-     { pop }
-    ifelse
-  } loop
+      dup { token } stopped { pop false exit } if
+      not { false exit } if               % end of file
+      dup /eexec eq { pop false exit } if         % reached eexec section
+      dup /Subrs eq { pop false exit } if         % Subrs without eexec
+      dup /CharStrings eq { pop false exit } if   % CharStrings without eexec
+      dup 3 index eq
+       { xcheck not { dup token exit } if }       % found key
+       { pop }
+      ifelse
+    } loop
                 % Stack: key file value true   (or)
                 % Stack: key file false
-  dup { 4 } { 3 } ifelse -2 roll closefile pop
+    dup { 4 } { 3 } ifelse -2 roll closefile pop
+  } { closefile pop false } ifelse
 } bind def
 /.findfontname
  { /FontName .findfontvalue

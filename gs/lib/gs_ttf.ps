@@ -1,4 +1,4 @@
-%    Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1996-2003 artofcode LLC.  All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
 % implied.
@@ -42,18 +42,20 @@
 % Closes the file in either case.
 /.findnonttfontvalue /.findfontvalue load def
 /.findfontvalue {
-  1 index read pop 2 index 1 index unread
-  dup 0 eq exch (t) 0 get eq or {
+  1 index read {
+    2 index 1 index unread
+    dup 0 eq exch (t) 0 get eq or {
 		% If this is a font at all, it's a TrueType font.
-    dup /FontType eq {
-      pop closefile 42 true
+      dup /FontType eq {
+        pop closefile 42 true
+      } {
+        dup /FontName eq { pop .findttfontname } { pop closefile false } ifelse
+      } ifelse
     } {
-      dup /FontName eq { pop .findttfontname } { pop closefile false } ifelse
-    } ifelse
-  } {
 		% Not a TrueType font.
-    .findnonttfontvalue
-  } ifelse
+      .findnonttfontvalue
+    } ifelse
+  } { pop closefile false } ifelse
 } bind def
 
 % <file> .findttfontname <fname> true
