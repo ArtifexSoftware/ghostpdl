@@ -145,6 +145,9 @@
   /zdot /zdotaccent 
 .dicttomark readonly def
 
+% Array used for fast pre-filling of cmap array
+/.array1024z [ 1024 { 0 } repeat ] def
+
 % ---- Utilities ---- %
 
 % Define a serial number for creating unique XUIDs for TrueType fonts.
@@ -355,6 +358,14 @@
       exch 1 index add exch
       numcodes add /numcodes exch def
     } for array def
+    % prefill the array with 0's faster than a { 0 putglyph } repeat
+    glyphs length 1024 ge {
+      .array1024z 0 1024 glyphs length 1023 sub { glyphs exch 2 index putinterval } for
+      glyphs dup length 1024 sub 3 -1 roll
+      putinterval
+    } {
+      0 1 glyphs length 1 sub { glyphs exch 0 put } for
+    } ifelse
 		% Now fill in the array.
     /numcodes 0 def /code 0 def
     0 2 nseg2 3 sub {
@@ -365,7 +376,7 @@
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
       %dup 16#e000 ge { 255 and } if
       % the previous line is obstructive to CJK fonts, so it was removed
-      exch sub 0 .max dup { 0 putglyph } repeat
+      exch sub 0 .max dup /code exch code exch add def
       ecode scode sub 1 add add numcodes add /numcodes exch def
       /delta iddelta i2 gets16 def
       TTFDEBUG {
@@ -430,6 +441,15 @@
     /postglyphs exch def
       postglyphs 32 getu16 /numglyphs exch def
       /glyphnames numglyphs 2 mul 34 add def
+      % Build names array in the order they occur in the 'post' table
+      /postpos glyphnames def
+      [ numglyphs 1 sub {
+	postglyphs postpos get 
+        postglyphs postpos 1 add 2 index getinterval cvn
+	exch postpos add 1 add /postpos exch def
+	postpos postglyphs length ge { exit } if
+      } repeat
+      ] /postnames exch def
       [ 0 1 numglyphs 1 sub {
 	2 mul 34 add postglyphs exch getu16
 	dup 258 lt {
@@ -442,27 +462,15 @@
 		% value of 16#ffff.
 	    pop /.notdef
 	  } {
-	    258 sub glyphnames exch {
-	      postglyphs 1 index
-	      % Some badly formed TT fonts have glyph index values past the end
-	      % of the 'post' table.
-              1 index length 1 index le {
-	        TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
-                exit
-              } if
-              get 1 add add
-	    } repeat
-	    1 add postglyphs exch
-            1 index length 1 index
-            lt {
+	    % Get the name for this glyph
+	    258 sub dup postnames length ge {
 	      TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
-              % extend the postglyphs string by 1 byte of 0x00
-	      exch (\000) concatstrings /postglyphs exch def postglyphs exch
+	      exit
 	    } if
-            2 copy 1 sub get getinterval cvn
-		% At least some of Microsoft's TrueType fonts use incorrect
-		% (Adobe-incompatible) names for some glyphs.
-		% Correct for this here.
+	    postnames exch get
+	    % At least some of Microsoft's TrueType fonts use incorrect
+	    % (Adobe-incompatible) names for some glyphs.
+	    % Correct for this here.
 	    postremap 1 index .knownget { exch pop } if
 	  } ifelse
 	} ifelse
