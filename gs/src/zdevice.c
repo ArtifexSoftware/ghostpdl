@@ -317,8 +317,12 @@ zoutputpage(i_ctx_t *i_ctx_p)
 
     check_type(imemory, op[-1], t_integer);
     check_type(imemory, *op, t_boolean);
+#ifdef PSI_INCLUDED
+    code = ps_end_page_top((int)op[-1].value.intval, op->value.boolval);
+#else
     code = gs_output_page(igs, (int)op[-1].value.intval,
 			  op->value.boolval);
+#endif
     if (code < 0)
 	return code;
     pop(2);
@@ -409,14 +413,20 @@ zsetdevice(i_ctx_t *i_ctx_p)
 {
     gx_device *dev = gs_currentdevice(igs);
     os_ptr op = osp;
-    int code;
+    int code = 0;
 
     check_write_type(imemory, *op, t_device);
     if (dev->LockSafetyParams) {	  /* do additional checking if locked  */
         if(op->value.pdevice != dev) 	  /* don't allow a different device    */
 	    return_error(imemory, e_invalidaccess);
     }
+#ifndef PSI_INCLUDED
+    /* the language switching build shouldn't install a new device
+       here.  The language switching machinery installs a shared
+       device. */
+
     code = gs_setdevice_no_erase(igs, op->value.pdevice);
+#endif
     if (code < 0)
 	return code;
     make_bool(op, code != 0);	/* erase page if 1 */
