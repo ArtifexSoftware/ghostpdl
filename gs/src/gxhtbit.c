@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -118,6 +118,33 @@ construct_ht_order_short(gx_ht_order *porder, const byte *thresholds)
 	}
     }
  out:
+    return 0;
+}
+
+/* Return the bit coordinate using the standard representation. */
+private int
+ht_bit_index_default(const gx_ht_order *porder, uint index, gs_int_point *ppt)
+{
+    const gx_ht_bit *phtb = &((const gx_ht_bit *)porder->bit_data)[index];
+    uint offset = phtb->offset;
+    int bit = 0;
+
+    while (!(((const byte *)&phtb->mask)[bit >> 3] & (0x80 >> (bit & 7))))
+	++bit;
+    ppt->x = (offset % porder->raster * 8) + bit;
+    ppt->y = offset / porder->raster;
+    return 0;
+}
+
+/* Return the bit coordinate using the short representation. */
+private int
+ht_bit_index_short(const gx_ht_order *porder, uint index, gs_int_point *ppt)
+{
+    uint bit_index = ((const ushort *)porder->bit_data)[index];
+    uint bit_raster = porder->raster * 8;
+
+    ppt->x = bit_index % bit_raster;
+    ppt->y = bit_index / bit_raster;
     return 0;
 }
 
@@ -242,6 +269,8 @@ render_ht_short(gx_ht_tile *pbt, int level, const gx_ht_order *porder)
 
 /* Define the procedure vectors for the order data implementations. */
 const gx_ht_order_procs_t ht_order_procs_table[2] = {
-    { sizeof(gx_ht_bit), construct_ht_order_default, render_ht_default },
-    { sizeof(ushort), construct_ht_order_short, render_ht_short }
+    { sizeof(gx_ht_bit), construct_ht_order_default, ht_bit_index_default,
+      render_ht_default },
+    { sizeof(ushort), construct_ht_order_short, ht_bit_index_short,
+      render_ht_short }
 };

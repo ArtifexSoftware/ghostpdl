@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -168,10 +168,15 @@ typedef struct gx_ht_order_procs_s {
     uint bit_data_elt_size;
 
     /* Construct the order from the threshold array. */
-    /* Note that for 16-bit threshold values (not supported yet), */
+    /* Note that for 16-bit threshold values, */
     /* each value is 2 bytes in big-endian order (Adobe spec). */
 
     int (*construct_order)(P2(gx_ht_order *order, const byte *thresholds));
+
+    /* Return the (x,y) coordinate of an element of bit_data. */
+
+    int (*bit_index)(P3(const gx_ht_order *order, uint index,
+			gs_int_point *ppt));
 
     /* Update a halftone cache tile to match this order. */
 
