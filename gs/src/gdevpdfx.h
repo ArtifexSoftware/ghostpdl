@@ -312,7 +312,7 @@ struct gx_device_pdf_s {
     bool EmitDSCWarnings;
     bool CreateJobTicket;
     bool PreserveEPSInfo;
-    bool AutoPositionEPSFile;
+    bool AutoPositionEPSFiles;
     bool PreserveCopyPage;
     bool UsePrologue;
     /* End of distiller parameters */

@@ -176,17 +176,17 @@ const gx_device_pdf gs_pdfwrite_device =
  PDF_COMPATIBILITY_LEVEL_INITIAL,  /* CompatibilityLevel */
  -1,				/* EndPage */
  1,				/* StartPage */
- 0 /*false*/,			/* Optimize */
+ 1 /*true*/,			/* Optimize */
  0 /*false*/,			/* ParseDSCCommentsForDocInfo */
- 0 /*false*/,			/* ParseDSCComments */
+ 1 /*true*/,			/* ParseDSCComments */
  0 /*false*/,			/* EmitDSCWarnings */
  0 /*false*/,			/* CreateJobTicket */
  0 /*false*/,			/* PreserveEPSInfo */
- 0 /*false*/,			/* AutoPositionEPSFile */
- 0 /*false*/,			/* PreserveCopyPage */
+ 1 /*true*/,			/* AutoPositionEPSFiles */
+ 1 /*true*/,			/* PreserveCopyPage */
  0 /*false*/,			/* UsePrologue */
- 1 /*true */ ,			/* ReAssignCharacters */
- 1 /*true */ ,			/* ReEncodeCharacters */
+ 1 /*true*/,			/* ReAssignCharacters */
+ 1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
  pdf_compress_none,		/* compression */
  {{0}},				/* xref */

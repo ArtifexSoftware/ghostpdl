@@ -56,7 +56,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("EmitDSCWarnings", gs_param_type_bool, EmitDSCWarnings),
     pi("CreateJobTicket", gs_param_type_bool, CreateJobTicket),
     pi("PreserveEPSInfo", gs_param_type_bool, PreserveEPSInfo),
-    pi("AutoPositionEPSFile", gs_param_type_bool, AutoPositionEPSFile),
+    pi("AutoPositionEPSFiles", gs_param_type_bool, AutoPositionEPSFiles),
     pi("PreserveCopyPage", gs_param_type_bool, PreserveCopyPage),
     pi("UsePrologue", gs_param_type_bool, UsePrologue),
 
