@@ -440,8 +440,13 @@ gx_dc_pure_fill_masked(const gx_device_color * pdevc, const byte * data,
 	gx_color_index scolors[2];
 	gx_color_index tcolors[2];
 
-	scolors[0] = gx_device_black(dev);
-	scolors[1] = gx_device_white(dev);
+        if ( lop != lop_default ) {
+            scolors[0] = gx_device_white(dev);
+            scolors[1] = gx_device_black(dev);
+        } else {
+            scolors[0] = gx_device_black(dev);
+            scolors[1] = gx_device_white(dev);
+        }
 	tcolors[0] = tcolors[1] = pdevc->colors.pure;
 	return (*dev_proc(dev, strip_copy_rop))
 	    (dev, data, data_x, raster, id, scolors,
