@@ -116,7 +116,7 @@ ps_impl_allocate_interp_instance(
 {
 	int code = 0, exit_code;
 	int argc = 3;
-	char *argv[] = { {""}, {"-dNOPAUSE"}, {"-dQUIET"}, {""}};
+	char *argv[] = { "", "-dNOPAUSE", "-dQUIET", ""};
 
 	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
 	    = (ps_interp_instance_t *)gs_alloc_bytes( mem,
@@ -217,13 +217,11 @@ ps_impl_init_job(
 	pl_interp_instance_t   *instance         /* interp instance to start job in */
 )
 {
-    int code = 0; 
-    int exit_code = 0;
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
     /* starting a new job */
     psi->fresh_job = true;
-    return 0; /* should be return zsave(psi->minst->i_ctx_p); */
+    return 0; 
 }
 
 /* Parse a buffer full of data */
@@ -327,8 +325,7 @@ ps_impl_process_eof(
 	pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
 {
-    int code = 0, exit_code;
-    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    int code = 0;
     /* put endjob logic here (finish encapsulation) */
     return code;
 }
@@ -343,7 +340,8 @@ ps_impl_report_errors(
    FILE                 *cout              /* stream for back-channel reports */
 )
 {
-    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    /*    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    */
     return code;
 }
 
@@ -377,7 +375,7 @@ ps_impl_dnit_job(
            is deinitialized so handle error processing here and return code is always 0. */
         if ( code < 0 ) {
             fprintf(gs_stderr, "PDF interpreter exited with exit code %d\n", exit_code);
-            fprintf(gs_stderr, "Flushing to EOJ\n", exit_code);
+            fprintf(gs_stderr, "Flushing to EOJ\n");
         }
         code = 0;
     }
@@ -391,7 +389,6 @@ ps_impl_remove_device(
 )
 {
 	int code = 0;	/* first error status encountered */
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
 	return code;
 }
