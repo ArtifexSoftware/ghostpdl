@@ -771,7 +771,6 @@ hpgl_TR(
     if (hpgl_arg_c_int(pargs, &mode) && ((mode & ~1) != 0))
 	return e_Range;
 
-    /* HAS not sure if pcl's state is updated as well */
     pgls->g.source_transparent = (mode != 0);
     return 0;
 }
