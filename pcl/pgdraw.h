@@ -26,11 +26,20 @@ int hpgl_add_arc_to_path(P9(hpgl_state_t *pgls, floatp center_x,
 			    floatp chord_angle, bool start_moveto,
 			    bool draw));
 
+/* puts a 3 point arc into the current path.  Note that the
+   decomposition is a bit different for 3 point arcs since the polygon
+   wedge routines use this function as well */
+
+int hpgl_add_arc_3point_to_path(P9(hpgl_state_t *pgls, floatp start_x, floatp
+				   start_y, floatp inter_x, floatp inter_y, 
+				   floatp end_x, floatp end_y, floatp chord_angle,
+				   bool draw));
+
 /* put bezier into the current path */
-int hpgl_add_bezier_to_path(P9(hpgl_state_t *pgls, floatp x1, 
+int hpgl_add_bezier_to_path(P10(hpgl_state_t *pgls, floatp x1, 
 				floatp y1, floatp x2, floatp y2, 
 				floatp x3, floatp y3, floatp x4, 
-				floatp y4));
+				floatp y4, bool draw));
 
 /* clears the current path with stroke or fill */
 int hpgl_draw_current_path(P2(hpgl_state_t *pgls, 
@@ -50,13 +59,6 @@ int hpgl_copy_current_path_to_polygon_buffer(P1(hpgl_state_t *pgls));
 /* draw the current path with stroke or fill, but do not clear */
 int hpgl_draw_and_preserve_path(P2(hpgl_state_t *pgls, 
 				   hpgl_rendering_mode_t render_mode));
-
-/* utility routine to add a 2 points and stroke/fill */
-int hpgl_draw_line(P5(hpgl_state_t *pgls, floatp x1, floatp y1, 
-			 floatp x2, floatp y2));
-
-/* Draw a dot.  A vector of zero length */
-int hpgl_draw_dot(P3(hpgl_state_t *pgls, floatp x1, floatp y1));
 
 /* destroy the current path */
 int hpgl_clear_current_path(P1(hpgl_state_t *pgls));

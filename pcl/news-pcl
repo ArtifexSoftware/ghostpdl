@@ -6,6 +6,106 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
+Version 0.31 (7/24/97)
+======================
+
+This fixes many minor GL/2 problems uncovered by the Genoa FTS.  Here is the
+current bug list: bugs believed fixed are marked with a *.
+
+1. default font used for captions in all fts test is supposed to be
+universe typeface.  We do not have a univers typeface in our font repotoire. 
+*2. empty.
+*3. empty.
+*4. page rotation wrong - 70-78, 90-98, 580-585, 2130.
+*5. improper clipping - 1470.
+6. spacing or font selection - 284, 291-294, 300, 301 (lots more).
+7. right margin clipping - 121, 124.
+8. hmi problem - 140-145.
+9. vmi problem (extra pages) - 150-159, 2130, 2151, 2270.
+10. vertical row positioning decipoints - 192, 174.
+11. horizontal column position 216, 206, 226.
+12. missing glyphs - 260, 261, 270, 271, 420, 421, 1151, 1300-1470, 2330.
+13. symbol set selection side effect - 274, 2050, 2130, 2261.
+14. pitch mode - 720.
+15. floating underline - 412, 414
+16. raster y offset - 600, 602, 2250
+17. extra pages in raster mode - 600-
+18. extra raster row - 618
+19. glyph boxes in raster output - 622.
+20. missing raster pages - 618-641
+21. pattern/raster interaction - 661-663, 1851.
+22. pattern selection - 665
+23. transparency / bounding box of outline glyph - 670, 682, 683, 701, 790.
+24. pattern rotation text direction interaction - 742, 2011, 2021
+25. missing macro line 791.
+26. missing several pages, blows up when starting gl/2 characters - 820, 960, 1480, 1810, 2350.
+27. out of phase dashed line 1062, 1082, 1116, 1132.
+28. misplaced line - probably position error after hpgl/2 line fill - 1094
+29. wrong fill - 1113.
+30. spacing/proportional font problem - 1161.
+31. font height - 1181.
+32. stroke weight - 1201.
+33. outline fonts not filled or edged - 1220-1223.
+34. bitmap font at non-orthogonal skew - 1241.
+35. variable text path - 1270-1274.
+36. extra space - 1280-1282.
+*37. missing wedges 1472.
+38. raster graphics restoring X=0 position 1840, 1841
+39. extra black rectangles 1860, 1861-1890.
+40. captions misplaced 2013, 2020.
+41. text pattern overlay 2013,2020
+42. hpgl/2 pcl user defined patterns unsupported - 2030-2042, 2290, 2291
+43. test pages rotated 180 degrees. 2221-
+44. si enhanced 2253
+*45. bezier 2340-2330.
+
+(HAS) ChangeLog:
+
+	* pgvector.c (hpgl_arc_3_point): most of code put in a new
+	function (hpgl_add_arc_3point_to_path()) that is also used by
+	hpgl_wedge.
+	(hpgl_bezier): fixed typo that set x pos and y pos to y pos.
+	Fixes #45.
+	(hpgl_CI): rewritten to not call other commands.
+
+	* pgpoly.c (hpgl_rectangle): removed direct calling of hpgl/2
+	commands. 
+	(hpgl_wedge): removed direct calling of hpgl/2 commands. 
+
+	* pglfill.c (hpgl_RF): new code to store pixels.
+
+	* pglabel.c (hpgl_LB): restore only the X position depending on
+	DV/LO combo 23-78.  Not sure if this is correct (as noted in code).
+
+	* pginit.c (hpgl_default_coordinate_system): added more
+	initialization here - scaling, position etc.
+	(hpgl_clear_state): gl/2 state now initialized with 0xee if in
+	DEBUG mode.
+
+	* pgdraw.c (hpgl_polyfill_bbox): commented out code to add pen
+	width which disturbs the current anchor corner implementation.
+	Fixes #5.
+	(hpgl_draw_vector_absolute): removed calling of hpgl/2 commands.
+	(hpgl_polyfill): removed saving and restoring of pen state.
+	(hpgl_map_fill_type): redone to handle all render modes correctly.
+	(hpgl_map_id_type): redone to handle all render modes correctly.
+	(hpgl_draw_line): removed.
+	(hpgl_draw_dot): removed.
+
+	* pcpage.c (pcl_page_orientation): reset hpgl/2 page parameters.
+	Fixes #4.
+
+	* pgdraw.c (hpgl_add_bezier_to_path): updated to handle drawing
+	bezier with pen up.  part of fixes #45.
+	(hpgl_add_arc_3point_to_path): new function used by AT and WG.  To
+	support WG no longer calling AT.
+
+	* pgconfig.c (hpgl_RO): changed to not reset the clipping window
+	IW.  fixes missing wedges in buglist.pcl #37
+
+	* pgchar.c (hpgl_select_font_by_id): hack to prevent code from
+	crashing while working on other things.
+
 Version 0.30 (7/5/97)
 =====================
 

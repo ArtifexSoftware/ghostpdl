@@ -128,6 +128,10 @@ hpgl_select_font_by_id(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	code = pcl_select_font_by_id(pfs, id, pgls /****** NOTA BENE ******/);
 	if ( code < 0 )
 	  return code;
+	/* HAS -- font not found - prevent code from crashing to work on
+           other things. */
+	if ( code == 1 ) 
+	  return 0;
 	pgls->g.font = pfs->font;
 	pgls->g.map = pfs->map;
 	/*

@@ -713,9 +713,12 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		      if ( !(can_concat[pgls->g.label.origin] &
 			     (1 << pgls->g.character.text_path))
 		         )
+			/* HAS not sure if this is correct.  But
+                           restoring Y causes problems printing
+                           captions in the FTS. */
 			hpgl_call(hpgl_add_point_to_path(pgls,
 					pgls->g.label.initial_pos.x,
-					pgls->g.label.initial_pos.y,
+					pgls->g.pos.y,
 					hpgl_plot_move_absolute));
 		    }
 		    return 0;

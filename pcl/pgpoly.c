@@ -40,19 +40,13 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 
 	  hpgl_call(gs_point_transform(x1, y1, &pgls->g.polygon.ctm, &p1));
 	  hpgl_call(gs_point_transform(x2, y2, &pgls->g.polygon.ctm, &p2));
-	  hpgl_args_set_real2(pargs, p1.x, p2.y);
-	  hpgl_call(hpgl_PD(pargs, pgls));
 
-	  hpgl_args_set_real2(pargs, p2.x, p2.y);
-	  hpgl_call(hpgl_PD(pargs, pgls));
-
-	  hpgl_args_set_real2(pargs, p2.x, p1.y);
-	  hpgl_call(hpgl_PD(pargs, pgls));
-
-	  hpgl_args_set_real2(pargs, p1.x, p1.y);
-	  hpgl_call(hpgl_PD(pargs, pgls));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p1.x, p1.y, hpgl_plot_move_absolute));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p1.x, p2.y, hpgl_plot_draw_absolute));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p2.x, p2.y, hpgl_plot_draw_absolute));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p2.x, p1.y, hpgl_plot_draw_absolute));
+	  /* polygons are implicitly closed */
 	}
-
 	/* exit polygon mode PM2 */
 	hpgl_args_set_int(pargs,2);
 	hpgl_call(hpgl_PM(pargs, pgls));
@@ -95,15 +89,13 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  hpgl_call(gs_point_transform(x1, y1, &pgls->g.polygon.ctm, &p1));
 	  hpgl_call(gs_point_transform(x2, y2, &pgls->g.polygon.ctm, &p2));
 	  hpgl_call(gs_point_transform(x3, y3, &pgls->g.polygon.ctm, &p3));
-	  hpgl_args_set_real2(pargs, p1.x, p1.y);
-	  hpgl_call(hpgl_PD(pargs, pgls));
-	  
-	  hpgl_args_set_real2(pargs, p2.x, p2.y);
-	  hpgl_args_add_real(pargs, p3.x);
-	  hpgl_args_add_real(pargs, p3.y);
-	  hpgl_args_add_real(pargs, chord);
-	  hpgl_call(hpgl_AT(pargs, pgls));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p1.x, p1.y, hpgl_plot_draw_absolute));
 
+	  hpgl_call(hpgl_add_arc_3point_to_path(pgls, 
+						p1.x, p1.y, 
+						p2.x, p2.y,
+						p3.x, p3.y, chord,
+						hpgl_plot_draw_absolute));
 	}
 	  
 	/* exit polygon mode */
@@ -194,17 +186,11 @@ hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_set_polygon_ctm(hpgl_state_t *pgls)
 {
 	gs_matrix mat;
-	gs_make_identity(&mat);
-	if ( pgls->g.rotation == 600 )
-	  {
-	    gs_point pos;
-	    hpgl_call(hpgl_get_current_position(pgls, &pos));
-	    hpgl_call(gs_matrix_translate(&mat, -pos.x, -pos.y, &mat));
-	    hpgl_call(gs_matrix_rotate(&mat, pgls->g.rotation, &mat));
-	  }
+	gs_make_identity(&mat); 
 	pgls->g.polygon.ctm = mat;
 	return 0;
 }
+
 /* PM op; */
 int
 hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)

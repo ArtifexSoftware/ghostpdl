@@ -16,7 +16,6 @@
 
 /* AC [x,y]; Anchor corner for fill offsets, note that this is
    different than the anchor corner of the pcl picture frame. */
-
 int
 hpgl_AC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t x, y;
@@ -360,7 +359,12 @@ hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  { int pixel;
 	    if ( !hpgl_arg_c_int(pargs, &pixel) )
 	      break;
-	    /**** STORE PIXEL ****/
+	    /* HAS does not handle color */
+	    if ( pixel )
+	      {
+		int bitindx = pargs->phase - 1;
+		pgls->g.raster_fill.data[bitindx >> 3] |= (128 >> (bitindx & 7));
+	      }
 	    hpgl_next_phase(pargs);
 	  }
 	index = pgls->g.raster_fill.index - 1; /* make 0-origin */

@@ -8,6 +8,7 @@
 #include "pgmand.h"
 #include "pginit.h"
 #include "pgdraw.h"
+#include "pgmisc.h"
 
 /* ------ Internal procedures ------ */
 
@@ -61,6 +62,13 @@ hpgl_default_coordinate_system(hpgl_state_t *pcls)
 	  pcls->text_length * (pcls->vmi);
 	pcls->g.picture_frame.anchor_point.x = pcls->left_margin;
 	pcls->g.picture_frame.anchor_point.y = pcls->top_margin;
+	/* The default coordinate system is absolute with the origin at 0,0 */
+	pcls->g.move_or_draw = hpgl_plot_move;
+	pcls->g.relative_coords = hpgl_plot_absolute;
+	pcls->g.pos.x = 0.0;
+	pcls->g.pos.y = 0.0;
+	pcls->g.scaling_type = hpgl_scaling_none;
+	return;
 }
 
 	
@@ -82,14 +90,14 @@ hpgl_default_render_mode(pcl_state_t *pcls)
 {
 	pcls->g.current_render_mode = hpgl_rm_vector;
 }
-/* fill the state with a bogus value -- debug only.  HAS fixme -- GL/2
-   interpreter actually depends on 0's being here.  It should not. */
-private void
+/* fill the state with a bogus value -- debug only.  */
+
+ private void
 hpgl_clear_state(pcl_state_t *pcls)
 {
 
 #ifdef DEBUG
-	memset(&pcls->g, 0, sizeof(pcls->g));
+	memset(&pcls->g, 0xee, sizeof(pcls->g));
 #endif
 	return;
 }
@@ -161,6 +169,7 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	  {
 	    /* HAS reset picture frame scaling factors */
 	  }
+	return;
 }
 
 /* ------ Copy the HP-GL/2 state for macro call/overlay/exit. */

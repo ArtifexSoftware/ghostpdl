@@ -200,6 +200,7 @@ pcl_page_orientation(pcl_args_t *pargs, pcl_state_t *pcls)
 	pcls->overlay_enabled = false;
 	pcl_compute_logical_page_size(pcls);
 	reset_text_length(pcls);
+	hpgl_do_reset(pcls, pcl_reset_page_params);
 	return 0;
 }
 

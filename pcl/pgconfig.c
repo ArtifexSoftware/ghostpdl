@@ -376,10 +376,6 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    pgls->g.rotation = angle;
 	    hpgl_call(hpgl_set_ctm(pgls));
-	    /* set up a new clipping window */
-	    hpgl_args_setup(&args);
-	    hpgl_IW(&args, pgls);
-
 	    hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
 	    /* now add a moveto the using the current ctm */
 	    hpgl_args_set_real(&args, point.x);
