@@ -29,6 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version8.31">Version 8.31 (2004-08-28)</a>
 <li><a href="#Version8.30">Version 8.30 (2004-05-29)</a>
 <li><a href="#Version8.12">Version 8.12 (2003-12-08)</a>
 <li><a href="#Version8.11">Version 8.11 (2003-08-16)</a>
@@ -64,6 +65,1973 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
+
+<h2><a name="Version8.31"></a>Version 8.31 (2004-08-28)</h2>
+
+<p>
+This is a beta release of the development tree. It contains a number 
+of new features and is made available for those interested in testing
+the new version before it becomes the next stable release.
+
+<p>
+This second beta contains a large number of bug fixes over the earlier 
+8.30 version.
+
+<p> 
+New features since the last stable release:
+
+<ul>
+<li><p>
+Topological grid fitting,
+an original method developed for Ghostscript by Dr. Igor V. Melichev, improves 
+the rendering of True Type fonts at small resolutions.
+See the documentation for <a href="Language.htm#GridFitTT">GridFitTT</a> for information on this
+feature.
+
+<li><p>
+The PDF writer now implements PDF 1.4 encryption.
+See the <a href="Ps2pdf.htm#Encryption">encryption parameter</a> documentation for more
+information.
+
+<li><p>
+A new rendering method for shadings, developed for Ghostscript by 
+Dr. Igor V. Melichev, improves the quality and performance of 
+rasterization on continuous tone devices.
+The new method allows hardware or software acceleration with help of
+customizable routines for filling areas with a linearly varying color.
+functions.
+
+<li><p>
+This version contains the first release of Rinkj, an
+experimental new driver for some inkjet printers using ETS screening.
+See the <a href="Devices.htm#Rinkj">Rinkj</a> section for more information.
+
+<li><p>
+We now support PDF 1.5 files, including the new compression
+and encryption modes.
+
+<li><p>
+We have beta support for JPEG 2000 compressed images, using the JasPer
+compression library. This is only enabled as part of the default build
+in the autoconf (POSIX) build system in this release.
+
+</ul>
+
+<p>
+The following <a href="http://bugs.ghostscript.com/">bug</a> numbers were open at
+the time of release:
+<blockquote>
+405501,
+430175,
+446344,
+456692,
+458780,
+463688,
+465936,
+487953,
+493348,
+526099,
+526491,
+530011,
+535366,
+535932,
+578865,
+592160,
+603934,
+610478,
+614298,
+626295,
+634036,
+645316,
+674418,
+677324,
+685335,
+686747,
+686750,
+686816,
+686819,
+686824,
+686841,
+686842,
+686843,
+686853,
+686863,
+686865,
+686867,
+686902,
+686919,
+686980,
+686996,
+687011,
+687012,
+687013,
+687039,
+687063,
+687079,
+687084,
+687086,
+687095,
+687102,
+687105,
+687108,
+687110,
+687122,
+687125,
+687146,
+687157,
+687168,
+687174,
+687179,
+687193,
+687196,
+687203,
+687219,
+687221,
+687229,
+687231,
+687243,
+687251,
+687257,
+687259,
+687271,
+687275,
+687280,
+687295,
+687297,
+687298,
+687303,
+687314,
+687316,
+687324,
+687327,
+687341,
+687342,
+687345,
+687346,
+687360,
+687373,
+687375,
+687394,
+687397,
+687399,
+687401,
+687403,
+687410,
+687414,
+687421,
+687434,
+687435,
+687445,
+687459,
+687460,
+687461,
+687467,
+687468,
+687473,
+687474,
+687475,
+687479,
+687480,
+687484,
+687485,
+687490,
+687492,
+687497,
+687498,
+687501,
+687512,
+687514,
+687516,
+687518,
+687520,
+687523,
+687524,
+687525,
+687528,
+687529,
+687531,
+687535,
+687536,
+687537,
+687539,
+687541,
+687542,
+687545,
+687547,
+687551,
+687552,
+687554,
+687555,
+687558,
+687559,
+687560,
+687561,
+687571,
+687574,
+687575,
+687577,
+687578,
+687579,
+687581,
+687582,
+687583,
+687584,
+687585,
+687586,
+687588,
+687589,
+687590,
+687592,
+687593,
+687595,
+687600,
+687601,
+687607,
+687608,
+687610,
+687611,
+687612,
+687614,
+687615,
+687616,
+687617,
+687621,
+687622,
+687625,
+687627,
+687628,
+687630,
+687631,
+687632,
+687633,
+687634.
+</blockquote>
+
+<h3><a name="8.31_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>
+No known incompatible changes at the time of release
+
+<h3><a name="8.31_changelog"></a>Changelog</h3>
+
+<!-- generated from: cvs2cl --utc -T --follow trunk --delta gs8_30:HEAD -U AUTHORS --xml -f doc/changelog.xml -->
+
+<p><strong><a name="2004-08-28_2210"></a>
+2004-08-28 22:10 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the version and date on the VMS help file.</pre>
+<p>[doc/gs-vms.hlp 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-28_2152"></a>
+2004-08-28 21:52 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update release date on documentation.</pre>
+<p>[doc/API.htm 1.44, doc/Bug-form.htm 1.41, doc/Bug-info.htm 1.40, doc/C-style.htm 1.47, doc/Commprod.htm 1.32, doc/Copying.htm 1.31, doc/DLL.htm 1.35, doc/Deprecated.htm 1.12, doc/Details8.htm 1.9, doc/Develop.htm 1.138, doc/Devices.htm 1.81, doc/Drivers.htm 1.48, doc/Fonts.htm 1.42, doc/Helpers.htm 1.35, doc/History1.htm 1.31, doc/History2.htm 1.31, doc/History3.htm 1.31, doc/History4.htm 1.31, doc/History5.htm 1.33, doc/History6.htm 1.48, doc/History7.htm 1.36, doc/History8.htm 1.13, doc/Htmstyle.htm 1.36, doc/Install.htm 1.46, doc/Issues.htm 1.41, doc/Language.htm 1.87, doc/Lib.htm 1.34, doc/Maintain.htm 1.42, doc/Make.htm 1.79, doc/New-user.htm 1.51, doc/Projects.htm 1.58, doc/Ps-style.htm 1.29, doc/Ps2epsi.htm 1.33, doc/Ps2pdf.htm 1.70, doc/Psfiles.htm 1.53, doc/Readme.htm 1.56, doc/Release.htm 1.86, doc/Source.htm 1.31, doc/Tester.htm 1.31, doc/Testing.htm 1.26, doc/Unix-lpr.htm 1.31, doc/Use.htm 1.111, doc/Xfonts.htm 1.31, man/dvipdf.1 1.29, man/font2c.1 1.29, man/gs.1 1.30, man/gslp.1 1.29, man/gsnd.1 1.29, man/pdf2dsc.1 1.28, man/pdf2ps.1 1.30, man/pdfopt.1 1.28, man/pf2afm.1 1.29, man/pfbtopfa.1 1.30, man/printafm.1 1.29, man/ps2ascii.1 1.28, man/ps2epsi.1 1.27, man/ps2pdf.1 1.34, man/ps2pdfwr.1 1.33, man/ps2ps.1 1.36, man/wftopfa.1 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-28_2147"></a>
+2004-08-28 21:47 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Change the product name to BETA RELEASE</pre>
+<p>[src/gscdef.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-28_2147"></a>
+2004-08-28 21:47 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add recent new files to the listings in the documentation.</pre>
+<p>[doc/Develop.htm 1.137, doc/Psfiles.htm 1.52]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-28_2128"></a>
+2004-08-28 21:28 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update release notes and open bug list for the 8.31 beta release. Bump
+the release date as well.</pre>
+<p>[doc/News.htm 1.150, src/version.mak 1.72]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-26_0913"></a>
+2004-08-26 09:13 Russell Lang</strong> (<a href="Details8.htm#2004-08-26_0913">details</a>)</p>
+<blockquote>
+<pre>
+Fix half-toning for display device, bug 687629.
+
+</pre>
+<p>[src/gdevdsp.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-26_0015"></a>
+2004-08-26 00:15 Ray Johnston</strong> (<a href="Details8.htm#2004-08-26_0015">details</a>)</p>
+<blockquote>
+<pre>
+Fix for image matrix having negative values.  Thanks to Len Sorenson
+for submitting this patch (author unknown).  Bug #687411.
+
+</pre>
+<p>[src/gximag3x.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-26_0004"></a>
+2004-08-26 00:04 Ray Johnston</strong> (<a href="Details8.htm#2004-08-26_0004">details</a>)</p>
+<blockquote>
+<pre>
+Close the font file after the font has been processed (loaded into VM).
+This prevents a problem with using up too many file handles detected on
+Solaris. Thanks to Alex Cherepanov for the patch. Bug #687066.
+
+</pre>
+<p>[lib/gs_type1.ps 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-25_2352"></a>
+2004-08-25 23:52 Ray Johnston</strong> (<a href="Details8.htm#2004-08-25_2352">details</a>)</p>
+<blockquote>
+<pre>
+Fix to close streams at EOF (not only filter streams), as required by
+the PLRM. Thanks to Alex Cherepanov for this patch. Bug #687505.
+
+</pre>
+<p>[src/stream.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-25_1556"></a>
+2004-08-25 15:56 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Bind all operators in DefaultGray, DefaultRGB, DefaultCMYK color spaces.
+Partial fix for the bug 687608</pre>
+<p>[Resource/ColorSpace/DefaultCMYK 1.3, Resource/ColorSpace/DefaultGray 1.3, Resource/ColorSpace/DefaultRGB 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1751"></a>
+2004-08-24 17:51 Igor Melichev</strong> (<a href="Details8.htm#2004-08-24_1751">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A page compression type change could cause a crash.
+
+</pre>
+<p>[src/gdevpdf.c 1.98, src/gdevpdfu.c 1.58, src/gdevpdfx.h 1.100]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1536"></a>
+2004-08-24 15:36 Igor Melichev</strong> (<a href="Details8.htm#2004-08-24_1536">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gs_lib_ctx was wrongly accessed while looking up a dictionary stack extension.
+
+</pre>
+<p>[src/idstack.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1536"></a>
+2004-08-24 15:36 Igor Melichev</strong> (<a href="Details8.htm#2004-08-24_1536">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gs_lib_ctx was not accessible while clist_playback_band.
+
+</pre>
+<p>[src/gxclread.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1252"></a>
+2004-08-24 12:52 Igor Melichev</strong> (<a href="Details8.htm#2004-08-24_1252">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : Provide a tolerance to an inconsistent cvt length.
+
+</pre>
+<p>[src/ttinterp.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1058"></a>
+2004-08-24 10:58 Igor Melichev</strong> (<a href="Details8.htm#2004-08-24_1058">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : A minor portability problem.
+
+</pre>
+<p>[src/ttload.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_0910"></a>
+2004-08-24 09:10 Igor Melichev</strong> (<a href="Details8.htm#2004-08-24_0910">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Makefiles missed a dependency.
+
+</pre>
+<p>[src/gslibctx.h 1.4, src/lib.mak 1.192]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-23_0957"></a>
+2004-08-23 09:57 Russell Lang</strong> (<a href="Details8.htm#2004-08-23_0957">details</a>)</p>
+<blockquote>
+<pre>
+Allow the display device row alignment to be changed from the
+default 4 bytes to 8, 16, 32 or 64 bytes.
+
+</pre>
+<p>[src/gdevdsp.c 1.26, src/gdevdsp.h 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-19_2152"></a>
+2004-08-19 21:52 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Changed iapi to use a void* instead of a gs_main_instance pointer.</pre>
+<p>[src/dmmain.c 1.4, src/dpmain.c 1.12, src/dwmainc.c 1.22, src/dxmain.c 1.14, src/dxmainc.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-19_1933"></a>
+2004-08-19 19:33 stefan</strong> (<a href="Details8.htm#2004-08-19_1933">details</a>)</p>
+<blockquote>
+<pre>
+Changed iapi to use a void* instead of a gs_main_instance pointer.
+Cleaned up warning related to function pointer signature miss-matches.
+
+</pre>
+<p>[src/dwmain.c 1.19, src/gdevpdtw.c 1.29, src/gdevpsf.h 1.27, src/gdevpsfm.c 1.15, src/gsalloc.c 1.22, src/gsccode.h 1.14, src/gscpixel.c 1.13, src/gscpixel.h 1.7, src/gscspace.c 1.18, src/gsdevice.c 1.23, src/gslibctx.c 1.4, src/gslibctx.h 1.3, src/gxccman.c 1.28, src/gxfcache.h 1.27, src/iapi.c 1.12, src/iapi.h 1.13, src/idict.c 1.12, src/ilocate.c 1.11, src/iutil.c 1.11, src/iutil.h 1.8, src/sdctc.c 1.6, src/zchar32.c 1.5, src/zcssepr.c 1.16, src/zfont.c 1.12, src/zpacked.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-19_1050"></a>
+2004-08-19 10:50 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Add a PPD for PostScript to be used by ghostscript ps2pdf.</pre>
+<p>[doc/Develop.htm 1.136, doc/Ps2pdf.htm 1.69, lib/ghostpdf.inf 1.1, lib/ghostpdf.ppd 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-19_0738"></a>
+2004-08-19 07:38 Russell Lang</strong> (<a href="Details8.htm#2004-08-19_0738">details</a>)</p>
+<blockquote>
+<pre>
+Enable progressive updates for the image window of
+the MS-Windows ghostscript command line program.
+Change update method to use a Windows timer.
+
+</pre>
+<p>[src/dwimg.c 1.13, src/dwimg.h 1.10, src/dwmainc.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_2225"></a>
+2004-08-18 22:25 stefan</strong></p>
+<blockquote>
+<pre>
+Fixed dependancies for gslibctx.h</pre>
+<p>[src/int.mak 1.128, src/lib.mak 1.191]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_2224"></a>
+2004-08-18 22:24 stefan</strong></p>
+<blockquote>
+<pre>
+Removed redundant include.</pre>
+<p>[src/gsmalloc.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_2044"></a>
+2004-08-18 20:44 Igor Melichev</strong> (<a href="Details8.htm#2004-08-18_2044">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Check for glyph name conflicts while font merging.
+
+</pre>
+<p>[src/gdevpdtt.c 1.87, src/gxfcopy.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_1440"></a>
+2004-08-18 14:40 Igor Melichev</strong> (<a href="Details8.htm#2004-08-18_1440">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Wrong glyph positions with CIDFontType2 with no vmtx.
+
+</pre>
+<p>[src/gdevpdtt.c 1.86]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_0448"></a>
+2004-08-18 04:48 Dan Coby</strong> (<a href="Details8.htm#2004-08-18_0448">details</a>)</p>
+<blockquote>
+<pre>
+Implementation of 687496 transparency and CMYK support.
+
+</pre>
+<p>[src/gdevp14.c 1.26, src/gxblend.c 1.6, src/lib.mak 1.190]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_2021"></a>
+2004-08-17 20:21 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add PDFSTEP debug aid. Prints a step number at end of PDFDEBUG line, and
+sync's the display, then reads a number of steps to skip (<cr> == single
+step). This is rudimentary but somewhat useful. Invoked with -dPDFSTEP.</pre>
+<p>[lib/pdf_base.ps 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_1956"></a>
+2004-08-17 19:56 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump the version number after the last beta release.</pre>
+<p>[lib/gs_init.ps 1.109, src/gscdef.c 1.44, src/version.mak 1.71]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_1939"></a>
+2004-08-17 19:39 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove references to the FreeType license. Artifex Software, Inc. has
+purchased rights to the FreeType 1 code and the work included here is
+relicensed under the same terms as with the rest of the Ghostscript code.</pre>
+<p>[LICENSE 1.4, doc/FTL.txt 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_1859"></a>
+2004-08-17 18:59 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add support for PDF single stepping debug aid (PDFSTEP). Actual interpreter
+changes made separately.</pre>
+<p>[lib/gs_init.ps 1.108]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_1753"></a>
+2004-08-17 17:53 Ray Johnston</strong> (<a href="Details8.htm#2004-08-17_1753">details</a>)</p>
+<blockquote>
+<pre>
+Handle invalid PDF's that use 0.0 font scaling (Tf operator). Fixes bug
+687606 for customer number 780.
+
+</pre>
+<p>[lib/pdf_ops.ps 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-14_0206"></a>
+2004-08-14 02:06 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Correct the previous MSVC 8 updates to allow compilation with debugging.</pre>
+<p>[src/msvc32.mak 1.62, src/msvccmd.mak 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-13_1259"></a>
+2004-08-13 12:59 stefan</strong></p>
+<blockquote>
+<pre>
+Added missing parameter types to prototype.</pre>
+<p>[src/gpcheck.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-13_0457"></a>
+2004-08-13 04:57 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Detect the version of Microsoft Visual C++ from the version of nmake.</pre>
+<p>[doc/Make.htm 1.78, src/msvc32.mak 1.61]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-13_0016"></a>
+2004-08-13 00:16 Russell Lang</strong> (<a href="Details8.htm#2004-08-13_0016">details</a>)</p>
+<blockquote>
+<pre>
+Add support for compiling with the beta of Microsoft Visual
+Studio 2005, also known as MSVC 8.
+
+</pre>
+<p>[doc/Make.htm 1.77, src/msvc32.mak 1.60, src/msvccmd.mak 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-11_1433"></a>
+2004-08-11 14:33 stefan</strong> (<a href="Details8.htm#2004-08-11_1433">details</a>)</p>
+<blockquote>
+<pre>
+Added memory pointers to gsmalloc use by jpg2000 interface.
+
+</pre>
+<p>[src/sjpx.c 1.10, src/sjpx.h 1.3, src/zfjpx.c 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-11_1336"></a>
+2004-08-11 13:36 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+When scaling factors of /ImageMatrix in a image mask for ImageType3 are
+negative, translation offset values for image mask rendering are
+incorrect and it makes abnormal output (eg. white lines).
+This patch fixes this bug #686843. Thanks to Len Sorensen for the analysis.</pre>
+<p>[src/gximag3x.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-11_1333"></a>
+2004-08-11 13:33 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+When scaling factors of /ImageMatrix in a image mask for ImageType3 are
+negative, translation offset values for image mask rendering are
+incorrect and it makes abnormal output (eg. white lines).
+This patch fixes this bug #686843. Thanks to Len Sorensen for the analysis.</pre>
+<p>[src/gximage3.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-11_1258"></a>
+2004-08-11 12:58 Ray Johnston</strong> (<a href="Details8.htm#2004-08-11_1258">details</a>)</p>
+<blockquote>
+<pre>
+Fix bug 687038 that resulted in a crash if the initial device was not
+pdfwrite.
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-10_1302"></a>
+2004-08-10 13:02 stefan</strong></p>
+<blockquote>
+<pre>
+Added memory_t pointers to gs_malloc() gs_free() calls in
+devices that aren't normally built.</pre>
+<p>[src/gdev3b1.c 1.5, src/gdevadmp.c 1.6, src/gdevccr.c 1.5, src/gdevcif.c 1.6, src/gdevcp50.c 1.6, src/gdevcslw.c 1.5, src/gdevhl7x.c 1.10, src/gdevimgn.c 1.7, src/gdevlp8k.c 1.5, src/gdevlxm.c 1.5, src/gdevmgr.c 1.6, src/gdevn533.c 1.6, src/gdevo182.c 1.6, src/gdevokii.c 1.7, src/gdevos2p.c 1.8, src/gdevp14.c 1.25, src/gdevphex.c 1.7, src/gdevpsdi.c 1.30, src/gdevsgi.c 1.6, src/gdevsj48.c 1.5, src/gdevsppr.c 1.8, src/gdevsunr.c 1.7, src/gdevwddb.c 1.7, src/gdevwprn.c 1.10, src/gp_macio.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-10_1259"></a>
+2004-08-10 12:59 stefan</strong> (<a href="Details8.htm#2004-08-10_1259">details</a>)</p>
+<blockquote>
+<pre>
+fixed bug with iapi, removed gs_lib_finit()'s call of gs_malloc_release.
+
+</pre>
+<p>[src/gsinit.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-09_1702"></a>
+2004-08-09 17:02 stefan</strong></p>
+<blockquote>
+<pre>
+Fixed uninitialized fstdio2 pointer.</pre>
+<p>[src/gslibctx.c 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-05_2017"></a>
+2004-08-05 20:17 stefan</strong></p>
+<blockquote>
+<pre>
+Fixed incorrect function pointer prototype,
+const gs_memory_t *  argument was missing.</pre>
+<p>[src/gxfcache.h 1.26, src/gxfcopy.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-05_2015"></a>
+2004-08-05 20:15 stefan</strong> (<a href="Details8.htm#2004-08-05_2015">details</a>)</p>
+<blockquote>
+<pre>
+Valid memory pointer used create a tile_clip device instead of NULL.
+
+</pre>
+<p>[src/gxp1fill.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-05_1702"></a>
+2004-08-05 17:02 stefan</strong> (<a href="Details8.htm#2004-08-05_1702">details</a>)</p>
+<blockquote>
+<pre>
+Windows only:
+check_interrupts() with a mem pointer to access the poll function.
+
+</pre>
+<p>[src/gdevdbit.c 1.11, src/gdevddrw.c 1.25, src/gdevwpr2.c 1.18, src/gdevwprn.c 1.9, src/gp_macpoll.c 1.2, src/gp_mslib.c 1.6, src/gp_mspol.c 1.5, src/gp_mswin.c 1.24, src/gxclrast.c 1.30, src/gxclread.c 1.11, src/gxclutil.c 1.11, src/gxdtfill.h 1.27, src/sfxfd.c 1.10, src/sfxstdio.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_2340"></a>
+2004-08-04 23:40 stefan</strong></p>
+<blockquote>
+<pre>
+fixed typo in last commit.</pre>
+<p>[src/gpcheck.h 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_2333"></a>
+2004-08-04 23:33 stefan</strong> (<a href="Details8.htm#2004-08-04_2333">details</a>)</p>
+<blockquote>
+<pre>
+gs_memory_t pointer additions for msvc build.
+
+</pre>
+<p>[src/gdev4081.c 1.6, src/gdev4693.c 1.9, src/gdev8510.c 1.7, src/gdevdm24.c 1.8, src/gdevdsp.c 1.25, src/gdevescp.c 1.7, src/gdevmswn.c 1.11, src/gdevmsxf.c 1.8, src/gdevpjet.c 1.7, src/gdevwpr2.c 1.17, src/gp_mspol.c 1.4, src/gpcheck.h 1.7, src/gsargs.c 1.9, src/gsdll.c 1.12, src/gsmisc.c 1.18, src/gxccache.c 1.32, src/gxclutil.c 1.10, src/imain.h 1.9, src/interp.c 1.19, src/main.h 1.7, src/msvc32.mak 1.59, src/sfxstdio.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_1936"></a>
+2004-08-04 19:36 stefan</strong> (<a href="Details8.htm#2004-08-04_1936">details</a>)</p>
+<blockquote>
+<pre>
+Addition of a Library Context to start the process of removing globals.
+
+</pre>
+<p>[src/bfont.h 1.10, src/devs.mak 1.117, src/dstack.h 1.6, src/files.h 1.10, src/gdevbj10.c 1.9, src/gdevcdj.c 1.15, src/gdevdcrd.c 1.6, src/gdevepsc.c 1.11, src/gdevepsn.c 1.9, src/gdevijs.c 1.9, src/gdevp14.c 1.24, src/gdevpdfb.c 1.23, src/gdevpdfc.c 1.48, src/gdevpdfg.c 1.58, src/gdevpdfg.h 1.33, src/gdevpdfi.c 1.56, src/gdevpdfk.c 1.8, src/gdevpdfv.c 1.36, src/gdevpdti.c 1.36, src/gdevplnx.c 1.10, src/gdevprn.c 1.18, src/gdevprna.c 1.6, src/gdevpsdi.c 1.29, src/gdevpxat.h 1.6, src/gdevpxen.h 1.6, src/gdevstc.c 1.10, src/gdevupd.c 1.16, src/gdevvec.c 1.23, src/gdevxcmp.c 1.9, src/gdevxxf.c 1.9, src/gp_mac.c 1.16, src/gs.c 1.12, src/gs_dll_call.h 1.1, src/gsalloc.c 1.21, src/gsalloc.h 1.7, src/gsalphac.c 1.7, src/gsccode.h 1.13, src/gscdevn.c 1.21, src/gscolor.c 1.14, src/gscolor1.c 1.11, src/gscolor3.c 1.8, src/gscparam.c 1.10, src/gscpixel.c 1.12, src/gscpixel.h 1.6, src/gscrd.c 1.6, src/gscrd.h 1.7, src/gscscie.c 1.12, src/gscsepr.c 1.27, src/gscspace.c 1.17, src/gscspace.h 1.14, src/gsdevice.c 1.22, src/gsequivc.c 1.5, src/gsexit.h 1.10, src/gsfcid2.c 1.6, src/gsfcmap.c 1.24, src/gsfcmap1.c 1.7, src/gsfont.c 1.33, src/gsht.c 1.22, src/gsht1.c 1.15, src/gshtx.c 1.6, src/gsimage.c 1.12, src/gsinit.c 1.6, src/gsio.h 1.8, src/gsiodevs.c 1.6, src/gsistate.c 1.10, src/gslib.c 1.14, src/gslib.h 1.6, src/gslibctx.c 1.2, src/gslibctx.h 1.2, src/gsmalloc.c 1.12, src/gsmalloc.h 1.6, src/gsmemlok.c 1.6, src/gsmemory.c 1.9, src/gsmemory.h 1.8, src/gsmemraw.h 1.8, src/gsmemret.c 1.5, src/gsmisc.c 1.17, src/gsovrc.c 1.6, src/gspcolor.c 1.14, src/gsptype1.c 1.19, src/gsstate.c 1.24, src/gsstruct.h 1.18, src/gsstype.h 1.6, src/gsutil.c 1.10, src/gsutil.h 1.8, src/gxacpath.c 1.10, src/gxalloc.h 1.11, src/gxccache.c 1.31, src/gxccman.c 1.27, src/gxcht.c 1.13, src/gxclbits.c 1.9, src/gxclrast.c 1.29, src/gxclread.c 1.10, src/gxclrect.c 1.7, src/gxcpath.c 1.12, src/gxcspace.h 1.13, src/gxdevcli.h 1.34, src/gxdevice.h 1.19, src/gxdhtserial.c 1.5, src/gxfcmap.h 1.16, src/gxfcopy.c 1.43, src/gxht.c 1.16, src/gxht.h 1.9, src/gximag3x.c 1.17, src/gximage.c 1.7, src/gxpcmap.c 1.13, src/gxttfb.c 1.34, src/gzht.h 1.13, src/ialloc.c 1.7, src/ialloc.h 1.6, src/iapi.c 1.11, src/ibnum.c 1.8, src/ibnum.h 1.8, src/ichar.h 1.7, src/icharout.h 1.9, src/icid.h 1.8, src/icie.h 1.7, src/icstate.h 1.13, src/idebug.c 1.9, src/idebug.h 1.6, src/idict.c 1.11, src/idict.h 1.6, src/idparam.c 1.9, src/idparam.h 1.7, src/idstack.c 1.6, src/ifapi.h 1.19, src/ifont.h 1.14, src/ifont1.h 1.7, src/ifont42.h 1.9, src/igc.c 1.13, src/igc.h 1.8, src/igcref.c 1.6, src/iimage.h 1.7, src/iinit.c 1.10, src/ilocate.c 1.10, src/imain.c 1.39, src/imainarg.c 1.32, src/iminst.h 1.8, src/iname.h 1.5, src/interp.c 1.18, src/iparam.c 1.10, src/iplugin.c 1.5, src/iplugin.h 1.5, src/isave.c 1.11, src/isave.h 1.7, src/iscan.c 1.18, src/iscanbin.c 1.14, src/iutil.c 1.10, src/iutil.h 1.7, src/lib.mak 1.189, src/sdctc.c 1.5, src/std.h 1.12, src/szlibc.c 1.6, src/ttload.c 1.5, src/zarray.c 1.5, src/zbfont.c 1.27, src/zchar.c 1.14, src/zchar1.c 1.36, src/zcharout.c 1.12, src/zcharx.c 1.7, src/zcid.c 1.9, src/zcie.c 1.12, src/zcolor.c 1.19, src/zcontext.c 1.11, src/zcontrol.c 1.11, src/zcrd.c 1.8, src/zcsdevn.c 1.12, src/zcsindex.c 1.7, src/zcspixel.c 1.5, src/zcssepr.c 1.15, src/zdevice.c 1.9, src/zdevice2.c 1.9, src/zdict.c 1.6, src/zdps.c 1.8, src/zdps1.c 1.7, src/zfapi.c 1.52, src/zfcid0.c 1.22, src/zfcid1.c 1.19, src/zfcmap.c 1.15, src/zfile.c 1.41, src/zfileio.c 1.17, src/zfont.c 1.11, src/zfont0.c 1.7, src/zfont1.c 1.12, src/zfont2.c 1.7, src/zfont32.c 1.5, src/zfont42.c 1.20, src/zfontenum.c 1.4, src/zfrsd.c 1.10, src/zfunc.c 1.14, src/zfunc3.c 1.7, src/zfunc4.c 1.12, src/zgeneric.c 1.8, src/zgstate.c 1.10, src/zht2.c 1.12, src/zht2.h 1.3, src/zicc.c 1.7, src/zimage.c 1.14, src/zimage3.c 1.7, src/ziodevs.c 1.9, src/ziodevsc.c 1.7, src/zmatrix.c 1.8, src/zmedia2.c 1.16, src/zmisc.c 1.7, src/zmisc2.c 1.7, src/zmisc3.c 1.6, src/zpacked.c 1.6, src/zpcolor.c 1.15, src/zrelbit.c 1.6, src/zshade.c 1.15, src/zstring.c 1.6, src/ztoken.c 1.14, src/ztrans.c 1.22, src/ztype.c 1.8, src/zupath.c 1.10, src/zusparam.c 1.13, src/zvmem.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_0100"></a>
+2004-08-04 01:00 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+add a .cvsignore list for generated files</pre>
+<p>[contrib/pscolor/.cvsignore 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_0055"></a>
+2004-08-04 00:55 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add variable declaration for the path to the ghostscript executable to
+the unix wrapper scripts. This simplifies changing the invocation name.
+Partial fix for bug 686863.</pre>
+<p>[lib/bdftops 1.5, lib/dumphint 1.2, lib/dvipdf 1.5, lib/eps2eps 1.6, lib/font2c 1.4, lib/gsbj 1.4, lib/gsdj 1.4, lib/gsdj500 1.4, lib/gslj 1.4, lib/gslp 1.4, lib/gsnd 1.4, lib/pdf2dsc 1.6, lib/pdf2ps 1.7, lib/pdfopt 1.7, lib/pf2afm 1.5, lib/pfbtopfa 1.6, lib/pphs 1.4, lib/ps2ascii 1.7, lib/ps2epsi 1.10, lib/ps2pdfwr 1.10, lib/ps2ps 1.7, lib/pv.sh 1.4, lib/unix-lpr.sh 1.5, lib/wftopfa 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-02_0333"></a>
+2004-08-02 03:33 Igor Melichev</strong> (<a href="Details8.htm#2004-08-02_0333">details</a>)</p>
+<blockquote>
+<pre>
+Fix : .OrigFont was not provided when an embeded font is defined.
+
+</pre>
+<p>[lib/gs_fonts.ps 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-30_2132"></a>
+2004-07-30 21:32 Dan Coby</strong> (<a href="Details8.htm#2004-07-30_2132">details</a>)</p>
+<blockquote>
+<pre>
+More work upon 687551 Implement the remaining TN 5044 procedures.
+This commit implements the setcmykoverprint procedure.
+
+</pre>
+<p>[lib/gs_lev2.ps 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-29_1919"></a>
+2004-07-29 19:19 Igor Melichev</strong> (<a href="Details8.htm#2004-07-29_1919">details</a>)</p>
+<blockquote>
+<pre>
+Fix : True Type font loader : numLoca run out the PS string size limit.
+
+</pre>
+<p>[lib/gs_ttf.ps 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-29_1746"></a>
+2004-07-29 17:46 Igor Melichev</strong> (<a href="Details8.htm#2004-07-29_1746">details</a>)</p>
+<blockquote>
+<pre>
+1. Fix (PS interpreter) : The FontBBox validation check was too strong.
+2. Fix (pdfwrite) : Explicitely set line parameters in a charproc.
+
+</pre>
+<p>[src/gdevpdtt.c 1.85, src/gslparam.h 1.5, src/zchar.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-28_1946"></a>
+2004-07-28 19:46 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+test commit; verifying the cvs announcement list is working.</pre>
+<p>[src/Makefile.in 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-28_1009"></a>
+2004-07-28 10:09 Igor Melichev</strong> (<a href="Details8.htm#2004-07-28_1009">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gs_function_is_monotonic computed an unused auxiliary result (continued 4).
+
+</pre>
+<p>[src/gsfunc3.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-26_2333"></a>
+2004-07-26 23:33 Dan Coby</strong> (<a href="Details8.htm#2004-07-26_2333">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687572 AFPL Ghostscript 8.14 fails with some PDF files.
+
+</pre>
+<p>[lib/pdf_draw.ps 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-26_2321"></a>
+2004-07-26 23:21 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687591 Overprint Preview is not documented.  This change adds
+documentaion for how Ghostscript handles overprinting and spot colors
+to Use.htm.</pre>
+<p>[doc/Use.htm 1.110]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-24_0812"></a>
+2004-07-24 08:12 Igor Melichev</strong> (<a href="Details8.htm#2004-07-24_0812">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 39 : Implementing embedded TrueType fonts (continued).
+
+</pre>
+<p>[lib/opdfread.ps 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-23_1911"></a>
+2004-07-23 19:11 Igor Melichev</strong> (<a href="Details8.htm#2004-07-23_1911">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 39 : Implementing embedded TrueType fonts.
+
+</pre>
+<p>[lib/opdfread.ps 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-22_1735"></a>
+2004-07-22 17:35 Igor Melichev</strong> (<a href="Details8.htm#2004-07-22_1735">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 38 : Implementing embedded Type 1 fonts.
+
+</pre>
+<p>[lib/opdfread.ps 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-22_1304"></a>
+2004-07-22 13:04 Igor Melichev</strong> (<a href="Details8.htm#2004-07-22_1304">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 38 : Write font data after the font descriptor.
+
+</pre>
+<p>[src/gdevpdtb.c 1.27, src/gdevpdtb.h 1.10, src/gdevpdtd.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-22_1108"></a>
+2004-07-22 11:08 Igor Melichev</strong> (<a href="Details8.htm#2004-07-22_1108">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 37 : Don't convert Type 1 into CFF when generating ps2write output.
+
+</pre>
+<p>[src/gdevpdfg.c 1.57, src/gdevpdfx.h 1.99, src/gdevpdtb.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-22_0756"></a>
+2004-07-22 07:56 Igor Melichev</strong> (<a href="Details8.htm#2004-07-22_0756">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 36 : Switching on the new code DELAYED_STREAMS, PS2WRITE.
+
+</pre>
+<p>[src/gdevvec.h 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-20_0708"></a>
+2004-07-20 07:08 Ray Johnston</strong> (<a href="Details8.htm#2004-07-20_0708">details</a>)</p>
+<blockquote>
+<pre>
+Fix to make sure that device deactivation is invoked before final close
+of the device when exit. Bug #687557.
+
+</pre>
+<p>[src/imain.c 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-17_1844"></a>
+2004-07-17 18:44 Ray Johnston</strong> (<a href="Details8.htm#2004-07-17_1844">details</a>)</p>
+<blockquote>
+<pre>
+Fix so that compiled fonts have the dictionary permissions set correctly.
+Bug 687444 for customer #531.
+
+</pre>
+<p>[src/iccfont.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-16_2214"></a>
+2004-07-16 22:14 Igor Melichev</strong> (<a href="Details8.htm#2004-07-16_2214">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Provide a delayed stream writing.
+
+</pre>
+<p>[src/gdevpdf.c 1.97, src/gdevpdfu.c 1.57, src/gdevpdfx.h 1.98, src/gdevpdtb.c 1.25, src/gdevpdtf.c 1.37, src/gdevpdti.c 1.35, src/gdevpdtw.c 1.28, src/gdevpdtw.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-15_1639"></a>
+2004-07-15 16:39 Igor Melichev</strong> (<a href="Details8.htm#2004-07-15_1639">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Discard the output file seekability requirement in the /PS pdfmark implementation.
+
+</pre>
+<p>[src/gdevpdfm.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-15_1237"></a>
+2004-07-15 12:37 Igor Melichev</strong> (<a href="Details8.htm#2004-07-15_1237">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : text.operation was inconsistent after replacing TEXT_FROM_GLYPHS.
+
+</pre>
+<p>[src/gdevpdtc.c 1.36, src/gdevpdte.c 1.60]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1821"></a>
+2004-07-14 18:21 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Sort the output in filename order to make comparison of daily db's easier.</pre>
+<p>[toolbin/tests/dump_testdb 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1757"></a>
+2004-07-14 17:57 Igor Melichev</strong> (<a href="Details8.htm#2004-07-14_1757">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 35 : Fixing more problems with color spaces.
+
+</pre>
+<p>[lib/opdfread.ps 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1757"></a>
+2004-07-14 17:57 Igor Melichev</strong> (<a href="Details8.htm#2004-07-14_1757">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Don't write DeviceN, DevicePixel colors with CompatibilityLevel<=1.2 .
+
+</pre>
+<p>[src/gdevpdfc.c 1.47, src/gdevpdfg.c 1.56]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1559"></a>
+2004-07-14 15:59 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Include string_.h for missing prototypes of strlen() &c. Bug 687541.</pre>
+<p>[src/gscdevn.c 1.20, src/gsfcmap.c 1.23, src/gsht1.c 1.14, src/int.mak 1.127, src/lib.mak 1.188, src/zfile1.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1538"></a>
+2004-07-14 15:38 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Cast pointer type to avoid a warning. Bug 687541.</pre>
+<p>[src/sjpx.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1534"></a>
+2004-07-14 15:34 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct some types to unsigned to match the gp_file_name_combine() prototype.
+Partial fix for bug 687541.</pre>
+<p>[src/gp_unix_cache.c 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1424"></a>
+2004-07-14 14:24 Ray Johnston</strong> (<a href="Details8.htm#2004-07-14_1424">details</a>)</p>
+<blockquote>
+<pre>
+Fix to pdfwrite initialization to make sure initial distiller params are
+incorporated into the device. Also add collection of distillerparams when
+building currentpagedevice. Fixes bugs 687325, 687436 and 687458.
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.38, lib/gs_setpd.ps 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1952"></a>
+2004-07-13 19:52 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1952">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 34 : Applying filters to the page contents stream.
+
+</pre>
+<p>[lib/opdfread.ps 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1931"></a>
+2004-07-13 19:31 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1931">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 33 : Fixing problems with color spaces in image XObjects.
+
+</pre>
+<p>[lib/opdfread.ps 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1858"></a>
+2004-07-13 18:58 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1858">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 32 : Fixing problems with color spaces in inline images.
+
+</pre>
+<p>[lib/opdfread.ps 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1558"></a>
+2004-07-13 15:58 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1558">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 31 : Implementing DecodeParms for filters.
+
+</pre>
+<p>[lib/opdfread.ps 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1513"></a>
+2004-07-13 15:13 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1513">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 30 : Continue the implementation of color spaces.
+
+</pre>
+<p>[lib/opdfread.ps 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1344"></a>
+2004-07-13 13:44 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1344">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 29 : The inplementation of FunctionType 4 was wrong.
+
+</pre>
+<p>[lib/opdfread.ps 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1238"></a>
+2004-07-13 12:38 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1238">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Don't write shadings with CompatibilityLevel<=1.2 .
+
+</pre>
+<p>[src/gdevpdfd.c 1.41, src/gdevpdfg.c 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1202"></a>
+2004-07-13 12:02 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1202">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Wrong /Matrix from /BP pdfmark (continued).
+
+</pre>
+<p>[src/gdevpdfm.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1109"></a>
+2004-07-13 11:09 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1109">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Dont create the alternative image compression if a loseless compression is only allowed.
+
+</pre>
+<p>[src/gdevpdfi.c 1.55, src/gdevpsdi.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-10_0855"></a>
+2004-07-10 08:55 Igor Melichev</strong> (<a href="Details8.htm#2004-07-10_0855">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 28 : Fixing tab characters in the source code (continued).
+
+</pre>
+<p>[lib/opdfread.ps 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-10_0804"></a>
+2004-07-10 08:04 Igor Melichev</strong> (<a href="Details8.htm#2004-07-10_0804">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 27 : Implemented FunctionType 4.
+
+</pre>
+<p>[lib/opdfread.ps 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-09_2054"></a>
+2004-07-09 20:54 Igor Melichev</strong> (<a href="Details8.htm#2004-07-09_2054">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 26 : Fixing tab characters in the source code.
+
+</pre>
+<p>[lib/opdfread.ps 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-09_2028"></a>
+2004-07-09 20:28 Igor Melichev</strong> (<a href="Details8.htm#2004-07-09_2028">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 25 : Fixing various problems in functions and color spaces.
+
+</pre>
+<p>[lib/opdfread.ps 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-09_1652"></a>
+2004-07-09 16:52 Igor Melichev</strong> (<a href="Details8.htm#2004-07-09_1652">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 24 : An initial implementation of functions.
+
+</pre>
+<p>[lib/opdfread.ps 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1715"></a>
+2004-07-08 17:15 Igor Melichev</strong> (<a href="Details8.htm#2004-07-08_1715">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 23 : Implementing Indexed and Separation (continued).
+
+</pre>
+<p>[lib/opdfread.ps 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1528"></a>
+2004-07-08 15:28 Igor Melichev</strong> (<a href="Details8.htm#2004-07-08_1528">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 22 : Implementing Indexed and Separation.
+
+</pre>
+<p>[lib/opdfread.ps 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1400"></a>
+2004-07-08 14:00 Igor Melichev</strong> (<a href="Details8.htm#2004-07-08_1400">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 20 : Implementing CalGray, CalRGB.
+
+</pre>
+<p>[lib/opdfread.ps 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1112"></a>
+2004-07-08 11:12 Igor Melichev</strong> (<a href="Details8.htm#2004-07-08_1112">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 20 : The implementations of Q,q,CharProc were incomplete.
+
+</pre>
+<p>[lib/opdfread.ps 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1006"></a>
+2004-07-08 10:06 Igor Melichev</strong> (<a href="Details8.htm#2004-07-08_1006">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 17 : Implementing Patterns.
+
+</pre>
+<p>[lib/opdfread.ps 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_0803"></a>
+2004-07-08 08:03 Igor Melichev</strong> (<a href="Details8.htm#2004-07-08_0803">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 18 : Fix : Length was written to a wrong file position.
+
+</pre>
+<p>[src/gdevpdfm.c 1.43]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1519"></a>
+2004-07-07 15:19 Igor Melichev</strong> (<a href="Details8.htm#2004-07-07_1519">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 17 : Image XForm implementation.
+
+</pre>
+<p>[lib/opdfread.ps 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1424"></a>
+2004-07-07 14:24 Igor Melichev</strong> (<a href="Details8.htm#2004-07-07_1424">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 16 : Inline image implementation.
+
+</pre>
+<p>[lib/opdfread.ps 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1142"></a>
+2004-07-07 11:42 Igor Melichev</strong> (<a href="Details8.htm#2004-07-07_1142">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 15 : Fix : ObjectRegistry expansion code was wrong.
+
+</pre>
+<p>[lib/opdfread.ps 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1100"></a>
+2004-07-07 11:00 Igor Melichev</strong> (<a href="Details8.htm#2004-07-07_1100">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 14 : Fix : fonts may have no Encoding.
+
+</pre>
+<p>[lib/opdfread.ps 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1040"></a>
+2004-07-07 10:40 Igor Melichev</strong> (<a href="Details8.htm#2004-07-07_1040">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 13 : Implementing Type 3 fonts.
+
+</pre>
+<p>[lib/opdfread.ps 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1019"></a>
+2004-07-07 10:19 Igor Melichev</strong> (<a href="Details8.htm#2004-07-07_1019">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 12 : Implementing Type 3 fonts.
+
+</pre>
+<p>[lib/opdfread.ps 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_0933"></a>
+2004-07-07 09:33 Russell Lang</strong> (<a href="Details8.htm#2004-07-07_0933">details</a>)</p>
+<blockquote>
+<pre>
+Fixes bug 687451 "default resolution for display device"
+Set the display resolution from the MS-Windows display resolution,
+using a device parameter -dDisplayResolution=DPI.
+
+</pre>
+<p>[doc/Devices.htm 1.80, src/dwmain.c 1.18, src/dwmainc.c 1.20, src/gdevdsp.c 1.24, src/gdevdsp.h 1.9, src/gdevdsp2.h 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_0909"></a>
+2004-07-07 09:09 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Fixes bug 687562 "vector devices close output file incorrectly".
+Vector devices open the output file with gx_device_open_output_file,
+so should close it with gx_device_close_output_file, not fclose.
+This was preventing pswrite from correctly closing special
+files such as "%printer%Printer Name" on Windows and OS/2.</pre>
+<p>[src/gdevvec.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_0907"></a>
+2004-07-07 09:07 Russell Lang</strong> (<a href="Details8.htm#2004-07-07_0907">details</a>)</p>
+<blockquote>
+<pre>
+In the Windows %printer% IODevice, the existing thread handle
+is closed automatically when the thread finishes.  Duplicate
+the thread handle so we always have a valid handle for waiting
+and closing.
+
+</pre>
+<p>[src/gp_msprn.c 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_2215"></a>
+2004-07-06 22:15 Dan Coby</strong> (<a href="Details8.htm#2004-07-06_2215">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687565 Incorrect equiv color for Orange in Altona test file.
+The altona test file Altona_Visual_bb_1v1_x3.pdf contains a spot color
+called Orange.  An incorrect equivalent CMYK color is being determined for
+this spot color.  The result is that the spot color is being displayed as
+black for the devices which handle spot colors and attempt to determine
+equivalent CMYK colors for the spot colors.  These are the psdcmyk,
+tiffsep, and display (with -dDisplayFormat=16#a0800) devices.
+
+</pre>
+<p>[src/gsequivc.c 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1927"></a>
+2004-07-06 19:27 Igor Melichev</strong> (<a href="Details8.htm#2004-07-06_1927">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 11 : Implementing Metrics for Type 1,2,42 fonts (continued).
+
+</pre>
+<p>[lib/opdfread.ps 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1904"></a>
+2004-07-06 19:04 Igor Melichev</strong> (<a href="Details8.htm#2004-07-06_1904">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 10 : Implementing Metrics for Type 1,2,42 fonts.
+
+</pre>
+<p>[lib/opdfread.ps 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1744"></a>
+2004-07-06 17:44 Igor Melichev</strong> (<a href="Details8.htm#2004-07-06_1744">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 9 : Implementing Encoding for Type 1,2,42 fonts.
+
+</pre>
+<p>[lib/opdfread.ps 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1348"></a>
+2004-07-06 13:48 Igor Melichev</strong> (<a href="Details8.htm#2004-07-06_1348">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 8 : Implementing ExtGState.
+
+</pre>
+<p>[lib/opdfread.ps 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1205"></a>
+2004-07-06 12:05 Igor Melichev</strong> (<a href="Details8.htm#2004-07-06_1205">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 7 : Implementing text rendering operastors.
+
+</pre>
+<p>[lib/opdfread.ps 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-05_2116"></a>
+2004-07-05 21:16 Igor Melichev</strong> (<a href="Details8.htm#2004-07-05_2116">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 6 : :Providing a page stream execution context.
+
+</pre>
+<p>[lib/opdfread.ps 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-05_1703"></a>
+2004-07-05 17:03 Igor Melichev</strong> (<a href="Details8.htm#2004-07-05_1703">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 5 : Page streams must interpret immediately.
+
+</pre>
+<p>[lib/opdfread.ps 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-05_1703"></a>
+2004-07-05 17:03 Igor Melichev</strong> (<a href="Details8.htm#2004-07-05_1703">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 4 : Stream data length must preceed the stream.
+
+</pre>
+<p>[src/gdevpdfm.c 1.42, src/gdevpdfu.c 1.56, src/gdevpdfx.h 1.97]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-05_1255"></a>
+2004-07-05 12:55 Igor Melichev</strong> (<a href="Details8.htm#2004-07-05_1255">details</a>)</p>
+<blockquote>
+<pre>
+ps2write step 3 : Initial commit for the Ordered PDF Reader.
+
+</pre>
+<p>[lib/opdfread.ps 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-03_1051"></a>
+2004-07-03 10:51 Russell Lang</strong> (<a href="Details8.htm#2004-07-03_1051">details</a>)</p>
+<blockquote>
+<pre>
+Log Message:
+Fixes bug 686956 Display device does not support separations.
+Add support for separations to display device.
+This requires a change to the display callback structure.
+Support is maintained for clients using version 1 of the structure.
+
+</pre>
+<p>[doc/API.htm 1.43, doc/Devices.htm 1.79, src/dwimg.c 1.12, src/dwimg.h 1.9, src/dwmain.c 1.17, src/dwmainc.c 1.19, src/dxmain.c 1.13, src/gdevdsp.c 1.23, src/gdevdsp.h 1.8, src/gdevdsp2.h 1.7, src/idisp.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-01_1923"></a>
+2004-07-01 19:23 Igor Melichev</strong> (<a href="Details8.htm#2004-07-01_1923">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 6).
+
+</pre>
+<p>[src/gdevpdtt.c 1.84]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-01_1827"></a>
+2004-07-01 18:27 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Correct some warnings from the MSVC compiler.</pre>
+<p>[src/gscdevn.c 1.19, src/gscsepr.c 1.26, src/gsht.c 1.21, src/gzht.h 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-01_0441"></a>
+2004-07-01 04:41 Dan Coby</strong></p>
+<blockquote>
+<pre>
+This change creates common routines for handling the DeviceN related
+device parameters (SeparationColorNames, SeparationOrder, and
+MaxSeparations).  The change also splits up some common routines that
+were assuming that the device was a 'printer' device.</pre>
+<p>[src/devs.mak 1.116, src/gdevdevn.c 1.21, src/gdevdevn.h 1.10, src/gdevnfwd.c 1.25, src/gdevpsd.c 1.16, src/gdevtsep.c 1.3, src/gdevxcf.c 1.9, src/gxcmap.c 1.22, src/gxcmap.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1737"></a>
+2004-06-30 17:37 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Fixes nonportable code in the vasarely.ps example file so that keeps
+to reasonable page size values even when default clippath is very
+large (as is the case with the bbox device). Fixes bug #687549.</pre>
+<p>[examples/vasarely.ps 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1455"></a>
+2004-06-30 14:55 Igor Melichev</strong> (<a href="Details8.htm#2004-06-30_1455">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdsfwrite) : Compression of XObjects implicitely depended on CompressFonts (continued).
+
+</pre>
+<p>[src/gdevpdfu.c 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1450"></a>
+2004-06-30 14:50 Igor Melichev</strong> (<a href="Details8.htm#2004-06-30_1450">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdsfwrite) : Compression of XObjects implicitely depended on CompressFonts.
+
+</pre>
+<p>[src/gdevpdfi.c 1.54, src/gdevpdfm.c 1.41, src/gdevpdfu.c 1.54, src/gdevpdfx.h 1.96, src/gdevpdti.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1435"></a>
+2004-06-30 14:35 Igor Melichev</strong> (<a href="Details8.htm#2004-06-30_1435">details</a>)</p>
+<blockquote>
+<pre>
+ps2write part 2 : Delay writing pages.
+
+</pre>
+<p>[src/gdevpdf.c 1.96, src/gdevpdfg.c 1.54, src/gdevpdfp.c 1.39, src/gdevpdfu.c 1.53, src/gdevpdfx.h 1.95, src/gdevpsdf.h 1.22, src/gdevpsdp.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1154"></a>
+2004-06-30 11:54 Igor Melichev</strong> (<a href="Details8.htm#2004-06-30_1154">details</a>)</p>
+<blockquote>
+<pre>
+ps2write part 1 : starting the project.
+
+</pre>
+<p>[src/gdevpsdf.h 1.21, src/gdevpsdp.c 1.13, src/gdevvec.h 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_0815"></a>
+2004-06-30 08:15 Igor Melichev</strong> (<a href="Details8.htm#2004-06-30_0815">details</a>)</p>
+<blockquote>
+<pre>
+Fix : MSVC compiler warning.
+
+</pre>
+<p>[src/gdevtsep.c 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-29_2246"></a>
+2004-06-29 22:46 Dan Coby</strong> (<a href="Details8.htm#2004-06-29_2246">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687553 rangecheck in .sethalftone5 and SeparationOrder.
+
+</pre>
+<p>[src/gsht.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-29_2227"></a>
+2004-06-29 22:27 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Correct spelling in a comment.</pre>
+<p>[src/gxcmap.h 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-29_2101"></a>
+2004-06-29 21:01 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Change the default handling of the MaxSeparations device parameter.  This
+parameter is only used by some of the DeviceN mode devices (which have
+their own handling of this parameter).  The default handler now simply
+ignores this parameter.  However it does read the parameter.  Not reading
+the parameter was causing problems with PDF files and page devices.</pre>
+<p>[src/gsdparam.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-29_0105"></a>
+2004-06-29 01:05 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add contributed pscolor utility by Carsten Hammer. This splits a ps
+document into two, one consisting only of black and white pages, and
+one of color pages. Useful for printing on separate devices.
+
+Submitted under bug 602263.
+
+The Makefile needs updating for the new location.</pre>
+<p>[contrib/pscolor/Makefile 1.1, contrib/pscolor/instream.yy 1.1, contrib/pscolor/test.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-28_1713"></a>
+2004-06-28 17:13 Igor Melichev</strong> (<a href="Details8.htm#2004-06-28_1713">details</a>)</p>
+<blockquote>
+<pre>
+Fix : True Type grid fitting must not apply to FAPI fonts.
+
+</pre>
+<p>[src/gxccman.c 1.26, src/lib.mak 1.187]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_1010"></a>
+2004-06-24 10:10 Igor Melichev</strong> (<a href="Details8.htm#2004-06-24_1010">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A dangling pointer from TExecution_Context could cause a memory corruption.
+
+</pre>
+<p>[src/ttfmemd.c 1.7, src/ttinterp.c 1.13, src/ttobjs.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0951"></a>
+2004-06-24 09:51 Igor Melichev</strong> (<a href="Details8.htm#2004-06-24_0951">details</a>)</p>
+<blockquote>
+<pre>
+Fix: Unwinding the recent change to gsdparam.c becauase it breaks the PDF interpreter.
+
+</pre>
+<p>[src/gsdparam.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0720"></a>
+2004-06-24 07:20 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Add source file src/gdevtsep.c.  This file is part of the implementation
+687440 and 542629.</pre>
+<p>[src/gdevtsep.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0654"></a>
+2004-06-24 06:54 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Add the src/gdevtsep.c file.  This contains the tiffgray, tiff32nc, and
+tiffsep devices.</pre>
+<p>[doc/Develop.htm 1.135]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0651"></a>
+2004-06-24 06:51 Igor Melichev</strong> (<a href="Details8.htm#2004-06-24_0651">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : The implementation of INSTCTRL did not follow the TT specification by Apple.
+
+</pre>
+<p>[src/ttinterp.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0648"></a>
+2004-06-24 06:48 Dan Coby</strong> (<a href="Details8.htm#2004-06-24_0648">details</a>)</p>
+<blockquote>
+<pre>
+This change implements the enhancements described in 542629 CMYK
+tiff driver and 687440 Support for outputting PDF separations
+separately.  This change implements three devices:  tiffgray
+which produces an 8 bit gray output with uncompressed data,
+tiff32nc which produces 32 bit CMYK with uncompressed data, and
+tiffsep which produces a tiffgray file for each separation
+(CMYK and spot colors) and it also produces a CMYK output file
+which is created using the CMYK image data plus the spot
+colors image data.  The spot colors are converted to CMYK using
+the logic in 687431.
+
+</pre>
+<p>[doc/Devices.htm 1.78, src/Makefile.in 1.36, src/devs.mak 1.115, src/dvx-gcc.mak 1.26, src/gdevdevn.h 1.9, src/gsdparam.c 1.15, src/macos-mcp.mak 1.25, src/msvc32.mak 1.58, src/openvms.mak 1.36, src/os2.mak 1.37, src/unix-gcc.mak 1.45, src/unixansi.mak 1.36, src/watcw32.mak 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0647"></a>
+2004-06-24 06:47 Igor Melichev</strong> (<a href="Details8.htm#2004-06-24_0647">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 80.
+
+</pre>
+<p>[src/gxshade6.c 1.77]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0503"></a>
+2004-06-24 05:03 Dan Coby</strong> (<a href="Details8.htm#2004-06-24_0503">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687534 Unable to determine equivalent CMYK for spot colors
+that are only used with overprint.
+
+</pre>
+<p>[doc/Drivers.htm 1.47, src/gdevbbox.c 1.18, src/gdevdflt.c 1.24, src/gdevnfwd.c 1.24, src/gdevprn.c 1.17, src/gdevpsd.c 1.15, src/gdevrops.c 1.12, src/gscdevn.c 1.18, src/gscsepr.c 1.25, src/gsequivc.c 1.3, src/gsequivc.h 1.2, src/gxclip.c 1.15, src/gxclip2.c 1.11, src/gxclipm.c 1.13, src/gxclist.c 1.14, src/gxdevcli.h 1.33, src/gxdevice.h 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0317"></a>
+2004-06-24 03:17 Ray Johnston</strong> (<a href="Details8.htm#2004-06-24_0317">details</a>)</p>
+<blockquote>
+<pre>
+Minor change to avoid a spurious compiler warning about 't' used before
+initialized. Fixes bug #687412.
+
+</pre>
+<p>[src/spdiff.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-23_2037"></a>
+2004-06-23 20:37 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Disable idiom recognition feature during execution of .bindnow
+because it has no effect except burning a few seconds of CPU time.
+Fix bug 687521</pre>
+<p>[lib/gs_init.ps 1.107]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-23_1857"></a>
+2004-06-23 18:57 stefan</strong></p>
+<blockquote>
+<pre>
+Fixed CMYK to RGB conversion.
+
+Used in rop code where RGB -> CMYK -> RGB needs to work correctly
+in the black and white cases.</pre>
+<p>[src/gdevbit.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-23_1850"></a>
+2004-06-23 18:50 stefan</strong></p>
+<blockquote>
+<pre>
+Fix macro to use it's arguments.  Platform specific, under exersized code.</pre>
+<p>[src/gxfarith.h 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-23_0904"></a>
+2004-06-23 09:04 Igor Melichev</strong> (<a href="Details8.htm#2004-06-23_0904">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2ascii) : Provide a tolerance to old versions of dvips output.
+
+</pre>
+<p>[lib/ps2ascii.ps 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-19_0401"></a>
+2004-06-19 04:01 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add new CMaps and update older ones to latest. Bug #687470. Thanks to
+A. Cherepanov for providing part of the newer files.</pre>
+<p>[Resource/CMap/83pv-RKSJ-H 1.2, Resource/CMap/90ms-RKSJ-H 1.2, Resource/CMap/90ms-RKSJ-UCS2 1.1, Resource/CMap/90ms-RKSJ-V 1.2, Resource/CMap/90msp-RKSJ-H 1.1, Resource/CMap/90msp-RKSJ-V 1.1, Resource/CMap/90pv-RKSJ-H 1.2, Resource/CMap/90pv-RKSJ-UCS2 1.1, Resource/CMap/90pv-RKSJ-UCS2C 1.1, Resource/CMap/90pv-RKSJ-V 1.2, Resource/CMap/Add-RKSJ-H 1.2, Resource/CMap/Add-RKSJ-V 1.2, Resource/CMap/Adobe-CNS1-B5pc 1.1, Resource/CMap/Adobe-CNS1-ETen-B5 1.1, Resource/CMap/Adobe-CNS1-H-CID 1.1, Resource/CMap/Adobe-CNS1-H-Host 1.1, Resource/CMap/Adobe-CNS1-H-Mac 1.1, Resource/CMap/Adobe-CNS1-UCS2 1.1, Resource/CMap/Adobe-GB1-GBK-EUC 1.1, Resource/CMap/Adobe-GB1-GBpc-EUC 1.1, Resource/CMap/Adobe-GB1-H-CID 1.1, Resource/CMap/Adobe-GB1-H-Host 1.1, Resource/CMap/Adobe-GB1-H-Mac 1.1, Resource/CMap/Adobe-GB1-UCS2 1.1, Resource/CMap/Adobe-Japan1-90ms-RKSJ 1.1, Resource/CMap/Adobe-Japan1-90pv-RKSJ 1.1, Resource/CMap/Adobe-Japan1-H-CID 1.1, Resource/CMap/Adobe-Japan1-H-Host 1.1, Resource/CMap/Adobe-Japan1-H-Mac 1.1, Resource/CMap/Adobe-Japan1-PS-H 1.1, Resource/CMap/Adobe-Japan1-PS-V 1.1, Resource/CMap/Adobe-Japan1-UCS2 1.1, Resource/CMap/Adobe-Korea1-H-CID 1.1, Resource/CMap/Adobe-Korea1-H-Host 1.1, Resource/CMap/Adobe-Korea1-H-Mac 1.1, Resource/CMap/Adobe-Korea1-KSCms-UHC 1.1, Resource/CMap/Adobe-Korea1-KSCpc-EUC 1.1, Resource/CMap/Adobe-Korea1-UCS2 1.1, Resource/CMap/B5pc-H 1.1, Resource/CMap/B5pc-UCS2 1.1, Resource/CMap/B5pc-UCS2C 1.1, Resource/CMap/B5pc-V 1.1, Resource/CMap/CNS-EUC-H 1.1, Resource/CMap/CNS-EUC-V 1.1, Resource/CMap/EUC-H 1.2, Resource/CMap/EUC-V 1.2, Resource/CMap/Ext-RKSJ-H 1.2, Resource/CMap/Ext-RKSJ-V 1.2, Resource/CMap/GB-EUC-H 1.1, Resource/CMap/GB-EUC-V 1.1, Resource/CMap/GBK-EUC-H 1.2, Resource/CMap/GBK-EUC-UCS2 1.1, Resource/CMap/GBK-EUC-V 1.2, Resource/CMap/GBK2K-H 1.1, Resource/CMap/GBK2K-V 1.1, Resource/CMap/GBKp-EUC-H 1.1, Resource/CMap/GBKp-EUC-V 1.1, Resource/CMap/GBT-EUC-H 1.1, Resource/CMap/GBT-EUC-V 1.1, Resource/CMap/GBpc-EUC-H 1.1, Resource/CMap/GBpc-EUC-UCS2 1.1, Resource/CMap/GBpc-EUC-UCS2C 1.1, Resource/CMap/GBpc-EUC-V 1.1, Resource/CMap/H 1.2, Resource/CMap/HKdla-B5-H 1.1, Resource/CMap/HKdla-B5-V 1.1, Resource/CMap/HKdlb-B5-H 1.1, Resource/CMap/HKdlb-B5-V 1.1, Resource/CMap/HKgccs-B5-H 1.1, Resource/CMap/HKgccs-B5-V 1.1, Resource/CMap/HKm314-B5-H 1.1, Resource/CMap/HKm314-B5-V 1.1, Resource/CMap/HKm471-B5-H 1.1, Resource/CMap/HKm471-B5-V 1.1, Resource/CMap/HKscs-B5-H 1.1, Resource/CMap/HKscs-B5-V 1.1, Resource/CMap/Identity-H 1.2, Resource/CMap/Identity-V 1.2, Resource/CMap/KSC-EUC-H 1.1, Resource/CMap/KSC-EUC-V 1.1, Resource/CMap/KSCms-UHC-H 1.2, Resource/CMap/KSCms-UHC-HW-H 1.1, Resource/CMap/KSCms-UHC-HW-V 1.1, Resource/CMap/KSCms-UHC-UCS2 1.1, Resource/CMap/KSCms-UHC-V 1.2, Resource/CMap/KSCpc-EUC-H 1.1, Resource/CMap/KSCpc-EUC-UCS2 1.1, Resource/CMap/KSCpc-EUC-UCS2C 1.1, Resource/CMap/UCS2-90ms-RKSJ 1.1, Resource/CMap/UCS2-90pv-RKSJ 1.1, Resource/CMap/UCS2-B5pc 1.1, Resource/CMap/UCS2-ETen-B5 1.1, Resource/CMap/UCS2-GBK-EUC 1.1, Resource/CMap/UCS2-GBpc-EUC 1.1, Resource/CMap/UCS2-KSCms-UHC 1.1, Resource/CMap/UCS2-KSCpc-EUC 1.1, Resource/CMap/UniCNS-UCS2-H 1.2, Resource/CMap/UniCNS-UCS2-V 1.2, Resource/CMap/UniGB-UCS2-H 1.2, Resource/CMap/UniGB-UCS2-V 1.2, Resource/CMap/UniJIS-UCS2-H 1.2, Resource/CMap/UniJIS-UCS2-HW-H 1.1, Resource/CMap/UniJIS-UCS2-HW-V 1.1, Resource/CMap/UniJIS-UCS2-V 1.2, Resource/CMap/UniKS-UCS2-H 1.2, Resource/CMap/UniKS-UCS2-V 1.2, Resource/CMap/V 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-18_1746"></a>
+2004-06-18 17:46 Igor Melichev</strong> (<a href="Details8.htm#2004-06-18_1746">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 5).
+
+</pre>
+<p>[src/gdevpdti.c 1.33, src/gdevpdfx.h 1.94, src/gdevpdtt.c 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-18_0700"></a>
+2004-06-18 07:00 Dan Coby</strong> (<a href="Details8.htm#2004-06-18_0700">details</a>)</p>
+<blockquote>
+<pre>
+687504 Enhancement: Imaging spot colors without using the
+SeparationColorNames parameter.
+
+</pre>
+<p>[src/gdevdevn.c 1.20, src/gdevdevn.h 1.8, src/gdevnfwd.c 1.23, src/gdevperm.c 1.4, src/gdevpsd.c 1.14, src/gdevxcf.c 1.8, src/gscdevn.c 1.17, src/gscsepr.c 1.24, src/gscspace.c 1.16, src/gsdparam.c 1.14, src/gsht.c 1.19, src/gxcmap.c 1.21, src/gxcmap.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-17_2142"></a>
+2004-06-17 21:42 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Protect genarch's test for sizeof(long long) with and #ifdef HAVE_LONG_LONG
+since a number of platforms (particularly MSVC) do not support this type.</pre>
+<p>[src/genarch.c 1.11, src/stdint_.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-17_1305"></a>
+2004-06-17 13:05 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Round elements of Mask array to the nearest integer following implementation
+of AR4, AR5, AR6.
+Fix bug 687494 from customer 580.</pre>
+<p>[lib/pdf_draw.ps 1.82]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-17_1114"></a>
+2004-06-17 11:14 Igor Melichev</strong> (<a href="Details8.htm#2004-06-17_1114">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Arithmetic errors could cause a function monotonity misrecongition.
+
+</pre>
+<p>[src/gsfunc0.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-16_2001"></a>
+2004-06-16 20:01 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix parsing of -2147483648.5, min_int followed by a fractional part.
+Fix bug 687500</pre>
+<p>[src/iscannum.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-16_1122"></a>
+2004-06-16 11:22 Igor Melichev</strong> (<a href="Details8.htm#2004-06-16_1122">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Allow named object reference in the Action key of /ANN pdfmark.
+
+</pre>
+<p>[src/gdevpdfm.c 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-16_0927"></a>
+2004-06-16 09:27 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Protect against cache values containing spaces. This shouldn't be a problem, the change is more for consistency.</pre>
+<p>[src/configure.ac 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-16_0927"></a>
+2004-06-16 09:27 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Try to use long long as a 64 bit type in the genarch fallback stdint definitions. Fix for bug 687514.</pre>
+<p>[src/genarch.c 1.10, src/stdint_.h 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-15_2028"></a>
+2004-06-15 20:28 Igor Melichev</strong> (<a href="Details8.htm#2004-06-15_2028">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A wrong CFF string index randiomization.
+
+</pre>
+<p>[src/gdevpdtb.c 1.24, src/gdevpsf2.c 1.31, src/lib.mak 1.186]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-15_1527"></a>
+2004-06-15 15:27 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Make pdf_dominant_rotation() return unknown text rotation for the file
+without text. It returned 0 rotation before, which excluded consideration
+of DSC comments later on.
+Fix bug 687515</pre>
+<p>[src/gdevpdf.c 1.95]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-10_1909"></a>
+2004-06-10 19:09 Igor Melichev</strong> (<a href="Details8.htm#2004-06-10_1909">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 4).
+
+</pre>
+<p>[src/gdevpdfi.c 1.53, src/gdevpdfm.c 1.39, src/gdevpdfx.h 1.93, src/gdevpdti.c 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-10_1641"></a>
+2004-06-10 16:41 Igor Melichev</strong> (<a href="Details8.htm#2004-06-10_1641">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 80.
+
+</pre>
+<p>[src/gxshade6.c 1.76]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-09_2047"></a>
+2004-06-09 20:47 Igor Melichev</strong> (<a href="Details8.htm#2004-06-09_2047">details</a>)</p>
+<blockquote>
+<pre>
+Fix (type 1 hinter) : an indeterministic bug in t1_hinter__simplify_representation.
+
+</pre>
+<p>[src/gxhintn.c 1.50]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-09_1207"></a>
+2004-06-09 12:07 Igor Melichev</strong> (<a href="Details8.htm#2004-06-09_1207">details</a>)</p>
+<blockquote>
+<pre>
+Fix (type 1 hinter) :
+1. Ever align the Y-coordinate of a glyph origin to pixels.
+2. Improve the unaligned pole interpolation;
+3. Set a waeaker angle threshold in t1_hinter__is_stem_hint_applicable.
+4. Allow an offset fuzz in t1_hinter__is_stem_hint_applicable.
+5. Align upper/lower horizontal stems by the upper/lower edge.
+6. A dependency was missed in lib.mak .
+
+</pre>
+<p>[src/gxchar.c 1.43, src/gxhintn.c 1.49, src/lib.mak 1.185, src/gxhintn.h 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-08_1142"></a>
+2004-06-08 11:42 Igor Melichev</strong> (<a href="Details8.htm#2004-06-08_1142">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Merge equal ExtGState objects.
+
+</pre>
+<p>[src/gdevpdfg.c 1.53, src/gdevpdfo.c 1.30, src/gdevpdfo.h 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-03_1712"></a>
+2004-06-03 17:12 Igor Melichev</strong> (<a href="Details8.htm#2004-06-03_1712">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 3).
+
+</pre>
+<p>[src/gdevpdti.c 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-02_1745"></a>
+2004-06-02 17:45 Igor Melichev</strong> (<a href="Details8.htm#2004-06-02_1745">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : 1. After used a process color, continue using it for same client color space.
+2. A bug in pdf_set_initial_color could miss some color commands.
+
+</pre>
+<p>[src/gdevpdfb.c 1.22, src/gdevpdfd.c 1.40, src/gdevpdfg.c 1.52, src/gdevpdfg.h 1.32, src/gdevpdfp.c 1.38, src/gdevpdtt.c 1.82, src/gdevpdfx.h 1.92, src/gdevvec.h 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-02_1319"></a>
+2004-06-02 13:19 Igor Melichev</strong> (<a href="Details8.htm#2004-06-02_1319">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : ConvertCMYKImagesToRGB crashed.
+
+</pre>
+<p>[src/gdevpsdi.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-02_1214"></a>
+2004-06-02 12:14 Igor Melichev</strong> (<a href="Details8.htm#2004-06-02_1214">details</a>)</p>
+<blockquote>
+<pre>
+Fix : 'midpoint' formula was wrong.
+
+</pre>
+<p>[src/gxpflat.c 1.41, src/gxshade6.c 1.75]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-02_0037"></a>
+2004-06-02 00:37 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo. Thanks to Russell for catching this one.</pre>
+<p>[doc/Make.htm 1.76]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_2113"></a>
+2004-06-01 21:13 Dan Coby</strong> (<a href="Details8.htm#2004-06-01_2113">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687477 Bad incremental update to a PDF file.
+
+</pre>
+<p>[lib/pdf_base.ps 1.43, lib/pdf_main.ps 1.87, lib/pdf_rbld.ps 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_1720"></a>
+2004-06-01 17:20 Igor Melichev</strong> (<a href="Details8.htm#2004-06-01_1720">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A Cygwin/gcc warning.
+
+</pre>
+<p>[src/gdevpdfx.h 1.91]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_1706"></a>
+2004-06-01 17:06 Igor Melichev</strong> (<a href="Details8.htm#2004-06-01_1706">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 2).
+
+</pre>
+<p>[src/gdevpdfd.c 1.39, src/gdevpdfg.c 1.51, src/gdevpdfg.h 1.31, src/gdevpdtt.c 1.81]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_1703"></a>
+2004-06-01 17:03 Igor Melichev</strong> (<a href="Details8.htm#2004-06-01_1703">details</a>)</p>
+<blockquote>
+<pre>
+High level devices may need a device color while executing stringwidth.
+
+</pre>
+<p>[src/gstext.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_1342"></a>
+2004-06-01 13:42 Igor Melichev</strong> (<a href="Details8.htm#2004-06-01_1342">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued).
+
+</pre>
+<p>[src/gdevpdti.c 1.30, src/gdevpdfx.h 1.90, src/gdevpdtt.c 1.80]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_0237"></a>
+2004-06-01 02:37 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Aviod a PostScript error in ps2ascii when the source file uses composite fonts.
+For now, dump the strings in the unmodified encoding when the corresponding
+font is composite.
+Fix bug 687466.</pre>
+<p>[lib/ps2ascii.ps 1.9]</p>
+</blockquote>
+
+<hr>
 
 <h2><a name="Version8.30"></a>Version 8.30 (2004-05-29)</h2>
 

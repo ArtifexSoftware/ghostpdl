@@ -29,6 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version8.31">Version 8.31 (2004-08-28)</a>
 <li><a href="#Version8.30">Version 8.30 (2004-05-29)</a>
 <li><a href="#Version8.12">Version 8.12 (2003-12-08)</a>
 <li><a href="#Version8.11">Version 8.11 (2003-08-16)</a>
@@ -75,6 +76,3464 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
+
+<h3><a name="Version8.31"></a>Version 8.31 (2004-08-28)</h3>
+
+<p>
+This is a beta release of the development tree. It contains a number 
+of new features and is made available for those interested in testing
+the new version before it becomes the next stable release.
+
+<p>
+This second beta contains a large number of bug fixes over the earlier 
+8.30 version.
+
+<p> 
+New features since the last stable release:
+
+<ul>
+<li><p>
+Topological grid fitting,
+an original method developed for Ghostscript by Dr. Igor V. Melichev, improves 
+the rendering of True Type fonts at small resolutions.
+See the documentation for <a href="Language.htm#GridFitTT">GridFitTT</a> for information on this
+feature.
+
+<li><p>
+The PDF writer now implements PDF 1.4 encryption.
+See the <a href="Ps2pdf.htm#Encryption">encryption parameter</a> documentation for more
+information.
+
+<li><p>
+A new rendering method for shadings, developed for Ghostscript by 
+Dr. Igor V. Melichev, improves the quality and performance of 
+rasterization on continuous tone devices.
+The new method allows hardware or software acceleration with help of
+customizable routines for filling areas with a linearly varying color.
+functions.
+
+<li><p>
+This version contains the first release of Rinkj, an
+experimental new driver for some inkjet printers using ETS screening.
+See the <a href="Devices.htm#Rinkj">Rinkj</a> section for more information.
+
+<li><p>
+We now support PDF 1.5 files, including the new compression
+and encryption modes.
+
+<li><p>
+We have beta support for JPEG 2000 compressed images, using the JasPer
+compression library. This is only enabled as part of the default build
+in the autoconf (POSIX) build system in this release.
+
+</ul>
+
+<p>
+The following <a href="http://bugs.ghostscript.com/">bug</a> numbers were open at
+the time of release:
+<blockquote>
+405501,
+430175,
+446344,
+456692,
+458780,
+463688,
+465936,
+487953,
+493348,
+526099,
+526491,
+530011,
+535366,
+535932,
+578865,
+592160,
+603934,
+610478,
+614298,
+626295,
+634036,
+645316,
+674418,
+677324,
+685335,
+686747,
+686750,
+686816,
+686819,
+686824,
+686841,
+686842,
+686843,
+686853,
+686863,
+686865,
+686867,
+686902,
+686919,
+686980,
+686996,
+687011,
+687012,
+687013,
+687039,
+687063,
+687079,
+687084,
+687086,
+687095,
+687102,
+687105,
+687108,
+687110,
+687122,
+687125,
+687146,
+687157,
+687168,
+687174,
+687179,
+687193,
+687196,
+687203,
+687219,
+687221,
+687229,
+687231,
+687243,
+687251,
+687257,
+687259,
+687271,
+687275,
+687280,
+687295,
+687297,
+687298,
+687303,
+687314,
+687316,
+687324,
+687327,
+687341,
+687342,
+687345,
+687346,
+687360,
+687373,
+687375,
+687394,
+687397,
+687399,
+687401,
+687403,
+687410,
+687414,
+687421,
+687434,
+687435,
+687445,
+687459,
+687460,
+687461,
+687467,
+687468,
+687473,
+687474,
+687475,
+687479,
+687480,
+687484,
+687485,
+687490,
+687492,
+687497,
+687498,
+687501,
+687512,
+687514,
+687516,
+687518,
+687520,
+687523,
+687524,
+687525,
+687528,
+687529,
+687531,
+687535,
+687536,
+687537,
+687539,
+687541,
+687542,
+687545,
+687547,
+687551,
+687552,
+687554,
+687555,
+687558,
+687559,
+687560,
+687561,
+687571,
+687574,
+687575,
+687577,
+687578,
+687579,
+687581,
+687582,
+687583,
+687584,
+687585,
+687586,
+687588,
+687589,
+687590,
+687592,
+687593,
+687595,
+687600,
+687601,
+687607,
+687608,
+687610,
+687611,
+687612,
+687614,
+687615,
+687616,
+687617,
+687621,
+687622,
+687625,
+687627,
+687628,
+687630,
+687631,
+687632,
+687633,
+687634.
+</blockquote>
+
+<h3><a name="8.31_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>
+No known incompatible changes at the time of release.
+
+<h3><a name="8.31_changelog"></a>Changelog</h3>
+
+<!-- generated from: cvs2cl --utc -T --follow trunk --delta gs8_30:HEAD -U AUTHORS --xml -f doc/changelog.xml -->
+
+<p><strong><a name="2004-08-28_2210"></a>
+2004-08-28 22:10 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the version and date on the VMS help file.</pre>
+<p>[doc/gs-vms.hlp 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-28_2152"></a>
+2004-08-28 21:52 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update release date on documentation.</pre>
+<p>[doc/API.htm 1.44, doc/Bug-form.htm 1.41, doc/Bug-info.htm 1.40, doc/C-style.htm 1.47, doc/Commprod.htm 1.32, doc/Copying.htm 1.31, doc/DLL.htm 1.35, doc/Deprecated.htm 1.12, doc/Details8.htm 1.9, doc/Develop.htm 1.138, doc/Devices.htm 1.81, doc/Drivers.htm 1.48, doc/Fonts.htm 1.42, doc/Helpers.htm 1.35, doc/History1.htm 1.31, doc/History2.htm 1.31, doc/History3.htm 1.31, doc/History4.htm 1.31, doc/History5.htm 1.33, doc/History6.htm 1.48, doc/History7.htm 1.36, doc/History8.htm 1.13, doc/Htmstyle.htm 1.36, doc/Install.htm 1.46, doc/Issues.htm 1.41, doc/Language.htm 1.87, doc/Lib.htm 1.34, doc/Maintain.htm 1.42, doc/Make.htm 1.79, doc/New-user.htm 1.51, doc/Projects.htm 1.58, doc/Ps-style.htm 1.29, doc/Ps2epsi.htm 1.33, doc/Ps2pdf.htm 1.70, doc/Psfiles.htm 1.53, doc/Readme.htm 1.56, doc/Release.htm 1.86, doc/Source.htm 1.31, doc/Tester.htm 1.31, doc/Testing.htm 1.26, doc/Unix-lpr.htm 1.31, doc/Use.htm 1.111, doc/Xfonts.htm 1.31, man/dvipdf.1 1.29, man/font2c.1 1.29, man/gs.1 1.30, man/gslp.1 1.29, man/gsnd.1 1.29, man/pdf2dsc.1 1.28, man/pdf2ps.1 1.30, man/pdfopt.1 1.28, man/pf2afm.1 1.29, man/pfbtopfa.1 1.30, man/printafm.1 1.29, man/ps2ascii.1 1.28, man/ps2epsi.1 1.27, man/ps2pdf.1 1.34, man/ps2pdfwr.1 1.33, man/ps2ps.1 1.36, man/wftopfa.1 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-28_2147"></a>
+2004-08-28 21:47 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Change the product name to BETA RELEASE</pre>
+<p>[src/gscdef.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-28_2147"></a>
+2004-08-28 21:47 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add recent new files to the listings in the documentation.</pre>
+<p>[doc/Develop.htm 1.137, doc/Psfiles.htm 1.52]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-28_2128"></a>
+2004-08-28 21:28 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update release notes and open bug list for the 8.31 beta release. Bump
+the release date as well.</pre>
+<p>[doc/News.htm 1.150, src/version.mak 1.72]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-26_0913"></a>
+2004-08-26 09:13 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Fix half-toning for display device, bug 687629.
+
+DETAILS:
+Prior to DeviceN, dither_gray/max_gray were used if ncomp==1.
+With DeviceN, dither_gray/max_gray are used if gray_index >= 0.
+The display device was not correctly setting gray_index for
+native 1-bit/pixel format.</pre>
+<p>[src/gdevdsp.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-26_0015"></a>
+2004-08-26 00:15 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix for image matrix having negative values.  Thanks to Len Sorenson
+for submitting this patch (author unknown).  Bug #687411.
+
+DETAILS:
+
+The error is using floor to round a value without checking if it might
+be negative first. There were actually two places that did this even
+though the patch that was originally submitted only was for one of them.</pre>
+<p>[src/gximag3x.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-26_0004"></a>
+2004-08-26 00:04 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Close the font file after the font has been processed (loaded into VM).
+This prevents a problem with using up too many file handles detected on
+Solaris. Thanks to Alex Cherepanov for the patch. Bug #687066.
+
+DETAILS:
+
+The patch has no effect on the cache. There is no point of not closing
+the file after the content has been copied to memory.
+
+On GNU/Linux GS has 250K VMThreshold and 1024 handles. That's enough.
+On Windows GS has 1M VNThreshold and 512 handles. This is still OK.
+On Solaris GS has 1M VMThreshold and 256 handles. Handles can be used up
+before garbage collection starts. The following program fails on Solaris.
+
+(a)(w) file closefile
+1000 { (a)(r) file pop } repeat
+
+Dependence on VMThreshold indicates that GC is not activated by
+open(2) failing with EMFILE . This is a real bug, the patch is
+just a work around that we may need to fix later, but not likely to
+be a problem.</pre>
+<p>[lib/gs_type1.ps 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-25_2352"></a>
+2004-08-25 23:52 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix to close streams at EOF (not only filter streams), as required by
+the PLRM. Thanks to Alex Cherepanov for this patch. Bug #687505.
+
+DETAILS:
+
+This is similar to a patch that I had developed and tested prior to
+Alex's patch. I had tested my patch, then Alex's against the regression
+suite and determined that it does not cause any differences.
+
+Alex's patch conforms to my analysis of the problem and the fix.</pre>
+<p>[src/stream.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-25_1556"></a>
+2004-08-25 15:56 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Bind all operators in DefaultGray, DefaultRGB, DefaultCMYK color spaces.
+Partial fix for the bug 687608</pre>
+<p>[Resource/ColorSpace/DefaultCMYK 1.3, Resource/ColorSpace/DefaultGray 1.3, Resource/ColorSpace/DefaultRGB 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1751"></a>
+2004-08-24 17:51 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A page compression type change could cause a crash.
+
+DETAILS :
+
+Bug 687626 "A crash in pdfwrite".
+It crashed after the compression is changed from none to Flate
+with setdevparams inside a page.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdf.c 1.98, src/gdevpdfu.c 1.58, src/gdevpdfx.h 1.100]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1536"></a>
+2004-08-24 15:36 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : gs_lib_ctx was wrongly accessed while looking up a dictionary stack extension.
+
+DETAILS :
+
+Bug 687623  A crash in the interp.c
+
+EXPECTED DIFFERENCES :
+
+Fixes crash with re-distilled files :
+251-01.ps
+Bug687044.ps
+Bug687489.ps
+test-setweightvector.ps,
+tpc2.ps</pre>
+<p>[src/idstack.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1536"></a>
+2004-08-24 15:36 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : gs_lib_ctx was not accessible while clist_playback_band.
+
+DETAILS :
+
+Bug 687624 "A crash in gp_check_interrupts".
+
+EXPECTED DIFFERENCES :
+
+Fixes crash with re-distilled files :
+Svd.pdf
+test.pdf</pre>
+<p>[src/gxclread.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1252"></a>
+2004-08-24 12:52 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : Provide a tolerance to an inconsistent cvt length.
+
+DETAILS :
+
+Bug 687604 "/invalidfont in --show-- error".
+
+We analyzed UFST and Free Type 2.
+UFST has same problem.
+FreeType 2 provides a tolerance, which we port now.
+Note that now we don't port a tolerance for other CVT commands.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/ttinterp.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_1058"></a>
+2004-08-24 10:58 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : A minor portability problem.
+
+DETAILS :
+
+A preprocessor statement didn't start in the first column.
+Occasionally discovered readin the code.
+Some time ago it was claimed as non-portable.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/ttload.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-24_0910"></a>
+2004-08-24 09:10 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Makefiles missed a dependency.
+
+DETAILS :
+
+After rebuilding the last revision got a crash due to gp_mspol.c
+was not recompiled. Found out that gslibctx_h was
+wrongly defined in lib.mak .
+Also changed the including of stdio.h in gslibctx.h to
+a C library file (IMO it should be so).
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gslibctx.h 1.4, src/lib.mak 1.192]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-23_0957"></a>
+2004-08-23 09:57 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Allow the display device row alignment to be changed from the
+default 4 bytes to 8, 16, 32 or 64 bytes.
+
+DETAILS:
+If the image is allocated in video display memory, an alignment
+such as 16 bytes (128-bit memory) may be required.
+This is implemented by making the underlying memory device
+use a larger width than the display device.</pre>
+<p>[src/gdevdsp.c 1.26, src/gdevdsp.h 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-19_2152"></a>
+2004-08-19 21:52 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Changed iapi to use a void* instead of a gs_main_instance pointer.</pre>
+<p>[src/dmmain.c 1.4, src/dpmain.c 1.12, src/dwmainc.c 1.22, src/dxmain.c 1.14, src/dxmainc.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-19_1933"></a>
+2004-08-19 19:33 stefan</strong></p>
+<blockquote>
+<pre>
+Changed iapi to use a void* instead of a gs_main_instance pointer.
+Cleaned up warning related to function pointer signature miss-matches.
+
+DETAILS:
+
+iapi.h no longer defines a type for gs_main_instance *
+This will likely need to be put back in for backward compatibility.
+
+The iapi interface now uses a void * instance handle reflecting
+that it is an opaque type to the outside world.
+
+Note that function pointer argument miss-matches generate warnings in
+msvc but not in gcc.  These have been fixed.</pre>
+<p>[src/dwmain.c 1.19, src/gdevpdtw.c 1.29, src/gdevpsf.h 1.27, src/gdevpsfm.c 1.15, src/gsalloc.c 1.22, src/gsccode.h 1.14, src/gscpixel.c 1.13, src/gscpixel.h 1.7, src/gscspace.c 1.18, src/gsdevice.c 1.23, src/gslibctx.c 1.4, src/gslibctx.h 1.3, src/gxccman.c 1.28, src/gxfcache.h 1.27, src/iapi.c 1.12, src/iapi.h 1.13, src/idict.c 1.12, src/ilocate.c 1.11, src/iutil.c 1.11, src/iutil.h 1.8, src/sdctc.c 1.6, src/zchar32.c 1.5, src/zcssepr.c 1.16, src/zfont.c 1.12, src/zpacked.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-19_1050"></a>
+2004-08-19 10:50 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Add a PPD for PostScript to be used by ghostscript ps2pdf.</pre>
+<p>[doc/Develop.htm 1.136, doc/Ps2pdf.htm 1.69, lib/ghostpdf.inf 1.1, lib/ghostpdf.ppd 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-19_0738"></a>
+2004-08-19 07:38 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Enable progressive updates for the image window of
+the MS-Windows ghostscript command line program.
+Change update method to use a Windows timer.
+
+DETAILS:
+In the MS-Windows GUI executable (i.e. text window managed by
+ghostscript rather than using a system console window), the image
+window is progressively updated every second or so as each page
+is drawn.  The console executable did not do this.
+
+The update code for both GUI and console executables is changed to
+use a timer.  The display update code is called whenever particular
+device drawing operations happen, and if a timer is not already
+running, it starts an update timer.  The minimum update interval
+is shortened from 1s to 100ms. The time to refresh the window is
+measured, and the update interval may be increased to make sure
+that updates account for no more than 10% of processing.
+The update interval is decreased if subsequent updates are
+much quicker.  The timer is stopped by any sync.</pre>
+<p>[src/dwimg.c 1.13, src/dwimg.h 1.10, src/dwmainc.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_2225"></a>
+2004-08-18 22:25 stefan</strong></p>
+<blockquote>
+<pre>
+Fixed dependancies for gslibctx.h</pre>
+<p>[src/int.mak 1.128, src/lib.mak 1.191]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_2224"></a>
+2004-08-18 22:24 stefan</strong></p>
+<blockquote>
+<pre>
+Removed redundant include.</pre>
+<p>[src/gsmalloc.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_2044"></a>
+2004-08-18 20:44 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Check for glyph name conflicts while font merging.
+
+DETAILS :
+
+Bug 687597  pdf created by pdfwrite has garbled text (spr 3994)
+
+1. When a document embeds 2 fonts with same name, same hinting
+and same glyph names but different charstrings, the old code
+didn't compare charstrings and erroneusely merged fonts.
+
+2. pdf_obtain_font_resource_encoded didn't compare the hinting
+because same_type1_hinting computed a too strong condition
+(this change is not strongly neccessary for the bug).
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdtt.c 1.87, src/gxfcopy.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_1440"></a>
+2004-08-18 14:40 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Wrong glyph positions with CIDFontType2 with no vmtx.
+
+DETAILS :
+
+Bug 687603  vertical text misplaced after distilling .
+
+1. When computing the glyph position, must account that we write
+DW2[0 0] when there is no vmtx.
+
+2. Computing a DW2, the advance got a wrong sign.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdtt.c 1.86]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-18_0448"></a>
+2004-08-18 04:48 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Implementation of 687496 transparency and CMYK support.
+
+DETAILS:
+
+This change extends our current implementation of the PDF 1.4
+transparency to include blending in a DeviceCMYK color space.
+There is also a partial implementation of a DeviceGray blending
+space.  However I do not have a method of generating test data
+for a DeviceGray blending space.  Currently the choice of a
+blending color space is based upon the process color model of
+the output device.
+
+Note:  There two differences expected in the regression testing.
+These are with ai2.pdf and dina3_watermark.pdf.</pre>
+<p>[src/gdevp14.c 1.26, src/gxblend.c 1.6, src/lib.mak 1.190]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_2021"></a>
+2004-08-17 20:21 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add PDFSTEP debug aid. Prints a step number at end of PDFDEBUG line, and
+sync's the display, then reads a number of steps to skip (<cr> == single
+step). This is rudimentary but somewhat useful. Invoked with -dPDFSTEP.</pre>
+<p>[lib/pdf_base.ps 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_1956"></a>
+2004-08-17 19:56 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump the version number after the last beta release.</pre>
+<p>[lib/gs_init.ps 1.109, src/gscdef.c 1.44, src/version.mak 1.71]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_1939"></a>
+2004-08-17 19:39 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove references to the FreeType license. Artifex Software, Inc. has
+purchased rights to the FreeType 1 code and the work included here is
+relicensed under the same terms as with the rest of the Ghostscript code.</pre>
+<p>[LICENSE 1.4, doc/FTL.txt 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_1859"></a>
+2004-08-17 18:59 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add support for PDF single stepping debug aid (PDFSTEP). Actual interpreter
+changes made separately.</pre>
+<p>[lib/gs_init.ps 1.108]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-17_1753"></a>
+2004-08-17 17:53 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Handle invalid PDF's that use 0.0 font scaling (Tf operator). Fixes bug
+687606 for customer number 780.
+
+DETAILS:
+
+If the font scale is 0.0, then just use a very small value. This may result
+in a small unwanted dot, but that is probably not an issue since it is
+an invalid value. The better approach for 'invisible' text is to use
+TextRenderingMode 3. The 'pdfformaterror' function is used to complain
+about this so the problem might get fixed by the PDF Creator.</pre>
+<p>[lib/pdf_ops.ps 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-14_0206"></a>
+2004-08-14 02:06 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Correct the previous MSVC 8 updates to allow compilation with debugging.</pre>
+<p>[src/msvc32.mak 1.62, src/msvccmd.mak 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-13_1259"></a>
+2004-08-13 12:59 stefan</strong></p>
+<blockquote>
+<pre>
+Added missing parameter types to prototype.</pre>
+<p>[src/gpcheck.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-13_0457"></a>
+2004-08-13 04:57 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Detect the version of Microsoft Visual C++ from the version of nmake.</pre>
+<p>[doc/Make.htm 1.78, src/msvc32.mak 1.61]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-13_0016"></a>
+2004-08-13 00:16 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Add support for compiling with the beta of Microsoft Visual
+Studio 2005, also known as MSVC 8.
+
+DETAILS:
+Add new MSVC_MINOR_VERSION=1 to distinguish Microsoft Visual
+Studio .NET 2003 (MSVC 7.1) from Microsoft Visual Studio .NET
+(MSVC 7.0)
+Add new MSVC_VERSION=8 for Microsoft Visual Studio 2005
+Ignore deprecated warnings from MSVC 8 with /wd4996, because
+insecure CRTL functions like strcpy and sprintf are now
+marked as deprecated.
+Remove /Ze which is always the default and is unknown to MSVC 8.
+Replace /O with /O2.  The former is not documented for MSVC 5 - 8
+and is unknown to MSVC 8.
+Remove /Gs and /Ge for MSVC 8.  Stack checking is now always done.</pre>
+<p>[doc/Make.htm 1.77, src/msvc32.mak 1.60, src/msvccmd.mak 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-11_1433"></a>
+2004-08-11 14:33 stefan</strong></p>
+<blockquote>
+<pre>
+Added memory pointers to gsmalloc use by jpg2000 interface.
+
+DETAILS:
+
+Added jpx_memory to the stream state since the memory pointer
+in a normal stream object in often NULL indicating a stack object.</pre>
+<p>[src/sjpx.c 1.10, src/sjpx.h 1.3, src/zfjpx.c 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-11_1336"></a>
+2004-08-11 13:36 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+When scaling factors of /ImageMatrix in a image mask for ImageType3 are
+negative, translation offset values for image mask rendering are
+incorrect and it makes abnormal output (eg. white lines).
+This patch fixes this bug #686843. Thanks to Len Sorensen for the analysis.</pre>
+<p>[src/gximag3x.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-11_1333"></a>
+2004-08-11 13:33 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+When scaling factors of /ImageMatrix in a image mask for ImageType3 are
+negative, translation offset values for image mask rendering are
+incorrect and it makes abnormal output (eg. white lines).
+This patch fixes this bug #686843. Thanks to Len Sorensen for the analysis.</pre>
+<p>[src/gximage3.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-11_1258"></a>
+2004-08-11 12:58 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix bug 687038 that resulted in a crash if the initial device was not
+pdfwrite.
+
+DETAILS:
+
+This was almost fixed by recent changes to gs_pdfwr.ps and
+gs_setpd.ps for bugs 687325, 687436 and 687458.
+
+Unfourtunately, the initialization of parameters only occurred
+if the initial device was pdfwrite. A second patch removing
+the initial device constraint on the '1010' .schedule_init
+process was committed and fixes the problem.
+
+Note that there was a work-around that if -dPDFSETTINGS=... was
+given on the command line, it also worked.
+
+EXPECTED DIFFERENCES:
+
+none, since we don't test for this usage.</pre>
+<p>[lib/gs_pdfwr.ps 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-10_1302"></a>
+2004-08-10 13:02 stefan</strong></p>
+<blockquote>
+<pre>
+Added memory_t pointers to gs_malloc() gs_free() calls in
+devices that aren't normally built.</pre>
+<p>[src/gdev3b1.c 1.5, src/gdevadmp.c 1.6, src/gdevccr.c 1.5, src/gdevcif.c 1.6, src/gdevcp50.c 1.6, src/gdevcslw.c 1.5, src/gdevhl7x.c 1.10, src/gdevimgn.c 1.7, src/gdevlp8k.c 1.5, src/gdevlxm.c 1.5, src/gdevmgr.c 1.6, src/gdevn533.c 1.6, src/gdevo182.c 1.6, src/gdevokii.c 1.7, src/gdevos2p.c 1.8, src/gdevp14.c 1.25, src/gdevphex.c 1.7, src/gdevpsdi.c 1.30, src/gdevsgi.c 1.6, src/gdevsj48.c 1.5, src/gdevsppr.c 1.8, src/gdevsunr.c 1.7, src/gdevwddb.c 1.7, src/gdevwprn.c 1.10, src/gp_macio.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-10_1259"></a>
+2004-08-10 12:59 stefan</strong></p>
+<blockquote>
+<pre>
+fixed bug with iapi, removed gs_lib_finit()'s call of gs_malloc_release.
+
+DETAILS:
+
+The problem is that single instance and multi instance interfaces
+both call gs_to_exit() with different meanings.
+
+If gs_lib_init0 was called then it should malloc_release
+single instance exit library means free all.
+
+If the iapi interface was used then the memory
+should not be freed since gs_lib_finit() and gs_to_exit()
+are called when the interpreter is exited but there is a
+seperate delete_instance call that should free the memory</pre>
+<p>[src/gsinit.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-09_1702"></a>
+2004-08-09 17:02 stefan</strong></p>
+<blockquote>
+<pre>
+Fixed uninitialized fstdio2 pointer.</pre>
+<p>[src/gslibctx.c 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-05_2017"></a>
+2004-08-05 20:17 stefan</strong></p>
+<blockquote>
+<pre>
+Fixed incorrect function pointer prototype,
+const gs_memory_t *  argument was missing.</pre>
+<p>[src/gxfcache.h 1.26, src/gxfcopy.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-05_2015"></a>
+2004-08-05 20:15 stefan</strong></p>
+<blockquote>
+<pre>
+Valid memory pointer used create a tile_clip device instead of NULL.
+
+Details :
+
+This needs to be leak checked.</pre>
+<p>[src/gxp1fill.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-05_1702"></a>
+2004-08-05 17:02 stefan</strong></p>
+<blockquote>
+<pre>
+Windows only:
+check_interrupts() with a mem pointer to access the poll function.
+
+DETAILS :
+
+This is windows specific since only windows uses the polling
+function in check_interrupts() macros.  If the gs_dll interface
+is used then a single instance is forced since the design of that
+interface forces one thread per process.  The iapi interface can not
+but enabled for more than one thread until the stream calling check_interrupts()
+calls are fixed.
+
+process_interrupts(NULL) calls are currently hacked to access a global memory
+pointer intended for access to stderr.  This is a place holder until the
+stream object changed that guarantee a valid memory pointer in process_stream
+calls are committed.  Basically it is common to allocate a stream object on the
+stack and use it in a functional manor with an uninitialized memory pointer in the
+object.</pre>
+<p>[src/gdevdbit.c 1.11, src/gdevddrw.c 1.25, src/gdevwpr2.c 1.18, src/gdevwprn.c 1.9, src/gp_macpoll.c 1.2, src/gp_mslib.c 1.6, src/gp_mspol.c 1.5, src/gp_mswin.c 1.24, src/gxclrast.c 1.30, src/gxclread.c 1.11, src/gxclutil.c 1.11, src/gxdtfill.h 1.27, src/sfxfd.c 1.10, src/sfxstdio.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_2340"></a>
+2004-08-04 23:40 stefan</strong></p>
+<blockquote>
+<pre>
+fixed typo in last commit.</pre>
+<p>[src/gpcheck.h 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_2333"></a>
+2004-08-04 23:33 stefan</strong></p>
+<blockquote>
+<pre>
+gs_memory_t pointer additions for msvc build.
+
+DETAILS :
+
+Mostly gs_malloc() and gs_free() additions of a gs_memory_t argument.
+
+Not gsdll.c forces a single instance.</pre>
+<p>[src/gdev4081.c 1.6, src/gdev4693.c 1.9, src/gdev8510.c 1.7, src/gdevdm24.c 1.8, src/gdevdsp.c 1.25, src/gdevescp.c 1.7, src/gdevmswn.c 1.11, src/gdevmsxf.c 1.8, src/gdevpjet.c 1.7, src/gdevwpr2.c 1.17, src/gp_mspol.c 1.4, src/gpcheck.h 1.7, src/gsargs.c 1.9, src/gsdll.c 1.12, src/gsmisc.c 1.18, src/gxccache.c 1.32, src/gxclutil.c 1.10, src/imain.h 1.9, src/interp.c 1.19, src/main.h 1.7, src/msvc32.mak 1.59, src/sfxstdio.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_1936"></a>
+2004-08-04 19:36 stefan</strong></p>
+<blockquote>
+<pre>
+Addition of a Library Context to start the process of removing globals.
+
+DETAILS :
+
+The goals is to remove globals from the system, this includes static
+globals that would hinder multiple threads from running at once.
+
+gs_lib_ctx is intended to be used as the opaque "handle" object
+that a client would use to associate with a thread running through
+the library.  Independent of a gs or a language switch build, this
+needs a new iapi2.h that allows the use of better job control from the
+client side.
+
+gs_lib_ctx is stashed under the gs_memory_t object and all memory objects
+used by a thread refer to the same gs_lib_ctx.  This storage location was
+choosen as a convenence since a memory_t pointer is common throughout the
+system.  Most of the turmoil is adding memory_t pointers to functions that
+used global variables but didn't have a memory pointer.
+
+FILE stdin, stdout, stderr are one per process by default.
+stdin and stdout may be changed but stderr may not.
+FILE stderr is one per process and shouldn't be changed.
+Note the stderr_fn is also one per process, changing this function pointer
+will not help as most users of stderr printing do not have a thread handle.
+Changing to a thread local storage mechanism can solve this.
+
+gs_id's  are currently per thread with each thread starting over at  1.
+This can be moved to per process with mutexes if so desired.
+
+A library context has a pointer to the top_of_system the intent is that this
+a void handle avaliable to make top of the system calls without knowing the
+data type.  In a postscript only  build this would be gs_main_instance but
+in a language switched build this would be an object above that main_universe.
+
+Other members of gs_lib_ctx_t are nothing more than global objects relocated
+to this "bag".  gs_name_table, dict_autoexpand  are examples of this.  There
+are a few more globals that will be moved.
+
+At the moment iapi is still constrained to one thread, since some of the
+globals haven't been removed yet.
+
+The display device's callback function setting is supported for now
+but this interface should be changed to a sDEVICE style call.
+
+gs_memory_t is the base type the abstract type gs_raw_memory_t is gone,
+this means that all memory types must derive from gs_memory_t.
+In addition to a pointer to the gs_lib_ctx there is a pointer to a
+non_gc_memory this will always point to a non garbage collected memory,
+it maybe the current object or an object below the current gargabe
+collected memory space.  This can be used were the previous code
+used the global gs_malloc_memory.  gs_malloc() now takes a memory pointer,
+it finds the non-gc memory from a valid memory pointer and allocates from it.
+
+The gdevbit device has an improved algorthym for converting from cmyk to rgb,
+this is never used by postscript but for pcl rops it puts the k plane into rgb.</pre>
+<p>[src/bfont.h 1.10, src/devs.mak 1.117, src/dstack.h 1.6, src/files.h 1.10, src/gdevbj10.c 1.9, src/gdevcdj.c 1.15, src/gdevdcrd.c 1.6, src/gdevepsc.c 1.11, src/gdevepsn.c 1.9, src/gdevijs.c 1.9, src/gdevp14.c 1.24, src/gdevpdfb.c 1.23, src/gdevpdfc.c 1.48, src/gdevpdfg.c 1.58, src/gdevpdfg.h 1.33, src/gdevpdfi.c 1.56, src/gdevpdfk.c 1.8, src/gdevpdfv.c 1.36, src/gdevpdti.c 1.36, src/gdevplnx.c 1.10, src/gdevprn.c 1.18, src/gdevprna.c 1.6, src/gdevpsdi.c 1.29, src/gdevpxat.h 1.6, src/gdevpxen.h 1.6, src/gdevstc.c 1.10, src/gdevupd.c 1.16, src/gdevvec.c 1.23, src/gdevxcmp.c 1.9, src/gdevxxf.c 1.9, src/gp_mac.c 1.16, src/gs.c 1.12, src/gs_dll_call.h 1.1, src/gsalloc.c 1.21, src/gsalloc.h 1.7, src/gsalphac.c 1.7, src/gsccode.h 1.13, src/gscdevn.c 1.21, src/gscolor.c 1.14, src/gscolor1.c 1.11, src/gscolor3.c 1.8, src/gscparam.c 1.10, src/gscpixel.c 1.12, src/gscpixel.h 1.6, src/gscrd.c 1.6, src/gscrd.h 1.7, src/gscscie.c 1.12, src/gscsepr.c 1.27, src/gscspace.c 1.17, src/gscspace.h 1.14, src/gsdevice.c 1.22, src/gsequivc.c 1.5, src/gsexit.h 1.10, src/gsfcid2.c 1.6, src/gsfcmap.c 1.24, src/gsfcmap1.c 1.7, src/gsfont.c 1.33, src/gsht.c 1.22, src/gsht1.c 1.15, src/gshtx.c 1.6, src/gsimage.c 1.12, src/gsinit.c 1.6, src/gsio.h 1.8, src/gsiodevs.c 1.6, src/gsistate.c 1.10, src/gslib.c 1.14, src/gslib.h 1.6, src/gslibctx.c 1.2, src/gslibctx.h 1.2, src/gsmalloc.c 1.12, src/gsmalloc.h 1.6, src/gsmemlok.c 1.6, src/gsmemory.c 1.9, src/gsmemory.h 1.8, src/gsmemraw.h 1.8, src/gsmemret.c 1.5, src/gsmisc.c 1.17, src/gsovrc.c 1.6, src/gspcolor.c 1.14, src/gsptype1.c 1.19, src/gsstate.c 1.24, src/gsstruct.h 1.18, src/gsstype.h 1.6, src/gsutil.c 1.10, src/gsutil.h 1.8, src/gxacpath.c 1.10, src/gxalloc.h 1.11, src/gxccache.c 1.31, src/gxccman.c 1.27, src/gxcht.c 1.13, src/gxclbits.c 1.9, src/gxclrast.c 1.29, src/gxclread.c 1.10, src/gxclrect.c 1.7, src/gxcpath.c 1.12, src/gxcspace.h 1.13, src/gxdevcli.h 1.34, src/gxdevice.h 1.19, src/gxdhtserial.c 1.5, src/gxfcmap.h 1.16, src/gxfcopy.c 1.43, src/gxht.c 1.16, src/gxht.h 1.9, src/gximag3x.c 1.17, src/gximage.c 1.7, src/gxpcmap.c 1.13, src/gxttfb.c 1.34, src/gzht.h 1.13, src/ialloc.c 1.7, src/ialloc.h 1.6, src/iapi.c 1.11, src/ibnum.c 1.8, src/ibnum.h 1.8, src/ichar.h 1.7, src/icharout.h 1.9, src/icid.h 1.8, src/icie.h 1.7, src/icstate.h 1.13, src/idebug.c 1.9, src/idebug.h 1.6, src/idict.c 1.11, src/idict.h 1.6, src/idparam.c 1.9, src/idparam.h 1.7, src/idstack.c 1.6, src/ifapi.h 1.19, src/ifont.h 1.14, src/ifont1.h 1.7, src/ifont42.h 1.9, src/igc.c 1.13, src/igc.h 1.8, src/igcref.c 1.6, src/iimage.h 1.7, src/iinit.c 1.10, src/ilocate.c 1.10, src/imain.c 1.39, src/imainarg.c 1.32, src/iminst.h 1.8, src/iname.h 1.5, src/interp.c 1.18, src/iparam.c 1.10, src/iplugin.c 1.5, src/iplugin.h 1.5, src/isave.c 1.11, src/isave.h 1.7, src/iscan.c 1.18, src/iscanbin.c 1.14, src/iutil.c 1.10, src/iutil.h 1.7, src/lib.mak 1.189, src/sdctc.c 1.5, src/std.h 1.12, src/szlibc.c 1.6, src/ttload.c 1.5, src/zarray.c 1.5, src/zbfont.c 1.27, src/zchar.c 1.14, src/zchar1.c 1.36, src/zcharout.c 1.12, src/zcharx.c 1.7, src/zcid.c 1.9, src/zcie.c 1.12, src/zcolor.c 1.19, src/zcontext.c 1.11, src/zcontrol.c 1.11, src/zcrd.c 1.8, src/zcsdevn.c 1.12, src/zcsindex.c 1.7, src/zcspixel.c 1.5, src/zcssepr.c 1.15, src/zdevice.c 1.9, src/zdevice2.c 1.9, src/zdict.c 1.6, src/zdps.c 1.8, src/zdps1.c 1.7, src/zfapi.c 1.52, src/zfcid0.c 1.22, src/zfcid1.c 1.19, src/zfcmap.c 1.15, src/zfile.c 1.41, src/zfileio.c 1.17, src/zfont.c 1.11, src/zfont0.c 1.7, src/zfont1.c 1.12, src/zfont2.c 1.7, src/zfont32.c 1.5, src/zfont42.c 1.20, src/zfontenum.c 1.4, src/zfrsd.c 1.10, src/zfunc.c 1.14, src/zfunc3.c 1.7, src/zfunc4.c 1.12, src/zgeneric.c 1.8, src/zgstate.c 1.10, src/zht2.c 1.12, src/zht2.h 1.3, src/zicc.c 1.7, src/zimage.c 1.14, src/zimage3.c 1.7, src/ziodevs.c 1.9, src/ziodevsc.c 1.7, src/zmatrix.c 1.8, src/zmedia2.c 1.16, src/zmisc.c 1.7, src/zmisc2.c 1.7, src/zmisc3.c 1.6, src/zpacked.c 1.6, src/zpcolor.c 1.15, src/zrelbit.c 1.6, src/zshade.c 1.15, src/zstring.c 1.6, src/ztoken.c 1.14, src/ztrans.c 1.22, src/ztype.c 1.8, src/zupath.c 1.10, src/zusparam.c 1.13, src/zvmem.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_0100"></a>
+2004-08-04 01:00 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+add a .cvsignore list for generated files</pre>
+<p>[contrib/pscolor/.cvsignore 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-04_0055"></a>
+2004-08-04 00:55 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add variable declaration for the path to the ghostscript executable to
+the unix wrapper scripts. This simplifies changing the invocation name.
+Partial fix for bug 686863.</pre>
+<p>[lib/bdftops 1.5, lib/dumphint 1.2, lib/dvipdf 1.5, lib/eps2eps 1.6, lib/font2c 1.4, lib/gsbj 1.4, lib/gsdj 1.4, lib/gsdj500 1.4, lib/gslj 1.4, lib/gslp 1.4, lib/gsnd 1.4, lib/pdf2dsc 1.6, lib/pdf2ps 1.7, lib/pdfopt 1.7, lib/pf2afm 1.5, lib/pfbtopfa 1.6, lib/pphs 1.4, lib/ps2ascii 1.7, lib/ps2epsi 1.10, lib/ps2pdfwr 1.10, lib/ps2ps 1.7, lib/pv.sh 1.4, lib/unix-lpr.sh 1.5, lib/wftopfa 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-08-02_0333"></a>
+2004-08-02 03:33 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : .OrigFont was not provided when an embeded font is defined.
+
+DETAILS :
+
+Bug 687598 "Courier CE font problems".
+The test case embeds a font with an instandard FontMatrix [ 0.00039 0 0 0.00039 0 0 ].
+For passing it to pdfwrite, the procedure .completefont adds the
+/.OrigFont key to the font dictionary. However the key was added after
+.buildfont1 is called, and the device did not recieve the information at the time.
+This patch moves the .OrigFont setting ahead to the .buildfont* call.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/gs_fonts.ps 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-30_2132"></a>
+2004-07-30 21:32 Dan Coby</strong></p>
+<blockquote>
+<pre>
+More work upon 687551 Implement the remaining TN 5044 procedures.
+This commit implements the setcmykoverprint procedure.
+
+DETAILS:
+
+We received a posting against 687551.  This posting indicated that some
+files in arXiv.org were failing with the current version of Ghostscript
+but worked with older versions.  The files were all created by a package
+called Canvas by Deneba Systems.  They failed because setcmykoverprint
+was not defined.
+
+Evidently the people at Deneba Systems did not read the following comment
+from page 15 of TN 5044:
+
+"Note The setcmykoverprint operator has not been adopted by the industry.
+It remains on the list of color convention operators because it has some
+perceived usefulness, but it is not supported by any shipping host-based
+separation applications today."
+
+The even stranger detail is that the Deneba Systems people have a
+dummy version of this procedure that does not implement overprinting.
+Thus if they do not need overprinting, they have no need to use this
+procedure.
+
+The files also fail with Distiller 6.0, Illustrator CS, and Photoshop 6.0.
+However this change allows these files to work with current Ghostscript.
+
+The change consists of putting in a dummy version of the setcmykoverprint
+procedure.  This version does not actually implement overprinting.</pre>
+<p>[lib/gs_lev2.ps 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-29_1919"></a>
+2004-07-29 19:19 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : True Type font loader : numLoca run out the PS string size limit.
+
+DETAILS :
+
+Bug 687599 "/rangecheck in --string--".
+This patch increases the maximal 'loca' size to 64528 bytes,
+which is enough for the customer's file.
+A further improvement would be to allow more 'loca' segments
+(currently arbitrary restricted with 2 for a minor code simplification).
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/gs_ttf.ps 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-29_1746"></a>
+2004-07-29 17:46 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+1. Fix (PS interpreter) : The FontBBox validation check was too strong.
+2. Fix (pdfwrite) : Explicitely set line parameters in a charproc.
+
+DETAILS :
+
+Bug 687594 "Barcode Width".
+See comments in the new code.
+
+This solution is a partial one.
+With the current architecture of the Postscript interpreter,
+a device can't recognize whether a PS charproc sets line parameters or not.
+Therefore we copy to PDF the values, which appear at a first use
+within a charproc. The old code copied only values, which differ from defaults.
+The new behavior appears closer to Adobe Distiller.
+
+A complete solution should copy the PS behavior to PDF,
+i.e. the PDF charproc should set those and only those parameters,
+which are set by the PS charproc. For doing that we need flags in the graphic state structure
+per each graphic state parameter, reset all them before running a charproc,
+and set whenever a parameter is changed. Without the flag, when the charproc sets
+a value equal to the old one (which was inherited from the context of
+the glyph usage), the event of setting is lost and causes a line width and other problems.
+We don't want such a deep change now, and go with the partial solution,
+because the partial solution appears enough for customer's needs.
+Likely Adobe Distiller have same architectural problem, and resolves it in same manner.
+
+EXPECTED DIFFERENCES :
+
+pdfwrite, 72dpi :
+012-09.ps
+013-09.ps
+014-09.ps
+015-09.ps
+083-09.ps
+123-09.ps
+205-09.ps
+250-01.ps
+296-01.ps
+298-09.ps
+321-09.ps
+
+pdfwrite 300dpi :
+
+012-09.ps
+013-09.ps
+014-09.ps
+015-09.ps
+027-05.ps
+032-07.ps
+034-10.ps
+083-09.ps
+093-01.ps
+123-09.ps
+169-09.ps
+205-09.ps
+212-01.ps
+213-01.ps
+214-01.ps
+222-09.ps
+238-01.ps
+250-01.ps
+296-01.ps
+298-09.ps
+307-07.ps
+321-09.ps</pre>
+<p>[src/gdevpdtt.c 1.85, src/gslparam.h 1.5, src/zchar.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-28_1946"></a>
+2004-07-28 19:46 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+test commit; verifying the cvs announcement list is working.</pre>
+<p>[src/Makefile.in 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-28_1009"></a>
+2004-07-28 10:09 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : gs_function_is_monotonic computed an unused auxiliary result (continued 4).
+
+DETAILS :
+
+FunctionType 3 did not account stitches with reversed interval boundaries : lower > upper.
+Also added a tolerance to a small noise.
+687573 Error: /rangecheck in --.shfill--
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gsfunc3.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-26_2333"></a>
+2004-07-26 23:33 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687572 AFPL Ghostscript 8.14 fails with some PDF files.
+
+DETAILS:
+
+The given file uses the scn operator inside of a form.  The scn
+operator is used for defining a color with DeviceN color spaces.
+The scn operator uses .pdfcount (inside of scresolve) to determine
+the number of parameters.  However inside a form, there is an extra
+dictionary on the stack.
+
+The fix consists of adjusting pdfemptycount (which is used by .pdfcount)
+to match the stack depth while executing a form.  After the form is
+executed, pdfemptycount is returned to its previous value.</pre>
+<p>[lib/pdf_draw.ps 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-26_2321"></a>
+2004-07-26 23:21 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687591 Overprint Preview is not documented.  This change adds
+documentaion for how Ghostscript handles overprinting and spot colors
+to Use.htm.</pre>
+<p>[doc/Use.htm 1.110]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-24_0812"></a>
+2004-07-24 08:12 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 39 : Implementing embedded TrueType fonts (continued).
+
+DETAILS :
+
+This fixes the problem with True Type encoding :
+account 'post' when 'cmap' can't give a character mapping.
+Debugged wit 159.pdf , the character /registered.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps,
+148-01.ps, 245-01.ps, 415-01.ps, 477-03.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf, bulletin.pdf, test.pdf, PT.ps,
+UnusualFontMatrix.ps, 159.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-23_1911"></a>
+2004-07-23 19:11 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 39 : Implementing embedded TrueType fonts.
+
+DETAILS :
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps,
+148-01.ps, 245-01.ps, 415-01.ps, 477-03.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf, bulletin.pdf, test.pdf, PT.ps,
+UnusualFontMatrix.ps, 159.pdf .
+
+Embedded fonts work, but there exist an encoding problem with 159.pdf .
+The PS reader must have AdobeGlyphList and MacRomanEncoding.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-22_1735"></a>
+2004-07-22 17:35 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 38 : Implementing embedded Type 1 fonts.
+
+DETAILS :
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps,
+148-01.ps, 245-01.ps, 415-01.ps, 477-03.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf, bulletin.pdf, test.pdf, PT.ps,
+UnusualFontMatrix.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-22_1304"></a>
+2004-07-22 13:04 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 38 : Write font data after the font descriptor.
+
+DETAILS :
+
+opdfread.ps will use this constraint to provide
+a proper context for interpreting font data.
+Rather we need this constraint with ps2write only,
+we always implement it to simplify the code.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdtb.c 1.27, src/gdevpdtb.h 1.10, src/gdevpdtd.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-22_1108"></a>
+2004-07-22 11:08 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 37 : Don't convert Type 1 into CFF when generating ps2write output.
+
+DETAILS :
+
+1. Applied the Type 1 font writer.
+2. Rather Type1C is a PDF 1.2 feature, we can't write it into a ps2write output.
+   We use the OrderResources parameter to decide about (not)converting Type 1
+   into Type1C (i.e. into CFF), because we want to write some PDF1.2 objects
+   into a ps2write output (for example - function objects,
+   because we don't want to convert them in C code).
+3. The parameter OrderResources isn't a good switch for deciding about CFF
+   due to the parameter name, but currently we don't want to define one more parameter.
+   Maybe will improve it later.
+4. Fixed a bug, which wrote "/Length1 -1" with Type1C.
+5. CONVERT_CFF_TO_TYPE1 is reserved for further development.
+6. Fixed Cygwin/gcc warnings in gdevpdfg.c .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfg.c 1.57, src/gdevpdfx.h 1.99, src/gdevpdtb.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-22_0756"></a>
+2004-07-22 07:56 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 36 : Switching on the new code DELAYED_STREAMS, PS2WRITE.
+
+DETAILS :
+
+See log messages of previous patches.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevvec.h 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-20_0708"></a>
+2004-07-20 07:08 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix to make sure that device deactivation is invoked before final close
+of the device when exit. Bug #687557.
+
+DETAILS:
+
+It is not known whether or not this ever worked, but this change does
+make sure that the .uninstalldevice gets invoked before the final
+closedevice on exit.
+
+EXPECTED DIFFERENCES.
+
+None detected with regression suite.</pre>
+<p>[src/imain.c 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-17_1844"></a>
+2004-07-17 18:44 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix so that compiled fonts have the dictionary permissions set correctly.
+Bug 687444 for customer #531.
+
+DETAILS:
+
+Previously the 'dict_attrs' parameter was ignored. I compared the attrs
+of the compiled font to a font loaded from a PFB file using:
+
+%! -------------------------------------------------------------------------
+% Procedure to check attributes of all elements of a dictionary
+% used to check Font dict contents.
+
+/dumpattrs {    % object dumpattrs -
+  dup { rcheck } stopped { pop (?) } { { (r) } { (-) } ifelse } ifelse print
+  dup { wcheck } stopped { pop (?) } { { (w) } { (-) } ifelse } ifelse print
+  dup { xcheck } stopped { pop (?) } { { (x) } { (-) } ifelse } ifelse print
+  (    ) print type = flush
+} bind def
+
+/chkattrs {     % dict chkattrs -       and lots of formatted output
+  (Dictionary:     ) print dup dumpattrs
+  { exch
+    (    /                    ) dup dup 4 -1 roll
+    20 string cvs
+    5 exch putinterval print
+    (    /                    ) 0 exch putinterval
+    dumpattrs
+  } forall
+} bind def
+
+/Helvetica findfont chkattrs
+quit
+
+%--------------------------------------------------------------------------</pre>
+<p>[src/iccfont.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-16_2214"></a>
+2004-07-16 22:14 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Provide a delayed stream writing.
+
+DETAILS :
+
+The ps2write requires length of streams to be written before the stream.
+This implements pdf_begin_data_stream with opening a stream object in a temporary file,
+using a methgod similar to pdf_enter_substream.
+With the new mechanizm the output file doesn't need to be positionable,
+and the generated PDF appears more effective because the number of objects is smaller.
+
+Also fixed a bug in gdevpdfu.c : crashed when encrypted with no page compression.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdf.c 1.97, src/gdevpdfu.c 1.57, src/gdevpdfx.h 1.98, src/gdevpdtb.c 1.25, src/gdevpdtf.c 1.37, src/gdevpdti.c 1.35, src/gdevpdtw.c 1.28, src/gdevpdtw.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-15_1639"></a>
+2004-07-15 16:39 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Discard the output file seekability requirement in the /PS pdfmark implementation.
+
+DETAILS :
+
+The ps2write requires length of streams to be written before the stream.
+The implementation of /PS pdfmark wrote a length in a separate object after the stream.
+Now /PS pdfmark is implemented with pdf_enter_substream,
+which writes the length directly into the object dictionary.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfm.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-15_1237"></a>
+2004-07-15 12:37 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : text.operation was inconsistent after replacing TEXT_FROM_GLYPHS.
+
+DETAILS :
+
+Bug 687563 "segfault during pdfwrite".
+text.operation became inconsistent after replacing
+TEXT_FROM_*_GLYPH* with TEXT_FROM_STRING.
+Declared a stronger constraint for process_text_modify_width,
+and documented the trick with text indices in process_plain_text.
+
+EXPECTED DIFFERENCES :
+
+pdfwtite -r300 tpc2.ps</pre>
+<p>[src/gdevpdtc.c 1.36, src/gdevpdte.c 1.60]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1821"></a>
+2004-07-14 18:21 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Sort the output in filename order to make comparison of daily db's easier.</pre>
+<p>[toolbin/tests/dump_testdb 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1757"></a>
+2004-07-14 17:57 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 35 : Fixing more problems with color spaces.
+
+DETAILS :
+
+The alternative space of [/Indexed [/Separation ...] ...] was not resolved.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps,
+148-01.ps, 245-01.ps, 415-01.ps, 473-01.ps, 477-03.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf, bulletin.pdf, test.pdf, PT.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1757"></a>
+2004-07-14 17:57 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Don't write DeviceN, DevicePixel colors with CompatibilityLevel<=1.2 .
+
+DETAILS :
+
+PDF 1.2 doesn't define DeviceN, DevicePixel.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfc.c 1.47, src/gdevpdfg.c 1.56]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1559"></a>
+2004-07-14 15:59 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Include string_.h for missing prototypes of strlen() &c. Bug 687541.</pre>
+<p>[src/gscdevn.c 1.20, src/gsfcmap.c 1.23, src/gsht1.c 1.14, src/int.mak 1.127, src/lib.mak 1.188, src/zfile1.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1538"></a>
+2004-07-14 15:38 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Cast pointer type to avoid a warning. Bug 687541.</pre>
+<p>[src/sjpx.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1534"></a>
+2004-07-14 15:34 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct some types to unsigned to match the gp_file_name_combine() prototype.
+Partial fix for bug 687541.</pre>
+<p>[src/gp_unix_cache.c 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-14_1424"></a>
+2004-07-14 14:24 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix to pdfwrite initialization to make sure initial distiller params are
+incorporated into the device. Also add collection of distillerparams when
+building currentpagedevice. Fixes bugs 687325, 687436 and 687458.
+
+DETAILS:
+
+Earlier change to use .putdeviceparamsonly in gs_pdfwr.ps so that the
+use of setdistillerparams does not reinitialize the device caused the
+initial parameter settings to not be set in the device. The change to
+gs_pdfwr.ps accomplishes this.
+
+Part of the investigation by Igor Melichev discovered that the values of
+disillerparams would not be correctly reflected in the pagedevice. The
+change to gs_setpd.ps collects the currentdistillerparams when the device
+is pdfwrite and merges new values into the pagedevice dictionary. The
+method is similar to that used for the dynamicppkeys such as PageCount
+that can be changed by the device. For the distillerparams, the values
+are changed dynamically by setdistillerparams.
+
+EXPECTED DIFFERENCES.
+
+Rotation of several files is restored to the correct value given by
+gs8.11:
+
+541.pdf
+mspro.pdf
+new_rect_nr.pdf
+pstopdf.pdf
+xes2ps-problem.pdf</pre>
+<p>[lib/gs_pdfwr.ps 1.38, lib/gs_setpd.ps 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1952"></a>
+2004-07-13 19:52 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 34 : Applying filters to the page contents stream.
+
+DETAILS :
+
+Due to the device parameter problem in the PS interpreter,
+the distilled PT.ps had a filtered contents stream in spite of we disabled filters.
+Fixing it now to avoid the dependence on another project.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps,
+148-01.ps, 245-01.ps, 415-01.ps, 477-03.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf, bulletin.pdf, test.pdf, PT.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1931"></a>
+2004-07-13 19:31 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 33 : Fixing problems with color spaces in image XObjects.
+
+DETAILS :
+
+1. The Separation color space needs to resolve and substitute the alternative color space.
+2. The Pattern color space needs to resolve and substitute the base color space.
+3. Removed an obsolete temporary debug printing.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps,
+148-01.ps, 245-01.ps, 415-01.ps, 477-03.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf, bulletin.pdf, test.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.
+`</pre>
+<p>[lib/opdfread.ps 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1858"></a>
+2004-07-13 18:58 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 32 : Fixing problems with color spaces in inline images.
+
+DETAILS :
+
+Inline images use local allocation mode for image data.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps,
+148-01.ps, 245-01.ps, 415-01.ps, 477-03.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1558"></a>
+2004-07-13 15:58 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 31 : Implementing DecodeParms for filters.
+
+DETAILS :
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 245-01.ps, 415-01.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1513"></a>
+2004-07-13 15:13 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 30 : Continue the implementation of color spaces.
+
+DETAILS :
+
+1. Implemented Lab.
+2. A pattern color space specification can contain an indirect reference.
+3. Moved the StreamDumperBuffer definition to the proper place.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 245-01.ps,
+0.pdf, 000040cf.000_60.pdf acrobat.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1344"></a>
+2004-07-13 13:44 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 29 : The inplementation of FunctionType 4 was wrong.
+
+DETAILS :
+
+The test case 245-01.ps .
+Also implemented a debug printing of the uncompressed data steram.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 0.pdf,
+000040cf.000_60.pdf acrobat.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1238"></a>
+2004-07-13 12:38 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Don't write shadings with CompatibilityLevel<=1.2 .
+
+DETAILS :
+
+Bug 687567 "pdfwrite : Shadings are written with CompatibilityLevel=1.2" :
+Shadings are not allowed in PDF 1.2 .
+This patch simply forwards to the default implementation,
+causing a shading to decompose into thousands of constant color areas.
+
+Probably a convertion to an image would be a better solution -
+delaying it for a while, because our current goal is to make
+ps2write working somehow.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfd.c 1.41, src/gdevpdfg.c 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1202"></a>
+2004-07-13 12:02 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Wrong /Matrix from /BP pdfmark (continued).
+
+DETAILS :
+
+Fixing a misprint in the patch
+http://www.ghostscript.com/pipermail/gs-cvs/2004-May/004502.html
+Thanks to SaGS for pointing it out.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfm.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-13_1109"></a>
+2004-07-13 11:09 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Dont create the alternative image compression if a loseless compression is only allowed.
+
+DETAILS :
+
+It is an optimization.
+The problem was occasionally found when working on the bug 687325,
+rather that bug is irrelevant. It created 2 alternative streams with same filters.
+This change rejects the creation of the second stream in such cases.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfi.c 1.55, src/gdevpsdi.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-10_0855"></a>
+2004-07-10 08:55 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 28 : Fixing tab characters in the source code (continued).
+
+DETAILS :
+
+This change is syntactically equivalent.
+Also removed an unuseful comment.
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 0.pdf,
+000040cf.000_60.pdf acrobat.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-10_0804"></a>
+2004-07-10 08:04 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 27 : Implemented FunctionType 4.
+
+DETAILS :
+
+245-01.ps contains one.
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 0.pdf,
+000040cf.000_60.pdf acrobat.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-09_2054"></a>
+2004-07-09 20:54 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 26 : Fixing tab characters in the source code.
+
+DETAILS :
+
+This change is syntactically equivalent.
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 0.pdf,
+000040cf.000_60.pdf acrobat.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-09_2028"></a>
+2004-07-09 20:28 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 25 : Fixing various problems in functions and color spaces.
+
+DETAILS :
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 0.pdf,
+000040cf.000_60.pdf acrobat.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-09_1652"></a>
+2004-07-09 16:52 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 24 : An initial implementation of functions.
+
+DETAILS :
+
+1-argument FunctionType 0 is converted to a Postscript procedure.
+The Order is ignored. 3d order functions interpolate as 1st order.
+Maybe we'll convert them in C in pdfwrite.
+N-argument FunctionType 0 are coded but not tested yet.
+Other function types are not coded.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 0.pdf, 000040cf.000_60.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1715"></a>
+2004-07-08 17:15 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 23 : Implementing Indexed and Separation (continued).
+
+DETAILS :
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 0.pdf, 000040cf.000_60.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1528"></a>
+2004-07-08 15:28 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 22 : Implementing Indexed and Separation.
+
+DETAILS :
+
+SubstitutePDFColorSpace factored out from ResolveColorSpace.
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps, 0.pdf, 000040cf.000_60.pdf .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1400"></a>
+2004-07-08 14:00 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 20 : Implementing CalGray, CalRGB.
+
+DETAILS :
+
+- implemented the color space cache PDFColorSpaces;
+- improved the procedure 'error';
+- a bug in Register : s|gt|ge;
+- moved color procedures before image procedures;
+- a bug in the CompleteOutlineImage comment.
+- ResolveColorSpace now converts CalGray, CalRGB.
+
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps 148-01.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1112"></a>
+2004-07-08 11:12 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 20 : The implementations of Q,q,CharProc were incomplete.
+
+DETAILS :
+
+Minor change : collected work data definitions in a single place.
+Tested with Bug687546.ps, 017-01.ps, 035-01.ps, 035-07.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_1006"></a>
+2004-07-08 10:06 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 17 : Implementing Patterns.
+
+DETAILS :
+
+Tested with Bug687546.ps, 035-01.ps, 035-07.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-08_0803"></a>
+2004-07-08 08:03 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 18 : Fix : Length was written to a wrong file position.
+
+DETAILS :
+
+Fixes a bug in the patch
+http://www.ghostscript.com/pipermail/gs-cvs/2004-July/004607.html .
+Thanks to Ray Johnston for pointing it out.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfm.c 1.43]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1519"></a>
+2004-07-07 15:19 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 17 : Image XForm implementation.
+
+DETAILS :
+
+Tested with Bug687546.ps, 035-01.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1424"></a>
+2004-07-07 14:24 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 16 : Inline image implementation.
+
+DETAILS :
+
+Tested with Bug687546.ps, TESTIMG.PS .
+The interpretation completes, but some images render wrongly.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1142"></a>
+2004-07-07 11:42 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 15 : Fix : ObjectRegistry expansion code was wrong.
+
+DETAILS :
+
+Tested with Bug687546.ps, 148-01.ps .
+148-01.ps still fails due to unimplemented images.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1100"></a>
+2004-07-07 11:00 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 14 : Fix : fonts may have no Encoding.
+
+DETAILS :
+
+Tested with Bug687546.ps, 148-01.ps .
+148-01.ps still fails due to unimplemented images.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1040"></a>
+2004-07-07 10:40 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 13 : Implementing Type 3 fonts.
+
+DETAILS :
+
+A minor restructurization of the code and a debug printout improvement.
+Tested with Bug687546.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_1019"></a>
+2004-07-07 10:19 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 12 : Implementing Type 3 fonts.
+
+DETAILS :
+
+1. Implemented a delayed stream interpretation.
+2. Implemented Type 3 fonts.
+3. Renamed UnRefD with ResolveD.
+4. Debug switches are bound.
+
+Tested with Bug687546.ps - now it renders fine.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_0933"></a>
+2004-07-07 09:33 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Fixes bug 687451 "default resolution for display device"
+Set the display resolution from the MS-Windows display resolution,
+using a device parameter -dDisplayResolution=DPI.
+
+DETAILS:
+The initial resolution must be set in display_put_params.
+Setting it in display_open is too late because this leaves
+the device resolution and currentpagedevice reporting
+different values.  Callbacks can't be used in display_put_params
+because the callback structure is not yet initialized.
+This leaves a device parameter on the command line as
+the cleanest implementation.
+If HWResolution is set (e.g. from -r72), then use that.
+Otherwise, if DisplayResolution is set, use that in the
+initial display_put_params.  After that, ignore all further
+use of DisplayResolution.
+The Windows client adds -dDisplayResolution=DPI to the
+command lines, similar to the existing -dDisplayFormat.
+The Windows client gets the resolution from the GDI.
+The default Windows display resolution is 96dpi (the same
+as the display device).  This can be changed to 120dpi by
+selecting "large fonts", or other values in recent versions
+of Windows.</pre>
+<p>[doc/Devices.htm 1.80, src/dwmain.c 1.18, src/dwmainc.c 1.20, src/gdevdsp.c 1.24, src/gdevdsp.h 1.9, src/gdevdsp2.h 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_0909"></a>
+2004-07-07 09:09 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Fixes bug 687562 "vector devices close output file incorrectly".
+Vector devices open the output file with gx_device_open_output_file,
+so should close it with gx_device_close_output_file, not fclose.
+This was preventing pswrite from correctly closing special
+files such as "%printer%Printer Name" on Windows and OS/2.</pre>
+<p>[src/gdevvec.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-07_0907"></a>
+2004-07-07 09:07 Russell Lang</strong></p>
+<blockquote>
+<pre>
+In the Windows %printer% IODevice, the existing thread handle
+is closed automatically when the thread finishes.  Duplicate
+the thread handle so we always have a valid handle for waiting
+and closing.
+
+DETAILS:
+When the thread finishes, the CRTL _endthread is closing
+the existing handle.  During debugging, it was found that
+waiting on the thread handle was Ok because the thread
+was still running, but by the time CloseHandle ran the
+thread handle was invalid.
+
+IODevices are effectively static, so iodev->state is initialized
+once at the start of the interpreter.  There is no need to
+test if iodev->state is valid.</pre>
+<p>[src/gp_msprn.c 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_2215"></a>
+2004-07-06 22:15 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687565 Incorrect equiv color for Orange in Altona test file.
+The altona test file Altona_Visual_bb_1v1_x3.pdf contains a spot color
+called Orange.  An incorrect equivalent CMYK color is being determined for
+this spot color.  The result is that the spot color is being displayed as
+black for the devices which handle spot colors and attempt to determine
+equivalent CMYK colors for the spot colors.  These are the psdcmyk,
+tiffsep, and display (with -dDisplayFormat=16#a0800) devices.
+
+DETAILS:
+
+The Orange spot color is used in two different DeviceN color spaces.  The
+first color space has components named 'None'.  These components are used
+as part of a special feature described in section 4.5 of the PDF 1.5 spec.
+This feature uses the None components as a means for passing values to
+the color space's alternate tint transform function.  In the example in
+the spec., these values are an equivalent color in the alternate color
+space.
+
+Our logic for determining an equivalent CMYK color for a spot colorant
+sets all color components except for the desired spot color to zero and
+then uses the tint transform function to form an alternate color.  This
+results in the equivalent CMYK color being black since the None values
+contain the real information for the tint transform function.
+
+This change consists of check for the presence of DeviceN color space
+components named None.  If any are detected then the equivalent CMYK
+color logic exits rather than determine an invalid color.  This is
+sufficient for this case since the second color space which contains
+the Orange spot color does not have the None components.  For the
+general case, a solution needs to be found which samples colors given
+actual values for the None components.</pre>
+<p>[src/gsequivc.c 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1927"></a>
+2004-07-06 19:27 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 11 : Implementing Metrics for Type 1,2,42 fonts (continued).
+
+DETAILS :
+
+The previous patch appeares incomplete due to MissingWidth. Now fixing.
+CID fonts and Type 3 fonts are still stubbed.
+Tested with Bug687546.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1904"></a>
+2004-07-06 19:04 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 10 : Implementing Metrics for Type 1,2,42 fonts.
+
+DETAILS :
+
+CID fonts and Type 3 fonts are still stubbed.
+Tested with Bug687546.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1744"></a>
+2004-07-06 17:44 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 9 : Implementing Encoding for Type 1,2,42 fonts.
+
+DETAILS :
+
+CID fonts and Type 3 fonts are still stubbed.
+Tested with Bug687546.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1348"></a>
+2004-07-06 13:48 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 8 : Implementing ExtGState.
+
+DETAILS :
+
+Function objects are subbed yet.
+Debugged with Bug687546.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-06_1205"></a>
+2004-07-06 12:05 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 7 : Implementing text rendering operastors.
+
+DETAILS :
+
+Font loading is stubbed yet.
+Debugged with Bug687546.ps .
+TextRenderingMode!=0 isn't debugged yet.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-05_2116"></a>
+2004-07-05 21:16 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 6 : :Providing a page stream execution context.
+
+DETAILS :
+
+Most operators are eother stubbed or unimplemented,
+but the interpretation runs and prints a trace.
+Debugged wioth Bug687546.ps .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-05_1703"></a>
+2004-07-05 17:03 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 5 : Page streams must interpret immediately.
+
+DETAILS :
+
+This works against a huge memory consumption.
+Also improved comments, the module structurization and error processing.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-05_1703"></a>
+2004-07-05 17:03 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 4 : Stream data length must preceed the stream.
+
+DETAILS :
+
+The new code is disabled with PS2WRITE 0 in gdevvec.h .
+
+pdf_begin_data_stream, pdfmark_PS wrote a stream data length after the stream object.
+With OrderResources true we write a direct object instead that.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfm.c 1.42, src/gdevpdfu.c 1.56, src/gdevpdfx.h 1.97]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-05_1255"></a>
+2004-07-05 12:55 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write step 3 : Initial commit for the Ordered PDF Reader.
+
+DETAILS :
+
+This revision only reads PDF objects into VM.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/opdfread.ps 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-03_1051"></a>
+2004-07-03 10:51 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Log Message:
+Fixes bug 686956 Display device does not support separations.
+Add support for separations to display device.
+This requires a change to the display callback structure.
+Support is maintained for clients using version 1 of the structure.
+
+DETAILS:
+Add support for a new color format, DISPLAY_COLORS_SEPARATION,
+which supports CMYK and spot colors.  A new callback
+display_separation() is used to tell the client about
+the names and CMYK equivalents of each separation.
+The callback structure version number is incremented to 2
+to show that has changed.  The display devices checks
+whether it is passed the older v1 structure or the newer
+v2 structure, and only calls the new separation callback
+if it was given a v2 structure.
+Only 8-bit/pixel, up to 8 components and 64-bit depth are supported.
+In the Windows and gtk+ clients, a subset of these 8 separations
+can be selected for display.
+The new code is based on the tiffsep device.</pre>
+<p>[doc/API.htm 1.43, doc/Devices.htm 1.79, src/dwimg.c 1.12, src/dwimg.h 1.9, src/dwmain.c 1.17, src/dwmainc.c 1.19, src/dxmain.c 1.13, src/gdevdsp.c 1.23, src/gdevdsp.h 1.8, src/gdevdsp2.h 1.7, src/idisp.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-01_1923"></a>
+2004-07-01 19:23 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 6).
+
+DETAILS :
+
+Bug 687546 pdfwrite : Type 3 glyph variations (was: ps2pdf segfaults)
+Relates to 687044, 687472, 687489, 687546.
+charproc_just_accumulated was not properly initialized on some circumstances.
+
+EXPECTED DIFFERENCES :
+
+Bug687546.ps (new)</pre>
+<p>[src/gdevpdtt.c 1.84]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-01_1827"></a>
+2004-07-01 18:27 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Correct some warnings from the MSVC compiler.</pre>
+<p>[src/gscdevn.c 1.19, src/gscsepr.c 1.26, src/gsht.c 1.21, src/gzht.h 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-07-01_0441"></a>
+2004-07-01 04:41 Dan Coby</strong></p>
+<blockquote>
+<pre>
+This change creates common routines for handling the DeviceN related
+device parameters (SeparationColorNames, SeparationOrder, and
+MaxSeparations).  The change also splits up some common routines that
+were assuming that the device was a 'printer' device.</pre>
+<p>[src/devs.mak 1.116, src/gdevdevn.c 1.21, src/gdevdevn.h 1.10, src/gdevnfwd.c 1.25, src/gdevpsd.c 1.16, src/gdevtsep.c 1.3, src/gdevxcf.c 1.9, src/gxcmap.c 1.22, src/gxcmap.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1737"></a>
+2004-06-30 17:37 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Fixes nonportable code in the vasarely.ps example file so that keeps
+to reasonable page size values even when default clippath is very
+large (as is the case with the bbox device). Fixes bug #687549.</pre>
+<p>[examples/vasarely.ps 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1455"></a>
+2004-06-30 14:55 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdsfwrite) : Compression of XObjects implicitely depended on CompressFonts (continued).
+
+DETAILS :
+
+Fixing a compiler error with PS2WRITE 1.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfu.c 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1450"></a>
+2004-06-30 14:50 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdsfwrite) : Compression of XObjects implicitely depended on CompressFonts.
+
+DETAILS :
+
+This patch makes the dependence explicit.
+Have no idea which distiller parameter must controll patterns and forms,
+so keeping the old dependence.
+With OrderResources=true pages now depend on CompressPages.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfi.c 1.54, src/gdevpdfm.c 1.41, src/gdevpdfu.c 1.54, src/gdevpdfx.h 1.96, src/gdevpdti.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1435"></a>
+2004-06-30 14:35 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write part 2 : Delay writing pages.
+
+DETAILS :
+
+The new code is disabled with PS2WRITE 0 in gdevvec.h .
+
+With OrderResources=true it writes pages at the end of the document,
+after all resources are written to PDF.
+Before that pages are accumulated in a temporary file.
+
+OrderResources has been moved from distiller parameters to device parameters.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdf.c 1.96, src/gdevpdfg.c 1.54, src/gdevpdfp.c 1.39, src/gdevpdfu.c 1.53, src/gdevpdfx.h 1.95, src/gdevpsdf.h 1.22, src/gdevpsdp.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_1154"></a>
+2004-06-30 11:54 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ps2write part 1 : starting the project.
+
+DETAILS :
+
+Define a new temporary configuration switch PS2WRITE.
+The new code is disabled with PS2WRITE 0 in gdevvec.h .
+
+Our development strategy is to make pdfwrite to generate an output,
+which a PS interpreter can handle with a special procset.
+For a while we'll not define a new ps2write device,
+but enhance the pdfwrite device with a new feature.
+
+A new temporary distiller parameter OrderResources will make pdfwrite
+to keep a proper resource ordering for generating a PS output.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpsdf.h 1.21, src/gdevpsdp.c 1.13, src/gdevvec.h 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-30_0815"></a>
+2004-06-30 08:15 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : MSVC compiler warning.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevtsep.c 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-29_2246"></a>
+2004-06-29 22:46 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687553 rangecheck in .sethalftone5 and SeparationOrder.
+
+DETAILS:
+
+If a file specifies a type 5 halftone and the SeparationOrder device
+parameter is specified then a rangecheck can occur.  This happens when
+the halftone includes two or more colorants that are not in the
+SeparationOrder parameter or one colorant and a 'Default' value.
+
+The problem occurs because the get_color_comp_index device procs use
+GX_DEVICE_COLOR_MAX_COMPONENTS to indicate colorants which are not
+being imaged due to the colorant not be included in the list for the
+SeparationOrder device parameter.  However the
+gs_color_name_component_number routine was using the same value to
+indicate 'Default' halftones.
+
+The fix consists of modifying gs_color_name_component_number to look
+for GX_DEVICE_COLOR_MAX_COMPONENTS from the get_color_comp_index
+device proc.  If found then the component is treated the same as
+a component that is not present in the device.  The halftoning
+logic is only concerned with the colorants which are actually being
+used by the device.</pre>
+<p>[src/gsht.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-29_2227"></a>
+2004-06-29 22:27 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Correct spelling in a comment.</pre>
+<p>[src/gxcmap.h 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-29_2101"></a>
+2004-06-29 21:01 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Change the default handling of the MaxSeparations device parameter.  This
+parameter is only used by some of the DeviceN mode devices (which have
+their own handling of this parameter).  The default handler now simply
+ignores this parameter.  However it does read the parameter.  Not reading
+the parameter was causing problems with PDF files and page devices.</pre>
+<p>[src/gsdparam.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-29_0105"></a>
+2004-06-29 01:05 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add contributed pscolor utility by Carsten Hammer. This splits a ps
+document into two, one consisting only of black and white pages, and
+one of color pages. Useful for printing on separate devices.
+
+Submitted under bug 602263.
+
+The Makefile needs updating for the new location.</pre>
+<p>[contrib/pscolor/Makefile 1.1, contrib/pscolor/instream.yy 1.1, contrib/pscolor/test.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-28_1713"></a>
+2004-06-28 17:13 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : True Type grid fitting must not apply to FAPI fonts.
+
+DETAILS :
+
+Bug 687543 "FAPI: Type 42 is broken".
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gxccman.c 1.26, src/lib.mak 1.187]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_1010"></a>
+2004-06-24 10:10 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : A dangling pointer from TExecution_Context could cause a memory corruption.
+
+DETAILS :
+
+The pointed area was never used and the pointer was not listed in the garbager descriptor.
+Due to the latter it was not relocated and a wrong object was released through it.
+Bug 687533  "segmentation fault on this PS file"
+
+We still keep the pointer defined, because we don't want to change FreeType structures.
+But now we don't allocate the area for its referent.
+
+Minor change (ttinterp.c) : skip allocating a debug data of zero size.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/ttfmemd.c 1.7, src/ttinterp.c 1.13, src/ttobjs.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0951"></a>
+2004-06-24 09:51 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix: Unwinding the recent change to gsdparam.c becauase it breaks the PDF interpreter.
+
+DETAILS :
+
+All comparefiles/*.pdf failed with -sDEVICE=ppmraw after the change
+http://www.ghostscript.com/pipermail/gs-cvs/2004-June/004575.html .
+
+EXPECTED DIFFERENCES :
+
+See DETAILS.</pre>
+<p>[src/gsdparam.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0720"></a>
+2004-06-24 07:20 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Add source file src/gdevtsep.c.  This file is part of the implementation
+687440 and 542629.</pre>
+<p>[src/gdevtsep.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0654"></a>
+2004-06-24 06:54 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Add the src/gdevtsep.c file.  This contains the tiffgray, tiff32nc, and
+tiffsep devices.</pre>
+<p>[doc/Develop.htm 1.135]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0651"></a>
+2004-06-24 06:51 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : The implementation of INSTCTRL did not follow the TT specification by Apple.
+
+DETAILS :
+
+Bug 687526 /invalidfont in --show--
+See http://developer.apple.com/fonts/TTRefMan/RM05/Chap5.html#INSTCTRL
+The old implementation comes from FreeType.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/ttinterp.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0648"></a>
+2004-06-24 06:48 Dan Coby</strong></p>
+<blockquote>
+<pre>
+This change implements the enhancements described in 542629 CMYK
+tiff driver and 687440 Support for outputting PDF separations
+separately.  This change implements three devices:  tiffgray
+which produces an 8 bit gray output with uncompressed data,
+tiff32nc which produces 32 bit CMYK with uncompressed data, and
+tiffsep which produces a tiffgray file for each separation
+(CMYK and spot colors) and it also produces a CMYK output file
+which is created using the CMYK image data plus the spot
+colors image data.  The spot colors are converted to CMYK using
+the logic in 687431.
+
+DETAILS:
+
+This change requires that 687504 be included in the sources.
+
+The tiffgray and tiff32nc devices are logically similar to the
+tiff24nc device except for the use of gray and CMYK process
+color models.
+
+The tiffsep device uses much of the logic which has been created
+for the psdcmyk and spotcmyk devices.  These include logic for
+implementing the SeparationOrder setpagedevice parameter 687423,
+logic for determining an equivalent CMYK color to spot colors
+687431, and automatically detecting spot colors (without requiring
+that they be specified via the SeparationColorNames setpagedevice
+parameter 687504.
+
+The tiffsep device also prints the names of any spot colors
+detected within a document to stderr.  (stderr is also use for the
+output from the bbox device.)  For each spot color the name of
+the color is printed preceded by '%%SeparationName:  '.  This
+provides a mechanism for external applications to be informed about
+the names of spot colors with a document.
+
+Due to the 64 bit pixel size limitation, the tiffsep can handle
+a maximum of 8 colorants per pass.  However it is possible to
+handle more than 8 colorants by doing multiple passes.  For each
+pass after the first one, the names of all of the separations need
+to be specified via the SeparationColorNames parameter and the
+names of the desired separations need to be specified via the
+SeparationOrder parameter.  When colorants are selected via the
+SeparationOrder parameter, the composite CMYK output contains
+the equivalent CMYK data only from the selected colorants.  It is
+possible to create an overall CMYK composite for more than 8
+colorants by then adding together (via an external application like
+imagemagick) the composite CMYK output files from the individual
+Ghostscript passes.
+
+Internally each spot color is assigned a spot color number.  These
+numbers start with 0 for the first spot color.  The spot color
+numbers are assigned in the same order as the names are printed to
+stderr (see above).  This order also matches the ordering in the
+SeparationColorNames list, if this parameter is specified.  The
+spot color numbers are not affected by the SeparationOrder parameter.
+
+This device creates multiple output files.  The file specified
+via the OutputFile command line parameter is used to contain the
+composite CMYK equivalent.  File names for the separations for the
+CMYK planes are created by appending '.Cyan.tif', '.Magenta.tif'
+'.Yellow.tif' or '.Black.tif' to the to the end of the file name
+specified via the OutputFile parameter.  File names for the spot
+color separation files are created by appending '.sn.tif' (where n
+is the spot color number) to the end of the file name specified via
+the OutputFile parameter.
+
+The src/gdevtsep.c source file does have a compile time option for
+including/not the '.tif' at the end of the created file name.  It
+also has a compile time option for using the name of the spot color
+as part of the file name.  However this is not enabled since there
+may be conflicts with spot color names (in which Adobe allows almost
+anything) and the operating system's conventions on file naming.
+
+This change consists of the new source module src/gdevtsep.c,
+changes to devs.mak for defining the new devices, changes to the
+various top level make files for including these devices in their
+DEVICE_DEVS definitions, and changes to the documentation files.</pre>
+<p>[doc/Devices.htm 1.78, src/Makefile.in 1.36, src/devs.mak 1.115, src/dvx-gcc.mak 1.26, src/gdevdevn.h 1.9, src/gsdparam.c 1.15, src/macos-mcp.mak 1.25, src/msvc32.mak 1.58, src/openvms.mak 1.36, src/os2.mak 1.37, src/unix-gcc.mak 1.45, src/unixansi.mak 1.36, src/watcw32.mak 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0647"></a>
+2004-06-24 06:47 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 80.
+
+DETAILS :
+
+A stronger prevention of a tiny decomposition of a color.
+It works against glitches in function|color monotonity|linearity checks.
+
+EXPECTED DIFFERENCES :
+
+72dpi :
+Altona-Testsuite_p2_S_x3.pdf
+Clarke Tate Manns Chinese.ai
+S2_Digitalproof-Forum_x3k.pdf
+
+300dpi :
+Clarke Tate Manns Chinese.ai
+S2_Digitalproof-Forum_x3k.pdf</pre>
+<p>[src/gxshade6.c 1.77]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0503"></a>
+2004-06-24 05:03 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687534 Unable to determine equivalent CMYK for spot colors
+that are only used with overprint.
+
+DETAILS:
+
+The given test file uses spot colors.  However the psdcmyk device
+was creating output files which did not contain equivalent CMYK
+colors for the spot colors.  The cause was that the previous
+version of the logic was capturing the equivalent CMYK colors
+when the psdcmyk device's high drawing procs were called.  However
+if overprinting is enabled, then the overprint device was inserting
+its own versions of these routines.  Since it only took one call
+to a high level drawing handler, the previous logic would capture
+the equivalent CMYK colors if there were any drawing operations
+with a spot color that did not have overprinting enabled.
+
+The fix consists of moving the capturing of the equivalent CMYK
+colors to a new device proc.  This new device proc is called
+update_spot_equivalent_colors.  This device proc is called whenever
+a Separation or a DeviceN color space is installed.
+
+The default version of the proc does nothing.  Thus there is only
+a small amount of overhead added for the installation of Separation
+and DeviceN color spaces for devices which do not need the equivalent
+CMYK colors for spot colors.
+
+Most of the change consists of the standard details of adding a
+new device proc.  There are several places that have to be updated
+when this is done.  The documentation in doc/Drivers.htm was updated
+to include this new proc.  The high level drawing handlers in the
+psdcmyk devices were removed and a new psd_update_spot_equivalent_colors
+procedure was added.  Some minor changes were made in the logic in
+gsequivc.c since it is no longer necessary to scan through base and
+alternate color spaces looking for Separation and DeviceN color spaces.
+The comments at the beginning of gsequivc.c was changed to reflect
+the changes in the logic for capturing equivalent CMYK colors for
+spot colors.</pre>
+<p>[doc/Drivers.htm 1.47, src/gdevbbox.c 1.18, src/gdevdflt.c 1.24, src/gdevnfwd.c 1.24, src/gdevprn.c 1.17, src/gdevpsd.c 1.15, src/gdevrops.c 1.12, src/gscdevn.c 1.18, src/gscsepr.c 1.25, src/gsequivc.c 1.3, src/gsequivc.h 1.2, src/gxclip.c 1.15, src/gxclip2.c 1.11, src/gxclipm.c 1.13, src/gxclist.c 1.14, src/gxdevcli.h 1.33, src/gxdevice.h 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-24_0317"></a>
+2004-06-24 03:17 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Minor change to avoid a spurious compiler warning about 't' used before
+initialized. Fixes bug #687412.
+
+DETAILS:
+
+This is an invalid warning, since 't' is always initialized before use,
+however the extensive use of macros confuses some compilers. IMO, this
+is an abuse of macros, but this is endemic in the older GS code.</pre>
+<p>[src/spdiff.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-23_2037"></a>
+2004-06-23 20:37 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Disable idiom recognition feature during execution of .bindnow
+because it has no effect except burning a few seconds of CPU time.
+Fix bug 687521</pre>
+<p>[lib/gs_init.ps 1.107]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-23_1857"></a>
+2004-06-23 18:57 stefan</strong></p>
+<blockquote>
+<pre>
+Fixed CMYK to RGB conversion.
+
+Used in rop code where RGB -> CMYK -> RGB needs to work correctly
+in the black and white cases.</pre>
+<p>[src/gdevbit.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-23_1850"></a>
+2004-06-23 18:50 stefan</strong></p>
+<blockquote>
+<pre>
+Fix macro to use it's arguments.  Platform specific, under exersized code.</pre>
+<p>[src/gxfarith.h 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-23_0904"></a>
+2004-06-23 09:04 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (ps2ascii) : Provide a tolerance to old versions of dvips output.
+
+DETAILS :
+
+Bug 531300  "ps2ascii chokes on ch-xoff and ch-* routines".
+Patch from Mike attached to the bug.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[lib/ps2ascii.ps 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-19_0401"></a>
+2004-06-19 04:01 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add new CMaps and update older ones to latest. Bug #687470. Thanks to
+A. Cherepanov for providing part of the newer files.</pre>
+<p>[Resource/CMap/83pv-RKSJ-H 1.2, Resource/CMap/90ms-RKSJ-H 1.2, Resource/CMap/90ms-RKSJ-UCS2 1.1, Resource/CMap/90ms-RKSJ-V 1.2, Resource/CMap/90msp-RKSJ-H 1.1, Resource/CMap/90msp-RKSJ-V 1.1, Resource/CMap/90pv-RKSJ-H 1.2, Resource/CMap/90pv-RKSJ-UCS2 1.1, Resource/CMap/90pv-RKSJ-UCS2C 1.1, Resource/CMap/90pv-RKSJ-V 1.2, Resource/CMap/Add-RKSJ-H 1.2, Resource/CMap/Add-RKSJ-V 1.2, Resource/CMap/Adobe-CNS1-B5pc 1.1, Resource/CMap/Adobe-CNS1-ETen-B5 1.1, Resource/CMap/Adobe-CNS1-H-CID 1.1, Resource/CMap/Adobe-CNS1-H-Host 1.1, Resource/CMap/Adobe-CNS1-H-Mac 1.1, Resource/CMap/Adobe-CNS1-UCS2 1.1, Resource/CMap/Adobe-GB1-GBK-EUC 1.1, Resource/CMap/Adobe-GB1-GBpc-EUC 1.1, Resource/CMap/Adobe-GB1-H-CID 1.1, Resource/CMap/Adobe-GB1-H-Host 1.1, Resource/CMap/Adobe-GB1-H-Mac 1.1, Resource/CMap/Adobe-GB1-UCS2 1.1, Resource/CMap/Adobe-Japan1-90ms-RKSJ 1.1, Resource/CMap/Adobe-Japan1-90pv-RKSJ 1.1, Resource/CMap/Adobe-Japan1-H-CID 1.1, Resource/CMap/Adobe-Japan1-H-Host 1.1, Resource/CMap/Adobe-Japan1-H-Mac 1.1, Resource/CMap/Adobe-Japan1-PS-H 1.1, Resource/CMap/Adobe-Japan1-PS-V 1.1, Resource/CMap/Adobe-Japan1-UCS2 1.1, Resource/CMap/Adobe-Korea1-H-CID 1.1, Resource/CMap/Adobe-Korea1-H-Host 1.1, Resource/CMap/Adobe-Korea1-H-Mac 1.1, Resource/CMap/Adobe-Korea1-KSCms-UHC 1.1, Resource/CMap/Adobe-Korea1-KSCpc-EUC 1.1, Resource/CMap/Adobe-Korea1-UCS2 1.1, Resource/CMap/B5pc-H 1.1, Resource/CMap/B5pc-UCS2 1.1, Resource/CMap/B5pc-UCS2C 1.1, Resource/CMap/B5pc-V 1.1, Resource/CMap/CNS-EUC-H 1.1, Resource/CMap/CNS-EUC-V 1.1, Resource/CMap/EUC-H 1.2, Resource/CMap/EUC-V 1.2, Resource/CMap/Ext-RKSJ-H 1.2, Resource/CMap/Ext-RKSJ-V 1.2, Resource/CMap/GB-EUC-H 1.1, Resource/CMap/GB-EUC-V 1.1, Resource/CMap/GBK-EUC-H 1.2, Resource/CMap/GBK-EUC-UCS2 1.1, Resource/CMap/GBK-EUC-V 1.2, Resource/CMap/GBK2K-H 1.1, Resource/CMap/GBK2K-V 1.1, Resource/CMap/GBKp-EUC-H 1.1, Resource/CMap/GBKp-EUC-V 1.1, Resource/CMap/GBT-EUC-H 1.1, Resource/CMap/GBT-EUC-V 1.1, Resource/CMap/GBpc-EUC-H 1.1, Resource/CMap/GBpc-EUC-UCS2 1.1, Resource/CMap/GBpc-EUC-UCS2C 1.1, Resource/CMap/GBpc-EUC-V 1.1, Resource/CMap/H 1.2, Resource/CMap/HKdla-B5-H 1.1, Resource/CMap/HKdla-B5-V 1.1, Resource/CMap/HKdlb-B5-H 1.1, Resource/CMap/HKdlb-B5-V 1.1, Resource/CMap/HKgccs-B5-H 1.1, Resource/CMap/HKgccs-B5-V 1.1, Resource/CMap/HKm314-B5-H 1.1, Resource/CMap/HKm314-B5-V 1.1, Resource/CMap/HKm471-B5-H 1.1, Resource/CMap/HKm471-B5-V 1.1, Resource/CMap/HKscs-B5-H 1.1, Resource/CMap/HKscs-B5-V 1.1, Resource/CMap/Identity-H 1.2, Resource/CMap/Identity-V 1.2, Resource/CMap/KSC-EUC-H 1.1, Resource/CMap/KSC-EUC-V 1.1, Resource/CMap/KSCms-UHC-H 1.2, Resource/CMap/KSCms-UHC-HW-H 1.1, Resource/CMap/KSCms-UHC-HW-V 1.1, Resource/CMap/KSCms-UHC-UCS2 1.1, Resource/CMap/KSCms-UHC-V 1.2, Resource/CMap/KSCpc-EUC-H 1.1, Resource/CMap/KSCpc-EUC-UCS2 1.1, Resource/CMap/KSCpc-EUC-UCS2C 1.1, Resource/CMap/UCS2-90ms-RKSJ 1.1, Resource/CMap/UCS2-90pv-RKSJ 1.1, Resource/CMap/UCS2-B5pc 1.1, Resource/CMap/UCS2-ETen-B5 1.1, Resource/CMap/UCS2-GBK-EUC 1.1, Resource/CMap/UCS2-GBpc-EUC 1.1, Resource/CMap/UCS2-KSCms-UHC 1.1, Resource/CMap/UCS2-KSCpc-EUC 1.1, Resource/CMap/UniCNS-UCS2-H 1.2, Resource/CMap/UniCNS-UCS2-V 1.2, Resource/CMap/UniGB-UCS2-H 1.2, Resource/CMap/UniGB-UCS2-V 1.2, Resource/CMap/UniJIS-UCS2-H 1.2, Resource/CMap/UniJIS-UCS2-HW-H 1.1, Resource/CMap/UniJIS-UCS2-HW-V 1.1, Resource/CMap/UniJIS-UCS2-V 1.2, Resource/CMap/UniKS-UCS2-H 1.2, Resource/CMap/UniKS-UCS2-V 1.2, Resource/CMap/V 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-18_1746"></a>
+2004-06-18 17:46 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 5).
+
+DETAILS :
+
+pdf_set_charproc_attrs went out the pw array range,
+and caused an indeterministic behavior with Bug687044.ps .
+
+EXPECTED DIFFERENCES :
+
+Not detected on Windows, but the old revision was indeterministic.</pre>
+<p>[src/gdevpdti.c 1.33, src/gdevpdfx.h 1.94, src/gdevpdtt.c 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-18_0700"></a>
+2004-06-18 07:00 Dan Coby</strong></p>
+<blockquote>
+<pre>
+687504 Enhancement: Imaging spot colors without using the
+SeparationColorNames parameter.
+
+DETAILS:
+
+The purpose of this enhancement is to provide an example of how
+to implement imaging spot colors without requiring that they be
+specified in advance via the SeparationColorNames setpagedevice
+parameter.  Note:  Spot colors are only supported on a few devices
+which have output file formats which allow for spot colors.  These
+are currently the psdcmyk, spotcmyk, and xcfcmyk devices.
+
+This commit only implements this feature on the psdcmyk, spotcmyk
+and devicen devices.
+
+In order to implement this feature, a device needs to be able to
+allocate image buffer memory for each colorant and to detect when
+a new colorant is being used inside of a color space.  The
+implementation has the following pieces:
+
+1.  The handling of the MaxSeparation setpagedevice parameter was
+extended.  Previously this parameter was always set to one.  For
+most devices it now indicates the number of colorants being used
+by the device.  For most devices this is a fixed quantity, however
+for the psdcmyk device, this parameter can be used to tell the
+device to allocate image buffer memory for up to eight colorants.
+(The eight colorant limit is due to the fact that the psdcmyk
+device uses 8 bits per colorant and we currently have a 64 bit
+maximum pixel size.)
+
+2.  The devices already have a 'get_color_comp_index' routine which
+is used to query if a colorant is supported by the device.  However
+this routine is used for both real components in color spaces and also
+for some special cases.  For instance, the same halftone may be used
+either for a cyan or a red colorant.  To handle this case, the halftoning
+setup logic will query the get_color_comp_index routine to check if
+cyan is supported by the device.  If not then a query is made to see
+if the device supports red.  By monitoring the names of the components
+passed to get_color_comp_index routine, a device can detect when a new spot
+color is being used.  However it is necessary to be able to detect
+the special cases so that the device does not believe that it has a
+'red' spot color.  To do this the third parameter of the
+get_color_comp_index device proc was logically modified to indicate
+if a name represents a name actually in a color space or one of the
+special case situations.  Previously this parameter was not being used.
+
+3.  The get_color_comp_index routine for the psdcmyk device was
+modified to look for new spot colors and to add then to its list of
+colorants if there was space available.  Note:  This also required
+that the psdcmyk device have its own structure descriptor, pointer
+enumeration and relocation procedures.  The macro which was used to
+define the psdcmyk and psdrgb devices needed to be changed since the
+previous macro used the st_device_printer structure descriptor instead
+of the new structure descriptor for the psd devices.</pre>
+<p>[src/gdevdevn.c 1.20, src/gdevdevn.h 1.8, src/gdevnfwd.c 1.23, src/gdevperm.c 1.4, src/gdevpsd.c 1.14, src/gdevxcf.c 1.8, src/gscdevn.c 1.17, src/gscsepr.c 1.24, src/gscspace.c 1.16, src/gsdparam.c 1.14, src/gsht.c 1.19, src/gxcmap.c 1.21, src/gxcmap.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-17_2142"></a>
+2004-06-17 21:42 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Protect genarch's test for sizeof(long long) with and #ifdef HAVE_LONG_LONG
+since a number of platforms (particularly MSVC) do not support this type.</pre>
+<p>[src/genarch.c 1.11, src/stdint_.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-17_1305"></a>
+2004-06-17 13:05 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Round elements of Mask array to the nearest integer following implementation
+of AR4, AR5, AR6.
+Fix bug 687494 from customer 580.</pre>
+<p>[lib/pdf_draw.ps 1.82]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-17_1114"></a>
+2004-06-17 11:14 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Arithmetic errors could cause a function monotonity misrecongition.
+
+DETAILS :
+
+Bug 687511 "shadinds: infinite recursion".
+
+EXPECTED DIFFERENCES :
+
+Not detected on Windows.
+On Linux expecting a difference with :
+Altona-Testsuite_p2_S_x3.pdf
+S2_Digitalproof-Forum_x3k.pdf</pre>
+<p>[src/gsfunc0.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-16_2001"></a>
+2004-06-16 20:01 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix parsing of -2147483648.5, min_int followed by a fractional part.
+Fix bug 687500</pre>
+<p>[src/iscannum.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-16_1122"></a>
+2004-06-16 11:22 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Allow named object reference in the Action key of /ANN pdfmark.
+
+DETAILS :
+
+Bug 687386  "-dEmbedAllFonts does not work".
+
+It's a PDF 1.5 feature. We still incompletely support PDF 1.5 .
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfm.c 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-16_0927"></a>
+2004-06-16 09:27 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Protect against cache values containing spaces. This shouldn't be a problem, the change is more for consistency.</pre>
+<p>[src/configure.ac 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-16_0927"></a>
+2004-06-16 09:27 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Try to use long long as a 64 bit type in the genarch fallback stdint definitions. Fix for bug 687514.</pre>
+<p>[src/genarch.c 1.10, src/stdint_.h 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-15_2028"></a>
+2004-06-15 20:28 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A wrong CFF string index randiomization.
+
+DETAILS :
+
+Bug 687507 "pdfwrite device closes with -15".
+
+1. Randomization parameters for cff_string_index were computed wrongly,
+causing the search to skip some items. As a consequence,
+some strings were added to the table many times, causing
+a groth of the table while CFF size estimation iterations,
+and psf_write_type2_font returned error due to "offset > End_offset".
+
+2. If an error happened writing a font after pdf_begin_fontfile is done,
+unconditionally call pdf_end_fontfile to provide a consistent stream state.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdtb.c 1.24, src/gdevpsf2.c 1.31, src/lib.mak 1.186]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-15_1527"></a>
+2004-06-15 15:27 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Make pdf_dominant_rotation() return unknown text rotation for the file
+without text. It returned 0 rotation before, which excluded consideration
+of DSC comments later on.
+Fix bug 687515</pre>
+<p>[src/gdevpdf.c 1.95]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-10_1909"></a>
+2004-06-10 19:09 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 4).
+
+DETAILS :
+
+Recent changes about charproc variations caused an appearence of idle entries
+in the xref table. Those entries pointed to zero length objects
+and were never referred.
+
+Idle entries appeared due to the substream accumulator reserved an object id
+before entering a substream, but later the object (a charproc) was cancelled.
+
+This patch delays the reservation of an object id until we decide
+that the object won't be cancelled. Added a new argument of pdf_enter_substream
+for this purpose.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfi.c 1.53, src/gdevpdfm.c 1.39, src/gdevpdfx.h 1.93, src/gdevpdti.c 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-10_1641"></a>
+2004-06-10 16:41 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 80.
+
+DETAILS :
+
+Propagated error codes from is_color_monotonic, is_color_linear.
+Should fix the bug 687511 "shadinds: infitite recursion".
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gxshade6.c 1.76]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-09_2047"></a>
+2004-06-09 20:47 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (type 1 hinter) : an indeterministic bug in t1_hinter__simplify_representation.
+
+DETAILS :
+
+Bug 687508 "segfault with cvs head".
+
+1. An old defect in the code :
+when contour_count is greater than hint_count,
+and the hinting is disabled by one axis,
+random hints could appear,
+causing indeterministic effects.
+
+2. this->grid_fit_x ans this->grid_fit_y were erroneusely exchanged.
+
+EXPECTED DIFFERENCES :
+
+72dpi :
+
+036-01.ps
+Bug687044.ps
+Faktura.pdf
+kazmir.pdf
+RealCities.pdf
+test.pdf
+xgfddg.pdf</pre>
+<p>[src/gxhintn.c 1.50]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-09_1207"></a>
+2004-06-09 12:07 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (type 1 hinter) :
+1. Ever align the Y-coordinate of a glyph origin to pixels.
+2. Improve the unaligned pole interpolation;
+3. Set a waeaker angle threshold in t1_hinter__is_stem_hint_applicable.
+4. Allow an offset fuzz in t1_hinter__is_stem_hint_applicable.
+5. Align upper/lower horizontal stems by the upper/lower edge.
+6. A dependency was missed in lib.mak .
+
+DETAILS :
+
+Bug 687419 "poor font rendering on X11 with gs 8.14".
+
+The intention of this change is to improve the rendering quality
+with TextAlphaBits > 1, but actually it modifies glyph rendering in all cases.
+
+1.
+The test file of the bug 687419 shows that we had 3
+inconsistent requirements :
+- the analigned glyph origin;
+- uniform glyph size;
+- and contrast stems.
+Since an uniform glyph height looks critical,
+we drop the analygned Y-coordinate of the glyph origin.
+In other words, now we ever align
+the Y-coordinate of the glyph origin to pixels.
+This also reduces the number of glyph raster variants in the cache.
+
+2.
+The old interpolation algorithm could cause
+significant distortions with flex-like serifs, which are not marked with flex.
+The character 'L' in the test document of the bug 687419 demonstrates that.
+If the path goes outside the interpolation interval
+and have no turns, now we shift the "outer" parts rather than
+breaking the path at extremal poles. (We wanted this change
+a long ago but haven't got a strong reason for it.)
+
+3.
+The threshold in t1_hinter__is_stem_hint_applicable changed from
+1/3 to 9/10. This makes more stems to recognize. The reason for that
+is the same character "L".
+
+4.
+Allowed a blue_fuzz offset t1_hinter__is_stem_hint_applicable.
+Debugged with comparefiles/tpc2.ps .
+
+5. In the test file of the bug 687419 the small font has no
+upper alignment zone for lowercase. This caused an uniform glyph height
+due to wide and norrow horizontal stems aligned ocasionally
+by top or bottom. Implemented a choice of the aligned edge
+depending on the Y-coordinate of stem middle relative to
+the glyph middle.
+
+6. gxhintn_h was defined in lib.mak after it is used at once.
+
+EXPECTED DIFFERENCES :
+
+Almost all comparefiles render differently.</pre>
+<p>[src/gxchar.c 1.43, src/gxhintn.c 1.49, src/lib.mak 1.185, src/gxhintn.h 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-08_1142"></a>
+2004-06-08 11:42 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Merge equal ExtGState objects.
+
+DETAILS :
+
+Bug 687487 "(pdfwrite) redundant ExtGState objects".
+
+Now we represent ExtGState objects as cos_dict_t instances,
+and perform a full comparizon before writing them into the output PDF.
+Redundant equal objects are being substituted and skipped.
+
+This patch consists of 4 parts :
+
+1. Creting an ExtGstate object, replaced old calls to stream functions
+with calls to cos_dict_t functions.
+
+2. Implemented the comparizon/substitution logic in pdf_end_gstate.
+
+3. pdf_prepare_drawing now doesn't pass keys to
+pdf_update_halftone, pdf_update_transfer, pdf_write_transfer_map,
+because we don't want them to become a part of a value.
+Instead that we made them to be keys of the cos_dict_t instance.
+
+4. Defined new functions cos_dict_put_c_key_bool and cos_dict_put_string_copy
+to simplify the new code.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfg.c 1.53, src/gdevpdfo.c 1.30, src/gdevpdfo.h 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-03_1712"></a>
+2004-06-03 17:12 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 3).
+
+DETAILS :
+
+Must check FontMatrix when deciding about same charproc.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdti.c 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-02_1745"></a>
+2004-06-02 17:45 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : 1. After used a process color, continue using it for same client color space.
+2. A bug in pdf_set_initial_color could miss some color commands.
+
+DETAILS :
+
+1. Bug 687197 "ps2pdf creates incorrect PDF".
+Defined nad maintained new flags pdev->fill_used_process_color and pdev->stroke_used_process_color
+for vector devices. The function pdf_reset_color use them when the cclient color space
+isn't embeddable.
+
+2. Occasionally found that pdf_set_initial_color set saved colors to pdev->vg_initial
+rather than to argument pointers. This could loose some color commands with a small probability,
+so that some objects could get a wrong color.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfb.c 1.22, src/gdevpdfd.c 1.40, src/gdevpdfg.c 1.52, src/gdevpdfg.h 1.32, src/gdevpdfp.c 1.38, src/gdevpdtt.c 1.82, src/gdevpdfx.h 1.92, src/gdevvec.h 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-02_1319"></a>
+2004-06-02 13:19 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : ConvertCMYKImagesToRGB crashed.
+
+DETAILS :
+
+Bug 687428 "ConvertCMYKImagesToRGB does not produce a PDF-File".
+It made a pointer from global memory to C stack.
+Fixed with allocating the structure dinamically.
+It produces a small garbage, which is not critical in pdfwrite.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpsdi.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-02_1214"></a>
+2004-06-02 12:14 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : 'midpoint' formula was wrong.
+
+DETAILS :
+
+Bug 687463 "The 'midpoint' formula is wrong".
+
+EXPECTED DIFFERENCES :
+
+I didn't detect any on Windows.
+After recent changes this stuff works only with curves,
+which can't flatten with 2^12 segments,
+and which are not a part of a shading,
+so likely the probability of a difference is small.</pre>
+<p>[src/gxpflat.c 1.41, src/gxshade6.c 1.75]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-02_0037"></a>
+2004-06-02 00:37 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo. Thanks to Russell for catching this one.</pre>
+<p>[doc/Make.htm 1.76]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_2113"></a>
+2004-06-01 21:13 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687477 Bad incremental update to a PDF file.
+
+DETAILS:
+
+The given test file had a bad incremental update.  This update
+has two problems:
+
+1.  The trailer dict only had a Prev entry.  None of the required
+entries were present.  To fix this problem, entries from previous
+trailer dicts are placed into the initial trailer dict if there is
+no entry with the same key in the initial trailer dict.
+
+2.  The update had an xref table with two entries.  One of them
+was bad.  (Not a very good percentage.)  To fix this problem,
+all entries in the composite xref table are scanned to verify that
+they point to a valid objects.  If not then the rebuild logic is
+used to attempt to recover the xref data.  This can be disabled
+by adding -dNoVerifyXref to the command line.  In most cases,
+the verification time is not noticeable but I did find a file with
+104,000 xref entries and it took about 2 seconds to verify the
+xref table.</pre>
+<p>[lib/pdf_base.ps 1.43, lib/pdf_main.ps 1.87, lib/pdf_rbld.ps 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_1720"></a>
+2004-06-01 17:20 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : A Cygwin/gcc warning.
+
+DETAILS :
+
+The prefious patch appeared incomplete. Now fixing.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfx.h 1.91]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_1706"></a>
+2004-06-01 17:06 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued 2).
+
+DETAILS :
+
+This is a final step of fixing the bug 687489
+"pdfwrite creates invalid Type3 font -- missing characters".
+
+This patch provides a check whether a color was changed while
+a PS charproc interpretation. A color command is written
+into the PDF charproc if and only if the PS charproc changed the color.
+
+This patch discovers a bug in Adobe Acrobat Reader 5 :
+with the test document of the bug 687489 it paints an "invisible" text in the 4th page.
+That text isn't visible when viewing with Adobe reader 6 and with GS.
+The text is painted with a white color, but AR 5 erroneusly paints it with black.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdfd.c 1.39, src/gdevpdfg.c 1.51, src/gdevpdfg.h 1.31, src/gdevpdtt.c 1.81]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_1703"></a>
+2004-06-01 17:03 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+High level devices may need a device color while executing stringwidth.
+
+DETAILS :
+
+This is second step of fixing the bug 687489
+"pdfwrite creates invalid Type3 font -- missing characters".
+The problem happens due to the old code could run a charproc while
+executing a stringwidth, when device color is not evaluated.
+
+This patch provides the device color loading with no dependence
+on the text operation.
+dev_proc(dev, text_begin) now receives a device color in any case.
+THIS IS AN INCOMPATIBLE CHANGE : if an old device depends on
+a device color ability, it will malfunction.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gstext.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_1342"></a>
+2004-06-01 13:42 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+(pdfwrite) : Implementing a dynamic recongnition for Type 3 charproc variations (continued).
+
+DETAILS :
+
+This is a preparation for fixing the bug 687489
+"pdfwrite creates invalid Type3 font -- missing characters".
+The problem happens due to the old code could run a charproc while
+executing a stringwidth, when the PDF viewer state isn't syncronized
+with the PS graphic state.
+We don't synchronize in this case because stringwidth doesn't paint.
+
+Our intention is to know whether a charproc changes graphic state parameters :
+current color, line width, etc. For doing so we need
+(1) to save the viewer state in the viewer state stack,
+and then (2) synchronize with the PS graphic state without
+writing commands to the PDF. This patch does provide (1)
+but does not implement (2) because we want to check
+the change (1) for no regressions.
+The change (2) will be a separate step.
+
+Saving a viewer state in a stack when entering a charproc
+was contributed with the recent patch
+http://www.ghostscript.com/pipermail/gs-cvs/2004-May/004507.html
+as an improvement of pdf_enter_substream, which was called from
+pdf_install_charproc_accum called from pdf_text_set_cache.
+In other words, the viewer state saving was deferred until setcachedevice/setcharwidth.
+However we need to save the viewer state in the beginning of a PS charproc.
+
+This patch moves the call to pdf_enter_substream from pdf_install_charproc_accum
+to the TEXT_PROCESS_RENDER branch of pdf_text_process.
+We believe that the new logic is more straight :
+we start the charproc stream accumulation immediately before the PS interpreter
+enters a charproc interpretation.
+
+Minor changes :
+
+1. Defined pdf_start_charproc_accum as a symmetric one for pdf_end_charproc_accum.
+2. Renamed pdf_install_charproc_accum into pdf_set_charproc_attrs.
+3. Improved the argument list of pdf_prepare_text_drawing.
+
+EXPECTED DIFFERENCES :
+
+None.</pre>
+<p>[src/gdevpdti.c 1.30, src/gdevpdfx.h 1.90, src/gdevpdtt.c 1.80]</p>
+</blockquote>
+
+<p><strong><a name="2004-06-01_0237"></a>
+2004-06-01 02:37 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Aviod a PostScript error in ps2ascii when the source file uses composite fonts.
+For now, dump the strings in the unmodified encoding when the corresponding
+font is composite.
+Fix bug 687466.</pre>
+<p>[lib/ps2ascii.ps 1.9]</p>
+</blockquote>
+
+<hr>
 
 <h2><a name="Version8.30"></a>Version 8.30 (2004-05-29)</h2>
 
