@@ -1,0 +1,8 @@
+AC_INIT(ijs.c)
+IJS_VERSION=0.33
+AC_SUBST(IJS_VERSION)
+AC_PROG_CC
+AC_PROG_RANLIB
+AC_PROG_INSTALL
+AC_OUTPUT(Makefile
+ijs-config, [case "$CONFIG_FILES" in *ijs-config*) chmod +x ijs-config;; esac])

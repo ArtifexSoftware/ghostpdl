@@ -1,0 +1,79 @@
+# Generated automatically from Makefile.in by configure.
+# Unix
+
+CC=gcc
+CFLAGS=-g -Wall -ansi -pedantic -Wmissing-prototypes
+LDLIBS=
+OBJ=.o
+
+# todo: this needs to be .dylib on OS X - write a test
+SHARED_OBJ=.so
+
+EXE=
+FE=-o 
+IJS_EXEC_SERVER=ijs_exec_unix$(OBJ)
+RM=rm -f
+AR=ar
+ARFLAGS=qc
+RANLIB=ranlib
+
+# Installation paths
+prefix=/usr/local
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+pkgincludedir=$(includedir)/ijs
+
+INSTALL = /usr/bin/install -c
+
+IJS_COMMON_OBJ=ijs$(OBJ)
+
+all:	libijs.a libijs$(SHARED_OBJ) ijs_client_example$(EXE) ijs_server_example$(EXE)
+
+LIB_OBJS=ijs$(OBJ) ijs_client$(OBJ) ijs_server$(OBJ) $(IJS_EXEC_SERVER)
+
+libijs.a:	$(LIB_OBJS)
+	rm -f $@
+	$(AR) $(ARFLAGS) $@ $^
+	$(RANLIB) $@
+
+# Note: this builds both the server and client into a single library. Logically, it
+# makes sense to separate them, but they're small enough to make this probably
+# not worthwhile.
+libijs$(SHARED_OBJ):	$(LIB_OBJS)
+	$(CC) -shared $^ -o $@
+
+ijs_client_example$(EXE):	ijs_client_example$(OBJ) ijs_client$(OBJ) $(IJS_COMMON_OBJ) $(IJS_EXEC_SERVER)
+	$(CC) $(CFLAGS) $(FE)ijs_client_example$(EXE) ijs_client_example$(OBJ) ijs_client$(OBJ) $(IJS_COMMON_OBJ) $(IJS_EXEC_SERVER) $(LDLIBS)
+
+ijs_server_example$(EXE):	ijs_server_example$(OBJ) ijs_server$(OBJ) $(IJS_COMMON_OBJ)
+	$(CC) $(CFLAGS) $(FE)ijs_server_example$(EXE) ijs_server_example$(OBJ) ijs_server$(OBJ) $(IJS_COMMON_OBJ) $(LDLIBS)
+
+common_clean:
+	$(RM) *$(OBJ) ijs_client_example$(EXE) ijs_server_example$(EXE)
+
+clean: common_clean
+	$(RM) *~ gmon.out core ijs_spec.log ijs_spec.tex ijs_spec.aux libijs.a libijs$(SHARED_OBJ) config.cache config.log config.status ijs-config
+
+install:	all
+	$(INSTALL) ijs_client_example$(EXE) -c $(bindir)/ijs_client_example$(EXE)
+	$(INSTALL) ijs-config -c $(bindir)/ijs-config
+	$(INSTALL) libijs.a $(libdir)/libijs.a
+	$(INSTALL) libijs$(SHARED_OBJ) $(libdir)/libijs$(SHARED_OBJ)
+	mkdir $(pkgincludedir)
+	$(INSTALL) ijs.h $(pkgincludedir)/ijs.h
+	$(INSTALL) ijs_client.h $(pkgincludedir)/ijs_client.h
+	$(INSTALL) ijs_server.h $(pkgincludedir)/ijs_server.h
+
+uninstall:
+	$(RM) $(bindir)/ijs_client_example$(EXE) $(bindir)/ijs-config $(libdir)/libijs.a $(libdir)/libijs$(SHARED_OBJ)
+	$(RM) $(pkgincludedir)/ijs_client.h $(pkgincludedir)/ijs_server.h $(pkgincludedir)/ijs.h
+
+ijs_spec.ps:	ijs_spec.sgml
+	# We don't use db2pdf because it can't handle embedded .eps
+	db2ps ijs_spec.sgml
+
+ijs_spec.pdf:	ijs_spec.ps
+	ps2pdf ijs_spec.ps
