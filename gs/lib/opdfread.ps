@@ -329,6 +329,43 @@ currentdict end readonly def
   } if
 } bind def
 
+/MakeStreamDumper % <file> MakeStreamDumper <file>
+{ % Debug purpose only.
+  currentglobal exch dup gcheck setglobal
+  [ exch
+    { //StreamDumperBuffer 
+      readstring pop
+      (StreamDumper <) print dup print (>\n) print
+    } /exec load    
+  ] cvx 0 () /SubFileDecode filter
+  exch setglobal
+} bind def
+
+/AppendFilters  % <file> <dict> AppendFilters <file>
+{
+  dup 3 1 roll					    % d f
+  /Filter //knownget exec {			    % d f n
+    dup type /nametype eq {
+      2 index /DecodeParms //knownget exec {
+        exch
+      } if
+      filter
+    } {
+      dup 0 exch 1 exch length 1 sub {		    % d [] i
+        2 index /DecodeParms //knownget exec {	    % d [] i DP
+          1 index get				    % d [] i dp
+        } if
+	exch 2 index exch get			    % d [] dp fn
+        filter
+      } for
+    } ifelse
+    //PDFR_DEBUG {
+      //MakeStreamDumper exec
+    } if
+  } if
+  exch pop
+} bind def
+
 /ExecuteStream	% <id> <obj> ExecuteStream <id> <obj>
 { % Executes a (encoded) data stream.
   dup //PDFReader exch /CurrentObject exch put		% id obj
@@ -340,6 +377,7 @@ currentdict end readonly def
   //PDFReader /GraphicState get copy pop
   //PDFReader /Operators get begin
   currentfile exch () /SubFileDecode filter		% id obj file
+  1 index //AppendFilters exec
   cvx mark exch 					% id obj mark file
   exec
   counttomark 0 ne {
@@ -435,41 +473,6 @@ currentdict end readonly def
     } ifelse
   } bind
 >> def
-
-/MakeStreamDumper % <file> MakeStreamDumper <file>
-{ % Debug purpose only.
-  [ exch
-    { //StreamDumperBuffer 
-      readstring pop
-      (StreamDumper <) print dup print (>\n) print
-    } /exec load    
-  ] cvx 0 () /SubFileDecode filter
-} bind def
-
-/AppendFilters  % <file> <dict> AppendFilters <file>
-{
-  dup 3 1 roll					    % d f
-  /Filter //knownget exec {			    % d f n
-    dup type /nametype eq {
-      2 index /DecodeParms //knownget exec {
-        exch
-      } if
-      filter
-    } {
-      dup 0 exch 1 exch length 1 sub {		    % d [] i
-        2 index /DecodeParms //knownget exec {	    % d [] i DP
-          1 index get				    % d [] i dp
-        } if
-	exch 2 index exch get			    % d [] dp fn
-        filter
-      } for
-    } ifelse
-    //PDFR_DEBUG {
-      //MakeStreamDumper exec
-    } if
-  } if
-  exch pop
-} bind def
 
 /MakeStreamReader % <obj> MakeStreamReader <file>
 { dup
