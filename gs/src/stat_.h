@@ -48,7 +48,13 @@
  * Some (System V?) systems test for directories in a slightly different way.
  */
 #if defined(OSK) || !defined(S_ISDIR)
-#  define stat_is_dir(stbuf) ((stbuf).st_mode & S_IFDIR)
+#  ifdef S_IFDIR
+#    define stat_is_dir(stbuf) ((stbuf).st_mode & S_IFDIR)
+#  else
+#    ifdef _S_IFDIR
+#      define stat_is_dir(stbuf) ((stbuf).st_mode & _S_IFDIR)
+#    endif
+#  endif
 #else
 #  define stat_is_dir(stbuf) S_ISDIR((stbuf).st_mode)
 #endif
