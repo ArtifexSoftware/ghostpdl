@@ -591,6 +591,11 @@ pdf_is_same_charproc1(gx_device_pdf * pdev, pdf_char_proc_t *pcp0, pdf_char_proc
 	return false;
     if (pcp0->v.y != pcp1->v.y)
 	return false;
+    if (pcp0->font->u.simple.s.type3.bitmap_font != pcp1->font->u.simple.s.type3.bitmap_font)
+	return false;
+    if (memcmp(&pcp0->font->u.simple.s.type3.FontMatrix, &pcp1->font->u.simple.s.type3.FontMatrix,
+		sizeof(pcp0->font->u.simple.s.type3.FontMatrix)))
+	return false;
     return true;
 }
 
