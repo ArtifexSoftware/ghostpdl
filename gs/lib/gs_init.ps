@@ -131,6 +131,7 @@ currentdict /OUTPUTFILE known	% obsolete
  } if
 currentdict /QUIET known   /QUIET exch def
 currentdict /SAFER known   /SAFER exch def
+currentdict /DELAYSAFER known   /DELAYSAFER exch def
 currentdict /SHORTERRORS known   /SHORTERRORS exch def
 currentdict /STRICT known   /STRICT exch def
 currentdict /TTYPAUSE known   /TTYPAUSE exch def
@@ -1548,30 +1549,65 @@ gsave
 
 % If we want a "safer" system, disable some obvious ways to cause havoc.
 SAFER not { (%END SAFER) .skipeof } if
+
+.currentglobal true .setglobal
+/SAFETY 1 dict dup /safe DELAYSAFER not put readonly def
+.setglobal
+
+/.setsafe
+  { //SAFETY /safe //true .forceput % overrides readonly
+  } .bind executeonly odef
+
 /file
- { dup (r) eq 2 index (%pipe*) .stringmatch not and
-   2 index (%std*) .stringmatch or
-    { file }
-    { /invalidfileaccess signalerror }
-   ifelse
- } .bind odef
-/renamefile { /invalidfileaccess signalerror } odef
-/deletefile { /invalidfileaccess signalerror } odef
+ { //SAFETY /safe get {
+     dup (r) eq 2 index (%pipe*) .stringmatch not and
+     2 index (%std*) .stringmatch or
+       { file }
+       { /invalidfileaccess //signalerror exec }
+     ifelse
+   } {
+     file
+   } ifelse
+ } .bind executeonly odef
+
+/renamefile
+  { //SAFETY /safe get
+      { /invalidfileaccess //signalerror exec }
+      { renamefile }
+    ifelse
+  } .bind executeonly odef
+
+
+/deletefile
+  { //SAFETY /safe get
+      { /invalidfileaccess //signalerror exec }
+      { deletefile }
+    ifelse
+  } .bind executeonly odef
+
 /putdeviceprops
- { counttomark
-   dup 2 mod 0 eq { pop /rangecheck signalerror } if
-   3 2 3 2 roll
-    { dup index /OutputFile eq  
-       { -2 roll 
-         dup () ne { /putdeviceprops load /invalidfileaccess signalerror } if
+ { //SAFETY /safe get { 
+     counttomark
+     dup 2 mod 0 eq { pop /rangecheck //signalerror exec } if
+     3 2 3 2 roll
+      { dup index /OutputFile eq  
+         { -2 roll 
+           dup () ne
+             { /putdeviceprops load /invalidfileaccess //signalerror exec
+             } if
          3 -1 roll
-       }
-       { pop
-       }
-      ifelse
-    } for
-   putdeviceprops
- } .bind odef
+         }
+         { pop
+         }
+        ifelse
+      } for
+     putdeviceprops
+   } {
+     putdeviceprops
+   } ifelse
+ } .bind executeonly odef
+
+currentdict /SAFETY undef
 
 %END SAFER
 
