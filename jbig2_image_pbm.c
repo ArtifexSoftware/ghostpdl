@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_pbm.c,v 1.10 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2_image_pbm.c,v 1.11 2002/08/14 11:44:53 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -44,12 +44,12 @@ int jbig2_image_write_pbm_file(Jbig2Image *image, char *filename)
 
 int jbig2_image_write_pbm(Jbig2Image *image, FILE *out)
 {
-        // pbm header
+        /* pbm header */
         fprintf(out, "P4\n%d %d\n", image->width, image->height);
         
-        // pbm format pads to a byte boundary, so we can
-        // just write out the whole data buffer
-        // NB: this assumes minimal stride for the width
+        /* pbm format pads to a byte boundary, so we can
+           just write out the whole data buffer
+           NB: this assumes minimal stride for the width */
         fwrite(image->data, 1, image->height*image->stride, out);
         
         /* success */
@@ -81,7 +81,7 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
     int c;
     char buf[32];
     
-    // look for 'P4' magic
+    /* look for 'P4' magic */
     while ((c = fgetc(in)) != 'P') {
         if (feof(in)) return NULL;
     }
@@ -89,17 +89,17 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
         fprintf(stderr, "not a binary pbm file.\n");
         return NULL;
     }
-    // read size. we must find two decimal numbers representing
-    // the image dimensions. done will index whether we're
-    // looking for the width of the height and i will be our
-    // array index for copying strings into our buffer
+    /* read size. we must find two decimal numbers representing
+       the image dimensions. done will index whether we're
+       looking for the width of the height and i will be our
+       array index for copying strings into our buffer */
     done = 0;
     i = 0;
     while (done < 2) {
         c = fgetc(in);
-        // skip whitespace
+        /* skip whitespace */
         if (c == ' ' || c == '\t' || c == '\r' || c == '\n') continue;
-        // skip comments
+        /* skip comments */
         if (c == '#') {
             while ((c = fgetc(in)) != '\n');
             continue;
@@ -118,20 +118,20 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
             done++;
         }
     }
-    // allocate image structure
+    /* allocate image structure */
     image = jbig2_image_new(ctx, dim[0], dim[1]);
     if (image == NULL) {
         fprintf(stderr, "could not allocate %dx%d image for pbm file\n", dim[0], dim[1]);
         return NULL;
     }
-    // the pbm data is byte-aligned, so we can
-    // do a simple block read
+    /* the pbm data is byte-aligned, so we can
+       do a simple block read */
     fread(image->data, 1, image->height*image->stride, in);
     if (feof(in)) {
         fprintf(stderr, "unexpected end of pbm file.\n");
         jbig2_image_free(ctx, image);
         return NULL;
     }    
-    // success
+    /* success */
     return image;
 }
