@@ -297,7 +297,6 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 		if ( zero_complement ) 
 		    plfont->character_complement[7] = 0x7;
  	    }
-
 	    /* pfh->Pitch is design unit width for scalable fonts. */
 	    { uint pitch_cp =
 		pl_get_uint16(pfh->Pitch) * 100 * pfont->FontMatrix.xx;
