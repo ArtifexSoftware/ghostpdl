@@ -821,7 +821,13 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
 #else
     pcache->base = A - delta / 2;	/* so lookup will round */
 #endif
-    pcache->factor = (delta == 0 ? 0 : N / R);
+    /*
+     * If size of the domain is zero, then use 1.0 as the scaling
+     * factor.  This prevents divide by zero errors in later calculations.
+     * This should only occurs with zero matrices.  It does occur with
+     * Genoa test file 050-01.ps.
+     */
+    pcache->factor = (any_abs(delta) < 1e-30 ? 0.0 : N / R);
     if_debug4('c', "[c]cache %s 0x%lx base=%g, factor=%g\n",
 	      (const char *)cname, (ulong) pcache,
 	      pcache->base, pcache->factor);
