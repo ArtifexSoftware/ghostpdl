@@ -17,46 +17,19 @@
 */
 
 /*$Id$ */
-/* Read stdin on platforms that support select and non-blocking read */
-#ifdef __VMS
-# include <time.h>
-#endif
+/* Read stdin on platforms that support unbuffered read. */
+/* We want unbuffered for console input and pipes. */
 
-# include "stdio_.h"
+#include "stdio_.h"
+#include "time_.h"
 #include "unistd_.h"
-#include "fcntl_.h"
-#include "errno_.h"
 #include "gx.h"
 #include "gp.h"
-#include "errors.h"
 
-/* Configure stdin for non-blocking reads if possible. */
-int gp_stdin_init(int fd)
-{
-    /* set file to non-blocking */
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK))
-	return e_ioerror;
-    return 0;
-}
 
-/* Read bytes from stdin, using non-blocking if possible. */
-int gp_stdin_read(char *buf, int len, int interactive, int fd)
+/* Read bytes from stdin, unbuffered if possible. */
+int gp_stdin_read(char *buf, int len, int interactive, FILE *f)
 {
-    fd_set rfds;
-    int count;
-    for (;;) {
-	count = read(fd, buf, len);
-	if (count >= 0)
-	    break;
-	if (errno == EAGAIN || errno == EWOULDBLOCK) {
-	    FD_ZERO(&rfds);
-	    FD_SET(fd, &rfds);
-	    select(1, &rfds, NULL, NULL, NULL);
-	} else if (errno != EINTR) {
-	    break;
-	}
-    }
-    return count;
+    return read(fileno(f), buf, len);
 }
 

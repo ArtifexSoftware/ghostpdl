@@ -112,8 +112,6 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     /* because it detects attempts to run 80N86 executables (N>0) */
     /* on incompatible processors. */
     gp_init();
-    if (!minst->stdin_fn)
-	gp_stdin_init(fileno(in));
     gp_get_usertime(minst->base_time);
     /* Initialize the imager. */
     heap = gs_lib_init0(gs_stdout);
@@ -270,7 +268,7 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 			minst->stdin_buf, count);
 	    else
 		count = gp_stdin_read(minst->stdin_buf, count, 
-		    minst->stdin_is_interactive, fileno(minst->fstdin));
+		    minst->stdin_is_interactive, minst->fstdin);
 	    if (count < 0)
 	        return_error(e_ioerror);
 
@@ -873,19 +871,22 @@ int
 gs_main_outwrite(gs_main_instance *minst, const char *str, int len)
 {
     int code;
+    FILE *fout;
     if (len == 0)
 	return 0;
     if (minst->stdout_is_redirected) {
 	if (minst->stdout_to_stderr)
 	    return gs_main_errwrite(minst, str, len);
-        code = fwrite(str, 1, len, minst->fstdout2);
-	fflush(minst->fstdout);
-	return code;
+	fout = minst->fstdout2;
     }
-    if (minst->stdout_fn)
+    else if (minst->stdout_fn) {
 	return (*minst->stdout_fn)(minst->caller_handle, str, len);
-    code = fwrite(str, 1, len, minst->fstdout);
-    fflush(minst->fstdout);
+    }
+    else {
+	fout = minst->fstdout;
+    }
+    code = fwrite(str, 1, len, fout);
+    fflush(fout);
     return code;
 }
 
@@ -912,14 +913,22 @@ int errwrite(const char *str, int len)
     return gs_main_errwrite(gs_main_instance_default(), str, len);
 }
 
-void outflush()
+void outflush(void)
 {
     gs_main_instance * minst = gs_main_instance_default();
-    if (!minst->stdout_fn)
+    if (minst->stdout_is_redirected) {
+	if (minst->stdout_to_stderr) {
+	    if (!minst->stderr_fn)
+		fflush(minst->fstderr);
+	}
+	else
+	    fflush(minst->fstdout2);
+    }
+    else if (!minst->stdout_fn)
         fflush(minst->fstdout);
 }
 
-void errflush()
+void errflush(void)
 {
     gs_main_instance * minst = gs_main_instance_default();
     if (!minst->stderr_fn)

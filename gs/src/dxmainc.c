@@ -29,7 +29,7 @@
  *
  * The ghostscript library needs to be compiled with
  *  gcc -fPIC -g -c -Wall file.c
- *  gcc -shared -Wl,-soname,libgs.so.6 -o libgs.so.6.60 file.o -lc
+ *  gcc -shared -Wl,-soname,libgs.so.7 -o libgs.so.7.00 file.o -lc
  */
 
 #include <stdio.h>
@@ -57,22 +57,7 @@ static int gsdll_stdout(void *instance, const char *str, int len);
 static int 
 gsdll_stdin(void *instance, char *buf, int len)
 {
-    fd_set rfds;
-    int count;
-    int fd = fileno(stdin);
-    for (;;) {
-	count = read(fd, buf, len);
-	if (count >= 0)
-	    break;
-	if (errno == EAGAIN || errno == EWOULDBLOCK) {
-	    FD_ZERO(&rfds);
-	    FD_SET(fd, &rfds);
-	    select(1, &rfds, NULL, NULL, NULL);
-	} else if (errno != EINTR) {
-	    break;
-	}
-    }
-    return count;
+    return read(fileno(stdin), buf, len);
 }
 
 static int 
@@ -98,13 +83,7 @@ int main(int argc, char *argv[])
     int exit_status;
     int code = 1;
     gs_main_instance *instance;
-    int flags;
     int exit_code;
-
-    /* set stdin to non-blocking */
-    flags = fcntl(fileno(stdin), F_GETFL, 0);
-    if (fcntl(fileno(stdin), F_SETFL, flags | O_NONBLOCK))
-	printf("Can't set stdin to non-blocking\n");
 
     /* run Ghostscript */
     if ((code = gsapi_new_instance(&instance, NULL)) == 0) {

@@ -508,7 +508,7 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 
 # The GCC/EMX platform
 
-os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ)
+os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)os2_ $(os2__) -include $(GLD)nosync
 
@@ -517,10 +517,9 @@ $(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c\
  $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_os2.$(OBJ) $(C_) $(GLSRC)gp_os2.c
 
-$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK)\
- $(stdio__h) $(unistd__h) $(fcntl__h) $(errno__h)\
- $(gx_h) $(gp_h) $(errors_h)
-	$(GLCC) $(GLO_)gp_stdin.$(OBJ) $(C_) $(GLSRC)gp_stdin.c
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # -------------------------- Auxiliary programs --------------------------- #
 

@@ -330,7 +330,7 @@ sysstat_h=$(GLOBJ)sys\:stat.h
 
 $(GLOBJ)gp_mac.$(OBJ): $(GLSRC)gp_mac.c
 $(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c
-$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c
+$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
 
 # does not work for systime_h?!?!
 #$(systypes_h):

@@ -36,7 +36,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <gtk/gtk.h>
-#include <gdk/gdkx.h>
 #define __PROTOTYPES__
 #include "errors.h"
 #include "iapi.h"
@@ -101,11 +100,14 @@ gsdll_stdin(void *instance, char *buf, int len)
 {
     struct stdin_buf input;
     gint input_tag;
+    int flags = fcntl(fileno(stdin), F_GETFL, 0);
 
     gtk_main_iteration_do(FALSE);
     input.len = len;
     input.buf = buf;
+    fcntl(fileno(stdin), F_SETFL, flags | O_NONBLOCK);
     input.count = read(fileno(stdin), input.buf, input.len);
+    fcntl(fileno(stdin), F_SETFL, flags);
 
     if (input.count < 0) { /* would block, so wait for event */
 	input_tag = gdk_input_add(fileno(stdin), 
@@ -495,10 +497,10 @@ static int display_size(void *handle, void *device, int width, int height,
 	    gtk_box_pack_start(GTK_BOX(img->vbox), img->cmyk_bar, 
 		FALSE, FALSE, 0);
 	    img->separation = 0xf;	/* all layers */
-	    window_add_button(img, "Cyan", cmyk_cyan);
-	    window_add_button(img, "Magenta", cmyk_magenta);
-	    window_add_button(img, "Yellow", cmyk_yellow);
-	    window_add_button(img, "Black", cmyk_black);
+	    window_add_button(img, "Cyan", (GtkSignalFunc)cmyk_cyan);
+	    window_add_button(img, "Magenta", (GtkSignalFunc)cmyk_magenta);
+	    window_add_button(img, "Yellow", (GtkSignalFunc)cmyk_yellow);
+	    window_add_button(img, "Black", (GtkSignalFunc)cmyk_black);
 	}
 	gtk_widget_show(img->cmyk_bar);
     }
@@ -777,18 +779,12 @@ int main(int argc, char *argv[])
     int nargc;
     char **nargv;
     char dformat[64];
-    int flags;
     int exit_code;
     gboolean use_gui;
 
     /* Gtk initialisation */
     gtk_set_locale();
     use_gui = gtk_init_check(&argc, &argv);
-
-    /* set stdin to non-blocking */
-    flags = fcntl(fileno(stdin), F_GETFL, 0);
-    if (fcntl(fileno(stdin), F_SETFL, flags | O_NONBLOCK))
-	g_print("Can't set stdin to non-blocking\n");
 
     /* insert display device parameters as first arguments */
     sprintf(dformat, "-dDisplayFormat=%d", 

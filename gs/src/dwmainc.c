@@ -43,47 +43,10 @@ char start_string[] = "systemdict /start get exec\n";
 /*********************************************************************/
 /* stdio functions */
 
-/* Read as many bytes as are available.
- * Returns:
- *  number of bytes on success.
- *  0 on EOF.
- *  < 0 on error.
- */
-static int 
-gp_read_stdin(char *buf, int len, int fd)
-{
-    HANDLE hPipe = (HANDLE)_get_osfhandle(fd);
-    DWORD dwBytesAvailable;
-    if (isatty(fd)) {
-	/* Input is a character device (terminal, console, 
-	 * printer or serial port).  Read one character at
-	 * a time.
-	 */
-	return _read(fd, buf, 1);
-    }
-    else {
-	/* Test if input is a pipe. */
-	if (PeekNamedPipe(hPipe, NULL, 0, NULL, &dwBytesAvailable, NULL)) {
-	    int count = _read(fd, buf, min(len, dwBytesAvailable));
-	    if (count == 0) /* pipe is empty */ {
-		count = _read(fd, buf, 1); /* block until 1 byte available */
-		/* Then see what else is also available */
-		if ((count == 1) && 
-		    PeekNamedPipe(hPipe, NULL, 0, NULL, 
-		    &dwBytesAvailable, NULL)) {
-		    count += _read(fd, buf+1, min(len-1, dwBytesAvailable));
-		}
-	    }
-	    return count;
-	}
-    }
-    /* Input must be a file. */
-    return _read(fd, buf, len);
-}
 static int GSDLLCALL
 gsdll_stdin(void *instance, char *buf, int len)
 {
-    return gp_read_stdin(buf, len, fileno(stdin));
+    return _read(fileno(stdin), buf, len);
 }
 
 static int GSDLLCALL

@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Artifex Software, Inc. All rights reserved.
+/* Copyright (C) 2000, 2001 Artifex Software, Inc. All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -34,10 +34,13 @@
 #ifdef __OS2__
 #  include <io.h>
 #endif
+#ifdef __WIN32__
+#  include <io.h>
+#endif
 
 #if defined(_MSC_VER) && defined(__WIN32__)
-#  include <io.h>
 #  define fsync(handle) _commit(handle)
+#  define read(fd, buf, len) _read(fd, buf, len)
 #else
 #  include <unistd.h>
 #endif

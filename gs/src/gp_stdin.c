@@ -17,22 +17,23 @@
 */
 
 /*$Id$ */
-/* Read stdin on platforms that do not support non-blocking reads */
+/* Read stdin on platforms that do not support unbuffered read.
+ * This is the most portable implementation, but it is very slow
+ * when reading stdin because it will read one byte at a time.
+ * Platforms that support unbuffered read should use gp_stdia.c
+ * or provide their own implementation
+ */
 
 #include "stdio_.h"
 #include "gx.h"
 #include "gp.h"
 
-/* Configure stdin for non-blocking reads if possible. */
-int gp_stdin_init(int fd)
+/* Read bytes from stdin, using unbuffered if possible.
+ * This implementation doesn't do unbuffered, so if 
+ * interactive read one byte at a time.
+ */
+int gp_stdin_read(char *buf, int len, int interactive, FILE *f)
 {
-    /* do nothing */
-    return 0;
-}
-
-/* Read bytes from stdin, using non-blocking if possible. */
-int gp_stdin_read(char *buf, int len, int interactive, int fd)
-{
-    return read(buf, 1, interactive ? 1 : len, fd);
+    return fread(buf, 1, interactive ? 1 : len, f);
 }
 

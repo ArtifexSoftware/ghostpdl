@@ -129,7 +129,7 @@ $(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 
 # The Windows Win32 platform
 
-mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ)
+mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 mswin32_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 
 $(GLGEN)mswin32_.dev:  $(mswin32__) $(ECHOGS_XE) $(mswin32_inc)
@@ -144,8 +144,9 @@ $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)
 	$(GLCCWIN) $(GLO_)gp_wgetv.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c
 
-$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(gx_h) $(gp_h)
-	$(GLCCWIN) $(GLO_)gp_stdin.$(OBJ) $(C_) $(GLSRC)gp_stdin.c
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+	$(GLCCWIN) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # Define MS-Windows handles (file system) as a separable feature.
 

@@ -482,7 +482,7 @@ $(GLOBJDIR)geninit.$(OBJ) : $(GLSRCDIR)geninit.c $(GENINIT_DEPS)
 $(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c
 	$(CC_)/include=($(GLGENDIR),$(GLSRCDIR))/obj=$(GLOBJ)gp_vms.$(OBJ) $(GLSRC)gp_vms.c
 
-$(GLOBJ)gp_stdia.$(OBJ) : $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(unistd__h) $(fcntl__h) $(gx_h) $(gp_h) $(errors_h)
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
 	$(CC_)/incl=$(GLOBJ)/obj=$(GLOBJ)gp_stdia.$(OBJ) $(GLSRC)gp_stdia.c
 
 # Preliminary definitions

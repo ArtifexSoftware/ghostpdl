@@ -114,20 +114,17 @@ int gp_readline(P9(stream *s_in, stream *s_out, void *readline_data,
  */
 void gp_readline_finit(P1(void *readline_data));
 
-/* ------ Reading from stdin, non-blocking if possible ------ */
+/* ------ Reading from stdin, unbuffered if possible ------ */
 
-/* Configure stdin for non-blocking reads if possible.  */
-int gp_stdin_init(P1(int fd));
-
-/* Read bytes from stdin, using non-blocking if possible.
+/* Read bytes from stdin, using unbuffered if possible.
  * Store up to len bytes in buf.
  * Returns number of bytes read, or 0 if EOF, or -ve if error.
- * If non-blocking is NOT possible, fetch 1 byte is interactive
+ * If unbuffered is NOT possible, fetch 1 byte if interactive
  * is non-zero, or up to len bytes otherwise.
- * If non-blocking is possible, fetch at least 1 byte (unless error or EOF) 
+ * If unbuffered is possible, fetch at least 1 byte (unless error or EOF) 
  * and any additional bytes that are available without blocking.
  */
-int gp_stdin_read(P4(char *buf, int len, int interactive, int fd));
+int gp_stdin_read(P4(char *buf, int len, int interactive, FILE *f));
 
 /* ------ Screen management ------ */
 

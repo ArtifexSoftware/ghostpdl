@@ -41,10 +41,9 @@ $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(gx_h) $(gsexit_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
 
-# assume all Unix platforms support async IO using read/select
+# assume all Unix platforms support unbuffered read
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
- $(stdio__h) $(unistd__h) $(fcntl__h) $(errno__h)\
- $(gx_h) $(gp_h) $(errors_h)
+  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # System V platforms other than SVR4, which lack some system calls,

@@ -69,7 +69,7 @@ cmd_count_op(int op, uint size)
 	else
 	    dlprintf3(", %s %d(%u)\n", cmd_op_names[op >> 4], op & 0xf,
 		      size);
-	errflush();
+	dflush();
     }
     return op;
 }

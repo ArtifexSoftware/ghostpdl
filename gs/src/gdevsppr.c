@@ -149,7 +149,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
           {
           errprintf(
             "sparc_print_page: Printer Problem with unknown reason...");
-          errflush();
+          dflush();
           warning=1;
           }
 	sleep(5);
@@ -158,7 +158,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
 	errprintf(
           "sparc_print_page: Printer-Warning: %s...",
           err_code_string(lpvierr.err_code));
-	errflush();
+	dflush();
 	warning=1;
 	sleep(5);
 	break;

@@ -305,9 +305,7 @@ $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
 $(GLOBJ)gp_mktmp.$(OBJ): $(GLSRC)gp_mktmp.c $(stat__h) $(string__h)
 	$(GLCC) $(GLO_)gp_mktmp.$(OBJ) $(C_) $(GLSRC)gp_mktmp.c
 
-$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK)\
- $(stdio__h) $(unistd__h) $(fcntl__h)\
- $(gx_h) $(gp_h) $(errors_h)
+$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_stdin.$(OBJ) $(C_) $(GLSRC)gp_stdin.c
 
 
