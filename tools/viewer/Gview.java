@@ -48,6 +48,7 @@ public class Gview
     // Non configurable members below 
 
     protected int pageNumber = 1;
+    protected int totalPageCount;
     protected BufferedImage currentPage;
     protected GpickleThread pickle;
     protected double desiredRes;
@@ -249,10 +250,10 @@ public class Gview
 	popup.addSeparator();
 
         menuPageNum = new java.awt.MenuItem();
-	menuPageNum.setLabel("page# " + pageNumber);
+	menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
 	menuPageNum.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
-		    menuPageNum.setLabel("page# " + pageNumber);
+		    menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
                 }
             }
 				  );
@@ -263,7 +264,7 @@ public class Gview
 	menuPageDwn.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
 		    prevPage();
-		    menuPageNum.setLabel("page# " + pageNumber);
+		    menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
                 }
             }
 				     );
@@ -274,7 +275,7 @@ public class Gview
 	menuPageUp.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
 		    nextPage();
-		    menuPageNum.setLabel("page# " + pageNumber);
+		    menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
                 }
             }
 				     );
@@ -397,7 +398,7 @@ public class Gview
 
 	// update menu status 
 	menuDPI.setLabel("dpi: " + desiredRes);
-	menuPageNum.setLabel("page# " + pageNumber);
+	menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
 
 	repaint();
     }
@@ -531,7 +532,7 @@ public class Gview
 				 double sx,   double sy,
 				 double resX, double resY)
     {
-	if ( false && debug ) {
+	if ( debug ) {
 	    System.out.println( "viewTrans"
 				+ "," + tx
 				+ "," + ty
@@ -555,7 +556,7 @@ public class Gview
 	    + sx
 	    + " -dViewScaleY="
 	    + sy;
-	if ( false && debug) System.out.println( options );
+	if ( debug ) System.out.println( options );
         pickle.setRes( resX, resY );
         pickle.setDeviceOptions( options  );
         pickle.startProduction( pageNumber );
@@ -568,7 +569,6 @@ public class Gview
 	    System.out.println("Error: Missing input file\n" + usage());
 	    System.exit(1);
 	}
-
 	System.out.print(usage());
 	Gview view = new Gview();
         view.runMain(args);
@@ -594,6 +594,8 @@ public class Gview
     protected void runMain(String[] args) {
 	// NB no error checking.
 	pickle.setJob(args[0]);
+        // get the total page count for the job
+        totalPageCount = pickle.getPrinterPageCount();
 	origRes = desiredRes = startingRes;
 	pickle.setRes(desiredRes, desiredRes);
 	pageNumber = 1;

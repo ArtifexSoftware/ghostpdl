@@ -11,7 +11,7 @@ import com.sun.image.codec.jpeg.*;
 
 public class Gpickle {
     /** debug printf control */
-    private final static boolean debug = false; 
+    private static boolean debug = false; 
     /** here are some defaults that might be overriden will probably be
     * overriden.
     */
@@ -19,6 +19,7 @@ public class Gpickle {
     private double yRes = 75f;
     private String jobList = "startpage.pcl";
     private int pageToDisplay = 1;
+    private int totalPageCount = -1;  // defaults to error
 
     /** We always use jpeg for output because java has good internal support for jpeg.
      */
@@ -64,9 +65,6 @@ public class Gpickle {
      */
     private String runString()
     {
-
-
-
 	return "pcl6"
 	    + deviceOptions
 	    + rtl
@@ -79,6 +77,49 @@ public class Gpickle {
             + " -sOutputFile=- " + jobList + " \n";
     }
 
+    /**
+     * "command line" to get the page count quickly
+     */
+    private String pageCountString()
+    {
+	return "pcl6 -C -r25 -dNOPAUSE -sDEVICE=nullpage "
+            + jobList;
+    }
+
+    /**
+    * run the pcl interpreter to get a total page count for the job.
+    * Returns -1 if there is an error.
+    */
+    public int getPrinterPageCount()
+    {
+        Process p;
+        // if the page count is non-negative 0 it has already been set
+        // for this job so just return the cached value.
+        if ( this.totalPageCount >= 0 ) {
+            if ( debug ) System.out.println("cached page count= " + this.totalPageCount);
+            return this.totalPageCount;
+        }
+
+        this.totalPageCount = -1;
+	try {
+	    if ( debug ) System.out.println("pagecountstring=" + pageCountString());
+	    p = Runtime.getRuntime().exec(pageCountString());
+            String line;
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            while ((line = br.readLine()) != null)
+                if ( line.startsWith("%%%") ) {
+                    // place after cursor after ':'
+                    int index = line.indexOf(':') + 1;
+                    // convert to integer
+                    this.totalPageCount = Integer.parseInt((line.substring(index)).trim());
+                    System.out.println(this.totalPageCount);
+                    // NB error checking ??
+                }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return this.totalPageCount;
+    }
 
     // public methods.
 
@@ -99,7 +140,7 @@ public class Gpickle {
         Process p = null;     
 
 	try {
-	    if (false && debug) System.out.println("runstring=" + runString());
+	    if ( debug ) System.out.println("runstring=" + runString());
 	    p = Runtime.getRuntime().exec(runString());
 	    // read process output and return a buffered image.
 	    JPEGImageDecoder decoder = JPEGCodec.createJPEGDecoder(p.getInputStream());
@@ -129,6 +170,7 @@ public class Gpickle {
      * NB should be an array of String.
      */
     public void setJob(String jobList) {
+        this.totalPageCount = -1;
 	this.jobList = jobList;
     }
 
@@ -173,15 +215,18 @@ public class Gpickle {
 
     /** main for test purposes */
     public static void main( String[] args ) {
+        debug = true;
 	Gpickle pcl = new Gpickle();
 	pcl.setRes(72, 72);
 	pcl.setPageNumber(5);
 	pcl.setJob("120pg.bin");
+        System.out.println(pcl.getPrinterPageCount());
 	System.out.println(pcl.getPrinterOutputPage());
 	System.out.println("Width = " + pcl.getImgWidth());
 	System.out.println("Height = " + pcl.getImgWidth());
 	Gpickle pxl = new Gpickle();
 	pxl.setJob("frs96.pxl");
+        System.out.println(pcl.getPrinterPageCount());
 	System.out.println(pxl.getPrinterOutputPage());
 	System.out.println("Width = " + pxl.getImgWidth());
 	System.out.println("Height = " + pxl.getImgWidth());

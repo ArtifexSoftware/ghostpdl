@@ -1,3 +1,4 @@
+
 import java.awt.image.*;
 
 /** Similar to ImageObserver but for BufferedImage
