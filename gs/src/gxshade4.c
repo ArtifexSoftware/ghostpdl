@@ -18,6 +18,7 @@
 
 /*$Id$ */
 /* Rendering for Gouraud triangle shadings */
+#include "math_.h"
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -62,8 +63,120 @@ mesh_init_fill_triangle(mesh_fill_state_t * pfs,
   if ( a < b ) vmin = a, vmax = b; else vmin = b, vmax = a;\
   if ( c < vmin ) vmin = c; else if ( c > vmax ) vmax = c
 
+#define MIDPOINT_FAST(a,b) arith_rshift_1((a) + (b) + 1)
+
+private mesh_frame_t *
+mesh_subdivide_triangle(mesh_fill_state_t *pfs, mesh_frame_t *fp)
+{
+    int i;
+    float dabx, daby, dbcx, dbcy, dacx, dacy;
+    float r2ab, r2bc, r2ac;
+    float r2min, r2max;
+    float tri_area_2;
+
+    dabx = fp->vb.p.x - fp->va.p.x;
+    daby = fp->vb.p.y - fp->va.p.y;
+    dbcx = fp->vc.p.x - fp->vb.p.x;
+    dbcy = fp->vc.p.y - fp->vb.p.y;
+    dacx = (dabx + dbcx);
+    dacy = (daby + dbcy);
+    r2ab = dabx * dabx + daby * daby;
+    r2bc = dbcx * dbcx + dbcy * dbcy;
+    r2ac = dacx * dacx + dacy * dacy;
+
+    SET_MIN_MAX_3(r2min, r2max, r2ab, r2bc, r2ac);
+    tri_area_2 = fp->va.p.y * (fp->vc.p.x - fp->vb.p.x) +
+	fp->vb.p.y * (fp->va.p.x - fp->vc.p.x) +
+	fp->vc.p.y * (fp->vb.p.x - fp->va.p.x);
+
+    if (fabs(tri_area_2) < 0.5 * r2max) {
+	/* skinny triangle, subdivide longest edge */
+	mesh_vertex_t tmp;
+	/* first, sort by length, so that AB is longest edge */
+	if (r2bc > r2ac) {
+	    if (r2bc > r2ab) {
+		/* BC is longest edge, rotate */
+		tmp = fp->va;
+		fp->va = fp->vb;
+		fp->vb = fp->vc;
+		fp->vc = tmp;
+	    }
+	} else {
+	    if (r2ac > r2ab) {
+		/* AC is longest edge, rotate */
+		tmp = fp->va;
+		fp->va = fp->vc;
+		fp->vc = fp->vb;
+		fp->vb = tmp;
+	    }
+	}
+
+#define VAB fp[1].va
+	VAB.p.x = MIDPOINT_FAST(fp->va.p.x, fp->vb.p.x);
+	VAB.p.y = MIDPOINT_FAST(fp->va.p.y, fp->vb.p.y);
+	for (i = 0; i < pfs->num_components; ++i) {
+	    float ta = fp->va.cc[i], tb = fp->vb.cc[i];
+
+	    VAB.cc[i] = (ta + tb) * 0.5;
+	}
+	/* Fill in the rest of the triangles. */
+	fp[1].vb = fp->vb;
+	fp[1].vc = fp->vc;
+	fp->vb = VAB;
+	fp[1].check_clipping = fp->check_clipping;
+	return fp + 1;
+#undef VAB
+    } else {
+	/* Reasonably shaped, subdivide into 4 triangles at midpoints */
+    /*
+     * Subdivide the triangle and recur.  The only subdivision method
+     * that doesn't seem to create anomalous shapes divides the
+     * triangle in 4, using the midpoints of each side.
+     *
+     * If the original vertices are A, B, C, we fill the sub-triangles
+     * in the following order:
+     *	(A, AB, AC) - fp[3]
+     *	(AB, AC, BC) - fp[2]
+     *	(AC, BC, C) - fp[1]
+     *	(AB, B, BC) - fp[0]
+     */
+#define VAB fp[3].vb
+#define VAC fp[2].vb
+#define VBC fp[1].vb
+    VAB.p.x = MIDPOINT_FAST(fp->va.p.x, fp->vb.p.x);
+    VAB.p.y = MIDPOINT_FAST(fp->va.p.y, fp->vb.p.y);
+    VAC.p.x = MIDPOINT_FAST(fp->va.p.x, fp->vc.p.x);
+    VAC.p.y = MIDPOINT_FAST(fp->va.p.y, fp->vc.p.y);
+    VBC.p.x = MIDPOINT_FAST(fp->vb.p.x, fp->vc.p.x);
+    VBC.p.y = MIDPOINT_FAST(fp->vb.p.y, fp->vc.p.y);
+    for (i = 0; i < pfs->num_components; ++i) {
+	float ta = fp->va.cc[i], tb = fp->vb.cc[i], tc = fp->vc.cc[i];
+
+	VAB.cc[i] = (ta + tb) * 0.5;
+	VAC.cc[i] = (ta + tc) * 0.5;
+	VBC.cc[i] = (tb + tc) * 0.5;
+    }
+    /* Fill in the rest of the triangles. */
+    fp[3].va = fp->va;
+    fp[3].vc = VAC;
+    fp[2].va = VAB;
+    fp[2].vc = VBC;
+    fp[1].va = VAC;
+    fp[1].vc = fp->vc;
+    fp->va = VAB;
+    fp->vc = VBC;
+#undef VAB
+#undef VAC
+#undef VBC
+    fp[3].check_clipping = fp[2].check_clipping =
+	fp[1].check_clipping = fp->check_clipping;
+    return fp + 3;
+    }
+}
+#undef MIDPOINT_FAST
+
 int
-mesh_fill_triangle(mesh_fill_state_t * pfs)
+mesh_fill_triangle(mesh_fill_state_t *pfs)
 {
     const gs_shading_mesh_t *psh = pfs->pshm;
     gs_imager_state *pis = pfs->pis;
@@ -193,55 +306,7 @@ mesh_fill_triangle(mesh_fill_state_t * pfs)
 		    goto fill;
 	    }
 	}
-	/*
-	 * Subdivide the triangle and recur.  The only subdivision method
-	 * that doesn't seem to create anomalous shapes divides the
-	 * triangle in 4, using the midpoints of each side.
-	 *
-	 * If the original vertices are A, B, C, we fill the sub-triangles
-	 * in the following order:
-	 *	(A, AB, AC) - fp[3]
-	 *	(AB, AC, BC) - fp[2]
-	 *	(AC, BC, C) - fp[1]
-	 *	(AB, B, BC) - fp[0]
-	 */
-	{
-#define VAB fp[3].vb
-#define VAC fp[2].vb
-#define VBC fp[1].vb
-	    int i;
-
-#define MIDPOINT_FAST(a,b) arith_rshift_1((a) + (b) + 1)
-	    VAB.p.x = MIDPOINT_FAST(fp->va.p.x, fp->vb.p.x);
-	    VAB.p.y = MIDPOINT_FAST(fp->va.p.y, fp->vb.p.y);
-	    VAC.p.x = MIDPOINT_FAST(fp->va.p.x, fp->vc.p.x);
-	    VAC.p.y = MIDPOINT_FAST(fp->va.p.y, fp->vc.p.y);
-	    VBC.p.x = MIDPOINT_FAST(fp->vb.p.x, fp->vc.p.x);
-	    VBC.p.y = MIDPOINT_FAST(fp->vb.p.y, fp->vc.p.y);
-#undef MIDPOINT_FAST
-	    for (i = 0; i < pfs->num_components; ++i) {
-		float ta = fp->va.cc[i], tb = fp->vb.cc[i], tc = fp->vc.cc[i];
-
-		VAB.cc[i] = (ta + tb) * 0.5;
-		VAC.cc[i] = (ta + tc) * 0.5;
-		VBC.cc[i] = (tb + tc) * 0.5;
-	    }
-	    /* Fill in the rest of the triangles. */
-	    fp[3].va = fp->va;
-	    fp[3].vc = VAC;
-	    fp[2].va = VAB;
-	    fp[2].vc = VBC;
-	    fp[1].va = VAC;
-	    fp[1].vc = fp->vc;
-	    fp->va = VAB;
-	    fp->vc = VBC;
-	    fp[3].check_clipping = fp[2].check_clipping =
-		fp[1].check_clipping = fp->check_clipping = check;
-#undef VAB
-#undef VAC
-#undef VBC
-	    fp += 3;
-	}
+	fp = mesh_subdivide_triangle(pfs, fp);
     }
 }
 
