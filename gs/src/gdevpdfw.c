@@ -462,8 +462,7 @@ pdf_write_CIDMap(stream *s, pdf_font_t *ppf)
  */
 private int
 pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
-			const gs_const_string *pfname,
-			const gs_const_string *pbfname)
+			const gs_const_string *pfname)
 {
     stream *s;
     const pdf_font_descriptor_t *pfd = pef->FontDescriptor;
@@ -475,7 +474,10 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	(pef->write_Widths ||
 	 pdf_has_subset_prefix(pfname->data, pfname->size) ? 1 : 0);
     long cidmap_id = 0;
+    gs_const_string fname;
+    byte fnchars[MAX_PDF_FONT_NAME];
 
+    fname = *pfname;
     pdf_open_separate(pdev, pdf_font_id(pef));
     s = pdev->strm;
     switch (pef->FontType) {
@@ -501,26 +503,27 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	goto out;
     }
     case ft_encrypted:
-    case ft_encrypted2: {
-#if 0
-	if (pef->is_MM_instance) {
+    case ft_encrypted2:
 	/*
-	 * If the font is a Multiple Master instance, it should be
-	 * identified as such.  However, Acrobat Reader doesn't seem to
-	 * recognize the MMType1 subtype, but will accept MM Type 1
-	 * instances happily if they are tagged as Type1 (!).
+	 * Multiple Master instances must be identified as such iff they
+	 * are not embedded.
 	 */
+	if (pef->is_MM_instance && !pfd->FontFile_id) {
+	    /* Replace spaces in the name by underscores. */
+	    uint i;
+
 	    pputs(s, "<</Subtype/MMType1");
-	    /****** NAME IS WRONG ******/
-	} else
-#endif
-	{
+	    if (fname.size > sizeof(fnchars))
+		return_error(gs_error_rangecheck);
+	    for (i = 0; i < fname.size; ++i)
+		fnchars[i] = (fname.data[i] == ' ' ? '_' : fname.data[i]);
+	    fname.data = fnchars;
+	} else {
 	    pputs(s, "<</Subtype/Type1");
 	}
-    }
     bfname:
 	pputs(s, "/BaseFont");
-	pdf_put_name(pdev, pbfname->data, pbfname->size);
+	pdf_put_name(pdev, fname.data, fname.size);
 	break;
     case ft_CID_encrypted:
 	pprintld1(s, "<</Subtype/CIDFontType0/CIDSystemInfo %ld 0 R",
@@ -536,7 +539,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	pputs(s, "<</Subtype/TrueType");
     ttname:
 	pputs(s, "/BaseFont");
-	pdf_put_name(pdev, pbfname->data, pbfname->size);
+	pdf_put_name(pdev, fname.data, fname.size);
 	/****** WHAT ABOUT STYLE INFO? ******/
 	break;
     default:
@@ -780,7 +783,7 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 		    font_name.data = 0;
 		    font_name.size = 0;
 		}
-		pdf_write_font_resource(pdev, ppf, &font_name, &font_name);
+		pdf_write_font_resource(pdev, ppf, &font_name);
 		if (ppf->font)
 		    gs_notify_unregister_calling(&ppf->font->notify_list,
 						 pdf_font_notify_proc, NULL,
@@ -797,7 +800,7 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 		pfd = ppf->FontDescriptor;
 		font_name.data = pfd->FontName.chars;
 		font_name.size = pfd->FontName.size;
-		pdf_write_font_resource(pdev, ppf, &font_name, &font_name);
+		pdf_write_font_resource(pdev, ppf, &font_name);
 		if (ppf->font)
 		    gs_notify_unregister_calling(&ppf->font->notify_list,
 						 pdf_font_notify_proc, NULL,
