@@ -1436,7 +1436,7 @@ process_h_segments(line_list *ll, fixed y)
 }
 
 private inline int
-loop_fill_trap_np(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
+loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_edge *re)
 {
     const fill_options * const fo = ll->fo;
     fixed ybot = max(le->start.y, fo->pbox->p.y);

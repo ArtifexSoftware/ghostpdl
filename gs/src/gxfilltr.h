@@ -165,6 +165,8 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 	    gs_fixed_edge le, re;
 	    int inside = 0;
 	    active_line *flp = NULL;
+	    fixed ybot = max(y, fo.pbox->p.y);
+	    fixed ytop = min(y1, fo.pbox->q.y);
 
 	    INCR(band);
 	    le.start.x = le.end.x = 0xbaadf00d;
@@ -234,29 +236,36 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 			    }
 			    vd_rect(le.end.x, le.start.y, re.end.x, le.end.y, 1, VD_TRAP_COLOR);
 			    code = LOOP_FILL_RECTANGLE_DIRECT(&fo, xli, yi, xi - xli, wi);
-			} else {
+			} else if (ybot < ytop) {
+			    #if 0 /* Reserved to improve the banding. */
+			    if (!FILL_ADJUST) {
+				/* Set original trapezoid sides. 
+				   We believe that the optimizer compiler siuppresses 
+				   unuseful old assignments.
+				*/
+				le.start = flp->start;
+				le.end = flp->end;
+				re.start = alp->start;
+				re.end = alp->end;
+			    }
+			    #endif
+			    vd_quad(flp->x_current, ybot, alp->x_current, ybot, alp->x_next, ytop, flp->x_next, ytop, 1, VD_TRAP_COLOR);
 			    if (PSEUDO_RASTERIZATION) {
-				fixed ybot = max(le.start.y, fo.pbox->p.y);
-				fixed ytop = min(le.end.y, fo.pbox->q.y);
+				int flags = ftf_pseudo_rasterization;
 
-				if (ybot < ytop) {
-				    int flags = ftf_pseudo_rasterization;
-
-				    if (flp->start.x == alp->start.x && flp->start.y == y)
-					flags |= ftf_peak0;
-				    if (flp->end.x == alp->end.x && flp->end.y == y1)
-					flags |= ftf_peak0;
-
-				    vd_quad(le.start.x, ybot, re.start.x, ybot, re.end.x, ytop, le.end.x, ytop, 1, VD_TRAP_COLOR);
-				    if (FILL_DIRECT)
-					code = gx_fill_trapezoid_cf_fd(fo.dev, &le, &re, ybot, ytop, flags, fo.pdevc, fo.lop);
-				    else
-					code = gx_fill_trapezoid_cf_nd(fo.dev, &le, &re, ybot, ytop, flags, fo.pdevc, fo.lop);
-				} else
-				    code = 0;
+				if (flp->start.x == alp->start.x && flp->start.y == y && alp->start.y == y)
+				    flags |= ftf_peak0;
+				if (flp->end.x == alp->end.x && flp->end.y == y1 && alp->end.y == y1)
+				    flags |= ftf_peak0;
+				if (FILL_DIRECT)
+				    code = gx_fill_trapezoid_cf_fd(fo.dev, &le, &re, ybot, ytop, flags, fo.pdevc, fo.lop);
+				else
+				    code = gx_fill_trapezoid_cf_nd(fo.dev, &le, &re, ybot, ytop, flags, fo.pdevc, fo.lop);
 			    } else
-				code = loop_fill_trap_np(ll, &le, &re);
-			}
+				code = fo.fill_trap(fo.dev, 
+					&le, &re, ybot, ytop, false, fo.pdevc, fo.lop);
+			} else
+			    code = 0;
 		    }
 		    if (PSEUDO_RASTERIZATION) {
 			if (code < 0)
