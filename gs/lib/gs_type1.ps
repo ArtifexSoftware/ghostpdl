@@ -40,12 +40,12 @@
       { dup length 2 add dict .copydict
         dup /UnderlinePosition known not
          { dup /UnderlinePosition 3 index /FontBBox get
-           1 get 2 div 			% 1/2 the font descent
+           1 get 2 div put 			% 1/2 the font descent
          }
         if
         dup /UnderlineThickness known not
          { dup /UnderlineThickness 3 index /FontBBox get
-           dup 3 get exch 1 get sub 20 div 	% 1/20 the font height
+           dup 3 get exch 1 get sub 20 div put 	% 1/20 the font height
          }
         if
         1 index /FontInfo get wcheck not { readonly } if
