@@ -504,11 +504,13 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 		     * includes at least 5 elements (gdir, head, hhea, hmtx,
 		     * maxp -- but we don't check the actual names).
 		     */
+#if 1 
 		    if ( seg_size < 12 + 5 * 16 ||
-			 memcmp(sdata, "\000\001\000\000", 4) ||
+			 /* memcmp(sdata, "\000\001\000\000", 4) || */
 			 u16(sdata + 4) < 3
 		       )
 		      return_scan_error(pfoe->illegal_GT_segment);
+#endif
 		    plfont->offsets.GT = segment - header;
 		    found = true;
 		    break;
