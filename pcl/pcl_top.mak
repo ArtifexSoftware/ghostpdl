@@ -33,7 +33,7 @@ config-clean: pl.config-clean pcl.config-clean
 
 #### Main program
 
-PCLVERSION=1.05
+PCLVERSION=1.07
 
 $(PCLSRC)pclver.h: $(PCLSRC)pcl_top.mak
 	$(PCLGEN)echogs$(XE) -e .h -w $(PCLSRC)pclver -n -x 23 "define PCLVERSION"
