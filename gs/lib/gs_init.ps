@@ -1551,7 +1551,10 @@ gsave
 SAFER not { (%END SAFER) .skipeof } if
 
 .currentglobal true .setglobal
-/SAFETY 1 dict dup /safe DELAYSAFER not put readonly def
+/SAFETY 2 dict
+  dup /safe DELAYSAFER not put
+  dup /tempfiles 10 dict put
+readonly def
 .setglobal
 
 /.setsafe
@@ -1578,12 +1581,18 @@ SAFER not { (%END SAFER) .skipeof } if
   } .bind executeonly odef
 
 
-/deletefile
-  { //SAFETY /safe get
-      { /invalidfileaccess //signalerror exec }
-      { deletefile }
-    ifelse
-  } .bind executeonly odef
+/deletefile {
+  //SAFETY /safe get {
+	% Allow deleting temporary files (created/opened with .tempfile).
+      //SAFETY /tempfiles get 1 index known {
+	deletefile
+      } {
+	/invalidfileaccess //signalerror exec
+      } ifelse
+    } {
+      deletefile
+  } ifelse
+} .bind executeonly odef
 
 /putdeviceprops
  { //SAFETY /safe get { 
@@ -1606,6 +1615,15 @@ SAFER not { (%END SAFER) .skipeof } if
      putdeviceprops
    } ifelse
  } .bind executeonly odef
+
+% If a file is opened with .tempfile with SAFER not (yet) set,
+% the file can be deleted later, even if SAFER is set.
+/.tempfile {
+  .tempfile	% filename file
+  //SAFETY /safe get not {	% DELAYSAFER, no .setsafe yet
+    //SAFETY /tempfiles get 2 index true put
+  } if
+} .bind executeonly odef
 
 currentdict /SAFETY undef
 
