@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.6 2002/06/21 22:54:03 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.7 2002/06/21 22:56:54 giles Exp $
 */
 
 #include <stddef.h>
@@ -93,7 +93,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, seg_number,
 			   "Invalid HCHEIGHT value");
 
-      printf ("HCHEIGHT = %d\n", HCHEIGHT);
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, seg_number,
+        "HCHEIGHT = %d", HCHEIGHT);
+        
       for (;;)
 	{
 	  /* 6.5.7 */
@@ -113,7 +115,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	    /* todo: mem cleanup */
 	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, seg_number,
 			       "Invalid SYMWIDTH value");
-	  printf ("SYMWIDTH = %d\n", SYMWIDTH);
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, seg_number,
+            "SYMWIDTH = %d", SYMWIDTH);
 
 	  /* 6.5.5 (4c.ii) */
 	  if (!params->SDHUFF || params->SDREFAGG)
@@ -123,7 +126,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		{
 		  Jbig2GenericRegionParams region_params;
 		  int sdat_bytes;
-		  byte *gbreg;
+		  Jbig2Image *image;
 
 		  /* Table 16 */
 		  region_params.MMR = 0;
@@ -135,13 +138,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		  sdat_bytes = params->SDTEMPLATE == 0 ? 8 : 2;
 		  memcpy(region_params.gbat, params->sdat, sdat_bytes);
 
-		  gbreg = jbig2_alloc(ctx->allocator,
-				      ((SYMWIDTH + 7) >> 3) * HCHEIGHT);
+		  image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
 
 		  code = jbig2_decode_generic_region(ctx, seg_number,
 						     &region_params,
 						     as,
-						     gbreg, GB_stats);
+						     image, GB_stats);
 		  /* todo: handle errors */
 		  /* todo: stash gbreg in SDNEWSYMS */
 						     
@@ -150,7 +152,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 	  /* 6.5.5 (4c.iv) */
 	  NSYMSDECODED = NSYMSDECODED + 1;
-	  printf ("%d of %d decoded\n", NSYMSDECODED, params->SDNUMNEWSYMS);
+	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, seg_number,
+            "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
 	}
     }
 
