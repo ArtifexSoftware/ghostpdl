@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_pbm.c,v 1.1 2002/05/08 02:36:04 giles Exp $
+    $Id: jbig2_image_pbm.c,v 1.2 2002/06/04 16:51:02 giles Exp $
 */
 
 #include <stdio.h>
@@ -61,6 +61,92 @@ int jbig2_image_write_pbm(Jbig2Image *image, FILE *out)
 	return 0;
 }
 
+/* take an image from a file in pbm format */
+Jbig2Image *jbig2_image_read_pbm_file(char *filename)
+{
+    FILE *in;
+    Jbig2Image *image;
+    
+    if ((in = fopen(filename, "rb")) == NULL) {
+		fprintf(stderr, "unable to open '%s' for reading\n", filename);
+		return NULL;
+    }
+    
+    image = jbig2_image_read_pbm(in);
+    
+    return (image);
+}
+
+// FIXME: should handle multi-image files
+Jbig2Image *jbig2_image_read_pbm(FILE *in)
+{
+    int i, dim[2];
+    int stride, pbm_stride;
+    int done;
+    Jbig2Image *image;
+    char c,buf[32];
+    byte *data;
+    
+    // look for 'P4' magic
+    while ((c = fgetc(in)) != 'P') {
+        if (feof(in)) return NULL;
+    }
+    if ((c = fgetc(in)) != '4') {
+        fprintf(stderr, "not a binary pbm file.\n");
+        return NULL;
+    }
+    // read size. we must find two decimal numbers representing
+    // the image dimensions. done will index whether we're
+    // looking for the width of the height and i will be our
+    // array index for copying strings into our buffer
+    done = 0;
+    i = 0;
+    while (done < 2) {
+        c = fgetc(in);
+        // skip whitespace
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n') continue;
+        // skip comments
+        if (c == '#') {
+            while ((c = fgetc(in)) != '\n');
+            continue;
+        }
+        if (isdigit(c)) {
+            buf[i++] = c;
+            while (isdigit(buf[i++] = fgetc(in))) {
+                if (feof(in) || i >= 32) {
+                    fprintf(stderr, "pbm parsing error\n");
+                    return NULL;
+                }
+            }
+            buf[i] = '\0';
+            sscanf(buf, "%d", &dim[done]);
+            i = 0;
+            done++;
+        }
+    }
+    // allocate image structure
+    image = jbig2_image_new(dim[0], dim[1]);
+    if (image == NULL) {
+        fprintf(stderr, "could not allocate %dx%d image structure\n", dim[0], dim[1]);
+        return NULL;
+    }
+    // the pbm data is byte-aligned, and our image struct is word-aligned,
+    // so we have to index each line separately
+    pbm_stride = (dim[0] + 1) >> 3;
+    data = (byte *)image->data;
+    for (i = 0; i < dim[1]; i++) {
+        fread(data, sizeof(byte), pbm_stride, in);
+        if (feof(in)) {
+            fprintf(stderr, "unexpected end of pbm file.\n");
+            jbig2_image_free(image);
+            return NULL;
+        }
+        data += image->stride;
+    }
+    
+    // success
+    return image;
+}
 
 #ifdef TEST
 int main(int argc, char *argv[])

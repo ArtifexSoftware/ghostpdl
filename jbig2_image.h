@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.h,v 1.2 2002/05/08 02:36:04 giles Exp $
+    $Id: jbig2_image.h,v 1.3 2002/06/04 16:51:02 giles Exp $
 */
 
 /*
@@ -21,9 +21,11 @@
 #ifndef _JBIG2_IMAGE_H
 #define _JBIG2_IMAGE_H
 
+#include <stdint.h>
+
 typedef struct _Jbig2Image {
-	int	width, height, stride;
-	uint32	*data;
+	int		width, height, stride;
+	uint32_t	*data;
 } Jbig2Image;
 
 Jbig2Image*	jbig2_image_new(int width, int height);
@@ -34,6 +36,8 @@ void		jbig2_image_free(Jbig2Image *image);
 
 int jbig2_image_write_pbm_file(Jbig2Image *image, char *filename);
 int jbig2_image_write_pbm(Jbig2Image *image, FILE *out);
+Jbig2Image *jbig2_image_read_pbm_file(char *filename);
+Jbig2Image *jbig2_image_read_pbm(FILE *in);
 
 #ifdef HAVE_LIBPNG
 int jbig2_image_write_png_file(Jbig2Image *image, char *filename);
