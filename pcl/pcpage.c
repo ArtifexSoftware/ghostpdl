@@ -679,6 +679,7 @@ set_top_margin(
     if ((pcs->vmi_cp != 0) && (tmarg <= hgt)) {
         pcs->margins.top = tmarg;
         pcs->margins.length = PAGE_LENGTH(hgt - tmarg, DFLT_BOTTOM_MARGIN);
+	return pcl_set_cap_y(pcs, 0L, false, false, false);
     }
     return 0;
 }
@@ -717,7 +718,7 @@ set_perforation_skip(
     bool            new_skip = uint_arg(pargs);
 
     if ((new_skip != pcs->perforation_skip) && (new_skip <= 1)) {
-        reset_vertical_margins(pcs);
+	reset_vertical_margins(pcs);
 	pcs->perforation_skip = new_skip;
     }
     return 0;
