@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: png_image.c,v 1.1 2001/08/10 23:29:28 giles Exp $
+    $Id: png_image.c,v 1.2 2001/08/11 06:46:15 giles Exp $
 */
 
 #include <stdio.h>
@@ -24,11 +24,11 @@ int jbig2_image_write_png(Jbig2Image *image, char *filename)
 {
 	FILE	*out;
 	int		i;
-	png_ptr		png;
-	png_infop	info;
-	png_bytep	rowpointer;
+	png_structp		png;
+	png_infop		info;
+	png_bytep		rowpointer;
 	
-	if (out = fopen(filename, "wb") == NULL) {
+	if ((out = fopen(filename, "wb")) == NULL) {
 		fprintf(stderr, "unable to open '%s' for writing\n", filename);
 		return 1;
 	}
@@ -41,10 +41,10 @@ int jbig2_image_write_png(Jbig2Image *image, char *filename)
 		return 2;
 	}
 	
-	info = png_create_info_struct(png_ptr);
+	info = png_create_info_struct(png);
 	if (info == NULL) {
 	  fprintf(stderr, "unable to create png info structure\n");
-      fclose(fp);
+      fclose(out);
       png_destroy_write_struct(&png,  (png_infopp)NULL);
       return 3;
 	}
@@ -53,7 +53,7 @@ int jbig2_image_write_png(Jbig2Image *image, char *filename)
 	if (setjmp(png_jmpbuf(png))) {
 		/* we've returned here after an internal error */
 		fprintf(stderr, "internal error in libpng saving file\n");
-		fclose(fp);
+		fclose(out);
 		png_destroy_write_struct(&png, &info);
 		return 4;
 	}
@@ -70,9 +70,9 @@ int jbig2_image_write_png(Jbig2Image *image, char *filename)
 	png_set_invert_mono(png);
 	
 	/* write out each row in turn */
-	rowpointer = image->data;
-	for(i = 0; i < image->height; i++)
-		png_write_row(png, &rowpointer);
+	rowpointer = (png_bytep)image->data;
+	for(i = 0; i < image->height; i++) {
+		png_write_row(png, rowpointer);
 		rowpointer += image->stride;
 	}
 	
@@ -101,11 +101,13 @@ int main(int argc, char *argv[])
 	}
 	
 	data = image->data;
-	for (j = 0; j < stride; j++) {
+	for (j = 0; j < image->stride; j++) {
 		for (i = 0; i < image->height; i++) {
-			data++ = (i+j % 2) * 0xF0F0F0F0;
+			*data++ = (i+j % 2) * 0xF0F0F0F0;
 		}
 	}
+	
+	return jbig2_image_write_png(image, filename);
 }
 
 #endif /* TEST */

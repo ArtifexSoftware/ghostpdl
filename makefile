@@ -12,8 +12,8 @@ test_huffman:	jbig2_huffman.c
 test_arith:	jbig2_arith.c
 	gcc $(CFLAGS) -DTEST -DDEBUG jbig2_arith.c -o test_arith
 
-test_png:	png_image.c
-	gcc $(CFLAGS) -DTEST -DDEBUG png_image.c -lpng -lz -o test_png
+test_png:	png_image.o jbig2_image.o
+	gcc $(CFLAGS) -DTEST -DDEBUG png_image.c jbig2_image.o -lpng -lz -o test_png
 
 clean:
 	rm $(APPS) *.o
