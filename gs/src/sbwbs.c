@@ -62,7 +62,7 @@ s_buffered_block_init(stream_state * st)
 /* In the latter case, also set filling = false. */
 /* Note that this procedure doesn't take pw as an argument. */
 private int
-s_buffered_process(stream_state * st, stream_cursor_read * pr, bool last)
+s_buffered_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr, bool last)
 {
     stream_buffered_state *const ss = (stream_buffered_state *) st;
     register const byte *p = pr->ptr;
@@ -223,7 +223,7 @@ bwbse_sort(const byte * buffer, uint * indices, int N)
 
 /* Encode a buffer */
 private int
-s_BWBSE_process(stream_state * st, stream_cursor_read * pr,
+s_BWBSE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -239,7 +239,7 @@ s_BWBSE_process(stream_state * st, stream_cursor_read * pr,
 	        return 1;
 
 	/* Continue filling the buffer. */
-	status = s_buffered_process(st, pr, last);
+	status = s_buffered_process(mem, st, pr, last);
 	if (!status)
 	    return 0;
 	ss->N = N = ss->bpos;
@@ -449,7 +449,7 @@ bwbsd_construct_offsets(stream_BWBS_state * sst, int *po, int N)
 
 /* Decode a buffer */
 private int
-s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
+s_BWBSD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -494,7 +494,7 @@ s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
 	ss->bsize = N;
     }
     if (ss->filling) {		/* Continue filling the buffer. */
-	if (!s_buffered_process(st, pr, last))
+	if (!s_buffered_process(mem, st, pr, last))
 	    return 0;
 	/* Construct the inverse sort order. */
 #ifdef SHORT_OFFSETS

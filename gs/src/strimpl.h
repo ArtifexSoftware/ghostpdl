@@ -157,6 +157,7 @@ typedef enum {
     hex_ignore_whitespace = 1,
     hex_ignore_leading_whitespace = 2
 } hex_syntax;
-int s_hex_process(stream_cursor_read *, stream_cursor_write *, int *, hex_syntax);	/* in sstring.c */
+int s_hex_process(const gs_memory_t *mem, stream_cursor_read *, stream_cursor_write *, 
+		  int *, hex_syntax);	/* in sstring.c */
 
 #endif /* strimpl_INCLUDED */

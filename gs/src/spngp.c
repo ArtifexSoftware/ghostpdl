@@ -126,7 +126,7 @@ paeth_predictor(int a, int b, int c)
     return (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
 }
 private void
-s_pngp_process(stream_state * st, stream_cursor_write * pw,
+s_pngp_process(const gs_memory_t *mem, stream_state * st, stream_cursor_write * pw,
 	       const byte * dprev, stream_cursor_read * pr,
 	       const byte * upprev, const byte * up, uint count)
 {
@@ -252,7 +252,7 @@ s_PNGPE_process(const gs_memory_t *mem,
 	    uint n = min(count, bpp);
 
 	    /* Process bytes whose predecessors are in prev. */
-	    s_pngp_process(st, pw, ss->prev, pr, up - bpp, up, n);
+	    s_pngp_process(mem, st, pw, ss->prev, pr, up - bpp, up, n);
 	    if (ss->prev_row)
 		memcpy(up - bpp, ss->prev, n);
 	    if (ss->row_left == 0)
@@ -275,7 +275,7 @@ s_PNGPE_process(const gs_memory_t *mem,
 	    /* We know we have at least bpp input and output bytes, */
 	    /* and that n = bpp. */
 	    count -= bpp;
-	    s_pngp_process(st, pw, pr->ptr - (bpp - 1), pr,
+	    s_pngp_process(mem, st, pw, pr->ptr - (bpp - 1), pr,
 			   up, up + bpp, count);
 	    memcpy(ss->prev, pr->ptr - (bpp - 1), bpp);
 	    if (ss->prev_row) {
@@ -335,7 +335,7 @@ s_PNGPD_process(const gs_memory_t *mem,
 	    uint n = min(count, bpp);
 
 	    /* Process bytes whose predecessors are in prev. */
-	    s_pngp_process(st, pw, ss->prev, pr, up - bpp, up, n);
+	    s_pngp_process(mem, st, pw, ss->prev, pr, up - bpp, up, n);
 	    if (ss->prev_row)
 		memcpy(up - bpp, ss->prev, n);
 	    if (ss->row_left == 0)
@@ -358,7 +358,7 @@ s_PNGPD_process(const gs_memory_t *mem,
 	    /* We know we have at least bpp input and output bytes, */
 	    /* and that n = bpp. */
 	    count -= bpp;
-	    s_pngp_process(st, pw, pw->ptr - (bpp - 1), pr,
+	    s_pngp_process(mem, st, pw, pw->ptr - (bpp - 1), pr,
 			   up, up + bpp, count);
 	    memcpy(ss->prev, pw->ptr - (bpp - 1), bpp);
 	    if (ss->prev_row) {

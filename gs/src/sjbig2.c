@@ -137,7 +137,7 @@ s_jbig2decode_init(stream_state * ss)
    see strimpl.h for return codes.
  */
 private int
-s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
+s_jbig2decode_process(gs_memory_t *mem, stream_state * ss, stream_cursor_read * pr,
 		  stream_cursor_write * pw, bool last)
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;

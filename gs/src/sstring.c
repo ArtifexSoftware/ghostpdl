@@ -90,7 +90,7 @@ s_AXD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr
 	      stream_cursor_write * pw, bool last)
 {
     stream_AXD_state *const ss = (stream_AXD_state *) st;
-    int code = s_hex_process(pr, pw, &ss->odd, hex_ignore_whitespace);
+    int code = s_hex_process(mem, pr, pw, &ss->odd, hex_ignore_whitespace);
 
     switch (code) {
 	case 0:
@@ -361,7 +361,7 @@ const stream_template s_PSSD_template =
  * See strimpl.h for the definition of syntax.
  */
 int
-s_hex_process(stream_cursor_read * pr, stream_cursor_write * pw,
+s_hex_process(const gs_memory_t *mem, stream_cursor_read * pr, stream_cursor_write * pw,
 	      int *odd_digit, hex_syntax syntax)
 {
     const byte *p = pr->ptr;

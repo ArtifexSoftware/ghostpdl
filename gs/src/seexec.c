@@ -170,7 +170,7 @@ hp:	r = *pr;
 	start = r.ptr;
 	if (r.limit - r.ptr > ss->hex_left)
 	    r.limit = r.ptr + ss->hex_left;
-	status = s_hex_process(&r, pw, &ss->odd,
+	status = s_hex_process(mem, &r, pw, &ss->odd,
 			       hex_ignore_leading_whitespace);
 	pr->ptr = r.ptr;
 	ss->hex_left -= r.ptr - start;

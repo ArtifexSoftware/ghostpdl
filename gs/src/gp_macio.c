@@ -281,7 +281,7 @@ mac_std_init(void)
 
 
 private int
-mac_stdin_read_process(stream_state *st, stream_cursor_read *ignore_pr,
+mac_stdin_read_process(const gs_memory_t *mem, stream_state *st, stream_cursor_read *ignore_pr,
   stream_cursor_write *pw, bool last)
 {
     uint count = pw->limit - pw->ptr;
@@ -294,7 +294,7 @@ mac_stdin_read_process(stream_state *st, stream_cursor_read *ignore_pr,
 
 
 private int
-mac_stdout_write_process(stream_state *st, stream_cursor_read *pr,
+mac_stdout_write_process(const gs_memory_t *mem, stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
  
@@ -305,7 +305,7 @@ mac_stdout_write_process(stream_state *st, stream_cursor_read *pr,
 }
 
 private int
-mac_stderr_write_process(stream_state *st, stream_cursor_read *pr,
+mac_stderr_write_process(const gs_memory_t *mem, stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
 

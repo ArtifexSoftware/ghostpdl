@@ -34,7 +34,7 @@ s_MTF_init(stream_state * st)
 
 /* Encode a buffer */
 private int
-s_MTFE_process(stream_state * st, stream_cursor_read * pr,
+s_MTFE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_MTF_state *const ss = (stream_MTF_state *) st;
@@ -68,7 +68,7 @@ const stream_template s_MTFE_template = {
 
 /* Decode a buffer */
 private int
-s_MTFD_process(stream_state * st, stream_cursor_read * pr,
+s_MTFD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_MTF_state *const ss = (stream_MTF_state *) st;

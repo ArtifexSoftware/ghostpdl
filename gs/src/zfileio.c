@@ -132,7 +132,7 @@ zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
     cw.ptr = str + start - 1;
     cw.limit = str + len - 1;
     for (;;) {
-	status = s_hex_process(&s->cursor.r, &cw, &odd,
+	status = s_hex_process(imemory, &s->cursor.r, &cw, &odd,
 			       hex_ignore_garbage);
 	if (status == 1) {	/* filled the string */
 	    ref_assign_inline(op - 1, op);

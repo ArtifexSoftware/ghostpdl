@@ -100,7 +100,7 @@ s_12_init(stream_state * st)
 	  }\
 	}
 private int
-s_N_8_process(stream_state * st, stream_cursor_read * pr,
+s_N_8_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     BEGIN_1248;
@@ -171,7 +171,7 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
 
 /* 12-to-8 "expansion" */
 private int
-s_12_8_process(stream_state * st, stream_cursor_read * pr,
+s_12_8_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     BEGIN_1248;
@@ -217,7 +217,7 @@ s_12_8_process(stream_state * st, stream_cursor_read * pr,
 	  }\
 	}
 private int
-s_8_N_process(stream_state * st, stream_cursor_read * pr,
+s_8_N_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     BEGIN_1248;
@@ -325,7 +325,7 @@ s_C2R_set_defaults(stream_state * st)
 
 /* Process one buffer. */
 private int
-s_C2R_process(stream_state * st, stream_cursor_read * pr,
+s_C2R_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_C2R_state *const ss = (stream_C2R_state *) st;
@@ -404,7 +404,7 @@ s_IE_init(stream_state * st)
 
 /* Process a buffer. */
 private int
-s_IE_process(stream_state * st, stream_cursor_read * pr,
+s_IE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
     stream_IE_state *const ss = (stream_IE_state *) st;
@@ -599,7 +599,7 @@ s_Subsample_init(stream_state * st)
 
 /* Process one buffer. */
 private int
-s_Subsample_process(gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_Subsample_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		    stream_cursor_write * pw, bool last)
 {
     stream_Subsample_state *const ss = (stream_Subsample_state *) st;
@@ -694,7 +694,7 @@ s_Average_release(stream_state * st)
 
 /* Process one buffer. */
 private int
-s_Average_process(stream_state * st, stream_cursor_read * pr,
+s_Average_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		  stream_cursor_write * pw, bool last)
 {
     stream_Average_state *const ss = (stream_Average_state *) st;
@@ -950,7 +950,7 @@ s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss,
 
 /* Process a buffer. */
 private int
-s_compr_chooser_process(gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+s_compr_chooser_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
     stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;

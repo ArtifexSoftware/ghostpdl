@@ -60,7 +60,7 @@ s_BHCE_release(stream_state * st)
 
 /* Process a buffer. */
 private int
-s_BHCE_process(stream_state * st, stream_cursor_read * pr,
+s_BHCE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_BHCE_state *const ss = (stream_BHCE_state *) st;
@@ -199,8 +199,8 @@ s_BHCD_release(stream_state * st)
 
 /* Process a buffer. */
 private int
-s_BHCD_process(stream_state * st, stream_cursor_read * pr,
-	       stream_cursor_write * pw, bool last)
+s_BHCD_process(gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
+	       const stream_cursor_write * pw, bool last)
 {
     stream_BHCD_state *const ss = (stream_BHCD_state *) st;
 

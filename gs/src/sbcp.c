@@ -33,7 +33,7 @@
 
 /* Process a buffer */
 private int
-s_xBCPE_process(stream_state * st, stream_cursor_read * pr,
+s_xBCPE_process(gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last, const byte * escaped)
 {
     const byte *p = pr->ptr;
@@ -75,7 +75,7 @@ s_BCPE_process(const gs_memory_t *mem,
 	0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0
     };
 
-    return s_xBCPE_process(st, pr, pw, last, escaped);
+    return s_xBCPE_process(mem, st, pr, pw, last, escaped);
 }
 private int
 s_TBCPE_process(const gs_memory_t *mem, 
@@ -88,7 +88,7 @@ s_TBCPE_process(const gs_memory_t *mem,
 	0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0
     };
 
-    return s_xBCPE_process(st, pr, pw, last, escaped);
+    return s_xBCPE_process(mem, st, pr, pw, last, escaped);
 }
 
 /* Stream templates */
@@ -116,7 +116,7 @@ s_BCPD_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_xBCPD_process(stream_state * st, stream_cursor_read * pr,
+s_xBCPD_process(gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last, bool tagged)
 {
     stream_BCPD_state *const ss = (stream_BCPD_state *) st;
@@ -229,13 +229,13 @@ private int
 s_BCPD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
-    return s_xBCPD_process(st, pr, pw, last, false);
+    return s_xBCPD_process(mem, st, pr, pw, last, false);
 }
 private int
 s_TBCPD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
-    return s_xBCPD_process(st, pr, pw, last, true);
+    return s_xBCPD_process(mem, st, pr, pw, last, true);
 }
 
 /* Stream templates */
