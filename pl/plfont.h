@@ -58,7 +58,7 @@ typedef enum {
 #define pl_fp_pitch_cp(pfp) ((pfp)->pitch.cp)
 #define pl_fp_set_pitch_cp(pfp, cpv)\
   ((pfp)->pitch.cp = (cpv),\
-   (pfp)->pitch.per_inch_x100 = 720000.0 / (cpv))
+   (pfp)->pitch.per_inch_x100 = ( (cpv) == 0 ? (cpv) : 720000.0 / (cpv)))
 #define pl_fp_pitch_per_inch(pfp) ((pfp)->pitch.per_inch_x100 / 100.0)
 #define pl_fp_pitch_per_inch_x100(pfp) ((pfp)->pitch.per_inch_x100)
 #define pl_fp_set_pitch_per_inch(pfp, cpi)\
@@ -259,7 +259,8 @@ typedef struct pl_font_offset_errors_s {
   int illegal_VT_segment;
   int illegal_BR_segment;
 } pl_font_offset_errors_t;
-int pl_font_scan_segments(pl_font_t *plfont, int fst_offset,
+int pl_font_scan_segments(const gs_memory_t *mem, 
+			  pl_font_t *plfont, int fst_offset,
                           int start_offset, long end_offset,
                           bool large_sizes,
                           const pl_font_offset_errors_t *pfoe);

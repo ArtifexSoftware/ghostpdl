@@ -119,8 +119,8 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
 /* Next-character procedure for fonts in GL/2 mode. NB.  this need to
    be reworked. */
 private int
-hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr, gs_glyph *pglyph)
-{	const pcl_state_t *pcs = gs_state_client_data(penum->pgs);
+hpgl_next_char_proc(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
+{	const pcl_state_t *pcs = gs_state_client_data(penum->pis);
 #define pgls pcs
 	int code = hpgl_next_char(penum, pgls, pchr);
 	if ( code )
@@ -190,15 +190,15 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	    int code;
 
 	    if ( pfont == 0 )
-	      return_error(e_Memory);
+	      return_error(pgls->memory, e_Memory);
 	    code = pl_fill_in_font((gs_font *)pfont, font, pgls->font_dir,
 				   pgls->memory, "stick/arc font");
 	    if ( code < 0 )
 	      return code;
 	    if ( pfs->params.proportional_spacing )
-	      hpgl_fill_in_arc_font(pfont, gs_next_ids(1));
+	      hpgl_fill_in_arc_font(pfont, gs_next_ids(pgls->memory, 1));
 	    else
-	      hpgl_fill_in_stick_font(pfont, gs_next_ids(1));
+	      hpgl_fill_in_stick_font(pfont, gs_next_ids(pgls->memory, 1));
 	    font->pfont = (gs_font *)pfont;
 	    font->scaling_technology = plfst_TrueType;/****** WRONG ******/
 	    font->font_type = plft_Unicode;
@@ -379,7 +379,7 @@ hpgl_slant_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *s_dxy
 	gs_point tmp_dxy = *dxy;
 	gs_make_identity(&smat);
 	smat.yx = pgls->g.character.slant;
-	hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &smat, s_dxy));
+	hpgl_call(gs_distance_transform(pgls->memory, tmp_dxy.x, tmp_dxy.y, &smat, s_dxy));
     }
     return 0;
 }
@@ -399,7 +399,7 @@ hpgl_rotation_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *r_
 	rmat.xy = rise / denom;
 	rmat.yx = -rmat.xy;
 	rmat.yy = rmat.xx;
-	hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &rmat, r_dxy));
+	hpgl_call(gs_distance_transform(pgls->memory, tmp_dxy.x, tmp_dxy.y, &rmat, r_dxy));
     }
     return 0;
 }
@@ -462,7 +462,7 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 	    gs_matrix mat;
 	    gs_point user_dxy;
 	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-	    hpgl_call(gs_distance_transform_inverse(dx, dy, &mat, &user_dxy));
+	    hpgl_call(gs_distance_transform_inverse(pgls->memory, dx, dy, &mat, &user_dxy));
 	    dx = user_dxy.x;
 	    dy = user_dxy.y;
 	}
@@ -504,9 +504,9 @@ hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_real_t spaces, lines;
 
-	if ( hpgl_arg_c_real(pargs, &spaces) )
+	if ( hpgl_arg_c_real(pgls->memory, pargs, &spaces) )
 	  {
-	    if ( !hpgl_arg_c_real(pargs, &lines) )
+	    if ( !hpgl_arg_c_real(pgls->memory, pargs, &lines) )
 	      return e_Range;
 	  }
 	else
@@ -563,7 +563,7 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 			       "hpgl_resize_label_buffer");
 
 	    if ( new_mem == 0 )
-	      return_error(e_Memory);
+	      return_error(pgls->memory, e_Memory);
 	    pgls->g.label.buffer = new_mem;
 	    pgls->g.label.buffer_size = new_size;
 	  }
@@ -1074,7 +1074,7 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 	    }
 	    break;
 	default:
-	    dprintf("unknown label parameter");
+	    dprintf(pgls->memory, "unknown label parameter");
 
 	}
     /* a relative move to the new position */
@@ -1352,7 +1352,7 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    have_16bits = !have_16bits; 
 	    prev_ch = ch;           
 	    ch = *++p;          
-	    if_debug1('I',
+	    if_debug1(pgls->memory, 'I',
 		      (ch == '\\' ? " \\%c" : ch >= 33 && ch <= 126 ? " %c" :
 		       " \\%03o"),
 		      ch);
@@ -1457,7 +1457,7 @@ pglabel_do_registration(
     gs_memory_t *mem
 )
 {		/* Register commands */
-	DEFINE_HPGL_COMMANDS
+    DEFINE_HPGL_COMMANDS(mem)
 	  HPGL_COMMAND('C', 'P', hpgl_CP, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	  /* LB also has special argument parsing. */
 	  HPGL_COMMAND('L', 'B', hpgl_LB, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),

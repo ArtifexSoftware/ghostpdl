@@ -42,17 +42,17 @@ hpgl_PC(
     /* output any current path */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
-    if (hpgl_arg_int(pargs, &pen)) {
+    if (hpgl_arg_int(pgls->memory, pargs, &pen)) {
         hpgl_real_t primary[3];
 
         if ((pen < 0) || (pen >= npen))
 	    return e_Range;
 
-	if (hpgl_arg_c_real(pargs, &primary[0])) {
+	if (hpgl_arg_c_real(pgls->memory, pargs, &primary[0])) {
             float       comps[3];
 
-	    if ( !hpgl_arg_c_real(pargs, &primary[1]) ||
-		 !hpgl_arg_c_real(pargs, &primary[2])   )
+	    if ( !hpgl_arg_c_real(pgls->memory, pargs, &primary[1]) ||
+		 !hpgl_arg_c_real(pgls->memory, pargs, &primary[2])   )
 		return e_Range;
             comps[0] = primary[0];
             comps[1] = primary[1];
@@ -90,7 +90,7 @@ hpgl_NP(
     /* output any current path */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
-    if ( hpgl_arg_int(pargs, &n) && ((n < 2) || (n > 32768)) )
+    if ( hpgl_arg_int(pgls->memory, pargs, &n) && ((n < 2) || (n > 32768)) )
 	return e_Range;
     return pcl_palette_NP(pgls, n);
 }
@@ -115,7 +115,7 @@ hpgl_CR(
 
     range[0] = range[2] = range[4] = 0;
     range[1] = range[3] = range[5] = 255;
-    for (i = 0; (i < 6) && hpgl_arg_c_real(pargs, &range[i]); ++i)
+    for (i = 0; (i < 6) && hpgl_arg_c_real(pgls->memory, pargs, &range[i]); ++i)
 	;
     if ( (range[0] == range[1]) ||
          (range[2] == range[3]) ||
@@ -142,7 +142,7 @@ pgcolor_do_registration(
 )
 {
     /* Register commands */
-    DEFINE_HPGL_COMMANDS
+    DEFINE_HPGL_COMMANDS(mem)
     HPGL_COMMAND('C', 'R', hpgl_CR, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('N', 'P', hpgl_NP, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('P', 'C', hpgl_PC, hpgl_cdf_pcl_rtl_both),

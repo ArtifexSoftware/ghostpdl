@@ -52,7 +52,7 @@ hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
 	 (pgls->g.picture_frame_width == 0) ||
 	 (pgls->g.plot_width == 0) ||
 	 (pgls->g.plot_height == 0) ) {
-	dprintf("bad picture frame coordinates\n");
+	dprintf(pgls->memory, "bad picture frame coordinates\n");
 	return 0;
     } else {
 	hpgl_real_t vert_scale = (pgls->g.plot_size_vertical_specified) ?
@@ -104,8 +104,8 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 	    hpgl_call(gs_scale(pgls->pgs, -(7200.0/1016.0), (7200.0/1016.0)));
 	} else {
 	    hpgl_call(gs_translate(pgls->pgs,
-			       pgls->g.picture_frame.anchor_point.x,
-			       pgls->g.picture_frame.anchor_point.y));
+				   pgls->g.picture_frame.anchor_point.x,
+				   pgls->g.picture_frame.anchor_point.y));
 	    /* move the origin */
 	    hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
 	    /* scale to plotter units and a flip for y */
@@ -164,7 +164,8 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 	    hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
 	    hpgl_call(gs_matrix_scale(pmat, pgls->g.scaling_params.factor.x,
 				      pgls->g.scaling_params.factor.y, pmat));
-	    hpgl_call(gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
+	    hpgl_call(gs_matrix_translate(pgls->memory, pmat, 
+					  -pgls->g.scaling_params.pmin.x,
 					  -pgls->g.scaling_params.pmin.y, pmat));
 	    break;
 	  default:
@@ -203,7 +204,8 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 	      scale_y -= fmod(scale_y, 1.0E-5);
 	      hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
 	      hpgl_call(gs_matrix_scale(pmat, scale_x, scale_y, pmat));
-	      hpgl_call(gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
+	      hpgl_call(gs_matrix_translate(pgls->memory, pmat, 
+					    -pgls->g.scaling_params.pmin.x,
 					    -pgls->g.scaling_params.pmin.y, pmat));
 	      break;
 	    }
@@ -253,7 +255,7 @@ hpgl_get_line_pattern_length(hpgl_state_t *pgls)
 	    isotropic_user_box.p = pgls->g.scaling_params.pmin;
 	    isotropic_user_box.q = pgls->g.scaling_params.pmax;
 
-	    hpgl_call(gs_bbox_transform(&isotropic_user_box, 
+	    hpgl_call(gs_bbox_transform(pgls->memory, &isotropic_user_box, 
 					&user_to_plu_mat,
 					&isotropic_plu_box));
 
@@ -428,7 +430,8 @@ vector:
 
       default:
 	/* shouldn't happen; we must have a mode to properly parse hpgl file. */
-	dprintf("warning no hpgl rendering mode set using vector mode\n");
+	dprintf(pgls->memory, 
+		"warning no hpgl rendering mode set using vector mode\n");
 	goto vector;
     }
 
@@ -436,8 +439,8 @@ vector:
     /* I do not remember the rational for the large miter */
     hpgl_call(gs_setmiterlimit( pgls->pgs,
 				(pgls->g.line.join == 1)
-                                   ? 5000.0
-                                   : pgls->g.miter_limit
+				? 5000.0
+				: pgls->g.miter_limit
                                 ) );
 #endif
     hpgl_call(gs_setmiterlimit(pgls->pgs, pgls->g.miter_limit));
@@ -488,7 +491,8 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    pcl_clip_box.q.x = pcl_clip_box.p.x + pgls->g.picture_frame_width;
 	    pcl_clip_box.q.y = pcl_clip_box.p.y + pgls->g.picture_frame_height;
 	    
-	    hpgl_call(gs_bbox_transform(&pcl_clip_box,
+	    hpgl_call(gs_bbox_transform(pgls->memory, 
+					&pcl_clip_box,
 					&pcl_ctm,
 					&dev_clip_box));
 	    /* the clip box defined by the picture frame appears to be
@@ -504,7 +508,8 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		gs_rect dev_soft_window_box;
 		gs_matrix ctm;
 		hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
-		hpgl_call(gs_bbox_transform(&pgls->g.soft_clip_window.rect,
+		hpgl_call(gs_bbox_transform(pgls->memory, 
+					    &pgls->g.soft_clip_window.rect,
 					    &ctm,
 					    &dev_soft_window_box));
 		/* Enlarge IW by 1 device dot to compensate for it's 
@@ -543,13 +548,13 @@ hpgl_draw_vector_absolute(
 {
     bool                    set_ctm = (render_mode != hpgl_rm_character);
 
-    hpgl_call( hpgl_add_point_to_path( pgls,
+    hpgl_call(hpgl_add_point_to_path( pgls,
                                        x0,
                                        y0,
 				       hpgl_plot_move_absolute,
                                        set_ctm
                                        ) );
-    hpgl_call( hpgl_add_point_to_path( pgls,
+    hpgl_call(hpgl_add_point_to_path( pgls,
                                        x1,
                                        y1,
 				       hpgl_plot_draw_absolute,
@@ -713,12 +718,12 @@ hpgl_polyfill(
     if (sin_dir < 0)
 	sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
 
-    hpgl_call( hpgl_get_adjusted_corner( x_fill_increment,
-                                         y_fill_increment,
-                                         &bbox,
-                                         &pgls->g.anchor_corner,
-                                         &start
-                                         ) );
+    hpgl_call(hpgl_get_adjusted_corner( x_fill_increment,
+					y_fill_increment,
+					&bbox,
+					&pgls->g.anchor_corner,
+					&start
+					) );
 
     /*
      * calculate the diagonals magnitude.  Note we clip this
@@ -730,26 +735,26 @@ hpgl_polyfill(
     endx = (diag_mag * cos_dir) + start.x;
     endy = (diag_mag * sin_dir) + start.y;
     hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
-    hpgl_call( hpgl_draw_vector_absolute( pgls,
-                                          start.x,
-                                          start.y,
-					  endx,
-                                          endy,
-                                          render_mode
-                                          ) );
+    hpgl_call(hpgl_draw_vector_absolute( pgls,
+					 start.x,
+					 start.y,
+					 endx,
+					 endy,
+					 render_mode
+					 ) );
     /* Travel along +x using current spacing. */
     if (x_fill_increment != 0) {
 	while ( endx += x_fill_increment,
 		(start.x += x_fill_increment) <= bbox.q.x ) {
 
 	    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
-	    hpgl_call( hpgl_draw_vector_absolute( pgls,
-                                                  start.x,
-                                                  start.y,
-						  endx,
-                                                  endy,
-                                                  render_mode
-                                                  ) );
+	    hpgl_call(hpgl_draw_vector_absolute( pgls,
+						 start.x,
+						 start.y,
+						 endx,
+						 endy,
+						 render_mode
+						 ) );
 	}
     }
 
@@ -761,12 +766,12 @@ hpgl_polyfill(
 	 * the X loop left everything set up exactly right for this case.
 	 */
 	if (cos_dir >= 0) {
-	    hpgl_call( hpgl_get_adjusted_corner( x_fill_increment,
-		                                 y_fill_increment,
-                                                 &bbox,
-                                                 &pgls->g.anchor_corner,
-                                                 &start
-                                                 ) );
+	    hpgl_call(hpgl_get_adjusted_corner( x_fill_increment,
+						y_fill_increment,
+						&bbox,
+						&pgls->g.anchor_corner,
+						&start
+						) );
 	    endx = (diag_mag * cos_dir) + start.x;
 	    endy = (diag_mag * sin_dir) + start.y;
 	} else
@@ -775,13 +780,13 @@ hpgl_polyfill(
 	while ( endy += y_fill_increment,
 		(start.y += y_fill_increment) <= bbox.q.y ) {
 	    hpgl_alternate_line_pattern_offset(pgls, lines_filled++);
-	    hpgl_call( hpgl_draw_vector_absolute( pgls,
-                                                  start.x,
-                                                  start.y,
-						  endx,
-                                                  endy,
-                                                  render_mode
-                                                  ) );
+	    hpgl_call(hpgl_draw_vector_absolute( pgls,
+						 start.x,
+						 start.y,
+						 endx,
+						 endy,
+						 render_mode
+						 ) );
 	}
 	
     }
@@ -875,15 +880,15 @@ hpgl_set_drawing_color(
 	  case hpgl_char_fill_edge:
 	    if ( (pgls->g.fill.type == hpgl_FT_pattern_one_line) ||
 		 (pgls->g.fill.type == hpgl_FT_pattern_two_lines)  ) {
-		hpgl_call( hpgl_polyfill_using_current_line_type( pgls,
-                                                                  render_mode
-                                                                  ) );
+		hpgl_call(hpgl_polyfill_using_current_line_type( pgls,
+								 render_mode
+								 ) );
 		return 0;
 	    } else
 		goto fill;
 
 	  default:
-	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+	    dprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
 	    return 0;
 	}
 	break;
@@ -950,7 +955,7 @@ fill:
 
             break;
 	  default:
-	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+	    dprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
 	    break;
 	}
 	break;
@@ -995,13 +1000,13 @@ fill:
             break;
 
 	  default:
-	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+	    dprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
 	    break;
 	}
 	break;
 
       default:
-	dprintf("hpgl_set_drawing_color: internal error illegal mode\n");
+	dprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal mode\n");
 	break;
     }
 
@@ -1096,7 +1101,7 @@ hpgl_add_point_to_path(
     {
         int     code = (*gs_procs[func])(pgls->pgs, x, y);
 	if (code < 0) {
-            hpgl_call_note_error(code);
+            hpgl_call_note_error(pgls->memory, code);
 	    if (code == gs_error_limitcheck)
 		hpgl_set_lost_mode(pgls, hpgl_lost_mode_entered);
 	} else {
@@ -1375,7 +1380,8 @@ hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t rende
 	adjust.y = -1;           
 	/* determine the adjustment in device space */
 	hpgl_call(gs_defaultmatrix(pgls->pgs, &default_matrix));
-	hpgl_call(gs_distance_transform(adjust.x, adjust.y, &default_matrix, &distance));
+	hpgl_call(gs_distance_transform(pgls->memory, 
+					adjust.x, adjust.y, &default_matrix, &distance));
 	/* translate all points in the path by the adjustment.  */
 	hpgl_call(gx_path_translate(ppath,
                   float2fixed(distance.x / fabs(distance.x)),
@@ -1531,7 +1537,7 @@ hpgl_draw_current_path(
 	    break;
 	}
     default :
-        dprintf("unknown render mode\n");
+        dprintf(pgls->memory, "unknown render mode\n");
     }
 
     return 0;

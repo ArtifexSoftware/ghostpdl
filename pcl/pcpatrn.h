@@ -77,23 +77,23 @@ typedef struct pcl_pattern_data_s {
 /*
  * The usual copy, init, and release macros.
  */
-#define pcl_pattern_data_init_from(pto, pfrom)  \
+#define pcl_pattern_data_init_from(mem, pto, pfrom)  \
     BEGIN                                       \
-    rc_increment(pfrom);                        \
+    rc_increment(mem, pfrom);                        \
     (pto) = (pfrom);                            \
     END
 
-#define pcl_pattern_data_copy_from(pto, pfrom)          \
+#define pcl_pattern_data_copy_from(mem, pto, pfrom)          \
     BEGIN                                               \
     if ((pto) != (pfrom)) {                             \
-        rc_increment(pfrom);                            \
-        rc_decrement(pto, "pcl_pattern_data_copy_from");\
+        rc_increment(mem, pfrom);                            \
+        rc_decrement(mem, pto, "pcl_pattern_data_copy_from");\
         (pto) = (pfrom);                                \
     }                                                   \
     END
 
-#define pcl_pattern_data_release(ppat_data)             \
-    rc_decrement(ppat_data, "pcl_pattern_data_release")
+#define pcl_pattern_data_release(mem, ppat_data)             \
+    rc_decrement(mem, ppat_data, "pcl_pattern_data_release")
 
 
 
@@ -265,23 +265,23 @@ struct  pcl_ccolor_s {
 /*
  * The usual copy, init, and release macros.
  */
-#define pcl_ccolor_init_from(pto, pfrom)    \
+#define pcl_ccolor_init_from(mem, pto, pfrom)    \
     BEGIN                                   \
-    rc_increment(pfrom);                    \
+    rc_increment(mem, pfrom);                    \
     (pto) = (pfrom);                        \
     END
 
-#define pcl_ccolor_copy_from(pto, pfrom)            \
+#define pcl_ccolor_copy_from(mem, pto, pfrom)            \
     BEGIN                                           \
     if ((pto) != (pfrom)) {                         \
-        rc_increment(pfrom);                        \
-        rc_decrement(pto, "pcl_ccolor_copy_from");  \
+        rc_increment(mem, pfrom);                        \
+        rc_decrement(mem, pto, "pcl_ccolor_copy_from");  \
         (pto) = (pfrom);                            \
     }                                               \
     END
 
-#define pcl_ccolor_release(pccolor)             \
-    rc_decrement(pccolor, "pcl_ccolor_release")
+#define pcl_ccolor_release(mem, pccolor)             \
+    rc_decrement(mem, pccolor, "pcl_ccolor_release")
 
 
 /*

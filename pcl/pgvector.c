@@ -34,13 +34,13 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	hpgl_real_t x_center, y_center, sweep, x_current, y_current, chord_angle = 5;
 	hpgl_real_t radius, start_angle;
 
-	if ( !hpgl_arg_units(pargs, &x_center) ||
-	     !hpgl_arg_units(pargs, &y_center) ||
-	     !hpgl_arg_c_real(pargs, &sweep)
+	if ( !hpgl_arg_units(pgls->memory, pargs, &x_center) ||
+	     !hpgl_arg_units(pgls->memory, pargs, &y_center) ||
+	     !hpgl_arg_c_real(pgls->memory, pargs, &sweep)
 	     )
 	  return e_Range;
 
-	hpgl_arg_c_real(pargs, &chord_angle);
+	hpgl_arg_c_real(pgls->memory, pargs, &chord_angle);
 
 	x_current = pgls->g.pos.x;
 	y_current = pgls->g.pos.y;
@@ -75,14 +75,14 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	hpgl_real_t x_inter, y_inter, x_end, y_end;
 	hpgl_real_t chord_angle = 5;
 
-	if ( !hpgl_arg_units(pargs, &x_inter) ||
-	     !hpgl_arg_units(pargs, &y_inter) ||
-	     !hpgl_arg_units(pargs, &x_end) ||
-	     !hpgl_arg_units(pargs, &y_end)
+	if ( !hpgl_arg_units(pgls->memory, pargs, &x_inter) ||
+	     !hpgl_arg_units(pgls->memory, pargs, &y_inter) ||
+	     !hpgl_arg_units(pgls->memory, pargs, &x_end) ||
+	     !hpgl_arg_units(pgls->memory, pargs, &y_end)
 	   )
 	  return e_Range;
 
-	hpgl_arg_c_real(pargs, &chord_angle);
+	hpgl_arg_c_real(pgls->memory, pargs, &chord_angle);
 
 	if ( relative )
 	  {
@@ -125,7 +125,7 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	    hpgl_real_t coords[6];
 	    int i;
 
-	    for ( i = 0; i < 6 && hpgl_arg_units(pargs, &coords[i]); ++i )
+	    for ( i = 0; i < 6 && hpgl_arg_units(pgls->memory, pargs, &coords[i]); ++i )
 	      ;
 	    switch ( i )
 	      {
@@ -184,7 +184,8 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
     if ( hpgl_plot_is_move(func) && !pgls->g.polygon_mode ) {
 	hpgl_call(hpgl_close_path(pgls));
     }
-    while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) ) {
+    while ( hpgl_arg_units(pgls->memory, pargs, &x) && 
+	    hpgl_arg_units(pgls->memory, pargs, &y) ) {
 	/* move with arguments closes path */
 	if ( pargs->phase == 0 
 	     && (hpgl_plot_is_move(func) || pgls->g.subpolygon_started )) {
@@ -284,7 +285,7 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	bool reset_ctm = true;
 	gs_point pos;
 
-	if ( !hpgl_arg_units(pargs, &radius) )
+	if ( !hpgl_arg_units(pgls->memory, pargs, &radius) )
 	    return e_Range;
 	
 	/* close existing path iff a draw exists in polygon path */
@@ -294,7 +295,7 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* center; closing subpolygon can move center */
 	pos = pgls->g.pos; 
 
-	hpgl_arg_c_real(pargs, &chord);
+	hpgl_arg_c_real(pgls->memory, pargs, &chord);
 	/* draw the path here for line type 0, otherwise the first dot
            drawn in the circumference of the circle will be oriented
            in the same direction as the center dot */
@@ -366,7 +367,7 @@ pe_fixed2float(int32 x, int32 fbits)
     return ((floatp)x * (1.0 / (1 << fbits)));
 }
 
-private bool pe_args(hpgl_args_t *, int32 *, int);
+private bool pe_args(const gs_memory_t *mem, hpgl_args_t *, int32 *, int);
 int
 hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
@@ -405,10 +406,10 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    return 0;
 	case ':':
-	    if_debug0('I', "\n  PE SP");
+	    if_debug0(pgls->memory, 'I', "\n  PE SP");
 	    {
 		int32 pen;
-		if ( !pe_args(pargs, &pen, 1) )
+		if ( !pe_args(pgls->memory, pargs, &pen, 1) )
 		    {
 			pargs->source.ptr = p - 1;
 			break;
@@ -423,14 +424,14 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    p = pargs->source.ptr;
 	    continue;
 	case '<':
-	    if_debug0('I', "\n  PE PU");
+	    if_debug0(pgls->memory, 'I', "\n  PE PU");
 	    pargs->phase |= pe_pen_up;
 	    continue;
 	case '>':
-	    if_debug0('I', "\n  PE PD");
+	    if_debug0(pgls->memory, 'I', "\n  PE PD");
 	    { 
 		int32 fbits;
-		if ( !pe_args(pargs, &fbits, 1) )
+		if ( !pe_args(pgls->memory, pargs, &fbits, 1) )
 		    {
 			pargs->source.ptr = p - 1;
 			break;
@@ -442,11 +443,11 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    p = pargs->source.ptr;
 	    continue;
 	case '=':
-	    if_debug0('I', "  PE ABS");
+	    if_debug0(pgls->memory, 'I', "  PE ABS");
 	    pargs->phase |= pe_absolute;
 	    continue;
 	case '7':
-	    if_debug0('I', "\n  PE 7bit");
+	    if_debug0(pgls->memory, 'I', "\n  PE 7bit");
 	    pargs->phase |= pe_7bit;
 	    continue;
 	case ESC:
@@ -474,7 +475,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		int32 xy[2];
 		hpgl_args_t     args;
 		int32 fbits = pgls->g.fraction_bits;
-		if ( !pe_args(pargs, xy, 2) )
+		if ( !pe_args(pgls->memory, pargs, xy, 2) )
 		    break;
 		if ( pargs->phase & pe_absolute )
 		    pgls->g.relative_coords = hpgl_plot_absolute;
@@ -505,7 +506,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* Get an encoded value from the input.  Return false if we ran out of */
 /* input data.  Ignore syntax errors (!). */
 private bool
-pe_args(hpgl_args_t *pargs, int32 *pvalues, int count)
+pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pvalues, int count)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 	int i;
@@ -542,7 +543,7 @@ pe_args(hpgl_args_t *pargs, int32 *pvalues, int count)
 		}
 	      }
 	    pvalues[i] = (value & 1 ? -(value >> 1) : value >> 1);
-	    if_debug1('I', "  [%ld]", (long)pvalues[i] );
+	    if_debug1(mem, 'I', "  [%ld]", (long)pvalues[i] );
 	  }
 	pargs->source.ptr = p;
 	return true;
@@ -593,7 +594,7 @@ pgvector_do_registration(
 )
 {	
     /* Register commands */
-    DEFINE_HPGL_COMMANDS
+    DEFINE_HPGL_COMMANDS(mem)
 	HPGL_COMMAND('A', 'A', 
 		     hpgl_AA, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	HPGL_COMMAND('A', 'R', 

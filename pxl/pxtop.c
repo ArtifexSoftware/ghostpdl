@@ -108,7 +108,7 @@ px_stream_header_process(
 	    default:
 	      /* Initialize state to avoid confusion */
 	      px_top_init(process->st, process->pxs, true);
-	      return gs_note_error(errorUnsupportedBinding);
+	      return gs_note_error(process->pxs->memory, errorUnsupportedBinding);
 	      }
 	    break;
 	  case PSHPSkipping:
@@ -121,7 +121,7 @@ px_stream_header_process(
 	  case PSHPDone:
 	  default:
 	    /* Shouldn't ever come here */
-	    return gs_note_error(errorIllegalStreamHeader);
+	    return gs_note_error(process->pxs->memory, errorIllegalStreamHeader);
 	    }
 	  }
 

@@ -89,7 +89,7 @@ int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfi
     /* allocate a buffer for the entire file */
     ptt_font_data = gs_alloc_bytes( mem, len, "get_windows_name_from_tt_file" );
     if ( ptt_font_data == NULL )
-	return_error( gs_error_VMerror );
+	return_error(mem, gs_error_VMerror );
 
     /* seek back to the beginning of the file and read the data
        into the buffer */
@@ -184,6 +184,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 	    int code;
 	    file_enum *fe;
 	    FILE *in = NULL;
+
             /* handle trailing separator */
             bool append_separator = false;
             int separator_length = strlen(gp_file_name_directory_separator());
@@ -196,7 +197,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
             if ( (strlen( pattern ) + 
                   strlen( tmp_pathp) + 1 ) +
                  (append_separator ? separator_length : 0) > sizeof( tmp_path_copy ) ) {
-                dprintf1( "path name %s too long\n", tmp_pathp );
+                dprintf1(mem, "path name %s too long\n", tmp_pathp );
                 continue;
             }
 
@@ -213,7 +214,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 					  strlen( tmp_path_copy ), mem );
 
 	    /* loop through the files */
-	    while ( ( code = gp_enumerate_files_next( fe,
+	    while ( ( code = gp_enumerate_files_next( mem,  fe,
 						      tmp_path_copy,
 						      sizeof( tmp_path_copy ) ) ) >= 0 ) {
 		char buffer[1024];
@@ -226,7 +227,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		    fclose( in );
 
 		if ( code > sizeof( tmp_path_copy ) ) {
-		    dprintf("filename length exceeds file name storage buffer length\n");
+		    dprintf(mem, "filename length exceeds file name storage buffer length\n");
 		    continue;
 		}
 		/* null terminate the string */
@@ -234,7 +235,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
 		in = fopen( tmp_path_copy, "rb" );
 		if ( in == NULL ) { /* shouldn't happen */
-		    dprintf1( "cannot open file %s\n", tmp_path_copy );
+		    dprintf1(mem, "cannot open file %s\n", tmp_path_copy );
 		    continue;
 		}
 
@@ -243,12 +244,13 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
 		code = get_windows_name_from_tt_file( in, mem, buffer );
 		if ( code < 0 ) {
-		    dprintf1( "input output failure on TrueType File %s\n", tmp_path_copy );
+		    dprintf1(mem, "input output failure on TrueType File %s\n", tmp_path_copy );
 		    continue;
 		}
 
 		if ( strlen( buffer ) == 0 ) {
-		    dprintf1( "could not extract font file name from file %s\n", tmp_path_copy );
+		    dprintf1(mem,
+			     "could not extract font file name from file %s\n", tmp_path_copy );
 		    continue;
 		}
 
@@ -264,10 +266,10 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
 		/* load the font file into memory.  NOTE: this closes the file - argh... */
 		if ( pl_load_tt_font(in, pdir, mem,
-				     gs_next_ids(1), &plfont,
+				     gs_next_ids(mem, 1), &plfont,
 				     buffer) < 0 )  {
 		    /* vm error but we continue anyway */
-		    dprintf1("Failed loading font %s\n", tmp_path_copy);
+		    dprintf1(mem, "Failed loading font %s\n", tmp_path_copy);
 		    continue;
 		}
 
@@ -306,7 +308,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		}
 		/* leave data stored in the file */
 		if ( pl_store_resident_font_data_in_file( tmp_path_copy, mem, plfont ) < 0 ) {
-		    dprintf1( "%s could not store data", tmp_path_copy );
+		    dprintf1(mem, "%s could not store data", tmp_path_copy );
 		    continue;
 		}
 		/* mark the font as found */

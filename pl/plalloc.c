@@ -122,7 +122,7 @@ pl_mem_node_remove(gs_memory_t *mem, byte *addr)
     pl_mem_node_t *current;
     /* check the head first */
     if ( head == NULL ) {
-        dprintf( "FAIL - no nodes to be removed\n" );
+        dprintf(mem, "FAIL - no nodes to be removed\n" );
         return -1;
     }
 
@@ -145,7 +145,7 @@ pl_mem_node_remove(gs_memory_t *mem, byte *addr)
             
         }
         if ( !found )
-            dprintf1( "FAIL freeing wild pointer freed address %x not found\n", addr );
+            dprintf1(mem, "FAIL freeing wild pointer freed address %x not found\n", addr );
     }
   }
   return 0;
@@ -178,27 +178,28 @@ pl_mem_node_free_all_remaining(gs_memory_t *mem)
 	       total_size += size;
 	       if (mem != gs_memory_t_default)
 #ifdef DEBUG
-		   dprintf4("Recovered pjl %x size %d %ld'th allocation client %s\n",
+		   dprintf4(mem, "Recovered pjl %x size %d %ld'th allocation client %s\n",
 			    ptr, size, current->op_count, current->cname)
 #endif
                        ;
 	       else
 #ifdef DEBUG
-		   dprintf4("Recovered %x size %d %ld'th allocation client %s\n",
+		   dprintf4(mem, "Recovered %x size %d %ld'th allocation client %s\n",
 			    ptr, size, current->op_count, current->cname)
 #endif
                        ;
 	    }
-	    free(current->address);
+            if (current->address != mem->pl_stdio)
+		free(current->address);
 	    free(current);
 	    current = next;
 	}
 	if ( print_recovered_block_info && blk_count )
 	    if (mem != gs_memory_t_default)
-		dprintf2("Recovered pjl %d blocks, %d bytes\n", 
+		dprintf2(mem, "Recovered pjl %d blocks, %d bytes\n", 
 			 blk_count, total_size);
 	    else
-		dprintf2("Recovered %d blocks, %d bytes\n", 
+		dprintf2(mem, "Recovered %d blocks, %d bytes\n", 
 			 blk_count, total_size);
 	mem->head = NULL;
     }
@@ -231,9 +232,9 @@ pl_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t c
 #ifdef DEBUG
 	if (mem != gs_memory_t_default)
 	    /* da for debug allocator - so scripts can parse the trace */
-	    if_debug2('A', "[da]:malloc pjl:%x:%s\n", &ptr[minsize * 2], cname );
+	    if_debug2(mem, 'A', "[da]:malloc pjl:%x:%s\n", &ptr[minsize * 2], cname );
 	else
-	    if_debug2('A', "[da]:malloc:%x:%s\n", &ptr[minsize * 2], cname );
+	    if_debug2(mem, 'A', "[da]:malloc:%x:%s\n", &ptr[minsize * 2], cname );
 #endif
 	/* set the type and size */
 	set_type(ptr, type);
@@ -326,7 +327,7 @@ pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_nam
     pl_mem_node_remove(mem, &bptr[-header_size]);
     pl_mem_node_add(mem, ptr, cname);
     /* da for debug allocator - so scripts can parse the trace */
-    if_debug2('A', "[da]:realloc:%x:%s\n", ptr, cname );
+    if_debug2(mem, 'A', "[da]:realloc:%x:%s\n", ptr, cname );
     /* we reset size and type - the type in case realloc moved us */
     set_size(ptr, new_size - header_size);
     set_type(ptr, objs_type);
@@ -349,10 +350,10 @@ pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	
 #ifdef DEBUG
 	if (mem != gs_memory_t_default)
-	    if_debug2('A', "[da]:free pjl:%x:%s\n", ptr, cname );
+	    if_debug2(mem, 'A', "[da]:free pjl:%x:%s\n", ptr, cname );
 	else
 	    /* da for debug allocator - so scripts can parse the trace */
-	    if_debug2('A', "[da]:free:%x:%s\n", ptr, cname );
+	    if_debug2(mem, 'A', "[da]:free:%x:%s\n", ptr, cname );
 #endif
     }
 }
@@ -550,6 +551,7 @@ const gs_malloc_memory_t pl_malloc_memory = {
     0, /* limit */ 
     0, /* used */ 
     0, /* max used */
+    0, /* stdio */
     0  /* head */
 };
 
@@ -567,12 +569,17 @@ pl_pjl_alloc_init(void)
 }
 
 gs_memory_t *
-pl_alloc_init(void)
+pl_alloc_init()
 {
 
 #ifndef PSI_INCLUDED
     if ( pl_malloc_init() ==  NULL )
 	return NULL;
+
+    pl_stdio_init(&pl_mem);
+
+    pl_mem.head = 0;
+
     return &pl_mem;
 #else
 
@@ -583,17 +590,15 @@ pl_alloc_init(void)
      */
     gs_memory_t *local_memory_t_default = 0;
 
-# ifndef NO_GS_MEMORY_GLOBALS_BIND
-    /* foo have globals so if it is already initialized
-     * point to the same memory manager.
-     */
-    if (gs_memory_t_default != 0 )
-	local_memory_t_default = gs_memory_t_default;
-# endif
+   /* foo have globals so if it is already initialized
+    * point to the same memory manager.
+    */
 
-    if (gs_malloc_init(&local_memory_t_default))
+
+    if( (local_memory_t_default = gs_malloc_init( 0 )) == 0 )
 	return 0;
     local_memory_t_default->head = 0;
+
     return local_memory_t_default;
 #endif
 }

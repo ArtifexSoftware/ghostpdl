@@ -134,12 +134,12 @@ free_ccolor(
 {
     pcl_ccolor_t *  pccolor = (pcl_ccolor_t *)pvccolor;
 
-    pcl_pattern_data_release(pccolor->ppat_data);
-    pcl_cs_indexed_release(pccolor->pindexed);
-    pcl_cs_base_release(pccolor->pbase);
+    pcl_pattern_data_release(pmem, pccolor->ppat_data);
+    pcl_cs_indexed_release(pmem, pccolor->pindexed);
+    pcl_cs_base_release(pmem, pccolor->pbase);
     if (pccolor->prast != 0)
         gs_free_object(pmem, (void *)pccolor->prast, cname);
-    gs_pattern_reference(&(pccolor->ccolor), -1);
+    gs_pattern_reference(pmem, &(pccolor->ccolor), -1);
     gs_free_object(pmem, pvccolor, cname);
 }
 
@@ -179,7 +179,7 @@ unshare_ccolor(
         pold->prast = 0;
         return 0;
     }
-    rc_decrement(pold, "unshare PCL client color object");
+    rc_decrement(pmem, pold, "unshare PCL client color object");
 
     rc_alloc_struct_1( pnew,
                        pcl_ccolor_t,
@@ -193,11 +193,11 @@ unshare_ccolor(
 
     if (pold != 0) {
         pnew->type = pold->type;
-        pcl_pattern_data_init_from(pnew->ppat_data, pold->ppat_data);
-        pcl_cs_indexed_init_from(pnew->pindexed, pold->pindexed);
-        pcl_cs_base_init_from(pnew->pbase, pold->pbase);
+        pcl_pattern_data_init_from(pmem, pnew->ppat_data, pold->ppat_data);
+        pcl_cs_indexed_init_from(pmem, pnew->pindexed, pold->pindexed);
+        pcl_cs_base_init_from(pmem, pnew->pbase, pold->pbase);
         pnew->ccolor = pold->ccolor;
-        gs_pattern_reference(&(pnew->ccolor), 1);
+        gs_pattern_reference(pmem, &(pnew->ccolor), 1);
     } else {
         pnew->type = pcl_ccolor_unpatterned;
         pnew->ppat_data = 0;
@@ -253,7 +253,7 @@ set_unpatterned_color(
 
     pcur->type = pcl_ccolor_unpatterned;
     if (pcur->ppat_data != 0) {
-        pcl_pattern_data_release(pcur->ppat_data);
+        pcl_pattern_data_release(pcs->memory, pcur->ppat_data);
         pcur->ppat_data = 0;
     }
 
@@ -266,10 +266,10 @@ set_unpatterned_color(
     }
     if (code < 0)
         return code;
-    pcl_cs_indexed_copy_from(pcur->pindexed, pindexed);
-    pcl_cs_base_copy_from(pcur->pbase, pbase);
+    pcl_cs_indexed_copy_from(pcs->memory, pcur->pindexed, pindexed);
+    pcl_cs_base_copy_from(pcs->memory, pcur->pbase, pbase);
 
-    gs_pattern_reference(&(pcur->ccolor), -1);
+    gs_pattern_reference(pcs->memory, &(pcur->ccolor), -1);
     pcur->ccolor.pattern = 0;
     pcur->ccolor.paint = *ppaint;
     return gs_setcolor(pcs->pgs, &(pcur->ccolor));
@@ -308,7 +308,7 @@ set_patterned_color(
 
     /* set the pattern instance */
     if ((code = gs_setpattern(pcs->pgs, &(pnew->ccolor))) >= 0)
-        pcl_ccolor_copy_from(pcs->pids->pccolor, pnew);
+        pcl_ccolor_copy_from(pcs->memory, pcs->pids->pccolor, pnew);
     return code;
 }
 
@@ -382,8 +382,8 @@ check_pattern_rendering(
                 return false;
             pccolor = pptrn->pmask_ccolor;
 
-            pcl_cs_indexed_copy_from(pccolor->pindexed, pindexed);
-            pcl_cs_base_copy_from(pccolor->pbase, pbase);
+            pcl_cs_indexed_copy_from(pcs->memory, pccolor->pindexed, pindexed);
+            pcl_cs_base_copy_from(pcs->memory, pccolor->pbase, pbase);
             pccolor->ccolor.paint = *ppaint;
         }
     }
@@ -431,10 +431,10 @@ render_pattern(
          (pptrn->ref_pt.x != pcs->pat_ref_pt.x)      ||
          (pptrn->ref_pt.y != pcs->pat_ref_pt.y)        ) {
         if (type == pcl_ccolor_mask_pattern) {
-            pcl_ccolor_release(pptrn->pcol_ccolor);
+            pcl_ccolor_release(pcs->memory, pptrn->pcol_ccolor);
             pptrn->pcol_ccolor = 0;
         } else {    /* type == pcl_ccolor_colored_pattern */
-            pcl_ccolor_release(pptrn->pmask_ccolor);
+            pcl_ccolor_release(pcs->memory, pptrn->pmask_ccolor);
             pptrn->pmask_ccolor = 0;
         }
     } 
@@ -454,12 +454,12 @@ render_pattern(
         return code;
 
     /* discard the existing pattern instance */
-    gs_pattern_reference(&(pccolor->ccolor), -1);
+    gs_pattern_reference(pcs->memory, &(pccolor->ccolor), -1);
     pccolor->ccolor.pattern = 0;
 
     /* initialize the pattern data, if the client color is newly allocated */
     pccolor->type = type;
-    pcl_pattern_data_copy_from(pccolor->ppat_data, pptrn->ppat_data);
+    pcl_pattern_data_copy_from(pcs->memory, pccolor->ppat_data, pptrn->ppat_data);
 
     /* set up the transformation and transparency information */
     pcl_xfm_get_pat_xfm(pcs, pptrn, &mat);
@@ -499,8 +499,8 @@ render_pattern(
 
     /* if all is OK, install the pattern; otherwise clear the pattern */
     if (code >= 0) {
-        pcl_cs_indexed_copy_from(pccolor->pindexed, pindexed);
-        pcl_cs_base_copy_from(pccolor->pbase, pbase);
+        pcl_cs_indexed_copy_from(pcs->memory, pccolor->pindexed, pindexed);
+        pcl_cs_base_copy_from(pcs->memory, pccolor->pbase, pbase);
         if (type == pcl_ccolor_mask_pattern)
             pccolor->ccolor.paint = *ppaint;
         code = set_patterned_color(pcs, pccolor);
@@ -573,7 +573,7 @@ set_frgrnd_pattern(
 
     /* release the extra reference to the indexed color space */
     if (colored) {
-        pcl_cs_indexed_release(pindexed);
+        pcl_cs_indexed_release(pcs->memory, pindexed);
         if (code >= 0) {
             pptrn->pen = 0;
             pptrn->cache_id = pfrgrnd->id;
@@ -625,7 +625,7 @@ set_uncolored_palette_pattern(
 
     /* release the extra reference to the indexed color space */
     if (colored) {
-        pcl_cs_indexed_release(pindexed);
+        pcl_cs_indexed_release(pcs->memory, pindexed);
         if (code >= 0) {
             pptrn->pen = pen;
             pptrn->cache_id = pcs->ppalet->id;
@@ -871,12 +871,12 @@ pattern_set_white(
     /* set the halftone and color space */
     if (code >= 0) {
         code = pcl_ht_set_halftone(pcs, &pdflt_ht, pcl_cspace_RGB, false);
-        pcl_ht_release(pdflt_ht); /* decrement reference to local ptr */
+        pcl_ht_release(pcs->memory, pdflt_ht); /* decrement reference to local ptr */
     }
 
     if (code >= 0)
         code = set_unpatterned_color(pcs, NULL, pwhite_cs, &white_paint);
-    pcl_cs_base_release(pwhite_cs);
+    pcl_cs_base_release(pcs->memory, pwhite_cs);
     return code;
 }
 
@@ -1294,7 +1294,7 @@ set_driver_configuration(
     /* the only device known to support this command */
     if ( ( driver->device_id != 6 ) /* hp color laserjet */ &&
          ( driver->device_id != 8 ) ) /* hp 4500 - 4550 */ {
-        dprintf1( "unknown device id %d\n", driver->device_id );
+        dprintf1(pcs->memory, "unknown device id %d\n", driver->device_id );
 	return e_Range;
     }
 
@@ -1346,7 +1346,7 @@ pattern_do_registration(
     gs_memory_t *   pmem
 )
 {
-    DEFINE_CLASS('*')
+    DEFINE_CLASS(pmem, '*')
     {
         'c', 'G',
         PCL_COMMAND( "Pattern ID",

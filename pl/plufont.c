@@ -327,8 +327,11 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->StrokeWidth = 0;
 	pfont->procs.init_fstack = gs_default_init_fstack;
 	pfont->procs.next_char_glyph = gs_default_next_char_glyph;
-        // NB NB	pfont->procs.callbacks.glyph_name = pl_glyph_name;
-	// pfont->procs.callbacks.known_encode = pl_known_encode;
+
+	// NB 
+	pfont->procs.callbacks.glyph_name = pl_glyph_name;
+	pfont->procs.callbacks.known_encode = pl_known_encode;
+
 	pfont->procs.define_font = gs_no_define_font;
 	pfont->procs.make_font = gs_no_make_font;
 	pfont->procs.font_info = gs_default_font_info;
@@ -420,7 +423,7 @@ pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
  * large_sizes = false indicates 2-byte segment sizes, true indicates 4-byte.
  */
 int
-pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
+pl_font_scan_segments(const gs_memory_t *mem, pl_font_t *plfont, int fst_offset, int start_offset,
   long end_offset, bool large_sizes, const pl_font_offset_errors_t *pfoe)
 {	const byte *header = plfont->header;
 	pl_font_scaling_technology_t fst = header[fst_offset];
@@ -432,7 +435,7 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 	ulong seg_size;
 	int illegal_font_data = pfoe->illegal_font_data;
 #define return_scan_error(err)\
-  return_error((err) ? (err) : illegal_font_data);
+  return_error(mem, (err) ? (err) : illegal_font_data);
 
 	if ( memcmp(null_segment, "\377\377", 2) /* NULL segment header */ )
 	  return_scan_error(pfoe->missing_required_segment);

@@ -125,9 +125,9 @@ pcl_gsave(
     if ((code = gs_gsave(pcs->pgs)) >= 0) {
         pids->prev = pcs->pids->prev;
         pcs->pids->prev = pids;
-        pcl_ccolor_init_from(pids->pccolor, pcs->pids->pccolor);
-        pcl_ht_init_from(pids->pht, pcs->pids->pht);
-        pcl_crd_init_from(pids->pcrd, pcs->pids->pcrd);
+        pcl_ccolor_init_from(pcs->memory, pids->pccolor, pcs->pids->pccolor);
+        pcl_ht_init_from(pcs->memory, pids->pht, pcs->pids->pht);
+        pcl_crd_init_from(pcs->memory, pids->pcrd, pcs->pids->pcrd);
     } else
         gs_free_object(pcs->memory, pids, "PCL gsave");
 
@@ -146,12 +146,12 @@ pcl_grestore(
         return e_Range;
     if ((code = gs_grestore(pcs->pgs)) >= 0) {
         pcs->pids->prev = pids->prev;
-        pcl_ccolor_copy_from(pcs->pids->pccolor, pids->pccolor);
-        pcl_ccolor_release(pids->pccolor);
-        pcl_ht_copy_from(pcs->pids->pht, pids->pht);
-        pcl_ht_release(pids->pht);
-        pcl_crd_copy_from(pcs->pids->pcrd, pids->pcrd);
-        pcl_crd_release(pids->pcrd);
+        pcl_ccolor_copy_from(pcs->memory, pcs->pids->pccolor, pids->pccolor);
+        pcl_ccolor_release(pcs->memory, pids->pccolor);
+        pcl_ht_copy_from(pcs->memory, pcs->pids->pht, pids->pht);
+        pcl_ht_release(pcs->memory, pids->pht);
+        pcl_crd_copy_from(pcs->memory, pcs->pids->pcrd, pids->pcrd);
+        pcl_crd_release(pcs->memory, pids->pcrd);
         gs_free_object(pcs->memory, pids, "PCL grestore");
     }
 

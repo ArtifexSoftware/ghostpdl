@@ -72,7 +72,7 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    }
 		    break;
 		default:
-		    dprintf( "HPGL CO automata is in an unknown state\n" );
+		    dprintf(pgls->memory, "HPGL CO automata is in an unknown state\n" );
 		    pargs->source.ptr = p;
 		    return 0;
 		}
@@ -298,7 +298,7 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 	  gs_rect pcl_win; /* pcl window */
 
 	  gs_currentmatrix(pgls->pgs, &mat);
-	  hpgl_call(gs_bbox_transform_inverse(&dev_win, &mat, &pcl_win));
+	  hpgl_call(gs_bbox_transform_inverse(pgls->memory, &dev_win, &mat, &pcl_win));
 /* Round all coordinates to the nearest integer. */
 #define set_round(e) gl2_win->e = (int)floor(pcl_win.e + 0.5)
 	  set_round(p.x);
@@ -328,7 +328,7 @@ hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* round the picture frame coordinates */
 	ptxy[0] = win.p.x; ptxy[1] = win.p.y;
 	ptxy[2] = win.q.x; ptxy[3] = win.q.y;
-	for ( i = 0; i < 4 && hpgl_arg_int(pargs, &ptxy[i]); ++i )
+	for ( i = 0; i < 4 && hpgl_arg_int(pgls->memory, pargs, &ptxy[i]); ++i )
 	  ;
 	if ( i & 1 )
 	  return e_Range;
@@ -366,7 +366,7 @@ hpgl_IR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_t args;
 	gs_int_rect win;
 
-	for ( i = 0; i < 4 && hpgl_arg_c_real(pargs, &rptxy[i]); ++i )
+	for ( i = 0; i < 4 && hpgl_arg_c_real(pgls->memory, pargs, &rptxy[i]); ++i )
 	  ;
 	if ( i & 1 )
 	  return e_Range;
@@ -407,7 +407,7 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	wxy[1] = win.p.y;
 	wxy[2] = win.q.x;
 	wxy[3] = win.q.y;
-	for ( i = 0; i < 4 && hpgl_arg_units(pargs, &wxy[i]); ++i )
+	for ( i = 0; i < 4 && hpgl_arg_units(pgls->memory, pargs, &wxy[i]); ++i )
 	  ;
 	if ( i & 3 )
 	  return e_Range;
@@ -434,7 +434,7 @@ hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	int dummy;
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	/* with parameter always feed, without parameter feed if marked */
-	if ( pcl_page_marked(pgls) || hpgl_arg_c_int(pargs, &dummy) )
+	if ( pcl_page_marked(pgls) || hpgl_arg_c_int(pgls->memory, pargs, &dummy) )
 	    hpgl_call(pcl_do_FF(pgls));
     }
     return 0;
@@ -470,7 +470,7 @@ hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
         page_dims[0] = pjl_proc_vartof(pgls->pjls, pjl_proc_get_envvar(pgls->pjls, "plotsize1"));
         page_dims[1] = pjl_proc_vartof(pgls->pjls, pjl_proc_get_envvar(pgls->pjls, "plotsize2"));
     } else {
-        for ( i = 0; i < 2 && hpgl_arg_real(pargs, &page_dims[i]); ++i )
+        for ( i = 0; i < 2 && hpgl_arg_real(pgls->memory, pargs, &page_dims[i]); ++i )
             ; /* NOTHING */
         if ( i == 1 )
             page_dims[1] = page_dims[0];
@@ -499,7 +499,7 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_call(hpgl_get_current_position(pgls, &point));
 	hpgl_call(gs_transform(pgls->pgs, point.x, point.y, &dev_pt));
 
-	if ( hpgl_arg_c_int(pargs, &angle) )
+	if ( hpgl_arg_c_int(pgls->memory, pargs, &angle) )
 	    switch ( angle )
 	      {
 	      case 0: case 90: case 180: case 270:
@@ -544,7 +544,7 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_call(gs_transform(pgls->pgs, point.x, point.y, &dev_pt));
 	hpgl_call(gs_transform(pgls->pgs, pgls->g.anchor_corner.x, 
 			       pgls->g.anchor_corner.y, &dev_anchor));
-	for ( i = 0; i < 4 && hpgl_arg_real(pargs, &xy[i]); ++i )
+	for ( i = 0; i < 4 && hpgl_arg_real(pgls->memory, pargs, &xy[i]); ++i )
 	  ;
 	switch ( i )
 	  {
@@ -555,7 +555,7 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    return e_Range;
 	  case 4:
 	    type = hpgl_scaling_anisotropic;
-	    hpgl_arg_c_int(pargs, &type);
+	    hpgl_arg_c_int(pgls->memory, pargs, &type);
 	    switch ( type )
 	      {
 	      case hpgl_scaling_anisotropic: /* 0 */
@@ -570,9 +570,9 @@ pxy:		scale_params.pmin.x = xy[0];
 		if ( xy[0] == xy[1] || xy[2] == xy[3] )
 		  return e_Range;
 		{ hpgl_real_t left = 50, bottom = 50;
-		  if ( (hpgl_arg_c_real(pargs, &left) &&
+		  if ( (hpgl_arg_c_real(pgls->memory, pargs, &left) &&
 			(left < 0 || left > 100 ||
-			 !hpgl_arg_c_real(pargs, &bottom) ||
+			 !hpgl_arg_c_real(pgls->memory, pargs, &bottom) ||
 			 bottom < 0 || bottom > 100))
 		     )
 		    return e_Range;
@@ -626,7 +626,7 @@ pgconfig_do_registration(
     gs_memory_t *mem
 )
 {		/* Register commands */
-	DEFINE_HPGL_COMMANDS
+    DEFINE_HPGL_COMMANDS(mem)
 	  /* CO has special argument parsing, so it must handle skipping */
 	  /* in polygon mode itself. */
 	  HPGL_COMMAND('C', 'O', hpgl_CO, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),

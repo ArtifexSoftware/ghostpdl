@@ -273,15 +273,15 @@ build_client_data(
 /*
  * Init a client data structure from an existing client data structure.
  */
-  private void
-init_client_data_from(
-    pcl_cs_client_data_t *          pnew,
-    const pcl_cs_client_data_t *    pfrom
+private void
+init_client_data_from( const gs_memory_t *mem, 
+		       pcl_cs_client_data_t *          pnew,
+		       const pcl_cs_client_data_t *    pfrom
 )
 {
     *pnew = *pfrom;
-    pcl_lookup_tbl_init_from(pnew->plktbl1, pfrom->plktbl1);
-    pcl_lookup_tbl_init_from(pnew->plktbl2, pfrom->plktbl2);
+    pcl_lookup_tbl_init_from(mem, pnew->plktbl1, pfrom->plktbl1);
+    pcl_lookup_tbl_init_from(mem, pnew->plktbl2, pfrom->plktbl2);
 }
 
 /*
@@ -295,8 +295,8 @@ update_lookup_tbls(
     gs_memory_t *           pmem
 )
 {
-    pcl_lookup_tbl_copy_from(pdata->plktbl1, plktbl1);
-    pcl_lookup_tbl_copy_from(pdata->plktbl2, plktbl2);
+    pcl_lookup_tbl_copy_from(pmem, pdata->plktbl1, plktbl1);
+    pcl_lookup_tbl_copy_from(pmem, pdata->plktbl2, plktbl2);
 }
 
 /*
@@ -930,7 +930,7 @@ free_base_cspace(
     pcl_cs_base_t * pbase = (pcl_cs_base_t *)pvbase;
 
     if (pbase->pcspace != 0) {
-        gs_cspace_release(pbase->pcspace);
+        gs_cspace_release(pmem, pbase->pcspace);
         gs_free_object(pmem, pbase->pcspace, cname);
     }
     free_lookup_tbls(&(pbase->client_data), pmem);
@@ -1006,9 +1006,9 @@ alloc_base_cspace(
  * graphic library color space will still be present in this case, but its
  * client data may have been changed).
  */
-  private int
-unshare_base_cspace(
-    pcl_cs_base_t **    ppbase
+private int
+unshare_base_cspace(const gs_memory_t *mem, 
+		    pcl_cs_base_t **    ppbase
 )
 {
     pcl_cs_base_t *     pbase = *ppbase;
@@ -1018,7 +1018,7 @@ unshare_base_cspace(
     /* check if there is anything to do */
     if (pbase->rc.ref_count == 1)
         return 0;
-    rc_decrement(pbase, "unshare PCL base color space");
+    rc_decrement(mem, pbase, "unshare PCL base color space");
 
     /* allocate a new gs_color_space */
     if ((code = alloc_base_cspace(ppbase, pbase->type, pbase->rc.memory)) < 0)
@@ -1026,7 +1026,7 @@ unshare_base_cspace(
     pnew = *ppbase;
 
     /* copy the client data */
-    init_client_data_from(&(pnew->client_data), &(pbase->client_data));
+    init_client_data_from(pbase->rc.memory, &(pnew->client_data), &(pbase->client_data));
 
     /* copy the color space (primarily for CIE color spaces; UGLY!!!) */
     if (pbase->type > pcl_cspace_CMY) {
@@ -1065,7 +1065,7 @@ pcl_cs_base_build_cspace(
 
     /* release the existing color space, if present */
     if (pbase != 0)
-        rc_decrement(pbase, "build base pcl color space");
+        rc_decrement(pmem, pbase, "build base pcl color space");
 
     /* build basic structure and client info. structure */
     if ((code = alloc_base_cspace(ppbase, type, pmem)) < 0)
@@ -1099,7 +1099,7 @@ pcl_cs_base_build_white_cspace(
     if (pcs->pwhite_cs == 0)
         code = alloc_base_cspace(&pcs->pwhite_cs, pcl_cspace_White, pmem);
     if (code >= 0)
-        pcl_cs_base_copy_from(*ppbase, pcs->pwhite_cs);
+        pcl_cs_base_copy_from(pmem, *ppbase, pcs->pwhite_cs);
     return code;
 }
 
@@ -1156,7 +1156,7 @@ pcl_cs_base_update_lookup_tbl(
     }
 
     /* make a unique copy of the base color space */
-    if ((code = unshare_base_cspace(ppbase)) < 0)
+    if ((code = unshare_base_cspace(pbase->rc.memory, ppbase)) < 0)
         return code;
     pbase = *ppbase;
 

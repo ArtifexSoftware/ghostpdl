@@ -97,17 +97,17 @@ build_pattern_data(
 /*
  * Free the rendered portion of a pattern.
  */
-  private void
-free_pattern_rendering(
-    pcl_pattern_t * pptrn
+private void
+free_pattern_rendering(const gs_memory_t *mem,
+		       pcl_pattern_t * pptrn
 )
 {
     if (pptrn->pcol_ccolor != 0) {
-        pcl_ccolor_release(pptrn->pcol_ccolor);
+        pcl_ccolor_release(mem, pptrn->pcol_ccolor);
         pptrn->pcol_ccolor = 0;
     }
     if (pptrn->pmask_ccolor != 0) {
-        pcl_ccolor_release(pptrn->pmask_ccolor);
+        pcl_ccolor_release(mem, pptrn->pmask_ccolor);
         pptrn->pmask_ccolor = 0;
     }
 }
@@ -125,9 +125,9 @@ pcl_pattern_free_pattern(
 {
     pcl_pattern_t * pptrn = (pcl_pattern_t *)pvptrn;
 
-    free_pattern_rendering(pptrn);
+    free_pattern_rendering(pmem, pptrn);
     if (pptrn->ppat_data != 0)
-        pcl_pattern_data_release(pptrn->ppat_data);
+        pcl_pattern_data_release(pmem, pptrn->ppat_data);
     gs_free_object(pmem, pvptrn, cname);
 }
 
@@ -260,7 +260,7 @@ delete_all_pcl_ptrns(
             id_set_key(key, plkey.data);
             define_pcl_ptrn(pcs, id_value(key), NULL);
         } else if (renderings)
-            free_pattern_rendering(pptrn);
+            free_pattern_rendering(pcs->memory, pptrn);
     }
 }
 
@@ -555,7 +555,7 @@ upattern_do_registration(
     gs_memory_t *   pmem
 )
 {
-    DEFINE_CLASS('*')
+    DEFINE_CLASS(pmem, '*')
     {
         'c', 'W',
         PCL_COMMAND("Download Pattern", download_pcl_pattern, pca_bytes)

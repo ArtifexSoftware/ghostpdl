@@ -49,28 +49,30 @@ pcl_register_command(byte *pindex, const pcl_command_definition_t *pcmd,
 
 /* Define a command or list of commands. */
 void
-pcl_define_control_command(int/*char*/ chr, const pcl_command_definition_t *pcmd,
+pcl_define_control_command(const gs_memory_t *mem,
+			   int/*char*/ chr, const pcl_command_definition_t *pcmd,
 			   pcl_parser_state_t *pcl_parser_state)
 {
 #ifdef DEBUG
 	if ( chr < 0 || chr >= countof(pcl_parser_state->definitions->pcl_control_command_indices) )
-	  if_debug1('I', "Invalid control character %d\n", chr);
+	  if_debug1(mem, 'I', "Invalid control character %d\n", chr);
 	else if (
 #endif
 	pcl_register_command(&pcl_parser_state->definitions->pcl_control_command_indices[chr], pcmd, pcl_parser_state)
 #ifdef DEBUG
 	)
-	  if_debug1('I', "Redefining control character %d\n", chr);
+	  if_debug1(mem, 'I', "Redefining control character %d\n", chr);
 #endif
 	;
 }
 void
-pcl_define_escape_command(int/*char*/ chr,
-  const pcl_command_definition_t *pcmd, pcl_parser_state_t *pcl_parser_state)
+pcl_define_escape_command(const gs_memory_t *mem, int/*char*/ chr,
+			  const pcl_command_definition_t *pcmd, 
+			  pcl_parser_state_t *pcl_parser_state)
 {
 #ifdef DEBUG
     if ( chr < min_escape_2char || chr > max_escape_2char )
-	if_debug1('I', "Invalid escape character %c\n", chr);
+	if_debug1(mem, 'I', "Invalid escape character %c\n", chr);
     else if (
 #endif
 	     pcl_register_command(&pcl_parser_state->definitions->pcl_escape_command_indices
@@ -78,7 +80,7 @@ pcl_define_escape_command(int/*char*/ chr,
 	                          pcl_parser_state)
 #ifdef DEBUG
 	     )
-	if_debug1('I', "Redefining ESC %c\n", chr)
+	if_debug1(mem, 'I', "Redefining ESC %c\n", chr)
 #endif
 	    ;
 }
@@ -91,8 +93,11 @@ private const byte pcl_escape_class_indices[max_escape_class - min_escape_class 
 };
 
 void
-pcl_define_class_command(int/*char*/ class, int/*char*/ group,
-  int/*char*/ command, const pcl_command_definition_t *pcmd, pcl_parser_state_t *pcl_parser_state)
+pcl_define_class_command(const gs_memory_t *mem,
+			 int/*char*/ class, int/*char*/ group,
+			 int/*char*/ command, 
+			 const pcl_command_definition_t *pcmd, 
+			 pcl_parser_state_t *pcl_parser_state)
 {
 #ifdef DEBUG
 	if ( class < min_escape_class || class > max_escape_class ||
@@ -100,7 +105,7 @@ pcl_define_class_command(int/*char*/ class, int/*char*/ group,
 	     (group != 0 && (group < min_escape_group || group > max_escape_group)) ||
 	     command < min_escape_command || command > max_escape_command
 	   )
-	  if_debug3('I', "Invalid command %c %c %c\n", class, group, command);
+	  if_debug3(mem, 'I', "Invalid command %c %c %c\n", class, group, command);
 	else if (
 #endif
 	pcl_register_command(&pcl_parser_state->definitions->pcl_grouped_command_indices
@@ -110,18 +115,20 @@ pcl_define_class_command(int/*char*/ class, int/*char*/ group,
 			     pcl_parser_state)
 #ifdef DEBUG
 	)
-	  if_debug3('I', "Redefining ESC %c %c %c\n", class,
+	  if_debug3(mem, 'I', "Redefining ESC %c %c %c\n", class,
 		   (group == 0 ? ' ' : group), command)
 #endif
 	;
 }
 void
-pcl_define_class_commands(int/*char*/ class,
-  const pcl_grouped_command_definition_t *pgroup, pcl_parser_state_t *pcl_parser_state)
+pcl_define_class_commands(const gs_memory_t *mem,
+			  int/*char*/ class,
+			  const pcl_grouped_command_definition_t *pgroup, 
+			  pcl_parser_state_t *pcl_parser_state)
 {	const pcl_grouped_command_definition_t *pgc = pgroup;
 
 	for ( ; pgc->command != 0; ++pgc )
-	  pcl_define_class_command(class, pgc->group, pgc->command,
+	  pcl_define_class_command(mem, class, pgc->group, pgc->command,
 				   &pgc->defn, pcl_parser_state);
 }
 
@@ -133,7 +140,10 @@ pcl_define_class_commands(int/*char*/ class,
  * The caller is responsible for providing valid arguments.
  */
 private const pcl_command_definition_t *
-pcl_get_command_definition(pcl_parser_state_t *pcl_parser_state, int/*char*/ class, int/*char*/ group,
+pcl_get_command_definition(const gs_memory_t *mem,
+			   pcl_parser_state_t *pcl_parser_state, 
+			   int/*char*/ class, 
+			   int/*char*/ group,
   int/*char*/ command)
 {	const pcl_command_definition_t *cdefn = 0;
 
@@ -154,11 +164,11 @@ pcl_get_command_definition(pcl_parser_state_t *pcl_parser_state, int/*char*/ cla
 #ifdef DEBUG
 	if ( cdefn == 0 )
 	  { if ( class == 0 )
-	      if_debug1('I', "ESC %c undefined\n", command);
+	      if_debug1(mem, 'I', "ESC %c undefined\n", command);
 	    else if ( group == 0 )
-	      if_debug2('I', "ESC %c %c undefined\n", class, command);
+	      if_debug2(mem, 'I', "ESC %c %c undefined\n", class, command);
 	    else
-	      if_debug3('I', "ESC %c %c %c undefined\n", class, group, command);
+	      if_debug3(mem, 'I', "ESC %c %c %c undefined\n", class, group, command);
 	  }
 #endif
 	return cdefn;
@@ -216,7 +226,7 @@ append_macro(const byte *from, const byte *to, pcl_state_t *pcs)
 			   "append_macro");
 
 	if ( new_defn == 0 )
-	  return_error(e_Memory);
+	  return_error(pcs->memory, e_Memory);
 	memcpy(new_defn + size, from + 1, count);
 	pcs->macro_definition = new_defn;
 	return 0;
@@ -265,7 +275,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			  continue;
 			}
 		      /* Invoke the command. */
-		      cdefn = pcl_get_command_definition(pst,
+		      cdefn = pcl_get_command_definition(pcs->memory,
+							 pst,
 							 pst->param_class,
 							 pst->param_group,
 							 pst->args.command);
@@ -344,18 +355,18 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 		      }
 #ifdef DEBUG
 			if ( gs_debug_c('i') )
-			  { dprintf2("(ESC %c %c)",
+			    { dprintf2(pcs->memory, "(ESC %c %c)",
 				     pst->param_class, pst->param_group);
 			    if ( value_is_present(&avalue) )
-			      { dputc(' ');
+			      { dputc(pcs->memory, ' ');
 			        if ( value_is_signed(&avalue) )
-				  dputc((value_is_neg(&avalue) ? '-' : '+'));
+				  dputc(pcs->memory, (value_is_neg(&avalue) ? '-' : '+'));
 			        if ( value_is_float(&avalue) )
-				  dprintf1("%g", avalue.i + avalue.fraction);
+				  dprintf1(pcs->memory, "%g", avalue.i + avalue.fraction);
 				else
-				  dprintf1("%u", avalue.i);
+				  dprintf1(pcs->memory, "%u", avalue.i);
 			      }
-			    dprintf1(" %c\n", chr);
+			    dprintf1(pcs->memory, " %c\n", chr);
 			  }
 #endif
 			if ( chr >= min_escape_command + 32 &&
@@ -373,12 +384,13 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			    continue;
 			  }
 			/* Dispatch on param_class, param_group, and chr. */
-			cdefn = pcl_get_command_definition(pst,
+			cdefn = pcl_get_command_definition(pcs->memory, 
+							   pst,
 							   pst->param_class,
 							   pst->param_group,
 							   chr);
 			if ( cdefn )
-			  { if_debug1('i', "   [%s]\n", cdefn->cname);
+			  { if_debug1(pcs->memory, 'i', "   [%s]\n", cdefn->cname);
 			    code = pcl_adjust_arg(&pst->args, cdefn);
 			    if ( code < 0 )
 			      goto x;
@@ -390,7 +402,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
  						     "command data");
 				    if ( pst->args.data == 0 )
 					{ --p;
-				        code = gs_note_error(e_Memory);
+				        code = gs_note_error(pcs->memory, e_Memory);
 					goto x;
 					}
 				    pst->args.data_on_heap = true;
@@ -428,14 +440,14 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 				--p;
 				goto x;
 			    }
-			    if_debug2('i', "%x%x\n", p[0], p[1]);
+			    if_debug2(pcs->memory, 'i', "%x%x\n", p[0], p[1]);
 			    code = pcl_text(p, 2, pcs, false);
 			    if ( code < 0 ) goto x;
 			    /* now pass over the second byte */
 			    p++;
 			    cdefn = NULL;
 			} else if ( chr != ESC )
-			  {	if_debug1('i',
+			  {	if_debug1(pcs->memory, 'i',
 					  (chr == '\\' ? "\\%c\n" :
 					   chr >= 33 && chr <= 126 ?
 					   "%c\n" : "\\%03o\n"),
@@ -460,11 +472,11 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 				    while ( p < rlimit && p[1] >= 32 &&
 					    p[1] <= 127
 					  )
-				      { if_debug1('i', "%c", p[1]);
+				      { if_debug1(pcs->memory, 'i', "%c", p[1]);
 					++p;
 				      }
 
-				    if_debug0('i', "\n");
+				    if_debug0(pcs->memory, 'i', "\n");
 				    code = pcl_text(str, (uint)(p + 1 - str),
 						    pcs, false);
 				    if ( code < 0 )
@@ -478,18 +490,19 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 				if ( chr < min_escape_class ||
 				     chr > max_escape_class
 				   )
-				  {	if_debug1('i',
+				  {	if_debug1(pcs->memory, 'i',
 						  (chr >= 33 && chr <= 126 ?
 						   "ESC %c\n" :
 						   "ESC \\%03o\n"),
 						  chr);
 					cdefn =
-					  pcl_get_command_definition(pst, 0, 0, chr);
+					  pcl_get_command_definition(pcs->memory, 
+								     pst, 0, 0, chr);
 					if ( !cdefn )
 					  { /* Skip the ESC, and current char */
 					    continue;
 					  }
-					if_debug1('i', "   [%s]\n",
+					if_debug1(pcs->memory, 'i', "   [%s]\n",
 						  cdefn->cname);
 				  }
 				else
@@ -504,7 +517,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 					    chr = 0;
 					  }
 					pst->param_group = chr;
-					if_debug2('i', "ESC %c %c\n",
+					if_debug2(pcs->memory, 'i', "ESC %c %c\n",
 						  pst->param_class, chr);
 					pst->scan_type = scanning_parameter;
 					param_init();
@@ -548,7 +561,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 		    if ( code == e_Unimplemented )
 		      {
 #if e_Unimplemented != 0
-			if_debug0('i', "Unimplemented\n");
+			if_debug0(pcs->memory, 'i', "Unimplemented\n");
 #endif
 		      }
 		    else if ( code < 0 )

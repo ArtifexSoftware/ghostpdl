@@ -86,15 +86,15 @@ pcl_invert_mtx(
  *
  * prect1 and prect2 may point to the same rectangle.
  */
-  void
-pcl_transform_rect(
-    const gs_rect *     prect1,
-    gs_rect *           prect2,
-    const gs_matrix *   pmtx
+void
+pcl_transform_rect(const gs_memory_t *mem,
+		   const gs_rect *     prect1,
+		   gs_rect *           prect2,
+		   const gs_matrix *   pmtx
 )
 {
-    gs_point_transform(prect1->p.x, prect1->p.y, pmtx, &(prect2->p));
-    gs_point_transform(prect1->q.x, prect1->q.y, pmtx, &(prect2->q));
+    gs_point_transform(mem, prect1->p.x, prect1->p.y, pmtx, &(prect2->p));
+    gs_point_transform(mem, prect1->q.x, prect1->q.y, pmtx, &(prect2->q));
     if (prect2->p.x > prect2->q.x) {
         double  ftmp = prect2->p.x;
 
@@ -268,7 +268,8 @@ pcl_xfm_pcl_set_pat_ref_pt(
 {
     pcl_xfm_state_t *   pxfmst = &(pcs->xfm_state);
 
-    gs_point_transform( pcs->pcl_pat_ref_pt.x,
+    gs_point_transform( pcs->memory, 
+			pcs->pcl_pat_ref_pt.x,
                         pcs->pcl_pat_ref_pt.y,
                         &(pxfmst->lp2dev_mtx),
                         &(pcs->pat_ref_pt)
@@ -316,7 +317,8 @@ set_pat_ref_pt(
 
     if (rotate <= 1) {
         pcl_break_underline(pcs);
-        gs_point_transform( (floatp)pcs->cap.x,
+        gs_point_transform( pcs->memory, 
+			    (floatp)pcs->cap.x,
                             (floatp)pcs->cap.y,
                             &(pcs->xfm_state.pd2lp_mtx),
                             &(pcs->pcl_pat_ref_pt)
@@ -339,7 +341,7 @@ xfm_do_registration(
     gs_memory_t *   pmem
 )
 {
-    DEFINE_CLASS('*')
+    DEFINE_CLASS(pmem, '*')
     {
         'p', 'R',
         PCL_COMMAND( "Pattern Reference Point",

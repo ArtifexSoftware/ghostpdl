@@ -81,10 +81,20 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 
 /* Get the name of a glyph.  We don't need to support this. */
 private const char *
-pl_glyph_name(gs_glyph glyph, uint *plen)
+pl_glyph_name(gs_glyph glyph, gs_const_string *pstr)
 {	
-    *plen = 0;
+    // NB assume input is zero
     return 0;
+}
+
+/* Get the unicode valude for a glyph */
+private gs_char
+pl_decode_glyph(gs_font *font,  gs_glyph glyph)
+{	
+    // NB glyph is unicode for builtin fonts 
+    // this fails for downloaded fonts where there is often 
+    // no association other than sequential numbering 
+    return glyph;
 }
 
 /* Get a glyph from a known encoding.  We don't support this either. */
@@ -193,7 +203,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	      if ( pfont == 0 )
 		return 0;
 	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
-	      pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
+	      pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
 	      break;
 	    }
 	  case plfst_Intellifont:
@@ -203,7 +213,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	      if ( pfont == 0 )
 		return 0;
 	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
-	      pl_fill_in_intelli_font(pfont, gs_next_ids(1));
+	      pl_fill_in_intelli_font(pfont, gs_next_ids(mem, 1));
 	      break;
 	    }
 	  case plfst_TrueType:
@@ -218,7 +228,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 		if ( pfont == 0 )
 		  return 0;
 		pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
-		pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_ids(1));
+		pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_ids(mem, 1));
 	      }
 	      break;
 	    }
@@ -313,12 +323,17 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
 	pfont->StrokeWidth = 0;
 	pfont->procs.init_fstack = gs_default_init_fstack;
 	pfont->procs.next_char_glyph = gs_default_next_char_glyph;
-        // NB NB	pfont->procs.callbacks.glyph_name = pl_glyph_name;
+
+        // NB postscript name haha like this will work	
+	pfont->procs.glyph_name = pl_glyph_name;
+	pfont->procs.decode_glyph = pl_decode_glyph;
+	// NB
 	// pfont->procs.callbacks.known_encode = pl_known_encode;
+
 	pfont->procs.define_font = gs_no_define_font;
 	pfont->procs.make_font = gs_no_make_font;
 	pfont->procs.font_info = gs_default_font_info;
-	pfont->id = gs_next_ids(1);
+	pfont->id = gs_next_ids(mem, 1);
 	strncpy(pfont->font_name.chars, font_name, sizeof(pfont->font_name.chars));
 	pfont->font_name.size = strlen(font_name);
 	/* replace spaces with '-', seems acrobat doesn't like spaces. */
@@ -383,7 +398,7 @@ pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
 {	/* Intellifonts have an 8782-unit design space. */
  	{ gs_matrix mat;
 	  gs_make_scaling(1.0/8782, 1.0/8782, &mat);
-	  gs_matrix_translate(&mat, -2980.0, -5380.0, &pfont->FontMatrix);
+	  gs_matrix_translate(pfont->memory, &mat, -2980.0, -5380.0, &pfont->FontMatrix);
 	}
 	pfont->FontType = ft_user_defined;
 	pfont->BitmapWidths = true;
@@ -409,7 +424,8 @@ pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
  * large_sizes = false indicates 2-byte segment sizes, true indicates 4-byte.
  */
 int
-pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
+pl_font_scan_segments(const gs_memory_t *mem,
+		      pl_font_t *plfont, int fst_offset, int start_offset,
   long end_offset, bool large_sizes, const pl_font_offset_errors_t *pfoe)
 {	const byte *header = plfont->header;
 	pl_font_scaling_technology_t fst = header[fst_offset];
@@ -420,8 +436,9 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 	bool found = false;
 	ulong seg_size;
 	int illegal_font_data = pfoe->illegal_font_data;
+
 #define return_scan_error(err)\
-  return_error((err) ? (err) : illegal_font_data);
+  return_error(mem, (err) ? (err) : illegal_font_data);
 
 	if ( memcmp(null_segment, "\377\377", 2) /* NULL segment header */ )
 	  return_scan_error(pfoe->missing_required_segment);
@@ -445,19 +462,19 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 
 	      seg_size = (large_sizes ? u32(segment + 2) : u16(segment + 2));
 	      if ( seg_size + 2 + wsize > end - segment )
-		return_error(illegal_font_data);
+		return_error(mem, illegal_font_data);
 	      /* Handle segments common to all fonts. */
 	      switch ( seg_id )
 		{
 		case 0xffff:		/* NULL segment ID */
 		  if ( segment != null_segment )
-		    return_error(illegal_font_data);
+		    return_error(mem, illegal_font_data);
 		  continue;
 		case id2('V','I'):
 		  continue;
 		case id2('C', 'C'):
 		  if ( seg_size != 8 )
-		    return_error(illegal_font_data);
+		    return_error(mem, illegal_font_data);
 		  memcpy(plfont->character_complement, sdata, 8);
 		  continue;
 		default:
@@ -481,7 +498,7 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 		    break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
-		      return_error(pfoe->illegal_font_segment);
+		      return_error(mem, pfoe->illegal_font_segment);
 		  }
 	      else		/* fst == plfst_TrueType */
 		switch ( seg_id )
@@ -524,14 +541,14 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 		    break;
 		  default:
 		    if ( pfoe->illegal_font_segment < 0 )
-		      return_error(pfoe->illegal_font_segment);
+		      return_error(mem, pfoe->illegal_font_segment);
 		  }
 #undef id2
 	    }
 	  if ( !found )
 	    return_scan_error(pfoe->missing_required_segment);
 	  if ( segment != end )
-	    return_error(illegal_font_data);
+	    return_error(mem, illegal_font_data);
 	  plfont->large_sizes = large_sizes;
 	  plfont->scaling_technology = fst;
 	  return 0;
@@ -557,13 +574,13 @@ pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, u
 	 * appropriate one.
 	 */
 	fclose(in);
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     rewind(in);
     *pptt_font_data = gs_alloc_bytes(mem, *size, "pl_tt_load_font data");
     if ( *pptt_font_data == 0 ) {
 	fclose(in);
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     fread(*pptt_font_data + 6, 1, len, in);
     fclose(in);
@@ -583,14 +600,14 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
     /* get the data from the file */
     code = pl_alloc_tt_fontfile_buffer(in, mem, &tt_font_datap, &size);
     if ( code < 0 )
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     /* Make a Type 42 font out of the TrueType data. */
     pfont = gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
 			    "pl_tt_load_font(gs_font_type42)");
     plfont = pl_alloc_font(mem, "pl_tt_load_font(pl_font_t)");
 
     if ( pfont == 0 || plfont == 0 )
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
     else { /* Initialize general font boilerplate. */
 	code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, font_name);
 	if ( code >= 0 ) { /* Initialize TrueType font boilerplate. */
@@ -654,13 +671,13 @@ pl_load_resident_font_data_from_file(gs_memory_t *mem, pl_font_t *plfont)
 	     * appropriate one.
 	     */
 	    fclose(in);
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	}
 	rewind(in);
 	data = gs_alloc_bytes(mem, size, "pl_tt_load_font data");
 	if ( data == 0 ) { 
 	    fclose(in);
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	}
 	fread(data + 6, 1, len, in);
 	fclose(in);

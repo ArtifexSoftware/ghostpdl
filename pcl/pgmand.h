@@ -131,15 +131,18 @@ typedef struct {
   hpgl_command_definition_t defn;
 } hpgl_named_command_t;
 int hpgl_init_command_index(hpgl_parser_state_t **pgl_parser_state, gs_memory_t *mem);
-void hpgl_define_commands(const hpgl_named_command_t *, hpgl_parser_state_t *pgl_parser_state);
-#define DEFINE_HPGL_COMMANDS \
-{ static const hpgl_named_command_t defs_[] = {
+void hpgl_define_commands(const gs_memory_t *mem, 
+			  const hpgl_named_command_t *, 
+			  hpgl_parser_state_t *pgl_parser_state);
+#define DEFINE_HPGL_COMMANDS(mem) \
+{ const gs_memory_t *mem_ = mem; \
+  static const hpgl_named_command_t defs_[] = {
 #define HPGL_COMMAND(c1, c2, proc, flag)\
   {c1, c2, {proc, flag}}
 #define END_HPGL_COMMANDS\
     {0, 0}\
   };\
-  hpgl_define_commands(defs_, pcl_parser_state->hpgl_parser_state);\
+  hpgl_define_commands(mem_, defs_, pcl_parser_state->hpgl_parser_state);\
 }
 
 /* Define a return code asking for more data. */
@@ -170,10 +173,10 @@ int hpgl_process(hpgl_parser_state_t *pst, hpgl_state_t *pgls,
  * if we have reached the end of the arguments.  Note that these
  * procedures longjmp back to the parser if they run out of input data.
  */
-bool hpgl_arg_real(hpgl_args_t *pargs, hpgl_real_t *pr);
-bool hpgl_arg_c_real(hpgl_args_t *pargs, hpgl_real_t *pr);
-bool hpgl_arg_int(hpgl_args_t *pargs, int32 *pi);
-bool hpgl_arg_c_int(hpgl_args_t *pargs, int *pi);
+bool hpgl_arg_real(const gs_memory_t *mem, hpgl_args_t *pargs, hpgl_real_t *pr);
+bool hpgl_arg_c_real(const gs_memory_t *mem, hpgl_args_t *pargs, hpgl_real_t *pr);
+bool hpgl_arg_int(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pi);
+bool hpgl_arg_c_int(const gs_memory_t *mem, hpgl_args_t *pargs, int *pi);
 /*
  * Many vector commands are defined as taking parameters whose format is
  * "current units".  This is nonsensical: whether scaling is on or off
@@ -182,7 +185,7 @@ bool hpgl_arg_c_int(hpgl_args_t *pargs, int *pi);
  * it turns out it actually matters), we define a separate procedure for
  * this.
  */
-bool hpgl_arg_units(hpgl_args_t *pargs, hpgl_real_t *pu);
+bool hpgl_arg_units(const gs_memory_t *mem, hpgl_args_t *pargs, hpgl_real_t *pu);
 
 /* In some cases, it is convenient for the implementation of command A to
  * call another command B.  While we don't particularly like this approach

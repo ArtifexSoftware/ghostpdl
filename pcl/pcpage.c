@@ -62,7 +62,8 @@ preserve_cap_and_margins(
 {
     pcur_pt->x = (double)pcs->cap.x;
     pcur_pt->y = (double)pcs->cap.y;
-    gs_point_transform( pcur_pt->x,
+    gs_point_transform( pcs->memory,
+			pcur_pt->x,
                         pcur_pt->y,
                         &(pcs->xfm_state.pd2lp_mtx),
                         pcur_pt
@@ -71,7 +72,7 @@ preserve_cap_and_margins(
     ptext_rect->p.y = (double)pcs->margins.top;
     ptext_rect->q.x = (double)pcs->margins.right;
     ptext_rect->q.y = (double)(pcs->margins.top + pcs->margins.length);
-    pcl_transform_rect(ptext_rect, ptext_rect, &(pcs->xfm_state.pd2lp_mtx));
+    pcl_transform_rect(pcs->memory, ptext_rect, ptext_rect, &(pcs->xfm_state.pd2lp_mtx));
 }
 
 /*
@@ -90,10 +91,10 @@ restore_cap_and_margins(
     gs_rect          tmp_rect;
 
     pcl_invert_mtx(&(pcs->xfm_state.pd2lp_mtx), &lp2pd);
-    gs_point_transform(pcur_pt->x, pcur_pt->y, &lp2pd, &tmp_pt);
+    gs_point_transform(pcs->memory, pcur_pt->x, pcur_pt->y, &lp2pd, &tmp_pt);
     pcs->cap.x = (coord)tmp_pt.x;
     pcs->cap.y = (coord)tmp_pt.y;
-    pcl_transform_rect(ptext_rect, &tmp_rect, &lp2pd);
+    pcl_transform_rect(pcs->memory, ptext_rect, &tmp_rect, &lp2pd);
     pcs->margins.left = (coord)tmp_rect.p.x;
     pcs->margins.top = (coord)tmp_rect.p.y;
     pcs->margins.right = (coord)tmp_rect.q.x;
@@ -170,7 +171,8 @@ update_xfm_state(
 	 (psize->height == 84168) )
 	offset -= inch2coord(1.0/10.0);
 
-    gs_matrix_translate( &(pxfmst->lp2pg_mtx),
+    gs_matrix_translate( pcs->memory, 
+			 &(pxfmst->lp2pg_mtx),
                          (floatp)offset,
                          0.0,
                          &(pxfmst->lp2pg_mtx)
@@ -224,14 +226,14 @@ update_xfm_state(
 	    print_rect.q.x = psize->width - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[2] / 72.0));
 	    print_rect.q.y = psize->height - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[3] / 72.0));
 	}
-	pcl_transform_rect(&print_rect, &dev_rect, &pg2dev);
+	pcl_transform_rect(pcs->memory, &print_rect, &dev_rect, &pg2dev);
 	pxfmst->dev_print_rect.p.x = float2fixed(round(dev_rect.p.x));
 	pxfmst->dev_print_rect.p.y = float2fixed(round(dev_rect.p.y));
 	pxfmst->dev_print_rect.q.x = float2fixed(round(dev_rect.q.x));
 	pxfmst->dev_print_rect.q.y = float2fixed(round(dev_rect.q.y));
     }
     pcl_invert_mtx(&(pxfmst->lp2pg_mtx), &pg2lp);
-    pcl_transform_rect(&print_rect, &(pxfmst->lp_print_rect), &pg2lp);
+    pcl_transform_rect(pcs->memory, &print_rect, &(pxfmst->lp_print_rect), &pg2lp);
 
     /* restablish the current point and text region */
     if ( !reset_initial )
@@ -338,7 +340,7 @@ new_page_size(
     gs_setdefaultmatrix(pgs, NULL);
     gs_initmatrix(pgs);
     gs_currentmatrix(pgs, &mat);
-    gs_matrix_translate(&mat, 0.0, height_pts, &mat);
+    gs_matrix_translate(pcs->memory, &mat, 0.0, height_pts, &mat);
     gs_matrix_scale(&mat, 0.01, -0.01, &mat);
     gs_setdefaultmatrix(pgs, &mat);
 
@@ -430,12 +432,12 @@ pcl_mark_page_for_current_pos(pcl_state_t *pcs)
         page_bbox_float.q.y = fixed2float(page_bbox_fixed.q.y);
         
         if ( gs_currentpoint(pcs->pgs, &current_pt) < 0 ) {
-             dprintf( "Not expected to fail\n" );
+             dprintf(pcs->memory, "Not expected to fail\n" );
              return;
         }
              
 	if ( gs_transform(pcs->pgs, current_pt.x, current_pt.y, &dev_pt) ) {
-             dprintf( "Not expected to fail\n" );
+             dprintf(pcs->memory, "Not expected to fail\n" );
              return;
         }
 
@@ -798,7 +800,6 @@ set_top_margin(
     coord           tmarg = uint_arg(pargs) * pcs->vmi_cp;
 
     if ((pcs->vmi_cp != 0) && (tmarg <= hgt)) {
-	int code;
         pcs->margins.top = tmarg;
         pcs->margins.length = PAGE_LENGTH(hgt - tmarg, DFLT_BOTTOM_MARGIN);
 	/* The pcl manual implies the cursor is only adjusted for the
@@ -908,7 +909,7 @@ pcpage_do_registration(
 )
 {
     /* Register commands */
-    DEFINE_CLASS('&')
+    DEFINE_CLASS(pmem, '&')
     {
         'l', 'A',
 	PCL_COMMAND( "Page Size",
@@ -995,12 +996,12 @@ pcpage_do_registration(
     },
     END_CLASS
 
-    DEFINE_ESCAPE( '9',
+    DEFINE_ESCAPE( pmem, '9',
                    "Clear Horizontal Margins",
                    clear_horizontal_margins
                    )
 
-    DEFINE_CLASS_COMMAND_ARGS( '*',
+    DEFINE_CLASS_COMMAND_ARGS( pmem, '*',
                                'o',
                                'Q',
                                "Print Quality",
@@ -1025,7 +1026,7 @@ get_default_paper(
 		pcs->wide_a4 = true;
 	    return &(paper_sizes[i].psize);
 	}
-    dprintf("system does not support requested paper setting\n");
+    dprintf(pcs->memory, "system does not support requested paper setting\n");
     return &(paper_sizes[1].psize);
 }
     

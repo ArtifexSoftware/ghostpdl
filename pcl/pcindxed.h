@@ -157,23 +157,23 @@ typedef pcl_cs_indexed_s pcl_cs_indexed_t;
 /*
  * The usual copy, init, and release macros.
  */
-#define pcl_cs_indexed_init_from(pto, pfrom)\
+#define pcl_cs_indexed_init_from(mem, pto, pfrom)\
     BEGIN                                   \
-    rc_increment(pfrom);                    \
+    rc_increment(mem, pfrom);                    \
     (pto) = (pfrom);                        \
     END
 
-#define pcl_cs_indexed_copy_from(pto, pfrom)            \
+#define pcl_cs_indexed_copy_from(mem, pto, pfrom)            \
     BEGIN                                               \
     if ((pto) != (pfrom)) {                             \
-        rc_increment(pfrom);                            \
-        rc_decrement(pto, "pcl_cs_indexed_copy_from");  \
+        rc_increment(mem, pfrom);                            \
+        rc_decrement(mem, pto, "pcl_cs_indexed_copy_from");  \
         (pto) = (pfrom);                                \
     }                                                   \
     END
 
-#define pcl_cs_indexed_release(pindexed)                \
-    rc_decrement(pindexed, "pcl_cs_indexed_release")
+#define pcl_cs_indexed_release(mem, pindexed)                \
+    rc_decrement(mem, pindexed, "pcl_cs_indexed_release")
 
 /*
  * Get the color space type for the base color space of an indexed color space.

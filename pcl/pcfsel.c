@@ -62,25 +62,25 @@ static const char * const score_name[] = {
 };
 
 private void
-dprint_cc(const byte *pcc)
-{	dprintf8("cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
+dprint_cc(const gs_memory_t *mem, const byte *pcc)
+{	dprintf8(mem, "cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
 		 pcc[1], pcc[2], pcc[3], pcc[4], pcc[5], pcc[6], pcc[7]);
 }
 void
-dprint_font_params_t(const pl_font_params_t *pfp)
-{	dprintf7("symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u\n",
+dprint_font_params_t(const gs_memory_t *mem, const pl_font_params_t *pfp)
+{	dprintf7(mem, "symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u\n",
 		 pfp->symbol_set,
 		 (pfp->proportional_spacing ? "prop." : "fixed"),
 		 pl_fp_pitch_cp(pfp) / 100.0, pfp->height_4ths / 4, pfp->style,
 		 pfp->stroke_weight, pfp->typeface_family);
 }
 private void
-dprint_font_t(const pl_font_t *pfont)
-{	dprintf3("storage=%d scaling=%d type=%d ",
+dprint_font_t(const gs_memory_t *mem, const pl_font_t *pfont)
+{	dprintf3(mem, "storage=%d scaling=%d type=%d ",
 		 pfont->storage, pfont->scaling_technology, pfont->font_type);
-	dprint_cc(pfont->character_complement);
-	dputs(";\n   ");
-	dprint_font_params_t(&pfont->params);
+	dprint_cc(mem, pfont->character_complement);
+	dputs(mem, ";\n   ");
+	dprint_font_params_t(mem, &pfont->params);
 }
 
 #endif
@@ -260,12 +260,12 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	if ( gs_debug_c('=') )
 	  { int i;
 
-	    dprintf1("[=]scoring 0x%lx: ", (ulong)fp);
-	    dprint_font_t(fp);
-	    dputs("   score:");
+	    dprintf1(pcs->memory, "[=]scoring 0x%lx: ", (ulong)fp);
+	    dprint_font_t(pcs->memory, fp);
+	    dputs(pcs->memory, "   score:");
 	    for ( i = 0; i < score_limit; ++i )
-	      dprintf2(" %s: %d", score_name[i], score[i]);
-	    dputs("\n");
+	      dprintf2(pcs->memory, " %s: %d", score_name[i], score[i]);
+	    dputs(pcs->memory, "\n");
 	  }
 #endif
 
@@ -286,8 +286,8 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 
 #ifdef DEBUG
 	    if ( gs_debug_c('=') )
-	      { dputs("[=]request: ");
-	        dprint_font_params_t(&pfs->params);
+	      { dputs(pcs->memory, "[=]request: ");
+	        dprint_font_params_t(pcs->memory, &pfs->params);
 	      }
 #endif
 	    /* if the font table is set up to select character by id
@@ -336,7 +336,8 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 			  best_map = mapp;
 			  memcpy((void*)best_match, (void*)match,
 			      sizeof(match));
-			  if_debug1('=', "   (***best so far, better %s***)\n", score_name[i]);
+			  if_debug1(pcs->memory, '=', 
+				    "   (***best so far, better %s***)\n", score_name[i]);
 			}
 		      break;
 		    }

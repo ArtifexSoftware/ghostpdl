@@ -13,15 +13,6 @@
 
 /* plmain.c */
 /* Main program command-line interpreter for PCL interpreters */
-#include "stdio_.h"
-/* get stdio values before they get redefined */
- private void
-pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
-{
-    *in = stdin;
-    *out = stdout;
-    *err = stderr;
-}
 #include "string_.h"
 #include "gdebug.h"
 #include "gscdefs.h"
@@ -47,6 +38,7 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "pltop.h"
 #include "pltoputl.h"
 #include "plapi.h"
+#include "pl_stdio.h"
 
 
 /*
@@ -134,12 +126,6 @@ private FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
 void pl_main_init_instance(pl_main_instance_t *pmi, gs_memory_t *memory);
 void pl_main_reinit_instance(pl_main_instance_t *pmi);
 
-#ifdef DEBUG
-/* Print memory and time usage. */
-void pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
-		       const char *msg);
-#endif
-
 /* Process the options on the command line, including making the
    initial device and setting its parameters.  */
 int pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
@@ -199,32 +185,11 @@ get_device_index(const char *value)
     return di;
 }
 
-/* determine if the device is a high level device */
-bool
-high_level_device(gx_device *device)
-{
-    /* this is a hack, there is not a nice way to determine if the
-       device is a high level device at this time */
-    if ( device && strncmp(gs_devicename(device), "pdfwrite", 8) == 0 )
-	return true;
-    else
-	return false;
-}
-
-/* high level devices are closed at end job time because they depend
-   on memory owned by the language possibly freed before the high
-   level device requires the memory */
 private int
 close_job(pl_main_universe_t *universe, pl_main_instance_t *pti)
 {	
     if ( pti->print_page_count )
-        dlprintf1("%%%%%PageCount: %d\n", pti->page_count);
-    if ( high_level_device(universe->curr_device) ) {
-	 if (gs_closedevice(universe->curr_device) < 0)
-	     return -1;
-	 /* forces reopen of the device. */
-	 universe->curr_device = 0;
-   }
+        dlprintf1(pti->memory, "%%%%%PageCount: %d\n", pti->page_count);
     return pl_dnit_job(universe->curr_instance);
 }
 
@@ -250,17 +215,12 @@ pl_main(
     pl_interp_instance_t *  curr_instance = 0;
     gs_c_param_list         params;
 
-    /* Init std io: set up in, our err - not much we can do here if this fails */
-    pl_get_real_stdio(&gs_stdin, &gs_stdout, &gs_stderr);
-
-    pl_platform_init(gs_stdout);
     mem = pl_alloc_init();
-#ifndef PSI_INCLUDED
-    /* process level allocations above a job */
-    pjl_mem = pl_pjl_alloc_init();
-#else
+    pl_platform_init(mem->pl_stdio->fstdout);
+
+
     pjl_mem = mem;
-#endif
+
     gs_lib_init1(pjl_mem);
 
     /* Create a memory allocator to allocate various states from */
@@ -285,14 +245,14 @@ pl_main(
     /* Create PJL instance */
     if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0
 	 || pl_allocate_interp_instance(&pjl_instance, pjl_interp, pjl_mem) < 0 ) {
-	fprintf(gs_stderr, "Unable to create PJL interpreter");
+	dprintf(mem, "Unable to create PJL interpreter");
 	return -1;
     }
 
     /* Create PDL instances, etc */
     if (pl_main_universe_init(&universe, err_buf, mem, pdl_implementation,
 			      pjl_instance, &inst, &pl_pre_finish_page, &pl_post_finish_page) < 0) {
-	fputs(err_buf, gs_stderr);
+	dprintf(mem, err_buf);
 	return -1;
     }
 
@@ -318,7 +278,7 @@ pl_main(
 	bool                new_job = false;
 
         if ( pl_init_job(pjl_instance) < 0 ) {
-            fprintf(gs_stderr, "Unable to init PJL job.\n");
+            dprintf(mem, "Unable to init PJL job.\n");
             return -1;
         }
 
@@ -354,7 +314,7 @@ pl_main(
            non-option on arg list */
         {
             int code = 0;
-            arg = arg_next(&args, &code);
+            arg = arg_next(mem, &args, &code);
             /* not sure what to do about this stupidity right now */
             if (code < 0)
                 fprintf(gs_stderr, "arg_next failed\n");
@@ -366,91 +326,91 @@ pl_main(
            requirements specified by each implementation in the
            characteristics structure */
         if (pl_main_cursor_open(&r, arg, buf, sizeof(buf)) < 0) {
-            fprintf(gs_stderr, "Unable to open %s for reading.\n", arg);
+            dprintf1(mem, "Unable to open %s for reading.\n", arg);
             return -1;
         }
 
 #ifdef DEBUG
         if (gs_debug_c(':'))
-            dprintf1("%% Reading %s:\n", arg);
+            dprintf1(mem, "%% Reading %s:\n", arg);
 #endif
 	/* pump data thru PJL/PDL until EOD or error */
 	new_job = false;
         in_pjl = true;
         for (;;) {
-            if_debug1('i', "[i][file pos=%ld]\n", pl_main_cursor_position(&r));
+            if_debug1(mem, 'i', "[i][file pos=%ld]\n", pl_main_cursor_position(&r));
             /* end of data - if we are not back in pjl the job has
                ended in the middle of the data stream. */
             if (pl_main_cursor_next(&r) <= 0) {
-                if_debug0('|', "End of of data\n");
+                if_debug0(mem, '|', "End of of data\n");
                 if ( !in_pjl ) {
-                    if_debug0('|', "end of data stream found in middle of job\n");
+                    if_debug0(mem, '|', "end of data stream found in middle of job\n");
 		    pl_process_eof(curr_instance);
                     if ( close_job(&universe, &inst) < 0 ) {
-			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
+			dprintf(mem, "Unable to deinit PDL job.\n");
 			return -1;
                     }
                 }
     	        break;
             }
             if ( in_pjl ) {
-                if_debug0('|', "Processing pjl\n");
+                if_debug0(mem, '|', "Processing pjl\n");
 		code = pl_process(pjl_instance, &r.cursor);
 		if (code == e_ExitLanguage) {
-                    if_debug0('|', "Exiting pjl\n" );
+                    if_debug0(mem, '|', "Exiting pjl\n" );
 		    in_pjl = false;
 		    new_job = true;
 		}
     	    } else {
 		if ( new_job ) {
-                    if_debug0( '|', "Selecting PDL\n" );
+                    if_debug0(mem, '|', "Selecting PDL\n" );
                     curr_instance = pl_main_universe_select(&universe, err_buf,
 							    pjl_instance,
                                                             pl_select_implementation(pjl_instance, &inst, r),
                                                             &inst, (gs_param_list *)&params);
                     if ( curr_instance == NULL ) {
-			fputs(err_buf, gs_stderr);
+			dprintf(mem, err_buf);
 			return -1;
 		    }
 
 		    if ( pl_init_job(curr_instance) < 0 ) {
-			fprintf(gs_stderr, "Unable to init PDL job.\n");
+			dprintf(mem, "Unable to init PDL job.\n");
 			return -1;
 		    }
-                    if_debug1('|', "selected and initializing (%s)\n",
+                    if_debug1(mem, '|', "selected and initializing (%s)\n",
                               pl_characteristics(curr_instance->interp->implementation)->language);
 		    new_job = false;
 		}
 		code = pl_process(curr_instance, &r.cursor);
-                if_debug1('|', "processing (%s) job\n", pl_characteristics(curr_instance->interp->implementation)->language);
+                if_debug1(mem, '|', "processing (%s) job\n", pl_characteristics(curr_instance->interp->implementation)->language);
     	        if (code == e_ExitLanguage) {
     	            in_pjl = true;
-                    if_debug1('|', "exiting (%s) job back to pjl\n",
+                    if_debug1(mem, '|', "exiting (%s) job back to pjl\n",
                     pl_characteristics(curr_instance->interp->implementation)->language);
                     if ( close_job(&universe, &inst) < 0 ) {
-			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
+			dprintf(mem,  "Unable to deinit PDL job.\n");
 			return -1;
 		    }
 		    if ( pl_init_job(pjl_instance) < 0 ) {
-			fprintf(gs_stderr, "Unable to init PJL job.\n");
+			dprintf(mem, "Unable to init PJL job.\n");
 			return -1;
                     }
 		} else if ( code < 0 ) { /* error and not exit language */
-		    fprintf(gs_stderr, "Warning interpreter exited with error code %d\n", code );
-		    fprintf(gs_stderr, "Flushing to end of job\n" );
+		    dprintf1(mem, "Warning interpreter exited with error code %d\n", code );
+		    dprintf(mem, "Flushing to end of job\n" );
 		    /* flush eoj may require more data */
 		    while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0) {
-                        if_debug1('|', "flushing to eoj for (%s) job\n",
+                        if_debug1(mem, '|', "flushing to eoj for (%s) job\n",
                                    pl_characteristics(curr_instance->interp->implementation)->language);
 			if (pl_main_cursor_next(&r) <= 0) {
-                            if_debug0('|', "end of data found while flushing\n");
+                            if_debug0(mem, '|', "end of data found while flushing\n");
                             break;
                         }
                     }
                     pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
                                      inst.error_report > 0, gs_stdout);
                     if ( close_job(&universe, &inst) < 0 ) {
-                        fprintf(gs_stderr, "Unable to deinit PJL.\n");
+                        dprintf(mem, "Unable to deinit PJL.\n");
                         return -1;
                     }
 		    /* Print PDL status if applicable, then dnit PDL job */
@@ -468,20 +428,20 @@ pl_main(
 
     /* Dnit PDLs */
     if (pl_main_universe_dnit(&universe, err_buf)) {
-	fputs(err_buf, gs_stderr);
+	dprintf(mem, err_buf);
 	return -1;
     }
     /* dnit pjl */
     if ( pl_deallocate_interp_instance(pjl_instance) < 0
 	 || pl_deallocate_interp(pjl_interp) < 0 ) {
-	fprintf(gs_stderr, "Unable to close out PJL instance\n");
+	dprintf(mem, "Unable to close out PJL instance\n");
 	return -1;
     }
 
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
         pl_print_usage(mem, &inst, "Final");
-        dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
+        dprintf1(mem, "%% Max allocated = %ld\n", gs_malloc_max);
     }
 #endif
 
@@ -493,15 +453,13 @@ pl_main(
     // NB this is gone    gs_iodev_free(pjl_mem);
    
     if ( gs_debug_c('A') )
-	dprintf( "Final time" );
+	dprintf(mem, "Final time" );
     pl_platform_dnit(0);
 
     if ( inst.mem_cleanup ) {
         pl_mem_node_free_all_remaining(mem);
-        pl_mem_node_free_all_remaining(pjl_mem);
     }
     return 0;
-#undef mem
 }
 
 /* --------- Functions operating on pl_main_universe_t ----- */
@@ -749,7 +707,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->print_page_count = false;
     pti->device = 0;
     pti->implementation = 0;
-    gp_get_usertime(pti->base_time);
+    gp_get_usertime(pti->memory, pti->base_time);
     pti->first_page = 1;
     pti->last_page = max_int;
     pti->page_count = 0;
@@ -795,7 +753,8 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
     const char *arg;
 
     gs_c_param_list_write_more(params);
-    while ( (arg = arg_next(pal, &code)) != 0 && *arg == '-' ) { /* just - read from stdin */
+    while ( (arg = arg_next(pmi->memory, pal, &code)) != 0 && 
+	    *arg == '-' ) { /* just - read from stdin */
         if (code < 0)
             break;
 	if ( arg[1] == '\0' )
@@ -803,7 +762,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	arg += 2;
 	switch ( arg[-1] ) {
 	default:
-	    fprintf(gs_stderr, "Unrecognized switch: %s\n", arg);
+	    dprintf1(pmi->memory, "Unrecognized switch: %s\n", arg);
 	    return -1;
 	case '\0':
 	    /* read from stdin - must be last arg */
@@ -863,7 +822,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                     buffer[eqp - arg] = '\0';
                     code = param_write_bool((gs_param_list *)params, arg_heap_copy(buffer), &bval);
                 } else {
-                    fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
+                    dprintf(pmi->memory, "Usage for -d is -d<option>=<integer>\n");
 		    continue;
 		}
 	    }
@@ -880,7 +839,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		gs_param_int_array ia;
 
 		if ( sscanf(arg, "%ux%u", &geom[0], &geom[1]) != 2 ) { 
-		    fputs("-g must be followed by <width>x<height>\n", gs_stderr);
+		    dprintf(pmi->memory, "-g must be followed by <width>x<height>\n");
 		    return -1;
 		}
 		ia.data = geom;
@@ -904,7 +863,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                 /* length of arg + newline (expected by PJL parser) + null */
                 int buf_len = strlen(arg) + 2;
                 if ( (buf_len ) > sizeof(buf) ) {
-                    fputs("pjl sequence too long\n", gs_stderr);
+                    dprintf(pmi->memory, "pjl sequence too long\n");
                     return -1;
                 }
                 /* copy and concatenate newline */
@@ -916,7 +875,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                 /* process the pjl */
                 code = pl_process(pjl_instance, &cursor);
                 if ( code < 0 ) {
-                    fputs("illegal pjl sequence in -J option\n", gs_stderr);
+                    dprintf(pmi->memory, "illegal pjl sequence in -J option\n");
                     return code;
                 }
             }
@@ -925,7 +884,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	    {
 		int maxk;
 		if ( sscanf(arg, "%d", &maxk) != 1 ) { 
-		    fputs("-K must be followed by a number\n", gs_stderr);
+		    dprintf(pmi->memory, "-K must be followed by a number\n");
 		    return -1;
 		}
 		gs_malloc_limit = (long)maxk << 10;
@@ -942,7 +901,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		     !strcmp(arg, "PCL5C") )
 		    strcpy(pmi->pcl_personality, arg);
 		else 
-		    dprintf("PCL personality must be RTL, PCL5E or PCL5C\n");
+		    dprintf(pmi->memory, "PCL personality must be RTL, PCL5E or PCL5C\n");
 	    }
 	    break;
 	case 'r':
@@ -952,8 +911,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 
 		switch ( sscanf(arg, "%fx%f", &res[0], &res[1]) ) {
 		default:
-		    fputs("-r must be followed by <res> or <xres>x<yres>\n",
-			  gs_stderr);
+		    dprintf(pmi->memory, "-r must be followed by <res> or <xres>x<yres>\n");
 		    return -1;
 		case 1:	/* -r<res> */
 		    res[1] = res[0];
@@ -974,7 +932,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		gs_param_string str;
 		eqp = strchr(arg, '=');
 		if ( !(eqp || (eqp = strchr(arg, '#'))) ) { 
-		    fputs("Usage for -s is -s<option>=<string>\n", gs_stderr);
+		    dprintf(pmi->memory, "Usage for -s is -s<option>=<string>\n");
 	            return -1;
 		}
 		value = eqp + 1;
@@ -1010,11 +968,11 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		if (impl_array[index] != 0)
 	            pmi->implementation = impl_array[index];
 		else {
-	            fputs("Choose language in -L<language> from: ", gs_stderr);
+	            dprintf(pmi->memory, "Choose language in -L<language> from: ");
 	            for (index = 0; impl_array[index] != 0; ++index)
-			fprintf(gs_stderr, "%s ",
+			dprintf1(pmi->memory, "%s ",
 				pl_characteristics(impl_array[index])->language);
-	            fputs("\n", gs_stderr);
+	            dprintf(pmi->memory, "\n");
 	            return -1;
 		}
 		break;
@@ -1030,7 +988,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
     pl_top_create_device(pmi, 0, true); /* create default device if needed */
     /* The last argument wasn't a switch, so push it back. */
     if (arg)
-	arg_push_string(pal, (char*)arg);  /* cast const away for bad prototype */
+	arg_push_string(pmi->memory, pal, (char*)arg);  /* cast const away for bad prototype */
     return 0;
 }
 
@@ -1092,12 +1050,12 @@ pl_auto_sense(
 
 /* Print memory and time usage. */
 void
-pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pti,
+pl_print_usage(const gs_memory_t *mem, const pl_main_instance_t *pti,
   const char *msg)
 {	
 	long utime[2];
-	gp_get_usertime(utime);
-	dprintf3("%% %s time = %g, pages = %d\n",
+	gp_get_usertime(mem, utime);
+	dprintf3(mem, "%% %s time = %g, pages = %d\n",
 		 msg, utime[0] - pti->base_time[0] +
 		 (utime[1] - pti->base_time[1]) / 1000000000.0,
                  pti->page_count);
@@ -1105,10 +1063,11 @@ pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pti,
 
 /* Log a string to console, optionally wait for input */
 void
-pl_log_string(char *str, int wait_for_key)
-{	fputs(str, gs_stderr);
-	if (wait_for_key)
-	  fgetc(gs_stdin);
+pl_log_string(const gs_memory_t *mem, gs_char *str, int wait_for_key)
+{
+    errwrite(mem, str, strlen((char*)str)); 
+    if (wait_for_key)
+	fgetc(mem->pl_stdio->fstdin);
 }
 
 /* Pre-page portion of page finishing routine */
@@ -1173,7 +1132,7 @@ pl_post_finish_page(pl_interp_instance_t *interp, void *closure)
 	  { char strbuf[256];
 	    sprintf(strbuf, "End of page %d, press <enter> to continue.\n",
 		  pti->page_count);
-	    pl_log_string(strbuf, 1);
+	    pl_log_string(pti->memory, strbuf, 1);
 	  }
 	else if ( gs_debug_c(':') )
 	  pl_print_usage(pti->memory, pti, " done :");
@@ -1250,33 +1209,3 @@ main(int argc, char **argv) {
 }
 #endif /* !defined(NO_MAIN) */
 
-/* Provide a single point for all "C" stdout and stderr.
- * These are provided here, but library users may want to build
- * provide their own functions to handle these, thus NO_STDIO_HANDLERS
- */
-
-#ifndef NO_STDIO_HANDLERS
-int outwrite(const char *str, int len)
-{
-    int c = fwrite(str, 1, len, gs_stdout);
-    fflush(gs_stdout);
-    return c;
-}
-
-int errwrite(const char *str, int len)
-{
-    int c = fwrite(str, 1, len, gs_stderr);
-    fflush(gs_stderr);
-    return c;
-}
-
-void outflush()
-{
-    fflush(gs_stdout);
-}
-
-void errflush()
-{
-    fflush(gs_stderr);
-}
-#endif /* !defined(NO_STDIO_HANDLERS) */

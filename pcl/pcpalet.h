@@ -79,23 +79,23 @@ typedef struct pcl_palette_s    pcl_palette_t;
 /*
  * The usual init, copy,and release macros.
  */
-#define pcl_palette_init_from(pto, pfrom)   \
+#define pcl_palette_init_from(mem, pto, pfrom)   \
     BEGIN                                   \
-    rc_increment(pfrom);                    \
+    rc_increment(mem, pfrom);                    \
     (pto) = (pfrom);                        \
     END
 
-#define pcl_palette_copy_from(pto, pfrom)           \
+#define pcl_palette_copy_from(mem, pto, pfrom)           \
     BEGIN                                           \
     if ((pto) != (pfrom)) {                         \
-        rc_increment(pfrom);                        \
-        rc_decrement(pto, "pcl_palette_copy_from"); \
+        rc_increment(mem, pfrom);                        \
+        rc_decrement(mem, pto, "pcl_palette_copy_from"); \
         (pto) = (pfrom);                            \
     }                                               \
     END
 
-#define pcl_palette_release(pbase)           \
-    rc_decrement(pbase, "pcl_frgrnd_release")
+#define pcl_palette_release(mem, pbase)           \
+    rc_decrement(mem, pbase, "pcl_frgrnd_release")
 
 
 /*

@@ -130,7 +130,7 @@ download_dither_matrix(
 
     /* update the dither matrix; release our reference */
     code = pcl_palette_set_udither(pcs, pdither);
-    pcl_udither_release(pdither);
+    pcl_udither_release(pcs->memory, pdither);
     return code;
 }
 
@@ -141,10 +141,10 @@ download_dither_matrix(
   private int
 udither_do_registration(
     pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *    pmme
+    gs_memory_t *    pmem
 )
 {
-    DEFINE_CLASS('*')
+    DEFINE_CLASS(pmem, '*')
     {
         'm', 'W',
         PCL_COMMAND("Download Dither Matrix", download_dither_matrix, pca_bytes)

@@ -264,7 +264,7 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 					pxs->font_dir, 
 					(int)pxfsInternal, 
 					true /* use unicode key names */) < 0 ) {
-		dprintf( "Fatal error - no resident fonts\n");
+		dprintf(pxs->memory, "Fatal error - no resident fonts\n");
 		return -1;
 
 	    }
@@ -277,7 +277,7 @@ int
 pxEndSession(px_args_t *par, px_state_t *pxs)
 {	px_end_session_cleanup(pxs);
 	if ( pxs->warning_length )
-	  return_error(errorWarningsReported);
+	  return_error(pxs->memory, errorWarningsReported);
 	return 0;
 }
 
@@ -300,21 +300,21 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	/* Check parameter presence for legal combinations. */
 	if ( par->pv[2] )
 	  { if ( par->pv[3] || par->pv[4] )
-	      return_error(errorIllegalAttributeCombination);
+	      return_error(pxs->memory, errorIllegalAttributeCombination);
 	  }
 	else if ( par->pv[3] && par->pv[4] )
 	  { if ( par->pv[2] )
-	      return_error(errorIllegalAttributeCombination);
+	      return_error(pxs->memory, errorIllegalAttributeCombination);
 	  }
 	else
-	  return_error(errorMissingAttribute);
+	  return_error(pxs->memory, errorMissingAttribute);
 	if ( par->pv[5] )
 	  { if ( par->pv[6] || par->pv[7] )
-	      return_error(errorIllegalAttributeCombination);
+	      return_error(pxs->memory, errorIllegalAttributeCombination);
 	  }
 	else if ( par->pv[6] )
 	  { if ( par->pv[5] )
-	      return_error(errorIllegalAttributeCombination);
+	      return_error(pxs->memory, errorIllegalAttributeCombination);
 	  }
 
 	/* Copy parameters to the PCL XL state. */
@@ -340,7 +340,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 					    array_value_size(par->pv[2]) + 1,
 					    "pxBeginPage");
 		if ( str == 0 )
-		    return_error(errorInsufficientMemory);
+		    return_error(pxs->memory, errorInsufficientMemory);
 		/* null terminate */
 		memcpy(str, par->pv[2]->value.array.data, array_value_size(par->pv[2]));
 		str[array_value_size(par->pv[2])] = '\0';
@@ -476,7 +476,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	    case 0:
 	      break;
 	    default:
-	      return_error(errorIllegalAttributeValue);
+	      return_error(pxs->memory, errorIllegalAttributeValue);
 	    }
 #undef plist
 	}
@@ -514,7 +514,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 		orient.xy = -1, orient.yx = -1;
 		break;
 	      default:			/* can't happen */
-		return_error(errorIllegalAttributeValue);
+		return_error(pxs->memory, errorIllegalAttributeValue);
 	      }
 	    if ( code < 0 ||
 		 (code = gs_concat(pgs, &orient)) < 0
@@ -556,7 +556,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 		  max(dev->HWMargins[2], pm->m_bottom * media_size_scale);
 	      page_bbox.q.y = (media_height * media_size_scale) - 
 		  max(dev->HWMargins[3], pm->m_right * media_size_scale);
-	      gs_bbox_transform(&page_bbox, &points2device, &device_page_bbox);
+	      gs_bbox_transform(dev->memory, &page_bbox, &points2device, &device_page_bbox);
 	      /* clip to rectangle takes fixed coordinates */
 	      fixed_bbox.p.x = float2fixed(device_page_bbox.p.x);
 	      fixed_bbox.p.y = float2fixed(device_page_bbox.p.y);
@@ -649,7 +649,7 @@ const byte apxOpenDataSource[] = {
 int
 pxOpenDataSource(px_args_t *par, px_state_t *pxs)
 {	if ( pxs->data_source_open )
-	  return_error(errorDataSourceNotClosed);
+	  return_error(pxs->memory, errorDataSourceNotClosed);
 	pxs->data_source_open = true;
 	pxs->data_source_big_endian =
 	  par->pv[1]->value.i == eBinaryHighByteFirst;

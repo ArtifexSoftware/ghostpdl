@@ -72,17 +72,12 @@ int pl_main_make_gstate(pl_main_instance_t *pmi, gs_state **ppgs);
 
 #ifdef DEBUG
 /* Print memory and time usage. */
-void pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
+void pl_print_usage(const gs_memory_t *mem, const pl_main_instance_t *pmi,
                     const char *msg);
 #endif
 
 /* Finish a page, possibly printing usage statistics and/or pausing. */
 int pl_finish_page(pl_main_instance_t *pmi, gs_state *pgs,
                    int num_copies, int flush);
-
-/* determine if a device is high level NB - should be
-   pl_high_level_device.  NBB - this is a hack to do unusual tricks
-   when pdfwrite is the active device. */
-bool high_level_device(gx_device *device);
 
 #endif				/* plmain_INCLUDED */

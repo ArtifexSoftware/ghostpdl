@@ -17,17 +17,13 @@
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gscspace.h"
-/* Define an abstract type for the PostScript graphics state. */
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
-#endif
 #include "gsstate.h"
 #include "gscie.h"
 #include "gscrdp.h"
 #include "gscrd.h"
 #include "gsparam.h"
 #include "gxstate.h"
+#include "gzstate.h"
 
 /* shared language (pcl and pclxl) for setting up sRGB to XYZ and an
    associated default CRD to be used.  The code will request a crd
@@ -296,11 +292,12 @@ pl_build_crd(gs_state *pgs)
 	return code;
 
     if ( pl_read_device_CRD(pl_pcrd, pgs) ) {
-        dprintf( "CRD initialized from device\n");
+        dprintf(pgs->memory, "CRD initialized from device\n");
         return 0;
     }
 
-    code = gs_cie_render1_initialize(pl_pcrd,
+    code = gs_cie_render1_initialize(pgs->memory, 
+				     pl_pcrd,
                                      NULL,
                                      &pl_WhitePoint,
                                      &pl_BlackPoint,

@@ -204,11 +204,11 @@ pcjob_do_registration(
     gs_memory_t *mem
 )
 {		/* Register commands */
-	DEFINE_ESCAPE_ARGS('E', "Printer Reset", pcl_printer_reset, pca_in_rtl)
-	DEFINE_CLASS('%')
+	DEFINE_ESCAPE_ARGS(mem, 'E', "Printer Reset", pcl_printer_reset, pca_in_rtl)
+	DEFINE_CLASS(mem, '%')
 	  {0, 'X', {pcl_exit_language, pca_neg_ok|pca_big_error|pca_in_rtl}},
 	END_CLASS
-	DEFINE_CLASS('&')
+	DEFINE_CLASS(mem, '&')
 	  {'l', 'X',
 	     PCL_COMMAND("Number of Copies", pcl_number_of_copies,
 			 pca_neg_ignore|pca_big_clamp)},

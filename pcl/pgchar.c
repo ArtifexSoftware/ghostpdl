@@ -41,12 +41,12 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 #define pfp (&pfs->params)
 	int kind;
 	pfs->selected_id = 0;
-	for ( ; hpgl_arg_c_int(pargs, &kind); pargs->phase |= 1 )
+	for ( ; hpgl_arg_c_int(pgls->memory, pargs, &kind); pargs->phase |= 1 )
 	  switch ( kind )
 	    {
 	    case 1:		/* symbol set */
 	      { int32 sset;
-	        if ( !hpgl_arg_int(pargs, &sset) )
+	        if ( !hpgl_arg_int(pgls->memory, pargs, &sset) )
 		  return e_Range;
 		if ( pfp->symbol_set != (uint)sset )
 		  pfp->symbol_set = (uint)sset,
@@ -55,7 +55,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      break;
 	    case 2:		/* spacing */
 	      { int spacing;
-	        if ( !hpgl_arg_c_int(pargs, &spacing) )
+	        if ( !hpgl_arg_c_int(pgls->memory, pargs, &spacing) )
 		  return e_Range;
 		if ( ((spacing == 1) || (spacing == 0)) && (pfp->proportional_spacing != spacing) )
 		  pfp->proportional_spacing = spacing,
@@ -64,7 +64,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      break;
 	    case 3:		/* pitch */
 	      { hpgl_real_t pitch;
-	        if ( !hpgl_arg_c_real(pargs, &pitch) )
+	        if ( !hpgl_arg_c_real(pgls->memory, pargs, &pitch) )
 		  return e_Range;
 		if ( (pl_fp_pitch_per_inch(pfp) != pitch) && (pitch >= 0) )
 		  pl_fp_set_pitch_per_inch(pfp, pitch),
@@ -73,7 +73,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      break;
 	    case 4:		/* height */
 	      { hpgl_real_t height;
-	        if ( !hpgl_arg_c_real(pargs, &height) )
+	        if ( !hpgl_arg_c_real(pgls->memory, pargs, &height) )
 		  return e_Range;
 		if ( (pfp->height_4ths != (uint)(height * 4)) && (height >= 0))
 		  pfp->height_4ths = (uint)(height * 4),
@@ -82,7 +82,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      break;
 	    case 5:		/* posture */
 	      { int posture;
-	        if ( !hpgl_arg_c_int(pargs, &posture) )
+	        if ( !hpgl_arg_c_int(pgls->memory, pargs, &posture) )
 		    return e_Range;
 		if ( pfp->style != posture )
 		    pfp->style = posture,
@@ -92,7 +92,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      break;
 	    case 6:		/* stroke weight */
 	      { int weight;
-	        if ( !hpgl_arg_c_int(pargs, &weight) )
+	        if ( !hpgl_arg_c_int(pgls->memory, pargs, &weight) )
 		     return e_Range;
 		if ( pfp->stroke_weight != weight )
 		    if ( ((weight >= -7 ) && (weight <= 7)) || (weight == 9999 ) )
@@ -102,7 +102,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      break;
 	    case 7:		/* typeface */
 	      { int32 face;
-	        if ( !hpgl_arg_int(pargs, &face) )
+	        if ( !hpgl_arg_int(pgls->memory, pargs, &face) )
 		  return e_Range;
 		if ( pfp->typeface_family != (uint)face )
 		  pfp->typeface_family = (uint)face,
@@ -128,8 +128,8 @@ private int
 hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	hpgl_real_t run = 1, rise = 0;
 
-	if ( hpgl_arg_c_real(pargs, &run) )
-	  { if ( !hpgl_arg_c_real(pargs, &rise) || (run == 0 && rise == 0) )
+	if ( hpgl_arg_c_real(pgls->memory, pargs, &run) )
+	  { if ( !hpgl_arg_c_real(pgls->memory, pargs, &rise) || (run == 0 && rise == 0) )
 	      return e_Range;
 	    { double hyp = hypot(run, rise);
 	      run /= hyp;
@@ -150,7 +150,7 @@ hpgl_select_font_by_id(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	int32 id;
 	int code;
 
-	if ( !hpgl_arg_c_int(pargs, &id) || id < 0 )
+	if ( !hpgl_arg_c_int(pgls->memory, pargs, &id) || id < 0 )
 	  return e_Range;
 	code = pcl_select_font_by_id(pfs, id, pgls /****** NOTA BENE ******/);
 	switch ( code )
@@ -224,14 +224,14 @@ hpgl_CF(
     int             npen = pcl_palette_get_num_entries(pgls->ppalet);
     int32           pen = 0;
 
-    if (hpgl_arg_c_int(pargs, &mode)) {
+    if (hpgl_arg_c_int(pgls->memory, pargs, &mode)) {
         if ((mode & ~3) != 0)
 	    return e_Range;
 	/* With only 1 argument, we "unset" the current pen.  This
            causes the drawing machinery to use the current pen when
            the stroke is rendered (i.e. a subsequent SP will change
            the character edge pen */
-	if (hpgl_arg_int(pargs, &pen)) {
+	if (hpgl_arg_int(pgls->memory, pargs, &pen)) {
             if ((pen < 0) || (pen >= npen))
 		return e_Range;
 	} else
@@ -288,7 +288,7 @@ hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		  pargs->phase = ch;
 		}
 	    }
-	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
+	if ( hpgl_arg_c_int(pgls->memory, pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	pgls->g.label.terminator = ch;
 	pgls->g.label.print_terminator = !mode;
@@ -300,8 +300,8 @@ hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int path = 0, line = 0;
 
-	hpgl_arg_c_int(pargs, &path);
-	hpgl_arg_c_int(pargs, &line);
+	hpgl_arg_c_int(pgls->memory, pargs, &path);
+	hpgl_arg_c_int(pgls->memory, pargs, &line);
 	if ( (path & ~3) | (line & ~1) )
 	  return e_Range;
 	pgls->g.character.text_path = path;
@@ -315,8 +315,8 @@ hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_ES(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t width = 0, height = 0;
 
-	hpgl_arg_c_real(pargs, &width);
-	hpgl_arg_c_real(pargs, &height);
+	hpgl_arg_c_real(pgls->memory, pargs, &width);
+	hpgl_arg_c_real(pgls->memory, pargs, &height);
 	pgls->g.character.extra_space.x = width;
 	pgls->g.character.extra_space.y = height;
 	return 0;
@@ -345,8 +345,8 @@ hpgl_LM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  (pgls->g.label.double_byte ? 1 : 0) +
 	  (pgls->g.label.write_vertical ? 2 : 0);
 
-	hpgl_arg_c_int(pargs, &mode);
-	hpgl_arg_c_int(pargs, &row_number);
+	hpgl_arg_c_int(pgls->memory, pargs, &mode);
+	hpgl_arg_c_int(pgls->memory, pargs, &row_number);
 	pgls->g.label.row_offset =
 	  (row_number < 0 ? 0 : row_number > 255 ? 255 : row_number) << 8;
 	mode &= 3;
@@ -367,7 +367,7 @@ hpgl_LM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int origin = 1;
 
-	hpgl_arg_c_int(pargs, &origin);
+	hpgl_arg_c_int(pgls->memory, pargs, &origin);
 	if ( origin < 1 || origin == 10 || origin == 20 || origin > 21 )
 	  return e_Range;
 	pgls->g.label.origin = origin;
@@ -387,7 +387,7 @@ hpgl_SA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 
-	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
+	if ( hpgl_arg_c_int(pgls->memory, pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	if ( pgls->g.bitmap_fonts_allowed != mode )
 	  { int i;
@@ -426,8 +426,8 @@ hpgl_SD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t width_cm, height_cm;
 
-	if ( hpgl_arg_c_real(pargs, &width_cm) )
-	  { if ( !hpgl_arg_c_real(pargs, &height_cm) )
+	if ( hpgl_arg_c_real(pgls->memory, pargs, &width_cm) )
+	  { if ( !hpgl_arg_c_real(pgls->memory, pargs, &height_cm) )
 	      return e_Range;
 	    pgls->g.character.size.x = mm_2_plu(width_cm * 10);
 	    pgls->g.character.size.y = mm_2_plu(height_cm * 10);
@@ -443,7 +443,7 @@ hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t slant = 0;
 
-	hpgl_arg_c_real(pargs, &slant);
+	hpgl_arg_c_real(pgls->memory, pargs, &slant);
 	pgls->g.character.slant = slant;
 	return 0;
 }
@@ -453,8 +453,8 @@ hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_SR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t width_pct, height_pct;
 
-	if ( hpgl_arg_c_real(pargs, &width_pct) )
-	  { if ( !hpgl_arg_c_real(pargs, &height_pct) )
+	if ( hpgl_arg_c_real(pgls->memory, pargs, &width_pct) )
+	  { if ( !hpgl_arg_c_real(pgls->memory, pargs, &height_pct) )
 	      return e_Range;
 	    pgls->g.character.size.x = width_pct / 100;
 	    pgls->g.character.size.y = height_pct / 100;
@@ -479,7 +479,7 @@ hpgl_SS(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_TD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 
-	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
+	if ( hpgl_arg_c_int(pgls->memory, pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	pgls->g.transparent_data = mode;
 	return 0;
@@ -491,7 +491,7 @@ pgchar_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem)
 {		/* Register commands */
-	DEFINE_HPGL_COMMANDS
+    DEFINE_HPGL_COMMANDS(mem)
 	  HPGL_COMMAND('A', 'D', hpgl_AD, hpgl_cdf_pcl_rtl_both),		/* kind/value pairs */
 	  HPGL_COMMAND('C', 'F', hpgl_CF, hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('D', 'I', hpgl_DI, hpgl_cdf_pcl_rtl_both),

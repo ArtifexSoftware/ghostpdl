@@ -33,7 +33,8 @@
 private int
 hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 {	hpgl_real_t x2, y2;
-	if ( !hpgl_arg_units(pargs, &x2) || !hpgl_arg_units(pargs, &y2) )
+	if ( !hpgl_arg_units(pgls->memory, pargs, &x2) || 
+	     !hpgl_arg_units(pgls->memory, pargs, &y2) )
 	  return e_Range;
 
 	if ( flags & DO_RELATIVE )
@@ -68,10 +69,10 @@ private int
 hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t radius, start, sweep, chord = 5;
 
-	if ( !hpgl_arg_units(pargs, &radius) ||
-	     !hpgl_arg_c_real(pargs, &start) ||
-	     !hpgl_arg_c_real(pargs, &sweep) || sweep < -360 || sweep > 360 ||
-	     (hpgl_arg_c_real(pargs, &chord) && (chord < 0.5 || chord > 180))
+	if ( !hpgl_arg_units(pgls->memory, pargs, &radius) ||
+	     !hpgl_arg_c_real(pgls->memory, pargs, &start) ||
+	     !hpgl_arg_c_real(pgls->memory, pargs, &sweep) || sweep < -360 || sweep > 360 ||
+	     (hpgl_arg_c_real(pgls->memory, pargs, &chord) && (chord < 0.5 || chord > 180))
 	   )
 	  return e_Range;
 
@@ -179,7 +180,7 @@ int
 hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int method = 0;
 
-	if ( hpgl_arg_c_int(pargs, &method) && (method & ~1) )
+	if ( hpgl_arg_c_int(pgls->memory, pargs, &method) && (method & ~1) )
 	  return e_Range;
 	pgls->g.fill_type = (method == 0) ?
 	  hpgl_even_odd_rule : hpgl_winding_number_rule;
@@ -242,7 +243,7 @@ int
 hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int op;
 
-	if ( hpgl_arg_c_int(pargs, &op) == 0 )
+	if ( hpgl_arg_c_int(pgls->memory, pargs, &op) == 0 )
 	  op = 0;
 
 	switch( op )
@@ -330,7 +331,7 @@ pgpoly_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem)
 {		/* Register commands */
-	DEFINE_HPGL_COMMANDS
+    DEFINE_HPGL_COMMANDS(mem)
 	  HPGL_COMMAND('E', 'A', hpgl_EA, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('E', 'P', hpgl_EP, hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('E', 'R', hpgl_ER, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),

@@ -253,7 +253,7 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 	  return code;
 	penum = gs_image_enum_alloc(gs_state_memory(pgs), "px_paint_pattern");
 	if ( penum == 0 )
-	  return_error(errorInsufficientMemory);
+	  return_error(gs_state_memory(pgs), errorInsufficientMemory);
 	bits_per_row = rep_width * image.BitsPerComponent * num_components;
 	bytes_per_row = (bits_per_row + 7) >> 3;
 	/*
@@ -349,9 +349,10 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	      gs_point user_origin;
 	      gs_matrix cur_mat;
 	      gs_currentmatrix(pgs, &cur_mat);
-	      gs_distance_transform_inverse(pxgs->halftone.origin.x,
+	      gs_distance_transform_inverse(pxgs->memory, pxgs->halftone.origin.x,
 			    pxgs->halftone.origin.y, &cur_mat, &user_origin);
-	      gs_matrix_translate( &mat,
+	      gs_matrix_translate( pxgs->memory, 
+				   &mat,
 				   -user_origin.x,
 				   -user_origin.y,
 				   &mat);
@@ -395,7 +396,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
                 gs_color_space cs;
                 gs_color_space *pcs;
 
-                gs_cspace_init_DeviceGray(&cs);
+                gs_cspace_init_DeviceGray(pxgs->memory, &cs);
                 pcs = &cs;
                 gs_setcolorspace(pgs, pcs);
             }
@@ -447,7 +448,7 @@ typedef enum {
 
 /* given a paint type decide if a halftone is necessary */
 private bool
-px_needs_halftone(px_paint_t *ppt)
+px_needs_halftone(const gs_memory_t *mem, px_paint_t *ppt)
 {
     bool needs_halftone;
     if ( ppt->type == pxpPattern )
@@ -466,7 +467,7 @@ px_needs_halftone(px_paint_t *ppt)
 	    }
 	}
     } else {
-	dprintf("unknown paint type\n");
+	dprintf(mem, "unknown paint type\n");
 	needs_halftone = true;
     }
     return needs_halftone;
@@ -485,7 +486,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	gs_client_color ccolor;
 	int code;
 	if ( par->pv[aRGBColor] || par->pv[aGrayLevel] || par->pv[aNullBrushPen] )
-	    return_error(errorIllegalAttributeCombination);
+	    return_error(pxs->memory, errorIllegalAttributeCombination);
 	key.type = pxd_array | pxd_ubyte;
 	key.value.array.data = (byte *)&par->pv[aPatternSelectID]->value.i;
 	key.value.array.size = sizeof(integer);
@@ -493,7 +494,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	       px_dict_find(&pxs->page_pattern_dict, &key, &value) ||
 	       px_dict_find(&pxs->session_pattern_dict, &key, &value))
 	     )
-	    return_error(errorRasterPatternUndefined);
+	    return_error(pxs->memory, errorRasterPatternUndefined);
 	pattern = value;
 	px_set_halftone(pxs);
 	code = render_pattern(&ccolor, pattern, par->pv[aPatternOrigin], 
@@ -503,7 +504,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	 * gs_makepattern creates pattern instances with a reference
 	 * count already set to 1.
 	 */
-	rc_increment(pattern);
+	rc_increment(pxs->memory, pattern);
 	if ( code < 0 )
 	    return code;
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
@@ -513,14 +514,14 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	/* not pxaPatternSelectID but we have a pattern origin or
 	   newdestination size */
     } else if ( par->pv[aPatternOrigin] || par->pv[aNewDestinationSize] ) {
-	return_error(errorIllegalAttributeCombination);
+	return_error(pxs->memory, errorIllegalAttributeCombination);
     } else if ( par->pv[aRGBColor] ) {
 	const px_value_t *prgb = par->pv[aRGBColor];
 	int i;
 	if ( par->pv[aGrayLevel] || par->pv[aNullBrushPen] )
-	    return_error(errorIllegalAttributeCombination);
+	    return_error(pxs->memory, errorIllegalAttributeCombination);
 	if ( pxgs->color_space != eRGB && pxgs->color_space != eSRGB )
-	    return_error(errorColorSpaceMismatch);
+	    return_error(pxs->memory, errorColorSpaceMismatch);
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
         if ( pxs->useciecolor )
             ppt->type = pxpSRGB;
@@ -535,9 +536,9 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	    }
     } else if ( par->pv[aGrayLevel] )	/* pxaGrayLevel */ { 
 	if ( par->pv[aNullBrushPen] )
-	    return_error(errorIllegalAttributeCombination);
+	    return_error(pxs->memory, errorIllegalAttributeCombination);
 	if ( pxgs->color_space != eGray )
-	    return_error(errorColorSpaceMismatch);
+	    return_error(pxs->memory, errorColorSpaceMismatch);
 	px_paint_rc_adjust(ppt, -1, pxs->memory);
 	ppt->type = pxpGray;
 	ppt->value.gray = fraction_value(par->pv[aGrayLevel], 0);
@@ -556,7 +557,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	else if ( pxgs->color_space == eSRGB )
 	    ppt->type = pxpSRGB;
 	else {
-	    dprintf1("Warning unknown color space %d\n", pxgs->color_space);
+	    dprintf1(pxs->memory, "Warning unknown color space %d\n", pxgs->color_space);
 	    ppt->type = pxpGray;
 	}
 	/* NB depth?? - for range checking */
@@ -569,14 +570,14 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	    /* NB figure out reals and ints */
 	    ppt->value.gray = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
     } else
-	return_error(errorMissingAttribute);
+	return_error(pxs->memory, errorMissingAttribute);
     /*
      * Update the halftone to the most recently set one.
      * This will do the wrong thing if we set the brush or pen source,
      * set the halftone, and then set the other source, but we have
      * no way to handle this properly with the current library.
      */
-    if ( code >= 0 && px_needs_halftone(ppt) )
+    if ( code >= 0 && px_needs_halftone(pxs->memory, ppt) )
 	code = px_set_halftone(pxs);
     return code;
 }
@@ -616,7 +617,7 @@ px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
             return gs_setcolor(pgs, &color);
         }
     default:		/* can't happen */
-	return_error(errorIllegalAttributeValue);
+	return_error(pxs->memory, errorIllegalAttributeValue);
     }
 }
 
@@ -655,7 +656,7 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
  	    if ( !(size == ncomp << 1 || size == ncomp << 4 ||
 		   size == ncomp << 8)
 	       )
-	      return_error(errorIllegalAttributeValue);
+	      return_error(pxs->memory, errorIllegalAttributeValue);
 	    /* The palette is in an array, but we want a string. */
 	    { 
 		if ( pxgs->palette.data && !pxgs->palette_is_shared &&
@@ -673,7 +674,7 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 				    "pxSetColorSpace(palette)");
 
 		  if ( pdata == 0 )
-		    return_error(errorInsufficientMemory);
+		    return_error(pxs->memory, errorInsufficientMemory);
 		  pxgs->palette.data = pdata;
 		  pxgs->palette.size = size;
 		}
@@ -681,7 +682,7 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	    }
 	  }
 	else if ( par->pv[6] || par->pv[7] )
-	  return_error(errorMissingAttribute);
+	  return_error(pxs->memory, errorMissingAttribute);
 	else if ( pxgs->palette.data )
 	  { if ( !pxgs->palette_is_shared )
 	      gs_free_string(pxs->memory, pxgs->palette.data,
@@ -724,7 +725,7 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 	if ( par->pv[1] )
 	  { /* Internal halftone */
 	    if ( par->pv[2] || par->pv[3] || par->pv[4] )
-	      return_error(errorIllegalAttributeCombination);
+	      return_error(pxs->memory, errorIllegalAttributeCombination);
 	    method = par->pv[1]->value.i;
 	    px_set_default_screen_size(pxs, method);
 	    pxs->download_string.data = 0;
@@ -744,7 +745,7 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 		  return pxNeedData;
 		data = gs_alloc_string(pxs->memory, size, "dither matrix");
 		if ( data == 0 )
-		  return_error(errorInsufficientMemory);
+		  return_error(pxs->memory, errorInsufficientMemory);
 		pxs->download_string.data = data;
 		pxs->download_string.size = size;
 	      }
@@ -808,7 +809,7 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 	    method = eDownloaded;
 	  }
 	else
-	  return_error(errorMissingAttribute);
+	  return_error(pxs->memory, errorMissingAttribute);
 	if ( par->pv[0] )
 	  gs_transform(pgs, real_value(par->pv[0], 0),
 		       real_value(par->pv[0], 1), &pxgs->halftone.origin);

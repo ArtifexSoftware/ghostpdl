@@ -31,7 +31,7 @@ tag_stream_name(const px_value_t *psnv, gs_string *pstr,
         byte *str = gs_alloc_string(mem, size + 1, cname);
 
         if ( str == 0 )
-          return_error(errorInsufficientMemory);
+          return_error(mem, errorInsufficientMemory);
         str[0] = value_size(psnv);
         memcpy(str + 1, psnv->value.array.data, size);
         pstr->data = str;
@@ -75,7 +75,7 @@ pxReadStream(px_args_t *par, px_state_t *pxs)
           str = gs_resize_object(pxs->memory, pxs->stream_def.data,
                                  old_size + copy, "pxReadStream");
         if ( str == 0 )
-          return_error(errorInsufficientMemory);
+          return_error(pxs->memory, errorInsufficientMemory);
         memcpy(str + old_size, par->source.data, copy);
         pxs->stream_def.data = str;
         pxs->stream_def.size = old_size + copy;
@@ -92,7 +92,7 @@ pxEndStream(px_args_t *par, px_state_t *pxs)
 
         gs_free_string(pxs->memory, pxs->stream_name.data,
                        pxs->stream_name.size, "pxEndStream(name)");
-        return (code < 0 ? gs_note_error(errorInsufficientMemory) : 0);
+        return (code < 0 ? gs_note_error(pxs->memory, errorInsufficientMemory) : 0);
 }
 
 const byte apxRemoveStream[] = {
@@ -112,7 +112,7 @@ pxRemoveStream(px_args_t *par, px_state_t *pxs)
         bool found = pl_dict_find(&pxs->stream_dict, str.data, str.size,
                                   &def);
         if ( !found )
-            return_error(errorStreamUndefined);
+            return_error(pxs->memory, errorStreamUndefined);
         pl_dict_undef(&pxs->stream_dict, str.data, str.size);
         gs_free_string(pxs->memory, str.data, str.size,
                        "pxRemoveStream(name)");
@@ -145,7 +145,7 @@ pxExecStream(px_args_t *par, px_state_t *pxs)
           gs_free_string(pxs->memory, str.data, str.size,
                          "pxExecStream(name)");
           if ( !found )
-            return_error(errorStreamUndefined);
+            return_error(pxs->memory, errorStreamUndefined);
         }
         def_data = def;
         def_size = gs_object_size(pxs->memory, def);
@@ -155,20 +155,20 @@ pxExecStream(px_args_t *par, px_state_t *pxs)
           {
           case '(': big_endian = true; break;
           case ')': big_endian = false; break;
-          default: return_error(errorUnsupportedBinding);
+          default: return_error(pxs->memory, errorUnsupportedBinding);
           }
         if ( def_size < 16 ||
              strncmp(def_data + 1, " HP-PCL XL", 10)
            )
-          return_error(errorUnsupportedClassName);
+          return_error(pxs->memory, errorUnsupportedClassName);
         /* support protocol level 1, 2 and 3 */
         if ( strncmp(def_data + 11, ";1;", 3) && 
              strncmp(def_data + 11, ";2;", 3) &&
              strncmp(def_data + 11, ";3;", 3) )
-            return_error(errorUnsupportedProtocol);
+            return_error(pxs->memory, errorUnsupportedProtocol);
         start = memchr(def_data + 14, '\n', def_size - 14);
         if ( !start )
-          return_error(errorIllegalStreamHeader);
+          return_error(pxs->memory, errorIllegalStreamHeader);
         st.memory = pxs->memory;
         px_process_init(&st, big_endian);
         st.macro_state = pst->macro_state | ptsExecStream;

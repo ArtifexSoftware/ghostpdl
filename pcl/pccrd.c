@@ -101,7 +101,7 @@ free_crd(
     pcl_crd_t *     pcrd = (pcl_crd_t *)pvcrd;
 
     if (pcrd->pgscrd != 0)
-        rc_decrement(pcrd->pgscrd, cname);
+        rc_decrement(pmem, pcrd->pgscrd, cname);
     gs_free_object(pmem, pvcrd, cname);
 }
 
@@ -232,7 +232,8 @@ pcl_crd_build_default_crd(
         return 0;
     else {
         pcs->dflt_TransformPQR = dflt_TransformPQR_proto;
-        return gs_cie_render1_initialize( pcrd->pgscrd,
+        return gs_cie_render1_initialize( pcs->memory,
+					  pcrd->pgscrd,
                                           NULL,
                                           &dflt_WhitePoint,
                                           NULL,
@@ -280,7 +281,8 @@ pcl_crd_set_view_illuminant(
     /* if no previous CRD, use the default settings */
     if (pold == 0) {
         pcs->dflt_TransformPQR = dflt_TransformPQR_proto;
-        return  gs_cie_render1_initialize( pcrd->pgscrd,
+        return  gs_cie_render1_initialize( pcs->memory,
+					   pcrd->pgscrd,
                                            NULL,
                                            pwht_pt,
                                            NULL,
@@ -296,7 +298,8 @@ pcl_crd_set_view_illuminant(
                                            NULL
                                            );
     }
-    code = gs_cie_render1_init_from( pcrd->pgscrd,
+    code = gs_cie_render1_init_from( pcs->memory,
+				     pcrd->pgscrd,
                                      NULL,     /* for now */
 				     pold->pgscrd,
                                      pwht_pt,
@@ -314,7 +317,7 @@ pcl_crd_set_view_illuminant(
                                      );
 
     if (pcrd != pold)
-	rc_decrement(pold, "pcl set viewing illuminant");
+	rc_decrement(pcs->memory, pold, "pcl set viewing illuminant");
     return code;
 }
 
@@ -338,7 +341,7 @@ pcl_crd_set_crd(
              ((code = pcl_crd_build_default_crd(pcs)) < 0)  )
             return code;
         pcrd = pcs->pcl_default_crd;
-        pcl_crd_init_from(*ppcrd, pcrd);
+        pcl_crd_init_from(pcs->memory, *ppcrd, pcrd);
     }
 
     /* see if there is anything to do */
@@ -346,6 +349,6 @@ pcl_crd_set_crd(
         return 0;
 
     if ((code = gs_setcolorrendering(pcs->pgs, pcrd->pgscrd)) >= 0)
-        pcl_crd_copy_from(pcs->pids->pcrd, pcrd);
+        pcl_crd_copy_from(pcs->memory, pcs->pids->pcrd, pcrd);
     return code;
 }

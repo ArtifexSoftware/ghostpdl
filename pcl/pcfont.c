@@ -372,15 +372,15 @@ pcfont_do_registration(
 	   */
 	  for ( chr = 'A'; chr <= '^'; ++chr )
 	    if ( chr != 'X' )
-	      { DEFINE_CLASS_COMMAND_ARGS('(', 0, chr, "Primary Symbol Set",
+	      { DEFINE_CLASS_COMMAND_ARGS(mem, '(', 0, chr, "Primary Symbol Set",
 					  pcl_primary_symbol_set,
 					  pca_neg_error|pca_big_error);
-	        DEFINE_CLASS_COMMAND_ARGS(')', 0, chr, "Secondary Symbol Set",
+	        DEFINE_CLASS_COMMAND_ARGS(mem, ')', 0, chr, "Secondary Symbol Set",
 					  pcl_secondary_symbol_set,
 					  pca_neg_error|pca_big_error);
 	      }
 	}
-	DEFINE_CLASS('(')
+	DEFINE_CLASS(mem, '(')
 	  {'s', 'P',
 	     PCL_COMMAND("Primary Spacing", pcl_primary_spacing,
 			 pca_neg_ignore|pca_big_ignore)},
@@ -408,7 +408,7 @@ pcfont_do_registration(
 			 pcl_select_default_font_primary,
 			 pca_neg_error|pca_big_error)},
 	END_CLASS
-	DEFINE_CLASS(')')
+	DEFINE_CLASS(mem, ')')
 	  {'s', 'P',
 	     PCL_COMMAND("Secondary Spacing", pcl_secondary_spacing,
 			 pca_neg_ignore|pca_big_ignore)},
@@ -437,9 +437,9 @@ pcfont_do_registration(
 			 pcl_select_default_font_secondary,
 			 pca_neg_error|pca_big_error)},
 	END_CLASS
-	DEFINE_CONTROL(SO, "SO", pcl_SO)
-	DEFINE_CONTROL(SI, "SI", pcl_SI)
-	DEFINE_CLASS('&')
+	DEFINE_CONTROL(mem, SO, "SO", pcl_SO)
+	DEFINE_CONTROL(mem, SI, "SI", pcl_SI)
+	DEFINE_CLASS(mem, '&')
 	  {'k', 'S',
 	     PCL_COMMAND("Set Pitch Mode", pcl_set_pitch_mode,
 			 pca_neg_error|pca_big_error)},
@@ -498,7 +498,7 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 		    /* rtl doesn't use fonts */
 		    return 0;
 		else {
-		    dprintf("No built-in fonts found during initialization\n");
+		    dprintf(pcs->memory, "No built-in fonts found during initialization\n");
 		    return -1;
 		}
 	    }
@@ -531,7 +531,7 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	    pcl_data_storage = pcds_all_simms;
 	    break;
 	default:
-	    dprintf("pcfont.c: unknown pjl resource\n");
+	    dprintf(pcs->memory, "pcfont.c: unknown pjl resource\n");
 	    return -1;
 	}
 	{
@@ -608,7 +608,7 @@ pcl_unload_resident_fonts(pcl_state_t *pcs)
 	pl_font_t *plfont = (pl_font_t *)value;
 	if ( plfont->font_file )
 	    if ( pl_store_resident_font_data_in_file(plfont->font_file, pcs->memory, plfont) < 0 )
-		dprintf1("%s", "could not store data" );
+		dprintf1(pcs->memory, "%s", "could not store data" );
 	    
     }
 }

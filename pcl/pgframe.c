@@ -35,7 +35,7 @@ extern pcl_command_proc(rtl_enter_pcl_mode);
 pcl_implicit_gl2_finish(pcl_state_t *pcs)
 {
     pcs->parse_other = 0;
-    hpgl_call(hpgl_draw_current_path(pcs, hpgl_rm_vector));
+    hpgl_call_mem(pcs->memory, hpgl_draw_current_path(pcs, hpgl_rm_vector));
     return 0;
 }
 
@@ -166,7 +166,7 @@ private int /* ESC % <enum> A */
 pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int code;
 
-	hpgl_call(hpgl_draw_current_path(pcs, hpgl_rm_vector));
+	hpgl_call_mem(pcs->memory, hpgl_draw_current_path(pcs, hpgl_rm_vector));
 	code = rtl_enter_pcl_mode(pargs, pcs);
 	switch ( code )
 	  {
@@ -187,7 +187,7 @@ pgframe_do_registration(
    gs_memory_t *mem
 )
 {		/* Register commands */
-	DEFINE_CLASS('*')
+	DEFINE_CLASS(mem, '*')
 	  {'c', 'X',
 	    PCL_COMMAND("Horizontal Picture Frame Size Decipoints",
 			pcl_horiz_pic_frame_size_decipoints,
@@ -209,7 +209,7 @@ pgframe_do_registration(
 			pcl_hpgl_plot_vert_size,
 			pca_neg_error|pca_big_error)},
 	END_CLASS
-	DEFINE_CLASS('%')
+	DEFINE_CLASS(mem, '%')
 	  {0, 'A',
 	    PCL_COMMAND("Enter PCL Mode",
 			pcl_enter_pcl_mode,

@@ -44,7 +44,7 @@ hpgl_register_command(hpgl_parser_state_t *pgl_parser_state,
 
 /* Define a list of commands. */
 void
-hpgl_define_commands(const hpgl_named_command_t *pcmds,
+hpgl_define_commands(const gs_memory_t *mem, const hpgl_named_command_t *pcmds,
 		     hpgl_parser_state_t *pgl_parser_state
 )
 {	const hpgl_named_command_t *pcmd = pcmds;
@@ -59,7 +59,7 @@ hpgl_define_commands(const hpgl_named_command_t *pcmds,
 				&pcmd->defn)
 #ifdef DEBUG
 	  )
-	    dprintf2("Redefining command %c%c\n", pcmd->char1, pcmd->char2);
+	    dprintf2(mem, "Redefining command %c%c\n", pcmd->char1, pcmd->char2);
 #endif
 	  ;
 }
@@ -92,7 +92,7 @@ hpgl_process(hpgl_parser_state_t *pst, hpgl_state_t *pgls,
 	    pr->ptr = pst->source.ptr;
 	    if ( code < 0 && code != e_NeedData )
 	      { pst->command = 0; /* cancel command */
-	        if_debug0('i', "\n");
+	        if_debug0(pgls->memory, 'i', "\n");
 	        return code;
 	      }
 	    return 0;
@@ -106,7 +106,7 @@ call:	if ( pst->command )
 	    if ( code < 0 )
 	      goto x;
 	    pst->command = 0;
-	    if_debug0('i', "\n");
+	    if_debug0(pgls->memory, 'i', "\n");
 	  }
 	while ( p < rlimit )
 	  {	byte next = *++p;
@@ -136,7 +136,7 @@ call:	if ( pst->command )
 #ifdef DEBUG
 		  if ( gs_debug_c('i') )
 		    { char c = (index ? '-' : '?');
-		      dprintf4("--%c%c%c%c", pst->first_letter + 'A',
+		      dprintf4(pgls->memory, "--%c%c%c%c", pst->first_letter + 'A',
 			       next + 'A', c, c);
 		    }
 #endif
@@ -198,9 +198,10 @@ x:	pr->ptr = p;
  * need more data.  Note that no errors are possible.
  */
 private const hpgl_value_t *
-hpgl_arg(hpgl_parser_state_t *pst)
+hpgl_arg(const gs_memory_t *mem, 
+	 hpgl_parser_state_t *pst)
 {	const byte *p;
-	const byte *rlimit;
+        const byte *rlimit;
 	hpgl_value_t *pvalue;
 
 #define parg (&pst->arg)
@@ -307,11 +308,11 @@ out:	pst->source.ptr = p;
 	  case 0:		/* no argument */
 	    return false;
 	  case 1:		/* integer */
-	    if_debug1('I', "  %ld", (long)pvalue->v_n.i);
+	    if_debug1(mem, 'I', "  %ld", (long)pvalue->v_n.i);
 	    pvalue->is_real = false;
 	    break;
 	  default /* case 2 */:	/* real */
-	    if_debug1('I', "  %g", pvalue->v_n.r);
+	    if_debug1(mem, 'I', "  %g", pvalue->v_n.r);
 	    pvalue->is_real = true;
 	  }
 	hpgl_arg_init(pst);
@@ -322,8 +323,9 @@ out:	pst->source.ptr = p;
 
 /* Get a real argument. */
 bool
-hpgl_arg_real(hpgl_args_t *pargs, hpgl_real_t *pr)
-{	const hpgl_value_t *pvalue = hpgl_arg(pargs);
+hpgl_arg_real(const gs_memory_t *mem,
+	      hpgl_args_t *pargs, hpgl_real_t *pr)
+{	const hpgl_value_t *pvalue = hpgl_arg(mem, pargs);
 
 	if ( !pvalue )
 	  return false;
@@ -333,8 +335,9 @@ hpgl_arg_real(hpgl_args_t *pargs, hpgl_real_t *pr)
 
 /* Get a clamped real argument. */
 bool
-hpgl_arg_c_real(hpgl_args_t *pargs, hpgl_real_t *pr)
-{	const hpgl_value_t *pvalue = hpgl_arg(pargs);
+hpgl_arg_c_real(const gs_memory_t *mem,
+		hpgl_args_t *pargs, hpgl_real_t *pr)
+{	const hpgl_value_t *pvalue = hpgl_arg(mem, pargs);
 	hpgl_real_t r;
 
 	if ( !pvalue )
@@ -347,8 +350,9 @@ hpgl_arg_c_real(hpgl_args_t *pargs, hpgl_real_t *pr)
 
 /* Get an integer argument. */
 bool
-hpgl_arg_int(hpgl_args_t *pargs, int32 *pi)
-{	const hpgl_value_t *pvalue = hpgl_arg(pargs);
+hpgl_arg_int(const gs_memory_t *mem,
+	     hpgl_args_t *pargs, int32 *pi)
+{	const hpgl_value_t *pvalue = hpgl_arg(mem, pargs);
 
 	if ( !pvalue )
 	  return false;
@@ -358,8 +362,9 @@ hpgl_arg_int(hpgl_args_t *pargs, int32 *pi)
 
 /* Get a clamped integer argument. */
 bool
-hpgl_arg_c_int(hpgl_args_t *pargs, int *pi)
-{	const hpgl_value_t *pvalue = hpgl_arg(pargs);
+hpgl_arg_c_int(const gs_memory_t *mem, 
+	       hpgl_args_t *pargs, int *pi)
+{	const hpgl_value_t *pvalue = hpgl_arg(mem, pargs);
 	int32 i;
 
 	if ( !pvalue )
@@ -371,9 +376,10 @@ hpgl_arg_c_int(hpgl_args_t *pargs, int *pi)
 
 /* Get a "current units" argument. */
 bool
-hpgl_arg_units(hpgl_args_t *pargs, hpgl_real_t *pu)
+hpgl_arg_units(const gs_memory_t *mem, 
+	       hpgl_args_t *pargs, hpgl_real_t *pu)
 {	/****** PROBABLY WRONG ******/
-	return hpgl_arg_real(pargs, pu);
+	return hpgl_arg_real(mem, pargs, pu);
 }
 
 /* initialize the HPGL command counter */

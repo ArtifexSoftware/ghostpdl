@@ -55,7 +55,7 @@ pxfont_init(px_state_t *pxs)
 {	/* Allocate the font directory now. */
 	pxs->font_dir = gs_font_dir_alloc(pxs->memory);
 	if ( pxs->font_dir == 0 )
-	  return_error(errorInsufficientMemory);
+	  return_error(pxs->memory, errorInsufficientMemory);
 	return 0;
 }
 
@@ -106,7 +106,7 @@ px_set_char_matrix(px_state_t *pxs)
 	gs_matrix mat;
 
 	if ( pxfont == 0 )
-	  return_error(errorNoCurrentFont);
+	  return_error(pxs->memory, errorNoCurrentFont);
 	if ( pxfont->scaling_technology == plfst_bitmap )
 	  { /*
 	     * Bitmaps don't scale, shear, or rotate; however, we have to
@@ -119,7 +119,7 @@ px_set_char_matrix(px_state_t *pxs)
 		 pxgs->char_shear.x != 0 || pxgs->char_shear.y != 0 ||
 		 pxgs->char_scale.x != 1 || pxgs->char_scale.y != 1
 	       )
-	      return_error(errorIllegalFontData);
+	      return_error(pxs->memory, errorIllegalFontData);
 	    gs_defaultmatrix(pxs->pgs, &mat);
 	    gs_make_scaling(
 	      adjust_scale(fabs(mat.xx + mat.yx) * 72 / pxfont->resolution.x),
@@ -187,11 +187,11 @@ px_define_font(px_font_t *pxfont, const byte *header, ulong size, gs_id id,
 	if ( size < 8 /* header */ + 6 /* 1 required segment */ +
 	       6 /* NULL segment */
 	   )
-	  return_error(errorIllegalFontData);
+	  return_error(mem, errorIllegalFontData);
 	if ( header[0] != 0 /* format */ ||
 	     header[5] != 0 /* variety */
 	   )
-	  return_error(errorIllegalFontHeaderFields);
+	  return_error(mem, errorIllegalFontHeaderFields);
 	pxfont->header = header;
 	pxfont->header_size = size;
 	{ static const pl_font_offset_errors_t errors = {
@@ -205,7 +205,7 @@ px_define_font(px_font_t *pxfont, const byte *header, ulong size, gs_id id,
 	    errorIllegalVerticalTxSegment,
 	    errorIllegalBitmapResolutionSegment
 	  };
-	  int code = pl_font_scan_segments(pxfont, 4, 8, size, true, &errors);
+	  int code = pl_font_scan_segments(mem, pxfont, 4, 8, size, true, &errors);
 
 	  if ( code < 0 )
 	    return code;
@@ -227,7 +227,7 @@ px_define_font(px_font_t *pxfont, const byte *header, ulong size, gs_id id,
 	    int code;
 
 	    if ( pfont == 0 )
-	      return_error(errorInsufficientMemory);
+	      return_error(mem, errorInsufficientMemory);
 	    code = px_fill_in_font((gs_font *)pfont, pxfont, pxs);
 	    if ( code < 0 )
 	      return code;
@@ -241,7 +241,7 @@ px_define_font(px_font_t *pxfont, const byte *header, ulong size, gs_id id,
 	    int code;
 
 	    if ( pfont == 0 )
-	      return_error(errorInsufficientMemory);
+	      return_error(mem, errorInsufficientMemory);
 	    /* Some fonts ask for unreasonably large tables.... */
 	    code = pl_tt_alloc_char_glyphs(pxfont, min(num_chars, 300), mem,
 					   "px_define_font(char_glyphs)");
@@ -298,15 +298,15 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     int code = 0;
 
     if ( pfont == 0 )
-	return_error(errorNoCurrentFont);
+	return_error(mem, errorNoCurrentFont);
     save_next_char = pfont->procs.next_char_glyph;
 
     if ( (pxdata != 0 && pxdata->value.array.size != len) ||
 	 (pydata != 0 && pydata->value.array.size != len)
 	)
-	return_error(errorIllegalArraySize);
+	return_error(mem, errorIllegalArraySize);
     if ( !pxgs->base_font )
-	return_error(errorNoCurrentFont);
+	return_error(mem, errorNoCurrentFont);
     if ( !pxgs->char_matrix_set )
     { code = px_set_char_matrix(pxs);
     if ( code < 0 )
@@ -402,7 +402,8 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 			code = gx_path_current_point(pgs->path, &origin);	
 			if ( code < 0 )
 			    break;
-			gs_distance_transform2fixed((const gs_matrix_fixed *)&save_ctm,
+			gs_distance_transform2fixed(mem, 
+						    (const gs_matrix_fixed *)&save_ctm,
 						    (pxdata ? real_elt(pxdata, i) : 0.0),
 						    (pydata ? real_elt(pydata, i) : 0.0),
 						    &dist);
@@ -416,7 +417,8 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 			code = gx_path_current_point(pgs->path, &origin);	
 			if ( code < 0 )
 			    break;
-			gs_distance_transform2fixed((const gs_matrix_fixed *)&save_ctm,
+			gs_distance_transform2fixed(mem,  
+						    (const gs_matrix_fixed *)&save_ctm,
 						    (pxdata ? real_elt(pxdata, i) : 0.0),
 						    (pydata ? real_elt(pydata, i) : 0.0),
 						    &dist);
@@ -446,7 +448,8 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	    if (!rotate) {
 		/* We cheat here, knowing that gs_d_t2f doesn't actually */
 		/* require a gs_matrix_fixed but only a gs_matrix. */
-		gs_distance_transform2fixed((const gs_matrix_fixed *)&save_ctm,
+		gs_distance_transform2fixed(mem, 
+					    (const gs_matrix_fixed *)&save_ctm,
 					    (pxdata ? real_elt(pxdata, i) : 0.0),
 					    (pydata ? real_elt(pydata, i) : 0.0),
 					    &dist);
@@ -467,7 +470,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	if ( len > 0 ) {
 	    fvals = (float *)gs_alloc_byte_array(mem, len+1, sizeof(float) * 2, "pxtext");
 	    if ( fvals == 0 )
-		return_error(errorInsufficientMemory);
+		return_error(mem, errorInsufficientMemory);
 	}
 	
 	if ( pxgs->writing_mode ) { /* rotated writing mode */
@@ -511,11 +514,13 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 		gs_concat(pgs, &pxgs->char_matrix);
 		
 		gs_currentmatrix(pgs, &current_mat);
-		gs_distance_transform(pxdata ? real_elt(pxdata, i) : 0.0,
+		gs_distance_transform(mem,
+				      pxdata ? real_elt(pxdata, i) : 0.0,
 				      pydata ? real_elt(pydata, i) : 0.0,
 				      &save_ctm,
 				      &device_distance);
-		gs_distance_transform_inverse(device_distance.x, 
+		gs_distance_transform_inverse(mem, 
+					      device_distance.x, 
 					      device_distance.y, 
 					      &current_mat, 
 					      &font_distance);
@@ -546,11 +551,12 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 		gs_point font_distance;
 		gs_matrix current_mat;
 		gs_currentmatrix(pgs, &current_mat);
-		gs_distance_transform(pxdata ? real_elt(pxdata, i) : 0.0,
+		gs_distance_transform(mem,
+				      pxdata ? real_elt(pxdata, i) : 0.0,
 				      pydata ? real_elt(pydata, i) : 0.0,
 				      &save_ctm,
 				      &device_distance);
-		gs_distance_transform_inverse(device_distance.x, 
+		gs_distance_transform_inverse(mem, device_distance.x, 
 					      device_distance.y, 
 					      &current_mat, 
 					      &font_distance);
@@ -570,7 +576,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     pfont->WMode = 0;
     pfont->procs.next_char_glyph = save_next_char;
     return (code == gs_error_invalidfont ?
-	    gs_note_error(errorBadFontData) : code);
+	    gs_note_error(mem, errorBadFontData) : code);
 }
 /* Next-character procedures, with symbol mapping. */
 private gs_char
@@ -672,12 +678,12 @@ pxBeginFontHeader(px_args_t *par, px_state_t *pxs)
 	if ( code >= 0 )
 	  { strcpy(pxs->error_line, "FontNameAlreadyExists - ");
 	    px_concat_font_name(pxs->error_line, px_max_error_line, pfnv);
-	    return_error(errorFontNameAlreadyExists);
+	    return_error(pxs->memory, errorFontNameAlreadyExists);
 	  }
 	/* Make a partially filled-in dictionary entry. */
 	pxfont = pl_alloc_font(mem, "pxBeginFontHeader(pxfont)");
 	if ( pxfont == 0 )
-	  return_error(errorInsufficientMemory);
+	  return_error(mem, errorInsufficientMemory);
 	pxfont->storage = pxfsDownLoaded;
 	pxfont->data_are_permanent = false;
 	code = px_dict_put(&pxs->font_dict, par->pv[0], pxfont);
@@ -715,7 +721,7 @@ pxReadFontHeader(px_args_t *par, px_state_t *pxs)
 				    pxs->download_bytes.size + len,
 				    "pxReadFontHeader"));
 		if ( new_data == 0 )
-		  return_error(errorInsufficientMemory);
+		  return_error(pxs->memory, errorInsufficientMemory);
 		pxs->download_bytes.data = new_data;
 		pxs->download_bytes.size += len;
 	      }
@@ -732,19 +738,19 @@ pxReadFontHeader(px_args_t *par, px_state_t *pxs)
 	      { /* Check the font header fields now. */
 		const byte *data = pxs->download_bytes.data;
 		if ( data[0] | data[5] )
-		  return_error(errorIllegalFontHeaderFields);
+		  return_error(pxs->memory, errorIllegalFontHeaderFields);
 		switch ( data[4] )
 		  {
 		  case plfst_TrueType:
 		    if ( data[1] )
-		      return_error(errorIllegalFontHeaderFields);
+		      return_error(pxs->memory, errorIllegalFontHeaderFields);
 		    break;
 		  case plfst_bitmap:
 		    if ( data[1] & ~3 )
-		      return_error(errorIllegalFontHeaderFields);
+		      return_error(pxs->memory, errorIllegalFontHeaderFields);
 		    break;
 		  default:
-		    return_error(errorIllegalFontHeaderFields);
+		    return_error(pxs->memory, errorIllegalFontHeaderFields);
 		  }
 	      }
 	  }
@@ -757,7 +763,7 @@ pxEndFontHeader(px_args_t *par, px_state_t *pxs)
 {	px_font_t *pxfont = pxs->download_font;
 	int code = px_define_font(pxfont, pxs->download_bytes.data,
 				  (ulong)pxs->download_bytes.size,
-				  gs_next_ids(1), pxs);
+				  gs_next_ids(pxs->memory, 1), pxs);
 
 	/****** HOW TO DETERMINE FONT TYPE? ******/
 	pxfont->font_type = plft_16bit;
@@ -777,7 +783,7 @@ pxBeginChar(px_args_t *par, px_state_t *pxs)
 	int code = px_find_existing_font(pfnv, &pxfont, pxs);
 
 	if ( code >= 0 && pxfont == 0 )
-	  code = gs_note_error(errorFontUndefined);
+	  code = gs_note_error(pxs->memory, errorFontUndefined);
 	if ( code < 0 )
 	  { if ( code == errorFontUndefined )
 	      { strcpy(pxs->error_line, "FontUndefined - ");
@@ -786,7 +792,7 @@ pxBeginChar(px_args_t *par, px_state_t *pxs)
 	    return code;
 	  }
 	if ( pxfont->storage != pxfsDownLoaded )
-	  return_error(errorCannotReplaceCharacter);
+	  return_error(pxs->memory, errorCannotReplaceCharacter);
 	pxs->download_font = pxfont;
 	return 0;
 }
@@ -805,12 +811,12 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 	    byte *def;
 
 	    if ( size < 2 )
-	      return_error(errorIllegalCharacterData);
+	      return_error(pxs->memory, errorIllegalCharacterData);
 	    if ( par->source.available == 0 )
 	      return pxNeedData;
 	    def = gs_alloc_bytes(pxs->memory, size, "pxReadChar");
 	    if ( def == 0 )
-	      return_error(errorInsufficientMemory);
+	      return_error(pxs->memory, errorInsufficientMemory);
 	    pxs->download_bytes.data = def;
 	    pxs->download_bytes.size = size;
 	  }
@@ -834,31 +840,31 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 	    {
 	    case 0:		/* bitmap */
 	      if ( header[4] != plfst_bitmap )
-		code = gs_note_error(errorFSTMismatch);
+		code = gs_note_error(pxs->memory, errorFSTMismatch);
 	      else if ( data[1] != 0 )
-		code = gs_note_error(errorUnsupportedCharacterClass);
+		code = gs_note_error(pxs->memory, errorUnsupportedCharacterClass);
 	      else if ( size < 10 ||
 			size != 10 + ((pl_get_uint16(data + 6) + 7) >> 3) *
 			  pl_get_uint16(data + 8)
 		      )
-		code = gs_note_error(errorIllegalCharacterData);
+		code = gs_note_error(pxs->memory, errorIllegalCharacterData);
 	      break;
 	    case 1:		/* TrueType outline */
 	      if ( header[4] != plfst_TrueType )
-		code = gs_note_error(errorFSTMismatch);
+		code = gs_note_error(pxs->memory, errorFSTMismatch);
 	      else if ( data[1] != 0 && data[1] != 1 
 			/* && data[1] != 2  NB Needs to be tested uncomment to try */ )
-		code = gs_note_error(errorUnsupportedCharacterClass);
+		code = gs_note_error(pxs->memory, errorUnsupportedCharacterClass);
 	      else if ( size < 6 || size != 2 + pl_get_uint16(data + 2) )
-		code = gs_note_error(errorIllegalCharacterData);
+		code = gs_note_error(pxs->memory, errorIllegalCharacterData);
 	      break;
 	    default:
-	      code = gs_note_error(errorUnsupportedCharacterFormat);
+	      code = gs_note_error(pxs->memory, errorUnsupportedCharacterFormat);
 	    }
 	  if ( code >= 0 )
 	    { code = pl_font_add_glyph(pxs->download_font, char_code, data);
 	      if ( code < 0 )
-		code = gs_note_error(errorInternalOverflow);
+		code = gs_note_error(pxs->memory, errorInternalOverflow);
 	    }
 	  if ( code < 0 )
 	    gs_free_object(pxs->memory, pxs->download_bytes.data,

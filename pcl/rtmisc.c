@@ -47,7 +47,7 @@ rtl_enter_hpgl_mode(
 	i = -1;
     else if (i > 3)
 	return 0;
-    hpgl_call(hpgl_clear_current_path(pcs));
+    hpgl_call_mem(pcs->memory, hpgl_clear_current_path(pcs));
     pcs->parse_other = ( int (*)( void *,
                                    pcl_state_t *,
                                    stream_cursor_read *
@@ -62,7 +62,7 @@ rtl_enter_hpgl_mode(
         hpgl_add_pcl_point_to_path(pcs, &pcl_pt);
 	hpgl_update_carriage_return_pos(pcs);
     }
-    hpgl_call(hpgl_set_ctm(pcs));
+    hpgl_call_mem(pcs->memory, hpgl_set_ctm(pcs));
     return 0;
 }
 
@@ -90,11 +90,11 @@ rtl_enter_pcl_mode(
             /* the usual user -> device -> user dance. */
 	    gs_point    pt, dev_pt;
 
-	    hpgl_call(hpgl_set_ctm(pcs));
-	    hpgl_call(hpgl_get_current_position(pcs, &pt));
-	    hpgl_call(gs_transform(pcs->pgs, pt.x, pt.y, &dev_pt));
-	    hpgl_call(pcl_set_ctm(pcs, true));
-	    hpgl_call(gs_itransform(pcs->pgs, dev_pt.x, dev_pt.y, &pt));
+	    hpgl_call_mem(pcs->memory, hpgl_set_ctm(pcs));
+	    hpgl_call_mem(pcs->memory, hpgl_get_current_position(pcs, &pt));
+	    hpgl_call_mem(pcs->memory, gs_transform(pcs->pgs, pt.x, pt.y, &dev_pt));
+	    hpgl_call_mem(pcs->memory, pcl_set_ctm(pcs, true));
+	    hpgl_call_mem(pcs->memory, gs_itransform(pcs->pgs, dev_pt.x, dev_pt.y, &pt));
 
 	    /* HPGL/2 uses floats for coordinates */
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
@@ -168,7 +168,7 @@ rtmisc_do_registration(
 {
     /* Register commands */
     /* Chapter 4 */
-    DEFINE_CLASS('%')
+    DEFINE_CLASS(mem, '%')
     /* Chapter 18 */
     {
         0, 'B',
@@ -187,7 +187,7 @@ rtmisc_do_registration(
     END_CLASS
 
     /* Comparison Guide */
-    DEFINE_CLASS('&')
+    DEFINE_CLASS(mem, '&')
     {
         'b', 'W',
 	PCL_COMMAND( "Appletalk Configuration",

@@ -33,7 +33,7 @@ hpgl_set_lost_mode(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode)
 	    hpgl_PU(&args, pgls);
 #endif
 #ifdef DEBUG
-	    dprintf("entering lost mode\n");
+	    dprintf(pgls->memory, "entering lost mode\n");
 #endif
 	  }
 	pgls->g.lost_mode = lost_mode;
@@ -45,9 +45,11 @@ hpgl_set_lost_mode(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode)
 /* Print an error message.  Note that function may be NULL. */
 /* This procedure must return its 'code' argument: see pgmisc.h. */
 int
-hpgl_print_error(const char *function, const char *file, int line, int code)
+hpgl_print_error(const gs_memory_t *mem, 
+		 const char *function, const char *file, int line, int code)
 {
-	dprintf4("hpgl call failed\n\tcalled from: %s\n\tfile: %s\n\tline: %d\n\terror code: %d\n",
+	dprintf4(mem, 
+		 "hpgl call failed\n\tcalled from: %s\n\tfile: %s\n\tline: %d\n\terror code: %d\n",
 		 (function == 0 ? "" : function), file, line, code);
 	hpgl_error();
 	return code;

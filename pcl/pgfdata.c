@@ -5042,7 +5042,7 @@ const short int arc_font_widths[] = {
 
 /* generate the segments NB void *data is the the graphics state */
 private int
-hpgl_stick_segments(void *data, uint char_index)
+hpgl_stick_segments(const gs_memory_t *mem, void *data, uint char_index)
 {
     /* characters start with 32 - what about char index < 0x20 ?? */
     short table_index_of_char = char_index - 0x20;
@@ -5066,19 +5066,19 @@ hpgl_stick_segments(void *data, uint char_index)
 	    i += 3;
 	}
 	else
-	    return_error(gs_error_invalidfont);
+	    return_error(mem, gs_error_invalidfont);
     }
 
     /* table must be corrupt if the loop didn't stop at stop */
     if ( i != stop )
-	return_error(gs_error_invalidfont);
+	return_error(mem, gs_error_invalidfont);
     return 0;
 }
 
 /* this procedure has the same cartoon as hpgl_stick_segments() above
    except the drawing operations are different */
 private int
-hpgl_arc_segments(void *data, uint char_index)
+hpgl_arc_segments(const gs_memory_t *mem, void *data, uint char_index)
 {
     /* characters start with 32 - what about char index < 0x20 ?? */
     short table_index_of_char = char_index - 0x20;
@@ -5108,12 +5108,12 @@ hpgl_arc_segments(void *data, uint char_index)
 	    i += 7;
 	}
 	else
-	    return_error(gs_error_invalidfont);
+	    return_error(mem, gs_error_invalidfont);
     }
 
     /* table must be corrupt if the loop didn't stop at stop */
     if ( i != stop )
-	return_error(gs_error_invalidfont);
+	return_error(mem, gs_error_invalidfont);
     return 0;
 }
 	
@@ -5133,12 +5133,13 @@ hpgl_arc_width(uint char_index)
 
 /* interface procedure render the characters */
 int 
-hpgl_stick_arc_segments(void *data, uint char_index, hpgl_font_type_t font_type)
+hpgl_stick_arc_segments(const gs_memory_t *mem,
+			void *data, uint char_index, hpgl_font_type_t font_type)
 {
     if ( font_type == HPGL_ARC_FONT )
-	return hpgl_arc_segments(data, char_index);
+	return hpgl_arc_segments(mem, data, char_index);
     else
-	return hpgl_stick_segments(data, char_index);
+	return hpgl_stick_segments(mem, data, char_index);
 }
 
 /* interface procedure to get the width of the characters */

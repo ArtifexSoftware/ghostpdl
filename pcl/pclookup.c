@@ -104,7 +104,7 @@ set_lookup_tbl(
 
     /* update the current palette; release our reference to the lookup table */
     code = pcl_palette_set_lookup_tbl(pcs, plktbl);
-    pcl_lookup_tbl_release(plktbl);
+    pcl_lookup_tbl_release(pcs->memory, plktbl);
     return code;
 }
 
@@ -139,7 +139,7 @@ lookup_do_registration(
     gs_memory_t *   pmem
 )
 {
-    DEFINE_CLASS('*')
+    DEFINE_CLASS(pmem, '*')
     {
         'l', 'W',
         PCL_COMMAND("Color Lookup Tables", set_lookup_tbl, pca_bytes)

@@ -695,7 +695,7 @@ pcl_text(
     code = pcl_show_chars_slow(pcs, &scale, str, size, literal);
     gs_setmatrix(pgs, &user_ctm);
     if (code > 0)		/* shouldn't happen */
-	code = gs_note_error(gs_error_invalidfont);
+	code = gs_note_error(pcs->memory, gs_error_invalidfont);
 
     return code;
 }
@@ -896,9 +896,9 @@ pctext_do_registration(
 )
 {
     /* Register commands */
-    DEFINE_CONTROL(0, "(plain char)", pcl_plain_char);
+    DEFINE_CONTROL(mem, 0, "(plain char)", pcl_plain_char);
 
-    DEFINE_CLASS('&')
+    DEFINE_CLASS(mem, '&')
     {
         'p', 'X',
 	PCL_COMMAND("Transparent Mode", pcl_transparent_mode, pca_bytes)
@@ -919,7 +919,7 @@ pctext_do_registration(
     },
     END_CLASS
 
-    DEFINE_CLASS('&')
+    DEFINE_CLASS(mem, '&')
     {
         't', 'P',
         PCL_COMMAND( "Text Parsing Method",
@@ -936,7 +936,7 @@ pctext_do_registration(
     },
     END_CLASS
 
-    DEFINE_CONTROL(1, "(plain char)", pcl_plain_char);	/* default "command" */
+    DEFINE_CONTROL(mem, 1, "(plain char)", pcl_plain_char);	/* default "command" */
 
     return 0;
 }

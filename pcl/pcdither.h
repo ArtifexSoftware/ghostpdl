@@ -63,23 +63,23 @@ typedef struct pcl_udither_s {
 /*
  * Copy, init, and release macros.
  */
-#define pcl_udither_init_from(pto, pfrom)   \
+#define pcl_udither_init_from(mem, pto, pfrom)   \
     BEGIN                                   \
-    rc_increment(pfrom);                    \
+    rc_increment(mem, pfrom);                    \
     (pto) = (pfrom);                        \
     END
 
-#define pcl_udither_copy_from(pto, pfrom)           \
+#define pcl_udither_copy_from(mem, pto, pfrom)           \
     BEGIN                                           \
     if ((pto) != (pfrom)) {                         \
-        rc_increment(pfrom);                        \
-        rc_decrement(pto, "pcl_udither_copy_from"); \
+        rc_increment(mem, pfrom);                        \
+        rc_decrement(mem, pto, "pcl_udither_copy_from"); \
         (pto) = (pfrom);                            \
     }                                               \
     END
 
-#define pcl_udither_release(pdither)            \
-    rc_decrement(pdither, "pcl_udither_release")
+#define pcl_udither_release(mem, pdither)            \
+    rc_decrement(mem, pdither, "pcl_udither_release")
 
 /*
  * Macros for retrieving information from a pcl_udither_t structure.

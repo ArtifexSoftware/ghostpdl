@@ -33,31 +33,32 @@ int32 hpgl_get_character_edge_pen(hpgl_state_t *pgls);
 #ifdef DEBUG
 
 void hpgl_error(void);
-int hpgl_print_error(const char *function, const char *file, int line, int code);
+int hpgl_print_error(const gs_memory_t *mem, 
+		     const char *function, const char *file, int line, int code);
 
 # ifdef __GNUC__
-#  define hpgl_call_note_error(code)\
-     hpgl_print_error(__FUNCTION__, __FILE__, __LINE__, code)
+#  define hpgl_call_note_error(mem, code)\
+     hpgl_print_error(mem, __FUNCTION__, __FILE__, __LINE__, code)
 # else
-#  define hpgl_call_note_error(code)\
-     hpgl_print_error((const char *)0, __FILE__, __LINE__, code)
+#  define hpgl_call_note_error(mem, code)\
+     hpgl_print_error(mem, (const char *)0, __FILE__, __LINE__, code)
 # endif
 
 #else				/* !DEBUG */
 
-#define hpgl_call_note_error(code) (code)
+#define hpgl_call_note_error(mem, code) (code)
 
 #endif
 
 /* We use the do ... while(0) in order to make the call be a statement */
 /* syntactically. */
 
-#define hpgl_call_and_check(call, if_check_else)\
+#define hpgl_call_and_check(mem, call, if_check_else)\
 do {						\
   int code; 					\
   if ((code = (call)) < 0)			\
     { if_check_else()				\
-        return hpgl_call_note_error(code);	\
+        return hpgl_call_note_error(mem, code);	\
     }						\
 } while (0)
 
@@ -66,7 +67,10 @@ do {						\
 #define hpgl_no_check() /* */
 
 #define hpgl_call(call)\
-  hpgl_call_and_check(call, hpgl_no_check)
+  hpgl_call_and_check(pgls->memory, call, hpgl_no_check)
+
+#define hpgl_call_mem(mem, call)\
+  hpgl_call_and_check(mem, call, hpgl_no_check)
 
 /* Function calls that can set LOST mode */
 
@@ -76,6 +80,6 @@ do {						\
   else
 
 #define hpgl_call_check_lost(call)\
-  hpgl_call_and_check(call, hpgl_limitcheck_set_lost)
+  hpgl_call_and_check(pgls->memory, call, hpgl_limitcheck_set_lost)
 
 #endif                       /* pgmisc_INCLUDED */

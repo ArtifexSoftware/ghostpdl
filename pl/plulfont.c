@@ -296,6 +296,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                                   err_cd,
                                   pname );
                     else {
+                        dprintf1( "Loading %s\n", pname );
                         uint    pitch_cp = (pfDesc->spaceBand * 100.0)
                             / pfDesc->scaleFactor + 0.5;
 

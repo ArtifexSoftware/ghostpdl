@@ -1549,9 +1549,9 @@ free_gs_hts(
     int         i;
 
     if (pht->pfg_ht != 0)
-        gs_ht_release(pht->pfg_ht);
+        gs_ht_release(pht->rc.memory, pht->pfg_ht);
     if (pht->pim_ht != 0)
-        gs_ht_release(pht->pim_ht);
+        gs_ht_release(pht->rc.memory, pht->pim_ht);
     pht->pfg_ht = 0;
     pht->pim_ht = 0;
 
@@ -1588,8 +1588,8 @@ free_pcl_ht(
     pcl_ht_t *      pht = (pcl_ht_t *)pvht;
 
     if (pht->client_data[0].plktbl != 0)
-        rc_adjust(pht->client_data[0].plktbl, -3, cname);
-    pcl_udither_release(pht->pdither);
+        rc_adjust(pmem, pht->client_data[0].plktbl, -3, cname);
+    pcl_udither_release(pmem, pht->pdither);
 
     /* free_gs_hts frees the string pointers */
     free_gs_hts(pht);
@@ -1676,14 +1676,14 @@ unshare_pcl_ht(
         free_gs_hts(pht);
         return 0;
     }
-    rc_decrement(pht, "unshare pcl halftone object");
+    rc_decrement(pht->rc.memory, pht, "unshare pcl halftone object");
 
     if ((code = alloc_pcl_ht(ppht, pht->rc.memory)) < 0)
         return code;
     pnew = *ppht;
 
     if (pht->pdither != 0)
-        pcl_udither_init_from(pnew->pdither, pht->pdither);
+        pcl_udither_init_from(pht->rc.memory, pnew->pdither, pht->pdither);
     pnew->render_method = pht->render_method;
     pnew->orig_render_method = pht->orig_render_method;
     pnew->is_gray_render_method = pht->is_gray_render_method;
@@ -1692,7 +1692,7 @@ unshare_pcl_ht(
         pnew->client_data[i].comp_indx = pht->client_data[i].comp_indx;
         pnew->client_data[i].inv_gamma = pht->client_data[i].inv_gamma;
         if (pht->client_data[i].plktbl != 0)
-            pcl_lookup_tbl_copy_from( pnew->client_data[i].plktbl,
+            pcl_lookup_tbl_copy_from( pht->rc.memory, pnew->client_data[i].plktbl,
                                       pht->client_data[i].plktbl
                                       );
     }
@@ -1848,7 +1848,7 @@ pcl_ht_set_gamma(
     /* discard the device specific color lookup table, if present */
     for (i = 0; i < 3; i++) {
         pht->client_data[i].inv_gamma = inv_gamma;
-        pcl_lookup_tbl_release(pht->client_data[i].plktbl);
+        pcl_lookup_tbl_release(pht->rc.memory, pht->client_data[i].plktbl);
         pht->client_data[i].plktbl = 0;
     }
 
@@ -1886,7 +1886,7 @@ pcl_ht_set_lookup_tbl(
     pht = *ppht;
 
     for (i = 0; i < 3; i++)
-        pcl_lookup_tbl_copy_from(pht->client_data[i].plktbl, plktbl);
+        pcl_lookup_tbl_copy_from(pht->rc.memory, pht->client_data[i].plktbl, plktbl);
     return 0;
 }
 
@@ -1909,7 +1909,7 @@ pcl_ht_set_udither(
         return code;
     pht = *ppht;
 
-    pcl_udither_copy_from(pht->pdither, pdither);
+    pcl_udither_copy_from(pht->rc.memory, pht->pdither, pdither);
     return 0;
 }
 
@@ -1958,7 +1958,7 @@ pcl_ht_build_default_ht(
 
     if ((pcs->pdflt_ht == 0) && ((code = alloc_pcl_ht(&pcs->pdflt_ht, pmem)) < 0))
         return code;
-    pcl_ht_copy_from(*ppht, pcs->pdflt_ht);
+    pcl_ht_copy_from(pmem, *ppht, pcs->pdflt_ht);
     return 0;
 }
 
@@ -2108,7 +2108,8 @@ set_threshold_ht(
             pht->thresholds[comp].data = pb;
         }
 
-        return gs_ht_set_threshold_comp( pgsht,
+        return gs_ht_set_threshold_comp( pht->rc.memory, 
+					 pgsht,
                                          comp,
                                          /* sepname, */
                                          dt.u.thresh.width,
@@ -2126,7 +2127,8 @@ set_threshold_ht(
                                     ? dt.u.thresh.pdata
                                     : dt.u.thresh.pdata + icomp * size );
 
-        return gs_ht_set_mask_comp( pgsht,
+        return gs_ht_set_mask_comp( pht->rc.memory, 
+				    pgsht,
                                     comp,
                                     // NB                                    sepname,
                                     dt.u.tdither.width,
@@ -2222,7 +2224,7 @@ create_gs_halftones(
         if (pinfo != get_rendering_info(pcs, pht->render_method, cstype, true))
             code = e_Unimplemented;
         else 
-	  gs_ht_init_ptr(pht->pim_ht, pht->pfg_ht);
+	  gs_ht_init_ptr(pht->rc.memory, pht->pim_ht, pht->pfg_ht);
     }
 
     if (code < 0)
@@ -2249,7 +2251,6 @@ pcl_ht_set_halftone(
     gs_ht *              pgsht = 0;
     int                  code = 0;
 
-
     gs_const_string thresh;
     thresh.data = ordered_dither_data;
     thresh.size = 256;
@@ -2261,7 +2262,7 @@ pcl_ht_set_halftone(
                                /* y phase */ 0);
 
 
-    dprintf( "NB halftone installation\n" );
+    //dprintf( "NB halftone installation\n" );
     return 0;
     /* if no halftone yet, create one */
     if (pht == 0) {
@@ -2303,7 +2304,7 @@ pcl_ht_set_halftone(
     if ((code = gs_ht_install(pcs->pgs, pgsht)) < 0)
         return code;
 
-    pcl_ht_copy_from(pcs->pids->pht, pht);
+    pcl_ht_copy_from(pht->rc.memory, pcs->pids->pht, pht);
     return code;
 }
 

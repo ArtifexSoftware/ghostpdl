@@ -74,23 +74,23 @@ typedef struct pcl_crd_s        pcl_crd_t;
 /*
  * The usual copy, init, and release macros.
  */
-#define pcl_crd_init_from(pto, pfrom)   \
+#define pcl_crd_init_from(mem, pto, pfrom)   \
     BEGIN                               \
-    rc_increment(pfrom);                \
+    rc_increment(mem, pfrom);                \
     (pto) = (pfrom);                    \
     END
 
-#define pcl_crd_copy_from(pto, pfrom)           \
+#define pcl_crd_copy_from(mem, pto, pfrom)           \
     BEGIN                                       \
     if ((pto) != (pfrom)) {                     \
-        rc_increment(pfrom);                    \
-        rc_decrement(pto, "pcl_crd_copy_from"); \
+        rc_increment(mem, pfrom);                    \
+        rc_decrement(mem, pto, "pcl_crd_copy_from"); \
         (pto) = (pfrom);                        \
     }                                           \
     END
 
-#define pcl_crd_release(pindexed)           \
-    rc_decrement(pindexed, "pcl_crd_release")
+#define pcl_crd_release(mem, pindexed)           \
+    rc_decrement(mem, pindexed, "pcl_crd_release")
 
 /*
  * Unlike other elements of the PCL "palette", color rendering dictionaries

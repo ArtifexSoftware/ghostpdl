@@ -32,7 +32,7 @@
 #include "gspath2.h"
 #include "gsrop.h"
 #include "gxpath.h"
-#include "gxstate.h"
+#include "gzstate.h"
 #include "gscolor2.h"
 
 /*
@@ -135,9 +135,9 @@ px_paint_rc_adjust(px_paint_t *ppt, int delta, gs_memory_t *mem)
 	     */
 	    cspace.type = &gs_color_space_type_Pattern;
 	    cspace.params.pattern.has_base_space = false;
-	    (*cspace.type->adjust_color_count)(&ppt->value.pattern.color,
+	    (*cspace.type->adjust_color_count)(mem, &ppt->value.pattern.color,
 					       &cspace, delta);
-	    rc_adjust_only(ppt->value.pattern.pattern, delta,
+	    rc_adjust_only(mem, ppt->value.pattern.pattern, delta,
 			   "px_paint_rc_adjust");
 	  }
 }
@@ -220,7 +220,7 @@ copy:	      if ( phtt->data )
 		{ byte *str = gs_alloc_string(pxfrom->memory, phtt->size,
 					      "px_gstate_client_copy(thresholds)");
 		  if ( str == 0 )
-		    return_error(errorInsufficientMemory);
+		    return_error(pxfrom->memory, errorInsufficientMemory);
 		  memcpy(str, phtt->data, phtt->size);
 		  phtt->data = str;
 		}
@@ -369,10 +369,10 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     int depth = params->depth;
     switch ( params->color_space ) {
     case eGray:
-	gs_cspace_init_DeviceGray(pcs);
+	gs_cspace_init_DeviceGray(pgs->memory, pcs);
 	break;
     case eRGB:
-        gs_cspace_init_DeviceRGB(pcs);
+        gs_cspace_init_DeviceRGB(pgs->memory, pcs);
         break;
     case eSRGB:
     case eCRGB:
@@ -380,7 +380,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
         pl_cspace_init_SRGB(&pcs, pgs);
 	break;
     default:
-	return_error(errorIllegalAttributeValue);
+	return_error(pgs->memory, errorIllegalAttributeValue);
     }
     if ( params->indexed ) { 
 	pcs->params.indexed.base_space.type = pcs->type;
@@ -391,7 +391,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     }
     {
         gs_color_space image_init_pcs;
-        gs_cspace_init_DeviceRGB(&image_init_pcs);
+        gs_cspace_init_DeviceRGB(pgs->memory, &image_init_pcs);
         gs_image_t_init(pim, &image_init_pcs);
     }
     pim->ColorSpace = pcs;
@@ -404,7 +404,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
 /* Check the setting of the clipping region. */
 #define check_clip_region(par, pxs)\
   if ( par->pv[0]->value.i == eExterior && pxs->pxgs->clip_mode != eEvenOdd )\
-    return_error(errorClipModeMismatch)
+    return_error(pxs->memory, errorClipModeMismatch)
 
 /* Record the most recent character transformation. */
 private void
@@ -676,9 +676,9 @@ pxSetLineDash(px_args_t *par, px_state_t *pxs)
 	    int code;
 
 	    if ( par->pv[2] )
-	      return_error(errorIllegalAttributeCombination);
+	      return_error(pxgs->memory, errorIllegalAttributeCombination);
 	    if ( size > MAX_DASH_ELEMENTS )
-	      return_error(errorIllegalArraySize);
+	      return_error(pxgs->memory, errorIllegalArraySize);
 
 	    /*
 	     * The H-P documentation gives no clue about what a negative
@@ -795,12 +795,12 @@ shrink:		  if ( inext == 0 )
 	  }
 	else if ( par->pv[2] )
 	  { if ( par->pv[1] )
-	      return_error(errorIllegalAttributeCombination);
+	      return_error(pxgs->memory, errorIllegalAttributeCombination);
 	    pxgs->dashed = false;
 	    return gs_setdash(pgs, NULL, 0, 0.0);
 	  }
 	else
-	  return_error(errorMissingAttribute);
+	  return_error(pxgs->memory, errorMissingAttribute);
 }
 
 const byte apxSetLineCap[] = {
@@ -817,7 +817,7 @@ int
 pxBeginUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
 {
 
-    dprintf( "undocumented\n" );
+    dprintf(pxs->memory, "undocumented\n" );
     return 0;
 }
 
@@ -827,7 +827,7 @@ int
 pxEndUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
 {
 
-    dprintf( "undocumented\n" );
+    dprintf(pxs->memory, "undocumented\n" );
     return 0;
 }
 
@@ -933,7 +933,9 @@ pxSetPageScale(px_args_t *par, px_state_t *pxs)
             sy = pxs->units_per_measure.y / suy;
             /* check for overflow.  NB we should do a better job here */
             if ( fabs(sx) > 1000.0 ) {
-                dprintf2( "warning probable overflow avoided for scaling factors %f %f\n", sx, sy );
+                dprintf2(pxs->memory, 
+			 "warning probable overflow avoided for scaling factors %f %f\n", 
+			 sx, sy );
                 sx = sy = 1;
             }
         }
@@ -1028,7 +1030,7 @@ pxSetCharSubMode(px_args_t *par, px_state_t *pxs)
 	if ( psubs->value.array.size != 1 ||
 	     psubs->value.array.data[0] >= pxeCharSubModeArray_next
 	   )
-	  return_error(errorIllegalAttributeValue);
+	  return_error(pxs->memory, errorIllegalAttributeValue);
 	pxs->pxgs->char_sub_mode = psubs->value.array.data[0];
 	return 0;
 }

@@ -70,7 +70,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 					      sizeof(pl_symbol_map_t),
 					      "pcl_font_header(header)");
 	  if ( header == 0 )
-	    return_error(e_Memory);
+	    return_error(pcs->memory, e_Memory);
 	  memcpy((void *)header, (void *)psm, psm_header_size);
 	  /* specify that we do not allow these sets to map to and fro
              msl and unicode */
@@ -98,7 +98,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 	    symsetp = (pcl_symbol_set_t *)gs_alloc_bytes(mem,
 		sizeof(pcl_symbol_set_t), "symset dict value");
 	    if ( !symsetp )
-	      return_error(e_Memory);
+	      return_error(pcs->memory, e_Memory);
 	    for ( gx = plgv_MSL; gx < plgv_next; gx++ )
 	      symsetp->maps[gx] = NULL;
 	    symsetp->storage = pcds_temporary;
@@ -197,7 +197,7 @@ pcl_load_built_in_symbol_sets(pcl_state_t *pcs)
 		symsetp = (pcl_symbol_set_t *)gs_alloc_bytes(pcs->memory,
 		    sizeof(pcl_symbol_set_t), "symset init dict value");
 		if ( !symsetp )
-		  return_error(e_Memory);
+		  return_error(pcs->memory, e_Memory);
 		for ( gx = plgv_MSL; gx < plgv_next; gx++ )
 		  symsetp->maps[gx] = NULL;
 		symsetp->storage = pcds_internal;
@@ -272,12 +272,12 @@ pcsymbol_do_registration(
     gs_memory_t *mem
 )
 {		/* Register commands */
-	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'R', "Symbol Set ID Code",
+	DEFINE_CLASS_COMMAND_ARGS(mem, '*', 'c', 'R', "Symbol Set ID Code",
 				  pcl_symbol_set_id_code,
 				  pca_neg_error|pca_big_error)
-	DEFINE_CLASS_COMMAND_ARGS('(', 'f', 'W', "Define Symbol Set",
+	DEFINE_CLASS_COMMAND_ARGS(mem, '(', 'f', 'W', "Define Symbol Set",
 				  pcl_define_symbol_set, pca_bytes)
-	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'S', "Symbol Set Control",
+	DEFINE_CLASS_COMMAND_ARGS(mem, '*', 'c', 'S', "Symbol Set Control",
 				  pcl_symbol_set_control,
 				  pca_neg_ignore|pca_big_ignore)
 	return 0;
@@ -300,7 +300,7 @@ pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	    /* NB.  Symbol sets are require for RTL/HPGL/2 mode for
 	     * stickfonts but we shouldn't load all of them. */
 	    if ( pcl_load_built_in_symbol_sets(pcs) < 0 )
-		dprintf("Internal error, no symbol sets found");
+		dprintf(pcs->memory, "Internal error, no symbol sets found");
 	}
 	else if ( type & pcl_reset_printer ) { 
 	    pcl_args_t args;

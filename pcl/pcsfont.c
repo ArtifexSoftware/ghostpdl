@@ -141,21 +141,18 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
         pl_dict_release(&pcs->soft_fonts);
         break;
     case 1:
-        if ( !high_level_device(gs_currentdevice(pcs->pgs)) ) {
-            /* Delete all temporary soft fonts. */
-            pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
-            while ( pl_dict_enum_next(&denum, &key, &value) )
-                if ( ((pl_font_t *)value)->storage == pcds_temporary )
-                    pcl_delete_soft_font(pcs, key.data, key.size, value);
-        }
+	/* Delete all temporary soft fonts. */
+	pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
+	while ( pl_dict_enum_next(&denum, &key, &value) )
+	    if ( ((pl_font_t *)value)->storage == pcds_temporary )
+		pcl_delete_soft_font(pcs, key.data, key.size, value);
         break;
     case 2:
-        if ( !high_level_device(gs_currentdevice(pcs->pgs)) ) {
-            /* Delete soft font <font_id>. */
-            pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
-            /* decache the currently selected font in case we deleted it. */
-            pcl_decache_font(pcs, -1);
-        }
+	/* Delete soft font <font_id>. */
+	pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
+	/* decache the currently selected font in case we deleted it. */
+	pcl_decache_font(pcs, -1);
+
         break;
     case 3:
         /* Delete character <font_id, character_code>. */
@@ -193,7 +190,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
                                                   pcs->memory,
                                                   "pcl_font_control()");
                 if ( plfont == 0 ) {
-                    dprintf("pcsfont.c clone font FIXME\n");
+                    dprintf(pcs->memory, "pcsfont.c clone font FIXME\n");
                     return 0;
                 }
                 code = gs_definefont(pcs->font_dir, plfont->pfont);
@@ -244,7 +241,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
             fst = plfst_TrueType;
             break;
           default:
-            return_error(gs_error_invalidfont);
+            return_error(mem, gs_error_invalidfont);
           }
         /* Delete any previous font with this ID. */
         pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
@@ -252,7 +249,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
         plfont = pl_alloc_font(mem, "pcl_font_header(pl_font_t)");
         header = gs_alloc_bytes(mem, count, "pcl_font_header(header)");
         if ( plfont == 0 || header == 0 )
-          return_error(e_Memory);
+          return_error(mem, e_Memory);
         memcpy(header, data, count);
         plfont->storage = pcds_temporary;
         plfont->data_are_permanent = false;
@@ -275,12 +272,12 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                                     "pcl_font_header(bitmap font)");
 
             if ( pfont == 0 )
-              return_error(e_Memory);
+              return_error(mem, e_Memory);
             code = pl_fill_in_font((gs_font *)pfont, plfont, pcs->font_dir,
                                    mem, "nameless_font");
             if ( code < 0 )
               return code;
-            pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
+            pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
             /* Extract parameters from the font header. */
             if ( pfh->HeaderFormat == pcfh_resolution_bitmap )
               {
@@ -320,7 +317,7 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                 gs_error_invalidfont, 0
               };
               code =
-                pl_font_scan_segments(plfont, 70, desc_size, (ulong)count - 2,
+                pl_font_scan_segments(mem, plfont, 70, desc_size, (ulong)count - 2,
                                       pfh->HeaderFormat == pcfh_truetype_large,
                                       &errors);
               if ( code < 0 )
@@ -335,7 +332,7 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
             pfont = gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
                                     "pcl_font_header(truetype font)");
             if ( pfont == 0 )
-              return_error(e_Memory);
+              return_error(mem, e_Memory);
 
             { uint num_chars = pl_get_uint16(pfh->LastCode);
 
@@ -352,7 +349,7 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                                    mem, "nameless_font");
             if ( code < 0 )
               return code;
-            pl_fill_in_tt_font(pfont, NULL, gs_next_ids(1));
+            pl_fill_in_tt_font(pfont, NULL, gs_next_ids(mem, 1));
             /* pfh->Pitch is design unit width for scalable fonts. */
             { uint pitch_cp =
                 pl_get_uint16(pfh->Pitch) * 100 / pfont->data.unitsPerEm;
@@ -367,12 +364,12 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                               "pcl_font_header(bitmap font)");
 
             if ( pfont == 0 )
-              return_error(e_Memory);
+              return_error(mem, e_Memory);
             code = pl_fill_in_font((gs_font *)pfont, plfont, pcs->font_dir,
                                    mem, "nameless_font");
             if ( code < 0 )
               return code;
-            pl_fill_in_intelli_font(pfont, gs_next_ids(1));
+            pl_fill_in_intelli_font(pfont, gs_next_ids(mem, 1));
             if ( pfh->HeaderFormat == pcfh_intellifont_unbound ) {
                 bool zero_complement = true;
                 int i;
@@ -393,7 +390,7 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
             break;
           }
           default:
-            return_error(gs_error_invalidfont); /* can't happen */
+            return_error(mem, gs_error_invalidfont); /* can't happen */
           }
         /* Extract common parameters from the font header. */
         plfont->params.symbol_set = pl_get_uint16(pfh->SymbolSet);
@@ -442,7 +439,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
            characters for now, since we don't have real world
            examples for the other font file formats.  */
         if ( data[0] != pccd_bitmap && data[3] != 1 ) {
-            dprintf("continuation not implemented for this font type\n");
+            dprintf(pcs->memory, "continuation not implemented for this font type\n");
             return e_Unimplemented;
         }
         /* append the new data to the new object */
@@ -482,7 +479,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
                 char_data = gs_alloc_bytes(pcs->memory, 16 + width_bytes * height,
                                            "pcl_character_data(compressed bitmap)");
                 if ( char_data == 0 )
-                    return_error(e_Memory);
+                    return_error(pcs->memory, e_Memory);
                 memcpy(char_data, data, 16);
                 memset(char_data + 16, 0, width_bytes * height);
                 row = char_data + 16;
@@ -583,7 +580,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
         char_data = gs_alloc_bytes(pcs->memory, font_data_size,
                                    "pcl_character_data");
         if ( char_data == 0 )
-            return_error(e_Memory);
+            return_error(pcs->memory, e_Memory);
         /* if count > font_data_size extra data is ignored */
         memcpy(char_data, data, min(count, font_data_size) );
         /* NB we only handle continuation for uncompressed bitmap characters */
@@ -689,7 +686,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
               char *new_id = (char *)gs_alloc_bytes(pcs->memory, string_id_size,
                                             "pcl_alphanumeric_id_data");
               if ( new_id == 0 ) 
-                return_error(e_Memory);
+                return_error(pcs->memory, e_Memory);
               /* release the previous id, if necessary */
               if ( pcs->alpha_font_id.id )
                 gs_free_object( pcs->memory,
@@ -758,7 +755,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
               char *new_id = (char *)gs_alloc_bytes(pcs->memory, string_id_size,
                                             "pcl_alphanumeric_id_data");
               if ( new_id == 0 ) 
-                return_error(e_Memory);
+                return_error(pcs->memory, e_Memory);
               /* release the previous id, if necessary */
               if ( pcs->alpha_macro_id.id )
                 gs_free_object( pcs->memory,
@@ -814,7 +811,7 @@ pcsfont_do_registration(
     gs_memory_t *mem
 )
 {               /* Register commands */
-        DEFINE_CLASS('*')
+        DEFINE_CLASS(mem, '*')
           {'c', 'D',
              PCL_COMMAND("Assign Font ID", pcl_assign_font_id,
                          pca_neg_error|pca_big_error)},
@@ -822,13 +819,13 @@ pcsfont_do_registration(
              PCL_COMMAND("Font Control", pcl_font_control,
                          pca_neg_error|pca_big_error)},
         END_CLASS
-        DEFINE_CLASS_COMMAND_ARGS(')', 's', 'W', "Font Header",
+        DEFINE_CLASS_COMMAND_ARGS(mem, ')', 's', 'W', "Font Header",
                                   pcl_font_header, pca_bytes)
-        DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'E', "Character Code",
+        DEFINE_CLASS_COMMAND_ARGS(mem, '*', 'c', 'E', "Character Code",
                                   pcl_character_code, pca_neg_error|pca_big_ok)
-        DEFINE_CLASS_COMMAND_ARGS('(', 's', 'W', "Character Data",
+        DEFINE_CLASS_COMMAND_ARGS(mem, '(', 's', 'W', "Character Data",
                                   pcl_character_data, pca_bytes)
-        DEFINE_CLASS_COMMAND_ARGS('&', 'n', 'W', "Alphanumeric ID Data",
+        DEFINE_CLASS_COMMAND_ARGS(mem, '&', 'n', 'W', "Alphanumeric ID Data",
                                   pcl_alphanumeric_id_data, pca_bytes)
         return 0;
 }

@@ -61,7 +61,7 @@ px_widen_font_name(px_value_t *pfnv, px_state_t *pxs)
 	      (char16 *)gs_alloc_byte_array(pxs->memory, size, sizeof(char16),
 					    "px_widen_font_name");
 	  if ( new_data == 0 )
-	    return_error(errorInsufficientMemory);
+	    return_error(pxs->memory, errorInsufficientMemory);
 	  for ( i = size; i; )
 	    { --i;
 	      new_data[i] =
@@ -131,14 +131,14 @@ px_find_existing_font(px_value_t *pfnv, px_font_t **ppxfont,
 		*ppxfont = pxfont;
 	      else {
 		  /* in the process of being downloaded. */
-		  dprintf( "font is being downloaded???\n");
+		  dprintf(pxs->memory, "font is being downloaded???\n");
 		  return -1;
 	      }
 	} else if ( px_dict_find(&pxs->builtin_font_dict, pfnv, &pxfont) ) 
 	    if ( ((px_font_t *)pxfont)->pfont )
 		*ppxfont = pxfont;
 	    else {
-		dprintf( "corrupt pxl builtin font\n");
+		dprintf(pxs->memory, "corrupt pxl builtin font\n");
 		return -1;
 	    }
 	else

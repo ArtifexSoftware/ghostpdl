@@ -121,7 +121,7 @@ color_do_registration(
 )
 {
     /* Register commands */
-    DEFINE_CLASS('*')
+    DEFINE_CLASS(pmem, '*')
     {
         'v', 'A',
 	PCL_COMMAND( "Color Component 1",

@@ -131,7 +131,11 @@ ps_impl_allocate_interp_instance(
         global_psi = psi;
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
-	psi->minst = gs_main_instance_default();
+	{
+	    // foo try segregation of memory spaces
+	    gs_memory_t * psmem = gs_malloc_init(mem);
+	    psi->minst = gs_main_alloc_instance(psmem);
+	}
 	code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
 	if (code<0)
 	    return code;
@@ -272,7 +276,8 @@ ps_impl_process(
                    returning */
                 strcpy(fmode, "w+");
                 strcat(fmode, gp_fmode_binary_suffix);
-                psi->pdf_filep = gp_open_scratch_file(gp_scratch_file_name_prefix,
+                psi->pdf_filep = gp_open_scratch_file(psi->plmemory, 
+						      gp_scratch_file_name_prefix,
                                                       psi->pdf_file_name, fmode);
                 if ( psi->pdf_filep == NULL )
                     psi->pdf_stream = false;

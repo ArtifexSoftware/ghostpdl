@@ -32,7 +32,6 @@ pl_platform_init(FILE *debug_out)
     /* debug flags we reset this out of gs_lib_init0 which sets these
          and the allocator we want the debug setting but we do our own
          allocator */
-    gs_debug_out = debug_out;
     memset(gs_debug, 0, 128);
     gs_log_errors = 0;
 }

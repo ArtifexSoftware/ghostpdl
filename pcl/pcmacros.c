@@ -120,7 +120,7 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcs)
 		gs_alloc_bytes(pcs->memory, sizeof(pcl_macro_t),
 			       "begin macro definition");
 	      if ( pmac == 0 )
-		return_error(e_Memory);
+		return_error(pcs->memory, e_Memory);
 	      pmac->storage = pcds_temporary;
 	      pcs->macro_definition = (byte *)pmac;
 	      pcs->defining_macro = true;
@@ -211,7 +211,7 @@ pcmacros_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem)
 {		/* Register commands */
-	DEFINE_CLASS('&')
+	DEFINE_CLASS(mem, '&')
 	  {'f', 'X',
 	     PCL_COMMAND("Macro Control", pcl_macro_control,
 			 pca_neg_error|pca_big_error|pca_in_macro)},
