@@ -71,3 +71,9 @@ a:hover, a:active, a:focus
 {
   background: #FFFFAA;
 }
+
+# table formatting hints
+td
+{
+  vertical-align: top;
+}

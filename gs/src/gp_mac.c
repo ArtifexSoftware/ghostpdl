@@ -1,4 +1,4 @@
-/* Copyright (C) 1989 - 1995, 1997 Artifex Software, Inc.  All rights reserved.
+/* Copyright (C) 1989 - 1995, 2001 Artifex Software, Inc.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -131,14 +131,14 @@ int
 gettimeofday(struct timeval *tvp)
 {
     struct tm tms;
-    static unsigned long offset = 0;
+    static long offset = 0;
     long ticks;
 
     if (!offset) {
 	time(&offset);
-	offset -= (time((unsigned long *)&tms) / HZ);
+	offset -= (time((long *)&tms) / HZ);
     }
-    ticks = time((unsigned long *)&tms);
+    ticks = time((long *)&tms);
     tvp->tv_sec = ticks / HZ + offset;
     tvp->tv_usec = (ticks % HZ) * (1000 * 1000 / HZ);
     return 0;

@@ -26,8 +26,8 @@
 /* if set to 0, old FM calls that are "not recommended" for carbon are used */
 /* for now, we'll set it to 0, as classic and carbon targets don't generate link errors, */
 /* but the carbon target would be better built with this macro set to 1 */
-/* In the case that it is set, the classic target should link in FontManagerLib */
-#define USE_RECOMMENDED_CARBON_FONTMANAGER_CALLS 0
+/* In the case that it is set, the classic target should link in FontManager(Lib) */
+#define USE_RECOMMENDED_CARBON_FONTMANAGER_CALLS 1
 
 
 
