@@ -480,7 +480,8 @@ zcolor_remap_color(i_ctx_t *i_ctx_p)
  *
  * encode and decode color to allow mapping to be tested.
  */
-int zcolor_test(i_ctx_t *i_ctx_p)
+private int
+zcolor_test(i_ctx_t *i_ctx_p)
 {
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_device *dev = gs_currentdevice(igs);
@@ -512,7 +513,8 @@ int zcolor_test(i_ctx_t *i_ctx_p)
  * Test encode/decode color procedures for a range of values.
  * Return value with the worst error in a single component.
  */
-int zcolor_test_all(i_ctx_t *i_ctx_p)
+private int
+zcolor_test_all(i_ctx_t *i_ctx_p)
 {
     os_ptr                  op = osp;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];

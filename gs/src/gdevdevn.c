@@ -322,7 +322,6 @@ devn_get_params(gx_device * pdev, gs_param_list * plist,
 {
     int code;
     bool seprs = false;
-    int max_separations = pdev->color_info.num_components;
     gs_param_string_array scna;
     gs_param_string_array sona;
 
