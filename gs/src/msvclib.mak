@@ -486,7 +486,7 @@ $(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(AK)
 mslib32__=$(GLOBJ)gp_mslib.$(OBJ)
 
 $(GLGEN)mslib32_.dev: $(mslib32__) $(ECHOGS_XE) $(GLGEN)mswin32_.dev
-        $(SETMOD) $(GLGEN)mslib32_ $(mslib32__)
+	$(SETMOD) $(GLGEN)mslib32_ $(mslib32__)
 	$(ADDMOD) $(GLGEN)mslib32_ -include $(GLGEN)mswin32_.dev
 
 # ----------------------------- Main program ------------------------------ #
@@ -499,6 +499,6 @@ $(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR)
 	echo $(GLOBJ)gscdefs.obj >> $(GLGENDIR)\gslib32.tr
 	echo  /SUBSYSTEM:CONSOLE > $(GLGENDIR)\gslib32.rsp
 	echo  /OUT:$(GS_XE) >> $(GLGENDIR)\gslib32.rsp
-        $(LINK) $(LCT) @$(GLGENDIR)\gslib32.rsp $(GLOBJ)gslib @$(GLGENDIR)\gslib32.tr @$(LIBCTR) $(INTASM) @$(GLGENDIR)\lib.tr
+	$(LINK) $(LCT) @$(GLGENDIR)\gslib32.rsp $(GLOBJ)gslib @$(GLGENDIR)\gslib32.tr @$(LIBCTR) $(INTASM) @$(GLGENDIR)\lib.tr
 	-del $(GLGENDIR)\gslib32.rsp
 	-del $(GLGENDIR)\gslib32.tr

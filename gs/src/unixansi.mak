@@ -176,7 +176,7 @@ ICCSRCDIR=icclib
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 IJSSRCDIR=ijs
 IJSEXECTYPE=unix
 
@@ -410,8 +410,8 @@ include $(GLSRCDIR)/unixinst.mak
 # this makefile is intended to be hand edited so we don't distribute
 # the (presumedly modified) version in the top level directory
 distclean : clean config-clean
-        -$(RM) Makefile
+	-$(RM) Makefile
 
 maintainer-clean : disclean
-        # nothing special to do
+	# nothing special to do
 

@@ -152,7 +152,7 @@ ICCSRCDIR=[.icclib]
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 #IJSSRCDIR=[.ijs]
 #IJSEXECTYPE=unix
 
@@ -350,7 +350,7 @@ XEAUX=.exe
 BEGINFILES=$(GLGENDIR)OPENVMS.OPT $(GLGENDIR)OPENVMS.COM
 
 # Define the C invocation for auxiliary programs (echogs, genarch).
-  
+
 CCAUX=CC/DECC
 
 # Define the C invocation for normal compilation.

@@ -64,11 +64,11 @@ $(GENINIT_XE): $(PSSRCDIR)$(D)geninit.c $(GENINIT_DEPS)
 LIBCTR=$(GLGEN)libc32.tr
 
 $(LIBCTR): $(TOP_MAKEFILES)
-        echo shell32.lib >$(LIBCTR)
-        echo comdlg32.lib >>$(LIBCTR)
-        echo gdi32.lib >>$(LIBCTR)
-        echo user32.lib >>$(LIBCTR)
-        echo winspool.lib >>$(LIBCTR)
+	echo shell32.lib >$(LIBCTR)
+	echo comdlg32.lib >>$(LIBCTR)
+	echo gdi32.lib >>$(LIBCTR)
+	echo user32.lib >>$(LIBCTR)
+	echo winspool.lib >>$(LIBCTR)
 	echo advapi32.lib >>$(LIBCTR)
 
 # end of msvctail.mak

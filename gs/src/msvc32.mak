@@ -609,7 +609,7 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 	echo $(PSOBJ)dwmain.obj >> $(PSGEN)gswin32.tr
 	echo $(GLOBJ)dwtext.obj >> $(PSGEN)gswin32.tr
 	echo $(GLOBJ)dwreg.obj >> $(PSGEN)gswin32.tr
-       	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(PSGEN)gswin32.rsp
+	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(PSGEN)gswin32.rsp
 	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GSDLL_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin32.tr
 	del $(PSGEN)gswin32.rsp
