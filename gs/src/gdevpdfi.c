@@ -238,7 +238,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	gs_image3_t type3;
 	gs_image3x_t type3x;
 	gs_image4_t type4;
-    } image;
+    } image[2];
     ulong nbytes;
     int width, height;
     const gs_range_t *pranges = 0;
@@ -273,7 +273,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	}
 	in_line = context == PDF_IMAGE_DEFAULT &&
 	    can_write_image_in_line(pdev, pim1);
-	image.type1 = *pim1;
+	image[0].type1 = *pim1;
 	break;
     }
     case 3: {
@@ -315,19 +315,19 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 
 	if (pdf_convert_image4_to_image1(pdev, pis, pdcolor,
 					 (const gs_image4_t *)pic,
-					 &image.type1, &icolor) >= 0) {
+					 &image[0].type1, &icolor) >= 0) {
 	    /* Undo the pop of the NI stack if necessary. */
 	    if (pnamed)
 		cos_array_add_object(pdev->NI_stack, COS_OBJECT(pnamed));
 	    return pdf_begin_typed_image(pdev, pis, pmat,
-					 (gs_image_common_t *)&image.type1,
+					 (gs_image_common_t *)&image[0].type1,
 					 prect, &icolor, pcpath, mem,
 					 pinfo, context);
 	}
 	/* No luck.  Masked images require PDF 1.3 or higher. */
 	if (pdev->CompatibilityLevel < 1.3)
 	    goto nyi;
-	image.type4 = *(const gs_image4_t *)pic;
+	image[0].type4 = *(const gs_image4_t *)pic;
 	break;
     }
     default:
@@ -422,6 +422,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     alt_writer_count = (in_line || 
 				    (pim->Width <= 64 && pim->Height <= 64) ||
 				    pdev->transfer_not_identity ? 1 : 2);
+    image[1] = image[0];
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 				      height, pnamed, in_line, alt_writer_count)) < 0 ||
 	/*
@@ -436,9 +437,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	(code = (pie->writer.alt_writer_count == 1 ?
 		 psdf_setup_lossless_filters((gx_device_psdf *) pdev,
 					     &pie->writer.binary[0],
-					     &image.pixel) :
+					     &image[0].pixel) :
 		 psdf_setup_image_filters((gx_device_psdf *) pdev,
-					  &pie->writer.binary[0], &image.pixel,
+					  &pie->writer.binary[0], &image[0].pixel,
 					  pmat, pis, true))) < 0 ||
 	/* SRZB 2001-04-25/Bl
 	 * Since psdf_setup_image_filters may change the color space
@@ -447,38 +448,39 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 */
 	(!is_mask &&
 	 (code = pdf_color_space(pdev, &cs_value, &pranges,
-				 image.pixel.ColorSpace,
+				 image[0].pixel.ColorSpace,
 				 (in_line ? &pdf_color_space_names_short :
 				  &pdf_color_space_names), in_line)) < 0)
 	)
 	goto fail;
-    if (pranges) {
-	/* Rescale the Decode values for the image data. */
-	float *decode = image.pixel.Decode;
-	int i;
-
-	for (i = 0; i < num_components; ++i, ++pranges, decode += 2) {
-	    double vmin = decode[0], vmax = decode[1];
-	    double base = pranges->rmin, factor = pranges->rmax - base;
-
-	    decode[1] = (vmax - vmin) / factor + (vmin - base);
-	    decode[0] = vmin - base;
-	}
-    }
     if (pie->writer.alt_writer_count > 1) {
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
         if (code)
             goto fail;
 	code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-				  &pie->writer.binary[1], &image.pixel,
+				  &pie->writer.binary[1], &image[1].pixel,
 				  pmat, pis, false);
         if (code)
             goto fail;
 	pie->writer.alt_writer_count = 2;
     }
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
+	if (pranges) {
+	    /* Rescale the Decode values for the image data. */
+	    const gs_range_t *pr = pranges;
+	    float *decode = image[i].pixel.Decode;
+	    int j;
+
+	    for (j = 0; j < num_components; ++j, ++pr, decode += 2) {
+		double vmin = decode[0], vmax = decode[1];
+		double base = pr->rmin, factor = pr->rmax - base;
+
+		decode[1] = (vmax - vmin) / factor + (vmin - base);
+		decode[0] = vmin - base;
+	    }
+	}
         if ((code = pdf_begin_image_data(pdev, &pie->writer,
-				         (const gs_pixel_image_t *)&image,
+				         (const gs_pixel_image_t *)&image[i],
 				         &cs_value, i)) < 0)
   	    goto fail;
     }
