@@ -248,7 +248,7 @@ image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
 	gx_set_dev_color(pgs);
 	code = (*dev_proc(dev, begin_image))
 	  (dev, (const gs_imager_state *)pgs, pim, gs_image_format_chunky,
-	   NULL, pgs->dev_color, pgs->clip_path, pgs->memory, &iinfo);
+	   NULL, pgs->dev_color, pgs->clip_path, pgs->memory, (gx_image_enum_common_t **)&iinfo);
 	if ( code < 0 )
 	  return code;
 	if ( bold )
@@ -602,7 +602,7 @@ pl_cmap_lookup(uint key, const byte *table, uint *pvalue)
 /* Encode a character using the TrueType cmap tables. */
 /* (We think this is never used for downloaded fonts.) */
 private gs_glyph
-pl_tt_cmap_encode_char(const gs_font_type42 *pfont, ulong cmap_offset,
+pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
   uint cmap_len, gs_char chr)
 {	const byte *cmap;
 	const byte *cmap_sub;
@@ -1321,7 +1321,7 @@ match_font_glyph(cached_char *cc, void *vpfg)
 	return (cc->pair->font == pfg->font && cc->code == pfg->glyph);
 }
 int
-pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *cdata)
+pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, byte *cdata)
 {	gs_font *pfont = plfont->pfont;
 	gs_glyph key = glyph;
 	pl_tt_char_glyph_t *ptcg = 0;

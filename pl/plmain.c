@@ -65,7 +65,7 @@ pl_main_create_device(pl_main_instance_t *pmi, int index)
 	  { const gx_device **list;
 	    int code;
 
-	    gs_lib_device_list(&list, NULL);
+	    gs_lib_device_list((const gx_device * const **)&list, NULL);
 	    code = gs_copydevice(&pmi->device, list[index], pmi->memory);
 	    if ( code < 0 )
 	      { fprintf(stderr, "Fatal error: gs_copydevice returned %d\n",
@@ -83,11 +83,11 @@ pl_main_arg_fopen(const char *fname, void *ignore_data)
 }
 #define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
-pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char *argv[],
+pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
   int argc)
 {	gs_memory_t *mem = pmi->memory;
 	const gx_device **dev_list;
-	int num_devs = gs_lib_device_list(&dev_list, NULL);
+	int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
 	int code = 0;
 	bool help = false;
 	const char *arg;
@@ -95,7 +95,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char *argv[],
 #define plist ((gs_param_list *)&params)
 
 	gs_c_param_list_write(&params, mem);
-	arg_init(pal, argv, argc, pl_main_arg_fopen, NULL);
+	arg_init(pal, (const char **)argv, argc, pl_main_arg_fopen, NULL);
 	while ( (arg = arg_next(pal)) != 0 && *arg == '-' )
 	  { arg += 2;
 	    switch ( arg[-1] )

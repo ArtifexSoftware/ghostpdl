@@ -10,7 +10,6 @@
 
 #include "gsargs.h"
 #include "gsgc.h"
-
 /*
  * Define the parameters for running the interpreter.
  */
@@ -39,7 +38,7 @@ void pl_main_init(P2(pl_main_instance_t *pmi, gs_memory_t *memory));
 /* Process the options on the command line, */
 /* including making the initial device and setting its parameters. */
 int pl_main_process_options(P4(pl_main_instance_t *pmi, arg_list *pal,
-			       char *argv[], int argc));
+			       char **argv, int argc));
 
 /* Allocate and initialize the first graphics state. */
 #ifndef gs_state_DEFINED

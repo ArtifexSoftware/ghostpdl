@@ -15,6 +15,7 @@
 #include "gsmatrix.h"
 #include "gsstate.h"
 #include "gschar.h"
+#include "gsutil.h"
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "plfont.h"
@@ -154,7 +155,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	      if ( pfont == 0 )
 		return 0;
 	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem);
-	      pl_fill_in_intelli_font(pfont, gs_next_ids());
+	      pl_fill_in_intelli_font(pfont, gs_next_ids(1));
 	      break;
 	    }
 	  case plfst_TrueType:
