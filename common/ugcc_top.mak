@@ -47,6 +47,41 @@ clean_gs:
 	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
 	GLOBJDIR='$(GLOBJDIR)' clean
 
+ifeq ($(PSICFLAGS), -DPSI_INCLUDED)
+# Build the required GS library files.  It's simplest always to build
+# the floating point emulator, even though we don't always link it in.
+# HACK * HACK * HACK - we force this make to occur since we have no
+# way to determine if gs files are out of date.
+$(GENDIR)/ldgs.tr: FORCE
+	-mkdir $(GLGENDIR)
+	-mkdir $(GLOBJDIR)
+	$(MAKE) \
+	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
+	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
+	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
+          DEVICE_DEVS='$(DEVICE_DEVS) $(DD)bbox.dev' \
+	  STDLIBS=$(STDLIBS) \
+	  SYNC=$(SYNC) \
+	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
+	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR) ZLIB_NAME=$(ZLIB_NAME) SHARE_ZLIB=$(SHARE_ZLIB) \
+	  JSRCDIR=$(JSRCDIR) JGENDIR=$(JGENDIR) JOBJDIR=$(JOBJDIR) \
+	  GLSRCDIR='$(GLSRCDIR)' PSSRCDIR=$(PSSRCDIR) PSGENDIR=$(GENDIR) \
+	  GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)' PSLIBDIR=$(PSLIBDIR) \
+	  ICCSRCDIR=$(ICCSRCDIR) \
+	  COMPILE_INITS=$(COMPILE_INITS) \
+	  PSRCDIR=$(PSRCDIR) PVERSION=$(PVERSION) PSOBJDIR=$(GENDIR)\
+	  -f $(GLSRCDIR)/unix-gcc.mak\
+	  $(GLOBJDIR)/ld.tr \
+	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
+	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.$(OBJ) \
+	  $(GLOBJDIR)/iccinit$(COMPILE_INITS).$(OBJ)
+	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldgs.tr
+
+FORCE:
+
+else
+
+
 # Build the required GS library files.  It's simplest always to build
 # the floating point emulator, even though we don't always link it in.
 # HACK * HACK * HACK - we force this make to occur since we have no
@@ -74,6 +109,8 @@ $(GENDIR)/ldgs.tr: FORCE
 
 FORCE:
 
+endif
+
 # Build the configuration file.
 $(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
 	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf.h -p "%s&s&&" -o $(GENDIR)/ldconf.tr
@@ -87,6 +124,16 @@ $(TARGET_LIB): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ)
 	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldall.tr
 
+ifeq ($(PSICFLAGS), -DPSI_INCLUDED)
+# Link a Unix executable.
+$(TARGET_XE): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
+	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ)  -s
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
+	cat $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	sh <$(GENDIR)/ldall.tr
+else
 # Link a Unix executable.
 $(TARGET_XE): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
@@ -95,3 +142,4 @@ $(TARGET_XE): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
 	cat $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	sh <$(GENDIR)/ldall.tr
+endif
