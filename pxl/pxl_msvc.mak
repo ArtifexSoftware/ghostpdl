@@ -123,7 +123,8 @@ FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)colimlib.dev  \
                   $(DD)cielib.dev    \
                   $(DD)htxlib.dev    \
-                  $(DD)devcmap.dev
+                  $(DD)devcmap.dev   \
+		  $(DD)gsnogc.dev
 
 !include $(COMMONDIR)\msvc_top.mak
 
