@@ -33,8 +33,9 @@
 #include "ifilter.h"
 #include "iparam.h"
 
-/*#define TEST*/
+public_st_jpeg_compress_data();
 
+/*#define TEST*/
 /* Import the parameter processing procedure from sdeparam.c */
 stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);
 #ifdef TEST
@@ -55,8 +56,8 @@ zDCTE(i_ctx_t *i_ctx_p)
     uint dspace;
 
     /* First allocate space for IJG parameters. */
-    jcdp = (jpeg_compress_data *)
-	gs_alloc_bytes_immovable(mem, sizeof(*jcdp), "zDCTE");
+    jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
+      &st_jpeg_compress_data, "zDCTE");
     if (jcdp == 0)
 	return_error(e_VMerror);
     if (s_DCTE_template.set_defaults)

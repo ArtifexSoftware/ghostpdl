@@ -344,9 +344,9 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
 	if (plist)
 	    gs_c_param_list_set_target(&rcc_list, plist);
 	/* Allocate space for IJG parameters. */
-	jcdp = (jpeg_compress_data *)
-	    gs_alloc_bytes_immovable(mem, sizeof(*jcdp), "zDCTE");
-	if (jcdp == 0)
+	jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
+           &st_jpeg_compress_data, "zDCTE");
+        if (jcdp == 0)
 	    return_error(gs_error_VMerror);
 	ss->data.compress = jcdp;
 	jcdp->memory = ss->jpeg_memory = mem;	/* set now for allocation */

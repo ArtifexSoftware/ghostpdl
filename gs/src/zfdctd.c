@@ -31,6 +31,8 @@
 #include "ifilter.h"
 #include "iparam.h"
 
+private_st_jpeg_decompress_data();
+
 /* Import the parameter processing procedure from sddparam.c */
 stream_state_proc_put_params(s_DCTD_put_params, stream_DCT_state);
 
@@ -49,8 +51,8 @@ zDCTD(i_ctx_t *i_ctx_p)
     uint dspace;
 
     /* First allocate space for IJG parameters. */
-    jddp = (jpeg_decompress_data *)
-	gs_alloc_bytes_immovable(mem, sizeof(*jddp), "zDCTD");
+    jddp = gs_alloc_struct_immovable(mem,jpeg_decompress_data,
+      &st_jpeg_decompress_data, "zDCTD");
     if (jddp == 0)
 	return_error(e_VMerror);
     if (s_DCTD_template.set_defaults)

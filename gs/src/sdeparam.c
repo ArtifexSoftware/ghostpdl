@@ -103,10 +103,8 @@ s_DCTE_get_params(gs_param_list * plist, const stream_DCT_state * ss, bool all)
     int code;
 
     if (!all) {
-	jpeg_compress_data *jcdp_default =
-	(jpeg_compress_data *)
-	gs_alloc_bytes_immovable(mem, sizeof(*jcdp), "s_DCTE_get_params");
-
+	jpeg_compress_data *jcdp_default = gs_alloc_struct_immovable(mem,
+           jpeg_compress_data, &st_jpeg_compress_data, "s_DCTE_get_params");
 	if (jcdp_default == 0)
 	    return_error(gs_error_VMerror);
 	defaults = &dcts_defaults;

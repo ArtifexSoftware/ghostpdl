@@ -41,8 +41,8 @@ gs_jpeg_create_compress(stream_DCT_state * st)
     if (setjmp(st->data.common->exit_jmpbuf))
 	return_error(gs_jpeg_log_error(st));
 
-    jpeg_create_compress(&st->data.compress->cinfo);
     jpeg_stream_data_common_init(st->data.compress);
+    jpeg_create_compress(&st->data.compress->cinfo);
     return 0;
 }
 

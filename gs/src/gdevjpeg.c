@@ -162,9 +162,8 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gs_memory_t *mem = pdev->memory;
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     byte *in = gs_alloc_bytes(mem, line_size, "jpeg_print_page(in)");
-    jpeg_compress_data *jcdp = (jpeg_compress_data *)
-    gs_alloc_bytes(mem, sizeof(*jcdp),
-		   "jpeg_print_page(jpeg_compress_data)");
+    jpeg_compress_data *jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
+      &st_jpeg_compress_data, "jpeg_print_page(jpeg_compress_data)");
     byte *fbuf = 0;
     uint fbuf_size;
     byte *jbuf = 0;
