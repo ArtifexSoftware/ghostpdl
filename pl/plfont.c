@@ -144,6 +144,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	plfont->scaling_technology = src->scaling_technology;
 	plfont->font_type = src->font_type;
 	plfont->char_width = src->char_width;
+	plfont->char_metrics = src->char_metrics;
 	plfont->large_sizes = src->large_sizes;
 	plfont->resolution = src->resolution;
 	plfont->params = src->params;
@@ -516,81 +517,97 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 #undef return_scan_error
 }
 
+int
+pl_free_tt_fontfile_buffer(gs_memory_t *mem, byte *ptt_font_data)
+{
+    gs_free_object(mem, ptt_font_data, "pl_tt_load_font data");
+    return 0;
+}
+
+int 
+pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size)
+{
+    ulong len = (fseek(in, 0L, SEEK_END), ftell(in));
+    *size = 6 + len;	/* leave room for segment header */
+    if ( *size != (uint)(*size) ) { 
+	/*
+	 * The font is too big to load in a single piece -- punt.
+	 * The error message is bogus, but there isn't any more
+	 * appropriate one.
+	 */
+	fclose(in);
+	return_error(gs_error_VMerror);
+    }
+    rewind(in);
+    *pptt_font_data = gs_alloc_bytes(mem, *size, "pl_tt_load_font data");
+    if ( *pptt_font_data == 0 ) {
+	fclose(in);
+	return_error(gs_error_VMerror);
+    }
+    fread(*pptt_font_data + 6, 1, len, in);
+    fclose(in);
+    return 0;
+}
+
 /* Load a built-in (TrueType) font from external storage. */
 int
 pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
   long unique_id, pl_font_t **pplfont)
-{	ulong len = (fseek(in, 0L, SEEK_END), ftell(in));
-	ulong size = 6 + len;	/* leave room for segment header */
-	byte *data;
-
-	if ( size != (uint)size )
-	  { /*
-	     * The font is too big to load in a single piece -- punt.
-	     * The error message is bogus, but there isn't any more
-	     * appropriate one.
-	     */
-	    fclose(in);
-	    return_error(gs_error_VMerror);
-	  }
-	rewind(in);
-	data = gs_alloc_bytes(mem, size, "pl_tt_load_font data");
-	if ( data == 0 )
-	  { fclose(in);
-	    return_error(gs_error_VMerror);
-	  }
-	fread(data + 6, 1, len, in);
-	fclose(in);
-	/* Make a Type 42 font out of the TrueType data. */
-	{ gs_font_type42 *pfont =
-	    gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
+{	
+    byte *tt_font_datap;
+    ulong size;
+    int code;
+    gs_font_type42 *pfont;
+    pl_font_t *plfont;
+    /* get the data from the file */
+    code = pl_alloc_tt_fontfile_buffer(in, mem, &tt_font_datap, &size);
+    if ( code < 0 )
+	return_error(gs_error_VMerror);
+    /* Make a Type 42 font out of the TrueType data. */
+    pfont = gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
 			    "pl_tt_load_font(gs_font_type42)");
-	  pl_font_t *plfont = pl_alloc_font(mem, "pl_tt_load_font(pl_font_t)");
-	  int code;
+    plfont = pl_alloc_font(mem, "pl_tt_load_font(pl_font_t)");
 
-	  if ( pfont == 0 || plfont == 0 )
-	    code = gs_note_error(gs_error_VMerror);
-	  else
-	    { /* Initialize general font boilerplate. */
-	      code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem);
-	      if ( code >= 0 )
-		{ /* Initialize TrueType font boilerplate. */
-		  plfont->header = data;
-		  plfont->header_size = size;
-		  plfont->scaling_technology = plfst_TrueType;
-		  plfont->font_type = plft_Unicode;
-		  plfont->large_sizes = true;
-		  plfont->offsets.GT = 0;
-		  pl_fill_in_tt_font(pfont, data, unique_id);
-		  code = gs_definefont(pdir, (gs_font *)pfont);
-		  if ( code >= 0 )
-		    { /*
-		       * Set the nominal design width to the width of a
-		       * small 'x' character.  If there isn't one, set the
-		       * design width arbitrarily at 0.6 em.
-		       */
-		      gs_char space = ' ';
-		      uint glyph_index =
-			(*pfont->procs.encode_char)
-			  ((gs_font *)pfont, space, gs_no_glyph);
-		      float sbw[4];
+    if ( pfont == 0 || plfont == 0 )
+	code = gs_note_error(gs_error_VMerror);
+    else { /* Initialize general font boilerplate. */
+	code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem);
+	if ( code >= 0 ) { /* Initialize TrueType font boilerplate. */
+	    plfont->header = tt_font_datap;
+	    plfont->header_size = size;
+	    plfont->scaling_technology = plfst_TrueType;
+	    plfont->font_type = plft_Unicode;
+	    plfont->large_sizes = true;
+	    plfont->offsets.GT = 0;
+	    pl_fill_in_tt_font(pfont, tt_font_datap, unique_id);
+	    code = gs_definefont(pdir, (gs_font *)pfont);
+	    if ( code >= 0 ) { 
+		/*
+		 * Set the nominal design width to the
+		 * width of a small 'x' character.  If
+		 * there isn't one, set the design
+		 * width arbitrarily at 0.6 em.  */
+		gs_char space = ' ';
+		uint glyph_index =
+		    (*pfont->procs.encode_char)
+		    ((gs_font *)pfont, space, gs_no_glyph);
+		float sbw[4];
 
-		      if ( gs_type42_get_metrics(pfont, 
-				glyph_index == 0xffff ? 0 : glyph_index, sbw) < 0 )
-			sbw[2] = 0.6;
-		      pl_fp_set_pitch_cp(&plfont->params, sbw[2] * 100);
-		    }
-		}
+		if ( gs_type42_get_metrics(pfont, 
+					   glyph_index == 0xffff ? 0 : glyph_index, sbw) < 0 )
+		    sbw[2] = 0.6;
+		pl_fp_set_pitch_cp(&plfont->params, sbw[2] * 100);
 	    }
-	  if ( code < 0 )
-	    { gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
-	      gs_free_object(mem, pfont, "pl_tt_load_font(gs_font_type42)");
-	      gs_free_object(mem, data, "pl_tt_load_font data");
-	      return code;
-	    }
-	  *pplfont = plfont;
 	}
-	return 0;
+    }
+    if ( code < 0 ) { 
+	gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
+	gs_free_object(mem, pfont, "pl_tt_load_font(gs_font_type42)");
+	pl_free_tt_fontfile_buffer(mem, tt_font_datap);
+	return code;
+    }
+    *pplfont = plfont;
+    return 0;
 }
 
 /* load resident font data to ram */

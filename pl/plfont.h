@@ -35,6 +35,7 @@ typedef enum {
 typedef enum {
   plfst_Intellifont = 0,
   plfst_TrueType = 1,
+  plfst_MicroType = 63,
   plfst_bitmap = 254
 } pl_font_scaling_technology_t;
 #define pl_font_is_scalable(plfont)\
@@ -137,15 +138,15 @@ typedef struct gs_matrix_s gs_matrix;
 typedef struct pl_font_s pl_font_t;
 #endif
 struct pl_font_s {
-  gs_font *pfont;	    /* Type 42 if TrueType, Type 3 if bitmap. */
-  int storage;		    /* where the font is stored */
-  bool data_are_permanent;  /* glyph data stored in rom */
-  char *font_file;       /* non null only if data is stored in a
-			    file only relevant to pcl resident
-			    fonts. NB this should be done
-			    dynamically */
-  bool font_file_loaded;    /* contents of the font file have be read into memory */
-  byte *header;	            /* downloaded header, or built-in font data */
+  gs_font *pfont;	      /* Type 42 if TrueType, Type 3 if bitmap. */
+  int storage;                /* where the font is stored */
+  bool data_are_permanent;    /* glyph data stored in rom */
+  char *font_file;            /* non null only if data is stored in a
+				 file only relevant to pcl resident
+				 fonts. NB this should be done
+				 dynamically */
+  bool font_file_loaded;      /* contents of the font file have be read into memory */
+  byte *header;	              /* downloaded header, or built-in font data */
   ulong header_size;
 	/* Information extracted from the font or supplied by the client. */
   pl_font_scaling_technology_t scaling_technology;
@@ -169,6 +170,8 @@ struct pl_font_s {
   pl_glyph_table_t glyphs;
 	/* Character to glyph map for downloaded TrueType fonts. */
   pl_tt_char_glyph_table_t char_glyphs;
+
+  float pts_per_inch;   /* either 72 or 72.307 (for Intellifont) */
 };
 #define private_st_pl_font()	/* in plfont.c */\
   gs_private_st_ptrs4(st_pl_font, pl_font_t, "pl_font_t",\
@@ -252,11 +255,13 @@ int pl_font_scan_segments(P6(pl_font_t *plfont, int fst_offset,
 			     const pl_font_offset_errors_t *pfoe));
 
 /* Load a built-in (TrueType) font from external storage. */
-/* Attempt to define this only if we have stdio included. */
-#ifdef EOF
 int pl_load_tt_font(P5(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 		       long unique_id, pl_font_t **pplfont));
-#endif
+
+/* allocate, read in and free tt font files to and from memory */
+int pl_alloc_tt_fontfile_buffer(P4(FILE *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size));
+int pl_free_tt_fontfile_buffer(P2(gs_memory_t *mem, byte *ptt_font_data));
+
 
 /* Add a glyph to a font.  Return -1 if the table is full. */
 int pl_font_add_glyph(P3(pl_font_t *plfont, gs_glyph glyph, byte *data));
