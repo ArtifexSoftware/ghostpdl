@@ -1274,6 +1274,21 @@ $(PSOBJ)zfarc4.$(OBJ) : $(PSSRC)zfarc4.c $(OP) $(memory__h)\
  $(sarc4_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfarc4.$(OBJ) $(C_) $(PSSRC)zfarc4.c
 
+# JBIG2 compression filter
+# this can be turned on and off with a FEATURE_DEV
+
+fjbig2_=$(PSOBJ)zfjbig2.$(OBJ)
+$(PSD)jbig2.dev : $(INT_MAK) $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev
+	$(SETMOD) $(PSD)jbig2 $(fjbig2_)
+	$(ADDMOD) $(PSD)jbig2 -include $(GLD)sjbig2
+	$(ADDMOD) $(PSD)jbig2 -oper zfjbig2
+
+$(PSOBJ)zfjbig2.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
+ $(sarc4_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfjbig2.$(OBJ) $(C_) $(PSSRC)zfjbig2.c
+
+
 # ---------------- Binary tokens ---------------- #
 
 nobtoken_=$(PSOBJ)inobtokn.$(OBJ)

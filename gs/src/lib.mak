@@ -468,6 +468,7 @@ sjpeg_h=$(GLSRC)sjpeg.h
 slzwx_h=$(GLSRC)slzwx.h
 smd5_h=$(GLSRC)smd5.h $(md5_h)
 sarc4_h=$(GLSRC)sarc4.h $(scommon_h)
+sjbig2_h=$(GLSRC)sjbig2.h
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
@@ -1334,6 +1335,17 @@ $(GLD)sarc4.dev : $(LIB_MAK) $(ECHOGS_XE) $(sarc4_)
 $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
  $(gserror_h) $(gserrors_h) $(sarc4_h) $(strimpl_h)
 	$(GLCC) $(GLO_)sarc4.$(OBJ) $(C_) $(GLSRC)sarc4.c
+
+# ---------------- JBIG2 compression filter ---------------- #
+
+sjbig2_=$(GLOBJ)sjbig2.$(OBJ)
+$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(sjbig2_)
+	$(SETMOD) $(GLD)sjbig2 $(sjbig2_)
+	$(ADDMOD) $(GLD)sjbig2 -lib jbig2dec
+
+$(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) $(memory__h)\
+ $(gserror_h) $(gserrors_h) $(sarc4_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.

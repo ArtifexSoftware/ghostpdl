@@ -203,6 +203,18 @@ fi
 AC_SUBST(IJSDIR)
 AC_SUBST(IJSDEVS)
 
+dnl look for jbig2dec
+AC_ARG_WITH(jbig2dec, AC_HELP_STRING([---with-jbig2dec],[include JBIG2 decode support]))
+JBIG2DEVS=''
+if test x$with_jbig2dec != xno; then
+    AC_CHECK_LIB([jbig2dec], [jbig2_page_out], [
+	JBIG2DEVS='$(PSD)jbig2.dev'
+    ], [
+	AC_MSG_WARN([disabling support for JBIG2 files])
+    ])
+fi
+AC_SUBST(JBIG2DEVS)
+
 dnl optional X11 for display devices
 AC_PATH_XTRA
 if test x"$no_x" = x"yes"; then
