@@ -51,11 +51,10 @@
 /*
  * Define which fill algorithm(s) to use.  At least one of the following
  * two #defines must be included (not commented out).
+ * The dropout prevention code requires FILL_TRAPEZOIDS defined.
  */
 
-#if !PSEUDO_RASTERIZATION
-#   define FILL_SCAN_LINES
-#endif
+#define FILL_SCAN_LINES
 #define FILL_TRAPEZOIDS
 /*
  * Define whether to sample curves when using the scan line algorithm
@@ -577,7 +576,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 #ifdef FILL_SCAN_LINES
 #  ifdef FILL_TRAPEZOIDS
     fill_by_trapezoids =
-	(!gx_path_has_curves(ppath) || params->flatness >= 1.0);
+	(pseudo_rasterization || !gx_path_has_curves(ppath) || params->flatness >= 1.0);
 #  else
     fill_by_trapezoids = false;
 #  endif
@@ -2072,7 +2071,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		{   int yi = fixed2int_pixround(y - adjust_below);
 		    int wi = fixed2int_pixround(y1 + adjust_above) - yi;
 
-		    if (PSEUDO_RASTERIZATION && xli == xi) {
+		    if (PSEUDO_RASTERIZATION && pseudo_rasterization && xli == xi) {
 			/*
 			 * The scan is empty but we should paint something 
 			 * against a dropout. Choose one of two pixels which 
