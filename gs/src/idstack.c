@@ -172,7 +172,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	uint size = ref_stack_count(&pds->stack);
 	ref *pvalue;	
 	
-	dict *pdict = pdref->value.pdict;
+	dict *pdict = pds->stack.p->value.pdict;
 	const gs_memory_t *mem = dict_mem(pdict);
 
 	name_index_ref(mem, nidx, &key);
