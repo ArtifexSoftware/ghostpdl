@@ -368,12 +368,12 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
   systemdict exch /.nativefontmapbuilt exch .forceput 
 } .bind executeonly def
 false .setnativefontmapbuilt
-/.buildnativefontmap {
+/.buildnativefontmap {   % - .buildnativefontmap <bool>
   QUIET not {
     (Querying operating system for font files...\n)
     print flush
   } if
-  .getnativefonts
+  .getnativefonts dup
   {
     {
       % stack: [ (name) (path) ]
@@ -865,12 +865,10 @@ $error /SubstituteFont { } put
     } {
                         % No more directories to scan. Try building the native
                         % font map entries if we haven't already done so.
-      systemdict /.nativefontmapbuilt get not {
-        .buildnativefontmap   
-        .dofindfont     % start over
+      systemdict /.nativefontmapbuilt get not { .buildnativefontmap } { false } ifelse {
                         % Same stack as at the beginning of .dofindfont.
+        .dofindfont     % start over
       } {
-      
                         % No luck.  Make sure we're not already
                         % looking for the default font.
         QUIET not {
