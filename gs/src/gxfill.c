@@ -1277,6 +1277,8 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     }
     /* Insert after m0 */
     m1 = alloc_margin(ll);
+    if (m1 == 0)
+	return_error(gs_error_VMerror);
     if (m0 != 0) {
 	m1->next = m0->next;
 	m1->prev = m0;
