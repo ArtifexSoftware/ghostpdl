@@ -115,6 +115,7 @@ currentdict end def
 /GraphicStateStackPointer 0 def
 /PDFColorSpaces 50 dict def
 /FuncDataReader 10 dict def
+/InstalledFonts 50 dict def
 
 % Debug data :
 /StreamDumperBuffer //PDFR_DEBUG { 1024 } { 1 } ifelse string def
@@ -148,7 +149,11 @@ currentdict end readonly def
   /DeviceCMYK true def 
 currentdict end readonly def
 
+/definefont_hook 1 dict def
+
 /1_24_bitshift_1_sub 1 24 bitshift 1 sub def
+
+/ReadFontProcs 10 dict def % Will be filled below.
 
 % ===================== Reading PDF objects ===============================
 
@@ -167,6 +172,9 @@ currentdict end readonly def
   3 copy pop get					% d r id obj e
   dup xcheck {						% d r id obj e
     5 4 roll pop					% r id obj e
+    //PDFR_DEBUG {
+      (Have a daemon for ) print 2 index =
+    } if
     % We've got a definition daemon, execute it :
     exec
   } {							% d r id obj e
@@ -180,6 +188,18 @@ currentdict end readonly def
     exec
   } ifelse						% r id obj
   put							%
+} bind def
+
+/IsRegistered % <id> GetRegistered <bool>
+{
+  //PDFReader /ObjectRegistry get			% id r
+  dup length						% id r l
+  2 index le {						% id r
+    pop pop false
+  } {
+    exch get						% id e
+    null ne
+  } ifelse
 } bind def
 
 /GetRegistered % <id> GetRegistered <obj>
@@ -198,7 +218,6 @@ currentdict end readonly def
     } if
     exch pop						% e
   } ifelse
-
 } bind def
 
 /PrintReference % <array> PrintReference <array>
@@ -389,7 +408,9 @@ currentdict end readonly def
     (ExecuteStream end.) =
   } if
   //PDFReader /CurrentObject null put
-  showpage
+  dup /IsPage known {
+    showpage
+  } if
 } bind def
 
 /stream  % <id> <obj> stream <id> <obj>
@@ -412,14 +433,32 @@ currentdict end readonly def
     pop
   } ifelse						% id obj
   dup /ImmediateExec known {
-    //ExecuteStream exec
+    dup /GlobalExec //knownget exec {
+      currentglobal 4 1 roll
+      setglobal
+      //ExecuteStream exec
+      3 2 roll setglobal
+    } {
+      //ExecuteStream exec
+    } ifelse
   } {
     //StoreStream exec
   } ifelse
 } bind def
 
 /endstream % <id> <obj> endstream <id> <obj>
-{ % Nothing to do.
+{ //definefont_hook /FontDescriptor //knownget exec {	% id obj fd
+    //PDFR_DEBUG {
+      (Loaded the font ) print dup /FontName get =
+    } if
+    dup /FontName get					% id obj fd fn
+    //PDFReader /RemoveFontNamePrefix get exec 
+    currentglobal true setglobal exch			% id obj fd g fn
+    findfont						% id obj fd g f
+    exch setglobal					% id obj fd f
+    /Font exch put					% id obj
+    //definefont_hook /FontDescriptor undef
+  } if
 } bind def
 
 /xref % - xref -
@@ -455,6 +494,36 @@ currentdict end readonly def
   } if							% id obj node
   1 index exch /Context exch put			% id obj
   dup /ImmediateExec true put
+  dup /IsPage true put
+} bind def
+
+/FontFileDaemon % <id> <obj> <font_descriptor> FontFileDaemon <id> <obj>
+{ % Note: an excessive operand from a prebond procedure.
+  //PDFR_DEBUG {
+    (Executing FontFileDaemon for ) print 2 index =
+  } if							% id obj fd
+  % We need any font resource that refers this descriptor
+  % to know the font type. Assuming that FontDescriptorDaemon
+  % provided FontFileType.
+  dup /FontFileType get					% id obj fd ft
+  2 index exch						% id obj fd obj ft
+  dup //ReadFontProcs exch //knownget exec {		% id obj fd obj ft proc
+     exch pop exec					% id obj fd
+  } {
+    mark (FontFile reader for ) 2 index ( isn't implemented yet.) //error exec
+  } ifelse
+  //PDFR_DEBUG {
+    (FontFileDaemon end) =
+  } if							% id obj fd
+  pop
+} bind def
+
+/FontDescriptorDaemon % <id> <obj> <font_resource> FontDescriptorDaemon <id> <obj>
+{ % Note: an excessive operand from a prebond procedure.
+  //PDFR_DEBUG {
+    (Executing FontDescriptorDaemon for ) print 2 index =
+  } if							% id obj fr
+  /Subtype get 1 index exch /FontFileType exch put
 } bind def
 
 /TypeDaemons <<  % <id> <obj> proc <id> <obj>
@@ -462,7 +531,7 @@ currentdict end readonly def
   { //PDFR_DEBUG {
       (Recognized a page.)=
     } if
-    dup /Contents //knownget exec {
+    dup /Contents //knownget exec {			% id obj c
     0 get //DoNothing exch				% id obj dn id1
     [ % <id> <obj> proc <id> <obj>
       3 index //PageContentsDaemon /exec load
@@ -471,6 +540,41 @@ currentdict end readonly def
     } {
       (fixme: page with no Contents won't be printed.) =
     } ifelse
+  } bind
+  /FontDescriptor
+  { //PDFR_DEBUG {
+      (Recognized a font descriptor.)=
+    } if
+    dup /FontFile //knownget exec {			% id obj ff
+      0 get //DoNothing exch				% id obj dn id1
+      [ % <id> <obj> proc <id> <obj>
+        3 index //FontFileDaemon /exec load
+      ] cvx						% id obj {}
+      //Register exec					% id obj
+    } {
+      % FontFile2, FontFile3 are not implemented yet.
+      (Font descriptor ) print 1 index =only ( has no FontFile.) =
+    } ifelse
+  } bind
+  /Font
+  { //PDFR_DEBUG {
+      (Recognized a font resource.)=
+    } if
+    dup /FontDescriptor //knownget exec {		% id obj fd
+      0 get 						% id obj id1
+      dup //IsRegistered exec {				% id obj id1
+	//PDFR_DEBUG {
+          (already registered ) print dup =
+	} if
+        pop
+      } {
+        //DoNothing exch				% id obj dn id1
+        [ % <id> <obj> proc <id> <obj>
+          3 index //FontDescriptorDaemon /exec load
+        ] cvx						% id obj {}
+       //Register exec					% id obj
+      } ifelse
+    } if
   } bind
 >> def
 
@@ -522,7 +626,7 @@ currentdict end readonly def
   exch //AppendFilters exec
 } bind def
 
-/RunDelayedStream % <stream_obj> RunStream -
+/RunDelayedStream % <stream_obj> RunDelayedStream -
 {
   //MakeStreamReader exec					% file
   mark exch
@@ -535,7 +639,16 @@ currentdict end readonly def
 
 % ===================== Font Management ======================
 
-/InstalledFonts 50 dict def
+//ReadFontProcs begin
+  /Type1   % <font_descriptor> <FontFile_object> Type1 <font_descriptor>
+  { //PDFR_DEBUG {
+      (ReadFontProcs.Type1) =
+    } if
+    //definefont_hook /FontDescriptor 3 index  put
+    dup /ImmediateExec true put
+    /GlobalExec true put
+  } bind def
+end
 
 /GetInstalledFont % <name> GetInstalledFont <font>
 { currentglobal exch true setglobal				% g n
@@ -695,7 +808,7 @@ currentdict end readonly def
   end % font
 } bind def
 
-/ResolveAndSetFont  % <resource_name> <size> ResolveAndSetFont -
+/ResolveAndSetFontAux  % <resource_name> <size> ResolveAndSetFont -
 { exch dup						% s rn rn
   //PDFReader /CurrentObject get /Context get /Resources get 
   /Font //DoNothing //ResolveD exec
@@ -703,46 +816,84 @@ currentdict end readonly def
   dup /Font //knownget exec {				% s rn fr f
     exch pop exch pop
   } {
-    //ObtainEncoding exec
-    //ObtainMetrics exec
-    dup /Subtype get /Type3 eq {			% s rn fr
-      2 copy exch /FontName exch put
-      dup /CharProcs get //ResolveDict exec
-      dup /FontType 3 put
-      dup /BuildChar //BuildChar put
-      dup dup /Font exch put
-      % Ignore Metrics because pdfwrite duplicates it 
-      % from setcharwidth/setcachedevice.
-      dup 3 1 roll					% s fr rn fr
-      definefont					% s fr f
-      2 copy ne { 
-	% The interpreter copied the font dictionary while 'definefont'
-	% Need to update the font pointer in the resource.
-	2 copy /Font exch put				% s fr f
+    {
+      dup /Subtype get dup /Type1 eq exch /TrueType eq or {
+							% s rn fr
+	//ObtainEncoding exec
+	//ObtainMetrics exec
+        (Underimplemented SetFont)=
+        exch pop					% s fr
+        dup /BaseFont get 				% s fr n
+        //RemoveFontNamePrefix exec			% s fr n
+        //PDFR_DEBUG {
+	  (Font ) print dup =
+        } if						% s fr n
+	1 index /FontDescriptor known {			% s fr n
+          //PDFR_DEBUG {
+	    (Font from a font descriptor.) =
+          } if
+	  1 index					% s fr n fr
+	  /FontDescriptor //DoNothing //ResolveD exec	% s fr n fd
+	  /Font //knownget exec {
+	    exch pop					% s fr fd
+	  } {
+            //PDFR_DEBUG {
+	      (Font descriptor has no Font resolved.) =
+            } if
+	    //GetInstalledFont exec			% s fr f
+	  } ifelse
+	} {
+          //GetInstalledFont exec			% s fr f
+	} ifelse
+	(vvv)= pstack
+        dup length dict copy				% s fr f
+        dup 2 index /Encoding get 			% s fr f f e
+        /Encoding exch put				% s fr f
+        1 index /Metrics //knownget exec {		% s fr f M
+	  1 index exch /Metrics exch put		% s fr f
+        } if
+        1 index /BaseFont get				% s fr f n
+        exch definefont					% s fr f
+        dup 3 1 roll					% s f fr f
+        /Font exch put					% s f
+	exit
       } if
-      exch pop						% s f
-    } { 						% s rn fr
-      (Underimplemented SetFont)=
-      exch pop						% s fr
-      dup /BaseFont get 				% s fr n
-      //RemoveFontNamePrefix exec			% s fr n
-      //PDFR_DEBUG {
-	(Font ) print dup =
-      } if						% s fr n
-      //GetInstalledFont exec				% s fr f
-      dup length dict copy				% s fr f
-      dup 2 index /Encoding get 			% s fr f f e
-      /Encoding exch put				% s fr f
-      1 index /Metrics //knownget exec {		% s fr f M
-	1 index exch /Metrics exch put			% s fr f
+      dup /Subtype get /Type3 eq {			% s rn fr
+	//ObtainEncoding exec
+	//ObtainMetrics exec
+        2 copy exch /FontName exch put
+        dup /CharProcs get //ResolveDict exec
+        dup /FontType 3 put
+        dup /BuildChar //BuildChar put
+        dup dup /Font exch put
+        % Ignore Metrics because pdfwrite duplicates it 
+        % from setcharwidth/setcachedevice.
+        dup 3 1 roll					% s fr rn fr
+        definefont					% s fr f
+        2 copy ne { 
+	  % The interpreter copied the font dictionary while 'definefont'
+	  % Need to update the font pointer in the resource.
+	  2 copy /Font exch put				% s fr f
+        } if
+        exch pop					% s f
+	exit
       } if
-      1 index /BaseFont get				% s fr f n
-      exch definefont					% s fr f
-      dup 3 1 roll					% s f fr f
-      /Font exch put					% s f
-    } ifelse
-  } ifelse
-  exch scalefont setfont
+      dup /Subtype get /Type0 eq {			% s rn fr
+      } if
+      dup /Subtype get /CIDFontType0 eq {		% s rn fr
+      } if
+      dup /Subtype get /CIDFontType2 eq {		% s rn fr
+      } if
+      mark (Unknown font type ) 2 index /Subtype get //error exec
+    } loop
+  } ifelse						% s f
+  exch scalefont setfont				%
+} bind def
+
+/ResolveAndSetFont  % <resource_name> <size> ResolveAndSetFont -
+{ currentglobal true setglobal 3 1 roll
+  //ResolveAndSetFontAux exec
+  setglobal
 } bind def
 
 % ===================== Functions ============================
@@ -1511,7 +1662,9 @@ currentdict end readonly def
   gsave
   //PDFReader /GraphicStateStackPointer get
   dup //GraphicStateStack exch get null eq {
+    currentglobal true setglobal exch
     dup //GraphicStateStack exch //InitialGraphicState length dict put 
+    exch setglobal
   } if
   dup //GraphicStateStack exch get
   //GraphicState exch copy pop
