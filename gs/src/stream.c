@@ -776,11 +776,12 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 
     for (;;) {
 	stream *strm;
+	stream_cursor_write *pw;
+	byte *oldpos;
 
 	for (;;) {		/* Descend into the recursion. */
 	    stream_cursor_read cr;
 	    stream_cursor_read *pr;
-	    stream_cursor_write *pw;
 	    int left;
 	    bool eof;
 
@@ -801,6 +802,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    if_debug4('s', "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), eof);
+	    oldpos = pw->ptr;
 	    status = (*curr->procs.process) (curr->state, pr, pw, eof);
 	    pr->limit += left;
 	    if_debug4('s', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d\n",
@@ -808,9 +810,11 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 		      (uint) (pw->limit - pw->ptr), status);
 	    if (strm == 0 || status != 0)
 		break;
-	    status = strm->end_status;
-	    if (status < 0)
+	    if (strm->end_status < 0) {
+		if (strm->end_status != EOFC || pw->ptr == oldpos)
+		    status = strm->end_status;
 		break;
+	    }
 	    MOVE_AHEAD(curr, prev);
 	    stream_compact(curr, false);
 	}
