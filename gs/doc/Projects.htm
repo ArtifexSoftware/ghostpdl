@@ -34,6 +34,10 @@ Ghostscript projects seeking developers
 <li><a href="#Graphics_performance">Performance</a>
 </ul>
 <li><a href="#Other_topics">Other topics</a>
+<ul>
+<li><a href="#Other_functionality">Functionality</a>
+<li><a href="#Other_implementation">Implementation</a>
+</ul>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -440,6 +444,8 @@ simply have a vacuous implementation.
 
 <h1><a name="Other_topics"></a>Other topics</h1>
 
+<h2><a name="Other_functionality"></a>Functionality</h2>
+
 <h3>OpenStep (Display PostScript + NeXT) extensions to Ghostscript.</h3>
 
 <p>
@@ -457,6 +463,47 @@ server" to encapsulate the execution of PostScript files.
 <I>See the section on "Job Execution Environment" in the PostScript
 Language Reference Manual for details.</I>
 
+<h3>SVG (XML Structured Vector Graphics) interpreter.</h3>
+
+<p>
+Ghostscript could be adapted with some work to read SVG.  This would be an
+interesting and challenging project because SVG's graphics model would
+require extending the library (see above).  <I>If SVG turns out to be an
+important standard, it is important that there be a good free implementation
+of it.</I>
+
+<h3><b><tt>%font%</tt></b> and other IODevices.</h3>
+
+<p>
+Currently, the <b><tt>%font%</tt></b> IODevice is not implemented.  We would
+like to see this implemented using a general framework for implementing
+IODevices (%xxxx%) entirely in PostScript, in an "object oriented" manner
+very similiar to the way Resource categories are implemented.  An IODevice
+would be implemented as a dictionary with the following keys, whose values
+would be procedures that implemented the corresponding operation:
+
+<blockquote><pre>
+/File
+/DeleteFile
+/RenameFile
+/Status
+/FileNameForAll
+/GetDevParams
+/PutDevParams
+</pre></blockquote>
+
+<p>
+There would only be global IODevices, no local ones; the dictionary keeping
+track of them would be stored in global VM.
+
+<p>
+<I>This is an obscure feature that matters only because some PostScript code
+uses <b><tt>filenameforall</tt></b> with this IODevice, rather than
+<b><tt>filenameforall</tt></b> with the <b><tt>/Font</tt></b> Resource
+category, to enumerate available fonts.</I>
+
+<h2><a name="Other_implementation"></a>Implementation</h2>
+
 <h3>Fully re-entrant code.</h3>
 
 <p>
@@ -469,15 +516,6 @@ Ghostscript interpreter instance by multiple threads: that is probably
 permanently out of the question.  <I>Almost all drivers, including all of
 Aladdin's own drivers, are already fully re-entrant; making the remaining
 ones re-entrant should really be up to the driver author.</I>
-
-<h3>SVG (XML Structured Vector Graphics) interpreter.</h3>
-
-<p>
-Ghostscript could be adapted with some work to read SVG.  This would be an
-interesting and challenging project because SVG's graphics model would
-require extending the library (see above).  <I>If SVG turns out to be an
-important standard, it is important that there be a good free implementation
-of it.</I>
 
 <!-- [2.0 end contents] ==================================================== -->
 
