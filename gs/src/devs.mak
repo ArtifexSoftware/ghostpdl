@@ -863,7 +863,7 @@ $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
 
 #### Select old vs. new text code
 # Define which pdfwrite text code to link in, pdftext (old) or pdxtext (new).
-PDTEXT=pdftext
+PDTEXT=pdxtext
 
 # In order to prevent code from decaying, we would like the makefile to
 # compile both old and new code, but only link in the one we are using.
