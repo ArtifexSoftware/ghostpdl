@@ -44,7 +44,6 @@ libjbig2_OBJS1=\
         $(JBIG2OBJ)jbig2_arith_iaid.$(OBJ) \
         $(JBIG2OBJ)jbig2_arith_int.$(OBJ) \
         $(JBIG2OBJ)jbig2_generic.$(OBJ) \
-        $(JBIG2OBJ)jbig2_refinement.$(OBJ) \
         $(JBIG2OBJ)jbig2_huffman.$(OBJ) \
         $(JBIG2OBJ)jbig2_image.$(OBJ) \
         $(JBIG2OBJ)jbig2_mmr.$(OBJ)
@@ -129,9 +128,6 @@ $(JBIG2OBJ)jbig2_arith_int.$(OBJ) : $(JBIG2SRC)jbig2_arith_int.c $(libjbig2_HDRS
 
 $(JBIG2OBJ)jbig2_generic.$(OBJ) : $(JBIG2SRC)jbig2_generic.c $(libjbig2_HDRS) $(JBIG2DEP)
 	$(JBIG2_CC) $(JBIG2O_)jbig2_generic.$(OBJ) $(C_) $(JBIG2SRC)jbig2_generic.c
-
-$(JBIG2OBJ)jbig2_refinement.$(OBJ) : $(JBIG2SRC)jbig2_refinement.c $(libjbig2_HDRS) $(JBIG2DEP)
-	$(JBIG2_CC) $(JBIG2O_)jbig2_refinement.$(OBJ) $(C_) $(JBIG2SRC)jbig2_refinement.c
 
 $(JBIG2OBJ)jbig2_huffman.$(OBJ) : $(JBIG2SRC)jbig2_huffman.c $(libjbig2_HDRS) $(JBIG2DEP)
 	$(JBIG2_CC) $(JBIG2O_)jbig2_huffman.$(OBJ) $(C_) $(JBIG2SRC)jbig2_huffman.c
