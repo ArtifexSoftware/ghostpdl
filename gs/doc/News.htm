@@ -95,6 +95,12 @@ the given paper size.
 (Interpreter)
 	- user_names_p and system_names_p may now be NULL: clients must
 check this.
+	- scan_comment_proc and scan_dsc_proc are now deprecated, and will
+disappear in the near future.
+	- The values in psuserparams are now checking procedures rather
+than parameter values.
+	- Comments beginning with %! are treated as "DSC comments", like
+comments beginning with %%.
 (Library)
 	- The macro for declaring the fill_rectangle procedure of a shading
 is now upper-case.  The fill_rectangle procedure is now a member of a procs

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -73,13 +73,10 @@ typedef struct scan_binary_state_s {
 /* Define the scanner state. */
 struct scanner_state_s {
     uint s_pstack;		/* stack depth when starting current */
-    /* procedure, after pushing old pstack */
+				/* procedure, after pushing old pstack */
     uint s_pdepth;		/* pstack for very first { encountered, */
-    /* for error recovery */
-    bool s_from_string;		/* true if string is source of data */
-    /* (for Level 1 `\' handling) */
-    bool s_check_only;		/* true if just checking for syntax errors */
-    /* and complete statements (no value) */
+				/* for error recovery */
+    int s_options;
     enum {
 	scanning_none,
 	scanning_binary,
@@ -107,21 +104,32 @@ extern_st(st_scanner_state);
 #define public_st_scanner_state()	/* in iscan.c */\
   gs_public_st_complex_only(st_scanner_state, scanner_state, "scanner state",\
     scanner_clear_marks, scanner_enum_ptrs, scanner_reloc_ptrs, 0)
+
+/* Initialize a scanner with a given set of options. */
+#define SCAN_FROM_STRING 1	/* true if string is source of data */
+				/* (for Level 1 `\' handling) */
+#define SCAN_CHECK_ONLY 2	/* true if just checking for syntax errors */
+				/* and complete statements (no value) */
+#define SCAN_PROCESS_COMMENTS 4  /* return scan_Comment for comments */
+				/* (all comments or only non-DSC) */
+#define SCAN_PROCESS_DSC_COMMENTS 8  /* return scan_DSC_Comment */
+void scanner_state_init_options(P2(scanner_state *sstate, int options));
 #define scanner_state_init_check(pstate, from_string, check_only)\
-  ((pstate)->s_scan_type = scanning_none,\
-   (pstate)->s_pstack = 0,\
-   (pstate)->s_from_string = from_string,\
-   (pstate)->s_check_only = check_only)
+  scanner_state_init_options(pstate,\
+			     (from_string ? SCAN_FROM_STRING : 0) |\
+			     (check_only ? SCAN_CHECK_ONLY : 0))
 #define scanner_state_init(pstate, from_string)\
   scanner_state_init_check(pstate, from_string, false)
 
 /*
  * Read a token from a stream.  As usual, 0 is a normal return,
- * <0 is an error.  There are also three special return codes:
+ * <0 is an error.  There are also some special return codes:
  */
 #define scan_BOS 1		/* binary object sequence */
 #define scan_EOF 2		/* end of stream */
 #define scan_Refill 3		/* get more input data, then call again */
+#define scan_Comment 4		/* comment, non-DSC if processing DSC */
+#define scan_DSC_Comment 5	/* DSC comment */
 int scan_token(P4(i_ctx_t *i_ctx_p, stream * s, ref * pref,
 		  scanner_state * pstate));
 
@@ -129,7 +137,10 @@ int scan_token(P4(i_ctx_t *i_ctx_p, stream * s, ref * pref,
  * Read a token from a string.  Return like scan_token, but also
  * update the string to move past the token (if no error).
  */
-int scan_string_token(P3(i_ctx_t *i_ctx_p, ref * pstr, ref * pref));
+int scan_string_token_options(P4(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
+				 int options));
+#define scan_string_token(i_ctx_p, pstr, pref)\
+  scan_string_token_options(i_ctx_p, pstr, pref, 0)
 
 /*
  * Handle a scan_Refill return from scan_token.

@@ -55,6 +55,9 @@
  */
 #define PACKED_SPECIAL_OPS 1
 
+/**************** HACK ****************/
+#define INTERP_SCAN_OPTIONS SCAN_PROCESS_DSC_COMMENTS
+
 /*
  * Pseudo-operators (procedures of type t_oparray) record
  * the operand and dictionary stack pointers, and restore them if an error
@@ -73,6 +76,10 @@ public_st_op_stack();
 
 /* Other imported procedures */
 extern int ztokenexec_continue(P1(i_ctx_t *));
+extern int ztoken_handle_comment(P8(i_ctx_t *i_ctx_p, const ref *fop,
+				    scanner_state *sstate, const ref *ptoken,
+				    int scan_code, bool save, bool push_file,
+				    op_proc_t cont));
 
 /* 
  * The procedure to call if an operator requests rescheduling.
@@ -1272,7 +1279,7 @@ remap:		    if (iesp + 2 >= estop) {
 	      rt:if (iosp >= ostop)	/* check early */
 		    return_with_stackoverflow_iref();
 		osp = iosp;	/* scan_token uses ostack */
-		scanner_state_init(&sstate, false);
+		scanner_state_init_options(&sstate, INTERP_SCAN_OPTIONS);
 	      again:code = scan_token(i_ctx_p, s, &token, &sstate);
 		iosp = osp;	/* ditto */
 		switch (code) {
@@ -1330,6 +1337,7 @@ remap:		    if (iesp + 2 >= estop) {
 			code = scan_handle_refill(i_ctx_p, &token, &sstate,
 						  true, true,
 						  ztokenexec_continue);
+		scan_cont:
 			iosp = osp;
 			iesp = esp;
 			switch (code) {
@@ -1344,6 +1352,26 @@ remap:		    if (iesp + 2 >= estop) {
 			}
 			/* must be an error */
 			iesp--;	/* don't push the file */
+			return_with_code_iref();
+		    case scan_Comment:
+		    case scan_DSC_Comment: {
+			/* See scan_Refill above for comments. */
+			ref file_token;
+
+			store_state(iesp);
+			ref_assign_inline(&file_token, IREF);
+			if (iesp >= estop)
+			    return_with_error_iref(e_execstackoverflow);
+			++iesp;
+			ref_assign_inline(iesp, &file_token);
+			esp = iesp;
+			osp = iosp;
+			code = ztoken_handle_comment(i_ctx_p, &file_token,
+						     &sstate, &token,
+						     code, true, true,
+						     ztokenexec_continue);
+		    }
+			goto scan_cont;
 		    default:	/* error */
 			return_with_code_iref();
 		}
@@ -1353,7 +1381,7 @@ remap:		    if (iesp + 2 >= estop) {
 		stream ss;
 		scanner_state sstate;
 
-		scanner_state_init(&sstate, true);
+		scanner_state_init_options(&sstate, SCAN_FROM_STRING);
 		sread_string(&ss, IREF->value.bytes, r_size(IREF));
 		osp = iosp;	/* scan_token uses ostack */
 		code = scan_token(i_ctx_p, &ss, &token, &sstate);

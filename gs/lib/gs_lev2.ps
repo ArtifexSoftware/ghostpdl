@@ -37,9 +37,9 @@ level2dict begin
 % a read-only local dictionary named userparams, defined in systemdict.
 % In a multi-context system, each context has its own copy of this
 % dictionary.  In addition, there is a constant dictionary named
-% psuserparams whose keys are the names of user parameters that exist
-% only in PostScript and whose values are (currently) arbitrary values
-% of the correct datatype: setuserparams uses this for type checking.
+% psuserparams where each key is the name of a user parameter that exists
+% only in PostScript and the value is a procedure to check that the value
+% is legal: setuserparams uses this for checking the values.
 % setuserparams updates userparams explicitly, in addition to setting
 % any user parameters in the interpreter; thus we can use userparams
 % to reset those parameters after a restore or a context switch.
@@ -47,23 +47,25 @@ level2dict begin
 % the interpreter creates the userparams dictionary.
 
 % Check parameters that are managed at the PostScript level.
-% Currently we allow resetting them iff the new value is of the same type.
+/.checkparamtype {		% <newvalue> <type> .checkparamtype <bool>
+  exch type eq
+} .bind def
 /.checksetparams {		% <newdict> <opname> <checkdict>
 				%   .checksetparams <newdict>
   2 index {
 		% Stack: newdict opname checkdict key newvalue
-    3 copy pop .knownget
-       { type 1 index type ne
-	  { pop pop pop load /typecheck signalerror }
-	 if
-	 dup type /stringtype eq
-	  { dup rcheck not
-	     { pop pop pop load /invalidaccess signalerror }
-	    if
-	  }
-	 if
-       }
-    if pop pop
+    3 copy 3 1 roll .knownget {
+      exec not {
+	pop pop pop load /typecheck signalerror
+      } if
+      dup type /stringtype eq {
+	dup rcheck not {
+	  pop pop pop load /invalidaccess signalerror
+	} if
+      } if
+    } {
+      pop
+    } ifelse pop pop
   } forall pop pop
 } .bind def	% not odef, shouldn't reset stacks
 
@@ -93,7 +95,8 @@ counttomark 2 idiv {
   userparams 3 1 roll put
 } repeat pop
 /.definepsuserparam {		% <name> <value> .definepsuserparam -
-  psuserparams 3 copy pop put
+  psuserparams 3 copy pop
+  type cvlit /.checkparamtype cvx 2 packedarray cvx put
   userparams 3 1 roll put
 } .bind def
 end
@@ -202,12 +205,11 @@ end
 % real parameters later: code near the end of gs_init.ps takes care of
 % removing any such parameters from ps{user,system}params.
 
-psuserparams begin
-  /MaxFormItem 100000 def
-  /MaxPatternItem 20000 def
-  /MaxScreenItem 48000 def
-  /MaxUPathItem 5000 def
-end
+% psuserparams
+  /MaxFormItem 100000 .definepsuserparam
+  /MaxPatternItem 20000 .definepsuserparam
+  /MaxScreenItem 48000 .definepsuserparam
+  /MaxUPathItem 5000 .definepsuserparam
 
 pssystemparams begin
   /CurDisplayList 0 .forcedef
@@ -227,6 +229,33 @@ pssystemparams begin
   /MaxSourceList 25000 .forcedef
   /RamSize 4194304 .forcedef
 end
+
+% Define the procedures for handling comment scanning.  The names
+% %ProcessComment and %ProcessDSCComment are known to the interpreter.
+% These procedures take the file and comment string and file as operands.
+/.checkprocesscomment {
+  dup null eq {
+    pop true
+  } {
+    dup xcheck {
+      type dup /arraytype eq exch /packedarraytype eq or
+    } {
+      pop false
+    } ifelse
+  } ifelse
+} .bind def
+/ProcessComment null .definepsuserparam
+psuserparams /ProcessComment {.checkprocesscomment} put
+(%ProcessComment) cvn {
+  /ProcessComment getuserparam
+  dup null eq { pop pop pop } { exec } ifelse
+} bind def
+/ProcessDSCComment null .definepsuserparam
+psuserparams /ProcessDSCComment {.checkprocesscomment} put
+(%ProcessDSCComment) cvn {
+  /ProcessDSCComment getuserparam
+  dup null eq { pop pop pop } { exec } ifelse
+} bind def
 
 % ------ Miscellaneous ------ %
 

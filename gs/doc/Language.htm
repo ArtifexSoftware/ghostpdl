@@ -52,6 +52,7 @@ The relationship between Ghostscript and PostScript
 </ul>
 </ul>
 <li><a href="#Device_parameters">Device parameters</a>
+<li><a href="#User_parameters">User parameters</a>
 <li><a href="#Miscellaneous_additions">Miscellaneous additions</a>
 </ul></blockquote>
 
@@ -1236,6 +1237,28 @@ In addition, Ghostscript supports the following parameter for
 before any other processing is done.  The procedure may not alter the
 dictionary, but it may return a modified copy.  This "hook" is provided for
 use by viewing programs such as GSview.
+</dl>
+
+<hr>
+
+<h1><a name="Device_parameters"></a>Device parameters</h1>
+
+Ghostscript supports the following non-standard user parameters:
+
+<dl>
+<dt><b><tt>ProcessDSCComment &lt;procedure|null&gt;</tt></b>
+<dd>If not null, this procedure is called whenever the scanner detects a DSC
+comment (comment beginning with <b><tt>%%</tt></b> or <b><tt>%!</tt></b>).
+There are two operands, the file and the comment (minus any terminating
+EOL), which the procedure must consume.
+</dl>
+
+<dl>
+<dt><b><tt>ProcessComment &lt;procedure|null&gt;</tt></b>
+<dd>If not null, this procedure is called whenever the scanner detects a
+comment (or, if <b><tt>ProcessDSCComment</tt></b> is also not null, a
+comment other than a DSC comment).  The operands are the same as for
+<b><tt>ProcessDSCComment</tt></b>.
 </dl>
 
 <hr>

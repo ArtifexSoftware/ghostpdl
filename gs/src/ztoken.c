@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,6 +18,7 @@
 
 /*$Id$ */
 /* Token reading operators */
+#include "string_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "estack.h"
@@ -27,6 +28,7 @@
 #include "store.h"
 #include "strimpl.h"		/* for sfilter.h */
 #include "sfilter.h"		/* for iscan.h */
+#include "iname.h"
 #include "iscan.h"
 
 /* <file> token <obj> -true- */
@@ -106,6 +108,8 @@ again:
     op = osp;
     switch (code) {
 	default:		/* error */
+	    if (code > 0)	/* comment, not possible */
+		code = gs_note_error(e_syntaxerror);
 	    push(1);
 	    ref_assign(op, &fref);
 	    break;
@@ -182,7 +186,6 @@ tokenexec_continue(i_ctx_t *i_ctx_p, stream * s, scanner_state * pstate,
 {
     os_ptr op = osp;
     int code;
-
     /* Note that scan_token may change osp! */
     /* Also, we must temporarily remove the file from the o-stack */
     /* when calling scan_token, in case we are scanning a procedure. */
@@ -191,6 +194,7 @@ tokenexec_continue(i_ctx_t *i_ctx_p, stream * s, scanner_state * pstate,
     ref_assign(&fref, op);
     pop(1);
 again:
+    check_estack(1);
     code = scan_token(i_ctx_p, s, (ref *) (esp + 1), pstate);
     op = osp;
     switch (code) {
@@ -230,6 +234,61 @@ again:
 	ifree_object(pstate, "token_continue");
     }
     return code;
+}
+
+/*
+ * Handle a scan_Comment or scan_DSC_Comment return from scan_token
+ * (scan_code) by calling out to %Process[DSC]Comment.  The continuation
+ * procedure expects the file and scanner state on the o-stack.
+ */
+int
+ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
+		      const ref *ptoken, int scan_code,
+		      bool save, bool push_file, op_proc_t cont)
+{
+    const char *proc_name;
+    scanner_state *pstate;
+    os_ptr op;
+    int code;
+
+    switch (scan_code) {
+    case scan_Comment:
+	proc_name = "%ProcessComment";
+	break;
+    case scan_DSC_Comment:
+	proc_name = "%ProcessDSCComment";
+	break;
+    default:
+	return_error(e_Fatal);	/* can't happen */
+    }
+    check_ostack(2);		/* ****** WRONG, RETURNS ON OVERFLOW ****** */
+    check_estack(4);
+    code = name_enter_string(proc_name, esp + 4);
+    if (code < 0)
+	return code;
+    if (save) {
+	pstate = ialloc_struct(scanner_state, &st_scanner_state,
+			       "ztoken_handle_comment");
+	if (pstate == 0)
+	    return_error(e_VMerror);
+	*pstate = *sstate;
+    } else
+	pstate = sstate;
+    /* Push the file and comment string on the o-stack. */
+    op = osp += 2;
+    osp[-1] = *fop;
+    *osp = *ptoken;
+    /*
+     * Push the continuation, scanner state, file, and callout name on the
+     * e-stack.
+     */
+    make_op_estack(esp + 1, cont);
+    make_istruct(esp + 2, 0, pstate);
+    esp[3] = *fop;
+    r_clear_attrs(esp + 3, a_executable);
+    r_set_attrs(esp + 4, a_executable);	/* see name_ref above */
+    esp += 4;
+    return o_push_estack;
 }
 
 /* ------ Initialization procedure ------ */

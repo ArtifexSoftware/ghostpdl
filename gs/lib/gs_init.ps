@@ -162,6 +162,10 @@ currentdict /DEVICE known not
   .dicttomark .setuserparams
 } if
 
+% Define dummy comment processing procedures.
+(%ProcessComment) cvn { pop pop } .bind
+(%ProcessDSCComment) cvn 1 index def def
+
 % Define a procedure for skipping over an unneeded section of code.
 % This avoids allocating space for the skipped procedures.
 % We can't use readline, because that imposes a line length limit.
@@ -1590,7 +1594,7 @@ false setpacking
 	% Save a copy of userparams for use with save/restore
 	% (and, if implemented, context switching).
   .currentglobal false .setglobal
-     mark .currentuserparams psuserparams { } forall .dicttomark readonly
+     mark userparams { } forall .dicttomark readonly
      /userparams exch .forcedef		% systemdict is read-only
   .setglobal
 } if

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -257,14 +257,10 @@ zcvi(i_ctx_t *i_ctx_p)
 
 		ref_assign(&str, op);
 		code = scan_string_token(i_ctx_p, &str, &token);
-		switch (code) {
-		    case scan_EOF:	/* no tokens */
-		    case scan_BOS:	/* not allowed */
-			code = gs_note_error(e_syntaxerror);
-		    default:
-			if (code < 0)
-			    return code;
-		}
+		if (code > 0)	/* anything other than a plain token */
+		    code = gs_note_error(e_syntaxerror);
+		if (code < 0)
+		    return code;
 		switch (r_type(&token)) {
 		    case t_integer:
 			*op = token;
@@ -314,14 +310,10 @@ zcvr(i_ctx_t *i_ctx_p)
 
 		ref_assign(&str, op);
 		code = scan_string_token(i_ctx_p, &str, &token);
-		switch (code) {
-		    case scan_EOF:	/* no tokens */
-		    case scan_BOS:	/* not allowed */
-			code = gs_note_error(e_syntaxerror);
-		    default:
-			if (code < 0)
-			    return code;
-		}
+		if (code > 0)	/* anything other than a plain token */
+		    code = gs_note_error(e_syntaxerror);
+		if (code < 0)
+		    return code;
 		switch (r_type(&token)) {
 		    case t_integer:
 			make_real(op, token.value.intval);
