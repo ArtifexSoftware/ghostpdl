@@ -29,10 +29,11 @@ Ghostscript PostScript coding guidelines
 <li><a href="#PS_features">Use of PostScript language features</a>
 <ul>
 <li><a href="#Restrictions">Restrictions</a>
+<li><a href="#Protection">Protection</a>
 <li><a href="#Standard_constructions">Standard constructions</a>
 </ul>
 <li><a href="#File_structuring">File structuring</a>
-<li><a href="#Comments">Comments</a>
+<li><a href="#Commenting">Commenting</a>
 <li><a href="#Formatting">Formatting</a>
 <ul>
 <li><a href="#Indentation">Indentation</a>
@@ -75,7 +76,8 @@ overview</a>.
 <li>Start every file with a copyright notice, the file name, and a one-line
 summary.
 
-<li>Comment every procedure with the arguments and result.
+<li>Comment every procedure with the arguments and result, and with the
+function of the procedure unless it's obvious.
 
 <li>Comment the stack contents ad lib, and particularly at the beginning of
 every loop body.
@@ -128,6 +130,24 @@ Instead, allocate storage for it:
 <blockquote><pre>
 1 string dup 0 4 -1 roll put show
 </pre></blockquote>
+
+<h2><a name="Protection"></a>Protection</h2>
+
+<p>
+If an object is never supposed to change, use <b><tt>readonly</tt></b> to
+make it read-only.  This applies especially to permanently allocated objects
+such as constant strings or dictionaries.
+
+<p>
+During initialization, and occasionally afterwards, it may be necessary to
+store into a read-only dictionary, or to store a pointer to a dictionary in
+local VM into a dictionary in global VM.  The operators
+<b><tt>.forceput</tt></b> and <b><tt>.forceundef</tt></b> are available for
+this purpose.  To make these operators inaccessible to ordinary programs,
+they are removed from <b><tt>systemdict</tt></b> at the end of
+initialization: system code that uses them should always use
+<b><tt>bind</tt></b> and <b><tt>odef</tt></b> (or
+<b><tt>executeonly</tt></b>) to make uses of them inaccessible as well.
 
 <h2><a name="Standard_constructions"></a>Standard constructions</h2>
 
@@ -248,6 +268,19 @@ update the copyright year and change the file name.
 <hr>
 
 <h1><a name="Commenting"></a>Commenting</h1>
+
+<p>
+If a file has well-defined functional sections, put a comment at the
+beginning of each section to describe its purpose or function.
+
+<p>
+Put a comment before every procedure to describe what the procedure does,
+unless it's obvious or the procedure's function is defined by the PLRM.  In
+case of doubt, don't assume it's obvious.  If the procedure may execute a
+deliberate 'stop' or 'exit' not enclosed in 'stopped' or a loop
+respectively, that should be mentioned.  However, information about the
+arguments and results should go in the argument and result comment
+(described just below) if possible, not the functional comment.
 
 <p>
 Put a comment on every procedure to describe the arguments and results:
@@ -403,6 +436,12 @@ order, essentially equivalent to
 
 <p>
 except that it doesn't actually create the array.
+
+<dt><tt>&lt;dict&gt; &lt;key&gt; .knownget &lt;value&gt; true
+<dt><tt>&lt;dict&gt; &lt;key&gt; .knownget false
+
+<dd>This combines <b><tt>known</tt></b> and <b><tt>get</tt></b> in the
+obvious way.
 
 <dt><tt>&lt;name&gt; &lt;proc&gt; odef -</tt>
 
