@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -106,37 +106,35 @@ pdfdict begin
 % Execute a file, interpreting its executable names in a given
 % dictionary.  The name procedures may do whatever they want
 % to the operand stack.
-/.pdfrun			% <file> <opdict> .pdfrun -
- {	% Construct a procedure with the stack depth, file and opdict
+/.pdfrun {			% <file> <opdict> .pdfrun -
+	% Construct a procedure with the stack depth, file and opdict
 	% bound into it.
-   1 index cvlit count 2 sub 3 1 roll mark mark 5 2 roll
-    {	% Stack: ..operands.. count opdict file
-      .pdftoken not { (%%EOF) cvn cvx } if
-      dup xcheck
-       { DEBUG { dup == flush } if
-	 2 copy .knownget
-	  { exch pop exch pop exch pop exec }
-	  { BXlevel 0 le
-	     { (%stderr) (w) file
-	       dup (****************Unknown operator: ) writestring
-	       dup 2 index .writecvs dup (\n) writestring flushfile
-	     }
-	    if pop pop
-	    count exch sub { pop } repeat	% pop all the operands
-	  }
-	 ifelse
-       }
-       { exch pop exch pop DEBUG { dup ==only ( ) print flush } if
-       }
-      ifelse
-    }
-   aload pop .packtomark cvx
-   /loop cvx 2 packedarray cvx
-    { stopped /PDFsource } aload pop
-   PDFsource
-    { store { stop } if } aload pop .packtomark cvx
-   /PDFsource 3 -1 roll store exec
- } bind def
+  1 index cvlit count 2 sub 3 1 roll mark mark 5 2 roll {
+	% Stack: ..operands.. count opdict file
+    .pdftoken not { (%%EOF) cvn cvx } if
+    dup xcheck {
+      DEBUG { dup == flush } if
+      2 copy .knownget {
+	exch pop exch pop exch pop exec
+      } {
+	BXlevel 0 le {
+	  (%stderr) (w) file
+	  dup (****************Unknown operator: ) writestring
+	  dup 2 index .writecvs dup (\n) writestring flushfile
+	} if pop pop
+	count exch sub { pop } repeat	% pop all the operands
+      } ifelse
+    } {
+      exch pop exch pop DEBUG { dup ==only ( ) print flush } if
+    } ifelse
+  }
+  aload pop .packtomark cvx
+  /loop cvx 2 packedarray cvx
+  { stopped /PDFsource } aload pop
+  PDFsource
+  { store { stop } if } aload pop .packtomark cvx
+  /PDFsource 3 -1 roll store exec
+} bind def
 
 % Execute a file, like .pdfrun, for a marking context.
 % This temporarily rebinds LocalResources.
