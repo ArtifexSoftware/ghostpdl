@@ -348,7 +348,7 @@ main(int argc, char *argv[])
 	fclose(out);
     }
 
-    exit(0);
+    return 0;
 }
 
 /* Allocate and initialize a string list. */
