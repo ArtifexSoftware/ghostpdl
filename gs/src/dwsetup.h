@@ -48,6 +48,7 @@
 #define IDC_TARGET                      1008
 #define IDC_ALLUSERS                    1009
 #define IDC_COPYRIGHT                   1010
+#define IDC_CJK_FONTS			1011
 
 
 #endif /* dwsetup_INCLUDED */

@@ -113,6 +113,7 @@ CHAR g_szTargetGroup[MAXSTR];
 CHAR g_szAppName[MAXSTR];
 
 BOOL g_bInstallFonts = TRUE;
+BOOL g_bCJKFonts = FALSE;
 BOOL g_bAllUsers = FALSE;
 
 
@@ -139,6 +140,7 @@ BOOL install_all();
 BOOL install_prog();
 BOOL install_fonts();
 BOOL make_filelist(int argc, char *argv[]);
+BOOL write_cidfmap(const char *gspath, const char *cidpath);
 
 
 //////////////////////////////////////////////////////////////////////
@@ -601,6 +603,9 @@ MainDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_bInstallFonts = (SendDlgItemMessage(g_hMain, 
 				IDC_INSTALL_FONTS, BM_GETCHECK, 0, 0) 
 				== BST_CHECKED);
+			g_bCJKFonts = (SendDlgItemMessage(g_hMain, 
+				IDC_CJK_FONTS, BM_GETCHECK, 0, 0) 
+				== BST_CHECKED);
 			g_bAllUsers = (SendDlgItemMessage(hwnd, 
 				IDC_ALLUSERS, BM_GETCHECK, 0, 0
 				) == BST_CHECKED);
@@ -797,6 +802,43 @@ install_prog()
 		gs_addmess("Failed to end Start Menu update\n");
 		return FALSE;
 	}
+
+        /* Create lib/cidfmap */
+	if (g_bCJKFonts) {
+		FILE *f;
+		char szCIDFmap[MAXSTR];
+		char szCIDFmap_bak[MAXSTR];
+		char szGSPATH[MAXSTR];
+
+		/* backup old cidfmap */
+		strcpy(szCIDFmap, g_szTargetDir);
+		strcat(szCIDFmap, "\\");
+		strcat(szCIDFmap, cinst.GetMainDir());
+		strcat(szCIDFmap, "\\lib\\cidfmap");
+		strcpy(szCIDFmap_bak, szCIDFmap);
+		strcat(szCIDFmap_bak, ".bak");
+		gs_addmess("Backing up\n  ");
+		gs_addmess(szCIDFmap);
+		gs_addmess("\nto\n  ");
+		gs_addmess(szCIDFmap_bak);
+		gs_addmess("\n");
+		rename(szCIDFmap, szCIDFmap_bak);
+
+		/* mark backup for uninstall */
+		cinst.AppendFileNew(szCIDFmap_bak);
+
+		/* write new cidfmap */
+		gs_addmess("Writing cidfmap\n   ");
+		gs_addmess(szCIDFmap);
+		gs_addmess("\n");
+		strcpy(szGSPATH, g_szTargetDir);
+		strcat(szGSPATH, "\\");
+		strcat(szGSPATH, cinst.GetMainDir());
+		if (!write_cidfmap(szGSPATH, szCIDFmap)) {
+			gs_addmess("Failed to write cidfmap\n");
+			return FALSE;
+		}
+	}
 	
 	// consolidate logs into one uninstall file
 	if (cinst.MakeLog()) {
@@ -871,6 +913,84 @@ install_fonts()
 	return TRUE;
 }
 
+//////////////////////////////////////////////////////////////////////
+// Create lib/cidfmap based on installed fonts
+//////////////////////////////////////////////////////////////////////
+
+/* Get the path to enumerate for fonts */
+int
+get_font_path(char *path, unsigned int pathlen)
+{
+    int i;
+    int len = GetWindowsDirectory(path, pathlen);
+    if (len == 0)
+       return -1;
+    if (pathlen - strlen(path) < 8)
+       return -1;
+    strncat(path, "/fonts", pathlen - strlen(path) - 7);
+    for (i = strlen(path)-1; i >= 0; i--)
+       if (path[i] == '\\')
+           path[i] = '/';
+    return len;
+}
+
+BOOL write_cidfmap(const char *gspath, const char *cidpath)
+{
+    char fontpath[MAXSTR];
+    char buf[4*MAXSTR];
+    STARTUPINFO siStartInfo;
+    PROCESS_INFORMATION piProcInfo;
+
+    get_font_path(fontpath, sizeof(fontpath)-1);
+
+    strcpy(buf, "\042");
+    strcat(buf, gspath);
+    strcat(buf, "\\bin\\gswin32c.exe\042 -q -dBATCH \042-sFONTDIR=");
+    strcat(buf, fontpath);
+    strcat(buf, "\042 \042");
+    strcat(buf, "-sCIDFMAP=");
+    strcat(buf, cidpath);
+    strcat(buf, "\042 \042");
+    strcat(buf, gspath);
+    strcat(buf, "\\lib\\mkcidfm.ps\042");
+
+    siStartInfo.cb = sizeof(STARTUPINFO);
+    siStartInfo.lpReserved = NULL;
+    siStartInfo.lpDesktop = NULL;
+    siStartInfo.lpTitle = NULL;  /* use executable name as title */
+    siStartInfo.dwX = siStartInfo.dwY = CW_USEDEFAULT;		/* ignored */
+    siStartInfo.dwXSize = siStartInfo.dwYSize = CW_USEDEFAULT;	/* ignored */
+    siStartInfo.dwXCountChars = 80;
+    siStartInfo.dwYCountChars = 25;
+    siStartInfo.dwFillAttribute = 0;			/* ignored */
+    siStartInfo.dwFlags = STARTF_USESHOWWINDOW;
+    siStartInfo.wShowWindow = SW_HIDE;
+    siStartInfo.cbReserved2 = 0;
+    siStartInfo.lpReserved2 = NULL;
+    siStartInfo.hStdInput = NULL;
+    siStartInfo.hStdOutput = NULL;
+    siStartInfo.hStdError = NULL;
+
+    /* Create the child process. */
+    if (!CreateProcess(NULL,
+        (char *)buf,  /* command line                       */
+        NULL,          /* process security attributes        */
+        NULL,          /* primary thread security attributes */
+        FALSE,         /* handles are not inherited          */
+        0,             /* creation flags                     */
+        NULL,          /* environment                        */
+        NULL,          /* use parent's current directory     */
+        &siStartInfo,  /* STARTUPINFO pointer                */
+        &piProcInfo))  /* receives PROCESS_INFORMATION  */
+	    return FALSE;
+
+    /* We don't care if ghostscript fails, so just return */
+
+    CloseHandle(piProcInfo.hProcess);
+    CloseHandle(piProcInfo.hThread);
+
+    return TRUE;
+}
 
 
 //////////////////////////////////////////////////////////////////////

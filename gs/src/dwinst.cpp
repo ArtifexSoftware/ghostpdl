@@ -244,6 +244,16 @@ BOOL CInstall::InstallFiles(BOOL bNoCopy, BOOL *pbQuit)
 }
 
 
+void CInstall::AppendFileNew(const char *filename)
+{
+    FILE *f;
+    /* mark backup file for uninstall */
+    if ((f = fopen(m_szFileNew, "a")) != (FILE *)NULL) {
+	fputs(filename, f);
+	fputs("\n", f);
+	fclose(f);
+    }
+}
 
 // recursive mkdir
 // requires a full path to be specified, so ignores root \ 

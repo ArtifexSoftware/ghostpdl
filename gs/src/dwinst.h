@@ -63,6 +63,8 @@ public:
 
 	void CleanUp(void);
 
+        void AppendFileNew(const char *filename);
+
 private:
 	BOOL m_bNoCopy;
 	BOOL m_bUseCommon;
