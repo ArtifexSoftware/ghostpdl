@@ -1102,9 +1102,9 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    s = pdev->strm;
 #	    if PS2WRITE
 		if (pdev->OrderResources) {
-		    int pos = stell(s) + 8, pos1;
+		    int pos = stell(s) + 10, pos1;
 
-		    pprintld1(s, "<</Length           >>stream\n", length_id);
+		    stream_puts(s, "<</Length           >>stream\n");
 		    size = pdfmark_write_ps(s, &level1);
 		    stream_puts(s, "endstream\n");
 		    pos1 = stell(s);
