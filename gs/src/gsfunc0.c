@@ -408,7 +408,7 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	(const gs_function_Sd_t *)pfn_common;
     float e0, e1, w0, w1;
     float r0[max_Sd_n], r1[max_Sd_n];
-    int code, i, result;
+    int code, i;
 
     /*
      * Testing this in general is very time-consuming, so we don't bother.
@@ -441,22 +441,7 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	if ((int)w0 != (int)w1 && ((int)w1 != w1 || (int)w0 + 1 != w1))
 	    return gs_error_undefined; /* not in the same sample */
     }
-    code = gs_function_evaluate(pfn_common, lower, r0);
-    if (code < 0)
-	return code;
-    gs_function_evaluate(pfn_common, upper, r1);
-    if (code < 0)
-	return code;
-    for (i = 0, result = 0; i < pfn->params.n; ++i) {
-	double diff = r1[i] - r0[i];
-
-	result |=
-	    (diff < 0 ? FN_MONOTONIC_DECREASING :
-	     diff > 0 ? FN_MONOTONIC_INCREASING :
-	     FN_MONOTONIC_DECREASING | FN_MONOTONIC_INCREASING) <<
-	    (2 * i);
-    }
-    return result;
+    return 1;
 }
 
 /* Return Sampled function information. */

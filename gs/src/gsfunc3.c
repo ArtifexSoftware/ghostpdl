@@ -135,22 +135,7 @@ fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
 	upper[0] < pfn->params.Domain[0]
 	)
 	return_error(gs_error_rangecheck);
-    for (i = 0, result = 0; i < pfn->params.n; ++i) {
-	double diff =
-	    (pfn->params.C1 == 0 ? 1.0 : pfn->params.C1[i]) -
-	    (pfn->params.C0 == 0 ? 0.0 : pfn->params.C0[i]);
-
-	if (pfn->params.N < 0)
-	    diff = -diff;
-	else if (pfn->params.N == 0)
-	    diff = 0;
-	result |=
-	    (diff < 0 ? FN_MONOTONIC_DECREASING :
-	     diff > 0 ? FN_MONOTONIC_INCREASING :
-	     FN_MONOTONIC_DECREASING | FN_MONOTONIC_INCREASING) <<
-	    (2 * i);
-    }
-    return result;
+    return 1;
 }
 
 /* Write Exponential Interpolation function parameters on a parameter list. */

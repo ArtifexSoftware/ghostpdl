@@ -204,13 +204,6 @@ int alloc_function_array(uint count, gs_function_t *** pFunctions,
  */
 #define gs_function_is_monotonic(pfn, lower, upper, effort)\
   ((pfn)->head.procs.is_monotonic)(pfn, lower, upper, effort)
-/*
- * If the function is monotonic, is_monotonic returns the direction of
- * monotonicity for output value N in bits 2N and 2N+1.  (Functions with
- * more than sizeof(int) * 4 - 1 outputs are never identified as monotonic.)
- */
-#define FN_MONOTONIC_INCREASING 1
-#define FN_MONOTONIC_DECREASING 2
 
 /* Get function information. */
 #define gs_function_get_info(pfn, pfi)\
