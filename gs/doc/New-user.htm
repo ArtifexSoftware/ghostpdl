@@ -771,16 +771,13 @@ Ghostscript is free and our staff time is not, we can only respond to
 problems under certain conditions.
 
 <p>
-If you have a problem, the first thing you should do is check the "known
-problems" notice at
+If you have a problem, the first thing you should do is check the bug data
+base at
 
 <blockquote>
-<a href="http://www.cs.wisc.edu/~ghost/aladdin/relnotes/">http://www.cs.wisc.edu/~ghost/aladdin/relnotes/</a>gs###/index.html
+<a href="http://sourceforge.net/bugs/?group_id=1897">
+http://sourceforge.net/bugs/?group_id=1897</a>
 </blockquote>
-
-<p>
-where "###" is the unpunctuated version number of Ghostscript's latest
-release.
 
 <p>
 If your problem isn't a known one, but it is connected with installing or
@@ -793,8 +790,37 @@ successfully, please read carefully the following information about
 reporting problems to us.
 
 <p>
-We will consider investigating problems reported to the newsgroups, or
-e-mailed directly to &lt;<a
+The first step in reporting a problem is to reproduce the problem using
+Ghostscript by itself.  We cannot help you unless you can provide us with
+the input file that was sent to Ghostscript and the exact command line that
+was used to invoke Ghostscript.
+
+<ul>
+
+<li>If you are running Ghostscript through Ghostview (for Unix and Linux),
+try to run the same file through Ghostscript (gs) without using Ghostview.
+If you don't know how to do this, or the problem doesn't show up, please
+contact Tim Theisen &lt;<a
+href="mailto:ghostview@cs.wisc.edu">ghostview@cs.wisc.edu</a>&gt;.
+
+<li>If you are running Ghostscript through GSview (for MS Windows and OS/2),
+try to run the same file through Ghostscript (gswin32 or gswin32c) without
+using GSview.  To find out more details about how GSview is calling
+Ghostscript, start GSview with debugging enabled (e.g. gsview /d): these
+details can be seen using "File | Show Messages" and can be copied to the
+clipboard for pasting into a text document.  If you have trouble doing this,
+or if you can't reproduce the original problem with Ghostscript alone,
+please contact Russell Lang &lt;<a
+href="mailto:gsview@ghostgum.com.au">gsview@ghostgum.com.au</a>&gt;.
+
+<li>If you are running Ghostscript through any other software (e.g., dvips,
+a printer spooler, etc.), we are sorry, but we cannot help you unless you
+can tell us how to produce the problem using Ghostscript alone.
+
+</ul>
+
+<p>
+We will consider investigating problems e-mailed to &lt;<a
 href="mailto:bug-gs@aladdin.com">bug-gs@aladdin.com</a>&gt;, if (and only
 if) the report meets all the following conditions:
 
@@ -803,8 +829,8 @@ if) the report meets all the following conditions:
 
 <li>You obtained Ghostscript directly from Aladdin Enterprises, or from the
 <a href="#Find_Ghostscript">FTP or AFS site</a> on the Internet mentioned
-above (that is, not from a bulletin board system or a commercial system
-such as CompuServe).
+above, or through a link or mirror on the Ghostscript home pages (that is,
+not from a bulletin board system or a commercial system such as CompuServe).
 
 <li>You have installed Ghostscript successfully, and used it successfully
 on other input data.
@@ -814,11 +840,7 @@ evokes it, either by e-mail in the problem report itself (if data is less
 than 500K bytes) or by anonymous FTP or HTTP.
 
 <li>Your problem is reproducible with Ghostscript alone, without using a
-viewer such as Ghostview or GSview.  (If a problem happens only with
-Ghostview, write to Tim Theisen &lt;<a
-href="mailto:ghostview@cs.wisc.edu">ghostview@cs.wisc.edu</a>&gt;.  If it
-happens only with GSview, contact Russell Lang &lt;<a
-href="mailto:gsview@ghostgum.com.au">gsview@ghostgum.com.au</a>&gt;.)
+viewer such as Ghostview or GSview, as discussed above.
 
 <li>Your problem is reproducible using a driver (output device) that Aladdin
 maintains -- i.e., one listed in <a
