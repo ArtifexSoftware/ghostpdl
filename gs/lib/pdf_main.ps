@@ -649,26 +649,46 @@ end readonly def
   count 1 sub /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
 	% a transparency group.
-  dup pageusestransparency {
-	%****** NYI ******
+  PDFversion 1.4 lt {
     showpagecontents
   } {
-    showpagecontents
+    dup /Group known {
+	% In PDF 1.4, Group overrides Contents.
+      DoForm
+    } {
+      dup pageusestransparency {
+	% Show the page within a fake top-level group.
+	processcolorspace setcolorspace
+	0 dict
+	currentdict /ClipRect .knownget not {
+	  gsave initclip clippath [pathbbox] grestore
+	} if aload pop
+	.begintransparencygroup {
+	  showpagecontents
+	} .internalstopped {
+	  .discardtransparencygroup stop
+	} if .endtransparencygroup
+      } {
+	showpagecontents
+      } ifelse
+    } ifelse
   } ifelse
    /Annots knownoget { { oforce drawannot } forall } if
    endpage
    end			% scratch dict
 } bind def
 /showpagecontents {	% <pagedict> showpagecontents -
-  dup /Group known PDFversion 1.4 ge and {
-	% In PDF 1.4, Group overrides Contents.
-    DoForm
-  } {
-    dup /Contents knownoget not { 0 array } if
-    dup type /arraytype ne { 1 array astore } if {
-      oforce false resolvestream pdfopdict .pdfrun
-    } forall
-  } ifelse
+  dup /Contents knownoget not { 0 array } if
+  dup type /arraytype ne { 1 array astore } if {
+    oforce false resolvestream pdfopdict .pdfrun
+  } forall
+} bind def
+/processcolorspace {	% - processcolorspace <colorspace>
+	% The following is per the PLRM3.
+  currentdevice 1 dict dup /ProcessColorModel dup put .getdeviceparams
+  exch pop exch pop
+  dup type /nametype ne { cvn } if
+  dup { setcolorspace } .internalstopped { pop /DeviceRGB } if
 } bind def
 
 % ------ Transparency support ------ %
