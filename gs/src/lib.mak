@@ -2071,7 +2071,7 @@ $(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
 
 $(GLOBJ)gdevpsf2.$(OBJ) : $(GLSRC)gdevpsf2.c $(GXERR)\
  $(math__h) $(memory__h)\
- $(gsccode_h) $(gscencs_h) $(gscrypt1_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gsarith_h) $(gsccode_h) $(gscencs_h) $(gscrypt1_h) $(gsmatrix_h) $(gsutil_h)\
  $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
  $(sfilter_h) $(stream_h)\
  $(gdevpsf_h)

@@ -19,6 +19,7 @@
 #include "math_.h"		/* for fabs */
 #include "memory_.h"
 #include "gx.h"
+#include "gxarith.h"
 #include "gscencs.h"
 #include "gserrors.h"
 #include "gsccode.h"
@@ -89,7 +90,7 @@ cff_string_table_init(cff_string_table_t *pcst, cff_string_item_t *items,
     pcst->items = items;
     pcst->count = 0;
     pcst->size = size;
-    while (size % reprobe == 0 && reprobe != 1)
+    while (reprobe != 1 && igcd(size, reprobe) != 1)
 	reprobe = (reprobe * 2 + 1) % size;
     pcst->total = 0;
     pcst->reprobe = reprobe;

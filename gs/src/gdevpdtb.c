@@ -589,8 +589,10 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 				   (gs_font_cid2 *)out_font,
 				   CID2_OPTIONS, NULL, 0, &fnstr);
     finish:
-	if (code < 0)
+	if (code < 0) {
+	    pdf_end_fontfile(pdev, &writer);
 	    return code;
+	}
 	code = pdf_end_fontfile(pdev, &writer);
 	break;
 
