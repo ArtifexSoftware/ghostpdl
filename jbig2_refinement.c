@@ -78,9 +78,13 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
     uint32_t line_m1;    /* previous line of the decoded bitmap */
 
     line_m1 = (y >= 1) ? grreg_line[-stride] : 0;
-    refline_m1 = (y >= 1) ? grref_line[-stride] : 0;
-    refline_0  = grref_line[0];
-    refline_1  = (y < GBW - 1) ? grref_line[+stride] : 0;
+    refline_m1 = (y >= 1) ? grref_line[-stride] << 2: 0;
+    refline_0  = grref_line[0] << 5;
+    refline_1  = (y < GBW - 1) ? grref_line[+stride] << 8 : 0;
+    CONTEXT = ((line_m1 >> 3) & 0x00e) |
+	      ((refline_1 >> 3) & 0x030) |
+	      ((refline_0 >> 3) & 0x1c0) |
+	      ((refline_m1 >> 3) & 0x200);
 
     for (x = 0; x < padded_width; x += 8) {
       byte result = 0;
@@ -91,15 +95,15 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
 	line_m1 = (line_m1 << 8) | 
 	  (x + 8 < GBW ? grreg_line[-stride + (x >> 3) + 1] : 0);
 	refline_m1 = (refline_m1 << 8) | 
-	  (x + 8 < GBW ? grref_line[-refstride + (x >> 3) + 1] : 0);
+	  (x + 8 < GBW ? grref_line[-refstride + (x >> 3) + 1] << 2 : 0);
       }
 
       refline_0 = (refline_0 << 8) |
-	  (x + 8 < GBW ? grref_line[(x >> 3) + 1] : 0);
+	  (x + 8 < GBW ? grref_line[(x >> 3) + 1] << 5 : 0);
 
       if (y < GBH - 1)
 	refline_1 = (refline_1 << 8) |
-	  (x + 8 < GBW ? grref_line[+refstride + (x >> 3) + 1] : 0);
+	  (x + 8 < GBW ? grref_line[+refstride + (x >> 3) + 1] << 8 : 0);
       else
 	refline_1 = 0;
 
@@ -110,10 +114,10 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
 	bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
 	result |= bit << (7 - x_minor);
 	CONTEXT = ((CONTEXT & 0x0d6) << 1) | bit |
-	  ((line_m1 >> (10 - x_minor)) &0x00e) |
-	  ((refline_1 >> (10 - x_minor)) &0x030) |
-	  ((refline_0 >> (10 - x_minor)) &0x1c0) |
-	  ((refline_m1 >> (10 - x_minor)) &0x200);
+	  ((line_m1 >> (10 - x_minor)) & 0x002) |
+	  ((refline_1 >> (10 - x_minor)) & 0x010) |
+	  ((refline_0 >> (10 - x_minor)) & 0x040) |
+	  ((refline_m1 >> (10 - x_minor)) & 0x200);
       }
 
       grreg_line[x>>3] = result;
@@ -125,8 +129,8 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
 
   }
 
-  return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-    "refinement region template 1 NYI");
+  return 0;
+
 }
 
 
