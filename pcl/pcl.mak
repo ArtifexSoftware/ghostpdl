@@ -2,7 +2,7 @@
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL5*, HP RTL, and HP-GL/2 interpreters
-
+# Users of this makefile must define the following:
 #	GSSRCDIR - the GS library source directory
 #	PLSRCDIR - the PCL* support library source directory
 #	PLOBJDIR - the object directory for the PCL support library
@@ -490,7 +490,9 @@ $(PCLOBJ)pcht.$(OBJ): $(PCLSRC)pcht.c   \
                       $(gsmemory_h)     \
                       $(gsstruct_h)     \
                       $(gsrefct_h)      \
+                      $(gsdevice_h)     \
                       $(gxdevice_h)     \
+                      $(gdevcmap.h)     \
                       $(pcommand_h)     \
                       $(pcstate_h)      \
                       $(pcdither_h)     \
@@ -530,6 +532,8 @@ $(PCLOBJ)pcpalet.$(OBJ): $(PCLSRC)pcpalet.c \
                          $(gx_h)            \
                          $(pldict_h)        \
                          $(pcdraw_h)        \
+                         $(pcpage_h)        \
+                         $(pcursor_h)       \
                          $(pcpalet_h)       \
                          $(pcfrgrnd_h)
 	$(PCLCCC) $(PCLSRC)pcpalet.c $(PCLO_)pcpalet.$(OBJ)
@@ -819,6 +823,8 @@ $(PCLOBJ)pcrect.$(OBJ): $(PCLSRC)pcrect.c   \
                         $(pcuptrn_h)        \
                         $(gspath_h)         \
                         $(gspath2_h)        \
+                        $(gsmatrix_h)       \
+                        $(gscoord_h)        \
                         $(gspaint_h)        \
                         $(gsrop_h)
 	$(PCLCCC) $(PCLSRC)pcrect.c $(PCLO_)pcrect.$(OBJ)
@@ -841,6 +847,7 @@ $(PCLOBJ)pcstatus.$(OBJ): $(PCLSRC)pcstatus.c   \
                           $(pcpatrn_h)          \
                           $(pcuptrn_h)          \
                           $(pcpage_h)           \
+                          $(pcursor_h)          \
                           $(stream_h)
 	$(PCLCCC) $(PCLSRC)pcstatus.c $(PCLO_)pcstatus.$(OBJ)
 
