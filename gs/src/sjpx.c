@@ -1,4 +1,4 @@
-/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2003-2004 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -98,6 +98,7 @@ dump_jas_image(jas_image_t *image)
 	int type = jas_image_cmpttype(image, i);
 	char *opacity = (type & JAS_IMAGE_CT_OPACITY) ? " opacity" : "";
 	char *name = "unrecognized";
+	char *issigned = "";
 	if (jas_clrspc_fam(clrspc) == JAS_CLRSPC_FAM_GRAY)
 	    name = "gray";
 	else if (jas_clrspc_fam(clrspc) == JAS_CLRSPC_FAM_RGB)
@@ -118,8 +119,10 @@ dump_jas_image(jas_image_t *image)
 		default:
 		    name = "unknown";
 	    }
-	dprintf5("  component %d: type %d '%s%s' (%d bits)",
-	    i, type, name, opacity, jas_image_cmptprec(image, i));
+	if (jas_image_cmptsgnd(image, i))
+	    issigned = ", signed";
+	dprintf6("  component %d: type %d '%s%s' (%d bits%s)",
+	    i, type, name, opacity, jas_image_cmptprec(image, i), issigned);
 	dprintf4(" grid step (%d,%d) offset (%d,%d)\n",
 	    jas_image_cmpthstep(image, i), jas_image_cmptvstep(image, i),
 	    jas_image_cmpttlx(image, i), jas_image_cmpttly(image, i));
@@ -185,7 +188,7 @@ copy_row_yuv(unsigned char *dest, jas_image_t *image,
     clut[2] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CR);
 
     for (i = 0; i < 3; i++) {
-	/* shift each component down to 8 bits */
+	/* shift each component up to 16 bits */
 	shift[i] = 16 - jas_image_cmptprec(image, clut[i]);
 	/* repeat subsampled pixels */
 	hstep[i] = jas_image_cmpthstep(image, clut[i]);
@@ -197,16 +200,17 @@ copy_row_yuv(unsigned char *dest, jas_image_t *image,
 	    p[j] = jas_image_readcmptsample(image, clut[j], x/hstep[j], y/vstep[j]);
 	    p[j] <<= shift[j];
 	}
-	/* rotate to RGB */
-#if 0
+	/* clamp and center chroma channels */
 	if (p[0] < 0) p[0] = 0;
 	else if (p[0] > 0xFFFF) p[0] = 0xFFFF;
-	p[1] -= 0x8FFF;
+	if (!jas_image_cmptsgnd(image, clut[1])) p[1] -= 0x8FFF;
 	if (p[1] < -0x8FFF) p[1] = -0x8FFF;
 	else if (p[1] > 0x8FFE) p[1] = 0x8FFE;
-	p[2] -= 0x8FFF;
+	if (!jas_image_cmptsgnd(image, clut[2])) p[2] -= 0x8FFF;
 	if (p[2] < -0x8FFF) p[2] = -0x8FFF;
 	else if (p[2] > 0x8FFE) p[2] = 0x8FFE;
+	/* rotate to RGB */
+#if 0
 	q[0] = (1./1.772) * (p[0] + 1.402 * p[2]);
 	q[1] = (1./1.772) * (p[0] + 1.772 * p[2]);
 	q[2] = (1./1.772) * (p[0] - 0.34413 * p[2] - 0.71414 * p[1]);
