@@ -1462,12 +1462,15 @@ $(GLOBJ)gxclpage.$(OBJ) : $(GLSRC)gxclpage.c $(AK)\
 	$(GLCC) $(GLO_)gxclpage.$(OBJ) $(C_) $(GLSRC)gxclpage.c
 
 $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
- $(memory__h) $(gp_h) $(gpcheck_h)\
- $(gsbitops_h) $(gscdefs_h) $(gscoord_h) $(gsdevice_h)\
+ $(memory__h) $(gx_h) $(gp_h) $(gpcheck_h) $(gscdefs_h)\
+ $(gserrors_h) $(gsbitops_h) $(gs_params_h)\
+ $(gsstate_h) $(gxdcolor_h) $(gxdevice_h)\
+ $(gxcoord_h) $(gsdevice_h) $(gsiparm4_h)\
+ $(gxdevmem_h) $(gxcldev_h) $(gxclpath_h)\
+ $(gxcmap_h) $(gxcolor2_h) $(gxcspace_h)\
+ $(gxht_h) $(gxdtres_h) $(gxhttile_h)\
+ $(gxgetbit_h) $(gxpaint_h) $(gxiparam_h)\
  $(gsiparm4_h) $(gsparams_h) $(gsstate_h)\
- $(gxcldev_h) $(gxclpath_h) $(gxcmap_h) $(gxcolor2_h) $(gxcspace_h)\
- $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdhtres_h) $(gxgetbit_h)\
- $(gxhttile_h) $(gxiparam_h) $(gxpaint_h)\
  $(gzacpath_h) $(gzcpath_h) $(gzpath_h)\
  $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gxclrast.$(OBJ) $(C_) $(GLSRC)gxclrast.c
