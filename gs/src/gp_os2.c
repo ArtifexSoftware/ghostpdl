@@ -717,23 +717,32 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
 #ifdef __IBMC__
-    char *temp = getenv("TMPDIR");
+    char *temp = 0;
     char *tname;
 
-    if (temp == 0)
-	temp = getenv("TEMP");
+    if (!gp_file_name_is_absolute(prefix, prefix_length)) {
+	temp = getenv("TMPDIR");
+	if (temp == 0)
+	    temp = getenv("TEMP");
+    }
     *fname = 0;
     tname = _tempnam(temp, (char *)prefix);
     if (tname) {
-/****** SHOULD DO A LENGTH CHECK ******/
+	if (strlen(tname) > gp_file_name_sizeof - 1) {
+	    free(tname);
+	    return 0;		/* file name too long */
+	}
 	strcpy(fname, tname);
 	free(tname);
     }
 #else
     /* The -7 is for XXXXXX plus a possible final \. */
-    int len = gp_file_name_sizeof - strlen(prefix) - 7;
+    int prefix_length = strlen(prefix);
+    int len = gp_file_name_sizeof - prefix_length - 7;
 
-    if (gp_gettmpdir(fname, &len) != 0)
+    if (gp_file_name_is_absolute(prefix, prefix_length) ||
+	gp_gettmpdir(fname, &len) != 0
+	)
 	*fname = 0;
     else {
 	char last = '\\';
@@ -743,13 +752,15 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 	for (temp = fname; *temp; temp++)
 	    *temp = last = tolower(*temp);
 	switch (last) {
-	    default:
-		strcat(fname, "\\");
-	    case ':':
-	    case '\\':
-		;
+	default:
+	    strcat(fname, "\\");
+	case ':':
+	case '\\':
+	    ;
 	}
     }
+    if (strlen(fname) + prefix_length + 7 >= gp_file_name_sizeof)
+	return 0;		/* file name too long */
     strcat(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);

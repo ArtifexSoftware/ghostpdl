@@ -219,6 +219,8 @@ FILE *
 gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
+    if (strlen(prefix) + 6 >= gp_file_name_sizeof)
+	return 0;		/* file name too long */
     strcpy(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);

@@ -561,10 +561,13 @@ gp_printfile_gs16spl(const char *filename, const char *port)
 /* Write the actual file name at fname. */
 FILE *
 gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
-{				/* The -7 is for XXXXXX plus a possible final \. */
-    int len = gp_file_name_sizeof - strlen(prefix) - 7;
+{	/* The -7 is for XXXXXX plus a possible final \. */
+    int prefix_length = strlen(prefix);
+    int len = gp_file_name_sizeof - prefix_length - 7;
 
-    if (gp_gettmpdir(fname, &len) != 0)
+    if (gp_file_name_is_absolute(prefix, prefix_length) ||
+	gp_gettmpdir(fname, &len) != 0
+	)
 	*fname = 0;
     else {
 	char *temp;
@@ -575,6 +578,8 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 	if (strlen(fname) && (fname[strlen(fname) - 1] != '\\'))
 	    strcat(fname, "\\");
     }
+    if (strlen(fname) + prefix_length + 7 >= gp_file_name_sizeof)
+	return 0;		/* file name too long */
     strcat(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);

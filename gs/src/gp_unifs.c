@@ -58,15 +58,20 @@ const char gp_current_directory_name[] = ".";
 FILE *
 gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
-{				/* The -8 is for XXXXXX plus a possible final / and -. */
-    int len = gp_file_name_sizeof - strlen(prefix) - 8;
+{	/* The -8 is for XXXXXX plus a possible final / and -. */
+    int prefix_length = strlen(prefix);
+    int len = gp_file_name_sizeof - prefix_length - 8;
 
-    if (gp_gettmpdir(fname, &len) != 0)
+    if (gp_file_name_is_absolute(prefix, prefix_length))
+	*fname = 0;
+    else if (gp_gettmpdir(fname, &len) != 0)
 	strcpy(fname, "/tmp/");
     else {
 	if (strlen(fname) != 0 && fname[strlen(fname) - 1] != '/')
 	    strcat(fname, "/");
     }
+    if (strlen(fname) + prefix_length + 8 >= gp_file_name_sizeof)
+	return 0;		/* file name too long */
     strcat(fname, prefix);
     /* Prevent trailing X's in path from being converted by mktemp. */
     if (*fname != 0 && fname[strlen(fname) - 1] == 'X')
