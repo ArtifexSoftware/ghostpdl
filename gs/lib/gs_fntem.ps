@@ -349,6 +349,44 @@ currentdict end def
   pop
 } bind def
 
+/ProvideUnicodeDecoding % <font> ProvideUnicodeDecoding <font>
+{
+  % If the font is maintained by FAPI, or if it is TT-emulated CID font,
+  % it already has /Decoding. But its value isn't guaranteeed to
+  % be an Unicode decoding. Since we can't determine whether 
+  % it is an Unicode decoding, we unconditionally load an appropriate Unicode decoding
+  % and attach it with /GlyphNames2Unicode entry.
+  %
+  % Another interesting case is when the font already has /GlyphNames2Unicode.
+  % The latter to be used instead. Note that /GlyphNames2Unicode
+  % appears only when type 32 fonts are disable (see .pdf_hook_DSC_Creator),
+  % but an automatic disabling is not implemented yet.
+
+  currentglobal true setglobal exch
+  dup /FontInfo known not {
+    dup /FontInfo 1 dict put
+  } if
+  { % A loop just for 'exit' context.
+    dup /FontInfo get /GlyphNames2Unicode known {
+      exit
+    } if
+    dup /CIDFontType known {
+      dup dup /CIDSystemInfo get /Ordering get (.Unicode)        % bool <font> <font> () ()
+      concatstrings cvn                                          % bool <font> <font> /Name
+      /CIDDecoding findresource                                  % bool <font> <font> <D>
+      exch /FontInfo get exch                                    % bool <font> <FI> <D>
+      /GlyphNames2Unicode exch
+      .forceput % FontInfo can be read-only.
+      exit
+    } if
+    dup /FontInfo get                                            % bool <font> <FI>
+    /GlyphNames2Unicode /Unicode /Decoding findresource
+    .forceput % FontInfo can be read-only.
+    exit
+  } loop
+  exch setglobal
+} bind def
+
 currentdict end /ProcSet defineresource pop
 
 .setlanguagelevel

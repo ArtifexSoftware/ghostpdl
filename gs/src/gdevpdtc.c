@@ -33,6 +33,8 @@
 #include "gdevpdts.h"
 #include "gdevpdtt.h"
 
+#define TEST_UNICODE_SUPPORT 1 /*  Debug purpose only. Coded for a particular customer. */
+
 /* ---------------- Non-CMap-based composite font ---------------- */
 
 /*
@@ -338,6 +340,17 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    if (subfont != NULL && subfont != scan.fstack.items[scan.fstack.depth].font)
 		break;
 	    subfont = scan.fstack.items[scan.fstack.depth].font;
+#if	    TEST_UNICODE_SUPPORT
+	    {
+		gs_char unicode_char = subfont->procs.decode_glyph(subfont, glyph);
+
+    		if (unicode_char != GS_NO_CHAR) {
+		    unsigned int unicode_code = (unsigned int)unicode_char;
+
+		    DISCARD(unicode_code);
+		}
+	    }
+#endif
 	    switch (subfont->FontType) {
 	    case ft_CID_encrypted:
 	    case ft_CID_TrueType:

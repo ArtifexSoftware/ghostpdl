@@ -397,13 +397,15 @@ buildfontdict 3 /.buildfont3 cvx put
         .buildcidfont
       } ifelse
 
-      DISKFONTS
-       { FontFileDirectory 2 index known
-          { dup /FontFile FontFileDirectory 4 index get .growput
-          }
-         if
-       }
-      if
+      DISKFONTS {
+        FontFileDirectory 2 index known {
+          dup /FontFile FontFileDirectory 4 index get .growput
+          } if
+      } if
+      systemdict /ProvideUnicode .knownget not { false } if {
+        /FontEmulationProcs /ProcSet findresource
+        /ProvideUnicodeDecoding get exec
+      } if
       readonly          % stack: name fontdict
   } stopped { /invalidfont signalerror } if
 } bind odef

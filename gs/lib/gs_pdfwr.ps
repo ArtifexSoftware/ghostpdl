@@ -621,7 +621,8 @@ currentdict /.pdf_hook_DSC_Creator undef
 } .bind odef
 
 1000 % priority
-{ currentdevice .devicename /pdfwrite eq {
+{ currentdevice .devicename /pdfwrite eq
+  systemdict /ProvideUnicode .knownget not { false } if or {
     currentglobal true setglobal
     systemdict /.setupUnicodeDecoder known {
       /Unicode /Decoding resourcestatus {

@@ -335,6 +335,10 @@ languagelevel exch 2 .setlanguagelevel
 % category with only a CIDFontType and no FontType.
 /.buildcidfont {		% <name> <fontdict> .buildcidfont
 				%   <name> <cidfont>
+  systemdict /ProvideUnicode .knownget not { false } if {
+    /FontEmulationProcs /ProcSet findresource
+    /ProvideUnicodeDecoding get exec
+  } if
   dup /CIDFontType get //.cidfonttypes exch get exec
 } odef
 
