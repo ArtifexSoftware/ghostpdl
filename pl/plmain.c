@@ -589,10 +589,15 @@ pl_main_universe_dnit(
 
     /* dealloc device if sel'd */
     if (universe->curr_device) {
-      gx_device_finalize(universe->curr_device);
-      /* finalize closes, frees stype, now free the rest of the device */
-      gs_free_object(universe->mem, universe->curr_device,
-		     "pl_main_universe_dnit(gx_device)");
+#ifdef PSI_INCLUDED
+	/* ps allocator retain's the device, pl_alloc doesn't */
+	gx_device_retain(universe->curr_device, false);
+#else
+	gx_device_finalize(universe->curr_device);
+        /* finalize closes, frees stype, now free the rest of the device */
+	gs_free_object(universe->mem, universe->curr_device,
+		       "pl_main_universe_dnit(gx_device)");
+#endif
     }
 
     return 0;
