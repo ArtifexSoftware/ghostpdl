@@ -251,7 +251,6 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	if (gs_rootfont(pgs)->WMode) {
 	    float vx = pw[8], vy = pw[9];
 	    gs_fixed_point pvxy, dvxy;
-	    cached_char *cc;
 
 	    gs_fixed_point rewind_pvxy;
 	    int rewind_code;
@@ -280,9 +279,8 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		return code;
 	    }
 	    /* Adjust the character origin too. */
-	    cc = penum->cc;
-	    cc->offset.x += dvxy.x;
-	    cc->offset.y += dvxy.y;
+	    (penum->cc)->offset.x += dvxy.x;
+	    (penum->cc)->offset.y += dvxy.y;
 	} else {
 	    code = set_char_width(penum, pgs, pw[0], pw[1]);
 	    if (code < 0)
