@@ -794,12 +794,15 @@ pcursor_do_reset(
         pcs->cursor_stk_size = 0;
 
         /* 
-         * If this is an initial reset, make sure underlining is disabled
-         * (homing the cursor may cause an underline to be put out.
-         */
-        if ((type & pcl_reset_initial) != 0)
+         * If this is an initial reset, make sure underlining is
+         * disabled (homing the cursor may cause an underline to be
+         * put out.  And provide reasonable initial values for the
+         * cap.  
+	 */
+        if ((type & pcl_reset_initial) != 0) {
             pcs->underline_enabled = false;
-
+	    pcs->cap.x = pcs->cap.y = 0;
+	}
         pcl_home_cursor(pcs);
     }
 }

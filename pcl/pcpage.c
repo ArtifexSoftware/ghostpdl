@@ -111,7 +111,8 @@ restore_cap_and_margins(
  */
   private void
 update_xfm_state(
-    pcl_state_t *               pcs
+    pcl_state_t *               pcs,
+    bool                        reset_initial
 )
 {
     pcl_xfm_state_t *           pxfmst = &(pcs->xfm_state);
@@ -124,7 +125,8 @@ update_xfm_state(
     floatp                      toff = pxfmst->top_offset_cp;
 
     /* preserve the current point and text rectangle in logical page space */
-    preserve_cap_and_margins(pcs, &cur_pt, &text_rect);
+    if ( !reset_initial )
+	preserve_cap_and_margins(pcs, &cur_pt, &text_rect);
 
     /* get the page to device transformation */
     gs_defaultmatrix(pcs->pgs, &pg2dev);
@@ -224,7 +226,8 @@ update_xfm_state(
     pcl_transform_rect(&print_rect, &(pxfmst->lp_print_rect), &pg2lp);
 
     /* restablish the current point and text region */
-    restore_cap_and_margins(pcs, &cur_pt, &text_rect);
+    if ( !reset_initial )
+	restore_cap_and_margins(pcs, &cur_pt, &text_rect);
 
     /*
      * No need to worry about pat_orient or pat_ref_pt; these will always
@@ -332,7 +335,7 @@ new_page_size(
 
     pcs->xfm_state.paper_size = psize;
     pcs->overlay_enabled = false;
-    update_xfm_state(pcs);
+    update_xfm_state(pcs, reset_initial);
     reset_margins(pcs);
 
     /* 
@@ -341,7 +344,8 @@ new_page_size(
      */
     if (reset_initial)
         pcs->underline_enabled = false;
-    pcl_home_cursor(pcs);
+    else
+	pcl_home_cursor(pcs);
 
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
@@ -438,7 +442,7 @@ pcl_end_page(
      * Advance of a page may move from a page front to a page back. This may
      * change the applicable transformations.
      */
-    update_xfm_state(pcs);
+    update_xfm_state(pcs, 0);
 
     pcl_continue_underline(pcs);
     return (code < 0 ? code : 1);
@@ -552,7 +556,7 @@ set_left_offset_registration(
 )
 {
     pcs->xfm_state.left_offset_cp = float_arg(pargs) * 10.0;
-    update_xfm_state(pcs);
+    update_xfm_state(pcs, 0);
     return 0;
 }
 
@@ -569,7 +573,7 @@ set_top_offset_registration(
 )
 {
     pcs->xfm_state.top_offset_cp = float_arg(pargs) * 10;
-    update_xfm_state(pcs);
+    update_xfm_state(pcs, 0);
     return 0;
 }
 
@@ -608,7 +612,7 @@ set_print_direction(
 
     if ((i <= 270) && (i % 90 == 0)) {
         pcs->xfm_state.print_dir = i / 90;
-        update_xfm_state(pcs);
+        update_xfm_state(pcs, 0);
     }
     return 0;
 }
@@ -936,7 +940,7 @@ pcpage_do_reset(
     } else if ((type & pcl_reset_overlay) != 0) {
 	pcs->perforation_skip = 1;
         pcs->xfm_state.print_dir = 0;
-        update_xfm_state(pcs);
+        update_xfm_state(pcs, 0);
         reset_margins(pcs);
         pcl_xfm_reset_pcl_pat_ref_pt(pcs);
     }

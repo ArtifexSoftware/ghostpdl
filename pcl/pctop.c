@@ -499,10 +499,8 @@ pcl_impl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
-	int code;
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
-
-	return code;
+	return 0;
 }
 
 /* Remove a device from an interperter instance */

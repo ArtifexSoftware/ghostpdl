@@ -58,6 +58,7 @@ hpgl_reset_overlay(hpgl_state_t *pgls)
 	hpgl_args_setup(&args);
 	hpgl_AC(&args, pgls);
 	hpgl_args_setup(&args);
+	pgls->g.font_selected = 0;
 	hpgl_AD(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_SD(&args, pgls);
@@ -74,18 +75,20 @@ hpgl_reset_overlay(hpgl_state_t *pgls)
 	hpgl_DV(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_ES(&args, pgls);
+	pgls->g.label.write_vertical = false;
+	pgls->g.label.double_byte = false;
 	hpgl_args_setup(&args);
 	hpgl_LM(&args, pgls);
 	hpgl_args_set_int(&args, 1);
 	hpgl_LO(&args, pgls);
 	/* we do this instead of calling SC directly */
 	pgls->g.scaling_type = hpgl_scaling_none;
+	pgls->g.fill_type = hpgl_even_odd_rule;
 	hpgl_args_set_int(&args,0);
 	hpgl_PM(&args, pgls);
 	hpgl_args_set_int(&args,2);
 	hpgl_PM(&args, pgls);
-	hpgl_args_set_int(&args,0);
-	hpgl_SB(&args, pgls);
+	pgls->g.bitmap_fonts_allowed = 0;
 	hpgl_args_setup(&args);
 	hpgl_SI(&args, pgls);
 	hpgl_args_setup(&args);
@@ -154,12 +157,10 @@ hpgl_IN_implicit(
 {
     hpgl_args_t     args;
 
+    /* cancel rotation */
+    pgls->g.rotation = 0;
     /* restore defaults */
     hpgl_DF(&args, pgls);
-
-    /* cancel rotation */
-    /* hpgl_args_setup(&args); hpgl_RO(&args, pgls); */
-    pgls->g.rotation = 0;
 
     /* defaults P1 and P2 */
     hpgl_args_setup(&args);

@@ -222,5 +222,5 @@ pcl_init_state(
 
     pcs->next_id = 8UL;
     pcl_init_gstate_stk(pcs);
-
+    pcs->configure_appletalk = 0;
 }

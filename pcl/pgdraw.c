@@ -217,8 +217,8 @@ hpgl_get_line_pattern_length(hpgl_state_t *pgls)
  private int
 hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 {
-	bool adaptive = ( pgls->g.line.current.type < 0 );
 	int entry = abs(pgls->g.line.current.type);
+	bool adaptive;
 	const hpgl_line_type_t *pat;
 	float length;
 	float pattern[20];
@@ -251,6 +251,7 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	    return 0;
 	  }
 
+	adaptive =  ( pgls->g.line.current.type < 0 );
 	pat = ((adaptive) ?
 	       (&pgls->g.adaptive_line_type[entry - 1]) :
 	       (&pgls->g.fixed_line_type[entry - 1]));

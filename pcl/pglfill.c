@@ -263,6 +263,7 @@ hpgl_set_line_pattern_defaults(hpgl_state_t *pgls)
     pgls->g.line.current.pattern_length_relative = 0; /* relative */
     pgls->g.line.current.pattern_length = 4.0; /* % of P1 P2 */
     pgls->g.line.current.is_solid = true;
+    pgls->g.line.current.type = 
     memcpy( &pgls->g.fixed_line_type,
 	    &hpgl_fixed_pats,
 	    sizeof(hpgl_fixed_pats)
