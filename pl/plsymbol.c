@@ -13,9 +13,9 @@
 
 /* Define a macro for generating the header for built-in symbol sets. */
 #define map_number(n, l) ((n) * 32 + (l) - '@')
-#define map_header(n, l, vocab, cc0, cc1, cc2, cc3, cc4, cc5, cc6, cc7)\
+#define map_header(n, l, vocab, t, cc0, cc1, cc2, cc3, cc4, cc5, cc6, cc7)\
   {0, 18}, {map_number(n, l) >> 8, map_number(n, l) & 0xff},\
-  (vocab) * 2 + 1, 2, {0, 0}, {0, 255},\
+  (vocab) * 2 + 1, t, {0, 0}, {0, 255},\
   {cc0, cc1, cc2, cc3, cc4, cc5, cc6, ((cc7) & 0xf8) | (vocab)}
 
 /*
@@ -63,7 +63,7 @@ main(int argc, char *argv[])
  ***************************************/
 /* ISO ASCII */
 private const pl_symbol_map_t map_0U_unicode = {
-  map_header(0, 'U', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(0, 'U', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -117,7 +117,7 @@ private const pl_symbol_map_t map_0U_unicode = {
 };
 /* United Kingdom */
 private const pl_symbol_map_t map_1E_unicode = {
-  map_header(1, 'E', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(1, 'E', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -171,7 +171,7 @@ private const pl_symbol_map_t map_1E_unicode = {
 };
 /* French */
 private const pl_symbol_map_t map_1F_unicode = {
-  map_header(1, 'F', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(1, 'F', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -225,7 +225,7 @@ private const pl_symbol_map_t map_1F_unicode = {
 };
 /* German */
 private const pl_symbol_map_t map_1G_unicode = {
-  map_header(1, 'G', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(1, 'G', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -279,7 +279,7 @@ private const pl_symbol_map_t map_1G_unicode = {
 };
 /* Italian */
 private const pl_symbol_map_t map_0I_unicode = {
-  map_header(0, 'I', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(0, 'I', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -333,7 +333,7 @@ private const pl_symbol_map_t map_0I_unicode = {
 };
 /* Swedish for names */
 private const pl_symbol_map_t map_0S_unicode = {
-  map_header(0, 'S', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(0, 'S', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -387,7 +387,7 @@ private const pl_symbol_map_t map_0S_unicode = {
 };
 /* Spanish */
 private const pl_symbol_map_t map_2S_unicode = {
-  map_header(2, 'S', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(2, 'S', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -441,7 +441,7 @@ private const pl_symbol_map_t map_2S_unicode = {
 };
 /* Norwegian version 1 */
 private const pl_symbol_map_t map_0D_unicode = {
-  map_header(0, 'D', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(0, 'D', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -498,7 +498,7 @@ private const pl_symbol_map_t map_0D_unicode = {
  * Roman-8 Unicode mapping *
  ***************************/
 private const pl_symbol_map_t map_8U_unicode = {
-  map_header(8, 'U', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(8, 'U', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -555,7 +555,7 @@ private const pl_symbol_map_t map_8U_unicode = {
  * Desktop Unicode mapping *
  ***************************/
 private const pl_symbol_map_t map_7J_unicode = {
-  map_header(7, 'J', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(7, 'J', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /* 0x00 */
     0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -612,7 +612,7 @@ private const pl_symbol_map_t map_7J_unicode = {
  * ISO 8859/1 Latin 1 Unicode mapping *
  **************************************/
 private const pl_symbol_map_t map_0N_unicode = {
-  map_header(0, 'N', plgv_Unicode, 0, 0, 0, 0, 0xc4, 0, 0, 0),
+  map_header(0, 'N', plgv_Unicode, 1, 0, 0, 0, 0, 0xc4, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -673,7 +673,7 @@ private const pl_symbol_map_t map_0N_unicode = {
  * it has added characters in positions 0x80 - 0x9f.
  */
 private const pl_symbol_map_t map_19U_unicode = {
-  map_header(19, 'U', plgv_Unicode, 0, 0, 0, 0, 0xc6, 0, 0, 0),
+  map_header(19, 'U', plgv_Unicode, 2, 0, 0, 0, 0, 0xc6, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -734,7 +734,7 @@ private const pl_symbol_map_t map_19U_unicode = {
  * codes 0x80-0xaf are (almost) shared with the PC-850 Multilingual map.
  */
 private const pl_symbol_map_t map_10U_unicode = {
-  map_header(10, 'U', plgv_Unicode, 0, 0, 0, 0, 0xc2, 0, 0, 0),
+  map_header(10, 'U', plgv_Unicode, 2, 0, 0, 0, 0, 0xc2, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0x263a, 0x263b, 0x2665, 0x2666, 0x2663, 0x2660, 0x2022,
@@ -791,7 +791,7 @@ private const pl_symbol_map_t map_10U_unicode = {
  * PC-850 Multilingual Unicode mapping *
  ***************************************/
 private const pl_symbol_map_t map_12U_unicode = {
-  map_header(12, 'U', plgv_Unicode, 0, 0, 0, 0, 0xe6, 0, 0, 0),
+  map_header(12, 'U', plgv_Unicode, 2, 0, 0, 0, 0, 0xe6, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0x263a, 0x263b, 0x2665, 0x2666, 0x2663, 0x2660, 0x2022,
@@ -848,7 +848,7 @@ private const pl_symbol_map_t map_12U_unicode = {
  * PS Text (TS) Unicode mapping *
  ********************************/
 private const pl_symbol_map_t map_10J_unicode = {
-  map_header(10, 'J', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0x80, 0, 0),
+  map_header(10, 'J', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0x80, 0, 0),
   {
 /*0x00*/
   0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -905,7 +905,7 @@ private const pl_symbol_map_t map_10J_unicode = {
  * MC Text (MC) Unicode mapping *
  ********************************/
 private const pl_symbol_map_t map_12J_unicode = {
-  map_header(12, 'J', plgv_Unicode, 0, 0, 0, 0, 0xc1, 0, 0, 0),
+  map_header(12, 'J', plgv_Unicode, 1, 0, 0, 0, 0, 0xc1, 0, 0, 0),
   {
 /*0x00*/
    0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -962,7 +962,7 @@ private const pl_symbol_map_t map_12J_unicode = {
  * PC-8 Danish/Norweigian (PD) Unicode mapping *
  ***********************************************/
 private const pl_symbol_map_t map_11U_unicode = {
-  map_header(11, 'U', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0x40, 0, 0),
+  map_header(11, 'U', plgv_Unicode, 2, 0, 0, 0, 0, 0xc0, 0x40, 0, 0),
   {
 /*0x00*/
   0xffff, 0x263a, 0x263b, 0x2665, 0x2666, 0x2663, 0x2660, 0x25cf,
@@ -1019,7 +1019,7 @@ private const pl_symbol_map_t map_11U_unicode = {
  * Legal (LG) Unicode mapping *
  ******************************/
 private const pl_symbol_map_t map_1U_unicode = {
-  map_header(1, 'U', plgv_Unicode, 0, 0, 0, 0, 0xc0, 0, 0, 0),
+  map_header(1, 'U', plgv_Unicode, 1, 0, 0, 0, 0, 0xc0, 0, 0, 0),
   {
 /*0x00*/
    0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1080,7 +1080,7 @@ private const pl_symbol_map_t map_1U_unicode = {
  * it has added characters in positions 0x91 - 0x92.
  */
 private const pl_symbol_map_t map_9U_unicode = {
-  map_header(9, 'U', plgv_Unicode, 0, 0, 0, 0, 0xcc, 0, 0, 0),
+  map_header(9, 'U', plgv_Unicode, 2, 0, 0, 0, 0, 0xcc, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -1137,7 +1137,7 @@ private const pl_symbol_map_t map_9U_unicode = {
  * Microsoft Publishing (PB) Unicode mapping *
  *********************************************/
 private const pl_symbol_map_t map_6J_unicode = {
-  map_header(6, 'J', plgv_Unicode, 0, 0, 0, 0, 0xc8, 0, 0, 0),
+  map_header(6, 'J', plgv_Unicode, 2, 0, 0, 0, 0, 0xc8, 0, 0, 0),
   {
 /*0x00*/
    0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1194,7 +1194,7 @@ private const pl_symbol_map_t map_6J_unicode = {
  * PC-852 Latin 2 Unicode mapping *
  **********************************/
 private const pl_symbol_map_t map_17U_unicode = {
-  map_header(17, 'U', plgv_Unicode, 0, 0, 0, 0, 0xe4, 0, 0, 0),
+  map_header(17, 'U', plgv_Unicode, 2, 0, 0, 0, 0, 0xe4, 0, 0, 0),
   {
 /* 0x00 */
     0xffff, 0x263a, 0x263b, 0x2665, 0x2666, 0x2663, 0x2660, 0x2022,
@@ -1252,7 +1252,7 @@ private const pl_symbol_map_t map_17U_unicode = {
  * PC-Turkish  (PT) Unicode mapping *
  ************************************/
 private const pl_symbol_map_t map_9T_unicode = {
-  map_header(9, 'T', plgv_Unicode, 0, 0, 0, 0, 0xd0, 0, 0, 0),
+  map_header(9, 'T', plgv_Unicode, 2, 0, 0, 0, 0, 0xd0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x263a, 0x263b, 0x2665, 0x2666, 0x2663, 0x2660, 0x25cf,
@@ -1309,7 +1309,7 @@ private const pl_symbol_map_t map_9T_unicode = {
  * ISO 8859/2 Latin 2 (E2) Unicode mapping *
  *******************************************/
 private const pl_symbol_map_t map_2N_unicode = {
-  map_header(2, 'N', plgv_Unicode, 0, 0, 0, 0, 0xe0, 0, 0, 0),
+  map_header(2, 'N', plgv_Unicode, 1, 0, 0, 0, 0, 0xe0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1366,7 +1366,7 @@ private const pl_symbol_map_t map_2N_unicode = {
  * Windows 3.1 Latin 2 (WE) Unicode mapping *
  ********************************************/
 private const pl_symbol_map_t map_9E_unicode = {
-  map_header(9, 'E', plgv_Unicode, 0, 0, 0, 0, 0xe0, 0, 0, 0),
+  map_header(9, 'E', plgv_Unicode, 2, 0, 0, 0, 0, 0xe0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1423,7 +1423,7 @@ private const pl_symbol_map_t map_9E_unicode = {
  * ISO 8859/9 Latin 5 (E5) Unicode mapping *
  *******************************************/
 private const pl_symbol_map_t map_5N_unicode = {
-  map_header(5, 'N', plgv_Unicode, 0, 0, 0, 0, 0xd0, 0, 0, 0),
+  map_header(5, 'N', plgv_Unicode, 1, 0, 0, 0, 0, 0xd0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1480,7 +1480,7 @@ private const pl_symbol_map_t map_5N_unicode = {
  * Windows 3.1 Latin 5 (WT) Unicode mapping *
  ********************************************/
 private const pl_symbol_map_t map_5T_unicode = {
-  map_header(5, 'T', plgv_Unicode, 0, 0, 0, 0, 0xd0, 0, 0, 0),
+  map_header(5, 'T', plgv_Unicode, 2, 0, 0, 0, 0, 0xd0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1537,7 +1537,7 @@ private const pl_symbol_map_t map_5T_unicode = {
  * Math-8 (M8) Unicode mapping *
  *******************************/
 private const pl_symbol_map_t map_8M_unicode = {
-  map_header(8, 'M', plgv_Unicode, 0, 0, 0, 4, 0, 0, 0, 0),
+  map_header(8, 'M', plgv_Unicode, 1, 0, 0, 0, 4, 0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1594,7 +1594,7 @@ private const pl_symbol_map_t map_8M_unicode = {
  * PI Font(PI) Unicode mapping *
  *******************************/
 private const pl_symbol_map_t map_15U_unicode = {
-  map_header(15, 'U', plgv_Unicode, 0, 0, 0, 4, 0, 0, 0, 0),
+  map_header(15, 'U', plgv_Unicode, 1, 0, 0, 0, 4, 0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1651,7 +1651,7 @@ private const pl_symbol_map_t map_15U_unicode = {
  * PS Math (MS) Unicode mapping *
  ********************************/
 private const pl_symbol_map_t map_5M_unicode = {
-  map_header(5, 'M', plgv_Unicode, 0, 0, 0, 4, 0, 0, 0, 0),
+  map_header(5, 'M', plgv_Unicode, 1, 0, 0, 0, 4, 0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1708,7 +1708,7 @@ private const pl_symbol_map_t map_5M_unicode = {
  * Symbol Font (AS) Unicode mapping *
  ************************************/
 private const pl_symbol_map_t map_19M_unicode = {
-  map_header(19, 'M', plgv_Unicode, 0, 0, 0, 4, 0, 0, 0, 0),
+  map_header(19, 'M', plgv_Unicode, 1, 0, 0, 0, 4, 0, 0, 0, 0),
   {
 /*0x00*/
 0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -1765,7 +1765,7 @@ private const pl_symbol_map_t map_19M_unicode = {
  * Wingdings Font (L$) MSL mapping *
  ***********************************/
 private const pl_symbol_map_t map_579L_msl = {
-  map_header(579, 'L', plgv_MSL, 0, 0, 0, 1, 0, 0, 0, 0),
+  map_header(579, 'L', plgv_MSL, 2, 0, 0, 0, 1, 0, 0, 0, 0),
   {
 /*00*/
 ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
@@ -1822,7 +1822,7 @@ ffff, ffff, 1108, 2027, 2010, ffff, ffff, ffff
  * PS ITC Zapf Dingbats (DS) MSL mapping *
  *****************************************/
 private const pl_symbol_map_t map_10L_msl = {
-  map_header(10, 'L', plgv_MSL, 0, 0, 0, 1, 0, 0, 0, 0),
+  map_header(10, 'L', plgv_MSL, 1, 0, 0, 0, 1, 0, 0, 0, 0),
   {
 /*00*/
 ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
@@ -1879,7 +1879,7 @@ ffff, 2524, 2412, 2234, 2265, 2287, 2327, 2245,
  * ITC Zapf Dingbats series 100 (D1) MSL mapping *
  *************************************************/
 private const pl_symbol_map_t map_11L_msl = {
-  map_header(11, 'L', plgv_MSL, 0, 0, 0, 1, 0, 0, 0, 0),
+  map_header(11, 'L', plgv_MSL, 1, 0, 0, 0, 1, 0, 0, 0, 0),
   {
 /*00*/
 ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
@@ -1936,7 +1936,7 @@ ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff
  * ITC Zapf Dingbats series 200 (D2) MSL mapping *
  *************************************************/
 private const pl_symbol_map_t map_12L_msl = {
-  map_header(12, 'L', plgv_MSL, 0, 0, 0, 1, 0, 0, 0, 0),
+  map_header(12, 'L', plgv_MSL, 1, 0, 0, 0, 1, 0, 0, 0, 0),
   {
 /*00*/
 ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
@@ -1993,7 +1993,7 @@ ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff
  * ITC Zapf Dingbats series 300 (D3) MSL mapping *
  *************************************************/
 private const pl_symbol_map_t map_13L_msl = {
-  map_header(13, 'L', plgv_MSL, 0, 0, 0, 1, 0, 0, 0, 0),
+  map_header(13, 'L', plgv_MSL, 1, 0, 0, 0, 1, 0, 0, 0, 0),
   {
 /*00*/
 ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
@@ -2051,7 +2051,7 @@ ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff
  * (Note: this symbol set is not documented anywhere.)       *
  *************************************************************/
 private const pl_symbol_map_t map_0E_unicode = {
-  map_header(0, 'E', plgv_Unicode, 0, 0, 0, 0, 0x40, 0, 0, 0),
+  map_header(0, 'E', plgv_Unicode, 0, 0, 0, 0, 0, 0x40, 0, 0, 0),
   {
 /* 0x00 */
     0x0000, 0x0002, 0x0001, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,

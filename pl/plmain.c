@@ -11,6 +11,7 @@
 #include "gdebug.h"
 #include "gstypes.h"
 #include "gsmemory.h"
+#include "gsmalloc.h"
 #include "gp.h"
 #include "gsmatrix.h"
 #include "gscdefs.h"
@@ -22,9 +23,6 @@
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
-
-/* Import the allocator limit. */
-extern long gs_malloc_limit;
 
 /* Define the usage message. */
 private const char *pl_usage = "\

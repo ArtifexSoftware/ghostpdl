@@ -1,9 +1,10 @@
-#    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL* interpreter libraries and for PJL.
 # Users of this makefile must define the following:
-#	GSSRCDIR - the GS library source directory
+#	GLSRCDIR - the GS library source directory
+#	GLGENDIR - the GS library generated file directory
 #	PLSRCDIR - the source directory
 #	PLOBJDIR - the object / executable directory
 
@@ -11,8 +12,8 @@ PLSRC=$(PLSRCDIR)$(D)
 PLOBJ=$(PLOBJDIR)$(D)
 PLO_=$(O_)$(PLOBJ)
 
-PLCCC=$(CCC) -I$(PLSRCDIR) -I$(GSSRCDIR) $(C_)
-PLCCLEAF=$(CCLEAF) -I$(PLSRCDIR) -I$(GSSRCDIR) $(C_)
+PLCCC=$(CCC) -I$(PLSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(C_)
+PLCCLEAF=$(CCLEAF) -I$(PLSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(C_)
 
 # Define the name of this makefile.
 PL_MAK=$(PLSRC)pl.mak

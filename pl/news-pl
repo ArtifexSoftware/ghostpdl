@@ -7,8 +7,37 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.18 (8/6/98)
+=====================
+
+Updates the makefile for the new directory structure in library version
+5.30.  (pl.mak)
+
+Changes (general improvements not associated with bugs):
+    o mods for dictionary synonyms (originally implemented in 1.17)
+	- pl_dict.c: pl_dict_put_links() and pl_dict_undef_purge_links()
+	renamed to pl_dict_put_synonyms() and pl_dict_undef_purge_synonyms().
+	- pl_dict.h: added interface document for adding a synonym to the
+	dictionary.
+	- pl_dict.c: renamed pl_dict_put_link() to pl_dict_put_synonym()
+    o mods for font copying fonts (originally implemented in 1.17)
+	- plchar.c: pl_font_add_glyph() no longer requires a
+	size field for the data.  This is not necessary and broke the pl 
+	interface with XL.
+	- pcfont.h: no longer require glyph size in data type
+	pl_font_glyph_t
+	- plfont.c: pl_clone_font() code changes to support copying fonts
+	without passing in the size of the glyph data  (see last 2 entries)
+     o symbol set types
+        - jan's additions to correct printable character ranges in symbol set's          as suggested by Peter plsymbol.c
+
+Fixes for gs5.28 compatibility:
+        - plmain.c: added gsmalloc.h for gs_memory_default and removed
+	obsolete extern for gs_malloc_limit.
+
 Version 1.17 (2/10/98)
 =====================
+
 Fixes bugs:
         - symbol set typos.
         - key mapping not using mod 64K arithmetic.  (plchar.c)
