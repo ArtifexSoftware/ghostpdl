@@ -983,45 +983,42 @@ of an error; you may have to delete them manually from time to time.
 <p>
 CID fonts are PostScript resources containing
 large number of glyphs (e.g. glyphs for Far East languages).
-Please refer Postscript Language Reference,
+Please refer to the Postscript Language Reference Manual,
 third edition, for details.
 
+<p>
+CID font resources are a different kind of PostScript resources from fonts.
+In particular, they cannot be used as regular fonts. To do this, one must
+first combine a CID font resource with a CMap resource, which defines
+specific codes for hieroglyphs (this allows using the same collection of
+hieroglyphs with different encodings).
 
 <p>
-CID font resources are different kind of PostScript resources than fonts.
-Particularly they cannot be used as regular fonts. For doing this,
-CID font resourse first to be combined with a CMap resource, which
-defines specific codes for hieroglyphs (this allows to use
-same collection of hieroglyphs with different encodings).
-
-<p>
-The simplest method to request a font composed of CID font resource and CMap resource
-is to code
+The simplest method to request a font composed from a CID font resource and
+CMap resource is to code
 <blockquote><b><tt>
 /CIDFont-CMap findfont
 </tt></b></blockquote>
 in a PostScript document, where <b><tt>CIDFont</tt></b> is a name of any
-CID font resourse, and <b><tt>CMap</tt></b> is a name of a CMap resource,
-being designed for same character collection. The interpreter will compose
+CID font resource, and <b><tt>CMap</tt></b> is a name of a CMap resource
+designed for same character collection. The interpreter will compose
 the font automatically from the specified CID font and CMap resources.
 Another method is based on the operator <b><tt>composefont</tt></b>.
 
 <p>
-For substituting CID font resources Ghostscript provides the control file
+For substituting CID font resources, Ghostscript provides the control file
 <b><tt>gs/lib/cidfmap</tt></b>, which defines a CID font resource map.
-The file forms a table of records, each of which is a simple pair of names :
+The file forms a table of records, each of which is a simple pair of names:
 
 <blockquote><b><tt>
 /Substituted /Original
 </tt></b></blockquote>
 where <b><tt>Substituted</tt></b> is a name of CID font resource being used
-by a document, and <b><tt>Original</tt></b> is a name of an available
-CID font resource. Please pay attention that both them must be
-designed for same character collection. In other words, you
-cannot substitute Japanese CID font resource to Korean CID font resource,
-etc. Also please pay attention that CMap resource names must not appear in
-<b><tt>gs/lib/cidfmap</tt></b>.
-
+by a document, and <b><tt>Original</tt></b> is a name of an available CID
+font resource. Please note that the two resources must be designed for same
+character collection. In other words, you cannot substitute a Japanese CID
+font resource for a Korean CID font resource, etc. Also please note that
+CMap resource names must not appear in <b><tt>gs/lib/cidfmap</tt></b>.
 
 <h2><a name="Environment_variables"></a>Summary of environment variables</h2>
 
@@ -2870,31 +2867,34 @@ To run Ghostscript with UFST, you first need to build Ghostscript
 with the UFST bridge. Refer <a href="Make.htm#UFST_build">How to build Ghostscript with UFST</a>.
 
 <p>
-Then you need to obtain the Decoding resources from Artifex Software Inc. and install them with Ghostscript.
-Just copy the files to the <b><tt>Resource/Decoding</tt></b> directory (or to the subdirectory
-<b><tt>Decoding</tt></b> of a directory, which is specified in <b><tt>GenericResourcePath</tt></b>).
+Then you need to obtain the Decoding resources from Artifex Software
+Inc. and install them with Ghostscript.  Just copy the files to the
+<b><tt>Resource/Decoding</tt></b> directory (or to the
+<b><tt>Decoding</tt></b> subdirectory of a directory specified in
+<b><tt>GenericResourcePath</tt></b>).
 
 <p>
-All resident fonts, being handled with UFST, must be listed
-in new font map file <b><tt>gs/lib/FAPIfontmap</tt></b>. The format of <b><tt>gs/lib/FAPIfontmap</tt></b>
-is explained below.
+All resident fonts, being handled with UFST, must be listed in new font map
+file <b><tt>gs/lib/FAPIfontmap</tt></b>. The format of
+<b><tt>gs/lib/FAPIfontmap</tt></b> is explained below.
 
 <p>
-Font files being handled with UFST may reside in any directory in your hard disk.
-Paths to them to be specified in <b><tt>gs/lib/FAPIfontmap</tt></b>. The path may be either
-absolute or relative. Relative ones are being resolved from the path,
-which is specified in Ghostscript command line arguments like this :
+Font files being handled with UFST may reside in any directory in your hard
+disk.  Paths to them must be specified in
+<b><tt>gs/lib/FAPIfontmap</tt></b>. The paths may be either absolute or
+relative. Relative ones are resolved from the path specified by Ghostscript
+command line arguments like this:
 
 <blockquote>
 <b><tt>-sGS_FAPIFONTPATH=path</tt></b>
 </blockquote>
 
-The file <b><tt>gs/lib/FAPIfontmap</tt></b> is actually special PostScript code. It contains an entry
-for each font being rendered by UFST.  Each entry is a pair.
-The first element of the pair is the font name (the name that PostScript
-documents use to access the font, which may differ
-from real name of the font which the font file defines).
-The second element is a dictionary with entries :
+The file <b><tt>gs/lib/FAPIfontmap</tt></b> is actually special PostScript
+code. It contains an entry for each font being rendered by UFST.  Each entry
+is a pair.  The first element of the pair is the font name (the name that
+PostScript documents use to access the font, which may differ from real name
+of the font which the font file defines).  The second element is a
+dictionary with entries :
 
 <table cellpadding=0 cellspacing=10>
 
@@ -2912,7 +2912,7 @@ The second element is a dictionary with entries :
 <tr>	<td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only /AgfaUFST is now allowed.
+            Only /AgfaUFST is currently allowed.
 <tr>	<td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
@@ -2934,7 +2934,8 @@ Example of external font mapping table entry :
 
 
 <p>
-You may need to customize the file <b><tt>gs/lib/xlatmap</tt></b> . Follow instructions in it.
+You may need to customize the file <b><tt>gs/lib/xlatmap</tt></b>. Follow
+the instructions in it.
 
 <p>
 As an option, you can force Ghostscript to use UFST to handle all Type 1 and Type 42 fonts, including the ones distributed with Ghostscript.
