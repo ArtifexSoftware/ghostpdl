@@ -1676,7 +1676,7 @@ private int zFAPIBuildGlyph9(i_ctx_t *i_ctx_p)
     return code;
 }
 
-private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
+private int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success)
 {   ref *pdr = osp;  /* font dict */
     gs_font *pfont;
     int code = font_param(osp, &pfont);
@@ -1684,9 +1684,14 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
     int HWResolution[2], BBox[4];
     FracInt matrix[6] = {1, 0, 0, 1, 0, 0}; /* to be scaled, see below */
     i_plugin_holder *h = i_plugin_get_list(i_ctx_p);
-    char *xlatmap = NULL; /* Not useed with non-disk fonts. */
+    char *xlatmap = NULL;
     const char *decodingID = NULL;
 
+    if (code < 0)
+	return code;
+    code = FAPI_get_xlatmap(i_ctx_p, &xlatmap);	/* Useful for emulated fonts hooked with FAPI. */
+    if (code < 0)
+	return code;
     pbfont = (gs_font_base *)pfont;
     *success = false;
     for (; h != 0; h = h->next) {
@@ -1701,7 +1706,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
 	matrix[0] = matrix[3] = 1 << I->frac_shift;
 
 
-	code = FAPI_prepare_font(i_ctx_p, I, pdr, pbfont, NULL, HWResolution, BBox, matrix, xlatmap, &decodingID);
+	code = FAPI_prepare_font(i_ctx_p, I, pdr, pbfont, font_file_path, HWResolution, BBox, matrix, xlatmap, &decodingID);
 	if (code < 0) {
             /* Failed, skip this renderer : */
 	    continue;
@@ -1725,9 +1730,19 @@ private int zFAPIpassfont(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
     int code;
     bool found;
+    char *font_file_path = NULL;
+    ref *v;
 
+    /* Normally embedded fonts have no Path, but if a CID font is
+     * emulated with a TT font, and it is hooked with FAPI,
+     * the path presents and is neccessary to access the full font data.
+     */
     check_type(*op, t_dictionary);
-    code = do_FAPIpassfont(i_ctx_p, &found);
+    if (dict_find_string(op, "Path", &v) > 0 && r_has_type(v, t_string))
+        font_file_path = ref_to_string(v, imemory_global, "font file path");
+    code = do_FAPIpassfont(i_ctx_p, font_file_path, &found);
+    if (font_file_path != NULL)
+        gs_free_string(imemory_global, (byte *)font_file_path, r_size(v) + 1, "font file path");
     if(code != 0)
 	return code;
     push(1);
