@@ -946,10 +946,7 @@ fill:
     if (code >= 0) {
         /* PCL and GL/2 no longer use graphic library transparency */
         gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);
-         if (pixel_placement_mode == 0)
-             gs_setfilladjust(pgls->pgs, 0.5, 0.5);
-         else
-             gs_setfilladjust(pgls->pgs, 0, 0);
+	gs_setfilladjust(pgls->pgs, 0, 0);
     }
     return code;
 }
@@ -1309,6 +1306,39 @@ hpgl_close_path(
     return 0;
 }
 
+
+/* Normally fill adjust is 0 with respect to the library's
+   implementation.  To implement centered we simply slide everything
+   up and left.  This is not exactly correct but produces the desired
+   results in most cases.  Note this routine is sensitive to scan
+   direction. */
+ private int
+hpgl_set_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+{
+    
+    /* handle pcl centering here we should always have fill adjust set
+       to zero.  So we don't explicitly deal with the intersection
+       model here. */
+    if ( pgls->pp_mode == 1 ) {
+	gs_matrix default_matrix;
+	gs_point distance, adjust;
+	gx_path *ppath = gx_current_path(pgls->pgs);
+	/* arbitrary just need the signs after transformation to
+	   device space */
+	adjust.x = -1; 
+	adjust.y = -1;           
+	/* determine the adjustment in device space */
+	hpgl_call(gs_defaultmatrix(pgls->pgs, &default_matrix));
+	hpgl_call(gs_distance_transform(adjust.x, adjust.y, &default_matrix, &distance));
+	/* translate all points in the path by the adjustment.  The
+           1.5 is a hack, it should be 1 */
+	hpgl_call(gx_path_translate(ppath,
+		   float2fixed(1.0 * (distance.x / fabs(distance.x))), 
+		   float2fixed(1.5 * (distance.y / fabs(distance.y)))));
+    }
+    return 0;
+}
+
 /*
  * Draw (stroke or fill) the current path.
  */
@@ -1354,7 +1384,7 @@ hpgl_draw_current_path(
 		fill = gs_fill;
 
 	    switch (pgls->g.character.fill_mode) {
-
+		
 	    case hpgl_char_solid_edge:
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
                 if ((code = set_proc(pgls, hpgl_get_selected_pen(pgls), false)) < 0)
@@ -1370,7 +1400,7 @@ hpgl_draw_current_path(
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
 		hpgl_call(gs_setlinewidth(pgls->pgs, 
-		     pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
+         		  pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
 		hpgl_call(gs_stroke(pgs));
 		break;
 
@@ -1387,29 +1417,31 @@ hpgl_draw_current_path(
 	    case hpgl_char_fill_edge:
 		if (pgls->g.bitmap_fonts_allowed)
 		    break;	/* no edging */
-                set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-		hpgl_call(hpgl_gsave(pgls));
-                if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
-                    return code;
-		hpgl_call(hpgl_set_plu_ctm(pgls));
-		hpgl_call(gs_setlinewidth(pgls->pgs, 
-		     pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
-		hpgl_call(gs_stroke(pgs));
-		hpgl_call(hpgl_grestore(pgls));
 		/* the fill has already been done if the fill type is
                    hpgl/2 vector fills.  This was handled when we set
-                   the drawing color */
+                   the drawing color.  gsave to preserve the path for
+                   subsequent edging */
 		if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
-		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines))
+		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines)) {
+		    hpgl_call(hpgl_gsave(pgls));
 		    hpgl_call((*fill)(pgs));
-		else
-		    hpgl_call(hpgl_clear_current_path(pgls));
+		    hpgl_call(hpgl_grestore(pgls));
+		}
+		set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
+		if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
+		    return code;
+		hpgl_call(hpgl_set_plu_ctm(pgls));
+		/* use the default raster operation for the edge.  It
+                   is automaticall restored next drawing operation */
+		hpgl_call(gs_setrasterop(pgls->pgs, (gs_rop3_t)252));
+		hpgl_call(gs_setlinewidth(pgls->pgs,
+			  pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
+		hpgl_call(gs_stroke(pgs));
 		break;
 	    }
 	}
-	break;
-
     case hpgl_rm_polygon:
+	hpgl_set_pixel_placement(pgls, hpgl_rm_polygon);
 	if (pgls->g.fill_type == hpgl_even_odd_rule)
 	    hpgl_call(gs_eofill(pgs));
 	else    /* hpgl_winding_number_rule */
