@@ -54,19 +54,9 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version7.22"></a>Version 7.22 (2002-08-06)</h3>
+<h3><a name="Version7.23"></a>Version 7.23 (prerelease)</h3>
 
-<p>
-This release integrates the rewritten pdfwrite font copying code,
-fixing a large class of pdfwrite bugs involving incremental font
-updating. This project was completed before the DeviceN merge was
-ready, so this release (rather than 7.21 as previously stated) is
-the final checkpoint prior to the DeviceN merge. 
-
-<p>
-Overall, pdfwrite is probably an improvement over previous releases,
-but there are still known issues. Testing of pdfwrite with real-world
-files is encouraged.
+<p>This is a CVS prerelease.
 
 <p>
 The following SourceForge bug numbers were open at the time of the last release:
@@ -160,18 +150,7 @@ The following SourceForge bug numbers were open at the time of the last release:
 591039,
 591326.
 
-<p>The nightly regression tests show many changes. However, most of
-the non-pdf regressions are tiny changes resulting in comparing a
-debug build against a non-debug baseline. The rendering really
-shouldn't be different at all, so we're leaving these regressions open
-until we can fix the discrepancy. On the pdfwrite side, most of the
-regressions are actually improvements, but there are some known
-issues.  Notably, the "same_font" function is incorrect, and deriving
-several fonts from a standard font, replacing Metrics or Metrics2
-only, pdfwrite incorrectly merges them into a single font. This causes
-a regression with 093-01.ps and probably other test files.
-
-<h3><a name="7.22_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="7.23_Incompatible_changes"></a>Incompatible changes</h3>
 
 <pre>
 </pre>
@@ -200,7 +179,7 @@ contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <p>
-<small>Ghostscript version 7.22, 6 August 2002
+<small>Ghostscript version 7.23, 6 August 2002
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
