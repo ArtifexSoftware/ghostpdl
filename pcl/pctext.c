@@ -877,7 +877,6 @@ pcl_disable_underline(
     pcl_state_t *   pcs
 )
 {	
-    pcl_break_underline(pcs);
     pcs->underline_enabled = false;
     return 0;
 }
