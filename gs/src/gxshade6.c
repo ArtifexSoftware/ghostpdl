@@ -86,8 +86,11 @@ patch_curve_t curve[4], gs_fixed_point interior[4] /* 0 for Coons patch */ )
     int flag = shade_next_flag(cs, BitsPerFlag);
     int num_colors, code;
 
-    if (flag < 0)
+    if (flag < 0) {
+	if (!cs->is_eod(cs))
+	    return_error(gs_error_rangecheck);
 	return 1;		/* no more data */
+    }
     switch (flag & 3) {
 	default:
 	    return_error(gs_error_rangecheck);	/* not possible */

@@ -44,6 +44,7 @@ private int cs_next_packed_decoded(shade_coord_stream_t *, int,
 				   const float[2], float *);
 private int cs_next_array_decoded(shade_coord_stream_t *, int,
 				  const float[2], float *);
+private bool cs_eod(const shade_coord_stream_t * cs);
 
 /* Initialize a packed value stream. */
 void
@@ -76,7 +77,16 @@ shade_next_init(shade_coord_stream_t * cs,
 	cs->get_value = cs_next_packed_value;
 	cs->get_decoded = cs_next_packed_decoded;
     }
+    cs->is_eod = cs_eod;
     cs->left = 0;
+    cs->ds_EOF = false;
+}
+
+/* Check for the End-Of-Data state form a stream. */
+private bool
+cs_eod(const shade_coord_stream_t * cs)
+{
+    return cs->ds_EOF;
 }
 
 /* Get the next (integer) value from a packed value stream. */
@@ -99,8 +109,10 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	for (; needed >= 8; needed -= 8) {
 	    int b = sgetc(cs->s);
 
-	    if (b < 0)
+	    if (b < 0) {
+	        cs->ds_EOF = true;
 		return_error(gs_error_rangecheck);
+	    }
 	    value = (value << 8) + b;
 	}
 	if (needed == 0) {
@@ -109,8 +121,10 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	} else {
 	    int b = sgetc(cs->s);
 
-	    if (b < 0)
+	    if (b < 0) {
+	        cs->ds_EOF = true;
 		return_error(gs_error_rangecheck);
+	    }
 	    cs->bits = b;
 	    cs->left = left = 8 - needed;
 	    *pvalue = (value << needed) + (b >> left);
@@ -130,8 +144,11 @@ cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
     uint read;
 
     if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
-	read != sizeof(float) || value < 0 ||
-	(num_bits != 0 && num_bits < sizeof(uint) * 8 &&
+	read != sizeof(float)) {
+	cs->ds_EOF = true;
+	return_error(gs_error_rangecheck);
+    }
+    if (value < 0 || (num_bits != 0 && num_bits < sizeof(uint) * 8 &&
 	 value >= (1 << num_bits)) ||
 	value != (uint)value
 	)
@@ -172,8 +189,10 @@ cs_next_array_decoded(shade_coord_stream_t * cs, int num_bits,
 
     if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
 	read != sizeof(float)
-    )
+    ) {
+	cs->ds_EOF = true;
 	return_error(gs_error_rangecheck);
+    }
     *pvalue = value;
     return 0;
 }

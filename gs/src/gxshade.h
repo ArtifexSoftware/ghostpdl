@@ -114,11 +114,13 @@ struct shade_coord_stream_s {
     stream *s;			/* DataSource or &ds */
     uint bits;			/* shifted bits of current byte */
     int left;			/* # of bits left in bits */
+    bool ds_EOF;                /* The 'ds' stream reached EOF. */
     const gs_shading_mesh_params_t *params;
     const gs_matrix_fixed *pctm;
     int (*get_value)(shade_coord_stream_t *cs, int num_bits, uint *pvalue);
     int (*get_decoded)(shade_coord_stream_t *cs, int num_bits,
 		       const float decode[2], float *pvalue);
+    bool (*is_eod)(const shade_coord_stream_t *cs);
 };
 
 /* Define one vertex of a mesh. */

@@ -428,6 +428,8 @@ v2:		if ((code = Gt_next_vertex(state.pshm, &cs, &vc)) < 0)
 		    return code;
 	}
     }
+    if (!cs.is_eod(&cs))
+	return_error(gs_error_rangecheck);
     return 0;
 }
 
