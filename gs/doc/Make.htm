@@ -223,8 +223,19 @@ href="http://www.ijg.org/">Independent JPEG Group</a> (IJG) library, the
 (PNG)
 library, and the <a
 href="http://www.gzip.org/zlib/">zlib</a>
-compression and decompression library.  Here are authoritative distribution
-points for these libraries, where as elsewhere, "#" is used for version
+compression and decompression library. The default build also expects source
+for the <a href="http://jbig2dec.sourceforge.net">jbig2dec</a> JBIG2 decompression
+library.
+
+<p>
+On Windows and MacOS, the .zip and .sit source archives include the appropriate 
+source versions of these libraries, so no additional downloads are necessary.
+Unix tarballs may also contain appropriate library source; the configure script
+will tell you if it cannot find the appropriate libraries.
+
+<p>
+Here are authoritative distribution points for these libraries, should you need
+to obtain the source yourself. As elsewhere, "#" is used for version
 numbers.  The JPEG source code is quite stable, so the reference
 here includes the latest version number.  The zlib references are
 version-independent and should always provide the latest version.
@@ -260,6 +271,11 @@ class="offsite">http://www.gzip.org/zlib/zlib.tar.gz</a><br>
 class="offsite">http://www.gzip.org/zlib/zlib.zip</a><br>
 	<a href="ftp://swrinde.nde.swri.edu/pub/png/src/" class="offsite">ftp://swrinde.nde.swri.edu/pub/png/src/zlib-#.#.#.tar.gz</a><br>
 	<a href="ftp://swrinde.nde.swri.edu/pub/png/src/" class="offsite">ftp://swrinde.nde.swri.edu/pub/png/src/zlib###.zip</a>
+
+<tr>	<td valign=top>jbig2dec
+	<td>&nbsp;
+	<td>	<a href="http://sourceforge.net/project/showfiles.php?group_id=28301" 
+class="offsite">http://sourceforge.net/project/showfiles.php?group_id=28301</a><br>
 </table></blockquote>
 
 <p>
@@ -275,15 +291,6 @@ worry about this yet.)  If you're running Linux, you might check whether
 these libraries are already available in source form on your system, since
 many Linux distributors include them; but we advise you to get the highest
 version from the Net if you can.
-
-<p>
-Although the zip archives of an old version of the PNG library may not be
-named <b><tt>lpng</tt></b>###<b><tt>.zip</tt></b>, we refer to it as
-<b><tt>lpng</tt></b>###<b><tt>.zip</tt></b>.
-
-<p>
-On MacOS, the .sit source archive includes the appropriate source versions
-of these libraries, so no additional downloads are necessary.
 
 <hr>
 
