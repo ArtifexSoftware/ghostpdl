@@ -1360,7 +1360,8 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
 {
     gs_type42_data *d0 = &font0->data, *d1 = &font1->data;
     gs_font_type42 *font[2];
-    uint pos[2][3], len[2][3];
+    uint pos[2][3];
+    uint len[2][3] = {{0,0,0}, {0,0,0}};
     int i, j, code;
 
     if (d0->unitsPerEm != d1->unitsPerEm)
@@ -1399,16 +1400,18 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
 	    return 0;
     }
     for (i = 0; i < 3; i++) {
-	const byte *data0, *data1;
+	if (len[0][i] != 0) {
+	    const byte *data0, *data1;
 
-	code = access_type42_data(font0, pos[0][i], len[0][i], &data0);
-	if (code < 0)
-	    return code;
-	code = access_type42_data(font1, pos[1][i], len[1][i], &data1);
-	if (code < 0)
-	    return code;
-	if (memcmp(data0, data1, len[1][i]))
-	    return 0;
+	    code = access_type42_data(font0, pos[0][i], len[0][i], &data0);
+	    if (code < 0)
+		return code;
+	    code = access_type42_data(font1, pos[1][i], len[1][i], &data1);
+	    if (code < 0)
+		return code;
+	    if (memcmp(data0, data1, len[1][i]))
+		return 0;
+	}
     }
     return 1;
 }
