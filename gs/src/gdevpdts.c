@@ -206,10 +206,13 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	}
 	if (dnotw == 0 && pts->buffer.count_chars > 0 &&
 	    /*
-	     * Work around the Acrobat Reader limitation of approximately
-	     * 14 bits for numeric values.
+	     * Acrobat Reader limits the magnitude of user-space
+	     * coordinates.  Also, AR apparently doesn't handle large
+	     * positive movement values (negative X displacements), even
+	     * though the PDF Reference says this bug was fixed in AR3.
 	     */
-	    (tdw = dw * -1000.0 / pts->in.size, fabs(tdw) <= MAX_USER_COORD)
+	    (tdw = dw * -1000.0 / pts->in.size,
+	     tdw >= -MAX_USER_COORD && tdw < 1000)
 	    ) {
 	    /* Use TJ. */
 	    int code = append_text_move(pts, tdw);
@@ -529,7 +532,8 @@ pdf_set_text_state_values(gx_device_pdf *pdev, pdf_text_state_values_t *ptsv,
 }
 
 /*
- * Transform a character-space distance to device space.
+ * Transform a distance from unscaled text space (text space ignoring the
+ * scaling implied by the font size) to device space.
  */
 int
 pdf_text_distance_transform(floatp wx, floatp wy, const pdf_text_state_t *pts,
@@ -539,7 +543,8 @@ pdf_text_distance_transform(floatp wx, floatp wy, const pdf_text_state_t *pts,
 }
 
 /*
- * Return the current (x,y) text position as seen by the client.
+ * Return the current (x,y) text position as seen by the client, in
+ * unscaled text space.
  */
 void
 pdf_text_position(const gx_device_pdf *pdev, gs_point *ppt)
@@ -551,7 +556,8 @@ pdf_text_position(const gx_device_pdf *pdev, gs_point *ppt)
 }
 
 /*
- * Append characters to text being accumulated.
+ * Append characters to text being accumulated, giving their advance width
+ * in device space.
  */
 int
 pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,

@@ -277,13 +277,19 @@ pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
     byte ch = pcp->char_code;
     pdf_text_state_values_t values;
 
+    values.character_spacing = 0;
     values.pdfont = pdfont;
     values.size = 1;
     values.matrix = *pimat;
     values.matrix.ty -= pcp->y_offset;
+    values.render_mode = 0;
+    values.word_spacing = 0;
     pdf_set_text_state_values(pdev, &values,
+			      TEXT_STATE_SET_CHARACTER_SPACING |
 			      TEXT_STATE_SET_FONT_AND_SIZE |
-			      TEXT_STATE_SET_MATRIX);
+			      TEXT_STATE_SET_MATRIX |
+			      TEXT_STATE_SET_RENDER_MODE |
+			      TEXT_STATE_SET_WORD_SPACING);
     pdf_append_chars(pdev, &ch, 1, pdfont->Widths[ch] * pimat->xx, 0.0);
     return 0;
 }

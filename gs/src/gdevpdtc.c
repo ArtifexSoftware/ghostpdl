@@ -292,6 +292,18 @@ process_cmap_text_common(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	return code;
     if (code > 0)		/* can't emulate ADD_TO_*_WIDTH */
 	return_error(gs_error_rangecheck);
+    /******
+	   PATCH: We don't implement ADD_TO_*_WIDTH at all, because
+	   it's too much trouble to calculate the width to pass to
+	   pdf_append_chars.
+    ******/
+    if (((text_state.members & TEXT_ADD_TO_ALL_WIDTHS) &&
+	 text_state.values.character_spacing != 0) ||
+	((text_state.members & TEXT_ADD_TO_SPACE_WIDTH) &&
+	 text_state.values.word_spacing != 0)
+	)
+	return_error(gs_error_rangecheck);
+	    
     if (pcmap->from_Unicode) {
 	gs_cmap_ranges_enum_t renum;
 

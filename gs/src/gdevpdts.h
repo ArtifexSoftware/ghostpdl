@@ -124,7 +124,8 @@ int pdf_text_distance_transform(floatp wx, floatp wy,
 void pdf_text_position(const gx_device_pdf *pdev, gs_point *ppt);
 
 /*
- * Append characters to text being accumulated.
+ * Append characters to text being accumulated, giving their advance width
+ * in device space.
  */
 int pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
 		     floatp wx, floatp wy);

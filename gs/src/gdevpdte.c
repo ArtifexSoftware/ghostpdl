@@ -141,6 +141,7 @@ pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
 	pet->is_difference =
 	    glyph != cfont->procs.encode_char((gs_font *)cfont, ch,
 					      GLYPH_SPACE_NAME);
+	pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
     }
     if (i > *pindex)
 	code = 0;
@@ -218,15 +219,17 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	    pdfont->u.simple.LastChar = chr;
     }
 
-    /* Bring the text-related parameters in the output up to date. */
-    code = pdf_set_text_process_state(pdev, pte, ppts,
-				      (gs_const_string *)pstr);
-    if (code < 0)
-	return code;
-
     if (text->operation & TEXT_REPLACE_WIDTHS) {
 	gs_point w;
 
+	/* Cancel word and character spacing. */
+	ppts->members |= TEXT_STATE_SET_CHARACTER_SPACING |
+	    TEXT_STATE_SET_WORD_SPACING;
+	ppts->values.character_spacing = ppts->values.word_spacing = 0;
+	code = pdf_set_text_process_state(pdev, pte, ppts,
+					  (gs_const_string *)pstr);
+	if (code < 0)
+	    return code;
 	w.x = w.y = 0;
 	for (i = 0; i < pstr->size; *pindex = ++i, pte->xy_index++) {
 	    gs_point d, dpt;
@@ -255,6 +258,12 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 				     float2fixed(ppts->values.matrix.ty));
 	return code;
     }
+
+    /* Bring the text-related parameters in the output up to date. */
+    code = pdf_set_text_process_state(pdev, pte, ppts,
+				      (gs_const_string *)pstr);
+    if (code < 0)
+	return code;
 
     /*
      * The only operations left to handle are TEXT_DO_DRAW and
@@ -313,8 +322,6 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     if (!(text->operation & TEXT_RETURN_WIDTH))
 	return 0;
     pte->returned.total_width = width_pt;
-    gs_distance_transform(width_pt.x, width_pt.y, &ctm_only(pte->pis),
-			  &width_pt);
     return gx_path_add_point(pte->path,
 			     penum->origin.x + float2fixed(width_pt.x),
 			     penum->origin.y + float2fixed(width_pt.y));
@@ -347,7 +354,6 @@ pdf_char_widths(pdf_font_resource_t *pdfont, int ch, gs_font_base *font,
 	    pdfont->Widths[ch] = pwidths->Width;
 	    pdfont->real_widths[ch] = pwidths->real_width;
 	}
-	pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
     } else {
 	pwidths->Width = pdfont->Widths[ch];
 	pwidths->real_width = pdfont->real_widths[ch];
@@ -401,12 +407,13 @@ process_text_return_width(const gs_text_params_t *ptp, gs_font_base *font,
     }
     *pindex = i;
     *pdpt = dpt;
+
     return widths_differ;
 }
 /*
  * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH.
  * We know that the Tw and Tc values are zero.  Uses and updates
- * ppts->values.matrix; uses ppts->values.font.
+ * ppts->values.matrix; uses ppts->values.pdfont.
  */
 private int
 process_text_add_width(gs_text_enum_t *pte, gs_font_base *font,
@@ -431,7 +438,7 @@ process_text_add_width(gs_text_enum_t *pte, gs_font_base *font,
     start.y = ppts->values.matrix.ty;
     total.x = total.y = 0;	/* user space */
     /*
-     * Note that character widths are in design space, but text.delta*
+     * Note that character widths are in design space, but text.delta_*
      * values and the width value returned in *pdpt are in user space
      * (design space scaled by *pfmat), and the width values for
      * pdf_append_chars are in device space.
@@ -440,39 +447,31 @@ process_text_add_width(gs_text_enum_t *pte, gs_font_base *font,
 	pdf_glyph_widths_t cw;	/* design space */
 	int code = pdf_char_widths(ppts->values.pdfont, pstr->data[i], font,
 				   &cw);
-	gs_point dpt, wpt;	/* user space */
+	gs_point did, wanted;	/* user space */
 
 	if (code < 0)
 	    break;
-	gs_distance_transform(cw.Width * scale, 0.0, pfmat, &wpt);
 	if (pte->text.operation & TEXT_DO_DRAW) {
-	    gs_point mpt;
-
-	    gs_distance_transform(wpt.x, wpt.y, &ctm_only(pte->pis), &mpt);
-	    code = pdf_append_chars(pdev, &pstr->data[i], 1, mpt.x, mpt.y);
+	    gs_distance_transform(cw.Width * scale, 0.0, pfmat, &did);
+	    code = pdf_append_chars(pdev, &pstr->data[i], 1, did.x, did.y);
 	    if (code < 0)
 		break;
-	}
-	total.x += wpt.x;
-	total.y += wpt.y;
-	gs_distance_transform((cw.real_width - cw.Width) * scale, 0.0,
-			      pfmat, &dpt);
+	} else
+	    did.x = did.y = 0;
+	gs_distance_transform(cw.real_width * scale, 0.0, pfmat, &wanted);
 	if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
-	    dpt.x += pte->text.delta_all.x;
-	    dpt.y += pte->text.delta_all.y;
+	    wanted.x += pte->text.delta_all.x;
+	    wanted.y += pte->text.delta_all.y;
 	}
 	if (pstr->data[i] == space_char) {
-	    dpt.x += pte->text.delta_space.x;
-	    dpt.y += pte->text.delta_space.y;
+	    wanted.x += pte->text.delta_space.x;
+	    wanted.y += pte->text.delta_space.y;
 	}
-	if (dpt.x != 0 || dpt.y != 0 || i == pstr->size - 1) {
-	    gs_point mpt;
-
-	    total.x += dpt.x;
-	    total.y += dpt.y;
-	    gs_distance_transform(total.x, total.y, &ctm_only(pte->pis), &mpt);
-	    ppts->values.matrix.tx = start.x + mpt.x;
-	    ppts->values.matrix.ty = start.y + mpt.y;
+	total.x += wanted.x;
+	total.y += wanted.y;
+	if (wanted.x != did.x || wanted.y != did.y) {
+	    ppts->values.matrix.tx = start.x + total.x;
+	    ppts->values.matrix.ty = start.y + total.y;
 	    code = pdf_set_text_state_values(pdev, &ppts->values,
 					     TEXT_STATE_SET_MATRIX);
 	    if (code < 0)

@@ -189,7 +189,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	pbfont->num_glyphs = -1;
 	break;
     case ft_TrueType:
-	pbfont->num_glyphs = ((gs_font_type42 *)font)->data.numGlyphs;
+	pbfont->num_glyphs = ((gs_font_type42 *)font)->data.trueNumGlyphs;
 	pbfont->do_subset =
 	    (pbfont->num_glyphs <= MAX_NO_SUBSET_GLYPHS ?
 	     DO_SUBSET_UNKNOWN : DO_SUBSET_YES);
@@ -446,25 +446,26 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 	goto finish;
 
     case ft_TrueType: {
+	gs_font_type42 *const pfont = (gs_font_type42 *)out_font;
 #define TRUETYPE_OPTIONS (WRITE_TRUETYPE_NAME | WRITE_TRUETYPE_HVMTX)
-	/****** WHEN SHOULD WE USE WRITE_TRUETYPE_CMAP? ******/
 	/* Acrobat Reader 3 doesn't handle cmap format 6 correctly. */
 	const int options = TRUETYPE_OPTIONS |
 	    (pdev->CompatibilityLevel <= 1.2 ?
-	     WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0);
+	     WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0) |
+	    /* Generate a cmap only for incrementally downloaded fonts. */
+	    (pfont->data.numGlyphs != pfont->data.trueNumGlyphs ?
+	     WRITE_TRUETYPE_CMAP : 0);
 	stream poss;
 
 	swrite_position_only(&poss);
-	code = psf_write_truetype_font(&poss, (gs_font_type42 *)out_font,
-				       options, NULL, 0, &fnstr);
+	code = psf_write_truetype_font(&poss, pfont, options, NULL, 0, &fnstr);
 	if (code < 0)
 	    return code;
 	code = pdf_begin_fontfile(pdev, FontFile_id, NULL, stell(&poss),
 				  &writer);
 	if (code < 0)
 	    return code;
-	code = psf_write_truetype_font(writer.binary.strm,
-				       (gs_font_type42 *)out_font,
+	code = psf_write_truetype_font(writer.binary.strm, pfont,
 				       options, NULL, 0, &fnstr);
 	goto finish;
     }

@@ -530,7 +530,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 	gs_font_base *cfont = pdf_font_resource_font(pdfont);
 
 	if (cfont != 0)
-	    pdf_font_orig_matrix((gs_font *)font, &orig_matrix);
+	    pdf_font_orig_matrix((gs_font *)cfont, &orig_matrix);
 	else
 	    pdf_font_orig_matrix(font, &orig_matrix);
     }
@@ -575,8 +575,9 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 	if (code >= 0 && pt.y == 0 && penum->text.space.s_char == 32) {
 	    ppts->values.word_spacing = pt.x * size;
 	    ppts->members |= TEXT_STATE_SET_WORD_SPACING;
-	} else
+	} else {
 	    mask |= TEXT_ADD_TO_SPACE_WIDTH;
+	}
     }
 
     /* Store the updated values. */
