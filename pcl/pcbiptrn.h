@@ -58,4 +58,10 @@ extern  pcl_pattern_t * pcl_pattern_get_cross( int indx );
  */
 extern  pcl_pattern_t * pcl_pattern_get_solid_pattern( void );
 
+/*
+ * Return an "unsolid", 1 x 1 pattern for use with GL/2. See the comments in
+ * pcbiptrn.c for why this is necessary.
+ */
+extern  pcl_pattern_t * pcl_pattern_get_unsolid_pattern( void );
+
 #endif  	/* pcbiptrn_INCLUDED */

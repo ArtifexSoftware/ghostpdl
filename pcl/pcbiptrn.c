@@ -43,9 +43,9 @@ private const byte  bi_data_array[ (7 + 6) * 2 * 16 ] = {
 
     /* shade 11% to 20% */
     0xc0, 0xc0,   0xc0, 0xc0,   0x00, 0x00,   0x00, 0x00,
-    0x00, 0x00,   0x00, 0x00,   0xc0, 0xc0,   0xc0, 0xc0,
-    0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
-    0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
+    0x0c, 0x0c,   0x0c, 0x0c,   0x00, 0x00,   0x00, 0x00,
+    0xc0, 0xc0,   0xc0, 0xc0,   0x00, 0x00,   0x00, 0x00,
+    0x0c, 0x0c,   0x0c, 0x0c,   0x00, 0x00,   0x00, 0x00,
 
     /* shade 21% to 35% */
     0xc1, 0xc1,   0xc1, 0xc1,   0x80, 0x80,   0x08, 0x08,
@@ -162,6 +162,22 @@ private const gs_depth_bitmap   solid_pattern_pixmap = {
 private pcl_pattern_t * psolid_pattern;
 
 /*
+ * An "un-solid" pattern, similar to the solid pattern described above, but
+ * with only background. This is used primarily to handle the case of an
+ * uncolored patter with a white foreground color in GL/2, which such patterns
+ * are completely transparent (if pattern transparency is on; note that what
+ * the GL/2 documentation describes as source transparency is actually pattern
+ * transparency).
+ */
+private const byte unsolid_pattern_data = 0x0;
+private const gs_depth_bitmap   unsolid_pattern_pixmap = {
+    (byte *)&unsolid_pattern_data, 1, {1, 1}, 0, 1, 1
+};
+
+private pcl_pattern_t * punsolid_pattern;
+
+
+/*
  * The following where originally local statics, but were moved to top level
  * so as to work on systems that do not re-initialize BSS at each startup.
  */
@@ -182,6 +198,7 @@ pcl_pattern_init_bi_patterns(
 {
     memset(bi_pattern_array, 0, sizeof(bi_pattern_array));
     psolid_pattern = 0;
+    punsolid_pattern = 0;
     last_inten = 0;
     plast_shade = 0;
     pbi_mem = pmem;
@@ -216,6 +233,14 @@ pcl_pattern_clear_bi_patterns(void)
                                   );
 
         psolid_pattern = 0;
+    }
+    if (punsolid_pattern != 0) {
+        pcl_pattern_free_pattern( pbi_mem,
+                                  punsolid_pattern,
+                                  "clear PCL built-in patterns"
+                                  );
+
+        punsolid_pattern = 0;
     }
 }
 
@@ -291,7 +316,7 @@ pcl_pattern_get_cross(
 }
 
 /*
- * Return the solid uncolored patterns, to be used with rasters (see above).
+ * Return the solid uncolored pattern, to be used with rasters (see above).
  */
   pcl_pattern_t *
 pcl_pattern_get_solid_pattern(void)
@@ -307,4 +332,23 @@ pcl_pattern_get_solid_pattern(void)
         psolid_pattern->ppat_data->storage = pcds_internal;
     }
     return psolid_pattern;
+}
+
+/*
+ * Return the "unsolid" uncolored patterns, to be used with GL/2.
+ */
+  pcl_pattern_t *
+pcl_pattern_get_unsolid_pattern(void)
+{
+    if (punsolid_pattern == 0) {
+        (void)pcl_pattern_build_pattern( &(punsolid_pattern),
+                                         &unsolid_pattern_pixmap,
+                                         pcl_pattern_uncolored,
+                                         300,
+                                         300,
+                                         pbi_mem
+                                         );
+        punsolid_pattern->ppat_data->storage = pcds_internal;
+    }
+    return punsolid_pattern;
 }
