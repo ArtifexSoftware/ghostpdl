@@ -37,6 +37,9 @@ typedef struct gs_function_Sd_params_s {
     const float *Encode;	/* 2 x m, optional */
     const float *Decode;	/* 2 x n, optional */
     const int *Size;		/* m */
+    double *pole;               /* cached poles (internal data) */
+    int *array_step;			/* pole array element step by dimensions */
+    int *stream_step;			/* sample stream element step by dimensions */
 } gs_function_Sd_params_t;
 
 #define private_st_function_Sd()	/* in gsfunc.c */\

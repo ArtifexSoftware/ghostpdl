@@ -25,6 +25,22 @@
 #include "gxfunc.h"
 #include "stream.h"
 
+#define POLE_CACHE 1 /* Old code = 0 new code = 1. 
+			The new code perfectly implements fn_Sd_is_monotonic
+			with is_tensor_monotonic (at least for <=3 arguments),
+			rather that old code does not.
+		      */
+#define POLE_CACHE_DEBUG 0      /* A temporary development technology need. 
+				   Remove after the beta testing. */
+#define POLE_CACHE_GENERIC_1D 1 /* A temporary development technology need. 
+				   Didn't decide yet - see fn_Sd_evaluate_cubic_cached_1d. */
+#define POLE_CACHE_IGNORE 0     /* A temporary development technology need. 
+				   Remove after the beta testing. */
+
+#if POLE_CACHE_DEBUG
+#   include <assert.h>
+#endif
+
 typedef struct gs_function_Sd_s {
     gs_function_head_t head;
     gs_function_Sd_params_t params;
@@ -35,13 +51,14 @@ private_st_function_Sd();
 private
 ENUM_PTRS_WITH(function_Sd_enum_ptrs, gs_function_Sd_t *pfn)
 {
-    index -= 3;
+    index -= 6;
     if (index < st_data_source_max_ptrs)
 	return ENUM_USING(st_data_source, &pfn->params.DataSource,
 			  sizeof(pfn->params.DataSource), index);
     return ENUM_USING_PREFIX(st_function, st_data_source_max_ptrs);
 }
 ENUM_PTR3(0, gs_function_Sd_t, params.Encode, params.Decode, params.Size);
+ENUM_PTR3(3, gs_function_Sd_t, params.pole, params.array_step, params.stream_step);
 ENUM_PTRS_END
 private
 RELOC_PTRS_WITH(function_Sd_reloc_ptrs, gs_function_Sd_t *pfn)
@@ -50,6 +67,7 @@ RELOC_PTRS_WITH(function_Sd_reloc_ptrs, gs_function_Sd_t *pfn)
     RELOC_USING(st_data_source, &pfn->params.DataSource,
 		sizeof(pfn->params.DataSource));
     RELOC_PTR3(gs_function_Sd_t, params.Encode, params.Decode, params.Size);
+    RELOC_PTR3(gs_function_Sd_t, params.pole, params.array_step, params.stream_step);
 }
 RELOC_PTRS_END
 
@@ -311,9 +329,34 @@ top:
     }
 }
 
+private inline double 
+fn_Sd_encode(const gs_function_Sd_t *pfn, int i, double sample)
+{
+    float d0, d1, r0, r1;
+    double value;
+    int bps = pfn->params.BitsPerSample;
+
+    if (pfn->params.Range)
+	r0 = pfn->params.Range[2 * i], r1 = pfn->params.Range[2 * i + 1];
+    else
+	r0 = 0, r1 = (float)((1 << bps) - 1);
+    if (pfn->params.Decode)
+	d0 = pfn->params.Decode[2 * i], d1 = pfn->params.Decode[2 * i + 1];
+    else
+	d0 = r0, d1 = r1;
+
+    value = sample * (d1 - d0) / ((1 << bps) - 1) + d0;
+    if (value < r0)
+	value = r0;
+    else if (value > r1)
+	value = r1;
+    return value;
+}
+
 /* Evaluate a Sampled function. */
+/* A generic algorithm with a recursion by dimentions. */
 private int
-fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
+fn_Sd_evaluate_general(const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_Sd_t *pfn = (const gs_function_Sd_t *)pfn_common;
     int bps = pfn->params.BitsPerSample;
@@ -374,31 +417,510 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 
     /* Encode the output values. */
 
-    for (i = 0; i < pfn->params.n; ++i) {
-	float d0, d1, r0, r1, value;
-
-	if (pfn->params.Range)
-	    r0 = pfn->params.Range[2 * i], r1 = pfn->params.Range[2 * i + 1];
-	else
-	    r0 = 0, r1 = (float)((1 << bps) - 1);
-	if (pfn->params.Decode)
-	    d0 = pfn->params.Decode[2 * i], d1 = pfn->params.Decode[2 * i + 1];
-	else
-	    d0 = r0, d1 = r1;
-
-	value = samples[i] * (d1 - d0) / ((1 << bps) - 1) + d0;
-	if (value < r0)
-	    out[i] = r0;
-	else if (value > r1)
-	    out[i] = r1;
-	else
-	    out[i] = value;
-    }
+    for (i = 0; i < pfn->params.n; ++i)
+	out[i] = (float)fn_Sd_encode(pfn, i, samples[i]);
 
     return 0;
 }
 
+static const double double_stub = 1e90;
+
+private inline void
+fn_make_cubic_poles(double *p, double f0, double f1, double f2, double f3, 
+	    const int pole_step_minor)
+{   /* The following is poles of the polinomial,
+       which represents interpolate_cubic in [1,2]. */
+    const double a = -0.5;
+
+    p[pole_step_minor * 1] = (a*f0 + 3*f1 - a*f2)/3.0;
+    p[pole_step_minor * 2] = (-a*f1 + 3*f2 + a*f3)/3.0;
+}
+
+private void
+fn_make_poles(double *p, const int pole_step, int power, int bias)
+{
+    const int pole_step_minor = pole_step / 3;
+    switch(power) {
+	case 1: /* A linear 3d power curve. */
+	    /* bias must be 0. */
+	    p[pole_step_minor * 1] = (2 * p[pole_step * 0] + 1 * p[pole_step * 1]) / 3;
+	    p[pole_step_minor * 2] = (1 * p[pole_step * 0] + 2 * p[pole_step * 1]) / 3;
+	    break;
+	case 2:
+	    /* bias may be be 0 or 1. */
+	    /* Duplicate the beginning or the ending pole (the old code compatible). */
+	    fn_make_cubic_poles(p + pole_step * bias, 
+		    p[pole_step * 0], p[pole_step * bias], 
+		    p[pole_step * (1 + bias)], p[pole_step * 2], 
+		    pole_step_minor);
+	    break;
+	case 3:
+	    /* bias must be 1. */
+	    fn_make_cubic_poles(p + pole_step * bias, 
+		    p[pole_step * 0], p[pole_step * 1], p[pole_step * 2], p[pole_step * 3], 
+		    pole_step_minor);
+	    break;
+	default: /* Must not happen. */
+	   DO_NOTHING; 
+    }
+}
+
+/* Evaluate a Sampled function.
+   A cubic interpolation with a pole cache.
+   Allows a fast check for extreme suspection. */
+/* This implementation is a particular case of 1 dimension. 
+   maybe we'll use as an optimisation of the generic case,
+   so keep it for a while. */
+private int
+fn_Sd_evaluate_cubic_cached_1d(const gs_function_Sd_t *pfn, const float *in, float *out)
+{
+    float d0 = pfn->params.Domain[2 * 0];
+    float d1 = pfn->params.Domain[2 * 0 + 1];
+    float x0 = in[0];
+    const int pole_step_minor = pfn->params.n;
+    const int pole_step = 3 * pole_step_minor;
+    int i0; /* A cell index. */
+    int ib, ie, i, k;
+    double *p, t0, t1, tt;
+
+    if (x0 < d0)
+	x0 = d0;
+    if (x0 > d1)
+	x0 = d1;
+    tt = (in[0] - d0) * (pfn->params.Size[0] - 1) / (d1 - d0);
+    i0 = (int)floor(tt);
+    ib = max(i0 - 1, 0);
+    ie = min(pfn->params.Size[0], i0 + 3);
+    for (i = ib; i < ie; i++) {
+	if (pfn->params.pole[i * pole_step] == double_stub) {
+	    uint sdata[max_Sd_n];
+	    int bps = pfn->params.BitsPerSample;
+
+	    p = &pfn->params.pole[i * pole_step];
+	    fn_get_samples[pfn->params.BitsPerSample](pfn, i * bps * pfn->params.n, sdata);
+	    for (k = 0; k < pfn->params.n; k++, p++)
+		*p = fn_Sd_encode(pfn, k, (double)sdata[k]);
+	}
+    }
+    p = &pfn->params.pole[i0 * pole_step];
+    t0 = tt - i0;
+    if (t0 == 0) {
+	for (k = 0; k < pfn->params.n; k++, p++)
+	    out[k] = *p;
+    } else {
+	if (p[1 * pole_step_minor] == double_stub) {
+	    for (k = 0; k < pfn->params.n; k++)
+		fn_make_poles(&pfn->params.pole[ib * pole_step + k], pole_step, 
+			ie - ib - 1, i0 - ib);
+	}
+	t1 = 1 - t0;
+	for (k = 0; k < pfn->params.n; k++, p++) {
+	    double y = p[0 * pole_step_minor] * t1 * t1 * t1 +
+		       p[1 * pole_step_minor] * t1 * t1 * t0 * 3 +
+		       p[2 * pole_step_minor] * t1 * t0 * t0 * 3 +
+		       p[3 * pole_step_minor] * t0 * t0 * t0;
+	    if (y < pfn->params.Range[0])
+		y = pfn->params.Range[0];
+	    if (y > pfn->params.Range[1])
+		y = pfn->params.Range[1];
+	    out[k] = y;
+	}
+    }
+    return 0;
+}
+
+private inline void
+decode_argument(const gs_function_Sd_t *pfn, const float *in, double T[max_Sd_m], int I[max_Sd_m])
+{
+    int i;
+
+    for (i = 0; i < pfn->params.m; i++) {
+	float xi = in[i];
+	float d0 = pfn->params.Domain[2 * i + 0];
+	float d1 = pfn->params.Domain[2 * i + 1];
+	double t;
+
+	if (xi < d0)
+	    xi = d0;
+	if (xi > d1)
+	    xi = d1;
+	t = (xi - d0) * (pfn->params.Size[i] - 1) / (d1 - d0);
+	I[i] = (int)floor(t);
+	T[i] = t - I[i];
+    }
+}
+
+private inline void
+index_span(const gs_function_Sd_t *pfn, int *I, double *T, int ii, int *Ii, int *ib, int *ie)
+{
+    *Ii = I[ii];
+    if (T[ii] != 0) {
+	*ib = max(*Ii - 1, 0);
+	*ie = min(pfn->params.Size[ii], *Ii + 3);
+    } else {
+	*ib = *Ii; 
+	*ie = *Ii + 1;
+    }
+}
+
+private inline int
+load_vector(const gs_function_Sd_t *pfn, int a_offset, int s_offset)
+{
+    if (*(pfn->params.pole + a_offset) == double_stub) {
+	uint sdata[max_Sd_n];
+	int k, code;
+
+	code = fn_get_samples[pfn->params.BitsPerSample](pfn, s_offset, sdata);
+	if (code < 0)
+	    return code;
+	for (k = 0; k < pfn->params.n; k++)
+	    *(pfn->params.pole + a_offset + k) = fn_Sd_encode(pfn, k, (double)sdata[k]);
+    }
+    return 0;
+}
+
+private inline void
+interpolate_vector(const gs_function_Sd_t *pfn, int offset, int pole_step, int power, int bias)
+{
+    int k;
+
+    for (k = 0; k < pfn->params.n; k++)
+	fn_make_poles(pfn->params.pole + offset + k, pole_step, power, bias);
+}
+
+private inline void
+interpolate_tensors(const gs_function_Sd_t *pfn, int *I, double *T, 
+	int offset, int pole_step, int power, int bias, int ii)
+{
+    if (ii < 0)
+	interpolate_vector(pfn, offset, pole_step, power, bias);
+    else {
+	int s = pfn->params.array_step[ii];
+	int Ii = I[ii];
+
+	if (T[ii] == 0) {
+	    interpolate_tensors(pfn, I, T, offset + Ii * s, pole_step, power, bias, ii - 1);	
+	} else {
+	    int l;
+
+	    for (l = 0; l < 4; l++) 
+		interpolate_tensors(pfn, I, T, offset + Ii * s + l * s / 3, pole_step, power, bias, ii - 1);	
+	}
+    }
+}
+
+private inline bool 
+is_tensor_done(const gs_function_Sd_t *pfn, int *I, double *T, int a_offset, int ii)
+{
+    /* Check an inner pole of the cell. */
+    int i, o = 0;
+
+    for (i = ii; i >= 0; i--) {
+	o += I[i] * pfn->params.array_step[i];
+	if (T[i] != 0)
+	    o += pfn->params.array_step[i] / 3;
+    }
+    if (*(pfn->params.pole + a_offset + o) != double_stub)
+	return true;
+    return false;
+}
+
+/* Creates a tensor of Bezier coefficients by node interpolation. */
+private inline int
+make_interpolation_tensor(const gs_function_Sd_t *pfn, int *I, double *T,
+			    int a_offset, int s_offset, int ii)
+{
+    /* Well, this function isn't obvious. Trying to explain what it does.
+
+       Suppose we have a 4x4x4...x4 hypercube of nodes, and we want to build
+       a multicubic interpolation function for the inner 2x2x2...x2 hypercube.
+       We represent the multicubic function with a tensor of Besier poles,
+       and the size of the tensor is 4x4x....x4. Note that the outer corners 
+       of the tensor are equal to the corners of the 2x2x...x2 hypercube.
+
+       We organized the 'pole' array so that a tensor of of a cell 
+       occupies the cell, and tensors for neighbour cells have a common hyperplane.
+
+       For a 1-dimentional case the let the nodes are p0, p1, p2, p3,
+       and let the tensor coefficients are q0, q1, q2, q3.
+       We choose a cubic approximation, in which tangents at nodes p1, p2
+       are parallel to (p2 - p0) and (p3 - p1) correspondingly.
+       (Well, this doesn't give a the minimal curvity, but likely it is
+       what Adobe implementations do, see the bug 687352, 
+       and we agree that it's some reasonable).
+
+       For a 2-dimensional case we apply the 1-dimentional case through
+       the first dimension, and then construct a surface by varying the
+       second coordinate as a parameter. It gives a bicubic surface,
+       and the result doesn't depend on the order of coordinates 
+       (I proved the latter with Matematica 3.0).
+       Then we know that an interpolation by one coordinate and
+       a differentiation by another coordinate are interchangeble operators.
+       Due to that poles of the interpolated function are same as 
+       interpolated poles of the function (well, we didn't spend time
+       for a strong proof, but this fact was confirmed with testing the 
+       implementation with POLE_CACHE_DEBUG).
+
+       Then we apply the 2-dimentional considerations recursively 
+       to all dimensions. This is exactly what this function does.
+
+       When the source node array have an insufficient nomber of nodes
+       along a dimension, we duplicate ending nodes. This solution is done 
+       choosen to the compatibility to the old code, but definitely 
+       there exists a better one.
+     */
+    int code;
+    
+    if (ii < 0) {
+	if (POLE_CACHE_IGNORE || *(pfn->params.pole + a_offset) == double_stub) {
+	    code = load_vector(pfn, a_offset, s_offset);
+	    if (code < 0)
+		return code;
+	}
+    } else {
+	int Ii, ib, ie, i;
+	int sa = pfn->params.array_step[ii];
+	int ss = pfn->params.stream_step[ii];
+
+	index_span(pfn, I, T, ii, &Ii, &ib, &ie);
+	if (POLE_CACHE_IGNORE || !is_tensor_done(pfn, I, T, a_offset, ii)) {
+	    for (i = ib; i < ie; i++) {
+		code = make_interpolation_tensor(pfn, I, T, 
+				a_offset + i * sa, s_offset + i * ss, ii - 1);
+		if (code < 0)
+		    return code;
+	    }
+	    if (T[ii] != 0)
+		interpolate_tensors(pfn, I, T, a_offset + ib * sa, sa, ie - ib - 1, 
+				Ii - ib, ii - 1);
+	}
+    }
+    return 0;
+}
+
+private inline int
+evaluate_from_tenzor(const gs_function_Sd_t *pfn, int *I, double *T, int offset, int ii, double *y)
+{
+    int s = pfn->params.array_step[ii], k, l, code;
+
+    if (ii < 0) {
+	for (k = 0; k < pfn->params.n; k++)
+	    y[k] = *(pfn->params.pole + offset + k);
+    } else if (T[ii] == 0) {
+	return evaluate_from_tenzor(pfn, I, T, offset + s * I[ii], ii - 1, y);
+    } else {
+	double t0 = T[ii], t1 = 1 - t0;
+	double p[4][max_Sd_n];
+
+	for (l = 0; l < 4; l++) {
+	    code = evaluate_from_tenzor(pfn, I, T, offset + s * I[ii] + l * (s / 3), ii - 1, p[l]);
+	    if (code < 0)
+		return code;
+	}
+	for (k = 0; k < pfn->params.n; k++)
+	    y[k] = p[0][k] * t1 * t1 * t1 +
+		   p[1][k] * t1 * t1 * t0 * 3 +
+		   p[2][k] * t1 * t0 * t0 * 3 +
+	   p[3][k] * t0 * t0 * t0;
+    }
+    return 0;
+}
+
+
+/* Evaluate a Sampled function. */
+/* A cubic interpolation with pole cache. */
+/* Allows a fast check for extreme suspection with is_tensor_monotonic. */
+private int
+fn_Sd_evaluate_multicubic_cached(const gs_function_Sd_t *pfn, const float *in, float *out)
+{
+    double T[max_Sd_m], y[max_Sd_n];
+    int I[max_Sd_m], k, code;
+
+    decode_argument(pfn, in, T, I);
+    code = make_interpolation_tensor(pfn, I, T, 0, 0, pfn->params.m - 1);
+    if (code < 0)
+	return code;
+    evaluate_from_tenzor(pfn, I, T, 0, pfn->params.m - 1, y);
+    for (k = 0; k < pfn->params.n; k++) {
+	double yk = y[k];
+
+	if (yk < pfn->params.Range[k * 2 + 0])
+	    yk = pfn->params.Range[k * 2 + 0];
+	if (yk > pfn->params.Range[k * 2 + 1])
+	    yk = pfn->params.Range[k * 2 + 1];
+	out[k] = yk;
+    }
+    return 0;
+}
+
+/* Evaluate a Sampled function. */
+private int
+fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
+{
+    const gs_function_Sd_t *pfn = (const gs_function_Sd_t *)pfn_common;
+    int code;
+
+    if (POLE_CACHE && pfn->params.Order == 3) {
+	if (POLE_CACHE_GENERIC_1D || pfn->params.m > 1)
+	    code = fn_Sd_evaluate_multicubic_cached(pfn, in, out);
+	else
+	    code = fn_Sd_evaluate_cubic_cached_1d(pfn, in, out);
+#	if POLE_CACHE_DEBUG
+	{   float y[max_Sd_n];
+	    int k, code1;
+
+	    code1 = fn_Sd_evaluate_general(pfn_common, in, y);
+	    assert(code == code1);
+	    for (k = 0; k < pfn->params.n; k++)
+		assert(any_abs(y[k] - out[k]) <= 1e-6 * (pfn->params.Range[k * 2 + 1] - pfn->params.Range[k * 2 + 0]));
+	}
+#	endif
+    } else
+	code = fn_Sd_evaluate_general(pfn_common, in, out);
+    return code;
+}
+
+/* Copy a tensor to a differently indexed pole array. */
+private int
+copy_poles(const gs_function_Sd_t *pfn, int *I, double *T0, double *T1, int a_offset,
+		int ii, double *pole, int p_offset, int pole_step)
+{
+    int i, ei, sa, code;
+
+    if (pole_step <= 0)
+	return_error(gs_error_limitcheck); /* Too small buffer. */
+    ei = (T0[ii] == T1[ii] ? 1 : 4);
+    sa = pfn->params.array_step[ii];
+    if (ii == 0) {
+	for (i = 0; i < ei; i++)
+	    *(pole + p_offset + i * pole_step) = 
+		    *(pfn->params.pole + a_offset + I[ii] * sa + i * (sa / 3));
+    } else {
+	for (i = 0; i < ei; i++) {
+	    code = copy_poles(pfn, I, T0, T1, a_offset + I[ii] * sa + i * (sa / 3), ii - 1, 
+			    pole, p_offset + i * pole_step, pole_step / 4);
+	    if (code < 0)
+		return code;
+	}
+    }
+    return 0;
+}
+
+private inline void
+subcurve(double *pole, int pole_step, double t0, double t1)
+{
+    /* Generated with subcurve.nb using Mathematica 3.0. */
+    double q0 = pole[pole_step * 0];
+    double q1 = pole[pole_step * 1];
+    double q2 = pole[pole_step * 2];
+    double q3 = pole[pole_step * 3];
+    double t01 = 1 - t0, t11 = 1 - t1;
+
+#define Power2(a) (a) * (a)
+#define Power3(a) (a) * (a) * (a)
+    pole[pole_step * 0] = t0*(t0*(q3*t0 - 3*q2*t01) + 3*q1*Power2(t01)) - q0*Power3(t01);
+    pole[pole_step * 1] = q1*t01*(-2*t0 - t1 + 3*t0*t1) + t0*(q2*t0 + 2*q2*t1 - 
+			    3*q2*t0*t1 + q3*t0*t1) - q0*t11*Power2(t01);
+    pole[pole_step * 2] = t1*(2*q2*t0 + q2*t1 - 3*q2*t0*t1 + q3*t0*t1) + 
+			    q1*(-t0 - 2*t1 + 3*t0*t1)*t11 - q0*t01*Power2(t11);
+    pole[pole_step * 3] = t1*(t1*(3*q2 - 3*q2*t1 + q3*t1) + 
+			    3*q1*Power2(t11)) - q0*Power3(t11);
+#undef Power2
+#undef Power3
+}
+
+private void
+clamp_poles(double *T0, double *T1, int ii, int i, double * pole, 
+		int p_offset, int pole_step, int pole_step_i)
+{
+    if (ii < 0) {
+	subcurve(pole + p_offset, pole_step_i, T0[i], T1[i]);
+    } else if (i == ii) {
+	clamp_poles(T0, T1, ii - 1, i, pole, p_offset, pole_step / 4, pole_step);
+    } else {
+	int i, ei = (T0[ii] == T1[ii] ? 1 : 4);
+
+	for (i = 0; i < ei; i++)
+	    clamp_poles(T0, T1, ii - 1, i, pole, p_offset + i * pole_step, 
+			    pole_step / 4, pole_step_i);
+    }
+}
+
+private inline int /* 2 - don't know, -1 - decreesing, 0 - constant, 1 - increasing. */
+curve_monotonity(double *pole, int pole_step)
+{
+    double p0 = pole[pole_step * 0];
+    double p1 = pole[pole_step * 1];
+    double p2 = pole[pole_step * 2];
+    double p3 = pole[pole_step * 3];
+
+    if (p0 == p1 && p1 == p2 && p2 == p3)
+	return 0;
+    if (p0 <= p1 && p1 <= p2 && p2 <= p3)
+	return 1;
+    if (p0 >= p1 && p1 >= p2 && p2 >= p3)
+	return -1;
+    /* Maybe not monotonic. 
+       Don't want to solve quadric equations, so return "don't know". 
+       This case should be rare.
+     */
+    return 2;
+}
+
+private int /* 2 - don't know, -1 - decreesing, 0 - constant, 1 - increasing. */
+dimension_monotonity(double *T0, double *T1, int ii, int i, double *pole, 
+		int p_offset, int pole_step, int pole_step_i)
+{
+    if (ii < 0) {
+	return curve_monotonity(pole + p_offset, pole_step_i);
+    } else if (i == ii) {
+	return dimension_monotonity(T0, T1, ii - 1, i, pole, p_offset, pole_step / 4, pole_step);
+    } else {
+	int i, ei = (T0[ii] == T1[ii] ? 1 : 4), m = 0, mm;
+
+	for (i = 0; i < ei; i++) {
+	    mm = dimension_monotonity(T0, T1, ii - 1, i, pole, p_offset + i * pole_step, 
+			    pole_step / 4, pole_step_i);
+	    if (mm == 2)
+		return 2;
+	    if (m == 0)
+		m = mm;
+	    else if (m * mm < 0)
+		return 2;
+	}
+	return m;
+    }
+}
+
+private inline int
+is_tensor_monotonic(const gs_function_Sd_t *pfn, int *I, double *T0, double *T1, int k)
+{
+    double pole[4*4*4]; /* For a while restricting with 3-in functions. 
+                 More arguments need a bigger buffer, but the rest of code is same. */
+    int i, code, ii = pfn->params.m - 1;
+
+    if (ii >= 3) {
+	 /* Unimplemented. We don't know practical cases,
+	    because currently it is only called while decomposing a shading.  */
+	return_error(gs_error_limitcheck);
+    }
+    code = copy_poles(pfn, I, T0, T1, 0, ii, pole, k, count_of(pole) / 4);
+    if (code < 0)
+	return code;
+    for (i = ii; i >= 0; i--) {
+	if (T0[i] != T1[i])
+	    clamp_poles(T0, T1, ii, i, pole, 0, count_of(pole) / 4, -1);
+    }
+    for (i = ii; i >= 0; i--) {
+	if (T0[i] != T1[i])
+	    if (dimension_monotonity(T0, T1, ii, i, pole, 0, count_of(pole) / 4, -1) == 2)
+		return false;
+    }
+    return true;
+}
+
 /* Test whether a Sampled function is monotonic. */
+/* 1 = monotonic, 0 = don't know, <0 = error. */
 private int
 fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 		   const float *lower, const float *upper)
@@ -407,16 +929,29 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	(const gs_function_Sd_t *)pfn_common;
     float e0, e1, w0, w1;
     int i;
+#   if POLE_CACHE
+	int I[max_Sd_m];
+	double T0[max_Sd_m], T1[max_Sd_m], TT[max_Sd_m];
+	int code;
+	/*
+	 * If the interval is not inside a single cell,
+	 * we simply return false, because it can't cause a too big subdivision of shadings.
+	 * Otherwise we check whether the interval tensor is monotonic.
+	 * If it is, the function is monotonic in the interval.
+	 * Otherwise we don't want to solve quadric equations, so return false.
+	 */
+#   else
+	/*
+	 * Currently it only checks whether the interval is inside a single cell.
+	 * In general need to check the cubic surface extremes.
+	 * at any boundary of the interval, and inside the interval.
+	 *
+	 * A right method would be to compute Bezier poles of the the surface.
+	 * and then apply an overstrenthened criterion about the
+	 * pole coordinate monotonity.
+	 */
+#   endif
 
-    /*
-     * Currently it only checks that the interval is inside a single cell.
-     * In general need to check the cubic surface extremes.
-     * at any boundary of the interval, and inside the interval.
-     *
-     * A right method would be to compute Bezier poles of the the surface.
-     * and then apply an overstrenthened criterion about the
-     * pole coordinate monotonity.
-     */
     if (pfn->params.n > sizeof(int) * 4 - 1)
 	return 0;		/* can't represent result */
     for (i = 0; i < pfn->params.m; i++) {
@@ -441,7 +976,31 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	    w1 = (float)pfn->params.Size[i] - 1;
 	if ((int)w0 != (int)w1 && ((int)w1 != w1 || (int)w0 + 1 != w1))
 	    return gs_error_undefined; /* not in the same sample */
+#	if POLE_CACHE
+	if (pfn->params.Order == 3) {
+	    I[i] = min((int)w0, (int)w1);
+	    T0[i] = w0 - I[i];
+	    T1[i] = w1 - I[i];
+	    if (any_abs(T1[i] - T0[i]) < 1e-30)
+		T1[i] = T0[i]; /* Safety. */
+	    TT[i] = (T0[i] + T1[i]) / 2;
+	}
+#	endif
     }
+#   if POLE_CACHE
+	if (pfn->params.Order == 3) {
+	    int k;
+
+	    code = make_interpolation_tensor(pfn, I, TT, 0, 0, pfn->params.m - 1);
+	    if (code < 0)
+		return code;
+	    for (k = 0; k < pfn->params.n; k++) {
+		code = is_tensor_monotonic(pfn, I, T0, T1, k);
+		if (code <= 0)
+		    return code;
+	    }
+	}
+#   endif
     return 1;
 }
 
@@ -538,6 +1097,9 @@ gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
     gs_free_const_object(mem, params->Decode, "Decode");
     gs_free_const_object(mem, params->Encode, "Encode");
     fn_common_free_params((gs_function_params_t *) params, mem);
+    gs_free_object(mem, params->pole, "gs_function_Sd_free_params");
+    gs_free_object(mem, params->array_step, "gs_function_Sd_free_params");
+    gs_free_object(mem, params->stream_step, "gs_function_Sd_free_params");
 }
 
 /* aA helper for gs_function_Sd_serialize. */
@@ -660,9 +1222,35 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	pfn->params = *params;
 	if (params->Order == 0)
 	    pfn->params.Order = 1;	/* default */
+	pfn->params.pole = NULL;
+	pfn->params.array_step = NULL;
+	pfn->params.stream_step = NULL;
 	pfn->head = function_Sd_head;
 	pfn->head.is_monotonic =
 	    fn_domain_is_monotonic((gs_function_t *)pfn);
+	if (POLE_CACHE && pfn->params.Order == 3) {
+	    int bps = pfn->params.BitsPerSample;
+	    int sa = pfn->params.n, ss = pfn->params.n * bps, i;
+
+	    pfn->params.array_step = (int *)gs_alloc_byte_array(mem, 
+				    max_Sd_m, sizeof(int), "gs_function_Sd_init");
+	    pfn->params.stream_step = (int *)gs_alloc_byte_array(mem, 
+				    max_Sd_m, sizeof(int), "gs_function_Sd_init");
+	    if (pfn->params.array_step == NULL || pfn->params.stream_step == NULL)
+		return_error(gs_error_VMerror);
+	    for (i = 0; i < pfn->params.m; i++) {
+		pfn->params.array_step[i] = sa * 3;
+		sa = (pfn->params.Size[i] * 3 - 2) * sa;
+		pfn->params.stream_step[i] = ss;
+		ss = pfn->params.Size[i] * ss;
+	    }
+	    pfn->params.pole = (double *)gs_alloc_byte_array(mem, 
+				    sa, sizeof(double), "gs_function_Sd_init");
+	    if (pfn->params.pole == NULL)
+		return_error(gs_error_VMerror);
+	    for (i = 0; i < sa; i++)
+		pfn->params.pole[i] = double_stub;    
+	}
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
