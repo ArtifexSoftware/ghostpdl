@@ -213,7 +213,12 @@ pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	    pcl_symbol_set_control(&args, pcs);
 	}
     }
+    if ( type & pcl_reset_permanent ) {
+	pl_dict_release(&pcs->soft_symbol_sets);
+	pl_dict_release(&pcs->built_in_symbol_sets);
+    }
 }
+
 
 private int
 pcsymbol_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
