@@ -222,7 +222,7 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
 
     if (tdev != 0)
 	gx_device_copy_params((gx_device *)bdev, tdev);
-    if (remap_colors && bdev->is_open) {
+    if (remap_colors) {
 	bdev->black = gx_device_black((gx_device *)bdev);
 	bdev->white = gx_device_white((gx_device *)bdev);
 	bdev->transparent =
@@ -522,7 +522,11 @@ bbox_get_params(gx_device * dev, gs_param_list * plist)
     bbox[2] = fixed2float(fbox.q.x);
     bbox[3] = fixed2float(fbox.q.y);
     bba.data = bbox, bba.size = 4, bba.persistent = false;
-    return param_write_float_array(plist, "PageBoundingBox", &bba);
+    code = param_write_float_array(plist, "PageBoundingBox", &bba);
+    if (code < 0)
+        return code;
+    code = param_write_bool(plist, "WhiteIsOpaque", &bdev->white_is_opaque);
+    return code;
 }
 
 /* We implement put_params to ensure that we keep the important */
@@ -534,6 +538,7 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     int code;
     int ecode = 0;
+    bool white_is_opaque = bdev->white_is_opaque;
     gs_param_name param_name;
     gs_param_float_array bba;
 
@@ -548,20 +553,32 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
 	    break;
 	default:
 	    ecode = code;
-	  e:param_signal_error(plist, param_name, ecode);
+	    e:param_signal_error(plist, param_name, ecode);
 	case 1:
 	    bba.data = 0;
+    }
+
+    switch (code = param_read_bool(plist, (param_name = "WhiteIsOpaque"), &white_is_opaque)) {
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 0:
+        case 1:
+	    break;
     }
 
     code = gx_forward_put_params(dev, plist);
     if (ecode < 0)
 	code = ecode;
-    if (code >= 0 && bba.data != 0) {
-	BBOX_INIT_BOX(bdev);
-	BBOX_ADD_RECT(bdev, float2fixed(bba.data[0]), float2fixed(bba.data[1]),
-		      float2fixed(bba.data[2]), float2fixed(bba.data[3]));
+    if (code >= 0) {
+        if( bba.data != 0) {
+	    BBOX_INIT_BOX(bdev);
+	    BBOX_ADD_RECT(bdev, float2fixed(bba.data[0]), float2fixed(bba.data[1]),
+	    	          float2fixed(bba.data[2]), float2fixed(bba.data[3]));
+        }
+        bdev->white_is_opaque = white_is_opaque;
     }
-    bbox_copy_params(bdev, true);
+    bbox_copy_params(bdev, bdev->is_open);
     return code;
 }
 

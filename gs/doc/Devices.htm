@@ -1146,6 +1146,15 @@ Currently, it always prints the bounding box on <b><tt>stderr</tt></b>;
 eventually, it should also recognize <b><tt>-sOutputFile=</tt></b>.
 
 <p>
+By default, white objects don't contribute to the bounding box because
+many files fill the whole page with white before drawing other objects.
+This can be changed by:
+
+<blockquote><tt><b>
+<< /WhiteIsOpaque true >> setpagedevice
+</b></tt></blockquote>
+
+<p>
 Note that this device, like other devices, has a resolution and a (maximum)
 page size.  As for other devices, the product (resolution x page size) is
 limited to approximately 500K pixels.  By default, the resolution is 4000
