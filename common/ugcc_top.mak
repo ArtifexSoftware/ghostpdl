@@ -17,6 +17,10 @@ include $(COMMONDIR)/gccdefs.mak
 include $(COMMONDIR)/unixdefs.mak
 include $(COMMONDIR)/generic.mak
 
+# HACK - allow pcl and xl to see gs header definitions
+
+include $(GLSRCDIR)/lib.mak
+
 # Configure for debugging
 debug:
 	make -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)'
@@ -40,10 +44,11 @@ clean_gs:
 	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
 	GLOBJDIR='$(GLOBJDIR)' clean
 	
-# Build the required GS library files.
-# It's simplest always to build the floating point emulator,
-# even though we don't always link it in.
-$(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE)
+# Build the required GS library files.  It's simplest always to build
+# the floating point emulator, even though we don't always link it in.
+# HACK * HACK * HACK - we force this make to occur since we have no
+# way to determine if gs files are out of date.
+$(GENDIR)/ldl$(CONFIG).tr: FORCE
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
 	make \
@@ -60,6 +65,8 @@ $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE)
 	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o $(GLOBJDIR)/gsnogc.o \
 	  $(GLOBJDIR)/gconfig$(CONFIG).o $(GLOBJDIR)/gscdefs$(CONFIG).o
 	cp $(GLOBJDIR)/ld$(CONFIG).tr $(GENDIR)/ldl$(CONFIG).tr
+
+FORCE:
 
 # Build the configuration file.
 $(GENDIR)/pconf$(CONFIG).h $(GENDIR)/ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
