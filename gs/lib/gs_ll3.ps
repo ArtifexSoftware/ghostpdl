@@ -348,12 +348,12 @@ currentdict /.useciecolorkeydict undef
 
 /.setglobal {		% <bool> .setglobal -
   dup .currentglobal ne {
-	% We only want to change substitutions for color spaces
-	% whose definitions are actually changing.
-    /ColorSpace /Category findresource begin
 	% If there are no local definitions of the Default keys,
 	% changing VM can't affect the definition of any resource.
-    .LocalDefaults {
+    /.localcsdefaults .uservar {
+	% We only want to change substitutions for color spaces
+	% whose definitions are actually changing.
+      /ColorSpace /Category findresource begin
       /DefaultGray .getdefaultcs
       /DefaultRGB .getdefaultcs
       /DefaultCMYK .getdefaultcs
@@ -371,7 +371,7 @@ currentdict /.useciecolorkeydict undef
       dup 4 index ne { 0 exch .setdefaultcs } { pop } ifelse
       pop pop pop pop
     } {
-      end .setglobal
+      .setglobal
     } ifelse
   } {
     .setglobal

@@ -645,40 +645,42 @@ counttomark 2 idiv
 % We keep track of whether there are any local definitions for any of
 % the Default keys.  This information must get saved and restored in
 % parallel with the local instance dictionary, so it must be stored in
-% local VM.  Therefore, we use a local array (actually, a procedure)
-% to hold the flag.
-
-% We'll need to use .forceput to initialize this correctly.
-/.LocalDefaults null
+% local VM.
+userdict /.localcsdefaults false put
 
 /DefineResource {
   2 copy /Generic /Category findresource /DefineResource get exec
   exch pop
   exch //.defaultcsnames exch .knownget {
     1 index .definedefaultcs
-    currentglobal not { /.LocalDefaults load 0 true put } if
+    currentglobal not { .userdict /.localcsdefaults true put } if
   } if
 } bind
 
 /UndefineResource {
   dup /Generic /Category findresource /UndefineResource get exec
-  //.defaultcsnames exch .knownget {
-    .undefinedefaultcs
-    currentglobal not {
-	% Recompute .LocalDefaults by scanning.  This is rarely needed.
-      /.LocalDefaults load 0 false //.defaultcsnames {
+  //.defaultcsnames 1 index .knownget {
+	% Stack: resname index
+    currentglobal {
+      .undefinedefaultcs pop
+    } {
+	% We removed the local definition, but there might be a global one.
+      exch .GetInstance {
+	0 get .definedefaultcs
+      } {
+	.undefinedefaultcs
+      } ifelse
+	% Recompute .localcsdefaults by scanning.  This is rarely needed.
+      .userdict /.localcsdefaults false //.defaultcsnames {
 	pop .LocalInstances exch known { pop true exit } if
       } forall put
-    } if
-  } if
+    } ifelse
+  } {
+    pop
+  } ifelse
 } bind
 
 .definecategory			% ColorSpace
-
-currentglobal false setglobal
-/ColorSpace /Category findresource
-  /.LocalDefaults [false] cvx .forceput	% category is global, array is local
-setglobal
 
 % Define the Encoding category.
 
