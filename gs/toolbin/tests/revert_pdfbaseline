@@ -36,13 +36,9 @@ import string
 
 def make_pdfcompare_entry(ifile, device, dpi, band):
     ofile = "%s.pdf.%s.%d.%d" % (ifile, device, dpi, band)
-    print "creating entry: " + ofile + "...",
+    print "reverting entry: " + ofile + "...",
     sys.stdout.flush()
 
-    if gssum.exists(ofile):
-        print "exists."
-        return
-    
     gs = gstestgs.Ghostscript()
     gs.log_stdout = gsconf.log_stdout
     gs.log_stderr = gsconf.log_stderr
