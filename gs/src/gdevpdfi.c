@@ -342,6 +342,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     default:
 	goto nyi;
     }
+    /* AR5 on Windows doesn't support 0-size images. Skipping. */
+    if (pim->Width == 0 || pim->Height == 0)
+	goto nyi;
     /* PDF doesn't support images with more than 8 bits per component. */
     if (pim->BitsPerComponent > 8)
 	goto nyi;
