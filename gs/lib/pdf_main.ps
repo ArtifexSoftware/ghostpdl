@@ -681,7 +681,6 @@ end readonly def
   dictbeginpage /DefaultMatrix 1 index store setmatrix
   dup		  % for showing annotations below
   count /pdfemptycount exch store
-  gsave
 	% If the page uses any transparency features, show it within
 	% a transparency group.
   PDFversion 1.4 lt {
@@ -711,18 +710,19 @@ end readonly def
       showpagecontents
     } ifelse
   } ifelse
-  grestore
-   % todo: mixing drawing ops outside the device filter could cause
-   % problems, for example with the pnga device.
-   /Annots knownoget { { oforce drawannot } forall } if
-   endpage
-   end			% scratch dict
+  % todo: mixing drawing ops outside the device filter could cause
+  % problems, for example with the pnga device.
+  /Annots knownoget { { oforce drawannot } forall } if
+  endpage
+  end			% scratch dict
 } bind def
 /showpagecontents {	% <pagedict> showpagecontents -
+  gsave		% preserve gstate for Annotations later
   /Contents knownoget not { 0 array } if
   dup type /arraytype ne { 1 array astore } if {
     oforce false resolvestream pdfopdict .pdfrun
   } forall
+  grestore
 } bind def
 /processcolorspace {	% - processcolorspace <colorspace>
 	% The following is per the PLRM3.
