@@ -189,7 +189,8 @@ pdf_embed_font_as_type1(gx_device_pdf *pdev, gs_font_type1 *font,
 private int
 pdf_embed_font_as_type2(gx_device_pdf *pdev, gs_font_type1 *font,
 			long FontFile_id, gs_glyph subset_glyphs[256],
-			uint subset_size, const gs_const_string *pfname)
+			uint subset_size, const gs_const_string *pfname,
+			gs_int_rect *FontBBox)
 {
     int code;
     pdf_data_writer_t writer;
@@ -201,7 +202,8 @@ pdf_embed_font_as_type2(gx_device_pdf *pdev, gs_font_type1 *font,
     if (code < 0)
 	return code;
     code = psf_write_type2_font(writer.binary.strm, font, options,
-				subset_glyphs, subset_size, pfname);
+				subset_glyphs, subset_size, pfname,
+				FontBBox);
     pdf_end_fontfile(pdev, &writer);
     return code;
 }
@@ -210,7 +212,8 @@ pdf_embed_font_as_type2(gx_device_pdf *pdev, gs_font_type1 *font,
 private int
 pdf_embed_font_type1(gx_device_pdf *pdev, gs_font_type1 *font,
 		     long FontFile_id, gs_glyph subset_glyphs[256],
-		     uint subset_size, const gs_const_string *pfname)
+		     uint subset_size, const gs_const_string *pfname,
+		     gs_int_rect *FontBBox)
 {
     switch (((const gs_font *)font)->FontType) {
     case ft_encrypted:
@@ -221,7 +224,8 @@ pdf_embed_font_type1(gx_device_pdf *pdev, gs_font_type1 *font,
 	/* falls through */
     case ft_encrypted2:
 	return pdf_embed_font_as_type2(pdev, font, FontFile_id,
-				       subset_glyphs, subset_size, pfname);
+				       subset_glyphs, subset_size, pfname,
+				       FontBBox);
     default:
 	return_error(gs_error_rangecheck);
     }
@@ -355,7 +359,8 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	    }
 	    code = pdf_embed_font_type1(pdev, (gs_font_type1 *)font,
 					FontFile_id, subset_list,
-					subset_size, &font_name);
+					subset_size, &font_name,
+					&pfd->values.FontBBox);
 	    break;
 	case ft_TrueType:
 	    if (do_subset) {

@@ -504,7 +504,8 @@ pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     if (!pfd->common.object->written &&
 	(code = pdf_compute_font_descriptor(pfd)) >= 0 &&
 	(!pfd->embed ||
-	 (code = pdf_write_embedded_font(pdev, pfd->base_font)) >= 0)
+	 (code = pdf_write_embedded_font(pdev, pfd->base_font, 
+				&pfd->common.values.FontBBox)) >= 0)
 	)
 	DO_NOTHING;
     return code;

@@ -399,7 +399,8 @@ pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
  * Write an embedded font.
  */
 int
-pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
+pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
+			gs_int_rect *FontBBox)
 {
     bool do_subset = pdf_do_subset_font(pdev, pbfont);
     gs_font_base *out_font =
@@ -442,7 +443,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 				    (gs_font_type1 *)out_font,
 				    TYPE2_OPTIONS |
 			(pdev->CompatibilityLevel < 1.3 ? WRITE_TYPE2_AR3 : 0),
-				    NULL, 0, &fnstr);
+				    NULL, 0, &fnstr, FontBBox);
 	goto finish;
 
     case ft_TrueType: {

@@ -66,6 +66,7 @@ typedef struct cff_writer_s {
     long start_pos;
     cff_string_table_t std_strings;
     cff_string_table_t strings;
+    gs_int_rect FontBBox;
 } cff_writer_t;
 typedef struct cff_glyph_subset_s {
     psf_outline_glyphs_t glyphs;
@@ -545,17 +546,22 @@ cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
     if (pinfo->members & FONT_INFO_FAMILY_NAME)
 	cff_put_string_value(pcw, pinfo->FamilyName.data,
 			     pinfo->FamilyName.size, TOP_FamilyName);
-    /* (Weight) */
-    if (pbfont->FontBBox.p.x != 0 || pbfont->FontBBox.p.y != 0 ||
-	pbfont->FontBBox.q.x != 0 || pbfont->FontBBox.q.y != 0
-	) {
-	/* An omitted FontBBox is equivalent to an empty one. */
-	cff_put_real(pcw, pbfont->FontBBox.p.x);
-	cff_put_real(pcw, pbfont->FontBBox.p.y);
-	cff_put_real(pcw, pbfont->FontBBox.q.x);
-	cff_put_real(pcw, pbfont->FontBBox.q.y);
-	cff_put_op(pcw, TOP_FontBBox);
-    }
+    if (pcw->FontBBox.p.x != 0 || pcw->FontBBox.p.y != 0 ||
+ 	pcw->FontBBox.q.x != 0 || pcw->FontBBox.q.y != 0
+  	) {
+  	/* An omitted FontBBox is equivalent to an empty one. */
+ 	/*
+ 	 * Since Acrobat Reader 4 on Solaris doesn't like 
+ 	 * an omitted FontBBox, we copy it here from
+ 	 * the font descriptor, because the base font
+ 	 * is allowed to omit it's FontBBox.
+ 	 */
+ 	cff_put_real(pcw, pcw->FontBBox.p.x);
+ 	cff_put_real(pcw, pcw->FontBBox.p.y);
+ 	cff_put_real(pcw, pcw->FontBBox.q.x);
+ 	cff_put_real(pcw, pcw->FontBBox.q.y);
+  	cff_put_op(pcw, TOP_FontBBox);
+      }
     if (uid_is_UniqueID(&pbfont->UID))
 	cff_put_int_value(pcw, pbfont->UID.id, TOP_UniqueID);
     else if (uid_is_XUID(&pbfont->UID)) {
@@ -1099,7 +1105,8 @@ cff_write_FDSelect(cff_writer_t *pcw, psf_glyph_enum_t *penum, uint size,
 int
 psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 		      gs_glyph *subset_glyphs, uint subset_size,
-		      const gs_const_string *alt_font_name)
+		      const gs_const_string *alt_font_name,
+		      gs_int_rect *FontBBox)
 {
     gs_font_base *const pbfont = (gs_font_base *)pfont;
     cff_writer_t writer;
@@ -1154,6 +1161,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     writer.glyph_data = psf_type1_glyph_data;
     writer.offset_size = 1;	/* arbitrary */
     writer.start_pos = stell(s);
+    writer.FontBBox = *FontBBox;
 
     /* Initialize the enumeration of the glyphs. */
     psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont,

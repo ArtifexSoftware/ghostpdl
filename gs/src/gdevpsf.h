@@ -199,7 +199,8 @@ int psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 #define WRITE_TYPE2_NO_GSUBRS 8	/* omit GlobalSubrs */
 int psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 			 gs_glyph *subset_glyphs, uint subset_size,
-			 const gs_const_string *alt_font_name);
+			 const gs_const_string *alt_font_name,
+			 gs_int_rect *FontBBox);
 
 #ifndef gs_font_cid0_DEFINED
 #  define gs_font_cid0_DEFINED
