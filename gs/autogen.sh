@@ -21,8 +21,9 @@ cd "$srcdir"
 echo "Generating configuration files for $package, please wait...."
 
 echo "  creating links to configuration sources"
-ln -sf src/configure.ac .
-ln -sf src/Makefile.in .
+rm -f configure.ac Makefile.in
+ln -s src/configure.ac .
+ln -s src/Makefile.in .
 
 #echo "  aclocal $ACLOCAL_FLAGS"
 #aclocal $ACLOCAL_FLAGS
