@@ -636,6 +636,8 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     /* Free the bookkeeping structures, except for the bits and mask */
     /* data iff they are still needed. */
     dev_proc(adev, close_device)((gx_device *)adev);
+    /* extra decrement to force free */
+    rc_decrement(adev, "gx_pattern_load(pattern_accum_device)");
     /* Freeing the state will free the device. */
     gs_state_free(saved);
     return code;
