@@ -55,39 +55,14 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version8.10"></a>Version 8.10 (2003-05-21)</h3>
+<h3><a name="Version8.11"></a>Version 8.11 (CVS PRE-RELEASE)</h3>
 
 <p>
-The 8.10 release is an incremental release from 8.00. It contains
-some fairly substantial reworking of important modules, most notably
-in the font rendering. Because of the extent of the changes, we're
-labelling this as a beta release. It should be quite usable, but
-it hasn't been as thoroughly wrung out as our production releases.
-<p>
-The major new feature improved font rendering by Igor Melichev. The
-new font renderer prevents dropouts intelligently rather than relying
-on "fill_adjust" (which has the side effect of making the font
-bolder).
-<p>
-In addition, pdfwrite continues to evolve and improve. Most patterns
-and type 3 fonts are now output as high-level objects rather 
-than being rasterized.
-<p>
-This is our first release with support for JBIG2 encoded images, using
-our jbig2dec library. This decoder is not yet complete, but
-successfully decodes many PDF files containing JBIG2 images.
-<p>
-This release also contains an important security fix. If you are using
-Ghostscript in a security-critical application, we recommend you
-upgrade now.
-<p>
-Finally, we include the usual bug fixes and improvements. Please
-exercise this release thoroughly, so we can make the next release
-rock-solid.
+This an unreleased development snapshot of AFPL Ghostscript.
 
 <p>
 The following <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a> numbers were open at
-the time of this release:
+the time of the last release:
 <blockquote>
 405501,
 406273,
@@ -232,10 +207,10 @@ the time of this release:
 686881.
 </blockquote>
 
-<h3><a name="8.10_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="8.11_Incompatible_changes"></a>Incompatible changes</h3>
 
-<p>The mechanism for locating resources has changed. See the <a href="Use.htm#Finding_files">usage
-documentation</a> for details of the new mechanism.
+<p>The mechanism for locating resources has changed since 8.00. See the <a
+href="Use.htm#Finding_files">usage documentation</a> for details of the new mechanism.
 
 <pre>
 </pre>
@@ -264,7 +239,7 @@ contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <p>
-<small>Ghostscript version 8.10, -d May 2003
+<small>Ghostscript version 8.11, 22 May 2003
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
