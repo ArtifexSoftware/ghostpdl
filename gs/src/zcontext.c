@@ -887,15 +887,21 @@ monitor_cleanup(i_ctx_t *i_ctx_p)
 {
     int code = lock_release(esp);
 
+    if (code < 0)
+	return code;
     --esp;
-    return code;
+    return o_pop_estack;
 }
 /* Release the monitor lock when the procedure completes. */
 private int
 monitor_release(i_ctx_t *i_ctx_p)
 {
-    --esp;
-    return monitor_cleanup(i_ctx_p);
+    int code = lock_release(esp - 1);
+
+    if (code < 0)
+	return code;
+    esp -= 2;
+    return o_pop_estack;
 }
 
 /* <condition> notify - */
