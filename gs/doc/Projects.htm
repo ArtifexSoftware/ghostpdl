@@ -281,6 +281,19 @@ single family.
 <p>
 See below under "Notification for glyph decaching."
 
+<h3>Preserve compression when writing PDF images.</h3>
+
+<p>
+Currently, all images are decompressed by the interpreter before being
+passed to the graphics library; the PDF writer may then compress them again.
+Ordinarily, this only slows things down a little, but in the case of
+DCT-encoded images that are being DCT-encoded in the output, image
+degradation may occur.  Ideally, the implementation should be smart enough
+to not decode and re-encode the image.  However, making this work properly
+is difficult.  <I>This would probably involve extending the library APIs for
+images so that they could pass a stream, possibly including filters, instead
+of the (fully decoded) data rows.</I>
+
 <h1><a name="Graphics"></a>Graphics</h1>
 
 <h2><a name="Graphics_functionality"></a>Functionality</h2>
