@@ -168,12 +168,10 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    clist_cfe_init(&sstate.cf,
 			   uncompressed_raster << 3 /*width_bits*/,
 			   mem);
-	    sstate.ss.template = &s_CFE_template;
 	    compress = cmd_compress_cfe;
 	} else if (compression_mask & (1 << cmd_compress_rle)) {
 	    /* Try RLE compression. */
 	    clist_rle_init(&sstate.rl);
-	    sstate.ss.template = &s_RLE_template;
 	    compress = cmd_compress_rle;
 	}
 	if (compress) {
