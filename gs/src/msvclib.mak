@@ -149,7 +149,7 @@ CFLAGS=
 # Define which major version of MSVC is being used (currently, 4 & 5 supported)
 
 !ifndef MSVC_VERSION
-MSVC_VERSION = 5
+MSVC_VERSION = 6
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
@@ -170,13 +170,26 @@ DEVSTUDIO=c:\msdev
 ! endif
 COMPBASE=$(DEVSTUDIO)
 SHAREDBASE=$(DEVSTUDIO)
-!else
+!endif
+
+!if $(MSVC_VERSION) == 5
 ! ifndef DEVSTUDIO
-DEVSTUDIO=c:\devstudio
+#DEVSTUDIO=c:\program files\devstudio
+DEVSTUDIO=c:\progra~1\devstu~1
 ! endif
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\SharedIDE
 !endif
+
+!if $(MSVC_VERSION) == 6
+! ifndef DEVSTUDIO
+#DEVSTUDIO=c:\program files\microsoft visual studio
+DEVSTUDIO=c:\progra~1\micros~2
+! endif
+COMPBASE=$(DEVSTUDIO)\VC98
+SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
+!endif
+
 COMPDIR=$(COMPBASE)\bin
 LINKDIR=$(COMPBASE)\bin
 RCDIR=$(SHAREDBASE)\bin

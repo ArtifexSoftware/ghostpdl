@@ -204,7 +204,7 @@ PSD=$(PSGENDIR)\$(NUL)
 # (currently, 4 & 5 are supported).
 
 !ifndef MSVC_VERSION 
-MSVC_VERSION=5
+MSVC_VERSION=6
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
