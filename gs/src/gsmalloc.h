@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Client interface to default (C heap) allocator */
 /* Requires gsmemory.h */
 
@@ -47,17 +47,15 @@ gs_malloc_memory_t *gs_malloc_memory_init(P0());
  * (We would really like to get rid of this.)
  */
 extern gs_malloc_memory_t *gs_malloc_memory_default;
-#define gs_memory_default (*(gs_memory_t *)gs_malloc_memory_default)
+extern gs_memory_t *gs_memory_t_default;  /* may be locked */
+#define gs_memory_default (*gs_memory_t_default)
 
 /*
  * The following procedures are historical artifacts that we hope to
  * get rid of someday.
  */
-#define gs_malloc_init()\
-  (gs_malloc_memory_default = gs_malloc_memory_init())
-#define gs_malloc_release()\
-  (gs_malloc_memory_release(gs_malloc_memory_default),\
-   gs_malloc_memory_default = 0)
+gs_memory_t * gs_malloc_init(P0());
+void gs_malloc_release(P0());
 #define gs_malloc(nelts, esize, cname)\
   (void *)gs_alloc_byte_array(&gs_memory_default, nelts, esize, cname)
 #define gs_free(data, nelts, esize, cname)\
@@ -68,5 +66,16 @@ extern gs_malloc_memory_t *gs_malloc_memory_default;
 
 /* Define an accessor for the maximum amount ever allocated from the heap. */
 #define gs_malloc_max (gs_malloc_memory_default->max_used)
+
+/* ---------------- Locking ---------------- */
+
+/* Create a locked wrapper for a heap allocator. */
+int gs_malloc_wrap(P2(gs_memory_t **wrapped, gs_malloc_memory_t *contents));
+
+/* Get the wrapped contents. */
+gs_malloc_memory_t *gs_malloc_wrapped_contents(P1(gs_memory_t *wrapped));
+
+/* Free the wrapper, and return the wrapped contents. */
+gs_malloc_memory_t *gs_malloc_unwrap(P1(gs_memory_t *wrapped));
 
 #endif /* gsmalloc_INCLUDED */

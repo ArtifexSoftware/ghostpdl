@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,15 +16,18 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* C heap allocator */
 #include "malloc_.h"
 #include "gdebug.h"
+#include "gserror.h"
+#include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsmdebug.h"
 #include "gsstruct.h"		/* for st_bytes */
 #include "gsmalloc.h"
+#include "gsmemlok.h"
 
 /* ------ Heap allocator ------ */
 
@@ -100,15 +103,13 @@ struct gs_malloc_block_s {
 #undef _npad
 };
 
-/* Define the default allocator. */
-gs_malloc_memory_t *gs_malloc_memory_default;
-
 /* Initialize a malloc allocator. */
 private long heap_available(P0());
 gs_malloc_memory_t *
 gs_malloc_memory_init(void)
 {
-    gs_malloc_memory_t *mem = malloc(sizeof(gs_malloc_memory_t));
+    gs_malloc_memory_t *mem =
+	(gs_malloc_memory_t *)malloc(sizeof(gs_malloc_memory_t));
 
     mem->procs = gs_malloc_memory_procs;
     mem->allocated = 0;
@@ -240,8 +241,8 @@ gs_heap_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
     gs_memory_type_ptr_t pstype = ptr->type;
     uint old_size = gs_object_size(mem, obj) + sizeof(gs_malloc_block_t);
     uint new_size =
-    gs_struct_type_size(pstype) * new_num_elements +
-    sizeof(gs_malloc_block_t);
+	gs_struct_type_size(pstype) * new_num_elements +
+	sizeof(gs_malloc_block_t);
     gs_malloc_block_t *new_ptr;
 
     if (new_size == old_size)
@@ -278,12 +279,22 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
     gs_malloc_block_t *bp = mmem->allocated;
+    gs_memory_type_ptr_t pstype;
+    struct_proc_finalize((*finalize));
 
     if_debug3('a', "[a-]gs_free(%s) 0x%lx(%u)\n",
 	      client_name_string(cname), (ulong) ptr,
 	      (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
     if (ptr == 0)
 	return;
+    pstype = ((gs_malloc_block_t *) ptr)[-1].type;
+    finalize = pstype->finalize;
+    if (finalize != 0) {
+	if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
+		  struct_type_name_string(pstype),
+		  (ulong) ptr, client_name_string(cname));
+	(*finalize) (ptr);
+    }
     if (ptr == bp + 1) {
 	mmem->allocated = bp->next;
 	mmem->used -= bp->size + sizeof(gs_malloc_block_t);
@@ -391,4 +402,73 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
     }
     if (free_mask & FREE_ALL_ALLOCATOR)
 	free(mem);
+}
+
+/* ------ Locking ------ */
+
+/* Create the locked wrapper for the heap allocator. */
+int
+gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
+{
+    gs_memory_t *cmem = (gs_memory_t *)contents;
+    gs_memory_locked_t *lmem = (gs_memory_locked_t *)
+	gs_alloc_bytes_immovable(cmem, sizeof(gs_memory_locked_t),
+				 "gs_malloc_wrap");
+    int code;
+
+    if (lmem == 0)
+	return_error(gs_error_VMerror);
+    code = gs_memory_locked_init(lmem, cmem);
+    if (code < 0) {
+	gs_free_object(cmem, lmem, "gs_malloc_wrap");
+	return code;
+    }
+    *wrapped = (gs_memory_t *)lmem;
+    return 0;
+}
+
+/* Get the wrapped contents. */
+gs_malloc_memory_t *
+gs_malloc_wrapped_contents(gs_memory_t *wrapped)
+{
+    gs_memory_locked_t *lmem = (gs_memory_locked_t *)wrapped;
+
+    return (gs_malloc_memory_t *)gs_memory_locked_target(lmem);
+}
+
+/* Free the wrapper, and return the wrapped contents. */
+gs_malloc_memory_t *
+gs_malloc_unwrap(gs_memory_t *wrapped)
+{
+    gs_memory_locked_t *lmem = (gs_memory_locked_t *)wrapped;
+    gs_memory_t *contents = gs_memory_locked_target(lmem);
+
+    gs_memory_locked_release(lmem);
+    gs_free_object(contents, lmem, "gs_malloc_unwrap");
+    return (gs_malloc_memory_t *)contents;
+}
+
+/* ------ Historical single-instance artifacts ------ */
+
+/* Define the default allocator. */
+gs_malloc_memory_t *gs_malloc_memory_default;
+gs_memory_t *gs_memory_t_default;
+
+/* Create the default allocator. */
+gs_memory_t *
+gs_malloc_init(void)
+{
+    gs_malloc_memory_default = gs_malloc_memory_init();
+    gs_malloc_wrap(&gs_memory_t_default, gs_malloc_memory_default);
+    return gs_memory_t_default;
+}
+
+/* Release the default allocator. */
+void
+gs_malloc_release(void)
+{
+    gs_malloc_unwrap(gs_memory_t_default);
+    gs_memory_t_default = 0;
+    gs_malloc_memory_release(gs_malloc_memory_default);
+    gs_malloc_memory_default = 0;
 }

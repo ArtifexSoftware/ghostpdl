@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,13 +16,13 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Interface to monitor-locked heap memory allocator */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
 
 #if !defined(gsmemlok_INCLUDED)
- #define gsmemlok_INCLUDED
+#  define gsmemlok_INCLUDED
 
 #include "gsmemory.h"
 #include "gxsync.h"
@@ -49,8 +49,7 @@ int gs_memory_locked_init(P2(
 
 /* Release a locked memory manager. */
 /* Note that this has no effect on the target. */
-#define gs_memory_locked_release(lmem)\
-  gs_memory_free_all(lmem, FREE_STRUCTURES, "gs_memory_locked_release")
+void gs_memory_locked_release(P1(gs_memory_locked_t *lmem));
 
 /* Get the target of a locked memory manager. */
 gs_memory_t * gs_memory_locked_target(P1(const gs_memory_locked_t *lmem));

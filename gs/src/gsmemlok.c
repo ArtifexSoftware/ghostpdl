@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Monitor-locked heap memory allocator */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -97,6 +97,15 @@ gs_memory_locked_init(
     /* Allocate a monitor to serialize access to structures within */
     lmem->monitor = gx_monitor_alloc(target);
     return (lmem->monitor ? 0 : gs_note_error(gs_error_VMerror));
+}
+
+/* Release a locked memory manager. */
+/* Note that this has no effect on the target. */
+void
+gs_memory_locked_release(gs_memory_locked_t *lmem)
+{
+    gs_memory_free_all((gs_memory_t *)lmem, FREE_ALL_STRUCTURES,
+		       "gs_memory_locked_release");
 }
 
 /* ---------- Accessors ------------- */
