@@ -90,7 +90,7 @@
 private dev_proc_print_page(escp2_print_page);
 
 /* Stylus 800 device */
-gx_device_printer far_data gs_st800_device =
+const gx_device_printer far_data gs_st800_device =
   prn_device(prn_std_procs, "st800",
 	DEFAULT_WIDTH_10THS,
 	DEFAULT_HEIGHT_10THS,			
@@ -99,7 +99,7 @@ gx_device_printer far_data gs_st800_device =
 	1, escp2_print_page);
 
 /* AP3250 device */
-gx_device_printer far_data gs_ap3250_device =
+const gx_device_printer far_data gs_ap3250_device =
   prn_device(prn_std_procs, "ap3250",
 	DEFAULT_WIDTH_10THS,
 	DEFAULT_HEIGHT_10THS,			

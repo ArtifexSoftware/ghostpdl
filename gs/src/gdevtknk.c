@@ -46,7 +46,7 @@ private gx_device_procs tekink_procs =
    value below is chosen to make the image area A*-format like, i.e. the 
    aspect ratio is close to sqrt(2).
 */
-gx_device_printer far_data gs_tek4696_device =
+const gx_device_printer far_data gs_tek4696_device =
     prn_device(tekink_procs,"tek4696",
     85,120,	/* Page size in 10th of inches */
     120,120,	/* Resolution in DPI */

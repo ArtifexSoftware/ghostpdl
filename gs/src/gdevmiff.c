@@ -33,7 +33,7 @@ private dev_proc_print_page(miff24_print_page);
 private const gx_device_procs miff24_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
-gx_device_printer gs_miff24_device =
+const gx_device_printer gs_miff24_device =
 prn_device(miff24_procs, "miff24",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,

@@ -32,7 +32,7 @@ private dev_proc_output_page(sonyfb_output_page);
 private dev_proc_close_device(sonyfb_close);
 private gx_device_procs sonyfb_procs =
   prn_procs(sonyfb_open, sonyfb_output_page, sonyfb_close);
-gx_device_printer far_data gs_sonyfb_device =
+const gx_device_printer far_data gs_sonyfb_device =
   prn_device(sonyfb_procs, "sonyfb",
 	102.4,				/* width_10ths */
 	103.2,				/* height_10ths */

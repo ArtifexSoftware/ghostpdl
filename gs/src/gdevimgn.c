@@ -237,7 +237,7 @@ gx_device_procs imagen_procs =
 #define ppdev ((gx_device_printer *)pdev)
 
 /*-------------------------------------------*/ 
-gx_device_printer far_data gs_imagen_device = 
+const gx_device_printer far_data gs_imagen_device = 
   prn_device(/*prn_std_procs*/ imagen_procs,
 	"imagen", 
 	WIDTH_10THS, 

@@ -77,7 +77,7 @@
 private dev_proc_print_page(okiibm_print_page);
 
 /* Okidata IBM device */
-gx_device_printer far_data gs_okiibm_device =
+const gx_device_printer far_data gs_okiibm_device =
   prn_device(prn_std_procs, "okiibm",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,

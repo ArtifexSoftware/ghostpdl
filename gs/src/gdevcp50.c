@@ -54,7 +54,7 @@ private gx_device_procs cp50_procs =
   prn_color_procs(gdev_prn_open, cp50_output_page, gdev_prn_close,
     cp50_rgb_color, cp50_color_rgb);
 
-gx_device_printer far_data gs_cp50_device =
+const gx_device_printer far_data gs_cp50_device =
   prn_device(cp50_procs, "cp50",
 	39,				/* width_10ths, 100mm */
 	59,				/* height_10ths,150mm  */

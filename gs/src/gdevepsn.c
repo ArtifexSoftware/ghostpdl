@@ -103,7 +103,7 @@ private dev_proc_print_page(eps9high_print_page);
 private dev_proc_print_page(ibmpro_print_page);
 
 /* Standard Epson device */
-gx_device_printer far_data gs_epson_device =
+const gx_device_printer far_data gs_epson_device =
   prn_device(prn_std_procs, "epson",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
@@ -111,7 +111,7 @@ gx_device_printer far_data gs_epson_device =
 	1, epson_print_page);
 
 /* Mid-res (interleaved, 1 pass per line) 9-pin device */
-gx_device_printer far_data gs_eps9mid_device = 
+const gx_device_printer far_data gs_eps9mid_device = 
   prn_device(prn_std_procs, "eps9mid",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, 3*Y_BASERES,
@@ -120,7 +120,7 @@ gx_device_printer far_data gs_eps9mid_device =
 
 
 /* High-res (interleaved) 9-pin device */
-gx_device_printer far_data gs_eps9high_device = 
+const gx_device_printer far_data gs_eps9high_device = 
   prn_device(prn_std_procs, "eps9high",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, 3*Y_BASERES,
@@ -128,7 +128,7 @@ gx_device_printer far_data gs_eps9high_device =
 	1, eps9high_print_page);
 
 /* IBM ProPrinter device */
-gx_device_printer far_data gs_ibmpro_device =
+const gx_device_printer far_data gs_ibmpro_device =
   prn_device(prn_std_procs, "ibmpro",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,

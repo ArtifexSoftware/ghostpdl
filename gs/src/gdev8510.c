@@ -27,7 +27,7 @@
 
 /* The device descriptor */
 private dev_proc_print_page(m8510_print_page);
-gx_device_printer far_data gs_m8510_device =
+const gx_device_printer far_data gs_m8510_device =
 	prn_device(prn_std_procs, "m8510",
 		85,				/* width_10ths, 8.5" */
 		110,				/* height_10ths, 11" */

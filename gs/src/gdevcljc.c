@@ -92,7 +92,7 @@ prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
 /* the CLJ device */
-gx_device_printer gs_cljet5c_device =
+const gx_device_printer gs_cljet5c_device =
 {
     prn_device_body(gx_device_printer, cljc_procs, "cljet5c",
 		    85, 110, X_DPI, Y_DPI,

@@ -52,7 +52,7 @@ private dev_proc_print_page(sparc_print_page);
 gx_device_procs prn_sparc_procs =
   prn_procs(sparc_open, gdev_prn_output_page, gdev_prn_close);
 
-gx_device_printer far_data gs_sparc_device =
+const gx_device_printer far_data gs_sparc_device =
 prn_device(prn_sparc_procs,
   "sparc",
   DEFAULT_WIDTH_10THS,DEFAULT_HEIGHT_10THS,

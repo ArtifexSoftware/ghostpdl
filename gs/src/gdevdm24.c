@@ -29,7 +29,7 @@
 
 /* Driver for NEC P6 */
 private dev_proc_print_page (necp6_print_page);
-gx_device_printer far_data gs_necp6_device =
+const gx_device_printer far_data gs_necp6_device =
   prn_device (prn_std_procs, "necp6",
 	      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	      360, 360,
@@ -40,7 +40,7 @@ gx_device_printer far_data gs_necp6_device =
 /* Driver for Epson LQ850 */
 /* I've tested this driver on a BJ300 with LQ850 emulation and there it produce correct 360x360dpi output. */
 private dev_proc_print_page (lq850_print_page);
-gx_device_printer gs_lq850_device =
+const gx_device_printer gs_lq850_device =
   prn_device (prn_std_procs, "lq850",
 	      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	      360, 360,

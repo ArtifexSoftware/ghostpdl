@@ -52,7 +52,7 @@ private dev_proc_close_device(nwp533_close);
 private gx_device_procs nwp533_procs =
   prn_procs(nwp533_open, gdev_prn_output_page, nwp533_close);
 
-gx_device_printer far_data gs_nwp533_device =
+const gx_device_printer far_data gs_nwp533_device =
   prn_device(nwp533_procs, "nwp533",
 	PAPER_XDOTS * 10.0 / DPI,	/* width_10ths */
 	PAPER_YDOTS * 10.0 / DPI,	/* height_10ths */

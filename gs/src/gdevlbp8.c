@@ -51,14 +51,14 @@ problems
 private dev_proc_print_page(lbp8_print_page);
 private dev_proc_print_page(lips3_print_page);
 
-gx_device_printer far_data gs_lbp8_device =
+const gx_device_printer far_data gs_lbp8_device =
   prn_device(prn_std_procs, "lbp8",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
 	0.16, 0.2, 0.32, 0.21,		/* margins: left, bottom, right, top */
 	1, lbp8_print_page);
 
-gx_device_printer far_data gs_lips3_device =
+const gx_device_printer far_data gs_lips3_device =
   prn_device(prn_std_procs, "lips3",
 	82,				/* width_10ths, 8.3" */
 	117,				/* height_10ths, 11.7" */

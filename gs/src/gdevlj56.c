@@ -48,7 +48,7 @@ private dev_proc_print_page(ljet5_print_page);
 private const gx_device_procs ljet5_procs =
 prn_procs(ljet5_open, gdev_prn_output_page, ljet5_close);
 
-gx_device_printer gs_lj5mono_device =
+const gx_device_printer gs_lj5mono_device =
 prn_device(ljet5_procs, "lj5mono",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -60,7 +60,7 @@ prn_color_procs(ljet5_open, gdev_prn_output_page, ljet5_close,
 		gx_default_gray_map_rgb_color,
 		gx_default_gray_map_color_rgb);
 
-gx_device_printer gs_lj5gray_device = {
+const gx_device_printer gs_lj5gray_device = {
     prn_device_body(gx_device_printer, lj5gray_procs, "lj5gray",
 		    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		    X_DPI, Y_DPI,

@@ -113,7 +113,7 @@ private dev_proc_print_page(bj10e_print_page);
 private gx_device_procs prn_bj200_procs =
   prn_procs(bj200_open, gdev_prn_output_page, gdev_prn_close);
 
-gx_device_printer far_data gs_bj200_device =
+const gx_device_printer far_data gs_bj200_device =
   prn_device(prn_bj200_procs, "bj200",
 	DEFAULT_WIDTH_10THS,
 	DEFAULT_HEIGHT_10THS,
@@ -128,7 +128,7 @@ gx_device_printer far_data gs_bj200_device =
  * fine with the bj200 setup here.
  */
 
-gx_device_printer far_data gs_bj10e_device =
+const gx_device_printer far_data gs_bj10e_device =
   prn_device(prn_bj200_procs, "bj10e",
 	DEFAULT_WIDTH_10THS,
 	DEFAULT_HEIGHT_10THS,

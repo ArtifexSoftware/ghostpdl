@@ -39,14 +39,14 @@ private int pj_common_print_page(P4(gx_device_printer *, FILE *, int, const char
 private gx_device_procs paintjet_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
-gx_device_printer far_data gs_lj250_device =
+const gx_device_printer far_data gs_lj250_device =
   prn_device(paintjet_procs, "lj250",
 	85,				/* width_10ths, 8.5" */
 	110,				/* height_10ths, 11" */
 	X_DPI, Y_DPI,
 	0.25, 0, 0.25, 0,		/* margins */
 	3, lj250_print_page);
-gx_device_printer far_data gs_paintjet_device =
+const gx_device_printer far_data gs_paintjet_device =
   prn_device(paintjet_procs, "paintjet",
 	85,				/* width_10ths, 8.5" */
 	110,				/* height_10ths, 11" */
@@ -56,7 +56,7 @@ gx_device_printer far_data gs_paintjet_device =
 private gx_device_procs pjetxl_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
-gx_device_printer far_data gs_pjetxl_device =
+const gx_device_printer far_data gs_pjetxl_device =
   prn_device(pjetxl_procs, "pjetxl",
 	85,				/* width_10ths, 8.5" */
 	110,				/* height_10ths, 11" */

@@ -129,7 +129,7 @@ private gx_device_procs epson_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     epson_map_rgb_color, epson_map_color_rgb); 
 
-gx_device_printer far_data gs_epsonc_device =
+const gx_device_printer far_data gs_epsonc_device =
   prn_device(epson_procs, "epsonc",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,

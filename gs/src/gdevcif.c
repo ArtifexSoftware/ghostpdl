@@ -37,7 +37,7 @@
 
 /* The device descriptor */
 private dev_proc_print_page(cif_print_page);
-gx_device_printer far_data gs_cif_device =
+const gx_device_printer far_data gs_cif_device =
   prn_device(prn_std_procs, "cif",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,

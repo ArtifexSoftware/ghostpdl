@@ -33,9 +33,9 @@ private gx_device_procs t4693d_procs =
 	3,depth,max_rgb,max_rgb,max_rgb + 1,max_rgb + 1, \
 	t4693d_print_page)}
 
-gx_device_printer gs_t4693d2_device = t4693d_prn_device("t4693d2",8, 3);
-gx_device_printer gs_t4693d4_device = t4693d_prn_device("t4693d4",16, 15);
-gx_device_printer gs_t4693d8_device = t4693d_prn_device("t4693d8",24, 255);
+const gx_device_printer gs_t4693d2_device = t4693d_prn_device("t4693d2",8, 3);
+const gx_device_printer gs_t4693d4_device = t4693d_prn_device("t4693d4",16, 15);
+const gx_device_printer gs_t4693d8_device = t4693d_prn_device("t4693d8",24, 255);
 
 private gx_color_index
 gdev_t4693d_map_rgb_color(gx_device *dev,

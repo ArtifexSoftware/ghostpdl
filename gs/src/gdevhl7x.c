@@ -276,7 +276,7 @@ private const gx_device_procs prn_hl_procs =
 		   gdev_prn_get_params, gdev_prn_put_params);
 
 
-gx_device_printer far_data gs_hl7x0_device =
+const gx_device_printer far_data gs_hl7x0_device =
   prn_device(prn_hl_procs, "hl7x0",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,

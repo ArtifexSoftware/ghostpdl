@@ -47,7 +47,7 @@ private gx_device_procs djet500c_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 
-gx_device_printer far_data gs_djet500c_device =
+const gx_device_printer far_data gs_djet500c_device =
   prn_device(djet500c_procs, "djet500c",
     85,                /* width_10ths, 8.5" */
     120,		/* height_10ths, 12" */

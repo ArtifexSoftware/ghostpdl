@@ -48,7 +48,7 @@ private dev_proc_print_page(jetp3852_print_page);
 private gx_device_procs jetp3852_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
-gx_device_printer far_data gs_jetp3852_device =
+const gx_device_printer far_data gs_jetp3852_device =
   prn_device(jetp3852_procs, "jetp3852",
 	86,				/* width_10ths, 8.6" (?) */
 	110,				/* height_10ths, 11" */

@@ -67,7 +67,7 @@ the graphics data can't match any Okidata commands
 
 private dev_proc_print_page(oki_print_page);
 
-gx_device_printer far_data gs_oki182_device =
+const gx_device_printer far_data gs_oki182_device =
   prn_device(prn_std_procs, "oki182",
 	80,				/* width_10ths, 8.0" */
 	110,				/* height_10ths, 11" */

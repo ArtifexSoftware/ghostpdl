@@ -47,7 +47,7 @@
  * making all font names in the output unique by adding a suffix derived
  * from the PDF object number.  We hope to get rid of this someday....
  */
-static bool MAKE_FONT_NAMES_UNIQUE = true;
+private const bool MAKE_FONT_NAMES_UNIQUE = true;
 
 /* GC descriptors */
 public_st_pdf_font();

@@ -48,7 +48,7 @@ typedef struct sun_rasterfile_s {
 
 private dev_proc_print_page(sunhmono_print_page);
 
-gx_device_printer gs_sunhmono_device =
+const gx_device_printer gs_sunhmono_device =
     prn_device(prn_std_procs, "sunhmono",
 	       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	       X_DPI, Y_DPI,
