@@ -129,7 +129,8 @@ gsSourceSets = [
     ('toolbin', ['*'], ['pre.chk'])
     ]
 gsDoubleInclusionOK = [
-    'src/gconf.h'
+    'src/gconf.h',
+    'src/gxdtfill.h'
     ]
 
 # Add the tests defined in this file to a suite.
