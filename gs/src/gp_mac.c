@@ -339,8 +339,9 @@ int gp_check_interrupts(void)
 		lastYieldTicks = TickCount();
 		/* the hwnd parameter which is submitted in gsdll_init to the DLL */
 		/* is returned in every gsdll_poll message in the count parameter */
-		return (*pgsdll_callback) (GSDLL_POLL, 0, (long) hwndtext);
-		return 0;
+		if (pgsdll_callback)
+			return (*pgsdll_callback) (GSDLL_POLL, 0, (long) hwndtext);
+		else return 0;
 	} else {
 		return 0;
 	}

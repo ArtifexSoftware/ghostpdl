@@ -272,6 +272,7 @@ mac_stdin_read_process(stream_state *st, stream_cursor_read *ignore_pr,
 {
     uint count = pw->limit - pw->ptr;
     /* callback to get more input */
+    if (pgsdll_callback == NULL) return EOFC;
     count = (*pgsdll_callback) (GSDLL_STDIN, (char*)pw->ptr + 1, count);
 	pw->ptr += count;	
 	return 1;
@@ -283,6 +284,7 @@ mac_stdout_write_process(stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
  
+    if (pgsdll_callback == NULL) return EOFC;
     (*pgsdll_callback) (GSDLL_STDOUT, (char *)(pr->ptr + 1), count);
 	pr->ptr = pr->limit;
 	return 0;
@@ -293,6 +295,7 @@ mac_stderr_write_process(stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
 
+    if (pgsdll_callback == NULL) return EOFC;
     (*pgsdll_callback) (GSDLL_STDOUT, (char *)(pr->ptr + 1), count);
 	pr->ptr = pr->limit;
 	return 0;

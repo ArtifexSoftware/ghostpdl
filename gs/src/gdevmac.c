@@ -1,4 +1,4 @@
-/* Copyright (C) 1994-7 artofcode LLC.  All rights reserved.
+/* Copyright (C) 1994-2003 artofcode LLC.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -154,7 +154,8 @@ mac_open(register gx_device *dev)
 	*mdev->currPicPos = 0x00ff;
 	
 	// notify the caller that a new device was opened
-	(*pgsdll_callback) (GSDLL_DEVICE, (char *)mdev, 1);
+	if (pgsdll_callback)
+		(*pgsdll_callback) (GSDLL_DEVICE, (char *)mdev, 1);
 	
 	return 0;
 }
@@ -184,7 +185,8 @@ mac_sync_output(gx_device * dev)
 	*mdev->currPicPos = 0x00ff;
 	
 	// tell the caller to sync
-	(*pgsdll_callback) (GSDLL_SYNC, (char *)mdev, 0);
+	if (pgsdll_callback)
+		(*pgsdll_callback) (GSDLL_SYNC, (char *)mdev, 0);
 	
 	return (0);
 }
@@ -205,7 +207,8 @@ mac_output_page(gx_device * dev, int copies, int flush)
 	}
 	
 	// tell the caller that the page is done
-	(*pgsdll_callback) (GSDLL_PAGE, (char *)mdev, 0);
+	if (pgsdll_callback)
+		(*pgsdll_callback) (GSDLL_PAGE, (char *)mdev, 0);
 	
 	gx_finish_output_page(dev, copies, flush);
 	
@@ -254,8 +257,9 @@ mac_close(register gx_device *dev)
 	}
 	
 	// notify the caller that the device was closed
-	// he has to dispose the PICT handle himself when he is ready!
-	(*pgsdll_callback) (GSDLL_DEVICE, (char *)mdev, 0);
+	// it has to dispose the PICT handle when it is ready!
+	if (pgsdll_callback)
+		(*pgsdll_callback) (GSDLL_DEVICE, (char *)mdev, 0);
 	
 	return 0;
 }
