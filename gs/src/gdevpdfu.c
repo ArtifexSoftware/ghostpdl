@@ -705,37 +705,11 @@ pdf_put_matrix(gx_device_pdf * pdev, const char *before,
 }
 
 /*
- * Write a name, with escapes for unusual characters.  In PDF 1.1, we have
- * no choice but to replace these characters with '?'; in PDF 1.2, we can
- * use an escape sequence for anything except a null <00>.
+ * Write a name, with escapes for unusual characters.  Since we only support
+ * PDF 1.2 and above, we can use an escape sequence for anything except a
+ * null <00>, and the machinery for selecting the put_name_chars procedure
+ * depending on CompatibilityLevel is no longer needed.
  */
-private int
-pdf_put_name_chars_1_1(stream *s, const byte *nstr, uint size)
-{
-    uint i;
-
-    for (i = 0; i < size; ++i) {
-	uint c = nstr[i];
-
-	switch (c) {
-	    default:
-		if (c >= 0x21 && c <= 0x7e) {
-		    stream_putc(s, c);
-		    break;
-		}
-		/* falls through */
-	    case '%':
-	    case '(': case ')':
-	    case '<': case '>':
-	    case '[': case ']':
-	    case '{': case '}':
-	    case '/':
-	    case 0:
-		stream_putc(s, '?');
-	}
-    }
-    return 0;
-}
 private int
 pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 {
@@ -771,8 +745,7 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 pdf_put_name_chars_proc_t
 pdf_put_name_chars_proc(const gx_device_pdf *pdev)
 {
-    return (pdev->CompatibilityLevel >= 1.2 ? pdf_put_name_chars_1_2 :
-	    pdf_put_name_chars_1_1);
+    return pdf_put_name_chars_1_2;
 }
 void
 pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr, uint size)
