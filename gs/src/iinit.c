@@ -204,7 +204,7 @@ make_initial_dict(i_ctx_t *i_ctx_p, const char *iname, ref idicts[])
 		gs_ref_memory_t *mem =
 		    (initial_dictionaries[i].local ?
 		     iimemory_local : iimemory_global);
-		int code = dict_alloc(mem, dsize, dref);
+		int code = dict_alloc(mem, dsize, dref, &i_ctx_p->dict_stack.dict_defaults);
 
 		if (code < 0)
 		    return 0;	/* disaster */
@@ -227,6 +227,7 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
 {
     int level = gs_op_language_level();
     ref system_dict;
+    dict_defaults_t dict_defaults;
     i_ctx_t *i_ctx_p;
     int code;
 
@@ -234,15 +235,17 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
      * Create systemdict.  The context machinery requires that
      * we do this before initializing the interpreter.
      */
+    dict_defaults_default(&dict_defaults);
     code = dict_alloc(idmem->space_global,
 		      (level >= 3 ? SYSTEMDICT_LL3_SIZE :
 		       level >= 2 ? SYSTEMDICT_LEVEL2_SIZE : SYSTEMDICT_SIZE),
-		      &system_dict);
+		      &system_dict,
+		      &dict_defaults);
     if (code < 0)
 	return code;
 
     /* Initialize the interpreter. */
-    code = gs_interp_init(pi_ctx_p, &system_dict, idmem);
+    code = gs_interp_init(pi_ctx_p, &system_dict, &dict_defaults, idmem);
     if (code < 0)
 	return code;
     i_ctx_p = *pi_ctx_p;

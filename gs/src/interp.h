@@ -56,7 +56,8 @@ int gs_errorname(P3(i_ctx_t *, int, ref *));
 int gs_errorinfo_put_string(P2(i_ctx_t *, const char *));
 
 /* Initialize the interpreter. */
-int gs_interp_init(P3(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
+int gs_interp_init(P4(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
+		      const dict_defaults_t *dict_defaults,
 		      gs_dual_memory_t *dmem));
 
 #ifndef gs_context_state_t_DEFINED

@@ -337,6 +337,7 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
     ref newdict, newmat, scalemat;
     uint dlen = dict_maxlength(fp);
     uint mlen = dict_length(fp) + 3;	/* FontID, OrigFont, ScaleMatrix */
+    dict_defaults_t dict_defaults;
     int code;
 
     if (dlen < mlen)
@@ -349,7 +350,8 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
      * This dictionary is newly created: it's safe to pass NULL as the
      * dstack pointer to dict_copy and dict_put_string.
      */
-    if ((code = dict_alloc(imem, dlen, &newdict)) < 0 ||
+    dict_defaults_default(&dict_defaults);
+    if ((code = dict_alloc(imem, dlen, &newdict, &dict_defaults)) < 0 ||
 	(code = dict_copy(fp, &newdict, NULL)) < 0 ||
 	(code = gs_alloc_ref_array(imem, &newmat, a_all, 12,
 				   "make_font(matrices)")) < 0

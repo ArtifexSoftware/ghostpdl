@@ -663,7 +663,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 			    continue;
 			}
 		    } else {
-			code = dict_create(count >> 1, &rdict);
+			code = dict_create(count >> 1, &rdict, &i_ctx_p->dict_stack.dict_defaults);
 			if (code < 0)
 			    return code;
 			while (count) {

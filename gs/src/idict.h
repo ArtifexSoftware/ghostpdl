@@ -18,7 +18,7 @@
 
 #include "iddstack.h"
 
-/*
+/**
  * Contrary to our usual practice, we expose the (first-level)
  * representation of a dictionary in the interface file,
  * because it is so important that access checking go fast.
@@ -36,18 +36,37 @@ struct dict_s {
 #define dict_memory(pdict) r_ptr(&(pdict)->memory, gs_ref_memory_t)
 };
 
-/*
- * Define the maximum size of a dictionary.
+
+/** Settings/defaults for the constrution of dictionarys 
+ * for postscript interp: i_ctx_p->dict_stack.dict_defaults
+ * auto_expand changes based on language level.
  */
-extern const uint dict_max_size;
+typedef struct dict_defaults_s dict_defaults_t;
+
+struct dict_defaults_s {
+    /** Define whether dictionaries expand automatically when full.  Note that
+     * if dict_auto_expand is true, dict_put, dict_copy, dict_resize, and
+     * dict_grow cannot return e_dictfull; however, they can return e_VMerror.
+     * (dict_find can return e_dictfull even if dict_auto_expand is true.)
+     */
+    bool auto_expand;      
+
+    /** Define whether dictionaries are packed by default. 
+     */
+    bool default_packed;     
+};
+
+/** fills dict_defaults with static compile time defaults.
+ * non-postscript language clients can access compile time settings 
+ * without keeping state via this method.
+ */
+void dict_defaults_default(P1(dict_defaults_t *dict_defaults));
+
 
 /*
- * Define whether dictionaries expand automatically when full.  Note that
- * if dict_auto_expand is true, dict_put, dict_copy, dict_resize, and
- * dict_grow cannot return e_dictfull; however, they can return e_VMerror.
- * (dict_find can return e_dictfull even if dict_auto_expand is true.)
- */
-extern bool dict_auto_expand;
+ * Define the maximum size of a dictionary.
+di */
+extern const uint dict_max_size;
 
 /*
  * Create a dictionary.
@@ -56,10 +75,10 @@ extern bool dict_auto_expand;
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
 #endif
-int dict_alloc(P3(gs_ref_memory_t *, uint maxlength, ref * pdref));
+int dict_alloc(P4(gs_ref_memory_t *, uint maxlength, ref * pdref, const dict_defaults_t * dict_defaults));
 
-#define dict_create(maxlen, pdref)\
-  dict_alloc(iimemory, maxlen, pdref)
+#define dict_create(maxlen, pdref, pdict_defaults)\
+  dict_alloc(iimemory, maxlen, pdref, pdict_defaults)
 
 /*
  * Return a pointer to a ref that holds the access attributes

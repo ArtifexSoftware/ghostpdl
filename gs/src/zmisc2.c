@@ -121,7 +121,7 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
 		    *pgdict = *pdict;
 		}
 		/* Set other flags for Level 2 operation. */
-		dict_auto_expand = true;
+		i_ctx_p->dict_stack.dict_defaults.auto_expand = true; 
 		}
 		code = swap_level_dict(i_ctx_p, "level2dict");
 		if (code < 0)
@@ -153,7 +153,7 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
 		/* Overwrite globaldict in the dictionary stack. */
 		*pgdict = *systemdict;
 		/* Set other flags for Level 1 operation. */
-		dict_auto_expand = false;
+		i_ctx_p->dict_stack.dict_defaults.auto_expand = false; 
 		}
 		code = swap_level_dict(i_ctx_p, "level2dict");
 		break;

@@ -66,30 +66,6 @@ public_st_dict_stack();
 public_st_exec_stack();
 public_st_op_stack();
 
-/* 
- * The procedure to call if an operator requests rescheduling.
- * This causes an error unless the context machinery has been installed.
- */
-private int
-no_reschedule(i_ctx_t **pi_ctx_p)
-{
-    return_error(e_invalidcontext);
-}
-int (*gs_interp_reschedule_proc)(P1(i_ctx_t **)) = no_reschedule;
-
-/*
- * The procedure to call for time-slicing.
- * This is a no-op unless the context machinery has been installed.
- */
-int (*gs_interp_time_slice_proc)(P1(i_ctx_t **)) = 0;
-
-/*
- * The number of interpreter "ticks" between calls on the time_slice_proc.
- * Currently, the clock ticks before each operator, and at each
- * procedure return.
- */
-int gs_interp_time_slice_ticks = 0x7fff;
-
 /*
  * Apply an operator.  When debugging, we route all operator calls
  * through a procedure.
@@ -276,12 +252,13 @@ const op_def interp_op_defs[] = {
 
 /* Initialize the interpreter. */
 int
-gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
+gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict, 
+	       const dict_defaults_t *dict_defaults,
 	       gs_dual_memory_t *dmem)
 {
     /* Create and initialize a context state. */
     gs_context_state_t *pcst = 0;
-    int code = context_state_alloc(&pcst, psystem_dict, dmem);
+    int code = context_state_alloc(&pcst, psystem_dict, dict_defaults, dmem);
 
     if (code >= 0)
 	code = context_state_load(pcst);
@@ -792,7 +769,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
   { o_stack.requested = 1; return_with_error(e_stackoverflow, objp); }
 #define return_with_stackoverflow_iref()\
   { o_stack.requested = 1; return_with_error_iref(e_stackoverflow); }
-    int ticks_left = gs_interp_time_slice_ticks;
+    int ticks_left = i_ctx_p->interp_time_slice_ticks;
 
     /*
      * If we exceed the VMThreshold, set ticks_left to -1
@@ -1599,7 +1576,7 @@ res:
     /* Some operator has asked for context rescheduling. */
     /* We've done a store_state. */
     *pi_ctx_p = i_ctx_p;
-    code = (*gs_interp_reschedule_proc)(pi_ctx_p);
+    code = i_ctx_p->interp_reschedule_proc(pi_ctx_p);
     i_ctx_p = *pi_ctx_p;
   sched:			/* We've just called a scheduling procedure. */
     /* The interpreter state is in memory; iref is not current. */
@@ -1635,13 +1612,13 @@ res:
 	*pi_ctx_p = i_ctx_p;
 	code = interp_reclaim(pi_ctx_p, -1);
 	i_ctx_p = *pi_ctx_p;
-    } else if (gs_interp_time_slice_proc) {
+    } else if (i_ctx_p->interp_time_slice_proc) {
 	*pi_ctx_p = i_ctx_p;
-	code = (*gs_interp_time_slice_proc)(pi_ctx_p);
+	code = i_ctx_p->interp_time_slice_proc(pi_ctx_p);
 	i_ctx_p = *pi_ctx_p;
     } else
 	code = 0;
-    ticks_left = gs_interp_time_slice_ticks;
+    ticks_left = i_ctx_p->interp_time_slice_ticks;
     goto sched;
 
     /* Error exits. */

@@ -167,8 +167,9 @@ ref_param_begin_write_collection(gs_param_list * plist, gs_param_name pkey,
 	return_error(e_VMerror);
     if (coll_type != gs_param_collection_array) {
 	ref dref;
-
-	code = dict_alloc(imem, pvalue->size, &dref);
+	dict_defaults_t dict_defaults;
+	dict_defaults_default(&dict_defaults);
+	code = dict_alloc(imem, pvalue->size, &dref, &dict_defaults);
 	if (code >= 0) {
 	    code = dict_param_list_write(dlist, &dref, NULL, imem);
 	    dlist->int_keys = coll_type == gs_param_collection_dict_int_keys;

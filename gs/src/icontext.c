@@ -83,10 +83,21 @@ private RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
 RELOC_PTRS_END
 public_st_context_state();
 
+/* 
+ * The procedure to call if an operator requests rescheduling.
+ * This causes an error unless the context machinery has been installed.
+ */
+VIRTUAL int
+no_reschedule(i_ctx_t **pi_ctx_p)
+{
+    return_error(e_invalidcontext);
+}
+
 /* Allocate the state of a context. */
 int
 context_state_alloc(gs_context_state_t ** ppcst,
 		    const ref *psystem_dict,
+		    const dict_defaults_t *dict_defaults,
 		    const gs_dual_memory_t * dmem)
 {
     gs_ref_memory_t *mem = dmem->space_local;
@@ -109,6 +120,13 @@ context_state_alloc(gs_context_state_t ** ppcst,
      */
     pcst->dict_stack.system_dict = *psystem_dict;
     pcst->dict_stack.min_size = 0;
+    pcst->dict_stack.dict_defaults.auto_expand = dict_defaults->auto_expand;
+    pcst->dict_stack.dict_defaults.default_packed = dict_defaults->default_packed;
+    
+    pcst->interp_reschedule_proc = no_reschedule;
+    pcst->interp_time_slice_proc = 0;
+    pcst->interp_time_slice_ticks = 0x7FFF;
+
     pcst->pgs = int_gstate_alloc(dmem);
     if (pcst->pgs == 0) {
 	code = gs_note_error(e_VMerror);
@@ -134,7 +152,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
 	    size = dict_length(puserparams);
 	else
 	    size = 20;
-	code = dict_alloc(pcst->memory.space_local, size, &pcst->userparams);
+	code = dict_alloc(pcst->memory.space_local, size, &pcst->userparams, &pcst->dict_stack.dict_defaults);
 	if (code < 0)
 	    goto x2;
 	/* PostScript code initializes the user parameters. */
