@@ -42,7 +42,8 @@ typedef struct gs_copied_font_data_s gs_copied_font_data_t;
 
 typedef struct gs_copied_font_procs_s {
     int (*finish_copy_font)(gs_font *font, gs_font *copied);
-    int (*copy_glyph)(gs_font *font, gs_glyph glyph, gs_font *copied);
+    int (*copy_glyph)(gs_font *font, gs_glyph glyph, gs_font *copied,
+		      int options);
     int (*add_encoding)(gs_font *copied, gs_char chr, gs_glyph glyph);
     int (*named_glyph_slot)(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			    gs_copied_glyph_t **pslot);
@@ -350,10 +351,11 @@ named_glyph_slot_linear(gs_copied_font_data_t *cfdata, gs_glyph glyph,
  * Add glyph data to the glyph table.  This handles copying the vector
  * data, detecting attempted redefinitions, and freeing temporary glyph
  * data.  The glyph must be an integer, an index in the glyph table.
- * Return 1 if the glyph was already defined, 0 if newly added.
+ * Return 1 if the glyph was already defined, 0 if newly added (or an
+ * error per options).
  */
 private int
-copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied,
+copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 		gs_glyph_data_t *pgdata, const byte *prefix, int prefix_bytes)
 {
     gs_copied_font_data_t *const cfdata = cf_data(copied);
@@ -363,7 +365,8 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied,
 
     switch (code) {
     case 0:			/* already defined */
-	if (pcg->gdata.size != prefix_bytes + size ||
+	if ((options & COPY_GLYPH_NO_OLD) ||
+	    pcg->gdata.size != prefix_bytes + size ||
 	    memcmp(pcg->gdata.data, prefix, prefix_bytes) ||
 	    memcmp(pcg->gdata.data + prefix_bytes,
 		   pgdata->bits.data, size)
@@ -372,23 +375,26 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied,
 	else
 	    code = 1;
 	break;
-    case gs_error_undefined: {
-	uint str_size = prefix_bytes + size;
-	byte *str = gs_alloc_string(copied->memory, str_size,
-				    "copy_glyph_data(data)");
-
-	if (str == 0)
-	    code = gs_note_error(gs_error_VMerror);
+    case gs_error_undefined:
+	if (options & COPY_GLYPH_NO_NEW)
+	    code = gs_note_error(gs_error_undefined);
 	else {
-	    if (prefix_bytes)
-		memcpy(str, prefix, prefix_bytes);
-	    memcpy(str + prefix_bytes, pgdata->bits.data, size);
-	    pcg->gdata.data = str;
-	    pcg->gdata.size = str_size;
-	    pcg->used = HAS_DATA;
-	    code = 0;
+	    uint str_size = prefix_bytes + size;
+	    byte *str = gs_alloc_string(copied->memory, str_size,
+					"copy_glyph_data(data)");
+
+	    if (str == 0)
+		code = gs_note_error(gs_error_VMerror);
+	    else {
+		if (prefix_bytes)
+		    memcpy(str, prefix, prefix_bytes);
+		memcpy(str + prefix_bytes, pgdata->bits.data, size);
+		pcg->gdata.data = str;
+		pcg->gdata.size = str_size;
+		pcg->used = HAS_DATA;
+		code = 0;
+	    }
 	}
-    }
     default:
 	break;
     }
@@ -672,7 +678,7 @@ copy_font_type1(gs_font *font, gs_font *copied)
 }
 
 private int
-copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied)
+copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
     gs_font_type1 *font1 = (gs_font_type1 *)font;
@@ -681,7 +687,7 @@ copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied)
 
     if (code < 0)
 	return code;
-    code = copy_glyph_data(font, glyph, copied, &gdata, NULL, 0);
+    code = copy_glyph_data(font, glyph, copied, options, &gdata, NULL, 0);
     if (code < 0)
 	return code;
     rcode = code;
@@ -863,7 +869,7 @@ copy_font_type42(gs_font *font, gs_font *copied)
 }
 
 private int
-copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied)
+copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
     gs_font_type42 *font42 = (gs_font_type42 *)font;
@@ -879,7 +885,8 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied)
 
     if (code < 0)
 	return code;
-    code = copy_glyph_data(font, gid + GS_MIN_CID_GLYPH, copied, &gdata, NULL, 0);
+    code = copy_glyph_data(font, gid + GS_MIN_CID_GLYPH, copied, options,
+			   &gdata, NULL, 0);
     if (code < 0)
 	return code;
     rcode = code;
@@ -1067,7 +1074,7 @@ copy_font_cid0(gs_font *font, gs_font *copied)
 }
 
 private int
-copy_glyph_cid0(gs_font *font, gs_glyph glyph, gs_font *copied)
+copy_glyph_cid0(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
     gs_font_cid0 *fcid0 = (gs_font_cid0 *)font;
@@ -1085,7 +1092,7 @@ copy_glyph_cid0(gs_font *font, gs_glyph glyph, gs_font *copied)
 	prefix[i] = (byte)fidx;
     if (fidx != 0)
 	return_error(gs_error_rangecheck);
-    return copy_glyph_data(font, glyph, copied, &gdata, prefix, fdbytes);
+    return copy_glyph_data(font, glyph, copied, options, &gdata, prefix, fdbytes);
 }
 
 private const gs_copied_font_procs_t copied_procs_cid0 = {
@@ -1137,7 +1144,7 @@ copy_font_cid2(gs_font *font, gs_font *copied)
 }
 
 private int
-copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied)
+copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_font_cid2 *fcid2 = (gs_font_cid2 *)font;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
@@ -1150,7 +1157,7 @@ copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied)
 	return_error(gs_error_rangecheck);
     if (cfdata->CIDMap[cid] != 0 && cfdata->CIDMap[cid] != gid)
 	return_error(gs_error_invalidaccess);
-    code = copy_glyph_type42(font, GS_MIN_CID_GLYPH + gid, copied);
+    code = copy_glyph_type42(font, GS_MIN_CID_GLYPH + gid, copied, options);
     if (code < 0)
 	return code;
     cfdata->CIDMap[cid] = gid;
@@ -1359,6 +1366,12 @@ gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new)
 int
 gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied)
 {
+    return gs_copy_glyph_options(font, glyph, copied, 0);
+}
+int
+gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
+		      int options)
+{
     int code;
 #define MAX_GLYPH_PIECES 32	/* arbitrary, but 10 is too small */
     gs_glyph glyphs[MAX_GLYPH_PIECES];
@@ -1366,7 +1379,7 @@ gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied)
 
     if (copied->procs.font_info != copied_font_info)
 	return_error(gs_error_rangecheck);
-    code = cf_data(copied)->procs->copy_glyph(font, glyph, copied);
+    code = cf_data(copied)->procs->copy_glyph(font, glyph, copied, options);
     if (code != 0)
 	return code;
     /* Copy any sub-glyphs. */
@@ -1375,7 +1388,8 @@ gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied)
     if (count > MAX_GLYPH_PIECES)
 	return_error(gs_error_limitcheck);
     for (i = 0; i < count; ++i) {
-	code = gs_copy_glyph(font, glyphs[i], copied);
+	code = gs_copy_glyph_options(font, glyphs[i], copied,
+				     options & ~COPY_GLYPH_NO_OLD);
 	if (code < 0)
 	    return code;
     }

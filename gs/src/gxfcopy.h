@@ -101,6 +101,18 @@ int gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new);
 int gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied);
 
 /*
+ * Copy a glyph with additional checking options.  If options includes
+ * COPY_GLYPH_NO_OLD, then if the top-level glyph has already been copied,
+ * return an invalidaccess error rather than 1.  If options includes
+ * COPY_GLYPH_NO_NEW, then if the top-level glyph has *not* already been
+ * copied, return an undefined error rather than 0.
+ */
+#define COPY_GLYPH_NO_OLD 1
+#define COPY_GLYPH_NO_NEW 2
+int gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
+			  int options);
+
+/*
  * Add an encoding entry to a copied font.  If the given encoding entry is
  * not empty and is not the same as the new value, gs_copied_font_encode
  * returns an invalidaccess error.
