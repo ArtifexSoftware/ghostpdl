@@ -323,18 +323,18 @@ anomalies caused by slight misregistration of different ink layers): we
 would like to implement this.  <I>This is a complex and
 difficult area; even many Adobe RIPs don't do it.</I>
 
-<h3>Hook FreeType TrueType library into graphics library.</h3>
+<h3>Improve the font grid fitting and antialiasing.</h3>
 
 <p>
-We would like to provide an option for good integration of the FreeType font
-rasterizer into Ghostscript, since the FreeType code is better than
-Ghostscript's current rasterizers.  We understand that some users in Japan
-have done this already, but we don't know if this is a good starting point
-(the only documentation is in Japanese).  <I>Their work uses
-Ghostscript's 'xfont' interface, which is how Ghostscript interfaces to
-platform facilities such as the X and MS Windows font capabilities.  This is
-a device-level interface and not the best place to do this: we would rather
-have the graphics library interface to FreeType directly.</I>
+Ghostscript includes a reduced True Type bytecode interpreter branched from FreeType 1.
+It performs a grid fitting for True Type glyphs except ones involving
+instructions patented by Apple. A wanted improvement is to implement
+a stem recognition algorithm similar to Free Type autohinting.
+It also would help to poorly designed Type 1 fonts, which have misplaced or missed hints. 
+
+<p>
+Another useful improvement is to implement a font antialiasing with 
+<b><tt>TextAlphaBits</tt></b> other than 1,2,4.
 
 <h3>ICC profile support for output.</h3>
 

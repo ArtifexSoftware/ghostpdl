@@ -1992,6 +1992,26 @@ may be overridden by the command line argument
 <b><tt>-dAlignToPixels</tt></b>.
 </dl>
 
+
+<dl>
+<dt><b><tt>GridFitTT &lt;integer&gt;</tt></b>
+<dd>Control the use of True Type grid fitting.
+Ghostscript implements a reduced True Type bytecode interpreter,
+which can interpret the subset of True Type glyph instructions  
+not covered by Apple's patents. This allows the Dynalab fonts to 
+rasterize properly.
+Fonts with patented instructions can't be properly grid fitted.
+This parameter controls the action of the reduced interpreter:
+a value of 0 disables grid fitting for all fonts;
+a value of 1 enables the grid fitting for glyphs that don't involve 
+patented instructions.
+When set to 1 a warning is printed to stderr when a patented 
+instruction is encountered, and the glyph is rendered ignoring the 
+entire grid fitting program. This parameter defaults to 0, but this
+may be overridden on the command line with
+<b><tt>-dGridFitTT=1</tt></b>.
+</dl>
+
 <dl>
 <dt><b><tt>UseWTS &lt;boolean&gt;</tt></b>
 <dd>If <tt>true</tt>, and if AccurateScreens are specified (either as
