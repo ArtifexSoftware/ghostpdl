@@ -332,7 +332,12 @@ Note that on MS Windows systems, the <b><tt>%</tt></b> character also has a spec
 <h4><a name="One_page_per_file"></a>One page per file</h4>
 
 <p>
-Specifying a single output file works fine for printing and rasterizing figures, but sometimes you want images of each page of a multi-page document. You can tell Ghostscript to put each page of output in a series of similarly named files. To do this place a template '<tt>%d</tt>' in the filename which Ghostscript will replace with the page number.
+Specifying a single output file works fine for printing and rasterizing
+figures, but sometimes you want images of each page of a multi-page
+document. You can tell Ghostscript to put each page of output in a
+series of similarly named files. To do this place a template
+'<tt>%d</tt>' in the filename which Ghostscript will replace with the
+page number.
 
 <p>
 You can also control the number of digits used in the file name:
@@ -347,6 +352,12 @@ You can also control the number of digits used in the file name:
 </dl></blockquote>
 
 Generally <tt>%03d</tt> is the best option for normal documents.
+
+<p>
+Note however that this features is not supported by all devices; in particular
+it does not work with document-oriented output devices like <tt>pdfwrite</tt> and
+<tt>pswrite</tt>. See the <tt>-dFirstPage</tt> and <tt>-dLastPage</tt> switches
+<a href="#PDF_switches">below</a> for a way to extract single pdf pages.
 
 <p>
 As noted above, on MS Windows systems, you will have to double the
