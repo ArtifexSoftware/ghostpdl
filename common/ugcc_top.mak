@@ -19,7 +19,7 @@ include $(COMMONDIR)/generic.mak
 
 # Configure for debugging
 debug:
-	make GENOPT='-DDEBUG' CFLAGS='-O0 $(GCFLAGS) $(XCFLAGS)'
+	make GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)'
 
 # Configure for profiling
 pg-fp:
