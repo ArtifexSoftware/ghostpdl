@@ -1,11 +1,11 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
-/* Ghostscript interpreter graphics state definition */
+/* Interpreter graphics state definition */
 
 #ifndef igstate_INCLUDED
 #  define igstate_INCLUDED
@@ -153,6 +153,11 @@ typedef struct int_gstate_s {
      * procedure.
      */
     ref remap_color_info;	/* t_struct (int_remap_color_info_t) */
+    /*
+     * The opacity and shape masks are a PDF 1.4 transparency feature,
+     * not standard PostScript.
+     */
+    ref opacity_mask, shape_mask; /* dictionary|null */
 } int_gstate;
 
 #define clear_pagedevice(pigs) make_null(&(pigs)->pagedevice)

@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Color table lookup and interpolation */
@@ -57,7 +57,7 @@ interpolate_accum(const fixed * pi, const gx_color_lookup_table * pclt,
 	fixed fx = fixed_fraction(pi[0]);
 
 	clt3.n = 3;
-	/*clt3.dims[0] = pdim[1]; *//* not used */
+	clt3.dims[0] = pdim[1];	/* needed only for range checking */
 	clt3.dims[1] = pdim[2];
 	clt3.dims[2] = pdim[3];
 	clt3.m = m;

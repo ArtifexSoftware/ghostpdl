@@ -1,8 +1,8 @@
-/* Copyright (C) 1991, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Command list document- and page-level code. */
@@ -110,7 +110,8 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_map_color_rgb_alpha,
     clist_create_compositor,
     gx_forward_get_hardware_params,
-    gx_default_text_begin
+    gx_default_text_begin,
+    gx_default_finish_copydevice
 };
 
 /* ------ Define the command set and syntax ------ */

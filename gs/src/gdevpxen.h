@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Enumerated attribute value definitions for PCL XL */
@@ -57,7 +57,7 @@ typedef enum {
     eNoColorSpace = 0,		/* Note: for this enumeration, 0 is not a valid value */
     eGray,
     eRGB,
-    eSRGB = 6,			/* 2.0, Note: HP value is 6 not the expected 3 */
+    eSRGB = 6,		/* 2.0, Note: HP's value is 6 not the expected 3 */
     pxeColorSpace_next
 } pxeColorSpace_t;
 

@@ -1,8 +1,8 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Rendering for non-mesh shadings */
@@ -57,17 +57,22 @@ shade_fill_device_rectangle(const shading_fill_state_t * pfs,
 	ymin = p0->y, ymax = p1->y;
     else
 	ymin = p1->y, ymax = p0->y;
-    /****** NOT QUITE RIGHT FOR PIXROUND ******/
+
+    /* See gx_default_fill_path for an explanation of the tweak below. */
     xmin -= pis->fill_adjust.x;
+    if (pis->fill_adjust.x == fixed_half)
+	xmin += fixed_epsilon;
     xmax += pis->fill_adjust.x;
     ymin -= pis->fill_adjust.y;
+    if (pis->fill_adjust.y == fixed_half)
+	ymin += fixed_epsilon;
     ymax += pis->fill_adjust.y;
-    x = fixed2int_var(xmin);
-    y = fixed2int_var(ymin);
+    x = fixed2int_var_pixround(xmin);
+    y = fixed2int_var_pixround(ymin);
     return
 	gx_fill_rectangle_device_rop(x, y,
-				     fixed2int_var(xmax) - x,
-				     fixed2int_var(ymax) - y,
+				     fixed2int_var_pixround(xmax) - x,
+				     fixed2int_var_pixround(ymax) - y,
 				     pdevc, pfs->dev, pis->log_op);
 }
 
@@ -294,7 +299,7 @@ typedef struct A_fill_state_s {
     shading_fill_state_common;
     const gs_shading_A_t *psh;
     bool orthogonal;		/* true iff ctm is xxyy or xyyx */
-    gs_rect rect;
+    gs_rect rect;		/* bounding rectangle in user space */
     gs_point delta;
     double length, dd;
     int depth;
@@ -325,11 +330,17 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
     (*pcs->type->remap_color)(pcc, pcs, &dev_color, pis,
 			      pfs->dev, gs_color_select_texture);
     if (x0 == x1 && pfs->orthogonal) {
-	/* Stripe is horizontal in both user and device space. */
+	/*
+	 * Stripe is horizontal in user space and horizontal or vertical
+	 * in device space.
+	 */
 	x0 = pfs->rect.p.x;
 	x1 = pfs->rect.q.x;
     } else if (y0 == y1 && pfs->orthogonal) {
-	/* Stripe is vertical in both user and device space space. */
+	/*
+	 * Stripe is vertical in user space and horizontal or vertical
+	 * in device space.
+	 */
 	y0 = pfs->rect.p.y;
 	y1 = pfs->rect.q.y;
     } else {

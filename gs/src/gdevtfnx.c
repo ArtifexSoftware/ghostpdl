@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* 12-bit & 24-bit RGB uncompressed TIFF driver */
@@ -36,20 +36,20 @@ private const gx_device_procs tiff24_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
-const gx_device_printer gs_tiff12nc_device =
-{prn_device_std_body(gx_device_tiff, tiff12_procs, "tiff12nc",
-		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		     X_DPI, Y_DPI,
-		     0, 0, 0, 0,
-		     24, tiff12_print_page)
+const gx_device_printer gs_tiff12nc_device = {
+    prn_device_std_body(gx_device_tiff, tiff12_procs, "tiff12nc",
+			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+			X_DPI, Y_DPI,
+			0, 0, 0, 0,
+			24, tiff12_print_page)
 };
 
-const gx_device_printer gs_tiff24nc_device =
-{prn_device_std_body(gx_device_tiff, tiff24_procs, "tiff24nc",
-		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		     X_DPI, Y_DPI,
-		     0, 0, 0, 0,
-		     24, tiff24_print_page)
+const gx_device_printer gs_tiff24nc_device = {
+    prn_device_std_body(gx_device_tiff, tiff24_procs, "tiff24nc",
+			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+			X_DPI, Y_DPI,
+			0, 0, 0, 0,
+			24, tiff24_print_page)
 };
 
 /* ------ Private definitions ------ */
@@ -76,23 +76,20 @@ private const tiff_rgb_directory dir_rgb_template =
     {TIFFTAG_SamplesPerPixel, TIFF_SHORT, 1, 3},
 };
 
-private const tiff_rgb_values val_12_template =
-{
+private const tiff_rgb_values val_12_template = {
     {4, 4, 4}
 };
 
-private const tiff_rgb_values val_24_template =
-{
+private const tiff_rgb_values val_24_template = {
     {8, 8, 8}
 };
 
 /* ------ Private functions ------ */
 
-#define tfdev ((gx_device_tiff *)pdev)
-
 private int
 tiff12_print_page(gx_device_printer * pdev, FILE * file)
 {
+    gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
     /* Write the page directory. */
@@ -100,7 +97,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 				(const TIFF_dir_entry *)&dir_rgb_template,
 			  sizeof(dir_rgb_template) / sizeof(TIFF_dir_entry),
 				(const byte *)&val_12_template,
-				sizeof(val_12_template));
+				sizeof(val_12_template), 0);
     if (code < 0)
 	return code;
 
@@ -133,6 +130,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 	    fwrite(line, 1, dest - line, file);
 	}
 
+	gdev_tiff_end_strip(&tfdev->tiff, file);
 	gdev_tiff_end_page(&tfdev->tiff, file);
 	gs_free_object(pdev->memory, line, "tiff12_print_page");
     }
@@ -143,6 +141,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 private int
 tiff24_print_page(gx_device_printer * pdev, FILE * file)
 {
+    gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
     /* Write the page directory. */
@@ -150,7 +149,7 @@ tiff24_print_page(gx_device_printer * pdev, FILE * file)
 				(const TIFF_dir_entry *)&dir_rgb_template,
 			  sizeof(dir_rgb_template) / sizeof(TIFF_dir_entry),
 				(const byte *)&val_24_template,
-				sizeof(val_24_template));
+				sizeof(val_24_template), 0);
     if (code < 0)
 	return code;
 
@@ -169,11 +168,10 @@ tiff24_print_page(gx_device_printer * pdev, FILE * file)
 		break;
 	    fwrite((char *)row, raster, 1, file);
 	}
+	gdev_tiff_end_strip(&tfdev->tiff, file);
 	gdev_tiff_end_page(&tfdev->tiff, file);
 	gs_free_object(pdev->memory, line, "tiff24_print_page");
     }
 
     return code;
 }
-
-#undef tfdev

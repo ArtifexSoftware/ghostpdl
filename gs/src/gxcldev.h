@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Internal definitions for Ghostscript command lists. */
@@ -24,41 +24,15 @@
 /* Define the compression modes for bitmaps. */
 /*#define cmd_compress_none 0 *//* (implicit) */
 #define cmd_compress_rle 1
-#define clist_rle_init(ss)\
-  BEGIN\
-    s_RLE_set_defaults_inline(ss);\
-    s_RLE_init_inline(ss);\
-  END
-#define clist_rld_init(ss)\
-  BEGIN\
-    s_RLD_set_defaults_inline(ss);\
-    s_RLD_init_inline(ss);\
-  END
 #define cmd_compress_cfe 2
-#define clist_cf_init(ss, width, mem)\
-  BEGIN\
-    (ss)->memory = (mem);\
-    (ss)->K = -1;\
-    (ss)->Columns = (width);\
-    (ss)->EndOfBlock = false;\
-    (ss)->BlackIs1 = true;\
-    (ss)->DecodedByteAlign = align_bitmap_mod;\
-  END
-#define clist_cfe_init(ss, width, mem)\
-  BEGIN\
-    s_CFE_set_defaults_inline(ss);\
-    clist_cf_init(ss, width, mem);\
-    (*s_CFE_template.init)((stream_state *)(ss));\
-  END
-#define clist_cfd_init(ss, width, height, mem)\
-  BEGIN\
-    (*s_CFD_template.set_defaults)((stream_state *)ss);\
-    clist_cf_init(ss, width, mem);\
-    (ss)->Rows = (height);\
-    (*s_CFD_template.init)((stream_state *)(ss));\
-  END
 #define cmd_mask_compress_any\
   ((1 << cmd_compress_rle) | (1 << cmd_compress_cfe))
+/* Exported by gxclutil.c */
+void clist_rle_init(P1(stream_RLE_state *ss));
+void clist_rld_init(P1(stream_RLD_state *ss));
+void clist_cfe_init(P3(stream_CFE_state *ss, int width, gs_memory_t *mem));
+void clist_cfd_init(P4(stream_CFD_state *ss, int width, int height,
+		       gs_memory_t *mem));
 
 /*
  * A command always consists of an operation followed by operands;
@@ -250,8 +224,8 @@ struct gx_clist_state_s {
 				/* -1 is used internally */
     short clip_enabled;		/* 0 = don't clip, 1 = do clip, */
 				/* -1 is used internally */
-    ushort color_is_alpha;	/* (Boolean) for copy_color_alpha */
-    ushort known;		/* flags for whether this band */
+    bool color_is_alpha;	/* for copy_color_alpha */
+    uint known;			/* flags for whether this band */
 				/* knows various misc. parameters */
     /* We assign 'known' flags here from the high end; */
     /* gxclpath.h assigns them from the low end. */

@@ -1,8 +1,8 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Null and forwarding device implementation */
@@ -638,7 +638,8 @@ private dev_proc_strip_copy_rop(null_strip_copy_rop);
 	gx_forward_map_color_rgb_alpha,\
 	gx_non_imaging_create_compositor,\
 	gx_forward_get_hardware_params,\
-	gx_default_text_begin\
+	gx_default_text_begin,\
+	gx_default_finish_copydevice\
 }
 
 const gx_device_null gs_null_device = {

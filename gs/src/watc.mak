@@ -1,4 +1,4 @@
-#    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -29,7 +29,7 @@ PSOBJDIR=obj
 
 # Define the root directory for Ghostscript installation.
 
-AROOTDIR=c:/Aladdin
+AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 
 # Define the directory that will hold documentation at runtime.
@@ -110,7 +110,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10005
+PVERSION=10008
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -260,7 +260,7 @@ GLCCWIN=$(GLCC)
 
 # The Watcom C platform
 
-watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_dosfb.$(OBJ)
+watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ)
 watc_2=$(GLOBJ)gp_mktmp.$(OBJ)
 !ifeq WAT32 0
 watc_3=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
@@ -277,7 +277,7 @@ $(GLGEN)watc_.dev: $(watc__) $(GLD)nosync.dev $(watc_inc)
 	$(ADDMOD) $(GLGEN)watc_ -include $(GLD)nosync $(watc_inc)
 
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
- $(gx_h) $(gp_h)
+ $(gx_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_iwatc.$(OBJ) $(C_) $(GLSRC)gp_iwatc.c
 
 $(GLOBJ)gp_mktmp.$(OBJ): $(GLSRC)gp_mktmp.c $(stat__h) $(string__h)

@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Object locating and validating for Ghostscript memory manager */
@@ -357,9 +357,9 @@ cks:	    if (optr != 0)
 		ialloc_validate_object(optr, NULL, gcst);
 	    break;
 	case t_name:
-	    if (name_index_ptr(r_size(pref)) != pref->value.pname) {
+	    if (name_index_ptr(name_index(pref)) != pref->value.pname) {
 		lprintf3("At 0x%lx, bad name %u, pname = 0x%lx\n",
-			 (ulong) pref, (uint) r_size(pref),
+			 (ulong) pref, (uint)name_index(pref),
 			 (ulong) pref->value.pname);
 		break;
 	    } {

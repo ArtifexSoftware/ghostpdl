@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions for X Windows drivers */
@@ -260,5 +260,6 @@ dev_proc_map_color_rgb(gdev_x_map_color_rgb);  /* gdevxcmp.c */
 dev_proc_get_params(gdev_x_get_params);  /* gdevxini.c */
 dev_proc_put_params(gdev_x_put_params);  /* gdevxini.c */
 dev_proc_get_xfont_procs(gdev_x_get_xfont_procs);  /* gdevxxf.c */
+dev_proc_finish_copydevice(gdev_x_finish_copydevice);  /* gdevxini.c */
 
 #endif /* gdevx_INCLUDED */

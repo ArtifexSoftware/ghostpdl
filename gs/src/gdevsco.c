@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 1992, 1993 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* 17Jul91 - wb - based on gdevpcfb.c */
@@ -27,19 +27,17 @@
 #endif
 
 #if defined(__STDC__)
-#include "stdlib.h"
+#include <stdlib.h>
 #else
 extern char *getenv(P1(const char *));
-
 #endif
 
 #if defined(M_XENIX)
-#include "prototypes.h"
-#include "fcntl.h"
+#include <prototypes.h>
+#include <fcntl.h>
 #else
 extern int ioctl(P3(int, int,...));
 extern int open(P3(const char *, int,...));
-
 #endif
 
 private int console_fd = -1;	/* file descriptor of console */

@@ -1,11 +1,31 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Miscellaneous utilities for Ghostscript library */
+
+/*
+ * In order to capture the original definition of sqrt, which might be
+ * either a procedure or a macro and might not have an ANSI-compliant
+ * prototype (!), we need to do the following:
+ */
+#include "std.h"
+#if defined(VMS) && defined(__GNUC__)
+/*  DEC VAX/VMS C comes with a math.h file, but GNU VAX/VMS C does not. */
+#  include "vmsmath.h"
+#else
+#  include <math.h>
+#endif
+inline private double
+orig_sqrt(double x)
+{
+    return sqrt(x);
+}
+
+/* Here is the real #include section. */
 #include "ctype_.h"
 #include "malloc_.h"
 #include "math_.h"
@@ -45,8 +65,15 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
 
 /*
  * Define the trace printout procedures.  We always include these, in case
- * other modules were compiled with DEBUG set.
+ * other modules were compiled with DEBUG set.  Note that they must use
+ * fprintf, not fput[cs], because of the way that stdout is implemented on
+ * Windows platforms.
  */
+void
+dflush(void)
+{
+    fflush(dstderr);
+}
 private const char *
 dprintf_file_tail(const char *file)
 {
@@ -78,11 +105,8 @@ void
 printf_program_ident(FILE * f, const char *program_name,
 		     long revision_number)
 {
-    if (program_name) {
-	fputs(program_name, f);
-	if (revision_number)
-	    fputc(' ', f);
-    }
+    if (program_name)
+	fprintf(f, (revision_number ? "%s " : "%s"), program_name);
     if (revision_number) {
 	int fpart = revision_number % 100;
 
@@ -96,7 +120,7 @@ eprintf_program_ident(FILE * f, const char *program_name,
 {
     if (program_name) {
 	printf_program_ident(f, program_name, revision_number);
-	fputs(": ", f);
+	fprintf(f, ": ");
     }
 }
 #if __LINE__			/* compiler provides it */
@@ -352,7 +376,7 @@ debug_print_string(const byte * chrs, uint len)
 
     for (i = 0; i < len; i++)
 	dputc(chrs[i]);
-    fflush(dstderr);
+    dflush();
 }
 
 /*
@@ -718,7 +742,7 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 	    denom <<= bits_8th, shift += bits_8th;
 	}
 #undef bits_8th
-	while (!(denom & (1L << (num_bits - 1)))) {
+	while (!(denom & (-1L << (num_bits - 1)))) {
 	    mincr(mds);
 	    denom <<= 1, ++shift;
 	}
@@ -815,17 +839,14 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 #undef half_mask
 
 /* Trace calls on sqrt when debugging. */
-#undef sqrt
-extern double sqrt(P1(double));
 double
 gs_sqrt(double x, const char *file, int line)
 {
     if (gs_debug_c('~')) {
-	fprintf(stdout, "[~]sqrt(%g) at %s:%d\n",
-		x, (const char *)file, line);
-	fflush(stdout);
+	dprintf3("[~]sqrt(%g) at %s:%d\n", x, (const char *)file, line);
+	dflush();
     }
-    return sqrt(x);
+    return orig_sqrt(x);
 }
 
 /*
@@ -1073,3 +1094,25 @@ gs_sincos_degrees(double ang, gs_sincos_t * psincos)
 }
 
 #endif /* USE_FPU */
+
+/*
+ * Define an atan2 function that returns an angle in degrees and uses
+ * the PostScript quadrant rules.  Note that it may return
+ * gs_error_undefinedresult.
+ */
+int
+gs_atan2_degrees(double y, double x, double *pangle)
+{
+    if (y == 0) {	/* on X-axis, special case */
+	if (x == 0)
+	    return_error(gs_error_undefinedresult);
+	*pangle = (x < 0 ? 180 : 0);
+    } else {
+	double result = atan2(y, x) * radians_to_degrees;
+
+	if (result < 0)
+	    result += 360;
+	*pangle = result;
+    }
+    return 0;
+}

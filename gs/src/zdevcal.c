@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* %Calendar% IODevice */
@@ -45,7 +45,7 @@ calendar_get_params(gx_io_device * iodev, gs_param_list * plist)
     };
     bool running;
 
-    if (time(&t) == -1 || (pltime = localtime(&t)) == 0) {
+    if (time(&t) == (time_t)-1 || (pltime = localtime(&t)) == 0) {
 	ltime.tm_sec = ltime.tm_min = ltime.tm_hour =
 	    ltime.tm_mday = ltime.tm_mon = ltime.tm_year = 0;
 	running = false;

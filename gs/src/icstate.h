@@ -1,8 +1,8 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Externally visible context state */
@@ -35,8 +35,10 @@ struct gs_context_state_s {
     long usertime_total;	/* total accumulated usertime, */
 				/* not counting current time if running */
     bool keep_usertime;		/* true if context ever executed usertime */
+    int in_superexec;		/* # of levels of superexec */
     /* View clipping is handled in the graphics state. */
     ref userparams;		/* t_dictionary */
+    int scanner_options;	/* derived from userparams */
     ref stdio[3];		/* t_file */
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;

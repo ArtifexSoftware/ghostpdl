@@ -1,8 +1,8 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Common utilities for PostScript and PDF format printing */
@@ -90,7 +90,8 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
 	r.limit = r.ptr + size;
 	w.limit = buf + sizeof(buf) - 1;
 	do {
-	    w.ptr = buf - 1;
+	    /* One picky compiler complains if we initialize to buf - 1. */
+	    w.ptr = buf;  w.ptr--;
 	    status = (*template->process) (st, &r, &w, true);
 	    pwrite(s, buf, (uint) (w.ptr + 1 - buf));
 	}
@@ -134,8 +135,8 @@ int
 s_init_param_printer(printer_param_list_t *prlist,
 		     const param_printer_params_t * ppp, stream * s)
 {
-    prlist->procs = &printer_param_list_procs;
-    prlist->memory = 0;
+    gs_param_list_init((gs_param_list *)prlist, &printer_param_list_procs,
+		       NULL);
     prlist->strm = s;
     prlist->params = *ppp;
     prlist->any = false;

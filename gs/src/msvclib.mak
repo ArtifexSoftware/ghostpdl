@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -18,7 +18,7 @@
 # Define the root directory for Ghostscript installation.
 
 !ifndef AROOTDIR
-AROOTDIR=c:/Aladdin
+AROOTDIR=c:/gs
 !endif
 !ifndef GSROOTDIR
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
@@ -129,7 +129,7 @@ JVERSION=6
 
 !ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=10005
+PVERSION=10008
 !endif
 
 # Define the directory where the zlib sources are stored.
@@ -191,16 +191,42 @@ COMPBASE=$(DEVSTUDIO)\VC98
 SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
 !endif
 
+# Some environments don't want to specify the path names for the tools at all.
+# Typical definitions for such an environment would be:
+#   INCDIR= LIBDIR= COMP=cl COMPAUX=cl RCOMP=rc LINK=link
+# COMPDIR, LINKDIR, and RCDIR are irrelevant, since they are only used to
+# define COMP, LINK, and RCOMP respectively, but we allow them to be
+# overridden anyway for completeness.
+!ifndef COMPDIR
 COMPDIR=$(COMPBASE)\bin
+!endif
+!ifndef LINKDIR
 LINKDIR=$(COMPBASE)\bin
+!endif
+!ifndef RCDIR
 RCDIR=$(SHAREDBASE)\bin
+!endif
+!ifndef INCDIR
 INCDIR=$(COMPBASE)\include
+!endif
+!ifndef LIBDIR
 LIBDIR=$(COMPBASE)\lib
+!endif
+!ifndef COMP
 COMP=$(COMPDIR)\cl
+!endif
+!ifndef COMPCPP
 COMPCPP=$(COMP)
+!endif
+!ifndef COMPAUX
 COMPAUX=$(COMPDIR)\cl
+!endif
+!ifndef RCOMP
 RCOMP=$(RCDIR)\rc
+!endif
+!ifndef LINK
 LINK=$(LINKDIR)\link
+!endif
 
 # Define the processor architecture. (i386, ppc, alpha)
 
@@ -236,7 +262,7 @@ CPU_TYPE=486
 # at runtime.
 
 ! ifndef FPU_TYPE
-FPU_TYPE=0
+FPU_TYPE=387
 ! endif
 
 !endif

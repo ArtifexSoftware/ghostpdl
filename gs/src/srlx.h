@@ -1,8 +1,8 @@
 /* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions for RunLength filters */
@@ -54,7 +54,7 @@ typedef struct stream_RLD_state_s {
 #define s_RLD_set_defaults_inline(ss)\
   ((ss)->EndOfData = true)
 #define s_RLD_init_inline(ss)\
-  ((ss)->copy_left = 0)
+  ((ss)->min_left = ((ss)->EndOfData ? 1 : 0), (ss)->copy_left = 0)
 extern const stream_template s_RLD_template;
 
 #endif /* srlx_INCLUDED */

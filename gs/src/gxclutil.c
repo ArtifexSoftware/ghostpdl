@@ -1,8 +1,8 @@
 /* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Command list writing utilities. */
@@ -595,4 +595,48 @@ cmd_put_params(gx_device_clist_writer *cldev,
 	    memcpy(dp, local_buf, param_length);	    /* did this when computing length */
     }
     return code;
+}
+
+/* Initialize CCITTFax filters. */
+private void
+clist_cf_init(stream_CF_state *ss, int width)
+{
+    ss->K = -1;
+    ss->Columns = width;
+    ss->EndOfBlock = false;
+    ss->BlackIs1 = true;
+    ss->DecodedByteAlign = align_bitmap_mod;
+}
+void
+clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem)
+{
+    s_init_state((stream_state *)ss, &s_CFE_template, mem);
+    s_CFE_set_defaults_inline(ss);
+    clist_cf_init((stream_CF_state *)ss, width);
+    s_CFE_template.init((stream_state *)(ss));
+}
+void
+clist_cfd_init(stream_CFD_state *ss, int width, int height, gs_memory_t *mem)
+{
+    s_init_state((stream_state *)ss, &s_CFD_template, mem);
+    s_CFD_template.set_defaults((stream_state *)ss);
+    clist_cf_init((stream_CF_state *)ss, width);
+    ss->Rows = height;
+    s_CFD_template.init((stream_state *)(ss));
+}
+
+/* Initialize RunLength filters. */
+void
+clist_rle_init(stream_RLE_state *ss)
+{
+    s_init_state((stream_state *)ss, &s_RLE_template, (gs_memory_t *)0);
+    s_RLE_set_defaults_inline(ss);
+    s_RLE_init_inline(ss);
+}
+void
+clist_rld_init(stream_RLD_state *ss)
+{
+    s_init_state((stream_state *)ss, &s_RLD_template, (gs_memory_t *)0);
+    s_RLD_set_defaults_inline(ss);
+    s_RLD_init_inline(ss);
 }

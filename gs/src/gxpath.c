@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Internal path management routines for Ghostscript library */
@@ -79,8 +79,6 @@ int
 gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
 			      gs_memory_t * mem, client_name_t cname)
 {
-    const gs_memory_t * stable_mem = gs_memory_stable(mem);
-
     if (shared) {
 	if (shared->segments == &shared->local_segments) {
 	    lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
@@ -90,13 +88,13 @@ gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
 	*ppath = *shared;
 	rc_increment(ppath->segments);
     } else {
-	int code = path_alloc_segments(&ppath->segments, stable_mem, cname);
+	int code = path_alloc_segments(&ppath->segments, mem, cname);
 
 	if (code < 0)
 	    return code;
 	gx_path_init_contents(ppath);
     }
-    ppath->memory = stable_mem;
+    ppath->memory = mem;
     ppath->allocation = path_allocated_contained;
     return 0;
 }
@@ -110,8 +108,7 @@ gx_path *
 gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
 		     client_name_t cname)
 {
-    const gs_memory_t * stable_mem = gs_memory_stable(mem);
-    gx_path *ppath = gs_alloc_struct(stable_mem, gx_path, &st_path, cname);
+    gx_path *ppath = gs_alloc_struct(mem, gx_path, &st_path, cname);
 
     if (ppath == 0)
 	return 0;
@@ -119,21 +116,21 @@ gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
 	if (shared->segments == &shared->local_segments) {
 	    lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
 		     (ulong) shared);
-	    gs_free_object(stable_mem, ppath, cname);
+	    gs_free_object(mem, ppath, cname);
 	    return 0;
 	}
 	*ppath = *shared;
 	rc_increment(ppath->segments);
     } else {
-	int code = path_alloc_segments(&ppath->segments, stable_mem, cname);
+	int code = path_alloc_segments(&ppath->segments, mem, cname);
 
 	if (code < 0) {
-	    gs_free_object(stable_mem, ppath, cname);
+	    gs_free_object(mem, ppath, cname);
 	    return 0;
 	}
 	gx_path_init_contents(ppath);
     }
-    ppath->memory = stable_mem;
+    ppath->memory = mem;
     ppath->allocation = path_allocated_on_heap;
     return ppath;
 }
@@ -146,8 +143,6 @@ int
 gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
 			  gs_memory_t * mem)
 {
-    const gs_memory_t * stable_mem = gs_memory_stable(mem);
-
     if (shared) {
 	if (shared->segments == &shared->local_segments) {
 	    lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
@@ -157,12 +152,12 @@ gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
 	*ppath = *shared;
 	rc_increment(ppath->segments);
     } else {
-	rc_init_free(&ppath->local_segments, stable_mem, 1,
+	rc_init_free(&ppath->local_segments, mem, 1,
 		     rc_free_path_segments_local);
 	ppath->segments = &ppath->local_segments;
 	gx_path_init_contents(ppath);
     }
-    ppath->memory = stable_mem;
+    ppath->memory = mem;
     ppath->allocation = path_allocated_on_stack;
     return 0;
 }

@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Imager state definition */
@@ -13,6 +13,7 @@
 #include "gscsel.h"
 #include "gsrefct.h"
 #include "gsropt.h"
+#include "gstparam.h"
 #include "gxcvalue.h"
 #include "gxcmap.h"
 #include "gxfixed.h"
@@ -30,7 +31,12 @@
  *      transformation matrix (CTM)
  *      logical operation: RasterOp, transparency
  *      color modification: alpha, rendering algorithm
- *      overprint flag
+ *	transparency information:
+ *	    blend mode
+ *	    (opacity + shape) (alpha + cached mask)
+ *	    text knockout flag
+ *	    rendering stack
+ *      overprint control: overprint flag and mode
  *      rendering tweaks: flatness, fill adjustment, stroke adjust flag,
  *        accurate curves flag, shading smoothness
  *      color rendering information:
@@ -183,6 +189,10 @@ typedef struct gs_imager_state_shared_s {
     device_color_spaces.named.RGB, device_color_spaces.named.CMYK)
 
 /* Define the imager state structure itself. */
+typedef struct gs_transparency_source_s {
+    float alpha;		/* constant alpha */
+    gs_transparency_mask_t *mask;
+} gs_transparency_source_t;
 #define gs_imager_state_common\
 	gs_memory_t *memory;\
 	void *client_data;\
@@ -191,7 +201,12 @@ typedef struct gs_imager_state_shared_s {
 	gs_matrix_fixed ctm;\
 	gs_logical_operation_t log_op;\
 	gx_color_value alpha;\
+	gs_blend_mode_t blend_mode;\
+	gs_transparency_source_t opacity, shape;\
+	bool text_knockout;\
+	gs_transparency_state_t *transparency_stack;\
 	bool overprint;\
+	int overprint_mode;\
 	float flatness;\
 	gs_fixed_point fill_adjust;	/* fattening for fill */\
 	bool stroke_adjust;\
@@ -201,7 +216,7 @@ typedef struct gs_imager_state_shared_s {
 	  (*get_cmap_procs)(P2(const gs_imager_state *, const gx_device *));\
 	gs_color_rendering_state_common
 #define st_imager_state_num_ptrs\
-  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 2)
+  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 5)
 /* Access macros */
 #define ctm_only(pis) (*(const gs_matrix *)&(pis)->ctm)
 #define ctm_only_writable(pis) (*(gs_matrix *)&(pis)->ctm)
@@ -225,7 +240,8 @@ struct gs_imager_state_s {
 #define gs_imager_state_initial(scale)\
   0, 0, 0, { gx_line_params_initial },\
    { scale, 0.0, 0.0, -(scale), 0.0, 0.0 },\
-  lop_default, gx_max_color_value, 0/*false*/, 1.0,\
+  lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
+   { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0/*false*/, 0, 1.0,\
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 1.0,\
   gx_default_get_cmap_procs
 

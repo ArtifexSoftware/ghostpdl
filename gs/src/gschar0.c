@@ -1,8 +1,8 @@
-/* Copyright (C) 1991, 1992, 1993, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1991, 1992, 1993, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Composite font decoding for Ghostscript library */
@@ -98,6 +98,8 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
     gs_char chr;
     gs_glyph glyph = gs_no_glyph;
     int changed = 0;
+
+    pte->FontBBox_as_Metrics2.x = pte->FontBBox_as_Metrics2.y = 0;
 
 #define need_left(n)\
   if ( end - p < n ) return_error(gs_error_rangecheck)
@@ -373,6 +375,15 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 	select_descendant(pfont, pdata, fidx, fdepth);
 	if_debug2('J', "... new depth=%d, new font=0x%lx\n",
 		  fdepth, (ulong) pfont);
+	/* FontBBox may be used as metrics2 with WMode=1 :
+	*/
+	if (pfont->FontType == ft_CID_encrypted ||
+	    pfont->FontType == ft_CID_TrueType
+	    ) {
+	    gs_font_base *pfb = (gs_font_base *)pfont;
+
+	    pte->FontBBox_as_Metrics2 = pfb->FontBBox.q;
+	}
     }
 done:
     *pchr = chr;

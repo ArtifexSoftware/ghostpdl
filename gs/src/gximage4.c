@@ -1,8 +1,8 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* ImageType 4 image implementation */
@@ -10,7 +10,6 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gscspace.h"
-#include "gsiparm3.h"
 #include "gsiparm4.h"
 #include "gxiparam.h"
 #include "gximage.h"
@@ -66,7 +65,7 @@ gx_begin_image4(gx_device * dev,
     penum->alpha = gs_image_alpha_none;
     penum->masked = false;
     penum->adjust = fixed_0;
-    /* Determine whether this image needs masking at all. */
+    /* Check that MaskColor values are within the valid range. */
     {
 	bool opaque = false;
 	uint max_value = (1 << pim->BitsPerComponent) - 1;
@@ -81,8 +80,8 @@ gx_begin_image4(gx_device * dev,
 	    else
 		c0 = c1 = pim->MaskColor[i >> 1];
 
-	    if (c1 > max_value)
-		c1 = max_value;
+	    if ((c0 | c1) > max_value)
+		return_error(gs_error_rangecheck);
 	    if (c0 > c1) {
 		opaque = true;	/* pixel can never match mask color */
 		break;

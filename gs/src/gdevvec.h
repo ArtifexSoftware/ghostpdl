@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Common definitions for "vector" devices */
@@ -77,6 +77,8 @@ typedef enum {
     gx_path_type_clip = 4,
     gx_path_type_winding_number = 0,
     gx_path_type_even_odd = 8,
+    gx_path_type_optimize = 16,	/* OK to optimize paths by merging seg.s */
+    gx_path_type_always_close = 32, /* include final closepath even if not stroke */
     gx_path_type_rule = gx_path_type_winding_number | gx_path_type_even_odd
 } gx_path_type_t;
 typedef enum {
@@ -150,6 +152,7 @@ int gdev_vector_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0,
 	gs_id no_clip_path_id;	/* indicates no clipping */\
 	gs_id clip_path_id;\
 		/* Other state */\
+	gx_path_type_t fill_options, stroke_options;  /* optimize */\
 	gs_point scale;		/* device coords / scale => output coords */\
 	bool in_page;		/* true if any marks on this page */\
 	gx_device_bbox *bbox_device;	/* for tracking bounding box */\
@@ -171,6 +174,7 @@ int gdev_vector_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0,
 	 { 0 },		/* stroke_color ****** WRONG ****** */\
 	gs_no_id,	/* clip_path_id */\
 	gs_no_id,	/* no_clip_path_id */\
+	0, 0,		/* fill/stroke_options */\
 	 { X_DPI/72.0, Y_DPI/72.0 },	/* scale */\
 	0/*false*/,	/* in_page */\
 	0,		/* bbox_device */\

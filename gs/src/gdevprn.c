@@ -1,8 +1,8 @@
-/* Copyright (C) 1990, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Generic printer driver support */
@@ -713,17 +713,48 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
     return (endcode < 0 ? endcode : upgraded_copypage ? 1 : 0);
 }
 
+/* Print a single copy of a page by calling print_page_copies. */
+int
+gx_print_page_single_copy(gx_device_printer * pdev, FILE * prn_stream)
+{
+    return pdev->printer_procs.print_page_copies(pdev, prn_stream, 1);
+}
+
 /* Print multiple copies of a page by calling print_page multiple times. */
 int
 gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 			     int num_copies)
 {
-    int i = num_copies;
+    int i = 1;
     int code = 0;
 
-    while (code >= 0 && i-- > 0)
+    for (; i < num_copies; ++i) {
+	int errcode, closecode;
+
 	code = (*pdev->printer_procs.print_page) (pdev, prn_stream);
-    return code;
+	if (code < 0)
+	    return code;
+	/*
+	 * Close and re-open the printer, to reset is_new and do the
+	 * right thing if we're producing multiple output files.
+	 * Code is mostly copied from gdev_prn_output_page.
+	 */
+	fflush(pdev->file);
+	errcode =
+	    (ferror(pdev->file) ? gs_note_error(gs_error_ioerror) : 0);
+	closecode = gdev_prn_close_printer((gx_device *)pdev);
+	pdev->PageCount++;
+	code = (errcode < 0 ? errcode : closecode < 0 ? closecode :
+		gdev_prn_open_printer((gx_device *)pdev, true));
+	if (code < 0) {
+	    pdev->PageCount -= i;
+	    return code;
+	}
+	prn_stream = pdev->file;
+    }
+    /* Print the last (or only) page. */
+    pdev->PageCount -= num_copies - 1;
+    return (*pdev->printer_procs.print_page) (pdev, prn_stream);
 }
 
 /*
@@ -820,6 +851,17 @@ int
 gdev_prn_open_printer(gx_device *pdev, bool binary_mode)
 {
     return gdev_prn_open_printer_seekable(pdev, binary_mode, false);
+}
+
+/*
+ * Test whether the printer's output file was just opened, i.e., whether
+ * this is the first page being written to this file.  This is only valid
+ * at the entry to a driver's print_page procedure.
+ */
+bool
+gdev_prn_file_is_new(const gx_device_printer *pdev)
+{
+    return pdev->file_is_new;
 }
 
 /* Determine the colors used in a range of lines. */

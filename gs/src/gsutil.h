@@ -1,8 +1,8 @@
 /* Copyright (C) 1992, 1993, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Prototypes for procedures in gsutil.c */
@@ -45,6 +45,7 @@ typedef struct string_match_params_s {
     int quote_next;		/* '\\' */
     bool ignore_case;
 } string_match_params;
+extern const string_match_params string_match_params_default;
 bool string_match(P5(const byte * str, uint len,
 		     const byte * pstr, uint plen,
 		     const string_match_params * psmp));

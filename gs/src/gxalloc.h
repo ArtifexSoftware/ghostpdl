@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Structure definitions for standard allocator */
@@ -14,7 +14,6 @@
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
-
 #endif
 
 #include "gsalloc.h"
@@ -287,7 +286,18 @@ struct alloc_change_s;
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
+#endif
 
+/*
+ * Ref (PostScript object) type, only needed for the binary_token_names
+ * member of the state.  This really shouldn't be visible at this level at
+ * all: we include it here only to avoid splitting gs_ref_memory_t two
+ * levels, which would be architecturally better but would involve too much
+ * work at this point.
+ */
+#ifndef ref_DEFINED
+typedef struct ref_s ref;
+#  define ref_DEFINED
 #endif
 
 /*
@@ -353,6 +363,7 @@ struct gs_ref_memory_s {
     uint new_mask;		/* l_new or 0 (default) */
     uint test_mask;		/* l_new or ~0 (default) */
     stream *streams;		/* streams allocated at current level */
+    ref *names_array;		/* system_names or user_names, if needed */
     /* Garbage collector information */
     gs_gc_root_t *roots;	/* roots for GC */
     /* Sharing / saved state information */
@@ -363,6 +374,7 @@ struct gs_ref_memory_s {
     struct alloc_save_s *reloc_saved;	/* for GC */
     gs_memory_status_t previous_status;		/* total allocated & used */
 				/* in outer save levels */
+    uint largest_free_size;	/* largest (aligned) size on large block list */
     /* We put the freelists last to keep the scalar offsets small. */
     obj_header_t *freelists[num_freelists];
 };
@@ -373,7 +385,7 @@ extern_st(st_ref_memory);
 #define public_st_ref_memory()	/* in gsalloc.c */\
   gs_public_st_composite(st_ref_memory, gs_ref_memory_t,\
     "gs_ref_memory", ref_memory_enum_ptrs, ref_memory_reloc_ptrs)
-#define st_ref_memory_max_ptrs 3	/* streams, changes, saved */
+#define st_ref_memory_max_ptrs 4  /* streams, names_array, changes, saved */
 
 /* Define the procedures for the standard allocator. */
 /* We export this for subclasses. */

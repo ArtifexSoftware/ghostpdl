@@ -1,14 +1,14 @@
-/* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* BCP and TBCP filters */
 #include "stdio_.h"
 #include "strimpl.h"
-#include "sfilter.h"
+#include "sbcp.h"
 
 #define CtrlA 0x01
 #define CtrlC 0x03

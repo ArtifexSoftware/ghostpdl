@@ -1,8 +1,8 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Image parameter definition */
@@ -208,8 +208,10 @@ typedef struct gs_image1_s {
     gs_image_alpha_t Alpha;
 } gs_image1_t;
 
-#define private_st_gs_image1()	/* in gximage1.c */\
-  gs_private_st_suffix_add0(st_gs_image1, gs_image1_t, "gs_image1_t",\
+/* The descriptor is public for soft masks. */
+extern_st(st_gs_image1);
+#define public_st_gs_image1()	/* in gximage1.c */\
+  gs_public_st_suffix_add0(st_gs_image1, gs_image1_t, "gs_image1_t",\
     image1_enum_ptrs, image1_reloc_ptrs, st_gs_pixel_image)
 
 /*

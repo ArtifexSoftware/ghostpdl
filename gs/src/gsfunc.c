@@ -1,13 +1,14 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Generic Function support */
 #include "gx.h"
 #include "gserrors.h"
+#include "gsparam.h"
 #include "gxfunc.h"
 
 /* GC descriptors */
@@ -65,68 +66,32 @@ fn_domain_is_monotonic(const gs_function_t *pfn, gs_function_effort_t effort)
     return gs_function_is_monotonic(pfn, lower, upper, effort);
 }
 
-/* ---------------- Vanilla functions ---------------- */
-
-/* GC descriptor */
-private_st_function_Va();
-
-/*
- * Test whether a Vanilla function is monotonic.  (This information is
- * provided at function definition time.)
- */
-private int
-fn_Va_is_monotonic(const gs_function_t * pfn_common,
-		   const float *lower, const float *upper,
-		   gs_function_effort_t effort)
-{
-    const gs_function_Va_t *const pfn =
-	(const gs_function_Va_t *)pfn_common;
-
-    return pfn->params.is_monotonic;
-}
-
-/* Free the parameters of a Vanilla function. */
+/* Return default function information. */
 void
-gs_function_Va_free_params(gs_function_Va_params_t * params,
-			   gs_memory_t * mem)
+gs_function_get_info_default(const gs_function_t *pfn, gs_function_info_t *pfi)
 {
-    gs_free_object(mem, params->eval_data, "eval_data");
-    fn_common_free_params((gs_function_params_t *) params, mem);
+    pfi->DataSource = 0;
+    pfi->Functions = 0;
 }
 
-/* Allocate and initialize a Vanilla function. */
+/* Write generic parameters (FunctionType, Domain, Range) on a parameter list. */
 int
-gs_function_Va_init(gs_function_t ** ppfn,
-		    const gs_function_Va_params_t * params,
-		    gs_memory_t * mem)
+fn_common_get_params(const gs_function_t *pfn, gs_param_list *plist)
 {
-    static const gs_function_head_t function_Va_head = {
-	function_type_Vanilla,
-	{
-	    NULL,			/* filled in from params */
-	    (fn_is_monotonic_proc_t) fn_Va_is_monotonic,
-	    (fn_free_params_proc_t) gs_function_Va_free_params,
-	    fn_common_free
-	}
-    };
+    int ecode = param_write_int(plist, "FunctionType", &FunctionType(pfn));
     int code;
 
-    *ppfn = 0;			/* in case of error */
-    code = fn_check_mnDR((const gs_function_params_t *)params, 1, params->n);
-    if (code < 0)
-	return code;
-    {
-	gs_function_Va_t *pfn =
-	    gs_alloc_struct(mem, gs_function_Va_t, &st_function_Va,
-			    "gs_function_Va_init");
-
-	if (pfn == 0)
-	    return_error(gs_error_VMerror);
-	pfn->params = *params;
-	pfn->head = function_Va_head;
-	pfn->head.procs.evaluate = params->eval_proc;
-	pfn->head.is_monotonic = params->is_monotonic;
-	*ppfn = (gs_function_t *) pfn;
+    if (pfn->params.Domain) {
+	code = param_write_float_values(plist, "Domain", pfn->params.Domain,
+					2 * pfn->params.m, false);
+	if (code < 0)
+	    ecode = code;
     }
-    return 0;
+    if (pfn->params.Range) {
+	code = param_write_float_values(plist, "Range", pfn->params.Range,
+					2 * pfn->params.n, false);
+	if (code < 0)
+	    ecode = code;
+    }
+    return ecode;
 }

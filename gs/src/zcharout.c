@@ -1,16 +1,19 @@
-/* Copyright (C) 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1996, 1997, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Common code for outline (Type 1 / 4 / 42) fonts */
+#include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
+#include "gscrypt1.h"
 #include "gstext.h"
 #include "gxdevice.h"		/* for gxfont.h */
 #include "gxfont.h"
+#include "gxfont1.h"
 #include "dstack.h"		/* only for systemdict */
 #include "estack.h"
 #include "ichar.h"
@@ -138,7 +141,8 @@ int
 zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 		const ref * pcnref, const double psb[2],
 		const double pwidth[2], const gs_rect * pbbox,
-		op_proc_t cont_fill, op_proc_t cont_stroke)
+		op_proc_t cont_fill, op_proc_t cont_stroke,
+		const double Metrics2_sbw_default[4])
 {
     os_ptr op = osp;
     const ref *pfdict = &pfont_data(pbfont)->dict;
@@ -175,6 +179,18 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 	if (code < 0)
 	    return code;
 	metrics2 = code > 0;
+    }
+
+    /*
+     * For FontType 9 and 11, if Metrics2 is missing, the caller provides
+     * default Metrics2 values derived from the FontBBox.
+     */
+    if (!metrics2 && Metrics2_sbw_default != NULL) {
+        w2[6] = Metrics2_sbw_default[2];
+        w2[7] = Metrics2_sbw_default[3];
+        w2[8] = Metrics2_sbw_default[0];
+        w2[9] = Metrics2_sbw_default[1];
+	metrics2 = true;
     }
 
     /* Check for CDevProc or "short-circuiting". */
@@ -242,6 +258,8 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
  * Get the CharString data corresponding to a glyph.  Return typecheck
  * if it isn't a string.
  */
+private bool charstring_is_notdef_proc(P1(const ref *));
+private int charstring_make_notdef(P2(gs_const_string *, const gs_font *));
 int
 zchar_charstring_data(gs_font *font, const ref *pgref, gs_const_string *pstr)
 {
@@ -249,9 +267,79 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_const_string *pstr)
 
     if (dict_find(&pfont_data(font)->CharStrings, pgref, &pcstr) <= 0)
 	return_error(e_undefined);
-    check_type_only(*pcstr, t_string);
+    if (!r_has_type(pcstr, t_string)) {
+	/*
+	 * The ADOBEPS4 Windows driver replaces the .notdef entry of
+	 * otherwise normal Type 1 fonts with the procedure
+	 *	{pop 0 0 setcharwidth}
+	 * To prevent this from making the font unembeddable in PDF files
+	 * (with our present font-writing code), we recognize this as a
+	 * special case and return a Type 1 CharString consisting of
+	 *	0 0 hsbw endchar
+	 * Note that we rely on garbage collection to free this string.
+	 */
+	if (font->FontType == ft_encrypted &&
+	    charstring_is_notdef_proc(pcstr)
+	    )
+	    return charstring_make_notdef(pstr, font);
+	else
+	    return_error(e_typecheck);
+    }
     pstr->data = pcstr->value.const_bytes;
     pstr->size = r_size(pcstr);
+    return 0;
+}
+private bool
+charstring_is_notdef_proc(const ref *pcstr)
+{
+    if (r_is_array(pcstr) && r_size(pcstr) == 4) {
+	ref elts[4];
+	long i;
+
+	for (i = 0; i < 4; ++i)
+	    array_get(pcstr, i, &elts[i]);
+	if (r_has_type(&elts[0], t_name) &&
+	    r_has_type(&elts[1], t_integer) && elts[1].value.intval == 0 &&
+	    r_has_type(&elts[2], t_integer) && elts[2].value.intval == 0 &&
+	    r_has_type(&elts[3], t_name)
+	    ) {
+	    ref nref;
+
+	    name_enter_string("pop", &nref);
+	    if (name_eq(&elts[0], &nref)) {
+		name_enter_string("setcharwidth", &nref);
+		if (name_eq(&elts[3], &nref))
+		    return true;
+	    }
+	}
+    }
+    return false;
+}
+private int
+charstring_make_notdef(gs_const_string *pstr, const gs_font *font)
+{
+    const gs_font_type1 *const pfont = (const gs_font_type1 *)font;
+    static const byte char_data[4] = {
+	139,			/* 0 */
+	139,			/* 0 */
+	c1_hsbw,
+	cx_endchar
+    };
+    uint len = max(pfont->data.lenIV, 0) + sizeof(char_data);
+    byte *chars = gs_alloc_string(font->memory, len, "charstring_make_notdef");
+
+    if (chars == 0)
+	return_error(e_VMerror);
+    pstr->data = chars;
+    pstr->size = len;
+    if (pfont->data.lenIV < 0)
+	memcpy(chars, char_data, sizeof(char_data));
+    else {
+	crypt_state state = crypt_charstring_seed;
+
+	memcpy(chars + pfont->data.lenIV, char_data, sizeof(char_data));
+	gs_type1_encrypt(chars, chars, len, &state);
+    }
     return 0;
 }
 

@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Generic PostScript language interface to Functions */
@@ -73,7 +73,7 @@ zexecfunction(i_ctx_t *i_ctx_p)
 	 * its type.
 	 */
     if (!r_is_struct(op) ||
-	r_has_masked_attrs(op, a_executable | a_execute, a_all)
+	!r_has_masked_attrs(op, a_executable | a_execute, a_executable | a_all)
 	)
 	return_error(e_typecheck);
     {
@@ -84,16 +84,23 @@ zexecfunction(i_ctx_t *i_ctx_p)
 	if (diff > 0)
 	    check_ostack(diff);
 	{
-	    float *in = (float *)ialloc_byte_array(m, sizeof(float),
-						   "%execfunction(in)");
-	    float *out = (float *)ialloc_byte_array(n, sizeof(float),
-						    "%execfunction(out)");
-	    int code;
+	    float params[20];	/* arbitrary size, just to avoid allocs */
+	    float *in;
+	    float *out;
+	    int code = 0;
 
-	    if (in == 0 || out == 0)
-		code = gs_note_error(e_VMerror);
-	    else if ((code = float_params(op - 1, m, in)) < 0 ||
-		     (code = gs_function_evaluate(pfn, in, out)) < 0
+	    if (m + n <= countof(params)) {
+		in = params;
+	    } else {
+		in = (float *)ialloc_byte_array(m + n, sizeof(float),
+						"%execfunction(in/out)");
+		if (in == 0)
+		    code = gs_note_error(e_VMerror);
+	    }
+	    out = in + m;
+	    if (code < 0 ||
+		(code = float_params(op - 1, m, in)) < 0 ||
+		(code = gs_function_evaluate(pfn, in, out)) < 0
 		)
 		DO_NOTHING;
 	    else {
@@ -105,8 +112,8 @@ zexecfunction(i_ctx_t *i_ctx_p)
 		}
 		code = make_floats(op + 1 - n, out, n);
 	    }
-	    ifree_object(out, "%execfunction(out)");
-	    ifree_object(in, "%execfunction(in)");
+	    if (in != params)
+		ifree_object(in, "%execfunction(in)");
 	    return code;
 	}
     }
@@ -202,7 +209,8 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
 
 	if (ptr == 0)
 	    return_error(e_VMerror);
-	code = dict_float_array_param(op, kstr, size, ptr, NULL);
+	code = dict_float_array_check_param(op, kstr, size, ptr, NULL,
+					    0, e_rangecheck);
 	if (code < 0 || (even && (code & 1) != 0)) {
 	    gs_free_object(mem, ptr, kstr);
 	    return(code < 0 ? code : gs_note_error(e_rangecheck));
@@ -210,6 +218,27 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
 	*pparray = ptr;
     }
     return code;
+}
+
+/*
+ * If a PostScript object is a Function procedure, return the function
+ * object, otherwise return 0.
+ */
+gs_function_t *
+ref_function(const ref *op)
+{
+    if (r_has_type(op, t_array) &&
+	r_has_masked_attrs(op, a_executable | a_execute,
+			   a_executable | a_all) &&
+	r_size(op) == 2 &&
+	r_has_type_attrs(op->value.refs + 1, t_operator, a_executable) &&
+	op->value.refs[1].value.opproc == zexecfunction &&
+	r_is_struct(op->value.refs) &&
+	r_has_masked_attrs(op->value.refs, a_executable | a_execute,
+			   a_executable | a_all)
+	)
+	return (gs_function_t *)op->value.refs->value.pstruct;
+    return 0;
 }
 
 /* ------ Initialization procedure ------ */

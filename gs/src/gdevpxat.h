@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Attribute ID definitions for PCL XL */
@@ -119,7 +119,7 @@ typedef enum {
     pxaSymbolSet,
     pxaTextData,
     pxaCharSubModeArray,
-    pxaWritingMode,             /* 2.0 */
+    pxaWritingMode,		/* 2.0 */
 
     pxaXSpacingData = 175,
     pxaYSpacingData,

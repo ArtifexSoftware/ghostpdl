@@ -1,8 +1,8 @@
-/* Copyright (C) 1992, 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Client interface to Separation color */
@@ -15,6 +15,9 @@
 /* Graphics state */
 bool gs_currentoverprint(P1(const gs_state *));
 void gs_setoverprint(P2(gs_state *, bool));
+/* Overprint mode is a PDF feature, but we include it here. */
+int gs_currentoverprintmode(P1(const gs_state *));
+int gs_setoverprintmode(P2(gs_state *, int));
 
 /*
  * Separation color spaces.
@@ -47,16 +50,32 @@ extern float *gs_cspace_get_sepr_value_array(P1(
 /* BACKWARD COMPATIBILITY */
 #define gs_cspace_get_separation_value_array gs_cspace_get_sepr_value_array
 
-/* Set the tint transformation procedure for a separation color space. */
-/* VMS limits procedure names to 31 characters. */
-extern int gs_cspace_set_tint_xform_proc(P2(
-					    gs_color_space * pcspace,
-			       int (*proc) (P3(const gs_separation_params *,
-					       floatp,
-					       float *
-					       ))
-					    ));
+/* Set the tint transformation procedure for a Separation color space. */
+/* VMS limits procedure names to 31 characters, and some systems only */
+/* compare the first 23 characters. */
+extern int gs_cspace_set_sepr_proc(P2(
+				      gs_color_space * pcspace,
+			int (*proc)(P3(const gs_separation_params *,
+				       floatp,
+				       float *
+				       ))
+				      ));
 /* BACKWARD COMPATIBILITY */
+#define gs_cspace_set_tint_xform_proc gs_cspace_set_sepr_proc
 #define gs_cspace_set_tint_transform_proc gs_cspace_set_tint_xform_proc
+
+/* Set the Separation tint transformation procedure to a Function. */
+#ifndef gs_function_DEFINED
+typedef struct gs_function_s gs_function_t;
+#  define gs_function_DEFINED
+#endif
+int gs_cspace_set_sepr_function(P2(const gs_color_space *pcspace,
+				   gs_function_t *pfn));
+
+/*
+ * If the Separation tint transformation procedure is a Function,
+ * return the function object, otherwise return 0.
+ */
+gs_function_t *gs_cspace_get_sepr_function(P1(const gs_color_space *pcspace));
 
 #endif /* gscsepr_INCLUDED */

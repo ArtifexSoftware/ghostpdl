@@ -1,8 +1,8 @@
-/* Copyright (C) 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* (T)BCP filter creation */
@@ -13,7 +13,7 @@
 #include "ialloc.h"
 #include "stream.h"
 #include "strimpl.h"
-#include "sfilter.h"
+#include "sbcp.h"
 #include "ifilter.h"
 
 /* Define null handlers for the BCP out-of-band signals. */

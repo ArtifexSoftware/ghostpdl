@@ -1,8 +1,8 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Internal matrix routines for Ghostscript library */
@@ -41,16 +41,24 @@ int gs_distance_transform2fixed(P4(const gs_matrix_fixed *, floatp, floatp,
  * The setup is in gscoord.c.
  */
 typedef struct {
-    long l;
-    fixed f;
-} coeff1;
-typedef struct {
-    coeff1 xx, xy, yx, yy;
+    long xx, xy, yx, yy;
     int skewed;
     int shift;			/* see m_fixed */
     int max_bits;		/* max bits of coefficient */
     fixed round;		/* ditto */
 } fixed_coeff;
+
+/*
+ * Multiply a fixed point value by a coefficient.  The coefficient has two
+ * parts: a value (long) and a shift factor (int), The result is (fixed *
+ * coef_value + round_value) >> (shift + _fixed_shift)) where the shift
+ * factor and the round value are picked from the fixed_coeff structure, and
+ * the coefficient value (from one of the coeff1 members) is passed
+ * explicitly.  The last parameter specifies the number of bits available to
+ * prevent overflow for integer arithmetic.  (This is a very custom
+ * routine.)  The intermediate value may exceed the size of a long integer.
+ */
+fixed fixed_coeff_mult(P4(fixed, long, const fixed_coeff *, int));
 
 /*
  * Multiply a fixed whose integer part usually does not exceed max_bits
@@ -61,8 +69,7 @@ typedef struct {
 #define m_fixed(v, c, fc, maxb)\
   (((v) + (fixed_1 << (maxb - 1))) &\
     ((-fixed_1 << maxb) | _fixed_fraction_v) ?	/* out of range, or has fraction */\
-   (fixed2int_var(v) * (fc).c.f +\
-    arith_rshift(fixed_fraction(v) * (fc).c.f + fixed_half, _fixed_shift)) :\
-   arith_rshift(fixed2int_var(v) * (fc).c.l + (fc).round, (fc).shift))
+    fixed_coeff_mult((v), (fc).c, &(fc), maxb) : \
+   arith_rshift(fixed2int_var(v) * (fc).c + (fc).round, (fc).shift))
 
 #endif /* gxmatrix_INCLUDED */

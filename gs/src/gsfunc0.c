@@ -1,8 +1,8 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Implementation of FunctionType 0 (Sampled) Functions */
@@ -10,6 +10,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsfunc0.h"
+#include "gsparam.h"
 #include "gxfarith.h"
 #include "gxfunc.h"
 
@@ -326,6 +327,59 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
     return result;
 }
 
+/* Return Sampled function information. */
+private void
+fn_Sd_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
+{
+    const gs_function_Sd_t *const pfn =
+	(const gs_function_Sd_t *)pfn_common;
+    long size;
+    int i;
+
+    gs_function_get_info_default(pfn_common, pfi);
+    pfi->DataSource = &pfn->params.DataSource;
+    for (i = 0, size = 1; i < pfn->params.m; ++i)
+	size *= pfn->params.Size[i];
+    pfi->data_size =
+	(size * pfn->params.n * pfn->params.BitsPerSample + 7) >> 3;
+}
+
+/* Write Sampled function parameters on a parameter list. */
+private int
+fn_Sd_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
+{
+    const gs_function_Sd_t *const pfn =
+	(const gs_function_Sd_t *)pfn_common;
+    int ecode = fn_common_get_params(pfn_common, plist);
+    int code;
+
+    if (pfn->params.Order != 1) {
+	if ((code = param_write_int(plist, "Order", &pfn->params.Order)) < 0)
+	    ecode = code;
+    }
+    if ((code = param_write_int(plist, "BitsPerSample",
+				&pfn->params.BitsPerSample)) < 0)
+	ecode = code;
+    if (pfn->params.Encode) {
+	if ((code = param_write_float_values(plist, "Encode",
+					     pfn->params.Encode,
+					     2 * pfn->params.m, false)) < 0)
+	    ecode = code;
+    }
+    if (pfn->params.Decode) {
+	if ((code = param_write_float_values(plist, "Decode",
+					     pfn->params.Decode,
+					     2 * pfn->params.n, false)) < 0)
+	    ecode = code;
+    }
+    if (pfn->params.Size) {
+	if ((code = param_write_int_values(plist, "Size", pfn->params.Size,
+					   pfn->params.m, false)) < 0)
+	    ecode = code;
+    }
+    return ecode;
+}
+
 /* Free the parameters of a Sampled function. */
 void
 gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
@@ -346,6 +400,8 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	{
 	    (fn_evaluate_proc_t) fn_Sd_evaluate,
 	    (fn_is_monotonic_proc_t) fn_Sd_is_monotonic,
+	    (fn_get_info_proc_t) fn_Sd_get_info,
+	    (fn_get_params_proc_t) fn_Sd_get_params,
 	    (fn_free_params_proc_t) gs_function_Sd_free_params,
 	    fn_common_free
 	}

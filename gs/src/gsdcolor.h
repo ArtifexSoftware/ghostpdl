@@ -1,8 +1,8 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Device color representation for drivers */
@@ -64,6 +64,10 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 /* Accessing a colored halftone. */
 #define gx_dc_is_colored_halftone(pdc)\
   ((pdc)->type == gx_dc_type_ht_colored)
+
+/* Test device colors for equality. */
+bool gx_device_color_equal(P2(const gx_device_color *pdevc1,
+			      const gx_device_color *pdevc2));
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * The definitions in the following section of the file, plus the ones

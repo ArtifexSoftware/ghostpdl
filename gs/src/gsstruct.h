@@ -1,8 +1,8 @@
-/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions for Ghostscript modules that define allocatable structures */
@@ -503,6 +503,13 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 #define gs_private_st_simple(stname, stype, sname)\
   gs__st_simple(private_st, stname, stype, sname)
 
+#define gs__st_simple_final(scope_st, stname, stype, sname, pfinal)\
+  scope_st stname = { sizeof(stype), sname, 0, 0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, pfinal }
+#define gs_public_st_simple_final(stname, stype, sname, pfinal)\
+  gs__st_simple_final(public_st, stname, stype, sname, pfinal)
+#define gs_private_st_simple_final(stname, stype, sname, pfinal)\
+  gs__st_simple_final(private_st, stname, stype, sname, pfinal)
+
 /* ---------------- Structures with explicit procedures. ---------------- */
 
 /*
@@ -800,6 +807,18 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 #define gs_private_st_suffix_add1_final(stname, stype, sname, penum, preloc, pfinal, supstname, e1)\
   gs__st_suffix_add1_final(private_st, stname, stype, sname, penum, preloc, pfinal, supstname, e1)
 
+	/* Suffix subclasses with 1 additional string. */
+
+#define gs__st_suffix_add_strings1(scope_st, stname, stype, sname, penum, preloc, supstname, e1)\
+  BASIC_PTRS(penum) {\
+    GC_STRING_ELT(stype, e1)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add_strings1(stname, stype, sname, penum, preloc, supstname, e1)\
+  gs__st_suffix_add_strings1(public_st, stname, stype, sname, penum, preloc, supstname, e1)
+#define gs_private_st_suffix_add_strings1(stname, stype, sname, penum, preloc, supstname, e1)\
+  gs__st_suffix_add_strings1(private_st, stname, stype, sname, penum, preloc, supstname, e1)
+
 	/* Suffix subclasses with 2 additional pointers. */
 
 #define gs__st_suffix_add2(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2)\
@@ -886,6 +905,19 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
   gs__st_suffix_add6(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6)
 #define gs_private_st_suffix_add6(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6)\
   gs__st_suffix_add6(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6)
+
+	/* Suffix subclasses with 9 additional pointers. */
+
+#define gs__st_suffix_add9(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6),\
+    GC_OBJ_ELT3(stype, e7, e8, e9)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add9(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9)\
+  gs__st_suffix_add9(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9)
+#define gs_private_st_suffix_add9(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9)\
+  gs__st_suffix_add9(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9)
 
 /* ---------------- General subclasses ---------------- */
 

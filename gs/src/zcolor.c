@@ -1,8 +1,8 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Color operators */
@@ -32,9 +32,13 @@ private int
 zcurrentgray(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    float gray;
+    int code = gs_currentgray(igs, &gray);
 
+    if (code < 0)
+	return code;
     push(1);
-    make_real(op, gs_currentgray(igs));
+    make_real(op, gray);
     return 0;
 }
 
@@ -44,8 +48,10 @@ zcurrentrgbcolor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     float par[3];
+    int code = gs_currentrgbcolor(igs, par);
 
-    gs_currentrgbcolor(igs, par);
+    if (code < 0)
+	return code;
     push(3);
     make_floats(op - 2, par, 3);
     return 0;
@@ -151,7 +157,7 @@ zcolor_remap_one(i_ctx_t *i_ctx_p, const ref * pproc,
      * more of these functions.
      */
     if (r_size(pproc) == 0) {
-	pmap->proc = gs_identity_transfer;
+	gx_set_identity_transfer(pmap);
 	/*
 	 * Even though we don't actually push anything on the e-stack, all
 	 * clients do, so we return o_push_estack in this case.  This is

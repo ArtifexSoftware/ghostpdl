@@ -1,8 +1,8 @@
 /* Copyright (C) 1994-1996, Russell Lang.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* gsdll extension for Microsoft Windows platforms */

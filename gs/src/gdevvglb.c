@@ -1,13 +1,13 @@
 /* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /*
- * This is a driver for 386 PCs using VGALIB for graphics on the console
- * display.
+ * This is a driver for 386 PCs using vgalib for graphics on the console
+ * display.  Note that this driver only works with 16-color modes.
  *
  * Written by Sigfrid Lundberg, siglun@euler.teorekol.lu.se.
  * Modified by Erik Talvola, talvola@gnu.ai.mit.edu

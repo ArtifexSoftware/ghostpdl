@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* PostScript language interface to FunctionType 0 (Sampled) Functions */
@@ -72,7 +72,7 @@ gs_build_function_0(const ref *op, const gs_function_params_t * mnDR,
 	    goto fail;
 	}
 	params.Size = ptr;
-	code = dict_int_array_param(op, "Size", params.m, ptr);
+	code = dict_ints_param(op, "Size", params.m, ptr);
 	if (code != params.m)
 	    goto fail;
     }

@@ -1,8 +1,8 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Miscellaneous graphics state operators for Ghostscript library */
@@ -62,7 +62,7 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *      We use reference counting to manage these.  Currently these are:
  *              halftone, dev_ht, cie_render, black_generation,
  *              undercolor_removal, set_transfer.*, cie_joint_caches,
- *		clip_stack
+ *		clip_stack, {opacity,shape}.mask
  *      effective_transfer.* may point to some of the same objects as
  *      set_transfer.*, but don't contribute to the reference count.
  *      Similarly, dev_color may point to the dev_ht object.  For
@@ -79,7 +79,9 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *                is never freed;
  *              view_clip, which is associated with the current
  *                save level (effectively, with the gstate sub-stack
- *                back to the save) and is managed specially.
+ *                back to the save) and is managed specially;
+ *		transparency_stack, which is associated with the entire
+ *		  stack but only stored in the topmost graphics state.
  *
  * (4) Objects that are referenced directly by exactly one gstate and that
  *      are not referenced (except transiently) from any other object.
@@ -130,8 +132,9 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
   m(0,saved) m(1,path) m(2,clip_path) m(3,clip_stack)\
   m(4,view_clip) m(5,effective_clip_path)\
   m(6,color_space) m(7,ccolor) m(8,dev_color)\
-  m(9,font) m(10,root_font) m(11,show_gstate) /*m(---,device)*/
-#define gs_state_num_ptrs 12
+  m(9,font) m(10,root_font) m(11,show_gstate) /*m(---,device)*/\
+  m(12,transparency_group_stack)
+#define gs_state_num_ptrs 13
 
 /*
  * Define these elements of the graphics state that are allocated
@@ -196,6 +199,19 @@ private const gs_imager_state gstate_initial = {
     gs_imager_state_initial(1.0)
 };
 
+/*
+ * Allocate a path for the graphics state.  We use stable memory because
+ * some PostScript files have Type 3 fonts whose BuildChar procedure
+ * uses the sequence save ... setcachedevice ... restore, and the path
+ * built between the setcachedevice and the restore must not be freed.
+ * If it weren't for this, we don't think stable memory would be needed.
+ */
+private gs_memory_t *
+gstate_path_memory(gs_memory_t *mem)
+{
+    return gs_memory_stable(mem);
+}
+
 /* Allocate and initialize a graphics state. */
 gs_state *
 gs_state_alloc(gs_memory_t * mem)
@@ -228,7 +244,7 @@ gs_state_alloc(gs_memory_t * mem)
 
     /* Initialize other things not covered by initgraphics */
 
-    pgs->path = gx_path_alloc(mem, "gs_state_alloc(path)");
+    pgs->path = gx_path_alloc(gstate_path_memory(mem), "gs_state_alloc(path)");
     pgs->clip_path = gx_cpath_alloc(mem, "gs_state_alloc(clip_path)");
     pgs->clip_stack = 0;
     pgs->view_clip = gx_cpath_alloc(mem, "gs_state_alloc(view_clip)");
@@ -246,7 +262,6 @@ gs_state_alloc(gs_memory_t * mem)
 	    pgs->device_color_spaces.indexed[i] = 0;
     }
     gx_set_device_color_1(pgs);
-    pgs->overprint = false;
     pgs->device = 0;		/* setting device adjusts refcts */
     gs_nulldevice(pgs);
     gs_setalpha(pgs, 1.0);
@@ -262,6 +277,7 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->in_charpath = (gs_char_path_mode) 0;
     pgs->show_gstate = 0;
     pgs->level = 0;
+    pgs->transparency_group_stack = 0;
     if (gs_initgraphics(pgs) >= 0)
 	return pgs;
     /* Something went very wrong. */
@@ -389,6 +405,7 @@ gs_grestore_only(gs_state * pgs)
     gs_state *saved = pgs->saved;
     void *pdata = pgs->client_data;
     void *sdata;
+    gs_transparency_state_t *tstack = pgs->transparency_stack;
 
     if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
@@ -404,6 +421,7 @@ gs_grestore_only(gs_state * pgs)
 	gstate_copy_client_data(pgs, pdata, sdata, copy_for_grestore);
     gstate_free_contents(pgs);
     *pgs = *saved;
+    pgs->transparency_stack = tstack;
     if (pgs->show_gstate == saved)
 	pgs->show_gstate = pgs;
     gs_free_object(pgs->memory, saved, "gs_grestore");
@@ -544,6 +562,7 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
     gs_state *saved_show = pgs->show_gstate;
     int level = pgs->level;
     gx_clip_path *view_clip = pgs->view_clip;
+    gs_transparency_state_t *tstack = pgs->transparency_stack;
     int code;
 
     pgs->view_clip = 0;		/* prevent refcount decrementing */
@@ -554,6 +573,7 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
     pgs->view_clip = view_clip;
     pgs->show_gstate =
 	(pgs->show_gstate == pfrom ? pgs : saved_show);
+    pgs->transparency_stack = tstack;
     return 0;
 }
 
@@ -679,11 +699,13 @@ private int
 gstate_alloc_parts(gs_state * parts, const gs_state * shared,
 		   gs_memory_t * mem, client_name_t cname)
 {
+    gs_memory_t *path_mem = gstate_path_memory(mem);
+
     parts->path =
 	(shared ?
-	 gx_path_alloc_shared(shared->path, mem,
+	 gx_path_alloc_shared(shared->path, path_mem,
 			      "gstate_alloc_parts(path)") :
-	 gx_path_alloc(mem, "gstate_alloc_parts(path)"));
+	 gx_path_alloc(path_mem, "gstate_alloc_parts(path)"));
     parts->clip_path =
 	(shared ?
 	 gx_cpath_alloc_shared(shared->clip_path, mem,
@@ -761,6 +783,7 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	return 0;
     GSTATE_ASSIGN_PARTS(&parts, pgs);
     *pgs = *pfrom;
+    pgs->transparency_stack = 0;
     /* Copy the dash pattern if necessary. */
     if (pgs->line_params.dash.pattern) {
 	int code;

@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -8,12 +8,23 @@
 # Windows NT or Windows 95 platform.
 # Created 1997-05-22 by L. Peter Deutsch from msvc4/5 makefiles.
 # edited 1997-06-xx by JD to factor out interpreter-specific sections
+# edited 2000-06-05 by lpd to handle empty INCDIR specially.
 
 
 # -------------------------- Auxiliary programs --------------------------- #
 
+!if "$(INCDIR)"==""
+IINCDIR=
+!else
+IINCDIR=/I$(INCDIR)
+!endif
+
+# This also creates the subdirectories since this (hopefully) will be the
+# first need. Too bad nmake doesn't have .BEFORE symbolic target.
 $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
-	echo $(GENOPT) /I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr
+	-mkdir $(GLGENDIR)
+	-mkdir $(BINDIR)
+	echo $(GENOPT) $(IINCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr
 
 $(ECHOGS_XE): $(GLSRC)echogs.c
 	$(CCAUX_SETUP)
@@ -52,11 +63,11 @@ $(GENINIT_XE): $(PSSRCDIR)$(D)geninit.c $(GENINIT_DEPS)
 LIBCTR=$(GLGEN)libc32.tr
 
 $(LIBCTR): $(TOP_MAKEFILES)
-        echo $(LIBDIR)\shell32.lib >$(LIBCTR)
-        echo $(LIBDIR)\comdlg32.lib >>$(LIBCTR)
-        echo $(LIBDIR)\gdi32.lib >>$(LIBCTR)
-        echo $(LIBDIR)\user32.lib >>$(LIBCTR)
-        echo $(LIBDIR)\winspool.lib >>$(LIBCTR)
-	echo $(LIBDIR)\advapi32.lib >>$(LIBCTR)
+        echo $(LIBD)shell32.lib >$(LIBCTR)
+        echo $(LIBD)comdlg32.lib >>$(LIBCTR)
+        echo $(LIBD)gdi32.lib >>$(LIBCTR)
+        echo $(LIBD)user32.lib >>$(LIBCTR)
+        echo $(LIBD)winspool.lib >>$(LIBCTR)
+	echo $(LIBD)advapi32.lib >>$(LIBCTR)
 
 # end of msvctail.mak

@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Image operators */
@@ -221,7 +221,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 			if (sources[pi].value.pfile == pp->value.pfile) {
 			    /* Record aliasing */
 			    make_int(ep + 1, -pi);
-			    EBOT_SOURCE(esp, pi)->value.intval++;
+			    EBOT_SOURCE(esp, pi)[1].value.intval++;
 			    break;
 			}
 		}
@@ -379,7 +379,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	    uint avail;
 
 	    if (num_aliases <= 0)
-		continue;	/* this is an alias for an earlier file */
+		num_aliases = ETOP_SOURCE(esp, -num_aliases)[1].value.intval;
 	    while ((avail = sbufavailable(s)) <=
 		   (min_left = sbuf_min_left(s)) + num_aliases - 1) {
 		int next = s->end_status;
@@ -462,6 +462,7 @@ image_string_continue(i_ctx_t *i_ctx_p)
 
 	if (code == e_RemapColor)
 	    return code;
+    stop_now:
 	if (code) {		/* Stop now. */
 	    esp -= NUM_PUSH(num_sources);
 	    image_cleanup(i_ctx_p);
@@ -470,9 +471,14 @@ image_string_continue(i_ctx_t *i_ctx_p)
 	for (px = 0; px < num_sources; ++px)
 	    if (sources[px].size == 0) {
 		const ref *psrc = ETOP_SOURCE(esp, px);
+		uint size = r_size(psrc);
 
+		if (size == 0) {	    /* empty source */
+		    code = 1;
+		    goto stop_now;
+                }
 		sources[px].data = psrc->value.bytes;
-		sources[px].size = r_size(psrc);
+		sources[px].size = size;
 	    }
     }
 }

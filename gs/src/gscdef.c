@@ -1,8 +1,8 @@
 /* Copyright (C) 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Configuration scalars */
@@ -29,13 +29,13 @@ const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
 
 #ifndef GS_PRODUCTFAMILY
 #  define GS_PRODUCTFAMILY\
-	"Aladdin Ghostscript"
+	"Artifex Ghostscript"
 #endif
 const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	"Aladdin Ghostscript"
+	"Artifex Ghostscript"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 

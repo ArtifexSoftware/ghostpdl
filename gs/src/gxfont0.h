@@ -1,8 +1,8 @@
-/* Copyright (C) 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Type 0 (composite) font data definition */
@@ -32,7 +32,7 @@ typedef enum {
 /* This is the type-specific information for a type 0 (composite) gs_font. */
 #ifndef gs_cmap_DEFINED
 #  define gs_cmap_DEFINED
-typedef struct gs_cmap_s gs_cmap;
+typedef struct gs_cmap_s gs_cmap_t;
 #endif
 typedef struct gs_type0_data_s {
     fmap_type FMapType;
@@ -44,7 +44,7 @@ typedef struct gs_type0_data_s {
     uint encoding_size;
     gs_font **FDepVector;
     uint fdep_size;
-    const gs_cmap *CMap;	/* fmap_CMap only */
+    const gs_cmap_t *CMap;	/* fmap_CMap only */
 } gs_type0_data;
 
 #define gs_type0_data_max_ptrs 3

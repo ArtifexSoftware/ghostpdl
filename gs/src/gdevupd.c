@@ -1,5 +1,5 @@
 /* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
-
+  
   This software is licensed to a single customer by Artifex Software Inc.
   under the terms of a specific OEM agreement.
 */

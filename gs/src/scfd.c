@@ -1,8 +1,8 @@
 /* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* CCITTFax decoding filter */
@@ -63,6 +63,7 @@ s_CFD_init(stream_state * st)
     ss->rpos = ss->wpos = raster - 1;
     ss->eol_count = 0;
     ss->invert = white;
+    ss->min_left = 1;
     return 0;
 }
 

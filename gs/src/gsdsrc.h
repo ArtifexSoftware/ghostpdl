@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* DataSource definitions */
@@ -28,7 +28,6 @@
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
-
 #endif
 
 /*
@@ -48,7 +47,10 @@ typedef enum {
     data_source_type_floats,
     data_source_type_stream
 } gs_data_source_type_t;
+#ifndef gs_data_source_DEFINED
+#  define gs_data_source_DEFINED
 typedef struct gs_data_source_s gs_data_source_t;
+#endif
 struct gs_data_source_s {
     data_source_proc_access((*access));
     gs_data_source_type_t type;

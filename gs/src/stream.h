@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions for Ghostscript stream package */
@@ -157,15 +157,20 @@ struct stream_s {
     stream *prev, *next;	/* keep track of all files */
     bool close_strm;		/* CloseSource/CloseTarget */
     bool close_at_eod;		/*(default is true, only false if "reusable")*/
+    int (*save_close)(P1(stream *));	/* save original close proc */
     /*
      * In order to avoid allocating a separate stream_state for
      * file streams, which are the most heavily used stream type,
      * we put their state here.
      */
     FILE *file;			/* file handle for C library */
+    gs_const_string file_name;	/* file name (optional) -- clients must */
+				/* access only through procedures */
     uint file_modes;		/* access modes for the file, */
 				/* may be a superset of modes */
-    int (*save_close)(P1(stream *));	/* save original close proc */
+    /* Clients must only set the following through sread_subfile. */
+    long file_offset;		/* starting point in file (reading) */
+    long file_limit;		/* ending point in file (reading) */
 };
 
 /* The descriptor is only public for subclassing. */
@@ -173,7 +178,7 @@ extern_st(st_stream);
 #define public_st_stream()	/* in stream.c */\
   gs_public_st_composite_final(st_stream, stream, "stream",\
     stream_enum_ptrs, stream_reloc_ptrs, stream_finalize)
-#define STREAM_NUM_PTRS 5
+#define STREAM_NUM_PTRS 6
 
 /* Initialize the checking IDs of a stream. */
 #define s_init_ids(s) ((s)->read_id = (s)->write_id = 1)
@@ -322,6 +327,17 @@ void sread_file(P4(stream *, FILE *, byte *, uint)),
     swrite_file(P4(stream *, FILE *, byte *, uint)),
     sappend_file(P4(stream *, FILE *, byte *, uint));
 
+/* Confine reading to a subfile.  This is primarily for reusable streams. */
+int sread_subfile(P3(stream *s, long start, long length));
+
+/* Set the file name of a stream, copying the name. */
+/* Return <0 if the copy could not be allocated. */
+int ssetfilename(P3(stream *, const byte *, uint));
+
+/* Return the file name of a stream, if any. */
+/* There is a guaranteed 0 byte after the string. */
+int sfilename(P2(stream *, gs_const_string *));
+
 /* Create a stream that tracks the position, */
 /* for calculating how much space to allocate when actually writing. */
 void swrite_position_only(P1(stream *));
@@ -345,9 +361,12 @@ int s_filter_write_flush(P1(stream *)), s_filter_close(P1(stream *));
 extern const stream_procs s_filter_read_procs, s_filter_write_procs;
 
 /*
- * Add a filter to a pipeline.  The client must have allocated the stream
- * state, if any, using the given allocator.  For s_init_filter, the
+ * Add a filter to an output pipeline.  The client must have allocated the
+ * stream state, if any, using the given allocator.  For s_init_filter, the
  * client must have called s_init and s_init_state.
+ *
+ * Note that if additional buffering is needed, s_add_filter may add
+ * an additional filter to provide it.
  */
 int s_init_filter(P5(stream *fs, stream_state *fss, byte *buf, uint bsize,
 		     stream *target));
@@ -359,5 +378,10 @@ stream *s_add_filter(P4(stream **ps, const stream_template *template,
  * their buffers and state structures.
  */
 int s_close_filters(P2(stream **ps, stream *target));
+
+/* Define templates for the NullEncode/Decode filters. */
+/* They have no state. */
+extern const stream_template s_NullE_template;
+extern const stream_template s_NullD_template;
 
 #endif /* stream_INCLUDED */

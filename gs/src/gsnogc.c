@@ -1,8 +1,8 @@
-/* Copyright (C) 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* String freelist implementation and ersatz garbage collector */
@@ -158,26 +158,34 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 	uint *pfree1 = &cp->sfree1[str_offset >> 8];
 	uint count = size;
 	byte *prev;
-	byte *ptr = str;
+	byte *ptr;
 
 	if (*pfree1 == 0) {
 	    *str = 0;
 	    *pfree1 = str_offset;
+	    if (!--count)
+		return;
 	    prev = str;
+	    ptr = str + 1;
 	} else if (str_offset < *pfree1) {
 	    *str = *pfree1 - str_offset;
 	    *pfree1 = str_offset;
+	    if (!--count)
+		return;
 	    prev = str;
+	    ptr = str + 1;
 	} else {
 	    uint next;
 
 	    prev = csbase(cp) + *pfree1;
-	    while (prev + (next = *prev) < str)
+	    while ((next = *prev) != 0 && prev + next < str)
 		prev += next;
+	    ptr = str;
 	}
 	for (;;) {
 	    /*
 	     * Invariants:
+	     *      ptr == str + size - count
 	     *      prev < sfbase + str_offset
 	     *      *prev == 0 || prev + *prev > sfbase + str_offset
 	     */
@@ -308,17 +316,24 @@ gs_nogc_reclaim(vm_spaces * pspaces, bool global)
     }
 }
 private void
-use_string_freelists(gs_ref_memory_t *mem)
+use_string_freelists(gs_ref_memory_t *rmem)
 {
     /*
-     * Change the allocator to use string freelists in the future.
+     * ANSI made an incompatible change to the C language standard that
+     * caused the following to generate aliasing warnings:
+	gs_memory_t *mem = (gs_memory_t *)rmem;
+     * Consequently, we now use rmem rather than mem in the assignments
+     * below, even though this degrades code readability by obscuring the
+     * fact that they are only manipulating fields of the more abstract
+     * superclass.
      */
-    mem->procs.alloc_string = sf_alloc_string;
-    if (mem->procs.free_string != gs_ignore_free_string)
-	mem->procs.free_string = sf_free_string;
-    mem->procs.enable_free = sf_enable_free;
-    mem->procs.consolidate_free = sf_consolidate_free;
+    /* Change the allocator to use string freelists in the future.  */
+    rmem->procs.alloc_string = sf_alloc_string;
+    if (rmem->procs.free_string != gs_ignore_free_string)
+	rmem->procs.free_string = sf_free_string;
+    rmem->procs.enable_free = sf_enable_free;
+    rmem->procs.consolidate_free = sf_consolidate_free;
 
-	/* Merge free objects, detecting entirely free chunks. */
-    gs_consolidate_free((gs_memory_t *)mem);
+    /* Merge free objects, detecting entirely free chunks. */
+    gs_consolidate_free((gs_memory_t *)rmem);
 }

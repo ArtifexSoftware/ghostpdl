@@ -1,8 +1,8 @@
-/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Coordinate system operators for Ghostscript library */
@@ -431,6 +431,14 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
 	if (expt > scale)
 	    scale = expt;
     }
+    /*
+     * There are two multiplications in fixed_coeff_mult: one involves a
+     * factor that may have max_bits significant bits, the other may have
+     * fixed_fraction_bits (_fixed_shift) bits.  Ensure that neither one
+     * will overflow.
+     */
+    if (max_bits < fixed_fraction_bits)
+	max_bits = fixed_fraction_bits;
     scale = sizeof(long) * 8 - 1 - max_bits - scale;
 
     shift = scale - _fixed_shift;
@@ -442,24 +450,55 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
 	pfc->round = 0;
 	scale -= shift;
     }
-#define set_c(c)\
-  if ( is_fzero(ctm.c) ) pfc->c.f = 0, pfc->c.l = 0;\
-  else pfc->c.f = ldexp(ctm.c, _fixed_shift), pfc->c.l = (long)ldexp(ctm.c, scale)
-    set_c(xx);
-    set_c(xy);
-    set_c(yx);
-    set_c(yy);
+#define SET_C(c)\
+  if ( is_fzero(ctm.c) ) pfc->c = 0;\
+  else pfc->c = (long)ldexp(ctm.c, scale)
+    SET_C(xx);
+    SET_C(xy);
+    SET_C(yx);
+    SET_C(yy);
+#undef SET_C
 #ifdef DEBUG
     if (gs_debug_c('x')) {
 	dlprintf6("[x]ctm: [%6g %6g %6g %6g %6g %6g]\n",
 		  ctm.xx, ctm.xy, ctm.yx, ctm.yy, ctm.tx, ctm.ty);
 	dlprintf6("   scale=%d fc: [0x%lx 0x%lx 0x%lx 0x%lx] shift=%d\n",
-		  scale, pfc->xx.l, pfc->xy.l, pfc->yx.l, pfc->yy.l,
+		  scale, pfc->xx, pfc->xy, pfc->yx, pfc->yy,
 		  pfc->shift);
     }
 #endif
     pfc->max_bits = max_bits;
     return 0;
+}
+
+/*
+ * Handle the case of a large value or a value with a fraction part.
+ * See gxmatrix.h for more details.
+ */
+fixed
+fixed_coeff_mult(fixed value, long coeff, const fixed_coeff *pfc, int maxb)
+{
+    int shift = pfc->shift;
+
+    /*
+     * Test if the value is too large for simple long math.
+     */
+    if ((value + (fixed_1 << (maxb - 1))) & (-fixed_1 << maxb)) {
+	/* The second argument of fixed_mult_quo must be non-negative. */
+	return
+	    (coeff < 0 ?
+	     -fixed_mult_quo(value, -coeff, fixed_1 << shift) :
+	     fixed_mult_quo(value, coeff, fixed_1 << shift));
+    } else {
+	/*
+	 * The construction above guarantees that the multiplications
+	 * won't overflow the capacity of an int.
+	 */
+        return (fixed)
+	    arith_rshift(fixed2int_var(value) * coeff
+			 + fixed2int(fixed_fraction(value) * coeff)
+			 + pfc->round, shift);
+    }
 }
 
 /* ------ Debugging printout ------ */

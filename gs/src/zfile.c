@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Non-I/O file operators */
@@ -177,6 +177,11 @@ zfile(i_ctx_t *i_ctx_p)
     }
     if (code < 0)
 	return code;
+    code = ssetfilename(s, op[-1].value.const_bytes, r_size(op - 1));
+    if (code < 0) {
+	sclose(s);
+	return_error(e_VMerror);
+    }
     make_stream_file(op - 1, s, file_access);
     pop(1);
     return code;
@@ -439,10 +444,10 @@ zfilenamesplit(i_ctx_t *i_ctx_p)
     return_error(e_undefined);
 }
 
-/* <string> findlibfile <found_string> <file> true */
-/* <string> findlibfile <string> false */
+/* <string> .libfile <file> true */
+/* <string> .libfile <string> false */
 private int
-zfindlibfile(i_ctx_t *i_ctx_p)
+zlibfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code;
@@ -460,31 +465,42 @@ zfindlibfile(i_ctx_t *i_ctx_p)
 	pname.iodev = iodev_default;
     if (pname.iodev != iodev_default) {		/* Non-OS devices don't have search paths (yet). */
 	code = zopen_file(&pname, "r", &s, imemory);
+	if (code >= 0) {
+	    code = ssetfilename(s, op->value.const_bytes, r_size(op));
+	    if (code < 0) {
+		sclose(s);
+		return_error(e_VMerror);
+	    }
+	}
 	if (code < 0) {
 	    push(1);
 	    make_false(op);
 	    return 0;
 	}
-	make_stream_file(op + 1, s, "r");
+	make_stream_file(op, s, "r");
     } else {
-	byte *cstr;
+	ref fref;
 
 	code = lib_file_open(pname.fname, pname.len, cname, MAX_CNAME,
-			     &clen, op + 1, imemory);
-	if (code == e_VMerror)
-	    return code;
+			     &clen, &fref, imemory);
+	if (code >= 0) {
+	    s = fptr(&fref);
+	    code = ssetfilename(s, cname, clen);
+	    if (code < 0) {
+		sclose(s);
+		return_error(e_VMerror);
+	    }
+	}
 	if (code < 0) {
+	    if (code == e_VMerror)
+		return code;
 	    push(1);
 	    make_false(op);
 	    return 0;
 	}
-	cstr = ialloc_string(clen, "findlibfile");
-	if (cstr == 0)
-	    return_error(e_VMerror);
-	memcpy(cstr, cname, clen);
-	make_string(op, a_all | icurrent_space, clen, cstr);
+	ref_assign(op, &fref);
     }
-    push(2);
+    push(1);
     make_true(op);
     return 0;
 }
@@ -500,7 +516,7 @@ const op_def zfile_op_defs[] =
     {"2.filenamedirseparator", zfilenamedirseparator},
     {"0.filenamelistseparator", zfilenamelistseparator},
     {"1.filenamesplit", zfilenamesplit},
-    {"1findlibfile", zfindlibfile},
+    {"1.libfile", zlibfile},
     {"2renamefile", zrenamefile},
     {"1status", zstatus},
 		/* Internal operators */
@@ -820,9 +836,9 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
     } else if (st != 0)		/* might not have client parameters */
 	memcpy(sst, st, ssize);
     s->state = sst;
-    sst->template = template;
-    sst->memory = mem;
+    s_init_state(sst, template, mem);
     sst->report_error = filter_report_error;
+
     if (template->init != 0) {
 	code = (*template->init)(sst);
 	if (code < 0) {

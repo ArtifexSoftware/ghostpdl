@@ -1,8 +1,8 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Accumulator for clipping paths */
@@ -72,7 +72,8 @@ private const gx_device_cpath_accum gs_cpath_accum_device =
   NULL,
   NULL,
   NULL,
-  gx_default_text_begin
+  gx_default_text_begin,
+  gx_default_finish_copydevice
  }
 };
 

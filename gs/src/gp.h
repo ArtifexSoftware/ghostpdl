@@ -1,8 +1,8 @@
 /* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Interface to platform-specific routines */
@@ -105,29 +105,6 @@ void gp_readline_finit(P1(void *readline_data));
 /* ------ Screen management ------ */
 
 /*
- * The following routines are only relevant in a single-window environment
- * such as a PC; on platforms with window systems, the 'make current'
- * routines do nothing.
- */
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
-/* Initialize the console. */
-void gp_init_console(P0());
-
-/* Write a string to the console. */
-void gp_console_puts(P2(const char *, uint));
-
-/* Make the console current on the screen. */
-int gp_make_console_current(P1(gx_device *));
-
-/* Make the graphics current on the screen. */
-int gp_make_graphics_current(P1(gx_device *));
-
-/*
  * The following are only relevant for X Windows.
  */
 
@@ -178,7 +155,7 @@ FILE *gp_fopen(P2(const char *fname, const char *mode));
 
 /* Force given file into binary mode (no eol translations, etc) */
 /* if 2nd param true, text mode if 2nd param false */
-bool gp_setmode_binary(P2(FILE * pfile, bool mode));
+int gp_setmode_binary(P2(FILE * pfile, bool mode));
 
 /* Answer whether a file name contains a directory/device specification, */
 /* i.e. is absolute (not directory- or device-relative). */

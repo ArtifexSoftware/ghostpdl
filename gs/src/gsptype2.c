@@ -1,8 +1,8 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* PatternType 2 implementation */
@@ -105,7 +105,11 @@ gs_private_st_ptrs_add0(st_dc_pattern2, gx_device_color, "dc_pattern2",
 private dev_color_proc_load(gx_dc_pattern2_load);
 private dev_color_proc_fill_rectangle(gx_dc_pattern2_fill_rectangle);
 private dev_color_proc_equal(gx_dc_pattern2_equal);
-private const gx_device_color_type_t gx_dc_pattern2 = {
+/*
+ * Define the PatternType 2 Pattern device color type.  This is public only
+ * for testing when writing PDF or PostScript.
+ */
+const gx_device_color_type_t gx_dc_pattern2 = {
     &st_dc_pattern2,
     gx_dc_pattern2_load, gx_dc_pattern2_fill_rectangle,
     gx_dc_default_fill_masked, gx_dc_pattern2_equal
@@ -151,7 +155,18 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     rect.q.y = int2fixed(y + h);
     /* We don't want any adjustment of the box. */
     gs_currentfilladjust(pgs, &save_adjust);
-    gs_setfilladjust(pgs, 0.0, 0.0);
+
+    /*
+     * We should set the fill adjustment to zero here, so that we don't
+     * get multiply-written pixels as a result of filling abutting
+     * triangles.  However, numerical inaccuracies in the shading
+     * algorithms can cause pixel dropouts, and a non-zero adjustment
+     * is by far the easiest way to work around them as a stopgap.
+     * NOTE: This makes shadings not interact properly with
+     * non-idempotent RasterOps (not a problem in practice, since
+     * PostScript doesn't have RasterOps and PCL doesn't have shadings).
+     */
+    gs_setfilladjust(pgs, 0.5, 0.5);
     /****** DOESN'T HANDLE RASTER OP ******/
     code = gs_shading_fill_path(pinst->template.Shading, NULL, &rect, dev,
 				(gs_imager_state *)pgs, true);

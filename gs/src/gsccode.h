@@ -1,8 +1,8 @@
-/* Copyright (C) 1993, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Types for character codes */
@@ -39,11 +39,21 @@ typedef ulong gs_glyph;
 typedef bool(*gs_glyph_mark_proc_t) (P2(gs_glyph glyph, void *proc_data));
 
 /* Define a procedure for mapping a gs_glyph to its (string) name. */
+/*
+ * NOTE: As of release 6.21, his procedure is obsolete and deprecated,
+ * but it must be supported for backward compatibility for the xfont
+ * interface.
+ */
 #define gs_proc_glyph_name(proc)\
   const char *proc(P2(gs_glyph, uint *))
-/* The following typedef is needed because ansi2knr can't handle */
-/* gs_proc_glyph_name((*procname)) in a formal argument list. */
 typedef gs_proc_glyph_name((*gs_proc_glyph_name_t));
+/*
+ * This is the updated procedure, which accepts closure data and also can
+ * return an error code.
+ */
+#define gs_glyph_name_proc(proc)\
+  int proc(P3(gs_glyph glyph, gs_const_string *pstr, void *proc_data))
+typedef gs_glyph_name_proc((*gs_glyph_name_proc_t));
 
 /* Define the indices for known encodings. */
 typedef enum {
@@ -58,9 +68,9 @@ typedef enum {
     ENCODING_INDEX_MACEXPERT,
 #define NUM_KNOWN_REAL_ENCODINGS 7
 	/* Pseudo-encodings (glyph sets). */
-    ENCODING_INDEX_MACGLYPH,	/* a pseudo-encoding */
-    ENCODING_INDEX_ALOGLYPH,	/* ditto */
-    ENCODING_INDEX_ALXGLYPH,	/* ditto */
+    ENCODING_INDEX_MACGLYPH,	/* Mac glyphs */
+    ENCODING_INDEX_ALOGLYPH,	/* Adobe Latin glyph set */
+    ENCODING_INDEX_ALXGLYPH,	/* Adobe Latin Extended glyph set */
     ENCODING_INDEX_CFFSTRINGS	/* CFF StandardStrings */
 #define NUM_KNOWN_ENCODINGS 11
 } gs_encoding_index_t;

@@ -1,8 +1,8 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /*
@@ -34,6 +34,7 @@
 #include "gx.h"
 #include "gp.h"
 #include "gpcheck.h"
+#include "gpmisc.h"
 #include "gserrors.h"
 #include "gsexit.h"
 
@@ -823,7 +824,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 {				/* The -7 is for XXXXXX plus a possible final \. */
     int len = gp_file_name_sizeof - strlen(prefix) - 7;
 
-    if (gp_getenv("TEMP", fname, &len) != 0)
+    if (gp_gettmpdir(fname, &len) != 0)
 	*fname = 0;
     else {
 	char *temp;
@@ -837,7 +838,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     strcat(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    return fopen(fname, mode);
+    return gp_fopentemp(fname, mode);
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */

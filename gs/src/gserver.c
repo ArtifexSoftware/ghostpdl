@@ -1,8 +1,8 @@
 /* Copyright (C) 1992, 1994, 1996 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Server front end for Ghostscript, replacing gs.c. */
@@ -263,7 +263,7 @@ job_begin()
 {
     int code;
 
-    /* Aladdin Ghostscript doesn't provide erasepage as an operator. */
+    /* Ghostscript doesn't provide erasepage as an operator. */
     /* However, we can get the same effect by calling gs_erasepage. */
     extern gs_state *igs;
 

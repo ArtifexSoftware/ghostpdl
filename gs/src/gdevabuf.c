@@ -1,8 +1,8 @@
-/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Alpha-buffering memory devices */
@@ -305,7 +305,8 @@ y_transfer_next(y_transfer * pyt, gx_device * dev)
 	tby -= mdev->height;
 	tbh = ms + mh - dev->height - tby;
     }
-    if_debug7('v', "[v]my=%d, mh=%d, ms=%d, ty=%d, th=%d, tby=%d, tbh=%d\n",
+    if_debug7('V',
+	      "[V]abuf: my=%d, mh=%d, ms=%d, ty=%d, th=%d, tby=%d, tbh=%d\n",
 	      my, mh, ms, ty, th, tby, tbh);
     if (tbh > th)
 	tbh = th;

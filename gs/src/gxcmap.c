@@ -1,8 +1,8 @@
 /* Copyright (C) 1992, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Color mapping for Ghostscript */
@@ -695,6 +695,18 @@ float
 gs_mapped_transfer(floatp value, const gx_transfer_map * pmap)
 {
     return gx_map_color_float(pmap, value);
+}
+
+/* Set a transfer map to the identity map. */
+void
+gx_set_identity_transfer(gx_transfer_map *pmap)
+{
+    int i;
+
+    pmap->proc = gs_identity_transfer;
+    /* We still have to fill in the cached values. */
+    for (i = 0; i < transfer_map_size; ++i)
+	pmap->values[i] = bits2frac(i, log2_transfer_map_size);
 }
 
 #if FRAC_MAP_INTERPOLATE	/* NOTA BENE */

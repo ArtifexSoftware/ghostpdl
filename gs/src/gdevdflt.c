@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Default device implementation */
@@ -84,6 +84,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, create_compositor, gx_default_create_compositor);
     fill_dev_proc(dev, get_hardware_params, gx_default_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_default_text_begin);
+    fill_dev_proc(dev, finish_copydevice, gx_default_finish_copydevice);
 }
 
 int
@@ -218,6 +219,13 @@ gx_null_create_compositor(gx_device * dev, gx_device ** pcdev,
 {
     *pcdev = dev;
     return 0;
+}
+
+int
+gx_default_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+{
+    /* Only allow copying the prototype. */
+    return (from_dev->memory ? gs_note_error(gs_error_rangecheck) : 0);
 }
 
 /* ---------------- Default per-instance procedures ---------------- */

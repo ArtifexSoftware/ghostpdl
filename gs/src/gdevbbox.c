@@ -1,8 +1,8 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Device for tracking bounding box */
@@ -118,7 +118,8 @@ gx_device_bbox gs_bbox_device =
      gx_default_map_color_rgb_alpha,
      bbox_create_compositor,
      NULL,			/* get_hardware_params */
-     bbox_text_begin
+     bbox_text_begin,
+     NULL			/* finish_copydevice */
     },
     0,				/* target */
     1,				/*true *//* free_standing */

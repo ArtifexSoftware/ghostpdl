@@ -1,8 +1,8 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Mask clipping device */
@@ -68,7 +68,8 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_map_color_rgb_alpha,
   gx_no_create_compositor,
   gx_forward_get_hardware_params,
-  gx_default_text_begin
+  gx_default_text_begin,
+  gx_default_finish_copydevice
  }
 };
 

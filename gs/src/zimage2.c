@@ -1,8 +1,8 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* image operator extensions for Level 2 PostScript */
@@ -46,15 +46,13 @@ data_image_params(const ref *op, gs_data_image_t *pim,
 	(code = dict_int_param(op, "BitsPerComponent", 1,
 			       max_bits_per_component, -1,
 			       &pim->BitsPerComponent)) < 0 ||
-	(code = decode_size = dict_float_array_param(op, "Decode",
-						     num_components * 2,
-					      &pim->Decode[0], NULL)) < 0 ||
+	(code = decode_size = dict_floats_param(op, "Decode",
+						num_components * 2,
+						&pim->Decode[0], NULL)) < 0 ||
 	(code = dict_bool_param(op, "Interpolate", false,
 				&pim->Interpolate)) < 0
 	)
 	return code;
-    if (decode_size != num_components * 2)
-	return_error(e_rangecheck);
     pip->pDecode = &pim->Decode[0];
     /* Extract and check the data sources. */
     if ((code = dict_find_string(op, "DataSource", &pds)) <= 0) {

@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Common support for interpreter front ends */
@@ -19,12 +19,14 @@ set_stdfiles(FILE * stdfiles[3])
 }
 #include "ghost.h"
 #include "gp.h"
+#include "gscdefs.h"		/* for gs_init_file */
 #include "gslib.h"
 #include "gsmatrix.h"		/* for gxdevice.h */
 #include "gsutil.h"		/* for bytes_compare */
 #include "gxdevice.h"
 #include "errors.h"
 #include "oper.h"
+#include "iconf.h"		/* for gs_init_* imports */
 #include "idebug.h"
 #include "idict.h"
 #include "iname.h"		/* for name_init */
@@ -67,15 +69,6 @@ int gs_exit_status;
 /* Define the interpreter's name table.  We'll move it somewhere better */
 /* eventually.... */
 name_table *the_gs_name_table;
-
-/* ------ Imported data ------ */
-
-/* Configuration information imported from gconfig.c and iinit.c. */
-extern const char *gs_init_file;
-extern const byte gs_init_string[];
-extern const uint gs_init_string_sizeof;
-extern const ref gs_init_file_array[];
-extern const ref gs_emulator_name_array[];
 
 /* ------ Forward references ------ */
 

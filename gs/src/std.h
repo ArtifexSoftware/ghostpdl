@@ -1,8 +1,8 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 1992, 1993, 1994, 1995, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Standard definitions for Aladdin Enterprises code */
@@ -154,6 +154,7 @@ void dprintf_file_only(P2(FILE *, const char *));
 #  define _dpl dprintf_file_only(estderr, __FILE__),
 #endif
 
+void dflush(P0());		/* flush dstderr */
 #define dputc(chr) dprintf1("%c", chr)
 #define dlputc(chr) dlprintf1("%c", chr)
 #define dputs(str) dprintf1("%s", str)

@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1999, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -51,8 +51,11 @@ XEAUX=.exe
 
 # We have to use a batch file for the equivalent of cp,
 # because the DOS COPY command copies the file write time, like cp -p.
+# We also have to use a batch file for for the equivalent of rm -f,
+# because the DOS ERASE command returns an error status if the file
+# doesn't exist.
 CP_=call $(GLSRCDIR)\cp.bat
-RM_=erase
+RM_=call $(GLSRCDIR)\rm.bat
 RMN_=call $(GLSRCDIR)\rm.bat
 
 # Define the generic compilation flags.
@@ -126,7 +129,7 @@ $(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
 # console I/O module gp_msio.c, because this incorrectly refers to gsdll.c,
 # which in turn incorrectly refers to PostScript interpreter code.
 
-msw32nc__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
+msw32nc__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
 msw32nc_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 $(GLGEN)msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE) $(msw32nc_inc)
 	$(SETMOD) $(GLGEN)msw32nc_ $(msw32nc__)
@@ -134,7 +137,7 @@ $(GLGEN)msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE) $(msw32nc_inc)
 
 $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
  $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \
- $(gx_h) $(gp_h) $(gpcheck_h) $(gserrors_h) $(gsexit_h)
+ $(gx_h) $(gp_h) $(gpcheck_h) $(gpmisc_h) $(gserrors_h) $(gsexit_h)
 	$(GLCCWIN) $(GLO_)gp_mswin.$(OBJ) $(C_) $(GLSRC)gp_mswin.c
 
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)

@@ -1,8 +1,8 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Pattern color mapping for Ghostscript library */
@@ -113,7 +113,8 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
      NULL,
      NULL,
      NULL,
-     gx_default_text_begin
+     gx_default_text_begin,
+     gx_default_finish_copydevice
  },
  0,				/* target */
  0, 0, 0, 0			/* bitmap_memory, bits, mask, instance */

@@ -1,8 +1,8 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Shading rendering support */
@@ -41,7 +41,16 @@ shade_next_init(shade_coord_stream_t * cs,
     cs->params = params;
     cs->pctm = &pis->ctm;
     if (data_source_is_stream(params->DataSource)) {
-	cs->s = params->DataSource.data.strm;
+	/*
+	 * Reset the data stream iff it is reusable -- either a reusable
+	 * file or a reusable string.
+	 */
+	stream *s = cs->s = params->DataSource.data.strm;
+
+	if ((s->file != 0 && s->file_limit != max_long) ||
+	    (s->file == 0 && s->strm == 0)
+	    )
+	    sreset(s);
     } else {
 	sread_string(&cs->ds, params->DataSource.data.str.data,
 		     params->DataSource.data.str.size);
@@ -120,7 +129,12 @@ cs_next_packed_decoded(shade_coord_stream_t * cs, int num_bits,
 {
     uint value;
     int code = cs->get_value(cs, num_bits, &value);
+#if ARCH_CAN_SHIFT_FULL_LONG
     double max_value = (double)(uint) ((1 << num_bits) - 1);
+#else
+    double max_value = (double)(uint)
+	(num_bits == sizeof(uint) * 8 ? ~0 : ((1 << num_bits) - 1));
+#endif
 
     if (code < 0)
 	return code;

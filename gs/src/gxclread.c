@@ -1,8 +1,8 @@
 /* Copyright (C) 1991, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Command list reading for Ghostscript. */
@@ -471,8 +471,8 @@ clist_playback_file_bands(clist_playback_action action,
     stream_band_read_state rs;
 
     /* setup stream */
-    rs.template = &s_band_read_template;
-    rs.memory = 0;
+    s_init_state((stream_state *)&rs, &s_band_read_template,
+		 (gs_memory_t *)0);
     rs.band_first = band_first;
     rs.band_last = band_last;
     rs.page_info = *page_info;

@@ -1,8 +1,8 @@
 /* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Generate configuration files */
@@ -336,7 +336,7 @@ main(int argc, char *argv[])
 	fclose(out);
     }
 
-    exit(0);
+    return 0;
 }
 
 /* Allocate and initialize a string list. */

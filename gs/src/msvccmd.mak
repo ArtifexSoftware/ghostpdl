@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -8,6 +8,8 @@
 # Windows NT or Windows 95 platform.
 # Created 1997-05-22 by L. Peter Deutsch from msvc4/5 makefiles.
 # edited 1997-06-xx by JD to factor out interpreter-specific sections
+# edited 2000-03-30 by lpd to make /FPi87 conditional on MSVC version
+# edited 2000-06-05 by lpd to treat empty INCDIR and LIBDIR specially.
 
 # Set up linker differently for MSVC 4 vs. later versions
 
@@ -18,13 +20,18 @@
 QI0f=
 
 # Set up LIB enviromnent variable to include LIBDIR. This is a hack for
-# MSVC4.x, which doesn't have compiler switches to do the deed
+# MSVC4.x, which doesn't have compiler switches to do the deed.
 
-!ifdef LIB
-LIB=$(LIBDIR);$(LIB)
+!if "$(LIBDIR)"==""
+LINK_SETUP=
+CCAUX_SETUP=
 !else
+! ifdef LIB
+LIB=$(LIBDIR);$(LIB)
+! else
 LINK_SETUP=set LIB=$(LIBDIR)
 CCAUX_SETUP=$(LINK_SETUP)
+! endif
 !endif
 
 !else
@@ -35,7 +42,11 @@ QI0f=/QI0f
 
 # Define linker switch that will select where MS libraries are.
 
+!if "$(LIBDIR)"==""
+LINK_LIB_SWITCH=
+!else
 LINK_LIB_SWITCH=/LIBPATH:$(LIBDIR)
+!endif
 
 # Define separate CCAUX command-line switch that must be at END of line.
 
@@ -85,7 +96,7 @@ CPFLAGS=/GB $(QI0f)
 CPFLAGS=/GB $(QI0f)
 !endif
 
-!if $(FPU_TYPE)>0
+!if $(FPU_TYPE)>0 && $(MSVC_VERSION)<5
 FPFLAGS=/FPi87
 !else
 FPFLAGS=
@@ -162,7 +173,13 @@ COMPILE_FOR_CONSOLE_EXE=
 
 # The /MT is for multi-threading.  We would like to make this an option,
 # but it's too much work right now.
+!if "$(PVERSION)"=="10008"
+# Work around a problem in the PNG lib version 10008 that defines PNGAPI
+# as _cdecl instead of __cdecl that MSVC uses.
+GENOPT=$(CP) $(CD) $(CT) $(CS) /W2 /nologo /MT /D_cdecl=__cdecl
+!else
 GENOPT=$(CP) $(CD) $(CT) $(CS) /W2 /nologo /MT
+!endif
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
@@ -182,7 +199,11 @@ CC_NO_WARN=$(CC_)
 
 # Compiler for auxiliary programs
 
+!if "$(INCDIR)"==""
+CCAUX=$(COMPAUX) /O
+!else
 CCAUX=$(COMPAUX) /I$(INCDIR) /O
+!endif
 
 # Compiler for Windows programs.
 # /Ze enables MS-specific extensions (this is also the default).

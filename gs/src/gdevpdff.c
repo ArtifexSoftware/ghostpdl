@@ -1,8 +1,8 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Font handling for pdfwrite driver. */
@@ -23,6 +23,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
 #include "gdevpdfo.h"
+#include "gdevpsf.h"
 #include "scommon.h"
 
 /*
@@ -257,18 +258,30 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 {
     const byte *chars = font->font_name.chars;
     uint size = font->font_name.size;
-    /* Check whether the font is in the base 14. */
-    int index = pdf_find_standard_font(chars, size);
 
-    if (index >= 0) {
-	*pindex = index;
-	if (font->is_resource) {
-	    *psame = ~0;
-	    return FONT_EMBED_STANDARD;
-	} else if (font->FontType != ft_composite &&
-		   find_std_appearance(pdev, (gs_font_base *)font, -1,
-				       psame) == index)
-	    return FONT_EMBED_STANDARD;
+    /*
+     * The behavior of Acrobat Distiller changed between 3.0 (PDF 1.2),
+     * which will never embed the base 14 fonts, and 4.0 (PDF 1.3), which
+     * doesn't treat them any differently from any other fonts.
+     */
+#if 0	/**************** DOESN'T WORK ****************/
+    if (pdev->CompatibilityLevel < 1.3) {
+#else
+    {
+#endif
+	/* Check whether the font is in the base 14. */
+	int index = pdf_find_standard_font(chars, size);
+
+	if (index >= 0) {
+	    *pindex = index;
+	    if (font->is_resource) {
+		*psame = ~0;
+		return FONT_EMBED_STANDARD;
+	    } else if (font->FontType != ft_composite &&
+		       find_std_appearance(pdev, (gs_font_base *)font, -1,
+					   psame) == index)
+		return FONT_EMBED_STANDARD;
+	}
     }
     *pindex = -1;
     *psame = 0;
@@ -328,20 +341,30 @@ pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_matrix *pfmat)
  */
 int
 pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
-	       gs_id descriptor_id)
+	       const pdf_font_descriptor_t *pfd_in)
 {
     gs_memory_t *mem = pdev->v_memory;
     pdf_font_descriptor_t *pfd = 0;
+    gs_string chars_used, glyphs_used;
     int code;
     pdf_font_t *pfres;
 
-    if (descriptor_id != gs_no_id) {
+    chars_used.data = 0;
+    glyphs_used.data = 0;
+    if (pfd_in != 0) {
 	code = pdf_alloc_resource(pdev, resourceFontDescriptor,
-				  descriptor_id, (pdf_resource_t **)&pfd, 0L);
+				  pfd_in->rid, (pdf_resource_t **)&pfd, 0L);
 	if (code < 0)
 	    return code;
-	memset(&pfd->values, 0, sizeof(pfd->values));
-	memset(pfd->chars_used, 0, sizeof(pfd->chars_used));
+	chars_used.size = pfd_in->chars_used.size;
+	chars_used.data = gs_alloc_string(mem, chars_used.size,
+					  "pdf_alloc_font(chars_used)");
+	if (chars_used.data == 0)
+	    goto fail;
+	memset(chars_used.data, 0, chars_used.size);
+	pfd->values = pfd_in->values;
+	pfd->chars_used = chars_used;
+	pfd->glyphs_used = glyphs_used;
 	pfd->subset_ok = true;
 	pfd->FontFile_id = 0;
 	pfd->base_font = 0;
@@ -350,10 +373,8 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     }
     code = pdf_alloc_resource(pdev, resourceFont, rid,
 			      (pdf_resource_t **)ppfres, 0L);
-    if (code < 0) {
-	gs_free_object(mem, pfd, "pdf_alloc_font(descriptor)");
-	return code;
-    }
+    if (code < 0)
+	goto fail;
     pfres = *ppfres;
     memset((byte *)pfres + sizeof(pdf_resource_t), 0,
 	   sizeof(*pfres) - sizeof(pdf_resource_t));
@@ -367,6 +388,15 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     pfres->char_procs = 0;
     pfres->skip = false;
     return 0;
+ fail:
+    if (glyphs_used.data)
+	gs_free_string(mem, glyphs_used.data, glyphs_used.size,
+		       "pdf_alloc_font(glyphs_used)");
+    if (chars_used.data)
+	gs_free_string(mem, chars_used.data, chars_used.size,
+		       "pdf_alloc_font(chars_used)");
+    gs_free_object(mem, pfd, "pdf_alloc_font(descriptor)");
+    return code;
 }
 
 /*
@@ -521,6 +551,8 @@ pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 					   GLYPH_INFO_WIDTH0 << wmode,
 					   &info)) >= 0
 	    ) {
+	    gs_const_string gnstr;
+
 	    if (wmode && (w = info.width[wmode].y) != 0)
 		v = info.width[wmode].x;
 	    else
@@ -532,8 +564,14 @@ pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 		w *= 1000;
 	    }
 	    ppf->Widths[ch] = (int)w;
-	    /* Mark the width as known. */
-	    ppf->widths_known[ch >> 3] |= 1 << (ch & 7);
+	    /*
+	     * If the character is .notdef, don't mark the width as known,
+	     * just in case this is an incrementally defined font.
+	     */
+	    gnstr.data = (const byte *)
+		bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
+	    if (gnstr.size != 7 || memcmp(gnstr.data, ".notdef", 7))
+		ppf->widths_known[ch >> 3] |= 1 << (ch & 7);
 	} else {
 	    /* Try for MissingWidth. */
 	    static const gs_point tt_scale = {1000, 1000};
@@ -793,7 +831,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
      * and the fixed width if any.  Avoid computing the bounding box of
      * letters a second time.
      */
-    num_letters = psdf_sort_glyphs(letters, num_letters);
+    num_letters = psf_sort_glyphs(letters, num_letters);
     desc.Ascent = desc.FontBBox.q.y;
     notdef = gs_no_glyph;
     for (index = 0;
@@ -803,7 +841,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 	gs_glyph_info_t info;
 	gs_const_string gnstr;
 
-	if (psdf_sorted_glyphs_include(letters, num_letters, glyph)) {
+	if (psf_sorted_glyphs_include(letters, num_letters, glyph)) {
 	    /* We don't need the bounding box. */
 	    code = font->procs.glyph_info(font, glyph, pmat,
 					  members - GLYPH_INFO_BBOX, &info);
@@ -837,7 +875,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
     if (desc.Ascent == 0)
 	desc.Ascent = desc.FontBBox.q.y;
     desc.Descent = desc.FontBBox.p.y;
-    if (!(desc.Flags & FONT_IS_ALL_CAPS) &&
+    if (!(desc.Flags & (FONT_IS_SYMBOLIC | FONT_IS_ALL_CAPS)) &&
 	(small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9)
 	)
 	desc.Flags |= FONT_IS_SMALL_CAPS;

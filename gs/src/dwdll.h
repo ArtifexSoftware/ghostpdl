@@ -1,9 +1,9 @@
 /* Copyright (C) 1996, Russell Lang.  All rights reserved.
-   Portions Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  Portions Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 
 // $RCSfile$ $Revision$

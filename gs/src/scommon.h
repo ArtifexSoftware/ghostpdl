@@ -1,8 +1,8 @@
 /* Copyright (C) 1994, 1996, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions common to stream clients and implementors */
@@ -145,6 +145,7 @@ stream_proc_report_error(s_no_report_error);
 	const stream_template *template;\
 	gs_memory_t *memory;\
 	stream_proc_report_error((*report_error));\
+        int min_left; /* required bytes for lookahead */ \
 	char error_string[STREAM_MAX_ERROR_STRING + 1]
 struct stream_state_s {
     stream_state_common;

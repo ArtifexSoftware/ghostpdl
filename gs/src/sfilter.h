@@ -1,8 +1,8 @@
-/* Copyright (C) 1993, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions for simple Ghostscript streams */
@@ -26,29 +26,6 @@
  * all structure members change dynamically.
  */
 
-/* (T)BCPEncode */
-/* (no state) */
-extern const stream_template s_BCPE_template;
-extern const stream_template s_TBCPE_template;
-
-/* (T)BCPDecode */
-typedef struct stream_BCPD_state_s {
-    stream_state_common;
-    /* The client sets the following before initialization. */
-    int (*signal_interrupt) (P1(stream_state *));
-    int (*request_status) (P1(stream_state *));
-    /* The following are updated dynamically. */
-    bool escaped;
-    int matched;		/* TBCP only */
-    int copy_count;		/* TBCP only */
-    const byte *copy_ptr;	/* TBCP only */
-} stream_BCPD_state;
-
-#define private_st_BCPD_state()	/* in sbcp.c */\
-  gs_private_st_simple(st_BCPD_state, stream_BCPD_state, "(T)BCPDecode state")
-extern const stream_template s_BCPD_template;
-extern const stream_template s_TBCPD_template;
-
 /* eexecEncode */
 typedef struct stream_exE_state_s {
     stream_state_common;
@@ -66,14 +43,16 @@ typedef struct stream_exD_state_s {
     stream_state_common;
     /* The following parameters are set by the client. */
     ushort cstate;		/* encryption state */
-    stream_PFBD_state *pfb_state;	/* state of underlying */
-				/* PFBDecode stream, if any */
     int binary;			/* 1=binary, 0=hex, -1=don't know yet */
     int lenIV;			/* # of initial decoded bytes to skip */
+    stream_PFBD_state *pfb_state;	/* state of underlying */
+				/* PFBDecode stream, if any */
     /* The following change dynamically. */
     int odd;			/* odd digit */
     long record_left;		/* data left in binary record in .PFB file, */
 				/* max_long if not reading a .PFB file */
+    long hex_left;		/* # of encoded chars to process as hex */
+				/* if binary == 0 */
     int skip;			/* # of decoded bytes to skip */
 } stream_exD_state;
 
@@ -81,11 +60,6 @@ typedef struct stream_exD_state_s {
   gs_private_st_ptrs1(st_exD_state, stream_exD_state, "eexecDecode state",\
     exd_enum_ptrs, exd_reloc_ptrs, pfb_state)
 extern const stream_template s_exD_template;
-
-/* NullEncode/Decode */
-/* (no state) */
-extern const stream_template s_NullE_template;
-extern const stream_template s_NullD_template;
 
 /* PFBDecode */
 /* The typedef for the state appears under eexecDecode above. */
@@ -106,8 +80,9 @@ extern const stream_template s_PFBD_template;
 typedef struct stream_SFD_state_s {
     stream_state_common;
     /* The following parameters are set by the client. */
-    long count;			/* # of EODs to scan over */
+    long count;			/* # of chars or EODs to scan over */
     gs_const_string eod;
+    long skip_count;		/* # of initial chars or records to skip */
     /* The following change dynamically. */
     uint match;			/* # of matched chars not copied to output */
     uint copy_count;		/* # of matched characters left to copy */

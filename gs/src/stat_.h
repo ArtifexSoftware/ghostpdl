@@ -1,8 +1,8 @@
-/* Copyright (C) 1991, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Generic substitute for Unix sys/stat.h */
@@ -57,6 +57,24 @@
 #    endif
 #  endif
 #  define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
+#endif
+
+/*
+ * Microsoft C doesn't define S_IRUSR or S_IWUSR.
+ */
+#ifndef S_IRUSR
+#  ifndef S_IREAD
+#    define S_IRUSR _S_IREAD
+#  else
+#    define S_IRUSR S_IREAD
+#  endif
+#endif
+#ifndef S_IWUSR
+#  ifndef S_IWRITE
+#    define S_IWUSR _S_IWRITE
+#  else
+#    define S_IWUSR S_IWRITE
+#  endif
 #endif
 
 #endif /* stat__INCLUDED */

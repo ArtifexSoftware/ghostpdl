@@ -1,8 +1,8 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Dictionary operators */
@@ -379,39 +379,6 @@ zdicttomark(i_ctx_t *i_ctx_p)
     return code;
 }
 
-/* <dict> <key> <value> .forceput - */
-/*
- * This forces a "put" even if the dictionary is not writable, and (if the
- * dictionary is systemdict or the save level is 0) even if the value is in
- * local VM.  It is meant to be used only for replacing the value of
- * FontDirectory in systemdict when switching between local and global VM,
- * and a few similar applications.  After initialization, this operator
- * should no longer be accessible by name.
- */
-private int
-zforceput(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    os_ptr odp = op - 2;
-    int code;
-
-    check_type(*odp, t_dictionary);
-    if (odp->value.pdict == systemdict->value.pdict ||
-	!imemory_save_level(iimemory)
-	) {
-	uint space = r_space(odp);
-
-	r_set_space(odp, avm_local);
-	code = idict_put(odp, op - 1, op);
-	r_set_space(odp, space);
-    } else
-	code = idict_put(odp, op - 1, op);
-    if (code < 0)
-	return code;
-    pop(3);
-    return 0;
-}
-
 /* <dict> <key> .forceundef - */
 /*
  * This forces an "undef" even if the dictionary is not writable.
@@ -517,7 +484,6 @@ const op_def zdict2_op_defs[] = {
 		/* Extensions */
     {"2.dictcopynew", zdictcopynew},
     {"1.dicttomark", zdicttomark},
-    {"3.forceput", zforceput},
     {"2.forceundef", zforceundef},
     {"2.knownget", zknownget},
     {"1.knownundef", zknownundef},

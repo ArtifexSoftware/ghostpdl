@@ -1,8 +1,8 @@
 /* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Pattern color operators and procedures for Ghostscript library */
@@ -47,7 +47,7 @@ private cs_proc_adjust_color_count(gx_adjust_color_Pattern);
 const gs_color_space_type gs_color_space_type_Pattern = {
     gs_color_space_index_Pattern, false, false,
     &st_color_space_Pattern, gx_num_components_Pattern,
-    gx_base_space_Pattern,
+    gx_base_space_Pattern, gx_cspace_not_equal,
     gx_init_Pattern, gx_restrict_Pattern,
     gx_no_concrete_space,
     gx_no_concretize_color, NULL,
@@ -238,7 +238,9 @@ gx_init_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 private void
 gx_restrict_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 {
-    if (pcc->pattern->type->procs.uses_base_space(gs_get_pattern(pcc)) &&
+    /* We need a special check for the null pattern. */
+    if (pcc->pattern &&
+	pcc->pattern->type->procs.uses_base_space(gs_get_pattern(pcc)) &&
 	pcs->params.pattern.has_base_space
 	) {
 	const gs_color_space *pbcs =

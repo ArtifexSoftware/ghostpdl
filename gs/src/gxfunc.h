@@ -1,8 +1,8 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Internal definitions for Functions */
@@ -35,5 +35,11 @@ int fn_check_mnDR(P3(const gs_function_params_t * params, int m, int n));
 /* Get the monotonicity of a function over its Domain. */
 int fn_domain_is_monotonic(P2(const gs_function_t *pfn,
 			      gs_function_effort_t effort));
+
+/* Generic get_info implementation (no Functions or DataSource). */
+FN_GET_INFO_PROC(gs_function_get_info_default);
+
+/* Write generic parameters (FunctionType, Domain, Range) on a parameter list. */
+int fn_common_get_params(P2(const gs_function_t *pfn, gs_param_list *plist));
 
 #endif /* gxfunc_INCLUDED */

@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Named object pdfmark processing */
@@ -56,17 +56,16 @@ int
 pdf_create_named(gx_device_pdf *pdev, const gs_param_string *pname,
 		 cos_type_t cotype, cos_object_t **ppco, long id)
 {
-    gs_memory_t *mem = pdev->pdf_memory;
     cos_object_t *pco;
     cos_value_t value;
 
-    *ppco = pco = cos_object_alloc(mem, "pdf_create_named");
+    *ppco = pco = cos_object_alloc(pdev, "pdf_create_named");
     if (pco == 0)
 	return_error(gs_error_VMerror);
     pco->id =
 	(id == -1 ? 0L : id == 0 ? pdf_obj_ref(pdev) : id);
     if (pname) {
-	int code = cos_dict_put(pdev->named_objects, pdev, pname->data,
+	int code = cos_dict_put(pdev->named_objects, pname->data,
 				pname->size, cos_object_value(&value, pco));
 
 	if (code < 0)
@@ -237,7 +236,8 @@ pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
 	r.limit = end - 1;
 	w.limit = buf + sizeof(buf) - 1;
 	do {
-	    w.ptr = buf - 1;
+	    /* One picky compiler complains if we initialize to buf - 1. */
+	    w.ptr = buf;  w.ptr--;
 	    status = (*s_PSSD_template.process)
 		((stream_state *) & ss, &r, &w, true);
 	}

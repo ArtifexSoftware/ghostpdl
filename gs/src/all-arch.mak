@@ -52,11 +52,14 @@
 #	maintainer-clean
 #	init
 #	install
+#	install-no-X11
 #	install-gnu-readline
 #	install-binary
 #	install-binary-gnu-readline
 #	install-fontmap
 #	install-pdfsec
+#	apple-powermac-rhapsody5.5
+#	apple-powerpc-rhapsody5.5
 #	dec-alpha-osf
 #	dec-alpha-osf-gnu-readline
 #	dec-mips-ultrix
@@ -69,6 +72,8 @@
 #	ibm-rs6000-aix-gcc
 #	ibm-rs6000-aix-4.2
 #	ibm-rs6000-aix-4.2-gnu-readline
+#	ibm-rs6000-aix-4.3
+#	ibm-rs6000-aix-4.3-64bit
 #	linux
 #	linux-gnu-readline
 #	next-m68K-mach
@@ -80,8 +85,13 @@
 #	sgi-mips-irix6.3
 #	sgi-mips-irix6.3-gnu-readline
 #	sgi-mips-irix6.4
+#	sgi-mips-irix6.4-gcc
 #	sgi-mips-irix6.4-gnu-readline
+#	sgi-mips-irix6.5
+#	sgi-mips-irix6.5-gnu-readline
+#	sgi-mips-irix6.5-64bit
 #	sun-sparc-solaris
+#	sun-sparc-solaris-64bit
 #	sun-sparc-solaris-gnu-readline
 #	sun-sparc-solaris-gcc
 #	sun-sparc-solaris-opt-gnu-readline
@@ -164,7 +174,7 @@ COMMON_ARGS		= DEVICE_DEVS_EXTRA='$(DEVICE_DEVS_EXTRA)' \
 			  JSRCDIR='$(JSRCDIR)' \
 			  PNGSRCDIR='$(PNGSRCDIR)' \
 			  PSRCDIR='$(PNGSRCDIR)' \
-			  PVERSION=10005 \
+			  PVERSION=10008 \
 			  SHARE_LIBPNG='$(SHARE_LIBPNG)' \
 			  SHARE_ZLIB='$(SHARE_ZLIB)' \
 			  XCFLAGS='$(XCFLAGS)' \
@@ -227,7 +237,7 @@ SHARE_ZLIB		= 1
 # Use of the shared libraries still requires reference to source code in
 # these directories:
 JSRCDIR			= $(SRCDIR)/jpeg/jpeg-6b
-PNGSRCDIR		= $(SRCDIR)/libpng/libpng-1.0.5
+PNGSRCDIR		= $(SRCDIR)/libpng/libpng-1.0.8
 ZSRCDIR			= $(SRCDIR)/zlib/zlib-1.1.3
 
 # Use this to provide alternate targets to make, instead of the default
@@ -480,6 +490,26 @@ ibm-rs6000-aix-4.2:	init
 		XINCLUDE=-I/usr/lpp/X11/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib'
 
+ibm-rs6000-aix-4.2-64bit:	init
+	$(MAKE) $(ARGS) \
+		CC='cc -q64 -O -DMAXMEM=4096' \
+		CP='cp -p' \
+		FEATURE_DEVS_EXTRA= \
+		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
+		XINCLUDE=-I/usr/lpp/X11/include \
+		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib' \
+		$(GLOBJ)gp_unix.o
+
+	$(MAKE) $(ARGS) \
+		CC='cc -q64 -O -D_POSIX_SOURCE -DMAXMEM=4096' \
+		CP='cp -p' \
+		FEATURE_DEVS_EXTRA= \
+		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
+		XINCLUDE=-I/usr/lpp/X11/include \
+		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib'
+
 ibm-rs6000-aix-4.2-gnu-readline:	init
 	$(MAKE) $(ARGS) \
 		CC='cc -O -DMAXMEM=4096' \
@@ -502,6 +532,16 @@ ibm-rs6000-aix-4.2-gnu-readline:	init
 ibm-rs6000-aix-4.3:	init
 	$(MAKE) $(ARGS) \
 		CC='cc -O -D_ALL_SOURCE -DMAXMEM=4096 -Dconst=' \
+		CP='cp -p' \
+		FEATURE_DEVS_EXTRA= \
+		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
+		XINCLUDE=-I/usr/lpp/X11/include \
+		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R6 -L/usr/lpp/X11/lib'
+
+ibm-rs6000-aix-4.3-64bit:	init
+	$(MAKE) $(ARGS) \
+		CC='cc -q64 -O -D_ALL_SOURCE -DMAXMEM=4096 -Dconst=' \
 		CP='cp -p' \
 		FEATURE_DEVS_EXTRA= \
 		INSTALL='/usr/ucb/install -c' \
@@ -567,6 +607,7 @@ sgi-mips-irix5:	init
 		$(GLOBJ)gdevpdf.o \
 		$(GLOBJ)gdevps.o \
 		$(GLOBJ)gdevtifs.o \
+		$(GLOBJ)gpmisc.o \
 		$(GLOBJ)gp_unix.o \
 		$(GLOBJ)zdevcal.o
 
@@ -591,6 +632,7 @@ sgi-mips-irix5-gnu-readline:	init
 		$(GLOBJ)gdevpdf.o \
 		$(GLOBJ)gdevps.o \
 		$(GLOBJ)gdevtifs.o \
+		$(GLOBJ)gpmisc.o \
 		$(GLOBJ)gp_unix.o \
 		$(GLOBJ)zdevcal.o
 
@@ -624,6 +666,7 @@ sgi-mips-irix6.3:	init
 		$(GLOBJ)gdevpdf.o \
 		$(GLOBJ)gdevps.o \
 		$(GLOBJ)gdevtifs.o \
+		$(GLOBJ)gpmisc.o \
 		$(GLOBJ)gp_unix.o \
 		$(GLOBJ)zdevcal.o
 
@@ -648,6 +691,7 @@ sgi-mips-irix6.3-gnu-readline:	init
 		$(GLOBJ)gdevpdf.o \
 		$(GLOBJ)gdevps.o \
 		$(GLOBJ)gdevtifs.o \
+		$(GLOBJ)gpmisc.o \
 		$(GLOBJ)gp_unix.o \
 		$(GLOBJ)zdevcal.o
 
@@ -686,6 +730,7 @@ sgi-mips-irix6.4:	init
 		$(GLOBJ)gdevpdf.o \
 		$(GLOBJ)gdevps.o \
 		$(GLOBJ)gdevtifs.o \
+		$(GLOBJ)gpmisc.o \
 		$(GLOBJ)gp_unix.o \
 		$(GLOBJ)zdevcal.o
 #
@@ -730,6 +775,7 @@ sgi-mips-irix6.4-gnu-readline:	init
 		$(GLOBJ)gdevpdf.o \
 		$(GLOBJ)gdevps.o \
 		$(GLOBJ)gdevtifs.o \
+		$(GLOBJ)gpmisc.o \
 		$(GLOBJ)gp_unix.o \
 		$(GLOBJ)zdevcal.o
 #
@@ -770,6 +816,7 @@ sgi-mips-irix6.5-64bit:	init
 		$(GLOBJ)gdevpdf.o \
 		$(GLOBJ)gdevps.o \
 		$(GLOBJ)gdevtifs.o \
+		$(GLOBJ)gpmisc.o \
 		$(GLOBJ)gp_unix.o \
 		$(GLOBJ)zdevcal.o
 #

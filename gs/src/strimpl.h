@@ -1,8 +1,8 @@
 /* Copyright (C) 1993, 1995, 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions for stream implementors */
@@ -94,6 +94,14 @@
  *
  *	Any stream whose state includes additional pointers (beyond those
  *	in stream_state_common) must have a set_defaults procedure.
+ */
+
+/*
+ * Note that all decoding filters that require an explicit EOD in the
+ * source data must have an init procedure that sets min_left = 1.
+ * This effectively provides a 1-byte lookahead in the source data,
+ * which is required so that the stream can close itself "after reading
+ * the last byte of data" (per Adobe specification), as noted above.
  */
 
 /*

@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* X Windows driver initialization/finalization */
@@ -246,8 +246,18 @@ gdev_x_open(gx_device_X * xdev)
 	xdev->scr = scr;
 	xvinfo.visual = DefaultVisualOfScreen(scr);
 	xdev->cmap = DefaultColormapOfScreen(scr);
+	if (xvinfo.visual->class != TrueColor) {
+	    int scrno = DefaultScreen(xdev->dpy);
+	    if ( XMatchVisualInfo(xdev->dpy, scrno, 24, TrueColor, &xvinfo) ||
+		 XMatchVisualInfo(xdev->dpy, scrno, 32, TrueColor, &xvinfo) || 
+		 XMatchVisualInfo(xdev->dpy, scrno, 16, TrueColor, &xvinfo) ||
+		 XMatchVisualInfo(xdev->dpy, scrno, 15, TrueColor, &xvinfo)  ) {
+		xdev->cmap = XCreateColormap (xdev->dpy, 
+					      DefaultRootWindow(xdev->dpy),
+					      xvinfo.visual, AllocNone ); 
+	    }
+	}
     }
-
     xvinfo.visualid = XVisualIDFromVisual(xvinfo.visual);
     xdev->vinfo = XGetVisualInfo(xdev->dpy, VisualIDMask, &xvinfo, &nitems);
     if (xdev->vinfo == NULL) {
@@ -271,11 +281,13 @@ gdev_x_open(gx_device_X * xdev)
 
     /* Reserve foreground and background colors under the regular connection. */
     xc.pixel = xdev->foreground;
-    XQueryColor(xdev->dpy, xdev->cmap, &xc);
+    XQueryColor(xdev->dpy, DefaultColormap(xdev->dpy,DefaultScreen(xdev->dpy)), &xc);
     XAllocColor(xdev->dpy, xdev->cmap, &xc);
+    xdev->foreground = xc.pixel;
     xc.pixel = xdev->background;
-    XQueryColor(xdev->dpy, xdev->cmap, &xc);
+    XQueryColor(xdev->dpy, DefaultColormap(xdev->dpy,DefaultScreen(xdev->dpy)), &xc);
     XAllocColor(xdev->dpy, xdev->cmap, &xc);
+    xdev->background = xc.pixel;
 
     code = gdev_x_setup_colors(xdev);
     if (code < 0) {
@@ -445,7 +457,7 @@ gdev_x_open(gx_device_X * xdev)
 
 	/* Before anything else, do a flush and wait for */
 	/* an exposure event. */
-	XFlush(xdev->dpy);
+	XSync(xdev->dpy, False);
 	if (xdev->pwin == (Window) None) {	/* there isn't a next event for existing windows */
 	    XNextEvent(xdev->dpy, &event);
 	}
@@ -599,38 +611,43 @@ gdev_x_clear_window(gx_device_X * xdev)
 {
     if (!xdev->ghostview) {
 	if (xdev->useBackingPixmap) {
-	    x_error_handler.oldhandler = XSetErrorHandler(x_catch_alloc);
-	    x_error_handler.alloc_error = False;
-	    xdev->bpixmap =
-		XCreatePixmap(xdev->dpy, xdev->win,
-			      xdev->width, xdev->height,
-			      xdev->vinfo->depth);
-	    XSync(xdev->dpy, False);	/* Force the error */
-	    if (x_error_handler.alloc_error) {
-		xdev->useBackingPixmap = False;
+	    if (xdev->bpixmap == 0) {
+		x_error_handler.oldhandler = XSetErrorHandler(x_catch_alloc);
+		x_error_handler.alloc_error = False;
+		xdev->bpixmap =
+		    XCreatePixmap(xdev->dpy, xdev->win,
+				  xdev->width, xdev->height,
+				  xdev->vinfo->depth);
+		XSync(xdev->dpy, False);	/* Force the error */
+		if (x_error_handler.alloc_error) {
+		    xdev->useBackingPixmap = False;
 #ifdef DEBUG
-		eprintf("Warning: Failed to allocated backing pixmap.\n");
+		    eprintf("Warning: Failed to allocated backing pixmap.\n");
 #endif
-		if (xdev->bpixmap) {
-		    XFreePixmap(xdev->dpy, xdev->bpixmap);
-		    xdev->bpixmap = None;
-		    XSync(xdev->dpy, False);	/* Force the error */
+		    if (xdev->bpixmap) {
+			XFreePixmap(xdev->dpy, xdev->bpixmap);
+			xdev->bpixmap = None;
+			XSync(xdev->dpy, False);	/* Force the error */
+		    }
 		}
+		x_error_handler.oldhandler =
+		    XSetErrorHandler(x_error_handler.oldhandler);
 	    }
-	    x_error_handler.oldhandler =
-		XSetErrorHandler(x_error_handler.oldhandler);
-	} else
-	    xdev->bpixmap = (Pixmap) 0;
+	} else {
+	    if (xdev->bpixmap != 0) {
+		XFreePixmap(xdev->dpy, xdev->bpixmap);
+		xdev->bpixmap = (Pixmap) 0;
+	    }
+	}
     }
     x_set_buffer(xdev);
     /* Clear the destination pixmap to avoid initializing with garbage. */
+    xdev->dest = (xdev->bpixmap != (Pixmap) 0 ?
+		  xdev->bpixmap : (Pixmap) xdev->win);
     if (xdev->dest != (Pixmap) 0) {
 	XSetForeground(xdev->dpy, xdev->gc, xdev->background);
 	XFillRectangle(xdev->dpy, xdev->dest, xdev->gc,
 		       0, 0, xdev->width, xdev->height);
-    } else {
-	xdev->dest = (xdev->bpixmap != (Pixmap) 0 ?
-		      xdev->bpixmap : (Pixmap) xdev->win);
     }
 
     /* Clear the background pixmap to avoid initializing with garbage. */
@@ -761,20 +778,49 @@ scan_font_resource(const char *resource, x11fontmap **pmaps, gs_memory_t *mem)
 private void
 gdev_x_setup_fontmap(gx_device_X * xdev)
 {
-    /*
-     * If this device is a copy of another one, the *_fonts lists
-     * might be dangling references.  Clear them before scanning.
-     */
-    xdev->regular_fonts = 0;
-    xdev->symbol_fonts = 0;
-    xdev->dingbat_fonts = 0;
-
     if (!xdev->useXFonts)
 	return;			/* If no external fonts, don't bother */
 
     scan_font_resource(xdev->regularFonts, &xdev->regular_fonts, xdev->memory);
     scan_font_resource(xdev->symbolFonts, &xdev->symbol_fonts, xdev->memory);
     scan_font_resource(xdev->dingbatFonts, &xdev->dingbat_fonts, xdev->memory);
+}
+
+/* Clean up the instance after making a copy. */
+int
+gdev_x_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+
+    /* Mark the new instance as closed. */
+    xdev->is_open = false;
+
+    /* Prevent dangling references from the *_fonts lists. */
+    xdev->regular_fonts = 0;
+    xdev->symbol_fonts = 0;
+    xdev->dingbat_fonts = 0;
+
+    /* Clear all other pointers. */
+    xdev->target = 0;
+    xdev->buffer = 0;
+    xdev->dpy = 0;
+    xdev->scr = 0;
+    xdev->vinfo = 0;
+
+    /* Clear pointer-like parameters. */
+    xdev->win = (Window)None;
+    xdev->bpixmap = (Pixmap)0;
+    xdev->dest = (Pixmap)0;
+    xdev->cp.pixmap = (Pixmap)0;
+    xdev->ht.pixmap = (Pixmap)0;
+
+    /* Reset pointer-related parameters. */
+    xdev->is_buffered = false;
+    /* See x_set_buffer for why we do this: */
+    set_dev_proc(xdev, fill_rectangle,
+		 dev_proc(&gs_x11_device, fill_rectangle));
+
+    return 0;
 }
 
 /* ---------------- Get/put parameters ---------------- */
@@ -817,6 +863,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
     long pwin = (long)xdev->pwin;
     bool save_is_page = xdev->IsPageDevice;
     int ecode = 0, code;
+    bool clear_window = false;
 
     values = *xdev;
 
@@ -850,15 +897,12 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	    gs_closedevice(dev);
 	xdev->pwin = (Window) pwin;
     }
-    /****** DO MORE FOR RESETTING MaxBitmap ******/
-    xdev->MaxBitmap = values.MaxBitmap;
     /* If the device is open, resize the window. */
     /* Don't do this if Ghostview is active. */
     if (xdev->is_open && !xdev->ghostview &&
 	(dev->width != values.width || dev->height != values.height ||
 	 dev->HWResolution[0] != values.HWResolution[0] ||
-	 dev->HWResolution[1] != values.HWResolution[1] ||
-	 xdev->MaxBitmap != values.MaxBitmap)
+	 dev->HWResolution[1] != values.HWResolution[1])
 	) {
 	int dw = dev->width - values.width;
 	int dh = dev->height - values.height;
@@ -873,14 +917,8 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 		xdev->bpixmap = (Pixmap) 0;
 	    }
 	    xdev->dest = 0;
+	    clear_window = true;
 	}
-	xdev->MaxTempPixmap = values.MaxTempPixmap;
-	xdev->MaxTempImage = values.MaxTempImage;
-	xdev->MaxBufferedTotal = values.MaxBufferedTotal;
-	xdev->MaxBufferedArea = values.MaxBufferedArea;
-	xdev->MaxBufferedCount = values.MaxBufferedCount;
-	if (dw || dh || xdev->MaxBitmap != values.MaxBitmap)
-	    gdev_x_clear_window(xdev);
 	/* Attempt to update the initial matrix in a sensible way. */
 	/* The whole handling of the initial matrix is a hack! */
 	if (xdev->initial_matrix.xy == 0) {
@@ -900,6 +938,17 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	xdev->initial_matrix.xy *= qx;
 	xdev->initial_matrix.yx *= qy;
 	xdev->initial_matrix.yy *= qy;
+    }
+    xdev->MaxTempPixmap = values.MaxTempPixmap;
+    xdev->MaxTempImage = values.MaxTempImage;
+    xdev->MaxBufferedTotal = values.MaxBufferedTotal;
+    xdev->MaxBufferedArea = values.MaxBufferedArea;
+    xdev->MaxBufferedCount = values.MaxBufferedCount;
+    if (clear_window || xdev->MaxBitmap != values.MaxBitmap) {
+	/****** DO MORE FOR RESETTING MaxBitmap ******/
+	xdev->MaxBitmap = values.MaxBitmap;
+	if (xdev->is_open)
+	    gdev_x_clear_window(xdev);
     }
     return 0;
 }
@@ -938,6 +987,8 @@ gdev_x_close(gx_device_X *xdev)
     free_x_fontmaps(&xdev->dingbat_fonts, xdev->memory);
     free_x_fontmaps(&xdev->symbol_fonts, xdev->memory);
     free_x_fontmaps(&xdev->regular_fonts, xdev->memory);
+    if (xdev->cmap != DefaultColormapOfScreen(xdev->scr))
+	XFreeColormap(xdev->dpy, xdev->cmap);
     XCloseDisplay(xdev->dpy);
     return 0;
 }

@@ -1,5 +1,5 @@
-/* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
-
+/* Copyright (C) 1999, 2000, Ghostgum Software Pty Ltd.  All rights reserved.
+  
   This software is licensed to a single customer by Artifex Software Inc.
   under the terms of a specific OEM agreement.
 */
@@ -7,7 +7,7 @@
 // $RCSfile$ $Revision$
 //
 //
-// This is the setup program for Win32 Aladdin Ghostscript
+// This is the setup program for Win32 Artifex Ghostscript
 //
 // The starting point is a self extracting zip archive
 // with the following contents:
@@ -27,22 +27,22 @@
 // uninstall log files are to be placed.  
 // Subsequent lines contain files to be copied (but not directories).
 // For example, filelist.txt might contain:
-//   Aladdin Ghostscript 6.0
-//   gs6.0
-//   gs6.0\bin\gsdll32.dll
-//   gs6.0\lib\gs_init.ps
+//   Artifex Ghostscript 6.50
+//   gs6.50
+//   gs6.50\bin\gsdll32.dll
+//   gs6.50\lib\gs_init.ps
 // The file fontlist.txt might contain:
-//   Aladdin Ghostscript Fonts
+//   Artifex Ghostscript Fonts
 //   fonts
 //   fonts\n019003l.pfb
 //   fonts\n019023l.pfb
 //
-// The default install directory is c:\Aladdin.
-// The default Start Menu Folder is Aladdin.
+// The default install directory is c:\gs.
+// The default Start Menu Folder is Ghostscript.
 // These are set in the resources.
 // The setup program will create the following uninstall log files
-//   c:\Aladdin\gs#.##\uninstal.txt
-//   c:\Aladdin\fonts\uninstal.txt
+//   c:\gs\gs#.##\uninstal.txt
+//   c:\gs\fonts\uninstal.txt
 // The uninstall program (accessed through control panel) will not 
 // remove directories nor will it remove itself.
 //
@@ -676,13 +676,14 @@ install_all()
 BOOL
 install_prog()
 {
-	char *regkey1 = "Aladdin Ghostscript";
+	char *regkey1 = "Artifex Ghostscript";
 	char regkey2[16];
 	char szDLL[MAXSTR];
 	char szLIB[MAXSTR];
 	char szProgram[MAXSTR];
 	char szArguments[MAXSTR];
 	char szDescription[MAXSTR];
+	char szDotVersion[MAXSTR];
 	
 	if (g_bQuit)
 		return FALSE;
@@ -704,7 +705,8 @@ install_prog()
 		nGSversion = (p[0]-'0')*100 + (p[2]-'0')*10 + (p[3]-'0');
 	else if (strlen(p) == 3)
 		nGSversion = (p[0]-'0')*100 + (p[2]-'0')*10;
-	sprintf(regkey2, "%d.%d", nGSversion / 100, nGSversion % 100);
+        strncpy(szDotVersion, p, sizeof(szDotVersion));
+	strncpy(regkey2, szDotVersion, sizeof(regkey2));
 	
 	// copy files
 	if (!cinst.InstallFiles(g_bNoCopy, &g_bQuit)) {
@@ -763,8 +765,7 @@ install_prog()
 	strcpy(szArguments, "\042-I");
 	strcat(szArguments, szLIB);
 	strcat(szArguments, "\042");
-	sprintf(szDescription, "Ghostscript %d.%d", 
-		nGSversion / 100, nGSversion % 100);
+	sprintf(szDescription, "Ghostscript %s", szDotVersion);
 	if (!cinst.StartMenuAdd(szDescription, szProgram, szArguments)) {
 		gs_addmess("Failed to add Start Menu item\n");
 		return FALSE;
@@ -773,8 +774,7 @@ install_prog()
 	strcat(szProgram, "\\");
 	strcat(szProgram, cinst.GetMainDir());
 	strcat(szProgram, "\\doc\\Readme.htm");
-	sprintf(szDescription, "Ghostscript Readme %d.%d", 
-		nGSversion / 100, nGSversion % 100);
+	sprintf(szDescription, "Ghostscript Readme %s", szDotVersion);
 	if (!cinst.StartMenuAdd(szDescription, szProgram, NULL)) {
 		gs_addmess("Failed to add Start Menu item\n");
 		return FALSE;
@@ -1002,7 +1002,7 @@ BOOL make_filelist(int argc, char *argv[])
 		    if ((title == NULL) || (strlen(title) == 0) ||
 			(dir == NULL) || (strlen(dir) == 0) ||
 			(list == NULL) || (strlen(list) == 0)) {
-			message_box("Usage: setupgs -title \042Aladdin Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
+			message_box("Usage: setupgs -title \042Artifex Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
 			return FALSE;
 		    }
 		    if (fList == (FILE *)NULL) {

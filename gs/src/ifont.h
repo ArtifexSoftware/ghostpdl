@@ -1,8 +1,8 @@
-/* Copyright (C) 1989, 1991, 1993, 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Interpreter internal font representation */
@@ -35,8 +35,14 @@ typedef struct font_data_s {
 	} type1;
 	struct _f42 {
 	    ref sfnts;
+	    ref CIDMap;		/* for CIDFontType 2 fonts */
 	    ref GlyphDirectory;
 	} type42;
+	struct _fc0 {
+	    ref GlyphDirectory;
+	    ref GlyphData;	/* (if preloaded) string or array of strings */
+	    ref DataSource;	/* (if not preloaded) reusable stream */
+	} cid0;
     } u;
 } font_data;
 

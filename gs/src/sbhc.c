@@ -1,8 +1,8 @@
 /* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Bounded Huffman code filters */
@@ -171,13 +171,14 @@ s_BHCD_init(register stream_state * st)
     min(hcd_initial_bits, ss->definition.num_counts);
     uint dsize = hc_sizeof_decoding(&ss->definition, initial_bits);
     hcd_code *decode = ss->decode.codes =
-    (hcd_code *) gs_alloc_byte_array(st->memory, dsize,
-				     sizeof(hcd_code), "BHCD decode");
+	(hcd_code *) gs_alloc_byte_array(st->memory, dsize,
+					 sizeof(hcd_code), "BHCD decode");
 
     if (decode == 0)
 	return ERRC;
 /****** WRONG ******/
     hc_make_decoding(decode, &ss->definition, initial_bits);
+    st->min_left = 1;
     return s_BHCD_reinit(st);
 }
 

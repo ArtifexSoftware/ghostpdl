@@ -1,8 +1,8 @@
-/* Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Separation color space support */
@@ -19,6 +19,7 @@
 #include "estack.h"
 #include "ialloc.h"
 #include "icsmap.h"
+#include "ifunc.h"
 #include "igstate.h"
 #include "iname.h"
 #include "ivmspace.h"
@@ -125,6 +126,14 @@ separation_map1(i_ctx_t *i_ctx_p)
 	pop(m);
 	op -= m;
 	if (i == (int)ep[csme_hival].value.intval) {	/* All done. */
+	    /*
+	     * If the tint_transform procedure is a Function, recognize it
+	     * as such now.
+	     */
+	    gs_function_t *pfn = ref_function(&ep[csme_proc]);
+
+	    if (pfn)
+		gs_cspace_set_sepr_function(gs_currentcolorspace(igs), pfn);
 	    esp -= num_csme;
 	    return o_pop_estack;
 	}
@@ -161,13 +170,40 @@ zsetoverprint(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* - .currentoverprintmode <int> */
+private int
+zcurrentoverprintmode(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_int(op, gs_currentoverprintmode(igs));
+    return 0;
+}
+
+/* <int> .setoverprintmode - */
+private int
+zsetoverprintmode(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int param;
+    int code = int_param(op, max_int, &param);
+
+    if (code < 0 || (code = gs_setoverprintmode(igs, param)) < 0)
+	return code;
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zcssepr_l2_op_defs[] =
 {
     op_def_begin_level2(),
     {"0currentoverprint", zcurrentoverprint},
+    {"0.currentoverprintmode", zcurrentoverprintmode},
     {"1setoverprint", zsetoverprint},
+    {"1.setoverprintmode", zsetoverprintmode},
     {"1.setseparationspace", zsetseparationspace},
 		/* Internal operators */
     {"1%separation_map1", separation_map1},

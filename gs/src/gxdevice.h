@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions for device implementors */
@@ -19,6 +19,11 @@
  * for these.  (Eventually they should go away.)
  */
 #include "gsmalloc.h"
+/*
+ * Similarly, quite a few drivers reference stdout and/or stderr.
+ * (Eventually these references must go away.)
+ */
+#include "gxstdio.h"
 
 /*
  * NOTE: if you write code that creates device instances (either with
@@ -241,6 +246,7 @@ dev_proc_create_compositor(gx_default_create_compositor);
 dev_proc_create_compositor(gx_null_create_compositor);
 dev_proc_get_hardware_params(gx_default_get_hardware_params);
 dev_proc_text_begin(gx_default_text_begin);
+dev_proc_finish_copydevice(gx_default_finish_copydevice);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 

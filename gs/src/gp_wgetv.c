@@ -1,8 +1,8 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* MS Windows implementation of gp_getenv */
@@ -44,10 +44,10 @@ gp_getenv(const char *name, char *ptr, int *plen)
     {
 	/* If using Win32, look in the registry for a value with
 	 * the given name.  The registry value will be under the key
-	 * HKEY_CURRENT_USER\Software\Aladdin Ghostscript\N.NN
+	 * HKEY_CURRENT_USER\Software\Artifex Ghostscript\N.NN
 	 * or if that fails under the key
-	 * HKEY_LOCAL_MACHINE\Software\Aladdin Ghostscript\N.NN
-	 * where "Aladdin Ghostscript" is actually gs_productfamily
+	 * HKEY_LOCAL_MACHINE\Software\Artifex Ghostscript\N.NN
+	 * where "Artifex Ghostscript" is actually gs_productfamily
 	 * and N.NN is obtained from gs_revision.
 	 */
 	DWORD version = GetVersion();
@@ -57,8 +57,14 @@ gp_getenv(const char *name, char *ptr, int *plen)
 	    /* not Win32s */
 	    int code;
 	    char key[256];
-	    sprintf(key, "Software\\%s\\%d.%d", gs_productfamily,
-		    (int)(gs_revision / 100), (int)(gs_revision % 100));
+	    char dotversion[16];
+	    
+	    if (gs_revision % 100 == 0)
+		sprintf(dotversion, "%d.0", (int)(gs_revision / 100));
+	    else
+		sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
+			(int)(gs_revision % 100));
+	    sprintf(key, "Software\\%s\\%s", gs_productfamily, dotversion);
 
 	    code = gp_getenv_registry(HKEY_CURRENT_USER, key, name, ptr, plen);
 	    if ( code <= 0 )

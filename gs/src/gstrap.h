@@ -1,8 +1,8 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1997, 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Definitions for trapping parameters and zones */
@@ -41,6 +41,7 @@ typedef struct gs_trap_params_s {
     bool Enabled;
     /* HalftoneName; */
     bool ImageInternalTrapping;
+    bool ImagemaskTrapping;
     int ImageResolution;
     bool ImageToObjectTrapping;
     gs_trap_placement_t ImageTrapPlacement;

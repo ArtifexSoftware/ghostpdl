@@ -1,8 +1,8 @@
 /* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* zlib decoding (decompression) filter stream */
@@ -28,6 +28,7 @@ s_zlibD_init(stream_state * st)
 	s_zlib_free_dynamic_state(ss);
 	return ERRC;	/****** WRONG ******/
     }
+    st->min_left=1;
     return 0;
 }
 

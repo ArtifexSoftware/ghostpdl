@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* RasterOp source device */
@@ -81,7 +81,8 @@ private const gx_device_rop_texture gs_rop_texture_device = {
      gx_forward_map_color_rgb_alpha,
      NULL,				/* create_compositor */
      gx_forward_get_hardware_params,
-     NULL				/* text_begin */
+     NULL,				/* text_begin */
+     NULL				/* finish_copydevice */
     },
     0,				/* target */
     lop_default			/* log_op */

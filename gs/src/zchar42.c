@@ -1,8 +1,8 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Type 42 character display operator */
@@ -91,7 +91,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 			   (present == metricsSideBearingAndWidth ?
 			    sbw : NULL),
 			   sbw + 2, &pbfont->FontBBox,
-			   type42_fill, type42_stroke);
+			   type42_fill, type42_stroke, NULL);
 }
 
 /* Continue after a CDevProc callout. */

@@ -1,4 +1,4 @@
-#    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -9,7 +9,7 @@
 libdefault: $(GLOBJ)gslib.exe
 	$(NO_OP)
 
-AROOTDIR=c:/Aladdin
+AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 GS_DOCDIR=$(GSROOTDIR)/doc
 GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(AROOTDIR)/fonts
@@ -45,8 +45,6 @@ GLOBJDIR=.\debugobj
 NUL=
 DD=$(GLGENDIR)\$(NUL)
 GLD=$(GLGENDIR)\$(NUL)
-GLOBJ=$(GLOBJDIR)\$(NUL)
-GLGEN=$(GLGENDIR)\$(NUL)
 
 !ifndef JSRCDIR
 JSRCDIR=jpeg
@@ -59,7 +57,7 @@ JVERSION=6
 PSRCDIR=libpng
 !endif
 !ifndef PVERSION
-PVERSION=10005
+PVERSION=10008
 !endif
 
 !ifndef ZSRCDIR
@@ -118,29 +116,22 @@ FILE_IMPLEMENTATION=stdio
 GLCCWIN=$(GLCC)
 !include $(GLSRCDIR)\winplat.mak
 
-watclib_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_dosfb.$(OBJ)
-watclib_2=$(GLOBJ)gp_mktmp.$(OBJ)
+watclib_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ)
 !ifeq WAT32 0
-watclib_3=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
+watclib_2=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
 watclib_inc=
 !else
-watclib_3=
+watclib_2=
 watclib_inc=$(GLD)winplat.dev
 !endif
-watclib__=$(watclib_1) $(watclib_2) $(watclib_3)
+watclib__=$(watclib_1) $(watclib_2)
 $(GLGEN)watclib_.dev: $(watclib__) $(GLGEN)nosync.dev $(watclib_inc)
 	$(SETMOD) $(GLGEN)watclib_ $(watclib_1)
-	$(ADDMOD) $(GLGEN)watclib_ $(watclib_2)
-	$(ADDMOD) $(GLGEN)watclib_ -obj $(watclib_3)
+	$(ADDMOD) $(GLGEN)watclib_ -obj $(watclib_2)
 	$(ADDMOD) $(GLGEN)watclib_ -include $(GLGEN)nosync $(watclib_inc)
 
-# Common objects specific to Watcom
-
-$(GLOBJ)gp_mktmp.$(OBJ): $(GLSRC)gp_mktmp.c $(stat__h) $(string__h)
-	$(GLCC) $(GLO_)gp_mktmp.$(OBJ) $(C_) $(GLSRC)gp_mktmp.c
-
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
- $(gx_h) $(gp_h)
+ $(gx_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_iwatc.$(OBJ) $(C_) $(GLSRC)gp_iwatc.c
 
 BEGINFILES=*.err

@@ -1,8 +1,8 @@
 /* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Type 42 (TrueType) font library routines */
@@ -11,8 +11,10 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsccode.h"
+#include "gsline.h"		/* for gs_imager_setflat */
 #include "gsmatrix.h"
 #include "gsutil.h"
+#include "gxchrout.h"
 #include "gxfixed.h"		/* for gxpath.h */
 #include "gxpath.h"
 #include "gxfont.h"
@@ -23,9 +25,8 @@
 public_st_gs_font_type42();
 
 /* Forward references */
-private int append_outline(P6(uint glyph_index, const gs_matrix_fixed * pmat,
-			      gx_path * ppath, gs_fixed_point *ppts,
-			      int point_index, gs_font_type42 * pfont));
+private int append_outline(P4(uint glyph_index, const gs_matrix_fixed * pmat,
+			      gx_path * ppath, gs_font_type42 * pfont));
 private int default_get_outline(P3(gs_font_type42 *pfont, uint glyph_index,
 				   gs_const_string *pgstr));
 private int default_get_metrics(P4(gs_font_type42 *pfont, uint glyph_index,
@@ -75,7 +76,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
     numTables = U16(OffsetTable + 4);
     ACCESS(12, numTables * 16, TableDirectory);
     /* Clear optional entries. */
-    memset(&pfont->data.metrics, 0, sizeof(pfont->data.metrics));
+    memset(pfont->data.metrics, 0, sizeof(pfont->data.metrics));
     for (i = 0; i < numTables; ++i) {
 	const byte *tab = TableDirectory + i * 16;
 	ulong offset = u32(tab + 8);
@@ -354,7 +355,7 @@ gs_type42_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	pmat = &imat;
     if ((code = gs_matrix_fixed_from_matrix(&fmat, pmat)) < 0 ||
 	(code = gx_path_current_point(ppath, &origin)) < 0 ||
-	(code = append_outline(glyph_index, &fmat, ppath, NULL, 0, pfont)) < 0 ||
+	(code = append_outline(glyph_index, &fmat, ppath, pfont)) < 0 ||
 	(code = font->procs.glyph_info(font, glyph, pmat,
 				       GLYPH_INFO_WIDTH, &info)) < 0
 	)
@@ -539,7 +540,12 @@ gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		 gx_path * ppath, const gs_log2_scale_point * pscale,
 		 bool charpath_flag, int paint_type, gs_font_type42 * pfont)
 {
-    return append_outline(glyph_index, &pis->ctm, ppath, NULL, 0, pfont);
+    int code = append_outline(glyph_index, &pis->ctm, ppath, pfont);
+
+    if (code < 0)
+	return code;
+    /* Set the flatness for curve rendering. */
+    return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
 }
 
 /*
@@ -715,9 +721,9 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 
 /* Append a glyph outline. */
 private int
-append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
-	       gx_path * ppath, gs_fixed_point *ppts, int point_index,
-	       gs_font_type42 * pfont)
+check_component(uint glyph_index, const gs_matrix_fixed *pmat,
+		gx_path *ppath, gs_font_type42 *pfont, gs_fixed_point *ppts,
+		const byte **pgdata)
 {
     gs_const_string glyph_string;
     const byte *gdata;
@@ -734,23 +740,35 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
     numContours = S16(gdata);
     if (numContours >= 0) {
 	simple_glyph_metrics(pfont, glyph_index, pfont->WMode, sbw);
-	return append_simple(gdata, sbw, pmat, ppath,
-			     (ppts ? ppts + point_index : NULL), pfont);
+	code = append_simple(gdata, sbw, pmat, ppath, ppts, pfont);
+	return (code < 0 ? code : 0); /* simple */
     }
     if (numContours != -1)
 	return_error(gs_error_rangecheck);
+    *pgdata = gdata;
+    return 1;			/* composite */
+}
+private int
+append_component(uint glyph_index, const gs_matrix_fixed * pmat,
+		 gx_path * ppath, gs_fixed_point *ppts, int point_index,
+		 gs_font_type42 * pfont)
+{
+    const byte *gdata;
+    int code;
+
+    code = check_component(glyph_index, pmat, ppath, pfont, ppts + point_index,
+			   &gdata);
+    if (code != 1)
+	return code;
     /*
      * This is a composite glyph.  Because of the "point matching" feature,
-     * we have to allocate a table of points and do an extra pass over
-     * each component to fill them in.
+     * we have to do an extra pass over each component to fill in the
+     * table of points.
      */
     {
-	gs_fixed_point pts[200]; /* for now */
 	uint flags;
 
 	gdata += 10;
-	if (ppts == 0)
-	    ppts = pts, point_index = 0;
 	do {
 	    uint comp_index = U16(gdata + 2);
 	    gs_matrix_fixed mat;
@@ -768,8 +786,8 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 		const gs_fixed_point *const pto = ppts + point_index + mp[1];
 		gs_fixed_point diff;
 
-		code = append_outline(comp_index, &mat, NULL, ppts,
-				      point_index, pfont);
+		code = append_component(comp_index, &mat, NULL, ppts,
+					point_index, pfont);
 		if (code < 0)
 		    return code;
 		diff.x = pfrom->x - pto->x;
@@ -777,8 +795,8 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 		mat.tx = fixed2float(mat.tx_fixed += diff.x);
 		mat.ty = fixed2float(mat.ty_fixed += diff.y);
 	    }
-	    code = append_outline(comp_index, &mat, ppath, ppts,
-				  point_index, pfont);
+	    code = append_component(comp_index, &mat, ppath, ppts,
+				    point_index, pfont);
 	    if (code < 0)
 		return code;
 	    point_index += total_points(pfont, comp_index);
@@ -786,4 +804,46 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 	while (flags & cg_moreComponents);
     }
     return 0;
+}
+private int
+append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
+	       gx_path * ppath, gs_font_type42 * pfont)
+{
+    {
+	const byte *gdata;
+	int code =
+	    check_component(glyph_index, pmat, ppath, pfont, NULL, &gdata);
+
+	if (code != 1)
+	    return code;
+    }
+    {
+	/*
+	 * Set up the points array (only needed for point matching, sigh).
+	 * We use stack allocation if possible, to avoid creating a sandbar
+	 * (pts will be allocated before, but also freed before, any path
+	 * elements).
+	 */
+#define MAX_STACK_PTS 150	/* usually enough */
+	int num_points = total_points(pfont, glyph_index);
+
+	if (num_points <= MAX_STACK_PTS) {
+	    gs_fixed_point pts[MAX_STACK_PTS];
+
+	    return append_component(glyph_index, pmat, ppath, pts, 0, pfont);
+	} else {
+	    gs_memory_t *mem = pfont->memory; /* any memory will do */
+	    gs_fixed_point *ppts = (gs_fixed_point *)
+		gs_alloc_byte_array(mem, num_points, sizeof(gs_fixed_point),
+				    "append_outline");
+	    int code;
+
+	    if (ppts == 0)
+		return_error(gs_error_VMerror);
+	    code = append_component(glyph_index, pmat, ppath, ppts, 0, pfont);
+	    gs_free_object(mem, ppts, "append_outline");
+	    return code;
+	}
+#undef MAX_STACK_PTS
+    }
 }

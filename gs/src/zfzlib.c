@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* zlib and Flate filter creation */
@@ -13,9 +13,23 @@
 #include "spdiffx.h"
 #include "spngpx.h"
 #include "szlibx.h"
+#include "idparam.h"
 #include "ifilter.h"
 #include "ifrpred.h"
 #include "ifwpred.h"
+
+/* Common setup for zlib (Flate) filter */
+private int
+filter_zlib(i_ctx_t *i_ctx_p, stream_zlib_state *pzls)
+{
+    os_ptr op = osp;
+    int code = 0;
+
+    (*s_zlibE_template.set_defaults)((stream_state *)pzls);
+    if (r_has_type(op, t_dictionary))
+	code = dict_int_param(op, "Effort", -1, 9, -1, &pzls->level);
+    return code;
+}
 
 /* <source> zlibEncode/filter <file> */
 /* <source> <dict> zlibEncode/filter <file> */
@@ -23,8 +37,10 @@ private int
 zzlibE(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
+    int code = filter_zlib(i_ctx_p, &zls);
 
-    (*s_zlibE_template.set_defaults)((stream_state *)&zls);
+    if (code < 0)
+	return code;
     return filter_write(i_ctx_p, 0, &s_zlibE_template, (stream_state *)&zls, 0);
 }
 
@@ -45,8 +61,10 @@ private int
 zFlateE(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
+    int code = filter_zlib(i_ctx_p, &zls);
 
-    (*s_zlibE_template.set_defaults)((stream_state *)&zls);
+    if (code < 0)
+	return code;
     return filter_write_predictor(i_ctx_p, 0, &s_zlibE_template,
 				  (stream_state *)&zls);
 }

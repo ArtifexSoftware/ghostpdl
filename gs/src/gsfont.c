@@ -1,8 +1,8 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Font operators for Ghostscript library */
@@ -672,6 +672,7 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	int index, code;
 
 	for (index = 0;
+	     fixed_width >= 0 &&
 	     (code = font->procs.enumerate_glyph(font, &index, GLYPH_SPACE_NAME, &glyph)) >= 0 &&
 		 index != 0;
 	     ) {
@@ -716,11 +717,22 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	     font->procs.enumerate_glyph(font, &index, GLYPH_SPACE_NAME, &glyph) >= 0 &&
 		 index != 0;
 	     ) {
-	    gs_const_string gnstr;
+	    /*
+	     * If this is a CIDFont or TrueType font that uses integers as
+	     * glyph names, check for glyph 0; otherwise, check for .notdef.
+	     */
+	    if (glyph >= gs_min_cid_glyph) {
+		if (glyph != gs_min_cid_glyph)
+		    continue;
+	    } else {
+		gs_const_string gnstr;
 
-	    gnstr.data = (const byte *)
-		bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
-	    if (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7)) {
+		gnstr.data = (const byte *)
+		    bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
+		if (gnstr.size != 7 || memcmp(gnstr.data, ".notdef", 7))
+		    continue;
+	    }
+	    {
 		gs_glyph_info_t glyph_info;
 		int code = font->procs.glyph_info(font, glyph, pmat,
 						  (GLYPH_INFO_WIDTH0 << wmode),

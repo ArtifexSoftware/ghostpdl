@@ -1,8 +1,8 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Driver text interface implementation support */
@@ -90,6 +90,7 @@ rc_free_proc(rc_free_text_enum);
     gx_font_stack_t fstack;\
     int cmap_code;		/* hack for FMapType 9 composite fonts, */\
 				/* the value returned by decode_next */\
+    gs_point FontBBox_as_Metrics2;  /* used with FontType 9,11 && WMode 1 */\
     /* The following are used to return information to the client. */\
     gs_text_returned_t returned
 /* The typedef is in gstext.h. */
@@ -190,7 +191,7 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_is_width_only(proc)\
-  int proc(P1(const gs_text_enum_t *pte))
+  bool proc(P1(const gs_text_enum_t *pte))
 
     text_enum_proc_is_width_only((*is_width_only));
 

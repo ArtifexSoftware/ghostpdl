@@ -1,8 +1,8 @@
 /* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Level 2 device operators */
@@ -28,7 +28,8 @@ private int push_callout(P2(i_ctx_t *, const char *));
 /* Extend the `copy' operator to deal with gstates. */
 /* This is done with a hack -- we know that gstates are the only */
 /* t_astruct subtype that implements copy. */
-private int
+/* We export this for recognition in FunctionType 4 functions. */
+int
 z2copy(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

@@ -1,8 +1,8 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* PNG (Portable Network Graphics) Format.  Pronounced "ping". */
@@ -134,7 +134,7 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     int height = pdev->height;
     int depth = pdev->color_info.depth;
     int y;
-    int code = 0;		/* return code */
+    int code;			/* return code */
     const char *software_key = "Software";
     char software_text[256];
     png_text text_png;
@@ -149,6 +149,7 @@ png_print_page(gx_device_printer * pdev, FILE * file)
 	code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
+    code = 0;			/* for normal path */
     /* set up the output control */
     png_init_io(png_ptr, file);
 

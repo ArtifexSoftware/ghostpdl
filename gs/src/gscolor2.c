@@ -1,8 +1,8 @@
-/* Copyright (C) 1992, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Level 2 color operators for Ghostscript library */
@@ -96,7 +96,7 @@ gs_currentcolor(const gs_state * pgs)
 /* ------ Internal procedures ------ */
 
 /* GC descriptors */
-public_st_indexed_map();
+private_st_indexed_map();
 
 /* Define a lookup_index procedure that just returns the map values. */
 int
@@ -128,14 +128,18 @@ alloc_indexed_map(gs_indexed_map ** ppmap, int nvals, gs_memory_t * pmem,
 
     rc_alloc_struct_1(pimap, gs_indexed_map, &st_indexed_map, pmem,
 		      return_error(gs_error_VMerror), cname);
-    pimap->values =
-	(float *)gs_alloc_byte_array(pmem, nvals, sizeof(float), cname);
+    if (nvals > 0) {
+	pimap->values =
+	    (float *)gs_alloc_byte_array(pmem, nvals, sizeof(float), cname);
 
-    if (pimap->values == 0) {
-	gs_free_object(pmem, pimap, cname);
-	return_error(gs_error_VMerror);
-    }
+	if (pimap->values == 0) {
+	    gs_free_object(pmem, pimap, cname);
+	    return_error(gs_error_VMerror);
+	}
+    } else
+	pimap->values = 0;
     pimap->rc.free = free_indexed_map;
+    pimap->proc_data = 0;	/* for GC */
     pimap->num_values = nvals;
     *ppmap = pimap;
     return 0;
@@ -150,6 +154,7 @@ gs_private_st_composite(st_color_space_Indexed, gs_paint_color_space,
 
 /* Define the Indexed color space type. */
 private cs_proc_base_space(gx_base_space_Indexed);
+private cs_proc_equal(gx_equal_Indexed);
 private cs_proc_restrict_color(gx_restrict_Indexed);
 private cs_proc_concrete_space(gx_concrete_space_Indexed);
 private cs_proc_concretize_color(gx_concretize_Indexed);
@@ -158,7 +163,7 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_Indexed);
 const gs_color_space_type gs_color_space_type_Indexed = {
     gs_color_space_index_Indexed, false, false,
     &st_color_space_Indexed, gx_num_components_1,
-    gx_base_space_Indexed,
+    gx_base_space_Indexed, gx_equal_Indexed,
     gx_init_paint_1, gx_restrict_Indexed,
     gx_concrete_space_Indexed,
     gx_concretize_Indexed, NULL,
@@ -213,6 +218,36 @@ private const gs_color_space *
 gx_base_space_Indexed(const gs_color_space * pcs)
 {
     return (const gs_color_space *)&(pcs->params.indexed.base_space);
+}
+
+/* Test whether one Indexed color space equals another. */
+private bool
+gx_equal_Indexed(const gs_color_space *pcs1, const gs_color_space *pcs2)
+{
+    const gs_color_space *base = gx_base_space_Indexed(pcs1);
+    uint hival = pcs1->params.indexed.hival;
+
+    if (!gs_color_space_equal(base, gx_base_space_Indexed(pcs2)))
+	return false;
+    if (hival == pcs2->params.indexed.hival ||
+	/*
+	 * In principle, a table-specified Indexed space could be equal
+	 * to a procedure-specified Indexed space, but we don't bother
+	 * to detect this.
+	 */
+	pcs1->params.indexed.use_proc != pcs2->params.indexed.use_proc
+	)
+	return false;
+    if (pcs1->params.indexed.use_proc) {
+	return !memcmp(pcs1->params.indexed.lookup.map->values,
+		       pcs2->params.indexed.lookup.map->values,
+		       pcs1->params.indexed.lookup.map->num_values *
+		         sizeof(pcs1->params.indexed.lookup.map->values[0]));
+    } else {
+	return !memcmp(&pcs1->params.indexed.lookup.table.data,
+		       &pcs2->params.indexed.lookup.table.data,
+		       gs_color_space_num_components(base) * (hival + 1));
+    }
 }
 
 /* Color space installation ditto. */
@@ -405,7 +440,6 @@ gs_cspace_indexed_set_proc(
 /* ------ Colors ------ */
 
 /* Force an Indexed color into legal range. */
-
 private void
 gx_restrict_Indexed(gs_client_color * pcc, const gs_color_space * pcs)
 {
@@ -418,7 +452,6 @@ gx_restrict_Indexed(gs_client_color * pcc, const gs_color_space * pcs)
 }
 
 /* Color remapping for Indexed color spaces. */
-
 private const gs_color_space *
 gx_concrete_space_Indexed(const gs_color_space * pcs,
 			  const gs_imager_state * pis)
@@ -438,40 +471,46 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 	(is_fneg(value) ? 0 :
 	 value >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
 	 (int)value);
-    gs_client_color cc;
     const gs_color_space *pbcs =
 	(const gs_color_space *)&pcs->params.indexed.base_space;
+    gs_client_color cc;
+    int code = gs_cspace_indexed_lookup(&pcs->params.indexed, index, &cc);
 
-    if (pcs->params.indexed.use_proc) {
-	int code =
-	    (*pcs->params.indexed.lookup.map->proc.lookup_index)
-	    (&pcs->params.indexed, index, &cc.paint.values[0]);
+    if (code < 0)
+	return code;
+    return (*pbcs->type->concretize_color) (&cc, pbcs, pconc, pis);
+}
 
-	if (code < 0)
-	    return code;
+/* Look up an index in an Indexed color space. */
+int
+gs_cspace_indexed_lookup(const gs_indexed_params *pip, int index,
+			 gs_client_color *pcc)
+{
+    if (pip->use_proc) {
+	return pip->lookup.map->proc.lookup_index
+	    (pip, index, &pcc->paint.values[0]);
     } else {
-	int m = cs_num_components((const gs_color_space *)
-				  &pcs->params.indexed.base_space);
-	const byte *pcomp =
-	pcs->params.indexed.lookup.table.data + m * index;
+	const gs_color_space *pbcs = (const gs_color_space *)&pip->base_space;
+	int m = cs_num_components(pbcs);
+	const byte *pcomp = pip->lookup.table.data + m * index;
 
 	switch (m) {
 	    default: {		/* DeviceN */
 		int i;
 
 		for (i = 0; i < m; ++i)
-		    cc.paint.values[i] = pcomp[i] * (1.0 / 255.0);
+		    pcc->paint.values[i] = pcomp[i] * (1.0 / 255.0);
 	    }
 		break;
 	    case 4:
-		cc.paint.values[3] = pcomp[3] * (1.0 / 255.0);
+		pcc->paint.values[3] = pcomp[3] * (1.0 / 255.0);
 	    case 3:
-		cc.paint.values[2] = pcomp[2] * (1.0 / 255.0);
+		pcc->paint.values[2] = pcomp[2] * (1.0 / 255.0);
 	    case 2:
-		cc.paint.values[1] = pcomp[1] * (1.0 / 255.0);
+		pcc->paint.values[1] = pcomp[1] * (1.0 / 255.0);
 	    case 1:
-		cc.paint.values[0] = pcomp[0] * (1.0 / 255.0);
+		pcc->paint.values[0] = pcomp[0] * (1.0 / 255.0);
 	}
+	return 0;
     }
-    return (*pbcs->type->concretize_color) (&cc, pbcs, pconc, pis);
 }

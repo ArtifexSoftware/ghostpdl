@@ -1,8 +1,8 @@
-/* Copyright (C) 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Level 1 extended color operators */
@@ -41,8 +41,10 @@ zcurrentcmykcolor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     float par[4];
+    int code = gs_currentcmykcolor(igs, par);
 
-    gs_currentcmykcolor(igs, par);
+    if (code < 0)
+	return code;
     push(4);
     make_floats(op - 3, par, 4);
     return 0;

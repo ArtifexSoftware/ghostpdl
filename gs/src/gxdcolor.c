@@ -1,8 +1,8 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Pure and null device color implementation */
@@ -118,6 +118,14 @@ top:
 	gx_rop_source_set_color(pno_source, black);
 	*psource = pno_source;
     }
+}
+
+/* Test device colors for equality. */
+bool
+gx_device_color_equal(const gx_device_color *pdevc1,
+		      const gx_device_color *pdevc2)
+{
+    return pdevc1->type->equal(pdevc1, pdevc2);
 }
 
 /* ------ Undefined color ------ */

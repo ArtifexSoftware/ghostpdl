@@ -1,8 +1,8 @@
-/* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Internal definitions for Level 2 color routines */
@@ -12,6 +12,7 @@
 #  define gxcolor2_INCLUDED
 
 #include "gscolor2.h"
+#include "gsmatrix.h"		/* for step_matrix */
 #include "gsrefct.h"
 #include "gxbitmap.h"
 
@@ -22,19 +23,19 @@ struct gs_indexed_map_s {
 	int (*lookup_index)(P3(const gs_indexed_params *, int, float *));
 	int (*tint_transform)(P3(const gs_separation_params *, floatp, float *));
     } proc;
+    void *proc_data;
     uint num_values;	/* base_space->type->num_components * (hival + 1) */
     float *values;	/* actually [num_values] */
 };
-
-extern_st(st_indexed_map);
-#define public_st_indexed_map() /* in gscolor2.c */\
-  gs_public_st_ptrs1(st_indexed_map, gs_indexed_map, "gs_indexed_map",\
-    indexed_map_enum_ptrs, indexed_map_reloc_ptrs, values)
+#define private_st_indexed_map() /* in gscolor2.c */\
+  gs_private_st_ptrs2(st_indexed_map, gs_indexed_map, "gs_indexed_map",\
+    indexed_map_enum_ptrs, indexed_map_reloc_ptrs, proc_data, values)
 
 /* Define a lookup_index procedure that just returns the map values. */
 int lookup_indexed_map(P3(const gs_indexed_params *, int, float *));
 
 /* Allocate an indexed map and its values. */
+/* The initial reference count is 1. */
 int alloc_indexed_map(P4(gs_indexed_map ** ppmap, int num_values,
 			 gs_memory_t * mem, client_name_t cname));
 

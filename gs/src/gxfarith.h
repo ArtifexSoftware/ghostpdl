@@ -1,8 +1,8 @@
-/* Copyright (C) 1993, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Floating point arithmetic macros for Ghostscript library */
@@ -122,5 +122,12 @@ typedef struct gs_sincos_s {
     bool orthogonal;		/* angle is multiple of 90 degrees */
 } gs_sincos_t;
 void gs_sincos_degrees(P2(double angle, gs_sincos_t * psincos));
+
+/*
+ * Define an atan2 function that returns an angle in degrees and uses
+ * the PostScript quadrant rules.  Note that it may return
+ * gs_error_undefinedresult.
+ */
+int gs_atan2_degrees(P3(double y, double x, double *pangle));
 
 #endif /* gxfarith_INCLUDED */

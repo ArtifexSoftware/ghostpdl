@@ -1,8 +1,8 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This software is licensed to a single customer by Artifex Software Inc.
-   under the terms of a specific OEM agreement.
- */
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+  
+  This software is licensed to a single customer by Artifex Software Inc.
+  under the terms of a specific OEM agreement.
+*/
 
 /*$RCSfile$ $Revision$ */
 /* Lower-level path filling procedures */
@@ -59,10 +59,7 @@ struct active_line_s {
     (alp)->num_adjust =\
       ((alp)->diff.x >= 0 ? 0 : -(alp)->diff.y + fixed_epsilon)
 #  define ADD_NUM_ADJUST(num, alp) ((num) + (alp)->num_adjust)
-#  define SUB_NUM_ADJUST(num, alp) ((num) - (alp)->num_adjust)
-#  define MAX_MINUS_NUM_ADJUST(alp) \
-    (((alp)->num_adjust < 0) ? ADD_NUM_ADJUST(max_fixed, alp) : \
-			       SUB_NUM_ADJUST(max_fixed, alp))
+#  define MAX_MINUS_NUM_ADJUST(alp) ADD_NUM_ADJUST(max_fixed, alp)
 #else
     /* neg/pos takes the floor, no special action is needed. */
 #  define SET_NUM_ADJUST(alp) DO_NOTHING
@@ -79,6 +76,11 @@ struct active_line_s {
       (startp).y;\
     (alp)->start = startp, (alp)->end = endp;\
   END
+    /*
+     * We know that alp->start.y <= yv <= alp->end.y, because the fill loop
+     * guarantees that the only lines being considered are those with this
+     * property.
+     */
 #define al_x_at_y(alp, yv)\
   ((yv) == (alp)->end.y ? (alp)->end.x :\
    ((yv) <= (alp)->y_fast_max ?\
@@ -116,7 +118,7 @@ struct active_line_s {
  * Y value, or, of the x_current values are equal, greater Y values
  * (if any: this Y value might be the end of both lines).
  */
-private bool
+private int
 x_order(const active_line *lp1, const active_line *lp2)
 {
     bool s1;
@@ -1387,10 +1389,13 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		/* We just went from inside to outside, so fill the region. */
 		wtop = xtop - xltop;
 		INCR(band_fill);
-		/* If lines are temporarily out of */
-		/* order, wtop might be negative. */
-		/* Patch this up now. */
-		if (wtop < 0) {
+		/*
+		 * If lines are temporarily out of order, we might have
+		 * xtop < xltop.  Patch this up now if necessary.  Note that
+		 * we can't test wtop < 0, because the subtraction might
+		 * overflow.
+		 */
+		if (xtop < xltop) {
 		    if_debug2('f', "[f]patch %g,%g\n",
 			      fixed2float(xltop), fixed2float(xtop));
 		    xtop = xltop += arith_rshift(wtop, 1);
