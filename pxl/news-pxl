@@ -24,9 +24,13 @@ file for each output.
 
 Known Problems:
 
-- leaves build generated files in the object directory after
-make clean.
+- leaves some build generated files in the object directory after make
+clean.  A workaround is to manually remove the object and generated
+directories.  See the top level platform specific makefile and look
+for *GENDIR and *OBJDIR.
 
+- generates device files in the current working directory, these are
+properly removed by make clean.
 
 Version 1.15 (8/6/98)
 =====================

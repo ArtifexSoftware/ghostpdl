@@ -11,7 +11,7 @@ MAKEFILE=../pxl/pxl_ugcc.mak
 GENDIR=./obj
 
 # The sources are taken from these directories:
-GLSRCDIR=../gs
+GLSRCDIR=/home/henrys/gs5.30
 PLSRCDIR=../pl
 PXLSRCDIR=../pxl
 COMMONDIR=../common
