@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -53,6 +53,7 @@ typedef struct gs_trap_params_s {
     bool Enabled;
     /* HalftoneName; */
     bool ImageInternalTrapping;
+    bool ImagemaskTrapping;
     int ImageResolution;
     bool ImageToObjectTrapping;
     gs_trap_placement_t ImageTrapPlacement;

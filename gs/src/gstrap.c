@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -78,6 +78,8 @@ gs_settrapparams(gs_trap_params_t * pparams, gs_param_list * plist)
 			   &params.Enabled, ecode);
     ecode = param_put_bool(plist, "ImageInternalTrapping",
 			   &params.ImageInternalTrapping, ecode);
+    ecode = param_put_bool(plist, "ImagemaskTrapping",
+			   &params.ImagemaskTrapping, ecode);
     ecode = param_put_int(plist, "ImageResolution",
 			  &params.ImageResolution, ecode);
     if (params.ImageResolution <= 0)
