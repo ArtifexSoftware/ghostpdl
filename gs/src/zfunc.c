@@ -96,16 +96,23 @@ zexecfunction(i_ctx_t *i_ctx_p)
 	if (diff > 0)
 	    check_ostack(diff);
 	{
-	    float *in = (float *)ialloc_byte_array(m, sizeof(float),
-						   "%execfunction(in)");
-	    float *out = (float *)ialloc_byte_array(n, sizeof(float),
-						    "%execfunction(out)");
-	    int code;
+	    float params[20];	/* arbitrary size, just to avoid allocs */
+	    float *in;
+	    float *out;
+	    int code = 0;
 
-	    if (in == 0 || out == 0)
-		code = gs_note_error(e_VMerror);
-	    else if ((code = float_params(op - 1, m, in)) < 0 ||
-		     (code = gs_function_evaluate(pfn, in, out)) < 0
+	    if (m + n <= countof(params)) {
+		in = params;
+	    } else {
+		in = (float *)ialloc_byte_array(m + n, sizeof(float),
+						"%execfunction(in/out)");
+		if (in == 0)
+		    code = gs_note_error(e_VMerror);
+	    }
+	    out = in + m;
+	    if (code < 0 ||
+		(code = float_params(op - 1, m, in)) < 0 ||
+		(code = gs_function_evaluate(pfn, in, out)) < 0
 		)
 		DO_NOTHING;
 	    else {
@@ -117,8 +124,8 @@ zexecfunction(i_ctx_t *i_ctx_p)
 		}
 		code = make_floats(op + 1 - n, out, n);
 	    }
-	    ifree_object(out, "%execfunction(out)");
-	    ifree_object(in, "%execfunction(in)");
+	    if (in != params)
+		ifree_object(in, "%execfunction(in)");
 	    return code;
 	}
     }
