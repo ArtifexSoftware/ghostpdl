@@ -32,6 +32,28 @@ config-clean: pl.config-clean pcl.config-clean
 
 #### Main program
 
+PCLVERSION=1.04
+
+# build a temporary c program _dt_temp.c to generate the time.
+$(PCLGEN)_dt_temp.c: pcl_top.mak
+	echo "#include <time.h>" > $(PCLGEN)_dt_temp.c
+	echo "#include <stdio.h>" >> $(PCLGEN)_dt_temp.c
+	echo "int main(int argc, char **argv)" >> $(PCLGEN)_dt_temp.c
+	echo "{ time_t t0; char buf[100];" >> $(PCLGEN)_dt_temp.c
+	echo "time(&t0);" >> $(PCLGEN)_dt_temp.c
+	echo "strftime(buf, sizeof buf, \"%c\", localtime(&t0));" >> $(PCLGEN)_dt_temp.c
+	echo "fprintf(stdout, \"#define PCLBUILDATE \\\"%s\\\"\", buf); return 0; }" >> $(PCLGEN)_dt_temp.c
+
+$(PCLGEN)_dt_temp: $(PCLGEN)_dt_temp.c
+
+$(PCLSRC)pclver.h: $(PCLGEN)_dt_temp
+	echo "#define PCLVERSION \"$(PCLVERSION)\"" > $(PCLSCRC)pclver.h
+	$(PCLGEN)_dt_temp >> $(PCLSRC)pclver.h
+	$(RM_) $(PCLGEN)_dt_temp.c
+	$(RM_) $(PCLGEN)_dt_temp
+
+pclver_h=$(PCLSRC)pclver.h
+
 $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c           \
                         $(AK)                       \
                         $(malloc__h)                \
@@ -61,6 +83,7 @@ $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c           \
                         $(gxdevice_h)               \
                         $(gxstate_h)                \
                         $(gdevbbox_h)               \
+			$(pclver_h)                 \
                         $(pjparse_h)                \
                         $(pgmand_h)                 \
                         $(plmain_h)                 \

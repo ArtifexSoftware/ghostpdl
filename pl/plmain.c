@@ -99,7 +99,7 @@ pl_main_arg_fopen(const char *fname, void *ignore_data)
 #define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
 pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
-  int argc)
+  int argc, char *version, char *build_date)
 {	gs_memory_t *mem = pmi->memory;
 	const gx_device **dev_list;
 	int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
@@ -254,9 +254,16 @@ out:	if ( arg == 0 || help )
 	    arg_finit(pal);
 	    gs_c_param_list_release(&params);
 	    fprintf(gs_stderr, pl_usage, argv[0]);
+	    if (version)
+		fprintf(gs_stderr, "Version: %s\n", version);
+	    if (build_date)
+		fprintf(gs_stderr, "Build date: %s\n", build_date);
 	    fputs("Devices:", gs_stderr);
-	    for ( i = 0; i < num_devs; ++i )
-	      fprintf(gs_stderr, " %s", gs_devicename(dev_list[i]));
+	    for ( i = 0; i < num_devs; ++i ) {
+		if ( ( (i + 1) )  % 9 == 0 )
+		    fputs("\n", gs_stderr);
+		fprintf(gs_stderr, " %s", gs_devicename(dev_list[i]));
+	    }
 	    fputs("\n", gs_stderr);
 	    exit(1);
 	  }

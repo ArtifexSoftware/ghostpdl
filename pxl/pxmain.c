@@ -130,7 +130,7 @@ main(int argc, char *argv[])
 	imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
 	imem->space = 0;		/****** WRONG ******/
 	pl_main_init(&inst, mem);
-	pl_main_process_options(&inst, &args, argv, argc);
+	pl_main_process_options(&inst, &args, argv, argc, NULL, NULL);
 	pl_main_make_gstate(&inst, &pgs);
 	st = px_process_alloc(mem);
 	pxs = px_state_alloc(mem);
