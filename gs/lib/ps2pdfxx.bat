@@ -20,14 +20,13 @@ if "%1"=="" goto usage
 if "%2"=="" goto usage
 
 rem Watcom C deletes = signs, so use # instead.
-rem Doing an initial 'save' helps keep fonts from being flushed between pages.
 rem We have to include the options twice because -I only takes effect if it
 rem appears before other options.
 
 :run
 echo -sOutputFile#%2 >>_.at2
 copy /b /y _.at2+_.at >NUL
-echo -c save pop -f %1 >>_.at2
+echo -c .setpdfwrite -f %1 >>_.at2
 %PS2PDFGS% @_.at @_.at2
 goto end
 

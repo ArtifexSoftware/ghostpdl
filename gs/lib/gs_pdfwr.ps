@@ -21,6 +21,15 @@
 % This file should be included iff the pdfwrite "device" is included
 % in the executable.
 
+% Set optimizations for converting PostScript to PDF.
+% The ps2pdf* scripts invoke this.
+/.setpdfwrite {		% - .setpdfwrite -
+		% Set a large VM threshold to reduce garbage collection.
+  currentuserparams /VMThreshold get 3000000 .max setvmthreshold
+		% Install a level of 'save' to reduce font loading.
+  save pop
+} bind def
+
 % Redefine pdfmark to pass the data to the driver.
 % We use a pseudo-parameter named /pdfmark whose value is an array:
 %	key1 value1 ... CTM /type

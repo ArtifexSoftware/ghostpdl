@@ -31,8 +31,6 @@ else
 	outfile=$2
 fi
 
-# Doing an initial 'save' helps keep fonts from being flushed between pages.
 # We have to include the options twice because -I only takes effect if it
 # appears before other options.
-# Increase the VM threshold so we don't garbage collect excessively.
-exec gs $OPTIONS -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$outfile $OPTIONS -c currentuserparams /VMThreshold get 3000000 .max setvmthreshold save pop -f $infile
+exec gs $OPTIONS -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$outfile $OPTIONS -c .setpdfwrite -f $infile
