@@ -1098,7 +1098,7 @@ append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
     gs_font_type42 *pfont = (gs_font_type42 *)pair->font;
 
     return gx_ttf_outline(pair->ttf, pair->ttr, pfont, (uint)glyph_index, 
-	pmat, pscale, ppath);
+	pmat, pscale, ppath, grid_fit);
 }
 #endif
 

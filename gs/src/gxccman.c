@@ -213,7 +213,13 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->ttr = 0;
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
 	int code; 
+	gs_matrix m;
 	
+	m.xx = mxx;
+	m.xy = mxy;
+	m.yx = myx;
+	m.yy = myy;
+	m.tx = m.yx =0;
 	pair->ttr = gx_ttfReader__create(dir->memory, (gs_font_type42 *)font);
 	if (!pair->ttr)
 	    return_error(gs_error_VMerror);
@@ -221,7 +227,8 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	pair->ttf = ttfFont__create(dir);
 	if (!pair->ttf)
 	    return_error(gs_error_VMerror);
-	code = ttfFont__Open_aux(dir->tti, pair->ttf, pair->ttr, (gs_font_type42 *)font);
+	code = ttfFont__Open_aux(dir->tti, pair->ttf, pair->ttr, 
+		    (gs_font_type42 *)font, &m, log2_scale);
 	if (code < 0)
 	    return code; /* fixme : propagate error. */
     }

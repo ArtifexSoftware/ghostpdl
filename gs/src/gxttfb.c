@@ -27,8 +27,10 @@
 #include "ttfmemd.h"
 #include "gsstruct.h"
 #include "gserrors.h"
+#include "gsfont.h"
 #include "gdebug.h"
 #include "memory_.h"
+#include "math_.h"
 #include <stdarg.h>
 
 gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
@@ -262,6 +264,42 @@ private void gx_ttfMemory__free(ttfMemory *this, void *p,  const char *cname)
 
 /*----------------------------------------------*/
 
+static inline float reminder(float v, int x)
+{
+    return ((v / x) - floor(v / x)) * x;
+}
+
+private void decompose_matrix(const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
+    bool align_to_pixels,
+    gs_point *char_size, gs_point *subpix_origin, gs_matrix *post_transform)
+{
+    /* 
+     *	char_tm maps to subpixels. 
+     */
+    /*
+     *	We use a Free Type 1 True Type interpreter, which cannot perform
+     *	a grid-fitting with skewing/rotation. It appears acceptable
+     *	because we want to minimize invocations of patented instructions.
+     *	We believe that skewing/rotation requires the patented intrivial cases
+     *	of projection/freedom vectors.
+     */
+    int scale_x = 1 << log2_scale->x;
+    int scale_y = 1 << log2_scale->y;
+    
+    char_size->x = hypot(char_tm->xx, char_tm->xy);
+    char_size->y = hypot(char_tm->yx, char_tm->yy);
+    subpix_origin->x = (align_to_pixels ? 0 : reminder(char_tm->tx, scale_x) / scale_x);
+    subpix_origin->y = (align_to_pixels ? 0 : reminder(char_tm->ty, scale_y) / scale_y);
+    post_transform->xx = char_tm->xx / char_size->x;
+    post_transform->xy = char_tm->xy / char_size->x;
+    post_transform->yx = char_tm->yx / char_size->y;
+    post_transform->yy = char_tm->yy / char_size->y;
+    post_transform->tx = char_tm->tx - subpix_origin->x;
+    post_transform->ty = char_tm->ty - subpix_origin->y;
+}
+
+/*----------------------------------------------*/
+
 ttfFont *ttfFont__create(gs_font_dir *dir)
 {
 #if NEW_TT_INTERPRETER 
@@ -298,13 +336,19 @@ void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
 #endif
 }
 
-int ttfFont__Open_aux(ttfInterpreter *tti, ttfFont *this, gx_ttfReader *r, gs_font_type42 *pfont)
+int ttfFont__Open_aux(ttfInterpreter *tti, ttfFont *this, gx_ttfReader *r, gs_font_type42 *pfont,
+    	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale)
 {
+    gs_point char_size, subpix_origin;
+    gs_matrix post_transform;
     /* Ghostscript proceses a TTC index in gs/lib/gs_ttf.ps, */
     /* so that TTC never comes here. */
     unsigned int nTTC = 0; 
+    bool atp = gs_currentaligntopixels(pfont->dir);
 
-    switch(ttfFont__Open(tti, this, &r->super, nTTC)) {
+    decompose_matrix(char_tm, log2_scale, atp, &char_size, &subpix_origin, &post_transform);
+    /* fixme : AlignToPixels==1 (log2_scale) isn't processed yet. */
+    switch(ttfFont__Open(tti, this, &r->super, nTTC, char_size.x, char_size.y)) {
 	case fNoError:
 	    return 0;
 	case fMemoryError:
@@ -388,19 +432,26 @@ private void gx_ttfExport__DebugPaint(ttfExport *this)
 /*----------------------------------------------*/
 
 int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int glyph_index, 
-	const gs_matrix *m, const gs_log2_scale_point * pscale, 
-	gx_path *path)
+	const gs_matrix *m, const gs_log2_scale_point *pscale, 
+	gx_path *path, bool grid_fit)
 {
     gx_ttfExport e;
     ttfOutliner o;
+    gs_point char_size, subpix_origin;
+    gs_matrix post_transform;
+    /* Ghostscript proceses a TTC index in gs/lib/gs_ttf.ps, */
+    /* so that TTC never comes here. */
+    unsigned int nTTC = 0; 
     FloatMatrix m1;
+    bool atp = gs_currentaligntopixels(pfont->dir);
 
-    m1.a = m->xx;
-    m1.b = m->xy;
-    m1.c = m->yx;
-    m1.d = m->yy;
-    m1.tx = m->tx;
-    m1.ty = m->ty;
+    decompose_matrix(m, pscale, atp, &char_size, &subpix_origin, &post_transform);
+    m1.a = post_transform.xx;
+    m1.b = post_transform.xy;
+    m1.c = post_transform.yx;
+    m1.d = post_transform.yy;
+    m1.tx = post_transform.tx;
+    m1.ty = post_transform.ty;
     e.super.bPoints = false;
     e.super.bOutline = true;
     e.super.MoveTo = gx_ttfExport__MoveTo;
@@ -416,7 +467,8 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     e.w.y = 0;
     gx_ttfReader__Reset(r);
     ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, pfont->WMode != 0);
-    switch(ttfOutliner__Outline(&o, glyph_index, &m1)) {
+    switch(ttfOutliner__Outline(&o, glyph_index, 
+	    subpix_origin.x, subpix_origin.y, &m1, grid_fit)) {
 	case fNoError:
 	    return 0;
 	case fMemoryError:

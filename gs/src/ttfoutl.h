@@ -122,6 +122,7 @@ struct ttfFont_s {
     unsigned int nLongMetricsHorz;
     unsigned int nIndexToLocFormat;
     bool    patented;
+    bool    bOwnScale;
     TFace *face;
     TInstance *inst;
     TExecution_Context  *exec;
@@ -134,7 +135,8 @@ void ttfFont__init(ttfFont *this, ttfMemory *mem,
 		    void (*DebugRepaint)(ttfFont *),
 		    void (*DebugPrint)(ttfFont *, const char *s, ...));
 void ttfFont__finit(ttfFont *this);
-FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r, unsigned int nTTC);
+FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r, 
+			unsigned int nTTC, float w, float h);
 
 typedef struct ttfExport_s ttfExport;
 struct ttfExport_s {
@@ -165,6 +167,7 @@ typedef struct {
 
 void ttfOutliner__init(ttfOutliner *, ttfFont *f, ttfReader *r, ttfExport *exp, 
 			bool bOutline, bool bFirst, bool bVertical);
-FontError ttfOutliner__Outline(ttfOutliner *, int glyphIndex, FloatMatrix *m1);
+FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
+	float orig_x, float orig_y, FloatMatrix *m1, bool grid_fit);
 
 #endif

@@ -1837,7 +1837,7 @@ $(GLOBJ)ttobjs.$(OBJ) : $(GLSRC)ttobjs.c $(GXERR) $(ttmisc_h)\
 
 $(GLOBJ)gxttfb.$(OBJ) : $(GLSRC)gxttfb.c $(GXERR) \
  $(gx_h) $(gxfont_h) $(gxfont42_h) $(gxttfb_h) $(gxfcache_h) $(ttfmemd_h)\
-  $(gsstruct_h) $(gserrors_h) $(gsdebug_h)
+  $(gsstruct_h) $(gserrors_h) $(gsfont_h) $(gsdebug_h) $(memory__h) $(math__h)
 	$(GLCC) $(GLO_)gxttfb.$(OBJ) $(C_) $(GLSRC)gxttfb.c
 
 # -------- Composite (PostScript Type 0) font support -------- #
