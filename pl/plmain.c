@@ -60,7 +60,7 @@ extern pl_interp_implementation_t const * const pdl_implementation[];	/* zero-te
 /* Define the usage message. */
 private const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
-Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|PCLXL> -Z...\n\
+Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
 ";
