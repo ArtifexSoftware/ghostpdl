@@ -938,6 +938,7 @@ gx_imager_dev_ht_install(
     int                     lcm_width = 1, lcm_height = 1;
     gs_wts_screen_enum_t *  wse0 = pdht->order.wse;
     wts_screen_t *          wts0 = 0;
+    bool                    mem_diff = pdht->rc.memory != pis->memory;
 
     /* construct the new device halftone structure */
     memset(&dht.order, 0, sizeof(dht.order));
@@ -970,7 +971,7 @@ gx_imager_dev_ht_install(
     if (pdht->components != 0) {
         int     input_ncomps = pdht->num_comp;
 
-        for (i = 0; i < input_ncomps; i++) {
+        for (i = 0; i < input_ncomps && code >= 0; i++) {
             gx_ht_order_component * p_s_comp = &pdht->components[i];
             gx_ht_order *           p_s_order = &p_s_comp->corder;
             int                     comp_num = p_s_comp->comp_number;
@@ -981,11 +982,21 @@ gx_imager_dev_ht_install(
                 /* indicate that this order has been filled in */
                 dht.components[comp_num].comp_number = comp_num;
 
-                /* check if this is also the default component */
-                used_default = used_default ||
-                               p_s_order->bit_data == pdht->order.bit_data;
+                /*
+                 * The component can be used only if it is from the
+                 * proper memory
+                 */
+                if (mem_diff)
+                    code = gx_ht_copy_ht_order( p_d_order,
+                                                p_s_order,
+                                                pis->memory );
+                else {
+                    /* check if this is also the default component */
+                    used_default = used_default ||
+                                   p_s_order->bit_data == pdht->order.bit_data;
 
-                gx_ht_move_ht_order(p_d_order, p_s_order);
+                    gx_ht_move_ht_order(p_d_order, p_s_order);
+                }
             }
         }
     }
@@ -1025,7 +1036,7 @@ gx_imager_dev_ht_install(
         gs_wts_screen_enum_t *  wse;
 
         if (dht.components[i].comp_number != i) {
-            if (used_default)
+            if (used_default || mem_diff)
                 code = gx_ht_copy_ht_order(porder, &pdht->order, pis->memory);
             else {
                 gx_ht_move_ht_order(porder, &pdht->order);

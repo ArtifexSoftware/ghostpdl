@@ -377,7 +377,7 @@ gs_strokepath(gs_state * pgs)
     gx_path spath;
     int code;
 
-    gx_path_init_local(&spath, pgs->memory);
+    gx_path_init_local(&spath, pgs->path->memory);
     code = gx_stroke_add(pgs->path, &spath, pgs);
     if (code < 0) {
 	gx_path_free(&spath, "gs_strokepath");

@@ -380,7 +380,7 @@ gs_clippath(gs_state * pgs)
     gx_path cpath;
     int code;
 
-    gx_path_init_local(&cpath, pgs->memory);
+    gx_path_init_local(&cpath, pgs->path->memory);
     code = gx_cpath_to_path(pgs->clip_path, &cpath);
     if (code >= 0)
 	code = gx_path_assign_free(pgs->path, &cpath);

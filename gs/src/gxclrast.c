@@ -296,6 +296,7 @@ clist_playback_band(clist_playback_action playback_action,
     int data_x;
     int code = 0;
     ht_buff_t  ht_buff;
+    gx_device *const orig_target = target;
 
     cbuf.data = (byte *)cbuf_storage;
     cbuf.size = cbuf_size;
@@ -1507,6 +1508,11 @@ idata:			data_size = 0;
     gx_path_free(&path, "clist_render_band exit");
     gs_imager_state_release(&imager_state);
     gs_free_object(mem, data_bits, "clist_playback_band(data_bits)");
+    if (target != orig_target) {
+        dev_proc(target, close_device)(target);
+	gs_free_object(target->memory, target, "gxclrast discard compositor");
+	target = orig_target;
+    }
     if (code < 0)
 	return_error(code);
     /* Check whether we have more pages to process. */

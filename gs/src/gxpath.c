@@ -81,6 +81,7 @@ private int
 path_alloc_segments(gx_path_segments ** ppsegs, gs_memory_t * mem,
 		    client_name_t cname)
 {
+    mem = gs_memory_stable(mem);
     rc_alloc_struct_1(*ppsegs, gx_path_segments, &st_path_segments,
 		      mem, return_error(gs_error_VMerror), cname);
     (*ppsegs)->rc.free = rc_free_path_segments;
@@ -361,6 +362,7 @@ rc_free_path_segments_local(gs_memory_t * mem, void *vpsegs,
     gx_path_segments *psegs = (gx_path_segments *) vpsegs;
     segment *pseg;
 
+    mem = gs_memory_stable(mem);
     if (psegs->contents.subpath_first == 0)
 	return;			/* empty path */
     pseg = (segment *) psegs->contents.subpath_current->last;
@@ -410,7 +412,8 @@ rc_free_path_segments(gs_memory_t * mem, void *vpsegs, client_name_t cname)
 #define path_alloc_segment(pseg,ctype,pstype,stype,snotes,cname)\
   path_unshare(ppath);\
   psub = ppath->current_subpath;\
-  if( !(pseg = gs_alloc_struct(ppath->memory, ctype, pstype, cname)) )\
+  if( !(pseg = gs_alloc_struct(gs_memory_stable(ppath->memory), ctype,\
+			       pstype, cname)) )\
     return_error(gs_error_VMerror);\
   pseg->type = stype, pseg->notes = snotes, pseg->next = 0
 #define path_alloc_link(pseg)\
@@ -616,8 +619,9 @@ gx_path_add_lines_notes(gx_path *ppath, const gs_fixed_point *ppts, int count,
 	    code = gs_note_error(gs_error_rangecheck);
 	    break;
 	}
-	if (!(next = gs_alloc_struct(ppath->memory, line_segment,
-				     &st_line, "gx_path_add_lines"))
+	if (!(next = gs_alloc_struct(gs_memory_stable(ppath->memory),
+				     line_segment, &st_line,
+				     "gx_path_add_lines"))
 	    ) {
 	    code = gs_note_error(gs_error_VMerror);
 	    break;
