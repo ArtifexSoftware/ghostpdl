@@ -377,6 +377,28 @@ userdict /.pdfcvstring () put
 userdict /pdfmark .undef
 currentdict /.pdfmarkparams .undef
 
+
+%	<dict> .hook_DSC_Creator -
+/.pdf_hook_DSC_Creator
+{
+  % If the Creator is PScript5.dll, disable the 32 /FontType resource for
+  % handling GlyphNames2Unicode. Since /FontType category can't redefine,
+  % we can do only with redefining the operator 'resourcestatus'.
+  /Creator .knownget {
+    (PScript5.dll) search {
+      pop pop pop
+      systemdict /resourcestatus dup
+      { dup /FontType eq 2 index 32 eq and {
+          pop pop false
+        } {
+          resourcestatus
+        } ifelse
+      } bind .makeoperator .forceput
+     } if
+  } if
+} 
+bind def
+
 % Use the DSC processing hook to pass DSC comments to the driver.
 % We use a pseudo-parameter named DSC whose value is an array:
 %	/key1 (value1) ... /type
@@ -386,6 +408,7 @@ currentdict /.pdfmarkparams .undef
 		% Stack: <dsc string> <dsc dict>
   20 .localvmdict 1 index { 3 copy put pop pop } forall
   3 -1 roll .parse_dsc_comments	% <dsc dict> <dict> <type>
+  1 index //.pdf_hook_DSC_Creator exec
   dup /NOP ne 2 index length 1 gt or {	% Skip unparsed comments
     DEBUG { (**** DSC comment: ) print dup == 1 index === flush } if
     exch mark 4 1 roll {
@@ -406,6 +429,7 @@ currentdict /.pdfmarkparams .undef
     pop pop pop
   } ifelse
 } bind def
+currentdict /.pdf_hook_DSC_Creator undef
 /.initialize_dsc_parser where {
   pop 2 dict dup .initialize_dsc_parser readonly
   currentuserparams /ProcessDSCComment get
