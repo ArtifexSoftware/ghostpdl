@@ -811,3 +811,57 @@ gp_fopen(const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
+/* -------------- Helpers for gp_file_name_combine_generic ------------- */
+
+uint gp_file_name_root(const char *fname, uint len)
+{   if (len > 0 && fname[0] == '/') {
+	return 1;
+    return 0;
+}
+
+uint gs_file_name_check_separator(const char *fname, int len, const char *item)
+{   if (len > 0) {
+	if (fname[0] == '/')
+	    return 1;
+    } else if (len < 0) {
+	if (fname[-1] == '/')
+	    return 1;
+    }
+    return 0;
+}
+
+bool gp_file_name_is_parent(const char *fname, uint len)
+{   return len == 2 && fname[0] == '.' && fname[1] == '.';
+}
+
+bool gp_file_name_is_current(const char *fname, uint len)
+{   return len == 1 && fname[0] == '.';
+}
+
+char *gp_file_name_separator(void)
+{   return "/";
+}
+
+char *gp_file_name_current(void)
+{   return ".";
+}
+
+bool gp_file_name_is_partent_allowed(void)
+{   return true;
+}
+
+uint gp_file_name_unclose(const char *fname, uint len)
+{   return 0;
+}
+
+bool gp_file_name_is_empty_item_meanful(void)
+{   return false;
+}
+
+gp_file_name_combine_result
+gp_file_name_combine(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen)
+{
+    return gp_file_name_combine_generic(prefix, plen, 
+	    fname, flen, buffer, blen);
+}

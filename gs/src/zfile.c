@@ -902,24 +902,19 @@ make_stream_file(ref * pfile, stream * s, const char *access)
     }
 }
 
-/*******PATCH*BEG*********************/
+#if NEW_COMBINE_PATH
 
-/* This code will be moved to gpmisc.h : */
-typedef enum {
-    gp_combine_small_buffer = -1,
-    gp_combine_cant_handle = 0,
-    gp_combine_success = 1
-} gp_file_name_combine_result;
+private gp_file_name_combine_result 
+gp_file_name_combine_patch(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen)
+{
+    return gp_file_name_combine(prefix, plen, fname, flen, buffer, blen);
+}
 
+#else
 
-/* This code will be moved to gp.h : */
-gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen, 
-	    const char *fname, uint flen, char *buffer, uint *blen);
-
-
-/* This code will be moved to gpmisc.c : */
-
-gp_file_name_combine_result gp_file_name_combine_generic(const char *prefix, uint plen, 
+private gp_file_name_combine_result 
+gp_file_name_combine_patch(const char *prefix, uint plen, 
 	    const char *fname, uint flen, char *buffer, uint *blen)
 {
     /* This is a stub. */
@@ -937,17 +932,7 @@ gp_file_name_combine_result gp_file_name_combine_generic(const char *prefix, uin
     return gp_combine_success;
 }
 
-/* This code will be moved to platform dependent modules : */
-
-gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen, 
-	    const char *fname, uint flen, char *buffer, uint *blen)
-{
-    /* Specific platforms may use a different implementation. */
-    return gp_file_name_combine_generic(prefix, plen, fname, flen, buffer, blen);
-}
-
-/*******PATCH*END*********************/
-
+#endif /* NEW_COMBINE_PATH */
 
 /* Prepare a stream with a file name. */
 /* Return 0 if successful, error code if not. */
@@ -1012,7 +997,7 @@ lib_fopen_with_libpath(gx_io_device *iodev, const char *fname, uint flen, char f
 	    const char *pstr = (const char *)prdir->value.const_bytes;
 	    uint plen = r_size(prdir), blen1 = blen;
 
-	    gp_file_name_combine_result r = gp_file_name_combine(pstr, plen, 
+	    gp_file_name_combine_result r = gp_file_name_combine_patch(pstr, plen, 
 		    fname, flen, buffer, &blen1);
 	    if (r != gp_combine_success)
 		continue;

@@ -622,3 +622,65 @@ int
 pclose (FILE * pipe ) {
 	return fclose (pipe);
 }
+
+/* -------------- Helpers for gp_file_name_combine_generic ------------- */
+
+uint gp_file_name_root(const char *fname, uint len)
+{   int i;
+
+    if (len > 0 && fname[0] == ':')
+	return 0; /* A relative path, no root. */
+    /* Root includes the separator after the volume name : */
+    for (i = 0; i < len; i++)
+	if (fname[i] == ':')
+	    return i + 1;
+    return 0;
+}
+
+uint gs_file_name_check_separator(const char *fname, int len, const char *item)
+{   if (len > 0) {
+	if (fname[0] == ':') {
+	    if (fname == item + 1 && item[0] == ':')
+		return 1; /* It is a separator after parent. */
+	    if (len > 1 && fname[1] == ':')
+		return 0; /* It is parent, not a separator. */
+	    return 1;
+	}
+    } else if (len < 0) {
+	if (fname[-1] == ':')
+	    return 1;
+    }
+    return 0;
+}
+
+bool gp_file_name_is_parent(const char *fname, uint len)
+{   return len == 1 && fname[0] == ':';
+}
+
+bool gp_file_name_is_current(const char *fname, uint len)
+{   return len == 0;
+}
+
+char *gp_file_name_separator(void)
+{   return ":";
+}
+
+char *gp_file_name_current(void)
+{   return ":";
+}
+
+bool gp_file_name_is_partent_allowed(void)
+{   return true;
+}
+
+bool gp_file_name_is_empty_item_meanful(void)
+{   return true;
+}
+
+gp_file_name_combine_result
+gp_file_name_combine(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen)
+{
+    return gp_file_name_combine_generic(prefix, plen, 
+	    fname, flen, buffer, blen);
+}

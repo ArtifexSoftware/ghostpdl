@@ -17,6 +17,7 @@
 /* $Id$ */
 /* VAX/VMS specific routines for Ghostscript */
 #include "string_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gp.h"
 #include "gsstruct.h"
@@ -489,3 +490,147 @@ gp_strerror(int errnum)
 {
     return NULL;
 }
+
+/* -------------- Helpers for gp_file_name_combine_generic ------------- */
+
+uint gp_file_name_root(const char *fname, uint len)
+{   
+    /*
+     *    The root for device:[root.][directory.subdirectory]filename.extension;version
+     *	    is device:[root.][
+     *    The root for device:[directory.subdirectory]filename.extension;version
+     *	    is device:[
+     *    The root for logical:filename.extension;version
+     *	    is logical:
+     */
+    int i, j;
+
+    if (len == 0)
+	return 0;
+    /* Search for ':' */
+    for (i = 0; i < len; i++)
+	if (fname[i] == ':')
+	    break;
+    if (i == len)
+	return 0; /* No root. */
+    if (fname[i] == ':')
+	i++;
+    if (i == len || fname[i] != '[')
+	return i; 
+    /* Search for ']' */
+    i++;
+    for (j = i; j < len; j++)
+	if (fname[j] == ']')
+	    break;
+    if (j == len)
+	return i; /* No ']'. Allowed as a Ghostscript specifics. */
+    j++;
+    if (j == len)
+	return i; /* Appending "device:[directory.subdirectory]" with "filename.extension;version". */
+    if (fname[j] != '[')
+	return i; /* Can't append anything, but pass through for checking an absolute path. */
+    return j + 1; /* device:[root.][ */
+}
+
+uint gs_file_name_check_separator(const char *fname, int len, const char *item)
+{   
+    if (len > 0) {
+	/* 
+	 * Ghostscript specifics : an extended syntax like Mac OS.
+	 * We intentionally don't consider ':', '[' and ']' as separators
+	 * in forward search, see gp_file_name_combine. 
+	 */
+	if (fname[0] == '.') {
+	    if (fname == item + 1 && item[0] == '.')
+		return 1; /* It is a separator after parent. */
+	    if (len > 1 && fname[1] == '.')
+		return 0; /* It is parent, not a separator. */
+	    return 1;
+	}
+    } else if (len < 0) {
+	if (fname[-1] == '.' || fname[-1] == ':' || fname[-1] == '[')
+	    return 1;
+    }
+    return 0;
+}
+
+bool gp_file_name_is_parent(const char *fname, uint len)
+{   /* Ghostscript specifics : an extended syntax like Mac OS. */
+    return len == 1 && fname[0] == '.';
+}
+
+bool gp_file_name_is_current(const char *fname, uint len)
+{   /* Ghostscript specifics : an extended syntax like Mac OS. */
+    return len == 0;
+}
+
+char *gp_file_name_separator(void)
+{   return ".";
+}
+
+char *gp_file_name_current(void)
+{   return "";
+}
+
+bool gp_file_name_is_partent_allowed(void)
+{   return false;
+}
+
+bool gp_file_name_is_empty_item_meanful(void)
+{   return true;
+}
+
+gp_file_name_combine_result
+gp_file_name_combine(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen)
+{
+    /*
+     * Reduce it to the MacOS case.
+     */
+    uint rlen, flen1 = flen, plen1 = plen;
+    const char *fname1 = fname;
+
+    if (plen == 0 && flen == 0) {
+	/* Not sure that we need this case. */
+	if (*blen == 0)
+	    return gp_combine_small_buffer;
+	buffer[0] = '.';
+	*blen = 1;
+    }
+    rlen = gp_file_name_root(fname, flen);
+    if (rlen > 0 || plen == 0 || flen == 0) {
+	if (rlen == 0 && plen != 0) {
+	    fname1 = prefix;
+	    flen1 = plen;
+	}
+	if (flen1 + 1 > *blen)
+	    return gp_combine_small_buffer;
+	memcpy(buffer, fname1, flen1);
+	buffer[flen1] = 0;
+	*blen = flen1;
+	return gp_combine_success;
+    }
+    if (((prefix[plen - 1] == ']' || prefix[plen - 1] == ':') && fname[0] != '[') || 
+	 (prefix[plen - 1] == ':' && fname[0] == '[')) {
+	/* Just concatenate. */
+	if (plen + flen + 1 > *blen)
+	    return gp_combine_small_buffer;
+	memcpy(buffer, prefix, plen);
+	memcpy(buffer + plen, fname, flen);
+	buffer[plen + flen] = 0;
+	*blen = plen + flen;
+	return gp_combine_success;
+    }
+    if (prefix[plen - 1] != ']' && fname[0] == '[')
+        return gp_combine_cant_handle;
+    /* Unclose "][" :*/
+    if (fname[0] == '[') {
+	fname1 = fname + 1;
+	flen1 = flen - 1;
+    }
+    if (prefix[plen - 1] == ']')
+        plen1 = plen - 1;
+    return gp_file_name_combine_generic(prefix, plen1, 
+	    fname1, flen1, buffer, blen);
+}
+

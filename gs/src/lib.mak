@@ -59,7 +59,7 @@ $(GLGEN)arch.h : $(GENARCH_XE)
 gstypes_h=$(GLSRC)gstypes.h
 srdline_h=$(GLSRC)srdline.h
 gpgetenv_h=$(GLSRC)gpgetenv.h
-gp_h=$(GLSRC)gp.h $(gpgetenv_h) $(gstypes_h) $(srdline_h)
+gp_h=$(GLSRC)gp.h $(gpgetenv_h) $(gstypes_h) $(srdline_h) $(gpmisc_h)
 gpcheck_h=$(GLSRC)gpcheck.h
 gpsync_h=$(GLSRC)gpsync.h
 
@@ -230,7 +230,7 @@ $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
 # Support for platform code
 $(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c\
  $(unistd__h) $(fcntl__h) $(stat__h) $(stdio__h)\
- $(gp_h) $(gpgetenv_h) $(gpmisc_h)
+ $(memory__h) $(string__h) $(gp_h) $(gpgetenv_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 
 # Command line argument list management

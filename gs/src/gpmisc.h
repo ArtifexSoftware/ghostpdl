@@ -38,4 +38,18 @@ int gp_gettmpdir(char *ptr, int *plen);
  */
 FILE *gp_fopentemp(const char *fname, const char *mode);
 
+typedef enum {
+    gp_combine_small_buffer = -1,
+    gp_combine_cant_handle = 0,
+    gp_combine_success = 1
+} gp_file_name_combine_result;
+
+/*
+ * Combine a file name with a prefix.
+ * Concatenates two paths and reduce parent references and current 
+ * directory references from the concatenation when possible.
+ */
+gp_file_name_combine_result gp_file_name_combine_generic(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen);
+
 #endif /* gpmisc_INCLUDED */

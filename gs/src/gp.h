@@ -21,6 +21,9 @@
 #ifndef gp_INCLUDED
 #  define gp_INCLUDED
 
+/* A temporary switch for the new logics of file path concatenation : */
+#define NEW_COMBINE_PATH 1 /* 0 = old, 1 = new. */
+
 #include "gstypes.h"
 /*
  * This file defines the interface to ***ALL*** platform-specific routines,
@@ -38,6 +41,11 @@
  * stream.h.
  */
 #include "srdline.h"
+/*
+ * The definition for gp_file_name_combine_result is in gpmisc.h, 
+ * since it is shared with gpmisc.c .
+ */
+#include "gpmisc.h"
 
 /* ------ Initialization/termination ------ */
 
@@ -205,6 +213,70 @@ bool gp_file_name_references_parent(const char *fname, uint len);
 /* determine if a separator is needed and may return an empty string	*/
 /* in some cases (platform dependent).					*/
 const char *gp_file_name_concat_string(const char *prefix, uint plen);
+
+/*
+ * Combine a file name with a prefix.
+ * Concatenates two paths and reduce parten references and current 
+ * directory references from the concatenation when possible.
+ * Various platforms may share this code.
+ */
+gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen);
+
+/* -------------- Helpers for gp_file_name_combine_generic ------------- */
+/* Platforms, which do not call gp_file_name_combine_generic, */
+/* must stub the helpers against linkage problems. */
+
+/* Return length of root prefix of the file name, or zero. */
+/*	unix:   length("/")	    */
+/*	Win:    length("c:/") or length("//computername/cd:/")  */
+/*	mac:	length("volume:")    */
+/*	VMS:	length("device:[root.]["	    */
+uint gp_file_name_root(const char *fname, uint len);
+
+/* Check whether a part of file name starts (ends) with a separator. */
+/* Must return the length of the separator.*/
+/* If the 'len' is negative, must search in backward direction. */
+/*	unix:   '/'	    */
+/*	Win:    '/' or '\'  */
+/*	mac:	':' except "::"	    */
+/*	VMS:	smart - see the implementation   */
+uint gs_file_name_check_separator(const char *fname, int len, const char *item);
+
+/* Check whether a part of file name is a parent reference. */
+/*	unix, Win:  equal to ".."	*/
+/*	mac:	equal to ":"		*/
+/*	VMS:	equal to "."		*/
+bool gp_file_name_is_parent(const char *fname, uint len);
+
+/* Check if a part of file name is a current directory reference. */
+/*	unix, Win:  equal to "."	*/
+/*	mac:	equal to ""		*/
+/*	VMS:	equal to ""		*/
+bool gp_file_name_is_current(const char *fname, uint len);
+
+/* Returns a string for referencing the current directory. */
+/*	unix, Win:  "."	    */
+/*	mac:	":"	    */
+/*	VMS:	""          */
+char *gp_file_name_current(void);
+
+/* Returns a string for separating file name items. */
+/*	unix, Win:  "/"	    */
+/*	mac:	":"	    */
+/*	VMS:	"."	    */
+char *gp_file_name_separator(void);
+
+/* Answer whether the platform allows parent refenences. */
+/*	unix, Win, Mac: yes */
+/*	VMS:	no.         */
+bool gp_file_name_is_partent_allowed(void);
+
+/* Answer whether an empty item is meanful in file names on the platform. */
+/*	unix, Win:  no	    */
+/*	mac:	yes	    */
+/*	VMS:	yes         */
+bool gp_file_name_is_empty_item_meanful(void);
 
 /* ------ Printer accessing ------ */
 
