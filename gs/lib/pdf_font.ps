@@ -902,39 +902,43 @@ readonly def
 .dicttomark readonly def
 
 /resourcefont			% <font-resource> resourcefont <font>
- { dup /PSFont .knownget
-    { /FID .knownget { type /fonttype eq } { false } ifelse }
-    { false }
-   ifelse
-    { /PSFont get
-    }
-    { dup dup /FontDescriptor knownoget
-       {	% Stack: font-res font-res font-desc
-	 dup /FontFile knownoget
-	  { exch pop readtype1 true }
-	  { dup /FontFile2 knownoget
-	     { exch pop readtruetype true }
-	     { /FontFile3 knownoget
-		{ dup /Subtype get fontloadprocs exch get exec true }
-		{ false }
-	       ifelse
-	     }
+{ dup /PSFont .knownget
+  { /FID .knownget { type /fonttype eq } { false } ifelse }
+  { false }
+  ifelse
+  { /PSFont get }
+  { dup dup /FontDescriptor knownoget {	% Stack: font-res font-res font-desc
+      dup /FontObject .knownget {
+	3 1 roll pop pop true
+      } {
+	dup /FontFile knownoget
+	{ exch pop readtype1 true }
+	{ dup /FontFile2 knownoget
+	  { exch pop readtruetype true }
+	  { /FontFile3 knownoget
+	    { dup /Subtype get fontloadprocs exch get exec true }
+	    { false }
 	    ifelse
 	  }
-	 ifelse
-       }
-       { false }
+	  ifelse
+	}
+	ifelse
+	2 index /FontDescriptor oget
+	2 index /FontObject exch
+	put			% Save pointer to the font
+      }
       ifelse
-		% Stack: font-res font-res false
-		%  -or-: font-res font true
-      not
-       { dup /Subtype get fonttypeprocs exch get exec }
-      if
-      2 copy /PSFont exch put
-      exch pop
     }
-   ifelse
- } bdef
+    { false }
+    ifelse
+	% Stack: font-res font-res false
+	%  -or-: font-res font true
+    not { dup /Subtype get fonttypeprocs exch get exec } if
+    2 copy /PSFont exch put
+    exch pop
+  }
+  ifelse
+} bdef
 
 drawopdict begin
   /d0 {
