@@ -60,6 +60,7 @@ $(GLGEN)arch.h : $(GENARCH_XE)
 gstypes_h=$(GLSRC)gstypes.h
 srdline_h=$(GLSRC)srdline.h
 gpgetenv_h=$(GLSRC)gpgetenv.h
+gpmisc_h=$(GLSRC)gpmisc.h
 gp_h=$(GLSRC)gp.h $(gpgetenv_h) $(gstypes_h) $(srdline_h) $(gpmisc_h)
 gpcheck_h=$(GLSRC)gpcheck.h
 gpsync_h=$(GLSRC)gpsync.h
