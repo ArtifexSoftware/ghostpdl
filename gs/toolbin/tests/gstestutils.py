@@ -189,7 +189,10 @@ def gsRunTestsMain(addTests):
     gsTestParseArgv(args, sys.argv)
     suite = GSTestSuite()
     addTests(suite, **args)
-    GSTestRunner().run(suite)
+    results = GSTestRunner().run(suite)
+    failures = len(results.failures)
+    if failures:
+      sys.exit(failures)
 
 # Parse sys.argv to extract test args.
 
