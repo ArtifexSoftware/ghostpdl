@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -163,6 +163,130 @@ private int (*const fn_get_samples[]) (P3(const gs_function_Sd_t * pfn,
 	fn_gets_32
 };
 
+/*
+ * Compute a value by quadratic interpolation.
+ * f[] = f(0), f(1), f(2); 0 < x < 1.
+ */
+private double
+interpolate_quadratic(floatp x, floatp f0, floatp f1, floatp f2)
+{
+    /*
+     * We want f(0) = f0, f(1) = f1, f'(1) = (f2 - 2 * f1 + f0) / 2.
+     * From there, it's a simple matter of algebra.
+     */
+    const double
+	s = (f2 - f0) * 0.5,
+	a = s - f1 + f0, b = f1 - a - f0;
+    const double c = a * x * x + b * x + f0;
+
+    if_debug5('~', "[~](%g, %g, %g)order2(%g) => %g\n",
+	      f0, f1, f2, x, c);
+    return c;
+}
+
+/*
+ * Compute a value by cubic interpolation.
+ * f[] = f(0), f(1), f(2), f(3); 1 < x < 2.
+ * The formula is derived from those presented in
+ * http://www.cs.uwa.edu.au/undergraduate/units/233.413/Handouts/Lecture04.html
+ * (thanks to Raph Levien for the reference).
+ */
+private double
+interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
+{
+    /*
+     * The parameter 'a' affects the contribution of the high-frequency
+     * components.  The abovementioned source suggests a = -0.5.
+     */
+#define a (-0.5) 
+#define SQR(v) ((v) * (v))
+#define CUBE(v) ((v) * (v) * (v))
+    const double xm1 = x - 1, m2x = 2 - x, m3x = 3 - x;
+    const double c =
+	(a * CUBE(x) - 5 * a * SQR(x) + 8 * a * x - 4 * a) * f0 +
+	((a+2) * CUBE(xm1) - (a+3) * SQR(xm1) + 1) * f1 +
+	((a+2) * CUBE(m2x) - (a+3) * SQR(m2x) + 1) * f2 +
+	(a * CUBE(m3x) - 5 * a * SQR(m3x) + 8 * a * m3x - 4 * a) * f3;
+
+    if_debug6('~', "[~](%g, %g, %g, %g)order3(%g) => %g\n",
+	      f0, f1, f2, f3, x, c);
+    return c;
+#undef a
+#undef SQR
+#undef CUBE
+}
+
+/* Calculate a result by multicubic interpolation. */
+private void
+fn_interpolate_cubic(const gs_function_Sd_t *pfn, const float *fparts,
+		     const int *iparts, const ulong *factors,
+		     float *samples, ulong offset, int m)
+{
+    int j;
+
+top:
+    if (m == 0) {
+	uint sdata[max_Sd_n];
+
+	(*fn_get_samples[pfn->params.BitsPerSample])(pfn, offset, sdata);
+	for (j = pfn->params.n - 1; j >= 0; --j)
+	    samples[j] = sdata[j];
+    } else {
+	float fpart = *fparts++;
+	int ipart = *iparts++;
+	ulong delta = *factors++;
+	int size = pfn->params.Size[pfn->params.m - m];
+	float samples1[max_Sd_n], samplesm1[max_Sd_n], samples2[max_Sd_n];
+
+	--m;
+	if (is_fzero(fpart))
+	    goto top;
+	fn_interpolate_cubic(pfn, fparts, iparts, factors, samples,
+			     offset, m);
+	fn_interpolate_cubic(pfn, fparts, iparts, factors, samples1,
+			     offset + delta, m);
+	/* Ensure we don't try to access out of bounds. */
+	/*
+	 * If size == 1, the only possible value for ipart and fpart is
+	 * 0, so we've already handled this case.
+	 */
+	if (size == 2) {	/* ipart = 0 */
+	    /* Use linear interpolation. */
+	    for (j = pfn->params.n - 1; j >= 0; --j)
+		samples[j] += (samples1[j] - samples[j]) * fpart;
+	    return;
+	}
+	if (ipart == 0) {
+	    /* Use quadratic interpolation. */
+	    fn_interpolate_cubic(pfn, fparts, iparts, factors,
+				 samples2, offset + delta * 2, m);
+	    for (j = pfn->params.n - 1; j >= 0; --j)
+		samples[j] =
+		    interpolate_quadratic(fpart, samples[j],
+					  samples1[j], samples2[j]);
+	    return;
+	}
+	/* At this point we know ipart > 0, size >= 3. */
+	fn_interpolate_cubic(pfn, fparts, iparts, factors, samplesm1,
+			     offset - delta, m);
+	if (ipart == size - 2) {
+	    /* Use quadratic interpolation. */
+	    for (j = pfn->params.n - 1; j >= 0; --j)
+		samples[j] =
+		    interpolate_quadratic(1 - fpart, samples1[j],
+					  samples[j], samplesm1[j]);
+	    return;
+	}
+	/* Now we know 0 < ipart < size - 2, size > 3. */
+	fn_interpolate_cubic(pfn, fparts, iparts, factors,
+			     samples2, offset + delta * 2, m);
+	for (j = pfn->params.n - 1; j >= 0; --j)
+	    samples[j] =
+		interpolate_cubic(fpart + 1, samplesm1[j], samples[j],
+				  samples1[j], samples2[j]);
+    }
+}
+
 /* Calculate a result by multilinear interpolation. */
 private void
 fn_interpolate_linear(const gs_function_Sd_t *pfn, const float *fparts,
@@ -204,6 +328,7 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
     ulong offset = 0;
     int i;
     float encoded[max_Sd_m];
+    int iparts[max_Sd_m];	/* only needed for cubic interpolation */
     ulong factors[max_Sd_m];
     float samples[max_Sd_n];
 
@@ -244,12 +369,16 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 	    int ipart = (int)encoded[i];
 
 	    offset += (factors[i] = factor) * ipart;
+	    iparts[i] = ipart;	/* only needed for cubic interpolation */
 	    encoded[i] -= ipart;
 	}
     }
-    /****** LINEAR INTERPOLATION ONLY ******/
-    fn_interpolate_linear(pfn, encoded, factors, samples, offset,
-			  pfn->params.m);
+    if (pfn->params.Order == 3)
+	fn_interpolate_cubic(pfn, encoded, iparts, factors, samples,
+			     offset, pfn->params.m);
+    else
+	fn_interpolate_linear(pfn, encoded, factors, samples, offset,
+			      pfn->params.m);
 
     /* Encode the output values. */
 
