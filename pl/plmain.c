@@ -795,10 +795,16 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		const char *value;
 		int vi;
 		float vf;
+		bool bval = true;
+		char buffer[128];
+
 		if ( eqp || (eqp = strchr(arg, '#')) )
 		    value = eqp + 1;
-		else
-		    value = "true";
+		else {                   
+		    /* -dDefaultBooleanIs_TRUE */
+		    code = param_write_bool((gs_param_list *)params, arg_heap_copy(arg), &bval);
+		    continue;
+		}
                 /* search for an int (no decimal), if fail try a float */
                 if ( ( !strchr(value, '.' ) ) &&
                      ( sscanf(value, "%d", &vi) == 1 ) ) {
@@ -808,31 +814,29 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                         pmi->last_page = vi;
                     else {
                         /* create a null terminated string */
-                        char buffer[128];
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
                         code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &vi);
                     }
                 } else if ( sscanf(value, "%f", &vf) == 1 ) {
                     /* create a null terminated string.  NB duplicated code. */
-                    char buffer[128];
                     strncpy(buffer, arg, eqp - arg);
                     buffer[eqp - arg] = '\0';
                     code = param_write_float((gs_param_list *)params, arg_heap_copy(buffer), &vf);
                 } else if ( !strcmp(value, "true") ) {
-		    bool bval = true;
-		    char buffer[128];
+		    /* bval = true; */
 		    strncpy(buffer, arg, eqp - arg);
 		    buffer[eqp - arg] = '\0';
 		    code = param_write_bool((gs_param_list *)params, arg_heap_copy(buffer), &bval);
                 } else if ( !strcmp(value, "false") ) {
-                    bool bval = false;
-                    char buffer[128];
+                    bval = false;
                     strncpy(buffer, arg, eqp - arg);
                     buffer[eqp - arg] = '\0';
                     code = param_write_bool((gs_param_list *)params, arg_heap_copy(buffer), &bval);
                 } else {
-                    dprintf(pmi->memory, "Usage for -d is -d<option>=<integer>\n");
+                    dprintf(pmi->memory, 
+			    "Usage for -d is -d<option>=[<integer>|<float>|true|false]\n");
+
 		    continue;
 		}
 	    }
