@@ -385,7 +385,6 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     ref->result = NULL;
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
       "found reference bitmap in segment %d", ref->number);
-    jbig2_image_write_pbm_file(params.reference, "ref.pbm");
   } else {
     /* the reference is just (a subset of) the page buffer */
     params.reference = jbig2_image_clone(ctx, 
