@@ -1572,7 +1572,7 @@ $(PSD)pdffonts.dev : $(INT_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(PSD)pdffonts -ps gs_mex_e gs_mro_e gs_pdf_e gs_wan_e
 
 $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE)\
- $(dpsnext_) $(PSD)fzlib.dev $(PSOBJ)zfunc4.$(OBJ)
+ $(PSD)fzlib.dev $(PSOBJ)zfunc4.$(OBJ)
 	$(SETMOD) $(PSD)pdfread -include $(PSD)fzlib
 	$(ADDMOD) $(PSD)pdfread -obj $(PSOBJ)zfunc4.$(OBJ)
 	$(ADDMOD) $(PSD)pdfread -oper zfunc4
