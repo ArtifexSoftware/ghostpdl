@@ -12,6 +12,9 @@ typedef int bool;
 #define FALSE 0
 #define TRUE 1
 
+#define min(x,y) ((x)>(y)?(y):(x))
+#define max(x,y) ((x)>(y)?(x):(y))
+
 typedef struct _Image Image;
 
 struct _Image {
