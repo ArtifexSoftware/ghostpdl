@@ -1341,6 +1341,7 @@ upd_get_params(gx_device *pdev, gs_param_list *plist)
 
 /** Export the version */
    if(upd_version) { /* Version-Export enabled */
+      const byte *rcsid = "1.0";
       udev->upd_version.data       = (const byte *) rcsid;
       udev->upd_version.size       = strlen(rcsid);
       udev->upd_version.persistent = true;
