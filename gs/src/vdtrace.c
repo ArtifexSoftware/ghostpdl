@@ -50,7 +50,7 @@ private inline double bezier_point(double p0, double p1, double p2, double p3, d
 
 private void vd_flatten(double p0x, double p0y, double p1x, double p1y, double p2x, double p2y, double p3x, double p3y)
 {   
-#if DEBUG
+#ifdef DEBUG
     double flat = 0.5;
     double d2x0 = (p0x - 2 * p1x + p2x), d2y0 = (p0y - 2 * p1y + p2y);
     double d2x1 = (p1x - 2 * p2x + p3x), d2y1 = (p1y - 2 * p2y + p3y);
