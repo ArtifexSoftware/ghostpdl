@@ -146,7 +146,12 @@ zSFD(i_ctx_t *i_ctx_p)
 	int code;
 
 	check_dict_read(*op);
-	if ((code = dict_int_param(op, "EODCount", 0, max_int, -1, &count)) < 0)
+	/*
+	 * The PLRM-3rd says that EODCount is a required parameter.  However
+	 * Adobe accepts files without this value and apparently defaults to
+	 * zero.  Thus we are doing the same.
+	 */
+	if ((code = dict_int_param(op, "EODCount", 0, max_int, 0, &count)) < 0)
 	    return code;
 	if (dict_find_string(op, "EODString", &sop) <= 0)
 	    return_error(e_rangecheck);
