@@ -165,6 +165,8 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
 	depth = (dev->color_info.num_components +
 		 (options & GB_ALPHA_NONE ? 0 : 1)) * std_depth;
     }
+    if (w == 0)
+	return_error(e_rangecheck);
     raster = (w * depth + 7) >> 3;
     check_write_type(*op, t_string);
     num_rows = r_size(op) / raster;
