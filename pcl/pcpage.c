@@ -358,9 +358,10 @@ new_page_size(
 
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
-    if (!reset_initial)
+    if (!reset_initial) {
         hpgl_do_reset(pcs, pcl_reset_page_params);
-    gs_erasepage(pcs->pgs);
+	gs_erasepage(pcs->pgs);
+    }
 }
 
 /*
