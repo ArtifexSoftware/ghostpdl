@@ -622,7 +622,8 @@ psdf_1=$(GLOBJ)gdevpsdi.$(OBJ) $(GLOBJ)gdevpsdp.$(OBJ)
 psdf_2=$(GLOBJ)gdevpsds.$(OBJ) $(GLOBJ)gdevpsdu.$(OBJ)
 psdf_3=$(GLOBJ)scfparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ) $(GLOBJ)sdeparam.$(OBJ)
 psdf_4=$(GLOBJ)spprint.$(OBJ) $(GLOBJ)spsdf.$(OBJ) $(GLOBJ)sstring.$(OBJ)
-psdf_=$(psdf_1) $(psdf_2) $(psdf_3) $(psdf_4)
+psdf_5=$(GLOBJ)gsparamx.$(OBJ)
+psdf_=$(psdf_1) $(psdf_2) $(psdf_3) $(psdf_4) $(psdf_5)
 psdf_inc1=$(GLD)vector.dev $(GLD)pngp.dev $(GLD)seexec.dev
 psdf_inc2=$(GLD)sdcte.dev $(GLD)slzwe.dev $(GLD)szlibe.dev
 psdf_inc=$(psdf_inc1) $(psdf_inc2)
@@ -631,6 +632,7 @@ $(DD)psdf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psdf_) $(psdf_inc)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_2)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_3)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_4)
+	$(ADDMOD) $(DD)psdf -obj $(psdf_5)
 	$(ADDMOD) $(DD)psdf -include $(psdf_inc1)
 	$(ADDMOD) $(DD)psdf -include $(psdf_inc2)
 
@@ -692,7 +694,7 @@ pdfwrite6_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ)
 pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ)
 pdfwrite8_=$(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfv.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
 pdfwrite9_=
-pdfwrite10_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
+pdfwrite10_=$(GLOBJ)gsflip.$(OBJ)
 pdfwrite11_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
 pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
