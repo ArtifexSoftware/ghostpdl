@@ -389,13 +389,12 @@ cgm_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     cgm_color fill_color;
     cgm_point points[2];
     cgm_result result;
-
+    
     fit_fill(dev, x, y, w, h);
     if (!cdev->in_picture) {	/* Check for erasepage. */
-	if (color == (*dev_proc(dev, map_rgb_color)) (dev,
-				     gx_max_color_value, gx_max_color_value,
-						      gx_max_color_value)
-	    )
+	gx_color_value blank[3] = {gx_max_color_value, gx_max_color_value, 
+				   gx_max_color_value};
+	if (color == (*dev_proc(dev, encode_color)) (dev, blank))
 	    return 0;
 	cgm_begin_picture(cdev);
     }
