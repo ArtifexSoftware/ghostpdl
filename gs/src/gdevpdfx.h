@@ -455,7 +455,6 @@ struct gx_device_pdf_s {
 #define st_device_pdf_max_ptrs\
   (st_device_psdf_max_ptrs + gx_device_pdf_num_ptrs +\
    gx_device_pdf_num_strings +\
-   PDF_NUM_STD_FONTS * 2 /* std_fonts[].{font,pfd} */ +\
    NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS /* resources[].chains[] */ +\
    MAX_OUTLINE_DEPTH * 2 /* outline_levels[].{first,last}.action */
 
