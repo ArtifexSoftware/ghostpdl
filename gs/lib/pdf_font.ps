@@ -1113,11 +1113,11 @@ readonly def
 } bdef
 
 /buildCIDType0 {	% <CIDFontType0-font-resource> buildCIDType0 <font>
-  dup /BaseFont get exch 1 index findCIDFont
+  dup /BaseFont get findCIDFont exch pop
 } bdef
 
 /buildCIDType2 {	% <CIDFontType2-font-resource> buildCIDType2 <font>
-  dup /BaseFont get exch 1 index findCIDFont
+  dup /BaseFont get findCIDFont exch pop
 } bdef
 
 /processCIDToGIDMap { % <fontres> <cidfont> processCIDToGIDMap <fontres> <cidfont>
