@@ -755,7 +755,8 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 	    gs_glyph_data_t gdata0, gdata1;
 	    
 	    switch(cfont->FontType) {
-		case ft_encrypted: {
+		case ft_encrypted:
+		case ft_encrypted2: {
 		    gs_font_type1 *font0 = (gs_font_type1 *)cfont;
 		    gs_font_type1 *font1 = (gs_font_type1 *)ofont;
 
