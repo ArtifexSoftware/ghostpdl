@@ -27,6 +27,14 @@
 #include "gdevprn.h"
 #include "gdevpcl.h"
 
+typedef struct gx_device_clj_s gx_device_clj;
+struct gx_device_clj_s {
+	gx_device_common;
+	gx_prn_device_common;
+	int rotated;		/* 0 = non-rotated, 1 = rotated */
+};
+
+#define pclj ((gx_device_clj *)pdev)
 
 /*
  * The HP Color LaserJet 5/5M provides a rather unexpected speed/performance
@@ -58,7 +66,6 @@
 /* X_DPI and Y_DPI must be the same */
 #define X_DPI 300
 #define Y_DPI 300
-
 
 /*
  * Array of paper sizes, and the corresponding offsets.
@@ -168,30 +175,30 @@ get_paper_size(
  * As will all HP laser printers, the printable region marin is 12 pts. from
  * the edge of the physical page.
  */
-  private void
-clj_get_initial_matrix(
-    gx_device *             pdev,
-    gs_matrix *             pmat
-)
+private void
+clj_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
 {
-    bool                    rotate;
-    const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, &rotate);
-    floatp                  fs_res = pdev->HWResolution[0] / 72.0;
-    floatp                  ss_res = pdev->HWResolution[1] / 72.0;
+    floatp      	fs_res = pdev->HWResolution[0] / 72.0;
+    floatp      	ss_res = pdev->HWResolution[1] / 72.0;
+    clj_paper_size	*psize;
 
+    psize = get_paper_size(pdev->MediaSize, NULL);
     /* if the paper size is not recognized, not much can be done */
+    /* This shouldn't be possible since clj_put_params rejects   */
+    /* unknown media sizes.					 */
     if (psize == 0) {
-        pmat->xx = fs_res;
-        pmat->xy = 0.0;
-        pmat->yx = 0.0;
-        pmat->yy = -ss_res;
-        pmat->tx = 0.0;
-        pmat->ty = pdev->MediaSize[1] * ss_res;
-        return;
+	pmat->xx = fs_res;
+	pmat->xy = 0.0;
+	pmat->yx = 0.0;
+	pmat->yy = -ss_res;
+	pmat->tx = 0.0;
+	pmat->ty = pdev->MediaSize[1] * ss_res;
+	return;
     }
-
+  
+    /* The 'rotated' flag is set in 'put_params' */
     /* all the pages are rotated, but we include code for both cases */
-    if (rotate) {
+    if (pclj->rotated) {
         pmat->xx = 0.0;
         pmat->xy = ss_res;
         pmat->yx = fs_res;
@@ -209,19 +216,52 @@ clj_get_initial_matrix(
 }
 
 /*
- * Special put-params routine, to intercept changes in the MediaSize, and to
+ * Special get_params routine, to fake MediaSize, width, and height if
+ * we were in a 'rotated' state.
+ */
+private int
+clj_get_params( gx_device *pdev, gs_param_list *plist )
+{
+    int code;
+
+    /* First un-rotate the MediaSize, etc. if we were in a rotated mode		*/
+    if (pclj->rotated) {
+        float ftmp;
+	int   itmp;
+
+	ftmp = pdev->MediaSize[0];
+	pdev->MediaSize[0] = pdev->MediaSize[1];
+	pdev->MediaSize[1] = ftmp;
+	itmp = pdev->width;
+	pdev->width = pdev->height;
+	pdev->height = itmp;
+    }
+
+    /* process the parameter list */
+    code = gdev_prn_get_params(pdev, plist);
+
+    /* Now re-rotate the page size if needed */
+    if (pclj->rotated) {
+        float ftmp;
+	int   itmp;
+
+	ftmp = pdev->MediaSize[0];
+	pdev->MediaSize[0] = pdev->MediaSize[1];
+	pdev->MediaSize[1] = ftmp;
+	itmp = pdev->width;
+	pdev->width = pdev->height;
+	pdev->height = itmp;
+    }
+
+    return code;
+}
+
+/*
+ * Special put_params routine, to intercept changes in the MediaSize, and to
  * make certain the desired MediaSize and HWResolution are supported.
  *
- * Though contrary to the documentation provided in gdevcli.h, this routine
- * uses the same method of operation as gdev_prn_put_params. Specifically,
- * if an error is detected at this level, that error is returned prior to
- * invoking the next lower level routine (in this case gdev_prn_put_params;
- * the latter procedure behaves the same way with respect to
- * gx_default_put_params). This approach is much simpler than having to change
- * the device parameters and subsequently undo the change (because several
- * parameters depend on resolution), and it is not completely clear when the
- * latter approach would be necessary (all errors other than invalid resolution
- * and/or MediaSize are ignored at this level).
+ * This function will rotate MediaSize if it is needed by the device in
+ * order to print this size page.
  */
   private int
 clj_put_params(
@@ -229,45 +269,64 @@ clj_put_params(
     gs_param_list *         plist
 )
 {
-    gs_param_float_array    farray;
-    int                      code = 0;
+    gs_param_float_array    fres;
+    gs_param_float_array    fsize;
+    gs_param_int_array      hwsize;
+    float		    mediasize[2];
+    int                     code = 0;
+    int                     pagesize_flag = 0;
+    bool                    rotate = 0;
+    const clj_paper_size    *psize;
 
-    if ( ((param_read_float_array(plist, "HWResolution", &farray) == 0) &&
-          !is_supported_resolution(farray.data)                           ) ||
-         ((param_read_float_array(plist, "PageSize", &farray) == 0) &&
-          (get_paper_size(farray.data, NULL) == 0)                    )     ||
-         ((param_read_float_array(plist, ".MediaSize", &farray) == 0) &&
-          (get_paper_size(farray.data, NULL) == 0)                      )     )
+    if ( (param_read_float_array(plist, "HWResolution", &fres) == 0) &&
+          !is_supported_resolution(fres.data) ) 
         return_error(gs_error_rangecheck);
-          
-    /* Note that this first call to 'gdev_prn_put_params' is used to set up	*/
-    /* 'width' and 'height', but we may change them afterwards -- see below	*/
-    if ((code = gdev_prn_put_params(pdev, plist)) >= 0) {
-        bool                    rotate;
-        const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, &rotate);
 
-        if (rotate) {
-	    int			pi[2];
-	    gs_c_param_list	alist;
-	    gs_param_int_array	pi_array;
-
-	    /* To swap width and height, we must synthesize a new parameter	*/
-	    /* list for 'gdev_prn_put_params' with the rotated 'width' and	*/
-	    /* 'height' so that the buffer geometry will be correct		*/
-	    pi_array.data = pi;
-	    pi_array.size = 2;
-	    pi_array.persistent = false;
-
-	    pi[0] = pdev->height;
-	    pi[1] = pdev->width;
-	    gs_c_param_list_write(&alist, (pdev->memory) ? pdev->memory : 
-	    				   &gs_memory_default);
-	    code = param_write_int_array((gs_param_list *)&alist, "HWSize", &pi_array);
-	    gs_c_param_list_read(&alist);
-	    code = gdev_prn_put_params(pdev, &alist);
-	    gs_c_param_list_release(&alist);
-        }
+    if ( (param_read_float_array(plist, "PageSize", &fsize) == 0) ||
+         (param_read_float_array(plist, ".MediaSize", &fsize) == 0) ) {
+	mediasize[0] = fsize.data[0];
+	mediasize[1] = fsize.data[1];
+	pagesize_flag = 1;
     }
+
+    if (param_read_int_array(plist, "HWSize", &hwsize) == 0) {
+        mediasize[0] = ((float)hwsize.data[0]) / fres.data[0];
+        mediasize[1] = ((float)hwsize.data[1]) / fres.data[1];
+	pagesize_flag = 1;
+    }
+
+    if (pagesize_flag) {
+	if (get_paper_size(mediasize, &rotate) == 0)
+	    return_error(gs_error_rangecheck);
+	 if (rotate) {
+	    /* We need to rotate the requested page size, so synthesize a new	*/
+	    /* parameter list in front of the requestor's list to force the	*/
+	    /* rotated page size.						*/
+	    gs_param_float_array	pf_array;
+	    gs_c_param_list		alist;
+	    float			ftmp = mediasize[0];
+
+	    mediasize[0] = mediasize[1];
+	    mediasize[1] = ftmp;
+	    pf_array.data = mediasize;
+	    pf_array.size = 2;
+	    pf_array.persistent = false;
+
+	    gs_c_param_list_write(&alist, (pdev->memory) ? pdev->memory : 
+					   &gs_memory_default);
+	    code = param_write_float_array((gs_param_list *)&alist, ".MediaSize", &pf_array);
+	    gs_c_param_list_read(&alist);
+
+	    /* stick this synthesized parameter on the front of the existing list */
+	    gs_c_param_list_set_target(&alist, plist);
+	    if ((code = gdev_prn_put_params(pdev, (gs_param_list *)&alist)) >= 0)
+		pclj->rotated = 1;
+	    gs_c_param_list_release(&alist);
+	}
+    }
+
+    else 
+	code = gdev_prn_put_params(pdev, plist);
 
     return code;
 }
@@ -413,7 +472,7 @@ clj_print_page(
     /* page size into pdev->width & height has been done. We just use rotate to	*/
     /* access the correct offsets. Color laserjet is always long edge feed, we	*/
     /* just include the non-rotated case for completeness.			*/
-    if (rotate) {
+    if (pclj->rotated) {
     	imageable_width = pdev->width - (2 * psize->offsets.x) * fs_res;
     	imageable_height = pdev->height - (2 * psize->offsets.y) * ss_res;
     }
@@ -432,7 +491,7 @@ clj_print_page(
 #endif
              "\033*r0f%ds%dt1A\033*b2M",
              psize->tag,
-             psize->orient,
+             pclj->rotated,
              (int)(pdev->HWResolution[0]),
              imageable_width,
              imageable_height
@@ -488,7 +547,7 @@ private gx_device_procs clj_procs = {
     NULL,	                    /* copy_color */
     NULL,	                    /* obsolete draw_line */
     NULL,	                    /* get_bits */
-    gdev_prn_get_params,            /* get_params */
+    clj_get_params, 	            /* get_params */
     clj_put_params,                 /* put_params */
     NULL,	                    /* map_cmyk_color */
     NULL,	                    /* get_xfont_procs */
@@ -521,15 +580,21 @@ private gx_device_procs clj_procs = {
 };
 
 /* the CLJ device */
-gx_device_printer   gs_cljet5_device = prn_device_margins(
+gx_device_clj gs_cljet5_device = {
+prn_device_body(
+    gx_device_clj,
     clj_procs,              /* procedures */
     "cljet5",               /* device name */
-    85,                    /* width - will be overridden subsequently */
-    110,                     /* height - will be overridden subsequently */
+    110,                    /* width - will be overridden subsequently */
+    85,                     /* height - will be overridden subsequently */
     X_DPI, Y_DPI,           /* resolutions - current must be the same */
-    0.0, 0.0,               /* no offset; handled by initial matrix */
     0.167, 0.167,           /* margins (left, bottom, right, top */
     0.167, 0.167,
-    3,                      /* color depth - 3 colors, 1 bit per pixel */
+    3,                      /* num_components - 3 colors, 1 bit per pixel */
+    8,			    /* depth - pack into bytes */
+    1, 1, 		    /* max_gray=max_component=1 */
+    2, 2,		    /* dithered_grays=dithered_components=2 */ 
     clj_print_page          /* routine to output page */
-);
+),
+    1			    /* rotated - will be overridden subsequently */
+};
