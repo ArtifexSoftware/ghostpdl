@@ -24,10 +24,11 @@
 #define NEW_SHADINGS 1 /* Old code = 0, new code = 1. */
 
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
-/* The code QUADRANGLES 1 appears a dead branch.
-   We keep it because it stores a valuable code for constant_color_quadrangle,
+/* The code QUADRANGLES 1 appears unuseful without having a low level function
+   for filling a trapezoid with a linear color. Maybe we'll define sunch function later,
+   therefore we keep this branch. It stores a valuable code for constant_color_quadrangle,
    which decomposes a random quadrangle into 3 or 4 trapezoids.
-   We don't use it because the color approximation looks
+   Without the linear color function, the color approximation looks
    worse than with triangles, and works some slower.
  */
 #define DIVIDE_BY_PARALLELS 0 /* 1 - divide a triangle by parallels, 0 - in 4 triangles.  */
@@ -37,13 +38,22 @@
    it stops the decomposition exactly when riches the smoothness.
    This is faster and is conforming to PLRM, but gives a worse view due to
    the color contiguity is missed. May be preferrable for contone devices.
+   We'll use it if we decide to define a new low level device virtual function
+   for filling a trapezoid with a linear color.
+
+   This mode doesn't work with LASY_WEDGES because neighbour areas
+   may get independent parallels, but make_wedge_median
+   assumes a dichotomy. Probably we should remove lazy wedges from 
+   divide_triangle, divide_triangle_by_parallels, divide_quadrangle_by_parallels.
  */
 #define POLYGONAL_WEDGES 0 /* 1 = polygons allowed, 0 = triangles only. */
-/* The code POLYGONAL_WEDGES 1 appears slightly faster, but it uses
+/* With POLYGONAL_WEDGES 0 an n-vertex wedge is represented as
+   n * log2(n) triangles, and the time consumption for it is O(n * log2(n)).
+   With POLYGONAL_WEDGES 1 the time consumption is O(n), but it calls
    a heavy function intersection_of_small_bars, which includes
-   a special effort against numeric errors. From experiments 
-   we decided that the small speeding up doesn't worth the trouble
-   with the numeric error effort.
+   a special effort against numeric errors. We're not sure
+   that the small speeding up worth the trouble with the numeric error effort.
+   Note that intersection_of_small_bars is used with QUADRANGLES 1.
  */
 #define INTERPATCH_PADDING (fixed_1 / 8) /* Emulate a trapping for poorly designed documents. */
 /* When INTERPATCH_PADDING > 0, it generates paddings between patches.
@@ -51,16 +61,24 @@
    The value specifies the width of paddings.
  */
 #define COLOR_CONTIGUITY 1 /* A smothness divisor for triangulation. */
- /* This is a coefficient, which DIVIDE_BY_PARALLELS 1 uses to rich
-    a better color contiguity. The value 1 corresponds to PLRM,
-    bigger values mean more contiguity. The spead decreases as
-    a square of COLOR_CONTIGUITY.
-  */
+/* This is a coefficient, which DIVIDE_BY_PARALLELS 1 uses to rich
+   a better color contiguity. The value 1 corresponds to PLRM,
+   bigger values mean more contiguity. The spead decreases as
+   a square of COLOR_CONTIGUITY.
+ */
 #define LAZY_WEDGES 1 /* 0 = fill immediately, 1 = fill lazy. */
- /* With the lazy mode the number of wadges dramatically reduce, 
-    causing a significant speedup.
-    The LAZY_WEDGES 0 mode was not debugged yet.
-  */
+/* This mode delays creating wedges for a boundary until
+   both neoghbour areas are painted. At that moment we can know
+   all subdivision points for both rights and left areas,
+   and skip wedges for common points. Therefore the number of wadges 
+   dramatically reduce, causing a significant speedup.
+   The LAZY_WEDGES 0 mode was not systematically tested.
+
+   This mode doesn't work with DIVIDE_BY_PARALLELS because neighbour areas
+   may get independent parallels, but make_wedge_median
+   assumes a dichotomy. Probably we should remove lazy wedges from 
+   divide_triangle, divide_triangle_by_parallels, divide_quadrangle_by_parallels.
+ */
 #define VD_TRACE_DOWN 0 /* Developer's needs, not important for production. */
 #define NOFILL_TEST 0 /* Developer's needs, must be off for production. */
 #define SKIP_TEST 0 /* Developer's needs, must be off for production. */
@@ -117,6 +135,7 @@ typedef struct patch_fill_state_s {
 #   if POLYGONAL_WEDGES
         gs_fixed_point *wedge_buf;
 #   endif
+    fixed max_small_coord; /* Length restriction for intersection_of_small_bars. */
     wedge_vertex_list_elem_t *wedge_vertex_list_elem_buffer;
     wedge_vertex_list_elem_t *free_wedge_vertex;
     int wedge_vertex_list_elem_count;
