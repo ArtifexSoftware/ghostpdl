@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -54,6 +54,7 @@ struct gs_screen_enum_s {
     gs_halftone halftone;	/* supplied by client */
     gx_ht_order order;
     gs_matrix mat;		/* for mapping device x,y to rotated cell */
+    gs_matrix mat_inv;		/* the inversion of mat */
     int x, y;
     int strip, shift;
     gs_state *pgs;

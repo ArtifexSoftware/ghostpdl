@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -498,6 +498,7 @@ gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
 	penum->mat.yy = Q * (R1 * M);
 	penum->mat.tx = -1.0;
 	penum->mat.ty = -1.0;
+	gs_matrix_invert(&penum->mat, &penum->mat_inv);
     }
     if_debug7('h', "[h]Screen: (%dx%d)/%d [%f %f %f %f]\n",
 	      porder->width, porder->height, porder->params.R,
@@ -512,6 +513,8 @@ gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
 {
     gs_point pt;
     int code;
+    double sx, sy; /* spot center in spot coords (integers) */
+    gs_point spot_center; /* device coords */
 
     if (penum->y >= penum->strip) {	/* all done */
 	gx_ht_construct_spot_order(&penum->order);
@@ -522,6 +525,25 @@ gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
     /* for which the spot function returns the same value. */
     if ((code = gs_point_transform(penum->x + 0.501, penum->y + 0.498, &penum->mat, &pt)) < 0)
 	return code;
+
+    /* find the spot center in device coords : */
+    sx = ceil( pt.x / 2 ) * 2;
+    sy = ceil( pt.y / 2 ) * 2;
+    if ((code = gs_point_transform(sx, sy, &penum->mat_inv, &spot_center)) < 0)
+    	return code;
+
+    /* shift the spot center to nearest pixel center : */
+    spot_center.x = floor(spot_center.x) + 0.5;
+    spot_center.y = floor(spot_center.y) + 0.5;
+
+    /* compute the spot function arguments for the shifted spot : */
+    if ((code = gs_distance_transform(penum->x - spot_center.x + 0.501, 
+                                      penum->y - spot_center.y + 0.498,
+				      &penum->mat, &pt)) < 0)
+	return code;
+    pt.x += 1;
+    pt.y += 1;
+
     if (pt.x < -1.0)
 	pt.x += ((int)(-ceil(pt.x)) + 1) & ~1;
     else if (pt.x >= 1.0)
