@@ -231,6 +231,18 @@ cie_is_lab(const gs_cie_abc *pcie)
 #undef CC_INDEX_1
 #undef CC_KEY
 
+/* Test whether one or more CIE-based ranges are [0..1]. */
+private bool
+cie_ranges_are_0_1(const gs_range *prange, int n)
+{
+    int i;
+
+    for (i = 0; i < n; ++i)
+	if (prange[i].rmin != 0 || prange[i].rmax != 1)
+	    return false;
+    return true;
+}
+
 /* ------ Utilities ------ */
 
 /* Add a 3-element vector to a Cos array or dictionary. */
@@ -534,6 +546,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     case gs_color_space_index_CIEA: {
 	/* Check that we can represent this as a CalGray space. */
 	const gs_cie_a *pcie = pcs->params.a;
+	bool unit = cie_ranges_are_0_1(&pcie->RangeA, 1);
 	gs_vector3 expts;
 
 	pciec = (const gs_cie_common *)pcie;
@@ -541,12 +554,14 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	      pcie->MatrixA.w == 1 &&
 	      pcie->common.MatrixLMN.is_identity))
 	    return_error(gs_error_rangecheck);
-	if (CIE_CACHE_IS_IDENTITY(&pcie->caches.DecodeA) &&
+	if (unit &&
+	    CIE_CACHE_IS_IDENTITY(&pcie->caches.DecodeA) &&
 	    CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts) &&
 	    expts.v == expts.u && expts.w == expts.u
 	    ) {
 	    DO_NOTHING;
-	} else if (CIE_CACHE3_IS_IDENTITY(pcie->common.caches.DecodeLMN) &&
+	} else if (unit &&
+		   CIE_CACHE3_IS_IDENTITY(pcie->common.caches.DecodeLMN) &&
 		   cie_vector_cache_is_exponential(&pcie->caches.DecodeA, &expts.u)
 		   ) {
 	    DO_NOTHING;
@@ -577,22 +592,25 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     case gs_color_space_index_CIEABC: {
 	/* Check that we can represent this as a CalRGB space. */
 	const gs_cie_abc *pcie = pcs->params.abc;
+	bool unit = cie_ranges_are_0_1(pcie->RangeABC.ranges, 3);
 	gs_vector3 expts;
 	const gs_matrix3 *pmat = NULL;
 	cie_cache_one_step_t one_step =
 	    cie_cached_abc_is_one_step(pcie, &pmat);
 
 	pciec = (const gs_cie_common *)pcie;
-	switch (one_step) {
-	case ONE_STEP_ABC:
-	    if (CIE_VECTOR3_CACHE_IS_EXPONENTIAL(pcie->caches.DecodeABC.caches, expts))
-		goto calrgb;
-	    break;
-	case ONE_STEP_LMN:
-	    if (CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts))
-		goto calrgb;
-	default:
-	    break;
+	if (unit) {
+	    switch (one_step) {
+	    case ONE_STEP_ABC:
+		if (CIE_VECTOR3_CACHE_IS_EXPONENTIAL(pcie->caches.DecodeABC.caches, expts))
+		    goto calrgb;
+		break;
+	    case ONE_STEP_LMN:
+		if (CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts))
+		    goto calrgb;
+	    default:
+		break;
+	    }
 	}
 	if (cie_is_lab(pcie)) {
 	    /* Represent this as a Lab space. */
