@@ -818,6 +818,12 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     color = dev_proc(dev, encode_color)(dev, cv);
     if (color != gx_no_color_index) 
 	color_set_pure(pdc, color);
+    else {
+	if (gx_render_device_DeviceN(cm_comps, pdc, dev,
+		    pis->dev_ht, &pis->screen_phase[select], false) == 1)
+	    gx_color_load_select(pdc, pis, dev, select);
+	return;
+    }
 }
 
 private void
