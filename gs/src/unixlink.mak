@@ -28,31 +28,23 @@ UNIXLINK_MAK=$(GLSRC)unixlink.mak
 
 # ----------------------------- Main program ------------------------------ #
 
-### Library files and archive
-
-LIB_ARCHIVE_ALL=$(LIB_ALL) $(DEVS_ALL)\
- $(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
-
-# Build an archive for the library only.
-# This is not used in a standard build.
-GSLIB_A=$(GS)lib.a
-$(GSLIB_A): $(LIB_ARCHIVE_ALL)
-	rm -f $(GSLIB_A)
-	$(AR) $(ARFLAGS) $(GSLIB_A) $(LIB_ARCHIVE_ALL)
-	$(RANLIB) $(GSLIB_A)
-
 ### Interpreter main program
 
-INT_ARCHIVE_ALL=$(PSOBJ)imainarg.$(OBJ) $(PSOBJ)imain.$(OBJ) $(INT_ALL) $(DEVS_ALL)\
+INT_ARCHIVE_ALL=$(PSOBJ)imainarg.$(OBJ) $(PSOBJ)imain.$(OBJ) \
  $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
-XE_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ARCHIVE_ALL)
+XE_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 
 # Build a library archive for the entire interpreter.
 # This is not used in a standard build.
+liar_tr=$(GLOBJ)liar.tr
 GS_A=$(GS).a
-$(GS_A): $(INT_ARCHIVE_ALL)
+$(GS_A): $(obj_tr) $(ECHOGS_XE) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 	rm -f $(GS_A)
-	$(AR) $(ARFLAGS) $(GS_A) $(INT_ARCHIVE_ALL)
+	$(ECHOGS_XE) -w $(liar_tr) -n - $(AR) $(ARFLAGS) $(GS_A)
+	$(ECHOGS_XE) -a $(liar_tr) -n -s $(INT_ARCHIVE_ALL) -s
+	cat $(obj_tr) >>$(liar_tr)
+	$(ECHOGS_XE) -a $(liar_tr) -s -
+	$(SH) <$(liar_tr)
 	$(RANLIB) $(GS_A)
 
 # Here is the final link step.  The stuff with LD_RUN_PATH is for SVR4

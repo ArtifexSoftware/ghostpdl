@@ -415,3 +415,7 @@ $(gconfig_h) $(ld_tr) $(GLGENDIR)$(D)lib.tr : \
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISION -s $(GS_REVISION)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISIONDATE -s $(GS_REVISIONDATE)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) $(GCONFIG_EXTRAS)
+
+obj_tr=$(GLGENDIR)$(D)obj.tr
+$(obj_tr) : $(ld_tr)
+	$(EXP)$(GENCONF_XE) $(devs_tr) $(CONFILES) -o $(obj_tr)

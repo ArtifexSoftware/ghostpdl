@@ -70,6 +70,13 @@ ICCSRCDIR=icclib
 IJSSRCDIR=ijs
 IJSEXECTYPE=unix
 
+# Define how to build the library archives.  (These are not used in any
+# standard configuration.)
+
+AR=ar
+ARFLAGS=qc
+RANLIB=ranlib
+
 CC=gcc
 CCLD=$(CC)
 
@@ -93,8 +100,8 @@ FPU_TYPE=1
 SYNC=posync
 
 FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\
- $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev\
- $(GLD)devcmap.dev
+ $(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)htxlib.dev \
+ $(GLD)roplib.dev $(GLD)devcmap.dev
 COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
@@ -159,5 +166,17 @@ $(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
 	cat $(ld_tr) >>$(ldt_tr)
 	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; $(SH) <$(ldt_tr)
+
+
+GSLIB_A=libgsgraph.a
+lar_tr=$(GLOBJ)lar.tr
+$(GSLIB_A):  $(obj_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
+	rm -f $(GSLIB_A)
+	$(ECHOGS_XE) -w $(lar_tr) -n - $(AR) $(ARFLAGS) $(GSLIB_A)
+	$(ECHOGS_XE) -a $(lar_tr) -n -s $(LIB_ONLY) -s
+	cat $(obj_tr) >>$(lar_tr)
+	$(ECHOGS_XE) -a $(lar_tr) -s -
+	$(SH) <$(lar_tr)
+	$(RANLIB) $(GSLIB_A)
 
 include $(GLSRCDIR)/unix-end.mak
