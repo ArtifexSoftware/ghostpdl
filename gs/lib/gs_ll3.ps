@@ -237,19 +237,19 @@ systemdict /.reuseparamdict mark
   /CloseSource true
 .dicttomark readonly put
 /.buildshading {	% <shadingdict> .buildshading <shading>
-	% The current implementation of shadings can't deal with
-	% procedure-based DataSource.
+        % Unfortunately, we always need to make the DataSource reusable,
+        % because if clipping is involved, even shfill may need to read
+        % the source data multiple times.  If it weren't for this,
+        % we would only need to create a reusable stream if the ultimate
+        % source of the data is a procedure (since the library can't
+        % suspend shading to do a procedure callout).
   dup /DataSource .knownget {
     dup type /filetype eq {
-      dup .isprocfilter {
-	//.reuseparamdict /ReusableStreamDecode filter
-	.currentglobal 1 index gcheck .setglobal
+      //.reuseparamdict /ReusableStreamDecode filter
+      .currentglobal 1 index gcheck .setglobal
 		% Stack: shdict rsdfile saveglobal
-	2 index dup length dict copy exch .setglobal
-	dup /DataSource 4 -1 roll put exch pop
-      } {
-	pop
-      } ifelse
+      2 index dup length dict copy exch .setglobal
+      dup /DataSource 4 -1 roll put exch pop
     } {
       pop
     } ifelse
