@@ -7,7 +7,7 @@
 # This file must be preceded by pxl.mak.
 
 #DEVICE_DEVS is defined in the platform-specific file.
-DD='$(GLGENDIR)$(D)'
+DD=$(GLGENDIR)$(D)
 FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev $(DD)ttflib.dev  $(DD)cielib.dev
 
 default: $(TARGET_XE)$(XE)
@@ -19,8 +19,8 @@ clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
 	$(RMN_) $(TARGET_XE)$(XE)
 
 config-clean: pl.config-clean pxl.config-clean
-	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld$(CONFIG).tr
-	$(RMN_) $(PXLGEN)pconf$(CONFIG).h $(PXLGEN)pconfig.h
+	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld.tr
+	$(RMN_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
 	$(RM_) $(PXLSRC)pxlver.h
 
 #### Main program
@@ -48,6 +48,6 @@ $(PXLOBJ)pxmain.$(OBJ): $(PXLSRC)pxmain.c $(AK)\
  $(plmain_h) $(plparse_h) $(pjparse_h)\
  $(pxlver_h)\
  $(pxattr_h) $(pxerrors_h) $(pxparse_h) $(pxptable_h) $(pxstate_h) $(pxvalue_h)\
- $(PXLGEN)pconf$(CONFIG).h
-	$(CP_) $(PXLGEN)pconf$(CONFIG).h $(PXLGEN)pconfig.h
+ $(PXLGEN)pconf.h
+	$(CP_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
 	$(PXLCCC) $(PXLSRC)pxmain.c $(PXLO_)pxmain.$(OBJ)

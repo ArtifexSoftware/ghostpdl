@@ -14,7 +14,7 @@ GENDIR=.\obj
 
 # The sources are taken from these directories:
 !ifndef GLSRCDIR
-GLSRCDIR=..\gs
+GLSRCDIR=..\gs\src
 !endif
 !ifndef PLSRCDIR
 PLSRCDIR=..\pl
@@ -26,15 +26,15 @@ PXLSRCDIR=..\pxl
 COMMONDIR=..\common
 !endif
 !ifndef JSRCDIR
-JSRCDIR=$(GLSRCDIR)\jpeg
+JSRCDIR=..\gs\jpeg
 JVERSION=6
 !endif
 !ifndef PSRCDIR
-PSRCDIR=$(GLSRCDIR)\libpng
+PSRCDIR=..\gs\libpng
 PVERSION=96
 !endif
 !ifndef ZSRCDIR
-ZSRCDIR=$(GLSRCDIR)\zlib
+ZSRCDIR=..\gs\zlib
 !endif
 
 
@@ -77,7 +77,7 @@ TARGET_XE=$(PXLOBJDIR)\pclxl
 DEBUG=1
 !endif
 !ifndef TDEBUG
-TDEBUG=1
+TDEBUG=0
 !endif
 !ifndef NOPRIVATE
 NOPRIVATE=0
@@ -102,6 +102,7 @@ MSVC_VERSION=5
 !endif
 
 !ifndef DEVICE_DEVS
+DD=$(GLGENDIR)$(D)
 DEVICE_DEVS=$(DD)djet500.dev $(DD)ljet4.dev $(DD)pcxmono.dev $(DD)pcxgray.dev \
  $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcxcmyk.dev \
  $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev
