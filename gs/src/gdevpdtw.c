@@ -99,6 +99,60 @@ pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0)
     return ch;
 }
 
+private ushort good_encodings[] = {
+	    4, /* WinAnsiEncoding */
+	    0, /* StandardEncoding */
+	    6, /* MacExpertEncoding */
+	    2  /* SymbolEncoding */
+	}; /* Ths table must be conssitent with gs_c_known_encodings. */
+
+/* Check for unknown encode (simple fonts only). */
+private bool
+pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
+{
+    int ch, ch1, i;
+    int ne = (pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 
+		? count_of(good_encodings) : count_of(good_encodings) - 1);
+
+    if (pdfont->u.simple.Encoding == NULL)
+	return true; /* Bitmap Type 3 fonts have no pdfont->u.simple.Encoding . */
+    for (ch = 0; ch < 256; ++ch) {
+	pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
+	gs_glyph glyph = pet->glyph;
+
+	if (glyph == GS_NO_GLYPH)
+	    continue;
+	if (glyph < gs_c_min_std_encoding_glyph || glyph >= GS_MIN_CID_GLYPH) {
+	    if (pet->str.size == 0)
+		return true;
+	    glyph = gs_c_name_glyph(pet->str.data, pet->str.size);
+	    if (glyph == GS_NO_GLYPH)
+		return true;
+	}
+	for (i = 0; i < ne; i++) {
+	    gs_glyph glyph1 = gs_c_known_encode(ch, good_encodings[i]);
+
+	    if (glyph == glyph1)
+		goto next;
+	}
+	for (i = 0; i < ne; i++) {
+	    ushort ei = good_encodings[i];
+
+	    for (ch1 = 0; ch1 < 256; ++ch1) {
+		gs_glyph glyph1 = gs_c_known_encode(ch1, ei);
+
+		if (glyph == glyph1)
+		    goto next;
+	    }
+	}
+	/* fixme : the 2 loops above to be optimized with a new statically 
+	 * defined table in gscedata.c . */
+	return true;
+	next: continue;
+    }
+    return false;
+}
+
 /* Write Encoding differencrs. */
 int 
 pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id, int ch)
@@ -456,28 +510,20 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s;
 
-    if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL &&
-	    !gs_cmap_is_identity(pdfont->cmap_ToUnicode, -1)) {
-	/*
-	 * The condition above slightly differs from PDF spec
-	 * (see the chapter "ToUnicode CMaps").
-	 * For Type 1 the spec requires to check whether all glyphs are
-	 * from Latin or Symbol character set. For True Type
-	 * it wants to check for 3 standard encodings, 
-	 * which only allowed with non-symbolic fonts.
-	 * We use a different condition because (1) currently
-	 * we don't have those sets in a simple form,
-	 * (2) we write True Types as symbolic fonts,
-	 * (3) we did not check whether Acrobat Reader actually
-	 * follows the spec.
-	 */
-	pdf_resource_t *prcmap;
-	int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap, -1);
+    if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL)
+	if (((pdfont->FontType == ft_composite) && 
+		!gs_cmap_is_identity(pdfont->cmap_ToUnicode, -1)) ||
+	    ((pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 || 
+		pdfont->FontType == ft_TrueType || pdfont->FontType == ft_user_defined) && 
+		pdf_simple_font_needs_ToUnicode(pdfont))
+	   ) {
+	    pdf_resource_t *prcmap;
+	    int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap, -1);
 
-	if (code < 0)
-	    return code;
-        pdfont->res_ToUnicode = prcmap;
-    }
+	    if (code < 0)
+		return code;
+	    pdfont->res_ToUnicode = prcmap;
+	}
     pdf_open_separate(pdev, pdf_font_id(pdfont));
     s = pdev->strm;
     stream_puts(s, "<<");

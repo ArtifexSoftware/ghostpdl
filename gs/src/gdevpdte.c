@@ -133,12 +133,10 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
     pdf_font_resource_t *pdfont = 0;
     gs_font_base *cfont, *ccfont;
     int code, i;
-    bool need_ToUnicode;
-   
 
     /*
-     * This crude version of the code simply uses pdf_obtain_font_resource,
-     * and never re-encodes characters.
+     * In contradiction with pre-7.20 versions of pdfwrite,
+     * we never re-encode texts due to possible encoding conflict while font merging.
      */
     code = pdf_obtain_font_resource((const gs_text_enum_t *)penum, pstr, &pdfont);
     if (code < 0)
@@ -147,12 +145,6 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
     if (code < 0)
 	return code;
 
-    /* 
-     * Any True Type need ToUnicode, because we write them as symbolic fonts.
-     * Also it is needed for Type 1, which has an unknown encoding.
-     */
-    need_ToUnicode = pdfont->u.simple.BaseEncoding == ENCODING_INDEX_UNKNOWN &&
-		    (pdfont->base_font == NULL || !pdf_is_standard_font(pdfont->base_font));
     cfont = pdf_font_resource_font(pdfont, false);
     ccfont = pdf_font_resource_font(pdfont, true);
     for (i = 0; i < pstr->size; ++i) {
@@ -216,11 +208,14 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 		pet->is_difference = true;
 	    pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
 	}
-	if (need_ToUnicode) {
-	    code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch);
-	    if (code < 0)
-		return code;
-	}
+	/*
+	 * We always generate ToUnicode for simple fonts, because
+	 * we can't detemine in advance, which glyphs the font actually uses.
+	 * The decision about writing it out is deferred until pdf_write_font_resource.
+	 */
+	code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch);
+	if (code < 0)
+	    return code;
 	pet->glyph = glyph;
 	pet->str = gnstr;
     }
