@@ -365,21 +365,21 @@ gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
 
 	/* Get maximal scale according to cached bitmap size. */
 	show_set_scale(penum, &log2_scale);
-	    /* Reduce the scale to fit into alpha bits. */
+	/* Reduce the scale to fit into alpha bits. */
 	excess = log2_scale.x + log2_scale.y - alpha_bits;
-	    while (excess > 0) {
-		if (log2_scale.y > 0) {
-		    log2_scale.y --; 
-		    excess--;
-		    if (excess == 0)
-			break;
-		}
-		if (log2_scale.x > 0) {
-		    log2_scale.x --; 
-		    excess--;
-		}
+	while (excess > 0) {
+	    if (log2_scale.y > 0) {
+		log2_scale.y --; 
+		excess--;
+		if (excess == 0)
+		    break;
+	    }
+	    if (log2_scale.x > 0) {
+		log2_scale.x --; 
+		excess--;
 	    }
 	}
+    }
     *p_log2_scale = log2_scale;
 }
 

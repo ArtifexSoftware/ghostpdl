@@ -200,14 +200,14 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 		draw_rect.p.y -= pgs->fill_adjust.x;
 		draw_rect.q.x += pgs->fill_adjust.x;
 		draw_rect.q.y += pgs->fill_adjust.x;
-	    rect_intersect(draw_rect, clip_rect);
-	    x = fixed2int_pixround(draw_rect.p.x);
-	    y = fixed2int_pixround(draw_rect.p.y);
-	    w = fixed2int_pixround(draw_rect.q.x) - x;
-	    h = fixed2int_pixround(draw_rect.q.y) - y;
+		rect_intersect(draw_rect, clip_rect);
+		x = fixed2int_pixround(draw_rect.p.x);
+		y = fixed2int_pixround(draw_rect.p.y);
+		w = fixed2int_pixround(draw_rect.q.x) - x;
+		h = fixed2int_pixround(draw_rect.q.y) - y;
 		if (w > 0 && h > 0)
     		    if (gx_fill_rectangle(x, y, w, h, pdc, pgs) < 0)
-		    goto slow;
+			goto slow;
 	    }
 	}
 	return 0;

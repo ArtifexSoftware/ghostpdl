@@ -1,4 +1,4 @@
-\/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
   
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that

@@ -357,7 +357,7 @@ int cmd_put_params(gx_device_clist_writer *, gs_param_list *);
 
 /* Conditionally keep command statistics. */
 #ifdef DEBUG
-int cmd_count_op(const gs_memory_t *dev, int op, uint size);
+int cmd_count_op(const gs_memory_t *mem, int op, uint size);
 void cmd_uncount_op(int op, uint size);
 #  define cmd_count_add1(v) (v++)
 #else

@@ -131,8 +131,8 @@ struct gs_type1_state_s {
 				/* a known othersubr call) */
     /* The following are set dynamically. */
     gs_fixed_point vs_offset;	/* device space offset for centering */
-    /* middle stem of vstem3 */
-    /* of subpath */
+				/* middle stem of vstem3 */
+				/* of subpath */
     fixed transient_array[32];	/* Type 2 transient array, */
     /* will be variable-size someday */
 };

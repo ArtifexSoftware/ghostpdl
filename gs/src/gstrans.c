@@ -240,9 +240,9 @@ gs_begin_transparency_group(gs_state *pgs,
     }
 #endif
     if (dev_proc(pgs->device, begin_transparency_group) != 0)
-    return (*dev_proc(pgs->device, begin_transparency_group)) (pgs->device, ptgp,
-							    pbbox, (gs_imager_state *)pgs,
-							    NULL, NULL);
+	return (*dev_proc(pgs->device, begin_transparency_group)) (pgs->device, ptgp,
+								   pbbox, (gs_imager_state *)pgs,
+								   NULL, NULL);
     else
 	return 0;
 #if PUSH_TS
@@ -255,8 +255,8 @@ int
 gs_end_transparency_group(gs_state *pgs)
 {
     if (dev_proc(pgs->device, end_transparency_group) != 0)
-    return (*dev_proc(pgs->device, end_transparency_group)) (pgs->device, (gs_imager_state *)pgs,
-							     NULL);
+	return (*dev_proc(pgs->device, end_transparency_group)) (pgs->device, (gs_imager_state *)pgs,
+								 NULL);
     else
 	return 0;
 #if 0

@@ -62,10 +62,10 @@ z_jbig2decode(i_ctx_t * i_ctx_p)
      */
     s_jbig2decode_set_global_ctx((stream_state*)&state, NULL);
     if (r_has_type(op, t_dictionary)) {
-    check_dict_read(*op);
-    if ( dict_find_string(op, ".jbig2globalctx", &sop) > 0) {
-	gref = r_ptr(sop, jbig2_global_data_t);
-	s_jbig2decode_set_global_ctx((stream_state*)&state, gref->global_ctx);
+        check_dict_read(*op);
+        if ( dict_find_string(op, ".jbig2globalctx", &sop) > 0) {
+	    gref = r_ptr(sop, jbig2_global_data_t);
+	    s_jbig2decode_set_global_ctx((stream_state*)&state, gref->global_ctx);
         }
     }
     	

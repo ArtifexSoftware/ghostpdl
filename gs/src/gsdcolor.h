@@ -409,7 +409,7 @@ extern const gx_device_color_type_t *const gx_dc_type_pure;	/* gxdcolor.c */
 		 * a spurious external reference in Level 1 systems.
 		 */
 #ifndef gx_dc_type_pattern
-								    /*extern const gx_device_color_type_t * const gx_dc_type_pattern; *//* gspcolor.c */
+/*extern const gx_device_color_type_t * const gx_dc_type_pattern; *//* gspcolor.c */
 #endif
 #ifndef gx_dc_type_ht_binary
 extern const gx_device_color_type_t *const gx_dc_type_ht_binary;	/* gxht.c */

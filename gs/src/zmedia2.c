@@ -189,8 +189,8 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		     match.match_key.value.intval > aelt.key.value.intval)) {
 		    reset_match(&match);
 		    match.match_key = aelt.key;
-		mbest = best_mismatch;
-	    }
+		    mbest = best_mismatch;
+		}
 	    }
 	    /* In case of a tie, see if the new match has priority. */
 	    for (pi = match.priority; pi > 0;) {

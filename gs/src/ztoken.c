@@ -65,7 +65,7 @@ ztoken(i_ctx_t *i_ctx_p)
 	    	    if (orig_ostack_depth < ref_stack_count(&o_stack))
 	    		pop(ref_stack_count(&o_stack)- orig_ostack_depth);
 		    return code;
-	    }
+		}
 	    }
 	    push(imemory, 2);
 	    op[-1] = token;

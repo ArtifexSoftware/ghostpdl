@@ -86,8 +86,8 @@ gs_fillpage(gs_state * pgs)
 		&rect, (const gs_imager_state *)pgs, pgs->dev_color, NULL);
     }
     if (!hl_color_available || code == gs_error_rangecheck)
-    code = gx_fill_rectangle(0, 0, dev->width, dev->height,
-			     pgs->dev_color, pgs);
+	code = gx_fill_rectangle(0, 0, dev->width, dev->height,
+				 pgs->dev_color, pgs);
     pgs->log_op = save_lop;
     if (code < 0)
 	return code;

@@ -1066,7 +1066,7 @@ swrite_string(register stream * s, byte * ptr, uint len)
 	s_std_null, s_std_null, s_string_write_process
     };
 
-    /* Hack to set up isheap boolean */
+    /* set isheap boolean */
     s->isheap = false;
     s_std_init(s, ptr, len, &p, s_mode_write + s_mode_seek);
     s->cbuf_string.data = ptr;

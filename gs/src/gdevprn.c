@@ -111,7 +111,7 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
     for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
 	dprintf2("  fp=0x%lx ip=0x%lx\n", (ulong)fp_, fp_[1]);\
   END
-dputs("alloc buffer:\n");
+    dputs(pdev->memory, "alloc buffer:\n");
 BACKTRACE(pdev);
 #endif /*DEBUGGING_HACKS*/
     for ( space = space_params->BufferSpace; ; ) {

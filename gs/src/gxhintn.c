@@ -171,11 +171,11 @@ private inline int32 shift_rounded(int32 v, unsigned int s)
 }
 
 private inline int32 Max(int32 a, int32 b)
-{   return a>b ? a : b;
+{   return a > b ? a : b;
 }
 
 private inline int32 Min(int32 a, int32 b)
-{   return a<b ? a : b;
+{   return a < b ? a : b;
 }
 
 private inline long rshift(long a, int b)
