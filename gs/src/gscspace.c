@@ -110,14 +110,7 @@ gs_cspace_alloc(gs_color_space ** ppcspace,
 int
 gs_cspace_init_DeviceGray(const gs_memory_t *mem, gs_color_space *pcs)
 {
-    /* parameterless color space; no re-entrancy problems */
-    static gs_color_space  dev_gray_proto;
-
-    if (dev_gray_proto.id == 0)
-        gs_cspace_init( &dev_gray_proto,
-                        &gs_color_space_type_DeviceGray,
-                        (gs_memory_t *)mem );
-    *pcs = dev_gray_proto;
+    gs_cspace_init(pcs, &gs_color_space_type_DeviceGray, (gs_memory_t *)mem );
     return 0;
 }
 int
@@ -133,16 +126,10 @@ gs_cspace_build_DeviceGray(gs_color_space ** ppcspace, gs_memory_t * pmem)
 int
 gs_cspace_init_DeviceRGB(const gs_memory_t *mem, gs_color_space *pcs)
 {
-    /* parameterless color space; no re-entrancy problems */
-    static gs_color_space  dev_rgb_proto;
-
-    if (dev_rgb_proto.id == 0)
-        gs_cspace_init( &dev_rgb_proto,
-                        &gs_color_space_type_DeviceRGB,
-                        (gs_memory_t *)mem );
-    *pcs = dev_rgb_proto;
+    gs_cspace_init(pcs, &gs_color_space_type_DeviceRGB, (gs_memory_t *)mem );
     return 0;
 }
+
 int
 gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
@@ -156,16 +143,10 @@ gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace, gs_memory_t * pmem)
 int
 gs_cspace_init_DeviceCMYK(const gs_memory_t *mem, gs_color_space *pcs)
 {
-    /* parameterless color space; no re-entrancy problems */
-    static gs_color_space  dev_cmyk_proto;
-
-    if (dev_cmyk_proto.id == 0)
-        gs_cspace_init( &dev_cmyk_proto,
-                        &gs_color_space_type_DeviceCMYK,
-                        (gs_memory_t *)mem );
-    *pcs = dev_cmyk_proto;
+    gs_cspace_init(pcs, &gs_color_space_type_DeviceCMYK, (gs_memory_t *)mem );
     return 0;
 }
+
 int
 gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
