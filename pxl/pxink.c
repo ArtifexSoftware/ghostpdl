@@ -900,7 +900,8 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 
 const byte apxSetHalftoneMethod[] = {
    0, pxaDitherOrigin, pxaDeviceMatrix, pxaDitherMatrixDataType,
-   pxaDitherMatrixSize, pxaDitherMatrixDepth, 0
+   pxaDitherMatrixSize, pxaDitherMatrixDepth, pxaAllObjectTypes,
+   pxaTextObjects, pxaVectorObjects, pxaRasterObjects, 0
 };
 
 int
@@ -908,6 +909,10 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 {	gs_state *pgs = pxs->pgs;
 	px_gstate_t *pxgs = pxs->pxgs;
 	pxeDitherMatrix_t method;
+
+        if ( par->pv[6] || par->pv[7] || par->pv[8] || par->pv[9] )
+            /* ignore object type arguments */
+            return 0;
 
 	if ( par->pv[1] )
 	  { /* Internal halftone */

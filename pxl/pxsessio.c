@@ -569,14 +569,10 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	     */
 	    px_args_t args;
 	    px_value_t device_matrix;
-
-	    args.pv[0] = 0;	/* DitherOrigin */
+            memset(args.pv, 0, sizeof(args.pv));
 	    args.pv[1] = &device_matrix;	/* DeviceMatrix */
 	      device_matrix.type = pxd_scalar | pxd_ubyte;
 	      device_matrix.value.i = eDeviceBest;
-	    args.pv[2] = 0;	/* DitherMatrixDataType */
-	    args.pv[3] = 0;	/* DitherMatrixSize */
-	    args.pv[4] = 0;	/* DitherMatrixDepth */
 	    pxSetHalftoneMethod(&args, pxs);
 	  }
 	/* Initialize other parts of the PCL XL state. */
