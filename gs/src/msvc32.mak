@@ -656,9 +656,9 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def
 
 DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1
 debug:
-	nmake $(DEBUGDEFS)
+	nmake -f $(MAKEFILE) $(DEBUGDEFS)
 
 debugclean:
-	nmake $(DEBUGDEFS) clean
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) clean
 
 # end of makefile
