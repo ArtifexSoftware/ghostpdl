@@ -30,13 +30,6 @@
 #include "gdevbmp.h"
 #include "gpsync.h"
 
-#define bmpa_cmyk_procs(p_map_color_rgb, p_map_cmyk_color)\
-    bmpa_writer_open, NULL, NULL, gdev_prn_output_page, gdev_prn_close,\
-    NULL, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
-    gdev_prn_get_params, bmpa_put_params,\
-    p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
-
-
 /* ------ The device descriptors ------ */
 
 /* Define data type for this device based on prn_device */
@@ -61,9 +54,14 @@ private dev_proc_print_page_copies(bmpa_reader_print_page_copies);
 private prn_dev_proc_buffer_page(bmpa_reader_buffer_page);
 private dev_proc_output_page(bmpa_reader_output_page);
 private dev_proc_put_params(bmpa_put_params);
+private dev_proc_get_params(bmpa_get_params);
 private dev_proc_get_hardware_params(bmpa_get_hardware_params);
 private prn_dev_proc_start_render_thread(bmpa_reader_start_render_thread);
 private prn_dev_proc_get_space_params(bmpa_get_space_params);
+private dev_proc_map_rgb_color(bmpa_forcemono_map_rgb_color);
+private dev_proc_map_color_rgb(bmpa_cmyk_map_color_rgb);
+private dev_proc_map_cmyk_color(bmpa_map_cmyk_color);
+
 #define default_print_page 0	/* not needed becoz print_page_copies def'd */
 
 /* Monochrome. */
@@ -114,13 +112,28 @@ gx_device_async far_data gs_bmpa16m_device =
 	0,0,0,0,			/* margins */
 	24, default_print_page);
 
-/* 32-bit CMYK color (outside the BMP specification). */
-
-private const gx_device_procs bmpa32b_procs = {
-    bmpa_cmyk_procs(gx_default_map_color_rgb, gx_default_cmyk_map_cmyk_color)
+private const gx_device_procs bmpacmyk_procs =
+{	bmpa_writer_open, gx_default_get_initial_matrix, NULL,
+	gdev_prn_output_page, gdev_prn_close,
+	bmpa_forcemono_map_rgb_color, bmpa_cmyk_map_color_rgb,
+	NULL, NULL, NULL, NULL, NULL, NULL,
+	bmpa_get_params, bmpa_put_params,
+	bmpa_map_cmyk_color,
+	NULL, NULL, NULL,
+	gx_page_device_get_page_device
 };
+
+const gx_device_printer gs_bmpacmyk_device =
+{prn_device_body(gx_device_printer, bmpacmyk_procs, "bmpacmyk",
+		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+		 X_DPI, Y_DPI,
+		 0, 0, 0, 0,	/* margins */
+		 4, 4, 1, 1, 2, 2, default_print_page)
+};
+
+/* 32-bit CMYK color (outside the BMP specification). */
 gx_device_async far_data gs_bmpa32b_device =
-async_device(bmpa32b_procs, "bmpa32b",
+async_device(bmpacmyk_procs, "bmpa32b",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
@@ -495,22 +508,106 @@ bmpa_get_space_params(const gx_device_printer *pdev,
 
 }
 
+
+/* The following macro is used in get_params and put_params to determine  */
+/* the num_components for the current device. It works using the device   */
+/* name character after "bmpa" which is 'm' for monochrome, 'c' or '3' 	  */
+/* CMYK, and '1', or '2' for RGB. Any devices that are added to this      */
+/* module must modify this macro to return  the correct num_components.   */
+/* This is needed to support the ForceMono parameter which alters	  */
+/* dev->num_components.				 			  */
+#define REAL_NUM_COMPONENTS(dev) \
+	((dev->dname[4]=='c' || dev->dname[4]=='3') ? 4 : \
+	 (dev->dname[4]=='m') ? 1 : 3)
+
+/* The only non-standard parameter is ForceMono */
+private int
+bmpa_get_params(gx_device * pdev, gs_param_list * plist)
+{
+    /* 
+     * The following is a hack to get the original num_components.
+     * See comment above.
+     */
+    int real_ncomps = REAL_NUM_COMPONENTS(pdev);
+    int code, ecode;
+    int ncomps = pdev->color_info.num_components;
+    int forcemono = (ncomps == real_ncomps) ? 0 : 1;
+
+    /*
+     * Temporarily set num_components back to the "real" value to avoid
+     * confusing those that rely on it.
+     */
+    pdev->color_info.num_components = real_ncomps;
+    ecode = gdev_prn_get_params(pdev, plist);
+
+    if ((code = param_write_int(plist, "ForceMono", &forcemono)) < 0) {
+	ecode = code;
+    }
+
+    /* Restore the working num_components */
+    pdev->color_info.num_components = ncomps;
+
+    return ecode;
+}
+
 /* Put device parameters. */
 /* IMPORTANT: async drivers must NOT CLOSE the device while doing put_params.*/
-/* IMPORTANT: async drivers must NOT CLOSE the device while doing put_params.*/
-/* IMPORTANT: async drivers must NOT CLOSE the device while doing put_params.*/
-/* IMPORTANT: async drivers must NOT CLOSE the device while doing put_params.*/
+
 private int
 bmpa_put_params(gx_device *pdev, gs_param_list *plist)
+/* ForceMono=1 forces monochrome output from RGB/CMYK devices. */
 {
+    gx_device_color_info save_info;
+    int real_ncomps = REAL_NUM_COMPONENTS(pdev);
+    int ncomps = pdev->color_info.num_components;
+    int v;
+    int ecode = 0;
+    int code;
+    const char *vname;
+
     /*
-     * This driver does nothing interesting except cascade down to
-     * gdev_prn_put_params, which is something it would have to do even if
-     * it did do something interesting here.
-     *
-     * Note that gdev_prn_put_params does not close the device.
+     * Temporarily set num_components back to the "real" value to avoid
+     * confusing those that rely on it.
      */
-    return gdev_prn_put_params(pdev, plist);
+    pdev->color_info.num_components = real_ncomps;
+
+    switch (code = param_read_int(plist, (vname = "ForceMono"), &v)) {
+    case 0:
+	if (v == 1) {
+	    ncomps = 1;
+	    break;
+	}
+	else if (v == 0)
+	    break;
+	code = gs_error_rangecheck;
+    default:
+	ecode = code;
+	param_signal_error(plist, vname, ecode);
+    case 1:
+	break;
+    }
+    if (ecode < 0)
+	return ecode;
+
+    ecode = gdev_prn_put_params(pdev, plist);
+    if (ecode < 0) 
+        return ecode;
+    
+    /* Now change num_components -- couldn't above because      */
+    /*  '1' is special in gx_default_put_params                 */
+    pdev->color_info.num_components = ncomps;
+
+
+    /* Reset the map_cmyk_color procedure if appropriate. */
+    if (dev_proc(pdev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ||
+        dev_proc(pdev, map_cmyk_color) == cmyk_8bit_map_cmyk_color ||
+        dev_proc(pdev, map_cmyk_color) == bmpa_map_cmyk_color) {
+        set_dev_proc(pdev, map_cmyk_color,
+                     pdev->color_info.depth == 4 ? cmyk_1bit_map_cmyk_color :
+                     pdev->color_info.depth == 32 ? cmyk_8bit_map_cmyk_color :
+                     bmpa_map_cmyk_color);
+    }
+    return 0;
 }
 
 /* Get hardware-detected parameters. */
@@ -530,3 +627,64 @@ bmpa_get_hardware_params(gx_device *dev, gs_param_list *plist)
     }
     return code;
 }
+
+/* Map CMYK to color. */
+private gx_color_index
+bmpa_map_cmyk_color(gx_device * dev, gx_color_value cyan,
+	gx_color_value magenta, gx_color_value yellow, gx_color_value black)
+{
+    int bpc = dev->color_info.depth / 4;
+    int drop = sizeof(gx_color_value) * 8 - bpc;
+    gx_color_index color =
+    ((((((cyan >> drop) << bpc) +
+	(magenta >> drop)) << bpc) +
+      (yellow >> drop)) << bpc) +
+    (black >> drop);
+
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+/* Map RGB to gray shade. */
+/* Only used in CMYK mode when put_params has set ForceMono=1 */
+private gx_color_index
+bmpa_forcemono_map_rgb_color(gx_device * dev, gx_color_value red,
+                  gx_color_value green, gx_color_value blue)
+{
+    gx_color_value color;
+    int bpc = dev->color_info.depth / 4;        /* This function is used in CMYK mode */
+    int drop = sizeof(gx_color_value) * 8 - bpc;
+    gx_color_value gray = red;
+
+    if ((red != green) || (green != blue))
+        gray = (red*30 + green*59 + blue*11 + 50) / 100;
+
+    color = (gx_max_color_value - gray) >> drop;        /* color is in K channel */
+    return color;
+}
+
+/* Map CMYK to RGB. */
+private int
+bmpa_cmyk_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
+{
+    int depth = dev->color_info.depth;
+    int bpc = depth / 4;
+    uint mask = (1 << bpc) - 1;
+    gx_color_index cshift = color;
+    uint c, m, y, k;
+
+#define cvalue(c) ((gx_color_value)((ulong)(c) * gx_max_color_value / mask))
+
+    k = cshift & mask;
+    cshift >>= bpc;
+    y = cshift & mask;
+    cshift >>= bpc;
+    m = cshift & mask;
+    c = cshift >> bpc;
+    /* We use our improved conversion rule.... */
+    rgb[0] = cvalue((mask - c) * (mask - k) / mask);
+    rgb[1] = cvalue((mask - m) * (mask - k) / mask);
+    rgb[2] = cvalue((mask - y) * (mask - k) / mask);
+    return 0;
+#undef cvalue
+}
+
