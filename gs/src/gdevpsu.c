@@ -208,6 +208,8 @@ void
 psw_end_file(FILE *f, const gx_device *dev,
 	     const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox)
 {
+    if (f == NULL)
+        return;		/* clients should be more careful */
     fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", dev->PageCount);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
 	if (pdpc->bbox_position >= 0) {
