@@ -32,7 +32,7 @@ SHARE_ZLIB=0
 JSRCDIR=../gs/jpeg
 JGENDIR=$(GENDIR)
 JOBJDIR=$(GENDIR)
-
+JVERSION="6"
 
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
@@ -161,7 +161,7 @@ STDLIBS=-lm -lpthread
 
 
 # Generic makefile
-include $(COMMONDIR)/ugcc_lstop.mak
+include $(COMMONDIR)/ugcc_top.mak
 # Subsystems
 
 include $(PLSRCDIR)/plps.mak
