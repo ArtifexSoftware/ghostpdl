@@ -74,14 +74,14 @@ class DocRefs:
         self.From = {}
 
     def doTo(self, fname, adding):
-        if os.path.islink(fname):
-            pass
-        elif os.path.isfile(fname):
-            self.to[fname] = adding
-        elif os.path.isdir(fname):
+        if os.path.isdir(fname):
             self.toDir[fname] = adding
             for f in glob.glob(os.path.join(fname, '*')):
                 self.doTo(f, adding)
+        elif os.path.islink(fname):
+            pass
+        elif os.path.isfile(fname):
+            self.to[fname] = adding
 
     def doFrom(self, fname, adding):
         self.From[fname] = adding
