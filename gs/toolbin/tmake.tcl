@@ -19,7 +19,7 @@ exec tclsh "$0" "$@"
 # requires that the copyright notice and this notice be preserved on all
 # copies.
 
-# $Id$
+set TMAKE_ID {$Id$}
 
 # This file is intended to be a drop-in replacement for a large and
 # useful subset of 'make'.  It compiles makefiles into Tcl scripts
@@ -55,10 +55,13 @@ set TMAKE_VERSION 106
 #	WARN_UNDEFINED - warn about undefined variables (every time)
 #	WARN_UNDEFINED_ONCE - warn about undefined variables (only once)
 
-set FLAGS [list\
-    DEBUG DRYRUN IGNORE_ERRORS KEEP_GOING SILENT\
-	    WARN_MULTIPLE WARN_REDEFINED WARN_UNDEFINED WARN_UNDEFINED_ONCE\
+set WARNINGS [list\
+    WARN_MULTIPLE WARN_REDEFINED WARN_UNDEFINED\
 ]
+set FLAGS "$WARNINGS\
+    DEBUG DRYRUN IGNORE_ERRORS KEEP_GOING SILENT\
+    WARN_UNDEFINED_ONCE\
+"
 set GLOBALS "$FLAGS\
     MAKEFLAGS MAX_JOBS MAX_LOAD\
 "
@@ -72,26 +75,303 @@ proc init_globals {} {
     set MAX_LOAD 99999
 }
 
+# ================ Compiled script conventions ================ #
+
+# Rule T1 ... Tk : D1 ... Dm
+#	B1
+#	...
+#	Bn
+# becomes
+#	L <sourceline>; R "T1 ... Tk" "list D1 ... Dm" "list B1 ... Bn"
+#
+# Macro definition XYZ = DEF becomes
+#	L <sourceline>; P XYZ DEF
+#
+# Macro usage $(XYZ) becomes [_XYZ] so we can use Tcl's 'unknown' facility
+# to default macro values to the empty string, since Tcl apparently does
+# not provide a way to trap references to undefined variables.
+#
+# At run time, for each target or dependent ABC, the procedure [@ABC]
+# builds ABC (if necessary) and returns its build time.
+
+# ================ Command line processing ================ #
+
+proc limit_arg {vvar argv} {
+    upvar $vvar var
+    if {[llength $argv] > 1 && [regexp {^[0-9]+$} [lindex $argv 1]]} {
+	set var [lindex $argv 1]; return 1
+    } else {
+	set var 99999; return 0
+    }
+}
+
+proc tmake_args {args} {
+    global GLOBALS COMPILE DEFINES JOBS MAKEFILE TARGETS WARNINGS
+    foreach v $GLOBALS {global $v}
+
+    set argv $args
+    while {[llength $argv] > 0} {
+	set n 0
+	set copy 1
+	set arg [lindex $argv 0]
+	switch -glob -- $arg {
+	    -C {    # -C is not implemented
+		set copy 0
+	    }
+	    --compile-only {set COMPILE 1}
+	    -d {set DEBUG 1}
+	    -f {set MAKEFILE [lindex $argv 1]; set n 1; set copy 0}
+	    -i {set IGNORE_ERRORS 1}
+	    -j {set n [limit_arg MAX_JOBS $argv]}
+	    -k {set KEEP_GOING 1}
+	    -l {set n [limit_arg MAX_LOAD $argv]}
+	    -m {    # -m is ignored for compatibility with GNU make;
+		    # also, because MAKEFLAGS omits the initial '-', we need a
+		    # dummy switch in case there are variable definitions (!).
+		set copy 0
+	    }
+	    -n {set DRYRUN 1}
+	    -s {set SILENT 1}
+	    --warn-all {
+		foreach v $WARNINGS {set $v 1}
+	    }
+	    --warn-multiply-defined-variables {set WARN_MULTIPLE 1}
+	    --warn-redefined-variables {set WARN_REDEFINED 1}
+	    --warn-undefined-variables {set WARN_UNDEFINED 1}
+	    --warn-undefined-variables-once {set WARN_UNDEFINED_ONCE 1}
+	    -* {
+		puts "Unknown option: $arg"
+		puts {Usage: tmake (<option> | <var>=<value> | <target>)*}
+		puts {Options:}
+		puts {	--compile-only -d -i -k -n -s --warn-all}
+		puts {	--warn-multiply-defined-variables --warn-redefined-variables}
+		puts {	--warn-undefined-variables --warn-undefined-variables-once}
+		puts {	-f <file> -j <jobs> -l <load>}
+		exit
+	    }
+	    *=* {
+		regexp {^([^=]*)=(.*)$} $arg skip lhs rhs
+		lappend DEFINES [list $lhs $rhs]
+		set copy 0
+	    }
+	    default {
+		lappend TARGETS $arg
+		set copy 0
+	    }
+	}
+	if $copy {lappend MAKEFLAGS [lrange $argv 0 $n]}
+	set argv [lreplace $argv 0 $n]
+    }
+}
+proc tmake {args} {
+    global argv0
+    global GLOBALS COMPILE DEFINES JOBS MAKEFILE TARGETS
+    global TMAKE_TIME TMAKE_VERSION
+    foreach v $GLOBALS {global $v}
+
+    set TMAKE_TIME [file mtime $argv0]
+    init_globals
+    set MAKEFILE makefile
+    set TARGETS ""
+    set DEFINES [list]
+    set COMPILE 0
+    set JOBS {}
+    eval tmake_args $args
+    # POSIX requires the following nonsense:
+    regsub {^-([^-])} $MAKEFLAGS {\1} MAKEFLAGS
+    if {$MAKEFLAGS == ""} {set MAKEFLAGS m}
+    foreach d $DEFINES {
+	append MAKEFLAGS " [lindex $d 0]='[lindex $d 1]'"
+    }
+    init_definition
+    foreach d $DEFINES {
+	catch {unset _[lindex $d 0]}
+	V [lindex $d 0] [lindex $d 1] command-line
+	set _($d) 1
+    }
+    if {$COMPILE} {
+	# Just compile the given makefile(s).
+	tcompile $MAKEFILE $TMAKE_VERSION
+    } {
+	# Build the selected targets.
+	tsource $MAKEFILE $TMAKE_VERSION
+	init_execution
+	foreach t $TARGETS {
+	    global errorInfo TARGET_FAILED
+
+	    set TARGET_FAILED ""
+	    switch [set status [catch "@$t" result]] {
+		0 {continue}
+		1 {if {$TARGET_FAILED != ""} {exit 1}}
+	    }
+	    puts stderr $errorInfo
+	    exit $status
+	}
+    }
+}
+
+# ================ Compilation ================ #
+
+# ---------------- Utilities ---------------- #
+
+# Convert variable references from $(vname) to [_vname],
+# escape characters that need to be quoted within "",
+# and surround the result with "".
+proc quote {defn {refsvar ""}} {
+    set orig $defn
+    set fixed ""
+    set refs {}
+    while {[regexp {^(([^$]|\$[^$(])*)\$(\$|\(([^)]*)\))(.*)$} $orig skip pre skip2 dollar var orig]} {
+	regsub -all {([][\"$])} $pre {\\\1} pre
+	if {$dollar == "\$"} {
+	    append fixed "$pre\\\$"
+	} else {
+	    append fixed "$pre\[_$var\]"
+	}
+	lappend refs $var
+    }
+    regsub -all {([][\"$])} $orig {\\\1} orig
+    append fixed $orig
+    if {[string match {*[ \\]*} $fixed] || $fixed == ""} {
+	return "\"$fixed\""
+    }
+    if {$refsvar != ""} {
+	upvar $refsvar rv
+	set rv $refs
+    }
+    return $fixed
+}
+
+# ---------------- Writing ---------------- #
+
+# Write the boilerplate at the beginning of the converted file.
+proc write_header {out fname} {
+    global TMAKE_ID TMAKE_VERSION
+
+    puts $out {#!/bin/tcl}
+    puts $out "# $fname created [exec date] with"
+    puts $out "#   TMAKE_VERSION = ${TMAKE_VERSION}"
+    set id $TMAKE_ID
+    regexp {^\$Id$$} $id skip id
+    puts $out "#   TMAKE_ID = $id"
+}
+
+# Write the definition of a macro.
+proc write_macro {out var defn linenum} {
+    puts $out "L [list $linenum];P $var {[quote $defn]}"
+}
+
+# Write an 'include'.
+proc write_include {out fname} {
+    global TMAKE_VERSION
+
+    puts $out "tsource [quote $fname] $TMAKE_VERSION"
+}
+
+# Write a rule.
+proc write_rule {out targets deps commands linenum} {
+	# Convert all uses of 'make' or $(MAKE) in rule bodies to tmake.
+    set body list
+    foreach c $commands {
+	regsub {^(make|\$\(MAKE\)) } $c {tmake $(MAKEFLAGS) MAKELEVEL=$(MAKELEVEL_1) } c
+	append body " [quote $c]"
+    }
+    puts $out "L [list $linenum];R [quote $targets] [quote [string trim $deps]] [list $body]"
+}
+
+# ---------------- Top level ---------------- #
+
+proc lgets {in lvar lnvar} {
+    upvar $lvar line $lnvar linenum
+    set line ""
+    set len [gets $in line]
+    if {$len < 0} {return $len}
+    incr linenum
+    while {[regsub {\\$} $line {} line]} {
+	if {[gets $in l] < 0} {break}
+	incr linenum
+	append line $l
+    }
+    return [string length $line]
+}
+
+proc mak2tcl {inname {outname ""}} {
+    set in [open $inname]
+    if {$outname == ""} {
+	set out stdout
+    } {
+	set out [open $outname w]
+    }
+    write_header $out $outname
+    set linenum 1
+    set line ""
+    while {1} {
+	while {$line == ""} {
+	    set lnfirst $linenum
+	    if {[lgets $in line linenum] < 0} break
+	}
+	if {$line == ""} break
+	if {[string index $line 0] == "#"} {
+	    set line ""
+	    continue
+	}
+	if {[regexp {^([0-9A-Za-z_]+)[ ]*=[ ]*(.*)[ ]*$} $line skip var defn]} {
+	    write_macro $out $var $defn ${inname}:$lnfirst
+	    set line ""
+	    continue
+	}
+	if {[regexp {^([^:]+):(.*)$} $line skip targets deps]} {
+	    set commands {}
+	    while {[lgets $in line linenum] > 0 && [regexp {^[#	]} $line]} {
+		regsub {^[	]} $line {} line
+		lappend commands $line
+	    }
+	    write_rule $out $targets $deps $commands ${inname}:$lnfirst
+	    continue
+	}
+	if {[regexp {^(!|)include[ ]+("|)([^ "]*)("|)$} $line skip skip2 skip3 fname]} {
+	    write_include $out $fname
+	    set line ""
+	    continue
+	}
+	# Recognize some GNU constructs
+	if {[regexp {^unexport } $line]} {
+	    set line ""
+	    continue
+	}
+	puts "${inname}:$lnfirst: Unrecognized line: $line"
+	set line ""
+    }
+    if {$out != "stdout"} {
+	close $out
+    }
+    close $in
+}
+
+proc tcompile {fname version} {
+    global TMAKE_TIME
+
+    set mf $fname
+    while {![catch {set mf [file readlink $mf]}]} {}
+    set tf ${mf}.tcl
+    if {![file exists $tf] || [file mtime $tf] < [file mtime $mf] || [file mtime $tf] < $TMAKE_TIME} {
+	puts "Compiling $mf to $tf."
+	flush stdout
+	mak2tcl $mf $tf
+    }
+    return $tf
+}
+
 # ================ Runtime support ================ #
 
-# Patch in case we're running a pre-8.0 tcl.
-if {[info command clock] == ""} {
-    proc clock {ignore} {exec date +%s}
-}
+# The R procedure numbers rules consecutively.  For rule i:
+#	C(i) is the rule body (a list of shell command lines)
+#	T(i) is the list of targets
+#	N(i) is the source line number
 
-# Replace the following on systems that don't have /proc
-# (don't ask me how!).
-proc proc_loadavg {} {
-    set fid [open /dev/proc]
-    set load [lindex [read $fid] 0]
-    close $fid
-    return $load
-}
-proc proc_exists {pid} {
-    return [file exists /proc/$pid]
-}
+# ---------------- Definition ---------------- #
 
-proc init_runtime {} {
+proc init_definition {} {
     global DEBUG I
 
     set I 0
@@ -103,7 +383,148 @@ proc init_runtime {} {
     V MAKELEVEL 0 implicit
 }
 
-rename unknown old_unknown
+proc var_value {var} {
+    # Skip over the "return"
+    set value [info body _$var]
+    if {[regexp "^proc _$var {} \\\[list return (.*)\\\];" $value skip value]} {
+    } else {
+	regexp {^return (.*)$} $value skip value
+    }
+    return $value
+}
+
+proc unsubst_vars {defn} {
+    set result ""
+    while {[regexp {^((\\.|[^\\[])*)\[_([^]]*)\](.*)$} $defn skip before skip2 var defn]} {
+	set result "${result}${before}\$\($var\)"
+    }
+    return "${result}${defn}"
+}
+
+proc redefined {var value lnum} {
+    global WARN_MULTIPLE WARN_REDEFINED
+
+    if {$WARN_MULTIPLE || ($WARN_REDEFINED && $value != [var_value $var])} {
+	global _
+
+	set old_lnum $_($var)
+	if {!(($old_lnum == "default" || $old_lnum == "implicit") && $lnum == "command-line")} {
+	    set old_value [var_value $var]
+	    puts "${lnum}: warning: variable `$var' redefined as [unsubst_vars $value]"
+	    puts "${old_lnum}: variable `$var' previously defined as [unsubst_vars $old_value]"
+	}
+    }
+}
+
+# Set the source line number.
+proc L {lnum} {
+    global LN
+
+    set LN $lnum
+}
+
+# Record a macro value.
+proc V {var value lnum} {
+    global _
+
+    if {![info exists _($var)]} {
+	ifdebug {puts "$var=$value"}
+	set _($var) $lnum
+	proc _$var {} [list return $value]
+    } elseif {[set old $_($var)] == "default"} {
+	unset _($var)
+	V $var $value $lnum
+    } elseif {$old != "command-line"} {
+	redefined $var $value $lnum
+	unset _($var)
+	V $var $value $lnum
+    }
+}
+
+# Define a macro.
+proc P {var vexpr} {
+    global _ LN
+
+    if {![info exists _($var)]} {
+	ifdebug {puts "$var=$vexpr"}
+	set _($var) $LN
+	proc _$var {} "proc _$var {} \[list return $vexpr\];_$var"
+    } elseif {[set old $_($var)] == "default"} {
+	unset _($var)
+	P $var $vexpr
+    } elseif {$old != "command-line"} {
+	redefined $var $vexpr $LN
+	unset _($var)
+	P $var $vexpr
+    }
+}
+
+# Define a rule.
+# Record the very first target as the default target.
+proc R {tl dl body} {
+    global TARGETS
+
+    if {$TARGETS == ""} {
+	lappend TARGETS [lindex $tl 0]
+    }
+    proc R {tl dl body} {
+	global C I N T LN
+
+	set C([incr I]) $body
+	foreach t [set T($I) $tl] {
+	    set N($t) $LN
+	    proc @$t {} [list target $t $dl $I]
+	}
+    }
+    R $tl $dl $body
+}
+
+# ---------------- Execution ---------------- #
+
+# ****** NONE OF THE FOLLOWING IS IMPLEMENTED YET. ******
+# For each rule i needing execution:
+#	S(i) is the rule's execution status:
+#	    -2 if the rule has not been executed yet
+#	    -1 if the rule is being executed
+#	    0 if the rule completed execution successfully
+#	    >0 (the exit status) if execution ended with an error
+#	W(i) is the list of rules with S() < 0 that must be executed
+#	    before rule i
+#	A(i) is the list of rules j such that W(j) includes i
+# In addition,
+#	PW(j) == i for some j, 0 <= j < [array size PW], iff S(i) == -2
+#	PX(j) == i for some j, 0 <= j < [array size PX], iff S(i) == -1
+
+proc init_execution {} {
+    foreach v {S W A PW PX} {
+	global $v
+	catch {unset $v}
+    }
+}
+
+# Patch in case we're running a pre-8.0 tcl.
+if {[info command clock] == ""} {
+    proc clock {ignore} {exec date +%s}
+}
+
+# Replace the following on systems that don't have /proc
+# (don't ask me how!).
+proc proc_loadavg {} {
+    set fid [open /proc/loadavg]
+    set load [lindex [read $fid] 0]
+    close $fid
+    return $load
+}
+proc proc_exists {pid} {
+    return [file exists /proc/$pid]
+}
+
+proc tset {p t} {
+    proc @$p {} [list return $t]
+    ifdebug {puts "ftime($p) <- $t"}
+}
+
+# Handle an undefined variable.
 proc unknown_ {cmd var} {
     global WARN_UNDEFINED WARN_UNDEFINED_ONCE LN
 
@@ -116,6 +537,8 @@ proc unknown_ {cmd var} {
     if {$def} {V $var "" default}
     return ""
 }
+
+# Handle an undefined dependent.
 proc unknown@ {cmd var} {
     if {[catch {tset $var [file mtime $var]}]} {
 	global N TARGET_FAILED
@@ -142,104 +565,16 @@ proc unknown@ {cmd var} {
     }
     return [$cmd]
 }
+
+# Hook into tcl's undefined-procedure mechanism.
+rename unknown old_unknown
 proc unknown {cmd args} {
     if {[regexp {^([_@])(.*)$} $cmd skip 1st var]} {
 	if {$args == ""} {return [unknown$1st $cmd $var]}
     }
     eval old_unknown [concat [list $cmd] $args]
 }
-proc var_value {var} {
-    # Skip over the "return"
-    set value [info body _$var]
-    if {[regexp "^proc _$var {} \\\[list return (.*)\\\];" $value skip value]} {
-    } else {
-	regexp {^return (.*)$} $value skip value
-    }
-    return $value
-}
-proc unsubst_vars {defn} {
-    set result ""
-    while {[regexp {^((\\.|[^\\[])*)\[_([^]]*)\](.*)$} $defn skip before skip2 var defn]} {
-	set result "${result}${before}\$\($var\)"
-    }
-    return "${result}${defn}"
-}
-proc redefined {var value lnum} {
-    global WARN_MULTIPLE WARN_REDEFINED
 
-    if {$WARN_MULTIPLE || ($WARN_REDEFINED && $value != [var_value $var])} {
-	global _
-
-	set old_lnum $_($var)
-	if {!(($old_lnum == "default" || $old_lnum == "implicit") && $lnum == "command-line")} {
-	    set old_value [var_value $var]
-	    puts "${lnum}: warning: variable `$var' redefined as [unsubst_vars $value]"
-	    puts "${old_lnum}: variable `$var' previously defined as [unsubst_vars $old_value]"
-	}
-    }
-}
-# Set the source line number.
-proc L {lnum} {
-    global LN
-
-    set LN $lnum
-}
-# Record a macro value.
-proc V {var value lnum} {
-    global _
-
-    if {![info exists _($var)]} {
-	ifdebug {puts "$var=$value"}
-	set _($var) $lnum
-	proc _$var {} [list return $value]
-    } elseif {[set old $_($var)] == "default"} {
-	unset _($var)
-	V $var $value $lnum
-    } elseif {$old != "command-line"} {
-	redefined $var $value $lnum
-	unset _($var)
-	V $var $value $lnum
-    }
-}
-proc P {var vexpr} {
-    global _ LN
-
-    if {![info exists _($var)]} {
-	ifdebug {puts "$var=$vexpr"}
-	set _($var) $LN
-	proc _$var {} "proc _$var {} \[list return $vexpr\];_$var"
-    } elseif {[set old $_($var)] == "default"} {
-	unset _($var)
-	P $var $vexpr
-    } elseif {$old != "command-line"} {
-	redefined $var $vexpr $LN
-	unset _($var)
-	P $var $vexpr
-    }
-}
-
-# Record the very first target as the default target.
-proc R {tl dl body} {
-    global TARGETS
-
-    if {$TARGETS == ""} {
-	lappend TARGETS [lindex $tl 0]
-    }
-    proc R {tl dl body} {
-	global C I N T LN
-
-	set C([incr I]) $body
-	foreach t [set T($I) $tl] {
-	    set N($t) $LN
-	    proc @$t {} [list target $t $dl $I]
-	}
-    }
-    R $tl $dl $body
-}
-proc tset {p t} {
-    proc @$p {} [list return $t]
-    ifdebug {puts "ftime($p) <- $t"}
-}
 proc reap_jobs {} {
     global JOBS
 
@@ -251,6 +586,7 @@ proc reap_jobs {} {
     }
     set JOBS $jobs
 }
+
 proc shell_exec {cmds} {
     global JOBS MAX_JOBS MAX_LOAD
 
@@ -266,6 +602,7 @@ proc shell_exec {cmds} {
     }
     lappend JOBS [eval exec $args &]
 }
+
 proc rexec {i} {
     global C T DRYRUN IGNORE_ERRORS SILENT
 
@@ -321,6 +658,7 @@ proc rexec {i} {
     }
     return $ok
 }
+
 proc target {t dl i} {
     if {[catch {set mt [file mtime $t]}]} {
 	ifdebug {puts "no ttime($t)"}
@@ -361,273 +699,12 @@ proc _MAKELEVEL_1 {} {
     V MAKELEVEL_1 [set level1 [expr [_MAKELEVEL] + 1]] implicit
     return $level1
 }
-proc tcompile {fname version} {
-    global TMAKE_TIME
 
-    set mf $fname
-    while {![catch {set mf [file readlink $mf]}]} {}
-    set tf ${mf}.tcl
-    if {![file exists $tf] || [file mtime $tf] < [file mtime $mf] || [file mtime $tf] < $TMAKE_TIME} {
-	puts "Compiling $mf to $tf."
-	flush stdout
-	mak2tcl $mf $tf
-    }
-    return $tf
-}
 proc tsource {fname {version 0}} {
     set tf [tcompile $fname $version]
     uplevel [list source $tf]
 }
 
-# ================ Compilation ================ #
-
-# 'Compile' a makefile to a Tcl script.
-# Each macro becomes a Tcl procedure prefixed by _.
-# This is so we can use Tcl's 'unknown' facility to default macro values
-# to the empty string, since Tcl doesn't appear to provide a way to trap
-# references to undefined variables.
-# Each target or precondition becomes a Tcl procedure prefixed by @.
-
-# ---------------- Utilities ---------------- #
-
-# Convert variable references from $(vname) to [_vname],
-# escape characters that need to be quoted within "",
-# and surround the result with "".
-proc quote {defn {refsvar ""}} {
-    set orig $defn
-    set fixed ""
-    set refs {}
-    while {[regexp {^(([^$]|\$[^$(])*)\$(\$|\(([^)]*)\))(.*)$} $orig skip pre skip2 dollar var orig]} {
-	regsub -all {([][\"$])} $pre {\\\1} pre
-	if {$dollar == "\$"} {
-	    append fixed "$pre\\\$"
-	} else {
-	    append fixed "$pre\[_$var\]"
-	}
-	lappend refs $var
-    }
-    regsub -all {([][\"$])} $orig {\\\1} orig
-    append fixed $orig
-    if {[string match {*[ \\]*} $fixed] || $fixed == ""} {
-	return "\"$fixed\""
-    }
-    if {$refsvar != ""} {
-	upvar $refsvar rv
-	set rv $refs
-    }
-    return $fixed
-}
-
-# ---------------- Writing ---------------- #
-
-# Write the boilerplate at the beginning of the converted file.
-proc write_header {out fname} {
-    global TMAKE_VERSION
-
-    puts $out {#!/bin/tcl}
-    puts $out "# File $fname created [exec date] by tmake ${TMAKE_VERSION}."
-}
-
-# Write the definition of a macro.
-proc write_macro {out var defn linenum} {
-    puts $out "L [list $linenum];P $var {[quote $defn]}"
-}
-
-# Write an 'include'.
-proc write_include {out fname} {
-    global TMAKE_VERSION
-
-    puts $out "tsource [quote $fname] $TMAKE_VERSION"
-}
-
-# Write a rule.
-proc write_rule {out targets deps commands linenum} {
-	# Convert all uses of 'make' or $(MAKE) in rule bodies to tmake.
-    set body list
-    foreach c $commands {
-	regsub {^(make|\$\(MAKE\)) } $c {tmake $(MAKEFLAGS) MAKELEVEL=$(MAKELEVEL_1) } c
-	append body " [quote $c]"
-    }
-    puts $out "L [list $linenum];R [quote $targets] [quote [string trim $deps]] [list $body]"
-}
-
-# ---------------- Top level ---------------- #
-
-proc lgets {in lvar lnvar} {
-    upvar $lvar line $lnvar linenum
-    set line ""
-    set len [gets $in line]
-    if {$len < 0} {return $len}
-    incr linenum
-    while {[regsub {\\$} $line {} line]} {
-	if {[gets $in l] < 0} {break}
-	incr linenum
-	append line $l
-    }
-    return [string length $line]
-}
-
-proc mak2tcl {inname {outname ""}} {
-    global =
-
-    catch {unset =}
-    set in [open $inname]
-    if {$outname == ""} {
-	set out stdout
-    } {
-	set out [open $outname w]
-    }
-    write_header $out $outname
-    set linenum 1
-    set line ""
-    while {1} {
-	while {$line == ""} {
-	    set lnfirst $linenum
-	    if {[lgets $in line linenum] < 0} break
-	}
-	if {$line == ""} break
-	if {[string index $line 0] == "#"} {
-	    set line ""
-	    continue
-	}
-	if {[regexp {^([0-9A-Za-z_]+)[ ]*=[ ]*(.*)[ ]*$} $line skip var defn]} {
-	    write_macro $out $var $defn ${inname}:$lnfirst
-	    set line ""
-	    continue
-	}
-	if {[regexp {^([^:]+):(.*)$} $line skip targets deps]} {
-	    set commands {}
-	    while {[lgets $in line linenum] > 0 && [regexp {^[#	]} $line]} {
-		regsub {^[	]} $line {} line
-		lappend commands $line
-	    }
-	    write_rule $out $targets $deps $commands ${inname}:$lnfirst
-	    continue
-	}
-	if {[regexp {^(!|)include[ ]+("|)([^ "]*)("|)$} $line skip skip2 skip3 fname]} {
-	    write_include $out $fname
-	    set line ""
-	    continue
-	}
-	# Recognize some GNU constructs
-	if {[regexp {^unexport } $line]} {
-	    set line ""
-	    continue
-	}
-	puts "${inname}:$lnfirst: Unrecognized line: $line"
-	set line ""
-    }
-    if {$out != "stdout"} {
-	close $out
-    }
-    close $in
-}
-
-# ================ Command line processing ================ #
-
-proc tmake_args {args} {
-    global GLOBALS COMPILE DEFINES JOBS MAKEFILE TARGETS
-
-    foreach v $GLOBALS {global $v}
-    set argv $args
-    while {[llength $argv] > 0} {
-	set n 0
-	set copy 1
-	set arg [lindex $argv 0]
-	switch -glob -- $arg {
-	    # -C is not implemented; set copy 0
-	    --compile-only {set COMPILE 1}
-	    -d {set DEBUG 1}
-	    -f {set MAKEFILE [lindex $argv 1]; set n 1; set copy 0}
-	    -i {set IGNORE_ERRORS 1}
-	    -j {
-		if {[llength $argv] > 1 && [regexp {^[0-9]+$} [lindex $argv 1]]} {
-		    set MAX_JOBS [lindex $argv 1]; set n 1
-		} else {
-		    set MAX_JOBS 99999
-		}
-	    }
-	    -k {set KEEP_GOING 1}
-	    -l {set MAX_LOAD [lindex $argv 1]; set n 1}
-	    # -m is ignored for compatibility with GNU make;
-	    # also, because MAKEFLAGS omits the initial '-', we need a
-	    # dummy switch in case there are variable definitions (!).
-	    -m {set copy 0}
-	    -n {set DRYRUN 1}
-	    -s {set SILENT 1}
-	    --warn-multiply-defined-variables {set WARN_MULTIPLE 1}
-	    --warn-redefined-variables {set WARN_REDEFINED 1}
-	    --warn-undefined-variables {set WARN_UNDEFINED 1}
-	    --warn-undefined-variables-once {set WARN_UNDEFINED_ONCE 1}
-	    -* {
-		puts "Unknown option: $arg"
-		puts {Usage: tmake (<option> | <var>=<value> | <target>)*}
-		puts {Options:}
-		puts {	--compile-only -d -i -k -n -s}
-		puts {	--warn-multiply-defined-variables --warn-redefined-variables}
-		puts {	--warn-undefined-variables --warn-undefined-variables-once}
-		puts {	-f <file> -j <jobs> -l <load>}
-		exit
-	    }
-	    *=* {
-		regexp {^([^=]*)=(.*)$} $arg skip lhs rhs
-		lappend DEFINES [list $lhs $rhs]
-		set copy 0
-	    }
-	    default {
-		lappend TARGETS $arg
-		set copy 0
-	    }
-	}
-	if $copy {lappend MAKEFLAGS [lrange $argv 0 $n]}
-	set argv [lreplace $argv 0 $n]
-    }
-}
-proc tmake {args} {
-    global argv0
-    global GLOBALS COMPILE DEFINES JOBS MAKEFILE TARGETS
-    global TMAKE_TIME TMAKE_VERSION
-
-    set TMAKE_TIME [file mtime $argv0]
-    foreach v $GLOBALS {global $v}
-    init_globals
-    set MAKEFILE makefile
-    set TARGETS ""
-    set DEFINES [list]
-    set COMPILE 0
-    set JOBS {}
-    eval tmake_args $args
-    # POSIX requires the following nonsense:
-    regsub {^-([^-])} $MAKEFLAGS {\1} MAKEFLAGS
-    if {$MAKEFLAGS == ""} {set MAKEFLAGS m}
-    foreach d $DEFINES {
-	append MAKEFLAGS " [lindex $d 0]='[lindex $d 1]'"
-    }
-    init_runtime
-    foreach d $DEFINES {
-	catch {unset _[lindex $d 0]}
-	V [lindex $d 0] [lindex $d 1] command-line
-	set _($d) 1
-    }
-    if {$COMPILE} {
-	# Just compile the given makefile(s).
-	tcompile $MAKEFILE $TMAKE_VERSION
-    } {
-	# Build the selected targets.
-	tsource $MAKEFILE $TMAKE_VERSION
-	foreach t $TARGETS {
-	    global errorInfo TARGET_FAILED
-
-	    set TARGET_FAILED ""
-	    set status [catch "@$t" result]
-	    if {$status == 0} {continue}
-	    if {$status == 1 && $TARGET_FAILED != ""} {
-		exit 1
-	    }
-	    puts stderr $errorInfo
-	    exit $status
-	}
-    }
-}
+# ================ Do it ================ #
 
 eval tmake $argv
