@@ -850,6 +850,7 @@ pm_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	return code;
     s->procs.process = pm_std_write_process;
     s->procs.available = pm_std_available;
+    s->procs.flush = s_std_write_flush;
     s->file = NULL;
     return 0;
 }
@@ -866,6 +867,7 @@ pm_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	return code;
     s->procs.process = pm_std_write_process;
     s->procs.available = pm_std_available;
+    s->procs.flush = s_std_write_flush;
     s->file = NULL;
     return 0;
 }
