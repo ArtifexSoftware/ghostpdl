@@ -26,6 +26,8 @@
 #include "gxfixed.h"
 #include "gxfont.h"
 #include "gxfont1.h"
+#include "gxmatrix.h"		/* for gxtype1.h */
+#include "gxtype1.h"
 #include "strimpl.h"		/* required by Watcom compiler (why?) */
 #include "stream.h"
 #include "sfilter.h"
@@ -157,12 +159,16 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
 
 /*
  * Write the Private dictionary.  This is a separate procedure only for
- * readability.
+ * readability.  write_CharString is a parameter so that we can encrypt
+ * Subrs and CharStrings when the font's lenIV == -1 but we are writing
+ * the font with lenIV = 0.
  */
 private int
 write_Private(stream *s, gs_font_type1 *pfont,
 	      gs_glyph *subset_glyphs, uint subset_size,
-	      gs_glyph notdef, const param_printer_params_t *ppp)
+	      gs_glyph notdef, int lenIV,
+	      int (*write_CharString)(P3(stream *, const void *, uint)),
+	      const param_printer_params_t *ppp)
 {
     const gs_type1_data *const pdata = &pfont->data;
     printer_param_list_t rlist;
@@ -177,8 +183,6 @@ write_Private(stream *s, gs_font_type1 *pfont,
     pputs(s, "/|{noaccess put}executeonly def\n");
     {
 	private const gs_param_item_t private_items[] = {
-	    {"lenIV", gs_param_type_int,
-	     offset_of(gs_type1_data, lenIV)},
 	    {"BlueFuzz", gs_param_type_int,
 	     offset_of(gs_type1_data, BlueFuzz)},
 	    {"BlueScale", gs_param_type_float,
@@ -197,7 +201,6 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	};
 	gs_type1_data defaults;
 
-	defaults.lenIV = 4;
 	defaults.BlueFuzz = 1;
 	defaults.BlueScale = 0.039625;
 	defaults.BlueShift = 7.0;
@@ -208,6 +211,11 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	code = gs_param_write_items(plist, pdata, &defaults, private_items);
 	if (code < 0)
 	    return code;
+	if (lenIV != 4) {
+	    code = param_write_int(plist, "lenIV", &lenIV);
+	    if (code < 0)
+		return code;
+	}
 	write_float_array(plist, "BlueValues", pdata->BlueValues.values,
 			  pdata->BlueValues.count);
 	write_float_array(plist, "OtherBlues", pdata->OtherBlues.values,
@@ -248,7 +256,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 
 		sprintf(buf, "dup %d %u -| ", i, str.size);
 		pputs(s, buf);
-		pwrite(s, str.data, str.size);
+		write_CharString(s, str.data, str.size);
 		pputs(s, " |\n");
 	    }
 	pputs(s, "|-\n");
@@ -286,7 +294,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 		pputs(s, "/");
 		pwrite(s, gstr, gssize);
 		pprintd1(s, " %d -| ", gdata.size);
-		pwrite(s, gdata.data, gdata.size);
+		write_CharString(s, gdata.data, gdata.size);
 		pputs(s, " |-\n");
 	    }
     }
@@ -296,6 +304,24 @@ write_Private(stream *s, gs_font_type1 *pfont,
     pputs(s, "end\nend\nreadonly put\nnoaccess put\n");
     s_release_param_printer(&rlist);
     return 0;
+}
+
+/* Encrypt and write a CharString. */
+private int
+pwrite_encrypted(stream *s, const void *ptr, uint count)
+{
+    const byte *const data = ptr;
+    crypt_state state = crypt_charstring_seed;
+    byte buf[50];		/* arbitrary */
+    uint left, n;
+    int code = 0;
+
+    for (left = count; left > 0; left -= n) {
+	n = min(left, sizeof(buf));
+	gs_type1_encrypt(buf, data + count - left, n, &state);
+	code = pwrite(s, buf, n);
+    }
+    return code;
 }
 
 /* Write one FontInfo entry. */
@@ -328,6 +354,8 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     stream_exE_state exE_state;
     byte exE_buf[200];		/* arbitrary */
     psf_outline_glyphs_t glyphs;
+    int lenIV = pfont->data.lenIV;
+    int (*write_CharString)(P3(stream *, const void *, uint)) = pwrite;
     int code = psf_get_type1_glyphs(&glyphs, pfont, orig_subset_glyphs,
 				     orig_subset_size);
 
@@ -416,6 +444,11 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 
     /* Write the Private dictionary. */
 
+    if (lenIV < 0 && (options & WRITE_TYPE1_WITH_LENIV)) {
+	/* We'll have to encrypt the CharStrings. */
+	lenIV = 0;
+	write_CharString = pwrite_encrypted;
+    }
     if (options & WRITE_TYPE1_EEXEC) {
 	pputs(s, "currentfile eexec\n");
 	lengths[0] = stell(s) - start;
@@ -441,7 +474,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	pputs(es, "****");
     }
     code = write_Private(es, pfont, glyphs.subset_glyphs, glyphs.subset_size,
-			 glyphs.notdef, &ppp);
+			 glyphs.notdef, lenIV, write_CharString, &ppp);
     if (code < 0)
 	return code;
     pputs(es, "dup/FontName get exch definefont pop\n");

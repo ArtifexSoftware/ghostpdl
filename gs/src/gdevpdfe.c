@@ -110,8 +110,12 @@ pdf_embed_font_as_type1(gx_device_pdf *pdev, gs_font_type1 *font,
      * NOTE: the options were set to 0 in the first checked-in version of
      * this file.  We can't explain this: Acrobat Reader requires eexec
      * encryption, so the code can't possibly have worked.
+     *
+     * Acrobat Reader 3 allows lenIV = -1 in Type 1 fonts, but Acrobat
+     * Reader 4 doesn't.  Therefore, we can't allow it.
      */
-#define TYPE1_OPTIONS (WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_MARK)
+#define TYPE1_OPTIONS (WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_MARK |\
+		       WRITE_TYPE1_WITH_LENIV)
     code = psf_write_type1_font(&poss, font, TYPE1_OPTIONS,
 				 subset_glyphs, subset_size, pfname, lengths);
     if (code < 0)

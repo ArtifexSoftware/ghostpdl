@@ -177,6 +177,7 @@ int psf_get_type1_glyphs(P4(psf_outline_glyphs_t *pglyphs,
 #define WRITE_TYPE1_EEXEC_PAD 4  /* add 512 0s */
 #define WRITE_TYPE1_EEXEC_MARK 8  /* assume 512 0s will be added */
 #define WRITE_TYPE1_POSTSCRIPT 16  /* don't observe ATM restrictions */
+#define WRITE_TYPE1_WITH_LENIV 32  /* don't allow lenIV = -1 */
 int psf_write_type1_font(P7(stream *s, gs_font_type1 *pfont, int options,
 			    gs_glyph *subset_glyphs, uint subset_size,
 			    const gs_const_string *alt_font_name,
