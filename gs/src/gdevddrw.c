@@ -102,7 +102,7 @@ typedef struct trap_line_s {
  */
 typedef struct trap_gradient_s {
 	frac32 *c; /* integer part of the color in frac32 units. */
-	long *f; /* the fraction part numerator */
+	ulong *f; /* the fraction part numerator */
 	long *num; /* the gradient numerator */
 	ulong den; /* color gradient denominator */
 } trap_gradient;
@@ -179,8 +179,10 @@ init_gradient(trap_gradient *g, const gs_linear_color_edge *e,
 	g->den = (uint32_t)(e->end.y - e->start.y);
 	assert(g->den == l->h);
 	for (i = 0; i < num_components; i++) {
-	    g->num[i] = (int32_t)(e->c1[i] - e->c0[i]);
-	    c = (int64_t)g->num[i] * (uint32_t)(ybot - e->start.y);
+	    g->num[i] = (int32_t)((e->c1[i] >> 1) - (e->c0[i] >> 1)); /* fixme: 
+			divided by 2 for the sign to fit into 32 bits. 
+			It may sensively loose a precision. */
+	    c = (int64_t)g->num[i] * 2 * (uint32_t)(ybot - e->start.y);
 	    d = (int32_t)(c / g->den);
 	    g->c[i] = e->c0[i] + d;
 	    c -= (int64_t)d * g->den;
@@ -202,7 +204,8 @@ step_gradient(trap_gradient *g, int num_components)
 	return;
     for (i = 0; i < num_components; i++) {
 	/* fixme: optimize. */
-	int64_t fc = g->f[i] + (int64_t)g->num[i] * fixed_1;
+	int64_t fc = g->f[i] + (int64_t)g->num[i] * fixed_1 * 2; /* fixme: 
+		2 compensates the division in init_gradient. */
 
 	g->c[i] += (int32_t)(fc / g->den);
 	fc -=  fc / g->den * g->den;
@@ -258,7 +261,7 @@ set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gr
 	if (arith_rshift_1(xr) - arith_rshift_1(xl) >= 0x3FFFFFFE) /* Can overflow ? */
 	    return_error(gs_error_unregistered); /* Must not happen. */
 #   endif
-    xg->den = x1 - x0;
+    xg->den = fixed2int(x1 - x0);
     for (i = 0; i < num_components; i++) {
 	/* Ignoring the ending colors fractions, 
 	   so the color gets a slightly smaller value
@@ -277,7 +280,8 @@ set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gr
 			 the further conversion to [0, 1 << cinfo->comp_bits[j]], 
 			 which drops the fraction anyway. 
 			 So setting 0 appears pretty good and fast. */
-	xg->num[i] = c1 - c0;
+	xg->num[i] = (c1 >> 1) - (c0 >> 1); /* fixme: divided by 2 for the sign to fit into 32 bits. 
+	                               It may sensively loose a precision. */
     }
     return 0;
 }
@@ -556,10 +560,13 @@ gx_default_fill_linear_color_triangle(const gs_fill_attributes *fa,
     fixed dx2 = p2->x - p0->x, dy2 = p2->y - p0->y;
     
     if ((int64_t)dx1 * dy2 < (int64_t)dx2 * dy1) {
-	const gs_fixed_point *p = p1; 
+	const gs_fixed_point *p = p1;
+	const frac32 *c = c1;
 	
 	p1 = p2; 
 	p2 = p;
+	c1 = c2;
+	c2 = c;
     }
     if (p0->y <= p1->y && p0->y <= p2->y)
 	return fill_linear_color_triangle(fa, p0, p1, p2, c0, c1, c2);

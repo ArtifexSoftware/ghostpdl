@@ -372,6 +372,7 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const shading_vertex_t * va,
 
  	memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
 	pfs1.Function = pfs->pshm->params.Function;
+	pfs1.rect = pfs->rect;
 	code = init_patch_fill_state(&pfs1);
 	if (code < 0)
 	    return code;
@@ -400,6 +401,12 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     int flag;
     shading_vertex_t va, vb, vc;
 
+    if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+    }
     mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
 			 dev, pis);
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
@@ -428,6 +435,8 @@ v2:		if ((code = Gt_next_vertex(state.pshm, &cs, &vc)) < 0)
 		    return code;
 	}
     }
+    if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s'))
+	vd_release_dc;
     if (!cs.is_eod(&cs))
 	return_error(gs_error_rangecheck);
     return 0;

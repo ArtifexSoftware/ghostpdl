@@ -770,15 +770,18 @@ gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace,
 int 
 gx_forward_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	int i, int j, int w,
-	const frac32 *c, const long *addx, const long *mulx, ulong divx)
+	const frac32 *c, const ulong *addx, const long *mulx, ulong divx)
 {
     gx_device_forward * const fdev = (gx_device_forward *)fa->pdev;
     gx_device *tdev = fdev->target;
     dev_proc_fill_linear_color_scanline((*proc)) =
 	(tdev == 0 ? (tdev = fa->pdev, gx_default_fill_linear_color_scanline) :
 	 dev_proc(tdev, fill_linear_color_scanline));
+    gs_fill_attributes fa1;
 
-    return proc(fa, i, j, w, c, addx, mulx, divx);
+    fa1 = *fa;
+    fa1.pdev = tdev;
+    return proc(&fa1, i, j, w, c, addx, mulx, divx);
 }
 
 int 
@@ -793,8 +796,11 @@ gx_forward_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
     dev_proc_fill_linear_color_trapezoid((*proc)) =
 	(tdev == 0 ? (tdev = fa->pdev, gx_default_fill_linear_color_trapezoid) :
 	 dev_proc(tdev, fill_linear_color_trapezoid));
+    gs_fill_attributes fa1;
 
-    return proc(fa, p0, p1, p2, p3, c0, c1, c2, c3);
+    fa1 = *fa;
+    fa1.pdev = tdev;
+    return proc(&fa1, p0, p1, p2, p3, c0, c1, c2, c3);
 }
 
 int 
@@ -808,8 +814,11 @@ gx_forward_fill_linear_color_triangle(const gs_fill_attributes *fa,
     dev_proc_fill_linear_color_triangle((*proc)) =
 	(tdev == 0 ? (tdev = fa->pdev, gx_default_fill_linear_color_triangle) :
 	 dev_proc(tdev, fill_linear_color_triangle));
+    gs_fill_attributes fa1;
 
-    return proc(fa, p0, p1, p2, c0, c1, c2);
+    fa1 = *fa;
+    fa1.pdev = tdev;
+    return proc(&fa1, p0, p1, p2, c0, c1, c2);
 }
 
 

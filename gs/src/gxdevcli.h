@@ -1246,7 +1246,7 @@ typedef struct gs_fill_attributes_s {
   int proc(const gs_fill_attributes *fa,\
 	int i, int j, int w, /* scanline coordinates and width */\
 	const frac32 *c0, /* initial color for the pixel (i,j), the integer part */\
-	const long *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
+	const ulong *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
 	const long *cg_num, /* color gradient numerator */\
 	ulong cg_den /* color gradient denominator */)
 #define dev_proc_fill_linear_color_scanline(proc)\

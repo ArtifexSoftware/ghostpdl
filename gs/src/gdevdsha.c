@@ -26,7 +26,7 @@
 int 
 gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	int i0, int j, int w,
-	const frac32 *c0, const long *c0f, const long *cg_num, ulong cg_den)
+	const frac32 *c0, const ulong *c0f, const long *cg_num, ulong cg_den)
 {
     /* This default implementation decomposes the area into constant color rectangles.
        Devices may supply optimized implementations with
@@ -35,14 +35,14 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
        and with a fixed bits per component.
      */
     frac32 c[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    long f[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    ulong f[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int i, i1 = i0 + w, bi = i0, k;
     gx_color_index ci0 = 0, ci1;
     const gx_device_color_info *cinfo = &fa->pdev->color_info;
     int n = cinfo->num_components;
     int si, ei, code;
 
-    if (j < fa->clip->p.y || j > fa->clip->q.y)
+    if (j < fixed2int(fa->clip->p.y) || j > fixed2int(fa->clip->q.y))
 	return 0;
     for (k = 0; k < n; k++) {
 	int shift = cinfo->comp_shift[k];
@@ -59,13 +59,28 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	    int bits = cinfo->comp_bits[k];
 	    long m = f[k] + cg_num[k];
 
-	    f[k] = m % cg_den;
-	    c[k] += m / cg_den;
+	    c[k] += m / (long)cg_den;
+	    m -= m / (long)cg_den * (long)cg_den;
+	    if (m < 0) {
+		c[k]--;
+		m += cg_den;
+	    }
+
+	    m += cg_num[k]; /* fixme: do at 2nd time due to the shift in set_x_gradient_nowedge */
+	    c[k] += m / (long)cg_den;
+	    m -= m / (long)cg_den * (long)cg_den;
+	    if (m < 0) {
+		c[k]--;
+		m += cg_den;
+	    }
+
+
+	    f[k] = m;
 	    ci1 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift;
 	}
 	if (ci1 != ci0) {
-	    si = max(bi, fa->clip->p.x);
-	    ei = min(i, fa->clip->q.x);
+	    si = max(bi, fixed2int(fa->clip->p.x));
+	    ei = min(i, fixed2int(fa->clip->q.x));
 	    if (si < ei) {
 		vd_rect(int2fixed(bi), int2fixed(j), int2fixed(i), int2fixed(j + 1), 1, (ulong)ci0);
 		if (fa->swap_axes)
@@ -79,8 +94,8 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	    ci0 = ci1;
 	}
     }
-    si = max(bi, fa->clip->p.x);
-    ei = min(i, fa->clip->q.x);
+    si = max(bi, fixed2int(fa->clip->p.x));
+    ei = min(i, fixed2int(fa->clip->q.x));
     vd_rect(int2fixed(bi), int2fixed(j), int2fixed(i), int2fixed(j + 1), 1, (ulong)ci0);
     if (si < ei) {
 	if (fa->swap_axes)

@@ -369,7 +369,7 @@ make_other_poles(patch_curve_t curve[4])
 }
 
 private int
-Fb_fill_region(Fb_fill_state_t * pfs)
+Fb_fill_region(Fb_fill_state_t * pfs, const gs_rect *rect)
 {
     patch_fill_state_t pfs1;
     patch_curve_t curve[4];
@@ -389,6 +389,7 @@ Fb_fill_region(Fb_fill_state_t * pfs)
 	return code;
     pfs1.maybe_self_intersecting = false;
     pfs1.n_color_args = 2;
+    shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
     gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.p.y, &curve[0].vertex.p);
     gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.p.y, &curve[1].vertex.p);
     gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.q.y, &curve[2].vertex.p);
@@ -446,7 +447,7 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     state.frames[0].region.p.y = y[0];
     state.frames[0].region.q.x = x[1];
     state.frames[0].region.q.y = y[1];
-    return Fb_fill_region(&state);
+    return Fb_fill_region(&state, rect);
 }
 
 /* ---------------- Axial shading ---------------- */
