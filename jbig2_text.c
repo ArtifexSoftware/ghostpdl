@@ -324,7 +324,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     Jbig2SymbolDict **dicts;
     int n_dicts;
     uint16_t flags;
-    uint16_t huffman_flags;
+    uint16_t huffman_flags = 0;
     int8_t sbrat[4];
     int code;
     
