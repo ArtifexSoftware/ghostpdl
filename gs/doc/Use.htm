@@ -971,37 +971,37 @@ of an error; you may have to delete them manually from time to time.
 <p>
 CID fonts are PostScript resources containing
 large number of glyphs (e.g. glyphs for Far East languages).
-Please refer Postscript Language Reference,
+Please refer to the Postscript Language Reference,
 third edition, for details.
 
 
 <p>
-CID font resources are different kind of PostScript resources than fonts.
-Particularly they cannot be used as regular fonts. For doing this,
-CID font resourse first to be combined with a CMap resource, which
-defines specific codes for hieroglyphs (this allows to use
-same collection of hieroglyphs with different encodings).
+CID font resources are a different kind of PostScript resources from fonts.
+Particularly they cannot be used as regular fonts.
+CID font resourses must first to be combined with a CMap resource, which
+defines specific codes for glyphs, before it can be used as a font. This 
+allows the reuse of a collection of glyphs with different encodings.
 
 <p>
-The simplest method to request a font composed of CID font resource and CMap resource
-is to code
+The simplest method to request a font composed of a CID font resource 
+and a CMap resource in a Postscript document is
 <blockquote><b><tt>
 /CIDFont-CMap findfont
 </tt></b></blockquote>
-in a PostScript document, where <b><tt>CIDFont</tt></b> is a name of any
-CID font resourse, and <b><tt>CMap</tt></b> is a name of a CMap resource,
-being designed for same character collection. The interpreter will compose
+where <b><tt>CIDFont</tt></b> is a name of any
+CID font resourse, and <b><tt>CMap</tt></b> is a name of a CMap resource
+designed for the same character collection. The interpreter will compose
 the font automatically from the specified CID font and CMap resources.
-Another method is based on the operator <b><tt>composefont</tt></b>.
+Another method is possible using the <b><tt>composefont</tt></b> operator.
 
 <p>
 For substituting CID font resources Ghostscript provides the control file
-<b><tt>gs/lib/cidfmap</tt></b>, which defines a CID font resource map.
+<b><tt>lib/cidfmap</tt></b>, which defines a CID font resource map.
 The file forms a table of records, each of which should use one of two formats,
 explained below.
 
 <p> For substituting a CID font resource to another CID font resource
-a record is a simple pair of names :
+a record is a simple pair of names:
 
 <blockquote><b><tt>
 /Substituted /Original ;
@@ -1011,13 +1011,13 @@ by a document, and <b><tt>Original</tt></b> is a name of an available
 CID font resource. Please pay attention that both them must be
 designed for same character collection. In other words, you
 cannot substitute Japanese CID font resource to Korean CID font resource,
-etc. Also please pay attention that CMap resource names must not appear in
-<b><tt>gs/lib/cidfmap</tt></b>. At last please note the ending semicolon and 
-a space before it.
+etc. CMap resource names must not appear in
+<b><tt>lib/cidfmap</tt></b>. The trailing semicolon and the space before it
+are both required.
 
 <p>
 
-For substituting a True Type font to a CID font one should use format like this :
+For substituting a TrueType font to a CID font one should use format like this :
 
 <blockquote><b><tt>
 /Substituted << keys&values >> ;
@@ -1030,18 +1030,18 @@ Where <b><tt>keys&values</tt></b> are explained in the table below.
 <tr>	<th>Key
 	<th>Type
 	<th>Description
-<tr>	<td>Path
+<tr>	<td><tt>/Path</tt>
         <td>string
-        <td>A path to a True Type font file.
-<tr>	<td>FileType
+        <td>A path to a TrueType font file.
+<tr>	<td><tt>/FileType</tt>
         <td>name
         <td>Must be <b><tt>/TrueType</tt></b>.
-<tr>	<td>SubfontId
+<tr>	<td><tt>/SubfontID</tt>
         <td>integer
         <td>(optional) Index of the font in font collection, such as TTC.
-            It is being ignored if Path doesn't specify a collection.
+            This is ignored if Path doesn't specify a collection.
             Default value is 0.
-<tr>	<td>CSI
+<tr>	<td><tt>/CSI</tt>
         <td>array of 2 elements
         <td>(required) Information for building <b><tt>CIDSystemInfo</tt></b>.
             The first element is a string, which specifies <b><tt>Ordering</tt></b>.
@@ -1049,8 +1049,8 @@ Where <b><tt>keys&values</tt></b> are explained in the table below.
 </table>
 
 <p>
-Now only CIDFontType 2 can be emulated with a True Type font.
-The True Type font must contain enough charasters to cover an
+Currently only CIDFontType 2 can be emulated with a TrueType font.
+The TrueType font must contain enough charasters to cover an
 Adobe character collection, which is specified in <b><tt>Ordering</tt></b>.
 
 <p>
@@ -2791,20 +2791,20 @@ Just copy the files to the <b><tt>Resource/Decoding</tt></b> directory (or to th
 There are 2 ways to handle fonts with a 3d party font renderer (FAPI). First, you can substitute
 any FAPI-handled font to a Postscript font, using special map files.
 Second, you can redirect Postscript fonts to FAPI, setting
-entries in <b><tt>gs/lib/FAPIconfig</tt></b> file.
+entries in <b><tt>lib/FAPIconfig</tt></b> file.
 
 <p>
-The file <b><tt>gs/lib/FAPIfontmap</tt></b> defines a map table for FAPI-handled fonts.
-The format of <b><tt>gs/lib/FAPIfontmap</tt></b> is explained below.
+The file <b><tt>lib/FAPIfontmap</tt></b> defines a map table for FAPI-handled fonts.
+The format of <b><tt>lib/FAPIfontmap</tt></b> is explained below.
 
 <p>
 Font files being handled with FAPI may reside in any directory in your hard disk.
-Paths to them to be specified in <b><tt>gs/lib/FAPIfontmap</tt></b>. The path may be either
+Paths to them to be specified in <b><tt>lib/FAPIfontmap</tt></b>. The path may be either
 absolute or relative. Relative ones are being resolved from the path,
-which is specified in <b><tt>gs/lib/FAPIconfig</tt></b> file.
+which is specified in <b><tt>lib/FAPIconfig</tt></b> file.
 
 <p>
-The file <b><tt>gs/lib/FAPIfontmap</tt></b> is actually special PostScript code.
+The file <b><tt>lib/FAPIfontmap</tt></b> is actually special PostScript code.
 It contains records for each font being rendered with FAPI.
 Records must end with semicolon. Each record is a pair.
 The first element of the pair is the font name (the name that PostScript
@@ -2820,7 +2820,7 @@ The second element is a dictionary with entries :
 <tr>	<td>Path
         <td>string
         <td>Absolute path to font file, or relative path to font file from the FontPath value,
-            being specified in <b><tt>gs/lib/FAPIconfig</tt></b>.
+            being specified in <b><tt>lib/FAPIconfig</tt></b>.
 <tr>    <td>FontType
         <td>interger
         <td>PostScript type for this font. Only 1 and 42 are currently allowed.
@@ -2839,7 +2839,7 @@ The second element is a dictionary with entries :
 <tr>	<td>Decoding
         <td>name
         <td>(optional) The name of a Decoding resource to be used with the font.
-            If specified, <b><tt>gs/lib/xlatmap</tt></b> (see below) doesn't work for this font.
+            If specified, <b><tt>lib/xlatmap</tt></b> (see below) doesn't work for this font.
 </table>
 
 <p>
@@ -2851,13 +2851,13 @@ Example of FAPI font map record :
 </blockquote>
 
 <p>
-Note that <b><tt>gs/lib/FAPIfontmap</tt></b> specifies only instances of
+Note that <b><tt>lib/FAPIfontmap</tt></b> specifies only instances of
 Font category. CID fonts to be listed in another map file.
 
 <p>
-The file <b><tt>gs/lib/FAPIcidfmap</tt></b> defines a mapping table for
+The file <b><tt>lib/FAPIcidfmap</tt></b> defines a mapping table for
 CIDFont resources. It contains records for each CID font being rendered with FAPI.
-The format is similar to <b><tt>gs/lib/FAPIfontmap</tt></b>,
+The format is similar to <b><tt>lib/FAPIfontmap</tt></b>,
 but dictionaries must contain few different entries :
 
 <table cellpadding=0 cellspacing=10>
@@ -2868,7 +2868,7 @@ but dictionaries must contain few different entries :
 <tr>	<td>Path
         <td>string
         <td>Absolute path to font file, or relative path to font file from the CIDFontPath value,
-            being specified in <b><tt>gs/lib/FAPIconfig</tt></b>.
+            being specified in <b><tt>lib/FAPIconfig</tt></b>.
 <tr>    <td>CIDFontType
         <td>interger
         <td>PostScript type for this CID font. Only 0, 1 and 2 are currently allowed.
@@ -2902,7 +2902,7 @@ Example of FAPI CID font map record :
 
 
 <p>
-The control file <b><tt>gs/lib/FAPIconfig</tt></b> defines 4 entries :
+The control file <b><tt>lib/FAPIconfig</tt></b> defines 4 entries :
 
 <table cellpadding=0 cellspacing=10>
 <tr>	<th>Key
@@ -2911,18 +2911,18 @@ The control file <b><tt>gs/lib/FAPIconfig</tt></b> defines 4 entries :
 <tr>	<td>FontPath
         <td>string
         <td>Absolute path to a directory, which contains fonts. Used to resolve
-            relative paths in <b><tt>gs/lib/FAPIfontmap</tt></b>.
+            relative paths in <b><tt>lib/FAPIfontmap</tt></b>.
 <tr>	<td>CIDFontPath
         <td>string
         <td>Absolute path to a directory, which contains fonts to substitute to CID fonts.
-            Used to resolve relative paths in <b><tt>gs/lib/FAPIcidfmap</tt></b>.
+            Used to resolve relative paths in <b><tt>lib/FAPIcidfmap</tt></b>.
             It may be same or different than FontPath.
 <tr>	<td>HookDiskFonts
         <td>array of integers.
         <td>List of PS font types to be handled with FAPI.
-            This controls other fonts that ones listed in <b><tt>gs/lib/FAPIfontmap</tt></b>
-            and <b><tt>gs/lib/FAPIcidfmap</tt></b> - such ones are PS fonts installed to
-            Ghostscript with <b><tt>gs/lib/fontmap</tt></b> or with <b><tt>GS_FONTPATH</tt></b>,
+            This controls other fonts that ones listed in <b><tt>lib/FAPIfontmap</tt></b>
+            and <b><tt>lib/FAPIcidfmap</tt></b> - such ones are PS fonts installed to
+            Ghostscript with <b><tt>lib/fontmap</tt></b> or with <b><tt>GS_FONTPATH</tt></b>,
             or regular CID font resources. Unlisted font types will be
             rendered with the native Ghostscript font renderer.
             Only allowed values now are 1,9,11,42. Note that 9 and 11
@@ -2939,7 +2939,7 @@ The control file <b><tt>gs/lib/FAPIconfig</tt></b> defines 4 entries :
 </table>
 
 <p>
-You may need to customize the file <b><tt>gs/lib/xlatmap</tt></b>. Follow instructions in it.
+You may need to customize the file <b><tt>lib/xlatmap</tt></b>. Follow instructions in it.
 
 <p>
 Note that UFST and Free Type cannot handle some Ghostscript fonts because
