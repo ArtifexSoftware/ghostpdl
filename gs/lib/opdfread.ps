@@ -710,7 +710,8 @@ currentdict end def
 	} ifelse
 	1 index exch /Decode exch put
   } if
-  dup /ImageMatrix [2 index /Width get 0 0 5 index /Height get 0 0] put
+  dup /ImageMatrix [2 index /Width get 0 0 5 index /Height get neg 
+					0 7 index /Height get] put % Not sure why upside down ?
   //DebugImagePrinting exec
 } bind def
 
@@ -737,9 +738,10 @@ currentdict end def
 {
   dup /ImageType known not {
 	dup /ImageType 1 put
-	dup dup //MakeStreamReader exec /DataSource exch put
     //CompleteImage exec
   } if
+  dup dup //MakeStreamReader exec /DataSource exch put
+  % todo: ResetStreamReader if DataSource already exists.
 } bind def
 
 /DoImage % <image_dict> DoImage -
@@ -751,6 +753,78 @@ currentdict end def
   grestore
 } bind def
 
+% ===================== Color Spaces and Colors ==============
+
+% We need some structures in local VM, put then into the userdict :
+currentglobal false setglobal
+userdict /PDFR_InitialGS gstate put
+userdict /PDFR_Patterns 50 dict put
+setglobal
+
+/CheckColorSpace %  <key> <val> CheckColorSpace  <key> <val>
+{
+  dup type /arraytype ne {
+    mark (Resource ) 3 index ( must be an array.) //error exec
+  } if
+} bind def
+
+/ResolveColorSpace  % <name> ResolveColorSpace <color_space>
+{
+  //PDFReader /CurrentObject get /Context get /Resources get 
+  /ColorSpace //DoNothing //ResolveD exec
+  exch //CheckColorSpace //ResolveD exec
+} bind def
+
+/CheckPattern %  <key> <val> CheckPattern  <key> <val>
+{
+  dup /Type get /Pattern ne {
+    mark (Resource ) 3 index ( must have /Type/Pattern .) //error exec
+  } if
+} bind def
+
+/PaintProc % 
+{ /Context get									% pattern_object
+  //RunDelayedStream exec
+} bind def
+
+/ResolvePattern % <name> ResolvePattern <pattern>
+{
+  dup												% n n
+  % Since makepattern makes a local dictionary,
+  % we cahche them in userdict, which is in local VM.
+  % Assuming unique resource name through the document
+  userdict /PDFR_Patterns get						% n n d
+  exch //knownget exec {							% n p
+    exch pop										% p
+  } {												% n
+    dup												% n n
+    //PDFReader /CurrentObject get /Context get /Resources get 
+    /Pattern //DoNothing //ResolveD exec
+    exch //CheckPattern //ResolveD exec				% n o
+    dup dup /Context exch put
+	dup /Resources //DoNothing //ResolveD exec pop
+	dup /PaintProc //PaintProc put
+	dup /Matrix get
+	gsave userdict /PDFR_InitialGS get setgstate
+	makepattern										% n p
+	grestore
+	dup userdict /PDFR_Patterns get					% n p p d
+	4 2 roll										% p d n p
+	put												% p
+  } ifelse
+} bind def
+
+/SetColor % Same arguments and result as for scn
+{ currentcolorspace dup type /nametype eq {
+    pop setcolor    
+  } {
+    0 get /Pattern eq {
+	  ResolvePattern setpattern
+	} {
+	  mark exch (Unimplemented color space) exch //error exec
+	} ifelse
+  } ifelse
+} bind def
 
 % ===================== Interpret Data Streams ===============
 
@@ -1038,14 +1112,14 @@ currentdict end def
   /k /setcmykcolor load def
   /cs { ResolveColorSpace setcolorspace } bind def
   /sc /setcolor load def
-  /scn  /setcolor load def
+  /scn { //SetColor exec } bind def
   /G /setgray load def
   /RG /setrgbcolor load def
   /K /setcmykcolor load def
   /CS { ResolveColorSpace setcolorspace } bind def
   /ri { SetColorRenderingIntent } bind def
   /SC /setcolor load def
-  /SCN /setcolor load def
+  /SCN { //SetColor exec } bind def
 
   /m /moveto load def
   /l /lineto load def
