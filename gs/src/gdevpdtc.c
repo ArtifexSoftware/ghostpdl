@@ -605,7 +605,7 @@ process_cid_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 
 	    if (gnum & ~0xffffL)
 		return_error(gs_error_rangecheck);
-	    *pchars++ = (byte)(gnum >> 8);
+	    *pchars++ = (byte)(gnum >> 8);  
 	    *pchars++ = (byte)gnum;
 	}
     }

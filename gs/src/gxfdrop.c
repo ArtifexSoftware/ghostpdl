@@ -484,6 +484,7 @@ private int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, i
     int iy = fixed2int_var_pixround(ms->y);
     int i, ir, h = -2, code;
     const fill_options * const fo = ll->fo;
+    const bool FILL_DIRECT = fo->fill_direct;
 
     assert(i0 >= 0 && i1 <= ll->bbox_width);
     ir = i0;

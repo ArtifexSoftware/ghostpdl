@@ -155,9 +155,9 @@ struct line_list_s {
 };
 
 #define LOOP_FILL_RECTANGLE_DIRECT(fo, x, y, w, h)\
-  (fo->fill_direct ?\
-   fo->fill_rect(fo->dev, x, y, w, h, fo->pdevc->colors.pure) :\
-   gx_fill_rectangle_device_rop(x, y, w, h, fo->pdevc, fo->dev, fo->lop))
+  (/*fo->fill_direct*/FILL_DIRECT ?\
+   (fo)->fill_rect((fo)->dev, x, y, w, h, (fo)->pdevc->colors.pure) :\
+   gx_fill_rectangle_device_rop(x, y, w, h, (fo)->pdevc, (fo)->dev, (fo)->lop))
 
 /* ---------------- Statistics ---------------- */
 

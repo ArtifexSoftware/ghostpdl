@@ -142,24 +142,45 @@ compute_ldx(trap_line *tl, fixed ys)
 
 /*
  * Fill a trapezoid.
- * Since we need 2 statically defined variants of this algorithm,
+ * Since we need 3 statically defined variants of this algorithm,
  * we stored it in gxdtfill.h and include it configuring with
  * macros defined here.
  */
-#define GX_FILL_TRAPEZOID gx_default_fill_trapezoid
+#define GX_FILL_TRAPEZOID gx_default_fill_trapezoid_as
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 1
-#define FLAGS_TYPE bool
 #include "gxdtfill.h"
-
 #undef GX_FILL_TRAPEZOID
 #undef CONTIGUOUS_FILL 
 #undef SWAP_AXES
-#define FLAGS_TYPE int
+
+#define GX_FILL_TRAPEZOID gx_default_fill_trapezoid_ns
+#define CONTIGUOUS_FILL 0
+#define SWAP_AXES 0
+#include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+
 #define GX_FILL_TRAPEZOID gx_fill_trapezoid_narrow
 #define CONTIGUOUS_FILL 1
 #define SWAP_AXES 0
 #include "gxdtfill.h"
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+
+int
+gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
+    const gs_fixed_edge * right, fixed ybot, fixed ytop, bool swap_axes,
+    const gx_device_color * pdevc, gs_logical_operation_t lop)
+{
+    if (swap_axes)
+	return gx_default_fill_trapezoid_as(dev, left, right, ybot, ytop, 0, pdevc, lop);
+    else
+	return gx_default_fill_trapezoid_ns(dev, left, right, ybot, ytop, 0, pdevc, lop);
+}
+
 
 /* Fill a parallelogram whose points are p, p+a, p+b, and p+a+b. */
 /* We should swap axes to get best accuracy, but we don't. */

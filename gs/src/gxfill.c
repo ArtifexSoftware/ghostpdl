@@ -35,7 +35,12 @@
 #include "gzspotan.h" /* Only for gx_san_trap_store. */
 #include "memory_.h"
 #include "vdtrace.h"
-#include <assert.h>
+/*
+#include "gxfilltr.h" - Do not remove this comment. "gxfilltr.h" is included below.
+#include "gxfillsl.h" - Do not remove this comment. "gxfillsl.h" is included below.
+#include "gxfillts.h" - Do not remove this comment. "gxfillts.h" is included below.
+*/
+
 
 #if DONT_FILTER_SMALL_SEGMENTS
 #   define gx0 lx0
@@ -294,7 +299,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     fill_options fo;
     line_list lst;
 
-    *(fill_options **)&lst.fo = &fo; /* break 'const'. */
+    *(const fill_options **)&lst.fo = &fo; /* break 'const'. */
     adjust = params->adjust;
     /*
      * Compute the bounding box before we flatten the path.
@@ -815,10 +820,10 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, fo->fixed_flat);
 
 #	if !DONT_FILTER_SMALL_SEGMENTS
-	assert(gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, 
-					s, k, fo->coords_near_threshold));
+	gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, 
+					s, k, fo->coords_near_threshold);
 #	else
-	assert(gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k));
+	gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k);
 #	endif
     } else {
 	q->dir = compute_dir(fo, q->prev->pt.y, q->pseg->pt.y);
@@ -1063,11 +1068,11 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (const curve_segment *)s1, ll->fo->fixed_flat);
 
 #	    if !DONT_FILTER_SMALL_SEGMENTS
-	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k, ll->fo->coords_near_threshold));
+	    gx_flattened_iterator__init(&alp->fi, 
+		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k, ll->fo->coords_near_threshold);
 #	    else
-	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k));
+	    gx_flattened_iterator__init(&alp->fi, 
+		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k);
 #	    endif
 	    step_al(alp, true);
 	} else {
@@ -1075,11 +1080,11 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 	    bool more;
 
 #	    if !DONT_FILTER_SMALL_SEGMENTS
-	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, ll->fo->coords_near_threshold));
+	    gx_flattened_iterator__init(&alp->fi, 
+		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, ll->fo->coords_near_threshold);
 #	    else
-	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k));
+	    gx_flattened_iterator__init(&alp->fi, 
+		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k);
 #	    endif
 	    alp->more_flattened = false;
 	    do {
@@ -1090,8 +1095,8 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 	    step_al(alp, false);
 	}
     } else {
-	assert(gx_flattened_iterator__init_line(&alp->fi, 
-		s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y));
+	gx_flattened_iterator__init_line(&alp->fi, 
+		s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y);
 	step_al(alp, true);
     }
     alp->pseg = s1;
@@ -1114,7 +1119,6 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
 	case DIR_UP:
 	    if (use_iter) {
 		init_al(alp, prev_lp, lp, ll);
-		assert(alp->start.y <= alp->end.y);
 	    } else {
 	    	SET_AL_POINTS(alp, *prev, *curr);
 		alp->pseg = lp;
@@ -1123,7 +1127,6 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
 	case DIR_DOWN:
 	    if (use_iter) {
 		init_al(alp, lp, prev_lp, ll);
-		assert(alp->start.y <= alp->end.y);
 	    } else {
 	    	SET_AL_POINTS(alp, *curr, *prev);
 		alp->pseg = prev_lp;
@@ -1443,7 +1446,6 @@ move_al_by_y(line_list *ll, fixed y1)
 	alp->x_current = alp->x_next;
 
 	nlp = alp->next;
-	/* assert(alp->end.y >= y && alp->start.y <= y); */
 	if (alp->end.y == y1 && alp->more_flattened) {
 	    step_al(alp, true);
 	    alp->x_current = alp->x_next = alp->start.x;
@@ -1524,90 +1526,19 @@ loop_fill_trap_np(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
 	(fo->dev, le, re, ybot, ytop, false, fo->pdevc, fo->lop);
 }
 
-private int
-fill_trap_slanted(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
-{
-    /*
-     * We want to get the effect of filling an area whose
-     * outline is formed by dragging a square of side adj2
-     * along the border of the trapezoid.  This is *not*
-     * equivalent to simply expanding the corners by
-     * adjust: There are 3 cases needing different
-     * algorithms, plus rectangles as a fast special case.
-     */
-    int xli = fixed2int_var_pixround(le->end.x);
-    int code = 0;
-    const fill_options * const fo = ll->fo;
-    /*
-     * Define a faster test for
-     *	fixed2int_pixround(y - below) != fixed2int_pixround(y + above)
-     * where we know
-     *	0 <= below <= _fixed_pixround_v,
-     *	0 <= above <= min(fixed_half, fixed_1 - below).
-     * Subtracting out the integer parts, this is equivalent to
-     *	fixed2int_pixround(fixed_fraction(y) - below) !=
-     *	  fixed2int_pixround(fixed_fraction(y) + above)
-     * or to
-     *	fixed2int(fixed_fraction(y) + _fixed_pixround_v - below) !=
-     *	  fixed2int(fixed_fraction(y) + _fixed_pixround_v + above)
-     * Letting A = _fixed_pixround_v - below and B = _fixed_pixround_v + above,
-     * we can rewrite this as
-     *	fixed2int(fixed_fraction(y) + A) != fixed2int(fixed_fraction(y) + B)
-     * Because of the range constraints given above, this is true precisely when
-     *	fixed_fraction(y) + A < fixed_1 && fixed_fraction(y) + B >= fixed_1
-     * or equivalently
-     *	fixed_fraction(y + B) < B - A.
-     * i.e.
-     *	fixed_fraction(y + _fixed_pixround_v + above) < below + above
-     */
-    fixed y_span_delta = _fixed_pixround_v + fo->adjust_above;
-    fixed y_span_limit = fo->adjust_below + fo->adjust_above;
+/* Define variants of the algorithm for filling a slanted trapezoid. */
+#define FILL_TRAP_SLANTED_NAME fill_trap_slanted_fd
+#define FILL_DIRECT 1
+#include "gxfillts.h"
+#undef FILL_TRAP_SLANTED_NAME
+#undef FILL_DIRECT
 
-#define ADJUSTED_Y_SPANS_PIXEL(y)\
-  (fixed_fraction((y) + y_span_delta) < y_span_limit)
+#define FILL_TRAP_SLANTED_NAME fill_trap_slanted_nd
+#define FILL_DIRECT 0
+#include "gxfillts.h"
+#undef FILL_TRAP_SLANTED_NAME
+#undef FILL_DIRECT
 
-    if (le->end.x <= le->start.x) {
-	if (re->end.x >= re->start.x) {	/* Top wider than bottom. */
-	    le->start.y = re->start.y -= fo->adjust_below;
-	    le->end.y = re->end.y -= fo->adjust_below;
-	    code = loop_fill_trap_np(ll, le, re);
-	    le->start.y = re->start.y += fo->adjust_below;
-	    le->end.y = re->end.y += fo->adjust_below;
-	    if (ADJUSTED_Y_SPANS_PIXEL(le->end.y)) {
-		if (code < 0)
-		    return code;
-		INCR(afill);
-		code = LOOP_FILL_RECTANGLE_DIRECT(fo, 
-		 xli, fixed2int_pixround(le->end.y - fo->adjust_below),
-		     fixed2int_var_pixround(re->end.x) - xli, 1);
-		vd_rect(le->end.x, le->end.y - fo->adjust_below, re->end.x, le->end.y, 1, VD_TRAP_COLOR);
-	    }
-	} else {	/* Slanted trapezoid. */
-	    code = fill_slant_adjust(ll, le, re);
-	}
-    } else {
-	if (re->end.x <= re->start.x) {	/* Bottom wider than top. */
-	    if (ADJUSTED_Y_SPANS_PIXEL(le->start.y)) {
-		INCR(afill);
-		xli = fixed2int_var_pixround(le->start.x);
-		code = LOOP_FILL_RECTANGLE_DIRECT(fo, 
-		  xli, fixed2int_pixround(le->start.y - fo->adjust_below),
-		     fixed2int_var_pixround(re->start.x) - xli, 1);
-		vd_rect(le->end.x, le->start.y - fo->adjust_below, re->start.x, le->start.y, 1, VD_TRAP_COLOR);
-		if (code < 0)
-		    return code;
-	    }
-	    le->start.y = re->start.y += fo->adjust_above;
-	    le->end.y = re->end.y += fo->adjust_above;
-	    code = loop_fill_trap_np(ll, le, re);
-	    le->start.y = re->start.y -= fo->adjust_above;
-	    le->end.y = re->end.y -= fo->adjust_above;
-	} else {	/* Slanted trapezoid. */
-	    code = fill_slant_adjust(ll, le, re);
-	}
-    }
-    return code;
-}
 
 #define COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above)\
     (fixed_pixround(y - adjust_below) < fixed_pixround(y1 + adjust_above))
@@ -1737,7 +1668,6 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 	    else if (alp->x_current >= endp->x_current &&
 		     intersect(endp, alp, y, y1, &y_new)) {
 		if (y_new <= y1) {
-		    assert(y_new >= y);
 		    stopx = endp;
 		    y1 = y_new;
 		    if (endp->diff.x == 0)
@@ -1841,291 +1771,105 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 
 /* ---------------- Trapezoid filling loop ---------------- */
 
+/* Generate specialized algorythms for the most important cases : */
+
+#define IS_SPOTAN 1
+#define PSEUDO_RASTERIZATION 0
+#define FILL_ADJUST 0
+#define FILL_DIRECT 1
+#define FILL_PROC_NAME fill_loop_by_trapezoids__spotan
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 1
+#define FILL_ADJUST 0
+#define FILL_DIRECT 1
+#define FILL_PROC_NAME fill_loop_by_trapezoids__pr
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 0
+#define FILL_ADJUST 1
+#define FILL_DIRECT 1
+#define FILL_PROC_NAME fill_loop_by_trapezoids__aj_fd
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 0
+#define FILL_ADJUST 1
+#define FILL_DIRECT 0
+#define FILL_PROC_NAME fill_loop_by_trapezoids__aj_nd
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 0
+#define FILL_ADJUST 0
+#define FILL_DIRECT 1
+#define FILL_PROC_NAME fill_loop_by_trapezoids__nj_fd
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 0
+#define FILL_ADJUST 0
+#define FILL_DIRECT 0
+#define FILL_PROC_NAME fill_loop_by_trapezoids__nj_nd
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
+
 /* Main filling loop.  Takes lines off of y_list and adds them to */
 /* x_list as needed.  band_mask limits the size of each band, */
 /* by requiring that ((y1 - 1) & band_mask) == (y0 & band_mask). */
 private int
 fill_loop_by_trapezoids(line_list *ll, fixed band_mask)
 {
+    /* For better porformance, choose a specialized algorithm : */
     const fill_options * const fo = ll->fo;
-    int rule = fo->rule;
-    const fixed y_limit = fo->pbox->q.y;
-    active_line *yll = ll->y_list;
-    fixed y;
-    int code;
-    const bool all_bands = fo->is_spotan;
 
-    if (yll == 0)
-	return 0;		/* empty list */
-    y = yll->start.y;		/* first Y value */
-    ll->x_list = 0;
-    ll->x_head.x_current = min_fixed;	/* stop backward scan */
-    ll->margin_set0.y = fixed_pixround(y) - fixed_half;
-    ll->margin_set1.y = fixed_pixround(y) - fixed_1 - fixed_half;
-    while (1) {
-	fixed y1;
-	active_line *alp, *plp = NULL;
-	bool covering_pixel_centers;
-
-	INCR(iter);
-	/* Move newly active lines from y to x list. */
-	while (yll != 0 && yll->start.y == y) {
-	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
-
-	    ll->y_list = ynext;
-	    if (ll->y_line == yll)
-		ll->y_line = ynext;
-	    if (ynext != NULL)
-		ynext->prev = NULL;
-	    if (yll->direction == DIR_HORIZONTAL) {
-		if (!fo->pseudo_rasterization) {
-		    /*
-		     * This is a hack to make sure that isolated horizontal
-		     * lines get stroked.
-		     */
-		    int yi = fixed2int_pixround(y - fo->adjust_below);
-		    int xi, wi;
-
-		    if (yll->start.x <= yll->end.x) {
-			xi = fixed2int_pixround(yll->start.x - fo->adjust_left);
-			wi = fixed2int_pixround(yll->end.x + fo->adjust_right) - xi;
-		    } else {
-			xi = fixed2int_pixround(yll->end.x - fo->adjust_left);
-			wi = fixed2int_pixround(yll->start.x + fo->adjust_right) - xi;
-		    }
-		    VD_RECT(xi, yi, wi, 1, VD_TRAP_COLOR);
-		    code = LOOP_FILL_RECTANGLE_DIRECT(fo, xi, yi, wi, 1);
-		    if (code < 0)
-			return code;
-		} else if (fo->pseudo_rasterization)
-		    insert_h_new(yll, ll);
-	    } else
-		insert_x_new(yll, ll);
-	    yll = ynext;
-	}
-	/* Mustn't leave by Y before process_h_segments. */
-	if (ll->x_list == 0) {	/* No active lines, skip to next start */
-	    if (yll == 0)
-		break;		/* no lines left */
-	    /* We don't close margin set here because the next set
-	     * may fall into same window. */
-	    y = yll->start.y;
-	    ll->h_list1 = ll->h_list0;
-	    ll->h_list0 = 0;
-	    continue;
-	}
-	if (vd_enabled) {
-	    vd_circle(0, y, 3, RGB(255, 0, 0));
-	    y += 0; /* Just a good place for a debugger breakpoint */
-	}
-	/* Find the next evaluation point. */
-	/* Start by finding the smallest y value */
-	/* at which any currently active line ends */
-	/* (or the next to-be-active line begins). */
-	y1 = (yll != 0 ? yll->start.y : ll->y_break);
-	/* Make sure we don't exceed the maximum band height. */
-	{
-	    fixed y_band = y | ~band_mask;
-
-	    if (y1 > y_band)
-		y1 = y_band + 1;
-	}
-	for (alp = ll->x_list; alp != 0; alp = alp->next) {
-	    assert(alp->start.y <= y && y <= alp->end.y);
-	    if (alp->end.y < y1)
-		y1 = alp->end.y;
-	}
-#	ifdef DEBUG
-	    if (gs_debug_c('F')) {
-		dlprintf2("[F]before loop: y=%f y1=%f:\n",
-			  fixed2float(y), fixed2float(y1));
-		print_line_list(ll->x_list);
-	    }
-#	endif
-	assert(y1 >= y);
-	if (y == y1) {
-	    code = process_h_segments(ll, y);
-	    if (code < 0)
-		return code;
-	    move_al_by_y(ll, y1);
-	    if (code > 0) {
-		yll = ll->y_list; /* add_y_line_aux in process_h_segments changes it. */
-		continue;
-	    }
-
-	}
-	if (y >= y_limit)
-	    break;
-	/* Now look for line intersections before y1. */
-	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, fo->adjust_below, fo->adjust_above);
-	if (y != y1) {
-	    intersect_al(ll, y, &y1, (covering_pixel_centers ? 1 : -1), all_bands); /* May change y1. */
-	    covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, fo->adjust_below, fo->adjust_above);
-	}
-	/* Prepare dropout prevention. */
-	if (fo->pseudo_rasterization) {
-	    code = start_margin_set(fo->dev, ll, y1);
-	    if (code < 0)
-		return code;
-	}
-	/* Fill a multi-trapezoid band for the active lines. */
-	if (covering_pixel_centers || all_bands) {
-	    gs_fixed_edge le, re;
-	    int inside = 0;
-	    active_line *flp = NULL;
-
-	    INCR(band);
-	    le.start.x = le.end.x = 0xbaadf00d;
-	    le.start.y = re.start.y = y;
-	    le.end.y = re.end.y = y1;
-
-	    /* Generate trapezoids */
-
-	    for (alp = ll->x_list; alp != 0; alp = alp->next) {
-		int code;
-
-		print_al("step", alp);
-		re.start.x = alp->x_current;
-		re.end.x = alp->x_next;
-		INCR(band_step);
-		if (!INSIDE_PATH_P(inside, rule)) { 	/* i.e., outside */
-		    inside += alp->direction;
-		    if (INSIDE_PATH_P(inside, rule))	/* about to go in */
-			le.start.x = re.start.x, le.end.x = re.end.x, flp = alp;
-		    continue;
-		}
-		/* We're inside a region being filled. */
-		inside += alp->direction;
-		if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
-		    continue;
-		/* We just went from inside to outside, so fill the region. */
-		INCR(band_fill);
-		if ((fo->adjust_left | fo->adjust_right) != 0) {
-		    le.start.x -= fo->adjust_left;
-		    re.start.x += fo->adjust_right;
-		    le.end.x -= fo->adjust_left;
-		    re.end.x += fo->adjust_right;
-		}
-		if (!(le.end.x == le.start.x && re.end.x == re.start.x) && (fo->adjust_below | fo->adjust_above) != 0) {
-		    /* Assuming pseudo_rasterization = false. */
-		    code = fill_trap_slanted(ll, &le, &re);
-		} else {
-		    if (fo->is_spotan) {
-			/* We can't pass data through the device interface because 
-			   we need to pass segment pointers. We're unhappy of that. */
-			code = gx_san_trap_store((gx_device_spot_analyzer *)fo->dev, 
-			    y, y1, le.start.x, re.start.x, le.end.x, re.end.x, flp->pseg, alp->pseg, 
-			    flp->direction, alp->direction);
-		    } else {
-			if (le.start.x == le.end.x && re.start.x == re.end.x) {
-			    int yi = fixed2int_pixround(le.start.y - fo->adjust_below);
-			    int wi = fixed2int_pixround(le.end.y + fo->adjust_above) - yi;
-			    int xli = fixed2int_var_pixround(le.end.x);
-			    int xi = fixed2int_var_pixround(re.end.x);
-
-			    if (fo->pseudo_rasterization && xli == xi) {
-				/*
-				 * The scan is empty but we should paint something 
-				 * against a dropout. Choose one of two pixels which 
-				 * is closer to the "axis".
-				 */
-				fixed xx = int2fixed(xli);
-
-				if (xx - le.end.x < re.end.x - xx)
-				    ++xi;
-				else
-				    --xli;
-			    }
-			    vd_rect(le.end.x, le.start.y, re.end.x, le.end.y, 1, VD_TRAP_COLOR);
-			    code = LOOP_FILL_RECTANGLE_DIRECT(fo, xli, yi, xi - xli, wi);
-			} else {
-			    if (fo->pseudo_rasterization) {
-				fixed ybot = max(le.start.y, fo->pbox->p.y);
-				fixed ytop = min(le.end.y, fo->pbox->q.y);
-
-				if (ybot < ytop) {
-				    int flags = ftf_pseudo_rasterization;
-
-				    if (flp->start.x == alp->start.x && flp->start.y == y)
-					flags |= ftf_peak0;
-				    if (flp->end.x == alp->end.x && flp->end.y == y1)
-					flags |= ftf_peak0;
-
-				    vd_quad(le.start.x, ybot, re.start.x, ybot, re.end.x, ytop, le.end.x, ytop, 1, VD_TRAP_COLOR);
-				    code = gx_fill_trapezoid_narrow(fo->dev, &le, &re, ybot, ytop, flags, fo->pdevc, fo->lop);
-				} else
-				    code = 0;
-			    } else
-				code = loop_fill_trap_np(ll, &le, &re);
-			}
-		    }
-		    if (fo->pseudo_rasterization) {
-			if (code < 0)
-			    return code;
-			code = complete_margin(ll, flp, alp, y, y1);
-			if (code < 0)
-			    return code;
-			code = margin_interior(ll, flp, alp, y, y1);
-			if (code < 0)
-			    return code;
-			code = add_margin(ll, flp, alp, y, y1);
-			if (code < 0)
-			    return code;
-			code = process_h_lists(ll, plp, flp, alp, y, y1);
-			plp = alp;
-		    }
-		}
-		if (code < 0)
-		    return code;
-	    }
-	} else {
-	    /* No trapezoids generation needed. */
-	    if (fo->pseudo_rasterization) {
-		/* Process dropouts near trapezoids. */
-		active_line *flp = NULL;
-		int inside = 0;
-
-		for (alp = ll->x_list; alp != 0; alp = alp->next) {
-		    if (!INSIDE_PATH_P(inside, rule)) {		/* i.e., outside */
-			inside += alp->direction;
-			if (INSIDE_PATH_P(inside, rule))	/* about to go in */
-			    flp = alp;
-			continue;
-		    }
-		    /* We're inside a region being filled. */
-		    inside += alp->direction;
-		    if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
-			continue;
-		    code = continue_margin(ll, flp, alp, y, y1);
-		    if (code < 0)
-			return code;
-		    code = process_h_lists(ll, plp, flp, alp, y, y1);
-		    plp = alp;
-		    if (code < 0)
-			return code;
-		}
-	    }
-	}
-	if (plp != 0) {
-	    code = process_h_lists(ll, plp, 0, 0, y, y1);
-	    if (code < 0)
-		return code;
-	}
-	move_al_by_y(ll, y1);
-	ll->h_list1 = ll->h_list0;
-	ll->h_list0 = 0;
-	y = y1;
+    if (fo->is_spotan)
+	return fill_loop_by_trapezoids__spotan(ll, band_mask);
+    if (fo->pseudo_rasterization)
+	return fill_loop_by_trapezoids__pr(ll, band_mask);
+    if (fo->adjust_below | fo->adjust_above | fo->adjust_left | fo->adjust_right) {
+	if (fo->fill_direct)
+	    return fill_loop_by_trapezoids__aj_fd(ll, band_mask);
+	else
+	    return fill_loop_by_trapezoids__aj_nd(ll, band_mask);
+    } else {
+	if (fo->fill_direct)
+	    return fill_loop_by_trapezoids__nj_fd(ll, band_mask);
+	else
+	    return fill_loop_by_trapezoids__nj_nd(ll, band_mask);
     }
-    if (fo->pseudo_rasterization) {
-	code = process_h_lists(ll, 0, 0, 0, y, y + 1 /*stub*/);
-	if (code < 0)
-	    return code;
-	code = close_margins(fo->dev, ll, &ll->margin_set1);
-	if (code < 0)
-	    return code;
-	return close_margins(fo->dev, ll, &ll->margin_set0);
-    } 
-    return 0;
 }
 
 /* ---------------- Range list management ---------------- */
@@ -2395,219 +2139,30 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
 private void set_scan_line_points(active_line *, fixed);
 #endif
 
-/* Main filling loop. */
+/* defina specializations of the scanline algorithm. */
+
+#define FILL_DIRECT 1
+#define FILL_PROC_NAME fill_loop_by_scan_lines_fd
+#include "gxfillsl.h"
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
+#define FILL_DIRECT 0
+#define FILL_PROC_NAME fill_loop_by_scan_lines_nd
+#include "gxfillsl.h"
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
 private int
 fill_loop_by_scan_lines(line_list *ll, fixed band_mask)
 {
-    const fill_options * const fo = ll->fo;
-    active_line *yll = ll->y_list;
-    fixed y_limit = fo->pbox->q.y;
-    /*
-     * The meaning of adjust_below (B) and adjust_above (A) is that the
-     * pixels that would normally be painted at coordinate Y get "smeared"
-     * to coordinates Y-B through Y+A-epsilon, inclusive.  This is
-     * equivalent to saying that the pixels actually painted at coordinate Y
-     * are those contributed by scan lines Y-A+epsilon through Y+B,
-     * inclusive.  (A = B = 0 is a special case, equivalent to B = 0, A =
-     * epsilon.)
-     */
-    fixed y_frac_min =
-	(fo->adjust_above == fixed_0 ? fixed_half :
-	 fixed_half + fixed_epsilon - fo->adjust_above);
-    fixed y_frac_max =
-	fixed_half + fo->adjust_below;
-    int y0 = fixed2int(min_fixed);
-    fixed y_bot = min_fixed;	/* normally int2fixed(y0) + y_frac_min */
-    fixed y_top = min_fixed;	/* normally int2fixed(y0) + y_frac_max */
-    fixed y = min_fixed;
-    coord_range_list_t rlist;
-    coord_range_t rlocal[MAX_LOCAL_ACTIVE];
-    int code = 0;
-
-    if (yll == 0)		/* empty list */
-	return 0;
-    range_list_init(&rlist, rlocal, countof(rlocal), ll->memory);
-    ll->x_list = 0;
-    ll->x_head.x_current = min_fixed;	/* stop backward scan */
-    while (code >= 0) {
-	active_line *alp, *nlp;
-	fixed x;
-	bool new_band;
-
-	INCR(iter);
-
-#	if SCANLINE_USES_ITERATOR
-	    move_al_by_y(ll, y);
-#	endif
-	/*
-	 * Find the next sampling point, either the bottom of a sampling
-	 * band or a line start.
-	 */
-
-	if (ll->x_list == 0)
-	    y = (yll == 0 ? ll->y_break : yll->start.y);
-	else {
-	    y = y_bot + fixed_1;
-	    if (yll != 0)
-		y = min(y, yll->start.y);
-	    for (alp = ll->x_list; alp != 0; alp = alp->next)
-#		if !SCANLINE_USES_ITERATOR
-		if (!end_x_line(alp, ll, false))
-#		endif
-		    y = min(y, alp->end.y);
-	}
-
-	/* Move newly active lines from y to x list. */
-
-	while (yll != 0 && yll->start.y == y) {
-	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
-
-	    if (yll->direction == DIR_HORIZONTAL) {
-		/* Ignore for now. */
-	    } else {
-		insert_x_new(yll, ll);
-#		if !SCANLINE_USES_ITERATOR
-		    set_scan_line_points(yll, fo->fixed_flat);
-#		endif
-	    }
-	    yll = ynext;
-	}
-
-	/* Update active lines to y. */
-
-	x = min_fixed;
-	for (alp = ll->x_list; alp != 0; alp = nlp) {
-	    fixed nx;
-
-	    nlp = alp->next;
-	  e:if (alp->end.y <= y || alp->start.y == alp->end.y) {
-		if (end_x_line(alp, ll, true))
-		    continue;
-#		if !SCANLINE_USES_ITERATOR
-		    set_scan_line_points(alp, fo->fixed_flat);
-#		else
-		    if (alp->more_flattened)
-			if (alp->end.y <= y || alp->start.y == alp->end.y)
-			    step_al(alp, true);
-#		endif
-		goto e;
-	    }
-	    nx = alp->x_current =
-		(alp->start.y >= y ? alp->start.x :
-#		if !SCANLINE_USES_ITERATOR
-		 alp->curve_k < 0 ?
-		 AL_X_AT_Y(alp, y) :
-		 gx_curve_x_at_y(&alp->cursor, y));
-#		else
-		 AL_X_AT_Y(alp, y));
-#		endif
-	    if (nx < x) {
-		/* Move this line backward in the list. */
-		active_line *ilp = alp;
-
-		while (nx < (ilp = ilp->prev)->x_current)
-		    DO_NOTHING;
-		/* Now ilp->x_current <= nx < ilp->next->x_cur. */
-		alp->prev->next = alp->next;
-		if (alp->next)
-		    alp->next->prev = alp->prev;
-		if (ilp->next)
-		    ilp->next->prev = alp;
-		alp->next = ilp->next;
-		ilp->next = alp;
-		alp->prev = ilp;
-		continue;
-	    }
-	    x = nx;
-	}
-
-	if (y > y_top || y >= y_limit) {
-	    /* We're beyond the end of the previous sampling band. */
-	    const coord_range_t *pcr;
-
-	    /* Fill the ranges for y0. */
-
-	    for (pcr = rlist.first.next; pcr != &rlist.last;
-		 pcr = pcr->next
-		 ) {
-		int x0 = pcr->rmin, x1 = pcr->rmax;
-
-		if_debug4('Q', "[Qr]draw 0x%lx: [%d,%d),%d\n", (ulong)pcr,
-			  x0, x1, y0);
-		VD_RECT(x0, y0, x1 - x0, 1, VD_TRAP_COLOR);
-		code = LOOP_FILL_RECTANGLE_DIRECT(fo, x0, y0, x1 - x0, 1);
-		if_debug3('F', "[F]drawing [%d:%d),%d\n", x0, x1, y0);
-		if (code < 0)
-		    goto done;
-	    }
-	    range_list_reset(&rlist);
-
-	    /* Check whether we've reached the maximum y. */
-
-	    if (y >= y_limit)
-		break;
-
-	    /* Reset the sampling band. */
-
-	    y0 = fixed2int(y);
-	    if (fixed_fraction(y) < y_frac_min)
-		--y0;
-	    y_bot = int2fixed(y0) + y_frac_min;
-	    y_top = int2fixed(y0) + y_frac_max;
-	    new_band = true;
-	} else
-	    new_band = false;
-
-	if (y <= y_top) {
-	    /*
-	     * We're within the same Y pixel.  Merge regions for segments
-	     * starting here (at y), up to y_top or the end of the segment.
-	     * If this is the first sampling within the band, run the
-	     * fill/eofill algorithm.
-	     */
-	    fixed y_min;
-
-	    if (new_band) {
-		int inside = 0;
-
-		INCR(band);
-		for (alp = ll->x_list; alp != 0; alp = alp->next) {
-		    int x0 = fixed2int_pixround(alp->x_current - fo->adjust_left);
-
-		    for (;;) {
-			/* We're inside a filled region. */
-			print_al("step", alp);
-			INCR(band_step);
-			inside += alp->direction;
-			if (!INSIDE_PATH_P(inside, fo->rule))
-			    break;
-			/*
-			 * Since we're dealing with closed paths, the test
-			 * for alp == 0 shouldn't be needed, but we may have
-			 * omitted lines that are to the right of the
-			 * clipping region.
-			 */
-			if ((alp = alp->next) == 0)
-			    goto out;
-		    }
-		    /* We just went from inside to outside, so fill the region. */
-		    code = range_list_add(&rlist, x0,
-					  fixed2int_rounded(alp->x_current +
-							    fo->adjust_right));
-		    if (code < 0)
-			goto done;
-		}
-	    out:
-		y_min = min_fixed;
-	    } else
-		y_min = y;
-	    code = merge_ranges(&rlist, ll, y_min, y_top);
-	} /* else y < y_bot + 1, do nothing */
-    }
- done:
-    range_list_free(&rlist);
-    return code;
+    if (ll->fo->fill_direct)
+	return fill_loop_by_scan_lines_fd(ll, band_mask);
+    else
+	return fill_loop_by_scan_lines_nd(ll, band_mask);
 }
+
+
 
 #if !SCANLINE_USES_ITERATOR
 

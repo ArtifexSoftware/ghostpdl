@@ -18,13 +18,13 @@
 /* Configurable algorithm for filling a trapezoid */
 
 /*
- * Since we need 2 statically defined variants of this agorithm,
- * we store it in .h file and include twice into gdevddrw.c and 
+ * Since we need 3 statically defined variants of this agorithm,
+ * we store it in .h file and include 3 times into gdevddrw.c and 
  * into gxfill.h . Configuration flags (macros) are :
  * 
  *   GX_FILL_TRAPEZOID - a name of method
  *   CONTIGUOUS_FILL   - prevent dropouts in narrow trapezoids
- *   SWAP_AXES         - generate branch for swapped axes
+ *   SWAP_AXES         - assume swapped axes
  */
 
 /*
@@ -37,17 +37,11 @@
 
 int
 GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
-    const gs_fixed_edge * right, fixed ybot, fixed ytop, FLAGS_TYPE flags,
+    const gs_fixed_edge * right, fixed ybot, fixed ytop, int flags,
     const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
     const fixed ymin = fixed_pixround(ybot) + fixed_half;
     const fixed ymax = fixed_pixround(ytop);
-
-#   if SWAP_AXES
-	const bool swap_axes = flags;
-#   else
-	const bool swap_axes = false;
-#   endif
 
     if (ymin >= ymax)
 	return 0;		/* no scan lines to sample */
@@ -83,16 +77,16 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 
 /*
  * Free variables of FILL_TRAP_RECT:
- *	swap_axes, pdevc, dev, lop
+ *	SWAP_AXES, pdevc, dev, lop
  * Free variables of FILL_TRAP_RECT_DIRECT:
- *	swap_axes, fill_rect, dev, cindex
+ *	SWAP_AXES, fill_rect, dev, cindex
  */
 #if SWAP_AXES
 #define FILL_TRAP_RECT(x,y,w,h)\
-  (swap_axes ? gx_fill_rectangle_device_rop(y, x, h, w, pdevc, dev, lop) :\
+  (SWAP_AXES ? gx_fill_rectangle_device_rop(y, x, h, w, pdevc, dev, lop) :\
    gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
 #define FILL_TRAP_RECT_DIRECT(x,y,w,h)\
-  (swap_axes ? (*fill_rect)(dev, y, x, h, w, cindex) :\
+  (SWAP_AXES ? (*fill_rect)(dev, y, x, h, w, cindex) :\
    (*fill_rect)(dev, x, y, w, h, cindex))
 #else
 #define FILL_TRAP_RECT(x,y,w,h)\
@@ -102,8 +96,8 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 #endif
 
 #define VD_RECT_SWAPPED(rxl, ry, rxr, iy)\
-    vd_rect(int2fixed(swap_axes ? ry : rxl), int2fixed(swap_axes ? rxl : ry),\
-            int2fixed(swap_axes ? iy : rxr), int2fixed(swap_axes ? rxr : iy),\
+    vd_rect(int2fixed(SWAP_AXES ? ry : rxl), int2fixed(SWAP_AXES ? rxl : ry),\
+            int2fixed(SWAP_AXES ? iy : rxr), int2fixed(SWAP_AXES ? rxr : iy),\
 	    1, VD_RECT_COLOR);
 
 	/* Compute the dx/dy ratios. */
