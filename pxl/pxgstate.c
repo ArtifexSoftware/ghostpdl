@@ -346,7 +346,6 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
   const px_bitmap_params_t *params, const gs_const_string *palette,
   const gs_state *pgs)
 {	int depth = params->depth;
-	const gs_color_space_type *pcst;
 
 	switch ( params->color_space )
 	  {
