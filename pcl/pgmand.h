@@ -57,6 +57,8 @@ typedef struct hpgl_command_s {
   hpgl_command_proc_t proc;
   byte flags;
 #define hpgl_cdf_polygon 1	/* execute command even in polygon mode */
+#define hpgl_cdf_lost_mode_cleared 2 /* exectute command only if 
+					lost mode cleared */
 } hpgl_command_definition_t;
 
 /* Define a HP-GL/2 command argument value. */
@@ -105,10 +107,8 @@ typedef struct {
 void hpgl_define_commands(P1(const hpgl_named_command_t *));
 #define DEFINE_HPGL_COMMANDS \
 { static const hpgl_named_command_t defs_[] = {
-#define HPGL_COMMAND(c1, c2, proc)\
-  {c1, c2, {proc, 0}}
-#define HPGL_POLY_COMMAND(c1, c2, proc)\
-  {c1, c2, {proc, hpgl_cdf_polygon}}
+#define HPGL_COMMAND(c1, c2, proc, flag)\
+  {c1, c2, {proc, flag}}
 #define END_HPGL_COMMANDS\
     {0, 0}\
   };\
@@ -185,37 +185,6 @@ bool hpgl_arg_units(P2(hpgl_args_t *pargs, hpgl_real_t *pu));
   (hpgl_args_setup(pargs), hpgl_args_add_int(pargs, ival))
 #define hpgl_args_set_real(pargs, rval)\
   (hpgl_args_setup(pargs), hpgl_args_add_real(pargs, rval))
-
-/* a macro that calls a function and returns an error code if the code
-   returned is less than 0.  Most of the hpgl and gs functions return
-   if the calling function is less than 0 so this avoids cluttering up
-   the code with the if statement and debug code.  HAS The current
-   function name is gcc specific. */
-
-#ifdef DEBUG
-extern void hpgl_error(void);
-
-#define hpgl_call(call)				\
-{ 						\
-  int code; 					\
-  if ((code = (call)) != 0)			\
-    {						\
-      dprintf4("hpgl call failed\n\tcalled from: %s\n\tfile: %s\n\tline: %d\n\terror code: %d\n", \
-	       __FUNCTION__, __FILE__, __LINE__, code);	\
-      hpgl_error();                             \
-      return(code);				\
-    }						\
-}
-#else
-#define hpgl_call(call) 			\
-{						\
-  int code;					\
-  if ((code = (call)) < 0)			\
-    {						\
-      return(code);				\
-    }						\
-}
-#endif
 
 /*
  * HPGL mnemonics

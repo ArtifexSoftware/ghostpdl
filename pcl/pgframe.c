@@ -8,6 +8,7 @@
 #include "math_.h"
 #include "pgmand.h"
 #include "pgdraw.h"
+#include "pgmisc.h"
 #include "gstypes.h"		/* for gsstate.h */
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */

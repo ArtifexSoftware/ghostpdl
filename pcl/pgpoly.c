@@ -8,7 +8,7 @@
 #include "pgmand.h"
 #include "pgdraw.h"
 #include "pggeom.h"
-
+#include "pgmisc.h"
 /* ------ Internal procedures ------ */
 
 /* Define fill/edge and absolute/relative flags. */
@@ -254,15 +254,15 @@ private int
 pgpoly_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
-	  HPGL_COMMAND('E', 'A', hpgl_EA),
-	  HPGL_COMMAND('E', 'P', hpgl_EP),
-	  HPGL_COMMAND('E', 'R', hpgl_ER),
-	  HPGL_COMMAND('E', 'W', hpgl_EW),
-	  HPGL_COMMAND('F', 'P', hpgl_FP),
-	  HPGL_POLY_COMMAND('P', 'M', hpgl_PM),
-	  HPGL_COMMAND('R', 'A', hpgl_RA),
-	  HPGL_COMMAND('R', 'R', hpgl_RR),
-	  HPGL_COMMAND('W', 'G', hpgl_WG),
+	  HPGL_COMMAND('E', 'A', hpgl_EA, hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('E', 'P', hpgl_EP, 0),
+	  HPGL_COMMAND('E', 'R', hpgl_ER, hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('E', 'W', hpgl_EW, hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('F', 'P', hpgl_FP, 0),
+	  HPGL_COMMAND('P', 'M', hpgl_PM, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('R', 'A', hpgl_RA, hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('R', 'R', hpgl_RR, hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('W', 'G', hpgl_WG, hpgl_cdf_lost_mode_cleared),
 	END_HPGL_COMMANDS
 	return 0;
 }

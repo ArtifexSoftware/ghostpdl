@@ -9,14 +9,6 @@
 #include "pginit.h"
 #include "pgdraw.h"
 
-/* called when there is a graphics error.  Keep a breakpoint on this function */
-#ifdef DEBUG
-void
-hpgl_error()
-{
-	return;
-}
-#endif
 /* ------ Internal procedures ------ */
 
 /* Reset a set of font parameters to their default values. */

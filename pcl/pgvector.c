@@ -10,6 +10,7 @@
 #include "pgmand.h"
 #include "pggeom.h"
 #include "pgdraw.h"
+#include "pgmisc.h"
 #include "gspath.h"
 #include "gscoord.h"
 #include "math_.h"
@@ -196,6 +197,20 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	  }
 }
 
+/* plots and clears lost mode if appropriate. */
+private int
+hpgl_plot_and_clear(hpgl_state_t *pgls, floatp x, floatp y,
+		    int (*gs_func)(gs_state *pgs, floatp x, floatp y))
+{
+	int ret = hpgl_add_point_to_path(pgls, x, y, gs_func);
+	    if (( !pgls->g.relative ) &&
+		( ret != gs_error_limitcheck ))
+	  hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
+	    
+	return ret;
+}
+
+
 /* Plot points, symbols, or lines (PA, PD, PR, PU). */
 int
 hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, 
@@ -213,13 +228,8 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls,
 
 	while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) ) 
 	  { 
-	    
 	    got_args = true;
-	    /* HAS If there are no arguments simply add the current point
-	       to the path */
-	    
-	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, gs_func));
-	    
+	    hpgl_call(hpgl_plot_and_clear(pgls, x, y, gs_func));
 	    /* Prepare for the next set of points. */
 	    hpgl_args_init(pargs);
 	  }
@@ -229,9 +239,8 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls,
 	  {
 	    gs_point cur_point;
 	    hpgl_call(gs_currentpoint(pgls->pgs, &cur_point));
-	    hpgl_call(hpgl_add_point_to_path(pgls, 
-					     cur_point.x, 
-					     cur_point.y, gs_func));
+	    hpgl_call(hpgl_plot_and_clear(pgls, cur_point.x, 
+					  cur_point.y, gs_func));
 	  }
 
 	/* set the current state position */
@@ -303,8 +312,15 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_PA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
+	/* plot the point and save the return value */
+	int ret = hpgl_plot(pargs, pgls, 
+			    (pgls->g.pen_down) ? gs_lineto : gs_moveto);
+
+	/* set the state flag */
 	pgls->g.relative = false;
-	return hpgl_plot(pargs, pgls, (pgls->g.pen_down) ? gs_lineto : gs_moveto);
+
+
+	return ret;
 }
 
 /* PD (d)x,(d)y...; */
@@ -517,18 +533,18 @@ pgvector_do_init(gs_memory_t *mem)
 {	
 	/* Register commands */
 	DEFINE_HPGL_COMMANDS
-		HPGL_POLY_COMMAND('A', 'A', hpgl_AA),
-		HPGL_POLY_COMMAND('A', 'R', hpgl_AR),
-		HPGL_POLY_COMMAND('A', 'T', hpgl_AT),
-		HPGL_POLY_COMMAND('B', 'R', hpgl_BR),	/* argument pattern can repeat */
-		HPGL_POLY_COMMAND('B', 'Z', hpgl_BZ),	/* argument pattern can repeat */
-		HPGL_POLY_COMMAND('C', 'I', hpgl_CI),
-		HPGL_POLY_COMMAND('P', 'A', hpgl_PA),	/* argument pattern can repeat */
-		HPGL_POLY_COMMAND('P', 'D', hpgl_PD),	/* argument pattern can repeat */
-		HPGL_POLY_COMMAND('P', 'E', hpgl_PE),
-		HPGL_POLY_COMMAND('P', 'R', hpgl_PR),	/* argument pattern can repeat */
-		HPGL_POLY_COMMAND('P', 'U', hpgl_PU),	/* argument pattern can repeat */
-		HPGL_POLY_COMMAND('R', 'T', hpgl_RT),
+		HPGL_COMMAND('A', 'A', hpgl_AA, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
+		HPGL_COMMAND('A', 'R', hpgl_AR, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
+		HPGL_COMMAND('A', 'T', hpgl_AT, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
+		HPGL_COMMAND('B', 'R', hpgl_BR, hpgl_cdf_polygon),	/* argument pattern can repeat */
+		HPGL_COMMAND('B', 'Z', hpgl_BZ, hpgl_cdf_polygon),	/* argument pattern can repeat */
+		HPGL_COMMAND('C', 'I', hpgl_CI, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
+		HPGL_COMMAND('P', 'A', hpgl_PA, hpgl_cdf_polygon),	/* argument pattern can repeat */
+		HPGL_COMMAND('P', 'D', hpgl_PD, hpgl_cdf_polygon),	/* argument pattern can repeat */
+		HPGL_COMMAND('P', 'E', hpgl_PE, hpgl_cdf_polygon),
+		HPGL_COMMAND('P', 'R', hpgl_PR, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),	/* argument pattern can repeat */
+		HPGL_COMMAND('P', 'U', hpgl_PU, hpgl_cdf_polygon),	/* argument pattern can repeat */
+		HPGL_COMMAND('R', 'T', hpgl_RT, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
 	END_HPGL_COMMANDS
 	return 0;
 }

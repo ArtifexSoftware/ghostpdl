@@ -20,6 +20,7 @@
 #include "pgmand.h"
 #include "pgdraw.h"
 #include "pggeom.h"
+#include "pgmisc.h"
 #include "pcdraw.h"             /* included for setting pcl's ctm */
 
 /* HAS: update ghostscript's gs and the current ctm to reflect hpgl's.
@@ -304,7 +305,9 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 	      }
 
 	    hpgl_call(gs_newpath(pgls->pgs));
-	    hpgl_call(gs_moveto(pgls->pgs, x, y));
+
+	    hpgl_call_check_lost(gs_moveto(pgls->pgs, x, y));
+
 	    /* HAS  HACK *** HACK **** HACK */
 	    /* we really do not want to indicate that we have a path
                as the using gs graphics a path is not truly created
@@ -314,7 +317,7 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 	  }
 	else
 	  {
-	    hpgl_call((*gs_func)(pgls->pgs, x, y));
+	    hpgl_call_check_lost((*gs_func)(pgls->pgs, x, y));
 	    /* update hpgl's state position */
 	    pgls->g.have_path = true;
 	  }
@@ -327,6 +330,7 @@ int
 hpgl_clear_current_path(hpgl_state_t *pgls)
 {
 	hpgl_call(gs_newpath(pgls->pgs));
+	pgls->g.have_first_moveto = false;
 	return 0;
 }
 

@@ -6,6 +6,44 @@
 This file, NEWS-5, describes the changes in the most recent releases of
 Aladdin's PCL 5 code, in reverse chronological order.
 
+Fileset of 3/6/97
+=================
+
+(LPD) Fixes bugs:
+	- Splits the definition of HPGL2_OTHER in the makefile into two, to
+avoid exceeding the MS-DOS command line limit.  (pcl5.mak)
+	- Removes a duplicate definition of hpgl_error.  (pginit.c)
+
+(HAS) Changes and fixes:
+
+	* pgvector.c (hpgl_plot_and_clear): new function to plot points
+	and clear lost mode if necessary.  Changes to implement lost mode.
+
+	* pg*.c:  mods to get rid of HPGL_COMMAND_POLY and use the new
+	HPGL_COMMAND with a flag as the 3rd arg.
+
+	* pgmand.h: removed HPGL_COMMAND_POLY macro.  Added flag 
+ 	argument to HPGL_COMMAND_MACRO which currently defines how the
+	command should behave wrt polygon mode and lost mode.
+
+	* pgmisc.h (hpgl_call_check_lost): implemented
+	hpgl_check_lost_mode macro.
+
+	* pgdraw.c (hpgl_clear_current_path): set first moveto state to
+	false in clear current path.
+
+	* pgvector.c (hpgl_PA): implemented clearing of lost mode.
+
+	* pgstate.h (hpgl_restore_pen_state): pgstate.h missing
+	pgstate_INCLUDED. 
+
+	* pgmisc.c (hpgl_set_lost_mode): function to set and clear lost
+	mode.  Interface in pgmisc.h.
+
+	(hpgl_error): moved error handling to pgmisc.[ch]
+
+	* pgstate.h: data structures for lost mode.
+
 Fileset of 3/4/97
 =================
 

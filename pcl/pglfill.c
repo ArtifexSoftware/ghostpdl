@@ -492,20 +492,20 @@ private int
 pglfill_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
-	  HPGL_COMMAND('A', 'C', hpgl_AC),
-	  HPGL_COMMAND('F', 'T', hpgl_FT),
-	  HPGL_COMMAND('L', 'A', hpgl_LA),
-	  HPGL_COMMAND('L', 'T', hpgl_LT),
-	  HPGL_COMMAND('P', 'W', hpgl_PW),
-	  HPGL_COMMAND('R', 'F', hpgl_RF),		/* + additional I parameters */
+	  HPGL_COMMAND('A', 'C', hpgl_AC, 0),
+	  HPGL_COMMAND('F', 'T', hpgl_FT, 0),
+	  HPGL_COMMAND('L', 'A', hpgl_LA, 0),
+	  HPGL_COMMAND('L', 'T', hpgl_LT, 0),
+	  HPGL_COMMAND('P', 'W', hpgl_PW, 0),
+	  HPGL_COMMAND('R', 'F', hpgl_RF, 0),		/* + additional I parameters */
 	  /* SM has special argument parsing, so it must handle skipping */
 	  /* in polygon mode itself. */
-	  HPGL_COMMAND('S', 'M', hpgl_SM),
-	  HPGL_COMMAND('S', 'P', hpgl_SP),
-	  HPGL_COMMAND('S', 'V', hpgl_SV),
-	  HPGL_COMMAND('T', 'R', hpgl_TR),
-	  HPGL_COMMAND('U', 'L', hpgl_UL),
-	  HPGL_COMMAND('W', 'U', hpgl_WU),
+	  HPGL_COMMAND('S', 'M', hpgl_SM, 0),
+	  HPGL_COMMAND('S', 'P', hpgl_SP, 0),
+	  HPGL_COMMAND('S', 'V', hpgl_SV, 0),
+	  HPGL_COMMAND('T', 'R', hpgl_TR, 0),
+	  HPGL_COMMAND('U', 'L', hpgl_UL, 0),
+	  HPGL_COMMAND('W', 'U', hpgl_WU, 0),
 	END_HPGL_COMMANDS
 	return 0;
 }

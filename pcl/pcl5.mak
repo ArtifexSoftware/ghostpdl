@@ -94,7 +94,6 @@ pcommand.$(OBJ): pcommand.c $(std_h)\
 
 pcdraw.$(OBJ): pcdraw.c $(std_h)\
  $(gscoord_h) $(gsdcolor_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
- $(gxfixed_h) $(gxpath_h)\
  $(pcdraw_h) $(pcommand_h) $(pcstate_h)
 
 #### PCL5 parsing
@@ -309,9 +308,10 @@ pcl5c.dev: pcl5.dev $(PCL5_MAK) $(ECHOGS_XE) $(PCL5C_OPS) rtlbasec.dev
 ################ HP-GL/2 ################
 
 pgdraw_h=pgdraw.h
+pgfont_h=pgfont.h $(stdpre_h) $(gstypes_h)
 pggeom_h=pggeom.h $(math__h)
 pginit_h=pginit.h
-pgfont_h=pgfont.h $(stdpre_h) $(gstypes_h)
+pgmisc_h=pgmisc.h
 
 #### HP-GL/2 non-commands
 
@@ -329,6 +329,8 @@ pgfont.$(OBJ): pgfont.c $(pgfont_h)
 pggeom.$(OBJ): pggeom.c $(math__h) $(stdio__h)\
  $(pggeom_h)
 
+pgmisc.$(OBJ): pgmisc.c $(pgmand_h) $(pgmisc_h)
+
 # Initialize/reset.  We break this out simply because it's easier to keep
 # track of it this way.
 
@@ -341,7 +343,9 @@ pgparse.$(OBJ): pgparse.c $(AK) $(math__h) $(stdio__h)\
  $(gdebug_h) $(gstypes_h) $(scommon_h)\
  $(pgmand_h)
 
-HPGL2_OTHER=pgdraw.$(OBJ) pggeom.$(OBJ) pginit.$(OBJ) pgparse.$(OBJ) pgfont.$(OBJ)
+HPGL2_OTHER1=pgdraw.$(OBJ) pggeom.$(OBJ) pginit.$(OBJ)
+HPGL2_OTHER2=pgparse.$(OBJ) pgfont.$(OBJ) pgmisc.$(OBJ)
+HPGL2_OTHER=$(HPGL2_OTHER1) $(HPGL2_OTHER2)
 
 #### HP-GL/2 commands
 # These are organized by chapter # in the PCL 5 Technical Reference Manual.
@@ -380,7 +384,8 @@ HPGL2_OPS2=pgpoly.$(OBJ) pglfill.$(OBJ) pgchar.$(OBJ)
 HPGL2_OPS=$(HPGL2_OPS1) $(HPGL2_OPS2)
 
 hpgl2.dev: $(PCL5_MAK) $(ECHOGS_XE) $(HPGL2_OTHER) $(HPGL2_OPS)
-	$(SETMOD) hpgl2 $(HPGL2_OTHER)
+	$(SETMOD) hpgl2 $(HPGL2_OTHER1)
+	$(ADDMOD) hpgl2 $(HPGL2_OTHER2)
 	$(ADDMOD) hpgl2 $(HPGL2_OPS1)
 	$(ADDMOD) hpgl2 $(HPGL2_OPS2)
 	$(ADDMOD) hpgl2 -init pginit pgframe pgconfig pgvector

@@ -118,11 +118,11 @@ private int
 pgcolor_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
-	  HPGL_COMMAND('C', 'R', hpgl_CR),
-	  HPGL_COMMAND('M', 'C', hpgl_MC),
-	  HPGL_COMMAND('N', 'P', hpgl_NP),
-	  HPGL_COMMAND('P', 'C', hpgl_PC),
-	  HPGL_COMMAND('P', 'P', hpgl_PP),
+	  HPGL_COMMAND('C', 'R', hpgl_CR, 0),
+	  HPGL_COMMAND('M', 'C', hpgl_MC, 0),
+	  HPGL_COMMAND('N', 'P', hpgl_NP, 0),
+	  HPGL_COMMAND('P', 'C', hpgl_PC, 0),
+	  HPGL_COMMAND('P', 'P', hpgl_PP, 0),
 	END_HPGL_COMMANDS
 	return 0;
 }

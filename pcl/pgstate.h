@@ -4,6 +4,10 @@
 
 /* pgstate.h */
 /* Definition of HP-GL/2 portion of PCL5 state */
+
+#ifndef pgstate_INCLUDED
+#  define pgstate_INCLUDED
+
 #include "gslparam.h"
 #include "gsuid.h"		/* for gxbitmap.h */
 #include "gstypes.h"		/* for gxbitmap.h */
@@ -27,7 +31,21 @@ typedef enum {
 	hpgl_rm_polygon
 } hpgl_rendering_mode_t;
 
+/* state of lost mode */
+typedef enum {
+	hpgl_lost_mode_entered,
+	hpgl_lost_mode_cleared
+} hpgl_lost_mode_t;
+
+
 typedef struct pcl_hpgl_state_s {
+		/* Chapter 17 lost mode (pgmisc.c) */
+  
+	/* According to PCLTRM IN, PG, RP and PA with args in range clears
+	   lost mode.  Note that all these commands have PA with valid args
+	   as a side effect so only PA needs to clear lost mode.  */
+
+	hpgl_lost_mode_t lost_mode; 
 
 		/* Chapter 18 (pgframe.c) */
 
@@ -56,6 +74,7 @@ typedef struct pcl_hpgl_state_s {
 
 		/* Chapter 20 (pgvector.c) */
 
+  
 	bool pen_down;
 	bool have_first_moveto;  
 	bool last_pen_down;      /* previous state of pen */
@@ -209,3 +228,4 @@ typedef struct pcl_hpgl_state_s {
    hpgl_restore_pen_position(pgls), \
    hpgl_restore_pen_relative_state(pgls))
 
+#endif				/* pgstate_INCLUDED */

@@ -433,16 +433,16 @@ pgconfig_do_init(gs_memory_t *mem)
 	DEFINE_HPGL_COMMANDS
 	  /* CO has special argument parsing, so it must handle skipping */
 	  /* in polygon mode itself. */
-	  HPGL_POLY_COMMAND('C', 'O', hpgl_CO),
-	  HPGL_COMMAND('D', 'F', hpgl_DF),
-	  HPGL_COMMAND('I', 'N', hpgl_IN),
-	  HPGL_COMMAND('I', 'P', hpgl_IP),
-	  HPGL_COMMAND('I', 'R', hpgl_IR),
-	  HPGL_COMMAND('I', 'W', hpgl_IW),
-	  HPGL_COMMAND('P', 'G', hpgl_PG),
-	  HPGL_COMMAND('R', 'O', hpgl_RO),
-	  HPGL_COMMAND('R', 'P', hpgl_RP),
-	  HPGL_COMMAND('S', 'C', hpgl_SC),
+	  HPGL_COMMAND('C', 'O', hpgl_CO, hpgl_cdf_polygon),
+	  HPGL_COMMAND('D', 'F', hpgl_DF, 0),
+	  HPGL_COMMAND('I', 'N', hpgl_IN, 0),
+	  HPGL_COMMAND('I', 'P', hpgl_IP, 0),
+	  HPGL_COMMAND('I', 'R', hpgl_IR, 0),
+	  HPGL_COMMAND('I', 'W', hpgl_IW, 0),
+	  HPGL_COMMAND('P', 'G', hpgl_PG, 0),
+	  HPGL_COMMAND('R', 'O', hpgl_RO, 0),
+	  HPGL_COMMAND('R', 'P', hpgl_RP, 0),
+	  HPGL_COMMAND('S', 'C', hpgl_SC, 0),
 	END_HPGL_COMMANDS
 	return 0;
 }

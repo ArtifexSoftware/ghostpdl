@@ -9,11 +9,11 @@
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
 #include "pgmand.h"
-
 #include "pginit.h"
 #include "pgfont.h"
 #include "pgdraw.h"
 #include "pggeom.h"
+#include "pgmisc.h"
 
 /* ------ Internal procedures ------ */
 
@@ -541,29 +541,29 @@ private int
 pgchar_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
-	  HPGL_COMMAND('A', 'D', hpgl_AD),		/* kind/value pairs */
-	  HPGL_COMMAND('C', 'F', hpgl_CF),
-	  HPGL_COMMAND('C', 'P', hpgl_CP),
-	  HPGL_COMMAND('D', 'I', hpgl_DI),
-	  HPGL_COMMAND('D', 'R', hpgl_DR),
+	  HPGL_COMMAND('A', 'D', hpgl_AD, 0),		/* kind/value pairs */
+	  HPGL_COMMAND('C', 'F', hpgl_CF, 0),
+	  HPGL_COMMAND('C', 'P', hpgl_CP, hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('D', 'I', hpgl_DI, 0),
+	  HPGL_COMMAND('D', 'R', hpgl_DR, 0),
 	  /* DT has special argument parsing, so it must handle skipping */
 	  /* in polygon mode itself. */
-	  HPGL_POLY_COMMAND('D', 'T', hpgl_DT),
-	  HPGL_COMMAND('D', 'V', hpgl_DV),
-	  HPGL_COMMAND('E', 'S', hpgl_ES),
-	  HPGL_COMMAND('F', 'I', hpgl_FI),
-	  HPGL_COMMAND('F', 'N', hpgl_FN),
+	  HPGL_COMMAND('D', 'T', hpgl_DT, hpgl_cdf_polygon),
+	  HPGL_COMMAND('D', 'V', hpgl_DV, 0),
+	  HPGL_COMMAND('E', 'S', hpgl_ES, 0),
+	  HPGL_COMMAND('F', 'I', hpgl_FI, 0),
+	  HPGL_COMMAND('F', 'N', hpgl_FN, 0),
 	  /* LB also has special argument parsing. */
-	  HPGL_POLY_COMMAND('L', 'B', hpgl_LB),
-	  HPGL_COMMAND('L', 'O', hpgl_LO),
-	  HPGL_COMMAND('S', 'A', hpgl_SA),
-	  HPGL_COMMAND('S', 'B', hpgl_SB),
-	  HPGL_COMMAND('S', 'D', hpgl_SD),		/* kind/value pairs */
-	  HPGL_COMMAND('S', 'I', hpgl_SI),
-	  HPGL_COMMAND('S', 'L', hpgl_SL),
-	  HPGL_COMMAND('S', 'R', hpgl_SR),
-	  HPGL_COMMAND('S', 'S', hpgl_SS),
-	  HPGL_COMMAND('T', 'D', hpgl_TD),
+	  HPGL_COMMAND('L', 'B', hpgl_LB, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared),
+	  HPGL_COMMAND('L', 'O', hpgl_LO, 0),
+	  HPGL_COMMAND('S', 'A', hpgl_SA, 0),
+	  HPGL_COMMAND('S', 'B', hpgl_SB, 0),
+	  HPGL_COMMAND('S', 'D', hpgl_SD, 0),		/* kind/value pairs */
+	  HPGL_COMMAND('S', 'I', hpgl_SI, 0),
+	  HPGL_COMMAND('S', 'L', hpgl_SL, 0),
+	  HPGL_COMMAND('S', 'R', hpgl_SR, 0),
+	  HPGL_COMMAND('S', 'S', hpgl_SS, 0),
+	  HPGL_COMMAND('T', 'D', hpgl_TD, 0),
 	END_HPGL_COMMANDS
 	return 0;
 }
