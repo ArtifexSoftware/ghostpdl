@@ -407,7 +407,6 @@ private FILL_LOOP_PROC(fill_loop_by_trapezoids);
  * and do the slightly ugly things necessary to make it work.
  */
 
-#if !PSEUDO_RASTERIZATION
 /*
  * Tweak the fill adjustment if necessary so that (nearly) empty
  * rectangles are guaranteed to produce some output.  This is a hack
@@ -437,20 +436,6 @@ gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
 		  fixed2float(adjust->y));
     }
 }
-#else
-void
-gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
-{
-    /*
-     * With DROPOUT_PREVENTION we don't need adjustments.
-     * Note that old code does adjustment for 0x0 boxes,
-     * but the new one does not. We believe that characters
-     * must have no 0x0 paths, but other paths have been adjusted
-     * in advance.
-     */
-     DO_NOTHING;
-}
-#endif
 
 /*
  * The general fill  path algorithm.
@@ -473,6 +458,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     int max_fill_band = dev->max_fill_band;
 #define NO_BAND_MASK ((fixed)(-1) << (sizeof(fixed) * 8 - 1))
     bool fill_by_trapezoids;
+    bool pseudo_rasterization;
     line_list lst;
 
     adjust = params->adjust;
@@ -485,7 +471,12 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * but right now we don't bother.
      */
     gx_path_bbox(ppath, &ibox);
-    if (params->fill_zero_width)
+#   define SMALL_CHARACTER 100
+    pseudo_rasterization = PSEUDO_RASTERIZATION && 
+			    ((adjust.x | adjust.y) == 0 && 
+			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
+			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
+    if (params->fill_zero_width && !pseudo_rasterization)
 	gx_adjust_if_empty(&ibox, &adjust);
     if (vd_enabled) {
 	fixed x0 = int2fixed(fixed2int(ibox.p.x - adjust.x - fixed_epsilon));
@@ -563,6 +554,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	adjust_below = adjust_above = adjust.y;
     /* Initialize the active line list. */
     init_line_list(&lst, ppath->memory);
+    lst.pseudo_rasterization = pseudo_rasterization;
     /*
      * We have a choice of two different filling algorithms:
      * scan-line-based and trapezoid-based.  They compare as follows:
@@ -652,11 +644,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	pfpath = &ffpath;
     }
 #endif
-#   define SMALL_CHARACTER 100
-    lst.pseudo_rasterization = PSEUDO_RASTERIZATION && 
-			    ((adjust.x | adjust.y) == 0 && 
-			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
-			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
     if ((code = add_y_list(pfpath, &lst, adjust_below, adjust_above, &ibox)) < 0)
 	goto nope;
     {
@@ -1807,7 +1794,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
     y = yll->start.y;		/* first Y value */
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
-    while (1) {
+   while (1) {
 	fixed y1;
 	active_line *endp, *alp, *stopx, *plp = NULL;
 	fixed x;
