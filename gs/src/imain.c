@@ -129,6 +129,9 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     return 0;
 }
 
+gs_memory_t *gs_memory_t_default;
+gs_malloc_memory_t *gs_malloc_memory_default;
+
 /* Initialization to be done before constructing any objects. */
 int
 gs_main_init1(gs_main_instance * minst)
