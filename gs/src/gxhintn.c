@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -18,9 +18,7 @@
 /* Type 1 hinter, a new algorithm */
 
 #include <assert.h>
-#include <limits.h>
-#include <memory.h>
-#include "stdpre.h"
+#include "memory_.h"
 #include "math_.h"
 #include "gx.h"
 #include "gxfixed.h"

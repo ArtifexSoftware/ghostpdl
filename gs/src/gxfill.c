@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989-2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -16,8 +16,8 @@
 
 /* $Id$ */
 /* Lower-level path filling procedures */
+
 #include <assert.h>
-#include <limits.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -36,6 +36,10 @@
 #define VD_TRACE 0
 #endif
 #include "vdtrace.h"
+
+#ifndef LONG_MIN
+#define LONG_MIN (-1 - (long)((unsigned long)ARCH_MAX_ULONG>>1))
+#endif
 
 #define VD_SCALE 0.004
 #define VD_TRAP_COLOR RGB(0, 255, 255)
