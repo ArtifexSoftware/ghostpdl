@@ -212,6 +212,9 @@ JBIG2DEVS=''
 if test x$with_jbig2dec != xno; then
     AC_CHECK_LIB([jbig2dec], [jbig2_page_out], [
 	JBIG2DEVS='$(PSD)jbig2.dev'
+	if test x$ac_cv_header_stdint_h != xyes; then
+	  AC_MSG_WARN([JBIG2 support requires stdint types which do not seem to be available.])
+	fi
     ], [
 	AC_MSG_WARN([disabling support for JBIG2 files])
     ])
