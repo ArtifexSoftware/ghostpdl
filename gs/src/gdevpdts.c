@@ -78,6 +78,7 @@ struct pdf_text_state_s {
     pdf_text_state_values_t out; /* see above */
     double leading;		/* TL (not settable, only used internally) */
     bool use_leading;		/* if true, use T* or ' */
+    bool continue_line;
     gs_point line_start;
     gs_point out_pos;		/* output position */
 };
@@ -91,6 +92,7 @@ private const pdf_text_state_t ts_default = {
     { TEXT_STATE_VALUES_DEFAULT },	/* out */
     0,				/* leading */
     0 /*false*/,		/* use_leading */
+    0 /*false*/,		/* continue_line */
     { 0, 0 },			/* line_start */
     { 0, 0 }			/* output position */
 };
@@ -314,8 +316,46 @@ pdf_from_stream_to_text(gx_device_pdf *pdev)
 
     gs_make_identity(&pts->out.matrix);
     pts->line_start.x = pts->line_start.y = 0;
+    pts->continue_line = false; /* Not sure, probably doesn't matter. */
     pts->buffer.count_chars = 0;
     pts->buffer.count_moves = 0;
+    return 0;
+}
+
+
+/*
+ *  Flush text from buffer.
+ */
+private int
+flush_text_buffer(gx_device_pdf *pdev)
+{
+    pdf_text_state_t *pts = pdev->text->text_state;
+    stream *s = pdev->strm;
+
+    if (pts->buffer.count_moves > 0) {
+	int i, cur = 0;
+
+	if (pts->use_leading)
+	    stream_puts(s, "T*");
+	stream_puts(s, "[");
+	for (i = 0; i < pts->buffer.count_moves; ++i) {
+	    int next = pts->buffer.moves[i].index;
+
+	    pdf_put_string(pdev, pts->buffer.chars + cur, next - cur);
+	    pprintg1(s, "%g", pts->buffer.moves[i].amount);
+	    cur = next;
+	}
+	if (pts->buffer.count_chars > cur)
+	    pdf_put_string(pdev, pts->buffer.chars + cur,
+			   pts->buffer.count_chars - cur);
+	stream_puts(s, "]TJ\n");
+    } else {
+	pdf_put_string(pdev, pts->buffer.chars, pts->buffer.count_chars);
+	stream_puts(s, (pts->use_leading ? "'\n" : "Tj\n"));
+    }
+    pts->buffer.count_chars = 0;
+    pts->buffer.count_moves = 0;
+    pts->use_leading = false;
     return 0;
 }
 
@@ -331,6 +371,9 @@ sync_text_state(gx_device_pdf *pdev)
 
     if (pts->buffer.count_chars == 0)
 	return 0;		/* nothing to output */
+
+    if (pts->continue_line) 
+	return flush_text_buffer(pdev);
 
     /* Bring text state parameters up to date. */
 
@@ -377,32 +420,9 @@ sync_text_state(gx_device_pdf *pdev)
 	}
     }
 
-    if (pts->buffer.count_moves > 0) {
-	int i, cur = 0;
-
-	if (pts->use_leading)
-	    stream_puts(s, "T*");
-	stream_puts(s, "[");
-	for (i = 0; i < pts->buffer.count_moves; ++i) {
-	    int next = pts->buffer.moves[i].index;
-
-	    pdf_put_string(pdev, pts->buffer.chars + cur, next - cur);
-	    pprintg1(s, "%g", pts->buffer.moves[i].amount);
-	    cur = next;
-	}
-	if (pts->buffer.count_chars > cur)
-	    pdf_put_string(pdev, pts->buffer.chars + cur,
-			   pts->buffer.count_chars - cur);
-	stream_puts(s, "]TJ\n");
-    } else {
-	pdf_put_string(pdev, pts->buffer.chars, pts->buffer.count_chars);
-	stream_puts(s, (pts->use_leading ? "'\n" : "Tj\n"));
-    }
-    pts->buffer.count_chars = 0;
-    pts->buffer.count_moves = 0;
-    pts->use_leading = false;
-    return 0;
+    return flush_text_buffer(pdev);
 }
+
 int
 pdf_from_string_to_text(gx_device_pdf *pdev)
 {
@@ -478,6 +498,7 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
     }
 
     pts->in = *ptsv;
+    pts->continue_line = false;
     return 0;
 }
 
@@ -523,10 +544,20 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
     }
     while (left)
 	if (pts->buffer.count_chars == MAX_TEXT_BUFFER_CHARS) {
-	    int code = pdf_open_page(pdev, PDF_IN_TEXT);
+	    int code = sync_text_state(pdev);
 
 	    if (code < 0)
 		return code;
+	    /* We'll keep a continuation of this line in the buffer,
+	     * but the current input parameters don't correspond to
+	     * the current position, because the text was broken in a
+	     * middle with unknown current point.
+	     * Don't change the output text state parameters
+	     * until input parameters are changed. 
+	     * pdf_set_text_state_values will reset the 'continue_line' flag 
+	     * at that time.
+	     */
+	    pts->continue_line = true;
 	} else {
 	    int code = pdf_open_page(pdev, PDF_IN_STRING);
 	    uint copy;
