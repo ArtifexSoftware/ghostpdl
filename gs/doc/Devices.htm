@@ -577,13 +577,13 @@ HP provides official drivers for many of their Deskjet printer models.
 In order to use these drivers, you will need the HP Inkjet Server as
 well as Ghostscript, available from <a
 href="http://hpinkjet.sourceforge.net">http://hpinkjet.sourceforge.net</a>.
-This version of Ghostscript includes the patch from version 0.96 of
+This version of Ghostscript includes the patch from version 0.97 of
 the hpijs software. If you are installing hpijs from an RPM, you will
 only need the hpijs RPM, not the ghostscript-hpijs one, as the code
 needed to work with hpijs is already included.
 
 <p>
-As of the 0.96 version, hpijs supports the following printer models:
+As of the 0.97 version, hpijs supports the following printer models:
 
 <dl><dt><b>e-Series:</b>
  <dd>e-20
@@ -606,7 +606,7 @@ As of the 0.96 version, hpijs supports the following printer models:
 <p>You will need to add the following line to your makefile:
 
 <blockquote>
-DEVICE_DEVS2=DJ630.dev DJ6xx.dev DJ6xxP.dev DJ8xx.dev DJ9xx.dev DJ9xxVIP.dev AP21xx.dev
+DEVICE_DEVS2=$(DD)DJ630.dev $(DD)DJ6xx.dev $(DD)DJ6xxP.dev $(DD)DJ8xx.dev $(DD)DJ9xx.dev $(DD)DJ9xxVIP.dev $(DD)AP21xx.dev
 </blockquote>
 
 <p>

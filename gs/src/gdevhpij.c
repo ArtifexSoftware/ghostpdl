@@ -54,8 +54,8 @@ typedef struct gx_device_hpijs_s
 #endif
 
 /* Margins are left, bottom, right, top. */
-#define DESKJET_MARGINS_LETTER   0.25, 0.44, -0.25, 0.33
-#define DESKJET_MARGINS_A4       0.125, 0.44, -0.125, 0.33
+#define DESKJET_MARGINS_LETTER   0.25, 0.44, -0.25, 0.167
+#define DESKJET_MARGINS_A4       0.125, 0.44, -0.125, 0.167
 //#define DESKJET_MARGINS_LETTER   0.25, 0.44, 0, 0.167
 //#define DESKJET_MARGINS_A4       0.125, 0.44, 0, 0.167
 
