@@ -449,7 +449,6 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
  * we must adjust its size in that dimension to match the request.
  * We recognize this by an unreasonably small medium->p.{x,y}.
  */
-#define MIN_MEDIA_SIZE 9
 private void 
 make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
 		       gs_matrix * pmat, bool scale, int rotate)
@@ -463,11 +462,21 @@ make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
 
 	rx = ry, ry = temp;
     }
-    /* Adjust the medium size if flexible. */ 
-    if (medium->p.x < MIN_MEDIA_SIZE && mx > rx)
-	mx = rx;
-    if (medium->p.y < MIN_MEDIA_SIZE && my > ry)
-	my = ry;
+    /* If 'medium' is flexible, adjust 'mx' and 'my' towards 'rx' and 'ry',
+       respectively. Note that 'mx' and 'my' have just acquired the largest
+       permissible value, medium->q. */
+    if (medium->p.x < mx)	/* non-empty width range */
+	if (rx < medium->p.x)
+	    mx = medium->p.x;	/* use minimum of the range */
+	else if (rx < mx)
+	    mx = rx;		/* fits */
+		/* else leave mx == medium->q.x, i.e., the maximum */
+    if (medium->p.y < my)	/* non-empty height range */
+	if (ry < medium->p.y)
+	    my = medium->p.y;	/* use minimum of the range */
+	else if (ry < my)
+	    my = ry;		/* fits */
+	    /* else leave my == medium->q.y, i.e., the maximum */
 
     /* Translate to align the centers. */ 
     gs_make_translation(mx / 2, my / 2, pmat);
