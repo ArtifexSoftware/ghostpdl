@@ -31,7 +31,10 @@ typedef struct cached_fm_pair_s cached_fm_pair;
 #endif
 
 /* This is the type-specific information for a Type 42 (TrueType) font. */
+#ifndef gs_type42_data_DEFINED
+#define gs_type42_data_DEFINED
 typedef struct gs_type42_data_s gs_type42_data;
+#endif
 #ifndef gs_font_type42_DEFINED
 #  define gs_font_type42_DEFINED
 typedef struct gs_font_type42_s gs_font_type42;
