@@ -740,42 +740,213 @@ readonly def
 
 % Insert metrics into a CIDFont, by saving the PDF W, W2, DW, and DW2
 % arrays and using a (currently very inefficient) CDevProc.
+% For detail, refer "PDF Reference" 2nd ed., p314 "5.6.3 CIDFonts".
+% It notes default DW is 0, but Acrobat Reader uses 1000 as default.
+% If DW is 0, currentpoint does not move by default in rendering text
+% horizontally, the result is unreadable. You can check it by Acrobat.
+
+/.pdfDefaultDW  1000 def
+/.pdfDefaultDW2 [ 880 -1000 ] def
+
 /addCIDmetrics {	% <CIDFont-resource> <CIDFont> addCIDmetrics <fontdict>
   dup length 5 add dict .copydict
   dup /FID undef
   dup /UniqueID undef
   dup /XUID undef
 	% Insert the widths into the font.
-  {W W2 DW DW2} {
-	% Stack: pdfresource newfont key
-    2 index 1 index .knownget {
-      2 index 3 1 roll put
-    } {
-      pop
-    } ifelse
-  } forall
+
+        % Stack: pdfresource newfont
+
+  1 index /DW .knownget {
+    1 index /DW 3 -1 roll put
+  } {
+    dup /DW .pdfDefaultDW put
+  } ifelse
+
+  1 index /W .knownget {
+    dup 2 index /W 3 -1 roll put
+    .pdfMakeInternalW 1 index /.internalW 3 -1 roll put
+  } if
+
+  1 index /DW2 .knownget {
+    1 index /DW2 3 -1 roll put
+  } {
+    dup /DW2 .pdfDefaultDW2 put
+  } ifelse
+
+  1 index /W2 .knownget {
+    dup 2 index /W2 3 -1 roll put
+    .pdfMakeInternalW2 1 index /.internalW2 3 -1 roll put
+  } if
+
   dup /CDevProc 1 index /CIDWProc load /exec load 3 packedarray cvx put
   exch pop
 } bdef
+
+/.pdfMakeInternalMTXArray { % <mtx_array> <item_size> .pdfConvertInternalW <mtx_array'>
+
+  % convert /W or /W2 to internal expression
+  %
+  %   mtx_array: original /W or /W2 array
+  %   item_size: number of metrics values per CID
+  %
+  %   for detail of the metrics list format in PDF,
+  %   refer PDF Ref. p.317 "Glyph Metrics in CIDFonts".
+  % 
+  %   format of single entry in internal expression
+  %
+  %     [
+  %       [cid_begin cid_end]
+  %       value_is_varied (bool)
+  %       [ [values for cid_begin...]
+  %         [values for cid_begin + 1]
+  %         ... ]
+  %     ]
+  %
+
+  7 dict
+  begin
+    /itemSize exch def
+    /M exch def			% original /W or /W2
+    /Msize M length def
+    /Mi { M i get } def		% W[i]
+    /Mi1 { M i 1 add get } def	% W[i + 1]
+    /putMTXEntry <<
+      /arraytype   {
+         [
+           [Mi Mi Mi1 length add 1 sub]
+           true
+           [
+             0 itemSize Mi1 length 1 sub {
+               [ exch 1 1 index itemSize add 1 sub { Mi1 exch get } for ]
+             } for
+           ]
+         ]
+         /i i 2 add def
+      }
+      /integertype {
+         [
+           [Mi Mi1]
+           false
+           [[ i 2 add 1 i 1 add itemSize add { M exch get } for ]]
+         ]
+         /i i 3 add def
+      }
+    >> def
+
+    /i 0 def
+
+    [ { putMTXEntry Mi1 type get exec i Msize ge { exit } if } loop ]
+  end
+} def
+
+/.pdfMakeInternalW  { dup length 0 gt { 1 .pdfMakeInternalMTXArray } if } def
+/.pdfMakeInternalW2 { dup length 0 gt { 3 .pdfMakeInternalMTXArray } if } def
+
+/.pdfGetMTXByCID { % <internalMTXArray> <cid>
+                   %     .pdfGetMTXByCID
+                   %         { <MTXEntry> true | false }
+
+  % get values for given CID from internal format of /W or /W2
+
+  exch
+  {
+    {
+      dup 0 get {} forall      % Stack: <cid> <entry> <cid_0> <cid_1>
+      3 index lt { pop pop false exit } if
+      2 index exch sub dup 0 lt { pop pop false exit } if
+      1 index 1 get not { pop 0 } if
+      exch 2 get exch get true exit
+    } loop
+    { exit } if
+  } forall
+  dup type /arraytype eq { exch pop true } { pop false } ifelse
+} def
+
 
 % Apply the [D]W[2] metrics to a character before displaying.
 /CIDWProc {		% <w0x> <w0y> <llx> <lly> <urx> <ury>
 			%   <w1x> <w1y> <vx> <vy> <cid> <font> CIDWproc
 			%   <w0x'> ... <vy'>
-  begin
-	% Look up and apply [D]W
-  10 index
-  currentdict /DW knownoget { 1000 div exch pop } if
-  currentdict /W knownoget {
-	% Search the W array for the CID.
-	% ****** NOT IMPLEMENTED YET ******
-	pop
-  } if
-  0 13 2 roll 11 -2 roll pop pop
-	% Look up and apply [D]W2
-	% ****** NOT IMPLEMENTED YET ******
-  pop end
-} bdef
+
+  begin % push <font> to currentdict
+    % <w1x> <w1y> <vx> <vy> won't be used and replaced, discard now
+    5 1 roll pop pop pop pop
+
+    {
+      currentdict /DW .knownget not {   % no DW
+        .pdfDefaultDW exit              % replace <w0x> by defaultDW
+      } if
+
+      currentdict /.internalW .knownget not {    % no W
+        exit                            % use already-stacked DW
+      } if
+
+      dup length 0 eq {                 % W is null array
+        pop                             % discard unusable W
+        exit                            % use already-stacked DW
+      } if
+
+      % W is finite array, try to get W_cid
+      2 index .pdfGetMTXByCID {           % got W, discard DW
+        exch pop {} forall
+        exit
+      } if
+
+      exit
+    } loop
+
+    1000 div                    % <w0x'> (normalized W)
+    0                           % <w0y'>
+
+    % Stack: <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <w0x'> <w0y'>
+    9 -2 roll pop pop           % discard <w0x> <w0y>
+    7  2 roll                   % put <w0x'> <w0y'>
+
+    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <cid>
+    0                           % <w1x'>
+    exch                        % put <w1x'>
+
+    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <cid>
+    {
+      currentdict /DW2 .knownget not {  % no DW2, use defaultDW2
+        .pdfDefaultDW2 exit
+      } if
+
+      currentdict /.internalW2 .knownget not {   % has DW2, no W2
+        exit                            % use already-stacked DW2
+      } if
+
+      dup length 0 eq {                 % W2 is null array
+        pop                             % discard unusable W2
+        exit                            % use already-stacked DW2
+      } if
+
+      2 index .pdfGetMTXByCID {		% got W2_cid, discard DW2
+        exch pop
+        exit
+      } if
+
+      % could not get W2_cid
+      exit
+
+    } loop
+
+    exch pop                            % discard <cid>
+
+
+    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> { [<vy'> <w1y'>] | [<w1y'> <vx'> <vy'>] }
+    dup length 2 eq {                   % this is DW2
+      {1000 div} forall exch
+      4 index 7 index add 2 div         % <vx'> = (<urx> + <llx>) / 2
+      exch
+    }{                                  % assume W2
+      {1000 div} forall
+    } ifelse
+  end                                   % recover currentdict
+
+} def
+
 % <string> <match> tailmatch ==> <pre> true
 %                            ==> <string> false
 /tailmatch {
