@@ -277,13 +277,19 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 		}
 		/* falls through */
 	    case t_string:
-		if (r_type(pp) != r_type(sources))
+		if (r_type(pp) != r_type(sources)) {
+    		    if (pie != NULL)
+		        gx_image_end(pie, false);    /* Clean up pie */
 		    return_error(e_typecheck);
+		}
 		check_read(*pp);
 		break;
 	    default:
-		if (!r_is_proc(sources))
+		if (!r_is_proc(sources)) {
+    		    if (pie != NULL)
+		        gx_image_end(pie, false);    /* Clean up pie */
 		    return_error(e_typecheck);
+		}
 		check_proc(*pp);
 	}
 	*ep = *pp;
