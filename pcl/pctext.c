@@ -583,7 +583,7 @@ pcl_show_chars_slow(
             if (code < 0)
                 break;
             /* NB WRONG - */
-            pcs->page_marked = true;
+            pcl_mark_page_for_current_pos(pcs);
         }
 
         /* 
