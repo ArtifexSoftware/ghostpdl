@@ -60,19 +60,21 @@ TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 # on the fly. If the artifex font scaler is chosen the makefiles will
 # build the scaler automatically.
 
-# Pick a font system technology.  PCL and XL do not need to use the
-# same scaler, but it is necessary to tinker/hack the makefiles to get
-# it to work properly.
+# Pick (uncomment) one font system technology ufst or artifex.  PCL and
+# XL do not need to use the same scaler, but it is necessary to
+# tinker/hack the makefiles to get it to work properly.
 
-# ufst - Agfa universal font scaler.
-# fts - freetype font system.
-# afs - artifex font scaler.
-# 3 mutually exclusive choices follow, pick one.
-
+# PL_SCALER=ufst
 PL_SCALER=afs
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
+# to compile in the fonts uncomment the following (this option only
+# works with the artifex scaler on a unix platform)
+
+# ROMFONTS=true
+
+# flags for UFST scaler.
 ifeq ($(PL_SCALER), ufst)
 XLDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
 # agfa does not use normalized library names (ie we expect libif.a not
@@ -81,9 +83,18 @@ EXTRALIBS=-lif -lfco -ltt
 AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -DAGFA_FONT_TABLE
 endif
 
+# flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
-LDFLAGS=
+
+XLDFLAGS=
 EXTRALIBS=
+
+ifeq ($(ROMFONTS), true)
+PL_SCALER=afsr
+XLDFLAGS=-L../pl/
+EXTRALIBS=-lttffont
+endif
+
 endif
 
 # a 64 bit type is needed for devicen color space/model support but
