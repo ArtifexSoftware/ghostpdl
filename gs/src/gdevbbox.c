@@ -1240,6 +1240,10 @@ bbox_text_begin(gx_device * dev, gs_imager_state * pis,
 	return code;
     }
     bbox_text_enum_copy(pbte);
+
+    /* See note on imaging_dev in gxtext.h */
+    rc_assign(pbte->target_info->imaging_dev, dev, "bbox_text_begin");
+
     *ppenum = (gs_text_enum_t *) pbte;
     return code;
 }

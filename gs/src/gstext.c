@@ -81,15 +81,16 @@ RELOC_PTRS_END
 
 private ENUM_PTRS_WITH(text_enum_enum_ptrs, gs_text_enum_t *eptr)
 {
-    index -= 7;
+    index -= 8;
     if (index <= eptr->fstack.depth)
 	ENUM_RETURN(eptr->fstack.items[index].font);
     index -= eptr->fstack.depth + 1;
      return ENUM_USING(st_gs_text_params, &eptr->text, sizeof(eptr->text), index);
 }
 case 0: return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
-ENUM_PTR3(1, gs_text_enum_t, pis, orig_font, path);
-ENUM_PTR3(4, gs_text_enum_t, pdcolor, pcpath, current_font);
+case 1: return ENUM_OBJ(gx_device_enum_ptr(eptr->imaging_dev));
+ENUM_PTR3(2, gs_text_enum_t, pis, orig_font, path);
+ENUM_PTR3(5, gs_text_enum_t, pdcolor, pcpath, current_font);
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
@@ -98,6 +99,7 @@ private RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
 
     RELOC_USING(st_gs_text_params, &eptr->text, sizeof(eptr->text));
     eptr->dev = gx_device_reloc_ptr(eptr->dev, gcst);
+    eptr->imaging_dev = gx_device_reloc_ptr(eptr->imaging_dev, gcst);
     RELOC_PTR3(gs_text_enum_t, pis, orig_font, path);
     RELOC_PTR3(gs_text_enum_t, pdcolor, pcpath, current_font);
     for (i = 0; i <= eptr->fstack.depth; i++)
@@ -153,6 +155,7 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
 
     pte->text = *text;
     pte->dev = dev;
+    pte->imaging_dev = NULL;
     pte->pis = pis;
     pte->orig_font = font;
     pte->path = path;
@@ -515,6 +518,7 @@ void
 gx_default_text_release(gs_text_enum_t *pte, client_name_t cname)
 {
     rc_decrement_only(pte->dev, cname);
+    rc_decrement_only(pte->imaging_dev, cname);
 }
 void
 rc_free_text_enum(gs_memory_t * mem, void *obj, client_name_t cname)

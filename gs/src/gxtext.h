@@ -79,6 +79,7 @@ rc_free_proc(rc_free_text_enum);
      */\
     gs_text_params_t text;	/* must be first for subclassing */\
     gx_device *dev;\
+    gx_device *imaging_dev;	/* see note below */\
     gs_imager_state *pis;\
     gs_font *orig_font;\
     gx_path *path;			/* unless DO_NONE & !RETURN_WIDTH */\
@@ -104,6 +105,42 @@ rc_free_proc(rc_free_text_enum);
 /*typedef*/ struct gs_text_enum_s {
     gs_text_enum_common;
 } /*gs_text_enum_t*/;
+
+/*
+ * Notes on the imaging_dev field of device enumeration structures:
+ *
+ * This field is added as a hack to make the bbox device work
+ * correctly as a forwarding device in some cases, particularly the X
+ * driver. When the X driver is configured to use a memory device for
+ * rendering (ie the MaxBitmap parameter is large enough to hold the
+ * buffer), it sets up a pipeline where the bbox device forwards to
+ * the memory device. The bbox device is used to determine which areas
+ * of the buffer have been drawn on, so that the screen can be
+ * appropriately updated.
+ *
+ * This works well for low-level operations such as filling
+ * rectangles, because the bbox device can easily determine the bbox
+ * of the drawing operation before forwarding it to the target device.
+ * However, for higher level operations, such as those that require
+ * enumerators, the approach is fundamentally broken. Essentially, the
+ * execution of the drawing operation is the responsibility of the
+ * target device, and the bbox device doesn't really have any way to
+ * determine the bounding box.
+ *
+ * The approach taken here is to add an additional field to the
+ * enumerations, imaging_dev. In the common case where the target
+ * device implements the high level drawing operation in terms of
+ * lower level operations, setting the imaging_dev field to non-NULL
+ * requests that these lower level imaging operations be directed to
+ * the imaging_dev rather than dev. The bbox device sets the
+ * imaging_dev field to point to itself. Thus, the low level drawing
+ * operations are intercepted by the bbox device, so that the bbox is
+ * accounted for.
+ *
+ * Note that, if the target device implements higher level operations
+ * by itself, ie not by breaking it into lower level operations, this
+ * approach will fail.
+ */
 
 #define st_gs_text_enum_max_ptrs (st_gs_text_params_max_ptrs + 7)
 /*extern_st(st_gs_text_enum); */
