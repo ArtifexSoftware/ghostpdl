@@ -557,7 +557,10 @@ end
     ifelse
   } bind
   /Separation {
-    aload pop exch oforce resolvecolorspace exch oforce resolvefnproc
+    aload pop exch oforce resolvecolorspace
+                % Contrary to PDF manuals up to v.1.5, Acrobat Distiller 3.01
+                % can use /Identity name here instead of a function.
+    exch oforce resolveidfnproc
     4 array astore
   }
   /DeviceN {
