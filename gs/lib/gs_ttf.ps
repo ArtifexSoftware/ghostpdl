@@ -112,6 +112,23 @@
 /MacRomanEncoding dup .findencoding def
 /MacGlyphEncoding dup .findencoding def
 
+% Define remapping for misnamed glyphs in TrueType 'post' tables.
+% There are probably a lot more than this!
+/postremap mark
+  /Cdot /Cdotaccent
+  /Edot /Edotaccent
+  /Eoverdot /Edotaccent
+  /Gdot /Gdotaccent
+  /Ldot /Ldotaccent
+  /Zdot /Zdotaccent
+  /cdot /cdotaccent 
+  /edot /edotaccent 
+  /eoverdot /edotaccent
+  /gdot /gdotaccent 
+  /ldot /ldotaccent
+  /zdot /zdotaccent 
+.dicttomark readonly def
+
 % ---- Utilities ---- %
 
 % Define a serial number for creating unique XUIDs for TrueType fonts.
@@ -328,6 +345,10 @@
 	    postglyphs 1 index get 1 add add
 	  } repeat
 	  1 add postglyphs exch 2 copy 1 sub get getinterval cvn
+		% At least some of Microsoft's TrueType fonts use incorrect
+		% (Adobe-incompatible) names for some glyphs.
+		% Correct for this here.
+	  postremap 1 index .knownget { exch pop } if
 	} ifelse
       } for ]
   } bind
