@@ -587,14 +587,18 @@ psw_check_erasepage(gx_device_pswrite *pdev)
     int code = 0;
 
     if (pdev->page_fill.color != gx_no_color_index) {
-	code = gdev_vector_fill_rectangle((gx_device *)pdev,
-					  pdev->page_fill.rect.p.x,
-					  pdev->page_fill.rect.p.y,
-					  pdev->page_fill.rect.q.x -
-					    pdev->page_fill.rect.p.x,
-					  pdev->page_fill.rect.q.y -
-					    pdev->page_fill.rect.p.y,
-					  pdev->page_fill.color);
+	if (pdev->page_fill.rect.p.x != pdev->page_fill.rect.q.x
+	    && pdev->page_fill.rect.p.y != pdev->page_fill.rect.q.y)
+	{
+	    code = gdev_vector_fill_rectangle((gx_device *)pdev,
+					      pdev->page_fill.rect.p.x,
+					      pdev->page_fill.rect.p.y,
+					      pdev->page_fill.rect.q.x -
+						pdev->page_fill.rect.p.x,
+					      pdev->page_fill.rect.q.y -
+						pdev->page_fill.rect.p.y,
+					      pdev->page_fill.color);
+	}
 	pdev->page_fill.color = gx_no_color_index;
     }
     return code;
