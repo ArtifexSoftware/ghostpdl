@@ -48,6 +48,7 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "pltoputl.h"
 #include "plapi.h"
 
+
 /*
  * Define bookeeping for interperters and devices 
  */
@@ -103,13 +104,14 @@ pl_main_universe_dnit(P2(
 	char                   *err_str              /* RETRUNS errmsg if error return */
 ));
 pl_interp_instance_t *    /* rets current interp_instance, 0 if err */
-pl_main_universe_select(P5(
+pl_main_universe_select(
 	pl_main_universe_t               *universe,              /* universe to select from */
 	char                             *err_str,               /* RETURNS error str if error */
+	pl_interp_instance_t             *pjl_instance,          /* pjl */
 	pl_interp_implementation_t const *desired_implementation,/* impl to select */
         pl_main_instance_t               *pti,                   /* inst contains device */
 	gs_param_list                    *params                 /* device params to use */
-));
+);
 
 private pl_interp_implementation_t const *
 pl_auto_sense(P3(
@@ -387,6 +389,7 @@ pl_main(
 		if ( new_job ) {
                     if_debug0( '|', "Selecting PDL\n" );
                     curr_instance = pl_main_universe_select(&universe, err_buf,
+							    pjl_instance,
                                                             pl_select_implementation(pjl_instance, &inst, r),
                                                             &inst, (gs_param_list *)&params);
                     if ( curr_instance == NULL ) {
@@ -578,6 +581,7 @@ pl_interp_instance_t *    /* rets current interp_instance, 0 if err */
 pl_main_universe_select(
         pl_main_universe_t               *universe,              /* universe to select from */
 	char                             *err_str,               /* RETURNS error str if error */
+	pl_interp_instance_t             *pjl_instance,          /* pjl */
 	pl_interp_implementation_t const *desired_implementation,/* impl to select */
 	pl_main_instance_t               *pti,                   /* inst contains device */
 	gs_param_list                    *params                 /* device params to set */
@@ -674,12 +678,20 @@ pl_main_universe_select(
                 pti->saved_hwres = true;
                 pti->hwres[0] = pdev->HWResolution[0];
                 pti->hwres[1] = pdev->HWResolution[1];
-		/* stefan foo: pulled until new_logical_page works 
-		 * gx_device_set_resolution(pdev, 10, 10);
-		 */
-		gx_device_set_resolution(pti->device, 
-					 pti->hwres[0], pti->hwres[1]);
 
+		if (!pjl_proc_compare(pjl_instance, 
+				      pjl_proc_get_envvar(pjl_instance, "viewer"), 
+				      "on")) {
+		    /* NB: new_logical_page shouldn't be called for every page 
+		     */ 
+		    pti->viewer = true; /* cache pjl variable on language select */
+		    gx_device_set_resolution(pdev, 10, 10);
+		}
+		else {
+  		    pti->viewer = false;
+		    gx_device_set_resolution(pti->device, 
+					     pti->hwres[0], pti->hwres[1]);
+		}
             }
         }
     }
@@ -805,11 +817,11 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                     buffer[eqp - arg] = '\0';
                     code = param_write_float((gs_param_list *)params, arg_heap_copy(buffer), &vf);
                 } else if ( !strcmp(value, "true") ) {
-                    bool bval = true;
-                    char buffer[128];
-                    strncpy(buffer, arg, eqp - arg);
-                    buffer[eqp - arg] = '\0';
-                    code = param_write_bool((gs_param_list *)params, arg_heap_copy(buffer), &bval);
+		    bool bval = true;
+		    char buffer[128];
+		    strncpy(buffer, arg, eqp - arg);
+		    buffer[eqp - arg] = '\0';
+		    code = param_write_bool((gs_param_list *)params, arg_heap_copy(buffer), &bval);
                 } else if ( !strcmp(value, "false") ) {
                     bool bval = false;
                     char buffer[128];
@@ -1102,11 +1114,15 @@ pl_pre_finish_page(pl_interp_instance_t *interp, void *closure)
             pti->saved_hwres = true;
             pti->hwres[0] = pdev->HWResolution[0];
             pti->hwres[1] = pdev->HWResolution[1];
-            /* stefan foo: pulled until new_logical_page works 
-	     * gx_device_set_resolution(pdev, 10, 10);
-	     */
-            gx_device_set_resolution(pti->device, 
-                                     pti->hwres[0], pti->hwres[1]);
+	    if ( pti->viewer ) {
+	        /* NB: new_logical_page shouldn't be called for every page 
+		 * viewer optimizations sometimes fail!
+		 */ 
+	        gx_device_set_resolution(pdev, 10, 10);
+	    }
+	    else
+	        gx_device_set_resolution(pti->device, 
+					 pti->hwres[0], pti->hwres[1]);
         }
     }
     /* out of range don't allow printing the page */
