@@ -151,7 +151,7 @@ private void dw_gt_release_dc(vd_trace_interface *I, vd_trace_interface **I1)
 	ReleaseDC(I->host->tw->hwnd, I->host->hdc);
 	I->host->hdc = NULL;
 	delete_pen_brush(I);
-        I1 = NULL;
+        *I1 = NULL;
     } else if(I->host->count_GetDC < 0) {
         /* safety : */
 	I->host->count_GetDC = 0;
