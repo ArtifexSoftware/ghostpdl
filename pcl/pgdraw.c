@@ -721,6 +721,8 @@ start:
     if (cross) {
 	cross = false;
 	direction += 90;
+	if ( direction >= 180 ) 
+	    direction -= 180;
 	goto start;
     }
     hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
