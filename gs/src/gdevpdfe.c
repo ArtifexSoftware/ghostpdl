@@ -95,8 +95,12 @@ pdf_embed_font_as_type1(gx_device_pdf *pdev, gs_font_type1 *font,
      * Note that the interpreter adds them implicitly (per documentation),
      * so we must set MARK so that the encrypted portion pushes a mark on
      * the stack.
+     *
+     * NOTE: the options were set to 0 in the first checked-in version of
+     * this file.  We can't explain this: Acrobat Reader requires eexec
+     * encryption, so the code can't possibly have worked.
      */
-#define TYPE1_OPTIONS 0/*(WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_MARK)*/
+#define TYPE1_OPTIONS (WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_MARK)
     code = psf_write_type1_font(&poss, font, TYPE1_OPTIONS,
 				 subset_glyphs, subset_size, pfname, lengths);
     if (code < 0)
