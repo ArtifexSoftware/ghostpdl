@@ -262,92 +262,97 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	}
     }
   
-    /* Check for LockDistillerParams before doing anything else. */
-
+    /*
+     * Check for LockDistillerParams before doing anything else.
+     * If LockDistillerParams is true and is not being set to false,
+     * ignore all resettings of PDF-specific parameters.  Note that
+     * LockDistillerParams is read again, and reset if necessary, in
+     * psdf_put_params.
+     */
     ecode = code = param_read_bool(plist, "LockDistillerParams", &locked);
-    if (locked && pdev->params.LockDistillerParams)
-	return ecode;
+ 
+    if (!(locked && pdev->params.LockDistillerParams)) {
+	/* General parameters. */
 
-    /* General parameters. */
+	{
+	    int efo = 1;
 
-    {
-	int efo = 1;
+	    ecode = param_put_int(plist, (param_name = ".EmbedFontObjects"), &efo, ecode);
+	    if (efo != 1)
+		param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
+	}
+	{
+	    int cdv = CoreDistVersion;
 
-	ecode = param_put_int(plist, (param_name = ".EmbedFontObjects"), &efo, ecode);
-	if (efo != 1)
-	    param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
-    }
-    {
-	int cdv = CoreDistVersion;
+	    ecode = param_put_int(plist, (param_name = "CoreDistVersion"), &cdv, ecode);
+	    if (cdv != CoreDistVersion)
+		param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
+	}
 
-	ecode = param_put_int(plist, (param_name = "CoreDistVersion"), &cdv, ecode);
-	if (cdv != CoreDistVersion)
-	    param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
-    }
+	save_dev = *pdev;
 
-    save_dev = *pdev;
+	switch (code = param_read_float(plist, (param_name = "CompatibilityLevel"), &cl)) {
+	    default:
+		ecode = code;
+		param_signal_error(plist, param_name, ecode);
+	    case 0:
+		/*
+		 * Must be 1.2, 1.3, or 1.4.  Per Adobe documentation, substitute
+		 * the nearest achievable value.
+		 */
+		if (cl < (float)1.25)
+		    cl = 1.2;
+		else if (cl >= (float)1.35)
+		    cl = 1.4;
+		else
+		    cl = 1.3;
+	    case 1:
+		break;
+	}
 
-    switch (code = param_read_float(plist, (param_name = "CompatibilityLevel"), &cl)) {
-	default:
+	code = gs_param_read_items(plist, pdev, pdf_param_items);
+	if (code < 0)
 	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
+	{
 	    /*
-	     * Must be 1.2, 1.3, or 1.4.  Per Adobe documentation, substitute
-	     * the nearest achievable value.
+	     * Setting FirstObjectNumber is only legal if the file
+	     * has just been opened and nothing has been written,
+	     * or if we are setting it to the same value.
 	     */
-	    if (cl < (float)1.25)
-		cl = 1.2;
-	    else if (cl >= (float)1.35)
-		cl = 1.4;
-	    else
-		cl = 1.3;
-	case 1:
-	    break;
-    }
+	    long fon = pdev->FirstObjectNumber;
 
-    code = gs_param_read_items(plist, pdev, pdf_param_items);
-    if (code < 0)
-	ecode = code;
-    {
-	/*
-	 * Setting FirstObjectNumber is only legal if the file
-	 * has just been opened and nothing has been written,
-	 * or if we are setting it to the same value.
-	 */
-	long fon = pdev->FirstObjectNumber;
-
-	if (fon != save_dev.FirstObjectNumber) {
-	    if (fon <= 0 || fon > 0x7fff0000 ||
-		(pdev->next_id != 0 &&
-		 pdev->next_id !=
-		 save_dev.FirstObjectNumber + pdf_num_initial_ids)
-		) {
-		ecode = gs_error_rangecheck;
-		param_signal_error(plist, "FirstObjectNumber", ecode);
+	    if (fon != save_dev.FirstObjectNumber) {
+		if (fon <= 0 || fon > 0x7fff0000 ||
+		    (pdev->next_id != 0 &&
+		     pdev->next_id !=
+		     save_dev.FirstObjectNumber + pdf_num_initial_ids)
+		    ) {
+		    ecode = gs_error_rangecheck;
+		    param_signal_error(plist, "FirstObjectNumber", ecode);
+		}
 	    }
 	}
-    }
-    {
-	/*
-	 * Set ProcessColorModel now, because gx_default_put_params checks
-	 * it.
-	 */
-	static const char *const pcm_names[] = {
-	    "DeviceGray", "DeviceRGB", "DeviceCMYK", 0
-	};
-	static const gx_device_color_info pcm_color_info[] = {
-	    dci_values(1, 8, 255, 0, 256, 0),
-	    dci_values(3, 24, 255, 255, 256, 256),
-	    dci_values(4, 32, 255, 255, 256, 256)
-	};
-	int pcm = -1;
+	{
+	    /*
+	     * Set ProcessColorModel now, because gx_default_put_params checks
+	     * it.
+	     */
+	    static const char *const pcm_names[] = {
+		"DeviceGray", "DeviceRGB", "DeviceCMYK", 0
+	    };
+	    static const gx_device_color_info pcm_color_info[] = {
+		dci_values(1, 8, 255, 0, 256, 0),
+		dci_values(3, 24, 255, 255, 256, 256),
+		dci_values(4, 32, 255, 255, 256, 256)
+	    };
+	    int pcm = -1;
 
-	ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
-			       pcm_names, ecode);
-	if (pcm >= 0) {
-	    pdev->color_info = pcm_color_info[pcm];
-	    pdf_set_process_color_model(pdev);
+	    ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
+				   pcm_names, ecode);
+	    if (pcm >= 0) {
+		pdev->color_info = pcm_color_info[pcm];
+		pdf_set_process_color_model(pdev);
+	    }
 	}
     }
     if (ecode < 0)
