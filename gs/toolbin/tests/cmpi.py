@@ -236,8 +236,8 @@ def open_files():
     SC.highlight = 0
     SC.highlight_list = [ ]
 
-    B = open(baseline_filename)
-    C = open(compare_filename)
+    B = open(baseline_filename, "rb")
+    C = open(compare_filename, "rb")
     BType = B.readline()
     CType = C.readline()
     while True:
