@@ -27,13 +27,14 @@
 #include "iplugin.h"
 #include "ifapi.h"
 /* UFST includes : */
-#include "CGCONFIG.H"
-#include "PORT.H"    
-#include "SHAREINC.H"
-#include "T1ISFNT.H"
-#include "CGMACROS.H"
+#include "cgconfig.h"
+#include "port.h"
+#include "shareinc.h"
+#include "t1isfnt.h"
+#include "cgmacros.h"
+#include "sfntenum.h"
 #define DOES_ANYONE_USE_THIS_STRUCTURE /* see TTPCLEO.H, UFST 4.2 */
-#include "TTPCLEO.H"
+#include "ttpcleo.h"
 #undef  DOES_ANYONE_USE_THIS_STRUCTURE
 /* GS includes : */
 #include "gxfapi.h"
@@ -67,6 +68,7 @@ typedef struct {
     UW16 platformId;
     UW16 specificId;
     pcleo_glyph_list_elem *glyphs;
+    char decodingID[12];
 } ufst_common_font_data;
 
 typedef struct { 
@@ -86,7 +88,6 @@ struct fapi_ufst_server_s {
     FONTCONTEXT fc;
     IFBITMAP * pbm;    
     double tran_xx, tran_xy, tran_yx, tran_yy;
-    const char *decodingID;
     fco_list_elem *fco_list;
     FAPI_retcode callback_error;
 };
@@ -140,10 +141,10 @@ private UW16 get_font_type(FILE *f)
 
     
 private int choose_decoding_PS(fapi_ufst_server *r, ufst_common_font_data *d, const char *cmapId)
-{ /*    Work around UFST bug :
-        It can't choose character by name due to bug with caching.
+{ strncpy(d->decodingID, "Latin1", sizeof(d->decodingID));
+  /*    fixme : must depend on charset used in the font.
+        Particulartly Symbol fonts need a different decoding.
   */
-  r->decodingID = "Latin1";
   return 1;
 }
 
@@ -177,17 +178,17 @@ private void scan_xlatmap(fapi_ufst_server *r, ufst_common_font_data *d, const c
         int good_kind =!strcmp(p, font_kind);
         p += strlen(p) + 2;
         while(*p) {
-            const char *cmapId = p;
-            r->decodingID = p + strlen(p) + 1;
-            if (!*r->decodingID)
+            const char *cmapId = p, *decodingID = p + strlen(p) + 1;
+            strncpy(d->decodingID, decodingID, sizeof(d->decodingID));
+            if (!decodingID[0])
                 break;
-            p = r->decodingID + strlen(r->decodingID) + 1;
+            p = decodingID + strlen(decodingID) + 1;
             if (good_kind)
                 if (choose_proc(r, d, cmapId))
                     return;
         }
     }
-    r->decodingID = NULL;
+    d->decodingID[0] = 0;
 }
 
 private void choose_decoding(fapi_ufst_server *r, ufst_common_font_data *d, const char *xlatmap)
@@ -195,8 +196,8 @@ private void choose_decoding(fapi_ufst_server *r, ufst_common_font_data *d, cons
         switch (d->font_type) {
             case FC_IF_TYPE: /* fixme */ break;
             case FC_PST1_TYPE: scan_xlatmap(r, d, xlatmap, "PostScript", choose_decoding_PS); break;
-            case FC_TT_TYPE: scan_xlatmap(r, d, xlatmap, "TrueType", choose_decoding_TT); break;
-            case FC_FCO_TYPE: /* fixme */ break;
+            case FC_TT_TYPE:   scan_xlatmap(r, d, xlatmap, "TrueType", choose_decoding_TT); break;
+            case FC_FCO_TYPE:  scan_xlatmap(r, d, xlatmap, "PostScript", choose_decoding_PS/* fixme */); break;
         } 
 }
 
@@ -225,7 +226,7 @@ private LPUB8 get_TT_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
     h->h.class = 15;
     h->add_data = 0;
     q = (LPUB8)&h->charDataSize;
-    q[0] = (glyph_length + 4) / 256; /* fixme : why + 4 ? */
+    q[0] = (glyph_length + 4) / 256; /* UFST wants '+4', not sure why. */
     q[1] = (glyph_length + 4) % 256;
     q = (LPUB8)&h->glyphID;
     q[0] = chId / 256;
@@ -264,7 +265,7 @@ private LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
     q[1] = 0; /* Namelen */
     q[2] = (glyph_length) / 256; /* Datalen */
     q[3] = (glyph_length) % 256; /* Datalen */
-    /* fixme : glyph name goes here */
+    /* Glyph name goes here, but we don't use it. */
     q+=4;
     glyph_length = ff->get_glyph(ff, chId, q, glyph_length);
     q += glyph_length;
@@ -306,10 +307,7 @@ private LPUB8 gs_PCLchId2ptr(IF_STATE *pIFS, UW16 chId)
 }
 
 private LPUB8 gs_PCLglyphID2Ptr(IF_STATE *pIFS, UW16 glyphID)
-{   /* never called (?) */
-    fapi_ufst_server *r = IFS_to_I(pIFS);
-    r->callback_error = e_unregistered;
-    return 0;
+{   return gs_PCLchId2ptr(pIFS, glyphID);
 }
 
 private inline void pack_word(LPUB8 *p, UW16 v)
@@ -475,9 +473,8 @@ private FAPI_retcode fco_open(fapi_ufst_server *r, const char *font_file_path, f
     return 0;
 }
 
-private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_path, int subfont, const char *xlatmap, FAPI_font *ff, ufst_common_font_data **return_data)
-{   /* fixme : use portable functions */
-    ulong area_length = sizeof(ufst_common_font_data), tt_size = 0;
+private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_path, int subfont, FAPI_font *ff, ufst_common_font_data **return_data)
+{   ulong area_length = sizeof(ufst_common_font_data), tt_size = 0;
     LPUB8 buf;
     PCLETTO_FHDR *h;
     ufst_common_font_data *d;
@@ -506,6 +503,7 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
     d->tt_font_body_offset = 0;
     d->platformId = 0;
     d->specificId = 0;
+    d->decodingID[0] = 0;
     d->glyphs = 0;
     d->font_id = 0;
     d->is_disk_font = (ff->font_file_path != NULL);
@@ -564,11 +562,11 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
         h->fontScalingTechnology = 1;   /* 70- 1=TrueType; 0=Intellifont */
         h->variety = 0;                 /* 71- 0 if TrueType */
         memset((LPUB8)h + PCLETTOFONTHDRSIZE, 0 ,8); /* work around bug in PCLswapHdr : it wants format 10 */
-        /*  fixme : This code assumes 1-byte alignment for PCLETTO_FHDR structure.
-            Use PACK_* macros to improve.
-        */
         /*  fixme : Most fields above being marked "wrong" look unused by UFST.
             Need to chack for sure.
+        */
+        /*  fixme : This code assumes 1-byte alignment for PCLETTO_FHDR structure.
+            Use PACK_* macros to improve.
         */
         PCLswapHdr(&r->IFS, (UB8 *)h, 0);
         if (ff->is_type1) {
@@ -606,7 +604,7 @@ private void prepare_typeface(fapi_ufst_server *r, ufst_common_font_data *d)
         r->fc.format |= FC_EXTERN_TYPE;
 }
 
-private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, const char *font_file_path, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap)
+private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap)
 {   fapi_ufst_server *r = If_to_I(server);
     FONTCONTEXT *fc = &r->fc;
     /*  Note : UFST doesn't provide handles for opened fonts,
@@ -620,14 +618,13 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, const c
     FAPI_retcode code;
     ff->need_decrypt = 1;
     if (d == 0) {
-        CheckRET(make_font_data(r, font_file_path, subfont, xlatmap, ff, &d));
+        CheckRET(make_font_data(r, ff->font_file_path, subfont, ff, &d));
         ff->server_font_data = d;
         prepare_typeface(r, d);
         if (ff->font_file_path != NULL || ff->is_type1) /* such fonts don't use RAW_GLYPH */
             choose_decoding(r, d, xlatmap);
     } else
         prepare_typeface(r, d);
-    r->decodingID = 0; /* Safety : don't leave pending pointer. */
     r->tran_xx = matrix[0] / scale, r->tran_xy = matrix[1] / scale;
     r->tran_yx = matrix[2] / scale, r->tran_yy = matrix[3] / scale;
     hx = hypot(r->tran_xx, r->tran_xy), hy = hypot(r->tran_yx, r->tran_yy);
@@ -646,11 +643,28 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, const c
     fc->s.m2.world_scale = 0;
     fc->s.m2.point_size   = (int)(hy * 8 + 0.5); /* 1/8ths of pixels */
     fc->s.m2.set_size     = (int)(hx * 8 + 0.5);
-    fc->ssnum       = (ff->font_file_path == NULL && !ff->is_type1 ? RAW_GLYPH : 0x8000 /* no symset mapping */ );
+    fc->ssnum = 0x8000; /* no symset mapping */
+    if (ff->font_file_path == NULL && !ff->is_type1)
+        fc->ssnum = RAW_GLYPH;
+    else if (ff->font_file_path != NULL && ff->is_cid) {
+         if (d->platformId == 3) {
+            switch (d->specificId) {
+                case 1 : fc->ssnum = UNICODE;   break;
+                case 2 : fc->ssnum = SHIFT_JIS; break;
+                case 3 : fc->ssnum = GB;        break;
+                case 4 : fc->ssnum = BIG5;      break;
+                case 5 : fc->ssnum = WANSUNG;   break;
+                case 6 : fc->ssnum = JOHAB;     break;
+            }
+        } else {
+            /* fixme : other platform IDs */
+        }
+    }
     fc->format      |= FC_NON_Z_WIND;   /* NON_ZERO Winding required for TrueType */
     fc->format      |= FC_INCHES_TYPE;  /* output in units per inch */
-    fc->user_platID = 0;
-    fc->user_specID = 0;
+    fc->user_platID = d->platformId;
+    fc->user_specID = d->specificId;
+    fc->ExtndFlags |= EF_TT_CMAPTABL;
     fc->dl_ssnum = (d->specificId << 4) | d->platformId;
     fc->ttc_index   = subfont;
     r->callback_error = 0;
@@ -662,7 +676,8 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, const c
 
 private FAPI_retcode get_decodingID(FAPI_server *server, FAPI_font *ff, const char **decodingID_result)
 {   fapi_ufst_server *r = If_to_I(server);
-    *decodingID_result = r->decodingID;
+    ufst_common_font_data *d = (ufst_common_font_data *)r->fc.font_hdr - 1;
+    *decodingID_result = d->decodingID;
     return 0;
 }
 
@@ -678,13 +693,22 @@ private FAPI_retcode get_font_bbox(FAPI_server *server, FAPI_font *ff, int BBox[
 }
 
 private FAPI_retcode can_retrieve_char_by_name(FAPI_server *server, FAPI_font *ff, int *result)
-{   
-    #if 0 /* UFST 4.2 bug : it can retrive Type 1 by char name, but it needs char code as cache key. */
-        fapi_ufst_server *r = If_to_I(server);
-        *result = (r->fc.format & FC_FONTTYPE_MASK) == FC_PST1_TYPE;
-    #else
-        *result = 0;
-    #endif
+{   fapi_ufst_server *r = If_to_I(server);
+    *result = 0;
+    switch (r->fc.format & FC_FONTTYPE_MASK) {
+        case FC_PST1_TYPE : *result = 1; break;
+        case FC_TT_TYPE : 
+            #if 0 /* Doesn't work because Agfa can't retrive characters by name. 
+                     It wantss a char code together with the name. */
+            if (ff->font_file_path != NULL) {
+                UB8 buf[2];
+                UL32 l = sizeof(buf);
+                UW16 code = CGIFtt_query(&r->IFS, r->fc.font_hdr, tag_Postscript, r->fc.ttc_index, &l, buf);
+                *result = (code == 0);
+            }
+            #endif
+            break;
+    }
     return 0;
 }
 
@@ -780,8 +804,10 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     metrics->bbox_x1 = -1;
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
     CheckRET(CGIFchIdptr(&r->IFS, &cc, PSchar_name));
-    {   /* hack : Changing UFST internal data. Change to r->fc doesn't help, because Agfa thinks that outline/raster is a property of current font. */
+    {   /* hack : Changing UFST internal data. Change to r->fc doesn't help, because Agfa thinks that the "outline or raster" is a property of current font. */
         r->IFS.fcCur.ssnum = (c->is_glyph_index ? RAW_GLYPH : 0x8000 /* no symset mapping */);
+        if (c->is_glyph_index)
+            r->IFS.fcCur.user_platID = r->IFS.fcCur.user_specID = 0;
         r->IFS.fcCur.format &= ~FC_OUTPUT_MASK;
         r->IFS.fcCur.format |= format;
     }

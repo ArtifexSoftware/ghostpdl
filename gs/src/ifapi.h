@@ -78,9 +78,10 @@ struct FAPI_font_s {
     const char *font_file_path;
     int subfont;
     bool is_type1; /* Only for non-disk fonts; dirty for disk fonts. */
+    bool is_cid;
     void *client_font_data;
     void *client_font_data2;
-    void *client_char_data;
+    const void *client_char_data;
     unsigned short (*get_word )(FAPI_font *ff, fapi_font_feature var_id, int index);
     unsigned long  (*get_long )(FAPI_font *ff, fapi_font_feature var_id, int index);
     float          (*get_float)(FAPI_font *ff, fapi_font_feature var_id, int index);
@@ -121,7 +122,7 @@ struct FAPI_server_s {
     i_plugin_instance ig;
     int frac_shift; /* The number of fractional bits in coordinates. */
     FAPI_retcode (*ensure_open)(FAPI_server *server);
-    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, const char *font_file_path, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap);
+    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);
     FAPI_retcode (*can_retrieve_char_by_name)(FAPI_server *server, FAPI_font *ff, int *result);
