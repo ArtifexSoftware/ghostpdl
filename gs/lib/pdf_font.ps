@@ -141,6 +141,7 @@ pdfdict begin
 		% dictionary works by character name, not by character code.
 		% We prefer to take (1) non-zero width, and (2) width for 
 		% the character code which appears in Differences.
+	   dup 0 eq { exit } if
 	   Metrics 2 index .knownget not { 0 } if 0 ne {
 	     5 index /Encoding knownoget not { exit } if
 	     dup type /dicttype ne { pop exit } if
