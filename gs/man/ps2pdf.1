@@ -1,33 +1,55 @@
 .\" $RCSfile$ $Revision$
-.TH PS2PDF 1 "12 November 1999" 5.96 "Ghostscript Tools" \" -*- nroff -*-
+.TH PS2PDF 1 "3 February 2000" 6.0 Ghostscript \" -*- nroff -*-
 .SH NAME
-ps2pdf \- Ghostscript PostScript to PDF translator
+ps2pdf \- Convert PostScript to PDF using ghostscript
+.br
+ps2pdf12 \- Convert PostScript to PDF\ 1.2 (Acrobat\ 3-and-later compatible) using ghostscript
+.br
+ps2pdf13 \- Convert PostScript to PDF\1.3 (Acrobat\ 4-and-later compatible) using ghostscript
 .SH SYNOPSIS
-\fBps2pdf\fR [ \fIoptions\fR ] \fIinput.ps output.pdf\fR
+\fBps2pdf\fR  [options...] (input.ps|-) [output.pdf|-]
+.br
+\fBps2pdf12\fR  [options...] (input.ps|-) [output.pdf|-]
+.br
+\fBps2pdf13\fR  [options...] (input.ps|-) [output.pdf|-]
 .SH DESCRIPTION
-\fBps2pdf\fR uses \fBgs\fR(1) to convert the \fBPostScript\fR(tm) file
-"input.ps" to the Adobe \fBPortable Document Format\fR (PDF) in
-"output.pdf."
+The
+.B ps2pdf
+scripts are work-alikes for nearly all the functionality (but not the
+user interface) of Adobe's Acrobat(TM) Distiller(TM) product: they
+convert PostScript files to Portable Document Format (PDF) files. 
 .PP
-With one exception, \fBps2pdf\fR is a pretty good workalike for Adobe
-\fBAcrobat\fR(tm) \fBDistiller\fR(tm) 3.0.  It implements
-"setdistillerparams" and nearly all of Distiller's compression and image
-downsampling options, except for LZW compression (thanks to Unisys).  By
-default it produces PDF 1.2 output compatible with Acrobat 3.x, compressed
-with "deflate" (also known as "zip" or "gzip") compression;
-to produce PDF 1.1 output compatible with Acrobat 2.x, use the
-\fB-dCompatibilityLevel=1.1\fR option.
+The three scripts differ as follows:
+.IP -
+.B ps2pdf12
+will always produce PDF 1.2 output (Acrobat 3-and-later compatible).
+.IP -
+.B ps2pdf13
+will always produce PDF 1.3 output (Acrobat 4-and-later compatible).
+.IP -
+.B ps2pdf
+per se currently produces PDF 1.2 output (Acrobat 3-and-later
+compatible). However, this may change in the future. If you care about
+the compatibility level of the output, use
+.B ps2pdf12
+or
+.BR ps2pdf13 ,
+or use the
+.B \-dCompatibility=1.x
+switch in the command line.
 .PP
-The one current great shortcoming of \fBps2pdf\fR is that except for the
-fourteen built-in PDF fonts, it converts all fonts in the PostScript file
-to bitmap fonts in the PDF file, and scrambles the character codes so that
-the output is not searchable.  (Normally it produces 720dpi bitmaps, but
-you can change this using Ghostscript's \fB\-r\fR option.)  We intend to
-mostly fix this by the end of 1998.
-.SH FILES
-Run "\fBgs -h\fR" to find the location of Ghostscript documentation on your
-system, from which you can get more details.
+There are some limitations in
+.BR ps2pdf 's
+conversion. See the HTML documentation for more information.
+.SH SEE ALSO
+gs(1), ps2pdfwr(1),
+.br
+Ps2pdf.htm in the Ghostscript documentation
 .SH VERSION
-This document was last revised for Ghostscript version 5.96.
+This document was last revised for Ghostscript version 6.0.
 .SH AUTHOR
-L. Peter Deutsch <ghost@aladdin.com>
+L. Peter Deutsch <ghost@aladdin.com> is the principal author of Ghostscript.
+Russell J. Lang <rjl@aladdin.com> is the author of most of the MS Windows
+code in Ghostscript.
+This manpage by George Ferguson.
+
