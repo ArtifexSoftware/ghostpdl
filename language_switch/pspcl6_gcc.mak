@@ -130,7 +130,7 @@ GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings $(PSICFLAGS) $
 CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS) $(PSICFLAGS)
 
 XINCLUDE=-I/usr/local/X/include
-XLIBDIRS=-L/usr/X11/lib
+XLIBDIRS=-L/usr/X11/lib -L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt SM ICE Xext X11
 
@@ -150,7 +150,6 @@ DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
 FEATURE_DEVS    = \
 		  $(DD)psl3.dev		\
 		  $(DD)pdf.dev		\
-                  $(DD)devcmap.dev	\
 		  $(DD)dpsnext.dev	\
                   $(DD)htxlib.dev	\
                   $(DD)roplib.dev	\
