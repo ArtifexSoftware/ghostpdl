@@ -508,7 +508,26 @@ pdfdict begin
    PDFfile dup 0 setfileposition pdfstring readstring 
    not {/pdfopen cvx /syntaxerror signalerror} if
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
-   length /PDFoffset exch def pop cvr /PDFversion exch def
+   length /PDFoffset exch def pop
+   % some badly formed PDF's (Visioneer) have something other than EOL
+   % after the version number. If we get an error, shorten the string
+   % and try again.
+   false exch		% error encountered
+   { { cvr } stopped
+     { exch pop true exch 0 1 index length 1 sub dup 0 eq
+       { pop 0 exit } if	% exit if string now empty
+       getinterval		% trim character from right end and retry
+     }
+     { exch {
+         (   **** Warning: PDF version number not followed by EOL.\n)
+         pdfformaterror
+       }
+       if exit
+     }
+     ifelse
+   } loop
+
+   /PDFversion exch def
 	% Read the last cross-reference table.
    count /pdfemptycount exch def
    /Trailer << >> def		% Initialize to an emptry dict.
