@@ -1,5 +1,6 @@
 #!/bin/sh
 # Run this to set up the build system: configure, makefiles, etc.
+# $Id$
 
 package="ghostscript"
 
