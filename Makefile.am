@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.11 2002/08/05 18:06:37 giles Exp $
+# $Id: Makefile.am,v 1.12 2002/08/06 11:27:08 giles Exp $
 ## process this file with automake to generate Makefile.in
 
 AUTOMAKE_OPTIONS = 1.6.1 # require automake 1.6
@@ -30,6 +30,6 @@ test_sha1_CFLAGS = -DTEST
 
 TESTS = test_sha1 test_jbig2dec.py
 
-EXTRA_DIST = test_jbig2dec.py
+EXTRA_DIST = test_jbig2dec.py msvc.mak
 
 MAINTAINERCLEANFILES = config_types.h.in
