@@ -3,20 +3,15 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (Identity-V)
 %%Title: (Identity-V Adobe Identity 0)
-%%Version: 1.000
+%%Version: 10.001
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1995 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2000 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
 %%Copyright:
 %%Copyright: NOTICE: All information contained herein is the property
 %%Copyright: of Adobe Systems Incorporated.
-%%Copyright:
-%%Copyright: Permission is granted for redistribution of this file
-%%Copyright: provided this copyright notice is maintained intact and
-%%Copyright: that the contents of this file are not altered in any
-%%Copyright: way from its original form.
 %%Copyright:
 %%Copyright: PostScript and Display PostScript are trademarks of
 %%Copyright: Adobe Systems Incorporated which may be registered in
@@ -37,10 +32,9 @@ begincmap
 end def
 
 /CMapName /Identity-V def
-/CMapVersion 1.000 def
+/CMapVersion 10.001 def
 /CMapType 1 def
 
-/UIDOffset 0 def
 /XUID [1 10 25404 9991] def
 
 /WMode 1 def
