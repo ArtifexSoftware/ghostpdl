@@ -8,7 +8,7 @@
 #include "gsmemory.h"
 #include "pgmand.h"
 #include "gsrop.h"
-
+#include "pgdraw.h" /* for hpgl_add_pcl_point_to_path() */
 /* ---------------- Chapter 4 ---------------- */
 
 /* Import the table of pointers to initialization data. */
@@ -67,6 +67,14 @@ rtl_enter_hpgl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 	  return_error(e_Memory);
 	hpgl_process_init(pcls->parse_data);
 	pcls->parse_other = hpgl_process;
+	/* add the pcl cap to hpgl/2's path */
+	if ( i == 1 )
+	  {
+	    gs_point pcl_pt;
+	    pcl_pt.x = (hpgl_real_t)pcls->cap.x;
+	    pcl_pt.y = (hpgl_real_t)pcls->cap.y;
+	    hpgl_add_pcl_point_to_path(pcls, &pcl_pt);
+	  }
 	return 0;
 }
 

@@ -92,7 +92,7 @@ private void
 reset_text_length(pcl_state_t *pcls)
 {	if ( pcls->vmi != 0 )
 	  { int len = (int)((pcls->logical_page_height - pcls->top_margin -
-			     inch2coord(0.5)) * 48.0 / pcls->vmi);
+			     inch2coord(0.5)) / pcls->vmi);
 	    /* We suppose that the minimum text length is 1.... */
 	    pcls->text_length = max(len, 1);
 	  }

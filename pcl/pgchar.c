@@ -94,7 +94,6 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	  hpgl_default_font_params(pfs);
 	return 0;
 }
-
 /* Define label drawing direction (DI, DR). */
 private int
 hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
@@ -163,6 +162,20 @@ hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 
 private int
+hpgl_get_carriage_return_pos(hpgl_state_t *pgls, gs_point *pt)
+{
+	*pt = pgls->g.carriage_return_pos;
+        return 0;
+}
+
+private int
+hpgl_set_carriage_return_pos(hpgl_state_t *pgls, gs_point *pt)
+{
+	pgls->g.carriage_return_pos = *pt;
+	return 0;
+}
+
+private int
 hpgl_get_current_cell_width(hpgl_state_t *pgls, hpgl_real_t *width)
 {
   	/* HAS - just supports current font */
@@ -190,48 +203,90 @@ hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_real_t spaces = 0.0;
 	hpgl_real_t lines = 1.0;
-	
+	hpgl_pen_state_t saved_pen_state;	
+	bool crlf = false;
+
+	/* HAS ***HACK **** HACK **** HACK */
+	/* save the current render mode and temporarily set it to
+           vector mode. This allows the HPGL/2 graphics not to apply
+           the character ctm for the label position move.  This must
+           be handled more "pleasantly" in the future */
+
+	hpgl_rendering_mode_t rm = pgls->g.current_render_mode;
+
+	pgls->g.current_render_mode = hpgl_rm_vector;
+
 	/* CP does its work with the pen up -- we restore the current
-           state at the end of the routine */
-	hpgl_save_pen_down_state(pgls);
-	/* We will take advantage of PR so save the current relative
-           state as well */
-	hpgl_save_pen_relative_state(pgls);
+           state at the end of the routine.  We will take advantage of
+           PR so save the current relative state as well */
+	hpgl_save_pen_state(pgls,  
+			    &saved_pen_state, 
+			    hpgl_pen_down | hpgl_pen_relative);
 
 	if ( hpgl_arg_c_real(pargs, &spaces) )
-	  { if ( !hpgl_arg_c_real(pargs, &lines) )
+	  { 
+	    if ( !hpgl_arg_c_real(pargs, &lines) )
 	      return e_Range;
 	  }
+	else
+
+	  /* if there are no arguments a carriage return and line feed
+	  is executed */
+	  crlf = true;
 
 	{
-
 	  hpgl_real_t width, height;
 	  hpgl_args_t args;
+	  gs_point pt, crpt, relpos; /* current pos and carriage return pos */
 
 	  /* get the character cell height and width */
 	  hpgl_call(hpgl_get_current_cell_width(pgls, &width));
 	  hpgl_call(hpgl_get_current_cell_height(pgls, &height));
-
-	  /* set the pen up */
-	  hpgl_args_set_real(&args, pgls->g.pos.x);
-	  hpgl_args_add_real(&args, pgls->g.pos.y);
-	  hpgl_PU(&args, pgls);
 	  
-	  /* relative move to new position, not forgetting ES */
-	  hpgl_args_set_real(&args, ((spaces + pgls->g.character.extra_space.x) * 
-				     width));
-	  hpgl_args_add_real(&args, -((lines + pgls->g.character.extra_space.y) * 
-				      height));
+	  /* get the current position and carriage return position */
+	  hpgl_call(hpgl_get_current_position(pgls, &pt));
+	  hpgl_call(hpgl_get_carriage_return_pos(pgls, &crpt));
+	  
+	  /* calculate the next label position in relative
+             coordinates.  If CR/LF the calculate the y coordinate and
+             the X position is simply the x coordinate of the current
+             carriage return point.  We use relative coordinates for
+             the movement in either case. */
+	  if (crlf)
+	    relpos.x = -(pt.x - crpt.x);
+	  else
+	    relpos.x = ((spaces + pgls->g.character.extra_space.x) * width);
+
+	  /* the y coordinate is independant of CR/LF status */
+	  relpos.y = -((lines + pgls->g.character.extra_space.y) * height);
+
+	  /* move to the current position */
+	  hpgl_args_setup(&args);
+	  hpgl_PU(&args, pgls);
+
+	  /* a relative move to the new position */
+	  hpgl_args_set_real(&args, relpos.x);
+	  hpgl_args_add_real(&args, relpos.y);
 	  hpgl_PR(&args, pgls);
 
-	  /* save the current position in GL/2's state */
-	  hpgl_call(hpgl_set_current_position(pgls, (gs_point *) NULL));
+	  /* update the carriage return point - the Y is the Y of
+             the current position and the X is the X of the current
+             carriage return point position */
+	  hpgl_call(hpgl_get_current_position(pgls, &pt));
+	  hpgl_call(hpgl_get_carriage_return_pos(pgls, &crpt));
+	  crpt.y = pt.y;
+
+	  /* set the value in the state */
+	  hpgl_call(hpgl_set_carriage_return_pos(pgls, &crpt));
 
 	}
+
 	/* put the pen back the way it was, of course we do not want
            to restore the pen's position */
-	hpgl_restore_pen_relative_state(pgls);
-	hpgl_restore_pen_down_state(pgls);
+	hpgl_restore_pen_state(pgls, 
+			       &saved_pen_state, 
+			       hpgl_pen_down | hpgl_pen_relative);
+	pgls->g.current_render_mode = rm;
 	return 0;
 }
 
@@ -341,6 +396,14 @@ hpgl_update_label_pos(hpgl_state_t *pgls, byte ch)
 	  break;
 	case LF :
 	  spaces = 0;
+	  lines = 1;
+	  break;
+	case CR :
+	  /* do a CR/LF and a -1 line move */
+	  hpgl_args_setup(&args);
+	  hpgl_CP(&args, pgls);
+	  spaces = 0;
+	  lines = -1;
 	  break;
 	default :
 	  break;
@@ -357,20 +420,18 @@ hpgl_print_char(hpgl_state_t *pgls,  hpgl_character_point *character)
 {
 	hpgl_rendering_mode_t rm = pgls->g.current_render_mode;
 
-	/* set the current gs point to the origin */
-	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
-
 	/* clear the current path, if there is one */
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
 	pgls->g.current_render_mode = hpgl_rm_character;
-
+	/* all character data is absolute */
+	pgls->g.relative = false;
 	while (character->operation != hpgl_char_end)
 	  {
 	    hpgl_args_t args;
 	    /* setup the arguments */
 	    hpgl_args_setup(&args);
-	    /* all operations supply arguments except: */
+	    /* all character operations supply numeric arguments except: */
 	    if (character->operation != hpgl_char_pen_down_no_args)
 	      {
 		hpgl_args_add_real(&args, character->vertex.x);
@@ -405,11 +466,15 @@ hpgl_print_char(hpgl_state_t *pgls,  hpgl_character_point *character)
  static int
 hpgl_process_char(hpgl_state_t *pgls, byte ch)
 {
-  
+	hpgl_pen_state_t saved_pen_state;
+	/* we need to keep this pen position, as updating the label
+           origin is relative to the current origin vs. the pen's
+           position after the character is rendered */
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all); 
 	if ( isprint(ch) )
 	  /* ascii is all we have right now */
 	  hpgl_call(hpgl_print_char(pgls, hpgl_ascii_char_set[ch - 0x20]));
-
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all); 
 	hpgl_call(hpgl_update_label_pos(pgls, ch));
 
 	return 0;
@@ -421,13 +486,17 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 
-	/* we use the hpgl drawing machinery to stroke the glyph so we
-           need to save the state of the pen and restore it after the
-           glyph is printed.  HAS needs work */
-	bool rel  = pgls->g.relative;
-	bool down = pgls->g.pen_down;
-	gs_point pos = pgls->g.pos;
-
+	/* HAS need to figure out what gets saved here -- relative,
+           pen_down, position ?? */
+	hpgl_call(hpgl_clear_current_path(pgls));
+	/* set the carriage return point */
+	{
+	  /* HAS this should only happen the first time that we call
+             LB ?? */
+	  gs_point pt;
+	  hpgl_call(hpgl_get_current_position(pgls, &pt));
+	  hpgl_call(hpgl_set_carriage_return_pos(pgls, &pt));
+	}
 	while ( p < rlimit )
 	  { byte ch = *++p;
 	    if_debug1('I',
@@ -440,15 +509,14 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    hpgl_call(hpgl_process_char(pgls, ch));
 
 		/* restore pen's state */
-		pgls->g.relative = rel;
-		pgls->g.pen_down = down;
-		pgls->g.pos = pos;
+		/* hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all); */
 		pargs->source.ptr = p;
 		return 0;
 	      }
 	    hpgl_call(hpgl_process_char(pgls, ch));
 	  }
 	pargs->source.ptr = p;
+	/* hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);  */
 	return e_NeedData;
 }
 

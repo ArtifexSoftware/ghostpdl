@@ -125,10 +125,11 @@ int
 hpgl_EA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	
-	hpgl_save_pen_state(pgls);
+	hpgl_pen_state_t saved_pen_state;
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_rectangle(pargs, pgls, DO_EDGE));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	hpgl_restore_pen_state(pgls);
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -136,9 +137,10 @@ hpgl_EA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_EP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_save_pen_state(pgls);
+	hpgl_pen_state_t saved_pen_state;
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	hpgl_restore_pen_state(pgls);
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -146,10 +148,11 @@ hpgl_EP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_ER(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_save_pen_state(pgls);
+	hpgl_pen_state_t saved_pen_state;
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	hpgl_restore_pen_state(pgls);
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -157,10 +160,11 @@ hpgl_ER(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_EW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_save_pen_state(pgls);
+	hpgl_pen_state_t saved_pen_state;
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_wedge(pargs, pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	hpgl_restore_pen_state(pgls);
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -220,10 +224,11 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_save_pen_state(pgls);
+	hpgl_pen_state_t saved_pen_state;
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_rectangle(pargs, pgls, 0));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
-	hpgl_restore_pen_state(pgls);
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -231,10 +236,11 @@ hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {		
-	hpgl_save_pen_state(pgls);
+	hpgl_pen_state_t saved_pen_state;
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
-	hpgl_restore_pen_state(pgls);
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -242,10 +248,11 @@ hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_WG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_save_pen_state(pgls);
+	hpgl_pen_state_t saved_pen_state;
+	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_wedge(pargs, pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
-	hpgl_restore_pen_state(pgls);
+	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 

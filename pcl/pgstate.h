@@ -28,7 +28,7 @@ typedef struct hpgl_line_type_s {
 typedef enum {
 	hpgl_rm_vector,
 	hpgl_rm_character,
-	hpgl_rm_polygon
+	hpgl_rm_polygon,
 } hpgl_rendering_mode_t;
 
 /* state of lost mode */
@@ -77,15 +77,10 @@ typedef struct pcl_hpgl_state_s {
   
 	bool pen_down;
 	bool have_first_moveto;  
-	bool last_pen_down;      /* previous state of pen */
 	bool relative;		/* true if relative coordinates */
-	bool last_relative;     /* previous relative state of pen */
         gs_point pos;
-	gs_point last_pos;
         /* used to track the line drawing state in hpgl */
         gs_point first_point;
-        bool have_path;
-
 		/* Chapter 21 (pgpoly.c) */
 
 	/**** polygon buffer ****/
@@ -185,6 +180,7 @@ typedef struct pcl_hpgl_state_s {
 	bool transparent_data;
 	uint font_id[2];
 	bool bitmap_fonts_allowed;
+	gs_point carriage_return_pos;
 
 		/* Chapter C7 (pgcolor.c) */
 
@@ -195,37 +191,37 @@ typedef struct pcl_hpgl_state_s {
 	hpgl_rendering_mode_t current_render_mode; /* HAS revisit */
 } pcl_hpgl_state_t;
 
+/* HAS: note don't mix and match save a restores.  peharps there
+   should be a type check field in the structure.  */
+typedef struct hpgl_pen_state_s {
+	bool relative;
+	bool pen_down;
+	gs_point pos;
+} hpgl_pen_state_t;
 
-/* HAS this can be done better, either the state should be saved in
-   local variables or a stack should be used.  The difficulty with
-   this state arrangement is it does not support nested saves */
-#define hpgl_save_pen_relative_state(pgls) \
-  ((pgls)->g.last_relative = (pgls)->g.relative)
+#define hpgl_pen_relative (1)
+#define hpgl_pen_down (1<<1)
+#define hpgl_pen_pos (1<<2)
+#define hpgl_pen_all (hpgl_pen_relative | hpgl_pen_down | hpgl_pen_pos)
 
-#define hpgl_restore_pen_relative_state(pgls) \
-  ((pgls)->g.relative = (pgls)->g.last_relative)
+/* HAS we may wish to make these functions to save on code space */
+#define hpgl_save_pen_state(pgls, save, save_flags)\
+do {\
+  if ( (save_flags) & hpgl_pen_relative )\
+    ((save)->relative = (pgls)->g.relative);\
+  if ( (save_flags) & hpgl_pen_down )\
+    ((save)->pen_down = (pgls)->g.pen_down);\
+  if ( (save_flags) & hpgl_pen_pos )\
+    ((save)->pos = (pgls)->g.pos);\
+} while (0)
 
-#define hpgl_save_pen_down_state(pgls) \
-  ((pgls)->g.last_pen_down = (pgls)->g.pen_down)
-
-#define hpgl_restore_pen_down_state(pgls) \
-  ((pgls)->g.pen_down = (pgls)->g.last_pen_down)
-
-/* HAS requires structure copy on assingment */
-#define hpgl_save_pen_position(pgls) \
-  ((pgls)->g.last_pos = (pgls)->g.pos)
-
-#define hpgl_restore_pen_position(pgls) \
-  ((pgls)->g.pos = (pgls)->g.last_pos)
-
-#define hpgl_save_pen_state(pgls) \
-  (hpgl_save_pen_down_state(pgls), \
-   hpgl_save_pen_position(pgls), \
-   hpgl_save_pen_relative_state(pgls))
-
-#define hpgl_restore_pen_state(pgls) \
-  (hpgl_restore_pen_down_state(pgls), \
-   hpgl_restore_pen_position(pgls), \
-   hpgl_restore_pen_relative_state(pgls))
-
+#define hpgl_restore_pen_state(pgls, save, restore_flags)\
+do {\
+  if ( (restore_flags) & hpgl_pen_relative )\
+    ((pgls)->g.relative = (save)->relative);\
+  if ( (restore_flags) & hpgl_pen_down )\
+    ((pgls)->g.pen_down = (save)->pen_down);\
+  if ( (restore_flags) & hpgl_pen_pos )\
+    ((pgls)->g.pos = (save)->pos);\
+} while (0)
 #endif				/* pgstate_INCLUDED */

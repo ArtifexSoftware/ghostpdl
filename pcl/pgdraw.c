@@ -110,12 +110,16 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t *pgls,
 	    {
 	    case hpgl_rm_character:
 	    case hpgl_rm_polygon:
-	      hpgl_call(gs_setlinejoin(pgls->pgs, gs_cap_round));
-	      hpgl_call(gs_setlinecap(pgls->pgs, gs_join_round));
+	      hpgl_call(gs_setlinejoin(pgls->pgs, 
+				       gs_join_round)); 
+	      hpgl_call(gs_setlinecap(pgls->pgs, 
+				      gs_cap_round));
 	      break;
 	    case hpgl_rm_vector:
-vector:	      hpgl_call(gs_setlinejoin(pgls->pgs, cap_map[pgls->g.line.cap]));
-	      hpgl_call(gs_setlinecap(pgls->pgs, join_map[pgls->g.line.join]));
+vector:	      hpgl_call(gs_setlinejoin(pgls->pgs, 
+				       join_map[pgls->g.line.join])); 
+	      hpgl_call(gs_setlinecap(pgls->pgs, 
+				      cap_map[pgls->g.line.cap]));
 	      break;
 	    default:
 	      /* shouldn't happen as we must have a mode to properly
@@ -164,28 +168,22 @@ hpgl_set_clipping_region(hpgl_state_t *pgls)
 	return 0;
 }
 
-/* change pcl's transformation.  HAS hpgl's coordinate system rotates
-   with pcl's orientation but not pcl's current print direction. */
 private int
-hpgl_set_ctm(hpgl_state_t *pgls)
+hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
 {
-  	/* set the default matrix */
 	pcl_set_ctm(pgls, false);
-	
 	/* translate the coordinate system to the anchor point */
 	hpgl_call(gs_translate(pgls->pgs, 
 			       pgls->g.picture_frame.anchor_point.x,
 			       pgls->g.picture_frame.anchor_point.y));
 
-	/* scale for x and y plu's with a flip for y */
-	hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0 / 1016.0)));
 	{
 	  /* picture frame dimensinsions in plu */
-	  hpgl_real_t pic_w = centipoints_2_plu(pgls->g.picture_frame.width);
-	  hpgl_real_t pic_h = centipoints_2_plu(pgls->g.picture_frame.height);
+	  hpgl_real_t pic_w = (pgls->g.picture_frame.width);
+	  hpgl_real_t pic_h = (pgls->g.picture_frame.height);
 
 	  /* move the origin */
-	  hpgl_call(gs_translate(pgls->pgs, 0, -(pic_h)));
+	  hpgl_call(gs_translate(pgls->pgs, 0, (pic_h)));
 
 	  hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
 
@@ -206,6 +204,9 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	      break;
 	      }
 	}
+	/* scale to plotter units and a flip for y */
+	hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
+
 	/* set up scaling wrt plot size and picture frame size.  HAS
 	   we still have the line width issue when scaling is
 	   assymetric !!  */
@@ -222,10 +223,133 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 			    pgls->g.plot_height),
 			   (pgls->g.picture_frame.width /
 			    pgls->g.plot_width)));
-		     
+
+	return 0;
+
+
+}
+
+private int
+hpgl_set_label_to_plu_ctm(hpgl_state_t *pgls)
+{
+	/* if we are not in character mode do nothing -- identity
+           transformation */
+        /* HAS font is selection not complete */
+	hpgl_real_t height_points = 
+	  pgls->g.font_selection[0].params.height_4ths / 4.0;
+	hpgl_real_t width_points = 
+	  1.0 / (pgls->g.font_selection[0].params.pitch_100ths / 100.0);
+	/* HAS -- Only LO1 is currently supported -- need to add others */
+	hpgl_call(gs_translate(pgls->pgs, pgls->g.pos.x, pgls->g.pos.y));
+	/* HAS -- only support standard font */
+	hpgl_call(gs_scale(pgls->pgs, 
+			   points_2_plu(height_points),
+			   inches_2_plu(width_points)));
 	return 0;
 }
 
+
+private int
+hpgl_set_user_units_to_plu_ctm(hpgl_state_t *pgls)
+{
+
+	hpgl_call(gs_translate(pgls->pgs, pgls->g.P1.x, -pgls->g.P1.y));
+			       
+	/* finally scale to user units.  HAS this only handles the
+           simple scaling scale for the moment. */
+	if ( pgls->g.scaling_type == hpgl_scaling_anisotropic )
+	  {
+	    floatp scale_x = (pgls->g.P2.x - pgls->g.P1.x) / 
+	      (pgls->g.scaling_params.pmax.x - pgls->g.scaling_params.pmin.x);
+	    floatp scale_y = (pgls->g.P2.y - pgls->g.P1.y) / 
+	      (pgls->g.scaling_params.pmax.y - pgls->g.scaling_params.pmin.y);
+	    hpgl_call(gs_scale(pgls->pgs, scale_x, scale_y));
+	  }
+	else if ( pgls->g.scaling_type != hpgl_scaling_none )
+	  dprintf1("unsuported scaling type %d:\n", pgls->g.scaling_type);
+
+	return 0;
+}
+
+/* set up ctm's.  Uses the current render mode to figure out which ctm
+   is appropriate */
+private int
+hpgl_set_ctm(hpgl_state_t *pgls)
+{
+	/* convert pcl->device to plu->device */
+	hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
+
+	/* concatenate on user units ctm or character ctm based on
+           current mode */
+	if ( pgls->g.current_render_mode == hpgl_rm_character )
+	  hpgl_call(hpgl_set_label_to_plu_ctm(pgls));
+	else
+	  hpgl_call(hpgl_set_user_units_to_plu_ctm(pgls));
+
+	return 0;
+}
+	      
+/* maps current hpgl fill type to pcl pattern type.  */
+private pcl_pattern_type_t
+hpgl_map_fill_type(hpgl_state_t *pgls)
+{
+	switch (pgls->g.fill.type)
+	  {
+	  case hpgl_fill_solid : return pcpt_solid_black;
+	  case hpgl_fill_solid2 : return pcpt_solid_black;
+	  case hpgl_fill_pcl_crosshatch : return pcpt_cross_hatch;
+	  case hpgl_fill_shaded : return pcpt_shading;
+	  case hpgl_fill_pcl_user_defined : 
+	    dprintf("No key mapping support flling back to solid");
+	    break;
+	  default : 
+	    dprintf1("Unsupported fill type %d falling back to solid\n",
+		     pgls->g.fill.type);
+	  }
+
+	return pcpt_solid_black;
+}
+
+/* HAS I don't much care for the idea of overloading pcl_id with
+   shading and hatching information, but that appears to be the way
+   pcl_set_drawing_color() is set up. */
+private pcl_id_t *
+hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id)
+{
+	switch (pgls->g.fill.type)
+	  {
+	  case hpgl_fill_solid : 
+	  case hpgl_fill_solid2 :
+	    id = NULL;
+	    break;
+	  case hpgl_fill_pcl_crosshatch : 
+	    id_set_value(*id, pgls->g.fill.param.pattern_type);
+	    break;
+	  case hpgl_fill_shaded : 
+	    id_set_value(*id, (int)((pgls->g.fill.param.shading) * 100.0));
+	    break;
+	  case hpgl_fill_pcl_user_defined : 
+	    id = NULL;
+	    dprintf("No key mapping support yet");
+	    break;
+	  default : 
+	    id = NULL;
+	    dprintf1("Unsupported fill type %d falling back to pcl solid\n",
+		     pgls->g.fill.type);
+	  }
+	return id;
+} 
+ 
+private int
+hpgl_set_drawing_color(hpgl_state_t *pgls)
+{
+	pcl_id_t pcl_id;
+
+	hpgl_call(pcl_set_drawing_color(pgls, 
+					hpgl_map_fill_type(pgls), 
+					hpgl_map_id_type(pgls, &pcl_id)));
+	return 0;
+}
 
 private int
 hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
@@ -236,50 +360,42 @@ hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
            etc. */
 	hpgl_call(hpgl_set_ctm(pgls));
 
-	/* do dash stuff */
+	/* do dash stuff. */
 	hpgl_call(hpgl_set_graphics_dash_state(pgls));
 
-	/* joins, caps, and line width */
+	/* joins, caps, and line width. */
 	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls, render_mode));
 	
+	/* set up the hpgl fills. */
+	hpgl_call(hpgl_set_drawing_color(pgls));
+
+	/* set up a clipping region */
 	hpgl_call(hpgl_set_clipping_region(pgls));
 
 	return 0;
 }
 
-/* transformations for the current character.  These are concatenated
-   with current ctm.  This routine is only called for rendering
-   characters with LB */
-private int
-hpgl_concatenate_character_transformations(hpgl_state_t *pgls)
+int
+hpgl_get_current_position(hpgl_state_t *pgls, gs_point *pt)
 {
-	/* HAS -- Only LO1 is currently supported -- need to add others */
-	hpgl_call(gs_translate(pgls->pgs, pgls->g.pos.x, pgls->g.pos.y));
-	/* HAS -- only support standard font */
-	hpgl_call(gs_scale(pgls->pgs, 
-			   points_2_plu((pgls->g.font_selection[0].params.height_4ths)
-					/4.0),
-			    inches_2_plu((1.0 / 
-					  (pgls->g.font_selection[0].params.pitch_100ths 
-					  / 100.0)))));
-	return 0;
-}
 
-/* function that simply sets the current pen position based on the
-   current point */
+	*pt = pgls->g.pos;
+	return 0;
+}					   
+
 int
 hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt)
 {
-        /* HAS - this will be a performance problem */
-	hpgl_call(hpgl_set_ctm(pgls));
-
-	/* if no point is supplied use the current point */
-	if (!pt) 
+	if ( pgls->g.relative )
 	  {
-	    hpgl_call(gs_currentpoint(pgls->pgs, &pgls->g.pos));
+	    pgls->g.pos.x += pt->x;
+	    pgls->g.pos.y += pt->y;
 	  }
 	else
-	  pgls->g.pos = *pt;
+	  {
+	    pgls->g.pos.x = pt->x;
+	    pgls->g.pos.y = pt->y;
+	  }
 	return 0;
 }
 
@@ -287,40 +403,31 @@ int
 hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y, 
 		       int (*gs_func)(gs_state *pgs, floatp x, floatp y))
 {	
+	gs_point point;
+	point.x = x;
+	point.y = y;
+
 	if ( !(pgls->g.have_first_moveto) ) 
 	  {
 	    /* initialize the first point so we can implicitly close
                the path when we stroke and set up the ctm */
-	    pgls->g.first_point.x = x;
-	    pgls->g.first_point.y = y;
-	    /* indicate that there is a current path */
-	    pgls->g.have_first_moveto = true;
-	    /* initialize the current transformation matrix -- see
-               notes above on performance */
+	    pgls->g.first_point = point;
+	    /* initialize the current transformation matrix */
 	    hpgl_call(hpgl_set_ctm(pgls));
-	    if (pgls->g.current_render_mode == hpgl_rm_character)
-	      {
-		/* apply necessary character transformations as well */
-		hpgl_call(hpgl_concatenate_character_transformations(pgls));
-	      }
 
 	    hpgl_call(gs_newpath(pgls->pgs));
 
-	    hpgl_call_check_lost(gs_moveto(pgls->pgs, x, y));
+	    hpgl_call_check_lost(gs_moveto(pgls->pgs, point.x, point.y));
+	    /* indicate that there is a current path */
+	    /* we do not want to indicate a first moveto if we went
+               into lost mode */
+	    if (!hpgl_lost) pgls->g.have_first_moveto = true;
+	  }
 
-	    /* HAS  HACK *** HACK **** HACK */
-	    /* we really do not want to indicate that we have a path
-               as the using gs graphics a path is not truly created
-               with the first moveto.  So we must indicate that we
-               have added the first moveto and subsequently check for
-               that condition.  Then we may set the "have_path" state */
-	  }
-	else
-	  {
-	    hpgl_call_check_lost((*gs_func)(pgls->pgs, x, y));
-	    /* update hpgl's state position */
-	    pgls->g.have_path = true;
-	  }
+	hpgl_call_check_lost((*gs_func)(pgls->pgs, point.x, point.y));
+
+	/* update hpgl's state position */
+	hpgl_call(hpgl_set_current_position(pgls, &point));
 	return 0;
 }
 
@@ -329,6 +436,7 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 int 
 hpgl_clear_current_path(hpgl_state_t *pgls)
 {
+	/* if a current path exists set the current state position */
 	hpgl_call(gs_newpath(pgls->pgs));
 	pgls->g.have_first_moveto = false;
 	return 0;
@@ -342,14 +450,26 @@ hpgl_close_current_path(hpgl_state_t *pgls)
 	return 0;
 }
 
+/* converts pcl coordinate to device space and back to hpgl space */
+int
+hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, gs_point *pcl_pt)
+{
+	gs_point dev_pt, hpgl_pt;
+	hpgl_call(hpgl_clear_current_path(pgls));
+	pcl_set_ctm(pgls, false);
+	hpgl_call(gs_transform(pgls->pgs, pcl_pt->x, pcl_pt->y, &dev_pt));
+	hpgl_call(hpgl_set_ctm(pgls));
+	hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &hpgl_pt));
+	hpgl_call(hpgl_add_point_to_path(pgls, hpgl_pt.x, hpgl_pt.y, gs_moveto));
+	return 0;
+}
 int
 hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y, 
 		     floatp radius, floatp start_angle, floatp sweep_angle,
 		     floatp chord_angle)
 {
 	int num_chords=
-	  hpgl_compute_number_of_chords(sweep_angle * (180.0 / M_PI),
-					chord_angle);
+	  hpgl_compute_number_of_chords(sweep_angle, chord_angle);
 	floatp start_angle_radians = start_angle * (M_PI/180.0);
 	floatp chord_angle_radians = chord_angle * (M_PI/180.0);
 	int i;
@@ -373,9 +493,6 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 					     ((pgls->g.pen_down) ? 
 					      gs_lineto : gs_moveto)));
 	  }
-	
-	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
-
 	return 0;
 }
 
@@ -388,11 +505,31 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 	/* HAS we may need to flatten this here */
 	hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
 	/* set the state position */
-	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
-
+	{
+	  gs_point last_point;
+	  last_point.x = x4;
+	  last_point.y = y4;
+	  hpgl_call(hpgl_set_current_position(pgls, (gs_point *)&last_point));
+	}
 	return 0;
 }
 
+/* an implicit gl/2 style closepath.  If the first and last point are
+   the same the path gets closed */
+private int
+hpgl_close_path(hpgl_state_t *pgls)
+{
+	gs_point last_point;
+	hpgl_call(hpgl_get_current_position(pgls, &last_point));
+
+	if ( (pgls->g.first_point.x == last_point.x) &&
+	     (pgls->g.first_point.y == last_point.y) )
+	    hpgl_call(gs_closepath(pgls->pgs));
+
+	return 0;
+}
+	
+	  
 
 /* HAS -- There will need to be compression phase here note that
    extraneous PU's do not result in separate subpaths.  */
@@ -401,34 +538,23 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 int
 hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-	gs_point pt;
+	if ( !pgls->g.have_first_moveto ) return 0;
 
-	if ( !pgls->g.have_path ) return 0;
-
-	/* get current point */
-	hpgl_call(gs_currentpoint(pgls->pgs, &pt));
-
-	/* If the first point is coincident with the final point the
-           path is closed implicitly.  HAS -- add epsilon */
-
-	if ( (pt.x == pgls->g.first_point.x) && 
-	     (pt.y == pgls->g.first_point.y) ) 
-	  {
-	    hpgl_call(gs_closepath(pgls->pgs));
-	  }
+	hpgl_call(hpgl_close_path(pgls));
 
 	hpgl_call(hpgl_set_graphics_state(pgls, render_mode));
 
-	/* HAS - yes they are exclusive but the hpgl_call macro is
-           kooky about "else" right now */
+	/* we reset the ctm before stroking to preserve the line width
+           information */
+	hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
+	
+	/* we fill polygons and stroke in character and vector mode */
 	if ( render_mode == hpgl_rm_polygon ) 
 	  hpgl_call(gs_fill(pgls->pgs));
-
-	if ( (render_mode == hpgl_rm_vector) || (render_mode == hpgl_rm_character) )
+	else
 	  hpgl_call(gs_stroke(pgls->pgs));
 
 	pgls->g.have_first_moveto = false;
-	pgls->g.have_path = false;
 	/* the page has been marked */
 	pgls->have_page = true;
 	return 0;
@@ -443,11 +569,7 @@ hpgl_draw_line(hpgl_state_t *pgls, floatp x1, floatp y1, floatp x2, floatp y2)
 	hpgl_call(hpgl_add_point_to_path(pgls, x2, y2, 
 					 ((pgls->g.pen_down) ? 
 					  gs_lineto : gs_moveto)));
-
-	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
-
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	
 	return 0;
 }
 
@@ -457,7 +579,6 @@ hpgl_draw_dot(hpgl_state_t *pgls, floatp x1, floatp y1)
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
 					 ((pgls->g.pen_down) ? 
 					  gs_lineto : gs_moveto)));
-	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
 	return 0;

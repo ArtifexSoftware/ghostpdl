@@ -13,13 +13,16 @@ hpgl_set_lost_mode(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode)
 {
 	if ( lost_mode == hpgl_lost_mode_entered ) 
 	  {
+#ifdef INFINITE_LOOP
 	    hpgl_args_t args;
 	    /* raise the pen.  Note this should handle the pcl oddity
                that when lost mode is cleared with an absolute PD we
                draw a line from the last valid position to the first
-               args of pen down. */
+               args of pen down.  The following appends a moveto the
+               current point in the gs path */
 	    hpgl_args_setup(&args);
 	    hpgl_PU(&args, pgls);
+#endif
 #ifdef DEBUG
 	    dprintf("entering lost mode\n");
 #endif

@@ -4,6 +4,8 @@
 
 /* pcmain.c */
 /* PCL5 main program */
+#undef DEBUG
+#define DEBUG			/* always enable debug output */
 #include "malloc_.h"
 #include "math_.h"
 #include "memory_.h"
@@ -22,8 +24,8 @@
 #include "gscoord.h"
 #include "gspath.h"
 #include "gxalloc.h"
-# include "gxdevice.h"
-# include "gdevbbox.h"
+#include "gxdevice.h"
+#include "gdevbbox.h"
 #include "pjparse.h"
 #include "plmain.h"
 
@@ -46,7 +48,10 @@ const pcl_init_t *pcl_init_table[] = {
 };
 
 /* Interim font initialization procedure */
-extern bool pcl_load_built_in_fonts(pcl_state_t *);
+extern bool pcl_load_built_in_fonts(P2(pcl_state_t *, const char *[]));
+private const char *built_in_font_prefixes[] = {
+  "", "/windows/system/", "/windows/fonts/", "/win95/fonts/", 0
+};
 
 /* Built-in symbol set initialization procedure */
 extern bool pcl_load_built_in_symbol_sets(pcl_state_t *);
@@ -139,7 +144,7 @@ main(int argc, char *argv[])
 
 	/* Intermediate initialization: after state is initialized, may
 	 * allocate memory, but we won't re-run this level of init. */
-	if ( !pcl_load_built_in_fonts(&state) )
+	if ( !pcl_load_built_in_fonts(&state, built_in_font_prefixes) )
 	  {
 	    lprintf("No built-in fonts found during initialization\n");
 	    exit(1);

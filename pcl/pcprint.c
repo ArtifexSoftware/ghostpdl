@@ -1,10 +1,10 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
 /* pcprint.c */
 /* PCL5 print model commands */
-#include "std.h"
+#include "stdio_.h"			/* std.h + NULL */
 #include "plvalue.h"
 #include "pcommand.h"
 #include "pcstate.h"

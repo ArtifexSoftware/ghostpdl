@@ -4,7 +4,6 @@
 
 /* pgframe.c */
 /* PCL5/HP-GL/2 picture frame commands */
-#include "std.h"
 #include "math_.h"
 #include "pgmand.h"
 #include "pgdraw.h"
@@ -64,8 +63,7 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	
 	/* default to pcl logical page */
 	if ( almost_equal(size, 0.0) )
-	  pcls->g.picture_frame.height = pcls->text_length * 
-	    (float)(pcls->vmi / 48.0);
+	  pcls->g.picture_frame.height = pcls->text_length * (float)(pcls->vmi);
 	else
 	  pcls->g.picture_frame.height = size;
 

@@ -89,7 +89,9 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_LT(&args, pgls);
 
 	hpgl_args_setup(&args);
-	hpgl_args_add_real(&args, 0.0);
+	hpgl_SC(&args, pgls);
+
+	hpgl_args_set_real(&args, 0.0);
 	hpgl_args_add_real(&args, 0.0);
 	hpgl_PA(&args, pgls);
 
@@ -99,14 +101,9 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_set_int(&args,2);
 	hpgl_PM(&args, pgls);
 
-	/*	hpgl_args_setup(&args);
-	hpgl_RF(&args, pgls); */
-
 	hpgl_args_set_int(&args,0);
 	hpgl_SB(&args, pgls);
 	
-	hpgl_args_setup(&args);
-	hpgl_SC(&args, pgls);
 
 	hpgl_args_setup(&args);
 	hpgl_SV(&args, pgls);
@@ -149,15 +146,6 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* restore defaults */
 	hpgl_DF(&args, pgls);
 
-	/* pen up position */
-	hpgl_args_setup(&args);
-	hpgl_PU(&args, pgls);
-	
-	/* absolute positioning at the lower left of the picture frame */
-	hpgl_args_set_real(&args, 0.0);
-	hpgl_args_add_real(&args, 0.0);
-	hpgl_PA(&args, pgls);
-
 	/* cancel rotation */
         hpgl_args_setup(&args);
 	hpgl_RO(&args, pgls);
@@ -188,6 +176,15 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_set_int(&args,2);
 	hpgl_NP(&args, pgls);
 #endif
+	/* pen up position */
+	hpgl_args_setup(&args);
+	hpgl_PU(&args, pgls);
+	
+	/* absolute positioning at the lower left of the picture frame */
+	hpgl_args_set_real(&args, 0.0);
+	hpgl_args_add_real(&args, 0.0);
+	hpgl_PA(&args, pgls);
+
 	return 0;
 }
 
@@ -385,6 +382,7 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  default:
 	    return e_Range;
 	  case 4:
+	    type = hpgl_scaling_anisotropic;
 	    hpgl_arg_c_int(pargs, &type);
 	    switch ( type )
 	      {
@@ -392,8 +390,8 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		if ( xy[0] == xy[1] || xy[2] == xy[3] )
 		  return e_Range;
 pxy:		pgls->g.scaling_params.pmin.x = xy[0];
-		pgls->g.scaling_params.pmin.y = xy[1];
-		pgls->g.scaling_params.pmax.x = xy[2];
+		pgls->g.scaling_params.pmax.x = xy[1];
+		pgls->g.scaling_params.pmin.y = xy[2];
 		pgls->g.scaling_params.pmax.y = xy[3];
 		break;
 	      case hpgl_scaling_isotropic: /* 1 */

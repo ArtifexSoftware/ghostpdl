@@ -12,14 +12,17 @@
 /* ---------------- Chapter 2 ---------------- */
 
 /* Define the simple color palettes. */
+/****** ALL THESE VALUES SHOULD BE pcl_fixed. ******/
 private const int32 palette_simple_CMY[8*3] =
-{
+{	0xff,0xff,0xff,  0,0xff,0xff,  0xff,0,0xff,  0,0,0xff,
+	0xff,0xff,0,  0,0xff,0,  0xff,0,0,  0,0,0
 };
-private const int32 palette_simple_K[1*3] =
-{
+private const int32 palette_simple_K[2*3] =
+{	0xff,0xff,0xff,  0,0,0
 };
 private const int32 palette_simple_RGB[8*3] =
-{
+{	0,0,0,  0xff,0,0,  0,0xff,0,  0xff,0xff,0,
+	0,0,0xff,  0xff,0,0xff,  0,0xff,0xff,  0xff,0xff,0xff
 };
 
 private int /* ESC * r <cs_enum> U */
@@ -49,6 +52,7 @@ pal3:	    psize = 8;
 	    return e_Range;
 	  }
 	/**** DESTROY OLD pcls->palette.data ****/
+	/****** const MISMATCH ******/
 	pcls->palette.data = pdata;
 	pcls->palette.size = psize;
 	return 0;

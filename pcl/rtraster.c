@@ -281,15 +281,18 @@ pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 	  { gs_point cap_dev, cap_image;
 
 	    /* Convert CAP to device coordinates, since it mustn't move. */
+	    pcl_set_graphics_state(pcls, true);  /* with print direction */
 	    gs_transform(pcls->pgs, (float)pcls->cap.x, (float)pcls->cap.y,
 			 &cap_dev);
-	    pcl_set_graphics_state(pcls, false);	/* false => ignore print direction */
+	    pcl_set_graphics_state(pcls, false);  /* ignore print direction */
 	    if ( across )	/* across_physical_page & landscape */
 	      gs_rotate(pcls->pgs, -90.0);
 	    gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
 	    pcls->cap.x = (coord)cap_image.x;
 	    pcls->cap.y = (coord)cap_image.y;
 	  }
+	else
+	  pcl_set_graphics_state(pcls, false);  /* ignore print direction */
 	/* See PCL5 manual, p. 15-10, for the following algorithm. */
 	if ( !(setting & 1 ) )
 	  { if ( across )
@@ -612,7 +615,7 @@ end_raster_graphics(pcl_state_t *pcls)
 	    /* Convert CAP to device coordinates, since it mustn't move. */
 	    gs_transform(pcls->pgs, (float)pcls->cap.x, (float)pcls->cap.y,
 			 &cap_dev);
-	    pcl_set_graphics_state(pcls, true);	/* false => ignore print direction */
+	    pcl_set_graphics_state(pcls, true);  /* with print direction */
 	    gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
 	    pcls->cap.x = (coord)cap_image.x;
 	    pcls->cap.y = (coord)cap_image.y;

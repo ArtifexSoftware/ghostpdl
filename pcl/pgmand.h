@@ -7,8 +7,8 @@
 
 #ifndef pgmand_INCLUDED
 #  define pgmand_INCLUDED
-#include <setjmp.h>
 #include "stdio_.h"		/* for gdebug.h */
+#include <setjmp.h>		/* must come after std.h */
 #include "gdebug.h"
 #include "pcommand.h"
 #include "pcstate.h"

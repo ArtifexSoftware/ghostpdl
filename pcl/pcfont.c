@@ -4,7 +4,7 @@
 
 /* pcfont.c */
 /* PCL5 font selection and text printing commands */
-#include "std.h"
+#include "memory_.h"
 /* XXX #include tangle:  We need pl_load_tt_font, which is only supplied
  * by plfont.h if stdio.h is included, but pcstate.h back-door includes
  * plfont.h, so we have to pull in stdio.h here even though it should only
@@ -861,18 +861,15 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
  * very little of this code can be salvaged for later.
  */
 bool
-pcl_load_built_in_fonts(pcl_state_t *pcls)
-{
-#include <sys/types.h>
-#include <dirent.h>
-#include <string.h>
-
-#define	FONTDIR	"."
+pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
+{	const char **pprefix;
+#include "string_.h"
+#include "gp.h"
 	typedef struct font_hack {
 	  char *ext_name;
 	  pl_font_params_t params;
 	} font_hack_t;
-	font_hack_t hack_table[] = {
+	static const font_hack_t hack_table[] = {
 	    /* Typeface family values are faked; they do not (necessarily)
 	     * match the actual fonts. */
 	    {"arial",	{0, 1, 0, 0, 0, 0, 16602} },
@@ -889,13 +886,8 @@ pcl_load_built_in_fonts(pcl_state_t *pcls)
 	    {"timesi",	{0, 1, 0, 0, 1, 0, 16901} },
 	    {NULL,	{0, 0, 0, 0, 0, 0, 0} }
 	};
-	DIR *dp;
-	struct dirent *dep;
-	FILE *fnp;
-	pl_font_t *plfont;
-	font_hack_t *hackp;
-	int id = 0;
-	byte key[2];
+	const font_hack_t *hackp;
+	byte font_found[countof(hack_table)];
 	bool found_some = false;
 
 	/* This initialization was moved from the do_reset procedures to
@@ -906,45 +898,34 @@ pcl_load_built_in_fonts(pcl_state_t *pcls)
 	pl_dict_init(&pcls->soft_fonts, pcls->memory, pl_free_font);
 	pl_dict_set_parent(&pcls->soft_fonts, &pcls->built_in_fonts);
 
-	if ( (dp=opendir(FONTDIR)) == NULL )
-	  {
-#ifdef DEBUG
-	    perror(FONTDIR);
-#endif
-	    return false;
-	  }
-	while ( (dep=readdir(dp)) != NULL )
-	  { int dirlen = strlen(dep->d_name);
-	    if ( strcmp(".ttf", &dep->d_name[dirlen - 4]) == 0 )
-	      {
-		if ( (fnp=fopen(dep->d_name, "r")) == NULL )
+	    /* Load only those fonts we know about. */
+	memset(font_found, 0, sizeof(font_found));
+	for ( pprefix = prefixes; *pprefix != 0; ++pprefix )
+	  for ( hackp = hack_table; hackp->ext_name != 0; ++hackp )
+	    if ( !font_found[hackp - hack_table] )
+	      { char fname[150];
+	        FILE *fnp;
+		pl_font_t *plfont;
+		int id = 0;
+		byte key[2];
+
+	        strcpy(fname, *pprefix);
+		strcat(fname, hackp->ext_name);
+		strcat(fname, ".ttf");
+		if ( (fnp=fopen(fname, gp_fmode_rb)) == NULL )
+		  continue;
+		if ( pl_load_tt_font(fnp, pcls->font_dir, pcls->memory,
+				     gs_next_ids(1), &plfont) < 0 )
 		  {
 #ifdef DEBUG
-		    perror(dep->d_name);
+		    lprintf1("Failed loading font %s\n", fname);
 #endif
 		    continue;
 		  }
-		if ( pl_load_tt_font(fnp, pcls->font_dir, pcls->memory,
-		    gs_next_ids(1), &plfont) < 0 )
-		  {
 #ifdef DEBUG
-		    lprintf1("Failed loading font %s\n", dep->d_name);
-#endif
-		    return false;
-		  }
-#ifdef DEBUG
-		dprintf1("Loaded %s\n", dep->d_name);
+		dprintf1("Loaded %s\n", fname);
 #endif
 		plfont->storage = pcds_internal;
-		/* extraordinary hack: get the font characteristics from a
-		 * hardwired table; ignore the font if we don't know it. */
-		for ( hackp=hack_table; hackp->ext_name; hackp++ )
-		  {
-		    if ( strncmp(hackp->ext_name, dep->d_name, dirlen-4) == 0 )
-			break;
-		  }
-		if ( hackp->ext_name == NULL )
-		    continue;	/* not in table */
 		/* Don't smash the pitch_100ths, which was obtained
 		 * from the actual font. */
 		{ uint save_pitch = plfont->params.pitch_100ths;
@@ -955,10 +936,9 @@ pcl_load_built_in_fonts(pcl_state_t *pcls)
 		key[0] = id >> 8;
 		key[1] = id;
 		pl_dict_put(&pcls->built_in_fonts, key, 2, plfont);
+		font_found[hackp - hack_table] = 1;
 		found_some = true;
 	    }
-	}
-	closedir(dp);
 	return found_some;
 }
 

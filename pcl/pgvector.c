@@ -32,6 +32,8 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 
 	hpgl_arg_c_real(pargs, &chord_angle);
 
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+
 	x_current = pgls->g.pos.x;
 	y_current = pgls->g.pos.y;
 
@@ -50,8 +52,7 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	hpgl_add_arc_to_path(pgls, x_center, y_center, 
 			     radius, start_angle, sweep, chord_angle);
 
-	/* HAS check this */
-	/* hpgl_draw_current_path(pgls, hpgl_rm_vector); */
+	hpgl_draw_current_path(pgls, hpgl_rm_vector);
 
 	return 0;
 }
@@ -203,8 +204,8 @@ hpgl_plot_and_clear(hpgl_state_t *pgls, floatp x, floatp y,
 		    int (*gs_func)(gs_state *pgs, floatp x, floatp y))
 {
 	int ret = hpgl_add_point_to_path(pgls, x, y, gs_func);
-	    if (( !pgls->g.relative ) &&
-		( ret != gs_error_limitcheck ))
+	if ( (!pgls->g.relative) &&
+	     (ret != gs_error_limitcheck) )
 	  hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
 	    
 	return ret;
@@ -237,10 +238,18 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls,
 	/* no argument case */
 	if ( !got_args) 
 	  {
-	    gs_point cur_point;
-	    hpgl_call(gs_currentpoint(pgls->pgs, &cur_point));
-	    hpgl_call(hpgl_plot_and_clear(pgls, cur_point.x, 
+	    /* HAS needs investigation -- NO ARGS case in relative mode */
+	    if (pgls->g.relative)
+	      {
+		hpgl_call(hpgl_plot_and_clear(pgls, 0.0, 0.0, gs_func));
+	      }
+	    else
+	      {
+		gs_point cur_point;
+		hpgl_call(hpgl_get_current_position(pgls, &cur_point));
+		hpgl_call(hpgl_plot_and_clear(pgls, cur_point.x, 
 					  cur_point.y, gs_func));
+	      }
 	  }
 
 	/* set the current state position */
@@ -290,8 +299,16 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	{
 	  hpgl_args_t args;
 	  bool down = pgls->g.pen_down;
+
+	  hpgl_clear_current_path(pgls);
+
 	  /* implicit pen down */
-	  hpgl_args_setup(&args); hpgl_PD(&args, pgls);
+	  hpgl_args_setup(&args); 
+	  hpgl_PU(&args, pgls);
+
+	  hpgl_args_setup(&args);
+	  hpgl_PD(&args, pgls);
+
 	  /* draw the arc/circle */
 	  hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
 			       radius, 0.0, 360.0, chord);
@@ -312,15 +329,11 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_PA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	/* plot the point and save the return value */
-	int ret = hpgl_plot(pargs, pgls, 
-			    (pgls->g.pen_down) ? gs_lineto : gs_moveto);
-
 	/* set the state flag */
 	pgls->g.relative = false;
-
-
-	return ret;
+	/* plot the point and save the return value */
+	return hpgl_plot(pargs, pgls, 
+			 (pgls->g.pen_down) ? gs_lineto : gs_moveto);
 }
 
 /* PD (d)x,(d)y...; */
@@ -328,7 +341,8 @@ int
 hpgl_PD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	pgls->g.pen_down = true;
-	return hpgl_plot(pargs, pgls, (pgls->g.relative) ? gs_rlineto : gs_lineto);
+	return hpgl_plot(pargs, pgls, 
+			 (pgls->g.relative) ? gs_rlineto : gs_lineto);
 }
 
 /* PE (flag|value|coord)*; */
@@ -371,7 +385,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		hpgl_args_set_int(&args, pen);
 		/* Note SP is illegal in polygon mode we must handle that here */
 		if ( !pgls->g.polygon_mode )
-		  hpgl_call(hpgl_SP(&args, pgls))
+		  hpgl_call(hpgl_SP(&args, pgls));
 	      }
 	      }
 	      p = pargs->source.ptr;
@@ -430,18 +444,18 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		  /* set up the up and down state */
 		  hpgl_args_setup(&args);
 		  if ( pargs->phase & pe_pen_up ) 
-		    hpgl_call(hpgl_PU(&args, pgls))
+		    hpgl_call(hpgl_PU(&args, pgls));
 		  else
-		    hpgl_call(hpgl_PD(&args, pgls))
+		    hpgl_call(hpgl_PD(&args, pgls));
 		
 		  hpgl_args_set_real(&args, (floatp)xy[0]);
 		  hpgl_args_add_real(&args, (floatp)xy[1]);
 
 		  /* arbitrarily use PA or PR */
 		  if ( pargs->phase & pe_absolute )
-		    hpgl_call(hpgl_PA(&args, pgls))
+		    hpgl_call(hpgl_PA(&args, pgls));
 		  else
-		    hpgl_call(hpgl_PR(&args, pgls))
+		    hpgl_call(hpgl_PR(&args, pgls));
 		}
 	      }
 	      pargs->phase &= ~(pe_pen_up | pe_absolute);
