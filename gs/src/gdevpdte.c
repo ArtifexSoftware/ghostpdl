@@ -310,12 +310,27 @@ pdf_char_widths(pdf_font_resource_t *pdfont, int ch, gs_font_base *font,
 	code = pdf_glyph_widths(pdfont, glyph, font, pwidths);
 	if (code < 0)
 	    return code;
+	if (pdfont->u.simple.v != 0)
+	    pdfont->u.simple.v[ch] = pwidths->v;
+	if (font->WMode != 0 && code > 0 &&
+	    pwidths->v.x == 0 && pwidths->v.y == 0) {
+	    /*
+	     * The font has no Metrics2, so it must be written
+	     * horizontally due to PS spec.
+	     * Therefore we need to fill Width array,
+	     * which is required by PDF spec.
+	     * Take it from WMode=0.
+	     */
+	    int save_WMode = font->WMode;
+	    font->WMode = 0; /* Temporary patch font because font->procs.glyph_info
+	                        has no WMode argument. */
+	    code = pdf_glyph_widths(pdfont, glyph, font, pwidths);
+	    font->WMode = save_WMode;
+	}
 	if (code == 0) {
 	    pdfont->Widths[ch] = pwidths->Width.w;
 	    pdfont->real_widths[ch] = pwidths->real_width.w;
 	}
-	if (pdfont->u.simple.v != 0)
-	    pdfont->u.simple.v[ch] = pwidths->v;
     } else {
 	pwidths->Width.w = pdfont->Widths[ch];
 	pwidths->real_width.w = pdfont->real_widths[ch];
