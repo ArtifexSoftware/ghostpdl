@@ -34,6 +34,7 @@
 #include "gxfcache.h"
 #include "gxxfont.h"
 #include "gxttfb.h"
+#include "gxfont42.h"
 #include <assert.h>
 
 /* Define the descriptors for the cache structures. */
@@ -202,32 +203,33 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->ttf = 0;
     pair->ttr = 0;
     pair->design_grid = false;
-    if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
-	int code; 
-	float cxx, cxy, cyx, cyy;
-	gs_matrix m;
-	gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
+    if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) 
+	if (((gs_font_type42 *)font)->FAPI==NULL) {
+	    int code; 
+	    float cxx, cxy, cyx, cyy;
+	    gs_matrix m;
+	    gx_compute_char_matrix(char_tm, log2_scale, &cxx, &cxy, &cyx, &cyy);
 
-	pair->design_grid = design_grid;
-	m.xx = cxx;
-	m.xy = cxy;
-	m.yx = cyx;
-	m.yy = cyy;
-	m.tx = m.ty = 0;
-	pair->ttr = gx_ttfReader__create(dir->memory);
-	if (!pair->ttr)
-	    return_error(gs_error_VMerror);
-	/*  We could use a single the reader instance for all fonts ... */
-	pair->ttf = ttfFont__create(dir);
-	if (!pair->ttf)
-	    return_error(gs_error_VMerror);
-	gx_ttfReader__set_font(pair->ttr, (gs_font_type42 *)font);
-	code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
-		    (gs_font_type42 *)font, &m, log2_scale, design_grid);
-	gx_ttfReader__set_font(pair->ttr, NULL);
-	if (code < 0)
-	    return code;
-    }
+	    pair->design_grid = design_grid;
+	    m.xx = cxx;
+	    m.xy = cxy;
+	    m.yx = cyx;
+	    m.yy = cyy;
+	    m.tx = m.ty = 0;
+	    pair->ttr = gx_ttfReader__create(dir->memory);
+	    if (!pair->ttr)
+		return_error(gs_error_VMerror);
+	    /*  We could use a single the reader instance for all fonts ... */
+	    pair->ttf = ttfFont__create(dir);
+	    if (!pair->ttf)
+		return_error(gs_error_VMerror);
+	    gx_ttfReader__set_font(pair->ttr, (gs_font_type42 *)font);
+	    code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
+			(gs_font_type42 *)font, &m, log2_scale, design_grid);
+	    gx_ttfReader__set_font(pair->ttr, NULL);
+	    if (code < 0)
+		return code;
+	}
     pair->memory = 0;
     if_debug8('k', "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",
 	      (ulong) pair, (ulong) font,
