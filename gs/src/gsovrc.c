@@ -930,6 +930,11 @@ fill_in_procs(gx_device_procs * pprocs)
     memcpy( &tmpdev.color_info,
             &gs_overprint_device.color_info,
             sizeof(tmpdev.color_info) );
+    /*
+     * Prevent the check_device_separable routine from executing while we
+     * fill in the procs.  Our tmpdev is not complete enough for it.
+     */
+    tmpdev.color_info.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
     tmpdev.static_procs = 0;
     memcpy(&tmpdev.procs, pprocs, sizeof(tmpdev.procs));
     gx_device_forward_fill_in_procs(&tmpdev);
