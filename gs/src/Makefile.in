@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2001 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1997, 2002 artofcode LLC.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -408,7 +408,7 @@ DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
 # Define the name of the partial makefile that specifies options --
 # used in dependencies.
 
-MAKEFILE=$(GLSRCDIR)/unix-gcc.mak
+MAKEFILE=Makefile
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
 # Define the ANSI-to-K&R dependency.  There isn't one, but we do have to
