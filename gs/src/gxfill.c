@@ -809,51 +809,17 @@ step_al(active_line *alp, bool move_iterator)
 
     if (move_iterator) {
 	if (forth)
-	    alp->more_flattened = gx_flattened_iterator__next(&alp->fi);
+	    alp->more_flattened = gx_flattened_iterator__next_filtered2(&alp->fi);
 	else
-	    alp->more_flattened = gx_flattened_iterator__prev(&alp->fi);
+	    alp->more_flattened = gx_flattened_iterator__prev_filtered2(&alp->fi);
     } else
 	vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
     /* Note that we can get alp->fi.ly0 == alp->fi.ly1 
-       with the first or the last piece of the line. */
-    alp->start.x = (forth ? alp->fi.lx0 : alp->fi.lx1);
-    alp->start.y = (forth ? alp->fi.ly0 : alp->fi.ly1);
-#   if CURVED_TRAPEZOID_FILL0_COMPATIBLE 
-	if (move_iterator) {
-	    if (forth) {
-		gx_flattened_iterator fi = alp->fi;
-
-		while (alp->more_flattened) {
-		    bool more;
-
-		    if (alp->first_flattened)
-			break;
-		    more = gx_flattened_iterator__next(&fi);
-		    if (!more ||
-			!gx_check_nearly_collinear(alp->start.x, alp->start.y, 
-			    fi.lx0, fi.ly0, fi.lx1, fi.ly1)) 
-			break;
-		    alp->more_flattened = more;
-		    alp->fi = fi;
-		}
-	    } else {
-		while (alp->more_flattened && 
-		       (alp->fi.i + 1) <= sizeof(alp->skip_points) * 8 &&
-		       !(alp->skip_points[(alp->fi.i + 1) >> 3] & (1 << ((alp->fi.i + 1) & 7)))) {
-		    alp->more_flattened = gx_flattened_iterator__prev(&alp->fi);
-		}
-		/* CAUTION: if skip_points array is smaller than the
-		   nomber of points, the flattening isn't equal to one
-		   generated with the old code. The maximal necessary array
-		   length is 128 = (1 << k_sample_max) / 8.
-		 */
-		DO_NOTHING; /* Just a place for a debugger breakpoint. */
-	    }
-	    alp->first_flattened = false;
-	}
-#   endif
-    alp->end.x = (forth ? alp->fi.lx1 : alp->fi.lx0);
-    alp->end.y = (forth ? alp->fi.ly1 : alp->fi.ly0);
+       if the curve tangent is horizontal. */
+    alp->start.x = (forth ? alp->fi.fx0 : alp->fi.fx1);
+    alp->start.y = (forth ? alp->fi.fy0 : alp->fi.fy1);
+    alp->end.x = (forth ? alp->fi.fx1 : alp->fi.fx0);
+    alp->end.y = (forth ? alp->fi.fy1 : alp->fi.fy0);
     alp->diff.x = alp->end.x - alp->start.x;
     alp->diff.y = alp->end.y - alp->start.y;
     SET_NUM_ADJUST(alp);
@@ -868,9 +834,6 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
     /* Warning : p0 may be equal to &alp->end. */
     bool curve = (ss != NULL && ss->type == s_curve);
 
-#if CURVED_TRAPEZOID_FILL0_COMPATIBLE
-    alp->first_flattened = true;
-#endif
     if (curve) {
 	if (alp->direction == DIR_UP) {
 	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (curve_segment *)s1, fixed_flat);
@@ -880,35 +843,18 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 	    step_al(alp, true);
 	} else {
 	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (curve_segment *)s0, fixed_flat);
+	    bool more;
 
-	    bool more, first = true;
-	    gx_flattened_iterator fi;
-
-	    memset(alp->skip_points, 0, sizeof(alp->skip_points));
 	    assert(gx_flattened_iterator__init(&alp->fi, 
 		s1->pt.x, s1->pt.y, (curve_segment *)s0, k, false, 0));
 	    alp->more_flattened = false;
+#	    if CHECK_BACKSCAN_CONSISTENCY
+		gx_flattened_iterator__test_filtered1(&alp->fi);
+		gx_flattened_iterator__test_filtered2(&alp->fi);
+#	    endif
 	    do {
-		fixed x = alp->fi.lx1, y = alp->fi.ly1;
-
-		more = gx_flattened_iterator__next(&alp->fi);
+		more = gx_flattened_iterator__next_filtered2(&alp->fi);
 		alp->more_flattened |= more;
-		if (!first) {
-		    fi = alp->fi;
-		    while (more) {
-			more = gx_flattened_iterator__next(&fi);
-			if (!more) {
-			    more = true;
-			    break;
-			}
-			if (!gx_check_nearly_collinear(x, y, fi.lx0, fi.ly0, fi.lx1, fi.ly1)) 
-			    break;
-			alp->fi = fi;
-		    }
-		}
-		if (alp->fi.i <= sizeof(alp->skip_points) * 8)
-		    alp->skip_points[alp->fi.i >> 3] |= 1 << (alp->fi.i & 7);
-		first = false;
 	    } while(more);
 	    step_al(alp, false);
 	}

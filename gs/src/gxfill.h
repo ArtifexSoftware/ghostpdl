@@ -79,17 +79,8 @@ struct active_line_s {
     curve_cursor cursor;	/* cursor for curves, unused for lines */
 #if CURVED_TRAPEZOID_FILL
     /* fixme : use an union {cursor, {fi, last}}, because they are used exclusively. */
-    gx_flattened_curve_iterator fi;
+    gx_flattened_iterator fi;
     bool more_flattened;
-#if CURVED_TRAPEZOID_FILL0_COMPATIBLE
-    bool first_flattened;
-    byte skip_points[128];  /* This huge thing is for testing purpose only. 
-			       The length should be (1 << k_sample_max) bits.
-			       128 sholuld be fine.
-			       With a smaller value the code is working,
-			       but the result is not guaranteed to be 
-			       equal to the old code. */
-#endif
 #endif
 /*
  * "Pending" lines (not reached in the Y ordering yet) use next and prev

@@ -415,9 +415,18 @@ struct gx_flattened_iterator_s {
     bool curve;
 #endif
     fixed lx0, ly0, lx1, ly1;
+    /* private data for filtered1 : */
+    int last_filtered1_i;
+    /* public data for filtered1 : */
+    fixed gx0, gy0, gx1, gy1;
+    int filtered1_i;
+    /* private data for filtered2 : */
+    bool ahead;
+    fixed xn, yn;
+    int last_filtered2_i;
     /* public data for filtered2 : */
     fixed fx0, fy0, fx1, fy1;
-    bool ahead;
+    int filtered2_i;
 };
 
 bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
@@ -426,7 +435,14 @@ bool gx_flattened_iterator__init_line(gx_flattened_iterator *this,
 	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes);
 bool gx_flattened_iterator__next(gx_flattened_iterator *this);
 bool gx_flattened_iterator__prev(gx_flattened_iterator *this);
+bool gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this);
+bool gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this);
+bool gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this);
 bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);
+#if CHECK_BACKSCAN_CONSISTENCY
+void gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this);
+void gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this);
+#endif
 
 bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
 		    fixed y0, fixed y1, fixed y2, fixed y3, 

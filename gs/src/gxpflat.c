@@ -236,6 +236,7 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 #   if CURVED_TRAPEZOID_FILL
 	this->curve = true;
 #   endif
+    this->ahead = false;
     vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
     this->k = k;
 #   ifdef DEBUG
@@ -320,6 +321,7 @@ gx_flattened_iterator__init_line(gx_flattened_iterator *this,
 #   if CURVED_TRAPEZOID_FILL
 	this->curve = false;
 #   endif
+    this->ahead = false;
     return true;
 }
 
@@ -416,6 +418,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
 	    return true;
 	}
+	--this->i;
     } else {
 	--this->i;
 	if (this->i == 0)
@@ -458,21 +461,31 @@ last:
  *	  due to the small segment uniting.
  * Note : It can generate nearly collinear segments. 
  */
-private bool
+bool
 gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this)
 {
     fixed x0 = this->lx1, y0 = this->ly1;
+    bool end = (this->i == 1 << this->k);
 
     for (;;) {
-	if (!gx_flattened_iterator__next(this)) {
-	    this->lx0 = x0;
-	    this->ly0 = y0;
-	    return false;
-	}
+	bool more = gx_flattened_iterator__next(this);
+
+#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE
+	    if (!more) {
+		this->filtered1_i = this->i;
+		if (end)
+		    this->last_filtered1_i = this->i;
+		this->lx0 = x0;
+		this->ly0 = y0;
+		return false;
+	    }
+#	endif
 	if (!coord_near(x0, this->lx1) || !coord_near(y0, this->ly1)) {
+	    this->last_filtered1_i = this->i;
+	    this->filtered1_i = this->i;
 	    this->lx0 = x0;
 	    this->ly0 = y0;
-	    return true;
+	    return more;
 	}
     }
 }
@@ -487,6 +500,11 @@ private inline bool
 gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
 {
 #if MERGE_COLLINEAR_SEGMENTS
+    /*	The macro name above is taken from the old code.
+	It appears some confusing.
+	Actually it merges segments, which are nearly collinear to
+	coordinate axes.
+     *
     /* fixme: optimise: don't check the coordinate order for monotonic curves. */
 #   define coords_in_order(v0, v1, v2) ( (((v1) - (v0)) ^ ((v2) - (v1))) >= 0 )
     if ((coord_near(x2, x0) || coord_near(y2, y0))
@@ -505,7 +523,7 @@ gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x
  * Note : The number of generated segments can be samller than 2^k 
  *	  due to the segment uniting.
  */
-private bool
+bool
 gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 {
     /* fixme: CURVED_TRAPEZOID_FILL0_COMPATIBLE 0 is not implemented yet. */
@@ -518,6 +536,8 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 	gx_flattened_iterator__next_filtered1(this);
 	this->fx1 = this->lx1;
 	this->fy1 = this->ly1;
+	this->filtered2_i = this->filtered1_i;
+	this->last_filtered2_i = this->filtered1_i;
 	if (this->i != 0) {
 	    /* The unfiltered iterator will go ahead. */
 	    gx_flattened_iterator__next_filtered1(this);
@@ -535,6 +555,7 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 		    break;
 		}
 		this->ahead = false;
+		this->filtered2_i = this->filtered1_i;
 		if (this->lx0 == this->fx0 && this->lx0 == this->fx0) {
 		    /* The last segment appears immediately after the first one,
 		       but the first one was yielded immediately. */
@@ -549,11 +570,20 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 		    return true;
 		} 
 	    } else {
-		gx_flattened_iterator__next_filtered1(this);
+		this->filtered2_i = this->filtered1_i;
+		if (!gx_flattened_iterator__next_filtered1(this)) {
+		    /* The old code always yields the last segment. */
+		    this->fx1 = this->lx0;
+		    this->fy1 = this->ly0;
+		    break;
+		}
 		if (!gx_check_nearly_collinear_inline(this->fx0, this->fy0, 
 			this->lx0, this->ly0, this->lx1, this->ly1)) {
 		    this->fx1 = this->lx0;
 		    this->fy1 = this->ly0;
+		    this->last_filtered2_i = this->filtered2_i;
+		    this->xn = this->lx1;
+		    this->yn = this->ly1;
 		    break;
 		}
 	    }
@@ -594,33 +624,25 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
     }
     x = this->x;
     y = this->y;
-    for(;;) {
-#	define unaccum(i, r, di, dr, rmask)\
+#   define unaccum(i, r, di, dr, rmask)\
 		    if ( r < dr ) r += rmask + 1 - dr, i -= di + 1;\
 		    else r -= dr, i -= di
-	unaccum(this->id2x, this->rd2x, this->id3x, this->rd3x, this->rmask);
-	unaccum(this->id2y, this->rd2y, this->id3y, this->rd3y, this->rmask);
-	unaccum(this->idx, this->rdx, this->id2x, this->rd2x, this->rmask);
-	unaccum(this->idy, this->rdy, this->id2y, this->rd2y, this->rmask);
-	unaccum(x, this->rx, this->idx, this->rdx, this->rmask);
-	unaccum(y, this->ry, this->idy, this->rdy, this->rmask);
-	this->i++;
-#	undef unaccum
-#	ifdef DEBUG
-	if_debug5('3', "[3]%s x=%g, y=%g x=%d y=%d\n",
-		  (((x ^ this->lx1) | (y ^ this->ly1)) & float2fixed(-0.5) ?
-		   "add" : "skip"),
-		  fixed2float(x), fixed2float(y), x, y);
-	gx_flattened_iterator__print_state(this);
-#	endif
-	last = (this->i == (1 << this->k) - 1);
-	if (last)
-	    break;
-	if (!coord_near(x, this->lx1) || !coord_near(y, this->ly1)) {
-	    /* X coordinates are not within a half-pixel. */
-	    break;
-	}
-    }
+    unaccum(this->id2x, this->rd2x, this->id3x, this->rd3x, this->rmask);
+    unaccum(this->id2y, this->rd2y, this->id3y, this->rd3y, this->rmask);
+    unaccum(this->idx, this->rdx, this->id2x, this->rd2x, this->rmask);
+    unaccum(this->idy, this->rdy, this->id2y, this->rd2y, this->rmask);
+    unaccum(x, this->rx, this->idx, this->rdx, this->rmask);
+    unaccum(y, this->ry, this->idy, this->rdy, this->rmask);
+    this->i++;
+#   undef unaccum
+#   ifdef DEBUG
+    if_debug5('3', "[3]%s x=%g, y=%g x=%d y=%d\n",
+	      (((x ^ this->lx1) | (y ^ this->ly1)) & float2fixed(-0.5) ?
+	       "add" : "skip"),
+	      fixed2float(x), fixed2float(y), x, y);
+    gx_flattened_iterator__print_state(this);
+#   endif
+    last = (this->i == (1 << this->k) - 1);
     this->lx0 = this->x = x;
     this->ly0 = this->y = y;
     vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 0, 255));
@@ -628,6 +650,389 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
 	assert(this->lx0 == this->x0 && this->ly0 == this->y0);
     return !last;
 }
+
+/* Move to the previous segment uniting small segments.
+ * Return true iff there exist more segments.
+ * Note : The number of generated segments can be samller than 2^k 
+ *	  due to the small segment uniting.
+ * Note : It can generate nearly collinear segments. 
+ */
+private bool
+gx_flattened_iterator__prev_filtered1(gx_flattened_iterator *this)
+{
+#   if CURVED_TRAPEZOID_FILL0_COMPATIBLE
+    /*	Stores the result to this->gx0, this->gy0, this->gx1, this->gy1 .
+	When returned, the base (unfiltered) iterator stands
+	on the segment, which's end point is the starting point
+	of the result, except for the curve end.
+	With the curve end it stands at the first unfiltered segment.
+     */
+    if (this->last_filtered1_i == 0) {
+	/* A single segment curve. */
+	this->gx0 = this->x0;
+	this->gy0 = this->y0;
+	this->gx1 = this->x3;
+	this->gy1 = this->y3;
+	this->filtered1_i = 0;
+	return false;
+    } else if (this->i < this->last_filtered1_i) {
+	/* next_filtered1 has an anomaly with the last but one
+	   due to possibly insufficient points to reach 
+	   !coord_near. To get a consistent state we scan 
+	   until the last_filtered1_i with 'prev'. */
+	fixed x1 = this->lx1, y1 = this->ly1;
+
+	this->filtered1_i = this->i;
+	while (this->i < this->last_filtered1_i) {
+	    gx_flattened_iterator__prev(this);
+	}
+	assert(this->i < 1 << this->k);
+	this->gx0 = this->lx1;
+	this->gy0 = this->ly1;
+	this->gx1 = x1;
+	this->gy1 = y1;
+	return true;
+    } else {
+	fixed x1 = this->gx0, y1 = this->gy0;
+	fixed x0 = this->lx0, y0 = this->ly0;
+
+	this->filtered1_i = this->i;
+	for (;;) {
+	    if (this->i + 1 == 1 << this->k) {
+		this->gx0 = this->lx0;
+		this->gy0 = this->ly0;
+		this->gx1 = x1;
+		this->gy1 = y1;
+		return false;
+	    }
+	    gx_flattened_iterator__prev(this);
+	    if (!coord_near(x0, this->lx0) || !coord_near(y0, this->ly0)) {
+		this->gx0 = this->lx1;
+		this->gy0 = this->ly1;
+		this->gx1 = x1;
+		this->gy1 = y1;
+		return true;
+	    }
+	}
+    }
+#   else
+    /*	Stores the result to this->lx0, this->ly0, this->lx1, this->ly1 . */
+    fixed x1 = this->lx0, y1 = this->ly0;
+
+    for (;;) {
+	if (!gx_flattened_iterator__prev(this)) {
+	    this->lx1 = x1;
+	    this->ly1 = y1;
+	    return false;
+	}
+	if (!coord_near(x1, this->lx0) || !coord_near(y1, this->ly0)) {
+	    this->lx1 = x1;
+	    this->ly1 = y1;
+	    return true;
+	}
+    }
+#   endif
+}
+
+#if CHECK_BACKSCAN_CONSISTENCY
+void
+gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this)
+{
+    /* 'this' must be just initialized. */
+    byte skip_points[128];  /* The length should be (1 << k_sample_max) bits.
+			       128 sholuld be fine.
+			       With a smaller value the testing is not guaranteed. */
+    gx_flattened_iterator fi = *this;
+    bool more;
+    bool missed_forth1 = false, extra_forth1 = false;
+    int i, j;
+
+    memset(skip_points, 0, sizeof(skip_points));
+    do {
+	more = gx_flattened_iterator__next_filtered1(&fi);
+	if (fi.i <= sizeof(skip_points) * 8) {
+	    skip_points[fi.i >> 3] |= 1 << (fi.i & 7);
+	    /* The bit index corresponds to the end of an unfiltered segment. */
+	}
+    } while(more);
+    i = 1; /* fi.i counts back. */
+    do {
+	more = gx_flattened_iterator__prev_filtered1(&fi);
+	j = fi.filtered1_i;
+	/* The bit index corresponds to the end of a filtered segment. */
+	for (; i < j; i++) {
+	    if (i <= sizeof(skip_points) * 8 &&
+		skip_points[i >> 3] & (1 << (i & 7)))
+		assert(missed_forth1);
+	}
+	if (j <= sizeof(skip_points) * 8 &&
+	    !(skip_points[j >> 3] & (1 << (j & 7))))
+	    assert(extra_forth1);
+	i = j + 1;
+    } while(more);
+}
+#endif
+
+/* Move to the previous segment uniting nearly collinear segments,
+ * and store it to this->fx0, this->fy0, this->fx1, this->fy1 .
+ * Return true iff there exist more segments.
+ * It should return exactly same segments, which 'next_filtered2' does.
+ * Note : The number of generated segments can be samller than 2^k 
+ *	  due to the segment uniting.
+ */
+bool
+gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
+{
+    /*	This algotithm is based on 2 properties of gx_check_nearly_collinear :
+	If 3 points are nearly collinear, same central point is nearly collinear
+	with any 2 points taken from same interval.
+	If 3 points are not nearly collinear, same central point is not nearly collinear
+	with any 2 points taken from a wider interval.
+     */
+    /*	When returned, the base (unfiltered2, i.e. filtered1) iterator stands
+	on the segment, which's end point is the starting point
+	of the result, except for the curve end.
+	With the curve end it stands at the first filtered1 segment.
+	Note that this->i is one step ahead due to filtered1.
+     */
+    /* fixme: CURVED_TRAPEZOID_FILL0_COMPATIBLE 0 is not implemented yet. */
+    fixed x1 = this->fx0, y1 = this->fy0;
+
+    if (this->last_filtered2_i == 0) {
+	/* A single segment curve. */
+	this->fx0 = this->x0;
+	this->fy0 = this->y0;
+	this->fx1 = this->x3;
+	this->fy1 = this->y3;
+	this->filtered2_i = 0;
+	return false;
+    } else if (this->filtered1_i < this->last_filtered2_i) {
+	/* next_filtered2 has an anomaly with the last but one
+	   due to possibly insufficient points to reach 
+	   !gx_check_nearly_collinear. We scan until the last_filtered2_i
+	   with 'prev' and do one ahead step with 'prev_filtered1'. 
+	   Note this is not executed with a single segment curve. */
+	while (this->filtered1_i < this->last_filtered2_i) {
+	    if (!gx_flattened_iterator__prev_filtered1(this))
+		break;
+	}
+	if (x1 == this->gx1 && y1 == this->gy1) {
+	    /* The last segment appears immediately after the first one,
+	       but the last one was yielded immediately. */
+	    this->filtered2_i = this->filtered1_i;
+	    this->fx1 = x1;
+	    this->fy1 = y1;
+	    this->fx0 = this->gx0;
+	    this->fy0 = this->gy0;
+	    return false;
+	}
+        this->filtered2_i = this->filtered1_i;
+	this->ahead = true;
+	this->fx1 = x1;
+	this->fy1 = y1;
+	this->fx0 = this->gx1;
+	this->fy0 = this->gy1;
+	return true;
+    } else if (!this->ahead) {
+#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE
+	    this->fx1 = x1;
+	    this->fy1 = y1;
+	    this->fx0 = this->gx0;
+	    this->fy0 = this->gy0;
+	    this->filtered2_i = this->filtered1_i;
+	    return false;
+#	else
+	    /* Must not happen. */
+	    assert(0);
+	    return false;
+#	endif
+    } else if (this->gx0 == this->x0 && this->gy0 == this->y0) {
+	/* The base iterator is ahead and has no more segments. */
+	this->fx1 = x1;
+	this->fy1 = y1;
+	this->fx0 = this->gx0;
+	this->fy0 = this->gy0;
+	this->filtered2_i = this->filtered1_i;
+	this->ahead = false;
+	return false;
+    } else {
+	fixed x0 = this->gx0, y0 = this->gy0;
+	fixed x2 = this->fx1, y2 = this->fy1;
+	fixed xn = this->xn, yn = this->yn;
+	bool more;
+
+	assert(this->gx1 == this->fx0 && this->gy1 == this->fy0);
+	/*  Invariant :
+	    The last yielded filtered2 segment is (p1, p2) where p1 = (x1, y1), p2 = (x2, y2);
+	    The next filtered1 point after p1 is n = (nx, ny).
+	    The base (the filtered1) iterator stands on (p0, p1) 
+		where p0 = (x0, y0), p1 = (x1, y1).
+	 */
+	for (;;) {
+	    fixed xp, yp;
+
+	    this->filtered2_i = this->filtered1_i;
+	    more = gx_flattened_iterator__prev_filtered1(this);
+	    xp = this->gx0, yp = this->gy0;
+	    if (gx_check_nearly_collinear(xp, yp, x0, y0, x1, y1)) {
+		/* p0 was skipped by the forward iterator. */
+		/* Find minimal p being collinear with x0, x1
+		   and not collinear with x1 and n. 
+		   This is what the forward filtered2 iterator does. */
+		if (more && !gx_check_nearly_collinear(xp, yp, x1, y1, xn, yn)) {
+		    /* The forward filtered2 iterator started with p. */
+		    /* Find minimal p being collinear with x0, x1.
+		       It is not collinear with x1 and n due to the check above,
+		       and won't be after enhanced. */
+
+		    for (;;) {
+			this->xn = this->gx1, this->yn = this->gy1;
+			more = gx_flattened_iterator__prev_filtered1(this);
+			x0 = this->gx1, y0 = this->gy1;
+			xp = this->gx0, yp = this->gy0;
+			if (!gx_check_nearly_collinear(xp, yp, x0, y0, x1, y1)) {
+			    this->fx0 = x0, this->fy0 = y0;
+			    this->fx1 = x1, this->fy1 = y1;
+			    return true;
+			} else if (!more) {
+#			    if CURVED_TRAPEZOID_FILL0_COMPATIBLE
+				/* The old code always yields the first segment. */
+				this->fx0 = x0, this->fy0 = y0;
+				this->fx1 = x1, this->fy1 = y1;
+				return true;
+#			    else
+				this->fx0 = xp, this->fy0 = yp;
+				this->fx1 = x1, this->fy1 = y1;
+				/* The invariant is broken, no more calls please. */
+				return false;
+#			    endif
+			}
+		    }
+		} else if (!more) {
+#		    if CURVED_TRAPEZOID_FILL0_COMPATIBLE
+			/* The old code always yields the first segment. */
+			this->fx0 = x0, this->fy0 = y0;
+			this->fx1 = x1, this->fy1 = y1;
+			return true;
+#		    else
+			this->fx0 = xp, this->fy0 = yp;
+			this->fx1 = x1, this->fy1 = y1;
+			/* The invariant is broken, no more calls please. */
+			return false;
+#		    endif
+		}
+	    } else {
+		/* p0 was yielded by the forward iterator. */
+		this->fx0 = x0, this->fy0 = y0;
+		this->fx1 = x1, this->fy1 = y1;
+		/* Restore the invariant: */
+		this->xn = x1, this->yn = y1;
+		return true;
+	    }
+	}
+
+    }
+}
+
+#if CHECK_BACKSCAN_CONSISTENCY
+void
+gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
+{
+    /* 'this' must be just initialized. */
+    byte skip_points[128];
+    gx_flattened_iterator fi = *this, fi1;
+    bool more, first = true, single_segment = true;
+    bool missed_forth2 = false, extra_forth2 = false, missed_back2 = false, extra_back2 = false;
+    int i, j;
+    gs_fixed_point points[100], *ppt = points, *ppe = ppt + count_of(points), *ppp = points;
+
+    memset(skip_points, 0, sizeof(skip_points));
+    do {
+	more = gx_flattened_iterator__next_filtered1(&fi);
+	if (ppt > points + 1 && more)
+	    if (gx_check_nearly_collinear_inline(ppt[-2].x, ppt[-2].y, 
+			    ppt[-1].x, ppt[-1].y, fi.lx1, fi.ly1))
+		--ppt;		/* remove middle point */
+	ppt->x = fi.lx1;
+	ppt->y = fi.ly1;
+	ppt++;
+    } while(more && ppt < ppe);
+    fi = *this;
+    do {
+	fixed x = fi.lx1, y = fi.ly1;
+
+	more = gx_flattened_iterator__next_filtered1(&fi);
+	if (!first) {
+	    fi1 = fi;
+	    while (more) {
+		more = gx_flattened_iterator__next_filtered1(&fi1);
+		if (!more) {
+		    more = true;
+		    break;
+		}
+		if (!gx_check_nearly_collinear(x, y, fi1.lx0, fi1.ly0, fi1.lx1, fi1.ly1)) 
+		    break;
+		fi = fi1;
+	    }
+	}
+	if (fi.i <= sizeof(skip_points) * 8)
+	    skip_points[fi.i >> 3] |= 1 << (fi.i & 7);
+	first = false;
+    } while(more);
+    fi = *this;
+    i = (1 << fi.k) - 1; /* fi.i counts back. */
+    do {
+	more = gx_flattened_iterator__next_filtered2(&fi);
+	single_segment &= !more;
+	j = fi.filtered2_i;
+	/* The bit index corresponds to the end of a filtered segment. */
+	for (; i > j; i--) {
+	    if (i <= sizeof(skip_points) * 8 &&
+		skip_points[i >> 3] & (1 << (i & 7)))
+		assert(missed_forth2);
+	}
+	if (j <= sizeof(skip_points) * 8 &&
+	    !(skip_points[j >> 3] & (1 << (j & 7))))
+	    assert(extra_forth2);
+	i = j - 1;
+	if (ppt < ppe) {
+	    assert(ppp < ppt);
+	    assert(ppp->x == fi.fx1 && ppp->y == fi.fy1);
+	    ppp++;
+	}
+    } while(more);
+    if (ppt < ppe)
+	assert(ppp == ppt);
+    i = fi.last_filtered2_i + 1; /* fi.i counts back. */
+    if (ppt < ppe)
+	ppt--;
+    do {
+	if (single_segment) {
+	    /* We stand on the last segment, there is no more. */
+	    break;
+	}
+	more = gx_flattened_iterator__prev_filtered2(&fi);
+	j = fi.filtered2_i;
+	/* The bit index corresponds to the end of a filtered segment. */
+	for (; i < j; i++) {
+	    if (i <= sizeof(skip_points) * 8 &&
+		skip_points[i >> 3] & (1 << (i & 7)))
+		assert(missed_back2);
+	}
+	if (j <= sizeof(skip_points) * 8 &&
+	    !(skip_points[j >> 3] & (1 << (j & 7))))
+	    assert(extra_back2);
+	i = j + 1;
+	if (ppt < ppe) {
+	    ppt--;
+	    assert(ppt >= points);
+	    assert(ppt->x == fi.fx1 && ppt->y == fi.fy1);
+	}
+    } while(more);
+    if (ppt < ppe)
+	assert(ppt == points);
+}
+#endif
 
 #   if CURVED_TRAPEZOID_FILL0_COMPATIBLE
 bool
