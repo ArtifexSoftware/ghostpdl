@@ -295,10 +295,17 @@ PSD=$(PSGENDIR)\$(NUL)
 # ------ Platform-specific options ------ #
 
 # Define which major version of MSVC is being used
-# (currently, 4, 5, and 6 are supported).
+# (currently, 4, 5, 6, 7, and 8 are supported).
 
 !ifndef MSVC_VERSION 
 MSVC_VERSION=6
+!endif
+
+# For Microsoft Visual Studio .NET 2003 (7.1)
+# use MSVC_VERSION=7 MSVC_MINOR_VERSION=1
+
+!ifndef MSVC_MINOR_VERSION
+MSVC_MINOR_VERSION=0
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
@@ -349,7 +356,11 @@ SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
 
 !if $(MSVC_VERSION) == 7
 ! ifndef DEVSTUDIO
+!if $(MSVC_MINOR_VERSION) == 0
 DEVSTUDIO=C:\Program Files\Microsoft Visual Studio .NET
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio .NET 2003
+!endif
 ! endif
 !if "$(DEVSTUDIO)"==""
 COMPBASE=
@@ -357,6 +368,19 @@ SHAREDBASE=
 !else
 COMPBASE=$(DEVSTUDIO)\Vc7
 SHAREDBASE=$(DEVSTUDIO)\Vc7\
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 8
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 8
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC\
 !endif
 !endif
 

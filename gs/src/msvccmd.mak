@@ -76,14 +76,28 @@ dosdefault: default
 
 # Define the compilation flags.
 
+# MSVC 8 (2005) warns about deprecated unsafe common functions like strcpy.
+!if $(MSVC_VERSION) == 8
+VC8WARN=/wd4996
+!else
+VC8WARN=
+!endif
+
 !if "$(CPU_FAMILY)"=="i386"
 
+!if $(MSVC_VERSION) >= 8
+# MSVC 8 (2005) attempts to produce code good for all processors.
+# and doesn't used /G5 or /GB.
+# MSVC 8 (2005) avoids buggy 0F instructions.
+CPFLAGS=
+!else
 !if $(CPU_TYPE)>500
 CPFLAGS=/G5 $(QI0f)
 !else if $(CPU_TYPE)>400
 CPFLAGS=/GB $(QI0f)
 !else
 CPFLAGS=/GB $(QI0f)
+!endif
 !endif
 
 !if $(FPU_TYPE)>0 && $(MSVC_VERSION)<5
@@ -155,10 +169,15 @@ COMPILE_WITH_FRAMES=
 COMPILE_WITHOUT_FRAMES=/Oy
 !endif
 
+!if $(MSVC_VERSION) >= 8
+# MSVC 8 (2005) always does stack probes and checking.
+CS=
+!else
 !if $(DEBUG)!=0 || $(TDEBUG)!=0
 CS=/Ge
 !else
 CS=/Gs
+!endif
 !endif
 
 # Specify output object name
@@ -171,7 +190,7 @@ COMPILE_FOR_CONSOLE_EXE=
 
 # The /MT is for multi-threading.  We would like to make this an option,
 # but it's too much work right now.
-GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) /nologo /MT
+GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) $(VC8WARN) /nologo /MT
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
@@ -198,11 +217,9 @@ CC_NO_WARN=$(CC_)
 
 # Compiler for auxiliary programs
 
-CCAUX=$(COMPAUX) /O
+CCAUX=$(COMPAUX) $(VC8WARN) /O2
 
 # Compiler for Windows programs.
-# /Ze enables MS-specific extensions (this is also the default).
-
-CCWINFLAGS=$(COMPILE_FULL_OPTIMIZED) /Ze
+CCWINFLAGS=$(COMPILE_FULL_OPTIMIZED)
 
 #end msvccmd.mak

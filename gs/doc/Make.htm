@@ -1013,7 +1013,7 @@ All Ghostscript builds in PC (DOS and MS Windows) environments are 32- or
 	<td valign=top>32-bit MS Windows 3.1 + Win32s, 95, 98, NT
 <tr>	<td valign=top><b><tt>msvc32.mak</tt></b>
 	<td>&nbsp;
-	<td valign=top><a href="#Microsoft_build">Microsoft Visual C++ 4 to 7</a>
+	<td valign=top><a href="#Microsoft_build">Microsoft Visual C++ 4 to 8</a>
 	<td>&nbsp;
 	<td valign=top>MS Windows 32-bit
 <tr>	<td valign=top><b><tt>watcw32.mak</tt></b>
@@ -1287,9 +1287,9 @@ significantly misleading. For general MSVC users we recommend TDEBUG=1.
   "<b><tt>MSVC_VERSION=5</tt></b>" or "<b><tt>MSVC_VERSION=7</tt></b>". 
 <p>In some cases the location of the Microsoft Developer Studio, needs to be changed. 
   The location of Microsoft Developer Studio is defined by the value of <b><tt>DEVSTUDIO</tt></b>. 
-  There are four different definitions of <b><tt>DEVSTUDIO</tt></b> in src\msvc32.mak. 
+  There are several different definitions of <b><tt>DEVSTUDIO</tt></b> in src\msvc32.mak. 
   There is one for each of the currently supported versions of Microsoft Visual 
-  C++ (4, 5, 6 and 7). 
+  C++ (4, 5, 6, 7, 7.1 and 8). 
 <p>The normal installation process for Microsoft Visual C++ includes setting the 
   location of the Microsoft Visual C++ executables (cl.exe, link.exe, nmake.exe, 
   rc.exe) in your PATH definition and the LIB and INCLUDE environment variables 
