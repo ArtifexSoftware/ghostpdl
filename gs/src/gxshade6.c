@@ -157,7 +157,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
 	if (code < 0)
 	    return code;
 #   endif
-    pfs->max_small_coord = 1 << ((sizeof(int64_t) * 8 - 1/*sign*/ - 1/*+*/) / 3);
+    pfs->max_small_coord = 1 << ((sizeof(int64_t) * 8 - 1/*sign*/) / 3);
 #   if POLYGONAL_WEDGES
 	pfs->max_small_coord = min(pfs->max_small_coord, 1024 * fixed_1);
 	pfs->wedge_buf = (gs_fixed_point *)gs_alloc_bytes(pfs->pis->memory, 
@@ -766,17 +766,17 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
         - While flattening boundaries of a subpatch,
 	to keep the plane coverage contiguity we insert wedges 
-	between enighbor subpatches, which use a different
+	between neighbor subpatches, which use a different
 	flattening factor. With non-monotonic curves
-	those wedges may overlap, and a pixel is painted so many
-	times as many wedges cover it. Fortunately
+	those wedges may overlap or be self-overlapping, and a pixel 
+	is painted so many times as many wedges cover it. Fortunately
 	the area of most wedges is zero or extremily small.
 
 	- Since quazi-horizontal wedges may have a non-constant color,
 	they can't decompose into constant color trapezoids with
 	keeping the coverage contiguity. To represent them we
 	apply the XY plane transposition. But with the transposition 
-	a semiopen interval can meet a non-transposed one,
+	a semiopen interval can met a non-transposed one,
 	so that some lines are not covered. Therefore we emulate 
 	closed intervals with expanding the transposed trapesoids in 
 	fixed_epsilon, and pixels at that boundary may be painted twice.
@@ -785,6 +785,8 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	preciselly due to high order polynomial equations. 
 	Therefore the subdivision near the monotonity boundary 
 	may paint some pixels twice within same monotonic part.
+
+    Non-monotonic areas slow down due to a tinny subdivision required.
     
     The target device may be either raster or vector. 
     Vector devices should preciselly pass trapezoids to the output.
@@ -808,9 +810,20 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     (pclwrite is an example) may apply the backward transposition,
     and a clipping instead the further decomposition.
     Note that many clip regions may appear for all wedges. 
-    Note that in some cases the right side adjustment to be withdrown
-    before the backward transposition.
+    Note that in some cases the adjustment of the right side to be 
+    withdrown before the backward transposition.
  */
+ /* We believe that a multiplication of 32-bit integers with a 
+    64-bit result is performed by modern platforms performs 
+    in hardware level. Therefore we widely use it here, 
+    but we minimize the usage of a multiplication of longer integers. 
+    
+    Unfortunately we do need a multiplication of long integers
+    in intersection_of_small_bars, because solving the linear system
+    requires tripple multiples of 'fixed'. Therefore we retain
+    of it's usage in the algorithm of the main branch.
+    Configuration macros QUADRANGLES and POLYGONAL_WEDGES prevent it.
+  */
 
 typedef struct {
     gs_fixed_point pole[4][4]; /* [v][u] */
@@ -1080,33 +1093,77 @@ intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, in
 	}
     } else if (s2 * s3 < 0) {
 	/* The intersection definitely exists, so the determinant isn't zero.  */
-	/* This branch is passed only with wedges,
-	   which have at least 3 segments. 
-	   Therefore the determinant can't overflow int64_t. */
-	/* The determinant can't compute in double due to 
-	   possible loss of all significant bits when subtracting the 
-	   trucnated prodicts. But after we subtract in int64_t,
-	   it converts to 'double' with a reasonable truncation. */
 	fixed d23x = dx3 - dx2, d23y = dy3 - dy2;
 	int64_t det = (int64_t)dx1 * d23y - (int64_t)dy1 * d23x;
 	int64_t mul = (int64_t)dx2 * d23y - (int64_t)dy2 * d23x;
-	double dy = dy1 * (double)mul / (double)det;
-	fixed iy;
+#	define USE_DOUBLE 0
+#	define USE_INT64_T (1 || !USE_DOUBLE)
+#	if USE_DOUBLE
+	{ 
+	    /* Assuming big bars. Not a good thing due to 'double'.  */
+	    /* The determinant can't compute in double due to 
+	       possible loss of all significant bits when subtracting the 
+	       trucnated prodicts. But after we subtract in int64_t,
+	       it converts to 'double' with a reasonable truncation. */
+	    double dy = dy1 * (double)mul / (double)det;
+	    fixed iy;
 
-	if (dy1 > 0 && dy >= dy1)
-	    return false; /* Outside the bar 1. */
-	if (dy1 < 0 && dy <= dy1)
-	    return false; /* Outside the bar 1. */
-	if (dy2 < dy3) {
-	    if (dy <= dy2 || dy >= dy3)
-		return false; /* Outside the bar 2. */
-	} else {
-	    if (dy >= dy2 || dy <= dy3)
-		return false; /* Outside the bar 2. */
+	    if (dy1 > 0 && dy >= dy1)
+		return false; /* Outside the bar 1. */
+	    if (dy1 < 0 && dy <= dy1)
+		return false; /* Outside the bar 1. */
+	    if (dy2 < dy3) {
+		if (dy <= dy2 || dy >= dy3)
+		    return false; /* Outside the bar 2. */
+	    } else {
+		if (dy >= dy2 || dy <= dy3)
+		    return false; /* Outside the bar 2. */
+	    }
+	    iy = (int)floor(dy);
+	    *ry = q[i0].y + iy;
+	    *ey = (dy > iy ? 1 : 0);
 	}
-	iy = (int)floor(dy);
-	*ry = q[i0].y + iy;
-	*ey = (dy > iy ? 1 : 0);
+#	endif
+#	if USE_INT64_T
+	{
+	    /* Assuming small bars : cubes of coordinates must fit into int64_t.
+	       curve_samples must provide that.  */
+	    int64_t num = dy1 * mul, iiy;
+	    fixed iy;
+	    fixed pry, pey;
+
+	    {	/* Likely when called form wedge_trap_decompose or constant_color_quadrangle,
+		   we always have det > 0 && num >= 0, but we check here for a safety reason. */
+		if (det < 0)
+		    num = -num, det = -det;
+		iiy = (num >= 0 ? num / det : (num - det + 1) / det);
+		iy = (fixed)iiy;
+		if (iy != iiy) {
+		    /* If it is inside the bars, it must fit into fixed. */
+		    return false;
+		}
+	    }
+	    if (dy1 > 0 && iy >= dy1)
+		return false; /* Outside the bar 1. */
+	    if (dy1 < 0 && iy <= dy1)
+		return false; /* Outside the bar 1. */
+	    if (dy2 < dy3) {
+		if (iy <= dy2 || iy >= dy3)
+		    return false; /* Outside the bar 2. */
+	    } else {
+		if (iy >= dy2 || iy <= dy3)
+		    return false; /* Outside the bar 2. */
+	    }
+	    pry = q[i0].y + (fixed)iy;
+	    pey = (iy * det < num ? 1 : 0);
+#	    if USE_DOUBLE && USE_INT64_T
+		assert(*ry == pry);
+		assert(*ey == pey);
+#	    endif
+	    *ry = pry;
+	    *ey = pey;
+	}
+#	endif
 	return true;
     }
     return false;
@@ -1710,6 +1767,10 @@ fill_triangle_wedge_aux(patch_fill_state_t *pfs,
 	p1 = &q1->p;
 	p2 = &q2->p;
     }
+    /* We decompose the thin triangle into 2 thin trapezoids.
+       An optimization with decomposing into 2 triangles
+       appears low useful, because the self_intersecting argument
+       with inline expansion does that job perfectly. */
     if (p0->y < p1->y) {
 	code = fill_wedge_trap(pfs, p0, p2, p0, p1, &q0->c, &q2->c, swap_axes, false);
 	if (code < 0)
