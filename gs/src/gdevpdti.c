@@ -106,6 +106,7 @@ assign_char_code(gx_device_pdf * pdev, int width)
 	    *pc = 'A', pc[1] = 0;
 	pbfs->open_font = pdfont;
 	pbfs->use_open_font = true;
+	pdfont->u.simple.FirstChar = 0;
     }
     c = ++(pdfont->u.simple.LastChar);
     pdfont->Widths[c] = pdev->char_width.x;

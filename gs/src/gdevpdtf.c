@@ -378,7 +378,7 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
     if (code < 0)
 	return code;
-    pfres->u.simple.FirstChar = 0;
+    pfres->u.simple.FirstChar = 256;
     pfres->u.simple.LastChar = -1;
     pfres->u.simple.BaseEncoding = -1;
     *ppfres = pfres;
