@@ -220,24 +220,12 @@ JBIG2SRCDIR=jbig2dec
 # Define the jasper library source location.
 # See jasper.mak for more information.
 
-# *** this is currently unsupported under MSVC ***
-# Support for JPEG 2000 images in PDF is not
-# part of the standard windows build in this
-# release.
+# Alternatively, you can build a separate DLL
+# and define SHARE_JASPER=1 in src/winlib.mak
 
-# If you want to compile in jasper, uncomment
-# the following, generate a jas_config.h from
-# the template in jasper/src/libjasper/include
-# and define JAS_WIN_MSVC_BUILD in the CFLAGS
-# You'll also need to add '$(PSD)jpx.dev' to
-# the list in FEATURE_DEVS to activate it.
-
-# alternatively, you can build a separate DLL
-# and define SHARE_JASPER=1
-
-#!ifndef JASPERSRCDIR
-#JASPERSRCDIR=jasper
-#!endif
+!ifndef JASPERSRCDIR
+JASPERSRCDIR=jasper
+!endif
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -555,7 +543,7 @@ SYNC=winsync
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)msprinter.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev $(PSD)jbig2.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)msprinter.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev $(PSD)jbig2.dev $(PSD)jpx.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
