@@ -808,6 +808,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    stream_compact(curr, false);
 	}
 	/* If curr reached EOD and is a filter or file stream, close it. */
+	/* (see PLRM 3rd, sec 3.8.2, p80) */
 	if ((strm != 0 || curr->file) && status == EOFC &&
 	    curr->cursor.r.ptr >= curr->cursor.r.limit &&
 	    curr->close_at_eod

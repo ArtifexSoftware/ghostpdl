@@ -578,7 +578,7 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
 	    BBOX_ADD_RECT(bdev, float2fixed(bba.data[0]), float2fixed(bba.data[1]),
 	    	          float2fixed(bba.data[2]), float2fixed(bba.data[3]));
         }
-        bdev->white_is_opaque = white_is_opaque;
+        bdev->white_is_opaque = white_is_opaque
     }
     bbox_copy_params(bdev, bdev->is_open);
     return code;
