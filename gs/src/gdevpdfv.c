@@ -306,6 +306,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 		return pdf_put_uncolored_pattern(pdev, &dcolor, ppscc, ppres);
 	    }
 	not_pure:
+	    DO_NOTHING;		/* required by MSVC */
 	}
 	if (pdev->CompatibilityLevel < 1.3) {
 	    /* Masked images are only supported starting in PDF 1.3. */
