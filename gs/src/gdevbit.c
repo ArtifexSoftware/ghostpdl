@@ -246,10 +246,8 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
 private int
 bit_put_params(gx_device * pdev, gs_param_list * plist)
 {
-    gx_device_color_info save_info;
     int ncomps = pdev->color_info.num_components;
-    int real_ncomps = REAL_NUM_COMPONENTS(pdev);
-    int bpc = pdev->color_info.depth / real_ncomps;
+    int bpc = pdev->color_info.depth / ncomps;
     int v;
     int ecode = 0;
     int code;
@@ -260,12 +258,6 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 	{4, 8, 0, 16, 32, 0, 0, 32}
     };
     const char *vname;
-
-    /*
-     * Temporarily set num_components back to the "real" value to avoid
-     * confusing those that rely on it.
-     */
-    pdev->color_info.num_components = real_ncomps;
 
     if ((code = param_read_int(plist, (vname = "GrayValues"), &v)) != 1 ||
 	(code = param_read_int(plist, (vname = "RedValues"), &v)) != 1 ||
@@ -287,49 +279,16 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 	    }
     }
 
-    switch (code = param_read_int(plist, (vname = "ForceMono"), &v)) {
-    case 0:
-	if (v == 1) {
-	    ncomps = 1;
-	    break;
-	}
-	else if (v == 0) {
-	    ncomps = real_ncomps;
-	    break;
-	}
-	code = gs_error_rangecheck;
-    default:
-	ecode = code;
-	param_signal_error(plist, vname, ecode);
-    case 1:
-	break;
-    }
-    if (ecode < 0)
-	return ecode;
-
-    /*
-     * Save the color_info in case gdev_prn_put_params fails, and for
-     * comparison.  Note that depth is computed from real_ncomps.
-     */
-    save_info = pdev->color_info;
-    pdev->color_info.depth = depths[real_ncomps - 1][bpc - 1];
+    pdev->color_info.depth = depths[ncomps - 1][bpc - 1];
     pdev->color_info.max_gray = pdev->color_info.max_color =
 	(pdev->color_info.dither_grays =
 	 pdev->color_info.dither_colors =
 	 (1 << bpc)) - 1;
     ecode = gdev_prn_put_params(pdev, plist);
     if (ecode < 0) {
-	pdev->color_info = save_info;
 	return ecode;
     }
-    /* Now restore/change num_components. This is done after other	*/
-    /* processing since it is used in gx_default_put_params		*/
-    pdev->color_info.num_components = ncomps;
-    if (pdev->color_info.depth != save_info.depth ||
-	pdev->color_info.num_components != save_info.num_components
-	) {
-	gs_closedevice(pdev);
-    }
+
     /* Reset the map_cmyk_color procedure if appropriate. */
     if (dev_proc(pdev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ||
 	dev_proc(pdev, map_cmyk_color) == cmyk_8bit_map_cmyk_color ||
