@@ -12,12 +12,11 @@ dnl --------------------------------------------------
 dnl Check for programs
 dnl --------------------------------------------------  
 
-dnl save $CFLAGS since AC_PROG_CC likes to insert "-g -O2"
-dnl if $CFLAGS is blank
-dnl cflags_save="$CFLAGS"
+dnl AC_PROG_CC likes to add '-g -O2' to CFLAGS, but
+dnl we do not worry since our makefile discards the env
+dnl CFLAGS
 AC_PROG_CC
 AC_PROG_CPP
-dnl CFLAGS="$cflags_save"
 
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
@@ -27,6 +26,22 @@ dnl Set build flags based on environment
 dnl --------------------------------------------------
 
 #AC_CANONICAL_HOST
+
+AC_MSG_CHECKING([supported compiler flags])
+cflags_to_try="-Wall -Wstrict-prototypes -Wmissing-declarations \
+-Wmissing-prototypes -Wtraditional -fno-builtin -fno-common"
+old_cflags=$CFLAGS
+echo
+for flag in $cflags_to_try; do
+	CFLAGS="$CFLAGS $flag"
+	AC_TRY_COMPILE(, [return 0;], [
+		echo -n " $flag"
+		GCFLAGS="$GCFLAGS $flag"
+	])
+	CFLAGS=$old_cflags
+done
+AC_SUBST(GCFLAGS)
+AC_MSG_RESULT([ ...done.])
 
 dnl --------------------------------------------------
 dnl Check for headers

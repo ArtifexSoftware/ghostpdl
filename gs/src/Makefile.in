@@ -196,12 +196,7 @@ CC=@CC@
 CCLD=$(CC)
 
 # Define the default gcc flags.
-# Note that depending whether or not we are running a version of gcc with
-# the 2.7.0-2.7.2 optimizer bug, either "-Dconst=" or
-# "-Wcast-qual -Wwrite-strings" is automatically included.
-
-# FIXME: these should be autoconfiscated
-GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -Wtraditional -fno-builtin -fno-common
+GCFLAGS=@GCFLAGS@
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
@@ -235,7 +230,7 @@ CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
 # XLDFLAGS can be set from the command line.
 XLDFLAGS=
 
-LDFLAGS=$(XLDFLAGS)
+LDFLAGS=$(XLDFLAGS) -fno-common
 
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
