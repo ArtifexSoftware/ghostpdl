@@ -24,7 +24,8 @@ How to prepare an Aladdin Ghostscript release
 
 <blockquote><ul>
 <li><a href="#Introduction">Introduction</a>
-<li><a href="#Adding_files">Adding files</a>
+<li><a href="#Master_site">Master site</a>
+<li><a href="#Adding_or_deleting_files">Adding or deleting files</a>
 <li><a href="#Making_distributions">Making distributions</a>
 <ul>
 <li><a href="#General_procedure">General procedure</a>
@@ -97,7 +98,38 @@ beginning of the file).
 
 </ul>
 
-<h1><a name="Adding_files"></a>Adding files</h1>
+<h1><a name="Master_site"></a>Master site</h1>
+
+<p>
+The master site for Aladdin Ghostscript is on the <a
+href="http://sourceforge.net">SourceForge</a> service.  If you have a
+SourceForge account (they're free) and have gotten "project member" status
+for Aladdin Ghostscript from Aladdin Enterprises, you can access the master
+CVS repository for Aladdin Ghostscript on SourceForge by setting these
+environment variables:
+
+<blockquote><pre>
+CVSROOT=:ext:<em>youraccount</em>@cvs.ghostscript.sourceforge.net:/cvsroot/ghostscript
+CVS_RSH=ssh
+</pre></blockquote>
+
+<p>
+Otherwise, you need to use anonymous CVS:
+
+<blockquote><pre>
+cvs -d:pserver:anonymous@cvs.ghostscript.sourceforge.net:/cvsroot/ghostscript login
+cvs -z3 -d:pserver:anonymous@cvs.ghostscript.sourceforge.net:/cvsroot/ghostscript co modulename
+</pre></blockquote>
+
+<p>
+In either case, SourceForge recommends using the <b><tt>-z3</tt></b> switch
+with <b><tt>cvs</tt></b> to enable compression of transmitted data.
+
+<h1><a name="Adding_or_deleting_files"></a>Adding files</h1>
+
+<p>
+When adding or removing any files, don't forget to invoke <b><tt>cvs
+add</tt></b> or <b><tt>cvs rm</tt></b>.
 
 <p>
 When adding or removing files other than .c or .h: If the files are included
@@ -256,11 +288,17 @@ master/gsmake check
 </pre></blockquote>
 
 <p>
-Clean up the directories with
+If you have ever run <b><tt>patch</tt></b>, clean up the directories with
 
 <blockquote><pre>
 rm -f src/*~ src/*.bak src/*.orig src/*.mak.tcl doc/*~ doc/*.orig lib/*~ lib/*.orig man/*~ man/*.orig examples/*~ gnu/src/*~ gnu/src/*.bak gnu/src/*.orig
 </pre></blockquote>
+
+<p>
+Run <b><tt>cvs commit</tt></b> to ensure the repository is up to date.
+
+<p>
+<b>****** INFORMATION BEYOND THIS POINT MAY BE OBSOLETE ******</b>
 
 <p>
 Make the source archives with
