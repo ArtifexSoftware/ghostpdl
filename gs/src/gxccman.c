@@ -348,10 +348,20 @@ lookup_xfont_by_name(gx_device * fdev, const gx_xfont_procs * procs,
 cached_char *
 gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 		   gx_device_memory * dev2, ushort iwidth, ushort iheight,
-		   const gs_log2_scale_point * pscale, int depth)
+		   const gs_log2_scale_point * pscale, int depth1)
 {
     int log2_xscale = pscale->x;
     int log2_yscale = pscale->y;
+#   if !DROPOUT_PREVENTION
+    int depth = depth1;
+#   else
+     /*	With DROPOUT_PREVENTION we never oversample over the device 
+      * alpha_bits, so we don't need to scale down. Perhaps it may happen 
+      * that we underuse alpha_bits due to a big character raster,
+      * so we must compute log2_depth more accurately :
+      */
+    int depth = (log2_xscale + log2_yscale == 0 ? 1 : min(log2_xscale + log2_yscale, depth1));
+#   endif
     int log2_depth = ilog2(depth);
     uint nwidth_bits = (iwidth >> log2_xscale) << log2_depth;
     ulong isize, icdsize;
