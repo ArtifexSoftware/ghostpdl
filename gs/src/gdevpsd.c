@@ -987,7 +987,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     psd_write_16(xc, (bits16) xc->base_bytes_pp); /* Mode - RGB=3, CMYK=4 */
     
     /* Color Mode Data */
-    psd_write_32(xc, 0); 
+    psd_write_32(xc, 0); 	/* No color mode data */
 
     /* Image Resources */
 
@@ -999,7 +999,8 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
 	chan_names_len += (separation_name->size + 1);
     }    
     psd_write_32(xc, 12 + (chan_names_len + (chan_names_len % 2))
-			+ (12 + (14*xc->n_extra_channels))); 
+			+ (12 + (14*xc->n_extra_channels))
+			+ 28); 
     psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1006); /* 0x03EE */
     psd_write_16(xc, 0); /* PString */
@@ -1035,8 +1036,22 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
 	psd_write_8(xc, 2); /* Don't know */
 	psd_write_8(xc, 0); /* Padding - Always Zero */
     }
+
+    /* Image resolution */
+    psd_write(xc, (const byte *)"8BIM", 4);
+    psd_write_16(xc, 1005); /* 0x03ED */
+    psd_write_16(xc, 0); /* PString */
+    psd_write_32(xc, 16); /* Length */
+    		/* Resolution is specified as a fixed 16.16 bits */
+    psd_write_32(xc, (int) (pdev->HWResolution[0] * 0x10000 + 0.5));
+    psd_write_16(xc, 1);	/* width:  1 --> resolution is pixels per inch */
+    psd_write_16(xc, 1);	/* width:  1 --> resolution is pixels per inch */
+    psd_write_32(xc, (int) (pdev->HWResolution[1] * 0x10000 + 0.5));
+    psd_write_16(xc, 1);	/* height:  1 --> resolution is pixels per inch */
+    psd_write_16(xc, 1);	/* height:  1 --> resolution is pixels per inch */
+
     /* Layer and Mask information */
-    psd_write_32(xc, 0); 
+    psd_write_32(xc, 0); 	/* No layer or mask information */
 
     return code;
 }
