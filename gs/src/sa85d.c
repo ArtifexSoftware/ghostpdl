@@ -56,13 +56,17 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	uint ccode = ch - '!';
 
 	if (ccode < 85) {	/* catches ch < '!' as well */
-	    if (wlimit - q < 4) {
-		p--;
-		status = 1;
-		break;
-	    }
-	    word = word * 85 + ccode;
-	    if (++ccount == 5) {
+	    if (ccount == 4) {
+		/*
+		 * We've completed a 32-bit group.  Make sure we have
+		 * room for it in the output.
+		 */
+		if (wlimit - q < 4) {
+		    p--;
+		    status = 1;
+		    break;
+		}
+		word = word * 85 + ccode;
 		q[1] = (byte) (word >> 24);
 		q[2] = (byte) (word >> 16);
 		q[3] = (byte) ((uint) word >> 8);
@@ -70,6 +74,9 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 		q += 4;
 		word = 0;
 		ccount = 0;
+	    } else {
+		word = word * 85 + ccode;
+		++ccount;
 	    }
 	} else if (ch == 'z' && ccount == 0) {
 	    if (wlimit - q < 4) {
