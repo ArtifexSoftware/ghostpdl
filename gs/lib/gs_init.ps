@@ -1923,6 +1923,9 @@ SAFER { .setsafe } if
 
 % If we delayed binding, make it possible to do it later.
 /.bindnow {
+  currentuserparams /IdiomRecognition .knownget {
+    1 dict dup /IdiomRecognition //false put setuserparams
+  } if
   //systemdict begin .bindoperators end
   % Temporarily disable the typecheck error.
   errordict /typecheck 2 copy get
@@ -1934,6 +1937,9 @@ SAFER { .setsafe } if
   //systemdict /.forcedef .forceundef		% remove temptation
   //systemdict /.forceput .forceundef		% ditto
   //systemdict /.forceundef .forceundef		% ditto
+  currentuserparams /IdiomRecognition known {
+    1 dict dup /IdiomRecognition 4 -1 roll put setuserparams
+  } if
 } .bind odef
 
 % Turn off array packing, since some PostScript code assumes that
