@@ -75,6 +75,6 @@
  *		< 0	error code	
  */
 GSDLLEXPORT int GSDLLAPI 
-pl_main(int argc, const char *argv[]);
+pl_main(int argc, char *argv[]);
 
 #endif				/* plapi_INCLUDED */

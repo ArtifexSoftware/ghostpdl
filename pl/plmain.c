@@ -230,9 +230,9 @@ close_job(pl_main_universe_t *universe)
  * Here is the real main program.
  */
 GSDLLEXPORT int GSDLLAPI 
-plmain(
+pl_main(
     int                 argc,
-    char **             argv
+    char *              argv[]
 )
 {
     gs_memory_t *           mem;
@@ -1145,7 +1145,7 @@ pl_main_cursor_close(
 /* ----------- Command-line driver for pl_interp's  ------ */
 int
 main(int argc, char **argv) {
-    return plmain(argc, argv);
+    return pl_main(argc, argv);
 }
 #endif /* !defined(NO_MAIN) */
 
