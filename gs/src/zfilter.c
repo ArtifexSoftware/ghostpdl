@@ -181,6 +181,7 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     os_ptr op = osp;
     uint min_size = template->min_out_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
+    uint use_space = max(space, save_space);
     os_ptr sop = op - npop;
     stream *s;
     stream *sstrm;
@@ -198,10 +199,11 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
      * Check to make sure that the underlying data
      * can function as a source for reading.
      */
+    use_space = max(use_space, r_space(sop));
     switch (r_type(sop)) {
 	case t_string:
 	    check_read(*sop);
-	    ialloc_set_space(idmemory, max(space, r_space(sop)));
+	    ialloc_set_space(idmemory, use_space);
 	    sstrm = file_alloc_stream(imemory, "filter_read(string stream)");
 	    if (sstrm == 0) {
 		code = gs_note_error(e_VMerror);
@@ -212,11 +214,11 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	    break;
 	case t_file:
 	    check_read_known_file(sstrm, sop, return);
-	    ialloc_set_space(idmemory, max(space, r_space(sop)));
+	    ialloc_set_space(idmemory, use_space);
 	    goto ens;
 	default:
 	    check_proc(*sop);
-	    ialloc_set_space(idmemory, max(space, r_space(sop)));
+	    ialloc_set_space(idmemory, use_space);
 	    code = sread_proc(sop, &sstrm, iimemory);
 	    if (code < 0)
 		goto out;
@@ -258,6 +260,7 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     os_ptr op = osp;
     uint min_size = template->min_in_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
+    uint use_space = max(space, save_space);
     register os_ptr sop = op - npop;
     stream *s;
     stream *sstrm;
@@ -275,10 +278,11 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
      * Check to make sure that the underlying data
      * can function as a sink for writing.
      */
+    use_space = max(use_space, r_space(sop));
     switch (r_type(sop)) {
 	case t_string:
 	    check_write(*sop);
-	    ialloc_set_space(idmemory, max(space, r_space(sop)));
+	    ialloc_set_space(idmemory, use_space);
 	    sstrm = file_alloc_stream(imemory, "filter_write(string)");
 	    if (sstrm == 0) {
 		code = gs_note_error(e_VMerror);
@@ -289,11 +293,11 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	    break;
 	case t_file:
 	    check_write_known_file(sstrm, sop, return);
-	    ialloc_set_space(idmemory, max(space, r_space(sop)));
+	    ialloc_set_space(idmemory, use_space);
 	    goto ens;
 	default:
 	    check_proc(*sop);
-	    ialloc_set_space(idmemory, max(space, r_space(sop)));
+	    ialloc_set_space(idmemory, use_space);
 	    code = swrite_proc(sop, &sstrm, iimemory);
 	    if (code < 0)
 		goto out;
