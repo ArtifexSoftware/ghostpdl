@@ -138,6 +138,7 @@ struct line_list_s {
     fixed ymin, ymax;
     int main_dir;
     fixed y_break;
+    fixed coords_near_threshold;
 };
 
 #define LOOP_FILL_RECTANGLE(x, y, w, h)\

@@ -454,6 +454,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	pfpath = &ffpath;
     }
     lst.fill_by_trapezoids = fill_by_trapezoids;
+    if (fill_by_trapezoids)
+	lst.coords_near_threshold = float2fixed(-0.5);
+    else
+	lst.coords_near_threshold = ~0;
     if ((code = add_y_list(pfpath, &lst)) < 0)
 	goto nope;
     {
@@ -791,7 +795,7 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, ll->fixed_flat);
 
 	assert(gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, 
-					s, k, false));
+					s, k, ll->coords_near_threshold));
     } else {
 	q->dir = compute_dir(ll, q->prev->pt.y, q->pseg->pt.y);
 	gx_flattened_iterator__init_line(q->fi, 
@@ -1023,7 +1027,7 @@ step_al(active_line *alp, bool move_iterator)
 }
 
 private void
-init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat)
+init_al(active_line *alp, const segment *s0, const segment *s1, const line_list *ll)
 {
     const segment *ss = (alp->direction == DIR_UP ? s1 : s0);
     /* Warning : p0 may be equal to &alp->end. */
@@ -1031,17 +1035,17 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 
     if (curve) {
 	if (alp->direction == DIR_UP) {
-	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (const curve_segment *)s1, fixed_flat);
+	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (const curve_segment *)s1, ll->fixed_flat);
 
 	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k, false));
+		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k, ll->coords_near_threshold));
 	    step_al(alp, true);
 	} else {
-	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (const curve_segment *)s0, fixed_flat);
+	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (const curve_segment *)s0, ll->fixed_flat);
 	    bool more;
 
 	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, false));
+		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, ll->coords_near_threshold));
 	    alp->more_flattened = false;
 	    do {
 		more = gx_flattened_iterator__next_filtered(&alp->fi);
@@ -1074,7 +1078,7 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
     switch ((alp->direction = dir)) {
 	case DIR_UP:
 	    if (use_iter) {
-		init_al(alp, prev_lp, lp, ll->fixed_flat);
+		init_al(alp, prev_lp, lp, ll);
 		assert(alp->start.y <= alp->end.y);
 	    } else {
 	    	SET_AL_POINTS(alp, *prev, *curr);
@@ -1083,7 +1087,7 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
 	    break;
 	case DIR_DOWN:
 	    if (use_iter) {
-		init_al(alp, lp, prev_lp, ll->fixed_flat);
+		init_al(alp, lp, prev_lp, ll);
 		assert(alp->start.y <= alp->end.y);
 	    } else {
 	    	SET_AL_POINTS(alp, *curr, *prev);
@@ -1227,7 +1231,7 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
 	    return true;
 	}
     if (fill_by_trapezoids || SCANLINE_USES_ITERATOR) {
-	init_al(alp, pseg, next, ll->fixed_flat);
+	init_al(alp, pseg, next, ll);
 	if (alp->start.y > alp->end.y) {
 	    /* See comment above. */
 	    remove_al(ll, alp);

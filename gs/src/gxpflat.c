@@ -188,38 +188,28 @@ private void gx_flattened_iterator__test_filtered(gx_flattened_iterator *this);
  */
 bool
 gx_flattened_iterator__init(gx_flattened_iterator *this, 
-	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse)
+	    fixed x0, fixed y0, const curve_segment *pc, int k, fixed coords_near_threshold)
 {
     /* Note : Immediately after the ininialization it keeps an invalid (zero length) segment. */
     fixed x1, y1, x2, y2;
     const int k2 = k << 1, k3 = k2 + k;
     fixed bx2, by2, ax6, ay6;
 
-    if (!reverse) {
-	x1 = pc->p1.x;
-	y1 = pc->p1.y;
-	x2 = pc->p2.x;
-	y2 = pc->p2.y;
-	this->x0 = this->lx0 = this->lx1 = x0;
-	this->y0 = this->ly0 = this->ly1 = y0;
-	this->x3 = pc->pt.x;
-	this->y3 = pc->pt.y;
-    } else {
-	x1 = pc->p2.x;
-	y1 = pc->p2.y;
-	x2 = pc->p1.x;
-	y2 = pc->p1.y;
-	this->x0 = this->lx0 = this->lx1 = pc->pt.x;
-	this->y0 = this->ly0 = this->ly1 = pc->pt.y;
-	this->x3 = x0;
-	this->y3 = y0;
-    }
+    x1 = pc->p1.x;
+    y1 = pc->p1.y;
+    x2 = pc->p2.x;
+    y2 = pc->p2.y;
+    this->x0 = this->lx0 = this->lx1 = x0;
+    this->y0 = this->ly0 = this->ly1 = y0;
+    this->x3 = pc->pt.x;
+    this->y3 = pc->pt.y;
     if (!curve_coeffs_ranged(this->x0, x1, x2, this->x3,
 			     this->y0, y1, y2, this->y3, 
 			     &this->ax, &this->bx, &this->cx, 
 			     &this->ay, &this->by, &this->cy, k))
 	return false;
     this->curve = true;
+    this->coords_near_threshold = coords_near_threshold;
     this->prev_filtered1_i = 0; /* stub */
     vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
     this->k = k;
@@ -300,6 +290,7 @@ gx_flattened_iterator__init_line(gx_flattened_iterator *this,
     this->k = 0;
     this->i = 1;
     this->curve = false;
+    this->coords_near_threshold = 0;
     return true;
 }
 
@@ -321,8 +312,16 @@ gx_flattened_iterator__print_state(gx_flattened_iterator *this)
 }
 #endif
 
+#if 1
+private inline bool 
+coord_near(fixed x0, fixed y0, fixed x1, fixed y1, fixed dist_inv) 
+{
+   return !(((x0 ^ x1) | (y0 ^ y1)) & dist_inv);
+}
+#else
+#define coord_near(x0, y0, x1, y1, dist) (!(((x0 ^ x1) | (y0 ^ y1)) & dist))
+#endif
 
-#define coord_near(v, ptv) (!( ((v) ^ (ptv)) & float2fixed(-0.5) ))
 
 /* Move to the next segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * Return true iff there exist more segments.
@@ -383,8 +382,8 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 		  (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
-	if ((((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)) &&
-	    (((x ^ this->x3) | (y ^ this->y3)) & float2fixed(-0.5))) {
+	if (!coord_near(x, y, this->x0, this->y0, this->coords_near_threshold) &&
+	    !coord_near(x, y, this->x3, this->y3, this->coords_near_threshold)) {
 	    this->lx1 = x, this->ly1 = y;
 	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
 	    return true;
@@ -439,8 +438,9 @@ gx_flattened_iterator__next_filtered(gx_flattened_iterator *this)
     this->prev_filtered1_i = this->filtered1_i;
     for (;;) {
 	bool more = gx_flattened_iterator__next(this);
+	bool b = !coord_near(x0, y0, this->lx1, this->ly1, this->coords_near_threshold);
 
-	if (!more || !coord_near(x0, this->lx1) || !coord_near(y0, this->ly1)) {
+	if (!more || !coord_near(x0, y0, this->lx1, this->ly1, this->coords_near_threshold)) {
 	    this->filtered1_i = this->i;
 	    this->gx0 = x0;
 	    this->gy0 = y0;
@@ -576,7 +576,7 @@ gx_flattened_iterator__prev_filtered(gx_flattened_iterator *this)
 		return false;
 	    }
 	    gx_flattened_iterator__prev(this);
-	    if (!coord_near(x0, this->lx0) || !coord_near(y0, this->ly0)) {
+	    if (!coord_near(x0, y0, this->lx0, this->ly0, this->coords_near_threshold)) {
 		this->gx0 = this->lx1;
 		this->gy0 = this->ly1;
 		this->gx1 = x1;
@@ -720,7 +720,7 @@ gx_subdivide_curve_rec(gx_flattened_iterator *this,
 
 top :
     if (!gx_flattened_iterator__init(this, 
-		ppath->position.x, ppath->position.y, pc, k, false)) {
+		ppath->position.x, ppath->position.y, pc, k, float2fixed(-0.5))) {
 	/* Curve is too long.  Break into two pieces and recur. */
 	curve_segment cseg;
 

@@ -420,12 +420,14 @@ struct gx_flattened_iterator_s {
     int prev_filtered1_i;
     int last_filtered1_i;
     /* public data for filtered1 : */
+    fixed coords_near_threshold;
     fixed gx0, gy0, gx1, gy1;
     int filtered1_i;
 };
 
 bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
-	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse);
+	    fixed x0, fixed y0, const curve_segment *pc, int k, 
+	    fixed coords_near_threshold);
 bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1);
 void gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this, bool not_first);
