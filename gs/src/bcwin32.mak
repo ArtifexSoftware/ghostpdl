@@ -178,6 +178,14 @@ PSD=$(PSGENDIR)\$(NUL)
 # Note that these prefixes are always followed by a \,
 #   so if you want to use the current directory, use an explicit '.'.
 
+# Rod Webster (rodw)
+# If Borland Compiler higher than 4 then you need to 
+# define BUILDER_VERSION explicity uisng BUILDER_VERSION=5 because 
+# CBuilder 4 and above all use Make Version 5.2 so point we can no 
+# longer tell the Compiler version from the __MAKE__ version number.
+
+BUILDER_VERSION=5
+
 !ifndef BUILDER_VERSION
 !if $(__MAKE__) >= 0x520
 # C++Builder4
@@ -203,6 +211,10 @@ COMPBASE16=c:\bc
 COMPBASE=c:\Progra~1\Borland\CBuilder4
 COMPBASE16=c:\bc
 !endif
+!if $(BUILDER_VERSION) == 5
+COMPBASE=c:\Borland\BCC55
+#COMPBASE16=$(COMPBASE)
+!endif
 
 COMPDIR=$(COMPBASE)\bin
 INCDIR=$(COMPBASE)\include
@@ -219,8 +231,9 @@ COMPAUX=$(COMPDIR)\bcc32
 
 !if $(BUILDER_VERSION) == 4
 LINK=$(COMPDIR)\ilink32
-!else
-LINK=$(COMPDIR)\tlink32
+!endif
+!if $(BUILDER_VERSION) == 5
+LINK=$(COMPDIR)\ilink32
 !endif
 
 # If you don't have an assembler, set USE_ASM=0.  Otherwise, set USE_ASM=1,
@@ -292,7 +305,11 @@ STDIO_IMPLEMENTATION=c
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
+!if $(BUILDER_VERSION) == 5 
+DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev $(DD)mspoll.dev
+!else
 DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+!endif
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
@@ -342,8 +359,12 @@ PCFBASM=
 
 # Make sure we get the right default target for make.
 
+# Rod Webster (rodw)
+# CBuilder 5 and above no longer support 16 bit compilation 
+# so add conditional to skip attempts to build 16 bit version
+!if $(BUILDER_VERSION) !=5
 dosdefault: default $(BINDIR)\gs16spl.exe
-
+!endif
 # Define the switches for the compilers.
 
 C_=-c
@@ -527,6 +548,19 @@ $(GS_OBJ).res
 !
 
 # The console mode small EXE loader
+!if $(BUILDER_VERSION) == 5
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
+	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
+$(LIBDIR)\c0x32 +
+$(OBJC) +
+,$(GSCONSOLE_XE),$(GLOBJ)$(GSCONSOLE), +
+$(LIBDIR)\import32 +
+$(LIBDIR)\cw32mt, +
+$(GLSRCDIR)\dw32c.def, +
+$(GS_OBJ).res
+!
+!else
+
 $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
 	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0w32 +
@@ -537,6 +571,7 @@ $(LIBDIR)\cw32, +
 $(GLSRCDIR)\dw32c.def, +
 $(GS_OBJ).res
 !
+!endif
 
 # The big DLL
 $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
@@ -567,6 +602,10 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 !endif
 
 # Access to 16 spooler from Win32s
+# Rod Webster (rodw)
+# CBuilder 5 and above no longer support 16 bit compilation 
+# so add conditional to skip attempts to build 16 bit version
+!if $(BUILDER_VERSION !=5)
 
 GSSPL_XE=$(BINDIR)\gs16spl.exe
 
@@ -586,6 +625,7 @@ $(COMPBASE16)\lib\cws, +
 $(GLSRCDIR)\gs16spl.def
 !
 	$(COMPBASE16)\bin\rlink -t $(GLOBJ)gs16spl.res $(GSSPL_XE)
+!endif
 
 # ---------------------- Setup and uninstall programs ---------------------- #
 
@@ -620,4 +660,4 @@ $(GLOBJ)dwuninst.res
 
 
 # end of makefile
-`
+

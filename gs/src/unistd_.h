@@ -36,7 +36,7 @@
 #  include <io.h>
 #endif
 
-#if defined(_MSC_VER) && defined(__WIN32__)
+#if defined(_MSC_VER) || defined(__BORLANDC__) && defined(__WIN32__) 
 #  define fsync(handle) _commit(handle)
 #  define read(fd, buf, len) _read(fd, buf, len)
 #else

@@ -30,6 +30,14 @@
 #include "dwimg.h"
 #include "dwtrace.h"
 
+/* Patch by Rod Webster (rodw) */
+/* Added conditional below to allow Borland Compilation (Tested on 5.5) */
+/* It would be better to place this code in an include file but no dwmainc.h exists */
+#ifdef __BORLANDC__
+#define _isatty isatty
+#define _setmode setmode
+#endif
+
 GSDLL gsdll;
 void *instance;
 BOOL quitnow = FALSE;

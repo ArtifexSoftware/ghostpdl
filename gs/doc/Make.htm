@@ -1158,13 +1158,31 @@ attempt to compile Ghostscript with these compilers.  If you want to report
 this bug to Borland, send them the result of compiling
 <b><tt>ziodev.c</tt></b> and tell them to look at the code generated for
 <b><tt>file_is_valid()</tt></b> and <b><tt>!file_is_valid()</tt></b>.  We
-don't know whether Borland C++ 5.02 still has this problem.
+don't know whether Borland C++ 5.02 still has this problem. The problem 
+does not appear to exist in Borland C++ 5.5.</li>
 
 <li>When building for the MS Windows Win32s environment, the make
 process will stop after it has created <b><tt>genarch.exe</tt></b>.
 You should then run "<b><tt>_genarch.bat</tt></b>", wait until
 <b><tt>genarch</tt></b> has finished and then exit MS Windows.  Then type
 "<b><tt>make</tt></b>" again to restart the make process.
+
+<li>Borland C++ 5 and above require <strong><tt>BUILDER_VERSION</tt></strong>
+to be set explicitly&nbsp; to 5 in the make file because the version of MAKE which ships
+with this product (Version 5.2) is the same as that shipped with Version 4.5. Therefore,
+there is no way to automatiucally establish the compiler version that is in use. Note that
+because a 16 bit compile does not ship with Version 5.5, conditionals have been added to
+prevent attempts to compile 16 bit code when <tt><strong>BUILDER_VERSION = 5</strong></tt></li>
+<li>Note that under Borland CBuilder 5,&nbsp; MAKE
+does not stop when <tt><strong>_genarch.bat</strong></tt> should be run as described
+above. It is necessary for the user to Abort the make by pressing Control-C. You should
+then run &quot;<b><tt>_genarch.bat</tt></b>&quot;, wait until <b><tt>genarch</tt></b> has
+finished and then exit MS Windows. Then type &quot;<b><tt>make</tt></b>&quot; again to
+restart the make process. All targets are built succesfully if this step is ignored. <tt><strong>I
+don't know if the targets are correct although they seem to run OK.</strong></tt></li>
+<li>To prevent the compiler terminating because too
+many warning messages have been generated, copy the file&nbsp; file <tt><strong>bcc32.cfg </strong></tt>to
+the top level directory using the following command:</li>
 
 </ul>
 
