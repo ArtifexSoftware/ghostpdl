@@ -623,11 +623,12 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	/* corrupt configuration */
 	if ( code != 0 )
 	    exit( 1 );
-	if ( type & pcl_reset_printer )
-	    pcl_unload_resident_fonts(pcs);
-
     }
     if ( type & pcl_reset_permanent ) {
+	/* NB - these must not be released before a high level device
+	   like pdfwrite needs to access the memory.  These devices
+	   have to closed before the font memory is deallocated. */
+	pcl_unload_resident_fonts(pcs);
 	pl_dict_release(&pcs->soft_fonts);
 	pl_dict_release(&pcs->built_in_fonts);
 	pl_dict_release(&pcs->cartridge_fonts);
