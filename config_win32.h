@@ -1,5 +1,9 @@
 /* configuration header file for compiling under Microsoft Windows */
 
+/* update package version here */
+#define PACKAGE "jbig2dec"
+#define VERSION "0.1"
+
 /* define this iff you are linking to/compiling in libpng */
 #define HAVE_LIBPNG
 
