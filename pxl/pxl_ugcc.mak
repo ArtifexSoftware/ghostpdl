@@ -51,6 +51,7 @@ CCLD=gcc
 DEVICE_DEVS=x11.dev x11mono.dev x11alpha.dev x11cmyk.dev\
  djet500.dev ljet4.dev cljet5c.dev\
  pcxmono.dev pcxgray.dev\
+ bmpmono.dev bmpamono.dev posync.dev\
  pbmraw.dev pgmraw.dev ppmraw.dev
 
 # Generic makefile

@@ -54,6 +54,7 @@ DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
  pxlmono.dev pxlcolor.dev\
  tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev\
  tifflzw.dev tiffpack.dev\
+ bmpmono.dev bmpamono.dev posync.dev\
  tiff12nc.dev tiff24nc.dev
 
 # Generic makefile
