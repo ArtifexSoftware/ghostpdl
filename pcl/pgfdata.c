@@ -2765,7 +2765,7 @@ const short int stick_font_data[] = {
    data goes until next index (NB. there's an extra entry for end of data)
    (character codes start with 32)
 */
-short int stick_font_offsets[] = {
+const short int stick_font_offsets[] = {
     0,
     0,
     21,
