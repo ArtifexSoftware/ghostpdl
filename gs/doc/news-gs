@@ -5,6 +5,18 @@ here.  We provide a reference aladdin release number and the files.
 Please see News.htm for a detailed explanation of these changes.
 
 
+Version 5.50c (note 5.50c includes the 5.55 changes noted below)
+================================================================
+
+Wed Dec  2 20:32:38 1998  Henry Stiles  <henrys@meerkat>
+
+	* gxpageq.h, gdevprn.c, gdevprna.c, gdevbmpa.c:
+	John D's changes for async code from the 12/1 code review.  See john's
+	comments in the files for details.
+
+	* gdevbbox.c:
+	hack to properly set flag for is_open in forwarding devices.
+
 Version 5.55 (12/01/98) (released branch of ghostscript 5.50)
 =====================================================
 
