@@ -23,8 +23,11 @@ Information for Ghostscript developers
 
 <blockquote><ul>
 <li><a href="#Introduction">Introduction</a>
+<li><a href="#Architecture">Architecture</a>
 <ul>
-<li><a href="#Layer_architecture">Layer architecture</a>
+<li><a href="#Design_goals">Design goals</a>
+<li><a href="#Large_scale_structure">Large-scale structure</a>
+<li><a href="#Object_oriented_constructs">Object-oriented constructs</a>
 </ul>
 <li><a href="#File_roadmap">File roadmap</a>
 <ul>
@@ -140,7 +143,107 @@ internals, primarily for developers actively working on Ghostscript.
 <p>
 THIS FILE IS A WORK IN PROGRESS.  MANY SECTIONS ARE PLACE-HOLDERS.
 
-<h1><a name="Layer_architecture"></a>Layer architecture</h1>
+<h1><a name="Architecture"></a>Architecture</h1>
+
+<h2><a name="Design_goals"></a>Design goals</h2>
+
+<p>
+Ghostscript has the following high-level design goals (not listed in order
+of importance):
+
+<ul>
+<li>Functionality
+<ul>
+<li>Ability to interpret the current PostScript and PDF languages, as
+defined (and occasionally, in the case of conflict, as implemented) by
+Adobe.
+<li>Ability to convert PostScript to and from PDF, comparable to
+Adobe products.
+<li>Ability to produce output for a wide range of resolutions (from
+TV-resolution displays to imagesetters) and color models (black and white,
+multilevel gray, bilevel or multi-level RGB and CMYK, 6- or 8-color
+inkjet printers, spot color).
+</ul>
+<li>Performance
+<ul>
+<li>Ability to render PostScript and PDF with commercial-quality performance
+(memory usage, speed, and output quality) on all platforms.
+<li>Specifically, ability to render PostScript effectively in embedded
+environments with constrained RAM, including the ability to put the code and
+supporting data in ROM.
+</ul>
+<li>Licensing
+<ul>
+<li>Licensing that supports both the Open Source / Free software communities
+and a commercial licensing business.
+<li>Freedom from licensing restrictions or fees imposed by third parties.
+</ul>
+<li>Other
+<ul>
+<li>Easy source portability to any platform (CPU, operating system, and
+development tools) that has an ANSI or K&amp;R C compiler.
+<li>Support for writing new interpreters and new drivers with no change to
+any existing code; specifically, ability to support PCL 5e, PCL 5c, and PCL
+XL interpreters, and the ever-changing roster of inkjet printers.
+</ul>
+</ul>
+
+<p>
+These goals often conflict: part of Ghostscript's claim to quality is that
+the conflicts have been resolved well.
+
+<h2><a name="Large_scale_structure"></a>Large-scale structure</h2>
+
+<p>
+At the largest design scale, Ghostscript consists of 4 layers.  Layer N
+is allowed to use the facilities of all layers M &lt;= N.
+
+<ol>
+
+<li>The bottom layer is called the <a href="#Substrate">substrate</a>.  It
+includes facilities like memory management, streams, fixed-point arithmetic,
+and low-level interfaces to the operating system.  The substrate is written
+in C, with a little C++ and/or assembler code for some platforms.
+
+<li>The layer above the substrate is the graphics layer.  It consists of two
+separate sub-parts.  The graphics layer is written in C.
+
+<ul>
+
+<li>The <a href="#Graphics_library">graphics library</a> manages graphics
+state information for, and decomposes and renders 2-D images described
+using, a graphics model that is approximately the union of those of
+PostScript, PDF, and PCL 5e/5c/XL.
+
+<li>The <a href="#Device_drivers">device drivers</a> are called by the
+graphics library to produce actual output.  The graphics library, and all
+higher layers, call device driver procedures only through virtual functions.
+
+</ul>
+
+<li>The principal clients of the graphics layer are language interpreters.
+Ghostscript as distributed includes the <a
+href="#PostScript_interpreter">PostScript interpreter</a>; there are also
+interpreters for PCL 5e, PCL 5c, and PCL XL, which are not currently freely
+redistributable and are not included in the standard Ghostscript package.
+The PostScript interpreter is written partly in C and partly in PostScript.
+
+<li>The <a href="#PDF_interpreter">PDF interpreter</a> is actually a client
+of the PostScript interpreter: it is written entirely in PostScript.
+
+</ol>
+
+<p>
+The most important interface in Ghostscript is the API between the graphics
+library and the device drivers: new printers (and, to a lesser extent,
+window systems, displays, plotters, film recorders, and graphics file
+formats) come on the scene frequently, and it must be possible to produce
+output for them with a minimum of effort and distruption.  This API is the
+only one that is extensively documented (see <a
+href="Drivers.htm">Drivers.htm</a>) and kept stringently backward-compatible
+through successive releases.
+
+<h2><a name="Object_oriented_constructs"></a>Object-oriented constructs</h2>
 
 <hr>
 
