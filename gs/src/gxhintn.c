@@ -516,8 +516,9 @@ private inline void t1_hinter__init_outline(t1_hinter * this)
 }
 
 private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy, fixed unit_x, fixed unit_y)
-{   this->orig_dx = dx /* & ~(unit_x - 1) */;
-    this->orig_dy = dy /* & ~(unit_x - 1) */;
+{   /*	Round to integral pixels, because GS doesn't cache characters with fractional shift. */
+    this->orig_dx = (dx + unit_x / 2) & ~(unit_x - 1);
+    this->orig_dy = (dy + unit_y / 2) & ~(unit_y - 1);
 #   if ADOBE_SHIFT_CHARPATH
         /*  Adobe CPSI rounds coordinates for 'charpath' :
             X to trunc(x+0.5)
