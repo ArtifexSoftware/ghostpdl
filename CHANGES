@@ -1,4 +1,4 @@
-Version 0.7 (unreleased)
+Version 0.7 (2004 December 8)
 
  * properly initialize page buffers
  * refinement region handling
