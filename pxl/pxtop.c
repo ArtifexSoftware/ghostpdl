@@ -394,7 +394,7 @@ pxl_impl_process(
 	switch (pxli->processState)
 	  {
 	case PSDone:
-	  return 0;
+	  return e_ExitLanguage;
 	case PSHeader:		/* Input stream header */
 	  code = px_stream_header_process(&pxli->headerState, cursor);
 	  if (code == 0)
