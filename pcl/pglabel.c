@@ -92,7 +92,7 @@ hpgl_is_printable(
     gs_char                 chr,
     bool                    is_stick
 )
-{
+{    
     if ( is_stick )
 	return (chr >= ' ') && (chr <= '\377');
     if ((psm == 0) || (psm->type >= 2))
@@ -667,7 +667,8 @@ hpgl_print_char(
 	{
 	    float metrics[4];
 	    /* undefined characters are treated as a space */
-	    if ( (pl_font_char_metrics(font, (void *)(pgls->pgs), ch, metrics)) == 1 ) {
+	    if ( (pl_font_char_metrics(font, (void *)(pgls->pgs), 
+				       hpgl_map_symbol(ch, pgls), metrics)) == 1 ) {
 		ch = ' ';
 		lsb = 0;
 	    } else
