@@ -629,7 +629,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	    pts->org_x += nPointsStored;
 	    pts->org_y += nPointsStored;
 	    pts->cur_x += nPointsStored;
-	    pts->cur_x += nPointsStored;
+	    pts->cur_y += nPointsStored;
 	    pts->touch += nPointsStored;
 	    pts->contours += nContoursStored;
 	    tti->usage_top += nUsage;
@@ -637,7 +637,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	    pts->org_x -= nPointsStored;
 	    pts->org_y -= nPointsStored;
 	    pts->cur_x -= nPointsStored;
-	    pts->cur_x -= nPointsStored;
+	    pts->cur_y -= nPointsStored;
 	    pts->touch -= nPointsStored;
 	    tti->usage_top -= nUsage;
 	    pts->contours -= nContoursStored;
