@@ -46,14 +46,13 @@ static gx_color_index prev_colors[256];
 
 /* Procedures */
 declare_mem_procs(mem_true64_copy_mono, mem_true64_copy_color, mem_true64_fill_rectangle);
-private dev_proc_copy_alpha(mem_true64_copy_alpha);
 
 /* The device descriptor. */
 const gx_device_memory mem_true64_device =
 mem_full_alpha_device("image64", 64, 0, mem_open,
 		 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
      mem_true64_copy_mono, mem_true64_copy_color, mem_true64_fill_rectangle,
-		      gx_default_map_cmyk_color, mem_true64_copy_alpha,
+		      gx_default_map_cmyk_color, gx_default_copy_alpha,
 		 gx_default_strip_tile_rectangle, mem_default_strip_copy_rop,
 		      mem_get_bits_rectangle);
 
@@ -332,18 +331,6 @@ mem_true64_copy_color(gx_device * dev,
 
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h);
-    return 0;
-}
-
-/* Copy an alpha map. */
-private int
-mem_true64_copy_alpha(gx_device * dev, const byte * base, int sourcex,
-		   int sraster, gx_bitmap_id id, int x, int y, int w, int h,
-		      gx_color_index color, int depth)
-{
-    /*
-     * I do not know what to do about alpha.
-     */
     return 0;
 }
 
