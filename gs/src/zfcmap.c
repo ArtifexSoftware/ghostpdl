@@ -256,7 +256,7 @@ acquire_cid_system_info(ref *psia, const ref *op)
  * documentation doesn't allow this), fill in dummy values and return 1.
  */
 private int
-get_cid_system_info(gs_cid_system_info * pcidsi, const ref * psia, uint index)
+get_cid_system_info(gs_cid_system_info_t *pcidsi, const ref *psia, uint index)
 {
     ref rcidsi;
     ref *pregistry;
@@ -298,8 +298,8 @@ bytes_eq(const gs_const_string *pcs1, const gs_const_string *pcs2)
 			  pcs2->data, pcs2->size);
 }
 private bool
-cid_system_info_compatible(const gs_cid_system_info * psi1,
-			   const gs_cid_system_info * psi2)
+cid_system_info_compatible(const gs_cid_system_info_t * psi1,
+			   const gs_cid_system_info_t * psi2)
 {
     return bytes_eq(&psi1->Registry, &psi2->Registry) &&
 	bytes_eq(&psi1->Ordering, &psi2->Ordering);
@@ -342,7 +342,7 @@ ztype0_get_cmap(const gs_cmap **ppcmap, const ref *pfdepvector, const ref *op,
 		return_error(e_rangecheck);
 #ifdef CHECK_CID_SYSTEM_INFO_COMPATIBILITY
 	    {
-		gs_cid_system_info cidsi;
+		gs_cid_system_info_t cidsi;
 
 		get_cid_system_info(&cidsi, &rfsi, 0);
 		if (!cid_system_info_compatible(&cidsi,
@@ -377,7 +377,7 @@ zbuildcmap(i_ctx_t *i_ctx_p)
     ref *pcodemap;
     ref rcidsi;
     gs_cmap *pcmap = 0;
-    gs_cid_system_info *pcidsi = 0;
+    gs_cid_system_info_t *pcidsi = 0;
     ref rdef, rfxdef, rcmap;
     uint i;
 
@@ -406,7 +406,7 @@ zbuildcmap(i_ctx_t *i_ctx_p)
     }
     if ((code = acquire_cid_system_info(&rcidsi, op)) < 0)
 	goto fail;
-    pcidsi = ialloc_struct_array(r_size(&rcidsi), gs_cid_system_info,
+    pcidsi = ialloc_struct_array(r_size(&rcidsi), gs_cid_system_info_t,
 				 &st_cid_system_info_element,
 				 "zbuildcmap(CIDSystemInfo)");
     if (pcidsi == 0) {

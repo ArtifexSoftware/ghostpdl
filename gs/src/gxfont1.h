@@ -23,6 +23,7 @@
 #  define gxfont1_INCLUDED
 
 #include "gstype1.h"		/* for charstring_interpret_proc */
+#include "gxfixed.h"
 
 /*
  * This is the type-specific information for Adobe Type 1 fonts.

@@ -1591,11 +1591,20 @@ $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
 
 gxcid_h=$(GLSRC)gxcid.h $(gsstype_h)
 gxfcid_h=$(GLSRC)gxfcid.h $(gxcid_h) $(gxfont_h) $(gxfont42_h)
-gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h)
+gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h) $(gxcid_h)
+
+cidlib_=$(GLOBJ)gsfcid.$(OBJ)
+$(GLD)cidlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cidlib_)
+	$(SETMOD) $(GLD)cidlib $(cidlib_)
+
+$(GLOBJ)gsfcid.$(OBJ) : $(GLSRC)gsfcid.c $(GX)\
+ $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h)
+	$(GLCC) $(GLO_)gsfcid.$(OBJ) $(C_) $(GLSRC)gsfcid.c
 
 cmaplib_=$(GLOBJ)gsfcmap.$(OBJ)
-$(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_)
+$(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev
 	$(SETMOD) $(GLD)cmaplib $(cmaplib_)
+	$(ADDMOD) $(GLD)cmaplib -include $(GLD)cidlib
 
 $(GLOBJ)gsfcmap.$(OBJ) : $(GLSRC)gsfcmap.c $(GXERR)\
  $(gsstruct_h) $(gxfcmap_h)
@@ -1665,7 +1674,7 @@ type1lib_=$(GLOBJ)gxtype1.$(OBJ) $(GLOBJ)gxhint1.$(OBJ) $(GLOBJ)gxhint2.$(OBJ) $
 
 gscrypt1_h=$(GLSRC)gscrypt1.h
 gstype1_h=$(GLSRC)gstype1.h
-gxfont1_h=$(GLSRC)gxfont1.h $(gstype1_h)
+gxfont1_h=$(GLSRC)gxfont1.h $(gstype1_h) $(gxfixed_h)
 gxop1_h=$(GLSRC)gxop1.h
 gxtype1_h=$(GLSRC)gxtype1.h $(gscrypt1_h) $(gstype1_h) $(gxop1_h)
 

@@ -56,10 +56,6 @@ switch (pcmap->type) {
 RELOC_PTR(gx_code_map, cmap);
 RELOC_PTRS_END
 
-/* CIDSystemInfo structure descriptors */
-private_st_cid_system_info();
-public_st_cid_system_info_element();
-
 /* ---------------- Procedures ---------------- */
 
 /*

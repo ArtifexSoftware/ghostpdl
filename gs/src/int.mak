@@ -749,7 +749,8 @@ $(PSOBJ)zchar42.$(OBJ) : $(PSSRC)zchar42.c $(OP)\
 
 $(PSOBJ)zfont42.$(OBJ) : $(PSSRC)zfont42.c $(OP) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gxfont_h) $(gxfont42_h)\
- $(bfont_h) $(icharout_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
+ $(bfont_h) $(icharout_h) $(idict_h) $(idparam_h) $(ifont42_h) $(iname_h)\
+ $(store_h)
 	$(PSCC) $(PSO_)zfont42.$(OBJ) $(C_) $(PSSRC)zfont42.c
 
 # ======================== Precompilation options ======================== #
@@ -1219,24 +1220,19 @@ $(PSD)compfont.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(GLD)psf0lib.dev $(PSD)psf0read.dev
 	$(SETMOD) $(PSD)compfont -include $(GLD)psf0lib $(PSD)psf0read
 
-# We always include zfcmap.$(OBJ) because zfont0.c refers to it,
+# We always include cmapread because zfont0.c refers to it,
 # and it's not worth the trouble to exclude.
-psf0read_=$(PSOBJ)zcfont.$(OBJ) $(PSOBJ)zfcmap.$(OBJ) $(PSOBJ)zfont0.$(OBJ)
+psf0read_=$(PSOBJ)zcfont.$(OBJ) $(PSOBJ)zfont0.$(OBJ)
 $(PSD)psf0read.dev : $(INT_MAK) $(ECHOGS_XE) $(psf0read_)
 	$(SETMOD) $(PSD)psf0read $(psf0read_)
-	$(ADDMOD) $(PSD)psf0read -oper zcfont zfcmap zfont0
+	$(ADDMOD) $(PSD)psf0read -oper zcfont zfont0
+	$(ADDMOD) $(PSD)psf0read -include $(PSD)cmapread
 
 $(PSOBJ)zcfont.$(OBJ) : $(PSSRC)zcfont.c $(OP)\
  $(gsmatrix_h)\
  $(gxfixed_h) $(gxfont_h) $(gxtext_h)\
  $(ichar_h) $(estack_h) $(ifont_h) $(igstate_h) $(store_h)
 	$(PSCC) $(PSO_)zcfont.$(OBJ) $(C_) $(PSSRC)zcfont.c
-
-$(PSOBJ)zfcmap.$(OBJ) : $(PSSRC)zfcmap.c $(OP)\
- $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
- $(gxfcmap_h) $(gxfont_h)\
- $(ialloc_h) $(iddict_h) $(idparam_h) $(ifont_h) $(iname_h) $(store_h)
-	$(PSCC) $(PSO_)zfcmap.$(OBJ) $(C_) $(PSSRC)zfcmap.c
 
 $(PSOBJ)zfont0.$(OBJ) : $(PSSRC)zfont0.c $(OP)\
  $(gsstruct_h)\
@@ -1246,11 +1242,13 @@ $(PSOBJ)zfont0.$(OBJ) : $(PSSRC)zfont0.c $(OP)\
  $(store_h)
 	$(PSCC) $(PSO_)zfont0.$(OBJ) $(C_) $(PSSRC)zfont0.c
 
-# ---------------- CMap support ---------------- #
+# ---------------- CMap and CIDFont support ---------------- #
 # Note that this requires at least minimal Level 2 support,
 # because it requires findresource.
 
-cmapread_=$(PSOBJ)zfcmap.$(OBJ)
+icid_h=$(PSSRC)icid.h
+
+cmapread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcmap.$(OBJ)
 $(PSD)cmapread.dev : $(INT_MAK) $(ECHOGS_XE) $(cmapread_)\
  $(GLD)cmaplib.dev $(PSD)psl2int.dev
 	$(SETMOD) $(PSD)cmapread $(cmapread_)
@@ -1258,22 +1256,28 @@ $(PSD)cmapread.dev : $(INT_MAK) $(ECHOGS_XE) $(cmapread_)\
 	$(ADDMOD) $(PSD)cmapread -oper zfcmap
 	$(ADDMOD) $(PSD)cmapread -ps gs_cmap
 
-# ---------------- CIDFont support ---------------- #
-# Note that this requires at least minimal Level 2 support,
-# because it requires findresource.
+$(PSOBJ)zfcmap.$(OBJ) : $(PSSRC)zfcmap.c $(OP)\
+ $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxfcmap_h) $(gxfont_h)\
+ $(ialloc_h) $(iddict_h) $(idparam_h) $(ifont_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zfcmap.$(OBJ) $(C_) $(PSSRC)zfcmap.c
 
-cidread_=$(PSOBJ)zcid.$(OBJ)
+cidread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcid.$(OBJ)
 $(PSD)cidfont.dev : $(INT_MAK) $(ECHOGS_XE) $(cidread_)\
  $(PSD)psf1read.dev $(PSD)psl2int.dev $(PSD)type42.dev
 	$(SETMOD) $(PSD)cidfont $(cidread_)
 	$(ADDMOD) $(PSD)cidfont -include $(PSD)psf1read $(PSD)psl2int $(PSD)type42
+	$(ADDMOD) $(PSD)cidfont -oper zfcid
 	$(ADDMOD) $(PSD)cidfont -ps gs_cidfn
-	$(ADDMOD) $(PSD)cidfont -oper zcid
 
 $(PSOBJ)zcid.$(OBJ) : $(PSSRC)zcid.c $(OP)\
- $(gsccode_h) $(gsmatrix_h) $(gxfont_h)\
- $(bfont_h) $(iname_h) $(store_h)
+ $(gxcid_h) $(errors_h) $(icid_h) $(idict_h) $(idparam_h)
 	$(PSCC) $(PSO_)zcid.$(OBJ) $(C_) $(PSSRC)zcid.c
+
+$(PSOBJ)zfcid.$(OBJ) : $(PSSRC)zfcid.c $(OP) $(memory__h)\
+ $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h) $(gxfont1_h)\
+ $(bfont_h) $(icid_h) $(idict_h) $(idparam_h) $(ifont1_h) $(ifont42_h) $(store_h)
+	$(PSCC) $(PSO_)zfcid.$(OBJ) $(C_) $(PSSRC)zfcid.c
 
 # ---------------- CIE color ---------------- #
 

@@ -26,23 +26,7 @@
 
 #include "gsfcmap.h"
 #include "gsuid.h"
-
-/* Define the structure for CIDSystemInfo. */
-typedef struct gs_cid_system_info_s {
-    gs_const_string Registry;
-    gs_const_string Ordering;
-    int Supplement;
-} gs_cid_system_info;
-/*extern_st(st_cid_system_info);*/
-extern_st(st_cid_system_info_element);
-#define private_st_cid_system_info() /* in gsfcmap.c */\
-  gs_public_st_const_strings2(st_cid_system_info, gs_cid_system_info,\
-    "gs_cid_system_info", cid_si_enum_ptrs, cid_si_reloc_ptrs,\
-    Registry, Ordering)
-#define public_st_cid_system_info_element() /* in gsfcmap.c */\
-  gs_public_st_element(st_cid_system_info_element, gs_cid_system_info,\
-    "gs_cid_system_info[]", cid_si_elt_enum_ptrs, cid_si_elt_reloc_ptrs,\
-    st_cid_system_info)
+#include "gxcid.h"
 
 /*
  * The main body of data in a CMap is two code maps, one for defined
@@ -95,7 +79,7 @@ extern_st(st_code_map_element);
 /* A CMap proper is relatively simple. */
 struct gs_cmap_s {
     gs_uid uid;
-    gs_cid_system_info *CIDSystemInfo;
+    gs_cid_system_info_t *CIDSystemInfo;
     int num_fonts;
     int WMode;
     gx_code_map def;		/* defined characters (cmap_subtree) */
