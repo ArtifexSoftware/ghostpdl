@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
         
-    $Id: jbig2_priv.h,v 1.16 2002/08/05 22:47:53 giles Exp $
+    $Id$
     
     shared library internals
 */
@@ -121,6 +121,7 @@ struct _Jbig2Page {
 
 int jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 int jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 typedef enum {
     JBIG2_COMPOSE_OR = 0,
