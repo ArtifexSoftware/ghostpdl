@@ -103,7 +103,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 			   (present == metricsSideBearingAndWidth ?
 			    sbw : NULL),
 			   sbw + 2, &pbfont->FontBBox,
-			   type42_fill, type42_stroke);
+			   type42_fill, type42_stroke, NULL);
 }
 
 /* Continue after a CDevProc callout. */

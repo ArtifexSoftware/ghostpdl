@@ -30,20 +30,20 @@ public_st_cmap();
 /* their enum_ptrs procedure must never return 0 prematurely. */
 private 
 ENUM_PTRS_WITH(code_lookup_range_enum_ptrs,
-	       gx_code_lookup_range_t *pclr) return 0;
+               gx_code_lookup_range_t *pclr) return 0;
 case 0:
     if (pclr->value_type == CODE_VALUE_GLYPH) {
-	const byte *pv = pclr->values.data;
-	int k;
+        const byte *pv = pclr->values.data;
+        int k;
 
-	for (k = 0; k < pclr->num_keys; ++k) {
-	    gs_glyph glyph = 0;
-	    int i;
+        for (k = 0; k < pclr->num_keys; ++k) {
+            gs_glyph glyph = 0;
+            int i;
 
-	    for (i = 0; i < pclr->value_size; ++i)
-		glyph = (glyph << 8) + *pv++;
-	    pclr->cmap->mark_glyph(glyph, pclr->cmap->mark_glyph_data);
-	}
+            for (i = 0; i < pclr->value_size; ++i)
+                glyph = (glyph << 8) + *pv++;
+            pclr->cmap->mark_glyph(glyph, pclr->cmap->mark_glyph_data);
+        }
     }
     return ENUM_OBJ(pclr->cmap);
 case 1: return ENUM_STRING(&pclr->keys);
@@ -79,7 +79,7 @@ bytes2int(const byte *p, int n)
     int i;
 
     for (i = 0; i < n; ++i)
-	v = (v << 8) + p[i];
+        v = (v << 8) + p[i];
     return v;
 }
 
@@ -91,73 +91,73 @@ bytes2int(const byte *p, int n)
  */
 private int
 code_map_decode_next(const gx_code_map_t * pcmap, const gs_const_string * pstr,
-		     uint * pindex, uint * pfidx,
-		     gs_char * pchr, gs_glyph * pglyph)
+                     uint * pindex, uint * pfidx,
+                     gs_char * pchr, gs_glyph * pglyph)
 {
     const byte *str = pstr->data + *pindex;
     uint ssize = pstr->size - *pindex;
     /*
-     * The keys are sorted, so we could use binary search, but for the
-     * moment we don't bother.
+     * The keys are not sorted due to 'usecmap'.  Possible optimization :
+     * merge and sort keys in 'zbuildcmap', then use binary search here.
+     * This would be valuable for UniJIS-UTF8-H, which contains about 7000
+     * keys.
      */
     int i;
 
-    for (i = 0; i < pcmap->num_lookup; ++i) {
-	const gx_code_lookup_range_t *pclr = &pcmap->lookup[i];
-	int pre_size = pclr->key_prefix_size, key_size = pclr->key_size,
-	    chr_size = pre_size + key_size;
+    for (i = pcmap->num_lookup - 1; i >= 0; --i) { /* reverse scan order due to 'usecmap' */
+        const gx_code_lookup_range_t *pclr = &pcmap->lookup[i];
+        int pre_size = pclr->key_prefix_size, key_size = pclr->key_size,
+            chr_size = pre_size + key_size;
 
-	if (ssize < chr_size)
-	    continue;
-	if (memcmp(str, pclr->key_prefix, pre_size))
-	    continue;
-	/* Search the lookup range.  Again, we could use binary search. */
-	{
-	    const byte *key = pclr->keys.data;
-	    int step = key_size;
-	    int k;
-	    const byte *pvalue;
+        if (ssize < chr_size)
+            continue;
+        if (memcmp(str, pclr->key_prefix, pre_size))
+            continue;
+        /* Search the lookup range. We could use binary search. */
+        {
+            const byte *key = pclr->keys.data;
+            int step = key_size;
+            int k;
+            const byte *pvalue;
 
-	    if (pclr->key_is_range) {
-		step <<= 1;
-		/*for (k = 0; k < pclr->num_keys; ++i, key += step)*/ /*MLC-*/
-		  for (k = 0; k < pclr->num_keys; ++k, key += step)   /*MLC+*/
-		    if (memcmp(str + pre_size, key, key_size) >= 0 &&
-			memcmp(str + pre_size, key + key_size, key_size) <= 0)
-			break;
-	    } else {
-	      /*for (k = 0; k < pclr->num_keys; ++i, key += step)*/ /*MLC-*/
-		for (k = 0; k < pclr->num_keys; ++k, key += step)   /*MLC+*/
-		    if (!memcmp(str + pre_size, key, key_size))
-			break;
-	    }
-	    if (k == pclr->num_keys)
-		continue;
-	    /* We have a match.  Return the result. */
-	    *pchr = (*pchr << (chr_size * 8)) + bytes2int(str, chr_size);
-	    *pindex += chr_size;
-	    *pfidx = pclr->font_index;
-	    pvalue = pclr->values.data + k * pclr->value_size;
-	    switch (pclr->value_type) {
-	    case CODE_VALUE_CID:
-		*pglyph = gs_min_cid_glyph +
-		    bytes2int(pvalue, pclr->value_size) +
-		    bytes2int(str + pre_size, key_size) -
-		    bytes2int(key, key_size);
-		return 0;
-	    case CODE_VALUE_GLYPH:
-		*pglyph = bytes2int(pvalue, pclr->value_size);
-		return 0;
-	    case CODE_VALUE_CHARS:
-		*pglyph =
-		    bytes2int(pvalue, pclr->value_size) +
-		    bytes2int(str + pre_size, key_size) -
-		    bytes2int(key, key_size);
-		return pclr->value_size;
-	    default:		/* shouldn't happen */
-		return_error(gs_error_rangecheck);
-	    }
-	}
+            if (pclr->key_is_range) {
+                step <<= 1;
+                for (k = 0; k < pclr->num_keys; ++k, key += step)
+                    if (memcmp(str + pre_size, key, key_size) >= 0 &&
+                        memcmp(str + pre_size, key + key_size, key_size) <= 0)
+                        break;
+            } else {
+                for (k = 0; k < pclr->num_keys; ++k, key += step)
+                    if (!memcmp(str + pre_size, key, key_size))
+                        break;
+            }
+            if (k == pclr->num_keys)
+                continue;
+            /* We have a match.  Return the result. */
+            *pchr = (*pchr << (chr_size * 8)) + bytes2int(str, chr_size);
+            *pindex += chr_size;
+            *pfidx = pclr->font_index;
+            pvalue = pclr->values.data + k * pclr->value_size;
+            switch (pclr->value_type) {
+            case CODE_VALUE_CID:
+                *pglyph = gs_min_cid_glyph +
+                    bytes2int(pvalue, pclr->value_size) +
+                    bytes2int(str + pre_size, key_size) -
+                    bytes2int(key, key_size);
+                return 0;
+            case CODE_VALUE_GLYPH:
+                *pglyph = bytes2int(pvalue, pclr->value_size);
+                return 0;
+            case CODE_VALUE_CHARS:
+                *pglyph =
+                    bytes2int(pvalue, pclr->value_size) +
+                    bytes2int(str + pre_size, key_size) -
+                    bytes2int(key, key_size);
+                return pclr->value_size;
+            default:            /* shouldn't happen */
+                return_error(gs_error_rangecheck);
+            }
+        }
     }
     /* No mapping. */
     *pglyph = gs_no_glyph;
@@ -170,20 +170,20 @@ code_map_decode_next(const gx_code_map_t * pcmap, const gs_const_string * pstr,
  */
 int
 gs_cmap_decode_next(const gs_cmap_t * pcmap, const gs_const_string * pstr,
-		    uint * pindex, uint * pfidx,
-		    gs_char * pchr, gs_glyph * pglyph)
+                    uint * pindex, uint * pfidx,
+                    gs_char * pchr, gs_glyph * pglyph)
 {
     uint save_index = *pindex;
     int code;
 
     *pchr = 0;
     code =
-	code_map_decode_next(&pcmap->def, pstr, pindex, pfidx, pchr, pglyph);
+        code_map_decode_next(&pcmap->def, pstr, pindex, pfidx, pchr, pglyph);
     if (code != 0 || *pglyph != gs_no_glyph)
-	return code;
+        return code;
     /* This is an undefined character.  Use the notdef map. */
     *pindex = save_index;
     *pchr = 0;
     return code_map_decode_next(&pcmap->notdef, pstr, pindex, pfidx,
-				pchr, pglyph);
+                                pchr, pglyph);
 }

@@ -89,6 +89,7 @@ typedef struct gs_type1exec_state_s {
     double sbw[4];
     int /*metrics_present */ present;
     gs_rect char_bbox;
+    bool use_FontBBox_as_Metrics2;
     /*
      * The following elements are only used locally to make the stack clean
      * for OtherSubrs: they don't need to be declared for the garbage
@@ -234,8 +235,22 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
 		return type1_call_OtherSubr(i_ctx_p, &cxs, nobbox_continue,
 					    &other_subr);
 	    case type1_result_sbw:	/* [h]sbw, just continue */
-		if (cxs.present != metricsSideBearingAndWidth)
-		    type1_cis_get_metrics(pcis, cxs.sbw);
+		if (cxs.present != metricsSideBearingAndWidth) {
+		    if ((penum->FontBBox_as_Metrics2.x == 0 &&
+			 penum->FontBBox_as_Metrics2.y == 0) ||
+		        gs_rootfont(igs)->WMode == 0
+			) {
+ 		        type1_cis_get_metrics(pcis, cxs.sbw);
+		        cxs.use_FontBBox_as_Metrics2 = false;
+	            } else { /* pass here if FontType==9,11 && WMode==1*/
+		        cxs.sbw[0] = penum->FontBBox_as_Metrics2.x / 2;
+		        cxs.sbw[1] = penum->FontBBox_as_Metrics2.y;
+		        cxs.sbw[2] = 0;
+		        cxs.sbw[3] = -penum->FontBBox_as_Metrics2.x; /* Sic! */
+		        cxs.use_FontBBox_as_Metrics2 = true;
+			cxs.present = metricsSideBearingAndWidth;
+		    }
+		}
 		opstr = 0;
 		goto icont;
 	}
@@ -285,7 +300,7 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs,
 	return zchar_set_cache(i_ctx_p, pbfont, &cnref,
 			       NULL, pcxs->sbw + 2,
 			       &pcxs->char_bbox,
-			       bbox_finish_fill, bbox_finish_stroke);
+			       bbox_finish_fill, bbox_finish_stroke, NULL);
     } else {
 	/* We have the width and bounding box: */
 	/* set up the cache device now. */
@@ -295,7 +310,7 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs,
 				pcxs->sbw : NULL),
 			       pcxs->sbw + 2,
 			       &pcxs->char_bbox,
-			       bbox_finish_fill, bbox_finish_stroke);
+			       bbox_finish_fill, bbox_finish_stroke, NULL);
     }
 }
 
@@ -329,7 +344,7 @@ bbox_getsbw_continue(i_ctx_t *i_ctx_p)
 	    bbox = pcxs->char_bbox;
 	    op_type1_free(i_ctx_p);
 	    return zchar_set_cache(i_ctx_p, pbfont, op, sbw, sbw + 2, &bbox,
-				   bbox_finish_fill, bbox_finish_stroke);
+				   bbox_finish_fill, bbox_finish_stroke, NULL);
 	}
     }
 }
@@ -722,9 +737,11 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 		return code;
 	    return type1exec_bbox(i_ctx_p, pcxs, pfont);
 	}
-	return zchar_set_cache(i_ctx_p, pbfont, op, NULL, pcxs->sbw + 2,
+	return zchar_set_cache(i_ctx_p, pbfont, op, NULL,
+	                       pcxs->sbw + 2,
 			       &pcxs->char_bbox,
-			       nobbox_fill, nobbox_stroke);
+			       nobbox_fill, nobbox_stroke,
+			       (pcxs->use_FontBBox_as_Metrics2 ? pcxs->sbw : NULL));
     }
 }
 /* Finish by popping the operands and filling or stroking. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -49,11 +49,12 @@ int /*metrics_present*/
  * o_push_estack if we had to call a CDevProc, or if we are skipping the
  * rendering process (only getting the metrics).
  */
-int zchar_set_cache(P8(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
+int zchar_set_cache(P9(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 		       const ref * pcnref, const double psb[2],
 		       const double pwidth[2], const gs_rect * pbbox,
 		       int (*cont_fill) (P1(i_ctx_t *)),
-		       int (*cont_stroke) (P1(i_ctx_t *))));
+		       int (*cont_stroke) (P1(i_ctx_t *)),
+		       const double Metrics2_sbw_default[4]));
 
 /*
  * Get the CharString data corresponding to a glyph.  Return typecheck

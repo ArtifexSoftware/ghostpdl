@@ -69,6 +69,9 @@ except for the following: 101549, 101814, 101905, 101955, 102146, 102735,
 
 <h2><a name="6.60_Incompatible_changes"></a>Incompatible changes</h2>
 
+(Interpreter)
+	- With WMode = 1, CID-keyed fonts with no Metrics2 now use default
+metrics computed from FontBBox rather than the horizontal metrics.
 (PDF interpreter)
 	- The interpreter now skips to the next EOL after reading the data
 following the ID operator.

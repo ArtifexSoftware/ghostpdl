@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1999, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -153,7 +153,8 @@ int
 zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 		const ref * pcnref, const double psb[2],
 		const double pwidth[2], const gs_rect * pbbox,
-		op_proc_t cont_fill, op_proc_t cont_stroke)
+		op_proc_t cont_fill, op_proc_t cont_stroke,
+		const double Metrics2_sbw_default[4])
 {
     os_ptr op = osp;
     const ref *pfdict = &pfont_data(pbfont)->dict;
@@ -190,6 +191,18 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 	if (code < 0)
 	    return code;
 	metrics2 = code > 0;
+    }
+
+    /*
+     * For FontType 9 and 11, if Metrics2 is missing, the caller provides
+     * default Metrics2 values derived from the FontBBox.
+     */
+    if (!metrics2 && Metrics2_sbw_default != NULL) {
+        w2[6] = Metrics2_sbw_default[2];
+        w2[7] = Metrics2_sbw_default[3];
+        w2[8] = Metrics2_sbw_default[0];
+        w2[9] = Metrics2_sbw_default[1];
+	metrics2 = true;
     }
 
     /* Check for CDevProc or "short-circuiting". */

@@ -414,8 +414,8 @@ $(PSOBJ)zchar.$(OBJ) : $(PSSRC)zchar.c $(OP)\
 	$(PSCC) $(PSO_)zchar.$(OBJ) $(C_) $(PSSRC)zchar.c
 
 # zcharout is used for Type 1 and Type 42 fonts only.
-$(PSOBJ)zcharout.$(OBJ) : $(PSSRC)zcharout.c $(OP)\
- $(gstext_h) $(gxdevice_h) $(gxfont_h)\
+$(PSOBJ)zcharout.$(OBJ) : $(PSSRC)zcharout.c $(OP) $(memory__h)\
+ $(gscrypt1_h) $(gstext_h) $(gxdevice_h) $(gxfont_h) $(gxfont1_h)\
  $(dstack_h) $(estack_h) $(ichar_h) $(icharout_h)\
  $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)zcharout.$(OBJ) $(C_) $(PSSRC)zcharout.c

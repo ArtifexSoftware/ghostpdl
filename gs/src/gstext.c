@@ -139,6 +139,7 @@ gs_text_enum_init_dynamic(gs_text_enum_t *pte, gs_font *font)
     pte->current_font = font;
     pte->index = 0;
     pte->xy_index = 0;
+    pte->FontBBox_as_Metrics2.x = pte->FontBBox_as_Metrics2.y = 0;
     return font->procs.init_fstack(pte, font);
 }
 int
@@ -184,6 +185,7 @@ gs_text_enum_copy_dynamic(gs_text_enum_t *pto, const gs_text_enum_t *pfrom,
     pto->index = pfrom->index;
     pto->xy_index = pfrom->xy_index;
     pto->fstack.depth = depth;
+    pto->FontBBox_as_Metrics2 = pfrom->FontBBox_as_Metrics2;
     if (depth >= 0)
 	memcpy(pto->fstack.items, pfrom->fstack.items,
 	       (depth + 1) * sizeof(pto->fstack.items[0]));
