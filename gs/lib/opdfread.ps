@@ -110,6 +110,10 @@ true setglobal
 { dup (A) 0 get ge exch (Z) 0 get le and
 } bind def
 
+/MacGlyphEncoding
+{ /MacGlyphEncoding findencoding
+} bind def
+
 % ===================== Work Data =========================================
 
 /BlockBuffer 65535 string def % Make it big to load entire TrueType font
@@ -969,7 +973,7 @@ end
 } bind def
 
 % ===================== True Type cmap Decoder =============
-% This fragment is copied from gs/lib/gs_ttf.ps with no cnahge.
+% The following procedures are copied from gs/lib/gs_ttf.ps with no change.
 
 % <string> <index> getu16 <integer>
 /getu16 {
@@ -1179,10 +1183,104 @@ end
   } if
 } bind def
 
+% Define remapping for misnamed glyphs in TrueType 'post' tables.
+% There are probably a lot more than this!
+/postremap mark
+  /Cdot /Cdotaccent
+  /Edot /Edotaccent
+  /Eoverdot /Edotaccent
+  /Gdot /Gdotaccent
+  /Ldot /Ldotaccent
+  /Zdot /Zdotaccent
+  /cdot /cdotaccent 
+  /edot /edotaccent 
+  /eoverdot /edotaccent
+  /gdot /gdotaccent 
+  /ldot /ldotaccent
+  /zdot /zdotaccent 
+.dicttomark readonly def
+
+% Each procedure in this dictionary is called as follows:
+%       posttable <<proc>> glyphencoding
+/postformats mark
+  16#00010000  {	% 258 standard Macintosh glyphs.
+    pop MacGlyphEncoding
+  }
+  16#00020000  {	% Detailed map, required by Microsoft fonts.
+    dup length 36 lt {
+      TTFDEBUG { (post format 2.0 invalid.) = flush } if
+      pop [ ]
+    } {
+    /postglyphs exch def
+      postglyphs 32 getu16 /numglyphs exch def
+      /glyphnames numglyphs 2 mul 34 add def
+      % Build names array in the order they occur in the 'post' table
+      /postpos glyphnames def
+      [ numglyphs 1 sub {
+	postpos postglyphs length ge { exit } if
+	% No name available, /postnames will be defined as an empty
+	% array and the glyph won't get a name attached.
+	postglyphs postpos get 
+        postglyphs postpos 1 add 2 index getinterval cvn
+	exch postpos add 1 add /postpos exch def
+      } repeat
+      ] /postnames exch def
+      [ 0 1 numglyphs 1 sub {
+	2 mul 34 add postglyphs exch getu16
+	dup 258 lt {
+	  MacGlyphEncoding exch get
+	} {
+	  dup 32768 ge {
+		% According to the published TrueType spec, such values are
+		% "reserved for future use", but at least some PDF files
+		% produced by the Adobe PDF library contain entries with a
+		% value of 16#ffff.
+	    pop /.notdef
+	  } {
+	    % Get the name for this glyph
+	    258 sub dup postnames length ge {
+	      TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
+	      exit
+	    } if
+	    postnames exch get
+	    % At least some of Microsoft's TrueType fonts use incorrect
+	    % (Adobe-incompatible) names for some glyphs.
+	    % Correct for this here.
+	    postremap 1 index .knownget { exch pop } if
+	  } ifelse
+	} ifelse
+      } for ]
+    }
+    ifelse
+  } bind
+  16#00030000  {	% No map.
+    pop [ ]
+  } bind
+.dicttomark readonly def                % postformats
+
+% - .getpost -
+% Uses post, defines glyphencoding
+/.getpost {
+  /glyphencoding post null eq {
+    TTFDEBUG { (post missing) = flush } if [ ]
+  } {
+    postformats post 0 getu32 .knownget {
+      TTFDEBUG {
+	(post: format ) print
+	post 0 getu16 =only (,) print post 2 getu16 = flush
+      } if
+      post exch exec
+    } {
+      TTFDEBUG { (post: unknown format ) print post 0 getu32 = flush } if [ ]
+    } ifelse
+  } ifelse def
+} bind def
+
 % ===================== True Type Interpretation =============
 
 /TTParser <<
   /Pos 0
+  /post null
 >> def
 
 /readu8   % <file> readu8 <int>
@@ -1353,29 +1451,95 @@ end
   } if
 } bind def
 
-/ComposeCharStrings % <cmaparray> <dict> ComposeCharStrings <dict>
-{ 1 index length 1 add dict begin				% cmap d
-  /.notdef 0 def
-  {							% cmap name code
-    dup 3 index length lt {				% cmap name code
-      2 index exch get					% cmap name glyphindex
-      dup 0 ne {
-        def						% cmap
-      } {
-        pop pop
-      } ifelse
+/PutCharString	% <cmap_array> <glyph_name> <char_code> PutCharString  <cmap_array>
+{
+  dup 3 index length lt {				% cmap name code
+    2 index exch get					% cmap name glyphindex
+    dup 0 ne {
+      def						% cmap
     } {
-      pop pop						% cmap
+      pop pop
     } ifelse
-  } forall
+  } {
+    pop pop						% cmap
+  } ifelse
+} bind def
+
+/ComposeCharStrings % <cmaparray> <dict> ComposeCharStrings <dict>
+{ 1 index length 1 add dict begin			% cmap d
+  % fixme : the dict length estimation doesn't account 'post'.
+  /.notdef 0 def
+  exch							% d cmap
+  //TTParser /post get					% d cmap [post]|null
+  dup null ne {
+    exch						% d [] cmap
+    1 index length 1 sub -1 0 {				% d [] cmap code
+      dup 3 index exch get exch				% d [] cmap name code
+      dup 0 eq {
+        pop pop
+      } {
+        def
+      } ifelse
+    } for
+  } if
+  exch pop exch						% cmap d
+  {							% cmap name code
+    //PutCharString exec
+  } forall						% cmap
   pop							%
   currentdict end
+} bind def
+
+/ParseTTpost   % <file> <TableDirectory> ParseTTpost -
+{ % Defines TTparser.post - an array, 
+  % which maps glyph indices to glyph names.
+  //PDFR_DEBUG {
+    (ParseTTpost beg) =
+  } if
+  /post get aload pop					% f o L
+  3 1 roll						% L f o
+  //PDFR_DEBUG {
+    (Current position = ) print //TTParser /Pos get =
+    (post position = ) print dup =
+  } if
+  1 index exch //SkipToPosition exec			% L f
+  //TTParser /Pos //TTParser /Pos get 4 index add put
+  exch string						% f s
+  readstring not {
+    mark (Insufficient data in the stream for ParseTTpost.) //error exec
+  } if							% s
+  1 dict begin % A bridge to the code from /gs/lib/gs_ttf.ps .
+    /post exch def
+    //.getpost exec
+    //TTParser /post glyphencoding put
+    //PDFR_DEBUG {
+      (ParseTTpost end) =
+      glyphencoding ==
+    } if
+  end
 } bind def
 
 /MakeTTCharStrings % <FontFile_object> MakeTTCharStrings <CharStrings>
 { //MakeStreamReader exec				% f
   dup dup //ParseTTTableDirectory exec			% f f d
-  //ParseTTcmapHeader exec				% f ch
+  % Since the file isn't positionable,
+  % we must pick up either 'post' or 'cmap' first.
+  % Deside which one we do first :
+  //TTParser /post null put
+  dup /post //knownget exec {
+    0 get
+    1 index /cmap get 0 get
+    lt {
+      2 copy //ParseTTpost exec				% f f d
+      //ParseTTcmapHeader exec				% f ch
+    } {
+      2 copy //ParseTTcmapHeader exec			% f f d ch
+      3 1 roll						% f ch f d
+      //ParseTTpost exec				% f ch
+    } ifelse
+  } {
+    //ParseTTcmapHeader exec				% f ch
+  } ifelse
   {
     dup 16#00030001 known {
       //PDFR_DEBUG {
@@ -1394,7 +1558,6 @@ end
       //ComposeCharStrings exec
       exit
     } if
-    % Must process 'post' here (with another stream reader).
     mark (True Type cmap has no useful encodings.) //error exec
   } loop
   //PDFR_DEBUG {
