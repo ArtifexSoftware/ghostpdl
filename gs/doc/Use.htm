@@ -2000,6 +2000,12 @@ both are specified.
 <dt><b><tt>-dGraphicsAlphaBits=</tt></b><em>n</em>
 <dd>These options control the use of subsample antialiasing. Their use is highly recommended for producing high quality rasterizations. The subsampling box size <em>n</em> should be 4 for optimum output, but smaller values can be used for faster rendering. Antialiasing is enabled separately for text and graphics content.
 Allowed values are 1, 2 or 4.
+<p>
+Note that because of the way antialiasing blends the edges of shapes into the background when
+they are drawn some files that rely on joining separate filled polygons together to cover
+an area may not render as expected with <tt>GraphicsAlphaBits</tt> at 2 or 4. If you encounter
+strange lines within solid areas, try rendering that file again with
+<tt>-dGraphicsAlphaBits=1</tt>.
 </dl>
 
 <dl>
