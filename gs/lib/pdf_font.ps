@@ -86,8 +86,17 @@ pdfdict begin
          ifelse
        }
        { dup /BaseEncoding knownoget
-	  { findencoding 3 -1 roll pop exch
-	  }
+	   {
+             dup / eq
+               { pop
+                 (   **** Warning: Ignoring bad BaseEncoding name.\n)  pdfformaterror
+                 % as found in a PDF file from J.D.Edwards OneWorld (B7333), bug 687786
+               }
+               {
+                 findencoding 3 -1 roll pop exch
+               }
+             ifelse
+	   }
 	 if
 	 /Differences knownoget { updateencoding } if
        }
