@@ -286,6 +286,10 @@ private int
         if (is_like_DeviceRGB(dev))
             return dev_proc(dev, map_color_rgb);
 
+	/* If separable ande linear then use default */
+        if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN )
+            return(gx_default_decode_color);
+
         /* gray devices can be handled based on their polarity */
         if ( dev->color_info.num_components == 1 &&
              dev->color_info.gray_index == 0       )
@@ -319,7 +323,10 @@ private int
      * code in gx_device_fill_in_procs, so at this point we can only hope
      * the device doesn't use the decode_color method.
      */
-     return gx_error_decode_color;
+    if (dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN )
+        return gx_default_decode_color;
+    else
+        return gx_error_decode_color;
 }
 
 /*
@@ -501,21 +508,8 @@ gx_device_fill_in_procs(register gx_device * dev)
         fill_dev_proc(dev, get_color_comp_index, gx_error_get_color_comp_index);
     }
 
-    if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
-        fill_dev_proc(dev, decode_color, gx_default_decode_color);
-	if ((dev_proc(dev, map_color_rgb) != 0) !=
-	    (dev_proc(dev, decode_color) != 0)) {
-	    if (is_like_DeviceRGB(dev)) {
-		if (dev_proc(dev, map_color_rgb) != 0)
-		    set_dev_proc(dev, decode_color, dev_proc(dev, map_color_rgb));
-		else if (dev_proc(dev, decode_color) != 0)
-		    set_dev_proc(dev, map_color_rgb, dev_proc(dev, decode_color));
-	    }
-        }
-    }
-    fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
-
     set_dev_proc(dev, decode_color, get_decode_color(dev));
+    fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
 
     /* initialiazation -- NB this chould be moved */
     if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
