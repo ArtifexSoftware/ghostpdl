@@ -79,7 +79,7 @@ ifeq ($(PL_SCALER), ufst)
 AGFA_LIB=../pl/agfa/rts/lib/
 # hack!!! we append this onto TOP_OBJ to avoid creating another
 # makefile variable.
-EXTRALIBS=$(AGFA_LIB)if_lib.a $(AGFA_LIB)fco_lib.a $(AGFA_LIB)tt_lib.a
+EXTRALIBS= $(AGFA_LIB)if_lib.a $(AGFA_LIB)fco_lib.a $(AGFA_LIB)tt_lib.a  $(AGFA_LIB)if_lib.a
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
 AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -I../pl/agfa/rts/tt/ -DAGFA_FONT_TABLE -DGCCx86
