@@ -294,6 +294,18 @@ currentdict end readonly def
   put							% val
 } bind def
 
+/ResolveA   % <array> <index> <check> ResolveA <value>
+{ 2 index 2 index get
+  dup xcheck {
+    exec
+    exch exec
+    3 copy put
+  } {
+    exch pop
+  } ifelse
+  exch pop exch pop
+} bind def
+
 /StoreStream  % <id> <obj> StoreStream <id> <obj>
 { % Stores a (encoded) data stream copy to the current object.
   dup //PDFReader exch /CurrentObject exch put		% id obj
@@ -819,7 +831,6 @@ currentdict end readonly def
   % Making the procedure : { Domain //ScaleArg exec ... n copy {} exec n+1 1 roll ... }
   % except "n copy" for the last chunk.
   %
-  (ddd0 ) print count =
   1 index /Size get length exch 			% f n m
   dup 7 mul 5 add array 				% f n m []
   PDFR_DEBUG {
@@ -835,16 +846,12 @@ currentdict end readonly def
     dup 3 //ScaleArgN put
   } ifelse
   dup 4 /exec load put
-  (ddd1)=
   1 index 1 sub 0 exch 1 exch { 			% f n m [] i
-    (ddd2 i=) print dup =
     dup 7 mul 5 add					% f n m [] i i1
     1 index 4 index 1 sub ne {
-      (ddd3)=
       dup 3 index exch 6 index put 1 add
       dup 3 index exch /copy load put 1 add
     } if
-    (ddd4)=
     [							% f n m [] i i1 [
       6 index /Data get 3 index get			% f n m [] i i1 [ di
       6 index 1 eq {
@@ -853,7 +860,6 @@ currentdict end readonly def
 	//ComputeFunction_n0 /exec load
       } ifelse
     ] cvx						% f n m [] i i1 {}
-    (ddd5)=
     3 index exch 2 index exch put 1 add 		% f n m [] i i1
     2 index 1 index /exec load put 1 add
     2 index 1 index 6 index 1 add put 1 add
@@ -872,7 +878,6 @@ currentdict end readonly def
     (Made a procedure for the n-argument function :) =
     dup ==
   } if
-  (ddd6 ) print count =
 } bind def
 
 /MakeTableRec % <func_obj> <n> MakeTableRec <array>
@@ -1100,12 +1105,11 @@ currentdict end readonly def
   { 
     dup 0 get /Pattern eq {
       dup length 1 gt {
-        dup 1 get xcheck {
-          dup 1 get exec
-	  1 index exch 1 exch 
-	  //SubstitutePDFColorSpaceRec exec
-	  put
-        } if
+        dup dup 1 //CheckColorSpace //ResolveA exec
+	dup type /nametype ne {
+          //SubstitutePDFColorSpaceRec exec
+	} if
+        1 exch put
       } if
       exit
     } if
@@ -1113,6 +1117,11 @@ currentdict end readonly def
       exit
     } if
     dup 0 get /Separation eq {
+      dup dup 2 //CheckColorSpace //ResolveA exec
+      dup type /nametype ne {
+        //SubstitutePDFColorSpaceRec exec
+      } if
+      2 exch put
       exit
     } if
     dup 0 get /CalGray eq {
@@ -1410,6 +1419,7 @@ currentdict end readonly def
       dup /ColorSpace //CheckColorSpace //ResolveD exec
       dup type /arraytype eq {
 	//ResolveColorSpaceArray exec
+	//SubstitutePDFColorSpace exec
 	1 index exch /ColorSpace exch put
       } {
 	pop
