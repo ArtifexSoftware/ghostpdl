@@ -2937,7 +2937,11 @@ currentdict end readonly def
   /g /setgray load def
   /rg /setrgbcolor load def
   /k /setcmykcolor load def
-  /cs { //ResolveColorSpace exec setcolorspace } bind def
+  /cs { % Assuming a dup of CS since we don't distinguish stroke and non-stroke colors.
+        % Can't apply twice due to pattern can't be applied over a pattern.
+        % //ResolveColorSpace exec setcolorspace 
+        pop
+      } bind def
   /sc /setcolor load def
   /scn { //SetColor exec } bind def
   /G /setgray load def
