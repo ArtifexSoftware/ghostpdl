@@ -102,9 +102,9 @@ typedef struct trap_line_s {
  */
 typedef struct trap_gradient_s {
 	frac31 *c; /* integer part of the color in frac32 units. */
-	ulong *f; /* the fraction part numerator */
-	long *num; /* the gradient numerator */
-	ulong den; /* color gradient denominator */
+	int32_t *f; /* the fraction part numerator */
+	int32_t *num; /* the gradient numerator */
+	int32_t den; /* color gradient denominator */
 } trap_gradient;
 
 
@@ -166,7 +166,8 @@ compute_ldx(trap_line *tl, fixed ys)
 }
 
 private inline void
-init_gradient(trap_gradient *g, const gs_linear_color_edge *e,
+init_gradient(trap_gradient *g, const gs_fill_attributes *fa,
+		const gs_linear_color_edge *e, const gs_linear_color_edge *e1,
 		const trap_line *l, fixed ybot, int num_components)
 {
     int i;
@@ -176,13 +177,18 @@ init_gradient(trap_gradient *g, const gs_linear_color_edge *e,
     if (e->c1 == NULL || e->c0 == NULL)
 	g->den = 0; /* A wedge - the color is axial along another edge. */
     else {
-	g->den = (uint32_t)(e->end.y - e->start.y);
-	assert(g->den == l->h);
+	bool ends_from_fa = (e1->c1 == NULL || e1->c0 == NULL);
+
+	if (ends_from_fa)
+	    g->den = fa->yend - fa->ystart;
+	else {
+	    g->den = e->end.y - e->start.y;
+	    assert(g->den == l->h);
+	}
 	for (i = 0; i < num_components; i++) {
-	    g->num[i] = (int32_t)((e->c1[i] >> 1) - (e->c0[i] >> 1)); /* fixme: 
-			divided by 2 for the sign to fit into 32 bits. 
-			It may sensively loose a precision. */
-	    c = (int64_t)g->num[i] * 2 * (uint32_t)(ybot - e->start.y);
+	    g->num[i] = e->c1[i] - e->c0[i];
+	    c = (int64_t)g->num[i] * (uint32_t)(ybot - 
+		    (ends_from_fa ? fa->ystart : e->start.y));
 	    d = (int32_t)(c / g->den);
 	    g->c[i] = e->c0[i] + d;
 	    c -= (int64_t)d * g->den;
@@ -203,16 +209,16 @@ step_gradient(trap_gradient *g, int num_components)
     if (g->den == 0)
 	return;
     for (i = 0; i < num_components; i++) {
-	/* fixme: optimize. */
 	int64_t fc = g->f[i] + (int64_t)g->num[i] * fixed_1;
+	int32_t fc32;
 
 	g->c[i] += (int32_t)(fc / g->den);
-	fc -=  fc / g->den * g->den;
-	if (fc < 0) {
-	    fc += g->den;
+	fc32 = (int32_t)(fc -  fc / g->den * g->den);
+	if (fc32 < 0) {
+	    fc32 += g->den;
 	    g->c[i]--;
 	}
-	g->f[i] = (int32_t)fc;
+	g->f[i] = fc32;
     }
 }
 
@@ -252,8 +258,8 @@ set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gr
     int32_t xl = l->x - (l->xf == -l->h ? 1 : 0) - fixed_half; /* Revert the GX_FILL_TRAPEZOID shift. */
     int32_t xr = r->x - (r->xf == -r->h ? 1 : 0) - fixed_half; /* Revert the GX_FILL_TRAPEZOID shift. */
     /* The pixel span boundaries : */
-    int32_t x0 = int2fixed(il) + fixed_half;     /* Shift to the pixel center. */
-    int32_t x1 = int2fixed(ir - 1) + fixed_half; /* Shift to the pixel center. */
+    int32_t x0 = int2fixed(il) + fixed_half; /* Shift to the pixel center. */
+    int32_t x1 = int2fixed(ir) + fixed_half; /* Shift to the pixel center. */
     int i;
 
 #   ifdef DEBUG

@@ -161,14 +161,14 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 #	if LINEAR_COLOR
 	    int num_components = dev->color_info.num_components;
 	    frac31 lgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    ulong lgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    long lgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    int32_t lgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    int32_t lgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    frac31 rgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    ulong rgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    long rgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    int32_t rgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    int32_t rgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    frac31 xgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    ulong xgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    long xgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    int32_t xgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    int32_t xgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    trap_gradient lg, rg, xg;
 #	else
 	    gx_color_index cindex = pdevc->colors.pure;
@@ -323,8 +323,8 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 	    xg.c = xgc;
 	    xg.f = xgf;
 	    xg.num = xgnum;
-	    init_gradient(&lg, left,  &l, ymin, num_components);
-	    init_gradient(&rg, right, &r, ymin, num_components);
+	    init_gradient(&lg, fa, left, right, &l, ymin, num_components);
+	    init_gradient(&rg, fa, right, left, &r, ymin, num_components);
 
 #	endif
 

@@ -571,7 +571,7 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
 }
 
 private int
-A_fill_region(A_fill_state_t * pfs)
+A_fill_region(A_fill_state_t * pfs, const gs_rect *rect)
 {
     const gs_shading_A_t * const psh = pfs->psh;
     gs_function_t * const pfn = psh->params.Function;
@@ -615,7 +615,7 @@ A_fill_region(A_fill_state_t * pfs)
 }
 #else
 private int
-A_fill_region(A_fill_state_t * pfs)
+A_fill_region(A_fill_state_t * pfs, const gs_rect *rect)
 {
     const gs_shading_A_t * const psh = pfs->psh;
     gs_function_t * const pfn = psh->params.Function;
@@ -633,6 +633,7 @@ A_fill_region(A_fill_state_t * pfs)
     code = init_patch_fill_state(&pfs1);
     if (code < 0)
 	return code;
+    shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
     pfs1.maybe_self_intersecting = false;
     gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
     gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
@@ -715,7 +716,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     state.length = hypot(dist.x, dist.y);	/* device space line length */
     state.dd = dd;
     state.depth = 1;
-    code = A_fill_region(&state);
+    code = A_fill_region(&state, rect);
 #   if NEW_SHADINGS
     if (psh->params.Extend[0] && t0 > t_rect.p.y) {
 	if (code < 0)
@@ -724,7 +725,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	state.v0 = t_rect.p.y;
 	state.v1 = t0;
 	state.t0 = state.t1 = t0 * dd + d0;
-	code = A_fill_region(&state);
+	code = A_fill_region(&state, rect);
     }
     if (psh->params.Extend[1] && t1 < t_rect.q.y) {
 	if (code < 0)
@@ -733,7 +734,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	state.v0 = t1;
 	state.v1 = t_rect.q.y;
 	state.t0 = state.t1 = t1 * dd + d0;
-	code = A_fill_region(&state);
+	code = A_fill_region(&state, rect);
     }
 #   else
     if (psh->params.Extend[0] && t0 > t_rect.p.y) {

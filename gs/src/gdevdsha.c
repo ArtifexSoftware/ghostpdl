@@ -26,7 +26,7 @@
 int 
 gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
 	int i0, int j, int w,
-	const frac31 *c0, const ulong *c0f, const long *cg_num, ulong cg_den)
+	const frac31 *c0, const int32_t *c0f, const int32_t *cg_num, int32_t cg_den)
 {
     /* This default implementation decomposes the area into constant color rectangles.
        Devices may supply optimized implementations with
@@ -57,10 +57,10 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
 	for (k = 0; k < n; k++) {
 	    int shift = cinfo->comp_shift[k];
 	    int bits = cinfo->comp_bits[k];
-	    long m = f[k] + cg_num[k];
+	    int32_t m = f[k] + cg_num[k];
 
-	    c[k] += m / (long)cg_den;
-	    m -= m / (long)cg_den * (long)cg_den;
+	    c[k] += m / cg_den;
+	    m -= m / cg_den * cg_den;
 	    if (m < 0) {
 		c[k]--;
 		m += cg_den;
@@ -72,11 +72,14 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
 	    si = max(bi, fixed2int(fa->clip->p.x));
 	    ei = min(i, fixed2int(fa->clip->q.x));
 	    if (si < ei) {
-		vd_rect(int2fixed(bi), int2fixed(j), int2fixed(i), int2fixed(j + 1), 1, (ulong)ci0);
-		if (fa->swap_axes)
-		    code = dev_proc(dev, fill_rectangle)(dev, j, bi, 1, i - bi, ci0);
-		else
-		    code = dev_proc(dev, fill_rectangle)(dev, bi, j, i - bi, 1, ci0);
+		
+		if (fa->swap_axes) {
+		    vd_rect(int2fixed(j), int2fixed(si), int2fixed(j + 1), int2fixed(ei), 1, (ulong)ci0);
+		    code = dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - si, ci0);
+		} else {
+		    vd_rect(int2fixed(si), int2fixed(j), int2fixed(ei), int2fixed(j + 1), 1, (ulong)ci0);
+		    code = dev_proc(dev, fill_rectangle)(dev, si, j, ei - si, 1, ci0);
+		}
 		if (code < 0)
 		    return code;
 	    }
@@ -86,12 +89,14 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     }
     si = max(bi, fixed2int(fa->clip->p.x));
     ei = min(i, fixed2int(fa->clip->q.x));
-    vd_rect(int2fixed(bi), int2fixed(j), int2fixed(i), int2fixed(j + 1), 1, (ulong)ci0);
     if (si < ei) {
-	if (fa->swap_axes)
-	    return dev_proc(dev, fill_rectangle)(dev, j, bi, 1, i - bi, ci0);
-	else
-	    return dev_proc(dev, fill_rectangle)(dev, bi, j, i - bi, 1, ci0);
+	if (fa->swap_axes) {
+	    vd_rect(int2fixed(j), int2fixed(si), int2fixed(j + 1), int2fixed(ei), 1, (ulong)ci0);
+	    return dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - bi, ci0);
+	} else {
+	    vd_rect(int2fixed(si), int2fixed(j), int2fixed(ei), int2fixed(j + 1), 1, (ulong)ci0);
+	    return dev_proc(dev, fill_rectangle)(dev, si, j, ei - bi, 1, ci0);
+	}
     }
     return 0;
 }

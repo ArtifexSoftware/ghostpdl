@@ -770,7 +770,7 @@ gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace,
 int 
 gx_forward_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
 	int i, int j, int w,
-	const frac31 *c, const ulong *addx, const long *mulx, ulong divx)
+	const frac31 *c, const int32_t *addx, const int32_t *mulx, int32_t divx)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;

@@ -1302,6 +1302,58 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
     return code;
 }
 
+private inline void
+dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
+	    frac31 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
+{
+    int j;
+    const gx_device_color_info *cinfo = &pfs->dev->color_info;
+
+    for (j = 0; j < pfs->num_components; j++) {
+	    int shift = cinfo->comp_shift[j];
+	    int bits = cinfo->comp_bits[j];
+
+	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac31) * 8 - 1 - bits);
+    }
+}
+
+private inline bool
+is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
+{
+    gs_direct_color_space *cs = 
+		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+    float smoothness = pfs->smoothness, s = 0;
+    int code;
+
+    if (pfs->Function != NULL) {
+	patch_color_t c;
+	const float q[2] = {(float)0.3, (float)0.7};
+	int i, j;
+
+	for (j = 0; j < count_of(q); j++) {
+	    c.t[0] = c0->t[0] * (1 - q[j]) + c1->t[0] * q[j];
+	    c.t[1] = c0->t[1] * (1 - q[j]) + c1->t[1] * q[j];
+	    patch_resolve_color(&c, pfs);
+	    for (i = 0; i < pfs->num_components; i++) {
+		float v = c0->cc.paint.values[i] * (1 - q[j]) + c1->cc.paint.values[i] * q[j];
+		float d = v - c.cc.paint.values[i];
+		float s1 = any_abs(d) / pfs->color_domain.paint.values[i];
+
+		if (s1 > smoothness)
+		    return false;
+		if (s < s1)
+		    s = s1;
+	    }
+	}
+	smoothness -= s;
+    }
+    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
+	    &c0->cc, &c1->cc, NULL, NULL, smoothness);
+    if (code <= 0)
+	return false;
+    return true;
+}
+
 private int
 decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 	fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c0, 
@@ -1317,14 +1369,61 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
        based on fn_is_monotonic_proc_t is_monotonic, 
        which applies to intervals. */
     patch_interpolate_color(&c, c0, c1, pfs, 0.5);
-    if (ytop - ybot < pfs->fixed_flat) /* Prevent an infinite color decomposition. */
+    if (ytop - ybot < pfs->fixed_flat && pfs->unlinear) /* Prevent an infinite color decomposition. */
 	return constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
     else {  
 	bool monotonic_color_save = pfs->monotonic_color;
 
 	if (!pfs->monotonic_color)
 	    pfs->monotonic_color = is_color_monotonic(pfs, c0, c1);
-	if (!pfs->monotonic_color || 
+	if (!pfs->unlinear && pfs->monotonic_color) {
+	    if (is_color_linear(pfs, c0, c1)) {
+		gx_device *pdev = pfs->dev;
+		frac31 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
+		gs_fill_attributes fa;
+		gx_device_color dc[2];
+		gs_fixed_rect clip;
+		int code;
+
+		clip = pfs->rect;
+		if (swap_axes) {
+		    fixed v;
+
+		    v = clip.p.x; clip.p.x = clip.p.y; clip.p.y = v;
+		    v = clip.q.x; clip.q.x = clip.q.y; clip.q.y = v;
+		}
+		clip.p.y = max(clip.p.y, ybot);
+		clip.q.y = min(clip.q.y, ytop);
+		fa.clip = &clip; 
+		fa.ht = NULL;
+		fa.swap_axes = swap_axes;
+		fa.lop = 0;
+		fa.ystart = ybot;
+		fa.yend = ytop;
+		code = patch_color_to_device_color(pfs, c0, &dc[0]);
+		if (code < 0)
+		    return code;
+		if (dc[0].type == &gx_dc_type_data_pure) {
+		    dc2fc(pfs, dc[0].colors.pure, fc[0]);
+		    code = patch_color_to_device_color(pfs, c1, &dc[1]);
+		    if (code < 0)
+			return code;
+		    dc2fc(pfs, dc[1].colors.pure, fc[1]);
+		    code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
+				    &le->start, &le->end, &re->start, &re->end, 
+				    fc[0], fc[1], NULL, NULL);
+		    if (code == 1) {
+			pfs->monotonic_color = monotonic_color_save;
+			return 0; /* The area is filled. */
+		    }
+		    if (code < 0)
+			return code;
+		    else /* code == 0, the device requested to decompose the area. */ 
+			return_error(gs_error_unregistered); /* Must not happen. */
+		}
+	    }
+	}
+	if (!pfs->monotonic_color || !pfs->unlinear ||
 		color_span(pfs, c0, c1) > pfs->smoothness) {
 	    fixed y = (ybot + ytop) / 2;
 
@@ -1709,21 +1808,6 @@ fill_triangle_wedge_aux(patch_fill_state_t *pfs,
     }
 }
 
-private inline void
-dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
-	    frac31 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
-{
-    int j;
-    const gx_device_color_info *cinfo = &pfs->dev->color_info;
-
-    for (j = 0; j < pfs->num_components; j++) {
-	    int shift = cinfo->comp_shift[j];
-	    int bits = cinfo->comp_bits[j];
-
-	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac31) * 8 - 1 - bits);
-    }
-}
-
 private inline int
 try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	const shading_vertex_t *p0, const shading_vertex_t *p1, 
@@ -1735,13 +1819,14 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	1 - decompose to linear color areas;
 	2 - decompose to constant color areas;
      */
-    gs_direct_color_space *cs = 
-	    (gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
     int code;
 
     if (pfs->unlinear)
 	return 2;
     if (!wedge) {
+	gs_direct_color_space *cs = 
+		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+
 	code = cs_is_linear(cs, pfs->pis, pfs->dev, 
 			    &p0->c.cc, &p1->c.cc, &p2->c.cc, NULL, pfs->smoothness);
 	if (code < 0)
@@ -1797,18 +1882,13 @@ fill_triangle_wedge(patch_fill_state_t *pfs,
 	(int64_t)(q1->p.y - q0->p.y) * (q2->p.x - q0->p.x))
 	return 0; /* Zero area. */
     draw_triangle(&q0->p, &q1->p, &q2->p, RGB(255, 255, 0));
-    code = try_device_linear_color(pfs, true, q0, q2, q1); /* The inner vertex must be second. */
-    switch(code) {
-	case 0: /* The area is filled. */
-	    return 0;
-	case 1: /* decompose to linear color areas */
-	    /* Must not happen. */
-	    /* Fall through. */
-	case 2: /* decompose to constant color areas */
-	    return fill_triangle_wedge_aux(pfs, q0, q1, q2);
-	default: /* Error. */
-	    return code;
-    }
+    /*
+	Can't apply try_device_linear_color here
+	because didn't check is_color_linear.
+	Maybe need a decomposition.
+	Do same as for 'unlinear', and branch later.
+     */
+    return fill_triangle_wedge_aux(pfs, q0, q1, q2);
 }
 
 private inline int
@@ -1970,37 +2050,6 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
     le.end.x = q1.x - adjust;
     re.end.x = q1.x + adjust;
     le.end.y = re.end.y = q1.y + adjust;
-    if (!pfs->unlinear) {
-	gx_device *pdev = pfs->dev;
-	frac31 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
-	gs_fill_attributes fa;
-	gx_device_color dc[2];
-	int code;
-
-	fa.clip = &pfs->rect;
-	fa.ht = NULL;
-	fa.swap_axes = swap_axes;
-	fa.lop = 0;
-	code = patch_color_to_device_color(pfs, cc0, &dc[0]);
-	if (code < 0)
-	    return code;
-	if (dc[0].type == &gx_dc_type_data_pure) {
-	    dc2fc(pfs, dc[0].colors.pure, fc[0]);
-	    code = patch_color_to_device_color(pfs, cc1, &dc[1]);
-	    if (code < 0)
-		return code;
-	    dc2fc(pfs, dc[1].colors.pure, fc[1]);
-	    code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
-			    &le.start, &le.end, &re.start, &re.end, 
-			    fc[0], fc[1], NULL, NULL);
-	    if (code == 1)
-		return 0; /* The area is filled. */
-	    if (code < 0)
-		return code;
-	    else /* code == 0, the device requested to decompose the area. */ 
-		return_error(gs_error_unregistered); /* Must noty happen. */
-	}
-    }
     return decompose_linear_color(pfs, &le, &re, le.start.y, le.end.y, swap_axes, cc0, cc1);
 }
 
@@ -2398,18 +2447,14 @@ private inline bool
 is_color_span_v_linear(const patch_fill_state_t *pfs, const tensor_patch *p)
 {
     int code;
-    gs_direct_color_space *cs = 
-		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
 
-    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-	    &p->c[0][0].cc, &p->c[1][0].cc, NULL, NULL, pfs->smoothness);
+    code = is_color_linear(pfs, &p->c[0][0], &p->c[1][0]);
     if (code <= 0)
-	return code;
-    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-	    &p->c[0][1].cc, &p->c[1][1].cc, NULL, NULL, pfs->smoothness);
+	return false;
+    code = is_color_linear(pfs, &p->c[0][1], &p->c[1][1]);
     if (code <= 0)
-	return code;
-    return true;
+	return false;
+    return 1;
 }
 
 private inline bool
@@ -3182,7 +3227,7 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv)
 {
     if (kv <= 1 && (is_patch_narrow(pfs, p) || 
 	    ((pfs->monotonic_color || is_color_monotonic_by_v(pfs, p)) && 
-	     (!pfs->unlinear && is_color_span_v_linear(pfs, p) || 
+	     ((!pfs->unlinear && is_color_span_v_linear(pfs, p)) || 
 	      !is_color_span_v_big(pfs, p)) &&
 	    !is_bended(p)))) { /* The order of calls is improtant for performance. */
 	draw_patch(p, true, RGB(0, 128, 0));

@@ -1239,7 +1239,8 @@ typedef struct gs_fill_attributes_s {
       const gs_fixed_rect *clip;
       bool swap_axes;
       const gx_device_halftone *ht; /* Reserved for possible use in future. */
-      gs_logical_operation_t lop; /* Reserved for possible  use in future. */
+      gs_logical_operation_t lop; /* Reserved for possible use in future. */
+      fixed ystart, yend; /* Only for X-independent gradients. Base coordinates of the gradient. */
 } gs_fill_attributes;
 
 /* Fill a linear color scanline. */
@@ -1248,9 +1249,9 @@ typedef struct gs_fill_attributes_s {
   int proc(dev_t *dev, const gs_fill_attributes *fa,\
 	int i, int j, int w, /* scanline coordinates and width */\
 	const frac31 *c0, /* initial color for the pixel (i,j), the integer part */\
-	const ulong *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
-	const long *cg_num, /* color gradient numerator */\
-	ulong cg_den /* color gradient denominator */)
+	const int32_t *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
+	const int32_t *cg_num, /* color gradient numerator */\
+	int32_t cg_den /* color gradient denominator */)
 #define dev_proc_fill_linear_color_scanline(proc)\
   dev_t_proc_fill_linear_color_scanline(proc, gx_device)
 
@@ -1260,6 +1261,12 @@ typedef struct gs_fill_attributes_s {
 /* [p0 : p1] - left edge, from bottom to top.
    [p2 : p3] - right edge, from bottom to top.
    The filled area is within Y-spans of both edges. */
+/* If either (c0 and c1) or (c2 and c3) may be NULL.
+   In this case the color doesn't depend on X (on Y if fa->swap_axes).
+   In this case the base coordinates for the color gradient
+   may be unequal to p0, p1, p2, p3, and must be provided/taken
+   in/from fa->ystart, fa->yend. 
+   The rerurn value 0 is not allowed in this case. */
 /* Return values : 
   1 - success;
   0 - Too big. The area isn't filled. The client must decompose the area.
