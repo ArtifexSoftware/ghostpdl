@@ -33,7 +33,15 @@
 #include "vdtrace.h"
 
 #define NEW_TENSOR_SHADING 0 /* Old code = 0, new code = 1. */
-#define NEW_TENSOR_SHADING_DEBUG (NEW_TENSOR_SHADING & 1)
+#define TENSOR_SHADING_DEBUG 0
+#define VD_DRAW_CIRCLES 0
+
+#if TENSOR_SHADING_DEBUG
+static int patch_cnt = 0; /* Temporary for a debug purpose.*/
+static bool dbg_nofill = false;
+#endif
+
+
 
 /* ================ Utilities ================ */
 
@@ -491,6 +499,14 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		memcpy(mu1v0.cc, cu1v0.cc.paint.values, sizeof(mu1v0.cc));
 		memcpy(mu1v1.cc, cu1v1.cc.paint.values, sizeof(mu1v1.cc));
 		memcpy(mu0v1.cc, cu0v1.cc.paint.values, sizeof(mu0v1.cc));
+		vd_quad(mu0v0.p.x, mu0v0.p.y, 
+			mu0v1.p.x, mu0v1.p.y, 
+			mu1v1.p.x, mu1v1.p.y, 
+			mu1v0.p.x, mu1v0.p.y, 
+			0, RGB(0, 255, 0));
+		if (vd_allowed('s'))
+		    vd_release_dc;
+
 /* Make this a procedure later.... */
 #define FILL_TRI(pva, pvb, pvc)\
   BEGIN\
@@ -519,6 +535,8 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		    FILL_TRI(&mu0v1, &mu0v0, &mmid);
 		}
 #endif
+		if (vd_allowed('s'))
+		    vd_get_dc('s');
 	    }
 	}
     }
@@ -578,6 +596,17 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 #if NEW_TENSOR_SHADING
     init_patch_fill_state(&state);
 #endif
+#if TENSOR_SHADING_DEBUG
+    patch_cnt++;
+    /*if (patch_cnt == 11)*/
+#endif
+    if (vd_allowed('s')) {
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+	/* vd_erase(RGB(192, 192, 192)); */
+    }
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
@@ -589,6 +618,8 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	    break; /* Temporary disabled for a debug purpose. */
 	#endif
     }
+    if (vd_allowed('s'))
+	vd_release_dc;
     return min(code, 0);
 }
 
@@ -747,8 +778,6 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
  */
 
 /* todo :
-   - 483-05.ps paints some pixels with a wrong color.
-
    - Maybe the smoothness threshold isn't correct.
      483-05.ps renders some unsmoothly, need to investigate why so.
 
@@ -768,11 +797,6 @@ typedef struct {
     gs_fixed_point pole[4][4]; /* [v][u] */
     patch_color_t c[2][2];     /* [v][u] */
 } tensor_patch;
-
-#if NEW_TENSOR_SHADING_DEBUG
-static int patch_cnt = 0; /* Temporary for a debug purpose.*/
-static bool dbg_nofill = false;
-#endif
 
 private void
 draw_patch(tensor_patch *p, bool interior, ulong rgbcolor)
@@ -803,7 +827,7 @@ private inline void
 draw_quadrangle(const tensor_patch *p, ulong rgbcolor)
 {
 #ifdef DEBUG
-#   if NEW_TENSOR_SHADING_DEBUG
+#   if TENSOR_SHADING_DEBUG
     if (dbg_nofill) /* A switch for a better view with a specific purpose. 
 	    Feel free to change the condition if needed. */
 #   endif
@@ -961,7 +985,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 
     if (ybot > ytop)
 	return 0;
-#   if NEW_TENSOR_SHADING_DEBUG
+#   if TENSOR_SHADING_DEBUG
     if (dbg_nofill)
 	return 0;
 #   endif
@@ -984,8 +1008,8 @@ patch_color_to_device_color(const patch_fill_state_t * pfs, const patch_color_t 
 			      pfs->dev, gs_color_select_texture);
 }
 
-private inline bool
-is_color_span_big(const patch_fill_state_t * pfs, const patch_color_t *c0, const patch_color_t *c1)
+private inline double
+color_span(const patch_fill_state_t * pfs, const patch_color_t *c0, const patch_color_t *c1)
 {
     const gs_color_space *pcs = pfs->direct_space;
     patch_color_t cc0 = *c0, cc1 = *c1;
@@ -997,7 +1021,7 @@ is_color_span_big(const patch_fill_state_t * pfs, const patch_color_t *c0, const
     m = any_abs(cc1.cc.paint.values[0] - cc0.cc.paint.values[0]) / pfs->color_domain.paint.values[0];
     for (i = 1; i < n; i++)
 	m = max(m, any_abs(cc1.cc.paint.values[i] - cc0.cc.paint.values[i]) / pfs->color_domain.paint.values[i]);
-    return m > pfs->pis->smoothness;
+    return m;
 }
 
 private inline bool
@@ -1023,6 +1047,18 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
 
     patch_resolve_color(&c1, pfs);
     patch_color_to_device_color(pfs, &c1, &dc);
+#   if VD_DRAW_CIRCLES
+    if (swap_axes)
+	vd_circle((ybot + ytop) / 2,
+		  (le->start.x + (int)((int64_t)(le->end.x - le->start.x) * ((ybot + ytop) / 2 - le->start.y) / (le->end.y - le->start.y)) + 
+		   re->start.x + (int)((int64_t)(re->end.x - re->start.x) * ((ybot + ytop) / 2 - re->start.y) / (re->end.y - re->start.y))) / 2,
+		  5, (uint)dc.colors.pure);
+    else
+	vd_circle((le->start.x + (int)((int64_t)(le->end.x - le->start.x) * ((ybot + ytop) / 2 - le->start.y) / (le->end.y - le->start.y)) + 
+		   re->start.x + (int)((int64_t)(re->end.x - re->start.x) * ((ybot + ytop) / 2 - re->start.y) / (re->end.y - re->start.y))) / 2,
+		  (ybot + ytop) / 2,
+		  5, (uint)dc.colors.pure);
+#   endif
     return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
 	le, re, ybot, ytop, swap_axes, &dc, pfs->pis->log_op);
 }
@@ -1042,7 +1078,8 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
     patch_interpolate_color(&c, c0, c1, pfs, 0.5);
     if (ytop - ybot < pfs->fixed_flat) /* Prevent an infinite color decomposition. */
 	return constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
-    else if (!is_color_monotonic(pfs, c0, c1) || is_color_span_big(pfs, c0, c1) || 
+    else if (!is_color_monotonic(pfs, c0, c1) || 
+		color_span(pfs, c0, c1) > pfs->pis->smoothness || 
 		ytop - ybot > max_small_coord) {
 	fixed y = (ybot + ytop) / 2;
     
@@ -1062,7 +1099,7 @@ linear_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_point q[4], int i0, int
     /* Assuming a very narrow trapezoid - ignore the transversal color change. */
     gs_fixed_edge le, re;
 
-#   if NEW_TENSOR_SHADING_DEBUG
+#   if TENSOR_SHADING_DEBUG
     if (dbg_nofill)
 	return 0;
 #   endif
@@ -1121,17 +1158,22 @@ fill_wedge_trap(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixe
     /* We assume that the width of the wedge is close to zero,
        so we can ignore the slope when computing transversal distances. */
     gs_fixed_point p[4];
+    const patch_color_t *cc0, *cc1;
 
     if (p0->y < p1->y) {
 	p[2] = *p0;
 	p[3] = *p1;
+	cc0 = c0;
+	cc1 = c1;
     } else {
 	p[2] = *p1;
 	p[3] = *p0;
+	cc0 = c1;
+	cc1 = c0;
     }
     p[0] = q[0];
     p[1] = q[1];
-    return wedge_trap_decompose(pfs, p, p[2].y, p[3].y, c0, c1, swap_axes);
+    return wedge_trap_decompose(pfs, p, p[2].y, p[3].y, cc0, cc1, swap_axes);
 }
 
 private void
@@ -1288,7 +1330,7 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
     y_extreme_vertice(&q[1], p, k1, 1);
     *pca = *c0;
     for (i = 1; i < k1; i++) {
-	patch_interpolate_color(pcb, c0, c1, pfs, (i - 1.0) / (ka - 1.0)); /* ka >= 2, see fill_wedges */
+	patch_interpolate_color(pcb, c0, c1, pfs, (double)i / ka); /* ka >= 2, see fill_wedges */
 	code = fill_wedge_trap(pfs, &p[i - 1], &p[i], q, pca, pcb, swap_axes);
 	if (code < 0)
 	    return code;
@@ -1385,6 +1427,11 @@ constant_color_quadrangle(patch_fill_state_t * pfs, const tensor_patch *p)
     patch_interpolate_color(&c, &c1, &c2, pfs, 0.5);
     patch_resolve_color(&c1, pfs);
     patch_color_to_device_color(pfs, &c, &dc);
+#   if VD_DRAW_CIRCLES
+    vd_circle((p->pole[0][0].x + p->pole[0][3].x + p->pole[3][0].x + p->pole[3][3].x) / 4,
+	      (p->pole[0][0].y + p->pole[0][3].y + p->pole[3][0].y + p->pole[3][3].y) / 4,
+	      3, (uint)dc.colors.pure);
+#   endif
     {	gs_fixed_point qq[4];
 
 	make_vertices(qq, p);
@@ -1599,21 +1646,26 @@ divide_quadrangle_by_u(patch_fill_state_t * pfs, tensor_patch *s0, tensor_patch 
 }
 
 private inline bool
-is_color_span_v_big(const patch_fill_state_t * pfs, const tensor_patch *p)
+is_patch_color_span_big(const patch_fill_state_t * pfs, const tensor_patch *p, bool *uv)
 {
-    if (is_color_span_big(pfs, &p->c[0][0], &p->c[1][0]))
+    double m01 = color_span(pfs, &p->c[0][0], &p->c[0][1]);
+    double m10 = color_span(pfs, &p->c[0][0], &p->c[1][0]);
+    double m11 = color_span(pfs, &p->c[0][0], &p->c[1][1]);
+
+    if (m11 > pfs->pis->smoothness || m01 > pfs->pis->smoothness 
+				   || m10 > pfs->pis->smoothness) {
+	*uv = m01 > m10;
 	return true;
-    if (is_color_span_big(pfs, &p->c[0][1], &p->c[1][1]))
-	return true;
+    }
     return false;
 }
 
 private inline bool
-is_color_span_u_big(const patch_fill_state_t * pfs, const tensor_patch *p)
+is_color_span_v_big(const patch_fill_state_t * pfs, const tensor_patch *p)
 {
-    if (is_color_span_big(pfs, &p->c[0][0], &p->c[0][1]))
+    if (color_span(pfs, &p->c[0][0], &p->c[1][0]) > pfs->pis->smoothness)
 	return true;
-    if (is_color_span_big(pfs, &p->c[1][0], &p->c[1][1]))
+    if (color_span(pfs, &p->c[0][1], &p->c[1][1]) > pfs->pis->smoothness)
 	return true;
     return false;
 }
@@ -1629,11 +1681,16 @@ is_color_monotonic_by_v(const patch_fill_state_t * pfs, const tensor_patch *p)
 }
 
 private inline bool
-is_color_monotonic_by_u(const patch_fill_state_t * pfs, const tensor_patch *p) 
+is_patch_color_monotonic(const patch_fill_state_t * pfs, const tensor_patch *p, bool *uv) 
 {
-    if (!is_color_monotonic(pfs, &p->c[0][0], &p->c[0][1]))
+    if (!is_color_monotonic(pfs, &p->c[0][0], &p->c[0][1])) {
+	*uv = true;
 	return false;
-    if (!is_color_monotonic(pfs, &p->c[1][0], &p->c[1][1]))
+    }
+    *uv = false;
+    if (!is_color_monotonic(pfs, &p->c[0][0], &p->c[1][0]))
+	return false;
+    if (!is_color_monotonic(pfs, &p->c[0][0], &p->c[1][1]))
 	return false;
     return true;
 }
@@ -1704,6 +1761,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
     tensor_patch s0, s1;
     int code;
     bool is_big_u = false, is_big_v = false;
+    bool color_big, color_u, color_monotonic;
     gs_fixed_point q[3];
 
     if (!pfs->vectorization && !quadrangle_bbox_covers_pixel_centers(p))
@@ -1726,7 +1784,9 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	is_big_v = true;
     if (!is_big_v && !is_big_u)
 	return constant_color_quadrangle(pfs, p);
-    else if (is_big_v && (!is_color_monotonic_by_v(pfs, p) || is_color_span_v_big(pfs, p))) {
+    color_big = !is_patch_color_monotonic(pfs, p, &color_u) || 
+		is_patch_color_span_big(pfs, p, &color_u);
+    if (is_big_v && (color_big && !color_u)) {
 	divide_quadrangle_by_v(pfs, &s0, &s1, p);
 	q[0] = s0.pole[0][0], q[2] = s0.pole[3][0], q[1] = s1.pole[3][0];
 	fill_linear_wedge(pfs, q, &p->c[0][0], &p->c[1][0]); /* smashes q. */
@@ -1738,7 +1798,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	if (code < 0)
 	    return code;
 	return fill_quadrangle(pfs, &s1);
-    } else if (is_big_u && (!is_color_monotonic_by_u(pfs, p) || is_color_span_u_big(pfs, p))) {
+    } else if (is_big_u && (color_big && color_u)) {
 	divide_quadrangle_by_u(pfs, &s0, &s1, p);
 	q[0] = s0.pole[0][0], q[2] = s0.pole[0][3], q[1] = s1.pole[0][3];
 	fill_linear_wedge(pfs, q, &p->c[0][0], &p->c[0][1]); /* smashes q. */
@@ -1852,8 +1912,8 @@ is_curve_y_monotonic(const gs_fixed_point *pole, int pole_step)
 	    pole[2 * pole_step].y >= pole[3 * pole_step].y);
 }
 
-private inline bool eqs(int a, int b)
-{   /* Equal signs. Assuming -1, 0, 1 only. */
+private inline bool neqs(int a, int b)
+{   /* Unequal signs. Assuming -1, 0, 1 only. */
     return a * b < 0;
 }
 
@@ -1861,7 +1921,7 @@ private inline int
 vector_pair_orientation(const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2)
 {   fixed dx1 = p1->x - p0->x, dy1 = p1->y - p0->y;
     fixed dx2 = p2->x - p0->x, dy2 = p2->y - p0->y;
-    int64_t vp = dx1 * dy1 - dy1 * dx2;
+    int64_t vp = dx1 * dy2 - dy1 * dx2;
 
     return (vp > 0 ? 1 : vp < 0 ? -1 : 0);
 }
@@ -1871,40 +1931,40 @@ is_bended(const tensor_patch *p)
 {   
     int sign = vector_pair_orientation(&p->pole[0][0], &p->pole[0][1], &p->pole[1][0]);
 
-    if (eqs(sign, vector_pair_orientation(&p->pole[0][1], &p->pole[0][2], &p->pole[1][1])))
-	return false;
-    if (eqs(sign, vector_pair_orientation(&p->pole[0][2], &p->pole[0][3], &p->pole[1][2])))
-	return false;
-    if (eqs(sign, -vector_pair_orientation(&p->pole[0][3], &p->pole[0][2], &p->pole[1][3])))
-	return false;
+    if (neqs(sign, vector_pair_orientation(&p->pole[0][1], &p->pole[0][2], &p->pole[1][1])))
+	return true;
+    if (neqs(sign, vector_pair_orientation(&p->pole[0][2], &p->pole[0][3], &p->pole[1][2])))
+	return true;
+    if (neqs(sign, -vector_pair_orientation(&p->pole[0][3], &p->pole[0][2], &p->pole[1][3])))
+	return true;
 
-    if (eqs(sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
-	return false;
-    if (eqs(sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
-	return false;
-    if (eqs(sign, vector_pair_orientation(&p->pole[1][2], &p->pole[1][3], &p->pole[2][2])))
-	return false;
-    if (eqs(sign, -vector_pair_orientation(&p->pole[1][3], &p->pole[1][2], &p->pole[2][3])))
-	return false;
+    if (neqs(sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
+	return true;
+    if (neqs(sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
+	return true;
+    if (neqs(sign, vector_pair_orientation(&p->pole[1][2], &p->pole[1][3], &p->pole[2][2])))
+	return true;
+    if (neqs(sign, -vector_pair_orientation(&p->pole[1][3], &p->pole[1][2], &p->pole[2][3])))
+	return true;
 
-    if (eqs(sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
-	return false;
-    if (eqs(sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
-	return false;
-    if (eqs(sign, vector_pair_orientation(&p->pole[2][2], &p->pole[2][3], &p->pole[3][2])))
-	return false;
-    if (eqs(sign, -vector_pair_orientation(&p->pole[2][3], &p->pole[2][2], &p->pole[3][3])))
-	return false;
+    if (neqs(sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
+	return true;
+    if (neqs(sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
+	return true;
+    if (neqs(sign, vector_pair_orientation(&p->pole[2][2], &p->pole[2][3], &p->pole[3][2])))
+	return true;
+    if (neqs(sign, -vector_pair_orientation(&p->pole[2][3], &p->pole[2][2], &p->pole[3][3])))
+	return true;
 
-    if (eqs(sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
-	return false;
-    if (eqs(sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
-	return false;
-    if (eqs(sign, -vector_pair_orientation(&p->pole[3][2], &p->pole[3][3], &p->pole[2][2])))
-	return false;
-    if (eqs(sign, vector_pair_orientation(&p->pole[3][3], &p->pole[3][2], &p->pole[2][3])))
-	return false;
-    return true;
+    if (neqs(sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
+	return true;
+    if (neqs(sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
+	return true;
+    if (neqs(sign, -vector_pair_orientation(&p->pole[3][2], &p->pole[3][3], &p->pole[2][2])))
+	return true;
+    if (neqs(sign, vector_pair_orientation(&p->pole[3][3], &p->pole[3][2], &p->pole[2][3])))
+	return true;
+    return false;
 }
 
 private inline bool
@@ -1917,9 +1977,9 @@ is_curve_x_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
     fixed xmax1 = max(pole[2 * pole_step].x, pole[3 * pole_step].x);
     fixed xmax =  max(xmax0, xmax1);
 
-    if (fixed_floor(xmin) == fixed_ceiling(xmax))
+    if(xmax - xmin <= fixed_1)
 	return true;
-    return xmax - xmin < fixed_half;
+    return false;	
 }
 
 private inline bool
@@ -1932,9 +1992,9 @@ is_curve_y_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
     fixed ymax1 = max(pole[2 * pole_step].y, pole[3 * pole_step].y);
     fixed ymax =  max(ymax0, ymax1);
 
-    if (fixed_floor(ymin) == fixed_ceiling(ymax))
+    if (ymax - ymin <= fixed_1)
 	return true;
-    return ymax - ymin < fixed_half;
+    return false;	
 }
 
 private inline bool
@@ -1962,15 +2022,18 @@ is_patch_narrow(const patch_fill_state_t * pfs, const tensor_patch *p)
 private int 
 fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv)
 {
-    if (kv <= 1 && (is_patch_narrow(pfs, p) || !is_bended(p)))
+    if (kv <= 1 && (is_patch_narrow(pfs, p) || 
+	    (is_color_monotonic_by_v(pfs, p) && 
+	     !is_color_span_v_big(pfs, p)) ||
+	    !is_bended(p))) /* The order of calls is improtant for performance. */
 	return fill_stripe(pfs, p);
     else {
 	tensor_patch s0, s1;
 	int code;
 
 	if (kv <= 1) {
-	    fill_wedges(pfs, 2, 1, &p->pole[0][0], 4, &p->c[0][0], &p->c[0][1]);
-	    fill_wedges(pfs, 2, 1, &p->pole[0][3], 4, &p->c[1][0], &p->c[1][1]);
+	    fill_wedges(pfs, 2, 1, &p->pole[0][0], 4, &p->c[0][0], &p->c[1][0]);
+	    fill_wedges(pfs, 2, 1, &p->pole[0][3], 4, &p->c[0][1], &p->c[1][1]);
 	} else {
 	    /* Nothing to do, because patch_fill processed wedges over kvm. */
 	    /* The wedges over kvm are not processed here,
@@ -2087,17 +2150,6 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     gs_fixed_point buf[33];
     gs_memory_t *memory = pfs->pis->memory;
 
-#if NEW_TENSOR_SHADING_DEBUG
-    patch_cnt++;
-    /*if (patch_cnt == 11)*/
-#endif
-    {
-	vd_get_dc('s');
-	vd_set_shift(0, 0);
-	vd_set_scale(0.01);
-	vd_set_origin(0, 0);
-	/* vd_erase(RGB(192, 192, 192)); */
-    }
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
     make_tensor_patch(pfs, &p, curve, interior);
@@ -2119,7 +2171,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	    return_error(gs_error_VMerror);
     } else
 	pfs->wedge_buf = buf;
-#   if NEW_TENSOR_SHADING_DEBUG
+#   if TENSOR_SHADING_DEBUG
 	dbg_nofill = false;
 #   endif
     code = fill_wedges(pfs, kv[0], kvm, &p.pole[0][0], 4, &p.c[0][0], &p.c[1][0]);
@@ -2132,7 +2184,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   patches may use the opposite direction for same bounding curve.
 	   We apply the recursive dichotomy, in which 
 	   the rounding errors do not depend on the direction. */
-#	if NEW_TENSOR_SHADING_DEBUG
+#	if TENSOR_SHADING_DEBUG
 	    dbg_nofill = false;
 	    code = fill_patch(pfs, &p, kvm);
 	    dbg_nofill = true;
@@ -2142,7 +2194,6 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     if (km + 1 > count_of(buf))
 	gs_free_object(memory, pfs->wedge_buf, "patch_fill");
     pfs->wedge_buf = NULL;
-    vd_release_dc;
     return code;
 }
 
