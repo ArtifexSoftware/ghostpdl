@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,7 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-
+% $Id$
 % pdf_font.ps
 % PDF font operations.
 
@@ -179,18 +179,25 @@ pdfdict begin
   dup /Font resourcestatus {
     pop pop findfont
   } {
-    pop dup /FontDescriptor knownoget {
-		% Right now, all we look at are the Flags for fixed-width,
-		% serif, italic, and force-bold.
-      /Flags oget
-      dup 16#40 and -4 bitshift
-      1 index 16#40000 and -15 bitshift add
-      exch 3 and add {
-	Helvetica Courier Times-Roman Courier
-	Helvetica-Oblique Courier-Oblique Times-Italic Courier-Oblique
-	Helvetica-Bold Courier-Bold Times-Bold Courier-Bold
-	Helvetica-BoldOblique Courier-BoldOblique Times-BoldItalic Courier-BoldOblique
-      } exch get findfont
+    1 index /FontDescriptor knownoget {
+		% Stack: font-res fontname fontdesc
+      dup /Flags oget
+      dup 16#40 and -6 bitshift		% oblique/italic
+      exch 16#40000 and -17 bitshift add	% bold
+		% We should look at the serif and fixed flags, too.
+		% Stack: font-res fontname fontdesc properties
+      exch /FontName oget exch
+      1 index .fontnameproperties or
+      .substitutefontname
+      Fontmap 1 index known not {
+		% No available good substitution, use the standard one.
+	pop dup .substitutefont
+      } if
+      QUIET not {
+	(Substituting font ) print dup =only
+	( for ) print 1 index =only (.\n) print flush
+      } if
+      exch pop findfont
     } {
 		% No descriptor available, use the default algorithm.
       findfont
@@ -376,6 +383,8 @@ readonly def
   /Arial,Italic /Helvetica-Oblique
   /Arial,Bold /Helvetica-Bold
   /Arial,BoldItalic /Helvetica-BoldOblique
+  /CourierNew /Courier
+  /CourierNew,Bold /Courier-Bold
   /TimesNewRoman /Times-Roman
   /TimesNewRoman,Italic /Times-Italic
   /TimesNewRoman,Bold /Times-Bold
