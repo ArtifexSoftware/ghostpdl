@@ -82,7 +82,7 @@ typedef FN_EVALUATE_PROC((*fn_evaluate_proc_t));
 
 /* Test whether a function is monotonic. */
 #define FN_IS_MONOTONIC_PROC(proc)\
-  int proc(const gs_function_t * pfn, const float *lower,\
+    int proc(const gs_memory_t *mem, const gs_function_t * pfn, const float *lower, \
 	   const float *upper, gs_function_effort_t effort)
 typedef FN_IS_MONOTONIC_PROC((*fn_is_monotonic_proc_t));
 
@@ -198,8 +198,8 @@ int alloc_function_array(uint count, gs_function_t *** pFunctions,
  * gs_error_rangecheck if any part of the interval is outside the function's
  * domain.  If lower[i] > upper[i], the result is not defined.
  */
-#define gs_function_is_monotonic(pfn, lower, upper, effort)\
-  ((pfn)->head.procs.is_monotonic)(pfn, lower, upper, effort)
+#define gs_function_is_monotonic(mem, pfn, lower, upper, effort)	\
+    ((pfn)->head.procs.is_monotonic)(mem, pfn, lower, upper, effort)
 /*
  * If the function is monotonic, is_monotonic returns the direction of
  * monotonicity for output value N in bits 2N and 2N+1.  (Functions with

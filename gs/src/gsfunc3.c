@@ -289,7 +289,7 @@ gs_function_ElIn_init(gs_function_t ** ppfn,
 	pfn->params.m = 1;
 	pfn->head = function_ElIn_head;
 	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
+	    fn_domain_is_monotonic(mem, (gs_function_t *)pfn, EFFORT_MODERATE);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
@@ -373,14 +373,14 @@ fn_1ItSg_is_monotonic(const gs_memory_t *mem,
 	w1 = (min(v1, b1) - b0) * (e1 - e0) / (b1 - b0) + e0;
 	/* Note that w0 > w1 is now possible if e0 > e1. */
 	if (w0 > w1) {
-	    code = gs_function_is_monotonic(pfn->params.Functions[i],
+	    code = gs_function_is_monotonic(mem, pfn->params.Functions[i],
 					    &w1, &w0, effort);
 	    if (code <= 0)
 		return code;
 	    /* Swap the INCREASING and DECREASING flags. */
 	    code = ((code & MASK1) << 1) | ((code & (MASK1 << 1)) >> 1);
 	} else {
-	    code = gs_function_is_monotonic(pfn->params.Functions[i],
+	    code = gs_function_is_monotonic(mem, pfn->params.Functions[i],
 					    &w0, &w1, effort);
 	    if (code <= 0)
 		return code;
@@ -555,7 +555,7 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
 	pfn->params.n = n;
 	pfn->head = function_1ItSg_head;
 	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
+	    fn_domain_is_monotonic(mem, (gs_function_t *)pfn, EFFORT_MODERATE);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
@@ -605,7 +605,8 @@ fn_AdOt_evaluate(const gs_memory_t *mem, const gs_function_t *pfn_common, const 
 
 /* Test whether an Arrayed Output function is monotonic. */
 private int
-fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
+fn_AdOt_is_monotonic(const gs_memory_t *mem, 
+		     const gs_function_t * pfn_common,
 		     const float *lower, const float *upper,
 		     gs_function_effort_t effort)
 {
@@ -615,7 +616,7 @@ fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
 
     for (i = 0, result = 0; i < pfn->params.n; ++i) {
 	int code =
-	    gs_function_is_monotonic(pfn->params.Functions[i], lower, upper,
+	    gs_function_is_monotonic(mem, pfn->params.Functions[i], lower, upper,
 				     effort);
 
 	if (code <= 0)
@@ -719,7 +720,7 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
 
 	if (psubfn->params.m != m || psubfn->params.n != 1)
 	    return_error(mem, gs_error_rangecheck);
-	sub_mono = fn_domain_is_monotonic(psubfn, EFFORT_MODERATE);
+	sub_mono = fn_domain_is_monotonic(mem, psubfn, EFFORT_MODERATE);
 	if (i == 0 || sub_mono < 0)
 	    is_monotonic = sub_mono;
 	else if (is_monotonic >= 0)

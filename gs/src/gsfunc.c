@@ -82,7 +82,7 @@ fn_check_mnDR(const gs_memory_t *mem, const gs_function_params_t * params, int m
 
 /* Get the monotonicity of a function over its Domain. */
 int
-fn_domain_is_monotonic(const gs_function_t *pfn, gs_function_effort_t effort)
+fn_domain_is_monotonic(const gs_memory_t *mem, const gs_function_t *pfn, gs_function_effort_t effort)
 {
 #define MAX_M 16		/* arbitrary */
     float lower[MAX_M], upper[MAX_M];
@@ -94,7 +94,7 @@ fn_domain_is_monotonic(const gs_function_t *pfn, gs_function_effort_t effort)
 	lower[i] = pfn->params.Domain[2 * i];
 	upper[i] = pfn->params.Domain[2 * i + 1];
     }
-    return gs_function_is_monotonic(pfn, lower, upper, effort);
+    return gs_function_is_monotonic(mem, pfn, lower, upper, effort);
 }
 
 /* Return default function information. */
@@ -223,7 +223,7 @@ fn_common_serialize(const gs_function_t * pfn, stream *s)
     if (code < 0)
 	return code;
     if (p->Range == NULL && p->n * 2 > count_of(dummy))
-	return gs_error_unregistered; /* Unimplemented. */
+	return_error(s->memory, gs_error_unregistered); /* Unimplemented. */
     return sputs(s, (const byte *)(p->Range != NULL ? &p->Range[0] : dummy), 
 	    sizeof(p->Range[0]) * p->n * 2, &n);
 }

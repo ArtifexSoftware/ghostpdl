@@ -39,7 +39,8 @@ void fn_common_free(gs_function_t * pfn, bool free_params, gs_memory_t * mem);
 int fn_check_mnDR(const gs_memory_t *mem, const gs_function_params_t * params, int m, int n);
 
 /* Get the monotonicity of a function over its Domain. */
-int fn_domain_is_monotonic(const gs_function_t *pfn,
+int fn_domain_is_monotonic(const gs_memory_t *mem,
+			   const gs_function_t *pfn,
 			   gs_function_effort_t effort);
 
 /* Generic get_info implementation (no Functions or DataSource). */

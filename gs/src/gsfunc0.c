@@ -677,7 +677,7 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	    pfn->params.Order = 1;	/* default */
 	pfn->head = function_Sd_head;
 	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
+	    fn_domain_is_monotonic(mem, (gs_function_t *)pfn, EFFORT_MODERATE);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;

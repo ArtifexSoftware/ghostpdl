@@ -851,7 +851,7 @@ gs_function_PtCr_init(gs_function_t ** ppfn,
 	pfn->data_source.access = calc_access;
 	pfn->head = function_PtCr_head;
 	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
+	    fn_domain_is_monotonic(mem, (gs_function_t *)pfn, EFFORT_MODERATE);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
