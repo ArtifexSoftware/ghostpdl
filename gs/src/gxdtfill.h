@@ -53,6 +53,78 @@
  * if they are necessary for the contiguity.
  */
 
+/*
+We must paint pixels with index i such that
+
+    Xl <= i + 0.5 < Xr
+
+The condition is is equivalent to
+
+    Xl - 0.5 <= i < Xr - 0.5
+
+which is equivalent to
+
+    (is_integer(Xl - 0.5) ? Xl - 0.5 : ceil(Xl - 0.5)) <= i <
+    (is_integer(Xr - 0.5) ? Xr - 0.5 : floor(Xr - 0.5) + 1)
+
+(the last '+1" happens due to the strong comparizon '<')
+which is equivalent to
+
+    ceil(Xl - 0.5) <= i < ceil(Xr - 0.5)
+
+trap_line represents the intersection coordinate as a rational value :
+
+    Xl = xl + e - fl
+    Xr = xr + e - fr
+
+Where 'e' is 'fixed_epsilon', 0.5 is 'fixed_half', and fl == l.fx / l.h, fr == - r.fx / r.h,
+e <= fl < 0, e <= fr < 0.
+Let 
+
+    xl' := xl + 0.5
+    xr' := xr + 0.5
+
+Then 
+
+    xl = xl' - 0.5
+    xr = xr' - 0.5
+
+    Xl = xl' - 0.5 + e - fl
+    Xr = xr' - 0.5 + e - fr
+
+    ceil(xl' - 0.5 + e - fl - 0.5) <= i < ceil(xr' - 0.5 + e - fr - 0.5)
+    
+which is equivalent to
+
+    ceil(xl' + e - fl) - 1 <= i < ceil(xr' + e - fr) - 1
+
+which is equivalent to
+
+    (is_integer(xl' + e - fl) ? xl' + e - fl - 1 : ceil(xl' + e - fl) - 1) <= i <
+    (is_integer(xr' + e - fr) ? xr' + e - fr - 1 : ceil(xr' + e - fr) - 1)
+
+which is equivalent to
+
+    (is_integer(xl' + e - fl) ? xl' + e - fl - 1 : floor(xl' + e - fl)) <= i <
+    (is_integer(xr' + e - fr) ? xr' + e - fr - 1 : floor(xr' + e - fr))
+
+which is equivalent to
+
+    (is_integer(xl') && e == fl ? xl' - 1 : floor(xl' + e - fl)) <= i <
+    (is_integer(xr') && e == fr ? xr' - 1 : floor(xr' + e - fr))
+
+Note that e != fl ==> floor(xl' + e - fl) == floor(xl')  due to e - fl < LeastSignificantBit(xl') ;
+          e == fl ==> floor(xl' + e - fl) == floor(xl')  due to e - fl == 0;
+
+thus the condition is is equivalent to
+
+    (is_integer(xl') && e == fl ? xl' - 1 : floor(xl')) <= i <
+    (is_integer(xr') && e == fr ? xr' - 1 : floor(xr'))
+
+It is computed with the macro 'rational_floor'.
+
+*/
+
 GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
     const gs_fixed_edge * right, fixed ybot, fixed ytop, int flags,
     const gx_device_color * pdevc, gs_logical_operation_t lop)
@@ -211,14 +283,20 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	    r.ldi = l.ldi, r.ldf = l.ldf, r.xf = l.xf;
 	else
 	    compute_ldx(&r, ysr);
-	rxl = fixed2int_var(l.x);
-	rxr = fixed2int_var(r.x);
+	/* We subtracted fixed_epsilon from l.x, r.x to simplify rounding
+	   when the rational part is zero. Now add it back to get xl', xr' */
+	l.x += fixed_epsilon;
+	r.x += fixed_epsilon;
 
+#define rational_floor(tl)\
+  fixed2int_var(fixed_is_int(tl.x) && tl.xf == -tl.h ? tl.x - fixed_1 : tl.x)
 #define STEP_LINE(ix, tl)\
   tl.x += tl.ldi;\
   if ( (tl.xf += tl.ldf) >= 0 ) tl.xf -= tl.h, tl.x++;\
-  ix = fixed2int_var(tl.x)
+  ix = rational_floor(tl)
 
+	rxl = rational_floor(l);
+	rxr = rational_floor(r);
 	SET_MINIMAL_WIDTH(rxl, rxr, l, r);
 	while (++iy != iy1) {
 	    register int ixl, ixr;
