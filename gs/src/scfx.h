@@ -20,8 +20,8 @@
 /* CCITTFax filter state definition */
 /* Requires strimpl.h */
 
-#ifndef scfx_DEFINED
-#  define scfx_DEFINED
+#ifndef scfx_INCLUDED
+#  define scfx_INCLUDED
 
 #include "shc.h"
 

@@ -19,8 +19,8 @@
 /*$Id$ */
 /* Definitions common to stream clients and implementors */
 
-#ifndef scommon_DEFINED
-#  define scommon_DEFINED
+#ifndef scommon_INCLUDED
+#  define scommon_INCLUDED
 
 #include "gsmemory.h"
 #include "gstypes.h"		/* for gs_string */
