@@ -240,6 +240,9 @@ pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
             pjl_proc_get_envvar(pcs->pjls, "binding"), "longedge") ? false : true;
         pcs->back_side = false;
         pcs->output_bin = 1;
+        pcs->tray_orientation =  pjl_proc_vartoi(pcs->pjls,
+            pjl_proc_get_envvar(pcs->pjls, "trayorientation"));
+
     }
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
         /* rtl always uses native units for user units.  The hp

@@ -95,6 +95,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"plotsizerotate", "on"},     /* "on" default allows PS rotation per spec */
     {"viewer", "off"},            /* "on" enables unsafe viewer speed optimizations */
     /*    {"personality", "rtl"}, */
+    {"trayorientation", "0"},     /* 0 90 180 or 270 */
     {"", ""}
 };
 

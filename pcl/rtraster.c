@@ -1077,7 +1077,10 @@ pcl_start_raster(
 
     prast->pmem = pcs->memory;
 
-    prast->transparent = (pcs->source_transparent || pcs->pattern_transparent);
+    if ( pcs->source_transparent || pcs->pattern_transparent )
+        prast->transparent = true;
+    else
+        prast->transparent = false;
     prast->src_height_set = pcs->raster_state.src_height_set;
     prast->pcs = pcs;
     pcl_cs_indexed_init_from(prast->pindexed, pindexed);

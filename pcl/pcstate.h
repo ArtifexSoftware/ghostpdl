@@ -356,6 +356,8 @@ struct pcl_state_s {
 
     /* end page procedure to use */
     int (*end_page)( pcl_state_t * pcs, int num_copies, int flush );
+    /* orientation of the current output tray page */
+    int tray_orientation;
 };
 
 /* accessor functions for the pcl target device.  These live in

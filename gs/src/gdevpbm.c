@@ -72,6 +72,7 @@ struct gx_device_pbm_s {
 				/* 1 if gray (PGM or PPM only), */
 				/* 2 or 3 if colored (PPM only) */
     bool UsePlanarBuffer;	/* 0 if chunky buffer, 1 if planar */
+    int TrayOrientation;        /* 0 (defualt), 90, 180, 270 */
     dev_proc_copy_alpha((*save_copy_alpha));
     dev_proc_begin_typed_image((*save_begin_typed_image));
 };
@@ -96,7 +97,7 @@ typedef struct gx_device_pbm_s gx_device_pbm;
 	 { 0 },\
 	is_raw,\
 	optimize,\
-	0, 0, 0\
+	0, 0, 0, 0\
 }
 
 /* For all but PBM, we need our own color mapping and alpha procedures. */
@@ -110,6 +111,7 @@ private dev_proc_get_params(ppm_get_params);
 private dev_proc_put_params(ppm_put_params);
 private dev_proc_copy_alpha(pnm_copy_alpha);
 private dev_proc_begin_typed_image(pnm_begin_typed_image);
+private dev_proc_get_initial_matrix(pbm_get_initial_matrix);
 
 /* We need to initialize uses_color when opening the device, */
 /* and after each showpage. */
@@ -126,33 +128,34 @@ private dev_proc_print_page(psm_print_page);
 /* The device procedures */
 
 /* See gdevprn.h for the template for the following. */
-#define pgpm_procs(p_open, p_get_params, p_map_rgb_color, p_map_color_rgb, p_map_cmyk_color) {\
-	p_open, NULL, NULL, ppm_output_page, gdev_prn_close,\
+#define pgpm_procs(p_open, p_initial_matrix, p_get_params, p_map_rgb_color, p_map_color_rgb, p_map_cmyk_color) {\
+	p_open, p_initial_matrix, NULL, ppm_output_page, gdev_prn_close,\
 	p_map_rgb_color, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
 	p_get_params, ppm_put_params,\
 	p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device\
 }
 
 private const gx_device_procs pbm_procs =
-    pgpm_procs(gdev_prn_open, gdev_prn_get_params,
+    pgpm_procs(gdev_prn_open, pbm_get_initial_matrix, gdev_prn_get_params,
 	       gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, NULL);
 private const gx_device_procs pgm_procs =
-    pgpm_procs(ppm_open, gdev_prn_get_params,
+    pgpm_procs(ppm_open, NULL, gdev_prn_get_params,
 	       pgm_map_rgb_color, pgm_map_color_rgb, NULL);
 private const gx_device_procs ppm_procs =
-    pgpm_procs(ppm_open, ppm_get_params,
+    pgpm_procs(ppm_open, NULL, ppm_get_params,
 	       gx_default_rgb_map_rgb_color, ppm_map_color_rgb, NULL);
 private const gx_device_procs pnm_procs =
-    pgpm_procs(ppm_open, ppm_get_params,
+    pgpm_procs(ppm_open, NULL, ppm_get_params,
 	       ppm_map_rgb_color, ppm_map_color_rgb, NULL);
 private const gx_device_procs pkm_procs =
-    pgpm_procs(ppm_open, ppm_get_params,
+    pgpm_procs(ppm_open, NULL, ppm_get_params,
 	       NULL, cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color);
 
 /* The device descriptors themselves */
 const gx_device_pbm gs_pbm_device =
 pbm_prn_device(pbm_procs, "pbm", '1', 0, 1, 1, 1, 0, 0,
 	       X_DPI, Y_DPI, pbm_print_page);
+
 const gx_device_pbm gs_pbmraw_device =
 pbm_prn_device(pbm_procs, "pbmraw", '4', 1, 1, 1, 1, 1, 0,
 	       X_DPI, Y_DPI, pbm_print_page);
@@ -394,9 +397,27 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     int ecode = 0;
     int code;
     long v;
+    int t;
     const char *vname;
 
     save_info = pdev->color_info;
+    if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
+        if (code < 0)
+            ecode = code;
+        else if (t != 0 && t != 90 && t != 180 && t != 270)
+            param_signal_error(plist, "TrayOrientation",
+                               ecode = gs_error_rangecheck);
+        else {
+            if ( t != ((gx_device_pbm *)pdev)->TrayOrientation) {
+                if ( t == 90 || t == 270 ) {
+                    floatp tmp = pdev->height;
+                    pdev->height = pdev->width;
+                    pdev->width = tmp;
+                }
+                ((gx_device_pbm *)pdev)->TrayOrientation = t;
+            }
+        }
+    }
     if ((code = param_read_long(plist, (vname = "GrayValues"), &v)) != 1 ||
 	(code = param_read_long(plist, (vname = "RedValues"), &v)) != 1 ||
 	(code = param_read_long(plist, (vname = "GreenValues"), &v)) != 1 ||
@@ -500,9 +521,53 @@ pnm_begin_typed_image(gx_device *dev,
 					   pdcolor, pcpath, memory, pinfo);
 }
 
-
 /* ------ Internal routines ------ */
 
+private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
+{
+    floatp fs_res = pdev->HWResolution[0] / 72.0;
+    floatp ss_res = pdev->HWResolution[1] / 72.0;
+    
+
+    switch(((gx_device_pbm *)pdev)->TrayOrientation) {
+    case 0:
+        pmat->xx = fs_res;
+        pmat->xy = 0;
+        pmat->yx = 0;
+        pmat->yy = -ss_res;
+        pmat->tx = 0;
+        pmat->ty = pdev->MediaSize[1];
+        break;
+    case 90:
+        pmat->xx = 0;
+        pmat->xy = -ss_res;
+        pmat->yx = -fs_res;
+        pmat->yy = 0;
+        pmat->tx = pdev->MediaSize[1];
+        pmat->ty = pdev->MediaSize[0];
+        break;
+    case 180:
+        pmat->xx = -fs_res;
+        pmat->xy = 0;
+        pmat->yx = 0;
+        pmat->yy = ss_res;
+        pmat->tx = pdev->MediaSize[0];
+        pmat->ty = 0;
+        break;
+    case 270:
+        pmat->xx = 0;
+        pmat->xy = ss_res;
+        pmat->yx = fs_res;
+        pmat->yy = 0;
+        /* NB WRONG Doesn't account for paper size offsets */
+        pmat->tx = 0;
+        pmat->ty = 0;
+        break;
+    default:
+        /* not reached */
+    }
+}
+    
 /* Print a page using a given row printing routine. */
 private int
 pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
