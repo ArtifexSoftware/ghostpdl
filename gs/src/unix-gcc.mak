@@ -459,3 +459,14 @@ include $(GLSRCDIR)/unixinst.mak
 # This has to come last so it won't be taken as the default target.
 $(AK):
 	if ( $(CC) --version | egrep "^2\.7\.([01]|2(\.[^1-9]|$$))" >/dev/null ); then echo -Dconst= >$(AK); else echo -Wcast-qual -Wwrite-strings >$(AK); fi
+
+# platform-specific clean-up
+# this makefile is intended to be hand edited so we don't distribute
+# the (presumedly modified) version in the top level directory
+distclean : clean config-clean
+	-$(RM) Makefile
+
+maintainer-clean : disclean
+	# nothing special to do
+
+

@@ -242,8 +242,11 @@ gconfigf_h=$(GLGENDIR)$(D)gconfxc.h
 all default : $(GS_XE)
 	$(NO_OP)
 
-#****** ON UNIX PLATFORMS, SHOULD REMOVE `makefile' ******
-distclean maintainer-clean realclean : clean
+# the distclean and maintainer-clean targets (if any)
+# are the responsibility of the platform-specific
+# makefiles. We only handle the internal build system
+# apparatus here.
+realclean : clean
 	$(NO_OP)
 
 clean : mostlyclean

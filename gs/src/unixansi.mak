@@ -393,3 +393,13 @@ include $(GLSRCDIR)/unix-aux.mak
 include $(GLSRCDIR)/unixlink.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/unixinst.mak
+
+# platform-specific clean-up  
+# this makefile is intended to be hand edited so we don't distribute
+# the (presumedly modified) version in the top level directory
+distclean : clean config-clean
+        -$(RM) Makefile
+
+maintainer-clean : disclean
+        # nothing special to do
+
