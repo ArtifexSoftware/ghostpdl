@@ -65,6 +65,10 @@
 <li><a href="#Device_parameters">Device parameters</a>
 <li><a href="#User_parameters">User parameters</a>
 <li><a href="#Miscellaneous_additions">Miscellaneous additions</a>
+<ul>
+<li><a href="#Extendeed_semantics_of_run">Extendeed semantics of 'run'</a>
+<li><a href="#GlyphNames2Unicode">GlyphNames2Unicode</a>
+</ul>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -1929,9 +1933,22 @@ may be overridden by the command line argument
 
 <h2><a name="Miscellaneous_additions"></a>Miscellaneous additions</h2>
 
-<b><tt>run</tt></b> can take either a string or a file as its argument.  In
+<h3><a name="Extendeed_semantics_of_run"></a>Extendeed semantics of 'run'</h3>
+
+<p>
+The operator <b><tt>run</tt></b> can take either a string or a file as its argument.  In
 the latter case, it just runs the file, closing it at the end, and trapping
 errors just as for the string case.
+
+<h3><a name="GlyphNames2Unicode"></a>GlyphNames2Unicode</h3>
+<p>
+<b><tt>GlyphNames2Unicode</tt></b> is an undocumented dictionary, which Adobe 
+Postscript printer driver uses to communicate with Adobe Distiller.
+In this dictionary keys are glyph names, values are Unicode UTC-16 codes for them.
+The dictionaly is stored into <b><tt>FontInfo</tt></b> dictionary with
+the key <b><tt>GlyphNames2Unicode</tt></b>. Ghostscript recognises it and uses
+to generate <b><tt>ToUnicode</tt></b> CMaps with pdfwrite.
+<p>
 
 <!-- [2.0 end contents] ==================================================== -->
 
