@@ -1939,8 +1939,10 @@ Note that the initialization file <b><tt>gs_init.ps</tt></b> makes
 <b><tt>systemdict</tt></b> read-only, so the values of names defined with
 <b><tt>-D</tt></b>, <b><tt>-d</tt></b>, <b><tt>-S</tt></b>, and
 <b><tt>-s</tt></b> cannot be changed -- although, of course, they can be
-superseded by definitions in <b><tt>userdict</tt></b> or other
-dictionaries.
+superseded by definitions in <b><tt>userdict</tt></b> or other dictionaries.
+However, device parameters set this way (<b><tt>PageSize</tt></b>,
+<b><tt>Margins</tt></b>, etc.) are <em>not</em> read-only, and <em>can</em>
+be changed by code in PostScript files.
 
 <dl>
 <dt><b><tt>-g</tt></b><em>number1</em><b><tt>x</tt></b><em>number2</em>
