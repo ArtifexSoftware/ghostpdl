@@ -263,7 +263,7 @@ $(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(memory__h) $(md5_h)
 	$(EXP)$(ECHOGS_XE) -a $(GLGEN)md5.h -+R $(GLSRC)md5.h
 	$(CP_) $(GLSRC)md5.c $(GLGEN)md5.c
 	$(GLCC) $(GLO_)md5.$(OBJ) $(C_) $(GLGEN)md5.c
-	$(RM_) $(GLGEN)md5.c
+	$(RM_) $(GLGEN)md5.c $(GLGEN)md5.h
 
 ###### Low-level facilities and utilities
 
