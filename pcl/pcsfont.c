@@ -110,6 +110,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	    return 0;
 	  case 6:
 	    { /* Assign <font_id> to copy of current font. */
+	      /* recompute the current font */
 	    }
 	    return e_Unimplemented;
 	  default:
@@ -204,7 +205,8 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	      pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
 	    }
 	    plfont->params.height_4ths =
-	      pl_get_uint16(pfh->Height) * 72 / plfont->resolution.x;
+	      (uint)(pl_get_uint16(pfh->Height) * 72.0 / plfont->resolution.x +
+		     0.5);
 	    break;
 	  }
 	  case plfst_TrueType:

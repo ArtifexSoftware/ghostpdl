@@ -203,9 +203,6 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
 #endif
 		    continue;
 		  }
-#ifdef DEBUG
-		dprintf1("Loaded %s\n", fname);
-#endif
 		plfont->storage = pcds_internal;
 		if ( residentp->params.symbol_set != 0 )
 		  plfont->font_type = plft_8bit;

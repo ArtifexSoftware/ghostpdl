@@ -77,7 +77,6 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	  hpgl_args_set_int(&args,2);
 	  hpgl_PM(&args, pcls);
-	  /* HAS update the pen's position */
 	}
 	return 0;
 }
@@ -109,7 +108,6 @@ pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	  hpgl_args_set_int(&args,2);
 	  hpgl_PM(&args, pcls);
-	  /* HAS update the pen's position */
 	}
 	return 0;
 }

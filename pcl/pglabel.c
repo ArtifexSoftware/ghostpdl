@@ -680,7 +680,10 @@ hpgl_print_char(hpgl_state_t *pgls, uint ch)
 	    }
 	  else
 	    { if ( use_show )
+	      {
 	        code = gs_show_n_init(penum, pgs, str, 1);
+		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
+	      }
 	      else
 		code = gs_charpath_n_init(penum, pgs, str, 1, true);
 	      if ( code < 0 || (code = gs_show_next(penum)) != 0 )
@@ -761,8 +764,8 @@ hpgl_can_concat_labels(const hpgl_state_t *pgls)
  
 /* return relative coordinates to compensate for origin placement -- LO */
  private int
-hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin, 
-				 hpgl_real_t width, hpgl_real_t height, 
+hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
+				 hpgl_real_t width, hpgl_real_t height,
 				 gs_point *offset)
 {
 	double pos_x = 0.0, pos_y = 0.0;
@@ -771,8 +774,6 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
            point size.  HAS need to support other font types. */
 	if ( origin > 10 )
 	  off_x = off_y = 0.33 * height;
-	    
-	/* HAS does not yet handle 21. */
 	switch ( origin )
 	  {
 	  case 11:
@@ -846,7 +847,6 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 	    dprintf("unknown label parameter");
 
 	  }
-
 	offset->x = pos_x;
 	offset->y = pos_y;
 	return 0;
@@ -864,6 +864,38 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 	/*
 	 * NOTE: the two loops below must be consistent with each other!
 	 */
+  
+#if 0				/* **************** */
+	/****************
+
+The algorithm below for deciding whether to compute the label length is
+wrong: hpgl_can_concat_labels is *not* the correct way to determine what
+needs to be computed.  To minimize the computation, what we need is a table
+that maps
+	<int label_origin, int text_path>
+to
+	<bool need_width, bool need_height>.
+If both need_width and need_height are false, we can skip the loop entirely;
+if only one is true, we can omit some of the computations in the loop (e.g.,
+if we are writing horizontally and only need the height, for example for LO
+3, we can omit the calls on hpgl_get_char_width and the special stuff for BS
+and HT).  I would choose to do this with a table of bytes, similar to
+can_concat, in which the bits of each byte contained
+	h3 h2 h1 h0 w3 w2 w1 w0
+i.e., <height needed for text path 3>, <height needed for text path 2>, ...,
+<width needed for text path 0>:
+	{ static const byte width_height_needed[22] = {
+	     ...
+	  };
+	  byte mask = width_height_needed[pgls->g.label.origin] >>
+	    pgls->g.character.text_path;
+
+	  need_width = (mask & 1) != 0;
+	  need_height = (mask & 0x10) != 0;
+	}
+We still need some special code to handle LFs.
+
+	 ****************/
 
 	/*
 	 * Compute the label length if the combination of text path and
@@ -875,6 +907,7 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 	     (vertical &&
 	      memchr(pgls->g.label.buffer, LF, pgls->g.label.char_count) != 0)
 	   )
+#endif				/* **************** */
 	{
 	  hpgl_real_t width = 0.0, height = 0.0;
 	  int save_index = pgls->g.font_selected;
@@ -969,7 +1002,7 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical, ve
 	   hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
 					 hpgl_plot_move_relative, true));
 	}
-
+	
 	{
 	  int i;
 	  for ( i = 0; i < pgls->g.label.char_count; ++i )
@@ -981,7 +1014,7 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical, ve
 		  switch (ch)
 		    {
 		    case BS :
-		      spaces = -1;
+		      spaces = -1, lines = 0;
 		      break;
 		    case LF :
 		      /*
@@ -1098,6 +1131,23 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	pargs->source.ptr = p;
 	return e_NeedData;
 }
+
+ int
+hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
+{	
+	int saved_origin = pgls->g.label.origin;
+	hpgl_call(hpgl_gsave(pgls));
+	pgls->g.label.origin = 5;
+	hpgl_call(hpgl_clear_current_path(pgls));
+	hpgl_call(hpgl_init_label_buffer(pgls));
+	hpgl_call(hpgl_buffer_char(pgls, pgls->g.symbol_mode));
+	hpgl_call(hpgl_process_buffer(pgls));
+	hpgl_call(hpgl_destroy_label_buffer(pgls));
+	hpgl_call(hpgl_grestore(pgls));
+	pgls->g.label.origin = saved_origin;
+	return 0;
+}
+	
 
 /* Initialization */
 private int

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -8,6 +8,9 @@
 #include "stdio_.h"
 #include <stdarg.h>		/* how to make this portable? */
 #include "string_.h"
+#include "gsmemory.h"		/* for gxdevice.h */
+#include "gstypes.h"		/* ditto */
+#include "gxdevice.h"		/* for gs_memory_default, if needed */
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcfont.h"

@@ -10,6 +10,7 @@
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"
+#include "gsrop.h"
 #include "gscspace.h"		/* for gscolor2.h */
 #include "gscoord.h"
 #include "gsdcolor.h"
@@ -555,12 +556,7 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	       */
 	      if ( id_value(*pid) != id_value(pcls->cached_pattern_id) )
 		{ /* Release patterns being decached. */
-		  int i;
-		  for ( i = 0; i < 3; ++i )
-		    { rc_decrement_only(pcls->cached_pattern[i],
-					"old cached_pattern");
-		      pcls->cached_pattern[i] = 0;
-		    }
+		  pcl_clear_cached_pattern_refs(pcls);
 		  pcls->cached_pattern_id = *pid;
 		}
 	      ppi = pcls->cached_pattern;
@@ -639,9 +635,28 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type, const pcl_id_t
 	rotation = pcls->rotate_patterns ? pcls->print_direction : 0;
 	pcl_set_drawing_color_rotation(pcls, type, pid,
           &pcls->patterns, rotation, &pattern_origin_device);
+	gs_setsourcetransparent(pcls->pgs, pcls->source_transparent);
+	gs_settexturetransparent(pcls->pgs, pcls->pattern_transparent);
+	gs_setrasterop(pcls->pgs, pcls->logical_op);
+	gs_setfilladjust(pcls->pgs, pcls->grid_adjust, pcls->grid_adjust);
 	return 0;
 }
 
+/* get rid of cached pattern references maintained in the pcl state.
+   This code is duplicated in pattern initilization. */
+private void
+cached_pattern_release(gs_pattern_instance **pcpat)
+{	rc_decrement_only(*pcpat, "cached_pattern_release");
+	*pcpat = 0;
+}
+int
+pcl_clear_cached_pattern_refs(pcl_state_t *pcls)
+{	int i;
+	for ( i=0; i < countof(pcls->cached_pattern); i++ )
+	  cached_pattern_release(&pcls->cached_pattern[i]);
+	return 0;
+}
+  
 /* Initialization */
 private int
 pcdraw_do_init(gs_memory_t *mem)
@@ -650,11 +665,6 @@ pcdraw_do_init(gs_memory_t *mem)
 private void
 cached_pattern_init(gs_pattern_instance **pcpat)
 {	*pcpat = 0;
-}
-private void
-cached_pattern_release(gs_pattern_instance **pcpat)
-{	rc_decrement_only(*pcpat, "cached_pattern_release");
-	*pcpat = 0;
 }
 private void
 pcdraw_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)

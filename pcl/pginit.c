@@ -105,9 +105,6 @@ hpgl_clear_state(pcl_state_t *pcls)
 void
 hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {		/* pgframe.c (Chapter 18) */
-	/* HAS we expect the pcl logical page size to be calculated in
-           advance of an hpgl reset.  Alot of repetition here that can
-           be done away with */
 	hpgl_args_t hpgl_args;
 
 	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold) )
@@ -127,9 +124,7 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    /* provide default anchor point, plot size and picture
                frame size */
 	    hpgl_default_coordinate_system(pcls);
-	    /* HAS clear the current gs path if there is one.  This
-               needs investigation since we should not have a path at
-               the end of gl/2 invocation.  */
+	    /* we should not have a path at this point but we make sure */
 	    hpgl_clear_current_path(pcls);
 	    /* Initialize stick/arc font instances */
 	    pcls->g.stick_font[0][0].pfont =
@@ -143,34 +138,24 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	if ( type & (pcl_reset_page_params) )
 	  {
 	    hpgl_default_coordinate_system(pcls);
-
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IW(&hpgl_args, pcls);
-	    
 	    hpgl_args_set_int(&hpgl_args,0);
 	    hpgl_PM(&hpgl_args, pcls);
-
 	    hpgl_args_set_int(&hpgl_args,2);
 	    hpgl_PM(&hpgl_args, pcls);
-
-	    /* update the cursor position ?? */
 	  }
 	
 	if ( type & (pcl_reset_picture_frame) )
 	  {
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IP(&hpgl_args, pcls);
-	    
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IW(&hpgl_args, pcls);
-
 	    hpgl_args_set_int(&hpgl_args,0);
 	    hpgl_PM(&hpgl_args, pcls);
-
 	    hpgl_args_set_int(&hpgl_args,2);
 	    hpgl_PM(&hpgl_args, pcls);
-
-	    /* HAS pen to P1 */
 	  }
 
 	if (type & (pcl_reset_plot_size))

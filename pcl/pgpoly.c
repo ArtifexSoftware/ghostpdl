@@ -66,27 +66,32 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_setup(pargs);
 	hpgl_call(hpgl_PM(pargs, pgls));
 
+	if ( sweep == 360.0 ) /* HAS needs epsilon */
+	  hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
+					 radius, 0.0, 360.0, chord, true, 
+					 hpgl_plot_draw_absolute, true));
+	else
 	/* draw the 2 lines and the arc using 3 point this does seem
            convoluted but it does guarantee that the endpoint lines
            for the vectors and the arc endpoints are coincident. */
-	{
-	  hpgl_real_t x1, y1, x2, y2, x3, y3;
-	  hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
-				        start, &x1, &y1);
-	  hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
-				        (start + (sweep / 2.0)), &x2, &y2);
-	  hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
-				        (start + sweep), &x3, &y3);
-	  hpgl_call(hpgl_add_point_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-					   hpgl_plot_move_absolute, true));
-	  hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
-					   hpgl_plot_draw_absolute, true));
-	  hpgl_call(hpgl_add_arc_3point_to_path(pgls, 
-						x1, y1, 
-						x2, y2,
-						x3, y3, chord,
-						hpgl_plot_draw_absolute));
-	}
+	  {
+	    hpgl_real_t x1, y1, x2, y2, x3, y3;
+	    hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
+					  start, &x1, &y1);
+	    hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
+					  (start + (sweep / 2.0)), &x2, &y2);
+	    hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
+					  (start + sweep), &x3, &y3);
+	    hpgl_call(hpgl_add_point_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
+					     hpgl_plot_move_absolute, true));
+	    hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
+					     hpgl_plot_draw_absolute, true));
+	    hpgl_call(hpgl_add_arc_3point_to_path(pgls, 
+						  x1, y1, 
+						  x2, y2,
+						  x3, y3, chord,
+						  hpgl_plot_draw_absolute));
+	  }
 	  
 	/* exit polygon mode, this should close the path and the wedge
            is complete */

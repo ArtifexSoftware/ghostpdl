@@ -370,7 +370,6 @@ struct pcl_state_s {
 	pl_dict_t patterns;
 		/* Internal variables */
 	pcl_id_t current_pattern_id;	/* at last select_pattern */
-	bool pattern_set;	/* true if pattern set in graphics state */
 	gx_ht_tile pattern_tile;	/* set by pcl_set_drawing_color */
 	gs_pattern_instance *cached_shading[7*4];  /* create as needed, */
 						/* 1 per rotation */
@@ -467,7 +466,7 @@ struct pcl_state_s {
 		/* Chapter C5 (pccprint.c) */
 
 	byte logical_op;	/* (also in graphics state) */
-	bool grid_centered;	/* (also fill adjust in graphics state) */
+	float grid_adjust;	/* (also fill adjust in graphics state) */
 
 		/* Chapter C6 (pccrastr.c) */
 

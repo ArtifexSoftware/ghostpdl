@@ -24,6 +24,11 @@ int hpgl_set_user_units_to_plu_ctm(P1(const hpgl_state_t *pgls));
 /* set (user units) ctm */
 int hpgl_set_ctm(P1(hpgl_state_t *pgls));
 
+/* function set up the current drawing attributes this is only used by
+   the character code since it does most of it's own graphic's state
+   bookkeeping */
+int hpgl_set_drawing_color(P2(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode));
+
 /* function to get the current hpgl/2 state position */
 int hpgl_get_current_position(P2(hpgl_state_t *pgls, gs_point *pt));
 

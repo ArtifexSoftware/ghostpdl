@@ -43,7 +43,7 @@ dprint_font_params_t(const pl_font_params_t *pfp)
 {	dprintf7("symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u\n",
 		 pfp->symbol_set,
 		 (pfp->proportional_spacing ? "prop." : "fixed"),
-		 pl_fp_pitch_cp(pfp) / 100.0, pfp->height_4ths * 4, pfp->style,
+		 pl_fp_pitch_cp(pfp) / 100.0, pfp->height_4ths / 4, pfp->style,
 		 pfp->stroke_weight, pfp->typeface_family);
 }
 private void
@@ -259,7 +259,6 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
 	      { pl_font_t *fp = (pl_font_t *)value;
 		match_score_t match;
 		score_index_t i;
-
 		score_match(pcls, pfs, fp, &mapp, match);
 		for (i=0; i<score_limit; i++)
 		  if ( match[i] != best_match[i] )

@@ -83,20 +83,6 @@ hpgl_CR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
-/* PP [mode]; */
-int
-hpgl_PP(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	int mode = 0;
-	float adjust;
-
-	if ( !hpgl_arg_c_int(pargs, &mode) || (mode & ~1) )
-	  return e_Range;
-	pgls->grid_centered = mode;
-	adjust = (pgls->grid_centered ? 0.0 : 0.5);
-	gs_setfilladjust(pgls->pgs, adjust, adjust);
-	return 0;
-}
-
 /* Initialization */
 private int
 pgcolor_do_init(gs_memory_t *mem)
@@ -105,7 +91,6 @@ pgcolor_do_init(gs_memory_t *mem)
 	  HPGL_COMMAND('C', 'R', hpgl_CR, 0),
 	  HPGL_COMMAND('N', 'P', hpgl_NP, 0),
 	  HPGL_COMMAND('P', 'C', hpgl_PC, 0),
-	  HPGL_COMMAND('P', 'P', hpgl_PP, 0),
 	END_HPGL_COMMANDS
 	return 0;
 }

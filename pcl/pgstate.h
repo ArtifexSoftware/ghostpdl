@@ -252,7 +252,6 @@ typedef struct pcl_hpgl_state_s {
 	/* derived from the current raster fill index */
 	pcl_id_t raster_pattern_id;
 	uint raster_fill_index;
-
 		/* Chapter 23 (pgchar.c, pglabel.c) */
 
 	pcl_font_selection_t font_selection[2];
@@ -326,7 +325,6 @@ typedef struct pcl_hpgl_state_s {
 #define hpgl_pen_pos (1<<2)
 #define hpgl_pen_all (hpgl_pen_relative | hpgl_pen_down | hpgl_pen_pos)
 
-/* HAS we may wish to make these functions to save on code space */
 #define hpgl_save_pen_state(pgls, save, save_flags)\
 do {\
   if ( (save_flags) & hpgl_pen_relative )\

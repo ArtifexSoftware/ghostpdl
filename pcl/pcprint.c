@@ -14,6 +14,7 @@
 #include "gscoord.h"
 #include "gsrop.h"
 #include "gsstate.h"
+#include "gsrefct.h"
 #include "gxbitmap.h"
 #include "gxdevice.h"		/* for gxpcolor.h */
 #include "gxpcolor.h"		/* for pattern cache winnowing */
@@ -26,7 +27,6 @@ pcl_pattern_transparency_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( i > 1 )
 	  return 0;
 	pcls->pattern_transparent = !i;
-	gs_settexturetransparent(pcls->pgs, pcls->pattern_transparent);
 	return 0;
 }
 
@@ -35,9 +35,7 @@ pcl_pattern_id(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint id = int_arg(pargs);
 
 	if ( id_value(pcls->pattern_id) != id )
-	  { id_set_value(pcls->pattern_id, id);
-	    pcls->pattern_set = false;
-	  }
+	  id_set_value(pcls->pattern_id, id);
 	return 0;
 }
 
@@ -53,9 +51,32 @@ pcl_select_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 	   )
 	  { pcls->pattern_type = i;
 	    pcls->current_pattern_id = pcls->pattern_id;
-	    pcls->pattern_set = false;
 	  }
 	return 0;
+}
+
+/* Purge deleted entries from the graphics library's Pattern cache. */
+private bool
+choose_deleted_patterns(gx_color_tile *ctile, void *pcls_data)
+{	pcl_state_t *pcls = (pcl_state_t *)pcls_data;
+	long id = ctile->uid.id;
+	pcl_id_t key;
+	void *ignore_value;
+
+	if ( id & ~0xffffL )
+	  return false;		/* not a user-defined pattern */
+	id_set_value(key, (uint)id);
+	return !pl_dict_find(&pcls->patterns, id_key(key), 2, &ignore_value);
+}
+private void
+pcl_purge_pattern_cache(pcl_state_t *pcls)
+{	gx_pattern_cache *pcache = gstate_pattern_cache(pcls->pgs);
+
+	if ( pcache != 0 )
+	  gx_pattern_cache_winnow(pcache, choose_deleted_patterns,
+				  (void *)pcls);
+	/* remove stale references from pcl pattern cache */
+	pcl_clear_cached_pattern_refs(pcls);
 }
 
 /* build a pattern and create a dictionary entry for it.  Also used by
@@ -106,6 +127,8 @@ pcl_store_user_defined_pattern(pcl_state_t *pcls, pl_dict_t *pattern_dict,
 	start = size - bytes;	/* start of downloaded bitmap data */
 	stored_raster = bitmap_raster(width);
 	pl_dict_undef(pattern_dict, id_key(pattern_id), 2);
+	if ( id_value(pattern_id) == id_value(pcls->cached_pattern_id) )
+	  pcl_purge_pattern_cache(pcls);
 	header = gs_alloc_bytes(pcls->memory,
 				pattern_data_offset +
 				((height + 7) & -8) * stored_raster,
@@ -148,10 +171,6 @@ pcl_user_defined_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 	      return code;
 	    }
 	}
-	if ( pcls->pattern_type == pcpt_user_defined &&
-	     id_value(pcls->current_pattern_id) == id_value(pcls->pattern_id)
-	   )
-	  pcls->pattern_set = false;
 	return 0;
 }
 
@@ -164,28 +183,6 @@ pcl_set_pattern_reference_point(pcl_args_t *pargs, pcl_state_t *pcls)
 	pcls->shift_patterns = true;
 	pcls->rotate_patterns = rotate == 0;
 	return 0;
-}
-
-/* Purge deleted entries from the graphics library's Pattern cache. */
-private bool
-choose_deleted_patterns(gx_color_tile *ctile, void *pcls_data)
-{	pcl_state_t *pcls = (pcl_state_t *)pcls_data;
-	long id = ctile->uid.id;
-	pcl_id_t key;
-	void *ignore_value;
-
-	if ( id & ~0xffffL )
-	  return false;		/* not a user-defined pattern */
-	id_set_value(key, (uint)id);
-	return !pl_dict_find(&pcls->patterns, id_key(key), 2, &ignore_value);
-}
-private void
-pcl_purge_pattern_cache(pcl_state_t *pcls)
-{	gx_pattern_cache *pcache = gstate_pattern_cache(pcls->pgs);
-
-	if ( pcache != 0 )
-	  gx_pattern_cache_winnow(pcache, choose_deleted_patterns,
-				  (void *)pcls);
 }
 
 private int /* ESC * c <pc_enum> Q */
@@ -273,10 +270,8 @@ pcprint_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	  { id_set_value(pcls->pattern_id, 0);
 	    pcls->pattern_type = pcpt_solid_black;
 	    pcls->pattern_transparent = true;
-	    gs_settexturetransparent(pcls->pgs, true);
 	    pcls->shift_patterns = false;
 	    pcls->rotate_patterns = true;
-	    pcls->pattern_set = false;
 	    if ( type & pcl_reset_initial )
 	      pl_dict_init(&pcls->patterns, pcls->memory, NULL);
 	    else

@@ -273,17 +273,33 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* MC mode[,opcode]; */
 int
 hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	int mode = 0, opcode;
+{	
+	int mode = 0, opcode;
 
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
-	opcode = (mode ? 168 : 255);
+	opcode = ( mode ) ? 168 : 252;
 	if ( mode != 0 && hpgl_arg_c_int(pargs, &opcode) )
 	  if (opcode < 0 || opcode > 255 )
 	    return e_Range;
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	pgls->logical_op = opcode;
 	return 0;
 }
+
+/* PP [mode]; */
+int
+hpgl_PP(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{	int mode = 0;
+
+	if ( hpgl_arg_c_int(pargs, &mode) )
+	  if ( mode < 0 || mode > 1 )
+	    return e_Range;
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	pgls->grid_adjust = (mode == 0) ? 0.5 : 0.0;
+	return 0;
+}
+
 
 /* PW [width[,pen]]; */
 int
@@ -291,7 +307,7 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
         /* we initialize the parameter to be parsed to either .1 which
            is a % of the magnitude of P1 P2 or .35 MM WU sets up how
-           it get interpreted. */
+           it gets interpreted. */
 	hpgl_real_t param = pgls->g.pen.width_relative ? .1 : .35;
 	hpgl_real_t width_plu;
 	int pmin = 0, pmax = pgls->g.number_of_pens - 1;
@@ -440,7 +456,10 @@ hpgl_SM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    else if ( (*p >= 33 && *p <= 126) ||
 		      (*p >= 161 && *p <= 254)
 		    )
-	      pgls->g.symbol_mode = *p;
+	      {
+		pgls->g.symbol_mode = *p;
+		return 0;
+	      }
 	    else
 	      return e_Range;
 	  }
@@ -526,6 +545,7 @@ hpgl_TR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
+	/* HAS not sure if pcl's state is updated as well */
 	pgls->g.source_transparent = mode;
 	return 0;
 }
@@ -596,6 +616,7 @@ pglfill_do_init(gs_memory_t *mem)
 	  HPGL_COMMAND('L', 'T', hpgl_LT, 0),
 	  HPGL_COMMAND('M', 'C', hpgl_MC, 0),
 	  HPGL_COMMAND('P', 'W', hpgl_PW, 0),
+	  HPGL_COMMAND('P', 'P', hpgl_PP, 0),
 	  HPGL_COMMAND('R', 'F', hpgl_RF, 0),		/* + additional I parameters */
 	  /* SM has special argument parsing, so it must handle skipping */
 	  /* in polygon mode itself. */

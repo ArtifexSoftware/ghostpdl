@@ -93,7 +93,7 @@ $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c $(std_h)\
 
 $(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c $(std_h) $(math__h)\
  $(gscolor2_h) $(gscoord_h) $(gscspace_h) $(gsdcolor_h) $(gsimage_h)\
- $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h) $(gsutil_h)\
+ $(gsmatrix_h) $(gsmemory_h) $(gsrop_h) $(gsstate_h) $(gstypes_h) $(gsutil_h)\
  $(gxfixed_h) $(gxstate_h) $(gzstate_h)\
  $(plvalue_h)\
  $(pcdraw_h) $(pcommand_h) $(pcfont_h) $(pcstate_h)
@@ -306,6 +306,7 @@ $(PCLOBJ)pcrect.$(OBJ): $(PCLSRC)pcrect.c $(math__h)\
 
 # Chapter 16
 $(PCLOBJ)pcstatus.$(OBJ): $(PCLSRC)pcstatus.c $(memory__h) $(stdio__h) $(string__h)\
+ $(gsmemory_h) $(gstypes_h) $(gxdevice_h)\
  $(stream_h)\
  $(pcfont_h) $(pcommand_h) $(pcstate_h) $(pcsymbol_h)
 	$(PCLCCC) $(PCLSRC)pcstatus.c $(PCLO_)pcstatus.$(OBJ)
@@ -396,7 +397,7 @@ $(PCLOBJ)pgdraw.$(OBJ): $(PCLSRC)pgdraw.c $(math__h) $(stdio__h)\
 	$(PCLCCC) $(PCLSRC)pgdraw.c $(PCLO_)pgdraw.$(OBJ)
 
 $(PCLOBJ)pggeom.$(OBJ): $(PCLSRC)pggeom.c $(math__h) $(stdio__h)\
- $(pggeom_h)
+ $(gxfarith_h) $(pggeom_h)
 	$(PCLCCC) $(PCLSRC)pggeom.c $(PCLO_)pggeom.$(OBJ)
 
 $(PCLOBJ)pgmisc.$(OBJ): $(PCLSRC)pgmisc.c $(pgmand_h) $(pgmisc_h)

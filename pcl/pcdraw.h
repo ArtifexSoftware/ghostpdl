@@ -97,4 +97,6 @@ int pcl_set_drawing_color_rotation(P6(pcl_state_t *pcls,
 int pcl_set_drawing_color(P3(pcl_state_t *pcls, pcl_pattern_type_t type, 
 			     const pcl_id_t *pid));
 
+/* get rid of cached pattern references maintained in the pcl state. */
+int pcl_clear_cached_pattern_refs(P1(pcl_state_t *pcls));
 #endif				/* pcdraw_INCLUDED */

@@ -51,92 +51,63 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* DF; sets programmable features except P1 and P2 */
 int
 hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	hpgl_args_t args;
-	hpgl_args_setup(&args);
-	hpgl_AC(&args, pgls);
-	hpgl_args_setup(&args);
-	hpgl_AD(&args, pgls);
-	
-	hpgl_args_setup(&args);
-	hpgl_CF(&args, pgls);
-	
+{
+	hpgl_args_t args;
+
+#define hpgl_do_command(hpgl_xx)\
+  hpgl_args_setup(&args);\
+  hpgl_xx(&args, pgls)
+#define hpgl_do_int_command(hpgl_xx, intv)\
+  hpgl_args_set_int(&args, intv);\
+  hpgl_xx(&args, pgls)
+
+	hpgl_do_command(hpgl_AC);
+	hpgl_do_command(hpgl_AD);
+	hpgl_do_command(hpgl_CF);
+
 	hpgl_args_setup(&args);
 	hpgl_args_add_int(&args, 1);
 	hpgl_args_add_int(&args, 0);
 	hpgl_DI(&args, pgls);
-	
+
 	/* HAS -- Figure out some way to do this so that it is consistant */
 	pgls->g.label.terminator = 3;
 	pgls->g.label.print_terminator = false;
 
-	hpgl_args_setup(&args);
-	hpgl_DV(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_ES(&args, pgls);
-	
-	hpgl_args_setup(&args);
-	hpgl_FT(&args, pgls);
-	
-	hpgl_args_setup(&args);
-	hpgl_IW(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_LA(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_LM(&args, pgls);
-
-	hpgl_args_set_int(&args, 1);
-	hpgl_LO(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_LT(&args, pgls);
+	hpgl_do_command(hpgl_DV);
+	hpgl_do_command(hpgl_ES);
+	hpgl_do_command(hpgl_FT);
+	hpgl_do_command(hpgl_IW);
+	hpgl_do_command(hpgl_LA);
+	hpgl_do_command(hpgl_LM);
+	hpgl_do_int_command(hpgl_LO, 1);
+	hpgl_do_command(hpgl_LT);
 
 	/* we do this instead of calling SC directly */
 	pgls->g.scaling_type = hpgl_scaling_none;
 
-	hpgl_args_set_int(&args,0);
-	hpgl_PM(&args, pgls);
-
-	hpgl_args_set_int(&args,2);
-	hpgl_PM(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_RF(&args, pgls);
-
-	hpgl_args_set_int(&args,0);
-	hpgl_SB(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_SV(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_SD(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_SI(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_SL(&args, pgls);
+	hpgl_do_int_command(hpgl_PM, 0);
+	hpgl_do_int_command(hpgl_PM, 2);
+	hpgl_do_command(hpgl_RF);
+	hpgl_do_int_command(hpgl_SB, 0);
+	hpgl_do_command(hpgl_SV);
+	hpgl_do_command(hpgl_SD);
+	hpgl_do_command(hpgl_SI);
+	hpgl_do_command(hpgl_SL);
 
 	/* HAS needs to be consistant */
 	pgls->g.symbol_mode = 0;
 	/*	hpgl_args_setup(&args);
 		hpgl_SM(&args, pgls); */
 
-	hpgl_args_setup(&args);
-	hpgl_SS(&args, pgls);
-
-	hpgl_args_set_int(&args,1);
-	hpgl_TR(&args, pgls);
-
-	hpgl_args_setup(&args);
-	hpgl_TD(&args, pgls);
-	
-	hpgl_args_setup(&args);
-	hpgl_UL(&args, pgls);
-
+	hpgl_do_command(hpgl_SS);
+	hpgl_do_int_command(hpgl_TR, 1);
+	hpgl_do_command(hpgl_TD);
+	hpgl_do_command(hpgl_UL);
+	hpgl_do_command(hpgl_MC);
+	hpgl_do_command(hpgl_PP);
+#undef hpgl_do_command
+#undef hpgl_do_int_command
 	return 0;
 }
 
@@ -145,35 +116,25 @@ int
 hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_args_t args;
-
 	/* restore defaults */
 	hpgl_DF(&args, pgls);
-
 	/* cancel rotation */
         hpgl_args_setup(&args);
 	hpgl_RO(&args, pgls);
-	
 	/* defaults P1 and P2 */
 	hpgl_args_setup(&args);
 	hpgl_IP(&args, pgls);
-	
 	/* HAS temporarily hardwired. Should use NP but that is broken
            at the moment.  */
 	pgls->g.number_of_pens = 2;
-
-	/* HAS: difficult to tell in SP has a default value.  We shall
-           use 1 for now. */
 	hpgl_args_set_int(&args,1);
 	hpgl_SP(&args, pgls);
-
 	/* pen width units - metric */
 	hpgl_args_setup(&args);
 	hpgl_WU(&args, pgls);
-	
 	/* pw .35 */
 	hpgl_args_set_real(&args,0.35);
 	hpgl_PW(&args, pgls);
-	
 	/* HAS Unclear what to do here.  state hardwired to 2 above */
 #ifdef LATER
 	hpgl_args_set_int(&args,2);
@@ -183,7 +144,6 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	   0,0 or the lower left of the picture frame.  Simply sets
 	   the gl/2 state, we subsequently clear the path because we
 	   do not want to create a live gs path. */
-
 	hpgl_args_setup(&args);
 	hpgl_PU(&args, pgls);
 	hpgl_args_set_real2(&args, 0.0, 0.0);
@@ -216,7 +176,6 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 
 	  gs_currentmatrix(pgls->pgs, &mat);
 	  hpgl_call(gs_bbox_transform_inverse(&dev_win, &mat, &pcl_win));
-/* HAS have not checked if this is properly rounded or truncated */
 /* Round all coordinates to the nearest integer. */
 #define set_round(e) gl2_win->e = (int)floor(pcl_win.e + 0.5)
 	  set_round(p.x);
@@ -266,8 +225,6 @@ hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  }
 
 	/* if either coordinate is equal it is incremented by 1 */
-	/* HAS more error checking ??? */
-
 	if ( pgls->g.P1.x == pgls->g.P2.x ) pgls->g.P2.x++;
 	if ( pgls->g.P1.y == pgls->g.P2.y ) pgls->g.P2.y++;
 	
@@ -317,8 +274,7 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	int i;
 	gs_int_rect win;
 
-	/* get the default picture frame coordinates.  HAS this need
-           to be redone.  I don't think it is necessary. */
+	/* get the default picture frame coordinates. */
 	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
 	wxy[0] = win.p.x;
 	wxy[1] = win.p.y;
@@ -374,11 +330,9 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		return e_Range;
 	      }
 
-	/* HAS need documentation */
         if ( angle != pgls->g.rotation )
 	  {
 	    hpgl_args_t args;
-	    
 	    hpgl_pen_state_t saved_pen_state;
 	    hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_down | hpgl_pen_relative);
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
@@ -392,9 +346,9 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_args_set_real(&args, point.x);
 	    hpgl_args_add_real(&args, point.y);
 	    hpgl_call(hpgl_PA(&args, pgls));
-	    /* HAS this is added to clear first moveto yuck */
 	    hpgl_call(hpgl_clear_current_path(pgls));
-	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_down | hpgl_pen_relative);
+	    hpgl_restore_pen_state(pgls, &saved_pen_state, 
+				   hpgl_pen_down | hpgl_pen_relative);
 	  }
 	return 0;
 }
@@ -480,9 +434,6 @@ pxy:		scale_params.pmin.x = xy[0];
 	  hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	  pgls->g.scaling_params = scale_params;
 	  pgls->g.scaling_type = type;
-	  
-	  /* HAS probably only needs to be done if the scaling state
-	     has changed */
 	  hpgl_call(hpgl_set_ctm(pgls));
 	  hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
 	  /* we must clear the current path because we set up the CTM

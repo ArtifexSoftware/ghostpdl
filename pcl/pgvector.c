@@ -58,8 +58,6 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 }
 
 /* Draw a 3-point arc (AT, RT). */
-/* HAS check if these can be connected to other portions of the
-   current subpath */
  private int
 hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	
@@ -165,13 +163,14 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	    pargs->phase = 1;	/* we have arguments */
 	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
 	    /* Prepare for the next set of points. */
+	    if ( pgls->g.symbol_mode != 0 )
+	      hpgl_call(hpgl_print_symbol_mode_char(pgls, pgls->g.symbol_mode));
 	    hpgl_args_init(pargs);
 	  }
 
 	/* check for no argument case */
 	if ( !pargs->phase) 
 	  {
-	    /* HAS needs investigation -- NO ARGS case in relative mode */
 	    if ( hpgl_plot_is_relative(func) )
 	      {
 		hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func, true));
@@ -184,6 +183,8 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 		hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x, 
 						 cur_point.y, func, true));
 	      }
+	    if ( pgls->g.symbol_mode != 0 )
+	      hpgl_call(hpgl_print_symbol_mode_char(pgls, pgls->g.symbol_mode));
 	  }
 
 	pgls->g.carriage_return_pos = pgls->g.pos;
@@ -258,7 +259,6 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	   the pen up .. or something like that. */
 	if ( pgls->g.polygon_mode )
 	  {
-	    /* HAS investigate commands added after CI in polygon mode */
 	    hpgl_args_t args;
 	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
 	    hpgl_args_setup(&args);

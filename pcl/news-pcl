@@ -6,6 +6,83 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
+Version 0.40 (11/30/97)
+=======================
+
+(HAS)
+-rtmisc.c - changed comments, pcl_source_transparent() changed to only
+update state source transparency; moved gs call to
+pcl_set_drawing_color().
+-pgvector.c - hpgl_plot() update for symbol mode (see below).  Also,
+changed/removed obsolete comments.
+-pgstate.h - edited obsolete comments.
+-pgpoly.c - sweep angles of 360 degrees no longer uses arc 3 point, now
+uses arc code directly.
+-pglfill.c - comment to check if updating transparency mode in gl/2
+needs also updates source/texture transparency in pcl, like MC updates
+pcl's logical op.
+-pglfill.c hpgl_SM() - parsing command incorrectly continued parse
+after getting the symbol, then reaching the ';' the code set the
+symbol code back to '\0'.  We now return upon getting a symbol and let
+the parser discard the semicolon.
+-pglfill.c hpgl_MC() - default opcode for mode 1 was 255 instead of 252.
+-pglfill.c hpgl_PP() - moved this function from pgcolor.c.
+-pglfill.c hpgl_PP() - default fill mode should be adjust, not centered.
+-pglabel.c hpgl_print_symbol_mode_character() - interface for printing
+characters in symbol mode - (first attempt at symbol mode)
+-pglabel.c - reworked comments.
+-pginit.c - reworked comments.
+-pggeom.c: hpgl_compute_arc_coords() redone to use gs library's sin
+and cos functions.
+-pgframe.c - cleanup.
+-pgdraw.h - added hpgl_set_drawing_color() to the interface, needed by
+character code.
+-pgdraw.c hpgl_draw_current_path(): fixed to preserve the current path
+between drawing the edge and the fill of characters.
+-pgdraw.c hpgl_set_drawing_color(): gs calls to set fill adjustment,
+source and texture transparency.
+-pgdraw.c hpgl_set_pcl_to_plu_ctm(): left and bottom parameters were
+being treated as fractions instead of percentages.
+-pgdraw.c cleanup.
+-pgcolor.c hpgl_PP() - removed and moved in pglfill.c (see above).
+-pcstate.h changed bool grid_centered to float grid_adjust.
+-pcsfont.c - proper round of quarter dots -> quarter points.  Yes this
+did cause a bug in the fts.  A tenth of a point difference caused the
+wrong font to be selected.  The rounding fixes the problem.
+-pcprint.c - pcl_purge_pattern_cache() now clears pcl pattern
+references.
+-pcprint.c - obsolete lvalue pcls->pattern_set removed.
+-pcprint.c pcl_store_user_defined_patterns() - now purges the pattern
+cache if the user downloads a pattern with the same id as the
+currently cached pattern.
+-pclfont.c - removed "Loaded" printf to cut down on stdout messages,
+the font loading code now reports any font *not* found in the internal
+table of resident fonts so this message should be unnecessary.
+-pcfsel.c - fixed debug message to divide "height_4ths" by 4 to print
+the point size.
+-pcdraw.c - added new function to clear pattern references.
+-pcdraw.c - gs calls to set source, texture, and fill adjust.
+-pccprint.c - pccprint_do_copy() doesn't need to evaluate boolean
+adjust since this is now maintained directly as floats.
+-pccprint.c - pcl_pixel_placement() grid adjust (not grid centered)
+now float.
+-pcl.mak - new include file dependencies added.
+
+(LPD) Adds some #includes to make the code compile with library version
+5.20, in which gs_memory_default is not declared by gsmemory.h.
+(pcstatus.c)
+
+See Version 0.38 notes for missing functionality.
+
+Version 0.39 (11/25/97)
+=======================
+
+This release simply changes the default pcl5 device to x11mono.  Currently
+the pcl code does not completely support devices with more than 1 bit per
+pixel, previously the default device was X11 which is an 8 bit per pixel
+color device.  The only necessary change was reordering the device files in
+the pcl5 makefile. (pcl.mak)
+
 Version 0.38 (11/20/97)
 =======================
 

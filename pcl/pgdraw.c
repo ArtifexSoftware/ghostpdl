@@ -49,13 +49,6 @@ hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
 	return 0;
 }
 
-/* HAS: update ghostscript's gs and the current ctm to reflect hpgl's.
-   embodied in hpgl_set_graphics_dash_state(),
-   hpgl_set_graphics_line_attributes(), and hpgl_set_drawing_state() below.
-   Note: For now the gs gstate is updated each time graphics are
-   rendered and the ctm is updated each time a new path is started.
-   Potential performance issue.  The design choice is based solely on
-   ease of implementation.  */
 /* ctm to translate from pcl space to plu space */
  int
 hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
@@ -136,13 +129,13 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 		{ if ( scale_x > scale_y )
 		    { /* Reduce the X scaling. */
 		      origin_x += range_x * (scale_x - scale_y) *
-			pgls->g.scaling_params.left;
+			(pgls->g.scaling_params.left / 100.0);
 		      scale_x = scale_y;
 		    }
 		  else if ( scale_y > scale_x )
 		    { /* Reduce the Y scaling. */
 		      origin_y += range_y * (scale_y - scale_x) *
-			pgls->g.scaling_params.bottom;
+			(pgls->g.scaling_params.bottom / 100.0);
 		      scale_y = scale_x;
 		    }
 		}
@@ -228,15 +221,11 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 		  (mm_2_plu(pgls->g.line.current.pattern_length)));
 
 	gs_setdashadapt(pgls->pgs, adaptive);
-	/* HAS not correct as user space may not be PU */
-	
 	/*
 	 * The graphics library interprets odd pattern counts differently
 	 * from GL: if the pattern count is odd, we need to do something
 	 * a little special.
 	 */
-	/* HAS does not handle residual / offset yet.  It is
-	   not clear where the calculation should take place. */
 	count = pat->count;
 	for ( i = 0; i < count; i++ )
 	  pattern[i] = length * pat->gap[i];
@@ -265,8 +254,6 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t *pgls,
 				       hpgl_rendering_mode_t render_mode)
 {
 
-	  /* HAS *** We use a miter join instead of miter/beveled as I
-             am not sure if the gs library supports it */
 	  const gs_line_cap cap_map[] = {gs_cap_butt,      /* 0 not supported */
 					 gs_cap_butt,      /* 1 butt end */
 					 gs_cap_square,    /* 2 square end */
@@ -321,10 +308,6 @@ vector:	      hpgl_call(gs_setlinejoin(pgls->pgs,
 	      goto vector;
 	    }
 
-	  /* HAS -- yuck need symbolic names for GL join types.  Set
-	     miter limit !very large! if there is not bevel.  Miter is
-	     also sensitive to render mode but I have not figured it
-	     out completely. */
 #ifdef COMMENT
 	  /* I do not remember the rational for the large miter */
 	  hpgl_call(gs_setmiterlimit(pgls->pgs, 
@@ -429,7 +412,7 @@ hpgl_draw_vector_absolute(hpgl_state_t *pgls, hpgl_real_t x0, hpgl_real_t y0,
 	bool set_ctm = (render_mode != hpgl_rm_character);
 	hpgl_call(hpgl_add_point_to_path(pgls, x0, y0, 
 					 hpgl_plot_move_absolute, set_ctm));
-	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
+	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
 					 hpgl_plot_draw_absolute, set_ctm));
 
 	return 0;      
@@ -554,7 +537,6 @@ start:	gs_sincos_degrees(direction, &sincos);
 #undef cos_dir
 }
 
-/* HAS - probably not necessary and clip intersection with IW */
  private int
 hpgl_polyfill_using_current_line_type(hpgl_state_t *pgls, 
 				      hpgl_rendering_mode_t render_mode)
@@ -579,7 +561,8 @@ hpgl_set_pcl_pattern_origin(hpgl_state_t *pgls, gs_point *point)
 	hpgl_call(gs_sethalftonephase(pgls->pgs, pattern_origin.x, pattern_origin.y));
 	return 0;
 }
- private int
+
+ int
 hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	pcl_id_t pcl_id;
@@ -588,19 +571,11 @@ hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
            use a private hpgl/2 dictionary. */
 	pl_dict_t *pattern_dictp = &pgls->patterns;
 	pcl_pattern_type_t pat;
-	/* HAS - this is tooooo complicated. */
-	if ( (render_mode == hpgl_rm_clip_and_fill_polygon) ||
-	     ((pgls->g.fill.type == hpgl_fill_hatch || pgls->g.fill.type == hpgl_fill_crosshatch) &&
-	     ((render_mode == hpgl_rm_character) &&
-	      ((pgls->g.character.fill_mode == hpgl_char_fill) ||
-	       (pgls->g.character.fill_mode == hpgl_char_fill_edge)))) )
-	  {
-	    hpgl_call(hpgl_polyfill_using_current_line_type(pgls, 
-							    render_mode));
-	    return 0;
-	  }
 	switch ( render_mode )
 	  {
+	  case hpgl_rm_clip_and_fill_polygon:
+	    hpgl_call(hpgl_polyfill_using_current_line_type(pgls, render_mode));
+	    return 0;
 	  case hpgl_rm_character:
 	    switch ( pgls->g.character.fill_mode )
 	      {
@@ -610,7 +585,14 @@ hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		break;
 	      case hpgl_char_fill:
 	      case hpgl_char_fill_edge:
-		goto fill;
+		if ( pgls->g.fill.type == hpgl_fill_hatch || 
+		     pgls->g.fill.type == hpgl_fill_crosshatch )
+		  {
+		    hpgl_call(hpgl_polyfill_using_current_line_type(pgls, render_mode));
+		    return 0;
+		  } 
+		else
+		  goto fill;
 	      default:
 		dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
 		return 0;
@@ -622,9 +604,13 @@ fill:	    switch ( pgls->g.fill.type )
 	      {
 	      case hpgl_fill_solid: 
 	      case hpgl_fill_solid2: /* fall through */
-		/* this is handled by hpgl/2 line drawing machinary
-		   and should not be handled here. (see hpgl_polyfill()
-		   below).  For now we use black and no id */
+		/* this is documented incorrectly PCLTRM 22-12 says
+                   these should be solid black but they are actually
+                   set to the value of the current pen - (i.e pen 0 is
+                   solid white */
+		/* HAS should use set foreground color */
+		pat = (pgls->g.pen.selected == 0 ? pcpt_solid_white : pcpt_solid_black);
+		break;
 	      case hpgl_fill_hatch:
 	      case hpgl_fill_crosshatch:
 		pat = pcpt_solid_black;
@@ -705,14 +691,15 @@ fill:	    switch ( pgls->g.fill.type )
 	    dprintf("hpgl_set_drawing_color: internal error illegal mode\n");
 	    break;
 	  }
-
 	gs_setrasterop(pgls->pgs, pgls->logical_op);
 	gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
+	gs_settexturetransparent(pgls->pgs, pgls->g.source_transparent);
 	/* set up the halftone phase origin in device space */
 	hpgl_call(gs_transform(pgls->pgs, pgls->g.anchor_corner.x, 
 	  pgls->g.anchor_corner.y, &pattern_origin));
+	gs_setfilladjust(pgls->pgs, pgls->grid_adjust, pgls->grid_adjust);
 	hpgl_call(pcl_set_drawing_color_rotation(pgls,
-	  pat, &pcl_id, pattern_dictp, -((pgls->g.rotation / 90) & 3),
+	  pat, &pcl_id, pattern_dictp, ((pgls->g.rotation / 90) & 3),
 	  &pattern_origin));
 	return 0;
 }
@@ -833,19 +820,17 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 		     floatp chord_angle, bool start_moveto, hpgl_plot_function_t draw, 
 		     bool set_ctm)
 {
-	floatp start_angle_radians = start_angle * degrees_to_radians;
 	/*
 	 * Ensure that the sweep angle is an integral multiple of the
 	 * chord angle, by decreasing the chord angle if necessary.
 	 */
 	int num_chords = (int)ceil(sweep_angle / chord_angle);
-	floatp chord_angle_radians =
-	  sweep_angle / num_chords * degrees_to_radians;
+	floatp integral_chord_angle = sweep_angle / num_chords;
 	int i;
 	floatp arccoord_x, arccoord_y; 
 
 	(void)hpgl_compute_arc_coords(radius, center_x, center_y, 
-				      start_angle_radians, 
+				      start_angle, 
 				      &arccoord_x, &arccoord_y);
 	hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
 					 (draw && !start_moveto ? 
@@ -855,10 +840,9 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 	/* HAS - pen up/down is invariant in the loop */
 	for ( i = 0; i < num_chords; i++ ) 
 	  {
-	    start_angle_radians += chord_angle_radians;
+	    start_angle += integral_chord_angle;
 	    hpgl_compute_arc_coords(radius, center_x, center_y, 
-				    start_angle_radians, 
-				    &arccoord_x, &arccoord_y);
+				    start_angle, &arccoord_x, &arccoord_y);
 	    hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
 					     (draw ? hpgl_plot_draw_absolute :
 					     hpgl_plot_move_absolute), set_ctm));
@@ -988,11 +972,12 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 					 hpgl_plot_move_absolute, true));
 	if ( draw )
 	  hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
-
-	/* this is done simply to set gl/2's current position */
-	hpgl_call(hpgl_add_point_to_path(pgls, x4, y4, 
-					 draw ? hpgl_plot_draw_absolute :
-					 hpgl_plot_move_absolute, true));
+	/* update hpgl's state position to last point of the curve. */
+	{
+	  gs_point point;
+	  point.x = x4; point.y = y4;
+	  hpgl_call(hpgl_set_current_position(pgls, &point));
+	}
 	return 0;
 }
 
@@ -1024,7 +1009,7 @@ hpgl_close_path(hpgl_state_t *pgls)
 	    hpgl_call(gs_closepath(pgls->pgs));
 	return 0;
 }
-	
+
 /* HAS -- There will need to be compression phase here note that
    extraneous PU's do not result in separate subpaths.  */
 
@@ -1062,7 +1047,7 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		  hpgl_call((*fill)(pgs));
 		  /* falls through */
 		case hpgl_char_edge:
-char_edge:	  if ( pgls->g.bitmap_fonts_allowed )
+		  if ( pgls->g.bitmap_fonts_allowed )
 		    break;	/* no edging */
 		  if ( pgls->g.character.edge_pen != 0 )
 		    { gs_setgray(pgs, 0.0);	/* solid edge */
@@ -1076,8 +1061,17 @@ char_edge:	  if ( pgls->g.bitmap_fonts_allowed )
 		  break;
 		case hpgl_char_fill_edge:
 		  /****** SHOULD USE VECTOR FILL ******/
+		  if ( pgls->g.bitmap_fonts_allowed )
+		    break;	/* no edging */
+		  if ( pgls->g.character.edge_pen != 0 )
+		    { 
+		      hpgl_call(hpgl_gsave(pgls));
+		      gs_setgray(pgs, 0.0);	/* solid edge */
+		      gs_setlinewidth(pgs, 0.1);
+		      hpgl_call(gs_stroke(pgs));
+		      hpgl_call(hpgl_grestore(pgls));
+		    }
 		  hpgl_call((*fill)(pgs));
-		  goto char_edge;
 		}
 	    }
 	    break;
@@ -1106,7 +1100,6 @@ char_edge:	  if ( pgls->g.bitmap_fonts_allowed )
 	return 0;
 }
 
-/* HAS needs error checking for empty paths and such */
  int 
 hpgl_copy_current_path_to_polygon_buffer(hpgl_state_t *pgls)
 {

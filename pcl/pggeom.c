@@ -8,6 +8,7 @@
 #include "stdio_.h"
 #include "math_.h"
 #include "pggeom.h"
+#include "gxfarith.h" /* for gs_sincos */
 
 /* HAS most of these computations require more error checking */
 
@@ -82,8 +83,10 @@ int
 hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y, 
 			floatp angle, floatp *px, floatp *py)
 {
-	*px = radius * cos(angle) + center_x;
-	*py = radius * sin(angle) + center_y;
+	gs_sincos_t sincos;
+	gs_sincos_degrees(angle, &sincos);
+	*px = radius * sincos.cos + center_x;
+	*py = radius * sincos.sin + center_y;
 	return 0;
 }
 
@@ -94,7 +97,6 @@ hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
 			      floatp angle_degrees, floatp *endx, floatp *endy)
 
 {
-	return hpgl_compute_arc_coords(magnitude, x, y,
-				       angle_degrees * (M_PI/180.0),
-				       endx, endy);
+	return hpgl_compute_arc_coords(magnitude, x, y, 
+				       angle_degrees, endx, endy);
 }

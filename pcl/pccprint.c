@@ -18,20 +18,16 @@ pcl_logical_operation(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( rop > 255 )
 	  return e_Range;
 	pcls->logical_op = rop;
-	gs_setrasterop(pcls->pgs, rop);
 	return 0;
 }
 
 private int /* ESC * l <bool> R */
 pcl_pixel_placement(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint i = uint_arg(pargs);
-	float adjust;
 
 	if ( i > 1 )
 	  return 0;
-	pcls->grid_centered = i != 0;
-	adjust = (pcls->grid_centered ? 0.0 : 0.5);
-	gs_setfilladjust(pcls->pgs, adjust, adjust);
+	pcls->grid_adjust = (i == 0) ? 0.5 : 0.0;
 	return 0;
 }
 
@@ -64,10 +60,9 @@ private int
 pccprint_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
   pcl_copy_operation_t operation)
 {	if ( operation & pcl_copy_after )
-	  { float adjust;
-	    gs_setrasterop(pcls->pgs, psaved->logical_op);
-	    adjust = (psaved->grid_centered ? 0.0 : 0.5);
-	    gs_setfilladjust(pcls->pgs, adjust, adjust);
+	  { gs_setrasterop(pcls->pgs, psaved->logical_op);
+	    gs_setfilladjust(pcls->pgs, 
+			     psaved->grid_adjust, psaved->grid_adjust);
 	  }
 	return 0;
 }

@@ -4,7 +4,7 @@
 
 /* rtmisc.c */
 /* Miscellanous HP RTL commands */
-/* HAS the order of these are jumbled because of dependencies */
+/* the order of these includes are jumbled because of dependencies */
 #include "math_.h"
 #include "pgmand.h"
 #include "pgdraw.h" /* for hpgl_add_pcl_point_to_path() */
@@ -47,7 +47,6 @@ pcl_source_transparency_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( i > 1 )
 	  return 0;
 	pcls->source_transparent = !i;
-	gs_setsourcetransparent(pcls->pgs, pcls->source_transparent);
 	return 0;
 }
 
@@ -94,9 +93,7 @@ rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 	    and conditionally copy back the cursor position. */
 	    gx_path_release(&(pcls->g.polygon.buffer.path));
 	    if ( b )
-	      { /* the usual user -> device -> user dance.  HAS This is
-		done frequently enough that it should be separated
-		out into a separate function */
+	      { /* the usual user -> device -> user dance. */
 		gs_point pt, dev_pt;
 		hpgl_call(hpgl_set_ctm(pcls));
 		hpgl_call(hpgl_get_current_position(pcls, &pt));
@@ -104,7 +101,6 @@ rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 		hpgl_call(pcl_set_ctm(pcls, false));
 		hpgl_call(gs_itransform(pcls->pgs, dev_pt.x, dev_pt.y, &pt));
 		/* HPGL/2 uses floats for coordinates */
-/* HAS have not checked if this is properly rounded or truncated */
 #define round(x) (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 		pcls->cap.x = round(pt.x);
 	        pcls->cap.y = round(pt.y);
