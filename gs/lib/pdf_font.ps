@@ -514,7 +514,7 @@ readonly def
   1 index /Subtype get /CIDFontType2 eq {
     .loadttcidfont
   } {
-    .loadttfont
+    null 2 index getencoding .loadpdfttfont
   } ifelse
   exch pop
   PDFfile 3 -1 roll setfileposition
