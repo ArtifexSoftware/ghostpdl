@@ -130,10 +130,11 @@ CCLD=gcc
 DD='$(GLGENDIR)$(D)'
 
 DEVICES_DEVS=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
-   $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev\
+   $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev $(DD)tr_rgb.dev\
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite.dev\
    $(DD)pxlmono.dev $(DD)pxlcolor.dev\
-   $(DD)bmpmono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
+   $(DD)bmpmono.dev $(DD)bmpsep8.dev\
+   $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
 
 FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
