@@ -397,6 +397,8 @@ text_putch(TW *tw, int ch)
 {
 int pos;
 int n;
+    if (tw->quitnow)
+	return ch;	/* don't write error message as we shut down */
     switch(ch) {
 	case '\r':
 		tw->CursorPos.x = 0;
@@ -441,6 +443,8 @@ text_write_buf(TW *tw, const char *str, int cnt)
 BYTE *p;
 int count, limit;
 int n;
+    if (tw->quitnow)
+	return;		/* don't write error message as we shut down */
     while (cnt>0) {
 	p = tw->ScreenBuffer + tw->CursorPos.y*tw->ScreenSize.x + tw->CursorPos.x;
 	limit = tw->ScreenSize.x - tw->CursorPos.x;

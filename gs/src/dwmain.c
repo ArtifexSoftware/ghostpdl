@@ -467,12 +467,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
 	/* display error message in text window */
 	char buf[80];
 	MSG msg;
+	text_puts(tw, "\nClose this window with the close button on the title bar or the system menu.\n");
 	if (IsIconic(text_get_handle(tw)))
 	    ShowWindow(text_get_handle(tw), SW_SHOWNORMAL);
 	BringWindowToTop(text_get_handle(tw));  /* make text window visible */
-	sprintf(buf, "Exit code %d\nSee text window for details",
-	    dll_exit_status);
-	MessageBox(text_get_handle(tw), buf, szAppName, MB_OK | MB_ICONSTOP);
+	FlashWindow(text_get_handle(tw), TRUE);
 	/* Wait until error message is read */
 	while (!tw->quitnow && GetMessage(&msg, (HWND)NULL, 0, 0)) {
 	    TranslateMessage(&msg);
