@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* CIE color rendering dictionary creation */
 #include "math_.h"
 #include "memory_.h"
@@ -127,7 +127,7 @@ write_proc3(gs_param_list * plist, gs_param_name key,
 /* Write a CRD as a device parameter. */
 int
 param_write_cie_render1(gs_param_list * plist, gs_param_name key,
-			const gs_cie_render * pcrd, gs_memory_t * mem)
+			gs_cie_render * pcrd, gs_memory_t * mem)
 {
     gs_param_dict dict;
     int code, dcode;
@@ -142,12 +142,14 @@ param_write_cie_render1(gs_param_list * plist, gs_param_name key,
 
 /* Write a CRD directly to a parameter list. */
 int
-param_put_cie_render1(gs_param_list * plist, const gs_cie_render * pcrd,
+param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
 		      gs_memory_t * mem)
 {
     int crd_type = CRD_TYPE;
-    int code;
+    int code = gs_cie_render_init(pcrd);
 
+    if (code < 0)
+	return code;
     if (pcrd->TransformPQR.proc_name) {
 	gs_param_string pn, pd;
 
@@ -506,6 +508,8 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
     int code, code_lmn, code_abc, code_rt, code_t;
     gs_param_string pname, pdata;
 
+    /* Reset the status to invalidate cached information. */
+    pcrd->status = CIE_RENDER_STATUS_BUILT;
     if ((code = param_read_int(plist, "ColorRenderingType", &crd_type)) < 0 ||
 	crd_type != CRD_TYPE ||
 	(code = read_vector3(plist, "WhitePoint", &pcrd->points.WhitePoint,
@@ -581,11 +585,19 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
 	gs_const_string *table;
 	int n, m, j;
 
+	for (j = 0; j < rt_size.size; ++j)
+	    if (rt_size.data[j] < 1)
+		return_error(gs_error_rangecheck);
 	code = param_read_string_array(plist, "RenderTableTable", &rt_values);
 	if (code < 0)
 	    return code;
-	if (code > 0) 
+	if (code > 0 || rt_values.size != rt_size.data[0])
 	    return_error(gs_error_rangecheck);
+	/* Note: currently n = 3 (rt_size.size = 4) always. */
+	for (j = 0; j < rt_values.size; ++j)
+	    if (rt_values.data[j].size !=
+		rt_size.data[1] * rt_size.data[2] * rt_size.data[3])
+		return_error(gs_error_rangecheck);
 	pcrd->RenderTable.lookup.n = n = rt_size.size - 1;
 	pcrd->RenderTable.lookup.m = m = rt_size.data[n];
 	if (n > 4 || m > 4)
