@@ -665,21 +665,28 @@ end readonly def
   PDFversion 1.4 lt {
     showpagecontents
   } {
-    dup /Group known {
-	% In PDF 1.4, Group overrides Contents.
-      DoForm
-    } {
-      dup pageusestransparency {
-	% Show the page within a PDF 1.4 device filter.
-	0 .pushpdf14devicefilter {
+    dup pageusestransparency {
+      % Show the page within a PDF 1.4 device filter.
+      0 .pushpdf14devicefilter {
+	% If the page has a Group, enclose contents in transparency group.
+        % (Adobe Tech Note 5407, sec 9.2)
+        dup /Group knownoget {
+	  1 index /CropBox knownoget not {
+	    1 index /MediaBox oget
+	  } if .beginformgroup {
+	    showpagecontents
+	  } .internalstopped {
+	    .discardtransparencygroup stop
+	  } if .endtransparencygroup
+        } {
 	  showpagecontents
-	} .internalstopped {
-	  % todo: discard
-	  .popdevicefilter stop
-	} if .popdevicefilter
-      } {
-	showpagecontents
-      } ifelse
+        } ifelse
+      } .internalstopped {
+	% todo: discard
+	.popdevicefilter stop
+      } if .popdevicefilter
+    } {
+      showpagecontents
     } ifelse
   } ifelse
   grestore

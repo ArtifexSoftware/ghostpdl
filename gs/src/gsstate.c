@@ -162,11 +162,13 @@ public_st_gs_state();
 
 /* GC procedures for gs_state */
 private ENUM_PTRS_WITH(gs_state_enum_ptrs, gs_state *gsvptr)
-ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 1);
+ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 2);
 #define e1(i,elt) ENUM_PTR(i,gs_state,elt);
 gs_state_do_ptrs(e1)
 case gs_state_num_ptrs:	/* handle device specially */
 ENUM_RETURN(gx_device_enum_ptr(gsvptr->device));
+case gs_state_num_ptrs + 1:	/* handle device filter stack specially */
+ENUM_RETURN(gsvptr->dfilter_stack);
 #undef e1
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(gs_state_reloc_ptrs, gs_state *gsvptr)
@@ -177,6 +179,7 @@ private RELOC_PTRS_WITH(gs_state_reloc_ptrs, gs_state *gsvptr)
 	gs_state_do_ptrs(r1)
 #undef r1
 	gsvptr->device = gx_device_reloc_ptr(gsvptr->device, gcst);
+	RELOC_PTR(gs_state, dfilter_stack);
     }
 }
 RELOC_PTRS_END

@@ -828,10 +828,12 @@ pdf14_fill_path(gx_device *dev, const gs_imager_state *pis,
 {
     int code;
     gx_device *mdev = pdf14_get_marking_device(dev, pis);
+    gs_imager_state new_is = *pis;
 
     if (mdev == 0)
 	return_error(gs_error_VMerror);
-    code = gx_default_fill_path(mdev, pis, ppath, params, pdcolor, pcpath);
+    new_is.log_op |= lop_pdf14;
+    code = gx_default_fill_path(mdev, &new_is, ppath, params, pdcolor, pcpath);
     pdf14_release_marking_device(mdev);
     return code;
 }
@@ -844,10 +846,13 @@ pdf14_stroke_path(gx_device *dev, const gs_imager_state *pis,
 {
     int code;
     gx_device *mdev = pdf14_get_marking_device(dev, pis);
+    gs_imager_state new_is = *pis;
 
     if (mdev == 0)
 	return_error(gs_error_VMerror);
-    code = gx_default_stroke_path(mdev, pis, ppath, params, pdcolor, pcpath);
+    new_is.log_op |= lop_pdf14;
+    code = gx_default_stroke_path(mdev, &new_is, ppath, params, pdcolor,
+				  pcpath);
     pdf14_release_marking_device(mdev);
     return code;
 }

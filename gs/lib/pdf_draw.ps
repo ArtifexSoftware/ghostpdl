@@ -372,17 +372,23 @@ end
   grestore
 } bdef
 
+/.beginformgroup {	% groupdict bbox .beginformgroup -
+  exch mark exch			% bbox mark groupdict
+  dup /CS knownoget { csresolve setcolorspace } if
+  dup /I knownoget { /Isolated exch 3 2 roll } if
+  dup /K knownoget { /Knockout exch 3 2 roll } if
+  pop .dicttomark
+		% Stack: bbox paramdict
+  exch aload pop
+  .begintransparencygroup
+} bdef
+
 % .paintgroupform implements the Form PaintProc in the case where the
 % Form XObject dictionary includes a Group key.  See .paintform below.
-/.paintgroupform {	% <resdict> <stream> <formdict> .paintform -
-  mark exch dup /Group oget
-  dup /CS knownoget { csresolve setcolorspace } if
-  dup /I knownoget { /Isolated exch 4 2 roll } if
-  dup /K knownoget { /Knockout exch 4 2 roll } if
-  pop counttomark 1 add 1 roll .dicttomark
-		% Stack: resdict stream formdict paramdict
-  exch /BBox oget aload pop
-  .begintransparencygroup {
+/.paintgroupform {	% <resdict> <stream> <formdict> .paintgroupform -
+  dup /Group oget exch /BBox oget
+		% Stack: resdict stream groupdict bbox
+  .beginformgroup {
     .execgroup
   } .internalstopped {
     .discardtransparencygroup stop
