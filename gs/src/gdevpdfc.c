@@ -359,14 +359,17 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     stream_AXE_state st;
     stream s, es;
     gs_memory_t *mem = pdev->pdf_memory;
-    byte *table =
-	gs_alloc_string(mem, string_size, "pdf_color_space(table)");
-    byte *palette =
-	gs_alloc_string(mem, table_size, "pdf_color_space(palette)");
+    byte *table;
+    byte *palette;
     gs_color_space cs_gray;
     cos_value_t v;
     int code;
 
+    /* PDF doesn't support Indexed color spaces with more than 256 entries. */
+    if (num_entries > 256)
+	return_error(gs_error_rangecheck);
+    table = gs_alloc_string(mem, string_size, "pdf_color_space(table)");
+    palette = gs_alloc_string(mem, table_size, "pdf_color_space(palette)");
     if (table == 0 || palette == 0) {
 	gs_free_string(mem, palette, table_size,
 		       "pdf_color_space(palette)");
