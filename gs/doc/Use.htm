@@ -39,9 +39,9 @@
 <li><a href="#Pipes">Interacting with pipes</a>
 <li><a href="#PDF">Using Ghostscript with PDF files</a>
 <ul>
-<li><a href="#PDF_stdin">PDF files from standard input</a>
 <li><a href="#PDF_switches">Switches for PDF files</a>
 <li><a href="#PDF_problems">Problems interpreting a PDF file</a>
+<li><a href="#PDF_stdin">PDF files from standard input</a>
 </ul>
 
 <li><a href="#EPS">Using Ghostscript with EPS files</a>
@@ -549,16 +549,11 @@ Ghostscript is still useful as a sanity-check for invalid files.
 <h3><a name="PDF_stdin"></a>PDF files from standard input</h3>
 
 <p>
-Using the special filename <a href="#Pipes">'<tt>-</tt>'</a> you can provide PDF input from a file, but not from a pipe, because the PDF language, unlike the PostScript language, inherently requires random access to the file, while a pipe is always sequential. That is,
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr>	<td><b><tt>gs - &lt; somefile.pdf</tt></b>
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<td>(<b><em>is</em></b> permissible)
-<tr>	<td>{<em>some program producing PDF</em>} <b><tt>| gs -</tt></b>
-	<td>&nbsp;
-	<td>(is <b><em>not</em></b> permissible)
-</table></blockquote>
+The PDF language, unlike the PostScript language, inherently requires 
+random access to the file.
+If you provide PDF to standard input using the 
+special filename <a href="#Pipes">'<tt>-</tt>'</a>,
+ghostscript will copy it to a temporary file before interpreting the PDF. 
 
 <h2><a name="EPS"></a>Using Ghostscript with EPS files</h2>
 <p>
@@ -1529,7 +1524,12 @@ expands <b><tt>@</tt></b><em>filename</em> arguments.
 <dd>These are not really switches: they tell Ghostscript to read from
 standard input, which is coming from a file or a pipe,
 with or without buffering.
-On some systems, Ghostscript may read the input one character at a time, which is useful for programs such as GSview that generate input for Ghostscript dynamically and watch for some response, but can slow processing. If performance is significantly slower than with a named file, try '<tt>-_</tt>' which always reads the input in . However, '<tt>-</tt>' is equivalent on most systems.
+On some systems, Ghostscript may read the input one character at a time, 
+which is useful for programs such as ghostview that generate input for 
+Ghostscript dynamically and watch for some response, but can slow processing. 
+If performance is significantly slower than with a named file, 
+try '<tt>-_</tt>' which always reads the input in blocks. 
+However, '<tt>-</tt>' is equivalent on most systems.
 </dl>
 
 <dl>
