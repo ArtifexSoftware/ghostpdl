@@ -1,4 +1,4 @@
-%    Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -56,8 +56,7 @@
 } if
 
 % If we didn't error out by now, then go ahead and define the /Default
-%     stack: StochasticDefault		(Halftone Type 5 Instance)
-
+/StochasticDefault /Halftone findresource
 /Default exch /Halftone defineresource
 sethalftone	% Use the halftone
 
