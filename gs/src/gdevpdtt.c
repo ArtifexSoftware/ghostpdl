@@ -780,7 +780,11 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    }
 	}
     }
-    if (font->FontType != ft_TrueType) {
+    if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2) {
+        /*
+	 * We write True Types with Symbolic flag set,
+	 * so we should not write Encodings for them.
+	 */
 	BaseEncoding = pdf_refine_encoding_index(
 	    ((const gs_font_base *)base_font)->nearest_encoding_index, false);
     }
