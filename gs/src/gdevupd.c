@@ -139,11 +139,11 @@ RGB-Values, but promises to deal with R==G==B-Values when asking to map.
 The second pair deals with RGB-Values.
 */
 
-private dev_proc_map_rgb_color( upd_rgb_1color);  /** RGB->Gray-Index */
-private dev_proc_map_color_rgb( upd_1color_rgb);  /** Gray-Index->RGB */
+private dev_proc_encode_color( upd_rgb_1color);  /** Gray-Gray->Index */
+private dev_proc_decode_color( upd_1color_rgb);  /** Gray-Index->Gray */
 
-private dev_proc_map_rgb_color( upd_rgb_3color);  /** RGB->RGB-Index */
-private dev_proc_map_color_rgb( upd_3color_rgb);  /** RGB-Index->RGB */
+private dev_proc_encode_color( upd_rgb_3color);  /** RGB->RGB-Index */
+private dev_proc_decode_color( upd_3color_rgb);  /** RGB-Index->RGB */
 
 /**
 The third pair maps RGB-Values into four components, which one might
@@ -151,8 +151,8 @@ expect to be KCMY-Values, but they are not: "uniprint" considers this four
 Values as White+RGB Values!
 */
 
-private dev_proc_map_rgb_color( upd_rgb_4color);  /** RGB->WRGB-Index */
-private dev_proc_map_color_rgb(upd_4color_rgb);   /** WRGB-Index->RGB */
+private dev_proc_encode_color( upd_rgb_4color);  /** RGB->WRGB-Index */
+private dev_proc_decode_color(upd_4color_rgb);   /** WRGB-Index->RGB */
 
 /**
 The fourth pair deals with KCMY-Values. The Mapping-Function
@@ -161,8 +161,8 @@ inverse-Function is of the same type, and expects RGB-Values to be
 deliverd into the receiving 3-Component-Array!
 */
 
-private dev_proc_map_cmyk_color(upd_cmyk_icolor); /** KCMY->KCMY-Index */
-private dev_proc_map_color_rgb( upd_icolor_rgb);  /** KCMY->RGB-Index */
+private dev_proc_encode_color(upd_cmyk_icolor); /** KCMY->KCMY-Index */
+private dev_proc_decode_color( upd_icolor_rgb);  /** KCMY->RGB-Index */
 
 /**
 The difference between the icolor-pair and the kcolor-pair is the enforced
@@ -170,8 +170,8 @@ black-generation in the forward-mapping. that is taken into account by the
 reverse-mapping too.
 */
 
-private dev_proc_map_cmyk_color(upd_cmyk_kcolor); /** adds black generation */
-private dev_proc_map_color_rgb( upd_kcolor_rgb);  /** watches black-gen */
+private dev_proc_encode_color(upd_cmyk_kcolor); /** adds black generation */
+private dev_proc_decode_color( upd_kcolor_rgb);  /** watches black-gen */
 
 /**
 "ovcolor" is CMYK with Black-Generation and Undercolor-Removal, which
@@ -181,7 +181,7 @@ with
    K'   = min(C,M,Y)
 */
 
-private dev_proc_map_rgb_color(upd_rgb_ovcolor);  /** RGB->CMYK-Index */
+private dev_proc_encode_color(upd_rgb_ovcolor);  /** RGB->CMYK-Index */
 #define upd_ovcolor_rgb upd_icolor_rgb            /** CMYK-Index->RGB */
 
 /**
@@ -192,7 +192,7 @@ with
    K'   = min(C,M,Y)
 */
 
-private dev_proc_map_rgb_color(upd_rgb_novcolor); /** RGB->CMYK-Index */
+private dev_proc_encode_color(upd_rgb_novcolor); /** RGB->CMYK-Index */
 #define upd_novcolor_rgb upd_icolor_rgb           /** CMYK-Index->RGB */
 
 /**
@@ -2257,7 +2257,7 @@ upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 }
 
 /* ------------------------------------------------------------------- */
-/* upd_rgb_1color: Grayscale-RGB->Grayscale-index-Mapping              */
+/* upd_rgb_1color: Grayscale->Grayscale-index-Mapping              */
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
@@ -2265,17 +2265,15 @@ upd_rgb_1color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
-   gx_color_value r, g, b;
-   r = cv[0]; g = cv[1]; b = cv[2];
+   gx_color_value g;
 
-   rv = upd_truncate(upd,0,r);
+   g = cv[0];
+   rv = upd_truncate(upd,0,g);
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
    errprintf(
-      "rgb_1color: (%5.1f,%5.1f,%5.1f) : (%5.1f) : 0x%0*lx\n",
-      255.0 * (double) r  / (double) gx_max_color_value,
+      "rgb_1color: (%5.1f) : (%5.1f) : 0x%0*lx\n",
       255.0 * (double) g  / (double) gx_max_color_value,
-      255.0 * (double) b  / (double) gx_max_color_value,
       255.0 * (double) ((rv >> upd->cmap[0].bitshf) & upd->cmap[0].bitmsk)
                     / (double) upd->cmap[0].bitmsk,
       (pdev->color_info.depth + 3)>>2,rv);
@@ -2289,15 +2287,13 @@ upd_rgb_1color(gx_device *pdev, const gx_color_value cv[])
 /* ------------------------------------------------------------------- */
 
 private int
-upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
+upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value cv[1])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
 /*
  * Actual task: expand to full range of gx_color_value
  */
-   prgb[0] = upd_expand(upd,0,color);
-
-   prgb[2] = prgb[1] = prgb[0];
+   cv[0] = upd_expand(upd,0,color);
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
    errprintf("1color_rgb: 0x%0*lx -> %5.1f -> (%5.1f,%5.1f,%5.1f)\n",
@@ -2305,8 +2301,8 @@ upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
       255.0 * (double) ((color >> upd->cmap[0].bitshf) & upd->cmap[0].bitmsk)
                        / (double) upd->cmap[0].bitmsk,
       255.0 * (double) prgb[0] / (double) gx_max_color_value,
-      255.0 * (double) prgb[1] / (double) gx_max_color_value,
-      255.0 * (double) prgb[2] / (double) gx_max_color_value);
+      255.0 * (double) prgb[0] / (double) gx_max_color_value,
+      255.0 * (double) prgb[0] / (double) gx_max_color_value);
 #endif
 
    return 0;
@@ -3120,42 +3116,58 @@ upd_procs_map(upd_device *udev)
 
    switch(imap) {
      case MAP_GRAY: /* Grayscale -> Grayscale */
+       set_dev_proc(udev,encode_color, upd_rgb_1color); 
+       set_dev_proc(udev,decode_color, upd_1color_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_1color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_1color_rgb);
      break;
      case MAP_RGBW: /* RGB->RGBW */
+       set_dev_proc(udev,encode_color, upd_rgb_4color); 
+       set_dev_proc(udev,decode_color, upd_4color_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_4color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_4color_rgb);
      break;
      case MAP_RGB: /* Plain RGB */
+       set_dev_proc(udev,encode_color, upd_rgb_3color); 
+       set_dev_proc(udev,decode_color, upd_3color_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_3color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_3color_rgb);
      break;
      case MAP_CMYK: /* Plain KCMY */
+       set_dev_proc(udev,encode_color, upd_cmyk_icolor); 
+       set_dev_proc(udev,decode_color, upd_icolor_rgb); 
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,upd_cmyk_icolor);
        set_dev_proc(udev,map_color_rgb, upd_icolor_rgb);
      break;
      case MAP_CMYKGEN: /* KCMY with black-generation */
+       set_dev_proc(udev,encode_color, upd_cmyk_kcolor); 
+       set_dev_proc(udev,decode_color, upd_kcolor_rgb); 
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,upd_cmyk_kcolor);
        set_dev_proc(udev,map_color_rgb, upd_kcolor_rgb);
      break;
      case MAP_RGBOV: /* RGB -> KCMY with BG and UCR for CMYK-Output */
+       set_dev_proc(udev,encode_color, upd_rgb_ovcolor); 
+       set_dev_proc(udev,decode_color, upd_ovcolor_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_ovcolor);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_ovcolor_rgb);
      break;
      case MAP_RGBNOV: /* RGB -> KCMY with BG and UCR for CMY+K-Output */
+       set_dev_proc(udev,encode_color, upd_rgb_novcolor); 
+       set_dev_proc(udev,decode_color, upd_novcolor_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_novcolor);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_novcolor_rgb);
      break;
 
      default:
+       set_dev_proc(udev,encode_color, gx_default_map_rgb_color); 
+       set_dev_proc(udev,decode_color, gx_default_map_color_rgb); 
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, gx_default_map_color_rgb);
