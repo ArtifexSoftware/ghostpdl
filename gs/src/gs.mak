@@ -260,6 +260,7 @@ mostlyclean : config-clean
 	$(RMN_) $(GSGEN)gconfig*.c $(GSGEN)gscdefs*.c $(GSGEN)iconfig*.c
 	$(RMN_) $(GSGEN)_temp_* $(GSGEN)_temp_*.* $(GSOBJ)*.map $(GSOBJ)*.sym
 	$(RMN_) $(GENARCH_XE) $(GENCONF_XE) $(GENDEV_XE) $(GENHT_XE) $(GENINIT_XE)
+	$(RMN_) $(ECHOGS_XE)
 	$(RMN_) $(GSGEN)gs_init.c $(BEGINFILES)
 
 # Remove only configuration-dependent information.
