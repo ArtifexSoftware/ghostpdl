@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,6 @@
    all copies.
  */
 
-
 /* CIE color rendering operators */
 #include "math_.h"
 #include "ghost.h"
@@ -25,16 +24,16 @@
 #include "gscspace.h"
 #include "gscolor2.h"
 #include "gscrd.h"
+#include "gscrdp.h"
 #include "estack.h"
 #include "ialloc.h"
 #include "idict.h"
 #include "idparam.h"
 #include "igstate.h"
 #include "icie.h"
+#include "iparam.h"
 #include "ivmspace.h"
 #include "store.h"		/* for make_null */
-
-/*#define TEST*/
 
 /* Forward references */
 private int zcrd1_proc_params(P2(os_ptr op, ref_cie_render_procs * pcprocs));
@@ -50,6 +49,68 @@ zcurrentcolorrendering(os_ptr op)
 {
     push(1);
     *op = istate->colorrendering.dict;
+    return 0;
+}
+
+/* <dict> .buildcolorrendering1 <crd> */
+private int
+zbuildcolorrendering1(os_ptr op)
+{
+    gs_memory_t *mem = gs_state_memory(igs);
+    int code;
+    es_ptr ep = esp;
+    gs_cie_render *pcrd;
+    ref_cie_render_procs procs;
+
+    check_read_type(*op, t_dictionary);
+    check_dict_read(*op);
+    code = gs_cie_render1_build(&pcrd, mem, ".buildcolorrendering1");
+    if (code < 0)
+	return code;
+    code = zcrd1_params(op, pcrd, &procs, mem);
+    if (code < 0 ||
+    (code = cache_colorrendering1(pcrd, &procs, (gs_ref_memory_t *) mem)) < 0
+	) {
+	rc_free_struct(pcrd, ".buildcolorrendering1");
+	esp = ep;
+	return code;
+    }
+    /****** FIX refct ******/
+    /*rc_decrement(pcrd, ".buildcolorrendering1"); *//* build sets rc = 1 */
+    istate->colorrendering.dict = *op;
+    make_istruct_new(op, a_readonly, pcrd);
+    return (esp == ep ? 0 : o_push_estack);
+}
+
+/* <dict> .builddevicecolorrendering1 <crd> */
+private int
+zbuilddevicecolorrendering1(os_ptr op)
+{
+    gs_memory_t *mem = gs_state_memory(igs);
+    dict_param_list list;
+    gs_cie_render *pcrd = 0;
+    int code;
+
+    check_type(*op, t_dictionary);
+    code = dict_param_list_read(&list, op, NULL, false);
+    if (code < 0)
+	return code;
+    code = gs_cie_render1_build(&pcrd, mem, ".builddevicecolorrendering1");
+    if (code >= 0) {
+	code = param_get_cie_render1(pcrd, (gs_param_list *) & list,
+				     gs_currentdevice(igs));
+	if (code >= 0) {
+	    /****** FIX refct ******/
+	    /*rc_decrement(pcrd, ".builddevicecolorrendering1"); *//* build sets rc = 1 */
+	}
+    }
+    iparam_list_release(&list);
+    if (code < 0) {
+	rc_free_struct(pcrd, ".builddevicecolorrendering1");
+	return code;
+    }
+    istate->colorrendering.dict = *op;
+    make_istruct_new(op, a_readonly, pcrd);
     return 0;
 }
 
@@ -79,35 +140,30 @@ zsetcolorrendering1(os_ptr op)
     return (esp == ep ? 0 : o_push_estack);
 }
 
-/* <dict> .buildcolorrendering1 <crd> */
+/* <dict> <crd> .setdevicecolorrendering1 - */
 private int
-zbuildcolorrendering1(os_ptr op)
+zsetdevicecolorrendering1(os_ptr op)
 {
-    gs_memory_t *mem = gs_state_memory(igs);
     int code;
-    es_ptr ep = esp;
-    gs_cie_render *pcrd;
     ref_cie_render_procs procs;
 
-    check_read_type(*op, t_dictionary);
-    check_dict_read(*op);
-    code = gs_cie_render1_build(&pcrd, mem, ".setcolorrendering1");
+    check_type(op[-1], t_dictionary);
+    check_stype(*op, st_cie_render1);
+    code = gs_setcolorrendering(igs, r_ptr(op, gs_cie_render));
     if (code < 0)
 	return code;
-    code = zcrd1_params(op, pcrd, &procs, mem);
-    if (code < 0 ||
-    (code = cache_colorrendering1(pcrd, &procs, (gs_ref_memory_t *) mem)) < 0
-	) {
-	rc_free_struct(pcrd, ".setcolorrendering1");
-	esp = ep;
+    refset_null((ref *)&procs, sizeof(procs) / sizeof(ref));
+    if (gs_cie_cs_common(igs) != 0 &&
+	(code = cie_cache_joint(&procs, igs)) < 0
+	)
 	return code;
-    }
-    /****** FIX refct ******/
-    /*rc_decrement(pcrd, ".setcolorrendering1"); *//* build sets rc = 1 */
-    istate->colorrendering.dict = *op;
-    make_istruct_new(op, a_readonly, pcrd);
-    return (esp == ep ? 0 : o_push_estack);
+    istate->colorrendering.dict = op[-1];
+    refset_null((ref *)&istate->colorrendering.procs,
+		sizeof(istate->colorrendering.procs) / sizeof(ref));
+    pop(2);
+    return 0;
 }
+
 /* Get ColorRenderingType 1 procedures from the PostScript dictionary. */
 private int
 zcrd1_proc_params(os_ptr op, ref_cie_render_procs * pcprocs)
@@ -138,6 +194,7 @@ zcrd1_proc_params(os_ptr op, ref_cie_render_procs * pcprocs)
 	make_null(&pcprocs->RenderTableT);
     return 0;
 }
+
 /* Get ColorRenderingType 1 parameters from the PostScript dictionary. */
 private int
 zcrd1_params(os_ptr op, gs_cie_render * pcrd,
@@ -150,15 +207,15 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 
     if ((code = dict_int_param(op, "ColorRenderingType", 1, 1, 0, &ignore)) < 0 ||
 	(code = zcrd1_proc_params(op, pcprocs)) < 0 ||
-	(code = dict_matrix3_param(op, "MatrixLMN", &pcrd->MatrixLMN)) != matrix3_ok ||
+	(code = dict_matrix3_param(op, "MatrixLMN", &pcrd->MatrixLMN)) < 0 ||
 	(code = dict_range3_param(op, "RangeLMN", &pcrd->RangeLMN)) < 0 ||
-	(code = dict_matrix3_param(op, "MatrixABC", &pcrd->MatrixABC)) != matrix3_ok ||
+	(code = dict_matrix3_param(op, "MatrixABC", &pcrd->MatrixABC)) < 0 ||
 	(code = dict_range3_param(op, "RangeABC", &pcrd->RangeABC)) < 0 ||
 	(code = cie_points_param(op, &pcrd->points)) < 0 ||
-	(code = dict_matrix3_param(op, "MatrixPQR", &pcrd->MatrixPQR)) != matrix3_ok ||
+	(code = dict_matrix3_param(op, "MatrixPQR", &pcrd->MatrixPQR)) < 0 ||
 	(code = dict_range3_param(op, "RangePQR", &pcrd->RangePQR)) < 0
 	)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+	return code;
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
 	const ref *prte = pRT->value.const_refs;
 
@@ -240,7 +297,8 @@ cie_cache_render_finish(os_ptr op)
 	int j;
 
 	for (j = 0; j < pcrd->RenderTable.lookup.m; j++)
-	    gs_cie_cache_to_fracs(&pcrd->caches.RenderTableT[j]);
+	    gs_cie_cache_to_fracs(&pcrd->caches.RenderTableT[j].floats,
+				  &pcrd->caches.RenderTableT[j].fracs);
     }
     pcrd->status = CIE_RENDER_STATUS_SAMPLED;
     pcrd->EncodeLMN = EncodeLMN_from_cache;
@@ -257,7 +315,9 @@ cie_cache_render_finish(os_ptr op)
 
 /* Load the joint caches. */
 private int
-    cie_exec_tpqr(P1(os_ptr)), cie_post_exec_tpqr(P1(os_ptr)), cie_tpqr_finish(P1(os_ptr));
+    cie_exec_tpqr(P1(os_ptr)),
+    cie_post_exec_tpqr(P1(os_ptr)),
+    cie_tpqr_finish(P1(os_ptr));
 int
 cie_cache_joint(const ref_cie_render_procs * pcrprocs, gs_state * pgs)
 {
@@ -274,6 +334,13 @@ cie_cache_joint(const ref_cie_render_procs * pcrprocs, gs_state * pgs)
 	return 0;
     if (pjc == 0)		/* must already be allocated */
 	return_error(e_VMerror);
+    if (r_has_type(&pcrprocs->TransformPQR, t_null)) {
+	/*
+	 * This CRD came from a driver, not from a PostScript dictionary.
+	 * Resample TransformPQR in C code.
+	 */
+	return gs_cie_cs_complete(pgs, true);
+    }
     gs_cie_compute_points_sd(pjc, pcie, pcrd);
     code = ialloc_ref_array(&pqr_procs, a_readonly, 3 * (1 + 4 + 4 * 6),
 			    "cie_cache_common");
@@ -345,7 +412,8 @@ private int
 cie_tpqr_finish(os_ptr op)
 {
     gs_state *pgs = r_ptr(op, gs_state);
-    gs_cie_render *pcrd = gs_currentcolorrendering(pgs);
+    gs_cie_render *pcrd =
+	(gs_cie_render *)gs_currentcolorrendering(pgs);  /* break const */
     int code;
 
     ifree_ref_array(op - 1, "cie_tpqr_finish");
@@ -355,61 +423,6 @@ cie_tpqr_finish(os_ptr op)
     return code;
 }
 
-/* ------ Operators for testing ------ */
-
-#ifdef TEST
-
-#include "gscrdp.h"
-#include "iparam.h"
-
-/* - .currentcrd <dict> */
-private int
-zcurrentcrd(os_ptr op)
-{
-    stack_param_list list;
-    int code;
-
-    stack_param_list_write(&list, &o_stack, NULL);
-    code = param_write_cie_render1((gs_param_list *) & list, "CRD",
-				   gs_currentcolorrendering(igs), imemory);
-    if (code < 0)
-	return code;
-    ref_assign(osp - 1, osp);
-    pop(1);
-    return 0;
-}
-
-/* <dict> .setcrd - */
-private int
-zsetcrd(os_ptr op)
-{
-    gs_memory_t *mem = gs_state_memory(igs);
-    dict_param_list list;
-    gs_cie_render *pcrd = 0;
-    int code;
-
-    check_type(*op, t_dictionary);
-    code = dict_param_list_read(&list, op, NULL, false);
-    if (code < 0)
-	return code;
-    code = gs_cie_render1_build(&pcrd, mem, ".setcrd");
-    if (code >= 0 &&
-	(code = param_get_cie_render1(pcrd, (gs_param_list *) & list,
-				      gs_currentdevice(igs))) >= 0
-	) {
-	code = gs_setcolorrendering(igs, pcrd);
-    }
-    if (pcrd)
-	rc_decrement(pcrd, ".setcrd");	/* build sets rc = 1 */
-    iparam_list_release(&list);
-    if (code < 0)
-	return code;
-    pop(1);
-    return 0;
-}
-
-#endif
-
 /* ------ Initialization procedure ------ */
 
 const op_def zcrd_l2_op_defs[] =
@@ -417,16 +430,13 @@ const op_def zcrd_l2_op_defs[] =
     op_def_begin_level2(),
     {"0currentcolorrendering", zcurrentcolorrendering},
     {"2.setcolorrendering1", zsetcolorrendering1},
+    {"2.setdevicecolorrendering1", zsetdevicecolorrendering1},
     {"1.buildcolorrendering1", zbuildcolorrendering1},
+    {"1.builddevicecolorrendering1", zbuilddevicecolorrendering1},
 		/* Internal "operators" */
     {"1%cie_render_finish", cie_cache_render_finish},
     {"3%cie_exec_tpqr", cie_exec_tpqr},
     {"2%cie_post_exec_tpqr", cie_post_exec_tpqr},
     {"1%cie_tpqr_finish", cie_tpqr_finish},
-		/* Testing */
-#ifdef TEST
-    {"0.currentcrd", zcurrentcrd},
-    {"1.setcrd", zsetcrd},
-#endif
     op_def_end(0)
 };

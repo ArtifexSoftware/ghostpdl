@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* CIE color rendering */
 #include "math_.h"
 #include "gx.h"
@@ -309,7 +309,7 @@ cie_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 	 * the range [0..1] and conversion to fracs.
 	 */
 #define EABC(i)\
-  cie_interpolate_fracs(pcrd->caches.EncodeABC[i].fracs.values, tabc[i])
+  cie_interpolate_fracs(pcrd->caches.EncodeABC[i].fixeds.fracs.values, tabc[i])
 	pconc[0] = EABC(0);
 	pconc[1] = EABC(1);
 	pconc[2] = EABC(2);
@@ -331,7 +331,7 @@ cie_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 	fixed rfix[3];
 
 #define EABC(i)\
-  cie_interpolate_fracs(pcrd->caches.EncodeABC[i].ints.values, tabc[i])
+  cie_interpolate_fracs(pcrd->caches.EncodeABC[i].fixeds.ints.values, tabc[i])
 #define FABC(i)\
   (EABC(i) << (_fixed_shift - _cie_interpolate_bits))
 	rfix[0] = FABC(0);
@@ -349,9 +349,7 @@ cie_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 		  frac2float(pconc[0]), frac2float(pconc[1]),
 		  frac2float(pconc[2]));
 	if (!pcrd->caches.RenderTableT_is_identity) {
-	    /*
-	     * Map the interpolated values.
-	     */
+	    /* Map the interpolated values. */
 #define frac2cache_index(v) frac2bits(v, gx_cie_log2_cache_size)
 	    pconc[0] = RT_LOOKUP(0, frac2cache_index(pconc[0]));
 	    pconc[1] = RT_LOOKUP(1, frac2cache_index(pconc[1]));

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,9 +16,9 @@
    all copies.
  */
 
-
 /* CIE color rendering cache management */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -57,7 +57,7 @@ private_st_joint_caches();
 /* Define the template for loading a cache. */
 /* If we had parameterized types, or a more flexible type system, */
 /* this could be done with a single procedure. */
-#define CIE_LOAD_CACHE_BODY(pcache, domains, rprocs, pcie, cname)\
+#define CIE_LOAD_CACHE_BODY(pcache, domains, rprocs, dprocs, pcie, cname)\
   BEGIN\
 	int j;\
 \
@@ -73,6 +73,8 @@ private_st_joint_caches();
 		if_debug5('C', "[C]%s[%d,%d] = %g => %g\n",\
 			  cname, j, i, lp.init, pcache[j].floats.values[i]);\
 	    }\
+	    (pcache)[j].floats.params.is_identity =\
+		 (rprocs)->procs[j] == (dprocs).procs[j];\
 	}\
   END
 
@@ -107,13 +109,14 @@ cache_set_linear(cie_cache_floats *pcf)
 	    pcf->params.linear.origin = 0;
 	    pcf->params.linear.scale = 1;
 	} else if (cache_is_linear(&pcf->params.linear, pcf)) {
-	    if_debug3('c',
-		      "[c]linear(0x%lx) = true, origin = %g, scale = %g\n",
-		      (ulong)pcf, pcf->params.linear.origin,
-		      pcf->params.linear.scale);
 	    if (pcf->params.linear.origin == 0 &&
 		fabs(pcf->params.linear.scale - 1) < 0.00001)
 		pcf->params.is_identity = true;
+	    if_debug4('c',
+		      "[c]linear(0x%lx) = true, origin = %g, scale = %g%s\n",
+		      (ulong)pcf, pcf->params.linear.origin,
+		      pcf->params.linear.scale,
+		      (pcf->params.is_identity ? " (=> is_identity)" : ""));
 	}
 #ifdef DEBUG
 	else
@@ -256,7 +259,12 @@ lmn_from_cache_2(floatp in, const gs_cie_common * pcie)
 float
 gs_cie_cached_value(floatp in, const cie_cache_floats *pcache)
 {
-    int index = (in - pcache->params.base) * pcache->params.factor;
+    /*
+     * We need to get the same results when we sample an already-loaded
+     * cache, so we need to round the index just a tiny bit.
+     */
+    int index =
+	(int)((in - pcache->params.base) * pcache->params.factor + 0.0001);
 
     CIE_CLAMP_INDEX(index);
     return pcache->values[index];
@@ -379,7 +387,8 @@ gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
     if_debug_matrix3("[c]CIE MatrixABC =", &pcie->MatrixABC);
     cie_matrix_init(&pcie->MatrixABC);
     CIE_LOAD_CACHE_BODY(pcie->caches.DecodeABC, pcie->RangeABC.ranges,
-			&pcie->DecodeABC, pcie, "DecodeABC");
+			&pcie->DecodeABC, DecodeABC_default, pcie,
+			"DecodeABC");
     cie_load_common_cache(&pcie->common, pgs);
     gs_cie_abc_complete(pcie);
     return gs_cie_cs_complete(pgs, true);
@@ -391,7 +400,8 @@ gx_install_CIEDEFG(gs_color_space * pcs, gs_state * pgs)
     gs_cie_defg *pcie = pcs->params.defg;
 
     CIE_LOAD_CACHE_BODY(pcie->caches_defg.DecodeDEFG, pcie->RangeDEFG.ranges,
-			&pcie->DecodeDEFG, pcie, "DecodeDEFG");
+			&pcie->DecodeDEFG, DecodeDEFG_default, pcie,
+			"DecodeDEFG");
     return gx_install_cie_abc((gs_cie_abc *)pcie, pgs);
 }
 
@@ -401,7 +411,8 @@ gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
     gs_cie_def *pcie = pcs->params.def;
 
     CIE_LOAD_CACHE_BODY(pcie->caches_def.DecodeDEF, pcie->RangeDEF.ranges,
-			&pcie->DecodeDEF, pcie, "DecodeDEF");
+			&pcie->DecodeDEF, DecodeDEF_default, pcie,
+			"DecodeDEF");
     return gx_install_cie_abc((gs_cie_abc *)pcie, pgs);
 }
 
@@ -438,7 +449,8 @@ cie_load_common_cache(gs_cie_common * pcie, gs_state * pgs)
     if_debug_matrix3("[c]CIE MatrixLMN =", &pcie->MatrixLMN);
     cie_matrix_init(&pcie->MatrixLMN);
     CIE_LOAD_CACHE_BODY(pcie->caches.DecodeLMN, pcie->RangeLMN.ranges,
-			&pcie->DecodeLMN, pcie, "DecodeLMN");
+			&pcie->DecodeLMN, DecodeLMN_default, pcie,
+			"DecodeLMN");
 }
 
 /* Complete loading the common caches. */
@@ -715,27 +727,46 @@ gs_cie_render_sample(gs_cie_render * pcrd)
     if (code < 0)
 	return code;
     CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeLMN, pcrd->DomainLMN.ranges,
-			&pcrd->EncodeLMN, pcrd, "EncodeLMN");
+			&pcrd->EncodeLMN, Encode_default, pcrd, "EncodeLMN");
     cache3_set_linear(pcrd->caches.EncodeLMN);
     CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeABC, pcrd->DomainABC.ranges,
-			&pcrd->EncodeABC, pcrd, "EncodeABC");
+			&pcrd->EncodeABC, Encode_default, pcrd, "EncodeABC");
     if (pcrd->RenderTable.lookup.table != 0) {
 	int i, j, m = pcrd->RenderTable.lookup.m;
 	gs_for_loop_params flp;
+	bool is_identity = true;
 
-	for (j = 0; j < m; j++)
+	for (j = 0; j < m; j++) {
 	    gs_cie_cache_init(&pcrd->caches.RenderTableT[j].fracs.params,
 			      &flp, &Range3_default.ranges[0],
 			      "RenderTableT");
-	/****** ASSUMES gx_cie_cache_size >= 256 ******/
-	for (i = 0; i < 256; i++)
+	    is_identity &= pcrd->RenderTable.T.procs[j] ==
+		RenderTableT_default.procs[j];
+	}
+	pcrd->caches.RenderTableT_is_identity = is_identity;
+	/*
+	 * Unfortunately, we defined the first argument of the RenderTable
+	 * T procedures as being a byte, limiting the number of distinct
+	 * cache entries to 256 rather than gx_cie_cache_size.
+	 * We confine this decision to this loop, rather than propagating
+	 * it to the procedures that use the cached data, so that we can
+	 * change it more easily at some future time.
+	 */
+	for (i = 0; i < gx_cie_cache_size; i++) {
+#if gx_cie_log2_cache_size >= 8
+	    byte value = i >> (gx_cie_log2_cache_size - 8);
+#else
+	    byte value = (i << (8 - gx_cie_log2_cache_size)) +
+		(i >> (gx_cie_log2_cache_size * 2 - 8));
+#endif
 	    for (j = 0; j < m; j++) {
 		pcrd->caches.RenderTableT[j].fracs.values[i] =
-		    (*pcrd->RenderTable.T.procs[j])((byte)i, pcrd);
+		    (*pcrd->RenderTable.T.procs[j])(value, pcrd);
 		if_debug3('C', "[C]RenderTableT[%d,%d] = %g\n",
 			  i, j,
 			  frac2float(pcrd->caches.RenderTableT[j].fracs.values[i]));
 	    }
+	}
     }
     pcrd->status = CIE_RENDER_STATUS_SAMPLED;
     return 0;
@@ -802,7 +833,7 @@ gs_cie_render_complete(gs_cie_render * pcrd)
 	double f;
 
 	for (c = 0; c < 3; c++) {
-	    gx_cie_scalar_cache *pcache = &pcrd->caches.EncodeABC[c];
+	    gx_cie_float_fixed_cache *pcache = &pcrd->caches.EncodeABC[c];
 
 	    cie_cache_restrict(&pcrd->caches.EncodeLMN[c].floats,
 			       &pcrd->RangeLMN.ranges[c]);
@@ -811,8 +842,8 @@ gs_cie_render_complete(gs_cie_render * pcrd)
 	    if (pcrd->RenderTable.lookup.table == 0) {
 		cie_cache_restrict(&pcache->floats,
 				   &Range3_default.ranges[0]);
-		gs_cie_cache_to_fracs(pcache);
-		pcache->fracs.params.is_identity = false;
+		gs_cie_cache_to_fracs(&pcache->floats, &pcache->fixeds.fracs);
+		pcache->fixeds.fracs.params.is_identity = false;
 	    } else {
 		int i;
 		int n = pcrd->RenderTable.lookup.dims[c];
@@ -830,29 +861,26 @@ gs_cie_render_complete(gs_cie_render * pcrd)
      (RESTRICTED_INDEX(f, n, itemp) * k)
 #endif
 		const gs_range *prange = pcrd->RangeABC.ranges + c;
+		double scale = (n - 1) / (prange->rmax - prange->rmin);
 
-		/* Loop from top to bottom so that we don't */
-		/* overwrite elements before they're used. */
-		for (i = gx_cie_cache_size; --i >= 0;) {
+		for (i = 0; i < gx_cie_cache_size; ++i) {
 		    float v =
-			(pcache->floats.values[i] -
-			 prange->rmin) * (n - 1) /
-			(prange->rmax - prange->rmin)
+			(pcache->floats.values[i] - prange->rmin) * scale
 #ifndef CIE_RENDER_TABLE_INTERPOLATE
 			+ 0.5
 #endif
-		         ;
+			;
 		    int itemp;
 
 		    if_debug5('c',
 			      "[c]cache[%d][%d] = %g => %g => %d\n",
 			      c, i, pcache->floats.values[i], v,
 			      SCALED_INDEX(v, n, itemp));
-		    pcache->ints.values[i] =
+		    pcache->fixeds.ints.values[i] =
 			SCALED_INDEX(v, n, itemp);
 		}
-		pcache->ints.params = pcache->floats.params;	/* (not necessary) */
-		pcache->ints.params.is_identity = false;
+		pcache->fixeds.ints.params = pcache->floats.params;
+		pcache->fixeds.ints.params.is_identity = false;
 #undef SCALED_INDEX
 	    }
 	}
@@ -893,16 +921,17 @@ cie_cache_restrict(cie_cache_floats * pcache, const gs_range * prange)
 }
 
 /* Convert a cache from floats to fracs. */
+/* Note that the two may be aliased. */
 void
-gs_cie_cache_to_fracs(gx_cie_scalar_cache * pcache)
+gs_cie_cache_to_fracs(const cie_cache_floats *pfloats, cie_cache_fracs *pfracs)
 {
     int i;
 
     /* Loop from bottom to top so that we don't */
     /* overwrite elements before they're used. */
     for (i = 0; i < gx_cie_cache_size; ++i)
-	pcache->fracs.values[i] = float2frac(pcache->floats.values[i]);
-    pcache->fracs.params = pcache->floats.params;	/* (not necessary) */
+	pfracs->values[i] = float2frac(pfloats->values[i]);
+    pfracs->params = pfloats->params;
 }
 
 /* ------ Fill in the joint cache ------ */
@@ -1022,6 +1051,7 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
 		      const gs_cie_common * pcie,
 		      gs_cie_render * pcrd)
 {
+    bool is_identity;
     int j;
 
     gs_cie_compute_points_sd(pjc, pcie, pcrd);
@@ -1031,6 +1061,7 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
      */
     if (pcrd->TransformPQR.proc == TransformPQR_from_cache.proc)
 	return 0;
+    is_identity = pcrd->TransformPQR.proc == TransformPQR_default.proc;
     for (j = 0; j < 3; j++) {
 	int i;
 	gs_for_loop_params lp;
@@ -1049,6 +1080,7 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
 	    if_debug4('C', "[C]TransformPQR[%d,%d] = %g => %g\n",
 		      j, i, lp.init, out);
 	}
+	pjc->TransformPQR[j].floats.params.is_identity = is_identity;
     }
     return 0;
 }

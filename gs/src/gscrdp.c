@@ -16,7 +16,6 @@
    all copies.
  */
 
-/*$Id$ */
 /* CIE color rendering dictionary creation */
 #include "math_.h"
 #include "memory_.h"
@@ -28,9 +27,6 @@
 #include "gscolor2.h"		/* for gs_set/currentcolorrendering */
 #include "gscrdp.h"
 #include "gxarith.h"
-
-/* Define the CRD type that we use here. */
-#define CRD_TYPE 101
 
 /* ---------------- Writing ---------------- */
 
@@ -145,8 +141,8 @@ int
 param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
 		      gs_memory_t * mem)
 {
-    int crd_type = CRD_TYPE;
-    int code = gs_cie_render_init(pcrd);
+    int crd_type = GX_DEVICE_CRD1_TYPE;
+    int code = gs_cie_render_sample(pcrd); /* we need RenderTableT_is_id' */
 
     if (code < 0)
 	return code;
@@ -511,7 +507,7 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
     /* Reset the status to invalidate cached information. */
     pcrd->status = CIE_RENDER_STATUS_BUILT;
     if ((code = param_read_int(plist, "ColorRenderingType", &crd_type)) < 0 ||
-	crd_type != CRD_TYPE ||
+	crd_type != GX_DEVICE_CRD1_TYPE ||
 	(code = read_vector3(plist, "WhitePoint", &pcrd->points.WhitePoint,
 			     NULL)) < 0 ||
 	(code = read_vector3(plist, "BlackPoint", &pcrd->points.BlackPoint,

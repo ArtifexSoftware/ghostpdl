@@ -16,7 +16,6 @@
    all copies.
  */
 
-/*$Id$ */
 /* CIE color rendering dictionary creation */
 #include "math_.h"
 #include "memory_.h"
@@ -97,45 +96,19 @@ render_table_identity(byte in, const gs_cie_render * pcrd)
 /* Transformation procedures that just consult the cache. */
 
 private float
-EncodeABC_cached(floatp in, const gs_cie_render * pcrd, int i)
-{
-    const gx_cie_scalar_cache *pcache = &pcrd->caches.EncodeABC[i];
-
-    if (pcrd->RenderTable.lookup.table == 0) {
-	int index = (in - pcache->fracs.params.base) *
-	pcache->fracs.params.factor;
-
-	CIE_CLAMP_INDEX(index);
-	return frac2float(pcache->fracs.values[index]);
-    } else {
-	/****** WRONG IF INTERPOLATING ******/
-	int index = (in - pcache->ints.params.base) *
-	    pcache->ints.params.factor;
-	const gs_range *prange = &pcrd->RangeABC.ranges[i];
-	int m = pcrd->RenderTable.lookup.m;
-	int k = (i == 0 ? 1 : i == 1 ?
-		 m * pcrd->RenderTable.lookup.dims[2] : m);
-
-	CIE_CLAMP_INDEX(index);
-	return (double)(pcache->ints.values[index]) / k *
-	    (prange->rmax - prange->rmin) / (gx_cie_cache_size - 1) +
-	    prange->rmin;
-    }
-}
-private float
 EncodeABC_cached_A(floatp in, const gs_cie_render * pcrd)
 {
-    return EncodeABC_cached(in, pcrd, 0);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[0].floats);
 }
 private float
 EncodeABC_cached_B(floatp in, const gs_cie_render * pcrd)
 {
-    return EncodeABC_cached(in, pcrd, 1);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[1].floats);
 }
 private float
 EncodeABC_cached_C(floatp in, const gs_cie_render * pcrd)
 {
-    return EncodeABC_cached(in, pcrd, 2);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[2].floats);
 }
 private float
 EncodeLMN_cached_L(floatp in, const gs_cie_render * pcrd)
@@ -156,8 +129,9 @@ EncodeLMN_cached_N(floatp in, const gs_cie_render * pcrd)
 private frac
 RTT_cached(byte in, const gs_cie_render * pcrd, int i)
 {
-    /****** NYI ******/
-    return byte2frac(in);
+    return pcrd->caches.RenderTableT[i].fracs.values[
+	in * (gx_cie_cache_size - 1) / 255
+    ];
 }
 private frac
 RTT_cached_0(byte in, const gs_cie_render * pcrd)
@@ -369,6 +343,7 @@ gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
 	pcrd->RenderTable.T = RenderTableT_default;
     }
     pcrd->status = CIE_RENDER_STATUS_BUILT;
+    return 0;
 }
 /*
  * Initialize a CRD without the option of copying cached values.

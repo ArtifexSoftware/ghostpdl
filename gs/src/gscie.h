@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -15,7 +15,6 @@
    License requires that the copyright notice and this notice be preserved on
    all copies.
  */
-
 
 /* Structures for CIE color algorithms */
 /* (requires gscspace.h, gscolor2.h) */
@@ -93,7 +92,8 @@
 #  define cie_interpolate(p, i)\
      cie_interpolate_between((p)[_cix(i)], (p)[_cix(i) + 1], i)
 #  define cie_interpolate_fracs(p, i)\
-     ((p)[_cix(i)] + (frac)arith_rshift((long)((p)[_cix(i) + 1] - (p)[_cix(i)]) * _cif(i), _cie_interpolate_bits))
+     ((p)[_cix(i)] +\
+      (frac)arith_rshift((long)((p)[_cix(i) + 1] - (p)[_cix(i)]) * _cif(i), _cie_interpolate_bits))
 #else
 #  define _cie_interpolate_bits 0
 #  define cie_interpolate_between(v0, v1, i) (v0)
@@ -345,7 +345,7 @@ typedef struct gx_cie_vector_cache_s {
 
 /* Elements common to all CIE color space dictionaries. */
 struct gs_cie_common_s {
-    int (*install_cspace) (P2(gs_color_space *, gs_state *));
+    int (*install_cspace)(P2(const gs_color_space *, gs_state *));
     void *client_data;
     gs_range3 RangeLMN;
     gs_cie_common_proc3 DecodeLMN;
@@ -503,6 +503,14 @@ typedef enum {
     CIE_RENDER_STATUS_COMPLETED
 } cie_render_status_t;
 
+typedef struct gx_cie_float_fixed_cache_s {
+    cie_cache_floats floats;
+    union if_ {
+	cie_cache_fracs fracs;
+	cie_cache_ints ints;
+    } fixeds;
+} gx_cie_float_fixed_cache;
+
 /* The main dictionary */
 struct gs_cie_render_s {
     cie_render_status_t status;
@@ -529,7 +537,7 @@ struct gs_cie_render_s {
     gs_vector3 wdpqr, bdpqr;
     struct {
 	gx_cie_vector_cache EncodeLMN[3];	/* mult. by M'ABCEncode */
-	gx_cie_scalar_cache EncodeABC[3];
+	gx_cie_float_fixed_cache EncodeABC[3];
 	gx_cie_scalar_cache RenderTableT[4];
 	bool RenderTableT_is_identity;
     } caches;
@@ -584,7 +592,7 @@ typedef struct gs_for_loop_params_s {
 } gs_for_loop_params;
 void gs_cie_cache_init(P4(cie_cache_params *, gs_for_loop_params *,
 			  const gs_range *, client_name_t));
-void gs_cie_cache_to_fracs(P1(gx_cie_scalar_cache *));
+void gs_cie_cache_to_fracs(P2(const cie_cache_floats *, cie_cache_fracs *));
 void gs_cie_defg_complete(P1(gs_cie_defg *));
 void gs_cie_def_complete(P1(gs_cie_def *));
 void gs_cie_abc_complete(P1(gs_cie_abc *));

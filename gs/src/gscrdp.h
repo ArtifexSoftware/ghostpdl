@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -15,7 +15,6 @@
    License requires that the copyright notice and this notice be preserved on
    all copies.
  */
-
 
 /* Interface for device-specified CRDs */
 
@@ -88,7 +87,10 @@ int param_get_cie_render1(P3(gs_cie_render * pcrd,
  * The actual representation of the CRD is a slightly modified PostScript
  * ColorRenderingType 1 dictionary.  THE FOLLOWING IS SUBJECT TO CHANGE
  * WITHOUT NOTICE.  Specifically, the following keys are different:
- *      ColorRenderingType = 101
+ *      ColorRenderingType = GX_DEVICE_CRD1_TYPE
+ */
+#define GX_DEVICE_CRD1_TYPE 101
+/*
  *      (Instead of TransformPQR = [T1 T2 T3]:)
  *        TransformPQRName = procedure name (a name)
  *        TransformPQRData = procedure data (a string)
