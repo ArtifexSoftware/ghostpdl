@@ -29,6 +29,10 @@ Ghostscript projects seeking developers
 <li><a href="#Specific_drivers">Specific drivers</a>
 </ul>
 <li><a href="#Graphics">Graphics</a>
+<ul>
+<li><a href="#Graphics_functionality">Functionality</a>
+<li><a href="#Graphics_performance">Performance</a>
+</ul>
 <li><a href="#Other_topics">Other topics</a>
 </ul></blockquote>
 
@@ -246,7 +250,9 @@ geometry and canned control strings, but we think this problem deserves
 another pass, especially in the hope of consolidating these drivers into a
 single family.
 
-<h1><a name="Graphics"></a>Graphics</h2>
+<h1><a name="Graphics"></a>Graphics</h1>
+
+<h2><a name="Graphics_functionality"></a>Functionality</h2>
 
 <h3>Support for 64-bit colors on 64-bit platforms.</h3>
 
@@ -307,15 +313,6 @@ black-and-white images; double-rectangle representation would give us a
 better implementation of AccurateScreens.  We might want store both
 threshold arrays and the current representation.</I>
 
-<h3>Change band list logic to defer halftoning until rendering.</h3>
-
-<p>
-Currently, when Ghostscript uses a band list, it does halftoning before
-banding.  It should do halftoning after banding: this produces smaller band
-lists and shifts more work to the rasterizer (which is good because the
-rasterizer can be multi-threaded internally for higher performance on
-multiprocessors.)
-
 <h3>Factor out error diffusion routines, integrate ETS.</h3>
 
 <p>
@@ -373,6 +370,50 @@ but it postdates the RasterOp implementation, and most of the RasterOp code
 doesn't use it.  We expect that the more extensive compositing and alpha
 capabilities of SVG will find their way into PDF (and probably PostScript as
 well) in the course of 2000 and 2001, and we will need to implement them.
+
+<h2><a name="Graphics_performance"></a>Performance</h2>
+
+<h3>Change band list logic to defer halftoning until rendering.</h3>
+
+<p>
+Currently, when Ghostscript uses a band list, it does halftoning before
+banding.  It should do halftoning after banding: this produces smaller band
+lists and shifts more work to the rasterizer (which is good because the
+rasterizer can be multi-threaded internally for higher performance on
+multiprocessors: see the next topic.)
+
+<h3>Reduce redundant data for smoothed banded images.</h3>
+
+<p>
+When smoothed ("interpolated") images are written in the band list, extra
+rows must be written above and below each band in order to provide the data
+for interpolation.  Currently, the number of such rows is computed very
+conservatively; instead, the final interpolation algorithm should be
+consulted to provide the correct value.  <i>This is a small task.</i>
+
+<h3>Multi-threaded rasterizing</h3>
+
+<p>
+For high-resolution devices, rasterization dominates execution time.  On
+multiprocessor systems, Ghostscript can do tasks in parallel:
+
+<ul>
+
+<li>Rasterize multiple bands simultaneously;
+
+<li>Rasterize multiple color planes of a single band simultaneously (if a
+planar representation is being used);
+
+<li>For some computation-intensive tasks like smoothing images or filling
+large regions, partition the task (possibly buffering more data to allow
+larger-grain partitioning) and execute several partitions simultaneously.
+
+</ul>
+
+<p>
+We would want these facilities implemented so that no conditional
+compilation was involved: on uniprocessor systems, the locking API would
+simply have a vacuous implementation.
 
 <h1><a name="Other_topics"></a>Other topics</h1>
 
