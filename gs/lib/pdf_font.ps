@@ -1131,10 +1131,10 @@ readonly def
 	% Can't know the length of the decompressed stream, so allocate a big buffer...
       dup 65534 string readstring {
    	% Length exceeded max string size, use an array of two strings
-   	1 index dup 65534 string readstring pop   % maybe a null string - not important.
-      	  2 array astore
+   	1 index 65534 string readstring pop   % maybe a null string - not important.
+      	2 array astore
       	        % Stack: filepos fontres font mapstream array 
-      	  dup 1 get 32767 add
+      	dup 1 get length 65534 add
       } {
         dup length
       } ifelse
