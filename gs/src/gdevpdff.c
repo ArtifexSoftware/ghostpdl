@@ -310,6 +310,52 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 /* ---------------- Everything else ---------------- */
 
 /*
+ * Compute and return the orig_matrix of a font.
+ */
+int
+pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
+{
+    switch (font->FontType) {
+    case ft_composite:		/* subfonts have their own FontMatrix */
+    case ft_TrueType:
+    case ft_CID_TrueType:
+	/* The TrueType FontMatrix is 1 unit per em, which is what we want. */
+	gs_make_identity(pmat);
+	break;
+    case ft_encrypted:
+    case ft_encrypted2:
+    case ft_CID_encrypted:
+	/*
+	 * Type 1 fonts are supposed to use a standard FontMatrix of
+	 * [0.001 0 0 0.001 0 0], with a 1000-unit cell.  However,
+	 * Windows NT 4.0 creates Type 1 fonts, apparently derived from
+	 * TrueType fonts, that use a 2048-unit cell and corresponding
+	 * FontMatrix.  Detect and correct for this here.
+	 */
+	{
+	    const gs_font *base_font = font;
+	    double scale;
+
+	    while (base_font->base != base_font)
+		base_font = base_font->base;
+	    if (base_font->FontMatrix.xx == 1.0/2048 &&
+		base_font->FontMatrix.xy == 0 &&
+		base_font->FontMatrix.yx == 0 &&
+		base_font->FontMatrix.yy == 1.0/2048
+		)
+		scale = 1.0/2048;
+	    else
+		scale = 0.001;
+	    gs_make_scaling(scale, scale, pmat);
+	}
+	break;
+    default:
+	return_error(gs_error_rangecheck);
+    }
+    return 0;
+}
+
+/*
  * Find the original (unscaled) standard font corresponding to an
  * arbitrary font, if any.  Return its index in standard_fonts, or -1.
  */
@@ -693,6 +739,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		int i;
 
 		memset(&ftemp, 0, sizeof(ftemp));
+		pdf_font_orig_matrix(font, &ftemp.orig_matrix);
 		ftemp.Widths = ftemp_Widths;
 		ftemp.widths_known = ftemp_widths_known;
 		memset(ftemp.widths_known, 0, sizeof(ftemp_widths_known));
@@ -1010,17 +1057,11 @@ pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 {
     int wmode = font->WMode;
     gs_glyph_info_t info;
-    bool use_tt_scale;
+    /*
+     * orig_matrix.xx is 1.0 for TrueType, 0.001 or 1.0/2048 for Type 1.
+     */
+    double scale = ppf->orig_matrix.xx * 1000.0;
     int code;
-
-    switch(font->FontType) {
-    case ft_TrueType:
-    case ft_CID_TrueType:
-	/* TrueType fonts have 1 unit per em, we want 1000. */
-	use_tt_scale = true; break;
-    default:
-	use_tt_scale = false;
-    }
 
     if (glyph != gs_no_glyph &&
 	(code = font->procs.glyph_info(font, glyph, NULL,
@@ -1035,9 +1076,7 @@ pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 	    w = info.width[wmode].x, v = info.width[wmode].y;
 	if (v != 0)
 	    return_error(gs_error_rangecheck);
-	if (use_tt_scale)
-	    w *= 1000;
-	*pwidth = (int)w;
+	*pwidth = (int)(w * scale);
 	/*
 	 * If the character is .notdef, don't cache the width,
 	 * just in case this is an incrementally defined font.
@@ -1045,12 +1084,12 @@ pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
 	return (gs_font_glyph_is_notdef((gs_font_base *)font, glyph) ? 1 : 0);
     } else {
 	/* Try for MissingWidth. */
-	static const gs_point tt_scale = {1000, 1000};
+	gs_point scale2;
 	const gs_point *pscale = 0;
 	gs_font_info_t finfo;
 
-	if (use_tt_scale)
-	    pscale = &tt_scale;
+	if (scale != 1)
+	    scale2.x = scale2.y = scale, pscale = &scale2;
 	code = font->procs.font_info(font, pscale, FONT_INFO_MISSING_WIDTH,
 				     &finfo);
 	if (code < 0)

@@ -998,22 +998,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (code < 0)
 	return code;
 
-    /* PDF always uses 1000 units per em for font metrics. */
-    switch (font->FontType) {
-    case ft_composite:		/* subfonts have their own FontMatrix */
-    case ft_TrueType:
-    case ft_CID_TrueType:
-	/* The TrueType FontMatrix is 1 unit per em, which is what we want. */
-	gs_make_identity(&orig_matrix);
-	break;
-    case ft_encrypted:
-    case ft_encrypted2:
-    case ft_CID_encrypted:
-	gs_make_scaling(0.001, 0.001, &orig_matrix);
-	break;
-    default:
-	return_error(gs_error_rangecheck);
-    }
+    pdf_font_orig_matrix(font, &orig_matrix);
     DISCARD(pdf_find_orig_font(pdev, font, &orig_matrix));
 
     /* Compute the scaling matrix and combined matrix. */

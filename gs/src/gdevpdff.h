@@ -336,6 +336,11 @@ extern const pdf_standard_font_t pdf_standard_fonts[];
 int pdf_find_standard_font(P2(const byte *str, uint size));
 
 /*
+ * Compute and return the orig_matrix of a font.
+ */
+int pdf_font_orig_matrix(P2(const gs_font *font, gs_matrix *pmat));
+
+/*
  * Find the original (unscaled) standard font corresponding to an
  * arbitrary font, if any.  Return its index in standard_fonts, or -1.
  */
