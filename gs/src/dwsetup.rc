@@ -139,7 +139,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDS_APPNAME             "AFPL Ghostscript Setup"
     IDS_TARGET_DIR          "C:\\gs"
-    IDS_TARGET_GROUP        "Aladdin"
+    IDS_TARGET_GROUP        "Ghostscript"
 END
 
 /////////////////////////////////////////////////////////////////////////////

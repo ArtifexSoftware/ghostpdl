@@ -50,7 +50,7 @@
 //   fonts\n019023l.pfb
 //
 // The default install directory is c:\gs.
-// The default Start Menu Folder is Aladdin.
+// The default Start Menu Folder is Ghostscript.
 // These are set in the resources.
 // The setup program will create the following uninstall log files
 //   c:\gs\gs#.##\uninstal.txt
