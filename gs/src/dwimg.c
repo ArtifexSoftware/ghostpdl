@@ -1047,14 +1047,34 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		INPUT_RECORD ir;
 		HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 		DWORD dwWritten = 0;
+		DWORD cks = 0;
 		ir.EventType = KEY_EVENT;
 		ir.Event.KeyEvent.bKeyDown = TRUE;
 		ir.Event.KeyEvent.wRepeatCount = lParam & 0xffff;
-		ir.Event.KeyEvent.wVirtualKeyCode = wParam;
-		ir.Event.KeyEvent.wVirtualScanCode = (lParam >> 16) & 0xff;
+		ir.Event.KeyEvent.wVirtualKeyCode = VkKeyScan((TCHAR)wParam) & 0xff;
+		ir.Event.KeyEvent.wVirtualScanCode = 
+		    (lParam >> 16) & 0xff;
 		ir.Event.KeyEvent.uChar.AsciiChar = wParam;
-		ir.Event.KeyEvent.dwControlKeyState = 0;
-		WriteConsoleInput(hStdin, &ir, 1, &dwWritten); 
+		if (GetKeyState(VK_CAPITAL))
+		   cks |= CAPSLOCK_ON;
+		/* ENHANCED_KEY unimplemented */
+		if (GetKeyState(VK_LMENU))
+		   cks |= LEFT_ALT_PRESSED;
+		if (GetKeyState(VK_LCONTROL))
+		   cks |= LEFT_CTRL_PRESSED;
+		if (GetKeyState(VK_NUMLOCK))
+		   cks |= NUMLOCK_ON;
+		if (GetKeyState(VK_RMENU))
+		   cks |= RIGHT_ALT_PRESSED;
+		if (GetKeyState(VK_RCONTROL))
+		   cks |= RIGHT_CTRL_PRESSED;
+		if (GetKeyState(VK_SCROLL))
+		   cks |= SCROLLLOCK_ON;
+		if (GetKeyState(VK_SHIFT))
+		   cks |= SHIFT_PRESSED;
+		ir.Event.KeyEvent.dwControlKeyState = cks;
+		if (hStdin != INVALID_HANDLE_VALUE)
+		    WriteConsoleInput(hStdin, &ir, 1, &dwWritten); 
 	    }
 	    return 0;
 	case WM_PAINT:
