@@ -652,14 +652,41 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
 	gs_function_AdOt_t *pfn =
 	    gs_alloc_struct(mem, gs_function_AdOt_t, &st_function_AdOt,
 			    "gs_function_AdOt_init");
+	float *domain = (float *)
+	    gs_alloc_byte_array(mem, 2 * m, sizeof(float),
+				"gs_function_AdOt_init(Domain)");
+	int i, j;
 
 	if (pfn == 0)
 	    return_error(gs_error_VMerror);
 	pfn->params = *params;
-	pfn->params.Domain = 0;
+	pfn->params.Domain = domain;
 	pfn->params.Range = 0;
 	pfn->head = function_AdOt_head;
 	pfn->head.is_monotonic = is_monotonic;
+	if (domain == 0) {
+	    gs_function_free((gs_function_t *)pfn, true, mem);
+	    return_error(gs_error_VMerror);
+	}
+	/*
+	 * We compute the Domain as the intersection of the Domains of
+	 * the individual subfunctions.  This isn't quite right: some
+	 * subfunction might actually make use of a larger domain of
+	 * input values.  However, the only place that Arrayed Output
+	 * functions are used is in Shading and similar dictionaries,
+	 * where the input values are clamped to the intersection of
+	 * the individual Domains anyway.
+	 */
+	memcpy(domain, params->Functions[0]->params.Domain,
+	       2 * sizeof(float) * m);
+	for (i = 1; i < n; ++i) {
+	    const float *dom = params->Functions[i]->params.Domain;
+
+	    for (j = 0; j < 2 * m; j += 2, dom += 2) {
+		domain[j] = max(domain[j], dom[0]);
+		domain[j + 1] = min(domain[j + 1], dom[1]);
+	    }
+	}
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
