@@ -1665,8 +1665,9 @@ false setpacking
 
 % Conditionally turn image interpolation on or off.
 currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
+
 /.interpolate {
-  dup /Interpolate .knownget not { false } if
+  dup /Interpolate .knownget not { //false } if
   /INTERPOLATE .systemvar ne {
     dup gcheck .currentglobal exch .setglobal
     exch dup length dict copy
@@ -1674,34 +1675,82 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
     exch .setglobal
   } if
 } bind odef
-/image {
-  dup type /dicttype eq {
-    .interpolate image
-  } {
-    /INTERPOLATE .systemvar {
-      8 dict begin
-      /ImageType 1 def
-      /DataSource 1 index def
-      /ImageMatrix 2 index def
-      /BitsPerComponent 3 index def
-      /Decode {0 1} def
-      /Height 4 index def
-      /Width 5 index def
-      /Interpolate true def
-      currentdict end
-      gsave /DeviceGray setcolorspace image grestore
-      5 { pop } repeat
-    } {
-      image
-    } ifelse
-  } ifelse
-} bind odef
+
+/colorimage
+  { /INTERPOLATE .systemvar
+      { .currentglobal                    % w h bit [] {}...{} multi ncomp glob
+        //false .setglobal
+        9 dict begin                      % w h bit [] {}...{} multi ncomp glob
+        2 index { 1 index 7 add } { 8 } ifelse
+        copy gsave pop                    % preserve the arguments
+        { 0 /DeviceGray 0 /DeviceRGB /DeviceCMYK }
+        1 index get setcolorspace         % ... glob w h bit [] {}...{} multi ncomp
+        {0 1 0 1 0 1 0 1}
+        1 index 2 mul 0 exch              % ... glob w h bit [] {}...{} multi ncomp {0 1 ...} 0 2*ncomp
+        getinterval /Decode exch def      % ... glob w h bit [] {}...{} multi ncomp
+        exch dup                          % ... glob w h bit [] {}...{} ncomp multi multi
+        /MultipleDataSources exch def     % ... glob w h bit [] {}...{} ncomp multi
+        { array astore} { pop } ifelse    % ... glob w h bit [] [{}...{}]
+        /DataSource exch def              % ... glob w h bit []
+        /ImageMatrix exch def             % ... glob w h bit
+        /BitsPerComponent exch def        % ... glob w h
+        /Height exch def                  % ... glob w
+        /Width exch def                   % ... glob 
+        /ImageType 1 def
+        /Interpolate //true def
+        .setglobal currentdict end        % ... <<>>
+        image grestore
+        exch { 4 add } { 6 } ifelse
+        { pop } repeat                    % -
+      }
+      { colorimage
+      }
+    ifelse
+  } bind odef
+
+/image
+  { dup type /dicttype eq
+      { dup /ImageType get 3 eq
+          { .currentglobal //false .setglobal exch
+            dup length dict copy begin .setglobal 
+            /DataDict DataDict .interpolate def
+            /MaskDict MaskDict .interpolate def
+            currentdict end
+          }
+          { .interpolate 
+          }
+        ifelse
+        image
+      }
+      { /INTERPOLATE .systemvar
+          { .currentglobal //false .setglobal
+            8 dict begin .setglobal
+            /ImageType 1 def
+            /DataSource 1 index def
+            /ImageMatrix 2 index def
+            /BitsPerComponent 3 index def
+            /Decode {0 1} def
+            /Height 4 index def
+            /Width 5 index def
+            /Interpolate //true def
+            currentdict end
+            gsave /DeviceGray setcolorspace image grestore
+            5 { pop } repeat
+          }
+          { image
+          }
+        ifelse
+      }
+    ifelse
+  } bind odef
+
 /imagemask {
   dup type /dicttype eq {
     .interpolate imagemask
   } {
     /INTERPOLATE .systemvar {
-      8 dict begin
+      .currentglobal //false .setglobal
+      8 dict begin .setglobal
       /ImageType 1 def
       /DataSource 1 index def
       /ImageMatrix 2 index def
@@ -1709,13 +1758,16 @@ currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
       2 index { {1 0} } { {0 1} } ifelse /Decode exch def
       /Height 4 index def
       /Width 5 index def
-      /Interpolate true def
+      /Interpolate //true def
       currentdict end imagemask 5 { pop } repeat
     } {
       imagemask
     } ifelse
   } ifelse
 } bind odef
+
+currentdict /.interpolate undef
+
 %END INTERPOLATE
 
 % Establish local VM as the default.
