@@ -305,6 +305,7 @@ typedef AR_frame_t A_frame_t;
 typedef struct A_fill_state_s {
     shading_fill_state_common;
     const gs_shading_A_t *psh;
+    bool orthogonal;		/* true iff ctm is xxyy or xyyx */
     gs_rect rect;
     gs_point delta;
     double length, dd;
@@ -335,12 +336,12 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
     (*pcs->type->restrict_color)(pcc, pcs);
     (*pcs->type->remap_color)(pcc, pcs, &dev_color, pis,
 			      pfs->dev, gs_color_select_texture);
-    if (x0 == x1) {
-	/* Stripe is horizontal. */
+    if (x0 == x1 && pfs->orthogonal) {
+	/* Stripe is horizontal in both user and device space. */
 	x0 = pfs->rect.p.x;
 	x1 = pfs->rect.q.x;
-    } else if (y0 == y1) {
-	/* Stripe is vertical. */
+    } else if (y0 == y1 && pfs->orthogonal) {
+	/* Stripe is vertical in both user and device space space. */
 	y0 = pfs->rect.p.y;
 	y1 = pfs->rect.q.y;
     } else {
@@ -368,7 +369,7 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
 	gx_path_free(ppath, "A_fill");
 	return code;
     }
-    /* Stripe is horizontal or vertical. */
+    /* Stripe is horizontal or vertical in both user and device space. */
     gs_point_transform2fixed(&pis->ctm, x0, y0, &pts[0]);
     gs_point_transform2fixed(&pis->ctm, x1, y1, &pts[1]);
     return
@@ -439,6 +440,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
     shade_init_fill_state((shading_fill_state_t *)&state, psh0, dev, pis);
     state.psh = psh;
+    state.orthogonal = is_xxyy(&pis->ctm) || is_xyyx(&pis->ctm);
     state.rect = *rect;
     /*
      * Compute the parameter range.  We construct a matrix in which
