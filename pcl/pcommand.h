@@ -64,7 +64,7 @@ float word2float(P1(uint32 word));
 /* Define the argument passed to PCL commands. */
 typedef struct pcl_args_s {
   pcl_value_t value;		/* PCL5 command argument */
-  const byte *data;		/* data following the command */
+  byte *data;			/* data following the command */
   bool data_on_heap;		/* if true, data is allocated on heap */
   char command;			/* (last) command character */
 } pcl_args_t;
