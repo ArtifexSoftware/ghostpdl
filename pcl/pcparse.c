@@ -170,12 +170,7 @@ pcl_adjust_arg(pcl_args_t *pargs, const pcl_command_definition_t *pdefn)
 {	uint acts = pdefn->actions;
 
 	if ( value_is_neg(&pargs->value) )
-	  { if ( pargs->value.i == 0 &&
-		 (!value_is_float(&pargs->value) ||
-		  pargs->value.fraction == 0)
-	       )
-	      arg_set_uint(pargs, 0);
-	    else switch ( acts & pca_neg_action )
+	  { switch ( acts & pca_neg_action )
 	      {
 	      case pca_neg_clamp:
 		arg_set_uint(pargs, 0); break;
