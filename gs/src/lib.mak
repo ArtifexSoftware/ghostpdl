@@ -1886,7 +1886,7 @@ $(GLOBJ)gscedata.$(OBJ) : $(GLSRC)gscedata.c\
  $(stdpre_h) $(gstypes_h) $(gscedata_h)
 	$(GLCC) $(GLO_)gscedata.$(OBJ) $(C_) $(GLSRC)gscedata.c
 
-$(GLOBJ)gscencs.$(OBJ) : $(GLSRC)gscencs.c $(GLSRC)gscedata.c\
+$(GLOBJ)gscencs.$(OBJ) : $(GLSRC)gscencs.c\
  $(memory__h) $(gscedata_h) $(gscencs_h) $(gserror_h) $(gserrors_h)
 	$(GLCC) $(GLO_)gscencs.$(OBJ) $(C_) $(GLSRC)gscencs.c
 
