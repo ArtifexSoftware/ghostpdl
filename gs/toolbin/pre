@@ -49,10 +49,16 @@ proc grep1 {pattern file linevar} {
     return 1
 }
 
-# Define a 1-origin array of month names.
-set monthnames1 [list ?\
-	January February March April May June\
-	July August September October November December]
+# Spell out the name of the month, given then number. Month numbers with
+# leading zeros are accepted.
+proc monthname {monthnum} {
+    # Define a 1-origin array of month names.
+    set monthnames1 [list ?\
+	    January February March April May June\
+	    July August September October November December]
+    regexp {^0*([0-9]+)} $monthnum skip index
+    return [lindex $monthnames1 $index]
+}
 
 # ---------------- Main program ---------------- #
 
@@ -256,7 +262,7 @@ foreach doc $doclist {
 	# Strip leading 0 from month and day.
 	set day [expr 1$day - 100]
 	set month1 [expr 1$month1 - 100]
-	set idate "$day [lindex $monthnames1 $month1] $year"
+	set idate "$day [monthname $month1] $year"
 	if {$ddate != $idate} {
 	    # Make a special exception for CVS version 1.1: see below.
 	    if {$idver != "1.1"} {
@@ -303,7 +309,7 @@ foreach doc $manlist {
     # and the Ghostscript version # is 6.0, because the very first
     # checkin date for the repository was later than the release date.
     if {$idrevision != 1.1 || $dver != 6.0} {
-	if {$idyear != $thyear || [lindex $monthnames1 $idmonth] != $thmonth || $idday != $thday} {
+	if {$idyear != $thyear || [monthname $idmonth] != $thmonth || $idday != $thday} {
 	    message "In $doc, Id: date is $idyear/$idmonth/$idday, .TH date is $thday $thmonth $thyear"
 	    if {$dver != $vcurdot} {
 		message "$doc header cites version $dver, current is $vcurdot"
