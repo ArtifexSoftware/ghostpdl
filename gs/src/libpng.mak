@@ -163,9 +163,9 @@ $(PNGGEN)lpg10005.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGE
 
 $(PNGGEN)lpg10008.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
 	$(SETMOD) $(PNGGEN)lpg10008 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-        
+
 $(PNGGEN)lpg10009.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
 	$(SETMOD) $(PNGGEN)lpg10009 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
-        
+
 $(PNGGEN)lpg10010.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
 	$(SETMOD) $(PNGGEN)lpg10010 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
