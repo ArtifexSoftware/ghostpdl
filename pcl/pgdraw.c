@@ -1245,17 +1245,18 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 			floatp x2, floatp y2, floatp x3, floatp y3,
 			floatp x4, floatp y4, hpgl_plot_function_t draw)
 {
+    if ( !pgls->g.polygon_mode )
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
 					 hpgl_plot_move_absolute, true));
-	if ( draw )
-	  hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
-	/* update hpgl's state position to last point of the curve. */
-	{
-	  gs_point point;
-	  point.x = x4; point.y = y4;
-	  hpgl_call(hpgl_set_current_position(pgls, &point));
-	}
-	return 0;
+    if ( draw )
+	hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
+    /* update hpgl's state position to last point of the curve. */
+    {
+	gs_point point;
+	point.x = x4; point.y = y4;
+	hpgl_call(hpgl_set_current_position(pgls, &point));
+    }
+    return 0;
 }
 
 /*
