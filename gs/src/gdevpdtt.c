@@ -236,8 +236,8 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
     }
 
-    if (!(text->operation & TEXT_DO_DRAW) || path == 0 ||
-	gx_path_current_point(path, &cpt) < 0
+    if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3) 
+	    || path == 0 || gx_path_current_point(path, &cpt) < 0
 	)
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 				     pcpath, mem, ppte);
@@ -1331,7 +1331,8 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     ppts->values.pdfont = pdfont;
     ppts->values.size = size;
     ppts->values.matrix = tmat;
-    ppts->values.render_mode = (font->PaintType == 0 ? 0 : 1);
+    ppts->values.render_mode = (penum->pis->text_rendering_mode == 3 ? 3 : 
+				font->PaintType == 0 ? 0 : 1);
     ppts->values.word_spacing = w_s;
     ppts->font = font;
 

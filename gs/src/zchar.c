@@ -709,7 +709,8 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
 	if (count > saved_count)	/* if <, we're in trouble */
 	    ref_stack_pop(&o_stack, count - saved_count);
     }
-    if (SHOW_IS_STRINGWIDTH(penum)) {	/* stringwidth does an extra gsave */
+    if (SHOW_IS_STRINGWIDTH(penum) && igs->text_rendering_mode != 3) {	
+	/* stringwidth does an extra gsave */
 	--saved_level;
     }
     if (penum->text.operation & TEXT_REPLACE_WIDTHS) {

@@ -434,7 +434,7 @@ end readonly def
 } bdef
 /Tc { /TextSpacing gput { showfirst } /Show gput } bdef
 /TL { /TextLeading gput } bdef
-/Tr { /TextRenderingMode gput { showfirst } /Show gput } bdef
+/Tr { dup .settextrenderingmode /TextRenderingMode gput { showfirst } /Show gput } bdef
 /Ts { /TextRise gput settextstate } bdef
 /Tw { /WordSpacing gput { showfirst } /Show gput } bdef
 /Tz { 100 div /TextHScaling gput settextstate} bdef
@@ -529,24 +529,30 @@ end readonly def
         { setfillstate show }
       } {
         TextRenderingMode 3 eq {
-          { 	% Some PDF files execute 'tm' with a singular matrix,
-		% and then use this text rendering mode.
+            	% Some PDF files execute 'tm' with a singular matrix,
+		% and then use the text rendering mode 3.
 		% The graphics library currently cannot handle text
 		% operations when the CTM is singular.
 		% Work around this here.
-	    matrix currentmatrix
-	    {1 0 0 1 0 0} setmatrix
-	    exch stringwidth
-	    3 -1 roll setmatrix
-	    rmoveto
-
+	  {	
+            matrix currentmatrix dup
+            dup 0 get 0 eq 1 index 1 get 0 eq and {
+              dup 0 1 put
+            } if
+            dup 2 get 0 eq 1 index 3 get 0 eq and {
+              dup 3 1 put
+            } if
+            setmatrix
+            exch setfillstate show % Tr was set to graphic state.
+            setmatrix 
           }
         } {
           { false charpath textrenderingprocs TextRenderingMode get exec }
         } ifelse
       } ifelse
     }
-    { TextRenderingMode 0 eq
+    { TextRenderingMode 0 eq TextRenderingMode 3 eq or
+       % Tr was set to graphic state.
        { WordSpacing 0 eq
           { { setfillstate TextSpacing 0 Vexch 3 -1 roll ashow } }
 	  { TextSpacing 0 eq
@@ -593,7 +599,7 @@ end readonly def
 } bdef
 
 /tf { setfillstate currentpoint fill moveto } bdef
-/tn { currentpoint newpath moveto } bdef
+/tn { currentpoint newpath moveto } bdef % Obsolete, never used.
 % For stroking characters, temporarily restore the graphics CTM so that
 % the line width will be transformed properly.
 /Tmatrix matrix def

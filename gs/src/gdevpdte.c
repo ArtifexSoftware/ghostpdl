@@ -350,27 +350,31 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	    return code;
     }
     
-    /*
-     * Acrobat Reader can't handle text with huge coordinates,
-     * so skip the text if it is outside the clip bbox
-     * (Note : it ever fails with type 3 fonts).
-     */
-    code = process_text_estimate_bbox(penum, font, (gs_const_string *)pstr, pfmat, 
-				      &text_bbox, &width_pt);
-    if (code == 0) {
-	gs_fixed_rect clip_bbox;
-	gs_rect rect;
+    if (penum->pis->text_rendering_mode != 3) {
+	/*
+	 * Acrobat Reader can't handle text with huge coordinates,
+	 * so skip the text if it is outside the clip bbox
+	 * (Note : it ever fails with type 3 fonts).
+	 */
+	code = process_text_estimate_bbox(penum, font, (gs_const_string *)pstr, pfmat, 
+					  &text_bbox, &width_pt);
+	if (code == 0) {
+	    gs_fixed_rect clip_bbox;
+	    gs_rect rect;
 
-	gx_cpath_outer_box(penum->pcpath, &clip_bbox);
-	rect.p.x = fixed2float(clip_bbox.p.x);
-	rect.p.y = fixed2float(clip_bbox.p.y);
-	rect.q.x = fixed2float(clip_bbox.q.x);
-	rect.q.y = fixed2float(clip_bbox.q.y);
-	rect_intersect(rect, text_bbox);
-	if (rect.p.x > rect.q.x || rect.p.y > rect.q.y) {
-	    penum->index += pstr->size;
-	    goto finish;
+	    gx_cpath_outer_box(penum->pcpath, &clip_bbox);
+	    rect.p.x = fixed2float(clip_bbox.p.x);
+	    rect.p.y = fixed2float(clip_bbox.p.y);
+	    rect.q.x = fixed2float(clip_bbox.q.x);
+	    rect.q.y = fixed2float(clip_bbox.q.y);
+	    rect_intersect(rect, text_bbox);
+	    if (rect.p.x > rect.q.x || rect.p.y > rect.q.y) {
+		penum->index += pstr->size;
+		goto finish;
+	    }
 	}
+    } else {
+	/* We have no penum->pcpath. */
     }
 
     /*
@@ -411,7 +415,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	    return code;
 	if (code == 0) {
 	    /* No characters with redefined widths -- the fast case. */
-	    if (text->operation & TEXT_DO_DRAW) {
+	    if (text->operation & TEXT_DO_DRAW || penum->pis->text_rendering_mode == 3) {
 		code = pdf_append_chars(pdev, pstr->data, accepted,
 					width_pt.x, width_pt.y, false);
 		if (code < 0)

@@ -238,6 +238,11 @@ gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte)
     return 0;
 }
 
+private inline uint text_do_draw(gs_state * pgs)
+{
+    return (pgs->text_rendering_mode == 3 ? TEXT_DO_NONE : TEXT_DO_DRAW);
+}
+
 /* Begin PostScript-equivalent text operations. */
 int
 gs_show_begin(gs_state * pgs, const byte * str, uint size,
@@ -245,7 +250,7 @@ gs_show_begin(gs_state * pgs, const byte * str, uint size,
 {
     gs_text_params_t text;
 
-    text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+    text.operation = TEXT_FROM_STRING | text_do_draw(pgs) | TEXT_RETURN_WIDTH;
     text.data.bytes = str, text.size = size;
     return gs_text_begin(pgs, &text, mem, ppte);
 }
@@ -256,7 +261,7 @@ gs_ashow_begin(gs_state * pgs, floatp ax, floatp ay, const byte * str, uint size
     gs_text_params_t text;
 
     text.operation = TEXT_FROM_STRING | TEXT_ADD_TO_ALL_WIDTHS |
-	TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+	text_do_draw(pgs) | TEXT_RETURN_WIDTH;
     text.data.bytes = str, text.size = size;
     text.delta_all.x = ax;
     text.delta_all.y = ay;
@@ -270,7 +275,7 @@ gs_widthshow_begin(gs_state * pgs, floatp cx, floatp cy, gs_char chr,
     gs_text_params_t text;
 
     text.operation = TEXT_FROM_STRING | TEXT_ADD_TO_SPACE_WIDTH |
-	TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+	text_do_draw(pgs) | TEXT_RETURN_WIDTH;
     text.data.bytes = str, text.size = size;
     text.delta_space.x = cx;
     text.delta_space.y = cy;
@@ -286,7 +291,7 @@ gs_awidthshow_begin(gs_state * pgs, floatp cx, floatp cy, gs_char chr,
 
     text.operation = TEXT_FROM_STRING |
 	TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH |
-	TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+	text_do_draw(pgs) | TEXT_RETURN_WIDTH;
     text.data.bytes = str, text.size = size;
     text.delta_space.x = cx;
     text.delta_space.y = cy;
@@ -301,7 +306,7 @@ gs_kshow_begin(gs_state * pgs, const byte * str, uint size,
 {
     gs_text_params_t text;
 
-    text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_INTERVENE |
+    text.operation = TEXT_FROM_STRING | text_do_draw(pgs) | TEXT_INTERVENE |
 	TEXT_RETURN_WIDTH;
     text.data.bytes = str, text.size = size;
     return gs_text_begin(pgs, &text, mem, ppte);
@@ -314,7 +319,7 @@ gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
     gs_text_params_t text;
 
     text.operation = TEXT_FROM_STRING | TEXT_REPLACE_WIDTHS |
-	TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+	text_do_draw(pgs) | TEXT_RETURN_WIDTH;
     text.data.bytes = str, text.size = size;
     text.x_widths = x_widths;
     text.y_widths = y_widths;
@@ -344,7 +349,7 @@ gs_glyphshow_begin(gs_state * pgs, gs_glyph glyph,
     gs_text_params_t text;
     int result;
 
-    text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+    text.operation = TEXT_FROM_SINGLE_GLYPH | text_do_draw(pgs) | TEXT_RETURN_WIDTH;
     text.data.d_glyph = glyph;
     text.size = 1;
     result = gs_text_begin(pgs, &text, mem, ppte);

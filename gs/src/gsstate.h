@@ -82,6 +82,8 @@ int gs_setfilladjust(gs_state *, floatp, floatp);
 int gs_currentfilladjust(const gs_state *, gs_point *);
 void gs_setlimitclamp(gs_state *, bool);
 bool gs_currentlimitclamp(const gs_state *);
+void gs_settextrenderingmode(gs_state * pgs, uint trm);
+uint gs_currenttextrenderingmode(const gs_state * pgs);
 #include "gscpm.h"
 gs_in_cache_device_t gs_incachedevice(const gs_state *);
 

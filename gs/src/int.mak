@@ -514,7 +514,7 @@ Z2OPS=zdict1 zdict2 zfile zfile1 zfileio1 zfileio2
 Z3_4OPS=zfilter zfproc zgeneric ziodev zmath
 Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar zcolor
-Z9OPS=zdevice zfont zgstate1 zgstate2 zdfilter
+Z9OPS=zdevice zfont zgstate1 zgstate2 zgstate3 zdfilter
 Z10OPS=zht zimage zmatrix
 Z11OPS=zpaint zpath
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
