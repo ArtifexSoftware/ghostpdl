@@ -418,7 +418,9 @@ setpacking
     dup VerifyMap                            % <<map>>
   } {
     QUIET not {
-      (Warning: the map file ) print dup =string cvs print ( was not found.) =
+      currentdict /IsMapFileOptional .knownget not { false } if not {
+        (Warning: the map file ) print dup =string cvs print ( was not found.) =
+      } if
     } if
     pop 0 dict                               % <<map>>
   } ifelse

@@ -1,0 +1,98 @@
+%    Copyright (C) 2000 artofcode LLC.  All rights reserved.
+% 
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
+% Redefine CIDFont category with an emulation with True Type fonts.
+
+languagelevel 2 .setlanguagelevel
+
+15 dict begin    % a temporary dictionary for local binding.
+
+%------------------Copy the FontEmulationProcs here : -------------------
+
+/FontEmulationProcs /ProcSet findresource {
+  def
+} forall
+
+currentdict /super.complete_instance currentdict /complete_instance get put
+
+%-----------TrueType-specific methods for category redefinition : -----------
+
+/RefinePath      % <FontDict> RefinePath <FontDict>
+{ dup begin
+  Path .pathstring_not_bare not {	% only add prefix is path is bare
+    % See how Fontmap fonts are being located. Use same procedure.
+    (Resolve a relative path to a True Type font : Incomplete implementation. See lib/gs_cidtt.ps .) =
+    /RefinePath cvx /invalidfont .signalerror
+  } if
+  pop
+  currentdict end
+} bind def
+
+/load_sfnts  % <FontDict> load_sfnts <FontDict> 
+{ % Read the True Type file from the path /Path, and buld /sfnts,
+  % skipping glyf and loca. Use functions from lib/gs_ttf.ps .
+  % Refine other CID font dictionary entries.
+  % Store glyf and loca offsets to load glyphs by demand.
+
+  % The following code is a temporary implementation,
+  % which loads entire font.
+  (Read a CJK True Type font file : Incomplete implementation. See lib/gs_cidtt.ps .) =
+  dup /Path get (r) file .loadttcidfont exch copy
+} bind def
+
+/complete_instance  % <font_name> <FontDict> <Options> complete_FAPI_Font <font_name> <FontDict>
+{ 1 index /CIDFontType 2 put % Other types are not emulated yet.
+  //super.complete_instance exec
+  //RefinePath exec
+  //load_sfnts exec
+} bind def
+
+/IsMyRecord      % <raw_record> -> <raw_record> bool
+{ dup type /dicttype eq { dup /FileType .knownget { /TrueType eq } { false } ifelse } { false } ifelse
+} bind def
+
+/IsActive       % <record> IsActive <bool>
+{ pop true
+} bind def
+
+/CIDFontRecordVirtualMethods //RecordVirtualMethodsStub dup length 3 add dict copy begin
+  /GetCSI //TranslateCSI def
+  /IsActive //IsActive def
+  /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
+  { //CIDFontOptions //complete_instance exec
+    2 copy //GetSize exec
+  } bind def
+currentdict end def
+
+% Redefine the /CIDFont category :
+4 dict begin
+  /CategoryName /CIDFont def
+  /MapFileName (cidttmap) def
+  /IsMapFileOptional true def
+  /VerifyMap  { pop } bind def
+  /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
+  { //IsMyRecord exec dup {
+      pop dup /RecordVirtualMethods //CIDFontRecordVirtualMethods put
+      true
+    } if
+  } bind def
+currentdict end
+
+/MappedCategoryRedefiner /ProcSet findresource /Redefine get exec
+
+end  % the temporary dictionary for local binding.
+
+.setlanguagelevel
