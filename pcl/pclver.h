@@ -1,2 +1,0 @@
-#define PCLVERSION "1.07"
-#define PCLBUILDDATE "Fri Jun 04 19:27:29 1999"
