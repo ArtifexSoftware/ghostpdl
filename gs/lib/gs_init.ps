@@ -351,7 +351,7 @@ userdict /.echo.mode true put
 	} odef
 % To satisfy the Genoa FTS, executive must be a procedure, not an operator.
 /executive
-	{ { NOPROMPT not { prompt } if
+	{ { prompt
 	     { (%statementedit) (r) file } stopped
 	     { pop pop $error /errorname get /undefinedfilename eq
 		{ .clearerror exit } if		% EOF
@@ -384,7 +384,7 @@ userdict /.echo.mode true put
 	count 0 ne { (<) print count =only } if
 	(>) print flush
 } bind def
-/prompt	{ flush flushpage .promptmsg } bind def
+/prompt	{ flush flushpage NOPROMPT not { .promptmsg } if } bind def
 /pstack	{ 0 1 count 3 sub { index == } for } bind def
 /putdeviceprops
 	{ .putdeviceprops { erasepage } if } odef
