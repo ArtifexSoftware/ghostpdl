@@ -49,7 +49,7 @@ zshow(i_ctx_t *i_ctx_p)
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    return op_show_contioue_pop(i_ctx_p, 1);
+    return op_show_continue_pop(i_ctx_p, 1);
 }
 
 /* <ax> <ay> <string> ashow - */
