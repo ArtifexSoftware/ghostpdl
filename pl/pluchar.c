@@ -1904,7 +1904,7 @@ pl_mt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
  * latter to the former.
  */
 LPUB8
-PCLchId2ptr(UW16 chId)
+PCLchId2ptr(FSP UW16 chId)
 {
     const pl_font_t *   plfont = plfont_last;
 
@@ -1926,7 +1926,7 @@ PCLchId2ptr(UW16 chId)
  * callback from UFST to pass PCLEO TT character data starting with header.
  */
 LPUB8
-PCLglyphID2Ptr(UW16 chId)
+PCLglyphID2Ptr(FSP UW16 chId)
 {
     if (plfont_last == NULL)
         return NULL;    /* something wrong */
@@ -1946,7 +1946,7 @@ LPUB8 PCLEO_charptr(LPUB8 pfont_hdr, UW16 char_code)
                   pfont_hdr );
         return NULL; /* something wrong */
     } else
-        return PCLchId2ptr(char_code);
+        return PCLchId2ptr(FSA char_code);
 }
 
 /* ---------------- Internal initialization ---------------- */
