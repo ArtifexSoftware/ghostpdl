@@ -24,6 +24,9 @@
    the build system doesn't pass them directly.
 */
 
+#ifndef _JBIG2_OS_TYPES_H
+#define _JBIG2_OS_TYPES_H
+
 #ifdef HAVE_CONFIG_H
 #include "config_types.h"
 #elif defined(_WIN32)
@@ -35,3 +38,5 @@
 #elif defined(__VMS)
 #include <inttypes.h>
 #endif
+
+#endif /* _JBIG2_OS_TYPES_H */
