@@ -106,7 +106,8 @@ private int
 fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 {
     const gs_function_PtCr_t *pfn = (const gs_function_PtCr_t *)pfn_common;
-    calc_value_t vstack[1 + MAX_VSTACK + 1];
+    calc_value_t vstack_buf[2 + MAX_VSTACK + 1];
+    calc_value_t *vstack = &vstack_buf[1];
     calc_value_t *vsp = vstack + pfn->params.m;
     const byte *p = pfn->params.ops.data;
     int i;
@@ -215,6 +216,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 
     };
 
+    vstack[-1].type = CVT_NONE;  /* for type dispatch in empty stack case */
     vstack[0].type = CVT_NONE;	/* catch underflow */
     for (i = 0; i < pfn->params.m; ++i)
 	store_float(&vstack[i + 1], in[i]);
