@@ -173,6 +173,7 @@ JBIG2SRCDIR=@JBIG2DIR@
 # Choose shared of compiled in libjasper (JPXDecode support) and source location
 SHARE_JASPER=@SHARE_JASPER@
 JASPERSRCDIR=@JASPERDIR@
+JASPERCFLAGS=-DJAS_CONFIGURE
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information

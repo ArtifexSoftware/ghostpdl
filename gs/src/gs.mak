@@ -66,6 +66,8 @@
 #	    in using our custom makefile from a local copy of the source
 #	JASPERSRCDIR - the name of the jasper library source directory
 #	    typically 'jasper' or 'jasper-/version/'
+#	JASPERCFLAGS - any platform-specific flags that are required
+#	    to properly compile in the jasper library source
 #	ICCSRCDIR - the name of the ICC lib source dir, currently
 #	    always icclib (compiled in statically)
 #	DEVICE_DEVS - the devices to include in the executable.
@@ -323,7 +325,7 @@ ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
 JB2I_=$(JBIG2SRCDIR)
 JB2CF_=
 JASI_=$(JASPERSRCDIR)$(D)src$(D)libjasper$(D)include
-JASCF_=
+JASCF_=$(JASPERCFLAGS)
 
 ######################## How to define new 'features' #######################
 #
