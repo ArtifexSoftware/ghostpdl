@@ -532,6 +532,12 @@ typedef struct gs_c_param_list_s {
   gs_private_st_ptrs2(st_c_param_list, gs_c_param_list, "c_param_list",\
     c_param_list_enum_ptrs, c_param_list_reloc_ptrs, head, target)
 
+/* Define a GC descriptor for gs_param_string. */
+/* This structure descriptor is only for non persistent gs_param_strings. */
+#define private_st_gs_param_string()	/* in gdevdevn.c */\
+  gs_private_st_composite(st_gs_param_string, gs_param_string, "gs_param_string",\
+			param_string_enum_ptrs, param_string_reloc_ptrs)
+
 /* Set the target of a C parameter list. */
 void gs_c_param_list_set_target(gs_c_param_list *, gs_param_list *);
 
