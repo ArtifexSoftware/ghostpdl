@@ -119,4 +119,11 @@ int gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied);
  */
 int gs_copied_font_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph);
 
+/*
+ * Copy all the glyphs and, if relevant, Encoding entries from a font.  This
+ * is equivalent to copying the glyphs and Encoding entries individually,
+ * and returns errors under the same conditions.
+ */
+int gs_copy_font_complete(gs_font *font, gs_font *copied);
+
 #endif /* gxfcopy_INCLUDED */

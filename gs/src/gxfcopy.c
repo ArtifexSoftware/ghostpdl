@@ -1390,3 +1390,41 @@ gs_copied_font_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
 	return_error(gs_error_rangecheck);
     return cfdata->procs->add_encoding(copied, chr, glyph);
 }
+
+/*
+ * Copy all the glyphs and, if relevant, Encoding entries from a font.  This
+ * is equivalent to copying the glyphs and Encoding entries individually,
+ * and returns errors under the same conditions.
+ */
+int
+gs_copy_font_complete(gs_font *font, gs_font *copied)
+{
+    int index, code = 0;
+    gs_glyph_space_t space = GLYPH_SPACE_NAME;
+    gs_glyph glyph;
+
+    for (;;) {
+	for (index = 0;
+	     code >= 0 &&
+		 (font->procs.enumerate_glyph(font, &index, space, &glyph),
+		  index != 0);
+	     )
+	    code = gs_copy_glyph(font, glyph, copied);
+	/*
+	 * For Type 42 fonts, if we copied by name, now copy again by index.
+	 */
+	if (space == GLYPH_SPACE_NAME && font->FontType == ft_TrueType)
+	    space = GLYPH_SPACE_INDEX;
+	else
+	    break;
+    }
+    if (cf_data(copied)->Encoding != 0)
+	for (index = 0; code >= 0 && index < 256; ++index) {
+	    glyph = font->procs.encode_char(font, (gs_char)index,
+					    GLYPH_SPACE_NAME);
+	    if (glyph != GS_NO_GLYPH)
+		code = gs_copied_font_add_encoding(copied, (gs_char)index,
+						   glyph);
+	}
+    return code;
+}
