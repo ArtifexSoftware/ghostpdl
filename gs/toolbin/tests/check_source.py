@@ -23,7 +23,7 @@ import os
 from gstestutils import GSTestCase, gsRunTestsMain
 
 ################ Check that every file certain to be source has an
-################ Id or RCSFile line.
+################ Id or RCSfile line.
 
 class GSCheckForIdLines(GSTestCase):
 
@@ -35,7 +35,7 @@ class GSCheckForIdLines(GSTestCase):
         GSTestCase.__init__(self)
 
     def shortDescription(self):
-        return "All relevant files must have correct Id lines. (checking %s/)" % self.dirName
+        return "All relevant files must have correct Id or RCSfile lines. (checking %s/)" % self.dirName
 
     def runTest(self):
         import re, glob
@@ -71,25 +71,52 @@ class GSCheckDoubleInclusion(GSTestCase):
 
     def __init__(self, root, skip = []):
         self.root = root
-        self.skip = skip
+        self.skip = map(lambda f,r=self.root: r+f, skip)
         GSTestCase.__init__(self)
 
     def runTest(self):
-        """All .h files must have #ifdef <file>_INCLUDED protection."""
+        """All .h files must have double-inclusion protection."""
         import re, glob
         messages = []
         for fname in glob.glob(self.root + 'src/*.h'):
             if fname in self.skip:
                 continue
+            # Double inclusion protection is required, but the name of the
+            # preprocessor symbol doesn't have to follow the Ghostscript
+            # convention.
             fp = open(fname, 'r')
-            contents = fp.read(10000)
+            found = 0
+            while 1:
+                line = fp.readline()
+                if not line:
+                    break               # EOF
+                line = line.strip()
+                if not line:
+                    continue            # skip blank lines
+                if line[:2] == '//':
+                    continue            # skip single-line comments
+                if re.match(r'\s*\/\*', line): # skip comments
+                    while not re.search(r'\*\/', line):
+                        line = fp.readline()
+                        if not line:
+                            break       # EOF
+                    if not line:
+                        break           # EOF
+                    continue
+                m = re.match(r'#[ ]*if(ndef[ ]+([a-zA-Z0-9_]+)|[ ]+!defined\(([a-zA-Z0-9_]+)\))$', line)
+                if m:
+                    # Check for #define in the next line.
+                    sym = m.group(2) or m.group(3)
+                    line = fp.readline().strip()
+                    if re.match(r'#[ ]*define[ ]+' + sym + r'[\s]*$', line):
+                        found = 1
+                        break
+                break                   # no protection
             fp.close()
-            included = os.path.basename(fname)[:-2] + '_INCLUDED'
-            pattern = '#[ ]*if(ndef[ ]+' + included + '|[ ]+!defined\\(' + included + '\\))'
-            if re.search(pattern, contents) == None:
+            if not found:
                 messages.append(fname)
         if messages:
-            messages = ['These %d files do not have _INCLUDED protection:' % len(messages)] + messages
+            messages = ['These %d files do not have double-inclusion protection:' % len(messages)] + messages
         self.failIfMessages(messages)
 
 ################ Main program
