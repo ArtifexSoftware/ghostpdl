@@ -56,8 +56,8 @@ typedef struct gx_device_hpijs_s
 /* Margins are left, bottom, right, top. */
 #define DESKJET_MARGINS_LETTER   0.25, 0.44, -0.25, 0.167
 #define DESKJET_MARGINS_A4       0.125, 0.44, -0.125, 0.167
-//#define DESKJET_MARGINS_LETTER   0.25, 0.44, 0, 0.167
-//#define DESKJET_MARGINS_A4       0.125, 0.44, 0, 0.167
+/*#define DESKJET_MARGINS_LETTER   0.25, 0.44, 0, 0.167*/
+/*#define DESKJET_MARGINS_A4       0.125, 0.44, 0, 0.167*/
 
 private int hpijs_print_page(gx_device_printer * pdev, FILE * prn_stream, const char *dname);
 
@@ -252,11 +252,12 @@ private int hpijs_open_srv(SRVD * sd, FILE * prn_stream, int raster_width)
    int pid;
 
    /* Make sure we can find the server. */
-   //   if (access(SRVPATH, F_OK) < 0)
-   //   {
-   //      bug("unable to locate %s: %m\n", SRVPATH);
-   //      return -1;
-   //   }    
+   /*   if (access(SRVPATH, F_OK) < 0)
+    *   {
+    *      bug("unable to locate %s: %m\n", SRVPATH);
+    *      return -1;
+    *   }    
+    */
 
    /* Assign fifo names for environment space, names must be const char. */
    sprintf(s2c, "SRV_TO_CLIENT=/tmp/hpijs_s2c_%d", getpid());
