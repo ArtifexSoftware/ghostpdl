@@ -216,6 +216,10 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
     }
 
+    code = pdf_prepare_fill(pdev, pis);
+    if (code < 0)
+	return code;
+
     if ((text->operation &
 	 ~(TEXT_FROM_STRING | TEXT_FROM_BYTES |
 	   TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH |
@@ -555,6 +559,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     /* PDF always uses 1000 units per em for font metrics. */
     switch (font->FontType) {
     case ft_TrueType:
+    case ft_CID_TrueType:
 	/*
 	 * ****** HACK ALERT ******
 	 *
@@ -1330,13 +1335,15 @@ assign_char_code(gx_device_pdf * pdev)
 
 	if (code < 0)
 	    return code;
-	strcpy(font->frname, pdev->open_font_name);
+	if (pdev->open_font == 0)
+	    memset(font->frname, 0, sizeof(font->frname));
+	else
+	    strcpy(font->frname, pdev->open_font->frname);
 	for (pc = font->frname; *pc == 'Z'; ++pc)
 	    *pc = '@';
 	if ((*pc)++ == 0)
 	    *pc = 'A', pc[1] = 0;
 	pdev->open_font = font;
-	strcpy(pdev->open_font_name, font->frname);
     }
     return font->num_chars++;
 }

@@ -378,7 +378,6 @@ struct gx_device_pdf_s {
      */
     pdf_temp_file_t pictures;
     pdf_font_t *open_font;
-    char open_font_name[sizeof(long) * 8 / 5 + 2]; /* radix-26 */
     long embedded_encoding_id;
     /* ................ */
     long next_id;

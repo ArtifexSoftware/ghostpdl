@@ -202,7 +202,6 @@ const gx_device_pdf gs_pdfwrite_device =
  {{0}},				/* streams */
  {{0}},				/* pictures */
  0,				/* open_font */
- {0},				/* open_font_name */
  0,				/* embedded_encoding_id */
  0,				/* next_id */
  0,				/* Catalog */
