@@ -240,7 +240,7 @@ ps_impl_process(
        appropriate state variables to process either a pdf or ps
        job */
     if ( psi->fresh_job ) {
-        const char pdf_idstr[] = "%PDF-1.2";
+        const char pdf_idstr[] = "%PDF-1.";
         /* do we have enough data? */
         const uint pdf_idstr_len = strlen(pdf_idstr);
         if ( avail < pdf_idstr_len )
