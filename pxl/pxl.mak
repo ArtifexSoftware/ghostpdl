@@ -55,7 +55,7 @@ pxsymbol_h=$(PXLGEN)pxsymbol.h
 pxvalue_h=$(PXLSRC)pxvalue.h $(gstypes_h) $(pxattr_h)
 # Nested headers
 pxdict_h=$(PXLSRC)pxdict.h $(pldict_h) $(pxvalue_h)
-pxgstate_h=$(PXLSRC)pxgstate.h $(gsccolor_h) $(gsiparam_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h) $(plsymbol_h) $(pxdict_h) $(pxenum_h)
+pxgstate_h=$(PXLSRC)pxgstate.h $(gsccolor_h) $(gsiparam_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h) $(gxfixed_h) $(plsymbol_h) $(pxdict_h) $(pxenum_h)
 pxoper_h=$(PXLSRC)pxoper.h $(gserror_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
 pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
@@ -76,7 +76,8 @@ $(PXLSRC)pxbfont.psc: $(PXLSRC)pxbfont.ps
 	$(CP_) $(PXLGEN)pxbfont_.psc $(PXLSRC)pxbfont.psc
 	$(RM_) $(PXLGEN)pxbfont_.psc
 
-$(PXLGEN)pxbfont.c: $(PXLSRC)pxbfont.psc
+$(PXLGEN)pxbfont.c: $(PXLSRC)pxbfont.psc\
+        $(stdpre_h) $(pxbfont_h)
 	$(CP_) $(PXLSRC)pxbfont.psc $(PXLGEN)pxbfont.c
 
 $(PXLOBJ)pxbfont.$(OBJ): $(PXLGEN)pxbfont.c $(AK) $(stdpre_h)\
@@ -91,11 +92,11 @@ $(PXLOBJ)pxerrors.$(OBJ): $(PXLSRC)pxerrors.c $(AK)\
  $(pxbfont_h) $(pxerrors_h) $(pxfont_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)
 	$(PXLCCC) $(PXLSRC)pxerrors.c $(PXLO_)pxerrors.$(OBJ)
 
-$(PXLOBJ)pxparse.$(OBJ): $(PXLSRC)pxparse.c $(AK) $(memory__h) $(stdio__h)\
- $(gdebug_h) $(gserror_h) $(gstypes_h)\
+$(PXLOBJ)pxparse.$(OBJ): $(PXLSRC)pxparse.c $(AK) $(memory__h)\
+ $(gdebug_h) $(gserror_h) $(gsio_h) $(gstypes_h)\
  $(plparse_h)\
  $(pxattr_h) $(pxenum_h) $(pxerrors_h) $(pxoper_h) $(pxparse_h) $(pxptable_h)\
- $(pxstate_h) $(pxtag_h) $(pxvalue_h)
+ $(pxstate_h) $(pxtag_h) $(pxvalue_h) $(gsstruct_h)
 	$(PXLCCC) $(PXLSRC)pxparse.c $(PXLO_)pxparse.$(OBJ)
 
 $(PXLOBJ)pxstate.$(OBJ): $(PXLSRC)pxstate.c $(AK) $(stdio__h)\
@@ -145,7 +146,7 @@ pxl_other_obj=$(pxl_other_obj1) $(pxl_other_obj2)
 # per se.
 $(PXLOBJ)pxffont.$(OBJ): $(PXLSRC)pxffont.c $(AK) $(string__h)\
  $(gschar_h) $(gsmatrix_h) $(gx_h) $(gxfont_h) $(gxfont42_h)\
- $(pxfont_h) $(pxoper_h) $(pxstate_h)
+ $(pxfont_h) $(pxoper_h) $(pxstate_h) $(pjtop_h)
 	$(PXLCCC) $(PXLSRC)pxffont.c $(PXLO_)pxffont.$(OBJ)
 
 $(PXLOBJ)pxfont.$(OBJ): $(PXLSRC)pxfont.c $(AK) $(math__h) $(stdio__h) $(string__h)\
@@ -160,21 +161,21 @@ $(PXLOBJ)pxgstate.$(OBJ): $(PXLSRC)pxgstate.c $(AK) $(math__h) $(memory__h) $(st
  $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h) $(gspath2_h) $(gsrop_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxcspace_h) $(gxstate_h)\
- $(pxoper_h) $(pxstate_h)
+ $(pxoper_h) $(pxstate_h) $(gdebug) $(gscie_h) $(gscolor2_h)
 	$(PXLCCC) $(PXLSRC)pxgstate.c $(PXLO_)pxgstate.$(OBJ)
 
 $(PXLOBJ)pximage.$(OBJ): $(PXLSRC)pximage.c $(AK) $(std_h)\
- $(gscoord_h) $(gsimage_h) $(gspaint_h) $(gspath_h) $(gspath2_h)\
+ $(string__h) $(gscoord_h) $(gsimage_h) $(gspaint_h) $(gspath_h) $(gspath2_h)\
  $(gsrefct_h) $(gsrop_h) $(gsstate_h) $(gsstruct_h) $(gsuid_h) $(gsutil_h)\
- $(gxbitmap_h) $(gxcspace_h) $(gxdevice_h) $(gxpcolor_h)\
- $(scommon_h) $(srlx_h) $(strimpl_h)\
- $(pldraw_h)\
- $(pxerrors_h) $(pxoper_h) $(pxstate_h)
+ $(gxbitmap_h) $(gxcspace_h) $(gxdevice_h) $(gxcolor2_h) $(gxpcolor_h)\
+ $(scommon_h) $(srlx_h) $(strimpl_h) $(gxdcolor_h) \
+ $(pldraw_h) $(jpeglib__h) $(sdct_h)\
+ $(pxerrors_h) $(pxoper_h) $(pxstate_h) $(gdebug_h)
 	$(PXLCCC) $(PXLSRC)pximage.c $(PXLO_)pximage.$(OBJ)
 
 $(PXLOBJ)pxink.$(OBJ): $(PXLSRC)pxink.c $(math__h) $(stdio__h)\
- $(gscolor2_h) $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h)\
- $(gstypes_h)\
+ $(gdebug_h) $(gscolor2_h) $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h)\
+ $(gstypes_h) $(gscie_h) \
  $(gxarith_h) $(gxcspace_h) $(gxdevice_h) $(gxht_h) $(gxstate_h)\
  $(pxoper_h) $(pxstate_h)
 	$(PXLCCC) $(PXLSRC)pxink.c $(PXLO_)pxink.$(OBJ)
@@ -186,9 +187,10 @@ $(PXLOBJ)pxpaint.$(OBJ): $(PXLSRC)pxpaint.c $(AK) $(math__h) $(stdio__h)\
 	$(PXLCCC) $(PXLSRC)pxpaint.c $(PXLO_)pxpaint.$(OBJ)
 
 $(PXLOBJ)pxsessio.$(OBJ): $(PXLSRC)pxsessio.c $(AK) $(math__h) $(stdio__h)\
- $(gschar_h) $(gscoord_h) $(gserrors_h) $(gspaint_h) $(gsparam_h) $(gsstate_h)\
- $(gxfcache_h) $(gxfixed_h)\
- $(pxfont_h) $(pxoper_h) $(pxstate_h) $(pjtop_h)
+ $(string__h) $(pxoper_h) $(pxstate_h) $(pxfont_h) \
+ $(pjparse_h) $(gschar_h) $(gscoord_h) $(gserrors_h) $(gspaint_h) $(gsparam_h)\
+ $(gsstate_h) $(gxfixed_h) $(gxpath_h) $(gxfcache_h)\
+ $(gxdevice_h) $(pjtop_h) $(pllfont_h)
 	$(PXLCCC) $(PXLSRC)pxsessio.c $(PXLO_)pxsessio.$(OBJ)
 
 $(PXLOBJ)pxstream.$(OBJ): $(PXLSRC)pxstream.c $(AK) $(memory__h)\
@@ -204,11 +206,11 @@ pxl_ops_obj=$(pxl_ops_obj1) $(pxl_ops_obj2)
 
 # Top-level API
 $(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
- $(gdebug_h) $(gp_h) $(gsdevice_h) $(gserrors_h) $(gsmemory_h)\
- $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
- $(pltop_h) $(pxtop_h) $(plparse_h)\
- $(pxattr_h) $(pxerrors_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)\
- $(pxvalue_h) $(PXLGEN)pconf.h
+ $(string__h) $(gdebug_h) $(gp_h) $(gsdevice_h) $(gserrors_h) $(gsmemory_h)\
+ $(gsstate_h) $(gsstruct_h) $(gspaint_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
+ $(gsnogc_h) $(pltop_h) $(pxtop_h) $(plparse_h)\
+ $(pxattr_h) $(pxerrors_h) $(pxoper_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)\
+ $(pxfont_h) $(pxvalue_h) $(PXLGEN)pconf.h $(plfont_h)
 	$(CP_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
 	$(PXLCCC) $(PXLSRC)pxtop.c $(PXLO_)pxtop.$(OBJ)
 
