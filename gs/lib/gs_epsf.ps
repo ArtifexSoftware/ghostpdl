@@ -50,7 +50,7 @@
 % Rescale and translate to fit the BoundingBox on the page
 /EPSBoundingBoxFitPage { % llx lly urx ury --
   DEBUG { (gs_epsf.ps: Rescaling EPS to fit page\n) print flush } if
-  clippath pathbbox
+  clippath pathbbox newpath
   % translate to new origin at lower left of clippath
   3 index 3 index translate
   % calculate scale to fit smaller of width or height
@@ -87,7 +87,7 @@
           EPSBoundingBoxFitPage
 	} {
 	  % Warn if some of the EPS file will be clipped
-	  clippath pathbbox
+	  clippath pathbbox newpath
 	  { % context for exit
 	    5 -1 roll lt { 6 { pop } repeat true exit } if
 	    4 -1 roll lt { 4 { pop } repeat true exit } if
