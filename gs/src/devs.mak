@@ -1183,39 +1183,51 @@ $(GLOBJ)gdevpsci.$(OBJ) : $(GLSRC)gdevpsci.c $(PDEVH)\
 $(DD)psrgb.dev : $(DEVS_MAK) $(psci_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)psrgb $(psci_)
 
-### -------------------- Plain or TIFF fax encoding --------------------- ###
-###    Use -sDEVICE=tiffg3 or tiffg4 and				  ###
-###	  -r204x98 for low resolution output, or			  ###
-###	  -r204x196 for high resolution output				  ###
+### ---------------- Fax encoding ---------------- ###
 
 # By default, these drivers recognize 3 page sizes -- (U.S.) letter, A4, and
 # B4 -- and adjust the page width to the nearest legal value for real fax
 # systems (1728 or 2048 pixels).  To suppress this, set the device parameter
 # AdjustWidth to 0 (e.g., -dAdjustWidth=0 on the command line).
 
+gdevfax_h=$(GLSRC)gdevfax.h
+
+fax_=$(GLOBJ)gdevfax.$(OBJ)
+$(DD)fax.dev : $(DEVS_MAK) $(fax_) $(GLD)cfe.dev
+	$(SETMOD) $(DD)fax $(fax_)
+	$(ADDMOD) $(DD)fax -include $(GLD)cfe
+
+$(GLOBJ)gdevfax.$(OBJ) : $(GLSRC)gdevfax.c $(PDEVH)\
+ $(gdevfax_h) $(scfx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)gdevfax.$(OBJ) $(C_) $(GLSRC)gdevfax.c
+
+$(DD)faxg3.dev : $(DEVS_MAK) $(DD)fax.dev
+	$(SETDEV2) $(DD)faxg3 -include $(DD)fax
+
+$(DD)faxg32d.dev : $(DEVS_MAK) $(DD)fax.dev
+	$(SETDEV2) $(DD)faxg32d -include $(DD)fax
+
+$(DD)faxg4.dev : $(DEVS_MAK) $(DD)fax.dev
+	$(SETDEV2) $(DD)faxg4 -include $(DD)fax
+
+### -------------------- Plain or TIFF fax encoding --------------------- ###
+###    Use -sDEVICE=tiffg3 or tiffg4 and				  ###
+###	  -r204x98 for low resolution output, or			  ###
+###	  -r204x196 for high resolution output				  ###
+
 gdevtifs_h=$(GLSRC)gdevtifs.h
 gdevtfax_h=$(GLSRC)gdevtfax.h
 
 tfax_=$(GLOBJ)gdevtfax.$(OBJ)
-$(DD)tfax.dev : $(DEVS_MAK) $(tfax_) $(GLD)cfe.dev $(GLD)lzwe.dev $(GLD)rle.dev $(DD)tiffs.dev
+$(DD)tfax.dev : $(DEVS_MAK) $(tfax_) $(GLD)cfe.dev $(GLD)lzwe.dev $(GLD)rle.dev $(DD)fax.dev $(DD)tiffs.dev
 	$(SETMOD) $(DD)tfax $(tfax_)
 	$(ADDMOD) $(DD)tfax -include $(GLD)cfe $(GLD)lzwe $(GLD)rle
-	$(ADDMOD) $(DD)tfax -include $(DD)tiffs
+	$(ADDMOD) $(DD)tfax -include $(DD)fax $(DD)tiffs
 
 $(GLOBJ)gdevtfax.$(OBJ) : $(GLSRC)gdevtfax.c $(PDEVH)\
- $(gdevtifs_h) $(gdevtfax_h) $(scfx_h) $(slzwx_h) $(srlx_h) $(strimpl_h)
+ $(gdevfax_h) $(gdevtfax_h) $(gdevtifs_h)\
+ $(scfx_h) $(slzwx_h) $(srlx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevtfax.$(OBJ) $(C_) $(GLSRC)gdevtfax.c
-
-### Plain G3/G4 fax with no header
-
-$(DD)faxg3.dev : $(DEVS_MAK) $(DD)tfax.dev
-	$(SETDEV2) $(DD)faxg3 -include $(DD)tfax
-
-$(DD)faxg32d.dev : $(DEVS_MAK) $(DD)tfax.dev
-	$(SETDEV2) $(DD)faxg32d -include $(DD)tfax
-
-$(DD)faxg4.dev : $(DEVS_MAK) $(DD)tfax.dev
-	$(SETDEV2) $(DD)faxg4 -include $(DD)tfax
 
 ### ---------------------------- TIFF formats --------------------------- ###
 
