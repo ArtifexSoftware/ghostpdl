@@ -320,6 +320,22 @@ setglobal
   } ifelse
 } bind def
 
+/.remove_font_name_prefix {  % <name>  .remove_font_name_prefix <name>
+  dup .namestring (+) search {
+    true exch
+    { dup 65 lt exch 90 gt or {
+        pop false exit
+      } if
+    } forall
+    { pop exch pop cvn
+    } {
+      pop pop
+    } ifelse
+  } {
+    pop
+  } ifelse
+} bind def
+
 % Find a font (except for embedded ones), and adjust its encoding if necessary.
 /.pdfdfndict mark
   /defaultfontname /Helvetica
@@ -344,12 +360,14 @@ setglobal
                 % /FontName key, we substitue /BaseFont for the value of /FontName.
                 % Yet another case of broken PDF's that Adobe Reader accepts.
       1 index dup /FontName known {
-        /FontName oget exch
+        /FontName oget
       } {
         (   **** FontDescriptor missing required /FontName key. BaseFont name used.\n)
         pdfformaterror
-        pop 2 index exch	% grab the BaseFont from the stack.
+        pop 2 index		% grab the BaseFont from the stack.
       } ifelse
+      .remove_font_name_prefix
+      exch
 		% Analyzes font name and extract "Narrow" property
 		% which is not described by the FontDescriptor Flags.
       0 2 index .fontnameproperties 4 and or
@@ -1094,7 +1112,7 @@ readonly def
       pop pop /CIDFont findresource
       exit
     } if
-
+    .remove_font_name_prefix
     dup dup length string cvs
     (,Bold) tailmatch {
       exch pop
@@ -1119,7 +1137,7 @@ readonly def
     concatstrings concatstrings
     cvn
     QUIET not {
-      (Substituting ) print dup ==only
+      (Substituting CID font resource) print dup ==only
       ( for ) print 1 index ==only (.\n) print
     } if
     exch pop

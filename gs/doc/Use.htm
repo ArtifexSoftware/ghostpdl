@@ -1175,6 +1175,42 @@ fonts. The 7.0x versions of Ghostscript supported this by assuming a Japanese
 character ordering. This is replaced in the 8.0x and later releases with the more
 general <b><tt>cidfmap</tt></b> mechanism.
 
+<p>
+Rather the PDF specification requires CID font files to be embedded,
+some documents miss them. As a workaround
+the PDF interpreter applies an additional substitution method when 
+a requested CID font resource is not embedded and it is not available.
+It takes values of the keys <b><tt>Registry</b></tt> and <b><tt>Ordering</b></tt>
+from the <b><tt>CIDFontSystem</b></tt> dictionary,
+and concatenates them with a dash inserted.
+For example, if a PDF CID font resource specifies 
+<blockquote><b><tt>
+/CIDSystemInfo << /Registry (Adobe) /Ordering (CNS1) /Supplement 1 >>
+</tt></b></blockquote>
+the generated subsitituite name is <b><tt>Adobe-CNS1</b></tt>.
+The latter may look some confusing for a font name,
+but we keep it for compatibility with older Ghostscript versions,
+which do so due to a historical reason.
+Add a proper record to <b><tt>lib/cidfmap</b></tt> to provide it.
+
+<p>
+Please note that when a PDF font resource specifies
+<blockquote><b><tt>
+/Registry (Adobe) /Ordering (Identity),
+</tt></b></blockquote>
+there is no way to determine the language properly.
+Therefore in this case, if the CID font file is not embedded,
+the <b><tt>Adobe-Identity</b></tt> record depends on document,
+and a correct record isn't possible when
+a document refers multiple Far East languages.
+In the latter case add individual records for specific CID font names.
+
+<p>
+Consequently, if you want to handle any PDF document with 
+non-embedded CID fonts (which isn't a correct PDF),
+you need to create <b><tt>lib/cidfmap</tt></b> dynamicly
+with a human interaction.
+
 <hr>
 
 <h2><a name="Platforms"></a>Notes on specific platforms</h2>
