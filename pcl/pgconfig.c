@@ -453,7 +453,9 @@ hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
     for ( i = 0; i < 2 && hpgl_arg_real(pargs, &page_dims[i]); ++i )
 	; /* NOTHING */
-    if ( i != 2 )
+    if ( i == 1 )
+	page_dims[1] = page_dims[0];
+    else if ( i != 2 )
 	return e_Range;
     paper.height = plu_2_coord(page_dims[0]);
     paper.width = plu_2_coord(page_dims[1]);
@@ -585,16 +587,17 @@ pxy:		scale_params.pmin.x = xy[0];
 	return 0;
 }
 
-/* BP - BreakPoint - add this to the HPGL stream and set a breakpoint
-   on this function.  This function is only defined for debugging
-   system. */
-#ifdef DEBUG
- private int
+/* BP - Begin Plot 
+*/
+private int
 hpgl_BP(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{
-	return 0;
+{	
+    hpgl_args_t args;
+
+    hpgl_args_setup(&args);
+    hpgl_IN(&args, pgls);
+    return 0;
 }
-#endif
 
 /* Initialization */
 private int
