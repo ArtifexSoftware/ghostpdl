@@ -276,10 +276,19 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   int tolerance = fparams->tolerance;
   int window_size = fparams->window_size;
   int row_bytes = width * 3;
+  int half_win = window_size >> 1;
   uchar **buf1 = alloc_window (row_bytes, window_size);
   uchar **buf2 = alloc_window (row_bytes, window_size);
   int y;
 
+  /* Read rows ahead for half window : */
+  for (y = 0; y < min(half_win, height); y++) 
+    {
+      image_get_rgb_scan_line (image1, buf1[half_win - y]);
+      image_get_rgb_scan_line (image2, buf2[half_win - y]);
+    }
+
+  /* Do compare : */
   freport->n_diff = 0;
   freport->n_outof_tolerance = 0;
   freport->n_outof_window = 0;
@@ -289,11 +298,14 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
       int x;
       uchar *row1 = buf1[0];
       uchar *row2 = buf2[0];
-      uchar *rowmid1 = buf1[window_size >> 1];
-      uchar *rowmid2 = buf2[window_size >> 1];
+      uchar *rowmid1 = buf1[half_win];
+      uchar *rowmid2 = buf2[half_win];
 
-      image_get_rgb_scan_line (image1, row1);
-      image_get_rgb_scan_line (image2, row2);
+      if (y < height - half_win)
+        {
+          image_get_rgb_scan_line (image1, row1);
+          image_get_rgb_scan_line (image2, row2);
+	}
       for (x = 0; x < width; x++)
 	{
 	  if (rowmid1[x * 3] != rowmid2[x * 3] ||
