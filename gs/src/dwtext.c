@@ -906,58 +906,31 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    }
 	    return(0);
 	case WM_KEYDOWN:
-	    if (GetKeyState(VK_SHIFT) < 0) {
-	      switch(wParam) {
-		case VK_HOME:
-			SendMessage(hwnd, WM_VSCROLL, SB_TOP, (LPARAM)0);
-			break;
-		case VK_END:
-			SendMessage(hwnd, WM_VSCROLL, SB_BOTTOM, (LPARAM)0);
-			break;
-		case VK_PRIOR:
-			SendMessage(hwnd, WM_VSCROLL, SB_PAGEUP, (LPARAM)0);
-			break;
-		case VK_NEXT:
-			SendMessage(hwnd, WM_VSCROLL, SB_PAGEDOWN, (LPARAM)0);
-			break;
-		case VK_UP:
-			SendMessage(hwnd, WM_VSCROLL, SB_LINEUP, (LPARAM)0);
-			break;
-		case VK_DOWN:
-			SendMessage(hwnd, WM_VSCROLL, SB_LINEDOWN, (LPARAM)0);
-			break;
-		case VK_LEFT:
-			SendMessage(hwnd, WM_HSCROLL, SB_LINEUP, (LPARAM)0);
-			break;
-		case VK_RIGHT:
-			SendMessage(hwnd, WM_HSCROLL, SB_LINEDOWN, (LPARAM)0);
-			break;
-	      }
-	    }
-	    else {
-	        switch(wParam) {
-		    case VK_HOME:
-		    case VK_END:
-		    case VK_PRIOR:
-		    case VK_NEXT:
-		    case VK_UP:
-		    case VK_DOWN:
-		    case VK_LEFT:
-		    case VK_RIGHT:
-		    case VK_DELETE:
-		    { /* store key in circular buffer */
-			long count = tw->KeyBufIn - tw->KeyBufOut;
-			if (count < 0) count += tw->KeyBufSize;
-			if (count < tw->KeyBufSize-2) {
-			    *tw->KeyBufIn++ = 0;
-			    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
-				tw->KeyBufIn = tw->KeyBuf; /* wrap around */
-			    *tw->KeyBufIn++ = HIWORD(lParam) & 0xff;
-			    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
-				tw->KeyBufIn = tw->KeyBuf; /* wrap around */
-			}
-		    }
-	        }
+	    switch(wParam) {
+	      case VK_HOME:
+		      SendMessage(hwnd, WM_VSCROLL, SB_TOP, (LPARAM)0);
+		      break;
+	      case VK_END:
+		      SendMessage(hwnd, WM_VSCROLL, SB_BOTTOM, (LPARAM)0);
+		      break;
+	      case VK_PRIOR:
+		      SendMessage(hwnd, WM_VSCROLL, SB_PAGEUP, (LPARAM)0);
+		      break;
+	      case VK_NEXT:
+		      SendMessage(hwnd, WM_VSCROLL, SB_PAGEDOWN, (LPARAM)0);
+		      break;
+	      case VK_UP:
+		      SendMessage(hwnd, WM_VSCROLL, SB_LINEUP, (LPARAM)0);
+		      break;
+	      case VK_DOWN:
+		      SendMessage(hwnd, WM_VSCROLL, SB_LINEDOWN, (LPARAM)0);
+		      break;
+	      case VK_LEFT:
+		      SendMessage(hwnd, WM_HSCROLL, SB_LINEUP, (LPARAM)0);
+		      break;
+	      case VK_RIGHT:
+		      SendMessage(hwnd, WM_HSCROLL, SB_LINEDOWN, (LPARAM)0);
+		      break;
 	    }
 	    break;
 	case WM_CHAR:
