@@ -22,7 +22,7 @@
 [
    /CMERGE_DEBUG
    /USE_CIDCHAR_AS_RANGE
-] {dup where {pop pop} { currentdict exch false def pop } ifelse} forall
+] {dup where {pop pop} { currentdict exch //false def pop } ifelse} forall
 
 % ---------------- Public operators ---------------- %
 
@@ -65,7 +65,7 @@
 	} ifelse findresource
       } if
       exch CMap /FontMatrices get dup length 2 index gt {
-	exch get dup null eq { pop } { makefont } ifelse
+	exch get dup //null eq { pop } { makefont } ifelse
       } {
 	pop pop
       } ifelse
@@ -85,9 +85,9 @@
 % Our internal .CodeMapData structure closely mirrors the structures
 % defined in gxfcmap.h (q.v.).  () indicate a string, [] indicate an array,
 % ? indicates a Boolean, # indicates an integer, {} for grouping.
-%	[[(first) (last) ...]		% code space ranges
-%	 [(prefix) (key_size,?is_range,value_type,value_size) (keys...)
-%	   {(values...) | [value ...]} #font_index	% code mappings
+%	[[[(first) (last) ...]+]		% code space ranges
+%	 [[(prefix) (key_size,?is_range,value_type,value_size) (keys...)
+%	   {(values...) | [value ...]} #font_index ]+]	% code mappings
 %	  ...]
 %	 <<same>>		% notdef mappings
 %	]
@@ -106,40 +106,50 @@
 % ------ Font-level operators ------ %
 
 /begincmap {		% - begincmap -
-  /.CodeMapData [[] [] []] def
+  /.CodeMapData [[[]] [[]] [[]]] def
   /FontMatrices [] def
   /.FontIndex 0 def
   /.TempMaps [20 dict 50 dict 50 dict] def
-  /CodeMap null def		% for .buildcmap
-} bind def
-/endcmap {		% - endcmap -
-  .rewriteTempMapsNotDef
-  CMAPDEBUG {
-    (*** defined charmap ***\n) print
-    .TempMaps 1 get {exch == (\t) print ==} forall
-    (*** undefined charmap ***\n) print
-    .TempMaps 2 get {exch == (\t) print ==} forall
-  } if
-  10 dict begin 0 1 2 {
-    /i exch def
-		% Append data from .TempMaps to .CodeMapData.
-    /t .TempMaps i get def
-    .CodeMapData i get length t { exch pop length add } forall
-    CMAPDEBUG { (requested array size ) print dup == } if
-    array /a exch def
-    a 0 .CodeMapData i get .putmore
-    0 1 t length 1 sub {
-      t exch get .putmore
-    } for pop pop
-    .CodeMapData i a put
-  } for end
-  currentdict /.TempMaps undef
-  /.CodeMapData .CodeMapData .endmap def
-  /FontMatrices FontMatrices .endmap def
+  /CodeMap //null def		% for .buildcmap
 } bind def
 
-/.putmore {		% <array> <i> <array2> .putmore <array> <i+len(array2)>
-  3 copy putinterval length add
+/endcmap {		% - endcmap -
+  .rewriteTempMapsNotDef
+
+  CMAPDEBUG {
+    2 (*** undefined charmap ***)
+    1 (*** defined charmap ***)
+    0 (*** code space ranges ***)
+    3 { =
+      .TempMaps exch get
+      0 1 2 index length 1 sub {
+        dup == (\t) print
+        1 index exch get ==
+      } for
+      pop
+    } repeat
+  } if
+  
+  /.CodeMapData dup load [ exch
+    .TempMaps aload pop begin begin begin 
+    {
+      [ exch aload pop
+        0 1 currentdict length 1 sub { 
+           currentdict exch get 
+        } for 
+      ]
+      end
+    } forall
+  ] .endmap def
+
+  CMAPDEBUG {
+    (*** Content of .CodeMapData ***) =
+    0 .CodeMapData { exch dup == 1 add exch (\t) print == } forall
+    pop
+  } if
+
+  currentdict /.TempMaps undef
+  /FontMatrices FontMatrices .endmap def
 } bind def
 
 /.endmap {		% <map> .endmap <map>
@@ -164,6 +174,7 @@
 /begincodespacerange {	% <count> begincodespacerange -
   pop mark
 } bind def
+
 /endcodespacerange {	% <code_lo> <code_hi> ... endcodespacerange -
   0 .appendmap
 } bind def
@@ -186,6 +197,7 @@
     /FontMatrices exch def
   } if
 } bind def
+
 /endusematrix {		% <matrix> endusematrix -
   FontMatrices 3 1 roll put
 } bind def
@@ -504,18 +516,18 @@ dup /DefineResource {
       dup length dict .copydict exch .setglobal
     } if
     dup gcheck 2 index gcheck not and {
-      exch .currentglobal exch true .setglobal
+      exch .currentglobal exch //true .setglobal
       dup length string copy exch .setglobal exch
     } if dup /CMapName 3 index put
   } if
-  dup /CodeMap get null eq { .buildcmap } if
+  dup /CodeMap get //null eq { .buildcmap } if
   /Generic /Category findresource /DefineResource get exec
 } put
 /Category defineresource pop
 	% We might have loaded CID font support already.
 /CIDInit /ProcSet 2 copy { findresource } .internalstopped
 	% An interior `stopped' might have reset VM allocation to local.
-true .setglobal
+//true .setglobal
  { pop pop 3 -1 roll }
  { dup length 4 index length add dict .copydict 4 -1 roll exch .copydict }
 ifelse exch defineresource pop

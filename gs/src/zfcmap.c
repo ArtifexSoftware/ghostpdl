@@ -63,14 +63,26 @@ free_code_map(gx_code_map_t * pcmap, gs_memory_t * mem)
 private int
 acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
 {
-    uint num_ranges;
+    uint num_ranges = 0;
     gx_code_space_range_t *ranges;
-    uint i;
+    uint i, j, elem_sz;
+    ref elem;
 
-    if (!r_is_array(pref) || (num_ranges = r_size(pref)) == 0 ||
-	num_ranges & 1)
+    if (!r_is_array(pref))
+	return_error(e_rangecheck);
+    for (i=0; i < r_size(pref); i++) {
+        int code = array_get(mem, pref, i, &elem);
+        if (code < 0)
+            return code;
+        elem_sz = r_size(&elem);
+        if (elem_sz & 1)
+	    return_error(e_rangecheck);
+        num_ranges += elem_sz;
+    }
+    if (num_ranges == 0)
 	return_error(e_rangecheck);
     num_ranges >>= 1;
+
     ranges = (gx_code_space_range_t *)
 	gs_alloc_byte_array(mem, num_ranges, sizeof(gx_code_space_range_t),
 			    "acquire_code_ranges");
@@ -78,12 +90,16 @@ acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
 	return_error(e_VMerror);
     cmap->code_space.ranges = ranges;
     cmap->code_space.num_ranges = num_ranges;
-    for (i = 0; i < num_ranges; ++i, ++ranges) {
+
+    for (i = 0; i < r_size(pref); i++) {
+        array_get(mem, pref, i, &elem);
+        elem_sz = r_size(&elem);
+        for (j = 0; j < elem_sz; j += 2) {
 	ref rfirst, rlast;
 	int size;
 
-	array_get(mem, pref, i * 2L, &rfirst);
-	array_get(mem, pref, i * 2L + 1, &rlast);
+	    array_get(mem, &elem, j, &rfirst);
+	    array_get(mem, &elem, j + 1, &rlast);
 	if (!r_has_type(&rfirst, t_string) ||
 	    !r_has_type(&rlast, t_string) ||
 	    (size = r_size(&rfirst)) == 0 || size > MAX_CMAP_CODE_SIZE ||
@@ -93,6 +109,8 @@ acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
 	memcpy(ranges->first, rfirst.value.bytes, size);
 	memcpy(ranges->last, rlast.value.bytes, size);
 	ranges->size = size;
+            ++ranges;
+        }
     }
     return 0;
 }
@@ -102,12 +120,23 @@ private int
 acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
 		 gs_memory_t *mem)
 {
-    uint num_lookup;
+    uint num_lookup = 0;
     gx_cmap_lookup_range_t *pclr;
     long i;
+    ref elem;
+    uint elem_sz;
 
-    if (!r_is_array(pref) || (num_lookup = r_size(pref)) % 5 != 0)
+    if (!r_is_array(pref))
 	return_error(e_rangecheck);
+    for (i=0; i < r_size(pref); i++) {
+        int code = array_get(mem, pref, i, &elem);
+        if (code < 0)
+            return code;
+        elem_sz = r_size(&elem);
+        if (elem_sz % 5 != 0)
+	return_error(e_rangecheck);
+        num_lookup += elem_sz;
+    }
     num_lookup /= 5;
     pclr = gs_alloc_struct_array(mem, num_lookup, gx_cmap_lookup_range_t,
 				 &st_cmap_lookup_range_element,
@@ -117,14 +146,20 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
     memset(pclr, 0, sizeof(*pclr) * num_lookup);
     pcmap->lookup = pclr;
     pcmap->num_lookup = num_lookup;
-    for (i = 0; i < num_lookup * 5; i += 5, ++pclr) {
+    
+   
+    for (i = 0; i < r_size(pref); i++) {
+        uint j;
+        array_get(mem, pref, i, &elem);
+        elem_sz = r_size(&elem);
+        for (j = 0; j < elem_sz; j += 5) {
 	ref rprefix, rmisc, rkeys, rvalues, rfxs;
 
-	array_get(mem, pref, i, &rprefix);
-	array_get(mem, pref, i + 1, &rmisc);
-	array_get(mem, pref, i + 2, &rkeys);
-	array_get(mem, pref, i + 3, &rvalues);
-	array_get(mem, pref, i + 4, &rfxs);
+	    array_get(mem, &elem, j, &rprefix);
+	    array_get(mem, &elem, j + 1, &rmisc);
+	    array_get(mem, &elem, j + 2, &rkeys);
+	    array_get(mem, &elem, j + 3, &rvalues);
+	    array_get(mem, &elem, j + 4, &rfxs);
 
 	if (!r_has_type(&rprefix, t_string) ||
 	    !r_has_type(&rmisc, t_string) ||
@@ -206,6 +241,8 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
 	}
 	check_int_leu_only(rfxs, 0xff);
 	pclr->font_index = (int)rfxs.value.intval;
+            ++pclr;
+        }
     }
     return 0;
 }
