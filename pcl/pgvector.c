@@ -348,6 +348,9 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	    if ( pargs->phase & pe_entered )
 		hpgl_restore_pen_state(pgls, &pgls->g.pen_state, hpgl_pen_relative);
+	    /* prevent paths from getting excessively large */
+	    if ( !pgls->g.polygon_mode )
+		hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    return 0;
 	case ':':
 	    if_debug0('I', "\n  :");
