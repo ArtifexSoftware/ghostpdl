@@ -294,6 +294,8 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
 	    *height = pgls->g.character.size.y;
 	    if (pgls->g.character.size_mode == hpgl_size_relative)
 		*height *= pgls->g.P2.y - pgls->g.P1.y;
+	    if ((pfs->params.typeface_family & 0xfff) != STICK_FONT_TYPEFACE)
+		*height *= 2;
 	}
 	*height *= 1.0 + pgls->g.character.extra_space.y;
 	return 0;
