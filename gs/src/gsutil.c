@@ -18,6 +18,7 @@
 
 /* ------ Unique IDs ------ */
 
+#define NOT_REENTRANT
 gs_id
 gs_next_id()
 {
@@ -28,6 +29,10 @@ gs_next_id()
     INTEGER64 sec64;
     INTEGER64 rnd64;
 
+#ifdef NOT_REENTRANT
+    static long global_id = 1;
+    return global_id++;
+#endif
     /* combine random and time in a 64 bit value */
     gp_get_realtime(secs_ns_array);
     secs_ns = secs_ns_array[0] * 1000 + secs_ns_array[1] / 1000000;

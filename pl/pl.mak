@@ -34,7 +34,7 @@ pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
 ################ PJL ################
 
 
-PJLVERSION=1.34_alpha_sleet
+PJLVERSION=1.34_Ricoh
 
 plver_h=$(PLSRC)plver.h
 
