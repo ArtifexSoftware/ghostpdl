@@ -308,13 +308,19 @@ pdf_write_font_resource(gx_device_pdf *pdev, const pdf_font_t *pef,
 	goto bfname;
     case ft_encrypted:
     case ft_encrypted2: {
-	/*
-	 * If the font is a Multiple Master instance, it needs to be
-	 * identified as such.
-	 */
 	if (pef->is_MM_instance) {
+	/*
+	 * If the font is a Multiple Master instance, it should be
+	 * identified as such.  However, Acrobat Reader doesn't seem to
+	 * recognize the MMType1 subtype, but will accept MM Type 1
+	 * instances happily if they are tagged as Type1 (!).
+	 */
+#if 0
 	    pputs(s, "<</Subtype/MMType1");
 	    /****** NAME IS WRONG ******/
+#else
+	    pputs(s, "<</Subtype/Type1");
+#endif
 	} else {
 	    pputs(s, "<</Subtype/Type1");
 	}

@@ -369,13 +369,6 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		return_error(gs_error_rangecheck);
 	    }
 	}
-	/*
-	 * Acrobat Reader doesn't accept embedded Multiple Master
-	 * instances, and we haven't been able to figure out why.
-	 */
-	if (font->FontType == ft_encrypted &&
-	    ((const gs_font_type1 *)font)->data.WeightVector.count > 0)
-	    return_error(gs_error_rangecheck);
 	code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
 	if (code < 0)
 	    return code;
