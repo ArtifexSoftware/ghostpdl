@@ -46,7 +46,8 @@ LIB_MAK=$(GLSRC)lib.mak
 # Generic files
 
 arch_h=$(GLGEN)arch.h
-stdpre_h=$(GLSRC)stdpre.h
+stdpn_h=$(GLSRC)stdpn.h
+stdpre_h=$(GLSRC)stdpre.h $(stdpn_h)
 std_h=$(GLSRC)std.h $(arch_h) $(stdpre_h)
 
 $(GLGEN)arch.h : $(GENARCH_XE)
