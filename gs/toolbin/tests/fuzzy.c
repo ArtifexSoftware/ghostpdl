@@ -26,6 +26,7 @@ struct _Image {
   int (*close) (Image *self);
   int (*get_scan_line) (Image *self, uchar *buf);
   int (*seek) (Image *self, int y);
+  int (*feof_) (Image *self);
   int width;
   int height;
   int maxval;
@@ -159,6 +160,14 @@ create_pnm_image(Image *templ, const char *path)
   fprintf(pnm->f,"%d %d\n", templ->width, pnm->super.height);
   fprintf(pnm->f,"255\n");
   return pnm;
+}
+
+static int
+image_pnm_feof (Image *self)
+{
+  ImagePnm *pnm = (ImagePnm *)self;
+
+  return feof (pnm->f);
 }
 
 static void
@@ -321,6 +330,7 @@ open_pnm_image (const char *fn)
   image->super.close = image_pnm_close;
   image->super.get_scan_line = image_pnm_get_scan_line;
   image->super.seek = no_seek;
+  image->super.feof_ = image_pnm_feof;
   image->super.width = width;
   image->super.height = height;
   image->super.maxval = maxval;
@@ -553,13 +563,13 @@ usage (void)
 int
 main (int argc, char **argv)
 {
-  Image *image1, *image2;
+  Image *image1,  *image2;
   ImagePnm *image_out = NULL;
   FuzzyParams fparams;
   FuzzyReport freport;
   const char *fn[3] = {0, 0, 0};
   int fn_idx = 0;
-  int i;
+  int i, page = 1, rcode = 0;
 
   fparams.tolerance = 2;
   fparams.window_size = 3;
@@ -621,19 +631,33 @@ main (int argc, char **argv)
                                                   : create_pnm_image)
            (image1, fn[2]);
 
-  fuzzy_diff_images (image1, image2, &fparams, &freport, image_out);
-
-  if (image_out)
-    image_pnm_close (&image_out->super);
-
-  if (freport.n_diff > 0)
+  while (!image1->feof_(image1) || !image2->feof_(image2)) 
+  { 
+    if (image1->feof_(image1)) 
     {
-      printf ("%s: %d different, %d out of tolerance, %d out of window\n",
-	      fn[0], freport.n_diff, freport.n_outof_tolerance,
-	      freport.n_outof_window);
+      printf ("Extra data (maybe pages) in the image file 2.");
       return 1;
     }
-  if (freport.n_outof_window > 0)
-      return 2;
-  return 0;
+    if (image2->feof_(image2)) 
+    {
+      printf ("Extra data (maybe pages) in the image file 1.");
+      return 1;
+    }
+    fuzzy_diff_images (image1, image2, &fparams, &freport, image_out);
+    if (image_out)
+      image_pnm_close (&image_out->super);
+    image_out = NULL;
+    if (freport.n_diff > 0)
+    {
+      printf ("%s: page %d: %d different, %d out of tolerance, %d out of window\n",
+ 	      fn[0], page, freport.n_diff, freport.n_outof_tolerance,
+	      freport.n_outof_window);
+      rcode = max(rcode, 1);
+    }
+    if (freport.n_outof_window > 0)
+      rcode = max(rcode, 2);
+    page++;
+  }
+
+  return rcode;
 }
