@@ -135,7 +135,9 @@ JVERSION=6
 # DON'T DO THIS. If you do, the resulting executable will not be able to
 # read some PostScript files containing JPEG data, because Adobe chose to
 # define PostScript's JPEG capabilities in a way that is slightly
-# incompatible with the JPEG standard.  See Make.htm for more details.
+# incompatible with the JPEG standard.  Note also that if you set SHARE_JPEG
+# to 1, you must still have the library header files available to compile
+# Ghostscript.  See doc/Make.htm for more information.
 
 # DON'T SET THIS TO 1!  See the comment just above.
 SHARE_JPEG=0

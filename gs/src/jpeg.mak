@@ -1,4 +1,4 @@
-#    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -24,7 +24,10 @@
 #	JOBJDIR - the object directory
 #	JVERSION - the library major version number (currently "6")
 #	SHARE_JPEG - 0 to compile the library, 1 to share
-#	JPEG_NAME - if SHARE_JPEG=1, the name of the shared library
+#	JPEG_NAME - if SHARE_JPEG = 1, the name of the shared library
+#
+# Note that if SHARE_JPEG = 1, you must still have the library header files
+# available to compile Ghostscript: see doc/Make.htm for more information.
 
 # NOTE: This makefile is only known to work with the following versions
 # of the IJG library: 6, 6a, 6b.
