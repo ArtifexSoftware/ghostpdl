@@ -24,6 +24,7 @@
 #include "gserrors.h"
 #include "gsmatrix.h"
 #include "gsutil.h"
+#include "gxfcid.h"
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gxttf.h"
@@ -31,12 +32,14 @@
 #include "spprint.h"
 #include "gdevpsf.h"
 
+#define MAX_COMPOSITE_PIECES 3	/* adhoc */
+
 /* ---------------- Utilities ---------------- */
 
 #define ACCESS(base, length, vptr)\
   BEGIN\
     code = string_proc(pfont, (ulong)(base), length, &vptr);\
-    if ( code < 0 ) return code;\
+    if (code < 0) return code;\
   END
 
 /* Pad to a multiple of 4 bytes. */
@@ -511,10 +514,10 @@ compare_table_tags(const void *pt1, const void *pt2)
 
     return (t1 < t2 ? -1 : t1 > t2 ? 1 : 0);
 }
-int
-psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
-			 gs_glyph *orig_subset_glyphs, uint orig_subset_size,
-			 const gs_const_string *alt_font_name)
+private int
+psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
+			psf_glyph_enum_t *penum, bool is_subset,
+			const gs_const_string *alt_font_name)
 {
     gs_font *const font = (gs_font *)pfont;
     gs_const_string font_name;
@@ -525,7 +528,6 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 #define MAX_NUM_TABLES 40
     byte tables[MAX_NUM_TABLES * 16];
     uint i;
-    psf_glyph_enum_t genum;
     ulong offset;
     gs_glyph glyph, glyph_prev;
     ulong max_glyph;
@@ -543,9 +545,6 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     uint cmap_length;
     ulong OS_2_start;
     uint OS_2_length = OS_2_LENGTH;
-    gs_glyph subset_data[256 * 3];  /* *3 for composites */
-    gs_glyph *subset_glyphs = orig_subset_glyphs;
-    uint subset_size = orig_subset_size;
     int code;
 
     if (alt_font_name)
@@ -553,22 +552,6 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     else
 	font_name.data = font->font_name.chars,
 	    font_name.size = font->font_name.size;
-
-    /* Sort the subset glyphs, if any. */
-
-    if (subset_glyphs) {
-	/* Add the component glyphs for composites. */
-	memcpy(subset_data, orig_subset_glyphs,
-	       sizeof(gs_glyph) * subset_size);
-	subset_glyphs = subset_data;
-	code = psf_add_subset_pieces(subset_glyphs, &subset_size,
-				      countof(subset_data),
-				      countof(subset_data),
-				      font);
-	if (code < 0)
-	    return code;
-	subset_size = psf_sort_glyphs(subset_glyphs, subset_size);
-    }
 
     /*
      * Count the number of tables, including the eventual glyf and loca
@@ -628,11 +611,8 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
      */
 
     /****** NO CHECKSUMS YET ******/
-    psf_enumerate_glyphs_begin(&genum, font, subset_glyphs,
-				(subset_glyphs ? subset_size : 0),
-				GLYPH_SPACE_INDEX);
     for (max_glyph = 0, glyf_length = 0;
-	 (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
+	 (code = psf_enumerate_glyphs_next(penum, &glyph)) != 1;
 	 ) {
 	uint glyph_index;
 	gs_const_string glyph_string;
@@ -791,10 +771,12 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 
     /* Write glyf. */
 
-    psf_enumerate_glyphs_begin(&genum, font, subset_glyphs,
-				(subset_glyphs ? subset_size : max_glyph + 1),
-				GLYPH_SPACE_INDEX);
-    for (offset = 0; psf_enumerate_glyphs_next(&genum, &glyph) != 1; ) {
+    if (is_subset)
+	psf_enumerate_glyphs_reset(penum);
+    else
+	psf_enumerate_glyphs_begin(penum, font, NULL, max_glyph + 1,
+				   GLYPH_SPACE_INDEX);
+    for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
 
 	if (pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
@@ -810,9 +792,9 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 
     /* Write loca. */
 
-    psf_enumerate_glyphs_reset(&genum);
+    psf_enumerate_glyphs_reset(penum);
     glyph_prev = gs_min_cid_glyph;
-    for (offset = 0; psf_enumerate_glyphs_next(&genum, &glyph) != 1; ) {
+    for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
 
 	for (; glyph_prev <= glyph; ++glyph_prev)
@@ -885,4 +867,56 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     pwrite(s, head, 56);
 
     return 0;
+}
+
+/* Write a TrueType font. */
+int
+psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
+			gs_glyph *orig_subset_glyphs, uint orig_subset_size,
+			const gs_const_string *alt_font_name)
+{
+    gs_font *const font = (gs_font *)pfont;
+    psf_glyph_enum_t genum;
+    gs_glyph subset_data[256 * MAX_COMPOSITE_PIECES];
+    gs_glyph *subset_glyphs = orig_subset_glyphs;
+    uint subset_size = orig_subset_size;
+
+    /* Sort the subset glyphs, if any. */
+
+    if (subset_glyphs) {
+	/* Add the component glyphs for composites. */
+	int code;
+
+	memcpy(subset_data, orig_subset_glyphs,
+	       sizeof(gs_glyph) * subset_size);
+	subset_glyphs = subset_data;
+	code = psf_add_subset_pieces(subset_glyphs, &subset_size,
+				     countof(subset_data),
+				     countof(subset_data),
+				     font);
+	if (code < 0)
+	    return code;
+	subset_size = psf_sort_glyphs(subset_glyphs, subset_size);
+    }
+    psf_enumerate_glyphs_begin(&genum, font, subset_glyphs,
+			       (subset_glyphs ? subset_size : 0),
+			       GLYPH_SPACE_INDEX);
+    return psf_write_truetype_data(s, pfont, options, &genum,
+				   subset_glyphs != 0, alt_font_name);
+}
+
+/* Write a CIDFontType 2 font. */
+int
+psf_write_cid2_font(stream *s, gs_font_cid2 *pfont, int options,
+		    const byte *subset_bits, uint subset_size,
+		    const gs_const_string *alt_font_name)
+{
+    gs_font *const font = (gs_font *)pfont;
+    psf_glyph_enum_t genum;
+
+    psf_enumerate_bits_begin(&genum, font, subset_bits,
+			     (subset_bits ? subset_size : 0),
+			     GLYPH_SPACE_INDEX);
+    return psf_write_truetype_data(s, (gs_font_type42 *)font, options, &genum,
+				   subset_bits != 0, alt_font_name);
 }

@@ -44,8 +44,10 @@ typedef struct psf_glyph_enum_s psf_glyph_enum_t;
 struct psf_glyph_enum_s {
     gs_font *font;
     struct su_ {
-	const gs_glyph *glyphs;	/* if subset given by a list */
-	const byte *cids;	/* if CID subset given by a bitmap */
+	union sus_ {
+	    const gs_glyph *list;	/* if subset given by a list */
+	    const byte *bits;	/* if CID or TT subset given by a bitmap */
+	} selected;
 	uint size;
     } subset;
     gs_glyph_space_t glyph_space;
@@ -58,14 +60,21 @@ struct psf_glyph_enum_s {
  * > 0 but subset_glyphs == 0, enumerate all glyphs in [0 .. subset_size-1]
  * (as integer glyphs, i.e., offset by gs_min_cid_glyph).
  */
-void psf_enumerate_glyphs_begin(P5(psf_glyph_enum_t *ppge, gs_font *font,
-				   const gs_glyph *subset_glyphs,
-				   uint subset_size,
-				   gs_glyph_space_t glyph_space));
+void psf_enumerate_list_begin(P5(psf_glyph_enum_t *ppge, gs_font *font,
+				 const gs_glyph *subset_list,
+				 uint subset_size,
+				 gs_glyph_space_t glyph_space));
+/* Backward compatibility */
+#define psf_enumerate_glyphs_begin psf_enumerate_list_begin
 
-/* Begin enumerating CID glyphs in a subset identified by a bit vector. */
-void psf_enumerate_cids_begin(P4(psf_glyph_enum_t *ppge, gs_font *font,
-				 const byte *subset_cids, uint subset_size));
+/* Begin enumerating CID or TT glyphs in a subset given by a bit vector. */
+/* Note that subset_size is given in bits, not in bytes. */
+void psf_enumerate_bits_begin(P5(psf_glyph_enum_t *ppge, gs_font *font,
+				 const byte *subset_bits, uint subset_size,
+				 gs_glyph_space_t glyph_space));
+/* Backward compatibility */
+#define psf_enumerate_cids_begin(ppge, font, bits, size)\
+   psf_enumerate_bits_begin(ppge, font, bits, size, GLYPH_SPACE_NAME)
 
 /*
  * Reset a glyph enumeration.
@@ -194,7 +203,8 @@ typedef struct gs_font_cid0_s gs_font_cid0;
 
 /*
  * Write out a CIDFontType 0 font definition as CFF.  The options are
- * the same as for psf_write_type2_font.
+ * the same as for psf_write_type2_font.  subset_cids is a bit vector of
+ * subset_size bits (not bytes).
  * This procedure does not allocate or free any data.
  */
 int psf_write_cid0_font(P6(stream *s, gs_font_cid0 *pfont, int options,
@@ -218,8 +228,7 @@ int psf_write_cmap(P4(stream *s, const gs_cmap_t *pcmap,
 /* ------ Exported by gdevpsft.c ------ */
 
 /*
- * Write out a TrueType (Type 42) font definition.  This procedure also
- * works for CIDFontType 2 fonts, which are subclasses of Type 42.
+ * Write out a TrueType (Type 42) font definition.
  * This procedure does not allocate or free any data.
  */
 #ifndef gs_font_type42_DEFINED
@@ -233,6 +242,24 @@ typedef struct gs_font_type42_s gs_font_type42;
 int psf_write_truetype_font(P6(stream *s, gs_font_type42 *pfont, int options,
 			       gs_glyph *subset_glyphs, uint subset_size,
 			       const gs_const_string *alt_font_name));
+
+#ifndef gs_font_cid2_DEFINED
+#  define gs_font_cid2_DEFINED
+typedef struct gs_font_cid2_s gs_font_cid2;
+#endif
+
+/*
+ * Write out a CIDFontType 2 font definition.  This procedure is identical
+ * to psf_write_truetype_font except that the subset, if any, is specified
+ * as a bit vector (as for psf_write_cid0_font) rather than a list of glyphs.
+ * NOTE: it is the client's responsibility to ensure that if the subset
+ * contains any composite glyphs, the components of the composites are
+ * included explicitly in the subset.
+ * This procedure does not allocate or free any data.
+ */
+int psf_write_cid2_font(P6(stream *s, gs_font_cid2 *pfont, int options,
+			   const byte *subset_glyphs, uint subset_size,
+			   const gs_const_string *alt_font_name));
 
 /* ------ Exported by gdevpsfx.c ------ */
 

@@ -43,7 +43,7 @@ enumerate_glyphs_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 {
     if (ppge->index >= ppge->subset.size)
 	return 1;
-    *pglyph = ppge->subset.glyphs[ppge->index++];
+    *pglyph = ppge->subset.selected.list[ppge->index++];
     return 0;
 }
 private int
@@ -55,43 +55,42 @@ enumerate_range_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
     return 0;
 }
 void
-psf_enumerate_glyphs_begin(psf_glyph_enum_t *ppge, gs_font *font,
-			   const gs_glyph *subset_glyphs, uint subset_size,
-			   gs_glyph_space_t glyph_space)
+psf_enumerate_list_begin(psf_glyph_enum_t *ppge, gs_font *font,
+			 const gs_glyph *subset_list, uint subset_size,
+			 gs_glyph_space_t glyph_space)
 {
     ppge->font = font;
-    ppge->subset.glyphs = subset_glyphs;
-    ppge->subset.cids = 0;
+    ppge->subset.selected.list = subset_list;
     ppge->subset.size = subset_size;
     ppge->glyph_space = glyph_space;
     ppge->enumerate_next =
-	(subset_glyphs ? enumerate_glyphs_next :
+	(subset_list ? enumerate_glyphs_next :
 	 subset_size ? enumerate_range_next : enumerate_font_next);
     psf_enumerate_glyphs_reset(ppge);
 }
 
-/* Begin enumerating CID glyphs in a subset identified by a bit vector. */
+/* Begin enumerating CID or TT glyphs in a subset given by a bit vector. */
 private int
-enumerate_cids_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
+enumerate_bits_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 {
     for (; ppge->index < ppge->subset.size; ppge->index++)
-	if (ppge->subset.cids[ppge->index >> 3] & (0x80 >> (ppge->index & 7))) {
+	if (ppge->subset.selected.bits[ppge->index >> 3] & (0x80 >> (ppge->index & 7))) {
 	    *pglyph = (gs_glyph)(ppge->index++ + gs_min_cid_glyph);
 	    return 0;
 	}
     return 1;
 }
 void
-psf_enumerate_cids_begin(psf_glyph_enum_t *ppge, gs_font *font,
-			 const byte *subset_cids, uint subset_size)
+psf_enumerate_bits_begin(psf_glyph_enum_t *ppge, gs_font *font,
+			 const byte *subset_bits, uint subset_size,
+			 gs_glyph_space_t glyph_space)
 {
     ppge->font = font;
-    ppge->subset.glyphs = 0;
-    ppge->subset.cids = subset_cids;
+    ppge->subset.selected.bits = subset_bits;
     ppge->subset.size = subset_size;
-    ppge->glyph_space = GLYPH_SPACE_NAME;  /* CIDs are "names" */
+    ppge->glyph_space = glyph_space;
     ppge->enumerate_next =
-	(subset_cids ? enumerate_cids_next :
+	(subset_bits ? enumerate_bits_next :
 	 subset_size ? enumerate_range_next : enumerate_font_next);
     psf_enumerate_glyphs_reset(ppge);
 }

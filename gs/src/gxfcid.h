@@ -117,7 +117,10 @@ extern_st(st_gs_font_cid1);
 
 /* CIDFontType 2 is a subclass of FontType 42. */
 
+#ifndef gs_font_cid2_DEFINED
+#  define gs_font_cid2_DEFINED
 typedef struct gs_font_cid2_s gs_font_cid2;
+#endif
 typedef struct gs_font_cid2_data_s {
     gs_font_cid_data common;
     int MetricsCount;
