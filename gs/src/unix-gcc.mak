@@ -432,7 +432,7 @@ AK=$(GLGENDIR)/cc.tr
 
 # Define the compilation rules and flags.
 
-CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS) -DGX_COLOR_INDEX_TYPE='unsigned long long'
+CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS) 
 CC_=$(CC) `cat $(AK)` $(CCFLAGS)
 CCAUX=$(CC) `cat $(AK)`
 CC_LEAF=$(CC_) -fomit-frame-pointer
