@@ -473,10 +473,10 @@ int gdev_prn_open_printer_seekable(P3(gx_device *dev, bool binary_mode,
 int gdev_prn_open_printer(P2(gx_device * dev, bool binary_mode));
 /*
  * Test whether the printer's output file was just opened, i.e., whether
- * this is the first page being written to this file.  The result is only
- * valid immediately after calling open_printer[_positionable].
+ * this is the first page being written to this file.  This is only valid
+ * at the entry to a driver's print_page procedure.
  */
-#define gdev_prn_file_is_new(pdev) ((pdev)->file_is_new)
+bool gdev_prn_file_is_new(P1(const gx_device_printer *pdev));
 
 /*
  * Determine the number of bytes required for one scan line of output to

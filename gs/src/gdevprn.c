@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -839,6 +839,17 @@ int
 gdev_prn_open_printer(gx_device *pdev, bool binary_mode)
 {
     return gdev_prn_open_printer_seekable(pdev, binary_mode, false);
+}
+
+/*
+ * Test whether the printer's output file was just opened, i.e., whether
+ * this is the first page being written to this file.  This is only valid
+ * at the entry to a driver's print_page procedure.
+ */
+bool
+gdev_prn_file_is_new(const gx_device_printer *pdev)
+{
+    return pdev->file_is_new;
 }
 
 /* Determine the colors used in a range of lines. */
