@@ -125,6 +125,7 @@ typedef struct t1_hinter_s
     int hint_count, max_hint_count;
     int hint_range_count, max_hint_range_count;
     int primary_hint_count;
+    int flex_count;
     int FontType; /* 1 or 2 */
     bool ForceBold;
     bool seac_flag;
@@ -162,6 +163,10 @@ int  t1_hinter__rlineto(t1_hinter *, fixed xx, fixed yy);
 int  t1_hinter__rcurveto(t1_hinter * this, fixed xx0, fixed yy0, fixed xx1, fixed yy1, fixed xx2, fixed yy2);
 void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy);
 int  t1_hinter__closepath(t1_hinter * this);
+
+int  t1_hinter__flex_beg(t1_hinter * this);
+int  t1_hinter__flex_end(t1_hinter * this, fixed flex_height);
+int  t1_hinter__flex_point(t1_hinter * this);
 
 int  t1_hinter__hint_mask(t1_hinter * this, byte *mask);
 int  t1_hinter__drop_hints(t1_hinter * this);

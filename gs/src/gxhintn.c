@@ -111,15 +111,21 @@
 
 */
 
-/*  vstem3/hstem3 and flex processing basics :
-    They are handled by the type 1 interpreter (gstype1.c).
+/*  vstem3/hstem3 processing basics :
+    They are handled by the type 1,2 interpreters (gstype1.c, gstype2.c).
  */
 
-#define VD_DRAW_IMPORT 0 /* CAUTION: with 1 can't close DC on import error */
+/*  flex processing basics :
+    With type 1 it is handled with t1_hinter__flex_* functions.
+    With type 2 it is handled by gstype2.c .
+ */
+
+#define VD_DRAW_IMPORT 1 /* CAUTION: with 1 can't close DC on import error */
 #define VD_SCALE  (0.2 / 4096.0)
 #define VD_SHIFT_X 50
 #define VD_SHIFT_Y 100
 #define VD_PAINT_POLE_IDS 1
+#define VD_IMPORT_COLOR RGB(255, 0, 0)
 
 #define ADOBE_OVERSHOOT_COMPATIBILIY 0
 #define ADOBE_SHIFT_CHARPATH 0
@@ -438,6 +444,7 @@ void t1_hinter__init(t1_hinter * this, gs_memory_t * mem)
     this->hint_count = 0;
     this->contour_count = 0;
     this->hint_range_count = 0;
+    this->flex_count = 0;
 
     this->max_contour_count = count_of(this->contour0);
     this->max_zone_count = count_of(this->zone0);
@@ -619,7 +626,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
     vd_set_origin(0,0);
     vd_erase(RGB(255, 255, 255));
     t1_hinter__paint_raster_grid(this);
-    vd_setcolor(RGB(255, 0, 0));
+    vd_setcolor(VD_IMPORT_COLOR);
     vd_setlinewidth(0);
 #   endif
     return 0;
@@ -773,18 +780,22 @@ int t1_hinter__sbw_seac(t1_hinter * this, fixed sbx, fixed sby)
 int t1_hinter__rmoveto(t1_hinter * this, fixed xx, fixed yy)
 {   int code;
 
-    if (this->pole_count > 0 && this->pole[this->pole_count - 1].type == moveto)
-        this->pole_count--;
-    if (this->pole_count > 0 && this->pole[this->pole_count - 1].type != closepath) {
-	code = t1_hinter__closepath(this);
-	if (code < 0)
-	    return code;
+    if (this->flex_count == 0) {
+	if (this->pole_count > 0 && this->pole[this->pole_count - 1].type == moveto)
+	    this->pole_count--;
+	if (this->pole_count > 0 && this->pole[this->pole_count - 1].type != closepath) {
+	    code = t1_hinter__closepath(this);
+	    if (code < 0)
+		return code;
+	}
     }
     code = t1_hinter__add_pole(this, xx, yy, moveto);
+    if (this->flex_count == 0) {
+	this->bx = this->cx;
+	this->by = this->cy;
+    }
     vd_circle(this->cx, this->cy, 2, RGB(255, 0, 0));
     vd_moveto(this->cx, this->cy);
-    this->bx = this->cx;
-    this->by = this->cy;
     return code;
 }
 
@@ -840,10 +851,9 @@ int t1_hinter__closepath(t1_hinter * this)
     if (contour_beg == this->pole_count)
 	return 0; /* maybe a single trailing moveto */
 #if VD_DRAW_IMPORT
-    vd_setcolor(RGB(255, 0, 0));
+    vd_setcolor(VD_IMPORT_COLOR);
     vd_setlinewidth(0);
     vd_lineto(this->bx, this->by);
-    vd_closepath;
 #endif
     if (this->bx == this->cx && this->by == this->cy) {
         /* Don't create degenerate segment */ 
@@ -874,6 +884,57 @@ private inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
 				    sizeof(this->hint0) / count_of(this->hint0), T1_MAX_HINTS, s_hint_array))
 	    return_error(gs_error_VMerror);
     *hint = &this->hint[this->hint_count];
+    return 0;
+}
+
+int t1_hinter__flex_beg(t1_hinter * this)
+{   if (this->flex_count != 0)
+	return_error(gs_error_invalidfont);
+    this->flex_count++;
+    return 0;
+}
+
+int t1_hinter__flex_point(t1_hinter * this)
+{   if (this->flex_count == 0)
+	return_error(gs_error_invalidfont);
+    this->flex_count++;
+    return 0;
+}
+
+int t1_hinter__flex_end(t1_hinter * this, fixed flex_height)
+{   t1_pole *pole0, *pole1, *pole4;
+    t1_hinter_space_coord ox, oy;
+    const int32 div_x = this->g2o_fraction * this->subpixels_x;
+    const int32 div_y = this->g2o_fraction * this->subpixels_y;
+    
+    if (this->flex_count != 8)
+	return_error(gs_error_invalidfont);
+    /* We've got 8 poles accumulated in pole array. */
+    pole0 = &this->pole[this->pole_count - 8];
+    pole1 = &this->pole[this->pole_count - 7];
+    pole4 = &this->pole[this->pole_count - 4];
+    g2o(this, pole4->gx - pole1->gx, pole4->gy - pole1->gy, &ox, &oy);
+    if (any_abs(ox) > div_x * fixed2float(flex_height) / 100 || 
+	any_abs(oy) > div_y * fixed2float(flex_height) / 100) {
+	/* do with curves */
+	memmove(pole1, pole1 + 1, (sizeof(this->pole0) / count_of(this->pole0)) * 7);
+	pole0[1].type = pole0[2].type = offcurve;
+	pole0[3].type = oncurve;
+	pole0[4].type = pole0[5].type = offcurve;
+	pole0[6].type = oncurve;
+	this->pole_count--;
+	vd_moveto (pole0[0].gx, pole0[0].gy);
+	vd_curveto(pole0[1].gx, pole0[1].gy, pole0[2].gx, pole0[2].gy, pole0[3].gx, pole0[3].gy);
+	vd_curveto(pole0[4].gx, pole0[4].gy, pole0[5].gx, pole0[5].gy, pole0[6].gx, pole0[6].gy);
+    } else {
+	/* do with line */
+	pole0[1] = pole0[7];
+	pole0[1].type = oncurve;
+	this->pole_count -= 6;
+	vd_moveto(pole0[0].gx, pole0[0].gy);
+	vd_lineto(pole0[1].gx, pole0[1].gy);
+    }
+    this->flex_count = 0;
     return 0;
 }
 
@@ -1236,7 +1297,7 @@ private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord po
     /*todo: optimize narrowing the search range */
 }
 
-private void t1_hinter__align_to_grid(t1_hinter * this, long unit, t1_glyph_space_coord *x, t1_glyph_space_coord *y)
+private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, t1_glyph_space_coord *x, t1_glyph_space_coord *y)
 {   if (unit > 0) {
 	long div_x = unit * this->subpixels_x;
 	long div_y = unit * this->subpixels_y;
@@ -1324,10 +1385,10 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
             bool forwd_curve = (this->pole[next1].type == offcurve);
             bool bckwd_curve = (this->pole[prev1].type == offcurve);
             bool curve = (bckwd_curve && forwd_curve);
-            bool convex  = (curve && this->pole[prev2].gy < pole->gy && 
-                                     this->pole[next2].gy < pole->gy);
-            bool concave = (curve && this->pole[prev2].gy > pole->gy && 
-                                     this->pole[next2].gy > pole->gy);
+            bool convex  = (curve && this->pole[prev2].gy <= pole->gy && 
+                                     this->pole[next2].gy <= pole->gy);
+            bool concave = (curve && this->pole[prev2].gy >= pole->gy && 
+                                     this->pole[next2].gy >= pole->gy);
             t1_zone *zone = t1_hinter__find_zone(this, pole->gy, curve, convex, concave);
 
             if (zone != NULL) {
@@ -1947,7 +2008,9 @@ int t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s)
 	vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
 	vd_set_scale(VD_SCALE);
 	vd_set_origin(0, 0);
+#	if !VD_DRAW_IMPORT
 	vd_erase(RGB(255, 255, 255));
+#	endif
     }
     t1_hinter__paint_raster_grid(this);
     t1_hinter__simplify_representation(this);

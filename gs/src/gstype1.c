@@ -506,21 +506,26 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    /* and the argument count off the stack. */
 			    switch (*pindex = fixed2int_var(*csp)) {
 				case 0:
-				    {	/* We have to do something really sleazy */
+				    {	
+#					if !NEW_TYPE1_HINTER
+					/* We have to do something really sleazy */
 					/* here, namely, make it look as though */
 					/* the rmovetos never really happened, */
 					/* because we don't want to interrupt */
 					/* the current subpath. */
+#					endif
 					gs_fixed_point ept;
 
-#if defined(DEBUG) || !ALWAYS_DO_FLEX_AS_CURVE
+#if defined(DEBUG) || !ALWAYS_DO_FLEX_AS_CURVE || NEW_TYPE1_HINTER
 					fixed fheight = csp[-4];
-					gs_fixed_point hpt;
-
 #endif
-
+#if defined(DEBUG) || !ALWAYS_DO_FLEX_AS_CURVE
+					gs_fixed_point hpt;
+#endif
+#					if !NEW_TYPE1_HINTER
 					if (pcis->flex_count != 8)
 					    return_error(gs_error_invalidfont);
+#					endif
 					/* Assume the next two opcodes */
 					/* are `pop' `pop'.  Unfortunately, some */
 					/* Monotype fonts put these in a Subr, */
@@ -530,6 +535,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 					csp[-4] = csp[-3] - pcis->asb_diff;
 					csp[-3] = csp[-2];
 					csp -= 3;
+#					if !NEW_TYPE1_HINTER
 					code = gx_path_current_point(sppath, &ept);
 					if (code < 0)
 					    return code;
@@ -549,50 +555,51 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 					if (any_abs(hpt.x) + any_abs(hpt.y) <
 					    fheight / 100
 					    ) {		/* Do the flex as a line. */
-					    OLD(code = gx_path_add_line(sppath,
-							      ept.x, ept.y));
-					    NEW(code = t1_hinter__rlineto(h, ept.x, ept.y));
+					    code = gx_path_add_line(sppath,
+							      ept.x, ept.y);
 					} else
 #endif
 					{	/* Do the flex as a curve. */
-					    OLD(code = gx_path_add_curve(sppath,
+					    code = gx_path_add_curve(sppath,
 						       fpts[2].x, fpts[2].y,
 						       fpts[3].x, fpts[3].y,
-						      fpts[4].x, fpts[4].y));
-					    NEW(code = t1_hinter__rcurveto(h, 
-						       fpts[2].x, fpts[2].y,
-						       fpts[3].x, fpts[3].y,
-						      fpts[4].x, fpts[4].y));
+						      fpts[4].x, fpts[4].y);
 					    if (code < 0)
 						return code;
-					    OLD(code = gx_path_add_curve(sppath,
+					    code = gx_path_add_curve(sppath,
 						       fpts[5].x, fpts[5].y,
 						       fpts[6].x, fpts[6].y,
-						      fpts[7].x, fpts[7].y));
-					    NEW(code = t1_hinter__rcurveto(h, 
-						    fpts[5].x, fpts[5].y, 
-						    fpts[6].x, fpts[6].y, 
-						    fpts[7].x, fpts[7].y));
+						      fpts[7].x, fpts[7].y);
 					}
+#					else
+					code = t1_hinter__flex_end(h, fheight);
+#					endif
 				    }
 				    if (code < 0)
 					return code;
 				    pcis->flex_count = flex_max;	/* not inside flex */
 				    inext;
 				case 1:
+#				    if !NEW_TYPE1_HINTER
 				    code = gx_path_current_point(sppath, &fpts[0]);
 				    if (code < 0)
 					return code;
 				    pcis->flex_path_state_flags =	/* <--- more sleaze */
 					gx_path_get_state_flags(sppath);
+#				    else
+				    code = t1_hinter__flex_beg(h);
+				    if (code < 0)
+					return code;
+#				    endif
 				    pcis->flex_count = 1;
 				    csp -= 2;
 				    inext;
 				case 2:
 				    if (pcis->flex_count >= flex_max)
 					return_error(gs_error_invalidfont);
-				    code = gx_path_current_point(sppath,
-						 &fpts[pcis->flex_count++]);
+				    OLD(code = gx_path_current_point(sppath,
+						 &fpts[pcis->flex_count++]));
+				    NEW(code = t1_hinter__flex_point(h));
 				    if (code < 0)
 					return code;
 				    csp -= 2;
