@@ -477,13 +477,13 @@ bmpa_get_space_params(const gx_device_printer *pdev,
     /* need to include minimal writer requirements to satisfy rasterizer init */
     writer_space = 	/* add 5K slop for good measure */
 	5000 + (72 + 8) * ( (pdev->height / space_params->band.BandHeight) + 1 );
-    space_params->band.BandBufferSpace =
-	max(render_space, writer_space) + tile_cache_space;
+
+    /* Force reader & writer to match until other logic is changed to	*/
+    /* allow these values to differ. Include the min_row_space in the	*/
+    /* calculation of the write space needed				*/
     space_params->BufferSpace =
 	max(render_space, writer_space + min_row_space) + tile_cache_space;
-    /**************** HACK HACK HACK ****************/
-    /* Override this computation to force reader & writer to match */
-    space_params->BufferSpace = space_params->band.BandBufferSpace;
+    space_params->BandBufferSpace = space_params->band.BufferSpace;
 
 }
 
