@@ -186,10 +186,22 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
      * and the width from the CharString or the Metrics.
      * If the FontBBox isn't valid, we can't do any of this.
      */
-    code = zchar_get_metrics(pbfont, op - 1, cxs.sbw);
-    if (code < 0)
-	return code;
-    cxs.present = code;
+
+    if ((penum->FontBBox_as_Metrics2.x == 0 &&
+	 penum->FontBBox_as_Metrics2.y == 0) ||
+	gs_rootfont(igs)->WMode == 0 ) {
+	code = zchar_get_metrics(pbfont, op - 1, cxs.sbw);
+	if (code < 0)
+	    return code;
+	cxs.present = code;
+	cxs.use_FontBBox_as_Metrics2 = false;
+    }  else {  /* pass here if FontType==9,11 && WMode==1*/
+	cxs.sbw[0] = penum->FontBBox_as_Metrics2.x / 2;
+	cxs.sbw[1] = penum->FontBBox_as_Metrics2.y;
+	cxs.sbw[2] = 0;
+	cxs.sbw[3] = -penum->FontBBox_as_Metrics2.x; /* Sic! */
+	cxs.use_FontBBox_as_Metrics2 = true;
+    }
     /* Establish a current point. */
     code = gs_moveto(igs, 0.0, 0.0);
     if (code < 0)
@@ -236,20 +248,10 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
 					    &other_subr);
 	    case type1_result_sbw:	/* [h]sbw, just continue */
 		if (cxs.present != metricsSideBearingAndWidth) {
-		    if ((penum->FontBBox_as_Metrics2.x == 0 &&
-			 penum->FontBBox_as_Metrics2.y == 0) ||
-		        gs_rootfont(igs)->WMode == 0
-			) {
+		    if (!cxs.use_FontBBox_as_Metrics2)
  		        type1_cis_get_metrics(pcis, cxs.sbw);
-		        cxs.use_FontBBox_as_Metrics2 = false;
-	            } else { /* pass here if FontType==9,11 && WMode==1*/
-		        cxs.sbw[0] = penum->FontBBox_as_Metrics2.x / 2;
-		        cxs.sbw[1] = penum->FontBBox_as_Metrics2.y;
-		        cxs.sbw[2] = 0;
-		        cxs.sbw[3] = -penum->FontBBox_as_Metrics2.x; /* Sic! */
-		        cxs.use_FontBBox_as_Metrics2 = true;
+	            else
 			cxs.present = metricsSideBearingAndWidth;
-		    }
 		}
 		opstr = 0;
 		goto icont;
@@ -304,13 +306,14 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs,
     } else {
 	/* We have the width and bounding box: */
 	/* set up the cache device now. */
-	return zchar_set_cache(i_ctx_p, pbfont, op - 1,
-			       (pcxs->present ==
-				metricsSideBearingAndWidth ?
-				pcxs->sbw : NULL),
+ 	return zchar_set_cache(i_ctx_p, pbfont, op - 1,
+			       (pcxs->present == metricsSideBearingAndWidth
+			        && !pcxs->use_FontBBox_as_Metrics2 ?
+			        pcxs->sbw : NULL),
 			       pcxs->sbw + 2,
 			       &pcxs->char_bbox,
-			       bbox_finish_fill, bbox_finish_stroke, NULL);
+			       bbox_finish_fill, bbox_finish_stroke, 
+			       (pcxs->use_FontBBox_as_Metrics2 ? pcxs->sbw : NULL));
     }
 }
 
@@ -497,10 +500,21 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
     /* Dismantle everything we've done, and start over. */
     gs_text_retry(penum);
     pfont1 = (gs_font_type1 *) pfont;
-    code = zchar_get_metrics(pbfont, op - 1, cxs.sbw);
-    if (code < 0)
-	return code;
-    cxs.present = code;
+    if ((penum->FontBBox_as_Metrics2.x == 0 &&
+	 penum->FontBBox_as_Metrics2.y == 0) ||
+	gs_rootfont(igs)->WMode == 0 ) {
+	code = zchar_get_metrics(pbfont, op - 1, cxs.sbw);
+	if (code < 0)
+	    return code;
+	cxs.present = code;
+    }  else {
+	cxs.sbw[0] = penum->FontBBox_as_Metrics2.x / 2;
+	cxs.sbw[1] = penum->FontBBox_as_Metrics2.y;
+	cxs.sbw[2] = 0;
+	cxs.sbw[3] = -penum->FontBBox_as_Metrics2.x; /* Sic! */
+	cxs.use_FontBBox_as_Metrics2 = true;
+	cxs.present = metricsSideBearingAndWidth;
+    }
     code = type1_exec_init(&cxs.cis, penum, igs, pfont1);
     if (code < 0)
 	return code;
