@@ -1413,8 +1413,9 @@ pattern_do_reset(
     }
     if ( type & pcl_reset_permanent || type & pcl_reset_printer ) {
         if (gstate_pattern_cache(pcs->pgs)) {
-            (gstate_pattern_cache(pcs->pgs)->free_all)(gstate_pattern_cache(pcs->pgs));
             gs_state *pgs = pcs->pgs;
+
+            (gstate_pattern_cache(pgs)->free_all)(gstate_pattern_cache(pgs));
             gs_free_object(pcs->memory, 
                            gstate_pattern_cache(pgs)->tiles, 
                            "pattern_do_reset(tiles)");
