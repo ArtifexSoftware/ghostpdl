@@ -187,7 +187,6 @@ window_draw(GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
     if (img && img->window && img->buf) {
         int color = img->format & DISPLAY_COLORS_MASK;
 	int depth = img->format & DISPLAY_DEPTH_MASK;
-	int alpha = img->format & DISPLAY_ALPHA_MASK;
 	switch (color) {
 	    case DISPLAY_COLORS_NATIVE:
 		if (depth == DISPLAY_DEPTH_8)
@@ -211,16 +210,16 @@ window_draw(GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 		break;
 	    case DISPLAY_COLORS_RGB:
 		if (depth == DISPLAY_DEPTH_8) {
-		    if (alpha == DISPLAY_ALPHA_NONE)
+		    if (img->rgbbuf)
 			gdk_draw_rgb_image(widget->window, 
 			    widget->style->fg_gc[GTK_STATE_NORMAL],
 			    0, 0, img->width, img->height,
-			    GDK_RGB_DITHER_MAX, img->buf, img->rowstride);
+			    GDK_RGB_DITHER_MAX, img->rgbbuf, img->width * 3);
 		    else
 			gdk_draw_rgb_image(widget->window, 
 			    widget->style->fg_gc[GTK_STATE_NORMAL],
 			    0, 0, img->width, img->height,
-			    GDK_RGB_DITHER_MAX, img->rgbbuf, img->rowstride);
+			    GDK_RGB_DITHER_MAX, img->buf, img->rowstride);
 		}
 		break;
 	    case DISPLAY_COLORS_CMYK:
@@ -428,9 +427,9 @@ static int display_size(void *handle, void *device, int width, int height,
 		    /* 0->63 = 00RRGGBB, 64->95 = 010YYYYY */
 		    if (i < 64) {
 			color[i] = 
-			    ((i & 0x30) >> 4) * one + 	/* r */
-			    ((i & 0x0c) >> 2) * one + 	/* g */
-			    (i & 0x03) * one;		/* b */
+			    (((i & 0x30) >> 4) * one << 16) + 	/* r */
+			    (((i & 0x0c) >> 2) * one << 8) + 	/* g */
+			    (i & 0x03) * one;		        /* b */
 		    }
 		    else {
 			int val = i & 0x1f;
@@ -458,7 +457,7 @@ static int display_size(void *handle, void *device, int width, int height,
 	    if (depth == DISPLAY_DEPTH_8) {
 		if (((img->format & DISPLAY_ALPHA_MASK) == DISPLAY_ALPHA_NONE)
 		    && ((img->format & DISPLAY_ENDIAN_MASK) 
-			== DISPLAY_LITTLEENDIAN))
+			== DISPLAY_BIGENDIAN))
 		    break;
 		else {
 		    /* need to convert to 24RGB */
@@ -628,8 +627,9 @@ static int display_sync(void *handle, void *device)
 	    break;
 	case DISPLAY_COLORS_RGB:
 	    if ( (depth == DISPLAY_DEPTH_8) && 
-		 ((alpha == DISPLAY_ALPHA_LAST) || 
-	          (alpha == DISPLAY_UNUSED_LAST)) )  {
+		 ((alpha == DISPLAY_ALPHA_FIRST) || 
+	          (alpha == DISPLAY_UNUSED_FIRST)) &&
+		 (endian == DISPLAY_BIGENDIAN) ) {
 		/* Mac format */
 		int x, y;
 		unsigned char *s, *d;
@@ -646,7 +646,8 @@ static int display_sync(void *handle, void *device)
 	    }
 	    else if ( (depth == DISPLAY_DEPTH_8) &&
 		      (endian == DISPLAY_LITTLEENDIAN) ) {
-	        if (alpha == DISPLAY_UNUSED_LAST) {
+	        if ((alpha == DISPLAY_UNUSED_LAST) ||
+	            (alpha == DISPLAY_ALPHA_LAST)) {
 		    /* Windows format + alpha = BGRx */
 		    int x, y;
 		    unsigned char *s, *d;
@@ -657,6 +658,22 @@ static int display_sync(void *handle, void *device)
 			    *d++ = s[2];	/* r */
 			    *d++ = s[1];	/* g */
 			    *d++ = s[0];	/* b */
+			    s += 4;
+			}
+		    }
+		}
+	        else if ((alpha == DISPLAY_UNUSED_FIRST) ||
+	            (alpha == DISPLAY_ALPHA_FIRST)) {
+		    /* xBGR */
+		    int x, y;
+		    unsigned char *s, *d;
+		    for (y = 0; y<img->height; y++) {
+			s = img->buf + y * img->rowstride;
+			d = img->rgbbuf + y * img->width * 3;
+			for (x=0; x<img->width; x++) {
+			    *d++ = s[3];	/* r */
+			    *d++ = s[2];	/* g */
+			    *d++ = s[1];	/* b */
 			    s += 4;
 			}
 		    }
