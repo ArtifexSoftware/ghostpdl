@@ -1,410 +1,365 @@
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<!DOCTYPE doctype PUBLIC "-//w3c//dtd html 4.0 transitional//en">
 <html>
 <head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.76 [en] (Windows NT 5.0; U) [Netscape]">
-   <title>GhostPCL5e, GhostPCL5c, and GhostPXL</title>
+    
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+    
+  <meta name="GENERATOR"
+ content="Mozilla/4.76 [en] (Windows NT 5.0; U) [Netscape]">
+  <title>GhostPCL5e, GhostPCL5c, and GhostPXL</title>
 </head>
-<body text="#000000" bgcolor="#FFFFFF" link="#0000EF" vlink="#51188E" alink="#FF0000">
-
-<h1>
-<img SRC="ghost64.gif" height=100 width=102> GhostPCL</h1>
-
-<hr>
-<br>This page discusses configuration, compilation and running of the&nbsp;
-GhostPCL family of products:&nbsp; PCL5E<sup>TM</sup>, PCL5c<sup>TM</sup>,
-PCLXL<sup>TM</sup>, and HPGL/2<sup>TM</sup> with RTL<sup>TM</sup>, additionally
-a scaled down PJL<sup>TM</sup> (Printer Job Language) interpreter is provided.&nbsp;
-All of the PCL products use the Ghostscript Graphic Library for graphics,
-imaging and driver support.&nbsp; A brief tour of the <a href="http://www.cs.wisc.edu/~ghost/">Ghostscript
-documentation (web)</a>&nbsp; <a href="../gs/doc/index.html">(local)</a>
-will be helpful to understand this document.&nbsp; The following is a short
-overview of GhostPCL, immediately followed by a "hands on" discussion of
-how to build and run the software.
-<p>GhostPCL is PCL<sup>TM</sup> technology; it is not intended to be a
-finished software application but a collection of software components that
-will ultimately be included in a software application or a real time embedded
-system.&nbsp; Generally the GhostPCL languages are compliant with the Genoa
-(now QualityLogic) Functional Test Suite and the Genoa Application Test
-suite.&nbsp; Also each language should run the corresponding Genoa Comprehensive
-Evaluation Test (CET) without egregious errors.
-<p>In this document and the software PCL6 refers to technology that supports
-both PCL5<sup>TM</sup> and PCLXL<sup>TM</sup> languages.
-<h2>
-Quick Start For Unix environment with GCC.</h2>
-<tt><font size=+0>tar zxvf ghostpcl-xxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# unpack the release <sup>1</sup></font></tt>
-<br><tt><font size=+0>tar zxvf urwfonts-xxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# unpack the fonts.</font></tt>
-<br><tt><font size=+0>mkdir -p /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# make a font directory. <sup>2</sup></font></tt>
-<br><tt><font size=+0>cp urwfonts-xxx/*.ttf /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# copy the fonts.</font></tt>
-<br><tt><font size=+0>cd ghostpcl-xxx/main/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# change to build directory</font></tt>
-<br><tt><font size=+0>make -f pcl6_gcc.mak&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# build PCL and PCLXL.</font></tt>
-<br><tt><font size=+0>cd obj&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# move to the executable's directory.</font></tt>
-<br><tt><font size=+0>pcl6 ../../tools/owl.pcl&nbsp; ../../tools/frs96.pxl
-# test with PCL and PXL test file</font></tt>
-<p><tt><font size=+0>1. If tar 'z' option is not supported: gunzip ghostpcl-xxx.tar.gz;
-tar xvf ghostpcl-xxx.tar.</font></tt>
-<br><tt><font size=+0>2. See&nbsp;</font></tt> <a href="#Fonts">#Fonts</a>&nbsp;
-to configure this differently..
-<br>&nbsp;
-<h2>
-Supported development environments</h2>
-
+  <body text="#000000" bgcolor="#ffffff" link="#0000ef" vlink="#51188e"
+ alink="#ff0000">
+  
+<h1> <img src="ghost64.gif" height="100" width="102">
+ GhostPCL</h1>
+  
+<hr> <br>
+This page discusses configuration, compilation and running of the&nbsp; GhostPCL
+family of products:&nbsp; PCL5E<sup>TM</sup>, PCL5c<sup>TM</sup>, PCLXL<sup>TM</sup>,
+and HPGL/2<sup>TM</sup> with RTL<sup>TM</sup>, additionally a scaled down
+PJL<sup>TM</sup> (Printer Job Language) interpreter is provided.&nbsp; All
+of the PCL products use the Ghostscript Graphic Library for graphics, imaging
+and driver support.&nbsp; A brief tour of the <a
+ href="http://www.cs.wisc.edu/%7Eghost/">Ghostscript documentation (web)</a>&nbsp;
+<a href="../gs/doc/index.html">(local)</a> will be helpful to understand
+this document.&nbsp; The following is a short overview of GhostPCL, immediately
+followed by a "hands on" discussion of how to build and run the software. 
+<p>GhostPCL is PCL<sup>TM</sup> technology; it is not intended to be a finished
+software application but a collection of software components that will ultimately
+be included in a software application or a real time embedded system.&nbsp;
+Generally the GhostPCL languages are compliant with the Genoa (now QualityLogic)
+Functional Test Suite and the Genoa Application Test suite.&nbsp; Also each
+language should run the corresponding Genoa Comprehensive Evaluation Test
+(CET) without egregious errors. </p>
+<p>In this document and the software PCL6 refers to technology that supports 
+both PCL5<sup>TM</sup> and PCLXL<sup>TM</sup> languages. </p>
+<h2> Quick Start For Unix environment with GCC.</h2>
+ <tt><font size="+0">tar zxvf ghostpcl-xxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+# unpack the release <sup>1</sup></font></tt> <br>
+<tt><font size="+0">tar zxvf urwfonts-xxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+# unpack the fonts.</font></tt> <br>
+<tt><font size="+0">mkdir -p /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+# make a font directory. <sup>2</sup></font></tt> <br>
+<tt><font size="+0">cp urwfonts-xxx/*.ttf /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+# copy the fonts.</font></tt> <br>
+<tt><font size="+0">cd ghostpcl-xxx/main/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+# change to build directory</font></tt> <br>
+<tt><font size="+0">make -f pcl6_gcc.mak&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+# build PCL and PCLXL.</font></tt> <br>
+<tt><font size="+0">cd obj&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+# move to the executable's directory.</font></tt> <br>
+<tt><font size="+0">pcl6 ../../tools/owl.pcl&nbsp; ../../tools/frs96.pxl #
+test with PCL and PXL test file</font></tt> 
+<p><tt><font size="+0">1. If tar 'z' option is not supported: gunzip ghostpcl-xxx.tar.gz; 
+tar xvf ghostpcl-xxx.tar.</font></tt> <br>
+<tt><font size="+0">2. See&nbsp;</font></tt> <a href="#Fonts">#Fonts</a>&nbsp; 
+to configure this differently.. <br>
+&nbsp; </p>
+<h2> Supported development environments</h2>
+  
 <ul>
-<li>
-<a href="#MSVC Compile">Windows NT and '95 with Microsoft Visual C/C++</a></li>
-
-<li>
-<a href="#Linux GCC">Linux with gcc</a></li>
-
-<li>
-<a href="#Generic Unix">Unix environments without GCC</a></li>
+ <li> <a href="#MSVC%20Compile">Windows NT and '95 with Microsoft Visual
+C/C++</a></li>
+  <li> <a href="#Linux%20GCC">Linux with gcc</a></li>
+  <li> <a href="#Generic%20Unix">Unix environments without GCC</a></li>
+ 
 </ul>
-
-<h2>
-<a NAME="UNPACKING"></a>Unpacking the source</h2>
-The source code will either be on CD-ROM (without any archiving or compression)
-or in a archived compressed format.&nbsp; Zip is used for Windows environments
-and compressed tar format for Unix environments.&nbsp; If you have a CD-ROM
-release you will want to replicate the directory structure from the CD-ROM
-to a development directory on a hard drive.&nbsp; The compile process does
-not require a special directory name.
-<p>For Windows use:
-<p>pkunzip -d &lt;archive_name>
-<p>For Unix use:
-<p>gunzip &lt;archive_name.gz>
-<br>tar xvf &lt;archive_name>
-<p>or
-<p>Some versions of tar can uncompress the archive as well:
-<p>tar zxvf &lt;archive_name.gz>
-<p>After unpacking the resulting directory hierarchy should look like this:
-<br>&nbsp;
-<br>&nbsp;
-<table BORDER COLS=2 WIDTH="100%" NOSAVE >
-<tr>
-<td>pcl</td>
-
-<td>pcl interpreter</td>
-</tr>
-
-<tr>
-<td>pl</td>
-
-<td>pxl and pcl common library</td>
-</tr>
-
-<tr>
-<td>common</td>
-
-<td>pcl and pxl shared makefiles</td>
-</tr>
-
-<tr>
-<td>tools</td>
-
-<td>miscellaneous tools</td>
-</tr>
-
-<tr>
-<td>gs</td>
-
-<td>Ghostscript Graphics Library</td>
-</tr>
-
-<tr>
-<td>gs/jpeg</td>
-
-<td>JPEG library</td>
-</tr>
-
-<tr>
-<td>gs/libpng</td>
-
-<td>Portable network graphics library</td>
-</tr>
-
-<tr>
-<td>gs/zlib</td>
-
-<td>compression library</td>
-</tr>
-
-<tr>
-<td>pxl</td>
-
-<td>XL interpreter</td>
-</tr>
-
-<tr>
-<td>main&nbsp;</td>
-
-<td>main makefile and build directory</td>
-</tr>
+  
+<h2> <a name="UNPACKING"></a>Unpacking the source</h2>
+ The source code will either be on CD-ROM (without any archiving or compression) 
+or in a archived compressed format.&nbsp; Zip is used for Windows environments 
+and compressed tar format for Unix environments.&nbsp; If you have a CD-ROM 
+release you will want to replicate the directory structure from the CD-ROM 
+to a development directory on a hard drive.&nbsp; The compile process does 
+not require a special directory name. 
+<p>For Windows use: </p>
+<p>pkunzip -d &lt;archive_name&gt; </p>
+<p>For Unix use: </p>
+<p>gunzip &lt;archive_name.gz&gt; <br>
+tar xvf &lt;archive_name&gt; </p>
+<p>or </p>
+<p>Some versions of tar can uncompress the archive as well: </p>
+<p>tar zxvf &lt;archive_name.gz&gt; </p>
+<p>After unpacking the resulting directory hierarchy should look like this: 
+<br>
+&nbsp; <br>
+&nbsp; 
+<table border="1" cols="2" width="100%" nosave="">
+ <tbody>
+    <tr>
+ <td>pcl</td>
+  <td>pcl interpreter</td>
+ </tr>
+  <tr>
+ <td>pl</td>
+  <td>pxl and pcl common library</td>
+ </tr>
+  <tr>
+ <td>common</td>
+  <td>pcl and pxl shared makefiles</td>
+ </tr>
+  <tr>
+ <td>tools</td>
+  <td>miscellaneous tools</td>
+ </tr>
+  <tr>
+ <td>gs</td>
+  <td>Ghostscript Graphics Library</td>
+ </tr>
+  <tr>
+ <td>gs/jpeg</td>
+  <td>JPEG library</td>
+ </tr>
+  <tr>
+ <td>gs/libpng</td>
+  <td>Portable network graphics library</td>
+ </tr>
+  <tr>
+ <td>gs/zlib</td>
+  <td>compression library</td>
+ </tr>
+  <tr>
+ <td>pxl</td>
+  <td>XL interpreter</td>
+ </tr>
+  <tr>
+ <td>main&nbsp;</td>
+  <td>main makefile and build directory</td>
+ </tr>
+ 
+  </tbody>
 </table>
-
-<p>This directory structure is the default, but the directories can be
-rearranged with minor modifications to the makefiles.
-<h2>
-<a NAME="MSVC Compile"></a>Building with Microsoft Visual C/C++</h2>
-The PCL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0.&nbsp;
-There are 2 ways of building the PCL components with Microsoft Visual C/C++:&nbsp;
-Convert the current makefile environment to a Visual C/C++ project ; or
-compile the source directly using nmake.&nbsp; The following steps take
-you through converting the supplied makefile environment to a Visual C++
-project:
+  </p>
+<p>This directory structure is the default, but the directories can be rearranged
+with minor modifications to the makefiles. </p>
+<h2> <a name="MSVC Compile"></a>Building with Microsoft Visual C/C++</h2>
+ The PCL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0.&nbsp; 
+There are 2 ways of building the PCL components with Microsoft Visual C/C++:&nbsp; 
+Convert the current makefile environment to a Visual C/C++ project ; or compile
+the source directly using nmake.&nbsp; The following steps take you through
+converting the supplied makefile environment to a Visual C++ project: 
 <ul>
-<li>
-Unpack the source code, see&nbsp; <a href="#UNPACKING">Unpacking the source</a>
-.</li>
-
-<li>
-Start MSVC++.</li>
-
-<li>
-Open pcl6_msvc.mak.&nbsp; `File` `Open`, combo box set to `Auto`;&nbsp;
+ <li> Unpack the source code, see&nbsp; <a href="#UNPACKING">Unpacking the
+source</a> .</li>
+  <li> Start MSVC++.</li>
+  <li> Open pcl6_msvc.mak.&nbsp; `File` `Open`, combo box set to `Auto`;&nbsp; 
 DevStudio will wrap the makefile.</li>
-
-<li>
-Change Project Settings.&nbsp; (Alt F7) `Project` `Settings`</li>
-
+  <li> Change Project Settings.&nbsp; (Alt F7) `Project` `Settings`</li>
+  
+  <ul>
+ <li> General Tab Build Command Line</li>
+  
+    <ul>
+ <li> NMAKE /f pcl6_msvc.mak DEBUG=1 DEVSTUDIO=c:\progra~1\micros~3</li>
+  
+      <ul>
+ <li> DEBUG=1/0 on/off will require you manually clean;&nbsp; del main\obj\*.*</li>
+  <li> DEVSTUDIO needs a dos mangled path to Microsoft Visual Studio</li>
+  
+        <ul>
+ <li> dir /x can be used to find the mangled&nbsp; name.</li>
+ 
+        </ul>
+ 
+      </ul>
+ 
+    </ul>
+  <li> Debug Tab Executable for debug session:</li>
+  
+    <ul>
+ <li> .\obj\pcl6.exe</li>
+ 
+    </ul>
+  <li> Debug Tab Program arguments:</li>
+  
+    <ul>
+ <li> command line arguments for the file to debug</li>
+ 
+    </ul>
+ 
+  </ul>
+  <li> Now PCL6 is set to be compiled, debugged and use other features of
+the MSVC++ IDE.</li>
+ 
+</ul>
+  
+<p><br>
+This will build both the PCL and XL language and supporting language switching
+code. </p>
+<p><b>Note:</b> </p>
+<p>Dos hackers can start up a dos window, set the DEVSTUDIO environment variable,
+and use the same make commands as above (the DEVSTUDIO variable should be
+set to the top level of the Microsoft Developer Studio, e.g. set DEVSTUDIO=c:\progra~1\devstu~1") 
+<br>
+&nbsp;&nbsp;&nbsp; or <br>
+NMAKE /f pcl6_msvc.mak DEBUG=1 DEVSTUDIO=c:\progra~1\micros~3 <br>
+&nbsp; </p>
+<h2> <a name="Linux GCC"></a>Building with Linux GCC</h2>
+ The pcl tools have been compiled on Linux using GCC.&nbsp; The makefile should
+only require minor modification to work on other UNIX environments using
+the GCC compiler and supporting tools. <br>
+&nbsp; 
 <ul>
-<li>
-General Tab Build Command Line</li>
-
+ <li> Unpack the source code, see&nbsp; <a href="#UNPACKING">Unpacking the
+source</a>.</li>
+  <li> Create a symbolic link to the makefile:</li>
+ 
+</ul>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+make /f pcl6_gcc.mak 
 <ul>
-<li>
-NMAKE /f pcl6_msvc.mak DEBUG=1 DEVSTUDIO=c:\progra~1\micros~3</li>
-
+ <li> Configure makefile variables, see configuration</li>
+  <li> Change to the desired directory pcl or pxl and use make to build the
+desired configuration.</li>
+ 
+</ul>
+  
+<h2> <a name="Generic Unix"></a>Building on a generic UNIX platform</h2>
+ The PCL tools have been compiled on Solaris with the Sun Development Tools 
+and SGI with the native SGI C compiler.&nbsp; We only provide makefiles for
+the gcc tools and assume users can customize the gcc makefiles such that
+they work with vendor's compilers.&nbsp; For the Sun Development tools the
+following workaround is sufficient to build the software: 
+<p>&nbsp; make -f pcl6_gcc.mak CC_=cc CCLD=cc \ <br>
+&nbsp; CCAUX=cc CFLAGS=-g CC_NO_WARN=cc GCFLAGS= </p>
+<p>If you intend to do development using the software a dedicated makefile 
+should be constructed. </p>
+<h1> <b>Customizing the build process</b></h1>
+ The build process is completely configurable.&nbsp; Here is a list of things 
+that are most likely to change: 
 <ul>
-<li>
-DEBUG=1/0 on/off will require you manually clean;&nbsp; del main\obj\*.*</li>
-
-<li>
-DEVSTUDIO needs a dos mangled path to Microsoft Visual Studio</li>
-
+ <li> Directory location of source directories.</li>
+  <li> Directory location of objects, executables, and other compile time
+generated files.</li>
+  <li> Selection of devices.</li>
+  <li> Directory location of PJL&nbsp; filesystem volume 0 and 1</li>
+  
+  <ul>
+ <li> Defaults to /tmp/pjl0 and /tmp/pjl1</li>
+  <li> Edit pl/pl.mak&nbsp; PJL_VOLUME_0 and PJL_VOLUME_1 to match desired
+root</li>
+ 
+  </ul>
+ 
+</ul>
+ All of these can be configured in the top level makefile or can be specified 
+on the make command line. 
+<p>The following make targets are available: </p>
 <ul>
-<li>
-dir /x can be used to find the mangled&nbsp; name.</li>
+ <li> debug - build tools with symbols and debugging information</li>
+  <li> product - builds optimized code.</li>
+  <li> pg-fp - builds profiling code for hardware with floating point.</li>
+  <li> pg-nofp - builds profiling code for hardware with no floating point
+(i.e. with floating point emulation software).</li>
+ 
 </ul>
-</ul>
-</ul>
-
-<li>
-Debug Tab Executable for debug session:</li>
-
-<ul>
-<li>
-.\obj\pcl6.exe</li>
-</ul>
-
-<li>
-Debug Tab Program arguments:</li>
-
-<ul>
-<li>
-command line arguments for the file to debug</li>
-</ul>
-</ul>
-
-<li>
-Now PCL6 is set to be compiled, debugged and use other features of the
-MSVC++ IDE.</li>
-</ul>
-
-<p><br>This will build both the PCL and XL language and supporting language
-switching code.
-<p><b>Note:</b>
-<p>Dos hackers can start up a dos window, set the DEVSTUDIO environment
-variable, and use the same make commands as above (the DEVSTUDIO variable
-should be set to the top level of the Microsoft Developer Studio, e.g.
-set DEVSTUDIO=c:\progra~1\devstu~1")
-<br>&nbsp;&nbsp;&nbsp; or
-<br>NMAKE /f pcl6_msvc.mak DEBUG=1 DEVSTUDIO=c:\progra~1\micros~3
-<br>&nbsp;
-<h2>
-<a NAME="Linux GCC"></a>Building with Linux GCC</h2>
-The pcl tools have been compiled on Linux using GCC.&nbsp; The makefile
-should only require minor modification to work on other UNIX environments
-using the GCC compiler and supporting tools.
-<br>&nbsp;
-<ul>
-<li>
-Unpack the source code, see&nbsp; <a href="#UNPACKING">Unpacking the source</a>.</li>
-
-<li>
-Create a symbolic link to the makefile:</li>
-</ul>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-make /f pcl6_gcc.mak
-<ul>
-<li>
-Configure makefile variables, see configuration</li>
-
-<li>
-Change to the desired directory pcl or pxl and use make to build the desired
-configuration.</li>
-</ul>
-
-<h2>
-<a NAME="Generic Unix"></a>Building on a generic UNIX platform</h2>
-The PCL tools have been compiled on Solaris with the Sun Development Tools
-and SGI with the native SGI C compiler.&nbsp; We only provide makefiles
-for the gcc tools and assume users can customize the gcc makefiles such
-that they work with vendor's compilers.&nbsp; For the Sun Development tools
-the following workaround is sufficient to build the software:
-<p>&nbsp; make -f pcl6_gcc.mak CC_=cc CCLD=cc \
-<br>&nbsp; CCAUX=cc CFLAGS=-g CC_NO_WARN=cc GCFLAGS=
-<p>If you intend to do development using the software a dedicated makefile
-should be constructed.
-<h1>
-<b>Customizing the build process</b></h1>
-The build process is completely configurable.&nbsp; Here is a list of things
-that are most likely to change:
-<ul>
-<li>
-Directory location of source directories.</li>
-
-<li>
-Directory location of objects, executables, and other compile time generated
-files.</li>
-
-<li>
-Selection of devices.</li>
-
-<li>
-Directory location of PJL&nbsp; filesystem volume 0 and 1</li>
-
-<ul>
-<li>
-Defaults to /tmp/pjl0 and /tmp/pjl1</li>
-
-<li>
-Edit pl/pl.mak&nbsp; PJL_VOLUME_0 and PJL_VOLUME_1 to match desired root</li>
-</ul>
-</ul>
-All of these can be configured in the top level makefile or can be specified
-on the make command line.
-<p>The following make targets are available:
-<ul>
-<li>
-debug - build tools with symbols and debugging information</li>
-
-<li>
-product - builds optimized code.</li>
-
-<li>
-pg-fp - builds profiling code for hardware with floating point.</li>
-
-<li>
-pg-nofp - builds profiling code for hardware with no floating point (i.e.
-with floating point emulation software).</li>
-</ul>
-
-<h1>
-Building only one Language</h1>
-
-<p><br>PCL or PCL-XL can be built together in a language switching environment
-or each can be built alone with the supporting PJL interpreter.&nbsp; The
-simplest way to implement one language is simply to remove the unwanted
-implementation from the pdl implementation table located in pl/plimpl.c:
-<p>For example, this is the default table with two implementations: PCL
-and XL.
-<p>&nbsp;&nbsp;&nbsp; /* Zero-terminated list of pointers to implementations
-*/
-<br>&nbsp;&nbsp;&nbsp; pl_interp_implementation_t const * const pdl_implementation[]
-= {
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;pcl_implementation,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;pxl_implementation,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0
-<br>&nbsp;&nbsp;&nbsp; };
-<p>If you only wish to use the pcl interpreter use the following table:
-<p>&nbsp;&nbsp; /* Zero-terminated list of pointers to implementations
-*/
-<br>&nbsp;&nbsp;&nbsp; pl_interp_implementation_t const * const pdl_implementation[]
-= {
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;pcl_implementation,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0
-<br>&nbsp;&nbsp;&nbsp; };
-<h1>
-Running the products.</h1>
-<i>"Few things are harder to put up with than a good example"&nbsp; - Mark
-Twain</i>
-<p>All options supplied to the interpreter in the following examples are
-described in the&nbsp; <a href="http://www.cs.wisc.edu/~ghost/">Ghostscript
-documentation.&nbsp; </a><a href="../gs/doc/index.html">(local)</a>
-<p><b>pcl6 -sDEVICE=x11 mypcl.pcl</b>
-<p>interpret a pcl file called mypcl.pcl and render to the x11 device.
-<p><b>pcl6 -sDEVICE=ljet4 -sOutputFile="| lpr" -dNOPAUSE mypcl.pcl</b>
-<p>interpret mypcl.pcl and send the Laserjet 4 formatted output to the
-command lpr, lpr should then send it to a real printer.&nbsp; Note this
-is for unix systems.
-<p><b>pcl6 -sDEVICE=pcxcmyk -sOutputFile="pcxpage.%d" -dNOPAUSE mypcl.pcl</b>
-<p>interpret mypcl.pcl and generate CMYK output. Pages are to be put in
-files named pcxpage.1, pcxpage.2, pcxpage.3, etc.
-<p><b>pcl6 -r72 -sDEVICE=x11mono mypcl.pcl -r100 -sDEVICE=x11 mypcl.pcl</b>
-<p>render a pcl file at 72dpi on the monochrome X11 device, then render
-the same file at 100 dpi&nbsp; on color X11 device.&nbsp; This demonstrates
-on-the-fly device switching.
-<p><b>pcl6</b>
-<p>simply running the interpreter should generate some useful information
-about the available options and devices.
-<br>&nbsp;
-<h1>
-PCL Personality</h1>
-
-<p><br>The PCL emulation comes in three flavors: PCL5E, PCL5C, and RTL.&nbsp;
-The PCL5E personality thresholds colors to black and white irrespective
-of the color parameters of the output device.&nbsp; PCL5C is the color
-personality, used with a monochrome device it will grayscale colors.&nbsp;
-The RTL personality can be used to print HPGL/2 RTL plot files.
-<p><b>pcl6 -PRTL myrtl.rtl</b>
-<p>run the interpreter with the rtl personality.
-<p><b>pcl6 -PPCL5E -sDEVICE=ljet4 mypcl.pcl</b>
-<p>run the interpreter with the pcl5e personality.&nbsp; This will threshold
-colors to black and white (ljet4 is a 1 bit device).
-<p><b>pcl6 -PPCL5C -sDEVICE=ljet4 mypcl.pcl</b>
-<p>run the interpreter with the pcl5c personality.&nbsp; This will grayscale
-colors on the 1 bit output device.
-<p>If not set on the command line the pcl interpreter personality will
-be set to PCL5E if the output device is 1 bit per pixel otherwise it is
-set to PCL5C.&nbsp; RTL must be explicitly set on the command line.&nbsp;
-RTL always grayscales and never thresholds colors to black and white.
-<h2>
-<a NAME="Fonts"></a>Fonts</h2>
-The release is packaged with 45 high quality URW TrueType fonts.&nbsp;
-For commercial use of the GhostPCL technology these fonts can be licensed
-from Artifex.&nbsp; The fonts are searched for in either the fonts, /windows/fonts,
-or a directory specified with the PCLFONTSOURCE environment variable.
-<p>Fonts from a third-party vendor such as&nbsp; <a href="http://www.agfa.com">Agfa</a>&nbsp;
-or&nbsp; <a href="http://www.bitstream.com">Bitstream</a>&nbsp; may also
-be used.&nbsp; There is an existing interface for hooking in the AGFA Universal
-Font Scaler Technology, several Artifex customers currently use this solution.&nbsp;
-The software can use Hewlett Packard FONTSMART version 1.5 or Windows TrueType
-fonts, using either of these font solutions require minor <a href="#PCL Code modifications to use Windows TrueType fonts">PCL
-code modifications.</a>
-<h1>
-<a NAME="PCL Code modifications to use Windows TrueType fonts"></a>PCL
+  
+<h1> Building only one Language</h1>
+  
+<p><br>
+PCL or PCL-XL can be built together in a language switching environment or
+each can be built alone with the supporting PJL interpreter.&nbsp; The simplest
+way to implement one language is simply to remove the unwanted implementation
+from the pdl implementation table located in pl/plimpl.c: </p>
+<p>For example, this is the default table with two implementations: PCL and
+XL. </p>
+<p>&nbsp;&nbsp;&nbsp; /* Zero-terminated list of pointers to implementations 
+*/ <br>
+&nbsp;&nbsp;&nbsp; pl_interp_implementation_t const * const pdl_implementation[] 
+= { <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;pcl_implementation, 
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;pxl_implementation, 
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 <br>
+&nbsp;&nbsp;&nbsp; }; </p>
+<p>If you only wish to use the pcl interpreter use the following table: </p>
+<p>&nbsp;&nbsp; /* Zero-terminated list of pointers to implementations */ 
+<br>
+&nbsp;&nbsp;&nbsp; pl_interp_implementation_t const * const pdl_implementation[] 
+= { <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;pcl_implementation, 
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 <br>
+&nbsp;&nbsp;&nbsp; }; </p>
+<h1> Running the products.</h1>
+ <i>"Few things are harder to put up with than a good example"&nbsp; - Mark 
+Twain</i> 
+<p>All options supplied to the interpreter in the following examples are described
+in the&nbsp; <a href="http://www.cs.wisc.edu/%7Eghost/">Ghostscript documentation.&nbsp;
+</a><a href="../gs/doc/index.html">(local)</a> </p>
+<p><b>pcl6 -sDEVICE=x11 mypcl.pcl</b> </p>
+<p>interpret a pcl file called mypcl.pcl and render to the x11 device. </p>
+<p><b>pcl6 -sDEVICE=ljet4 -sOutputFile="| lpr" -dNOPAUSE mypcl.pcl</b> </p>
+<p>interpret mypcl.pcl and send the Laserjet 4 formatted output to the command
+lpr, lpr should then send it to a real printer.&nbsp; Note this is for unix
+systems. </p>
+<p><b>pcl6 -sDEVICE=pcxcmyk -sOutputFile="pcxpage.%d" -dNOPAUSE mypcl.pcl</b> 
+</p>
+<p>interpret mypcl.pcl and generate CMYK output. Pages are to be put in files
+named pcxpage.1, pcxpage.2, pcxpage.3, etc. </p>
+<p><b>pcl6 -r72 -sDEVICE=x11mono mypcl.pcl -r100 -sDEVICE=x11 mypcl.pcl</b> 
+</p>
+<p>render a pcl file at 72dpi on the monochrome X11 device, then render the
+same file at 100 dpi&nbsp; on color X11 device.&nbsp; This demonstrates on-the-fly
+device switching. </p>
+<p><b>pcl6</b> </p>
+<p>simply running the interpreter should generate some useful information 
+about the available options and devices. <br>
+&nbsp; </p>
+<h1> PCL Personality</h1>
+  
+<p><br>
+The PCL emulation comes in three flavors: PCL5E, PCL5C, and RTL.&nbsp; The
+PCL5E personality thresholds colors to black and white irrespective of the
+color parameters of the output device.&nbsp; PCL5C is the color personality,
+used with a monochrome device it will grayscale colors.&nbsp; The RTL personality
+can be used to print HPGL/2 RTL plot files. </p>
+<p><b>pcl6 -PRTL myrtl.rtl</b> </p>
+<p>run the interpreter with the rtl personality. </p>
+<p><b>pcl6 -PPCL5E -sDEVICE=ljet4 mypcl.pcl</b> </p>
+<p>run the interpreter with the pcl5e personality.&nbsp; This will threshold 
+colors to black and white (ljet4 is a 1 bit device). </p>
+<p><b>pcl6 -PPCL5C -sDEVICE=ljet4 mypcl.pcl</b> </p>
+<p>run the interpreter with the pcl5c personality.&nbsp; This will grayscale 
+colors on the 1 bit output device. </p>
+<p>If not set on the command line the pcl interpreter personality will be
+set to PCL5E if the output device is 1 bit per pixel otherwise it is set
+to PCL5C.&nbsp; RTL must be explicitly set on the command line.&nbsp; RTL
+always grayscales and never thresholds colors to black and white. </p>
+<h2> <a name="Fonts"></a>Fonts</h2>
+ The release is packaged with 45 high quality URW TrueType fonts.&nbsp; For
+commercial use of the GhostPCL technology these fonts can be licensed from
+Artifex.&nbsp; The fonts are searched for in either the fonts, /windows/fonts, 
+or a directory specified with the PCLFONTSOURCE environment variable. 
+<p>Fonts from a third-party vendor such as&nbsp; <a
+ href="http://www.agfa.com">Agfa</a>&nbsp; or&nbsp; <a
+ href="http://www.bitstream.com">Bitstream</a>&nbsp; may also be used.&nbsp;
+There is an existing interface for hooking in the AGFA Universal Font Scaler
+Technology, several Artifex customers currently use this solution.&nbsp; The
+software can use Hewlett Packard FONTSMART version 1.5 or Windows TrueType 
+fonts, using either of these font solutions require minor <a
+ href="#PCL%20Code%20modifications%20to%20use%20Windows%20TrueType%20fonts">PCL 
+code modifications.</a> </p>
+<h1> <a name="PCL Code modifications to use Windows TrueType fonts"></a>PCL 
 Code changes required to use other TrueType fonts.</h1>
-At this time, PCL does not have a font mapping technology so to use a new
-set of TrueType fonts requires modifying the C code in the file pl/pllfont.c.&nbsp;
-The C structure resident_table contains a list of Windows TrueType font
-names.&nbsp; In the released package these names will correspond with the
-Windows True Type
-<br>font names in the URW font set.&nbsp; To use a different font set these
-names must be replaced with the new font names and the code (minimally
-the pllfont.c module) should be recompiled and linked.
-<h1>
-Reporting bugs</h1>
-Use the <a href="http://meerkat.dimensional.com/pcldocs/pclbug.html">bug
-reporting form</a> .
-<p>A frequently asked question file is under construction&nbsp; <a href="pclfaq.htm">here.</a>
-<p>Please send comments about this documentation to <a href="mailto::bug-pcl@ghostscript.com">bug-pcl@ghostscript.com</a>
-.
+ At this time, PCL does not have a font mapping technology so to use a new 
+set of TrueType fonts requires modifying the C code in the file pl/pllfont.c.&nbsp; 
+The C structure resident_table contains a list of Windows TrueType font names.&nbsp;
+In the released package these names will correspond with the Windows True
+Type <br>
+font names in the URW font set.&nbsp; To use a different font set these names
+must be replaced with the new font names and the code (minimally the pllfont.c
+module) should be recompiled and linked. 
+<h1> Reporting bugs</h1>
+ 
+<p>A frequently asked question file is under construction&nbsp; <a
+ href="pclfaq.htm">here.</a> </p>
+<p>If you find a bug or have comments about this documentation, please send
+&nbsp;mail to <a href="mailto::bug-pcl@ghostscript.com">bug-pcl@ghostscript.com</a> 
+. </p>
+<br>
 </body>
 </html>
