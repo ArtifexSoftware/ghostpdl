@@ -755,10 +755,10 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     double dx = x - x0, dy = y - y0;
 
     /*
-     * Omit null lines when filling.
+     * Omit null lines except when stroking (so that linecap works).
      ****** MAYBE WRONG IF PATH CONSISTS ONLY OF NULL LINES. ******
      */
-    if (dx != 0 || dy != 0) {
+    if ((type & gx_path_type_stroke) || dx != 0 || dy != 0) {
 	stream *s = gdev_vector_stream(vdev);
 	gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
