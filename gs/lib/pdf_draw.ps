@@ -395,13 +395,14 @@ end
 } bdef
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
-  gsave
+  gsave //nodict begin
+  null SMask
   1 .setopacityalpha 1 .setshapealpha
   0 .inittransparencymask 1 .inittransparencymask
   /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
   pdfopdict .pdfruncontext
-  grestore
+  end grestore
 } bdef
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
