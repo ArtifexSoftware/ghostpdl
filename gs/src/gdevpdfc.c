@@ -546,7 +546,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     case gs_color_space_index_CIEA: {
 	/* Check that we can represent this as a CalGray space. */
 	const gs_cie_a *pcie = pcs->params.a;
-	bool unit = cie_ranges_are_0_1(&pcie->RangeA, 1);
+	bool unitary = cie_ranges_are_0_1(&pcie->RangeA, 1);
 	gs_vector3 expts;
 
 	pciec = (const gs_cie_common *)pcie;
@@ -554,13 +554,13 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	      pcie->MatrixA.w == 1 &&
 	      pcie->common.MatrixLMN.is_identity))
 	    return_error(gs_error_rangecheck);
-	if (unit &&
+	if (unitary &&
 	    CIE_CACHE_IS_IDENTITY(&pcie->caches.DecodeA) &&
 	    CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts) &&
 	    expts.v == expts.u && expts.w == expts.u
 	    ) {
 	    DO_NOTHING;
-	} else if (unit &&
+	} else if (unitary &&
 		   CIE_CACHE3_IS_IDENTITY(pcie->common.caches.DecodeLMN) &&
 		   cie_vector_cache_is_exponential(&pcie->caches.DecodeA, &expts.u)
 		   ) {
@@ -592,14 +592,14 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     case gs_color_space_index_CIEABC: {
 	/* Check that we can represent this as a CalRGB space. */
 	const gs_cie_abc *pcie = pcs->params.abc;
-	bool unit = cie_ranges_are_0_1(pcie->RangeABC.ranges, 3);
+	bool unitary = cie_ranges_are_0_1(pcie->RangeABC.ranges, 3);
 	gs_vector3 expts;
 	const gs_matrix3 *pmat = NULL;
 	cie_cache_one_step_t one_step =
 	    cie_cached_abc_is_one_step(pcie, &pmat);
 
 	pciec = (const gs_cie_common *)pcie;
-	if (unit) {
+	if (unitary) {
 	    switch (one_step) {
 	    case ONE_STEP_ABC:
 		if (CIE_VECTOR3_CACHE_IS_EXPONENTIAL(pcie->caches.DecodeABC.caches, expts))
