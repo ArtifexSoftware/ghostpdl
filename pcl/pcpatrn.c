@@ -1292,8 +1292,9 @@ set_driver_configuration(
 	return e_Range;
 
     /* the only device known to support this command */
-    if ( ( driver->device_id != 6 ) /* hp color laserjet */ &&
-         ( driver->device_id != 8 ) ) /* hp 4500 - 4550 */ {
+    if ( ( driver->device_id < 6 )   /* 6 == hp color laserjet */ 
+         ||                          /* 7 == hp clj 5 */ 
+         ( driver->device_id > 8 ) ) /* 8 == hp 4500 - 4550 */ {
         dprintf1(pcs->memory, "unknown device id %d\n", driver->device_id );
 	return e_Range;
     }
