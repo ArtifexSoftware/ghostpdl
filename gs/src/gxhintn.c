@@ -1787,36 +1787,61 @@ private void t1_hinter__interpolate_other_poles(t1_hinter * this)
             int range_beg;
 
             for (j = beg_contour_pole; j <= end_contour_pole; j++)
-                if (*member_prt(bool, &this->pole[j], offset_f))
+                if (*member_prt(enum t1_align_type, &this->pole[j], offset_f))
                     break;
             if (j > end_contour_pole)
                 continue;
             range_beg = j;
             do {
-                int start_pole = j, stop_pole;
-                t1_glyph_space_coord min_g = * member_prt(t1_glyph_space_coord, &this->pole[j], offset_gc);
-                t1_glyph_space_coord max_g = min_g;
-                int min_i = j, max_i = j;
+                int start_pole = j, stop_pole = -1;
                 t1_glyph_space_coord min_a, max_a;
+		t1_glyph_space_coord min_g, max_g, g0, g1;
+		int min_i = start_pole, max_i = start_pole, cut_l, l;
 
-                for (j = ranger_step_f(j,  beg_contour_pole, end_contour_pole); j != start_pole;
-                     j = ranger_step_f(j,  beg_contour_pole, end_contour_pole)) {
-                    t1_glyph_space_coord g = * member_prt(t1_glyph_space_coord, &this->pole[j], offset_gc);
-                    if (min_g > g)
-                        min_g = g, min_i = j;
-                    if (max_g < g)
-                        max_g = g, max_i = j;
-                    if (*member_prt(bool, &this->pole[j], offset_f))
-                        break;
-                }
-                stop_pole = j;
-                if (min_i != start_pole && min_i < stop_pole)
-                    stop_pole = min_i;
-                if (max_i != start_pole && max_i < stop_pole)
-                    stop_pole = max_i;
-                if (start_pole == stop_pole)
-                    break; /* safety */
+		do {
+		    int min_l = 0, max_l = 0;
+
+		    g0 = *member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_gc);
+		    min_g = g0;
+		    max_g = g0;
+		    min_i = start_pole;
+		    max_i = start_pole;
+		    for (j = ranger_step_f(start_pole,  beg_contour_pole, end_contour_pole), l = 1; 
+		         j != start_pole;
+			 j = ranger_step_f(j,  beg_contour_pole, end_contour_pole), l++) {
+			t1_glyph_space_coord g = * member_prt(t1_glyph_space_coord, &this->pole[j], offset_gc);
+
+			if (min_g > g)
+			    min_g = g, min_i = j, min_l = l;
+			if (max_g < g)
+			    max_g = g, max_i = j, max_l = l;
+			if (*member_prt(enum t1_align_type, &this->pole[j], offset_f))
+			    break;
+			if (j == stop_pole)
+			    break;
+		    }
+		    stop_pole = j;
+		    cut_l = l;
+		    g1 = * member_prt(t1_glyph_space_coord, &this->pole[stop_pole], offset_gc);
+		    if (min_i != start_pole && min_l < cut_l && min_g != g0 && min_g != g1)
+			stop_pole = min_i, cut_l = min_l;
+		    if (max_i != start_pole && max_l < cut_l && max_g != g0 && max_g != g1)
+			stop_pole = max_i, cut_l = max_l;
+		} while (cut_l < l);
+		if (start_pole == stop_pole)
+		    break; /* safety */
                 /* Now start_pole and end_pole point to the contour interval to interpolate. */
+		if (g0 < g1) {
+		    min_g = g0;
+		    max_g = g1;
+		    min_i = start_pole;
+		    max_i = stop_pole;
+		} else {
+		    min_g = g1;
+		    max_g = g0;
+		    min_i = stop_pole;
+		    max_i = start_pole;
+		}
                 min_a = * member_prt(t1_glyph_space_coord, &this->pole[min_i], offset_ac);
                 max_a = * member_prt(t1_glyph_space_coord, &this->pole[max_i], offset_ac);
 #               if 0
@@ -1825,12 +1850,12 @@ private void t1_hinter__interpolate_other_poles(t1_hinter * this)
                         This attempt was not successful.
                         Probably a smarter algorithm is useful.
                     */
-                    if (!*member_prt(bool, &this->pole[min_i], offset_f))
+                    if (!*member_prt(enum t1_align_type, &this->pole[min_i], offset_f))
                         min_a = min_g + Min(max_a-max_g, Min (* member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_ac) - 
                                                               * member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_gc),
                                                               * member_prt(t1_glyph_space_coord, &this->pole[stop_pole ], offset_ac) - 
                                                               * member_prt(t1_glyph_space_coord, &this->pole[stop_pole ], offset_gc)));
-                    else if (!*member_prt(bool, &this->pole[max_i], offset_f))
+                    else if (!*member_prt(enum t1_align_type, &this->pole[max_i], offset_f))
                         max_a = max_g + Max(min_a-min_g, Max (* member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_ac) - 
                                                               * member_prt(t1_glyph_space_coord, &this->pole[start_pole], offset_gc),
                                                               * member_prt(t1_glyph_space_coord, &this->pole[stop_pole ], offset_ac) - 
