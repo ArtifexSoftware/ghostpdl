@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1997, 1998, 1999, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -189,6 +189,7 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 {
     int npush = nstate + 4;
     stream *ps;
+    stream *psstdin;
 
     switch (status) {
 	case INTC:
@@ -210,6 +211,14 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
     esp[-1] = *fop;
     r_clear_attrs(esp - 1, a_executable);
     *esp = ((stream_proc_state *) ps->state)->proc;
+
+    /* If stream is stdin, ask for callout. */
+    zget_stdin(i_ctx_p, &psstdin);
+    if (ps == psstdin) {
+	check_estack(1);
+	esp += 1;
+	make_op_estack(esp, zneedstdin);
+    }
     return o_push_estack;
 }
 /* Continue a read operation after returning from a procedure callout. */
@@ -309,6 +318,8 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 			 const ref * pstate, int nstate, op_proc_t cont)
 {
     stream *ps;
+    stream *psstderr;
+    stream *psstdout;
     stream_proc_state *psst;
 
     switch (status) {
@@ -339,6 +350,15 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
     esp[-2] = psst->proc;
     *esp = psst->data;
     r_set_size(esp, psst->index);
+
+    /* If stream is stdout/err, ask for callout. */
+    zget_stdout(i_ctx_p, &psstdout);
+    zget_stderr(i_ctx_p, &psstderr);
+    if ((ps == psstderr) || (ps == psstdout)) {
+	check_estack(1);
+	esp += 1;
+	make_op_estack(esp, (ps == psstderr) ? zneedstderr : zneedstdout);
+    }
     return o_push_estack;
 }
 /* Continue a write operation after returning from a procedure callout. */

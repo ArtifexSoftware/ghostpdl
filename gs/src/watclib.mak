@@ -120,6 +120,9 @@ BAND_LIST_COMPRESSOR=zlib
 !ifndef FILE_IMPLEMENTATION
 FILE_IMPLEMENTATION=stdio
 !endif
+!ifndef STDIO_IMPLEMENTATION
+STDIO_IMPLEMENTATION=
+!endif
 
 !include $(GLSRCDIR)\wctail.mak
 !include $(GLSRCDIR)\devs.mak

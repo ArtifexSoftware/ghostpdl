@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -178,8 +178,29 @@ zfile(i_ctx_t *i_ctx_p)
 	 * more information.
 	 */
     if (pname.iodev && pname.iodev->dtype == iodev_dtype_stdio) {
+	bool statement = (strcmp(pname.iodev->dname, "%statementedit%") == 0);
+	bool lineedit = (strcmp(pname.iodev->dname, "%lineedit%") == 0);
 	if (pname.fname)
 	    return_error(e_invalidfileaccess);
+	if (statement || lineedit) {
+	    /* These need special code to support callouts */
+	    gx_io_device *indev = gs_findiodevice((const byte *)"%stdin", 6);
+	    stream *ins;
+	    if (strcmp(file_access, "r"))
+		return_error(e_invalidfileaccess);
+	    indev->state = i_ctx_p;
+	    code = (indev->procs.open_device)(indev, file_access, &ins, imemory);
+	    indev->state = 0;
+	    if (code < 0)
+		return code;
+	    check_ostack(2);
+	    push(2);
+	    make_stream_file(op - 3, ins, file_access);
+	    make_bool(op-2, statement);
+	    make_int(op-1, 0);
+	    make_string(op, 0, 0, NULL);
+	    return zfilelineedit(i_ctx_p);
+	}
 	pname.iodev->state = i_ctx_p;
 	code = (*pname.iodev->procs.open_device)(pname.iodev,
 						 file_access, &s, imemory);

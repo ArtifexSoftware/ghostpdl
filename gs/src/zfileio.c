@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -472,12 +472,22 @@ int
 zflush(i_ctx_t *i_ctx_p)
 {
     stream *s;
+    int status;
+    ref rstdout;
     int code = zget_stdout(i_ctx_p, &s);
 
     if (code < 0)
 	return code;
-    sflush(s);
-    return 0;
+
+    make_stream_file(&rstdout, s, "w");
+    status = sflush(s);
+    if (status == 0 || status == EOFC) {
+	return 0;
+    }
+    return
+	(s_is_writing(s) ?
+	 handle_write_status(i_ctx_p, status, &rstdout, NULL, zflush) :
+	 handle_read_status(i_ctx_p, status, &rstdout, NULL, zflush));
 }
 
 /* <file> flushfile - */
@@ -688,7 +698,7 @@ zpeekstring(i_ctx_t *i_ctx_p)
 	    s_process_read_buf(s);
 	    continue;
 	default:
-	    return handle_read_status(i_ctx_p, status, op - 1, &rlen,
+	    return handle_read_status(i_ctx_p, status, op - 1, NULL,
 				      zpeekstring);
 	}
 	break;
@@ -796,6 +806,32 @@ zwritecvp_continue(i_ctx_t *i_ctx_p)
     return zwritecvp_at(i_ctx_p, op - 1, (uint) op->value.intval, false);
 }
 
+/* Callout for stdin */
+/* - .needstdin - */
+int
+zneedstdin(i_ctx_t *i_ctx_p)
+{
+    return e_NeedStdin;		/* Interpreter will exit to caller. */
+}
+
+/* Callout for stdout */
+/* - .needstdout - */
+int
+zneedstdout(i_ctx_t *i_ctx_p)
+{
+    return e_NeedStdout;	/* Interpreter will exit to caller. */
+}
+
+/* Callout for stderr */
+/* - .needstderr - */
+int
+zneedstderr(i_ctx_t *i_ctx_p)
+{
+    return e_NeedStderr;	/* Interpreter will exit to caller. */
+}
+
+
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -832,6 +868,9 @@ const op_def zfileio2_op_defs[] = {
     {"3%zreadstring_continue", zreadstring_continue},
     {"4%zwritecvp_continue", zwritecvp_continue},
     {"3%zwritehexstring_continue", zwritehexstring_continue},
+    {"0.needstdin", zneedstdin},
+    {"0.needstdout", zneedstdout},
+    {"0.needstderr", zneedstderr},
     op_def_end(0)
 };
 

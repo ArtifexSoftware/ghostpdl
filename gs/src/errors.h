@@ -134,11 +134,26 @@ extern const char *const gs_error_names[];
 #define e_NeedInput (-106)
 
 /*
+ * Internal code for stdin callout.
+ */
+#define e_NeedStdin (-107)
+
+/*
+ * Internal code for stdout callout.
+ */
+#define e_NeedStdout (-108)
+
+/*
+ * Internal code for stderr callout.
+ */
+#define e_NeedStderr (-109)
+
+/*
  * Internal code for a normal exit when usage info is displayed.
  * This allows Window versions of Ghostscript to pause until
  * the message can be read.
  */
-#define e_Info (-107)
+#define e_Info (-110)
 
 /*
  * Define which error codes require re-executing the current object.

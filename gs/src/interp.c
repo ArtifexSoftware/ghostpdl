@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -523,6 +523,9 @@ again:
 	    epref = &doref;
 	    goto again;
 	case e_NeedInput:
+	case e_NeedStdin:
+	case e_NeedStdout:
+	case e_NeedStderr:
 	    return code;
     }
     /* Adjust osp in case of operand stack underflow */

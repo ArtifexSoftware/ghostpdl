@@ -124,6 +124,10 @@
 #	    both, provides both implementations with different procedure
 #	    names for the fd-based implementation (see sfxfd.c for
 #	    more information).
+#	STDIO_IMPLEMENTATION - normally '' which uses file based stdio
+#	    in ziodevs.c; 'c' uses callouts and ziodevsc.c.
+#           Callouts use procedure based streams and return back to
+#           to gs_main_interpret() in imain.c whenever stdio is needed.
 #	EXTEND_NAMES - a value N between 0 and 6, indicating that the name
 #	    table should have a capacity of 2^(16+N) names.  This normally
 #	    should be set to 0 (or left undefined), since non-zero values

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1997, 1998, 1999, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -59,12 +59,12 @@ extern const char iodev_dtype_stdio[];
 #define LINEEDIT_BUF_SIZE 20	/* initial size, not fixed size */
 private iodev_proc_open_device(lineedit_open);
 const gx_io_device gs_iodev_lineedit =
-    iodev_special("%lineedit%", iodev_no_init, lineedit_open);
+    iodev_special("%lineedit%", iodev_no_init, iodev_no_open_device);
 
 #define STATEMENTEDIT_BUF_SIZE 50	/* initial size, not fixed size */
 private iodev_proc_open_device(statementedit_open);
 const gx_io_device gs_iodev_statementedit =
-    iodev_special("%statementedit%", iodev_no_init, statementedit_open);
+    iodev_special("%statementedit%", iodev_no_init, iodev_no_open_device);
 
 /* ------ Operators ------ */
 
@@ -93,51 +93,67 @@ zgetiodevice(i_ctx_t *i_ctx_p)
 
 /* ------ %lineedit and %statementedit ------ */
 
-private int
-line_collect(gx_io_device * iodev, const char *access, stream ** ps,
-	     gs_memory_t * mem, uint initial_buf_size, bool statement)
+/* <file> <bool> <int> <string> .filelineedit <file> */
+/* This opens %statementedit% or %lineedit% and is also the 
+ * continuation proc for callouts.
+ * Input:
+ *  string is the statement/line buffer, 
+ *  int is the write index into string
+ *  bool is true if %statementedit%
+ *  file is stdin
+ * Output:
+ *  file is a string based stream
+ */
+int
+zfilelineedit(i_ctx_t *i_ctx_p)
 {
     uint count = 0;
     bool in_eol = false;
     int code;
-    gx_io_device *indev = gs_findiodevice((const byte *)"%stdin", 6);
-    /* HACK: get the context pointer from the IODevice.  See above. */
-    i_ctx_t *i_ctx_p = (i_ctx_t *)iodev->state;
+    os_ptr op = osp;
+    bool statement;
     stream *s;
     stream *ins;
     gs_string str;
+    uint initial_buf_size;
+    const char *filename;
     /*
      * buf exists only for stylistic parallelism: all occurrences of
      * buf-> could just as well be str. .
      */
     gs_string *const buf = &str;
 
-    if (strcmp(access, "r"))
-	return_error(e_invalidfileaccess);
-    s = file_alloc_stream(mem, "line_collect(stream)");
-    if (s == 0)
-	return_error(e_VMerror);
-    /* HACK: see above. */
-    indev->state = i_ctx_p;
-    code = (indev->procs.open_device)(indev, access, &ins, mem);
-    indev->state = 0;
-    if (code < 0)
-	return code;
-    buf->size = initial_buf_size;
-    buf->data = gs_alloc_string(mem, buf->size, "line_collect(buffer)");
-    if (buf->data == 0)
-	return_error(e_VMerror);
+    check_type(*op, t_string);		/* line assembled so far */
+    buf->data = op->value.bytes;
+    buf->size = op->tas.rsize;
+    check_type(*(op-1), t_integer);	/* index */
+    count = (op-1)->value.intval;
+    check_type(*(op-2), t_boolean);	/* statementedit/lineedit */
+    statement = (op-2)->value.boolval;
+    check_read_file(ins, op - 3);	/* %stdin */
+
+    /* extend string */
+    initial_buf_size = statement ? STATEMENTEDIT_BUF_SIZE : LINEEDIT_BUF_SIZE;
+    if (!buf->data || (buf->size < initial_buf_size)) {
+	count = 0;
+	buf->data = gs_alloc_string(imemory, initial_buf_size, 
+	    "zfilelineedit(buffer)");
+	if (buf->data == 0)
+	    return_error(e_VMerror);
+	buf->size = initial_buf_size;
+    }
+
 rd:
+    op->value.bytes = buf->data;
+    op->tas.rsize = buf->size;
+
     /*
      * We have to stop 1 character short of the buffer size,
      * because %statementedit must append an EOL.
      */
     buf->size--;
-    /* HACK: set %stdin's state so that GNU readline can retrieve it. */
-    indev->state = i_ctx_p;
-    code = zreadline_from(ins, buf, mem, &count, &in_eol);
+    code = zreadline_from(ins, buf, imemory, &count, &in_eol);
     buf->size++;		/* restore correct size */
-    indev->state = 0;
     switch (code) {
 	case EOFC:
 	    code = gs_note_error(e_undefinedfilename);
@@ -146,6 +162,16 @@ rd:
 	    break;
 	default:
 	    code = gs_note_error(e_ioerror);
+	    break;
+	case CALLC:
+	    {
+		ref rfile;
+		(op-1)->value.intval = count;
+		/* callout is for stdin */
+		make_file(&rfile, a_readonly | avm_system, ins->read_id, ins);
+		code = s_handle_read_exception(i_ctx_p, code, &rfile,  
+		    NULL, 0, zfilelineedit);
+	    }
 	    break;
 	case 1:		/* filled buffer */
 	    {
@@ -161,8 +187,8 @@ rd:
 		else
 #endif
 		    nsize = buf->size * 2;
-		nbuf = gs_resize_string(mem, buf->data, buf->size, nsize,
-					"line_collect(grow buffer)");
+		nbuf = gs_resize_string(imemory, buf->data, buf->size, nsize,
+					"zfilelineedit(grow buffer)");
 		if (nbuf == 0) {
 		    code = gs_note_error(e_VMerror);
 		    break;
@@ -172,10 +198,8 @@ rd:
 		goto rd;
 	    }
     }
-    if (code != 0) {
-	gs_free_string(mem, buf->data, buf->size, "line_collect(buffer)");
+    if (code != 0)
 	return code;
-    }
     if (statement) {
 	/* If we don't have a complete token, keep going. */
 	stream st;
@@ -201,39 +225,34 @@ sc:
 	    case scan_EOF:
 		break;
 	    default:		/* error */
-		gs_free_string(mem, buf->data, buf->size, "line_collect(buffer)");
 		return code;
 	}
     }
-    buf->data = gs_resize_string(mem, buf->data, buf->size, count,
-			   "line_collect(resize buffer)");
+    buf->data = gs_resize_string(imemory, buf->data, buf->size, count,
+			   "zfilelineedit(resize buffer)");
     if (buf->data == 0)
 	return_error(e_VMerror);
+
+    s = file_alloc_stream(imemory, "zfilelineedit(stream)");
+    if (s == 0)
+	return_error(e_VMerror);
+
     sread_string(s, buf->data, count);
     s->save_close = s->procs.close;
     s->procs.close = file_close_disable;
-    *ps = s;
-    return 0;
-}
 
-private int
-lineedit_open(gx_io_device * iodev, const char *access, stream ** ps,
-	      gs_memory_t * mem)
-{
-    int code = line_collect(iodev, access, ps, mem,
-			    LINEEDIT_BUF_SIZE, false);
+    filename = statement ? gs_iodev_statementedit.dname
+	: gs_iodev_lineedit.dname;
+    code = ssetfilename(s, (const byte *)filename, strlen(filename)+1);
+    if (code < 0) {
+	sclose(s);
+	return_error(e_VMerror);
+    }
 
-    return (code < 0 ? code : 1);
-}
+    pop(3);
+    make_stream_file(osp, s, "r");
 
-private int
-statementedit_open(gx_io_device * iodev, const char *access, stream ** ps,
-		   gs_memory_t * mem)
-{
-    int code = line_collect(iodev, access, ps, mem,
-			    STATEMENTEDIT_BUF_SIZE, true);
-
-    return (code < 0 ? code : 1);
+    return code;
 }
 
 /* ------ Initialization procedure ------ */
