@@ -566,8 +566,13 @@ continue_show(gs_show_enum * penum)
 /* the cached values in the enumerator. */
 private int
 continue_kshow(gs_show_enum * penum)
-{
-    int code = show_state_setup(penum);
+{   int code;
+    gs_state *pgs = penum->pgs;
+
+    if (pgs->font != penum->orig_font) 
+	gs_setfont(pgs, penum->orig_font);
+
+    code = show_state_setup(penum);
 
     if (code < 0)
 	return code;
