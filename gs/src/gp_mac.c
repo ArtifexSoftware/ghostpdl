@@ -69,27 +69,19 @@ noMemoryExit(void)
 }
 
 char *
-mygetenv(const char * env) {
-
-	char 			*p;
-	FSSpec			pFile;
-	OSErr			err = 0;
-	char			fpath[256]="";
-	
-	return 0;
-	
+mygetenv(const char * env)
+{
+	return (NULL);	
 }
 
 
 
 void
 gp_init (void)
-
 {
 	extern char    *gs_lib_default_path;
 	extern char    *gs_init_file;
 	
-
 #if 0
 	/*...Initialize Ghostscript's default library paths and initialization file...*/
 
@@ -238,9 +230,8 @@ UnsignedWide beginMicroTickCount={0,0};
 /* Read the current date (in days since Jan. 1, 1980) */
 /* and time (in nanoseconds since midnight). */
 
-	void
+void
 gpp_get_realtime (long *pdt)
-
 {
 
     UnsignedWide microTickCount,
@@ -266,7 +257,7 @@ gpp_get_realtime (long *pdt)
     nMicroTickCount.hi = microTickCount.hi - beginMicroTickCount.hi;
     
 	GetDateTime ((unsigned long *) &secs);
-	//SecondsToDate (secs, &dateRec);
+	SecondsToDate (secs, &dateRec);
 
 
 	/* If the date is reasonable, subtract the days since Jan. 1, 1980 */
