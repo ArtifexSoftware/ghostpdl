@@ -89,10 +89,10 @@ map_symbol(
     /*
      * If there is no symbol map we assume the the character
      * implicitly indexes the font.
+     * Assumes internal fonts are either plfst_TrueType or plfst_MicroType
      */
     if (psm == 0) {
-	if ( (pfont->scaling_technology == plfst_TrueType) &&
-	     (pfont->storage == pcds_internal)               )
+	if ( pfont->storage == pcds_internal )
 	    return chr + 0xf000;
 	return chr;
     }
