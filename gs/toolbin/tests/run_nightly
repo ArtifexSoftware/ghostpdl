@@ -32,7 +32,7 @@ MAIL_SERVER = 'localhost'
 REPORT_EMAIL = 'gs-regression@ghostscript.com'
 MAIL_FROM = 'regression@casper.ghostscript.com'
 HEAD_DIR = gsconf.gsroot
-REGRESSION_SCRIPT = '/home/regression/regression/run_regression 2>&1'
+REGRESSION_SCRIPT = '/home/regression/regression/run_regression --track 2>&1'
 DIFF_SCRIPT = '/home/regression/regression/testdiff %s 2>&1' % (YESTERDAY,)
 LOG_STDOUT = gsconf.log_stdout
 LOG_STDERR = gsconf.log_stderr
@@ -81,11 +81,6 @@ def change_gsproduct(file):
 
     os.unlink(file)
     os.rename(tmpfile, file)
-
-def create_dailydb():
-    # create a new empty database
-    db = anydbm.open(gsconf.dailydb, "n")
-    db.close()
 
 def sendmail(frm, to, subject, text):
     import smtplib
@@ -164,9 +159,6 @@ try:
     log.close()
 except:
     die("The log files were not able to be restarted")
-
-# create the daily results database
-create_dailydb()
 
 p = os.popen(REGRESSION_SCRIPT)
 if p == None:

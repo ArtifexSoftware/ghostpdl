@@ -22,14 +22,24 @@
 #
 # runs ghostscript regression tests
 
+import sys
+import anydbm
 import gstestutils, gsconf
 import check_all
 import gscheck_all
 
+track = 0
+if len(sys.argv) > 1:
+    if sys.argv[1] == "--track":
+        track = 1
+
+        db = anydbm.open(gsconf.dailydb, "n")
+        db.close()
+        
 suite = gstestutils.GSTestSuite()
 
 # Add tests based on running Ghostscript.
-gscheck_all.addTests(suite, gsroot=gsconf.gsroot)
+gscheck_all.addTests(suite, gsroot=gsconf.gsroot, track=track)
 
 # Add tests not based on actually running Ghostscript.
 check_all.addTests(suite, gsroot=gsconf.gsroot)

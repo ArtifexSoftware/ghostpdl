@@ -74,7 +74,7 @@ class GSCompareTestCase(gstestgs.GhostscriptTestCase):
 
 
 # add compare tests
-def add_compare_test(suite, f, device, dpi, band):
+def add_compare_test(suite, f, device, dpi, band, track):
     suite.addTest(GSCompareTestCase(gs=gsconf.comparegs,
                                     file=gsconf.comparefiledir + f,
                                     device=device, dpi=dpi,
@@ -82,10 +82,15 @@ def add_compare_test(suite, f, device, dpi, band):
                                     gsoptions=gsconf.compareoptions,
                                     log_stdout=gsconf.log_stdout,
                                     log_stderr=gsconf.log_stderr,
-                                    track_daily=1))
+                                    track_daily=track))
 
 
 def addTests(suite, gsroot, **args):
+    if args.has_key('track'):
+        track = args['track']
+    else:
+        track = 0
+
     # get a list of test files
     comparefiles = os.listdir(gsconf.comparefiledir)
 
@@ -94,7 +99,7 @@ def addTests(suite, gsroot, **args):
         if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
 	    for params in gsparamsets.testparamsets:
 	        add_compare_test(suite, f, params.device,
-				 params.resolution, params.banding)
+				 params.resolution, params.banding, track)
 
 
 if __name__ == '__main__':

@@ -85,15 +85,20 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 
 # Add the tests defined in this file to a suite
 
-def add_compare_test(suite, f, device, dpi, band):
+def add_compare_test(suite, f, device, dpi, band, track):
     suite.addTest(GSPDFWriteCompareTestCase(gs=gsconf.comparegs,
 					    file=gsconf.comparefiledir + f,
 					    device=device, dpi=dpi,
-					    band=band, track_daily=1,
+					    band=band, track_daily=track,
 					    log_stdout=gsconf.log_stdout,
 					    log_stderr=gsconf.log_stderr))
 
 def addTests(suite, gsroot, **args):
+    if args.has_key('track'):
+        track = args['track']
+    else:
+        track = 0
+    
     # get a list of test files
     comparefiles = os.listdir(gsconf.comparefiledir)
 
@@ -102,7 +107,7 @@ def addTests(suite, gsroot, **args):
 	    for params in gsparamsets.pdftestparamsets:
 	        add_compare_test(suite, f, params.device,
 				 params.resolution,
-				 params.banding)
+				 params.banding, track)
 
 if __name__ == "__main__":
     gstestutils.gsRunTestsMain(addTests)
