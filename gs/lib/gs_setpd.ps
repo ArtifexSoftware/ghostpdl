@@ -91,7 +91,8 @@ level2dict begin
 % Define interpreter callouts for handling gstate-restoring operators
 % when the current page device needs to be changed.
 % The names %grestorepagedevice, %grestoreallpagedevice,
-% %restorepagedevice, and %setgstatepagedevice are known to the interpreter.
+% %restorepagedevice, %restore1pagedevice, and %setgstatepagedevice
+% are known to the interpreter.
 
 /.installpagedevice
  {	% Since setpagedevice doesn't create new device objects,
@@ -124,8 +125,12 @@ level2dict begin
  { .uninstallpagedevice grestore .installpagedevice grestoreall
  } bind def
 
-(%restorepagedevice) cvn
+(%restore1pagedevice) cvn
  { .uninstallpagedevice grestore .installpagedevice restore
+ } bind def
+
+(%restorepagedevice) cvn
+ { .uninstallpagedevice restore .installpagedevice
  } bind def
 
 (%setgstatepagedevice) cvn

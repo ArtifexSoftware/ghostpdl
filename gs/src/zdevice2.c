@@ -305,14 +305,13 @@ z2grestoreall(i_ctx_t *i_ctx_p)
 private int
 z2restore(i_ctx_t *i_ctx_p)
 {
-    for (;;) {
-	if (!restore_page_device(igs, gs_state_saved(igs))) {
-	    if (!gs_state_saved(gs_state_saved(igs)))
-		break;
-	    gs_grestore(igs);
-	} else
-	    return push_callout(i_ctx_p, "%restorepagedevice");
+    while (gs_state_saved(gs_state_saved(igs))) {
+	if (restore_page_device(igs, gs_state_saved(igs)))
+	    return push_callout(i_ctx_p, "%restore1pagedevice");
+	gs_grestore(igs);
     }
+    if (restore_page_device(igs, gs_state_saved(igs)))
+	return push_callout(i_ctx_p, "%restorepagedevice");
     return zrestore(i_ctx_p);
 }
 
