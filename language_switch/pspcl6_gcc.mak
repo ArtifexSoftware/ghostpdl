@@ -139,7 +139,7 @@ CCLD=gcc
 DD='$(GLGENDIR)$(D)'
 
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
- $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
+ $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
  $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev\
  $(DD)pxlmono.dev $(DD)pxlcolor.dev\
  $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
