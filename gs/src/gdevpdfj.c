@@ -487,6 +487,7 @@ pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force
     piw->binary[1].strm = piw->binary[2].strm = 0; /* for GC */
     s[k1]->id = piw->pres->object->id;
     piw->pres->object = (cos_object_t *)s[k1];
+    piw->data = s[k1];
     piw->alt_writer_count = 1;
 }
 
