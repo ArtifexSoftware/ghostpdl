@@ -90,7 +90,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                              const Jbig2TextRegionParams *params,
                              const Jbig2SymbolDict * const *dicts, const int n_dicts,
                              Jbig2Image *image,
-                             const byte *data, const size_t size)
+                             const byte *data, const size_t size,
+			     Jbig2ArithCx *GR_stats)
 {
     /* relevent bits of 6.4.4 */
     uint32_t NINSTANCES;
@@ -113,7 +114,13 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     Jbig2ArithIntCtx *IADS = NULL;
     Jbig2ArithIntCtx *IAIT = NULL;
     Jbig2ArithIaidCtx *IAID = NULL;
+    Jbig2ArithIntCtx *IARI = NULL;
+    Jbig2ArithIntCtx *IARDW = NULL;
+    Jbig2ArithIntCtx *IARDH = NULL;
+    Jbig2ArithIntCtx *IARDX = NULL;
+    Jbig2ArithIntCtx *IARDY = NULL;
     int code = 0;
+    int RI;
     
     max_id = 0;
     for (index = 0; index < n_dicts; index++) {
@@ -121,11 +128,6 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
         "symbol list contains %d glyphs in %d dictionaries", max_id, n_dicts);
-    
-    if (params->SBREFINE) {
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-            "text regions with refinement bitmaps NYI");
-    }
     
     if (!params->SBHUFF) {
 	int SBSYMCODELEN;
@@ -139,6 +141,11 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	/* Table 31 */
 	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < max_id; SBSYMCODELEN++);
         IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
+	IARI = jbig2_arith_int_ctx_new(ctx);
+	IARDW = jbig2_arith_int_ctx_new(ctx);
+	IARDH = jbig2_arith_int_ctx_new(ctx);
+	IARDX = jbig2_arith_int_ctx_new(ctx);
+	IARDY = jbig2_arith_int_ctx_new(ctx);
     }
     
     /* 6.4.5 (1) */
@@ -216,7 +223,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                     "symbol id out of range! (%d/%d)", ID, max_id);
 	    }
 
-	    /* (3c.v) look up the symbol bitmap IB */
+	    /* (3c.v / 6.4.11) look up the symbol bitmap IB */
 	    {
 		uint32_t id = ID;
 
@@ -224,6 +231,38 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		while (id >= dicts[index]->n_symbols)
 		    id -= dicts[index++]->n_symbols;
 		IB = dicts[index]->glyphs[id];
+	    }
+	    if (params->SBREFINE) {
+		code = jbig2_arith_int_decode(IARI, as, &RI);
+	    } else {
+		RI = 0;
+	    }
+	    if (RI) {
+		Jbig2RefinementRegionParams rparams;
+		Jbig2Image *IBO;
+		int32_t RDW, RDH, RDX, RDY;
+		Jbig2Image *image;
+
+		/* (6.4.11 (1, 2, 3, 4)) */
+		code = jbig2_arith_int_decode(IARDW, as, &RDW);
+		code = jbig2_arith_int_decode(IARDH, as, &RDH);
+		code = jbig2_arith_int_decode(IARDX, as, &RDX);
+		code = jbig2_arith_int_decode(IARDY, as, &RDY);
+
+		/* (6.4.11 (6)) */
+		IBO = IB;
+		image = jbig2_image_new(ctx, IB->width + RDW,
+					     IB->height + RDH);
+		/* Table 12 */
+		rparams.GRTEMPLATE = params->SBRTEMPLATE;
+		rparams.reference = IB;
+		rparams.DX = (RDW >> 1) + RDX;
+		rparams.DY = (RDH >> 1) + RDY;
+		rparams.TPGRON = 0;
+		memcpy(rparams.grat, params->sbrat, 4);
+		jbig2_decode_refinement_region(ctx, segment,
+		    &rparams, as, image, GR_stats);
+		IB = image;
 	    }
         
 	    /* (3c.vi) */
@@ -293,7 +332,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     int n_dicts;
     uint16_t flags;
     uint16_t huffman_flags = 0;
-    int8_t sbrat[4];
+    Jbig2ArithCx *GR_stats = NULL;
     int code = 0;
     
     /* 7.4.1 */
@@ -331,11 +370,12 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         /* 7.4.3.1.3 */
         if ((params.SBREFINE) && !(params.SBRTEMPLATE))
           {
-            sbrat[0] = segment_data[offset];
-            sbrat[1] = segment_data[offset + 1];
-            sbrat[2] = segment_data[offset + 2];
-            sbrat[3] = segment_data[offset + 3];
+            params.sbrat[0] = segment_data[offset];
+            params.sbrat[1] = segment_data[offset + 1];
+            params.sbrat[2] = segment_data[offset + 2];
+            params.sbrat[3] = segment_data[offset + 3];
             offset += 4;
+	  }
       }
     
     /* 7.4.3.1.4 */
@@ -363,12 +403,18 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         /* 7.4.3.1.7 */
         /* todo: symbol ID huffman table decoding */
     }
-    
+
+    /* 7.4.3.2 (3) */
+    if (!params.SBHUFF && params.SBREFINE) {
+	int stats_size = params.SBRTEMPLATE ? 1 << 10 : 1 << 13;
+	GR_stats = jbig2_alloc(ctx->allocator, stats_size);
+	memset(GR_stats, 0, stats_size);
+    }
+
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
         "text region: %d x %d @ (%d,%d) %d symbols",
         region_info.width, region_info.height,
         region_info.x, region_info.y, params.SBNUMINSTANCES);
-    }
     
     /* compose the list of symbol dictionaries */
     n_dicts = jbig2_sd_count_referred(ctx, segment);
@@ -402,7 +448,8 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
     code = jbig2_decode_text_region(ctx, segment, &params,
                 (const Jbig2SymbolDict * const *)dicts, n_dicts, image,
-                segment_data + offset, segment->data_length - offset);
+                segment_data + offset, segment->data_length - offset,
+		GR_stats);
 
     /* todo: check errors */
 
