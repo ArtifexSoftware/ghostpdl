@@ -701,7 +701,7 @@ end readonly def
   count 1 sub /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
 	% a transparency group.
-  PDFversion 1.4 lt {
+  PDFversion 1.4 lt NOTRANSPARENCY or {
     showpagecontents
   } {
     dup pageusestransparency {
@@ -767,7 +767,7 @@ end readonly def
 %	- Image XObject with SMask
 % ****** DO WE NEED TO LOOK IN RESOURCE DICTS OF OTHER CONTENT STREAMS? ******
 /pageusestransparency {		% <pagedict> pageusestransparency <bool>
-  PDFversion 1.4 lt {
+  PDFversion 1.4 lt NOTRANSPARENCY or {
     pop false
   } {
     dup /Group known {

@@ -838,7 +838,11 @@ end
 /doimage {	% <imagemask> doimage -
 		% imagedict is currentdict, gets popped from dstack
   DataSource exch
-  PDFversion 1.4 ge { currentdict /SMask knownoget } { false } ifelse {
+  PDFversion 1.4 ge NOTRANSPARENCY not and {
+    currentdict /SMask knownoget
+  } {
+    false
+  } ifelse {
     makesoftmaskimage
   } {
     currentdict /Mask knownoget {
@@ -868,7 +872,7 @@ end
 } bdef
 
 /.paintform {	% <formdict> <resdict> <stream> .paintform -
-  3 -1 roll dup /Group known {
+  3 -1 roll dup /Group known NOTRANSPARENCY not and {
     .paintgroupform
   } {
     pop pdfopdict .pdfruncontext
