@@ -287,14 +287,14 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("NimbusRomanNo9 Medium", "Times New Roman Bold"),
+        fontnames("Times New Roman Bold", "NimbusRomanNo9 Medium"),
         {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ','B','d'},
         {0, 1, {25, 28800}, 0, REGULAR, BOLD, 16901},
         cc_alphabetic
     },
 
     {
-        fontnames("Times New Roman Italic", "NimbusRomanNo9 Italic"),
+        fontnames("Times New Roman Bold Italic", "NimbusRomanNo9 Italic"),
         {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ','I','t'},
         {0, 1, {25, 28800}, 0, ITALIC, NOBOLD, 16901},
         cc_alphabetic
@@ -407,7 +407,7 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("URWBookmanL", "Bookman-Light"),
+        fontnames("Bookman-Light", "URWBookmanL"),
         {'I','T','C','B','o','o','k','m','a','n',' ',' ',' ',' ','L','t'},
         {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24623}, cc_alphabetic
     },
@@ -489,11 +489,28 @@ const font_resident_t resident_table[] = {
         cc_alphabetic
     },
  
-    /* NB needs alias 
-    {"StandardSymL", {'S','y','m','b','o','l','P','S',' ',' ',' ',' ',' ',' ',' ',' '},
-     {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686}, cc_symbol},
-    */
+    {
+        fontnames("Symbol", "StandarSymL"),
+        {'S','y','m','b','o','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+        {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686},
+        cc_symbol
+    },
 
+    /* NB Symbol - Symbol PS for URW are the same.  Adding the
+       confusion AGFA has 2 different fonts presumably Symbol and
+       SymbolPS, each called Symbol. */
+    {
+        fontnames("SymbPS", "StandarSymL"),
+        {'S','y','m','b','o','l','P','S',' ',' ',' ',' ',' ',' ',' ',' '},
+        {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686},
+        cc_symbol
+    },
+
+
+    /* NB no Wingdings 
+    {"Dingbats", {'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '},
+     {18540, 1, {27, 25914},0, REGULAR, NOBOLD, face_val(2730, agfa)}, cc_dingbats},
+    */
 #ifdef AGFA_FONT_TABLE
     {
         fontnames("Wingdings", "noname"),
@@ -505,8 +522,8 @@ const font_resident_t resident_table[] = {
 
     {
         fontnames("ZapfDingbats", "Dingbats"), 
-        {'I','T','C','Z','a','p','f','D','i','n','g','b','a','t','s',' '},
-        {18540, 1, {27, 25914},0, REGULAR, NOBOLD, face_val(45, agfa)},
+        {'Z','a','p','f','D','i','n','g','b','a','t','s',' ',' ',' ',' '},
+        {18540, 1, {27, 25914},0, REGULAR, NOBOLD, face_val(2730, agfa)},
         cc_dingbats
     },
 
@@ -556,14 +573,14 @@ const font_resident_t resident_table[] = {
 
     {
         /* NB should be CourierPS */
-        fontnames("NimbusMonL", "Courier"),
+        fontnames("Courier", "NimbusMonL"),
         {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {0, 0}, 0, REGULAR, NOBOLD, 24579},
         cc_alphabetic
     },
 
     {
-        fontnames("NimbusMonL Bold", "Courier-Bold"),
+        fontnames("Courier-Bold", "NimbusMonL Bold"),
         {'C','o','u','r','i','e','r','P','S',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {0, 0}, 0, REGULAR, BOLD, 24579}, cc_alphabetic
     },

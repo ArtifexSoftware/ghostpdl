@@ -15,7 +15,7 @@
 /* resident font table */
 typedef struct font_resident {
     const char full_font_name[40];    /* name entry 4 in truetype fonts */
-    const short unicode_fontname[17]; /* pxl name */
+    const short unicode_fontname[16]; /* pxl name */
     pl_font_params_t params;
     byte character_complement[8];
 } font_resident_t;
