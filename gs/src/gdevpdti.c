@@ -378,21 +378,39 @@ pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev)
 }
 
 /*
+ * Start charproc accumulation for a Type 3 font.
+ */
+int
+pdf_start_charproc_accum(gx_device_pdf *pdev)
+{
+    pdf_char_proc_t *pcp;
+    pdf_resource_t *pres;
+    int code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(1), &pres);
+
+    if (code < 0)
+       return code;
+    pcp = (pdf_char_proc_t *)pres;
+    pcp->char_next = NULL;
+    pcp->font = NULL;
+    pcp->char_code = GS_NO_CHAR;
+    pcp->char_name.data = NULL;
+    pcp->char_name.size = 0;
+    return 0;
+}
+
+/*
  * Install charproc accumulator for a Type 3 font.
  */
 int
-pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw, 
+pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, 
 		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr)
 {
     pdf_font_resource_t *pdfont;
-    pdf_resource_t *pres;
+    pdf_resource_t *pres = pdev->accumulating_substream_resource;
     pdf_char_proc_t *pcp;
     int code;
 
     code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
-    if (code < 0)
-	return code;
-    code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(1), &pres);
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *)pres;

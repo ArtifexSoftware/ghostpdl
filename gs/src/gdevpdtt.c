@@ -197,7 +197,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    code = gx_clip_to_rectangle(penum_s->pgs, &clip_box);
 	    if (code < 0)
 		return code;
-	    code = pdf_install_charproc_accum(pdev, pte->current_font, 
+	    code = pdf_set_charproc_attrs(pdev, pte->current_font, 
 			pw1, control, ch, &gnstr);
 	    if (code < 0)
 		return code;
@@ -212,13 +212,24 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    penum->charproc_accum = true;
 	    return code;
 	} else {
+	    gs_matrix m;
+	    pdf_resource_t *pres = pdev->accumulating_substream_resource;
+
+	    /* pdf_text_process started a charproc stream accumulation,
+	       but now we re-decided to go with the default implementation.
+	       Cancel the stream now.
+	     */
+	    code = pdf_exit_substream(pdev);
+	    if (code < 0)
+		return code;
+	    code = pdf_cancel_resource(pdev, pres, resourceCharProc);
+	    if (code < 0)
+		return code;
 	    /* pdf_text_process had set an identity CTM for the
 	       charproc stream accumulation, but now we re-decided
 	       to go with the default implementation.
 	       Need to restore the correct CTM and add
 	       changes, which the charproc possibly did. */
-	    gs_matrix m;
-
 	    gs_matrix_multiply((gs_matrix *)&pdev->charproc_ctm, (gs_matrix *)&penum->pis->ctm, &m);
 	    gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
 	}
@@ -262,10 +273,12 @@ private const gs_text_enum_procs_t pdf_text_procs = {
 };
 
 private int
-pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_imager_state * pis, 
-	    const gx_device_color * pdcolor, const gx_clip_path * pcpath,
-	    const gs_text_params_t *text)
+pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
 {
+    gs_imager_state * pis = pte->pis;
+    const gx_device_color * pdcolor = pte->pdcolor;
+    const gx_clip_path * pcpath = pte->pcpath;
+    const gs_text_params_t *text = &pte->text;
     bool new_clip = false; /* Quiet compiler. */
     int code;
 
@@ -1951,7 +1964,7 @@ pdf_text_process(gs_text_enum_t *pte)
 
     if (!penum->pte_default && !penum->charproc_accum) {
 	/* Don't need to sync before exiting charproc. */
-	code = pdf_prepare_text_drawing(pdev, pte->pis, pte->pdcolor, pte->pcpath, &pte->text);
+	code = pdf_prepare_text_drawing(pdev, pte);
 	if (code == gs_error_rangecheck) {
 	    /* Fallback to the default implermentation for handling 
 	       a transparency with CompatibilityLevel<=1.3 . */
@@ -1990,21 +2003,23 @@ pdf_text_process(gs_text_enum_t *pte)
 	    penum->returned.current_glyph = pte_default->returned.current_glyph;
 	}
 	if (code == TEXT_PROCESS_RENDER) {
+
 	    pdev->charproc_ctm = penum->pis->ctm;
     	    pdev->charproc_just_accumulated = false;
 	    if (penum->current_font->FontType == ft_user_defined && 
 		    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
+		/* The condition above must be consistent with one in pdf_text_set_cache,
+		   which decides to apply pdf_set_charproc_attrs. */
+		gs_matrix m;
+
+		code = pdf_start_charproc_accum(pdev);
 		/* Must set an identity CTM for the charproc accumulation.
-		   The condition above must be consistent with one in pdf_text_set_cache,
-		   which decides to apply pdf_install_charproc_accum.
 		   The function show_proceed (called from gs_text_process above) 
 		   executed gsave, so we are safe to change CTM now.
 		   Note that BuildChar may change CTM before calling setcachedevice. */
-		gs_matrix m;
-
 		gs_make_identity(&m);
 		gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
-		return code;
+		return TEXT_PROCESS_RENDER;
 	    }
 	}
 	if (code)
@@ -2095,7 +2110,7 @@ pdf_text_process(gs_text_enum_t *pte)
      * output font. Then it installs pte_default and falls back to default
      * implementation with PS interpreter callout. The callout executes 
      * BuildChar/BuildGlyph with setcachedevice. The latter calls
-     * pdf_install_charproc_accum, which sets up an accumulator 
+     * pdf_set_charproc_attrs, which sets up an accumulator 
      * of graphic objects to a pdf_begin_resource stream.
      * When the callout completes, pdf_text_process calls pdf_end_charproc_accum
      * and later resumes the normal (non-default) text enumeration, repeating the 
