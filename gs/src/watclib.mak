@@ -45,6 +45,8 @@ GLOBJDIR=.\debugobj
 NUL=
 DD=$(GLGENDIR)\$(NUL)
 GLD=$(GLGENDIR)\$(NUL)
+GLOBJ=$(GLOBJDIR)\$(NUL)
+GLGEN=$(GLGENDIR)\$(NUL)
 
 !ifndef JSRCDIR
 JSRCDIR=jpeg
@@ -117,18 +119,25 @@ GLCCWIN=$(GLCC)
 !include $(GLSRCDIR)\winplat.mak
 
 watclib_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_dosfb.$(OBJ)
+watclib_2=$(GLOBJ)gp_mktmp.$(OBJ)
 !ifeq WAT32 0
-watclib_2=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
+watclib_3=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
 watclib_inc=
 !else
-watclib_2=
+watclib_3=
 watclib_inc=$(GLD)winplat.dev
 !endif
-watclib__=$(watclib_1) $(watclib_2)
+watclib__=$(watclib_1) $(watclib_2) $(watclib_3)
 $(GLGEN)watclib_.dev: $(watclib__) $(GLGEN)nosync.dev $(watclib_inc)
 	$(SETMOD) $(GLGEN)watclib_ $(watclib_1)
-	$(ADDMOD) $(GLGEN)watclib_ -obj $(watclib_2)
+	$(ADDMOD) $(GLGEN)watclib_ $(watclib_2)
+	$(ADDMOD) $(GLGEN)watclib_ -obj $(watclib_3)
 	$(ADDMOD) $(GLGEN)watclib_ -include $(GLGEN)nosync $(watclib_inc)
+
+# Common objects specific to Watcom
+
+$(GLOBJ)gp_mktmp.$(OBJ): $(GLSRC)gp_mktmp.c $(stat__h) $(string__h)
+	$(GLCC) $(GLO_)gp_mktmp.$(OBJ) $(C_) $(GLSRC)gp_mktmp.c
 
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
  $(gx_h) $(gp_h)

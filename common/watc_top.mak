@@ -5,7 +5,7 @@
 # Generic top-level makefile for MS-DOS/Watcom platforms.
 
 # The product-specific top-level makefile defines the following:
-#	MAKEFILE, COMMONDIR, DEBUG, DEVICE_DEVS, GLSRCDIR, MAIN_OBJ,
+#	MAKEFILE, COMMONDIR, DEBUG, DEVICE_DEVS, GLSRCDIR, 
 #	NOPRIVATE, TDEBUG, TARGET_DEVS, TARGET_XE, WCVERSION
 # It also must include the product-specific *.mak.
 
@@ -69,16 +69,20 @@ $(GLGENDIR)\ld.tr: $(MAKEFILE) $(ECHOGS_XE)
 	echo DEVICE_DEVS=$(DEVICE_DEVS) $(DD)bbox.dev >>$(GLGENDIR)\_wm_temp.mak
 	echo FPU_TYPE=$(FPU_TYPE) >>$(GENDIR)\_wm_temp.mak
 	echo CPU_TYPE=$(CPU_TYPE) >>$(GENDIR)\_wm_temp.mak
-	echo BAND_LIST_STORAGE=memory >>$(GLGENDIR)\_wm_temp.mak
+	echo BAND_LIST_STORAGE=file >>$(GLGENDIR)\_wm_temp.mak
 	echo BAND_LIST_COMPRESSOR=zlib >>$(GLGENDIR)\_wm_temp.mak
+	echo DEBUG=$(DEBUG) >>$(GLGENDIR)\_wm_temp.mak
+	echo TDEBUG=$(TDEBUG) >>$(GLGENDIR)\_wm_temp.mak
+	echo NOPRIVATE=$(NOPRIVATE) >>$(GLGENDIR)\_wm_temp.mak
 	echo !include $(GLSRCDIR)\watclib.mak >>$(GLGENDIR)\_wm_temp.mak
 	$(MAKE) -u -h -f $(GLGENDIR)\_wm_temp.mak \
 		$(GLOBJDIR)\gsargs.$(OBJ) \
 		$(GLGENDIR)\arch.h \
 		$(GLGENDIR)\ld.tr \
+		$(GLGENDIR)\watclib_.dev \
 		$(GLOBJDIR)\gconfig.$(OBJ) \
 		$(GLOBJDIR)\gscdefs.$(OBJ) \
-		$(GLOBJDIR)\gconfigv.h
+		$(GLOBJDIR)\gconfigv.h 
 
 # Build the configuration file.
 $(GLGENDIR)\pconf.h $(GLGENDIR)\ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
@@ -99,5 +103,6 @@ $(GLGENDIR)\ldt.tr: $(MAKEFILE) $(GLGENDIR)\ld.tr $(GLGENDIR)\ldconf.tr
 	$(RM_) $(GLGENDIR)\ld.tr
 
 # Link the executable.
-$(TARGET_XE)$(XE): $(GLGENDIR)\ldt.tr $(MAIN_OBJ) $(TOP_OBJ)
-	$(LINK) $(LCT) NAME $(TARGET_XE) OPTION MAP=$(TARGET_XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GLGENDIR)\ldt.tr
+$(TARGET_XE)$(XE): $(GLGENDIR)\ldt.tr dt $(MAIN_OBJ) $(TOP_OBJ)
+	$(LINK) $(LCT) NAME $(TARGET_XE) OPTION MAP=$(TARGET_XE) FILE $(MAIN_OBJ) \
+	FILE $(IMPL_OBJ) FILE $(PCL_TOP_OBJ) FILE $(PXL_TOP_OBJ) @$(GLGENDIR)\ldt.tr
