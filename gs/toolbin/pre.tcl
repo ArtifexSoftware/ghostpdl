@@ -1,6 +1,6 @@
 #!/usr/bin/tclsh
 
-#    Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 2000-2002 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -85,7 +85,7 @@ proc read_news {} {
 	message "$NEWS release date is missing"
 	exit 1
     }
-    set curdate [exec date +%Y-%m-%d]
+    set curdate [exec date -u +%Y-%m-%d]
     if {$rdate != $curdate} {
 	message "Warning: current date is $curdate, release date is $rdate"
     }
@@ -176,7 +176,7 @@ check_library_version PVERSION $pversion
 ################ If requested, mechanically update doc files.
 
 set dateformat "%-d %B %Y"
-set curdate [exec date +$dateformat]
+set curdate [exec date -u +$dateformat]
 set manlist [glob {man/gs*.1} {man/[dpfw]*.1}]
 foreach d "[glob doc/*.htm] doc/gs-vms.hlp" {
     if {![regexp {Changes|Hershey|Humor|Public} $d]} {
@@ -229,7 +229,7 @@ foreach doc $doclist {
     } else {
 	regexp $dateline $dstr skip skip2 skip3 dver ddate
 	regexp $idline $idstr skip idver year month1 day
-	set ddate [exec date +$dateformat -d $ddate]
+	set ddate [exec date -u +$dateformat -d $ddate]
 	# Strip leading 0 from month and day.
 	set day [expr 1$day - 100]
 	set month1 [expr 1$month1 - 100]
