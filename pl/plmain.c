@@ -351,8 +351,8 @@ pl_main(
 			return -1;
                     }
                 }
-    	        break;
-            }
+    	        break;            
+	    }
             if ( in_pjl ) {
                 if_debug0(mem, '|', "Processing pjl\n");
 		code = pl_process(pjl_instance, &r.cursor);
@@ -361,59 +361,60 @@ pl_main(
 		    in_pjl = false;
 		    new_job = true;
 		}
-    	    } else {
-		if ( new_job ) {
-                    if_debug0(mem, '|', "Selecting PDL\n" );
-                    curr_instance = pl_main_universe_select(&universe, err_buf,
-							    pjl_instance,
-                                                            pl_select_implementation(pjl_instance, &inst, r),
-                                                            &inst, (gs_param_list *)&params);
-                    if ( curr_instance == NULL ) {
-			dprintf(mem, err_buf);
-			return -1;
-		    }
-
-		    if ( pl_init_job(curr_instance) < 0 ) {
-			dprintf(mem, "Unable to init PDL job.\n");
-			return -1;
-		    }
-                    if_debug1(mem, '|', "selected and initializing (%s)\n",
-                              pl_characteristics(curr_instance->interp->implementation)->language);
-		    new_job = false;
+    	    } 
+	    if ( new_job ) {
+	        if_debug0(mem, '|', "Selecting PDL\n" );
+		curr_instance = pl_main_universe_select(&universe, err_buf,
+							pjl_instance,
+							pl_select_implementation(pjl_instance, &inst, r),
+							&inst, (gs_param_list *)&params);
+		if ( curr_instance == NULL ) {
+		    dprintf(mem, err_buf);
+		    return -1;
 		}
-		code = pl_process(curr_instance, &r.cursor);
-                if_debug1(mem, '|', "processing (%s) job\n", pl_characteristics(curr_instance->interp->implementation)->language);
-    	        if (code == e_ExitLanguage) {
-    	            in_pjl = true;
-                    if_debug1(mem, '|', "exiting (%s) job back to pjl\n",
-                    pl_characteristics(curr_instance->interp->implementation)->language);
-                    if ( close_job(&universe, &inst) < 0 ) {
-			dprintf(mem,  "Unable to deinit PDL job.\n");
+
+		if ( pl_init_job(curr_instance) < 0 ) {
+		    dprintf(mem, "Unable to init PDL job.\n");
+		    return -1;
+		}
+		if_debug1(mem, '|', "selected and initializing (%s)\n",
+			  pl_characteristics(curr_instance->interp->implementation)->language);
+		new_job = false;
+	    }
+	    if ( curr_instance ) {
+	        code = pl_process(curr_instance, &r.cursor);
+		if_debug1(mem, '|', "processing (%s) job\n", pl_characteristics(curr_instance->interp->implementation)->language);
+		if (code == e_ExitLanguage) {
+		    in_pjl = true;
+		    if_debug1(mem, '|', "exiting (%s) job back to pjl\n",
+			      pl_characteristics(curr_instance->interp->implementation)->language);
+		    if ( close_job(&universe, &inst) < 0 ) {
+		        dprintf(mem,  "Unable to deinit PDL job.\n");
 			return -1;
 		    }
 		    if ( pl_init_job(pjl_instance) < 0 ) {
-			dprintf(mem, "Unable to init PJL job.\n");
+		        dprintf(mem, "Unable to init PJL job.\n");
 			return -1;
-                    }
+		    }
 		} else if ( code < 0 ) { /* error and not exit language */
 		    dprintf1(mem, "Warning interpreter exited with error code %d\n", code );
 		    dprintf(mem, "Flushing to end of job\n" );
 		    /* flush eoj may require more data */
 		    while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0) {
-                        if_debug1(mem, '|', "flushing to eoj for (%s) job\n",
-                                   pl_characteristics(curr_instance->interp->implementation)->language);
+		        if_debug1(mem, '|', "flushing to eoj for (%s) job\n",
+				  pl_characteristics(curr_instance->interp->implementation)->language);
 			if (pl_main_cursor_next(&r) <= 0) {
-                            if_debug0(mem, '|', "end of data found while flushing\n");
-                            break;
-                        }
-                    }
-                    pl_report_errors(curr_instance, code, 
+			    if_debug0(mem, '|', "end of data found while flushing\n");
+			    break;
+			}
+		    }
+		    pl_report_errors(curr_instance, code, 
 				     pl_main_cursor_position(&r),
-                                     inst.error_report > 0);
-                    if ( close_job(&universe, &inst) < 0 ) {
-                        dprintf(mem, "Unable to deinit PJL.\n");
-                        return -1;
-                    }
+				     inst.error_report > 0);
+		    if ( close_job(&universe, &inst) < 0 ) {
+		        dprintf(mem, "Unable to deinit PJL.\n");
+			return -1;
+		    }
 		    /* Print PDL status if applicable, then dnit PDL job */
 		    code = 0;
 		    new_job = true;
@@ -452,7 +453,7 @@ pl_main(
     arg_finit(&args);
 
     /* free iodev */
-    // NB this is gone    gs_iodev_free(pjl_mem);
+    gs_iodev_free(pjl_mem);
    
     if ( gs_debug_c('A') )
 	dprintf(mem, "Final time" );
