@@ -363,14 +363,22 @@
 	dup 258 lt {
 	  MacGlyphEncoding exch get
 	} {
-	  258 sub glyphnames exch {
-	    postglyphs 1 index get 1 add add
-	  } repeat
-	  1 add postglyphs exch 2 copy 1 sub get getinterval cvn
+	  dup 32768 ge {
+		% According to the published TrueType spec, such values are
+		% "reserved for future use", but at least some PDF files
+		% produced by the Adobe PDF library contain entries with a
+		% value of 16#ffff.
+	    pop /.notdef
+	  } {
+	    258 sub glyphnames exch {
+	      postglyphs 1 index get 1 add add
+	    } repeat
+	    1 add postglyphs exch 2 copy 1 sub get getinterval cvn
 		% At least some of Microsoft's TrueType fonts use incorrect
 		% (Adobe-incompatible) names for some glyphs.
 		% Correct for this here.
-	  postremap 1 index .knownget { exch pop } if
+	    postremap 1 index .knownget { exch pop } if
+	  } ifelse
 	} ifelse
       } for ]
   } bind
@@ -869,7 +877,7 @@ end readonly def                % .loadttfontdict
 % <charname> <charcode> .pdfaddchar <charname> <glyph#>
 % <charname> <charcode> .pdfaddchar -
 /.pdfaddchar {
-  dup cmapencoding length ge {
+  dup cmapencoding length lt {
     cmapencoding exch get dup 0 eq {
       pop .pdfaddpost
     } if
