@@ -149,7 +149,7 @@ document: inches, centimeters and millimeters, points, and bits per pixel.
 <dt><b>Inches</b>
 <dd>1 inch equals 2.54 centimeters.  The inch measure is sometimes
 represented by "<b>in</b>" or a quotation mark (<b>&quot;</b>) to the right
-of a measure, like <b>8.5in</b> or <b>8.5"</b>.  Dots per inch,
+of a measure, like <b>8.5in</b> or <b>8.5""</b>.  Dots per inch,
 "<b>dpi</b>", are the common measure of printing resolution for dot-matrix,
 laser, and ink-jet printers.  U.S. "letter" paper is exactly
 8.5in&times;11in, approximately 21.6cm&times;27.9cm.  (See in the usage
@@ -1168,15 +1168,9 @@ href="mailto:scb@stelab.nagoya-u.ac.jp">scb@stelab.nagoya-u.ac.jp</a>&gt;.
 These files also handle the Japanese Canon F850 printer.
 
 <p>
-DISCLAIMER: USAGE OF THIS PROGRAM IS NEITHER SUPPORTED NOR ENDORSED BY THE
-CANON CORPORATION. I WILL NOT BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
-GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE
-OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA
-OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
-PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
-EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
-
+Warning: Usage of this program is neither supported nor endorsed by
+the Canon corporation. Please see the Ghostscript <a
+href="Public.htm">license</a> regarding warranty.
 
 <h2>Introduction</h2>
 
@@ -1184,10 +1178,10 @@ SUCH DAMAGES.
 The Canon Bubble Jet printer BJC-8200 is designed for printing digital
 photos and halftone images. Software drivers for Windows 95-2000 and Mac are
 usually included and can be downloaded from the Canon web sites like
-<a href="http://www.ccsi.canon.com/bjc/bjc8200/content.html#specs">
-http://www.ccsi.canon.com/bjc/bjc8200/content.html#specs</a> for the US
-market. If these drivers cannot be used for some reason, then at present
-Ghostscript is probably the alternative giving the best results.
+<a href="http://www.ccsi.canon.com/bjc/bjc8200">
+http://www.ccsi.canon.com/bjc/bjc8200/</a> for the US market. If these
+drivers cannot be used for some reason, then at present Ghostscript is
+probably the alternative giving the best results.
 
 <p>
 The BJC-8200 has features not found among the specs of earlier bubble jet
@@ -1217,12 +1211,13 @@ required.
 
 <p>
 Ghostscript comes with a relatively highly configurable driver, called
-"uniprint," for printers which understand raster images in various propriety
-formats. Most options for this driver are usually organized into files
-having the suffix ".upp." Ghostscript versions >= 5.10 (or even earlier)
-include such uniprint control files for the Canon BJC-610. They work also
-well for some other Canon Bubble Jet models, for example for my
-BJC-35vII. But when using them for a BJC-8200 the result is unsatisfactory.
+<a href="#Uniprint">uniprint</a>, for printers which understand raster
+images in various propriety formats. Most options for this driver are
+usually organized into files having the suffix ".upp." Ghostscript
+versions >= 5.10 (or even earlier) include such uniprint control files
+for the Canon BJC-610. They work also well for some other Canon Bubble
+Jet models, for example for my BJC-35vII. But when using them for a
+BJC-8200 the result is unsatisfactory.
 
 <h2>The uniprint control files for the BJC-8200</h2>
 
@@ -1241,10 +1236,11 @@ uniprint control files:
 </ul>
 
 <p>
-You can put them anywhere in the Ghostscript search path (type "gs -h" to
-see the path), but should perhaps add the files to the directory with the
-other *.upp files. This is "/usr/share/ghostscript/gs6.01/lib" in my RedHat
-6.1 Linux box with Aladdin Ghostscript 6.01.
+They are included in Ghostscript >=6.21. For older versions you can put
+them anywhere in the Ghostscript search path (type "gs -h" to see the
+path), but should perhaps add the files to the directory with the
+other *.upp files. This is "/usr/share/ghostscript/gs6.01/lib" in my
+RedHat 6.1 Linux box with Aladdin Ghostscript 6.01.
 
 <p>
 Here is an explanation of my file name convention: the prefix "bj8" should
@@ -1333,15 +1329,16 @@ Crucial are the numbers in the lines like
 <h2>Outlook</h2>
 
 <p>
-Presently uniprint can use the black (K), cyan (C), magenta (M), and yellow
-(Y) colors in the BJC-8200. The unused colors are photo (or light) cyan (c)
-and magenta (m). Also the Canon driver seems to use only CMYK, for example
-when printing on Photo Paper Pro in "Camera" or "SuperPhoto" mode. These
-modes supposedly produce prints of the best quality that the Canon driver
-can offer. Other Canon driver modes do use up to all six color cartridges
-(CMYKcm). Therefore expanding uniprints capabilities for six colors would be
-interesting, but it may not increase the output quality of 6-color printers
-such as the BJC-8200 drastically.
+Presently uniprint can use the black (K), cyan (C), magenta (M), and
+yellow (Y) colors in the BJC-8200. The unused colors are photo (or
+light) cyan (c) and magenta (m). Also the Canon driver seems to use
+only CMYK, for example when printing on Photo Paper Pro in "Camera" or
+"SuperPhoto" mode. These modes supposedly produce prints of the best
+quality that the Canon driver can offer. Other modes of Canon driver
+do use up to all six color cartridges (CMYKcm). Therefore expanding
+uniprint's capabilities for six colors would be interesting, but it may
+not increase the output quality of 6-color printers such as the
+BJC-8200 drastically.
 
 <p>
 More control files for uniprint could be added in order to offer more
@@ -5329,3 +5326,4 @@ Ghostscript version 6.21, xx xxxxxx 2000
 
 </body>
 </html>
+
