@@ -153,7 +153,7 @@ ZLIB_NAME=gz
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
-ICCSRCDIR=src
+ICCSRCDIR=icclib
 
 # ------ Platform-specific options ------ #
 

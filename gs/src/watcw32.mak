@@ -136,7 +136,7 @@ ZSRCDIR=zlib
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
-ICCSRCDIR=src
+ICCSRCDIR=icclib
 
 # Define any other compilation flags.
 

@@ -144,7 +144,7 @@ ZSRCDIR=zlib
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
-ICCSRCDIR=src
+ICCSRCDIR=icclib
 
 # The following is a hack to get around the special treatment of \ at
 # the end of a line.

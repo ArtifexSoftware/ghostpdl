@@ -199,7 +199,7 @@ ZSRCDIR=zlib
 # See icclib.mak for more information
 
 !ifndef ICCSRCDIR
-ICCSRCDIR=src
+ICCSRCDIR=icclib
 !endif
 
 # Define any other compilation flags.

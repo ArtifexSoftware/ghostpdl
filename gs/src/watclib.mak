@@ -80,7 +80,7 @@ ZSRCDIR=zlib
 # See icclib.mak for more information
 
 !ifndef ICCSRCDIR
-ICCSRCDIR=gs_icclib
+ICCSRCDIR=icclib
 !endif
 
 CFLAGS=
