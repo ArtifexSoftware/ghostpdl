@@ -82,7 +82,9 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 /* Get the name of a glyph.  We don't need to support this. */
 private const char *
 pl_glyph_name(gs_glyph glyph, uint *plen)
-{	return 0;
+{	
+    *plen = 0;
+    return 0;
 }
 
 /* Get a glyph from a known encoding.  We don't support this either. */
