@@ -211,7 +211,6 @@ hpgl_LA(
 	}
     }
 
-    /* why is this here as opposed to the start or end? -- jan */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
     /* LA1,1,2,1,3,5 is the same as LA */
