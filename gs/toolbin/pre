@@ -223,7 +223,7 @@ if {$argv == {update}} {
     set redate {[0-9]+ [A-Z][a-z]+ [0-9]+}
     foreach doc $doclist {
 	updoc $doc \
-	    "^(! |)(AFPL |Aladdin |GNU |)(Ghostscript version )$rever, $redate\$" \
+		"^(! |<small>)(AFPL |Aladdin |GNU |)(Ghostscript version )$rever, ${redate}(</small>|)\$" \
 	    "\$1\$2\${3}$vcurdot, $curdate"
     }
     foreach doc1 $manlist {
