@@ -637,10 +637,19 @@ end
   /DeviceGray dup  /DeviceRGB dup  /DeviceCMYK dup  /Pattern dup
 .dicttomark readonly def
 /csresolve {		% <csresourcename> csresolve <cspace>
-  dup Page /ColorSpace rget {
-    exch pop resolvecolorspace
+  dup type /nametype ne {
+    (\n   **** Warning: CS/cs (setcolorspace) operand not a name: ) pdfformaterror
+    dup stderrfile dup 3 -1 roll write==only flushfile
+    ( ****\n) pdfformaterror
+    dup type /arraytype eq {	% Adobe InDesign + PDF Library has array
+      resolvecolorspace
+    } if
   } {
-    //csnames 1 index known not { /undefined cvx signalerror } if
+    dup Page /ColorSpace rget {
+      exch pop resolvecolorspace
+    } {
+      //csnames 1 index known not { /undefined cvx signalerror } if
+    } ifelse
   } ifelse
 } bdef
 /resolvecolorspace {	% <cspace> resolvecolorspace <cspace'>
