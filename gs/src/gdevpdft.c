@@ -291,7 +291,7 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 	    }
 	    pdf_append_chars(pdev, &space_char, 1);
 	    pdev->text.current.x += dx * pmat->xx;
-	    pdev->text.use_leading = false;
+	    /* Don't change use_leading -- it only affects Y placement. */
 	    return 0;
 	}
       not_spaces:
