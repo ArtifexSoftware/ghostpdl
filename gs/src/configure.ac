@@ -161,10 +161,14 @@ dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.
 dnl A more sophisticated approach would be to test the shared lib
 dnl to see whether it has already been patched.
 LIBJPEGDIR=src
-if test -d jpeg; then
-	AC_MSG_RESULT([yes])
+if test -f jpeg/jpeglib.h; then
+	AC_MSG_RESULT([jpeg])
 	SHARE_LIBJPEG=0
 	LIBJPEGDIR=jpeg
+elif test -f jpeg-6b/jpeglib.h; then
+	AC_MSG_RESULT([jpeg-6b])
+	SHARE_LIBJPEG=0
+	LIBJPEGDIR=jpeg-6b
 else
 	AC_MSG_RESULT([no])
 	AC_CHECK_LIB(jpeg, jpeg_set_defaults, [SHARE_LIBJPEG=1], [
