@@ -718,6 +718,7 @@ fn_PtCr_make_scaled(const gs_function_PtCr_t *pfn, gs_function_PtCr_t **ppsfn,
     psfn->params = pfn->params;
     psfn->params.ops.data = ops;
     psfn->params.ops.size = opsize;
+    psfn->data_source = pfn->data_source;
     code = fn_common_scale((gs_function_t *)psfn, (const gs_function_t *)pfn,
 			   pranges, mem);
     if (code < 0) {
