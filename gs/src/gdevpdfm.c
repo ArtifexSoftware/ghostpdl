@@ -886,8 +886,8 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	int page = 0;
 	uint i;
 
-	if (pdfmark_find_key("/Page", pairs, count, &page_string))
-	    page = pdfmark_page_number(pdev, &page_string);
+	pdfmark_find_key("/Page", pairs, count, &page_string);
+	page = pdfmark_page_number(pdev, &page_string);
 	part->last.page_id = pdf_page_id(pdev, page);
 	for (i = 0; i < count; i += 2) {
 	    if (pdf_key_eq(&pairs[i], "/Rect") || pdf_key_eq(&pairs[i], "/Page"))
