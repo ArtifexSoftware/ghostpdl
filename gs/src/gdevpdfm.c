@@ -70,17 +70,17 @@ pdf_key_eq(const gs_param_string * pcs, const char *str)
 int
 pdfmark_scan_int(const gs_param_string * pstr, int *pvalue)
 {
-#define max_int_str 20
+#define MAX_INT_STR 20
     uint size = pstr->size;
-    char str[max_int_str + 1];
+    char str[MAX_INT_STR + 1];
 
-    if (size > max_int_str)
+    if (size > MAX_INT_STR)
 	return_error(gs_error_limitcheck);
     memcpy(str, pstr->data, size);
     str[size] = 0;
     return (sscanf(str, "%d", pvalue) == 1 ? 0 :
 	    gs_note_error(gs_error_rangecheck));
-#undef max_int_str
+#undef MAX_INT_STR
 }
 
 /* ---------------- Private utilities ---------------- */
@@ -1118,8 +1118,8 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     for (i = 0; code >= 0 && i < count; i += 2) {
 	const gs_param_string *pair = pairs + i;
 	gs_param_string alt_pair[2];
-#define VDATA alt_pair[1].data
-#define VSIZE alt_pair[1].size
+	const byte *vdata;	/* alt_pair[1].data */
+	uint vsize;		/* alt_pair[1].size */
 	byte *str = 0;
 
 	if (pdf_key_eq(pairs + i, "/Producer")) {
@@ -1131,11 +1131,13 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    string_match_params params;
 
 	    memcpy(alt_pair, pairs + i, sizeof(alt_pair));
+	    vdata = alt_pair[1].data;
+	    vsize = alt_pair[1].size;
 	    params = string_match_params_default;
 	    params.ignore_case = true;
-	    if (string_match(VDATA, VSIZE, (const byte *)"*Distiller*",
+	    if (string_match(vdata, vsize, (const byte *)"*Distiller*",
 			     11, &params) ||
-		string_match(VDATA, VSIZE,
+		string_match(vdata, vsize,
 	     (const byte *)"*\000D\000i\000s\000t\000i\000l\000l\000e\000r*",
 			     20, &params)
 		) {
@@ -1143,16 +1145,16 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		char buf[PDF_MAX_PRODUCER];
 		int len;
 
-		for (j = VSIZE; j > 0 && VDATA[--j] != '+'; )
+		for (j = vsize; j > 0 && vdata[--j] != '+'; )
 		    DO_NOTHING;
-		if (VSIZE - j > 2 && VDATA[j] == '+') {
+		if (vsize - j > 2 && vdata[j] == '+') {
 		    ++j;
-		    while (j < VSIZE && VDATA[j] == ' ')
+		    while (j < vsize && vdata[j] == ' ')
 			++j;
 		}
 		/*
-		 * Replace VDATA[j .. VSIZE) with our name.  Note that both
-		 * VDATA/VSTR and the default producer string are enclosed
+		 * Replace vdata[j .. vsize) with our name.  Note that both
+		 * vdata/vstr and the default producer string are enclosed
 		 * in ().
 		 */
 		pdf_store_default_Producer(buf);
@@ -1160,18 +1162,16 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		str = gs_alloc_string(mem, j + len, "Producer");
 		if (str == 0)
 		    return_error(gs_error_VMerror);
-		memcpy(str, VDATA, j);
+		memcpy(str, vdata, j);
 		memcpy(str + j, buf + 1, len);
-		VDATA = str;
-		VSIZE = j + len;
+		alt_pair[1].data = vdata = str;
+		alt_pair[1].size = vsize = j + len;
 		pair = alt_pair;
 	    }
 	}
 	code = pdfmark_put_pair(pcd, pair);
 	if (str)
-	    gs_free_string(mem, str, VSIZE, "Producer");
-#undef VDATA
-#undef VSIZE
+	    gs_free_string(mem, str, vsize, "Producer");
     }
     return code;
 }
