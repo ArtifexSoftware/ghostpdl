@@ -71,10 +71,24 @@ def change_gsproduct(file):
     os.unlink(file)
     os.rename(tmpfile, file)
 
+def read_fnord(file)
+    if os.path.exists(file):
+        f = open(file)
+        keyword = f.readline()
+        keyword = keyword.strip()
+        f.close()
+        return keyword
+    else:
+        return ''
+
 def sendmail(frm, to, subject, text):
     import smtplib
 
-    msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s' % (frm, to, subject, text)
+    keyword = read_fnord(gsconf.codeddir + 'fnord')
+    if keyword:
+        msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\nX-Fnord: %s\r\n\r\n%s' % (frm, to, subject, keyword, text)
+    else:
+        msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s' % (frm, to, subject, text)
 
     server = smtplib.SMTP(gsconf.mail_server)
     server.sendmail(frm, to, msg)
