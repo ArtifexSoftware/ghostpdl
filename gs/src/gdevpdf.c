@@ -204,9 +204,12 @@ const gx_device_pdf gs_pdfwrite_device =
  {0, 0},			/* UserPassword */
  0,				/* KeyLength */
  -4,				/* Permissions */
+ 0,				/* EncryptionR */
  {0},				/* EncryptionO */
  {0},				/* EncryptionU */
  {0},				/* EncryptionKey */
+ 0,				/* EncryptionV */
+ true,				/* EncryptMetadata */
  0 /*false*/,			/* is_EPS */
  {-1, -1},			/* doc_dsc_info */
  {-1, -1},			/* page_dsc_info */
@@ -458,6 +461,7 @@ pdf_compute_fileID(gx_device_pdf * pdev)
 	return code;
     sclose(s);
     gs_free_object(mem, s, "pdf_compute_fileID");
+    memcpy(pdev->fileID, "xxxxxxxxxxxxxxxx", sizeof(pdev->fileID)); /* Debug */
     return 0;
 }
 
@@ -474,18 +478,62 @@ copy_padded(byte buf[32], gs_const_string *str)
 	memcpy(buf + str->size, pad, 32 - str->size);
 }
 
+private void
+Adobe_magic_loop_50(byte digest[16], byte buf[32])
+{
+    md5_state_t md5;
+    int i;
+
+    for (i = 0; i < 50; i++) {
+	memcpy(buf, digest, 16);
+	md5_init(&md5);
+	md5_append(&md5, buf, 16);
+	md5_finish(&md5, digest);
+    }
+}
+
+private void
+Adobe_magic_loop_19(byte *data, int data_size, const byte *key, int key_size)
+{
+    stream_arcfour_state sarc4;
+    byte key_buf[16];
+    int i, j;
+
+    for (i = 1; i <= 19; i++) {
+	for (j = 0; j < key_size; j++)
+	    key_buf[j] = key[j] ^ (byte)i;
+	s_arcfour_set_key(&sarc4, key_buf, key_size);
+	s_arcfour_process_buffer(&sarc4, data, data_size);
+    }
+}
+
 private int
 pdf_compute_encryption_data(gx_device_pdf * pdev)
 {
-    int code;
     md5_state_t md5;
     byte digest[16], buf[32], t;
     stream_arcfour_state sarc4;
 
     if (pdev->KeyLength == 0)
 	pdev->KeyLength = 40;
-    if (pdev->CompatibilityLevel < 1.4 && pdev->KeyLength != 40) {
-	eprintf("PDF 1.4 only supports 40 bits encryption keys.");
+    if (pdev->EncryptionV == 0 && pdev->KeyLength == 40)
+	pdev->EncryptionV = 1;	
+    if (pdev->EncryptionV == 0 && pdev->KeyLength > 40)
+	pdev->EncryptionV = 2;	
+    if (pdev->EncryptionV > 1 && pdev->CompatibilityLevel < 1.4) {
+	eprintf("PDF 1.3 only supports 40 bits keys.");
+	return_error(gs_error_rangecheck);
+    }
+    if (pdev->EncryptionR == 0 && pdev->KeyLength == 40)
+	pdev->EncryptionR = 2;
+    if (pdev->EncryptionR == 0 && pdev->KeyLength > 40)
+	pdev->EncryptionR = 3;
+    if (pdev->EncryptionR == 2 && pdev->KeyLength != 40) {
+	eprintf("Encryption revision R=2 only supports 40 bits keys.");
+	return_error(gs_error_rangecheck);
+    }
+    if (pdev->EncryptionR < 2 || pdev->EncryptionR > 3) {
+	eprintf("Encryption revisions 2 and 3 are only supported.");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength > 128) {
@@ -496,19 +544,23 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 	eprintf("PDF encryption key length must be a multiple of 8.");
 	return_error(gs_error_rangecheck);
     }
+    if (pdev->EncryptionR == 2 && (~pdev->Permissions & (0xF << 8))) {
+	eprintf("Some of Permissions are not allowed with R=2.");
+	return_error(gs_error_rangecheck);
+    }
     /* Compute O : */
     md5_init(&md5);
     copy_padded(buf, &pdev->OwnerPassword);
     md5_append(&md5, buf, sizeof(buf));
     md5_finish(&md5, digest);
-    copy_padded(pdev->EncryptionO, &pdev->UserPassword);
-    code = s_arcfour_set_key(&sarc4, digest, pdev->KeyLength / 8);
-    if (code < 0)
-	return code;
-    code = s_arcfour_process_buffer(&sarc4, pdev->EncryptionO, sizeof(pdev->EncryptionO));
-    if (code < 0)
-	return code;
-
+    if (pdev->EncryptionR == 3)
+	Adobe_magic_loop_50(digest, buf);
+    copy_padded(buf, &pdev->UserPassword);
+    s_arcfour_set_key(&sarc4, digest, pdev->KeyLength / 8);
+    s_arcfour_process_buffer(&sarc4, buf, sizeof(buf));
+    if (pdev->EncryptionR == 3)
+	Adobe_magic_loop_19(buf, sizeof(buf), digest, pdev->KeyLength / 8);
+    memcpy(pdev->EncryptionO, buf, sizeof(pdev->EncryptionO));
     /* Compute Key : */
     md5_init(&md5);
     copy_padded(buf, &pdev->UserPassword);
@@ -519,31 +571,35 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     t = (byte)(pdev->Permissions >> 16);  md5_append(&md5, &t, 1);
     t = (byte)(pdev->Permissions >> 24);  md5_append(&md5, &t, 1);
     md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
-    md5_finish(&md5, digest);
-    memcpy(pdev->EncryptionKey, digest, pdev->KeyLength / 8);
+    if (pdev->EncryptionR == 3)
+	if (!pdev->EncryptMetadata) {
+	    const byte v[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
+	    md5_append(&md5, v, 4);
+	}
+    md5_finish(&md5, digest);
+    if (pdev->EncryptionR == 3)
+	Adobe_magic_loop_50(digest, buf);
+    memcpy(pdev->EncryptionKey, digest, pdev->KeyLength / 8);
     /* Compute U : */
-    memcpy(pdev->EncryptionU, pad, sizeof(pdev->EncryptionU));
-    code = s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
-    if (code < 0)
-	return code;
-    code = s_arcfour_process_buffer(&sarc4, pdev->EncryptionU, sizeof(pdev->EncryptionU));
-    if (code < 0)
-	return code;
+    if (pdev->EncryptionR == 3) {
+	md5_init(&md5);
+	md5_append(&md5, pad, sizeof(pad));
+	md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
+	md5_finish(&md5, digest);
+	s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
+	s_arcfour_process_buffer(&sarc4, digest, sizeof(digest));
+	Adobe_magic_loop_19(digest, sizeof(digest), pdev->EncryptionKey, pdev->KeyLength / 8);
+	memcpy(pdev->EncryptionU, digest, sizeof(digest));
+	memcpy(pdev->EncryptionU + sizeof(digest), pad, 
+		sizeof(pdev->EncryptionU) - sizeof(digest));
+    } else {
+	memcpy(pdev->EncryptionU, pad, sizeof(pdev->EncryptionU));
+	s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
+	s_arcfour_process_buffer(&sarc4, pdev->EncryptionU, sizeof(pdev->EncryptionU));
+    }
     return 0;
 }
-
-private int
-security_revision(gx_device_pdf * pdev)
-{
-    if (pdev->KeyLength > 40)
-	return 3;
-    /* In the PDF spec bit positions are numbered from 1. Checking bits 9-12 : */
-    if (~pdev->Permissions & ((ulong)0xF << 8))
-	return 3;
-    return 2;
-}
-
 
 #ifdef __DECC
 /* The ansi alias rules are violated in this next routine.  Tell the compiler
@@ -1173,9 +1229,9 @@ pdf_close(gx_device * dev)
 	s = pdev->strm;
 	stream_puts(s, "<<");
 	stream_puts(s, "/Filter /Standard ");
-	pprintld1(s, "/V %ld ", pdev->KeyLength == 40 ? 1 : 2);
+	pprintld1(s, "/V %ld ", pdev->EncryptionV);
 	pprintld1(s, "/Length %ld ", pdev->KeyLength);
-	pprintld1(s, "/R %ld ", security_revision(pdev));
+	pprintld1(s, "/R %ld ", pdev->EncryptionR);
 	pprintld1(s, "/P %ld ", pdev->Permissions);
 	stream_puts(s, "/O ");
 	pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));

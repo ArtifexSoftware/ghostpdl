@@ -393,12 +393,15 @@ struct gx_device_pdf_s {
     gs_const_string OwnerPassword;
     gs_const_string UserPassword;
     uint KeyLength;
-    ulong Permissions;
+    uint Permissions;
+    uint EncryptionR;
     /* End of parameters */
     /* Encryption data */
     byte EncryptionO[32];
     byte EncryptionU[32];
     byte EncryptionKey[16];
+    uint EncryptionV;
+    bool EncryptMetadata;
     /* Values derived from DSC comments */
     bool is_EPS;
     pdf_page_dsc_info_t doc_dsc_info; /* document default */

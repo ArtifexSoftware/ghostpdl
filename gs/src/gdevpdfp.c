@@ -80,7 +80,8 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("OwnerPassword", gs_param_type_string, OwnerPassword),
     pi("UserPassword", gs_param_type_string, UserPassword),
     pi("KeyLength", gs_param_type_int, KeyLength),
-    pi("Permissions", gs_param_type_long, Permissions),
+    pi("Permissions", gs_param_type_int, Permissions),
+    pi("EncryptionR", gs_param_type_int, EncryptionR),
 #undef pi
     gs_param_item_end
 };
