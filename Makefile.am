@@ -27,7 +27,6 @@ jbig2dec_SOURCES = jbig2dec.c sha1.c sha1.h \
 	jbig2.h jbig2_image.h getopt.h \
 	os_types.h config_types.h config_win32.h
 jbig2dec_LDADD = libjbig2dec.a @LIBOBJS@
-jbig2dec_CFLAGS = -Wall
 
 test_sha1_SOURCES = sha1.c sha1.h
 test_sha1_CFLAGS = -DTEST
