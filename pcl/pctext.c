@@ -258,10 +258,12 @@ get_next_char(
 
     /* check if the character is in the font and get the character
        width at the same time */
-    if ( pl_font_char_width(pcs->font, (void *)(pcs->pgs), chr, pwidth) == 0 )
-	return 0;
+    if ( *pis_space == false )
+        if ( pl_font_char_width(pcs->font, (void *)(pcs->pgs), chr, pwidth) == 0 )
+            return 0;
     /*
-     * The character is not in the font.
+     * If we get to this point deem the character an undefined
+     * character - a space in pcl.
      */
     *pis_space = true;
     *pchr = 0xffff;
