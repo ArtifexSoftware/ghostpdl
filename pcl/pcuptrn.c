@@ -4,6 +4,7 @@
 
 /* pcuptrn.c - code for PCL and GL/2 user defined patterns */
 
+#include "math_.h"
 #include "string_.h"
 #include "gx.h"
 #include "gsuid.h"
@@ -151,6 +152,10 @@ pcl_pattern_build_pattern(
 
     pptrn->pcol_ccolor = 0;
     pptrn->pmask_ccolor = 0;
+    pptrn->orient = 0;
+    /* provide a sentinel to guarantee the initial pattern is
+       rendered */
+    pptrn->ref_pt.x = pptrn->ref_pt.y = -1.0;
     code = build_pattern_data( &(pptrn->ppat_data),
                                ppixinfo,
                                type,
