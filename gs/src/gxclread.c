@@ -348,7 +348,7 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count, byte *data_in,
     }
 
     /* Render a band if necessary, and copy it incrementally. */
-    code = (*crdev->make_buffer_device)(mdev, target, 0, true);
+    code = (*crdev->make_buffer_device)(mdev, target, crdev->memory, true);
     if (code < 0)
 	return code;
     mdev->width = target->width;
