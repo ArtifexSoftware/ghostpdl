@@ -157,13 +157,16 @@ LCT=/DEBUG /INCREMENTAL:YES
 COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
 COMPILE_WITH_FRAMES=    # no optimization when debugging
 COMPILE_WITHOUT_FRAMES=    # no optimization when debugging
+CMT=/MTd
 !else
 !if $(DEBUGSYM)==0
 CT=
 LCT=
+CMT=/MT
 !else
 CT=/Zi /Fd$(GLOBJDIR) $(NULL)
 LCT=/DEBUG
+CMT=/MTd
 !endif
 !if $(MSVC_VERSION) == 5
 # NOTE: With MSVC++ 5.0, /O2 produces a non-working executable.
@@ -197,7 +200,7 @@ COMPILE_FOR_CONSOLE_EXE=
 
 # The /MT is for multi-threading.  We would like to make this an option,
 # but it's too much work right now.
-GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) $(VC8WARN) /nologo /MT
+GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) $(VC8WARN) /nologo $(CMT)
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
