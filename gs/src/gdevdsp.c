@@ -527,15 +527,15 @@ display_map_rgb_color_rgb(gx_device * dev, const gx_color_value cv[])
 	case DISPLAY_ALPHA_FIRST:
 	case DISPLAY_UNUSED_FIRST:
 	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN)
-		return (red<<16) + (green<<8) + blue;		/* xRGB */
+		return ((gx_color_index)red<<16) + (green<<8) + blue;		/* xRGB */
 	    else
-		return (blue<<16) + (green<<8) + red;		/* xBGR */
+		return ((gx_color_index)blue<<16) + (green<<8) + red;		/* xBGR */
 	case DISPLAY_ALPHA_LAST:
 	case DISPLAY_UNUSED_LAST:
 	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN)
-		return (red<<24) + (green<<16) + (blue<<8);	/* RGBx */
+		return ((gx_color_index)red<<24) + (green<<16) + (blue<<8);	/* RGBx */
 	    else
-		return (blue<<24) + (green<<16) + (red<<8);	/* BGRx */
+		return ((gx_color_index)blue<<24) + (green<<16) + (red<<8);	/* BGRx */
     }
     return 0;
 }
