@@ -857,6 +857,8 @@ end
 } bdef
 
 /DoForm {
+    % Adobe 2nd edition of the PDF 1.3 spec makes /FormType
+    % and /Matrix keys optional. Cope with the missing keys.
   dup length
   1 index /Matrix known
     { dict
@@ -866,6 +868,10 @@ end
     }
   ifelse
   copy
+  dup /FormType known not {
+    dup length 1 add dict copy dup /FormType 1 put
+  } if
+
   dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
   3 index false /resolvestream cvx
   /.paintform cvx
@@ -1078,15 +1084,6 @@ end
 	  pop { exch pop oforce exit } forall
 	} ifelse
       } if
-		% Acrobat Distiller produces files in which this Form
-		% XObject lack FormType and Matrix keys.  This is illegal,
-		% but Acrobat Reader accepts it. DoForm can cope with
-                % missing Matrix key.
-
-      dup /FormType known not  {
-	dup length 1 add dict copy dup /FormType 1 put
-      } if
-
     1 index annotrect pop pop translate
     2 index dup scale		% Apply scale factor
       DoForm
