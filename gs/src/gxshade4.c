@@ -274,29 +274,23 @@ mesh_fill_triangle(mesh_fill_state_t *pfs)
 	     */
 	    if (pis->fill_adjust.x != 0 || pis->fill_adjust.y != 0) {
 		gx_path *ppath = gx_path_alloc(pis->memory, "Gt_fill");
-#		if VD_TRACE
-		    vd_trace_interface * vd_trace_save = vd_trace1;
-#		endif
+		vd_save;
 
 		gx_path_add_point(ppath, fp->va.p.x, fp->va.p.y);
 		gx_path_add_line(ppath, fp->vb.p.x, fp->vb.p.y);
 		gx_path_add_line(ppath, fp->vc.p.x, fp->vc.p.y);
-#		if VD_TRACE
-		    vd_quad(fp->va.p.x, fp->va.p.y,
-			    fp->va.p.x, fp->va.p.y,
-			    fp->vb.p.x, fp->vb.p.y,
-			    fp->vc.p.x, fp->vc.p.y, 0, RGB(255, 0, 0));
-		    if (!VD_TRACE_DOWN)
-			vd_trace1 = NULL;
-#		    if TENSOR_SHADING_DEBUG
-			triangle_cnt++;
-#		    endif
+		vd_quad(fp->va.p.x, fp->va.p.y,
+			fp->va.p.x, fp->va.p.y,
+			fp->vb.p.x, fp->vb.p.y,
+			fp->vc.p.x, fp->vc.p.y, 0, RGB(255, 0, 0));
+		if (!VD_TRACE_DOWN)
+		    vd_disable;
+#		if TENSOR_SHADING_DEBUG
+		    triangle_cnt++;
 #		endif
 		code = shade_fill_path((const shading_fill_state_t *)pfs,
 				       ppath, &dev_color);
-#		if VD_TRACE
-		    vd_trace1 = vd_trace_save;
-#		endif
+		vd_restore;
 		gx_path_free(ppath, "Gt_fill");
 	    } else {
 		code = (*dev_proc(pfs->dev, fill_triangle))

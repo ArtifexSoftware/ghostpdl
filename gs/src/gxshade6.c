@@ -491,9 +491,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	    /* Fill the sub-patch given by ((u0,v0),(u1,v1)). */
 	    {
 		mesh_vertex_t mu0v0, mu1v0, mu1v1, mu0v1;
-#		if VD_TRACE
-		    vd_trace_interface * vd_trace_save = vd_trace1;
-#		endif
+		vd_save;
 
 		(*transform)(&mu0v0.p, curve, interior, u0, v0);
 		(*transform)(&mu1v0.p, curve, interior, u1, v0);
@@ -509,15 +507,13 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		memcpy(mu1v0.cc, cu1v0.cc.paint.values, sizeof(mu1v0.cc));
 		memcpy(mu1v1.cc, cu1v1.cc.paint.values, sizeof(mu1v1.cc));
 		memcpy(mu0v1.cc, cu0v1.cc.paint.values, sizeof(mu0v1.cc));
-#		if VD_TRACE
-		    vd_quad(mu0v0.p.x, mu0v0.p.y, 
-			    mu0v1.p.x, mu0v1.p.y, 
-			    mu1v1.p.x, mu1v1.p.y, 
-			    mu1v0.p.x, mu1v0.p.y, 
-			    0, RGB(0, 255, 0));
-		    if (!VD_TRACE_DOWN)
-			vd_trace1 = NULL;
-#		endif
+		vd_quad(mu0v0.p.x, mu0v0.p.y, 
+			mu0v1.p.x, mu0v1.p.y, 
+			mu1v1.p.x, mu1v1.p.y, 
+			mu1v0.p.x, mu1v0.p.y, 
+			0, RGB(0, 255, 0));
+		if (!VD_TRACE_DOWN)
+		    vd_disable;
 
 /* Make this a procedure later.... */
 #define FILL_TRI(pva, pvb, pvc)\
@@ -547,9 +543,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		    FILL_TRI(&mu0v1, &mu0v0, &mmid);
 		}
 #endif
-#		if VD_TRACE
-		    vd_trace1 = vd_trace_save;
-#		endif
+		vd_restore;
 	    }
 	}
     }
@@ -1014,12 +1008,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 {
     gs_fixed_edge le, re;
     int code;
-#   if VD_TRACE
-	vd_trace_interface * vd_trace_save = vd_trace1;
-
-	if (!VD_TRACE_DOWN)
-	    vd_trace1 = NULL;
-#   endif
+    vd_save;
 
     if (ybot > ytop)
 	return 0;
@@ -1028,11 +1017,11 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 	return 0;
 #   endif
     make_trapezoid(q, vi0, vi1, vi2, vi3, ybot, ytop, swap_axes, orient, &le, &re);
+    if (!VD_TRACE_DOWN)
+	vd_disable;
     code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
 	    &le, &re, ybot, ytop, swap_axes, pdevc, pfs->pis->log_op);
-#   if VD_TRACE
-	vd_trace1 = vd_trace_save;
-#   endif
+    vd_restore;
     return code;
 }
 
@@ -1104,12 +1093,7 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
     patch_color_t c1 = *c;
     gx_device_color dc;
     int code;
-#   if VD_TRACE
-	vd_trace_interface * vd_trace_save = vd_trace1;
-
-	if (!VD_TRACE_DOWN)
-	    vd_trace1 = NULL;
-#   endif
+    vd_save;
 
     patch_color_to_device_color(pfs, &c1, &dc);
 #   if VD_DRAW_CIRCLES
@@ -1124,11 +1108,11 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
 		  (ybot + ytop) / 2,
 		  5, (uint)dc.colors.pure);
 #   endif
+    if (!VD_TRACE_DOWN)
+	vd_disable;
     code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
 	le, re, ybot, ytop, swap_axes, &dc, pfs->pis->log_op);
-#   if VD_TRACE
-	vd_trace1 = vd_trace_save;
-#   endif
+    vd_restore;
     return code;
 }
 
@@ -1625,13 +1609,10 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
     gs_fixed_edge ue;
     int code;
     gx_device_color dc;
-#   if VD_TRACE
-	vd_trace_interface * vd_trace_save = vd_trace1;
+    vd_save;
 
-	if (!VD_TRACE_DOWN)
-	    vd_trace1 = NULL;
-#   endif
-
+    if (!VD_TRACE_DOWN)
+        vd_disable;
     patch_color_to_device_color(pfs, c, &dc);
     if (le->end.y < re->end.y) {
 	code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
@@ -1654,9 +1635,7 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
     } else
 	code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
 	    le, re, le->start.y, le->end.y, false, &dc, pfs->pis->log_op);
-#   if VD_TRACE
-	vd_trace1 = vd_trace_save;
-#   endif
+    vd_restore;
     return code;
 }
 
