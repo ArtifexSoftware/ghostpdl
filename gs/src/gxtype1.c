@@ -271,7 +271,6 @@ int
 gs_type1_endchar(gs_type1_state * pcis)
 {
     gs_imager_state *pis = pcis->pis;
-    gx_path *ppath = pcis->path;
 
     if (pcis->seac_accent >= 0) {	/* We just finished the base character of a seac. */
 	/* Do the accent. */
