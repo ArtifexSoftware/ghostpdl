@@ -76,13 +76,14 @@ def LastLogDate2CtimeTuple(filename):
 # build a date, time, author, email address header.
 def ChangeLogDateNameHeader(date, author, hostname, tabsize):
     import time, pwd
-    seperator = ' ' * tabsize
+    seperator1 = ' ' * tabsize
+    seperator2 = ' ' * (tabsize / 2)
     try:
 	author_name = pwd.getpwnam(author)[4]
     except:
 	author_name = ''
-    return time.asctime(date) + ' GMT' + seperator + author_name +\
-	   seperator + author + '@' + hostname + '\n'
+    return time.asctime(date) + ' GMT' + seperator1 + author_name +\
+	   seperator2 + author + '@' + hostname + '\n'
 
 # build change log entries with file name, revisions, etc. lumping
 # like descriptions together.  We assume the dictionary contains data.
