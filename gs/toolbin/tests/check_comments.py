@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.2
+#!/usr/bin/env python
 
 #    Copyright (C) 2003 artofcode LLC. All rights reserved.
 #

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.2
+#!/usr/bin/env python
 
 #    Copyright (C) 2001 Artifex Software Inc.
 # 
@@ -25,8 +25,7 @@
 # compares Ghostscript against a baseline made from file->pdf->raster->md5sum.
 # this test tries to detect Ghostscript changes that affect the pdfwrite driver.
 
-import os, calendar
-import string
+import os, calendar, string, time
 import gstestutils
 import gsconf, gstestgs, gsparamsets, gssum
 
@@ -37,7 +36,7 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 	rasterfilename = gsconf.rasterdbdir + file + ".gz"
 	if not os.access(rasterfilename, os.F_OK):
 		os.system(gsconf.codedir + "update_pdfbaseline " + os.path.basename(self.file))	
-	ct = calendar.localtime(os.stat(rasterfilename)[9])
+	ct = time.localtime(os.stat(rasterfilename)[9])
 	baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
 
 	if self.band:
