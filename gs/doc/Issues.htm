@@ -266,7 +266,31 @@ an causing an invalidrestore.
 <p>
 Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=603689"
 class="offsite">#603689</a>, September 2, 2002.
- 
+
+<h3> Failure to repair incorrect component ids in JPEG images </h3>
+
+<p>There are PDF files in the wild containing JPEG images with
+incorrect component id tags. Ghostscript currently displays these
+files incorrectly, but in the past the files displayed fine. The
+problem is not in Ghostscript itself, though, but in the libjpeg
+library.
+
+<p>Behavior changed in recent libjpeg versions; libjpeg version 6a
+ignored the component ids. As of version 6b, libjpeg interprets the id
+tags, but creates garbage output when they're invalid. We developed a
+<a
+href="http://ghostscript.com/pipermail/gs-code-review/2004-June/004579.html"
+class="offsite">patch
+to libjpeg 6b</a> which makes the decoding more robust. We are not
+aware of anybody maintaining new libjpeg releases, so we include the
+patch here in the hope that people can apply it themselves, and that
+in the event that there is a future libjpeg update, that it will
+include this patch as well. Linux distributions are especially
+encouraged to apply this patch to the system libjpeg package.
+
+<p>Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=406643"
+class="offsite">#686980</a>, July 31, 2003.
+
 <hr>
 
 <h2><a name="Driver_Issues"></a>Driver Issues.</h2>
