@@ -28,16 +28,17 @@ pdfdict begin
 
 % ---------------- Encodings ---------------- %
 
+/.notdefEncoding 256 { /.notdef } repeat 256 packedarray def
+
 % Apply a list of differences to an Encoding.
 % Note that the differences may cause the array to grow.
 /updateencoding {	% <encoding|null> <differences> updateencoding <enc'>
 	% Calculate the length of the result.
-  exch 0 2 index {
+  % in case the incoming Encoding is null, use .notdefEncoding
+  exch dup null eq { pop .notdefEncoding } if
+  0 2 index {
     dup type /nametype ne { exch pop } { pop 1 add } ifelse
   } forall
-  % if the encoding was null, make one large enough for 
-  % ordinary use (one byte characters) and fill it with .notdef
-  1 index null eq { exch pop [ 256 { /.notdef } repeat ] exch } if
   1 index length .max array dup 0 4 -1 roll putinterval
   exch 0 exch {
 		% Stack: enc' code element
@@ -49,13 +50,10 @@ pdfdict begin
 } bdef
 
 % Get the Encoding for a font.
-/getencoding		% <base-encoding|null> <font-resource> getencoding <enc>
- { % Grab the Flags entry to see if this font is "symbolic" later
-   dup /FontDescriptor knownoget { /Flags get } { 0 } ifelse exch
-   /Encoding knownoget
+/getencoding		% <base-encoding> <font-resource> getencoding <enc>
+ { /Encoding knownoget
     { dup type /nametype eq
-       { 
-         exch pop	% named Encoding explicit, discard Flags
+       {
          % The published PDF specification says the Encoding name
          % "must be" one of the 3 predefined Encodings, implying
          % that an error should occur if it isn't.  However, Acrobat
@@ -71,29 +69,15 @@ pdfdict begin
            }
          ifelse
        }
-       {
-	 dup /BaseEncoding knownoget
-	  { exch pop	% named Encoding explicit, discard Flags
-            findencoding 3 -1 roll pop exch
+       { dup /BaseEncoding knownoget
+	  { findencoding 3 -1 roll pop exch
 	  }
-          % If BaseEncoding is absent, then the Differences entry describes
-	  % differences from an implicit base encoding. For a font program
-	  % that is embedded in the PDF file, the implicit base encoding
-	  % is the font program’s built-in encoding, which has been passed
-	  % on the stack. Otherwise, for a nonsymbolic font, it is
-	  % StandardEncoding. Symbolic fonts use the built-in encoding.
-
-          { % use StandardEncoding as long as this is not a Symbolic font
-	    exch 4 and 0 eq { /StandardEncoding findencoding 3 -1 roll pop exch } if
-	  }
-	 ifelse
+	 if
 	 /Differences knownoget { updateencoding } if
        }
       ifelse
-    } {
-      pop	% no Encoding, discard Flags
     }
-   ifelse
+   if
  } bdef
 
 % Rename a font with a generated name.
@@ -565,8 +549,6 @@ readonly def
  } bdef
 
 % ---------------- Type 3 fonts ---------------- %
-
-/.notdefEncoding 256 { /.notdef } repeat 256 packedarray def
 
 /buildType3 {		% <Type3-font-resource> buildType3 <font>
   8 dict begin
