@@ -171,7 +171,7 @@ private const pcl_cid_col_common_t  chroma_default = {
         { 0.155, 0.070 },   /* "blue" chromaticity */
         { 0.313, 0.329 }    /* white chromaticity */
     },
-    { { 2.2, 1.0 }, { 2.2, 1.0 }, { 2.2, 1.0 } }
+    { { 1, 1.0 }, { 1, 1.0 }, { 1, 1.0 } }
 };
 
 private const float     lumchrom_xform_default[9] = {

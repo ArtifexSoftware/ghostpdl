@@ -51,6 +51,7 @@ private_st_crd_t();
  *
  */
 private const gs_vector3    dflt_WhitePoint = { 0.95, 1.0, 1.09 };
+private const gs_range3     dflt_RangePQR = {{ {0, 1}, {0, 1}, {0, 1.09} }};
 private const gs_matrix3    dflt_MatrixLMN = { {  3.51, -1.07,  0.06 },
                                                { -1.74,  1.98, -0.20 },
                                                { -0.54,  0.04,  1.05 },
@@ -236,7 +237,7 @@ pcl_crd_build_default_crd(
                                           &dflt_WhitePoint,
                                           NULL,
                                           NULL,
-                                          NULL,
+                                          &dflt_RangePQR,
                                           &pcs->dflt_TransformPQR,
                                           &dflt_MatrixLMN,
                                           NULL,
