@@ -350,13 +350,13 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 % returns an array of arrays, each containing a pair
 % of strings: what the system thinks is the ps name,
 % and the access path.
+/.nativefontmapbuilt [ false ] def % use an array to avoid vm issues
 /.buildnativefontmap {
-  QUIET true or not {
+  QUIET not {
     (Querying operating system for font files...\n)
     print flush
   } if
-  false % disabled code:
-  %.getnativefonts
+  .getnativefonts
   {
     {
       % stack: [ (name) (path) ]
@@ -375,6 +375,8 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
         aload pop .definefontmap
       } ifelse
     } forall
+    % record that we've been run
+    .nativefontmapbuilt 0 true put 
   } if
 } bind def
 
@@ -816,11 +818,13 @@ $error /SubstituteFont { } put
       counttomark 1 sub { pop } repeat
       .dofindfont
     } {
-                        % We didn't find it in the font path. Try (re)building
-                        % the native font map entries
-      .buildnativefontmap
-      %counttomark 1 sub { pop } repeat
-      .tryfindfont not {
+                        % No more directories to scan. Try building the native
+                        % font map entries if we haven't already done so.
+      .nativefontmapbuilt 0 get not {
+        .buildnativefontmap
+        .dofindfont     % start over
+      } {
+      
                         % No luck.  Make sure we're not already
                         % looking for the default font.
         QUIET not {
@@ -836,7 +840,7 @@ $error /SubstituteFont { } put
         } if
                         % Substitute for the font.  Don't alias.
         $error /SubstituteFont get exec .stdsubstfont
-      } if
+      } ifelse
     } ifelse
   } if
 } bind def
