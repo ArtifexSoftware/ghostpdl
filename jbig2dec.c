@@ -368,7 +368,8 @@ main (int argc, char **argv)
   params.verbose = 1;
   params.hash = 0;
   params.output_file = NULL;
-
+  params.output_format = jbig2dec_format_none;
+  
   filearg = parse_options(argc, argv, &params);
 
   if (params.hash) hash_init(&params);
@@ -467,8 +468,13 @@ main (int argc, char **argv)
         params.output_file = make_output_filename(argv[filearg], ".pbm");
         params.output_format = jbig2dec_format_pbm;
 #endif
+      } else {
+        int len = strlen(params.output_file);
+        if ((len >= 3) && (params.output_format == jbig2dec_format_none))
+          /* try to set the output type by the given extension */
+          set_output_format(&params, params.output_file + len - 3);
       }
-    
+
     /* retrieve and write out all the completed pages */
     while ((image = jbig2_page_out(ctx)) != NULL) {
       write_page_image(&params, image);
