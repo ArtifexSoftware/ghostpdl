@@ -1598,7 +1598,7 @@ cidlib_=$(GLOBJ)gsfcid.$(OBJ)
 $(GLD)cidlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cidlib_)
 	$(SETMOD) $(GLD)cidlib $(cidlib_)
 
-$(GLOBJ)gsfcid.$(OBJ) : $(GLSRC)gsfcid.c $(GX)\
+$(GLOBJ)gsfcid.$(OBJ) : $(GLSRC)gsfcid.c $(GX) $(memory__h)\
  $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h)
 	$(GLCC) $(GLO_)gsfcid.$(OBJ) $(C_) $(GLSRC)gsfcid.c
 

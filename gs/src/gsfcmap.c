@@ -48,19 +48,28 @@ case 0:
     return ENUM_OBJ(pclr->cmap);
 case 1: return ENUM_STRING(&pclr->keys);
 case 2: return ENUM_STRING(&pclr->values);
-case 3: return ENUM_STRING(&pclr->file_indices);
 ENUM_PTRS_END
 private
 RELOC_PTRS_WITH(code_lookup_range_reloc_ptrs, gx_code_lookup_range_t *pclr)
     RELOC_VAR(pclr->cmap);
     RELOC_STRING_VAR(pclr->keys);
     RELOC_STRING_VAR(pclr->values);
-    RELOC_STRING_VAR(pclr->file_indices);
 RELOC_PTRS_END
 public_st_code_lookup_range();
 public_st_code_lookup_range_element();
 
 /* ---------------- Procedures ---------------- */
+
+/*
+ * Initialize a just-allocated CMap, to ensure that all pointers are clean
+ * for the GC.
+ */
+void
+gs_cmap_init(gs_cmap_t *pcmap)
+{
+    memset(pcmap, 0, sizeof(*pcmap));
+    uid_set_invalid(&pcmap->uid);
+}
 
 /* Get a big-endian integer. */
 private uint
@@ -123,8 +132,7 @@ code_map_decode_next(const gx_code_map_t * pcmap, const gs_const_string * pstr,
 		continue;
 	    /* We have a match.  Return the result. */
 	    *pindex += pre_size + key_size;
-	    *pfidx = (pclr->file_indices.data ? pclr->file_indices.data[k] :
-		      pclr->default_file_index);
+	    *pfidx = pclr->font_index;
 	    pvalue = pclr->values.data + k * pclr->value_size;
 	    switch (pclr->value_type) {
 	    case CODE_VALUE_CID:

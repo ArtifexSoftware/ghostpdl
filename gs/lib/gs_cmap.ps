@@ -63,8 +63,7 @@
 % ? indicates a Boolean, # indicates an integer, {} for grouping.
 %	[[(first) (last) ...]		% code space ranges
 %	 [(prefix) (key_size,?is_range,value_type,value_size) (keys...)
-%	   {(values...) | [value ...]}
-%	   {#font_index | (font_indices...)}	% code mappings
+%	   {(values...) | [value ...]} #font_index	% code mappings
 %	  ...]
 %	 <<same>>		% notdef mappings
 %	]
@@ -176,13 +175,14 @@
 
 % ------ Character name/code selector operators ------ %
 
-% ****** THIS SECTION NOT UPDATED ******
-
 /beginbfchar {		% <count> beginbfchar -
   pop mark
 } bind def
 /endbfchar {		% <code> <to_code|charname> ... endbfchar
-  .endmapchar
+  counttomark 2 idiv {
+    counttomark -2 roll		% process in correct order
+    .addbfchar
+  } repeat 1 .appendmap
 } bind def
 
 /beginbfrange {		% <count> beginbfrange -
@@ -192,22 +192,54 @@
 			%   endbfrange -
   counttomark 3 idiv {
     counttomark -3 roll		% process in correct order
-    .addbfrange
-  } repeat pop
+    dup type dup /arraytype eq exch /packedarraytype eq or {
+			% Array value, split up.
+      exch pop {
+			% Stack: code to_code|charname
+	1 index exch .addbfchar
+			% Increment the code.  As noted above, we require
+			% that only the last byte vary, but we still must
+			% mask it after incrementing, in case the last
+			% value was 0xff.
+			% Stack: code prefix params key value fontindex
+	6 -1 roll dup length string copy
+	dup dup length 1 sub 2 copy get 1 add 255 and put
+      } forall pop
+    } {
+			% Single value, handle directly.
+      .addbfrange
+    } ifelse
+  } repeat 1 .appendmap
 } bind def
 
-/.addbfrange {		% <code_lo> <code_hi> <to_code|(charname*)>
-			%   .addbfrange
-  dup type /stringtype eq {
-    { dup length string copy dup dup length 1 sub 2 copy get 1 add put }
-    .addcharrange
+/.addbfchar {		% <code> <to_code|charname> .addbfchar
+			%   <prefix> <params> <key> <value> <font_index>
+  1 index exch .addbfrange
+} bind def
+/.addbfrange {		% <code_lo> <code_hi> <to_code|charname>
+			%   .addbfrange <<same as .addbfchar>>
+  4 string dup 3
+  3 index type /nametype eq {
+    2 index 2 1 put
+    4 -1 roll 1 array astore 4 1 roll 4
   } {
-    2 dict begin /codes 1 index def 0 get
-    { pop codes dup dup length 1 sub 1 exch getinterval /codes exch def
-      dup length 0 gt { 0 get } if
-    }
-    .addcharrange end
+    2 index 2 2 put
+    3 index length
+  } ifelse put
+			% Stack: code_lo code_hi value params
+  3 index 3 index eq {
+			% Single value.
+    3 -1 roll pop exch () exch
+  } {
+			% Range.
+    dup 0 1 put dup 1 1 put
+    4 2 roll
+    dup dup length 1 sub 0 exch getinterval 5 1 roll	% prefix
+			% Stack: prefix value params code_lo code_hi
+    2 { exch dup length 1 sub 1 getinterval } repeat concatstrings
+    3 -1 roll
   } ifelse
+  .FontIndex
 } bind def
 
 % ------ CID selector operators ------ %

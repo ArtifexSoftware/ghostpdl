@@ -18,6 +18,7 @@
 
 /*$Id$ */
 /* Support for CID-keyed fonts */
+#include "memory_.h"
 #include "gx.h"
 #include "gsmatrix.h"		/* for gsfont.h */
 #include "gsstruct.h"
@@ -82,6 +83,22 @@ RELOC_PTRS_WITH(font_cid2_reloc_ptrs, gs_font_cid2 *pfcid2);
     RELOC_USING(st_gs_font_cid_data, &pfcid2->cidata.common,
 		sizeof(st_gs_font_cid_data));
 RELOC_PTRS_END
+
+/*
+ * The CIDSystemInfo of a CMap may be null.  We represent this by setting
+ * Registry and Ordering to empty strings, and Supplement to 0.
+ */
+void
+cid_system_info_set_null(gs_cid_system_info_t *pcidsi)
+{
+    memset(pcidsi, 0, sizeof(*pcidsi));
+}
+bool
+cid_system_info_is_null(const gs_cid_system_info_t *pcidsi)
+{
+    return (pcidsi->Registry.size == 0 && pcidsi->Ordering.size == 0 &&
+	    pcidsi->Supplement == 0);
+}
 
 /*
  * Get the CIDSystemInfo of a font.  If the font is not a CIDFont,

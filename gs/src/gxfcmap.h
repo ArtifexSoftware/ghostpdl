@@ -86,9 +86,7 @@ typedef struct gx_code_lookup_range_s {
     gx_code_value_type_t value_type;
     int value_size;		/* bytes per value */
     gs_string values;		/* [num_keys * value_size] */
-    int default_file_index;
-    int file_index_size;	/* currently must be 1 */
-    gs_string file_indices;	/* [num_keys * file_index_size], may be 0 */
+    int font_index;
 } gx_code_lookup_range_t;
 /*
  * The GC descriptor for lookup ranges is complex, because it must mark
@@ -115,25 +113,38 @@ typedef struct gx_code_map_s {
 
 /* A CMap proper is relatively simple. */
 struct gs_cmap_s {
-    gs_uid uid;
-    gs_cid_system_info_t *CIDSystemInfo;
+    int CMapType;		/* must be first; must be 0 or 1 */
+    gs_const_string CMapName;
+    gs_cid_system_info_t *CIDSystemInfo; /* [num_fonts] */
     int num_fonts;
+    float CMapVersion;
+    gs_uid uid;			/* XUID or nothing */
+    long UIDOffset;
     int WMode;
     gx_code_space_t code_space;
     gx_code_map_t def;		/* defined characters */
     gx_code_map_t notdef;	/* notdef characters */
     gs_glyph_mark_proc_t mark_glyph;	/* glyph marking procedure for GC */
     void *mark_glyph_data;	/* closure data */
+    gs_glyph_name_proc_t glyph_name;	/* glyph name procedure for printing */
+    void *glyph_name_data;	/* closure data */
 };
 
 extern_st(st_cmap);
 #define public_st_cmap()	/* in gsfcmap.c */\
   BASIC_PTRS(cmap_ptrs) {\
-    GC_OBJ_ELT3(gs_cmap_t, uid.xvalues, CIDSystemInfo, code_space.ranges),\
+    GC_CONST_STRING_ELT(gs_cmap_t, CMapName),\
+    GC_OBJ_ELT3(gs_cmap_t, CIDSystemInfo, uid.xvalues, code_space.ranges),\
     GC_OBJ_ELT2(gs_cmap_t, def.lookup, notdef.lookup),\
-    GC_OBJ_ELT(gs_cmap_t, mark_glyph_data)\
+    GC_OBJ_ELT2(gs_cmap_t, mark_glyph_data, glyph_name_data)\
   };\
   gs_public_st_basic(st_cmap, gs_cmap_t, "gs_cmap",\
     cmap_ptrs, cmap_data)
+
+/*
+ * Initialize a just-allocated CMap, to ensure that all pointers are clean
+ * for the GC.
+ */
+void gs_cmap_init(P1(gs_cmap_t *));
 
 #endif /* gxfcmap_INCLUDED */

@@ -132,7 +132,7 @@ acquire_code_map(gx_code_map_t * pcmap, const ref * pref, gs_cmap_t * root,
 	    !r_has_type(&rmisc, t_string) ||
 	    !r_has_type(&rkeys, t_string) ||
 	    !(r_has_type(&rvalues, t_string) || r_is_array(&rvalues)) ||
-	    !(r_has_type(&rfxs, t_integer) || r_has_type(&rfxs, t_string))
+	    !r_has_type(&rfxs, t_integer)
 	    )
 	    return_error(e_typecheck);
 	if (r_size(&rmisc) != 4 ||
@@ -194,25 +194,20 @@ acquire_code_map(gx_code_map_t * pcmap, const ref * pref, gs_cmap_t * root,
 		if (!r_has_type(&rvalue, t_name))
 		    return_error(e_rangecheck);
 		value = name_index(&rvalue);
-		if ((value >> (pclr->value_size * 8)) != 0)
+		/*
+		 * We need a special check here because some CPUs cannot
+		 * shift by the full size of an int or long.
+		 */
+		if (pclr->value_size < sizeof(value) &&
+		    (value >> (pclr->value_size * 8)) != 0
+		    )
 		    return_error(e_rangecheck);
 		for (i = pclr->value_size; --i >= 0; )
 		    *pvalue++ = (byte)(value >> (i * 8));
 	    }
 	}
-	if (r_has_type(&rfxs, t_integer)) {
-	    check_int_leu_only(rfxs, 0xff);
-	    pclr->default_file_index = (int)rfxs.value.intval;
-	    pclr->file_index_size = 0;
-	    pclr->file_indices.data = 0;
-	    pclr->file_indices.size = 0;
-	} else {
-	    if (r_size(&rfxs) != pclr->num_keys)
-		return_error(e_rangecheck);
-	    pclr->file_index_size = 1;
-	    pclr->file_indices.data = rfxs.value.bytes,
-		pclr->file_indices.size = r_size(&rfxs);
-	}
+	check_int_leu_only(rfxs, 0xff);
+	pclr->font_index = (int)rfxs.value.intval;
     }
     return 0;
 }
@@ -242,8 +237,7 @@ acquire_cid_system_info(ref *psia, const ref *op)
 
 /*
  * Get one element of a CIDSystemInfo array.  If the element is missing or
- * null (apparently Adobe interpreters accept null, even though the
- * documentation doesn't allow this), fill in dummy values and return 1.
+ * null, return 1.
  */
 private int
 get_cid_system_info(gs_cid_system_info_t *pcidsi, const ref *psia, uint index)
@@ -252,10 +246,7 @@ get_cid_system_info(gs_cid_system_info_t *pcidsi, const ref *psia, uint index)
     int code = array_get(psia, (long)index, &rcidsi);
 
     if (code < 0 || r_has_type(&rcidsi, t_null)) {
-	/* Return a null value. */
-	pcidsi->Registry.data = 0, pcidsi->Registry.size = 0;
-	pcidsi->Ordering.data = 0, pcidsi->Ordering.size = 0;
-	pcidsi->Supplement = 0;
+	cid_system_info_set_null(pcidsi);
 	return 1;
     }
     return cid_system_info_param(pcidsi, &rcidsi);
@@ -318,7 +309,8 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
 		gs_cid_system_info_t cidsi;
 
 		get_cid_system_info(&cidsi, &rfsi, 0);
-		if (!cid_system_info_compatible(&cidsi,
+		if (!cid_system_info_is_null(&cidsi) &&
+		    !cid_system_info_compatible(&cidsi,
 						pcmap->CIDSystemInfo + i))
 		    return_error(e_rangecheck);
 	    }
@@ -337,17 +329,34 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
  * and have an entry with key = CodeMap and value = null; the result is
  * read-only and has a real CodeMap.
  *
- * This operator reads the CIDSystemInfo, WMode, and .CodeMapData elements
- * of the CMap dictionary.  For details, see lib/gs_cmap.ps.
+ * This operator reads the CMapType, CMapName, CIDSystemInfo, CMapVersion,
+ * UIDOffset, XUID, WMode, and .CodeMapData elements of the CMap dictionary.
+ * For details, see lib/gs_cmap.ps and the Adobe documentation.
  */
+private int
+zfcmap_glyph_name(gs_glyph glyph, gs_const_string *pstr, void *proc_data)
+{
+    ref nref, nsref;
+    int code = 0;
+
+    /*code = */name_index_ref((uint)glyph, &nref);
+    if (code < 0)
+	return code;
+    name_string_ref(&nref, &nsref);
+    pstr->data = nsref.value.const_bytes;
+    pstr->size = r_size(&nsref);
+    return 0;
+}
 private int
 zbuildcmap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code;
+    ref *pcmapname;
+    ref *puidoffset;
     ref *pcodemapdata;
     ref *pcodemap;
-    ref rcidsi, rcoderanges, rdefs, rnotdefs;
+    ref rname, rcidsi, rcoderanges, rdefs, rnotdefs;
     gs_cmap_t *pcmap = 0;
     gs_cid_system_info_t *pcidsi = 0;
     ref rcmap;
@@ -360,10 +369,31 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 	code = gs_note_error(e_VMerror);
 	goto fail;
     }
-    if ((code = dict_uid_param(op, &pcmap->uid, 0, imemory, i_ctx_p)) < 0 ||
+    gs_cmap_init(pcmap);
+    if ((code = dict_int_param(op, "CMapType", 0, 1, -1, &pcmap->CMapType)) < 0 ||
+	(code = dict_float_param(op, "CMapVersion", 0.0, &pcmap->CMapVersion)) < 0 ||
+	(code = dict_uid_param(op, &pcmap->uid, 0, imemory, i_ctx_p)) < 0 ||
 	(code = dict_int_param(op, "WMode", 0, 1, 0, &pcmap->WMode)) < 0
 	)
 	goto fail;
+    if ((code = dict_find_string(op, "CMapName", &pcmapname)) <= 0) {
+	code = gs_note_error(e_rangecheck);
+	goto fail;
+    }
+    if (!r_has_type(pcmapname, t_name)) {
+	code = gs_note_error(e_typecheck);
+	goto fail;
+    }
+    name_string_ref(pcmapname, &rname);
+    pcmap->CMapName.data = rname.value.const_bytes;
+    pcmap->CMapName.size = r_size(&rname);
+    if (dict_find_string(op, "UIDOffset", &puidoffset) > 0) {
+	if (!r_has_type(puidoffset, t_integer)) {
+	    code = gs_note_error(e_typecheck);
+	    goto fail;
+	}
+	pcmap->UIDOffset = puidoffset->value.intval; /* long, not int */
+    }
     if (dict_find_string(op, ".CodeMapData", &pcodemapdata) <= 0 ||
 	!r_has_type(pcodemapdata, t_array) ||
 	r_size(pcodemapdata) != 3 ||
@@ -383,6 +413,7 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 	goto fail;
     }
     pcmap->CIDSystemInfo = pcidsi;
+    pcmap->num_fonts = r_size(&rcidsi);
     for (i = 0; i < r_size(&rcidsi); ++i) {
 	code = get_cid_system_info(pcidsi + i, &rcidsi, i);
 	if (code < 0)
@@ -399,6 +430,8 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 	goto fail;
     pcmap->mark_glyph = zfont_mark_glyph_name;
     pcmap->mark_glyph_data = 0;
+    pcmap->glyph_name = zfcmap_glyph_name;
+    pcmap->glyph_name_data = 0;
     make_istruct_new(&rcmap, a_readonly, pcmap);
     code = idict_put_string(op, "CodeMap", &rcmap);
     if (code < 0)
@@ -415,18 +448,26 @@ fail:
 #if defined(DEBUG) || defined(PROFILE) || defined(TEST)
 
 #include "stream.h"
+#include "spprint.h"
 #include "files.h"
 #include "gdevpsf.h"
 
 /* <file> <cmap> .writecmap - */
 private int
+zfcmap_put_name_default(stream *s, const byte *str, uint size)
+{
+    pputc(s, '/');
+    pwrite(s, str, size);
+    return 0;
+}
+private int
 zwritecmap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     ref *pcodemap;
+    gs_cmap_t *pcmap;
     int code;
     stream *s;
-    gs_const_string str;
 
     check_type(*op, t_dictionary);
     if (dict_find_string(op, "CodeMap", &pcodemap) <= 0 ||
@@ -434,10 +475,8 @@ zwritecmap(i_ctx_t *i_ctx_p)
 	)
 	return_error(e_typecheck);
     check_write_file(s, op - 1);
-    /* Make up an arbitrary name. */
-    str.data = (const byte *)"myCMap";
-    str.size = strlen((const char *)str.data);
-    code = psf_write_cmap(s, r_ptr(pcodemap, gs_cmap_t), &str);
+    pcmap = r_ptr(pcodemap, gs_cmap_t);
+    code = psf_write_cmap(s, pcmap, zfcmap_put_name_default, NULL);
     if (code >= 0)
 	pop(2);
     return code;

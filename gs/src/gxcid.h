@@ -42,4 +42,11 @@ extern_st(st_cid_system_info_element);
     "gs_cid_system_info_t[]", cid_si_elt_enum_ptrs, cid_si_elt_reloc_ptrs,\
     st_cid_system_info)
 
+/*
+ * The CIDSystemInfo of a CMap may be null.  We represent this by setting
+ * Registry and Ordering to empty strings, and Supplement to 0.
+ */
+void cid_system_info_set_null(P1(gs_cid_system_info_t *));
+bool cid_system_info_is_null(P1(const gs_cid_system_info_t *));
+
 #endif /* gxcid_INCLUDED */

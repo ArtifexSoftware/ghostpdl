@@ -52,9 +52,9 @@ pput_string_entry(stream *s, const char *prefix, const gs_const_string *pstr)
     pwrite(s, pstr->data, pstr->size);
 }
 
-/* Write a CID in hex. */
+/* Write a hex string. */
 private void
-pput_cid(stream *s, const byte *pcid, int size)
+pput_hex(stream *s, const byte *pcid, int size)
 {
     int i;
     static const char *const hex_digits = "0123456789abcdef";
@@ -65,13 +65,29 @@ pput_cid(stream *s, const byte *pcid, int size)
     }
 }
 
+/* Write one CIDSystemInfo dictionary. */
+private void
+cmap_put_system_info(stream *s, const gs_cid_system_info_t *pcidsi)
+{
+    if (cid_system_info_is_null(pcidsi)) {
+	pputs(s, " null ");
+    } else {
+	pputs(s, " 3 dict dup begin\n");
+	pputs(s, "/Registry ");
+	s_write_ps_string(s, pcidsi->Registry.data, pcidsi->Registry.size, 0);
+	pputs(s, " def\n/Ordering ");
+	s_write_ps_string(s, pcidsi->Ordering.data, pcidsi->Ordering.size, 0);
+	pprintd1(s, " def\n/Supplement %d def\nend ", pcidsi->Supplement);
+    }
+}
+
 /* Write one code map. */
 private int
 cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
-		  const cmap_operators_t *pcmo)
+		  const gs_cmap_t *pcmap, const cmap_operators_t *pcmo,
+		  psf_put_name_proc_t put_name, int *pfont_index)
 {
     /* For simplicity, produce one entry for each lookup range. */
-    /****** IGNORES FILE INDEX ******/
     const gx_code_lookup_range_t *pclr = pccmap->lookup;
     int nl = pccmap->num_lookup;
 
@@ -80,6 +96,10 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 	const byte *pvalue = pclr->values.data;
 	int gi;
 
+	if (pclr->font_index != *pfont_index) {
+	    pprintd1(s, "%d usefont\n", pclr->font_index);
+	    *pfont_index = pclr->font_index;
+	}
 	for (gi = 0; gi < pclr->num_keys; gi += 100) {
 	    int i = gi, ni = min(i + 100, pclr->num_keys);
 	    const char *end;
@@ -89,7 +109,7 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		if (pclr->value_type == CODE_VALUE_CID) {
 		    pputs(s, pcmo->beginrange);
 		    end = pcmo->endrange;
-		} else {
+		} else {	/* must be def, not notdef */
 		    pputs(s, "beginbfrange\n");
 		    end = "endbfrange\n";
 		}
@@ -97,7 +117,7 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		if (pclr->value_type == CODE_VALUE_CID) {
 		    pputs(s, pcmo->beginchar);
 		    end = pcmo->endchar;
-		} else {
+		} else {	/* must be def, not notdef */
 		    pputs(s, "beginbfchar\n");
 		    end = "endbfchar\n";
 		}
@@ -108,8 +128,8 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 
 		for (j = 0; j <= pclr->key_is_range; ++j) {
 		    pputc(s, '<');
-		    pput_cid(s, pclr->key_prefix, pclr->key_prefix_size);
-		    pput_cid(s, pkey, pclr->key_size);
+		    pput_hex(s, pclr->key_prefix, pclr->key_prefix_size);
+		    pput_hex(s, pkey, pclr->key_size);
 		    pputc(s, '>');
 		    pkey += pclr->key_size;
 		}
@@ -117,15 +137,29 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		    value = (value << 8) + *pvalue++;
 		switch (pclr->value_type) {
 		case CODE_VALUE_CID:
-		case CODE_VALUE_CHARS:
-		    pprintld1(s, "%ld\n", value);
+		    pprintld1(s, "%ld", value);
 		    break;
-		case CODE_VALUE_GLYPH:
-		    /****** PRINT GLYPH NAME -- NYI ******/
+		case CODE_VALUE_CHARS:
+		    pputc(s, '<');
+		    pput_hex(s, pvalue - pclr->value_size, pclr->value_size);
+		    pputc(s, '>');
+		    break;
+		case CODE_VALUE_GLYPH: {
+		    gs_const_string str;
+		    int code = pcmap->glyph_name((gs_glyph)value, &str,
+						 pcmap->glyph_name_data);
+
+		    if (code < 0)
+			return code;
+		    code = put_name(s, str.data, str.size);
+		    if (code < 0)
+			return code;
+		}
 		    break;
 		default:	/* not possible */
 		    return_error(gs_error_rangecheck);
 		}
+		pputc(s, '\n');
 	    }
 	    pputs(s, end);
 	}
@@ -136,13 +170,21 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 /* ---------------- Main program ---------------- */
 
 /* Write a CMap in its standard (source) format. */
-/****** DOESN'T HANDLE MULTI-FILE CMapS ******/
 int
 psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
-	       const gs_const_string *cmap_name)
+	       psf_put_name_proc_t put_name,
+	       const gs_const_string *alt_cmap_name)
 {
+    const gs_const_string *const cmap_name =
+	(alt_cmap_name ? alt_cmap_name : &pcmap->CMapName);
     const gs_cid_system_info_t *const pcidsi = pcmap->CIDSystemInfo;
-    int CMapVersion = 1;		/****** BOGUS ******/
+
+    switch (pcmap->CMapType) {
+    case 0: case 1:
+	break;
+    default:
+	return_error(gs_error_rangecheck);
+    }
 
     /* Write the header. */
 
@@ -154,22 +196,29 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
     pput_string_entry(s, " ", &pcidsi->Registry);
     pput_string_entry(s, " ", &pcidsi->Ordering);
     pprintd1(s, " %d)\n", pcidsi->Supplement);
-    pprintd1(s, "%%%%Version: %d\n", CMapVersion);
+    pprintg1(s, "%%%%Version: %g\n", pcmap->CMapVersion);
     pputs(s, "/CIDInit /ProcSet findresource begin\n");
-    pputs(s, "12 dict begin begincmap\n");
+    pputs(s, "12 dict begin\nbegincmap\n");
 
     /* Write the fixed entries. */
 
-    pputs(s, "/CIDSystemInfo 3 dict dup begin\n");
-    pputs(s, "/Registry ");
-    s_write_ps_string(s, pcidsi->Registry.data, pcidsi->Registry.size, 0);
-    pputs(s, " def\n/Ordering ");
-    s_write_ps_string(s, pcidsi->Ordering.data, pcidsi->Ordering.size, 0);
-    pprintd1(s, " def\n/Supplement %d def\nend def\n", pcidsi->Supplement);
-    pput_string_entry(s, "/CMapName /", cmap_name); /****** ESCAPE NAME ******/
-    pprintd1(s, " def\n/CMapVersion %d def\n", CMapVersion);
-    pputs(s, "/CMapType 1 def\n");
-    /****** UIDOffset ******/
+    pprintd1(s, "/CMapType %d def\n", pcmap->CMapType);
+    pputs(s, "/CMapName ");
+    put_name(s, cmap_name->data, cmap_name->size);
+    pputs(s, " def\n/CIDSystemInfo");
+    if (pcmap->num_fonts == 1) {
+	cmap_put_system_info(s, pcidsi);
+    } else {
+	int i;
+
+	pprintd1(s, " %d array\n", pcmap->num_fonts);
+	for (i = 0; i < pcmap->num_fonts; ++i) {
+	    pprintd1(s, "dup %d", i);
+	    cmap_put_system_info(s, pcidsi + i);
+	    pputs(s, "put\n");
+	}
+    }
+    pprintg1(s, "def\n/CMapVersion %g def\n", pcmap->CMapVersion);
     if (uid_is_XUID(&pcmap->uid)) {
 	uint i, n = uid_XUID_size(&pcmap->uid);
 	const long *values = uid_XUID_values(&pcmap->uid);
@@ -179,6 +228,7 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 	    pprintld1(s, " %ld", values[i]);
 	pputs(s, "] def\n");
     }
+    pprintld1(s, "/UIDOffset %ld def\n", pcmap->UIDOffset);
     pprintd1(s, "/WMode %d def\n", pcmap->WMode);
 
     /* Write the code space ranges. */
@@ -193,9 +243,9 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 	    pprintd1(s, "%d begincodespacerange\n", ni - i);
 	    for (; i < ni; ++i, ++pcsr) {
 		pputs(s, "<");
-		pput_cid(s, pcsr->first, pcsr->size);
+		pput_hex(s, pcsr->first, pcsr->size);
 		pputs(s, "><");
-		pput_cid(s, pcsr->last, pcsr->size);
+		pput_hex(s, pcsr->last, pcsr->size);
 		pputs(s, ">\n");
 	    }
 	    pputs(s, "endcodespacerange\n");
@@ -204,13 +254,19 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 
     /* Write the code and notdef data. */
 
-    cmap_put_code_map(s, &pcmap->notdef, &cmap_notdef_operators);
-    cmap_put_code_map(s, &pcmap->def, &cmap_cid_operators);
+    {
+	int font_index = (pcmap->num_fonts <= 1 ? 0 : -1);
+
+	cmap_put_code_map(s, &pcmap->notdef, pcmap, &cmap_notdef_operators,
+			  put_name, &font_index);
+	cmap_put_code_map(s, &pcmap->def, pcmap, &cmap_cid_operators,
+			  put_name, &font_index);
+    }
 
     /* Write the trailer. */
 
     pputs(s, "endcmap\n");
-    pputs(s, "CMapName currentdict /CMap defineresource pop end end\n");
+    pputs(s, "CMapName currentdict /CMap defineresource pop\nend end\n");
     pputs(s, "%%EndResource\n");
     pputs(s, "%%EOF\n");
 

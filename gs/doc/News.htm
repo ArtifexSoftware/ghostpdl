@@ -60,15 +60,15 @@ overview</a>.
 <p>
 This fileset includes more PDF writer enhancements: conversion of embedded
 Type 1 fonts to Type 1C (smaller), handling of more color spaces for images,
-compression of mask images, partial support for Pattern colors, more
+compression of mask images, partial support for (tiled) Pattern colors, more
 graphics state distiller parameters, recording of graphics state functions
 in the output.  It also greatly improves the space usage and loading time
 for CMaps.
 
 <p>
-All problems registered on SourceForge numbered 104118 or lower are closed,
+All problems registered on SourceForge numbered 104316 or lower are closed,
 except for the following: 101549, 101814, 101829, 101905, 101955, 102046,
-102047, 102132, 102146, 102735, 103016, 103528, 104118.
+102047, 102132, 102146, 102735, 103016, 103528, 104118, 104316.
 
 <p>
 The following projects are in a partially completed state in the PDF writer:
@@ -95,9 +95,11 @@ replacing Columns.
 	- The last argument of pdf_alloc_font has changed.
 	- pdf_set_color is renamed pdf_set_pure_color.
 (Library)
-	- The internal representation of CMaps is changed completely.
+	- The internal representation of CMaps is changed completely, and
+has several new required members.
 	- gs_cmap is renamed gs_cmap_t; gx_code_map is renamed
 gx_code_map_t.
+	- Clients creating CMaps must call gs_cmap_init to initialize them.
 
 </pre>
 
