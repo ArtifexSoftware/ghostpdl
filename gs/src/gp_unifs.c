@@ -351,7 +351,11 @@ gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uin
     }
 
     /* Test for a match at this directory level */
+#if DEBUG
     if (!string_match(mem, (byte *) work, len, (byte *) pattern, pathead, NULL))
+#else
+    if (!string_match((byte *) work, len, (byte *) pattern, pathead, NULL))
+#endif 
 	goto top;
 
     /* Perhaps descend into subdirectories */
