@@ -16,8 +16,11 @@
   all copies.
 */
 
-/* gdevmgr.h */
+/*Id: gdevmgr.h */
 /* Common header file for MGR devices */
+
+#ifndef gdevmgr_INCLUDED
+#  define gdevmgr_INCLUDED
 
 #define MGR_RESERVEDCOLORS 16
 
@@ -114,3 +117,5 @@ static char mgrlut[LUT][RGB][LUTENTRIES] = {
   { { BCT_RED },   { BCT_GREEN },   { BCT_BLUE } },
   { { USER_RED },  { USER_GREEN },  { USER_BLUE } }
 };
+
+#endif				/* gdevmgr_INCLUDED */

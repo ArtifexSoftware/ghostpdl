@@ -1,2 +1,3 @@
 #!/bin/sh
+# Id: font2c 
 exec gs -q -dNODISPLAY -dWRITESYSTEMDICT -- font2c.ps "$@"

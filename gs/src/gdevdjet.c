@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevdjet.c */
+/*Id: gdevdjet.c  */
 /* HP LaserJet/DeskJet driver for Ghostscript */
 #include "gdevprn.h"
 #include "gdevpcl.h"
@@ -145,74 +145,74 @@ private dev_proc_print_page(ljet4_print_page);
 private dev_proc_print_page(lp2563_print_page);
 private dev_proc_print_page(oce9050_print_page);
 
-private gx_device_procs prn_hp_procs =
+private const gx_device_procs prn_hp_procs =
 prn_params_procs(hpjet_open, gdev_prn_output_page, hpjet_close,
 		 gdev_prn_get_params, gdev_prn_put_params);
 
-gx_device_printer far_data gs_deskjet_device =
+const gx_device_printer gs_deskjet_device =
 prn_device(prn_hp_procs, "deskjet",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins filled in by hpjet_open */
 	   1, djet_print_page);
 
-gx_device_printer far_data gs_djet500_device =
+const gx_device_printer gs_djet500_device =
 prn_device(prn_hp_procs, "djet500",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins filled in by hpjet_open */
 	   1, djet500_print_page);
 
-gx_device_printer far_data gs_laserjet_device =
+const gx_device_printer gs_laserjet_device =
 prn_device(prn_hp_procs, "laserjet",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0.05, 0.25, 0.55, 0.25,	/* margins */
 	   1, ljet_print_page);
 
-gx_device_printer far_data gs_ljetplus_device =
+const gx_device_printer gs_ljetplus_device =
 prn_device(prn_hp_procs, "ljetplus",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0.05, 0.25, 0.55, 0.25,	/* margins */
 	   1, ljetplus_print_page);
 
-gx_device_printer far_data gs_ljet2p_device =
+const gx_device_printer gs_ljet2p_device =
 prn_device(prn_hp_procs, "ljet2p",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0.20, 0.25, 0.25, 0.25,	/* margins */
 	   1, ljet2p_print_page);
 
-gx_device_printer far_data gs_ljet3_device =
+const gx_device_printer gs_ljet3_device =
 prn_device(prn_hp_procs, "ljet3",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0.20, 0.25, 0.25, 0.25,	/* margins */
 	   1, ljet3_print_page);
 
-gx_device_printer far_data gs_ljet3d_device =
+const gx_device_printer gs_ljet3d_device =
 prn_device(prn_hp_procs, "ljet3d",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0.20, 0.25, 0.25, 0.25,	/* margins */
 	   1, ljet3d_print_page);
 
-gx_device_printer far_data gs_ljet4_device =
+const gx_device_printer gs_ljet4_device =
 prn_device(prn_hp_procs, "ljet4",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI2, Y_DPI2,
 	   0, 0, 0, 0,		/* margins */
 	   1, ljet4_print_page);
 
-gx_device_printer far_data gs_lp2563_device =
+const gx_device_printer gs_lp2563_device =
 prn_device(prn_hp_procs, "lp2563",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
 	   1, lp2563_print_page);
 
-gx_device_printer far_data gs_oce9050_device =
+const gx_device_printer gs_oce9050_device =
 prn_device(prn_hp_procs, "oce9050",
 	   24 * 10, 24 * 10,	/* 24 inch roll (can print 32" also) */
 	   400, 400,		/* 400 dpi */
@@ -231,7 +231,7 @@ private int hpjet_print_page(P6(gx_device_printer * pdev, FILE * prn_stream,
 private int
 hpjet_open(gx_device * pdev)
 {				/* Change the margins if necessary. */
-    const float _ds *m = 0;
+    const float *m = 0;
     bool move_origin = true;
 
     if (ppdev->printer_procs.print_page == djet_print_page ||
@@ -265,14 +265,15 @@ hpjet_open(gx_device * pdev)
     return gdev_prn_open(pdev);
 }
 
-/* hpjet_close is only here to eject odd numbered pages in duplex mode. */
+/* hpjet_close is only here to eject odd numbered pages in duplex mode, */
+/* and to reset the printer so the ink cartridge doesn't clog up. */
 private int
 hpjet_close(gx_device * pdev)
 {
-    if (ppdev->Duplex_set >= 0 && ppdev->Duplex) {
-	gdev_prn_open_printer(pdev, 1);
+    gdev_prn_open_printer(pdev, 1);
+    if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
 	fputs("\033&l0H", ppdev->file);
-    }
+    fputs("\033E", ppdev->file);
     return gdev_prn_close(pdev);
 }
 
@@ -408,8 +409,8 @@ hpjet_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype,
 
     int out_count;
     int compression = -1;
-    static const char *from2to3 = "\033*b3M";
-    static const char *from3to2 = "\033*b2M";
+    static const char *const from2to3 = "\033*b3M";
+    static const char *const from3to2 = "\033*b2M";
     int penalty_from2to3 = strlen(from2to3);
     int penalty_from3to2 = strlen(from3to2);
     int paper_size = gdev_pcl_paper_size((gx_device *) pdev);

@@ -38,14 +38,6 @@
  * The 16- and 32-bit cases aren't implemented.
  ***************** ****************/
 
-/*
- * Note that aside from the use of dlprintxxx and the 3 extra elements in
- * the device procedure vector, this file is usable with Ghostscript 5.1x.
- */
-
-/* Forward references */
-private gs_rop3_t gs_transparent_rop(P1(gs_logical_operation_t lop));
-
 #define chunk byte
 
 /* Calculate the X offset for a given Y value, */
@@ -53,62 +45,6 @@ private gs_rop3_t gs_transparent_rop(P1(gs_logical_operation_t lop));
 #define x_offset(px, ty, textures)\
   ((textures)->shift == 0 ? (px) :\
    (px) + (ty) / (textures)->rep_height * (textures)->rep_shift)
-
-/* ---------------- Initialization ---------------- */
-
-void
-gs_roplib_init(gs_memory_t * mem)
-{				/* Replace the default and forwarding copy_rop procedures. */
-    gx_default_copy_rop_proc = gx_real_default_copy_rop;
-    gx_forward_copy_rop_proc = gx_forward_copy_rop;
-    gx_default_strip_copy_rop_proc = gx_real_default_strip_copy_rop;
-    gx_forward_strip_copy_rop_proc = gx_forward_strip_copy_rop;
-}
-
-/* ---------------- Debugging aids ---------------- */
-
-#ifdef DEBUG
-
-private void
-trace_copy_rop(const char *cname, gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-	       const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-	       int x, int y, int width, int height,
-	       int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    dlprintf4("%s: dev=0x%lx(%s) depth=%d\n",
-	      cname, (ulong) dev, dev->dname, dev->color_info.depth);
-    dlprintf4("  source data=0x%lx x=%d raster=%u id=%lu colors=",
-	      (ulong) sdata, sourcex, sraster, (ulong) id);
-    if (scolors)
-	dprintf2("(%lu,%lu);\n", scolors[0], scolors[1]);
-    else
-	dputs("none;\n");
-    if (textures)
-	dlprintf8("  textures=0x%lx size=%dx%d(%dx%d) raster=%u shift=%d(%d)",
-		  (ulong) textures, textures->size.x, textures->size.y,
-		  textures->rep_width, textures->rep_height,
-		  textures->raster, textures->shift, textures->rep_shift);
-    else
-	dlputs("  textures=none");
-    if (tcolors)
-	dprintf2(" colors=(%lu,%lu)\n", tcolors[0], tcolors[1]);
-    else
-	dputs(" colors=none\n");
-    dlprintf7("  rect=(%d,%d),(%d,%d) phase=(%d,%d) op=0x%x\n",
-	      x, y, x + width, y + height, phase_x, phase_y,
-	      (uint) lop);
-    if (gs_debug_c('B')) {
-	if (sdata)
-	    debug_dump_bitmap(sdata, sraster, height, "source bits");
-	if (textures && textures->data)
-	    debug_dump_bitmap(textures->data, textures->raster,
-			      textures->size.y, "textures bits");
-    }
-}
-
-#endif
 
 /* ---------------- Monobit RasterOp ---------------- */
 
@@ -398,7 +334,7 @@ mem_gray_strip_copy_rop(gx_device * dev,
 	(tcolors && (tcolors[0] != tcolors[1]))
 	) {
 	/* We can't fake it: do it the slow, painful way. */
-	return gx_real_default_strip_copy_rop(dev,
+	return gx_default_strip_copy_rop(dev,
 		    sdata, sourcex, sraster, id, scolors, textures, tcolors,
 				x, y, width, height, phase_x, phase_y, lop);
     }
@@ -414,7 +350,8 @@ mem_gray_strip_copy_rop(gx_device * dev,
 	texture2.rep_shift <<= log2_depth;
 	real_texture = &texture2;
     }
-    if (tcolors) {		/* For polybit textures with colors other than */
+    if (tcolors) {
+	/* For polybit textures with colors other than */
 	/* all 0s or all 1s, fabricate the data. */
 	if (tcolors[0] != 0 && tcolors[0] != max_pixel) {
 	    real_tcolors = 0;
@@ -462,9 +399,9 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
     int bpp = depth >> 3;	/* bytes per pixel, 1 or 3 */
     gx_color_index all_ones = ((gx_color_index) 1 << depth) - 1;
     gx_color_index strans =
-    (lop & lop_S_transparent ? all_ones : gx_no_color_index);
+	(lop & lop_S_transparent ? all_ones : gx_no_color_index);
     gx_color_index ttrans =
-    (lop & lop_T_transparent ? all_ones : gx_no_color_index);
+	(lop & lop_T_transparent ? all_ones : gx_no_color_index);
 
     /* Check for constant source. */
     if (scolors != 0 && scolors[0] == scolors[1]) {	/* Constant source */
@@ -485,19 +422,48 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 	    rop = rop3_know_T_1(rop);
     } else if (!rop3_uses_T(rop))
 	const_texture = 0;	/* arbitrary */
+    if (bpp == 1 && gx_device_has_color(dev)) {
+	/*
+	 * This is an 8-bit device but not gray-scale.  Except in a few
+	 * simple cases, we have to use the slow algorithm that converts
+	 * values to and from RGB.
+	 */
+	gx_color_index bw_pixel;
 
-    /*
-     * If this is an 8-bit device but not gray-scale, we have to use
-     * the slow algorithm that converts values to and from RGB.
-     */
-    if (bpp == 1 && gx_device_has_color(dev) && rop != rop3_D &&
-	(rop | (lop & lop_S_transparent)) != rop3_S &&
-	(rop | (lop & lop_T_transparent)) != rop3_T &&
-	rop != rop3_0 && rop != rop3_1
-	)
-	return gx_real_default_strip_copy_rop(dev,
-		    sdata, sourcex, sraster, id, scolors, textures, tcolors,
-				x, y, width, height, phase_x, phase_y, lop);
+	switch (rop) {
+	case rop3_0:
+	    bw_pixel = gx_device_black(dev);
+	    goto bw;
+	case rop3_1:
+	    bw_pixel = gx_device_white(dev);
+bw:	    switch (bw_pixel) {
+	    case 0x00:
+		rop = rop3_0;
+		break;
+	    case 0xff:
+		rop = rop3_1;
+		break;
+	    default:
+		goto df;
+	    }
+	    break;
+	case rop3_D:
+	    break;
+	case rop3_S:
+	    if (lop & lop_S_transparent)
+		goto df;
+	    break;
+	case rop3_T:
+	    if (lop & lop_T_transparent)
+		goto df;
+	    break;
+	default:
+df:	    return gx_default_strip_copy_rop(dev,
+				sdata, sourcex, sraster, id, scolors,
+				textures, tcolors, x, y, width, height,
+				phase_x, phase_y, lop);
+	}
+    }
     /* Adjust coordinates to be in bounds. */
     if (const_source == gx_no_color_index) {
 	fit_copy(dev, sdata, sourcex, sraster, id,
@@ -524,9 +490,9 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 /* 8-bit */
 #define cbit8(base, i, colors)\
   (dbit(base, i) ? (byte)colors[1] : (byte)colors[0])
-#define rop_body_8()\
-  if ( s_pixel == strans ||	/* So = 0, s_tr = 1 */\
-       t_pixel == ttrans	/* Po = 0, p_tr = 1 */\
+#define rop_body_8(s_pixel, t_pixel)\
+  if ( (s_pixel) == strans ||	/* So = 0, s_tr = 1 */\
+       (t_pixel) == ttrans	/* Po = 0, p_tr = 1 */\
      )\
     continue;\
   *dptr = (*rop_proc_table[rop])(*dptr, s_pixel, t_pixel)
@@ -539,9 +505,9 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
   (ptr)[2] = (byte)(pixel)
 #define cbit24(base, i, colors)\
   (dbit(base, i) ? colors[1] : colors[0])
-#define rop_body_24()\
-  if ( s_pixel == strans ||	/* So = 0, s_tr = 1 */\
-       t_pixel == ttrans	/* Po = 0, p_tr = 1 */\
+#define rop_body_24(s_pixel, t_pixel)\
+  if ( (s_pixel) == strans ||	/* So = 0, s_tr = 1 */\
+       (t_pixel) == ttrans	/* Po = 0, p_tr = 1 */\
      )\
     continue;\
   { gx_color_index d_pixel = get24(dptr);\
@@ -559,22 +525,14 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 
 		if (bpp == 1)
 /**** 8-bit destination ****/
-#define s_pixel (byte)const_source
-#define t_pixel (byte)const_texture
 		    for (; left > 0; ++dptr, --left) {
-			rop_body_8();
+			rop_body_8((byte)const_source, (byte)const_texture);
 		    }
-#undef s_pixel
-#undef t_pixel
 		else
 /**** 24-bit destination ****/
-#define s_pixel const_source
-#define t_pixel const_texture
 		    for (; left > 0; dptr += 3, --left) {
-			rop_body_24();
+			rop_body_24(const_source, const_texture);
 		    }
-#undef s_pixel
-#undef t_pixel
 	    }
 	} else {
 /**** Data source, const texture ****/
@@ -590,44 +548,36 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 
 		    if (bpp == 1)
 /**** 8-bit destination ****/
-#define t_pixel (byte)const_texture
 			for (; left > 0; ++dptr, ++sx, --left) {
 			    byte s_pixel = cbit8(srow, sx, scolors);
 
-			    rop_body_8();
+			    rop_body_8(s_pixel, (byte)const_texture);
 			}
-#undef t_pixel
 		    else
 /**** 24-bit destination ****/
-#define t_pixel const_texture
 			for (; left > 0; dptr += 3, ++sx, --left) {
 			    bits32 s_pixel = cbit24(srow, sx, scolors);
 
-			    rop_body_24();
+			    rop_body_24(s_pixel, const_texture);
 			}
-#undef t_pixel
 		} else if (bpp == 1) {
 /**** 8-bit source & dest ****/
 		    const byte *sptr = srow + sourcex;
 
-#define t_pixel (byte)const_texture
 		    for (; left > 0; ++dptr, ++sptr, --left) {
 			byte s_pixel = *sptr;
 
-			rop_body_8();
+			rop_body_8(s_pixel, (byte)const_texture);
 		    }
-#undef t_pixel
 		} else {
 /**** 24-bit source & dest ****/
 		    const byte *sptr = srow + sourcex * 3;
 
-#define t_pixel const_texture
 		    for (; left > 0; dptr += 3, sptr += 3, --left) {
 			bits32 s_pixel = get24(sptr);
 
-			rop_body_24();
+			rop_body_24(s_pixel, const_texture);
 		    }
-#undef t_pixel
 		}
 	    }
 	}
@@ -652,42 +602,34 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 /**** 1-bit texture ****/
 		    if (bpp == 1)
 /**** 8-bit dest ****/
-#define s_pixel (byte)const_source
 			for (; left > 0; ++dptr, ++tx, --left) {
 			    byte t_pixel = cbit8(tptr, tx, tcolors);
 
-			    rop_body_8();
+			    rop_body_8((byte)const_source, t_pixel);
 			}
-#undef s_pixel
 		    else
 /**** 24-bit dest ****/
-#define s_pixel const_source
 			for (; left > 0; dptr += 3, ++tx, --left) {
 			    bits32 t_pixel = cbit24(tptr, tx, tcolors);
 
-			    rop_body_24();
+			    rop_body_24(const_source, t_pixel);
 			}
-#undef s_pixel
 		} else if (bpp == 1) {
 /**** 8-bit T & D ****/
 		    tptr += tx;
-#define s_pixel (byte)const_source
 		    for (; left > 0; ++dptr, ++tptr, --left) {
 			byte t_pixel = *tptr;
 
-			rop_body_8();
+			rop_body_8((byte)const_source, t_pixel);
 		    }
-#undef s_pixel
 		} else {
 /**** 24-bit T & D ****/
 		    tptr += tx * 3;
-#define s_pixel const_source
 		    for (; left > 0; dptr += 3, tptr += 3, --left) {
 			bits32 t_pixel = get24(tptr);
 
-			rop_body_24();
+			rop_body_24(const_source, t_pixel);
 		    }
-#undef s_pixel
 		}
 	    }
 	}
@@ -728,11 +670,11 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 		    tptr += tx;
 		    for (; left > 0; ++dptr, ++sptr, ++tptr, ++sx, ++tx, --left) {
 			byte s_pixel =
-			(scolors ? cbit8(srow, sx, scolors) : *sptr);
+			    (scolors ? cbit8(srow, sx, scolors) : *sptr);
 			byte t_pixel =
-			(tcolors ? cbit8(tptr, tx, tcolors) : *tptr);
+			    (tcolors ? cbit8(tptr, tx, tcolors) : *tptr);
 
-			rop_body_8();
+			rop_body_8(s_pixel, t_pixel);
 		    }
 		} else {
 /**** 24-bit destination ****/
@@ -741,13 +683,13 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 		    tptr += tx * 3;
 		    for (; left > 0; dptr += 3, sptr += 3, tptr += 3, ++sx, ++tx, --left) {
 			bits32 s_pixel =
-			(scolors ? cbit24(srow, sx, scolors) :
-			 get24(sptr));
+			    (scolors ? cbit24(srow, sx, scolors) :
+			     get24(sptr));
 			bits32 t_pixel =
-			(tcolors ? cbit24(tptr, tx, tcolors) :
-			 get24(tptr));
+			    (tcolors ? cbit24(tptr, tx, tcolors) :
+			     get24(tptr));
 
-			rop_body_24();
+			rop_body_24(s_pixel, t_pixel);
 		    }
 		}
 	    }
@@ -759,642 +701,4 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 #undef cbit8
 #undef cbit24
     return 0;
-}
-
-/* ---------------- Default copy_rop implementations ---------------- */
-
-/*
- * We do the conversion between packed and standard formats explicitly here,
- * because this code must be usable with 5.1x.  If it weren't for that,
- * we would simply use get_bits_rectangle, which already has the ability
- * to convert between representations.
- */
-
-private void
-unpack_to_standard(gx_device * dev, byte * dest, const byte * src, int sourcex,
-		   int width, int depth, int src_depth)
-{
-    dev_proc_map_color_rgb((*map)) = dev_proc(dev, map_color_rgb);
-    byte *dp = dest;
-    int bit_x = sourcex * src_depth;
-    const byte *sp = src + (bit_x >> 3);
-    uint mask = (1 << src_depth) - 1;
-    int shift = (~bit_x & 7) + 1;
-    int x;
-
-    for (x = width; --x >= 0;) {
-	gx_color_index pixel;
-	gx_color_value rgb[3];
-
-	if ((shift -= src_depth) < 0)
-	    shift += 8, ++sp;
-	pixel = (*sp >> shift) & mask;
-	(*map) (dev, pixel, rgb);
-	*dp++ = gx_color_value_to_byte(rgb[0]);
-	if (depth > 8) {
-	    *dp++ = gx_color_value_to_byte(rgb[1]);
-	    *dp++ = gx_color_value_to_byte(rgb[2]);
-	}
-    }
-}
-
-private void
-unpack_colors_to_standard(gx_device * dev, gx_color_index real_colors[2],
-			  const gx_color_index * colors, int depth)
-{
-    int i;
-
-    for (i = 0; i < 2; ++i) {
-	gx_color_value rgb[3];
-	gx_color_index pixel;
-
-	(*dev_proc(dev, map_color_rgb)) (dev, colors[i], rgb);
-	pixel = gx_color_value_to_byte(rgb[0]);
-	if (depth > 8) {
-	    pixel = (pixel << 16) +
-		(gx_color_value_to_byte(rgb[1]) << 8) +
-		gx_color_value_to_byte(rgb[2]);
-	}
-	real_colors[i] = pixel;
-    }
-}
-
-private gx_color_index
-map_rgb_to_color_via_cmyk(gx_device * dev, gx_color_value r,
-			  gx_color_value g, gx_color_value b)
-{
-    gx_color_value c = gx_max_color_value - r;
-    gx_color_value m = gx_max_color_value - g;
-    gx_color_value y = gx_max_color_value - b;
-    gx_color_value k = (c < m ? min(c, y) : min(m, y));
-
-    return (*dev_proc(dev, map_cmyk_color)) (dev, c - k, m - k, y - k, k);
-}
-private void
-pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
-		   int width, int depth, int src_depth)
-{
-    dev_proc_map_rgb_color((*map)) =
-	(dev->color_info.num_components == 4 ?
-	 map_rgb_to_color_via_cmyk : dev_proc(dev, map_rgb_color));
-    int bit_x = destx * depth;
-    byte *dp = dest + (bit_x >> 3);
-    int shift = (~bit_x & 7) + 1;
-    byte buf = (shift == 8 ? 0 : *dp & (0xff00 >> shift));
-    const byte *sp = src;
-    int x;
-
-    for (x = width; --x >= 0;) {
-	byte vr, vg, vb;
-	gx_color_value r, g, b;
-	gx_color_index pixel;
-	byte chop = 0x1;
-
-	if ((shift -= depth) < 0)
-	    shift += 8, *dp++ = buf, buf = 0;
-	vr = *sp++;
-	if (src_depth > 8) {
-	    vg = *sp++;
-	    vb = *sp++;
-	} else
-	    vb = vg = vr;
-	/*
-	 * We have to map back to some pixel value, even if the color
-	 * isn't accurate.
-	 */
-	for (;;) {
-	    r = gx_color_value_from_byte(vr);
-	    g = gx_color_value_from_byte(vg);
-	    b = gx_color_value_from_byte(vb);
-	    pixel = (*map) (dev, r, g, b);
-	    if (pixel != gx_no_color_index)
-		break;
-	    /* Reduce the color accuracy and try again. */
-	    vr = (vr >= 0x80 ? vr | chop : vr & ~chop);
-	    vg = (vg >= 0x80 ? vg | chop : vg & ~chop);
-	    vb = (vb >= 0x80 ? vb | chop : vb & ~chop);
-	    chop <<= 1;
-	}
-	buf += (byte) (pixel << shift);
-    }
-    if (width > 0)
-	*dp = (shift == 0 ? buf : buf + (*dp & ((1 << shift) - 1)));
-}
-
-int
-gx_real_default_strip_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			       const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			       int x, int y, int width, int height,
-		       int phase_x, int phase_y, gs_logical_operation_t lop)
-{				
-/*
-				 * The default implementation uses get_bits to read out the
-				 * pixels, the memory device implementation to do the operation,
-				 * and copy_color to write the pixels back.  Note that if the
-				 * device is already a memory device, we need to convert the
-				 * pixels to standard representation (8-bit gray or 24-bit RGB),
-				 * do the operation, and convert them back.  This is very slow,
-				 * but we don't see a better way.
-				 */
-    bool expand = dev->width - width < 32 && gs_device_is_memory(dev);
-    int depth = dev->color_info.depth;
-    int rop_depth = (!expand ? depth : gx_device_has_color(dev) ? 24 : 8);
-    gs_memory_t *mem = (dev->memory ? dev->memory : &gs_memory_default);
-    const gx_device_memory *mdproto = gdev_mem_device_for_bits(rop_depth);
-    gx_device_memory mdev;
-    uint draster = gx_device_raster(dev, true);
-    bool uses_d = rop3_uses_D(gs_transparent_rop(lop));
-    bool expand_s, expand_t;
-    byte *row = 0;
-    byte *dest_row = 0;
-    byte *source_row = 0;
-    byte *texture_row = 0;
-    uint traster;
-    gx_color_index source_colors[2];
-    const gx_color_index *real_scolors = scolors;
-    gx_color_index texture_colors[2];
-    const gx_color_index *real_tcolors = tcolors;
-    gx_strip_bitmap rop_texture;
-    const gx_strip_bitmap *real_texture = textures;
-    int code;
-    int py;
-
-#ifdef DEBUG
-    if (gs_debug_c('b'))
-	trace_copy_rop("gx_default_strip_copy_rop",
-		       dev, sdata, sourcex, sraster,
-		       id, scolors, textures, tcolors,
-		       x, y, width, height, phase_x, phase_y, lop);
-#endif
-    if (mdproto == 0)
-	return_error(gs_error_rangecheck);
-    if (sdata == 0) {
-	fit_fill(dev, x, y, width, height);
-    } else {
-	fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
-    }
-    gs_make_mem_device(&mdev, mdproto, 0, -1, dev);
-    mdev.width = width;
-    mdev.height = 1;
-    mdev.bitmap_memory = mem;
-    if (expand) {
-	if (rop_depth == 8) {
-	    /* Mark 8-bit standard device as gray-scale only. */
-	    mdev.color_info.num_components = 1;
-	}
-    } else
-	mdev.color_info = dev->color_info;
-    code = (*dev_proc(&mdev, open_device)) ((gx_device *) & mdev);
-    if (code < 0)
-	return code;
-
-#define ALLOC_BUF(buf, size, cname)\
-	BEGIN\
-	  buf = gs_alloc_bytes(mem, size, cname);\
-	  if ( buf == 0 ) {\
-	    code = gs_note_error(gs_error_VMerror);\
-	    goto out;\
-	  }\
-	END
-
-    ALLOC_BUF(row, draster, "copy_rop row");
-    if (expand) {
-	/* We may need intermediate buffers for all 3 operands. */
-	ALLOC_BUF(dest_row, bitmap_raster(dev->width * rop_depth),
-		  "copy_rop dest_row");
-	expand_s = scolors == 0 && rop3_uses_S(gs_transparent_rop(lop));
-	if (expand_s) {
-	    ALLOC_BUF(source_row, bitmap_raster(width * rop_depth),
-		      "copy_rop source_row");
-	}
-	if (scolors) {
-	    unpack_colors_to_standard(dev, source_colors, scolors, rop_depth);
-	    real_scolors = source_colors;
-	}
-	expand_t = tcolors == 0 && rop3_uses_T(gs_transparent_rop(lop));
-	if (expand_t) {
-	    traster = bitmap_raster(textures->rep_width * rop_depth);
-	    ALLOC_BUF(texture_row, traster, "copy_rop texture_row");
-	    rop_texture = *textures;
-	    rop_texture.data = texture_row;
-	    rop_texture.raster = traster;
-	    rop_texture.size.x = rop_texture.rep_width;
-	    rop_texture.id = gs_no_bitmap_id;
-	    real_texture = &rop_texture;
-	}
-	if (tcolors) {
-	    unpack_colors_to_standard(dev, texture_colors, tcolors, rop_depth);
-	    real_tcolors = texture_colors;
-	}
-    } else {
-	dest_row = row;
-    }
-
-#undef ALLOC_BUF
-
-    for (py = y; py < y + height; ++py) {
-	byte *data;
-	int sx = sourcex;
-	const byte *source_data = sdata + (py - y) * sraster;
-
-	if (uses_d) {
-	    code = (*dev_proc(dev, get_bits)) (dev, py, row, &data);
-	    if (code < 0)
-		break;
-	    if (expand) {
-		/* Convert the destination data to standard format. */
-		unpack_to_standard(dev, dest_row, data, 0, dev->width,
-				   rop_depth, depth);
-		data = dest_row;
-	    }
-	    code = (*dev_proc(&mdev, copy_color)) ((gx_device *) & mdev,
-					  data, x, draster, gx_no_bitmap_id,
-						   0, 0, width, 1);
-	    if (code < 0)
-		return code;
-	}
-	if (expand) {
-	    /* Convert the source and texture to standard format. */
-	    if (expand_s) {
-		unpack_to_standard(dev, source_row, source_data, sx, width,
-				   rop_depth, depth);
-		source_data = source_row;
-		sx = 0;
-	    }
-	    if (expand_t) {
-		int rep_y = (phase_y + py) % rop_texture.rep_height;
-
-		unpack_to_standard(dev, texture_row,
-				   textures->data +
-				   rep_y * textures->raster,
-				   0, textures->rep_width, rop_depth, depth);
-		/*
-		 * Compensate for the addition of rep_y * raster
-		 * in the subsidiary strip_copy_rop call.
-		 */
-		rop_texture.data = texture_row - rep_y * rop_texture.raster;
-	    }
-	}
-	code = (*dev_proc(&mdev, strip_copy_rop)) ((gx_device *) & mdev,
-		     source_data, sx, sraster /*ad lib */ , gx_no_bitmap_id,
-				   real_scolors, real_texture, real_tcolors,
-				  0, 0, width, 1, phase_x + x, phase_y + py,
-						   lop);
-	if (code < 0)
-	    break;
-	code = (*dev_proc(&mdev, get_bits)) ((gx_device *) & mdev,
-					     0, dest_row, &data);
-	if (code < 0)
-	    break;
-	if (expand) {
-	    /* Convert the result back to the device's format. */
-	    pack_from_standard(dev, row, 0, data, width, depth, rop_depth);
-	    data = row;
-	}
-	code = (*dev_proc(dev, copy_color)) (dev,
-					  data, 0, draster, gx_no_bitmap_id,
-					     x, py, width, 1);
-	if (code < 0)
-	    break;
-    }
-  out:
-    if (dest_row != row) {
-	gs_free_object(mem, texture_row, "copy_rop texture_row");
-	gs_free_object(mem, source_row, "copy_rop source_row");
-	gs_free_object(mem, dest_row, "copy_rop dest_row");
-    }
-    gs_free_object(mem, row, "copy_rop row");
-    (*dev_proc(&mdev, close_device)) ((gx_device *) & mdev);
-    return code;
-}
-
-/* ------ Implementation of related functions ------ */
-
-int
-gx_real_default_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			 const gx_color_index * scolors,
-	     const gx_tile_bitmap * texture, const gx_color_index * tcolors,
-			 int x, int y, int width, int height,
-		       int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    const gx_strip_bitmap *textures;
-    gx_strip_bitmap tiles;
-
-    if (texture == 0)
-	textures = 0;
-    else {
-	*(gx_tile_bitmap *) & tiles = *texture;
-	tiles.rep_shift = tiles.shift = 0;
-	textures = &tiles;
-    }
-    return (*dev_proc(dev, strip_copy_rop))
-	(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors,
-	 x, y, width, height, phase_x, phase_y, lop);
-}
-
-int
-gx_forward_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-		    const gx_color_index * scolors,
-	     const gx_tile_bitmap * texture, const gx_color_index * tcolors,
-		    int x, int y, int width, int height,
-		    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    gx_device *tdev = ((gx_device_forward *) dev)->target;
-
-    dev_proc_copy_rop((*proc));
-
-    if (tdev == 0)
-	tdev = dev, proc = gx_default_copy_rop;
-    else
-	proc = dev_proc(tdev, copy_rop);
-    return (*proc) (tdev, sdata, sourcex, sraster, id, scolors,
-		    texture, tcolors, x, y, width, height,
-		    phase_x, phase_y, lop);
-}
-
-int
-gx_forward_strip_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			  const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			  int x, int y, int width, int height,
-		       int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    gx_device *tdev = ((gx_device_forward *) dev)->target;
-
-    dev_proc_strip_copy_rop((*proc));
-
-    if (tdev == 0)
-	tdev = dev, proc = gx_default_strip_copy_rop;
-    else
-	proc = dev_proc(tdev, strip_copy_rop);
-    return (*proc) (tdev, sdata, sourcex, sraster, id, scolors,
-		    textures, tcolors, x, y, width, height,
-		    phase_x, phase_y, lop);
-}
-
-int
-gx_copy_rop_unaligned(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-		      const gx_color_index * scolors,
-	     const gx_tile_bitmap * texture, const gx_color_index * tcolors,
-		      int x, int y, int width, int height,
-		      int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    const gx_strip_bitmap *textures;
-    gx_strip_bitmap tiles;
-
-    if (texture == 0)
-	textures = 0;
-    else {
-	*(gx_tile_bitmap *) & tiles = *texture;
-	tiles.rep_shift = tiles.shift = 0;
-	textures = &tiles;
-    }
-    return gx_strip_copy_rop_unaligned
-	(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors,
-	 x, y, width, height, phase_x, phase_y, lop);
-}
-
-int
-gx_strip_copy_rop_unaligned(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			    const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			    int x, int y, int width, int height,
-		       int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    dev_proc_strip_copy_rop((*copy_rop)) = dev_proc(dev, strip_copy_rop);
-    int depth = (scolors == 0 ? dev->color_info.depth : 1);
-    int step = sraster & (align_bitmap_mod - 1);
-
-    /* Adjust the origin. */
-    if (sdata != 0) {
-	uint offset =
-	(uint) (sdata - (const byte *)0) & (align_bitmap_mod - 1);
-
-	/* See copy_color above re the following statement. */
-	if (depth == 24)
-	    offset += (offset % 3) *
-		(align_bitmap_mod * (3 - (align_bitmap_mod % 3)));
-	sdata -= offset;
-	sourcex += (offset << 3) / depth;
-    }
-    /* Adjust the raster. */
-    if (!step || sdata == 0 ||
-	(scolors != 0 && scolors[0] == scolors[1])
-	) {			/* No adjustment needed. */
-	return (*copy_rop) (dev, sdata, sourcex, sraster, id, scolors,
-			    textures, tcolors, x, y, width, height,
-			    phase_x, phase_y, lop);
-    }
-    /* Do the transfer one scan line at a time. */
-    {
-	const byte *p = sdata;
-	int d = sourcex;
-	int dstep = (step << 3) / depth;
-	int code = 0;
-	int i;
-
-	for (i = 0; i < height && code >= 0;
-	     ++i, p += sraster - step, d += dstep
-	    )
-	    code = (*copy_rop) (dev, p, d, sraster, gx_no_bitmap_id, scolors,
-				textures, tcolors, x, y + i, width, 1,
-				phase_x, phase_y, lop);
-	return code;
-    }
-}
-
-/* ---------------- RasterOp texture device ---------------- */
-
-public_st_device_rop_texture();
-
-/* Device for clipping with a region. */
-private dev_proc_fill_rectangle(rop_texture_fill_rectangle);
-private dev_proc_copy_mono(rop_texture_copy_mono);
-private dev_proc_copy_color(rop_texture_copy_color);
-
-/* The device descriptor. */
-private const gx_device_rop_texture far_data gs_rop_texture_device =
-{std_device_std_body(gx_device_rop_texture, 0, "rop source",
-		     0, 0, 1, 1),
- {NULL,				/* open_device */
-  gx_forward_get_initial_matrix,
-  NULL,				/* default_sync_output */
-  NULL,				/* output_page */
-  NULL,				/* close_device */
-  gx_forward_map_rgb_color,
-  gx_forward_map_color_rgb,
-  rop_texture_fill_rectangle,
-  NULL,				/* tile_rectangle */
-  rop_texture_copy_mono,
-  rop_texture_copy_color,
-  NULL,				/* draw_line */
-  NULL,				/* get_bits */
-  gx_forward_get_params,
-  gx_forward_put_params,
-  gx_forward_map_cmyk_color,
-  gx_forward_get_xfont_procs,
-  gx_forward_get_xfont_device,
-  gx_forward_map_rgb_alpha_color,
-  gx_forward_get_page_device,
-  NULL,				/* get_alpha_bits (no alpha) */
-  gx_no_copy_alpha,		/* shouldn't be called */
-  gx_forward_get_band,
-  gx_no_copy_rop,		/* shouldn't be called */
-  NULL,				/* fill_path */
-  NULL,				/* stroke_path */
-  NULL,				/* fill_mask */
-  NULL,				/* fill_trapezoid */
-  NULL,				/* fill_parallelogram */
-  NULL,				/* fill_triangle */
-  NULL,				/* draw_thin_line */
-  NULL,				/* begin_image */
-  NULL,				/* image_data */
-  NULL,				/* end_image */
-  NULL,				/* strip_tile_rectangle */
-  NULL,				/* strip_copy_rop */
-  gx_forward_get_clipping_box,
-  gx_forward_get_hardware_params
- },
- 0,				/* target */
- lop_default,			/* log_op */
- NULL				/* texture */
-};
-
-#define rtdev ((gx_device_rop_texture *)dev)
-
-/* Initialize a RasterOp source device. */
-void
-gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
-	     gs_logical_operation_t log_op, const gx_device_color * texture)
-{
-    *dev = gs_rop_texture_device;
-    /* Drawing operations are defaulted, non-drawing are forwarded. */
-    gx_device_fill_in_procs((gx_device *) dev);
-    dev->color_info = target->color_info;
-    dev->target = target;
-    dev->log_op = log_op;
-    dev->texture = texture;
-}
-
-/* Fill a rectangle */
-private int
-rop_texture_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-			   gx_color_index color)
-{
-    gx_rop_source_t source;
-
-    source.sdata = NULL;
-    source.sourcex = 0;
-    source.sraster = 0;
-    source.id = gx_no_bitmap_id;
-    source.scolors[0] = source.scolors[1] = color;
-    source.use_scolors = true;
-    return gx_device_color_fill_rectangle(rtdev->texture,
-					  x, y, w, h, rtdev->target,
-					  rtdev->log_op, &source);
-}
-
-/* Copy a monochrome rectangle */
-private int
-rop_texture_copy_mono(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		      int x, int y, int w, int h,
-		      gx_color_index color0, gx_color_index color1)
-{
-    gx_rop_source_t source;
-    gs_logical_operation_t lop = rtdev->log_op;
-
-    source.sdata = data;
-    source.sourcex = sourcex;
-    source.sraster = raster;
-    source.id = id;
-    source.scolors[0] = color0;
-    source.scolors[1] = color1;
-    source.use_scolors = true;
-    /* Adjust the logical operation per transparent colors. */
-    if (color0 == gx_no_color_index)
-	lop = rop3_use_D_when_S_0(lop);
-    else if (color1 == gx_no_color_index)
-	lop = rop3_use_D_when_S_1(lop);
-    return gx_device_color_fill_rectangle(rtdev->texture,
-					  x, y, w, h, rtdev->target,
-					  lop, &source);
-}
-
-/* Copy a color rectangle */
-private int
-rop_texture_copy_color(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		       int x, int y, int w, int h)
-{
-    gx_rop_source_t source;
-
-    source.sdata = data;
-    source.sourcex = sourcex;
-    source.sraster = raster;
-    source.id = id;
-    source.scolors[0] = source.scolors[1] = gx_no_color_index;
-    source.use_scolors = true;
-    return gx_device_color_fill_rectangle(rtdev->texture,
-					  x, y, w, h, rtdev->target,
-					  rtdev->log_op, &source);
-}
-
-/* ---------------- Internal routines ---------------- */
-
-/* Compute the effective RasterOp for the 1-bit case, */
-/* taking transparency into account. */
-private gs_rop3_t
-gs_transparent_rop(gs_logical_operation_t lop)
-{
-    gs_rop3_t rop = lop_rop(lop);
-
-    /*
-     * The algorithm for computing an effective RasterOp is presented,
-     * albeit obfuscated, in the H-P PCL5 technical documentation.
-     * Define So ("source opaque") and Po ("pattern opaque") as masks
-     * that have 1-bits precisely where the source or pattern
-     * respectively are not white (transparent).
-     * One applies the original RasterOp to compute an intermediate
-     * result R, and then computes the final result as
-     * (R & M) | (D & ~M) where M depends on transparencies as follows:
-     *      s_tr    p_tr    M
-     *       0       0      1
-     *       0       1      ~So | Po (? Po ?)
-     *       1       0      So
-     *       1       1      So & Po
-     * The s_tr = 0, p_tr = 1 case seems wrong, but it's clearly
-     * specified that way in the "PCL 5 Color Technical Reference
-     * Manual."
-     *
-     * In the 1-bit case, So = ~S and Po = ~P, so we can apply the
-     * above table directly.
-     */
-#define So rop3_not(rop3_S)
-#define Po rop3_not(rop3_T)
-#ifdef TRANSPARENCY_PER_H_P
-#  define MPo (rop3_uses_S(rop) ? rop3_not(So) | Po : Po)
-#else
-#  define MPo Po
-#endif
-    /*
-     * If the operation doesn't use S or T, we must disregard the
-     * corresponding transparency flag.
-     */
-#define source_transparent ((lop & lop_S_transparent) && rop3_uses_S(rop))
-#define pattern_transparent ((lop & lop_T_transparent) && rop3_uses_T(rop))
-    gs_rop3_t mask =
-    (source_transparent ?
-     (pattern_transparent ? So & Po : So) :
-     (pattern_transparent ? MPo : rop3_1));
-
-#undef MPo
-    return (rop & mask) | (rop3_D & ~mask);
 }

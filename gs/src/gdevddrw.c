@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,9 +16,10 @@
    all copies.
  */
 
-/* gdevddrw.c */
+/*Id: gdevddrw.c  */
 /* Default polygon and image drawing device procedures */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
@@ -26,6 +27,8 @@
 #include "gxmatrix.h"
 #include "gxdcolor.h"
 #include "gxdevice.h"
+#include "gxiparam.h"
+#include "gxistate.h"
 
 /* ---------------- Polygon and line drawing ---------------- */
 
@@ -435,13 +438,7 @@ gx_default_draw_thin_line(gx_device * dev,
 		gx_fill_rectangle_device_rop(ix, itoy, 1, iy - itoy + 1,
 					     pdevc, dev, lop)
 	    );
-    }
-    if (color_writes_pure(pdevc, lop) &&
-	(*dev_proc(dev, draw_line)) (dev, ix, iy, itox, itoy,
-				     pdevc->colors.pure) >= 0
-	)
-	return 0;
-    {
+    } {
 	fixed h = fy1 - fy0;
 	fixed w = fx1 - fx0;
 	fixed tf;
@@ -481,4 +478,139 @@ gx_default_draw_line(gx_device * dev,
 		     int x0, int y0, int x1, int y1, gx_color_index color)
 {
     return -1;
+}
+
+/* ---------------- Image drawing ---------------- */
+
+/* GC structures for image enumerator */
+public_st_gx_image_enum_common();
+
+#define eptr ((gx_image_enum_common_t *)vptr)
+
+private 
+ENUM_PTRS_BEGIN(image_enum_common_enum_ptrs) return 0;
+
+case 0:
+return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
+ENUM_PTRS_END
+
+private RELOC_PTRS_BEGIN(image_enum_common_reloc_ptrs)
+{
+    eptr->dev = gx_device_reloc_ptr(eptr->dev, gcst);
+}
+RELOC_PTRS_END
+
+#undef eptr
+
+/*
+ * gx_default_begin_image is only invoked for ImageType 1 images.  However,
+ * the argument types are different, and if the device provides a
+ * begin_typed_image procedure, we should use it.  See gxdevice.h.
+ */
+private int
+gx_no_begin_image(gx_device * dev,
+		  const gs_imager_state * pis, const gs_image_t * pim,
+		  gs_image_format_t format, const gs_int_rect * prect,
+	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		  gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
+{
+    return -1;
+}
+int
+gx_default_begin_image(gx_device * dev,
+		       const gs_imager_state * pis, const gs_image_t * pim,
+		       gs_image_format_t format, const gs_int_rect * prect,
+	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
+{
+    /*
+     * Hand off to begin_typed_image, being careful to avoid a
+     * possible recursion loop.
+     */
+    dev_proc_begin_image((*save_begin_image)) = dev_proc(dev, begin_image);
+    gs_image_t image;
+    const gs_image_t *ptim;
+    int code;
+
+    set_dev_proc(dev, begin_image, gx_no_begin_image);
+    if (pim->format == format)
+	ptim = pim;
+    else {
+	image = *pim;
+	image.format = format;
+	ptim = &image;
+    }
+    code = (*dev_proc(dev, begin_typed_image))
+	(dev, pis, NULL, (const gs_image_common_t *)ptim, prect, pdcolor,
+	 pcpath, memory, pinfo);
+    set_dev_proc(dev, begin_image, save_begin_image);
+    return code;
+}
+
+int
+gx_default_begin_typed_image(gx_device * dev,
+			const gs_imager_state * pis, const gs_matrix * pmat,
+		   const gs_image_common_t * pic, const gs_int_rect * prect,
+	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		      gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
+{	/*
+	 * If this is an ImageType 1 image using the imager's CTM,
+	 * defer to begin_image.
+	 */
+    if (pic->type->begin_typed_image == gx_begin_image1) {
+	const gs_image_t *pim = (const gs_image_t *)pic;
+
+	if (pmat == 0 ||
+	    (pis != 0 && !memcmp(pmat, &ctm_only(pis), sizeof(*pmat)))
+	    ) {
+	    int code = (*dev_proc(dev, begin_image))
+	    (dev, pis, pim, pim->format, prect, pdcolor,
+	     pcpath, memory, pinfo);
+
+	    if (code >= 0)
+		return code;
+	}
+    }
+    return (*pic->type->begin_typed_image)
+	(dev, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
+}
+
+int
+gx_device_image_data(gx_device * dev,
+	gx_image_enum_common_t * info, const byte ** plane_data, int data_x,
+		     uint raster, int height)
+{
+    int num_planes = info->num_planes;
+    gx_image_plane_t planes[gs_image_max_components];
+    int i;
+
+#ifdef DEBUG
+    if (num_planes > gs_image_max_components) {
+	lprintf2("num_planes=%d > gs_image_max_components=%d!\n",
+		 num_planes, gs_image_max_components);
+	return_error(gs_error_Fatal);
+    }
+#endif
+    for (i = 0; i < num_planes; ++i) {
+	planes[i].data = plane_data[i];
+	planes[i].data_x = data_x;
+	planes[i].raster = raster;
+    }
+    return gx_device_image_plane_data(dev, info, planes, height);
+}
+
+int
+gx_device_image_plane_data(gx_device * dev,
+ gx_image_enum_common_t * info, const gx_image_plane_t * planes, int height)
+{
+    /* We must use the device in the enumerator, not the argument. */
+    return info->procs->plane_data(info->dev, info, planes, height);
+}
+
+int
+gx_device_end_image(gx_device * dev,
+		    gx_image_enum_common_t * info, bool draw_last)
+{
+    /* We must use the device in the enumerator, not the argument. */
+    return info->procs->end_image(info->dev, info, draw_last);
 }

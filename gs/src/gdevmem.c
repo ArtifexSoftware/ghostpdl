@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,13 +16,16 @@
    all copies.
  */
 
-/* gdevmem.c */
+/*Id: gdevmem.c  */
 /* Generic "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gsrect.h"
 #include "gsstruct.h"
+#include "gxarith.h"
 #include "gxdevice.h"
+#include "gxgetbit.h"
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
 
@@ -34,7 +37,7 @@ public_st_device_memory();
 private 
 ENUM_PTRS_BEGIN(device_memory_enum_ptrs)
 {
-    return (*st_device_forward.enum_ptrs) (vptr, sizeof(gx_device_forward), index - 2, pep);
+    return ENUM_USING(st_device_forward, vptr, sizeof(gx_device_forward), index - 2);
 }
 case 0:
 ENUM_RETURN((mptr->foreign_bits ? NULL : (void *)mptr->base));
@@ -55,7 +58,7 @@ private RELOC_PTRS_BEGIN(device_memory_reloc_ptrs)
 	mptr->line_ptrs = (byte **) ((byte *) mptr->line_ptrs - reloc);
     }
     RELOC_CONST_STRING_PTR(gx_device_memory, palette);
-    (*st_device_forward.reloc_ptrs) (vptr, sizeof(gx_device_forward), gcst);
+    RELOC_USING(st_device_forward, vptr, sizeof(gx_device_forward));
 }
 RELOC_PTRS_END
 #undef mptr
@@ -124,19 +127,20 @@ void
 gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 		   gs_memory_t * mem, int page_device, gx_device * target)
 {
-    *dev = *mdproto;
-    dev->memory = mem;
+    gx_device_init((gx_device *) dev, (const gx_device *)mdproto,
+		   mem, true);
     dev->stype = &st_device_memory;
     switch (page_device) {
 	case -1:
-	    dev->std_procs.get_page_device = gx_default_get_page_device;
+	    set_dev_proc(dev, get_page_device, gx_default_get_page_device);
 	    break;
 	case 1:
-	    dev->std_procs.get_page_device = gx_page_device_get_page_device;
+	    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
 	    break;
     }
     dev->target = target;
-    if (target != 0) {		/* Forward the color mapping operations to the target. */
+    if (target != 0) {
+	/* Forward the color mapping operations to the target. */
 	gx_device_forward_color_procs((gx_device_forward *) dev);
     }
     if (dev->color_info.depth == 1)
@@ -154,9 +158,10 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
 {
     *dev = mem_mono_device;
     dev->memory = mem;
-    dev->std_procs.get_page_device = gx_default_get_page_device;
+    set_dev_proc(dev, get_page_device, gx_default_get_page_device);
     mdev->target = target;
     gdev_mem_mono_set_inverted(dev, true);
+    rc_init(dev, mem, 0);
 }
 
 
@@ -292,30 +297,58 @@ mem_close(gx_device * dev)
     return 0;
 }
 
-/* Copy a scan line to a client. */
+/* Copy bits to a client. */
 #undef chunk
 #define chunk byte
 int
-mem_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
+mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
+		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
-    byte *src;
+    gs_get_bits_options_t options = params->options;
+    int x = prect->p.x, w = prect->q.x - x, y = prect->p.y, h = prect->q.y - y;
 
-    if (y < 0 || y >= dev->height)
+    if (options == 0) {
+	params->options =
+	    (GB_ALIGN_STANDARD | GB_ALIGN_ANY) |
+	    (GB_RETURN_COPY | GB_RETURN_POINTER) |
+	    (GB_OFFSET_0 | GB_OFFSET_SPECIFIED | GB_OFFSET_ANY) |
+	    (GB_RASTER_STANDARD | GB_RASTER_SPECIFIED | GB_RASTER_ANY) |
+	    GB_PACKING_CHUNKY | GB_COLORS_NATIVE | GB_ALPHA_NONE;
 	return_error(gs_error_rangecheck);
-    src = scan_line_base(mdev, y);
-    if (actual_data == 0)
-	memcpy(str, src, gx_device_raster(dev, 0));
-    else
-	*actual_data = src;
-    return 0;
+    }
+    if ((w <= 0) | (h <= 0)) {
+	if ((w | h) < 0)
+	    return_error(gs_error_rangecheck);
+	return 0;
+    }
+    if (x < 0 || w > dev->width - x ||
+	y < 0 || h > dev->height - y
+	)
+	return_error(gs_error_rangecheck);
+    {
+	byte *base = scan_line_base(mdev, y);
+	int code = gx_get_bits_return_pointer(dev, x, h, params,
+				      GB_COLORS_NATIVE | GB_PACKING_CHUNKY |
+					      GB_ALPHA_NONE, base);
+
+	if (code >= 0)
+	    return code;
+	return gx_get_bits_copy(dev, x, w, h, params,
+				GB_COLORS_NATIVE | GB_PACKING_CHUNKY |
+				GB_ALPHA_NONE, base,
+				gx_device_raster(dev, true));
+    }
 }
 
 #if !arch_is_big_endian
 
-/* Swap byte order in a rectangular subset of a bitmap. */
-/* If store = true, assume the rectangle will be overwritten, */
-/* so don't swap any bytes where it doesn't matter. */
-/* The caller has already done a fit_fill or fit_copy. */
+/*
+ * Swap byte order in a rectangular subset of a bitmap.  If store = true,
+ * assume the rectangle will be overwritten, so don't swap any bytes where
+ * it doesn't matter.  The caller has already done a fit_fill or fit_copy.
+ * Note that the coordinates are specified in bits, not in terms of the
+ * actual device depth.
+ */
 void
 mem_swap_byte_rect(byte * base, uint raster, int x, int w, int h, bool store)
 {
@@ -354,24 +387,36 @@ mem_swap_byte_rect(byte * base, uint raster, int x, int w, int h, bool store)
     }
 }
 
-/* Copy a word-oriented scan line to the client, swapping bytes as needed. */
+/* Copy a word-oriented rectangle to the client, swapping bytes as needed. */
 int
-mem_word_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
+mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
+		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
     byte *src;
-    uint raster = gx_device_raster(dev, 0);	/* only doing 1 scan line */
+    uint dev_raster = gx_device_raster(dev, 1);
+    int x = prect->p.x;
+    int w = prect->q.x - x;
+    int y = prect->p.y;
+    int h = prect->q.y - y;
+    int bit_x, bit_w;
+    int code;
 
-    if (y < 0 || y >= dev->height)
-	return_error(gs_error_rangecheck);
+    fit_fill_xywh(dev, x, y, w, h);
+    if (w <= 0 || h <= 0) {
+	/*
+	 * It's easiest to just keep going with an empty rectangle.
+	 * We pass the original rectangle to mem_get_bits_rectangle,
+	 * so unread will be filled in correctly.
+	 */
+	x = y = w = h = 0;
+    }
+    bit_x = x * dev->color_info.depth;
+    bit_w = w * dev->color_info.depth;
     src = scan_line_base(mdev, y);
-    /* We use raster << 3 rather than dev->width so that */
-    /* the right thing will happen if depth > 1. */
-    mem_swap_byte_rect(src, raster, 0, raster << 3, 1, false);
-    memcpy(str, src, raster);
-    if (actual_data != 0)
-	*actual_data = str;
-    mem_swap_byte_rect(src, raster, 0, raster << 3, 1, false);
-    return 0;
+    mem_swap_byte_rect(src, dev_raster, bit_x, bit_w, h, false);
+    code = mem_get_bits_rectangle(dev, prect, params, unread);
+    mem_swap_byte_rect(src, dev_raster, bit_x, bit_w, h, false);
+    return code;
 }
 
 #endif /* !arch_is_big_endian */

@@ -1,2 +1,3 @@
 #!/bin/sh
+# Id: bdftops 
 exec gs -q -dNODISPLAY -- bdftops.ps "$@"

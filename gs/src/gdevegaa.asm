@@ -15,6 +15,7 @@
 ; License requires that the copyright notice and this notice be preserved on
 ; all copies.
 
+; Id: gdevegaa.asm 
 ; gdevegaasm.asm
 ; Assembly code for Ghostscript PC frame buffer driver
 

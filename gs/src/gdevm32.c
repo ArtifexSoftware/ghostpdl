@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevm32.c */
+/*Id: gdevm32.c  */
 /* 32-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -33,12 +33,12 @@
 declare_mem_procs(mem_true32_copy_mono, mem_true32_copy_color, mem_true32_fill_rectangle);
 
 /* The device descriptor. */
-const gx_device_memory far_data mem_true32_device =
+const gx_device_memory mem_true32_device =
 mem_full_device("image32", 24, 8, mem_open,
 		gx_default_map_rgb_color, gx_default_map_color_rgb,
      mem_true32_copy_mono, mem_true32_copy_color, mem_true32_fill_rectangle,
-		mem_get_bits, gx_default_cmyk_map_cmyk_color,
-		gx_default_strip_tile_rectangle, gx_no_strip_copy_rop);
+	    gx_default_cmyk_map_cmyk_color, gx_default_strip_tile_rectangle,
+		gx_no_strip_copy_rop, mem_get_bits_rectangle);
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte
@@ -190,12 +190,12 @@ mem_true32_copy_color(gx_device * dev,
 declare_mem_procs(mem32_word_copy_mono, mem32_word_copy_color, mem32_word_fill_rectangle);
 
 /* Here is the device descriptor. */
-const gx_device_memory far_data mem_true32_word_device =
+const gx_device_memory mem_true32_word_device =
 mem_full_device("image32w", 24, 8, mem_open,
 		gx_default_map_rgb_color, gx_default_map_color_rgb,
      mem32_word_copy_mono, mem32_word_copy_color, mem32_word_fill_rectangle,
-		mem_word_get_bits, gx_default_cmyk_map_cmyk_color,
-		gx_default_strip_tile_rectangle, gx_no_strip_copy_rop);
+	    gx_default_cmyk_map_cmyk_color, gx_default_strip_tile_rectangle,
+		gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
 private int

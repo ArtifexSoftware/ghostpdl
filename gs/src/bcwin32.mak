@@ -1,4 +1,4 @@
-#    Copyright (C) 1989-1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989-1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# bcwin32.mak
+# Id: bcwin32.mak 
 # makefile for (MS-Windows 3.1/Win32s / Windows 95 / Windows NT) +
 #   Borland C++ 4.5 platform.
 
@@ -55,18 +55,18 @@ GS_INIT=gs_init.ps
 # Code runs substantially slower even if no debugging switches are set,
 # and also takes about another 25K of memory.
 
-DEBUG=0
+DEBUG=1
 
 # Setting TDEBUG=1 includes symbol table information for the debugger,
 # and also enables stack checking.  Code is substantially slower and larger.
 
-TDEBUG=0
+TDEBUG=1
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables public,
 # so they are visible to the debugger and profiler.
 # No execution time or space penalty, just larger .OBJ and .EXE files.
 
-NOPRIVATE=0
+NOPRIVATE=1
 
 # Define the names of the executable files.
 
@@ -79,12 +79,22 @@ GSDLL=gsdll32
 
 MAKEDLL=1
 
+# Define the source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+GLSRCDIR=.
+GLGENDIR=debugobj
+GLOBJDIR=debugobj
+PSSRCDIR=.
+PSGENDIR=debugobj
+PSOBJDIR=debugobj
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=jpeg-6a
+JSRCDIR=jpeg
 JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
@@ -145,7 +155,7 @@ CPU_FAMILY=i386
 
 # Define the processor (CPU) type.  (386, 486 or 586)
 
-CPU_TYPE=386
+CPU_TYPE=586
 
 # Define the math coprocessor (FPU) type.
 # Options are -1 (optimize for no FPU), 0 (optimize for FPU present,
@@ -158,13 +168,13 @@ CPU_TYPE=386
 # of that type (or higher) is available: this is NOT currently checked
 # at runtime.
 
-FPU_TYPE=0
+FPU_TYPE=387
 
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=level2.dev pdf.dev ttfont.dev
+FEATURE_DEVS=psl3.dev pdf.dev ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -187,7 +197,8 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
-# Choose the device(s) to include.  See devs.mak for details.
+# Choose the device(s) to include.  See devs.mak for details,
+# devs.mak and contrib.mak for the list of available devices.
 
 DEVICE_DEVS=mswindll.dev mswinprn.dev mswinpr2.dev
 DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
@@ -209,7 +220,7 @@ DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=bcwin32.mak winlib.mak winint.mak
+MAKEFILE=$(GLSRCDIR)\bcwin32.mak
 
 # Define the current directory prefix and shell invocations.
 
@@ -222,10 +233,8 @@ SHP=
 
 # Define the arguments for genconf.
 
-#CONFILES=-p %s+ -o $(ld_tr) -l lib.tr
-# We can't use $(ld_tr) because Borland make expands macro usages in
-# macro definitions at definition time, not at use time.
-CONFILES=-p %s+ -o ld$(CONFIG).tr -l lib.tr
+CONFILES=-p %s+ -l lib.tr
+CONFLDTR=-o
 
 # Define the generic compilation flags.
 
@@ -236,7 +245,11 @@ PCFBASM=
 
 # Make sure we get the right default target for make.
 
-dosdefault: default gs16spl.exe
+dosdefault: default $(GLOBJDIR)\gs16spl.exe
+
+# Define the switch for output files.
+
+O_=-o
 
 # Define the compilation flags.
 
@@ -292,9 +305,6 @@ CS=-N
 CS=
 !endif
 
-# Specify output object name
-CCOBJNAME=-o
-
 # Specify function prolog type
 COMPILE_FOR_DLL=-WDE
 COMPILE_FOR_EXE=-WE
@@ -311,49 +321,45 @@ WX=$(COMPILE_FOR_DLL)
 !else
 WX=$(COMPILE_FOR_EXE)
 !endif
-CCC=$(CC) $(WX) $(CO) -c
-CCD=$(CC) $(WX) -c
-CCINT=$(CC) $(WX) -c
-CCCF=$(CCC)
-CCLEAF=$(CCC)
+CC_WX=$(CC) $(WX)
+CC_=$(CC_WX) $(CO)
+CC_D=$(CC_WX)
+CC_INT=$(CC_WX)
+CC_LEAF=$(CC_)
 
-# Compiler for auxiliary programs
-
-CCAUX=$(COMPAUX) -ml -I$(INCDIR) -L$(LIBDIR) -O
-
-# Compiler for Windows headers includes
-
-CCCWIN=$(CCC)
-
-# Define the generic compilation rules.
-
-.c.obj:
-	$(CCC) { $<}
-
-.cpp.obj:
-	$(CCC) { $<}
+# No additional flags are needed for Windows compilation.
+CCWINFLAGS=
 
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-BEGINFILES2=gs16spl.exe
+BEGINFILES2=$(GLOBJDIR)\gs16spl.exe
 
 # Include the generic makefiles.
 
-!include winlib.mak
-!include winint.mak
+!include $(GLSRCDIR)\winlib.mak
+!include $(GLSRCDIR)\winint.mak
 
 # -------------------------- Auxiliary programs --------------------------- #
+
+# Compiler for auxiliary programs
+
+CCAUX=$(COMPAUX) -ml -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O
+CCAUX_TAIL=
 
 ccf32.tr: $(MAKEFILE) makefile
 	echo -a1 -d -r -G -N -X -I$(INCDIR) $(CCFLAGS0) -DCHECK_INTERRUPTS > ccf32.tr
 
 # Since we are running in a Windows environment with a different compiler
-# for the DOS utilities, we have to invoke genarch by hand:
-$(GENARCH_XE): genarch.c $(stdpre_h) $(iref_h) ccf32.tr
-	$(COMP) -I$(INCDIR) -L$(LIBDIR) -O genarch.c
-	echo ***** Run "win genarch arch.h", then continue make. *****
+# for the DOS utilities, we have to invoke genarch by hand.
+# For unfathomable reasons, the 'win' program requires /, not \,
+# in the name of the program to be run, and apparently also in any
+# file names passed on the command line (?!).
+$(GENARCH_XE): $(GLSRC)genarch.c $(stdpre_h) $(iref_h) ccf32.tr
+	$(COMP) -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O $(GLSRC)genarch.c
+	echo win $(AUXGENDIR)/genarch $(GLGENDIR)/arch.h >_genarch.bat
+	echo ***** Run "_genarch.bat", then continue make. *****
 
 # -------------------------------- Library -------------------------------- #
 
@@ -362,73 +368,78 @@ $(GENARCH_XE): genarch.c $(stdpre_h) $(iref_h) ccf32.tr
 # ----------------------------- Main program ------------------------------ #
 
 LIBCTR=libc32.tr
+GSCONSOLE_XE=$(GLOBJ)$(GSCONSOLE).exe
 
 $(LIBCTR): $(MAKEFILE) $(ECHOGS_XE)
-        echogs -w $(LIBCTR) $(LIBDIR)\import32.lib+
-        echogs -a $(LIBCTR) $(LIBDIR)\cw32.lib
+	echo $(LIBDIR)\import32.lib $(LIBDIR)\cw32.lib >$(LIBCTR)
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
-$(GS_XE): $(GSDLL).dll  $(DWOBJ) $(GSCONSOLE).exe
+$(GS_XE): $(GSDLL_OBJ).dll  $(DWOBJ) $(GSCONSOLE_XE)\
+ $(GS_OBJ).res $(GLSRC)dwmain32.def
 	$(LINK) /Tpe $(LCT) @&&!
 $(LIBDIR)\c0w32 +
 $(DWOBJ) +
 ,$(GS_XE),$(GS), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
-dwmain32.def, +
-$(GS).res
+$(GLSRC)dwmain32.def, +
+$(GS_OBJ).res
 !
 
 # The console mode small EXE loader
-$(GSCONSOLE).exe: $(OBJC) $(GS).res dw32c.def
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRC)dw32c.def
 	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0w32 +
 $(OBJC) +
-,$(GSCONSOLE).exe,$(GSCONSOLE), +
+,$(GSCONSOLE_XE),$(GSCONSOLE), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
-dw32c.def, +
-$(GS).res
+$(GLSRC)dw32c.def, +
+$(GS_OBJ).res
 !
 
 # The big DLL
-$(GSDLL).dll: $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(GSDLL).res
-	$(LINK) $(LCT) /Tpd $(LIBDIR)\c0d32 gsdll @$(ld_tr) $(INTASM) ,$(GSDLL).dll,$(GSDLL),@lib.tr @$(LIBCTR),$(GSDLL).def,$(GSDLL).res
+$(GSDLL_OBJ).dll: $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
+ $(GSDLL_OBJ).res $(GSDLL_SRC).def
+	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + > gswin32.tr
+	copy /Y gswin32.tr+$(ld_tr)
+	$(LINK) $(LCT) /Tpd @gswin32.tr $(INTASM) ,$(GSDLL_OBJ).dll,$(GSDLL),@lib.tr @$(LIBCTR),$(GSDLL_SRC).def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
-$(GS_XE):   $(GSCONSOLE).exe $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).res dwmain32.def
-	copy $(ld_tr) gswin32.tr
-	echo $(DWOBJNO) + >> gswin32.tr
-	$(LINK) $(LCT) /Tpe $(LIBDIR)\c0w32 gsdll @gswin32.tr $(INTASM) ,$(GS_XE),$(GS),@lib.tr @$(LIBCTR),dwmain32.def,$(GS).res
+$(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
+ $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(GLSRC)dwmain32.def
+	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + > gswin32.tr
+	copy /Y gswin32.tr+$(ld_tr)
+	echo $(DWOBJNO) $(INTASM) >> gswin32.tr
+	$(LINK) $(LCT) /Tpe @gswin32.tr ,$(GS_XE),$(GS),@lib.tr @$(LIBCTR),$(GLSRC)dwmain32.def,$(GS_OBJ).res
 	-del gswin32.tr
 
 # The big console mode EXE
-$(GSCONSOLE).exe:  $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(OBJCNO) $(GS).res dw32c.def
-	copy $(ld_tr) gswin32.tr
-	echo $(OBJCNO) + >> gswin32.tr
-	$(LINK) $(LCT) /Tpe /ap $(LIBDIR)\c0w32 gsdll @gswin32.tr $(INTASM) ,$(GSCONSOLE),$(GSCONSOLE),@lib.tr @$(LIBCTR),dw32c.def,$(GS).res
+$(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
+ $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(GLSRC)dw32c.def
+	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + > gswin32.tr
+	copy /Y gswin32.tr+$(ld_tr)
+	echo $(OBJCNO) $(INTASM) >> gswin32.tr
+	$(LINK) $(LCT) /Tpe /ap @gswin32.tr ,$(GSCONSOLE_XE),$(GSCONSOLE),@lib.tr @$(LIBCTR),$(GLSRC)dw32c.def,$(GS_OBJ).res
 	-del gswin32.tr
 !endif
 
 # Access to 16 spooler from Win32s
 
-gs16spl.exe: gs16spl.c gs16spl.rc
-	$(CCAUX) -W -ms -c -v -I$(INCDIR) $*.c
-	$(COMPDIR)\brcc -i$(INCDIR) -r $*.rc
+$(GLOBJ)gs16spl.exe: $(GLSRC)gs16spl.c $(GLSRC)gs16spl.rc
+	$(CCAUX) -W -ms -v -I$(INCDIR) $(GLO_)gs16spl.obj -c $(GLSRC)gs16spl.c
+	$(COMPDIR)\brcc -i$(INCDIR) -r -fo$(GLOBJ)gs16spl.res $(GLSRC)gs16spl.rc
 	$(COMPDIR)\tlink /Twe /c /m /s /l @&&!
 $(LIBDIR)\c0ws +
-$*.obj +
-,$*.exe,$*, +
+$(GLOBJ)gs16spl.obj +
+,$(GLOBJ)gs16spl.exe,$(GLOBJ)gs16spl, +
 $(LIBDIR)\import +
 $(LIBDIR)\mathws +
 $(LIBDIR)\cws, +
-$*.def
+$(GLSRC)gs16spl.def
 !
-	$(COMPDIR)\rlink -t $*.res $*.exe
+	$(COMPDIR)\rlink -t $(GLOBJ)gs16spl.res $(GLOBJ)gs16spl.exe
 
 # end of makefile
-
-
-

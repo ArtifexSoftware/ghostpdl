@@ -1,62 +1,57 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* estack.h */
-/* Definitions for the execution stack */
-#include "istack.h"
+   This file is part of Aladdin Ghostscript.
 
-/* Define the execution stack pointers. */
-typedef s_ptr es_ptr;
-typedef const_s_ptr const_es_ptr;
-extern ref_stack e_stack;
-#define esbot (e_stack.bot)
-#define esp (e_stack.p)
-#define estop (e_stack.top)
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
 
-/*
- * To improve performance, we cache the currentfile pointer
- * (i.e., `shallow-bind' it in Lisp terminology).  The invariant is as
- * follows: either esfile points to the currentfile slot on the estack
- * (i.e., the topmost slot with an executable file), or it is 0.
- * To maintain the invariant, it is sufficient that whenever a routine
- * pushes or pops anything on the estack, if the object *might* be
- * an executable file, invoke esfile_clear_cache(); alternatively,
- * immediately after pushing an object, invoke esfile_check_cache().
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
  */
-extern ref *esfile;
+
+/*Id: estack.h  */
+/* Definitions for the execution stack */
+
+#ifndef estack_INCLUDED
+#  define estack_INCLUDED
+
+#include "iestack.h"
+
+/* There's only one exec stack right now.... */
+#define esfile (iexec_stack.current_file)
 #define esfile_clear_cache() (esfile = 0)
 #define esfile_set_cache(pref) (esfile = (pref))
 #define esfile_check_cache()\
   if ( r_has_type_attrs(esp, t_file, a_executable) )\
     esfile_set_cache(esp)
 
+/* Define the execution stack pointers. */
+extern exec_stack_t iexec_stack;
+
+#define e_stack (iexec_stack.stack)
+#define esbot (e_stack.bot)
+#define esp (e_stack.p)
+#define estop (e_stack.top)
+
 /*
  * The execution stack is used for three purposes:
  *
- *	- Procedures being executed are held here.  They always have
+ *      - Procedures being executed are held here.  They always have
  * type = t_array, t_mixedarray, or t_shortarray, with a_executable set.
  * More specifically, the e-stack holds the as yet unexecuted tail of the
  * procedure.
  *
- *	- if, ifelse, etc. push arguments to be executed here.
+ *      - if, ifelse, etc. push arguments to be executed here.
  * They may be any kind of object whatever.
  *
- *	- Control operators (filenameforall, for, repeat, loop, forall,
+ *      - Control operators (filenameforall, for, repeat, loop, forall,
  * pathforall, run, stopped, ...) mark the stack by pushing whatever state
  * they need to save or keep track of and then an object with type = t_null,
  * attrs = a_executable, size = es_xxx (see below), and value.opproc = a
@@ -105,10 +100,10 @@ extern ref *esfile;
     { e_stack.requested = (n); return_error(e_ExecStackUnderflow); }
 
 /* Define the various kinds of execution stack marks. */
-#define es_other 0			/* internal use */
-#define es_show 1			/* show operators */
-#define es_for 2			/* iteration operators */
-#define es_stopped 3			/* stopped operator */
+#define es_other 0		/* internal use */
+#define es_show 1		/* show operators */
+#define es_for 2		/* iteration operators */
+#define es_stopped 3		/* stopped operator */
 
 /*
  * Pop a given number of elements off the execution stack,
@@ -119,10 +114,11 @@ void pop_estack(P1(uint));
 /*
  * The execution stack is implemented as a linked list of blocks;
  * operators that can push or pop an unbounded number of values, or that
- * access the entire o-stack, must take this into account.  These are:
- *	exit  .stop  .instopped  countexecstack  execstack  currentfile
- *	pop_estack(exit, stop, error recovery)
- *	gs_show_find(all the show operators)
+ * access the entire e-stack, must take this into account.  These are:
+ *      exit  .stop  .instopped  countexecstack  execstack  currentfile
+ *      .execn
+ *      pop_estack(exit, stop, error recovery)
+ *      gs_show_find(all the show operators)
  * In addition, for e-stack entries created by control operators, we must
  * ensure that the mark and its data are never separated.  We do this
  * by ensuring that when splitting the top block, at least N items
@@ -133,3 +129,5 @@ void pop_estack(P1(uint));
  * that contains a procedure that returns an internal "exec stack block
  * underflow" error.
  */
+
+#endif /* estack_INCLUDED */

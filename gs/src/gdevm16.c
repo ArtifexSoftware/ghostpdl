@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevm16.c */
+/*Id: gdevm16.c  */
 /* 16-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -35,7 +35,7 @@ declare_mem_map_procs(mem_true16_map_rgb_color, mem_true16_map_color_rgb);
 declare_mem_procs(mem_true16_copy_mono, mem_true16_copy_color, mem_true16_fill_rectangle);
 
 /* The device descriptor. */
-const gx_device_memory far_data mem_true16_device =
+const gx_device_memory mem_true16_device =
 mem_device("image16", 16, 0,
 	   mem_true16_map_rgb_color, mem_true16_map_color_rgb,
      mem_true16_copy_mono, mem_true16_copy_color, mem_true16_fill_rectangle,

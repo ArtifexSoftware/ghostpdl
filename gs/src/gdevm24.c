@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevm24.c */
+/*Id: gdevm24.c  */
 /* 24-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -38,12 +38,13 @@ declare_mem_procs(mem_true24_copy_mono, mem_true24_copy_color, mem_true24_fill_r
 private dev_proc_copy_alpha(mem_true24_copy_alpha);
 
 /* The device descriptor. */
-const gx_device_memory far_data mem_true24_device =
+const gx_device_memory mem_true24_device =
 mem_full_alpha_device("image24", 24, 0, mem_open,
 		 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
      mem_true24_copy_mono, mem_true24_copy_color, mem_true24_fill_rectangle,
-	     mem_get_bits, gx_default_map_cmyk_color, mem_true24_copy_alpha,
-		gx_default_strip_tile_rectangle, mem_true24_strip_copy_rop);
+		      gx_default_map_cmyk_color, mem_true24_copy_alpha,
+		 gx_default_strip_tile_rectangle, mem_true24_strip_copy_rop,
+		      mem_get_bits_rectangle);
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte
@@ -444,12 +445,12 @@ mem_true24_copy_alpha(gx_device * dev, const byte * base, int sourcex,
 declare_mem_procs(mem24_word_copy_mono, mem24_word_copy_color, mem24_word_fill_rectangle);
 
 /* Here is the device descriptor. */
-const gx_device_memory far_data mem_true24_word_device =
+const gx_device_memory mem_true24_word_device =
 mem_full_device("image24w", 24, 0, mem_open,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
      mem24_word_copy_mono, mem24_word_copy_color, mem24_word_fill_rectangle,
-		mem_word_get_bits, gx_default_map_cmyk_color,
-		gx_default_strip_tile_rectangle, gx_no_strip_copy_rop);
+		gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
+		gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
 private int

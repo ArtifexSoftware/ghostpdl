@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevcgm.c */
+/*Id: gdevcgm.c  */
 /* CGM (Computer Graphics Metafile) driver */
 #include "memory_.h"
 #include "gx.h"
@@ -249,7 +249,7 @@ cgm_put_params(gx_device * dev, gs_param_list * plist)
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
     int ecode = 0;
     int code;
-    const char _ds *param_name;
+    const char *param_name;
     gs_param_string ofs;
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {

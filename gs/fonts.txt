@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: fonts.txt 
 This file, fonts.txt, describes the fonts and font facilities supplied
 with Ghostscript.
 
@@ -73,6 +74,19 @@ and then to produce a sampler of a particular font, invoke
 	/fontName DoFont
 e.g.
 	/Times-Roman DoFont
+
+A free Chinese font
+-------------------
+
+A free Chinese font, originally provided by the courtesy of Jackson
+Technology, Ltd., Taiwan under the GPL and now distributed by the Taiwan
+NeXT User Group, is available from
+
+ftp.ifcss.org        /pub/software/fonts/big5/next/KaiSu.pkg_0_7.tar.gz
+ftp.ifcss.org        /pub/software/fonts/big5/next/KaiSu.Regular.font.patch
+
+For more information, please send e-mail to
+	KaiSu@nextstep.dorm6.nctu.edu.tw
 
 About the Kanji fonts
 ---------------------
@@ -173,13 +187,12 @@ documentation found there.
 Adding your own fonts
 =====================
 
-Ghostscript can use any Type 0, Type 1, Type 3, Type 4, or Type 42 font that
-is acceptable to other PostScript language interpreters or to ATM, including
-MultiMaster fonts.  Starting with release 4.0, Ghostscript can also use
-TrueType fonts (if Ghostscript was compiled with the `ttfont' option).
-Ghostscript also provides a way to construct a (low-quality) Type 1 font
-from a bitmap font in BDF format, which is a popular format in the Unix
-world.
+Ghostscript can use any Type 0, 1, 3, 4, or 42 font that is acceptable to
+other PostScript language interpreters or to ATM, including MultiMaster
+fonts.  Starting with release 4.0, Ghostscript can also use TrueType fonts
+(if Ghostscript was compiled with the `ttfont' option).  Ghostscript also
+provides a way to construct a (low-quality) Type 1 font from a bitmap font
+in BDF format, which is a popular format in the Unix world.
 
 If you want to add fonts of your own, you must edit Fontmap to include an
 entry for your new font at the end.  The format for entries is documented
@@ -222,11 +235,15 @@ Contents of fonts
 As noted above, Ghostscript accepts fonts in the same formats as PostScript
 interpreters.  Type 0, 1, and 3 fonts are documented in the PostScript
 Language Reference Manual (Second Edition); detailed documentation for Type
-1 fonts appears in a separate Adobe book.  Type 42 (encapsulated TrueType)
-fonts are documented in an Adobe supplement; the TrueType format is
-documented in publications available from Apple and Microsoft.  Type 4 fonts
-are not documented anywhere; they are essentially Type 1 fonts with a
-BuildChar or BuildGlyph procedure.
+1 fonts appears in a separate Adobe book.  Type 2 (Compressed Format) fonts
+are documented in separate Adobe publications.  Type 4 fonts are not
+documented anywhere; they are essentially Type 1 fonts with a BuildChar or
+BuildGlyph procedure.  Type 9, 10, and 11 (CIDFontType 0, 1, and 2) and Type
+32 (downloaded bitmap) fonts are documented in Adobe supplements.  Type 42
+(encapsulated TrueType) fonts are documented in an Adobe supplement; the
+TrueType format is documented in publications available from Apple and
+Microsoft.  Ghostscript does not support Type 14 (Chameleon) fonts, which
+use a proprietary Adobe format.
 
 Precompiling fonts
 ------------------
@@ -236,9 +253,10 @@ executable.  (Type 1 fonts include any font whose name ends with .pfa or
 .pfb, and it also includes all the Ghostscript .gsf fonts except for the
 Hershey fonts.)  This doesn't have any effect on rendering speed, but it
 eliminates the time for loading the font dynamically, which may make a big
-difference in total rendering time, especially for multi-page documents.
-Fonts that have been precompiled and linked in this way do not need to
-appear in the Fontmap, although if they do appear there, no harm is done.
+difference in total rendering time, especially for multi-page documents; it
+also reduces the number of auxiliary files required at run time.  Fonts that
+have been precompiled and linked in this way do not need to appear in the
+Fontmap, although if they do appear there, no harm is done.
 
 The utility for precompiling fonts is called font2c.  Note that font2c is
 a PostScript language program, so you must have Ghostscript already
@@ -272,23 +290,17 @@ On some systems, you may have to omit the space following the -f, i.e.,
 
 Besides running font2c, you must arrange things so that the fonts will be
 compiled, and linked into the executable.  To do this, add the compiled
-fonts "feature" to your platform-specific makefile.  On MS-DOS systems, you
-edit tc.mak, bc.mak, bcwin.mak, msc.mak, or watc.mak; on Unix systems, you
-edit ansihead.mak, cc-head.mak, or gcc-head.mak, and then execute tar_cat.
+fonts "feature" to your platform-specific makefile: see the "Makefile
+overview" section of make.txt for the list of makefiles for each platform.
 Find the definition of the FEATURE_DEVS macro in the makefile, e.g.,
-	FEATURE_DEVS=level2.dev pdf.dev
+	FEATURE_DEVS=psl2.dev pdf.dev
 and add ccfonts.dev, e.g.,
-	FEATURE_DEVS=level2.dev pdf.dev ccfonts.dev
+	FEATURE_DEVS=psl2.dev pdf.dev ccfonts.dev
 
-Next, you must add the specific fonts to the generic makefile.  On MS-DOS
-systems, you edit gs.mak; on Unix systems, you edit makefile.  The makefile
-already has rules for the standard 35 fonts supplied with Ghostscript.
-Find the line in the relevant makefile that says
-	#ccfonts1_=<something>
-Remove the # mark from this line, and from all the following lines down to
-and including the one that says
-	#ccfonts9=<something>
-This is all you need to do for the standard fonts.  The next couple of
+Next, you must add the specific fonts to the platform-independent makefile
+for the interpreter, int.mak.  This makefile already has rules for the
+standard 35 fonts supplied with Ghostscript, so if you just want to compile
+the standard fonts, you don't need to do anything else.  The next couple of
 paragraphs describe how to compile in other fonts, such as the Utopia or
 Kana fonts or your own fonts.
 
@@ -298,9 +310,9 @@ ccfonts10.  Add your compiled font file names, e.g.,
 	ccfonts10_=fhirw.$(OBJ)
 If the line gets too long, use another line of the same form, e.g.,
 	ccfonts11_=fkarw.$(OBJ)
-Just below this, you will find a line that says
-	ccfonts10_=
-Add your own fonts to the end of this line, e.g.,
+Just below the ccfonts10_= line, you will find a line that says
+	ccfonts10=
+(no underscore).  Add your own fonts to the end of this line, e.g.,
 	ccfonts10=Calligraphic_Hiragana
 Notice that you must replace `-' by `_' in the font name.  Again, if
 the line gets too long, add another line of the same form, e.g.,
@@ -345,7 +357,7 @@ Then when you add the font to the gsaddmod line in the makefile, use the
 short name, not the actual font name, e.g.,
 	ccfonts2=pncbi
 instead of
-	ccfonts2=NewCenturySchlbk_BoldItalic
+	ccfonts2=NewCenturySchlbk-BoldItalic
 Everything else is as described above.
 
 This procedure doesn't change the name of the font in the Fontmap, or as

@@ -13,6 +13,8 @@ grestore
 
 0.0 setlinewidth
 
+/length 0.1 def
+/width 0.02 def
 /hsvcircle {
 gsave
     /h 0.0 def
@@ -23,18 +25,18 @@ gsave
 
     newpath
     0.0 0.0 moveto
-    0.1 0.0 lineto
-    0.1 0.02 lineto
-    0.0 0.02 lineto
+    length 0.0 lineto
+    length width lineto
+    0.0 width lineto
     closepath
     h 1.0 1.0 sethsbcolor
     fill
 
     %newpath
     %0.0 0.0 moveto
-    %0.1 0.0 lineto
-    %0.1 0.02 lineto
-    %0.0 0.02 lineto
+    %length 0.0 lineto
+    %length width lineto
+    %0.0 width lineto
     %closepath
     %0.0 setgray
     %stroke
@@ -56,9 +58,9 @@ gsave
 
     newpath
     0.0 0.0 moveto
-    0.1 0.0 lineto
-    0.1 0.02 lineto
-    0.0 0.02 lineto
+    length 0.0 lineto
+    length width lineto
+    0.0 width lineto
     closepath
 
     h abs setgray
@@ -66,9 +68,9 @@ gsave
 
     %newpath
     %0.0 0.0 moveto
-    %0.1 0.0 lineto
-    %0.1 0.02 lineto
-    %0.0 0.02 lineto
+    %length 0.0 lineto
+    %length width lineto
+    %0.0 width lineto
     %closepath
     %0.0 setgray
     %stroke

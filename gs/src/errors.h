@@ -1,23 +1,26 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1989, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* errors.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: errors.h  */
 /* Definition of error codes */
+
+#ifndef errors_INCLUDED
+#  define errors_INCLUDED
 
 /*
  * A procedure that may return an error always returns
@@ -26,102 +29,62 @@
  * We use ints rather than an enum to avoid a lot of casting.
  */
 
-/*
- * The following peculiar structure allows us to include this file
- * wherever error code definitions are needed, and use the same file
- * to generate the table of error names by setting INCLUDE_ERROR_NAMES.
- */
-
-#		ifdef INCLUDE_ERROR_NAMES
-
 /* Define the error name table */
-const char _ds *gs_error_names[] = {
-#define _e_(code,name) name,
-
-#		else			/* !INCLUDE_ERROR_NAMES */
-
-extern const char _ds *gs_error_names[];
-#  define _e_(code,name)
-
-#endif					/* (!)INCLUDE_ERROR_NAMES */
+extern const char *const gs_error_names[];
 
 		/* ------ PostScript Level 1 errors ------ */
 
-#define e_unknownerror (-1)		/* unknown error */
-  _e_(e_unknown, "unknownerror")
+#define e_unknownerror (-1)	/* unknown error */
 #define e_dictfull (-2)
-  _e_(e_dictfull, "dictfull")
 #define e_dictstackoverflow (-3)
-  _e_(e_dictstackoverflow, "dictstackoverflow")
 #define e_dictstackunderflow (-4)
-  _e_(e_dictstackunderflow, "dictstackunderflow")
 #define e_execstackoverflow (-5)
-  _e_(e_execstackoverflow, "execstackoverflow")
 #define e_interrupt (-6)
 /* We also need to define gs_error_interrupt, for gpcheck.h. */
 #undef gs_error_interrupt
 #define gs_error_interrupt e_interrupt
-  _e_(e_interrupt, "interrupt")
 #define e_invalidaccess (-7)
-  _e_(e_invalidaccess, "invalidaccess")
 #define e_invalidexit (-8)
-  _e_(e_invalidexit, "invalidexit")
 #define e_invalidfileaccess (-9)
-  _e_(e_invalidfileaccess, "invalidfileaccess")
 #define e_invalidfont (-10)
-  _e_(e_invalidfont, "invalidfont")
 #define e_invalidrestore (-11)
-  _e_(e_invalidrestore, "invalidrestore")
 #define e_ioerror (-12)
-  _e_(e_ioerror, "ioerror")
 #define e_limitcheck (-13)
-  _e_(e_limitcheck, "limitcheck")
 #define e_nocurrentpoint (-14)
-  _e_(e_nocurrentpoint, "nocurrentpoint")
 #define e_rangecheck (-15)
-  _e_(e_rangecheck, "rangecheck")
 #define e_stackoverflow (-16)
-  _e_(e_stackoverflow, "stackoverflow")
 #define e_stackunderflow (-17)
-  _e_(e_stackunderflow, "stackunderflow")
 #define e_syntaxerror (-18)
-  _e_(e_syntaxerror, "syntaxerror")
 #define e_timeout (-19)
-  _e_(e_timeout, "timeout")
 #define e_typecheck (-20)
-  _e_(e_typecheck, "typecheck")
 #define e_undefined (-21)
-  _e_(e_undefined, "undefined")
 #define e_undefinedfilename (-22)
-  _e_(e_undefinedfilename, "undefinedfilename")
 #define e_undefinedresult (-23)
-  _e_(e_undefinedresult, "undefinedresult")
 #define e_unmatchedmark (-24)
-  _e_(e_unmatchedmark, "unmatchedmark")
 #define e_VMerror (-25)
-  _e_(e_VMerror, "VMerror")
+
+#define LEVEL1_ERROR_NAMES\
+ "unknownerror", "dictfull", "dictstackoverflow", "dictstackunderflow",\
+ "execstackoverflow", "interrupt", "invalidaccess", "invalidexit",\
+ "invalidfileaccess", "invalidfont", "invalidrestore", "ioerror",\
+ "limitcheck", "nocurrentpoint", "rangecheck", "stackoverflow",\
+ "stackunderflow", "syntaxerror", "timeout", "typecheck", "undefined",\
+ "undefinedfilename", "undefinedresult", "unmatchedmark", "VMerror"
 
 		/* ------ Additional Level 2 and DPS errors ------ */
 
 #define e_configurationerror (-26)
-  _e_(e_configurationerror, "configurationerror")
 #define e_invalidcontext (-27)
-  _e_(e_invalidcontext, "invalidcontext")
 #define e_undefinedresource (-28)
-  _e_(e_undefinedresource, "undefinedresource")
 #define e_unregistered (-29)
-  _e_(e_unregistered, "unregistered")
 /* invalidid is for the NeXT DPS extension. */
 #define e_invalidid (-30)
-  _e_(e_invalidid, "invalidid")
 
-#		ifdef INCLUDE_ERROR_NAMES
+#define LEVEL2_ERROR_NAMES\
+ "configurationerror", "invalidcontext", "undefinedresource",\
+ "unregistered", "invalidid"
 
-/* End of error name table */
-  0
-};
-
-#		endif			/* INCLUDE_ERROR_NAMES */
+#define ERROR_NAMES   LEVEL1_ERROR_NAMES, LEVEL2_ERROR_NAMES
 
 		/* ------ Pseudo-errors used internally ------ */
 
@@ -175,3 +138,5 @@ extern const char _ds *gs_error_names[];
  */
 #define error_is_interrupt(ecode)\
   ((ecode) == e_interrupt || (ecode) == e_timeout)
+
+#endif /* errors_INCLUDED */

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevl256.c */
+/*Id: gdevl256.c  */
 /* Ghostscript driver for 256-color VGA modes with Linux and vgalib */
 /* This Driver was derived from the BGI-Driver. It was written
    only for my own purpose. I never planned to release it or send

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,11 @@
    all copies.
  */
 
-/* gdevemap.c */
+/*Id: gdevemap.c  */
 /* Mappings between StandardEncoding and ISOLatin1Encoding */
 #include "std.h"
 
-const byte far_data gs_map_std_to_iso[256] =
+const byte gs_map_std_to_iso[256] =
 {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -40,7 +40,7 @@ const byte far_data gs_map_std_to_iso[256] =
     0, 230, 0, 0, 0, 144, 0, 0, 0, 248, 0, 223, 0, 0, 0, 0
 };
 
-const byte far_data gs_map_iso_to_std[256] =
+const byte gs_map_iso_to_std[256] =
 {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

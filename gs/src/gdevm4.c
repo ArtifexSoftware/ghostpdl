@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevm4.c */
+/*Id: gdevm4.c  */
 /* 4-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -37,7 +37,7 @@ extern dev_proc_strip_copy_rop(mem_gray_strip_copy_rop);
 declare_mem_procs(mem_mapped4_copy_mono, mem_mapped4_copy_color, mem_mapped4_fill_rectangle);
 
 /* The device descriptor. */
-const gx_device_memory far_data mem_mapped4_device =
+const gx_device_memory mem_mapped4_device =
 mem_device("image4", 4, 0,
 	   mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
   mem_mapped4_copy_mono, mem_mapped4_copy_color, mem_mapped4_fill_rectangle,
@@ -74,42 +74,129 @@ mem_mapped4_copy_mono(gx_device * dev,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
     const byte *line;
-    int first_bit;
-    byte first_mask, b0, b1;
 
     declare_scan_ptr(dest);
+    byte invert, bb;
+
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     setup_rect(dest);
     line = base + (sourcex >> 3);
-    first_bit = 0x80 >> (sourcex & 7);
-    first_mask = (x & 1 ? 0xf : 0xf0);
-    b0 = ((byte) zero << 4) + (byte) zero;
-    b1 = ((byte) one << 4) + (byte) one;
-    while (h-- > 0) {
-	register byte *pptr = (byte *) dest;
+    /* Divide into opaque and masked cases. */
+    if (one == gx_no_color_index) {
+	if (zero == gx_no_color_index)
+	    return 0;		/* nothing to do */
+	invert = 0xff;
+	bb = ((byte) zero << 4) | (byte) zero;
+    } else if (zero == gx_no_color_index) {
+	invert = 0;
+	bb = ((byte) one << 4) | (byte) one;
+    } else {
+	/* Opaque case. */
+	bits32 oz = (zero << 4) | zero;
+	int shift = ~(sourcex ^ x) & 1;
+
+	/* Set oz = o.o.o.z.z.o.z.z. */
+	oz = (((((((((one << 4) | one) << 4) | one) << 8) | oz) << 4) | one)
+	      << 8) | oz;
+	do {
+	    register byte *dptr = (byte *) dest;
+	    const byte *sptr = line;
+	    register uint sbyte = *sptr++;
+	    register int sbit = ~sourcex & 7;
+	    int count = w;
+
+	    /*
+	     * If the first source bit corresponds to an odd X in the
+	     * destination, process it now.
+	     */
+	    if (x & 1) {
+		*dptr = (*dptr & 0xf0) |
+		    ((sbyte >> sbit) & 1 ? one : zero);
+		--count;	/* may now be 0 */
+		if (--sbit < 0)
+		    sbit = 7, sbyte = *sptr++;
+		++dptr;
+	    }
+	    /*
+	     * Now we know the next destination X is even.  We want to
+	     * process 2 source bits at a time from now on, so set things up
+	     * properly depending on whether the next source X (bit) is even
+	     * or odd.  In both even and odd cases, the active source bits
+	     * are in bits 8..1 of sbyte.
+	     */
+	    sbyte <<= shift;
+	    sbit += shift - 1;
+	    /*
+	     * Now bit # sbit+1 is the most significant unprocessed bit
+	     * in sbyte.  -1 <= sbit <= 7; sbit is odd.
+	     * Note that if sbit = -1, all of sbyte has been processed.
+	     *
+	     * Continue processing pairs of bits in the first source byte.
+	     */
+	    while (count >= 2 && sbit >= 0) {
+		*dptr++ = (byte) (oz >> (((sbyte >> sbit) << 3) & 24));
+		sbit -= 2, count -= 2;
+	    }
+	    /*
+	     * Now sbit = -1 iff we have processed the entire first source
+	     * byte.
+	     *
+	     * Process full source bytes.
+	     */
+	    while (count >= 8) {
+		sbyte = (sbyte << 8) | (*sptr++ << shift);
+		dptr[0] = (byte) (oz >> ((sbyte >> 4) & 24));
+		dptr[1] = (byte) (oz >> ((sbyte >> 2) & 24));
+		dptr[2] = (byte) (oz >> (sbyte & 24));
+		dptr[3] = (byte) (oz >> ((sbyte << 2) & 24));
+		dptr += 4;
+		count -= 8;
+	    }
+	    if (!count)
+		continue;
+	    /*
+	     * Process pairs of bits in the final source byte.  Note that
+	     * if sbit > 0, this is still the first source byte (the
+	     * full-byte loop wasn't executed).
+	     */
+	    if (sbit < 0) {
+		sbyte = (sbyte << 8) | (*sptr << shift);
+		sbit = 7;
+	    }
+	    while (count >= 2) {
+		*dptr++ = (byte) (oz >> (((sbyte >> sbit) << 3) & 24));
+		sbit -= 2, count -= 2;
+	    }
+	    /*
+	     * If the final source bit corresponds to an even X value,
+	     * process it now.
+	     */
+	    if (count) {
+		*dptr = (*dptr & 0x0f) |
+		    (((sbyte >> sbit) & 2 ? one : zero) << 4);
+	    }
+	} while ((line += sraster, inc_ptr(dest, draster), --h) > 0);
+	return 0;
+    }
+    /* Masked case. */
+    do {
+	register byte *dptr = (byte *) dest;
 	const byte *sptr = line;
-	register int sbyte = *sptr++;
-	register int bit = first_bit;
-	register byte mask = first_mask;
+	register int sbyte = *sptr++ ^ invert;
+	register int sbit = 0x80 >> (sourcex & 7);
+	register byte mask = (x & 1 ? 0x0f : 0xf0);
 	int count = w;
 
 	do {
-	    if (sbyte & bit) {
-		if (one != gx_no_color_index)
-		    *pptr = (*pptr & ~mask) + (b1 & mask);
-	    } else {
-		if (zero != gx_no_color_index)
-		    *pptr = (*pptr & ~mask) + (b0 & mask);
-	    }
-	    if ((bit >>= 1) == 0)
-		bit = 0x80, sbyte = *sptr++;
-	    if ((mask = ~mask) == 0xf0)
-		pptr++;
-	}
-	while (--count > 0);
+	    if (sbyte & sbit)
+		*dptr = (*dptr & ~mask) | (bb & mask);
+	    if ((sbit >>= 1) == 0)
+		sbit = 0x80, sbyte = *sptr++ ^ invert;
+	    dptr += (mask = ~mask) >> 7;
+	} while (--count > 0);
 	line += sraster;
 	inc_ptr(dest, draster);
-    }
+    } while (--h > 0);
     return 0;
 }
 
@@ -144,12 +231,12 @@ mem_mapped4_copy_color(gx_device * dev,
 declare_mem_procs(mem4_word_copy_mono, mem4_word_copy_color, mem4_word_fill_rectangle);
 
 /* Here is the device descriptor. */
-const gx_device_memory far_data mem_mapped4_word_device =
+const gx_device_memory mem_mapped4_word_device =
 mem_full_device("image4w", 4, 0, mem_open,
 		mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
 	mem4_word_copy_mono, mem4_word_copy_color, mem4_word_fill_rectangle,
-		mem_word_get_bits, gx_default_map_cmyk_color,
-		gx_default_strip_tile_rectangle, gx_no_strip_copy_rop);
+		gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
+		gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
 private int

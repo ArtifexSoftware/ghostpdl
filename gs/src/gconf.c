@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,17 +16,12 @@
    all copies.
  */
 
-/* gconf.c */
+/*Id: gconf.c  */
 /* Configuration tables */
+#include "memory_.h"
 #include "gx.h"
 #include "gscdefs.h"		/* interface */
-#include "gconfig.h"		/* for #defines */
-/*
- * Since we only declare variables of type gx_device *,
- * it should be sufficient to define struct gx_device_s as
- * an abstract (undefined) structure.  However, the VAX VMS compiler
- * isn't happy with this, so we have to include the full definition.
- */
+#include "gconf.h"		/* for #defines */
 #include "gxdevice.h"
 #include "gxiodev.h"
 
@@ -34,8 +29,10 @@
  * The makefile generates the file gconfig.h, which consists of
  * lines of the form
  *      device_(gs_xxx_device)
+ * or
+ *      device2_(gs_xxx_device)
  * for each installed device;
- *      emulator_("emulator")
+ *      emulator_("emulator", strlen("emulator"))
  * for each known emulator;
  *      init_(gs_xxx_init)
  * for each initialization procedure;
@@ -43,7 +40,7 @@
  * for each known IODevice;
  *      oper_(xxx_op_defs)
  * for each operator option;
- *      psfile_("gs_xxxx.ps")
+ *      psfile_("gs_xxxx.ps", strlen("gs_xxxx.ps"))
  * for each optional initialization file.
  *
  * We include this file multiple times to generate various different
@@ -55,18 +52,22 @@
 
 /* Declare devices, init procedures, and IODevices as extern. */
 #define device_(dev) extern far_data gx_device dev;
+#define device2_(dev) extern const gx_device dev;
 #define init_(proc) extern void proc(P1(gs_memory_t *));
-#define io_device_(iodev) extern gx_io_device iodev;
-#include "gconfig.h"
+#define io_device_(iodev) extern const gx_io_device iodev;
+#include "gconf.h"
 #undef init_
 #undef io_device_
+#undef device2_
 #undef device_
 
 /* Set up the initialization procedure table. */
 extern_gx_init_table();
+private void gconf_init(P1(gs_memory_t *));
 #define init_(proc) proc,
-void (*gx_init_table[]) (P1(gs_memory_t *)) = {
-#include "gconfig.h"
+const gx_init_proc gx_init_table[] = {
+#include "gconf.h"
+    gconf_init,
     0
 };
 #undef init_
@@ -75,52 +76,42 @@ void (*gx_init_table[]) (P1(gs_memory_t *)) = {
 /* since it is the default for files with no explicit device specified. */
 extern_gx_io_device_table();
 extern gx_io_device gs_iodev_os;
-
 #define io_device_(iodev) &iodev,
-gx_io_device *gx_io_device_table[] =
-{
+const gx_io_device *const gx_io_device_table[] = {
     &gs_iodev_os,
-#include "gconfig.h"
+#include "gconf.h"
     0
 };
-
 #undef io_device_
-uint gx_io_device_table_count =
-countof(gx_io_device_table) - 1;
+const uint gx_io_device_table_count = countof(gx_io_device_table) - 1;
 
 /* Set up the device table. */
-#define device_(dev) &dev,
-     private const gx_device *gx_device_list[] =
-     {
-#include "gconfig.h"
+#define device_(dev) (const gx_device *)&dev,
+#define device2_(dev) &dev,
+private const gx_device *const gx_device_list[] = {
+#include "gconf.h"
 	 0
-     };
-
+};
+#undef device2_
 #undef device_
 
-/*
- * Allocate structure descriptors for the devices.
- * We can't fill in the structure sizes, because we don't know them
- * statically, and we also don't know statically which devices are
- * forwarders; so we fill all of this in when we need to
- * (in gs_copydevice in gsdevice.c).
- */
-#define device_(dev) { 0 },
-/* Because of a bug in the Borland C++ 4.5 compiler, */
-/* we can't declare the following far_data but not static. */
-     static /*private */ far_data gs_memory_struct_type_t gx_device_st_list[] =
-     {
-#include "gconfig.h"
-	 {0}
-     };
+/* Allocate and initialize structure descriptors for the devices. */
+private gs_memory_struct_type_t gx_device_st_list[countof(gx_device_list) - 1];
+private void
+gconf_init(gs_memory_t *mem)
+{
+    int i;
 
-#undef device_
+    for (i = 0; i < countof(gx_device_list) - 1; ++i)
+	gx_device_make_struct_type(&gx_device_st_list[i], gx_device_list[i]);
+}
 
 /* Return the list of device prototypes, the list of their structure */
 /* descriptors, and (as the value) the length of the lists. */
 extern_gs_lib_device_list();
-     int
-         gs_lib_device_list(const gx_device *** plist, gs_memory_struct_type_t ** pst)
+int
+gs_lib_device_list(const gx_device * const **plist,
+		   gs_memory_struct_type_t ** pst)
 {
     if (plist != 0)
 	*plist = gx_device_list;

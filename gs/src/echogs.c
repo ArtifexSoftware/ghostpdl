@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* echogs.c */
+/*Id: echogs.c  */
 /* 'echo'-like utility */
 #include <stdio.h>
 /* Some brain-damaged environments (e.g. Sun) don't include */

@@ -17,7 +17,7 @@
    all copies.
  */
 
-/* bench.c */
+/*Id: bench.c  */
 /* Simple hardware benchmarking suite (C and PostScript) */
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +32,7 @@ extern void gp_get_usertime(long ptm[2]);
 FILE *gs_stdout;
 FILE *gs_stderr;
 const char gp_scratch_file_name_prefix[] = "gs_";
-void
+void 
 gp_init_console()
 {
 }
@@ -41,16 +41,16 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 {
     return NULL;
 }
-void
+void 
 gp_set_printer_binary(int prnfno, int binary)
 {
 }
-void
+void 
 gs_exit(n)
 {
     exit(n);
 }
-void
+void 
 lprintf_file_and_line(FILE * f, const char *file, int line)
 {
     fprintf(f, "%s(%d): ", file, line);

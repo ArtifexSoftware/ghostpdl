@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevm1.c */
+/*Id: gdevm1.c  */
 /* Monobit "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -55,12 +55,13 @@ private dev_proc_strip_tile_rectangle(mem_mono_strip_tile_rectangle);
 
 /* The device descriptor. */
 /* The instance is public. */
-const gx_device_memory far_data mem_mono_device =
+const gx_device_memory mem_mono_device =
 mem_full_alpha_device("image1", 0, 1, mem_open,
 		      mem_mono_map_rgb_color, mem_mono_map_color_rgb,
 	 mem_mono_copy_mono, gx_default_copy_color, mem_mono_fill_rectangle,
-		  mem_get_bits, gx_default_map_cmyk_color, gx_no_copy_alpha,
-		    mem_mono_strip_tile_rectangle, mem_mono_strip_copy_rop);
+		      gx_default_map_cmyk_color, gx_no_copy_alpha,
+		      mem_mono_strip_tile_rectangle, mem_mono_strip_copy_rop,
+		      mem_get_bits_rectangle);
 
 /* Map color to/from RGB.  This may be inverted. */
 private gx_color_index
@@ -104,22 +105,31 @@ mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 #undef mono_masks
 #define mono_masks mono_copy_masks
 
-/* Fetch a chunk from the source. */
-/* The source data are always stored big-endian. */
-/* Note that the macros always cast cptr, */
-/* so it doesn't matter what the type of cptr is. */
+/*
+ * Fetch a chunk from the source.
+ *
+ * Since source and destination are both always big-endian,
+ * fetching an aligned chunk never requires byte swapping.
+ */
+#define CFETCH_ALIGNED(cptr)\
+  (*(const chunk *)(cptr))
+
+/*
+ * Note that the macros always cast cptr,
+ * so it doesn't matter what the type of cptr is.
+ */
 /* cshift = chunk_bits - shift. */
 #undef chunk
 #if arch_is_big_endian
 #  define chunk uint
-#  define cfetch_right(cptr, shift, cshift)\
-	(cfetch_aligned(cptr) >> shift)
-#  define cfetch_left(cptr, shift, cshift)\
-	(cfetch_aligned(cptr) << shift)
+#  define CFETCH_RIGHT(cptr, shift, cshift)\
+	(CFETCH_ALIGNED(cptr) >> shift)
+#  define CFETCH_LEFT(cptr, shift, cshift)\
+	(CFETCH_ALIGNED(cptr) << shift)
 /* Fetch a chunk that straddles a chunk boundary. */
-#  define cfetch2(cptr, cskew, skew)\
-    (cfetch_left(cptr, cskew, skew) +\
-     cfetch_right((const chunk *)(cptr) + 1, skew, cskew))
+#  define CFETCH2(cptr, cskew, skew)\
+    (CFETCH_LEFT(cptr, cskew, skew) +\
+     CFETCH_RIGHT((const chunk *)(cptr) + 1, skew, cskew))
 #else /* little-endian */
 #  define chunk bits16
 private const bits16 right_masks2[9] =
@@ -131,161 +141,166 @@ private const bits16 left_masks2[9] =
     0xffff, 0xfefe, 0xfcfc, 0xf8f8, 0xf0f0, 0xe0e0, 0xc0c0, 0x8080, 0x0000
 };
 
-#  define ccont(cptr, off) (((const chunk *)(cptr))[off])
-#  define cfetch_right(cptr, shift, cshift)\
+#  define CCONT(cptr, off) (((const chunk *)(cptr))[off])
+#  define CFETCH_RIGHT(cptr, shift, cshift)\
 	((shift) < 8 ?\
-	 ((ccont(cptr, 0) >> (shift)) & right_masks2[shift]) +\
-	  (ccont(cptr, 0) << (cshift)) :\
+	 ((CCONT(cptr, 0) >> (shift)) & right_masks2[shift]) +\
+	  (CCONT(cptr, 0) << (cshift)) :\
 	 ((chunk)*(const byte *)(cptr) << (cshift)) & 0xff00)
-#  define cfetch_left(cptr, shift, cshift)\
+#  define CFETCH_LEFT(cptr, shift, cshift)\
 	((shift) < 8 ?\
-	 ((ccont(cptr, 0) << (shift)) & left_masks2[shift]) +\
-	  (ccont(cptr, 0) >> (cshift)) :\
-	 ((ccont(cptr, 0) & 0xff00) >> (cshift)) & 0xff)
+	 ((CCONT(cptr, 0) << (shift)) & left_masks2[shift]) +\
+	  (CCONT(cptr, 0) >> (cshift)) :\
+	 ((CCONT(cptr, 0) & 0xff00) >> (cshift)) & 0xff)
 /* Fetch a chunk that straddles a chunk boundary. */
 /* We can avoid testing the shift amount twice */
-/* by expanding the cfetch_left/right macros in-line. */
-#  define cfetch2(cptr, cskew, skew)\
+/* by expanding the CFETCH_LEFT/right macros in-line. */
+#  define CFETCH2(cptr, cskew, skew)\
 	((cskew) < 8 ?\
-	 ((ccont(cptr, 0) << (cskew)) & left_masks2[cskew]) +\
-	  (ccont(cptr, 0) >> (skew)) +\
+	 ((CCONT(cptr, 0) << (cskew)) & left_masks2[cskew]) +\
+	  (CCONT(cptr, 0) >> (skew)) +\
 	  (((chunk)(((const byte *)(cptr))[2]) << (cskew)) & 0xff00) :\
-	 (((ccont(cptr, 0) & 0xff00) >> (skew)) & 0xff) +\
-	  ((ccont(cptr, 1) >> (skew)) & right_masks2[skew]) +\
-	   (ccont(cptr, 1) << (cskew)))
+	 (((CCONT(cptr, 0) & 0xff00) >> (skew)) & 0xff) +\
+	  ((CCONT(cptr, 1) >> (skew)) & right_masks2[skew]) +\
+	   (CCONT(cptr, 1) << (cskew)))
 #endif
-/* Since source and destination are both always big-endian, */
-/* fetching an aligned chunk never requires byte swapping. */
-#  define cfetch_aligned(cptr)\
-	(*(const chunk *)(cptr))
 
-/* copy_function and copy_shift get added together for dispatch */
 typedef enum {
-    copy_or = 0, copy_store, copy_and, copy_funny
+    COPY_OR = 0, COPY_STORE, COPY_AND, COPY_FUNNY
 } copy_function;
-
-/* copy_right/left is not an enum, because compilers complain about */
-/* an enumeration clash when these are added to a copy_function. */
-#define copy_right ((copy_function)0)
-#define copy_left ((copy_function)4)
 typedef struct {
-    short invert;
-    ushort op;			/* copy_function */
+    uint invert;
+    copy_function op;
 } copy_mode;
 
-/* Map from <c0,c1> to copy_mode. */
-#define cm(i,op) { i, (ushort)op }
-private copy_mode copy_modes[9] =
+/*
+ * Map from <color0,color1> to copy_mode.
+ * Logically, this is a 2-D array.
+ * The indexing is (transparent, 0, 1, unused). */
+private const copy_mode copy_modes[16] =
 {
-    cm(-1, copy_funny),		/* NN */
-    cm(-1, copy_and),		/* N0 */
-    cm(0, copy_or),		/* N1 */
-    cm(0, copy_and),		/* 0N */
-    cm(0, copy_funny),		/* 00 */
-    cm(0, copy_store),		/* 01 */
-    cm(-1, copy_or),		/* 1N */
-    cm(-1, copy_store),		/* 10 */
-    cm(0, copy_funny),		/* 11 */
+    {~0, COPY_FUNNY},		/* NN */
+    {~0, COPY_AND},		/* N0 */
+    {0, COPY_OR},		/* N1 */
+    {0, 0},			/* unused */
+    {0, COPY_AND},		/* 0N */
+    {0, COPY_FUNNY},		/* 00 */
+    {0, COPY_STORE},		/* 01 */
+    {0, 0},			/* unused */
+    {~0, COPY_OR},		/* 1N */
+    {~0, COPY_STORE},		/* 10 */
+    {0, COPY_FUNNY},		/* 11 */
+    {0, 0},			/* unused */
+    {0, 0},			/* unused */
+    {0, 0},			/* unused */
+    {0, 0},			/* unused */
+    {0, 0},			/* unused */
 };
+
+/* Handle the funny cases that aren't supposed to happen. */
+#define FUNNY_CASE()\
+  (invert ? gs_note_error(-1) :\
+   mem_mono_fill_rectangle(dev, x, y, w, h, color0))
+
 private int
 mem_mono_copy_mono(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+ const byte * source_data, int source_x, int source_raster, gx_bitmap_id id,
+   int x, int y, int w, int h, gx_color_index color0, gx_color_index color1)
 {
 #ifdef USE_COPY_ROP
-    return mem_mono_copy_rop(dev, base, sourcex, sraster, id, NULL,
-			     NULL, NULL,
+    return mem_mono_copy_rop(dev, source_data, source_x, source_raster,
+			     id, NULL, NULL, NULL,
 			     x, y, w, h, 0, 0,
-			     ((zero == gx_no_color_index ? rop3_D :
-			       zero == 0 ? rop3_0 : rop3_1) & ~rop3_S) |
-			     ((one == gx_no_color_index ? rop3_D :
-			       one == 0 ? rop3_0 : rop3_1) & rop3_S));
+			     ((color0 == gx_no_color_index ? rop3_D :
+			       color0 == 0 ? rop3_0 : rop3_1) & ~rop3_S) |
+			     ((color1 == gx_no_color_index ? rop3_D :
+			       color1 == 0 ? rop3_0 : rop3_1) & rop3_S));
 #else /* !USE_COPY_ROP */
     register const byte *bptr;	/* actually chunk * */
     int dbit, wleft;
     uint mask;
     copy_mode mode;
 
-#define function (copy_function)(mode.op)
-    declare_scan_ptr_as(dbptr, byte *);
+    DECLARE_SCAN_PTR_VARS(dbptr, byte *, dest_raster);
 #define optr ((chunk *)dbptr)
     register int skew;
     register uint invert;
 
-    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
+    fit_copy(dev, source_data, source_x, source_raster, id, x, y, w, h);
 #if gx_no_color_index_value != -1	/* hokey! */
-    if (zero == gx_no_color_index)
-	zero = -1;
-    if (one == gx_no_color_index)
-	one = -1;
+    if (color0 == gx_no_color_index)
+	color0 = -1;
+    if (color1 == gx_no_color_index)
+	color1 = -1;
 #endif
-#define izero (int)zero
-#define ione (int)one
-    mode = copy_modes[izero + izero + izero + ione + 4];
-#undef izero
-#undef ione
-    invert = (uint) (int)mode.invert;	/* load register */
-    setup_rect_as(dbptr, byte *);
-    bptr = base + ((sourcex & ~chunk_align_bit_mask) >> 3);
+    mode = copy_modes[((int)color0 << 2) + (int)color1 + 5];
+    invert = mode.invert;	/* load register */
+    SETUP_RECT_VARS(dbptr, byte *, dest_raster);
+    bptr = source_data + ((source_x & ~chunk_align_bit_mask) >> 3);
     dbit = x & chunk_align_bit_mask;
-    skew = dbit - (sourcex & chunk_align_bit_mask);
+    skew = dbit - (source_x & chunk_align_bit_mask);
+
 /* Macros for writing partial chunks. */
 /* The destination pointer is always named optr, */
 /* and must be declared as chunk *. */
-/* cinvert may be temporarily redefined. */
-#define cinvert(bits) ((bits) ^ invert)
-#define write_or_masked(bits, mask, off)\
-  optr[off] |= (cinvert(bits) & mask)
-#define write_store_masked(bits, mask, off)\
-  optr[off] = ((optr[off] & ~mask) | (cinvert(bits) & mask))
-#define write_and_masked(bits, mask, off)\
-  optr[off] &= (cinvert(bits) | ~mask)
+/* CINVERT may be temporarily redefined. */
+#define CINVERT(bits) ((bits) ^ invert)
+#define WRITE_OR_MASKED(bits, mask, off)\
+  optr[off] |= (CINVERT(bits) & mask)
+#define WRITE_STORE_MASKED(bits, mask, off)\
+  optr[off] = ((optr[off] & ~mask) | (CINVERT(bits) & mask))
+#define WRITE_AND_MASKED(bits, mask, off)\
+  optr[off] &= (CINVERT(bits) | ~mask)
 /* Macros for writing full chunks. */
-#define write_or(bits)  *optr |= cinvert(bits)
-#define write_store(bits) *optr = cinvert(bits)
-#define write_and(bits) *optr &= cinvert(bits)
+#define WRITE_OR(bits)  *optr |= CINVERT(bits)
+#define WRITE_STORE(bits) *optr = CINVERT(bits)
+#define WRITE_AND(bits) *optr &= CINVERT(bits)
 /* Macro for incrementing to next chunk. */
-#define next_x_chunk\
+#define NEXT_X_CHUNK()\
   bptr += chunk_bytes; dbptr += chunk_bytes
 /* Common macro for the end of each scan line. */
-#define end_y_loop(sdelta, ddelta)\
-  if ( --h == 0 ) break;\
+#define END_Y_LOOP(sdelta, ddelta)\
   bptr += sdelta; dbptr += ddelta
+
     if ((wleft = w + dbit - chunk_bits) <= 0) {		/* The entire operation fits in one (destination) chunk. */
 	set_mono_thin_mask(mask, w, dbit);
-#define write_single(wr_op, src)\
+
+#define WRITE_SINGLE(wr_op, src)\
   for ( ; ; )\
    { wr_op(src, mask, 0);\
-     end_y_loop(sraster, draster);\
+     if ( --h == 0 ) break;\
+     END_Y_LOOP(source_raster, dest_raster);\
    }
-#define write1_loop(src)\
-  switch ( function ) {\
-    case copy_or: write_single(write_or_masked, src); break;\
-    case copy_store: write_single(write_store_masked, src); break;\
-    case copy_and: write_single(write_and_masked, src); break;\
-    default: goto funny;\
+
+#define WRITE1_LOOP(src)\
+  switch ( mode.op ) {\
+    case COPY_OR: WRITE_SINGLE(WRITE_OR_MASKED, src); break;\
+    case COPY_STORE: WRITE_SINGLE(WRITE_STORE_MASKED, src); break;\
+    case COPY_AND: WRITE_SINGLE(WRITE_AND_MASKED, src); break;\
+    default: return FUNNY_CASE();\
   }
+
 	if (skew >= 0) {	/* single -> single, right/no shift */
 	    if (skew == 0) {	/* no shift */
-		write1_loop(cfetch_aligned(bptr));
+		WRITE1_LOOP(CFETCH_ALIGNED(bptr));
 	    } else {		/* right shift */
 		int cskew = chunk_bits - skew;
 
-		write1_loop(cfetch_right(bptr, skew, cskew));
+		WRITE1_LOOP(CFETCH_RIGHT(bptr, skew, cskew));
 	    }
 	} else if (wleft <= skew) {	/* single -> single, left shift */
 	    int cskew = chunk_bits + skew;
 
 	    skew = -skew;
-	    write1_loop(cfetch_left(bptr, skew, cskew));
+	    WRITE1_LOOP(CFETCH_LEFT(bptr, skew, cskew));
 	} else {		/* double -> single */
 	    int cskew = -skew;
 
 	    skew += chunk_bits;
-	    write1_loop(cfetch2(bptr, cskew, skew));
+	    WRITE1_LOOP(CFETCH2(bptr, cskew, skew));
 	}
-#undef write1_loop
-#undef write_single
+#undef WRITE1_LOOP
+#undef WRITE_SINGLE
     } else if (wleft <= skew) {	/* 1 source chunk -> 2 destination chunks. */
 	/* This is an important special case for */
 	/* both characters and halftone tiles. */
@@ -294,149 +309,156 @@ mem_mono_copy_mono(gx_device * dev,
 
 	set_mono_left_mask(mask, dbit);
 	set_mono_right_mask(rmask, wleft);
-#undef cinvert
-#define cinvert(bits) (bits)	/* pre-inverted here */
+#undef CINVERT
+#define CINVERT(bits) (bits)	/* pre-inverted here */
+
 #if arch_is_big_endian		/* no byte swapping */
-#  define write_1to2(wr_op)\
+#  define WRITE_1TO2(wr_op)\
   for ( ; ; )\
-   { register uint bits = cfetch_aligned(bptr) ^ invert;\
+   { register uint bits = CFETCH_ALIGNED(bptr) ^ invert;\
      wr_op(bits >> skew, mask, 0);\
      wr_op(bits << cskew, rmask, 1);\
-     end_y_loop(sraster, draster);\
+     if ( --h == 0 ) break;\
+     END_Y_LOOP(source_raster, dest_raster);\
    }
 #else /* byte swapping */
-#  define write_1to2(wr_op)\
+#  define WRITE_1TO2(wr_op)\
   for ( ; ; )\
-   { wr_op(cfetch_right(bptr, skew, cskew) ^ invert, mask, 0);\
-     wr_op(cfetch_left(bptr, cskew, skew) ^ invert, rmask, 1);\
-     end_y_loop(sraster, draster);\
+   { wr_op(CFETCH_RIGHT(bptr, skew, cskew) ^ invert, mask, 0);\
+     wr_op(CFETCH_LEFT(bptr, cskew, skew) ^ invert, rmask, 1);\
+     if ( --h == 0 ) break;\
+     END_Y_LOOP(source_raster, dest_raster);\
    }
 #endif
-	switch (function) {
-	    case copy_or:
-		write_1to2(write_or_masked);
+
+	switch (mode.op) {
+	    case COPY_OR:
+		WRITE_1TO2(WRITE_OR_MASKED);
 		break;
-	    case copy_store:
-		write_1to2(write_store_masked);
+	    case COPY_STORE:
+		WRITE_1TO2(WRITE_STORE_MASKED);
 		break;
-	    case copy_and:
-		write_1to2(write_and_masked);
+	    case COPY_AND:
+		WRITE_1TO2(WRITE_AND_MASKED);
 		break;
 	    default:
-		goto funny;
+		return FUNNY_CASE();
 	}
-#undef cinvert
-#define cinvert(bits) ((bits) ^ invert)
-#undef write_1to2
+#undef CINVERT
+#define CINVERT(bits) ((bits) ^ invert)
+#undef WRITE_1TO2
     } else {			/* More than one source chunk and more than one */
 	/* destination chunk are involved. */
 	uint rmask;
 	int words = (wleft & ~chunk_bit_mask) >> 3;
-	uint sskip = sraster - words;
-	uint dskip = draster - words;
+	uint sskip = source_raster - words;
+	uint dskip = dest_raster - words;
 	register uint bits;
 
 	set_mono_left_mask(mask, dbit);
 	set_mono_right_mask(rmask, wleft & chunk_bit_mask);
 	if (skew == 0) {	/* optimize the aligned case */
-#define write_aligned(wr_op, wr_op_masked)\
+
+#define WRITE_ALIGNED(wr_op, wr_op_masked)\
   for ( ; ; )\
    { int count = wleft;\
      /* Do first partial chunk. */\
-     wr_op_masked(cfetch_aligned(bptr), mask, 0);\
+     wr_op_masked(CFETCH_ALIGNED(bptr), mask, 0);\
      /* Do full chunks. */\
      while ( (count -= chunk_bits) >= 0 )\
-      { next_x_chunk; wr_op(cfetch_aligned(bptr)); }\
+      { NEXT_X_CHUNK(); wr_op(CFETCH_ALIGNED(bptr)); }\
      /* Do last chunk */\
      if ( count > -chunk_bits )\
-      { wr_op_masked(cfetch_aligned(bptr + chunk_bytes), rmask, 1); }\
-     end_y_loop(sskip, dskip);\
+      { wr_op_masked(CFETCH_ALIGNED(bptr + chunk_bytes), rmask, 1); }\
+     if ( --h == 0 ) break;\
+     END_Y_LOOP(sskip, dskip);\
    }
-	    switch (function) {
-		case copy_or:
-		    write_aligned(write_or, write_or_masked);
+
+	    switch (mode.op) {
+		case COPY_OR:
+		    WRITE_ALIGNED(WRITE_OR, WRITE_OR_MASKED);
 		    break;
-		case copy_store:
-		    write_aligned(write_store, write_store_masked);
+		case COPY_STORE:
+		    WRITE_ALIGNED(WRITE_STORE, WRITE_STORE_MASKED);
 		    break;
-		case copy_and:
-		    write_aligned(write_and, write_and_masked);
+		case COPY_AND:
+		    WRITE_ALIGNED(WRITE_AND, WRITE_AND_MASKED);
 		    break;
 		default:
-		    goto funny;
+		    return FUNNY_CASE();
 	    }
-#undef write_aligned
+#undef WRITE_ALIGNED
 	} else {		/* not aligned */
-	    int ccase =
-	    (skew >= 0 ? copy_right :
-	     ((bptr += chunk_bytes), copy_left))
-	    + (int)function;
 	    int cskew = -skew & chunk_bit_mask;
+	    bool case_right =
+	    (skew >= 0 ? true :
+	     ((bptr += chunk_bytes), false));
 
 	    skew &= chunk_bit_mask;
-	    for (;;) {
-		int count = wleft;
 
-#define prefetch_right\
-  bits = cfetch_right(bptr, skew, cskew)
-#define prefetch_left\
-  bits = cfetch2(bptr - chunk_bytes, cskew, skew)
-#define write_unaligned(wr_op, wr_op_masked)\
+#define WRITE_UNALIGNED(wr_op, wr_op_masked)\
+  /* Prefetch partial word. */\
+  bits =\
+    (case_right ? CFETCH_RIGHT(bptr, skew, cskew) :\
+     CFETCH2(bptr - chunk_bytes, cskew, skew));\
   wr_op_masked(bits, mask, 0);\
   /* Do full chunks. */\
   while ( count >= chunk_bits )\
-    { bits = cfetch2(bptr, cskew, skew);\
-      next_x_chunk; wr_op(bits); count -= chunk_bits;\
+    { bits = CFETCH2(bptr, cskew, skew);\
+      NEXT_X_CHUNK(); wr_op(bits); count -= chunk_bits;\
     }\
   /* Do last chunk */\
   if ( count > 0 )\
-    { bits = cfetch_left(bptr, cskew, skew);\
-      if ( count > skew ) bits += cfetch_right(bptr + chunk_bytes, skew, cskew);\
+    { bits = CFETCH_LEFT(bptr, cskew, skew);\
+      if ( count > skew ) bits += CFETCH_RIGHT(bptr + chunk_bytes, skew, cskew);\
       wr_op_masked(bits, rmask, 1);\
     }
-		switch (ccase) {
-		    case copy_or + copy_left:
-			prefetch_left;
-			goto uor;
-		    case copy_or + copy_right:
-			prefetch_right;
-		      uor:write_unaligned(write_or, write_or_masked);
-			break;
-		    case copy_store + copy_left:
-			prefetch_left;
-			goto ustore;
-		    case copy_store + copy_right:
-			prefetch_right;
-		      ustore:write_unaligned(write_store, write_store_masked);
-			break;
-		    case copy_and + copy_left:
-			prefetch_left;
-			goto uand;
-		    case copy_and + copy_right:
-			prefetch_right;
-		      uand:write_unaligned(write_and, write_and_masked);
-			break;
-		    default:
-			goto funny;
-		}
-		end_y_loop(sskip, dskip);
-#undef write_unaligned
-#undef prefetch_left
-#undef prefetch_right
+
+	    switch (mode.op) {
+		case COPY_OR:
+		    for (;;) {
+			int count = wleft;
+
+			WRITE_UNALIGNED(WRITE_OR, WRITE_OR_MASKED);
+			if (--h == 0)
+			    break;
+			END_Y_LOOP(sskip, dskip);
+		    }
+		    break;
+		case COPY_STORE:
+		    for (;;) {
+			int count = wleft;
+
+			WRITE_UNALIGNED(WRITE_STORE, WRITE_STORE_MASKED);
+			if (--h == 0)
+			    break;
+			END_Y_LOOP(sskip, dskip);
+		    }
+		    break;
+		case COPY_AND:
+		    for (;;) {
+			int count = wleft;
+
+			WRITE_UNALIGNED(WRITE_AND, WRITE_AND_MASKED);
+			if (--h == 0)
+			    break;
+			END_Y_LOOP(sskip, dskip);
+		    }
+		    break;
+		default /*case COPY_FUNNY */ :
+		    return FUNNY_CASE();
 	    }
+#undef WRITE_UNALIGNED
 	}
     }
-#undef end_y_loop
-#undef next_x_chunk
+#undef END_Y_LOOP
+#undef NEXT_X_CHUNK
     return 0;
-    /* Handle the funny cases that aren't supposed to happen. */
-  funny:return (invert ? gs_note_error(-1) :
-	    mem_mono_fill_rectangle(dev, x, y, w, h, zero));
 #undef optr
 #endif /* !USE_COPY_ROP */
 }
 
-#if OPTIMIZE_TILE
+#if OPTIMIZE_TILE		/**************** *************** */
 
 /* Strip-tile with a monochrome halftone. */
 /* This is a performance bottleneck for monochrome devices, */
@@ -457,9 +479,9 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 				  color1 == 0 ? rop3_0 : rop3_1) & rop3_T));
 #else /* !USE_COPY_ROP */
     register uint invert;
-    int sraster;
+    int source_raster;
     uint tile_bits_size;
-    const byte *base;
+    const byte *source_data;
     const byte *end;
     int x, rw, w, h;
     register const byte *bptr;	/* actually chunk * */
@@ -467,7 +489,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
     uint mask;
     byte *dbase;
 
-    declare_scan_ptr_as(dbptr, byte *);
+    DECLARE_SCAN_PTR_VARS(dbptr, byte *, dest_raster);
 #define optr ((chunk *)dbptr)
     register int skew;
 
@@ -477,32 +499,31 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 					       color0, color1, px, py);
     fit_fill(dev, tx, y, tw, th);
     invert = -(uint) color0;
-    sraster = tiles->raster;
-    base = tiles->data + ((y + py) % tiles->rep_height) * sraster;
-    tile_bits_size = tiles->size.y * sraster;
+    source_raster = tiles->raster;
+    source_data = tiles->data + ((y + py) % tiles->rep_height) * source_raster;
+    tile_bits_size = tiles->size.y * source_raster;
     end = tiles->data + tile_bits_size;
-#undef end_y_loop
-#define end_y_loop(sdelta, ddelta)\
-  if ( --h == 0 ) break;\
+#undef END_Y_LOOP
+#define END_Y_LOOP(sdelta, ddelta)\
   if ( end - bptr <= sdelta )	/* wrap around */\
     bptr -= tile_bits_size;\
   bptr += sdelta; dbptr += ddelta
-    draster = mdev->raster;
+    dest_raster = mdev->raster;
     dbase = scan_line_base(mdev, y);
     x = tx;
     rw = tw;
     /*
      * The outermost loop here works horizontally, one iteration per
      * copy of the tile.  Note that all iterations except the first
-     * have sourcex = 0.
+     * have source_x = 0.
      */
     {
-	int sourcex = (x + px) % tiles->rep_width;
+	int source_x = (x + px) % tiles->rep_width;
 
-	w = tiles->size.x - sourcex;
-	bptr = base + ((sourcex & ~chunk_align_bit_mask) >> 3);
+	w = tiles->size.x - source_x;
+	bptr = source_data + ((source_x & ~chunk_align_bit_mask) >> 3);
 	dbit = x & chunk_align_bit_mask;
-	skew = dbit - (sourcex & chunk_align_bit_mask);
+	skew = dbit - (source_x & chunk_align_bit_mask);
     }
   outer:if (w > rw)
 	w = rw;
@@ -510,31 +531,32 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
     dbptr = dbase + ((x >> 3) & -chunk_align_bytes);
     if ((wleft = w + dbit - chunk_bits) <= 0) {		/* The entire operation fits in one (destination) chunk. */
 	set_mono_thin_mask(mask, w, dbit);
-#define write1_loop(src)\
+#define WRITE1_LOOP(src)\
   for ( ; ; )\
-   { write_store_masked(src, mask, 0);\
-     end_y_loop(sraster, draster);\
+   { WRITE_STORE_MASKED(src, mask, 0);\
+     if ( --h == 0 ) break;\
+     END_Y_LOOP(source_raster, dest_raster);\
    }
 	if (skew >= 0) {	/* single -> single, right/no shift */
 	    if (skew == 0) {	/* no shift */
-		write1_loop(cfetch_aligned(bptr));
+		WRITE1_LOOP(CFETCH_ALIGNED(bptr));
 	    } else {		/* right shift */
 		int cskew = chunk_bits - skew;
 
-		write1_loop(cfetch_right(bptr, skew, cskew));
+		WRITE1_LOOP(CFETCH_RIGHT(bptr, skew, cskew));
 	    }
 	} else if (wleft <= skew) {	/* single -> single, left shift */
 	    int cskew = chunk_bits + skew;
 
 	    skew = -skew;
-	    write1_loop(cfetch_left(bptr, skew, cskew));
+	    WRITE1_LOOP(CFETCH_LEFT(bptr, skew, cskew));
 	} else {		/* double -> single */
 	    int cskew = -skew;
 
 	    skew += chunk_bits;
-	    write1_loop(cfetch2(bptr, cskew, skew));
+	    WRITE1_LOOP(CFETCH2(bptr, cskew, skew));
 	}
-#undef write1_loop
+#undef WRITE1_LOOP
     } else if (wleft <= skew) {	/* 1 source chunk -> 2 destination chunks. */
 	/* This is an important special case for */
 	/* both characters and halftone tiles. */
@@ -544,33 +566,37 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 	set_mono_left_mask(mask, dbit);
 	set_mono_right_mask(rmask, wleft);
 #if arch_is_big_endian		/* no byte swapping */
-#undef cinvert
-#define cinvert(bits) (bits)	/* pre-inverted here */
+#undef CINVERT
+#define CINVERT(bits) (bits)	/* pre-inverted here */
 	for (;;) {
-	    register uint bits = cfetch_aligned(bptr) ^ invert;
+	    register uint bits = CFETCH_ALIGNED(bptr) ^ invert;
 
-	    write_store_masked(bits >> skew, mask, 0);
-	    write_store_masked(bits << cskew, rmask, 1);
-	    end_y_loop(sraster, draster);
+	    WRITE_STORE_MASKED(bits >> skew, mask, 0);
+	    WRITE_STORE_MASKED(bits << cskew, rmask, 1);
+	    if (--h == 0)
+		break;
+	    END_Y_LOOP(source_raster, dest_raster);
 	}
-#undef cinvert
-#define cinvert(bits) ((bits) ^ invert)
+#undef CINVERT
+#define CINVERT(bits) ((bits) ^ invert)
 #else /* byte swapping */
 	for (;;) {
-	    write_store_masked(cfetch_right(bptr, skew, cskew), mask, 0);
-	    write_store_masked(cfetch_left(bptr, cskew, skew), rmask, 1);
-	    end_y_loop(sraster, draster);
+	    WRITE_STORE_MASKED(CFETCH_RIGHT(bptr, skew, cskew), mask, 0);
+	    WRITE_STORE_MASKED(CFETCH_LEFT(bptr, cskew, skew), rmask, 1);
+	    if (--h == 0)
+		break;
+	    END_Y_LOOP(source_raster, dest_raster);
 	}
 #endif
     } else {			/* More than one source chunk and more than one */
 	/* destination chunk are involved. */
 	uint rmask;
 	int words = (wleft & ~chunk_bit_mask) >> 3;
-	uint sskip = sraster - words;
-	uint dskip = draster - words;
+	uint sskip = source_raster - words;
+	uint dskip = dest_raster - words;
 	register uint bits;
 
-#define next_x_chunk\
+#define NEXT_X_CHUNK()\
   bptr += chunk_bytes; dbptr += chunk_bytes
 
 	set_mono_right_mask(rmask, wleft & chunk_bit_mask);
@@ -584,19 +610,21 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 
 		/* Do first partial chunk. */
 		if (mask)
-		    write_store_masked(cfetch_aligned(bptr), mask, 0);
+		    WRITE_STORE_MASKED(CFETCH_ALIGNED(bptr), mask, 0);
 		else
-		    write_store(cfetch_aligned(bptr));
+		    WRITE_STORE(CFETCH_ALIGNED(bptr));
 		/* Do full chunks. */
 		while ((count -= chunk_bits) >= 0) {
-		    next_x_chunk;
-		    write_store(cfetch_aligned(bptr));
+		    NEXT_X_CHUNK();
+		    WRITE_STORE(CFETCH_ALIGNED(bptr));
 		}
 		/* Do last chunk */
 		if (count > -chunk_bits) {
-		    write_store_masked(cfetch_aligned(bptr + chunk_bytes), rmask, 1);
+		    WRITE_STORE_MASKED(CFETCH_ALIGNED(bptr + chunk_bytes), rmask, 1);
 		}
-		end_y_loop(sskip, dskip);
+		if (--h == 0)
+		    break;
+		END_Y_LOOP(sskip, dskip);
 	    }
 	} else {		/* not aligned */
 	    bool case_right =
@@ -610,35 +638,37 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 		int count = wleft;
 
 		if (case_right)
-		    bits = cfetch_right(bptr, skew, cskew);
+		    bits = CFETCH_RIGHT(bptr, skew, cskew);
 		else
-		    bits = cfetch2(bptr - chunk_bytes, cskew, skew);
-		write_store_masked(bits, mask, 0);
+		    bits = CFETCH2(bptr - chunk_bytes, cskew, skew);
+		WRITE_STORE_MASKED(bits, mask, 0);
 		/* Do full chunks. */
 		while (count >= chunk_bits) {
-		    bits = cfetch2(bptr, cskew, skew);
-		    next_x_chunk;
-		    write_store(bits);
+		    bits = CFETCH2(bptr, cskew, skew);
+		    NEXT_X_CHUNK();
+		    WRITE_STORE(bits);
 		    count -= chunk_bits;
 		}
 		/* Do last chunk */
 		if (count > 0) {
-		    bits = cfetch_left(bptr, cskew, skew);
+		    bits = CFETCH_LEFT(bptr, cskew, skew);
 		    if (count > skew)
-			bits += cfetch_right(bptr + chunk_bytes, skew, cskew);
-		    write_store_masked(bits, rmask, 1);
+			bits += CFETCH_RIGHT(bptr + chunk_bytes, skew, cskew);
+		    WRITE_STORE_MASKED(bits, rmask, 1);
 		}
-		end_y_loop(sskip, dskip);
+		if (--h == 0)
+		    break;
+		END_Y_LOOP(sskip, dskip);
 	    }
 	}
     }
-#undef end_y_loop
-#undef next_x_chunk
+#undef END_Y_LOOP
+#undef NEXT_X_CHUNK
 #undef optr
     if ((rw -= w) > 0) {
 	x += w;
 	w = tiles->size.x;
-	bptr = base;
+	bptr = source_data;
 	skew = dbit = x & chunk_align_bit_mask;
 	goto outer;
     }
@@ -646,7 +676,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 #endif /* !USE_COPY_ROP */
 }
 
-#endif
+#endif /**************** *************** */
 
 /* ================ "Word"-oriented device ================ */
 
@@ -662,12 +692,13 @@ private dev_proc_fill_rectangle(mem1_word_fill_rectangle);
 #define mem1_word_strip_tile_rectangle gx_default_strip_tile_rectangle
 
 /* Here is the device descriptor. */
-const gx_device_memory far_data mem_mono_word_device =
+const gx_device_memory mem_mono_word_device =
 mem_full_alpha_device("image1w", 0, 1, mem_open,
 		      mem_mono_map_rgb_color, mem_mono_map_color_rgb,
        mem1_word_copy_mono, gx_default_copy_color, mem1_word_fill_rectangle,
-	     mem_word_get_bits, gx_default_map_cmyk_color, gx_no_copy_alpha,
-		      mem1_word_strip_tile_rectangle, gx_no_strip_copy_rop);
+		      gx_default_map_cmyk_color, gx_no_copy_alpha,
+		      mem1_word_strip_tile_rectangle, gx_no_strip_copy_rop,
+		      mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
 private int
@@ -689,20 +720,20 @@ mem1_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Copy a bitmap. */
 private int
 mem1_word_copy_mono(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+ const byte * source_data, int source_x, int source_raster, gx_bitmap_id id,
+   int x, int y, int w, int h, gx_color_index color0, gx_color_index color1)
 {
     byte *row;
     uint raster;
     bool store;
 
-    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
+    fit_copy(dev, source_data, source_x, source_raster, id, x, y, w, h);
     row = scan_line_base(mdev, y);
     raster = mdev->raster;
-    store = (zero != gx_no_color_index && one != gx_no_color_index);
+    store = (color0 != gx_no_color_index && color1 != gx_no_color_index);
     mem_swap_byte_rect(row, raster, x, w, h, store);
-    mem_mono_copy_mono(dev, base, sourcex, sraster, id,
-		       x, y, w, h, zero, one);
+    mem_mono_copy_mono(dev, source_data, source_x, source_raster, id,
+		       x, y, w, h, color0, color1);
     mem_swap_byte_rect(row, raster, x, w, h, false);
     return 0;
 }

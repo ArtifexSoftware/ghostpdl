@@ -1,23 +1,26 @@
-/* Copyright (C) 1991, 1992 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1991, 1992, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* dos_.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: dos_.h  */
 /* Generic MS-DOS interface */
+
+#ifndef dos__INCLUDED
+#  define dos__INCLUDED
 
 /* This file is needed because the various DOS compilers */
 /* provide slightly different procedures for interfacing to DOS and */
@@ -60,7 +63,7 @@
 #    define stdprn _stdprn
 #  endif
 
-#else			/* not Watcom or Microsoft */
+#else /* not Watcom or Microsoft */
 
 /* ---------------- Borland compiler, 16:16 pseudo-segmented model. */
 /* ---------------- ffblk is in dir.h, not dos.h. */
@@ -75,3 +78,5 @@
 #define dos_findnext(b) findnext(b)
 
 #endif
+
+#endif /* dos__INCLUDED */

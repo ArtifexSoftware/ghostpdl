@@ -20,7 +20,7 @@
 /* Special color mapping device */
 #include "gx.h"
 #include "gserrors.h"
-#include "gxiparam.h"
+#include "gxdevice.h"
 #include "gxlum.h"
 #include "gdevcmap.h"
 
@@ -57,8 +57,9 @@ private const gx_device_cmap gs_cmap_device =
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0,
-	0,			/* get_hardware_params (5.14) */
-	cmap_begin_typed_image
+	cmap_begin_typed_image,
+	0,
+	0			/* map_color_rgb_alpha */
     },
     0,				/* target */
     device_cmap_identity
@@ -167,7 +168,7 @@ cmap_map_rgb_color(gx_device * dev, gx_color_value red,
     rgb.green = green;
     rgb.blue = blue;
     cmap_convert_rgb_color(cmdev, &rgb);
-    return target->std_procs.map_rgb_color(target, rgb.red, rgb.green, rgb.blue);
+    return target->procs.map_rgb_color(target, rgb.red, rgb.green, rgb.blue);
 }
 private gx_color_index
 cmap_map_rgb_alpha_color(gx_device * dev, gx_color_value red,
@@ -182,8 +183,8 @@ cmap_map_rgb_alpha_color(gx_device * dev, gx_color_value red,
     rgb.green = green;
     rgb.blue = blue;
     cmap_convert_rgb_color(cmdev, &rgb);
-    return target->std_procs.map_rgb_alpha_color(target, rgb.red, rgb.green,
-						 rgb.blue, alpha);
+    return target->procs.map_rgb_alpha_color(target, rgb.red, rgb.green,
+					     rgb.blue, alpha);
 }
 
 /*

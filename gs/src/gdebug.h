@@ -1,42 +1,70 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* gdebug.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gdebug.h  */
 /* Debugging machinery definitions */
 
 #ifndef gdebug_INCLUDED
 #  define gdebug_INCLUDED
 
+/*
+ * The compile-time DEBUG symbol determines whether debugging/tracing
+ * code is included in the compiled code.  DEBUG may be set or not set
+ * independently for every compilation; however, a small amount of support
+ * machinery in gsmisc.c is always included in the executable, just
+ * in case *some* file was compiled with DEBUG set.
+ *
+ * When DEBUG is set, it does not cause debugging/tracing printout to occur.
+ * Rather, it includes code that produces such printout *if* (a) given
+ * one(s) of 128 debugging flags is set.  In this way, one can selectively
+ * turn printout on and off during debugging.  (In fact, we even provide a
+ * PostScript operator, .setdebug, that does this.)
+ *
+ * The debugging flags are normally indexed by character code.  This is more
+ * than a convention: gs_debug_c, which tests whether a given flag is set,
+ * considers that if a flag named by a given upper-case letter is set, the
+ * flag named by the corresponding lower-case letter is also set.
+ *
+ * If the output selected by a given flag can be printed by a single
+ * printf, the conventional way to produce the output is
+ *      if_debugN('x', "...format...", v1, ..., vN);
+ * Usually the flag appears in the output explicitly:
+ *      if_debugN('x', "[x]...format...", v1, ..., vN);
+ * If the output is more complex, the conventional way to produce the
+ * output is
+ *      if ( gs_debug_c('x') ) {
+ *        ... start each line with dlprintfN(...)
+ *        ... produce additional output within a line with dprintfN(...)
+ * } */
+
 /* Define the array of debugging flags, indexed by character code. */
 extern char gs_debug[128];
-#define gs_debug_c(c)\
-  ((c)>='a' && (c)<='z' ? gs_debug[c] | gs_debug[(c)^32] : gs_debug[c])
-#ifdef DEBUG
-#  define gs_if_debug_c(c) gs_debug_c(c)
-#else
-#  define gs_if_debug_c(c) 0
-#endif
-/* Define an alias for a specialized debugging flag */
-/* that used to be a separate variable. */
+bool gs_debug_c(P1(int /*char */ ));
+
+/*
+ * Define an alias for a specialized debugging flag
+ * that used to be a separate variable.
+ */
 #define gs_log_errors gs_debug['#']
 
 /* If debugging, direct all error output to gs_debug_out. */
 extern FILE *gs_debug_out;
+
 #ifdef DEBUG
 #undef dstderr
 #define dstderr gs_debug_out
@@ -44,49 +72,34 @@ extern FILE *gs_debug_out;
 #define estderr gs_debug_out
 #endif
 
-/* Redefine eprintf_program_name and lprintf_file_and_line as procedures */
-/* so one can set breakpoints on them. */
-#undef eprintf_program_name
-extern void eprintf_program_name(P2(FILE *, const char *));
-#undef lprintf_file_and_line
-extern void lprintf_file_and_line(P3(FILE *, const char *, int));
-
-/* Insert code conditionally if debugging. */
-#ifdef DEBUG
-#  define do_debug(x) x
-#else
-#  define do_debug(x)
-#endif
-
 /* Debugging printout macros. */
-/* The do...while construct is to avoid capturing a following 'else'. */
 #ifdef DEBUG
 #  define if_debug0(c,s)\
-    do { if (gs_debug_c(c)) dprintf(s); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf(s); END
 #  define if_debug1(c,s,a1)\
-    do { if (gs_debug_c(c)) dprintf1(s,a1); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf1(s,a1); END
 #  define if_debug2(c,s,a1,a2)\
-    do { if (gs_debug_c(c)) dprintf2(s,a1,a2); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf2(s,a1,a2); END
 #  define if_debug3(c,s,a1,a2,a3)\
-    do { if (gs_debug_c(c)) dprintf3(s,a1,a2,a3); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf3(s,a1,a2,a3); END
 #  define if_debug4(c,s,a1,a2,a3,a4)\
-    do { if (gs_debug_c(c)) dprintf4(s,a1,a2,a3,a4); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf4(s,a1,a2,a3,a4); END
 #  define if_debug5(c,s,a1,a2,a3,a4,a5)\
-    do { if (gs_debug_c(c)) dprintf5(s,a1,a2,a3,a4,a5); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf5(s,a1,a2,a3,a4,a5); END
 #  define if_debug6(c,s,a1,a2,a3,a4,a5,a6)\
-    do { if (gs_debug_c(c)) dprintf6(s,a1,a2,a3,a4,a5,a6); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf6(s,a1,a2,a3,a4,a5,a6); END
 #  define if_debug7(c,s,a1,a2,a3,a4,a5,a6,a7)\
-    do { if (gs_debug_c(c)) dprintf7(s,a1,a2,a3,a4,a5,a6,a7); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf7(s,a1,a2,a3,a4,a5,a6,a7); END
 #  define if_debug8(c,s,a1,a2,a3,a4,a5,a6,a7,a8)\
-    do { if (gs_debug_c(c)) dprintf8(s,a1,a2,a3,a4,a5,a6,a7,a8); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf8(s,a1,a2,a3,a4,a5,a6,a7,a8); END
 #  define if_debug9(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9)\
-    do { if (gs_debug_c(c)) dprintf9(s,a1,a2,a3,a4,a5,a6,a7,a8,a9); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf9(s,a1,a2,a3,a4,a5,a6,a7,a8,a9); END
 #  define if_debug10(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)\
-    do { if (gs_debug_c(c)) dprintf10(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf10(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); END
 #  define if_debug11(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)\
-    do { if (gs_debug_c(c)) dprintf11(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf11(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
 #  define if_debug12(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
-    do { if (gs_debug_c(c)) dprintf12(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); } while (0)
+    BEGIN if (gs_debug_c(c)) dlprintf12(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
 #else
 #  define if_debug0(c,s) DO_NOTHING
 #  define if_debug1(c,s,a1) DO_NOTHING
@@ -104,10 +117,10 @@ extern void lprintf_file_and_line(P3(FILE *, const char *, int));
 #endif
 
 /* Debugging support procedures in gsmisc.c */
-void debug_dump_bytes(P3(const byte *from, const byte *to, 
+void debug_dump_bytes(P3(const byte * from, const byte * to,
 			 const char *msg));
-void debug_dump_bitmap(P4(const byte *from, uint raster, uint height,
+void debug_dump_bitmap(P4(const byte * from, uint raster, uint height,
 			  const char *msg));
-void debug_print_string(P2(const byte *str, uint len));
+void debug_print_string(P2(const byte * str, uint len));
 
-#endif				/* gdebug_INCLUDED */
+#endif /* gdebug_INCLUDED */

@@ -1,30 +1,39 @@
-/* Copyright (C) 1991, 1995, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1991, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* gp.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gp.h  */
 /* Interface to platform-specific routines */
 /* Requires gsmemory.h, gstypes.h */
 
+#ifndef gp_INCLUDED
+#  define gp_INCLUDED
+
 /*
- * This file defines the interface to ***ALL*** platform-specific routines.
+ * This file defines the interface to ***ALL*** platform-specific routines,
+ * with the exception of the thread/synchronization interface (gpsync.h).
  * The routines are implemented in a gp_*.c file specific to each platform.
  * We try very hard to keep this list short!
  */
+/*
+ * gp_getenv is declared in a separate file, because a few places need it
+ * and don't want to include any of the other gs definitions.
+ */
+#include "gpgetenv.h"
 
 /* ------ Initialization/termination ------ */
 
@@ -82,6 +91,7 @@ void gp_get_usertime(P1(long ptm[2]));
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
+
 #endif
 
 /* Initialize the console. */
@@ -103,20 +113,16 @@ int gp_make_graphics_current(P1(gx_device *));
 /* Get the environment variable that specifies the display to use. */
 const char *gp_getenv_display(P0());
 
-/* ------ Printer accessing ------ */
+/* ------ File naming and accessing ------ */
 
 /*
- * Open a connection to a printer.  A null file name means use the
- * standard printer connected to the machine, if any.
- * If possible, support "|command" for opening an output pipe.
- * Return NULL if the connection could not be opened.
+ * Define the maximum size of a file name returned by gp_open_scratch_file
+ * or gp_open_printer.  (This should really be passed as an additional
+ * parameter, but it would break too many clients to make this change now.)
+ * Note that this is the size of the buffer, not the maximum number of
+ * characters: the latter is one less, because of the terminating \0.
  */
-FILE *gp_open_printer(P2(char *fname, int binary_mode));
-
-/* Close the connection to the printer. */
-void gp_close_printer(P2(FILE *pfile, const char *fname));
-
-/* ------ File naming and accessing ------ */
+#define gp_file_name_sizeof 128
 
 /* Define the character used for separating file names in a list. */
 extern const char gp_file_name_list_separator;
@@ -134,6 +140,7 @@ extern const char gp_current_directory_name[];
 /* for opening files without end-of-line conversion. */
 /* This is always either "" or "b". */
 extern const char gp_fmode_binary_suffix[];
+
 /* Define the file modes for binary reading or writing. */
 /* (This is just a convenience: they are "r" or "w" + the suffix.) */
 extern const char gp_fmode_rb[];
@@ -141,11 +148,16 @@ extern const char gp_fmode_wb[];
 
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
-FILE *gp_open_scratch_file(P3(const char *prefix, char *fname,
- 			const char *mode));
+FILE *gp_open_scratch_file(P3(const char *prefix,
+			      char fname[gp_file_name_sizeof],
+			      const char *mode));
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *gp_fopen(P2(const char *fname, const char *mode));
+
+/* Force given file into binary mode (no eol translations, etc) */
+/* if 2nd param true, text mode if 2nd param false */
+bool gp_setmode_binary(P2(FILE * pfile, bool mode));
 
 /* Answer whether a file name contains a directory/device specification, */
 /* i.e. is absolute (not directory- or device-relative). */
@@ -156,12 +168,29 @@ bool gp_file_name_is_absolute(P2(const char *fname, uint len));
 const char *gp_file_name_concat_string(P4(const char *prefix, uint plen,
 					  const char *fname, uint len));
 
+/* ------ Printer accessing ------ */
+
+/*
+ * Open a connection to a printer.  A null file name means use the
+ * standard printer connected to the machine, if any.
+ * If possible, support "|command" for opening an output pipe.
+ * Return NULL if the connection could not be opened.
+ *
+ * Note that if the file name is null (0-length), it may be replaced with
+ * the name of a scratch file.
+ */
+FILE *gp_open_printer(P2(char fname[gp_file_name_sizeof], int binary_mode));
+
+/* Close the connection to the printer. */
+void gp_close_printer(P2(FILE * pfile, const char *fname));
+
 /* ------ File enumeration ------ */
 
-#ifndef file_enum_DEFINED		/* also defined in iodev.h */
+#ifndef file_enum_DEFINED	/* also defined in iodev.h */
 #  define file_enum_DEFINED
-struct file_enum_s;	/* opaque to client, defined by implementor */
+struct file_enum_s;		/* opaque to client, defined by implementor */
 typedef struct file_enum_s file_enum;
+
 #endif
 
 /*
@@ -176,7 +205,7 @@ typedef struct file_enum_s file_enum;
  * the pattern also, as a quoting character.
  */
 file_enum *gp_enumerate_files_init(P3(const char *pat, uint patlen,
-					   gs_memory_t *memory));
+				      gs_memory_t * memory));
 
 /*
  * Return the next file name in the enumeration.  The client passes in
@@ -185,7 +214,7 @@ file_enum *gp_enumerate_files_init(P3(const char *pat, uint patlen,
  * returns max length +1.  If there are no more files, the procedure
  * returns -1.
  */
-uint gp_enumerate_files_next(P3(file_enum *pfen, char *ptr, uint maxlen));
+uint gp_enumerate_files_next(P3(file_enum * pfen, char *ptr, uint maxlen));
 
 /*
  * Clean up a file enumeration.  This is only called to abandon
@@ -193,4 +222,6 @@ uint gp_enumerate_files_next(P3(file_enum *pfen, char *ptr, uint maxlen));
  * no more files to enumerate.  This should deallocate the file_enum
  * structure and any subsidiary structures, strings, buffers, etc.
  */
-void gp_enumerate_files_close(P1(file_enum *pfen));
+void gp_enumerate_files_close(P1(file_enum * pfen));
+
+#endif /* gp_INCLUDED */

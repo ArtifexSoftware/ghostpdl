@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: cfonts.mak 
 # Makefile for compiling PostScript Type 1 fonts into C.
 # For more information about fonts, consult the Fontmap file,
 # and also fonts.txt.

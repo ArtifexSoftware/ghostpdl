@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevabuf.c */
+/*Id: gdevabuf.c  */
 /* Alpha-buffering memory devices */
 #include "memory_.h"
 #include "gx.h"
@@ -150,7 +150,7 @@ private dev_proc_fill_rectangle(mem_abuf_fill_rectangle);
 private dev_proc_get_clipping_box(mem_abuf_get_clipping_box);
 
 /* The device descriptor. */
-private const gx_device_memory far_data mem_alpha_buffer_device =
+private const gx_device_memory mem_alpha_buffer_device =
 mem_device("image(alpha buffer)", 0, 1,
 	   gx_forward_map_rgb_color, gx_forward_map_color_rgb,
 	 mem_abuf_copy_mono, gx_default_copy_color, mem_abuf_fill_rectangle,
@@ -336,7 +336,9 @@ mem_abuf_copy_mono(gx_device * dev,
     if (zero != gx_no_color_index || one == gx_no_color_index)
 	return_error(gs_error_undefinedresult);
     x -= mdev->mapped_x;
-    fit_copy_xwh(dev, base, sourcex, sraster, id, x, y, w, h);	/* don't limit y */
+    fit_copy_xyw(dev, base, sourcex, sraster, id, x, y, w, h);	/* don't limit h */
+    if (w <= 0 || h <= 0)
+	return 0;
     mdev->save_color = one;
     y_transfer_init(&yt, dev, y, h);
     while (yt.height_left > 0) {
@@ -358,7 +360,8 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     y_transfer yt;
 
     x -= mdev->mapped_x;
-    fit_fill_xyw(dev, x, y, w, h);	/* don't limit h */
+    fit_fill_xy(dev, x, y, w, h);
+    fit_fill_w(dev, x, w);	/* don't limit h */
     /* or check w <= 0, h <= 0 */
     mdev->save_color = color;
     y_transfer_init(&yt, dev, y, h);

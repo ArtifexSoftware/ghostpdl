@@ -24,6 +24,10 @@ Link Library.
 For an overview of Ghostscript and a list of the documentation files, see
 README.  
 
+**************** WARNING: The API described in this document is subject
+**************** to changes, possibly non-backward-compatible, in
+**************** future releases.
+
 ==================================
 DLL.TXT   1996-09-05
 ==================================

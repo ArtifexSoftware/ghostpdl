@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevlj56.c */
+/*Id: gdevlj56.c  */
 /* H-P LaserJet 5 & 6 drivers for Ghostscript */
 #include "gdevprn.h"
 #include "gdevpcl.h"
@@ -43,7 +43,7 @@ private dev_proc_open_device(ljet5_open);
 private dev_proc_close_device(ljet5_close);
 private dev_proc_print_page(ljet5_print_page);
 
-private gx_device_procs ljet5_procs =
+private const gx_device_procs ljet5_procs =
 prn_procs(ljet5_open, gdev_prn_output_page, ljet5_close);
 
 gx_device_printer far_data gs_lj5mono_device =
@@ -53,7 +53,7 @@ prn_device(ljet5_procs, "lj5mono",
 	   0, 0, 0, 0,
 	   1, ljet5_print_page);
 
-private gx_device_procs lj5gray_procs =
+private const gx_device_procs lj5gray_procs =
 prn_color_procs(ljet5_open, gdev_prn_output_page, ljet5_close,
 		gx_default_gray_map_rgb_color,
 		gx_default_gray_map_color_rgb);

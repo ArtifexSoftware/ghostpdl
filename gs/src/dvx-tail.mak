@@ -1,4 +1,4 @@
-#    Copyright (C) 1994, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,11 +15,9 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: dvx-tail.mak 
 # Partial makefile, common to all Desqview/X configurations.
-
 # This is the last part of the makefile for Desqview/X configurations.
-# Since Unix make doesn't have an 'include' facility, we concatenate
-# the various parts of the makefile together by brute force (in tar_cat).
 
 # The following prevents GNU make from constructing argument lists that
 # include all environment variables, which can easily be longer than
@@ -31,13 +29,13 @@
 
 ## The Desqview/X platform
 
-dvx__=gp_nofb.$(OBJ) gp_dvx.$(OBJ) gp_unifs.$(OBJ) gp_dosfs.$(OBJ)
+dvx__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_dvx.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ)
 dvx_.dev: $(dvx__)
 	$(SETMOD) dvx_ $(dvx__)
 
-gp_dvx.$(OBJ): gp_dvx.c $(AK) $(string__h) $(gx_h) $(gsexit_h) $(gp_h) \
+$(GLOBJ)gp_dvx.$(OBJ): $(GLSRC)gp_dvx.c $(AK) $(string__h) $(gx_h) $(gsexit_h) $(gp_h) \
   $(time__h) $(dos__h)
-	$(CCC) -D__DVX__ gp_dvx.c
+	$(CC_) -D__DVX__ -c $(GLSRC)gp_dvx.c -o $(GLOBJ)gp_dvx.$(OBJ)
 
 # -------------------------- Auxiliary programs --------------------------- #
 
@@ -62,23 +60,26 @@ $(GENCONF_XE): genconf.c $(stdpre_h)
 	coff2exe genconf
 	del genconf
 
+$(GENDEV_XE): gendev.c $(stdpre_h)
+	$(CC) -o gendev gendev.c
+	strip gendev
+	coff2exe gendev
+	del gendev
+
 $(GENINIT_XE): geninit.c $(stdio__h) $(string__h)
 	$(CC) -o geninit geninit.c
 	strip geninit
 	coff2exe geninit
 	del geninit
 
-# Construct gconfig_.h to reflect the environment.
+# Construct $(gconfig__h) to reflect the environment.
 INCLUDE=/djgpp/include
-gconfig_.h: dvx-tail.mak $(ECHOGS_XE)
-	echogs -w gconfig_.h -x 2f2a -s This file was generated automatically. -s -x 2a2f
-	echogs -a gconfig_.h -x 23 define HAVE_SYS_TIME_H
-	echogs -a gconfig_.h -x 23 define HAVE_DIRENT_H
+$(gconfig__h): $(GLSRCDIR)/dvx-tail.mak $(ECHOGS_XE)
+	$(ECHOGS_XE) -w $(gconfig__h) -x 2f2a -s This file was generated automatically. -s -x 2a2f
+	$(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_SYS_TIME_H
+	$(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_DIRENT_H
 
 # ----------------------------- Main program ------------------------------ #
-
-BEGINFILES=
-CCBEGIN=$(CCC) *.c
 
 # Interpreter main program
 

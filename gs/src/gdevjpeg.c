@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevjpeg.c */
+/*Id: gdevjpeg.c  */
 /* JPEG output driver */
 #include "stdio_.h"		/* for jpeglib.h */
 #include "jpeglib.h"
@@ -59,7 +59,7 @@ prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		       gx_default_rgb_map_color_rgb,
 		       jpeg_get_params, jpeg_put_params);
 
-gx_device_jpeg far_data gs_jpeg_device =
+const gx_device_jpeg gs_jpeg_device =
 {prn_device_std_body(gx_device_jpeg, jpeg_procs, "jpeg",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI, 0, 0, 0, 0, 24, jpeg_print_page),
@@ -75,7 +75,7 @@ prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		       gx_default_gray_map_color_rgb,
 		       jpeg_get_params, jpeg_put_params);
 
-gx_device_jpeg far_data gs_jpeggray_device =
+const gx_device_jpeg gs_jpeggray_device =
 {prn_device_body(gx_device_jpeg, jpeggray_procs, "jpeggray",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI, 0, 0, 0, 0,
@@ -162,11 +162,9 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gs_memory_t *mem = pdev->memory;
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     byte *in = gs_alloc_bytes(mem, line_size, "jpeg_print_page(in)");
-
-    /* The current implementation of the DCTE filter */
-    /* requires that we allocate this with gs_malloc! */
-    jpeg_compress_data *jcdp =
-    gs_malloc(1, sizeof(*jcdp), "jpeg_print_page(jpeg_compress_data)");
+    jpeg_compress_data *jcdp = (jpeg_compress_data *)
+    gs_alloc_bytes(mem, sizeof(*jcdp),
+		   "jpeg_print_page(jpeg_compress_data)");
     byte *fbuf = 0;
     uint fbuf_size;
     byte *jbuf = 0;
@@ -176,16 +174,12 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     stream_DCT_state state;
     stream fstrm, jstrm;
 
-    static const stream_procs filter_write_procs =
-    {s_std_noavailable, s_std_noseek, s_std_write_reset,
-     s_std_write_flush, s_filter_close
-    };
-
     if (jcdp == 0 || in == 0) {
 	code = gs_note_error(gs_error_VMerror);
 	goto fail;
     }
     /* Create the DCT decoder state. */
+    jcdp->template = s_DCTE_template;
     state.template = &jcdp->template;
     state.memory = 0;
     state.QFactor = 1.0;	/* disable quality adjustment in zfdcte.c */
@@ -196,6 +190,9 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     state.Markers.data = 0;
     state.Markers.size = 0;
     state.data.compress = jcdp;
+    if (state.template->set_defaults)
+	(*state.template->set_defaults) ((stream_state *) & state);
+    jcdp->memory = state.jpeg_memory = mem;
     if ((code = gs_jpeg_create_compress(&state)) < 0)
 	goto fail;
     jcdp->cinfo.image_width = pdev->width;
@@ -230,7 +227,6 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     jcdp->cinfo.X_density = pdev->HWResolution[0];
     jcdp->cinfo.Y_density = pdev->HWResolution[1];
     /* Create the filter. */
-    jcdp->template = s_DCTE_template;
     /* Make sure we get at least a full scan line of input. */
     state.scan_line_size = jcdp->cinfo.input_components *
 	jcdp->cinfo.image_width;
@@ -250,7 +246,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	goto done;
     }
     swrite_file(&fstrm, prn_stream, fbuf, fbuf_size);
-    s_std_init(&jstrm, jbuf, jbuf_size, &filter_write_procs,
+    s_std_init(&jstrm, jbuf, jbuf_size, &s_filter_write_procs,
 	       s_mode_write);
     jstrm.memory = mem;
     jstrm.state = (stream_state *) & state;
@@ -281,8 +277,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     return code;
   fail:
     if (jcdp)
-	gs_free(jcdp, 1, sizeof(*jcdp),
-		"jpeg_print_page(jpeg_compress_data)");
+	gs_free_object(mem, jcdp, "jpeg_print_page(jpeg_compress_data)");
     gs_free_object(mem, in, "jpeg_print_page(in)");
     return code;
 #undef jcdp

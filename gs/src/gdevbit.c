@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,12 @@
    all copies.
  */
 
-/* gdevbit.c */
+/*Id: gdevbit.c  */
 /* "Plain bits" devices to measure rendering time. */
 #include "gdevprn.h"
 #include "gsparam.h"
+#include "gscrd.h"
+#include "gscrdp.h"
 #include "gxlum.h"
 
 /*
@@ -50,6 +52,7 @@ private dev_proc_map_rgb_color(bit_mono_map_rgb_color);
 private dev_proc_map_rgb_color(bit_map_rgb_color);
 private dev_proc_map_color_rgb(bit_map_color_rgb);
 private dev_proc_map_cmyk_color(bit_map_cmyk_color);
+private dev_proc_put_params(bit_get_params);
 private dev_proc_put_params(bit_put_params);
 private dev_proc_print_page(bit_print_page);
 
@@ -67,7 +70,7 @@ private dev_proc_print_page(bit_print_page);
 	NULL,	/* copy_color */\
 	NULL,	/* draw_line */\
 	NULL,	/* get_bits */\
-	gdev_prn_get_params,\
+	bit_get_params,\
 	bit_put_params,\
 	map_cmyk_color,\
 	NULL,	/* get_xfont_procs */\
@@ -76,9 +79,9 @@ private dev_proc_print_page(bit_print_page);
 	gx_page_device_get_page_device	/* get_page_device */\
 }
 
-private gx_device_procs bitmono_procs =
+private const gx_device_procs bitmono_procs =
 bit_procs(bit_mono_map_rgb_color, NULL);
-gx_device_printer far_data gs_bit_device =
+const gx_device_printer gs_bit_device =
 {prn_device_body(gx_device_printer, bitmono_procs, "bit",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
@@ -86,9 +89,9 @@ gx_device_printer far_data gs_bit_device =
 		 1, 1, 1, 0, 2, 1, bit_print_page)
 };
 
-private gx_device_procs bitrgb_procs =
+private const gx_device_procs bitrgb_procs =
 bit_procs(bit_map_rgb_color, NULL);
-gx_device_printer far_data gs_bitrgb_device =
+const gx_device_printer gs_bitrgb_device =
 {prn_device_body(gx_device_printer, bitrgb_procs, "bitrgb",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
@@ -96,9 +99,9 @@ gx_device_printer far_data gs_bitrgb_device =
 		 3, 4, 1, 1, 2, 2, bit_print_page)
 };
 
-private gx_device_procs bitcmyk_procs =
+private const gx_device_procs bitcmyk_procs =
 bit_procs(NULL, bit_map_cmyk_color);
-gx_device_printer far_data gs_bitcmyk_device =
+const gx_device_printer gs_bitcmyk_device =
 {prn_device_body(gx_device_printer, bitcmyk_procs, "bitcmyk",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
@@ -203,6 +206,64 @@ bit_map_cmyk_color(gx_device * dev, gx_color_value cyan,
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
+/* Get parameters.  We provide a default CRD. */
+private int
+my_tpqr(int index, floatp in, const gs_cie_wbsd * pwbsd,
+	gs_cie_render * pcrd, float *out)
+{
+    *out = (in < 0.5 ? in / 2 : in * 3 / 2 - 0.5);
+    return 0;
+}
+private int
+bit_get_params(gx_device * pdev, gs_param_list * plist)
+{
+    int ecode = gdev_prn_get_params(pdev, plist);
+    int code;
+
+    if (param_requested(plist, "CRDDefault") > 0) {
+	gs_cie_render *pcrd;
+
+	code = gs_cie_render1_build(&pcrd, pdev->memory, "bit_get_params");
+	if (code >= 0) {
+	    static const gs_vector3 my_white_point = {1, 1, 1};
+	    static const gs_cie_transform_proc3 my_TransformPQR = {
+		0, "bitTPQRDefault", {0, 0}, 0
+	    };
+	    gs_cie_transform_proc3 tpqr;
+
+	    tpqr = my_TransformPQR;
+	    tpqr.driver_name = pdev->dname;
+	    code = gs_cie_render1_initialize(pcrd, NULL,
+					     &my_white_point, NULL,
+					     NULL, NULL, &tpqr,
+					     NULL, NULL, NULL,
+					     NULL, NULL, NULL,
+					     NULL);
+	    if (code >= 0) {
+		code = param_write_cie_render1(plist, "CRDDefault", pcrd,
+					       pdev->memory);
+	    }
+	    rc_decrement(pcrd, "bit_get_params"); /* release */
+	}
+	if (code < 0)
+	    ecode = code;
+    }
+    if (param_requested(plist, "bitTPQRDefault") > 0) {
+	gs_cie_transform_proc my_proc = my_tpqr;
+	static byte my_addr[sizeof(gs_cie_transform_proc)];
+	gs_param_string as;
+
+	memcpy(my_addr, &my_proc, sizeof(gs_cie_transform_proc));
+	as.data = my_addr;
+	as.size = sizeof(gs_cie_transform_proc);
+	as.persistent = true;
+	code = param_write_string(plist, "bitTPQRDefault", &as);
+	if (code < 0)
+	    ecode = code;
+    }
+    return ecode;
+}
+
 /* Set parameters.  We allow setting the number of bits per component. */
 private int
 bit_put_params(gx_device * pdev, gs_param_list * plist)
@@ -220,7 +281,7 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 	{4, 8, 0, 16, 16, 0, 0, 24},
 	{4, 8, 0, 16, 32, 0, 0, 32}
     };
-    const char _ds *vname;
+    const char *vname;
 
     if ((code = param_read_int(plist, (vname = "GrayValues"), &v)) != 1 ||
 	(code = param_read_int(plist, (vname = "RedValues"), &v)) != 1 ||

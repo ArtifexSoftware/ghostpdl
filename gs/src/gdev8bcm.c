@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdev8bcm.c */
+/*Id: gdev8bcm.c  */
 /* Dynamic color mapping for 8-bit displays */
 #include "gx.h"
 #include "gxdevice.h"

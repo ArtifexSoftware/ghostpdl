@@ -17,37 +17,35 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: current.txt 
 This file, current.txt, describes problems and new features in the current
-release of Ghostscript.  This file describes version 5.14 of Ghostscript.
+release of Ghostscript.  This file describes version 5.27 of Ghostscript.
 
 For an overview of Ghostscript and a list of the documentation files, see
 README.
 
-New features (since release 5.03)
+New features (since release 5.10)
 ============
 
 (This is not a complete list of new features: see NEWS for details.)
 
-ps2pdf (and the pdfwrite device) now produces much more compact output.  By
-default, the output is compatible only with Acrobat 3.x; for Acrobat
-2.x-compatible output, use
-	ps2pdf -dCompatibilityLevel=1.1 ...
+The PDF writer now implements the xxxImageFilter, EncodexxxImage, and
+ConvertCMYKImagesToRGB distiller parameters, which provide the ability to
+compress images.
 
-ps2pdf now has more flexibility about the handling of unencoded glyphs.  See
-gdevpdft.c for details.
+The PDF writer now recognizes nearly all varieties of pdfmark, other than
+the Distiller 3.0 "named object" pdfmarks.
 
-ps2pdf now recognizes the CompressPages, CompatibilityLevel, and
-UseFlateCompression device (distiller) parameters.
-
-The PDF interpreter now handles Lab and Separation color spaces, images with
-color space resources, embedded font subsets, undefined operators with
-BX/EX, and Functions.
+It is now possible (in fact, easy) to build Ghostscript with the source and
+object files in different directories.
 
 Changes
 =======
 
-The RGB<->CMYK conversion rules have been changed back to Adobe's documented
-rules.
+Contributed drivers now have their own makefile (contrib.mak).
+
+The IJG JPEG library is now in a directory named jpeg rather than
+jpeg-<version>.
 
 Known problems
 ==============
@@ -106,14 +104,8 @@ cshow doesn't work with composite fonts.
 Non-graphics bugs
 -----------------
 
-The %statementedit pseudo-file is equivalent to %lineedit.  As a
-consequence, the interactive interpreter requires that every statement fit
-on a line, i.e., you can't have an unpaired (, {, or <.
-
 The following operators that expect arrays won't accept packed arrays:
 	definefont (Subrs (type 1 fonts))
 
 Syntax errors occurring within a binary token do not produce the error
 message specified by the Adobe documentation.
-
-save doesn't save, and restore doesn't restore, the user parameters.

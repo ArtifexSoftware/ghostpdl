@@ -17,7 +17,7 @@
 */
 
 
-// dwtext.cpp
+// Id: dwtext.cpp 
 
 
 // Microsoft Windows 3.n text window for Ghostscript.

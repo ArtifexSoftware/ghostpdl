@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevmpla.c */
+/*Id: gdevmpla.c  */
 /* Any-depth planar "memory" (stored bitmap) devices */
 #include "memory_.h"
 #include "gx.h"
@@ -42,13 +42,13 @@ declare_mem_procs(mem_planar_copy_mono, mem_planar_copy_color, mem_planar_fill_r
 /* The default instance has depth = 1, but clients may set this */
 /* to other values before opening the device. */
 private dev_proc_open_device(mem_planar_open);
-private dev_proc_get_bits(mem_planar_get_bits);
-const gx_device_memory far_data mem_planar_device =
+private dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
+const gx_device_memory mem_planar_device =
 mem_full_device("image(planar)", 0, 1, mem_planar_open,
 		mem_planar_map_rgb_color, mem_planar_map_color_rgb,
      mem_planar_copy_mono, mem_planar_copy_color, mem_planar_fill_rectangle,
-		mem_planar_get_bits, gx_default_map_cmyk_color,
-		gx_default_strip_tile_rectangle, gx_no_strip_copy_rop);
+		gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
+		gx_no_strip_copy_rop, mem_planar_get_bits_rectangle);
 
 /* Open a planar memory device. */
 private int
@@ -184,7 +184,8 @@ mem_planar_copy_color(gx_device * dev,
 /* Copy bits back from a planar memory device. */
 /****** NOT IMPLEMENTED YET ******/
 private int
-mem_planar_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
+mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
+		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
     return_error(-1);
 }

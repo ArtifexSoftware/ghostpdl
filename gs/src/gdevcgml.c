@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevcgml.c */
+/*Id: gdevcgml.c  */
 /* CGM-writing library */
 #include "memory_.h"
 #include "stdio_.h"
@@ -29,7 +29,7 @@ private void begin_command(P2(cgm_state *, cgm_op_index));
 private cgm_result end_command(P1(cgm_state *));
 
 #define END_OP (void)end_command(st)
-#define END return end_command(st)
+#define DONE return end_command(st)
 /* Parameters */
 private void put_int(P3(cgm_state *, cgm_int, int));
 
@@ -164,7 +164,7 @@ cgm_BEGIN_METAFILE(cgm_state * st, const char *str, uint len)
 {
     OP(BEGIN_METAFILE);
     S(str, len);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -262,7 +262,7 @@ cgm_result
 cgm_END_METAFILE(cgm_state * st)
 {
     OP(END_METAFILE);
-    END;
+    DONE;
 }
 
 /* ---------------- Picture elements ---------------- */
@@ -272,7 +272,7 @@ cgm_BEGIN_PICTURE(cgm_state * st, const char *str, uint len)
 {
     OP(BEGIN_PICTURE);
     S(str, len);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -321,7 +321,7 @@ cgm_set_picture_elements(cgm_state * st, const cgm_picture_elements * pic, long 
     if ((mask & cgm_set_BACKGROUND_COLOR)) {
 	OP(BACKGROUND_COLOR);
 	CD(&pic->background_color.rgb);
-	END;
+	DONE;
 	st->picture.background_color = pic->background_color;
     }
     return st->result;
@@ -331,14 +331,14 @@ cgm_result
 cgm_BEGIN_PICTURE_BODY(cgm_state * st)
 {
     OP(BEGIN_PICTURE_BODY);
-    END;
+    DONE;
 }
 
 cgm_result
 cgm_END_PICTURE(cgm_state * st)
 {
     OP(END_PICTURE);
-    END;
+    DONE;
 }
 
 /* ---------------- Control elements ---------------- */
@@ -350,7 +350,7 @@ cgm_VDC_INTEGER_PRECISION(cgm_state * st, int precision)
 	OP(VDC_INTEGER_PRECISION);
 	I(precision);
 	st->vdc_integer_precision = precision;
-	END;
+	DONE;
     } else
 	return cgm_result_ok;
 }
@@ -361,7 +361,7 @@ cgm_VDC_REAL_PRECISION(cgm_state * st, const cgm_precision * precision)
     OP(VDC_REAL_PRECISION);
     put_real_precision(st, precision);
     st->vdc_real_precision = *precision;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -370,7 +370,7 @@ cgm_AUXILIARY_COLOR(cgm_state * st, const cgm_color * color)
     OP(AUXILIARY_COLOR);
     CO(color);
     st->auxiliary_color = *color;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -379,7 +379,7 @@ cgm_TRANSPARENCY(cgm_state * st, cgm_transparency transparency)
     OP(TRANSPARENCY);
     E(transparency);
     st->transparency = transparency;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -390,7 +390,7 @@ cgm_CLIP_RECTANGLE(cgm_state * st, const cgm_point rectangle[2])
     st->clip_rectangle[0] = rectangle[0];
     P(&rectangle[1]);
     st->clip_rectangle[1] = rectangle[1];
-    END;
+    DONE;
 }
 
 cgm_result
@@ -399,7 +399,7 @@ cgm_CLIP_INDICATOR(cgm_state * st, cgm_clip_indicator clip)
     OP(CLIP_INDICATOR);
     E(clip);
     st->clip_indicator = clip;
-    END;
+    DONE;
 }
 
 /* ---------------- Graphical primitive elements ---------------- */
@@ -409,7 +409,7 @@ cgm_POLYLINE(cgm_state * st, const cgm_point * vertices, int count)
 {
     OP(POLYLINE);
     nP(vertices, count);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -417,7 +417,7 @@ cgm_DISJOINT_POLYLINE(cgm_state * st, const cgm_point * endpoints, int count)
 {
     OP(DISJOINT_POLYLINE);
     nP(endpoints, count);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -425,7 +425,7 @@ cgm_POLYMARKER(cgm_state * st, const cgm_point * positions, int count)
 {
     OP(POLYMARKER);
     nP(positions, count);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -435,7 +435,7 @@ cgm_TEXT(cgm_state * st, const cgm_point * position, bool final, const char *str
     P(position);
     E(final);
     S(str, len);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -446,7 +446,7 @@ cgm_RESTRICTED_TEXT(cgm_state * st, const cgm_vdc * delta_width, const cgm_vdc *
     P(position);
     E(final);
     S(str, len);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -455,7 +455,7 @@ cgm_APPEND_TEXT(cgm_state * st, bool final, const char *str, uint len)
     OP(APPEND_TEXT);
     E(final);
     S(str, len);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -463,7 +463,7 @@ cgm_POLYGON(cgm_state * st, const cgm_point * vertices, int count)
 {
     OP(POLYGON);
     nP(vertices, count);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -476,7 +476,7 @@ cgm_POLYGON_SET(cgm_state * st, const cgm_polygon_edge * vertices, int count)
 	P(&vertices[i].vertex);
 	E(vertices[i].edge_out);
     }
-    END;
+    DONE;
 }
 
 cgm_result
@@ -524,7 +524,7 @@ cgm_CELL_ARRAY(cgm_state * st, const cgm_point * pqr /*[3] */ , cgm_int nx, cgm_
 	    put_byte(st, 0);
 	}
     }
-    END;
+    DONE;
 }
 
 cgm_result
@@ -533,7 +533,7 @@ cgm_RECTANGLE(cgm_state * st, const cgm_point * corner1, const cgm_point * corne
     OP(RECTANGLE);
     P(corner1);
     P(corner2);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -542,7 +542,7 @@ cgm_CIRCLE(cgm_state * st, const cgm_point * center, const cgm_vdc * radius)
     OP(CIRCLE);
     P(center);
     VDC(radius);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -552,7 +552,7 @@ cgm_CIRCULAR_ARC_3_POINT(cgm_state * st, const cgm_point * start, const cgm_poin
     P(start);
     P(intermediate);
     P(end);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -563,7 +563,7 @@ cgm_CIRCULAR_ARC_3_POINT_CLOSE(cgm_state * st, const cgm_point * start, const cg
     P(intermediate);
     P(end);
     E(closure);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -573,7 +573,7 @@ cgm_CIRCULAR_ARC_CENTER(cgm_state * st, const cgm_point * center, const cgm_vdc 
     P(center);
     VDC4(dx_start, dy_start, dx_end, dy_end);
     VDC(radius);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -584,7 +584,7 @@ cgm_CIRCULAR_ARC_CENTER_CLOSE(cgm_state * st, const cgm_point * center, const cg
     VDC4(dx_start, dy_start, dx_end, dy_end);
     VDC(radius);
     E(closure);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -594,7 +594,7 @@ cgm_ELLIPSE(cgm_state * st, const cgm_point * center, const cgm_point * cd1_end,
     P(center);
     P(cd1_end);
     P(cd2_end);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -605,7 +605,7 @@ cgm_ELLIPTICAL_ARC(cgm_state * st, const cgm_point * center, const cgm_point * c
     P(cd1_end);
     P(cd2_end);
     VDC4(dx_start, dy_start, dx_end, dy_end);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -617,7 +617,7 @@ cgm_ELLIPTICAL_ARC_CLOSE(cgm_state * st, const cgm_point * center, const cgm_poi
     P(cd2_end);
     VDC4(dx_start, dy_start, dx_end, dy_end);
     E(closure);
-    END;
+    DONE;
 }
 
 /* ---------------- Attribute elements ---------------- */
@@ -628,7 +628,7 @@ cgm_LINE_BUNDLE_INDEX(cgm_state * st, cgm_int index)
     OP(LINE_BUNDLE_INDEX);
     IX(index);
     st->line_bundle_index = index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -637,7 +637,7 @@ cgm_LINE_TYPE(cgm_state * st, cgm_line_type line_type)
     OP(LINE_TYPE);
     IX((int)line_type);
     st->line_type = line_type;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -646,7 +646,7 @@ cgm_LINE_WIDTH(cgm_state * st, const cgm_line_width * line_width)
     OP(LINE_WIDTH);
     VDC_R(line_width, st->picture.line_width_specification_mode);
     st->line_width = *line_width;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -655,7 +655,7 @@ cgm_LINE_COLOR(cgm_state * st, const cgm_color * color)
     OP(LINE_COLOR);
     CO(color);
     st->line_color = *color;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -664,7 +664,7 @@ cgm_MARKER_BUNDLE_INDEX(cgm_state * st, cgm_int index)
     OP(MARKER_BUNDLE_INDEX);
     IX(index);
     st->marker_bundle_index = index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -673,7 +673,7 @@ cgm_MARKER_TYPE(cgm_state * st, cgm_marker_type marker_type)
     OP(MARKER_TYPE);
     IX((int)marker_type);
     st->marker_type = marker_type;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -682,7 +682,7 @@ cgm_MARKER_SIZE(cgm_state * st, const cgm_marker_size * marker_size)
     OP(MARKER_SIZE);
     VDC_R(marker_size, st->picture.marker_size_specification_mode);
     st->marker_size = *marker_size;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -691,7 +691,7 @@ cgm_MARKER_COLOR(cgm_state * st, const cgm_color * color)
     OP(MARKER_COLOR);
     CO(color);
     st->marker_color = *color;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -700,7 +700,7 @@ cgm_TEXT_BUNDLE_INDEX(cgm_state * st, cgm_int index)
     OP(TEXT_BUNDLE_INDEX);
     IX(index);
     st->text_bundle_index = index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -709,7 +709,7 @@ cgm_TEXT_FONT_INDEX(cgm_state * st, cgm_int index)
     OP(TEXT_FONT_INDEX);
     IX(index);
     st->text_font_index = index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -718,7 +718,7 @@ cgm_TEXT_PRECISION(cgm_state * st, cgm_text_precision precision)
     OP(TEXT_PRECISION);
     E(precision);
     st->text_precision = precision;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -727,7 +727,7 @@ cgm_CHARACTER_EXPANSION_FACTOR(cgm_state * st, cgm_real factor)
     OP(CHARACTER_EXPANSION_FACTOR);
     R(factor);
     st->character_expansion_factor = factor;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -736,7 +736,7 @@ cgm_CHARACTER_SPACING(cgm_state * st, cgm_real spacing)
     OP(CHARACTER_SPACING);
     R(spacing);
     st->character_spacing = spacing;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -745,7 +745,7 @@ cgm_TEXT_COLOR(cgm_state * st, const cgm_color * color)
     OP(TEXT_COLOR);
     CO(color);
     st->text_color = *color;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -754,7 +754,7 @@ cgm_CHARACTER_HEIGHT(cgm_state * st, const cgm_vdc * height)
     OP(CHARACTER_HEIGHT);
     VDC(height);
     st->character_height = *height;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -766,7 +766,7 @@ cgm_CHARACTER_ORIENTATION(cgm_state * st, const cgm_vdc * x_up, const cgm_vdc * 
     st->character_orientation[1] = *y_up;
     st->character_orientation[2] = *x_base;
     st->character_orientation[3] = *y_base;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -775,7 +775,7 @@ cgm_TEXT_PATH(cgm_state * st, cgm_text_path text_path)
     OP(TEXT_PATH);
     E(text_path);
     st->text_path = text_path;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -786,7 +786,7 @@ cgm_TEXT_ALIGNMENT(cgm_state * st, cgm_text_alignment_horizontal align_h, cgm_te
     E(align_v);
     R(align_cont_h);
     R(align_cont_v);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -795,7 +795,7 @@ cgm_CHARACTER_SET_INDEX(cgm_state * st, cgm_int index)
     OP(CHARACTER_SET_INDEX);
     IX(index);
     st->character_set_index = index;
-    END;
+    DONE;
 }
 
 /* See gdevcgml.c for why this isn't named cgm_ALTERNATE_.... */
@@ -805,7 +805,7 @@ cgm_ALT_CHARACTER_SET_INDEX(cgm_state * st, cgm_int index)
     OP(ALTERNATE_CHARACTER_SET_INDEX);
     IX(index);
     st->alternate_character_set_index = index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -814,7 +814,7 @@ cgm_FILL_BUNDLE_INDEX(cgm_state * st, cgm_int index)
     OP(FILL_BUNDLE_INDEX);
     IX(index);
     st->fill_bundle_index = index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -823,7 +823,7 @@ cgm_INTERIOR_STYLE(cgm_state * st, cgm_interior_style interior_style)
     OP(INTERIOR_STYLE);
     E(interior_style);
     st->interior_style = interior_style;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -832,7 +832,7 @@ cgm_FILL_COLOR(cgm_state * st, const cgm_color * color)
     OP(FILL_COLOR);
     CO(color);
     st->fill_color = *color;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -841,7 +841,7 @@ cgm_HATCH_INDEX(cgm_state * st, cgm_hatch_index hatch_index)
     OP(HATCH_INDEX);
     IX((int)hatch_index);
     st->hatch_index = hatch_index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -850,7 +850,7 @@ cgm_PATTERN_INDEX(cgm_state * st, cgm_int index)
     OP(PATTERN_INDEX);
     IX(index);
     st->pattern_index = index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -859,7 +859,7 @@ cgm_EDGE_BUNDLE_INDEX(cgm_state * st, cgm_int index)
     OP(EDGE_BUNDLE_INDEX);
     IX(index);
     st->edge_bundle_index = index;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -868,7 +868,7 @@ cgm_EDGE_TYPE(cgm_state * st, cgm_edge_type edge_type)
     OP(EDGE_TYPE);
     IX((int)edge_type);
     st->edge_type = edge_type;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -877,7 +877,7 @@ cgm_EDGE_WIDTH(cgm_state * st, const cgm_edge_width * edge_width)
     OP(EDGE_WIDTH);
     VDC_R(edge_width, st->picture.edge_width_specification_mode);
     st->edge_width = *edge_width;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -885,7 +885,7 @@ cgm_EDGE_COLOR(cgm_state * st, const cgm_color * color)
 {
     OP(EDGE_COLOR);
     CO(color);
-    END;
+    DONE;
 }
 
 cgm_result
@@ -894,7 +894,7 @@ cgm_EDGE_VISIBILITY(cgm_state * st, bool visibility)
     OP(EDGE_VISIBILITY);
     E(visibility);
     st->edge_visibility = visibility;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -903,7 +903,7 @@ cgm_FILL_REFERENCE_POINT(cgm_state * st, const cgm_point * reference_point)
     OP(FILL_REFERENCE_POINT);
     P(reference_point);
     st->fill_reference_point = *reference_point;
-    END;
+    DONE;
 }
 
 /* PATTERN_TABLE */
@@ -917,7 +917,7 @@ cgm_PATTERN_SIZE(cgm_state * st, const cgm_vdc * x_height, const cgm_vdc * y_hei
     st->pattern_size[1] = *y_height;
     st->pattern_size[2] = *x_width;
     st->pattern_size[3] = *y_width;
-    END;
+    DONE;
 }
 
 cgm_result
@@ -929,7 +929,7 @@ cgm_COLOR_TABLE(cgm_state * st, cgm_int index, const cgm_color * values, int cou
     CI(index);
     for (i = 0; i < count; ++i)
 	CD(&values[i].rgb);
-    END;
+    DONE;
 }
 
 cgm_result 
@@ -943,7 +943,7 @@ cgm_ASPECT_SOURCE_FLAGS(cgm_state * st, const cgm_aspect_source_flag * flags, in
 	E(flags[i].source);
 	st->source_flags[flags[i].type] = (byte) flags[i].source;
     }
-    END;
+    DONE;
 }
 
 /* ================ Internal routines ================ */

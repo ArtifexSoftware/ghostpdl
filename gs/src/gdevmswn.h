@@ -1,23 +1,27 @@
 /* Copyright (C) 1989, 1992, 1993, 1994 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gdevmswn.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gdevmswn.h  */
 /* Shared definitions for Microsoft Windows 3.n drivers */
+
+#ifndef gdevmswn_INCLUDED
+#  define gdevmswn_INCLUDED
+
 #include "string_.h"
 #include <stdlib.h>
 #include "dos_.h"
@@ -81,8 +85,8 @@ dev_proc_get_alpha_bits(win_get_alpha_bits);
 
 /* The basic window device */
 struct gx_device_win_s {
-	gx_device_common;
-	gx_device_win_common;
+    gx_device_common;
+    gx_device_win_common;
 };
 
 /* Initial values for width and height */
@@ -98,8 +102,8 @@ struct gx_device_win_s {
 #define rop_write_at_0s 0xB8074AL	/* BitBlt: write brush at 0's */
 #define rop_write_0_at_1s 0x220326L	/* BitBlt: ~S & D */
 #define rop_write_0_at_0s 0x8800C6L	/* BitBlt: S & D */
-#define rop_write_1s 0xFF0062L		/* write 1's */
-#define rop_write_0s 0x000042L		/* write 0's */
+#define rop_write_1s 0xFF0062L	/* write 1's */
+#define rop_write_0s 0x000042L	/* write 0's */
 #define rop_write_pattern 0xF00021L	/* PatBlt: write brush */
 
 /* Compress a gx_color_value into an 8-bit Windows color value, */
@@ -107,3 +111,5 @@ struct gx_device_win_s {
 #define win_color_value(z)\
   ((((z) >> (gx_color_value_bits - 5)) << 3) +\
    ((z) >> (gx_color_value_bits - 3)))
+
+#endif /* gdevmswn_INCLUDED */

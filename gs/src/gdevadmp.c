@@ -1,28 +1,29 @@
 /* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+*/
 
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
- */
-
+/*Id: gdevadmp.c */
 /*
  * This is a modification of Mark Wedel's Apple DMP and 
  * Jonathan Luckey's Imagewriter II driver to
  * support the Imagewriter LQ's higher resolution (320x216):
  *      appledmp:  120dpi x  72dpi is still supported (yuck)
- *      iwlo:      160dpi x  72dpi
- *      iwhi:      160dpi x 144dpi
+ *	iwlo:	   160dpi x  72dpi
+ *	iwhi:	   160dpi x 144dpi
  *      iwlq:      320dpi x 216dpi
  *
  * This is also my first attempt to work with gs. I have not included the LQ's
@@ -38,8 +39,8 @@
  * This is a modification of Mark Wedel's Apple DMP driver to
  * support 2 higher resolutions:
  *      appledmp:  120dpi x  72dpi is still supported (yuck)
- *      iwlo:      160dpi x  72dpi
- *      iwhi:      160dpi x 144dpi
+ *	iwlo:	   160dpi x  72dpi
+ *	iwhi:	   160dpi x 144dpi
  *
  * The Imagewriter II is a bit odd.  In pinfeed mode, it thinks its
  * First line is 1 inch from the top of the page. If you set the top
@@ -118,41 +119,41 @@ private dev_proc_print_page(dmp_print_page);
 /* Standard DMP device */
 gx_device_printer far_data gs_appledmp_device =
 prn_device(prn_std_procs, "appledmp",
-	   85,			/* width_10ths, 8.5" */
-	   110,			/* height_10ths, 11" */
-	   120, 72,		/* X_DPI, Y_DPI */
-	   0, 0.5, 0.5, 0,	/* margins */
-	   1, dmp_print_page);
+	85,				/* width_10ths, 8.5" */
+	110,				/* height_10ths, 11" */
+	120, 72,			/* X_DPI, Y_DPI */
+	0, 0.5, 0.5, 0,		/* margins */
+	1, dmp_print_page);
 
 
 /*  lowrez Imagewriter device */
 gx_device_printer far_data gs_iwlo_device =
 prn_device(prn_std_procs, "iwlo",
-	   85,			/* width_10ths, 8.5" */
-	   110,			/* height_10ths, 11" */
-	   160, 72,		/* X_DPI, Y_DPI */
-	   0, 0.5, 0.5, 0,	/* margins */
-	   1, dmp_print_page);
+	85,				/* width_10ths, 8.5" */
+	110,				/* height_10ths, 11" */
+	160, 72,			/* X_DPI, Y_DPI */
+	0, 0.5, 0.5, 0,		/* margins */
+	1, dmp_print_page);
 
 
 /*  hirez Imagewriter device */
 gx_device_printer far_data gs_iwhi_device =
 prn_device(prn_std_procs, "iwhi",
-	   85,			/* width_10ths, 8.5" */
-	   110,			/* height_10ths, 11" */
-	   160, 144,		/* X_DPI, Y_DPI */
-	   0, 0.5, 0.5, 0,	/* margins */
-	   1, dmp_print_page);
+	85,				/* width_10ths, 8.5" */
+	110,				/* height_10ths, 11" */
+	160, 144,			/* X_DPI, Y_DPI */
+	0, 0.5, 0.5, 0,		/* margins */
+	1, dmp_print_page);
 
 
 /* LQ hirez Imagewriter device */
 gx_device_printer far_data gs_iwlq_device =
 prn_device(prn_std_procs, "iwlq",
-	   85,			/* width_10ths, 8.5" */
-	   110,			/* height_10ths, 11" */
-	   320, 216,
-	   0, 0, 0.5, 0,	/* margins */
-	   1, dmp_print_page);
+	85,				/* width_10ths, 8.5" */
+	110,				/* height_10ths, 11" */
+	320, 216,
+	0, 0, 0.5, 0,		/* margins */
+	1, dmp_print_page);
 
 
 /* ------ Internal routines ------ */
@@ -164,71 +165,74 @@ prn_device(prn_std_procs, "iwlq",
 
 /* Send the page to the printer. */
 private int
-dmp_print_page(gx_device_printer * pdev, FILE * prn_stream)
-{
-    int dev_type;
+dmp_print_page(gx_device_printer *pdev, FILE *prn_stream)
+{	
+	int dev_type;
 
-    int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
+	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+	/* Note that in_size is a multiple of 8. */
+	int in_size = line_size * 8;
+  
+	byte *buf1 = (byte *)gs_malloc(in_size, 1, "dmp_print_page(buf1)");
+	byte *buf2 = (byte *)gs_malloc(in_size, 1, "dmp_print_page(buf2)");
+	byte *prn = (byte *)gs_malloc(3*in_size, 1, "dmp_print_page(prn)");
+  
+	byte *in = buf1;
+	byte *out = buf2;
+	int lnum = 0;
 
-    /* Note that in_size is a multiple of 8. */
-    int in_size = line_size * 8;
+	/* Check allocations */
+	if ( buf1 == 0 || buf2 == 0 || prn == 0 )
+	{
+		if ( buf1 ) 
+			gs_free((char *)buf1, in_size, 1,
+			"dmp_print_page(buf1)");
+		if ( buf2 ) 
+			gs_free((char *)buf2, in_size, 1,
+			"dmp_print_page(buf2)");
+		if ( prn ) 
+			gs_free((char *)prn, in_size, 1,
+			"dmp_print_page(prn)");
+		return_error(gs_error_VMerror);
+	}
 
-    byte *buf1 = (byte *) gs_malloc(in_size, 1, "dmp_print_page(buf1)");
-    byte *buf2 = (byte *) gs_malloc(in_size, 1, "dmp_print_page(buf2)");
-    byte *prn = (byte *) gs_malloc(3 * in_size, 1, "dmp_print_page(prn)");
+	if ( pdev->y_pixels_per_inch == 216 )
+		dev_type = IWLQ;
+	else if ( pdev->y_pixels_per_inch == 144 )
+		dev_type = IWHI;
+	else if ( pdev->x_pixels_per_inch == 160 )
+		dev_type = IWLO;
+	else
+		dev_type = DMP;
 
-    byte *in = buf1;
-    byte *out = buf2;
-    int lnum = 0;
+	/* Initialize the printer and reset the margins. */
 
-    /* Check allocations */
-    if (buf1 == 0 || buf2 == 0 || prn == 0) {
-	if (buf1)
-	    gs_free((char *)buf1, in_size, 1,
-		    "dmp_print_page(buf1)");
-	if (buf2)
-	    gs_free((char *)buf2, in_size, 1,
-		    "dmp_print_page(buf2)");
-	if (prn)
-	    gs_free((char *)prn, in_size, 1,
-		    "dmp_print_page(prn)");
-	return_error(gs_error_VMerror);
-    }
-    if (pdev->y_pixels_per_inch == 216)
-	dev_type = IWLQ;
-    else if (pdev->y_pixels_per_inch == 144)
-	dev_type = IWHI;
-    else if (pdev->x_pixels_per_inch == 160)
-	dev_type = IWLO;
-    else
-	dev_type = DMP;
+	fputs("\r\n\033>\033T16", prn_stream);
 
-    /* Initialize the printer and reset the margins. */
-
-    fputs("\r\n\033>\033T16", prn_stream);
-
-    switch (dev_type) {
+	switch(dev_type)
+	{
 	case IWLQ:
-	    fputs("\033P\033a3", prn_stream);
-	    break;
+		fputs("\033P\033a3", prn_stream);
+		break;
 	case IWHI:
 	case IWLO:
-	    fputs("\033P", prn_stream);
-	    break;
-	case DMP:
+		fputs("\033P", prn_stream);
+		break;
+	case DMP: 
 	default:
-	    fputs("\033q", prn_stream);
-	    break;
-    }
+		fputs("\033q", prn_stream);
+		break;
+	}
 
-    /* Print lines of graphics */
-    while (lnum < pdev->height) {
-	byte *inp;
-	byte *in_end;
-	byte *out_end;
-	int lcnt, ltmp;
-	int count, passes;
-	byte *prn_blk, *prn_end, *prn_tmp;
+	/* Print lines of graphics */
+	while ( lnum < pdev->height )
+	{	
+		byte *inp;
+		byte *in_end;
+		byte *out_end;
+		int lcnt,ltmp;
+		int count, passes;
+		byte *prn_blk, *prn_end, *prn_tmp;
 
 /* The apple DMP printer seems to be odd in that the bit order on
  * each line is reverse what might be expected.  Meaning, an
@@ -237,180 +241,168 @@ dmp_print_page(gx_device_printer * pdev, FILE * prn_stream)
  * scan line in reverse order.
  */
 
-	switch (dev_type) {
-	    case IWLQ:
-		passes = 3;
-		break;
-	    case IWHI:
-		passes = 2;
-		break;
-	    case IWLO:
-	    case DMP:
-	    default:
-		passes = 1;
-		break;
-	}
-
-	for (count = 0; count < passes; count++) {
-	    for (lcnt = 0; lcnt < 8; lcnt++) {
-		switch (dev_type) {
-		    case IWLQ:
-			ltmp = lcnt + 8 * count;
-			break;
-		    case IWHI:
-			ltmp = 2 * lcnt + count;
-			break;
-		    case IWLO:
-		    case DMP:
-		    default:
-			ltmp = lcnt;
-			break;
+		switch (dev_type)
+		{
+		case IWLQ: passes = 3; break;
+		case IWHI: passes = 2; break;
+		case IWLO:
+		case DMP:
+		default: passes = 1; break;
 		}
 
-		if ((lnum + ltmp) > pdev->height)
-		    memset(in + lcnt * line_size, 0, line_size);
-		else
-		    gdev_prn_copy_scan_lines(pdev,
-				   lnum + ltmp, in + line_size * (7 - lcnt),
-					     line_size);
-	    }
+		for (count = 0; count < passes; count++)
+		{
+			for (lcnt=0; lcnt<8; lcnt++)
+			{
+				switch(dev_type)
+				{
+				case IWLQ: ltmp = lcnt + 8*count; break;
+				case IWHI: ltmp = 2*lcnt + count; break;
+				case IWLO:
+				case DMP:
+				default: ltmp = lcnt; break;
+				}
 
-	    out_end = out;
-	    inp = in;
-	    in_end = inp + line_size;
-	    for (; inp < in_end; inp++, out_end += 8) {
-		gdev_prn_transpose_8x8(inp, line_size,
-				       out_end, 1);
-	    }
+				if ((lnum+ltmp)>pdev->height) 
+					memset(in+lcnt*line_size,0,line_size);
+				else
+					gdev_prn_copy_scan_lines(pdev,
+					lnum+ltmp, in + line_size*(7 - lcnt),
+					line_size);
+			}
 
-	    out_end = out;
+			out_end = out;
+			inp = in;
+			in_end = inp + line_size;
+			for ( ; inp < in_end; inp++, out_end += 8 )
+			{
+				gdev_prn_transpose_8x8(inp, line_size,
+				out_end, 1);
+			}
 
-	    switch (dev_type) {
+			out_end = out;
+
+			switch (dev_type)
+			{
+			case IWLQ: prn_end = prn + count; break;
+			case IWHI: prn_end = prn + in_size*count; break;
+			case IWLO:
+			case DMP:
+			default: prn_end = prn; break;
+			}
+
+			while ( (int)(out_end-out) < in_size)
+			{
+				*prn_end = *(out_end++);
+				if ((dev_type) == IWLQ) prn_end += 3;
+				else prn_end++;
+			}
+		}
+      
+		switch (dev_type)
+		{
 		case IWLQ:
-		    prn_end = prn + count;
-		    break;
+			prn_blk = prn;
+			prn_end = prn_blk + in_size * 3;
+			while (prn_end > prn && prn_end[-1] == 0 &&
+				prn_end[-2] == 0 && prn_end[-3] == 0)
+			{
+				prn_end -= 3;
+			}
+			while (prn_blk < prn_end && prn_blk[0] == 0 &&
+				prn_blk[1] == 0 && prn_blk[2] == 0)
+			{
+				prn_blk += 3;
+			}
+			if (prn_end != prn_blk)
+			{
+				if ((prn_blk - prn) > 7)
+					fprintf(prn_stream,"\033U%04d%c%c%c",
+						(int)((prn_blk - prn)/3),
+						0, 0, 0);
+				else
+					prn_blk = prn;
+				fprintf(prn_stream,"\033C%04d",
+					(int)((prn_end - prn_blk)/3));
+				fwrite(prn_blk, 1, (int)(prn_end - prn_blk),
+					prn_stream);
+		        }
+			break;
 		case IWHI:
-		    prn_end = prn + in_size * count;
-		    break;
+			for (count = 0; count < 2; count++)
+			{
+				prn_blk = prn_tmp = prn + in_size*count;
+				prn_end = prn_blk + in_size;
+				while (prn_end > prn_blk && prn_end[-1] == 0)
+					prn_end--;
+				while (prn_blk < prn_end && prn_blk[0] == 0)
+					prn_blk++;
+				if (prn_end != prn_blk)
+				{
+					if ((prn_blk - prn_tmp) > 7)
+						fprintf(prn_stream,
+							"\033V%04d%c",
+							(int)(prn_blk-prn_tmp),
+							 0);
+					else
+						prn_blk = prn_tmp;
+					fprintf(prn_stream,"\033G%04d",
+						(int)(prn_end - prn_blk));
+					fwrite(prn_blk, 1,
+						(int)(prn_end - prn_blk),
+						prn_stream);
+				}
+				if (!count) fputs("\033T01\r\n",prn_stream);
+			}
+			fputs("\033T15",prn_stream);
+			break;
 		case IWLO:
 		case DMP:
 		default:
-		    prn_end = prn;
-		    break;
-	    }
-
-	    while ((int)(out_end - out) < in_size) {
-		*prn_end = *(out_end++);
-		if ((dev_type) == IWLQ)
-		    prn_end += 3;
-		else
-		    prn_end++;
-	    }
-	}
-
-	switch (dev_type) {
-	    case IWLQ:
-		prn_blk = prn;
-		prn_end = prn_blk + in_size * 3;
-		while (prn_end > prn && prn_end[-1] == 0 &&
-		       prn_end[-2] == 0 && prn_end[-3] == 0) {
-		    prn_end -= 3;
-		}
-		while (prn_blk < prn_end && prn_blk[0] == 0 &&
-		       prn_blk[1] == 0 && prn_blk[2] == 0) {
-		    prn_blk += 3;
-		}
-		if (prn_end != prn_blk) {
-		    if ((prn_blk - prn) > 7)
-			fprintf(prn_stream, "\033U%04d%c%c%c",
-				(int)((prn_blk - prn) / 3),
-				0, 0, 0);
-		    else
 			prn_blk = prn;
-		    fprintf(prn_stream, "\033C%04d",
-			    (int)((prn_end - prn_blk) / 3));
-		    fwrite(prn_blk, 1, (int)(prn_end - prn_blk),
-			   prn_stream);
+			prn_end = prn_blk + in_size;
+			while (prn_end > prn_blk && prn_end[-1] == 0)
+				prn_end--;
+			while (prn_blk < prn_end && prn_blk[0] == 0)
+				prn_blk++;
+			if (prn_end != prn_blk)
+			{
+				if ((prn_blk - prn) > 7)
+					fprintf(prn_stream,"\033V%04d%c",
+						(int)(prn_blk - prn), 0);
+				else
+					prn_blk = prn;
+				fprintf(prn_stream,"\033G%04d",
+					(int)(prn_end - prn_blk));
+				fwrite(prn_blk, 1, (int)(prn_end - prn_blk),
+					prn_stream);
+			}
+			break;
 		}
-		break;
-	    case IWHI:
-		for (count = 0; count < 2; count++) {
-		    prn_blk = prn_tmp = prn + in_size * count;
-		    prn_end = prn_blk + in_size;
-		    while (prn_end > prn_blk && prn_end[-1] == 0)
-			prn_end--;
-		    while (prn_blk < prn_end && prn_blk[0] == 0)
-			prn_blk++;
-		    if (prn_end != prn_blk) {
-			if ((prn_blk - prn_tmp) > 7)
-			    fprintf(prn_stream,
-				    "\033V%04d%c",
-				    (int)(prn_blk - prn_tmp),
-				    0);
-			else
-			    prn_blk = prn_tmp;
-			fprintf(prn_stream, "\033G%04d",
-				(int)(prn_end - prn_blk));
-			fwrite(prn_blk, 1,
-			       (int)(prn_end - prn_blk),
-			       prn_stream);
-		    }
-		    if (!count)
-			fputs("\033T01\r\n", prn_stream);
+
+		fputs("\r\n",prn_stream);
+
+		switch (dev_type)
+		{
+			case IWLQ: lnum += 24 ; break;
+			case IWHI: lnum += 16 ; break;
+			case IWLO:
+			case DMP:
+			default: lnum += 8 ; break;
 		}
-		fputs("\033T15", prn_stream);
-		break;
-	    case IWLO:
-	    case DMP:
-	    default:
-		prn_blk = prn;
-		prn_end = prn_blk + in_size;
-		while (prn_end > prn_blk && prn_end[-1] == 0)
-		    prn_end--;
-		while (prn_blk < prn_end && prn_blk[0] == 0)
-		    prn_blk++;
-		if (prn_end != prn_blk) {
-		    if ((prn_blk - prn) > 7)
-			fprintf(prn_stream, "\033V%04d%c",
-				(int)(prn_blk - prn), 0);
-		    else
-			prn_blk = prn;
-		    fprintf(prn_stream, "\033G%04d",
-			    (int)(prn_end - prn_blk));
-		    fwrite(prn_blk, 1, (int)(prn_end - prn_blk),
-			   prn_stream);
-		}
-		break;
 	}
 
-	fputs("\r\n", prn_stream);
+	/* ImageWriter will skip a whole page if too close to end */
+	/* so skip back more than an inch */
+	if ( !(dev_type == DMP) )
+		fputs("\033T99\n\n\033r\n\n\n\n\033f", prn_stream);
+  
+	/* Formfeed and Reset printer */
+	fputs("\033T16\f\033<\033B\033E", prn_stream);
+	fflush(prn_stream);
 
-	switch (dev_type) {
-	    case IWLQ:
-		lnum += 24;
-		break;
-	    case IWHI:
-		lnum += 16;
-		break;
-	    case IWLO:
-	    case DMP:
-	    default:
-		lnum += 8;
-		break;
-	}
-    }
-
-    /* ImageWriter will skip a whole page if too close to end */
-    /* so skip back more than an inch */
-    if (!(dev_type == DMP))
-	fputs("\033T99\n\n\033r\n\n\n\n\033f", prn_stream);
-
-    /* Formfeed and Reset printer */
-    fputs("\033T16\f\033<\033B\033E", prn_stream);
-    fflush(prn_stream);
-
-    gs_free((char *)prn, in_size, 1, "dmp_print_page(prn)");
-    gs_free((char *)buf2, in_size, 1, "dmp_print_page(buf2)");
-    gs_free((char *)buf1, in_size, 1, "dmp_print_page(buf1)");
-    return 0;
+	gs_free((char *)prn, in_size, 1, "dmp_print_page(prn)");
+	gs_free((char *)buf2, in_size, 1, "dmp_print_page(buf2)");
+	gs_free((char *)buf1, in_size, 1, "dmp_print_page(buf1)");
+	return 0;
 }

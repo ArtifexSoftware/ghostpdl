@@ -16,11 +16,15 @@
   all copies.
 */
 
-/* gdevbjc.h */
+/*Id: gdevbjc.h */
+
+#ifndef gdevbjc_INCLUDED
+#  define gdevbjc_INCLUDED
+
 /*
  * Definitions for Canon BJC printers and the associated drivers.
  *
- * Copyright (C) Yves Arrouye <Yves.Arrouye@imag.fr>, 1995, 1996.
+ * Copyright (C) Yves Arrouye <yves.arrouye@usa.net>, 1995, 1996.
  *
  */
 
@@ -280,3 +284,5 @@
 #endif
 
 #endif /* _GDEVBJC_H */
+
+#endif				/* gdevbjc_INCLUDED */

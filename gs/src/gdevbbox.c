@@ -26,6 +26,7 @@
 #include "gxdevice.h"
 #include "gsdevice.h"		/* requires gsmatrix.h */
 #include "gdevbbox.h"
+#include "gxdcolor.h"		/* for gx_device_black/white */
 #include "gxiparam.h"		/* for image source size */
 #include "gxistate.h"
 #include "gxpaint.h"
@@ -55,6 +56,8 @@ private dev_proc_draw_thin_line(bbox_draw_thin_line);
 private dev_proc_strip_tile_rectangle(bbox_strip_tile_rectangle);
 private dev_proc_strip_copy_rop(bbox_strip_copy_rop);
 private dev_proc_begin_typed_image(bbox_begin_typed_image);
+private dev_proc_create_compositor(bbox_create_compositor);
+private dev_proc_text_begin(bbox_text_begin);
 
 /* The device prototype */
 /*
@@ -74,7 +77,7 @@ private dev_proc_begin_typed_image(bbox_begin_typed_image);
  * the page size in inches is limited to the maximum representable pixel
  * size divided by R, which gives a limit of about 120" in each dimension.
  */
-#define max_coord (min(max_int, fixed2int(max_fixed)) - 1000)
+#define max_coord (max_int_in_fixed - 1000)
 #define max_resolution 4000
 gx_device_bbox far_data gs_bbox_device =
 {
@@ -118,8 +121,12 @@ gx_device_bbox far_data gs_bbox_device =
      bbox_strip_tile_rectangle,
      bbox_strip_copy_rop,
      NULL,			/* get_clipping_box */
+     bbox_begin_typed_image,
+     NULL,			/* get_bits_rectangle */
+     NULL,			/* map_color_rgb_alpha */
+     bbox_create_compositor,
      NULL,			/* get_hardware_params */
-     bbox_begin_typed_image
+     bbox_text_begin
     },
     0,				/* target */
     1				/*true *//* free_standing */
@@ -151,10 +158,7 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_white)
 #undef COPY_ARRAY_PARAM
     }
     if (remap_white)
-	bdev->white =
-	    (*dev_proc(bdev, map_rgb_color))
-	    ((gx_device *) bdev, gx_max_color_value, gx_max_color_value,
-	     gx_max_color_value);
+	bdev->white = gx_device_white((gx_device *)bdev);
 }
 
 #define gx_dc_is_white(pdevc, bdev)\
@@ -934,4 +938,139 @@ bbox_image_end_image(gx_device * dev, gx_image_enum_common_t * info,
 
     gs_free_object(pbe->memory, pbe, "bbox_end_image");
     return code;
+}
+
+private int
+bbox_create_compositor(gx_device * dev,
+		       gx_device ** pcdev, const gs_composite_t * pcte,
+		       const gs_imager_state * pis, gs_memory_t * memory)
+{
+    gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    gx_device *target = bdev->target;
+
+    /*
+     * If there isn't a target, all we care about is the bounding box,
+     * so don't bother with actually compositing.
+     */
+    if (target == 0) {
+	*pcdev = dev;
+	return 0;
+    }
+    /*
+     * Create a compositor for the target, and then wrap another
+     * bbox device around it, but still accumulating the bounding
+     * box in the same place.
+     */
+    {
+	gx_device *cdev;
+	gx_device_bbox *bbcdev;
+	int code = (*dev_proc(target, create_compositor))
+	(target, &cdev, pcte, pis, memory);
+
+	if (code < 0)
+	    return code;
+	bbcdev = gs_alloc_struct_immovable(memory, gx_device_bbox,
+					   &st_device_bbox,
+					   "bbox_create_compositor");
+	if (bbcdev == 0) {
+	    (*dev_proc(cdev, close_device)) (cdev);
+	    return_error(gs_error_VMerror);
+	}
+	gx_device_bbox_init(bbcdev, target);
+	bbcdev->target = cdev;
+	bbcdev->box_device = bdev;
+	*pcdev = (gx_device *) bbcdev;
+	return 0;
+    }
+}
+
+/* ------ Text imaging ------ */
+
+extern_st(st_gs_text_enum);
+
+typedef struct bbox_text_enum_s {
+    gs_text_enum_common;
+    gs_text_enum_t *target_info;
+} bbox_text_enum;
+
+gs_private_st_suffix_add1(st_bbox_text_enum, bbox_text_enum, "bbox_text_enum",
+			bbox_text_enum_enum_ptrs, bbox_text_enum_reloc_ptrs,
+			  st_gs_text_enum, target_info);
+
+private text_enum_proc_process(bbox_text_process);
+private text_enum_proc_set_cache(bbox_text_set_cache);
+private rc_free_proc(bbox_text_free);
+
+private const gs_text_enum_procs_t bbox_text_procs =
+{
+    bbox_text_process, bbox_text_set_cache
+};
+
+private int
+bbox_text_begin(gx_device * dev, gs_imager_state * pis,
+		const gs_text_params_t * text, const gs_font * font,
+gx_path * path, const gx_device_color * pdcolor, const gx_clip_path * pcpath,
+		gs_memory_t * memory, gs_text_enum_t ** ppenum)
+{
+    gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    gx_device *tdev = bdev->target;
+    bbox_text_enum *pbte;
+    int code;
+
+    if (tdev == 0)
+	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+				     pcpath, memory, ppenum);
+    rc_alloc_struct_1(pbte, bbox_text_enum, &st_bbox_text_enum, memory,
+		      return_error(gs_error_VMerror),
+		      "bbox_text_begin");
+    pbte->rc.free = bbox_text_free;
+    code =
+	(*dev_proc(tdev, text_begin))
+	(tdev, pis, text, font, path, pdcolor, pcpath, memory,
+	 &pbte->target_info);
+    if (code < 0) {
+	gs_free_object(memory, pbte, "bbox_text_begin");
+	return code;
+    }
+    *(gs_text_enum_t *) pbte = *pbte->target_info;	/* copy common info */
+    pbte->procs = &bbox_text_procs;
+    *ppenum = (gs_text_enum_t *) pbte;
+    return code;
+}
+
+private int
+bbox_text_process(gs_text_enum_t * pte)
+{
+    bbox_text_enum *const pbte = (bbox_text_enum *) pte;
+    int code = gs_text_process(pbte->target_info);
+
+    if (code < 0)
+	return code;
+    /* Copy back the dynamic information for the client. */
+    pte->index = pbte->target_info->index;
+    return code;
+}
+
+private int
+bbox_text_set_cache(gs_text_enum_t * pte, const double *values,
+		    gs_text_cache_control_t control)
+{
+    bbox_text_enum *const pbte = (bbox_text_enum *) pte;
+    gs_text_enum_t *tpte = pbte->target_info;
+    int code = tpte->procs->set_cache(tpte, values, control);
+
+    if (code < 0)
+	return code;
+    /* Copy back the dynamic information for the client. */
+    pte->index = tpte->index;
+    return code;
+}
+
+private void
+bbox_text_free(gs_memory_t * memory, void *vpte, client_name_t cname)
+{
+    bbox_text_enum *const pbte = (bbox_text_enum *) vpte;
+
+    gs_text_release(pbte->target_info, cname);
+    rc_free_struct_only(memory, vpte, cname);
 }

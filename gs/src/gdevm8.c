@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevm8.c */
+/*Id: gdevm8.c  */
 /* 8-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -38,7 +38,7 @@ extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);		/* in gdevmrop.
 declare_mem_procs(mem_mapped8_copy_mono, mem_mapped8_copy_color, mem_mapped8_fill_rectangle);
 
 /* The device descriptor. */
-const gx_device_memory far_data mem_mapped8_device =
+const gx_device_memory mem_mapped8_device =
 mem_device("image8", 8, 0,
 	   mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
   mem_mapped8_copy_mono, mem_mapped8_copy_color, mem_mapped8_fill_rectangle,
@@ -167,12 +167,12 @@ mem_mapped8_copy_color(gx_device * dev,
 declare_mem_procs(mem8_word_copy_mono, mem8_word_copy_color, mem8_word_fill_rectangle);
 
 /* Here is the device descriptor. */
-const gx_device_memory far_data mem_mapped8_word_device =
+const gx_device_memory mem_mapped8_word_device =
 mem_full_device("image8w", 8, 0, mem_open,
 		mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
 	mem8_word_copy_mono, mem8_word_copy_color, mem8_word_fill_rectangle,
-		mem_word_get_bits, gx_default_map_cmyk_color,
-		gx_default_strip_tile_rectangle, gx_no_strip_copy_rop);
+		gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
+		gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
 private int

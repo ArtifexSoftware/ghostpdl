@@ -1,4 +1,4 @@
-   Copyright (C) 1992, 1995 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1992, 1995, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: devices.txt 
 This file, devices.txt, gives more detailed documentation about
 certain specific devices for which Ghostscript can produce output.
 
@@ -123,7 +124,7 @@ There are 6 generic drivers contained in the source module:
 
      1 - cdj500:      HP DeskJet 500C and 540C
      2 - cdj550:      HP DeskJet 550C, 560C, 660C, 660Cse
-     3 - pjxl300:     HP PaintJet XL300 and DeskJet 1200C
+     3 - pjxl300:     HP PaintJet XL300, DeskJet 1200C, and CopyJet
      4 - pjtest:      HP PaintJet
      5 - pjxltest:    HP PaintJet XL
      6 - declj250:    DEC LJ250
@@ -1776,7 +1777,7 @@ Germany
 
 ### -- The BJC-600/BJC-4000/BJC-70/Stylewriter 2x00, BJC-800 printers -- ###
 
-This section was written by Yves Arrouye <Yves.Arrouye@marin.fdn.fr>.
+This section was written by Yves Arrouye <yves.arrouye@usa.net>.
 
 
 HISTORY
@@ -1784,7 +1785,7 @@ HISTORY
 
 The BJC-600 driver was written in the first place by Yoshio Kuniyoshi
 <yoshio@nak.math.keio.ac.jp> and later modified by me, Yves Arrouye
-<Yves.Arrouye@marin.fdn.fr>. We both tried to make it evolve synchronously,
+<yves.arrouye@usa.net>. We both tried to make it evolve synchronously,
 though Yoshio cannot be reached since a long time.
 
 The drivers are based on code for the HP printers by George Cameron
@@ -1865,12 +1866,11 @@ variable. The line should read something like that:
 
     DEVICE_DEVS6=bj10e.dev bj200.dev bjc600.dev bjc800.dev
 
-Now if you get an error from make saying that it does not know how to
-make bjc800.dev it's because you have an old makefile with only the
-bjc600 device in it. You then have to copy the lines explaining how to
-make bjc800.dev in your makefile. These lines are in devs.mak (under
-the lines for making bjc600.dev) and should go just after the lines
-for making bjc600.dev.
+Now if you get an error from make saying that it does not know how to make
+bjc800.dev it's because you have an old makefile with only the bjc600 device
+in it. You then have to copy the lines explaining how to make bjc800.dev in
+your makefile. These lines are in contrib.mak (under the lines for making
+bjc600.dev) and should go just after the lines for making bjc600.dev.
 
 Testing the margins
 -------------------
@@ -2249,8 +2249,8 @@ be the device you really use).
 Contact Address
 ---------------
 
-If you have problems with this driver (or if you are extremely
-satisfied with it) you may email me at Yves.Arrouye@marin.fdn.fr.
+If you have problems with this driver (or if you are extremely satisfied
+with it) you may email me at yves.arrouye@usa.net.
 
 Acknowledgements
 ----------------

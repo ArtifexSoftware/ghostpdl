@@ -1,5 +1,5 @@
-   Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
+  Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+
   This file is part of Aladdin Ghostscript.
   
   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
@@ -17,37 +17,239 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: c-style.txt 
 This file, c-style.txt, describes Aladdin's C coding guidelines.
 
 For an overview of Ghostscript and a list of the documentation files, see
 README.
 
-Generalities
+-------------------------------- Summary --------------------------------
+
+Preprocessor:
+- Use preprocessor conditionals that test for individual platforms or
+  compilers, if necessary, only in header files named xxx_.h.
+- Don't define a macro if you can do it with a procedure.
+- Use
+	gx_device_fubar * const fdev = (gx_device_fubar *)dev;
+  rather than
+	#define fdev ((gx_device_fubar *)dev)
+- Put () around the body of expression-macro definitions, and around each
+  use of an argument.
+- Make all variables referenced in a macro body arguments of the macro.
+Types/scopes:
+- Use const for pointer referents (i.e., const T *) wherever possible.
+- Use unions or (less preferably) casts in preference to void *.
+- Don't use anonymous structures or unions.
+- Don't declare procedure parameters of type float, short, or char.
+- Never explicitly cast float to double.
+- Use 'private' instead of 'static' at the top level of a file.
+- Don't create any new non-const static variables.
+- Put externs in .h files, not .c files.
+Formatting:
+- gsindent (GNU indent + fixup script) will do 98% of the job for you.
+- Put indentation points every 4 spaces, with 8 spaces = 1 tab stop.
+- { should always be the last non-blank character on its line (except for
+  comments); } should always be the first non-blank on its line.
+- Use spaces after comma and semicolon, around binary operators, and on
+  both sides of the parentheses for if / for / while; nowhere else.
+- Use parentheses only when mixing && and ||, when mixing &, | and/or
+  shifts with each other or other operators, and around ? : expressions.
+Other:
+- List #includes in the order *_.h, gs*.h, gx*.h, s*.h, i*.h.
+- Use full words in names rather than contractions; don't run words together.
+- Don't assign new values to procedure parameters.
+- Initialize local variables when they are declared.
+
+-------------------------------- End summary --------------------------------
+
+Introduction
 ============
 
-All the rules below are meant to produce code that is easy to read.  If you
-find a rule getting in your way or producing ugly-looking results once in a
-while, it's OK to break it.
+There are many rules that Ghostscript's code follows almost everywhere.
+These rules are meant to produce code that is easy to read.  It's important
+to observe them as much as possible in order to maintain a consistent style,
+but if you find a rule getting in your way or producing ugly-looking results
+once in a while, it's OK to break it.
 
-Indentation
------------
+Use of C language features
+==========================
 
-Tab stops are set every 8 columns.  However, tabs are not equivalent to
-logical nesting levels for C code: see below for details.
+Preprocessor
+~~~~~~~~~~~~
 
-File layout
------------
+Conditionals
+------------
+
+Use of preprocessor conditionals can easily lead to unreadable code, since
+the eye really wants to read linearly rather than having to parse the
+conditionals just to figure out what code is relevant.  It's OK to use
+conditionals that have small scope and that don't change the structure or
+logic of the program (typically, they select between different sets of
+values depending on some configuration parameter), but where possible, break
+up source modules rather than use conditionals that affect the structure or
+logic.
+
+Don't use preprocessor conditionals that test for individual platforms or
+compilers in .c files.  Use them only in header files named xxx_.h.
+
+Macros
+------
+
+Ghostscript code makes heavy use of macros to effectively extend the rather
+weak abstraction capabilities of the C language, specifically in the area of
+memory management / garbage collection: in order to read Ghostscript code
+effectively, you'll simply have to learn some of these macros as though they
+were part of the language.  The current code also uses macros heavily for
+other purposes: we are trying to phase these out as rapidly as possible,
+because they make the code harder to read and debug, and to use the
+following rules consistently in new code.
+
+Define macros in the smallest scope you can get away with (procedure, file,
+or .h file), and #undef them at the end of that scope: that way, a person
+reading the code can see the definitions easily when reading the uses.  If
+that isn't appropriate, define them in as large a scope as possible, so that
+they effectively become part of the language: this places an additional
+burden on the reader, but it can be amortized over reading larger amounts of
+code.
+
+Try hard to use procedures instead of macros.  Use 'inline' if you really
+think the extra speed is needed, but only within a .c file: don't put inline
+procedures in .h files, because most compilers don't honor 'inline' and
+you'll wind up with a copy of the procedure in every .c file that includes
+the .h file.
+
+Don't use macros to define shorthands for casted pointers, e.g.
+	#define fdev ((gx_device_fubar *)dev)
+Instead, use
+	gx_device_fubar * const fdev = (gx_device_fubar *)dev;
+The use of const alerts the reader that this is effectively a synonym.
+
+If you define a macro that looks like a procedure, make sure it will work
+wherever a procedure will work.  In particular, put parentheses around every
+use of an argument within the macro body, so that the macro will parse
+correctly if some of the arguments are expressions, and put parentheses
+around the entire macro body.  (This is still subject to the problem that an
+argument may be evaluated more than once, but there is no way around this in
+C, since C doesn't provide for local variables within expressions.)
+
+If a macro generates anything larger than a single expression (i.e., one or
+more statements), surround it with BEGIN and END.  These are a workaround
+for the fact that in C, simple statements and compound statements can't be
+substituted for each other syntactically.
+
+If you define macros for special loop control structures, make their uses
+look somewhat like ordinary loops, e.g.:
+
+	BEGIN_RECT(xx, yy) {
+	    ... body indented one position ...
+	} END_RECT(xx, yy);
+
+If at all possible, don't use free variables in macros -- that is, variables
+that aren't apparent as arguments of the macro.  If you must use free
+variables, list them all in a comment at the point where the macro is
+defined.
+
+Preferably CAPITALIZE macro names.
+
+Types/declarations
+~~~~~~~~~~~~~~~~~~
+
+Pointers/structures
+-------------------
+
+Use const for pointer referents (i.e., const T *) wherever possible and
+appropriate.  Don't bother using it for anything else, except as described
+above for casted pointers.
+
+If you find yourself wanting to use void *, try to find an alternative using
+unions or (in the case of super- and subclasses) casts, unless you're
+writing something like a memory manager that really treats memory as opaque.
+
+Don't use anonymous structures if you can possibly avoid it, except perhaps
+as components of other structures.  Ideally, use the 'struct' keyword only
+for declaring named structure types, like this:
+
+	typedef struct xxx_yyy_s {
+	  ... members ...
+	} xxx_yyy_t;
+
+Many older structure names don't have a _t on the end, but it should be used
+in all new code.  (The _s name is only needed to satisfy some debuggers: no
+code should use it.)
+
+If you have a procedure parameter that is itself a procedure, do list its
+parameter types rather than just using ().  E.g.,
+
+	int foo(P1(int (*callback)(P2(int, int))));
+
+rather than just
+
+       int foo(P1(int (*callback)()));
+
+Scalars
+-------
+
+Don't declare parameters as being of type float, short, or char.  If you do
+this and forget to include the prototype at a call site, ANSI compilers will
+generate incompatible calling sequences.  Use floatp (a synonym for double,
+mnemonic for "float parameter") instead of float, and use [u]int instead of
+short or char.
+
+ANSI compilers in their default mode do all floating point computations in
+double precision, so never cast a float to a double explicitly.
+
+Unless there's a good reason for doing otherwise, return floatp (double)
+rather than float values.  Many FPUs do everything in double internally and
+have to do extra work to convert between double and float.
+
+Scoping
+~~~~~~~
+
+Use 'private' instead of 'static' for constructs (procedures and variables)
+declared at the outermost scope of a file.  This allows making such
+constructs either visible or invisible to profilers with a single changed
+#define.
+
+Don't create any new non-const static variables (whether exported or local
+to a file): they are incompatible with reentrancy, and we're in the process
+of eliminating all of them.
+
+Avoid static const data, but don't knock yourself out over it, especially if
+it's local to a file.
+
+Avoid externs in .c files: put them in header files.
+
+Other
+~~~~~
+
+The most important descriptive comments are ones in header files that
+describe structures, including invariants; but every procedure or structure
+declaration, or group of other declarations, should have a comment.  Don't
+spend a lot of time commenting executable code unless something unusual or
+subtle is going on.
+
+In older code, calling a variable or parameter procedure always used
+explicit indirection, e.g., (*ptr->func)(...) rather than ptr->func(...).
+Since all current compilers accept the latter form, use it in new code.
+
+File structuring
+================
+
+All files
+~~~~~~~~~
 
 Every code file should start with comments containing a copyright notice,
-the name of the file, and a half-to-one-line summary of what the file
-contains.  If you create a file by copying the boilerplate from another
-file, make sure to edit the copyright year and the file name.
+the name of the file in the form of a RCS Id:
 
-C code
-======
+	/*Id$: filename.c $*/
+
+(using the comment convention appropriate to the language of the file), and
+a half-to-one-line summary of what the file contains.  If you create a file
+by copying the boilerplate from another file, make sure to edit the
+copyright year and the file name.
 
 makefiles
----------
+~~~~~~~~~
 
 For each #include "xxx.h", make sure there is a dependency on $(xxx_h) in
 the makefile.  If xxx ends with a _, this rule still holds: e.g., #include
@@ -58,8 +260,18 @@ each level, list them alphabetically.  Also do this with the #includes
 themselves whenever possible (but sometimes there are inter-header
 dependencies that require bending this).
 
-Headers
--------
+C code in general
+~~~~~~~~~~~~~~~~~
+
+List #includes from "bottom" to "top", i.e., in the following order:
+	System includes ("xxx_.h")
+	gs*.h
+	gx*.h (yes, gs and gx are in the wrong order)
+	s*.h
+	i*.h (or other interpreter headers that don't start with i)
+
+Headers (.h files)
+~~~~~~~~~~~~~~~~~~
 
 In header files, always use the following to prevent double inclusion:
 
@@ -78,52 +290,85 @@ every procedure and structure has a comment that says what it does.  Divide
 procedures into meaningful groups set off by some distinguished form of
 comment.
 
-#include lists
---------------
+Executable code (.c files)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-List #includes from "bottom" to "top", i.e., in the following order:
-	System includes ("xxx_.h")
-	g*.h
-	s*.h
-	pl*.h
-	p[cg]*.h
+After the initial comments, arrange C files in the following order:
+
+	#includes
+	Exported data declarations
+	Explicit externs (if necessary)
+	Forward declarations of procedures
+	Private data declarations
+	Exported procedures
+	Private procedures
+
+Be flexible about the order of the declarations if necessary to improve
+readability.  Many older files don't follow this order, often without good
+reason.
+
+Formatting
+==========
 
 Indentation
 -----------
 
-Put the first indentation point at the first tab stop; thereafter, each
-level of logical nesting indents by an additional 4 columns.  Proceed as
-follows:
+We've formatted all of our code using the GNU indent program.
+	indent -bad -nbap -nsob -br -ce -cli4 -npcs -ncs\
+	  -i4 -di0 -psl -lp -lps somefile.c
+will do a 98% accurate job of producing our preferred style.  Unfortunately,
+there are bugs in all versions of GNU indent, requiring both pre- and
+post-processing of the code.  The gsindent script in the Ghostscript fileset
+contains the necessary workarounds.
 
-	{ ... in-line compound statement ...
-	  ... (indented +2 columns)
-	}
-	... construct requiring subordinate code ...
-	  ... subordinate simple statement ... (indented +2 columns)
-	... construct requiring subordinate code ...
-	  { ... subordinate code ...
-	    ... (indented +4 columns)
-	  }
+Put indentation points every 4 spaces, with 8 spaces = 1 tab stop.
 
-Or you can do this if you prefer:
+Indent in-line blocks thus:
 
 	{
-	  ... in-line compound statement ...
+	    ... declarations ...
+	    <blank line if any declarations above>
+	    ... statements ...
 	}
-	... construct requiring subordinate code ...
-	  ... subordinate simple statement ...
-	... construct requiring subordinate code ...
-	  {
+
+Similarly, indent procedures thus:
+
+return_type
+proc_name(... arguments ...)
+{
+    ... declarations ...
+    <blank line if any declarations above>
+    ... statements ...
+}
+
+If a control construct (if, do, while, for) has a 1-line body, use this:
+
+	... control construct ...
+	    ... subordinate simple statement ...
+
+If it has a multi-line body, use this:
+
+	... control construct ... {
 	    ... subordinate code ...
-	  }
+	}
 
-But not this:
+If the subordinate code has declarations, see blocks above.
 
-	if ... {
+For if-else statements, do this:
+
+	if ( ... ) {
+	  ... subordinate code ...
+	} else if ( ... ) {
 	  ... subordinate code ...
 	} else {
 	  ... subordinate code ...
 	}
+
+Similarly, for do-while statements, do this:
+
+	do {
+	    ... body ...
+	} while ( ... condition ... );
 
 Spaces
 ------
@@ -132,7 +377,7 @@ Do put a space:
 	- after every comma and semicolon, unless it ends a line;
 	- around every binary operator, although you can omit the spaces
 	around the innermost operator in a nested expression if you like;
-	- on both sides of the the parentheses of an if, for, or while.
+	- on both sides of the parentheses of an if, for, or while.
 
 Don't put a space:
 	- at the end of a line;
@@ -174,36 +419,11 @@ use
 	hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
 			       (pgls->g.pen_down ? gs_lineto : gs_moveto));
 
-Types
------
+Naming
+======
 
-Use 'private' instead of 'static' for constructs (procedures and variables)
-declared at the outermost scope.  This allows making such constructs either
-visible or invisible to profilers with a single changed #define.
-
-Use const wherever possible and appropriate.
-
-If you find yourself wanting to use void *, try to find an alternative using
-unions or (in the case of super- and subclasses) casts, unless you're
-writing something like a memory manager that really treats memory as opaque.
-
-Use anonymous structures as little as possible.  Declare structure types
-like this (the _t on the type name is preferable but not required):
-
-	typedef struct xxx_yyy_s {
-	  ... members ...
-	} xxx_yyy_t;
-
-Don't declare parameters as being of type float, short, or char.  If you do
-this and forget to include the prototype at a call site, ANSI compilers will
-generate incompatible calling sequences.  Use floatp (a synonym for double)
-instead of float, and use [u]int instead of short or char.
-
-If you have a parameter that is itself a procedure, do list its parameter
-types rather than just using ().
-
-Names
------
+General rules
+-------------
 
 Use fully spelled-out English words in names rather than contractions.  This
 is most important for procedure and macro names, global variables and
@@ -213,49 +433,37 @@ uninformative types like int.  It's not very important for arguments or
 local variables of distinctive types, or for local index or count variables.
 
 Avoid names that run English words together.  hpgl_compute_arc_center is
-preferable to hpgl_compute_arccenter.
+preferable to hpgl_compute_arccenter.  However, for words drawn from some
+externally defined set, like PostScript operators, use the word in its
+well-known form (e.g., gs_setlinewidth rather than gs_set_line_width).
 
 Procedures, variables, and structures visible outside a single .c file
 should generally have a prefix that indicates what subsystem they belong to
 (in the case of Ghostscript, gs_ or gx_).  This rule isn't followed very
 consistently.
 
-Commenting
-----------
+Conventional names
+------------------
 
-The most important descriptive comments are ones in header files that
-describe structures, including invariants.  But every procedure or structure
-declaration, or group of other declarations, should have a comment.
+Within the Ghostscript code, certain names are used consistently for certain
+kinds of values.  Here are some of the most common and least obvious:
 
-Other formatting
-----------------
+	code - a value to be returned from a procedure where <0 means an
+	error code defined in gserrors.h (or errors.h), 0 means a normal
+	return, and >0 means a non-standard but successful return (which
+	must be documented, preferably with the procedure's prototype).
 
-Format procedures as follows:
-
-scope return_type
-proc_name(type1 arg1, type2 arg2, type3 arg3, type4 verylongargument4,
-  type5 argument5)
-{	... body ...
-}
-
-Leave a blank line after the declarations of local variables in a procedure
-or compound statement, unless there's only 1 variable and the scope is less
-than 10 lines or so.
+	status - a value returned from a stream procedure: 0 means a
+	normal return (or, from the 'process' procedure, means that
+	more input is needed); 1 (from the 'process' procedure) means
+	that more output space is needed; <0 indicates an exceptional
+	condition as defined in scommon.h.
 
 Other
------
+=====
 
-When calling a variable or parameter procedure, do use explicit indirection,
-e.g., (*func)(...) rather than func(...).  It makes it clearer to the reader
-what is going on.  Also, not all compilers accept the elision.  (gcc accepts
-a dismaying number of constructs that other compilers dislike.)
-
-ANSI compilers in their default mode do all floating point computations in
-double precision, so never cast a float to a double explicitly.
-
-Unless there's a good reason for doing otherwise, return floatp (double)
-rather than float values.  Many FPUs do everything in double internally and
-have to do extra work to convert between double and float.
+Single-use procedures
+---------------------
 
 In general, don't create procedures that are private and only called from
 one place.  However, if a compound statement (especially an arm of a
@@ -264,22 +472,16 @@ its { (i.e., it's longer than 10 or 15 lines), and it doesn't use or set a
 lot of state held in outer local variables, putting it in a procedure may
 help readability.
 
-Global variables
-----------------
-
-Avoid global variables (non-const data) like the plague.  Avoid global const
-data, but don't knock yourself out over it.
-
 Local variables
 ---------------
 
-Avoid assigning new values to procedure parameters.  It makes debugging very
+Don't assign new values to procedure parameters.  It makes debugging very
 confusing when the parameter values printed for a procedure are not the ones
 actually supplied by the caller.  Instead, use a separate local variable
 that is initialized to the value of the parameter.
 
 If a local variable only gets assigned a value once, assign it that value at
-its declaration, if convenient.  E.g.,
+its declaration, if possible.  E.g.,
 
 		int x = <some expression>;
 
@@ -288,6 +490,15 @@ rather than
 		int x;
 		...
 		x = <some expression>;
+
+Use a local pointer variable like this to "narrow" pointer types, e.g.
+
+	int
+	someproc(... gx_device *dev ...)
+	{
+	    gx_device_printer *const pdev = (gx_device_printer *)dev;
+	    ...
+	}
 
 Error handling
 --------------
@@ -298,32 +509,4 @@ return other than the normal case, and <0 indicates an error.  All callers
 should check for error returns and, in general, propagate them to *their*
 caller.
 
-Preprocessor conditionals
--------------------------
-
-Conditionals can easily lead to unreadable code, since the eye really wants
-to read linearly rather than having to parse the conditionals just to figure
-out what code is relevant.  It's OK to use conditionals that have small
-scope and that don't change the structure or logic of the program
-(typically, they select between different sets of values depending on some
-configuration parameter), but where possible, break up source modules rather
-than use conditionals that affect the structure or logic.
-
-Preprocessor macros
--------------------
-
-If you define a macro that looks like a procedure, make sure it will work
-wherever a procedure will work.  In particular, put parentheses around every
-use of a macro argument, so that the macro will parse correctly if some of
-the arguments are expressions.
-
-PostScript code
-===============
-
-Put indentation points every 3 spaces.
-
-Format procedure definitions like this:
-
-/procname		% <arg1> <arg2> procname <result1> <result2>
- { ...code...
- } bind def
+----------------------------------------------------------------

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, Russell Lang.  All rights reserved.
+/* Copyright (C) 1996, 1998, Russell Lang.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,7 +17,7 @@
 */
 
 
-// dwdll.cpp
+// Id: dwdll.cpp 
 
 // gsdll class  for MS-Windows
 
@@ -27,7 +27,11 @@
 #include <stdio.h>
 
 extern "C" {
+#include "stdpre.h"
+#undef public
+#include "gpgetenv.h"
 #include "gsdll.h"
+#include "gscdefs.h"
 }
 
 #include "dwdll.h"   // gsdll_class
@@ -44,6 +48,7 @@ char fullname[1024];
 const char *shortname;
 char *p;
 long version;
+int len;
 
     // Don't load if already loaded
     if (hmodule)
@@ -52,8 +57,15 @@ long version;
     initialized = FALSE;
   
 
-    // Try to load DLL first with given path
-    hmodule = LoadLibrary(name);
+    // First try to load DLL with name in registry or environment variable
+    hmodule = (HINSTANCE)NULL;
+    len = sizeof(fullname);
+    if (gp_getenv("GS_DLL", fullname, &len) == 0)
+        hmodule = LoadLibrary(fullname);
+
+    // Next try to load DLL first with given path
+    if (hmodule < (HINSTANCE)HINSTANCE_ERROR)
+        hmodule = LoadLibrary(name);
     if (hmodule < (HINSTANCE)HINSTANCE_ERROR) {
 	// failed
 	// try again, with path of EXE

@@ -17,7 +17,7 @@
 */
 
 
-// dwnodll.cpp
+// Id: dwnodll.cpp 
 
 // gsdll class  for MS-Windows
 

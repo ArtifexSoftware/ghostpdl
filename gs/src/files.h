@@ -1,29 +1,26 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* files.h */
-/* Common declarations for zfile.c and zfileio.c */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: files.h  */
 /* Requires stream.h */
 
-/*
- * In many places below, a do {...} while (0) avoids problems with a possible
- * enclosing 'if'.
- */
+#ifndef files_INCLUDED
+#  define files_INCLUDED
 
 /*
  * File objects store a pointer to a stream in value.pfile.
@@ -42,18 +39,30 @@ int zget_stdin(P1(stream **));
 int zget_stdout(P1(stream **));
 int zget_stderr(P1(stream **));
 extern bool gs_stdin_is_interactive;
+
+/* Export the stdio refs for switching contexts. */
+extern ref ref_stdio[3];
+
+#define ref_stdin ref_stdio[0]
+#define ref_stdout ref_stdio[1]
+#define ref_stderr ref_stdio[2]
 /* An invalid (closed) file. */
 extern stream *invalid_file_entry;
 
-/* Macros for checking file validity. */
+/*
+ * Macros for checking file validity.
+ * NOTE: in order to work around a bug in the Borland 5.0 compiler,
+ * you must use file_is_invalid rather than !file_is_valid.
+ */
 #define file_is_valid(svar,op)\
   (svar = fptr(op), (svar->read_id | svar->write_id) == r_size(op))
+#define file_is_invalid(svar,op)\
+  (svar = fptr(op), (svar->read_id | svar->write_id) != r_size(op))
 #define check_file(svar,op)\
-  do\
-   {	check_type(*(op), t_file);\
-	if ( !file_is_valid(svar, op) ) return_error(e_invalidaccess);\
-   }\
-  while (0)
+  BEGIN\
+    check_type(*(op), t_file);\
+    if ( file_is_invalid(svar, op) ) return_error(e_invalidaccess);\
+  END
 
 /*
  * If a file is open for both reading and writing, its read_id, write_id,
@@ -61,43 +70,41 @@ extern stream *invalid_file_entry;
  * an id check failure will switch it to the other mode.
  */
 int file_switch_to_read(P1(const ref *));
+
 #define check_read_file(svar,op)\
-  do\
-   {	check_read_type(*(op), t_file);\
-	check_read_known_file(svar, op, return);\
-   }\
-  while (0)
+  BEGIN\
+    check_read_type(*(op), t_file);\
+    check_read_known_file(svar, op, return);\
+  END
 #define check_read_known_file(svar,op,error_return)\
   check_read_known_file_else(svar, op, error_return, svar = invalid_file_entry)
 /* The do... avoids problems with a possible enclosed 'if'. */
 #define check_read_known_file_else(svar,op,error_return,invalid_action)\
-  do\
-   {	svar = fptr(op);\
+  BEGIN\
+	svar = fptr(op);\
 	if ( svar->read_id != r_size(op) )\
 	{	if ( svar->read_id == 0 && svar->write_id == r_size(op) )\
 		{	int fcode = file_switch_to_read(op);\
 			if ( fcode < 0 ) error_return(fcode);\
 		}\
-		else do { invalid_action; } while (0);	/* closed or reopened file */\
+		else BEGIN invalid_action; END;	/* closed or reopened file */\
 	}\
-   }\
-  while (0)
+  END
 int file_switch_to_write(P1(const ref *));
+
 #define check_write_file(svar,op)\
-  do\
-   {	check_write_type(*(op), t_file);\
-	check_write_known_file(svar, op, return);\
-   }\
-  while (0)
+  BEGIN\
+    check_write_type(*(op), t_file);\
+    check_write_known_file(svar, op, return);\
+  END
 #define check_write_known_file(svar,op,error_return)\
-  do\
-   {	svar = fptr(op);\
-	if ( svar->write_id != r_size(op) )\
+  BEGIN\
+    svar = fptr(op);\
+    if ( svar->write_id != r_size(op) )\
 	{	int fcode = file_switch_to_write(op);\
 		if ( fcode < 0 ) error_return(fcode);\
 	}\
-   }\
-  while (0)
+  END
 
 /* Data exported by zfile.c. */
 	/* for zfilter.c and ziodev.c */
@@ -106,32 +113,39 @@ extern const uint file_default_buffer_size;
 /* Procedures exported by zfile.c. */
 	/* for gs.c */
 FILE *lib_fopen(P1(const char *));
+
 	/* for gsmain.c */
 int lib_file_open(P6(const char *, uint, byte *, uint, uint *, ref *));
+
 	/* for iccinit.c */
 int file_read_string(P3(const byte *, uint, ref *));
+
 	/* for os_open in ziodev.c */
-#ifdef iodev_proc_fopen			/* in gxiodev.h */
+#ifdef iodev_proc_fopen		/* in gxiodev.h */
 int file_open_stream(P6(const char *, uint, const char *, uint,
-  stream **, iodev_proc_fopen_t));
+			stream **, iodev_proc_fopen_t));
+
 #endif
 	/* for zfilter.c */
-int filter_open(P6(const char *, uint, ref *, const stream_procs _ds *,
-  const stream_template *, const stream_state *));
+int filter_open(P6(const char *, uint, ref *, const stream_procs *,
+		   const stream_template *, const stream_state *));
+
 	/* for zfileio.c */
 void make_stream_file(P3(ref *, stream *, const char *));
+
 	/* for ziodev.c */
 int file_close_finish(P1(stream *));
 int file_close_disable(P1(stream *));
 int file_close_file(P1(stream *));
+
 	/* for gsmain.c, interp.c */
 int file_close(P1(ref *));
-	/* for ziodev.c */
+
+	/* for zfproc.c, ziodev.c */
 stream *file_alloc_stream(P2(gs_memory_t *, client_name_t));
-	/* for isave.c */
-void file_save(P0());
-/*void file_restore(P1(const alloc_save_t *));*/
 
 /* Procedures exported by zfileio.c. */
 	/* for ziodev.c */
 int zreadline_from(P5(stream *, byte *, uint, uint *, bool *));
+
+#endif /* files_INCLUDED */

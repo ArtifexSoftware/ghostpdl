@@ -17,7 +17,7 @@
 */
 
 
-// dwmain.cpp
+// Id: dwmain.cpp 
 // Ghostscript DLL loader for Windows
 
 #define STRICT

@@ -17,8 +17,9 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: README 
 ****************************************************
-* This file describes version 5.14 of Ghostscript. *
+* This file describes version 5.27 of Ghostscript. *
 ****************************************************
 
 If this is your first contact with Ghostscript, we suggest you read the file
@@ -40,11 +41,11 @@ overview of:
 	- what to do if you have problems (the "If you need help" section).
 
 The rest of this README file is a road map to the documentation files that
-are part of the fileset.  If you are a new user, we suggest you look through
-it now.  After that, we recommend you read install.txt, which tells you how
-to install Ghostscript, and make.txt, which tells you how to compile
-Ghostscript from source code (which is required before installation on Unix
-and VMS systems).
+are part of the fileset and/or available on the Web.  If you are a new user,
+we suggest you look through it now.  After that, we recommend you read
+install.txt, which tells you how to install Ghostscript, and make.txt, which
+tells you how to compile Ghostscript from source code (which is required
+before installation on Unix and VMS systems).
 
 ********
 ******** Documentation overview ********
@@ -52,6 +53,9 @@ and VMS systems).
 
 There is a Ghostscript World Wide Web home page at 
 	http://www.cs.wisc.edu/~ghost/index.html
+If you have access to the Web, you will find helpful information there, such
+as a FAQ and a list of known problems and workarounds for the current
+Aladdin Ghostscript release (in the "Obtaining" file for that release).
 
 All the file names mentioned in the documentation, except for README and
 NEWS, are in lower case, which is the usual convention for Unix systems.  On
@@ -71,9 +75,10 @@ Then read as many of the following as seem relevant:
 > use.txt - information about to use Ghostscript.  Some of this information
 is also contained in gs.1 - a `man' page for Ghostscript.
 
-> The catalog at the beginning of devs.mak, which lists all the devices for
-which Ghostscript is able to produce output (although if you got Ghostscript
-in binary form, it will only include a subset of these devices).
+> The catalogs at the beginning of devs.mak and contrib.mak, which list all
+the devices for which Ghostscript is able to produce output (although if you
+got Ghostscript in binary form, it will only include a subset of these
+devices).
 
 > devices.txt - more detailed information about some specific devices that
 Ghostscript knows about.
@@ -133,6 +138,8 @@ What if I'm a developer?
 
 If you are going to be writing a new driver for Ghostscript, you
 should read:
+
+> source.txt - a guide to the Ghostscript sources.
 
 > drivers.txt - the interface between Ghostscript and device drivers.
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevevga.c */
+/*Id: gdevevga.c  */
 /* IBM PC EGA and VGA display drivers */
 /* All of the real code is in gdevpcfb.c. */
 #include "memory_.h"

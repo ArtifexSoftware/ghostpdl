@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: bug-form.txt 
 This file, bug-form.txt, contains an e-mailable form for reporting problems.
 Please read the section titled "If you need help" in new-user.txt before
 using the form below.  For an overview of Ghostscript and a list of the
@@ -24,9 +25,17 @@ documentation files, see README.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Please e-mail the completed form to ghost@aladdin.com.  We can't promise to
-investigate every reported problem, but we do give priority to those
-reported using this form.  Thanks.
+Before you send in a bug report, please check the list of problems found
+after the latest release.  Currently you will find this list at
+	http://www.vix.com/ghost/post###.html
+where ### is the release number (e.g., 510).
+
+If your problem hasn't been reported yet, please fill out this form and
+e-mail it to ghost@aladdin.com.  We can't promise to investigate every
+reported problem, but we do give priority to those reported using this form.
+It is very important that you fill out *every* applicable entry: in
+particular, we can't investigate problem if you don't provide the input
+data.  Thanks.
 
 ------snip------snip------snip------snip------snip------snip------snip------
 

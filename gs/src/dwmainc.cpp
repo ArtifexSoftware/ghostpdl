@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, Russell Lang.  All rights reserved.
+/* Copyright (C) 1996-1998, Russell Lang.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,7 +17,7 @@
 */
 
 
-// dwmainc.cpp
+// Id: dwmainc.cpp 
 // Ghostscript DLL loader for Windows 95/NT
 // For WINDOWCOMPAT (console mode) application
 
@@ -28,6 +28,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dos.h>
+#include <fcntl.h>
+#include <io.h>
 extern "C" {
 #include "gscdefs.h"
 #define GSREVISION gs_revision
@@ -59,6 +61,8 @@ new_main(int argc, char *argv[])
 {
 typedef char FAR * FARARGV_PTR;
 int rc;
+
+    setmode(fileno(stdin), O_BINARY);
 
     // load DLL
     if (gsdll.load(ghInstance, szDllName, GSREVISION)) {
@@ -197,9 +201,10 @@ char buf[256];
 	    return count;
 	case GSDLL_DEVICE:
 	    if (count) {
-		fputs("mswindll device not supported by the command\n\
-line version of Ghostscript.  Select a different device using\n\
--sDEVICE= as described in use.txt.\n", stdout);
+		fputs("\n\
+The mswindll device is not supported by the command line version of\n\
+Ghostscript.  Select a different device using -sDEVICE= as described\n\
+in use.txt.\n", stdout);
 	    }
 	    break;
 	case GSDLL_SYNC:
