@@ -799,7 +799,7 @@ $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
  $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfg.$(OBJ) $(C_) $(GLSRC)gdevpdfg.c
 
-$(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c\
+$(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c $(memory__h)\
  $(gx_h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gsdevice_h) $(gserrors_h) $(gsflip_h) $(gsiparm4_h)\
@@ -808,7 +808,7 @@ $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c\
 
 $(GLOBJ)gdevpdfj.$(OBJ) : $(GLSRC)gdevpdfj.c\
  $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gdevpsds_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gserrors_h) $(gsiparm4_h) $(gxcspace_h)
 	$(GLJCC) $(GLO_)gdevpdfj.$(OBJ) $(C_) $(GLSRC)gdevpdfj.c
 
