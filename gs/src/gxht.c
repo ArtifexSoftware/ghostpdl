@@ -45,6 +45,7 @@ private dev_color_proc_save_dc(gx_dc_ht_binary_save_dc);
 private dev_color_proc_get_dev_halftone(gx_dc_ht_binary_get_dev_halftone);
 private dev_color_proc_load(gx_dc_ht_binary_load);
 private dev_color_proc_fill_rectangle(gx_dc_ht_binary_fill_rectangle);
+private dev_color_proc_fill_masked(gx_dc_ht_binary_fill_masked);
 private dev_color_proc_equal(gx_dc_ht_binary_equal);
 private dev_color_proc_write(gx_dc_ht_binary_write);
 private dev_color_proc_read(gx_dc_ht_binary_read);
@@ -54,7 +55,7 @@ const gx_device_color_type_t
  gx_dc_ht_binary_save_dc, gx_dc_ht_binary_get_dev_halftone,
  gx_dc_ht_get_phase,
  gx_dc_ht_binary_load, gx_dc_ht_binary_fill_rectangle,
- gx_dc_default_fill_masked, gx_dc_ht_binary_equal,
+ gx_dc_ht_binary_fill_masked, gx_dc_ht_binary_equal,
  gx_dc_ht_binary_write, gx_dc_ht_binary_read,
  gx_dc_ht_binary_get_nonzero_comps
 };
@@ -180,18 +181,8 @@ gx_ht_free_cache(gs_memory_t * mem, gx_ht_cache * pcache)
 bool
 gx_check_tile_cache_current(const gs_imager_state * pis)
 {
-#ifdef TO_DO_DEVICEN
-    const gx_ht_order *porder = &pis->dev_ht->order;
-    gx_ht_cache *pcache = pis->ht_cache;
-
-    if (pcache == 0 || pis->dev_ht == 0 ||	/* no halftone or cache */
-        pcache->order.bit_data != porder->bit_data)	/* not current */
-	return false;
-    /* else */
-    return true;
-#else
+    /* TO_DO_DEVICEN - this routine is no longer used - delete. */
     return false;
-#endif
 }
 
 /* Make the cache order current, and return whether */
@@ -199,46 +190,8 @@ gx_check_tile_cache_current(const gs_imager_state * pis)
 bool
 gx_check_tile_cache(const gs_imager_state * pis)
 {
-#ifdef TO_DO_DEVICEN
-    const gx_ht_order *porder = &pis->dev_ht->order;
-    gx_ht_cache *pcache = pis->ht_cache;
-
-    if (pcache == 0 || pis->dev_ht == 0)
-	return false;		/* no halftone or cache */
-    if (pcache->order.bit_data != porder->bit_data)
-	gx_ht_init_cache(pcache, porder);
-    if (pcache->tiles_fit >= 0)
-	return (bool)pcache->tiles_fit;
-    {
-	bool fit = false;
-	int bits_per_level;
-
-	if (pcache->num_cached < porder->num_levels)
-	    DO_NOTHING;
-	else if (pcache->levels_per_tile == 1)
-	    fit = true;
-	/*
-	 * All the tiles fit iff bits and levels are exactly N-for-1, where
-	 * N is a multiple of levels_per_tile.
-	 */
-	else if (porder->num_bits % porder->num_levels == 0 &&
-		 (bits_per_level = porder->num_bits / porder->num_levels) %
-		   pcache->levels_per_tile == 0) {
-	    /* Check the N-for-1 property. */
-	    const uint *level = porder->levels;
-	    int i = porder->num_levels, j = 0;
-
-	    for (; i > 0; --i, j += bits_per_level, ++level)
-		if (*level != j)
-		    break;
-	    fit = i == 0;
-	}
-	pcache->tiles_fit = (int)fit;
-	return fit;
-    }
-#else
+    /* TO_DO_DEVICEN - this routine is no longer used - delete. */
     return false;
-#endif
 }
 
 /*
@@ -253,6 +206,7 @@ int
 gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 		   gs_color_select_t select, int *ppx)
 {
+    /* TO_DO_DEVICEN - this routine is no longer used - delete. */
     return -1;
 }
 
@@ -341,20 +295,36 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
 
     if (pcache->order.bit_data != porder->bit_data)
 	gx_ht_init_cache(pcache, porder);
-    /* Expand gx_render_ht inline for speed. */
-    {
-	int b_level = pdevc->colors.binary.b_level;
-	int level = porder->levels[b_level];
-	gx_ht_tile *bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+    /*
+     * We do not load the cache now.  Instead we wait until we are ready
+     * to actually render the color.  This allows multiple colors to be
+     * loaded without cache conflicts.  (Cache conflicts can occur when
+     * if two device colors use the same cache elements.  This can occur
+     * when the tile size is large enough that we do not have a separate
+     * tile for each half tone level.)  See gx_dc_ht_binary_load_cache.
+     */
+    return 0;
+}
 
-	if (bt->level != level) {
-	    int code = render_ht(bt, level, porder,
-				 pcache->base_id + b_level);
+/*
+ * Load the half tone tile in the halftone cache.
+ */
+private int
+gx_dc_ht_binary_load_cache(const gx_device_color * pdevc)
+{
+    int component_index = pdevc->colors.binary.b_index;
+    const gx_ht_order *porder =
+	 &pdevc->colors.binary.b_ht->components[component_index].corder;
+    gx_ht_cache *pcache = porder->cache;
+    int b_level = pdevc->colors.binary.b_level;
+    int level = porder->levels[b_level];
+    gx_ht_tile *bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
 
-	    if (code < 0)
-		return_error(gs_error_Fatal);
-	}
-	pdevc->colors.binary.b_tile = bt;
+    if (bt->level != level) {
+	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
+
+	if (code < 0)
+	    return_error(gs_error_Fatal);
     }
     return 0;
 }
@@ -368,6 +338,8 @@ gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 {
     gx_rop_source_t no_source;
 
+    /* Load the halftone cache for the color */
+    gx_dc_ht_binary_load_cache(pdevc);
     /*
      * Observation of H-P devices and documentation yields confusing
      * evidence about whether white pixels in halftones are always
@@ -396,6 +368,26 @@ gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 					     pdevc->colors.binary.color,
 				 x, y, w, h, pdevc->phase.x, pdevc->phase.y,
 					     lop);
+}
+
+private int
+gx_dc_ht_binary_fill_masked(const gx_device_color * pdevc, const byte * data,
+	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
+		   gx_device * dev, gs_logical_operation_t lop, bool invert)
+{
+    /*
+     * Load the halftone cache for the color.  We do not do it earlier
+     * because for small halftone caches, each cache tile may be used for
+     * for more than one halftone level.  This can cause conflicts if more
+     * than one device color has been set and they use the same cache
+     * entry.
+     */
+    int code = gx_dc_ht_binary_load_cache(pdevc);
+
+    if (code < 0)
+	return code;
+    return gx_dc_default_fill_masked(pdevc, data, data_x, raster, id,
+		    			x, y, w, h, dev, lop, invert);
 }
 
 /* Compare two binary halftones for equality. */

@@ -515,35 +515,9 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 				IMAGE_SET_GRAY(run);
 				htrun = run;
 			    }
-			    /* We open-code gx_fill_rectangle, */
-			    /* because we've done some of the work for */
-			    /* halftone tiles in advance. */
-			    if (color_is_pure(pdevc)) {
-				code = (*fill_proc) (dev, xi, yt, wi, iht,
-						     pdevc->colors.pure);
-			    } else if (!color_is_binary_halftone(pdevc)) {
-				code =
-				    gx_fill_rectangle_device_rop(xi, yt, wi, iht,
-							   pdevc, dev, lop);
-			    } else if (tile_offset >= 0 &&
-				(tile = &pdevc->colors.binary.b_tile->tiles,
-				 (tsx = (xi + phase_x) % tile->rep_width) + wi <= tile->size.x)
-				) {	/* The pixel(s) fit(s) in a single (binary) tile. */
-				byte *row = tile->data + tile_offset;
+                            code = gx_fill_rectangle_device_rop(xi, yt, wi, iht,
+                                                                 pdevc, dev, lop);
 
-				code = (*copy_mono_proc)
-				    (dev, row, tsx, tile->raster, gx_no_bitmap_id,
-				     xi, yt, wi, iht,
-				     pdevc->colors.binary.color[0],
-				     pdevc->colors.binary.color[1]);
-			    } else {
-				code = (*tile_proc) (dev,
-					&pdevc->colors.binary.b_tile->tiles,
-						     xi, yt, wi, iht,
-					      pdevc->colors.binary.color[0],
-					      pdevc->colors.binary.color[1],
-					    pdevc->phase.x, pdevc->phase.y);
-			    }
 		    }
 		    if (code < 0)
 			goto err;
