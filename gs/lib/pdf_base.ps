@@ -511,7 +511,7 @@ pdfdict begin
 % Extract and apply filters.
 /filterparms {		% <dict> <DPkey> <Fkey> filterparms
 			%   <dict> <parms> <filternames>
-  2 index exch .knownget {
+  2 index exch knownoget {
     exch 2 index exch .knownget {
 		% Both filters and parameters.
       exch dup type /nametype eq {
