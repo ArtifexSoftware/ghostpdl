@@ -29,6 +29,8 @@
  * Bug fixed by Pierre Arnaud 2000-03-09 (win_pr2_put_params error when is_open)
  * Bug fixed by Pierre Arnaud 2000-03-20 (win_pr2_set_bpp did not set anti_alias)
  * Bug fixed by Pierre Arnaud 2000-03-22 (win_pr2_set_bpp depth was wrong)
+ * Modified by Pierre Arnaud 2000-12-12 (mainly added support for Tumble)
+ * Bug fixed by Pierre Arnaud 2000-12-18 (-dQueryUser now works from cmd line)
  */
 
 /* This driver uses the printer default size and resolution and
@@ -46,7 +48,7 @@
  * rjl 1997-11-20
  */
 
-/* Additions by Pierre Arnaud (Pierre.Arnaud@iname.com) 1992-11-20
+/* Additions by Pierre Arnaud (Pierre.Arnaud@opac.ch)
  *
  * The driver has been extended in order to provide some run-time
  * feed-back about the default Windows printer and to give the user
@@ -185,6 +187,8 @@ struct gx_device_win_pr2_s {
     int max_dpi;		/* maximum resolution in DPI */
     int ratio;			/* stretch ratio when printing */
     int selected_bpp;		/* selected bpp, memorised by win_pr2_set_bpp */
+    bool tumble;		/* tumble setting (with duplex) */
+    int query_user;		/* query user (-dQueryUser) */
 
     HANDLE win32_hdevmode;	/* handle to device mode information */
     HANDLE win32_hdevnames;	/* handle to device names information */
@@ -220,6 +224,8 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
     0,				/* max_dpi */
     0,				/* ratio */
     0,				/* selected_bpp */
+    false,			/* tumble */
+    -1,				/* query_user */
     NULL,			/* win32_hdevmode */
     NULL,			/* win32_hdevnames */
     NULL,			/* lpfnAbortProc */
@@ -697,7 +703,14 @@ win_pr2_get_params(gx_device * pdev, gs_param_list * plist)
 	code = param_write_bool(plist, "NoCancel",
 				&(wdev->nocancel));
     if (code >= 0)
+	code = param_write_bool(plist, "QueryUser",
+				&(wdev->query_user));
+    if (code >= 0)
 	code = win_pr2_write_user_settings(wdev, plist);
+    
+    if ((code >= 0) && (wdev->Duplex_set > 0))
+	code = param_write_bool(plist, "Tumble",
+				&(wdev->tumble));
 
     return code;
 }
@@ -711,9 +724,11 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
     int ecode = 0, code;
     int old_bpp = pdev->color_info.depth;
     int bpp = old_bpp;
+    bool tumble   = wdev->tumble;
     bool nocancel = wdev->nocancel;
     int queryuser = 0;
     bool old_duplex = wdev->Duplex;
+    bool old_tumble = wdev->tumble;
     int  old_orient = wdev->user_orient;
     int  old_color  = wdev->user_color;
     int  old_paper  = wdev->user_paper;
@@ -722,6 +737,7 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
     if (wdev->Duplex_set < 0) {
 	wdev->Duplex_set = 0;
 	wdev->Duplex = false;
+	wdev->tumble = false;
     }
     
     win_pr2_copy_check(wdev);
@@ -766,6 +782,17 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 	    break;
     }
 
+    switch (code = param_read_bool(plist, "Tumble", &tumble)) {
+	case 0:
+	    wdev->tumble = tumble;
+	    break;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, "Tumble", ecode);
+	case 1:
+	    break;
+    }
+
     switch (code = param_read_int(plist, "QueryUser", &queryuser)) {
 	case 0:
 	    if ((queryuser > 0) &&
@@ -785,6 +812,7 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
     
     if (wdev->win32_hdevmode && wdev->hdcprn) {
 	if ( (old_duplex != wdev->Duplex)
+	  || (old_tumble != wdev->tumble)
 	  || (old_orient != wdev->user_orient)
 	  || (old_color  != wdev->user_color)
 	  || (old_paper  != wdev->user_paper)
@@ -1089,6 +1117,7 @@ win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
     if (pdevmode->dmFields & DM_DUPLEX) {
 	dev->Duplex_set = 1;
 	dev->Duplex = pdevmode->dmDuplex == DMDUP_SIMPLEX ? false : true;
+	dev->tumble = pdevmode->dmDuplex == DMDUP_HORIZONTAL ? true : false;
     }
     
     return TRUE;
@@ -1101,9 +1130,9 @@ win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
 	pdevmode->dmFields |= DM_DUPLEX;
 	pdevmode->dmDuplex = DMDUP_SIMPLEX;
 	if (dev->Duplex) {
-/*	    if (dev->Tumble) {
+	    if (dev->tumble == false) {
 		pdevmode->dmDuplex = DMDUP_VERTICAL;
-	    } else */ {
+	    } else {
 		pdevmode->dmDuplex = DMDUP_HORIZONTAL;
 	    }
 	}
@@ -1329,6 +1358,7 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
     LPDEVNAMES devnames;
 
     wdev->user_changed_settings = FALSE;
+    wdev->query_user = mode;
 
     memset(&pd, 0, sizeof(pd));
     pd.lStructSize = sizeof(pd);
@@ -1378,6 +1408,7 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
     if (devmode->dmFields & DM_DUPLEX) {
 	wdev->Duplex_set = 1;
 	wdev->Duplex = devmode->dmDuplex == DMDUP_SIMPLEX ? false : true;
+	wdev->tumble = devmode->dmDuplex == DMDUP_HORIZONTAL ? true : false;
     }
 
     {
