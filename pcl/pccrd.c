@@ -414,9 +414,6 @@ pcl_crd_set_crd(
     if (pcs->pids->pcrd == pcrd)
         return 0;
 
-    gs_cie_render_init(pcrd->pgscrd);
-    gs_cie_render_sample(pcrd->pgscrd);
-
     if ((code = gs_setcolorrendering(pcs->pgs, pcrd->pgscrd)) >= 0)
         pcl_crd_copy_from(pcs->pids->pcrd, pcrd);
     return code;
