@@ -1756,7 +1756,7 @@ gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h)
 psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ)
 psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
 psf_=$(psf_1) $(psf_2)
-$(DD)psf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psf_)
+$(DD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
 	$(SETMOD) $(DD)psf $(psf_1)
 	$(ADDMOD) $(DD)psf -obj $(psf_2)
 
