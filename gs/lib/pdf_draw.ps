@@ -61,6 +61,8 @@ pdfdict begin
 
 /.resolvefn3 {
   dup length dict .copydict
+  dup /Bounds 2 copy knownoget { put } { pop pop } ifelse
+  dup /Encode 2 copy knownoget { put } { pop pop } ifelse
   dup /Functions 2 copy oget mark exch dup {
     oforce .resolvefn
   } forall
