@@ -52,9 +52,9 @@ void psw_begin_file_header(P5(FILE *f, const gx_device *dev,
 void psw_end_file_header(P1(FILE *f));
 
 /* End the file. */
-void psw_end_file(P4(FILE *f, const gx_device *dev,
+void psw_end_file(P5(FILE *f, const gx_device *dev,
 		     const gx_device_pswrite_common_t *pdpc,
-		     const gs_rect *pbbox));
+		     const gs_rect *pbbox, int page_count));
 
 /* ---------------- Page level ---------------- */
 

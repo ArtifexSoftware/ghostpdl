@@ -206,11 +206,12 @@ psw_end_file_header(FILE *f)
  */
 void
 psw_end_file(FILE *f, const gx_device *dev,
-	     const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox)
+	     const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox,
+             int page_count)
 {
     if (f == NULL)
         return;		/* clients should be more careful */
-    fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", dev->PageCount);
+    fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", page_count);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
 	if (pdpc->bbox_position >= 0) {
 	    long save_pos = ftell(f);

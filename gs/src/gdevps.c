@@ -943,7 +943,8 @@ psw_close(gx_device * dev)
 	    dev->PageCount++;
 	}
     }
-    psw_end_file(f, dev, &pdev->pswrite_common, &bbox);
+    psw_end_file(f, dev, &pdev->pswrite_common, &bbox, 
+                 (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount));
     gs_free_object(pdev->v_memory, pdev->image_writer,
 		   "psw_close(image_writer)");
     pdev->image_writer = 0;

@@ -247,7 +247,8 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 private int
 psmono_close(gx_device *dev)
 {
-    psw_end_file(((gx_device_printer *)dev)->file, dev, &psmono_values, NULL);
+    psw_end_file(((gx_device_printer *)dev)->file, dev, &psmono_values, NULL, 
+                 dev->PageCount);
     return gdev_prn_close(dev);
 }
 
@@ -406,6 +407,7 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
 private int
 psrgb_close(gx_device *dev)
 {
-    psw_end_file(((gx_device_printer *)dev)->file, dev, &psrgb_values, NULL);
+    psw_end_file(((gx_device_printer *)dev)->file, dev, &psrgb_values, NULL, 
+                 dev->PageCount);
     return gdev_prn_close(dev);
 }
