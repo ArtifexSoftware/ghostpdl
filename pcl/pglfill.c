@@ -67,7 +67,7 @@ hpgl_AC(
  * FT 3[,spacing[,angle]];
  * FT 4[,spacing[,angle]];
  * FT 10[,level];
- * FT 11[,index];
+ * FT 11[,index][,use_pen_1_or_cur_pen]; - varies from documentation
  * FT 21[,type];
  * FT 22[,id];
  * FT;
@@ -92,7 +92,8 @@ hpgl_FT(
 	pgls->g.fill.param.crosshatch.spacing = 0;
 	pgls->g.fill.param.crosshatch.angle = 0;
 	pgls->g.fill.param.shading = 100;
-	pgls->g.fill.param.pattern_index = 1;  /****** NOT SURE ******/
+	pgls->g.fill.param.user_defined.pattern_index = 1;
+        pgls->g.fill.param.user_defined.use_current_pen = false;
 	pgls->g.fill.param.pattern_type = 1;  /****** NOT SURE ******/
 	pgls->g.fill.param.pattern_id = 0;  /****** NOT SURE ******/
 	break;
@@ -139,13 +140,19 @@ hatch:
 
       case hpgl_FT_pattern_RF: /* 11 */
 	{
-            int     index;
+            int     index, mode;
 
-	    if (hpgl_arg_c_int(pargs, &index)) {
-                if ((index < 1) || (index > 8))
-		    return e_Range;
-		pgls->g.fill.param.pattern_id = index;
-	    }
+            /* contrary to the documentation, option 2 is used */
+	    if (!hpgl_arg_int(pargs, &index))
+                index = pgls->g.fill.param.user_defined.pattern_index;
+            else if ((index < 1) || (index > 8))
+                return e_Range;
+	    if (!hpgl_arg_c_int(pargs, &mode))
+		mode = pgls->g.fill.param.user_defined.use_current_pen;
+            else if ((mode & ~1) != 0)
+		 return e_Range;
+	    pgls->g.fill.param.user_defined.pattern_index = index;
+	    pgls->g.fill.param.user_defined.use_current_pen = mode;
 	}
 	break;
 
@@ -372,7 +379,7 @@ hpgl_PP(
 	    return e_Range;
     }
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-    pgls->grid_adjust = (mode == 0) ? 0.5 : 0.0;
+    pgls->pp_mode = mode;
     return 0;
 }
 
@@ -440,6 +447,12 @@ hpgl_PW(
 
 /*
  * RF [index[,width,height,pen...]];
+ *
+ * Nominally, patterns generated via RF are colored patterns. For backwards
+ * compatibility with PCL 5e, however, they may also be uncolored patterns. The
+ * determining factor is whether or not all of the entries in the pattern are
+ * 0 or 1: if so, the pattern is an uncolored pattern; otherwise it is a colored
+ * pattern.
  */
   int
 hpgl_RF(
@@ -450,6 +463,7 @@ hpgl_RF(
     uint            index, width, height;
     gs_depth_bitmap pixmap;
     int             code = 0;
+    bool            is_mask = true;
     byte *          data;
 
     if (pargs->phase == 0) {
@@ -479,12 +493,13 @@ hpgl_RF(
 
         /*
          * All variables must be saved in globals since the parser
-         * the parser reinvokes hpgl_RF() while processing data.
-         * (is this really the case?? - jan)
+         * the parser reinvokes hpgl_RF() while processing data
+         * (hpgl_arg_c_int can execute a longjmp).
          */
 	pgls->g.raster_fill.width = width;
 	pgls->g.raster_fill.height = height;
         pgls->g.raster_fill.data = data;
+        pgls->g.raster_fill.is_mask = is_mask;
 
         /* set bitmap to 0, as not all pens need be provided */
 	memset(data, 0, width * height);
@@ -494,6 +509,7 @@ hpgl_RF(
         width = pgls->g.raster_fill.width;
         height = pgls->g.raster_fill.height;
         data = pgls->g.raster_fill.data;
+        is_mask = pgls->g.raster_fill.is_mask;
     }
 
     while ((pargs->phase - 1) < width * height) {
@@ -501,18 +517,64 @@ hpgl_RF(
 
 	if (!hpgl_arg_c_int(pargs, &pixel))
 	    break;
-	if (pixel != 0)
+	if (pixel != 0) {
             data[pargs->phase - 1] = pixel;
+            if (pixel != 1)
+                is_mask = false;
+        }
         hpgl_next_phase(pargs);
     }
 
+    /* if the pattern is uncolored, collapse it to 1-bit per pixel */
+    if (is_mask) {
+        int     raster = (width + 7) / 8;
+        byte *  mdata = gs_alloc_bytes( pgls->memory,
+                                        height * raster,
+                                        "hpgl mask raster fill"
+                                        );
+        byte *  pb1 = data;
+        byte *  pb2 = mdata;
+        int     i;
+
+        if (mdata == 0) {
+            gs_free_object(pgls->memory, data, "hpgl raster fill");
+            return e_Memory;
+        }
+
+        for (i = 0; i < height; i++) {
+            int     mask = 0x80;
+            int     outval = 0;
+            int     j;
+
+            for (j = 0; j < width; j++) {
+                if (*pb1++ != 0)
+                    outval |= mask;
+                if ((mask >>= 1) == 0) {
+                    *pb2++ = outval;
+                    outval = 0;
+                    mask = 0x80;
+		}
+            }
+
+            if (mask != 0x80)
+                *pb2++ = outval;
+        }
+
+        gs_free_object(pgls->memory, data, "hpgl raster fill");
+        pixmap.data = mdata;
+        pixmap.raster = raster;
+        pixmap.pix_depth = 1;
+
+    } else {
+        pixmap.data = data;
+        pixmap.raster = width;
+        pixmap.pix_depth = 8;
+    }
+
     /* set up the pixmap */
-    pixmap.data = data;
-    pixmap.raster = pgls->g.raster_fill.width;
-    pixmap.size.x = pgls->g.raster_fill.width;
-    pixmap.size.y = pgls->g.raster_fill.height;
+    pixmap.size.x = width;
+    pixmap.size.y = height;
     pixmap.id = 0;
-    pixmap.pix_depth = 8;
     pixmap.num_comps = 1;
 
     if ((code = pcl_pattern_RF(index, &pixmap, pgls)) < 0)
@@ -606,6 +668,11 @@ hpgl_SV(
 	switch (type) {
 
 	  case hpgl_SV_pattern_solid_pen: /* 0 */
+            pgls->g.screen.param.shading = 100;
+            pgls->g.screen.param.user_defined.pattern_index = 1;
+            pgls->g.screen.param.user_defined.use_current_pen = false;
+            pgls->g.screen.param.pattern_type = 1;
+            pgls->g.screen.param.pattern_id = 0;
 	    break;
 
 	  case hpgl_SV_pattern_shade: /* 1 */
@@ -624,11 +691,13 @@ hpgl_SV(
 	    {
                 int     index, mode;
 
-		if ( !hpgl_arg_int(pargs, &index)  ||
-                     (index < 1)                   ||
-                     (index > 8)                   ||
-		     !hpgl_arg_c_int(pargs, &mode) ||
-                     ((mode & ~1) != 0)              )
+		if (!hpgl_arg_int(pargs, &index))
+                    index = pgls->g.screen.param.user_defined.pattern_index;
+                else if ((index < 1) || (index > 8))
+                    return e_Range;
+		if (!hpgl_arg_c_int(pargs, &mode))
+		    mode = pgls->g.screen.param.user_defined.use_current_pen;
+                else if ((mode & ~1) != 0)
 		    return e_Range;
 		pgls->g.screen.param.user_defined.pattern_index = index;
 		pgls->g.screen.param.user_defined.use_current_pen = mode;
@@ -668,6 +737,15 @@ hpgl_SV(
 
 /*
  * TR [mode];
+ *
+ * NB: Though termed "source transparency" in HP's documentation, GL/2
+ *     transparency concept actually corresponds to pattern transparency in
+ *     the PCL sense. GL/2 objects are all logically masks: they have no
+ *     background, and thus are unaffected by source transparency.
+ *
+ *     The GL/2 source and PCL pattern transparency states are, however,
+ *     maintained separately. The former affects only GL/2 objects, the
+ *     latter only objects generated in PCL.
  */
   int
 hpgl_TR(
@@ -681,7 +759,7 @@ hpgl_TR(
 	return e_Range;
 
     /* HAS not sure if pcl's state is updated as well */
-    pgls->g.source_transparent = mode;
+    pgls->g.source_transparent = (mode != 0);
     return 0;
 }
 
