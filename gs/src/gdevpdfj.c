@@ -361,6 +361,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 int
 pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * pbw)
 {
+    stream *save_strm = pdev->strm;
     cos_stream_t *pcos = cos_stream_alloc(pdev, "pdf_make_alt_stream");
     int code;
 
@@ -373,7 +374,11 @@ pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * pbw)
         return_error(gs_error_VMerror);
     pbw->dev = (gx_device_psdf *)pdev;
     pbw->memory = pdev->pdf_memory;
-    return 0;
+    pbw->target = NULL; /* We don't need target with cos_write_stream. */
+    pdev->strm = pbw->strm;
+    code = psdf_begin_binary((gx_device_psdf *) pdev, pbw);
+    pdev->strm = save_strm;
+    return code;
 }
 
 /* Begin writing the image data, setting up the dictionary and filters. */
