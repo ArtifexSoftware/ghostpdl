@@ -128,7 +128,7 @@ search_separator(const char **ip, const char *ipe, const char *item, int directi
  *	"C:/gs/lib" + "../Resource/CMap/H" --> "C:/gs/Resource/CMap/H"
  *	"hard disk:gs:lib" + "::Resource:CMap:H" --> 
  *		"hard disk:gs:Resource:CMap:H"
- *	"DUA1:[GHOSTSCRIPT.LIB" + "..RESOURCE.CMAP]H" --> 
+ *	"DUA1:[GHOSTSCRIPT.LIB" + "-.RESOURCE.CMAP]H" --> 
  *		"DUA1:[GHOSTSCRIPT.RESOURCE.CMAP]H"
  *      "\\server\share/a/b///c/../d.e/./" + "../x.e/././/../../y.z/v.v" --> 
  *		"\\server\share/a/y.z/v.v"
@@ -295,7 +295,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
  *	"C:/gs/lib/../Resource/CMap/H" --> "C:/gs/Resource/CMap/H"
  *	"hard disk:gs:lib::Resource:CMap:H" --> 
  *		"hard disk:gs:Resource:CMap:H"
- *	"DUA1:[GHOSTSCRIPT.LIB..RESOURCE.CMAP]H" --> 
+ *	"DUA1:[GHOSTSCRIPT.LIB.-.RESOURCE.CMAP]H" --> 
  *		"DUA1:[GHOSTSCRIPT.RESOURCE.CMAP]H"
  *      "\\server\share/a/b///c/../d.e/./../x.e/././/../../y.z/v.v" --> 
  *		"\\server\share/a/y.z/v.v"
