@@ -789,18 +789,41 @@ set_colored_pattern(
  *                          For colored patterns, handling is similar to
  *                          pcl_pattern_set_user_pcl.
  *
- *    pattern_set_gl_RF     One additional operand, the index of the
- *                          GL/2 user defined pattern, created with the
- *                          RF command. Handling is similar to
- *                          pcl_pattern_set_user_pcl for colored patterns.
+ *    pattern_set_gl_RF     Two additional operands, the index of the
+ *                          GL/2 user defined pattern (created with the
+ *                          RF command), and the current pen number. The
+ *                          latter is used only for unoclored RF patterns.
+ *
+ *                          To keep life interesting, HP inserted a very
+ *                          odd feature into the behavior of uncolored
+ *                          RF patterns. Generally, the applicable SV or
+ *                          FT command determines whether the current pen
+ *                          or pen 1 is to be used for the foreground pixels.
+ *                          However, if the reference pattern does not exist,
+ *                          the current pen is always used.
+ *
+ *                          To accommodate this behavior within the current
+ *                          scheme, the current pen is passed as a negative
+ *                          number if pen 1 is for a pattern that exists.
  *
  * All procedures return 0 on success, < 0 in the event of an error.
  *
  * If that did not seem to make things complex enough, some additional
- * complications arise for PCL rasters. This is because PCL rasters are
- * themselves colored objects, and thus require a CRD and a halftone to
- * render. In PCL, rasters may also interact with the current color, which
- * may be using a different CRD and halftone.
+ * complications arise for transparency in GL/2 and for PCL rasters.
+ *
+ * GL/2 has a concept of transparency similar to PCL's, though what GL terms
+ * "source" transparency corresponds to PCL's pattern transparency (all GL/2
+ * objects are mask; hence, they have neither color nor background, so the
+ * PCL concept of source transparency is irrelevant for them). Unlike PCL,
+ * however, uncolored patterns in GL/2 are fully transparent if the current
+ * pen is white. The normal code for uncolored patterns is not equipped to
+ * handle this situation, and it make little sense to modify it for what is
+ * not a particular useful case. Hence, a special "unsolid" uncolored pattern
+ * is provided. This pattern has only background, and thus is fully transparent.
+ *
+ * The difficulty with PCL rasters is that, being colored objects, they make
+ * use of a CRD and a halftone to render. Rasters may also interact with the
+ * current color, which may be using a different CRD and halftone.
  *
  * The CRD and halftone to be used with rasters are taken from the current
  * PCL palette. If the current pattern is either solid foreground (the most
@@ -814,10 +837,6 @@ set_colored_pattern(
  * foreground into an uncolored pattern which happens to be "on" everywhere, it
  * is possible to achieve the desired result. For performance reasons, this
  * should be done only when necessary.
- *
- * Still not handled correctly is the case in which the current pattern type
- * is solid white, and a raster is being generated. This case is, however, so
- * rare as to not be of concern.
  */
 
   private int
@@ -848,6 +867,12 @@ pattern_set_white(
     return code;
 }
 
+private int     pattern_set_shade_gl(
+    pcl_state_t *   pcs,
+    int             inten,  /* intensity value */
+    int             pen     /* pen number for foreground */
+);
+
   private int
 pattern_set_pen(
     pcl_state_t *       pcs,
@@ -862,6 +887,10 @@ pattern_set_pen(
     /* put the pen number in the proper range */
     if (pen >= num_entries)
         pen = (pen % (num_entries - 1)) + 1;
+
+    /* check if the current pen is white; if so, use the "unsolid" pattern */
+    if (pcl_cs_indexed_is_white(pindexed, pen))
+        return pattern_set_shade_gl(pcs, 1, pen);
 
     /* set halftone and crd from the palette */
     code = set_ht_crd_from_palette(pcs);
@@ -939,13 +968,15 @@ pattern_set_shade_gl(
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_shade(inten);
 
-    if (pptrn == 0)
+    /* check if the current pen is white; if so, use the "unsolid" pattern */
+    if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
+        pptrn = pcl_pattern_get_unsolid_pattern();
+    else if (pptrn == 0)
         return ( inten <= 0 ? pattern_set_pen(pcs, pen, 0)
                             : pattern_set_white(pcs, 0, 0)   );
-    else {
-        pcl_xfm_gl_set_pat_ref_pt(pcs);
-        return set_uncolored_palette_pattern(pcs, pptrn, pen);
-    }
+    
+    pcl_xfm_gl_set_pat_ref_pt(pcs);
+    return set_uncolored_palette_pattern(pcs, pptrn, pen);
 }
 
   private int
@@ -979,12 +1010,14 @@ pattern_set_hatch_gl(
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_cross(indx);
 
-    if (pptrn == 0)
+    /* check if the current pen is white; if so, use the "unsolid" pattern */
+    if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
+        pptrn = pcl_pattern_get_unsolid_pattern();
+    else if (pptrn == 0)
         return pattern_set_pen(pcs, pen, 0);
-    else {
-        pcl_xfm_gl_set_pat_ref_pt(pcs);
-        return set_uncolored_palette_pattern(pcs, pptrn, pen);
-    }
+
+    pcl_xfm_gl_set_pat_ref_pt(pcs);
+    return set_uncolored_palette_pattern(pcs, pptrn, pen);
 }
 
   private int
@@ -1023,10 +1056,16 @@ pattern_set_user_gl(
     if (pptrn == 0)
         return pattern_set_pen(pcs, 0, 0);
     else {
+
         pcl_xfm_gl_set_pat_ref_pt(pcs);
-        if (pptrn->ppat_data->type == pcl_pattern_uncolored)
+        if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
+
+	    /* check if the current pen is white */
+            if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
+                pptrn = pcl_pattern_get_unsolid_pattern();
             return set_uncolored_palette_pattern(pcs, pptrn, pen);
-        else
+
+        } else
             return set_colored_pattern(pcs, pptrn);
     }
 }
@@ -1035,16 +1074,32 @@ pattern_set_user_gl(
 pattern_set_gl_RF(
     pcl_state_t *   pcs,
     int             indx,   /* GL/2 RF pattern index */
-    int             arg2    /* ignored */
+    int             pen     /* used only for uncolored patterns */
 )
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_gl_uptrn(indx);
 
+    /*
+     * HACK - if pen 1 is to be use for actual uncolored RF patterns, the pen
+     * operand will be the opposite of the current pen number. This allows us
+     * to use the current pen if the pattern does not exist.
+     */
     if (pptrn == 0)
-        return pattern_set_pen(pcs, 0, 0);
+        return pattern_set_pen(pcs, (pen < 0 ? -pen : pen), 0);
     else {
+        if (pen < 0)
+            pen = 1;
+
         pcl_xfm_gl_set_pat_ref_pt(pcs);
-        return set_colored_pattern(pcs, pptrn);
+        if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
+
+            /* check if the current pen is white */
+            if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
+                pptrn = pcl_pattern_get_unsolid_pattern();
+            return set_uncolored_palette_pattern(pcs, pptrn, pen);
+
+        } else
+            return set_colored_pattern(pcs, pptrn);
     }
 }
 
@@ -1165,7 +1220,7 @@ set_pattern_transparency_mode(
 
     if (i <= 1) {
         pcl_break_underline(pcs);
-        pcs->pattern_transparent = (i == 0);
+        pcs->pcl_pattern_transparent = (i == 0);
     }
     return 0;
 }
@@ -1263,11 +1318,13 @@ pattern_do_reset(
 {
     static const uint   mask = (   pcl_reset_initial
                                  | pcl_reset_cold
-                                 | pcl_reset_printer );
+                                 | pcl_reset_printer
+                                 | pcl_reset_overlay );
 
     if ((type & mask) != 0) {
         if ((type  & pcl_reset_initial) != 0)
             pcl_pattern_init_bi_patterns(pcs->memory);
+        pcs->pcl_pattern_transparent = true;
         pcs->pattern_transparent = true;
         pcs->source_transparent = true;
         pcs->pattern_id = 0;
