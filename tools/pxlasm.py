@@ -1,0 +1,802 @@
+#!/usr/bin/env python
+
+# TODO
+# array data should be wrapped.
+#
+# text data should be printed as a string not an array of ascii values.
+#
+# enumerations should printed we now print the ordinal value of the enumeration.
+#
+# make self.unpack endian like with binding
+
+# DIFFS between HP
+# Artifex reports the file offset of each operator HP does not.
+
+import string 
+import regsub
+DEBUG = 0
+
+# for packing and unpacking binary data
+from struct import *
+
+# tags
+pxl_tags_dict = {
+    'ArcPath' :                 0x91,
+    'BeginChar' :               0x52,
+    'BeginFontHeader' :         0x4f,
+    'BeginImage' :              0xb0,
+    'BeginPage' :               0x43,
+    'BeginRastPattern' :        0xb3,
+    'BeginScan' :               0xb6,
+    'BeginSession' :            0x41,
+    'BeginStream' :             0x5b,
+    'BezierPath' :              0x93,
+    'BezierRelPath' :           0x95,
+    'Chord' :                   0x96,
+    'ChordPath' :               0x97,
+    'CloseDataSource' :         0x49,
+    'CloseSubPath' :            0x84,
+    'Comment' :                 0x47,
+    'Ellipse' :                 0x98,
+    'EllipsePath' :             0x99,
+    'EndChar' :                 0x54,
+    'EndFontHeader' :           0x51,
+    'EndImage' :                0xb2,
+    'EndPage' :                 0x44,
+    'EndRastPattern' :          0xb5,
+    'EndScan' :                 0xb8,
+    'EndSession' :              0x42,
+    'EndStream' :               0x5d,
+    'ExecStream' :              0x5e,
+    'LinePath' :                0x9b,
+    'LineRelPath' :             0x9d,
+    'NewPath' :                 0x85,
+    'OpenDataSource' :          0x48,
+    'PaintPath' :               0x86,
+    'Pie' :                     0x9e,
+    'PiePath' :                 0x9f,
+    'PopGS' :                   0x60,
+    'PushGS' :                  0x61,
+    'ReadChar' :                0x53,
+    'ReadFontHeader' :          0x50,
+    'ReadImage' :               0xb1,
+    'ReadRastPattern' :         0xb4,
+    'ReadStream' :              0x5c,
+    'Rectangle' :               0xa0,
+    'RectanglePath' :           0xa1,
+    'RemoveFont' :              0x55,
+    'SetCharAttributes' :       0x56,
+    'RemoveStream' :            0x5f,
+    'RoundRectangle' :          0xa2,
+    'RoundRectanglePath' :      0xa3,
+    'ScanLineRel' :             0xb9,
+    'SetClipReplace' :          0x62,
+    'SetBrushSource' :          0x63,
+    'SetCharAngle' :            0x64,
+    'SetCharBoldValue' :        0x7d,
+    'SetCharScale' :            0x65,
+    'SetCharShear' :            0x66,
+    'SetCharSubMode' :          0x81,
+    'SetClipIntersect' :        0x67,
+    'SetClipMode' :             0x7f,
+    'SetClipRectangle' :        0x68,
+    'SetClipToPage' :           0x69,
+    'SetColorSpace' :           0x6a,
+    'SetCursor' :               0x6b,
+    'SetCursorRel' :            0x6c,
+    'SetHalftoneMethod' :       0x6d,
+    'SetFillMode' :             0x6e,
+    'SetFont' :                 0x6f,
+    'SetLineCap' :              0x71,
+    'SetLineDash' :             0x70,
+    'SetLineJoin' :             0x72,
+    'SetMiterLimit' :           0x73,
+    'SetPageDefaultCTM' :       0x74,
+    'SetPageOrigin' :           0x75,
+    'SetPageRotation' :         0x76,
+    'SetPageScale' :            0x77,
+    'SetPathToClip' :           0x80,
+    'SetPatternTxMode' :        0x78,
+    'SetPenSource' :            0x79,
+    'SetPenWidth' :             0x7a,
+    'SetROP' :                  0x7b,
+    'SetSourceTxMode' :         0x7c,
+    'Text' :                    0xa8,
+    'TextPath' :                0xa9,
+    'attr_ubyte' :              0xf8,
+    'attr_uint16' :             0xf9,
+    'embedded_data' :           0xfa,
+    'embedded_data_byte' :      0xfb,
+    'real32' :                  0xc5,
+    'real32_array' :            0xcd,
+    'real32_box' :              0xe5,
+    'real32_xy' :               0xd5,
+    'sint16' :                  0xc3,
+    'sint16_array' :            0xcb,
+    'sint16_box' :              0xe3,
+    'sint16_xy' :               0xd3,
+    'sint32' :                  0xc4,
+    'sint32_array' :            0xcc,
+    'sint32_box' :              0xe4,
+    'sint32_xy' :               0xd4,
+    'ubyte' :                   0xc0,
+    'ubyte_array' :             0xc8,
+    'ubyte_box' :               0xe0,
+    'ubyte_xy' :                0xd0,
+    'uint16' :                  0xc1,
+    'uint16_array' :            0xc9,
+    'uint16_box' :              0xe1,
+    'uint16_xy' :               0xd1,
+    'uint32' :                  0xc2,
+    'uint32_array' :            0xca,
+    'uint32_box' :              0xe2,
+    'uint32_xy' :               0xd2
+}
+
+# nb enumerations are not supported we print the ordinal value.
+pxl_enumerations_dict = {
+    'DataOrg' : [ 'eBinaryHighByteFirst', 'eBinaryLowByteFirst' ],
+    'DataSource' : [ 'eDefault' ],
+    'DataType' : [ 'eUByte', 'eSByte', 'eUint16', 'eSint16' ],
+    'ArcDirection' : [ 'eClockWise',  'eCounterClockWise' ],
+    'DitherMatrix' : [ 'eDeviceBest' ],
+    'CharSubModeArray' : [ 'eNoSubstitution', 'eVerticalSubstitution' ],
+    'ClipMode' : ['eNonZeroWinding', 'eEvenOdd' ],
+    'DuplexPageSide' : [ 'eFrontMediaSide', 'eBackMediaSide' ],
+    'ClipRegion' : ['eInterior', 'eExterior'],
+    'ErrorReport' : ['eNoReporting', 'eBackChannel'],
+    'ColorDepth' : [ 'e1Bit', 'e4Bit', 'e8Bit' ],
+    'ColorMapping' : [ 'eDirectPixel', 'eIndexedPixel' ],
+    'ColorSpace' : [ 'eGray', 'eRGB', 'eSRGB' ],
+    'CompressMode' : [ 'eNoCompression', 'eRLECompression', 'eJPEGCompression' ],
+    'LineJoineMiterJoin' : [ 'eRoundJoin', 'eBevelJoin', 'eNoJoin' ],
+    'MeasureeInch' : [ 'eMillimeter', 'eTenthsOfAMillimeter' ],
+    'MediaSize' : [ 'eLetterPaper', 'eLegalPaper', 'eA4Paper',
+		    'eExecPaper', 'eLedgerPaper', 'eA3Paper', 
+		    'eCOM10Envelope', 'eMonarchEnvelope', 'eC5Envelope', 
+		    'eDLEnvelope', 'eJB4Paper', 'eJB5Paper', 'eB5Envelope',
+		    'eJPostcard', 'eJDoublePostcard', 'eA5Paper', 'eA6Paper',
+		    'eJBPaper' ],
+    'MediaSource' : [ 'eDefaultSource', 'eAutoSelect', 'eManualFeed',
+		      'eMultiPurposeTray', 'eUpperCassette', 'eLowerCassette', 
+		      'eEnvelopeTray', 'eThirdCassette' ],
+    'MediaDestination' :  [ 'eDefaultDestination', 'eFaceDownBin', 'eFaceUpBin',
+			     'eJobOffsetBin' ],
+    'DuplexPageMode' : [ 'eDuplexHorizontalBinding', 'eDuplexVerticalBinding' ],
+    'DuplexPageSide' : [ 'eFrontMediaSide', 'eBackMediaSide' ],
+    'ErrorReport' :  [ 'eNoReporting', 'eBackChannel' ],
+    'BackCh' : ['eErrorPage'],
+    'ErrPage' : ['eBackChAndErrPage', 'eNWBackChannel', 'eNWErrorPage',
+		 'eNWBackChAndErrPage'],
+    'FillMode' : ['eNonZeroWinding', 'eEvenOdd' ],
+    'LineCapeButtCap' : [ 'eRoundCap', 'eSquareCap', 'eTriangleCap' ],
+    'LineJoineMiterJoin' : [ 'ePortraitOrientation', 'eLandscapeOrientation',
+			     'eReversePortrait', 'eReverseLandscape' ],
+    'PatternPersistence' : [ 'eTempPattern', 'ePagePattern', 'eSessionPattern'],
+    'SimplexPageMode' : ['eSimplexFrontSide'],
+    'TxMode' : [ 'eOpaque', 'eTransparent' ],
+    'WritingMode' : [ 'eHorizontal', 'eVertical' ]
+}
+
+pxl_attribute_name_to_attribute_number_dict = { 
+    'ArcDirection' : 65,
+    'BlockByteLength' : 111,
+    'BlockHeight' : 99,
+    'BoldValue' : 177,
+    'BoundingBox' : 66,
+    'ColorimetricColorSpace': 17,
+    'CharAngle' : 161,
+    'CharCode' : 162,
+    'CharDataSize' : 163,
+    'CharScale' : 164,
+    'CharShear' : 165,
+    'CharSize' : 166,
+    'CharSubModeArray' : 172,
+    'ClipMode' : 84,
+    'ClipRegion' : 83,
+    'ColorDepth' : 98,
+    'ColorMapping' : 100,
+    'ColorSpace' : 3,
+    'CommentData' : 129,
+    'CompressMode' : 101,
+    'ControlPoint1' : 81,
+    'ControlPoint2' : 82,
+    'CRGBMinMax' : 20,
+    'CustomMediaSize' : 47,
+    'CustomMediaSizeUnits' : 48,
+    'DashOffset' : 67,
+    'DataOrg' : 130,
+    'DestinationBox' : 102,
+    'DestinationSize' : 103,
+    'DeviceMatrix' : 33,
+    'DitherMatrixDataType' : 34,
+    'DitherMatrixDepth' : 51,
+    'DitherMatrixSize' : 50,
+    'DitherOrigin' : 35,
+    'DuplexPageMode' : 53,
+    'DuplexPageSide' : 54,
+    'EllipseDimension' : 68,
+    'EndPoint' : 69,
+    'ErrorReport' : 143,
+    'FillMode' : 70,
+    'FontFormat' : 169,
+    'FontHeaderLength' : 167,
+    'FontName' : 168,
+    'GammaGain' : 21,
+    'GrayLevel' : 9,
+    'LineCapStyle' : 71,
+    'LineDashStyle' : 74,
+    'LineJoinStyle' : 72,
+    'Measure' : 134,
+    'MediaSize' : 37,
+    'MediaSource' : 38,
+    'MediaType' : 39,
+    'MiterLength' : 73,
+    'NewDestinationSize' : 13,
+    'NullBrush' : 4,
+    'NullPen' : 5,
+    'NumberOfPoints' : 77,
+    'NumberOfScanLines' : 115,
+    'Orientation' : 40,
+    'PadBytesMultiple' : 110,
+    'PageAngle' : 41,
+    'PageCopies' : 49,
+    'PageOrigin' : 42,
+    'PageScale' : 43,
+    'PaletteData' : 6,
+    'PaletteDepth' : 2,
+    'PatternDefineID' : 105,
+    'PatternOrigin' : 12,
+    'PatternPersistence' : 104,
+    'PatternSelectID' : 8,
+    'PenWidth' : 75,
+    'Point' : 76,
+    'PointType' : 80,
+    'PrimaryArray' : 14,
+    'PrimaryDepth' : 15,
+    'RGBColor' : 11,
+    'ROP3' : 44,
+    'SimplexPageMode' : 52,
+    'SolidLine' : 78,
+    'SourceHeight' : 107,
+    'SourceType' : 136,
+    'SourceWidth' : 108,
+    'StartLine' : 109,
+    'StartPoint' : 79,
+    'StreamDataLength' : 140,
+    'StreamName' : 139,
+    'SymbolSet' : 170,
+    'TextData' : 171,
+    'TxMode' : 45,
+    'UnitsPerMeasure' : 137,
+    'WhiteReferencePoint' : 19,
+    'WritingMode' : 173,
+    'XSpacingData' : 175,
+    'XYChromaticities' : 18,
+    'YSpacingData' : 176,
+}
+
+class pxl_asm:
+
+    def __init__(self, data):
+        # skip the first line
+        index = 0
+        while( data[index] != '\n' ):
+            index = index + 1
+        index = index + 1
+        # copy of the data without the PJL
+        data = data[index:]
+        self.data = data
+        # pointer to data
+        self.index = 0
+
+        self.data = regsub.gsub( '\/\/.*$', '', self.data )
+        self.data = regsub.gsub( '\012+', ' ', self.data )
+        # print out big endian protocol and revision.  NB should check
+        # revisions are the same.
+        print ") HP-PCL XL;2;0"
+        # saved size of last array parsed
+
+        # saved size of last array parsed
+        self.size_of_array = -1;
+        self.pack_string = ""
+
+        # dictionary of streams keyed by stream name
+	self.user_defined_streams = {}
+
+        # the n'th operator in the stream
+        self.operator_position = 0
+        self.__verbose = DEBUG
+        
+    # set DEBUG=1 above to enable this
+    def debug_trace(self, format, *arguments):
+        if self.__verbose:
+            sys.stderr.write(format % arguments)
+            sys.stderr.write('\n')
+        
+    def big_endian_stream(self):
+        return (self.binding == ')')
+
+    def little_endian_stream(self):
+        return (self.binding == '(')
+
+    def ascii_stream(self):
+        return (self.binding == '`')
+
+    def nullAttributeList(self):
+        return 0
+
+    # does not consume the string
+    def next_string(self):
+        index = self.index
+        while self.data[index] in string.whitespace: index = index + 1
+        start = index
+        while self.data[index] not in string.whitespace: index = index + 1
+        end = index
+        self.debug_trace(  "found string %s\n", self.data[start:end])
+        return self.data[start:end]
+
+    def consume_next_string(self):
+        while self.data[self.index] in string.whitespace:
+            self.index = self.index + 1
+        while self.data[self.index] not in string.whitespace:
+            self.index = self.index + 1
+
+    # redefine pack to handle endiannes
+    def pack(self, format, *data):
+
+        # prepend endian specifiers to stream if necessary.  NB we
+        # don't handle ascii streams and the endian formatting does
+        # not work properly right now:
+
+        # if ( self.big_endian_stream() ):
+        #
+        # format = '>' + format
+        # else:
+        # format = '<' + format
+        for args in data:
+            sys.stdout.write(pack(format, args))
+    
+    # implicitly read when parsing the tag
+    def attributeIDValue(self):
+        self.debug_trace("attributeIDValue")
+        return 1
+
+    # search for next expected tag "tag" and print its hex value.
+    def getTag(self, tag):
+        self.debug_trace("getTag")
+        new_tag = self.next_string()
+        self.debug_trace("getTag: found tag: %s", new_tag)
+        self.debug_trace("getTag: looking for: %s", tag)
+        self.debug_trace("%d", new_tag == tag)
+        if ( new_tag == tag ):
+            self.consume_next_string()
+            self.debug_trace( "found tag: %s %x", tag, pxl_tags_dict[tag] )
+            self.pack( "B", pxl_tags_dict[tag] )
+            return 1
+        self.debug_trace( "tag not found: %s", tag )
+        return 0
+
+    # get the next operator
+    def operatorTag(self):
+        self.debug_trace("operatorTag")
+        self.operator_position = self.operator_position + 1
+        tag = self.next_string()
+        self.debug_trace( "searching for operator: %s", tag )
+        if ( tag in pxl_tags_dict.keys() ):
+            self.pack( 'B', pxl_tags_dict[tag] )
+            self.consume_next_string()
+            # handle special cases
+            if ( self.is_Embedded(tag) ):
+                self.process_EmbeddedInfo(tag)
+            self.debug_trace( "found operator %s", tag )
+            return 1
+        self.debug_trace( "did not find operator %s", tag )
+        return 0
+
+    def Tag_ubyte(self):
+        self.debug_trace("Tag_ubyte")
+        if ( self.getTag( 'ubyte' ) ):
+             self.pack_string = 'B'
+             return 1
+        return 0
+
+    def Tag_sint16(self):
+        self.debug_trace("Tag_sint16")
+        if ( self.getTag( 'sint16' ) ):
+            self.pack_string = 'h'
+            return 1
+        return 0
+
+    def Tag_uint16(self):
+        self.debug_trace("Tag_uint16")
+        if ( self.getTag( 'uint16' ) ):
+             self.pack_string = 'H'
+             return 1
+        return 0
+
+    def Tag_sint32(self):
+        self.debug_trace("Tag_sint32")
+        if ( self.getTag( 'sint32' ) ):
+            self.pack_string = 'l'
+            return 1
+        return 0
+
+    def Tag_uint32(self):
+        self.debug_trace("Tag_uint32")
+        if ( self.getTag( 'uint32' ) ):
+             self.pack_string = 'L'
+             return 1
+        return 0
+
+    def Tag_real32(self):
+        self.debug_trace("Tag_real32")
+        if ( self.getTag( 'real32' ) ):
+            self.pack_string = 'f'
+            return 1
+        return 0
+
+    def consume_to_char_plus_one(self, chr):
+        while (self.data[self.index] != chr):
+            self.index = self.index + 1
+        self.index = self.index + 1
+            
+    def Tag_ubyte_array(self):
+        self.debug_trace("Tag_ubyte_array")
+        if ( self.getTag( 'ubyte_array' ) ):
+            self.consume_to_char_plus_one('[')
+            self.pack_string = 'B'
+            return 1
+        return 0
+
+    def Tag_uint16_array(self):
+        self.debug_trace("Tag_uint16_array")
+        if ( self.getTag( 'uint16_array' ) ):
+            self.pack_string = 'H'
+            self.consume_to_char_plus_one('[')
+            return 1
+        return 0
+
+    def Tag_sint16_array(self):
+        self.debug_trace("Tag_sint16_array")
+        if ( self.getTag( 'sint16_array' ) ):
+            self.pack_string = 'h'
+            self.consume_to_char_plus_one('[')
+            return 1
+        return 0
+
+    def Tag_uint32_array(self):
+        self.debug_trace("Tag_uint32_array")
+        if ( self.getTag( 'uint32_array' ) ):
+            self.pack_string = 'L'
+            self.consume_to_char_plus_one('[')
+            return 1
+        return 0
+
+    def Tag_sint32_array(self):
+        self.debug_trace("Tag_sint32_array")
+        if ( self.getTag( 'sint32_array' ) ):
+            self.pack_string = 'l'
+            self.consume_to_char_plus_one('[')
+            return 1
+        return 0
+
+    def Tag_real32_array(self):
+        self.debug_trace("Tag_real32_array")
+        if ( self.getTag( 'real32_array' ) ):
+            self.pack_string = 'f'
+            self.consume_to_char_plus_one('[')
+            return 1
+        return 0
+    
+    def Tag_ubyte_xy(self):
+        self.debug_trace("Tag_ubyte_xy")
+        if ( self.getTag( 'ubyte_xy' ) ):
+            self.pack('B', self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_uint16_xy(self):
+        self.debug_trace("Tag_uint16_xy")
+        if ( self.getTag( 'uint16_xy' ) ):
+            self.pack('H', self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_sint16_xy(self):
+        self.debug_trace("Tag_sint16_xy")
+        if ( self.getTag( 'sint16_xy' ) ):
+            self.pack('h', self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_uint32_xy(self):
+        self.debug_trace("Tag_uint32_xy")
+        if ( self.getTag( 'uint32_xy' ) ):
+            self.pack('L', self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_sint32_xy(self):
+        self.debug_trace("Tag_sint32_xy")
+        if ( self.getTag( 'sint32_xy' ) ):
+            self.pack('l', self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_real32_xy(self):
+        self.debug_trace("Tag_real32_xy")
+        if ( self.getTag( 'real32_xy' ) ):
+            self.pack('f', self.next_num(), self.next_num())
+            return 1
+        return 0
+    
+    def Tag_ubyte_box(self):
+        self.debug_trace("Tag_ubyte_box")
+        if ( self.getTag( 'ubyte_box' ) ):
+            self.pack('B', self.next_num(), self.next_num(),
+                      self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_uint16_box(self):
+        self.debug_trace("Tag_uint16_box")
+        if ( self.getTag( 'uint16_box' ) ):
+            self.pack('H', self.next_num(), self.next_num(),
+                      self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_sint16_box(self):
+        self.debug_trace("Tag_sint16_box")
+        if ( self.getTag( 'sint16_box' ) ):
+            self.pack('h', self.next_num(), self.next_num(),
+                      self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_uint32_box(self):
+        self.debug_trace("Tag_uint32_box")
+        if ( self.getTag( 'uint32_box' ) ):
+            self.pack('L', self.next_num(), self.next_num(),
+                      self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_sint32_box(self):
+        self.debug_trace("Tag_sint32_box")
+        if ( self.getTag( 'sint32_box' ) ):
+            self.pack('l', self.next_num(), self.next_num(),
+                      self.next_num(), self.next_num())
+            return 1
+        return 0
+
+    def Tag_real32_box(self):
+        self.debug_trace("Tag_real32_box")
+        if ( self.getTag( 'real32_box' ) ):
+            self.pack('f', self.next_num(), self.next_num(),
+                      self.next_num(), self.next_num())
+            return 1
+        return 0
+    
+    # check for embedded tags.
+    def is_Embedded(self, name):
+        self.debug_trace("is_Embedded")
+        return ( name == 'embedded_data' or name == 'embedded_data_byte' )
+
+    def process_EmbeddedInfo(self, name):
+        self.debug_trace("process_EmbeddedInfo")
+        # skip over the
+        # finally write the list
+        self.consume_to_char_plus_one( '[' )
+        number_list = []
+        while (1):
+            num = self.next_num()
+            # trick - num will fail on ']'
+            if (num != None):
+                number_list.append(num)
+            else:
+                break
+        # write the length of the list as the embedded data's size
+        if ( name == 'embedded_data' ):
+            format = 'L'
+        else:
+            format = 'B'
+        self.pack(format, len(number_list))
+        # NB needs wrapping
+        for num in number_list:
+            self.pack( 'B', num )
+
+    def Tag_attr_ubyte(self):
+        self.debug_trace("Tag_attr_ubyte")
+        tag = self.next_string()
+        self.debug_trace( "searching for attribute %s", tag)
+        if ( tag in pxl_attribute_name_to_attribute_number_dict.keys() ):
+            self.pack( 'B', pxl_tags_dict['attr_ubyte'] )
+            self.pack( 'B', pxl_attribute_name_to_attribute_number_dict[tag] )
+            self.consume_next_string()
+            self.debug_trace( "found  %s", tag)
+            # handle special cases
+            if ( self.is_Embedded(tag) ):
+                self.process_EmbeddedInfo(tag)
+            return 1
+        self.debug_trace( "did not find attribute %s", tag)
+        return 0
+
+    def Tag_attr_uint16(self):
+        self.debug_trace("Tag_attr_uint16")
+        if ( self.getTag( 'attr_uint16' ) ):
+            print "Attribute tag uint16 # NOT IMPLEMENTED #", self.pack('HH', self.data[self.index] )
+            self.index = self.index + 2
+            return 1
+        return 0
+
+    def attributeID(self):
+        self.debug_trace("attributeID")
+        return (self.Tag_attr_ubyte() or self.Tag_attr_uint16()) and self.attributeIDValue()
+
+    def next_num(self):
+        self.debug_trace("next_num")
+        # no checking.
+        while self.data[self.index] in string.whitespace: self.index = self.index + 1
+        start = self.index
+        while self.data[self.index] not in string.whitespace: self.index = self.index + 1
+        end = self.index
+        self.debug_trace(  "found number %s\n", self.data[start:end])
+        try:
+            num = string.atoi(self.data[start:end])
+        except ValueError:
+            try:
+                num = string.atof(self.data[start:end])
+            except:
+                num = None # shouldn't happen
+        return num
+    
+    def singleValueType(self):
+        self.debug_trace("singleValueType")
+        if ( self.Tag_ubyte() or self.Tag_uint16() or self.Tag_uint32() or \
+             self.Tag_sint16() or self.Tag_sint32() or self.Tag_real32() ):
+            self.pack(self.pack_string, self.next_num()),
+            return 1
+        return 0
+
+    def xyValueType(self):
+        self.debug_trace("xyValueType")
+        return self.Tag_ubyte_xy() or self.Tag_uint16_xy() or self.Tag_uint32_xy() or \
+               self.Tag_sint16_xy() or self.Tag_sint32_xy() or self.Tag_real32_xy()
+        
+    def boxValueType(self):
+        self.debug_trace("boxValueType")
+        return self.Tag_ubyte_box() or self.Tag_uint16_box() or self.Tag_uint32_box() or \
+               self.Tag_sint16_box() or self.Tag_sint32_box() or self.Tag_real32_box()
+        
+    def valueType(self):
+        self.debug_trace("valueType")
+	return self.singleValueType() or self.xyValueType() or self.boxValueType()
+
+    # don't confuse the size of the type with the size of the elements
+    # in the array
+    def arraySizeType(self):
+        self.debug_trace("arraySizeType")
+        return (self.Tag_ubyte() or self.Tag_uint16())
+
+    def arraySize(self):
+        # save the old pack string for the type of the array, the data
+        # type for the size will replace it.
+        self.debug_trace("arraySize")
+        pack_string = self.pack_string
+        if ( self.arraySizeType() ):
+            self.size_of_array = self.next_num()
+            self.pack(self.pack_string, self.size_of_array)
+            self.debug_trace("array size found %d", self.size_of_array )
+            # restore the pack string
+            self.pack_string = pack_string
+            return 1
+        return 0
+        
+    def singleValueArrayType(self):
+        self.debug_trace("singleValueArrayType")
+        return self.Tag_ubyte_array() or self.Tag_uint16_array() or \
+               self.Tag_uint32_array() or self.Tag_sint16_array() or \
+               self.Tag_sint32_array() or self.Tag_real32_array()
+        
+    def arrayType(self):
+        self.debug_trace("arrayType")
+        if (self.singleValueArrayType() and self.arraySize()):
+            for num in range(0, self.size_of_array):
+                n = self.next_num()
+                self.debug_trace( "num %d got %d\n", num, n)
+                self.pack(self.pack_string, n)
+            self.consume_to_char_plus_one(']')
+            return 1
+        return 0
+
+    def dataType(self):
+        self.debug_trace("dataType")
+        return( self.valueType() or self.arrayType() or self.boxValueType() )
+
+    # these get parsed when doing the tags
+    def numericValue(self):
+        self.debug_trace("numericValue")
+        return 1;
+
+    def attributeValue(self):
+        self.debug_trace("attributeValue")
+        return( self.dataType() and self.numericValue() )
+
+    def singleAttributePair(self):
+        self.debug_trace("singleAttributePair")
+        return( self.attributeValue() and self.attributeID() )
+    
+    def multiAttributeList(self):
+        self.debug_trace("multiAttributeList")
+        # NB should be many 1+ not sure how this get handled yet
+        return( self.singleAttributePair() )
+    
+    def nullAttributeList(self):
+        self.debug_trace("nullAttributeList")        # NB not sure
+        return 0
+    
+    def attributeList(self):
+        self.debug_trace("attributeList")
+        return (self.singleAttributePair() or self.multiAttributeList() or self.nullAttributeList())
+
+    def attributeLists(self):
+        self.debug_trace("attributeLists")
+        # save the beginning of the attribute list even if it is
+        # empty.  So we can report the position of the command.
+        self.begin_attribute_pos = self.index
+        # 0 or more attribute lists
+        while( self.attributeList() ):
+            continue
+        return 1
+
+    def UEL(self):
+        self.debug_trace("UEL")
+        uel_string_1 = 'string*'
+        uel_string_2 = '-12345X'
+        tag = self.next_string()
+        if ( tag == uel_string_1 ):
+            self.consume_next_string()
+            self.debug_trace("found UEL string 1")
+            # an approximate search
+            if ( string.find(self.data[self.index:], uel_string_2 ) >= 0 ):
+                self.debug_trace("found UEL string 2")
+                self.consume_to_char_plus_one('X')
+                sys.stdout.write( "\033%-12345X" )
+                return 1
+        return 0
+        
+    def operatorSequences(self):
+        self.debug_trace("operatorSequences")
+        while ( self.attributeLists() and self.operatorTag() ) or self.UEL():
+            continue
+        
+    def assemble(self):
+        try:
+            self.operatorSequences()
+        # assume an index error means we have processed everything - ugly
+        except IndexError:
+             return
+        else:
+            sys.stderr.write("assemble failed")
+
+if __name__ == '__main__':
+    import sys
+
+    if not sys.argv[1:]:
+        print "Usage: %s pxl files" % sys.argv[0]
+        
+    for file in sys.argv[1:]:
+        try:
+            fp = open(file, 'rb')
+        except:
+            sys.stderr.write("Cannot find file %s" % file)
+            continue
+        # read the whole damn thing.  Removing comments and blank lines.
+        pxl_code = fp.read()
+        fp.close()
+    
+        # initialize and assemble.
+        pxl_stream = pxl_asm(pxl_code)
+        pxl_stream.assemble()
