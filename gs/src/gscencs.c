@@ -56,7 +56,7 @@ gs_glyph
 gs_c_known_encode(gs_char ch, int ei)
 {
     if (ei < 0 || ei >= gs_c_known_encoding_count ||
-	ch > gs_c_known_encoding_lengths[ei]
+	ch >= gs_c_known_encoding_lengths[ei]
 	)
 	return gs_no_glyph;
     return gs_c_min_std_encoding_glyph + gs_c_known_encodings[ei][ch];

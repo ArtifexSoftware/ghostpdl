@@ -1408,9 +1408,16 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 	    if (HAS_DIFF(c) || IS_USED(c))
 		continue; /* slot already referenced */
 	    font_glyph = ENCODE_NO_DIFF(c);
-	    if (font_glyph == gs_no_glyph ||
-		gs_font_glyph_is_notdef(bfont, font_glyph)
-		)
+ 	    if (font_glyph == gs_no_glyph)
+ 		break;
+ 	    else if (font_glyph >= gs_c_min_std_encoding_glyph) {
+ 		uint len;
+ 		const char *str = gs_c_glyph_name(font_glyph, &len);
+ 
+ 		if (len == 7 && !memcmp(str, ".notdef", 7))
+ 		    break;
+ 	    } else if (gs_font_glyph_is_notdef(bfont, font_glyph))
+  		break;
 		break;
 	}
 	if (c == 256)	/* no .notdef positions left */
