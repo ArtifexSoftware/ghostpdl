@@ -922,6 +922,8 @@ intersection_of_big_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int 
 	int64_t det = (int64_t)dx1 * d23y - (int64_t)dy1 * d23x;
 	int64_t mul = (int64_t)dx2 * d23y - (int64_t)dy2 * d23x;
 	double dy = dy1 * (double)mul / (double)det;
+	fixed iy;
+
 	if (dy1 > 0 && dy >= dy1)
 	    return false; /* Outside the bar 1. */
 	if (dy1 < 0 && dy <= dy1)
@@ -933,8 +935,9 @@ intersection_of_big_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int 
 	    if (dy >= dy2 || dy <= dy3)
 		return false; /* Outside the bar 2. */
 	}
-	*ry = q[i0].y + (fixed)dy; /* Drop the fraction part, no rounding. */
-	*ey = (dy > (fixed)dy ? 1 : 0);
+	iy = (int)floor(dy);
+	*ry = q[i0].y + iy;
+	*ey = (dy > iy ? 1 : 0);
 	return true;
     }
     return false;
@@ -2448,7 +2451,7 @@ private inline int
 vector_pair_orientation(const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2)
 {   fixed dx1 = p1->x - p0->x, dy1 = p1->y - p0->y;
     fixed dx2 = p2->x - p0->x, dy2 = p2->y - p0->y;
-    int64_t vp = dx1 * dy2 - dy1 * dx2;
+    int64_t vp = (int64_t)dx1 * dy2 - (int64_t)dy1 * dx2;
 
     return (vp > 0 ? 1 : vp < 0 ? -1 : 0);
 }
@@ -2551,8 +2554,8 @@ fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv)
 {
     if (kv <= 1 && (is_patch_narrow(pfs, p) || 
 	    (is_color_monotonic_by_v(pfs, p) && 
-	     !is_color_span_v_big(pfs, p)) ||
-	    !is_bended(p))) /* The order of calls is improtant for performance. */
+	     !is_color_span_v_big(pfs, p) &&
+	    !is_bended(p)))) /* The order of calls is improtant for performance. */
 	return fill_stripe(pfs, p);
     else {
 	tensor_patch s0, s1;
