@@ -142,6 +142,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 	    fwrite(line, 1, dest - line, file);
 	}
 
+	gdev_tiff_end_strip(&tfdev->tiff, file);
 	gdev_tiff_end_page(&tfdev->tiff, file);
 	gs_free_object(pdev->memory, line, "tiff12_print_page");
     }
@@ -179,6 +180,7 @@ tiff24_print_page(gx_device_printer * pdev, FILE * file)
 		break;
 	    fwrite((char *)row, raster, 1, file);
 	}
+	gdev_tiff_end_strip(&tfdev->tiff, file);
 	gdev_tiff_end_page(&tfdev->tiff, file);
 	gs_free_object(pdev->memory, line, "tiff24_print_page");
     }
