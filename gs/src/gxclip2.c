@@ -95,7 +95,8 @@ private const gx_device_tile_clip gs_tile_clip_device =
   gx_forward_include_color_space,
   gx_forward_fill_linear_color_scanline,
   gx_forward_fill_linear_color_trapezoid,
-  gx_forward_fill_linear_color_triangle
+  gx_forward_fill_linear_color_triangle,
+  gx_forward_update_spot_equivalent_colors
  }
 };
 

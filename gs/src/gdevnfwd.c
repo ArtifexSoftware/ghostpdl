@@ -107,6 +107,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, fill_linear_color_scanline, gx_forward_fill_linear_color_scanline);
     fill_dev_proc(dev, fill_linear_color_trapezoid, gx_forward_fill_linear_color_trapezoid);
     fill_dev_proc(dev, fill_linear_color_triangle, gx_forward_fill_linear_color_triangle);
+    fill_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -809,6 +810,18 @@ gx_forward_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *
 	(tdev == 0 ? (tdev = dev, gx_default_fill_linear_color_triangle) :
 	 dev_proc(tdev, fill_linear_color_triangle));
     return proc(tdev, fa, p0, p1, p2, c0, c1, c2);
+}
+
+int 
+gx_forward_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+    int code = 0;
+
+    if (tdev != NULL)
+	code = dev_proc(tdev, update_spot_equivalent_colors)(tdev, pgs);
+    return code;
 }
 
 

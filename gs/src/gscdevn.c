@@ -504,9 +504,16 @@ gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
     pgs->color_space->params.device_n.use_alt_cspace =
 	using_alt_color_space(pgs);
     if (pgs->color_space->params.device_n.use_alt_cspace)
-        return (*pcs->params.device_n.alt_space.type->install_cspace)
+        code = (*pcs->params.device_n.alt_space.type->install_cspace)
 	((const gs_color_space *) & pcs->params.device_n.alt_space, pgs);
-    return 0;
+    /*
+     * Give the device an opportunity to capture equivalent colors for any
+     * spot colors which might be present in the color space.
+     */
+    if (code >= 0)
+        code = dev_proc(pgs->device, update_spot_equivalent_colors)
+							(pgs->device, pgs);
+    return code;
 }
 
 /* Set overprint information for a DeviceN color space */

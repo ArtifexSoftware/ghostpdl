@@ -37,20 +37,23 @@
  * colorant is not present.  We want to be able to display the spot colors
  * on our RGB or CMYK display.  We are using the tint transform function
  * to determine a CMYK equivalent to the spot color.  Current only CMYK
- * equivalent colors are supported but the logic can be cloned for any
- * other subtractive process color model.
+ * equivalent colors are supported.  This is because the CMYK is the only
+ * standard subtractive color space.
  *
  * This process consists of the following steps:
  *
  * 1.  Whenever new spot colors are found, set status flags indicating
  * that we have one or more spot colors for which we need to determine an
- * color.  New spot colors can either be explicitly specified by the
- * SeparationColorNames device parameter or they may be detected by the
+ * equivalent color.  New spot colors can either be explicitly specified by
+ * the SeparationColorNames device parameter or they may be detected by the
  * device's get_color_comp_index routine.
  *
- * 2.  Whenever a high level drawing operation is requested, the device
- * checks if the color space contains a spot color for which we do not
- * know the equivalent.
+ * 2.  Whenever a Separation or DeviceN color space is installed, the
+ * update_spot_equivalent_colors device proc is called.  This allows the
+ * device to check if the color space contains a spot color for which the
+ * device does not know the equivalent CMYK color.  The routine
+ * update_spot_equivalent_cmyk_colors is provided for this task (and the
+ * next item).
  *
  * 3.  For each spot color for which an equivalent color is not known, we
  * do the following:
@@ -92,13 +95,10 @@
  *     put_param routines to check if any separations have been added to the
  *     device.  For examples see code fragments in psd_get_color_comp_index and
  *     psd_put_params in src/gdevpsd.c.
- * 3.  The device needs to have its own version of the five high level interface
- *     routines.  These are:  fill_path, stroke_path, begin_image, text_begin
- *     and fill_rectangle_hl_color.  Usually these routines only need to consist
- *     of a call to update_spot_equivalent_cmyk_colors and then a call to the
- *     default routine.  For examples see the definition of the device_procs
- *     macro and the psd_fill_path, psd_stroke_path, psd_begin_image,
- *     psd_text_begin, and psd_fill_rectangle_hl_color routines in src/gdevpsd.c.
+ * 3.  The device needs to have its own version of the
+ *     update_spot_equivalent_colors routine.  For examples see the definition
+ *     of the device_procs macro and the psd_update_spot_equivalent_colors
+ *     routine in src/gdevpsd.c.
  * 4.  The device then uses the saved equivalent color values when its output
  *     is created.  For example see the psd_write_header routine in
  *     src/gdevpsd.c.
@@ -212,12 +212,10 @@ private bool check_all_colors_known(int num_spot,
 
 /* If possible, update the equivalent CMYK color for a spot color */
 void
-update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_imager_state *pis,
+update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pparams)
 {
-    const gs_state * pgs;
     const gs_color_space * pcs;
-    extern_st(st_gs_state);
 
     /* If all of the color_info is valid then there is nothing to do. */
     if (pparams->all_color_info_valid)
@@ -229,41 +227,24 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_imager_state *pis,
 	return;
     }
     /*
-     * We need access to the graphics state, verify the pis is really a
-     * gs_state *.  If not then there is nothing that we can do.
-     */
-    if (gs_object_type(pdev->memory, pis) != &st_gs_state)
-	return;
-    /*
-     * Scan the color space and see if it is a DeviceN or Separation color
+     * Verify that the given color space is a Separation or a DeviceN color
      * space.  If so then when check if the color space contains a separation
-     * color for which we need a CMYK equivalent.  We also have to scan the
-     * base spaces since the top level color space may be an 'indexed' space,
-     * etc.
+     * color for which we need a CMYK equivalent.
      */
-    pgs = (const gs_state *) pis;
     pcs = pgs->color_space;
-    while (pcs != NULL) {
-        const gs_color_space * last_pcs = pcs;
-
+    if (pcs != NULL) {
 	if (pcs->type->index == gs_color_space_index_Separation) {
 	    update_Separation_spot_equivalent_cmyk_colors(pdev, pgs, pcs,
 						pdevn_params, pparams);
 	    pparams->all_color_info_valid = check_all_colors_known
 		    (pdevn_params->separations.num_separations, pparams);
-	    break;
 	}
 	else if (pcs->type->index == gs_color_space_index_DeviceN) {
 	    update_DeviceN_spot_equivalent_cmyk_colors(pdev, pgs, pcs,
 						pdevn_params, pparams);
 	    pparams->all_color_info_valid = check_all_colors_known
 		    (pdevn_params->separations.num_separations, pparams);
-	    break;
 	}
-	/* Go to any base color spaces to check them */
-	pcs = pcs->type->base_space(pcs);
-	if (pcs == last_pcs)	/* Exit if the base and current pcs are same */
-	    break;
     }
 }
 

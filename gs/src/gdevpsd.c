@@ -48,11 +48,7 @@ private dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
 private dev_proc_get_color_comp_index(psd_get_color_comp_index);
 private dev_proc_encode_color(psd_encode_color);
 private dev_proc_decode_color(psd_decode_color);
-private dev_proc_fill_path(psd_fill_path);
-private dev_proc_stroke_path(psd_stroke_path);
-private dev_proc_begin_image(psd_begin_image);
-private dev_proc_text_begin(psd_text_begin);
-private dev_proc_fill_rectangle_hl_color(psd_fill_rectangle_hl_color);
+private dev_proc_update_spot_equivalent_colors(psd_update_spot_equivalent_colors);
 
 /* This is redundant with color_info.cm_name. We may eliminate this
    typedef and use the latter string for everything. */
@@ -156,14 +152,14 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 	NULL,				/* copy_alpha */\
 	NULL,				/* get_band */\
 	NULL,				/* copy_rop */\
-	psd_fill_path,			/* fill_path */\
-	psd_stroke_path,		/* stroke_path */\
+	NULL,				/* fill_path */\
+	NULL,				/* stroke_path */\
 	NULL,				/* fill_mask */\
 	NULL,				/* fill_trapezoid */\
 	NULL,				/* fill_parallelogram */\
 	NULL,				/* fill_triangle */\
 	NULL,				/* draw_thin_line */\
-	psd_begin_image,		/* begin_image */\
+	NULL,				/* begin_image */\
 	NULL,				/* image_data */\
 	NULL,				/* end_image */\
 	NULL,				/* strip_tile_rectangle */\
@@ -174,7 +170,7 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 	NULL,				/* map_color_rgb_alpha */\
 	NULL,				/* create_compositor */\
 	NULL,				/* get_hardware_params */\
-	psd_text_begin,			/* text_begin */\
+	NULL,				/* text_begin */\
 	NULL,				/* finish_copydevice */\
 	NULL,				/* begin_transparency_group */\
 	NULL,				/* end_transparency_group */\
@@ -186,7 +182,12 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 	psd_encode_color,		/* encode_color */\
 	psd_decode_color,		/* decode_color */\
 	NULL,				/* pattern_manage */\
-	psd_fill_rectangle_hl_color	/* fill_rectangle_hl_color */\
+	NULL,				/* fill_rectangle_hl_color */\
+	NULL,				/* include_color_space */\
+	NULL,				/* fill_linear_color_scanline */\
+	NULL,				/* fill_linear_color_trapezoid */\
+	NULL,				/* fill_linear_color_triangle */\
+	psd_update_spot_equivalent_colors /* update_spot_equivalent_colors */\
 }
 
 
@@ -520,77 +521,16 @@ psd_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 }
 
 /*
- * We implement the high level routines simply so we can check to see if
- * these operations involve separation colors.  If so then we use them to
- * capture an equivalent CMYK color for the the separation.
+ *  Device proc for updating the equivalent CMYK color for spot colors.
  */
 private int
-psd_fill_path(gx_device * pdev, const gs_imager_state * pis,
-		     gx_path * ppath, const gx_fill_params * params,
-		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+psd_update_spot_equivalent_colors(gx_device *pdev, const gs_state * pgs)
 {
     psd_device * psdev = (psd_device *)pdev;
 
-    update_spot_equivalent_cmyk_colors(pdev, pis,
+    update_spot_equivalent_cmyk_colors(pdev, pgs,
 		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
-    return gx_default_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
-}
-
-private int
-psd_stroke_path(gx_device * pdev, const gs_imager_state * pis,
-		       gx_path * ppath, const gx_stroke_params * params,
-		       const gx_drawing_color * pdcolor,
-		       const gx_clip_path * pcpath)
-{
-    psd_device * psdev = (psd_device *)pdev;
-
-    update_spot_equivalent_cmyk_colors(pdev, pis,
-		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
-    return gx_default_stroke_path(pdev, pis, ppath, params, pdcolor, pcpath);
-}
-
-private int
-psd_begin_image(gx_device * pdev, const gs_imager_state * pis,
-		const gs_image_t * pim, gs_image_format_t format,
-		const gs_int_rect * prect, const gx_drawing_color * pdcolor,
-		const gx_clip_path * pcpath, gs_memory_t * memory,
-		gx_image_enum_common_t ** pinfo)
-{
-    psd_device * psdev = (psd_device *)pdev;
-
-    update_spot_equivalent_cmyk_colors(pdev, pis,
-		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
-    return gx_default_begin_image(pdev, pis, pim, format, prect, pdcolor,
-		    pcpath, memory, pinfo);
-}
-
-private int
-psd_text_begin(gx_device * pdev, gs_imager_state * pis,
-		      const gs_text_params_t * text, gs_font * font,
-		      gx_path * path, const gx_device_color * pdcolor,
-		      const gx_clip_path * pcpath,
-		      gs_memory_t * mem, gs_text_enum_t ** ppte)
-{
-    psd_device * psdev = (psd_device *)pdev;
-
-    update_spot_equivalent_cmyk_colors(pdev, pis,
-		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
-    return gx_default_text_begin(pdev, pis, text, font, path, pdcolor,
-		    pcpath, mem, ppte);
-}
-
-private int
-psd_fill_rectangle_hl_color(gx_device *pdev, 
-    const gs_fixed_rect *rect, 
-    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
-    const gx_clip_path *pcpath)
-{
-    psd_device * psdev = (psd_device *)pdev;
-
-    update_spot_equivalent_cmyk_colors(pdev, pis,
-		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
-    return gx_default_fill_rectangle_hl_color(pdev, rect,
-		    pis, pdcolor, pcpath);
+    return 0;
 }
 
 private int

@@ -273,6 +273,8 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 	set_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
 	set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
 	set_dev_proc(dev, include_color_space, gx_forward_include_color_space);
+	set_dev_proc(dev, update_spot_equivalent_colors,
+				gx_forward_update_spot_equivalent_colors);
 	gx_device_set_target((gx_device_forward *)dev, target);
     } else {
 	gx_device_fill_in_procs((gx_device *)dev);

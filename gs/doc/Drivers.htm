@@ -702,10 +702,13 @@ many Ghostscript operators.
 <a href="../src/gxcindex.h">gxcindex.h</a>)
 <dd>This is meant to be whatever the driver uses to represent a device
 color.  For example, it might be an index in a color map, or it might be R,
-G, and B values packed into a single integer.  Ghostscript doesn't ever do
-any computations with <b><tt>gx_color_index</tt></b> values: it gets them
-from <b><tt>encode_color</tt></b> and
-hands them back as arguments to several other procedures.
+G, and B values packed into a single integer.  The Ghostscript graphics library
+gets <b><tt>gx_color_index</tt></b> values from the device's
+<b><tt>encode_color</tt></b> and hands them back as arguments to several other
+procedures. If the <b><tt>separable_and_linear</tt></b> field in the device's
+<b><tt>color_info</tt></b> structure is not set to
+<b><tt>GX_CINFO_SEP_LIN</tt></b> then Ghostscript does not do
+any computations with <b><tt>gx_color_index</tt></b> values.
 
 <p>
 The special
@@ -1312,6 +1315,18 @@ graphic_object_type&nbsp;type)</tt></b> <b><em>[OPTIONAL] [OBSOLETE]</em></b>
 color_info.anti_alias member of the driver structure.  However, it still
 appears in the driver procedure vector for backward compatibility.  It
 should never be called, and drivers should not implement it.
+</dl>
+
+<dl>
+<dt><b><tt>void (*update_spot_equivalent_colors)(gx_device&nbsp;*,
+const gs_state *)</tt></b>
+<b><em>[OPTIONAL]</em></b>
+<dd>This routine provides a method for the device to gather an equivalent
+color for spot colorants. This routine is called when a Separation or DeviceN
+color space is installed.  See comments at the start of
+<a href="../src/gsequivc.c">gsequivc.c</a>. Note: This procedure is only needed
+for devices that support spot colorants and also need to have an equivalent
+color for simulating the appearance of the spot colorants.
 </dl>
 
 <h3><a name="Pixel_level_drawing"></a>Pixel-level drawing</h3>

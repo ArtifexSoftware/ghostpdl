@@ -1314,6 +1314,17 @@ typedef struct gs_fill_attributes_s {
 #define dev_proc_fill_linear_color_triangle(proc)\
   dev_t_proc_fill_linear_color_triangle(proc, gx_device)
 
+/*
+ * Update the equivalent colors for spot colors in a color space.  The default
+ * procedure does nothing.  However this routine provides a method for devices
+ * to determine an equivalent color for a spot color.  See comments at the
+ * start of src/gsequivc.c.
+ */
+#define dev_t_proc_update_spot_equivalent_colors(proc, dev_t)\
+  int proc(dev_t *dev, const gs_state * pgs)
+#define dev_proc_update_spot_equivalent_colors(proc)\
+  dev_t_proc_update_spot_equivalent_colors(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1376,6 +1387,7 @@ typedef struct gs_fill_attributes_s {
 	dev_t_proc_fill_linear_color_scanline((*fill_linear_color_scanline), dev_t); \
 	dev_t_proc_fill_linear_color_trapezoid((*fill_linear_color_trapezoid), dev_t); \
 	dev_t_proc_fill_linear_color_triangle((*fill_linear_color_triangle), dev_t); \
+	dev_t_proc_update_spot_equivalent_colors((*update_spot_equivalent_colors), dev_t); \
 }
 
 

@@ -136,9 +136,16 @@ gx_install_Separation(const gs_color_space * pcs, gs_state * pgs)
     pgs->color_space->params.separation.use_alt_cspace =
 	using_alt_color_space(pgs);
     if (pgs->color_space->params.separation.use_alt_cspace)
-        return (*pcs->params.separation.alt_space.type->install_cspace)
+        code = (*pcs->params.separation.alt_space.type->install_cspace)
 	((const gs_color_space *) & pcs->params.separation.alt_space, pgs);
-    return 0;
+    /*
+     * Give the device an opportunity to capture equivalent colors for any
+     * spot colors which might be present in the color space.
+     */
+    if (code >= 0)
+        code = dev_proc(pgs->device, update_spot_equivalent_colors)
+							(pgs->device, pgs);
+    return code;
 }
 
 /* Set the overprint information appropriate to a separation color space */
@@ -503,7 +510,7 @@ gx_serialize_Separation(const gs_color_space * pcs, stream * s)
 
     if (code < 0)
 	return code;
-    code = sputs(s, (byte *)&p->sep_name, sizeof(p->sep_name), &n);
+    code = sputs(s, (const byte *)&p->sep_name, sizeof(p->sep_name), &n);
     if (code < 0)
 	return code;
     code = cs_serialize((const gs_color_space *)&p->alt_space, s);
@@ -512,6 +519,6 @@ gx_serialize_Separation(const gs_color_space * pcs, stream * s)
     code = gx_serialize_device_n_map(pcs, p->map, s);
     if (code < 0)
 	return code;
-    return sputs(s, (byte *)&p->sep_type, sizeof(p->sep_type), &n);
+    return sputs(s, (const byte *)&p->sep_type, sizeof(p->sep_type), &n);
     /* p->use_alt_cspace isn't a property of the space. */
 }

@@ -669,6 +669,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, fill_linear_color_scanline, gx_default_fill_linear_color_scanline);
     fill_dev_proc(dev, fill_linear_color_trapezoid, gx_default_fill_linear_color_trapezoid);
     fill_dev_proc(dev, fill_linear_color_triangle, gx_default_fill_linear_color_triangle);
+    fill_dev_proc(dev, update_spot_equivalent_colors, gx_default_update_spot_equivalent_colors);
 }
 
 int
@@ -833,6 +834,17 @@ gx_default_fill_rectangle_hl_color(gx_device *pdev,
 int
 gx_default_include_color_space(gx_device *pdev, gs_color_space *cspace, 
 	const byte *res_name, int name_length)
+{
+    return 0;
+}
+
+/*
+ * If a device want to determine an equivalent color for its spot colors then
+ * it needs to implement this method.  See comments at the start of
+ * src/gsequivc.c.
+ */
+int
+gx_default_update_spot_equivalent_colors(gx_device *pdev, const gs_state * pgs)
 {
     return 0;
 }

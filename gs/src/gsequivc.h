@@ -44,7 +44,7 @@ typedef struct equivalent_cmyk_color_params_s {
 
 /* If possible, update the equivalent CMYK color for a spot color */
 void update_spot_equivalent_cmyk_colors(gx_device * pdev,
-		const gs_imager_state *pis, gs_devn_params * pdevn_params,
+		const gs_state * pgs, gs_devn_params * pdevn_params,
 		equivalent_cmyk_color_params * pparams);
 
 #endif		/* define gsequivc_INCLUDED */
