@@ -3185,9 +3185,9 @@ of the size in the descriptor.  For this reason, every object stores its
 size as well as a reference to its descriptor.
 
 <p>
-Because the standard Ghostscript garbage collector is conservative and can
-move objects, every object allocated by a Ghostscript allocator must have an
-accurate structure descriptor.  If you define a new type of object
+Because the standard Ghostscript garbage collector is non-conservative and
+can move objects, every object allocated by a Ghostscript allocator must
+have an accurate structure descriptor.  If you define a new type of object
 (structure) that will be allocated in storage managed by Ghostscript, you
 <em>must</em> create an accurate descriptor for it, and use that descriptor
 to allocate it.  The process of creating accurate descriptors for all
@@ -3253,6 +3253,14 @@ collectors for Ghostscript's own allocator:
 described <a href="#Interpreter_GC">below</a>;
 <li>A "non" garbage collector that only merges adjacent free blocks.
 </ul>
+
+<p>
+As noted above, because the architecture supports compacting garbage
+collection, a "real" garbage collector cannot be run at arbitrary times,
+because it cannot reliably find and relocate pointers that are on the C
+stack.  In general, it is only safe to run a "real" garbage collector when
+control is at the top level of the program, when there are no pointers to
+garbage collectable objects from the stack (other than designated roots).
 
 <dl>
 <dt>
@@ -3631,6 +3639,17 @@ to determine whether arbitrary bit patterns are pointers) cannot compact.
 <li>It uses mark-and-sweep, rather than a more modern copying approach,
 because it cannot afford the extra memory required for copying.
 </ul>
+
+<p>
+Because the garbage collector is non-conservative, it cannot be run if there
+are any pointers to movable storage from the C stack.  Thus it cannot be run
+automatically when the allocator is unable to allocate requested space.
+Instead, when the allocator has allocated a given amount of storage (the
+<b><tt>vm_threshold</tt></b> amount, corresponding to the PostScript
+<b><tt>VMThreshold</tt></b> parameter), it sets a flag that the interpreter
+checks in the main loop.  When the interpreter sees that this flag is set,
+it calls the garbage collector: at that point, there are no problematic
+pointers from the stack.
 
 <p>
 Roots for tracing must be registered with the allocator.  Most roots are
