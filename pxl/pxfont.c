@@ -279,8 +279,12 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	const px_value_t *pydata = par->pv[2];
        	gs_matrix save_ctm;
 	gs_font *pfont = gs_currentfont(pgs);
-	font_proc_next_char_glyph((*save_next_char)) = pfont->procs.next_char_glyph;
+	font_proc_next_char_glyph((*save_next_char));
 	int code = 0;
+
+	if ( pfont == 0 )
+	  return_error(errorNoCurrentFont);
+	save_next_char = pfont->procs.next_char_glyph;
 
 	if ( (pxdata != 0 && pxdata->value.array.size != len) ||
 	     (pydata != 0 && pydata->value.array.size != len)
