@@ -459,10 +459,12 @@
       % Build names array in the order they occur in the 'post' table
       /postpos glyphnames def
       [ numglyphs 1 sub {
+	postpos postglyphs length ge { exit } if
+	% No name available, /postnames will be defined as an empty
+	% array and the glyph won't get a name attached.
 	postglyphs postpos get 
         postglyphs postpos 1 add 2 index getinterval cvn
 	exch postpos add 1 add /postpos exch def
-	postpos postglyphs length ge { exit } if
       } repeat
       ] /postnames exch def
       [ 0 1 numglyphs 1 sub {
