@@ -415,10 +415,20 @@ int
 hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
     if ( pgls->personality == rtl ) {
+	int dummy;
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	hpgl_call(pcl_do_FF(pgls));
+	/* with parameter always feed, without parameter feed if marked */
+	if ( pcl_page_marked(pgls) || hpgl_arg_c_int(pargs, &dummy) )
+	    hpgl_call(pcl_do_FF(pgls));
     }
     return 0;
+}
+
+/* enable cutter - not supported */
+int
+hpgl_EC(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{
+    return e_Unimplemented;
 }
 
 /* PS;  NB this is only a partial implementation. */
@@ -595,6 +605,7 @@ pgconfig_do_registration(
 	  HPGL_COMMAND('I', 'W', hpgl_IW, hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('P', 'G', hpgl_PG, hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('P', 'S', hpgl_PS, hpgl_cdf_rtl),
+	  HPGL_COMMAND('E','C',  hpgl_EC, hpgl_cdf_rtl),
 	  HPGL_COMMAND('R', 'O', hpgl_RO, hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('R', 'P', hpgl_RP, hpgl_cdf_rtl),
 	  HPGL_COMMAND('S', 'C', hpgl_SC, hpgl_cdf_pcl_rtl_both),
