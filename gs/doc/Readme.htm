@@ -116,6 +116,7 @@ PostScript, and PDF reference documentation</a>
 <li>Primarily for developers:
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><td valign=top>
+<a href="#API">API.htm</a><br>
 <a href="#C-style">C-style.htm</a><br>
 <a href="#DLL">DLL.htm</a><br>
 <a href="#Develop">Develop.htm</a><br>
@@ -276,10 +277,11 @@ can be distributed <a href="Commprod.htm">with a commercial product</a>
 
 <p>
 If you intend to use Ghostscript in the form of a dynamic link library
-(DLL) under OS/2 or Microsoft Windows, read
+(DLL) under OS/2 or Microsoft Windows or in the form of shared object
+under Linux, read
 
 <ul>
-<li> documentation on <a href="DLL.htm">Ghostscript as a DLL</a>
+<li> documentation on <a href="API.htm">Ghostscript Interpreter API</a>
 </ul>
 
 <p>
@@ -402,6 +404,14 @@ class="offsite">http://www.volny.cz/rebus/ghostscript</a>
 with explanations of the contents.
 
 <dl>
+<dt><a name="API"></a><a href="API.htm"><b>API.htm</b></a>
+<dd> On MS-Windows and OS/2, Ghostscript is compiled as a dynamic 
+link library (DLL).  On Linux, Ghostscript can be compiled as
+a shared object.  This describes how to use it.
+For developers.
+</dl>
+
+<dl>
 <dt><a name="Bug-form"></a><a href="Bug-form.htm"><b>Bug-form.htm</b></a>
 <dd> A form to fill out and a-meil to report a problem with AFPL
 Ghostscript -- but remember that Ghostscript comes with <b>NO WARRANTY</b>
@@ -454,7 +464,8 @@ See also the <a href="#News">latest news</a> of changes.
 <dt><a name="DLL"></a><a href="DLL.htm"><b>DLL.htm</b></a>
 <dd> On OS/2, MS Windows-16 and MS Windows-32 platforms, Ghostscript is
 compiled as a dynamic link library (DLL).  This describes how to use it.
-For developers.
+For developers. <b>This DLL interface is obsolete.</b>  
+Use <a href="#API"><b>API.htm</b></a> instead.
 </dl>
 
 <dl>
