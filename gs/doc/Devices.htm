@@ -553,7 +553,7 @@ each strip be about 8 Kbytes.  As an example, to generate the 'tiger' in
 tiffg4 format that has the recommended strip size, use:
 
 <blockquote><pre>
-gs -sDEVICE=tiffg4 -sOutputFile=tiger.tif -dMaxStripSize=8192 examples/tiger.ps
+gs -sDEVICE=tiffg4 -sOutputFile=tiger.tif -dMaxStripSize=8192 examples/tiger.eps
 </pre></blockquote>
 
 <p>
@@ -987,7 +987,7 @@ colour and mono drivers.  It is also possible to set various
 printer-specific parameters from the command line, for example
 
 <blockquote><b><tt>
-gs&nbsp;-sDEVICE=cDeskJet&nbsp;-dBitsPerPixel=16&nbsp;-dDepletion=1&nbsp;-dShingling=2&nbsp;tiger.ps
+gs&nbsp;-sDEVICE=cDeskJet&nbsp;-dBitsPerPixel=16&nbsp;-dDepletion=1&nbsp;-dShingling=2&nbsp;tiger.eps
 </tt></b></blockquote>
 
 <p>
@@ -4222,7 +4222,7 @@ like this:
 For example, from my Linux box:
 
 <blockquote><b><tt>
-gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
+gs @stc.upp -sOutputFile=/dev/lp1 tiger.eps -c quit
 </tt></b></blockquote>
 
 <blockquote><table cellpadding=0 cellspacing=0>
