@@ -91,7 +91,7 @@ stat__h=$(GLSRC)stat_.h $(std_h)
 stdio__h=$(GLSRC)stdio_.h $(std_h)
 string__h=$(GLSRC)string_.h $(std_h)
 time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
-unistd_h=$(GLSRC)unistd_.h $(std_h)
+unistd__h=$(GLSRC)unistd_.h $(std_h)
 windows__h=$(GLSRC)windows_.h
 # Out of order
 pipe__h=$(GLSRC)pipe_.h $(stdio__h)
