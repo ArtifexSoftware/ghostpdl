@@ -214,7 +214,7 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  case 2 :
 	      if ( pgls->g.polygon_mode ) {
 		  /* explicitly close the path if the pen is down */
-		  if ( pgls->g.pen_state.move_or_draw & hpgl_pen_down )
+		  if ( pgls->g.move_or_draw == hpgl_pen_down )
 		      hpgl_call(hpgl_close_current_path(pgls));
 		  /* make a copy of the path and clear the current path */
 		  hpgl_call(hpgl_copy_current_path_to_polygon_buffer(pgls));
