@@ -1475,6 +1475,7 @@ process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
 	dpt.x += pte->text.delta_space.x * num_spaces;
 	dpt.y += pte->text.delta_space.y * num_spaces;
     }
+    *pindex = i;
     *pdpt = dpt;
     return 0;
 }
