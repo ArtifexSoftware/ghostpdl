@@ -722,7 +722,7 @@ win_pr2_get_params(gx_device * pdev, gs_param_list * plist)
 	code = param_write_bool(plist, "NoCancel",
 				&(wdev->nocancel));
     if (code >= 0)
-	code = param_write_bool(plist, "QueryUser",
+	code = param_write_int(plist, "QueryUser",
 				&(wdev->query_user));
     if (code >= 0)
 	code = win_pr2_write_user_settings(wdev, plist);
