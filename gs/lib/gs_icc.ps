@@ -277,25 +277,34 @@ systemdict begin
   dup
   (%%BeginICCProfile) anchorsearch {
     pop pop
-    % DEBUG { (.ProcessICCcomment found %%BeginICCProfile) print flush } if
+    DEBUG { (.ProcessICCcomment found %%BeginICCProfile) print flush } if
 
     % load an ICC profile defined as comments (hex encoded).
     % Ends with %%End at the start of a line. Read the data into
-    % a tempfile to allow seeking. The tempfile is not closed since
-    % it is needed by the ICC logic.
-    (icc) (w) .tempfile	% stack: --file-- (%%BeginICCProfile: ...) (tempfilename) --tempfile--
-    3 index 0 (%%EndICCProfile) /SubFileDecode filter
-    32768 string
-  	% stack: (tempfilename) --tempfile-- --infile-- scratchstring
-    {
-      2 copy readhexstring
-      exch 4 index exch
-      writestring
-      not { exit } if
-    } loop
-    pop pop	% done with scratchstring and input file
-    closefile
-    (r) file	% open binary ICC profile file for reading
+    % a bytestring to allow seeking. This string can be used as a
+    % seekable ReusableStreamDecode filter source by the ICC logic.
+    %
+    % Since .bigstring needs to know the size, we first read an array of
+    % strings each 64000 max length.
+    %
+    % stack: --file-- (%%BeginICCProfile: ...) 
+    1 index 0 (%%EndICCProfile) /SubFileDecode filter
+    [ { counttomark 1 add index
+        64000 string readhexstring
+        not { exit } if
+      } loop
+    ] exch closefile
+    0 1 index { length add } forall
+    .bigstring
+    exch 0 exch {
+      % stack: --file-- (%%BeginICCProfile: ...) --bytestring-- cur_index --string--
+      2 copy length add 	% calculate next string start point
+      3 1 roll 3 index 3 1 roll putinterval
+    } forall
+    pop				% discard length of bytestring
+    % make a seekable -file- out of the bytestring
+    mark /AsyncRead true .dicttomark /ReusableStreamDecode filter
+    % stack: --file-- (%%BeginICCProfile: ...) --icc_subfile-- 
     /DeviceCMYK setcolorspace
     << /DataSource 3 -1 roll
        /N 4		% Try CMYK first
