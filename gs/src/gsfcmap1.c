@@ -414,8 +414,6 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
             /* Undecodable string is shorter than the shortest character,
              * there's no way except to return error.
              */
-	    *pglyph = gs_no_glyph;
-	    return -1;
             if (gs_debug_c('J')) {
                 dlprintf2("[J]GCDN() left data in buffer (%d) is shorter than shortest defined character (%d)\n",
                   ssize, chr_size_shortest);
