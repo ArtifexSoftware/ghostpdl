@@ -782,7 +782,8 @@ flex:			{
 			cnext;
 		    case ce2_hflex1:
 			csp[4] = fixed_half;	/* fd/100 */
-			csp[2] = *csp, csp[3] = 0;	/* dx6, dy6 */
+			csp[2] = *csp;          /* dx6 */
+			csp[3] = -(csp[-7] + csp[-5] + csp[-1]);	/* dy6 */
 			*csp = csp[-2], csp[1] = csp[-1];	/* dx5, dy5 */
 			csp[-2] = csp[-3], csp[-1] = 0;		/* dx4, dy4 */
 			csp[-3] = 0;	/* dy3 */
