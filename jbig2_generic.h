@@ -8,14 +8,14 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.h,v 1.4 2002/06/21 19:10:02 giles Exp $
+    $Id: jbig2_generic.h,v 1.5 2002/06/22 09:47:31 giles Exp $
 */
 
 /* Table 2 */
 typedef struct {
   bool MMR;
-  int32_t GBW;
-  int32_t GBH;
+  /* GBW */
+  /* GBH */
   int GBTEMPLATE;
   bool TPGDON;
   bool USESKIP;

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.8 2002/06/21 23:11:29 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.9 2002/06/22 09:47:31 giles Exp $
 */
 
 #include <stddef.h>
@@ -135,8 +135,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		  /* Table 16 */
 		  region_params.MMR = 0;
-		  region_params.GBW = SYMWIDTH;
-		  region_params.GBH = HCHEIGHT;
 		  region_params.GBTEMPLATE = params->SDTEMPLATE;
 		  region_params.TPGDON = 0;
 		  region_params.USESKIP = 0;

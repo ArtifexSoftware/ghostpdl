@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.c,v 1.6 2002/06/21 19:10:02 giles Exp $
+    $Id: jbig2_generic.c,v 1.7 2002/06/22 09:47:31 giles Exp $
 */
 
 /**
@@ -408,8 +408,6 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   params.GBTEMPLATE = (seg_flags & 6) >> 1;
   params.TPGDON = (seg_flags & 8) >> 3;
   params.USESKIP = 0;
-  params.GBW = rsi.width;
-  params.GBH = rsi.height;
   memcpy (params.gbat, gbat, gbat_bytes);
 
   image = jbig2_image_new(ctx, rsi.width, rsi.height);
