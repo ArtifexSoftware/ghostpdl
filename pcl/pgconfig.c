@@ -73,6 +73,35 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return e_NeedData;
 }
 
+#ifdef DEBUG
+
+/* debug hpgl/2 operator equivalent to using -Z on the command line.
+   This is useful for systems that don't have access to the debugging
+   command line options.  Sets debug flags until a terminating ";" is
+   received.  GL/2 example: IN;SP1;ZZPB; is equivalent to running the
+   interpreter with the option -ZPB which turns on debug trace for
+   paths and bitmaps */
+
+int
+hpgl_ZZ(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{
+    const byte *p = pargs->source.ptr;
+    const byte *rlimit = pargs->source.limit;
+    while ( p < rlimit ) {
+	byte ch = *++p;
+	/* ; terminates the command */
+	if ( ch == ';' ) {
+	    pargs->source.ptr = p;
+	    return 0;
+	}
+	else {
+	    gs_debug[(int)ch] = 1;
+	}
+    }
+    pargs->source.ptr = p;
+    return e_NeedData;
+}
+#endif
 /* The part of the DF command applicable for overlay macros */
 void
 hpgl_reset_overlay(hpgl_state_t *pgls)
@@ -571,6 +600,7 @@ pgconfig_do_registration(
 	  HPGL_COMMAND('S', 'C', hpgl_SC, hpgl_cdf_pcl_rtl_both),
 #ifdef DEBUG
 	  HPGL_COMMAND('B', 'P', hpgl_BP, hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('Z', 'Z', hpgl_ZZ, hpgl_cdf_pcl_rtl_both),
 #endif
 	END_HPGL_COMMANDS
 	return 0;
