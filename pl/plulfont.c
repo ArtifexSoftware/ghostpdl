@@ -30,12 +30,19 @@ SW16 trace_sw = 0;
 
 /*
  * NB NB NB The root of the directory tree containing UFST fonts, plugins, and symbol
- * set files. Adjust this as required on your system. Note that the final
- * character must be a separator ('/').
+ * set files. Adjust this as required on your system.
+ * Also note this conditional compilation flag is not a very good solution, but it is
+ * a #define required by the agfa system and needs only be defined for the UFST specific
+ * files.
  */
-#define UFST_DATA_ROOT  "../../pl/agfa/fontdata/"
 
-/*
+#ifdef MSVC
+#define UFST_DATA_ROOT  "..\\..\\pl\\agfa\\fontdata"
+#else
+#define UFST_DATA_ROOT 
+#define UFST_DATA_ROOT  "../../pl/agfa/fontdata/"
+#endif
+ /*
  * Paths for the statically loadded data. Since only MicroType font collection
  * objects are used for built-in fonts, all of these names are prefaced by fc.
  *
@@ -49,9 +56,16 @@ SW16 trace_sw = 0;
  * Note that the plug-in font collection object must be specifically registered
  * via the CGIFfco_Plugin procedure.
  */
+#ifdef MSVC
+private const UB8           fcNmPl[] =    "\\mtfonts\\pcl45\\mt1\\plug___f.fco";
+private const UB8 *const    fcNmAry[] = { "\\mtfonts\\pcl45\\mt1\\pcl____f.fco",
+                                          "\\mtfonts\\pcl45\\mt1\\wd_____f.fco" };
+#else
+
 private const UB8           fcNmPl[] =    "mtfonts/pcl45/mt1/plug___f.fco";
 private const UB8 *const    fcNmAry[] = { "mtfonts/pcl45/mt1/pcl____f.fco",
                                           "mtfonts/pcl45/mt1/wd_____f.fco" };
+#endif
 
 /*
  * Handle for the plugin object and the various font collection objects. The
