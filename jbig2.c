@@ -1,7 +1,21 @@
+/*
+    jbig2dec
+    
+    Copyright (c) 2002 artofcode LLC.
+    
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+        
+    $Id: jbig2.c,v 1.6 2002/06/15 14:12:50 giles Exp $
+*/
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
@@ -382,22 +396,6 @@ void jbig2_global_ctx_free(Jbig2GlobalCtx *global_ctx)
   jbig2_ctx_free((Jbig2Ctx *)global_ctx);
 }
 
-int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
-			 const uint8_t *segment_data)
-{
-  jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
-	      "Segment %d, flags=%x, type=%d, data_length=%d",
-	      sh->segment_number, sh->flags, sh->flags & 63,
-	      sh->data_length);
-  switch (sh->flags & 63)
-    {
-    case 0:
-      return jbig2_symbol_dictionary(ctx, sh, segment_data);
-    case 38:
-      return jbig2_immediate_generic_region(ctx, sh, segment_data);
-    }
-  return 0;
-}
 
 const Jbig2Result *
 jbig2_get_result(Jbig2Ctx *ctx, int32_t segment_number)

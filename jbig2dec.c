@@ -8,13 +8,17 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.18 2002/06/04 16:47:09 giles Exp $
+    $Id: jbig2dec.c,v 1.19 2002/06/15 14:12:50 giles Exp $
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
@@ -37,18 +41,6 @@ typedef struct {
 
 #ifdef DEAD_CODE
 
-
-int32
-get_bytes (Jbig2Ctx_foo *ctx, byte *buf, int size, int off)
-{
-  int n_bytes;
-
-  fseek(ctx->f, off, SEEK_SET);
-  n_bytes = fread(buf, 1, size, ctx->f);
-  if (n_bytes < size)
-    ctx->eof = TRUE;
-  return n_bytes;
-}
 
 static Jbig2Ctx_foo *
 jbig2_open (FILE *f)
@@ -240,8 +232,19 @@ static int
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity,
 	       int32_t seg_idx)
 {
-  fprintf(stderr, "%s\n", buf);
-  return 0;
+    char *string;
+    
+    switch (severity) {
+        case JBIG2_SEVERITY_DEBUG: string = "DEBUG"; break;;
+        case JBIG2_SEVERITY_INFO: string = "info"; break;;
+        case JBIG2_SEVERITY_WARNING: string = "warning"; break;;
+        case JBIG2_SEVERITY_FATAL: string = "fatal error"; break;;
+        default: string = "unknown message"; break;;
+    }
+    
+    fprintf(stderr, "jbig2dec %s %s (segment 0x%0x)\n", string, buf, seg_idx);
+
+    return 0;
 }
 
 int
@@ -256,6 +259,7 @@ main (int argc, char **argv)
   filearg = parse_options(argc, argv, &params);
 
   if ((argc - filearg) == 1)
+  // only one argument--open as a jbig2 file
     {
       char *fn = argv[filearg];
 
@@ -267,6 +271,7 @@ main (int argc, char **argv)
 	}
     }
   else if ((argc - filearg) == 2)
+  // two arguments open as separate global and page streams
     {
       char *fn = argv[filearg];
       char *fn_page = argv[filearg+1];
@@ -285,12 +290,15 @@ main (int argc, char **argv)
 	  return 1;
 	}
     }
-  else    
+  else
+  // any other number of arguments
     return print_usage();
     
   ctx = jbig2_ctx_new(NULL, f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0,
 		      NULL,
 		      error_callback, NULL);
+
+  // pull the whole file/global stream into memory
   for (;;)
     {
       int n_bytes = fread(buf, 1, sizeof(buf), f);
@@ -300,6 +308,7 @@ main (int argc, char **argv)
     }
   fclose(f);
 
+  // if there's a local page stream read that in its entirety
   if (f_page != NULL)
     {
       Jbig2GlobalCtx *global_ctx = jbig2_make_global_ctx(ctx);
@@ -318,5 +327,6 @@ main (int argc, char **argv)
 
   jbig2_ctx_free(ctx);
 
+  // fin
   return 0;
 }
