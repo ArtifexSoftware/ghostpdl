@@ -226,6 +226,8 @@ write_Private(stream *s, gs_font_type1 *pfont,
 			  pdata->FamilyOtherBlues.count);
 	write_float_array(plist, "StdHW", pdata->StdHW.values,
 			  pdata->StdHW.count);
+	write_float_array(plist, "StdVW", pdata->StdVW.values,
+			  pdata->StdVW.count);
 	write_float_array(plist, "StemSnapH", pdata->StemSnapH.values,
 			  pdata->StemSnapH.count);
 	write_float_array(plist, "StemSnapV", pdata->StemSnapV.values,
