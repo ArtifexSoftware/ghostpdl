@@ -152,8 +152,8 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
         for (j = 0; j < h; j++) {
 	    *d++ |= (*s & mask) >> shift;
             for(i = leftbyte; i < rightbyte - 1; i++) {
-		*d++ |= ((*s & ~mask) << (8 - shift)) |
-		    ((*(++s) & mask) >> shift);
+		*d |= ((*s++ & ~mask) << (8 - shift));
+		*d++ |= ((*s & mask) >> shift);
 	    }
 	    if (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3))
 		*d |= (s[0] & rightmask) << (8 - shift);
