@@ -481,6 +481,7 @@ void t1_hinter__init(t1_hinter * this, gx_path *output_path)
     this->output_path = output_path;
     this->memory = (output_path == 0 ? 0 : output_path->memory);
     this->disable_hinting = (this->memory == NULL);
+    this->autohinting = false;
 
     this->stem_snap[0][0] = this->stem_snap[1][0] = 100; /* default */
 }
@@ -791,6 +792,7 @@ int t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *p
     this->ForceBold = false;
     this->disable_hinting |= no_grid_fitting;
     this->charpath_flag = no_grid_fitting;
+    this->autohinting = true;
     if (this->disable_hinting)
 	return 0;
     /* Currently we don't provice alignments zones or stem snap. */
@@ -1637,6 +1639,9 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 			if (this->hint[i].side_mask != 3) {
 			    /* An overal hint from the True Type autohinter. */
 			    align = (this->hint[i].side_mask & 2 ? topzn : botzn);
+			} else if (this->autohinting && horiz) {
+			    if (this->pole[segment_index].gy == this->hint[i].g0)
+				align = (this->hint[i].g0 > this->hint[i].g0 ? topzn : botzn);
 			}
 			vd_square(this->pole[segment_index].gx, this->pole[segment_index].gy, 
 				    (horiz ? 7 : 9), (i < this->primary_hint_count ? RGB(0,0,255) : RGB(0,255,0)));

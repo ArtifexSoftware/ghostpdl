@@ -125,6 +125,7 @@ typedef struct t1_hinter_s
     bool grid_fit_x, grid_fit_y;
     bool charpath_flag;
     bool path_opened;
+    bool autohinting;
     t1_glyph_space_coord blue_shift, blue_fuzz;
     t1_pole pole0[T1_MAX_POLES], *pole;
     t1_hint hint0[T1_MAX_HINTS], *hint;

@@ -553,6 +553,7 @@ transpose_path(gx_path *path)
 typedef struct {
     t1_hinter super;
     int transpose;
+    fixed midx;
 } t1_hinter_aux;
 
 private int 
@@ -560,14 +561,31 @@ stem_hint_handler(void *client_data, gx_san_sect *ss)
 {
     t1_hinter_aux *h = (t1_hinter_aux *)client_data;
 
-    if (ss->side_mask == 3)
-	return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
-		    (&h->super, ss->xl, ss->xr - ss->xl);
-    else
+    if (ss->side_mask == 3) {
+	/* Orient horizontal hints to help with top/bottom alignment zones. 
+	   Otherwize glyphs may get a random height due to serif adjustsment. */
+	if (ss->xl > h->midx && h->transpose)
+	    return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
+			(&h->super, ss->xr, ss->xl - ss->xr);
+	else
+	    return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
+			(&h->super, ss->xl, ss->xr - ss->xl);
+    } else
 	return t1_hinter__overall_hstem(&h->super, ss->xl, ss->xr - ss->xl, ss->side_mask);
 }
 
-#define OVERALL_HINT 0 /* fixme : This stuff appers unuseful. */
+#define OVERALL_HINT 0 /* Overall hints help to emulate Type 1 alignment zones
+                          (except for overshoot suppression.)
+			  For example, without it comparefiles/type42_glyph_index.ps
+			  some glyphs have different height due to 
+			  serifs are aligned in same way as horizontal stems,
+			  but both sides of a stem have same priority.
+
+			  This stuff appears low useful, because horizontal
+			  hint orientation performs this job perfectly.
+			  fixme : remove.
+			  fixme : remove side_mask from gxhintn.c .
+			  */
 
 private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
 	gs_font_type42 *pfont, const gs_log2_scale_point *pscale, gx_ttfExport *e, ttfOutliner *o)
@@ -634,6 +652,7 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	params.fill_zero_width = false;
 
 	for (h.transpose = 0; h.transpose < 2; h.transpose++) {
+	    h.midx = (padev->xmin + padev->xmax) / 2;
 	    if (h.transpose)
 		transpose_path(path);
 	    gx_san_begin(padev);
