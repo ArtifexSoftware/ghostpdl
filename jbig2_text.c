@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.21 2003/02/07 05:06:46 raph Exp $
+    $Id: jbig2_text.c,v 1.22 2003/03/05 14:29:35 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -274,27 +274,6 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     return 0;
 }
 
-/* find a segment by number */
-static Jbig2Segment *
-find_segment(Jbig2Ctx *ctx, uint32_t number)
-{
-    int index, index_max = ctx->segment_index - 1;
-    const Jbig2Ctx *global_ctx = ctx->global_ctx;
-
-    /* FIXME: binary search would be better? */
-    for (index = index_max; index >= 0; index--)
-        if (ctx->segments[index]->number == number)
-            return (ctx->segments[index]);
-        
-    if (global_ctx)
-	for (index = global_ctx->segment_index - 1; index >= 0; index--)
-	    if (global_ctx->segments[index]->number == number)
-		return (global_ctx->segments[index]);
-    
-    /* didn't find a match */
-    return NULL;
-}
-
 /* count the number of dictionary segments referred to by the given segment */
 static int
 count_referred_dicts(Jbig2Ctx *ctx, Jbig2Segment *segment)
@@ -304,7 +283,7 @@ count_referred_dicts(Jbig2Ctx *ctx, Jbig2Segment *segment)
     int n_dicts = 0;
 
     for (index = 0; index < segment->referred_to_segment_count; index++) {
-        rsegment = find_segment(ctx, segment->referred_to_segments[index]);
+        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
         if (rsegment && ((rsegment->flags & 63) == 0))
             n_dicts++;
     }
@@ -324,7 +303,7 @@ list_referred_dicts(Jbig2Ctx *ctx, Jbig2Segment *segment)
     
     dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
     for (index = 0; index < segment->referred_to_segment_count; index++) {
-        rsegment = find_segment(ctx, segment->referred_to_segments[index]);
+        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
         if (rsegment && ((rsegment->flags & 63) == 0))
             dicts[dindex++] = (Jbig2SymbolDict *)rsegment->result;
     }

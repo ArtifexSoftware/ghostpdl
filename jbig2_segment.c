@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.21 2003/03/05 02:44:43 giles Exp $
+    $Id: jbig2_segment.c,v 1.22 2003/03/05 14:29:35 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -122,6 +122,27 @@ jbig2_free_segment (Jbig2Ctx *ctx, Jbig2Segment *segment)
   }
   /* todo: free result */
   jbig2_free (ctx->allocator, segment);
+}
+
+/* find a segment by number */
+Jbig2Segment *
+jbig2_find_segment(Jbig2Ctx *ctx, uint32_t number)
+{
+    int index, index_max = ctx->segment_index - 1;
+    const Jbig2Ctx *global_ctx = ctx->global_ctx;
+
+    /* FIXME: binary search would be better? */
+    for (index = index_max; index >= 0; index--)
+        if (ctx->segments[index]->number == number)
+            return (ctx->segments[index]);
+        
+    if (global_ctx)
+	for (index = global_ctx->segment_index - 1; index >= 0; index--)
+	    if (global_ctx->segments[index]->number == number)
+		return (global_ctx->segments[index]);
+    
+    /* didn't find a match */
+    return NULL;
 }
 
 void
