@@ -561,10 +561,23 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
         } else {
             ref *CharStrings, char_name, *glyph;
             if (ff->char_data != NULL) {
+		/*
+		 * Can't use char_code in this case because hooked Type 1 fonts
+		 * with 'glyphshow' may render a character which has no
+		 * Encoding entry.
+		 */
                 if (name_ref(ff->char_data, ff->char_data_len, &char_name, -1) < 0)
 		    return -1;
-	    }  else if (name_ref((const byte *)".notdef", 7, &char_name, -1) < 0)
-                return -1;
+		if (buf != NULL)
+		    ff->char_data = NULL; /* Hack : next fime fall into 'seac' below. */
+	    }  else { /* seac */
+		i_ctx_t *i_ctx_p = (i_ctx_t *)ff->client_ctx_p;
+		ref *StandardEncoding;
+		if (dict_find_string(systemdict, "StandardEncoding", &StandardEncoding) <= 0 ||
+		    array_get(StandardEncoding, char_code, &char_name) < 0)
+		    if (name_ref((const byte *)".notdef", 7, &char_name, -1) < 0)
+			return -1;
+	    }
             if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
                 return -1;
             if (dict_find(CharStrings, &char_name, &glyph) <= 0)
@@ -608,6 +621,7 @@ private const FAPI_font ff_stub = {
     0, /* subfont */
     0, /* is_type1 */
     0, /* is_cid */
+    0, /* client_ctx_p */
     0, /* client_font_data */
     0, /* client_font_data2 */
     0, /* char_data */
@@ -714,6 +728,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
         subfont = SubfontId->value.intval;
     ff.font_file_path = font_file_path;
     ff.is_type1 = IsType1GlyphData(pbfont);
+    ff.client_ctx_p = i_ctx_p;
     ff.client_font_data = pbfont;
     ff.client_font_data2 = pdr;
     ff.server_font_data = pbfont->FAPI_font_data; /* Possibly pass it from zFAPIpassfont. */
@@ -782,6 +797,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
             return_error(e_invalidfont);
         ff = ff_stub;
         ff.is_type1 = true;
+	ff.client_ctx_p = i_ctx_p;
         for (i = 0; i < n; i++) {
             gs_font_type1 *pbfont1 = FDArray[i];
             pbfont1->FontBBox = pbfont->FontBBox; /* Inherit FontBBox from the type 9 font. */
@@ -1124,6 +1140,7 @@ retry_oversampling:
     ff.font_file_path = font_file_path;
     ff.is_type1 = bIsType1GlyphData;
     ff.is_cid = bCID;
+    ff.client_ctx_p = i_ctx_p;
     ff.client_font_data = pbfont;
     ff.client_font_data2 = op - 1;
     ff.server_font_data = pbfont->FAPI_font_data;
@@ -1426,6 +1443,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
     ff.font_file_path = NULL;
     ff.is_type1 = IsType1GlyphData(pbfont);
     ff.is_cid = IsCIDFont(pbfont);
+    ff.client_ctx_p = i_ctx_p;
     ff.client_font_data = pfont;
     ff.client_font_data2 = pdr;
     ff.server_font_data = 0;

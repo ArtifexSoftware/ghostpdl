@@ -80,6 +80,7 @@ struct FAPI_font_s {
     int subfont;
     bool is_type1; /* Only for non-disk fonts; dirty for disk fonts. */
     bool is_cid;
+    void *client_ctx_p;
     void *client_font_data;
     void *client_font_data2;
     const void *char_data;
