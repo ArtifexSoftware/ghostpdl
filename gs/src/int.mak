@@ -933,6 +933,62 @@ $(PSOBJ)ht_ccsto.$(OBJ) : $(PSGEN)ht_ccsto.c $(gxdhtres_h)
 $(PSGEN)ht_ccsto.c : $(PSLIB)ht_ccsto.ps $(GENHT_XE)
 	$(EXP)$(GENHT_XE) $(PSLIB)ht_ccsto.ps $(PSGEN)ht_ccsto.c
 
+# ================ PS LL3 features used internally in L2 ================ #
+
+# ---------------- Functions ---------------- #
+
+ifunc_h=$(PSSRC)ifunc.h $(gsfunc_h)
+
+# Generic support, and FunctionType 0.
+funcread_=$(PSOBJ)zfunc.$(OBJ) $(PSOBJ)zfunc0.$(OBJ)
+$(PSD)func.dev : $(INT_MAK) $(ECHOGS_XE) $(funcread_) $(GLD)funclib.dev
+	$(SETMOD) $(PSD)func $(funcread_)
+	$(ADDMOD) $(PSD)func -oper zfunc
+	$(ADDMOD) $(PSD)func -functiontype 0
+	$(ADDMOD) $(PSD)func -include $(GLD)funclib
+
+$(PSOBJ)zfunc.$(OBJ) : $(PSSRC)zfunc.c $(OP) $(memory__h)\
+ $(gscdefs_h) $(gsfunc_h) $(gsstruct_h)\
+ $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(store_h)
+	$(PSCC) $(PSO_)zfunc.$(OBJ) $(C_) $(PSSRC)zfunc.c
+
+$(PSOBJ)zfunc0.$(OBJ) : $(PSSRC)zfunc0.c $(OP) $(memory__h)\
+ $(gsdsrc_h) $(gsfunc_h) $(gsfunc0_h)\
+ $(stream_h)\
+ $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h)
+	$(PSCC) $(PSO_)zfunc0.$(OBJ) $(C_) $(PSSRC)zfunc0.c
+
+# ---------------- zlib/Flate filters ---------------- #
+
+fzlib_=$(PSOBJ)zfzlib.$(OBJ)
+$(PSD)fzlib.dev : $(INT_MAK) $(ECHOGS_XE) $(fzlib_)\
+ $(GLD)szlibe.dev $(GLD)szlibd.dev
+	$(SETMOD) $(PSD)fzlib -include $(GLD)szlibe $(GLD)szlibd
+	$(ADDMOD) $(PSD)fzlib -obj $(fzlib_)
+	$(ADDMOD) $(PSD)fzlib -oper zfzlib
+
+$(PSOBJ)zfzlib.$(OBJ) : $(PSSRC)zfzlib.c $(OP)\
+ $(idict_h) $(ifilter_h) $(ifrpred_h) $(ifwpred_h)\
+ $(spdiffx_h) $(spngpx_h) $(strimpl_h) $(szlibx_h)
+	$(PSCC) $(PSO_)zfzlib.$(OBJ) $(C_) $(PSSRC)zfzlib.c
+
+# ---------------- ReusableStreamDecode filter ---------------- #
+# This is also used by the implementation of CIDFontType 0 fonts.
+
+$(PSD)frsd.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)zfrsd.dev
+	$(SETMOD) $(PSD)frsd -include $(PSD)zfrsd
+	$(ADDMOD) $(PSD)frsd -ps gs_lev2 gs_res gs_frsd
+
+zfrsd_=$(PSOBJ)zfrsd.$(OBJ)
+$(PSD)zfrsd.dev : $(INT_MAK) $(ECHOGS_XE) $(zfrsd_)
+	$(SETMOD) $(PSD)zfrsd $(zfrsd_)
+	$(ADDMOD) $(PSD)zfrsd -oper zfrsd
+
+$(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
+ $(sfilter_h) $(stream_h) $(strimpl_h)\
+ $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zfrsd.$(OBJ) $(C_) $(PSSRC)zfrsd.c
+
 # ======================== PostScript Level 2 ======================== #
 
 # We keep the old name for backward compatibility.
@@ -1265,9 +1321,10 @@ $(PSOBJ)zfcmap.$(OBJ) : $(PSSRC)zfcmap.c $(OP)\
 
 cidread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcid.$(OBJ)
 $(PSD)cidfont.dev : $(INT_MAK) $(ECHOGS_XE) $(cidread_)\
- $(PSD)psf1read.dev $(PSD)psl2int.dev $(PSD)type42.dev
+ $(PSD)psf1read.dev $(PSD)psl2int.dev $(PSD)type42.dev $(PSD)zfrsd.dev
 	$(SETMOD) $(PSD)cidfont $(cidread_)
-	$(ADDMOD) $(PSD)cidfont -include $(PSD)psf1read $(PSD)psl2int $(PSD)type42
+	$(ADDMOD) $(PSD)cidfont -include $(PSD)psf1read $(PSD)psl2int
+	$(ADDMOD) $(PSD)cidfont -include $(PSD)type42 $(PSD)zfrsd
 	$(ADDMOD) $(PSD)cidfont -oper zfcid
 	$(ADDMOD) $(PSD)cidfont -ps gs_cidfn
 
@@ -1339,29 +1396,6 @@ $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
  $(ialloc_h) $(icsmap_h) $(estack_h) $(igstate_h) $(iname_h) $(ivmspace_h) $(store_h)
 	$(PSCC) $(PSO_)zcssepr.$(OBJ) $(C_) $(PSSRC)zcssepr.c
 
-# ---------------- Functions ---------------- #
-
-ifunc_h=$(PSSRC)ifunc.h $(gsfunc_h)
-
-# Generic support, and FunctionType 0.
-funcread_=$(PSOBJ)zfunc.$(OBJ) $(PSOBJ)zfunc0.$(OBJ)
-$(PSD)func.dev : $(INT_MAK) $(ECHOGS_XE) $(funcread_) $(GLD)funclib.dev
-	$(SETMOD) $(PSD)func $(funcread_)
-	$(ADDMOD) $(PSD)func -oper zfunc
-	$(ADDMOD) $(PSD)func -functiontype 0
-	$(ADDMOD) $(PSD)func -include $(GLD)funclib
-
-$(PSOBJ)zfunc.$(OBJ) : $(PSSRC)zfunc.c $(OP) $(memory__h)\
- $(gscdefs_h) $(gsfunc_h) $(gsstruct_h)\
- $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(store_h)
-	$(PSCC) $(PSO_)zfunc.$(OBJ) $(C_) $(PSSRC)zfunc.c
-
-$(PSOBJ)zfunc0.$(OBJ) : $(PSSRC)zfunc0.c $(OP) $(memory__h)\
- $(gsdsrc_h) $(gsfunc_h) $(gsfunc0_h)\
- $(stream_h)\
- $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h)
-	$(PSCC) $(PSO_)zfunc0.$(OBJ) $(C_) $(PSSRC)zfunc0.c
-
 # ---------------- DCT filters ---------------- #
 # The definitions for jpeg*.dev are in jpeg.mak.
 
@@ -1396,20 +1430,6 @@ $(PSOBJ)zfdctd.$(OBJ) : $(PSSRC)zfdctd.c $(OP)\
  $(gsmalloc_h)\
  $(ialloc_h) $(ifilter_h) $(iparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfdctd.$(OBJ) $(C_) $(PSSRC)zfdctd.c
-
-# ---------------- zlib/Flate filters ---------------- #
-
-fzlib_=$(PSOBJ)zfzlib.$(OBJ)
-$(PSD)fzlib.dev : $(INT_MAK) $(ECHOGS_XE) $(fzlib_)\
- $(GLD)szlibe.dev $(GLD)szlibd.dev
-	$(SETMOD) $(PSD)fzlib -include $(GLD)szlibe $(GLD)szlibd
-	$(ADDMOD) $(PSD)fzlib -obj $(fzlib_)
-	$(ADDMOD) $(PSD)fzlib -oper zfzlib
-
-$(PSOBJ)zfzlib.$(OBJ) : $(PSSRC)zfzlib.c $(OP)\
- $(idict_h) $(ifilter_h) $(ifrpred_h) $(ifwpred_h)\
- $(spdiffx_h) $(spngpx_h) $(strimpl_h) $(szlibx_h)
-	$(PSCC) $(PSO_)zfzlib.$(OBJ) $(C_) $(PSSRC)zfzlib.c
 
 # ================ Display PostScript ================ #
 
@@ -1464,20 +1484,6 @@ $(PSOBJ)zcspixel.$(OBJ) : $(PSSRC)zcspixel.c $(OP)\
  $(gscolor2_h) $(gscpixel_h) $(gscspace_h) $(gsmatrix_h)\
  $(igstate_h)
 	$(PSCC) $(PSO_)zcspixel.$(OBJ) $(C_) $(PSSRC)zcspixel.c
-
-# ---------------- ReusableStreamDecode filter ---------------- #
-# This is also used by the implementation of CIDFontType 0 fonts.
-
-frsd_=$(PSOBJ)zfrsd.$(OBJ)
-$(PSD)frsd.dev : $(INT_MAK) $(ECHOGS_XE) $(frsd_)
-	$(SETMOD) $(PSD)frsd $(frsd_)
-	$(ADDMOD) $(PSD)frsd -oper zfrsd
-	$(ADDMOD) $(PSD)frsd -ps gs_lev2 gs_res gs_frsd
-
-$(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
- $(sfilter_h) $(stream_h) $(strimpl_h)\
- $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
-	$(PSCC) $(PSO_)zfrsd.$(OBJ) $(C_) $(PSSRC)zfrsd.c
 
 # ---------------- Rest of LanguageLevel 3 ---------------- #
 

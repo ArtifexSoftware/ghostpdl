@@ -257,7 +257,7 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 /* Note that as of Adobe PostScript version 3011, this may be either */
 /* a Type 1 or Type 2 font. */
 private int
-build_FDArray_sub_font(i_ctx_t *i_ctx_p, /*const*/ ref *op,
+build_FDArray_sub_font(i_ctx_t *i_ctx_p, ref *op,
 		       gs_font_base **ppfont,
 		       font_type ftype, gs_memory_type_ptr_t pstype,
 		       const build_proc_refs * pbuild,
@@ -265,14 +265,14 @@ build_FDArray_sub_font(i_ctx_t *i_ctx_p, /*const*/ ref *op,
 {
     gs_font *pfont;
     int code = build_gs_sub_font(i_ctx_p, op, &pfont, ftype, pstype, pbuild,
-				 NULL, NULL);
+				 NULL, op);
 
     if (code >= 0)
 	*ppfont = (gs_font_base *)pfont;
     return code;
 }
 int
-build_gs_FDArray_font(i_ctx_t *i_ctx_p, /*const*/ ref *op,
+build_gs_FDArray_font(i_ctx_t *i_ctx_p, ref *op,
 		      gs_font_base **ppfont,
 		      font_type ftype, gs_memory_type_ptr_t pstype,
 		      const build_proc_refs * pbuild)

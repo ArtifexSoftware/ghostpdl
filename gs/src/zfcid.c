@@ -75,7 +75,7 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
 
 /* Get one element of a FDArray. */
 private int
-fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, /*const*/ ref *prfd)
+fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
 {
     charstring_font_refs_t refs;
     gs_type1_data data1;
