@@ -1314,7 +1314,8 @@ hpgl_draw_current_path(
                 if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
-		gs_setlinewidth(pgs, 0.1);
+		hpgl_call(gs_setlinewidth(pgls->pgs, 
+		     pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
 		hpgl_call(gs_stroke(pgs));
 		break;
 
@@ -1336,7 +1337,8 @@ hpgl_draw_current_path(
                 if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
-		gs_setlinewidth(pgs, 0.1); /* NB WRONG */
+		hpgl_call(gs_setlinewidth(pgls->pgs, 
+		     pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
 		hpgl_call(gs_stroke(pgs));
 		hpgl_call(hpgl_grestore(pgls));
 		/* the fill has already been done if the fill type is
