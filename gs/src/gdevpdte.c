@@ -930,6 +930,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    if (code < 0)
 		break;
 	}
+	pdev->charproc_just_accumulated = false;
     }
     *pdpt = total;
     return code;
