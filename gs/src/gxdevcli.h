@@ -1255,6 +1255,9 @@ typedef struct gs_fill_attributes_s {
 /* Fill a linear color trapezoid. */
 /* The server assumes a strongly linear color, 
    i.e. it can ignore any of c0, c1, c2, c3. */
+/* [p0 : p1] - left edge, from bottom to top.
+   [p2 : p3] - right edge, from bottom to top.
+   The filled area is within Y-spans of both edges. */
 /* Return values : 
   1 - success;
   0 - Too big. The area isn't filled. The client must decompose the area.

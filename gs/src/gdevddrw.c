@@ -386,7 +386,6 @@ middle_frac32_color(frac32 *c, const frac32 *c0, const frac32 *c2, int num_compo
     [p0 : p1] - left edge, from bottom to top.
     [p2 : p3] - right edge, from bottom to top.
     The filled area is within Y-spans of both edges.
-    Returns the number of unfilled scanlines. 
 
     This implemetation actually handles a bilinear color,
     in which the generatrix keeps a parallelizm to the X axis.
@@ -417,8 +416,10 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
     re.clip_x = fa->clip->q.x;
     code = (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(fa->pdev, 
 	    &le, &re, ymin, ymax, 0, NULL, 0);
-    if (code <= 0)
+    if (code < 0)
 	return code;
+    if (code == 0)
+	return 1;
     /* The device reported a too big area, decompose it now with no dropouts. */
     /* No dropouts due to upper and lower sides are parallel to the X axis. */
     {
@@ -447,8 +448,11 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
 		    p0, p1, &p02, &p13, c0, c1, c02, c13);
 	if (code < 0)
 	    return code;
-	return gx_default_fill_linear_color_trapezoid(&fa1,
+	code = gx_default_fill_linear_color_trapezoid(&fa1,
 		    &p02, &p13, p2, p3, c02, c13, c2, c3);
+	if (code < 0)
+	    return code;
+	return 1;
     }
 }
 
