@@ -63,6 +63,14 @@ bool dict_auto_expand = false;
 /* Define whether dictionaries are packed by default. */
 bool dict_default_pack = true;
 
+/*
+ * Define the check for whether we can set the 1-element cache.
+ * We only set the cache if we aren't inside a save.
+ * This way, we never have to undo setting the cache.
+ */
+#define CAN_SET_PVALUE_CACHE(pds, pdref, mem)\
+  (pds && dstack_dict_is_permanent(pds, pdref) && !ref_saving_in(mem))
+
 /* Forward references */
 private int dict_create_contents(P3(uint size, const ref * pdref, bool pack));
 
@@ -498,12 +506,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	    name *pname = pkey->value.pname;
 
 	    if (pname->pvalue == pv_no_defn &&
-		pds && dstack_dict_is_permanent(pds, pdref) &&
-		/*
-		 * Only set the cache if we aren't inside a save.
-		 * This way, we never have to undo setting the cache.
-		 */
-		!ref_saving_in(mem)
+		CAN_SET_PVALUE_CACHE(pds, pdref, mem)
 		) {		/* Set the cache. */
 		if_debug0('d', "[d]set cache\n");
 		pname->pvalue = pvslot;
@@ -641,12 +644,18 @@ dict_max_index(const ref * pdref /* t_dictionary */ )
     return npairs(pdref->value.pdict) - 1;
 }
 
-/* Copy one dictionary into another. */
-/* If new_only is true, only copy entries whose keys */
-/* aren't already present in the destination. */
-int
-dict_copy_entries(const ref * pdrfrom /* t_dictionary */ ,
-		  ref * pdrto /* t_dictionary */ , bool new_only,
+/*
+ * Copy one dictionary into another.
+ * If COPY_NEW_ONLY is set, only copy entries whose keys
+ * aren't already present in the destination.
+ * If COPY_FOR_RESIZE is set, reset any valid name cache entries to
+ * pv_no_defn before doing the dict_put.
+ */
+#define COPY_NEW_ONLY 1
+#define COPY_FOR_RESIZE 2
+private int
+dict_copy_elements(const ref * pdrfrom /* t_dictionary */ ,
+		  ref * pdrto /* t_dictionary */ , int options,
 		  dict_stack_t *pds)
 {
     int space = r_space(pdrto);
@@ -655,10 +664,13 @@ dict_copy_entries(const ref * pdrfrom /* t_dictionary */ ,
     ref *pvslot;
     int code;
 
-    if (space != avm_max) {	/* Do the store check before starting the copy. */
+    if (space != avm_max) {
+	/* Do the store check before starting the copy. */
 	index = dict_first(pdrfrom);
 	while ((index = dict_next(pdrfrom, index, elt)) >= 0)
-	    if (!new_only || dict_find(pdrto, &elt[0], &pvslot) <= 0) {
+	    if (!(options & COPY_NEW_ONLY) ||
+		dict_find(pdrto, &elt[0], &pvslot) <= 0
+		) {
 		store_check_space(space, &elt[0]);
 		store_check_space(space, &elt[1]);
 	    }
@@ -666,12 +678,35 @@ dict_copy_entries(const ref * pdrfrom /* t_dictionary */ ,
     /* Now copy the contents. */
     index = dict_first(pdrfrom);
     while ((index = dict_next(pdrfrom, index, elt)) >= 0) {
-	if (new_only && dict_find(pdrto, &elt[0], &pvslot) > 0)
+	ref *pvalue = pv_no_defn;
+
+	if ((options & COPY_NEW_ONLY) &&
+	    dict_find(pdrto, &elt[0], &pvslot) > 0
+	    )
 	    continue;
-	if ((code = dict_put(pdrto, &elt[0], &elt[1], pds)) < 0)
+	if ((options & COPY_FOR_RESIZE) &&
+	    r_has_type(&elt[0], t_name) &&
+	    (pvalue = elt[0].value.pname->pvalue, pv_valid(pvalue))
+	    )
+	    elt[0].value.pname->pvalue = pv_no_defn;
+	if ((code = dict_put(pdrto, &elt[0], &elt[1], pds)) < 0) {
+	    /*
+	     * If COPY_FOR_RESIZE is set, the dict_put isn't supposed to
+	     * be able to fail, but we don't want to depend on this.
+	     */
+	    if (pvalue != pv_no_defn)
+		elt[0].value.pname->pvalue = pvalue;
 	    return code;
+	}
     }
     return 0;
+}
+int
+dict_copy_entries(const ref *pdrfrom, ref *pdrto, bool new_only,
+		  dict_stack_t *pds)
+{
+    return dict_copy_elements(pdrfrom, pdrto, (new_only ? COPY_NEW_ONLY : 0),
+			      pds);
 }
 
 /* Resize a dictionary. */
@@ -695,11 +730,30 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
     dnew.memory = pdict->memory;
     if ((code = dict_create_contents(new_size, &drto, dict_is_packed(pdict))) < 0)
 	return code;
-    /* We must suppress the store check, in case we are expanding */
-    /* systemdict or another global dictionary that is allowed */
-    /* to reference local objects. */
+    /*
+     * We must suppress the store check, in case we are expanding
+     * systemdict or another global dictionary that is allowed
+     * to reference local objects.
+     */
     r_set_space(&drto, avm_local);
-    dict_copy(pdref, &drto, pds);	/* can't fail */
+    /*
+     * If we are expanding a permanent dictionary, we must make sure that
+     * dict_put doesn't think this is a second definition for any
+     * single-definition names.  This in turn requires that
+     * dstack_dict_is_permanent must be true for the second ("to")
+     * argument of dict_copy_elements, which requires temporarily
+     * setting *pdref = drto.
+     */
+    if (CAN_SET_PVALUE_CACHE(pds, pdref, mem)) {
+	ref drfrom;
+
+	drfrom = *pdref;
+	*pdref = drto;
+	dict_copy_elements(&drfrom, pdref, COPY_FOR_RESIZE, pds);
+	*pdref = drfrom;
+    } else {
+	dict_copy_elements(pdref, &drto, 0, pds);
+    }
     /* Save or free the old dictionary. */
     if (ref_must_save_in(mem, &pdict->values))
 	ref_do_save_in(mem, pdref, &pdict->values, "dict_resize(values)");
