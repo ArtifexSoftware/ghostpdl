@@ -683,9 +683,9 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     if (1 || /* Doesn't work - see comment above. Using this->disable_hinting instead. */
 	    this->resolution * this->font_size >= 2) {	
 	/* Enable the grid fitting separately for axes : */
-	this->grid_fit_x = (any_abs(this->ctmf.xy) * 10 < any_abs(this->ctmf.xx) ||
+	this->grid_fit_y = (any_abs(this->ctmf.xy) * 10 < any_abs(this->ctmf.xx) ||
 			    any_abs(this->ctmf.xx) * 10 < any_abs(this->ctmf.xy)); 
-	this->grid_fit_y = (any_abs(this->ctmf.yx) * 10 < any_abs(this->ctmf.yy) ||
+	this->grid_fit_x = (any_abs(this->ctmf.yx) * 10 < any_abs(this->ctmf.yy) ||
 			    any_abs(this->ctmf.yy) * 10 < any_abs(this->ctmf.yx));
     } else {
 	/* Disable the grid fitting for very small fonts. */
@@ -1371,7 +1371,7 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
      * We can't do before import is completed due to hint mask commands.
      */
     if (!this->grid_fit_x || !this->grid_fit_y) {
-	for (i = j = 0; i < this->contour_count; i++)
+	for (i = j = 0; i < this->hint_count; i++)
 	    if ((this->hint[i].type == vstem && !this->grid_fit_x) ||
 		(this->hint[i].type == hstem && !this->grid_fit_y)) {
 		continue; /* skip it. */
@@ -1379,6 +1379,7 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
 		this->hint[j] = this->hint[i];
 		j++;
 	    }
+	this->hint_count = j;
     }
 }
 
