@@ -166,27 +166,30 @@ compute_ldx(trap_line *tl, fixed ys)
 }
 
 private inline void
-init_gradient(trap_gradient *g, const gs_linear_color_edge *e, const gs_linear_color_edge *e1, 
+init_gradient(trap_gradient *g, const gs_linear_color_edge *e,
 		const trap_line *l, fixed ybot, int num_components)
 {
     int i;
     int64_t c;
     int32_t d;
-    const frac32 *c1 = (e->c1 != NULL ? e->c1 : /* a wedge */e1->c1);
 
-    g->den = (uint32_t)(e->end.y - e->start.y);
-    assert(g->den == l->h);
-    for (i = 0; i < num_components; i++) {
-	g->num[i] = (int32_t)(c1[i] - e->c0[i]);
-	c = (int64_t)g->num[i] * (uint32_t)(ybot - e->start.y);
-	d = (int32_t)(c / g->den);
-	g->c[i] = e->c0[i] + d;
-	c -= (int64_t)d * g->den;
-	if (c < 0) {
-	    g->c[i]--;
-	    c += g->den;
+    if (e->c1 == NULL || e->c0 == NULL)
+	g->den = 0; /* A wedge - the color is axial along another edge. */
+    else {
+	g->den = (uint32_t)(e->end.y - e->start.y);
+	assert(g->den == l->h);
+	for (i = 0; i < num_components; i++) {
+	    g->num[i] = (int32_t)(e->c1[i] - e->c0[i]);
+	    c = (int64_t)g->num[i] * (uint32_t)(ybot - e->start.y);
+	    d = (int32_t)(c / g->den);
+	    g->c[i] = e->c0[i] + d;
+	    c -= (int64_t)d * g->den;
+	    if (c < 0) {
+		g->c[i]--;
+		c += g->den;
+	    }
+	    g->f[i] = (int32_t)c;
 	}
-	g->f[i] = (int32_t)c;
     }
 }
 
@@ -195,6 +198,8 @@ step_gradient(trap_gradient *g, int num_components)
 {
     int i;
 
+    if (g->den == 0)
+	return;
     for (i = 0; i < num_components; i++) {
 	/* fixme: optimize. */
 	int64_t fc = g->f[i] + (int64_t)g->num[i] * fixed_1;
@@ -213,26 +218,31 @@ private inline bool
 check_gradient_overflow(const gs_linear_color_edge *le, const gs_linear_color_edge *re,
 		int num_components)
 {
-    /* Check whether set_x_gradient, fill_linear_color_scanline can overflow. 
+    if (le->c1 == NULL || re->c1 == NULL) {
+	/* A wedge doesn't use a gradient by X. */
+	return false;
+    } else {
+	/* Check whether set_x_gradient, fill_linear_color_scanline can overflow. 
 
-       dev_proc(dev, fill_linear_color_scanline) can perform its computation in 32-bit fractions,
-       so we assume it never overflows. Devices which implement it with no this
-       assumption must implement the check in gx_default_fill_linear_color_trapezoid,
-       gx_default_fill_linear_color_triangle with a function other than this one.
+	   dev_proc(dev, fill_linear_color_scanline) can perform its computation in 32-bit fractions,
+	   so we assume it never overflows. Devices which implement it with no this
+	   assumption must implement the check in gx_default_fill_linear_color_trapezoid,
+	   gx_default_fill_linear_color_triangle with a function other than this one.
 
-       Since set_x_gradient perform computations in int64_t, which provides 63 bits
-       while multiplying a 32-bits color value to a coordinate,
-       we must restrict the X span with 63 - 32 = 31 bits.
-     */
-    int32_t xl = min(le->start.x, le->end.x);
-    int32_t xr = min(re->start.x, re->end.x);
-    /* The pixel span boundaries : */
-    return arith_rshift_1(xr) - arith_rshift_1(xl) >= 0x3FFFFFFE;
+	   Since set_x_gradient perform computations in int64_t, which provides 63 bits
+	   while multiplying a 32-bits color value to a coordinate,
+	   we must restrict the X span with 63 - 32 = 31 bits.
+	 */
+	int32_t xl = min(le->start.x, le->end.x);
+	int32_t xr = min(re->start.x, re->end.x);
+	/* The pixel span boundaries : */
+	return arith_rshift_1(xr) - arith_rshift_1(xl) >= 0x3FFFFFFE;
+    }
 }
 
 
 private inline int
-set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
+set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
 	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
 {
     /* Ignoring the ending coordinats fractions, 
@@ -270,6 +280,25 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 	xg->num[i] = c1 - c0;
     }
     return 0;
+}
+
+private inline int
+set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
+	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
+{
+    if (lg->den == 0 || rg->den == 0) {
+	/* A wedge doesn't use a gradient by X. */
+	int i;
+
+	xg->den = 1;
+	for (i = 0; i < num_components; i++) {
+	    xg->c[i] = (lg->den == 0 ? rg->c[i] : lg->c[i]);
+	    xg->f[i] = 0; /* Compatible to set_x_gradient_nowedge. */
+	    xg->num[i] = 0;
+	}
+	return 0;
+    } else
+	return set_x_gradient_nowedge(xg, lg, rg, l, r, il, ir, num_components);
 }
 
 /*
@@ -445,7 +474,6 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
 {
     gs_linear_color_edge le, re;
     int num_components = fa->pdev->color_info.num_components;
-    int code;
 
     le.start = *p0;
     le.end = *p1;

@@ -1709,15 +1709,113 @@ fill_triangle_wedge_aux(patch_fill_state_t *pfs,
     }
 }
 
+private inline void
+dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
+	    frac32 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
+{
+    int j;
+    const gx_device_color_info *cinfo = &pfs->dev->color_info;
+
+    for (j = 0; j < pfs->num_components; j++) {
+	    int shift = cinfo->comp_shift[j];
+	    int bits = cinfo->comp_bits[j];
+
+	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac32) * 8 - bits);
+    }
+}
+
+private inline int
+try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
+	const shading_vertex_t *p0, const shading_vertex_t *p1, 
+	const shading_vertex_t *p2)
+{
+    /*	Returns :
+	<0 - error;
+	0 - success;
+	1 - decompose to linear color areas;
+	2 - decompose to constant color areas;
+     */
+#   if USE_LINEAR_COLOR_PROCS
+	gs_direct_color_space *cs = 
+		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+	int code;
+
+	if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN
+		|| 0 /* fixme: pfs->pis->halftone->type == ht_type_none
+		    doesn't work: with display it appears ht_type_screen. */) 
+	    return 2;
+	if (!wedge) {
+	    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
+				&p0->c.cc, &p1->c.cc, &p2->c.cc, NULL, pfs->smoothness);
+	    if (code < 0)
+		return code;
+	    if (code == 0)
+		return 1;
+	}
+	{   gx_device *pdev = pfs->dev;
+	    frac32 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    gs_fill_attributes fa;
+	    gx_device_color dc[3];
+
+	    fa.pdev = pdev;
+	    fa.clip = &pfs->rect;
+	    fa.ht = NULL; /* fixme */
+	    fa.swap_axes = false;
+	    fa.lop = 0; /* fixme */
+	    code = patch_color_to_device_color(pfs, &p0->c, &dc[0]);
+	    if (code < 0)
+		return code;
+	    if (dc[0].type != &gx_dc_type_data_pure)
+		return 2;
+	    dc2fc(pfs, dc[0].colors.pure, fc[0]);
+	    if (!wedge) {
+		code = patch_color_to_device_color(pfs, &p1->c, &dc[1]);
+		if (code < 0)
+		    return code;
+		dc2fc(pfs, dc[1].colors.pure, fc[1]);
+	    }
+	    code = patch_color_to_device_color(pfs, &p2->c, &dc[2]);
+	    if (code < 0)
+		return code;
+	    dc2fc(pfs, dc[2].colors.pure, fc[2]);
+	    draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
+	    code = dev_proc(pdev, fill_linear_color_triangle)(&fa, 
+			    &p0->p, &p1->p, &p2->p, 
+			    fc[0], (wedge ? NULL : fc[1]), fc[2]);
+	    if (code == 1)
+		return 0; /* The area is filled. */
+	    if (code < 0)
+		return code;
+	    else /* code == 0, the device requested to decompose the area. */ 
+		return 1;
+	}
+#   else
+	return 2;
+#   endif
+}
+
 private inline int 
 fill_triangle_wedge(patch_fill_state_t *pfs,
 	    const shading_vertex_t *q0, const shading_vertex_t *q1, const shading_vertex_t *q2)
 {
+    int code;
+
     if ((int64_t)(q1->p.x - q0->p.x) * (q2->p.y - q0->p.y) == 
 	(int64_t)(q1->p.y - q0->p.y) * (q2->p.x - q0->p.x))
 	return 0; /* Zero area. */
     draw_triangle(&q0->p, &q1->p, &q2->p, RGB(255, 255, 0));
-    return fill_triangle_wedge_aux(pfs, q0, q1, q2);
+    code = try_device_linear_color(pfs, true, q0, q2, q1); /* The inner vertex must be second. */
+    switch(code) {
+	case 0: /* The area is filled. */
+	    return 0;
+	case 1: /* decompose to linear color areas */
+	    /* Must not happen. */
+	    /* Fall through. */
+	case 2: /* decompose to constant color areas */
+	    return fill_triangle_wedge_aux(pfs, q0, q1, q2);
+	default: /* Error. */
+	    return code;
+    }
 }
 
 private inline int
@@ -2315,21 +2413,6 @@ divide_bar(patch_fill_state_t *pfs,
     patch_interpolate_color(&p->c, &p0->c, &p1->c, pfs, (double)(radix - 1) / radix);
 }
 
-private inline void
-dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
-	    frac32 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
-{
-    int j;
-    const gx_device_color_info *cinfo = &pfs->dev->color_info;
-
-    for (j = 0; j < pfs->num_components; j++) {
-	    int shift = cinfo->comp_shift[j];
-	    int bits = cinfo->comp_bits[j];
-
-	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac32) * 8 - bits);
-    }
-}
-
 private int 
 triangle_by_4(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
@@ -2340,68 +2423,31 @@ triangle_by_4(patch_fill_state_t *pfs,
     wedge_vertex_list_t L01, L12, L20, L[3];
     bool subdivide_to_constant_color = true;
     int code;
-#   if USE_LINEAR_COLOR_PROCS
-	gs_direct_color_space *cs = 
-		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
-#   endif
     
     if (sd < fixed_1 * 4)
 	return constant_color_triangle(pfs, p2, p0, p1);
-#   if USE_LINEAR_COLOR_PROCS
-	if (1 /* fixme: pfs->dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN) 
-		    doesn't work with 'display'. */
-		&& 1 /* fixme: pfs->pis->halftone->type == ht_type_none
-		    doesn't work: with display it appears ht_type_screen. */) {
-	    if (cs_is_linear(cs, pfs->pis, pfs->dev, &p0->c.cc, 
-				&p1->c.cc, &p2->c.cc, NULL, pfs->smoothness) > 0) {
-		gx_device *pdev = pfs->dev;
-		frac32 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
-		gs_fill_attributes fa;
-		gx_device_color dc[3];
+    code = try_device_linear_color(pfs, false, p0, p1, p2);
+    switch(code) {
+	case 0: /* The area is filled. */
+	    return 0;
+	case 2: /* decompose to constant color areas */
+	    if (pfs->Function != NULL) {
+		double d01 = color_span(pfs, &p1->c, &p0->c);
+		double d12 = color_span(pfs, &p2->c, &p1->c);
+		double d20 = color_span(pfs, &p0->c, &p2->c);
 
-		fa.pdev = pdev;
-		fa.clip = &pfs->rect;
-		fa.ht = NULL; /* fixme */
-		fa.swap_axes = false;
-		fa.lop = 0; /* fixme */
-		code = patch_color_to_device_color(pfs, &p0->c, &dc[0]);
-		if (code < 0)
-		    return code;
-		code = patch_color_to_device_color(pfs, &p1->c, &dc[1]);
-		if (code < 0)
-		    return code;
-		code = patch_color_to_device_color(pfs, &p2->c, &dc[2]);
-		if (code < 0)
-		    return code;
-		if (dc[0].type == &gx_dc_type_data_pure) {
-		    dc2fc(pfs, dc[0].colors.pure, fc[0]);
-		    dc2fc(pfs, dc[1].colors.pure, fc[1]);
-		    dc2fc(pfs, dc[2].colors.pure, fc[2]);
-		    draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
-		    code = dev_proc(pdev, fill_linear_color_triangle)(&fa, 
-				    &p0->p, &p1->p, &p2->p, fc[0], fc[1], fc[2]);
-		    if (code == 1)
-			return 0;
-		    if (code < 0)
-			return code;
-		    subdivide_to_constant_color = false;
-		}
-	    } else
-    		subdivide_to_constant_color = false;
-	}
-#   endif
-    if (subdivide_to_constant_color)
-	if (pfs->Function != NULL) {
-	    double d01 = color_span(pfs, &p1->c, &p0->c);
-	    double d12 = color_span(pfs, &p2->c, &p1->c);
-	    double d20 = color_span(pfs, &p0->c, &p2->c);
-
-	    if (d01 <= pfs->smoothness / COLOR_CONTIGUITY && 
-		d12 <= pfs->smoothness / COLOR_CONTIGUITY && 
-		d20 <= pfs->smoothness / COLOR_CONTIGUITY)
+		if (d01 <= pfs->smoothness / COLOR_CONTIGUITY && 
+		    d12 <= pfs->smoothness / COLOR_CONTIGUITY && 
+		    d20 <= pfs->smoothness / COLOR_CONTIGUITY)
+		    return constant_color_triangle(pfs, p2, p0, p1);
+	    } else if (cd <= pfs->smoothness / COLOR_CONTIGUITY)
 		return constant_color_triangle(pfs, p2, p0, p1);
-	} else if (cd <= pfs->smoothness / COLOR_CONTIGUITY)
-	    return constant_color_triangle(pfs, p2, p0, p1);
+	    break;
+	case 1: /* decompose to linear color areas */
+	    break;
+	default: /* Error. */
+	    return code;
+    }
     divide_bar(pfs, p0, p1, 2, &p01);
     divide_bar(pfs, p1, p2, 2, &p12);
     divide_bar(pfs, p2, p0, 2, &p20);

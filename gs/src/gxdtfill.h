@@ -323,8 +323,8 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 	    xg.c = xgc;
 	    xg.f = xgf;
 	    xg.num = xgnum;
-	    init_gradient(&lg, left, right, &l, ymin, num_components);
-	    init_gradient(&rg, right, left, &r, ymin, num_components);
+	    init_gradient(&lg, left,  &l, ymin, num_components);
+	    init_gradient(&rg, right, &r, ymin, num_components);
 
 #	endif
 
@@ -339,8 +339,6 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 	rxr = rational_floor(r);
 	SET_MINIMAL_WIDTH(rxl, rxr, l, r);
 	while (LINEAR_COLOR ? 1 : ++iy != iy1) {
-	    register int ixl, ixr;
-
 #	    if LINEAR_COLOR
 		if (rxl != rxr) {
 		    code = set_x_gradient(&xg, &lg, &rg, &l, &r, rxl, rxr, num_components);
@@ -358,6 +356,8 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 		step_gradient(&lg, num_components);
 		step_gradient(&rg, num_components);
 #	    else
+		register int ixl, ixr;
+
 		STEP_LINE(ixl, l);
 		STEP_LINE(ixr, r);
 		SET_MINIMAL_WIDTH(ixl, ixr, l, r);
