@@ -48,7 +48,7 @@ typedef	int match_score_t[score_limit];
 
 #ifdef DEBUG
 
-const char *score_name[] = {
+static const char * const score_name[] = {
     "symbol",
     "spacing",
     "pitch",
