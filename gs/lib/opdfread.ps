@@ -2447,6 +2447,7 @@ currentdict end readonly def
 
 /CompleteOutlineImage  % <dict> CompleteOutlineImage <image_dict>
 { 
+  currentglobal exch dup gcheck setglobal
   //PDFR_DEBUG {
     (CompleteOutlineImage beg) =
   } if
@@ -2469,6 +2470,7 @@ currentdict end readonly def
   //PDFR_DEBUG {
     (CompleteOutlineImage end) =
   } if
+  exch setglobal
 } bind def
 
 /DoImage % <image_dict> DoImage -
