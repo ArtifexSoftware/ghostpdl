@@ -28,6 +28,7 @@
 #include "gxistate.h"
 #include "gxpaint.h"		/* for prototypes */
 #include "gsptype2.h"
+#include "gdevddrw.h"
 
 #if !DROPOUT_PREVENTION
 #define VD_TRACE 0
@@ -1138,8 +1139,7 @@ private inline int to_interval(int x, int l, int u)
 }
 
 private inline fixed Y_AT_X(active_line *alp, fixed xp)
-{   return (fixed)(alp->start.y + (double)(xp - alp->start.x) * alp->diff.y / alp->diff.x);
-    /* fixme : use fixed point (fixed_mult_quo) */
+{   return alp->start.y + fixed_mult_quo(xp - alp->start.x,  alp->diff.y, alp->diff.x);
 }
 
 private void margin_boundary(line_list * ll, margin_set * set, active_line * alp, fixed y0, fixed y1, int dir)
@@ -1406,11 +1406,12 @@ private void resort_x_line(active_line *);
 
 /****** PATCH ******/
 #define LOOP_FILL_TRAPEZOID_FIXED(fx0, fw0, fy0, fx1, fw1, fh)\
-  loop_fill_trap(dev, fx0, fw0, fy0, fx1, fw1, fh, pbox, pdevc, lop)
+  loop_fill_trap(dev, fx0, fw0, fy0, fx1, fw1, fh, pbox, pdevc, lop, pseudo_rasterization)
 private int
 loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
 	       fixed fx1, fixed fw1, fixed fh, const gs_fixed_rect * pbox,
-	       const gx_device_color * pdevc, gs_logical_operation_t lop)
+	       const gx_device_color * pdevc, gs_logical_operation_t lop,
+	       bool pseudo_rasterization)
 {
     fixed fy1 = fy0 + fh;
     fixed ybot = max(fy0, pbox->p.y);
@@ -1515,7 +1516,13 @@ loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
     left.end.y = right.end.y = fy1;
     right.start.x = (left.start.x = fx0) + fw0;
     right.end.x = (left.end.x = fx1) + fw1;
-    return (*fill_trap)(dev, &left, &right, ybot, ytop, false, pdevc, lop);
+#if PSEUDO_RASTERIZATION
+    return (pseudo_rasterization ? gx_fill_trapezoid_narrow : *fill_trap)
+	(dev, &left, &right, ybot, ytop, false, pdevc, lop);
+#else
+    return (*fill_trap)
+	(dev, &left, &right, ybot, ytop, false, pdevc, lop);
+#endif
 }
 /****** END PATCH ******/
 
@@ -1536,6 +1543,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
     int code;
     bool fill_direct = color_writes_pure(pdevc, lop);
     const bool pseudo_rasterization = ll->pseudo_rasterization;
+    const bool character = !(adjust_below | adjust_above);
     gx_color_index cindex;
 
     dev_proc_fill_rectangle((*fill_rect));
@@ -1591,22 +1599,31 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		 * This is a hack to make sure that isolated horizontal
 		 * lines get stroked.
 		 */
-		int yi = fixed2int_pixround(y - adjust_below);
-		int xi, wi;
+#		if PSEUDO_RASTERIZATION
+		if (yll->start.x != yll->end.x || !character)
+		    /*
+		     * (excluding for empty paths in characters
+		     * because Adobe doesn't paint them).
+		     */
+#		endif
+		{   int yi = fixed2int_pixround(y - adjust_below);
+		    int xi, wi;
 
-		if (yll->start.x <= yll->end.x)
-		    xi = fixed2int_pixround(yll->start.x -
-					    adjust_left),
-			wi = fixed2int_pixround(yll->end.x +
-						adjust_right) - xi;
-		else
-		    xi = fixed2int_pixround(yll->end.x -
-					    adjust_left),
-			wi = fixed2int_pixround(yll->start.x +
-						adjust_right) - xi;
-		code = LOOP_FILL_RECTANGLE_DIRECT(xi, yi, wi, 1);
-		if (code < 0)
-		    return code;
+		    if (yll->start.x <= yll->end.x)
+			xi = fixed2int_pixround(yll->start.x -
+						adjust_left),
+			    wi = fixed2int_pixround(yll->end.x +
+						    adjust_right) - xi;
+		    else
+			xi = fixed2int_pixround(yll->end.x -
+						adjust_left),
+			    wi = fixed2int_pixround(yll->start.x +
+						    adjust_right) - xi;
+		    VD_RECT(xi, yi, wi, 1, RGB(0, 255, 255));
+		    code = LOOP_FILL_RECTANGLE_DIRECT(xi, yi, wi, 1);
+		    if (code < 0)
+			return code;
+		}
 	    } else
 		insert_x_new(yll, ll);
 	    yll = ynext;
@@ -2516,6 +2533,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 
 		if_debug4('Q', "[Qr]draw 0x%lx: [%d,%d),%d\n", (ulong)pcr,
 			  x0, x1, y0);
+		VD_RECT(x0, y0, x1 - x0, 1, RGB(0, 255, 255));
 		code = LOOP_FILL_RECTANGLE_DIRECT(x0, y0, x1 - x0, 1);
 		if_debug3('F', "[F]drawing [%d:%d),%d\n", x0, x1, y0);
 		if (code < 0)
