@@ -158,7 +158,7 @@ typedef ulong bits32;
 #include <stdio.h>
 
 /*
- * a very good place to define this, but we can't find a better one.
+ * Not a very good place to define this, but we can't find a better one.
  */
 #ifndef gs_memory_DEFINED
 #  define gs_memory_DEFINED
