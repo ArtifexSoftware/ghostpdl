@@ -51,6 +51,23 @@
  */
 #define GS_CHAR_FILL gs_eofill	/* gs_fill or gs_eofill */
 
+/* ============== PATCH BEG=================== */
+/*
+ * On April 4, 2002, we received bug report #539359
+ * which we interpret as some Genoa test are now obsolete,
+ * so we need to drop the bad font tolerance feature
+ * explained above. This temporary patch changes
+ * the even-odd rule back to non-zero rule.
+ * This patch to be kept until we accumulate
+ * enough information from regression testing and
+ * from user responses.
+ */
+
+#undef  GS_CHAR_FILL
+#define GS_CHAR_FILL gs_fill	/* gs_fill or gs_eofill */
+ 
+/* ============== PATCH END=================== */
+
 /* ---------------- Utilities ---------------- */
 
 /* Test whether a font is a CharString font. */
