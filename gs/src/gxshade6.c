@@ -2578,40 +2578,26 @@ is_color_monotonic_by_v(const patch_fill_state_t *pfs, const tensor_patch *p)
     return 1;
 }
 
-private inline bool
-is_quadrangle_color_monotonic(const patch_fill_state_t *pfs, const quadrangle_patch *p, bool *uv) 
+private inline int
+is_quadrangle_color_monotonic_by_u(const patch_fill_state_t *pfs, const quadrangle_patch *p) 
 {   /* returns : 1 = monotonic, 0 = don't know, <0 = error. */
     int code;
 
     code = is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[0][1]->c);
-    if (code < 0)
+    if (code <= 0)
 	return code;
-    if (!code) {
-        *uv = true;
-	return 0;
-    }
-    code = is_color_monotonic(pfs, &p->p[1][0]->c, &p->p[1][1]->c);
-    if (code < 0)
-	return code;
-    if (!code) {
-        *uv = true;
-	return 0;
-    }
+    return is_color_monotonic(pfs, &p->p[1][0]->c, &p->p[1][1]->c);
+}
+
+private inline int
+is_quadrangle_color_monotonic_by_v(const patch_fill_state_t *pfs, const quadrangle_patch *p) 
+{   /* returns : 1 = monotonic, 0 = don't know, <0 = error. */
+    int code;
+
     code = is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[1][0]->c);
-    if (code < 0)
+    if (code <= 0)
 	return code;
-    if (!code) {
-	*uv = false;
-	return 0;
-    }
-    code = is_color_monotonic(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
-    if (code < 0)
-	return code;
-    if (!code) {
-	*uv = false;
-	return 0;
-    }
-    return 1;
+    return is_color_monotonic(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
 }
 
 private inline bool
@@ -2990,55 +2976,36 @@ make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2],
 }
 
 private inline int
-is_quadrangle_color_linear(const patch_fill_state_t *pfs, const quadrangle_patch *p, bool *uv)
+is_quadrangle_color_linear_by_u(const patch_fill_state_t *pfs, const quadrangle_patch *p)
 {   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
     int code;
 
-    if (pfs->unlinear)
-	return 1; /* Disable this check. */
     code = is_color_linear(pfs, &p->p[0][0]->c, &p->p[0][1]->c);
-    if (code < 0)
+    if (code <= 0)
 	return code;
-    if (!code) {
-	*uv = true;
-	return 0;
-    }
-    code = is_color_linear(pfs, &p->p[1][0]->c, &p->p[1][1]->c);
-    if (code < 0)
-	return code;
-    if (!code) {
-	*uv = true;
-	return 0;
-    }
+    return is_color_linear(pfs, &p->p[1][0]->c, &p->p[1][1]->c);
+}
+
+private inline int
+is_quadrangle_color_linear_by_v(const patch_fill_state_t *pfs, const quadrangle_patch *p)
+{   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
+    int code;
+
     code = is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][0]->c);
-    if (code < 0)
+    if (code <= 0)
 	return code;
-    if (!code) {
-	*uv = false;
-	return false;
-    }
-    code = is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
-    if (code < 0)
-	return code;
-    if (!code) {
-	*uv = false;
-	return 0;
-    }
+    return is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
+}
+
+private inline int
+is_quadrangle_color_linear_by_diagonals(const patch_fill_state_t *pfs, const quadrangle_patch *p)
+{   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
+    int code;
+
     code = is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][1]->c);
-    if (code < 0)
+    if (code <= 0)
 	return code;
-    if (!code) {
-	*uv = true;
-	return 0;
-    }
-    code = is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][0]->c);
-    if (code < 0)
-	return code;
-    if (!code) {
-	*uv = false;
-	return 0;
-    }
-    return 1;
+    return is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][0]->c);
 }
 
 typedef enum {
@@ -3049,7 +3016,7 @@ typedef enum {
 } color_change_type_t;
 
 private inline color_change_type_t
-quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p, bool *uv)
+quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p, bool *divide_u, bool *divide_v)
 {
     patch_color_t d0001, d1011, d;
     double D, D0001, D1011, D0010, D0111, D0011, D0110;
@@ -3069,11 +3036,11 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
 	    D0011 <= pfs->smoothness && D0110 <= pfs->smoothness)
 	    return color_change_small;
 	if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness) {
-	    *uv = false;
+	    *divide_v = true;
 	    return color_change_gradient;
 	}
 	if (D0010 <= pfs->smoothness && D0111 <= pfs->smoothness) {
-	    *uv = true;
+	    *divide_u = true;
 	    return color_change_gradient;
 	}
     }
@@ -3085,7 +3052,10 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
 	return color_change_small;
     if (D <= pfs->smoothness)
 	return color_change_linear;
-    *uv = Du > Dv;
+    if (Du > Dv)
+	*divide_u = true;
+    else
+	*divide_v = true;
     return color_change_general;
 }
 
@@ -3141,37 +3111,67 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    big1 = false;
     }
     if (!big1) {
-	bool is_big_u = false, is_big_v = false, color_u;
+	bool is_big_u = false, is_big_v = false;
+	double d0001x = any_abs(p->p[0][0]->p.x - p->p[0][1]->p.x);
+	double d1011x = any_abs(p->p[1][0]->p.x - p->p[1][1]->p.x);
+	double d0001y = any_abs(p->p[0][0]->p.y - p->p[0][1]->p.y);
+	double d1011y = any_abs(p->p[1][0]->p.y - p->p[1][1]->p.y);
+	double d0010x = any_abs(p->p[0][0]->p.x - p->p[1][0]->p.x);
+	double d0111x = any_abs(p->p[0][1]->p.x - p->p[1][1]->p.x);
+	double d0010y = any_abs(p->p[0][0]->p.y - p->p[1][0]->p.y);
+	double d0111y = any_abs(p->p[0][1]->p.y - p->p[1][1]->p.y);
 
-	if (any_abs(p->p[0][0]->p.x - p->p[0][1]->p.x) > fixed_1 ||
-	    any_abs(p->p[1][0]->p.x - p->p[1][1]->p.x) > fixed_1 ||
-	    any_abs(p->p[0][0]->p.y - p->p[0][1]->p.y) > fixed_1 ||
-	    any_abs(p->p[1][0]->p.y - p->p[1][1]->p.y) > fixed_1)
+	if (d0001x > fixed_1 || d1011x > fixed_1 || d0001y > fixed_1 || d1011y > fixed_1)
 	    is_big_u = true;
-	if (any_abs(p->p[0][0]->p.x - p->p[1][0]->p.x) > fixed_1 ||
-	    any_abs(p->p[0][1]->p.x - p->p[1][1]->p.x) > fixed_1 ||
-	    any_abs(p->p[0][0]->p.y - p->p[1][0]->p.y) > fixed_1 ||
-	    any_abs(p->p[0][1]->p.y - p->p[1][1]->p.y) > fixed_1)
+	if (d0010x > fixed_1 || d0111x > fixed_1 || d0010y > fixed_1 || d0111y > fixed_1)
 	    is_big_v = true;
 	else if (!is_big_u)
 	    return (QUADRANGLES || !pfs->maybe_self_intersecting ? 
 			constant_color_quadrangle : triangles)(pfs, p, 
 			    pfs->maybe_self_intersecting);
 	if (!pfs->monotonic_color) {
-	    code = is_quadrangle_color_monotonic(pfs, p, &color_u);
-	    if (code < 0)
-		return code;
-	    if (code) {
-		code = is_quadrangle_color_linear(pfs, p, &color_u);
+	    if (is_big_u) {
+		code = is_quadrangle_color_monotonic_by_u(pfs, p);
 		if (code < 0)
 		    return code;
-		if (code)
+		divide_u = !code;
+	    }
+	    if (is_big_v) {
+		code = is_quadrangle_color_monotonic_by_v(pfs, p);
+		if (code < 0)
+		    return code;
+		divide_v = !code;
+	    }
+	    if (!divide_u && !divide_v && !pfs->unlinear) {
+		if (is_big_u) {
+		    code = is_quadrangle_color_linear_by_u(pfs, p);
+		    if (code < 0)
+			return code;
+		    divide_u = !code;
+		}
+		if (is_big_v) {
+		    code = is_quadrangle_color_linear_by_v(pfs, p);
+		    if (code < 0)
+			return code;
+		    divide_v = !code;
+		}
+		if (is_big_u && is_big_v) {
+		    code = is_quadrangle_color_linear_by_diagonals(pfs, p);
+		    if (code < 0)
+			return code;
+		    if (!code)
+			if (d0001x + d1011x+ d0001y + d1011y > d0010x + d0111x + d0010y + d0111y)
+			    divide_u = true;
+			else
+			    divide_v = true;
+		}
+		if (!divide_u && !divide_v)
 		    pfs->monotonic_color = true;
 	    }
 	}
 	if (!pfs->monotonic_color) {
 	    /* go to divide. */
-	} else switch(quadrangle_color_change(pfs, p, &color_u)) {
+	} else switch(quadrangle_color_change(pfs, p, &divide_u, &divide_v)) {
 	    case color_change_small: 
 		code = (QUADRANGLES || !pfs->maybe_self_intersecting ? 
 			    constant_color_quadrangle : triangles)(pfs, p, 
@@ -3187,14 +3187,6 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    case color_change_gradient:
 	    case color_change_general:
 		; /* goto divide. */
-	}
-	if (!color_u && is_big_v)
-	    divide_v = true;
-	if (color_u && is_big_u)
-	    divide_u = true;
-	if (!divide_u && !divide_v) {
-	    divide_u = is_big_u;
-	    divide_v = is_big_v; /* Unused. Just for a clarity. */
 	}
     }
     if (!pfs->inside) {
@@ -3242,7 +3234,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 		return code;
 	    code = terminate_wedge_vertex_list(pfs, &l0, &s0.p[1][0]->c, &s0.p[1][1]->c);
 	}
-    } else {
+    } else if (divide_u) {
 	divide_quadrangle_by_u(pfs, &s0, &s1, q, p);
 	if (LAZY_WEDGES) {
 	    make_wedge_median(pfs, &l1, p->l0001, true,  &p->p[0][0]->p, &p->p[0][1]->p, &s0.p[0][1]->p);
@@ -3280,7 +3272,10 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 		return code;
 	    code = terminate_wedge_vertex_list(pfs, &l0, &s0.p[0][1]->c, &s0.p[1][1]->c);
 	}
-    }
+    } else 
+	code = (QUADRANGLES || !pfs->maybe_self_intersecting ? 
+		    constant_color_quadrangle : triangles)(pfs, p, 
+			pfs->maybe_self_intersecting);
     pfs->monotonic_color = monotonic_color_save;
     pfs->inside = inside_save;
     return code;
