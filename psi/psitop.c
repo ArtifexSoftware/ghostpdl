@@ -174,7 +174,8 @@ ps_impl_allocate_interp_instance(
 private int   /* ret 0 ok, else -ve error code */
 ps_impl_set_client_instance(
   pl_interp_instance_t   *instance,     /* interp instance to use */
-  pl_interp_instance_t   *client        /* client to set */
+  pl_interp_instance_t   *client,       /* client to set */
+  pl_interp_instance_clients_t which_client
 )
 {
 	return 0;
@@ -459,8 +460,6 @@ ps_impl_deallocate_interp(
 	/* nothing to do */
 	return 0;
 }
-
-extern pl_interp_instance_t *get_interpreter_from_memory( const gs_memory_t *mem );
 
 /* 
  * End-of-page called back by PS
