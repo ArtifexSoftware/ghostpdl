@@ -75,7 +75,6 @@
 #endif	/* OS2 && __IBMC */
 
 #ifdef __MACINTOSH__
-# include <QDOffscreen.h>
 # pragma export on
 #endif
 
