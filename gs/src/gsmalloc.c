@@ -242,9 +242,11 @@ gs_heap_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
     uint new_size =
     gs_struct_type_size(pstype) * new_num_elements +
     sizeof(gs_malloc_block_t);
-    gs_malloc_block_t *new_ptr =
-    (gs_malloc_block_t *) gs_realloc(ptr, old_size, new_size);
+    gs_malloc_block_t *new_ptr;
 
+    if (new_size == old_size)
+        return obj;
+    new_ptr = (gs_malloc_block_t *) gs_realloc(ptr, old_size, new_size);
     if (new_ptr == 0)
 	return 0;
     if (new_ptr->prev)
