@@ -646,6 +646,7 @@ cos_array_add_object(cos_array_t *pca, cos_object_t *pco)
 {
     cos_value_t value;
 
+    value.contents.chars.size = 0; /* Quiet a warning appeared with MSVC6 inline optimization. */
     return cos_array_add(pca, cos_object_value(&value, pco));
 }
 

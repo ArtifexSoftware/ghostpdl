@@ -575,10 +575,14 @@ alloc_name_is_since_save(const ref * pnref, const alloc_save_t * save)
 bool
 alloc_name_index_is_since_save(uint nidx, const alloc_save_t * save)
 {
-    ref nref;
+    const name_string_t *pnstr;
 
-    nref.value.pname = name_index_ptr(nidx);
-    return alloc_name_is_since_save(&nref, save);
+    if (!save->restore_names)
+	return false;
+    pnstr = names_index_string_inline(the_gs_name_table, nidx);
+    if (pnstr->foreign_string)
+	return false;
+    return alloc_is_since_save(pnstr->string_bytes, save);
 }
 
 /* Check whether any names have been created since a given save */
