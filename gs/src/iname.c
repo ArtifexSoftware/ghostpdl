@@ -500,7 +500,7 @@ name_alloc_sub(name_table * nt)
     memset(ssub, 0, sizeof(name_string_sub_table_t));
     /* The following code is only used if EXTEND_NAMES is non-zero. */
 #if name_extension_bits > 0
-    sub->high_index = sub_index >> (16 - nt_log2_sub_size);
+    sub->high_index = (sub_index >> (16 - nt_log2_sub_size)) << 16;
 #endif
     nt->sub[sub_index].names = sub;
     nt->sub[sub_index].strings = ssub;
