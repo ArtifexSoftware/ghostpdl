@@ -53,7 +53,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version6.62"></a>Version 6.62 (2001-03-19)</h3>
+<h3><a name="Version6.63"></a>Version 6.63 (2001-03-28)</h3>
 
 <p>
 This is the first beta release for the upcoming 7.0 release. This fileset
@@ -74,31 +74,9 @@ closed, except for the following: 201955, 202735, 206652, 209350,
 since the 6.61 release, SourceForge has renumbered all bugs in the
 1xxxxx range by adding 100000 (thus, they are now 2xxxxxx).
 
-<h3><a name="6.62_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="6.63_Incompatible_changes"></a>Incompatible changes</h3>
 
 <pre>
-(Interpreter)
-	- With WMode = 1, CID-keyed fonts with no Metrics2 now use default
-metrics computed from FontBBox rather than the horizontal metrics.
-(PDF interpreter)
-	- The interpreter now skips to the next EOL after reading the data
-following the ID operator.
-	- The incorrectly named ViewerOrientation DSC comment is now
-corrected to ViewingOrientation.
-(Streams)
-	- All decoding filters that recognize an EOD in the source data
-must now have an init procedure that sets state->min_left = 1.
-(Library)
-	- The glyph_data, subr_data, and seac_data procedures in a Type 1
-font (gs_type1_data_procs), and the glyph_data procedure passed to
-psf_{check,get}_outline_glyphs, must now return 1 iff the outline string was
-newly allocated and should be freed by the caller, like the get_outline
-procedure of Type 42 fonts (gs_type42_data).
-	- The ip_state structure is renamed ip_state_t, and has a new
-member, free_char_string.
-	- The incorrectly named ViewerOrientation DSC comment is now
-corrected to ViewingOrientation, and the viewer_orientation members of
-the DSC parsing structure are corrected to viewing_orientation.
 
 </pre>
 
@@ -118,7 +96,7 @@ full details of the terms of using, copying, modifying, and redistributing
 AFPL Ghostscript.</small>
 
 <p>
-<small>Ghostscript version 6.62, 19 March 2001
+<small>Ghostscript version 6.63, 28 March 2001
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
