@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -60,9 +60,7 @@ typedef struct psdf_image_params_s {
 #endif
     enum psdf_downsample_type {
 	ds_Average,
-#ifdef POST60
 	ds_Bicubic,
-#endif
 	ds_Subsample
     } DownsampleType;
     bool Encode;

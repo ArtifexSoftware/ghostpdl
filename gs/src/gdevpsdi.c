@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -193,9 +193,10 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 		   gs_image_t * pim, floatp resolution)
 {
     gx_device_psdf *pdev = pbw->dev;
+    /* Note: Bicubic is currently intepreted as Average. */
     const stream_template *template =
-	(pdip->DownsampleType == ds_Average ?
-	 &s_Average_template : &s_Subsample_template);
+	(pdip->DownsampleType == ds_Subsample ?
+	 &s_Subsample_template : &s_Average_template);
     int factor = (int)(resolution / pdip->Resolution);
     int orig_bpc = pim->BitsPerComponent;
     int orig_width = pim->Width;
