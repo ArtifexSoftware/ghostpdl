@@ -25,8 +25,6 @@ Started by Graham Asher, 9th August 2002.
 #include "wrfont.h"
 #include "write_t2.h"
 #include "stdio_.h"
-#include "iref.h"
-#include "idict.h"
 
 #include <assert.h>
 
