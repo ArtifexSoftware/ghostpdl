@@ -195,10 +195,6 @@ int shade_bbox_transform2fixed(P3(const gs_rect * rect,
 				  const gs_imager_state * pis,
 				  gs_fixed_rect * rfixed));
 
-/* Check whether 4 colors fall within the smoothness criterion. */
-bool shade_colors4_converge(P2(const gs_client_color cc[4],
-			       const shading_fill_state_t * pfs));
-
 /* Fill one piece of a shading. */
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED

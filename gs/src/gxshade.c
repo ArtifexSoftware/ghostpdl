@@ -320,33 +320,6 @@ shade_bbox_transform2fixed(const gs_rect * rect, const gs_imager_state * pis,
     return code;
 }
 
-/* Check whether 4 colors fall within the smoothness criterion. */
-bool
-shade_colors4_converge(const gs_client_color cc[4],
-		       const shading_fill_state_t * pfs)
-{
-    int ci;
-
-    for (ci = 0; ci < pfs->num_components; ++ci) {
-	float
-	      c0 = cc[0].paint.values[ci], c1 = cc[1].paint.values[ci],
-	      c2 = cc[2].paint.values[ci], c3 = cc[3].paint.values[ci];
-	float min01, max01, min23, max23;
-
-	if (c0 < c1)
-	    min01 = c0, max01 = c1;
-	else
-	    min01 = c1, max01 = c0;
-	if (c2 < c3)
-	    min23 = c2, max23 = c3;
-	else
-	    min23 = c3, max23 = c2;
-	if (max(max01, max23) - min(min01, min23) > pfs->cc_max_error[ci])
-	    return false;
-    }
-    return true;
-}
-
 /* Fill one piece of a shading. */
 int
 shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
