@@ -266,7 +266,7 @@ drawopdict begin
   /d /setdash load def
   /j /setlinejoin load def
   /w /setlinewidth load def
-  /M /setmiterlimit load def
+  /M { 1 .max setmiterlimit } bdef
   /gs { gs } def
 end
 
@@ -323,7 +323,7 @@ end
   /LW { setlinewidth }
   /LC { setlinecap }
   /LJ { setlinejoin }
-  /ML { setmiterlimit }
+  /ML { 1 .max setmiterlimit }
   /D { aload pop setdash }
   /RI { ri }
   /op { op }
