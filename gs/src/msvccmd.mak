@@ -70,6 +70,9 @@ PCFBASM=
 # Make sure we get the right default target for make.
 
 dosdefault: default
+	@attrib -H dosdefault
+	@echo Done. > dosdefault
+	@attrib +H dosdefault
 
 # Define the compilation flags.
 
