@@ -21,6 +21,7 @@
 #include "pcfrgrnd.h"
 #include "gsparam.h"
 #include "gsdevice.h"
+#include "gxcmap.h"
 
 /* GC routines */
 private_st_palette_t();
@@ -29,7 +30,7 @@ private_st_pstack_entry_t();
 /*
  * Free a PCL palette.
  */
-  private void
+private void
 free_palette(
     gs_memory_t *   pmem,
     void *          pvpalet,
@@ -47,6 +48,34 @@ free_palette(
     gs_free_object(pmem, pvpalet, cname);
 }
 
+void 
+pcl_free_default_objects( 
+    gs_memory_t *   mem,
+    pcl_state_t *     pcs
+    )
+{
+    pcl_palette_t * ppalette = (pcl_palette_t *)pcs->pdflt_palette;
+
+    rc_decrement(pcs->pdflt_cs_indexed, "free_default_palette(pdflt_cs_indexed)");
+
+    if (ppalette != 0) {
+      
+        rc_decrement(ppalette->pindexed, "free_default_palette cs indexed released");
+	if (ppalette->pht)
+	  rc_decrement(ppalette->pht, "free_default_palette ht released");
+	if (ppalette->pcrd)
+	  rc_decrement(ppalette->pcrd, "free_default_palette pcl_crd_release");
+	gs_free_object(mem, ppalette, "free_default_palette ppalette free");
+	pcs->pdflt_palette = 0;
+    }
+    rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
+    rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
+    rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
+    rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
+
+    if(pcs->pcl_default_crd)
+          free_crd(mem, pcs->pcl_default_crd, "free_default_palette pcl_default_crd free");
+}
 /*
  * Free procedure for palettes to be used by the dictionary which implements
  * the palette store.
@@ -899,7 +928,6 @@ set_print_mode(
 {
     uint            mode = uint_arg(pargs);
     int             code = 0;
-    gx_device *     pdev = pcl_get_target_device(pcs);
 
     if ( pcs->personality == pcl5e )
 	return 0;
@@ -1001,16 +1029,10 @@ palette_do_reset(
         pl_dict_init(&pcs->palette_store, pcs->memory, dict_free_palette);
         pcs->ppalet = 0;
         pcs->pfrgrnd = 0;
-	pcs->pdflt_frgrnd = 0;
-        /* set up the built-in render methods and dithers matrices */
-        pcl_ht_init_render_methods(pcs, pcs->memory);
 
-        /* handle possible non-initialization of BSS */
-        pcs->pdflt_palette = 0;
-        pcs->palette_stack = 0;
-        pcs->pcl_default_crd = 0;
-        pcl_cs_base_init(pcs);
-        pcl_cs_indexed_init(pcs);
+	/* set up the built-in render methods and dithers matrices */
+	pcl_ht_init_render_methods(pcs, pcs->memory);
+
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer | pcl_reset_permanent)) != 0) {
        pcs->monochrome_mode = 0; 
@@ -1021,10 +1043,13 @@ palette_do_reset(
     }
     if ( type & pcl_reset_permanent ) {
 	pl_dict_release(&pcs->palette_store);
-	gs_free_object(pcs->memory, pcs->ppalet->pindexed,  "palette cs indexed released permanent reset");
-	gs_free_object(pcs->memory, pcs->ppalet->pht,  "palette ht released permanent reset");
-	gs_free_object(pcs->memory, pcs->ppalet->pcrd,  "palette ht released permanent reset");
-	gs_free_object(pcs->memory, pcs->ppalet,  "palette released permanent reset");
+	if (pcs->ppalet != pcs->pdflt_palette) {
+	  /* stefan foo: free or decrement reference counts? */
+	    gs_free_object(pcs->memory, pcs->ppalet->pindexed,  "palette cs indexed released permanent reset");
+	    gs_free_object(pcs->memory, pcs->ppalet->pht,  "palette ht released permanent reset");
+	    gs_free_object(pcs->memory, pcs->ppalet->pcrd,  "palette ht released permanent reset");
+	    gs_free_object(pcs->memory, pcs->ppalet,  "palette released permanent reset");
+	}
     }
     /* select and control palette ID's must be set back to 0 */
     pcs->sel_palette_id = 0;
