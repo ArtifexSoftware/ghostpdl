@@ -690,11 +690,19 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_int(plist, "DisplayFormat", &format)) {
 	case 0:
-	    if (dev->is_open && ddev->nFormat != format)
-		ecode = gs_error_rangecheck;
-	    else
-		ecode = display_set_color_format(ddev, format);
-		break;
+	    if (dev->is_open) {
+ 		if (ddev->nFormat != format)
+		    ecode = gs_error_rangecheck;
+		else
+		    break;
+	    }
+	    else {
+		code = display_set_color_format(ddev, format);
+		if (code < 0)
+		    ecode = code;
+		else
+		    break;
+	    }
 	    goto cfe;
 	default:
 	    ecode = code;
@@ -705,10 +713,12 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_long(plist, "DisplayHandle", (long *)(&handle))) {
 	case 0:
-	    if (dev->is_open && ddev->pHandle != handle)
-		ecode = gs_error_rangecheck;  /* may not be an error */
-	    else if (handle == NULL)
-		ecode = gs_error_rangecheck;
+	    if (dev->is_open) {
+		if (ddev->pHandle != handle)
+		    ecode = gs_error_rangecheck;
+		else
+		    break;
+	    }
 	    else
 		ddev->pHandle = handle;
 		break;
