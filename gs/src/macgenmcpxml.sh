@@ -217,7 +217,7 @@ WriteSETTINGLIST()
 	WriteValueSetting MWWarning_C_warn_emptydecl 1
 	WriteValueSetting MWWarning_C_warn_possunwant 1
 	WriteValueSetting MWWarning_C_warn_unusedvar 1
-	WriteValueSetting MWWarning_C_warn_unusedarg 1
+	WriteValueSetting MWWarning_C_warn_unusedarg 0
 	WriteValueSetting MWWarning_C_warn_extracomma 1
 	WriteValueSetting MWWarning_C_pedantic 1
 	WriteValueSetting MWWarning_C_warningerrors 0
@@ -343,7 +343,7 @@ done
 
 LIBS="console.stubs.c MSL\ ShLibRuntime.Lib MSL\ RuntimePPC.Lib"
 CARBONLIBS="MSL\ C.Carbon.Lib CarbonLib"
-#CLASSICLIBS="MSL\ C.PPC.Lib InterfaceLib FontManagerLib MathLib"
+#CLASSICLIBS="MSL\ C.PPC.Lib InterfaceLib FontManager MathLib"
 CLASSICLIBS="MSL\ C.PPC.Lib InterfaceLib MathLib"
 
 #####
@@ -363,7 +363,7 @@ echo "<PROJECT>"
 #    WriteTARGET "$CARBONDEBUGTARGETNAME" $CFILES $LIBS $CARBONLIBS
     WriteTARGET "$CARBONDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.Carbon.Lib" "CarbonLib"
 #    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES $LIBS $CLASSICLIBS
-    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.PPC.Lib" "InterfaceLib" "FontManagerLib" "MathLib"
+    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.PPC.Lib" "InterfaceLib" "FontManager" "MathLib"
     echo "</TARGETLIST>"
     
     echo "<TARGETORDER>"
@@ -374,7 +374,7 @@ echo "<PROJECT>"
     echo "<GROUPLIST>"
         WriteGROUP "Ghostscript Sources" "$CARBONDEBUGTARGETNAME" $CFILES
 #        WriteGROUP "Libraries" "$CARBONDEBUGTARGETNAME" $LIBS $CARBONLIBS $CLASSICLIBS
-#        WriteGROUP "Libraries" "$CARBONDEBUGTARGETNAME" "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.Carbon.Lib" "CarbonLib" "MSL C.PPC.Lib" "InterfaceLib" "FontManagerLib" "MathLib"
+#        WriteGROUP "Libraries" "$CARBONDEBUGTARGETNAME" "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.Carbon.Lib" "CarbonLib" "MSL C.PPC.Lib" "InterfaceLib" "FontManager" "MathLib"
         
         echo "<GROUP><NAME>Libraries</NAME>"
             WriteFILEREF "console.stubs.c" "$CARBONDEBUGTARGETNAME"
@@ -384,7 +384,7 @@ echo "<PROJECT>"
             WriteFILEREF "CarbonLib" "$CARBONDEBUGTARGETNAME"
             WriteFILEREF "MSL C.PPC.Lib" "$CLASSICDEBUGTARGETNAME"
             WriteFILEREF "InterfaceLib" "$CLASSICDEBUGTARGETNAME"
-            WriteFILEREF "FontManagerLib" "$CLASSICDEBUGTARGETNAME"
+            WriteFILEREF "FontManager" "$CLASSICDEBUGTARGETNAME"
             WriteFILEREF "MathLib" "$CLASSICDEBUGTARGETNAME"
         echo "</GROUP>"
         
