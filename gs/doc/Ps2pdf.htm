@@ -302,39 +302,46 @@ containing '=' mean that the value of the parameter is the same as in the
 </table></blockquote>
 
 <p>
-(note 0) This parameter can be set and queried, but currently has no effect.
+<a name="note_0">(note 0)</a>
+This parameter can be set and queried, but currently has no effect.
 
 <p>
-(note 1) <b><tt>AutoFilterxxxImages</tt></b> doesn't examine the image to
-decide between JPEG and LZW or Flate compression: it uses JPEG compression
-if the image has 8 bits per component and does not use an Indexed color
-space, and LZW or Flate compression otherwise.
+<a name="note_1">(note 1)</a>
+Currently, <b><tt>AutoFilterxxxImages</tt></b> doesn't examine the image to
+decide between JPEG and LZW or Flate compression: it always uses LZW or
+Flate compression.  If you want to force JPEG compression, use
+<b><tt>-dAutoFilterxxxImages=false</tt></b>.
 
 <p>
-(note 2) Because of Unisys's threats regarding the Welch patent,
+<a name="note_2">(note 2)</a>
+Because of Unisys's threats regarding the Welch patent,
 <b><tt>ps2pdf</tt></b> cannot actually use LZW compression: instead, it
 treats all requests for LZW compression as calling for Flate compression if
 <b><tt>UseFlateCompression</tt></b> is true and
 <b><tt>CompatibilityLevel</tt></b> &gt;= 1.2, and ignores them otherwise.
 
 <p>
-(note 3) The <b><tt>xxxDownsampleType</tt></b> parameters can also have the
-value /Bicubic (a Distiller 4 feature), which is currently treated as
-equivalent to /Average.
+<a name="note_3">(note 3)</a>
+The <b><tt>xxxDownsampleType</tt></b> parameters can also have the value
+/Bicubic (a Distiller 4 feature), which is currently treated as equivalent
+to /Average.
 
 <p>
-(note 4) Currently, the transfer function is always applied.  If the
-corresponding parameter is set to <b><tt>/Preserve</tt></b>, the function
-setting is also copied into the PDF file.
+<a name="note_4">(note 4)</a>
+Currently, the transfer function is always applied.  If the corresponding
+parameter is set to <b><tt>/Preserve</tt></b>, the function setting is also
+copied into the PDF file.
 
 <p>
-(note 5) Optimization (linearization) is implemented with a separate
-program, <b><tt>pdfopt</tt></b> <em>input.pdf</em> <em>output.pdf</em>; the
+<a name="note_5">(note 5)</a>
+Optimization (linearization) is implemented with a separate program,
+<b><tt>pdfopt</tt></b> <em>input.pdf</em> <em>output.pdf</em>; the
 <b><tt>Optimize</tt></b> parameter has no effect.
 
 <p>
-(note 6) Currently, colors for images and shadings are left in the color
-space specified in the PostScript input, except for
+<a name="note_6">(note 6)</a>
+Currently, colors for images and shadings are left in the color space
+specified in the PostScript input, except for
 <b><tt>ConvertCMYKImagesToRGB</tt></b>; the current color in the graphics
 state (used for fill, stroke, text, and imagemask) is always converted to
 the color space specified by the current value of
@@ -345,33 +352,37 @@ color space specified by <b><tt>ProcessColorModel</tt></b> rather than
 always to <b><tt>/DeviceRGB</tt></b>.
 
 <p>
-(note 7) The default image parameter dictionary is
+<a name="note_7">(note 7)</a>
+ The default image parameter dictionary is
 <blockquote><b><tt>
 << /QFactor 0.9 /Blend 1 /HSamples [2 1 1 2] /VSamples [2 1 1 2] >>
 </tt></b></blockquote>
 
 <p>
-(note 8) The printer ACS image parameter dictionary is
+<a name="note_8">(note 8)</a>
+The printer ACS image parameter dictionary is
 <blockquote><b><tt>
 << /QFactor 0.4 /Blend 1 /ColorTransform 1 /HSamples [1 1 1 1] /VSamples [1 1 1 1] >>
 </tt></b></blockquote>
 
 <p>
-(note 9) The prepress ACS image parameter dictionary is
+<a name="note_9">(note 9)</a>
+The prepress ACS image parameter dictionary is
 <blockquote><b><tt>
 << /QFactor 0.15 /Blend 1 /ColorTransform 1 /HSamples [1 1 1 1] /VSamples [1 1 1 1] >>
 </tt></b></blockquote>
 
 <p>
-(note 10) The screen and ebook ACS image parameter dictionary is
+<a name="note_10">(note 10)</a>
+The screen and ebook ACS image parameter dictionary is
 <blockquote><b><tt>
 << /QFactor 0.76 /Blend 1 /ColorTransform 1 /HSamples [2 1 1 2] /VSamples [2 1 1 2] >>
 </tt></b></blockquote>
 
 <p>
-(note 11) The default, screen, and ebook settings never embed the 14
-standard fonts (Courier, Helvetica, and Times families, Symbol, and
-ZapfDingbats).
+<a name="note_11">(note 11)</a>
+The default, screen, and ebook settings never embed the 14 standard fonts
+(Courier, Helvetica, and Times families, Symbol, and ZapfDingbats).
 
 <hr>
 
