@@ -1356,13 +1356,11 @@ private int add_horiz_margin(line_list * ll, active_line * alp)
     if (ix0 < ix1) {
 	if (ix1 < 0 || ix0 > ll->bbox_width)
 	    return 0; /* Outside clip box */
-	return margin_boundary(ll, &ll->margin_set0, alp, alp->start.y, alp->start.y, 1);
     } else if (ix0 > ix1) {
 	if (ix0 < 0 || ix1 > ll->bbox_width)
 	    return 0; /* Outside clip box */
-	return margin_boundary(ll, &ll->margin_set0, alp, alp->start.y, alp->start.y, 1);
     }
-    return 0;
+    return margin_boundary(ll, &ll->margin_set0, alp, alp->start.y, alp->start.y, -1);
 }
 
 private inline const segment * PrevSeg(const segment *pseg)
