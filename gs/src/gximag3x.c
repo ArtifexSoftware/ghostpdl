@@ -239,8 +239,6 @@ gx_begin_image3x_generic(gx_device * dev,
 	if (code < 0)
 	    goto out1;
 	penum->mask[i].mdev = mdev;
-	midev[i] = mdev;
-	minfo[i] = penum->mask[i].info;
 	gs_image_t_init_gray(&mask[i].image, pis); /* gray is bogus */
 	mask[i].image.ColorSpace = pmcs;
 	mask[i].image.adjust = false;
@@ -276,6 +274,8 @@ gx_begin_image3x_generic(gx_device * dev,
 	    if (code < 0)
 		goto out2;
 	}
+	midev[i] = mdev;
+	minfo[i] = penum->mask[i].info;
     }
     gs_image_t_init(&pixel.image, pim->ColorSpace);
     {
@@ -298,7 +298,9 @@ gx_begin_image3x_generic(gx_device * dev,
 	int added_depth = 0;
 	int pi = 0;
 
-	for (i = 0; i < NUM_MASKS; ++i)
+	for (i = 0; i < NUM_MASKS; ++i) {
+	    if (penum->mask[i].depth == 0)	/* no mask */
+		continue;
 	    switch (penum->mask[i].InterleaveType) {
 	    case interleave_chunky:
 		/* Add the mask data to the depth of the image data. */
@@ -314,6 +316,7 @@ gx_begin_image3x_generic(gx_device * dev,
 		code = gs_note_error(gs_error_Fatal);
 		goto out3;
 	    }
+	}
 	memcpy(&penum->plane_widths[pi], &penum->pixel.info->plane_widths[0],
 	       penum->pixel.info->num_planes * sizeof(penum->plane_widths[0]));
 	memcpy(&penum->plane_depths[pi], &penum->pixel.info->plane_depths[0],
@@ -321,8 +324,10 @@ gx_begin_image3x_generic(gx_device * dev,
 	penum->plane_depths[pi] += added_depth;
 	penum->num_planes = pi + penum->pixel.info->num_planes;
     }
-    gx_device_retain(midev[0], true); /* will free explicitly */
-    gx_device_retain(midev[1], true); /* ditto */
+    if (midev[0])
+	gx_device_retain(midev[0], true); /* will free explicitly */
+    if (midev[1])
+	gx_device_retain(midev[1], true); /* ditto */
     gx_device_retain(pcdev, true); /* ditto */
     *pinfo = (gx_image_enum_common_t *) penum;
     return 0;
@@ -566,6 +571,8 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
 
 	mask_plane[i].data = 0;
 	mask_used[i] = 0;
+	if (!penum->mask[i].depth)
+	    continue;
 	h1 = min(h1, mh - penum->mask[i].y);
 	if (penum->mask[i].InterleaveType == interleave_chunky)
 	    ++num_chunky;
@@ -801,15 +808,21 @@ gx_image3x_end_image(gx_image_enum_common_t * info, bool draw_last)
     gx_image3x_enum_t *penum = (gx_image3x_enum_t *) info;
     gs_memory_t *mem = penum->memory;
     gx_device *mdev0 = penum->mask[0].mdev;
-    int ocode = gx_image_end(penum->mask[0].info, draw_last);
+    int ocode =
+	(penum->mask[0].info ? gx_image_end(penum->mask[0].info, draw_last) :
+	 0);
     gx_device *mdev1 = penum->mask[1].mdev;
-    int scode = gx_image_end(penum->mask[1].info, draw_last);
+    int scode =
+	(penum->mask[1].info ? gx_image_end(penum->mask[1].info, draw_last) :
+	 0);
     gx_device *pcdev = penum->pcdev;
     int pcode = gx_image_end(penum->pixel.info, draw_last);
 
     gs_closedevice(pcdev);
-    gs_closedevice(mdev0);
-    gs_closedevice(mdev1);
+    if (mdev0)
+	gs_closedevice(mdev0);
+    if (mdev1)
+	gs_closedevice(mdev1);
     gs_free_object(mem, penum->mask[0].data,
 		   "gx_image3x_end_image(mask[0].data)");
     gs_free_object(mem, penum->mask[1].data,
