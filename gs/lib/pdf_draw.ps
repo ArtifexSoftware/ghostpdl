@@ -235,7 +235,7 @@ drawopdict begin
   /Q { Q } def
 			% Graphics state setting
   /cm { //cmmatrix astore concat } def
-  /i /setflat load def
+  /i { 1 .min setflat } def
   /J /setlinecap load def
   /d /setdash load def
   /j /setlinejoin load def
@@ -295,7 +295,7 @@ end
   /BG2 { gsbg }
   /UCR2 { gsucr }
   /TR2 { gstr }
-  /FL { setflat }
+  /FL { 1 .min setflat }
   /SM {
 	% SM may be present even if this is only a Level 2 interpreter.
     /setsmoothness where { pop setsmoothness } { pop } ifelse
