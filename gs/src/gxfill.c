@@ -1511,7 +1511,7 @@ process_h_segments(line_list *ll, fixed y)
 }
 
 private inline int
-loop_fill_trap(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re, int flags)
+loop_fill_trap_np(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
 {
     const fill_options * const fo = ll->fo;
     fixed ybot = max(le->start.y, fo->pbox->p.y);
@@ -1520,9 +1520,6 @@ loop_fill_trap(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re, int fl
     if (ybot >= ytop)
 	return 0;
     vd_quad(le->start.x, ybot, re->start.x, ybot, re->end.x, ytop, le->end.x, ytop, 1, VD_TRAP_COLOR);
-    if (flags & ftf_pseudo_rasterization)
-	return gx_fill_trapezoid_narrow
-	    (fo->dev, le, re, ybot, ytop, flags, fo->pdevc, fo->lop);
     return (*fo->fill_trap)
 	(fo->dev, le, re, ybot, ytop, false, fo->pdevc, fo->lop);
 }
@@ -1573,7 +1570,7 @@ fill_trap_slanted(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
 	if (re->end.x >= re->start.x) {	/* Top wider than bottom. */
 	    le->start.y = re->start.y -= fo->adjust_below;
 	    le->end.y = re->end.y -= fo->adjust_below;
-	    code = loop_fill_trap(ll, le, re, 0);
+	    code = loop_fill_trap_np(ll, le, re);
 	    le->start.y = re->start.y += fo->adjust_below;
 	    le->end.y = re->end.y += fo->adjust_below;
 	    if (ADJUSTED_Y_SPANS_PIXEL(le->end.y)) {
@@ -1602,7 +1599,7 @@ fill_trap_slanted(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
 	    }
 	    le->start.y = re->start.y += fo->adjust_above;
 	    le->end.y = re->end.y += fo->adjust_above;
-	    code = loop_fill_trap(ll, le, re, 0);
+	    code = loop_fill_trap_np(ll, le, re);
 	    le->start.y = re->start.y -= fo->adjust_above;
 	    le->end.y = re->end.y -= fo->adjust_above;
 	} else {	/* Slanted trapezoid. */
@@ -1610,36 +1607,6 @@ fill_trap_slanted(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re)
 	}
     }
     return code;
-}
-
-private int
-fill_trap_or_rect(const line_list *ll, gs_fixed_edge *le, gs_fixed_edge *re, int flags)
-{
-    const fill_options * const fo = ll->fo;
-
-    if (le->start.x == le->end.x && re->start.x == re->end.x) {
-	int yi = fixed2int_pixround(le->start.y - fo->adjust_below);
-	int wi = fixed2int_pixround(le->end.y + fo->adjust_above) - yi;
-	int xli = fixed2int_var_pixround(le->end.x);
-	int xi = fixed2int_var_pixround(re->end.x);
-
-	if (fo->pseudo_rasterization && xli == xi) {
-	    /*
-	     * The scan is empty but we should paint something 
-	     * against a dropout. Choose one of two pixels which 
-	     * is closer to the "axis".
-	     */
-	    fixed xx = int2fixed(xli);
-
-	    if (xx - le->end.x < re->end.x - xx)
-		++xi;
-	    else
-		--xli;
-	}
-	vd_rect(le->end.x, le->start.y, re->end.x, le->end.y, 1, VD_TRAP_COLOR);
-	return LOOP_FILL_RECTANGLE_DIRECT(fo, xli, yi, xi - xli, wi);
-    } else
-	return loop_fill_trap(ll, le, re, flags);
 }
 
 #define COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above)\
@@ -2050,16 +2017,47 @@ fill_loop_by_trapezoids(line_list *ll, fixed band_mask)
 			    y, y1, le.start.x, re.start.x, le.end.x, re.end.x, flp->pseg, alp->pseg, 
 			    flp->direction, alp->direction);
 		    } else {
-			int flags = 0;
+			if (le.start.x == le.end.x && re.start.x == re.end.x) {
+			    int yi = fixed2int_pixround(le.start.y - fo->adjust_below);
+			    int wi = fixed2int_pixround(le.end.y + fo->adjust_above) - yi;
+			    int xli = fixed2int_var_pixround(le.end.x);
+			    int xi = fixed2int_var_pixround(re.end.x);
 
-			if (fo->pseudo_rasterization) {
-			    flags = ftf_pseudo_rasterization;
-			    if (flp->start.x == alp->start.x && flp->start.y == y)
-				flags |= ftf_peak0;
-			    if (flp->end.x == alp->end.x && flp->end.y == y1)
-				flags |= ftf_peak0;
+			    if (fo->pseudo_rasterization && xli == xi) {
+				/*
+				 * The scan is empty but we should paint something 
+				 * against a dropout. Choose one of two pixels which 
+				 * is closer to the "axis".
+				 */
+				fixed xx = int2fixed(xli);
+
+				if (xx - le.end.x < re.end.x - xx)
+				    ++xi;
+				else
+				    --xli;
+			    }
+			    vd_rect(le.end.x, le.start.y, re.end.x, le.end.y, 1, VD_TRAP_COLOR);
+			    code = LOOP_FILL_RECTANGLE_DIRECT(fo, xli, yi, xi - xli, wi);
+			} else {
+			    if (fo->pseudo_rasterization) {
+				fixed ybot = max(le.start.y, fo->pbox->p.y);
+				fixed ytop = min(le.end.y, fo->pbox->q.y);
+
+				if (ybot < ytop) {
+				    int flags = ftf_pseudo_rasterization;
+
+				    if (flp->start.x == alp->start.x && flp->start.y == y)
+					flags |= ftf_peak0;
+				    if (flp->end.x == alp->end.x && flp->end.y == y1)
+					flags |= ftf_peak0;
+
+				    vd_quad(le.start.x, ybot, re.start.x, ybot, re.end.x, ytop, le.end.x, ytop, 1, VD_TRAP_COLOR);
+				    code = gx_fill_trapezoid_narrow(fo->dev, &le, &re, ybot, ytop, flags, fo->pdevc, fo->lop);
+				} else
+				    code = 0;
+			    } else
+				code = loop_fill_trap_np(ll, &le, &re);
 			}
-			code = fill_trap_or_rect(ll, &le, &re, flags);
 		    }
 		    if (fo->pseudo_rasterization) {
 			if (code < 0)
