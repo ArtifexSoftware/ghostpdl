@@ -386,7 +386,7 @@ currentdict /.pdfmarkparams .undef
   % we can do only with redefining the operator 'resourcestatus'.
   /Creator .knownget {
     (PScript5.dll) search {
-      pop pop pop
+      pop pop
       systemdict /resourcestatus dup
       { dup /FontType eq 2 index 32 eq and {
           pop pop false
@@ -394,7 +394,8 @@ currentdict /.pdfmarkparams .undef
           resourcestatus
         } ifelse
       } bind .makeoperator .forceput
-     } if
+    } if
+    pop
   } if
 } 
 bind def
