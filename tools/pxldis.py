@@ -25,8 +25,8 @@ import string
 from struct import *
 
 # tags
-pxl_tags_dict = {
-    'ArcPath' :                 0x91,
+pxl_tags_dict = {                                  
+    'ArcPath' :                 0x91,                  
     'BeginChar' :               0x52,
     'BeginFontHeader' :         0x4f,
     'BeginImage' :              0xb0,
@@ -35,6 +35,7 @@ pxl_tags_dict = {
     'BeginScan' :               0xb6,
     'BeginSession' :            0x41,
     'BeginStream' :             0x5b,
+    'BeginUserDefinedLineCap' : 0x82,
     'BezierPath' :              0x93,
     'BezierRelPath' :           0x95,
     'Chord' :                   0x96,
@@ -52,12 +53,14 @@ pxl_tags_dict = {
     'EndScan' :                 0xb8,
     'EndSession' :              0x42,
     'EndStream' :               0x5d,
+    'EndUserDefinedLineCaps' :  0x83,
     'ExecStream' :              0x5e,
     'LinePath' :                0x9b,
     'LineRelPath' :             0x9d,
     'NewPath' :                 0x85,
     'OpenDataSource' :          0x48,
     'PaintPath' :               0x86,
+    'Passthrough' :             0xbf,
     'Pie' :                     0x9e,
     'PiePath' :                 0x9f,
     'PopGS' :                   0x60,
@@ -70,13 +73,13 @@ pxl_tags_dict = {
     'Rectangle' :               0xa0,
     'RectanglePath' :           0xa1,
     'RemoveFont' :              0x55,
-    'SetCharAttributes' :       0x56,
     'RemoveStream' :            0x5f,
     'RoundRectangle' :          0xa2,
     'RoundRectanglePath' :      0xa3,
     'ScanLineRel' :             0xb9,
-    'SetClipReplace' :          0x62,
+    'SetAdaptiveHalftoning' :   0x94,
     'SetBrushSource' :          0x63,
+    'SetCharAttributes' :       0x56,
     'SetCharAngle' :            0x64,
     'SetCharBoldValue' :        0x7d,
     'SetCharScale' :            0x65,
@@ -85,17 +88,22 @@ pxl_tags_dict = {
     'SetClipIntersect' :        0x67,
     'SetClipMode' :             0x7f,
     'SetClipRectangle' :        0x68,
+    'SetClipReplace' :          0x62,
     'SetClipToPage' :           0x69,
     'SetColorSpace' :           0x6a,
+    'SetColorTrapping' :        0x92,
+    'SetColorTreatment' :       0x58,
     'SetCursor' :               0x6b,
     'SetCursorRel' :            0x6c,
     'SetHalftoneMethod' :       0x6d,
     'SetFillMode' :             0x6e,
     'SetFont' :                 0x6f,
+    'SetHalftoneMethod' :       0x6d,
     'SetLineCap' :              0x71,
     'SetLineDash' :             0x70,
     'SetLineJoin' :             0x72,
     'SetMiterLimit' :           0x73,
+    'SetNeutralAxis' :          0x7e,
     'SetPageDefaultCTM' :       0x74,
     'SetPageOrigin' :           0x75,
     'SetPageRotation' :         0x76,
@@ -138,60 +146,63 @@ pxl_tags_dict = {
     'uint32_xy' :               0xd2
 }
 
-# nb enumerations are not supported we print the ordinal value.
 pxl_enumerations_dict = {
-    'DataOrg' : [ 'eBinaryHighByteFirst', 'eBinaryLowByteFirst' ],
-    'DataSource' : [ 'eDefault' ],
-    'DataType' : [ 'eUByte', 'eSByte', 'eUint16', 'eSint16' ],
-    'ArcDirection' : [ 'eClockWise',  'eCounterClockWise' ],
-    'DitherMatrix' : [ 'eDeviceBest' ],
-    'CharSubModeArray' : [ 'eNoSubstitution', 'eVerticalSubstitution' ],
-    'ClipMode' : ['eNonZeroWinding', 'eEvenOdd' ],
-    'DuplexPageSide' : [ 'eFrontMediaSide', 'eBackMediaSide' ],
-    'ClipRegion' : ['eInterior', 'eExterior'],
-    'ErrorReport' : ['eNoReporting', 'eBackChannel'],
-    'ColorDepth' : [ 'e1Bit', 'e4Bit', 'e8Bit' ],
-    'ColorMapping' : [ 'eDirectPixel', 'eIndexedPixel' ],
-    'ColorSpace' : [ 'eGray', 'eRGB', 'eSRGB' ],
-    'CompressMode' : [ 'eNoCompression', 'eRLECompression', 'eJPEGCompression' ],
-    'LineJoineMiterJoin' : [ 'eRoundJoin', 'eBevelJoin', 'eNoJoin' ],
-    'MeasureeInch' : [ 'eMillimeter', 'eTenthsOfAMillimeter' ],
-    'MediaSize' : [ 'eLetterPaper', 'eLegalPaper', 'eA4Paper',
-		    'eExecPaper', 'eLedgerPaper', 'eA3Paper', 
-		    'eCOM10Envelope', 'eMonarchEnvelope', 'eC5Envelope', 
-		    'eDLEnvelope', 'eJB4Paper', 'eJB5Paper', 'eB5Envelope',
-		    'eJPostcard', 'eJDoublePostcard', 'eA5Paper', 'eA6Paper',
-		    'eJBPaper' ],
-    'MediaSource' : [ 'eDefaultSource', 'eAutoSelect', 'eManualFeed',
-		      'eMultiPurposeTray', 'eUpperCassette', 'eLowerCassette', 
-		      'eEnvelopeTray', 'eThirdCassette' ],
-    'MediaDestination' :  [ 'eDefaultDestination', 'eFaceDownBin', 'eFaceUpBin',
-			     'eJobOffsetBin' ],
-    'DuplexPageMode' : [ 'eDuplexHorizontalBinding', 'eDuplexVerticalBinding' ],
-    'DuplexPageSide' : [ 'eFrontMediaSide', 'eBackMediaSide' ],
-    'ErrorReport' :  [ 'eNoReporting', 'eBackChannel' ],
-    'BackCh' : ['eErrorPage'],
-    'ErrPage' : ['eBackChAndErrPage', 'eNWBackChannel', 'eNWErrorPage',
-		 'eNWBackChAndErrPage'],
-    'FillMode' : ['eNonZeroWinding', 'eEvenOdd' ],
-    'LineCapeButtCap' : [ 'eRoundCap', 'eSquareCap', 'eTriangleCap' ],
-    'LineJoineMiterJoin' : [ 'ePortraitOrientation', 'eLandscapeOrientation',
-			     'eReversePortrait', 'eReverseLandscape' ],
-    'PatternPersistence' : [ 'eTempPattern', 'ePagePattern', 'eSessionPattern'],
-    'SimplexPageMode' : ['eSimplexFrontSide'],
-    'TxMode' : [ 'eOpaque', 'eTransparent' ],
-    'WritingMode' : [ 'eHorizontal', 'eVertical' ]
+    'ArcDirection' : [ 'eClockWise=0',  'eCounterClockWise=1' ],
+    'BackCh' : ['eErrorPage=0'], # deprecated.
+    'CharSubModeArray' : [ 'eNoSubstitution=0', 'eVerticalSubstitution=1' ],
+    'ClipMode' : ['eNonZeroWinding=0', 'eEvenOdd=1' ],
+    'ClipRegion' : ['eInterior=0', 'eExterior=1'],
+    'ColorDepth' : [ 'e1Bit=0', 'e4Bit=1', 'e8Bit=2' ],
+    'ColorMapping' : [ 'eDirectPixel=0', 'eIndexedPixel=1' ],
+    'ColorSpace' : [ 'eGray=1', 'eRGB=2', 'eSRGB=3' ], # srgb deprecated
+    'ColorTreatment' : [ 'eNoTreatment=0', 'eScreenMatch=1', 'eVivid=2' ],
+    'CompressMode' : [ 'eNoCompression=0', 'eRLECompression=1',
+                       'eJPEGCompression=2', 'eDeltaRowCompression=3' ],
+    'DataOrg' : [ 'eBinaryHighByteFirst=0', 'eBinaryLowByteFirst=1' ],
+    'DataSource' : [ 'eDefault=0' ],
+    'DataType' : [ 'eUByte=0', 'eSByte=1', 'eUint16=2', 'eSint16=3' ],
+    'DitherMatrix' : [ 'eDeviceBest=0' ],
+    'DuplexPageMode' : [ 'eDuplexHorizontalBinding=0', 'eDuplexVerticalBinding=1' ],
+    'DuplexPageSide' : [ 'eFrontMediaSide=0', 'eBackMediaSide=1' ],
+    'ErrorReport' : ['eNoReporting=0', 'eBackChannel=1', 'eErrorPage=2',
+                     'eBackChAndErrPage=3', 'eNWBackChannel=4', 'eNWErrorPage=5',
+                     'eNWBackChAndErrPage=6' ],
+    'FillMode' : ['eNonZeroWinding=0', 'eEvenOdd=1' ],
+    'LineJoineMiterJoin' : [ 'eRoundJoin=0', 'eBevelJoin=1', 'eNoJoin=2' ],
+    'MediaSource' : [ 'eDefaultSource=0', 'eAutoSelect=1', 'eManualFeed=2',
+		      'eMultiPurposeTray=3', 'eUpperCassette=4', 'eLowerCassette=5', 
+		      'eEnvelopeTray=6', 'eThirdCassette=7', 'External Trays=8-255' ],
+    'MediaDestination' :  [ 'eDefaultDestination=0', 'eFaceDownBin=1', 'eFaceUpBin=2',
+			     'eJobOffsetBin=3', 'External Bins=5-255' ],
+    'LineCapStyle' : [ 'eButtCap=0' 'eRoundCap=1', 'eSquareCap=2', 'eTriangleCap=3' ],
+    'LineJoin' : [ 'eMiterJoin=0', 'eRoundJoin=1', 'eBevelJoin=2', 'eNoJoin=3' ],
+    'Measure' : [ 'eInch=0', 'eMillimeter=1', 'eTenthsOfAMillimeter=2' ],
+    'MediaSize' : [ 'eDefault = 96', 'eLetterPaper=0', 'eLegalPaper=1', 'eA4Paper=2',
+		    'eExecPaper=3', 'eLedgerPaper=4', 'eA3Paper=5', 
+		    'eCOM10Envelope=6', 'eMonarchEnvelope=7', 'eC5Envelope=8', 
+		    'eDLEnvelope=9', 'eJB4Paper=10', 'eJB5Paper=11', 'eB5Paper=13',
+                    'eB5Envelope=12', 'eJPostcard=14', 'eJDoublePostcard=15',
+                    'eA5Paper=16', 'eA6Paper=17', 'eJBPaper=18', 'JIS8K=19',
+                    'JIS16K=20', 'JISExec=21' ],
+    'Orientation' : ['ePortraitOrientation=0', 'eLandscapeOrientation=1',
+                     'eReversePortrait=2', 'eReverseLandscape=3',
+                     'eDefaultOrientation=4' ],
+    'PatternPersistence' : [ 'eTempPattern=0', 'ePagePattern=1', 'eSessionPattern=2'],
+    'SimplexPageMode' : ['eSimplexFrontSide=0'],
+    'TxMode' : [ 'eOpaque=0', 'eTransparent=1' ],
+    'WritingMode' : [ 'eHorizontal=0', 'eVertical=1' ]
 }
 
 # see appendix F
 pxl_attribute_name_to_attribute_number_dict = { 
+    'AllObjectTypes' : 29,
     'ArcDirection' : 65,
     'BlockByteLength' : 111,
     'BlockHeight' : 99,
-    'BoldValue' : 177,
     'BoundingBox' : 66,
-    'ColorimetricColorSpace': 17,
+    'ColorimetricColorSpace': 17, # deprecated
     'CharAngle' : 161,
+    'CharBoldValue' : 177,
     'CharCode' : 162,
     'CharDataSize' : 163,
     'CharScale' : 164,
@@ -203,11 +214,12 @@ pxl_attribute_name_to_attribute_number_dict = {
     'ColorDepth' : 98,
     'ColorMapping' : 100,
     'ColorSpace' : 3,
+    'ColorTreatment' : 120,
     'CommentData' : 129,
     'CompressMode' : 101,
     'ControlPoint1' : 81,
     'ControlPoint2' : 82,
-    'CRGBMinMax' : 20,
+    'CRGBMinMax' : 20, # deprecated
     'CustomMediaSize' : 47,
     'CustomMediaSizeUnits' : 48,
     'DashOffset' : 67,
@@ -228,12 +240,13 @@ pxl_attribute_name_to_attribute_number_dict = {
     'FontFormat' : 169,
     'FontHeaderLength' : 167,
     'FontName' : 168,
-    'GammaGain' : 21,
+    'GammaGain' : 21, # deprecated.
     'GrayLevel' : 9,
     'LineCapStyle' : 71,
     'LineDashStyle' : 74,
     'LineJoinStyle' : 72,
     'Measure' : 134,
+    'MediaDestination' : 36,
     'MediaSize' : 37,
     'MediaSource' : 38,
     'MediaType' : 39,
@@ -244,6 +257,7 @@ pxl_attribute_name_to_attribute_number_dict = {
     'NumberOfPoints' : 77,
     'NumberOfScanLines' : 115,
     'Orientation' : 40,
+    'PCLSelectFont' : 173,
     'PadBytesMultiple' : 110,
     'PageAngle' : 41,
     'PageCopies' : 49,
@@ -262,6 +276,7 @@ pxl_attribute_name_to_attribute_number_dict = {
     'PrimaryDepth' : 15,
     'RGBColor' : 11,
     'ROP3' : 44,
+    'RasterObjects' : 32,
     'SimplexPageMode' : 52,
     'SolidLine' : 78,
     'SourceHeight' : 107,
@@ -273,22 +288,25 @@ pxl_attribute_name_to_attribute_number_dict = {
     'StreamName' : 139,
     'SymbolSet' : 170,
     'TextData' : 171,
+    'TextObjects' : 30,
     'TxMode' : 45,
     'UnitsPerMeasure' : 137,
-    'WhiteReferencePoint' : 19,
-    'WritingMode' : 173,
-    'XSpacingData' : 175,
-    'XYChromaticities' : 18,
+    'VectorObjects' : 31,
+    'WhiteReferencePoint' : 19, # deprecated.
+    'WritingMode' : 173, # deprecated.
+    'XSpacingData' : 175, 
+    'XYChromaticities' : 18, # deprecated.
     'YSpacingData' : 176,
 }
 
 class pxl_dis:
 
     def __init__(self, data):
-        # the class does not handle pjl, work around that here
-        index = 0
-        while( data[index] != ')' and  data[index] != '(' ):
-            index = index + 1
+
+        # the class does not handle pjl, work around that here.  NB
+        # should check for little endian protocol but we haven't seen
+        # it used yet.
+        index = data.index(") HP-PCL XL;")
         
         # copy of the data without the PJL
         data = data[index:]
@@ -314,7 +332,7 @@ class pxl_dis:
 
         # print out ascii protocol and revision.  NB should check
         # revisions are the same.
-        print "` HP-PCL XL;2;0"
+        print "` HP-PCL XL;" + self.protocol + ";" + self.revision
         # saved size of last array parsed
         self.size_of_element = -1;
         self.size_of_array = -1;
@@ -364,8 +382,7 @@ class pxl_dis:
         tag = unpack('B', self.data[self.index] )[0]
         for k in pxl_tags_dict.keys():
             if ( pxl_tags_dict[k] == tag ):
-                print "// Operator Position: %d File Offset of operator" % \
-                      self.operator_position, self.begin_attribute_pos
+                print "// Operator Position: %d Operator File Offset: %d Operator Hex Code: %X" % (self.operator_position, self.begin_attribute_pos, tag)
                 print k
                 self.index = self.index + 1
                 # handle special cases
@@ -653,6 +670,10 @@ class pxl_dis:
             # an int.
             length = int(self.unpack('L', self.data[self.index:self.index+4])[0])
             self.index = self.index + 4
+            print "length:",
+            print length
+            print "index:",
+            print self.index
         if ( name == 'embedded_data_byte' ):
             length = int(self.unpack('B', self.data[self.index:self.index+1])[0])
             self.index = self.index + 1
@@ -665,11 +686,13 @@ class pxl_dis:
         # for some screwed up reason trailing nulls can comme after
         # embedded data
         self.index = self.index + length
-        while ( 1 ):
-            if ( self.data[self.index] == "\0" ):
-                self.index = self.index + 1
-            else:
-                break
+        print "new index",
+        print self.index
+#        while ( 1 ):
+#            if ( ord(self.data[self.index]) == 0 or ord(self.data[self.index]) == 1 ):
+#                self.index = self.index + 1
+#            else:
+#                break
             
                  
     def Tag_attr_ubyte(self):
@@ -681,7 +704,17 @@ class pxl_dis:
             tag = unpack('B', self.data[self.index] )[0]
             for k in pxl_attribute_name_to_attribute_number_dict.keys():
                 if ( pxl_attribute_name_to_attribute_number_dict[k] == tag ):
-                    print k
+                    print k,
+                    if pxl_enumerations_dict.has_key(k):
+                        print "//",
+                        searchstr = "=" + str(self.saved_ubyte)
+                        enum = pxl_enumerations_dict[k]
+                        for value in enum:
+                            if ( value[value.index('='):] == searchstr ):
+                                print value
+                                break
+                    else:
+                        print
                     self.index = self.index + 1
 		    # handle special cases
 		    if ( self.is_Embedded(k) ):
@@ -709,6 +742,8 @@ class pxl_dis:
                 print "%f" % self.unpack(self.unpack_string, self.data[self.index:self.index+size]),
             else:
                 print "%d" % self.unpack(self.unpack_string, self.data[self.index:self.index+size]),
+            if ( self.unpack_string == 'B' and size == 1 ):
+                self.saved_ubyte = self.unpack(self.unpack_string, self.data[self.index:self.index+size])[0]
             self.index = self.index + self.size_of_element
             return 1
         return 0
@@ -810,9 +845,13 @@ class pxl_dis:
             self.operatorSequences()
         # assume an index error means we have processed everything - ugly
         except IndexError:
-             return
+            return
         else:
-             print "dissassemble failed"
+            endpos = min(len(self.data), self.index + 25)
+            for byte in self.data[self.index:endpos]:
+                print hex(ord(byte)),
+            print
+            print "dissassemble failed"
 
 if __name__ == '__main__':
     import sys
