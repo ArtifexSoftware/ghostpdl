@@ -26,6 +26,7 @@
 <li><a href="#Orientation">Setting page orientation</a>
 <li><a href="#Options">Options</a>
 <li><a href="#Limitations">Limitations</a>
+<li><a href="#PPD">Ghostscript PDF Printer Description</a>
 <li><a href="#Problems">Known problems</a>
 <li><a href="#Ps2pdf_vs_AD">Comparison of <b><tt>ps2pdf</tt></b> and Acrobat Distiller</a>
 <li><a href="#Acknowledgments">Acknowledgments</a>
@@ -472,6 +473,40 @@ If a CID font is substituted in <b><tt>lib/cidfmap</tt></b>,
 the substitute font name is used when the CID font is embedded,
 and the original CID font name is used when it is not embedded.
 <b><tt>NeverEnbed</tt></b> should always specify the original CID font name.
+
+<hr>
+
+<h2><a name="PPD"></a>Ghostscript PDF Printer Description</h2>
+<p>
+To assist with creating a PostScript file suitable for conversion
+to PDF, ghostscript includes <a href="../lib/ghostpdf.ppd">ghostpdf.ppd</a>, 
+a PostScript Printer Description (PPD) file.
+This allows some <a href="#Options">distiller parameters</a>
+to be set when a PostScript file is generated.
+
+<h3>Windows XP or 2000</h3>
+<p>
+To install a "Ghostscript PDF" printer on Windows XP, 
+select the Windows Control Panel, 
+Printers and Faxes, 
+Add a Printer, 
+Local Printer, 
+Use port FILE: (Print to File),
+Have Disk..., 
+select the directory containg 
+<a href="../lib/ghostpdf.ppd">ghostpdf.ppd</a> 
+and
+<a href="../lib/ghostpdf.inf">ghostpdf.inf</a>,
+select "Ghostscript PDF", 
+Replace existing driver (if asked),
+and answer the remaining questions appropriately.
+After installing, open the "Ghostscript PDF" properties,
+select the Device Settings tab, 
+set "Mimimum Font Size to Download as Outline" to 0 pixels.
+<p>
+To set distiller parameters, select the "Ghostscript PDF" 
+Printing Preferences, then the Advanced button.
+The PDF settings are under "Printer Features".
 
 <hr>
 

@@ -65,6 +65,7 @@
     <a href="#PostScript_code">PostScript code</a>
 </ul>
 <li><a href="#PDF_interpreter">PDF interpreter</a>
+<li><a href="#PPD">PostScript Printer Description</a>
 <li><a href="#Build_process">Build process</a>
 <ul>
 <li><a href="#Makefile_structure">Makefile structure</a>,
@@ -2883,6 +2884,24 @@ Files:
 <a href="../lib/pdf_rbld.ps">lib/pdf_rbld.ps</a>,
 <a href="../lib/pdf_ops.ps">lib/pdf_ops.ps</a>,
 <a href="../lib/pdf_sec.ps">lib/pdf_sec.ps</a>.
+
+</dl>
+
+<h3><a name="PPD"></a>PostScript Printer Description</h3>
+<p>
+A PostScript Printer Description tells a generic PostScript printer 
+driver how to generate PostScript for a particular printer.
+Ghostscript includes a PPD file for generating PostScript 
+intended to be converted to PDF.  A Windows INF file for
+installing the PPD on Windows 2000 and XP is included.
+
+<dl>
+
+<dt>
+Files:
+<dd>
+<a href="../lib/ghostpdf.ppd">lib/ghostpdf.ppd</a>,
+<a href="../lib/ghostpdf.inf">lib/ghostpdf.inf</a>.
 
 </dl>
 
