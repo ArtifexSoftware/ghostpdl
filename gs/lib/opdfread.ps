@@ -1052,6 +1052,55 @@ currentdict end readonly def
   } ifelse
 } bind def
 
+/FunctionToProc2 % <function_dict> FunctionToProc2 <proc>
+{ begin
+    currentdict /C0 //knownget exec { length 1 eq } { true } ifelse {
+      N
+      currentdict /C0 //knownget exec {
+	0 get
+      } {
+        0
+      } ifelse
+      currentdict /C1 //knownget exec {
+	0 get
+      } {
+        1
+      } ifelse
+      1 index sub
+      [ 4 1 roll
+        {		% x n c0 c1-c0
+	  4 2 roll	% c0 c1-c0 x n
+	  excp mul add	% y
+	} aload pop
+      ] cvx
+    } { 
+	[ 
+	  0 1 C0 length 1 sub {
+	    N						% [ ... i n
+            C0 2 index get				% [ ... i n c0
+            C1 3 index get				% [ ... i n c0 c1
+	    4 3 roll pop				% [ ... n c0 c1
+	    1 index sub					% [ ... n c0 c1-c0
+	    [ /dup load					% [ ... n c0 c1-c0 [ dup
+	      5 2 roll					% [ ... [ dup n c0 c1-c0
+	      {			% x x n c0 c1-c0	
+	        4 2 roll	% x c0 c1-c0 x n
+	        exp mul add	% x y
+	        exch		% y x
+	      } aload pop
+	    ] cvx 
+	    /exec load
+	  } for
+	  /pop load
+	] cvx
+    } ifelse
+  end
+  //PDFR_DEBUG {
+    (FunctionType2Proc : ) print dup == 
+  } if
+} bind def
+
+
 /FunctionToProc4 % <function_dict> FunctionToProc4 <proc>
 { //MakeStreamReader exec cvx run
   //PDFR_DEBUG {
@@ -1064,6 +1113,9 @@ currentdict end readonly def
   dup /FunctionType get
   { dup 0 eq {
       pop //FunctionToProc10 exec exit
+    } if
+    dup 2 eq {
+      pop //FunctionToProc2 exec exit
     } if
     dup 4 eq {
       pop //FunctionToProc4 exec exit
@@ -1197,6 +1249,11 @@ currentdict end readonly def
   } ifelse
 } bind def
 
+/ResolveColorSpaceArrayRec  % <color_space> ResolveColorSpaceArrayRec <color_space>
+{ 0 % Will be bond below.
+  exec
+} bind def
+
 
 /ResolveColorSpaceArray  % <color_space> ResolveColorSpaceArray <color_space>
 {
@@ -1204,7 +1261,9 @@ currentdict end readonly def
     1 //ResolveArrayElement exec
     dup dup 1 get 
     dup type /arraytype eq {
-      //SubstitutePDFColorSpace exec 1 exch put
+      //SubstitutePDFColorSpace exec 
+      //ResolveColorSpaceArrayRec exec
+      1 exch put
     } {
       pop pop
     } ifelse
@@ -1220,6 +1279,8 @@ currentdict end readonly def
     dup ==
   } if
 } bind def
+
+//ResolveColorSpaceArrayRec 0 //ResolveColorSpaceArray put
 
 /ResolveColorSpace  % <name> ResolveColorSpace <color_space>
 { 
