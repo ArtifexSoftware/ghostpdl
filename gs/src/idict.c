@@ -64,7 +64,6 @@ const uint dict_max_size = max_array_size - 1;
 private int dict_create_contents(P3(uint size, const ref * pdref, bool pack));
 
 /* Debugging statistics */
-#ifdef DEBUG
 struct stats_dict_s {
     long lookups;		/* total lookups */
     long probe1;		/* successful lookups on only 1 probe */
@@ -84,6 +83,7 @@ void dict_defaults_default(dict_defaults_t *dict_defaults)
     dict_defaults->default_packed = true;
 }
 
+#ifdef DEBUG
 /* Wrapper for dict_find */
 int real_dict_find(P3(const ref * pdref, const ref * key, ref ** ppvalue));
 int
