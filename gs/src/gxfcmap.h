@@ -77,7 +77,7 @@ typedef struct gx_code_lookup_range_s {
     gs_cmap_t *cmap;		/* back pointer for glyph marking */
     /* Keys */
     byte key_prefix[MAX_CMAP_CODE_SIZE];
-    int key_prefix_size;	/* 1 .. MAX_CMAP_CODE_SIZE */
+    int key_prefix_size;	/* 0 .. MAX_CMAP_CODE_SIZE */
     int key_size;		/* 0 .. MAX_CMAP_CODE_SIZE - key_prefix_s' */
     int num_keys;
     bool key_is_range;
@@ -146,5 +146,11 @@ extern_st(st_cmap);
  * for the GC.
  */
 void gs_cmap_init(P1(gs_cmap_t *));
+
+/*
+ * Create an Identity CMap.
+ */
+int gs_cmap_create_identity(P4(gs_cmap_t **ppcmap, int num_bytes, int wmode,
+			       gs_memory_t *mem));
 
 #endif /* gxfcmap_INCLUDED */

@@ -71,6 +71,75 @@ gs_cmap_init(gs_cmap_t *pcmap)
     uid_set_invalid(&pcmap->uid);
 }
 
+/*
+ * Create an Identity CMap.
+ */
+int
+gs_cmap_create_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
+			gs_memory_t *mem)
+{
+    gs_cmap_t *pcmap =
+	gs_alloc_struct(mem, gs_cmap_t, &st_cmap,
+			"gs_cmap_create_identity(CMap)");
+    gx_code_space_range_t *range = (gx_code_space_range_t *)
+	gs_alloc_bytes(mem, sizeof(gx_code_space_range_t),
+		       "gs_cmap_create_identity(code space range)");
+    gx_code_lookup_range_t *lookup =
+	gs_alloc_struct_array(mem, 1, gx_code_lookup_range_t,
+			      &st_code_lookup_range,
+			      "gs_cmap_create_identity(lookup range)");
+    /* We allocate CIDSystemInfo dynamically only for the sake of the GC. */
+    gs_cid_system_info_t *pcidsi =
+	gs_alloc_struct(mem, gs_cid_system_info_t, &st_cid_system_info,
+			"gs_cmap_create_identity(CIDSystemInfo)");
+    static const byte key_data[8] = {
+	0, 0, 0, 0, 0xff, 0xff, 0xff, 0xff
+    };
+    static const gs_cid_system_info_t identity_cidsi = {
+	{ (const byte *)"Adobe", 5 },
+	{ (const byte *)"Identity", 8 },
+	0
+    };
+
+    if (pcmap == 0 || range == 0 || lookup == 0 || pcidsi == 0)
+	return_error(gs_error_VMerror);
+    if (num_bytes != 2)		/* for now */
+	return_error(gs_error_rangecheck);
+    gs_cmap_init(pcmap);
+    pcmap->CMapType = 1;
+    pcmap->CMapName.data = (const byte *)
+	(wmode ? "Identity-V" : "Identity-H");
+    pcmap->CMapName.size = 10;
+    *pcidsi = identity_cidsi;
+    pcmap->CIDSystemInfo = pcidsi;
+    pcmap->num_fonts = 1;
+    pcmap->CMapVersion = 1.0;
+    /* no uid, UIDOffset */
+    pcmap->WMode = wmode;
+    memset(range->first, 0, num_bytes);
+    memset(range->last, 0xff, num_bytes);
+    range->size = num_bytes;
+    pcmap->code_space.ranges = range;
+    pcmap->code_space.num_ranges = 1;
+    memset(lookup, 0, sizeof(*lookup));
+    lookup->cmap = pcmap;
+    lookup->key_size = num_bytes;
+    lookup->num_keys = 1;
+    lookup->key_is_range = true;
+    lookup->keys.data = key_data + 4 - num_bytes;
+    lookup->keys.size = num_bytes * 2;
+    lookup->value_type = CODE_VALUE_CID;
+    lookup->value_size = num_bytes;
+    lookup->values.data = key_data;
+    lookup->values.size = num_bytes;
+    pcmap->def.lookup = lookup;
+    pcmap->def.num_lookup = 1;
+    /* no notdef */
+    /* no mark_glyph, mark_glyph_data, glyph_name, glyph_name_data */
+    *ppcmap = pcmap;
+    return 0;
+}
+
 /* Get a big-endian integer. */
 private uint
 bytes2int(const byte *p, int n)
