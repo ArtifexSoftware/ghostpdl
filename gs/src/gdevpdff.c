@@ -595,6 +595,10 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	   base_font->procs.same_font(base_font, below,
 				      FONT_SAME_OUTLINES))
 	base_font = below;
+    /*
+     * set_base is the head of a logical loop; we return here if we
+     * decide to change the base_font to one registered as a resource.
+     */
  set_base:
     if (base_font == font)
 	base_same = same;
@@ -609,8 +613,8 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	     */
 	    base_font = psf->font;
 	    pfd = psf->pfd;
-	    is_standard = true;
 	}
+	is_standard = true;
     } else if (embed == FONT_EMBED_YES &&
 	       base_font->FontType != ft_composite &&
 	       uid_is_valid(BASE_UID(base_font)) &&
@@ -658,7 +662,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	pfd = (pdf_font_descriptor_t *)
 	    pdf_find_resource_by_gs_id(pdev, resourceFontDescriptor,
 				       base_font->id);
-    if (pfd != 0 && pfd->base_font != base_font)
+    if (pfd != 0 && pfd->base_font != base_font && pfd->base_font != 0)
 	pfd = 0;
 
     /* Create an appropriate font and descriptor. */
@@ -697,7 +701,9 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	    return code;
 	if (!pfd)
 	    ffid = pdf_obj_ref(pdev);
-	goto wf;
+	/* The font isn't standard: make sure we write the Widths. */
+	same &= ~FONT_SAME_METRICS;
+	break;
     case FONT_EMBED_NO:
 	/*
 	 * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
@@ -716,10 +722,9 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
 	if (code < 0)
 	    return code;
-    wf:
 	/* The font isn't standard: make sure we write the Widths. */
 	same &= ~FONT_SAME_METRICS;
-	/* falls through */
+	break;
     case FONT_EMBED_STANDARD:
 	break;
     }
@@ -960,9 +965,9 @@ pdf_adjust_font_name(const gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 			old_chars += SUBSET_PREFIX_SIZE,
 			    old_size -= SUBSET_PREFIX_SIZE;
 		    if (!bytes_compare(old_chars, old_size, chars, size))
-			goto found;
+			goto found; /* do a double 'break' */
 		}
-    found:
+    found:			/* only used for double 'break' above */
 	if (j < NUM_RESOURCE_CHAINS) {
 	    /* Create a unique name. */
 	    char suffix[sizeof(long) * 2 + 2];
