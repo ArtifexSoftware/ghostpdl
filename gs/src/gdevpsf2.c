@@ -143,7 +143,7 @@ cff_string_index(cff_string_table_t *pcst, const byte *data, uint size,
 private int
 cff_string_sid(cff_writer_t *pcw, const byte *data, uint size)
 {
-    uint index;
+    int index;
     int code = cff_string_index(&pcw->std_strings, data, size, false, &index);
 
     if (code < 0) {
@@ -1175,7 +1175,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 	 ++j) {
 	uint size;
 	const byte *str = pfont->procs.callbacks.glyph_name(glyph, &size);
-	uint ignore;
+	int ignore;
 
 	cff_string_index(&writer.std_strings, str, size, true, &ignore);
     }
