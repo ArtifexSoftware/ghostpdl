@@ -478,7 +478,7 @@ set_default_entries(
         bits = 2;
     if (gl2)
         porder = gl2_order[bits];
-    else if (type == pcl_cspace_RGB)
+    else if ( (type == pcl_cspace_RGB) || (type == pcl_cspace_Colorimetric) )
         porder = rgb_order[bits];
     else
         porder = cmy_order[bits];
