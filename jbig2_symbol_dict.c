@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.12 2002/06/24 15:51:57 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.13 2002/06/24 19:09:47 giles Exp $
     
     symbol dictionary segment decode and support
 */
@@ -16,7 +16,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
@@ -64,7 +67,7 @@ jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
 #endif /* HAVE_LIBPNG */
 
 /* 6.5 */
-Jbig2SymbolDict *
+static Jbig2SymbolDict *
 jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			 Jbig2Segment *segment,
 			 const Jbig2SymbolDictParams *params,
@@ -123,10 +126,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			   "Invalid HCHEIGHT value");
           return NULL;
         }
-
+#ifdef DEBUG
       jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
         "HCHEIGHT = %d", HCHEIGHT);
-        
+#endif        
       for (;;)
 	{
 	  /* 6.5.7 */
@@ -149,9 +152,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 "Invalid SYMWIDTH value");
               return NULL;
             }
+#ifdef DEBUG
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "SYMWIDTH = %d", SYMWIDTH);
-
+#endif
 	  /* 6.5.5 (4c.ii) */
 	  if (!params->SDHUFF || params->SDREFAGG)
 	    {
@@ -186,8 +190,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 	  /* 6.5.5 (4c.iv) */
 	  NSYMSDECODED = NSYMSDECODED + 1;
+#ifdef DEBUG
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
+#endif
 	}
     }
 
