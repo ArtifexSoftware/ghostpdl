@@ -25,8 +25,8 @@
 #include "store.h"
 
 /* Garbage collector control parameters. */
-#define DEFAULT_VM_THRESHOLD_SMALL 20000
-#define DEFAULT_VM_THRESHOLD_LARGE 250000
+#define DEFAULT_VM_THRESHOLD_SMALL 100000
+#define DEFAULT_VM_THRESHOLD_LARGE 1000000
 #define MIN_VM_THRESHOLD 1
 #define MAX_VM_THRESHOLD max_long
 
