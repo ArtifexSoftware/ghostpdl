@@ -84,6 +84,8 @@
  */
 
 /* Forward references */
+private int encoding_find_glyph(P3(gs_font_base *bfont, gs_glyph font_glyph,
+				   gs_encoding_index_t index));
 private int pdf_set_font_and_size(P3(gx_device_pdf * pdev, pdf_font_t * font,
 				     floatp size));
 private int pdf_set_text_matrix(P2(gx_device_pdf * pdev,
@@ -101,20 +103,6 @@ extern_st(st_gs_text_enum);
 gs_private_st_suffix_add1(st_pdf_text_enum, pdf_text_enum_t, "pdf_text_enum_t",
   pdf_text_enum_enum_ptrs, pdf_text_enum_reloc_ptrs, st_gs_text_enum,
   pte_default);
-
-/*
- * Define quantities derived from the current font and CTM, used within
- * the text processing loop.
- */
-typedef struct pdf_text_process_state_s {
-    float chars;		/* scaled character spacing (Tc) */
-    float words;		/* scaled word spacing (Tw) */
-    float size;			/* font size for Tf */
-    gs_matrix text_matrix;	/* normalized FontMatrix * CTM for Tm */
-    int mode;			/* render mode (Tr) */
-    gs_font *font;
-    pdf_font_t *pdfont;
-} pdf_text_process_state_t;
 
 /* Define the auxiliary procedures for text processing. */
 private int
@@ -274,271 +262,434 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 }
 
 /*
- * Create a new pdf_font for a gs_font.  This is a separate procedure only
- * for readability: it is only called from one place in
- * pdf_update_text_state.
+ * Continue processing text.  Per the check in pdf_text_begin, we know the
+ * operation is TEXT_FROM_STRING/BYTES, TEXT_DO_DRAW, and possibly
+ * TEXT_ADD_TO_ALL_WIDTHS, TEXT_ADD_TO_SPACE_WIDTH, TEXT_REPLACE_WIDTHS,
+ * TEXT_RETURN_WIDTH, and/or TEXT_INTERVENE.
+ */
+
+/*
+ * Define quantities derived from the current font and CTM, used within
+ * the text processing loop.
+ */
+typedef struct pdf_text_process_state_s {
+    float chars;		/* scaled character spacing (Tc) */
+    float words;		/* scaled word spacing (Tw) */
+    float size;			/* font size for Tf */
+    gs_matrix text_matrix;	/* normalized FontMatrix * CTM for Tm */
+    int mode;			/* render mode (Tr) */
+    gs_font *font;
+    pdf_font_t *pdfont;
+} pdf_text_process_state_t;
+
+/*
+ * Declare the procedures for processing different species of text.
+ * These procedures may, but need not, copy pte->text into buf
+ * (a caller-supplied buffer large enough to hold the string).
+ */
+#define PROCESS_TEXT_PROC(proc)\
+  int proc(P3(gs_text_enum_t *pte, byte *buf, uint size))
+private PROCESS_TEXT_PROC(process_plain_text);
+private PROCESS_TEXT_PROC(process_composite_text);
+private PROCESS_TEXT_PROC(process_cmap_text);
+private PROCESS_TEXT_PROC(process_cid_text);
+
+/* Other forward declarations */
+private int pdf_process_string(P5(pdf_text_enum_t *penum, gs_string *pstr,
+				  const gs_matrix *pfmat,
+				  pdf_text_process_state_t *pts, int *pindex));
+private int pdf_update_text_state(P3(pdf_text_process_state_t *ppts,
+				     const pdf_text_enum_t *penum,
+				     const gs_matrix *pfmat));
+private int pdf_encode_char(P4(gx_device_pdf *pdev, int chr,
+			       gs_font_base *bfont, pdf_font_t *ppf));
+private int pdf_write_text_process_state(P4(gx_device_pdf *pdev,
+			const gs_text_enum_t *pte,	/* for pdcolor, pis */
+			const pdf_text_process_state_t *ppts,
+			const gs_const_string *pstr));
+private int process_text_return_width(P7(const gs_text_enum_t *pte,
+					 gs_font *font, pdf_font_t *pdfont,
+					 const gs_matrix *pfmat,
+					 const gs_const_string *pstr,
+					 int *pindex, gs_point *pdpt));
+private int process_text_add_width(P7(gs_text_enum_t *pte,
+				      gs_font *font, const gs_matrix *pfmat,
+				      const pdf_text_process_state_t *ppts,
+				      const gs_const_string *pstr,
+				      int *pindex, gs_point *pdpt));
+
+/*
+ * Continue processing text.  This is the 'process' procedure in the text
+ * enumerator.
  */
 private int
-create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
-		pdf_font_t **pppf)
+pdf_text_process(gs_text_enum_t *pte)
 {
-    int index = -1;
-    pdf_font_t ftemp;
-    int BaseEncoding = ENCODING_INDEX_UNKNOWN;
-    int same = 0, base_same = 0;
-    pdf_font_embed_t embed =
-	pdf_font_embed_status(pdev, font, &index, &same);
-    bool have_widths = false;
-    bool is_standard = false;
-    long ffid = 0;
-    pdf_font_descriptor_t *pfd;
-    gs_font *base_font = font;
-    gs_font *below;
-    pdf_font_descriptor_t fdesc;
-    pdf_font_t *ppf;
+    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
+    uint size = pte->text.size - pte->index;
+    gs_text_enum_t *pte_default = penum->pte_default;
+    PROCESS_TEXT_PROC((*process));
     int code;
-#define BASE_UID(fnt) (&((const gs_font_base *)(fnt))->UID)
+#define BUF_SIZE 100		/* arbitrary > 0 */
 
-    /* Find the "lowest" base font that has the same outlines. */
-    while ((below = base_font->base) != base_font &&
-	   base_font->procs.same_font(base_font, below,
-				      FONT_SAME_OUTLINES))
-	base_font = below;
- set_base:
-    if (base_font == font)
-	base_same = same;
-    else
-	embed = pdf_font_embed_status(pdev, base_font, &index, &base_same);
-    if (embed == FONT_EMBED_STANDARD && pdev->std_fonts[index].font != 0) {
-	/* Use the standard font as the base font. */
-	base_font = pdev->std_fonts[index].font;
-	is_standard = true;
-    } else if (embed == FONT_EMBED_YES &&
-	       base_font->FontType != ft_composite &&
-	       uid_is_valid(BASE_UID(base_font)) &&
-	       !base_font->is_resource
-	       ) {
-	/*
-	 * The base font has a UID, but it isn't a resource.  Look for a
-	 * resource with the same UID, in the hope that that will be
-	 * longer-lived.
-	 */
-	gs_font *orig = base_font->dir->orig_fonts;
-
-	for (; orig; orig = orig->next)
-	    if (orig != base_font && orig->FontType == base_font->FontType &&
-		orig->is_resource &&
-		uid_equal(BASE_UID(base_font), BASE_UID(orig))
-		) {
-		/* Use this as the base font instead. */
-		base_font = orig;
-		/*
-		 * Recompute the embedding status of the base font.  This
-		 * can't lead to a loop, because base_font->is_resource is
-		 * now known to be true.
-		 */
-		goto set_base;
-	    }
-    }
-	 
-    /* See if we already have a descriptor for this base font. */
-    pfd = (pdf_font_descriptor_t *)
-	pdf_find_resource_by_gs_id(pdev, resourceFontDescriptor,
-				   base_font->id);
-    if (pfd != 0 && pfd->base_font != base_font)
-	pfd = 0;
-
-    /* Create an appropriate font and descriptor. */
-
-    switch (embed) {
-    case FONT_EMBED_YES:
-	/*
-	 * HACK: Acrobat Reader 3 has a bug that makes cmap formats 4
-	 * and 6 not work in embedded TrueType fonts.  Consequently, it
-	 * can only handle embedded TrueType fonts if all the glyphs
-	 * referenced by the Encoding have numbers 0-255.  Check for
-	 * this now.
-	 */
-	if (font->FontType == ft_TrueType &&
-	    pdev->CompatibilityLevel <= 1.2
-	    ) {
-	    int i;
-
-	    for (i = 0; i <= 0xff; ++i) {
-		gs_glyph glyph =
-		    font->procs.encode_char(font, (gs_char)i,
-					    GLYPH_SPACE_INDEX);
-
-		if (glyph == gs_no_glyph ||
-		    (glyph >= gs_min_cid_glyph &&
-		     glyph <= gs_min_cid_glyph + 0xff)
-		    )
-		    continue;
-		/* Can't embed, punt. */
-		return_error(gs_error_rangecheck);
-	    }
-	}
-	code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
-	if (code < 0)
+    /*
+     * If we fell back to the default implementation, continue using it.
+     */
+ top:
+    if (pte_default) {
+	code = gs_text_process(pte_default);
+	gs_text_enum_copy_dynamic(pte, pte_default, true);
+	if (code)
 	    return code;
-	if (!pfd)
-	    ffid = pdf_obj_ref(pdev);
-	goto wf;
-    case FONT_EMBED_NO:
-	/*
-	 * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
-	 * values allowed for non-embedded fonts.  Pick one here.
-	 */
-	BaseEncoding =
-	    ((const gs_font_base *)base_font)->nearest_encoding_index;
-	switch (BaseEncoding) {
-	default:
-	    BaseEncoding = ENCODING_INDEX_WINANSI;
-	case ENCODING_INDEX_WINANSI:
-	case ENCODING_INDEX_MACROMAN:
-	case ENCODING_INDEX_MACEXPERT:
-	    break;
-	}
-	code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
-	if (code < 0)
-	    return code;
-    wf:
-	/* The font isn't standard: make sure we write the Widths. */
-	same &= ~FONT_SAME_METRICS;
-	/* falls through */
-    case FONT_EMBED_STANDARD:
-	break;
+	gs_text_release(pte_default, "pdf_text_process");
+	penum->pte_default = 0;
+	return 0;
     }
-    if (~same & (FONT_SAME_METRICS | FONT_SAME_ENCODING)) {
-	/*
-	 * Before allocating the font resource, check that we can
-	 * get all the widths.
-	 */
-	int i;
+    {
+	gs_font *font = pte->current_font;
 
-	memset(&ftemp, 0, sizeof(ftemp));
-	for (i = 0; i <= 255; ++i) {
-	    code = pdf_char_width(&ftemp, i, font, NULL);
-	    if (code < 0 && code != gs_error_undefined)
-		return code;
-	}
-	have_widths = true;
-    }
-    if (pfd) {
-	code = pdf_alloc_font(pdev, font->id, &ppf, NULL);
-	if (code < 0)
-	    return code;
-	if_debug4('_',
-		  "[_]created pdf_font_t 0x%lx, id %ld, FontDescriptor 0x%lx, id %ld (old)\n",
-		  (ulong)ppf, pdf_resource_id((pdf_resource_t *)ppf),
-		  (ulong)pfd, pdf_resource_id((pdf_resource_t *)pfd));
-	ppf->FontDescriptor = pfd;
-    } else {
-	int name_index = index;
-
-	fdesc.rid = base_font->id;
-	switch (base_font->FontType) {
+	switch (font->FontType) {
 	case ft_CID_encrypted:
-	    fdesc.chars_used.size =
-		(((const gs_font_cid0 *)base_font)->
-		 cidata.common.CIDCount + 7) >> 3;
-	    break;
 	case ft_CID_TrueType:
-	    fdesc.chars_used.size =
-		(((const gs_font_cid2 *)base_font)->
-		 cidata.common.CIDCount + 7) >> 3;
+	    /*
+	     * If used directly, these are only legal with glyphshow.
+	     * If used as a descendant font of a Type 0 font with
+	     * FMapType = 9, ? ? ?
+	     */
+	    process = process_cid_text;
+	    break;
+	case ft_encrypted:
+	case ft_encrypted2:
+	case ft_TrueType:
+	    process = process_plain_text;
+	    break;
+	case ft_composite:
+	    process =
+		(((gs_font_type0 *)font)->data.FMapType == fmap_CMap ?
+		 process_cmap_text :
+		 process_composite_text);
 	    break;
 	default:
-	    fdesc.chars_used.size = 256/8; /* Encoding size */
+	    return_error(gs_error_rangecheck);
 	}
-	code = pdf_alloc_font(pdev, font->id, &ppf, &fdesc);
+    }
+    /*
+     * We want to process the entire string in a single call, but we may
+     * need to modify it.  Copy it to a buffer.
+     */
+    if (size <= BUF_SIZE) {
+	byte buf[BUF_SIZE];
+
+	code = process(pte, buf, size);
+    } else {
+	byte *buf = gs_alloc_string(pte->memory, size, "pdf_text_process");
+
+	if (buf == 0)
+	    return_error(gs_error_VMerror);
+	code = process(pte, buf, size);
+	gs_free_string(pte->memory, buf, size, "pdf_text_process");
+    }
+
+    if (code < 0) {
+	/* Fall back to the default implementation. */
+	code = gx_default_text_begin(pte->dev, pte->pis, &pte->text,
+				     pte->current_font,
+				     pte->path, pte->pdcolor, pte->pcpath,
+				     pte->memory, &pte_default);
 	if (code < 0)
 	    return code;
-	pfd = ppf->FontDescriptor;
-	if_debug4('_',
-		  "[_]created pdf_font_t 0x%lx, id %ld, FontDescriptor 0x%lx, id %ld (new)\n",
-		  (ulong)ppf, pdf_resource_id((pdf_resource_t *)ppf),
-		  (ulong)pfd, pdf_resource_id((pdf_resource_t *)pfd));
-	if (index < 0) {
-	    int ignore_same;
+	penum->pte_default = pte_default;
+	gs_text_enum_copy_dynamic(pte_default, pte, false);
+	goto top;
+    }
+    return code;
+}
 
-	    memcpy(pfd->FontName.chars, base_font->font_name.chars,
-		   base_font->font_name.size);
-	    pfd->FontName.size = base_font->font_name.size;
-	    pfd->FontFile_id = ffid;
-	    pfd->base_font = base_font;
-	    pfd->orig_matrix = *pomat;
-	    /* Don't allow non-standard fonts with standard names. */
-	    pdf_font_embed_status(pdev, base_font, &name_index,
-				  &ignore_same);
-	} else {
-	    /* Use the standard name. */
-	    const pdf_standard_font_t *ppsf = &pdf_standard_fonts[index];
-	    const char *fnchars = ppsf->fname;
-	    uint fnsize = strlen(fnchars);
+/*
+ * Process a text string in an ordinary font.
+ */
+private int
+process_plain_text(gs_text_enum_t *pte, byte *buf, uint size)
+{
+    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
+    int index = 0, code;
+    gs_string str;
+    pdf_text_process_state_t text_state;
 
-	    memcpy(pfd->FontName.chars, fnchars, fnsize);
-	    pfd->FontName.size = fnsize;
-	    memset(&pfd->values, 0, sizeof(&pfd->values));
+    memcpy(buf, pte->text.data.bytes + pte->index, size);
+    str.data = buf;
+    str.size = size;
+    if (size > 1 && (pte->text.operation & TEXT_INTERVENE)) {
+	/* Just do one character. */
+	str.size = 1;
+	code = pdf_process_string(penum, &str, NULL, &text_state, &index);
+	if (code >= 0)
+	    code = TEXT_PROCESS_INTERVENE;
+    } else
+	code = pdf_process_string(penum, &str, NULL, &text_state, &index);
+    pte->index += index;
+    return code;
+}
+
+/*
+ * Process a text string in a composite font with FMapType != 9 (CMap).
+ */
+private int
+process_composite_text(gs_text_enum_t *pte, byte *buf, uint size)
+{
+    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
+    int index = 0, code;
+    gs_string str;
+    pdf_text_process_state_t text_state;
+    pdf_text_enum_t curr, prev;
+    gs_point total_width;
+
+    str.data = buf;
+    if (pte->text.operation & TEXT_INTERVENE) {
+	/* Not implemented. (PostScript doesn't even allow this case.) */
+	return_error(gs_error_rangecheck);
+    }
+    total_width.x = total_width.y = 0;
+    curr = *penum;
+    prev = curr;
+    prev.current_font = 0;
+    /* Scan runs of characters in the same leaf font. */
+    for ( ; ; ) {
+	int font_code, buf_index;
+	gs_font *new_font;
+
+	for (buf_index = 0; ; ++buf_index) {
+	    gs_char chr;
+	    gs_glyph glyph;
+
+	    gs_text_enum_copy_dynamic((gs_text_enum_t *)&prev,
+				      (gs_text_enum_t *)&curr, false);
+	    font_code = pte->orig_font->procs.next_char_glyph
+		((gs_text_enum_t *)&curr, &chr, &glyph);
+	    /*
+	     * We check for a font change by comparing the current
+	     * font, rather than testing the return code, because
+	     * it makes the control structure a little simpler.
+	     */
+	    switch (font_code) {
+	    case 0:		/* no font change */
+	    case 1:		/* font change */
+		new_font = curr.fstack.items[curr.fstack.depth].font;
+		if (new_font != prev.current_font)
+		    break;
+		if (chr != (byte)chr)	/* probably can't happen */
+		    return_error(gs_error_rangecheck);
+		buf[buf_index] = (byte)chr;
+		continue;
+	    case 2:		/* end of string */
+		break;
+	    default:	/* error */
+		return font_code;
+	    }
+	    break;
 	}
-	if (!is_standard) {
-	    code = pdf_adjust_font_name(pdev, pfd, name_index >= 0);
+	str.size = buf_index;
+	gs_text_enum_copy_dynamic((gs_text_enum_t *)&curr,
+				  (gs_text_enum_t *)&prev, false);
+	if (buf_index) {
+	    /* Buf_index == 0 is only possible the very first time. */
+	    /*
+	     * The FontMatrix of leaf descendant fonts is not updated
+	     * by scalefont.  Compute the effective FontMatrix now.
+	     */
+	    const gs_matrix *psmat =
+		&curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
+	    gs_matrix fmat;
+
+	    gs_matrix_multiply(&curr.current_font->FontMatrix, psmat,
+			       &fmat);
+	    code = pdf_process_string(&curr, &str, &fmat, &text_state,
+				      &index);
+	    if (code < 0)
+		return code;
+	    gs_text_enum_copy_dynamic(pte, (gs_text_enum_t *)&curr, true);
+	    if (pte->text.operation & TEXT_RETURN_WIDTH) {
+		pte->returned.total_width.x = total_width.x +=
+		    curr.returned.total_width.x;
+		pte->returned.total_width.y = total_width.y +=
+		    curr.returned.total_width.y;
+	    }
+	}
+	if (font_code == 2)
+	    break;
+	curr.current_font = new_font;
+    }
+    return code;
+}
+
+/*
+ * Process a text string in a composite font with FMapType == 9 (CMap).
+ */
+private int
+process_cmap_text(gs_text_enum_t *pte, byte *buf, uint size)
+{
+    /****** NOT IMPLEMENTED YET ******/
+    return_error(gs_error_rangecheck);
+}
+
+/*
+ * Process a text string in a CIDFont.
+ */
+private int
+process_cid_text(gs_text_enum_t *pte, byte *buf, uint size)
+{
+    /****** NOT IMPLEMENTED YET ******/
+    return_error(gs_error_rangecheck);
+}
+
+/*
+ * Internal procedure to process a string in a non-composite font.
+ * Doesn't use or set pte->{data,size,index}; may use/set pte->xy_index;
+ * may set pte->returned.total_width.
+ */
+private int
+pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
+		   const gs_matrix *pfmat,
+		   pdf_text_process_state_t *pts, int *pindex)
+{
+    gs_text_enum_t *const pte = (gs_text_enum_t *)penum;
+    gx_device_pdf *const pdev = (gx_device_pdf *)penum->dev;
+    gs_font *font;
+    const gs_text_params_t *text = &pte->text;
+    int i;
+    int code = 0, mask;
+
+    font = penum->current_font;
+    if (pfmat == 0)
+	pfmat = &font->FontMatrix;
+    if (text->operation & TEXT_RETURN_WIDTH)
+	gx_path_current_point(pte->path, &penum->origin);
+
+    switch (font->FontType) {
+    case ft_TrueType:
+    case ft_encrypted:
+    case ft_encrypted2:
+	break;
+    default:
+	return_error(gs_error_rangecheck);
+    }
+
+    code = pdf_update_text_state(pts, penum, pfmat);
+    if (code > 0) {
+	/* Try not to emulate ADD_TO_WIDTH if we don't have to. */
+	if (code & TEXT_ADD_TO_SPACE_WIDTH) {
+	    if (!memchr(pstr->data, pte->text.space.s_char, pstr->size))
+		code &= ~TEXT_ADD_TO_SPACE_WIDTH;
+	}
+    }
+    if (code < 0)
+	return code;
+    mask = code;
+
+    /* Check that all characters can be encoded. */
+
+    for (i = 0; i < pstr->size; ++i) {
+	int chr = pstr->data[i];
+	pdf_font_t *pdfont = pts->pdfont;
+	int code = pdf_encode_char(pdev, chr, (gs_font_base *)font, pdfont);
+
+	if (code < 0)
+	    return code;
+	/*
+	 * For incrementally loaded fonts, expand FirstChar..LastChar
+	 * if needed.
+	 */
+	if (code < pdfont->FirstChar)
+	    pdfont->FirstChar = code;
+	if (code > pdfont->LastChar)
+	    pdfont->LastChar = code;
+	pstr->data[i] = (byte)code;
+    }
+
+    /* Bring the text-related parameters in the output up to date. */
+    code = pdf_write_text_process_state(pdev, pte, pts,
+					(gs_const_string *)pstr);
+    if (code < 0)
+	return code;
+
+    if (text->operation & TEXT_REPLACE_WIDTHS) {
+	gs_point w;
+	gs_matrix tmat;
+
+	w.x = w.y = 0;
+	tmat = pts->text_matrix;
+	for (i = 0; i < pstr->size; *pindex = ++i, pte->xy_index++) {
+	    gs_point d, dpt;
+
+	    code = pdf_append_chars(pdev, pstr->data + i, 1);
+	    if (code < 0)
+		return code;
+	    gs_text_replaced_width(&pte->text, pte->xy_index, &d);
+	    w.x += d.x, w.y += d.y;
+	    gs_distance_transform(d.x, d.y, &ctm_only(pte->pis), &dpt);
+	    tmat.tx += dpt.x;
+	    tmat.ty += dpt.y;
+	    if (i + 1 < pstr->size) {
+		code = pdf_set_text_matrix(pdev, &tmat);
+		if (code < 0)
+		    return code;
+	    }
+	}
+	pte->returned.total_width = w;
+	if (text->operation & TEXT_RETURN_WIDTH)
+	    code = gx_path_add_point(pte->path, float2fixed(tmat.tx),
+				     float2fixed(tmat.ty));
+	return code;
+    }
+
+    /* Write out the characters, unless we have to emulate ADD_TO_WIDTH. */
+    if (mask == 0) {
+	code = pdf_append_chars(pdev, pstr->data, pstr->size);
+	if (code < 0)
+	    return code;
+    }
+
+    /*
+     * If we don't need the total width, and don't have to emulate
+     * ADD_TO_WIDTH, return now.  If the widths are available directly from
+     * the font, place the characters and/or compute and return the total
+     * width now.  Otherwise, call the default implementation.
+     */
+    {
+	gs_point dpt;
+
+	if (mask) {
+	    /*
+	     * Cancel the word and character spacing, since we're going
+	     * to emulate them.
+	     */
+	    pts->words = pts->chars = 0;
+	    code = pdf_write_text_process_state(pdev, pte, pts,
+						(gs_const_string *)pstr);
+	    if (code < 0)
+		return code;
+	    code = process_text_add_width(pte, font, pfmat, pts,
+					  (gs_const_string *)pstr,
+					  pindex, &dpt);
+	    if (code < 0)
+		return code;
+	    if (!(text->operation & TEXT_RETURN_WIDTH))
+		return 0;
+	} else if (!(text->operation & TEXT_RETURN_WIDTH))
+	    return 0;
+	else {
+	    code = process_text_return_width(pte, font, pts->pdfont, pfmat,
+					     (gs_const_string *)pstr,
+					     pindex, &dpt);
 	    if (code < 0)
 		return code;
 	}
-    } /* end else (!pfd) */
-    ppf->FontType = font->FontType;
-    ppf->index = index;
-    switch (font->FontType) {
-    case ft_encrypted:
-    case ft_encrypted2:
-	ppf->is_MM_instance =
-	    ((const gs_font_type1 *)font)->data.WeightVector.count > 0;
-    default:
-	DO_NOTHING;
+	pte->returned.total_width = dpt;
+	gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pis), &dpt);
+	return gx_path_add_point(pte->path,
+				 penum->origin.x + float2fixed(dpt.x),
+				 penum->origin.y + float2fixed(dpt.y));
     }
-    ppf->BaseEncoding = BaseEncoding;
-    ppf->fname = pfd->FontName;
-    ppf->font = font;
-    if (~same & FONT_SAME_METRICS) {
-	/*
-	 * Contrary to the PDF 1.3 documentation, FirstChar and
-	 * LastChar are *not* simply a way to strip off initial and
-	 * final entries in the Widths array that are equal to
-	 * MissingWidth.  Acrobat Reader assumes that characters
-	 * with codes less than FirstChar or greater than LastChar
-	 * are undefined, without bothering to consult the Encoding.
-	 * Therefore, the implicit value of MissingWidth is pretty
-	 * useless, because there must be explicit Width entries for
-	 * every character in the font that is ever used.
-	 * Furthermore, if there are several subsets of the same
-	 * font in a document, it appears to be random as to which
-	 * one Acrobat Reader uses to decide what the FirstChar and
-	 * LastChar values are.  Therefore, we must write the Widths
-	 * array for the entire font even for subsets.
-	 */
-	ppf->write_Widths = true;
-	/*
-	 * If the font is being downloaded incrementally, the range we
-	 * determine here will be too small.  The character encoding
-	 * loop in pdf_process_text takes care of expanding it.
-	 */
-	pdf_find_char_range(font, &ppf->FirstChar, &ppf->LastChar);
-    }
-    if (have_widths) {
-	/*
-	 * C's bizarre coercion rules make us use memcpy here
-	 * rather than direct assignments, even though sizeof()
-	 * gives the correct value....
-	     */
-	memcpy(ppf->Widths, ftemp.Widths, sizeof(ppf->Widths));
-	memcpy(ppf->widths_known, ftemp.widths_known,
-	       sizeof(ppf->widths_known));
-    }
-    code = pdf_register_font(pdev, font, ppf);
-
-    *pppf = ppf;
-    return code;
 }
 
 /*
@@ -652,7 +803,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (ppf && ppf->FontDescriptor->written)
 	ppf = 0;
     if (ppf == 0 || ppf->font == 0) {
-	code = create_pdf_font(pdev, font, &orig_matrix, &ppf);
+	code = pdf_create_pdf_font(pdev, font, &orig_matrix, &ppf);
 	if (code < 0)
 	    return code;
     }
@@ -675,23 +826,6 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     ppts->pdfont = ppf;
 
     return mask;
-}
-
-/* Check whether a glyph exists in a (pseudo-)encoding. */
-private bool
-encoding_has_glyph(gs_font_base *bfont, gs_glyph font_glyph,
-		   gs_encoding_index_t index)
-{
-    int ch;
-    gs_glyph glyph;
-
-    for (ch = 0;
-	 (glyph = bfont->procs.callbacks.known_encode((gs_char)ch, index)) !=
-	     gs_no_glyph;
-	 ++ch)
-	if (glyph == font_glyph)
-	    return true;
-    return false;
 }
 
 /*
@@ -813,9 +947,9 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
 	case ENCODING_INDEX_WINANSI:
 	case ENCODING_INDEX_MACROMAN:
 	    /* Check the full Adobe glyph set(s). */
-	    if (!encoding_has_glyph(bfont, glyph, ENCODING_INDEX_ALOGLYPH) &&
+	    if (encoding_find_glyph(bfont, glyph, ENCODING_INDEX_ALOGLYPH) < 0 &&
 		(pdev->CompatibilityLevel < 1.3 ||
-		 !encoding_has_glyph(bfont, glyph, ENCODING_INDEX_ALXGLYPH))
+		 encoding_find_glyph(bfont, glyph, ENCODING_INDEX_ALXGLYPH) < 0)
 		)
 		return_error(gs_error_undefined);
 	default:
@@ -983,340 +1117,6 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
     return 0;
 }
 
-/*
- * Continue processing text.  Per the check in pdf_text_begin, we know the
- * operation is TEXT_FROM_STRING/BYTES, TEXT_DO_DRAW, and possibly
- * TEXT_ADD_TO_ALL_WIDTHS, TEXT_ADD_TO_SPACE_WIDTH, TEXT_REPLACE_WIDTHS,
- * TEXT_RETURN_WIDTH, and/or TEXT_INTERVENE.
- */
-private int process_text_return_width(P7(const gs_text_enum_t *pte,
-					 gs_font *font, pdf_font_t *pdfont,
-					 const gs_matrix *pfmat,
-					 const gs_const_string *pstr,
-					 int *pindex, gs_point *pdpt));
-private int process_text_add_width(P7(gs_text_enum_t *pte,
-				      gs_font *font, const gs_matrix *pfmat,
-				      const pdf_text_process_state_t *ppts,
-				      const gs_const_string *pstr,
-				      int *pindex, gs_point *pdpt));
-/*
- * Internal procedure to process a string in a non-composite font.
- * Doesn't use or set pte->{data,size,index}; may use/set pte->xy_index;
- * may set pte->returned.total_width.
- */
-private int
-pdf_process_text(pdf_text_enum_t *penum, gs_string *pstr,
-		 const gs_matrix *pfmat,
-		 pdf_text_process_state_t *pts, int *pindex)
-{
-    gs_text_enum_t *const pte = (gs_text_enum_t *)penum;
-    gx_device_pdf *const pdev = (gx_device_pdf *)penum->dev;
-    gs_font *font;
-    const gs_text_params_t *text = &pte->text;
-    int i;
-    int code = 0, mask;
-
-    font = penum->current_font;
-    if (pfmat == 0)
-	pfmat = &font->FontMatrix;
-    if (text->operation & TEXT_RETURN_WIDTH)
-	gx_path_current_point(pte->path, &penum->origin);
-
-    switch (font->FontType) {
-    case ft_TrueType:
-    case ft_encrypted:
-    case ft_encrypted2:
-	break;
-    default:
-	return_error(gs_error_rangecheck);
-    }
-
-    code = pdf_update_text_state(pts, penum, pfmat);
-    if (code > 0) {
-	/* Try not to emulate ADD_TO_WIDTH if we don't have to. */
-	if (code & TEXT_ADD_TO_SPACE_WIDTH) {
-	    if (!memchr(pstr->data, pte->text.space.s_char, pstr->size))
-		code &= ~TEXT_ADD_TO_SPACE_WIDTH;
-	}
-    }
-    if (code < 0)
-	return code;
-    mask = code;
-
-    /* Check that all characters can be encoded. */
-
-    for (i = 0; i < pstr->size; ++i) {
-	int chr = pstr->data[i];
-	pdf_font_t *pdfont = pts->pdfont;
-	int code = pdf_encode_char(pdev, chr, (gs_font_base *)font, pdfont);
-
-	if (code < 0)
-	    return code;
-	/*
-	 * For incrementally loaded fonts, expand FirstChar..LastChar
-	 * if needed.
-	 */
-	if (code < pdfont->FirstChar)
-	    pdfont->FirstChar = code;
-	if (code > pdfont->LastChar)
-	    pdfont->LastChar = code;
-	pstr->data[i] = (byte)code;
-    }
-
-    /* Bring the text-related parameters in the output up to date. */
-    code = pdf_write_text_process_state(pdev, pte, pts,
-					(gs_const_string *)pstr);
-    if (code < 0)
-	return code;
-
-    if (text->operation & TEXT_REPLACE_WIDTHS) {
-	gs_point w;
-	gs_matrix tmat;
-
-	w.x = w.y = 0;
-	tmat = pts->text_matrix;
-	for (i = 0; i < pstr->size; *pindex = ++i, pte->xy_index++) {
-	    gs_point d, dpt;
-
-	    code = pdf_append_chars(pdev, pstr->data + i, 1);
-	    if (code < 0)
-		return code;
-	    gs_text_replaced_width(&pte->text, pte->xy_index, &d);
-	    w.x += d.x, w.y += d.y;
-	    gs_distance_transform(d.x, d.y, &ctm_only(pte->pis), &dpt);
-	    tmat.tx += dpt.x;
-	    tmat.ty += dpt.y;
-	    if (i + 1 < pstr->size) {
-		code = pdf_set_text_matrix(pdev, &tmat);
-		if (code < 0)
-		    return code;
-	    }
-	}
-	pte->returned.total_width = w;
-	if (text->operation & TEXT_RETURN_WIDTH)
-	    code = gx_path_add_point(pte->path, float2fixed(tmat.tx),
-				     float2fixed(tmat.ty));
-	return code;
-    }
-
-    /* Write out the characters, unless we have to emulate ADD_TO_WIDTH. */
-    if (mask == 0) {
-	code = pdf_append_chars(pdev, pstr->data, pstr->size);
-	if (code < 0)
-	    return code;
-    }
-
-    /*
-     * If we don't need the total width, and don't have to emulate
-     * ADD_TO_WIDTH, return now.  If the widths are available directly from
-     * the font, place the characters and/or compute and return the total
-     * width now.  Otherwise, call the default implementation.
-     */
-    {
-	gs_point dpt;
-
-	if (mask) {
-	    /*
-	     * Cancel the word and character spacing, since we're going
-	     * to emulate them.
-	     */
-	    pts->words = pts->chars = 0;
-	    code = pdf_write_text_process_state(pdev, pte, pts,
-						(gs_const_string *)pstr);
-	    if (code < 0)
-		return code;
-	    code = process_text_add_width(pte, font, pfmat, pts,
-					  (gs_const_string *)pstr,
-					  pindex, &dpt);
-	    if (code < 0)
-		return code;
-	    if (!(text->operation & TEXT_RETURN_WIDTH))
-		return 0;
-	} else if (!(text->operation & TEXT_RETURN_WIDTH))
-	    return 0;
-	else {
-	    code = process_text_return_width(pte, font, pts->pdfont, pfmat,
-					     (gs_const_string *)pstr,
-					     pindex, &dpt);
-	    if (code < 0)
-		return code;
-	}
-	pte->returned.total_width = dpt;
-	gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pis), &dpt);
-	return gx_path_add_point(pte->path,
-				 penum->origin.x + float2fixed(dpt.x),
-				 penum->origin.y + float2fixed(dpt.y));
-    }
-}
-/*
- * Process a text string, copying it into a buffer first.
- */
-private int
-pdf_process_string(gs_text_enum_t *pte, byte *buf, uint size)
-{
-    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
-    int index = 0, code;
-    gs_string str;
-    pdf_text_process_state_t text_state;
-    gs_font *font = pte->current_font;
-
-    str.data = buf;
-    if (font->FontType == ft_composite) {
-	gs_font_type0 *const pfont = (gs_font_type0 *)font;
-	pdf_text_enum_t curr, prev;
-	gs_point total_width;
-
-	if (pfont->data.FMapType == fmap_CMap) {
-	    /****** NOT IMPLEMENTED YET ******/
-	    return_error(gs_error_rangecheck);
-	}
-	if (pte->text.operation & TEXT_INTERVENE) {
-	    /* Not implemented. (PostScript doesn't even allow this case.) */
-	    return_error(gs_error_rangecheck);
-	}
-	total_width.x = total_width.y = 0;
-	curr = *penum;
-	prev = curr;
-	prev.current_font = 0;
-	/* Scan runs of characters in the same leaf font. */
-	for ( ; ; ) {
-	    int font_code, bufx;
-	    gs_font *new_font;
-
-	    for (bufx = 0; ; ++bufx) {
-		gs_char chr;
-		gs_glyph glyph;
-
-		gs_text_enum_copy_dynamic((gs_text_enum_t *)&prev,
-					  (gs_text_enum_t *)&curr, false);
-		font_code = pte->orig_font->procs.next_char_glyph
-		    ((gs_text_enum_t *)&curr, &chr, &glyph);
-		/*
-		 * We check for a font change by comparing the current
-		 * font, rather than testing the return code, because
-		 * it makes the control structure a little simpler.
-		 */
-		switch (font_code) {
-		case 0:		/* no font change */
-		case 1:		/* font change */
-		    new_font = curr.fstack.items[curr.fstack.depth].font;
-		    if (new_font != prev.current_font)
-			break;
-		    if (chr != (byte)chr)	/* probably can't happen */
-			return_error(gs_error_rangecheck);
-		    buf[bufx] = (byte)chr;
-		    continue;
-		case 2:		/* end of string */
-		    break;
-		default:	/* error */
-		    return font_code;
-		}
-		break;
-	    }
-	    str.size = bufx;
-	    gs_text_enum_copy_dynamic((gs_text_enum_t *)&curr,
-				      (gs_text_enum_t *)&prev, false);
-	    if (bufx) {
-		/* Bufx == 0 is only possible the very first time. */
-		/*
-		 * The FontMatrix of leaf descendant fonts is not updated
-		 * by scalefont.  Compute the effective FontMatrix now.
-		 */
-		const gs_matrix *psmat =
-		    &curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
-		gs_matrix fmat;
-
-		gs_matrix_multiply(&curr.current_font->FontMatrix, psmat,
-				   &fmat);
-		code = pdf_process_text(&curr, &str, &fmat, &text_state,
-					&index);
-		if (code < 0)
-		    return code;
-		gs_text_enum_copy_dynamic(pte, (gs_text_enum_t *)&curr, true);
-		if (pte->text.operation & TEXT_RETURN_WIDTH) {
-		    pte->returned.total_width.x = total_width.x +=
-			curr.returned.total_width.x;
-		    pte->returned.total_width.y = total_width.y +=
-			curr.returned.total_width.y;
-		}
-	    }
-	    if (font_code == 2)
-		break;
-	    curr.current_font = new_font;
-	}
-    } else {
-	memcpy(buf, pte->text.data.bytes + pte->index, size);
-	str.size = size;
-	if (size > 1 && (pte->text.operation & TEXT_INTERVENE)) {
-	    /* Just do one character. */
-	    str.size = 1;
-	    code = pdf_process_text(penum, &str, NULL, &text_state, &index);
-	    if (code >= 0)
-		code = TEXT_PROCESS_INTERVENE;
-	} else
-	    code = pdf_process_text(penum, &str, NULL, &text_state, &index);
-	pte->index += index;
-    }
-    return code;
-}
-/*
- * Continue processing text.  This is the 'process' procedure in the text
- * enumerator.
- */
-private int
-pdf_text_process(gs_text_enum_t *pte)
-{
-    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
-    uint size = pte->text.size - pte->index;
-    gs_text_enum_t *pte_default = penum->pte_default;
-    int code;
-#define BUF_SIZE 100		/* arbitrary > 0 */
-
-    /*
-     * If we fell back to the default implementation, continue using it.
-     */
- top:
-    if (penum->pte_default) {
-	code = gs_text_process(pte_default);
-	gs_text_enum_copy_dynamic(pte, pte_default, true);
-	if (code)
-	    return code;
-	gs_text_release(pte_default, "pdf_text_process");
-	penum->pte_default = 0;
-	return 0;
-    }
-    /*
-     * We want to process the entire string in a single call, but we may
-     * need to modify it.  Copy it to a buffer.
-     */
-    if (size <= BUF_SIZE) {
-	byte buf[BUF_SIZE];
-
-	code = pdf_process_string(pte, buf, size);
-    } else {
-	byte *buf = gs_alloc_string(pte->memory, size, "pdf_text_process");
-
-	if (buf == 0)
-	    return_error(gs_error_VMerror);
-	code = pdf_process_string(pte, buf, size);
-	gs_free_string(pte->memory, buf, size, "pdf_text_process");
-    }
-
-    if (code < 0) {
-	/* Fall back to the default implementation. */
-	code = gx_default_text_begin(pte->dev, pte->pis, &pte->text,
-				     pte->current_font,
-				     pte->path, pte->pdcolor, pte->pcpath,
-				     pte->memory, &pte_default);
-	if (code < 0)
-	    return code;
-	penum->pte_default = pte_default;
-	gs_text_enum_copy_dynamic(pte_default, pte, false);
-	goto top;
-    }
-    return code;
-}
-
 /* Compute the total text width (in user space). */
 private int
 process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
@@ -1422,6 +1222,26 @@ process_text_add_width(gs_text_enum_t *pte, gs_font *font,
 
 /* Forward declarations */
 private int assign_char_code(P1(gx_device_pdf * pdev));
+
+/*
+ * Try to find a glyph in a (pseudo-)encoding.  If present, return the
+ * index (character code); if absent, return -1.
+ */
+private int
+encoding_find_glyph(gs_font_base *bfont, gs_glyph font_glyph,
+		    gs_encoding_index_t index)
+{
+    int ch;
+    gs_glyph glyph;
+
+    for (ch = 0;
+	 (glyph = bfont->procs.callbacks.known_encode((gs_char)ch, index)) !=
+	     gs_no_glyph;
+	 ++ch)
+	if (glyph == font_glyph)
+	    return ch;
+    return -1;
+}
 
 /*
  * Set the current font and size, writing a Tf command if needed.

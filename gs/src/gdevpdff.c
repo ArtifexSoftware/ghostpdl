@@ -31,6 +31,8 @@
 #include "gxfixed.h"		/* for gxfcache.h */
 #include "gxfont.h"
 #include "gxfcache.h"		/* for orig_fonts list */
+#include "gxfcid.h"
+#include "gxfont1.h"
 #include "gxpath.h"		/* for getting current point */
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
@@ -408,6 +410,273 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 	gs_free_string(mem, chars_used.data, chars_used.size,
 		       "pdf_alloc_font(chars_used)");
     gs_free_object(mem, pfd, "pdf_alloc_font(descriptor)");
+    return code;
+}
+
+/*
+ * Create a new pdf_font for a gs_font.  This procedure is only intended
+ * to be called from one place in gdevpdft.c.
+ */
+int
+pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
+		    pdf_font_t **pppf)
+{
+    int index = -1;
+    pdf_font_t ftemp;
+    int BaseEncoding = ENCODING_INDEX_UNKNOWN;
+    int same = 0, base_same = 0;
+    pdf_font_embed_t embed =
+	pdf_font_embed_status(pdev, font, &index, &same);
+    bool have_widths = false;
+    bool is_standard = false;
+    long ffid = 0;
+    pdf_font_descriptor_t *pfd;
+    gs_font *base_font = font;
+    gs_font *below;
+    pdf_font_descriptor_t fdesc;
+    pdf_font_t *ppf;
+    int code;
+#define BASE_UID(fnt) (&((const gs_font_base *)(fnt))->UID)
+
+    /* Find the "lowest" base font that has the same outlines. */
+    while ((below = base_font->base) != base_font &&
+	   base_font->procs.same_font(base_font, below,
+				      FONT_SAME_OUTLINES))
+	base_font = below;
+ set_base:
+    if (base_font == font)
+	base_same = same;
+    else
+	embed = pdf_font_embed_status(pdev, base_font, &index, &base_same);
+    if (embed == FONT_EMBED_STANDARD && pdev->std_fonts[index].font != 0) {
+	/* Use the standard font as the base font. */
+	base_font = pdev->std_fonts[index].font;
+	is_standard = true;
+    } else if (embed == FONT_EMBED_YES &&
+	       base_font->FontType != ft_composite &&
+	       uid_is_valid(BASE_UID(base_font)) &&
+	       !base_font->is_resource
+	       ) {
+	/*
+	 * The base font has a UID, but it isn't a resource.  Look for a
+	 * resource with the same UID, in the hope that that will be
+	 * longer-lived.
+	 */
+	gs_font *orig = base_font->dir->orig_fonts;
+
+	for (; orig; orig = orig->next)
+	    if (orig != base_font && orig->FontType == base_font->FontType &&
+		orig->is_resource &&
+		uid_equal(BASE_UID(base_font), BASE_UID(orig))
+		) {
+		/* Use this as the base font instead. */
+		base_font = orig;
+		/*
+		 * Recompute the embedding status of the base font.  This
+		 * can't lead to a loop, because base_font->is_resource is
+		 * now known to be true.
+		 */
+		goto set_base;
+	    }
+    }
+	 
+    /* See if we already have a descriptor for this base font. */
+    pfd = (pdf_font_descriptor_t *)
+	pdf_find_resource_by_gs_id(pdev, resourceFontDescriptor,
+				   base_font->id);
+    if (pfd != 0 && pfd->base_font != base_font)
+	pfd = 0;
+
+    /* Create an appropriate font and descriptor. */
+
+    switch (embed) {
+    case FONT_EMBED_YES:
+	/*
+	 * HACK: Acrobat Reader 3 has a bug that makes cmap formats 4
+	 * and 6 not work in embedded TrueType fonts.  Consequently, it
+	 * can only handle embedded TrueType fonts if all the glyphs
+	 * referenced by the Encoding have numbers 0-255.  Check for
+	 * this now.
+	 */
+	if (font->FontType == ft_TrueType &&
+	    pdev->CompatibilityLevel <= 1.2
+	    ) {
+	    int i;
+
+	    for (i = 0; i <= 0xff; ++i) {
+		gs_glyph glyph =
+		    font->procs.encode_char(font, (gs_char)i,
+					    GLYPH_SPACE_INDEX);
+
+		if (glyph == gs_no_glyph ||
+		    (glyph >= gs_min_cid_glyph &&
+		     glyph <= gs_min_cid_glyph + 0xff)
+		    )
+		    continue;
+		/* Can't embed, punt. */
+		return_error(gs_error_rangecheck);
+	    }
+	}
+	code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
+	if (code < 0)
+	    return code;
+	if (!pfd)
+	    ffid = pdf_obj_ref(pdev);
+	goto wf;
+    case FONT_EMBED_NO:
+	/*
+	 * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
+	 * values allowed for non-embedded fonts.  Pick one here.
+	 */
+	BaseEncoding =
+	    ((const gs_font_base *)base_font)->nearest_encoding_index;
+	switch (BaseEncoding) {
+	default:
+	    BaseEncoding = ENCODING_INDEX_WINANSI;
+	case ENCODING_INDEX_WINANSI:
+	case ENCODING_INDEX_MACROMAN:
+	case ENCODING_INDEX_MACEXPERT:
+	    break;
+	}
+	code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
+	if (code < 0)
+	    return code;
+    wf:
+	/* The font isn't standard: make sure we write the Widths. */
+	same &= ~FONT_SAME_METRICS;
+	/* falls through */
+    case FONT_EMBED_STANDARD:
+	break;
+    }
+    if (~same & (FONT_SAME_METRICS | FONT_SAME_ENCODING)) {
+	/*
+	 * Before allocating the font resource, check that we can
+	 * get all the widths.
+	 */
+	int i;
+
+	memset(&ftemp, 0, sizeof(ftemp));
+	for (i = 0; i <= 255; ++i) {
+	    code = pdf_char_width(&ftemp, i, font, NULL);
+	    if (code < 0 && code != gs_error_undefined)
+		return code;
+	}
+	have_widths = true;
+    }
+    if (pfd) {
+	code = pdf_alloc_font(pdev, font->id, &ppf, NULL);
+	if (code < 0)
+	    return code;
+	if_debug4('_',
+		  "[_]created pdf_font_t 0x%lx, id %ld, FontDescriptor 0x%lx, id %ld (old)\n",
+		  (ulong)ppf, pdf_resource_id((pdf_resource_t *)ppf),
+		  (ulong)pfd, pdf_resource_id((pdf_resource_t *)pfd));
+	ppf->FontDescriptor = pfd;
+    } else {
+	int name_index = index;
+
+	fdesc.rid = base_font->id;
+	switch (base_font->FontType) {
+	case ft_CID_encrypted:
+	    fdesc.chars_used.size =
+		(((const gs_font_cid0 *)base_font)->
+		 cidata.common.CIDCount + 7) >> 3;
+	    break;
+	case ft_CID_TrueType:
+	    fdesc.chars_used.size =
+		(((const gs_font_cid2 *)base_font)->
+		 cidata.common.CIDCount + 7) >> 3;
+	    break;
+	default:
+	    fdesc.chars_used.size = 256/8; /* Encoding size */
+	}
+	code = pdf_alloc_font(pdev, font->id, &ppf, &fdesc);
+	if (code < 0)
+	    return code;
+	pfd = ppf->FontDescriptor;
+	if_debug4('_',
+		  "[_]created pdf_font_t 0x%lx, id %ld, FontDescriptor 0x%lx, id %ld (new)\n",
+		  (ulong)ppf, pdf_resource_id((pdf_resource_t *)ppf),
+		  (ulong)pfd, pdf_resource_id((pdf_resource_t *)pfd));
+	if (index < 0) {
+	    int ignore_same;
+
+	    memcpy(pfd->FontName.chars, base_font->font_name.chars,
+		   base_font->font_name.size);
+	    pfd->FontName.size = base_font->font_name.size;
+	    pfd->FontFile_id = ffid;
+	    pfd->base_font = base_font;
+	    pfd->orig_matrix = *pomat;
+	    /* Don't allow non-standard fonts with standard names. */
+	    pdf_font_embed_status(pdev, base_font, &name_index,
+				  &ignore_same);
+	} else {
+	    /* Use the standard name. */
+	    const pdf_standard_font_t *ppsf = &pdf_standard_fonts[index];
+	    const char *fnchars = ppsf->fname;
+	    uint fnsize = strlen(fnchars);
+
+	    memcpy(pfd->FontName.chars, fnchars, fnsize);
+	    pfd->FontName.size = fnsize;
+	    memset(&pfd->values, 0, sizeof(&pfd->values));
+	}
+	if (!is_standard) {
+	    code = pdf_adjust_font_name(pdev, pfd, name_index >= 0);
+	    if (code < 0)
+		return code;
+	}
+    } /* end else (!pfd) */
+    ppf->FontType = font->FontType;
+    ppf->index = index;
+    switch (font->FontType) {
+    case ft_encrypted:
+    case ft_encrypted2:
+	ppf->is_MM_instance =
+	    ((const gs_font_type1 *)font)->data.WeightVector.count > 0;
+    default:
+	DO_NOTHING;
+    }
+    ppf->BaseEncoding = BaseEncoding;
+    ppf->fname = pfd->FontName;
+    ppf->font = font;
+    if (~same & FONT_SAME_METRICS) {
+	/*
+	 * Contrary to the PDF 1.3 documentation, FirstChar and
+	 * LastChar are *not* simply a way to strip off initial and
+	 * final entries in the Widths array that are equal to
+	 * MissingWidth.  Acrobat Reader assumes that characters
+	 * with codes less than FirstChar or greater than LastChar
+	 * are undefined, without bothering to consult the Encoding.
+	 * Therefore, the implicit value of MissingWidth is pretty
+	 * useless, because there must be explicit Width entries for
+	 * every character in the font that is ever used.
+	 * Furthermore, if there are several subsets of the same
+	 * font in a document, it appears to be random as to which
+	 * one Acrobat Reader uses to decide what the FirstChar and
+	 * LastChar values are.  Therefore, we must write the Widths
+	 * array for the entire font even for subsets.
+	 */
+	ppf->write_Widths = true;
+	/*
+	 * If the font is being downloaded incrementally, the range we
+	 * determine here will be too small.  The character encoding
+	 * loop in pdf_process_string takes care of expanding it.
+	 */
+	pdf_find_char_range(font, &ppf->FirstChar, &ppf->LastChar);
+    }
+    if (have_widths) {
+	/*
+	 * C's bizarre coercion rules make us use memcpy here
+	 * rather than direct assignments, even though sizeof()
+	 * gives the correct value....
+	     */
+	memcpy(ppf->Widths, ftemp.Widths, sizeof(ppf->Widths));
+	memcpy(ppf->widths_known, ftemp.widths_known,
+	       sizeof(ppf->widths_known));
+    }
+    code = pdf_register_font(pdev, font, ppf);
+
+    *pppf = ppf;
     return code;
 }
 

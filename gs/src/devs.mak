@@ -744,7 +744,7 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(memory__h) $(string__h)\
- $(gscdefs_h) $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)
+ $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 
 $(GLOBJ)gdevpdfb.$(OBJ) : $(GLSRC)gdevpdfb.c\
@@ -777,7 +777,7 @@ $(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
  $(ctype__h) $(math__h) $(memory__h) $(string__h) $(gx_h)\
  $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpsf_h)\
  $(gserrors_h) $(gsmalloc_h) $(gsmatrix_h) $(gspath_h) $(gsutil_h)\
- $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxpath_h)\
+ $(gxfcache_h) $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxpath_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdff.$(OBJ) $(C_) $(GLSRC)gdevpdff.c
 
@@ -833,7 +833,7 @@ $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
 
 $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
  $(jpeglib__h) $(memory__h) $(string__h)\
- $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gscdefs_h)\
  $(gsdsrc_h) $(gsfunc_h)\
  $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)

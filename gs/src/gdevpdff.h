@@ -299,6 +299,13 @@ int pdf_alloc_font(P4(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 		      const pdf_font_descriptor_t *pfd));
 
 /*
+ * Create a new pdf_font for a gs_font.  This procedure is only intended
+ * to be called from one place in gdevpdft.c.
+ */
+int pdf_create_pdf_font(P4(gx_device_pdf *pdev, gs_font *font,
+			   const gs_matrix *pomat, pdf_font_t **pppf));
+
+/*
  * Determine whether a font is a subset font by examining the name.
  */
 bool pdf_has_subset_prefix(P2(const byte *str, uint size));
