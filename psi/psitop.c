@@ -104,7 +104,7 @@ ps_impl_allocate_interp(
 }
 
 /* NB FIX ME fold into the instance like other languages. */
-ps_interp_instance_t *global_psi = NULL;
+// ps_interp_instance_t *global_psi = NULL;
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
 private int   /* ret 0 ok, else -ve error code */
@@ -128,7 +128,7 @@ ps_impl_allocate_interp_instance(
 	if (!psi) {
 	  return gs_error_VMerror;
 	}
-        global_psi = psi;
+	//        global_psi = psi;
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
 	{
@@ -139,8 +139,10 @@ ps_impl_allocate_interp_instance(
 #else
 	    // use one memory space
 	    psi->minst = gs_main_alloc_instance(mem);
+
 #endif
 	}
+	*instance = (pl_interp_instance_t *)psi;
 	code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
 	if (code<0)
 	    return code;
@@ -156,7 +158,8 @@ ps_impl_allocate_interp_instance(
 	    return exit_code;
 
 	/* Return success */
-	*instance = (pl_interp_instance_t *)psi;
+
+
         /* inialize fresh job to false so that we can check for a pdf
            file next job. */
         psi->fresh_job = true;
@@ -232,6 +235,12 @@ ps_impl_get_device_memory(
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     *pmem = (gs_memory_t*)&psi->minst->i_ctx_p->memory;
     return 0;
+}
+
+gs_main_instance *ps_impl_get_minst( const gs_memory_t *mem )
+{
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)get_interpreter_from_memory(mem);
+    return psi->minst;
 }
   
 /* Prepare interp instance for the next "job" */
@@ -451,16 +460,20 @@ ps_impl_deallocate_interp(
 	return 0;
 }
 
+extern pl_interp_instance_t *get_interpreter_from_memory( const gs_memory_t *mem );
+
 /* 
  * End-of-page called back by PS
  */
 int
-ps_end_page_top(int num_copies, bool flush)
+ps_end_page_top(const gs_memory_t *mem, int num_copies, bool flush)
 {
-    /* NB access instance through the global */
-    ps_interp_instance_t *psi = global_psi;
-    pl_interp_instance_t *instance = (pl_interp_instance_t *)psi;
+    pl_interp_instance_t *instance = get_interpreter_from_memory(mem);
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     int code = 0;
+
+    if (psi == 0) 
+	return 0;
 
     /* do pre-page action */
     if (psi->pre_page_action) {
