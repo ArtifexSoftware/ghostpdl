@@ -18,12 +18,6 @@
 % $Id$
 % Type 42 font support code.
 
-% Redefine .buildfont42 with FAPI :
-/.buildfont42
-{ //.buildfont42 
-  systemdict /.FAPIhook known { .FAPIhook } if
-} odef
-
 % Here are the BuildChar and BuildGlyph implementation for Type 42 fonts.
 % The names %Type42BuildChar and %Type42BuildGlyph are known to the
 % interpreter.  The real work is done in an operator:

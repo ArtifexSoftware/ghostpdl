@@ -46,6 +46,7 @@
 <li><a href="#Font_lookup">Font lookup</a>
 <li><a href="#Temp_files">Temporary files</a>
 </ul>
+<li><a href="#CIDFontSubstitution">CID font substitution</a>
 <li><a href="#Environment_variables">Summary of environment variables</a>
 <li><a href="#PDF">Using Ghostscript with PDF files</a>
 <ul>
@@ -976,6 +977,51 @@ setting the <b><tt>TMPDIR</tt></b> or <b><tt>TEMP</tt></b> environment
 variable to the name of the directory you want used.  Ghostscript currently
 doesn't do a very good job of deleting temporary files if it exits because
 of an error; you may have to delete them manually from time to time.
+
+<h2><a name="CIDFontSubstitution"></a>CID font substitution</h2>
+
+<p>
+CID fonts are PostScript resources containing
+large number of glyphs (e.g. glyphs for Far East languages).
+Please refer Postscript Language Reference,
+third edition, for details.
+
+
+<p>
+CID font resources are different kind of PostScript resources than fonts.
+Particularly they cannot be used as regular fonts. For doing this,
+CID font resourse first to be combined with a CMap resource, which
+defines specific codes for hieroglyphs (this allows to use
+same collection of hieroglyphs with different encodings).
+
+<p>
+The simplest method to request a font composed of CID font resource and CMap resource
+is to code
+<blockquote><b><tt>
+/CIDFont-CMap findfont
+</tt></b></blockquote>
+in a PostScript document, where <b><tt>CIDFont</tt></b> is a name of any
+CID font resourse, and <b><tt>CMap</tt></b> is a name of a CMap resource,
+being designed for same character collection. The interpreter will compose
+the font automatically from the specified CID font and CMap resources.
+Another method is based on the operator <b><tt>composefont</tt></b>.
+
+<p>
+For substituting CID font resources Ghostscript provides the control file
+<b><tt>gs/lib/cidfmap</tt></b>, which defines a CID font resource map.
+The file forms a table of records, each of which is a simple pair of names :
+
+<blockquote><b><tt>
+/Substituted /Original
+</tt></b></blockquote>
+where <b><tt>Substituted</tt></b> is a name of CID font resource being used
+by a document, and <b><tt>Original</tt></b> is a name of an available
+CID font resource. Please pay attention that both them must be
+designed for same character collection. In other words, you
+cannot substitute Japanese CID font resource to Korean CID font resource,
+etc. Also please pay attention that CMap resource names must not appear in
+<b><tt>gs/lib/cidfmap</tt></b>.
+
 
 <h2><a name="Environment_variables"></a>Summary of environment variables</h2>
 
@@ -2825,35 +2871,25 @@ with the UFST bridge. Refer <a href="Make.htm#UFST_build">How to build Ghostscri
 
 <p>
 Then you need to obtain the Decoding resources from Artifex Software Inc. and install them with Ghostscript.
-Just copy the files to the Resource/Decoding directory.
-
-<p>
-Then you need to decide where to place fonts being handled with UFST.
-It may be a new directory, or a directory existing in your system 
-(such as the system font directory).
+Just copy the files to the <b><tt>Resource/Decoding</tt></b> directory (or to the subdirectory
+<b><tt>Decoding</tt></b> of a directory, which is specified in <b><tt>GenericResourcePath</tt></b>).
 
 <p>
 All resident fonts, being handled with UFST, must be listed
-in new font map file "extfont.map". The format of "extfont.map"
-is explained below. Put "extfont.map" to any directory and specify path to
-the directory on the Ghostscript command line like this :
+in new font map file <b><tt>gs/lib/FAPIfontmap</tt></b>. The format of <b><tt>gs/lib/FAPIfontmap</tt></b>
+is explained below.
+
+<p>
+Font files being handled with UFST may reside in any directory in your hard disk.
+Paths to them to be specified in <b><tt>gs/lib/FAPIfontmap</tt></b>. The path may be either
+absolute or relative. Relative ones are being resolved from the path,
+which is specified in Ghostscript command line arguments like this :
 
 <blockquote>
-<b><tt>-sGS_EXTFONTPATH=/gs/efonts</tt></b>
+<b><tt>-sGS_FAPIFONTPATH=path</tt></b>
 </blockquote>
 
-<p>
-Note that the name "extfont.map" is not a part of the value of GS_EXTFONTPATH.
-The value of GS_EXTFONTPATH is also used for resolving relative paths,
-which may appear in "extfont.map".
-
-<p>
-You may prefer to put "extfont.map" to same directory as fonts,
-but this may cause problems if you use the system font directory,
-and the system doesn't allow foreign files in there.
-
-<p>
-The file "extfont.map" is actually special PostScript code. It contains an entry
+The file <b><tt>gs/lib/FAPIfontmap</tt></b> is actually special PostScript code. It contains an entry
 for each font being rendered by UFST.  Each entry is a pair.
 The first element of the pair is the font name (the name that PostScript
 documents use to access the font, which may differ
@@ -2873,16 +2909,16 @@ The second element is a dictionary with entries :
         <td>PostScript type for this font. Only 1 and 42 are currently allowed.
             Note that this is unrelated to the real type of the font file -
             the bridge will perform format conversion.
-<tr>	<td>/FAPI
+<tr>	<td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only /UFST is now allowed.
-<tr>	<td>/SubfontId
+            Only /AgfaUFST is now allowed.
+<tr>	<td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
             It is being ignored if /Path doesn't specify a collection.
             Default value is 0.
-<tr>	<td>/Decoding
+<tr>	<td>Decoding
         <td>name
         <td>(optional) The name of a Decoding resource to be used with the font.
             If specified, "xlatmap" doesn't work for this font.
@@ -2892,24 +2928,24 @@ The second element is a dictionary with entries :
 Example of external font mapping table entry :
 <blockquote>
 <b><tt>
-/FCO0        &lt&lt /Path (F:/AFPL/Agfa/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__F.fco) /FontType 1 /FAPI /AgfaUFST &gt&gt
+/FCO1        &lt&lt /Path (/AFPL/Agfa/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__F.fco) /FontType 1 /FAPI /AgfaUFST &gt&gt
 </tt></b>
 </blockquote>
 
 
 <p>
-You may need to customize the file gs/lib/xlatmap . Follow instructions in it.
+You may need to customize the file <b><tt>gs/lib/xlatmap</tt></b> . Follow instructions in it.
 
 <p>
-As an option, you can force Ghostscript to use UFST to handle all fonts, including the ones distributed with Ghostscript.
-To do this you need to modify gs/lib/gs_fapi.ps .
-Find the name FAPI_force_hook_installed_fonts in this file, and change its
-value to "false".
+As an option, you can force Ghostscript to use UFST to handle all Type 1 and Type 42 fonts, including the ones distributed with Ghostscript.
+To do this you need to modify <b><tt>gs/lib/gs_fapi.ps</tt></b>.
+Find the name <b><tt>FAPI_force_hook_installed_fonts</tt></b> in this file, and change its
+value to <b><tt>false</tt></b>.
 
 <p>
 Note that UFST cannot handle some Ghostscript fonts because
 UFST does not include a PostScript interpreter and therefore has stronger restrictions on font formats than Ghostscript itself does.
-If FAPI_force_hook_installed_fonts is true, Ghostscript
+If <b><tt>FAPI_force_hook_installed_fonts</tt></b> is <b><tt>true</tt></b>, Ghostscript
 loads Ghostscript fonts as PS files, then serializes them into RAM buffer and
 passes to UFST as PCLEOs.
 

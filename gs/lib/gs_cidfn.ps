@@ -61,7 +61,7 @@ dup 0 {
     end
   } if
   1 index exch .buildfont9 exch pop
-} bind put
+} put % Don't bind it here, because gs_fapi.ps redefines .buildfont9
 
 % Add entries to a new CIDFontType 0 font per documentation (FontMatrix)
 % or for .buildfont9 (FDArray.Private.Subrs).

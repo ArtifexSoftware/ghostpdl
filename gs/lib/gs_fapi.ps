@@ -16,35 +16,21 @@
 % copies.
 
 % $Id$
-% Redefine Font category with FAPI-handeled fonts.
+% Redefine Font and CIDFont categories with FAPI-handeled fonts.
 
 .FAPIavailable not {
-    currentfile closefile
+  currentfile closefile
 } if
 
 languagelevel 2 .setlanguagelevel
 
+% Define the Decoding resource category :
 /Generic /Category findresource dup length dict copy
 dup /InstanceType /dicttype put
 /Decoding exch /Category defineresource pop
 
-/Font /Category findresource
-dup length 2 add dict copy begin % the new category
-
-systemdict /GS_EXTFONTPATH .knownget {
-  % Process extfont.map :
-  mark exch
-  pssystemparams /GenericResourcePathSep get
-  (extfont.map) concatstrings concatstrings
-  run
-  counttomark 0 eq {
-    cleartomark
-  } { 
-    .dicttomark /extfontmap exch def
-  } ifelse
-
-  % Process xlatmap :
-  % We convert it into plain text to simplify processing in C :
+%========================= Process xlatmap ====================
+{ % We convert it into a plain text to simplify the processing in C :
   % *(fontkind\0\0\ *(charmap\0decoding\0) ) \0
   mark
   (xlatmap) .runlibfile
@@ -69,24 +55,19 @@ systemdict /GS_EXTFONTPATH .knownget {
   } loop                         % string
   (\0) concatstrings
   systemdict exch /.xlatmap exch put
-} if
+} bind exec
 
-/make_font_procs 5 dict begin    % biulding font dictionaries for specific types :
 
-/is_absolute_path  % <disk_file_path_string> is_absolute_path <bool>
-{ dup length 2 lt {
-    pop false
-  } {
-    dup 0 get pssystemparams /GenericResourcePathSep get eq {
-      pop true
-        } {
-          1 get (:) 0 get eq % Windows specific
-        } ifelse
-  } ifelse
-} bind def
+%====================================================================
+% Redefine Font category with FAPIfontmap and CIDFont with FAPIfontmap :
+10 dict begin    % a temporary dictionary for local binding.
+
+%-------------------------------Font--------------------------------
 
 /font_common  % - font_common -
-{ /PaintType 0 def
+{ currentdict /PaintType known not {
+    /PaintType 0 def
+  } if
   
   currentdict /Encoding .knownget not {
     //StandardEncoding
@@ -96,169 +77,169 @@ systemdict /GS_EXTFONTPATH .knownget {
   } if
   /Encoding exch def
 
-  Path //is_absolute_path exec not {
-        /Path systemdict /GS_EXTFONTPATH get pssystemparams /GenericResourcePathSep get Path concatstrings concatstrings def
+  Path .path_is_absolute not {
+    /Path systemdict /GS_FAPIFONTPATH get pssystemparams /GenericResourcePathSep get 
+    Path concatstrings concatstrings def
   } if
 } bind def
 
-1
-{ /FontMatrix [0.001 0 0 0.001 0 0] def
-  /FontBBox [-128 -128 1024 1024] def %fixme
-  /Private 0 dict def
-  /CharStrings << /.notdef () >> def
-  //font_common exec
-} bind def
+/FontOptions 5 dict begin
+  /make_procs currentdict def
+  /NameKey /FontName def
+  /TypeKey /FontType def
 
-42
-{ /FontMatrix [1 0 0 1 0 0] def
-  /FontBBox [0 0 1 1] def %fixme
-  /CharStrings <<>> def
-  /sfnts [<00010000 0000 0000 0000 0000 0000>] def
-  /GlyphDirectory [] def
-  //font_common exec
-} bind def
+  1
+  { /FontMatrix [0.001 0 0 0.001 0 0] def
+    /FontBBox [-128 -128 1024 1024] def % zfapi.ps refines it.
+    /Private 0 dict def
+    /CharStrings << /.notdef () >> def
+    //font_common exec
+  } bind def
 
-%fixme : more types
+  42
+  { /FontMatrix [1 0 0 1 0 0] def
+    /FontBBox [0 0 1 1] def % zfapi.ps refines it.
+    /CharStrings <<>> def
+    /sfnts [<00010000 0000 0000 0000 0000 0000>] def
+    /GlyphDirectory [] def
+    //font_common exec
+  } bind def
+
+  %fixme : more font types.
+
 currentdict end def
 
-/lctag
-{ currentglobal { /global_defined } { /local_defined } ifelse
+
+%---------------------------CIDFont---------------------------
+
+/TranslateCSI   % <record> TranslateCSI <CSI>
+{ begin
+  << /Registry (Adobe) 
+     /Ordering CSI aload pop 
+     /Supplement exch 
+  >>
+  end
 } bind def
 
-/complete_FAPI_font  % <font_name> <FontDict> complete_FAPI_font <FontDict>
+/CIDFontOptions 5 dict begin
+  /make_procs currentdict def
+  /NameKey /CIDFontName def
+  /TypeKey /CIDFontType def
+
+  0
+  { /CIDSystemInfo currentdict //TranslateCSI exec def
+    currentdict /CSI undef
+    /FontBBox [-128 -128 1024 1024] def % zfapi.ps refines it.
+    /FDArray [
+      14 dict begin
+        /FontName CIDFontName =string cvs (%) concatstrings cvn def
+        /FontType 1 def
+        /FontMatrix [0.001 0 0 0.001 0 0 ] def
+        /PaintType 0 def
+        /Private 0 dict def
+        currentdict
+      end
+    ] def
+    /CIDCount 1000 def % fixme
+    /GlyphDirectory [] def
+    /GDBytes 1 def
+    /FDBytes 0 def
+  } bind def
+
+  %fixme : more font types.
+
+currentdict end def
+
+%---------------------------common----------------------------
+
+/complete_instance  % <font_name> <FontDict> <Options> complete_FAPI_Font <font_name> <FontDict>
 { begin
-  dup /FontName exch def
-  currentdict end
-  dup dup length dict copy
+  dup length dict copy
   begin
-  //lctag exec true put
+  1 index NameKey exch def
   currentglobal true setglobal
-  //make_font_procs FontType .knownget {
+  make_procs TypeKey load .knownget {
     exec
   } { setglobal
-      /complete_FAPI_font cvx /invalidfont signalerror
+      /complete_instance cvx /invalidfont signalerror
   } ifelse
   setglobal
   currentdict end
+  end
 } bind def
 
-/FindResource  % <FontName> FindResource <dict>
-{ currentdict /extfontmap get          % /font <<extfontmap>>
-  1 index .knownget {                  % /font <<font_stub>>
-    dup //lctag exec known not {       % /font <<font_stub>>
-      //complete_FAPI_font exec        % /font <<font>>
-      //DefineResource exec
-    } {
-      pop
-      //FindResource exec
-    } ifelse
-  } {
-    //FindResource exec
-  } ifelse
+/IsMyRecord      % <raw_record> -> <raw_record> bool
+{ dup type /dicttype eq { dup /FAPI known } { false } ifelse
 } bind def
 
-/UndefineResource  % <FontName> UndefineResource -
-{ currentdict /extfontmap get
-  1 index .knownget {                  % /font <<font_stub>>
-    //lctag exec undef
-  } if                                 % /font
-  //UndefineResource exec              
+/GetFilePath    % <scratch> <Name> <record> GetFilePath <filepath>
+{ exch pop                       % (scratch) <record>
+  /Path get                      % (scratch) (path)
+  exch copy
+  % Actually it is not a PS resource - unable to provide full conformity :
+  % the attempt to run this file may fail.
 } bind def
 
-/ResourceFileName  % <FontName> <scratch> ResourceFileName -
-{ currentdict /extfontmap get
-  2 index .knownget {
-    3 2 roll pop /Path get exch cvs
-        % Actually it is not a PS resource - unable to provide conformity.
-  } { 
-    //ResourceFileName exec
-  } ifelse
+/GetSize        % <Name> <record> GetSize <size>
+{ pop pop -1 % Unknown size.
+  % fixme: probably we could provide an estimation size for some fonts.
 } bind def
 
-/ currentdict def
+/FontRecordVirtualMethods 3 dict begin
+  /GetFilePath //GetFilePath def
+  /GetSize //GetSize def
+  /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
+  { //FontOptions //complete_instance exec
+    2 copy //GetSize exec
+  } bind def
+currentdict end def
 
-/ResourceForAll  % <template> <proc> <scratch> ResourceForAll -
-{ % We know that gs_cidcm.ps will order output of this proc, 
-  % so don't care of the order here.
-  % All what we need here is to unite the output of underlying category
-  % with fonts listed in extfontmap.
-  %
-  % Since <proc> may leave something on stack, we generate 
-  % stack-length-insensitive procedures and then run them.
+/CIDFontRecordVirtualMethods 3 dict begin
+  /GetFilePath //GetFilePath def
+  /GetSize //GetSize def
+  /GetCSI //TranslateCSI def
+  /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
+  { //CIDFontOptions //complete_instance exec
+    2 copy //GetSize exec
+  } bind def
+currentdict end def
 
-                                      % (templ) {proc} (sctarch)
-  2 index                             % (templ) {proc} (sctarch) (templ)
+%----------------------------------The Redefintion---------------------
 
-  % Building the procedure 'proc1' for processing the underlying resources :
-  [ 3 index
-  {                   % (font)
-    % resourceforall_proc_placeholder
-    exch              % {proc} (font)
-    dup cvn // /extfontmap get exch known {
-      pop pop
-    } {
-      exch exec
-    } ifelse
-  } aload pop 
-  ] cvx                               % (templ) {proc} (sctarch) (templ) {proc1}
+/MappedCategoryRedefiner /ProcSet findresource /Redefine get /Redefine exch def
 
-  2 index                             % (templ) {proc} (sctarch) (templ) {proc1} (sctarch)
+% Redefine the /Font category :
+4 dict begin
+  /CategoryName /Font def
+  /MapFileName (FAPIfontmap) def
+  /VerifyMap  { pop } bind def
+  /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
+  { //IsMyRecord exec dup {
+      pop dup /RecordVirtualMethods //FontRecordVirtualMethods put
+      true
+    } if
+  } bind def
+currentdict end Redefine
 
-  % Building the procedure 'proc2' for enumerating all resources, like this :
-  % { (templ) {proc1} (sctarch) //ResourceForAll exec <<map>> {proc3} forall }
-  % See below about proc3.
-  [                                   % (templ) {proc} (sctarch) (templ) {proc1} (sctarch) [
-  4 1 roll                            % (templ) {proc} (sctarch) [ (templ) {proc1} (sctarch)
-  //ResourceForAll /exec cvx // /extfontmap get
-                                      % (templ) {proc} (sctarch) [ (templ) {proc1} (sctarch) //ResourceForAll exec <<map>>
+% Redefine the /CIDFont category :
+4 dict begin
+  /CategoryName /CIDFont def
+  /MapFileName (FAPIcidfmap) def
+  /VerifyMap  { pop } bind def
+  /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
+  { //IsMyRecord exec dup {
+      pop dup /RecordVirtualMethods //CIDFontRecordVirtualMethods put
+      true
+    } if
+  } bind def
+currentdict end Redefine
 
-    % The procedure 'proc3' for processing the private resources :
-    % <efont_name> <efont_stub_dict> proc3 - 
-    % Now build it :
-    [                                 % (templ) {proc} (sctarch) [ (templ) {proc1} (sctarch) //ResourceForAll exec <<map>> [
-    11 8 roll                         % [ (templ) {proc1} (sctarch) //ResourceForAll exec <<map>> [ (templ) {proc} (sctarch)
-    {                        % /efont <<font_stub>> (templ) {proc} (sctarch)
-      5 3 roll               % (templ) {proc} (sctarch) /efont <<font_stub>> 
-      pop                    % (templ) {proc} (sctarch) /efont
-      exch cvs               % (templ) {proc} (efont)
-      dup                    % (templ) {proc} (efont) (font)
-      4 3 roll               % {proc} (efont) (efont) (templ)
-      .stringmatch {         % {proc} (efont)
-        exch exec            %
-      } {
-        pop pop              %
-      } ifelse
-    } aload pop
-    ] cvx % proc 3 end                % [ (templ) {proc1} (sctarch) //ResourceForAll exec <<map>> {proc3}
+end % the temporary dictionary
 
-  /forall cvx                         % [ (templ) {proc1} (sctarch) //ResourceForAll exec <<map>> {proc3} forall
-  ] cvx                               % {proc2}
+%==================== A hook for buildfont* operators ====================
 
-  % Now apply proc2 :
-  exec                                % ...
-} bind def
-
-/ResourceStatus
-{ dup //ResourceStatus exec {
-    3 2 roll pop true
-  } {
-    currentdict /extfontmap get
-    exch known {
-      2 -1 true
-    } {
-      false
-    } ifelse
-  } ifelse
-} bind def
-
-currentdict /extfontmap known {
-  /Font currentdict /Category defineresource pop
-} if
-
-end
-
-% .FAPIhook procedure redirects PS fonts to FAPI on necessity.
-% It depends on following conditions :
+% The operaqtor .FAPIhook redirects PS fonts to FAPI on necessity.
+% This depends on the following conditions :
 %
 % 1. If font dictionary has /FAPI entry, it is a font listed in extfontmap,
 %    and must be build with .buildfontFAPI .
@@ -290,8 +271,7 @@ end
 % .FAPIhook is defined to systemdict for gs_type1.ps, gs_type42.ps, etc., to access 
 % it independently of the order of definitions. This may be improved later.
 
-5 dict begin
-/this currentdict def
+5 dict begin     % A temporary dictionary for local binding.
 
 /FAPI_hook_debug   % <proc> FAPI_hook_debug -
 DEBUG { {exec} } { {pop} } ifelse
@@ -347,34 +327,23 @@ bind def
 
 /FAPI_is_hook_disabled     % - FAPI_is_hook_disabled <bool>
 { % checks whether execution stack contains packedarray started with /FAPI_hook_disable .
-  currentglobal false setglobal
-  countexecstack 1 add array execstack
-  false exch
-  { dup type /packedarraytype eq {
-      dup length 0 gt {
-        0 get /FAPI_hook_disable eq {
-          { (FAPI_hook disabled) = } //FAPI_hook_debug exec
-          pop true exit
-        } if
-      } {
-        pop
-      } ifelse
-    } {
-      pop
-    } ifelse
-  } forall
-  exch setglobal
+  /FAPI_hook_disable /MappedCategoryRedefiner /ProcSet findresource /execstack_lookup get exec
+  null ne
+  dup {
+    { (FAPI_hook disabled) = } //FAPI_hook_debug exec
+  } if
 } bind def
 
 /.FAPIhook  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
-{                                                        % name <<font>>
+{                                                     % name <<font>>
   { (FAPIhook ) print 1 index = } //FAPI_hook_debug exec
-    dup /FAPI known {
-    (Font ) print 1 index =string cvs print ( \( ) print dup /FontName get =string cvs print ( \) uses FAPI=) print dup /FAPI get =
+  dup /FAPI known {
+    (Font ) print 1 index =string cvs print ( \( ) print dup 
+    /FontName .knownget not { dup /CIDFontName get } if =string cvs print ( \) uses FAPI=) print dup /FAPI get =
     true .FAPIrebuildfont
     //FAPI_choose_decoding exec
   } {
-    //FAPI_force_hook_installed_fonts                    % name <<font>> bHook
+    //FAPI_force_hook_installed_fonts                 % name <<font>> bHook
     dup {
       { (FAPI_force_hook_installed_fonts = true) = } //FAPI_hook_debug exec
     } {
@@ -387,7 +356,7 @@ bind def
     } ifelse
     {
       { (Trying to render ) print 1 index =string cvs print ( with FAPI) =} //FAPI_hook_debug exec
-        .FAPIpassfont                               % name <<font>> bool
+      .FAPIpassfont                                   % name <<font>> bool
       { (Font ) print 1 index =string cvs print ( is being rendered with FAPI=) print dup /FAPI get =
         false .FAPIrebuildfont                        % name <<font>>
         //FAPI_choose_decoding exec
@@ -395,9 +364,22 @@ bind def
       } ifelse
     } if
   } ifelse
+} bind def
+
+% Redefine .buildfont* with FAPI :
+/.buildfont1
+{ //.buildfont1 exec //.FAPIhook exec
+} bind
+
+/.buildfont42
+{ //.buildfont42 exec //.FAPIhook exec
+} bind
+
+/.buildfont9
+{ //.buildfont9 exec //.FAPIhook exec
 } bind
 
 end
+odef odef odef
 
-odef
 .setlanguagelevel

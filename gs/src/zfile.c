@@ -577,6 +577,17 @@ ztempfile(i_ctx_t *i_ctx_p)
     return code;
 }
 
+/* <string> .zpath_is_absolute <bool> */
+private int
+zpath_is_absolute(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    check_type(*op, t_string);
+    make_bool(op, gp_file_name_is_absolute((char *)op->value.bytes, r_size(op)));
+    return 0;
+}
+
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfile_op_defs[] =
@@ -592,6 +603,7 @@ const op_def zfile_op_defs[] =
     {"2renamefile", zrenamefile},
     {"1status", zstatus},
     {"2.tempfile", ztempfile},
+    {"2.path_is_absolute", zpath_is_absolute},
 		/* Internal operators */
     {"0%file_continue", file_continue},
     {"0%execfile_finish", execfile_finish},

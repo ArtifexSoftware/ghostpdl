@@ -21,12 +21,6 @@
 % The standard representation for PostScript compatible fonts is described
 % in the book "Adobe Type 1 Font Format", published by Adobe Systems Inc.
 
-% Redefine .buildfont1 with FAPI :
-/.buildfont1
-{ //.buildfont1
-  systemdict /.FAPIhook known { .FAPIhook } if
-} odef
-
 % Define an augmented version of .buildfont1 that inserts UnderlinePosition
 % and UnderlineThickness entries in FontInfo if they aren't there already,
 % and FontBBox isn't degenerate.
