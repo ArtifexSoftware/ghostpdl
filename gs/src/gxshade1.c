@@ -356,19 +356,36 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
 	 * Extend it to the edges of the (user-space) rectangle.
 	 */
 	gx_path *ppath = gx_path_alloc(pis->memory, "A_fill");
-	double dist = max(pfs->rect.q.x - pfs->rect.p.x,
-			  pfs->rect.q.y - pfs->rect.p.y);
-	/* denom = length of axis in domain space */
-	double denom = hypot(pfs->delta.x, pfs->delta.y);
-	double dx = dist * pfs->delta.y / denom,
-	    dy = -dist * pfs->delta.x / denom;
+	if (fabs(pfs->delta.x) < fabs(pfs->delta.y)) {
+	    /*
+	     * Calculate intersections with vertical sides of rect.
+	     */
+	    double slope = pfs->delta.x / pfs->delta.y;
+	    double yi = y0 - slope * (pfs->rect.p.x - x0);
 
-	if_debug6('|', "[|]p0=(%g,%g), p1=(%g,%g), dxy=(%g,%g)\n",
-		  x0, y0, x1, y1, dx, dy);
-	gs_point_transform2fixed(&pis->ctm, x0 - dx, y0 - dy, &pts[0]);
-	gs_point_transform2fixed(&pis->ctm, x0 + dx, y0 + dy, &pts[1]);
-	gs_point_transform2fixed(&pis->ctm, x1 + dx, y1 + dy, &pts[2]);
-	gs_point_transform2fixed(&pis->ctm, x1 - dx, y1 - dy, &pts[3]);
+	    gs_point_transform2fixed(&pis->ctm, pfs->rect.p.x, yi, &pts[0]);
+	    yi = y1 - slope * (pfs->rect.p.x - x1);
+	    gs_point_transform2fixed(&pis->ctm, pfs->rect.p.x, yi, &pts[1]);
+	    yi = y1 - slope * (pfs->rect.q.x - x1);
+	    gs_point_transform2fixed(&pis->ctm, pfs->rect.q.x, yi, &pts[2]);
+	    yi = y0 - slope * (pfs->rect.q.x - x0);
+	    gs_point_transform2fixed(&pis->ctm, pfs->rect.q.x, yi, &pts[3]);
+	}
+	else {
+	    /*
+	     * Calculate intersections with horizontal sides of rect.
+	     */
+	    double slope = pfs->delta.y / pfs->delta.x;
+	    double xi = x0 - slope * (pfs->rect.p.y - y0);
+
+	    gs_point_transform2fixed(&pis->ctm, xi, pfs->rect.p.y, &pts[0]);
+	    xi = x1 - slope * (pfs->rect.p.y - y1);
+	    gs_point_transform2fixed(&pis->ctm, xi, pfs->rect.p.y, &pts[1]);
+	    xi = x1 - slope * (pfs->rect.q.y - y1);
+	    gs_point_transform2fixed(&pis->ctm, xi, pfs->rect.q.y, &pts[2]);
+	    xi = x0 - slope * (pfs->rect.q.y - y0);
+	    gs_point_transform2fixed(&pis->ctm, xi, pfs->rect.q.y, &pts[3]);
+	}
 	gx_path_add_point(ppath, pts[0].x, pts[0].y);
 	gx_path_add_lines(ppath, pts + 1, 3);
 	code = shade_fill_path((const shading_fill_state_t *)pfs,
