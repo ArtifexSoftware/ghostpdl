@@ -224,7 +224,10 @@ pcl_intelli_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
 void
 pcl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
 {	/* Intellifonts have an 8782-unit design space. */
-	gs_make_scaling(1.0/8782, 1.0/8782, &pfont->FontMatrix);
+ 	{ gs_matrix mat;
+	  gs_make_scaling(1.0/8782, 1.0/8782, &mat);
+	  gs_matrix_translate(&mat, -2980.0, -5380.0, &pfont->FontMatrix);
+	}
 	pfont->FontType = ft_user_defined;
 	pfont->BitmapWidths = true;
 	pfont->ExactSize = fbit_use_outlines;

@@ -137,7 +137,8 @@ typedef struct pcl_hpgl_state_s {
 
 #define plot_width plot_size.x
 #define plot_height plot_size.y
-
+        bool plot_size_vertical_specified;
+        bool plot_size_horizontal_specified;
 		/* Chapter 19 (pgconfig.c) */
 
   	enum {

@@ -6,6 +6,133 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
+Version 0.38 (11/20/97)
+=======================
+
+(LPD)
+	- Adds PCL XL output to the Unix makefile.  Note that this required
+a minor, backward-compatible change in common/ugcc_top.mak and
+common/watc_top.mak.  (pcl_ugcc.mak)
+	- Adds fonts/ to the list of directories to search for fonts.
+(pcmain.c)
+
+The following PCL5e commands and facilities are parsed correctly, but their
+functionality is not implemented yet:
+	- Select default font (ESC (|) 3 @).  (pcfont.c)
+	- Conditional pattern rotation (ESC * p # R).  (pcprint.c)
+	- Assign font id to copy of current font (ESC * c 6 F).  (pcsfont.c)
+	- Continuation blocks for character data (for ESC ( s # W).
+(pcsfont.c)
+	- Variable text path (ESC & c # T).  (pctext.c)
+
+The following HP-GL/2 commands and facilities are still unimplemented:
+	- Double-byte characters (LM command is implemented but has no
+	effect).  
+
+(HAS) Fixes bug in design window origin for Intellifonts.  (pcifont.c)
+
+Version 0.37 (11/6/97)
+=====================
+
+Fixes problem in updated LJ5 FTS and integrates complete set of
+resident fonts except lineprinter.
+
+The only new functionality in this release is label origin mode that
+allows positioning of the hpgl/2 character origin at the current pcl
+cursor position, (pglabel.c) and the new fonts.
+
+(LPD) added documentation for common makefiles and added gdevbbox and
+bbox.dev dependencies.
+
+(HAS) Changes associated with bug LJ5 FTS fixes include:
+
+- Pattern phases/rotation not correct.
+pcdraw.c:pcl_set_drawing_color_rotation() pattern phase set here,
+added device space origin parameter, removed reflection code.  Added
+function pcdraw.c:pcl_set_drawing_color() initializes rotation and
+pattern origin.  Updated prototypes for changes are in pcdraw.h.
+pcprint.c:pcl_set_pattern_reference_point() updated to only set state
+values that affect how the reference point will be set.
+- pclfont.c:pcl_lood_built_in_fonts() restructured to support new
+resident fonts.
+- pcsfont.c:pcl_font_header() interpreted bitmap font height
+incorrectly, using 1/4 points instead of 1/4 dots.
+- pcltext.c:pcl_show_chars() restructure to properly clip/drop text at
+the right margin.  This will be a major performance bottleneck since
+the code now renders one character at a time.  This will be addressed
+when the FTS tests are correct.
+- pcltext.c:pcl_text() removed device space clipping code.
+- pcltext.c:pcl_text() explicit hmi was ignored for proportional fonts.
+- pccursor.c:move_down() half line was not working because function
+was using global vmi instead of passed in parameter.
+- pgconfig.c:hpgl_picture_frame_coords() picture frame coordinates not
+specified correctly.
+- pgdraw.c:hpgl_set_picture_frame_scaline() new function added to
+simplify hpgl_set_ctm().
+- pgdraw.c: several functions were ignoring GS return values.  This is
+now fixed.
+- pgdraw.c:hpgl_set_drawing_color() updated to handle pcl drawing
+attributes for rendering characters.
+- pgdraw.c and pgvector.c: hpgl_plot_function_t is not "fungible" with
+bool.  This has been straightened out.
+- pgframe.c - added state variable to indicate if plot mode has been set.
+- pglfill.c: hpgl_PU() and hpgl_WU() - redone.
+- pcsymbol.c:pcl_define_symbol_set() symbol codes not byte swapped.
+
+Known problems:
+
+-The left margin is set to the left of the right margin.  PCLTRM 5-15
+says the left margin should not be reset.  anomaly.  fts 111.
+Height of bars is incorrect.  We use a scalable courier font.
+anomaly.  fts 140.
+-Pattern reference point is not the same as the 6mp.  We are doing what
+the manual says (PCLTRM 13-16), using a default reference point of 0,
+0, the 6mp does not seem to do the same.  anomaly.  fts 102, 125, 174,
+194. 225, 1072, 1074, 1092, 1094, 2276.
+-Space character is still marginally different this results in an
+accumulation error on the right margin.  Bug.  fts 260.
+-Wrong or missing glyphs in character set.  Bug.  fts 260, 261, 263,
+264, 270, 271, 274, 1810, 1820, 2063, 1150, 2330.
+-Extra space before string.  Bug.  fts 311.
+-Font selection incorrect.  bug.  fts 291, 341, 390, 401, 2272, 1612,
+1700, 2300.
+-Wrong baseline for string.  intellifont scalar not properly
+interpreting measuring baseline for font.  fts 342, 351, 360. 410,
+411.
+-Dashed lines not offset wrt anchor corner dashed lines are not offset
+for gl/2 fills.  fts 1132, 1133.
+-Character fill mode not working for stick fonts. I believe this is an
+HP bug since vectors should be filled with using SV and not FT since
+stick fonts are actually vector data.  anomaly.  fts 1221.
+-The glyph for "t" in a dounloaded intellifont font is corrupt.  The
+number of auxillary point in the font is set to 0xffff.  I have no
+documentation that says what to do if this is the case.  Bug.  fts
+1800.
+-GL/2 transparency problem. Bug.  fts 1541, 1542, 1563. 1810 page 3.
+-GL/2 anchor corner.  Bug fts 1611, 1620, 1621, 1630.
+-wrong font selected - 1612, 1700, 2300.
+-black boxes on panel border are too large - 1613.
+-one of the scaling modes is not correct 1634, 1635.
+-gl/2 vector fill not working properly with character data and gl/2
+-vector fills not properly implemented with fill polygon mode.  we will
+probably need to rewrite the filling algorithms to handle both
+-odd-even and non-zero winding fills.  Bug.  fts - 1810
+-stray line probably due to clipping difference Bug.  1810 page 5.
+-extra raster data Bug.  1833, 1836
+-wrong pattern - pattern state not properly updated.  Bug.  fts - 2040,
+2041, 2042
+-missing line.  Bug.  fts 2120, 2122, 2125.
+-missing line drawing characters from character set.  Bug. fts 2240.
+-missing overlay - hpgl/2 in pcl5 macro not properly implemented.  Bug
+fts 2290, 2291.
+-downloaded font not rendered Bug fts 2321.
+-not selecting correct secondary font.  Bug fts 2322
+-stray lines on bezier curver Bug fts 2342, 2352
+-raster operation incorrect and pixel placement not implemented.  Bug
+fts 2380-2412.
+-text parsing method - double byte characters not done.  Bug fts
+2420-2422.
+
 Version 0.36 (9/4/97)
 =====================
 
@@ -81,17 +208,6 @@ univers typeface.  We do not have a univers typeface in our font repotoire.
   other problems in this test.
 54. pen color wrong - 1512.
 *55. left offset clipped incorrectly - 1761.
-
-The following PCL5e commands and facilities are still unimplemented:
-	- Select default font (ESC (|) 3 @).  (pcfont.c)
-	- Assign font id to copy of current font (ESC * c 6 F).  (pcsfont.c)
-	- Continuation blocks for character data (for ESC ( s # W).
-(pcsfont.c)
-	- Variable text path (ESC & c # T).  (pctext.c)
-
-The following HP-GL/2 commands and facilities are still unimplemented:
-	- Double-byte characters (LM command is implemented but has no
-	effect).
 
 (LPD) Fixes bugs:
 	- Symbol sets weren't supported in GL/2.  (pglabel.c)

@@ -386,8 +386,7 @@ pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
   gs_state *pgs, floatp scale_x, floatp scale_y, int rotation /* 0..3 */,
   uint id)
 {	gs_client_pattern pat;
-	gs_matrix mat, dmat, smat;
-	bool d_reflected, s_reflected;
+	gs_matrix mat, smat;
 	int angle = rotation * 90;
 
 	if ( tile->raster != bitmap_raster(tile->size.x) )
@@ -403,23 +402,11 @@ pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
 	pat.YStep = tile->rep_height;
 	pat.PaintProc = pcl_bitmap_PaintProc;
 	pat.client_data = tile->data;
-	gs_defaultmatrix(pgs, &dmat);
 	gs_currentmatrix(pgs, &smat);
 	gs_make_identity(&mat);
 	gs_setmatrix(pgs, &mat);
 	gs_make_scaling(scale_x, scale_y, &mat);
-	/*
-	 * We know that the default matrix imposes a PCL coordinate system,
-	 * i.e., (0,0) in the upper left corner.  Check whether the current
-	 * matrix is reflected with respect to this, e.g., for HP-GL/2.
-	 */
-	d_reflected = dmat.xy * dmat.yx > dmat.xx * dmat.yy;
-	s_reflected = smat.xy * smat.yx > smat.xx * smat.yy;
-	if ( s_reflected != d_reflected )
-	  mat.yy = -mat.yy;
-	else 
-	  angle = -angle;
-	gs_matrix_rotate(&mat, angle, &mat);
+	gs_matrix_rotate(&mat, -angle, &mat);
 	/*
 	 * Reset the current color in the graphics state so that we don't
 	 * wind up with a stale pointer to a deleted pattern.
@@ -458,7 +445,7 @@ pcl_bitmap_PaintProc(const gs_client_color *pcolor, gs_state *pgs)
 /* Note that we pass the pattern rotation explicitly. */
 int
 pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
-  const pcl_id_t *pid, pl_dict_t *patterns, int rotation)
+  const pcl_id_t *pid, pl_dict_t *patterns, int rotation, gs_point *origin)
 {	gs_state *pgs = pcls->pgs;
 	gs_pattern_instance **ppi;
 	gs_int_point resolution;
@@ -618,7 +605,40 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	      *ppi = ccolor.pattern;
 	    }
 	  gs_setpattern(pgs, &ccolor);
+	  gs_sethalftonephase(pgs, origin->x, origin->y);
 	}
+	return 0;
+}
+
+/* set pcl's drawing color.  Uses pcl state values to determine
+   rotation and translation of patterns */
+ int
+pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type, const pcl_id_t *pid)
+{
+	gs_point pattern_origin;
+	gs_point pattern_origin_device;
+	int rotation;
+	/* if the pattern reference point has been set than we use the
+           current cap otherwise the coordinate 0, 0 is used.  The 0,0
+           reference point does not seem to be used on the 6mp but
+           this is in accordance with PCLTRM 13-16. */
+	if ( pcls->shift_patterns )
+	  {
+	    pattern_origin.x = (float)pcls->cap.x;
+	    pattern_origin.y = (float)pcls->cap.y;
+	  }
+	else
+	  {
+	    pattern_origin.x = 0.0;
+	    pattern_origin.y = 0.0;
+	  }
+	gs_transform(pcls->pgs, pattern_origin.x, pattern_origin.y,
+	  &pattern_origin_device);
+	/* setting the pattern reference point also decides whether we
+           rotate patterns, see pcl_set_pattern_reference_point(). */
+	rotation = pcls->rotate_patterns ? pcls->print_direction : 0;
+	pcl_set_drawing_color_rotation(pcls, type, pid,
+          &pcls->patterns, rotation, &pattern_origin_device);
 	return 0;
 }
 

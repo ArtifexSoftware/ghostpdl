@@ -52,7 +52,7 @@ const pcl_init_t *pcl_init_table[] = {
 /* Interim font initialization procedure */
 extern bool pcl_load_built_in_fonts(P2(pcl_state_t *, const char *[]));
 private const char *built_in_font_prefixes[] = {
-  "", "/windows/system/", "/windows/fonts/", "/win95/fonts/", 0
+  "", "fonts/", "/windows/system/", "/windows/fonts/", "/win95/fonts/", 0
 };
 
 /* Built-in symbol set initialization procedure */

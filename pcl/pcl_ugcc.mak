@@ -42,7 +42,8 @@ CCLD=gcc
 DEVICE_DEVS=x11.dev x11mono.dev x11alpha.dev x11cmyk.dev\
  djet500.dev ljet4.dev\
  pcxmono.dev pcxgray.dev\
- pbmraw.dev pgmraw.dev ppmraw.dev
+ pbmraw.dev pgmraw.dev ppmraw.dev\
+ pxlmono.dev pxlcolor.dev
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak

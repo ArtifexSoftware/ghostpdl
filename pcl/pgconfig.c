@@ -197,34 +197,34 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
  private int 
 hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 {
-
 	gs_rect dev_win; /* device window */
-	gs_rect pcl_win; /* pcl window -- upper left and lower right */
 	hpgl_real_t x1 = pgls->g.picture_frame.anchor_point.x;
 	hpgl_real_t y1 = pgls->g.picture_frame.anchor_point.y;
 	hpgl_real_t x2 = x1 + pgls->g.picture_frame_width;
 	hpgl_real_t y2 = y1 + pgls->g.picture_frame_height;
+
 	pcl_set_ctm(pgls, false);
 	hpgl_call(gs_transform(pgls->pgs, x1, y1, &dev_win.p));
 	hpgl_call(gs_transform(pgls->pgs, x2, y2, &dev_win.q));
 	hpgl_call(hpgl_set_plu_ctm(pgls));
-	hpgl_call(gs_itransform(pgls->pgs, 
-			       dev_win.p.x,
-			       dev_win.p.y,
-			       &pcl_win.p));
-	hpgl_call(gs_itransform(pgls->pgs, 
-			       dev_win.q.x,
-			       dev_win.q.y,
-			       &pcl_win.q));
-	/* now win.p is the upper left and win.q the lower right, gl/2
-           likes to use the lower left and upper right for boxes */
+	/*
+	 * gs_bbox_transform_inverse puts the resulting points in the
+	 * correct order, with p < q.
+	 */
+	{ gs_matrix mat;
+	  gs_rect pcl_win; /* pcl window */
+
+	  gs_currentmatrix(pgls->pgs, &mat);
+	  hpgl_call(gs_bbox_transform_inverse(&dev_win, &mat, &pcl_win));
 /* HAS have not checked if this is properly rounded or truncated */
-#define round(x) (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
-	gl2_win->p.x = round(pcl_win.p.x);
-	gl2_win->p.y = round(pcl_win.q.y); /* !! */
-	gl2_win->q.x = round(pcl_win.q.x);
-	gl2_win->q.y = round(pcl_win.p.y); /* !! */
-#undef round
+/* Round all coordinates to the nearest integer. */
+#define set_round(e) gl2_win->e = (int)floor(pcl_win.e + 0.5)
+	  set_round(p.x);
+	  set_round(p.y);
+	  set_round(q.x);
+	  set_round(q.y);
+#undef set_round
+	}
 	return 0;
 }
 	
@@ -493,6 +493,7 @@ pxy:		scale_params.pmin.x = xy[0];
 	  hpgl_args_set_real(&args, point.x);
 	  hpgl_args_add_real(&args, point.y);
 	  hpgl_call(hpgl_PU(&args, pgls));
+	  hpgl_call(hpgl_clear_current_path(pgls));
 	  hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
 	}
 

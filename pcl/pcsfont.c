@@ -203,7 +203,8 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	      pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
 	    }
-	    plfont->params.height_4ths = pl_get_uint16(pfh->Height);
+	    plfont->params.height_4ths =
+	      pl_get_uint16(pfh->Height) * 72 / plfont->resolution.x;
 	    break;
 	  }
 	  case plfst_TrueType:

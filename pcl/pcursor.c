@@ -37,7 +37,7 @@ pcl_do_FF(pcl_state_t *pcls)
 /* Move the cursor down, taking perforation skip into account if necessary. */
 private int
 move_down(pcl_state_t *pcls, coord dy)
-{	coord y = pcls->cap.y + pcls->vmi;
+{	coord y = pcls->cap.y + dy;
 	if ( pcls->perforation_skip &&
 	     y > pcl_top_margin(pcls) + pcl_text_length(pcls)
 	   )

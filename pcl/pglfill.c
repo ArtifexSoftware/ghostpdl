@@ -278,10 +278,10 @@ hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	opcode = (mode ? 168 : 255);
-	if ( hpgl_arg_c_int(pargs, &opcode) && (opcode & ~255) )
-	  return e_Range;
+	if ( mode != 0 && hpgl_arg_c_int(pargs, &opcode) )
+	  if (opcode < 0 || opcode > 255 )
+	    return e_Range;
 	pgls->logical_op = opcode;
-	gs_setrasterop(pgls->pgs, opcode);
 	return 0;
 }
 
@@ -289,16 +289,16 @@ hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_real_t width = 
-	  ((pgls->g.pen.width_relative) ? 
-	   (0.01 * hpgl_compute_distance(pgls->g.P1.x, pgls->g.P1.y,
-					 pgls->g.P2.x, pgls->g.P2.y)):
-	   (0.35));
+        /* we initialize the parameter to be parsed to either .1 which
+           is a % of the magnitude of P1 P2 or .35 MM WU sets up how
+           it get interpreted. */
+	hpgl_real_t param = pgls->g.pen.width_relative ? .1 : .35;
+	hpgl_real_t width_plu;
 	int pmin = 0, pmax = pgls->g.number_of_pens - 1;
 
 	/* we maintain the line widths in plotter units, irrespective
-           of current units (WU) */
-	if ( hpgl_arg_c_real(pargs, &width) )
+           of current units (WU).  They width argument to PW are mm */
+	if ( hpgl_arg_c_real(pargs, &param) )
 	  { 
 	    if ( hpgl_arg_c_int(pargs, &pmin) ) 
 	      if ( pmin < 0 || pmin > pmax ) 
@@ -306,25 +306,25 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      else 
 		pmax = pmin;
 	  }
-
+	/* width is maintained in plu only */
+	width_plu = ((pgls->g.pen.width_relative) ?
+		     ((param/100.0) * hpgl_compute_distance(pgls->g.P1.x, pgls->g.P1.y,
+							    pgls->g.P2.x, pgls->g.P2.y)) :
+		     mm_2_plu(param));
 	/* PCLTRM 22-38 metric widths scaled scaled by the ratio of
            the picture frame to plot size.  Note that we always store
            the line width in PU not MM. */
-	if ( !pgls->g.pen.width_relative ) 
-	  {
-	    width = width * (min((hpgl_real_t)pgls->g.picture_frame_height /
-				 (hpgl_real_t)pgls->g.plot_height,
-				 ((hpgl_real_t)pgls->g.picture_frame_width /
-				  (hpgl_real_t)pgls->g.plot_width)));
-	    width = mm_2_plu(width);
-	  }
-	
+	if ( pgls->g.pen.width_relative )
+	    width_plu *= (min((hpgl_real_t)pgls->g.picture_frame_height /
+			      (hpgl_real_t)pgls->g.plot_height,
+			      ((hpgl_real_t)pgls->g.picture_frame_width /
+			       (hpgl_real_t)pgls->g.plot_width)));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	
 	{ 
 	  int i;
+
 	  for ( i = pmin; i <= pmax; ++i )
-	    pgls->g.pen.width[i] = width;
+	    pgls->g.pen.width[i] = width_plu;
 	}
 	return 0;
 }
@@ -537,7 +537,7 @@ hpgl_UL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_int(pargs, &index) )
 	  { hpgl_real_t gap[20];
 	    double total = 0;
-	    int i;
+	    int i, k;
 
 	    if ( index < -8 || index > 8 || index == 0 )
 	      return e_Range;
@@ -548,15 +548,18 @@ hpgl_UL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      }
 	    if ( total == 0 )
 	      return e_Range;
-	    { 
-	      hpgl_line_type_t *fixed_plt =
+	    
+	    for ( k = 0; k < i; k++ )
+	      gap[k] /= total;
+
+	    { hpgl_line_type_t *fixed_plt =
 		&pgls->g.fixed_line_type[(index < 0 ? -index : index) - 1];
 	      hpgl_line_type_t *adaptive_plt =
 		&pgls->g.adaptive_line_type[(index < 0 ? -index : index) - 1];
 	      fixed_plt->count = adaptive_plt->count = i;
 	      memcpy(fixed_plt->gap, gap, i * sizeof(hpgl_real_t));
 	      memcpy(adaptive_plt->gap, gap, i * sizeof(hpgl_real_t));
-	    }
+	    } 
 	  }
 	else
 	  {
@@ -573,8 +576,9 @@ int
 hpgl_WU(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 
-	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
-	  return e_Range;
+	if ( hpgl_arg_c_int(pargs, &mode) )
+	  if ( mode != 0 && mode != 1 )
+	    return e_Range;
 	pgls->g.pen.width_relative = mode;
 	hpgl_args_setup(pargs);
 	hpgl_PW(pargs, pgls);

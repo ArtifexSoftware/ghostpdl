@@ -147,7 +147,8 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 	bool source_transparent = gs_currentsourcetransparent(pgs);
 	bool opaque = !source_transparent &&
 	  rop3_know_S_0(effective_rop) != rop3_D;
-	bool wrap = pcls->end_of_line_wrap && pcls->check_right_margin;
+	bool wrap = pcls->end_of_line_wrap;
+	bool clip = pcls->check_right_margin;
 
 	/* Compute any width adjustment. */
 	switch ( adjust )
@@ -188,12 +189,13 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 	 * bounding box that is outside their actual shape), we have to
 	 * do quite a bit of extra work.  This "feature" is a pain!
 	 */
-	if ( opaque || wrap )
-	  { /*
-	     * If end-of-line wrap is enabled, or characters are opaque,
-	     * we must render one character at a time.  (It's a good thing
-	     * this is used primarily for diagnostics and contrived tests.)
-	     */
+	 if ( clip )
+	   {
+	   /*
+	    * If end-of-line wrap is enabled, or characters are opaque,
+	    * we must render one character at a time.  (It's a good thing
+	    * this is used primarily for diagnostics and contrived tests.)
+	    */
 	    uint i, ci;
 	    gs_char chr;
 	    gs_const_string gstr;
@@ -225,12 +227,20 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 		 * We should really handle this by scaling the font....
 		 * We need a little fuzz to handle rounding inaccuracies.
 		 */
-		if ( wrap && pt.x + width.x >= limit )
-		  { pcl_do_CR(pcls);
-		    pcl_do_LF(pcls);
-		    pcls->check_right_margin = true; /* CR/LF reset this */
-		    gs_moveto(pgs, pcls->cap.x / pscale->x,
-			      pcls->cap.y / pscale->y);
+		if ( pt.x + width.x > limit )
+		  { 
+		    if ( wrap )
+		      {
+			pcl_do_CR(pcls);
+			pcl_do_LF(pcls);
+			pcls->check_right_margin = true; /* CR/LF reset this */
+			gs_moveto(pgs, pcls->cap.x / pscale->x,
+				  pcls->cap.y / pscale->y);
+		      }
+		    else
+		      {
+			return 0;
+		      }
 		  }
 		if ( opaque )
 		  { /*
@@ -394,9 +404,6 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	pfp = &pcls->font_selection[pcls->font_selected];
 	/**** WE COULD CACHE MORE AND DO LESS SETUP HERE ****/
 	pcl_set_graphics_state(pcls, true);
-	/* Clip to the margins. */
-	{ gs_rect text_clip;
-
 	  /*
 	   * TRM 5-13 describes text clipping very badly.  Text is only
 	   * clipped if it crosses the right margin in the course of
@@ -404,24 +411,12 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	   * clipped to the right margin if it starts to the right of
 	   * the right margin.
 	   */
-	  if ( !pcls->within_text )
-	    {
-	      /* Decide now whether to clip and wrap. */
-	      pcls->check_right_margin = pcls->cap.x < pcl_right_margin(pcls);
-	      pcls->within_text = true;
-	    }
-	  gs_initclip(pgs);
-	  gs_clippath(pgs);
-	  gs_pathbbox(pgs, &text_clip);
-	  gs_newpath(pgs);
-	  text_clip.p.y = pcl_top_margin(pcls);
-	  if ( pcls->check_right_margin )
-	    text_clip.q.x = pcl_right_margin(pcls);
-	  text_clip.q.y = pcl_top_margin(pcls) + pcl_text_length(pcls);
-	  code = gs_rectclip(pgs, &text_clip, 1);
-	  if ( code < 0 )
-	    return code;
-	}
+	if ( !pcls->within_text )
+	  {
+	    /* Decide now whether to clip and wrap. */
+	    pcls->check_right_margin = pcls->cap.x < pcl_right_margin(pcls);
+	    pcls->within_text = true;
+	  }
 	code = pcl_set_drawing_color(pcls, pcls->pattern_type,
 				     &pcls->current_pattern_id);
 	if ( code < 0 )
@@ -507,20 +502,19 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	      adjust = char_adjust_all;
 	  }
 	else
-	  { /*
-	     * If the string has any spaces and the font doesn't define the
-	     * space character, we have to do something special.
-	     * ******HACK******: The built-in fonts must not define the
-	     * space character (required by Genoa FTS 0010-054).
+	  {  /*
+	     * If the string has any spaces and the font doesn't
+	     * define the space character or hmi has been explicitly
+	     * set we have to do something special.  (required by
+	     * Genoa FTS panel 40).  
 	     */
 	    uint i;
 	    gs_char chr;
 
 	    for ( i = 0; !pcl_next_char(&gstr, &i, tpm, &chr); )
 	      if ( chr == ' ' )
-		{ if ( (pcls->font->storage & pcds_internal) ||
-		       !pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ')
-		     )
+		{ if ( (!pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ')) ||
+		       (pcls->hmi_set == hmi_set_explicitly) )
 		    adjust = char_adjust_space;
 	          break;
 		}

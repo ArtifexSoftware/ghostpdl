@@ -51,7 +51,7 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 				       radius, start_angle, sweep, 
 				       (sweep < 0.0 ) ?
 				       -chord_angle : chord_angle, false,
-				       pgls->g.move_or_draw != 0));
+				       pgls->g.move_or_draw, true));
 	
 	pgls->g.carriage_return_pos = pgls->g.pos;
 	return 0;
@@ -76,7 +76,7 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 
 	hpgl_arg_c_real(pargs, &chord_angle);
 
-	if ( relative ) 
+	if ( relative )
 	  {
 	    x_inter += x_start;
 	    y_inter += y_start;
@@ -84,11 +84,11 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	    y_end += y_start;
 	  }
 	
-	hpgl_call(hpgl_add_arc_3point_to_path(pgls, 
-					      x_start, y_start, 
+	hpgl_call(hpgl_add_arc_3point_to_path(pgls,
+					      x_start, y_start,
 					      x_inter, y_inter,
 					      x_end, y_end, chord_angle,
-					      pgls->g.move_or_draw != 0));
+					      pgls->g.move_or_draw));
 	pgls->g.carriage_return_pos = pgls->g.pos;
 	return 0;
 }
@@ -134,13 +134,13 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 						y_start + coords[3],
 						x_start + coords[4], 
 						y_start + coords[5],
-						pgls->g.move_or_draw != 0));
+						pgls->g.move_or_draw));
 	    else
 	      hpgl_call(hpgl_add_bezier_to_path(pgls, x_start, y_start, 
 						coords[0], coords[1], 
 						coords[2], coords[3], 
 						coords[4], coords[5],
-						pgls->g.move_or_draw != 0));
+						pgls->g.move_or_draw));
 	    
 	    
 	    /* Prepare for the next set of points. */
@@ -244,15 +244,16 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_real_t radius, chord = 5;
 	hpgl_pen_state_t saved_pen_state;
+	bool reset_ctm = true;
+
 	if ( !hpgl_arg_units(pargs, &radius) )
 	  return e_Range;
 	hpgl_arg_c_real(pargs, &chord);
 	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
-
 	/* draw the arc/circle */
 	hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-				       radius, 0.0, 360.0, chord, true, true));
-
+				       radius, 0.0, 360.0, chord, true, 
+				       hpgl_plot_draw_absolute, reset_ctm));
 	/* It appears from experiment that a CI in polygon mode leaves
 	   the pen up .. or something like that. */
 	if ( pgls->g.polygon_mode )
@@ -268,6 +269,8 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_call(hpgl_draw_arc(pgls));
 	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
 	  }
+	/* restore the ctm - i.e. the ctm with picture frame scaling */
+	hpgl_set_ctm(pgls);
 	return 0;
 
 }

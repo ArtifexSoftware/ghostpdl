@@ -24,6 +24,31 @@
 #include "pgmisc.h"
 #include "pcdraw.h"             /* included for setting pcl's ctm */
 
+
+ int
+hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
+{
+	if ( (pgls->g.picture_frame_height == 0) ||
+	     (pgls->g.picture_frame_width == 0) ||
+	     (pgls->g.plot_width == 0) ||
+	     (pgls->g.plot_height == 0) )
+	  return 1;
+	{
+	  hpgl_real_t vert_scale = (pgls->g.plot_size_vertical_specified) ?
+	    ((hpgl_real_t)pgls->g.picture_frame_height /
+	     (hpgl_real_t)pgls->g.plot_height) :
+	    1.0;
+	  hpgl_real_t horz_scale = (pgls->g.plot_size_horizontal_specified) ?
+	    ((hpgl_real_t)pgls->g.picture_frame_width /
+	     (hpgl_real_t)pgls->g.plot_width) :
+	    1.0;
+
+	  hpgl_call(gs_scale(pgls->pgs, horz_scale, vert_scale));
+	}
+			     
+	return 0;
+}
+
 /* HAS: update ghostscript's gs and the current ctm to reflect hpgl's.
    embodied in hpgl_set_graphics_dash_state(),
    hpgl_set_graphics_line_attributes(), and hpgl_set_drawing_state() below.
@@ -35,7 +60,7 @@
  int
 hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 {
-	pcl_set_ctm(pgls, false);
+	hpgl_call(pcl_set_ctm(pgls, false));
 	hpgl_call(gs_translate(pgls->pgs, 
 			       pgls->g.picture_frame.anchor_point.x,
 			       pgls->g.picture_frame.anchor_point.y));
@@ -64,20 +89,7 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 	      break;
 	    }
 	}
-	/* set up scaling wrt plot size and picture frame size.  HAS
-	   we still have the line width issue when scaling is
-	   assymetric !!  */
-	/* if any of these are zero something is wrong */
-        if ( (pgls->g.picture_frame_height == 0) ||
-	     (pgls->g.picture_frame_width == 0) ||
-	     (pgls->g.plot_width == 0) ||
-	     (pgls->g.plot_height == 0) )
-	  return 1;
-	hpgl_call(gs_scale(pgls->pgs, 
-			   ((hpgl_real_t)pgls->g.picture_frame_height /
-			    (hpgl_real_t)pgls->g.plot_height),
-			   ((hpgl_real_t)pgls->g.picture_frame_width /
-			    (hpgl_real_t)pgls->g.plot_width)));
+	hpgl_call(hpgl_set_picture_frame_scaling(pgls));
 	return 0;
 }
 
@@ -101,11 +113,11 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 	    gs_make_identity(pmat);
 	    break;
 	  case hpgl_scaling_point_factor:
-	    gs_make_translation(origin_x, origin_y, pmat);
-	    gs_matrix_scale(pmat, pgls->g.scaling_params.factor.x,
-			    pgls->g.scaling_params.factor.y, pmat);
-	    gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
-				-pgls->g.scaling_params.pmin.y, pmat);
+	    hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
+	    hpgl_call(gs_matrix_scale(pmat, pgls->g.scaling_params.factor.x,
+				      pgls->g.scaling_params.factor.y, pmat));
+	    hpgl_call(gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
+					  -pgls->g.scaling_params.pmin.y, pmat));
 	    break;
 	  default:
 	  /*case hpgl_scaling_anisotropic:*/
@@ -134,17 +146,17 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 		      scale_y = scale_x;
 		    }
 		}
-	      gs_make_translation(origin_x, origin_y, pmat);
-	      gs_matrix_scale(pmat, scale_x, scale_y, pmat);
-	      gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
-				  -pgls->g.scaling_params.pmin.y, pmat);
+	      hpgl_call(gs_make_translation(origin_x, origin_y, pmat));
+	      hpgl_call(gs_matrix_scale(pmat, scale_x, scale_y, pmat));
+	      hpgl_call(gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
+					    -pgls->g.scaling_params.pmin.y, pmat));
 	      break;
 	    }
 	  }
 	return 0;
 
 }
- private int
+ int
 hpgl_set_user_units_to_plu_ctm(hpgl_state_t *pgls)
 {
 	if ( pgls->g.scaling_type != hpgl_scaling_none )
@@ -329,77 +341,20 @@ vector:	      hpgl_call(gs_setlinejoin(pgls->pgs,
 }
 
 /* A bounding box for the current polygon -- used for HPGL/2 vector
-   fills.  We expand the bounding box by the current line width to
+   fills.  We expand the bounding box by 1/2 the current line width to
    avoid overhanging lines. */
 
  private int
-hpgl_polyfill_anchored_bbox(hpgl_state_t *pgls, gs_rect *bbox, 
-			    hpgl_real_t spacing, hpgl_real_t direction)
+hpgl_polyfill_bbox(hpgl_state_t *pgls, gs_rect *bbox)
 {
-  	/* get the bounding box we only need this for the upper right
-           corner.  The lower left is supplied by AC */
+	hpgl_real_t half_width = pgls->g.pen.width[pgls->g.pen.selected] / 2.0;
+  	/* get the bounding box for the current path / polygon */
 	hpgl_call(gs_pathbbox(pgls->pgs, bbox));
-	/* expand the box */
-
-	{
-#define sin_dir sincos.sin
-#define cos_dir sincos.cos
-	  gs_matrix mat, imat;
-	  gs_sincos_t sincos;
-	  gs_point anchor = pgls->g.anchor_corner;
-	  /* calculate integer number of fill lines between the origin
-             of the bbox and the anchor corner in X and Y directions.
-             Then use the coordinates of the n'th fill line as the
-             anchor corner.  Also make sure anchor corner is in front of bbox */
-#if 0
-	  gs_point fill_increment;
-	  int fill_line_num;
-#endif
-	  hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-	  hpgl_call(gs_matrix_invert(&mat, &imat));
-	  hpgl_call(gs_point_transform(pgls->g.anchor_corner.x, 
-				       pgls->g.anchor_corner.y,
-				       &imat,
-				       &anchor));
-	  gs_sincos_degrees(direction, &sincos);
-	  /* HAS anchor in front of polygon origin is not documented */
-	  bbox->p.x = min(anchor.x, bbox->p.x);
-	  bbox->p.y = min(anchor.y, bbox->p.y);
-
-#if 0
-	  if ( sin_dir != 0 )
-	    {
-	      fill_increment.x = fabs(spacing / sin_dir);
-	      /* move the anchor back if necessary.  note that we
-                 treat x and y exclusively */
-	      while ( bbox->p.x < anchor.x ) anchor.x -= fill_increment.x;
-	      /* integer number of fill lines */
-
-	      fill_line_num =
-		(int)fabs(bbox->p.x - anchor.x) / fill_increment.x;
-	      /* new origin at last fill line below origin */
-	      bbox->p.x = fill_line_num * fill_increment.x;
-	    }
-	  /* same for y */
-	  if ( cos_dir != 0 )
-	    {
-	      fill_increment.y = fabs(spacing / cos_dir);
-	      while ( bbox->p.y < anchor.y ) anchor.y -= fill_increment.y;
-	      fill_line_num =
-		(int)fabs(bbox->p.y - anchor.y) / fill_increment.y;
-	      bbox->p.y = fill_line_num * fill_increment.y;
-	    }
-	  bbox->p = anchor;
-
-	{
-	  hpgl_real_t half_width = pgls->g.pen.width[pgls->g.pen.selected] / 2.0;
-	  bbox->p.x -= half_width;
-	  bbox->p.y -= half_width;
-	  bbox->q.x += half_width;
-	  bbox->q.y += half_width;
-	}
-#endif
-	}
+	/* expand the box. */
+	bbox->p.x -= half_width;
+	bbox->p.y -= half_width;
+	bbox->q.x += half_width;
+	bbox->q.y += half_width;
 	return 0;
 }
 
@@ -449,10 +404,10 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		hpgl_call(gs_bbox_transform(&pgls->g.soft_clip_window.rect, 
 					    &ctm,
 					    &dev_soft_window_box));
-	        dev_clip_box.p.x = max(dev_clip_box.p.x, dev_soft_window_box.p.x);  
-		dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y); 
-	    	dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x); 
-		dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y); 
+	        dev_clip_box.p.x = max(dev_clip_box.p.x, dev_soft_window_box.p.x);
+		dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y);
+	    	dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x);
+		dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y);
 	      }
 
 	    /* convert intersection box to fixed point and clip */
@@ -476,7 +431,6 @@ hpgl_draw_vector_absolute(hpgl_state_t *pgls, hpgl_real_t x0, hpgl_real_t y0,
 					 hpgl_plot_move_absolute, set_ctm));
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
 					 hpgl_plot_draw_absolute, set_ctm));
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
 
 	return 0;      
 }
@@ -493,6 +447,7 @@ hpgl_polyfill(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 #define cos_dir sincos.cos
 	gs_rect bbox;
 	hpgl_pen_state_t saved_pen_state;
+	hpgl_real_t x_fill_increment, y_fill_increment;
 	bool cross = (pgls->g.fill.type == hpgl_fill_crosshatch);
 	const hpgl_hatch_params_t *params =
 	  (cross ? &pgls->g.fill.param.crosshatch : &pgls->g.fill.param.hatch);
@@ -504,7 +459,7 @@ hpgl_polyfill(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	  { /* Per TRM 22-12, use 1% of the P1/P2 distance. */
 	    gs_matrix mat;
 
-	    hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
+	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
 	    spacing = 
 	      0.01 * hpgl_compute_distance(pgls->g.P1.x, pgls->g.P1.y,
 					   pgls->g.P2.x, pgls->g.P2.y);
@@ -512,16 +467,9 @@ hpgl_polyfill(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    spacing /= min(fabs(mat.xx), fabs(mat.yy));
 	  }
 	/* get the bounding box */
-        hpgl_call(hpgl_polyfill_anchored_bbox(pgls, &bbox, spacing, direction));
+        hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
 	/* HAS calculate the offset for dashing - we do not need this
            for solid lines */
-	/* HAS calculate the diagonals magnitude.  Note we clip this
-           latter in the library.  If desired we could clip to the
-           actual bbox here to save processing time.  For now we simply
-           draw all fill lines using the diagonals magnitude */
-	diag_mag = 
-	  hpgl_compute_distance(bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
-
 	/* if the line width exceeds the spacing we use the line width
            to avoid overlapping of the fill lines.  HAS this can be
            integrated with the logic above for spacing as not to
@@ -544,33 +492,43 @@ start:	gs_sincos_degrees(direction, &sincos);
 	if ( sin_dir < 0 )
 	  sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
 	/* Draw one vector regardless of direction. */
-	startx = bbox.p.x; starty = bbox.p.y;
+	startx = pgls->g.anchor_corner.x; starty = pgls->g.anchor_corner.y;
+	x_fill_increment = (sin_dir != 0) ? fabs(spacing / sin_dir) : 0;
+	y_fill_increment = (cos_dir != 0) ? fabs(spacing / cos_dir) : 0;
+	  
+	/* account for anchor corner greater than origin */
+	if ( x_fill_increment != 0 )
+	  while ( startx > bbox.p.x ) startx -= x_fill_increment;
+	if ( y_fill_increment != 0 )
+	  while ( starty > bbox.p.y ) starty -= y_fill_increment;
+	/* calculate the diagonals magnitude.  Note we clip this
+           latter in the library.  If desired we could clip to the
+           actual bbox here to save processing time.  For now we simply
+           draw all fill lines using the diagonals magnitude */
+	diag_mag = 
+	  hpgl_compute_distance(startx, starty, bbox.q.x, bbox.q.y);
 	endx = (diag_mag * cos_dir) + startx;
 	endy = (diag_mag * sin_dir) + starty;
 	hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, 
 					    endx, endy, render_mode));
 	/* Travel along +x using current spacing. */
-	if ( sin_dir != 0 )
-	  { hpgl_real_t x_fill_increment = fabs(spacing / sin_dir);
-
+	if ( x_fill_increment != 0 )
 	    while ( endx += x_fill_increment,
 		    (startx += x_fill_increment) <= bbox.q.x
 
 		  )
 	      hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, 
 						  endx, endy, render_mode));
-	  }
 	/* Travel along +Y similarly. */
-	if ( cos_dir != 0 )
-	  { hpgl_real_t y_fill_increment = fabs(spacing / cos_dir);
-
+	if ( y_fill_increment != 0 )
+	  {
 	    /*
 	     * If the slope is negative, we have to travel along the right
 	     * edge of the box rather than the left edge.  Fortuitously,
 	     * the X loop left everything set up exactly right for this case.
 	     */
 	    if ( cos_dir >= 0 )
-	      { startx = bbox.p.x; starty = bbox.p.y;
+	      { startx = pgls->g.anchor_corner.x; starty = pgls->g.anchor_corner.y;
 	        endx = (diag_mag * cos_dir) + startx;
 		endy = (diag_mag * sin_dir) + starty;
 	      }
@@ -589,6 +547,7 @@ start:	gs_sincos_degrees(direction, &sincos);
 	    direction += 90;
 	    goto start;
 	  }
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
 	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
 	return 0;
 #undef sin_dir
@@ -613,18 +572,28 @@ hpgl_polyfill_using_current_line_type(hpgl_state_t *pgls,
 }
 
  private int
+hpgl_set_pcl_pattern_origin(hpgl_state_t *pgls, gs_point *point)
+{
+	gs_point pattern_origin;
+	hpgl_call(gs_transform(pgls->pgs, point->x, point->y, &pattern_origin));
+	hpgl_call(gs_sethalftonephase(pgls->pgs, pattern_origin.x, pattern_origin.y));
+	return 0;
+}
+ private int
 hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	pcl_id_t pcl_id;
+	gs_point pattern_origin;
 	/* default to pcl pattern dictionary.  Only user defined types
            use a private hpgl/2 dictionary. */
 	pl_dict_t *pattern_dictp = &pgls->patterns;
 	pcl_pattern_type_t pat;
-
+	/* HAS - this is tooooo complicated. */
 	if ( (render_mode == hpgl_rm_clip_and_fill_polygon) ||
+	     ((pgls->g.fill.type == hpgl_fill_hatch || pgls->g.fill.type == hpgl_fill_crosshatch) &&
 	     ((render_mode == hpgl_rm_character) &&
 	      ((pgls->g.character.fill_mode == hpgl_char_fill) ||
-	       (pgls->g.character.fill_mode == hpgl_char_fill_edge))) )
+	       (pgls->g.character.fill_mode == hpgl_char_fill_edge)))) )
 	  {
 	    hpgl_call(hpgl_polyfill_using_current_line_type(pgls, 
 							    render_mode));
@@ -639,13 +608,17 @@ hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	      case hpgl_char_edge:
 		pat = pcpt_solid_black;
 		break;
+	      case hpgl_char_fill:
+	      case hpgl_char_fill_edge:
+		goto fill;
 	      default:
 		dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
-		break;
+		return 0;
 	      }
+	    break;
 	    /* fill like a polygon */
 	  case hpgl_rm_polygon:
-	    switch ( pgls->g.fill.type )
+fill:	    switch ( pgls->g.fill.type )
 	      {
 	      case hpgl_fill_solid: 
 	      case hpgl_fill_solid2: /* fall through */
@@ -659,12 +632,16 @@ hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	      case hpgl_fill_pcl_crosshatch:
 		id_set_value(pcl_id, pgls->g.fill.param.pattern_type);
 		pat = pcpt_cross_hatch;
+		hpgl_call(hpgl_set_pcl_pattern_origin(pgls, 
+						      &pgls->g.anchor_corner));
 		break;
 	      case hpgl_fill_shaded:
 		id_set_value(pcl_id, pgls->g.fill.param.shading);
 		pat = pcpt_shading;
 		break;
 	      case hpgl_fill_pcl_user_defined:
+		hpgl_call(hpgl_set_pcl_pattern_origin(pgls, 
+						      &pgls->g.anchor_corner));
 		id_set_value(pcl_id, pgls->g.fill.param.pattern_id);
 		pat = pcpt_user_defined;
 		break;
@@ -714,6 +691,8 @@ hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		}
 		break;
 	      case hpgl_screen_pcl_user_defined:
+		hpgl_call(hpgl_set_pcl_pattern_origin(pgls, 
+						      &pgls->g.anchor_corner));
 		pat = pcpt_user_defined;
 		id_set_value(pcl_id, pgls->g.screen.param.pattern_id);
 		break;
@@ -727,13 +706,14 @@ hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    break;
 	  }
 
+	gs_setrasterop(pgls->pgs, pgls->logical_op);
 	gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
-
+	/* set up the halftone phase origin in device space */
+	hpgl_call(gs_transform(pgls->pgs, pgls->g.anchor_corner.x, 
+	  pgls->g.anchor_corner.y, &pattern_origin));
 	hpgl_call(pcl_set_drawing_color_rotation(pgls,
-						 pat,
-						 &pcl_id,
-						 pattern_dictp,
-						 (pgls->g.rotation / 90) & 3));
+	  pat, &pcl_id, pattern_dictp, -((pgls->g.rotation / 90) & 3),
+	  &pattern_origin));
 	return 0;
 }
 
@@ -807,7 +787,7 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 		hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
 
 	      /* update hpgl's state position */
-	      gs_currentpoint(pgls->pgs, &point);
+	      hpgl_call(gs_currentpoint(pgls->pgs, &point));
 	      hpgl_call(hpgl_set_current_position(pgls, &point));
 	    }
 	}
@@ -850,26 +830,27 @@ hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, const gs_point *pcl_pt)
  int
 hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y, 
 		     floatp radius, floatp start_angle, floatp sweep_angle,
-		     floatp chord_angle, bool start_moveto, bool draw)
+		     floatp chord_angle, bool start_moveto, hpgl_plot_function_t draw, 
+		     bool set_ctm)
 {
 	floatp start_angle_radians = start_angle * degrees_to_radians;
 	/*
 	 * Ensure that the sweep angle is an integral multiple of the
 	 * chord angle, by decreasing the chord angle if necessary.
 	 */
-	int num_chords = ceil(sweep_angle / chord_angle);
+	int num_chords = (int)ceil(sweep_angle / chord_angle);
 	floatp chord_angle_radians =
 	  sweep_angle / num_chords * degrees_to_radians;
 	int i;
 	floatp arccoord_x, arccoord_y; 
 
-	hpgl_compute_arc_coords(radius, center_x, center_y, 
-				start_angle_radians, 
-				&arccoord_x, &arccoord_y);
+	(void)hpgl_compute_arc_coords(radius, center_x, center_y, 
+				      start_angle_radians, 
+				      &arccoord_x, &arccoord_y);
 	hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
 					 (draw && !start_moveto ? 
 					 hpgl_plot_draw_absolute :
-					 hpgl_plot_move_absolute), true));
+					 hpgl_plot_move_absolute), set_ctm));
 
 	/* HAS - pen up/down is invariant in the loop */
 	for ( i = 0; i < num_chords; i++ ) 
@@ -880,7 +861,7 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 				    &arccoord_x, &arccoord_y);
 	    hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
 					     (draw ? hpgl_plot_draw_absolute :
-					     hpgl_plot_move_absolute), true));
+					     hpgl_plot_move_absolute), set_ctm));
 	  }
 	return 0;
 }
@@ -890,7 +871,7 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 hpgl_add_arc_3point_to_path(hpgl_state_t *pgls, floatp start_x, floatp
 			    start_y, floatp inter_x, floatp inter_y, 
 			    floatp end_x, floatp end_y, floatp chord_angle,
-			    bool draw)
+			    hpgl_plot_function_t draw)
 {
 	/* handle unusual cases as per pcltrm */
 	if ( hpgl_3_same_points(start_x, start_y, 
@@ -917,7 +898,7 @@ hpgl_add_arc_3point_to_path(hpgl_state_t *pgls, floatp start_x, floatp
 					   (hypot((inter_x - start_x),
 						  (inter_y - start_y)) / 2.0),
 					   0.0, 360.0, chord_angle, false,
-					   draw));
+					   draw, true));
 	    return 0;
 	  }
 
@@ -989,7 +970,7 @@ hpgl_add_arc_3point_to_path(hpgl_state_t *pgls, floatp start_x, floatp
 					 radius, start_angle, sweep_angle, 
 					 (sweep_angle < 0.0 ) ?
 					 -chord_angle : chord_angle, false,
-					 draw));
+					 draw, true));
 	  return 0;
 	}
 }
@@ -1001,7 +982,7 @@ hpgl_add_arc_3point_to_path(hpgl_state_t *pgls, floatp start_x, floatp
  int
 hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1, 
 			floatp x2, floatp y2, floatp x3, floatp y3, 
-			floatp x4, floatp y4, bool draw)
+			floatp x4, floatp y4, hpgl_plot_function_t draw)
 {
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
 					 hpgl_plot_move_absolute, true));

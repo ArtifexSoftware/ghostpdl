@@ -15,6 +15,12 @@ int hpgl_set_plu_ctm(P1(hpgl_state_t *pgls));
 int hpgl_compute_user_units_to_plu_ctm(P2(const hpgl_state_t *pgls,
 					  gs_matrix *pmat));
 
+/* The following 2 functions can be used together to calculate a ctm
+   without picture frame scaling.  */
+int hpgl_set_pcl_to_plu_ctm(P1(const hpgl_state_t *pgls));
+
+int hpgl_set_user_units_to_plu_ctm(P1(const hpgl_state_t *pgls));
+
 /* set (user units) ctm */
 int hpgl_set_ctm(P1(hpgl_state_t *pgls));
 
@@ -27,11 +33,11 @@ int hpgl_add_point_to_path(P5(hpgl_state_t *pgls, floatp x, floatp y,
 
 /* puts an arc into the current path.  start moveto indicates that we
    use moveto to go from the arc center to arc circumference. */
-int hpgl_add_arc_to_path(P9(hpgl_state_t *pgls, floatp center_x, 
-			    floatp center_y, floatp radius, 
-			    floatp start_angle, floatp sweep_angle, 
-			    floatp chord_angle, bool start_moveto,
-			    bool draw));
+int hpgl_add_arc_to_path(P10(hpgl_state_t *pgls, floatp center_x, 
+			     floatp center_y, floatp radius, 
+			     floatp start_angle, floatp sweep_angle, 
+			     floatp chord_angle, bool start_moveto,
+			     hpgl_plot_function_t draw, bool set_ctm));
 
 /* puts a 3 point arc into the current path.  Note that the
    decomposition is a bit different for 3 point arcs since the polygon
@@ -40,13 +46,13 @@ int hpgl_add_arc_to_path(P9(hpgl_state_t *pgls, floatp center_x,
 int hpgl_add_arc_3point_to_path(P9(hpgl_state_t *pgls, floatp start_x, floatp
 				   start_y, floatp inter_x, floatp inter_y, 
 				   floatp end_x, floatp end_y, floatp chord_angle,
-				   bool draw));
+				   hpgl_plot_function_t draw));
 
 /* put bezier into the current path */
 int hpgl_add_bezier_to_path(P10(hpgl_state_t *pgls, floatp x1, 
 				floatp y1, floatp x2, floatp y2, 
 				floatp x3, floatp y3, floatp x4, 
-				floatp y4, bool draw));
+				floatp y4, hpgl_plot_function_t draw));
 
 /* clears the current path with stroke or fill */
 int hpgl_draw_current_path(P2(hpgl_state_t *pgls, 

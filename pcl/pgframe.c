@@ -121,9 +121,16 @@ pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls)
   	float size = float_arg(pargs) * 7200.0;
 	
 	if ( (coord)size == 0 )
-	  pcls->g.plot_width = pcls->g.picture_frame_width;
+	  {
+	    pcls->g.plot_width = pcls->g.picture_frame_width;
+	    pcls->g.plot_size_horizontal_specified = false;
+	  }
 	else
-	  pcls->g.plot_width = (coord)size;
+	  {
+	    pcls->g.plot_width = (coord)size;
+	    pcls->g.plot_size_horizontal_specified = true;
+	  }
+
 	return 0;
 }
 
@@ -133,9 +140,15 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 	/* convert to centipoints as to match the picture frame */
   	float size = float_arg(pargs) * 7200.0;
 	if ( (coord)size == 0 )
-	  pcls->g.plot_height = pcls->g.picture_frame_height;
+	  {
+	    pcls->g.plot_height = pcls->g.picture_frame_height;
+	    pcls->g.plot_size_vertical_specified = false;
+	  }
 	else
-	  pcls->g.plot_height = (coord)size;
+	  {
+	    pcls->g.plot_height = (coord)size;
+	    pcls->g.plot_size_vertical_specified = true;
+	  }
 	return 0;
 }
 

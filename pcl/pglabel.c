@@ -761,12 +761,12 @@ hpgl_can_concat_labels(const hpgl_state_t *pgls)
  
 /* return relative coordinates to compensate for origin placement -- LO */
  private int
-hpgl_get_character_origin_offset(int origin, hpgl_real_t width,
-  hpgl_real_t height, gs_point *offset)
+hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin, 
+				 hpgl_real_t width, hpgl_real_t height, 
+				 gs_point *offset)
 {
 	double pos_x = 0.0, pos_y = 0.0;
 	double off_x, off_y;
-
 	/* stickfonts are offset by 16 grid units or .33 times the
            point size.  HAS need to support other font types. */
 	if ( origin > 10 )
@@ -827,7 +827,20 @@ hpgl_get_character_origin_offset(int origin, hpgl_real_t width,
 	    pos_y += height;
 	    break;
 	  case 21:
-	    dprintf("no label 21 support yet, LO offsets are 0\n");
+	    {
+	      gs_matrix save_ctm;
+	      gs_point pcl_pos_dev, label_origin;
+
+	      gs_currentmatrix(pgls->pgs, &save_ctm);
+	      pcl_set_ctm(pgls, false);
+	      hpgl_call(gs_transform(pgls->pgs, (floatp)pgls->cap.x,
+				     (floatp)pgls->cap.y, &pcl_pos_dev));
+	      gs_setmatrix(pgls->pgs, &save_ctm);
+	      hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
+				      (floatp)pcl_pos_dev.y, &label_origin));
+	      pos_x = -(pgls->g.pos.x - label_origin.x);
+	      pos_y = -(pgls->g.pos.y - label_origin.y);
+	    }
 	    break;
 	  default:
 	    dprintf("unknown label parameter");
@@ -931,7 +944,7 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical, ve
 	    }
 	  hpgl_select_font(pgls, save_index);
 	}
-	hpgl_call(hpgl_get_character_origin_offset(pgls->g.label.origin,
+	hpgl_call(hpgl_get_character_origin_offset(pgls, pgls->g.label.origin,
 						   label_length, label_height,
 						   &offset));
 	switch ( pgls->g.character.text_path )
@@ -945,8 +958,17 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical, ve
 	  default:
 	    DO_NOTHING;
 	  }
-	hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
+	
+	/* these units should be strictly plu */
+	{  gs_matrix mat;
+
+	   hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
+	
+	   offset.x /= mat.xx;
+	   offset.y /= mat.yy;
+	   hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
 					 hpgl_plot_move_relative, true));
+	}
 
 	{
 	  int i;

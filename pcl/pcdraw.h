@@ -85,14 +85,16 @@ typedef struct pcl_pattern_s {
 /* Set the color and pattern for drawing. */
 /* We pass the pattern rotation explicitly, since it is different */
 /* for PCL and HP-GL.  The rotation is expressed as the multiple of */
-/* 90 degrees (i.e., 0..3) to be added to the page orientation. */
-int pcl_set_drawing_color_rotation(P5(pcl_state_t *pcls,
+/* 90 degrees (i.e., 0..3) to be added to the page orientation.  Also */
+/* the phase or "origin" of the pattern is specified in device space */
+int pcl_set_drawing_color_rotation(P6(pcl_state_t *pcls,
 				      pcl_pattern_type_t type,
 				      const pcl_id_t *pid, pl_dict_t *patterns, 
-				      int rotation));
-#define pcl_set_drawing_color(pcls, type, pid)\
-  pcl_set_drawing_color_rotation(pcls, type, pid, &(pcls)->patterns,\
-				 ((pcls)->rotate_patterns ?\
-				  (pcls)->print_direction : 0))
+				      int rotation, gs_point *origin));
+
+/* same as above function but is only called only by pcl.  It derives
+   the rotation and origin from pcl state values */
+int pcl_set_drawing_color(P3(pcl_state_t *pcls, pcl_pattern_type_t type, 
+			     const pcl_id_t *pid));
 
 #endif				/* pcdraw_INCLUDED */

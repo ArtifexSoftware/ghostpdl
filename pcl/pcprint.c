@@ -162,14 +162,6 @@ pcl_set_pattern_reference_point(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( rotate > 1 )
 	  return 0;
 	pcls->shift_patterns = true;
-	{ gs_point origin;
-	  gs_transform(pcls->pgs, (float)pcls->cap.x,
-		       (float)pcls->cap.y, &origin);
-	  pcls->pattern_reference_point.x = (int)origin.x;
-	  pcls->pattern_reference_point.y = (int)origin.y;
-	  gs_sethalftonephase(pcls->pgs, pcls->pattern_reference_point.x,
-			      pcls->pattern_reference_point.y);
-	}
 	pcls->rotate_patterns = rotate == 0;
 	return 0;
 }

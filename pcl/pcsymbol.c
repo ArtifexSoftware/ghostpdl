@@ -26,14 +26,15 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	uint header_size;
 	uint first_code, last_code;
 	gs_memory_t *mem = pcls->memory;
-	byte *header;
+	pl_symbol_map_t *header;
 	pcl_symbol_set_t *symsetp;
 	pl_glyph_vocabulary_t gv;
 
-	if ( count < 18 )
+#define psm_header_size offset_of(pl_symbol_map_t, codes)
+	if ( count < psm_header_size )
 	  return e_Range;
 	header_size = pl_get_uint16(psm->header_size);
-	if ( header_size < 18 ||
+	if ( header_size < psm_header_size ||
 	     psm->id[0] != id_key(pcls->symbol_set_id)[0] ||
 	     psm->id[1] != id_key(pcls->symbol_set_id)[1] ||
 	     psm->type > 2
@@ -45,19 +46,33 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	  case 3:
 	    break;
 	  default:
-	    return 0;
+	    return e_Range;
 	  }
 	first_code = pl_get_uint16(psm->first_code);
 	last_code = pl_get_uint16(psm->last_code);
 	gv = (psm->character_requirements[7] & 07)==1? plgv_Unicode: plgv_MSL;
-	if ( first_code > last_code ||
-	     count < 18 + (last_code - first_code + 1) * 2
-	   )
-	  return e_Range;
-	header = gs_alloc_bytes(mem, count, "pcl_font_header(header)");
-	if ( header == 0 )
-	  return_error(e_Memory);
-	memcpy(header, (void *)psm, count);
+	{ int num_codes = last_code - first_code + 1;
+	  int i;
+
+	  if ( num_codes <= 0 || count < psm_header_size + num_codes * 2 )
+	    return e_Range;
+	  header =
+	    (pl_symbol_map_t *)gs_alloc_bytes(mem,
+					      psm_header_size +
+					        num_codes * sizeof(ushort),
+					      "pcl_font_header(header)");
+	  if ( header == 0 )
+	    return_error(e_Memory);
+	  memcpy((void *)header, (void *)psm, psm_header_size);
+	  /*
+	   * Byte swap the codes now, so that we don't have to byte swap
+	   * them every time we access them.
+	   */
+	  for ( i = num_codes; --i >= 0; )
+	    header->codes[i] =
+	      pl_get_uint16((byte *)psm + psm_header_size + i * 2);
+	}
+#undef psm_header_size
 
 	/* Symbol set may already exist; if so, we may be replacing one of
 	 * its existing maps or adding one for a new glyph vocabulary. */
@@ -79,7 +94,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	    pl_dict_put(&pcls->soft_symbol_sets, id_key(pcls->symbol_set_id),
 		2, symsetp);
 	  }
-	symsetp->maps[gv] = (pl_symbol_map_t *)header;
+	symsetp->maps[gv] = header;
 
 	return 0;
 }
