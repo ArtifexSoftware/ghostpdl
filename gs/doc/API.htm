@@ -422,12 +422,15 @@ http://www.cs.wisc.edu/~ghost/doc/gsapi.htm</a>.
 <pre>
 /* Example of using GS DLL as a ps2pdf converter.  */
 
+#if defined(_WIN32) && !defined(_Windows)
+# define _Windows
+#endif
 #ifdef _Windows
 /* Compile with:
  * cl -D_Windows -Isrc -Febin\ps2pdf.exe ps2pdf.c bin\gsdll32.lib
  */
-#include &lt;windows.h&gt;
-#define GSDLLEXPORT __declspec(dllimport)
+# include &lt;windows.h&gt;
+# define GSDLLEXPORT __declspec(dllimport)
 #endif
 
 #include "errors.h"
@@ -438,7 +441,6 @@ gs_main_instance *minst;
 int main(int argc, char *argv[])
 {
     int code;
-    int exit_code;
     const char * gsargv[10];
     int gsargc;
     gsargv[0] = "ps2pdf";	/* actual value doesn't matter */
@@ -471,6 +473,16 @@ int main(int argc, char *argv[])
 <pre>
 /* Similar to command line gs */
 
+#if defined(_WIN32) && !defined(_Windows)
+# define _Windows
+#endif
+#ifdef _Windows
+/* Compile with:
+ * cl -D_Windows -Isrc -Febin\gstest.exe gstest.c bin\gsdll32.lib
+ */
+# include &lt;windows.h&gt;
+# define GSDLLEXPORT __declspec(dllimport)
+#endif
 #include &lt;stdio.h&gt;
 #include "errors.h"
 #include "iapi.h"
@@ -574,6 +586,8 @@ int main(int argc, char *argv[])
 The Ghostscript library should have been compiled with a 
 thread safe run time library.
 Synchronisation of threads is entirely up to the caller.
+The exported <a href="#Exported_functions "><b><tt>gsapi_*()</tt></b></a>
+functions must be called from one thread only.
 
 <h2><a name="stdio"></a>Standard input and output</h2>
 <p>
