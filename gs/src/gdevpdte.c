@@ -102,9 +102,18 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 		num_codes = pfcid->cidata.common.CIDCount;
 		key_size = 2;
 	    } else if (font->FontType == ft_CID_TrueType) {
+#if 0
 		gs_font_cid2 *pfcid = (gs_font_cid2 *)font;
 
 		num_codes = pfcid->cidata.common.CIDCount;
+#else
+		/* Since PScript5.dll creates GlyphNames2Unicode with character codes
+		   instead CIDs, and with the WinCharSetFFFF-H2 CMap
+		   character codes appears from the range 0-0xFFFF (Bug 687954),
+		   we must use the maximal character code value for the ToUnicode
+		   code count. */
+		num_codes = 65536;
+#endif
 		key_size = 2;
 	    }
 	    code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, num_codes, key_size, 

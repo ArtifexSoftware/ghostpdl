@@ -385,15 +385,21 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &w0, &v);
 	    if (code < 0)
 		return code;
-	    unicode_char = subfont->procs.decode_glyph(subfont, glyph);
-    	    if (unicode_char != GS_NO_CHAR) {
+	    {
 		pdf_font_resource_t *pdfont;
 
 		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, 
 				&font->data.CMap->CMapName, &pdfont);
 		if (code < 0)
 		    return code;
-		code = pdf_add_ToUnicode(pdev, subfont, pdfont, glyph, cid);
+		if (pdf_is_CID_font(subfont)) {
+		    /* Since PScript5.dll creates GlyphNames2Unicode with character codes
+		    instead CIDs, and with the WinCharSetFFFF-H2 CMap
+		    character codes appears different than CIDs (Bug 687954),
+		    pass the character code intead the CID. */
+		    code = pdf_add_ToUnicode(pdev, subfont, pdfont, chr + GS_MIN_CID_GLYPH, chr);
+		} else
+		    code = pdf_add_ToUnicode(pdev, subfont, pdfont, glyph, cid);
 		if (code < 0)
 		    return code;
 	    }
