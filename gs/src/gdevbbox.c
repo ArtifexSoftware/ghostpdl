@@ -259,8 +259,8 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 {
     gx_device_init((gx_device *) dev, (const gx_device *)&gs_bbox_device,
 		   (target ? target->memory : NULL), true);
-    gx_device_forward_fill_in_procs((gx_device_forward *) dev);
     if (target) {
+        gx_device_forward_fill_in_procs((gx_device_forward *) dev);
 	set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
 	set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
 	set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
@@ -271,6 +271,9 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 	set_dev_proc(dev, encode_color, gx_forward_encode_color);
 	set_dev_proc(dev, decode_color, gx_forward_decode_color);
 	gx_device_set_target((gx_device_forward *)dev, target);
+    } else {
+	gx_device_fill_in_procs(dev);
+        gx_device_forward_fill_in_procs((gx_device_forward *) dev);
     }
     dev->box_procs = box_procs_default;
     dev->box_proc_data = dev;
