@@ -29,6 +29,7 @@
 
 #if defined(__CYGWIN__) && !defined(HAVE_STDINT_H)
 # include <sys/types.h>
+# if defined(OLD_CYGWIN_SYS_TYPES)
   /*
    * Old versions of Cygwin have no stdint.h but define "MS types". Some of
    * them conflict with a standard type emulation provided by config_types.h
@@ -37,6 +38,7 @@
    typedef u_int8_t uint8_t;
    typedef u_int16_t uint16_t;
    typedef u_int32_t uint32_t;
+#endif
 #elif defined(HAVE_CONFIG_H)
 # include "config_types.h"
 #elif defined(_WIN32)
