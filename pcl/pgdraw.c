@@ -63,14 +63,14 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 {
 	hpgl_call(pcl_set_ctm(pgls, false));
 	if ( pgls->personality == rtl ) {
-	    /* for plot length > width, y increases across the short
+	    /* for plot length >= width, y increases across the short
                edge and x increases down the plot.  Rotate the pcl
                coordinate system -90, scale and flip the x axis.  If
                the plot width > length the origin is in the upper
                right and x increases going to the left and y increases
                going down.  Translate the pcl coordinate system by the
                picture frame width, scale and flip x. */
-	    if ( pgls->g.picture_frame_height > pgls->g.picture_frame_width )
+	    if ( pgls->g.picture_frame_height >= pgls->g.picture_frame_width )
 		hpgl_call(gs_rotate(pgls->pgs, -90));
 	    else
 		hpgl_call(gs_translate(pgls->pgs, pgls->g.picture_frame_width, 0));
