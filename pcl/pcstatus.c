@@ -33,6 +33,7 @@
 #include "pcpatrn.h"
 #include "pcuptrn.h"
 #include "pcpage.h"
+#include "pcursor.h"
 #include "stream.h"
 
 #define STATUS_BUFFER_SIZE 10000
@@ -670,7 +671,11 @@ pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcls)
 	    }
 	  case 1:
 	    { /* Flush all pages, including an incomplete one. */
-	      return pcl_end_page_if_marked(pcls);
+	      int code = pcl_end_page_if_marked(pcls);
+
+              if (code >= 0)
+                  pcl_home_cursor(pcls);
+	      return code;
 	    }
 	  default:
 	    return e_Range;
