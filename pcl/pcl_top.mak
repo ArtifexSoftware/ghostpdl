@@ -15,7 +15,8 @@ FEATURE_DEVS    = dps2lib.dev   \
                   ttflib.dev    \
                   colimlib.dev  \
                   cielib.dev    \
-                  htxlib.dev
+                  htxlib.dev    \
+                  devcmap.dev
 
 default: $(TARGET_XE)$(XE)
 	echo Done.
