@@ -31,7 +31,7 @@
 #include "memory_.h"
 #include "math_.h"
 #include "vdtrace.h"
-#include <assert.h>
+
 
 #define VD_TRAP_N_COLOR RGB(128, 128, 0)
 #define VD_TRAP_U_COLOR RGB(0, 0, 255)
@@ -130,7 +130,7 @@ private inline void
 trap_unreserve(gx_device_spot_analyzer *padev, gx_san_trap *t)
 {
     /* Assuming the last reserved one. */
-    assert(t->link == padev->trap_free);
+    GS_DBG_ASSERT(t->link == padev->trap_free);
     padev->trap_free = t;
 }
 
@@ -138,7 +138,7 @@ private inline void
 cont_unreserve(gx_device_spot_analyzer *padev, gx_san_trap_contact *t)
 {
     /* Assuming the last reserved one. */
-    assert(t->link == padev->cont_free);
+    GS_DBG_ASSERT(t->link == padev->cont_free);
     padev->cont_free = t;
 }
 
@@ -318,7 +318,7 @@ check_band_list(const gx_san_trap *list)
 	const gx_san_trap *t = list;
 
 	while (t->next != list) {
-	    assert(t->xrtop <= t->next->xltop);
+	    GS_DBG_ASSERT(t->xrtop <= t->next->xltop);
 	    t = t->next;
 	}
     }

@@ -27,4 +27,20 @@ int gs_log_error(int, const char *, int);
 #define gs_note_error(err) gs_log_error(err, __FILE__, __LINE__)
 #define return_error(err) return gs_note_error(err)
 
+
+#ifndef DEBUG
+# define GS_ASSERT(exp)  if (!exp) { \
+	dprintf3("ASSERT FAILURE: file %s line %d :%s\n", __FILE__, __LINE__, #exp); \
+	return -1; } else ((void) 0)
+# define GS_DBG_ASSERT(exp) ((void) 0)
+# define assert #error
+#else
+  void gs_assert(long line, const char *file, const char *exp);
+# define GS_DBG_ASSERT(exp) if (exp) {} else	\
+	gs_assert(__LINE__, __FILE__, #exp)
+# define GS_ASSERT(exp) if (exp) {} else		\
+	gs_assert(__LINE__, __FILE__, #exp)
+# define assert #error
+#endif
+
 #endif /* gserror_INCLUDED */

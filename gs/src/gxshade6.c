@@ -36,7 +36,6 @@
 #include "stdint_.h"
 #include "math_.h"
 #include "vdtrace.h"
-#include <assert.h>
 
 #define VD_TRACE_TENSOR_PATCH 1
 
@@ -905,7 +904,7 @@ release_triangle_wedge_vertex_list_elem(patch_fill_state_t *pfs,
 {
     wedge_vertex_list_elem_t *e = beg->next;
 
-    assert(beg->next->next == end);
+    GS_DEBUG_ASSERT(beg->next->next == end);
     beg->next = end;
     end->prev = beg;
     wedge_vertex_list_elem_release(pfs, e);
@@ -934,13 +933,13 @@ release_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *ll, int 
 	wedge_vertex_list_t *l = ll + i;
 
 	if (l->beg != NULL) {
-	    assert(l->end != NULL);
+	    GS_DBG_ASSERT(l->end != NULL);
 	    release_wedge_vertex_list_interval(pfs, l->beg, l->end);
 	    wedge_vertex_list_elem_release(pfs, l->beg);
 	    wedge_vertex_list_elem_release(pfs, l->end);
 	    l->beg = l->end = NULL;
 	} else
-	    assert(l->end == NULL);
+	    GS_DBG_ASSERT(l->end == NULL);
     }
 }
 
@@ -950,7 +949,7 @@ wedge_vertex_list_find(wedge_vertex_list_elem_t *beg, const wedge_vertex_list_el
 {
     wedge_vertex_list_elem_t *e = beg;
     
-    assert(beg != NULL && end != NULL);
+    GS_DBG_ASSERT(beg != NULL && end != NULL);
     for (; e != end; e = e->next)
 	if (e->level == level)
 	    return e;
@@ -1167,8 +1166,8 @@ intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, in
 	    pry = q[i0].y + (fixed)iy;
 	    pey = (iy * det < num ? 1 : 0);
 #	    if USE_DOUBLE && USE_INT64_T
-		assert(*ry == pry);
-		assert(*ey == pey);
+		GS_DBG_ASSERT(*ry == pry);
+		GS_DBG_ASSERT(*ey == pey);
 #	    endif
 	    *ry = pry;
 	    *ey = pey;
@@ -1707,11 +1706,11 @@ private inline void
 create_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
 	const gs_fixed_point *p0, const gs_fixed_point *p1)
 {
-    assert(l->end == NULL);
+    GS_DBG_ASSERT(l->end == NULL);
     l->beg = wedge_vertex_list_elem_reserve(pfs);
     l->end = wedge_vertex_list_elem_reserve(pfs);
-    assert(l->beg != NULL);
-    assert(l->end != NULL);
+    GS_DBG_ASSERT(l->beg != NULL);
+    GS_DBG_ASSERT(l->end != NULL);
     l->beg->prev = l->end->next = NULL;
     l->beg->next = l->end;
     l->end->prev = l->beg;
@@ -1727,9 +1726,9 @@ insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, c
 
     /* We have got enough free elements due to the preliminary decomposition 
        of curves to LAZY_WEDGES_MAX_LEVEL, see curve_samples. */
-    assert(e != NULL); 
-    assert(l->beg->next == l->end);
-    assert(l->end->prev == l->beg);
+    GS_DBG_ASSERT(e != NULL); 
+    GS_DBG_ASSERT(l->beg->next == l->end);
+    GS_DBG_ASSERT(l->end->prev == l->beg);
     e->next = l->end;
     e->prev = l->beg;
     e->p = *p;
@@ -1739,10 +1738,10 @@ insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, c
     {	int sx = l->beg->p.x < l->end->p.x ? 1 : -1;
 	int sy = l->beg->p.y < l->end->p.y ? 1 : -1;
 
-	assert((p->x - l->beg->p.x) * sx >= 0);
-	assert((p->y - l->beg->p.y) * sy >= 0);
-	assert((l->end->p.x - p->x) * sx >= 0);
-	assert((l->end->p.y - p->y) * sy >= 0);
+	GS_DBG_ASSERT((p->x - l->beg->p.x) * sx >= 0);
+	GS_DBG_ASSERT((p->y - l->beg->p.y) * sy >= 0);
+	GS_DBG_ASSERT((l->end->p.x - p->x) * sx >= 0);
+	GS_DBG_ASSERT((l->end->p.y - p->y) * sy >= 0);
     }
     return e;
 }
@@ -1756,10 +1755,10 @@ open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     if (!l->last_side) {
 	if (l->beg == NULL)
 	    create_wedge_vertex_list(pfs, l, p0, p1);
-	assert(l->beg->p.x == p0->x);
-	assert(l->beg->p.y == p0->y);
-	assert(l->end->p.x == p1->x);
-	assert(l->end->p.y == p1->y);
+	GS_DBG_ASSERT(l->beg->p.x == p0->x);
+	GS_DBG_ASSERT(l->beg->p.y == p0->y);
+	GS_DBG_ASSERT(l->end->p.x == p1->x);
+	GS_DBG_ASSERT(l->end->p.y == p1->y);
 	e = insert_wedge_vertex_list_elem(pfs, l, pm);
 	e->divide_count++;
 	return e;
@@ -1770,10 +1769,10 @@ open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	    e->divide_count++;
 	    return e;
 	}
-	assert(l->beg->p.x == p1->x);
-	assert(l->beg->p.y == p1->y);
-	assert(l->end->p.x == p0->x);
-	assert(l->end->p.y == p0->y);
+	GS_DBG_ASSERT(l->beg->p.x == p1->x);
+	GS_DBG_ASSERT(l->beg->p.y == p1->y);
+	GS_DBG_ASSERT(l->end->p.x == p0->x);
+	GS_DBG_ASSERT(l->end->p.y == p0->y);
 	if (l->beg->next == l->end) {
 	    e = insert_wedge_vertex_list_elem(pfs, l, pm);
 	    e->divide_count++;
@@ -1781,8 +1780,8 @@ open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	} else {
 	    e = wedge_vertex_list_find(l->beg, l->end, 
 			max(l->beg->level, l->end->level) + 1);
-	    assert(e != NULL);
-	    assert(e->p.x == pm->x && e->p.y == pm->y);
+	    GS_DBG_ASSERT(e != NULL);
+	    GS_DBG_ASSERT(e->p.x == pm->x && e->p.y == pm->y);
     	    e->divide_count++;
 	    return e;
 	}
@@ -2008,7 +2007,7 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
     if (beg->next == end)
 	return 0;
     else if (beg->next->next == end) {
-	assert(beg->next->divide_count == 1 || beg->next->divide_count == 2);
+	GS_DBG_ASSERT(beg->next->divide_count == 1 || beg->next->divide_count == 2);
 	if (beg->next->divide_count != 1)
 	    return 0;
 	return fill_triangle_wedge_from_list(pfs, beg, end, beg->next, c0, c1);
@@ -2021,8 +2020,8 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
 	p.x = (beg->p.x + end->p.x) / 2;
 	p.y = (beg->p.y + end->p.y) / 2;
 	e = wedge_vertex_list_find(beg, end, level + 1);
-	assert(e != NULL);
-	assert(e->p.x == p.x && e->p.y == p.y);
+	GS_DBG_ASSERT(e != NULL);
+	GS_DBG_ASSERT(e->p.x == p.x && e->p.y == p.y);
 	patch_interpolate_color(&c, c0, c1, pfs, 0.5);
 	code = fill_wedge_from_list_rec(pfs, beg, e, level + 1, c0, &c);
 	if (code < 0)
@@ -2030,7 +2029,7 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
 	code = fill_wedge_from_list_rec(pfs, e, end, level + 1, &c, c1);
 	if (code < 0)
 	    return code;
-	assert(e->divide_count == 1 || e->divide_count == 2);
+	GS_DBG_ASSERT(e->divide_count == 1 || e->divide_count == 2);
 	if (e->divide_count != 1)
 	    return 0;
 	return fill_triangle_wedge_from_list(pfs, beg, end, e, c0, c1);

@@ -45,7 +45,7 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     gs_lib_ctx_t *pio = 0;
 
     if ( mem == 0 ) 
-	return -1;  /* assert mem != 0 */
+	return -1;  /* GS_ASSERT( mem != 0 ) isn't defined yet :( */
 
     mem_err_print = mem;
     

@@ -17,7 +17,6 @@
 /* $Id$ */
 /* Image interpolation filter */
 #include "memory_.h"
-#include <assert.h>
 #include "gxfixed.h"		/* for gxdda.h */
 #include "gxdda.h"
 #include "gxfrac.h"

@@ -23,7 +23,6 @@
 #include "gzpath.h"
 #include "memory_.h"
 #include "vdtrace.h"
-#include <assert.h>
 
 /* ---------------- Curve flattening ---------------- */
 
@@ -422,7 +421,7 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
 {
     bool last; /* i.e. the first one in the forth order. */
 
-    assert(this->i < 1 << this->k);
+    GS_DBG_ASSERT(this->i < 1 << this->k);
     this->lx1 = this->lx0;
     this->ly1 = this->ly0;
     if (this->k <= 1) {
@@ -452,7 +451,7 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
     this->ly0 = this->y;
     vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 0, 255));
     if (last)
-	assert(this->lx0 == this->x0 && this->ly0 == this->y0);
+	GS_DBG_ASSERT(this->lx0 == this->x0 && this->ly0 == this->y0);
     return !last;
 }
 

@@ -208,6 +208,18 @@ gs_log_error(int err, const char *file, int line)
     return err;
 }
 
+#ifdef DEBUG 
+void
+gs_assert(long line, const char *file, const char *exp)
+{
+    dprintf3("ASSERT FAILURE: file %s line %d :%s\n", file, line, exp);
+
+#undef assert
+#include <assert.h>
+   assert(0);
+}
+#endif
+
 /* Check for interrupts before a return. */
 int
 gs_return_check_interrupt(const gs_memory_t *mem, int code)

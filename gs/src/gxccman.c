@@ -35,7 +35,6 @@
 #include "gxxfont.h"
 #include "gxttfb.h"
 #include "gxfont42.h"
-#include <assert.h>
 
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
@@ -564,7 +563,7 @@ cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 	       Glyph raster params could change then. */
 	    cc->pair = pair;
 	} else
-	    assert(cc->pair == pair);
+	    GS_DBG_ASSERT(cc->pair == pair);  
 	cc->linked = true;
 	cc_set_pair(cc, pair);
 	pair->num_chars++;
