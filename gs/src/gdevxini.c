@@ -654,8 +654,10 @@ gdev_x_clear_window(gx_device_X * xdev)
     }
     x_set_buffer(xdev);
     /* Clear the destination pixmap to avoid initializing with garbage. */
-    xdev->dest = (xdev->bpixmap != (Pixmap) 0 ?
+    if (xdev->dest == (Pixmap) 0) {
+	xdev->dest = (xdev->bpixmap != (Pixmap) 0 ?
 		  xdev->bpixmap : (Pixmap) xdev->win);
+    }
     if (xdev->dest != (Pixmap) 0) {
 	XSetForeground(xdev->dpy, xdev->gc, xdev->background);
 	XFillRectangle(xdev->dpy, xdev->dest, xdev->gc,
