@@ -3,9 +3,7 @@
 # Creates C program data files for each ttf file given on the command
 # line.  Also a C header file is generated.  The C files are compiled
 # using gcc and archived into a large library using gnu ar, the final
-# result can be linked with pcl.  It requires ttf_windows_font_name, a
-# C program which fetches a name from each Truetype font and modifies
-# it to a name PCL expects.  DEVELOPERS ONLY.
+# result can be linked with pcl.  DEVELOPERS ONLY.
 
 #  This program does not do any error checking, clean up data files or
 #  anything that might be construed as user friendly - please use with
