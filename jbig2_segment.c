@@ -1,14 +1,14 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002 artofcode LLC.
+    Copyright (c) 2002-2003 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.22 2003/03/05 14:29:35 giles Exp $
+    $Id: jbig2_segment.c,v 1.23 2003/03/10 14:44:01 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -106,9 +106,12 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
   } else {
 	result->page_association = buf[offset++];
   }
-  
+  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, result->number,
+  	"segment %d is associated with page %d",
+  	result->number, result->page_association);
+  	
   /* 7.2.7 */
-  result->data_length = jbig2_get_int32 (buf + offset);
+  result->data_length = jbig2_get_int32(buf + offset);
   *p_header_size = offset + 4;
 
   return result;
