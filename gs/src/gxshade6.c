@@ -2349,11 +2349,11 @@ triangle_by_4(patch_fill_state_t *pfs,
 	double d12 = color_span(pfs, &p2->c, &p1->c);
 	double d20 = color_span(pfs, &p0->c, &p2->c);
 
-	if (d01 < pfs->smoothness / COLOR_CONTIGUITY && 
-	    d12 < pfs->smoothness / COLOR_CONTIGUITY && 
-	    d20 < pfs->smoothness / COLOR_CONTIGUITY)
+	if (d01 <= pfs->smoothness / COLOR_CONTIGUITY && 
+	    d12 <= pfs->smoothness / COLOR_CONTIGUITY && 
+	    d20 <= pfs->smoothness / COLOR_CONTIGUITY)
 	    return constant_color_triangle(pfs, p2, p0, p1);
-    } else if (cd < pfs->smoothness / COLOR_CONTIGUITY)
+    } else if (cd <= pfs->smoothness / COLOR_CONTIGUITY)
 	return constant_color_triangle(pfs, p2, p0, p1);
     divide_bar(pfs, p0, p1, 2, &p01);
     divide_bar(pfs, p1, p2, 2, &p12);
@@ -2423,7 +2423,7 @@ divide_quadrangle_by_parallels(patch_fill_state_t *pfs,
 	wedge_vertex_list_t *l01, wedge_vertex_list_t *l23,
 	double d01)
 {
-    if (d01 < pfs->smoothness / COLOR_CONTIGUITY ||
+    if (d01 <= pfs->smoothness / COLOR_CONTIGUITY ||
 	    (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1 &&
 	     any_abs(p3->p.x - p2->p.x) < fixed_1 && any_abs(p3->p.y - p2->p.y) < fixed_1)) {
 	quadrangle_patch p;
@@ -2580,15 +2580,15 @@ fill_triangle(patch_fill_state_t *pfs,
 	double d20 = color_span(pfs, &p0->c, &p2->c);
 
 	draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
-	if (d01 < pfs->smoothness / COLOR_CONTIGUITY && 
-	    d12 < pfs->smoothness / COLOR_CONTIGUITY && 
-	    d20 < pfs->smoothness / COLOR_CONTIGUITY)
+	if (d01 <= pfs->smoothness / COLOR_CONTIGUITY && 
+	    d12 <= pfs->smoothness / COLOR_CONTIGUITY && 
+	    d20 <= pfs->smoothness / COLOR_CONTIGUITY)
 	    return constant_color_triangle(pfs, p0, p1, p2);
-	if (d01 < pfs->smoothness / COLOR_CONTIGUITY)
+	if (d01 <= pfs->smoothness / COLOR_CONTIGUITY)
 	    return divide_triangle_by_parallels(pfs, p0, p1, p2, l01, l12, l20, (d12 + d20) / 2);
-	if (d12 < pfs->smoothness / COLOR_CONTIGUITY)
+	if (d12 <= pfs->smoothness / COLOR_CONTIGUITY)
 	    return divide_triangle_by_parallels(pfs, p1, p2, p0, l12, l20, l01, (d20 + d01) / 2);
-	if (d20 < pfs->smoothness / COLOR_CONTIGUITY)
+	if (d20 <= pfs->smoothness / COLOR_CONTIGUITY)
 	    return divide_triangle_by_parallels(pfs, p2, p0, p1, l20, l01, l12, (d01 + d12) / 2);
 	if (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1)
 	    return divide_triangle_by_parallels(pfs, p0, p1, p2, l01, l12, l20, (d12 + d20) / 2);
@@ -2772,21 +2772,21 @@ quadrangle_color_change(const patch_fill_state_t * pfs, const quadrangle_patch *
     D0111 = color_span(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
     D0011 = color_span(pfs, &p->p[0][0]->c, &p->p[1][1]->c);
     D0110 = color_span(pfs, &p->p[0][1]->c, &p->p[1][0]->c);
-    if (D0001 < pfs->smoothness && D1011 < pfs->smoothness &&
-	D0010 < pfs->smoothness && D0111 < pfs->smoothness &&
-	D0011 < pfs->smoothness && D0110 < pfs->smoothness)
+    if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness &&
+	D0010 <= pfs->smoothness && D0111 <= pfs->smoothness &&
+	D0011 <= pfs->smoothness && D0110 <= pfs->smoothness)
 	return color_change_small;
-    if (D0001 < pfs->smoothness && D1011 < pfs->smoothness) {
+    if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness) {
 	*uv = false;
 	return color_change_gradient;
     }
-    if (D0010 < pfs->smoothness && D0111 < pfs->smoothness) {
+    if (D0010 <= pfs->smoothness && D0111 <= pfs->smoothness) {
 	*uv = true;
 	return color_change_gradient;
     }
     color_diff(pfs, &d0001, &d1011, &d);
     D = color_norm(pfs, &d);
-    if (D < pfs->smoothness)
+    if (D <= pfs->smoothness)
 	return color_change_linear;
     {	double D0001 = color_norm(pfs, &d0001);
 	double D1011 = color_norm(pfs, &d1011);
@@ -3256,23 +3256,23 @@ make_tensor_patch(const patch_fill_state_t * pfs, tensor_patch *p, const patch_c
 {
     const gs_color_space *pcs = pfs->direct_space;
 
-    p->pole[0][0] = curve[3].vertex.p;
-    p->pole[0][1] = curve[3].control[0];
-    p->pole[0][2] = curve[3].control[1];
-    p->pole[0][3] = curve[0].vertex.p;
-    p->pole[1][3] = curve[0].control[0];
-    p->pole[2][3] = curve[0].control[1];
-    p->pole[3][3] = curve[1].vertex.p;
-    p->pole[3][2] = curve[1].control[0];
-    p->pole[3][1] = curve[1].control[1];
-    p->pole[3][0] = curve[2].vertex.p;
-    p->pole[2][0] = curve[2].control[0];
-    p->pole[1][0] = curve[2].control[1];
+    p->pole[0][0] = curve[0].vertex.p;
+    p->pole[1][0] = curve[0].control[0];
+    p->pole[2][0] = curve[0].control[1];
+    p->pole[3][0] = curve[1].vertex.p;
+    p->pole[3][1] = curve[1].control[0];
+    p->pole[3][2] = curve[1].control[1];
+    p->pole[3][3] = curve[2].vertex.p;
+    p->pole[2][3] = curve[2].control[0];
+    p->pole[1][3] = curve[2].control[1];
+    p->pole[0][3] = curve[3].vertex.p;
+    p->pole[0][2] = curve[3].control[0];
+    p->pole[0][1] = curve[3].control[1];
     if (interior != NULL) {
-	p->pole[1][1] = interior[3];
-	p->pole[2][1] = interior[0];
-	p->pole[2][2] = interior[1];
-	p->pole[1][2] = interior[2];
+	p->pole[1][1] = interior[0];
+	p->pole[1][2] = interior[1];
+	p->pole[2][2] = interior[2];
+	p->pole[2][1] = interior[3];
     } else {
 	p->pole[1][1].x = lcp1(p->pole[0][1].x, p->pole[3][1].x) +
 			  lcp1(p->pole[1][0].x, p->pole[1][3].x) -
@@ -3308,10 +3308,10 @@ make_tensor_patch(const patch_fill_state_t * pfs, tensor_patch *p, const patch_c
 			  lcp2(lcp2(p->pole[0][0].y, p->pole[0][3].y),
 			       lcp2(p->pole[3][0].y, p->pole[3][3].y));
     }
-    patch_set_color(pfs, &p->c[0][0], curve[3].vertex.cc);
-    patch_set_color(pfs, &p->c[0][1], curve[0].vertex.cc);
-    patch_set_color(pfs, &p->c[1][1], curve[1].vertex.cc);
-    patch_set_color(pfs, &p->c[1][0], curve[2].vertex.cc);
+    patch_set_color(pfs, &p->c[0][0], curve[0].vertex.cc);
+    patch_set_color(pfs, &p->c[1][0], curve[1].vertex.cc);
+    patch_set_color(pfs, &p->c[1][1], curve[2].vertex.cc);
+    patch_set_color(pfs, &p->c[0][1], curve[3].vertex.cc);
     patch_resolve_color(&p->c[0][0], pfs);
     patch_resolve_color(&p->c[0][1], pfs);
     patch_resolve_color(&p->c[1][0], pfs);

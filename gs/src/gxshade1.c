@@ -390,14 +390,14 @@ Fb_fill_region(Fb_fill_state_t * pfs)
     pfs1.maybe_self_intersecting = false;
     pfs1.n_color_args = 2;
     gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.p.y, &curve[0].vertex.p);
-    gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.q.y, &curve[1].vertex.p);
+    gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.p.y, &curve[1].vertex.p);
     gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.q.y, &curve[2].vertex.p);
-    gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.p.y, &curve[3].vertex.p);
+    gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.q.y, &curve[3].vertex.p);
     make_other_poles(curve);
     curve[0].vertex.cc[0] = fp->region.p.x;   curve[0].vertex.cc[1] = fp->region.p.y;
-    curve[1].vertex.cc[0] = fp->region.p.x;   curve[1].vertex.cc[1] = fp->region.q.y;
+    curve[1].vertex.cc[0] = fp->region.q.x;   curve[1].vertex.cc[1] = fp->region.p.y;
     curve[2].vertex.cc[0] = fp->region.q.x;   curve[2].vertex.cc[1] = fp->region.q.y;
-    curve[3].vertex.cc[0] = fp->region.q.x;   curve[3].vertex.cc[1] = fp->region.p.y;
+    curve[3].vertex.cc[0] = fp->region.p.x;   curve[3].vertex.cc[1] = fp->region.q.y;
     code = patch_fill(&pfs1, curve, NULL, NULL);
     term_patch_fill_state(&pfs1);
     if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
@@ -634,13 +634,13 @@ A_fill_region(A_fill_state_t * pfs)
 	return code;
     pfs1.maybe_self_intersecting = false;
     gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
-    gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[1].vertex.p);
+    gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
     gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
-    gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[3].vertex.p);
+    gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
     curve[0].vertex.cc[0] = pfs->t0;
-    curve[1].vertex.cc[0] = pfs->t0;
+    curve[1].vertex.cc[0] = pfs->t1;
     curve[2].vertex.cc[0] = pfs->t1;
-    curve[3].vertex.cc[0] = pfs->t1;
+    curve[3].vertex.cc[0] = pfs->t0;
     make_other_poles(curve);
     code = patch_fill(&pfs1, curve, NULL, NULL);
     term_patch_fill_state(&pfs1);
