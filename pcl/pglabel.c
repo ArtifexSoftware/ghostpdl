@@ -885,6 +885,16 @@ hpgl_print_char(
 		}
             }
 	    hpgl_call(gs_currentpoint(pgs, &end_pt));
+	    if ( start_pt.x == end_pt.x && start_pt.y == end_pt.y ) { 
+		/* freetype doesn't move currentpoint in gs_show(), 
+		 * since gs cache is not used.  
+		 */
+		
+		hpgl_get_char_width(pgls, ch, &width);
+		hpgl_call(hpgl_add_point_to_path(pgls,  width / scale.x, 0.0,
+						 hpgl_plot_move_relative, false));
+		hpgl_call(gs_currentpoint(pgs, &end_pt));
+	    }
 	    if ( (text_path == hpgl_text_right)        &&
 		 (hpgl_get_character_extra_space_x(pgls) != 0)  ) {
 		hpgl_get_char_width(pgls, ch, &width);
