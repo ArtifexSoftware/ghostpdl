@@ -1,13 +1,38 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html><head>
-<title>Ghostscript 8.00 change history as of 2002-11-20 23:15:27</title>
-<link rel=stylesheet type="text/css" href="gs.css">
-</head><body>
+<html>
+<head>
+<title>History of Ghostscript versions 8.n</title>
+<!-- $Id$ -->
+<!--
+	WARNING: do not use Pete Kaiser's emacs function "gs-toc" alone to
+	re-create the table of contents here, because it will replace the
+	hand-edited TOC subheads with a separate subhead for each H2 in
+	the body of the file.  Or if you do, first look at the original
+	TOC to see how to edit it for visual conciseness.
+-->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
+</head>
 
-<!-- cvs command: cvs -d raph@cvs.ghostscript.com:/cvs/ghostscript -Q log  -b -->
+<body>
+<!-- [1.0 begin visible header] ============================================ -->
 
+<!-- [1.1 begin headline] ================================================== -->
+
+<table width="100%" border="0">
+<tr><th align="center" bgcolor="#CCCC00"><font size=6>History of Ghostscript versions 8.xx</font>
+</table>
+
+<!-- [1.1 end headline] ==================================================== -->
+
+<!-- [1.2 begin table of contents] ========================================= -->
+
+<h2>Table of contents</h2>
+
+<blockquote><ul>
+<li><a href="#Version8.00">Version 8.00 (2002-11-21)</a>
 <ul>
-<li><a href="#8.00-Documentation">Documentation</a>,
+<li><a href="#8.00_Incompatible_changes">Incompatible changes</a>,
+    <a href="#8.00-Documentation">Documentation</a>,
     <a href="#8.00-Procedures">Procedures</a>,
     <a href="#8.00-Utilities">Utilities</a>,
     <a href="#8.00-Drivers">Drivers</a>,
@@ -16,6 +41,151 @@
     <a href="#8.00-Interpreter">Interpreter</a>,
     <a href="#8.00-Library">Library</a>
 </ul>
+</ul></blockquote>
+
+<!-- [1.2 end table of contents] =========================================== -->
+
+<!-- [1.3 begin hint] ====================================================== -->
+
+<p>
+This document is a record of changes in Ghostscript releases numbered 8.xx.
+For earlier versions, see the the history documents:
+
+<blockquote>
+<a href="History6.htm">History of Ghostscript versions 7.n</a><br>
+<a href="History6.htm">History of Ghostscript versions 6.n</a><br>
+<a href="History5.htm">History of Ghostscript versions 5.n</a><br>
+<a href="History4.htm">History of Ghostscript versions 4.n</a><br>
+<a href="History3.htm">History of Ghostscript versions 3.n</a><br>
+<a href="History2.htm">History of Ghostscript versions 2.n</a><br>
+<a href="History1.htm">History of Ghostscript versions 1.n</a>
+</blockquote>
+
+<p>For other information, see the <a href="Readme.htm">Ghostscript
+overview</a>.
+
+<!-- [1.3 end hint] ======================================================== -->
+
+<hr>
+
+<!-- [1.0 end visible header] ============================================== -->
+
+<!-- [2.0 begin contents] ================================================== -->
+
+<p>
+Within each release, news appears in the following order: Incompatible
+changes, Documentation, Procedures, Utilities, Drivers, Platforms, Fonts,
+PDF writer (included under Drivers through fileset 5.88), Interpreter,
+Streams (included under Interpreter through release 2.9.9), Library.
+Changes marked with a * were made available as patches to a previous
+release.
+
+<hr>
+
+<h1><a name="Version8.00"></a>Version 8.00 (2002-11-21)</h1>
+
+<p>
+This is the 8.00 release of AFPL Ghostscript. The most significant new
+feature since 7.0x is support for DeviceN colorspaces, up to 8
+colorants total at 8 bits per component. Also, pdfwrite has seen
+considerable improvement in font handling, and many other bug fixes.
+
+<p>
+The following SourceForge bug numbers were open at the time of this release:
+405342,
+407342,
+414947,
+414985,
+446344,
+458261,
+458775,
+458780,
+459647,
+465936,
+484752,
+484753,
+487953,
+493348,
+505429,
+510808,
+526099,
+526491,
+530011,
+535366,
+535752,
+535836,
+538033,
+539239,
+546823,
+554076,
+558151,
+558435,
+563287,
+569573,
+570772,
+573744,
+578838,
+578865,
+584990,
+592160,
+592837,
+592841,
+592925,
+592930,
+595760,
+596009,
+600288,
+601255,
+601336,
+601694,
+603934,
+605830,
+607425,
+607850,
+610356,
+610478,
+610727,
+611694,
+611701,
+611727,
+611898,
+612801,
+614298,
+615165,
+616970,
+616976,
+617077,
+617523,
+621246,
+623292,
+624515,
+625085,
+626059,
+626295,
+626358,
+626419,
+626464,
+627545,
+628110,
+629335,
+633299,
+634036,
+634358,
+634514,
+636210,
+640159,
+641278,
+641280,
+641283,
+641296,
+641490.
+
+<h3><a name="8.00_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>No incompatible changes in this release.
+
+<pre>
+</pre>
 
 
 <h2><a name="8.00-Documentation"></a>Documentation</h2><pre>
@@ -142,4 +312,35 @@ faster. SourceForge bug "[ 621243 ] (pdfwrite) slow mahle.pdf"
 First commit of 8.0 process: update versions and dates, update to News.htm.
 (gscdef.c [1.32]: 2002/11/21 07:12:17 raph)
 
-</pre></body></html>
+</pre>
+
+<!-- [2.0 end contents] ==================================================== -->
+
+<!-- [3.0 begin visible trailer] =========================================== -->
+<hr>
+
+<p>
+<small>Copyright &copy; 2002 artofcode LLC.
+All rights reserved.</small>
+
+<p>
+This software is provided AS-IS with no warranty, either express or
+implied.
+
+This software is distributed under license and may not be copied,
+modified or distributed except as expressly authorized under the terms
+of the license contained in the file LICENSE in this distribution.
+
+For more information about licensing, please refer to
+http://www.ghostscript.com/licensing/. For information on
+commercial licensing, go to http://www.artifex.com/licensing/ or
+contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+<p>
+<small>Ghostscript version 8.00, 21 November 2002
+
+<!-- [3.0 end visible trailer] ============================================= -->
+
+</body>
+</html>
