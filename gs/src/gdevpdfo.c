@@ -802,6 +802,21 @@ cos_dict_put_c_key_real(cos_dict_t *pcd, const char *key, floatp value)
     return cos_dict_put_c_key_string(pcd, key, str, stell(&s));
 }
 int
+cos_dict_put_c_key_floats(cos_dict_t *pcd, const char *key, const float *pf,
+			  uint size)
+{
+    cos_array_t *pca = cos_array_from_floats(pcd->pdev, pf, size,
+					     "cos_dict_put_c_key_floats");
+    int code;
+
+    if (pca == 0)
+	return_error(gs_error_VMerror);
+    code = cos_dict_put_c_key_object(pcd, key, COS_OBJECT(pca));
+    if (code < 0)
+	COS_FREE(pca, "cos_dict_put_c_key_floats");
+    return code;
+}
+int
 cos_dict_put_c_key_object(cos_dict_t *pcd, const char *key, cos_object_t *pco)
 {
     cos_value_t value;

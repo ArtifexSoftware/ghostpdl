@@ -41,23 +41,6 @@ extern const gx_device_color_type_t gx_dc_pattern2;
 
 /* ---------------- Utilities ---------------- */
 
-/* Write an array of floats as a parameter. */
-private int
-cos_dict_put_float_array(cos_dict_t *pscd, const char *key, const float *pf,
-			 uint size)
-{
-    cos_array_t *pca = cos_array_from_floats(pscd->pdev, pf, size,
-					     "cos_dict_put_float_array");
-    int code;
-
-    if (pca == 0)
-	return_error(gs_error_VMerror);
-    code = cos_dict_put_c_key_object(pscd, key, COS_OBJECT(pca));
-    if (code < 0)
-	COS_FREE(pca, "cos_dict_put_float_array");
-    return code;
-}
-
 /* Write a matrix parameter. */
 private int
 cos_dict_put_matrix(cos_dict_t *pscd, const char *key, const gs_matrix *pmat)
@@ -70,7 +53,7 @@ cos_dict_put_matrix(cos_dict_t *pscd, const char *key, const gs_matrix *pmat)
     matrix[3] = pmat->yy;
     matrix[4] = pmat->tx;
     matrix[5] = pmat->ty;
-    return cos_dict_put_float_array(pscd, key, matrix, 6);
+    return cos_dict_put_c_key_floats(pscd, key, matrix, 6);
 }
 
 /* ---------------- PatternType 1 colors ---------------- */
@@ -346,7 +329,7 @@ pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh)
 	)
 	return code;
     if (psh->params.Background) {
-	code = cos_dict_put_float_array(pscd, "/Background",
+	code = cos_dict_put_c_key_floats(pscd, "/Background",
 				   psh->params.Background->paint.values,
 				   gs_color_space_num_components(pcs));
 	if (code < 0)
@@ -359,7 +342,7 @@ pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh)
 	bbox[1] = psh->params.BBox.p.y;
 	bbox[2] = psh->params.BBox.q.x;
 	bbox[3] = psh->params.BBox.q.y;
-	code = cos_dict_put_float_array(pscd, "/BBox", bbox, 4);
+	code = cos_dict_put_c_key_floats(pscd, "/BBox", bbox, 4);
 	if (code < 0)
 	    return code;
     }
@@ -373,11 +356,11 @@ pdf_put_linear_shading(cos_dict_t *pscd, const float *Coords,
 		       const gs_function_t *Function,
 		       const bool *Extend /*[2]*/)
 {
-    int code = cos_dict_put_float_array(pscd, "/Coords", Coords, num_coords);
+    int code = cos_dict_put_c_key_floats(pscd, "/Coords", Coords, num_coords);
 
     if (code < 0 ||
 	((Domain[0] != 0 || Domain[1] != 1) &&
-	 (code = cos_dict_put_float_array(pscd, "/Domain", Domain, 2)) < 0)
+	 (code = cos_dict_put_c_key_floats(pscd, "/Domain", Domain, 2)) < 0)
 	)
 	return code;
     if (Function) {
@@ -416,7 +399,7 @@ pdf_put_scalar_shading(cos_dict_t *pscd, const gs_shading_t *psh)
 	    (const gs_shading_Fb_params_t *)&psh->params;
 	cos_value_t fn_value;
 
-	if ((code = cos_dict_put_float_array(pscd, "/Domain", params->Domain, 4)) < 0 ||
+	if ((code = cos_dict_put_c_key_floats(pscd, "/Domain", params->Domain, 4)) < 0 ||
 	    (code = pdf_function(pscd->pdev, params->Function, &fn_value)) < 0 ||
 	    (code = cos_dict_put_c_key(pscd, "/Function", &fn_value)) < 0 ||
 	    (code = cos_dict_put_matrix(pscd, "/Matrix", &params->Matrix)) < 0
@@ -567,7 +550,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh)
 	byte buf[100];		/* arbitrary */
 	uint num_read;
 
-	code = cos_dict_put_float_array(pscd, "/Decode", pmp->Decode,
+	code = cos_dict_put_c_key_floats(pscd, "/Decode", pmp->Decode,
 				4 + gs_color_space_num_components(pcs) * 2);
 	while (sgets(&cs.ds, buf, sizeof(buf), &num_read), num_read > 0)
 	    if ((code = cos_stream_add_bytes(pscs, buf, num_read)) < 0)

@@ -236,6 +236,7 @@ int cos_dict_put_c_key_string(P4(cos_dict_t *, const char *, const byte *,
 				 uint));
 int cos_dict_put_c_key_int(P3(cos_dict_t *, const char *, int));
 int cos_dict_put_c_key_real(P3(cos_dict_t *, const char *, floatp));
+int cos_dict_put_c_key_floats(P4(cos_dict_t *, const char *, const float *, uint));
 int cos_dict_put_c_key_object(P3(cos_dict_t *, const char *, cos_object_t *));
 int cos_dict_put_string(P5(cos_dict_t *, const byte *, uint, const byte *,
 			   uint));

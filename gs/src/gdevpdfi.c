@@ -579,20 +579,22 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 		      gx_image_enum_common_t **pinfo,
 		      gx_device **pmcdev, gx_device *midev[2],
 		      gx_image_enum_common_t *pminfo[2],
-		      const gs_int_point origin[2])
+		      const gs_int_point origin[2],
+		      const gs_image3x_t *pim)
 {
     int code;
     pdf_image_enum *pmie;
     pdf_image_enum *pmce;
     cos_stream_t *pmcs;
     int i;
+    const gs_image3x_mask_t *pixm;
 
     if (midev[0]) {
 	if (midev[1])
 	    return_error(gs_error_rangecheck);
-	i = 0;
+	i = 0, pixm = &pim->Opacity;
     } else if (midev[1])
-	i = 1;
+	i = 1, pixm = &pim->Shape;
     else
 	return_error(gs_error_rangecheck);
     code = pdf_make_mxd(pmcdev, midev[i], mem);
@@ -603,16 +605,30 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	 pinfo, PDF_IMAGE_TYPE3_DATA);
     if (code < 0)
 	return code;
-    /* Add the /SMask entry to the image dictionary. */
     if ((*pinfo)->procs != &pdf_image_enum_procs) {
 	/* We couldn't handle the image.  Bail out. */
 	gx_image_end(*pinfo, false);
-	gs_free_object(mem, *pmcdev, "pdf_image3_make_mcde");
+	gs_free_object(mem, *pmcdev, "pdf_image3x_make_mcde");
 	return_error(gs_error_rangecheck);
     }
     pmie = (pdf_image_enum *)pminfo[i];
     pmce = (pdf_image_enum *)(*pinfo);
     pmcs = (cos_stream_t *)pmce->writer.pres->object;
+    /*
+     * Add the SMask entry to the image dictionary, and, if needed,
+     * the Matte entry to the mask dictionary.
+     */
+    if (pixm->has_Matte) {
+	int num_components =
+	    gs_color_space_num_components(pim->ColorSpace);
+
+	code = cos_dict_put_c_key_floats(
+				(cos_dict_t *)pmie->writer.pres->object,
+				"/Matte", pixm->Matte,
+				num_components);
+	if (code < 0)
+	    return code;
+    }
     return cos_dict_put_c_key_object(cos_stream_dict(pmcs), "/SMask",
 				     pmie->writer.pres->object);
 }
