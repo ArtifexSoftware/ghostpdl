@@ -4,6 +4,575 @@ ported directly from the latest aladdin release it is not documented
 here.  We provide a reference aladdin release number and the files.
 Please see News.htm for a detailed explanation of these changes.
 
+Version 5.84a (08/25/99)
+========================
+
+Wed Jun 16 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/gxccman.c [1.5]:
+        rc fix from gs5.87 (peter).
+        
+
+Wed Jun  2 03:00:00 1999 GMT            johnd@artifex.com
+
+        * src/gsstate.h [1.4], src/gsstate.c [1.9], src/gsparam.h [1.6], 
+        src/gsdevice.h [1.7], src/gscparam.c [1.6]:
+        Initial checkin for multiple language support, shared devices,
+        interpreter instances, interpreter initialization/de-initialization,
+        etc.  A todo list of unfinished work is in pctop.c and pxtop.c.
+        
+
+Fri May 28 06:00:00 1999 GMT            ray@artifex.com
+
+        * src/devs.mak [1.15]:
+        Fix missing 'gdevppla' module when building with bmpa... devices and no
+        pbm... devices.
+        
+
+Tue May 25 21:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/msvclib.mak [1.9], src/lib.mak [1.17], src/gs.mak [1.10]:
+        gs5.84 integration.  Sets DD and GLD in the msvc library file
+        and restores gs.mak and lib.mak to 5.84 originals.
+        
+
+Tue May 25 07:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/msvclib.mak [1.8]:
+        adds include of version.mak so clients can resolve the
+        revision information.
+        
+        * src/lib.mak [1.16], src/gs.mak [1.9]:
+        restores DD setup.  Clients do not have a way of setting this
+        right now.
+        
+
+Mon May 24 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/zvmem2.c [1.4], src/zvmem.c [1.4], src/zusparam.c [1.5], 
+        src/zupath.c [1.4], src/ztype.c [1.4], src/ztrap.c [1.5], 
+        src/ztoken.c [1.4], src/zsysvm.c [1.4], src/zstring.c [1.4], 
+        src/zstack.c [1.4], src/zshade.c [1.4], src/zrop.c [1.4], 
+        src/zrelbit.c [1.4], src/zpcolor.c [1.5], src/zpath1.c [1.4], 
+        src/zpath.c [1.4], src/zpaint.c [1.4], src/zpacked.c [1.4], 
+        src/zmisc3.c [1.4], src/zmisc2.c [1.4], src/zmisc1.c [1.4], 
+        src/zmisc.c [1.4], src/zmedia2.c [1.4], src/zmatrix.c [1.4], 
+        src/zmath.c [1.4], src/zlib.mak [1.8], src/ziodev2.c [1.4], 
+        src/ziodev.c [1.4], src/zimage3.c [1.4], src/zimage2.c [1.4], 
+        src/zimage.c [1.4], src/zht2.c [1.4], src/zht1.c [1.4], 
+        src/zht.c [1.4], src/zhsb.c [1.4], src/zgstate.c [1.5], 
+        src/zgeneric.c [1.4], src/zfzlib.c [1.4], src/zfunc3.c [1.4], 
+        src/zfunc0.c [1.4], src/zfunc.c [1.5], src/zfreuse.c [1.4], 
+        src/zfproc.c [1.4], src/zfont42.c [1.4], src/zfont32.c [1.5], 
+        src/zfont2.c [1.4], src/zfont1.c [1.4], src/zfont0.c [1.4], 
+        src/zfont.c [1.4], src/zfname.c [1.4], src/zfilterx.c [1.4], 
+        src/zfilter2.c [1.5], src/zfilter.c [1.4], src/zfileio.c [1.5], 
+        src/zfile.c [1.5], src/zfdecode.c [1.4], src/zfdcte.c [1.5], 
+        src/zfdctd.c [1.4], src/zfcmap.c [1.4], src/zfbcp.c [1.4], 
+        src/zdps1.c [1.4], src/zdps.c [1.4], src/zdpnext.c [1.4], 
+        src/zdouble.c [1.4], src/zdosio.c [1.4], src/zdict.c [1.4], 
+        src/zdevice2.c [1.4], src/zdevice.c [1.4], src/zcssepr.c [1.6], 
+        src/zcspixel.c [1.5], src/zcsindex.c [1.5], src/zcsdevn.c [1.5], 
+        src/zcrd.c [1.7], src/zcontrol.c [1.4], src/zcontext.c [1.5], 
+        src/zcolor2.c [1.4], src/zcolor1.c [1.4], src/zcolor.c [1.4], 
+        src/zcie.c [1.5], src/zcid.c [1.4], src/zcharx.c [1.1], 
+        src/zcharout.c [1.4], src/zchar42.c [1.4], src/zchar32.c [1.5], 
+        src/zchar2.c [1.5], src/zchar1.c [1.6], src/zchar.c [1.5], 
+        src/zcfont.c [1.4], src/zbseq.c [1.4], src/zbfont.c [1.1], 
+        src/zarray.c [1.4], src/zarith.c [1.4], src/x_.h [1.4], 
+        src/winplat.mak [1.1], src/winlib.mak [1.10], src/winint.mak [1.7], 
+        src/windows_.h [1.4], src/wctail.mak [1.6], src/wccommon.mak [1.12], 
+        src/watcw32.mak [1.7], src/watclib.mak [1.8], src/watc.mak [1.10], 
+        src/version.mak [1.14], src/unixtrad.mak [1.1], src/unixtail.mak [1.6], 
+        src/unixlink.mak [1.1], src/unixinst.mak [1.8], src/unixhead.mak [1.8], 
+        src/unixansi.mak [1.8], src/unix-gcc.mak [1.14], src/unix-end.mak [1.8], 
+        src/unix-cc.mak [1.8], src/unix-aux.mak [1.1], src/ugcclib.mak [1.6], 
+        src/t [1.1], src/string_.h [1.4], src/stream.h [1.4], src/stream.c [1.5], 
+        src/store.h [1.4], src/stdpre.h [1.6], src/std.h [1.4], 
+        src/stat_.h [1.5], src/sstring.h [1.5], src/sstring.c [1.4], 
+        src/srdline.h [1.1], src/spngp.c [1.4], src/spdiffx.h [1.4], 
+        src/spdiff.c [1.4], src/spcxx.h [1.4], src/spcxd.c [1.5], 
+        src/sjpegerr.c [1.4], src/sjpege.c [1.4], src/sjpegd.c [1.4], 
+        src/sjpegc.c [1.4], src/sisparam.h [1.1], src/siscale.h [1.4], 
+        src/siscale.c [1.4], src/siinterp.h [1.1], src/siinterp.c [1.1], 
+        src/sfxfd.c [1.5], src/sfilter2.c [1.5], src/sfilter1.c [1.5], 
+        src/seexec.c [1.5], src/sdeparam.c [1.4], src/sddparam.c [1.4], 
+        src/sdcte.c [1.4], src/sdctd.c [1.4], src/sdctc.c [1.4], 
+        src/sdcparam.c [1.4], src/scommon.h [1.4], src/scfe.c [1.4], 
+        src/scfd.c [1.5], src/sa85x.h [1.4], src/sa85d.h [1.1], 
+        src/sa85d.c [1.1], src/rm.bat [1.1], src/png_.h [1.1], src/pcwin.mak [1.6], 
+        src/ostack.h [1.4], src/os2.mak [1.8], src/opextern.h [1.4], 
+        src/oper.h [1.4], src/openvms.mmk [1.1], src/openvms.mak [1.8], 
+        src/opdef.h [1.4], src/mv.bat [1.1], src/msvctail.mak [1.7], 
+        src/msvclib.mak [1.7], src/msvccmd.mak [1.8], src/msvc32.mak [1.10], 
+        src/memory_.h [1.4], src/md5.h [1.1], src/md5.c [1.1], src/main.h [1.4], 
+        src/libpng.mak [1.7], src/jpeg.mak [1.8], src/jerror_.h [1.1], 
+        src/iutil.h [1.5], src/iutil.c [1.5], src/istruct.h [1.4], 
+        src/istream.h [1.4], src/istack.h [1.4], src/istack.c [1.4], 
+        src/isdata.h [1.1], src/iscannum.c [1.5], src/iscanbin.c [1.4], 
+        src/iscan.h [1.4], src/iscan.c [1.5], src/isave.c [1.6], 
+        src/iref.h [1.4], src/ireclaim.c [1.4], src/ipcolor.h [1.1], 
+        src/iparray.h [1.4], src/iparam.h [1.4], src/iparam.c [1.5], 
+        src/ipacked.h [1.4], src/iostack.h [1.4], src/iosdata.h [1.1], 
+        src/interp.h [1.4], src/interp.c [1.6], src/int.mak [1.8], 
+        src/inouparm.c [1.4], src/inobtokn.c [1.1], src/inames.h [1.4], 
+        src/inamedef.h [1.4], src/iname.c [1.5], src/iminst.h [1.4], 
+        src/imemory.h [1.4], src/imainarg.c [1.5], src/imain.h [1.4], 
+        src/imain.c [1.4], src/ilocate.c [1.7], src/ilevel.h [1.4], 
+        src/iinit.c [1.4], src/iimage2.h [1.4], src/iimage.h [1.4], 
+        src/iht.h [1.4], src/igstate.h [1.4], src/igcstr.c [1.4], 
+        src/igcref.c [1.5], src/igc.h [1.4], src/igc.c [1.5], src/ifunc.h [1.5], 
+        src/ifont1.h [1.1], src/ifont.h [1.4], src/ifilter.h [1.4], 
+        src/iestack.h [1.4], src/iesdata.h [1.1], src/idstack.h [1.4], 
+        src/idstack.c [1.4], src/idsdata.h [1.1], src/idparam.h [1.4], 
+        src/idparam.c [1.4], src/idict.h [1.4], src/idict.c [1.4], 
+        src/idebug.h [1.4], src/idebug.c [1.4], src/iddstack.h [1.1], 
+        src/iddict.h [1.1], src/icstate.h [1.5], src/icsmap.h [1.4], 
+        src/icremap.h [1.1], src/icontext.h [1.4], src/icontext.c [1.4], 
+        src/iconf.c [1.4], src/icolor.h [1.4], src/icie.h [1.4], 
+        src/icharout.h [1.5], src/ichar1.h [1.1], src/ichar.h [1.4], 
+        src/icfontab.c [1.4], src/iccfont.c [1.5], src/ibnum.c [1.5], 
+        src/ialloc.h [1.4], src/ialloc.c [1.4], src/gzstate.h [1.4], 
+        src/gzpath.h [1.4], src/gzline.h [1.4], src/gzht.h [1.5], 
+        src/gzcpath.h [1.4], src/gxxfont.h [1.4], src/gxtype1.h [1.5], 
+        src/gxtype1.c [1.5], src/gxtext.h [1.4], src/gxsync.h [1.4], 
+        src/gxstroke.c [1.11], src/gxshade6.c [1.6], src/gxshade4.h [1.5], 
+        src/gxshade4.c [1.7], src/gxshade1.c [1.6], src/gxshade.h [1.5], 
+        src/gxshade.c [1.5], src/gxsample.h [1.4], src/gxsample.c [1.4], 
+        src/gxrplane.h [1.1], src/gxpcopy.c [1.5], src/gxpcolor.h [1.4], 
+        src/gxpcmap.c [1.5], src/gxpath2.c [1.6], src/gxpath.h [1.5], 
+        src/gxpath.c [1.4], src/gxpaint.h [1.4], src/gxpaint.c [1.4], 
+        src/gxpageq.h [1.6], src/gxpageq.c [1.7], src/gxp1fill.c [1.7], 
+        src/gxobj.h [1.4], src/gxmclip.h [1.5], src/gxmclip.c [1.5], 
+        src/gxistate.h [1.4], src/gxiscale.c [1.5], src/gxipixel.c [1.3], 
+        src/gxiparam.h [1.7], src/gxino12b.c [1.1], src/gximono.c [1.8], 
+        src/gximage4.c [1.10], src/gximage3.c [1.7], src/gximage2.c [1.7], 
+        src/gximage1.c [1.7], src/gximage.h [1.6], src/gximage.c [1.4], 
+        src/gxiinit.c [1.5], src/gxifast.c [1.6], src/gxidata.c [1.6], 
+        src/gxicolor.c [1.8], src/gxiclass.h [1.1], src/gxi12bit.c [1.5], 
+        src/gxhttype.h [1.4], src/gxhtbit.c [1.1], src/gxht.h [1.4], 
+        src/gxht.c [1.5], src/gxgetbit.h [1.4], src/gxfunc.h [1.4], 
+        src/gxftype.h [1.5], src/gxfont1.h [1.4], src/gxfont.h [1.4], 
+        src/gxfmap.h [1.4], src/gxfixed.h [1.4], src/gxfcmap.h [1.4], 
+        src/gxfcache.h [1.4], src/gxdither.h [1.4], src/gxdither.c [1.6], 
+        src/gxdhtres.h [1.1], src/gxdht.h [1.4], src/gxdevmem.h [1.4], 
+        src/gxdevice.h [1.9], src/gxdevcli.h [1.7], src/gxdevbuf.h [1.1], 
+        src/gxdcolor.h [1.4], src/gxdcolor.c [1.6], src/gxdcconv.c [1.4], 
+        src/gxctable.h [1.4], src/gxctable.c [1.4], src/gxcspace.h [1.7], 
+        src/gxcpath.h [1.5], src/gxcpath.c [1.5], src/gxcolor2.h [1.4], 
+        src/gxcmap.h [1.4], src/gxcmap.c [1.5], src/gxclrect.c [1.5], 
+        src/gxclread.c [1.8], src/gxclrast.c [1.11], src/gxclpath.h [1.6], 
+        src/gxclpath.c [1.10], src/gxclmem.c [1.7], src/gxclist.h [1.5], 
+        src/gxclist.c [1.7], src/gxclipsr.h [1.1], src/gxclip2.h [1.5], 
+        src/gxclip.h [1.4], src/gxclip.c [1.5], src/gxclimag.c [1.8], 
+        src/gxcldev.h [1.7], src/gxclbits.c [1.4], src/gxcindex.h [1.4], 
+        src/gxcht.c [1.7], src/gxchar.h [1.4], src/gxcdevn.h [1.1], 
+        src/gxccman.c [1.4], src/gxbitmap.h [1.6], src/gxbitfmt.h [1.4], 
+        src/gxband.h [1.6], src/gxarith.h [1.4], src/gxalloc.h [1.11], 
+        src/gxacpath.c [1.5], src/gx.h [1.5], src/gstypes.h [1.4], 
+        src/gstype42.c [1.7], src/gstype2.c [1.4], src/gstype1.h [1.4], 
+        src/gstype1.c [1.5], src/gstrap.c [1.4], src/gstext.h [1.5], 
+        src/gstext.c [1.5], src/gsstype.h [1.1], src/gsstruct.h [1.5], 
+        src/gsstate.c [1.8], src/gsshade.h [1.5], src/gsshade.c [1.6], 
+        src/gsropt.h [1.5], src/gsropc.c [1.4], src/gsrefct.h [1.4], 
+        src/gsrect.h [1.6], src/gsptype2.h [1.4], src/gsptype2.c [1.1], 
+        src/gsptype1.h [1.4], src/gsptype1.c [1.1], src/gspcolor.h [1.4], 
+        src/gspcolor.c [1.10], src/gspath1.c [1.4], src/gspath.h [1.4], 
+        src/gspath.c [1.5], src/gsparamx.h [1.1], src/gsparamx.c [1.1], 
+        src/gsparams.c [1.4], src/gsparam.h [1.5], src/gspaint.c [1.4], 
+        src/gsnogc.h [1.1], src/gsnogc.c [1.6], src/gsmisc.c [1.5], 
+        src/gsmemret.h [1.1], src/gsmemret.c [1.1], src/gsmemraw.h [1.6], 
+        src/gsmemory.h [1.6], src/gsmemory.c [1.5], src/gsmemlok.h [1.5], 
+        src/gsmemlok.c [1.6], src/gsmatrix.c [1.6], src/gsmalloc.h [1.5], 
+        src/gsmalloc.c [1.8], src/gsline.h [1.5], src/gsline.c [1.5], 
+        src/gslib.c [1.4], src/gsjconf.h [1.4], src/gsistate.c [1.1], 
+        src/gsiparm4.h [1.6], src/gsiparam.h [1.5], src/gsiodev.c [1.5], 
+        src/gsio.h [1.4], src/gsimage.h [1.4], src/gsimage.c [1.6], 
+        src/gshtx.h [1.4], src/gshtx.c [1.5], src/gshtscr.c [1.6], 
+        src/gsht1.c [1.6], src/gsht.c [1.5], src/gsgc.h [1.4], src/gsfunc3.c [1.4], 
+        src/gsfunc0.c [1.4], src/gsfunc.c [1.4], src/gsfont.c [1.5], 
+        src/gsflip.h [1.4], src/gsflip.c [1.4], src/gsfcmap.h [1.4], 
+        src/gsfcmap.c [1.5], src/gsdparam.c [1.6], src/gsdllwin.h [1.1], 
+        src/gsdllos2.h [1.1], src/gsdll32.rc [1.2], src/gsdll16.rc [1.2], 
+        src/gsdll16.def [1.2], src/gsdll.h [1.4], src/gsdll.c [1.4], 
+        src/gsdevice.h [1.6], src/gsdevice.c [1.12], src/gsdcolor.h [1.5], 
+        src/gscssub.h [1.1], src/gscssub.c [1.1], src/gscspace.h [1.5], 
+        src/gscspace.c [1.6], src/gscsepr.h [1.4], src/gscsepr.c [1.6], 
+        src/gscscie.c [1.6], src/gscrdp.h [1.6], src/gscrdp.c [1.8], 
+        src/gscrd.h [1.6], src/gscrd.c [1.8], src/gscpm.h [1.4], 
+        src/gscparam.c [1.5], src/gscolor3.c [1.5], src/gscolor2.h [1.4], 
+        src/gscolor2.c [1.7], src/gscolor1.c [1.4], src/gscolor.c [1.4], 
+        src/gsclipsr.c [1.2], src/gsciemap.c [1.4], src/gscie.h [1.7], 
+        src/gscie.c [1.8], src/gschar0.c [1.4], src/gschar.h [1.4], 
+        src/gschar.c [1.5], src/gscdevn.c [1.5], src/gscdefs.h [1.6], 
+        src/gscdef.c [1.4], src/gsccolor.h [1.4], src/gsccode.h [1.4], 
+        src/gsbittab.h [1.5], src/gsbittab.c [1.4], src/gsbitops.h [1.4], 
+        src/gsbitops.c [1.5], src/gsbitmap.h [1.4], src/gsargs.h [1.4], 
+        src/gsargs.c [1.4], src/gsalphac.c [1.4], src/gsalloc.c [1.12], 
+        src/gs16spl.rc [1.4], src/gs.mak [1.8], src/gs.c [1.4], 
+        src/gpsync.h [1.5], src/gp_wsync.c [1.1], src/gp_win32.c [1.7], 
+        src/gp_vms.c [1.4], src/gp_strdl.c [1.1], src/gp_os2.c [1.4], 
+        src/gp_ntfs.c [1.6], src/gp_nsync.c [1.4], src/gp_msio.c [1.4], 
+        src/gp_iwatc.c [1.5], src/gp_gnrdl.c [1.1], src/gp.h [1.4], 
+        src/geninit.c [1.4], src/genht.c [1.1], src/genconf.c [1.6], 
+        src/genarch.c [1.4], src/gdevxxf.c [1.4], src/gdevxres.c [1.1], 
+        src/gdevxini.c [1.5], src/gdevxcmp.h [1.1], src/gdevxcmp.c [1.1], 
+        src/gdevxalt.c [1.7], src/gdevx.h [1.4], src/gdevx.c [1.6], 
+        src/gdevwpr2.c [1.4], src/gdevwdib.c [1.4], src/gdevvglb.c [1.4], 
+        src/gdevvec.h [1.4], src/gdevvec.c [1.4], src/gdevtfax.c [1.4], 
+        src/gdevsvga.h [1.4], src/gdevsvga.c [1.4], src/gdevsunr.c [1.1], 
+        src/gdevsppr.c [1.4], src/gdevsgi.c [1.4], src/gdevrun.c [1.4], 
+        src/gdevrops.c [1.4], src/gdevpx.c [1.7], src/gdevpsds.h [1.5], 
+        src/gdevpsds.c [1.5], src/gdevpsdp.c [1.5], src/gdevpsdi.c [1.5], 
+        src/gdevpsdf.h [1.4], src/gdevpsdf.c [1.4], src/gdevps.c [1.7], 
+        src/gdevprna.h [1.4], src/gdevprna.c [1.11], src/gdevprn.h [1.5], 
+        src/gdevprn.c [1.12], src/gdevppla.h [1.1], src/gdevppla.c [1.1], 
+        src/gdevpng.c [1.4], src/gdevpm.c [1.5], src/gdevplnx.h [1.1], 
+        src/gdevplnx.c [1.1], src/gdevpdfx.h [1.4], src/gdevpdfp.c [1.4], 
+        src/gdevpdfo.c [1.5], src/gdevpdfm.c [1.4], src/gdevpdfi.c [1.6], 
+        src/gdevpdfd.c [1.4], src/gdevpdf.c [1.5], src/gdevpcx.c [1.5], 
+        src/gdevpcl.h [1.4], src/gdevpcl.c [1.6], src/gdevpcfb.c [1.4], 
+        src/gdevpbm.c [1.8], src/gdevnfwd.c [1.6], src/gdevmsxf.c [1.4], 
+        src/gdevmswn.h [1.4], src/gdevmswn.c [1.4], src/gdevmrun.h [1.1], 
+        src/gdevmrun.c [1.1], src/gdevmrop.h [1.6], src/gdevmrop.c [1.5], 
+        src/gdevmr8n.c [1.2], src/gdevmr2n.c [1.2], src/gdevmpla.h [1.1], 
+        src/gdevmpla.c [1.4], src/gdevmgr.c [1.4], src/gdevmem.h [1.5], 
+        src/gdevmem.c [1.6], src/gdevmeds.h [1.1], src/gdevmeds.c [1.1], 
+        src/gdevm32.c [1.5], src/gdevm24.c [1.5], src/gdevm2.c [1.4], 
+        src/gdevm1.c [1.7], src/gdevlxm.c [1.1], src/gdevlj56.c [1.4], 
+        src/gdevl31s.c [1.1], src/gdevl256.c [1.4], src/gdevjpeg.c [1.5], 
+        src/gdevifno.c [1.2], src/gdevhl7x.c [1.2], src/gdevhit.c [1.5], 
+        src/gdevdrop.c [1.6], src/gdevdjet.c [1.4], src/gdevdgbr.c [1.5], 
+        src/gdevdflt.c [1.5], src/gdevddrw.c [1.6], src/gdevdcrd.h [1.1], 
+        src/gdevdcrd.c [1.1], src/gdevdbit.c [1.4], src/gdevcslw.c [1.1], 
+        src/gdevcmap.h [1.5], src/gdevcmap.c [1.9], src/gdevcljc.c [1.5], 
+        src/gdevclj.c [1.9], src/gdevcgm.c [1.5], src/gdevcdj.c [1.4], 
+        src/gdevcd8.c [1.1], src/gdevbmpc.c [1.4], src/gdevbmpa.c [1.16], 
+        src/gdevbmp.h [1.4], src/gdevbmp.c [1.8], src/gdevbjcl.h [1.1], 
+        src/gdevbjcl.c [1.1], src/gdevbit.c [1.7], src/gdevbbox.h [1.6], 
+        src/gdevalph.c [1.5], src/gdevabuf.c [1.4], src/gdev3852.c [1.4], 
+        src/gconf.c [1.6], src/foo [1.1], src/files.h [1.5], src/estack.h [1.4], 
+        src/errors.h [1.5], src/echogs.c [1.6], src/dwnodll.cpp [1.6], 
+        src/dwmain.rc [1.4], src/dwdll.h [1.6], src/dwdll.cpp [1.6], 
+        src/dvx-tail.mak [1.6], src/dvx-head.mak [1.6], src/dvx-gcc.mak [1.7], 
+        src/dstack.h [1.4], src/dpmainc.c [1.4], src/devs.mak [1.14], 
+        src/cp.bat [1.1], src/contrib.mak [1.12], src/cfonts.mak [1.7], 
+        src/ccgs [1.6], src/ccfont.h [1.5], src/bughunt.sh [1.1], 
+        src/btoken.h [1.4], src/bfont.h [1.4], src/bcwin32.mak [1.8], 
+        src/ansi2knr.c [1.5], lib/writecff.ps [1.6], lib/waterfal.ps [1.6], 
+        lib/viewpcx.ps [1.6], lib/viewpbm.ps [1.6], lib/viewmiff.ps [1.1], 
+        lib/viewcmyk.ps [1.7], lib/vasarely.ps [1.2], lib/type1ops.ps [1.6], 
+        lib/traceop.ps [1.6], lib/tiger.ps [1.2], lib/test.ps [1.2], 
+        lib/t1tot2.ps [1.6], lib/snowflak.ps [1.2], lib/rm.bat [1.7], 
+        lib/ps2pdf [1.6], lib/ps2ascii.ps [1.7], lib/ps2ai.ps [1.6], 
+        lib/pfbtopfa.ps [1.1], lib/pfbtopfa [1.1], lib/pdf_ops.ps [1.6], 
+        lib/pdf_main.ps [1.14], lib/pdf_font.ps [1.8], lib/pdf_draw.ps [1.9], 
+        lib/pdf_base.ps [1.7], lib/pdf2dsc.ps [1.6], lib/lpr2.bat [1.1], 
+        lib/lpgs.bat [1.1], lib/lp386r2.bat [1.1], lib/lp386.bat [1.1], 
+        lib/ht_ccbnm.ps [1.1], lib/gs_wan_e.ps [1.6], lib/gs_type1.ps [1.6], 
+        lib/gs_typ32.ps [1.7], lib/gs_ttf.ps [1.8], lib/gs_trap.ps [1.1], 
+        lib/gs_sym_e.ps [1.6], lib/gs_res.ps [1.6], lib/gs_rdlin.ps [1.1], 
+        lib/gs_pdfwr.ps [1.7], lib/gs_pdf_e.ps [1.6], lib/gs_mro_e.ps [1.6], 
+        lib/gs_ll3.ps [1.7], lib/gs_lev2.ps [1.8], lib/gs_init.ps [1.13], 
+        lib/gs_fonts.ps [1.7], lib/gs_dps2.ps [1.6], lib/gs_dps1.ps [1.6], 
+        lib/gs_cmap.ps [1.6], lib/gs_cidfn.ps [1.7], lib/gs_cff.ps [1.6], 
+        lib/gs_btokn.ps [1.6], lib/errpage.ps [1.1], lib/Fontmap.Ult [1.6], 
+        lib/Fontmap.Sol [1.6], lib/Fontmap.GS [1.6], lib/Fontmap [1.6], 
+        examples/waterfal.ps [1.1], examples/vasarely.ps [1.1], 
+        examples/tiger.ps [1.1], examples/snowflak.ps [1.1], examples/grayalph.ps [1.1], 
+        examples/golfer.ps [1.1], examples/escher.ps [1.1], examples/colorcir.ps [1.1], 
+        examples/chess.ps [1.1], examples/cheq.ps [1.1], examples/alphabet.ps [1.1]:
+        initial gs5.84 checkin with pcl and xl compiling.
+        
+
+Mon May 24 06:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/lib.mak [1.15]:
+        The last modification was not correct, reverts to previous revision.
+        
+
+Mon May 24 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/lib.mak [1.14]:
+        removes gsnogc object from "async_" definition to avoid multiple link
+        problem in pxl and pcl.
+        
+        * src/gdevbbox.c [1.16]:
+        gs5.84 integration - uses gx_stroke_add() instead of
+        gx_image_stroke_add().  When drawing dots (0 length lines)
+        gx_stroke_path_only() requires the current device to get the initial
+        matrix.  gx_imager_stroke_add() does not pass the device.
+        
+
+Sun May 23 00:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * doc/Use.htm [1.3], doc/Tester.htm [1.1], doc/Readme.htm [1.3], 
+        doc/Psfiles.htm [1.3], doc/News.htm [1.3], doc/New-user.htm [1.3], 
+        doc/Make.htm [1.3], doc/Language.htm [1.3], doc/Install.htm [1.3], 
+        doc/History5.htm [1.1], doc/Helpers.htm [1.3], doc/Fonts.htm [1.3], 
+        doc/Drivers.htm [1.3], doc/Devices.htm [1.3], doc/Current.htm [1.3], 
+        doc/Commprod.htm [1.3], doc/C-style.htm [1.3], doc/Bug-form.htm [1.3]:
+        gs5.84 integration: incorporates new documentation.
+        
+
+Thu May 13 17:00:00 1999 GMT            ray@artifex.com
+
+        * src/gxstroke.c [1.9]:
+        Change round joins to match Adobe -- full circle.
+        
+        * src/gxstroke.c [1.10]:
+        Change the way round joins and caps are done to match 5.83.
+        
+
+Wed Apr 21 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/gdevbmp.c [1.7]:
+        change to use proper color mapping procedure going from cmyk to rgb.
+        
+
+Tue Apr 20 01:00:00 1999 GMT        Marcos H. Woehrmann    marcos@artifex.com
+
+        * src/winlib.mak [1.9]:
+        Added definitions for D_, _D_, and _D (required by zlib).
+        
+
+Mon Apr 19 06:00:00 1999 GMT            ray@artifex.com
+
+        * src/stdpre.h [1.5]:
+        Add another UPPERCASE macro to allow code to match later 5.8x style.
+        
+        * src/gsalloc.c [1.11]:
+        Add logic to track the top of 'interior' free space of each chunk and
+        consolidate when freeing an object just above that space. This prevents
+        sandbars in the chunk. Logic also incorporated in 5.82+
+        
+        * src/gxalloc.h [1.10]:
+        Add 'int_freed_top' to track when free list consolidation is needed. This
+        is to fix sandbar problems in the chunk.
+        
+
+Mon Apr 19 02:00:00 1999 GMT            ray@artifex.com
+
+        * src/gxclmem.c [1.6]:
+        Change #define that enables statics used for gathering statistics to
+        DEBUG_MEMFILE so that normal DEBUG builds aren't polluted with statics.
+        
+
+Fri Apr 16 17:00:00 1999 GMT            ray@artifex.com
+
+        * src/stdpre.h [1.4]:
+        Add UPPERCASE versions of some #define macros for compatibility with
+        future GS source (5.8x). Lowercase version kept for backward compatibility
+        
+
+Thu Apr 15 19:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/gdevbbox.c [1.15]:
+        adds a procedure for releasing the bbox and removes near keyword (from
+        gs5.80).
+        
+
+Tue Apr 13 05:00:00 1999 GMT            ray@artifex.com
+
+        * src/gp_ntfs.c [1.5]:
+        Get rid of label "top" to prevent spurious warning.
+        
+
+Thu Apr  8 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/gdevclj.c [1.8]:
+        moves the origin of the pcl output to properly account for the offsets
+        of the imageable area.
+        
+
+Wed Apr  7 15:00:00 1999 GMT            ray@artifex.com
+
+        * lib/pdf_main.ps [1.13]:
+        Remove debug statement inadvertently left in previous version.
+        
+
+Wed Apr  7 02:00:00 1999 GMT            ray@artifex.com
+
+        * lib/pdf_main.ps [1.12]:
+        Fix for (probably bogus) file that has undefined Annotation Link Dest
+        name '/0'. Allow/ignore undefined Dest in Links. Also allow the '%%EOF'
+        to be truncated to '%%EO' - fixes another bogus file problem that Adobe
+        Acrobat reads.
+        
+
+Tue Apr  6 23:00:00 1999 GMT            ray@artifex.com
+
+        * lib/gs_fonts.ps [1.6]:
+        Fixes (from 5.80) for PDF font substitution problems, primarily with
+        Bold font not being picked when it should.
+        
+        * lib/pdf_font.ps [1.7]:
+        Fix (from 5.80) for font substitution for PDF files, problem primarily with
+        Bold font not being picked when it should.
+        
+
+Fri Apr  2 07:00:00 1999 GMT            ray@artifex.com
+
+        * src/gsrect.h [1.5]:
+        Add macro to detect parallelograms that are rectangles. Used in clist
+        fill_parallelogram for optimization.
+        
+        * src/gxclpath.c [1.9], src/gdevddrw.c [1.5]:
+        Add a check for parallelograms that are rectangles.
+        
+
+Thu Apr  1 23:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/gximage1.c [1.6]:
+        Fix from aladdin gs5.67.  Images with non-default ImageMatrix weren't
+        written correctly in the band list. (bug introduced in 5.60)
+        
+
+Thu Apr  1 16:00:00 1999 GMT            ray@artifex.com
+
+        * src/gsdevice.c [1.11], src/gsalloc.c [1.10]:
+        Fix "Pointer Type Mismatch" warning.
+        
+
+Thu Apr  1 08:00:00 1999 GMT            ray@artifex.com
+
+        * src/gxclpath.c [1.8]:
+        Fix clist triangle and paralleogram functions to respect the disable_path
+        flag. This plugs a hole in clist VMerror recovery that is not handled
+        by clist_put_polyfill. Later, maybe fix put_polyfill to use TRY_RECT
+        END_RECT macros so that VMerror recovery will work for these higher
+        level (but still simple) paths operations.
+        
+
+Thu Mar 25 07:00:00 1999 GMT            ray@artifex.com
+
+        * src/gsparam.h [1.4]:
+        Add 'target' pointer to param list to chain to another list. Also add
+        prototype for 'set_target' that allows chaining two lists. Params on
+        first list will supercede parameters on the second, target, list.
+        
+        * src/gscparam.c [1.4]:
+        Add logic to chain lists using 'target' element. Also add 'set_target'
+        function that allows chaining two lists. Params on first list will
+        supercede parameters on the second, target, list.
+        
+
+Wed Mar 24 23:00:00 1999 GMT            ray@artifex.com
+
+        * src/gdevclj.c [1.7]:
+        Fix rotation method (again). This now uses a new function that prepends
+        a parameter list for use by gdev_prn_put_params. Also a private 'rotated'
+        flag is used to keep the MediaSize correct for get_params and put_params.
+        
+
+Tue Mar 23 22:00:00 1999 GMT            ray@artifex.com
+
+        * src/gdevclj.c [1.6]:
+        Fix crash caused by changing width and height after gdev_prn_put_params
+        is called. Margins are now ignored in clj_print_page.
+        
+
+Thu Mar 18 07:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/gxclrast.c [1.10]:
+        incorrect format specifier in debug print statement.
+        
+
+Tue Mar 16 18:00:00 1999 GMT            ray@artifex.com
+
+        * src/gdevbbox.c [1.14]:
+        Add conditional forwarding of open and close, controlled by a new function
+        'gx_device_bbox_fwd_open_close(bbox* dev, bool forward_open_close)'
+        
+
+Tue Mar 16 17:00:00 1999 GMT            ray@artifex.com
+
+        * src/gdevbbox.h [1.5]:
+        Add conditional forwarding of open and close, controlled by a new function
+        'gx_device_bbox_fwd_open_close(bbox* dev, bool forward_open_close)'
+        
+
+Tue Mar 16 15:00:00 1999 GMT            ray@artifex.com
+
+        * src/gxcldev.h [1.6]:
+        Fix HANDLE_RECT_UNLESS to prevent a >0 return code from terminating the
+        loop.
+        
+        * src/gxclist.c [1.6]:
+        Fix for improper handling of the return code from clist_VMerror_recover.
+        (related to HANDLE_RECT_UNLESS fix in gxcldev.h -r1.6)
+        
+        * src/gp_win32.c [1.6]:
+        Put __WATCOMC__ conditional sections in to allow this module to be used.
+        Watcom's beginthread API is different than Microsoft's.
+        
+
+Tue Mar 16 08:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/gxpath2.c [1.5], src/gxpath.h [1.4]:
+        changes to support opaque gx_path.
+        
+
+Thu Mar 11 15:00:00 1999 GMT            ray@artifex.com
+
+        * src/gxclrast.c [1.9]:
+        Change 'read_put_params' to use new API gs_imager_putdeviceparams rather
+        than going directly to the device. This will make changes to the state
+        caused by the put_params to be picked up in cached items like cmap_procs.
+        
+        * src/gsdevice.h [1.5]:
+        Make "seeing" put_params more reliable, by accessing put_params through the
+        graphics state rather than taking the back door directly into the device.
+        
+        * src/gsdevice.c [1.10]:
+        Add API functions gs_imager_putdeviceparams and gs_state_putdeviceparams
+        to make "seeing" put_params more reliable, by accessing put_params through
+        the graphics state rather than taking the back door directly into the
+        device.
+        
+
+Wed Mar 10 20:00:00 1999 GMT            ray@artifex.com
+
+        * src/gdevbbox.c [1.13]:
+        Change to forward open and close by calling gs_opendevice and gs_closedevice
+        so that the is_open flag is correct for the target device. Bbox is a special
+        type of forwarding device that needs to do this. This fixes a problem with
+        PCL5 main freeing memory and exiting while async rendering is still in
+        progress (exception with -Z@).
+        
+        * src/gsdevice.c [1.9]:
+        Add new 'gs_opendevice' function that is used by bbox.
+        
+        * src/gsdevice.h [1.4]:
+        Add prototype for new 'gs_opendevice' function that is now used by bbox.
+        
+
+Wed Mar 10 01:00:00 1999 GMT            ray@artifex.com
+
+        * src/gdevbmpa.c [1.15]:
+        Add 'bmpacmyk' 4-bit cmyk device that allows viewing with standard tools.
+        Add support for ForceMono=1 to put_params, and mono support for CMYKs
+        devices (both bmpa32b and bmpacmyk).
+        
+        * src/gdevbit.c [1.6]:
+        Fix problem of rangecheck during put_params for call following set of
+        ForceMono=1. Need to set num_components back to real value during call
+        down into gdev_prn_put_params -> gx_default_put_params.
+        
+
+Sat Mar  6 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * src/gdevcljc.c [1.4]:
+        positions offset of the logical page correctly.
+        
+
+Fri Mar  5 17:00:00 1999 GMT            ray@artifex.com
+
+        * src/gdevbit.c [1.5]:
+        Fix ForceMono handling so it doesn't revert to color on subsequent put_param
+        calls that don't include ForceMono.
+        
+
 Version 5.50f (03/04/99)
 ========================
 
