@@ -679,7 +679,7 @@ hpgl_set_drawing_color(
 {
     int                     code = 0;
     pcl_pattern_set_proc_t  set_proc;
-
+    byte pixel_placement_mode = 0;
     switch (render_mode) {
 
       case hpgl_rm_clip_and_fill_polygon:
@@ -715,6 +715,8 @@ hpgl_set_drawing_color(
 	/* fill like a polygon */
       case hpgl_rm_polygon:
 fill:
+        /* pixel placement mode is only relevant to polygon fills */ 
+        pixel_placement_mode = pgls->pp_mode;
         set_proc = pcl_pattern_get_proc_FT(pgls->g.fill.type);
 	switch (pgls->g.fill.type) {
 
@@ -824,10 +826,10 @@ fill:
     if (code >= 0) {
         /* PCL and GL/2 no longer use graphic library transparency */
         gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);
-        if (pgls->pp_mode == 0)
+        if (pixel_placement_mode == 0)
             gs_setfilladjust(pgls->pgs, 0.5, 0.5);
         else
-            gs_setfilladjust(pgls->pgs, 0.0, 0.0);
+            gs_setfilladjust(pgls->pgs, 0, 0);
     }
 
     return code;
