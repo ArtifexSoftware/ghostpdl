@@ -270,8 +270,8 @@ private int
 mac_stdin_read_process(stream_state *st, stream_cursor_read *ignore_pr,
   stream_cursor_write *pw, bool last)
 {
-    uint count;
-/* callback to get more input */
+    uint count = pw->limit - pw->ptr;
+    /* callback to get more input */
     count = (*pgsdll_callback) (GSDLL_STDIN, (char*)pw->ptr + 1, count);
 	pw->ptr += count;	
 	return 1;
