@@ -170,6 +170,56 @@ pdf_put_image_filters(cos_dict_t *pcd, gx_device_pdf *pdev,
 
 /* ---------------- Image writing ---------------- */
 
+/*
+ * Fill in the image parameters for a device space bitmap.
+ * PDF images are always specified top-to-bottom.
+ * data_h is the actual number of data rows, which may be less than h.
+ */
+void
+pdf_make_bitmap_matrix(gs_matrix * pmat, int x, int y, int w, int h,
+		       int h_actual)
+{
+    pmat->xx = w;
+    pmat->xy = 0;
+    pmat->yx = 0;
+    pmat->yy = -h_actual;
+    pmat->tx = x;
+    pmat->ty = y + h;
+}
+
+/* Put out the gsave and matrix for an image. */
+void
+pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
+		     floatp y_scale)
+{
+    gs_matrix imat;
+
+    gs_matrix_scale(pmat, 1.0, y_scale, &imat);
+    pdf_put_matrix(pdev, "q ", &imat, "cm\n");
+}
+
+/* Put out a reference to an image resource. */
+int
+pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
+	     const gs_matrix * pimat, bool in_contents)
+{
+    if (in_contents) {
+	int code = pdf_open_contents(pdev, PDF_IN_STREAM);
+
+	if (code < 0)
+	    return code;
+    }
+    if (pimat) {
+	/* Scale the matrix to account for short images. */
+	const pdf_x_object_t *const pxo = (const pdf_x_object_t *)pres;
+	double scale = (double)pxo->data_height / pxo->height;
+
+	pdf_put_image_matrix(pdev, pimat, scale);
+    }
+    pprintld1(pdev->strm, "/R%ld Do\nQ\n", pdf_resource_id(pres));
+    return 0;
+}
+
 /* ------ Begin / finish ------ */
 
 /*

@@ -148,6 +148,25 @@ int pdf_put_image_filters(P4(cos_dict_t *pcd, gx_device_pdf *pdev,
 
 /* ------ Image writing ------ */
 
+/* Define the maximum size of an in-line image. */
+#define MAX_INLINE_IMAGE_BYTES 4000
+
+/*
+ * Fill in the image parameters for a device space bitmap.
+ * PDF images are always specified top-to-bottom.
+ * data_h is the actual number of data rows, which may be less than h.
+ */
+void pdf_make_bitmap_matrix(P6(gs_matrix * pmat, int x, int y, int w, int h,
+			       int h_actual));
+
+/* Put out the gsave and matrix for an image. */
+void pdf_put_image_matrix(P3(gx_device_pdf * pdev, const gs_matrix * pmat,
+			     floatp y_scale));
+
+/* Put out a reference to an image resource. */
+int pdf_do_image(P4(gx_device_pdf * pdev, const pdf_resource_t * pres,
+		    const gs_matrix * pimat, bool in_contents));
+
 /* Define the structure for writing an image. */
 typedef struct pdf_image_writer_s {
     psdf_binary_writer binary;

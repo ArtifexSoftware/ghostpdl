@@ -124,15 +124,21 @@ make_mid_default(gx_device **pmidev, gx_device *dev, int width, int height,
     *pmidev = (gx_device *)midev;
     return 0;
 }
-private IMAGE3_MAKE_MCD_PROC(make_mcd_default);	/* check prototype */
+private IMAGE3_MAKE_MCDE_PROC(make_mcde_default);  /* check prototype */
 private int
-make_mcd_default(gx_device **pmcdev, gx_device *dev, gx_device *midev,
-		 const gs_int_point *origin, gs_memory_t *mem)
+make_mcde_default(gx_device *dev, const gs_imager_state *pis,
+		  const gs_matrix *pmat, const gs_image_common_t *pic,
+		  const gs_int_rect *prect, const gx_drawing_color *pdcolor,
+		  const gx_clip_path *pcpath, gs_memory_t *mem,
+		  gx_image_enum_common_t **pinfo,
+		  gx_device **pmcdev, gx_device *midev,
+		  gx_image_enum_common_t *pminfo,
+		  const gs_int_point *origin)
 {
     gx_device_memory *const mdev = (gx_device_memory *)midev;
     gx_device_mask_clip *mcdev =
 	gs_alloc_struct(mem, gx_device_mask_clip, &st_device_mask_clip,
-			"make_mcd_default");
+			"make_mcde_default");
     gx_strip_bitmap bits;	/* only gx_bitmap */
     int code;
 
@@ -147,10 +153,17 @@ make_mcd_default(gx_device **pmcdev, gx_device *dev, gx_device *midev,
 				   (const gx_bitmap *)&bits, dev,
 				   origin->x, origin->y, mem);
     if (code < 0) {
-	gs_free_object(mem, mcdev, "make_mcd_default");
+	gs_free_object(mem, mcdev, "make_mcde_default");
 	return code;
     }
     mcdev->tiles = bits;
+    code = dev_proc(mcdev, begin_typed_image)
+	((gx_device *)mcdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+	 pinfo);
+    if (code < 0) {
+	gs_free_object(mem, mcdev, "make_mcde_default");
+	return code;
+    }
     *pmcdev = (gx_device *)mcdev;
     return 0;
 }
@@ -163,7 +176,7 @@ gx_begin_image3(gx_device * dev,
 {
     return gx_begin_image3_generic(dev, pis, pmat, pic, prect, pdcolor,
 				   pcpath, mem, make_mid_default,
-				   make_mcd_default, pinfo);
+				   make_mcde_default, pinfo);
 }
 
 /*
@@ -178,7 +191,7 @@ gx_begin_image3_generic(gx_device * dev,
 			const gx_drawing_color *pdcolor,
 			const gx_clip_path *pcpath, gs_memory_t *mem,
 			IMAGE3_MAKE_MID_PROC((*make_mid)),
-			IMAGE3_MAKE_MCD_PROC((*make_mcd)),
+			IMAGE3_MAKE_MCDE_PROC((*make_mcde)),
 			gx_image_enum_common_t **pinfo)
 {
     const gs_image3_t *pim = (const gs_image3_t *)pic;
@@ -300,8 +313,10 @@ gx_begin_image3_generic(gx_device * dev,
 	penum->mask_data =
 	    gs_alloc_bytes(mem, (penum->mask_width + 7) >> 3,
 			   "gx_begin_image3(mask_data)");
-	if (penum->pixel_data == 0 || penum->mask_data == 0)
+	if (penum->pixel_data == 0 || penum->mask_data == 0) {
+	    code = gs_note_error(gs_error_VMerror);
 	    goto out1;
+	}
     }
     penum->InterleaveType = pim->InterleaveType;
     penum->bpc = pim->BitsPerComponent;
@@ -322,10 +337,6 @@ gx_begin_image3_generic(gx_device * dev,
     if (code < 0)
 	goto out1;
     penum->mdev = mdev;
-    code = make_mcd(&pcdev, dev, mdev, &origin, mem);
-    if (code < 0)
-	goto out2;
-    penum->pcdev = pcdev;
     gs_image_t_init_mask(&i_mask, false);
     i_mask.adjust = false;
     {
@@ -356,7 +367,7 @@ gx_begin_image3_generic(gx_device * dev,
 					   &mask_rect, &dcolor, NULL, mem,
 					   &penum->mask_info);
 	if (code < 0)
-	    goto out5;
+	    goto out2;
     }
     gs_image_t_init(&i_pixel, pim->ColorSpace);
     {
@@ -365,11 +376,12 @@ gx_begin_image3_generic(gx_device * dev,
 	*(gs_pixel_image_t *)&i_pixel = *(const gs_pixel_image_t *)pim;
 	i_pixel.type = type1;
     }
-    code = gx_device_begin_typed_image(pcdev, pis, pmat,
-				       (const gs_image_common_t *)&i_pixel,
-			   prect, pdcolor, pcpath, mem, &penum->pixel_info);
+    code = make_mcde(dev, pis, pmat, (const gs_image_common_t *)&i_pixel,
+		     prect, pdcolor, pcpath, mem, &penum->pixel_info,
+		     &pcdev, mdev, penum->mask_info, &origin);
     if (code < 0)
-	goto out6;
+	goto out3;
+    penum->pcdev = pcdev;
     /*
      * Set num_planes, plane_widths, and plane_depths from the values in the
      * enumerators for the mask and the image data.
@@ -408,11 +420,8 @@ gx_begin_image3_generic(gx_device * dev,
     gx_device_retain(pcdev, true); /* ditto */
     *pinfo = (gx_image_enum_common_t *) penum;
     return 0;
-  out6:
+  out3:
     gx_image_end(penum->mask_info, false);
-  out5:
-    gs_closedevice(pcdev);
-    gs_free_object(mem, pcdev, "gx_begin_image3(pcdev)");
   out2:
     gs_closedevice(mdev);
     gs_free_object(mem, mdev, "gx_begin_image3(mdev)");
@@ -420,7 +429,7 @@ gx_begin_image3_generic(gx_device * dev,
     gs_free_object(mem, penum->mask_data, "gx_begin_image3(mask_data)");
     gs_free_object(mem, penum->pixel_data, "gx_begin_image3(pixel_data)");
     gs_free_object(mem, penum, "gx_begin_image3");
-    return_error(gs_error_VMerror);
+    return code;
 }
 private bool
 check_image3_extent(floatp mask_coeff, floatp data_coeff)

@@ -450,15 +450,16 @@ struct gx_device_pdf_s {
 
 /* ================ Driver procedures ================ */
 
+    /* In gdevpdfb.c */
+dev_proc_copy_mono(gdev_pdf_copy_mono);
+dev_proc_copy_color(gdev_pdf_copy_color);
+dev_proc_fill_mask(gdev_pdf_fill_mask);
+dev_proc_strip_tile_rectangle(gdev_pdf_strip_tile_rectangle);
     /* In gdevpdfd.c */
 dev_proc_fill_rectangle(gdev_pdf_fill_rectangle);
 dev_proc_fill_path(gdev_pdf_fill_path);
 dev_proc_stroke_path(gdev_pdf_stroke_path);
     /* In gdevpdfi.c */
-dev_proc_copy_mono(gdev_pdf_copy_mono);
-dev_proc_copy_color(gdev_pdf_copy_color);
-dev_proc_fill_mask(gdev_pdf_fill_mask);
-dev_proc_strip_tile_rectangle(gdev_pdf_strip_tile_rectangle);
 dev_proc_begin_typed_image(gdev_pdf_begin_typed_image);
     /* In gdevpdfp.c */
 dev_proc_get_params(gdev_pdf_get_params);
