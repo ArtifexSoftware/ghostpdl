@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1999, 2002 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -102,8 +102,8 @@ typedef struct obj_header_data_s {
  * so objects must be aligned at least 0 mod obj_back_scale.
  */
 #define obj_align_mod\
-  (((arch_align_long_mod - 1) | (arch_align_ptr_mod - 1) |\
-    (arch_align_double_mod - 1) | (align_bitmap_mod - 1) |\
+  (((arch_align_memory_mod - 1) |\
+    (align_bitmap_mod - 1) |\
     (obj_back_scale - 1)) + 1)
 /* The only possible values for obj_align_mod are 4, 8, or 16.... */
 #if obj_align_mod == 4

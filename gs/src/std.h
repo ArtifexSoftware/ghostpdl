@@ -37,6 +37,7 @@
 #define arch_align_ptr_mod ARCH_ALIGN_PTR_MOD
 #define arch_align_float_mod ARCH_ALIGN_FLOAT_MOD
 #define arch_align_double_mod ARCH_ALIGN_DOUBLE_MOD
+#define arch_align_struct_mod ARCH_ALIGN_STRUCT_MOD
 #define arch_log2_sizeof_short ARCH_LOG2_SIZEOF_SHORT
 #define arch_log2_sizeof_int ARCH_LOG2_SIZEOF_INT
 #define arch_log2_sizeof_long ARCH_LOG2_SIZEOF_LONG
@@ -56,6 +57,15 @@
 #define arch_floats_are_IEEE ARCH_FLOATS_ARE_IEEE
 #define arch_arith_rshift ARCH_ARITH_RSHIFT
 #define arch_can_shift_full_long ARCH_CAN_SHIFT_FULL_LONG
+/*
+ * Define the alignment that the memory manager must preserve.
+ * We assume all alignment moduli are powers of 2.
+ * NOTE: we require that malloc align blocks at least this strictly.
+ */
+#define ARCH_ALIGN_MEMORY_MOD\
+  (((ARCH_ALIGN_LONG_MOD - 1) | (ARCH_ALIGN_PTR_MOD - 1) |\
+    (ARCH_ALIGN_DOUBLE_MOD - 1) | (ARCH_ALIGN_STRUCT_MOD - 1)) + 1)
+#define arch_align_memory_mod ARCH_ALIGN_MEMORY_MOD
 
 /* Define integer data type sizes in terms of log2s. */
 #define ARCH_SIZEOF_SHORT (1 << ARCH_LOG2_SIZEOF_SHORT)

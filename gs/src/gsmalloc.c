@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -101,8 +101,8 @@ struct gs_malloc_block_s {
     malloc_block_data;
 /* ANSI C does not allow zero-size arrays, so we need the following */
 /* unnecessary and wasteful workaround: */
-#define _npad (-size_of(struct malloc_block_data_s) & 7)
-    byte _pad[(_npad == 0 ? 8 : _npad)];	/* pad to double */
+#define _npad (-size_of(struct malloc_block_data_s) & (arch_align_memory_mod - 1))
+    byte _pad[(_npad == 0 ? arch_align_memory_mod : _npad)];
 #undef _npad
 };
 
@@ -174,6 +174,13 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	    set_msg("exceeded limit");
 	else if ((ptr = (byte *) malloc(added)) == 0)
 	    set_msg("failed");
+#ifdef DEBUG
+	else if (ALIGNMENT_MOD(ptr, arch_align_memory_mod) != 0) {
+	    set_msg("malloc alignment failed!");
+	    free(ptr);
+	    ptr = 0;
+	} 
+#endif
 	else {
 	    gs_malloc_block_t *bp = (gs_malloc_block_t *) ptr;
 
