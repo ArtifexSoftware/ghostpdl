@@ -115,17 +115,16 @@ void
 printf_program_ident(FILE * f, const char *program_name,
 		     long revision_number)
 {
-    if (program_name) {
-	fputs(program_name, f);
-	if (revision_number)
-	    fputc(' ', f);
-    }
-    if (revision_number) {
-	int fpart = revision_number % 100;
-
-	fprintf(f, (fpart == 0 ? "%d.%d" : "%d.%02d"),
-		(int)(revision_number / 100), fpart);
-    }
+    if (program_name) 
+      { fprintf(f,"%s",program_name);
+        if (revision_number)
+	      fprintf(f," ");
+      }
+    if (revision_number) 
+      { int fpart = revision_number % 100;
+	    fprintf(f, (fpart == 0 ? "%d.%d" : "%d.%02d")
+          ,(int)(revision_number / 100), fpart);
+      }
 }
 void
 eprintf_program_ident(FILE * f, const char *program_name,
@@ -133,7 +132,7 @@ eprintf_program_ident(FILE * f, const char *program_name,
 {
     if (program_name) {
 	printf_program_ident(f, program_name, revision_number);
-	fputs(": ", f);
+	fprintf(f,": ");
     }
 }
 #if __LINE__			/* compiler provides it */
