@@ -346,6 +346,28 @@ private const stream_template s_Null1D_template = {
     &st_stream_state, NULL, s_Null1D_process, 1, 1
 };
 
+/* A utility filter that returns an immediate EOF without consuming */
+/* any data from its source. Used by PDF interpreter for unknown    */
+/* filter types.                                                    */
+private int
+s_EOFD_process(stream_state * st, stream_cursor_read * pr,
+		 stream_cursor_write * pw, bool last)
+{
+    return EOFC;
+}
+private const stream_template s_EOFD_template = {
+    &st_stream_state, NULL, s_EOFD_process, 1, 1
+};
+
+/* <target> /.EOFDecode filter <file> */
+/* <target> <dict> /.EOFDecode filter <file> */
+private int
+zEOFD(i_ctx_t *i_ctx_p)
+{
+    return filter_read_simple(i_ctx_p, &s_EOFD_template);
+}
+
+
 /* Ensure a minimum buffer size for a filter. */
 /* This may require creating an intermediate stream. */
 private int
@@ -429,5 +451,6 @@ const op_def zfilter_op_defs[] = {
     {"2RunLengthEncode", zRLE},
     {"1RunLengthDecode", zRLD},
     {"3SubFileDecode", zSFD},
+    {"1.EOFDecode", zEOFD},
     op_def_end(0)
 };

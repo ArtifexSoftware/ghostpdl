@@ -579,6 +579,15 @@ pdfdict begin
 } bind def
 /filtername {		% <filtername> filtername <filtername'>
   //unabbrevfilterdict 1 index .knownget { exch pop } if
+  dup /Filter resourcestatus { pop pop } {
+    Repaired exch	% this error is not the creator's fault	
+    (   **** ERROR: Unable to process ) pdfformaterror
+    64 string cvs pdfformaterror
+    ( data. Page will be missing data.\n) pdfformaterror
+    /Repaired exch store % restore the previous "Repaired" state
+    % provide a filter that returns EOF (no data)
+    /.EOFDecode
+  } ifelse
 } bind def
 /applyfilters {		% <parms> <source> <filternames> applyfilters <stream>
   2 index null eq {
