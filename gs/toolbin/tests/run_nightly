@@ -18,6 +18,7 @@
 # $Id$
 
 import os
+import sys
 import re
 import time
 import string
@@ -87,34 +88,73 @@ def create_dailydb():
     db.close()
 
 def sendmail(frm, to, subject, text):
-	import smtplib
+    import smtplib
 
-	msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s' % (frm, to, subject, text)
+    msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s' % (frm, to, subject, text)
 
-	server = smtplib.SMTP(MAIL_SERVER)
-	server.sendmail(frm, to, msg)
-	server.quit()
+    server = smtplib.SMTP(MAIL_SERVER)
+    server.sendmail(frm, to, msg)
+    server.quit()
+
+def die(msg):
+    sendmail(MAIL_FROM, REPORT_EMAIL, "error running regression", msg)
+    sys.exit(0)
 
 def update_ghostscript():
-	cwd = os.getcwd()
-	os.chdir(HEAD_DIR)
+    cwd = os.getcwd()
+    os.chdir(HEAD_DIR)
 	
-	os.unlink("%s/src/gscdef.c" % (HEAD_DIR,))
-	if os.system("date >> " + CVS_LOG_STDOUT) != 0: return -1
-	if os.system("date >> " + CVS_LOG_STDERR) != 0: return -1
-	if os.system("cvs update -Pd >> " + CVS_LOG_STDOUT + " 2>> " + CVS_LOG_STDERR) != 0: return -1
-	change_gsproduct("%s/src/gscdef.c" % (HEAD_DIR,))
+    os.unlink("%s/src/gscdef.c" % (HEAD_DIR,))
+    
+    if os.system("date > " + CVS_LOG_STDOUT) != 0: return 1
+    if os.system("date > " + CVS_LOG_STDERR) != 0: return 1
+    if os.system("cvs update -Pd >> " + CVS_LOG_STDOUT + " 2>> " +
+                 CVS_LOG_STDERR) != 0: return 1
+    
+    change_gsproduct("%s/src/gscdef.c" % (HEAD_DIR,))
 	
-	if os.system("make clean > /dev/null 2> /dev/null") != 0: return -1
-	if os.system("make > " + MAKE_LOG_STDOUT + " 2> " + MAKE_LOG_STDERR) != 0: return -1
-	if os.system("make install > " + INSTALL_LOG_STDOUT + " 2> " + INSTALL_LOG_STDERR) != 0: return -1
+    if os.system("make clean > /dev/null 2> /dev/null") != 0:
+        return -1
+    
+    if os.system("make > " + MAKE_LOG_STDOUT + " 2> " +
+                 MAKE_LOG_STDERR) != 0: return 2
 
-	return 0
+    if os.system("make install > " + INSTALL_LOG_STDOUT + " 2> " + \
+                 INSTALL_LOG_STDERR) != 0: return 3
 
+    return 0
 
-if update_ghostscript() != 0:
-	sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'There was an error updating and building ghostscript from CVS.  Please investigate.')
-	exit(0)
+def get_file(f):
+    file = open(f, 'r')
+    lines = file.readlines()
+    file.close()
+    return string.join(lines, '')
+
+err = update_ghostscript()
+if err != 0:
+    if err == 1:
+        msg = "Ghostscript update failed updating from CVS.\n\n"
+        msg = msg + "stdout log:\n\n"
+        msg = msg + get_file(CVS_LOG_STDOUT)
+        msg = msg + "\nstderr log:\n\n"
+        msg = msg + get_file(CVS_LOG_STDERR)
+        die(msg)
+    elif err == 2:
+        msg = "Ghostscript update failed during make.\n\n"
+        msg = msg + "stdout log:\n\n"
+        msg = msg + get_file(MAKE_LOG_STDOUT)
+        msg = msg + "\nstderr log:\n\n"
+        msg = msg + get_file(MAKE_LOG_STDERR)
+        die(msg)
+    elif err == 3:
+        msg = "Ghostscript update failed during install.\n\n"
+        msg = msg + "stdout log:\n\n"
+        msg = msg + get_file(INSTALL_LOG_STDOUT)
+        msg = msg + "\nstderr log:\n\n"
+        msg = msg + get_file(INSTALL_LOG_STDERR)
+        die(msg)
+    else:
+        die("Unknown error updating Ghostscript")
 
 # start new log files
 try:
@@ -123,23 +163,21 @@ try:
     log = open(LOG_STDERR, "w")
     log.close()
 except:
-    sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'The log files were not able to be restartd.')
-    exit(0)
+    die("The log files were not able to be restarted")
 
 # create the daily results database
 create_dailydb()
 
 p = os.popen(REGRESSION_SCRIPT)
 if p == None:
-	sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'There was an error updating and building ghostscript from CVS.  Please investigate.')
-	exit(0)
+    die("Could not open and run the regression script.")
 
 pattern = 'ok$'
 msg = ''
 for line in p.readlines():
-	if re.search(pattern, line):
-		continue
-	msg = msg + line
+    if re.search(pattern, line):
+        continue
+    msg = msg + line
 	
 p.close()
 
@@ -148,9 +186,9 @@ diff = 'The following regression changes happened since yesterday\'s report:\n'
 
 p = os.popen(DIFF_SCRIPT)
 if p:
-	for line in p.readlines():
-		diff = diff + line
-	p.close()
+    for line in p.readlines():
+        diff = diff + line
+    p.close()
 
 diff = diff + "\n\nThe complete list of regressions for today:\n"
 msg = diff + msg
