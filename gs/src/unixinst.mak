@@ -63,7 +63,7 @@ install-libdata:
 	-mkdir -p $(gsdatadir)
 	-mkdir -p $(gsdatadir)/lib
 	$(SH) -c 'for f in \
-Fontmap Fontmap.GS \
+Fontmap Fontmap.GS cidfmap \
 ht_ccsto.ps \
 acctest.ps addxchar.ps align.ps bdftops.ps \
 caption.ps cid2code.ps decrypt.ps docie.ps \
