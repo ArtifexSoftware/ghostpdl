@@ -1793,6 +1793,13 @@ false setpacking
   } repeat pop
 } if
 
+% Set up AlignToPixels :
+
+/AlignToPixels where {
+  mark /AlignToPixels 2 index /AlignToPixels get .dicttomark setuserparams
+  /AlignToPixels undef
+} if
+
 % Conditionally turn image interpolation on or off.
 currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
 

@@ -90,6 +90,7 @@ type1_exec_init(gs_type1_state *pcis, gs_text_enum_t *penum,
      * the current gstate and path.  This is a design bug that we will
      * have to address someday!
      */
+    
     return gs_type1_interp_init(pcis, (gs_imager_state *)pgs, pgs->path,
 				&penum->log2_scale,
 				(penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
@@ -122,6 +123,7 @@ typedef struct gs_type1exec_state_s {
      */
     ref save_args[6];
     int num_args;
+    bool AlignToPixels;
 } gs_type1exec_state;
 
 gs_private_st_suffix_add1(st_gs_type1exec_state, gs_type1exec_state,

@@ -447,8 +447,11 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphData, &GlyphData);
     ref_assign(&pfont_data(pfont)->u.cid0.DataSource, &DataSource);
     code = define_gs_font((gs_font *)pfont);
-    if (code >= 0)
+    if (code >= 0) {
+	for (i = 0; i < FDArray_size; ++i)
+	    FDArray[i]->dir = pfont->dir;
 	return code;
+    }
  fail:
     ifree_object(FDArray, "buildfont9(FDarray)");
     return code;

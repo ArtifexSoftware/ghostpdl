@@ -137,6 +137,7 @@ struct cached_char_s {
     /* is allocated */
     uint loc;			/* relative location in chunk */
     uint pair_index;		/* index of pair in mdata */
+    gs_fixed_point subpix_origin; /* glyph origin offset modulo pixel */
 
     /* The rest of the structure is the 'value'. */
     /* gx_cached_bits_common has width, height, raster, */
@@ -244,6 +245,10 @@ struct gs_font_dir_s {
     /* Scanning cache for GC */
     uint enum_index;		/* index (N) */
     uint enum_offset;		/* ccache.table[offset] is N'th non-zero entry */
+
+    /* User parameter AlignToPixels. */
+
+    bool align_to_pixels;
 };
 
 #define private_st_font_dir()	/* in gsfont.c */\

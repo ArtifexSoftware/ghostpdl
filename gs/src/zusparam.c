@@ -412,6 +412,17 @@ set_MinScreenLevels(i_ctx_t *i_ctx_p, long val)
     gs_setminscreenlevels((uint) val);
     return 0;
 }
+private long
+current_AlignToPixels(i_ctx_t *i_ctx_p)
+{
+    return gs_currentaligntopixels(ifont_dir);
+}
+private int
+set_AlignToPixels(i_ctx_t *i_ctx_p, long val)
+{
+    gs_setaligntopixels(ifont_dir, (uint)val);
+    return 0;
+}
 private const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
@@ -436,7 +447,9 @@ private const long_param_def_t user_long_params[] =
      current_WaitTimeout, set_WaitTimeout},
     /* Extensions */
     {"MinScreenLevels", 0, MAX_UINT_PARAM,
-     current_MinScreenLevels, set_MinScreenLevels}
+     current_MinScreenLevels, set_MinScreenLevels},
+    {"AlignToPixels", 0, 1,
+     current_AlignToPixels, set_AlignToPixels}
 };
 
 /* Boolean values */

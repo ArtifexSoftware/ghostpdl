@@ -259,6 +259,7 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->scaled_fonts = 0;
     pdir->ssize = 0;
     pdir->smax = smax;
+    pdir->align_to_pixels = true;
     return pdir;
 }
 
@@ -567,6 +568,12 @@ gs_setcacheupper(gs_font_dir * pdir, uint size)
     pdir->ccache.upper = size;
     return 0;
 }
+int
+gs_setaligntopixels(gs_font_dir * pdir, uint size)
+{
+    pdir->align_to_pixels = size;
+    return 0;
+}
 
 /* currentcacheparams */
 uint
@@ -583,6 +590,11 @@ uint
 gs_currentcacheupper(const gs_font_dir * pdir)
 {
     return pdir->ccache.upper;
+}
+uint
+gs_currentaligntopixels(const gs_font_dir * pdir)
+{
+    return pdir->align_to_pixels;
 }
 
 /* Purge a font from all font- and character-related tables. */

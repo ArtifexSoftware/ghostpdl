@@ -497,20 +497,6 @@ Ghostscript is normally built to interpret both PostScript and PDF files, examin
 </dl>
 
 <dl>
-<dt><b><tt>-dPDFFitPage</tt></b>
-<dd>Rather than selecting a PageSize given by the PDF MediaBox or
-CropBox (see -dUseCropBox), the PDF file will be scaled to fit
-the current device page size (usually the default page size).
-<p>
-This is useful to avoid clipping information on a PDF document when
-sending to a printer that may have unprintable areas at the edge of
-the media larger than allowed for in the document.
-<p>
-This is also useful for creating fixed size images of PDF files
-that may have a variety of page sizes, for example thumbnail images.
-</dl>
-
-<dl>
 <dt><b><tt>-dPrinted</tt></b>
 <dt><b><tt>-dPrinted=false</tt></b>
 <dd>Determines whether the file should be displayed or printed using the
@@ -1730,6 +1716,25 @@ both are specified.
 <dt><b><tt>-dTextAlphaBits=</tt></b><em>n</em>
 <dt><b><tt>-dGraphicsAlphaBits=</tt></b><em>n</em>
 <dd>These options control the use of subsample antialiasing. Their use is highly recommended for producing high quality rasterizations. The subsampling box size <em>n</em> should be 4 for optimum output, but smaller values can be used for faster rendering. Antialiasing is enabled separately for text and graphics content.
+Allowed values are 1, 2 or 4.
+</dl>
+
+<dl>
+<dt><b><tt>-dAlignToPixels=</tt></b><em>n</em>
+<dd>Chooses glyph alignent to integral pixels (the value 1)
+or to subpixels (the value 0). Subpixels are a smaller raster grid,
+which is used internally for text antialiasing.
+The number of subpixels in a pixel usually is <b><tt>2 ^ TextAlphaBits</tt></b>,
+but it may be automatically reduced for big characters to save space
+in character cache.
+
+<p>
+The parameter has no effect if <b><tt>-dTextAlphaBits=1</tt></b>.
+Default value is 1.
+
+<p>
+With <b><tt>-dAlignToPixels=0</tt></b> poolrly hinted fonts may render
+better, but perfectly hinted fonts may render worse.
 </dl>
 
 <dl>

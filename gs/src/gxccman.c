@@ -448,6 +448,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     cc_set_raster(cc, gdev_mem_raster(pdev2));
     cc_set_pair_only(cc, 0);	/* not linked in yet */
     cc->id = gx_no_bitmap_id;
+    cc->subpix_origin.x = cc->subpix_origin.y = 0;
 
     /* Open the cache device(s). */
 

@@ -80,5 +80,7 @@ uint gs_currentcachelower(const gs_font_dir *);
 int gs_setcachelower(gs_font_dir *, uint);
 uint gs_currentcacheupper(const gs_font_dir *);
 int gs_setcacheupper(gs_font_dir *, uint);
+uint gs_currentaligntopixels(const gs_font_dir *);
+int gs_setaligntopixels(gs_font_dir *, uint);
 
 #endif /* gsfont_INCLUDED */

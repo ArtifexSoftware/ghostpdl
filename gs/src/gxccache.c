@@ -103,7 +103,8 @@ gx_lookup_fm_pair(gs_font * pfont, register const gs_state * pgs)
 /* Return the cached_char or 0. */
 cached_char *
 gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
-		      gs_glyph glyph, int wmode, int alt_depth)
+		      gs_glyph glyph, int wmode, int alt_depth, 
+		      gs_fixed_point *subpix_origin)
 {
     gs_font_dir *dir = pfont->dir;
     uint chi = chars_head_index(glyph, pair);
@@ -111,6 +112,8 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
 
     while ((cc = dir->ccache.table[chi & dir->ccache.table_mask]) != 0) {
 	if (cc->code == glyph && cc_pair(cc) == pair &&
+	    cc->subpix_origin.x == subpix_origin->x && 
+	    cc->subpix_origin.y == subpix_origin->y &&
 	    cc->wmode == wmode && (cc_depth(cc) == 1 || cc_depth(cc) == alt_depth)
 	    ) {
 	    if_debug4('K', "[K]found 0x%lx (depth=%d) for glyph=0x%lx, wmode=%d\n",

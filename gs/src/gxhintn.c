@@ -526,7 +526,8 @@ private inline void t1_hinter__init_outline(t1_hinter * this)
 
 private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy, fixed unit_x, fixed unit_y)
 {   
-    if (this->align_to_subpixels) {
+    if (!this->align_to_pixels) {
+	/* Align to subpixels : */
 	this->orig_dx = (dx + fixed_half) & ~(fixed_1 - 1);
 	this->orig_dy = (dy + fixed_half) & ~(fixed_1 - 1);
     } else {
@@ -556,7 +557,7 @@ private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy, 
 int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
 		    gs_matrix * FontMatrix, gs_matrix * baseFontMatrix,
 		    fixed unit_x, fixed unit_y,
-		    fixed origin_x, fixed origin_y)
+		    fixed origin_x, fixed origin_y, bool align_to_pixels)
 {   float axx = fabs(ctm->xx), axy = fabs(ctm->xy);
     float ayx = fabs(ctm->xx), ayy = fabs(ctm->xy);
     float scale = max(axx + axy, ayx + ayy);
@@ -635,7 +636,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
 			    any_abs(this->ctmf.yy) * 10 < any_abs(this->ctmf.yx));
     }
     this->transposed = (any_abs(this->ctmf.xy) * 10 > any_abs(this->ctmf.xx));
-    this->align_to_subpixels = false;
+    this->align_to_pixels = align_to_pixels;
     t1_hinter__set_origin(this, origin_x, origin_y, unit_x, unit_y);
 #   if VD_DRAW_IMPORT
     vd_get_dc('h');
@@ -1357,14 +1358,14 @@ private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord po
 
 private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, t1_glyph_space_coord *x, t1_glyph_space_coord *y)
 {   if (unit > 0) {
-	long div_x = unit * (this->align_to_subpixels ? 1 : this->subpixels_x);
-	long div_y = unit * (this->align_to_subpixels ? 1 : this->subpixels_y);
+	long div_x = unit * (!this->align_to_pixels ? 1 : this->subpixels_x);
+	long div_y = unit * (!this->align_to_pixels ? 1 : this->subpixels_y);
         t1_glyph_space_coord gx = *x, gy = *y;
         t1_hinter_space_coord ox, oy;
         int32 dx, dy;
 
         g2o(this, gx, gy, &ox, &oy);
-	if (this->align_to_subpixels) {
+	if (!this->align_to_pixels) {
 	    ox += this->orig_ox;
 	    oy += this->orig_oy;
 	}
@@ -1573,8 +1574,8 @@ private int t1_hinter__find_best_standard_width(t1_hinter * this, t1_glyph_space
 }
 
 private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
-{   int32 pixel_o_x = this->g2o_fraction * (this->align_to_subpixels ? 1 : this->subpixels_x);
-    int32 pixel_o_y = this->g2o_fraction * (this->align_to_subpixels ? 1 : this->subpixels_y);
+{   int32 pixel_o_x = this->g2o_fraction * (!this->align_to_pixels ? 1 : this->subpixels_x);
+    int32 pixel_o_y = this->g2o_fraction * (!this->align_to_pixels ? 1 : this->subpixels_y);
     t1_glyph_space_coord pixel_gh = any_abs(o2g_dist(this, pixel_o_x, this->heigt_transform_coef_inv));
     t1_glyph_space_coord pixel_gw = any_abs(o2g_dist(this, pixel_o_y, this->width_transform_coef_inv));
     int i, j;
@@ -2032,9 +2033,8 @@ private int t1_hinter__export(t1_hinter * this)
 private int t1_hinter__add_trailing_moveto(t1_hinter * this)
 {   t1_glyph_space_coord gx = this->width_gx, gy = this->width_gy;
 
-#   if 0 /* Don't align because the old code desn't. Not sure though. */
+    if (this->align_to_pixels)
 	t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy);
-#   endif
     return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 

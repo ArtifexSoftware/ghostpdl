@@ -113,7 +113,7 @@ typedef struct t1_hinter_s
     t1_glyph_space_coord bx, by; /* starting point of a contour */
     uint subpixels_x, subpixels_y; /* Number of subpixels in a pixel (by an axis) */
     bool transposed;
-    bool align_to_subpixels;
+    bool align_to_pixels; /* false == "align to (integral) pixels" */
     bool disable_hinting;
     bool grid_fit_x, grid_fit_y;
     bool charpath_flag;
@@ -159,7 +159,7 @@ void t1_hinter__init(t1_hinter * this, gx_path *output_path);
 int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
 			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix,
 			fixed unit_x, fixed unit_y,
-			fixed origin_x, fixed origin_y);
+			fixed origin_x, fixed origin_y, bool align_to_pixels);
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
 			bool charpath_flag);
 

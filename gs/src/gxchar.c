@@ -389,6 +389,39 @@ gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
     *p_log2_scale = log2_scale;
 }
 
+/* Compute glyph raster parameters */
+private int
+compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *alpha_bits, 
+		    gs_fixed_point *subpix_origin, gs_log2_scale_point *log2_scale)
+{
+    gs_state *pgs = penum->pgs;
+    gx_device *dev = gs_currentdevice_inline(pgs);
+    int code;
+    
+    *alpha_bits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
+    if (in_setcachedevice) {
+	/* current point should already be in penum->origin */
+    } else {
+	code = gx_path_current_point_inline(pgs->path, &penum->origin);
+	if (code < 0) {
+	    /* For cshow, having no current point is acceptable. */
+	    if (!SHOW_IS(penum, TEXT_DO_NONE))
+		return code;
+	    penum->origin.x = penum->origin.y = 0;	/* arbitrary */
+	}
+    }
+    if (penum->fapi_log2_scale.x != -1)
+	*log2_scale = penum->fapi_log2_scale;
+    else
+	gx_compute_text_oversampling(penum, penum->current_font, *alpha_bits, log2_scale);
+    if (gs_currentaligntopixels(penum->current_font->dir) == 0) {
+	subpix_origin->x = fixed2int_pixround(penum->origin.x) & ((fixed_1 << log2_scale->x) - 1); /* see gx_lookup_cached_char */
+	subpix_origin->y = fixed2int_pixround(penum->origin.y) & ((fixed_1 << log2_scale->y) - 1);
+    } else
+	subpix_origin->x = subpix_origin->y = 0;
+    return 0;
+}
+
 /* Set up the cache device if relevant. */
 /* Return 1 if we just set up a cache device. */
 /* Used by setcachedevice and setcachedevice2. */
@@ -424,9 +457,9 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	const gs_font *pfont = pgs->font;
 	gs_font_dir *dir = pfont->dir;
 	gx_device *dev = gs_currentdevice_inline(pgs);
-        int alpha_bits =
-        (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
+        int alpha_bits;
 	gs_log2_scale_point log2_scale;
+	gs_fixed_point subpix_origin;
         static const fixed max_cdim[3] =
         {
 #define max_cd(n)\
@@ -471,10 +504,9 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	if (clr.y < cll.y)
 	    cll.y = clr.y, cur.y = cul.y;
 	/* Now cll and cur are the extrema of the box. */
-        if (penum->fapi_log2_scale.x != -1)
-            log2_scale = penum->fapi_log2_scale;
-        else
-            gx_compute_text_oversampling(penum, pfont, alpha_bits, &log2_scale);
+	code = compute_glyph_raster_params(penum, true, &alpha_bits, &subpix_origin, &log2_scale);
+	if (code < 0)
+	    return code;
 #ifdef DEBUG
         if (gs_debug_c('k')) {
 	    dlprintf6("[k]cbox=[%g %g %g %g] scale=%dx%d\n",
@@ -534,6 +566,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	cc->code = glyph;
 	cc->wmode = gs_rootfont(pgs)->WMode;
 	cc->wxy = penum->wxy;
+	cc->subpix_origin = subpix_origin;
 	/* Install the device */
 	gx_set_device_only(pgs, (gx_device *) penum->dev_cache);
 	pgs->ctm_default_set = false;
@@ -824,8 +857,6 @@ show_proceed(gs_show_enum * penum)
     gs_glyph glyph;
     int code;
     cached_char *cc;
-    gx_device *dev = gs_currentdevice_inline(pgs);
-    int alpha_bits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
 
     if (penum->charpath_flag == cpm_show && SHOW_USES_OUTLINE(penum)) {
 	code = gs_state_color_load(pgs);
@@ -873,8 +904,17 @@ show_proceed(gs_show_enum * penum)
 		    }
 		    if (pair == 0)
 			pair = gx_lookup_fm_pair(pfont, pgs);
-		    cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
-					       alpha_bits);
+		    {
+			int alpha_bits;
+			gs_log2_scale_point log2_scale;
+			gs_fixed_point subpix_origin;
+
+			code = compute_glyph_raster_params(penum, false, &alpha_bits, &subpix_origin, &log2_scale);
+			if (code < 0)
+			    return code;
+			cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
+						   alpha_bits, &subpix_origin);
+		    }
 		    if (cc == 0) {
 			/* Character is not in cache. */
 			/* If possible, try for an xfont before */

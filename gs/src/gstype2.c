@@ -184,7 +184,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             code = t1_hinter__set_mapping(h, &pcis->pis->ctm, &pfont->FontBBox, 
 			    &pfont->FontMatrix, &pfont->base->FontMatrix,
 			    pcis->scale.x.unit, pcis->scale.y.unit, 
-			    pcis->origin.x, pcis->origin.y);
+			    pcis->origin.x, pcis->origin.y, 
+			    gs_currentaligntopixels(pfont->dir));
 	    if (code < 0)
 	    	return code;
 	    code = t1_hinter__set_font_data(h, 2, pdata, pcis->charpath_flag);

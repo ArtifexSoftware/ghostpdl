@@ -128,7 +128,7 @@ void gx_free_cached_char(gs_font_dir *, cached_char *);
 void gx_add_cached_char(gs_font_dir *, gx_device_memory *, cached_char *, cached_fm_pair *, const gs_log2_scale_point *);
 void gx_add_char_bits(gs_font_dir *, cached_char *, const gs_log2_scale_point *);
 cached_char *
-            gx_lookup_cached_char(const gs_font *, const cached_fm_pair *, gs_glyph, int, int);
+            gx_lookup_cached_char(const gs_font *, const cached_fm_pair *, gs_glyph, int, int, gs_fixed_point *);
 cached_char *
             gx_lookup_xfont_char(const gs_state *, cached_fm_pair *, gs_char, gs_glyph, int);
 int gx_image_cached_char(gs_show_enum *, cached_char *);
