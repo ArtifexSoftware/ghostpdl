@@ -213,12 +213,13 @@ pcjob_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pcls->duplex = false;
 	    pcls->back_side = false;
 	    pcls->output_bin = 1;
-	    { pcl_args_t args;
-	      arg_set_uint(&args, 300);
-	      pcl_set_unit_of_measure(&args, pcls);
-	    }
+          }
+        if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
+	  { pcl_args_t args;
+	    arg_set_uint(&args, 300);
+	    pcl_set_unit_of_measure(&args, pcls);
 	  }
 }
 const pcl_init_t pcjob_init = {
-  pcjob_do_init, pcjob_do_reset
+  pcjob_do_init, pcjob_do_reset, 0
 };

@@ -213,14 +213,9 @@ pcmacros_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pcls->defining_macro = false;
 	    pcls->saved = 0;
 	    pcls->macro_definition = 0;
-	    pcls->alpha_macro_id.size = 0;
-	    pcls->macro_id_type = numeric_id;
-	    id_set_value(pcls->macro_id, 0);
+
 	    if ( type & pcl_reset_initial )
-	      {
 		pl_dict_init(&pcls->macros, pcls->memory, NULL);
-		pcls->alpha_macro_id.id = 0;
-	      }
 	    else
 	      { pcl_args_t args;
 	        arg_set_uint(&args, macro_delete_temporary);
@@ -229,9 +224,16 @@ pcmacros_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 		  gs_free_object(pcls->memory,
 				 pcls->alpha_macro_id.id,
 				 "pcmacros_do_reset");
-		pcls->alpha_macro_id.id = 0;
 	      }
 	  }
+
+	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
+          {
+	    pcls->alpha_macro_id.size = 0;
+	    pcls->macro_id_type = numeric_id;
+	    id_set_value(pcls->macro_id, 0);
+	    pcls->alpha_macro_id.id = 0;
+          }
 }
 private int
 pcmacros_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,

@@ -453,7 +453,7 @@ pcfont_do_init(gs_memory_t *mem)
 }
 private void
 pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
+{	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
 	  { pcls->font_selection[0].params.symbol_set =
 	      DEFAULT_SYMBOL_SET;
 	    pcls->font_selection[0].params.proportional_spacing = false;
@@ -470,5 +470,5 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 }
 
 const pcl_init_t pcfont_init = {
-  pcfont_do_init, pcfont_do_reset
+  pcfont_do_init, pcfont_do_reset, 0
 };
