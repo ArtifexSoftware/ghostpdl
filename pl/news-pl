@@ -7,6 +7,125 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.30 (08/25/99)
+=======================
+
+Wed Aug 25 17:00:00 1999 GMT        Marcos H. Woehrmann    marcos@artifex.com
+
+        * plmain.h [1.5], plmain.c [1.15], pl.mak [1.11], pjparsei.c [1.2]:
+        Added version number/build date to PJL code.
+
+        * pl.mak [1.12]:
+        Changed verion number.
+
+
+Tue Aug 24 01:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.14]:
+        removes conditional debug flag.
+        
+
+Wed Jul 28 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.13]:
+        The page count was not reimplemented correctly when the code for
+        seperate language instances was done.
+        
+
+Mon Jul 19 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plfont.c [1.5]:
+        The intellifont cloning procedure was not properly handling compound
+        characters it was treating all intellifont characters as non compound
+        characters.
+        
+
+Thu Jun 17 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plfont.h [1.4], plfont.c [1.4]:
+        releases pxl error page font and enumeration when shutting down an
+        interpreter instance.  This required adding support to pl_font_t for
+        fonts with permenent data (data that should not be freed).
+        
+
+Mon Jun 14 03:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plchar.c [1.6]:
+        intellifont character width function was returning the width in
+        intellifont design units.
+        
+
+Mon Jun  7 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pldebug.h [1.1], pl.mak [1.10]:
+        adds debugging assertions for current devices while devices are being
+        removed from the pcl interpreter's instance.
+        
+
+Sun Jun  6 08:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pltop.c [1.2]:
+        Routine to deallocate the interpreter instance was trying to "reclaim"
+        freed memory.
+        
+
+Sun Jun  6 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plchar.c [1.5]:
+        As of gs library version 5.86, the log2_current_scale member of the
+        gs_show_enum structure is renamed log2_scale.  Adds conditional
+        compilation directives to determine the current library and the
+        correct member name to use.  (peter)
+        
+
+Wed Jun  2 08:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.12]:
+        Usage print statement after an error processing the command line was
+        missing the command name.
+        
+
+Wed Jun  2 03:00:00 1999 GMT            johnd@artifex.com
+
+        * pltoputl.h [1.1], pltoputl.c [1.1], pltop.h [1.1], pltop.c [1.1], 
+        plplatf.h [1.1], plplatf.c [1.1], plmain.c [1.11], plimpl.c [1.1], 
+        pl.mak [1.9], pjtop.h [1.1], pjtop.c [1.1], pjparsei.c [1.1], 
+        pjparse.h [1.6]:
+        Initial checkin for multiple language support, shared devices,
+        interpreter instances, interpreter initialization/de-initialization,
+        etc.  A todo list of unfinished work is in pctop.c and pxtop.c.
+        
+
+Mon May 24 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.10], plchar.c [1.4]:
+        initial gs5.84 checkin with pcl and xl compiling.
+        
+
+Tue May 11 06:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pjparse.c [1.9]:
+        not properly closing directories.
+        
+
+Mon Apr 26 07:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pjparse.c [1.8]:
+        Modifications for RTL/GL2 mode, these changes are only relevant to RTL
+        not pcl5c or pcl5e: (1) Adds rtl personality to pcl state and factory
+        defaults (2) sets page size offsets to zero (3) changes clipping
+        region to not use the pcl default setting of a 1/6" margin around the
+        page (4) export pcl's new logical page and pcl's form feed procedure
+        for use by gl/2's plot size (PS) and advance full page (PG) (5)
+        Ignores text (6) Adds more implementations to plot size and advance
+        page size (these commands are not complete) (7) defines rtl coordinate
+        system for cases plot length < plot width and plot length > plot width
+        (8) change gl/2 picture frame to have the same extant as the logical
+        page size. (9) defaults gl/2's anchor point to have coordinate 0, 0
+        (having no effect on the coordinate system).
+        
+
+
 Version 1.25 (02/24/99)
 =======================
 
