@@ -53,12 +53,6 @@ public class Nav extends Gview {
         view.runMain(args);
     }
 
-
-    /** file open From menu */
-    private void jMenuItemOpenActionPerformed(java.awt.event.ActionEvent evt) {
-	fileOpen();
-    }
-
     public void nextPage() {
 	super.nextPage();
 	
