@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Adobe-based CMap character decoding */
 #include "memory_.h"
+#include "errors.h"
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -310,20 +311,24 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
             const byte *pvalue = NULL;
 
 	    /* when range is "range", 2 keys for lo-end and hi-end
-	     * are stacked. So twice the step. */
+             * are stacked. So twice the step. current "key" points
+             * lo-end of current range, and the pointer for hi-end
+             * is calculated by (key + step - key_size).
+             */
+
             if (pclr->key_is_range)
 		step <<=1; 	/* step = step * 2; */
 
             for (k = 0; k < pclr->num_entries; ++k, key += step) {
 
-                if_debug0('J', "[J]CMDNmr()     check key:");
-                if (gs_debug_c('J')) 
+                if_debug0('j', "[j]CMDNmr()     check key:");
+                if (gs_debug_c('j'))
                     print_msg_str_in_range(str + pre_size,
-                                         key, key + key_size, key_size);
-
+                        key, key + step - key_size, key_size) ;
+ 
                 for (l = 0; l < key_size; l++) {
                     byte c = str[l + pre_size];
-                    if (c < key[l] || c > key[key_size +l])
+                    if (c < key[l] || c > key[step - key_size + l])
                         break;
                 }
 
@@ -359,7 +364,7 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
                 *pglyph = gs_min_cid_glyph +
                     bytes2int(pvalue, pclr->value_size) +
                     gs_multidim_CID_offset(str + pre_size,
-                        key, key + key_size, key_size);
+                        key, key + step - key_size, key_size);
                 return 0;
             case CODE_VALUE_NOTDEF:
                 *pglyph = gs_min_cid_glyph +
@@ -487,6 +492,12 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
              */
 	    *pglyph = gs_no_glyph;
 	    return -1;
+            if (gs_debug_c('J')) {
+                dlprintf2("[J]GCDN() left data in buffer (%d) is shorter than shortest defined character (%d)\n",
+                  ssize, chr_size_shortest);
+            }
+            *pglyph = gs_no_glyph;
+            return_error(e_rangecheck);
 	}
     }
 }
