@@ -32,7 +32,7 @@ REPORT_EMAIL = 'gs-regression@ghostscript.com'
 MAIL_FROM = 'regression@casper.ghostscript.com'
 HEAD_DIR = gsconf.gsroot
 REGRESSION_SCRIPT = 'run_regression 2>&1'
-DIFF_SCRIPT = 'testdiff %s 2>&1' $ (YESTERDAY,)
+DIFF_SCRIPT = 'testdiff %s 2>&1' % (YESTERDAY,)
 LOG_STDOUT = gsconf.log_stdout
 LOG_STDERR = gsconf.log_stderr
 
