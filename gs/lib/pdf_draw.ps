@@ -83,7 +83,6 @@ pdfdict begin
   1 index /Function 3 -1 roll put
   exch PDFfile exch setfileposition
 } bdef
-currentdict /tfopdict undef
 
 /.resolvefn {		% <fndict> .resolvefn <fndict'>
   dup /FunctionType oget //fnrdict exch get exec
