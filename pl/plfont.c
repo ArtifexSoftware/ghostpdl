@@ -648,7 +648,7 @@ pl_load_resident_font_data_from_file(gs_memory_t *mem, pl_font_t *plfont)
 	}
 	rewind(in);
 	data = gs_alloc_bytes(mem, size, "pl_tt_load_font data");
-this would create a problem.	if ( data == 0 ) { 
+	if ( data == 0 ) { 
 	    fclose(in);
 	    return_error(gs_error_VMerror);
 	}
