@@ -25,7 +25,7 @@
 #include "gdevpdff.h"
 #include "gdevpdfg.h"
 #include "scommon.h"
-
+#include "gxchar.h"
 /*
  * The PDF documentation does a pretty shoddy job of specifying use of fonts
  * beyond the base 14, and on top of that, Acrobat Reader has some serious
@@ -1015,21 +1015,21 @@ pdf_text_process(gs_text_enum_t *pte)
     if (code < 0)
 	goto dflt;
 
-    /* stefan foo: skip non-unicode safe pdf code 
-     * widths_size is wrong!
-     * how do I discover if non single byte encoding is being used? 
+    /* stefan foo: compact to byte array string
+     * pcl sends 8bit chars in a short array 0x00cc, 0x00cc,
+     * size is number of shorts.  
+     * width_size is a clue as is leading null 
      */
-    if (text->size * 2 == text->widths_size) {
+    if (text->size * 2 == text->widths_size && str.data[0] == 0) {
 	if (str.size > sizeof(strbuf) * 2)
 	    goto dflt;
 	for (i = 0; i < text->widths_size; i += 2) {
 	    if (str.data[i] != 0)
-		goto dflt;
+		goto dflt;  /* shouldn't happen */
 	    strbuf[i >> 1] = str.data[i + 1];
 	}
 	str.data = strbuf;
     }
-
     /* Check that all characters can be encoded. 
      * Note: fails on 2 byte chars, 
      * hence all 2 byte chars will be sent as images
