@@ -122,6 +122,12 @@ typedef struct pcl_ccolor_s     pcl_ccolor_t;
  *    The transp bit indicates the transparency of the render (pattern
  *        transparent (true) or pattern opaque (false).
  *
+ *    The colored bit indicates if the pattern was rendered as a colored
+ *        pattern, in the graphic library sense. PCL's colored patterns are
+ *        always rendered as graphic library colored patterns, but PCL's
+ *        uncolored patterns may be rendered as either mask or colored
+ *        patterns, depending on circumstancs.
+ *
  *    The orient field indicates the orientation of the rendering, in
  *        the range 0 to 3.
  *
@@ -149,6 +155,7 @@ typedef struct pcl_pattern_t {
 
     /* "rendered key" */
     uint                    transp:1;  /* transparency of rendering */
+    uint                    colored:1; /* 1 ==> rendered as colored pattern */
     uint                    orient:2;  /* orientation of rendering */
     uint                    pen:8;     /* 0 for PCL or colored patterns */
     pcl_gsid_t              cache_id;  /* foreground or palette */
