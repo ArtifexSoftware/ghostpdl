@@ -1,0 +1,27 @@
+
+Libpng 1.0.8 - July 24, 2000
+
+This is a public release of libpng, intended for use in production codes.
+
+Changes since the last public release (1.0.7):
+
+  Added png_free(png_ptr, key) two places in pngpread.c to stop memory leaks.
+  Changed PNG_NO_STDIO to PNG_NO_CONSOLE_IO, several places in pngrutil.c and
+     pngwutil.c.
+  Changed PNG_EXPORT_VAR to use PNG_IMPEXP, in pngconf.h.
+  Removed unused "#include <assert.h>" from png.c
+  Added WindowsCE support.
+  Revised pnggccrd.c to work with gcc-2.95.2 and in the Cygwin environment.
+  Only set the PNG_FLAG_FREE_TRNS or PNG_FREE_TRNS flag in png_handle_tRNS()
+     for indexed-color input files to avoid potential double-freeing trans array
+     under some unusual conditions; problem was introduced in version 1.0.7.
+  Added the files pngbar.png and pngbar.jpg to the distribution.
+  Added cygwin subdirectory, makefile.cygwin, and cygwin support in pngconf.h
+  Added PNG_NO_ZALLOC_ZERO macro (makes png_zalloc skip zeroing memory)
+  Revised png_debug() macros and statements to eliminate compiler warnings.
+  Updated makefile.hpux to build a shared library.
+
+Send comments/corrections/commendations to
+png-implement@ccrc.wustl.edu or to randeg@alum.rpi.edu
+
+Glenn R-P

@@ -1,0 +1,48 @@
+
+Known bugs and suggested enhancements in libpng-1.0.8
+
+1. July 2, 2000 -- BUG -- pnggccrd.c
+
+   The png_read_filter() function has still not been fully converted and
+   will not compile under gcc-2.95.2; it is currently ifdef'ed out.
+
+   STATUS: Under investigation.  Experts on MMX assembler code are
+   invited to help with the debugging.  Note that pngvcrd.c works fine.
+
+2. March 15, 1998 -- OPTIMIZATION -- Kevin Bracey
+
+   Loops need to be optimized everywhere
+
+   Make them count down instead of up -- Kevin Bracey
+
+   Optimizing compilers don't need this, and making
+   the change would be error prone -- Tom Lane, Glenn R-P
+
+   Question whether i-- or --i is better.
+
+   STATUS: Under investigation, postponed until after
+   libpng-2.0.0.  About 160 loops will be turned around
+   in libpng-2.0.x betaxx, for testing.
+
+3. July 4, 1998 -- ENHANCEMENT -- Glenn R-P
+
+   libpng-1.0.5 and earlier transform colors to gamma=1.0 space for
+   merging with background, and then back to the image's gamma.  The
+   bit_depth of the intermediate (gamma=1.0) representation is probably
+   not sufficient.  In the typical gamma=1/2.2 situation, the linear
+   pixels need about 4 more bits than the gamma-encoded ones, to avoid
+   loss of precision.  A similar situation exists with the rgb_to_gray
+   operation.
+
+   STATUS: under development.
+
+4. September 1999 -- ENHANCEMENT --
+
+   It should be possible to use libpng without floating-point aritmetic.
+
+   STATUS: Under investigation, implementation postponed until after
+   libpng-2.0.0.
+
+   Much of this was completed in libpng-1.0.6, but gamma compensation
+   is not yet done in fixed-point arithmetic.
+
