@@ -804,6 +804,7 @@ font_bbox_param(const ref * pfdict, double bbox[4])
 	    int i;
 	    int code;
 	    float dx, dy, ratio;
+	    const float max_ratio = 12; /* From the bug 687594. */
 
 	    for (i = 0; i < 4; i++) {
 		packed_get(pbe, rbe + i);
@@ -811,12 +812,11 @@ font_bbox_param(const ref * pfdict, double bbox[4])
 	    }
 	    if ((code = num_params(rbe + 3, 4, bbox)) < 0)
 		return code;
-	    /* Require "reasonable" values.  Thanks to Ray */
-	    /* Johnston for suggesting the following test. */
+ 	    /* Require "reasonable" values. */
 	    dx = bbox[2] - bbox[0];
 	    dy = bbox[3] - bbox[1];
 	    if (dx <= 0 || dy <= 0 ||
-		(ratio = dy / dx) < 0.125 || ratio > 8.0
+		(ratio = dy / dx) < 1 / max_ratio || ratio > max_ratio
 		)
 		bbox[0] = bbox[1] = bbox[2] = bbox[3] = 0.0;
 	}

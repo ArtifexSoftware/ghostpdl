@@ -2019,6 +2019,17 @@ pdf_text_process(gs_text_enum_t *pte)
 		if (code < 0)
 		    return code;
 		pdf_viewer_state_from_imager_state(pdev, pte->pis, pte->pdcolor);
+		/* Set line params to unallowed values so that
+		   they'll synchronize with writing them out on the first use. 
+		   Doing so because PDF viewer inherits them from the 
+		   contents stream when executing the charproc,
+		   but at this moment we don't know in what contexts
+		   it will be used. */
+		pdev->state.line_params.half_width = -1;
+		pdev->state.line_params.cap = gs_cap_unknown;
+		pdev->state.line_params.join = gs_join_unknown;
+		pdev->state.line_params.miter_limit = -1;
+		pdev->state.line_params.dash.pattern_size = -1;
 		/* Must set an identity CTM for the charproc accumulation.
 		   The function show_proceed (called from gs_text_process above) 
 		   executed gsave, so we are safe to change CTM now.
