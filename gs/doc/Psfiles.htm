@@ -141,8 +141,44 @@ CIDFont--CMap) and creating the font automatically.
 </dl>
 
 <dl>
+<dt><a href="../lib/gs_ciecs2.ps"><tt>gs_ciecs2.ps</tt></a>
+<dd>Implementation of the LangaugeLevel 2 CIEBased color spaces: CIEBasedA and CIEBasedABC.
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_ciecs3.ps"><tt>gs_ciecs3.ps</tt></a>
+<dd>Implementation of the LangaugeLevel 3 CIEBased color spaces: CIEBasedA and CIEBasedABC.
+</dl>
+
+<dl>
 <dt><a href="../lib/gs_cmap.ps"><tt>gs_cmap.ps</tt></a>
 <dd><b><tt>ProcSet</tt></b> for implementing <b><tt>CMap</tt></b> resources.
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_cspace.ps"><tt>gs_cspace.ps</tt></a>
+<dd> PostScript portion of the basic color space handling;
+see the extensive comment at the head of the file
+for information. Note that color space substitution
+and the hue-saturation-brightness (HSB) color space
+are now fully implemented in the PostScript code;
+the interpreter and the graphic library are no longer
+involved in or even aware of these features.
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_devcs.ps"><tt>gs_devcs.ps</tt></a>
+<dd>Implementation of the DeviceGray, DeviceRGB, and DeviceCMYK color spaces.
+</dl>
+
+<dl> 
+  <dt><a href="../lib/gs_devn.ps"><tt>gs_devn.ps</tt></a> 
+  <dd>Implementation of the DeviceN color space.
+</dl>
+
+<dl> 
+  <dt><a href="../lib/gs_devpxl.ps"><tt>gs_devpxl.ps</tt></a> 
+  <dd>Implementation of the DevicePixel color space.
 </dl>
 
 <dl>
@@ -175,6 +211,19 @@ font machinery and provides some utility procedures that work with fonts.
 </dl>
 
 <dl>
+<dt><a href="../lib/gs_img.ps"><tt>gs_img.ps</tt></a>
+<dd>Implementation of the traditional (non-dictionary)
+form of the image and imagemask operators, and the
+colorimage operator (including the Next alphaimage
+facility).
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_indxd.ps"><tt>gs_indxd.ps</tt></a>
+<dd>Implementation of the Indexed color space.
+</dl>
+
+<dl>
 <dt><a href="../lib/gs_init.ps"><tt>gs_init.ps</tt></a>
 <dd>Ghostscript reads this automatically when it starts up.  It contains
 definitions of many standard procedures and initialization for a wide
@@ -194,6 +243,11 @@ procedures and miscellaneous initialization for the Level 2 functions.
 </dl>
 
 <dl>
+<dt><a href="../lib/gs_patrn.ps"><tt>gs_patrn.ps</tt></a>
+<dd>Implementation of the Pattern color space.
+</dl>
+
+<dl>
 <dt><a href="../lib/gs_resmp.ps"><tt>gs_resmp.ps</tt></a>
 <dd>A procset for redefining resource categories with a resource map.
 </dl>
@@ -203,6 +257,11 @@ procedures and miscellaneous initialization for the Level 2 functions.
 <dd><b><tt>gs_init.ps</tt></b> reads this in if the Level 2 resource
 machinery is included.  Currently, this is the case for all Level 2
 configurations.
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_sepr.ps"><tt>gs_sepr.ps</tt></a>
+<dd>Implementaton of the Separation color space.
 </dl>
 
 <dl>
@@ -907,5 +966,5 @@ San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
-</body>
+</small></body>
 </html>
