@@ -709,10 +709,17 @@ pcl_text(
         if (pfp->font->params.proportional_spacing) {
 	    scale.x = scale.y = pfp->params.height_4ths
 	                         * 0.25 * 7200.0 / ppi;
-	} else
+	} else {
 	    scale.x = scale.y = pl_fp_pitch_cp(&pfp->params)
 	                         * (100.0 / pl_fp_pitch_cp(&pfp->font->params))
 	                         * (7200.0 / (100.0 * ppi));
+	    if (1670 == pl_fp_pitch_per_inch_x100(&pfp->params) ) {
+		/* NB ArtLinePrinter.ttf : convert lineprinter glyphs to a taller aspect ratio 
+		 * 36x75 cell at 600dpi vs the fonts native 36x72 
+		 */
+		scale.y *= 1.0416667;
+	    }
+	}
 	/*
 	 * Scalable fonts use an upright coordinate system,
 	 * the opposite from the usual PCL system.
