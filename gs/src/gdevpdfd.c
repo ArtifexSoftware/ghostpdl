@@ -259,6 +259,29 @@ pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     return true;
 }
 
+/* Put a single element of a clipping path list. */
+int
+pdf_put_clip_path_list_elem(gx_device_pdf * pdev, gx_cpath_path_list *e, 
+	gs_path_enum *cenum, gdev_vector_dopath_state_t *state,
+	gs_fixed_point vs[3])
+{   /* This recursive function provides a reverse order of the list elements. */
+    int pe_op;
+
+    if (e->next != NULL) {
+	int code = pdf_put_clip_path_list_elem(pdev, e->next, cenum, state, vs);
+
+	if (code != 0)
+	    return code;
+    }
+    gx_path_enum_init(cenum, &e->path);
+    while ((pe_op = gx_path_enum_next(cenum, vs)) > 0)
+	gdev_vector_dopath_segment(state, pe_op, vs);
+    pprints1(pdev->strm, "%s n\n", (e->rule <= 0 ? "W" : "W*"));
+    if (pe_op < 0)
+	return pe_op;
+    return 0;
+}
+
 /* Put a clipping path on the output file. */
 int
 pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
@@ -307,7 +330,6 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     }
     if (new_id != pdev->no_clip_path_id) {
 	gdev_vector_dopath_state_t state;
-	gs_cpath_enum cenum;
 	gs_fixed_point vs[3];
 	int pe_op;
 
@@ -317,6 +339,9 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    return 0;
 	gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
 				gx_path_type_fill, NULL);
+	if (pcpath->path_list == NULL) {
+	    gs_cpath_enum cenum;
+
 	/*
 	 * We have to break 'const' here because the clip path
 	 * enumeration logic uses some internal mark bits.
@@ -329,6 +354,13 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
 	if (pe_op < 0)
 	    return pe_op;
+	} else {
+	    gs_path_enum cenum;
+
+	    code = pdf_put_clip_path_list_elem(pdev, pcpath->path_list, &cenum, &state, vs);
+	    if (code < 0)
+		return code;
+	}
     }
     pdev->clip_path_id = new_id;
     return pdf_remember_clip_path(pdev, 
