@@ -29,6 +29,7 @@ import gstestgs
 import gsconf
 import gssum
 import gsparamsets
+import rasterdb
 import anydbm
 import time
 import os, sys
@@ -54,6 +55,7 @@ def make_entry(ifile, device, dpi, band):
 		log.write(time.ctime() + " " + ifile + " reverted\n")
 		log.close()
             gssum.add_file(ofile)
+            rasterdb.put_file(ofile)
             os.unlink(ofile)
             print "done."
         except OSError:

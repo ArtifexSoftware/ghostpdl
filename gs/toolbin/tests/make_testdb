@@ -29,6 +29,7 @@ import gstestgs
 import gsconf
 import gssum
 import gsparamsets
+import rasterdb
 import anydbm
 import os, sys
 import string
@@ -52,6 +53,7 @@ def make_compare_entry(ifile, device, dpi, band):
         if gs.process():
 	    try:
        	        gssum.add_file(ofile)
+                rasterdb.put_file(ofile)
     	        os.unlink(ofile)
     	        print "done."
             except OSError:
@@ -97,6 +99,7 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
     if gs.process():
         try:
             gssum.add_file(ofile)
+            rasterdb.put_file(ofile)
             os.unlink(tfile)
             os.unlink(ofile)
             print "done."

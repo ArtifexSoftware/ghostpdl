@@ -31,6 +31,7 @@ import gsconf
 import gssum
 import gsparamsets
 import anydbm
+import rasterdb
 import time
 import os, sys
 import string
@@ -71,6 +72,7 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
 		log.write(time.ctime() + " " + ifile + " updated (pdfwrite)\n")
 		log.close()
             gssum.add_file(ofile)
+            rasterdb.put_file(ofile)
             os.unlink(tfile)
             os.unlink(ofile)
             print "done."

@@ -27,6 +27,7 @@
 
 import gstestgs
 import gsconf
+import rasterdb
 import os, sys
 import string
 
@@ -42,6 +43,7 @@ def make_version(ifile, ofile, device, dpi, baseline=0):
 
     gs.infile = gsconf.comparefiledir + ifile
     gs.dpi = dpi
+    gs.band = 0
 
     # make file->PDF
 
@@ -71,9 +73,14 @@ if len(sys.argv) > 3:
 else:
     res = 72
 
+dbfile = "%s.pdf.%s.%d.%d" % (file, device, res, 0)
 ofile = "%s.pdf.%s.baseline.pnm" % (file, device)
 
-make_version(file, ofile, device, res, baseline=1)
+# check for cached raster and use that if it exists
+if rasterdb.exists(dbfile):
+    rasterdb.get_file(dbfile, output=ofile)
+else:
+    make_version(file, ofile, device, res, baseline=1)
 
 ofile = "%s.%s.compare.pnm" % (file, device)
 

@@ -7,7 +7,7 @@ codedir		/home/regression/regression/
 datadir		/home/regression/regression/
 logdir		/home/regression/regression/logs/
 dailydir	/home/regression/regression/daily/
-
+rasterdbdir	/home/regression/regression/raster/
 
 # programs
 
