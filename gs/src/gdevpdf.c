@@ -408,6 +408,7 @@ pdf_open(gx_device * dev)
     if (code < 0)
 	goto fail;
     gdev_vector_init((gx_device_vector *) pdev);
+    pdev->fill_options = pdev->stroke_options = gx_path_type_optimize;
     /* Set in_page so the vector routines won't try to call */
     /* any vector implementation procedures. */
     pdev->in_page = true;

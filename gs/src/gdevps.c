@@ -848,6 +848,7 @@ psw_open(gx_device * dev)
 	    return code;
     }
     gdev_vector_init(vdev);
+    vdev->fill_options = vdev->stroke_options = gx_path_type_optimize;
     pdev->first_page = true;
     pdev->binary_ok = !pdev->params.ASCII85EncodePages;
     pdev->image_writer = gs_alloc_struct(mem, psdf_binary_writer,
@@ -1096,7 +1097,7 @@ psw_copy_color(gx_device * dev,
 }
 
 /* Fill or stroke a path. */
-/* We redefine these to skip empty paths. */
+/* We redefine these to skip empty paths, and to allow optimization. */
 private int
 psw_fill_path(gx_device * dev, const gs_imager_state * pis,
 	      gx_path * ppath, const gx_fill_params * params,

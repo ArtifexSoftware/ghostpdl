@@ -289,7 +289,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    pdev->state.flatness = params->flatness;
 	}
 	gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-			   gx_path_type_fill, NULL);
+			   gx_path_type_fill | gx_path_type_optimize, NULL);
 	pputs(s, (params->rule < 0 ? "f\n" : "f*\n"));
     }
     return 0;
@@ -339,7 +339,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     if (set_ctm)
 	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
     code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-			      gx_path_type_stroke,
+			      gx_path_type_stroke | gx_path_type_optimize,
 			      (set_ctm ? &mat : (const gs_matrix *)0));
     if (code < 0)
 	return code;

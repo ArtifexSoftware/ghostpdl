@@ -50,6 +50,12 @@ gdev_vector_setflat(gx_device_vector * vdev, floatp flatness)
  * Put a path on the output file.  If type is stroke and the last
  * path component is a closepath, omit it and return 1.
  */
+private bool
+coord_between(fixed start, fixed mid, fixed end)
+{
+    return (start <= end ? start <= mid && mid <= end :
+	    start >= mid && mid >= end);
+}
 int
 gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 		   gx_path_type_t type, const gs_matrix *pmat)
@@ -59,6 +65,8 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
     gx_path_rectangular_type rtype = gx_path_is_rectangular(ppath, &rbox);
     gs_path_enum cenum;
     gdev_vector_dopath_state_t state;
+    gs_fixed_point line_start, line_end;
+    bool incomplete_line = false;
     int code;
 
     gdev_vector_dopath_init(&state, vdev, type, pmat);
@@ -91,29 +99,70 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 	int pe_op = gx_path_enum_next(&cenum, vs);
 
     sw:
-	switch (pe_op) {
-	    case 0:		/* done */
-		code = vdev_proc(vdev, endpath)(vdev, type);
-		return (code < 0 ? code : 0);
-	    case gs_pe_closepath:
-		if (!do_close) {
-		    pe_op = gx_path_enum_next(&cenum, vs);
-		    if (pe_op != 0) {
-			code = gdev_vector_dopath_segment(&state,
-							  gs_pe_closepath, vs);
-			if (code < 0)
-			    return code;
-			goto sw;
-		    }
-		    code = vdev_proc(vdev, endpath)(vdev, type);
-		    return (code < 0 ? code : 1);
+	if (type & gx_path_type_optimize) {
+	opt:
+	    if (pe_op == gs_pe_lineto) {
+		if (!incomplete_line) {
+		    line_end = vs[0];
+		    incomplete_line = true;
+		    continue;
 		}
-		/* falls through */
-	    default:
-		code = gdev_vector_dopath_segment(&state, pe_op, vs);
+		if (vs[0].x == line_end.x) {
+		    if (vs[0].x == line_start.x &&
+			coord_between(line_start.y, line_end.y, vs[0].y)
+			) {
+			line_end = vs[0];
+			continue;
+		    }
+		} else if (vs[0].y == line_end.y) {
+		    if (vs[0].y == line_start.y &&
+			coord_between(line_start.x, line_end.x, vs[0].x)
+			) {
+			line_end = vs[0];
+			continue;
+		    }
+		}
+	    }
+	    if (incomplete_line) {
+		code = gdev_vector_dopath_segment(&state, gs_pe_lineto,
+						  &line_end);
 		if (code < 0)
 		    return code;
+		line_start = line_end;
+		incomplete_line = false;
+		goto opt;
+	    }
 	}
+	switch (pe_op) {
+	case 0:		/* done */
+	    code = vdev_proc(vdev, endpath)(vdev, type);
+	    return (code < 0 ? code : 0);
+	case gs_pe_curveto:
+	    line_start = vs[2];
+	    goto draw;
+	case gs_pe_moveto:
+	case gs_pe_lineto:
+	    line_start = vs[0];
+	    goto draw;
+	case gs_pe_closepath:
+	    if (!do_close) {
+		pe_op = gx_path_enum_next(&cenum, vs);
+		if (pe_op != 0) {
+		    code = gdev_vector_dopath_segment(&state,
+						      gs_pe_closepath, vs);
+		    if (code < 0)
+			return code;
+		    goto sw;
+		}
+		code = vdev_proc(vdev, endpath)(vdev, type);
+		return (code < 0 ? code : 1);
+	    }
+	draw:
+	    code = gdev_vector_dopath_segment(&state, pe_op, vs);
+	    if (code < 0)
+		return code;
+	}
+	incomplete_line = false; /* only needed if optimizing */
     }
 }
 
@@ -911,7 +960,8 @@ gdev_vector_fill_path(gx_device * dev, const gs_imager_state * pis,
 	(code = (*vdev_proc(vdev, dopath))
 	 (vdev, ppath,
 	  (params->rule > 0 ? gx_path_type_even_odd :
-	   gx_path_type_winding_number) | gx_path_type_fill,
+	   gx_path_type_winding_number) | gx_path_type_fill |
+	   vdev->fill_options,
 	 NULL)) < 0
 	)
 	return gx_default_fill_path(dev, pis, ppath, params, pdevc, pcpath);
@@ -936,7 +986,7 @@ gdev_vector_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	  ((gx_device *) vdev->bbox_device, pis, ppath, params,
 	   pdcolor, pcpath)) < 0) ||
 	(code = (*vdev_proc(vdev, dopath))
-	 (vdev, ppath, gx_path_type_stroke, NULL)) < 0
+	 (vdev, ppath, gx_path_type_stroke | vdev->stroke_options, NULL)) < 0
 	)
 	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
     return code;
