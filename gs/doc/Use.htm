@@ -1023,26 +1023,39 @@ is,
 <h2><a name="PDF_switches"></a>Switches for PDF files</h2>
 
 <dl>
-<dt><b><tt>-dFirstPage=pagenumber</tt></b>
+<dt><b><tt>-dFirstPage=</tt></b><em>pagenumber</em>
 <dd>Begins interpreting on the designated page of the document.
 </dl>
 
 <dl>
-<dt><b><tt>-dLastPage=pagenumber</tt></b>
+<dt><b><tt>-dLastPage=</tt></b><em>pagenumber</em>
 <dd>Stops interpreting after the designated page of the document.
+</dl>
+
+<dl>
+<dt><b><tt>-dPrinted</tt></b>
+<dt><b><tt>-dPrinted=false</tt></b>
+<dd>Determines whether the file should be displayed or printed using the
+screen or printed options for annotations and images.  With
+<b><tt>-dPrinted</tt></b>, the output will use the file's "printer"
+options; with <b><tt>-dPrinted=false</tt></b>, the output will use the
+file's "screen" options.  If neither of these is specified, the output will
+use the "screen" options for any output device that doesn't have an
+<b><tt>OutputFile</tt></b> parameter, and the "printer" options for devices
+that do have this parameter.
 </dl>
 
 <h2><a name="PDF_problems"></a>Problems interpreting a PDF file</h2>
 
 <p>
 Occasionally you may try to read or print a <b><tt>*.pdf</tt></b> file that
-Ghostscript doesn't recognize as PDF, but the same file <b><em>can</em></b>
-be opened and interpreted by an Adobe Acrobat viewer.  This can happen
-when, for instance, a PDF file produced on a Macintosh is carelessly moved
-to another kind of system, leaving now-useless Macintosh-specific data
-before the standard header.  Ghostscript can't read these files because
-they don't conform to the PDF standard, Adobe's
-"<a href="http://www.adobe.com/supportservice/devrelations/PDFS/TN/PDFSPEC.PDF"><b><em>Portable
+Ghostscript doesn't recognize as PDF, even though the same file
+<b><em>can</em></b> be opened and interpreted by an Adobe Acrobat viewer.
+This can happen when, for instance, a PDF file produced on a Macintosh is
+carelessly moved to another kind of system, leaving now-useless
+Macintosh-specific data before the standard header.  Ghostscript can't read
+these files because they don't conform to the PDF standard, Adobe's "<a
+href="http://www.adobe.com/supportservice/devrelations/PDFS/TN/PDFSPEC.PDF"><b><em>Portable
 Document Format Reference Manual</em></b></a>", version 1.2, which states:
 
 <blockquote>
