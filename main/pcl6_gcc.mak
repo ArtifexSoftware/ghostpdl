@@ -120,8 +120,8 @@ GX_COLOR_INDEX_DEFINE=
 GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings $(GX_COLOR_INDEX_DEFINE)
 CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
 
-XINCLUDE=-I/usr/local/X/include
-XLIBDIRS=-L/usr/X11/lib -L/usr/X11R6/lib
+XINCLUDE=-I/usr/X11R6/include
+XLIBDIRS=-L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt SM ICE Xext X11
 
