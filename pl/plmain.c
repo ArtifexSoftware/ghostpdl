@@ -241,7 +241,7 @@ main(
 #ifdef DEBUG
 	byte                buf[1<<9];
 #else
-	byte                bug[1<<13];
+	byte                buf[1<<13];
 #endif
 	pl_top_cursor_t     r;
 	int                 code = 0;
