@@ -4,6 +4,7 @@
 rem Convert PostScript to PDF 1.3 (Acrobat 4-and-later compatible).
 
 rem Make sure an empty argument list stays empty.
+set PS2PDFSW=
 if "%1"=="" goto bot
 
 rem This clunky loop is the only way to ensure we pass the full
