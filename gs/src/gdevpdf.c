@@ -200,7 +200,10 @@ const gx_device_pdf gs_pdfwrite_device =
  1,				/* FirstObjectNumber */
  1 /*true*/,			/* CompressFonts */
  0 /*false*/,			/* PrintStatistics */
- 0 /*false*/,			/* OrderResources */
+ 0 /*false*/,			/* ForOPDFRead */
+ 0 /*false*/,			/* ResourcesBeforeUsage */
+ 1 /*true*/,			/* HavePDFWidths */
+ 0 /*false*/,			/* HaveStrokeColor */
  0 /*false*/,			/* PatternImagemask */
  12000,				/* MaxClipPathSize */ /* HP LaserJet 1320 hangs with 14000. */
  256000,			/* MaxShadingBitmapSize */
@@ -911,7 +914,7 @@ pdf_close_page(gx_device_pdf * pdev)
      */
 
     pdf_open_document(pdev);
-    if (PS2WRITE && pdev->OrderResources && pdev->context == PDF_IN_NONE) {
+    if (pdev->ForOPDFRead && pdev->context == PDF_IN_NONE) {
 	/* Must create a context stream for empty pages. */
 	code = pdf_open_contents(pdev, PDF_IN_STREAM);
 	if (code < 0)
@@ -1113,8 +1116,7 @@ pdf_close(gx_device * dev)
     code1 = pdf_free_resource_objects(pdev, resourceCMap);
     if (code >= 0)
 	code = code1;
-#if PS2WRITE
-    if (pdev->OrderResources)
+    if (pdev->ResourcesBeforeUsage)
 	pdf_reverse_resource_chain(pdev, resourcePage);
     code1 = pdf_write_resource_objects(pdev, resourcePage);
     if (code >= 0)
@@ -1122,7 +1124,7 @@ pdf_close(gx_device * dev)
     code1 = pdf_free_resource_objects(pdev, resourcePage);
     if (code >= 0)
 	code = code1;
-#endif
+
     code1 = pdf_free_resource_objects(pdev, resourceOther);
     if (code >= 0)
 	code = code1;

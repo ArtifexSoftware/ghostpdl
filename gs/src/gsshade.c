@@ -458,7 +458,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
     gx_device_clip path_dev;
     int code = 0;
 
-    if (!PS2WRITE || (*dev_proc(dev, pattern_manage))(dev, 
+    if ((*dev_proc(dev, pattern_manage))(dev, 
 			gs_no_id, NULL, pattern_manage__shading_area) == 0) {
 	path_clip = gx_cpath_alloc(mem, "shading_fill_path(path_clip)");
 	if (path_clip == 0) {

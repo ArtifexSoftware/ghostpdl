@@ -211,6 +211,7 @@ typedef enum {
 	gx_device_vector_common;\
 	psdf_version version;\
 	bool binary_ok;		/* derived from ASCII85EncodePages */\
+	bool HaveCFF;\
 	bool HaveTrueTypes;\
 	bool HaveCIDSystem;\
 	psdf_distiller_params params
@@ -223,6 +224,7 @@ typedef struct gx_device_psdf_s {
 	vector_initial_values,\
 	version,\
 	!(ascii),\
+	true,\
 	true,\
 	false,\
 	 { psdf_general_param_defaults(ascii),\

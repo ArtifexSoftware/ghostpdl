@@ -30,7 +30,6 @@
 #include "gdevpsdf.h"
 #include "gxdevmem.h"
 
-#define CONVERT_CFF_TO_TYPE1 (PS2WRITE & 0) /* Old code = 0, new code = 1 */
 #define FINE_GLYPH_USAGE 1 /* Old code = 0, new code = 1 */
 
 #ifndef stream_arcfour_state_DEFINED
@@ -106,9 +105,7 @@ typedef enum {
     resourcePattern,
     resourceShading,
     resourceXObject,
-#if PS2WRITE
     resourceOther, /* Anything else that needs to be stored for a time. */
-#endif
     resourceFont,
     /*
      * Internally used (pseudo-)resources.
@@ -118,13 +115,10 @@ typedef enum {
     resourceCMap,
     resourceFontDescriptor,
     resourceFunction,
-#if PS2WRITE
     resourcePage,
-#endif
     NUM_RESOURCE_TYPES
 } pdf_resource_type_t;
 
-#if PS2WRITE
 #define PDF_RESOURCE_TYPE_NAMES\
   "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", 0, "/Font",\
   0, "/Font", "/CMap", "/FontDescriptor", 0
@@ -142,23 +136,6 @@ typedef enum {
   &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource,\
   &st_pdf_resource
-#else /* PS2WRITE */
-#define PDF_RESOURCE_TYPE_NAMES\
-  "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", "/Font",\
-  0, "/Font", "/CMap", "/FontDescriptor", 0, 0
-#define PDF_RESOURCE_TYPE_STRUCTS\
-  &st_pdf_color_space,		/* gdevpdfg.h / gdevpdfc.c */\
-  &st_pdf_resource,		/* see below */\
-  &st_pdf_pattern,\
-  &st_pdf_resource,\
-  &st_pdf_x_object,		/* see below */\
-  &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
-  &st_pdf_char_proc,		/* gdevpdff.h / gdevpdff.c */\
-  &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
-  &st_pdf_resource,\
-  &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
-  &st_pdf_resource
-#endif /* PS2WRITE */
 
 /*
  * rname is currently R<id> for all resources other than synthesized fonts;
@@ -436,8 +413,10 @@ struct gx_device_pdf_s {
     long FirstObjectNumber;
     bool CompressFonts;
     bool PrintStatistics;
-    bool OrderResources;   /* PS2WRITE only. */
-#if PS2WRITE
+    bool ForOPDFRead;          /* PS2WRITE only. */
+    bool ResourcesBeforeUsage; /* PS2WRITE only. */
+    bool HavePDFWidths;        /* PS2WRITE only. */
+    bool HaveStrokeColor;      /* PS2WRITE only. */
     bool PatternImagemask; /* The target viewer|printer handles imagemask 
 			      with pattern color. */
     long MaxClipPathSize;  /* The maximal number of elements of a clipping path
@@ -445,7 +424,6 @@ struct gx_device_pdf_s {
     long MaxShadingBitmapSize; /* The maximal number of bytes in 
 			      a bitmap representation of a shading.
 			      (Bigger shadings to be downsampled). */
-#endif
     long MaxInlineImageSize;
     /* Encryption parameters */
     gs_const_string OwnerPassword;
@@ -620,7 +598,6 @@ struct gx_device_pdf_s {
 			because it points from global to local memory. */
     int substituted_pattern_count;
     int substituted_pattern_drop_page;
-#if PS2WRITE
     /* Temporary data for use_image_as_pattern,
        They pass an information about a mask of a masked image,
        (which is being converted into a pattern)
@@ -628,7 +605,6 @@ struct gx_device_pdf_s {
     gs_id     image_mask_id;
     gs_matrix converting_image_matrix;
     double    image_mask_scale;
-#endif
 };
 
 #define is_in_page(pdev)\
@@ -964,9 +940,7 @@ int pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 typedef struct pdf_data_writer_s {
     psdf_binary_writer binary;
     long start;
-#if PS2WRITE
     long length_pos;
-#endif
     pdf_resource_t *pres;
     gx_device_pdf *pdev; /* temporary for backward compatibility of pdf_end_data prototype. */
     long length_id;

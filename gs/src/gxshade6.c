@@ -2878,7 +2878,6 @@ int
 mesh_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
-#if PS2WRITE
     if ((*dev_proc(pfs->dev, pattern_manage))(pfs->dev, 
 	    gs_no_id, NULL, pattern_manage__shading_area) > 0) {
 	/* Inform the device with the shading coverage area. 
@@ -2907,7 +2906,6 @@ mesh_triangle(patch_fill_state_t *pfs,
 	if (code < 0)
 	    return code;
     }
-#endif
     return mesh_triangle_rec(pfs, p0, p1, p2);
 }
 
@@ -3788,7 +3786,6 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
        possibly inserting wedges between them against a dropout. */
     make_tensor_patch(pfs, &p, curve, interior);
     pfs->unlinear = !is_linear_color_applicable(pfs);
-#if PS2WRITE
     if ((*dev_proc(pfs->dev, pattern_manage))(pfs->dev, 
 	    gs_no_id, NULL, pattern_manage__shading_area) > 0) {
 	/* Inform the device with the shading coverage area. 
@@ -3834,7 +3831,6 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 	if (code < 0)
 	    return code;
     }
-#endif
     /* draw_patch(&p, true, RGB(0, 0, 0)); */
     kv[0] = curve_samples(pfs, &p.pole[0][0], 4, pfs->fixed_flat);
     kv[1] = curve_samples(pfs, &p.pole[0][1], 4, pfs->fixed_flat);

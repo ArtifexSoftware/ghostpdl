@@ -431,13 +431,9 @@ pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 	FontFile_key = "/FontFile2";
 	break;
     default:			/* Type 1/2, CIDFontType 0 */
-	/* Hack : assuming OrderResources == true 
-	   iff we generate a ps2write output. */
-#	if PS2WRITE
-	    if (pdev->OrderResources)
-		FontFile_key = "/FontFile";
-	    else
-#	endif
+	if (pdev->ResourcesBeforeUsage)
+	    FontFile_key = "/FontFile";
+	else
 	    FontFile_key = "/FontFile3";
     }
     stream_puts(s, FontFile_key);
@@ -542,54 +538,46 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	break;
 
     case ft_encrypted2:
-#	if PS2WRITE && CONVERT_CFF_TO_TYPE1
-	    /* Hack : assuming OrderResources == true 
-	       iff we generate a ps2write output. */
-	    if (pdev->OrderResources) {
-		/* Must convert to Type 1 charstrings. */
-		return_error(gs_error_unregistered); /* Not implemented yet. */
-	    }
-#	endif
+	if (!pdev->HaveCFF) {
+	    /* Must convert to Type 1 charstrings. */
+	    return_error(gs_error_unregistered); /* Not implemented yet. */
+	}
     case ft_encrypted:
-	if (!PS2WRITE || !pdev->OrderResources) {
+	if (pdev->HavePDFWidths) {
 	    code = copied_drop_extension_glyphs((gs_font *)out_font);
 	    if (code < 0)
 		return code;
 	}
-#	if PS2WRITE
-	    /* Hack : assuming OrderResources == true 
-	       iff we generate a ps2write output. */
-	    if (pdev->OrderResources) {
-		int lengths[3];
+	if (!pdev->HaveCFF) {
+	    /* Write the type 1 font with no converting to CFF. */
+	    int lengths[3];
 
-		code = pdf_begin_fontfile(pdev, FontFile_id, NULL, -1L,
-					  &writer);
+	    code = pdf_begin_fontfile(pdev, FontFile_id, NULL, -1L,
+					&writer);
+	    if (code < 0)
+		return code;
+	    code = psf_write_type1_font(writer.binary.strm,
+				(gs_font_type1 *)out_font,
+				WRITE_TYPE1_WITH_LENIV |
+				    WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_PAD,
+				NULL, 0, &fnstr, lengths);
+	    if (lengths[0] > 0) {
 		if (code < 0)
 		    return code;
-		code = psf_write_type1_font(writer.binary.strm,
-				    (gs_font_type1 *)out_font,
-				    WRITE_TYPE1_WITH_LENIV |
-					WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_PAD,
-				    NULL, 0, &fnstr, lengths);
-		if (lengths[0] > 0) {
-		    if (code < 0)
-			return code;
-		    code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
-				"/Length1", lengths[0]);
-		}
-		if (lengths[1] > 0) {
-		    if (code < 0)
-			return code;
-		    code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
-				"/Length2", lengths[1]);
-		    if (code < 0)
-			return code;
-		    code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
-				"/Length3", lengths[2]);
-		}
-	    } else
-#	endif
-	{
+		code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
+			    "/Length1", lengths[0]);
+	    }
+	    if (lengths[1] > 0) {
+		if (code < 0)
+		    return code;
+		code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
+			    "/Length2", lengths[1]);
+		if (code < 0)
+		    return code;
+		code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object, 
+			    "/Length3", lengths[2]);
+	    }
+	} else {
 	    /*
 	     * Since we only support PDF 1.2 and later, always write Type 1
 	     * fonts as Type1C (Type 2).  Acrobat Reader apparently doesn't
@@ -623,7 +611,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	     WRITE_TRUETYPE_CMAP : 0);
 	stream poss;
 
-	if (!PS2WRITE || !pdev->OrderResources) {
+	if (pdev->HavePDFWidths) {
 	    code = copied_drop_extension_glyphs((gs_font *)out_font);
 	    if (code < 0)
 		return code;

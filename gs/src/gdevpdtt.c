@@ -922,8 +922,7 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
 private int 
 pdf_refine_encoding_index(const gx_device_pdf *pdev, int index, bool is_standard)
 {
-#if PS2WRITE
-    if (pdev->OrderResources) {
+    if (pdev->ForOPDFRead) {
 	/*
 	* Allow Postscript encodings only.
 	*/
@@ -935,7 +934,6 @@ pdf_refine_encoding_index(const gx_device_pdf *pdev, int index, bool is_standard
 		return ENCODING_INDEX_STANDARD;
 	}
     }
-#endif
     /*
      * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
      * values allowed for non-embedded fonts.  Pick one here.
@@ -1032,7 +1030,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		break;
 	}
     }
-    if (pdev->OrderResources && !pdev->HaveCIDSystem) {
+    if (pdev->ForOPDFRead && !pdev->HaveCIDSystem) {
 	switch(font->FontType) {
 	    case ft_CID_encrypted:
 	    case ft_CID_TrueType:
@@ -1041,7 +1039,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		break;
 	}
     }
-    if (pdev->OrderResources) {
+    if (!pdev->HaveCFF) {
 	if (font->FontType == ft_encrypted2)
 	    return_error(gs_error_undefined);
     }

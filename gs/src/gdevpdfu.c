@@ -277,8 +277,7 @@ none_to_stream(gx_device_pdf * pdev)
     if (pdev->contents_id != 0)
 	return_error(gs_error_Fatal);	/* only 1 contents per page */
     pdev->compression_at_page_start = pdev->compression;
-#if PS2WRITE
-    if (pdev->OrderResources) {
+    if (pdev->ResourcesBeforeUsage) {
 	pdf_resource_t *pres;
 
 	code = pdf_enter_substream(pdev, resourcePage, gs_no_id, &pres, 
@@ -289,9 +288,7 @@ none_to_stream(gx_device_pdf * pdev)
 	pdev->contents_length_id = gs_no_id; /* inapplicable */
 	pdev->contents_pos = -1; /* inapplicable */
 	s = pdev->strm;
-    } else 
-#endif
-    {
+    } else {
     	pdev->contents_id = pdf_begin_obj(pdev);
 	pdev->contents_length_id = pdf_obj_ref(pdev);
 	s = pdev->strm;
@@ -343,9 +340,6 @@ none_to_stream(gx_device_pdf * pdev)
 		     ri_names[(int)pdev->params.DefaultRenderingIntent]);
 	}
     }
-#if !PS2WRITE
-    pdev->vgstack_depth = 0;
-#endif
     pdev->AR4_save_bug = false;
     return PDF_IN_STREAM;
 }
@@ -400,15 +394,12 @@ stream_to_none(gx_device_pdf * pdev)
     stream *s = pdev->strm;
     long length;
 
-#if PS2WRITE
-    if (pdev->OrderResources) {
+    if (pdev->ResourcesBeforeUsage) {
 	int code = pdf_exit_substream(pdev);
 
 	if (code < 0)
 	    return code;
-    } else 
-#endif
-    {
+    } else {
 	if (pdev->vgstack_depth)
 	    pdf_restore_viewer_state(pdev, s);
 	if (pdev->compression_at_page_start == pdf_compress_Flate) {	/* Terminate the Flate filter. */
@@ -1021,13 +1012,9 @@ pdf_open_page(gx_device_pdf * pdev, pdf_context_t context)
 int
 pdf_unclip(gx_device_pdf * pdev)
 {
-#if PS2WRITE
-    const int bottom = (pdev->OrderResources ? 1 : 0);
-    /* When OrderResources != 0, one sbstack element 
+    const int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
+    /* When ResourcesBeforeUsage != 0, one sbstack element 
        appears from the page contents stream. */
-#else
-    const int bottom = 0;
-#endif
 
     if (pdev->sbstack_depth <= bottom) {
 	int code = pdf_open_page(pdev, PDF_IN_STREAM);
@@ -1414,20 +1401,15 @@ pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     if (!(options & DATA_STREAM_NOLENGTH)) {
 	stream_puts(s, (pdev->CompatibilityLevel < 1.3 ? 
 	    fnames1_2[filters] : fnames[filters]));
-#	if PS2WRITE
-	    if (pdev->OrderResources) {
-		pdw->length_pos = stell(s) + 8;
-		stream_puts(s, "/Length             >>stream\n");
-		pdw->length_id = -1;
-	    } else {
-		pdw->length_pos = -1;		
-		pdw->length_id = pdf_obj_ref(pdev);
-		pprintld1(s, "/Length %ld 0 R>>stream\n", pdw->length_id);
-	    }
-#	else
+	if (pdev->ResourcesBeforeUsage) {
+	    pdw->length_pos = stell(s) + 8;
+	    stream_puts(s, "/Length             >>stream\n");
+	    pdw->length_id = -1;
+	} else {
+	    pdw->length_pos = -1;		
 	    pdw->length_id = pdf_obj_ref(pdev);
 	    pprintld1(s, "/Length %ld 0 R>>stream\n", pdw->length_id);
-#	endif
+	}
     }
     if (options & DATA_STREAM_ENCRYPT) {
 	code = pdf_begin_encrypt(pdev, &s, object_id);

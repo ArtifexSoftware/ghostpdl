@@ -299,7 +299,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
     /* Patch pdev->strm so the right stream gets into the writer. */
     stream *save_strm = pdev->strm;
     cos_stream_t *data;
-    bool mask = (PS2WRITE && piw->data != NULL);
+    bool mask = (piw->data != NULL);
     int alt_stream_index = (!mask ? 0 : piw->alt_writer_count);
     int code;
 
@@ -612,7 +612,7 @@ pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force
     s[k1]->id = piw->pres->object->id;
     piw->pres->object = (cos_object_t *)s[k1];
     piw->data = s[k1];
-    if (PS2WRITE && piw->alt_writer_count > 3) {
+    if (piw->alt_writer_count > 3) {
 	piw->binary[1] = piw->binary[3];
 	piw->binary[3].strm = 0; /* for GC */
 	piw->binary[3].target = 0;

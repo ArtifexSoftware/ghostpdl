@@ -227,11 +227,7 @@ int pdf_do_image_by_id(gx_device_pdf * pdev, double scale,
 int pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 		 const gs_matrix * pimat, bool in_contents);
 
-#if PS2WRITE
 #define pdf_image_writer_num_alt_streams 4
-#else
-#define pdf_image_writer_num_alt_streams 3
-#endif
 
 /* Define the structure for writing an image. */
 typedef struct pdf_image_writer_s {

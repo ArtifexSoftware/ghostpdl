@@ -166,7 +166,7 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
 	    const byte *d = pdfont->u.simple.Encoding[ch].str.data;
 	    int i, l = pdfont->u.simple.Encoding[ch].str.size;
 
-    	    if (!PS2WRITE || !pdev->OrderResources) {
+    	    if (pdev->HavePDFWidths) {
 		for (i = 0; i + sl < l; i++)
 		    if (!memcmp(d + i, gx_extendeg_glyph_name_separator, sl)) {
 			l = i;

@@ -84,9 +84,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("Permissions", gs_param_type_int, Permissions),
     pi("EncryptionR", gs_param_type_int, EncryptionR),
     pi("NoEncrypt", gs_param_type_string, NoEncrypt),
-#if PS2WRITE
-    pi("OrderResources", gs_param_type_bool, OrderResources),
-#endif
+    pi("ForOPDFRead", gs_param_type_bool, ForOPDFRead),
     pi("PatternImagemask", gs_param_type_bool, PatternImagemask),
     pi("MaxClipPathSize", gs_param_type_int, MaxClipPathSize),
     pi("MaxShadingBitmapSize", gs_param_type_int, MaxShadingBitmapSize),
@@ -103,48 +101,23 @@ private const gs_param_item_t pdf_param_items[] = {
   Architectural issues
   --------------------
 
-  Must disable all color conversions, so that driver gets original color
-    and color space -- needs "protean" device color space
   Must optionally disable application of TR, BG, UCR similarly.  Affects:
     PreserveHalftoneInfo
     PreserveOverprintSettings
     TransferFunctionInfo
     UCRandBGInfo
 
-  * = requires architectural change to complete
-
   Current limitations
   -------------------
 
   Non-primary elements in HalftoneType 5 are not written correctly
-  Doesn't recognize Default TR/HT/BG/UCR
-  Optimization is a separate program
-
-  Optimizations
-  -------------
-
-  Create shared resources for Indexed (and other) color spaces
-  Remember image XObject IDs for sharing
-  Remember image and pattern MD5 fingerprints for sharing -- see
-    CD-ROM from dhoff@margnat.com
-  Merge font subsets?  (k/ricktest.ps, from rick@dgii.com re file output
-    size ps2pdf vs. pstoedit)
-  Minimize tables for embedded TT fonts (requires renumbering glyphs)
-  Clip off image data outside bbox of clip path?
 
   Acrobat Distiller 3
   -------------------
 
-  ---- Other functionality ----
-
-  Compress forms, Type 3 fonts, and Cos streams
-
   ---- Image parameters ----
 
   AntiAlias{Color,Gray,Mono}Images
-  AutoFilter{Color,Gray}Images
-    Needs to scan image
-  Convert CIE images to Device if can't represent color space
 
   ---- Other parameters ----
 
@@ -172,21 +145,10 @@ private const gs_param_item_t pdf_param_items[] = {
 
   xxxDownsampleType = /Bicubic
     Add new filter (or use siscale?) & to setup (gdevpsdi.c)
-  Binding
-    ? not sure where this goes (check with AD4)
   DetectBlends
     Idiom recognition?  PatternType 2 patterns / shfill?  (see AD4)
   DoThumbnails
     Also output to memory device -- resolution issue
-  EndPage / StartPage
-    Only affects AR? -- see what AD4 produces
-  ###Profile
-    Output in ICCBased color spaces
-  ColorConversionStrategy
-  * Requires suppressing CIE => Device color conversion
-    Convert other CIE spaces to ICCBased
-  CannotEmbedFontPolicy
-    Check when trying to embed font -- how to produce warning?
 
   ---- Job-level control ----
 
@@ -319,7 +281,7 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		 * Must be 1.2, 1.3, or 1.4.  Per Adobe documentation, substitute
 		 * the nearest achievable value.
 		 */
-		if (PS2WRITE && cl < (float)1.15)
+		if (cl < (float)1.15)
 		    cl = (float)1.1;
 		else if (cl < (float)1.25)
 		    cl = (float)1.2;
@@ -380,6 +342,21 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
      * the version.
      */
     pdev->version = (cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
+    if (pdev->ForOPDFRead) {
+	pdev->ResourcesBeforeUsage = true;
+	pdev->HaveCFF = false;
+	pdev->HavePDFWidths = false;
+	pdev->HaveStrokeColor = false;
+	cl = (float)1.2; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
+	pdev->MaxInlineImageSize = max_long; /* Save printer's RAM from saving temporary image data.
+					        Immediate images doen't need buffering. */
+	pdev->version = psdf_version_level2;
+    } else {
+	pdev->ResourcesBeforeUsage = false;
+	pdev->HaveCFF = true;
+	pdev->HavePDFWidths = true;
+	pdev->HaveStrokeColor = true;
+    }
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
 	goto fail;
