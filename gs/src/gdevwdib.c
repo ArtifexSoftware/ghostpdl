@@ -459,7 +459,7 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
     if (wdev->color_info.depth > 16)
 	palcount = 0;
     else if (wdev->color_info.depth > 8)
-	palcount = 3;		// 16-bit BI_BITFIELDS
+	palcount = 3;		/* 16-bit BI_BITFIELDS */
     else
 	palcount = wdev->nColors;
 
