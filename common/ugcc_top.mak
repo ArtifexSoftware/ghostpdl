@@ -19,21 +19,21 @@ include $(COMMONDIR)/generic.mak
 
 # Configure for debugging
 debug:
-	make GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)'
+	make -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)'
 
 # Configure for profiling
 pg-fp:
-	make GENOPT='' CFLAGS='-pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg'
+	make -f $(MAKEFILE) GENOPT='' CFLAGS='-pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg'
 pg-nofp:
-	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
+	make -f $(MAKEFILE) GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Configure for debugging and no FPU (crude timing configuration)
 nofp:
-	make GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
+	make -f $(MAKEFILE) GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Configure for optimization.
 product:
-	make GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)'
+	make -f $(MAKEFILE) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)'
 
 clean_gs:
 	make -f $(GLSRCDIR)/ugcclib.mak \
