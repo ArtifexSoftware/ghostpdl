@@ -409,7 +409,7 @@ bind def
 %	/key1 (value1) ... /type
 /.pdfdsc_dict 2 dict def
 /.pdfdsc {	% <file> <DSC string> <dsc dict> [<prev proc>] .pdfdsc -
-  0 get dup null ne { 4 copy exch pop exec } { pop } ifelse 3 -1 roll pop
+  0 get dup null ne { 4 copy exch pop exec pop } { pop } ifelse 3 -1 roll pop
 		% Stack: <dsc string> <dsc dict>
   20 .localvmdict 1 index { 3 copy put pop pop } forall
   3 -1 roll .parse_dsc_comments	% <dsc dict> <dict> <type>

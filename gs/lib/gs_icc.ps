@@ -268,4 +268,57 @@ colorspacedict
 put
 
 end     % .cspace_util
+
+% Now set up ICC profile loading for PostScript %%BeginICCProfile sections.
+
+systemdict begin
+/.ProcessICCcomment { % file comment --  file comment
+  dup
+  (%%BeginICCProfile) anchorsearch {
+    pop pop
+    % DEBUG { (.ProcessICCcomment found %%BeginICCProfile) print flush } if
+
+    % load an ICC profile defined as comments (hex encoded).
+    % Ends with %%End at the start of a line. Read the data into
+    % a tempfile to allow seeking. The tempfile is not closed since
+    % it is needed by the ICC logic.
+    (icc) (w) .tempfile	% stack: --file-- (%%BeginICCProfile: ...) (tempfilename) --tempfile--
+    3 index 0 (%%EndICCProfile) /SubFileDecode filter
+    32768 string
+  	% stack: (tempfilename) --tempfile-- --infile-- scratchstring
+    {
+      2 copy readhexstring
+      exch 4 index exch
+      writestring
+      not { exit } if
+    } loop
+    pop pop	% done with scratchstring and input file
+    closefile
+    (r) file	% open binary ICC profile file for reading
+    /DeviceCMYK setcolorspace
+    << /DataSource 3 -1 roll
+       /N 4		% Try CMYK first
+    >> { .seticcspace } stopped {
+      /DeviceRGB setcolorspace
+      dup /N 3 put  { .seticcspace } stopped {
+        /DeviceGray setcolorspace
+        dup /N 1 put { .seticcspace } stopped {	% last choice
+          QUIET not { (   *** Unable to load ICC profile from PostScript DSC comments ***) = flush } if
+          pop
+        } if
+      } if
+    } if
+  } {
+    pop % Not interested in this DSC comment
+  } ifelse
+} bind def
+
+% Merge ProcessICCcomment with existing handler
+/.ProcessICCcomment load /exec load
+currentuserparams /ProcessDSCComment get 
+dup null eq {pop {pop pop}} if /exec load
+4 array astore cvx readonly
+<< /ProcessDSCComment 3 -1 roll >> setuserparams
+
+end	% systemdict
 .setglobal
