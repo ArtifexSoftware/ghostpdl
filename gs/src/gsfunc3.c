@@ -482,15 +482,22 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
     };
     int m = params->m, n = params->n;
     int i;
+    int is_monotonic = 0;	/* initialize to pacify compiler */
 
     *ppfn = 0;			/* in case of error */
     if (m <= 0 || n <= 0)
 	return_error(gs_error_rangecheck);
     for (i = 0; i < n; ++i) {
 	const gs_function_t *psubfn = params->Functions[i];
+	int sub_mono;
 
 	if (psubfn->params.m != m || psubfn->params.n != 1)
 	    return_error(gs_error_rangecheck);
+	sub_mono = fn_domain_is_monotonic(psubfn, EFFORT_MODERATE);
+	if (i == 0 || sub_mono < 0)
+	    is_monotonic = sub_mono;
+	else if (is_monotonic >= 0)
+	    is_monotonic &= sub_mono;
     }
     {
 	gs_function_AdOt_t *pfn =
@@ -503,8 +510,7 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
 	pfn->params.Domain = 0;
 	pfn->params.Range = 0;
 	pfn->head = function_AdOt_head;
-	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
+	pfn->head.is_monotonic = is_monotonic;
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
