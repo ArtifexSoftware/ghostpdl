@@ -238,10 +238,10 @@ private int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
 /* Colour mapping procedures */
 private dev_proc_map_cmyk_color (gdev_cmyk_map_cmyk_color);
 private dev_proc_map_rgb_color (gdev_cmyk_map_rgb_color);
-private dev_proc_map_color_rgb (gdev_cmyk_map_color_rgb);
 
 private dev_proc_map_rgb_color (gdev_pcl_map_rgb_color);
 private dev_proc_map_color_rgb (gdev_pcl_map_color_rgb);
+private dev_proc_decode_color  (gdev_cmyk_map_color_cmyk);
 
 /* Print-page, parameters and miscellaneous procedures */
 private dev_proc_open_device(dj500c_open);
@@ -463,7 +463,7 @@ typedef struct {
 	gdev_prn_output_page,\
 	gdev_prn_close,\
 	NULL /* map_rgb_color */,\
-	gdev_cmyk_map_color_rgb,\
+	NULL /* map_color_rgb */,\
 	NULL /* fill_rectangle */,\
 	NULL /* tile_rectangle */,\
 	NULL /* copy_mono */,\
@@ -472,7 +472,44 @@ typedef struct {
 	gx_default_get_bits,\
 	proc_get_params,\
 	proc_put_params,\
-        gdev_cmyk_map_cmyk_color\
+        gdev_cmyk_map_cmyk_color,\
+	NULL,	/* get_xfont_procs */\
+	NULL,	/* get_xfont_device */\
+	NULL,	/* map_rgb_alpha_color */\
+	NULL,	/* get_page_device */\
+	NULL,	/* get_alpha_bits */\
+	NULL,	/* copy_alpha */\
+	NULL,	/* get_band */\
+	NULL,	/* copy_rop */\
+	NULL,	/* fill_path */\
+	NULL,	/* stroke_path */\
+	NULL,	/* fill_mask */\
+	NULL,	/* fill_trapezoid */\
+	NULL,	/* fill_parallelogram */\
+	NULL,	/* fill_triangle */\
+	NULL,	/* draw_thin_line */\
+	NULL,	/* begin_image */\
+	NULL,	/* image_data */\
+	NULL,	/* end_image */\
+	NULL,	/* strip_tile_rectangle */\
+	NULL,	/* strip_copy_rop */\
+	NULL,	/* get_clipping_box */\
+	NULL,	/* begin_typed_image */\
+	NULL,	/* get_bits_rectangle */\
+	NULL,	/* map_color_rgb_alpha */\
+	NULL,	/* create_compositor */\
+	NULL,	/* get_hardware_params */\
+	NULL,	/* text_begin */\
+	NULL,	/* finish_copydevice */\
+	NULL,	/* begin_transparency_group */\
+	NULL,	/* end_transparency_group */\
+	NULL,	/* begin_transparency_mask */\
+	NULL,	/* end_transparency_mask */\
+	NULL,	/* discard_transparency_layer */\
+	NULL,	/* get_color_mapping_procs */\
+	NULL,	/* get_color_comp_index */\
+	gdev_cmyk_map_cmyk_color,	/* encode_color */\
+	gdev_cmyk_map_color_cmyk	/* decode_color */\
 }
 
 private gx_device_procs cdj500_procs =
@@ -2760,18 +2797,18 @@ gdev_cmyk_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 /* Mapping of CMYK colors. */
 
 private int
-gdev_cmyk_map_color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
+gdev_cmyk_map_color_cmyk(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 {
     switch (pdev->color_info.depth) {
 	case 1:
-	   prgb[0] = prgb[1] = prgb[2] = gx_max_color_value * (1 - color);
+	   prgb[0] = gx_max_color_value * (1 - color);
 	   break;
 
 	case 8:
 	   if (pdev->color_info.num_components == 1) {
 	       gx_color_value value = (gx_color_value) color ^ 0xff;
 
-	       prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
+	       prgb[0] = (value << 8) + value;
 
 	       break;
 	   }
@@ -2783,34 +2820,10 @@ gdev_cmyk_map_color_rgb(gx_device *pdev, gx_color_index color, gx_color_value pr
 	    gx_value_cmyk_bits(color, bcyan, bmagenta, byellow, black,
 	        nbits >> 2);
 
-#ifdef USE_ADOBE_CMYK_RGB
-
-	    /* R = 1.0 - min(1.0, C + K), etc. */
-
-	    bcyan += black, bmagenta += black, byellow += black;
-	    prgb[0] = (bcyan > gx_max_color_value ? (gx_color_value) 0 :
-		       gx_max_color_value - bcyan);
-	    prgb[1] = (bmagenta > gx_max_color_value ? (gx_color_value) 0 :
-		       gx_max_color_value - bmagenta);
-	    prgb[2] = (byellow > gx_max_color_value ? (gx_color_value) 0 :
-		       gx_max_color_value - byellow);
-
-#else
-
-	    /* R = (1.0 - C) * (1.0 - K), etc. */
-
-	    prgb[0] = (gx_color_value)
-	      ((ulong)(gx_max_color_value - bcyan) *
-	       (gx_max_color_value - black) / gx_max_color_value);
-	    prgb[1] = (gx_color_value)
-	      ((ulong)(gx_max_color_value - bmagenta) *
-	       (gx_max_color_value - black) / gx_max_color_value);
-	    prgb[2] = (gx_color_value)
-	      ((ulong)(gx_max_color_value - byellow) *
-	       (gx_max_color_value - black) / gx_max_color_value);
-
-#endif
-
+	    prgb[0] = bcyan;
+	    prgb[1] = bmagenta;
+	    prgb[2] = byellow;
+	    prgb[3] = black;
 	}
     }
 
@@ -3146,9 +3159,9 @@ cdj_set_bpp(gx_device *pdev, int bpp, int ccomps)
 
       /* Reset procedures because we may have been in another mode. */
 
-      dev_proc(pdev, map_cmyk_color) = gdev_cmyk_map_cmyk_color;
+      dev_proc(pdev, encode_color) = gdev_cmyk_map_cmyk_color;
       dev_proc(pdev, map_rgb_color) = NULL;
-      dev_proc(pdev, map_color_rgb) = gdev_cmyk_map_color_rgb;
+      dev_proc(pdev, decode_color) = gdev_cmyk_map_color_cmyk;
 
       if (pdev->is_open) gs_closedevice(pdev);
   }
