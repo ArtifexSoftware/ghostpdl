@@ -324,7 +324,7 @@ typedef struct pdf_page_dsc_info_s {
  */
 typedef struct pdf_page_s {
     cos_dict_t *Page;
-    gs_int_point MediaBox;
+    gs_point MediaBox;
     pdf_procset_t procsets;
     long contents_id;
     long resource_ids[resourceFont + 1]; /* resources thru Font, see above */

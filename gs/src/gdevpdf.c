@@ -585,8 +585,8 @@ pdf_close_page(gx_device_pdf * pdev)
 
     pdf_page_id(pdev, page_num);
     page = &pdev->pages[page_num - 1];
-    page->MediaBox.x = (int)(pdev->MediaSize[0]);
-    page->MediaBox.y = (int)(pdev->MediaSize[1]);
+    page->MediaBox.x = pdev->MediaSize[0];
+    page->MediaBox.y = pdev->MediaSize[1];
     page->contents_id = pdev->contents_id;
     /* pdf_store_page_resources sets procsets, resource_ids[]. */
     code = pdf_store_page_resources(pdev, page);
@@ -638,6 +638,11 @@ pdf_close_page(gx_device_pdf * pdev)
 }
 
 /* Write the page object. */
+private double
+round_box_coord(floatp xy)
+{
+    return (int)(xy * 100 + 0.5) / 100.0;
+}
 private int
 pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
@@ -647,8 +652,9 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 
     pdf_open_obj(pdev, page_id);
     s = pdev->strm;
-    pprintd2(s, "<</Type/Page/MediaBox [0 0 %d %d]\n",
-	     page->MediaBox.x, page->MediaBox.y);
+    pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
+	     round_box_coord(page->MediaBox.x),
+	     round_box_coord(page->MediaBox.y));
     if (page->text_rotation.Rotate >= 0)
 	pprintd1(s, "/Rotate %d", page->text_rotation.Rotate);
     else if (page->dsc_info.orientation >= 0)
