@@ -73,7 +73,7 @@ nodict readonly pop
 
 /graphicsbeginpage {
   initgraphics
-  currentdict /ClipRect .knownget { aload pop rectclip } if
+  currentdict /ClipRect knownoget { aload pop rectclip } if
   0 g  0 G  false op  false OP  0 OPM
   1 ca  1 CA  null SMask  false AIS  /Compatible BM  true TK
 } bdef
@@ -88,12 +88,43 @@ nodict readonly pop
    if def
  } bdef
 
+% Restore graphics state, but do not modify path. Paths are not part
+% of the PDF graphics state; see 4.4.1 of PDF reference 3rd ed.
+/grestore_nopath {
+  { false upath } stopped {
+    pop grestore newpath
+  } {
+    grestore newpath uappend
+  } ifelse
+} bdef
+
 /q {
   gsave //nodict begin
 } bdef
 % Some PDF files have excess Q operators!
 /Q {
-  currentdict /self .knownget { exec //nodict eq { end grestore } if } if
+  currentdict /self .knownget {
+    exec //nodict eq { end grestore_nopath false } { true } ifelse
+  } {
+    true	% formaterror -- not a gsave dict
+  } ifelse
+  { (\n   **** File has imbalanced q/Q operators \(too many Q's\) ****\n)
+    pdfformaterror
+  } if
+} bdef
+
+% Save PDF gstate
+/qstate {       % - qstate <qstate>
+  gstate
+} bdef
+
+% Set PDF gstate
+/setqstate {    % <qstate> setqstate -
+  { //false upath } stopped {
+    pop setgstate newpath
+  } {
+    exch setgstate newpath uappend
+  } ifelse
 } bdef
 
 % ---------------- Color setting ---------------- %
@@ -237,8 +268,7 @@ nodict readonly pop
   /DeviceGray { pop setgray } bdef
   /DeviceRGB { pop setrgbcolor } bdef
   /DeviceCMYK { pop setcmykcolor } bdef
-  /CIEBasedA
-   { dup currentcolorspace eq { pop } { setcolorspace } ifelse setcolor } bdef
+  /CIEBasedA { setgcolorspace setcolor } bdef
   /CIEBasedABC /CIEBasedA load def
   /CIEBasedDEF /CIEBasedA load def
   /CIEBasedDEFG /CIEBasedA load def
@@ -247,9 +277,32 @@ nodict readonly pop
   /DeviceN /CIEBasedA load def
   /Indexed /CIEBasedA load def
   /Pattern
-   { dup currentcolorspace eq { pop } { setcolorspace } ifelse
-     dup /Matrix .knownget not { matrix } if
-     gsave DefaultMatrix setmatrix makepattern grestore setcolor
+   { setgcolorspace
+
+     % Since multiple patterns may share
+     % same data stream, we need to ensure
+     % that the stream is at 0 position.
+     % Making this consistently with resolveshading,
+     % which applies ReusableStreamDecode filter
+     % to the PS stream, which represents the
+     % PDF stream in dynamics.
+
+     dup /Shading knownoget {
+       dup /ShadingType oget 4 ge {
+         /DataSource knownoget {
+           dup type /filetype eq {
+             0 setfileposition
+           } {
+             pop
+           } ifelse
+         } if
+       } {
+        pop
+       } ifelse
+     } if
+
+     dup /Matrix knownoget not { matrix } if
+     gsave DefaultQstate setqstate makepattern grestore setcolor
    } bdef
 end def
 /setgcolor	% (null | <color...>) <colorspace> setgcolor -
@@ -258,6 +311,29 @@ end def
     { dup 0 get //Cdict exch get exec }
    ifelse
  } bdef
+% Compare the old and new color spaces in an attempt to avoid expensive
+% reloads of CIEBased color spaces.
+/PCSdict 15 dict dup begin	% <colorspace> -proc- <colorspace|pdfcspace>
+  /CIEBasedA { dup 1 get /PDFColorSpace .knownget { exch pop } if } bdef
+  /CIEBasedABC /CIEBasedA load def
+  /CIEBasedDEF /CIEBasedA load def
+  /CIEBasedDEFG /CIEBasedA load def
+  /Indexed {
+    dup 1 get dup pdfcolorspace 2 copy ne { 3 1 roll } if pop pop
+  } bdef
+end def
+/pdfcolorspace {	% <colorspace> pdfcolorspace <colorspace|pdfcspace>
+  dup type /arraytype eq {
+    //PCSdict 1 index 0 get .knownget { exec } if
+  } if
+} bdef
+/setgcolorspace {	% <colorspace> setgcolorspace -
+  dup pdfcolorspace currentcolorspace pdfcolorspace eq {
+    pop
+  } {
+    setcolorspace
+  } ifelse
+} bdef
 /fsexec		% <fillop|strokeop> fsexec -
  {		% Preserve the current point, if any.
     { currentpoint } stopped
@@ -431,6 +507,10 @@ end readonly def
 
 % ---------------- Text painting ---------------- %
 
+/Vexch {
+  rootfont /WMode knownoget { 1 eq { exch } if } if
+} bind def
+
 /textrenderingprocs [		% (0 is handled specially)
 	% Painting-only modes
    { tf } { tS } { tB } { tn }
@@ -442,17 +522,34 @@ end readonly def
 ] readonly def
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and
-    { TextRenderingMode 0 eq
-       { { setfillstate show } }
-       { { false charpath textrenderingprocs TextRenderingMode get exec } }
-      ifelse
+    { TextRenderingMode 0 eq {
+        { setfillstate show }
+      } {
+        TextRenderingMode 3 eq {
+          { 	% Some PDF files execute 'tm' with a singular matrix,
+		% and then use this text rendering mode.
+		% The graphics library currently cannot handle text
+		% operations when the CTM is singular.
+		% Work around this here.
+	    matrix currentmatrix
+	    {1 0 0 1 0 0} setmatrix
+	    exch stringwidth
+	    3 -1 roll setmatrix
+	    rmoveto
+
+          }
+        } {
+          { false charpath textrenderingprocs TextRenderingMode get exec }
+        } ifelse
+      } ifelse
     }
     { TextRenderingMode 0 eq
        { WordSpacing 0 eq
-          { { setfillstate TextSpacing exch 0 exch ashow } }
+          { { setfillstate TextSpacing 0 Vexch 3 -1 roll ashow } }
 	  { TextSpacing 0 eq
-	     { { setfillstate WordSpacing exch 0 exch 32 exch widthshow } }
-	     { { setfillstate WordSpacing exch TextSpacing exch 0 32 4 2 roll 0 exch awidthshow } }
+            { { setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow } }
+            { { setfillstate WordSpacing 0 Vexch 32
+                 TextSpacing 0 Vexch 6 -1 roll awidthshow } }
 	    ifelse
 	  }
 	 ifelse
@@ -464,7 +561,7 @@ end readonly def
 			% Stack: string xword xchar
 	    { pop pop (x) dup 0 3 index put false charpath
 			% Stack: xword xchar ccode
-	      3 copy 32 eq { add } { exch pop } ifelse 0 rmoveto pop
+             3 copy 32 eq { add } { exch pop } ifelse 0 Vexch rmoveto pop
 	    }
 	   4 -1 roll cshow pop pop
 	   textrenderingprocs TextRenderingMode get exec
@@ -487,7 +584,7 @@ end readonly def
       Show
     } { -1000 div
       currentfont /ScaleMatrix .knownget { 0 get mul } if
-      0 rmoveto
+      0 Vexch rmoveto
     } ifelse
   } forall settextposition
 } bdef

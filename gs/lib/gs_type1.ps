@@ -17,34 +17,38 @@
 % in the book "Adobe Type 1 Font Format", published by Adobe Systems Inc.
 
 % Define an augmented version of .buildfont1 that inserts UnderlinePosition
-% and UnderlineThickness entries in FontInfo if they aren't there already.
+% and UnderlineThickness entries in FontInfo if they aren't there already,
+% and FontBBox isn't degenerate.
 % (This works around the incorrect assumption, made by many word processors,
 % that these entries are present in the built-in fonts.)
 /.buildfont1
- { dup /FontInfo known not
-    { .growfontdict dup /FontInfo 2 dict put }
-   if
-   dup dup /FontInfo get dup dup
-   /UnderlinePosition known exch /UnderlineThickness known and
-    { pop pop		% entries already present
-    }
-    { dup length 2 add dict .copydict
-      dup /UnderlinePosition known not
-       { dup /UnderlinePosition 3 index /FontBBox .knownget
-          { 1 get 2 div }			% 1/2 the font descent
-	  { -100 } ifelse put
-       }
-      if
-      dup /UnderlineThickness known not
-       { dup /UnderlineThickness 3 index /FontBBox .knownget
-          { dup 3 get exch 1 get sub 20 div }	% 1/20 the font height
-	  { 50 } ifelse put
-       }
-      if
-      1 index /FontInfo get wcheck not { readonly } if
-      /FontInfo exch put
-    }
-   ifelse //.buildfont1
+ {
+   dup .fontbbox {
+     pop pop pop pop
+     dup /FontInfo known not
+      { .growfontdict dup /FontInfo 2 dict put }
+     if
+     dup dup /FontInfo get dup dup
+     /UnderlinePosition known exch /UnderlineThickness known and
+      { pop pop		% entries already present
+      }
+      { dup length 2 add dict .copydict
+        dup /UnderlinePosition known not
+         { dup /UnderlinePosition 3 index /FontBBox get
+           1 get 2 div put 			% 1/2 the font descent
+         }
+        if
+        dup /UnderlineThickness known not
+         { dup /UnderlineThickness 3 index /FontBBox get
+           dup 3 get exch 1 get sub 20 div put 	% 1/20 the font height
+         }
+        if
+        1 index /FontInfo get wcheck not { readonly } if
+        /FontInfo exch put
+      }
+     ifelse
+   } if
+   //.buildfont1
  } bind def
 % If the diskfont feature isn't included, define a dummy .loadfontdict.
 /.loadfontdict where
@@ -122,8 +126,9 @@ ifelse
     } if
   end
 } bind def
-% CCRun is an undocumented procedure provided for Type 4 and Type 0 fonts.
+
 1183615869 internaldict begin
+% CCRun is an undocumented procedure provided for Type 4 and Type 0 fonts.
 % Apparently there are two different argument lists for CCRun.
 % Handling the one with the extra Private dictionary requires fabricating
 % a Type 1 font on the fly, since we aren't currently prepared to parse the
@@ -153,6 +158,23 @@ ifelse
     3 index /Encoding get exch get
   } if exch .type1execchar
 } bind def
+
+% setweightvector is an undocumented procedure that force writes
+% weight vector to the font. Do extra checks for safety.
+/setweightvector { % <font> <vector> setweightvector -
+  dup type dup /arraytype ne exch /packedarraytype ne and
+  2 index type /dicttype ne or {
+    /setweightvector cvx /typecheck signalerror
+  } if
+  1 index /FontType known not {
+    /setweightvector cvx /invalidfont signalerror
+  } if
+  dup gcheck 2 index gcheck not and {
+    /setweightvector cvx /invalidaccess signalerror
+  } if
+  2 copy /WeightVector exch .forceput
+  .setweightvector
+} .bind executeonly def 
 end
 
 % Register the font types for definefont.

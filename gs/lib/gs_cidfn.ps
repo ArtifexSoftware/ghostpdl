@@ -56,7 +56,7 @@ dup 0 {
     end
   } if
   1 index exch .buildfont9 exch pop
-} bind put
+} put % Don't bind it here, because gs_fapi.ps redefines .buildfont9
 
 % Add entries to a new CIDFontType 0 font per documentation (FontMatrix)
 % or for .buildfont9 (FDArray.Private.Subrs).
@@ -65,7 +65,10 @@ dup 0 {
   dup /FontMatrix known not {
     dup /FontMatrix [0.001 0 0 0.001 0 0] put
     dup /FDArray get {
-      /FontMatrix get [1000 0 0 1000 0 0] 1 index concatmatrix pop
+       currentglobal exch dup gcheck setglobal
+       dup /FontMatrix get [1000 0 0 1000 0 0] matrix concatmatrix
+       /FontMatrix exch put
+       setglobal
     } forall
   } if
   dup /FDArray get {
@@ -126,14 +129,14 @@ dup 0 {
 dup 1 {
   10 .checkfonttype pop
   1 index exch .buildfont10 exch pop
-} bind put
+} put % Don't bind it here because gs_fapi.ps redefines .buildfont10
 
 % ------ CIDFontType 2 (FontType 11) ------ %
 
 dup 2 {
   11 .checkfonttype pop
   1 index exch .buildfont11 exch pop
-} bind put
+} put % Don't bind it here because gs_fapi.ps redefines .buildfont11
 
 pop		% .cidfonttypes
 
@@ -173,7 +176,7 @@ pop		% .cidfonttypes
       mark 3 1 roll {
 		% Stack: mark str ... readproc length
 	dup 0 eq { pop exit } if
-	dup 65400 min dup string 3 index exec
+	dup 65400 .min dup string 3 index exec
 		% Stack: mark str ... readproc length newstrlen newstr
 	4 1 roll sub
       } loop
@@ -386,3 +389,6 @@ dup /.CheckResource {
 /Category defineresource pop
 
 .setlanguagelevel
+
+%% Replace 1 (gs_ciddc.ps)
+(gs_ciddc.ps) runlibfile

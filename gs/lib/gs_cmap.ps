@@ -16,22 +16,32 @@
 
 % NOTE: Rearranged fonts are not implemented yet.
 
+[
+   /CMERGE_DEBUG
+   /USE_CIDCHAR_AS_RANGE
+] {dup where {pop pop} { currentdict exch false def pop } ifelse} forall
+
 % ---------------- Public operators ---------------- %
 
 /.rewriteTempMapsNotDef {
-  DEBUG { (rewriting TempMapsNotDef\n) print flush } if
+  %
+  % Before building .CodeMapData from .TempMaps,
+  % we need to replace dst type codes in the notdef map with the value 3,
+  % which corresponds to CODE_VALUE_NOTDEF, see gxfcmap.h .
+  %
+  CMAPDEBUG { (rewriting TempMapsNotDef\n) print flush } if
   .TempMaps 2 get
   dup length 0 gt {
     0 get
-    DEBUG { (...original...\n) print flush } if
+    CMAPDEBUG { (...original...\n) print flush } if
     1 5 2 index length 1 sub {
       { 1 index exch get 2 3 put } stopped
-      { DEBUG { (cannot rewrite\n) print flush } if }
-      { DEBUG { (rewrite\n) print flush } if } ifelse
+      { CMAPDEBUG { (cannot rewrite\n) print flush } if }
+      { CMAPDEBUG { (rewrite\n) print flush } if } ifelse
     } for
   } if
   pop
-  DEBUG { (...FINISHED...\n) print } if
+  CMAPDEBUG { (...FINISHED...\n) print } if
 } bind def
 
 % composefont doesn't appear in CMap files -- it's documented in
@@ -101,7 +111,7 @@
 } bind def
 /endcmap {		% - endcmap -
   .rewriteTempMapsNotDef
-  DEBUG {
+  CMAPDEBUG {
     (*** defined charmap ***\n) print
     .TempMaps 1 get {exch == (\t) print ==} forall
     (*** undefined charmap ***\n) print
@@ -112,7 +122,7 @@
 		% Append data from .TempMaps to .CodeMapData.
     /t .TempMaps i get def
     .CodeMapData i get length t { exch pop length add } forall
-    DEBUG { (requested array size ) print dup == } if
+    CMAPDEBUG { (requested array size ) print dup == } if
     array /a exch def
     a 0 .CodeMapData i get .putmore
     0 1 t length 1 sub {
@@ -237,10 +247,10 @@
 			%   .addbfrange <<same as .addbfchar>>
   4 string dup 3
   3 index type /nametype eq {
-    2 index 2 1 put
+    2 index 2 1 put % dst = CODE_VALUE_GLYPH, see gxfcmap.h .
     4 -1 roll 1 array astore 4 1 roll 4
   } {
-    2 index 2 2 put
+    2 index 2 2 put % dst = CODE_VALUE_CHARS, see gxfcmap.h .
     3 index length
   } ifelse put
 			% Stack: code_lo code_hi value params
@@ -275,13 +285,72 @@
   1 .endmapranges
 } bind def
 
-/.endmapchars {		% -mark- <code> <cid> ... <map#> .endmapchars -
+/.endmapchars {         % -mark- <code> <cid> ... <map#> .endmapchars -
   counttomark 1 add 1 roll
   counttomark 2 idiv {
-    counttomark -2 roll		% process in correct order
-		% Construct prefix, params, key, value, font_index
-    <00 00 00 02> ()	% params, key
-    3 -1 roll .endmapvalue
+    counttomark -2 roll         % process in correct order
+    exch        % <cid> <code>
+                % Construct prefix, params, key, value, font_index
+    dup length 1 eq {   % 1-byte
+      <00 00 00 02> ()  % <prefix> <param> <null_key>
+    } {                 % N-byte
+      dup 0 1 getinterval exch  % make 1-byte prefix
+      4 string dup 0
+      USE_CIDCHAR_AS_RANGE {
+        <00 01 00 02>   % skelton for param
+      } {
+        <00 00 00 02>   % skelton for param
+      } ifelse
+      putinterval
+      exch              % <prefix> <param> <code>
+      dup length        % <prefix> <param> <code> N
+      1 sub             % <prefix> <param> <code> N-1
+      dup               % <prefix> <param> <code> N-1 N-1
+      3 index           % <prefix> <param> <code> N-1 N-1 <param>
+      exch              % <prefix> <param> <code> N-1 <param> N-1
+      0 exch            % <prefix> <param> <code> N-1 <param> 0 N-1
+      put               % <prefix> <param'> <code> N-1
+      1 exch            % <prefix> <param'> <code> 1 N-1
+      getinterval       % <prefix> <param'> <key>
+
+      USE_CIDCHAR_AS_RANGE {
+        dup length 2 mul string % <key> <dkey>
+        dup                     % <key> <dkey> <dkey>
+        2 index                 % <key> <dkey> <dkey> <key>
+        0 exch putinterval      % <key> <dkey'>
+        dup                     % <key> <dkey'> <dkey'>
+        3 -1 roll               % <dkey'> <dkey'> <key>
+        dup length              % <dkey'> <dkey'> <key> N-1
+        exch putinterval        % <dkey''>
+      } if
+
+    } ifelse
+
+    4 -1 roll           % <prefix> <param'> <key> <cid>
+    .endmapvalue        % <prefix> <param'> <key> <hex_cid> <font_idx>
+    % prefix params keys value fontindex
+    counttomark 5 gt { % 2 (or more) ranges (1 range = 5 item)
+       4 index 10 index eq      % compare prefix
+       4 index 10 index eq and  % compare params
+       1 index 7 index eq and   % compare fontindex
+        {
+          CMAPDEBUG { (merge! char\n) print } if
+          pop 4 2 roll pop pop
+           % prefix params keys value fontindex keys2 value2
+          5 -1 roll 3 -1 roll concatstrings
+           % prefix params value fontindex value2 keys'
+          4 -1 roll 3 -1 roll concatstrings
+           % prefix params fontindex keys' values'
+          3 -1 roll
+        } if
+     } if % end of 2 (or more) ranges
+    CMERGE_DEBUG {
+    ( prefix:) print 4 index =only
+    ( param:) print 3 index =only
+    ( key:) print 2 index =only
+    ( hex_cid:) print 1 index =only
+    ( font_idx:) print 0 index == flush
+    } if
   } repeat
   counttomark 2 add -1 roll .appendmap
 } bind def
@@ -351,7 +420,8 @@
     dup length 3 index length exch sub
 				% cid_base code_lo code_hi prefix range_len
     dup 255 gt {
-       (too long coderange specification for current GS\n) print stop
+       (too long coderange specification for current GS\n) print
+       signalerror
     } if
     <00 01 00 02> 4 string copy	% create initialized param
     dup 0 4 -1 roll put		% put range_len into param
@@ -377,7 +447,7 @@
        4 index 10 index eq and	% compare params
        1 index 7 index eq and	% compare fontindex
 	{
-          DEBUG { (merge!\n) print } if
+          CMAPDEBUG { (merge!\n) print } if
 	  pop 4 2 roll pop pop
            % prefix params keys value fontindex keys2 value2
 	  5 -1 roll 3 -1 roll concatstrings

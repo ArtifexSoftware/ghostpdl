@@ -66,10 +66,22 @@ level2dict begin
 
 % currentuser/systemparams creates and returns a dictionary in the
 % current VM.  The easiest way to make this work is to copy any composite
-% PostScript-level parameters to global VM.  Currently, the only such
-% parameters are strings.  In fact, we always copy string parameters,
-% so that we can be sure the contents won't be changed.
+% PostScript-level parameters to global VM.  Currently we have strings
+% as well as arrays. For arrays, we also need to copy any contents that
+% are in VM. Also copying string parameters insures the contents won't
+% be changed. Also be careful to preserve 'executable' state.
 /.copyparam {			% <value> .copyparam <value'>
+  dup type /arraytype eq {
+    .currentglobal true .setglobal exch 
+    dup xcheck exch		% original executable state
+    [ exch {
+      dup type dup /arraytype eq exch /stringtype eq or {
+        .copyparam	% recurse to handle composite array elements
+      } if
+    } forall ]
+    exch { cvx } if		% set executable state
+    exch .setglobal
+  } if
   dup type /stringtype eq {
     .currentglobal true .setglobal
     1 index length string exch .setglobal
@@ -80,7 +92,7 @@ level2dict begin
 % Some user parameters are managed entirely at the PostScript level.
 % We take care of that here.
 systemdict begin
-/psuserparams 40 dict def
+/psuserparams 48 dict def
 /getuserparam {			% <name> getuserparam <value>
   /userparams .systemvar 1 index get exch pop
 } odef
@@ -150,6 +162,20 @@ end
 /setsystemparams {		% <dict> setsystemparams -
 	% Check that we will be able to set the PostScript-level
 	% system parameters.
+   /SAFETY .systemvar /safe get {
+     % SAFER mode disallows some changes
+     [ /GenericResourceDir /FontResourceDir /GenericResourcePathSep ] {
+       2 copy .knownget {
+	 exch //pssystemparams exch .knownget {
+           ne { /setsystemparams /invalidaccess signalerror } if
+         } {
+           pop
+         } ifelse
+       } {
+         pop
+       } ifelse
+     } forall
+   } if
    /setsystemparams //pssystemparams mark exch {
      type cvlit /.checkparamtype cvx 2 packedarray cvx
    } forall .dicttomark .checksetparams
@@ -208,6 +234,31 @@ end
   /MaxScreenItem 48000 .definepsuserparam
   /MaxUPathItem 5000 .definepsuserparam
 
+% File Access Permission parameters
+  .currentglobal true .setglobal
+  /.checkFilePermitparams {
+    type /arraytype eq {
+      currentuserparams /LockFilePermissions get {
+        5 { pop } repeat /setuserparams /invalidaccess signalerror
+      }
+      if
+    } {
+      5 { pop } repeat /setuserparams /typecheck signalerror
+    }
+    ifelse
+    true
+  } .bind def
+% Initialize the File Permission access control to wide open
+% These will only be accessed via current/set userparams.
+% Values are a string containing multiple nul terminated path strings
+  /PermitFileReading dup [ (*) ] .definepsuserparam
+    psuserparams exch /.checkFilePermitparams load put
+  /PermitFileWriting dup [ (*) ] .definepsuserparam
+    psuserparams exch /.checkFilePermitparams load put
+  /PermitFileControl dup [ (*) ] .definepsuserparam
+    psuserparams exch /.checkFilePermitparams load put
+  .setglobal
+
 pssystemparams begin
   /CurDisplayList 0 .forcedef
   /CurFormCache 0 .forcedef
@@ -249,9 +300,10 @@ psuserparams /ProcessComment {.checkprocesscomment} put
 } bind def
 /ProcessDSCComment null .definepsuserparam
 psuserparams /ProcessDSCComment {.checkprocesscomment} put
+/.loadingfont false def
 (%ProcessDSCComment) cvn {
   /ProcessDSCComment getuserparam
-  dup null eq { pop pop pop } { exec } ifelse
+  dup null eq .loadingfont or { pop pop pop } { exec } ifelse
 } bind def
 
 % ------ Miscellaneous ------ %
@@ -403,6 +455,14 @@ end		% serverdict
   { .startnewjob true } .startjob
 } odef
 
+% The procedure to undo the job encapsulation 
+/.endjob {
+  clear cleardictstack
+  serverdict /.jobsave get dup null eq { pop } { restore } ifelse
+  serverdict /.jobsave null put
+  2 vmreclaim   % recover local and global VM
+} odef
+
 systemdict begin
 /quit {				% - quit -
   //systemdict begin serverdict /.jobsave get null eq
@@ -442,6 +502,8 @@ currentsystemparams
 
 % The following do not depend on the presence of setpagedevice.
 /buildtime 1 index /BuildTime get def
+% Also define /buildtime in systemdict because Adobe does so and some fonts use it as ID
+systemdict /buildtime dup load put
 /byteorder 1 index /ByteOrder get def
 /checkpassword { .checkpassword 0 gt } bind def
 dup /DoStartPage known
@@ -531,13 +593,13 @@ currentdict end
 % defined here, rather than in gs_init.ps, because they require the
 % resource machinery.
 
-/devforall {		% <pattern> <proc> <scratch> devforall -
+/devforall {		% <proc> <scratch> devforall -
   exch {
     1 index currentdevparams
     /Type .knownget { /FileSystem eq } { false } ifelse
     { exec } { pop pop } ifelse
   } /exec load 3 packedarray cvx exch
-  (*) 3 1 roll ppstack flush /IODevice resourceforall
+  (*) 3 1 roll /IODevice resourceforall
 } odef
 /devstatus {		% <(%disk*%)> devstatus <searchable> <writable>
 			%   <hasNames> <mounted> <removable> <searchOrder>
@@ -548,7 +610,7 @@ currentdict end
       dup /IODevice resourcestatus {
 	pop pop dup currentdevparams
 	dup /Searchable get
-	exch dup /Writable get
+	exch dup /Writeable get
 	exch dup /HasNames get
 	exch dup /Mounted get
 	exch dup /Removable get
@@ -569,90 +631,30 @@ currentdict end
 
 % ------ Color spaces ------ %
 
-% Attempt to convert a tint transformation procedure to a Function.
-% The current color space defines the number of output values.
-/.converttinttransform {	% [.. .. .. proc ] <m>
-				%   .converttinttransform [.. .. .. proc']
-  .currentglobal 2 index gcheck .setglobal
-  4 dict
-    dup /FunctionType 4 put
-    dup /Function 5 index 3 get put
-		% Stack: orig m global func
-    dup /Domain [ 6 -1 roll {0 1} repeat ] put
-    dup /Range [
-      mark currentcolor counttomark
-      dup 2 add 1 roll cleartomark	% # of components in alternate space
-    {0 1} repeat ] put
-  { .buildfunction } .internalstopped {
-    pop .setglobal
-  } {
-		% Stack: orig global func
-    2 index 4 array copy dup 3 4 -1 roll put
-    exch .setglobal exch pop
-  } ifelse
-} bind def
+% Move setcolorsapce, setcolor, and colorspacedict to level2dict
+level2dict /setcolorspace .cspace_util 1 index get put
+level2dict /setcolor .cspace_util 1 index get put
+level2dict /colorspacedict .cspace_util 1 index get put
 
-% Define the setcolorspace procedures:
-%	<colorspace> proc <colorspace'|null>
-% We have to define the dictionary first, so it can be bound into the
-% implementation procedure, but we can't populate it until the procedure
-% has been defined, so that the procedure can get bound into recursive calls.
-/colorspacedict 20 dict def
+% Add the level 2 color spaces
+% DevicePixel is actually a LanguageLevel 3 feature; it is here for
+% historical reasons.
+%% Replace 1 (gs_devpxl.ps) 
+(gs_devpxl.ps) runlibfile
 
-/.devcs [
-  /DeviceGray /DeviceRGB /DeviceCMYK /DevicePixel
-] readonly def
-/currentcolorspace {		% - currentcolorspace <array>
-  .currentcolorspace dup type /integertype eq {
-    //.devcs exch 1 getinterval
-  } if
-} odef
-currentdict /.devcs .undef
+%% Replace 1 (gs_ciecs2.ps)
+(gs_ciecs2.ps) runlibfile
 
-/setcolorspace {		% <name|array> setcolorspace -
-  dup dup dup type /nametype ne { 0 get } if
-  //colorspacedict exch get exec
-  dup null eq { pop } { .setcolorspace } ifelse pop
-} odef
+%% Replace 1 (gs_indxd.ps)
+(gs_indxd.ps) runlibfile
 
-colorspacedict
-  dup /DeviceGray { pop 0 setgray null } bind put
-  dup /DeviceRGB { pop 0 0 0 setrgbcolor null } bind put
-  /setcmykcolor where
-   { pop dup /DeviceCMYK { pop 0 0 0 1 setcmykcolor null } bind put
-   } if
-  /.setcieaspace where
-   { pop dup /CIEBasedA { NOCIE { pop 0 setgray null } { dup 1 get .setcieaspace } ifelse } bind put
-   } if
-  /.setcieabcspace where
-   { pop dup /CIEBasedABC { NOCIE { pop 0 0 0 setrgbcolor null } { dup 1 get .setcieabcspace } ifelse } bind put
-   } if
-  /.setciedefspace where
-   { pop dup /CIEBasedDEF { NOCIE { pop 0 0 0 setrgbcolor null } { dup 1 get .setciedefspace } ifelse } bind put
-   } if
-  /.setciedefgspace where
-   { pop dup /CIEBasedDEFG { NOCIE { pop 0 0 0 1 setcmykcolor null } { dup 1 get .setciedefgspace } ifelse } bind put
-   } if
-  /.setseparationspace where
-   { pop dup /Separation { dup 2 get setcolorspace dup 1 .converttinttransform .setseparationspace } bind put
-   } if
-  /.setindexedspace where
-   { pop dup /Indexed { dup 1 get setcolorspace dup .setindexedspace } bind put
-   } if
-  /.nullpatternspace [/Pattern] readonly def
-  /.setpatternspace where
-   { pop dup /Pattern
-      { dup type /nametype eq { pop //.nullpatternspace } if
-	dup length 1 gt { dup 1 get setcolorspace } if
-        dup .setpatternspace
-      } bind put
-   } if
-	% If DeviceN space is included, gs_ll3.ps registers it.
-  /.setdevicepixelspace where
-   { pop dup /DevicePixel { dup .setdevicepixelspace } bind put
-   } if
-  currentdict /.nullpatternspace .undef
-pop
+%% Replace 1 (gs_sepr.ps)
+(gs_sepr.ps) runlibfile
+
+%% Replace 1 (gs_patrn.ps)
+(gs_patrn.ps) runlibfile
+
+
 
 % ------ CIE color rendering ------ %
 
@@ -715,51 +717,38 @@ end
   dup .builddevicecolorrendering1 .setdevicecolorrendering1
 } .bind put
 
-% Initialize the default CIE rendering dictionary.
-% The most common CIE files seem to assume the "calibrated RGB color space"
-% described on p. 189 of the PostScript Language Reference Manual,
-% 2nd Edition; we simply invert this transformation back to RGB.
+% sRGB output CRD, D65 white point
 mark
-   /ColorRenderingType 1
-% We must make RangePQR and RangeLMN large enough so that values computed by
-% the assumed encoding MatrixLMN don't get clamped.
-   /RangePQR [0 0.9505 0 1 0 1.0890] readonly
-% This TransformPQR implements a relative colorimetric intent by scaling
-% the XYZ values relative to the white and black points.
+/ColorRenderingType 1
+/RangePQR [ -0.5 2 -0.5 2 -0.5 2 ] readonly
+
+% Bradford Cone Space
+/MatrixPQR [ 0.8951 -0.7502  0.0389
+	     0.2664  1.7135 -0.0685
+	    -0.1614  0.0367  1.0296] readonly
+
+/MatrixLMN [ 3.240449 -0.969265  0.055643
+	    -1.537136  1.876011 -0.204026
+	    -0.498531  0.041556  1.057229 ] readonly
+
+% Inverse sRGB gamma transform
+/EncodeABC [ { dup 0.00304 le
+                { 12.92321 mul }
+                { 1 2.4 div exp 1.055 mul 0.055 sub }
+               ifelse
+             } bind dup dup
+           ] readonly
+
+/WhitePoint [ 0.9505 1 1.0890 ] readonly % D65
+/BlackPoint [ 0 0 0 ] readonly
+
+% VonKries-like transform in Bradford Cone Space
    /TransformPQR
-     [ { 5 1 roll                    % p Ws Bs Wd Bd
-         4 {3 get 5 1 roll} repeat   % ws bs wd bd p 
-         3 index sub                 % ws bs wd bd p-bs 
-         1 index                     % ws bs wd bd p-bs bd
-         6 2 roll                    % p-bs bd ws bs wd bd 
-         sub                         % p-bs bd ws bs wd-bd 
-         5 1 roll                    % wd-bd p-bs bd ws bs  
-         sub                         % wd-bd p-bs bd ws-bs  
-         4 2 roll                    % bd ws-bs wd-bd p-bs 
-         mul                         % bd ws-bs (wd-bd)*(p-bs)
-         exch div add                % bd + (wd-bd)*(p-bs)/(ws-bs)
-       } bind
-       { 5 1 roll
-         4 {4 get 5 1 roll} repeat
-         3 index sub 1 index 6 2 roll sub 5 1 roll
-         sub 4 2 roll mul exch div add
-       } bind
-       { 5 1 roll
-         4 {5 get 5 1 roll} repeat
-         3 index sub 1 index 6 2 roll sub 5 1 roll
-         sub 4 2 roll mul exch div add
-       } bind
+     % The implementations have been moved to C for performance.
+     [ { .TransformPQR_scale_WB0 } bind
+       { .TransformPQR_scale_WB1 } bind 
+       { .TransformPQR_scale_WB2 } bind
      ] readonly
-   /RangeLMN [0 0.9505 0 1 0 1.0890] readonly
-   /MatrixABC
-    [ 3.24063 -0.96893  0.05571
-     -1.53721  1.87576 -0.20402
-     -0.49863  0.04152  1.05700
-    ] readonly
-   /EncodeABC [ {0 .max 0.45 exp} bind dup dup] readonly
-   /WhitePoint [0.9505 1 1.0890] readonly
-	% Some Genoa tests seem to require the presence of BlackPoint.
-   /BlackPoint [0 0 0] readonly
 .dicttomark setcolorrendering
 
 %END CRD
@@ -826,42 +815,5 @@ def
   } if setcolor
 } odef
 
-/endjob { % - endjob -
-  clear cleardictstack
-  serverdict /.jobsave get dup null eq { pop } { restore } ifelse
-  serverdict /.jobsave null put
-} odef
-
-% Extend image and imagemask to accept dictionaries.
-% We must create .imagetypes and .imagemasktypes outside level2dict,
-% and leave some extra space because we're still in Level 1 mode.
-systemdict begin
-/.imagetypes 5 dict
-  dup 1 /.image1 load put
-def
-/.imagemasktypes 5 dict
-  dup 1 /.imagemask1 load put
-def
-end
-
-/.image /image load def
-/image {
-  dup type /dicttype eq {
-    dup /ImageType get //.imagetypes exch get exec
-  } {
-    //.image
-  } ifelse
-} odef
-currentdict /.image undef
-
-/.imagemask /imagemask load def
-/imagemask {
-  dup type /dicttype eq {
-    dup /ImageType get //.imagemasktypes exch get exec
-  } {
-    //.imagemask
-  } ifelse
-} odef
-currentdict /.imagemask undef
 
 end				% level2dict

@@ -27,7 +27,11 @@ pdfdict begin
 % Define the name interpretation dictionary for reading values.
 /valueopdict mark
   (<<) cvn { mark } bind	% don't push an actual mark!
-  (>>) cvn /.dicttomark load
+  (>>) cvn { { .dicttomark } stopped {
+      (   **** File has an unbalanced >> \(close dictionary\).\n)
+      pdfformaterror
+    } if
+  } bind
   ([) cvn { mark } bind		% ditto
   (]) cvn dup load
 %  /true true		% see .pdfexectoken below
@@ -90,14 +94,31 @@ pdfdict begin
 % to the operand stack.
 /.pdftokenerror {		% <count> <opdict> <errtoken> .pdftokenerror -
   BXlevel 0 le {
-    (%stderr) (w) file
-    dup (****************Unknown operator: ) writestring
-    dup 2 index .writecvs dup (\n) writestring flushfile
-  } if pop pop
-  count exch sub { pop } repeat	% pop all the operands
+    (   **** Unknown operator: ') pdfformaterror
+    dup =string cvs pdfformaterror 
+    % Attempt a retry scan of the element after changing to PDFScanRules
+    << /PDFScanRules true >> setuserparams
+    =string cvs
+    token pop exch pop dup type
+    dup /integertype eq exch /realtype eq or {
+      exch pop exch pop
+      (', processed as number, value: ) pdfformaterror
+      dup =string cvs pdfformaterror (\n) pdfformaterror
+      false 	% suppress any stack cleanup
+    } {
+      % error was non-recoverable with modified scanning rules
+      (\n) pdfformaterror
+      true
+    } ifelse
+  } {
+    true
+  } ifelse
+  { % clean up the operand stack if this was non-recoverable
+    pop pop count exch sub { pop } repeat	% pop all the operands
+  } if
 } bind def
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
-  DEBUG { dup == flush } if
+  PDFDEBUG { dup == flush } if
   2 copy .knownget {
     exch pop exch pop exch pop exec
   } {
@@ -127,10 +148,10 @@ pdfdict begin
 	  .pdfexectoken
 	} {
 	  .pdffixname
-	  exch pop exch pop DEBUG { dup ==only ( ) print flush } if
+	  exch pop exch pop PDFDEBUG { dup ==only ( ) print flush } if
 	} ifelse
       } {
-	exch pop exch pop DEBUG { dup ==only ( ) print flush } if
+	exch pop exch pop PDFDEBUG { dup ==only ( ) print flush } if
       } ifelse
     } {
       (%%EOF) cvn cvx .pdfexectoken
@@ -145,18 +166,21 @@ pdfdict begin
 } bind def
 
 % Execute a file, like .pdfrun, for a marking context.
-% This temporarily rebinds LocalResources and DefaultMatrix.
+% This temporarily rebinds LocalResources and DefaultQstate.
 /.pdfruncontext {		% <resdict> <file> <opdict> .pdfruncontext -
-  /.pdfrun load LocalResources DefaultMatrix
+  /.pdfrun load LocalResources DefaultQstate
   /LocalResources 7 -1 roll store
-  /DefaultMatrix matrix currentmatrix store
+  /DefaultQstate qstate store
   3 .execn
-  /DefaultMatrix exch store
+  /DefaultQstate exch store
   /LocalResources exch store
 } bind def
 
-% Get the depth of the PDF operand stack.  The main program (pdf_main.ps)
-% sets pdfemptycount before calling .pdfrun.
+% Get the depth of the PDF operand stack.  The caller sets pdfemptycount
+% before calling .pdfrun or .pdfruncontext.  It is initially set by
+% pdf_main, and is also set by any routine which changes the operand
+% stack depth (currently .pdfpaintproc, although there are other callers
+% of .pdfrun{context} which have not been checked for opstack depth.
 /.pdfcount {		% - .pdfcount <count>
   count pdfemptycount sub
 } bind def
@@ -315,7 +339,7 @@ pdfdict begin
 	pop false
       } {
 		% Update Objects from GlobalObjects
-	DEBUG { (%Global=>local: ) print dup == } if
+	PDFDEBUG { (%Global=>local: ) print dup == } if
 	GlobalObjects 1 index get dup Objects 4 1 roll lput true
       } ifelse
     } {
@@ -358,10 +382,13 @@ pdfdict begin
   } {
     QUIET not {
       Generations 2 index lget 0 eq {
-	(Warning: reference to free object: )
+	(   **** Warning: reference to free object: )
       } {
-	(Warning: wrong generation: )
-      } ifelse print 1 index =only ( ) print =only ( R) =
+	(   **** Warning: wrong generation: )
+      } ifelse
+      2 index =string cvs concatstrings ( ) concatstrings
+      exch =string cvs concatstrings ( R\n) concatstrings
+      pdfformaterror
     } {
       pop
     } ifelse false
@@ -395,7 +422,7 @@ pdfdict begin
 		% The only global objects we bother to save are
 		% (resource) dictionaries.
     1 index dup gcheck exch type /dicttype eq and {
-      DEBUG { (%Local=>global: ) print dup == } if
+      PDFDEBUG { (%Local=>global: ) print dup == } if
       GlobalObjects 1 index 3 index put
       IsGlobal 1 index 1 put
     } if
@@ -414,7 +441,7 @@ pdfdict begin
   /obj { pop pop endobj exit } bind
 .dicttomark readonly def
 /resolveR {		% <object#> <generation#> resolveR <object>
-  DEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
+  PDFDEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
   1 index resolved? {
     exch pop exch pop
   } {
@@ -424,11 +451,13 @@ pdfdict begin
 			% Stack: savepos objpos obj#
 	 exch PDFoffset add PDFfile exch setfileposition
 	 PDFfile token pop 2 copy ne
-	  { (xref error!) = /resolveR cvx /rangecheck signalerror
+	  { (   **** Unrecoverable error in xref!\n) pdfformaterror
+	    /resolveR cvx /rangecheck signalerror
 	  }
 	 if pop PDFfile token pop
 	 PDFfile token pop /obj ne
-	  { (xref error!) = /resolveR cvx /rangecheck signalerror
+	  { (   **** Unrecoverable error in xref!\n) pdfformaterror
+	    /resolveR cvx /rangecheck signalerror
 	  }
 	 if
 	 pdf_run_resolve	% PDFfile resolveopdict .pdfrun
@@ -462,28 +491,65 @@ pdfdict begin
 % especially since the PDF 1.2 specification states flatly that the only
 % legal terminators following the 'stream' keyword are \n or \r\n, both of
 % which are properly skipped and discarded by the token operator.
+% Unfortunately, this doesn't account for other whitespace characters that
+% may have preceded the EOL, such as spaces or tabs. Thus we back up one
+% character and scan until we find the \n terminator.
 /stream {	% <dict> stream <modified_dict>
+  dup /Length oget 0 eq {
+    dup /Filter undef	% don't confuse any filters that require data
+  } if
   dup /F known dup PDFsource PDFfile eq or {
     not {
       dup /File PDFfile put
+      % make sure that we are just past the EOL \n character
+      PDFfile dup fileposition 1 sub setfileposition	% back up one
+      { PDFfile read pop dup 13 eq {
+	  % If there had been a \n, token would have advanced over it
+	  % thus, if the terminator was \r, we have a format error!
+	  (   **** Warning: stream operator not terminated by valid EOL.\n) pdfformaterror
+	  pop exit	% fileposition is OK (just past the \r).
+	} if 
+	10 eq { exit } if
+      } loop	% scan past \n
       dup /FilePosition PDFfile fileposition put
-      DEBUG { (%FilePosition: ) print dup /FilePosition get == } if
+      PDFDEBUG { (%FilePosition: ) print dup /FilePosition get == } if
     } if
-    PDFfile fileposition 1 index /Length oget add
-      PDFfile exch setfileposition
+    % Some (bad) PDf files have invalid stream lengths.  This causes problems
+    % if we reposition beyond the end of the file.  So we compare the given
+    % length to number of bytes left in the file.
+    dup /Length oget 
+    dup PDFfile bytesavailable lt {	% compare to to bytes left in file
+      PDFfile fileposition 		% reposition to the end of stream
+      add PDFfile exch setfileposition
+    } {
+      pop				% bad stream length - do not reposition.
+      					% This will force a length warning below
+    } ifelse
   } {
     pop
 	% We're already reading from a stream, which we can't reposition.
 	% Capture the sub-stream contents in a string.
     dup /Length oget string PDFsource exch readstring
     not {
-      (Unexpected EOF in stream!) =
+      (   **** Warning: Unexpected EOF in stream!\n) pdfformaterror
       /stream cvx /rangecheck signalerror
     } if
     1 index exch /File exch put
   } ifelse
-  PDFsource token pop
-    /endstream ne { /stream cvx /syntaxerror signalerror } if
+  PDFsource {token} stopped {
+    pop null
+  } {
+    not { null } if
+  } ifelse
+  dup /endobj eq {
+    % Another case that Acrobat Reader handles -- 'endobj' without 'endstream'.
+    (   **** Warning: stream missing 'endstream'.\n) pdfformaterror
+    pop /endstream		% fake a valid endstream
+  } if
+  /endstream ne { 
+    (   **** Warning: stream Length incorrect.\n) pdfformaterror
+    cvx endobj exit % exit from .pdfrun now.
+  } if
   cvx
 } bind def
 /endstream {
@@ -501,8 +567,8 @@ pdfdict begin
 % Extract and apply filters.
 /filterparms {		% <dict> <DPkey> <Fkey> filterparms
 			%   <dict> <parms> <filternames>
-  2 index exch .knownget {
-    exch 2 index exch .knownget {
+  2 index exch knownoget {
+    exch 2 index exch knownoget {
 		% Both filters and parameters.
       exch dup type /nametype eq {
 	1 array astore exch 1 array astore exch
@@ -519,28 +585,56 @@ pdfdict begin
 } bind def
 /filtername {		% <filtername> filtername <filtername'>
   //unabbrevfilterdict 1 index .knownget { exch pop } if
+  dup /Filter resourcestatus { pop pop } {
+    Repaired exch	% this error is not the creator's fault	
+    (   **** ERROR: Unable to process ) pdfformaterror
+    64 string cvs pdfformaterror
+    ( data. Page will be missing data.\n) pdfformaterror
+    /Repaired exch store % restore the previous "Repaired" state
+    % provide a filter that returns EOF (no data)
+    /.EOFDecode
+  } ifelse
 } bind def
 /applyfilters {		% <parms> <source> <filternames> applyfilters <stream>
   2 index null eq {
     { filtername filter }
   } {
-    {		% Stack: parms stream filtername
-      2 index 0 oget dup null eq { pop } { exch } ifelse filtername filter
+    {		% Stack: parms source filtername
+      2 index 0 oget dup null eq { pop } {
+        exch dup /JBIG2Decode eq { exch jbig2cachectx exch } if
+      } ifelse filtername filter
       exch dup length 1 sub 1 exch getinterval exch
     }
   } ifelse forall exch pop
 } bind def
 
+% JBIG2 streams have an optional 'globals' stream obj for
+% sharing redundant data between page images. Here we resolve
+% that  stream reference (if any) and run it through the decoder,
+% creating a special -jbig2globalctx- postscript object our
+% JBIG2Decode filter implementation looks for in the parm dict.
+/jbig2cachectx { % <parmdict> jbig2cachectx <parmdict>
+  dup /JBIG2Globals knownoget {
+    dup /Length oget
+    % make global ctx
+    PDFfile fileposition 3 1 roll % resolvestream is not reentrant
+    exch true resolvestream exch .bytestring
+    .readbytestring pop .jbig2makeglobalctx
+    PDFfile 3 -1 roll setfileposition
+    1 index exch
+    /.jbig2globalctx exch put
+  } if
+} bind def
+
 % Resolve a stream dictionary to a PostScript stream.
 % Streams with no filters require special handling:
-%	- If we are going to interpret their contents, we let endstream
-%	  terminate the interpretation loop;
-%	- If we are just going to read data from them, we impose
-%	  a SubFileDecode filter that reads just the requisite amount of data.
+%     - Whether we are going to interpret the stream, or If we are just
+%       going to read data from them, we impose a SubFileDecode filter
+%         that reads just the requisite amount of data.
 % Note that, in general, resolving a stream repositions PDFfile.
 % Clients must save and restore the position of PDFfile themselves.
 /resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
-  1 index /F .knownget {
+  1 index /F knownoget {
 		% This stream is stored on an external file.
     (r) file 3 -1 roll
     /FDecodeParms /FFilter filterparms
@@ -563,15 +657,13 @@ pdfdict begin
 		% there is no specified filter.
       pop exch pop
 		% Stack: readdata? dict file/string
-      2 index {
-		% We're going to read data; use a SubFileDecode filter.
-	1 index /Length oget () /SubFileDecode filter
+      2 index 1 index type /filetype eq or {
+              % Use length for any files or reading data from any source.
+        1 index /Length knownoget not { 0 } if
       } {
-	dup type /filetype ne {
-		% Use a SubFileDecode filter to read from a string.
-	  0 () /SubFileDecode filter
-	} if
+      0       % Otherwise length of 0 for whole string
       } ifelse
+      2 index /IDFlag known { pop } { () /SubFileDecode filter } ifelse
     } {
       applyfilters
     } ifelse

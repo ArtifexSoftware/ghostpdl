@@ -84,9 +84,9 @@ fi
 # Information for the logfile
 #
 lock=`dirname ${acctfile}`/lock
-cf=`tail -1 ${lock}`
-job=`egrep '^J' ${cf} | tail +2c`
-
+cf=`sed -n '$p' ${lock}`
+job=`sed -n 's/^J//p' ${cf}`
+ 
 echo "gsbanner: ${host}:${user}  Job: ${job}  Date: `date`"
 echo "gsif: ${host}:${user} ${fdevname} start - `date`"
 
