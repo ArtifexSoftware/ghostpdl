@@ -74,7 +74,7 @@ typedef enum {
      * up to but not including Font are written page-by-page.
      */
     resourceColorSpace,
-    /*resourceExtGState,*/	/* not needed */
+    resourceExtGState,
     resourcePattern,
     /*resourceShading,*/	/* not needed */
     resourceXObject,
@@ -89,10 +89,11 @@ typedef enum {
 } pdf_resource_type_t;
 
 #define pdf_resource_type_names\
-  "ColorSpace", "Pattern", "XObject", "Font",\
-  0, 0
+  "ColorSpace", "ExtGState", "Pattern", "XObject", "Font",\
+  0, 0, 0
 #define pdf_resource_type_structs\
   &st_pdf_resource,		/* see below */\
+  &st_pdf_resource,\
   &st_pdf_resource,\
   &st_pdf_x_object,		/* see below */\
   &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
