@@ -527,24 +527,30 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 private int
 upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 {
+    ref opcodes;
     check_read(*oppath);
     gs_newpath(igs);
 /****** ROUND tx AND ty ******/
-    if (r_has_type(oppath, t_array) && r_size(oppath) == 2 &&
-	r_has_type(oppath->value.refs + 1, t_string)
-	) {			/* 1st element is operators, 2nd is operands */
-	const ref *operands = oppath->value.refs;
+    if (!r_is_array(oppath))
+	return_error(e_typecheck);
+    
+    if ( r_size(oppath) == 2 &&
+	 array_get(oppath, 1, &opcodes) >= 0 &&
+         r_has_type(&opcodes, t_string)
+	) {			/* 1st element is operands, 2nd is operators */
+	ref operands;
 	int code, format;
 	int repcount = 1;
 	const byte *opp;
 	uint ocount, i = 0;
 
-	code = num_array_format(operands);
+        array_get(oppath, 0, &operands);
+        code = num_array_format(&operands);
 	if (code < 0)
 	    return code;
 	format = code;
-	opp = oppath->value.refs[1].value.bytes;
-	ocount = r_size(&oppath->value.refs[1]);
+	opp = opcodes.value.bytes;
+	ocount = r_size(&opcodes);
 	while (ocount--) {
 	    byte opx = *opp++;
 
@@ -559,7 +565,7 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 
 		    while (opargs--) {
 			push(1);
-			code = num_array_get(operands, format, i++, op);
+			code = num_array_get(&operands, format, i++, op);
 			switch (code) {
 			    case t_integer:
 				r_set_type_attrs(op, t_integer, 0);
@@ -579,7 +585,7 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 		repcount = 1;
 	    }
 	}
-    } else if (r_is_array(oppath)) {	/* Ordinary executable array. */
+    } else {	/* Ordinary executable array. */
 	const ref *arp = oppath;
 	uint ocount = r_size(oppath);
 	long index = 0;
@@ -629,8 +635,7 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 	}
 	if (argcount)
 	    return_error(e_typecheck);	/* leftover args */
-    } else
-	return_error(e_typecheck);
+    }
     return 0;
 }
 
