@@ -461,7 +461,9 @@ pdf_compute_fileID(gx_device_pdf * pdev)
 	return code;
     sclose(s);
     gs_free_object(mem, s, "pdf_compute_fileID");
+#if 0
     memcpy(pdev->fileID, "xxxxxxxxxxxxxxxx", sizeof(pdev->fileID)); /* Debug */
+#endif
     return 0;
 }
 
