@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.16 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2.c,v 1.17 2002/08/05 22:55:02 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
