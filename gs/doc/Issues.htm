@@ -241,6 +241,24 @@ filter and to be put into the 'tables' array.</i>
 <p>
 SourceForge Bug #615620, September 27, 2002.
 
+<h3> save restore fails from the command line </h3>
+
+<p>
+Entering 'save' followed by 'restore' from the interactive
+Ghostscript prompt (on separate lines) generates an /invalidrestore
+exception. It shouldn't. This is a long standing issue.
+
+<p>
+The problem is that the string that is used
+for command line input by the 'executive'
+processing still exists when the 'restore'
+happens, but this string is brought into
+existence after the 'save' operation, thus
+an causing an invalidrestore.
+
+<p>
+SourceForge Bug #603689, September 2, 2002.
+ 
 <hr>
 
 <h2><a name="Driver_Issues"></a>Driver Issues.</h2>
