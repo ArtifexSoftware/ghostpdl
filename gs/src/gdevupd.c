@@ -586,6 +586,10 @@ Floyd-Steinberg Algorithm and instead of gx_color_index. The
 since gdevprn.c does (currently) support only 32-Bit Rasterdata.
 */
 
+#undef INT32_MIN
+#undef INT32_MAX
+#undef UINT32_MAX
+
 #if     arch_log2_sizeof_int < 2  /* int is too small */
    typedef          long  int32;
 #define                   INT32_MIN  LONG_MIN
