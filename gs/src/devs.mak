@@ -1139,6 +1139,20 @@ $(GLOBJ)gdevxcf.$(OBJ) : $(GLSRC)gdevxcf.c $(PDEVH) $(math__h)\
  $(gxdcconv_h)
 	$(GLICCCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
 
+### --------------------------- The PSD device ------------------------- ###
+
+psd_=$(GLOBJ)gdevpsd.$(OBJ)
+
+$(DD)psdrgb.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev
+	$(SETDEV) $(DD)psdrgb $(psd_)
+
+$(DD)psdcmyk.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev
+	$(SETDEV) $(DD)psdcmyk $(psd_)
+
+$(GLOBJ)gdevpsd.$(OBJ) : $(GLSRC)gdevpsd.c $(PDEVH) $(math__h)\
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)
+	$(GLICCCC) $(GLO_)gdevpsd.$(OBJ) $(C_) $(GLSRC)gdevpsd.c
+
 ### ----------------------- The permutation device --------------------- ###
 
 perm_=$(GLOBJ)gdevperm.$(OBJ)
