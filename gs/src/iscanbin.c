@@ -373,6 +373,10 @@ scan_bin_string_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
     uint wanted = pstate->s_da.limit - q;
     uint rcnt;
 
+    /* We don't check the return status from 'sgets' here.
+       If there is an error in sgets, the condition rcnt==wanted
+       would be false and this function will return scan_Refill.
+    */
     sgets(s, q, wanted, &rcnt);
     if (rcnt == wanted) {
 	/* Finished collecting the string. */

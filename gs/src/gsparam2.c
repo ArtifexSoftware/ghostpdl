@@ -374,5 +374,11 @@ sget_bytes(stream *src, byte *data, uint size)
 {
     uint ignore_count;
 
-    return sgets(src, data, size, &ignore_count);
+    int status = sgets(src, data, size, &ignore_count);
+
+    if (status < 0 && status != EOFC)
+	return_error(gs_error_ioerror);
+    };
+
+    return 0;
 }

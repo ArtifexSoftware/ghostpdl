@@ -143,23 +143,29 @@ top_up_cbuf(command_buf_t *pcb, const byte *cbp)
 }
 
 /* Read data from the command buffer and stream. */
-private const byte *
-cmd_read_data(command_buf_t *pcb, byte *ptr, uint rsize, const byte *cbp)
+private int
+cmd_read_data(command_buf_t *pcb, byte *ptr, uint rsize, const byte *cbp, const byte **pncbp)
 {
+    int code = 0;
     if (pcb->end - cbp >= rsize) {
 	memcpy(ptr, cbp, rsize);
-	return cbp + rsize;
+	*pncbp = cbp + rsize;
     } else {
 	uint cleft = pcb->end - cbp;
 	uint rleft = rsize - cleft;
+	int status;
 
 	memcpy(ptr, cbp, cleft);
-	sgets(pcb->s, ptr + cleft, rleft, &rleft);
-	return pcb->end;
+	status = sgets(pcb->s, ptr + cleft, rleft, &rleft);
+	if (status < 0 && status != EOFC)
+	    code = gs_note_error(gs_error_ioerror);
+	*pncbp = pcb->end;
     }
+
+    return code;
 }
 #define cmd_read(ptr, rsize, cbp)\
-  cbp = cmd_read_data(&cbuf, ptr, rsize, cbp)
+ cmd_read_data(&cbuf, ptr, rsize, cbp, &cbp)
 
 /* Read a fixed-size value from the command buffer. */
 inline private const byte *
@@ -202,10 +208,10 @@ private int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
 			    gs_memory_t *mem);
 
 private const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
-private const byte *cmd_read_matrix(gs_matrix *, const byte *);
-private const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
+private int cmd_read_matrix(gs_matrix *, const byte *, const byte **);
+private int cmd_read_short_bits(command_buf_t *pcb, byte *data,
 					int width_bytes, int height,
-					uint raster, const byte *cbp);
+					uint raster, const byte *cbp, const byte **pncbp);
 private int cmd_select_map(cmd_map_index, cmd_map_contents,
 			   gs_imager_state *, gx_ht_order *, frac **,
 			   uint *, gs_memory_t *);
@@ -233,6 +239,7 @@ clist_playback_band(clist_playback_action playback_action,
 #define data_bits_size cbuf_size
     byte *data_bits = 0;
     register const byte *cbp;
+    const byte *pncbp;
     int dev_depth = cdev->color_info.depth;
     int dev_depth_bytes = (dev_depth + 7) >> 3;
     gx_device *tdev;
@@ -455,8 +462,11 @@ in:				/* Initialize for a new page. */
 
 					if (code < 0)
 					    goto out;
-					if (cont == cmd_map_other) {
-					    cmd_read((byte *)mdata, count, cbp);
+					if (cont == cmd_map_other) {					    
+					    code = cmd_read_data(&cbuf, (byte *)mdata, count, cbp, &pncbp);
+					    cbp = pncbp;
+					    if (code < 0)
+						goto out;
 #ifdef DEBUG
 					    if (gs_debug_c('L')) {
 						uint i;
@@ -732,6 +742,10 @@ in:				/* Initialize for a new page. */
 
 			    memmove(cbuf.data, cbp, cleft);
 			    cbuf.end_status = sgets(s, cbuf.data + cleft, nread, &nread);
+			    if (cbuf.end_status < 0 && cbuf.end_status != EOFC) {
+				code = gs_note_error(gs_error_ioerror);
+				goto out;
+			    }
 			    set_cb_end(&cbuf, cbuf.data + cleft + nread);
 			    cbp = cbuf.data;
 			}
@@ -773,11 +787,17 @@ in:				/* Initialize for a new page. */
 			       width_bytes != raster
 			) {
 			source = data_bits;
-			cbp = cmd_read_short_bits(&cbuf, source, width_bytes,
+			code = cmd_read_short_bits(&cbuf, source, width_bytes,
 						  state.rect.height,
-						  raster, cbp);
+						  raster, cbp, &pncbp);
+			cbp = pncbp;
+			if (code < 0)
+			    goto out;
 		    } else {
-			cmd_read(cbuf.data, bytes, cbp);
+			code = cmd_read_data(&cbuf, cbuf.data, bytes, cbp, &pncbp);
+			cbp = pncbp;
+			if (code < 0) 
+			    goto out;
 			source = cbuf.data;
 		    }
 #ifdef DEBUG
@@ -873,7 +893,10 @@ set_phase:	/*
 			{
 			    gs_matrix mat;
 
-			    cbp = cmd_read_matrix(&mat, cbp);
+			    code = cmd_read_matrix(&mat, cbp, &pncbp);
+			    cbp = pncbp;
+			    if (code < 0)
+				goto out;
 			    mat.tx -= x0;
 			    mat.ty -= y0;
 			    gs_imager_setmatrix(&imager_state, &mat);
@@ -1108,6 +1131,7 @@ idata:			data_size = 0;
 			    uint cleft = cbuf.end - cbp;
 			    uint rleft = data_size - cleft;
 			    byte *rdata;
+			    int status;
 
 			    if (data_size > cbuf.end - cbuf.data) {
 				/* Allocate a separate buffer. */
@@ -1121,8 +1145,12 @@ idata:			data_size = 0;
 			    } else
 				rdata = cbuf.data;
 			    memmove(rdata, cbp, cleft);
-			    sgets(s, rdata + cleft, rleft,
-				  &rleft);
+			    status = sgets(s, rdata + cleft, rleft, &rleft);
+			    if (status < 0 && status != EOFC) {
+				code = gs_note_error(gs_error_ioerror);
+				goto out;
+			    }
+
 			    planes[0].data = rdata;
 			    cbp = cbuf.end;	/* force refill */
 			}
@@ -1640,6 +1668,8 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
 	    memmove(pcb->data, cbp, cleft);
 	    pcb->end_status = sgets(pcb->s, pcb->data + cleft, nread, &nread);
+	    if (pcb->end_status < 0 && pcb->end_status != EOFC)
+		return_error(gs_error_ioerror);
 	    set_cb_end(pcb, pcb->data + cleft + nread);
 	    cbp = pcb->data;
 	}
@@ -1675,11 +1705,17 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 	}
 	cbp = r.ptr + 1;
     } else if (rep_height > 1 && width_bytes != bits->cb_raster) {
-	cbp = cmd_read_short_bits(pcb, data,
+	int code;
+	code = cmd_read_short_bits(pcb, data,
 				  width_bytes, rep_height,
-				  bits->cb_raster, cbp);
+				  bits->cb_raster, cbp, &cbp);
+	if (code < 0)
+	    return_error(code);
     } else {
-	cbp = cmd_read_data(pcb, data, bytes, cbp);
+	int code;
+	code = cmd_read_data(pcb, data, bytes, cbp, &cbp);
+	if (code < 0) 
+	    return_error(code);
     }
     if (bits->width > rep_width)
 	bits_replicate_horizontally(data,
@@ -1806,8 +1842,11 @@ read_set_ht_data(command_buf_t *pcb, uint *pdata_index, gx_ht_order *porder,
 
     if (*pdata_index < porder->num_levels) {	/* Setting levels */
 	byte *lptr = (byte *)(porder->levels + *pdata_index);
+	int code;
 
-	cbp = cmd_read_data(pcb, lptr, n * sizeof(*porder->levels), cbp);
+	code = cmd_read_data(pcb, lptr, n * sizeof(*porder->levels), cbp, &cbp);
+	if (code < 0)
+	    return_error(gs_error_ioerror);
 #ifdef DEBUG
 	if (gs_debug_c('L')) {
 	    int i;
@@ -1823,8 +1862,11 @@ read_set_ht_data(command_buf_t *pcb, uint *pdata_index, gx_ht_order *porder,
 	byte *bptr =
 	    (byte *)porder->bit_data +
 	      (*pdata_index - porder->num_levels) * elt_size;
+	int code;
 
-	cbp = cmd_read_data(pcb, bptr, n * elt_size, cbp);
+	code = cmd_read_data(pcb, bptr, n * elt_size, cbp, &cbp);
+	if (code < 0)
+	    return_error(gs_error_ioerror);
 #ifdef DEBUG
 	if (gs_debug_c('L')) {
 	    int i;
@@ -2088,7 +2130,9 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 	    data = table;
 	    data_size = num_values;
 	}
-	cbp = cmd_read_data(pcb, data, data_size, cbp);
+	code = cmd_read_data(pcb, data, data_size, cbp, &cbp);
+	if (code < 0)
+	    goto out;
 	pcolor_space->type =
 	    &gs_color_space_type_Indexed;
 	memmove(&pcolor_space->params.indexed.base_space, pcs,
@@ -2159,6 +2203,10 @@ read_put_params(command_buf_t *pcb, gs_imager_state *pis,
 	rleft = param_length - cleft;
 	memmove(param_buf, cbp, cleft);
 	pcb->end_status = sgets(pcb->s, param_buf + cleft, rleft, &rleft);
+	if (rleft == 0 && pcb->end_status == EOFC) {
+	    code = gs_note_error(gs_error_ioerror);
+	    goto out;
+	}
 	cbp = pcb->end;  /* force refill */
     }
 
@@ -2193,15 +2241,16 @@ out:
 /* ---------------- Utilities ---------------- */
 
 /* Read and unpack a short bitmap */
-private const byte *
+private int
 cmd_read_short_bits(command_buf_t *pcb, byte *data, int width_bytes,
-		    int height, uint raster, const byte *cbp)
+		    int height, uint raster, const byte *cbp, const byte **pncbp)
 {
     uint bytes = width_bytes * height;
     const byte *pdata = data /*src*/ + bytes;
     byte *udata = data /*dest*/ + height * raster;
+    int code;
 
-    cbp = cmd_read_data(pcb, data, width_bytes * height, cbp);
+    code = cmd_read_data(pcb, data, width_bytes * height, cbp, &cbp);
     while (--height >= 0) {
 	udata -= raster, pdata -= width_bytes;
 	switch (width_bytes) {
@@ -2223,7 +2272,9 @@ cmd_read_short_bits(command_buf_t *pcb, byte *data, int width_bytes,
 	    case 0:;		/* shouldn't happen */
 	}
     }
-    return cbp;
+
+    *pncbp = cbp;
+    return code;
 }
 
 /* Read a rectangle. */
@@ -2246,14 +2297,18 @@ cmd_read_rect(int op, gx_cmd_rect * prect, const byte * cbp)
 }
 
 /* Read a transformation matrix. */
-private const byte *
-cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
+private int
+cmd_read_matrix(gs_matrix * pmat, const byte * cbp, const byte **pncbp)
 {
     stream s;
+    int code;
 
     sread_string(&s, cbp, 1 + sizeof(*pmat));
-    sget_matrix(&s, pmat);
-    return cbp + stell(&s);
+    
+    code = sget_matrix(&s, pmat);
+    *pncbp = cbp + stell(&s);
+
+    return code;
 }
 
 /* Select a map for loading with data. */

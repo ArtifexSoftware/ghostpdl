@@ -559,8 +559,8 @@ sget_matrix(stream *s, gs_matrix *pmat)
 	    float value;
 
 	    status = sgets(s, (byte *)&value, sizeof(value), &nread);
-	    if (status < 0)
-		return status;
+	    if (status < 0 && status != EOFC)
+		return_error(gs_error_ioerror);
 	    coeff[i] = value;
 	    switch ((b >> 6) & 3) {
 		case 1:
@@ -572,15 +572,15 @@ sget_matrix(stream *s, gs_matrix *pmat)
 		case 3:
 		    status = sgets(s, (byte *)&coeff[i ^ 3],
 				   sizeof(coeff[0]), &nread);
-		    if (status < 0)
-			return status;
+		    if (status < 0 && status != EOFC)
+			return_error(gs_error_ioerror);
 	    }
 	}
     for (; i < 6; ++i, b <<= 1)
 	if (b & 0x80) {
 	    status = sgets(s, (byte *)&coeff[i], sizeof(coeff[0]), &nread);
-	    if (status < 0)
-		return status;
+	    if (status < 0 && status != EOFC)
+		return_error(gs_error_ioerror);
 	} else
 	    coeff[i] = 0.0;
     pmat->xx = coeff[0];
