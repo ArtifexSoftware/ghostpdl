@@ -80,6 +80,8 @@ AC_SUBST(JPEGDIR)
 
 dnl these are technically optional
 dnl zlib is needed for language level 3, and libpng
+# we must define ZLIBDIR regardless because libpng.mak does a -I$(ZLIBDIR)
+ZLIBDIR=.
 AC_CHECK_LIB(z, deflate, [SHARE_ZLIB=1], [
 	SHARE_ZLIB=0
 	AC_MSG_CHECKING([for local zlib source])
