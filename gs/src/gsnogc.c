@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -320,8 +320,9 @@ gs_nogc_reclaim(vm_spaces * pspaces, bool global)
     }
 }
 private void
-use_string_freelists(gs_ref_memory_t *mem)
+use_string_freelists(gs_ref_memory_t *rmem)
 {
+    gs_memory_t *mem = (gs_memory_t *)rmem;
     /*
      * Change the allocator to use string freelists in the future.
      */
@@ -331,6 +332,6 @@ use_string_freelists(gs_ref_memory_t *mem)
     mem->procs.enable_free = sf_enable_free;
     mem->procs.consolidate_free = sf_consolidate_free;
 
-	/* Merge free objects, detecting entirely free chunks. */
-    gs_consolidate_free((gs_memory_t *)mem);
+    /* Merge free objects, detecting entirely free chunks. */
+    gs_consolidate_free(mem);
 }
