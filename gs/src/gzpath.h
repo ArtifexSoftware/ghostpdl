@@ -420,23 +420,15 @@ struct gx_flattened_iterator_s {
     /* public data for filtered1 : */
     fixed gx0, gy0, gx1, gy1;
     int filtered1_i;
-    /* private data for filtered2 : */
-    bool ahead;
-    fixed xn, yn;
-    int last_filtered2_i;
-    int prev_filtered2_i;
-    /* public data for filtered2 : */
-    fixed fx0, fy0, fx1, fy1;
-    int filtered2_i;
 };
 
 bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse);
 bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1);
-void gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, bool last_segment);
-bool gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this);
-bool gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this);
+void gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this);
+bool gx_flattened_iterator__next_filtered(gx_flattened_iterator *this);
+bool gx_flattened_iterator__prev_filtered(gx_flattened_iterator *this);
 bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);
 
 bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 

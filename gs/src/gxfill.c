@@ -486,7 +486,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	unclose_path(pfpath, lst.close_count);
     free_line_list(&lst);
     if (pfpath != ppath)	/* had to flatten */
-	gx_path_free(pfpath, "gx_default_fill_path(flattened path)");
+	gx_path_free(pfpath, "gx_general_fill_path");
 #ifdef DEBUG
     if (gs_debug_c('f')) {
 	dlputs("[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");
@@ -671,7 +671,7 @@ compute_dir(line_list *ll, fixed y0, fixed y1)
 
 private inline int
 add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir, 
-    gx_flattened_iterator *fi, bool more1, bool last_segment, bool step_back)
+    gx_flattened_iterator *fi, bool more1, bool step_back)
 {
     active_line *alp = make_al(ll);
 
@@ -682,11 +682,11 @@ add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir,
     alp->fi = *fi;
     alp->more_flattened = more1;
     if (dir != DIR_UP && more1)
-	gx_flattened_iterator__switch_to_backscan2(&alp->fi, last_segment);
+	gx_flattened_iterator__switch_to_backscan(&alp->fi);
     if (step_back) {
 	do {
-	    alp->more_flattened = gx_flattened_iterator__prev_filtered2(&alp->fi);
-	    if (compute_dir(ll, alp->fi.fy0, alp->fi.fy1) != 2)
+	    alp->more_flattened = gx_flattened_iterator__prev_filtered(&alp->fi);
+	    if (compute_dir(ll, alp->fi.gy0, alp->fi.gy1) != 2)
 		break;
 	} while (alp->more_flattened);
     }
@@ -699,20 +699,19 @@ private inline int
 start_al_pair(line_list *ll, contour_cursor *q, contour_cursor *p)
 {
     int code;
-    const bool false_stub = false;
     
     if (q->monotonic)
 	code = add_y_line(q->prev, q->pseg, DIR_DOWN, ll);
     else 
 	code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    !q->first_flattened, true, false);
+			    !q->first_flattened, false);
     if (code < 0) 
 	return code;
     if (p->monotonic)
 	code = add_y_line(p->prev, p->pseg, DIR_UP, ll);
     else
 	code = add_y_curve_part(ll, p->prev, p->pseg, DIR_UP, p->fi, 
-			    p->more_flattened, false_stub, false);
+			    p->more_flattened, false);
     return code;
 }
 
@@ -721,33 +720,32 @@ private int
 start_al_pair_from_min(line_list *ll, contour_cursor *q)
 {
     int dir, code;
-    const bool false_stub = false;
 
     /* q stands at the first segment, which isn't last. */
     do {
-	q->more_flattened = gx_flattened_iterator__next_filtered2(q->fi);
-	dir = compute_dir(ll, q->fi->fy0, q->fi->fy1);
-	if (q->fi->fy0 > ll->ymax && ll->y_break > q->fi->fy0)
-	    ll->y_break = q->fi->fy0;
-	if (q->fi->fy1 > ll->ymax && ll->y_break > q->fi->fy1)
-	    ll->y_break = q->fi->fy1;
-	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->fy0 >= ll->ymin) {
+	q->more_flattened = gx_flattened_iterator__next_filtered(q->fi);
+	dir = compute_dir(ll, q->fi->gy0, q->fi->gy1);
+	if (q->fi->gy0 > ll->ymax && ll->y_break > q->fi->y0)
+	    ll->y_break = q->fi->gy0;
+	if (q->fi->gy1 > ll->ymax && ll->y_break > q->fi->gy1)
+	    ll->y_break = q->fi->gy1;
+	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->gy0 >= ll->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    true, !q->more_flattened, true);
+			    true, true);
 	    if (code < 0) 
 		return code; 
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
-			    q->more_flattened, false_stub, false);
+			    q->more_flattened, false);
 	    if (code < 0) 
 		return code; 
-	} else if (q->fi->fy0 < ll->ymin && q->fi->fy1 >= ll->ymin) {
+	} else if (q->fi->gy0 < ll->ymin && q->fi->gy1 >= ll->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
-			    q->more_flattened, false_stub, false);
+			    q->more_flattened, false);
 	    if (code < 0) 
 		return code; 
-	} else if (q->fi->fy0 >= ll->ymin && q->fi->fy1 < ll->ymin) {
+	} else if (q->fi->gy0 >= ll->ymin && q->fi->gy1 < ll->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    true, !q->more_flattened, false);
+			    true, false);
 	    if (code < 0) 
 		return code; 
 	}
@@ -775,7 +773,7 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	q->crossing = ymin < ll->ymin && ymax >= ll->ymin;
 	q->monotonic = !ll->fill_by_trapezoids ||
 	    !in_band ||
-	    (!CURVED_TRAPEZOID_FILL_HEAVY_TEST && !q->crossing &&
+	    (!q->crossing &&
 	    ((q->prev->pt.y <= s->p1.y && s->p1.y <= s->p2.y && s->p2.y <= s->pt.y) ||
 	     (q->prev->pt.y >= s->p1.y && s->p1.y >= s->p2.y && s->p2.y >= s->pt.y)));
     } else 
@@ -803,7 +801,6 @@ scan_contour(line_list *ll, contour_cursor *q)
     int code;
     bool only_horizontal = true, saved = false;
     const bool fill_by_trapezoids = ll->fill_by_trapezoids;
-    const bool false_stub = false;
     contour_cursor save_q;
 
     p.fi = &fi;
@@ -811,13 +808,13 @@ scan_contour(line_list *ll, contour_cursor *q)
     ll->main_dir = DIR_HORIZONTAL;
     for (; ; q->pseg = q->prev, q->prev = q->prev->prev) {
 	init_contour_cursor(ll, q);
-	while(gx_flattened_iterator__next_filtered2(q->fi)) {
+	while(gx_flattened_iterator__next_filtered(q->fi)) {
 	    q->first_flattened = false;
-	    q->dir = compute_dir(ll, q->fi->fy0, q->fi->fy1);
+	    q->dir = compute_dir(ll, q->fi->gy0, q->fi->gy1);
 	    ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
 			    q->dir == DIR_UP ? DIR_UP : ll->main_dir);
 	}
-	q->dir = compute_dir(ll, q->fi->fy0, q->fi->fy1);
+	q->dir = compute_dir(ll, q->fi->gy0, q->fi->gy1);
 	q->more_flattened = false;
 	ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
 			q->dir == DIR_UP ? DIR_UP : ll->main_dir);
@@ -844,12 +841,12 @@ scan_contour(line_list *ll, contour_cursor *q)
 		|| p.prev->pt.x != p.pseg->pt.x || p.prev->pt.y != p.pseg->pt.y 
 		|| p.pseg->type == s_curve) {
 	    init_contour_cursor(ll, &p);
-	    p.more_flattened = gx_flattened_iterator__next_filtered2(p.fi);
-	    p.dir = compute_dir(ll, p.fi->fy0, p.fi->fy1);
-	    if (p.fi->fy0 > ll->ymax && ll->y_break > p.fi->fy0)
-		ll->y_break = p.fi->fy0;
-	    if (p.fi->fy1 > ll->ymax && ll->y_break > p.fi->fy1)
-		ll->y_break = p.fi->fy1;
+	    p.more_flattened = gx_flattened_iterator__next_filtered(p.fi);
+	    p.dir = compute_dir(ll, p.fi->gy0, p.fi->gy1);
+	    if (p.fi->gy0 > ll->ymax && ll->y_break > p.fi->gy0)
+		ll->y_break = p.fi->gy0;
+	    if (p.fi->gy1 > ll->ymax && ll->y_break > p.fi->gy1)
+		ll->y_break = p.fi->gy1;
 	    if (p.monotonic && p.dir == DIR_HORIZONTAL && 
 		    !ll->pseudo_rasterization && 
 		    fixed2int_pixround(p.pseg->pt.y - ll->adjust_below) <
@@ -867,44 +864,44 @@ scan_contour(line_list *ll, contour_cursor *q)
 		    return code;
 	    } 
 	    if (fill_by_trapezoids && 
-		    p.fi->fy0 >= ll->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
+		    p.fi->gy0 >= ll->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
 	    if (!fill_by_trapezoids && 
-		    p.fi->fy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_DOWN) {
+		    p.fi->gy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
 	    if (!fill_by_trapezoids && 
-		    p.fi->fy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_HORIZONTAL) {
+		    p.fi->gy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_HORIZONTAL) {
 		code = add_y_line(p.prev, p.pseg, p.dir, ll);
 		if (code < 0)
 		    return code;
 	    }
 	    if (!fill_by_trapezoids && 
-		    q->fi->fy1 >= ll->ymin && q->dir == DIR_DOWN && p.dir == DIR_HORIZONTAL) {
+		    q->fi->gy1 >= ll->ymin && q->dir == DIR_DOWN && p.dir == DIR_HORIZONTAL) {
 		code = add_y_line(q->prev, q->pseg, q->dir, ll);
 		if (code < 0)
 		    return code;
 	    }	    
-	    if (p.fi->fy0 < ll->ymin && p.fi->fy1 >= ll->ymin) {
+	    if (p.fi->gy0 < ll->ymin && p.fi->gy1 >= ll->ymin) {
 		if (p.monotonic)
 		    code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
 		else
 		    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_UP, p.fi, 
-					p.more_flattened, false_stub, false);
+					p.more_flattened, false);
 		if (code < 0)
 		    return code;
 	    }	    
-	    if (p.fi->fy0 >= ll->ymin && p.fi->fy1 < ll->ymin) {
+	    if (p.fi->gy0 >= ll->ymin && p.fi->gy1 < ll->ymin) {
 		if (p.monotonic)
 		    code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
 		else
 		    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_DOWN, p.fi, 
-					!p.first_flattened, !p.more_flattened, false);
+					!p.first_flattened, false);
 		if (code < 0)
 		    return code;
 	    }	    
@@ -997,17 +994,17 @@ step_al(active_line *alp, bool move_iterator)
 
     if (move_iterator) {
 	if (forth)
-	    alp->more_flattened = gx_flattened_iterator__next_filtered2(&alp->fi);
+	    alp->more_flattened = gx_flattened_iterator__next_filtered(&alp->fi);
 	else
-	    alp->more_flattened = gx_flattened_iterator__prev_filtered2(&alp->fi);
+	    alp->more_flattened = gx_flattened_iterator__prev_filtered(&alp->fi);
     } else
 	vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
     /* Note that we can get alp->fi.ly0 == alp->fi.ly1 
        if the curve tangent is horizontal. */
-    alp->start.x = (forth ? alp->fi.fx0 : alp->fi.fx1);
-    alp->start.y = (forth ? alp->fi.fy0 : alp->fi.fy1);
-    alp->end.x = (forth ? alp->fi.fx1 : alp->fi.fx0);
-    alp->end.y = (forth ? alp->fi.fy1 : alp->fi.fy0);
+    alp->start.x = (forth ? alp->fi.gx0 : alp->fi.gx1);
+    alp->start.y = (forth ? alp->fi.gy0 : alp->fi.gy1);
+    alp->end.x = (forth ? alp->fi.gx1 : alp->fi.gx0);
+    alp->end.y = (forth ? alp->fi.gy1 : alp->fi.gy0);
     alp->diff.x = alp->end.x - alp->start.x;
     alp->diff.y = alp->end.y - alp->start.y;
     SET_NUM_ADJUST(alp);
@@ -1037,11 +1034,11 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, false));
 	    alp->more_flattened = false;
 	    do {
-		more = gx_flattened_iterator__next_filtered2(&alp->fi);
+		more = gx_flattened_iterator__next_filtered(&alp->fi);
 		alp->more_flattened |= more;
 	    } while(more);
 	    if (alp->more_flattened)
-		gx_flattened_iterator__switch_to_backscan2(&alp->fi, true);
+		gx_flattened_iterator__switch_to_backscan(&alp->fi);
 	    step_al(alp, false);
 	}
     } else {

@@ -27,15 +27,6 @@
 #include "gsmemory.h"
 #include "gdebug.h"
 
-/* Configuration swtches - development needs only. */
-/* Users should not modify them. */
-#   define CURVED_TRAPEZOID_FILL_HEAVY_TEST 0  /* Temporarily used for a debug purpose. */
-#   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
-                                               The implementation of 0 is not completed yet. */
-#   define FLATTENED_ITERATOR_SELFTEST 0 /* Temporarily used for a debug purpose. */
-#   define FLATTENED_ITERATOR_HEAVY_SELFTEST 0 /* Temporarily used for a debug purpose. */
-
-
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */
 /* rather than at a higher level as perhaps would be more appropriate. */
