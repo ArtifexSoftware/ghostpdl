@@ -280,13 +280,12 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
      * drawing anything.
      */
     bool have_path;
+    gs_fixed_rect box = {{0, 0}, {0, 0}};
 
     /*
      * Check for an empty clipping path.
      */
     if (pcpath) {
-	gs_fixed_rect box;
-
 	gx_cpath_outer_box(pcpath, &box);
 	if (box.p.x >= box.q.x || box.p.y >= box.q.y)
 	    return 0;		/* empty clipping path */
@@ -319,7 +318,17 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	double scale;
 	gs_matrix smat;
 	gs_matrix *psmat = NULL;
+	
+	if (pcpath) {
+	    gs_fixed_rect box1;
 
+	    code = gx_path_bbox(ppath, &box1);
+	    if (code < 0)
+		return code;
+	    rect_intersect(box1, box);
+	    if (box1.p.x >= box1.q.x || box1.p.y >= box1.q.y)
+		return 0;		/* outside the clipping path */
+	}
 	if (params->flatness != pdev->state.flatness) {
 	    pprintg1(s, "%g i\n", params->flatness);
 	    pdev->state.flatness = params->flatness;
