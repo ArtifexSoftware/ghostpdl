@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.13 2002/07/03 19:54:43 giles Exp $
+    $Id: jbig2_image.c,v 1.14 2002/07/03 21:51:09 raph Exp $
 */
 
 #include <stdio.h>
@@ -96,35 +96,50 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
 
     leftbyte = x >> 3;
     leftbits = x & 7;
-    rightbyte = (x + w) >> 3;
+    rightbyte = (x + w - 1) >> 3;
     rightbits = (x + w) & 7;
     fprintf(stderr, "left byte:bits %d:%d right byte:bits %d:%d\n",
         leftbyte, leftbits, rightbyte, rightbits);
 
     /* general OR case */    
-    d = ss;
+    s = ss;
     d = dd = dst->data + y*dst->stride + leftbyte;
     if (leftbyte == rightbyte) {
-        mask = (1 << (w & 7)) - 1;
+	mask = 0x100 - (0x100 >> w);
         for (j = 0; j < h; j++) {
-            *d |= (*s & mask) << leftbits;
+            *d |= (*s & mask) >> leftbits;
             d += dst->stride;
             s += src->stride;
         }
-    } else {
-        mask = 1 << (8 - leftbits) - 1;
-        highmask = (1 << rightbits) - 1;
+    } else if (leftbits == 0) {
         for (j = 0; j < h; j++) {
-            *d++ |= (*s & mask) << leftbits;
-            for(i = leftbyte; i < rightbyte; i++) {
-                *d |= (*s++ & ~mask) >> leftbits;
-                *d++ |= (*s & mask) << leftbits;
-            }
-            *d |= (*s++ & ~mask) >> leftbits;
-            *d |= (*s & highmask) << leftbits;
+	    for (i = leftbyte; i <= rightbyte; i++)
+		*d++ |= *s++;
             d = (dd += dst->stride);
             s = (ss += src->stride);
-        }
+	}
+    } else {
+	mask = 0x100 - (1 << leftbits);
+	if (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3))
+	    highmask = (0x100 - (0x100 >> rightbits)) >> (8 - leftbits);
+	else
+	    highmask = 0x100 - (0x100 >> (w & 7));
+        for (j = 0; j < h; j++) {
+	    *d++ |= (*s & mask) >> leftbits;
+            for(i = leftbyte; i < rightbyte - 1; i++) {
+		*d |= ((s[0] & ~mask) << (8 - leftbits)) |
+		    ((s[1] & mask) >> leftbits);
+		s++;
+		d++;
+	    }
+	    if (((w + 7) >> 3) < ((x + w + 7) >> 3) - (x >> 3))
+		*d |= (s[0] & highmask) << (8 - leftbits);
+	    else
+		*d |= ((s[0] & ~mask) << (8 - leftbits)) |
+		    ((s[1] & highmask) >> leftbits);
+	    d = (dd += dst->stride);
+	    s = (ss += src->stride);
+	}
     }
             
     return 0;
