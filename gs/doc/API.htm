@@ -41,7 +41,7 @@
 <li><a href="#set_visual_tracer"><b><tt>set_visual_tracer</tt></b></a>
 <li><a href="#return_codes">Return codes</a>
 </ul>
-<li><a href="#Typical_usage">Typical usage</a>
+<li><a href="#Example_usage">Example usage</a>
 <li><a href="#stdio">Standard input and output</a>
 <li><a href="#display">Display device</a>
 </ul>
@@ -114,7 +114,8 @@ The source for the executable is in <b><tt>dw</tt></b>*.* (Windows),
 <b><tt>dp</tt></b>*.* (OS/2) and  <b><tt>dx</tt></b>*.* (Linux).  
 See these source files for examples of how to use the DLL.
 
-The source file <p><tt>dxmainc.c</tt> can serve as an example of how to use the 
+<p>
+The source file <tt>dxmainc.c</tt> can serve as an example of how to use the 
 framework shared component on MacOS X. Just change the header includes to use 
 the Ghostscript namespace:
 <blockquote><pre><tt>#include &lt;Ghostscript/errors.h&gt;
@@ -323,6 +324,9 @@ Initialise the interpreter.
 This calls <b><tt>gs_main_init_with_args()</tt></b> in 
 <b><tt><a href="../src/imainarg.c">imainarg.c</a></tt></b>.
 See below for <a href="#return_codes">return codes</a>.
+The arguments are the same as the "C" main function:
+argv[0] is ignored and the user supplied arguments 
+are argv[1] to argv[argc-1].
 </blockquote>
 
 <h3><a name="run"></a><b><tt>gsapi_run_*()</tt></b></h3>
@@ -407,16 +411,68 @@ Reading from <b><tt>%stdin</tt></b> uses the stdin callback.
 
 
 
-<h2><a name="Typical_usage"></a>Typical Usage</h2>
-A really short example of using the Ghostscript interpreter library is:
+<h2><a name="Example_usage"></a>Example Usage</h2>
+Some overly simple examples of using the Ghostscript interpreter library are:
   
+<h3>Example 1</h3>
 <pre>
+/* Example of using GS DLL as a ps2pdf converter.  */
+
+#ifdef _Windows
+/* Compile with:
+ * cl -D_Windows -Isrc -Febin\ps2pdf.exe ps2pdf.c bin\gsdll32.lib
+ */
+#include &lt;windows.h&gt;
+#define GSDLLEXPORT __declspec(dllimport)
+#endif
+
+#include "errors.h"
+#include "iapi.h"
+
+gs_main_instance *minst;
+
+int main(int argc, char *argv[])
+{
+    int code;
+    int exit_code;
+    const char * gsargv[10];
+    int gsargc;
+    gsargv[0] = "ps2pdf";	/* actual value doesn't matter */
+    gsargv[1] = "-dNOPAUSE";
+    gsargv[2] = "-dBATCH";
+    gsargv[3] = "-dSAFER";
+    gsargv[4] = "-sDEVICE=pdfwrite";
+    gsargv[5] = "-sOutputFile=out.pdf";
+    gsargv[6] = "-c";
+    gsargv[7] = ".setpdfwrite";
+    gsargv[8] = "-f";
+    gsargv[9] = "input.ps";
+    gsargc=10;
+
+    code = gsapi_new_instance(&minst, NULL);
+    if (code &lt; 0)
+	return 1;
+    code = gsapi_init_with_args(minst, gsargc, gsargv);
+    gsapi_exit(minst);
+
+    gsapi_delete_instance(minst);
+
+    if ((code == 0) || (code == e_Quit))
+	return 0;
+    return 1;
+}
+</pre>
+
+<h3>Example 2</h3>
+<pre>
+/* Similar to command line gs */
+
 #include &lt;stdio.h&gt;
 #include "errors.h"
 #include "iapi.h"
 
 /* stdio functions */
-static int 
+static int GSDLLCALL
 gsdll_stdin(void *instance, char *buf, int len)
 {
     int ch;
@@ -433,7 +489,7 @@ gsdll_stdin(void *instance, char *buf, int len)
     return count;
 }
 
-static int 
+static int GSDLLCALL
 gsdll_stdout(void *instance, const char *str, int len)
 {
     fwrite(str, 1, len, stdout);
@@ -441,7 +497,7 @@ gsdll_stdout(void *instance, const char *str, int len)
     return len;
 }
 
-static int 
+static int GSDLLCALL
 gsdll_stderr(void *instance, const char *str, int len)
 {
     fwrite(str, 1, len, stderr);
@@ -474,17 +530,39 @@ int main(int argc, char *argv[])
 }
 </pre>
 
+<h3>Example 3</h3>
 
-<p>
-Another partial code example showing how you can feed Ghostscript piecemeal:
+Replace main() in either of the above with the following code,
+showing how you can feed Ghostscript piecemeal:
 <pre>
-    char *command = "1 2 add == flush\n";
+const char *command = "1 2 add == flush\n";
+
+int main(int argc, char *argv[])
+{
+    int code;
     int exit_code;
-    gsapi_run_string_begin(minst, 0, &exit_code);
-    gsapi_run_string_continue(minst, command, strlen(command), 0, &exit_code);
-    gsapi_run_string_continue(minst, "qu", 2, 0, &exit_code);
-    gsapi_run_string_continue(minst, "it", 2, 0, &exit_code);
-    gsapi_run_string_end(minst, 0, &exit_code);
+
+    code = gsapi_new_instance(&minst, NULL);
+    if (code < 0)
+	return 1;
+    code = gsapi_init_with_args(minst, argc, argv);
+
+    if (code == 0) {
+	gsapi_run_string_begin(minst, 0, &exit_code);
+	gsapi_run_string_continue(minst, command, strlen(command), 0, &exit_code);
+	gsapi_run_string_continue(minst, "qu", 2, 0, &exit_code);
+	gsapi_run_string_continue(minst, "it", 2, 0, &exit_code);
+	gsapi_run_string_end(minst, 0, &exit_code);
+    }
+
+    gsapi_exit(minst);
+
+    gsapi_delete_instance(minst);
+
+    if ((code == 0) || (code == e_Quit))
+	return 0;
+    return 1;
+}
 </pre>
 
 
