@@ -223,7 +223,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
         w.ptr = data + pos_in_row - 1;
         w.limit = data + data_per_row - 1;
-        (*s_DCTD_template.process)((stream_state *)ss, &r, &w, false);
+        (*s_DCTD_template.process)(ss->memory, (stream_state *)ss, &r, &w, false);
         used = w.ptr + 1 - data - pos_in_row;
         pos_in_row += used;
         par->source.position += used;
@@ -309,7 +309,7 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
         w.ptr = data + pos_in_row - 1;
         w.limit = data + data_per_row - 1;
-        (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
+        (*s_RLD_template.process)(ss->memory, (stream_state *)ss, &r, &w, false);
         used = w.ptr + 1 - data - pos_in_row;
         pos_in_row += used;
         par->source.position += used;
@@ -320,7 +320,7 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 		    
             w.ptr = pad - 1;
             w.limit = w.ptr + data_per_row_padded - pos_in_row;
-            (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
+            (*s_RLD_template.process)(ss->memory, (stream_state *)ss, &r, &w, false);
             used = w.ptr + 1 - pad;
             pos_in_row += used;
             par->source.position += used;
