@@ -270,7 +270,7 @@ pdfdict begin
 /findxref {		% - findxref <xrefpos>
   PDFfile dup dup 0 setfileposition bytesavailable
   dup /PDFfilelen exch def
-	% Find the last %%EOF string (within 2048 bytes)
+	% Find the last %%EOF string (within 4096 bytes)
   4096 sub PDFoffset .max
   2 copy setfileposition
   PDFfilelen exch sub string 1 index exch readstring pop {
