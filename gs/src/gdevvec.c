@@ -132,6 +132,13 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 		}
 	    }
 	    if (incomplete_line) {
+		if (need_moveto) {	/* see gs_pe_moveto case */
+		    code = gdev_vector_dopath_segment(&state, gs_pe_moveto,
+						      &line_start);
+		    if (code < 0)
+			return code;
+		    need_moveto = false;
+		}
 		code = gdev_vector_dopath_segment(&state, gs_pe_lineto,
 						  &line_end);
 		if (code < 0)
