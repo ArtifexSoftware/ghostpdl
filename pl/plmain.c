@@ -336,7 +336,7 @@ pl_main(
 	    dprintf( "memory allocated\n" );
 	/* Process the next file. process_options leaves next non-option on arg list*/
         {
-            int code;
+            int code = 0;
             arg = arg_next(&args, &code);
             /* not sure what to do about this stupidity right now */
             if (code < 0)
@@ -1133,7 +1133,6 @@ pl_main_cursor_close(
 	pl_top_cursor_dnit(cursor);
 	fclose(cursor->strm);
 }
-
 
 #ifndef NO_MAIN
 /* ----------- Command-line driver for pl_interp's  ------ */
