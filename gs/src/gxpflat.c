@@ -24,20 +24,9 @@
 #include "vdtrace.h"
 #include <assert.h>
 
-/* Configuration swtches - development needs only. */
-/* Users should not modify them. */
-#define CURVED_TRAPEZOID_FILL0_COMPATIBLE 0 /* Temporarily used for a backward compatibility. 
-                                               The implementation of 0 is not completed yet. */
 #define FLATTENED_ITERATOR_SELFTEST 0 /* Debug purpose only. */
 
 /* ---------------- Curve flattening ---------------- */
-
-#define x1 pc->p1.x
-#define y1 pc->p1.y
-#define x2 pc->p2.x
-#define y2 pc->p2.y
-#define x3 pc->pt.x
-#define y3 pc->pt.y
 
 /*
  * To calculate how many points to sample along a path in order to
@@ -64,8 +53,8 @@ gx_curve_log2_samples(fixed x0, fixed y0, const curve_segment * pc,
 		      fixed fixed_flat)
 {
     fixed
-	x03 = x3 - x0,
-	y03 = y3 - y0;
+	x03 = pc->pt.x - x0,
+	y03 = pc->pt.y - y0;
     int k;
 
     if (x03 < 0)
@@ -81,10 +70,11 @@ gx_curve_log2_samples(fixed x0, fixed y0, const curve_segment * pc,
 	    k++, m >>= 1;
     } else {
 	const fixed
-	      x12 = x1 - x2, y12 = y1 - y2, dx0 = x0 - x1 - x12, dy0 = y0 - y1 - y12,
-	      dx1 = x12 - x2 + x3, dy1 = y12 - y2 + y3, adx0 = any_abs(dx0),
-	      ady0 = any_abs(dy0), adx1 = any_abs(dx1), ady1 = any_abs(dy1);
-
+	      x12 = pc->p1.x - pc->p2.x, y12 = pc->p1.y - pc->p2.y, 
+	      dx0 = x0 - pc->p1.x - x12, dy0 = y0 - pc->p1.y - y12,
+	      dx1 = x12 - pc->p2.x + pc->pt.x, dy1 = y12 - pc->p2.y + pc->pt.y, 
+	      adx0 = any_abs(dx0), ady0 = any_abs(dy0), 
+	      adx1 = any_abs(dx1), ady1 = any_abs(dy1);
 	fixed
 	    d = max(adx0, adx1) + max(ady0, ady1);
 	/*
@@ -95,9 +85,9 @@ gx_curve_log2_samples(fixed x0, fixed y0, const curve_segment * pc,
 	uint q = qtmp / fixed_flat;
 
 	if_debug6('2', "[2]d01=%g,%g d12=%g,%g d23=%g,%g\n",
-		  fixed2float(x1 - x0), fixed2float(y1 - y0),
+		  fixed2float(pc->p1.x - x0), fixed2float(pc->p1.y - y0),
 		  fixed2float(-x12), fixed2float(-y12),
-		  fixed2float(x3 - x2), fixed2float(y3 - y2));
+		  fixed2float(pc->pt.x - pc->p2.x), fixed2float(pc->pt.y - pc->p2.y));
 	if_debug2('2', "     D=%f, flat=%f,",
 		  fixed2float(d), fixed2float(fixed_flat));
 	/* Now we want to set k = ceiling(log2(q) / 2). */
@@ -124,17 +114,17 @@ split_curve_midpoint(fixed x0, fixed y0, const curve_segment * pc,
 				 */
 #define midpoint(a,b)\
   (arith_rshift_1(a) + arith_rshift_1(b) + ((a) & (b) & 1) + 1)
-    fixed x12 = midpoint(x1, x2);
-    fixed y12 = midpoint(y1, y2);
+    fixed x12 = midpoint(pc->p1.x, pc->p2.x);
+    fixed y12 = midpoint(pc->p1.y, pc->p2.y);
 
     /*
      * pc1 or pc2 may be the same as pc, so we must be a little careful
      * about the order in which we store the results.
      */
-    pc1->p1.x = midpoint(x0, x1);
-    pc1->p1.y = midpoint(y0, y1);
-    pc2->p2.x = midpoint(x2, x3);
-    pc2->p2.y = midpoint(y2, y3);
+    pc1->p1.x = midpoint(x0, pc->p1.x);
+    pc1->p1.y = midpoint(y0, pc->p1.y);
+    pc2->p2.x = midpoint(pc->p2.x, pc->pt.x);
+    pc2->p2.y = midpoint(pc->p2.y, pc->pt.y);
     pc1->p2.x = midpoint(pc1->p1.x, x12);
     pc1->p2.y = midpoint(pc1->p1.y, y12);
     pc2->p1.x = midpoint(x12, pc2->p2.x);
@@ -160,13 +150,6 @@ print_points(const gs_fixed_point *points, int count)
 #endif
 }
 
-
-#undef x1
-#undef y1
-#undef x2
-#undef y2
-#undef x3
-#undef y3
 
 bool
 curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
@@ -400,14 +383,8 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 		  (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
-	if (
-#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE
-	    ((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)
-#	else
-	    (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)) &&
-	    (((x ^ this->x3) | (y ^ this->y3)) & float2fixed(-0.5))
-#	endif
-	    ) {
+	if ((((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)) &&
+	    (((x ^ this->x3) | (y ^ this->y3)) & float2fixed(-0.5))) {
 	    this->lx1 = x, this->ly1 = y;
 	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
 	    return true;
