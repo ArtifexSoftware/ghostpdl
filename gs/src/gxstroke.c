@@ -1195,13 +1195,18 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	double u1 = plp->e.cdelta.y, v1 = plp->e.cdelta.x;
 	double u2 = nplp->o.cdelta.y, v2 = nplp->o.cdelta.x;
 	double num, denom;
+	int code;
 
 	if (pmat) {
 	    gs_point pt;
 
-	    gs_distance_transform_inverse(v1, u1, pmat, &pt);
+	    code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
+	    if (code < 0)
+		return code;
 	    v1 = pt.x, u1 = pt.y;
-	    gs_distance_transform_inverse(v2, u2, pmat, &pt);
+	    code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
+	    if (code < 0)
+		return code;
 	    v2 = pt.x, u2 = pt.y;
 	    /*
 	     * We need to recompute ccw according to the

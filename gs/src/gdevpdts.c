@@ -179,8 +179,11 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	    dy = pmat->ty - pts->in.matrix.ty;
 	gs_point dist;
 	double dw, dnotw, tdw;
+	int code;
 
-	set_text_distance(&dist, dx, dy, pmat);
+	code = set_text_distance(&dist, dx, dy, pmat);
+	if (code < 0)
+	    return code;
 	if (pts->wmode)
 	    dw = dist.y, dnotw = dist.x;
 	else
@@ -224,9 +227,12 @@ pdf_set_text_matrix(gx_device_pdf * pdev)
     pts->use_leading = false;
     if (matrix_is_compatible(&pts->out.matrix, &pts->in.matrix)) {
 	gs_point dist;
+	int code;
 
-	set_text_distance(&dist, pts->start.x - pts->line_start.x,
+	code = set_text_distance(&dist, pts->start.x - pts->line_start.x,
 			  pts->start.y - pts->line_start.y, &pts->in.matrix);
+	if (code < 0)
+	    return code;
 	if (dist.x == 0 && dist.y < 0) {
 	    /* Use TL, if needed, and T* or '. */
 	    float dist_y = (float)-dist.y;

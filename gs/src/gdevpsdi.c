@@ -324,7 +324,9 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	gs_point pt;
 
 	/* We could do both X and Y, but why bother? */
-	gs_distance_transform_inverse(1.0, 0.0, &pim->ImageMatrix, &pt);
+	code = gs_distance_transform_inverse(1.0, 0.0, &pim->ImageMatrix, &pt);
+	if (code < 0)
+	    return code;
 	gs_distance_transform(pt.x, pt.y, pctm, &pt);
 	resolution = 1.0 / hypot(pt.x / pdev->HWResolution[0],
 				 pt.y / pdev->HWResolution[1]);
