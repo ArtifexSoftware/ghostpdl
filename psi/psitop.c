@@ -115,9 +115,9 @@ ps_impl_allocate_interp_instance(
 )
 {
 	int code = 0, exit_code;
-	int argc = 4;  
+	int argc = 3;  
 	/* NB: DITHERPPI should be computed from the resolution */
-	const char *argv[] = { "", "-dNOPAUSE", "-dQUIET", "-dDITHERPPI=106", ""};
+	const char *argv[] = { "", "-dNOPAUSE", "-dQUIET", ""};
 
 	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
 	    = (ps_interp_instance_t *)gs_alloc_bytes( mem,
@@ -132,7 +132,7 @@ ps_impl_allocate_interp_instance(
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
 	psi->minst = gs_main_instance_default();
-	code = gs_main_init_with_args(psi->minst, argc, argv);
+	code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
 	if (code<0)
 	    return code;
 
@@ -232,7 +232,7 @@ ps_impl_init_job(
 )
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-    static const char *buf = "false 0 startjob pop\n";  /* encapsulate the job */
+    static const char *buf = "currentpagedevice setpagedevice false 0 startjob pop\n";  /* encapsulate the job */
     int code, exit_code;
     /* starting a new job */
     psi->fresh_job = true;
@@ -498,3 +498,4 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_deallocate_interp,
   ps_impl_get_device_memory,
 };
+
