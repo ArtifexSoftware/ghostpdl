@@ -341,10 +341,28 @@ param_write_int_array(gs_param_list * plist, gs_param_name pkey,
     RETURN_WRITE_TYPED(ia, gs_param_type_int_array);
 }
 int
+param_write_int_values(gs_param_list * plist, gs_param_name pkey,
+		       const int *values, uint size, bool persistent)
+{
+    gs_param_int_array ia;
+
+    ia.data = values, ia.size = size, ia.persistent = persistent;
+    return param_write_int_array(plist, pkey, &ia);
+}
+int
 param_write_float_array(gs_param_list * plist, gs_param_name pkey,
 			const gs_param_float_array * pvalue)
 {
     RETURN_WRITE_TYPED(fa, gs_param_type_float_array);
+}
+int
+param_write_float_values(gs_param_list * plist, gs_param_name pkey,
+			 const float *values, uint size, bool persistent)
+{
+    gs_param_float_array fa;
+
+    fa.data = values, fa.size = size, fa.persistent = persistent;
+    return param_write_float_array(plist, pkey, &fa);
 }
 int
 param_write_string_array(gs_param_list * plist, gs_param_name pkey,

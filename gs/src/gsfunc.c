@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,6 +20,7 @@
 /* Generic Function support */
 #include "gx.h"
 #include "gserrors.h"
+#include "gsparam.h"
 #include "gxfunc.h"
 
 /* GC descriptors */
@@ -77,6 +78,36 @@ fn_domain_is_monotonic(const gs_function_t *pfn, gs_function_effort_t effort)
     return gs_function_is_monotonic(pfn, lower, upper, effort);
 }
 
+/* Return default function information. */
+void
+gs_function_get_info_default(const gs_function_t *pfn, gs_function_info_t *pfi)
+{
+    pfi->DataSource = 0;
+    pfi->Functions = 0;
+}
+
+/* Write generic parameters (FunctionType, Domain, Range) on a parameter list. */
+int
+fn_common_get_params(const gs_function_t *pfn, gs_param_list *plist)
+{
+    int ecode = param_write_int(plist, "FunctionType", &FunctionType(pfn));
+    int code;
+
+    if (pfn->params.Domain) {
+	code = param_write_float_values(plist, "Domain", pfn->params.Domain,
+					2 * pfn->params.m, false);
+	if (code < 0)
+	    ecode = code;
+    }
+    if (pfn->params.Range) {
+	code = param_write_float_values(plist, "Range", pfn->params.Range,
+					2 * pfn->params.n, false);
+	if (code < 0)
+	    ecode = code;
+    }
+    return ecode;
+}
+
 /* ---------------- Vanilla functions ---------------- */
 
 /* GC descriptor */
@@ -117,6 +148,8 @@ gs_function_Va_init(gs_function_t ** ppfn,
 	{
 	    NULL,			/* filled in from params */
 	    (fn_is_monotonic_proc_t) fn_Va_is_monotonic,
+	    gs_function_get_info_default,
+	    fn_common_get_params,	/****** WHAT TO DO ABOUT THIS? ******/
 	    (fn_free_params_proc_t) gs_function_Va_free_params,
 	    fn_common_free
 	}

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -396,10 +396,14 @@ int param_read_int_array(P3(gs_param_list *, gs_param_name,
 			    gs_param_int_array *));
 int param_write_int_array(P3(gs_param_list *, gs_param_name,
 			     const gs_param_int_array *));
+int param_write_int_values(P5(gs_param_list *, gs_param_name,
+			      const int *, uint, bool));
 int param_read_float_array(P3(gs_param_list *, gs_param_name,
 			      gs_param_float_array *));
 int param_write_float_array(P3(gs_param_list *, gs_param_name,
 			       const gs_param_float_array *));
+int param_write_float_values(P5(gs_param_list *, gs_param_name,
+				const float *, uint, bool));
 int param_read_string_array(P3(gs_param_list *, gs_param_name,
 			       gs_param_string_array *));
 int param_write_string_array(P3(gs_param_list *, gs_param_name,

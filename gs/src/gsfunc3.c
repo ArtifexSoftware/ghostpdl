@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsfunc3.h"
+#include "gsparam.h"
 #include "gxfunc.h"
 
 /* ---------------- Utilities ---------------- */
@@ -121,6 +122,30 @@ fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
     return result;
 }
 
+/* Write Exponential Interpolation function parameters on a parameter list. */
+private int
+fn_ElIn_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
+{
+    const gs_function_ElIn_t *const pfn =
+	(const gs_function_ElIn_t *)pfn_common;
+    int ecode = fn_common_get_params(pfn_common, plist);
+    int code;
+
+    if (pfn->params.C0) {
+	if ((code = param_write_float_values(plist, "C0", pfn->params.C0,
+					     pfn->params.n, false)) < 0)
+	    ecode = code;
+    }
+    if (pfn->params.C1) {
+	if ((code = param_write_float_values(plist, "C1", pfn->params.C1,
+					     pfn->params.n, false)) < 0)
+	    ecode = code;
+    }
+    if ((code = param_write_float(plist, "N", &pfn->params.N)) < 0)
+	ecode = code;
+    return ecode;
+}
+
 /* Free the parameters of an Exponential Interpolation function. */
 void
 gs_function_ElIn_free_params(gs_function_ElIn_params_t * params,
@@ -142,6 +167,8 @@ gs_function_ElIn_init(gs_function_t ** ppfn,
 	{
 	    (fn_evaluate_proc_t) fn_ElIn_evaluate,
 	    (fn_is_monotonic_proc_t) fn_ElIn_is_monotonic,
+	    gs_function_get_info_default,
+	    (fn_get_params_proc_t) fn_ElIn_get_params,
 	    (fn_free_params_proc_t) gs_function_ElIn_free_params,
 	    fn_common_free
 	}
@@ -280,6 +307,36 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
     return result;
 }
 
+/* Return 1-Input Stitching function information. */
+private void
+fn_1ItSg_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
+{
+    const gs_function_1ItSg_t *const pfn =
+	(const gs_function_1ItSg_t *)pfn_common;
+
+    gs_function_get_info_default(pfn_common, pfi);
+    pfi->Functions = pfn->params.Functions;
+    pfi->num_Functions = pfn->params.k;
+}
+
+/* Write 1-Input Stitching function parameters on a parameter list. */
+private int
+fn_1ItSg_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
+{
+    const gs_function_1ItSg_t *const pfn =
+	(const gs_function_1ItSg_t *)pfn_common;
+    int ecode = fn_common_get_params(pfn_common, plist);
+    int code;
+
+    if ((code = param_write_float_values(plist, "Bounds", pfn->params.Bounds,
+					 pfn->params.k - 1, false)) < 0)
+	ecode = code;
+    if ((code = param_write_float_values(plist, "Encode", pfn->params.Encode,
+					 2 * pfn->params.k, false)) < 0)
+	ecode = code;
+    return ecode;
+}
+
 /* Free the parameters of a 1-Input Stitching function. */
 void
 gs_function_1ItSg_free_params(gs_function_1ItSg_params_t * params,
@@ -301,6 +358,8 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
 	{
 	    (fn_evaluate_proc_t) fn_1ItSg_evaluate,
 	    (fn_is_monotonic_proc_t) fn_1ItSg_is_monotonic,
+	    (fn_get_info_proc_t) fn_1ItSg_get_info,
+	    (fn_get_params_proc_t) fn_1ItSg_get_params,
 	    (fn_free_params_proc_t) gs_function_1ItSg_free_params,
 	    fn_common_free
 	}
@@ -415,6 +474,8 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
 	{
 	    (fn_evaluate_proc_t) fn_AdOt_evaluate,
 	    (fn_is_monotonic_proc_t) fn_AdOt_is_monotonic,
+	    gs_function_get_info_default, /****** WRONG ******/
+	    fn_common_get_params,	/****** WHAT TO DO ABOUT THIS? ******/
 	    (fn_free_params_proc_t) gs_function_AdOt_free_params,
 	    fn_common_free
 	}

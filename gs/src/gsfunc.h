@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -49,24 +49,68 @@ typedef enum {
     EFFORT_ESSENTIAL = 2
 } gs_function_effort_t;
 
+/* Define abstract types. */
+#ifndef gs_data_source_DEFINED
+#  define gs_data_source_DEFINED
+typedef struct gs_data_source_s gs_data_source_t;
+#endif
+#ifndef gs_param_list_DEFINED
+#  define gs_param_list_DEFINED
+typedef struct gs_param_list_s gs_param_list;
+#endif
+
 /* Define a generic function, for use as the target type of pointers. */
 typedef struct gs_function_params_s {
     gs_function_params_common;
 } gs_function_params_t;
+#ifndef gs_function_DEFINED
 typedef struct gs_function_s gs_function_t;
-typedef int (*fn_evaluate_proc_t)(P3(const gs_function_t * pfn,
-				     const float *in, float *out));
-typedef int (*fn_is_monotonic_proc_t)(P4(const gs_function_t * pfn,
-					 const float *lower,
-					 const float *upper,
-					 gs_function_effort_t effort));
-typedef void (*fn_free_params_proc_t)(P2(gs_function_params_t * params,
-					 gs_memory_t * mem));
-typedef void (*fn_free_proc_t)(P3(gs_function_t * pfn,
-				  bool free_params, gs_memory_t * mem));
+#  define gs_function_DEFINED
+#endif
+typedef struct gs_function_info_s {
+    const gs_data_source_t *DataSource;
+    ulong data_size;
+    const gs_function_t *const *Functions;
+    int num_Functions;
+} gs_function_info_t;
+
+/* Evaluate a function. */
+#define FN_EVALUATE_PROC(proc)\
+  int proc(P3(const gs_function_t * pfn, const float *in, float *out))
+typedef FN_EVALUATE_PROC((*fn_evaluate_proc_t));
+
+/* Test whether a function is monotonic. */
+#define FN_IS_MONOTONIC_PROC(proc)\
+  int proc(P4(const gs_function_t * pfn, const float *lower,\
+	      const float *upper, gs_function_effort_t effort))
+typedef FN_IS_MONOTONIC_PROC((*fn_is_monotonic_proc_t));
+
+/* Get function information. */
+#define FN_GET_INFO_PROC(proc)\
+  void proc(P2(const gs_function_t *pfn, gs_function_info_t *pfi))
+typedef FN_GET_INFO_PROC((*fn_get_info_proc_t));
+
+/* Put function parameters on a parameter list. */
+#define FN_GET_PARAMS_PROC(proc)\
+  int proc(P2(const gs_function_t *pfn, gs_param_list *plist))
+typedef FN_GET_PARAMS_PROC((*fn_get_params_proc_t));
+
+/* Free function parameters. */
+#define FN_FREE_PARAMS_PROC(proc)\
+  void proc(P2(gs_function_params_t * params, gs_memory_t * mem))
+typedef FN_FREE_PARAMS_PROC((*fn_free_params_proc_t));
+
+/* Free a function. */
+#define FN_FREE_PROC(proc)\
+  void proc(P3(gs_function_t * pfn, bool free_params, gs_memory_t * mem))
+typedef FN_FREE_PROC((*fn_free_proc_t));
+
+/* Define the generic function structures. */
 typedef struct gs_function_procs_s {
     fn_evaluate_proc_t evaluate;
     fn_is_monotonic_proc_t is_monotonic;
+    fn_get_info_proc_t get_info;
+    fn_get_params_proc_t get_params;
     fn_free_params_proc_t free_params;
     fn_free_proc_t free;
 } gs_function_procs_t;
@@ -118,7 +162,7 @@ void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
 
 /* Evaluate a function. */
 #define gs_function_evaluate(pfn, in, out)\
-  (*(pfn)->head.procs.evaluate)(pfn, in, out)
+  ((pfn)->head.procs.evaluate)(pfn, in, out)
 
 /*
  * Test whether a function is monotonic on a given (closed) interval.  If
@@ -128,7 +172,7 @@ void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
  * domain.  If lower[i] > upper[i], the result is not defined.
  */
 #define gs_function_is_monotonic(pfn, lower, upper, effort)\
-  (*(pfn)->head.procs.is_monotonic)(pfn, lower, upper, effort)
+  ((pfn)->head.procs.is_monotonic)(pfn, lower, upper, effort)
 /*
  * If the function is monotonic, is_monotonic returns the direction of
  * monotonicity for output value N in bits 2N and 2N+1.  (Functions with
@@ -137,13 +181,21 @@ void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
 #define FN_MONOTONIC_INCREASING 1
 #define FN_MONOTONIC_DECREASING 2
 
+/* Get function information. */
+#define gs_function_get_info(pfn, pfi)\
+  ((pfn)->head.procs.get_info(pfn, pfi))
+
+/* Write function parameters. */
+#define gs_function_get_params(pfn, plist)\
+  ((pfn)->head.procs.get_params(pfn, plist))
+
 /* Free function parameters. */
 #define gs_function_free_params(pfn, mem)\
-  (*(pfn)->head.procs.free_params)(&(pfn)->params, mem)
+  ((pfn)->head.procs.free_params(&(pfn)->params, mem))
 
 /* Free a function's implementation, optionally including its parameters. */
 #define gs_function_free(pfn, free_params, mem)\
-  (*(pfn)->head.procs.free)(pfn, free_params, mem)
+  ((pfn)->head.procs.free(pfn, free_params, mem))
 
 /* ---------------- Vanilla functions ---------------- */
 
