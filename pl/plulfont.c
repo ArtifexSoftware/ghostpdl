@@ -69,12 +69,14 @@ pl_ufst_root_dir(char *pathname, int pathlen)
 {
  
     /* get the ufst root directory */
-    if ( gp_getenv( "PCLFONTSOURCE", pathname, &pathlen) != 0 ) {
-        dprintf( "UFST configuration error.  Set environment variable PCLFONTSOURCE\n" );
-        dprintf( "to the directory containing the ufst fontdata directory\n" );
-        return -1;
-    } else
-        return 0;
+    /* CONFIG: Hard coded ufst root directory could go here. */
+    if ( gp_getenv( "UFSTFONTSOURCE", pathname, &pathlen) != 0 ) {
+	dprintf( "UFST configuration error.  Set environment variable UFSTFONTSOURCE\n" );
+	dprintf( "to the directory containing the ufst fontdata directory\n" );
+	dprintf( "ie: export UFSTFONTSOURCE=/usr/local/ufst/fontdata/ \n" );
+	return -1;
+    } else 
+	return 0;
 }
 
 /*
