@@ -80,11 +80,12 @@ RELOC_PTRS_END
 
 private ENUM_PTRS_WITH(text_enum_enum_ptrs, gs_text_enum_t *eptr)
 {
-    if (index == 8)
+    if (index == 8) {
 	if (eptr->pair != 0)
 	    ENUM_RETURN(eptr->pair - eptr->pair->index);
 	else
 	    ENUM_RETURN(0);
+    }
     index -= 9;
     if (index <= eptr->fstack.depth)
 	ENUM_RETURN(eptr->fstack.items[index].font);
