@@ -952,7 +952,6 @@ int
 pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 		      int orig_options)
 {
-    long length_id = pdf_obj_ref(pdev);
     stream *s = pdev->strm;
     int options = orig_options;
 #define USE_ASCII85 1
@@ -970,13 +969,17 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     }
     if ((options & DATA_STREAM_BINARY) && !pdev->binary_ok)
 	filters |= USE_ASCII85;
-    stream_puts(s, fnames[filters]);
-    pprintld1(s, "/Length %ld 0 R>>stream\n", length_id);
+    if (!(options & DATA_STREAM_NOLENGTH)) {
+	long length_id = pdf_obj_ref(pdev);
+		
+	stream_puts(s, fnames[filters]);
+	pprintld1(s, "/Length %ld 0 R>>stream\n", length_id);
+	pdw->length_id = length_id;
+    }
     code = psdf_begin_binary((gx_device_psdf *)pdev, &pdw->binary);
     if (code < 0)
 	return code;
     pdw->start = stell(s);
-    pdw->length_id = length_id;
     if (filters & USE_FLATE)
 	code = pdf_flate_binary(pdev, &pdw->binary);
     return code;

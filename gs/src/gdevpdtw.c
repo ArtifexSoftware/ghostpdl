@@ -549,7 +549,8 @@ pdf_close_text_document(gx_device_pdf *pdev)
      * the descriptors.
      */
 
-    if ((code = finish_font_descriptors(pdev, pdf_finish_FontDescriptor)) < 0 ||
+    if ((code = pdf_write_resource_objects(pdev, resourceCharProc)) < 0 ||
+	(code = finish_font_descriptors(pdev, pdf_finish_FontDescriptor)) < 0 ||
 	(code = write_font_resources(pdev, &pdev->resources[resourceCIDFont])) < 0 ||
 	(code = write_font_resources(pdev, &pdev->resources[resourceFont])) < 0 ||
 	(code = finish_font_descriptors(pdev, pdf_write_FontDescriptor)) < 0

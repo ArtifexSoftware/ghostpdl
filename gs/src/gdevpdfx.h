@@ -808,6 +808,7 @@ typedef struct pdf_data_writer_s {
 #define DATA_STREAM_NOT_BINARY 0  /* data are text, not binary */
 #define DATA_STREAM_BINARY 1	/* data are binary */
 #define DATA_STREAM_COMPRESS 2	/* OK to compress data */
+#define DATA_STREAM_NOLENGTH 4	/* Skip the length reference and filter names writing. */
 int pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 			  int options);
 /* begin_data = begin_data_binary with both options = true. */
@@ -1001,8 +1002,8 @@ int pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double 
 int pdf_end_charproc_accum(gx_device_pdf *pdev);
 
 /* Enter the substream accumulation mode. */
-int pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, pdf_resource_t **ppres, 
-			long *extra_length);
+int pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
+			    gs_id id, pdf_resource_t **ppres);
 
 /* Exit the substream accumulation mode. */
 int pdf_exit_substream(gx_device_pdf *pdev);
