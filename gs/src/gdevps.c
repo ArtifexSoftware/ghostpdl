@@ -40,6 +40,8 @@
 /* Current ProcSet version */
 #define PSWRITE_PROCSET_VERSION 1
 
+/* Guaranteed size of operand stack accoeding to PLRM */
+#define MAXOPSTACK 500
 
 private int psw_open_printer(gx_device * dev);
 private int psw_close_printer(gx_device * dev);
@@ -831,7 +833,12 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	stream *s = gdev_vector_stream(vdev);
 	gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
-	if (pdev->path_state.num_points > 0 &&
+	if (pdev->path_state.num_points > MAXOPSTACK / 2 - 10) {
+ 	    stream_puts(s, (pdev->path_state.move ? "P\n" : "p\n"));
+            pdev->path_state.num_points = 0;
+            pdev->path_state.move = 0;
+        }
+        else if (pdev->path_state.num_points > 0 &&
 	    !(pdev->path_state.num_points & 7)
 	    )
 	    stream_putc(s, '\n');	/* limit line length for DSC compliance */
