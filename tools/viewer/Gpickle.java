@@ -71,12 +71,12 @@ public class Gpickle {
     private String ghostAppStr;
 
     /** look for relative path executable first */
-    private String ghostAppRelStr =  "../../main/obj/pcl6";
-    //private String ghostAppStr =  "../../language_switch/obj/pspcl6";
+    //private String ghostAppRelStr =  "../../main/obj/pcl6";
+    private String ghostAppRelStr =  "../../language_switch/obj/pspcl6";
 
     /** look for executable in path next */
-    private String ghostAppPathStr =  "pcl6";
-    //private String ghostAppPathStr =  "pspcl6";
+    //private String ghostAppPathStr =  "pcl6";
+    private String ghostAppPathStr =  "pspcl6";
 
     /** find the GhostPrinter application
      * first relative path
@@ -219,6 +219,11 @@ public class Gpickle {
         this.totalPageCount = -1;
 	this.jobList = jobList;
     }
+
+    public String getJob() {
+	return jobList;
+    }
+
 
     /** NB needs error handling.
      * set x and y resolution.

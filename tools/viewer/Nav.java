@@ -36,7 +36,7 @@ public class Nav extends Gview  {
     }
 
     public void runMain(String[] args) {
-
+	
 	// this window is smaller/lower res, count pages now.
 	runJob(args, startingRes / zoomWindowRatio, true);
 

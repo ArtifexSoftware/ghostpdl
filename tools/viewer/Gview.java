@@ -834,8 +834,23 @@ public class Gview
      */
     protected void setPageCount( int pageCount ) {
 	totalPageCount = pageCount;
-	menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
-	setTitle("GhostPickle " + pageNumber + " of " + totalPageCount);
+	if ( totalPageCount < 0 ) {
+	    menuPageNum.setLabel("page# " + pageNumber + " of ?");
+	    setTitle("GhostPickle: " + 
+		     pickle.getJob() + 
+		     " " +
+		     pageNumber + 
+		     " of ?");
+	}
+	else {
+	    menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
+	    setTitle("GhostPickle: " + 
+		     pickle.getJob() + 
+		     " " +
+		     pageNumber + 
+		     " of " + 
+		     totalPageCount);
+	}
     }
 
     /** Sets the job, opening/reopening the window based on resolution.
@@ -846,13 +861,13 @@ public class Gview
         origRes = desiredRes = resolution;
 	pickle.setRes(desiredRes, desiredRes);
 
+	// set the total page count as unknown for now 
+	setPageCount(-1);
 	if (getPageCount == true) {
 	    // get the total page count for the job
 	    pageCounter.setJob(args[0]);  
 	    pageCounter.startCountingPages();
 	}
-	// set the total page count as unknown for now 
-        setPageCount(-1);
 
 	pageNumber = 1;
 	pickle.setPageNumber(pageNumber);
