@@ -64,15 +64,6 @@ pl_allocate_interp_instance(
 	pli = *instance;
 	pli->interp = interp;
 
-	/* make sure free list handlers are setup */
-	{ int i;
-	  for ( i = 0; i < countof(pli->spaces.memories.indexed); ++i )
-	    pli->spaces.memories.indexed[i] = 0;
-	  pli->spaces.memories.named.local = pli->spaces.memories.named.global =
-	    (gs_ref_memory_t *)mem;
-	}
-	gs_nogc_reclaim(&pli->spaces, true);
-
 	return code;
 }
 
@@ -118,9 +109,6 @@ pl_set_device(
   gx_device              *device        /* device to set (open or closed) */
 )
 {
-	/* call once more to get rid of any temporary objects */
-	gs_nogc_reclaim(&instance->spaces, true);
-
 	return instance->interp->implementation->proc_set_device(instance, device);
 }
 
@@ -188,7 +176,7 @@ pl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
-	return instance->interp->implementation->proc_dnit_job(instance);
+    return instance->interp->implementation->proc_dnit_job(instance);
 }
 
 /* Remove a device from an interperter instance */
@@ -198,9 +186,6 @@ pl_remove_device(
 )
 {
 	int code = instance->interp->implementation->proc_remove_device(instance);
-
-	gs_nogc_reclaim(&instance->spaces, true);
-
 	return code;
 }
 
