@@ -80,14 +80,16 @@ private dev_proc_print_page(bit_print_page);
 	gx_page_device_get_page_device	/* get_page_device */\
 }
 
-/* The following macro is used in get_params and put_params to determine  */
-/* the num_components for the current device. It works using the device   */
-/* name character after "bit" which is either '\0', 'r', or 'c'. Any new  */
-/* devices that are added to this module must modify this macro to return */
-/* the correct num_components. This is needed to support the ForceMono    */
-/* parameter which alters dev->num_components.				  */
-#define REAL_NUM_COMPONENTS(dev) ((dev->dname[3]== 'c') ? 4 : \
-				  (dev->dname[3]=='r') ? 3 : 1)
+/*
+ * The following macro is used in get_params and put_params to determine the
+ * num_components for the current device. It works using the device name
+ * character after "bit" which is either '\0', 'r', or 'c'. Any new devices
+ * that are added to this module must modify this macro to return the
+ * correct num_components. This is needed to support the ForceMono
+ * parameter, which alters dev->num_components.
+ */
+#define REAL_NUM_COMPONENTS(dev) (dev->dname[3] == 'c' ? 4 : \
+                                  dev->dname[3] == 'r' ? 3 : 1)
 
 private const gx_device_procs bitmono_procs =
 bit_procs(bit_mono_map_rgb_color, NULL);
@@ -250,15 +252,25 @@ my_tpqr(int index, floatp in, const gs_cie_wbsd * pwbsd,
 private int
 bit_get_params(gx_device * pdev, gs_param_list * plist)
 {
-    int ecode = gdev_prn_get_params(pdev, plist);
-    int code;
-    /* The following is a hack to get the original num_components. See comment above */
-    int ncomps = REAL_NUM_COMPONENTS(pdev);
-    int forcemono = (ncomps == pdev->color_info.num_components) ? 0 : 1;
+    int code, ecode;
+    /*
+     * The following is a hack to get the original num_components.
+     * See comment above.
+     */
+    int real_ncomps = REAL_NUM_COMPONENTS(pdev);
+    int ncomps = pdev->color_info.num_components;
+    int forcemono = (ncomps == real_ncomps ? 0 : 1);
+
+    /*
+     * Temporarily set num_components back to the "real" value to avoid
+     * confusing those that rely on it.
+     */
+    pdev->color_info.num_components = real_ncomps;
 
     if (param_requested(plist, "CRDDefault") > 0) {
 	gs_cie_render *pcrd;
 
+    ecode = gdev_prn_get_params(pdev, plist);
 	code = gs_cie_render1_build(&pcrd, pdev->memory, "bit_get_params");
 	if (code >= 0) {
 	    static const gs_vector3 my_white_point = {1, 1, 1};
@@ -303,6 +315,9 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
 	ecode = code;
     }
 
+    /* Restore the working num_components */
+    pdev->color_info.num_components = ncomps;
+
     return ecode;
 }
 
@@ -312,12 +327,12 @@ private int
 bit_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_color_info save_info;
-    int ncomps = REAL_NUM_COMPONENTS(pdev);
-    int new_ncomps = ncomps;
-    int bpc = pdev->color_info.depth / ncomps;
+    int ncomps = pdev->color_info.num_components;
+    int real_ncomps = REAL_NUM_COMPONENTS(pdev);
+    int bpc = pdev->color_info.depth / real_ncomps;
     int v;
     int ecode = 0;
-    int code, ccode;
+    int code;
     static const byte depths[4][8] = {
 	{1, 2, 0, 4, 8, 0, 0, 8},
 	{0},
@@ -325,6 +340,12 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 	{4, 8, 0, 16, 32, 0, 0, 32}
     };
     const char *vname;
+
+    /*
+     * Temporarily set num_components back to the "real" value to avoid
+     * confusing those that rely on it.
+     */
+    pdev->color_info.num_components = real_ncomps;
 
     if ((code = param_read_int(plist, (vname = "GrayValues"), &v)) != 1 ||
 	(code = param_read_int(plist, (vname = "RedValues"), &v)) != 1 ||
@@ -335,35 +356,27 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 	    ecode = code;
 	else
 	    switch (v) {
-		case 2:
-		    bpc = 1;
-		    break;
-		case 4:
-		    bpc = 2;
-		    break;
-		case 16:
-		    bpc = 4;
-		    break;
-		case 32:
-		    bpc = 5;
-		    break;
-		case 256:
-		    bpc = 8;
-		    break;
+                case   2: bpc = 1; break;
+                case   4: bpc = 2; break;
+                case  16: bpc = 4; break;
+                case  32: bpc = 5; break;
+                case 256: bpc = 8; break;
 		default:
 		    param_signal_error(plist, vname,
 				       ecode = gs_error_rangecheck);
 	    }
     }
 
-    switch (ccode = param_read_int(plist, (vname = "ForceMono"), &v)) {
+    switch (code = param_read_int(plist, (vname = "ForceMono"), &v)) {
     case 0:
 	if (v == 1) {
-	    new_ncomps = 1;
+            ncomps = 1;
 	    break;
 	}
-	else if (v == 0)
+        else if (v == 0) {
+            ncomps = real_ncomps;
 	    break;
+        }
 	code = gs_error_rangecheck;
     default:
 	ecode = code;
@@ -374,29 +387,27 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     if (ecode < 0)
 	return ecode;
 
-    /* Tuck away the color_info in case gdev_prn_put_params fails */
+    /*
+     * Save the color_info in case gdev_prn_put_params fails, and for
+     * comparison.  Note that depth is computed from real_ncomps.
+     */
     save_info = pdev->color_info;
-    if (code != 1 || ccode != 1) {
-	pdev->color_info.depth = depths[ncomps - 1][bpc - 1];
-	pdev->color_info.max_gray = pdev->color_info.max_color =
-	    (pdev->color_info.dither_grays =
-	     pdev->color_info.dither_colors =
+    pdev->color_info.depth = depths[real_ncomps - 1][bpc - 1];
+    pdev->color_info.max_gray = pdev->color_info.max_color =
+	(pdev->color_info.dither_grays =
+	 pdev->color_info.dither_colors =
 	     (1 << bpc)) - 1;
-    }
     ecode = gdev_prn_put_params(pdev, plist);
     if (ecode < 0) {
 	pdev->color_info = save_info;
 	return ecode;
     }
-    /* Now change num_components -- couldn't above because	*/
-    /*  '1' is special in gx_default_put_params			*/
-    if (ccode == 0)
-	pdev->color_info.num_components = new_ncomps;
+    /* Now restore/change num_components. This is done after other	*/
+    /* processing since it is used in gx_default_put_params		*/
+    pdev->color_info.num_components = ncomps;
 
-    if (code != 1) {
-	if (pdev->is_open)
+    if (pdev->color_info.depth != save_info.depth)
 	    gs_closedevice(pdev);
-    }
     /* Reset the map_cmyk_color procedure if appropriate. */
     if (dev_proc(pdev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ||
 	dev_proc(pdev, map_cmyk_color) == cmyk_8bit_map_cmyk_color ||
