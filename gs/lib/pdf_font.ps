@@ -395,7 +395,7 @@ end readonly def
   sectionstr 0 1 put	% either way we go to the next stage
   pfbhdr type1readdata
   1 index 0 get 16#80 eq {
-    (\n   **** Warning: Embedded Type1 font in PFB format is not valid PDF.)
+    (   **** Warning: Embedded Type1 font in PFB format is not valid PDF.\n)
     pdfformaterror
     DEBUG { (skipping PFB header) = flush } if
     exch pop buffer 0 5 getinterval type1readdata exch
@@ -404,7 +404,7 @@ end readonly def
     DEBUG { (PFB segment length = ) print dup = } if
     exch pop  % discard the string keeping the PFB segment length
     2 copy ne {
-      (\n   **** Warning: Type 1 PFB segment length and Length 1 value do not match.)
+      (   **** Warning: Type 1 PFB segment length and Length 1 value do not match.\n)
       pdfformaterror
       exch 	% keep the PFB length instead
     } if
@@ -434,7 +434,7 @@ end readonly def
         DEBUG { (PFB segment length = ) print dup = } if
 	exch pop  % discard the string keeping the PFB segment length
 	2 copy ne {
-          (\n   **** Warning: Type 1 PFB segment length and Length 2 value do not match.)
+          (   **** Warning: Type 1 PFB segment length and Length 2 value do not match.\n)
           pdfformaterror
 	  dup =
 	  exch 		% keep the PFB length instead
@@ -493,12 +493,11 @@ readonly def
            DEBUG { (PFB segment length = ) print dup = } if
 	   exch pop  % discard the string keeping the PFB segment length
 	   2 copy ne {
-           (\n   **** Warning: Type 1 PFB segment length and Length 3 value do not match.)
+           (   **** Warning: Type 1 PFB segment length and Length 3 value do not match.\n)
            pdfformaterror
 	     exch 	% keep the PFB length instead
 	   } if
 	   pop
-	   (\n) pdfformaterror
          } if
          type1read3
        }

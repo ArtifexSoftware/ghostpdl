@@ -363,10 +363,13 @@ pdfdict begin
   } {
     QUIET not {
       Generations 2 index lget 0 eq {
-	(Warning: reference to free object: )
+	(   **** Warning: reference to free object: )
       } {
-	(Warning: wrong generation: )
-      } ifelse print 1 index =only ( ) print =only ( R) =
+	(   **** Warning: wrong generation: )
+      } ifelse
+      2 index =string cvs concatstrings ( ) concatstrings
+      exch =string cvs concatstrings ( R\n) concatstrings
+      pdfformaterror
     } {
       pop
     } ifelse false
@@ -429,11 +432,13 @@ pdfdict begin
 			% Stack: savepos objpos obj#
 	 exch PDFoffset add PDFfile exch setfileposition
 	 PDFfile token pop 2 copy ne
-	  { (xref error!) = /resolveR cvx /rangecheck signalerror
+	  { (   **** Unrecoverable error in xref!\n) pdfformaterror
+	    /resolveR cvx /rangecheck signalerror
 	  }
 	 if pop PDFfile token pop
 	 PDFfile token pop /obj ne
-	  { (xref error!) = /resolveR cvx /rangecheck signalerror
+	  { (   **** Unrecoverable error in xref!\n) pdfformaterror
+	    /resolveR cvx /rangecheck signalerror
 	  }
 	 if
 	 pdf_run_resolve	% PDFfile resolveopdict .pdfrun
@@ -482,7 +487,7 @@ pdfdict begin
 	% Capture the sub-stream contents in a string.
     dup /Length oget string PDFsource exch readstring
     not {
-      (Unexpected EOF in stream!) =
+      (   **** Unexpected EOF in stream!\n) pdfformaterror
       /stream cvx /rangecheck signalerror
     } if
     1 index exch /File exch put

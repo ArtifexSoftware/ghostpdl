@@ -302,9 +302,8 @@ pdfdict begin
     dup (%%EOF\n) eq exch dup (%%EOF\r) eq
     exch (%%EOF\r\n) eq or or not
   } ifelse {
-    (
-   **** File has a corrupted %%EOF marker, or garbage after the %%EOF.
-) pdfformaterror
+    (   **** File has a corrupted %%EOF marker, or garbage after the %%EOF.\n)
+    pdfformaterror
   } if
   PDFfile exch setfileposition
 	% Now read the startxref and xref start position.
@@ -316,9 +315,8 @@ pdfdict begin
   } {	% else, this file has 'startxref #####' format
     (startxref) ne { /findxref cvx /syntaxerror signalerror } if
     cvi		% xref start position
-    (
-   **** The format of the startxref line in this file is invalid.
-) pdfformaterror
+    (   **** The format of the startxref line in this file is invalid.\n)
+    pdfformaterror
     exch PDFfile exch setfileposition
   } ifelse
 } bind def
@@ -330,10 +328,7 @@ pdfdict begin
   stderrprint
   /Repaired true store
 } bind def
-/printrepaired {
-(
-   **** This file had errors that were repaired or ignored.
-) stderrprint
+/printProducer {
   Trailer /Info knownoget {
     /Producer knownoget not { null } if
   } {
@@ -353,6 +348,12 @@ pdfdict begin
     stderrprint
     ( <<<<\n) stderrprint
   } ifelse
+} bind def
+/printrepaired {
+(
+   **** This file had errors that were repaired or ignored.
+) stderrprint
+  printProducer
   (\
    **** Please notify the author of the software that produced this
    **** file that it does not conform to Adobe's published PDF

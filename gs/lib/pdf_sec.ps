@@ -152,8 +152,8 @@ def
     dup 3 eq {
       pop pdf_gen_user_password_R3
     } {
-      (****This file uses an unknown standard security handler revision: )
-      print == flush
+      (   ****This file uses an unknown standard security handler revision: )
+      exch =string cvs concatstrings pdfformaterror printProducer
       /pdf_check_user_password cvx /undefined signalerror
     } ifelse
   } ifelse
@@ -290,9 +290,9 @@ def
                   { dup /null eq
                       { pop //null
                       }
-                      { (%stderr) (w) file
-	                dup (****************Unknown operator: ) writestring
-	                dup 3 -1 roll .writecvs dup (\n) writestring flushfile
+                      { (   **** Unknown operator: ) 
+	                exch =string cvs concatstrings (\n) concatstrings
+			pdfformaterror
                       }
                     ifelse
                   }

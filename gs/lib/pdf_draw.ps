@@ -858,7 +858,7 @@ end
       pop (\n   **** File has insufficient data for an image.\n)
       pdfformaterror
     } {
-      (\n   **** File encountered an ')
+      (\n   **** File encountered ')
       exch 40 string cvs concatstrings
       (' error while processing an image.\n) concatstrings
       pdfformaterror
@@ -916,10 +916,9 @@ drawopdict begin
     } {
 		% This should cause an error, but Acrobat Reader can
 		% continue, so we do too.
-      (%stderr) (w) file
-      dup (****************Undefined XObject resource: ) writestring 
-      dup 3 -1 roll write===
-      flushfile
+      (   **** Undefined XObject resource: ) 
+      exch =string cvs concatstrings (\n) concatstrings
+      pdfformaterror
     } ifelse
     PDFfile exch setfileposition
   } bdef
