@@ -499,6 +499,60 @@ pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 	return (result ? result : ptcg);
 }
 
+extern int default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
+		    float sbw[4]);
+
+/* get metrics with support for XL tt class 1 and 2 
+ * pl overrides gstype42_default_get_metrics   
+ */
+
+int
+pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
+		    float sbw[4])
+{    
+    pl_font_t *plfont = pfont->client_data;
+    const pl_font_glyph_t *pfg = 0;
+    const byte *cdata = 0;
+
+    if ( plfont->glyphs.table != 0 ) {
+	/* at least one caller calls before the glyph.table is valid, no chars yet 
+	 * test routes caller to gs_type42_default_get_metrics
+	 */
+	pfg = pl_font_lookup_glyph(plfont, glyph_index);
+	cdata = pfg->data;   
+
+	if (cdata && (cdata[1] == 1 || cdata[1] == 2)) {
+	    double factor = 1.0 / pfont->data.unitsPerEm;
+	    uint width;
+	    int lsb;
+
+#           define U16(p) (((uint)((p)[0]) << 8) + (p)[1])
+#           define S16(p) (int)((U16(p) ^ 0x8000) - 0x8000)
+
+	    lsb = S16(cdata + 4);
+	    width = S16(cdata + 6);
+
+#           undef U16
+#           undef S16
+
+	    /* foo NB what about the top side bearing in class 2 ? */
+
+	    if (wmode) {
+		factor = -factor;	/* lsb and width go down the page */
+		sbw[0] = 0, sbw[1] = lsb * factor;
+		sbw[2] = 0, sbw[3] = width * factor;
+	    } else {
+		sbw[0] = lsb * factor, sbw[1] = 0;
+		sbw[2] = width * factor, sbw[3] = 0;
+	    }	
+	    return 0; /* tt class 1,2 */
+	}
+    }
+    /* else call default implementation for tt class 0, incomplete font */
+    return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);
+}
+
+
 /* Get the outline data for a glyph in a downloaded TrueType font. */
 int
 pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_const_string *pdata)
@@ -1553,8 +1607,6 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 #undef pbfont
 }
 
-/* Get a string from a TrueType font. */
-private int
 pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length,
   const byte **pdata)
 {	pl_font_t *plfont = pfont->client_data;
@@ -1607,6 +1659,8 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
 	      }
 	  }
 #endif
+	/* override default get metrics */
+	pfont->data.get_metrics = pl_tt_get_metrics;
 }
 
 

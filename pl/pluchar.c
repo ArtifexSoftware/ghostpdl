@@ -2090,6 +2090,8 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
               }
           }
 #endif
+	/* override default get metrics */
+	pfont->data.get_metrics = pl_tt_get_metrics;
 }
 
 void
