@@ -35,7 +35,6 @@
  * for an early floating point version of this algorithm.
  */
 
-int
 GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
     const gs_fixed_edge * right, fixed ybot, fixed ytop, int flags,
     const gx_device_color * pdevc, gs_logical_operation_t lop)

@@ -146,7 +146,7 @@ compute_ldx(trap_line *tl, fixed ys)
  * we stored it in gxdtfill.h and include it configuring with
  * macros defined here.
  */
-#define GX_FILL_TRAPEZOID gx_default_fill_trapezoid_as
+#define GX_FILL_TRAPEZOID private int gx_default_fill_trapezoid_as
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 1
 #include "gxdtfill.h"
@@ -154,7 +154,7 @@ compute_ldx(trap_line *tl, fixed ys)
 #undef CONTIGUOUS_FILL 
 #undef SWAP_AXES
 
-#define GX_FILL_TRAPEZOID gx_default_fill_trapezoid_ns
+#define GX_FILL_TRAPEZOID private int gx_default_fill_trapezoid_ns
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 0
 #include "gxdtfill.h"
@@ -162,7 +162,7 @@ compute_ldx(trap_line *tl, fixed ys)
 #undef CONTIGUOUS_FILL 
 #undef SWAP_AXES
 
-#define GX_FILL_TRAPEZOID gx_fill_trapezoid_narrow
+#define GX_FILL_TRAPEZOID int gx_fill_trapezoid_narrow
 #define CONTIGUOUS_FILL 1
 #define SWAP_AXES 0
 #include "gxdtfill.h"
