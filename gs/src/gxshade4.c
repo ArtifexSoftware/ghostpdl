@@ -289,18 +289,15 @@ mesh_fill_triangle(mesh_fill_state_t *pfs)
 	    if (region.q.x - region.p.x <= fixed_1 &&
 		region.q.y - region.p.y <= fixed_1) {
 		/*
-		 * More precisely, does the bounding box of the region,
-		 * taking fill adjustment into account, span more than 1
-		 * pixel center in either X or Y?
+		 * More precisely, does the bounding box of the region
+		 * span more than 1 pixel center in either X or Y?
 		 */
-		fixed ax = pis->fill_adjust.x;
 		int nx =
-		    fixed2int_pixround(region.q.x + ax) -
-		    fixed2int_pixround(region.p.x - ax);
-		fixed ay = pis->fill_adjust.y;
+		    fixed2int_pixround(region.q.x) -
+		    fixed2int_pixround(region.p.x);
 		int ny =
-		    fixed2int_pixround(region.q.y + ay) -
-		    fixed2int_pixround(region.p.y - ay);
+		    fixed2int_pixround(region.q.y) -
+		    fixed2int_pixround(region.p.y);
 
 		if (!(nx > 1 && ny != 0) || (ny > 1 && nx != 0))
 		    goto fill;
