@@ -102,7 +102,7 @@ s_buffered_release(stream_state * st)
 /* ------ Common code for Burrows/Wheeler block sorting filters ------ */
 
 private_st_BWBS_state();
-private void s_BWBS_release(P1(stream_state *));
+private void s_BWBS_release(stream_state *);
 
 /* Set default parameter values (actually, just clear pointers). */
 private void

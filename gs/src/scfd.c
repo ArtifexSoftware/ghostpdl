@@ -198,10 +198,10 @@ d:			memset(q, black_byte, rlen >> 3);\
 		*q ^= ((1 << rlen) - 1) << qbit
 
 /* Buffer refill for CCITTFaxDecode filter */
-private int cf_decode_eol(P2(stream_CFD_state *, stream_cursor_read *));
-private int cf_decode_1d(P2(stream_CFD_state *, stream_cursor_read *));
-private int cf_decode_2d(P2(stream_CFD_state *, stream_cursor_read *));
-private int cf_decode_uncompressed(P2(stream_CFD_state *, stream_cursor_read *));
+private int cf_decode_eol(stream_CFD_state *, stream_cursor_read *);
+private int cf_decode_1d(stream_CFD_state *, stream_cursor_read *);
+private int cf_decode_2d(stream_CFD_state *, stream_cursor_read *);
+private int cf_decode_uncompressed(stream_CFD_state *, stream_cursor_read *);
 private int
 s_CFD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)

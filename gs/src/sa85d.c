@@ -35,7 +35,7 @@ s_A85D_init(stream_state * st)
 }
 
 /* Process a buffer */
-private int a85d_finish(P3(int, ulong, stream_cursor_write *));
+private int a85d_finish(int, ulong, stream_cursor_write *);
 private int
 s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)

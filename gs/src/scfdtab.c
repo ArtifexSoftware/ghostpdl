@@ -932,8 +932,8 @@ const cfd_node cf_uncompressed_decode[] = {
 };
 
 /* Dummy executable code to pacify compilers. */
-void scfdtab_dummy(P0());
+void scfdtab_dummy(void);
 void
-scfdtab_dummy()
+scfdtab_dummy(void)
 {
 }

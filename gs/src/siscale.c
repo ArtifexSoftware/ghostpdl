@@ -407,7 +407,7 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
 #define tmp_height params.HeightIn
 
 /* Forward references */
-private void s_IScale_release(P1(stream_state * st));
+private void s_IScale_release(stream_state * st);
 
 /* Calculate the weights for an output row. */
 private void

@@ -24,9 +24,9 @@
 #include "strimpl.h"
 
 /* Forward declarations */
-private int sreadbuf(P2(stream *, stream_cursor_write *));
-private int swritebuf(P3(stream *, stream_cursor_read *, bool));
-private void stream_compact(P2(stream *, bool));
+private int sreadbuf(stream *, stream_cursor_write *);
+private int swritebuf(stream *, stream_cursor_read *, bool);
+private void stream_compact(stream *, bool);
 
 /* Structure types for allocating streams. */
 public_st_stream();
@@ -617,7 +617,7 @@ int
 sreadline(stream *s_in, stream *s_out, void *readline_data,
 	  gs_const_string *prompt, gs_string * buf,
 	  gs_memory_t * bufmem, uint * pcount, bool *pin_eol,
-	  bool (*is_stdin)(P1(const stream *)))
+	  bool (*is_stdin)(const stream *))
 {
     uint count = *pcount;
 
@@ -968,13 +968,13 @@ stream_compact(stream * s, bool always)
 
 /* String stream procedures */
 private int
-    s_string_available(P2(stream *, long *)),
-    s_string_read_seek(P2(stream *, long)),
-    s_string_write_seek(P2(stream *, long)),
-    s_string_read_process(P4(stream_state *, stream_cursor_read *,
-			     stream_cursor_write *, bool)),
-    s_string_write_process(P4(stream_state *, stream_cursor_read *,
-			      stream_cursor_write *, bool));
+    s_string_available(stream *, long *),
+    s_string_read_seek(stream *, long),
+    s_string_write_seek(stream *, long),
+    s_string_read_process(stream_state *, stream_cursor_read *,
+			  stream_cursor_write *, bool),
+    s_string_write_process(stream_state *, stream_cursor_read *,
+			   stream_cursor_write *, bool);
 
 /* Initialize a stream for reading a string. */
 void
@@ -1084,8 +1084,8 @@ s_string_write_process(stream_state * st, stream_cursor_read * pr,
 /* ------ Position-tracking stream ------ */
 
 private int
-    s_write_position_process(P4(stream_state *, stream_cursor_read *,
-				stream_cursor_write *, bool));
+    s_write_position_process(stream_state *, stream_cursor_read *,
+			     stream_cursor_write *, bool);
 
 /* Set up a write stream that just keeps track of the position. */
 void

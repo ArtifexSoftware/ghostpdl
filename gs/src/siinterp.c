@@ -73,7 +73,7 @@ gs_private_st_ptrs2(st_IIEncode_state, stream_IIEncode_state,
     prev, cur);
 
 /* Forward references */
-private void s_IIEncode_release(P1(stream_state * st));
+private void s_IIEncode_release(stream_state * st);
 
 /* Initialize the filter. */
 private int

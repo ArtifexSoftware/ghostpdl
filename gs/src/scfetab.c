@@ -156,7 +156,7 @@ const cfe_run cf_uncompressed_exit[10] =
 };
 
 /* Some C compilers insist on having executable code in every file.... */
-void scfetab_dummy(P0());	/* for picky compilers */
+void scfetab_dummy(void);	/* for picky compilers */
 void
 scfetab_dummy(void)
 {

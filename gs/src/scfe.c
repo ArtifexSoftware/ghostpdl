@@ -113,7 +113,7 @@ cf_put_long_run(stream_CFE_state * ss, byte * q, int lenv, const cf_runs * prt)
 
 private_st_CFE_state();
 
-private void s_CFE_release(P1(stream_state *));
+private void s_CFE_release(stream_state *);
 
 /* Set default parameter values. */
 private void
@@ -190,10 +190,10 @@ s_CFE_release(stream_state * st)
 }
 
 /* Flush the buffer */
-private void cf_encode_1d(P3(stream_CFE_state *, const byte *,
-			     stream_cursor_write *));
-private void cf_encode_2d(P4(stream_CFE_state *, const byte *,
-			     stream_cursor_write *, const byte *));
+private void cf_encode_1d(stream_CFE_state *, const byte *,
+			  stream_cursor_write *);
+private void cf_encode_2d(stream_CFE_state *, const byte *,
+			  stream_cursor_write *, const byte *);
 private int
 s_CFE_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)

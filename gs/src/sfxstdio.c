@@ -25,19 +25,19 @@
 
 /* Forward references for file stream procedures */
 private int
-    s_file_available(P2(stream *, long *)),
-    s_file_read_seek(P2(stream *, long)),
-    s_file_read_close(P1(stream *)),
-    s_file_read_process(P4(stream_state *, stream_cursor_read *,
-			   stream_cursor_write *, bool));
+    s_file_available(stream *, long *),
+    s_file_read_seek(stream *, long),
+    s_file_read_close(stream *),
+    s_file_read_process(stream_state *, stream_cursor_read *,
+			stream_cursor_write *, bool);
 private int
-    s_file_write_seek(P2(stream *, long)),
-    s_file_write_flush(P1(stream *)),
-    s_file_write_close(P1(stream *)),
-    s_file_write_process(P4(stream_state *, stream_cursor_read *,
-			    stream_cursor_write *, bool));
+    s_file_write_seek(stream *, long),
+    s_file_write_flush(stream *),
+    s_file_write_close(stream *),
+    s_file_write_process(stream_state *, stream_cursor_read *,
+			 stream_cursor_write *, bool);
 private int
-    s_file_switch(P2(stream *, bool));
+    s_file_switch(stream *, bool);
 
 /* ------ File reading ------ */
 

@@ -46,9 +46,9 @@
 #ifdef KEEP_FILENO_API
 /* Provide prototypes to avoid compiler warnings. */
 void
-    sread_fileno(P4(stream *, FILE *, byte *, uint)),
-    swrite_fileno(P4(stream *, FILE *, byte *, uint)),
-    sappend_fileno(P4(stream *, FILE *, byte *, uint));
+    sread_fileno(stream *, FILE *, byte *, uint),
+    swrite_fileno(stream *, FILE *, byte *, uint),
+    sappend_fileno(stream *, FILE *, byte *, uint);
 #else
 #  define sread_fileno sread_file
 #  define swrite_fileno swrite_file
@@ -57,19 +57,19 @@ void
 
 /* Forward references for file stream procedures */
 private int
-    s_fileno_available(P2(stream *, long *)),
-    s_fileno_read_seek(P2(stream *, long)),
-    s_fileno_read_close(P1(stream *)),
-    s_fileno_read_process(P4(stream_state *, stream_cursor_read *,
-			     stream_cursor_write *, bool));
+    s_fileno_available(stream *, long *),
+    s_fileno_read_seek(stream *, long),
+    s_fileno_read_close(stream *),
+    s_fileno_read_process(stream_state *, stream_cursor_read *,
+			  stream_cursor_write *, bool);
 private int
-    s_fileno_write_seek(P2(stream *, long)),
-    s_fileno_write_flush(P1(stream *)),
-    s_fileno_write_close(P1(stream *)),
-    s_fileno_write_process(P4(stream_state *, stream_cursor_read *,
-			      stream_cursor_write *, bool));
+    s_fileno_write_seek(stream *, long),
+    s_fileno_write_flush(stream *),
+    s_fileno_write_close(stream *),
+    s_fileno_write_process(stream_state *, stream_cursor_read *,
+			   stream_cursor_write *, bool);
 private int
-    s_fileno_switch(P2(stream *, bool));
+    s_fileno_switch(stream *, bool);
 
 /* Get the file descriptor number of a stream. */
 inline private int
