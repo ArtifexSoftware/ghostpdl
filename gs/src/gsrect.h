@@ -22,6 +22,8 @@
 #ifndef gsrect_INCLUDED
 #  define gsrect_INCLUDED
 
+#include "gxfixed.h"
+
 /* Check whether one rectangle is included entirely within another. */
 #define rect_within(inner, outer)\
   (inner.q.y <= outer.q.y && inner.q.x <= outer.q.x &&\
@@ -63,5 +65,32 @@
  */
 int int_rect_difference(P3(gs_int_rect * outer, const gs_int_rect * inner,
 			   gs_int_rect * diffs /*[4] */ ));
+
+/*
+ * Check whether a parallelogram is a rectangle.
+ */
+#define PARALLELOGRAM_IS_RECT(ax, ay, bx, by)\
+  ( ((ax) | (by)) == 0 || ((bx) | (ay)) == 0 )
+
+/*
+ * Convert a rectangular parallelogram to a rectangle, carefully following
+ * the center-of-pixel rule in all cases.
+ */
+#define INT_RECT_FROM_PARALLELOGRAM(prect, px, py, ax, ay, bx, by)\
+  BEGIN\
+    int px_ = fixed2int_pixround(px);\
+    int py_ = fixed2int_pixround(py);\
+    int qx_ = fixed2int_pixround((px) + (ax) + (bx));  /* only one is non-zero */\
+    int qy_ = fixed2int_pixround((py) + (ay) + (by));  /* ditto */\
+\
+    if (qx_ < px_)\
+      (prect)->p.x = qx_, (prect)->q.x = px_;\
+    else\
+      (prect)->p.x = px_, (prect)->q.x = qx_;\
+    if (qy_ < py_)\
+      (prect)->p.y = qy_, (prect)->q.y = py_;\
+    else\
+      (prect)->p.y = py_, (prect)->q.y = qy_;\
+  END
 
 #endif /* gsrect_INCLUDED */
