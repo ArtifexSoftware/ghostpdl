@@ -917,7 +917,8 @@ palette_do_reset(
     static const uint   mask = (   pcl_reset_initial
                                  | pcl_reset_cold
                                  | pcl_reset_printer
-                                 | pcl_reset_overlay );
+                                 | pcl_reset_overlay
+				 | pcl_reset_permanent);
 
     if ((type & mask) == 0)
         return;
@@ -927,7 +928,7 @@ palette_do_reset(
         pl_dict_init(&pcs->palette_store, pcs->memory, dict_free_palette);
         pcs->ppalet = 0;
         pcs->pfrgrnd = 0;
-
+	pcs->pdflt_frgrnd = 0;
         /* set up the built-in render methods and dithers matrices */
         pcl_ht_init_render_methods(pcs, pcs->memory);
 
@@ -938,24 +939,23 @@ palette_do_reset(
         pcl_cs_base_init(pcs);
         pcl_cs_indexed_init(pcs);
 
-    } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
-
+    } else if ((type & (pcl_reset_cold | pcl_reset_printer | pcl_reset_permanent)) != 0) {
         /* clear the palette stack and store */
         clear_palette_stack(pcs, pcs->memory);
-        clear_palette_store(pcs);
+	clear_palette_store(pcs);
     }
-
+    if ( type & pcl_reset_permanent ) {
+	pcl_palette_release(pcs->pdflt_palette);
+	pcl_palette_release(pcs->ppalet);
+    }
     /* select and control palette ID's must be set back to 0 */
     pcs->sel_palette_id = 0;
     pcs->ctrl_palette_id = 0;
 
-    /* build the default palette and foreground */
-    (void)build_default_palette(pcs);
-    (void)pcl_frgrnd_set_default_foreground(pcs);
-
-    /* the following is helpful when working with memory leak detectors */
-    if ((type & pcl_reset_overlay) == 0)
-        pcl_set_drawing_color(pcs, pcl_pattern_solid_frgrnd, 0, false);
+    if ( !(type & pcl_reset_permanent) ) {
+	(void)build_default_palette(pcs);
+	(void)pcl_frgrnd_set_default_foreground(pcs);
+    }
 }
 
 /*
