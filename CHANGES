@@ -1,10 +1,14 @@
+Version 0.8 (unreleased)
+
+ * no changes as of yet
+
 Version 0.7 (2004 December 8)
 
  * properly initialize page buffers
  * refinement region handling
  * successfully decodes ubc test streams 042_21, 042_22 and 042_23
  * generic region template 3 handling with arbitrary AT locations
- * seccussfully decodes ubc test stream 042_6 and 042_7
+ * successfully decodes ubc test stream 042_6 and 042_7
  
 Version 0.6 (2003 December 31)
 
