@@ -135,11 +135,11 @@ hpgl_do_reset(
 	  pcs->g.stick_font[0][1].pfont =
 	  pcs->g.stick_font[1][0].pfont =
 	  pcs->g.stick_font[1][1].pfont = 0;
-
+	/* intialize subpolygon started hack flag */
+	pcs->g.subpolygon_started = false;
 	/* execute only the implicit portion of IN */
 	hpgl_IN_implicit(pcs);
     }
-
     /* NB check all of these */
     if ((type & pcl_reset_page_params) != 0) {
 	/* provide default anchor point, plot size and picture frame size */
