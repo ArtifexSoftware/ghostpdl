@@ -57,7 +57,7 @@ pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
     return pdf_end_data(pdw);
 }
 
-/* Decide whether a font should be embedded. */
+/* Decide whether a font should be subsetted. */
 private bool
 pdf_do_subset_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
