@@ -317,12 +317,6 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
-    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
-				      pdcolor, scale);
-    if (code < 0)
-	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
-				      pcpath);
-
     /*
      * If the CTM is not uniform, stroke width depends on angle.
      * We'd like to avoid resetting the CTM, so we check for uniform
@@ -336,6 +330,12 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
 					       pis, &scale, &mat);
     pdf_put_clip_path(pdev, pcpath);
+    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
+				      pdcolor, scale);
+    if (code < 0)
+	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
+				      pcpath);
+
     if (set_ctm)
 	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
     code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
