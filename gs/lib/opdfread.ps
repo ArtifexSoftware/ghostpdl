@@ -70,6 +70,7 @@ true setglobal
 
 /PDFR_DEBUG DefaultSwitch
 /PDFR_DUMP DefaultSwitch
+/PDFR_STREAM DefaultSwitch
 
 /error	%  mark <object> .... error -
 { % A stub for a while.
@@ -250,24 +251,23 @@ true setglobal
   } if
 } bind def
 
-/ExecStream  % <id> <obj> ExecStream <id> <obj>
+/ExecuteStream  % <id> <obj> ExecuteStream <id> <obj>
 { % Executes a (encoded) data stream.
   dup /Length //CheckLength //UnRefD exec							% id obj l
   PDFR_DEBUG {
-	(ExecStream Length = ) print dup =
+	(ExecuteStream id = ) print 2 index =only ( Length = ) print dup =
   } if
+  //PDFReader /Operators get begin
   currentfile exch () /SubFileDecode filter 						% id obj file
-  % We stub it for a while :
-  { dup //BlockBuffer readstring {									% id obj file buf
-	  (Interpreting ) print length =only ( bytes.) =
-	} {
-	  (Interpreting ) print length =only ( bytes.) =
-	  exit
-	} ifelse														% id obj file
-  } loop
-  pop																% id obj
+  cvx mark exch														% id obj mark file
+  exec
+  counttomark 0 ne {
+    mark (Data left on ostack after a stream execution) //error exec
+  } if
+  cleartomark														% id obj
+  end % Operators
   PDFR_DEBUG {
-	(ExecStream end.) =
+	(ExecuteStream end.) =
   } if
 } bind def
 
@@ -291,7 +291,7 @@ true setglobal
     pop
   } ifelse															% id obj
   dup /ImmediateExec known {
-	//ExecStream exec
+	//ExecuteStream exec
   } {
 	//StoreStream exec
   } ifelse
@@ -318,11 +318,12 @@ true setglobal
 
 % ===================== Restoring the PDF Document Structure ===============
 
-/PageContentsDaemon % <id> <obj> PageContentsDaemon <id> <obj>
-{
+/PageContentsDaemon % <id> <obj> <node> PageContentsDaemon <id> <obj>
+{ % Note: an excessive operand from a prebond procedure.
   PDFR_DEBUG {
-	(Executing PageContentsDaemon for ) print 1 index =
-  } if
+	(Executing PageContentsDaemon for ) print 2 index =
+  } if																% id obj node
+  1 index exch /Context exch put									% id obj
   dup /ImmediateExec true put
 } bind def
 
@@ -331,10 +332,119 @@ true setglobal
   { PDFR_DEBUG {
 	  (Recognized a page.)=
 	} if
-	dup /Contents get 0 get
-	//DoNothing exch //PageContentsDaemon //Register exec
+	dup /Contents get 0 get	//DoNothing exch 						% id obj dn id1
+	[ % <id> <obj> proc <id> <obj>
+	  3 index //PageContentsDaemon /exec load
+	] cvx															% id obj {}
+	//Register exec													% id obj
   } bind
 >> def
+
+% ===================== Interpret Data Streams ===============
+
+/TempMatrix matrix def
+
+/Operators 50 dict begin
+  /q /gsave load def
+  /Q /grestore load def
+  /cm { //TempMatrix astore concat } bind def
+  /i { 1 .min setflat } bind def
+  /J /setlinecap load def
+  /d /setdash load def
+  /j /setlinejoin load def
+  /w /setlinewidth load def
+  /M /setmiterlimit load def
+  /gs { (Unimplemented SetExtGState)= pop } bind def
+
+  /g /setgray load def
+  /rg /setrgbcolor load def
+  /k /setcmykcolor load def
+  /cs { ResolveColorSpace setcolorspace } bind def
+  /sc /setcolor load def
+  /scn  /setcolor load def
+  /G /setgray load def
+  /RG /setrgbcolor load def
+  /K /setcmykcolor load def
+  /CS { ResolveColorSpace setcolorspace } bind def
+  /ri { SetColorRenderingIntent } bind def
+  /SC /setcolor load def
+  /SCN /setcolor load def
+
+  /m /moveto load def
+  /l /lineto load def
+  /c /curveto load def
+  /v { currentpoint 6 2 roll curveto } def
+  /y { 2 copy curveto } def
+  /re {
+   4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
+   closepath
+  } def
+  /h /closepath load def
+  /n /newpath load def
+  /S /stroke load def
+  /s { closepath stroke } bind def
+  /f /fill load def
+  /f* /eofill load def
+  /B { gsave fill grestore stroke } bind def
+  /b { closepath gsave fill grestore stroke } bind def
+  /B* { gsave eofill grestore stroke } bind def
+  /b* { closepath gsave eofill grestore stroke } bind def
+  /W /clip load def
+  /W* /eoclip load def
+  /sh { ResolveShading shfill } bind def
+
+  /DO { DoXObject } bind def
+
+  /BI { BeginIfnlineImage } bind def
+  /EI { EndInlineImage } bind def
+  /ID { BeginInlineData } bind def
+
+  /BT { (Unimplemented BeginText)= } bind def
+  /ET { (Unimplemented EndText)= } bind def
+  /Tc { SetCharacterSpacing } bind def
+  /TL { SetTextLeading } bind def
+  /Tr { SetTextRenderingMode } bind def
+  /Ts { SetTextRise } bind def
+  /Tw { SetWordSpacing } bind def
+  /Tz { SetHorizontalTextScaling } bind def
+  /Td { (Unimplemented MoveTextPosition)= pop pop } bind def
+  /TD { MoveTextPositionAndSetLeading } bind def
+  /Tm { (Unimplemented SetTextMatrixAndTextLineMatrix)= pop pop pop pop pop pop } bind def
+  /T* { MoveToNextTextLine } bind def
+  /Tj { (Unimplemented ShowText)= pop } bind def
+  /' { MoveToNextTextLine ShowText } bind def
+  /" { SetWordSpacing SetCharacterSpacing MoveToNextTextLine ShowText } bind def
+  /TJ { (Unimplemented ShowTextWithGlyphPositioning)= pop } bind def
+  /Tf { (Unimplemented SetFont)= pop pop } bind def
+
+  /d0 /setcharwidth load def
+  /d1 /setcachedevice load def
+
+  /BDC { BeginMarkedContentSequenceWithPropertyList } bind def
+  /BMC { BeginMarkedContentSequence } bind def
+  /EMC { EndMarkedContentSequence } bind def
+  /BX { BeginCompatibilitySection } bind def
+  /DP { DefineMarkedContentPointWithPropertyList } bind def
+  /MP { DefineMarkedContentPoint } bind def
+currentdict end def
+
+PDFR_STREAM {
+  % Rebind operators with a debug tracing.
+  //Operators length dict begin
+  //Operators {												% n p
+	exch dup												% p n n
+	[ exch //=only /exec load								% p n [ n =only exec
+	  ( ) /print load										% p n [ n =only exec () print
+      8 7 roll												% n [ n =only exec () print p
+	  dup type /arraytype eq {
+	    /exec load											% n [ n =only exec () print p exec
+	  } if
+	  ( ) /print load
+	] cvx													% n {}
+	def
+  } forall
+  currentdict end /Operators exch def
+} if
 
 % Leaving the procset on the dictionary stack to provide 
 % definitions of obj, endobj, stream, endstream, R, xref.
