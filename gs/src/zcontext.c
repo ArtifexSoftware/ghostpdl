@@ -267,11 +267,22 @@ context_reclaim(vm_spaces * pspaces, bool global)
     }
 
     /* Hide all contexts in other (local) VMs. */
-    loc.memory = lmem;
+    /*
+     * See context_create below for why we look for the context
+     * in stable memory.
+     */
+    loc.memory = (gs_ref_memory_t *)gs_memory_stable((gs_memory_t *)lmem);
     loc.cp = 0;
     for (i = 0; i < CTX_TABLE_SIZE; ++i)
 	for (pctx = psched->table[i]; pctx; pctx = pctx->table_next)
 	    pctx->visible = chunk_locate_ptr(pctx, &loc);
+
+#ifdef DEBUG
+    if (!psched->current->visible) {
+	lprintf("Current context is invisible!\n");
+	gs_exit(1);
+    }
+#endif
 
     /* Do the actual garbage collection. */
     psched->save_vm_reclaim(pspaces, global);
@@ -1128,14 +1139,21 @@ context_create(gs_scheduler_t * psched, gs_context_t ** ppctx,
 	       const gs_dual_memory_t * dmem,
 	       const gs_context_state_t *i_ctx_p, bool copy_state)
 {
-    gs_ref_memory_t *mem = dmem->space_local;
+    /*
+     * Contexts are always created at the outermost save level, so they do
+     * not need to be allocated in stable memory for the sake of
+     * save/restore.  However, context_reclaim needs to be able to test
+     * whether a given context belongs to a given local VM, and allocating
+     * contexts in stable local VM avoids the need to scan multiple save
+     * levels when making this test.
+     */
+    gs_memory_t *mem = gs_memory_stable((gs_memory_t *)dmem->space_local);
     gs_context_t *pctx;
     int code;
     long ctx_index;
     gs_context_t **pte;
 
-    pctx = gs_alloc_struct((gs_memory_t *) mem, gs_context_t, &st_context,
-			   "context_create");
+    pctx = gs_alloc_struct(mem, gs_context_t, &st_context, "context_create");
     if (pctx == 0)
 	return_error(e_VMerror);
     if (copy_state) {
@@ -1145,7 +1163,7 @@ context_create(gs_scheduler_t * psched, gs_context_t ** ppctx,
 
 	code = context_state_alloc(&pctx_st, systemdict, dmem);
 	if (code < 0) {
-	    gs_free_object((gs_memory_t *) mem, pctx, "context_create");
+	    gs_free_object(mem, pctx, "context_create");
 	    return code;
 	}
     }
