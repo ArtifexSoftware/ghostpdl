@@ -216,6 +216,7 @@ typedef struct gs_transparency_source_s {
 	gs_blend_mode_t blend_mode;\
 	gs_transparency_source_t opacity, shape;\
 	bool text_knockout;\
+	uint text_rendering_mode;\
 	gs_transparency_state_t *transparency_stack;\
 	bool overprint;\
 	int overprint_mode;\
@@ -254,7 +255,7 @@ struct gs_imager_state_s {
   0, 0, { gx_line_params_initial },\
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-   { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0/*false*/, 0, 0, 1.0,\
+   { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,\
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 1.0,\
   gx_default_get_cmap_procs
 

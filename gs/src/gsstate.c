@@ -753,6 +753,20 @@ gs_currentlimitclamp(const gs_state * pgs)
     return pgs->clamp_coordinates;
 }
 
+/* settextrenderingmode */
+void
+gs_settextrenderingmode(gs_state * pgs, uint trm)
+{
+    pgs->text_rendering_mode = trm;
+}
+
+/* currenttextrenderingmode */
+uint
+gs_currenttextrenderingmode(const gs_state * pgs)
+{
+    return pgs->text_rendering_mode;
+}
+
 /* ------ Internal routines ------ */
 
 /* Free the privately allocated parts of a gstate. */
