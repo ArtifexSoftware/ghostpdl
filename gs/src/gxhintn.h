@@ -29,11 +29,11 @@ typedef struct gs_type1_data_s gs_type1_data;
 #define T1_MAX_ALIGNMENT_ZONES 6
 #define T1_MAX_CONTOURS 10
 #define T1_MAX_POLES (100 + T1_MAX_CONTOURS)
-#define T1_MAX_HINTS 30 /* total number of hints in a glyph, not a maximal one at a moiment */
+#define T1_MAX_HINTS 30
 
 typedef int int32;
 typedef fixed t1_glyph_space_coord; /* measured in original glyph space units */
-typedef int32 t1_hinter_space_coord; /* measured in temporary outliner's space units */
+typedef int32 t1_hinter_space_coord; /* measured in internal outliner's space units */
 typedef int32 int19;
 
 enum t1_hint_type
@@ -108,15 +108,18 @@ typedef struct t1_hinter_s
     t1_glyph_space_coord width_gx, width_gy; /* glyph space coords of the glyph origin */
     t1_glyph_space_coord cx, cy; /* current point */
     t1_glyph_space_coord bx, by; /* starting point of a contour */
+    uint subpixels_x, subpixels_y; /* Number of subpixels in a pixel (by an axis) */
+    bool transposed;
     double BlueScale;
     t1_glyph_space_coord blue_shift, blue_fuzz;
     t1_pole pole0[T1_MAX_POLES], *pole;
     t1_hint hint0[T1_MAX_HINTS], *hint;
     t1_zone zone0[T1_MAX_ALIGNMENT_ZONES], *zone;
     int contour0[T1_MAX_CONTOURS], *contour;
-    t1_glyph_space_coord stem_snap[2][T1_MAX_STEM_SNAPS + 1]; /* StdWH + StemSnapH, StdWV + StemSnapV */
+    t1_glyph_space_coord stem_snap0[2][T1_MAX_STEM_SNAPS + 1]; /* StdWH + StemSnapH, StdWV + StemSnapV */
+    t1_glyph_space_coord *stem_snap[2];
     t1_hint_range hint_range0[T1_MAX_HINTS], *hint_range;
-    int stem_snap_count[2]; /* H, V */
+    int stem_snap_count[2], max_stem_snap_count[2]; /* H, V */
     int contour_count, max_contour_count;
     int zone_count, max_zone_count;
     int pole_count, max_pole_count;
@@ -145,11 +148,13 @@ typedef struct t1_hinter_s
     gs_memory_t *memory;
 } t1_hinter;
 
-void t1_hinter__reset(t1_hinter * this, gs_memory_t * mem);
-int  t1_hinter__init(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
-			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix);
+void t1_hinter__init(t1_hinter * this, gs_memory_t * mem);
+int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
+			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix,
+			fixed unit_x, fixed unit_y,
+			fixed origin_x, fixed origin_y);
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
-			bool charpath_flag, fixed origin_x, fixed origin_y);
+			bool charpath_flag);
 
 int  t1_hinter__sbw(t1_hinter * this, fixed sbx, fixed sby, fixed wx,  fixed wy);
 int  t1_hinter__sbw_seac(t1_hinter * this, fixed sbx, fixed sby);
