@@ -2,3 +2,10 @@ bin
 obj
 debugobj
 pgobj
+jpeg
+libpng
+zlib
+ghostscript\ Data
+ghostscript.mcp.xml
+ghostscript.mcp
+Output
