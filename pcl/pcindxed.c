@@ -1028,6 +1028,7 @@ pcl_cs_indexed_build_default_cspace(
     if (pcs->pdflt_cs_indexed == 0) {
         pcs->dflt_cid_data.len = 6;
         pcs->dflt_cid_data.u.hdr = dflt_cid_hdr;
+        pcs->dflt_cid_data.original_cspace = pcl_cspace_num;
         return pcl_cs_indexed_build_cspace( pcs,
 					    ppindexed,
                                             &pcs->dflt_cid_data,
