@@ -51,4 +51,18 @@ extern int gs_cspace_set_devn_proc(P3(
 				      void *proc_data
 				      ));
 
+/* Set the DeviceN tint transformation procedure to a Function. */
+#ifndef gs_function_DEFINED
+typedef struct gs_function_s gs_function_t;
+#  define gs_function_DEFINED
+#endif
+int gs_cspace_set_devn_function(P2(gs_color_space *pcspace,
+				   gs_function_t *pfn));
+
+/*
+ * If the DeviceN tint transformation procedure is a Function,
+ * return the function object, otherwise return 0.
+ */
+gs_function_t *gs_cspace_get_devn_function(P1(const gs_color_space *pcspace));
+
 #endif /* gscdevn_INCLUDED */

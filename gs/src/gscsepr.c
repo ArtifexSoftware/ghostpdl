@@ -226,7 +226,7 @@ gs_cspace_get_sepr_value_array(const gs_color_space * pcspace)
  * Set the tint transformation procedure used by a Separation color space.
  */
 int
-gs_cspace_set_tint_xform_proc(gs_color_space * pcspace,
+gs_cspace_set_sepr_proc(gs_color_space * pcspace,
 	    int (*proc) (P3(const gs_separation_params *, floatp, float *)))
 {
     gs_indexed_map *pimap;
@@ -236,6 +236,52 @@ gs_cspace_set_tint_xform_proc(gs_color_space * pcspace,
     pimap = pcspace->params.separation.map;
     pimap->proc.tint_transform = proc;
     pimap->proc_data = 0;
+    return 0;
+}
+
+/* Map a Separation tint using a Function. */
+private int
+map_sepr_using_function(const gs_separation_params * pcssepr,
+			floatp in_val, float *out_vals)
+{
+    float in = in_val;
+    gs_function_t *const pfn = pcssepr->map->proc_data;
+
+    return gs_function_evaluate(pfn, &in, out_vals);
+}
+
+/*
+ * Set the Separation tint transformation procedure to a Function.
+ */
+int
+gs_cspace_set_sepr_function(const gs_color_space *pcspace, gs_function_t *pfn)
+{
+    gs_indexed_map *pimap;
+
+    if (gs_color_space_get_index(pcspace) != gs_color_space_index_Separation ||
+	pfn->params.m != 1 ||
+	pfn->params.n !=
+	  gs_color_space_num_components((const gs_color_space *)
+					&pcspace->params.separation.alt_space)
+	)
+	return_error(gs_error_rangecheck);
+    pimap = pcspace->params.separation.map;
+    pimap->proc.tint_transform = map_sepr_using_function;
+    pimap->proc_data = pfn;
+    return 0;
+}
+
+/*
+ * If the Separation tint transformation procedure is a Function,
+ * return the function object, otherwise return 0.
+ */
+gs_function_t *
+gs_cspace_get_sepr_function(const gs_color_space *pcspace)
+{
+    if (gs_color_space_get_index(pcspace) == gs_color_space_index_Separation &&
+	pcspace->params.separation.map->proc.tint_transform ==
+	  map_sepr_using_function)
+	return pcspace->params.separation.map->proc_data;
     return 0;
 }
 

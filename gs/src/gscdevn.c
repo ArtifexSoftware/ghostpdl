@@ -21,6 +21,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gscdevn.h"
+#include "gsfunc.h"
 #include "gsrefct.h"
 #include "gsmatrix.h"		/* for gscolor2.h */
 #include "gsstruct.h"
@@ -152,6 +153,54 @@ gs_cspace_set_devn_proc(gs_color_space * pcspace,
     pimap->tint_transform = proc;
     pimap->tint_transform_data = proc_data;
     pimap->cache_valid = false;
+    return 0;
+}
+
+/* Map a DeviceN color using a Function. */
+private int
+map_devn_using_function(const gs_device_n_params *pcsdevn,
+			const float *in, float *out,
+			const gs_imager_state *pis, void *data)
+
+{
+    gs_function_t *const pfn = data;
+
+    return gs_function_evaluate(pfn, in, out);
+}
+
+/*
+ * Set the DeviceN tint transformation procedure to a Function.
+ */
+int
+gs_cspace_set_devn_function(gs_color_space *pcspace, gs_function_t *pfn)
+{
+    gs_device_n_map *pimap;
+
+    if (gs_color_space_get_index(pcspace) != gs_color_space_index_DeviceN ||
+	pfn->params.m != pcspace->params.device_n.num_components ||
+	pfn->params.n !=
+	  gs_color_space_num_components((gs_color_space *)
+					&pcspace->params.device_n.alt_space)
+	)
+	return_error(gs_error_rangecheck);
+    pimap = pcspace->params.device_n.map;
+    pimap->tint_transform = map_devn_using_function;
+    pimap->tint_transform_data = pfn;
+    pimap->cache_valid = false;
+    return 0;
+}
+
+/*
+ * If the DeviceN tint transformation procedure is a Function,
+ * return the function object, otherwise return 0.
+ */
+gs_function_t *
+gs_cspace_get_devn_function(const gs_color_space *pcspace)
+{
+    if (gs_color_space_get_index(pcspace) == gs_color_space_index_DeviceN &&
+	pcspace->params.device_n.map->tint_transform ==
+	  map_devn_using_function)
+	return pcspace->params.device_n.map->tint_transform_data;
     return 0;
 }
 
