@@ -749,7 +749,7 @@ gp_open_scratch_file(const gs_memory_t *mem, const char *prefix, char *fname, co
 	}
     }
     if (f == NULL)
-	eprintf1("**** Could not open temporary file '%s'\n", fname);
+	eprintf1(mem, "**** Could not open temporary file '%s'\n", fname);
     return f;
 }
 
