@@ -163,9 +163,11 @@ gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
 	gs_glyph_data_t gdata;
 	int fidx;
 	gs_glyph glyph = (gs_glyph)(gs_min_cid_glyph + (*pindex)++);
-	int code = pfont->cidata.glyph_data((gs_font_base *)pfont, glyph,
-					    &gdata, &fidx);
+	int code;
 
+	gdata.memory = pfont->memory;
+	code = pfont->cidata.glyph_data((gs_font_base *)pfont, glyph,
+					    &gdata, &fidx);
 	if (code < 0 || gdata.bits.size == 0)
 	    continue;
 	*pglyph = glyph;

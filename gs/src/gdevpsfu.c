@@ -218,6 +218,7 @@ psf_check_outline_glyphs(gs_font_base *pfont, psf_glyph_enum_t *ppge,
 
 	if (code < 0)
 	    return code;
+	gdata.memory = pfont->memory;
 	code = glyph_data(pfont, glyph, &gdata, &ignore_font);
 	/*
 	 * If the glyph isn't defined by a CharString, glyph_data will

@@ -383,6 +383,7 @@ cff_put_CharString(cff_writer_t *pcw, const byte *data, uint size,
 	gs_glyph_data_t gdata;
 	int code;
 
+	gdata.memory = pfont->memory;
 	gs_glyph_data_from_string(&gdata, data, size, NULL);
 	code = psf_convert_type1_to_type2(s, &gdata, pfont);
 	if (code < 0)
@@ -826,6 +827,7 @@ cff_write_CharStrings_offsets(cff_writer_t *pcw, psf_glyph_enum_t *penum,
 	gs_font_type1 *pfd;
 	int gcode;
 
+	gdata.memory = pfont->memory;
 	if (code == 0 &&
 	    (gcode = pcw->glyph_data(pfont, glyph, &gdata, &pfd)) >= 0
 	    ) {
@@ -866,6 +868,7 @@ cff_write_CharStrings(cff_writer_t *pcw, psf_glyph_enum_t *penum,
 	gs_glyph_data_t gdata;
 	gs_font_type1 *pfd;
 
+	gdata.memory = pfont->memory;
 	if (code == 0 &&
 	    (code = pcw->glyph_data(pfont, glyph, &gdata, &pfd)) >= 0
 	    ) {
@@ -891,6 +894,7 @@ cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont,
     int code;
     gs_glyph_data_t gdata;
 
+    gdata.memory = pfont->memory;
     for (j = 0, offset = 1;
 	 (code = pfont->data.procs.subr_data(pfont, j, global, &gdata)) !=
 	     gs_error_rangecheck;
@@ -914,6 +918,7 @@ cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
     gs_glyph_data_t gdata;
     int code;
 
+    gdata.memory = pfont->memory;
     cff_put_Index_header(pcw, subrs_count, subrs_size);
     cff_write_Subrs_offsets(pcw, &ignore_count, pfont, global);
     for (j = 0;

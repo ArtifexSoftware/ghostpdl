@@ -626,6 +626,7 @@ type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
     gs_glyph_data_t cs_data;
     gs_glyph_data_t *pcsd;
 
+    cs_data.memory = imemory;
     if (pcref == 0) {
 	pcsd = 0;
     } else {
@@ -1013,6 +1014,7 @@ zchar1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *
     int code;
 
     glyph_ref(font->memory, glyph, &gref);
+    gdata.memory = font->memory;
     code = zchar_charstring_data(font, &gref, &gdata);
     if (code < 0)
 	return code;

@@ -245,6 +245,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	gs_glyph_data_t gdata;
 	int code;
 
+	gdata.memory = pfont->memory;
 	for (n = 0;
 	     (code = pdata->procs.subr_data(pfont, n, false, &gdata)) !=
 		 gs_error_rangecheck;
@@ -278,6 +279,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	gs_glyph_data_t gdata;
 	int code;
 
+	gdata.memory = pfont->memory;
 	psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, subset_glyphs,
 				    (subset_glyphs ? subset_size : 0),
 				    GLYPH_SPACE_NAME);

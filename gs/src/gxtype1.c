@@ -284,6 +284,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	gs_const_string gstr;
 	int code;
 
+	agdata.memory = pfont->memory;
 	pcis->seac_accent = -1;
 	/* Reset the coordinate system origin */
 	pcis->asb_diff = pcis->save_asb - pcis->save_lsb.x;
@@ -532,6 +533,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     if (default_members == members)
 	return code;		/* all done */
 
+    gdata.memory = pfont->memory;
     if ((code = pdata->procs.glyph_data(pfont, glyph, &gdata)) < 0)
 	return code;		/* non-existent glyph */
 

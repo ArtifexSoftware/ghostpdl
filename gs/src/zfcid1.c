@@ -146,6 +146,7 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
     int lsb, width;
     int code = 0;
 
+    gdata.memory = pfont->memory;
     if (wmode >= skip >> 2 ||
 	(code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, &gdata)) < 0 ||
 	gdata.bits.size < skip

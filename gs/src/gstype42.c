@@ -978,6 +978,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
     gs_glyph_data_t glyph_data;
     int code;
 
+    glyph_data.memory = pfont->memory;
     code = check_component(glyph_index, pmat, ppath, pfont, ppts + point_index,
 			   &glyph_data, subglyph);
     if (code != 1)

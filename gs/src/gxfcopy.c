@@ -325,6 +325,7 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
     byte *data;
     uint *starts;
 
+    gdata.memory = pfont->memory;
     /* Scan the font to determine the size of the subrs. */
     for (i = 0, size = 0;
 	 (code = pfont->data.procs.subr_data(pfont, i, global, &gdata)) !=
@@ -807,6 +808,8 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		    gs_font_type1 *font0 = (gs_font_type1 *)cfont;
 		    gs_font_type1 *font1 = (gs_font_type1 *)ofont;
 
+		    gdata0.memory = font0->memory;
+		    gdata1.memory = font1->memory;
 		    code0 = font0->data.procs.glyph_data(font0, glyph, &gdata0);
 		    code1 = font1->data.procs.glyph_data(font1, glyph, &gdata1);
 		    break;
@@ -829,6 +832,8 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		    gs_font_cid0 *font1 = (gs_font_cid0 *)ofont;
 		    int fidx0, fidx1;
 
+		    gdata0.memory = font0->memory;
+		    gdata1.memory = font1->memory;
 		    code0 = font0->cidata.glyph_data((gs_font_base *)font0, glyph, &gdata0, &fidx0);
 		    code1 = font1->cidata.glyph_data((gs_font_base *)font1, glyph, &gdata1, &fidx1);
 		    break;
@@ -970,9 +975,11 @@ copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
     gs_font_type1 *font1 = (gs_font_type1 *)font;
-    int code = font1->data.procs.glyph_data(font1, glyph, &gdata);
+    int code;
     int rcode;
 
+    gdata.memory = font->memory;
+    code = font1->data.procs.glyph_data(font1, glyph, &gdata);
     if (code < 0)
 	return code;
     code = copy_glyph_data(font, glyph, copied, options, &gdata, NULL, 0);
@@ -999,11 +1006,13 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
      */
     gs_glyph_data_t gdata;
     gs_font_type1 *const pfont1 = (gs_font_type1 *)font;
-    int code = pfont1->data.procs.glyph_data(pfont1, glyph, &gdata);
+    int code;
     const gs_glyph_data_t *pgd = &gdata;
     gs_type1_state cis;
     gs_imager_state gis;
 
+    gdata.memory = pfont1->memory;
+    code = pfont1->data.procs.glyph_data(pfont1, glyph, &gdata);
     if (code < 0)
 	return code;
     if (pgd->bits.size <= max(pfont1->data.lenIV, 0))
@@ -1056,6 +1065,8 @@ same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont,
     int i, code = 0;
     bool exit = false;
 
+    gdata0.memory = cfont->memory;
+    gdata1.memory = ofont->memory;
     /* Scan the font to determine the size of the subrs. */
     for (i = 0; !exit; i++) {
 	int code0 = cfont->data.procs.subr_data((gs_font_type1 *)cfont, 
@@ -1611,11 +1622,13 @@ copy_glyph_cid0(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     gs_font_cid0 *copied0 = (gs_font_cid0 *)copied;
     int fdbytes = copied0->cidata.FDBytes;
     int fidx;
-    int code = fcid0->cidata.glyph_data((gs_font_base *)font, glyph,
-					&gdata, &fidx);
+    int code;
     byte prefix[MAX_FDBytes];
     int i;
 
+    gdata.memory = font->memory;
+    code = fcid0->cidata.glyph_data((gs_font_base *)font, glyph,
+		&gdata, &fidx);
     if (code < 0)
 	return code;
     for (i = fdbytes - 1; i >= 0; --i, fidx >>= 8)
@@ -2037,6 +2050,7 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 	gs_glyph_data_t gdata;
 	gs_char chars[2];
 
+	gdata.memory = font->memory;
 	/* Since we just copied the glyph, copied_glyph_slot can't fail. */
 	DISCARD(copied_glyph_slot(cf_data(copied), glyph, &pcg));
 	gs_glyph_data_from_string(&gdata, pcg->gdata.data, pcg->gdata.size,

@@ -180,6 +180,7 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
     ulong fidx;
     int code;
 
+    gdata.memory = pfont->memory;
     if (!r_has_type(&pfdata->u.cid0.GlyphDirectory, t_null)) {
         code = font_gdir_get_outline(pfont->memory,
 				     &pfdata->u.cid0.GlyphDirectory,
@@ -256,6 +257,7 @@ z9_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat
     gs_glyph_data_t gdata;
     int code, fidx, ocode;
 
+    gdata.memory = font->memory;
     code = pfcid->cidata.glyph_data((gs_font_base *)pfcid, glyph, &gdata,
 				    &fidx);
     if (code < 0)
@@ -520,6 +522,7 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
 	return_error(e_invalidfont);
     check_type(*op, t_integer);
     pfcid = (gs_font_cid0 *)pfont;
+    gdata.memory = pfont->memory;
     code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
 			(gs_glyph)(gs_min_cid_glyph + op->value.intval),
 				    &gdata, &fidx);
