@@ -1,4 +1,4 @@
-#    Copyright (C) 1997-2002 artofcode LLC. All rights reserved.
+#    Copyright (C) 1997-2003 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -48,11 +48,12 @@ fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_PROGRAM) $(PSLIBDIR)/$$f $(scriptdir); fi;\
 	done'
 
+PSRESDIR=$(PSLIBDIR)/../Resource
 PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-install-data: install-libdata install-doc install-man install-examples
+install-data: install-libdata install-resdata install-doc install-man install-examples
 
 # There's no point in providing a complete dependency list: we include
 # one file from each subdirectory just as a sanity check.
@@ -85,6 +86,20 @@ pdf2dsc.ps pdfopt.ps ;\
 	done'
 	$(SH) -c 'for f in $(PSLIBDIR)/*.ppd $(PSLIBDIR)/*.rpd $(PSLIBDIR)/*.upp $(PSLIBDIR)/*.xbm $(PSLIBDIR)/*.xpm;\
 	do $(INSTALL_DATA) $$f $(gsdatadir)/lib ;\
+	done'
+
+# install the default resource files
+RES_CATEGORIES=CMap Decoding
+install-resdata: $(PSRESDIR)/Decoding/Unicode
+	-mkdir -p $(datadir)
+	-mkdir -p $(gsdir)
+	-mkdir -p $(gsdatadir)/Resource
+	$(SH) -c 'for dir in $(RES_CATEGORIES); do \
+	  rdir=$(gsdatadir)/Resource/$$dir ; \
+	  test -d $$rdir || mkdir -p $$rdir ; \
+	  for file in $(PSRESDIR)/$$dir/*; do \
+	    if test -f $$file; then $(INSTALL_DATA) $$file $$rdir ; fi \
+	  done \
 	done'
 
 # install html documentation
