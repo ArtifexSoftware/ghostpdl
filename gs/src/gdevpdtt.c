@@ -425,15 +425,15 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
 /*
  * Compute and return the orig_matrix of a font.
  */
-private int
-font_orig_scale(const gs_font *font, double *sx, double *sy)
+int
+pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
 {
     switch (font->FontType) {
     case ft_composite:		/* subfonts have their own FontMatrix */
     case ft_TrueType:
     case ft_CID_TrueType:
 	/* The TrueType FontMatrix is 1 unit per em, which is what we want. */
-	*sx = *sy = 1.0;
+	gs_make_identity(pmat);
 	return 0;
     case ft_encrypted:
     case ft_encrypted2:
@@ -467,28 +467,28 @@ font_orig_scale(const gs_font *font, double *sx, double *sy)
 		base_font->FontMatrix.yx == 0 &&
 		any_abs(base_font->FontMatrix.yy) == 1.0/2048
 		)
-		*sx = *sy = 1.0/2048;
+		*pmat = base_font->FontMatrix;
 	    else
-		*sx = *sy = 0.001;
-	    if (base_font->FontMatrix.yy < 0)
-		*sy = -*sy;
+		gs_make_scaling(0.001, 0.001, pmat);
 	}
 	return 0;
     default:
 	return_error(gs_error_rangecheck);
     }
 }
-int
-pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
-{
-    double sx, sy;
-    int code = font_orig_scale(font, &sx, &sy);
+
+private int
+font_orig_scale(const gs_font *font, double *sx)
+{   
+    gs_matrix mat;
+    int code = pdf_font_orig_matrix(font, &mat);
 
     if (code < 0)
 	return code;
-    gs_make_scaling(sx, sy, pmat);
+    *sx = mat.xx;
     return 0;
 }
+
 
 /*
  * Check font resource for encoding compatibility.
@@ -1250,14 +1250,14 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
     /*
      * orig_scale is 1.0 for TrueType, 0.001 or 1.0/2048 for Type 1.
      */
-    double sxc, syc, sxo, syo;
+    double sxc, sxo;
     double scale_c, scale_o;
     int code, rcode = 0;
 
-    code = font_orig_scale((const gs_font *)cfont, &sxc, &syc);
+    code = font_orig_scale((const gs_font *)cfont, &sxc);
     if (code < 0)
 	return code;
-    code = font_orig_scale((const gs_font *)ofont, &sxo, &syo);
+    code = font_orig_scale((const gs_font *)ofont, &sxo);
     if (code < 0)
 	return code;
     scale_c = sxc * 1000.0;

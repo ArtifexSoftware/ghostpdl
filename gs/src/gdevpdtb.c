@@ -181,6 +181,10 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     if (code < 0)
 	goto fail;
     memset(pbfont, 0, sizeof(*pbfont));
+    {
+	/* hack : AR 4,5 ignores FontMatrix.ty */
+	copied->FontMatrix.tx = copied->FontMatrix.ty = 0;
+    }
     switch (font->FontType) {
     case ft_encrypted:
     case ft_encrypted2:
