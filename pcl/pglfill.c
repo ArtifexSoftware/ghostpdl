@@ -653,7 +653,8 @@ hpgl_SP(
 	while ( pen > max_pen )
 	    pen = pen - max_pen;
     }
-    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+    if ( !pgls->g.polygon_mode )
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     pgls->g.pen.selected = pen;
     return 0;
 }
@@ -867,7 +868,7 @@ pglfill_do_registration(
      * in polygon mode itself.`
      */
     HPGL_COMMAND('S', 'M', hpgl_SM, hpgl_cdf_pcl_rtl_both),
-    HPGL_COMMAND('S', 'P', hpgl_SP, hpgl_cdf_pcl_rtl_both),
+    HPGL_COMMAND('S', 'P', hpgl_SP, hpgl_cdf_pcl_rtl_both|hpgl_cdf_polygon),
     HPGL_COMMAND('S', 'V', hpgl_SV, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('T', 'R', hpgl_TR, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('U', 'L', hpgl_UL, hpgl_cdf_pcl_rtl_both),
