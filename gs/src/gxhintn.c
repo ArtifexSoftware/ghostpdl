@@ -2023,7 +2023,7 @@ private void t1_hinter__unfix_opposite_to_common(t1_hinter * this)
 				p_oj = (!k ? &this->hint[j].aligned1 : &this->hint[j].aligned0);
 				p_agj = (!k ? &this->hint[j].ag0 : &this->hint[j].ag1);
 				*p_aj = am;
-				if (*p_oj > weak)
+				if (*p_oj == aligned)
 				    *p_oj = weak;
 				*p_agj = agm;
 			    }
