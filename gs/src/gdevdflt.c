@@ -40,11 +40,13 @@ set_cinfo_polarity(gx_device * dev, gx_color_polarity_t new_polarity)
         return;
     }
 #endif
-
+    /*
+     * The meory devices assume that single color devices are gray.
+     * This may not be true if SeparationOrder is specified.  Thus only
+     * change the value if the current value is unknown.
+     */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_UNKNOWN)
         dev->color_info.polarity = new_polarity;
-    else if (dev->color_info.polarity != new_polarity)
-        dprintf("set_cinfo_polarity: different polarity already set");
 }
 
 
@@ -461,41 +463,41 @@ gx_device_fill_in_procs(register gx_device * dev)
      */
     switch (dev->color_info.num_components) {
     case 1:     /* DeviceGray or DeviceInvertGray */
-        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
-            fill_dev_proc( dev,
+	if (dev_proc(dev, get_color_mapping_procs) == NULL) {
+	    /*
+	     * If not gray then the device must provide the color
+	     * mapping procs.
+	     */
+	    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+		fill_dev_proc( dev,
                            get_color_mapping_procs,
                            gx_default_DevGray_get_color_mapping_procs );
-        } else {
-            dprintf( "Subtractive gray mapping not implemented");
-#if 0
-            fill_dev_proc( dev,
-                           get_color_mapping_procs,
-                           gx_default_InvertDevGray_get_color_mapping_procs );
-#endif
-        }
+            }
+	}
         fill_dev_proc( dev,
                        get_color_comp_index,
                        gx_default_DevGray_get_color_comp_index );
         break;
 
     case 3:
-        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
-            fill_dev_proc( dev,
+	if (dev_proc(dev, get_color_mapping_procs) == NULL) {
+            if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+                fill_dev_proc( dev,
                            get_color_mapping_procs,
                            gx_default_DevRGB_get_color_mapping_procs );
-            fill_dev_proc( dev,
+                fill_dev_proc( dev,
                            get_color_comp_index,
                            gx_default_DevRGB_get_color_comp_index );
-        } else {
-            dprintf ( "DeviceCMY mapping procs not supported\n" );
+            } else {
 #if 0
-            fill_dev_proc( dev,
+                fill_dev_proc( dev,
                            get_color_mapping_procs,
                            gx_default_DevCMY_get_color_mapping_procs );
-            fill_dev_proc( dev,
+                fill_dev_proc( dev,
                            get_color_comp_index,
                            gx_default_DevCMY_get_color_comp_index );
 #endif
+	    }
         }
         break;
 

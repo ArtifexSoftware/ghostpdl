@@ -27,6 +27,7 @@
 #include "gstypes.h"
 #include "icc.h"
 #include "gxdcconv.h"
+#include "gdevdevn.h"
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -41,28 +42,11 @@ private dev_proc_get_params(psd_get_params);
 private dev_proc_put_params(psd_put_params);
 private dev_proc_print_page(psd_print_page);
 private dev_proc_map_color_rgb(psd_map_color_rgb);
-private dev_proc_get_color_mapping_procs(get_spotrgb_color_mapping_procs);
-#if 0
-private dev_proc_get_color_mapping_procs(get_spotcmyk_color_mapping_procs);
-#endif
+private dev_proc_get_color_mapping_procs(get_psdrgb_color_mapping_procs);
 private dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
 private dev_proc_get_color_comp_index(psd_get_color_comp_index);
 private dev_proc_encode_color(psd_encode_color);
 private dev_proc_decode_color(psd_decode_color);
-
-/*
- * Type definitions associated with the fixed color model names.
- */
-typedef const char * fixed_colorant_name;
-typedef fixed_colorant_name fixed_colorant_names_list[];
-
-/*
- * Structure for holding SeparationNames and SeparationOrder elements.
- */
-typedef struct gs_separation_names_s {
-    int num_names;
-    const gs_param_string * names[GX_DEVICE_COLOR_MAX_COMPONENTS];
-} gs_separation_names;
 
 /* This is redundant with color_info.cm_name. We may eliminate this
    typedef and use the latter string for everything. */
@@ -82,32 +66,9 @@ typedef struct psd_device_s {
 
     /*        ... device-specific parameters ... */
 
+    gs_devn_params devn_params;		/* DeviceN generated parameters */
+
     psd_color_model color_model;
-
-    /*
-     * Bits per component (device colorant).  Currently only 1 and 8 are
-     * supported.
-     */
-    int bitspercomponent;
-
-    /*
-     * Pointer to the colorant names for the color model.  This will be
-     * null if we have DeviceN type device.  The actual possible colorant
-     * names are those in this list plus those in the separation_names
-     * list (below).
-     */
-    const fixed_colorant_names_list * std_colorant_names;
-    int num_std_colorant_names;	/* Number of names in list */
-
-    /*
-    * Separation names (if any).
-    */
-    gs_separation_names separation_names;
-
-    /*
-     * Separation Order (if specified).
-     */
-    gs_separation_names separation_order;
 
     /* ICC color profile objects, for color conversion. */
     char profile_rgb_fn[256];
@@ -194,19 +155,10 @@ private const fixed_colorant_names_list DeviceRGBComponents = {
 	0		/* List terminator */
 };
 
-private const fixed_colorant_names_list DeviceCMYKComponents = {
-	"Cyan",
-	"Magenta",
-	"Yellow",
-	"Black",
-	0		/* List terminator */
-};
-
-
 /*
  * Example device with RGB and spot color support
  */
-private const gx_device_procs spot_rgb_procs = device_procs(get_spotrgb_color_mapping_procs);
+private const gx_device_procs spot_rgb_procs = device_procs(get_psdrgb_color_mapping_procs);
 
 const psd_device gs_psdrgb_device =
 {   
@@ -221,14 +173,17 @@ const psd_device gs_psdrgb_device =
 	 GX_CINFO_SEP_LIN,      /* Linear & Seperable */
 	 "DeviceRGB",		/* Process color model name */
 	 psd_print_page),	/* Printer page print routine */
-    /* DeviceN device specific parameters */
-    psd_DEVICE_RGB,		/* Color model */
-    8,				/* Bits per color - must match ncomp, depth, etc. above */
+    /* devn_params specific parameters */
+    { 8,			/* Bits per color - must match ncomp, depth, etc. above */
     				/* Names of color model colorants */
-    (const fixed_colorant_names_list *) &DeviceRGBComponents,
-    3,				/* Number colorants for RGB */
-    {0},			/* SeparationNames */
-    {0}				/* SeparationOrder names */
+      (fixed_colorant_names_list *) &DeviceRGBComponents,
+      3,			/* Number colorants for RGB */
+      {0},			/* SeparationNames */
+      {0},			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    /* PSD device specific parameters */
+    psd_DEVICE_RGB,		/* Color model */
 };
 
 private const gx_device_procs spot_cmyk_procs = device_procs(get_psd_color_mapping_procs);
@@ -246,25 +201,27 @@ const psd_device gs_psdcmyk_device =
 	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
 	 "DeviceCMYK",		/* Process color model name */
 	 psd_print_page),	/* Printer page print routine */
-    /* DeviceN device specific parameters */
-    psd_DEVICE_CMYK,		/* Color model */
-    8,				/* Bits per color - must match ncomp, depth, etc. above */
+    /* devn_params specific parameters */
+    { 8,			/* Bits per color - must match ncomp, depth, etc. above */
     				/* Names of color model colorants */
-    (const fixed_colorant_names_list *) &DeviceCMYKComponents,
-    4,				/* Number colorants for RGB */
-    {0},			/* SeparationNames */
-    {0}				/* SeparationOrder names */
+      (fixed_colorant_names_list *) &DeviceCMYKComponents,
+      4,			/* Number colorants for CMYK */
+      {0},			/* SeparationNames */
+      {0},			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    /* PSD device specific parameters */
+    psd_DEVICE_CMYK,		/* Color model */
 };
 
 /*
  * The following procedures are used to map the standard color spaces into
- * the color components for the spotrgb device.
+ * the color components for the psdrgb device.
  */
 private void
-gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_psdrgb_cm(gx_device * dev, frac gray, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    int i = ((psd_device *)dev)->separation_names.num_names;
+    int i = ((psd_device *)dev)->devn_params.separations.num_separations;
 
     out[0] = out[1] = out[2] = gray;
     for(; i>0; i--)			/* Clear spot colors */
@@ -272,11 +229,10 @@ gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
 }
 
 private void
-rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_psdrgb_cm(gx_device * dev, const gs_imager_state *pis,
 				  frac r, frac g, frac b, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    int i = ((psd_device *)dev)->separation_names.num_names;
+    int i = ((psd_device *)dev)->devn_params.separations.num_separations;
 
     out[0] = r;
     out[1] = g;
@@ -286,10 +242,9 @@ rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_imager_state *pis,
 }
 
 private void
-cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_psdrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    int i = ((psd_device *)dev)->separation_names.num_names;
+    int i = ((psd_device *)dev)->devn_params.separations.num_separations;
 
     color_cmyk_to_rgb(c, m, y, k, NULL, out);
     for(; i>0; i--)			/* Clear spot colors */
@@ -297,53 +252,64 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
 }
 
 private void
-gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
+gray_cs_to_psdcmyk_cm(gx_device * dev, frac gray, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    int i = ((psd_device *)dev)->separation_names.num_names;
+    int i = dev->color_info.num_components - 1;
+    int * map =
+      (int *)(&((psd_device *) dev)->devn_params.separation_order_map);
 
-    out[0] = out[1] = out[2] = 0;
-    out[3] = frac_1 - gray;
-    for(; i>0; i--)			/* Clear spot colors */
-        out[3 + i] = 0;
+    for(; i >= 0; i--)			/* Clear colors */
+        out[i] = frac_0;
+    if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = frac_1 - gray;
 }
 
 private void
-rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_psdcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    psd_device *xdev = (psd_device *)dev;
-    int n = xdev->separation_names.num_names;
-    int i;
+    int i = dev->color_info.num_components - 1;
+    int * map =
+      (int *)(&((psd_device *) dev)->devn_params.separation_order_map);
+    frac cmyk[4];
 
-    color_rgb_to_cmyk(r, g, b, pis, out);
-    for(i = 0; i < n; i++)			/* Clear spot colors */
-	out[4 + i] = 0;
+    for(; i >= 0; i--)			/* Clear colors */
+        out[i] = frac_0;
+    color_rgb_to_cmyk(r, g, b, pis, cmyk);
+    if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = cmyk[0];
+    if ((i = map[1]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = cmyk[1];
+    if ((i = map[2]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = cmyk[2];
+    if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = cmyk[3];
 }
 
 private void
-cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_psdcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    psd_device *xdev = (psd_device *)dev;
-    int n = xdev->separation_names.num_names;
-    int i;
+    int i = dev->color_info.num_components - 1;
+    int * map =
+      (int *)(&((psd_device *) dev)->devn_params.separation_order_map);
 
-    out[0] = c;
-    out[1] = m;
-    out[2] = y;
-    out[3] = k;
-    for(i = 0; i < n; i++)			/* Clear spot colors */
-	out[4 + i] = 0;
-}
+    for(; i >= 0; i--)			/* Clear colors */
+        out[i] = frac_0;
+    if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = c;
+    if ((i = map[1]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = m;
+    if ((i = map[2]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = y;
+    if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
+        out[i] = k;
+};
 
 private void
 cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     psd_device *xdev = (psd_device *)dev;
-    int n = xdev->separation_names.num_names;
+    int n = xdev->devn_params.separations.num_separations;
     icmLuBase *luo = xdev->lu_cmyk;
     int i;
 
@@ -375,8 +341,6 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 private void
 gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-
     cmyk_cs_to_spotn_cm(dev, 0, 0, 0, (frac)(frac_1 - gray), out);
 }
 
@@ -384,9 +348,8 @@ private void
 rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     psd_device *xdev = (psd_device *)dev;
-    int n = xdev->separation_names.num_names;
+    int n = xdev->devn_params.separations.num_separations;
     icmLuBase *luo = xdev->lu_rgb;
     int i;
 
@@ -412,15 +375,15 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
     }
 }
 
-private const gx_cm_color_map_procs spotRGB_procs = {
-    gray_cs_to_spotrgb_cm, rgb_cs_to_spotrgb_cm, cmyk_cs_to_spotrgb_cm
+private const gx_cm_color_map_procs psdRGB_procs = {
+    gray_cs_to_psdrgb_cm, rgb_cs_to_psdrgb_cm, cmyk_cs_to_psdrgb_cm
 };
 
-private const gx_cm_color_map_procs spotCMYK_procs = {
-    gray_cs_to_spotcmyk_cm, rgb_cs_to_spotcmyk_cm, cmyk_cs_to_spotcmyk_cm
+private const gx_cm_color_map_procs psdCMYK_procs = {
+    gray_cs_to_psdcmyk_cm, rgb_cs_to_psdcmyk_cm, cmyk_cs_to_psdcmyk_cm
 };
 
-private const gx_cm_color_map_procs spotN_procs = {
+private const gx_cm_color_map_procs psdN_procs = {
     gray_cs_to_spotn_cm, rgb_cs_to_spotn_cm, cmyk_cs_to_spotn_cm
 };
 
@@ -429,18 +392,10 @@ private const gx_cm_color_map_procs spotN_procs = {
  * to color model conversion routines.
  */
 private const gx_cm_color_map_procs *
-get_spotrgb_color_mapping_procs(const gx_device * dev)
+get_psdrgb_color_mapping_procs(const gx_device * dev)
 {
-    return &spotRGB_procs;
+    return &psdRGB_procs;
 }
-
-#if 0
-private const gx_cm_color_map_procs *
-get_spotcmyk_color_mapping_procs(const gx_device * dev)
-{
-    return &spotCMYK_procs;
-}
-#endif
 
 private const gx_cm_color_map_procs *
 get_psd_color_mapping_procs(const gx_device * dev)
@@ -448,11 +403,11 @@ get_psd_color_mapping_procs(const gx_device * dev)
     const psd_device *xdev = (const psd_device *)dev;
 
     if (xdev->color_model == psd_DEVICE_RGB)
-	return &spotRGB_procs;
+	return &psdRGB_procs;
     else if (xdev->color_model == psd_DEVICE_CMYK)
-	return &spotCMYK_procs;
+	return &psdCMYK_procs;
     else if (xdev->color_model == psd_DEVICE_N)
-	return &spotN_procs;
+	return &psdN_procs;
     else
 	return NULL;
 }
@@ -463,7 +418,7 @@ get_psd_color_mapping_procs(const gx_device * dev)
 private gx_color_index
 psd_encode_color(gx_device *dev, const gx_color_value colors[])
 {
-    int bpc = ((psd_device *)dev)->bitspercomponent;
+    int bpc = ((psd_device *)dev)->devn_params.bitspercomponent;
     int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_index color = 0;
     int i = 0;
@@ -482,7 +437,7 @@ psd_encode_color(gx_device *dev, const gx_color_value colors[])
 private int
 psd_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 {
-    int bpc = ((psd_device *)dev)->bitspercomponent;
+    int bpc = ((psd_device *)dev)->devn_params.bitspercomponent;
     int drop = sizeof(gx_color_value) * 8 - bpc;
     int mask = (1 << bpc) - 1;
     int i = 0;
@@ -567,15 +522,18 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
     int code;
     bool seprs = false;
     gs_param_string_array scna;
+    gs_param_string_array sona;
     gs_param_string pos;
     gs_param_string prgbs;
     gs_param_string pcmyks;
 
     set_param_array(scna, NULL, 0);
+    set_param_array(sona, NULL, 0);
 
     if ( (code = gdev_prn_get_params(pdev, plist)) < 0 ||
          (code = sample_device_crd_get_params(pdev, plist, "CRDDefault")) < 0 ||
 	 (code = param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
+	 (code = param_write_name_array(plist, "SeparationOrder", &sona)) < 0 ||
 	 (code = param_write_bool(plist, "Separations", &seprs)) < 0)
 	return code;
 
@@ -627,35 +585,6 @@ check_process_color_names(const fixed_colorant_names_list * pcomp_list,
     return false;
 }
 
-/*
- * This utility routine calculates the number of bits required to store
- * color information.  In general the values are rounded up to an even
- * byte boundary except those cases in which mulitple pixels can evenly
- * into a single byte.
- *
- * The parameter are:
- *   ncomp - The number of components (colorants) for the device.  Valid
- * 	values are 1 to GX_DEVICE_COLOR_MAX_COMPONENTS
- *   bpc - The number of bits per component.  Valid values are 1, 2, 4, 5,
- *	and 8.
- * Input values are not tested for validity.
- */
-static int
-bpc_to_depth(int ncomp, int bpc)
-{
-    static const byte depths[4][8] = {
-	{1, 2, 0, 4, 8, 0, 0, 8},
-	{2, 4, 0, 8, 16, 0, 0, 16},
-	{4, 8, 0, 16, 16, 0, 0, 24},
-	{4, 8, 0, 16, 32, 0, 0, 32}
-    };
-
-    if (ncomp <=4 && bpc <= 8)
-        return depths[ncomp -1][bpc-1];
-    else
-    	return (ncomp * bpc + 7) & 0xf8;
-}
-
 #define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
     BEGIN\
     switch (code = pread(plist, (param_name = pname), &(pa))) {\
@@ -676,7 +605,7 @@ e:	param_signal_error(plist, param_name, ecode);\
 
 private int
 psd_param_read_fn(gs_param_list *plist, const char *name,
-		  gs_param_string *pstr, int max_len)
+		  gs_param_string *pstr, uint max_len)
 {
     int code = param_read_string(plist, name, pstr);
 
@@ -702,27 +631,27 @@ psd_set_color_model(psd_device *xdev, psd_color_model color_model)
 {
     xdev->color_model = color_model;
     if (color_model == psd_DEVICE_GRAY) {
-	xdev->std_colorant_names =
-	    (const fixed_colorant_names_list *) &DeviceGrayComponents;
-	xdev->num_std_colorant_names = 1;
+	xdev->devn_params.std_colorant_names =
+	    (fixed_colorant_names_list *) &DeviceGrayComponents;
+	xdev->devn_params.num_std_colorant_names = 1;
 	xdev->color_info.cm_name = "DeviceGray";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == psd_DEVICE_RGB) {
-	xdev->std_colorant_names =
-	    (const fixed_colorant_names_list *) &DeviceRGBComponents;
-	xdev->num_std_colorant_names = 3;
+	xdev->devn_params.std_colorant_names =
+	    (fixed_colorant_names_list *) &DeviceRGBComponents;
+	xdev->devn_params.num_std_colorant_names = 3;
 	xdev->color_info.cm_name = "DeviceRGB";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == psd_DEVICE_CMYK) {
-	xdev->std_colorant_names =
-	    (const fixed_colorant_names_list *) &DeviceCMYKComponents;
-	xdev->num_std_colorant_names = 4;
+	xdev->devn_params.std_colorant_names =
+	    (fixed_colorant_names_list *) &DeviceCMYKComponents;
+	xdev->devn_params.num_std_colorant_names = 4;
 	xdev->color_info.cm_name = "DeviceCMYK";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else if (color_model == psd_DEVICE_N) {
-	xdev->std_colorant_names =
-	    (const fixed_colorant_names_list *) &DeviceCMYKComponents;
-	xdev->num_std_colorant_names = 4;
+	xdev->devn_params.std_colorant_names =
+	    (fixed_colorant_names_list *) &DeviceCMYKComponents;
+	xdev->devn_params.num_std_colorant_names = 4;
 	xdev->color_info.cm_name = "DeviceN";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else {
@@ -739,20 +668,16 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
     psd_device * const pdevn = (psd_device *) pdev;
     gx_device_color_info save_info;
     gs_param_name param_name;
-    int npcmcolors;
-    int num_spot = pdevn->separation_names.num_names;
+    int num_spot = pdevn->devn_params.separations.num_separations;
     int ecode = 0;
     int code;
-    gs_param_string_array scna;
     gs_param_string po;
     gs_param_string prgb;
     gs_param_string pcmyk;
     gs_param_string pcm;
     psd_color_model color_model = pdevn->color_model;
-
-    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
-	break;
-    } END_ARRAY_PARAM(scna, scne);
+    int max_sep = pdevn->color_info.num_components;
+    gs_devn_params * pparams = &(((psd_device *)pdev)->devn_params);
 
     code = psd_param_read_fn(plist, "ProfileOut", &po,
 				 sizeof(pdevn->profile_out_fn));
@@ -783,54 +708,17 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 	ecode = code;
 
     /*
-     * Save the color_info in case gdev_prn_put_params fails, and for
-     * comparison.
+     * Save the color_info in case devicen_put_params fails.
      */
     save_info = pdevn->color_info;
     ecode = psd_set_color_model(pdevn, color_model);
     if (ecode == 0)
-	ecode = gdev_prn_put_params(pdev, plist);
+	ecode = devicen_put_params(pdev, pparams, plist);
     if (ecode < 0) {
 	pdevn->color_info = save_info;
 	return ecode;
     }
 
-    /* Separations are only valid with a subrtractive color model */
-    if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-        /*
-         * Process the separation color names.  Remove any names that already match
-         * the process color model colorant names for the device.
-         */
-        if (scna.data != 0) {
-	    int i;
-	    int num_names = scna.size;
-	    const fixed_colorant_names_list * pcomp_names = 
-	        ((psd_device *)pdev)->std_colorant_names;
-
-	    for (i = num_spot = 0; i < num_names; i++) {
-	        if (!check_process_color_names(pcomp_names, &scna.data[i]))
-	            pdevn->separation_names.names[num_spot++] = &scna.data[i];
-	    }
-	    pdevn->separation_names.num_names = num_spot;
-	    if (pdevn->is_open)
-	        gs_closedevice(pdev);
-        }
-
-        npcmcolors = pdevn->num_std_colorant_names;
-        pdevn->color_info.num_components = npcmcolors + num_spot;
-        /* 
-         * The DeviceN device can have zero components if nothing has been specified.
-         * This causes some problems so force at least one component until something
-         * is specified.
-         */
-        if (!pdevn->color_info.num_components)
-	    pdevn->color_info.num_components = 1;
-        pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components,
-    						pdevn->bitspercomponent);
-        if (pdevn->color_info.depth != save_info.depth) {
-	    gs_closedevice(pdev);
-        }
-    }
     if (po.data != 0) {
 	memcpy(pdevn->profile_out_fn, po.data, po.size);
 	pdevn->profile_out_fn[po.size] = 0;
@@ -862,39 +750,29 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
  * number if the name is found.  It returns a negative value if not found.
  */
 private int
-psd_get_color_comp_index(const gx_device * dev, const char * pname, int name_size, int src_index)
+psd_get_color_comp_index(const gx_device * dev, const char * pname,
+					int name_size, int component_type)
 {
-/* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    const fixed_colorant_names_list * list = ((const psd_device *)dev)->std_colorant_names;
-    const fixed_colorant_name * pcolor = *list;
+    psd_device * pdev = (psd_device *) dev;
+    gs_devn_params * pparams = &(((psd_device *)dev)->devn_params);
+    int num_order = pparams->separation_order.num_names;
     int color_component_number = 0;
-    int i;
 
-    /* Check if the component is in the implied list. */
-    if (pcolor) {
-	while( *pcolor) {
-	    if (compare_color_names(pname, name_size, *pcolor, strlen(*pcolor)))
-		return color_component_number;
-	    pcolor++;
-	    color_component_number++;
-	}
+    /*
+     * Check if the component is in either the process color model list
+     * or in the SeparationNames list.
+     */
+    color_component_number = check_pcm_and_separation_names(dev, pparams,
+					pname, name_size, component_type);
+    /* Check if the component is in the separation order list. */
+
+    if (color_component_number >= 0 && num_order) {
+	color_component_number = 
+		pparams->separation_order_map[color_component_number];
+        return color_component_number;
     }
 
-    /* Check if the component is in the separation names list. */
-    {
-	const gs_separation_names * separations = &((const psd_device *)dev)->separation_names;
-	int num_spot = separations->num_names;
-
-	for (i=0; i<num_spot; i++) {
-	    if (compare_color_names((const char *)separations->names[i]->data,
-		  separations->names[i]->size, pname, name_size)) {
-		return color_component_number;
-	    }
-	    color_component_number++;
-	}
-    }
-
-    return -1;
+    return color_component_number;
 }
 
 
@@ -914,8 +792,13 @@ typedef struct {
 
     int width;
     int height;
-    int base_bytes_pp; /* almost always 3 (rgb) */
+    int base_bytes_pp;	/* almost always 3 (rgb) or 4 (CMYK) */
     int n_extra_channels;
+    int num_channels;	/* base_bytes_pp + any spot colors that are imaged */
+    /* Map output channel number to original separation number. */
+    int chnl_to_orig_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    /* Map output channel number to gx_color_index position. */
+    int chnl_to_position[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
     /* byte offset of image data */
     int image_data_off;
@@ -924,10 +807,38 @@ typedef struct {
 private int
 psd_setup(psd_write_ctx *xc, psd_device *dev)
 {
-    xc->base_bytes_pp = dev->color_info.num_components - dev->separation_names.num_names;
-    xc->n_extra_channels = dev->separation_names.num_names;
+    int i;
+
+#define NUM_CMYK_COMPONENTS 4
+    xc->base_bytes_pp = dev->devn_params.num_std_colorant_names;
+    xc->num_channels = xc->base_bytes_pp;
+    xc->n_extra_channels = dev->devn_params.separations.num_separations;
     xc->width = dev->width;
     xc->height = dev->height;
+
+    /*
+     * Determine the order of the output components.  This is based upon
+     * the SeparationOrder parameter.  This parameter can be used to select
+     * which planes are actually imaged.  For the process color model channels
+     * we image the channels which are requested.  Non requested process color
+     * model channels are simply filled with white.  For spot colors we only
+     * image the requested channels.  Note:  There are no spot colors with
+     * the RGB color model.
+     */
+    for (i = 0; i < xc->base_bytes_pp + xc->n_extra_channels; i++)
+	xc->chnl_to_position[i] = -1;
+    for (i = 0; i < xc->base_bytes_pp + xc->n_extra_channels; i++) {
+	int sep_order_num = dev->devn_params.separation_order_map[i];
+
+	if (sep_order_num != GX_DEVICE_COLOR_MAX_COMPONENTS) {
+	    if (i < NUM_CMYK_COMPONENTS)	/* Do not rearrange CMYK */
+	        xc->chnl_to_position[i] = sep_order_num;
+	    else {				/* Re arrange separations */
+	        xc->chnl_to_position[xc->num_channels] = sep_order_num;
+	        xc->chnl_to_orig_sep[xc->num_channels++] = i;
+	    }
+	}
+    }
 
     return 0;
 }
@@ -971,9 +882,11 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
 {
     int code = 0;
     int n_extra_channels = xc->n_extra_channels;
-    int bytes_pp = xc->base_bytes_pp + n_extra_channels;
+    int bytes_pp = xc->num_channels;
     int chan_idx;
     int chan_names_len = 0;
+    int sep_num;
+    const gs_param_string *separation_name;
 
     psd_write(xc, (const byte *)"8BPS", 4); /* Signature */
     psd_write_16(xc, 1); /* Version - Always equal to 1*/
@@ -992,23 +905,21 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     /* Image Resources */
 
     /* Channel Names */
-    for (chan_idx = 0; chan_idx < xc->n_extra_channels; chan_idx++) {
-	const gs_param_string *separation_name =
-	    pdev->separation_names.names[chan_idx];
-	
+    for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
+	sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
+	separation_name = pdev->devn_params.separations.info[sep_num].name;
 	chan_names_len += (separation_name->size + 1);
     }    
     psd_write_32(xc, 12 + (chan_names_len + (chan_names_len % 2))
-			+ (12 + (14*xc->n_extra_channels))
+			+ (12 + (14 * (xc->num_channels - xc->base_bytes_pp)))
 			+ 28); 
     psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1006); /* 0x03EE */
     psd_write_16(xc, 0); /* PString */
     psd_write_32(xc, chan_names_len + (chan_names_len % 2));
-    for (chan_idx = 0; chan_idx < xc->n_extra_channels; chan_idx++) {
-	const gs_param_string *separation_name =
-	    pdev->separation_names.names[chan_idx];
-
+    for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
+	sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
+	separation_name = pdev->devn_params.separations.info[sep_num].name;
 	psd_write_8(xc, (byte) separation_name->size);
 	psd_write(xc, separation_name->data, separation_name->size);
     }    
@@ -1019,14 +930,8 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1007); /* 0x03EF */
     psd_write_16(xc, 0); /* PString */
-    psd_write_32(xc, 14 * xc->n_extra_channels); /* Length */
-    for (chan_idx = 0; chan_idx < xc->n_extra_channels; chan_idx++) {
-	/*
-	const gs_param_string *separation_name =
-	    pdev->separation_names.names[chan_idx];
-	psd_write_8(xc, separation_name->size);
-	psd_write(xc, separation_name->data, separation_name->size);
-	*/
+    psd_write_32(xc, 14 * (xc->num_channels - xc->base_bytes_pp)); /* Length */
+    for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
 	psd_write_16(xc, 02); /* CMYK */
 	psd_write_16(xc, 65535); /* Cyan */
 	psd_write_16(xc, 65535); /* Magenta */
@@ -1084,44 +989,76 @@ psd_calib_row(psd_write_ctx *xc, byte **tile_data, const byte *row,
     }
 }
 
+/*
+ * Output the image data for the PSD device.  The data for the PSD is
+ * written in separate planes.  If the device is psdrgb then we simply
+ * write three planes of RGB data.  The DeviceN parameters (SeparationOrder,
+ * SeparationCOlorNames, and MaxSeparations) are not applied to the psdrgb
+ * device.
+ *
+ * The DeviceN parameters are applied to the psdcmyk device.  If the
+ * SeparationOrder parameter is not specified then first we write out the data
+ * for the CMYK planes and then any separation planes.  If the SeparationOrder
+ * parameter is specified, then things are more complicated.  Logically we
+ * would simply write the planes specified by the SeparationOrder data.
+ * However Photoshop expects there to be CMYK data.  First we will write out
+ * four planes of data for CMYK.  If any of these colors are present in the
+ * SeparationOrder data then the plane data will contain the color information.
+ * If a color is not present then the plane data will be zero.  After the CMYK
+ * data, we will write out any separation data which is specified in the
+ * SeparationOrder data.
+ */
 private int
 psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 {
+    psd_device * const pdevn = (psd_device *) pdev;
     int code = 0;
     int raster = gdev_prn_raster(pdev);
     int i, j;
     byte *line, *sep_line;
     int base_bytes_pp = xc->base_bytes_pp;
     int n_extra_channels = xc->n_extra_channels;
-    int bytes_pp = base_bytes_pp + n_extra_channels;
+    int bytes_pp =pdev->color_info.num_components;
     int chan_idx;
     psd_device *xdev = (psd_device *)pdev;
     icmLuBase *luo = xdev->lu_out;
     byte *row;
 
-    /* Image Data Section */
     psd_write_16(xc, 0); /* Compression */
 
     line = gs_alloc_bytes(pdev->memory, raster, "psd_write_image_data");
     sep_line = gs_alloc_bytes(pdev->memory, xc->width, "psd_write_sep_line");
 
-    for (chan_idx = 0; chan_idx < bytes_pp; chan_idx++) {
+    /* Print the output planes */
+    for (chan_idx = 0; chan_idx < xc->num_channels; chan_idx++) {
 	for (j = 0; j < xc->height; ++j) {
-	    code = gdev_prn_get_bits(pdev, j, line, &row);
-	    if (luo == NULL) {
-		for (i=0; i<xc->width; ++i) {
-		    if (base_bytes_pp == 3) {
-			/* RGB */
-			sep_line[i] = row[i*bytes_pp + chan_idx];
-		    } else {
-			/* CMYK */
-			sep_line[i] = 255 - row[i*bytes_pp + chan_idx];
+	    int data_pos = xc->chnl_to_position[chan_idx];
+
+	    /* Check if the separation is present in the SeparationOrder */
+	    if (data_pos >= 0) {
+	        code = gdev_prn_get_bits(pdev, j, line, &row);
+	        if (luo == NULL) {
+		    for (i = 0; i < xc->width; ++i) {
+		        if (base_bytes_pp == 3) {
+			    /* RGB */
+			    sep_line[i] = row[i*bytes_pp + data_pos];
+		        } else {
+			    /* CMYK */
+			    sep_line[i] = 255 - row[i*bytes_pp + data_pos];
+		        }
 		    }
-		}
+	        } else {
+		    psd_calib_row(xc, &sep_line, row, data_pos, luo);
+	        }	
+	        psd_write(xc, sep_line, xc->width);
 	    } else {
-		psd_calib_row(xc, &sep_line, row, chan_idx, luo);
+		if (chan_idx < NUM_CMYK_COMPONENTS) {
+		    /* Write empty process color */
+		    for (i = 0; i < xc->width; ++i)
+		        sep_line[i] = 255;
+	            psd_write(xc, sep_line, xc->width);
+		}
 	    }	
-	    psd_write(xc, sep_line, xc->width);
 	}
     }
 

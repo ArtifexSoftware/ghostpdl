@@ -34,15 +34,24 @@ typedef fixed_colorant_name fixed_colorant_names_list[];
  * This value is arbitrary.  It is set simply to define a limit on
  * on the separation_name_array and map.
  */
-#define GX_DEVICE_MAX_SEPARATIONS 32
+#define GX_DEVICE_MAX_SEPARATIONS 16
+
+/*
+ * Structure for holding Separation information.
+ */
+typedef struct gs_separation_info_s {
+    bool has_cmyk_color;
+    gs_param_string * name;
+} gs_separation_info;
 
 /*
  * Structure for holding SeparationNames elements.
  */
-typedef struct gs_separation_names_s {
-    int num_names;
-    const gs_param_string * names[GX_DEVICE_MAX_SEPARATIONS];
-} gs_separation_names;
+typedef struct gs_separations_s {
+    int num_separations;
+    bool have_all_cmyk_colors;
+    gs_separation_info info[GX_DEVICE_MAX_SEPARATIONS];
+} gs_separations;
 
 /*
  * Structure for holding SeparationOrder elements.
@@ -67,16 +76,16 @@ typedef struct gs_devn_params_s {
     /*
      * Pointer to the colorant names for the color model.  This will be
      * null if we have DeviceN type device.  The actual possible colorant
-     * names are those in this list plus those in the separation_names
+     * names are those in this list plus those in the separation[i].info.name
      * list (below).
      */
-    const fixed_colorant_names_list * std_colorant_names;
-    const int num_std_colorant_names;	/* Number of names in list */
+    fixed_colorant_names_list * std_colorant_names;
+    int num_std_colorant_names;	/* Number of names in list */
 
     /*
-    * Separation names (if any).
+    * Separation info (if any).
     */
-    gs_separation_names separation_names;
+    gs_separations separations;
 
     /*
      * Separation Order (if specified).
@@ -135,7 +144,7 @@ int devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
  */
 int check_pcm_and_separation_names(const gx_device * dev,
 		const gs_devn_params * pparams, const char * pname,
-		int name_size, int src_index);
+		int name_size, int component_type);
 
 /*
  * This routine will check to see if the color component name  match those
@@ -150,7 +159,7 @@ int check_pcm_and_separation_names(const gx_device * dev,
  * number if the name is found.  It returns a negative value if not found.
  */
 int devicen_get_color_comp_index(const gx_device * dev, gs_devn_params * pparams,
-		const char * pname, int name_size, int src_index);
+		const char * pname, int name_size, int component_type);
 
 /*
  * This routine will extract a specified set of bits from a buffer and pack

@@ -169,7 +169,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     if (colors > 1) {
 	int RGBValues = dev->color_info.max_color + 1;
-	long ColorValues = (depth >= 32 ? -1 : 1L << depth);
+	long ColorValues = (depth >= (8 * sizeof(gx_color_index)) ? -1
+							: 1L << depth);
 
 	if ((code = param_write_int(plist, "RedValues", &RGBValues)) < 0 ||
 	    (code = param_write_int(plist, "GreenValues", &RGBValues)) < 0 ||
@@ -662,13 +663,13 @@ nce:
 	ecode = code;
     if ((code = param_check_long(plist, "PageCount", dev->PageCount, true)) < 0)
 	ecode = code;
-    if ((code = param_check_int(plist, "RedValues", RGBValues, colors > 1)) < 0)
+    if ((code = param_check_int(plist, "RedValues", RGBValues, true)) < 0)
 	ecode = code;
-    if ((code = param_check_int(plist, "GreenValues", RGBValues, colors > 1)) < 0)
+    if ((code = param_check_int(plist, "GreenValues", RGBValues, true)) < 0)
 	ecode = code;
-    if ((code = param_check_int(plist, "BlueValues", RGBValues, colors > 1)) < 0)
+    if ((code = param_check_int(plist, "BlueValues", RGBValues, true)) < 0)
 	ecode = code;
-    if ((code = param_check_long(plist, "ColorValues", ColorValues, colors > 1)) < 0)
+    if ((code = param_check_long(plist, "ColorValues", ColorValues, true)) < 0)
 	ecode = code;
     if (param_read_string(plist, "HWColorMap", &cms) != 1) {
 	byte palette[3 << 8];
