@@ -39,7 +39,7 @@
 #endif
 
 GSDLL gsdll;
-void *instance;
+struct gs_main_instance_s *instance;
 BOOL quitnow = FALSE;
 HANDLE hthread;
 DWORD thread_id;

@@ -569,6 +569,7 @@ process_client_order(gx_ht_order * porder, gs_state * pgs,
 }
 
 private const gx_ht_order_procs_t wts_order_procs = {
+    0, 0, 0, 0, 0
 };
 
 /**

@@ -145,7 +145,7 @@ private void dw_gt_get_dc(vd_trace_interface *I, vd_trace_interface **I1)
 private void dw_gt_release_dc(vd_trace_interface *I, vd_trace_interface **I1)
 {   get_window(); 
     if (host.tw == NULL) 
-        return(100);
+        return;
     --I->host->count_GetDC;
     if(I->host->count_GetDC == 0) {
 	ReleaseDC(I->host->tw->hwnd, I->host->hdc);
