@@ -7,11 +7,7 @@
 #
 # enumerations should printed we now print the ordinal value of the enumeration.
 #
-# does not yet support PJL.  It must be deleted in advance of using
-# the disassembler.
-#
-# streams not yet supported.
-#
+# make self.unpack endian like with binding
 
 # DIFFS between HP
 # Artifex reports the file offset of each operator HP does not.
@@ -278,27 +274,42 @@ pxl_attribute_name_to_attribute_number_dict = {
 class pxl_dis:
 
     def __init__(self, data):
-        self.next = 0
-        # the data
-	self.data = data;      
-        # data order and PXL protocol
+        # the class does not handle pjl, work around that here
+        index = 0
+        while( data[index] != ')' and  data[index] != '(' ):
+            index = index + 1
+        
+        # copy of the data without the PJL
+        data = data[index:]
+        self.data = data
+        
+        # parse out data order and protocol
         self.binding = data[0]
         self.protocol = data[12]
         self.revision = data[14]
+
         # check binding NB - should check other stuff too:
         # example: )<SP>HP-PCL XL;1;1<CR><LF>
         if self.binding not in ['(', ')', '`']:
             raise(SyntaxError)
+
         # pointer to data
         self.index = 0
-        # skip header
+
+        # skip over protocol and revision
         while( data[self.index] != '\n' ):
             self.index = self.index + 1
         self.index = self.index + 1
-        # size of current element and size of current array
+
+        # saved size of last array parsed
         self.size_of_element = -1;
         self.size_of_array = -1;
         self.unpack_string = ""
+
+        # dictionary of streams keyed by stream name
+	self.user_defined_streams = {}
+
+        # the n'th operator in the stream
         self.operator_position = 0
         self.__verbose = DEBUG
         
@@ -319,29 +330,52 @@ class pxl_dis:
     def nullAttributeList(self):
         return 0
     
+    # redefine unpack to handle endiannes
+    def unpack(self, format, data):
+
+        # prepend endian specifiers to stream if necessary.  NB we
+        # don't handle ascii streams and the endian formatting does
+        # not work properly right now:
+
+        # if ( self.big_endian_stream() ):
+        #
+        # format = '>' + format
+        # else:
+        # format = '<' + format
+
+        num = unpack(format, data)
+        return num
+    
     # implicitly read when parsing the tag
     def attributeIDValue(self):
         return 1
 
+    # search for next expected tag "tag"
     def getTag(self, tag):
         new_tag = unpack('B', self.data[self.index])[0]
-        self.debug_trace( "searching for %x found %x", tag, new_tag)
         if ( new_tag == tag ):
             self.index = self.index + 1
+            self.debug_trace( "found tag: %x", tag )
             return 1
+        self.debug_trace( "tag not found: %x", tag )
         return 0
 
+    # get the next operator
     def operatorTag(self):
         self.operator_position = self.operator_position + 1
         tag = unpack('B', self.data[self.index] )[0]
-        self.debug_trace( "searching for operator %x", tag)
         for k in pxl_tags_dict.keys():
             if ( pxl_tags_dict[k] == tag ):
                 print "// Operator Position: %d File Offset of operator" % \
                       self.operator_position, self.begin_attribute_pos
                 print k
                 self.index = self.index + 1
+                # handle special cases
+                if ( self.is_Embedded(k) ):
+                    self.process_EmbeddedInfo(k)
+                self.debug_trace( "found operator %s", k )
                 return 1
+        self.debug_trace( "did not find operator %x", tag )
         return 0
 
     def Tag_ubyte(self):
@@ -443,7 +477,7 @@ class pxl_dis:
     def Tag_ubyte_xy(self):
         if ( self.getTag( pxl_tags_dict['ubyte_xy'] ) ):
             print "ubyte_xy %d %d" % \
-                  unpack('BB', self.data[self.index:self.index+2]),
+                  self.unpack('BB', self.data[self.index:self.index+2]),
             self.index = self.index + 4
             return 1
         return 0
@@ -451,7 +485,7 @@ class pxl_dis:
     def Tag_uint16_xy(self):
         if ( self.getTag( pxl_tags_dict['uint16_xy'] ) ):
             print "uint16_xy %d %d" % \
-                  unpack('HH', self.data[self.index:self.index+4]),
+                  self.unpack('HH', self.data[self.index:self.index+4]),
             self.index = self.index + 4
             return 1
         return 0
@@ -459,7 +493,7 @@ class pxl_dis:
     def Tag_sint16_xy(self):
         if ( self.getTag( pxl_tags_dict['sint16_xy'] ) ):
             print "sint16_xy %d %d" % \
-                  unpack('hh', self.data[self.index:self.index+4]),
+                  self.unpack('hh', self.data[self.index:self.index+4]),
             self.index = self.index + 4
             return 1
         return 0
@@ -467,7 +501,7 @@ class pxl_dis:
     def Tag_uint32_xy(self):
         if ( self.getTag( pxl_tags_dict['uint32_xy'] ) ):
             print "uint32_xy" % \
-                  unpack('LL', self.data[self.index:self.index+8]),
+                  self.unpack('LL', self.data[self.index:self.index+8]),
             self.index = self.index + 8
             return 1
         return 0
@@ -475,7 +509,7 @@ class pxl_dis:
     def Tag_sint32_xy(self):
         if ( self.getTag( pxl_tags_dict['sint32_xy'] ) ):
             print "sint32_xy %d %d" % \
-                  unpack('ll', self.data[self.index:self.index+8]),
+                  self.unpack('ll', self.data[self.index:self.index+8]),
             self.index = self.index + 8
             return 1
         return 0
@@ -483,7 +517,7 @@ class pxl_dis:
     def Tag_real32_xy(self):
         if ( self.getTag( pxl_tags_dict['real32_xy'] ) ):
             print "real32_xy %f %f" % \
-                  unpack('ff', self.data[self.index:self.index+8]),
+                  self.unpack('ff', self.data[self.index:self.index+8]),
             self.index = self.index + 8
             return 1
         return 0
@@ -491,7 +525,7 @@ class pxl_dis:
     def Tag_ubyte_box(self):
         if ( self.getTag( pxl_tags_dict['ubyte_box'] ) ):
             print "ubyte_box %d %d %d %d" % \
-                  unpack('BBBB', self.data[self.index:self.index+4]),
+                  self.unpack('BBBB', self.data[self.index:self.index+4]),
             self.index = self.index + 4
             return 1
         return 0
@@ -499,7 +533,7 @@ class pxl_dis:
     def Tag_uint16_box(self):
         if ( self.getTag( pxl_tags_dict['uint16_box'] ) ):
             print "uint16_box %d %d %d %d" % \
-                  unpack('hhhh', self.data[self.index:self.index+8]),
+                  self.unpack('hhhh', self.data[self.index:self.index+8]),
             self.index = self.index + 8
             return 1
         return 0
@@ -507,7 +541,7 @@ class pxl_dis:
     def Tag_sint16_box(self):
         if ( self.getTag( pxl_tags_dict['sint16_box'] ) ):
             print "sint16_box %d %d %d %d" % \
-                  unpack('hhhh', self.data[self.index:self.index+8])
+                  self.unpack('hhhh', self.data[self.index:self.index+8])
             self.index = self.index + 8
             return 1
         return 0
@@ -515,7 +549,7 @@ class pxl_dis:
     def Tag_uint32_box(self):
         if ( self.getTag( pxl_tags_dict['uint32_box'] ) ):
             print "uint32_box %d %d %d %d" % \
-                  unpack('LLLL', self.data[self.index:self.index+16])
+                  self.unpack('LLLL', self.data[self.index:self.index+16])
             self.index = self.index + 32
             return 1
         return 0
@@ -523,7 +557,7 @@ class pxl_dis:
     def Tag_sint32_box(self):
         if ( self.getTag( pxl_tags_dict['sint32_box'] ) ):
             print "sint32_box %d %d %d %d" % \
-                  unpack('llll', self.data[self.index:self.index+16])
+                  self.unpack('llll', self.data[self.index:self.index+16])
             self.index = self.index + 16
             return 1
         return 0
@@ -531,11 +565,32 @@ class pxl_dis:
     def Tag_real32_box(self):
         if ( self.getTag( pxl_tags_dict['real32_box'] ) ):
             print "real32_box %f %f %f %f" % \
-                  unpack('ffff', self.data[self.index:self.index+16])
+                  self.unpack('ffff', self.data[self.index:self.index+16])
             self.index = self.index + 16
             return 1
         return 0
     
+    # check for embedded tags.
+    def is_Embedded(self, name):
+        return ( name == 'embedded_data' or name == 'embedded_data_byte' )
+
+    def process_EmbeddedInfo(self, name):
+        if ( name == 'embedded_data' ):
+            # can't index into the data with a long - have to make it
+            # an int.
+            length = int(self.unpack('L', self.data[self.index:self.index+4])[0])
+            self.index = self.index + 4
+        if ( name == 'embedded_data_byte' ):
+            length = int(self.unpack('B', self.data[self.index:self.index+1])[0])
+            self.index = self.index + 1
+
+        # NB needs wrapping
+        print "[ ",
+        for byte in self.data[self.index:self.index+length]:
+            print ord(byte),
+        print " ]"
+        self.index = self.index + length
+
     def Tag_attr_ubyte(self):
         if ( self.getTag( pxl_tags_dict['attr_ubyte'] ) ):
             tag = unpack('B', self.data[self.index] )[0]
@@ -545,12 +600,15 @@ class pxl_dis:
                     print k
                     self.debug_trace( "found  %s", k)
                     self.index = self.index + 1
+		    # handle special cases
+		    if ( self.is_Embedded(k) ):
+			self.process_EmbeddedInfo(k)
                     return 1
         return 0
 
     def Tag_attr_uint16(self):
         if ( self.getTag( pxl_tags_dict['attr_uint16'] ) ):
-            print "Attribute tag uint16 # NOT IMPLEMENTED #", unpack('HH', self.data[self.index] )
+            print "Attribute tag uint16 # NOT IMPLEMENTED #", self.unpack('HH', self.data[self.index] )
             self.index = self.index + 2
             return 1
         return 0
@@ -563,9 +621,9 @@ class pxl_dis:
              self.Tag_sint16() or self.Tag_sint32() or self.Tag_real32() ):
             size = self.size_of_element
             if ( self.unpack_string == 'f' ):
-                print "%f" % unpack(self.unpack_string, self.data[self.index:self.index+size]),
+                print "%f" % self.unpack(self.unpack_string, self.data[self.index:self.index+size]),
             else:
-                print "%d" % unpack(self.unpack_string, self.data[self.index:self.index+size]),
+                print "%d" % self.unpack(self.unpack_string, self.data[self.index:self.index+size]),
             self.index = self.index + self.size_of_element
             return 1
         return 0
@@ -590,10 +648,10 @@ class pxl_dis:
         unpack_string = self.unpack_string
         size_of_element = self.size_of_element
         if ( self.arraySizeType() ):
-            self.size_of_array = unpack( self.unpack_string, \
+            self.size_of_array = self.unpack( self.unpack_string, \
                                          self.data[self.index:self.index+self.size_of_element] )[0]
             print self.size_of_array,
-            self.debug_trace( "array size found %d", self.size_of_array )
+            self.debug_trace(  "array size found %d", self.size_of_array )
             self.index = self.index + self.size_of_element
             # restore the unpack string
             self.unpack_string = unpack_string
@@ -608,13 +666,8 @@ class pxl_dis:
         
     def arrayType(self):
         if (self.singleValueArrayType() and self.arraySize()):
-            self.debug_trace( "size_of_array %d", self.size_of_array )
-            self.debug_trace( "unpack string %s",  str(self.size_of_array) + self.unpack_string )
-            self.debug_trace( "size of array element %d", self.size_of_element )
-            self.debug_trace( "size of array %d", self.size_of_array)
-            
             array_size = self.size_of_element * self.size_of_array
-            array_elements = unpack( str(self.size_of_array) + self.unpack_string, \
+            array_elements = self.unpack( str(self.size_of_array) + self.unpack_string, \
                                      self.data[self.index:self.index+array_size] )
             for num in array_elements:
                 print num,
@@ -647,9 +700,6 @@ class pxl_dis:
     def attributeList(self):
         return (self.singleAttributePair() or self.multiAttributeList() or self.nullAttributeList())
 
-    def embedded_data(self):
-        return 0
-
     def attributeLists(self):
         # save the beginning of the attribute list even if it is
         # empty.  So we can report the position of the command.
@@ -667,7 +717,7 @@ class pxl_dis:
         return 0
         
     def operatorSequences(self):
-        while (( self.attributeLists() and self.operatorTag() ) or self.embedded_data()) or self.UEL():
+        while ( self.attributeLists() and self.operatorTag() ) or self.UEL():
             print
             continue
         
@@ -677,26 +727,26 @@ class pxl_dis:
         # assume an index error means we have processed everything - ugly
         except IndexError:
              return
+        else:
+             print "dissassemble failed"
 
 if __name__ == '__main__':
     import sys
 
+    if not sys.argv[1:]:
+        print "Usage: %s pxl files" % sys.argv[0]
+        
     for file in sys.argv[1:]:
         try:
             fp = open(file, 'rb')
         except:
             print "Cannot find file %s" % file
             continue
-        # read the whole damn thing
+        # read the whole damn thing.  If this get too cumbersome we
+        # can switch to string i/o which will use a disk
         pxl_code = fp.read()
         fp.close()
     
-        # the class does not handle pjl work around that here
-        index = 0
-        # skip header
-        while( pxl_code[index] != ')' and  pxl_code[index] != '(' ):
-            index = index + 1
-
-        # size of current element and size of current array
-        pxl_stream = pxl_dis(pxl_code[index:])
+        # initialize and disassemble.
+        pxl_stream = pxl_dis(pxl_code)
         pxl_stream.disassemble()
