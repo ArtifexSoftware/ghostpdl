@@ -1,3 +1,7 @@
+Version 0.7 (unreleased)
+
+ * properly initialize page buffers
+
 Version 0.6 (2003 December 31)
 
  * minor portability fix for cygwin
