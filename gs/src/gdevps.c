@@ -40,6 +40,10 @@
 /* Current ProcSet version */
 #define PSWRITE_PROCSET_VERSION 1
 
+
+private int psw_open_printer(gx_device * dev);
+private int psw_close_printer(gx_device * dev);
+
 /* ---------------- Device definition ---------------- */
 
 /* Device procedures */
@@ -618,15 +622,14 @@ psw_is_separate_pages(gx_device_vector *const vdev)
 private int
 psw_beginpage(gx_device_vector * vdev)
 {
-    stream *s;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
-    if (!vdev->is_open) {
-	int code = psw_open((gx_device *)vdev);
-	if (code < 0)
-	     return code;
-	vdev->is_open = true;
-    }
-    s = vdev->strm;
+    int code = psw_open_printer((gx_device *)vdev);
+
+    stream *s = vdev->strm;
+
+    if (code < 0)
+	 return code;
+
     if (pdev->first_page)
 	psw_begin_file(pdev, NULL);
 
@@ -867,23 +870,26 @@ psw_open(gx_device * dev)
 
     vdev->v_memory = mem;
     vdev->vec_procs = &psw_vector_procs;
-    {
-	int code = gdev_vector_open_file_options(vdev, 512,
-					VECTOR_OPEN_FILE_SEQUENTIAL_OK |
-					VECTOR_OPEN_FILE_BBOX);
 
-	if (code < 0)
-	    return code;
-    }
     gdev_vector_init(vdev);
     vdev->fill_options = vdev->stroke_options = gx_path_type_optimize;
-    pdev->first_page = true;
     pdev->binary_ok = !pdev->params.ASCII85EncodePages;
     pdev->image_writer = gs_alloc_struct(mem, psdf_binary_writer,
 					 &st_psdf_binary_writer,
 					 "psw_open(image_writer)");
     memset(pdev->image_writer, 0, sizeof(*pdev->image_writer));  /* for GC */
     image_cache_reset(pdev);
+
+    pdev->strm = NULL;
+
+    /* if (ppdev->OpenOutputFile) */
+    {
+	int code = psw_open_printer(dev);
+
+	if (code < 0)
+	    return code;
+    }
+
     return 0;
 }
 
@@ -908,8 +914,10 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
 
     dev->PageCount ++;
     if (psw_is_separate_pages(vdev)) {
-	psw_close(dev);
-	dev->is_open = false;
+	int code = psw_close_printer(dev);
+
+	if (code < 0) 
+	    return code;
     }
     return 0;
 }
@@ -922,34 +930,19 @@ psw_close(gx_device * dev)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
-    FILE *f = vdev->file;
-    gs_rect bbox;
 
-    gx_device_bbox_bbox(vdev->bbox_device, &bbox);
-    if (pdev->first_page & !vdev->in_page) {
-	/* Nothing has been written.  Write the file header now. */
-	psw_begin_file(pdev, &bbox);
-    } else {
-	/* If there is an incomplete page, complete it now. */
-	if (vdev->in_page) {
-	    /*
-	     * Flush the stream if it hasn't been flushed (and finalized)
-	     * already.
-	     */
-	    stream *s = vdev->strm;
-
-	    if (s->swptr != s->cbuf - 1)
-		sflush(s);
-	    psw_write_page_trailer(vdev->file, 1, 1);
-	    dev->PageCount++;
-	}
-    }
-    psw_end_file(f, dev, &pdev->pswrite_common, &bbox, 
-                 (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount));
     gs_free_object(pdev->v_memory, pdev->image_writer,
 		   "psw_close(image_writer)");
     pdev->image_writer = 0;
-    return gdev_vector_close_file(vdev);
+
+    if (vdev->strm != NULL) {
+	int code = psw_close_printer(dev);
+
+	if (code < 0)
+	    return code;
+    }
+
+    return 0;
 }
 
 /* ---------------- Get/put parameters ---------------- */
@@ -1046,6 +1039,68 @@ psw_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     return gdev_vector_fill_rectangle(dev, x, y, w, h, color);
 }
 
+/*
+ * Open the printer's output file if necessary.
+ */
+
+private int 
+psw_open_printer(gx_device * dev)
+{
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
+
+    if (vdev->strm != 0) {
+	return 0;
+    }
+    {
+	int code = gdev_vector_open_file_options(vdev, 512,
+					VECTOR_OPEN_FILE_SEQUENTIAL_OK |
+					VECTOR_OPEN_FILE_BBOX);
+
+	if (code < 0)
+	    return code;
+    }
+
+    pdev->first_page = true;
+
+    return 0;
+}
+
+/*
+ * Close the printer's output file.
+ */
+
+private int 
+psw_close_printer(gx_device * dev)
+{
+    gx_device_vector *const vdev = (gx_device_vector *)dev;
+    gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
+    FILE *f = vdev->file;
+    gs_rect bbox;
+
+    gx_device_bbox_bbox(vdev->bbox_device, &bbox);
+    if (pdev->first_page & !vdev->in_page) {
+	/* Nothing has been written.  Write the file header now. */
+	psw_begin_file(pdev, &bbox);
+    } else {
+	/* If there is an incomplete page, complete it now. */
+	if (vdev->in_page) { 
+	    /*
+	     * Flush the stream after writing page trailer.
+	     */
+
+	    stream *s = vdev->strm;
+	    psw_write_page_trailer(vdev->file, 1, 1);
+	    sflush(s);
+
+	    dev->PageCount++;
+	}
+    }
+    psw_end_file(f, dev, &pdev->pswrite_common, &bbox, 
+                 (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount));
+
+    return gdev_vector_close_file(vdev);
+}
 
 /* ---------------- Images ---------------- */
 
