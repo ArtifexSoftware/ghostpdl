@@ -122,7 +122,30 @@ pdfdict begin
   } if
 } bind def
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
-  PDFDEBUG { dup == flush } if
+  PDFDEBUG {
+    pdfdict /PDFSTEPcount known not { pdfdict /PDFSTEPcount 1 .forceput } if
+    PDFSTEP {
+      pdfdict /PDFtokencount 2 copy .knownget { 1 add } { 1 } ifelse .forceput
+      PDFSTEPcount 1 gt {
+	pdfdict /PDFSTEPcount PDFSTEPcount 1 sub .forceput
+      } {
+        dup ==only
+        (    step # ) print PDFtokencount =only 
+	( ? ) print flush 1 false .outputpage
+	(%stdin) (r) file 255 string readline {
+	  token {
+            exch pop pdfdict /PDFSTEPcount 3 -1 roll .forceput
+	  } {
+	    pdfdict /PDFSTEPcount 1 .forceput
+	  } ifelse % token
+	} {
+	  pop /PDFSTEP false def	 % EOF on stdin
+	} ifelse % readline
+      } ifelse % PDFSTEPcount > 1
+    } {
+      dup ==only () = flush
+    } ifelse % PDFSTEP
+  } if % PDFDEBUG
   2 copy .knownget {
     exch pop exch pop exch pop exec
   } {
@@ -152,10 +175,18 @@ pdfdict begin
 	  .pdfexectoken
 	} {
 	  .pdffixname
-	  exch pop exch pop PDFDEBUG { dup ==only ( ) print flush } if
+	  exch pop exch pop PDFDEBUG {
+            PDFSTEPcount 1 le {
+              dup ==only ( ) print flush
+            } if
+          } if
 	} ifelse
       } {
-	exch pop exch pop PDFDEBUG { dup ==only ( ) print flush } if
+	exch pop exch pop PDFDEBUG {
+          PDFSTEPcount 1 le {
+            dup ==only ( ) print flush
+          } if
+        } if
       } ifelse
     } {
       (%%EOF) cvn cvx .pdfexectoken
@@ -575,7 +606,11 @@ pdfdict begin
 .dicttomark readonly def
 
 /resolveR {		% <object#> <generation#> resolveR <object>
-  PDFDEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
+  PDFDEBUG {
+    PDFSTEPcount 1 le {
+      (%Resolving: ) print 2 copy 2 array astore ==
+    } if
+  } if
   1 index resolved? {		% If object has already been resolved ...
     exch pop exch pop		% then clear stack and return object
   } {				% Else if not resolved ...
@@ -659,7 +694,11 @@ pdfdict begin
 	10 eq { exit } if
       } loop	% scan past \n
       dup /FilePosition PDFfile fileposition put
-      PDFDEBUG { (%FilePosition: ) print dup /FilePosition get == } if
+      PDFDEBUG {
+        PDFSTEPcount 1 le {
+          (%FilePosition: ) print dup /FilePosition get ==
+        } if
+      } if
     } if
     % Some (bad) PDf files have invalid stream lengths.  This causes problems
     % if we reposition beyond the end of the file.  So we compare the given
