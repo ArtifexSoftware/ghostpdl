@@ -803,7 +803,8 @@ $(DD)bmp32b.dev : $(bmp_) $(GLD)page.dev
 
 ### ------------- BMP driver that serves as demo of async rendering ---- ###
 
-bmpa_=$(GLOBJ)gdevbmpa.$(OBJ) $(GLOBJ)gdevbmpc.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
+bmpa_=$(GLOBJ)gdevbmpa.$(OBJ) $(GLOBJ)gdevbmpc.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) \
+ $(GLOBJ)gdevpccm.$(OBJ)
 
 $(GLOBJ)gdevbmpa.$(OBJ) : $(GLSRC)gdevbmpa.c $(AK) $(stdio__h)\
  $(gdevbmp_h) $(gdevprna_h) $(gdevpccm_h) $(gdevppla_h)\
