@@ -801,7 +801,7 @@ psf_convert_type1_to_type2(stream *s, const gs_const_string *pstr,
 	    case cx_vhcurveto:
 		if (depth & 1)
 		    goto copy;
-		if (depth & 4)
+		if (!(depth & 4))
 		    goto vrc;
 	    hrc:  /* (hvcurveto vhcurveto)+ hrcurveto => hvcurveto */
 		/* vhcurveto (hvcurveto vhcurveto)* hrcurveto => vhcurveto */
