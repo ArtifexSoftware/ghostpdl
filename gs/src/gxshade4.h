@@ -31,10 +31,15 @@
    which decomposes a random quadrangle into 3 or 4 trapezoids.
    The color approximation looks worse than with triangles, and works some slower.
  */
-#define INTERPATCH_PADDING (fixed_1 / 8) /* Emulate a trapping for poorly designed documents. */
-/* When INTERPATCH_PADDING > 0, it generates paddings between patches.
-   This is an emulation of Adobe's trapping.
+#define INTERPATCH_PADDING (fixed_1 / 2) /* Emulate a trapping for poorly designed documents. */
+/* When INTERPATCH_PADDING > 0, it generates paddings between patches,
+   i.e. performs a patch expansion, being similar
+   to the path adjustment in the filling algorithm.
+   The expansion is an emulation of Adobe's trapping.
    The value specifies the width of paddings.
+   We did some testing of Adobe RIP, and it looks as applying 
+   same logicks as for clipping - any part of pixel inside.
+   Therefore the expansion should be half pixel size.
  */
 #define COLOR_CONTIGUITY 1 /* A smothness divisor for triangulation. */
 /* This is a coefficient used to rich
@@ -170,7 +175,12 @@ int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 
 int wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs);
 void wedge_vertex_list_elem_buffer_free(patch_fill_state_t *pfs);
+
 void patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs);
+
+int gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect, 
+	const gx_device_color *pdevc, gs_logical_operation_t log_op);
+
 #endif
 
 #endif /* gxshade4_INCLUDED */

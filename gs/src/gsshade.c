@@ -515,12 +515,24 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
     path_dev.HWResolution[1] = dev->HWResolution[1];
     dev = (gx_device *)&path_dev;
     dev_proc(dev, open_device)(dev);
+#if 0 /* NEW_SHADINGS - doesn't work for 478-01.ps, which sets a big smoothness :
+         makes an assymmetrix domain, and the patch decomposition
+	 becomes highly irregular. */
+    {	gs_fixed_rect r;
+
+	dev_proc(dev, get_clipping_box)(dev, &r);
+	rect_intersect(path_box, r);
+    }
+#else
     dev_proc(dev, get_clipping_box)(dev, &path_box);
+#endif
     if (psh->params.Background && fill_background) {
+#if !NEW_SHADINGS
 	int x0 = fixed2int(path_box.p.x);
 	int y0 = fixed2int(path_box.p.y);
 	int x1 = fixed2int(path_box.q.x);
 	int y1 = fixed2int(path_box.q.y);
+#endif
 	const gs_color_space *pcs = psh->params.ColorSpace;
 	gs_client_color cc;
 	gx_device_color dev_color;
@@ -529,9 +541,14 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 	(*pcs->type->restrict_color)(&cc, pcs);
 	(*pcs->type->remap_color)(&cc, pcs, &dev_color, pis,
 				  dev, gs_color_select_texture);
+
 	/****** WRONG IF NON-IDEMPOTENT RasterOp ******/
+#if NEW_SHADINGS
+	code = gx_shade_background(dev, &path_box, &dev_color, pis->log_op);
+#else
 	code = gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
 					    &dev_color, dev, pis->log_op);
+#endif
 	if (code < 0)
 	    goto out;
     }

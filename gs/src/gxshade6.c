@@ -1213,12 +1213,14 @@ make_trapezoid(const gs_fixed_point q[4],
 
 private inline int 
 gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4], 
-	int vi0, int vi1, int vi2, int vi3, fixed ybot, fixed ytop, 
+	int vi0, int vi1, int vi2, int vi3, fixed ybot0, fixed ytop0, 
 	bool swap_axes, const gx_device_color *pdevc, bool orient)
 {
     gs_fixed_edge le, re;
     int code;
     vd_save;
+    fixed ybot = max(ybot0, swap_axes ? pfs->rect.p.x : pfs->rect.p.y);
+    fixed ytop = min(ytop0, swap_axes ? pfs->rect.q.x : pfs->rect.q.y);
 
     if (ybot > ytop)
 	return 0;
@@ -1448,7 +1450,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 
 		v = clip.p.x; clip.p.x = clip.p.y; clip.p.y = v;
 		v = clip.q.x; clip.q.x = clip.q.y; clip.q.y = v;
-		adjust_swapped_boundary(&clip.q.x, swap_axes);
+		/* Don't need adjust_swapped_boundary here. */
 	    }
 	    clip.p.y = max(clip.p.y, ybot);
 	    clip.q.y = min(clip.q.y, ytop);
@@ -2140,6 +2142,12 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
     adjust_swapped_boundary(&re.start.x, swap_axes);
     adjust_swapped_boundary(&re.end.x, swap_axes);
     return decompose_linear_color(pfs, &le, &re, le.start.y, le.end.y, swap_axes, cc0, cc1, 0);
+    /* fixme : for a better performance and quality, we would like to 
+       consider the bar as an oriented one and to know at what side of it the spot resides.
+       If we know that, we could expand only to outside the spot.
+       Note that if the boundary has a self-intersection,
+       we still need to expand to both directions.
+     */
 }
 
 private int
@@ -3659,6 +3667,25 @@ make_tensor_patch(const patch_fill_state_t *pfs, tensor_patch *p, const patch_cu
 	pcs->type->restrict_color(&p->c[1][1].cc, pcs);
     }
 }
+
+int 
+gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect, 
+	const gx_device_color *pdevc, gs_logical_operation_t log_op)
+{
+    gs_fixed_edge le, re;
+
+    le.start.x = rect->p.x - INTERPATCH_PADDING;
+    le.start.y = rect->p.y - INTERPATCH_PADDING;
+    le.end.x = rect->p.x - INTERPATCH_PADDING;
+    le.end.y = rect->q.y + INTERPATCH_PADDING;
+    re.start.x = rect->q.x + INTERPATCH_PADDING;
+    re.start.y = rect->p.y - INTERPATCH_PADDING;
+    re.end.x = rect->q.x + INTERPATCH_PADDING;
+    re.end.y = rect->q.y + INTERPATCH_PADDING;
+    return dev_proc(pdev, fill_trapezoid)(pdev,
+	    &le, &re, le.start.y, le.end.y, false, pdevc, log_op);
+}
+
 
 int
 patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],

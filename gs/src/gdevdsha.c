@@ -42,8 +42,8 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     int n = cinfo->num_components;
     int si, ei, code;
 
-    if (j < fixed2int_pixround(fa->clip->p.y) || 
-	    j > fixed2int_pixround(fa->clip->q.y))
+    if (j < fixed2int(fa->clip->p.y) ||
+	    j > fixed2int_ceiling(fa->clip->q.y)) /* Must be compatible to the clipping logic. */
 	return 0;
     for (k = 0; k < n; k++) {
 	int shift = cinfo->comp_shift[k];
@@ -70,8 +70,8 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
 	    ci1 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - 1 - bits)) << shift;
 	}
 	if (ci1 != ci0) {
-	    si = max(bi, fixed2int_pixround(fa->clip->p.x));
-	    ei = min(i, fixed2int_pixround(fa->clip->q.x));
+	    si = max(bi, fixed2int(fa->clip->p.x));	    /* Must be compatible to the clipping logic. */
+	    ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
 	    if (si < ei) {
 		
 		if (fa->swap_axes) {
@@ -88,8 +88,8 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
 	    ci0 = ci1;
 	}
     }
-    si = max(bi, fixed2int_pixround(fa->clip->p.x));
-    ei = min(i, fixed2int_pixround(fa->clip->q.x));
+    si = max(bi, fixed2int(fa->clip->p.x));	    /* Must be compatible to the clipping logic. */
+    ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
     if (si < ei) {
 	if (fa->swap_axes) {
 	    vd_rect(int2fixed(j), int2fixed(si), int2fixed(j + 1), int2fixed(ei), 1, (ulong)ci0);
