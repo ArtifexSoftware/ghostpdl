@@ -120,12 +120,14 @@ code_map_decode_next(const gx_code_map_t * pcmap, const gs_const_string * pstr,
 
 	    if (pclr->key_is_range) {
 		step <<= 1;
-		for (k = 0; k < pclr->num_keys; ++i, key += step)
+		/*for (k = 0; k < pclr->num_keys; ++i, key += step)*/ /*MLC-*/
+		  for (k = 0; k < pclr->num_keys; ++k, key += step)   /*MLC+*/
 		    if (memcmp(str + pre_size, key, key_size) >= 0 &&
 			memcmp(str + pre_size, key + key_size, key_size) <= 0)
 			break;
 	    } else {
-		for (k = 0; k < pclr->num_keys; ++i, key += step)
+	      /*for (k = 0; k < pclr->num_keys; ++i, key += step)*/ /*MLC-*/
+		for (k = 0; k < pclr->num_keys; ++k, key += step)   /*MLC+*/
 		    if (!memcmp(str + pre_size, key, key_size))
 			break;
 	    }
