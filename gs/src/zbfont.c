@@ -561,6 +561,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
     pfont->InBetweenSize = (fbit_type)inbetweensize;
     pfont->TransformedChar = (fbit_type)transformedchar;
     pfont->WMode = wmode;
+    pfont->procs.font_info = zfont_info;
     code = 0;
 set_name:
     copy_font_name(&pfont->key_name, &kname);

@@ -40,7 +40,6 @@
 extern const gs_type1_data_procs_t z1_data_procs;
 font_proc_glyph_info(z1_glyph_info);
 /* Font procedures defined here */
-private font_proc_font_info(z1_font_info);
 private font_proc_same_font(z1_same_font);
 
 /* ------ Private utilities ------ */
@@ -208,7 +207,6 @@ charstring_font_init(gs_font_type1 *pfont, const charstring_font_refs_t *pfr,
     ref_assign(&pdata->u.type1.GlobalSubrs, pfr->GlobalSubrs);
     pfont->data.procs = z1_data_procs;
     pfont->data.proc_data = (char *)pdata;
-    pfont->procs.font_info = z1_font_info;
     pfont->procs.same_font = z1_same_font;
     pfont->procs.glyph_info = z1_glyph_info;
     pfont->procs.enumerate_glyph = z1_enumerate_glyph;
@@ -296,54 +294,6 @@ const op_def zfont1_op_defs[] =
 };
 
 /* ------ Font procedures for Type 1 fonts ------ */
-
-/* font_info procedure */
-private bool
-z1_font_info_has(const ref *pfidict, const char *key, gs_const_string *pmember)
-{
-    ref *pvalue;
-
-    if (dict_find_string(pfidict, key, &pvalue) > 0 &&
-	r_has_type(pvalue, t_string)
-	) {
-	pmember->data = pvalue->value.const_bytes;
-	pmember->size = r_size(pvalue);
-	return true;
-    }
-    return false;
-}
-private int
-z1_font_info(gs_font *font, const gs_point *pscale, int members,
-	     gs_font_info_t *info)
-{
-    const gs_font_type1 *const pfont1 = (const gs_font_type1 *)font;
-    int code = gs_default_font_info(font, pscale, members &
-		    ~(FONT_INFO_COPYRIGHT | FONT_INFO_NOTICE |
-		      FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
-				    info);
-    const ref *pfdict;
-    ref *pfontinfo;
-
-    if (code < 0)
-	return code;
-    pfdict = &pfont_data(pfont1)->dict;
-    if (dict_find_string(pfdict, "FontInfo", &pfontinfo) <= 0 ||
-	!r_has_type(pfontinfo, t_dictionary))
-	return 0;
-    if ((members & FONT_INFO_COPYRIGHT) &&
-	z1_font_info_has(pfontinfo, "Copyright", &info->Copyright))
-	info->members |= FONT_INFO_COPYRIGHT;
-    if ((members & FONT_INFO_NOTICE) &&
-	z1_font_info_has(pfontinfo, "Notice", &info->Notice))
-	info->members |= FONT_INFO_NOTICE;
-    if ((members & FONT_INFO_FAMILY_NAME) &&
-	z1_font_info_has(pfontinfo, "FamilyName", &info->FamilyName))
-	info->members |= FONT_INFO_FAMILY_NAME;
-    if ((members & FONT_INFO_FULL_NAME) &&
-	z1_font_info_has(pfontinfo, "FullName", &info->FullName))
-	info->members |= FONT_INFO_FULL_NAME;
-    return code;
-}
 
 /* same_font procedure */
 private bool

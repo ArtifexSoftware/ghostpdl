@@ -110,4 +110,11 @@ int font_param(P2(const ref * pfdict, gs_font ** ppfont));
  */
 bool zfont_mark_glyph_name(P2(gs_glyph glyph, void *ignore_data));
 
+/*
+ * Return information about a font, including information from the FontInfo
+ * dictionary.  This procedure is intended to be used as the font_info
+ * procedure in all PostScript fonts.
+ */
+font_proc_font_info(zfont_info);
+
 #endif /* ifont_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -500,4 +500,53 @@ top:
 	gx_purge_selected_cached_chars(pdir, purge_if_name_removed,
 				       (void *)save);
 
+}
+
+/* ------ Font procedures for PostScript fonts ------ */
+
+/* font_info procedure */
+private bool
+zfont_info_has(const ref *pfidict, const char *key, gs_const_string *pmember)
+{
+    ref *pvalue;
+
+    if (dict_find_string(pfidict, key, &pvalue) > 0 &&
+	r_has_type(pvalue, t_string)
+	) {
+	pmember->data = pvalue->value.const_bytes;
+	pmember->size = r_size(pvalue);
+	return true;
+    }
+    return false;
+}
+int
+zfont_info(gs_font *font, const gs_point *pscale, int members,
+	   gs_font_info_t *info)
+{
+    int code = gs_default_font_info(font, pscale, members &
+		    ~(FONT_INFO_COPYRIGHT | FONT_INFO_NOTICE |
+		      FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
+				    info);
+    const ref *pfdict;
+    ref *pfontinfo;
+
+    if (code < 0)
+	return code;
+    pfdict = &pfont_data(font)->dict;
+    if (dict_find_string(pfdict, "FontInfo", &pfontinfo) <= 0 ||
+	!r_has_type(pfontinfo, t_dictionary))
+	return 0;
+    if ((members & FONT_INFO_COPYRIGHT) &&
+	zfont_info_has(pfontinfo, "Copyright", &info->Copyright))
+	info->members |= FONT_INFO_COPYRIGHT;
+    if ((members & FONT_INFO_NOTICE) &&
+	zfont_info_has(pfontinfo, "Notice", &info->Notice))
+	info->members |= FONT_INFO_NOTICE;
+    if ((members & FONT_INFO_FAMILY_NAME) &&
+	zfont_info_has(pfontinfo, "FamilyName", &info->FamilyName))
+	info->members |= FONT_INFO_FAMILY_NAME;
+    if ((members & FONT_INFO_FULL_NAME) &&
+	zfont_info_has(pfontinfo, "FullName", &info->FullName))
+	info->members |= FONT_INFO_FULL_NAME;
+    return code;
 }
