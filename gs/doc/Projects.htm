@@ -594,8 +594,9 @@ usable in embedded environments.  Note that this is necessary, but far from
 sufficient, for Ghostscript to allow simultaneous execution of a single
 Ghostscript interpreter instance by multiple threads: that is probably
 permanently out of the question.  <I>Almost all drivers, including all of
-Aladdin's own drivers, are already fully re-entrant; making the remaining
-ones re-entrant should really be up to the driver author.</I>
+the drivers in devs.mak which are maintained as part of the main Ghostscript
+code, are already fully re-entrant; making the remaining ones re-entrant
+should really be up to the driver author.</I>
 
 <!-- [2.0 end contents] ==================================================== -->
 

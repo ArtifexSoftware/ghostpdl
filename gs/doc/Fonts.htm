@@ -506,14 +506,13 @@ with Ghostscript and defined earlier in the file.
 
 <p>
 In the PC world, Type 1 fonts are customarily given names ending in
-<tt><b>.PFA</b></tt> or <tt><b>.PFB</b></tt>.
-Ghostscript can use these directly: you just need to make the entry in
-Fontmap.  If you want to use with Ghostscript a commercial Type 1 font
-(such as fonts obtained in conjunction with Adobe Type Manager), please
-read carefully the license that accompanies the font to satisfy yourself
-that you may do so legally; Aladdin Enterprises takes no responsibility for
-any possible violations of such licenses.  The same applies to TrueType
-fonts.
+<tt><b>.PFA</b></tt> or <tt><b>.PFB</b></tt>.  Ghostscript can use these
+directly: you just need to make the entry in Fontmap.  If you want to use
+with Ghostscript a commercial Type 1 font (such as fonts obtained in
+conjunction with Adobe Type Manager), please read carefully the license that
+accompanies the font to satisfy yourself that you may do so legally; we take
+no responsibility for any possible violations of such licenses.  The same
+applies to TrueType fonts.
 
 <h3><a name="Convert_BDF"></a>Converting BDF fonts</h3>
 
@@ -856,11 +855,11 @@ San Jose, CA  95110-2704<br>
 The XUID is a Level 2 PostScript feature that serves the same function as
 the UniqueID, but is not limited to a single 24-bit integer.  The
 <tt><b>bdftops</b></tt> program creates XUIDs of the form
-"<tt><b>[-X-&nbsp;0&nbsp;-U-]</b></tt>" where
-"<tt><b>-X-</b></tt>" is the organization XUID and
-"<tt><b>-U-</b></tt>" is the UniqueID.  (Aladdin Enterprises'
-organization XUID is 107; do not use this for your own fonts that you
-distribute.)
+"<tt><b>[-X-&nbsp;0&nbsp;-U-]</b></tt>" where "<tt><b>-X-</b></tt>" is the
+organization XUID and "<tt><b>-U-</b></tt>" is the UniqueID.  (Aladdin
+Enterprises' organization XUID, which appears in a few places in various
+font-related files distributed with Ghostscript, is 107; do not use this for
+your own fonts that you distribute.)
 
 <p>
 Because Ghostscript runs on many different systems, including DOS, the

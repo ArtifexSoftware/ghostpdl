@@ -575,7 +575,7 @@ relatively small ones containing platform-specific information.
 	<td>Contributed device drivers
 <tr>	<td><b><tt>devs.mak</tt></b>
 	<td>&nbsp;
-	<td>Aladdin's device drivers
+	<td>Maintained device drivers
 <tr>	<td><b><tt>gs.mak</tt></b>
 	<td>&nbsp;
 	<td>Documentation and miscellany
@@ -765,45 +765,45 @@ alone.
 AFPL Ghostscript does not include an interface to GNU readline.  A user
 contributed code for this purpose, which we spent significant time debugging
 and then updating to track internal architectural changes in Ghostscript.
-The contributor was willing to assign the copyright to Aladdin Enterprises,
-and to allow the code to be distributed with the Aladdin Free Public License
-(AFPL) as well as the GNU License (GPL).  However, even though the GPL
-allows linking GPLed code (such as the GNU readline library package) with
-non-GPLed code (such as all the rest of AFPL Ghostscript) if one doesn't
-distribute the result, the Free Software Foundation, creators of the GPL,
-have told us that in their opinion, the GPL forbids distributing non-GPLed
-code that is merely <em>intended</em> to be linked with GPLed code.  We
-understand that FSF takes this position in order to prevent the construction
-of software that is partly GPLed and partly not GPLed, even though the
-text of the GPL does not actually forbid this (it only forbids
-<em>distribution</em> of such software).  We think that FSF's position is
-legally questionable and not in the best interest of users, but we do not
-have the resources to challenge it, especially since FSF's attorney
-apparently supports it.  Therefore, even though we added the
-user-contributed interface to GNU readline in internal Aladdin Ghostscript
-version 5.71 and had it working in version 5.93 (one of the last beta
-versions before the 6.0 release), we removed it from the Aladdin Ghostscript
-6.0 distribution.
+The contributor was willing to assign the copyright to Aladdin Enterprises
+(the copyright holder of Ghostscript at the time), and to allow the code to
+be distributed with the Aladdin Free Public License (AFPL) as well as the
+GNU License (GPL).  However, even though the GPL allows linking GPLed code
+(such as the GNU readline library package) with non-GPLed code (such as all
+the rest of AFPL Ghostscript) if one doesn't distribute the result, the Free
+Software Foundation, creators of the GPL, have told us that in their
+opinion, the GPL forbids distributing non-GPLed code that is merely
+<em>intended</em> to be linked with GPLed code.  We understand that FSF
+takes this position in order to prevent the construction of software that is
+partly GPLed and partly not GPLed, even though the text of the GPL does not
+actually forbid this (it only forbids <em>distribution</em> of such
+software).  We think that FSF's position is legally questionable and not in
+the best interest of users, but we do not have the resources to challenge
+it, especially since FSF's attorney apparently supports it.  Therefore, even
+though we added the user-contributed interface to GNU readline in internal
+Aladdin Ghostscript version 5.71 and had it working in version 5.93 (one of
+the last beta versions before the 6.0 release), we removed it from the
+Aladdin Ghostscript 6.0 distribution.
 
 <p>
 GNU Ghostscript distributions will include support for GNU readline.  As
 with other GNU Ghostscript components that are not included in AFPL
-Ghostscript, Aladdin will not attempt to run, link, or even compile this
-code, or keep it current across changes in the rest of Ghostscript.  We
-will, however, welcome bug fixes or updates, and distribute them with
-subsequent releases of GNU Ghostscript.
+Ghostscript, the maintainers of Ghostscript will not attempt to run, link,
+or even compile this code, or keep it current across changes in the rest of
+Ghostscript.  We will, however, welcome bug fixes or updates, and distribute
+them with subsequent releases of GNU Ghostscript.
 
 <p>
 The first GNU Ghostscript distribution that will include GNU readline
-support will be GNU Ghostscript 6.0, currently scheduled for release in the
-third quarter of 2000.  Before that time, we may return the copyright of
-Ghostscript's GNU readline interface module, which the original author
-assigned to Aladdin Enterprises, to the author, so that users of GNU
-Ghostscript will have have access to it.  However, since it requires
-internal changes not available in any released GNU Ghostscript version
-before 6.0, any user who gets this code and links it with Aladdin
-Ghostscript 6.0 will, according to FSF, be violating the intent (though not
-the letter) of the GPL.
+support will be GNU Ghostscript 6.0, currently scheduled for release along
+with AFPL Ghostscript 7.0 in the first or second quarter of 2001.  Before
+that time, we may return the copyright of Ghostscript's GNU readline
+interface module, which the original author assigned to Aladdin Enterprises,
+to the author, so that users of GNU Ghostscript will have have access to it.
+However, since it requires internal changes not available in any released
+GNU Ghostscript version before 6.0, any user who gets this code and links it
+with Aladdin Ghostscript 6.0 will, according to FSF, be violating the intent
+(though not the letter) of the GPL.
 
 <p>
 We put considerable work into making it possible for Ghostscript to use GNU
@@ -2598,7 +2598,7 @@ multi-threading by setting <b><tt>SYNC=nosync</tt></b> in the top-level
 makefile.  Note that you will not be able to use any so-called "async"
 drivers (drivers that overlap interpretation and rasterization) if you do
 this.  No such drivers are in the <b><tt>DEVICE_DEVS*</tt></b> lists of any
-makefile that Aladdin distributes.
+makefile that we distribute.
 
 <h3><a name="Plan_9"></a>Plan 9</h3>
 
