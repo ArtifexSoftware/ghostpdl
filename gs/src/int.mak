@@ -743,7 +743,7 @@ $(PSD)macglyph.dev : $(INT_MAK) $(ECHOGS_XE) $(PSLIB)gs_mgl_e.ps\
 # Native TrueType support
 $(PSD)ttfont.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)macglyph.dev $(PSD)type42.dev
 	$(SETMOD) $(PSD)ttfont -include $(PSD)macglyph $(PSD)type42
-	$(ADDMOD) $(PSD)ttfont -ps gs_wan_e gs_ttf
+	$(ADDMOD) $(PSD)ttfont -ps gs_wan_e gs_agl gs_ttf
 
 # Type 42 (embedded TrueType) support
 type42read_=$(PSOBJ)zchar42.$(OBJ) $(PSOBJ)zcharout.$(OBJ) $(PSOBJ)zfont42.$(OBJ)
