@@ -141,6 +141,8 @@ zSFD(i_ctx_t *i_ctx_p)
     ref *sop = op;
     int npop;
 
+    if (s_SFD_template.set_defaults)
+	s_SFD_template.set_defaults((stream_state *)&state);
     if (LL3_ENABLED && r_has_type(op, t_dictionary)) {
 	int count;
 	int code;
