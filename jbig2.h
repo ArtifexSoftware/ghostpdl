@@ -8,12 +8,15 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.15 2003/02/03 20:04:11 giles Exp $
+    $Id: jbig2.h,v 1.16 2003/02/05 15:09:59 giles Exp $
 */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef _JBIG2_H
+#define _JBIG2_H
 
 /* warning levels */
 typedef enum {
@@ -115,6 +118,8 @@ Jbig2Segment *jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t bu
 int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
 			 const uint8_t *segment_data);
 void jbig2_free_segment (Jbig2Ctx *ctx, Jbig2Segment *segment);
+
+#endif /* _JBIG2_H */
 
 #ifdef __cplusplus
 }
