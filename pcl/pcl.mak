@@ -464,7 +464,7 @@ $(PCLOBJ)pccrd.$(OBJ): $(PCLSRC)pccrd.c \
 $(PCLOBJ)pccsbase.$(OBJ): $(PCLSRC)pccsbase.c   \
                           $(gx_h)               \
                           $(math__h)             \
-                          $(gstypes.h)          \
+                          $(gstypes_h)          \
                           $(gsmatrix_h)         \
                           $(gsstruct_h)         \
                           $(gsrefct_h)          \
@@ -775,7 +775,7 @@ $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c   \
                         $(gspath_h)         \
                         $(gspath2_h)        \
                         $(gsrop)            \
-                        $(gsstate.h)        \
+                        $(gsstate_h)        \
                         $(gxchar_h)         \
                         $(gxfont_h)         \
                         $(gxstate_h)
@@ -934,7 +934,7 @@ pggeom_h    = $(PCLSRC)pggeom.h   \
               $(math__h)          \
               $(gstypes_h)
 
-pginit_h    = $(PCSRC)pginit.h    \
+pginit_h    = $(PCLSRC)pginit.h   \
               $(gx_h)             \
               $(pcstate_h)        \
               $(pcommand_h)       \
