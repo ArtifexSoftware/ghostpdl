@@ -935,11 +935,11 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     if (mdproto == 0)
 	return_error(gs_error_rangecheck);
     
-    ccode = gs_copydevice((gx_device **)&(ddev->mdev),
-			     (const gx_device *)mdproto,
-			     gs_memory_stable(ddev->memory));
-    if (ccode < 0)
-	return ccode;
+    ddev->mdev = gs_alloc_struct(gs_memory_stable(ddev->memory), 
+	    gx_device_memory, &st_device_memory, "display_memory_device");
+    if (ddev->mdev == 0)
+        return_error(gs_error_VMerror);
+
     gs_make_mem_device(ddev->mdev, mdproto, gs_memory_stable(ddev->memory), 
 	0, (gx_device *) NULL);
     gx_device_fill_in_procs((gx_device *)(ddev->mdev));
