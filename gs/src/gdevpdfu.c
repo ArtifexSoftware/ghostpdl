@@ -755,7 +755,7 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 pdf_put_name_chars_proc_t
 pdf_put_name_chars_proc(const gx_device_pdf *pdev)
 {
-    return pdf_put_name_chars_1_2;
+    return &pdf_put_name_chars_1_2;
 }
 void
 pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr, uint size)

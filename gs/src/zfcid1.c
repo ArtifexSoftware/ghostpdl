@@ -22,6 +22,7 @@
 #include "gsmatrix.h"
 #include "gsccode.h"
 #include "gsstruct.h"
+#include "gsgcache.h"
 #include "gxfcid.h"
 #include "bfont.h"
 #include "icid.h"
@@ -129,19 +130,6 @@ z11_get_outline(gs_font_type42 * pfont, uint glyph_index,
     }
     return code;
 }
-
-/* Take outline data from a True TYpe font file. */
-private int
-z11_get_outline_from_TT_file(gs_font_type42 * pfont, uint glyph_index,
-		gs_glyph_data_t *pgd)
-{
-    ref *file = &((font_data *)pfont->client_data)->u.type42.file;
-    stream *s;
-
-    check_read_file(s, file);
-    return gs_type42_get_outline_from_TT_file(pfont, s, glyph_index, pgd);
-}
-
 
 #define GET_U16_MSB(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
@@ -274,10 +262,13 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	 * We assume that disk fonts has no MetricsCount.
 	 * We could do not, but the number of virtual function wariants increases.
 	 */
-	ref_assign_new(&((font_data *)pfont->client_data)->u.type42.file, file);
+	stream *s;
+
+	check_read_file(s, file);
 	pfont->data.loca = loca_glyph_pos[0][0];
 	pfont->data.glyf = loca_glyph_pos[1][0];
-	pfont->data.get_outline = z11_get_outline_from_TT_file;
+	pfont->data.get_outline = gs_get_glyph_data_cached;
+   	pfont->data.gdcache = gs_glyph_cache__alloc(pfont, s, gs_type42_get_outline_from_TT_file);
     }
     return define_gs_font((gs_font *)pfont);
 }

@@ -307,6 +307,7 @@ gsfcmap_h=$(GLSRC)gsfcmap.h $(gsccode_h)
 gsfname_h=$(GLSRC)gsfname.h
 gsfont_h=$(GLSRC)gsfont.h
 gsgdata_h=$(GLSRC)gsgdata.h $(gsstype_h)
+gxgcache_h=$(GLSRC)gxgcache.h
 gshsb_h=$(GLSRC)gshsb.h
 gsht_h=$(GLSRC)gsht.h
 gsht1_h=$(GLSRC)gsht1.h $(gsht_h)
@@ -768,6 +769,10 @@ $(GLOBJ)gsgdata.$(OBJ) : $(GLSRC)gsgdata.c $(GXERR) $(memory__h)\
  $(gsgdata_h) $(gsmatrix_h) $(gsstruct_h) $(gxfont_h)
 	$(GLCC) $(GLO_)gsgdata.$(OBJ) $(C_) $(GLSRC)gsgdata.c
 
+$(GLOBJ)gsgcache.$(OBJ) : $(GLSRC)gsgcache.c $(GXERR)\
+ $(gsstruct_h) $(gsgdata_h) $(gsgcache_h) $(gxfont_h) $(gxfont42_h)
+	$(GLCC) $(GLO_)gsgcache.$(OBJ) $(C_) $(GLSRC)gsgcache.c
+
 $(GLOBJ)gsht.$(OBJ) : $(GLSRC)gsht.c $(GXERR) $(memory__h)\
  $(gsstruct_h) $(gsutil_h) $(gxarith_h) $(gxdevice_h) $(gzht_h) $(gzstate_h)\
  $(gswts_h)
@@ -1032,7 +1037,7 @@ LIB2s=$(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
 LIB3s=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ)
 LIB4s= $(GLOBJ)gscoord.$(OBJ) $(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ) $(GLOBJ)gsovrc.$(OBJ) $(GLOBJ)gxoprect.$(OBJ)
 LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ) $(GLOBJ)gsdfilt.$(OBJ)
-LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ)
+LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ) $(GLOBJ)gsgcache.$(OBJ)
 LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ) $(GLOBJ)gswts.$(OBJ)
 LIB8s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB9s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsistate.$(OBJ) $(GLOBJ)gsline.$(OBJ)

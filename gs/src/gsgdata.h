@@ -54,11 +54,15 @@
 /* ------ Structure declaration ------ */
 
 typedef struct gs_glyph_data_procs_s gs_glyph_data_procs_t;
-typedef struct gs_glyph_data_s {
+#ifndef gs_glyph_data_DEFINED
+#   define gs_glyph_data_DEFINED
+typedef struct gs_glyph_data_s gs_glyph_data_t;
+#endif
+struct gs_glyph_data_s {
     gs_const_bytestring bits;	/* pointer to actual data returned here */
     const gs_glyph_data_procs_t *procs;
     void *proc_data;
-} gs_glyph_data_t;
+};
 extern_st(st_glyph_data);
 #define ST_GLYPH_DATA_NUM_PTRS 2
 
