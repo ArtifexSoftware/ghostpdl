@@ -34,6 +34,7 @@
 
 #define NEW_TENSOR_SHADING 0 /* Old code = 0, new code = 1. */
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
+#define POLYGON_WEDGES 0 /* 1 = polygons allowed, 1 = triangles only. */
 #define TENSOR_SHADING_DEBUG 0
 #define VD_DRAW_CIRCLES 0
 #define VD_TRACE_DOWN 1
@@ -136,7 +137,9 @@ typedef struct patch_fill_state_s {
     const gs_function_t *Function;
 #if NEW_TENSOR_SHADING
     bool vectorization;
+#   if QUADRANGLES
     gs_fixed_point *wedge_buf;
+#   endif
     gs_client_color color_domain;
     fixed fixed_flat;
 #endif
@@ -159,7 +162,9 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     for (i = 0; i < n; i++)
 	pfs->color_domain.paint.values[i] = max(fcc1.paint.values[i] - fcc0.paint.values[i], 1);
     pfs->vectorization = false; /* A stub for a while. Will use with pclwrite. */
-    pfs->wedge_buf = NULL;
+#   if QUADRANGLES
+	pfs->wedge_buf = NULL;
+#   endif
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
 }
 #endif
@@ -787,19 +792,10 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     before the backward transposition.
  */
 
-/* todo :
-   - Maybe the smoothness threshold isn't correct.
-     483-05.ps renders some unsmoothly, need to investigate why so.
-
-   - Optimize intersection_of_small_bars - see 'fixme' in there.
-
-   - A general optimization isn't done yet. Tune thresholds.
- */
-
 /* fixme :
    The current code allocates up to 64 instances of tensor_patch on C stack, 
    when executes fill_stripe, decompose_stripe, fill_quadrangle.
-   Our estimation of the stack size id about 10K.
+   Our estimation of the stack size is about 10K.
    Maybe it needs to reduce with a heap-allocated stack.
 */
 
@@ -1323,7 +1319,6 @@ draw_wedge(gs_fixed_point *p, int n)
 #endif
 }
 
-
 private int
 fill_wedge(patch_fill_state_t *pfs, int ka, 
 	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
@@ -1332,7 +1327,12 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
     fixed dx, dy;
     bool swap_axes;
     int k1 = ka + 1, i, code;
-    gs_fixed_point q[2], *p = pfs->wedge_buf;
+    gs_fixed_point q[2];
+#   if QUADRANGLES
+	gs_fixed_point *p = pfs->wedge_buf;
+#   else
+	gs_fixed_point *p = NULL; /* never executes. */
+#   endif
 
     p[0] = pole[0];
     p[ka] = pole[3];
@@ -1364,6 +1364,59 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
     return fill_wedge_trap(pfs, &p[0], &p[ka], q, c0, c1, swap_axes);
 }
 
+private inline int 
+fill_triangle_wedge(patch_fill_state_t *pfs, gs_fixed_point q[3], 
+		    const patch_color_t *c0, const patch_color_t *c1)
+{
+    patch_color_t c;
+    int code;
+    fixed dx = any_abs(q[0].x - q[1].x), dy = any_abs(q[0].y - q[1].y);
+    bool swap_axes = false;
+
+    if (dx > dy) {
+	swap_axes = true;
+	do_swap_axes(q, 3);
+    }
+    if (q[0].y > q[1].y) {
+	const patch_color_t *cc = c0;
+	gs_fixed_point p = q[0]; 
+	
+	q[0] = q[1]; 
+	q[1] = p; 
+	c0 = c1; 
+	c1 = cc;
+    }
+    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
+    code = fill_wedge_trap(pfs, &q[0], &q[2], q, c0, &c, swap_axes);
+    if (code < 0)
+	return code;
+    return fill_wedge_trap(pfs, &q[2], &q[1], q, &c, c1, swap_axes);
+}
+
+private int
+wedge_by_triangles(patch_fill_state_t *pfs, int ka, 
+	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
+{   /* Assuming ka >= 2, see fill_wedges. */
+    gs_fixed_point q[2][4], p[3];
+    patch_color_t c;
+    int code;
+
+    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
+    split_curve(pole, q[0], q[1]);
+    p[0] = pole[0]; /* fixme: Improve fill_triangle_wedge prototype. */
+    p[1] = pole[3];
+    p[2] = q[0][3];
+    code = fill_triangle_wedge(pfs, p, c0, &c);
+    if (code < 0)
+	return code;
+    if (ka == 2)
+	return 0;
+    code = wedge_by_triangles(pfs, ka / 2, q[0], c0, &c);
+    if (code < 0)
+	return code;
+    return wedge_by_triangles(pfs, ka / 2, q[1], &c, c1);
+}
+
 private int
 fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka, 
 	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
@@ -1380,7 +1433,7 @@ fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka,
 	    return code;
 	return fill_wedges_aux(pfs, k / 2, ka, q[1], &c, c1);
    } else
-	return fill_wedge(pfs, ka, pole, c0, c1);
+	return (POLYGON_WEDGES ? fill_wedge : wedge_by_triangles)(pfs, ka, pole, c0, c1);
 }
 
 private int
@@ -1862,35 +1915,6 @@ quadrangle_bbox_covers_pixel_centers(const tensor_patch *p)
     return false;
 }
 
-private inline int 
-fill_triangle_wedge(patch_fill_state_t *pfs, gs_fixed_point q[3], 
-		    const patch_color_t *c0, const patch_color_t *c1)
-{
-    patch_color_t c;
-    int code;
-    fixed dx = any_abs(q[0].x - q[1].x), dy = any_abs(q[0].y - q[1].y);
-    bool swap_axes = false;
-
-    if (dx > dy) {
-	swap_axes = true;
-	do_swap_axes(q, 3);
-    }
-    if (q[0].y > q[1].y) {
-	const patch_color_t *cc = c0;
-	gs_fixed_point p = q[0]; 
-	
-	q[0] = q[1]; 
-	q[1] = p; 
-	c0 = c1; 
-	c1 = cc;
-    }
-    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
-    code = fill_wedge_trap(pfs, &q[0], &q[2], q, c0, &c, swap_axes);
-    if (code < 0)
-	return code;
-    return fill_wedge_trap(pfs, &q[2], &q[1], q, &c, c1, swap_axes);
-}
-
 private int triangle(patch_fill_state_t *pfs, 
 	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
 	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2);
@@ -2366,14 +2390,16 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     ku[3] = curve_samples(p.pole[0], 1, pfs->fixed_flat);
     kum = max(ku[0], ku[3]);
     km = max(kvm, kum);
-    if (km + 1 > count_of(buf)) {
-	/* km may be randomly big with a patch which looks as a triangle in XY. */
-	pfs->wedge_buf = (gs_fixed_point *)gs_alloc_bytes(memory, 
-		sizeof(gs_fixed_point) * (km + 1), "patch_fill");
-	if (pfs->wedge_buf == NULL)
-	    return_error(gs_error_VMerror);
-    } else
-	pfs->wedge_buf = buf;
+#   if QUADRANGLES
+	if (QUADRANGLES && km + 1 > count_of(buf)) {
+	    /* km may be randomly big with a patch which looks as a triangle in XY. */
+	    pfs->wedge_buf = (gs_fixed_point *)gs_alloc_bytes(memory, 
+		    sizeof(gs_fixed_point) * (km + 1), "patch_fill");
+	    if (pfs->wedge_buf == NULL)
+		return_error(gs_error_VMerror);
+	} else
+	    pfs->wedge_buf = buf;
+#   endif
 #   if TENSOR_SHADING_DEBUG
 	dbg_nofill = false;
 #   endif
@@ -2394,9 +2420,11 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 #	endif
 	code = fill_patch(pfs, &p, kvm);
     }
-    if (km + 1 > count_of(buf))
-	gs_free_object(memory, pfs->wedge_buf, "patch_fill");
-    pfs->wedge_buf = NULL;
+#   if QUADRANGLES
+	if (km + 1 > count_of(buf))
+	    gs_free_object(memory, pfs->wedge_buf, "patch_fill");
+	pfs->wedge_buf = NULL;
+#   endif
     return code;
 }
 
