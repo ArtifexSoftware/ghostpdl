@@ -1,0 +1,7 @@
+Version 0.1
+
+ * decodes artithmetic and huffman-coded generic regions
+    - some templates not working
+ * decodes arithmetic symbol dictionaries
+ * decodes artithmetic text regions
+ * successfully decodes ubc test streams 042_1,2,4,5 and 10.
