@@ -1,4 +1,4 @@
-%    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -58,7 +58,7 @@
 	pop pop
       } ifelse
     } ifelse
-  } forall .dicttomark readonly .forceput	% systemdict is read-only
+  } forall .dicttomark readonly put
 		% Create localdicts for the current context.
   false .setglobal
   userdict /localdicts mark savedlocaldicts {
@@ -106,7 +106,7 @@
       counttomark 1 add index .copydict
     } {
       1 index /userparams eq {
-		% Stack: userparams mark ... /userparams inituserparams
+		% Stack: userdict mark ... /userparams inituserparams
 	userparams .copydict
       } {
 	.copylocal
@@ -125,6 +125,12 @@
   end .setglobal
 } odef
 
+% Check whether an object is a procedure.
+/.proccheck {			% <obj> .proccheck <bool>
+  dup xcheck
+  exch type dup /arraytype eq exch /packedarraytype eq or and
+} bind def
+
 % Create a context with private local VM.
 % The .localfork operator does all the work, but we must ensure that
 % .initlocaldicts gets called when the new context starts up.
@@ -132,8 +138,7 @@
 				%   <stdin|null> <stdout|null>
 				%   localfork <context>
   .currentglobal true .setglobal 3 index
-  dup dup xcheck
-  exch type dup /arraytype eq exch /packedarraytype eq or and not {
+  dup .proccheck not {
     pop .setglobal /localfork cvx /typecheck signalerror
   } if
   {exec .initlocaldicts} aload pop
@@ -141,16 +146,16 @@
   4 1 roll 5 -1 roll pop .setglobal .localfork
 } odef
 
-% Fork a context that shares VM.  We still need to fill in userparams
-% when the new context starts up.
+% Fork a context that shares VM.  The .fork operator creates an empty
+% userparams dictionary for the context, but we still need to initialize
+% this dictionary when the new context starts up.
 /.postfork {		% - .postfork -
 	% Initialize the user parameters.
   savedlocaldicts /userparams get userparams .copydict readonly pop
 } odef
 /fork {			% <mark> <obj1> ... <objN> <proc> fork <context>
   .currentglobal false .setglobal 1 index
-  dup dup xcheck
-  exch type dup /arraytype eq exch /packedarraytype eq or and not {
+  dup .proccheck not {
     pop .setglobal /fork cvx /typecheck signalerror
   } if
   {exec .postfork} aload pop
