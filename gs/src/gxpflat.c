@@ -382,7 +382,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 		  (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
-	if (!coord_near(x, y, this->x0, this->y0, this->coords_near_threshold) &&
+	if (!coord_near(x, y, this->x0, this->y0, this->coords_near_threshold) ||
 	    !coord_near(x, y, this->x3, this->y3, this->coords_near_threshold)) {
 	    this->lx1 = x, this->ly1 = y;
 	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
