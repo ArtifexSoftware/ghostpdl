@@ -177,8 +177,8 @@ diff = diff + "\n\nThe complete list of regressions for today:\n"
 msg = diff + msg
 
 # Prepend checkout times
-times = "CVS checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %z", time.localtime(starttime)) + "\n"
-times = times + "CVS checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %z", time.localtime(endtime)) + "\n\n"
+times = "CVS checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(starttime)) + "\n"
+times = times + "CVS checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n\n"
 
 msg = times + msg
 
