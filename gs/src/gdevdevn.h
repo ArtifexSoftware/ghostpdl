@@ -94,10 +94,30 @@ typedef gs_devn_params_t gs_devn_params;
 extern const fixed_colorant_names_list DeviceCMYKComponents;
 
 /*
- * Put the DeviceN related parameters.  Note that this routine requires a pointer
- * to the DeviceN parametes within the device structure.
+ * Put the DeviceN related parameters.
+ *
+ * Note that this routine requires a pointer to the DeviceN parametes within
+ * the device structure.
+ *
+ * Note:  See the devicen_put_params_no_sep_order routine (next) for comments
+ * about the SeparationOrder parameter.
  */
 int devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
+		gs_param_list * plist);
+
+/*
+ * Put the DeviceN related parameters.  This routine does not handle the
+ * SeparationOrder parameter.  Some high level devices do not want the
+ * SeparationOrder parameter to processed.  (The use of the SeparationOrder
+ * parameter could result in only some of the separations being present in
+ * the device's output.  This is not desired for a device like pdfwrite
+ * which uses the process color model colorants for a backup case to
+ * handle colors.  Missing separations would result in missing color values.)
+ *
+ * Note that this routine requires a pointer to the DeviceN parametes within
+ * the device structure.
+ */
+int devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
 		gs_param_list * plist);
 
 /*

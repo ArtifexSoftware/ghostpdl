@@ -606,38 +606,34 @@ spotcmyk_put_params(gx_device * pdev, gs_param_list * plist)
 		    &(((spotcmyk_device *)pdev)->devn_params), plist);
 }
 
-/* Set parameters. */
+/*
+ * devicen_pat_params_no_sep_order()
+ *
+ * This routine handles most of the DeviceN related parameters.  It does
+ * not handle the SeparationOrder parameter.  Some high level devices do
+ * not want to support the SeparationOrder parameter so the remaining
+ * parameter handling has been split out as a separate routine.  See
+ * the devicen_put_params() routine for handling of SeparationOrder.
+ */
 int
-devicen_put_params(gx_device * pdev, gs_devn_params * pparams, gs_param_list * plist)
+devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
+					gs_param_list * plist)
 {
     /* Save info in case it needs to be restored */
     gx_device_color_info save_info = pdev->color_info;
     gs_separation_names save_separation_names = pparams->separation_names;
-    gs_separation_order save_separation_order = pparams->separation_order;
-    gs_separation_map save_separation_order_map;
     gs_param_name param_name;
     int npcmcolors = pparams->num_std_colorant_names;
     int num_spot = pparams->separation_names.num_names;
     int num_order = pparams->separation_order.num_names;
     int code = 0, ecode = 0;
     gs_param_string_array scna;		/* SeparationColorNames array */
-    gs_param_string_array sona;		/* SeparationOrder names array */
-
-    memcpy(&save_separation_order_map, &pparams->separation_order_map,
-		    				sizeof(gs_separation_map));
 
     /* Get the SeparationColorNames */
     BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
     if (scna.data != 0 && scna.size > GX_DEVICE_COLOR_MAX_COMPONENTS)
-	return_error(gs_error_rangecheck);
-
-    /* Get the SeparationOrder names */
-    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationOrder", sona, sona.size, sone) {
-	break;
-    } END_ARRAY_PARAM(sona, sone);
-    if (sona.data != 0 && sona.size > GX_DEVICE_COLOR_MAX_COMPONENTS)
 	return_error(gs_error_rangecheck);
 
     /* Separations are only valid with a subrtractive color model */
@@ -661,6 +657,82 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams, gs_param_list * p
 	    for (i = 0; i < num_spot + npcmcolors; i++)
 		pparams->separation_order_map[i] = i;
         }
+	/*
+	 * If we have SeparationOrder specified then the number of components
+	 * is given by the number of names in the list.  Otherwise the number
+	 * of ProcessColorModel components and SeparationColorNames is used.
+	 */
+        pdev->color_info.num_components = (num_order) ? num_order 
+						      : npcmcolors + num_spot;
+        /* 
+         * The DeviceN device can have zero components if nothing has been
+	 * specified.  This causes some problems so force at least one component
+	 * until something is specified.
+         */
+        if (!pdev->color_info.num_components)
+	    pdev->color_info.num_components = 1;
+        pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components, 
+						pparams->bitspercomponent);
+    }
+
+    /* If no error (so far) then check for default printer parameters */
+    if (ecode >= 0)
+        ecode = gdev_prn_put_params(pdev, plist);
+
+    /* If we have an error then restore original data. */
+    if (ecode < 0) {
+	pdev->color_info = save_info;
+	pparams->separation_names = save_separation_names;
+	return ecode;
+    }
+
+    /* If anything changed, then close the device, etc. */
+    if (memcmp(&pdev->color_info, &save_info, sizeof(gx_device_color_info)) ||
+	memcmp(&pparams->separation_names, &save_separation_names,
+					sizeof(gs_separation_names)))
+	gs_closedevice(pdev);
+        /* Reset the sparable and linear shift, masks, bits. */
+	set_linear_color_bits_mask_shift(pdev);
+        pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+
+    return 0;
+}
+
+/*
+ * devicen_pat_params()
+ *
+ * This routine handles most of the DeviceN related parameters.  This
+ * routine does handle the SeparationOrder parameter. See
+ * devicen_put_params_no_sep_order() for a routine that does not
+ * handle the SeparationOrder parameter.
+ */
+int
+devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
+					gs_param_list * plist)
+{
+    /* Save info in case it needs to be restored */
+    gx_device_color_info save_info = pdev->color_info;
+    gs_separation_order save_separation_order = pparams->separation_order;
+    gs_separation_map save_separation_order_map;
+    gs_param_name param_name;
+    int npcmcolors = pparams->num_std_colorant_names;
+    int num_spot = pparams->separation_names.num_names;
+    int num_order = pparams->separation_order.num_names;
+    int code = 0, ecode = 0;
+    gs_param_string_array sona;		/* SeparationOrder names array */
+
+    memcpy(&save_separation_order_map, &pparams->separation_order_map,
+		    				sizeof(gs_separation_map));
+
+    /* Get the SeparationOrder names */
+    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationOrder", sona, sona.size, sone) {
+	break;
+    } END_ARRAY_PARAM(sona, sone);
+    if (sona.data != 0 && sona.size > GX_DEVICE_COLOR_MAX_COMPONENTS)
+	return_error(gs_error_rangecheck);
+
+    /* Separations are only valid with a subrtractive color model */
+    if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
         /*
          * Process the SeparationOrder names.
          */
@@ -701,15 +773,16 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams, gs_param_list * p
         pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components, 
 						pparams->bitspercomponent);
     }
-
-    /* If no error (so far) then check fo default printer parameters */
+    /*
+     * If no error (so far) then check for the remainder of the DeviceN
+     * and other printer related parameters.
+     */
     if (ecode >= 0)
-        ecode = gdev_prn_put_params(pdev, plist);
+        ecode = devicen_put_params_no_sep_order(pdev, pparams, plist);
 
     /* If we have an error then restore original data. */
     if (ecode < 0) {
 	pdev->color_info = save_info;
-	pparams->separation_names = save_separation_names;
 	pparams->separation_order = save_separation_order;
 	memcpy(&pparams->separation_order_map, &save_separation_order_map,
 			    size_of(gs_separation_map));
@@ -718,8 +791,6 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams, gs_param_list * p
 
     /* If anything changed, then close the device, etc. */
     if (memcmp(&pdev->color_info, &save_info, sizeof(gx_device_color_info)) ||
-	memcmp(&pparams->separation_names, &save_separation_names,
-					sizeof(gs_separation_names)) ||
 	memcmp(&pparams->separation_order, &save_separation_order,
 					sizeof(gs_separation_order)) ||
 	memcmp(&pparams->separation_order_map, &save_separation_order_map,
