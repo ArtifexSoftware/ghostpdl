@@ -841,8 +841,10 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   maxplbits maxclbits .max /maxplbits 1 index def /maxclbits exch def
 
         % Mapping from object number to shared object reference
-  /shared_id_dict SharedNs length dict begin
-  0 SharedNs { 1 index def 1 add } forall pop
+  /shared_id_dict FirstPageNs length SharedNs length add dict begin
+  0 FirstPageNs { 1 index def 1 add } forall
+    SharedNs { 1 index def 1 add } forall
+  pop
   currentdict end def 
 
                 % Table F.3 Page offset hint table, header section
@@ -872,10 +874,10 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   maxclbits 16 bwn
 		% 10: Bits needed to represent the greatest number of Shared
    		% Object references:
-  0 SharedPageNs { length .max } forall bitsneeded
+  FirstPageNs length SharedPageNs { length .max } forall bitsneeded
   /maxsorbits 1 index def 16 bwn
 		% 11: Bits needed to identify a Shared Object:
-  SharedNs length bitsneeded
+  FirstPageNs length SharedNs length add bitsneeded
   /sobits 1 index def 16 bwn
 		% 12: Bits needed to represent numerator of fraction:
   2
@@ -901,9 +903,11 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   bits bitflush
 
 		% 3: Number of shared objects referenced from page:
+  FirstPageNs length maxsorbits bwn 
   SharedPageNs { length maxsorbits bwn } forall
   bits bitflush
                 % 4: A shared object identifier:
+  FirstPageNs { shared_id_dict exch get sobits bwn } forall
   SharedPageNs {
     { shared_id_dict exch get sobits bwn
     } forall
@@ -911,6 +915,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   bits bitflush
 
                 % 5: Numerator of fractional position for each shared object:
+  FirstPageNs { pop 0 numfbits bwn  } forall
   SharedPageNs {
     { pop 0 numfbits bwn 
     } forall
