@@ -210,6 +210,12 @@ typedef struct gs_transparency_source_s {
     float alpha;		/* constant alpha */
     gs_transparency_mask_t *mask;
 } gs_transparency_source_t;
+/*
+ * Note that the ctm member is a gs_matrix_fixed.  As such, it cannot be
+ * used directly as the argument for procedures like gs_point_transform.
+ * Instead, one must use the ctm_only macro, e.g., &ctm_only(pis) rather
+ * than &pis->ctm.
+ */
 #define gs_imager_state_common\
 	gs_memory_t *memory;\
 	void *client_data;\
