@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -44,9 +44,13 @@ private int
 zcurrentgray(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    float gray;
+    int code = gs_currentgray(igs, &gray);
 
+    if (code < 0)
+	return code;
     push(1);
-    make_real(op, gs_currentgray(igs));
+    make_real(op, gray);
     return 0;
 }
 
@@ -56,8 +60,10 @@ zcurrentrgbcolor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     float par[3];
+    int code = gs_currentrgbcolor(igs, par);
 
-    gs_currentrgbcolor(igs, par);
+    if (code < 0)
+	return code;
     push(3);
     make_floats(op - 2, par, 3);
     return 0;

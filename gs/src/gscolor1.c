@@ -72,6 +72,7 @@ gs_currentcmykcolor(const gs_state * pgs, float pr4[4])
     gs_color_space_index csi = pgs->orig_cspace_index;
     frac fcc[4];
     gs_client_color cc;
+    int code;
 
   sw:switch (csi) {
 	case gs_color_space_index_DeviceGray:
@@ -108,8 +109,9 @@ gs_currentcmykcolor(const gs_state * pgs, float pr4[4])
 		default:	/* outer switch will catch undefined cases */
 		    break;
 	    }
-	    if (cs_concretize_color(pcc, pcs, fcc, pis) < 0)
-		break;
+	    code = cs_concretize_color(pcc, pcs, fcc, pis);
+	    if (code < 0)
+		return code;
 	    cc.paint.values[0] = frac2float(fcc[0]);
 	    cc.paint.values[1] = frac2float(fcc[1]);
 	    cc.paint.values[2] = frac2float(fcc[2]);
