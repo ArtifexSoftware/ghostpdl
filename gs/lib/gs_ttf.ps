@@ -216,10 +216,19 @@
       exch pop
 		% Stack: false table record
       dup 10 getu16 2 index 4 getu16 add
-      1 index 8 getu16 4 -1 roll 3 1 roll getinterval exch
+      1 index 8 getu16 4 -1 roll 3 1 roll
+	  3 copy add 1 index length
+	  le {
+	    pop
+	    getinterval exch
 		% Stack: false string record
 		% Check for 8- vs. 16-bit characters.
-      is2byte { string2to1 } if true null 4 -1 roll exit
+        is2byte { string2to1 } if true null 4 -1 roll exit
+	  } {
+	    pop pop pop pop
+	    false
+		exit
+	  } ifelse
     } if pop
   } for pop pop
   TTFDEBUG {
