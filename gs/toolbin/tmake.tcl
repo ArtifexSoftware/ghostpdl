@@ -2,7 +2,7 @@
 # hack to restart using tclsh \
 exec tclsh "$0" "$@"
 
-#    Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -36,7 +36,7 @@ exec tclsh "$0" "$@"
 #	- No target is the target of more than one rule.
 
 # Define the backward-compatibility version of this file.
-set TMAKE_VERSION 104
+set TMAKE_VERSION 105
 
 #****** -j doesn't work yet ******#
 
@@ -460,16 +460,25 @@ proc mak2tcl {inname {outname ""}} {
     }
     write_header $out $outname
     set linenum 1
-    for {set lnfirst $linenum} {[lgets $in line linenum] >= 0} {set lnfirst $linenum} {
-	if {$line == ""} {continue}
-	if {[string index $line 0] == "#"} {continue}
+    set line ""
+    while {1} {
+	while {$line == ""} {
+	    set lnfirst $linenum
+	    if {[lgets $in line linenum] < 0} break
+	}
+	if {$line == ""} break
+	if {[string index $line 0] == "#"} {
+	    set line ""
+	    continue
+	}
 	if {[regexp {^([0-9A-Za-z_]+)[ ]*=[ ]*(.*)[ ]*$} $line skip var defn]} {
 	    write_macro $out $var $defn ${inname}:$lnfirst
+	    set line ""
 	    continue
 	}
 	if {[regexp {^([^:]+):(.*)$} $line skip targets deps]} {
 	    set commands {}
-	    while {[lgets $in line linenum] > 0} {
+	    while {[lgets $in line linenum] > 0 && [regexp {^[#	]} $line]} {
 		regsub {^[	]} $line {} line
 		lappend commands $line
 	    }
@@ -478,11 +487,16 @@ proc mak2tcl {inname {outname ""}} {
 	}
 	if {[regexp {^(!|)include[ ]+("|)([^ "]*)("|)$} $line skip skip2 skip3 fname]} {
 	    write_include $out $fname
+	    set line ""
 	    continue
 	}
 	# Recognize some GNU constructs
-	if {[regexp {^unexport } $line]} {continue}
-	puts "****Not recognized: $line"
+	if {[regexp {^unexport } $line]} {
+	    set line ""
+	    continue
+	}
+	puts "${inname}:$lnfirst: Unrecognized line: $line"
+	set line ""
     }
     if {$out != "stdout"} {
 	close $out
