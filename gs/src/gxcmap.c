@@ -1113,8 +1113,11 @@ gx_color_frac_map(frac cv, const frac * values)
 gx_color_index
 gx_default_w_b_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {				/* Map values >= 1/2 to 1, < 1/2 to 0. */
-    return ((cv[0] | cv[1] | cv[2]) > gx_max_color_value / 2 ?
-	    (gx_color_index) 1 : (gx_color_index) 0);
+    gx_color_index cvtmp = (cv[0] | cv[1] | cv[2]);
+    if ( cvtmp > gx_max_color_value / 2 )
+        return (gx_color_index) 1;
+    else
+        return (gx_color_index) 0;
 }
 int
 gx_default_w_b_map_color_rgb(gx_device * dev, gx_color_index color,
