@@ -80,7 +80,7 @@ dfax_print_page(gx_device_printer *dev, FILE *prn_stream)
 	static char hdr[64] = "\000PC Research, Inc\000\000\000\000\000\000";
 	int code;
 
-	gdev_fax_init_state(&state, dev);
+	gdev_fax_init_state(&state, (gx_device_fax *)dev);
 	state.EndOfLine = true;
 	state.EncodedByteAlign = true;
 
