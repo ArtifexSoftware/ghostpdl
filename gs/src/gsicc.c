@@ -329,6 +329,15 @@ gx_adjust_cspace_CIEICC(const gs_color_space * pcs, int delta)
                 (const gs_color_space *)&picc_params->alt_space, delta );
 }
 
+/*
+ * Increment color space reference counts.
+ */
+void
+gx_increment_cspace_count(const gs_color_space * pcs)
+{
+    pcs->type->adjust_cspace_count(pcs, 1);
+}
+
 private int
 icmFileGs_seek(icmFile *pp, long int offset)
 {

@@ -536,6 +536,12 @@ end
     /ReusableStreamDecode filter /DataSource exch put
     1 exch put
     exch PDFfile exch setfileposition
+    % Resolve alternate color space
+    dup 1 get			% Get colorspace dictionary
+    dup /Alternate .knownget	% Check for alternate color space
+    { oforce resolvecolorspace /Alternate exch put }	% resolve and replace
+    { pop }			% remove colorspace dictionary
+    ifelse
   } bind
   /Separation {
     aload pop exch oforce resolvecolorspace exch oforce resolvefnproc
