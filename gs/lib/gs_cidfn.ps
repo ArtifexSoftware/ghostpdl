@@ -292,7 +292,6 @@ currentdict end
 (%Type11BuildGlyph) cvn {	% <cidfont> <cid> %Type11BuildGlyph -
 		% We must be prepared for out-of-range CIDs.
   2 copy { .type11mapcid } .internalstopped {
-		%**** 0 IS WRONG
     pop /CharStrings get /.notdef get
   } if
 			% Stack: cidfont cid glyphindex
@@ -347,18 +346,17 @@ dup /DefineResource {
 
 /CIDMap /Generic /Category findresource dup length dict .copydict
 dup /.CheckResource {
-	% Allow either a string or an array of strings.
-  dup type dup /stringtype eq
-   { pop true
-   }
-   { dup /arraytype eq exch /packedarraytype eq or
-      { true exch { type /stringtype ne { pop false exit } if } forall
-      }
-      { false
-      }
-     ifelse
-   }
-  ifelse
+	% Allow a string, an array of strings, or (as of Adobe release 3011)
+	% a dictionary.
+  dup type dup dup /stringtype eq exch /dicttype eq or {
+    pop true
+  } {
+    dup /arraytype eq exch /packedarraytype eq or {
+      true exch { type /stringtype eq and } forall
+    } {
+      false
+    } ifelse
+  } ifelse
 } bind put
 /Category defineresource pop
 
