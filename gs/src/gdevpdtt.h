@@ -161,7 +161,7 @@ int pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
  * Create or find a parent Type 0 font resource object for a CID font resource.
  */
 int pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdsubf, 
-		pdf_font_resource_t **pdfont);
+		const gs_const_string *CMapName, pdf_font_resource_t **pdfont);
 
 /*
  * Retrive font resource attached to a font.

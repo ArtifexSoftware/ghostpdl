@@ -698,6 +698,38 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
     return 0;
 }
 
+/* 
+ * Find a type0 font resource for a gived descendent name and CMap name. 
+ */
+private int
+pdf_find_type0_font_resource(gx_device_pdf *pdev, const pdf_font_resource_t *pdsubf, 
+	    const gs_const_string *CMapName, pdf_font_resource_t **ppdfont)
+{
+    pdf_resource_t **pchain = pdev->resources[resourceFont].chains;
+    pdf_resource_t *pres;
+    int i;
+    
+    for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
+	for (pres = pchain[i]; pres != 0; pres = pres->next) {
+	    pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pres;
+
+	    if (pdfont->FontType != ft_composite)
+		continue;
+	    if (pdfont->u.type0.DescendantFont != pdsubf)
+		continue;
+	    if (pdfont->BaseFont.size != pdsubf->BaseFont.size + CMapName->size + 1)
+		continue;
+	    if (memcmp(pdfont->BaseFont.data + pdsubf->BaseFont.size + 1, 
+			CMapName->data, CMapName->size))
+		continue;
+	    *ppdfont = pdfont;
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+
 private int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		       pdf_font_resource_t **ppdfont, 
 		       gs_glyph *glyphs, gs_char *chars, int num_chars);
@@ -732,14 +764,6 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
 	 */
     }
     return code;
-}
-private int
-pdf_obtain_cidfont_resource_old(gx_device_pdf *pdev, gs_font_type0 *font, 
-			    pdf_font_resource_t **ppdsubf, 
-			    gs_glyph *glyphs, int num_glyphs)
-{
-    return pdf_obtain_cidfont_resource(pdev, font->data.FDepVector[0], 
-			    ppdsubf, glyphs, num_glyphs);
 }
 
 /*
@@ -1031,7 +1055,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	if (num_all_chars > glyphs_offset)
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (glyph_usage != 0 && cid > char_cache_size)
-	    return_error(gs_error_unregistered); /* Must not happen. */
+	    continue;
 	store_glyphs(glyphs, glyphs_offset,	chars, glyphs_offset,
 		     glyph_usage, char_cache_size,
 		     &num_all_chars, &num_unused_chars,
@@ -1122,7 +1146,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	if (code < 0)
 	    return code;
 	if (glyph_usage != 0 && cid >= char_cache_size)
-	    return_error(gs_error_unregistered); /* Must not happen. */
+	    continue;
 	glyph_usage[cid / 8] |= 0x80 >> (cid & 7);
     }
 out:
@@ -1131,14 +1155,22 @@ out:
     return code;
 }
 
+private inline bool
+strings_equal(const gs_const_string *s1, const gs_const_string *s2)
+{
+    return s1->size == s2->size &&
+	    !memcmp(s1->data, s2->data, s1->size);
+}
+
 /*
  * Create or find a parent Type 0 font resource object for a CID font resource.
  */
 int
 pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdsubf, 
-		pdf_font_resource_t **pdfont)
+		const gs_const_string *CMapName, pdf_font_resource_t **pdfont)
 {
-    if (pdsubf->u.cidfont.parent != 0)
+    if (pdsubf->u.cidfont.parent != 0 && 
+	    strings_equal(CMapName, &pdsubf->u.cidfont.parent->u.type0.CMapName))
 	*pdfont = pdsubf->u.cidfont.parent;
     else {
 	/*
@@ -1150,10 +1182,14 @@ pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *
 	 * descendant is allowed,which must be a CIDFont (not a font).This restriction
 	 * may be relaxed in a future PDF version.
 	 */
-	int code = pdf_font_type0_alloc(pdev, pdfont, gs_no_id, pdsubf);
 
-	if (code < 0)
-	    return code;
+	if (pdsubf->u.cidfont.parent == NULL || 
+		pdf_find_type0_font_resource(pdev, pdsubf, CMapName, pdfont) <= 0) {
+	    int code = pdf_font_type0_alloc(pdev, pdfont, gs_no_id, pdsubf, CMapName);
+
+	    if (code < 0)
+		return code;
+	}
 	pdsubf->u.cidfont.parent = *pdfont;
     }
     return 0;

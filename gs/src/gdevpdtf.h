@@ -304,7 +304,8 @@ pdf_standard_font_t *pdf_standard_fonts(const gx_device_pdf *pdev);
  * Allocate specific types of font resource.
  */
 int pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-			 gs_id rid, pdf_font_resource_t *DescendantFont);
+			 gs_id rid, pdf_font_resource_t *DescendantFont,
+			 const gs_const_string *CMapName);
 int pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			 pdf_font_write_contents_proc_t write_contents);
 int pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,

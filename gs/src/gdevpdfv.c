@@ -310,7 +310,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	cos_value_t v;
 	stream *s = pdev->strm;
 	int code;
-#	if PATTERN_STREAM_ACCUMULATION
+#	if !PATTERN_STREAM_ACCUMULATION
 	cos_stream_t *pcs_image;
 #	endif
 	static const psdf_set_color_commands_t no_scc = {0, 0, 0};

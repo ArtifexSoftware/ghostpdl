@@ -203,7 +203,7 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 	*pfidx = 0;
 	if (pgd)
 	    gs_glyph_data_from_null(pgd);
-	return_error(e_undefined);
+	return_error(e_rangecheck);
     }
     {
 	byte fd_gd[(MAX_FDBytes + MAX_GDBytes) * 2];

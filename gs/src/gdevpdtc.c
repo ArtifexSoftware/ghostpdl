@@ -356,7 +356,8 @@ scan_cmap_text(pdf_text_enum_t *pte)
 				       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
 	    if (code < 0)
 		return code;
-	    code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, &pdfont);
+	    code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, 
+			    &font->data.CMap->CMapName, &pdfont);
 	    if (code < 0)
 		return code;
 	    if (!pdfont->u.type0.Encoding_name[0]) {
@@ -374,17 +375,32 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &v);
 	    if (code < 0)
 		return code;
+	    if (!(pdsubf->used[0] & 0x80)) {
+		/* A glyph for CID=0 must present as a .notdef character. */
+		code = pdf_font_used_glyph(pfd, GS_MIN_CID_GLYPH, (gs_font_base *)subfont);
+		if (code < 0)
+		    return code;
+	    }
 	    /* We can't check pdsubf->used[cid >> 3] here,
 	       because it mixed data for different values of WMode. 
 	       Perhaps pdf_font_used_glyph returns fast with reused glyphs.
 	     */
 	    code = pdf_font_used_glyph(pfd, glyph, (gs_font_base *)subfont);
-	    if (code < 0)
+	    if (code == gs_error_rangecheck) {
+		if (!(pdsubf->used[cid >> 3] & (0x80 >> (cid & 7)))) {
+		    char buf[gs_font_name_max + 1];
+		    int l = min(sizeof(buf) - 1, subfont->font_name.size);
+
+		    memcpy(buf, subfont->font_name.chars, l);
+		    buf[l] = 0;
+		    eprintf2("Missing glyph CID=%d in the font %s . The output PDF may fail with some viewers.\n", cid, buf);
+		    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
+		}
+		cid = 0, code = 1;  /* undefined glyph. */
+	    } else if (code < 0)
 		return code;
 	    if (cid < 0 || cid >= char_cache_size || cid >= width_cache_size)
 		return_error(gs_error_unregistered); /* Must not happen */
-	    if (cid >= pdsubf->count)
-		cid = 0, code = 1; /* undefined CID */
 	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
 		pdf_glyph_widths_t widths;
 

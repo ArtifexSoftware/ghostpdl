@@ -571,7 +571,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 	if (code < 0)
 	    return code;
 	fname = pdsubf->BaseFont;
-	if (pdsubf->FontType == ft_CID_encrypted)
+	if (pdsubf->FontType == ft_CID_encrypted || pdsubf->FontType == ft_CID_TrueType)
 	    extra = 1 + pdfont->u.type0.CMapName.size;
     }
     else if (pdfont->FontDescriptor == 0) {
@@ -590,6 +590,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 	if (extra) {
 	    data[size] = '-';
 	    memcpy(data + size + 1, pdfont->u.type0.CMapName.data, extra - 1);
+	    size += extra;
 	}
 	break;
     case ft_encrypted:
@@ -646,13 +647,15 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 /* Allocate a Type 0 font resource. */
 int
 pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		     gs_id rid, pdf_font_resource_t *DescendantFont)
+		     gs_id rid, pdf_font_resource_t *DescendantFont, 
+		     const gs_const_string *CMapName)
 {
     int code = font_resource_alloc(pdev, ppfres, resourceFont, rid,
 				   ft_composite, 0, pdf_write_contents_type0);
 
     if (code >= 0) {
 	(*ppfres)->u.type0.DescendantFont = DescendantFont;
+	(*ppfres)->u.type0.CMapName = *CMapName;
 	code = pdf_compute_BaseFont(pdev, *ppfres, false);
     }
     return code;    
