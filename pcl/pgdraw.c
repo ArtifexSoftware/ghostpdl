@@ -486,10 +486,12 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		hpgl_call(gs_bbox_transform(&pgls->g.soft_clip_window.rect,
 					    &ctm,
 					    &dev_soft_window_box));
-	        dev_clip_box.p.x = max(dev_clip_box.p.x, dev_soft_window_box.p.x);
-		dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y);
-	    	dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x);
-		dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y);
+		/* Enlarge IW by 1 device dot to compensate for it's 
+		   'on the line' is not clipped behavior. */
+	        dev_clip_box.p.x = max(dev_clip_box.p.x, dev_soft_window_box.p.x - 1.0);
+		dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y - 1.0);
+	    	dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x + 1.0);
+		dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y + 1.0);
 		if ( gs_debug_c('P') ) {
 		    dprintf4("gl/2 window user units: p.x=%f p.y=%f q.x=%f q.y=%f\n",
 			     pgls->g.soft_clip_window.rect.p.x, 
@@ -497,8 +499,8 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 			     pgls->g.soft_clip_window.rect.q.x, 
 			     pgls->g.soft_clip_window.rect.q.y);
 		    dprintf4("gl/2 device soft clip region: p.x=%f p.y=%f q.x=%f q.y=%f\n",
-			     dev_soft_window_box.p.x, dev_soft_window_box.p.y,
-			     dev_soft_window_box.q.x, dev_soft_window_box.q.y);
+			     dev_soft_window_box.p.x - 1.0, dev_soft_window_box.p.y - 1.0,
+			     dev_soft_window_box.q.x + 1.0, dev_soft_window_box.q.y + 1.0);
 		}
 	    }
 	    /* convert intersection box to fixed point and clip */
@@ -630,35 +632,34 @@ hpgl_polyfill(
                                                 : &pgls->g.fill.param.hatch);
     gs_point                    spacing;
     hpgl_real_t                 direction = params->angle;
+    hpgl_real_t                 unscaled_direction;
     float saved_line_pattern_offset = pgls->g.line.current.pattern_offset;
     int lines_filled;
 
     /* spacing is always relevant to the scaling of the x-axis.  It
        can be specified in user space if provided to FT or by default
        it is 1% of the distance from P1 to P2 */
-    spacing.x = spacing.y = params->spacing;
+    spacing.x = params->spacing;
     /* save the pen position */
     hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
     hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &user_to_plu_mat));
     if (params->spacing == 0) {
         /* Per TRM 22-12, use 1% of the P1/P2 distance. */
 	
-	spacing.x = spacing.y = 0.01 * hpgl_compute_distance( pgls->g.P1.x,
-							      pgls->g.P1.y,
-							      pgls->g.P2.x,
-							      pgls->g.P2.y
-                                                );
+	spacing.x = 0.01 * hpgl_compute_distance( pgls->g.P1.x,
+						  pgls->g.P1.y,
+						  pgls->g.P2.x,
+						  pgls->g.P2.y
+						  );
+
+	/* 1% is in plu, convert back to user units */
+	spacing.y = spacing.x / fabs(user_to_plu_mat.yy);
 	spacing.x /= fabs(user_to_plu_mat.xx);
     }
-
-    /* the spacing is now in user units, convert to plu using only the
-       x axis scaling then convert back the plu result to y units.  In
-       the case of using 1% of the P1/P2 we simply end up with what we
-       originally had as the distance between P1 and P2 */
-    spacing.x *= fabs(user_to_plu_mat.xx);
-    spacing.y = spacing.x / fabs(user_to_plu_mat.yy);
-    spacing.x /= fabs(user_to_plu_mat.xx);
-
+    else {
+	/* set spacing.y based on ratio of x/y scaling, still in user units */
+	spacing.y = spacing.x * fabs(user_to_plu_mat.xx) / fabs(user_to_plu_mat.yy);
+    }
     /* get the bounding box */
     hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
     /*
@@ -679,14 +680,22 @@ hpgl_polyfill(
     }
 
     /* get rid of the current path */
+
     hpgl_call(hpgl_clear_current_path(pgls));
 
-    /* HP preserves angles in plotter units - find the equivalent
-       plotter unit angle in user space */
+
+ start:  /* Change direction, come back and draw crosshatch lines. */
+
+    /* hatch angles are isotropic; ie 45degrees is not affected by y scale != x scale.
+       unscaled_direction ::= user requested angle  
+       direction ::= the angle that when scaled will generate user requested angle */
+
+    /* save unscaled angle */
+    unscaled_direction = direction;
 
     /* not necessery if direction is orthogonal */
     if ( !equal(fmod( direction, 90 ), 0 ) ) {
-	hpgl_real_t slope, scaled_slope, direction_user;
+	hpgl_real_t slope, scaled_slope;
 	gs_sincos_degrees(direction, &sincos);
 	/* take the tangent by dividing sin by cos.  Since we know
 	   the angle is non-orthogonal the cosine is non-zero */
@@ -694,24 +703,27 @@ hpgl_polyfill(
 	/* scale the slope by the ratio of the scaling factors */
 	scaled_slope = (user_to_plu_mat.xx / user_to_plu_mat.yy) * slope;
 	/* preserved angle in user space */
-	direction_user = radians_to_degrees * atan(scaled_slope);
-	/* assert angles are equal if scaling is symmetric */
-	if ((equal(user_to_plu_mat.xx, user_to_plu_mat.yy)) &&
-	     (!equal(direction, direction_user)))
-	    dprintf2("Warning user space angle %f is not equal to plu angle %f\n", 
-		     direction, direction_user);
-	/* replace FT's parameter with the new angle */
-	direction = direction_user;
+	direction = radians_to_degrees * atan(scaled_slope);
     }
 
-start:
     lines_filled = 0;
 
-    gs_sincos_degrees(direction, &sincos);
+    /* spacing is done with the unscaled angle 
+       spacing.x .y is already scaled hence the unscaled angle is used. 
+       scale * spacing * sin(unscaled_angle) */
+    gs_sincos_degrees(unscaled_direction, &sincos);
     if (sin_dir < 0)
 	sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
     x_fill_increment = (sin_dir != 0) ? fabs(spacing.x / sin_dir) : 0;
     y_fill_increment = (cos_dir != 0) ? fabs(spacing.y / cos_dir) : 0;
+    
+    /* scaled angle is used for end point calculation 
+       distance * sin( scaled_angle ) 
+       scale is applyed once and only once per calculation */
+    gs_sincos_degrees(direction, &sincos);
+    if (sin_dir < 0)
+	sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
+
     hpgl_call( hpgl_get_adjusted_corner( x_fill_increment,
                                          y_fill_increment,
                                          &bbox,
@@ -784,10 +796,11 @@ start:
 	}
 	
     }
-    if (cross) {
+    if (cross) { 
+	/* go back and draw the perpendicular lines, +90degress */
 	cross = false;
-	direction += 90;
-	if ( direction >= 180 ) 
+	direction = unscaled_direction + 90;
+	if ( direction >= 180 )
 	    direction -= 180;
 	goto start;
     }
@@ -1372,7 +1385,7 @@ hpgl_close_path(
    is not exactly correct but produces the desired results in most
    cases.  Note this routine is sensitive to the orientation of the
    device */
- private int
+int
 hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
     if ( pgls->pp_mode == 1 ) {
@@ -1391,7 +1404,10 @@ hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t rende
            1.5 is a hack, it should be 1 */
 	hpgl_call(gx_path_translate(ppath,
 		   float2fixed(1.0 * (distance.x / fabs(distance.x))), 
-		   float2fixed(1.5 * (distance.y / fabs(distance.y)))));
+		   float2fixed(1.0 * (distance.y / fabs(distance.y)))));
+	hpgl_call(gx_path_translate(ppath,
+		   float2fixed(-1.0 * (distance.x / fabs(distance.x))), 
+		   float2fixed(-1.0 * (distance.y / fabs(distance.y)))));
     }
     return 0;
 }
