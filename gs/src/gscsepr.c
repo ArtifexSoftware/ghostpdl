@@ -354,7 +354,7 @@ private int
 gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
-{   int code;
+{
     if (pcs->params.separation.sep_type != SEP_NONE)
 	return gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
     color_set_null(pdc);
