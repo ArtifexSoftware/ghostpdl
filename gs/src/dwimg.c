@@ -1,4 +1,4 @@
-/* Copyright (C) 1996-2000 Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1996-2001 Ghostgum Software Pty Ltd.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -43,6 +43,7 @@
 
 #include "dwmain.h"
 #include "dwimg.h"
+#include "dwreg.h"
 #include "gdevdsp.h"
 
 
@@ -302,6 +303,10 @@ image_close(IMAGE *img)
 	DeleteObject(img->palette);
     img->palette = NULL;
 
+    if (img->hBrush)
+	DeleteObject(img->hBrush);
+    img->hBrush = NULL;
+
     free(img);
 }
 
@@ -320,7 +325,7 @@ register_class(void)
     wndclass.hInstance = hInstance;
     wndclass.hIcon = LoadIcon(hInstance,(LPSTR)MAKEINTRESOURCE(GSIMAGE_ICON));
     wndclass.hCursor = LoadCursor((HINSTANCE)NULL, IDC_ARROW);
-    wndclass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    wndclass.hbrBackground = NULL;	/* we will paint background */
     wndclass.lpszMenuName = NULL;
     wndclass.lpszClassName = szImgName2;
     RegisterClass(&wndclass);
@@ -364,7 +369,7 @@ void sep_menu(IMAGE *img, int menu, int mask)
     img->sep ^= mask ;
     CheckMenuItem(GetSystemMenu(img->hwnd, FALSE), menu, MF_BYCOMMAND | 
 	((img->sep & mask) ? MF_CHECKED : MF_UNCHECKED) );
-    InvalidateRect(img->hwnd, NULL, 1);
+    InvalidateRect(img->hwnd, NULL, 0);
     UpdateWindow(img->hwnd);
 }
 
@@ -373,16 +378,41 @@ static void
 create_window(IMAGE *img)
 {
     HMENU sysmenu;
+    HBRUSH hbrush;
+    LOGBRUSH lb;
+    char winposbuf[256];
+    int len = sizeof(winposbuf);
+    int x, y, cx, cy;
+
+    /* create background brush */
+    lb.lbStyle = BS_SOLID;
+    lb.lbHatch = 0;
+    lb.lbColor = GetSysColor(COLOR_WINDOW);
+    if (lb.lbColor = RGB(255,255,255)) /* Don't allow white */
+	lb.lbColor = GetSysColor(COLOR_MENU);
+    if (lb.lbColor = RGB(255,255,255)) /* Don't allow white */
+	lb.lbColor = GetSysColor(COLOR_APPWORKSPACE);
+    if (lb.lbColor = RGB(255,255,255)) /* Don't allow white */
+	lb.lbColor = RGB(192,192,192);
+    img->hBrush = CreateBrushIndirect(&lb);
 
     img->cxClient = img->cyClient = 0;
     img->nVscrollPos = img->nVscrollMax = 0;
     img->nHscrollPos = img->nHscrollMax = 0;
+    img->x = img->y = img->cx = img->cy = CW_USEDEFAULT;
+    if (win_get_reg_value("Image", winposbuf, &len) == 0) {
+	if (sscanf(winposbuf, "%d %d %d %d", &x, &y, &cx, &cy) == 4) {
+	    img->x = x;
+	    img->y = y;
+	    img->cx = cx;
+	    img->cy = cy;
+	}
+    }
 
     /* create window */
     img->hwnd = CreateWindow(szImgName2, (LPSTR)szImgName2,
 	      WS_OVERLAPPEDWINDOW,
-	      CW_USEDEFAULT, CW_USEDEFAULT, 
-	      CW_USEDEFAULT, CW_USEDEFAULT, 
+	      img->x, img->y, img->cx, img->cy, 
 	      NULL, NULL, GetModuleHandle(NULL), (void *)img);
     ShowWindow(img->hwnd, SW_SHOWMINNOACTIVE);
 
@@ -402,6 +432,9 @@ image_poll(IMAGE *img)
     SYSTEMTIME t1;
     SYSTEMTIME t2;
     int delta;
+    if ((img->bmih.biWidth == 0) || (img->bmih.biHeight == 0))
+	return;
+
     GetSystemTime(&t1);
     delta = (t1.wSecond - img->update_time.wSecond) +
 		(t1.wMinute - img->update_time.wMinute) * 60 +
@@ -905,9 +938,26 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    /* enable drag-drop */
 	    DragAcceptFiles(hwnd, TRUE);
 	    break;
+	case WM_MOVE:
+	    if (!IsIconic(hwnd) && !IsZoomed(hwnd)) {
+		GetWindowRect(hwnd, &rect);
+		img->x = rect.left;
+		img->y = rect.top;
+	    }
+	    break;
 	case WM_SIZE:
 	    if (wParam == SIZE_MINIMIZED)
 		    return(0);
+
+	    /* remember current window size */
+	    if (wParam != SIZE_MAXIMIZED) {
+		GetWindowRect(hwnd, &rect);
+		img->cx = rect.right - rect.left;
+		img->cy = rect.bottom - rect.top;
+		img->x = rect.left;
+		img->y = rect.top;
+	    }
+
 	    if (img->hmutex != INVALID_HANDLE_VALUE)
 		WaitForSingleObject(img->hmutex, 120000);
 	    img->cyClient = HIWORD(lParam);
@@ -1080,6 +1130,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 	    {
 	    int sx,sy,wx,wy,dx,dy;
+	    RECT fillrect;
 	    hdc = BeginPaint(hwnd, &ps);
 	    if (img->hmutex != INVALID_HANDLE_VALUE)
 		WaitForSingleObject(img->hmutex, 120000);
@@ -1100,6 +1151,22 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		    wy = img->bmih.biHeight - sy;
 
 	    draw(img, hdc, dx, dy, wx, wy, sx, sy);
+
+	    /* fill areas around page */ 
+	    if (rect.right > img->bmih.biWidth) {
+		fillrect.top = rect.top;
+		fillrect.left = img->bmih.biWidth;
+		fillrect.bottom = rect.bottom;
+		fillrect.right = rect.right;
+		FillRect(hdc, &fillrect, img->hBrush);
+	    }
+	    if (rect.bottom > img->bmih.biHeight) {
+		fillrect.top = img->bmih.biHeight;
+		fillrect.left = rect.left;
+		fillrect.bottom = rect.bottom;
+		fillrect.right = rect.right;
+		FillRect(hdc, &fillrect, img->hBrush);
+	    }
 
 	    if (img->hmutex != INVALID_HANDLE_VALUE)
 		ReleaseMutex(img->hmutex);
@@ -1134,6 +1201,12 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    }
 	    break;
 	case WM_DESTROY:
+	    {   /* Save the text window size */
+		char winposbuf[64];
+		sprintf(winposbuf, "%d %d %d %d", img->x, img->y, 
+		    img->cx, img->cy);
+		win_set_reg_value("Image", winposbuf);
+	    }
 	    DragAcceptFiles(hwnd, FALSE);
 	    break;
 

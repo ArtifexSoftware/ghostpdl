@@ -82,6 +82,7 @@ dwdll_h=$(GLSRC)dwdll.h
 dwimg_h=$(GLSRC)dwimg.h
 dwmain_h=$(GLSRC)dwmain.h
 dwtext_h=$(GLSRC)dwtext.h
+dwreg_h=$(GLSRC)dwreg.h
 
 # Make the icons from their text form.
 
@@ -110,7 +111,7 @@ $(GSDLL_OBJ).res: $(GLSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
 
 # Modules for big EXE
 
-DWOBJNO = $(GLOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj
+DWOBJNO = $(GLOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)dwreg.obj
 
 $(GLOBJ)dwnodll.obj: $(GLSRC)dwnodll.c $(AK)\
  $(dwdll_h) $(iapi_h)
@@ -126,8 +127,8 @@ $(GLOBJ)gp_msdll.obj: $(GLSRC)gp_msdll.c $(AK) $(iapi_h)
 
 # Modules for console mode EXEs
 
-OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwimg.obj
-OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj
+OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwreg.obj
+OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwreg.obj
 
 $(GLOBJ)dwmainc.obj: $(GLSRC)dwmainc.c $(AK) $(dwmain_h) $(dwdll_h) $(gscdefs_h) $(iapi_h)
 	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj $(C_) $(GLSRC)dwmainc.c
@@ -141,9 +142,7 @@ $(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.c $(AK) $(dwdll_h) $(iapi_h)
 
 # Modules for small EXE loader.
 
-DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj
-
-DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj
+DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwreg.obj
 
 $(GLOBJ)dwdll.obj: $(GLSRC)dwdll.c $(AK)\
  $(dwdll_h) $(iapi_h)
@@ -151,15 +150,19 @@ $(GLOBJ)dwdll.obj: $(GLSRC)dwdll.c $(AK)\
 
 $(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
  $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h)\
- $(gscdefs_h) $(iapi_h)
+ $(gscdefs_h) $(iapi_h) $(dwreg_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.c
 
 $(GLOBJ)dwmain.obj: $(GLSRC)dwmain.c $(AK)\
- $(dwdll_h) $(gscdefs_h) $(iapi_h)
+ $(dwdll_h) $(gscdefs_h) $(iapi_h) $(dwreg_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwmain.obj $(C_) $(GLSRC)dwmain.c
 
 $(GLOBJ)dwtext.obj: $(GLSRC)dwtext.c $(AK) $(dwtext_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtext.obj $(C_) $(GLSRC)dwtext.c
+
+$(GLOBJ)dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwreg.obj $(C_) $(GLSRC)dwreg.c
+
 
 # ---------------------- Setup and uninstall program ---------------------- #
 

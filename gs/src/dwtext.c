@@ -48,6 +48,7 @@
 
 /* sysmenu */
 #define M_COPY_CLIP 1
+#define M_PASTE_CLIP 2
 
 LRESULT CALLBACK WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 static void text_error(char *message);
@@ -55,6 +56,7 @@ static void text_new_line(TW *tw);
 static void text_update_text(TW *tw, int count);
 static void text_drag_drop(TW *tw, HDROP hdrop);
 static void text_copy_to_clipboard(TW *tw);
+static void text_paste_from_clipboard(TW *tw);
 
 static const char* TextWinClassName = "rjlTextWinClass";
 static const POINT TextWinMinSize = {16, 4};
@@ -230,6 +232,26 @@ text_drag(TW *tw, const char *pre, const char *post)
 	strcpy(tw->DragPost, post);
 }
 
+/* Set the window position and size */
+void 
+text_setpos(TW *tw, int x, int y, int cx, int cy)
+{
+    tw->x = x;
+    tw->y = y;
+    tw->cx = cx;
+    tw->cy = cy;
+}
+
+/* Get the window position and size */
+int text_getpos(TW *tw, int *px, int *py, int *pcx, int *pcy)
+{
+    *px = tw->x;
+    *py = tw->y;
+    *pcx = tw->cx;
+    *pcy = tw->cy;
+    return 0;
+}
+
 /* Allocate new text window */
 TW *
 text_new(void)
@@ -253,6 +275,10 @@ text_new(void)
     tw->line_complete = FALSE;
     tw->line_eof = FALSE;
 
+    tw->x = CW_USEDEFAULT;
+    tw->y = CW_USEDEFAULT;
+    tw->cx = CW_USEDEFAULT;
+    tw->cy = CW_USEDEFAULT;
     return tw;
 }
 
@@ -348,8 +374,7 @@ text_create(TW *tw, const char *app_name, int show_cmd)
 
     tw->hwnd = CreateWindow(TextWinClassName, tw->Title,
 		  WS_OVERLAPPEDWINDOW | WS_VSCROLL | WS_HSCROLL,
-		  CW_USEDEFAULT, CW_USEDEFAULT,
-		  CW_USEDEFAULT, CW_USEDEFAULT,
+		  tw->x, tw->y, tw->cx, tw->cy,
 		  NULL, NULL, hInstance, tw);
 
     if (tw->hwnd == NULL) {
@@ -361,6 +386,7 @@ text_create(TW *tw, const char *app_name, int show_cmd)
     sysmenu = GetSystemMenu(tw->hwnd,0);	/* get the sysmenu */
     AppendMenu(sysmenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(sysmenu, MF_STRING, M_COPY_CLIP, "Copy to Clip&board");
+    AppendMenu(sysmenu, MF_STRING, M_PASTE_CLIP, "&Paste");
 
     return 0;
 }
@@ -478,7 +504,16 @@ text_getch(TW *tw)
 	ShowCaret(tw->hwnd);
     }
 
-    do {
+    while (PeekMessage(&msg, (HWND)NULL, 0, 0, PM_NOREMOVE)) {
+	if (GetMessage(&msg, (HWND)NULL, 0, 0)) {
+	    TranslateMessage(&msg);
+	    DispatchMessage(&msg);
+	}
+    }
+    if (tw->quitnow)
+       return EOF;	/* window closed */
+
+    while (!text_kbhit(tw)) {
         if (!tw->quitnow) {
 	    if (GetMessage(&msg, (HWND)NULL, 0, 0)) {
 		TranslateMessage(&msg);
@@ -487,7 +522,7 @@ text_getch(TW *tw)
 	}
 	else
 	   return EOF;	/* window closed */
-    } while (!text_kbhit(tw));
+    }
 
     ch = *tw->KeyBufOut++;
     if (ch=='\r')
@@ -692,6 +727,33 @@ text_copy_to_clipboard(TW *tw)
     CloseClipboard();
 }
 
+void
+text_paste_from_clipboard(TW *tw)
+{
+    HGLOBAL hClipMemory;
+    BYTE *p;
+    long count;
+    OpenClipboard(tw->hwnd);
+    if (IsClipboardFormatAvailable(CF_TEXT)) {
+	hClipMemory = GetClipboardData(CF_TEXT);
+	p = GlobalLock(hClipMemory);
+	while (*p) {
+	    /* transfer to keyboard circular buffer */
+	    count = tw->KeyBufIn - tw->KeyBufOut;
+	    if (count < 0) 
+		count += tw->KeyBufSize;
+	    if (count < tw->KeyBufSize-1) {
+		*tw->KeyBufIn++ = *p;
+		if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+		    tw->KeyBufIn = tw->KeyBuf;	/* wrap around */
+	    }
+	    p++;
+	}
+	GlobalUnlock(hClipMemory);
+    }
+    CloseClipboard();
+}
+
 /* text window */
 LRESULT CALLBACK
 WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -717,6 +779,9 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case M_COPY_CLIP:
 		    text_copy_to_clipboard(tw);
 		    return 0;
+		case M_PASTE_CLIP:
+		    text_paste_from_clipboard(tw);
+		    return 0;
 	    }
 	    break;
 	case WM_SETFOCUS: 
@@ -732,7 +797,26 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    DestroyCaret();
 	    tw->bFocus = FALSE;
 	    break;
+	case WM_MOVE:
+	    if (!IsIconic(hwnd) && !IsZoomed(hwnd)) {
+		GetWindowRect(hwnd, &rect);
+		tw->x = rect.left;
+		tw->y = rect.top;
+	    }
+	    break;
 	case WM_SIZE:
+	    if (wParam == SIZE_MINIMIZED)
+		    return(0);
+
+	    /* remember current window size */
+	    if (wParam != SIZE_MAXIMIZED) {
+		GetWindowRect(hwnd, &rect);
+		tw->cx = rect.right - rect.left;
+		tw->cy = rect.bottom - rect.top;
+		tw->x = rect.left;
+		tw->y = rect.top;
+	    }
+
 	    tw->ClientSize.y = HIWORD(lParam);
 	    tw->ClientSize.x = LOWORD(lParam);
 

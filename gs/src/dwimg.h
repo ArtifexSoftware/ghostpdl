@@ -26,6 +26,7 @@ struct IMAGE_S {
     void *handle;
     void *device;
     HWND hwnd;
+    HBRUSH hBrush;	/* background */
     int raster;
     unsigned int format;
     unsigned char *image;
@@ -50,6 +51,8 @@ struct IMAGE_S {
     IMAGE *next;
 
     HWND hwndtext;	/* handle to text window */
+
+    int x, y, cx, cy;	/* window position */
 };
 
 extern IMAGE *first_image;

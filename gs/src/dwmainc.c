@@ -111,8 +111,12 @@ static void winthread(void *arg)
 		image_open((IMAGE *)msg.lParam);
 		break;
 	    case DISPLAY_CLOSE:
-		image_close((IMAGE *)msg.lParam);
-		CloseHandle(((IMAGE *)msg.lParam)->hmutex);
+		{
+		    IMAGE *img = (IMAGE *)msg.lParam; 
+		    HANDLE hmutex = img->hmutex;
+		    image_close(img);
+		    CloseHandle(hmutex);
+		}
 		break;
 	    case DISPLAY_SIZE:
 		image_updatesize((IMAGE *)msg.lParam);

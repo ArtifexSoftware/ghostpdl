@@ -1,4 +1,4 @@
-/* Copyright (C) 1996-2000 Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1996-2001 Ghostgum Software Pty Ltd.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -34,6 +34,7 @@
 #include "dwdll.h"
 #include "dwtext.h"
 #include "dwimg.h"
+#include "dwreg.h"
 #include "gdevdsp.h"
 
 /* public handles */
@@ -61,10 +62,10 @@ static int poll(void)
     while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
 	TranslateMessage(&msg);
 	DispatchMessage(&msg);
-	}
+    }
     /* If text window closing then abort Ghostscript */
     if (tw->quitnow)
-	return 1;
+	return e_Fatal;
     return 0;
 }
 
@@ -365,6 +366,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     char command[256];
     char *args;
     char *d, *e;
+    char winposbuf[256];
+    int len = sizeof(winposbuf);
+    int x, y, cx, cy;
  
     /* copy the hInstance into a variable so it can be used */
     ghInstance = hInstance;
@@ -446,6 +450,10 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     set_font();
     text_size(tw, 80, 80);
     text_drag(tw, "(", ") run\r");
+    if (win_get_reg_value("Text", winposbuf, &len) == 0) {
+	if (sscanf(winposbuf, "%d %d %d %d", &x, &y, &cx, &cy) == 4)
+	    text_setpos(tw, x, y, cx, cy);
+    }
 
     /* create the text window */
     if (text_create(tw, szAppName, cmdShow))
@@ -456,14 +464,26 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     dll_exit_status = new_main(argc, argv);
     
     if (dll_exit_status && !tw->quitnow) {
-	/* display message box so error messages in text window can be read */
+	/* display error message in text window */
 	char buf[80];
+	MSG msg;
 	if (IsIconic(text_get_handle(tw)))
 	    ShowWindow(text_get_handle(tw), SW_SHOWNORMAL);
 	BringWindowToTop(text_get_handle(tw));  /* make text window visible */
 	sprintf(buf, "Exit code %d\nSee text window for details",
 	    dll_exit_status);
-	MessageBox((HWND)NULL, buf, szAppName, MB_OK | MB_ICONSTOP);
+	MessageBox(text_get_handle(tw), buf, szAppName, MB_OK | MB_ICONSTOP);
+	/* Wait until error message is read */
+	while (!tw->quitnow && GetMessage(&msg, (HWND)NULL, 0, 0)) {
+	    TranslateMessage(&msg);
+	    DispatchMessage(&msg);
+	}
+    }
+
+    /* Save the text window size */
+    if (text_getpos(tw, &x, &y, &cx, &cy) == 0) {
+	sprintf(winposbuf, "%d %d %d %d", x, y, cx, cy);
+	win_set_reg_value("Text", winposbuf);
     }
 
     text_destroy(tw);

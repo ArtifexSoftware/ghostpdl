@@ -65,6 +65,8 @@ typedef struct TEXTWINDOW_S {
     POINT CharSize;
     POINT ScrollPos;
     POINT ScrollMax;
+
+    int x, y, cx, cy;	/* window position */
 } TW;
 
 
@@ -122,6 +124,10 @@ void text_font(TW *tw, const char *fontname, int fontsize);
 
 /* Set screen size in characters */
 void text_size(TW *tw, int width, int height);
+
+/* Set and get the window position and size */
+void text_setpos(TW *tw, int x, int y, int cx, int cy);
+int text_getpos(TW *tw, int *px, int *py, int *pcx, int *pcy);
 
 /* Set pre drag and post drag strings
  * If a file is dropped on the window, the following will
