@@ -72,8 +72,21 @@ values are handled, but this is not reliable since there are places in
 the graphics library that depend on first quadrant coordinates.
 </I>
 
-<hr>
+<h3>Error messages are too low level and confusing.</h3>
 
+<p>
+Although technically correct many error messages are confusing for
+end users. Some commonly reported examples are listed below.
+
+<p>
+When pdfwrite device cannot open the output file it fails with:
+<pre>**** Unable to open the initial device, quitting.</pre>
+
+When CIDFont-CMap pair required by PDF file is not available GS
+fails with:
+<pre>/undefinedresource in --findresource--</pre>
+
+<hr>
 <h2><a name="Minor_bugs"></a>Minor Bugs.</h2>
 
 <h3>gs-6.31 and gs-6.60 fail running lib/image-qa.ps</h3>
