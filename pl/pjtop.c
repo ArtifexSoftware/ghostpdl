@@ -71,17 +71,6 @@ pjl_proc_fontsource_to_path(
 	 ->proc_fontsource_to_path(pli, fontsource);
 }
 
-/* get a pjl fontnumber for an internal pcl font. */
-int
-pjl_proc_get_pcl_internal_font_number(
-  pl_interp_instance_t   *pli,
-  const char             *filename
-)
-{
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_get_pcl_internal_font_number(pli, filename);
-}
-
 /* Change to next highest priority font source. */
 void
 pjl_proc_set_next_fontsource(

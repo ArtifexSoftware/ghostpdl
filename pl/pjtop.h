@@ -55,18 +55,6 @@ typedef char * (*pjl_proc_fontsource_to_path_t)(P2(pl_interp_instance_t *pli,
 char * pjl_proc_fontsource_to_path(P2(pl_interp_instance_t *pli,
   const pjl_envvar_t *fontsource));
 
-/* get a pjl fontnumber for an internal pcl font.  This must be
-   handled differently in the future.  PJL should enumerate the fonts
-   and give the fonts to pcl.  We cannot do this now because pcl
-   depends on the ordering of the font table for proper font
-   selection.  It also adds attributes that should be acquired from
-   the font itselft.  Consequently, pcl enumerates the fonts and asks
-   pjl for a font number to associate with each file font file read.  */
-typedef int (*pjl_proc_get_pcl_internal_font_number_t)(P2(pl_interp_instance_t *pli,
- const char *filename));
-int pjl_proc_get_pcl_internal_font_number(P2(pl_interp_instance_t *pli,
- const char *filename));
-
 /* Change to next highest priority font source.  The following events
    automatically change the value of the FONTSOURCE variable to the
    next highest priority font source containing a default-marked font:
@@ -115,7 +103,6 @@ typedef struct pjl_implementation_s {
   pjl_proc_vartoi_t                        proc_vartoi;
   pjl_proc_vartof_t                        proc_vartof;
   pjl_proc_fontsource_to_path_t            proc_fontsource_to_path;
-  pjl_proc_get_pcl_internal_font_number_t  proc_get_pcl_internal_font_number;
   pjl_proc_set_next_fontsource_t           proc_set_next_fontsource;
   pjl_proc_register_permanent_soft_font_deletion_t proc_register_permanent_soft_font_deletion;
   pjl_proc_register_permanent_soft_font_addition_t proc_register_permanent_soft_font_addition;
