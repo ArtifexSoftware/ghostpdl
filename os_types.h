@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002 artofcode LLC.
+    Copyright (c) 2003 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,6 @@
 #include "config_win32.h"
 #endif
 
-+#if defined(HAVE_STDINT_H) || defined(__MACOS__)
+#if defined(HAVE_STDINT_H) || defined(__MACOS__)
 #include <stdint.h>
 #endif
