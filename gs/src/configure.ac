@@ -26,10 +26,15 @@ dnl --------------------------------------------------
 
 #AC_CANONICAL_HOST
 
-AC_MSG_CHECKING([supported compiler flags])
+if test $ac_cv_prog_gcc = yes; then
 cflags_to_try="-Wall -Wstrict-prototypes -Wmissing-declarations \
 -Wmissing-prototypes -Wcast-qual -Wwrite-strings \
 -fno-builtin -fno-common"
+else
+	cflags_to_try=
+fi
+	
+AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
 echo
 for flag in $cflags_to_try; do
