@@ -588,7 +588,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 		    arg2 = ttfReader__Byte(r);
                 }
             }
-	    m.b = m.c = 0;
+	    m.b = m.c = m.tx = m.ty = 0;
 	    if (flags & WE_HAVE_A_SCALE)
 		m.a = m.d = (Fixed)ttfReader__Short(r) << 2;
 	    else if (flags & WE_HAVE_AN_X_AND_Y_SCALE) {

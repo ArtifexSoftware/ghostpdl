@@ -22,6 +22,7 @@
 #include "iapi.h"
 #include "iminst.h"
 #include "ierrors.h"
+#include "gsmalloc.h"
 
 /* Define an optional array of strings for testing. */
 /*#define RUN_STRINGS */
