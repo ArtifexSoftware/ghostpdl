@@ -297,16 +297,15 @@ pl_main_make_gstate(pl_main_instance_t *pmi, gs_state **ppgs)
 void
 pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
   const char *msg)
-{	/* gs_memory_status_t status; */
-	/* long utime[2]; */
+{	gs_memory_status_t status;
+	long utime[2];
 
-	/* gs_memory_status(mem, &status); */
-	/* gp_get_usertime(utime); */
-	/* dprintf5("%% %s time = %g, pages = %d, memory allocated = %lu, used = %lu\n",
+	gs_memory_status(mem, &status);
+	gp_get_usertime(utime);
+	dprintf5("%% %s time = %g, pages = %d, memory allocated = %lu, used = %lu\n",
 		 msg, utime[0] - pmi->base_time[0] +
-		   (utime[1] - pmi->base_time[1]) / 1000000000.0,
-		 pmi->page_count, 0, 0);
-	*/
+		 (utime[1] - pmi->base_time[1]) / 1000000000.0,
+		 pmi->page_count, status.allocated, status.used);
 }
 
 /* Finish a page, possibly printing usage statistics and/or pausing. */
