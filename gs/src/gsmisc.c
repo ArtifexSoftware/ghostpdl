@@ -406,6 +406,29 @@ debug_dump_bytes(const gs_memory_t *mem, const byte * from, const byte * to, con
     }
 }
 
+
+void
+debug_dump_bits(const gs_memory_t *mem, const byte * from, const byte * to, const char *msg)
+{
+    const byte *p = from;
+
+    if (from < to && msg)
+	dprintf1(mem, "%s:\n", msg);
+    while (p != to) {
+	const byte *q = min(p + 16, to);
+
+	dprintf1(mem, "0x%lx:", (ulong) p);
+	while (p != q) {
+            int i;
+            for (i = 7; i >= 0; i--) {
+                dprintf1(mem, "%d", (*p & (1 << i)) != 0 ? 1 : 0);
+            }
+            p++;
+        }
+        dputc(mem, '\n');
+    }
+}
+
 /* Dump a bitmap. */
 void
 debug_dump_bitmap(const gs_memory_t *mem, 
@@ -415,7 +438,7 @@ debug_dump_bitmap(const gs_memory_t *mem,
     const byte *data = bits;
 
     for (y = 0; y < height; ++y, data += raster)
-	debug_dump_bytes(mem, data, data + raster, (y == 0 ? msg : NULL));
+	debug_dump_bits(mem, data, data + raster, (y == 0 ? msg : NULL));
 }
 
 /* Print a string. */
