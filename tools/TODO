@@ -1,33 +1,38 @@
+
+The format of the entry: Description of item ( assigned to, status )
+
 General
 =======
 
 o pdfwrite should require artifex font scaler.  Freetype and UFST will
-not work with high level drivers.
-o PCLXL 2.1.
+  not work with high level drivers. (stefan, not started )
+o PCLXL 2.1. (henry, not started)
 o 80 resident pcl fonts using freetype scaler and Type 1 + TrueType
-font data.
-o URW font character analysis.
-o Microsoft Publishing symbol set 6J has incorrect entries.
-o Vertical glyph substitutions - see fts 242* panels.
+  font data. (henry, not started)
+o URW font character analysis. (henry, not started)
+o Microsoft Publishing symbol set 6J has incorrect entries plsymbol.c (stefan, not started)
+o Vertical glyph substitutions - see fts 242* panels. (henry, not started)
 
 Language switching
 ==================
 
-o Postscript job encapsulation for the language switching environment.
-o Memory leak testing.
-o Device switching testing.
-o Investigate Postscript font downloading persistence.
+o Postscript job encapsulation for the language switching
+  environment. (stefan, finished with known problems)
+o Memory leak testing. (stefan, in progress)
+o Device switching testing. (henry, smoke tested)
+o Investigate Postscript font downloading persistence. (henry, not started).
+o windows build (stefan, not started).
 
 Freetype 2 integration
 ======================
 
-o Needs a cache device.
+o Needs a cache device. (henry, not started)
 o GL/2 labels with Freetype 2 are not always correct.  Problem should
 go away once a cache device is installed.  HPGL/2 tries to figure out
 its next position based on the "currentpoint" after rendering the
-character.
-o left side bearing metric is always 0.
-o galley characters unsupported.
-o downloaded truetypes don't work.
-o pclxl algorithmic bold characters are not supported.
+character. (stefan, in progress)
+o left side bearing metric is always 0. (henry, not started)
+o galley characters unsupported.  (henry, not started)
+o downloaded truetypes don't work.  (henry, not started)
+o pclxl algorithmic bold characters are not supported.  (henry, not started)
 
