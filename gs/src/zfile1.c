@@ -58,7 +58,7 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
 	buffer = iresize_string(buffer, blen0, blen, "zfile_name_combine");
 	if (buffer == 0)
 	    return_error(e_VMerror);
-	make_string(op - 2, a_read | icurrent_space, blen, buffer);
+	make_string(op - 2, a_all | icurrent_space, blen, buffer);
 	make_bool(op - 1, true);
 	pop(1);
     }
