@@ -35,31 +35,78 @@
 .dicttomark readonly def
 
 % This procedure is called whenever a DSC comment is found by the interpreter
-/parse_dsc {				% <file> <DSC string> parse_dsc -
-  dsc_dict exch				% <file> <dict> <string>
-  .parse_dsc_comments			% <file> <dict> <name>
-  //DSCparseprocs exch .knownget {
-    exec				% execute any local handler
+/do_parse_dsc false def
+/parse_dsc {				% <file> <DSC string> [<prev proc>]
+					%   parse_dsc -
+	% Run any previously installed parser.
+  0 get dup null eq { pop } { 3 copy exec pop } ifelse
+	% Check whether this parser is disabled.
+  do_parse_dsc {
+    dsc_dict exch			% <file> <dict> <string>
+    .parse_dsc_comments			% <file> <dict> <name>
+    //DSCparseprocs exch .knownget {
+      exec				% execute any local handler
+    } if
   } if
-  pop pop				% remove file and dict
+  pop pop				% remove file, dict
 } bind def
 
+
+% Check whether the currently installed parser is the one defined in this file.
+/.using_parse_dsc {			% - .using_parse_dsc <proc> <using?>
+  currentuserparams /ProcessDSCComment get
+  dup null eq { pop {{//null} //parse_dsc exec} } if
+  dup length 3 eq {
+    dup dup length 1 sub get /parse_dsc load eq
+  } {
+    false
+  } ifelse
+} bind def
+
+% Establish a binding for dsc_dict.
+userdict /dsc_dict null put
 
 % - dsc_init -
 /dsc_init {				% Initialize DSC parser
-  /dsc_dict 50 dict def			% Size must be large enough for all DSC values
+  currentglobal true setglobal
+  /dsc_dict 50 dict store		% Size must be large enough for all DSC values
   dsc_dict .initialize_dsc_parser
-  << /ProcessDSCComment /parse_dsc load >> setuserparams
+  .using_parse_dsc {
+	% Already using this parser.
+    pop
+  } {
+	% Encapsulate the previous parser.  We know it is in global VM:
+	% allocate the new one in global VM as well.
+    1 array astore
+    /parse_dsc load /exec load 3 array astore cvx readonly
+    << /ProcessDSCComment 3 -1 roll >>
+    setuserparams
+  } ifelse
+  /do_parse_dsc true store
+  setglobal
 } bind def
 
 
+% Enable the DSC parser defined in this file.
 % - enable_dsc -
-/enable_dsc {				% enable DSC parser
+/enable_dsc {
   dsc_init
 } bind def
 
-% Disable DSC parser - replace DSC parser with do nothing parser
+% Disable the DSC parser defined in this file.
 % - disable_dsc -
-/disable_dsc {				% disable the DSC parser
-  << /ProcessDSCComment {pop pop} >> setuserparams
+/disable_dsc {
+	% There might be another parser installed: if so, restore it.
+	% (If it has encapsulated our parser, we can't.)
+  .using_parse_dsc {
+	% Restore the parser we encapsulated.
+    0 get 0 get
+    currentglobal true setglobal exch
+    << /ProcessDSCComment 3 -1 roll >>
+    exch setglobal setuserparams
+  } {
+    pop
+  } ifelse
+	% If we couldn't restore the old parser, at least disable ours.
+  /do_parse_dsc false store
 } bind def

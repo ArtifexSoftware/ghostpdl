@@ -187,29 +187,29 @@
   save pop
 } bind def
 
-% Redefine pdfmark to pass the data to the driver.
-% We use a pseudo-parameter named /pdfmark whose value is an array:
-%	key1 value1 ... CTM /type
+% ---------------- pdfmark and DSC processing ---------------- %
+
+% Encode values to pass for the /pdfmark or /DSC pseudo-parameter.
 /.pdf===dict mark
   /arraytype
    { dup xcheck { ({) (}) } { ([) (]) } ifelse
 		% Stack: file obj left right
       4 1 roll 2 index exch writestring () exch
        { exch 2 index exch writestring
-	 1 index exch pdfmark===only ( )
+	 1 index exch pdf===only ( )
        }
       forall pop exch writestring
    } bind
   /packedarraytype 1 index
   /dicttype
    { 1 index (<<\n) writestring
-      { 2 index 3 -1 roll pdfmark===only 1 index ( ) writestring
-	1 index exch pdfmark===only dup (\n) writestring
+      { 2 index 3 -1 roll pdf===only 1 index ( ) writestring
+	1 index exch pdf===only dup (\n) writestring
       }
      forall (>>) writestring
    } bind
 .dicttomark readonly def
-/pdfmark===only {	% <file> <obj> pdfmark===only -
+/pdf===only {	% <file> <obj> pdf===only -
   .pdf===dict 1 index type .knownget { exec } { write===only } ifelse
 } bind def
 /.pdfcvbuf 10 string def	% enough for most arguments
@@ -221,10 +221,14 @@ userdict /.pdfcvstring () put
   { pop dup length 0 eq { pop } {
       /.pdfcvstring .pdfcvstring 3 -1 roll concatstrings store
     } ifelse //.pdfcvbuf
-  } /NullEncode filter dup 3 -1 roll pdfmark===only
+  } /NullEncode filter dup 3 -1 roll pdf===only
   closefile
   .setglobal .pdfcvstring
 } bind def
+
+% Redefine pdfmark to pass the data to the driver.
+% We use a pseudo-parameter named /pdfmark whose value is an array:
+%	/key1 (value1) ... (CTM) /type
 /.pdfputparams {	% -mark- <key1> <value1> ... .pdfputparams <result...>
   currentdevice null false counttomark 1 add 3 roll
 		% Don't allow the page device to get cleared....
@@ -294,6 +298,44 @@ userdict /.pdfcvstring () put
 } odef
 userdict /pdfmark .undef
 currentdict /.pdfmarkparams .undef
+
+% Use the DSC processing hook to pass DSC comments to the driver.
+% We use a pseudo-parameter named DSC whose value is an array:
+%	/key1 (value1) ... /type
+/.pdfdsc_dict 2 dict def
+/.pdfdsc {	% <file> <DSC string> <dsc dict> [<prev proc>] .pdfdsc -
+  0 get dup null ne { 4 copy exch pop exec } { pop } ifelse 3 -1 roll pop
+		% Stack: <dsc string> <dsc dict>
+  20 .localvmdict 1 index { 3 copy put pop pop } forall
+  3 -1 roll .parse_dsc_comments	% <dsc dict> <dict> <type>
+  dup /NOP ne 2 index length 1 gt or {	% Skip unparsed comments
+    exch mark 4 1 roll {
+		% mark <key1> <value1> ... <dsc dict> <type> <key> <value>
+      3 index 2 index known {	% Skip the DSC_struct entry
+        pop pop
+      } {
+        .pdfcvs 4 -2 roll
+      } ifelse
+    } forall exch pop counttomark .localvmarray astore
+    mark /DSC 3 -1 roll .pdfputparams
+    dup type /booleantype ne {
+      /DSC .pdfparamerror
+    } {
+      pop pop
+    } ifelse
+  } {
+    pop pop pop
+  } ifelse
+} bind def
+/.initialize_dsc_parser where {
+  pop 2 dict dup .initialize_dsc_parser readonly
+  currentuserparams /ProcessDSCComment get
+  1 array astore	% in case the value is executable
+  //.pdfdsc /exec load 4 array astore cvx readonly
+  << /ProcessDSCComment 3 -1 roll >> setuserparams
+} if
+
+% ---------------- {set,current}distillerparams ---------------- %
 
 % Define setdistillerparams / currentdistillerparams.
 % Distiller parameters are currently treated as device parameters.

@@ -526,6 +526,23 @@ currentdict /superexec .knownget {
 	   } if
 	  put
 	} bind def
+% .localvmarray may be an operator: see zsysvm.c.
+/.localvmarray where {
+  pop
+} {
+  /.localvmarray {
+    .currentglobal false .setglobal
+    exch array exch .setglobal
+  } bind def
+} ifelse
+/.localvmdict where {
+  pop
+} {
+  /.localvmdict {
+    .currentglobal false .setglobal
+    exch dict exch .setglobal
+  } bind def
+} ifelse
 /.packtomark
 	{ counttomark packedarray exch pop } bind def
 /ppstack
