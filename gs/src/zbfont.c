@@ -506,12 +506,11 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	if (!r_has_type(pfid, t_fontID))
 	    return_error(e_invalidfont);
 	/*
-	 * If this font has a FID entry already, it might be
-	 * a scaled font made by makefont or scalefont;
-	 * in a Level 2 environment, it might be an existing font
-	 * being registered under a second name, or a re-encoded
-	 * font (which is questionable PostScript, but dvips
-	 * is known to do this).
+	 * If this font has a FID entry already, it might be a scaled font
+	 * made by makefont or scalefont; in a Level 2 environment, it might
+	 * be an existing font being registered under a second name, or a
+	 * re-encoded font (which was invalid in Level 1, but dvips did it
+	 * anyway).
 	 */
 	pfont = r_ptr(pfid, gs_font);
 	if (pfont->base == pfont) {	/* original font */
