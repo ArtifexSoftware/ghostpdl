@@ -54,12 +54,19 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version7.22"></a>Version 7.22 (prerelease)</h3>
+<h3><a name="Version7.22"></a>Version 7.22 (2002-08-06)</h3>
 
 <p>
-This is a reasonably stable development snapshot, the last before the
-DeviceN work gets merged in. In particular, this version is probably
-the most stable pdfwrite version to date.
+This release integrates the rewritten pdfwrite font copying code,
+fixing a large class of pdfwrite bugs involving incremental font
+updating. This project was completed before the DeviceN merge was
+ready, so this release (rather than 7.21 as previously stated) is
+the final checkpoint prior to the DeviceN merge. 
+
+<p>
+Overall, pdfwrite is probably an improvement over previous releases,
+but there are still known issues. Testing of pdfwrite with real-world
+files is encouraged.
 
 <p>
 The following SourceForge bug numbers were open at the time of the last release:
@@ -67,7 +74,6 @@ The following SourceForge bug numbers were open at the time of the last release:
 407342,
 414947,
 414985,
-415142,
 423838,
 427347,
 432040,
@@ -79,7 +85,6 @@ The following SourceForge bug numbers were open at the time of the last release:
 458775,
 458780,
 459647,
-462221,
 465720,
 465936,
 468762,
@@ -92,9 +97,7 @@ The following SourceForge bug numbers were open at the time of the last release:
 493348,
 495319,
 498595,
-503794,
 505429,
-506375,
 508081,
 509646,
 510808,
@@ -102,36 +105,24 @@ The following SourceForge bug numbers were open at the time of the last release:
 513905,
 514616,
 517349,
-521354,
 521916,
-522486,
-524292,
 526099,
 526491,
-528647,
-529103,
-529578,
 530011,
 530588,
 533467,
 535366,
 535752,
 535836,
-535997,
-536877,
 538033,
-538267,
 539239,
 542848,
 543185,
 546823,
-549307,
 551565,
-552949,
 552989,
 554076,
 555496,
-557024,
 557177,
 558151,
 558435,
@@ -143,30 +134,42 @@ The following SourceForge bug numbers were open at the time of the last release:
 567421,
 567487,
 567604,
-567612,
 567773,
 569573,
 570181,
-570213,
-570217,
 570772,
-570800,
-570816,
-570829,
-571897,
 571980,
 572119,
 573744,
-574865,
-576574,
-576577,
 576586,
 576591,
-576615,
-576651.
+578838,
+578865,
+580029,
+580873,
+581420,
+582471,
+583413,
+584713,
+584990,
+586178,
+586595,
+589244,
+590307,
+590979,
+591039,
+591326.
 
-<p>All the regression tests run correctly, with the following exceptions:
-pdfwrite testing of 401-01.ps, which segfaults.
+<p>The nightly regression tests show many changes. However, most of
+the non-pdf regressions are tiny changes resulting in comparing a
+debug build against a non-debug baseline. The rendering really
+shouldn't be different at all, so we're leaving these regressions open
+until we can fix the discrepancy. On the pdfwrite side, most of the
+regressions are actually improvements, but there are some known
+issues.  Notably, the "same_font" function is incorrect, and deriving
+several fonts from a standard font, replacing Metrics or Metrics2
+only, pdfwrite incorrectly merges them into a single font. This causes
+a regression with 093-01.ps and probably other test files.
 
 <h3><a name="7.22_Incompatible_changes"></a>Incompatible changes</h3>
 
@@ -197,7 +200,7 @@ contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <p>
-<small>Ghostscript version 7.22, 8 July 2002
+<small>Ghostscript version 7.22, 6 August 2002
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
