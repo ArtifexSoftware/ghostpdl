@@ -33,6 +33,10 @@ typedef struct gs_font_s gs_font;
 #  define gs_font_base_DEFINED
 typedef struct gs_font_base_s gs_font_base;
 #endif
+#ifndef stream_DEFINED
+#  define stream_DEFINED
+typedef struct stream_s stream;
+#endif
 
 /*
  * Define the structure used for enumerating the glyphs in a font or a
