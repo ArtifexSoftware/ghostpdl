@@ -423,7 +423,8 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     code = jbig2_decode_refinement_region(ctx, segment, &params,
                               as, image, GR_stats);
 
-    /* TODO: free ws, as */
+    jbig2_free(ctx->allocator, as);
+    jbig2_word_stream_buf_free(ctx, ws);
     jbig2_free(ctx->allocator, GR_stats);
 
     if ((segment->flags & 63) == 40) {

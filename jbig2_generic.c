@@ -611,16 +611,17 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
       as = jbig2_arith_new(ctx, ws);
       code = jbig2_decode_generic_region(ctx, segment, &params,
 					 as, image, GB_stats);
+      jbig2_free(ctx->allocator, as);
+      jbig2_word_stream_buf_free(ctx, ws);
+
+      jbig2_free(ctx->allocator, GB_stats);
     }
 
-  /* todo: free ws, as */
-  
+
   jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image, image,
 			rsi.x, rsi.y, JBIG2_COMPOSE_OR);
   jbig2_image_release(ctx, image);
   
-  jbig2_free(ctx->allocator, GB_stats);
-
   return code;
 }
 
