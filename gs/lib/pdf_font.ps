@@ -683,7 +683,7 @@ readonly def
 
 /buildCIDType2 {	% <CIDFontType2-font-resource> buildCIDType2 <font>
   dup /BaseFont get /CIDFont findresource
-  addCIDmetrics dup /BaseFont get exch /CIDFont defineresource
+  addCIDmetrics dup /CIDFontName get exch /CIDFont defineresource
 } bdef
 
 % ---------------- Other embedded fonts ---------------- %
