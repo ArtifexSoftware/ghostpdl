@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <memory.h>
 #include "stdpre.h"
 #include "math_.h"
 #include "gx.h"
@@ -32,8 +33,6 @@
 #include "gserrors.h"
 #include "vdtrace.h"
 
-/* fixme: if FontBBox > 4095, import downscaling may produce degenerate segments. */
-
 /*  todo :
     - Diagonal stems are not hinted;
     - Some fonts have no StdHW, StdWW. Adobe appears to autohint them.
@@ -41,9 +40,8 @@
     - Adobe looks adjusting the relative stem length.
     - Test Adobe compatibility for rotated/skewed glyphs.
     - Fix glyph placement along X-coordinate.
-    - remove rudiments of old code.
-    - dynamical allocation of hinter's arrays.
-    - test this code with fixed_shift != 12.
+    - Test this code with fixed_shift != 12.
+    - Remove rudiments of old code from gstype1.c, gstype2.c .
  */
 
 
@@ -114,9 +112,13 @@
     They are handled by the type 1 interpreter (gstype1.c).
  */
 
-#define ADOBE_COMPATIBILIY 1
-#define SHIFT_CHARPATH 1
+#define ADOBE_OVERSHOOT_COMPATIBILIY 0
+#define ADOBE_SHIFT_CHARPATH 0
 
+static const char *s_pole_array = "t1_hinter pole array";
+static const char *s_zone_array = "t1_hinter zone array";
+static const char *s_hint_array = "t1_hinter hint array";
+static const char *s_contour_array = "t1_hinter contour array";
 
 #define member_prt(type, ptr, offset) (type *)((char *)(ptr) + (offset))
 
@@ -409,12 +411,23 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
 
 /* --------------------- t1_hinter class members - import --------------------*/
 
-void t1_hinter__reset(t1_hinter * this)
-{   this->contour_count = 0;
-    this->stem_snap_count[0] = this->stem_snap_count[1] = 0;
+void t1_hinter__reset(t1_hinter * this, gs_memory_t * mem)
+{   this->stem_snap_count[0] = this->stem_snap_count[1] = 0;
     this->stem_snap[0][0] = this->stem_snap[1][0] = 100;
     this->zone_count = 0;
     this->pole_count = 0;
+    this->contour_count = 0;
+
+    this->max_contour_count = count_of(this->contour0);
+    this->max_zone_count = count_of(this->zone0);
+    this->max_pole_count = count_of(this->pole0);
+    this->max_hint_count = count_of(this->hint0);
+
+    this->pole = this->pole0;
+    this->hint = this->hint0;
+    this->zone = this->zone0;
+    this->contour = this->contour0;
+
     this->ForceBold = false;
     this->base_font_scale = 0;
     this->resolution = 0;
@@ -430,6 +443,22 @@ void t1_hinter__reset(t1_hinter * this)
     this->charpath_flag = false;
     this->disable_hinting = false;
     this->import_shift = 0;
+    this->memory = mem;
+}
+
+private void t1_hinter__free_arrays(t1_hinter * this)
+{   if (this->pole != this->pole0)
+	gs_free_object(this->memory, this->pole, s_pole_array);
+    if (this->hint != this->hint0)
+	gs_free_object(this->memory, this->hint, s_hint_array);
+    if (this->zone != this->zone0)
+	gs_free_object(this->memory, this->zone, s_zone_array);
+    if (this->contour != this->contour0)
+	gs_free_object(this->memory, this->contour, s_contour_array);
+    this->pole = 0;
+    this->hint = 0;
+    this->zone = 0;
+    this->contour = 0;
 }
 
 void t1_hinter__reset_outline(t1_hinter * this)
@@ -551,13 +580,29 @@ private void t1_hinter__make_zone(t1_hinter * this, t1_zone *zone, float * blues
     }
 }
 
+private bool t1_hinter__realloc_array(gs_memory_t *mem, void **a, void *a0, int *max_count, int elem_size, int enhancement, const char *cname)
+{
+    void *aa = gs_alloc_bytes(mem, (*max_count + enhancement * 2) * elem_size, cname);
+
+    if (aa == NULL)
+	return true;
+    memcpy(aa, *a, *max_count * elem_size);
+    if (*a != a0)
+	gs_free_object(mem, *a, cname);
+    *a = aa;
+    *max_count += enhancement * 2;
+    return false;
+}
+
 int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int count, enum t1_zone_type type, bool family)
 {   int count2 = count / 2, i, j;
 
     if (!family) {
         /* Store zones : */
-        if (count2 + this->zone_count >= T1_MAX_ALIGNMENT_ZONES)
-    	    return_error(gs_error_limitcheck);
+        if (count2 + this->zone_count >= this->max_zone_count)
+	    if(t1_hinter__realloc_array(this->memory, &this->zone, this->zone0, &this->max_zone_count, 
+	                                sizeof(this->zone0) / count_of(this->zone0), T1_MAX_ALIGNMENT_ZONES, s_zone_array))
+    		return_error(gs_error_VMerror);
         for (i = 0; i < count2; i++)
             t1_hinter__make_zone(this, &this->zone[this->zone_count + i], blues + i + i, type, this->blue_fuzz);
         this->zone_count += count2;
@@ -588,15 +633,18 @@ int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count, unsigne
     return 0;
 }
 
-private inline int t1_hinter__can_add_pole(t1_hinter * this)
+private inline int t1_hinter__can_add_pole(t1_hinter * this, t1_pole **pole)
 {   if (this->pole_count >= T1_MAX_POLES)
-	return_error(gs_error_limitcheck);
+        if(t1_hinter__realloc_array(this->memory, &this->pole, this->pole0, &this->max_pole_count, 
+				    sizeof(this->pole0) / count_of(this->pole0), T1_MAX_POLES, s_pole_array))
+	    return_error(gs_error_VMerror);
+    *pole = &this->pole[this->pole_count];
     return 0;
 }
 
 private inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy, enum t1_pole_type type)
-{   t1_pole *pole = &this->pole[this->pole_count];
-    int code = t1_hinter__can_add_pole(this);
+{   t1_pole *pole;
+    int code = t1_hinter__can_add_pole(this, &pole);
 
     if (code < 0)
 	return code;
@@ -613,8 +661,8 @@ private inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx
 void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
 {   this->orig_dx = dx;
     this->orig_dy = dy;
-#   if SHIFT_CHARPATH
-        /*  Some Adobe interpreters round coordinates for 'charpath' :
+#   if ADOBE_SHIFT_CHARPATH
+        /*  Adobe CPSI rounds coordinates for 'charpath' :
             X to trunc(x+0.5)
             Y to trunc(y)+0.5
         */
@@ -625,6 +673,7 @@ void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
             this->orig_dy += fixed_half;
         } else {
             this->orig_dy += fixed_1;
+	    /* Adobe CPSI does this, not sure why. */
             /* fixme : check bbox of cached bitmap. */
         }
 #   endif
@@ -650,9 +699,9 @@ int t1_hinter__sbw_seac(t1_hinter * this, t1_glyph_space_coord sbx, t1_glyph_spa
 }
 
 int t1_hinter__rmoveto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy)
-{   if (this->pole_count>0 && this->pole[this->pole_count - 1].type == moveto)
+{   if (this->pole_count > 0 && this->pole[this->pole_count - 1].type == moveto)
         this->pole_count--;
-    if (this->pole_count>0 && this->pole[this->pole_count - 1].type != closepath) {
+    if (this->pole_count > 0 && this->pole[this->pole_count - 1].type != closepath) {
 	int code; 
 
         code = t1_hinter__add_pole(this, 0, 0, closepath);
@@ -662,8 +711,25 @@ int t1_hinter__rmoveto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space
     return t1_hinter__add_pole(this, xx, yy, moveto);
 }
 
+private inline void t1_hinter__skip_degenerate_segnment(t1_hinter * this, int npoles)
+{   /* Degenerate segments amy appear due to import shift with bbox > 4096 */
+    int contour_beg = this->contour[this->contour_count], i;
+
+    if (contour_beg >= this->pole_count - npoles)
+	return;
+    for (i = this->pole_count - npoles - 1; i < this->pole_count - 1; i++)
+	if (this->pole[i].ax != this->cx || this->pole[i].ay != this->cy)
+	    return;
+    this->pole_count -= npoles;
+}
+
 int t1_hinter__rlineto(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy)
-{   return t1_hinter__add_pole(this, xx, yy, oncurve);
+{   int code = t1_hinter__add_pole(this, xx, yy, oncurve);
+    
+    if (code < 0)
+	return code;
+    t1_hinter__skip_degenerate_segnment(this, 1);
+    return 0;
 }
 
 int t1_hinter__rcurveto(t1_hinter * this, t1_glyph_space_coord xx0, t1_glyph_space_coord yy0
@@ -677,7 +743,11 @@ int t1_hinter__rcurveto(t1_hinter * this, t1_glyph_space_coord xx0, t1_glyph_spa
     code = t1_hinter__add_pole(this, xx1, yy1, offcurve);
     if (code < 0)
 	return code;
-    return t1_hinter__add_pole(this, xx2, yy2, oncurve);
+    code = t1_hinter__add_pole(this, xx2, yy2, oncurve);
+    if (code < 0)
+	return code;
+    t1_hinter__skip_degenerate_segnment(this, 3);
+    return 0;
 }
 
 void t1_hinter__setcurrentpoint(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy)
@@ -686,42 +756,48 @@ void t1_hinter__setcurrentpoint(t1_hinter * this, t1_glyph_space_coord xx, t1_gl
 }
 
 int t1_hinter__closepath(t1_hinter * this)
-{   int contour_beg = this->contour[this->contour_count];
+{   int contour_beg = this->contour[this->contour_count], code;
+    t1_pole *pole;
 
     if (contour_beg == this->pole_count)
 	return_error(gs_error_invalidfont);
     if (any_abs(this->pole[contour_beg].gx - this->cx) <= 1 && /* Was 0.1 pixel in the old code. */
-        any_abs(this->pole[contour_beg].gy - this->cy) <= 1)
+        any_abs(this->pole[contour_beg].gy - this->cy) <= 1) {
         /* Eliminate microscopic segment : */ 
         this->pole_count --;
-    else {
-        int code = t1_hinter__can_add_pole(this);
-
+	pole = &this->pole[this->pole_count];
+    } else {
+	code = t1_hinter__can_add_pole(this, &pole);
 	if (code < 0)
 	    return code;
     }
-    this->pole[this->pole_count].type = closepath;
-    this->pole[this->pole_count].gx = this->pole[contour_beg].gx;
-    this->pole[this->pole_count].gy = this->pole[contour_beg].gy;
-    this->pole[this->pole_count].contour_index = this->contour_count;
-    this->pole[this->pole_count].aligned_x = this->pole[this->pole_count].aligned_y = false;
+    pole->type = closepath;
+    pole->gx = this->pole[contour_beg].gx;
+    pole->gy = this->pole[contour_beg].gy;
+    pole->contour_index = this->contour_count;
+    pole->aligned_x = pole->aligned_y = false;
     this->pole_count++;
     this->contour_count++;
-    if (this->contour_count >= T1_MAX_CONTOURS)
-	return_error(gs_error_limitcheck);
+    if (this->contour_count >= this->max_contour_count)
+        if(t1_hinter__realloc_array(this->memory, &this->contour, this->contour0, &this->max_contour_count, 
+				    sizeof(this->contour0) / count_of(this->contour0), T1_MAX_CONTOURS, s_contour_array))
+	    return_error(gs_error_VMerror);
     this->contour[this->contour_count] = this->pole_count;
     return 0;
 }
 
-private inline int t1_hinter__can_add_hint(t1_hinter * this)
-{   if (this->hint_count >= T1_MAX_HINTS)
-	return_error(gs_error_limitcheck);
+private inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
+{   if (this->hint_count >= this->max_hint_count)
+        if(t1_hinter__realloc_array(this->memory, &this->hint, this->hint0, &this->max_hint_count, 
+				    sizeof(this->hint0) / count_of(this->hint0), T1_MAX_HINTS, s_hint_array))
+	    return_error(gs_error_VMerror);
+    *hint = &this->hint[this->hint_count];
     return 0;
 }
 
 int t1_hinter__drop_hints(t1_hinter * this)
-{   t1_hint *hint = &this->hint[this->hint_count];
-    int code =t1_hinter__can_add_hint(this);
+{   t1_hint *hint;
+    int code =t1_hinter__can_add_hint(this, &hint);
 
     if (code < 0)
 	return code;
@@ -739,9 +815,9 @@ int t1_hinter__drop_hints(t1_hinter * this)
 
 private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, unsigned short stem3_index
                                                   , t1_glyph_space_coord g0, t1_glyph_space_coord g1)
-{   t1_hint *hint = &this->hint[this->hint_count];
+{   t1_hint *hint;
     t1_glyph_space_coord s = (type == hstem ? this->subglyph_orig_gy : this->subglyph_orig_gx);
-    int code = t1_hinter__can_add_hint(this);
+    int code = t1_hinter__can_add_hint(this, &hint);
 
     if (code < 0)
 	return code;
@@ -1081,7 +1157,7 @@ private bool t1_hinter__compute_aligned_coord(t1_hinter * this, t1_glyph_space_c
 
             if (zone != NULL) {
                 if (this->suppress_overshoots)
-#                   if ADOBE_COMPATIBILIY
+#                   if ADOBE_OVERSHOOT_COMPATIBILIY
                         gy = (zone->type == topzone ? zone->overshoot_y : zone->y);
 #                   else
                         gy = zone->y;
@@ -1098,13 +1174,13 @@ private bool t1_hinter__compute_aligned_coord(t1_hinter * this, t1_glyph_space_c
                         if (s < ss) /* Enforce overshoot : */
                             gy = (zone->type == topzone ? zone->y + ss : zone->y - ss);
                         else { 
-#                           if ADOBE_COMPATIBILIY
+#                           if ADOBE_OVERSHOOT_COMPATIBILIY
                                 t1_hinter__add_overshoot(this, zone, &gx, &gy);
 #                           else
                                 gy = (zone->type == topzone ? zone->y + ss : zone->y - ss);
 #                           endif
                         }
-                    }
+		    }
                 }
                 aligned = true;
             }
@@ -1667,7 +1743,7 @@ private void t1_hinter__add_full_width_hint(t1_hinter * this)
     t1_glyph_space_coord min_gx, min_gy, max_gx, max_gy;
     t1_glyph_space_coord s = this->subglyph_orig_gx;
     t1_glyph_space_coord gx0, gx1;
-    t1_hint hint;
+    t1_hint hint, *dummy;
     int i;
 
     if (this->pole_count == 0)
@@ -1691,7 +1767,7 @@ private void t1_hinter__add_full_width_hint(t1_hinter * this)
              (this->hint[i].g0 == gx1 && this->hint[i].g1 == gx0)))
             return;
     /* Insert new hint in very beginning : */
-    if (t1_hinter__can_add_hint(this) != 0)
+    if (t1_hinter__can_add_hint(this, &dummy) != 0)
         return;
     t1_hinter__stem(this, vstem, 0, gx0, gx1);
     hint = this->hint[this->hint_count - 1];
@@ -1703,8 +1779,9 @@ private void t1_hinter__add_full_width_hint(t1_hinter * this)
 int t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s)
 {   int code;
 
+    vd_get_dc('h');
     vd_set_central_shift;
-    vd_set_scale(0.3/4096.0);
+    vd_set_scale(0.2/4096.0);
     vd_set_origin(0,0);
     vd_get_dc('h');
     vd_erase(RGB(255,255,255));
@@ -1735,6 +1812,7 @@ int t1_hinter__endglyph(t1_hinter * this, gs_op1_state * s)
 	*/
     }
     code = t1_hinter__export(this, s);
+    t1_hinter__free_arrays(this);
     vd_release_dc;
     return code;
 }

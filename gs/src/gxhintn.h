@@ -20,15 +20,11 @@
 #ifndef gxhintn_INCLUDED
 #  define gxhintn_INCLUDED
 
-/* fixme : In this version we statically define sizes of all internal arrays.
-   It would be nice to implement dynamical re-allocation on overflow.
-*/
-
 #define T1_MAX_STEM_SNAPS 12
-#define T1_MAX_ALIGNMENT_ZONES 25
-#define T1_MAX_CONTOURS 50
-#define T1_MAX_POLES (500 + T1_MAX_CONTOURS)
-#define T1_MAX_HINTS 200 /* total number of hints in a glyph, not a maximal one at a moiment */
+#define T1_MAX_ALIGNMENT_ZONES 6
+#define T1_MAX_CONTOURS 10
+#define T1_MAX_POLES (100 + T1_MAX_CONTOURS)
+#define T1_MAX_HINTS 30 /* total number of hints in a glyph, not a maximal one at a moiment */
 
 typedef int int32;
 typedef fixed t1_glyph_space_coord; /* measured in original glyph space units */
@@ -99,16 +95,16 @@ typedef struct t1_hinter_s
     t1_glyph_space_coord cx, cy; /* current point */
     double BlueScale;
     t1_glyph_space_coord blue_shift, blue_fuzz;
-    t1_pole pole[T1_MAX_POLES];
-    t1_hint hint[T1_MAX_HINTS];
+    t1_pole pole0[T1_MAX_POLES], *pole;
+    t1_hint hint0[T1_MAX_HINTS], *hint;
+    t1_zone zone0[T1_MAX_ALIGNMENT_ZONES], *zone;
+    int contour0[T1_MAX_CONTOURS], *contour;
     t1_glyph_space_coord stem_snap[2][T1_MAX_STEM_SNAPS + 1]; /* StdWH + StemSnapH, StdWV + StemSnapV */
-    t1_zone zone[T1_MAX_ALIGNMENT_ZONES];
-    int contour[T1_MAX_CONTOURS];
-    int contour_count;
     int stem_snap_count[2]; /* H, V */
-    int zone_count;
-    int pole_count;
-    int hint_count;
+    int contour_count, max_contour_count;
+    int zone_count, max_zone_count;
+    int pole_count, max_pole_count;
+    int hint_count, max_hint_count;
     int primary_hint_count;
     bool ForceBold;
     bool seac_flag;
@@ -127,9 +123,10 @@ typedef struct t1_hinter_s
     int19 width_transform_coef_inv;
     int19 heigt_transform_coef_inv;
     t1_glyph_space_coord overshoot_threshold;
+    gs_memory_t *memory;
 } t1_hinter;
 
-void t1_hinter__reset(t1_hinter * this);
+void t1_hinter__reset(t1_hinter * this, gs_memory_t * mem);
 void t1_hinter__reset_outline(t1_hinter * this);
 int  t1_hinter__set_transform(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, gs_matrix * FontMatrix, gs_matrix * baseFontMatrix);
 int  t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int count, enum t1_zone_type type, bool family);

@@ -93,7 +93,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
     switch (pcis->init_done) {
 	case -1:
-            NEW(t1_hinter__reset(h));
+            NEW(t1_hinter__reset(h, pcis->pis->memory));
 #	    if NEW_TYPE1_HINTER
             code = t1_hinter__set_transform(h, &pcis->pis->ctm, 
 		    &pfont->FontBBox, &pfont->FontMatrix, &pfont->base->FontMatrix);
@@ -325,7 +325,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    return code;
                 if (pcis->seac_accent < 0)
                     code = t1_hinter__endglyph(h, &s);
-#	    else
+#	    endif
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {
 		    /* do accent of seac */
@@ -334,7 +334,6 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    cip = ipsp->cs_data.bits.data;
 		    goto call;
 		}
-#	    endif
 		return code;
 	    case cx_rmoveto:
 		accum_xy(cs0, cs1);

@@ -408,6 +408,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	pcis->ipstack[0].cs_data = agdata;
 	return 1;
     }
+#   if !NEW_TYPE1_HINTER
     if (pcis->hint_next != 0 || path_is_drawing(ppath))
 	apply_path_hints(pcis, true);
     /* Set the current point to the character origin */
@@ -454,6 +455,9 @@ gs_type1_endchar(gs_type1_state * pcis)
     } else {			/* Don't do any adjusting. */
 	pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
     }
+#   else
+    pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
+#   endif
 #   else
     pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
 #   endif
