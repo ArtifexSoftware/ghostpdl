@@ -777,7 +777,7 @@ pcl_text(
 	pcl_font_selection_t *  pfp = &pcs->font_selection[pcs->font_selected];
 	/* AGFA madness - 72.307 points per inch for intellifonts */
 	floatp ppi = (pfp->font->scaling_technology == plfst_Intellifont) ? 72.307 : 72.0;
-        if (pfp->params.proportional_spacing) {
+        if (pfp->font->params.proportional_spacing) {
 	    scale.x = scale.y = pfp->params.height_4ths
 	                         * 0.25 * 7200.0 / ppi;
 	} else
