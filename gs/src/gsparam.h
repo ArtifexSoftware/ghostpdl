@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -440,6 +440,8 @@ struct gs_param_list_s {
 };
 
 /* Set whether the keys for param_write_XXX are persistent. */
+/* VMS limits procedure names to 31 characters. */
+#define gs_param_list_set_persistent_keys gs_param_list_set_persist_keys
 void gs_param_list_set_persistent_keys(P2(gs_param_list *, bool));
 
 /* Initialize a parameter list key enumerator. */
