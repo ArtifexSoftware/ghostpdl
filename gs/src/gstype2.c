@@ -251,9 +251,11 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		/*
 		 * Type 2 CharStrings, unlike Type 1, insert an explicit
 		 * closepath before a moveto rather than an implicit one.
-		 * (This makes a difference for charpath.)
+		 * (This makes a difference for charpath.)  Note that if
+		 * we are just getting the glyph info, sppath may be 0:
+		 * this is OK, because check_first_operator will return.
 		 */
-		if (pfont->PaintType != 1) {
+		if (pfont->PaintType != 1 && sppath != 0) {
 		    code = gx_path_close_subpath(sppath);
 		    if (code < 0)
 			return code;
@@ -300,8 +302,11 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		}
 		goto pp;
 	    case cx_endchar:
-		/* See vmoveto above re closing the subpath. */
-		if (pfont->PaintType != 1) {
+		/*
+		 * See vmoveto above re closing the subpath.  Note that
+		 * sppath may be 0 if we are just getting the glyph info.
+		 */
+		if (pfont->PaintType != 1 && sppath != 0) {
 		    code = gx_path_close_subpath(sppath);
 		    if (code < 0)
 			return code;
@@ -345,7 +350,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		return code;
 	    case cx_rmoveto:
 		/* See vmoveto above re closing the subpath. */
-		if (pfont->PaintType != 1) {
+		if (pfont->PaintType != 1 && sppath != 0) {
 		    code = gx_path_close_subpath(sppath);
 		    if (code < 0)
 			return code;
@@ -355,7 +360,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		goto move;
 	    case cx_hmoveto:
 		/* See vmoveto above re closing the subpath. */
-		if (pfont->PaintType != 1) {
+		if (pfont->PaintType != 1 && sppath != 0) {
 		    code = gx_path_close_subpath(sppath);
 		    if (code < 0)
 			return code;
