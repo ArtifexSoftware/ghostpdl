@@ -77,6 +77,11 @@ typedef struct gx_device_s gx_device;
  * non-retained, if there are no references to it from graphics states or
  * targets, it will be freed immediately.
  *
+ * The preferred technique for creating a new device is now gs_copydevice.
+ * There are a number of places in the code where memory is explicitly
+ * allocated, then initialized with gx_device_init. These should gradually
+ * be replaced.
+ *
  * There are 3 ways that a device structure might be allocated:
  *	1) Allocated dynamically, e.g.,
  *		gx_device *pdev_new;
@@ -86,9 +91,12 @@ typedef struct gx_device_s gx_device;
  *	or
  *		const gx_device devc = ...;
  *	3) Embedded in an object allocated in one of the above ways.
- * If you allocate a device using #2 or #3, you MUST mark it as retained
- * by calling gx_device_retain(pdev, true).  If you do not do this, an
- * attempt will be made to free the device, corrupting memory.  */
+ * If you allocate a device using #2 or #3, you must either mark it as
+ * retained by calling gx_device_retain(pdev, true) or initialize it with a
+ * NULL memory.  If you do not do this, an attempt will be made to free the
+ * device, corrupting memory.  Note that when memory is NULL, the finalize
+ * method of the device will not be called when it is freed, so you cannot
+ * use it for cleanup.  */
 
 /*
  * Do not set the target of a forwarding device with an assignment like
