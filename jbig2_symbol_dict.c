@@ -25,6 +25,7 @@
 
 #include <stddef.h>
 #include <string.h> /* memset() */
+#include <stdio.h> /* debugging, remove me! */
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
@@ -43,7 +44,7 @@ typedef struct {
   bool SDHUFF;
   bool SDREFAGG;
   int32_t SDNUMINSYMS;
-  /* SDINSYMS */
+  Jbig2SymbolDict *SDINSYMS;
   uint32_t SDNUMNEWSYMS;
   uint32_t SDNUMEXSYMS;
   /* SDHUFFDH */
@@ -215,6 +216,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			 Jbig2ArithCx *GB_stats)
 {
   Jbig2SymbolDict *SDNEWSYMS;
+  Jbig2SymbolDict *SDEXSYMS;
   int32_t HCHEIGHT;
   uint32_t NSYMSDECODED;
   int32_t SYMWIDTH, TOTWIDTH;
@@ -222,6 +224,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   Jbig2ArithState *as = NULL;
   Jbig2ArithIntCtx *IADH = NULL;
   Jbig2ArithIntCtx *IADW = NULL;
+  Jbig2ArithIntCtx *IAEX = NULL;
   int code;
 
   /* 6.5.5 (3) */
@@ -234,11 +237,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       as = jbig2_arith_new(ctx, ws);
       IADH = jbig2_arith_int_ctx_new(ctx);
       IADW = jbig2_arith_int_ctx_new(ctx);
+      IAEX = jbig2_arith_int_ctx_new(ctx);
     }
 
-  SDNEWSYMS = jbig2_alloc(ctx->allocator, params->SDNUMNEWSYMS * sizeof(*SDNEWSYMS));
-  SDNEWSYMS->n_symbols = params->SDNUMNEWSYMS;
-  SDNEWSYMS->glyphs = (Jbig2Image **)jbig2_alloc(ctx->allocator, SDNEWSYMS->n_symbols * sizeof(Jbig2Image*));
+  SDNEWSYMS = jbig2_sd_new(ctx, params->SDNUMNEWSYMS);
   
   /* 6.5.5 (4a) */
   while (NSYMSDECODED < params->SDNUMNEWSYMS)
@@ -338,8 +340,45 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     }
 
   jbig2_free(ctx->allocator, GB_stats);
-
-  return SDNEWSYMS;
+  
+  /* 6.5.10 */
+  SDEXSYMS = jbig2_sd_new(ctx, params->SDNUMEXSYMS);
+  {
+    int i = 0;
+    int j = 0;
+    int k, m, exrunlength, exflag = 0;
+    
+    if (params->SDINSYMS != NULL)
+      m = params->SDINSYMS->n_symbols;
+    else
+      m = 0;
+    fprintf(stderr, "building export symbol dictionary\n");
+    fprintf(stderr, "\tinput: %d symbols, decoded: %d symbols\n",
+    	params->SDNUMINSYMS, NSYMSDECODED);
+    fprintf(stderr, "\tto export: %d symbols\n", params->SDNUMEXSYMS);
+    while (j < params->SDNUMEXSYMS) {
+      if (params->SDHUFF)
+      	/* FIXME: implement reading from huff table B.1 */
+        exrunlength = params->SDNUMEXSYMS;
+      else
+        code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
+      fprintf(stderr, "  read runlength %d symbols (exflag = %d)\n",
+      	exrunlength, exflag);
+      for(k = 0; k < exrunlength; k++)
+        if (exflag) {
+          SDEXSYMS->glyphs[j++] = (i < m) ? 
+            jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]) :
+            jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i-m]);
+          i++;
+        }
+        exflag = !exflag;
+        fprintf(stderr, " export index %d; import index %d\n", j, i);
+    }
+  }
+  
+  jbig2_sd_release(ctx, SDNEWSYMS);
+  
+  return SDEXSYMS;
 }
 
 /* 7.4.2 */
@@ -352,8 +391,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   int sdat_bytes;
   int offset;
   Jbig2ArithCx *GB_stats = NULL;
-  Jbig2SymbolDict *SDNEWSYMS;
-
+  Jbig2SymbolDict *SDINSYMS = NULL;
+  
   if (segment->data_length < 10)
     goto too_short;
 
@@ -416,6 +455,23 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	      "symbol dictionary, flags=%04x, %d exported syms, %d new syms",
 	      flags, params.SDNUMEXSYMS, params.SDNUMNEWSYMS);
 
+  /* 7.4.2.2 (2) */
+  {
+    int n_dicts = jbig2_sd_count_referred(ctx, segment);
+    Jbig2SymbolDict **dicts = NULL;
+  
+    params.SDINSYMS = NULL;	
+    if (n_dicts > 0) {
+      dicts = jbig2_sd_list_referred(ctx, segment);
+      params.SDINSYMS = jbig2_sd_cat(ctx, n_dicts, dicts);
+    }
+    if (params.SDINSYMS != NULL) {
+      params.SDNUMINSYMS = params.SDINSYMS->n_symbols;
+    } else {
+     params.SDNUMINSYMS = 0;
+    }
+  }
+  
   /* 7.4.2.2 (4) */
   if (!params.SDHUFF)
     {
@@ -431,22 +487,19 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
         "segment marks bitmap coding context as retained (NYI)");
     }
 
-  SDNEWSYMS = jbig2_decode_symbol_dict(ctx, segment,
+  segment->result = (void *)jbig2_decode_symbol_dict(ctx, segment,
 				  &params,
 				  segment_data + offset,
 				  segment->data_length - offset,
 				  GB_stats);
 #ifdef DUMP_SYMDICT
-  if (segment->result) jbig2_dump_symbol_dict(SDNEWSYMS);
+  if (segment->result) jbig2_dump_symbol_dict(segment->result);
 #endif
 
-  /* FIXME: assume for now everything is exported */
-  segment->result = (void *)SDNEWSYMS;
+  /* todo: retain or free GB_stats */
 
   return (segment->result != NULL) ? 0 : -1;
 
-  /* todo: retain or free GB_stats */
-  
  too_short:
   return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		     "Segment too short");
