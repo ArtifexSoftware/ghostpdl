@@ -155,20 +155,23 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 		  pgls->g.scaling_params.pmin.y,
 		scale_y = window_y / range_y;
 
-	      if ( pgls->g.scaling_type == hpgl_scaling_isotropic )
-		{ if ( scale_x > scale_y )
-		    { /* Reduce the X scaling. */
+	      
+	      if ( pgls->g.scaling_type == hpgl_scaling_isotropic ) {
+		  /* it is unclear what should happen if scale x and
+                     scale y have different signs for now we do
+                     nothing */
+		  if ( scale_x * scale_y < 0 )
+		      ;
+		  else if ( scale_x > scale_y ) { /* Reduce the X scaling. */
 		      origin_x += range_x * (scale_x - scale_y) *
 			(pgls->g.scaling_params.left / 100.0);
 		      scale_x = scale_y;
-		    }
-		  else if ( scale_y > scale_x )
-		    { /* Reduce the Y scaling. */
+		  } else if ( scale_y > scale_x ) { /* Reduce the Y scaling. */
 		      origin_y += range_y * (scale_y - scale_x) *
 			(pgls->g.scaling_params.bottom / 100.0);
 		      scale_y = scale_x;
-		    }
-		}
+		  }
+	      }
 	      /* looks like HP keeps 5 decimal digits of accuracy
                  here.  This was derived empirically */
 	      scale_x -= fmod(scale_x, 1.0E-5);
