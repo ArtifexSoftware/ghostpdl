@@ -89,7 +89,8 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      */
     if (for_pattern < 0)
 	stream_puts(pdev->strm, "q ");
-    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line, 1)) < 0 ||
+    pdf_image_writer_init(piw);
+    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
 	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
 					    &piw->binary[0],
 					    (gs_pixel_image_t *)pim)) < 0 ||
@@ -158,7 +159,8 @@ pdf_copy_mono(gx_device_pdf *pdev,
 			 w, h + y_offset);
 		pprintd3(pdev->strm, "%d 0 0 %d 0 %d cm\n", w, h,
 			 y_offset);
-		code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true, 1);
+		pdf_image_writer_init(&writer);
+		code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true);
 		if (code < 0)
 		    return code;
 		pres = (pdf_resource_t *) pcp;
@@ -230,7 +232,8 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
-	code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, in_line, 1);
+	pdf_image_writer_init(&writer);
+	code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, in_line);
 	if (code < 0)
 	    return code;
     }
@@ -388,7 +391,8 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      * We don't have to worry about color space scaling: the color
      * space is always a Device space.
      */
-    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line, 1)) < 0 ||
+    pdf_image_writer_init(piw);
+    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
 	(code = pdf_color_space(pdev, &cs_value, NULL, &cs,
 				&piw->pin->color_spaces, in_line)) < 0 ||
 	(for_pattern < 2 ?

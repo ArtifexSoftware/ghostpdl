@@ -276,6 +276,14 @@ pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 
 /* ------ Begin / finish ------ */
 
+/* Initialize image writer. */
+void
+pdf_image_writer_init(pdf_image_writer * piw)
+{
+    memset(piw, 0, sizeof(*piw));
+    piw->alt_writer_count = 1; /* Default. */
+}
+
 /*
  * Begin writing an image, creating the resource if not in-line, and setting
  * up the binary writer.  If pnamed != 0, it is a stream object created by a
@@ -284,13 +292,12 @@ pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 int
 pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 		      gx_bitmap_id id, int w, int h, cos_dict_t *named,
-		      bool in_line, int alt_writer_count)
+		      bool in_line)
 {
     /* Patch pdev->strm so the right stream gets into the writer. */
     stream *save_strm = pdev->strm;
     int code;
 
-    piw->alt_writer_count = alt_writer_count;
     if (in_line) {
 	piw->pres = 0;
 	piw->pin = &pdf_image_names_short;

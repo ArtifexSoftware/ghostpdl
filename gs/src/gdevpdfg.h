@@ -244,6 +244,9 @@ extern_st(st_pdf_image_writer);	/* public for gdevpdfi.c */
     "pdf_image_writer", pdf_image_writer_enum_ptrs, pdf_image_writer_reloc_ptrs)
 #define pdf_image_writer_max_ptrs (psdf_binary_writer_max_ptrs * 3 + 3)
 
+/* Initialize image writer. */
+void pdf_image_writer_init(pdf_image_writer * piw);
+
 /*
  * Begin writing an image, creating the resource if not in-line, and setting
  * up the binary writer.  If pnamed != 0, it is a dictionary object created
@@ -251,8 +254,7 @@ extern_st(st_pdf_image_writer);	/* public for gdevpdfi.c */
  */
 int pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 			  gx_bitmap_id id, int w, int h,
-			  cos_dict_t *pnamed, bool in_line,
-			  int alt_writer_count);
+			  cos_dict_t *pnamed, bool in_line);
 
 /* Begin writing the image data, setting up the dictionary and filters. */
 int pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,

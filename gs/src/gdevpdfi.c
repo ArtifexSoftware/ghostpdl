@@ -252,7 +252,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     } image[2];
     int width, height;
     const gs_range_t *pranges = 0;
-    int alt_writer_count;
 
     /*
      * Pop the image name from the NI stack.  We must do this, to keep the
@@ -470,12 +469,13 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    goto nyi;
 	}
     }
-    alt_writer_count = (in_line || 
+    pdf_image_writer_init(&pie->writer);
+    pie->writer.alt_writer_count = (in_line || 
 				    (pim->Width <= 64 && pim->Height <= 64) ||
 				    pdev->transfer_not_identity ? 1 : 2);
     image[1] = image[0];
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
-		    height, pnamed, in_line, alt_writer_count)) < 0 ||
+		    height, pnamed, in_line)) < 0 ||
 	/*
 	 * Some regrettable PostScript code (such as LanguageLevel 1 output
 	 * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
