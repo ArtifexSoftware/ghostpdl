@@ -46,10 +46,12 @@ static const gs_log2_scale_point scale_log2_1 =
 
 /* Look up, and if necessary add, a font/matrix pair in the cache */
 cached_fm_pair *
-gx_lookup_fm_pair(gs_font * pfont, register const gs_state * pgs)
+gx_lookup_fm_pair(gs_font * pfont, register const gs_state * pgs, gs_log2_scale_point *log2_scale)
 {
-    float mxx = pgs->char_tm.xx, mxy = pgs->char_tm.xy, myx = pgs->char_tm.yx,
-          myy = pgs->char_tm.yy;
+    int scale_x = 1 << log2_scale->x;
+    int scale_y = 1 << log2_scale->y;
+    float mxx = pgs->char_tm.xx * scale_x, mxy = pgs->char_tm.xy * scale_x, 
+          myx = pgs->char_tm.yx * scale_y, myy = pgs->char_tm.yy * scale_y;
     gs_font *font = pfont;
     register gs_font_dir *dir = font->dir;
     register cached_fm_pair *pair =

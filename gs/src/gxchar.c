@@ -728,7 +728,7 @@ show_update(gs_show_enum * penum)
 		    ;
 	    }
 	    gx_add_cached_char(pgs->font->dir, penum->dev_cache,
-			       cc, gx_lookup_fm_pair(pgs->font, pgs),
+			       cc, gx_lookup_fm_pair(pgs->font, pgs, &penum->log2_scale),
 			       &penum->log2_scale);
 	    if (!SHOW_USES_OUTLINE(penum) ||
 		penum->charpath_flag != cpm_show
@@ -919,8 +919,6 @@ show_proceed(gs_show_enum * penum)
 			}
 		    } else
     			SET_CURRENT_GLYPH(penum, glyph);
-		    if (pair == 0)
-			pair = gx_lookup_fm_pair(pfont, pgs);
 		    {
 			int alpha_bits, depth;
 			gs_log2_scale_point log2_scale;
@@ -929,6 +927,8 @@ show_proceed(gs_show_enum * penum)
 			code = compute_glyph_raster_params(penum, false, &alpha_bits, &depth, &subpix_origin, &log2_scale);
 			if (code < 0)
 			    return code;
+			if (pair == 0)
+			    pair = gx_lookup_fm_pair(pfont, pgs, &log2_scale);
 			cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
 						   depth, &subpix_origin);
 		    }
