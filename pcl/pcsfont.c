@@ -432,7 +432,6 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
             switch ( data[3] ) {
             case 1:             /* uncompressed bitmap */
                 font_data_size = 16 + (((width + 7) >> 3) * height);
-                /* if count > font_data_size extra data is ignored, no error */
                 break;
             case 2:             /* compressed bitmap */
                 { uint y = 0;
@@ -546,7 +545,8 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
                                    "pcl_character_data");
         if ( char_data == 0 )
             return_error(e_Memory);
-        memcpy(char_data, data, count);
+        /* if count > font_data_size extra data is ignored */
+        memcpy(char_data, data, min(count, font_data_size) );
         /* NB we only handle continuation for uncompressed bitmap characters */
         if ( data[0] == pccd_bitmap && 
              data[3] == 1 &&
