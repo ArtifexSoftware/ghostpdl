@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.6 2002/06/22 16:05:45 giles Exp $
+    $Id: jbig2_segment.c,v 1.7 2002/06/24 18:40:01 giles Exp $
 */
 
 #include <stdio.h>
@@ -26,6 +26,7 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
   Jbig2Segment *result;
   uint8_t rtscarf;
   uint32_t rtscarf_long;
+  uint32_t *referred_to_segments;
   int referred_to_segment_count;
   int referred_to_segment_size;
   int pa_size;
@@ -60,13 +61,25 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
   result->referred_to_segment_count = referred_to_segment_count;
 
   /* 7.2.5 */
-  /* todo: read referred to segment numbers */
-  /* For now, we skip them. */
-  referred_to_segment_size = result->number <= 256 ? 1:
-    result->number <= 65536 ? 2:
-    4;
-  offset += referred_to_segment_count * referred_to_segment_size;
+  if (referred_to_segment_count)
+    {
+      int i;
 
+      referred_to_segment_size = result->number <= 256 ? 1:
+        result->number <= 65536 ? 2 : 4;
+      referred_to_segments = jbig2_alloc(ctx->allocator, referred_to_segment_count * referred_to_segment_size);
+    
+      for (i = 0; i < referred_to_segment_count; i++) {
+        referred_to_segments[i] = jbig2_get_int32(buf + offset);
+        offset += referred_to_segment_size;
+      }
+      result->referred_to_segments = referred_to_segments;
+    }
+  else /* no referred-to segments */
+    {
+      result->referred_to_segments = NULL;
+    }
+  
   /* 7.2.6 */
   pa_size = result->flags & 0x40 ? 4 : 1;
 
@@ -75,7 +88,7 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
       jbig2_free (ctx->allocator, result);
       return NULL;
     }
-
+  
   if (result->flags & 0x40) {
 	result->page_association = jbig2_get_int32(buf + offset);
 	offset += 4;
@@ -93,6 +106,10 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
 void
 jbig2_free_segment (Jbig2Ctx *ctx, Jbig2Segment *segment)
 {
+  if (segment->referred_to_segments != NULL) {
+    jbig2_free(ctx->allocator, segment->referred_to_segments);
+  }
+  /* todo: free result */
   jbig2_free (ctx->allocator, segment);
 }
 
