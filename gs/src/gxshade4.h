@@ -21,13 +21,40 @@
 #  define gxshade4_INCLUDED
 
 /* Configuration flags for development needs only. Users should not modify them. */
-#define NEW_SHADINGS 0 /* Old code = 0, new code = 1. */
+#define NEW_SHADINGS 1 /* Old code = 0, new code = 1. */
+
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
+/* The code QUADRANGLES 0 appears a dead branch.
+   We keep it because it stores a valuable code for constant_color_quadrangle,
+   which decomposes a random quadrangle into 3 or 4 trapezoids.
+ */
 #define DIVIDE_BY_PARALLELS 0 /* 1 - divide a triangle by parallels, 0 - in 4 triangles.  */
+/* The code DIVIDE_BY_PARALLELS 1 appears faster due to a smaller decomposition,
+   because it is optimized for constant color areas.
+   When smoothness is smaller than the device color resolution,
+   it stops the decomposition exactly when riches the smoothness.
+   This is faster and is conforming to PLRM, but gives a worse view due to
+   the color contiguity is missed. May be preferrable for contone devices.
+ */
 #define POLYGONAL_WEDGES 0 /* 1 = polygons allowed, 0 = triangles only. */
+/* The code POLYGONAL_WEDGES 1 appears slightly faster, but it uses
+   a heavy function intersection_of_small_bars, which includes
+   a special effort against numeric errors. From experiments 
+   we decided that the small speed up doesn't worth the trouble
+   with numeric errorr.
+ */
 #define INTERPATCH_PADDING (fixed_1 / 8) /* Emulate a trapping for poorly designed documents. */
+/* When INTERPATCH_PADDING > 0, it generates paddings between patches.
+   This is an emulation of Adobe's trapping.
+   The value specifies the width of paddings.
+ */
 #define COLOR_CONTIGUITY 1 /* A smothness divisor for triangulation. */
-#define VD_TRACE_DOWN 0
+ /* This is a coefficient, which DIVIDE_BY_PARALLELS 1 uses to rich
+    a better color contiguity. The value 1 corresponds to PLRM,
+    bigger values mean more contiguity. The spead decreases as
+    a square of COLOR_CONTIGUITY.
+  */
+#define VD_TRACE_DOWN 0 /* Developer's needs, not important. */
 /* End of configuration flags (we don't mean that users should modify the rest). */
 
 #define mesh_max_depth (16 * 3 + 1)	/* each recursion adds 3 entries */
@@ -85,6 +112,10 @@ struct shading_vertex_s {
     gs_fixed_point p;
     patch_color_t c;
 };
+
+#if TENSOR_SHADING_DEBUG
+    extern int triangle_cnt, patch_cnt;
+#endif
 
 /* Initialize the fill state for triangle shading. */
 void mesh_init_fill_state(mesh_fill_state_t * pfs,
