@@ -93,7 +93,7 @@ $(PXLOBJ)pxerrors.$(OBJ): $(PXLSRC)pxerrors.c $(AK)\
  $(pxbfont_h) $(pxerrors_h) $(pxfont_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)
 	$(PXLCCC) $(PXLSRC)pxerrors.c $(PXLO_)pxerrors.$(OBJ)
 
-$(PXLSRC)pxlver.h: $(PXLSRC)pxl.mak
+$(PXLSRC)pxlver.h:
 	$(PXLGEN)echogs$(XE) -e .h -w $(PXLSRC)pxlver -n -x 23 "define PXLVERSION"
 	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 $(PXLVERSION) -x 22
 	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -n -x 23 "define PXLBUILDDATE"
@@ -211,7 +211,7 @@ pxl_ops_obj2=$(PXLOBJ)pxink.$(OBJ) $(PXLOBJ)pxpaint.$(OBJ) $(PXLOBJ)pxsessio.$(O
 pxl_ops_obj=$(pxl_ops_obj1) $(pxl_ops_obj2)
 
 # Top-level API
-$(TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
+$(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
  $(gdebug_h) $(gp_h) $(gsdevice_h) $(gserrors_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
  $(pltop_h) $(pxtop_h) $(plparse_h)\

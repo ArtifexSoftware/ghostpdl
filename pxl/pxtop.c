@@ -41,15 +41,16 @@ maybe by Artifex.
 #include "pltop.h"
 
 /* Define the table of pointers to initialization data. */
-#define init_(init) int init(P1(px_state_t *));
-typedef init_((*px_init_proc));
-#include "pconfig.h"
-#undef init_
+
+typedef int  (*px_init_proc) ( px_state_t * );
+
+int pxfont_init(P1(px_state_t *pxs ));
+int pxerrors_init(P1(px_state_t *pxs ));
+
 const px_init_proc px_init_table[] = {
-#define init_(init) &init,
-#include "pconfig.h"
-#undef init_
-	    0
+    &pxfont_init,
+    &pxerrors_init,
+    0
 };
 
 /* Imported operators */
@@ -178,6 +179,7 @@ pxl_impl_characteristics(
 {
   static pl_interp_characteristics_t pxl_characteristics = {
     "PCL/XL",
+    ") HP-PCL XL;1;1",
     "Artifex",
     PXLVERSION,
     PXLBUILDDATE,
@@ -218,7 +220,6 @@ pxl_impl_allocate_interp_instance(
 	gs_state *pgs = gs_state_alloc(mem);
 	px_parser_state_t *st = px_process_alloc(mem);	/* parser init, cheap */
 	px_state_t *pxs = px_state_alloc(mem);	/* inits interp state, potentially expensive */
-
 	/* If allocation error, deallocate & return */
 	if (!pxli || !pgs || !st || !pxs) {
 	  if (!pxli)
@@ -260,7 +261,6 @@ pxl_impl_set_client_instance(
 )
 {
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
-
 	pxli->pxs->pjls = client;
 	return 0;
 }
@@ -303,7 +303,6 @@ pxl_impl_set_device(
 	int code;
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
 	enum {Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone} stage;
-
 	stage = Sbegin;
 	gs_opendevice(device);
 
@@ -365,7 +364,6 @@ pxl_impl_init_job(
 	int code = 0;
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
 	gs_memory_status_t status;
-
 	px_reset_errors(pxli->pxs);
 	px_process_init(pxli->st, true);
 
@@ -536,7 +534,6 @@ pxl_impl_dnit_job(
 {
 	int code;
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
-
 	px_stream_header_dnit(&pxli->headerState);
 	px_state_cleanup(pxli->pxs);
 
@@ -552,7 +549,6 @@ pxl_impl_remove_device(
 	int code = 0;	/* first error status encountered */
 	int error;
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
-
 	/* return to original gstate  */
 	gs_grestore_only(pxli->pgs);	/* destroys gs_save stack */
 	/* Deselect device */
@@ -571,7 +567,6 @@ pxl_impl_deallocate_interp_instance(
 {
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
 	gs_memory_t *mem = pxli->memory;
-
 	/* do total dnit of interp state */
 	px_state_finit(pxli->pxs);
 
@@ -607,7 +602,6 @@ pxl_end_page_top(
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)(pxls->client_data);
 	pl_interp_instance_t *instance = (pl_interp_instance_t *)pxli;
 	int code = 0;
-
 	/*
 	 * Check whether it's worth doing a garbage collection.
 	 * Note that this only works if we don't relocate pointers,
