@@ -911,8 +911,7 @@ print_usage(const gs_main_instance *minst)
 private int
 cmpstr(const void *v1, const void *v2)
 {
-//    return (strcmp((const char *)v1,(const char *)v2));
-    return (strcmp(v1,v2));
+    return strcmp( (const char *)v1, (const char *)v2 );
 }
 
 /* Print the list of available devices. */
