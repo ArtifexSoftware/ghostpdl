@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995-2002 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -25,8 +25,8 @@
 
 # This partial makefile compiles the zlib library for use in Ghostscript.
 # You can get the source code for this library from:
-#   http://www.info-zip.org/pub/infozip/zlib/
-#   ftp://ftp.info-zip.org/pub/infozip/zlib/
+#   http://www.gzip.org/zlib/
+#   http://www.libpng.org/pub/png/src/
 #	zlib-#.#.#.tar.gz or zlib###.zip
 # Please see Ghostscript's `Make.htm' file for instructions about how to
 # unpack these archives.
