@@ -33,7 +33,7 @@ SW16 trace_sw = 0;
  * set files. Adjust this as required on your system. Note that the final
  * character must be a separator ('/').
  */
-#define UFST_DATA_ROOT  "/home/henrys/coloru/pl/agfa/fontdata/"
+#define UFST_DATA_ROOT  "../../pl/agfa/fontdata/"
 
 /*
  * Paths for the statically loadded data. Since only MicroType font collection
@@ -49,10 +49,9 @@ SW16 trace_sw = 0;
  * Note that the plug-in font collection object must be specifically registered
  * via the CGIFfco_Plugin procedure.
  */
-private const UB8           fcNmPl[] = "mtfonts/LJ4000pl.fco";
-private const UB8 *const    fcNmAry[] = { "mtfonts/LJ4000.fco",
-                                          "mtfonts/LJ4000sy.fco",
-                                          "mtfonts/LJ4000wd.fco" };
+private const UB8           fcNmPl[] =    "mtfonts/pcl45/mt1/plug___f.fco";
+private const UB8 *const    fcNmAry[] = { "mtfonts/pcl45/mt1/pcl____f.fco",
+                                          "mtfonts/pcl45/mt1/wd_____f.fco" };
 
 /*
  * Handle for the plugin object and the various font collection objects. The
@@ -383,6 +382,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                             plfont->font_type = plft_8bit;
 
                         plfont->storage = storage;
+                        plfont->data_are_permanent = false;
                         plfont->params = resident_table[j].params;
 
                         /*

@@ -226,22 +226,29 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(PLSRC)pllfont.h $(AK)\
 	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
-pl_obj1=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plfont.$(OBJ)
-pl_obj2=$(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
-pl_obj3=$(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ) $(PLOBJ)plplatf.$(OBJ)
-pl_obj4=$(PLOBJ)plalloc.$(OBJ)
-pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3) $(pl_obj4)
+pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ)
+pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ)
+pl_obj3=$(PLOBJ)plplatf.$(OBJ) $(PLOBJ)plalloc.$(OBJ)
+
+# shared objects - non font
+pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
+
+# artifex font objects
+afs_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
+
+# ufst font objects
+ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
 
 # generic artifex font device.
-$(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
-	$(SETMOD) $(PLOBJ)afs $(PLOBJ)plchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
+$(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj)
+	$(SETMOD) $(PLOBJ)afs $(afs_obj)
 
-# AGFA ufst font device
-$(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE) $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
-	$(SETMOD) $(PLOBJ)ufst $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
-	$(ADDMOD) $(PLOBJ)ufst -link $(AGFALIBDIRS)
-	$(ADDMOD) $(PLOBJ)ufst -lib $(AGFALIBS)
+# AGFA ufst font device - the libraries are expected to be linked in
+# the main platform makefile
+$(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE) $(ufst_obj)
+	$(SETMOD) $(PLOBJ)ufst $(ufst_obj)
 
+### BROKEN #####
 # Bitstream font device
 $(PLOBJ)bfs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
 	$(SETMOD) $(PLOBJ)bfs $(pl_obj1) $(pl_obj2)
@@ -252,11 +259,13 @@ $(PLOBJ)fts.dev: $(PL_MAK) $(ECHOGS_XE) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)pldict.$(
 	$(ADDMOD) $(PLOBJ)fts -link $(FT_LIBDIRS)
 	$(ADDMOD) $(PLOBJ)fts -lib $(FT_LIBS)
 
+### END BROKEN ###
+
 $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
-	$(ADDMOD) $(PLOBJ)pl $(pl_obj4)
+	$(ADDMOD) $(PLOBJ)pl -include $(SCALER) # font scaler chosen.
 
 ###### Command-line driver's main program #####
 

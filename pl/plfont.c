@@ -298,7 +298,7 @@ int
 pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
   gs_memory_t *mem, char *font_name)
 {	
-         int i;
+        int i;
 	plfont->pfont = pfont;
 	/* Initialize generic font data. */
 	pfont->next = pfont->prev = 0;

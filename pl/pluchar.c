@@ -346,6 +346,7 @@ pl_init_fc(
         NULL,               /* font_hdr - fill in if necessary */
         0,                  /* dl_ssnum */
         0,                  /* ExtndFlags */
+        0,                  /* ttc truetype collection ignored if not ttc file */
         FC_MAT1_TYPE,       /* world space to device mapping */
         {{
           { FXD_ONE, 0, 0, FXD_ONE },
