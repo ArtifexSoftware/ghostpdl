@@ -1,5 +1,12 @@
 # makefile for jbig2dec
 # under Microsoft Visual C++
+#
+# To compile zlib.dll:
+#  Get zlib >= 1.1.4, unzip and rename to zlib,
+#  cd zlib, copy nt\zlib.dnt zlib.dnt, then nmake -f nt\makefile.nt
+# To compile libpng.lib:
+#  Get libpng >= 1.2.5, unzip then rename to libpng,
+#  cd libpng, nmake -f scripts\makefile.vcwin32
 
 LIBPNGDIR=../libpng
 ZLIBDIR=../zlib
