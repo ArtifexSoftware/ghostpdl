@@ -454,7 +454,16 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
     } {
 	gs_rect bbox;
 
-	gs_upathbbox(pgs, &bbox, true);
+	if ((code = gs_upathbbox(pgs, &bbox, true)) < 0) {
+	    /*
+	     * Note: Adobe throws 'nocurrentpoint' error, but the PLRM
+	     * not list this as a possible error from 'upath', so we
+	     * set a reasonable default bbox instead.
+	     */
+	    if (code != e_nocurrentpoint)
+		return code;
+	    bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
+	}
 	make_real_new(next, bbox.p.x);
 	make_real_new(next + 1, bbox.p.y);
 	make_real_new(next + 2, bbox.q.x);
