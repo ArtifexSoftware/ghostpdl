@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_priv.h,v 1.15 2002/07/09 10:39:08 giles Exp $
+    $Id: jbig2_priv.h,v 1.16 2002/08/05 22:47:53 giles Exp $
     
     shared library internals
 */
@@ -45,8 +45,8 @@ struct _Jbig2Ctx {
 
   byte *buf;
   size_t buf_size;
-  int buf_rd_ix;
-  int buf_wr_ix;
+  unsigned int buf_rd_ix;
+  unsigned int buf_wr_ix;
 
   Jbig2FileState state;
 
