@@ -29,6 +29,20 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version6.62">Version 6.62 (2001-03-16)</a>
+<ul>
+<li><a href="#6.62_Incompatible_changes">Incompatible changes</a>,
+    <a href="#6.62-Documentation">Documentation</a>,
+    <a href="#6.62-Procedures">Procedures</a>,
+    <a href="#6.62-Utilities">Utilities</a>,
+    <a href="#6.62-Drivers">Drivers</a>,
+    <a href="#6.62-PDF_writer">PDF writer</a>,
+    <a href="#6.62-PDF_Interpreter">PDF Interpreter</a>,
+    <a href="#6.62-Interpreter">Interpreter</a>,
+    <a href="#6.62-Streams">Streams</a>,
+    <a href="#6.62-Library">Library</a>,
+    <a href="#6.62-Other">Other</a>
+</ul>
 <li><a href="#Version6.61">Version 6.61 (2001-02-21)</a>
 <ul>
 <li><a href="#6.61_Incompatible_changes">Incompatible changes</a>,
@@ -186,6 +200,435 @@ PDF writer (included under Drivers through fileset 5.88), Interpreter,
 Streams (included under Interpreter through release 2.9.9), Library.
 Changes marked with a * were made available as patches to a previous
 release.
+
+<hr>
+
+<h1><a name="Version6.62"></a>Version 6.62 (2001-03-16)</h1>
+
+<p>
+This is the first beta release for the upcoming 7.0 release. This fileset
+adds ICC profile support using Graeme Gill's icclib, and the new DLL
+interface from Russell Lang.
+
+<p>
+All problems registered on SourceForge numbered 409245 or lower are
+closed, except for the following: 201955, 202735, 206652, 209350,
+213799, 215256, 219677, 219798, 220967, 221582, 222534, 222683,
+222727, 223005, 223091, 223754, 223896, 223992, 224056, 224095,
+224134, 224205, 224863, 226364, 226391, 226462, 226477, 226584,
+226943, 227090, 227190, 227276, 227382, 227651, 227684, 227709,
+228180, 228354, 228423, 228641, 228714, 228788, 228808, 229439,
+230694, 230699, 231390, 232334, 232696, 233403, 404255, 404255,
+404482, 404933, 405313, 406285, 406643, 406689, 406694, 406696,
+406699, 406979, 407342, 409105, 409133, 409244, 409245. Note that
+SourceForge has renumbered all bugs since the 6.61 release.
+
+<h3><a name="6.62_Incompatible_changes"></a>Incompatible changes</h3>
+
+<pre>
+(Interpreter)
+	- With WMode = 1, CID-keyed fonts with no Metrics2 now use default
+metrics computed from FontBBox rather than the horizontal metrics.
+(PDF interpreter)
+	- The interpreter now skips to the next EOL after reading the data
+following the ID operator.
+	- The incorrectly named ViewerOrientation DSC comment is now
+corrected to ViewingOrientation.
+(Streams)
+	- All decoding filters that recognize an EOD in the source data
+must now have an init procedure that sets state->min_left = 1.
+(Library)
+	- The glyph_data, subr_data, and seac_data procedures in a Type 1
+font (gs_type1_data_procs), and the glyph_data procedure passed to
+psf_{check,get}_outline_glyphs, must now return 1 iff the outline string was
+newly allocated and should be freed by the caller, like the get_outline
+procedure of Type 42 fonts (gs_type42_data).
+	- The ip_state structure is renamed ip_state_t, and has a new
+member, free_char_string.
+	- The incorrectly named ViewerOrientation DSC comment is now
+corrected to ViewingOrientation, and the viewer_orientation members of
+the DSC parsing structure are corrected to viewing_orientation.
+
+
+
+<h2><a name="6.62-Documentation"></a>Documentation</h2><pre>
+
+Increments version number to 6.62 as part of 6.61 release process.
+(doc/News.htm [1.77]: 2001/02/24 01:56:01 raph)
+
+Adds Epson Stylus Color 300 support to uniprint, also some code cleanups.
+Thanks to Glenn Ramsey and Gunther Hess for the patch.
+(doc/Devices.htm [1.20]: 2001/03/03 00:45:01 raph)
+
+Added documentation for Ghostscript interpreter API as used by Windows and
+OS/2 DLL and Linux shared object. (doc/API.htm [1.1], doc/DLL.htm [1.8],
+doc/Readme.htm [1.20]: 2001/03/13 07:12:06 ghostgum)
+
+Documentation changes in preparation for 6.62 beta release.
+(doc/API.htm [1.2], doc/Bug-form.htm [1.15], doc/Bug-info.htm [1.11],
+doc/C-style.htm [1.12], doc/Commprod.htm [1.9], doc/Copying.htm [1.7],
+doc/Current.htm [1.7], doc/DLL.htm [1.9], doc/Develop.htm [1.33],
+doc/Devices.htm [1.21], doc/Drivers.htm [1.15], doc/Fonts.htm [1.13],
+doc/Helpers.htm [1.10], doc/History1.htm [1.7], doc/History2.htm [1.7],
+doc/History3.htm [1.7], doc/History4.htm [1.7], doc/History5.htm [1.9],
+doc/History6.htm [1.19], doc/Htmstyle.htm [1.10], doc/Install.htm [1.15],
+doc/Language.htm [1.26], doc/Lib.htm [1.7], doc/Maintain.htm [1.11],
+doc/Make.htm [1.23], doc/New-user.htm [1.20], doc/News.htm [1.78],
+doc/Projects.htm [1.24], doc/Ps-style.htm [1.7], doc/Ps2epsi.htm [1.8],
+doc/Ps2pdf.htm [1.25], doc/Psfiles.htm [1.14], doc/README [1.6],
+doc/Readme.htm [1.21], doc/Release.htm [1.29], doc/Source.htm [1.7],
+doc/Tester.htm [1.7], doc/Unix-lpr.htm [1.7], doc/Use.htm [1.23],
+doc/Xfonts.htm [1.7], doc/gs-vms.hlp [1.6], man/dvipdf.1 [1.4],
+man/font2c.1 [1.4], man/gs.1 [1.4], man/gslp.1 [1.4], man/gsnd.1 [1.4],
+man/pdf2dsc.1 [1.4], man/pdf2ps.1 [1.6], man/pdfopt.1 [1.4],
+man/pf2afm.1 [1.4], man/pfbtopfa.1 [1.5], man/printafm.1 [1.4],
+man/ps2ascii.1 [1.4], man/ps2epsi.1 [1.4], man/ps2pdf.1 [1.8],
+man/ps2pdfwr.1 [1.5], man/ps2ps.1 [1.11], man/wftopfa.1 [1.4]: 2001/03/17
+01:26:48 raph)
+
+</pre><h2><a name="6.62-Procedures"></a>Procedures</h2><pre>
+
+Fixes problems:
+	- Minor changes to fix compilation on VMS, thanks to Jacob
+=JoukJansen for the patch. (devs.mak [1.42]: 2001/03/01 22:16:02 raph)
+	- Corrects whitespace for new entries in devs.mak for VMS build.
+Thanks to Jouk Jansen. (devs.mak [1.44]: 2001/03/13 20:01:35 raph)
+	- Fixes SourceForge bug #219677. Adds debug and debugclean targets
+to MSVC++ makefile that build in the debugobj and debugbin directories.
+Fixes BEGINFILES and BEGINFILES2 so that 'make clean' removes all files.
+(msvc32.mak [1.10], winlib.mak [1.7]: 2001/03/16 22:53:18 ghostgum)
+
+Increments version number to 6.62 as part of 6.61 release process.
+(version.mak [1.27]: 2001/02/24 01:56:01 raph)
+
+Provide alternate %stdin/out/err implementation using procedure based
+streams and callouts. Previous stdio implementation with
+STDIO_IMPLEMENTATION= New callout stdio implementation with
+STDIO_IMPLEMENTATION=c Bug fix to zflush and zpeekstring. New stdio stream
+code is in ziodevsc.c which will be in next commit. (bcwin32.mak [1.5],
+dvx-gcc.mak [1.6], gs.mak [1.3], int.mak [1.43], msvc32.mak [1.7],
+msvclib.mak [1.7], openvms.mak [1.7], os2.mak [1.10], ugcclib.mak [1.7],
+unix-gcc.mak [1.10], unixansi.mak [1.8], unixtrad.mak [1.8], watc.mak [1.7],
+watclib.mak [1.7], watcw32.mak [1.6]: 2001/03/12 04:05:19 ghostgum)
+
+Adds device filter pipeline, which will be used by PDF 1.4 and other
+enhanced imaging operations. (int.mak [1.44], lib.mak [1.43]: 2001/03/13
+00:41:10 raph)
+
+Implement new Ghostscript interpreter API for DLL or shared object.
+Reimplement old DLL interface using new API. See iapi.h and iapi.c for new
+API. For unix, build using "make so". Added loader programs for Ghostscript
+interpreter library for Linux (dxmain.c), Windows (dw*.c) and OS/2
+(dpmain.c). Add new "display" device for use with the new API. Linux
+dxmain.c uses the "display" device, Gtk+ and GdkRgb for faster drawing than
+the "x11" device. (devs.mak [1.43], gsdll2.def [1.2], gsdll32.def [1.2],
+int.mak [1.45], msvc32.mak [1.8], os2.mak [1.11], unix-dll.mak [1.1],
+unix-gcc.mak [1.11], winint.mak [1.6], winlib.mak [1.6]: 2001/03/13 07:09:28
+ghostgum)
+
+When building the Linux shared object, separate directories soobj and sobin
+are used to prevent 'make' from mixing the object files and building a
+corrupt executable. Added 'API.htm' to the installed documentation files.
+(unix-dll.mak [1.2], unix-gcc.mak [1.12], unixinst.mak [1.18]: 2001/03/15
+09:11:28 ghostgum)
+
+Change AFPL Ghostscript path on Windows and OS/2 platforms from c:/aladdin
+to c:/gs. (bcwin32.mak [1.6], msvc32.mak [1.9], msvclib.mak [1.8],
+watc.mak [1.8], watclib.mak [1.8], watcw32.mak [1.7]: 2001/03/16 22:19:16
+ghostgum)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (bcwin32.mak [1.7], devs.mak [1.45], dvx-gcc.mak [1.7], gs.mak [1.4],
+icclib.mak [1.1], int.mak [1.46], lib.mak [1.44], msvc32.mak [1.11],
+msvclib.mak [1.9], openvms.mak [1.8], os2.mak [1.12], ugcclib.mak [1.8],
+unix-gcc.mak [1.13], unixansi.mak [1.9], unixtrad.mak [1.9],
+version.mak [1.28], watc.mak [1.9], watclib.mak [1.9], watcw32.mak [1.8],
+wctail.mak [1.3], winlib.mak [1.8]: 2001/03/17 01:15:42 raph)
+
+</pre><h2><a name="6.62-Utilities"></a>Utilities</h2><pre>
+
+Replace many references to exit() with returns. (gp_dvx.c [1.3],
+gp_os2.c [1.7], gp_unix.c [1.4]: 2001/03/12 03:50:02 ghostgum)
+
+Cleanup of MS-Windows and OS/2 code. Remove old 16-bit MS-Windows code.
+Remove references to stdout/err, replacing with eprintf(). Remove global
+variables. Disable mswindll and os2dll devices if a callback function is not
+provided. (gp_mswin.c [1.4], gp_os2.c [1.8]: 2001/03/12 03:56:13 ghostgum)
+
+stdio implementation using callouts. Missing file from last commit.
+(ziodevsc.c [1.1]: 2001/03/12 04:11:28 ghostgum)
+
+Implement new Ghostscript interpreter API for DLL or shared object.
+Reimplement old DLL interface using new API. See iapi.h and iapi.c for new
+API. For unix, build using "make so". Added loader programs for Ghostscript
+interpreter library for Linux (dxmain.c), Windows (dw*.c) and OS/2
+(dpmain.c). Add new "display" device for use with the new API. Linux
+dxmain.c uses the "display" device, Gtk+ and GdkRgb for faster drawing than
+the "x11" device. (dxmain.c [1.1], gp_msdll.c [1.1], gp_mswin.c [1.5],
+gp_os2.c [1.9], gsdll.c [1.4]: 2001/03/13 07:09:28 ghostgum)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (icc.c [1.1]: 2001/03/17 01:15:42 raph)
+
+</pre><h2><a name="6.62-Drivers"></a>Drivers</h2><pre>
+
+Fixes problems:
+	- to achieve page independence, every page must in the general case
+set page parameters. To preserve duplexing the page cannot set page
+parameters. New code checks the current page size and sets it only if it is
+necessary. Bug #404376 reported by bannis at users.sourceforge.net
+(gdevpsu.c [1.3]: 2001/03/03 03:27:03 alexcher)
+
+Adds Epson Stylus Color 300 support to uniprint, also some code cleanups.
+Thanks to Glenn Ramsey and Gunther Hess for the patch. (gdevupd.c [1.4],
+lib/stc300.upp [1.1], lib/stc300bl.upp [1.1], lib/stc300bm.upp [1.1]:
+2001/03/03 00:45:01 raph)
+
+Cleanup of MS-Windows and OS/2 code. Remove old 16-bit MS-Windows code.
+Remove references to stdout/err, replacing with eprintf(). Remove global
+variables. Disable mswindll and os2dll devices if a callback function is not
+provided. (gdevmswn.c [1.3], gdevpm.c [1.3], gdevwdib.c [1.3],
+gdevwpr2.c [1.6], gdevwprn.c [1.3]: 2001/03/12 03:56:13 ghostgum)
+
+Redirect all user messages from stdout and stderr to outwrite() and
+errwrite(). This is needed to allow stdout/err to be redirected to the
+caller for DLL / shared object builds. (gdev4693.c [1.2], gdevcdj.c [1.5],
+gdevhl7x.c [1.4], gdevifno.c [1.2], gdevimgn.c [1.3], gdevos2p.c [1.4],
+gdevsppr.c [1.3], gdevsunr.c [1.3], gdevupd.c [1.5], gdevwddb.c [1.3],
+gdevwpr2.c [1.7]: 2001/03/13 06:51:39 ghostgum)
+
+Implement new Ghostscript interpreter API for DLL or shared object.
+Reimplement old DLL interface using new API. See iapi.h and iapi.c for new
+API. For unix, build using "make so". Added loader programs for Ghostscript
+interpreter library for Linux (dxmain.c), Windows (dw*.c) and OS/2
+(dpmain.c). Add new "display" device for use with the new API. Linux
+dxmain.c uses the "display" device, Gtk+ and GdkRgb for faster drawing than
+the "x11" device. (gdevdsp.c [1.1], gdevdsp.h [1.1], gdevdsp2.h [1.1],
+gdevmswn.c [1.4], gdevpm.c [1.4]: 2001/03/13 07:09:28 ghostgum)
+
+Adds typed image rendering to pnga (prototype PDF 1.4) device.
+(gdevpnga.c [1.3]: 2001/03/17 00:16:53 raph)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (gdevpx.c [1.6]: 2001/03/17 01:15:42 raph)
+
+</pre><h2><a name="6.62-PDF_writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- properly include unistd_.h in files that call unlink()
+(gdevpdf.c [1.29]: 2001/03/16 22:12:34 giles)
+
+Redirect all user messages from stdout and stderr to outwrite() and
+errwrite(). This is needed to allow stdout/err to be redirected to the
+caller for DLL / shared object builds. (gdevpdfm.c [1.9]: 2001/03/13
+06:51:39 ghostgum)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (gdevpdfc.c [1.14]: 2001/03/17 01:15:42 raph)
+
+</pre><h2><a name="6.62-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
+
+Fixes problems:
+	- When the stream is located in an external file (i.e. the stream
+dictionary contains an /F entry) GS fails with "typecheck in .knownget"
+because of a minor bug in stack handling in pdf_base.ps. Bug #229425, the
+fix from Andreas Bolsch &lt;meromorphic at users.sourceforge.net&gt;
+(lib/pdf_base.ps [1.13]: 2001/03/04 16:59:19 alexcher)
+	- GS can override image interpolation using INTERPOLATE or
+NOINTERPOLATE flags. These flags had no effect on PDF because the PDF
+interpreter is bound earlier than image operator is redefined. New version
+takes image and imagemask values from systemdict at run time.
+(lib/pdf_draw.ps [1.27]: 2001/03/11 05:15:26 alexcher)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (lib/pdf_draw.ps [1.28], lib/pdf_ops.ps [1.16]: 2001/03/17 01:15:41
+raph)
+
+</pre><h2><a name="6.62-Interpreter"></a>Interpreter</h2><pre>
+
+Fixes problems:
+	- Allocate filter in local VM when currentglobal is false. Prevents
+a problem with some QuarkXpress ProcSets that turn off vmreclaim and expect
+save/restore to free memory which only works on local VM. Fix for problem
+reported by Artifex customer #150, file "japan.ps". (zfilter.c [1.5]:
+2001/02/28 00:39:26 rayjj)
+	- Speed-up JPEG decompression by increasing file buffer to 2K. This
+avoids installation of an intermediate buffering filter that resulted in a
+byte-by-byte filling of the buffer to the JPEG code. When the buffer was not
+full enough a recoverable error would result in a round trip for the next
+byte. Fixes SourcForge bug #405342 for Artifex customer #350.
+(zfile.c [1.7]: 2001/03/02 03:06:50 alexcher)
+	- Removes Category dictionary from dictionary stack during the
+execution of the /Font resourceforall procedure, needed for proper access
+from the procedure to underlying dictionary. Fixes SourceForge bug #224973.
+(lib/gs_cidcm.ps [1.2]: 2001/03/03 15:09:12 igorm)
+	- GS didn't accept packed array as data source in image with
+multiple data sources. From internal bug report. (zimage2.c [1.4]:
+2001/03/12 22:53:22 alexcher)
+	- ztype9mapcid now allocates string in global memory space to match
+allocation of contents. Thanks to Masatake YAMATO for the patch.
+(zfcid0.c [1.6]: 2001/03/13 19:57:06 raph)
+	- Define to DefaultGray, DefaultRGB, DefaultCMYK color spaces to
+allow UseCIEColor to work. SourceForge bugs #216461, #219676.
+(lib/gs_ll3.ps [1.8]: 2001/03/14 12:00:37 igorm)
+
+Increments version number to 6.62 as part of 6.61 release process.
+(lib/gs_init.ps [1.30]: 2001/02/24 01:56:01 raph)
+
+Replace many references to exit() with returns. (errors.h [1.3], gs.c [1.3],
+igcref.c [1.3], imain.c [1.4], imainarg.c [1.7], imainarg.h [1.3],
+zcontext.c [1.7]: 2001/03/12 03:50:02 ghostgum)
+
+Provide alternate %stdin/out/err implementation using procedure based
+streams and callouts. Previous stdio implementation with
+STDIO_IMPLEMENTATION= New callout stdio implementation with
+STDIO_IMPLEMENTATION=c Bug fix to zflush and zpeekstring. New stdio stream
+code is in ziodevsc.c which will be in next commit. (errors.h [1.4],
+files.h [1.3], imain.c [1.5], iminst.h [1.3], interp.c [1.7], zfile.c [1.8],
+zfileio.c [1.10], zfproc.c [1.8], ziodev.c [1.4]: 2001/03/12 04:05:19
+ghostgum)
+
+This fix corrects a problem with VM usage in the DSC parser. Previously the
+dictionary dsc_dict was allocated in global VM but the DSC parser would try
+to insert items while in local VM mode. This fix forces the DSC parser into
+global VM mode. (lib/gs_dscp.ps [1.4]: 2001/03/12 22:41:22 dancoby)
+
+Adds device filter pipeline, which will be used by PDF 1.4 and other
+enhanced imaging operations. (zdfilter.c [1.1]: 2001/03/13 00:41:10 raph)
+
+Redirect all user messages from stdout and stderr to outwrite() and
+errwrite(). This is needed to allow stdout/err to be redirected to the
+caller for DLL / shared object builds. (gs.c [1.4], idebug.c [1.3],
+igc.c [1.3], imain.c [1.6], imainarg.c [1.8]: 2001/03/13 06:51:39 ghostgum)
+
+Implement new Ghostscript interpreter API for DLL or shared object.
+Reimplement old DLL interface using new API. See iapi.h and iapi.c for new
+API. For unix, build using "make so". Added loader programs for Ghostscript
+interpreter library for Linux (dxmain.c), Windows (dw*.c) and OS/2
+(dpmain.c). Add new "display" device for use with the new API. Linux
+dxmain.c uses the "display" device, Gtk+ and GdkRgb for faster drawing than
+the "x11" device. (dpmain.c [1.1], dpmainc.c [1.3], dwdll.c [1.1],
+dwdll.cpp [1.3], dwdll.h [1.3], dwimg.c [1.1], dwimg.cpp [1.4],
+dwimg.h [1.3], dwmain.c [1.1], dwmain.cpp [1.3], dwmain.h [1.3],
+dwmainc.c [1.1], dwmainc.cpp [1.4], dwnodll.c [1.1], dwnodll.cpp [1.3],
+dwtext.c [1.1], dwtext.cpp [1.3], dwtext.h [1.3], files.h [1.4], gs.c [1.5],
+iapi.c [1.1], iapi.h [1.1], iconf.c [1.3], idisp.c [1.1], idisp.h [1.1],
+imain.c [1.7], imainarg.c [1.9], iminst.h [1.4], main.h [1.3]: 2001/03/13
+07:09:28 ghostgum)
+
+Interpolation overriding is modified to support - colorimage; old version
+did nothing - ImageType 3 dictionaries; old version did nothing - local data
+source in global mode; old version failed (lib/gs_init.ps [1.31]: 2001/03/13
+22:50:03 alexcher)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (icie.h [1.3], lib/gs_icc.ps [1.1], zcie.c [1.5], zicc.c [1.1]:
+2001/03/17 01:15:41 raph)
+
+</pre><h2><a name="6.62-Streams"></a>Streams</h2><pre>
+
+Fixes problems:
+	- eexecDecode filter returned EOF immediately if the input stream
+was shorter than 9 characters. New code may misidentify short streams but
+old code always failed. (seexec.c [1.4]: 2001/02/23 03:00:13 alexcher)
+
+Replace many references to exit() with returns. (stdpre.h [1.3]: 2001/03/12
+03:50:02 ghostgum)
+
+Redirect all user messages from stdout and stderr to outwrite() and
+errwrite(). This is needed to allow stdout/err to be redirected to the
+caller for DLL / shared object builds. (std.h [1.4]: 2001/03/13 06:51:39
+ghostgum)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (stream.c [1.10]: 2001/03/17 01:15:42 raph)
+
+Minor patch to header files so that unlink() prototype doesn't conflict when
+const is disabled through #define. (stdio_.h [1.4]: 2001/03/17 01:18:34
+raph)
+
+</pre><h2><a name="6.62-Library"></a>Library</h2><pre>
+
+Fixes problems:
+	- Minor changes to fix compilation on VMS, thanks to Jacob
+=JoukJansen for the patch. (gstrans.c [1.13]: 2001/03/01 22:16:02 raph)
+	- gp_file_name_sizeof is increased to 260 bytes, == MAX_PATH on MS
+Windows. The platform-specific fix is too difficult because some platforms
+may have very long or unlimited file names. Bug #231514 submitted by
+anonymous user. (gp.h [1.6]: 2001/03/03 04:38:19 alexcher)
+	- When objects were resized or trimmed, the objects o_size was not
+being updated if the rounded_size didn't change. This could lead to
+alignment issues on some systems (causing a crash). Problem reported by
+Artifex customer #460. (gsalloc.c [1.9]: 2001/03/12 00:04:28 rayjj)
+	- Some device color components were missed while serializing
+halftone to clist, causing segment fault during playback. Changes use proper
+number of device color components to be written to clist and read from it.
+SourceForge bug #211449. (gxclpath.c [1.9], gxclrast.c [1.9]: 2001/03/13
+08:38:03 igorm)
+	- kshow now restores currentfont if changed while running proc.
+Fixes SourceForge bug #221715. (gxchar.c [1.3]: 2001/03/14 13:03:49 igorm)
+	- properly include unistd_.h in files that call unlink()
+(gsiodev.c [1.5], gxclfile.c [1.3]: 2001/03/16 22:12:34 giles)
+
+Replace many references to exit() with returns. (gsargs.c [1.3],
+gsargs.h [1.4], gsexit.h [1.3], gxalloc.h [1.6]: 2001/03/12 03:50:02
+ghostgum)
+
+Adds device filter pipeline, which will be used by PDF 1.4 and other
+enhanced imaging operations. (gsdfilt.c [1.1], gsdfilt.h [1.1],
+gsstate.c [1.10], gzstate.h [1.5]: 2001/03/13 00:41:10 raph)
+
+Redirect all user messages from stdout and stderr to outwrite() and
+errwrite(). This is needed to allow stdout/err to be redirected to the
+caller for DLL / shared object builds. (gp_unifs.c [1.4], gsargs.c [1.4],
+gsinit.c [1.3], gsio.h [1.5], gslib.c [1.4], gsmisc.c [1.10],
+gxclutil.c [1.4]: 2001/03/13 06:51:39 ghostgum)
+
+Implement new Ghostscript interpreter API for DLL or shared object.
+Reimplement old DLL interface using new API. See iapi.h and iapi.c for new
+API. For unix, build using "make so". Added loader programs for Ghostscript
+interpreter library for Linux (dxmain.c), Windows (dw*.c) and OS/2
+(dpmain.c). Add new "display" device for use with the new API. Linux
+dxmain.c uses the "display" device, Gtk+ and GdkRgb for faster drawing than
+the "x11" device. (gsexit.h [1.4]: 2001/03/13 07:09:29 ghostgum)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (gs_stdio.h [1.1], gscdef.c [1.12], gscie.c [1.4], gscie.h [1.3],
+gsciemap.c [1.5], gscolor.c [1.5], gscolor1.c [1.4], gscscie.c [1.4],
+gscspace.h [1.6], gscssub.c [1.3], gsicc.c [1.1], gsicc.h [1.1],
+gxcie.h [1.3], gxshade.c [1.5], icc.h [1.1]: 2001/03/17 01:15:42 raph)
+
+Minor patch to header files so that unlink() prototype doesn't conflict when
+const is disabled through #define. (unistd_.h [1.2]: 2001/03/17 01:18:34
+raph)
+
+</pre><h2><a name="6.62-Other"></a>Other</h2><pre>
+
+Cleanup of MS-Windows and OS/2 code. Remove old 16-bit MS-Windows code.
+Remove references to stdout/err, replacing with eprintf(). Remove global
+variables. Disable mswindll and os2dll devices if a callback function is not
+provided. (gp_mswin.h [1.3]: 2001/03/12 03:56:13 ghostgum)
+
+Implement new Ghostscript interpreter API for DLL or shared object.
+Reimplement old DLL interface using new API. See iapi.h and iapi.c for new
+API. For unix, build using "make so". Added loader programs for Ghostscript
+interpreter library for Linux (dxmain.c), Windows (dw*.c) and OS/2
+(dpmain.c). Add new "display" device for use with the new API. Linux
+dxmain.c uses the "display" device, Gtk+ and GdkRgb for faster drawing than
+the "x11" device. (gp_mswin.h [1.4], gsdll.h [1.3], gsdllwin.h [1.3]:
+2001/03/13 07:09:28 ghostgum)
+
+Integrates ICC profile input support from Jan Stoeckenius. Also includes
+slightly modified version of icclib (icc.h, icc.c, icc9809.h) by Graeme
+Gill. (icc9809.h [1.1]: 2001/03/17 01:15:42 raph)
 
 <hr>
 
@@ -4742,7 +5185,7 @@ Adds .cvsignore files, to prevent bogus warnings on cvs update.
 
 Fixes problems:
 	- A couple of places in the Windows code didn't correctly handle
-Ghostscript version 6.61, 21 February 2001
+Ghostscript version 6.62, 16 March 2001
 21:45:03 lpd)
 	- Replaces a final exit() with a return, to avoid a compiler
 warning. (genconf.c [1.2]: 2000/04/05 19:53:27 lpd)
