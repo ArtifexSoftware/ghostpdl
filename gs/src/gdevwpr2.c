@@ -26,6 +26,7 @@
  * Modified by lpd 1999-04-03 for compatibility with Borland C++ 4.5.
  * Modified by Pierre Arnaud 1999-10-03 (accept b&w printing on color printers).
  * Modified by Pierre Arnaud 1999-11-20 (accept lower resolution)
+ * Bug fixed by Pierre Arnaud 2000-03-09 (win_pr2_put_params error when is_open)
  */
 
 /* This driver uses the printer default size and resolution and
@@ -176,6 +177,7 @@ struct gx_device_win_pr2_s {
     int user_color;		/* user's choice: color format */
     int max_dpi;		/* maximum resolution in DPI */
     int ratio;			/* stretch ratio when printing */
+    int selected_bpp;		/* selected bpp, memorised by win_pr2_set_bpp */
 
     HANDLE win32_hdevmode;	/* handle to device mode information */
     HANDLE win32_hdevnames;	/* handle to device names information */
@@ -209,6 +211,7 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
     0,				/* user_color */
     0,				/* max_dpi */
     0,				/* ratio */
+    0,				/* selected_bpp */
     NULL,			/* win32_hdevmode */
     NULL,			/* win32_hdevnames */
     NULL,			/* lpfnAbortProc */
@@ -696,6 +699,8 @@ win_pr2_set_bpp(gx_device * dev, int depth)
 
 	dev->color_info = win_pr2_1color;
     }
+    
+    ((gx_device_win_pr2 *)dev)->selected_bpp = depth;
 }
 
 /********************************************************************************/
@@ -745,9 +750,12 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 
     switch (code = param_read_int(plist, "BitsPerPixel", &bpp)) {
 	case 0:
-	    if (pdev->is_open)
+	    if (pdev->is_open) {
+		if (wdev->selected_bpp == bpp) {
+		    break;
+		}
 		ecode = gs_error_rangecheck;
-	    else {		/* change dev->color_info is valid before device is opened */
+	    } else {		/* change dev->color_info is valid before device is opened */
 		win_pr2_set_bpp(pdev, bpp);
 		break;
 	    }
@@ -761,9 +769,12 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 
     switch (code = param_read_bool(plist, "NoCancel", &nocancel)) {
 	case 0:
-	    if (pdev->is_open)
+	    if (pdev->is_open) {
+		if (wdev->nocancel == nocancel) {
+		    break;
+		}
 		ecode = gs_error_rangecheck;
-	    else {
+	    } else {
 		wdev->nocancel = nocancel;
 		break;
 	    }
