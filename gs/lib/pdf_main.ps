@@ -717,6 +717,8 @@ pdfdict begin
    ifelse { linkdest } stopped 
     {
       cleartomark	% ignore this link
+      (   **** Warning: Outline has invalid link that was discarded.\n)
+      pdfformaterror
     } {
       /Title oget /Title exch /OUT pdfmark
     }
