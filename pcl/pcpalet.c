@@ -189,7 +189,7 @@ build_default_palette(
                                                         pmem
                                                        );
         if ((code == 0) && (pcl_default_crd == 0))
-            code = pcl_crd_build_default_crd(pmem);
+            code = pcl_crd_build_default_crd(pcs);
         if (code == 0)
             pcl_crd_init_from(ppalet->pcrd, pcl_default_crd);
         if (code == 0)
@@ -660,7 +660,7 @@ pcl_palette_set_view_illuminant(
     int                 code = unshare_palette(pcs);
 
     if ((code == 0) && (pcs->ppalet->pcrd == 0)) {
-        if ((code = pcl_crd_build_default_crd(pcs->memory)) == 0)
+        if ((code = pcl_crd_build_default_crd(pcs)) == 0)
             pcl_crd_init_from(pcs->ppalet->pcrd, pcl_default_crd);
     }
     if (code == 0)
@@ -699,7 +699,7 @@ pcl_palette_check_complete(
                                                     pcs->memory
                                                     );
     if ((code == 0) && (ppalet->pcrd == 0)) {
-        if ((code = pcl_crd_build_default_crd(pcs->memory)) == 0)
+        if ((code = pcl_crd_build_default_crd(pcs)) == 0)
             pcl_crd_init_from(pcs->ppalet->pcrd, pcl_default_crd);
     }
     if ((code == 0) && (ppalet->pht == 0))
