@@ -114,6 +114,7 @@ currentdict end def
 /GraphicStateStack 20 array def
 /GraphicStateStackPointer 0 def
 /PDFColorSpaces 50 dict def
+/FuncDataReader 10 dict def
 
 % We need some structures in local VM, put then into the userdict :
 currentglobal false setglobal
@@ -137,6 +138,8 @@ currentdict end readonly def
   /TextRenderingMode 0 def
   /WordSpacing 0 def
 currentdict end readonly def
+
+/1_24_bitshift_1_sub 1 24 bitshift 1 sub def
 
 % ===================== Reading PDF objects ===============================
 
@@ -412,7 +415,8 @@ currentdict end readonly def
 >> def
 
 /MakeStreamReader % <obj> MakeStreamReader <file>
-{ [ 
+{ dup
+  [ 
     exch
 	//PDFR_DEBUG {
       (Stream proc )
@@ -455,6 +459,14 @@ currentdict end readonly def
 	(Stream reader ) print dup ==
   } if
   0 () /SubFileDecode filter
+  exch /Filter //knownget exec {
+    dup type /nametype eq {
+	  filter
+	} {
+	  { filter
+	  } forall
+	} ifelse
+  } if
 } bind def
 
 /RunDelayedStream % <stream_obj> RunStream -
@@ -681,6 +693,305 @@ currentdict end readonly def
   exch scalefont setfont
 } bind def
 
+% ===================== Functions ============================
+
+/ScaleVal % <value> <Range> ScaleVal <scaled_value>
+{
+  aload pop											% v r0 r1
+  1 index sub										% v r0 r1-r0
+  3 2 roll mul add
+} bind def
+
+/ScaleArg % <arg> <Domain> ScaleArg <scaled_arg>
+{
+  aload pop													% a d0 d1
+  1 index sub												% a d0 d1-d0
+  3 1 roll													% d1-d0 a d0
+  sub exch div												% (a-d0)/(d1-d0)
+} bind def
+
+/ScaleArgN % <arg0> ... <argN> <Domain> ScaleArg <scaled_arg0> ... <scaled_argN>
+{
+  dup length 2 idiv 1 sub -1 0 {					% a0 ... an [] i
+    2 mul 2											% a0 ... an [] 2i 2
+	2 index 3 1 roll getinterval					% a0 ... an [] []
+	3 2 roll										% a0 ... [] [] an
+	exch //ScaleArg exe								% a0 ... [] an'
+	1 index length 1 roll							% an' a0 ... []
+  }	for												% a0' ... an'
+} bind def
+
+
+/ComputeFunction_10 % <scaled_arg> <sample_array> ComputeFunction_10 <result>
+{ % Assuming a 1-argument 1-result function type 0.
+  (ComputeFunction_10 beg ) print 1 index =
+  exch														% [] x
+  dup 1 eq {
+    pop dup length 1 sub get								% y
+  } {
+    1 index length 1 sub mul								% [] x*(l-1)
+	dup dup floor sub										% [] x*(l-1) f
+	dup 0 eq {
+	  pop cvi get											% y
+	} {
+	  3 1 roll												% f [] x*(l-1)
+	  2 getinterval aload pop								% f y0 y1
+	  2 index mul 3 2 roll 1 exch sub 3 2 roll mul add		% y1*f+(1-f)*y0
+	} ifelse
+  } ifelse
+  (ComputeFunction_10 end ) print dup =
+} bind def
+
+/ComputeFunction_n0 % <arg0> .... <argn> <sample_array> ComputeFunction_n0 <result>
+{ % Assuming a n-argument 1-result function type 0.
+  mark (Unimplemented n-argument function type 0.) //error exec
+} bind def
+
+/FunctionToProc_x01 % <function_dict> <n> FunctionToProc_x01 <proc>
+{ % Assuming a n-argument 1-result function type 0.
+  % The stream is already converted to the array /Data.
+  /Data get 0 get 
+  [ exch //ComputeFunction_10 /exec load
+  ] cvx
+  //PDFR_DEBUG {
+    (Made a procedure for the 1-argument function :) =
+    dup ==
+  } if
+} bind def
+
+/FunctionToProc_x0n % <function_dict> <n> FunctionToProc_x0n <proc>
+{ % Assuming a n-argument m-result function type 0.
+  % The stream is already converted to the array /Data.
+  %
+  % Making the procedure : { Domain //ScaleArg exec ... n copy {} exec n+1 1 roll ... }
+  % except "n copy" for the last chunk.
+  %
+  dup 7 mul 1 add array										% f n m []
+  dup 0 5 index /Domain get put
+  2 index 1 eq {
+    dup 1 //ScaleArg put
+  } {
+    dup 1 //ScaleArgN put
+  } ifelse
+  dup 2 /exec load put
+  dup exch 0 exch 1 exch 1 sub {							% f n m [] i
+    dup 7 mul 3 add											% f n m [] i i1
+    1 index 3 index 1 sub ne {
+	  dup 3 index 5 index put 1 add
+	  dup 3 index /copy load put 1 add
+	} if
+	[														% f n m [] i i1 [
+      6 index /Data get	3 index get							% f n m [] i i1 [ di
+	  6 index 1 eq {
+	    //ComputeFunction_10 /exec load
+	  } {
+	    //ComputeFunction_n0 /exec load
+	  } ifelse
+	] cvx													% f n m [] i i1 {}
+	3 index exch 2 index exch put 1 add						% f n m [] i i1
+	2 index 1 index /exec load put 1 add
+	2 index 1 index 5 index 1 add put 1 add
+	2 index 1 index 1 put 1 add
+	2 index 1 index /roll load put							% f n m [] i i1
+	pop pop
+  } for
+  cvx exch pop exch pop
+  //PDFR_DEBUG {
+    (Made a procedure for the n-argument function :) =
+    dup ==
+  } if
+} bind def
+
+/MakeTableRec % <func_obj> <n> MakeTableRec <array>
+{
+  0 % to be bound below
+  exec
+} bind def
+
+/MakeTable % <func_obj> <n> MakeTable <array>
+{ //PDFR_DEBUG {
+    (MakeTable beg)= count =
+  } if
+  1 index /Size get exch									% f S N
+  1 sub	dup													% f S n n
+  3 1 roll													% f n S n
+  get														% f n s
+  array														% f n []
+  1 index 0 eq {
+    exch pop exch pop										% []
+  } {
+    dup length - sub -1 0 {									% f n [] i
+	  3 index 3 index //MakeTableRec exec					% f n [] i []
+	  2 index 3 1 roll put									% f n []
+	} for
+	exch pop exch pop
+  } ifelse
+  //PDFR_DEBUG {
+    (MakeTable end)= count =
+  } if
+} bind def
+
+//MakeTableRec 0 /MakeTable put
+
+/StoreSample  % <value> <table> <dimensions> StoreSample -
+{ % The reader in on the dictionary stack.
+  1 sub 
+  dup 0 eq {
+    pop														% v []
+  } {
+    -1 1 {													% v T i
+	  I exch get get										% v T[I[i]]
+	} for													% v []
+  } ifelse
+  I 0 get 3 2 roll put
+} bind def
+
+/ReadSample32   % - ReadSample32 <value>
+{
+  4 {
+    File read not {
+	  mark (Insufficient data for function.) //error exec
+	} if
+  } repeat
+  pop % Ignore the last byte because it can't fit into 'real'.
+  3 1 roll exch
+  256 mul add 256 mul add
+  //1_24_bitshift_1_sub div
+} bind def
+
+/ReadSample   % - ReadSample <value>
+{ % The reader in on the dictionary stack.
+  Buffer BitsLeft BitsPerSample
+  { 2 copy ge {
+      exit
+    } if
+	3 1 roll 
+	8 add 3 1 roll
+	256 mul File read not {
+	  mark (Insufficient data for function.) //error exec
+	} if
+	add
+	3 1 roll
+  } loop							% b bl pbs
+  sub dup							% b bl-bps bl-bps
+  2 index exch						% b bl-bps b bl-bps
+  neg bitshift						% b bl-bps v
+  2 copy exch bitshift				% b bl-bps v v<<(bl-bps)
+  4 3 roll exch sub					% bl-bps v b-(v<<(bl-bps))
+  /Buffer exch def					% bl-bps v
+  exch /BitsLeft exch def			% v
+  Div div							% v/(1<<pbs-1)
+} bind def
+
+/ReadSamplesRec % <dimensions> ReadSamplesRec -
+{ 0 % Will be bound below
+  exec
+} bind def
+
+/ReadSamples % <dimensions> ReadSamples -
+{ % The reader in on the dictionary stack.
+  (ReadSamples beg ) print count =
+  dup 1 eq {
+    pop
+    0 1 Size 0 get 1 sub {
+	  I exch 0 exch put
+	  0 1 M 1 sub {
+	    dup Range exch 2 mul 2 getinterval					% m r 
+		//PDFR_DEBUG {
+		  (Will read a sample ... ) print
+		} if
+		BitsPerSample 32 eq { //ReadSample32 } { //ReadSample } ifelse
+		exec exch //ScaleVal exec				% m v
+		//PDFR_DEBUG {
+		  (value=) print dup =
+		} if
+		exch Table exch get									% v []
+		N //StoreSample exec								%
+	  } for
+	} for
+  } {
+    1 sub 
+	dup Size exch get 0 exch 1 exch 1 sub {					% d-1 i
+	  I exch 2 index exch put								% d-1
+	  //ReadSamplesRec exec
+	} forall
+  } ifelse
+  (ReadSamples end ) print count =
+} bind def
+
+//ReadSamplesRec 0 //ReadSamples put
+
+/StreamToArray % <obj> StreamToArray -
+{ //PDFR_DEBUG {
+    (StreamToArray beg ) print count =
+  } if
+  //FuncDataReader begin									% f
+    dup /BitsPerSample get /BitsPerSample exch def
+	dup /Size get length /N exch def
+	dup /Range get length 2 idiv /M exch def
+	1 BitsPerSample bitshift 1 sub /Div exch def
+	/BitsLeft 0 def
+	/Buffer 0 def
+	dup /Size get /Size exch def							% f
+	dup /Range get /Range exch def							% f
+	/File 1 index //MakeStreamReader exec def				% f
+	/I [ N { 0 } repeat ] def								% f
+	M array													% f []
+    dup length 1 sub -1 0 {									% f [] m
+      2 index N //MakeTable exec							% f [] m T
+	  2 index 3 1 roll put									% f []
+    } for
+    /Table exch def											% f
+	N //ReadSamples exec									% f
+	/Data Table put											%
+  end
+  //PDFR_DEBUG {
+    (StreamToArray end ) print count =
+  } if
+} bind def
+
+/FunctionToProc10 % <function_dict> FunctionToProc10 <proc>
+{ % Assuming a 1-argument function type 0.
+  dup /Order //knownget exec {
+    1 ne {
+      (Underimplemented function Type 0 Order 3.)=
+    } if
+  } if
+  dup //StreamToArray exec									% f
+  dup /Range get length 2 dup eq {
+    pop //FunctionToProc_x01 exec							% proc
+  } {
+    2 div //FunctionToProc_x0n exec								% proc
+  } ifelse
+} bind def
+
+/FunctionToProc1 % <function_dict> FunctionToProc <proc>
+{ % Assuming a 1-argument function.
+  dup /FunctionType get
+  { dup 0 eq {
+      pop //FunctionToProc10 exec exit
+    } if
+	mark exch (Function type) exch ( isn't implemented yet.) //error exec
+  } loop
+} bind def
+
+/FunctionToProc % <function_dict> FunctionToProc1 <proc>
+{ //PDFR_DEBUG {
+	(FunctionToProc beg) =
+  } if
+  dup /Domain get length 2 idiv
+  {
+    dup 1 eq {
+	  pop //FunctionToProc1 exec exit
+	} if
+	mark (Functions with many arguments aren't implemented yet.) //error exec
+  } loop
+  //PDFR_DEBUG {
+	(FunctionToProc end) =
+  } if
+} bind def
+
+
 % ===================== Color Spaces and Colors ==============
 
 /CheckColorSpace %  <key> <val> CheckColorSpace  <key> <val>
@@ -756,9 +1067,13 @@ currentdict end readonly def
   } if
   dup 0 get /Separation eq {
 	3 //ResolveArrayElement exec
-	dup 3 get type /dicttype eq {
-	  mark (Function in /Separation isn't implemented yet.) //error exec
-	} if
+	dup 3 get //FunctionToProc exec
+	2 copy 3 exch put
+	pop
+  } if
+  PDFR_DEBUG {
+    (Construcrted color space :) =
+    dup ==
   } if
 } bind def
 
@@ -1073,13 +1388,13 @@ currentdict end def
   } {
     dup type /arraytype eq {
 	  0 4 getinterval aload pop 
-	  FunctionToProc11 4 1 roll
-	  FunctionToProc11 4 1 roll
-	  FunctionToProc11 4 1 roll
-	  FunctionToProc11 4 1 roll
+	  FunctionToProc1x1 4 1 roll
+	  FunctionToProc1x1 4 1 roll
+	  FunctionToProc1x1 4 1 roll
+	  FunctionToProc1x1 4 1 roll
 	  setcolortransfer
 	} {
-	  FunctionToProc11
+	  FunctionToProc1x1
 	  settransfer
 	} ifelse
   } iflese
