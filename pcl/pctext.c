@@ -45,10 +45,6 @@ private const pcl_text_parsing_method_t pcl_tpm_0 = pcl_tpm_0_data,
 #define	dots(n)	    ((float)(7200 / 300 * n))
 
 
-/*
- * Get next character procedure, to be passed to the graphic library font
- * machinery. Always assumes two bytes are in the string.
- */
   private int
 get_gs_next_char(
     gs_text_enum_t *    penum,
@@ -56,12 +52,13 @@ get_gs_next_char(
     gs_glyph *          pglyph
 )
 {
-    const byte *        pb = penum->text.data.bytes;
-    if ( (penum->index / 2 ) == penum->text.size )
-	return 2;
+    /* one character at a time */
+    //    assert(penum->text.size == 1);
+    if ( penum->index == 1 )
+        return 2;
     *pglyph = gs_no_glyph;
-    *pchr = (((uint)pb[penum->index]) << 8) + pb[penum->index+1];
-    penum->index += 2;
+    *pchr = penum->text.data.chars[0];
+    penum->index++;
     return 0;
 }
 
@@ -225,25 +222,28 @@ get_next_char(
 private int
 show_char_foreground(
     const pcl_state_t * pcs,
-    const char *        pbuff
+    const gs_char *        pbuff
 )
 {
     int code = 0;
     gs_text_enum_t *penum;
     const pl_font_t *plfont = pcs->font;
     gs_font *pfont = plfont->pfont;
+    gs_text_params_t text;
 
-    if (pcs->text_path == -1 && pbuff[0] && pcs->source_transparent) {
-	/* -1 text path rotated text path; don't rotate 1 byte chars 
-	 * NB no support for opaque text
-	 * NB no support for centering about the center line of the glyph 
-	 */
-	pfont->WMode = 1;        /* enable vertical substitutions */
-	gs_rotate(pcs->pgs, 90); /* caller will unrotate */
+    if (pcs->text_path == -1 && ((pbuff[0] & 0xff) != 0) && pcs->source_transparent) {
+    	/* -1 text path rotated text path; don't rotate 1 byte chars 
+    	 * NB no support for opaque text
+    	 * NB no support for centering about the center line of the glyph 
+    	 */
+    	pfont->WMode = 1;        /* enable vertical substitutions */
+    	gs_rotate(pcs->pgs, 90); /* caller will unrotate */
     }
 
-    code = gs_show_begin(pcs->pgs, pbuff, 1, pcs->memory, &penum);
-
+    text.operation = TEXT_FROM_CHARS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+    text.data.chars = pbuff;
+    text.size = 1;
+    code = gs_text_begin(pcs->pgs, &text, pcs->memory, &penum);
     if (code >= 0)
         code = gs_text_process(penum);
     gs_text_release(penum, "show_char_foreground");
@@ -288,10 +288,9 @@ show_char_foreground(
   private int
 show_char_background(
     pcl_state_t *       pcs,
-    const char *        pbuff
+    const gs_char *        pbuff
 )
 {
-    gs_text_enum_t *    penum;
     gs_state *          pgs = pcs->pgs;
     gs_rop3_t           rop = (gs_rop3_t)(pcs->logical_op);
     const pl_font_t *   plfont = pcs->font;
@@ -307,7 +306,7 @@ show_char_background(
     gs_currentpoint(pgs, &pt);
 
     if (plfont->scaling_technology == plfst_bitmap) {
-	gs_char         chr = (((uint)pbuff[0]) << 8) + pbuff[1];
+	gs_char         chr = pbuff[0];
 	gs_glyph        glyph = pfont->procs.encode_char(pfont, chr, gs_no_glyph);
 	const byte *    cdata = pl_font_lookup_glyph(plfont, glyph)->data;
 	int             nbytes;
@@ -347,16 +346,20 @@ show_char_background(
         gs_free_object(gs_state_memory(pgs), pen, "bitmap font background");
 
     } else {
+        gs_text_params_t text;
 	gs_rect     bbox;
+        gs_text_enum_t *    penum;
 
         /* clear the path; start the new one from the current point */
 	gs_newpath(pgs);
 	gs_moveto(pgs, pt.x, pt.y);
-
-        /* get the character path */
-	gs_charpath_begin(pgs, pbuff, 1, true, pcs->memory, &penum);
-	if ((code = gs_text_process(penum)) >= 0) {
-
+        text.data.chars = pbuff;
+        text.size = 1;
+        text.operation = TEXT_FROM_CHARS | TEXT_DO_TRUE_CHARPATH | TEXT_RETURN_WIDTH;
+        code = gs_text_begin(pgs, &text, pcs->memory, &penum);
+        if (code >= 0)
+            code = gs_text_process(penum);
+        if (code >= 0) {
 	    /* append the characters bounding box and use eofill */
 	    gs_pathbbox(pgs, &bbox);
 	    gs_rectappend(pgs, &bbox, 1);
@@ -466,7 +469,7 @@ pcl_show_chars_slow(
 )
 {
     gs_state *              pgs = pcs->pgs;
-    char                    buff[2];
+    gs_char                 buff[1];
     floatp                  rmargin = pcs->margins.right;
     floatp                  page_size = pcs->xfm_state.pd_size.x;
     bool                    source_opaque = !pcs->source_transparent;
@@ -489,8 +492,7 @@ pcl_show_chars_slow(
         floatp  tmp_x;
 
         /* check if a character was found */
-        buff[0] = (chr >> 8);
-        buff[1] = (chr & 0xff);
+        buff[0] = chr;
 	/* round width to integral pcl current units */
 	width = (pcl_get_width(pcs, &advance_vector, pscale, chr, is_space));
         /*
@@ -553,7 +555,7 @@ pcl_show_chars_slow(
             if (source_opaque)
                 code = show_char_background(pcs, buff);
             if (code >= 0)
-                if (!invisible_pattern)
+            if (!invisible_pattern)
                     code = show_char_foreground(pcs, buff);
             if (code < 0)
                 break;
@@ -700,7 +702,6 @@ pcl_text(
     gs_setmatrix(pgs, &user_ctm);
     if (code > 0)		/* shouldn't happen */
 	code = gs_note_error(pcs->memory, gs_error_invalidfont);
-
     return code;
 }
 
