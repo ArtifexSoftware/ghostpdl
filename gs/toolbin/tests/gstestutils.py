@@ -137,7 +137,7 @@ class GSTestCase(unittest.TestCase):
 class _GSTextTestResult(unittest._TextTestResult):
 
     def addFailure(self, test, err):
-        unittest.TestResult.addFailure(self, test, err)
+        self.failures.append((test, err))
         if self.showAll:
             self.stream.writeln("DIFFER")
         elif self.dots:
@@ -146,7 +146,7 @@ class _GSTextTestResult(unittest._TextTestResult):
     def printErrorList(self, flavor, errors):
         handoff = []
         for test, err in errors:
-            if isinstance(err[0], GSTestFailure):
+            if isinstance(err[1], GSTestFailure):
                 self.stream.writeln(self.separator1)
                 self.stream.writeln("%s: %s" % (flavor, self.getDescription(test)))
                 self.stream.writeln(self.separator2)
