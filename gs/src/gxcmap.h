@@ -53,6 +53,8 @@ typedef struct gx_device_color_s gx_device_color;
 #define cmap_proc_devicen(proc)\
   void proc(const frac *, gx_device_color *, const gs_imager_state *, \
 	       gx_device *, gs_color_select_t)
+#define cmap_proc_is_halftoned(proc)\
+  bool proc(const gs_imager_state *, gx_device *)
 
 /*
  * List of mapping functions from the standard color spaces to the
@@ -117,6 +119,7 @@ struct gx_color_map_procs_s {
     cmap_proc_rgb_alpha((*map_rgb_alpha));
     cmap_proc_separation((*map_separation));
     cmap_proc_devicen((*map_devicen));
+    cmap_proc_is_halftoned((*is_halftoned));
 };
 typedef struct gx_color_map_procs_s gx_color_map_procs;
 

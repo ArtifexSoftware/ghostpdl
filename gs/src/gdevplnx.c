@@ -891,8 +891,15 @@ plane_cmap_rgb_alpha(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
 				(gx_device *)edev, select);
     reduce_drawing_color(pdc, edev, &dcolor, &lop);
 }
+private bool
+plane_cmap_is_halftoned(const gs_imager_state *pis_image, gx_device *dev)
+{
+    return false;
+}
+
 private const gx_color_map_procs plane_color_map_procs = {
-    plane_cmap_gray, plane_cmap_rgb, plane_cmap_cmyk, plane_cmap_rgb_alpha
+    plane_cmap_gray, plane_cmap_rgb, plane_cmap_cmyk, plane_cmap_rgb_alpha,
+    NULL, NULL, plane_cmap_is_halftoned
 };
 private const gx_color_map_procs *
 plane_get_cmap_procs(const gs_imager_state *pis, const gx_device *dev)

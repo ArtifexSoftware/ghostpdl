@@ -403,13 +403,17 @@ private cmap_proc_separation(cmap_separation_direct);
 private cmap_proc_devicen(cmap_devicen_halftoned);
 private cmap_proc_devicen(cmap_devicen_direct);
 
+private cmap_proc_is_halftoned(cmap_halftoned_is_halftoned);
+private cmap_proc_is_halftoned(cmap_direct_is_halftoned);
+
 private const gx_color_map_procs cmap_few = {
      cmap_gray_halftoned, 
      cmap_rgb_halftoned, 
      cmap_cmyk_halftoned,
      cmap_rgb_alpha_halftoned,
      cmap_separation_halftoned,
-     cmap_devicen_halftoned
+     cmap_devicen_halftoned,
+     cmap_halftoned_is_halftoned
     };
 private const gx_color_map_procs cmap_many = {
      cmap_gray_direct,
@@ -417,7 +421,8 @@ private const gx_color_map_procs cmap_many = {
      cmap_cmyk_direct,
      cmap_rgb_alpha_direct,
      cmap_separation_direct,
-     cmap_devicen_direct
+     cmap_devicen_direct,
+     cmap_direct_is_halftoned
     };
 
 const gx_color_map_procs *const cmap_procs_default = &cmap_many;
@@ -1111,6 +1116,19 @@ cmap_devicen_direct(const frac * pcc,
         cmap_devicen_halftoned(pcc, pdc, pis, dev, select);
 }
 
+/* ------ Halftoning check ----- */
+
+private bool
+cmap_halftoned_is_halftoned(const gs_imager_state * pis, gx_device * dev)
+{
+    return true;
+}
+
+private bool
+cmap_direct_is_halftoned(const gs_imager_state * pis, gx_device * dev)
+{
+    return false;
+}
 
 /* ------ Transfer function mapping ------ */
 

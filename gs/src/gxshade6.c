@@ -2052,25 +2052,18 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
 }
 
 private inline bool
-unlinear(const patch_fill_state_t *pfs, const patch_color_t *c)
+is_linear_color_applicable(const patch_fill_state_t *pfs)
 {
     int i, code;
     gx_device_color dc;
 
     if (!USE_LINEAR_COLOR_PROCS)
-	return true;
+	return false;
     if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
-	return true;
-    /* Hack : a check for halftoning : */
-    for (i = 0; i < pfs->dev->color_info.num_components; i++)
-	if ((i == pfs->dev->color_info.gray_index ? pfs->dev->color_info.max_gray 
-					          : pfs->dev->color_info.max_color)
-		< min_linear_grades)
-	    return true;
-    code = patch_color_to_device_color(pfs, c, &dc);
-    if (code < 0)
-	return true; /* Don't know, disable linear color. */
-    return dc.type != gx_dc_type_pure;
+	return false;
+    if (gx_get_cmap_procs(pfs->pis, pfs->dev)->is_halftoned(pfs->pis, pfs->dev))
+	return false;
+    return true;
 }
 
 int
@@ -2085,7 +2078,7 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
     gs_fixed_edge le, re;
     const fixed adjust = INTERPATCH_PADDING;
 
-    pfs->unlinear = unlinear(pfs, c0);
+    pfs->unlinear = !is_linear_color_applicable(pfs);
     if (swap_axes) {
 	if (p0->x < p1->x) {
 	    q0.x = p0->y;
@@ -2788,7 +2781,7 @@ int
 mesh_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
-    pfs->unlinear = unlinear(pfs, &p0->c);
+    pfs->unlinear = !is_linear_color_applicable(pfs);
     if (manhattan_dist(&p0->p, &p1->p) < pfs->max_small_coord &&
 	manhattan_dist(&p1->p, &p2->p) < pfs->max_small_coord &&
 	manhattan_dist(&p2->p, &p0->p) < pfs->max_small_coord)
@@ -3586,7 +3579,7 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
     make_tensor_patch(pfs, &p, curve, interior);
-    pfs->unlinear = unlinear(pfs, &p.c[0][0]);
+    pfs->unlinear = !is_linear_color_applicable(pfs);
     /* draw_patch(&p, true, RGB(0, 0, 0)); */
     kv[0] = curve_samples(pfs, &p.pole[0][0], 4, pfs->fixed_flat);
     kv[1] = curve_samples(pfs, &p.pole[0][1], 4, pfs->fixed_flat);
