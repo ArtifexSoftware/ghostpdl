@@ -16,8 +16,7 @@
 
 /* Convert a downloaded dither matrix to a threshold halftone. */
 const byte *
-load_threshold(gs_threshold_halftone *ptht, const byte *data,
-  gs_memory_t *mem)
+load_threshold(gs_threshold_halftone *ptht, byte *data, gs_memory_t *mem)
 {	uint h = (data[0] << 8) + data[1];
 	uint w = (data[2] << 8) + data[3];
 	uint size = h * w;

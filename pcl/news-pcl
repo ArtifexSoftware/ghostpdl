@@ -10,6 +10,9 @@ Version 0.42 (??/??/98)
 
 - removed borland makefile from pcl directory.  It was the pclxl file.
 - removed outdated font message in the README file.
+- added back README file which mysteriously disappeared in the last
+  release.
+- 
 
 
 Version 0.41 (11/26/97)
