@@ -179,15 +179,8 @@ gs_cmap_decode_next(const gs_cmap_t * pcmap, const gs_const_string * pstr,
     if (code != 0 || *pglyph != gs_no_glyph)
 	return code;
     /* This is an undefined character.  Use the notdef map. */
-    {
-	uint next_index = *pindex;
-
-	*pindex = save_index;
-	*pchr = 0;
-	code =
-	    code_map_decode_next(&pcmap->notdef, pstr, pindex, pfidx,
-				 pchr, pglyph);
-	*pindex = next_index;
-    }
-    return code;
+    *pindex = save_index;
+    *pchr = 0;
+    return code_map_decode_next(&pcmap->notdef, pstr, pindex, pfidx,
+				pchr, pglyph);
 }
