@@ -69,7 +69,7 @@ typedef struct trap_line_s {
     int di;
     fixed df;
 	/*
-	 * The intersection of the line with a scan line is x + xf/h.
+	 * The intersection of the line with a scan line is x + xf/h + 1.
 	 * (The 1 refers to the least significant bit of x, not fixed_1;
 	 * similarly, the quotient refers to the l.s.b. of x.)
 	 * We know -h <= xf < 0.
