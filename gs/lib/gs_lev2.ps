@@ -859,6 +859,9 @@ def
 % "QuarkXPress: pictwpstops filter 1.0" which produce bad shading dictionaries
 % if these operators are not defined. 
 
+% Conditionally disable the TN 5044 psuedo-ops if NO_TN5044 specified
+/NO_TN5044 where { pop (%END TN 5044 psuedo-ops) .skipeof } if
+
 % TN 5044 does not define the contents of the array.  We are simply putting
 % the values given into an array.  This is consistent with what we see when
 % testing with Adobe Distiller 6.0.
@@ -903,5 +906,7 @@ def
 /setcmykoverprint {
   4 { dup -1 eq { pop 0 } if 4 1 roll } repeat setcmykcolor
 } bind def
+
+%END TN 5044 psuedo-ops
 
 end				% level2dict

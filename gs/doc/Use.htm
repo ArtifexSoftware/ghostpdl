@@ -831,7 +831,7 @@ from all directories listed in
 So in this example, if the user on a Windows platform specifies
 the command line option <b><tt>-I.;../gs/lib;c:/gs8.50/lib</tt></b>,
 Ghostscript searches for <b><tt>../gs/Resource/CMap/Identity-H</tt></b> and
-then for <tt><b>c:/gs8.50/Resource/CMap/Identity-H</tt></b>.
+then for <tt><b>c:/gs8.50/Resource/CMap/Identity-H</b></tt>.
 
 <p>
 To get a proper platform dependent syntax Ghostscript inserts 
@@ -844,7 +844,7 @@ platform dependent equivalent.
 
 <p>
 In the case of multiple resource directories,
-the default <b><tt>ResourceFileName</b></tt> procedure retrieves either a path 
+the default <b><tt>ResourceFileName</tt></b> procedure retrieves either a path 
 to the first avaliable resource, or if the resource is not available it
 returns a path starting with <b><tt>GenericResourceDir</tt></b>.
 Consequently Postscript installers of Postscript resources
@@ -1091,7 +1091,7 @@ Ghostscript distribution (which are of just as good quality), except to save
 about a megabyte of disk space, but the installation documentation explains
 how to do it <a href="Install.htm#Use_Acrobat_fonts_Unix">on Unix</a>.
 
-<h3><a name="CIDFonts"></a>CID fonts</h2>
+<h3><a name="CIDFonts"></a>CID fonts
 
 <p>
 CID fonts are PostScript resources containing a
@@ -1168,7 +1168,7 @@ Where <b><tt>keys&amp;values</tt></b> are explained in the table below.
 <tr valign="top">       <td><b><tt>/Path</tt></b>
         <td>string
         <td>A path to a TrueType font file.  This must be an absolute path.
-        If using <b><tt><a href="#Safer">-dSAFER</a></b></tt>, the directory 
+        If using <b><tt><a href="#Safer">-dSAFER</a></tt></b>, the directory 
         containing the font file must be on one of the permitted paths.
 <tr valign="top">       <td><b><tt>/FileType</tt></b>
         <td>name
@@ -1230,18 +1230,18 @@ The PDF specification requires CID font files to be embedded,
 however some documents omit them. As a workaround
 the PDF interpreter applies an additional substitution method when 
 a requested CID font resource is not embedded and it is not available.
-It takes values of the keys <b><tt>Registry</b></tt> and <b><tt>Ordering</b></tt>
-from the <b><tt>CIDFontSystem</b></tt> dictionary,
+It takes values of the keys <b><tt>Registry</tt></b> and <b><tt>Ordering</tt></b>
+from the <b><tt>CIDFontSystem</tt></b> dictionary,
 and concatenates them with a dash inserted.
 For example, if a PDF CID font resource specifies 
 <blockquote><b><tt>
 /CIDSystemInfo &lt;&lt; /Registry (Adobe) /Ordering (CNS1) /Supplement 1 &gt;&gt;
 </tt></b></blockquote>
-the generated subsitituite name is <b><tt>Adobe-CNS1</b></tt>.
+the generated subsitituite name is <b><tt>Adobe-CNS1</tt></b>.
 The latter may look some confusing for a font name,
 but we keep it for compatibility with older Ghostscript versions,
 which do so due to a historical reason.
-Add a proper record to <b><tt>lib/cidfmap</b></tt> to provide it.
+Add a proper record to <b><tt>lib/cidfmap</tt></b> to provide it.
 
 <p>
 Please note that when a PDF font resource specifies
@@ -1249,7 +1249,7 @@ Please note that when a PDF font resource specifies
 /Registry (Adobe) /Ordering (Identity)
 </tt></b></blockquote>
 there is no way to determine the language properly.
-If the CID font file is not embedded, the <b><tt>Adobe-Identity</b></tt> 
+If the CID font file is not embedded, the <b><tt>Adobe-Identity</tt></b> 
 record depends on the document and a correct record isn't possible when
 a document refers to multiple Far East languages.
 In the latter case add individual records for specific CID font names used in the document.
@@ -2117,6 +2117,16 @@ overrides <b><tt>-dDOINTERPOLATE</tt></b>.
 <dd>Turns off PDF 1.4 transparency, resulting in faster (but possibly
 incorrect) rendering of pages containing PDF 1.4 transparency and
 blending.
+</dl>
+
+<dl>
+<dt><b><tt>-dNO_TN5044</tt></b>
+<dd>Turns off the TN 5044 psuedo operators. These psuedo operators are not a part
+of the official Postscript specification. However they are defined in <i>Technical
+Note #5044 Color Separation Conventions for PostScript Language Programs</i>.
+These psuedo operators are required for some files from QuarkXPress. However some
+files from Corel 9 and Illustrator 88 do not operate properly if these operators
+are present.
 </dl>
 
 <dl>
@@ -3374,5 +3384,5 @@ San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
-</small></body>
+</small></h3></body>
 </html>
