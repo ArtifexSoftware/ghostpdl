@@ -347,6 +347,19 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 				real_value(porigin, 1), &mat);
 	  else
 	    gs_make_identity(&mat);
+	  /* unaccount for the pattern shift caused by screen phase in
+             the library...  I am not sure this is correct */
+	  {
+	      gs_point user_origin;
+	      gs_matrix cur_mat;
+	      gs_currentmatrix(pgs, &cur_mat);
+	      gs_distance_transform_inverse(pxgs->halftone.origin.x,
+			    pxgs->halftone.origin.y, &cur_mat, &user_origin);
+	      gs_matrix_translate( &mat,
+				   -user_origin.x,
+				   -user_origin.y,
+				   &mat);
+	  }
 	  if ( pdsize )
 	    { dsize.x = real_value(pdsize, 0);
 	      dsize.y = real_value(pdsize, 1);
@@ -437,6 +450,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	       )
 	      return_error(errorRasterPatternUndefined);
 	    pattern = value;
+	    px_set_halftone(pxs);
 	    code = render_pattern(&ccolor, pattern, par->pv[4], par->pv[5],
 				  pxs);
 	    /*
@@ -451,7 +465,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	    ppt->type = pxpPattern;
 	    ppt->value.pattern.pattern = pattern;
 	    ppt->value.pattern.color = ccolor;
-	    ppt->needs_halftone = true;
+	    ppt->needs_halftone = false;
 	  }
 	else if ( par->pv[4] || par->pv[5] )
 	  return_error(errorIllegalAttributeCombination);
